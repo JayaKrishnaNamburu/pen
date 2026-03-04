@@ -148,50 +148,53 @@ const editor = createEditor({
 Three layers: **Schema** (data), **Headless** (behavior), **Rendering** (UI). Each independent and swappable.
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Consumer Application                     │
-│  ┌─────────────────────────────────────────────────────────┐    │
-│  │                    Rendering Layer                       │    │
-│  │  (styled components — React, Vue, Svelte, vanilla HTML) │    │
-│  └──────────────────────────┬──────────────────────────────┘    │
-│                             │ consumes                          │
-│  ┌──────────────────────────┴──────────────────────────────┐    │
-│  │                   Headless Layer                         │    │
-│  │  Unstyled behavioral primitives (like Radix/cmdk)       │    │
-│  │  ┌──────────┐ ┌──────────┐ ┌────────────┐ ┌──────────┐ │    │
-│  │  │ Editor   │ │ Toolbar  │ │ SlashMenu  │ │ AI       │ │    │
-│  │  │ .Root    │ │ .Root    │ │ .Root      │ │ .Root    │ │    │
-│  │  │ .Block   │ │ .Group   │ │ .Input     │ │ .Trigger │ │    │
-│  │  │ .Inline  │ │ .Button  │ │ .List      │ │ .Panel   │ │    │
-│  │  │ .Layout  │ │ .Toggle  │ │ .Item      │ │ .Stream  │ │    │
-│  │  │ .App     │ │          │ │            │ │          │ │    │
-│  │  └──────────┘ └──────────┘ └────────────┘ └──────────┘ │    │
-│  │  ┌──────────────────────────────────────────────────┐   │    │
-│  │  │    Field Editor (shared content editor)          │   │    │
-│  │  └──────────────────────────────────────────────────┘   │    │
-│  │  ┌──────────────────────────────────────────────────┐   │    │
-│  │  │    Extension Host (tx hooks, decorations, state) │   │    │
-│  │  └──────────────────────────────────────────────────┘   │    │
-│  │  ┌──────────────────────────────────────────────────┐   │    │
-│  │  │    Selection Manager (cross-block aware)         │   │    │
-│  │  └──────────────────────────────────────────────────┘   │    │
-│  │  ┌──────────────────────────────────────────────────┐   │    │
-│  │  │    Decoration Engine (non-mutating overlays)     │   │    │
-│  │  └──────────────────────────────────────────────────┘   │    │
-│  └──────────────────────────┬──────────────────────────────┘    │
-│                             │ reads/writes                      │
-│  ┌──────────────────────────┴──────────────────────────────┐    │
-│  │                    Schema Layer                          │    │
-│  │  CRDTDocument ← block schemas, layout rules,            │    │
-│  │                  content model, app state                │    │
-│  │  ┌────────────────────────────────────────────────┐     │    │
-│  │  │  CRDTAdapter interface                         │     │    │
-│  │  │  ├─ YjsAdapter (default)                       │     │    │
-│  │  │  ├─ LoroAdapter (future)                       │     │    │
-│  │  │  └─ AutomergeAdapter (future)                  │     │    │
-│  │  └────────────────────────────────────────────────┘     │    │
-│  └─────────────────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────┐
+│ Consumer Application                                      │
+│                                                           │
+│  ┌──────────────────────────────────────────────────────┐ │
+│  │ Rendering Layer                                      │ │
+│  │ (styled components — React, Vue, Svelte, HTML)       │ │
+│  └────────────────────────┬─────────────────────────────┘ │
+│                           │ consumes                      │
+│  ┌────────────────────────┴─────────────────────────────┐ │
+│  │ Headless Layer                                       │ │
+│  │ Unstyled behavioral primitives (like Radix/cmdk)     │ │
+│  │                                                      │ │
+│  │  ┌────────┐ ┌─────────┐ ┌──────────┐ ┌────────────┐ │ │
+│  │  │ Editor │ │ Toolbar │ │ SlashMenu│ │ AI         │ │ │
+│  │  │ .Root  │ │ .Root   │ │ .Root    │ │ .Root      │ │ │
+│  │  │ .Block │ │ .Group  │ │ .Input   │ │ .Trigger   │ │ │
+│  │  │ .Inline│ │ .Button │ │ .List    │ │ .Panel     │ │ │
+│  │  │ .Layout│ │ .Toggle │ │ .Item    │ │ .Stream    │ │ │
+│  │  │ .App   │ │         │ │          │ │            │ │ │
+│  │  └────────┘ └─────────┘ └──────────┘ └────────────┘ │ │
+│  │                                                      │ │
+│  │  ┌──────────────────────────────────────────────┐    │ │
+│  │  │ Field Editor (shared content editor)         │    │ │
+│  │  ├──────────────────────────────────────────────┤    │ │
+│  │  │ Extension Host (tx hooks, decorations, state)│    │ │
+│  │  ├──────────────────────────────────────────────┤    │ │
+│  │  │ Selection Manager (cross-block aware)        │    │ │
+│  │  ├──────────────────────────────────────────────┤    │ │
+│  │  │ Decoration Engine (non-mutating overlays)    │    │ │
+│  │  └──────────────────────────────────────────────┘    │ │
+│  │                                                      │ │
+│  └────────────────────────┬─────────────────────────────┘ │
+│                           │ reads/writes                  │
+│  ┌────────────────────────┴─────────────────────────────┐ │
+│  │ Schema Layer                                         │ │
+│  │ CRDTDocument ← block schemas, layout rules,         │ │
+│  │                 content model, app state             │ │
+│  │                                                      │ │
+│  │  ┌──────────────────────────────────────────────┐    │ │
+│  │  │ CRDTAdapter interface                        │    │ │
+│  │  │ ├─ YjsAdapter (default)                      │    │ │
+│  │  │ ├─ LoroAdapter (future)                      │    │ │
+│  │  │ └─ AutomergeAdapter (future)                 │    │ │
+│  │  └──────────────────────────────────────────────┘    │ │
+│  │                                                      │ │
+│  └──────────────────────────────────────────────────────┘ │
+└───────────────────────────────────────────────────────────┘
 ```
 
 ## Packages
