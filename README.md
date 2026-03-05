@@ -280,7 +280,6 @@ pnpm test
 pnpm typecheck
 ```
 
-
 ## Milestones
 
 - **M0 -- Core Steel Thread.** Working editor with schema engine, field editor, AI streaming, undo, decorations, and React rendering.
