@@ -1,5 +1,3 @@
-<img width="7200" height="1840" alt="logo_black@2x" src="https://github.com/user-attachments/assets/c357ef56-9a48-47d8-ab6f-1d82bf23062f" />
-
 # Pen
 
 Pen is an open-source, headless, extension-first editor engine built for human-AI co-authoring.
