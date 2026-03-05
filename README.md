@@ -293,7 +293,7 @@ Pen is in active development. Contribution guidelines are coming soon.
 
 ## Authors
 
-Pen is created by [Input](https://www.input.so/) and contributed to by [Krijn Rijshouwer](https://x.com/krijnrijshouwer) and [Matteo Gauthier](https://x.com/MatteoGauthier_).
+Pen is created by [Input](https://www.input.so/), the augmented tools company.
 
 ## License
 
