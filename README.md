@@ -6,6 +6,7 @@ An open-source, headless, extension-first editor engine for human-AI co-authorin
 
 </div>
 
+
 ```bash
 npm install @pen/core @pen/react
 ```
@@ -22,6 +23,15 @@ npm install @pen/core @pen/react
 8. [Authors](#authors)
 9. [License](#license)
 
+## Why Pen?
+
+- **Headless:** Behavior and state separated from rendering. Same engine powers Notion-style, Docs-style, Markdown-first, or headless CMS.
+- **AI-native:** Document model, operation format, and extension architecture designed around how LLMs generate and how humans collaborate with them.
+- **Extension-first:** Core is tiny. Everything -- blocks, formatting, AI, multiplayer, execution, apps -- is an extension.
+- **Schema-driven:** Block types, layout rules, and content as declarative schemas. Compile to React, Vue, Svelte, HTML, or SSR without changing the definition.
+- **CRDT-first:** Documents stored and transmitted as binary CRDT state. Yjs default, with future portability to Loro or Automerge.
+- **Model-agnostic:** A minimal `ModelAdapter` interface works with any LLM client, including the Vercel AI SDK and its 25+ providers.
+
 ```
 ProseMirror / Lexical       Pen                      TipTap / Plate / BlockNote
 (raw engine)           (headless toolkit)            (opinionated toolkit)
@@ -31,15 +41,6 @@ build everything        primitives + AI-native        some assembly required
                         CRDT-first, schema-driven     framework-coupled
                         you bring the design          design decisions made
 ```
-
-## Why Pen?
-
-- **Headless:** Behavior and state separated from rendering. Same engine powers Notion-style, Docs-style, Markdown-first, or headless CMS.
-- **AI-native:** Document model, operation format, and extension architecture designed around how LLMs generate and how humans collaborate with them.
-- **Extension-first:** Core is tiny. Everything -- blocks, formatting, AI, multiplayer, execution, apps -- is an extension.
-- **Schema-driven:** Block types, layout rules, and content as declarative schemas. Compile to React, Vue, Svelte, HTML, or SSR without changing the definition.
-- **CRDT-first:** Documents stored and transmitted as binary CRDT state. Yjs default, with future portability to Loro or Automerge.
-- **Model-agnostic:** A minimal `ModelAdapter` interface works with any LLM client, including the Vercel AI SDK and its 25+ providers.
 
 ## Quick Start
 
