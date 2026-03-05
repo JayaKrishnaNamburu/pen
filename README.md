@@ -1,12 +1,7 @@
-<div align="center">
-
-# Pen
-
-<h3 align="center" style="max-width: 200px; margin: 0 auto;">
-An open-source, headless, extension-first editor engine for human-AI co-authoring
+<h1 align="center">Pen</h1>
+<h3 align="center">
+  An open-source, headless, extension-first<br />editor engine for human-AI co-authoring
 </h3>
-
-</div>
 
 
 ```bash
@@ -35,7 +30,7 @@ npm install @pen/core @pen/react
 - **Model-agnostic:** A minimal `ModelAdapter` interface works with any LLM client, including the Vercel AI SDK and its 25+ providers.
 
 ```
-ProseMirror / Lexical       Pen                      TipTap / Plate / BlockNote
+ProseMirror / Lexical       Pen                      TipTap / Plate
 (raw engine)           (headless toolkit)            (opinionated toolkit)
 ◄────────────────────────────┼──────────────────────────────────►
 no UI primitives        unstyled behavioral           styled components
