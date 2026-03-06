@@ -179,7 +179,7 @@ Three layers: **Schema** (data), **Headless** (behavior), **Rendering** (UI). Ea
 │                           │ consumes                      │
 │  ┌────────────────────────┴─────────────────────────────┐ │
 │  │ Headless Layer                                       │ │
-│  │ Unstyled behavioral primitives (like Radix/cmdk)     │ │
+│  │ Unstyled behavioral primitives                       │ │
 │  │                                                      │ │
 │  │  ┌────────┐ ┌─────────┐ ┌──────────┐ ┌────────────┐  │ │
 │  │  │ Editor │ │ Toolbar │ │ SlashMenu│ │ AI         │  │ │
