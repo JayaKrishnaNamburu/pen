@@ -34,6 +34,7 @@ npm install @pen/core @pen/react
 - **Schema-driven:** Block types, layout rules, and content as declarative schemas. Compile to React, Vue, Svelte, HTML, or SSR without changing the definition.
 - **CRDT-first:** Documents stored and transmitted as binary CRDT state. Yjs default, with future portability to Loro or Automerge.
 - **Model-agnostic:** A minimal `ModelAdapter` interface works with any LLM client, including the Vercel AI SDK and its 25+ providers.
+- **Zero-config to start:** createEditor() with zero args gives you a working editor.
 
 ```
 ProseMirror / Lexical       Pen                      TipTap / Plate
