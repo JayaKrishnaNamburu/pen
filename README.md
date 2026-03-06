@@ -281,6 +281,37 @@ pnpm test
 pnpm typecheck
 ```
 
+### Golden Path (New Contributor)
+
+The fastest way to a working editor:
+
+1. **Clone and install.** `git clone <repo> && cd pen && pnpm install`
+2. **Build.** `pnpm build` — all packages build with zero errors.
+3. **Run tests.** `pnpm test` — headless test suite passes (no browser required).
+4. **Typecheck.** `pnpm typecheck` — monorepo-wide type safety.
+5. **Scaffold an app.** Once M0 packages are published: `npx @pen/cli create my-editor` scaffolds a React + Vite app with the default editor. The bootstrap scaffold is an M0 requirement (see DX Sequencing in `spec/v01.md` Section 21); full CLI features ship in Wave 9.
+6. **Explore the spec.** Start with `spec/v01.md` for architecture and design principles, then dive into wave specs (`spec/wave-00-foundation-types.md` onward) for implementation details.
+
+### Spec Navigation
+
+| Document | What it covers |
+|---|---|
+| `spec/v01.md` | Full technical specification: architecture, types, schema, selection, extensions, streaming, milestones |
+| `spec/wave-00-foundation-types.md` | `@pen/types` — type definitions, `prop` builder, `defineBlock`, `defineExtension` |
+| `spec/wave-01-crdt-layer.md` | `@pen/crdt-yjs` — Yjs adapter, CRDT events, conflict resolution |
+| `spec/wave-02-schema-engine.md` | Schema engine, normalization, `BlockHandle` API, default schema, `@pen/test` |
+| `spec/wave-03-editor-core.md` | `createEditor()`, apply pipeline, extensions, undo, streaming |
+| `spec/wave-04-transports-importers.md` | SSE/direct transports, markdown/HTML importers and exporters |
+| `spec/wave-05-react-rendering.md` | React primitives, field editor, hooks, toolbar, clipboard |
+| `spec/wave-06-mcp-bench-integration.md` | MCP server, benchmarks, M0 exit criteria |
+| `spec/wave-07-ai-track-changes.md` | AI extension, suggestions, track changes |
+| `spec/wave-08-collaboration-history.md` | Multiplayer, presence, awareness, version history |
+| `spec/wave-09-search-input-rules-cli.md` | Search, input rules, `pen create` CLI |
+| `spec/wave-10-layout.md` | Layout containers, flex/grid blocks, responsive stacks |
+| `spec/wave-11-apps-execution.md` | Embedded apps, execution sandboxing, document branching |
+| `spec/wave-12-production-ecosystem.md` | Auth, rate limiting, Vue/Svelte, Loro, documentation site |
+| `spec/errata-ledger.md` | Consolidated errata triage across all waves |
+
 ## Milestones
 
 - **M0 -- Core Steel Thread.** Working editor with schema engine, field editor, AI streaming, undo, decorations, and React rendering.
@@ -288,9 +319,19 @@ pnpm typecheck
 - **M2 -- Layout + Apps + Execution.** Structured layout, interactive apps, Docker sandboxing, document branching.
 - **M3 -- Production + Ecosystem.** Auth, rate limiting, exporters, Vue/Svelte, Loro adapter, documentation site.
 
+For detailed milestone scope, exit criteria, and decision locks, see `spec/v01.md` Section 21.
+
 ## Contributing
 
 Pen is in active development. Contribution guidelines are coming soon.
+
+### Pre-build Governance
+
+Before implementation starts on any wave, the following must be satisfied:
+
+- **Errata lock.** All items in `spec/errata-ledger.md` for that wave must be triaged (fixed in spec, implementation-required, or deferred).
+- **Diagnostics contract.** All diagnostic emissions must use structured codes per `spec/v01.md` Section 22.
+- **API stability.** Public API changes follow the stability policy in `spec/v01.md` Section 23.
 
 ## Authors
 

@@ -2292,10 +2292,6 @@ apply(
   const origin = options?.origin ?? 'user';
   this._pipeline.apply(ops, origin);
 }
-
-applyWithOrigin(origin: OpOrigin, ...ops: DocumentOp[]): void {
-  this.apply(ops, { origin });
-}
 ```
 
 #### Selection Delegation
@@ -2696,13 +2692,13 @@ export class ToolContextImpl implements ToolContext {
       position,
     } as PenStreamPart);
 
-    this.editor.applyWithOrigin('ai', {
+    this.editor.apply([{
       type: 'insert-block',
       blockId,
       blockType,
       props,
       position,
-    });
+    }], { origin: 'ai' });
 
     return blockId;
   }
@@ -2714,11 +2710,11 @@ export class ToolContextImpl implements ToolContext {
       props,
     } as PenStreamPart);
 
-    this.editor.applyWithOrigin('ai', {
+    this.editor.apply([{
       type: 'update-block',
       blockId,
       props,
-    });
+    }], { origin: 'ai' });
   }
 
   deleteBlock(blockId: string): void {
@@ -2727,10 +2723,10 @@ export class ToolContextImpl implements ToolContext {
       blockId,
     } as PenStreamPart);
 
-    this.editor.applyWithOrigin('ai', {
+    this.editor.apply([{
       type: 'delete-block',
       blockId,
-    });
+    }], { origin: 'ai' });
   }
 
   beginStreaming(blockId: string): string {
@@ -2878,13 +2874,13 @@ export function insertBlockTool(editor: Editor): ToolDefinition {
     },
     handler: async (input: any) => {
       const blockId = crypto.randomUUID();
-      editor.applyWithOrigin('ai', {
+      editor.apply([{
         type: 'insert-block',
         blockId,
         blockType: input.blockType,
         props: input.props ?? {},
         position: input.position,
-      });
+      }], { origin: 'ai' });
       return { blockId };
     },
   };
@@ -3159,37 +3155,37 @@ export async function processStream(
 
       case 'block-insert': {
         const blockId = part.blockId ?? crypto.randomUUID();
-        editor.applyWithOrigin('ai', {
+        editor.apply([{
           type: 'insert-block',
           blockId,
           blockType: part.blockType,
           props: part.props ?? {},
           position: part.position,
-        });
+        }], { origin: 'ai' });
         break;
       }
 
       case 'block-update':
-        editor.applyWithOrigin('ai', {
+        editor.apply([{
           type: 'update-block',
           blockId: part.blockId,
           props: part.props,
-        });
+        }], { origin: 'ai' });
         break;
 
       case 'block-delete':
-        editor.applyWithOrigin('ai', {
+        editor.apply([{
           type: 'delete-block',
           blockId: part.blockId,
-        });
+        }], { origin: 'ai' });
         break;
 
       case 'block-move':
-        editor.applyWithOrigin('ai', {
+        editor.apply([{
           type: 'move-block',
           blockId: part.blockId,
           position: part.position,
-        });
+        }], { origin: 'ai' });
         break;
 
       case 'tool-input-available': {
@@ -3268,10 +3264,10 @@ export async function processStream(
 | `gen-start` | `streaming.beginStreaming(zoneId, blockId)` |
 | `gen-delta` | `streaming.appendDelta(delta)` (batched) |
 | `gen-end` | `streaming.endStreaming(status)` |
-| `block-insert` | validate against schema → `editor.applyWithOrigin('ai', ...)` |
-| `block-update` | `editor.applyWithOrigin('ai', ...)` |
-| `block-delete` | `editor.applyWithOrigin('ai', ...)` |
-| `block-move` | `editor.applyWithOrigin('ai', ...)` |
+| `block-insert` | validate against schema → `editor.apply([...], { origin: 'ai' })` |
+| `block-update` | `editor.apply([...], { origin: 'ai' })` |
+| `block-delete` | `editor.apply([...], { origin: 'ai' })` |
+| `block-move` | `editor.apply([...], { origin: 'ai' })` |
 | `tool-input-available` | `toolServer.executeTool()` → emit `tool-output` or `tool-error` |
 | `data-*` | reconcile by `id` in data store (Map-based, replace on match) |
 | `error` | cancel active generation |
@@ -3473,36 +3469,37 @@ processStream(AsyncIterable<PenStreamPart>)
 3. `editor.apply({ type: 'insert-text', blockId: 'b1', offset: 0, text: 'hello' })` → `editor.getBlock('b1').textContent()` returns `'hello'`.
 4. `editor.apply({ type: 'split-block', blockId: 'b1', offset: 5, newBlockId: 'b2' })` splits correctly — original has first 5 chars, new block has the rest.
 5. `editor.apply({ type: 'merge-blocks', targetBlockId: 'b1', sourceBlockId: 'b2' })` combines text and deletes source.
-6. Applying an op with an unknown block type emits a `validation-error` diagnostic and does not modify the CRDT.
-7. Extension `observe()` fires after `apply()` with correct `CRDTEvent`.
-8. Undo reverses the most recent capture window. Redo restores it.
-9. Undo after field editor activation/deactivation boundaries are correct (separate undo steps).
-10. `processStream()` with a sequence of `gen-start`, `gen-delta`, `gen-end` parts produces text in the CRDT.
-11. Streaming batching: multiple rapid `gen-delta` parts are accumulated and flushed in one CRDT write.
-12. `editor.on('change', handler)` fires after mutations.
-13. `editor.on('selectionChange', handler)` fires after `setSelection()`.
-14. Extension dependency resolution: registering an extension with a missing dependency throws.
-15. Reentry safety: calling `apply()` from within an `observe()` handler does not throw; ops are queued and executed after the current batch.
-16. `editor.blocks()` generator yields handles in document order.
-17. `editor.getBlock(id)` returns `null` for non-existent block IDs.
-18. `convert-block` from `content: 'inline'` to `content: 'inline'` preserves the block's text content.
-19. `convert-block` from `content: 'inline'` to `content: 'none'` discards the block's content.
-20. `move-block` with `{ after: 'b1' }` places the block immediately after `b1` in `blockOrder`.
-21. `move-block` with `{ before: 'b1' }` places the block immediately before `b1` in `blockOrder`.
-22. `processStream()` with a `block-insert` part creates a block with schema validation (unknown types are rejected).
-23. Token batching: 10 rapid `gen-delta` parts within 50ms produce a single CRDT write containing all 10 tokens.
-24. `editor.destroy()` deactivates extensions in reverse dependency order.
-25. `loadDocument()` re-initializes all extensions with new document state; `editor.getBlock()` reflects the new document.
-26. Tool server `executeTool()` with an unknown tool name throws.
-27. `createDecorationSet([])` returns `emptyDecorationSet()`.
-28. `DecorationSet.map(mapping)` returns the same instance when no decorations are affected.
-29. `selectText(blockId, from, to)` clamps offsets to `Y.Text.length`.
-30. Circular extension dependencies are detected and throw at registration time.
-31. `editor.apply({ type: 'set-meta', blockId: 'b1', namespace: 'suggestion', data: { action: 'insert-block' } })` writes to the block's `meta` Y.Map, and `editor.getBlock('b1').meta('suggestion')` returns the data.
-32. `editor.apply({ type: 'set-meta', blockId: 'b1', namespace: 'suggestion', data: null })` removes the namespace from `meta`.
-33. `editor.on('change', handler)` receives `CRDTEvent[]` (array), not a singular event — matching `PenEventMap.change` contract.
-34. `getSelectedText()` returns correct text for backwards selections (focus before anchor).
-35. `replaceSelection(blocks)` with `Block[]` content inserts all blocks at the correct position after deleting the selection.
+6. Applying an op with an unknown block type emits a `PEN_APPLY_002` diagnostic and does not modify the CRDT.
+7. All diagnostics emitted by the apply pipeline carry structured `code` fields per Spec Section 22.
+8. Extension `observe()` fires after `apply()` with correct `CRDTEvent`.
+9. Undo reverses the most recent capture window. Redo restores it.
+10. Undo after field editor activation/deactivation boundaries are correct (separate undo steps).
+11. `processStream()` with a sequence of `gen-start`, `gen-delta`, `gen-end` parts produces text in the CRDT.
+12. Streaming batching: multiple rapid `gen-delta` parts are accumulated and flushed in one CRDT write.
+13. `editor.on('change', handler)` fires after mutations.
+14. `editor.on('selectionChange', handler)` fires after `setSelection()`.
+15. Extension dependency resolution: registering an extension with a missing dependency throws.
+16. Reentry safety: calling `apply()` from within an `observe()` handler does not throw; ops are queued and executed after the current batch.
+17. `editor.blocks()` generator yields handles in document order.
+18. `editor.getBlock(id)` returns `null` for non-existent block IDs.
+19. `convert-block` from `content: 'inline'` to `content: 'inline'` preserves the block's text content.
+20. `convert-block` from `content: 'inline'` to `content: 'none'` discards the block's content.
+21. `move-block` with `{ after: 'b1' }` places the block immediately after `b1` in `blockOrder`.
+22. `move-block` with `{ before: 'b1' }` places the block immediately before `b1` in `blockOrder`.
+23. `processStream()` with a `block-insert` part creates a block with schema validation (unknown types are rejected).
+24. Token batching: 10 rapid `gen-delta` parts within 50ms produce a single CRDT write containing all 10 tokens.
+25. `editor.destroy()` deactivates extensions in reverse dependency order.
+26. `loadDocument()` re-initializes all extensions with new document state; `editor.getBlock()` reflects the new document.
+27. Tool server `executeTool()` with an unknown tool name throws.
+28. `createDecorationSet([])` returns `emptyDecorationSet()`.
+29. `DecorationSet.map(mapping)` returns the same instance when no decorations are affected.
+30. `selectText(blockId, from, to)` clamps offsets to `Y.Text.length`.
+31. Circular extension dependencies are detected and throw at registration time.
+32. `editor.apply({ type: 'set-meta', blockId: 'b1', namespace: 'suggestion', data: { action: 'insert-block' } })` writes to the block's `meta` Y.Map, and `editor.getBlock('b1').meta('suggestion')` returns the data.
+33. `editor.apply({ type: 'set-meta', blockId: 'b1', namespace: 'suggestion', data: null })` removes the namespace from `meta`.
+34. `editor.on('change', handler)` receives `CRDTEvent[]` (array), not a singular event — matching `PenEventMap.change` contract.
+35. `getSelectedText()` returns correct text for backwards selections (focus before anchor).
+36. `replaceSelection(blocks)` with `Block[]` content inserts all blocks at the correct position after deleting the selection.
 
 ---
 

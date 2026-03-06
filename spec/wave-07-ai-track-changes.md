@@ -437,16 +437,16 @@ export function buildToolContext(
     },
     insertBlock(blockType, props, position) {
       const id = crypto.randomUUID();
-      editor.applyWithOrigin('ai', {
+      editor.apply([{
         type: 'insert-block', blockId: id, blockType, props, position,
-      });
+      }], { origin: 'ai' });
       return id;
     },
     updateBlock(bid, props) {
-      editor.applyWithOrigin('ai', { type: 'update-block', blockId: bid, props });
+      editor.apply([{ type: 'update-block', blockId: bid, props }], { origin: 'ai' });
     },
     deleteBlock(bid) {
-      editor.applyWithOrigin('ai', { type: 'delete-block', blockId: bid });
+      editor.apply([{ type: 'delete-block', blockId: bid }], { origin: 'ai' });
     },
     beginStreaming(zid, bid) {
       editor.undoManager.stopCapturing();

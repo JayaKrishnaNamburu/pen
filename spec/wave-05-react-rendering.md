@@ -1380,7 +1380,7 @@ export function handlePaste(
     } catch { /* fall through */ }
   }
 
-  // Backward compatibility: lossless format embedded in HTML payload
+  // Secondary lossless path: format embedded in HTML payload
   const html = dataTransfer.getData('text/html');
   if (html) {
     const penMatch = html.match(/data-pen-blocks="([^"]*)"/);

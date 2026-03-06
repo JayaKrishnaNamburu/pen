@@ -1096,7 +1096,6 @@ export interface CreateEditorOptions {
 
 export interface Editor {
   apply(ops: DocumentOp[], options?: ApplyOptions): void;
-  applyWithOrigin(origin: OpOrigin, ...ops: DocumentOp[]): void;
   loadDocument(doc: CRDTDocument): void;
 
   onBeforeApply(

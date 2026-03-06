@@ -298,18 +298,18 @@ function createToolContext(
     insertBlock(blockType, props, position) {
       if (!editor) throw new Error('No editor available');
       const blockId = crypto.randomUUID();
-      editor.applyWithOrigin('ai', {
+      editor.apply([{
         type: 'insert-block', blockId, blockType, props, position,
-      });
+      }], { origin: 'ai' });
       return blockId;
     },
     updateBlock(blockId, props) {
       if (!editor) throw new Error('No editor available');
-      editor.applyWithOrigin('ai', { type: 'update-block', blockId, props });
+      editor.apply([{ type: 'update-block', blockId, props }], { origin: 'ai' });
     },
     deleteBlock(blockId) {
       if (!editor) throw new Error('No editor available');
-      editor.applyWithOrigin('ai', { type: 'delete-block', blockId });
+      editor.apply([{ type: 'delete-block', blockId }], { origin: 'ai' });
     },
     beginStreaming(blockId) {
       if (!editor) throw new Error('No editor available');
@@ -988,7 +988,7 @@ const editor = createEditor()
 2. **Schema validation fallback:**
    - An LLM generates a `block-insert` part with `blockType: 'unknown_type'`.
    - The `onUnknownBlock` handler fires.
-   - A diagnostic event is emitted: `{ type: 'validation-error', op, reason }`.
+   - A diagnostic event is emitted with `code: 'PEN_APPLY_002'` and a `remediation` string.
    - The consumer can subscribe via `editor.on('diagnostic', callback)`.
 
 3. **Extension conflict:**
@@ -999,7 +999,9 @@ const editor = createEditor()
 **What to test:**
 - Development-mode diagnostics produce `console.error` (not `console.warn` or silent failure).
 - Production builds strip diagnostic code (tree-shaking via `process.env.NODE_ENV` checks).
-- Each diagnostic includes the component/extension name and a suggested fix.
+- Each diagnostic carries a stable `code` field following the `PEN_<AREA>_<NNN>` convention (Spec Section 22).
+- `error`-level diagnostics include a `remediation` string with actionable fix guidance.
+- Each diagnostic includes `source` and (where applicable) `extension` to identify the origin.
 
 ---
 
@@ -1112,4 +1114,4 @@ Beyond the exit criteria, these end-to-end scenarios validate the full M0 stack:
 27. Exit criterion 4: Undo/redo correctly groups AI generations.
 28. Exit criterion 5: Cross-block selection works for 3+ blocks.
 29. Exit criterion 6: `pnpm test` passes across all packages.
-30. Exit criterion 7: Development-mode diagnostics fire for common mistakes.
+30. Exit criterion 7: Development-mode diagnostics fire for common mistakes. All emitted diagnostics carry structured `code` fields following the `PEN_<AREA>_<NNN>` convention (Spec Section 22), with `remediation` text for `error`-level diagnostics.

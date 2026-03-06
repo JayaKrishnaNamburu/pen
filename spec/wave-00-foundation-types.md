@@ -72,7 +72,7 @@ packages/core/src/
 └── index.ts                Re-exports @pen/types + throw-stubs for createEditor, mergeSchemas, etc.
 ```
 
-**Why two packages?** Every package in the monorepo imports types from `@pen/core`. By Wave 3, `@pen/core` also contains the schema engine, editor factory, apply pipeline, and extension manager — heavy runtime code. Splitting types into `@pen/types` means downstream packages that only need types and lightweight helpers (`defineBlock`, `prop`, `defineExtension`) take zero dependency on the runtime. `@pen/core` re-exports everything from `@pen/types` for backwards compatibility, so existing `import { ... } from '@pen/core'` statements continue to work.
+**Why two packages?** Every package in the monorepo imports types from `@pen/core`. By Wave 3, `@pen/core` also contains the schema engine, editor factory, apply pipeline, and extension manager — heavy runtime code. Splitting types into `@pen/types` means downstream packages that only need types and lightweight helpers (`defineBlock`, `prop`, `defineExtension`) take zero dependency on the runtime. `@pen/core` re-exports everything from `@pen/types` as the primary import surface.
 
 ### Import DAG (no cycles — all within `@pen/types`)
 
@@ -602,14 +602,17 @@ export interface DocumentState {
 - `documentChange` — post-pipeline editor event. Fires after `apply()` completes (ops executed, normalization done). Payload includes the processed ops, origin, and affected block IDs.
 - `decorationsChange` — fires when the decoration `generation` counter increments (after `requestDecorationUpdate()` or internal decoration invalidation).
 
-**Add `DiagnosticEvent`** (referenced by `PenEventMap` but not defined in the stub):
+**Add `DiagnosticEvent`** (referenced by `PenEventMap` but not defined in the stub). All diagnostics must carry a stable `code` following the `PEN_<AREA>_<NNN>` convention defined in Spec Section 22:
 
 ```typescript
 export interface DiagnosticEvent {
+  code: string;
   level: 'warn' | 'error' | 'info';
   source: string;
   message: string;
-  code?: string;
+  remediation?: string;
+  op?: DocumentOp;
+  extension?: string;
   error?: unknown;
   [key: string]: unknown;
 }
@@ -654,9 +657,6 @@ interface Editor {
 
   /** The local CRDT client identifier. Shorthand for internals.adapter.getClientId(internals.crdtDoc). */
   readonly clientId: number;
-
-  // ── Apply with explicit origin (shorthand) ─────────────
-  applyWithOrigin(origin: OpOrigin, ...ops: DocumentOp[]): void;
 
   // ── Apply hook ─────────────────────────────────────────
   onBeforeApply(
@@ -1208,7 +1208,7 @@ type ExtensionCleanup = {
 };
 ```
 
-When `TConfig` is `void` (default), `setup(editor)` takes no config — backwards compatible with extensions that don't need config. When a generic is provided (e.g. `defineExtension<CollabConfig>({ ... })`), `setup(editor, config)` receives the typed config.
+When `TConfig` is `void` (default), `setup(editor)` takes no config. When a generic is provided (e.g. `defineExtension<CollabConfig>({ ... })`), `setup(editor, config)` receives the typed config.
 
 The `decorations` field in `ExtensionCleanup` allows extensions to provide a decoration factory function that is called by the editor's decoration collection pipeline. Extensions like search (Wave 9), collaboration (Wave 8), and track changes (Wave 7) use this to produce inline and block decorations. The function receives the current `DocumentState` and returns a `DecorationSet`.
 
@@ -1218,9 +1218,9 @@ The `decorations` field in `ExtensionCleanup` allows extensions to provide a dec
 
 These principles apply across all waves. Later wave specs reference this section rather than defining their own error behavior.
 
-- **Ops never throw.** An invalid op (referencing a non-existent block, wrong type, malformed payload) is silently dropped. The editor emits a `diagnostic` event with `{ level: 'warn', source: 'apply', message, op }` for observability. The remaining ops in the batch continue to apply.
-- **Extensions are isolated.** A throwing `observe()` or `decorations()` callback does not crash the editor. The error is caught, reported via `diagnostic` with `{ level: 'error', source: 'extension', extensionName, error }`, and the call is skipped for that cycle.
-- **Normalization is non-fatal.** If a `BlockSchema.normalize` function throws for a given block, that block is skipped for the current normalization pass. The error is reported via `diagnostic`. The block remains in its pre-normalization state.
+- **Ops never throw.** An invalid op (referencing a non-existent block, wrong type, malformed payload) is silently dropped. The editor emits a `diagnostic` event with `{ code: 'PEN_APPLY_001', level: 'warn', source: 'apply.validate', message, op }` for observability. The remaining ops in the batch continue to apply. See Spec Section 22 for the full code catalog.
+- **Extensions are isolated.** A throwing `observe()` or `decorations()` callback does not crash the editor. The error is caught, reported via `diagnostic` with `{ code: 'PEN_EXT_001', level: 'error', source: 'extension.observe', extension: extensionName, error }`, and the call is skipped for that cycle.
+- **Normalization is non-fatal.** If a `BlockSchema.normalize` function throws for a given block, that block is skipped for the current normalization pass. The error is reported via `diagnostic` with `code: 'PEN_SCHEMA_001'`. The block remains in its pre-normalization state.
 - **Streaming is recoverable.** If a `gen-delta` batch flush fails (CRDT write error, normalization error), the generation zone emits `gen-end` with `status: 'error'` and `reason`. The zone is cleaned up (deferred normalization is released, dirty set is flushed).
 
 These events use the existing `PenEventMap` mechanism (`editor.on('diagnostic', handler)`). The `diagnostic` event type is added to `PenEventMap` in `types/editor.ts`.
