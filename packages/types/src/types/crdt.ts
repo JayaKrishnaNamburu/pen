@@ -1,0 +1,150 @@
+import type { DocumentOp, OpOrigin } from "./ops.js";
+import type { Unsubscribe } from "./utility.js";
+import type { DocumentRange } from "./document-range.js";
+
+// ── Abstract CRDT Collections ───────────────────────────────
+
+export interface CRDTArray<T> {
+  readonly length: number;
+  get(index: number): T;
+  toArray(): T[];
+  [Symbol.iterator](): Iterator<T>;
+}
+
+export interface CRDTMap<T> {
+  get(key: string): T | undefined;
+  has(key: string): boolean;
+  entries(): IterableIterator<[string, T]>;
+  keys(): IterableIterator<string>;
+  readonly size: number;
+}
+
+// ── CRDT Adapter ────────────────────────────────────────────
+
+export interface CRDTAdapter {
+  createDocument(): CRDTDocument;
+  loadDocument(binary: Uint8Array): CRDTDocument;
+
+  encodeState(doc: CRDTDocument): Uint8Array;
+  encodeUpdate(doc: CRDTDocument, since?: Uint8Array): Uint8Array;
+  applyUpdate(doc: CRDTDocument, update: Uint8Array): void;
+
+  transact(doc: CRDTDocument, fn: () => void, origin?: string): void;
+
+  createUndoManager(
+    doc: CRDTDocument,
+    options?: UndoManagerOptions,
+  ): CRDTUndoManager;
+
+  createAwareness?(doc: CRDTDocument): Awareness;
+
+  observe(
+    doc: CRDTDocument,
+    callback: (event: CRDTEvent) => void,
+  ): Unsubscribe;
+
+  createSnapshot(doc: CRDTDocument): Uint8Array;
+  restoreSnapshot(doc: CRDTDocument, snapshot: Uint8Array): CRDTDocument;
+
+  mergeUpdates?(updates: Uint8Array[]): Uint8Array;
+
+  fork?(doc: CRDTDocument): CRDTDocument;
+  merge?(target: CRDTDocument, source: CRDTDocument): void;
+
+  getClientId(doc: CRDTDocument): number;
+
+  raw<T>(doc: CRDTDocument): T;
+
+  // Factory methods
+  createMap(): unknown;
+  createArray(): unknown;
+  createText(): unknown;
+  initBlockMap(
+    doc: CRDTDocument,
+    blockId: string,
+    blockType: string,
+    contentType: "inline" | "nested" | "table" | "none",
+  ): unknown;
+
+  // Attribution (per-character authorship)
+  getAttributionRanges?(
+    doc: CRDTDocument,
+    blockId: string,
+  ): AttributionRange[];
+}
+
+export interface AttributionRange {
+  offset: number;
+  length: number;
+  clientId: number;
+}
+
+// ── CRDT Document ───────────────────────────────────────────
+
+export interface CRDTDocument {
+  readonly adapter: CRDTAdapter;
+}
+
+export interface PenDocument {
+  readonly blockOrder: CRDTArray<string>;
+  readonly blocks: CRDTMap<unknown>;
+  readonly apps: CRDTMap<unknown>;
+  readonly metadata: CRDTMap<unknown>;
+  readonly adapter: CRDTAdapter;
+}
+
+// ── Undo Manager ────────────────────────────────────────────
+
+export interface UndoManagerOptions {
+  trackedOrigins?: OpOrigin[];
+  captureTimeout?: number;
+}
+
+export interface CRDTUndoManager {
+  undo(): boolean;
+  redo(): boolean;
+  canUndo(): boolean;
+  canRedo(): boolean;
+  stopCapturing(): void;
+}
+
+// ── Awareness ───────────────────────────────────────────────
+
+export interface AwarenessChangeEvent {
+  added: number[];
+  updated: number[];
+  removed: number[];
+}
+
+export interface Awareness {
+  getLocalState(): Record<string, unknown> | null;
+  setLocalState(state: Record<string, unknown>): void;
+  getStates(): Map<number, Record<string, unknown>>;
+  on(
+    event: "change",
+    callback: (changes: AwarenessChangeEvent) => void,
+  ): void;
+  off(
+    event: "change",
+    callback: (changes: AwarenessChangeEvent) => void,
+  ): void;
+  destroy(): void;
+}
+
+// ── Generation Zone ─────────────────────────────────────────
+
+export interface GenerationZone {
+  id: string;
+  blockId: string;
+  range: DocumentRange;
+  status: "idle" | "streaming" | "complete" | "error";
+}
+
+// ── CRDT Event ──────────────────────────────────────────────
+
+export interface CRDTEvent {
+  origin: OpOrigin;
+  readonly affectedBlocks: readonly string[];
+  ops: readonly DocumentOp[];
+  timestamp: number;
+}

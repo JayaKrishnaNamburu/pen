@@ -1,7 +1,7 @@
 {
-  "name": "@pen/core",
+  "name": "@pen/types",
   "version": "0.0.0",
-  "description": "Headless, extension-first editor engine for human-AI co-authoring",
+  "description": "Type definitions and lightweight runtime helpers for Pen",
   "license": "MIT",
   "type": "module",
   "exports": {
@@ -29,9 +29,6 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "clean": "rm -rf dist *.tsbuildinfo"
-  },
-  "dependencies": {
-    "@pen/types": "workspace:*"
   },
   "devDependencies": {
     "tsup": "^8.4.0",
