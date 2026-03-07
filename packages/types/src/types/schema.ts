@@ -2,7 +2,7 @@ import type { Block, AppPlacement, Range } from "./block.js";
 import type { MarkdownNode, XMLElement } from "./serialization.js";
 import type { LayoutSchema, LayoutProps, LayoutChildProps } from "./layout.js";
 import type { KeyBinding } from "./input.js";
-import type { FieldEditorFactory } from "./field-editor.js";
+import type { FieldEditorFactory } from "./fieldEditor.js";
 import type { SelectionState } from "./selection.js";
 
 // ── Prop Schema (JSON Schema subset) ────────────────────────

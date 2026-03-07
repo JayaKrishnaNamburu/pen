@@ -1,7 +1,2 @@
-import type { PenTransport } from "@pen/core";
-
-export type { PenTransport };
-
-export function directTransport(): PenTransport {
-  throw new Error("Not implemented");
-}
+export { directTransport } from "./directTransport.js";
+export type { DirectTransportOptions } from "./directTransport.js";

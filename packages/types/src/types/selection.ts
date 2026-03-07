@@ -1,4 +1,4 @@
-import type { DocumentRange } from "./document-range.js";
+import type { DocumentRange } from "./documentRange.js";
 
 export interface TextSelection {
   type: "text";

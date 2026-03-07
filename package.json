@@ -1,7 +1,7 @@
 {
   "name": "pen",
   "private": true,
-  "license": "MIT",
+  "license": "LICENSE.md",
   "packageManager": "pnpm@9.15.4",
   "scripts": {
     "build": "turbo run build",

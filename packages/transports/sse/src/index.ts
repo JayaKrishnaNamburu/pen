@@ -1,12 +1,8 @@
-import type { PenTransport } from "@pen/core";
-
-export interface SSETransportOptions {
-  url: string;
-  headers?: Record<string, string>;
-}
-
-export type { PenTransport };
-
-export function sseTransport(_options: SSETransportOptions): PenTransport {
-  throw new Error("Not implemented");
-}
+export { sseTransport } from "./client.js";
+export { createSSEHandler } from "./server.js";
+export type {
+  SSEClientOptions,
+  SSEServerOptions,
+  SSEEvent,
+  SSEStreamState,
+} from "./types.js";

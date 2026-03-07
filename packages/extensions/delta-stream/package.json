@@ -2,7 +2,7 @@
   "name": "@pen/delta-stream",
   "version": "0.0.0",
   "description": "Streaming protocol and processing pipeline for Pen",
-  "license": "MIT",
+  "license": "LICENSE.md",
   "type": "module",
   "exports": {
     ".": {
@@ -31,7 +31,8 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@pen/core": "workspace:*"
+    "@pen/types": "workspace:*",
+    "@pen/document-ops": "workspace:*"
   },
   "devDependencies": {
     "tsup": "^8.4.0",

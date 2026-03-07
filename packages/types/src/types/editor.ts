@@ -69,12 +69,12 @@ export interface DiagnosticEvent {
 
 export interface DocumentValidationError {
   code:
-    | "MISSING_SHARED_TYPE"
-    | "INVALID_BLOCK_STRUCTURE"
-    | "ORPHAN_BLOCK"
-    | "DUPLICATE_BLOCK_ORDER"
-    | "UNKNOWN_CONTENT_TYPE"
-    | "MISSING_BLOCK_MAP_KEY";
+  | "MISSING_SHARED_TYPE"
+  | "INVALID_BLOCK_STRUCTURE"
+  | "ORPHAN_BLOCK"
+  | "DUPLICATE_BLOCK_ORDER"
+  | "UNKNOWN_CONTENT_TYPE"
+  | "MISSING_BLOCK_MAP_KEY";
   blockId?: string;
   message: string;
   severity: "error" | "warning";

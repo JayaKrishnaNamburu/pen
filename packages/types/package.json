@@ -2,7 +2,7 @@
   "name": "@pen/types",
   "version": "0.0.0",
   "description": "Type definitions and lightweight runtime helpers for Pen",
-  "license": "MIT",
+  "license": "LICENSE.md",
   "type": "module",
   "exports": {
     ".": {

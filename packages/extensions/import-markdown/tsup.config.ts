@@ -7,4 +7,7 @@ export default defineConfig({
   outDir: "dist",
   clean: true,
   external: ["@pen/core"],
+  outExtension({ format }) {
+    return { js: format === "esm" ? ".mjs" : ".cjs" };
+  },
 });

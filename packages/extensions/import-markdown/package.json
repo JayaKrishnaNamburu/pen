@@ -2,7 +2,7 @@
   "name": "@pen/import-markdown",
   "version": "0.0.0",
   "description": "Markdown importer for Pen",
-  "license": "MIT",
+  "license": "LICENSE.md",
   "type": "module",
   "exports": {
     ".": {
@@ -31,7 +31,10 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@pen/core": "workspace:*"
+    "@pen/core": "workspace:*",
+    "mdast-util-from-markdown": "^2.0.0",
+    "mdast-util-gfm": "^3.0.0",
+    "micromark-extension-gfm": "^3.0.0"
   },
   "devDependencies": {
     "tsup": "^8.4.0",

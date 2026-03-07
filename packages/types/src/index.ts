@@ -2,6 +2,6 @@
 export * from "./types/index.js";
 
 // Runtime
-export { prop } from "./prop.js";
-export { defineBlock } from "./define-block.js";
-export { defineExtension } from "./define-extension.js";
+export { prop, resolveSchema } from "./prop.js";
+export { defineBlock } from "./defineBlock.js";
+export { defineExtension } from "./defineExtension.js";

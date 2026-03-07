@@ -1,11 +1,6 @@
-import type { Extension, ToolContext } from "@pen/core";
-
-export interface DocumentOpsOptions {
-  enableGenerationZones?: boolean;
-}
-
-export function documentOps(_options?: DocumentOpsOptions): Extension {
-  throw new Error("Not implemented");
-}
-
-export type { ToolContext };
+export {
+  documentOpsExtension,
+} from "./documentOpsExtension.js";
+export type { DocumentOpsOptions } from "./documentOpsExtension.js";
+export { ToolServerImpl } from "./toolServer.js";
+export { ToolContextImpl } from "./toolContext.js";

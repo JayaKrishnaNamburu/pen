@@ -18,11 +18,11 @@ MCP (Model Context Protocol) server (Spec Section 13.2). Exposes Pen's `ToolServ
 
 ```
 packages/providers/mcp/src/
-├── server.ts               createMCPServer() factory
+├── server.ts               createMCPServer() stdio factory + createMCPRequestHandler()
 ├── tool-bridge.ts          ToolDefinition → MCP tool descriptor mapping
 ├── transport-stdio.ts      stdio transport adapter
-├── transport-sse.ts        SSE transport adapter
-├── transport-http.ts       Streamable HTTP transport adapter
+├── transport-sse.ts        SSE request-scoped transport binder
+├── transport-http.ts       Streamable HTTP request-scoped transport binder
 ├── types.ts                Configuration types
 └── index.ts                Package entry
 ```
@@ -30,7 +30,7 @@ packages/providers/mcp/src/
 ### Import DAG
 
 ```
-types.ts             ← (@pen/core)
+types.ts             ← (@pen/core), (node:http)
 tool-bridge.ts       ← types.ts, (@pen/core)
 transport-stdio.ts   ← types.ts, (@modelcontextprotocol/sdk)
 transport-sse.ts     ← types.ts, (@modelcontextprotocol/sdk)
@@ -45,21 +45,42 @@ No cycles.
 
 ```typescript
 import type { ToolServer, Editor } from '@pen/types';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 
-export interface MCPServerOptions {
+interface MCPSharedOptions {
   toolServer?: ToolServer;
   editor?: Editor;
   name?: string;
   version?: string;
-  transport?: 'stdio' | 'sse' | 'streamable-http';
-  port?: number;
+}
+
+export interface MCPServerOptions extends MCPSharedOptions {
+  transport?: 'stdio';
+}
+
+export interface MCPRequestHandlerOptions extends MCPSharedOptions {
   path?: string;
+  sessionIdGenerator?: (() => string) | undefined;
 }
 
 export interface MCPServerInstance {
   start(): Promise<void>;
   stop(): Promise<void>;
   readonly running: boolean;
+}
+
+export interface MCPRequestHandler {
+  handleSSE(
+    req: IncomingMessage,
+    res: ServerResponse,
+    parsedBody?: unknown,
+  ): Promise<void>;
+
+  handleStreamableHTTP(
+    req: IncomingMessage,
+    res: ServerResponse,
+    parsedBody?: unknown,
+  ): Promise<void>;
 }
 ```
 
@@ -184,71 +205,33 @@ function isAsyncIterable(value: unknown): value is AsyncIterable<unknown> {
 - **Streaming results are buffered.** MCP's `tools/call` response is a single JSON object, not a stream. `AsyncIterable` results from `ToolServer.executeTool()` are collected into an array and returned as a complete `text` content block. This is a protocol limitation, not an architectural choice — when MCP supports streaming tool results, this bridge can be updated.
 - **Error isolation.** Tool execution errors are caught and returned as `isError: true` results, not thrown. This keeps the MCP protocol clean.
 - **Schema normalization.** Pen's `PropSchema` is already JSON Schema 7, which MCP expects. The normalizer wraps non-object schemas in an object wrapper for compatibility.
+- **Transport lifetime is explicit.** `stdio` is process-scoped and started via `createMCPServer().start()`. SSE and streamable HTTP are request-scoped and must be embedded through host HTTP handlers; they are not started through the generic server lifecycle.
 
 ### Module: `server.ts`
 
 ```typescript
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
-import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamablehttp.js';
-import type { MCPServerOptions, MCPServerInstance } from './types.js';
+import { createStdioTransport } from './transport-stdio.js';
+import { createSSEHandler } from './transport-sse.js';
+import { createStreamableHTTPHandler } from './transport-http.js';
+import type {
+  MCPServerOptions,
+  MCPServerInstance,
+  MCPRequestHandlerOptions,
+  MCPRequestHandler,
+} from './types.js';
 import { listMCPTools, executeMCPTool } from './tool-bridge.js';
 import type { ToolServer, ToolContext, Editor } from '@pen/types';
 
 export function createMCPServer(options: MCPServerOptions): MCPServerInstance {
-  const {
-    toolServer: explicitToolServer,
-    editor,
-    name = 'pen-mcp',
-    version = '0.1.0',
-    transport: transportType = 'stdio',
-  } = options;
-
-  const toolServer: ToolServer = explicitToolServer
-    ?? editor.internals.getSlot<ToolServer>('document-ops:toolServer')
-    ?? throwMissingToolServer();
-
+  let server: Server | null = createProtocolServer(options);
   let running = false;
-  let server: Server | null = null;
 
   const instance: MCPServerInstance = {
     async start(): Promise<void> {
       if (running) return;
-
-      server = new Server(
-        { name, version },
-        {
-          capabilities: {
-            tools: {},
-          },
-        },
-      );
-
-      // ── tools/list handler ─────────────────────────────
-      server.setRequestHandler(
-        { method: 'tools/list' } as { method: string },
-        async () => {
-          const tools = listMCPTools(toolServer);
-          return { tools };
-        },
-      );
-
-      // ── tools/call handler ─────────────────────────────
-      server.setRequestHandler(
-        { method: 'tools/call' } as { method: string },
-        async (request: { params: { name: string; arguments?: unknown } }) => {
-          const { name: toolName, arguments: toolInput } = request.params;
-
-          const context: ToolContext = createToolContext(editor, toolServer);
-
-          return executeMCPTool(toolServer, toolName, toolInput, context);
-        },
-      );
-
-      // ── Connect transport ──────────────────────────────
-      const transport = createTransport(transportType, options);
-      await server.connect(transport);
+      server ??= createProtocolServer(options);
+      await server.connect(createStdioTransport());
 
       running = true;
     },
@@ -268,20 +251,67 @@ export function createMCPServer(options: MCPServerOptions): MCPServerInstance {
   return instance;
 }
 
-function createTransport(
-  type: string,
-  options: MCPServerOptions,
-): any {
-  switch (type) {
-    case 'stdio':
-      return new StdioServerTransport();
-    case 'sse':
-      return new SSEServerTransport(options.path ?? '/mcp', options.response ?? null!);
-    case 'streamable-http':
-      return new StreamableHTTPServerTransport({ path: options.path ?? '/mcp' });
-    default:
-      return new StdioServerTransport();
-  }
+export function createMCPRequestHandler(
+  options: MCPRequestHandlerOptions,
+): MCPRequestHandler {
+  const server = createProtocolServer(options);
+
+  return {
+    async handleSSE(req, res, parsedBody) {
+      return createSSEHandler(server, options).handle(req, res, parsedBody);
+    },
+
+    async handleStreamableHTTP(req, res, parsedBody) {
+      return createStreamableHTTPHandler(server, options).handle(
+        req,
+        res,
+        parsedBody,
+      );
+    },
+  };
+}
+
+function createProtocolServer(
+  options: MCPServerOptions | MCPRequestHandlerOptions,
+): Server {
+  const {
+    toolServer: explicitToolServer,
+    editor,
+    name = 'pen-mcp',
+    version = '0.1.0',
+  } = options;
+
+  const toolServer: ToolServer = explicitToolServer
+    ?? editor?.internals.getSlot<ToolServer>('document-ops:toolServer')
+    ?? throwMissingToolServer();
+
+  const server = new Server(
+    { name, version },
+    {
+      capabilities: {
+        tools: {},
+      },
+    },
+  );
+
+  server.setRequestHandler(
+    { method: 'tools/list' } as { method: string },
+    async () => {
+      const tools = listMCPTools(toolServer);
+      return { tools };
+    },
+  );
+
+  server.setRequestHandler(
+    { method: 'tools/call' } as { method: string },
+    async (request: { params: { name: string; arguments?: unknown } }) => {
+      const { name: toolName, arguments: toolInput } = request.params;
+      const context: ToolContext = createToolContext(editor, toolServer);
+      return executeMCPTool(toolServer, toolName, toolInput, context);
+    },
+  );
+
+  return server;
 }
 
 function createToolContext(
@@ -333,7 +363,7 @@ function createToolContext(
 
 function throwMissingToolServer(): never {
   throw new Error(
-    'createMCPServer requires either a toolServer or an editor with a toolServer. ' +
+    'MCP server helpers require either a toolServer or an editor with a toolServer. ' +
     'Pass { toolServer } or { editor } in options.',
   );
 }
@@ -351,7 +381,13 @@ The `ToolContext` created for MCP tool execution includes a reference to the hea
 
 ```typescript
 export { createMCPServer } from './server.js';
-export type { MCPServerOptions, MCPServerInstance } from './types.js';
+export { createMCPRequestHandler } from './server.js';
+export type {
+  MCPServerOptions,
+  MCPServerInstance,
+  MCPRequestHandlerOptions,
+  MCPRequestHandler,
+} from './types.js';
 ```
 
 ### Dependencies
@@ -881,22 +917,24 @@ const editor = createEditor()
 - `yjsAdapter()` is used when no `crdt` option is provided.
 - The editor starts with a single empty paragraph block.
 
-### Criterion 2: AI streaming via ModelAdapter
+### Criterion 2: AI streaming via the delta-stream pipeline
 
 **Verification steps:**
-1. Create a `ModelAdapter` wrapping any LLM client (e.g., AI SDK with Anthropic).
-2. Pass the adapter to `createEditor({ model: adapter })` or configure `@pen/ai`.
-3. Trigger an AI generation (via command menu, toolbar button, or programmatic call).
-4. Tokens appear in real-time as `gen-delta` parts stream in.
-5. The generation zone is visible (`data-ai-generating` attribute on the target block).
-6. The generation completes (`gen-end` part received).
-7. The `StreamingTarget` correctly batches tokens (50-100ms window) before flushing to CRDT.
+1. Create an editor with the default `@pen/delta-stream` extension enabled.
+2. Build an async stream of `gen-start` → `gen-delta` × N → `gen-end` parts.
+3. Pass the stream to `processStream(stream, editor)`.
+4. Tokens appear in the target block as `gen-delta` parts are processed.
+5. The generation completes (`gen-end` part received).
+6. The `StreamingTarget` correctly batches tokens (50-100ms window) before flushing to CRDT.
+7. The generation zone is cleared after completion.
 
 **What to test:**
 - Token insertion rate: 100+ tokens/sec renders smoothly without dropped tokens.
 - `gen-start` → `gen-delta` × N → `gen-end` lifecycle completes correctly.
 - The generation zone defers normalization during streaming and normalizes on `gen-end`.
 - The block's Y.Text content matches the accumulated deltas after generation.
+
+> **Scope note:** `ModelAdapter` orchestration and `@pen/ai` UI flows begin in Wave 7. Wave 6 verifies the M0 streaming substrate that those layers depend on.
 
 ### Criterion 3: AI streaming via MCP
 
@@ -916,13 +954,13 @@ const editor = createEditor()
 - Tool execution produces correct CRDT mutations.
 - The headless editor's Y.Doc is the same CRDT peer as the React editor — mutations propagate.
 
-### Criterion 4: Undo/redo groups AI generations
+### Criterion 4: Undo/redo groups AI-origin streaming generations
 
 **Verification steps:**
 1. Create an editor with content: two paragraphs.
 2. User types "hello" in the first paragraph → creates a user undo group.
-3. Trigger an AI generation that inserts text into the second paragraph.
-4. AI generation completes.
+3. Run a streamed AI-origin generation into the second paragraph via `processStream()`.
+4. The streamed generation completes.
 5. Press Ctrl+Z → the entire AI generation is undone in one step.
 6. Press Ctrl+Y → the entire AI generation is redone.
 7. Press Ctrl+Z again → AI generation undone.
@@ -1088,11 +1126,11 @@ Beyond the exit criteria, these end-to-end scenarios validate the full M0 stack:
 7. An MCP `tools/call` request for `delete_block` removes the block from the editor.
 8. An MCP `tools/call` request for `search_document` returns matching blocks with snippets.
 9. MCP server works over stdio transport.
-10. MCP server works over SSE transport (when configured).
+10. `createMCPRequestHandler({ editor })` exposes handler-based SSE and streamable HTTP entry points for embedded Node HTTP servers.
 11. Tool execution errors return `isError: true` results, not protocol errors.
 12. `AsyncIterable` tool results are buffered and returned as complete results.
 13. `stop()` cleanly shuts down the MCP server.
-14. `createMCPServer` without `toolServer` or `editor` throws a descriptive error.
+14. `createMCPServer` and `createMCPRequestHandler` throw descriptive errors when neither `toolServer` nor `editor` is provided.
 
 ### `@pen/bench`
 
@@ -1109,7 +1147,7 @@ Beyond the exit criteria, these end-to-end scenarios validate the full M0 stack:
 ### M0 Exit Criteria
 
 24. Exit criterion 1: Zero-config editor renders and is interactive.
-25. Exit criterion 2: AI streaming via `ModelAdapter` works end-to-end.
+25. Exit criterion 2: AI streaming via the delta-stream pipeline works end-to-end.
 26. Exit criterion 3: MCP tools are callable by external clients.
 27. Exit criterion 4: Undo/redo correctly groups AI generations.
 28. Exit criterion 5: Cross-block selection works for 3+ blocks.

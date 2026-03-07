@@ -1,160 +1,156 @@
-import type { ReactNode, Ref } from "react";
-import type {
-  Editor,
-  CreateEditorOptions,
-  BlockHandle,
-  Decoration,
-  SelectionState,
-  FieldEditor as FieldEditorInterface,
-} from "@pen/core";
+// ── @pen/react — React rendering layer for Pen ─────────────
+//
+// Package entry. Re-exports all public API:
+// - Pen.* compound component namespace
+// - Individual primitives
+// - Hooks
+// - Contexts (for advanced use)
+// - Field editor internals (for extension authors)
+// - Renderer registry
+// - Utilities
 
-// ── useEditor ───────────────────────────────────────────────
+// ── Convenience component ───────────────────────────────────
+export { PenEditor, type PenEditorProps } from "./penEditor.js";
 
-export function useEditor(_options?: CreateEditorOptions): Editor {
-  throw new Error("Not implemented");
-}
+// ── Compound component namespace ────────────────────────────
+export { Pen } from "./primitives/index.js";
 
-// ── PenEditor (convenience wrapper) ─────────────────────────
+// ── Editor primitives ───────────────────────────────────────
+export {
+  EditorRoot,
+  EditorContent,
+  EditorBlock,
+  InlineContent,
+  EditorBlockHandle,
+  EditorDragOverlay,
+  EditorSelectionRect,
+  EditorFieldEditor,
+  type EditorRootProps,
+  type EditorContentProps,
+  type EditorBlockProps,
+  type InlineContentProps,
+  type BlockHandleProps,
+  type DragOverlayProps,
+  type SelectionRectProps,
+  type FieldEditorWrapperProps,
+} from "./primitives/editor/index.js";
 
-export interface PenEditorProps {
-  editor: Editor;
-}
+// ── Toolbar primitives ──────────────────────────────────────
+export {
+  ToolbarRoot,
+  ToolbarGroup,
+  ToolbarButton,
+  ToolbarToggle,
+  ToolbarSelect,
+  ToolbarSeparator,
+  type ToolbarRootProps,
+  type ToolbarGroupProps,
+  type ToolbarButtonProps,
+  type ToolbarToggleProps,
+  type ToolbarSelectProps,
+} from "./primitives/toolbar/index.js";
 
-export function PenEditor(_props: PenEditorProps): ReactNode {
-  throw new Error("Not implemented");
-}
-
-// ── Block Render Context ────────────────────────────────────
-
-export interface BlockRenderContext {
-  editable: boolean;
-  selected: boolean;
-  decorations: readonly Decoration[];
-  ref: Ref<HTMLElement>;
-}
-
-// ── Compound Component Namespaces ───────────────────────────
-
-export declare namespace Pen {
-  namespace Editor {
-    function Root(props: { editor: Editor; children?: ReactNode }): ReactNode;
-    function Content(props: { virtualize?: boolean | { overscan?: number; estimatedHeight?: number }; children?: ReactNode }): ReactNode;
-    function Block(props: { children?: ReactNode }): ReactNode;
-    function BlockHandle(props: { children?: ReactNode }): ReactNode;
-    function InlineContent(props: { children?: ReactNode }): ReactNode;
-    function DragOverlay(props: { children?: ReactNode }): ReactNode;
-    function SelectionRect(props: { children?: ReactNode }): ReactNode;
-    function FieldEditor(props: { children?: ReactNode }): ReactNode;
-  }
-
-  namespace Toolbar {
-    function Root(props: { children?: ReactNode }): ReactNode;
-    function Group(props: { children?: ReactNode }): ReactNode;
-    function Button(props: { children?: ReactNode; asChild?: boolean }): ReactNode;
-    function Toggle(props: { format: string; children?: ReactNode; asChild?: boolean }): ReactNode;
-    function Select(props: { format: string; options: string[]; children?: ReactNode }): ReactNode;
-    function Separator(): ReactNode;
-  }
-
-  namespace SlashMenu {
-    function Root(props: { open?: boolean; onOpenChange?: (open: boolean) => void; children?: ReactNode }): ReactNode;
-    function Input(props: { placeholder?: string }): ReactNode;
-    function List(props: { children?: ReactNode }): ReactNode;
-    function Group(props: { heading?: string; children?: ReactNode }): ReactNode;
-    function Item(props: { blockType?: string; onSelect?: () => void; children?: ReactNode }): ReactNode;
-    function Empty(props: { children?: ReactNode }): ReactNode;
-  }
-
-  namespace AI {
-    function Root(props: { model?: unknown; children?: ReactNode }): ReactNode;
-    function Trigger(props: { children?: ReactNode }): ReactNode;
-    function CommandMenu(props: { children?: ReactNode }): ReactNode;
-    function CommandInput(props: { placeholder?: string }): ReactNode;
-    function CommandList(props: { children?: ReactNode }): ReactNode;
-    function CommandItem(props: { command: string; children?: ReactNode }): ReactNode;
-    function GenerationZone(props: { children?: ReactNode }): ReactNode;
-    function StreamingText(props: Record<string, unknown>): ReactNode;
-    function Suggestion(props: { children?: ReactNode }): ReactNode;
-    function Progress(props: Record<string, unknown>): ReactNode;
-    function StepIndicator(props: Record<string, unknown>): ReactNode;
-    function ToolInvocation(props: Record<string, unknown>): ReactNode;
-
-    namespace TrackChanges {
-      function Mark(props: { children?: ReactNode }): ReactNode;
-    }
-
-    namespace ActionBar {
-      function Accept(props: { children?: ReactNode }): ReactNode;
-      function Reject(props: { children?: ReactNode }): ReactNode;
-      function Retry(props: { children?: ReactNode }): ReactNode;
-    }
-
-    namespace DiffView {
-      function Root(props: { mode?: "inline" | "side-by-side"; children?: ReactNode }): ReactNode;
-    }
-  }
-
-  namespace Collab {
-    function Root(props: { children?: ReactNode }): ReactNode;
-    function Cursor(props: Record<string, unknown>): ReactNode;
-    function Selection(props: Record<string, unknown>): ReactNode;
-    function PresenceList(props: { children?: ReactNode }): ReactNode;
-    function PresenceItem(props: Record<string, unknown>): ReactNode;
-  }
-}
+// ── Slash menu primitives ───────────────────────────────────
+export {
+  SlashMenuRoot,
+  SlashMenuInput,
+  SlashMenuList,
+  SlashMenuGroup,
+  SlashMenuItem,
+  SlashMenuEmpty,
+  type SlashMenuRootProps,
+  type SlashMenuInputProps,
+  type SlashMenuListProps,
+  type SlashMenuGroupProps,
+  type SlashMenuItemProps,
+  type SlashMenuEmptyProps,
+} from "./primitives/slash-menu/index.js";
 
 // ── Hooks ───────────────────────────────────────────────────
+export {
+  useEditor,
+  useFieldEditor,
+  useSelection,
+  useDecorations,
+  useExtensionState,
+  useToolbar,
+  useSlashMenu,
+  useBlockList,
+  useVisualViewport,
+  type SlashMenuState,
+  type SlashMenuActions,
+  type VisualViewportState,
+} from "./hooks/index.js";
 
-export function useFieldEditor(_editor: Editor): FieldEditorInterface {
-  throw new Error("Not implemented");
-}
+// ── Contexts (for advanced composition) ─────────────────────
+export {
+  EditorContext,
+  useEditorContext,
+  FieldEditorContext,
+  useFieldEditorContext,
+  ToolbarContext,
+  useToolbarContext,
+  EMPTY_TOOLBAR_STATE,
+  type EditorContextValue,
+  type PasteImporters,
+  type ToolbarState,
+  type ToolbarContextValue,
+} from "./context/index.js";
 
-export function useToolbar(_editor: Editor): unknown {
-  throw new Error("Not implemented");
-}
+// ── Renderer registry ───────────────────────────────────────
+export {
+  resolveRenderer,
+  registerRenderer,
+  ParagraphRenderer,
+  HeadingRenderer,
+  BulletListItemRenderer,
+  NumberedListItemRenderer,
+  CheckListItemRenderer,
+  CodeBlockRenderer,
+  ImageRenderer,
+  TableRenderer,
+  DividerRenderer,
+  CalloutRenderer,
+  ToggleRenderer,
+  BlockquoteRenderer,
+  DefaultRenderer,
+} from "./renderers/index.js";
 
-export function useSlashMenu(_editor: Editor): unknown {
-  throw new Error("Not implemented");
-}
+// ── Field editor internals (for extension authors) ──────────
+export { FieldEditorImpl } from "./field-editor/fieldEditorImpl.js";
+export {
+  applyDeltaToDOM,
+  fullReconcileToDOM,
+  saveSelection,
+  restoreSelection,
+} from "./field-editor/reconciler.js";
+export { resolveMarksAtPosition } from "./field-editor/markBoundary.js";
+export {
+  computeTextDiff,
+  extractTextFromDOM,
+  type TextDiffOp,
+  type SelectionPoint,
+} from "./field-editor/selectionBridge.js";
+export { handlePaste, handleCopy, handleCut } from "./field-editor/clipboard.js";
 
-export function useAI(_editor: Editor): unknown {
-  throw new Error("Not implemented");
-}
+// ── Utilities ───────────────────────────────────────────────
+export { composeRefs } from "./utils/composeRefs.js";
+export { renderAsChild, type AsChildProps } from "./utils/asChild.js";
+export { DATA_ATTRS, buildDataAttributes } from "./utils/dataAttributes.js";
 
-export function useCollab(_editor: Editor): unknown {
-  throw new Error("Not implemented");
-}
+// ── Re-export key types from @pen/core for convenience ──────
+export type {
+  BlockRenderContext,
+  BlockRenderer,
+  BlockHandle,
+  Editor,
+  SelectionState,
+  DecorationSet,
+  Decoration,
+  InlineDecoration,
+  BlockDecoration,
+  FieldEditor,
+  InputBackend,
+} from "@pen/core";
 
-export function useLayout(_editor: Editor): unknown {
-  throw new Error("Not implemented");
-}
-
-export function useDecorations(_editor: Editor): unknown {
-  throw new Error("Not implemented");
-}
-
-export function useSelection(_editor: Editor): SelectionState {
-  throw new Error("Not implemented");
-}
-
-// ── Model Adapter (re-exported for convenience) ─────────────
-
-export interface ModelAdapter {
-  stream(options: {
-    messages: unknown[];
-    tools: unknown;
-    signal?: AbortSignal;
-  }): unknown;
-}
-
-export function penToolSchemas(_tools: unknown): unknown {
-  throw new Error("Not implemented");
-}
-
-// ── Schema Compilation ──────────────────────────────────────
-
-export function createReactRenderers(
-  _schema: unknown,
-): Record<string, (props: BlockRenderContext) => ReactNode> {
-  throw new Error("Not implemented");
-}
+export type { CreateEditorOptions } from "@pen/core";

@@ -2,7 +2,7 @@
   "name": "@pen/undo",
   "version": "0.0.0",
   "description": "Undo/redo extension with origin tagging for Pen",
-  "license": "MIT",
+  "license": "LICENSE.md",
   "type": "module",
   "exports": {
     ".": {
@@ -31,7 +31,7 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@pen/core": "workspace:*"
+    "@pen/types": "workspace:*"
   },
   "devDependencies": {
     "tsup": "^8.4.0",

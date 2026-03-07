@@ -1,0 +1,499 @@
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #fafafa;
+  --surface: #fff;
+  --border: #e4e4e7;
+  --border-focus: #a1a1aa;
+  --text: #18181b;
+  --text-muted: #71717a;
+  --accent: #18181b;
+  --accent-fg: #fff;
+  --radius: 8px;
+  --topbar-h: 50px;
+  --font-sans: -apple-system, system-ui, BlinkMacSystemFont, "Inter",
+    "Helvetica Neue", "Apple Color Emoji", "System Default", "Segoe UI",
+    "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans",
+    sans-serif, serif;
+  --font-mono: "Google Sans Code", "Source Code Pro", "SF Mono", "Monaco",
+    "Inconsolata", "Fira Code", "Fira Mono", "Droid Sans Mono",
+    "Lucida Console", "Menlo", "Consolas", "DejaVu Sans Mono",
+    "Bitstream Vera Sans Mono", "Liberation Mono", "Ubuntu Mono",
+    "Courier New", "andale mono", "lucida console", monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #09090b;
+    --surface: #101012;
+    --border: #27272a;
+    --border-focus: #52525b;
+    --text: #fafafa;
+    --text-muted: #a1a1aa;
+    --accent: #fafafa;
+    --accent-fg: #09090b;
+  }
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+html {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body,
+input,
+button,
+textarea,
+select {
+  font-family: var(--font-sans);
+}
+
+/* ── Shell layout ─────────────────────────────────────────── */
+
+.playground {
+  display: flex;
+  height: 100%;
+  width: 100%;
+}
+
+.playground-body {
+  display: flex;
+  flex-grow: 1;
+  min-height: 0;
+}
+
+.playground-editor {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+  overflow: hidden;
+}
+
+.playground-editor [data-pen-editor-content] {
+  width: 100%;
+  height: 100%;
+}
+
+.playground-inspector {
+  display: flex;
+  flex-direction: column;
+  flex-basis: 50%;
+  min-width: 0;
+  height: 100%;
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+  background: var(--surface);
+}
+
+/* ── Topbar ───────────────────────────────────────────────── */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: var(--topbar-h);
+  padding: 0 20px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.topbar-title {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.topbar-badge {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.topbar-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.topbar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  user-select: none;
+}
+
+.topbar-icon,
+.toolbar-icon {
+  display: block;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
+.topbar-btn:hover {
+  color: var(--text);
+  background: var(--bg);
+  border-color: var(--border);
+}
+
+.topbar-btn[data-active] {
+  color: var(--accent-fg);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.topbar-sep {
+  width: 1px;
+  height: 16px;
+  background: var(--border);
+  margin: 0 2px;
+}
+
+/* ── Toolbar (inside topbar) ──────────────────────────────── */
+
+[data-pen-toolbar] {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+[data-pen-toolbar-group] {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+[data-pen-toolbar-toggle] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  user-select: none;
+  line-height: 0;
+}
+
+[data-pen-toolbar-toggle]:hover {
+  color: var(--text);
+  background: var(--bg);
+  border-color: var(--border);
+}
+
+[data-pen-toolbar-toggle][data-active] {
+  color: var(--accent-fg);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+[data-pen-toolbar-separator] {
+  width: 1px;
+  height: 16px;
+  background: var(--border);
+  margin: 0 4px;
+}
+
+[data-pen-toolbar-select] {
+  height: 28px;
+  padding: 0 6px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 4px center;
+  padding-right: 20px;
+}
+
+[data-pen-toolbar-select]:hover {
+  color: var(--text);
+  border-color: var(--border);
+}
+
+[data-pen-toolbar-select]:focus-visible {
+  border-color: var(--border-focus);
+}
+
+/* ── Editor ───────────────────────────────────────────────── */
+
+[data-pen-editor-root] {
+  height: 100%;
+  width: 100%;
+  background: transparent;
+  border: none;
+  cursor: text;
+}
+
+[data-pen-editor-content] {
+  padding: 0;
+  min-height: 300px;
+  outline: none;
+}
+
+[data-pen-inline-content] {
+  display: block;
+  min-height: 1.5em;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+[data-pen-inline-content]:focus,
+[data-pen-inline-content]:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+/* ── Block styles ─────────────────────────────────────────── */
+
+[data-pen-block] {
+  outline: none;
+}
+
+[data-pen-block] + [data-pen-block] {
+  margin-top: 4px;
+}
+
+[data-pen-block][data-block-type="heading"] {
+  margin-top: 24px;
+}
+
+[data-pen-block][data-block-type="heading"]:first-child {
+  margin-top: 0;
+}
+
+[data-pen-block][data-block-type="heading"][data-heading-level="1"] [data-pen-inline-content] {
+  font-size: 2em;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+}
+
+[data-pen-block][data-block-type="heading"][data-heading-level="2"] [data-pen-inline-content] {
+  font-size: 1.5em;
+  font-weight: 650;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+}
+
+[data-pen-block][data-block-type="heading"][data-heading-level="3"] [data-pen-inline-content] {
+  font-size: 1.2em;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+}
+
+[data-pen-block][data-block-type="bullet-list-item"] {
+  padding-left: 24px;
+  position: relative;
+}
+
+[data-pen-block][data-block-type="bullet-list-item"]::before {
+  content: "•";
+  position: absolute;
+  left: 8px;
+  color: var(--text-muted);
+}
+
+[data-pen-block][data-block-type="numbered-list-item"] {
+  padding-left: 24px;
+  position: relative;
+}
+
+[data-pen-block][data-block-type="check-list-item"] {
+  padding-left: 28px;
+  position: relative;
+}
+
+[data-pen-block][data-block-type="blockquote"] {
+  padding-left: 20px;
+  border-left: 3px solid var(--border);
+  color: var(--text-muted);
+}
+
+[data-pen-block][data-block-type="code-block"] {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  background: var(--bg);
+  padding: 16px;
+  border-radius: 6px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
+
+[data-pen-block][data-block-type="divider"] {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 16px 0;
+}
+
+[data-pen-block][data-block-type="callout"] {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 16px;
+}
+
+[data-pen-block][data-block-type="image"] img {
+  max-width: 100%;
+  border-radius: 6px;
+}
+
+/* ── Inline marks ─────────────────────────────────────────── */
+
+[data-pen-inline-content] strong {
+  font-weight: 650;
+}
+
+[data-pen-inline-content] em {
+  font-style: italic;
+}
+
+[data-pen-inline-content] u {
+  text-underline-offset: 3px;
+}
+
+[data-pen-inline-content] s {
+  text-decoration-color: var(--text-muted);
+}
+
+[data-pen-inline-content] code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background: var(--bg);
+  padding: 2px 5px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+
+[data-pen-inline-content] a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--border-focus);
+}
+
+[data-pen-inline-content] a:hover {
+  text-decoration-color: var(--text);
+}
+
+/* ── Slash menu ───────────────────────────────────────────── */
+
+[data-pen-slash-menu] {
+  display: none;
+}
+
+[data-pen-slash-menu][data-open] {
+  display: block;
+  position: fixed;
+  z-index: 50;
+  top: 50%;
+  left: 25%;
+  transform: translate(-50%, -50%);
+  width: 280px;
+  max-height: 320px;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  padding: 4px;
+}
+
+/* ── Empty state ──────────────────────────────────────────── */
+
+[data-pen-editor-content][data-pen-empty]::before {
+  content: "Type '/' for commands, or just start writing...";
+  color: var(--text-muted);
+  pointer-events: none;
+  position: absolute;
+  opacity: 0.7;
+}
+
+/* ── Selection highlight ──────────────────────────────────── */
+
+[data-pen-editor-block][data-selected="true"] {
+  outline: 1px solid var(--border);
+  outline-offset: 2px 4px;
+  border-radius: 4px;
+}
+
+/* ── Inspector panel ──────────────────────────────────────── */
+
+.inspector {
+  height: 100%;
+  overflow-y: auto;
+}
+
+.inspector-json {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-muted);
+  padding: 20px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}

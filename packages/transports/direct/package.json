@@ -2,7 +2,7 @@
   "name": "@pen/transport-direct",
   "version": "0.0.0",
   "description": "In-process transport for Pen",
-  "license": "MIT",
+  "license": "LICENSE.md",
   "type": "module",
   "exports": {
     ".": {

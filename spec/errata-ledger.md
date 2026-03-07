@@ -68,6 +68,18 @@ Source: `spec/wave-05-react-rendering.md`, "Known Errata (Fix During Implementat
 
 ---
 
+## Wave 6 — MCP, Bench & M0 Integration
+
+Source: post-spec review during Wave 6 implementation
+
+| # | Summary | Disposition | Notes |
+|---|---|---|---|
+| 1 | MCP SSE and streamable HTTP transports are request-scoped, not compatible with `createMCPServer().start()` | Fixed in spec | Wave 6 now distinguishes process-scoped `stdio` from handler-based HTTP transports. |
+| 2 | Wave 6 public API must expose HTTP handler factories, not only a start/stop server instance | Fixed in spec | `createMCPRequestHandler()` added to the spec; `createMCPServer()` is stdio-oriented. |
+| 3 | Wave 6 AI streaming exit criterion referenced `ModelAdapter` / `@pen/ai` flows that do not exist until Wave 7 | Fixed in spec | Wave 6 now verifies the M0 `@pen/delta-stream` pipeline directly; Wave 7 owns model orchestration and AI UI. |
+
+---
+
 ## Wave 11 — Apps, Execution & Branching
 
 Source: `spec/wave-11-apps-execution.md`, "Known Errata (Fix During Implementation)"

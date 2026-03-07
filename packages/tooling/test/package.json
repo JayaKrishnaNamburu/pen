@@ -2,7 +2,7 @@
   "name": "@pen/test",
   "version": "0.0.0",
   "description": "Headless testing utilities for Pen",
-  "license": "MIT",
+  "license": "LICENSE.md",
   "type": "module",
   "exports": {
     ".": {
@@ -31,7 +31,11 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@pen/core": "workspace:*"
+    "@pen/core": "workspace:*",
+    "@pen/crdt-yjs": "workspace:*",
+    "@pen/schema-default": "workspace:*",
+    "@pen/types": "workspace:*",
+    "yjs": "^13.6.29"
   },
   "devDependencies": {
     "tsup": "^8.4.0",

@@ -2,7 +2,7 @@
   "name": "@pen/mcp",
   "version": "0.0.0",
   "description": "MCP tool server provider for Pen",
-  "license": "MIT",
+  "license": "LICENSE.md",
   "type": "module",
   "exports": {
     ".": {
@@ -31,7 +31,9 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@pen/core": "workspace:*"
+    "@pen/core": "workspace:*",
+    "@pen/types": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.27.0"
   },
   "devDependencies": {
     "tsup": "^8.4.0",

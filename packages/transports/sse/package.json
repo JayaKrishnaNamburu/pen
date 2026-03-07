@@ -2,7 +2,7 @@
   "name": "@pen/transport-sse",
   "version": "0.0.0",
   "description": "Server-Sent Events transport for Pen",
-  "license": "MIT",
+  "license": "LICENSE.md",
   "type": "module",
   "exports": {
     ".": {

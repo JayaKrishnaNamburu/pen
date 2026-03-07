@@ -1,17 +1,14 @@
-export interface BenchContext {
-  start(): void;
-  end(): void;
-}
+export { bench, runSuite } from "./bench.js";
+export type { BenchContext, BenchResult, BenchOptions } from "./bench.js";
 
-export interface BenchOptions {
-  iterations?: number;
-  warmup?: number;
-}
+export { crdtBenchmarks } from "./suites/crdt.bench.js";
+export { schemaBenchmarks } from "./suites/schema.bench.js";
+export { streamingBenchmarks } from "./suites/streaming.bench.js";
+export { editorBenchmarks } from "./suites/editor.bench.js";
+export { extensionBenchmarks } from "./suites/extension.bench.js";
+export { createLargeDocument } from "./fixtures/large-doc.js";
+export { generateGenDeltaParts } from "./fixtures/streaming-parts.js";
 
-export function bench(
-  _name: string,
-  _fn: (b: BenchContext) => Promise<void> | void,
-  _options?: BenchOptions,
-): void {
-  throw new Error("Not implemented");
-}
+export { reportConsole } from "./reporters/console.js";
+export { reportJSON } from "./reporters/json.js";
+export type { BenchReport } from "./reporters/json.js";

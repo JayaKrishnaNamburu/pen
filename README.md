@@ -6,7 +6,7 @@
 <p align="center">
   <a href="https://www.npmjs.com/package/@pen/core"><img src="https://img.shields.io/npm/v/@pen/core?color=0368FF&label=version" alt="npm version" /></a>
   <img src="https://img.shields.io/github/stars/niceperson/pen?style=flat&color=8D30FF" alt="GitHub stars" />
-  <img src="https://img.shields.io/npm/l/@pen/core?color=FF2B6E" alt="license" />
+  <img src="https://img.shields.io/badge/license-Pen-FF2B6E" alt="license" />
 </p>
 
 
@@ -257,6 +257,8 @@ Three layers: **Schema** (data), **Headless** (behavior), **Rendering** (UI). Ea
 |---|---|
 | `@pen/mcp` | MCP tool server for bidirectional protocol clients |
 
+See `packages/providers/mcp/README.md` for `stdio`, Streamable HTTP, and SSE wiring examples.
+
 ### Tooling
 
 | Package | Description |
@@ -325,6 +327,8 @@ For detailed milestone scope, exit criteria, and decision locks, see `spec/v01.m
 
 Pen is in active development. Contribution guidelines are coming soon.
 
+By contributing to Pen, you agree to the [Contributor License Agreement](CLA.md).
+
 ### Pre-build Governance
 
 Before implementation starts on any wave, the following must be satisfied:
@@ -335,8 +339,10 @@ Before implementation starts on any wave, the following must be satisfied:
 
 ## Authors
 
-Pen is created by [Input](https://www.input.so/), the augmented tools company.
+Pen is created by [Input](https://www.input.so/).
 
 ## License
 
-MIT
+The Pen SDK is provided under the [Pen license](LICENSE.md). You can use the SDK freely in development. Production use requires a license key. Visit [input.so](https://www.input.so/) to learn more.
+
+Copyright (c) 2025-present Input B.V.

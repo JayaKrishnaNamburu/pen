@@ -2,3 +2,4 @@ packages:
   - "packages/types"
   - "packages/core"
   - "packages/*/*"
+  - "playground"

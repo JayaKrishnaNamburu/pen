@@ -32,7 +32,7 @@ export type {
 } from "./selection.js";
 
 // ── Document Range ──────────────────────────────────────────
-export type { DocumentRange } from "./document-range.js";
+export type { DocumentRange } from "./documentRange.js";
 
 // ── Layout ──────────────────────────────────────────────────
 export type {
@@ -135,7 +135,7 @@ export type {
   FieldEditorContext,
   InputBackend,
   StreamingTarget,
-} from "./field-editor.js";
+} from "./fieldEditor.js";
 
 // ── CRDT ────────────────────────────────────────────────────
 export type {

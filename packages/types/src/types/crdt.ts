@@ -1,6 +1,6 @@
 import type { DocumentOp, OpOrigin } from "./ops.js";
 import type { Unsubscribe } from "./utility.js";
-import type { DocumentRange } from "./document-range.js";
+import type { DocumentRange } from "./documentRange.js";
 
 // ── Abstract CRDT Collections ───────────────────────────────
 

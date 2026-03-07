@@ -2,7 +2,7 @@
   "name": "@pen/schema-default",
   "version": "0.0.0",
   "description": "Default block and inline schemas for Pen",
-  "license": "MIT",
+  "license": "LICENSE.md",
   "type": "module",
   "exports": {
     ".": {
@@ -13,6 +13,16 @@
       "require": {
         "types": "./src/index.ts",
         "default": "./dist/index.cjs"
+      }
+    },
+    "./defs": {
+      "import": {
+        "types": "./src/defs.ts",
+        "default": "./dist/defs.mjs"
+      },
+      "require": {
+        "types": "./src/defs.ts",
+        "default": "./dist/defs.cjs"
       }
     }
   },
@@ -31,7 +41,8 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@pen/core": "workspace:*"
+    "@pen/core": "workspace:*",
+    "@pen/types": "workspace:*"
   },
   "devDependencies": {
     "tsup": "^8.4.0",

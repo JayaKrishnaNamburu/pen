@@ -2,7 +2,7 @@
   "name": "@pen/core",
   "version": "0.0.0",
   "description": "Headless, extension-first editor engine for human-AI co-authoring",
-  "license": "MIT",
+  "license": "LICENSE.md",
   "type": "module",
   "exports": {
     ".": {
@@ -31,11 +31,16 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@pen/types": "workspace:*"
+    "@pen/crdt-yjs": "workspace:*",
+    "@pen/delta-stream": "workspace:*",
+    "@pen/document-ops": "workspace:*",
+    "@pen/types": "workspace:*",
+    "@pen/undo": "workspace:*"
   },
   "devDependencies": {
     "tsup": "^8.4.0",
     "typescript": "^5.7.3",
-    "vitest": "^3.0.7"
+    "vitest": "^3.0.7",
+    "yjs": "^13.6.29"
   }
 }

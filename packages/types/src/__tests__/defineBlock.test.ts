@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { defineBlock } from "../define-block.js";
+import { defineBlock } from "../defineBlock.js";
 import { prop } from "../prop.js";
 
 describe("defineBlock", () => {

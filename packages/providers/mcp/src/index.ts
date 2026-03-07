@@ -1,12 +1,10 @@
-import type { Extension, ServerConfig } from "@pen/core";
-
-export interface MCPProviderOptions {
-  url?: string;
-  transport?: ServerConfig["transport"];
-}
-
-export function mcpProvider(_options?: MCPProviderOptions): Extension {
-  throw new Error("Not implemented");
-}
-
-export type { ServerConfig };
+export { createMCPServer, createMCPRequestHandler } from "./server.js";
+export type {
+  MCPServerOptions,
+  MCPServerInstance,
+  MCPRequestHandlerOptions,
+  MCPRequestHandler,
+  MCPNodeRequest,
+  MCPNodeResponse,
+} from "./types.js";
+export { listMCPTools, executeMCPTool } from "./tool-bridge.js";
