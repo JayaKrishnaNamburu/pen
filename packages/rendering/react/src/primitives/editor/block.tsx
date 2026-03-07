@@ -1,66 +1,75 @@
 import React, { useRef } from "react";
 import { useEditorContext } from "../../context/editorContext.js";
 import { useFieldEditorContext } from "../../context/fieldEditorContext.js";
-import { useSelection } from "../../hooks/useSelection.js";
-import { useDecorations } from "../../hooks/useDecorations.js";
-import { useFieldEditorState } from "../../hooks/useFieldEditorState.js";
+import { useBlockDecorations } from "../../hooks/useBlockDecorations.js";
+import { useBlockEditingState } from "../../hooks/useBlockEditingState.js";
+import { useBlockModel } from "../../hooks/useBlockModel.js";
+import { useBlockSelectionState } from "../../hooks/useBlockSelectionState.js";
+import { useBlockSurfaceRole } from "../../hooks/useBlockSurfaceRole.js";
 import { resolveRenderer } from "../../renderers/index.js";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild.js";
 import { DATA_ATTRS } from "../../utils/dataAttributes.js";
 import type { BlockRenderContext } from "@pen/core";
 
 export interface EditorBlockProps extends AsChildProps {
-  blockId: string;
-  ref?: React.Ref<HTMLElement>;
+	blockId: string;
+	ref?: React.Ref<HTMLElement>;
 }
 
 export function EditorBlock(props: EditorBlockProps) {
-  const { blockId, ...rest } = props;
-  const { editor, readonly } = useEditorContext();
-  const fieldEditor = useFieldEditorContext();
-  const fieldEditorState = useFieldEditorState(fieldEditor);
-  const selection = useSelection(editor);
-  const decorations = useDecorations(editor);
-  const blockRef = useRef<HTMLElement>(null);
+	const { blockId, ...rest } = props;
+	const { editor, readonly } = useEditorContext();
+	const fieldEditor = useFieldEditorContext();
+	const isEditable = useBlockEditingState(fieldEditor, blockId);
+	const blockModel = useBlockModel(editor, blockId);
+	const isSelected = useBlockSelectionState(editor, blockId);
+	const surfaceRole = useBlockSurfaceRole(editor, fieldEditor, blockId);
+	const blockDecorations = useBlockDecorations(editor, blockId);
+	const blockRef = useRef<HTMLElement>(null);
 
-  const block = editor.getBlock(blockId);
-  if (!block) return null;
+	if (!blockModel.exists) return null;
 
-  const isSelected =
-    (selection?.type === "block" && selection.blockIds.includes(blockId)) ||
-    (selection?.type === "text" && selection.blockRange.includes(blockId));
+	const block = editor.getBlock(blockId);
+	if (!block) return null;
 
-  const isEditable =
-    !readonly &&
-    !!fieldEditor &&
-    fieldEditorState.activeBlockId === blockId;
+	const blockType = blockModel.type ?? block.type;
 
-  const blockDecorations = decorations.forBlock(blockId);
+	const isBlockEditable = !readonly && !!fieldEditor && isEditable;
 
-  const renderCtx: BlockRenderContext = {
-    editable: isEditable,
-    selected: isSelected,
-    decorations: blockDecorations,
-    ref: blockRef,
-  };
+	const renderCtx: BlockRenderContext = {
+		editable: isBlockEditable,
+		selected: isSelected,
+		decorations: blockDecorations,
+		ref: blockRef,
+	};
 
-  const Renderer = resolveRenderer(block.type);
+	const Renderer = resolveRenderer(blockType);
 
-  const isAiGenerating = !!decorations.forBlock(blockId)?.some(
-    (d: any) => d.type === "ai-generating" || d.attrs?.["ai-generating"],
-  );
+	const isAiGenerating = blockDecorations.some(
+		(d: any) => d.type === "ai-generating" || d.attrs?.["ai-generating"],
+	);
 
-  const primitiveProps: Record<string, unknown> = {
-    [DATA_ATTRS.editorBlock]: "",
-    [DATA_ATTRS.blockId]: blockId,
-    [DATA_ATTRS.blockType]: block.type,
-    [DATA_ATTRS.selected]: isSelected || undefined,
-    [DATA_ATTRS.aiGenerating]: isAiGenerating || undefined,
-  };
+	const primitiveProps: Record<string, unknown> = {
+		[DATA_ATTRS.editorBlock]: "",
+		[DATA_ATTRS.blockId]: blockId,
+		[DATA_ATTRS.blockType]: blockType,
+		[DATA_ATTRS.selected]: isSelected || undefined,
+		[DATA_ATTRS.surfaceRole]: surfaceRole ?? undefined,
+		[DATA_ATTRS.aiGenerating]: isAiGenerating || undefined,
+		tabIndex: -1,
+		contentEditable:
+			surfaceRole != null && surfaceRole !== "editable-inline"
+				? false
+				: undefined,
+	};
 
-  return renderAsChild(
-    { ...rest, children: Renderer(block, renderCtx) as React.ReactNode, ref: blockRef },
-    "div",
-    primitiveProps,
-  );
+	return renderAsChild(
+		{
+			...rest,
+			children: Renderer(block, renderCtx) as React.ReactNode,
+			ref: blockRef,
+		},
+		"div",
+		primitiveProps,
+	);
 }

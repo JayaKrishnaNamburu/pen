@@ -5,7 +5,7 @@ import { SlashMenuGroup } from "./group.js";
 import { SlashMenuItem } from "./item.js";
 
 export interface SlashMenuListProps extends AsChildProps {
-  ref?: React.Ref<HTMLElement>;
+	ref?: React.Ref<HTMLElement>;
 }
 
 /**
@@ -14,55 +14,54 @@ export interface SlashMenuListProps extends AsChildProps {
  * - Manual mode (has children): consumer provides explicit items
  */
 export function SlashMenuList(props: SlashMenuListProps) {
-  const { children, ...rest } = props;
-  const { items, selectedIndex } = useSlashMenuContext();
+	const { children, ...rest } = props;
+	const { items, selectedIndex, confirm } = useSlashMenuContext();
 
-  const hasManualChildren = React.Children.count(children) > 0;
+	const hasManualChildren = React.Children.count(children) > 0;
 
-  let content: React.ReactNode;
-  if (hasManualChildren) {
-    content = children;
-  } else {
-    const groups = new Map<string, typeof items>();
-    for (const item of items) {
-      const group = item.display.group ?? "Other";
-      const existing = groups.get(group) ?? [];
-      existing.push(item);
-      groups.set(group, existing);
-    }
+	let content: React.ReactNode;
+	if (hasManualChildren) {
+		content = children;
+	} else {
+		const groups = new Map<string, typeof items>();
+		for (const item of items) {
+			const group = item.display.group ?? "Other";
+			const existing = groups.get(group) ?? [];
+			existing.push(item);
+			groups.set(group, existing);
+		}
 
-    let globalIndex = 0;
-    const groupElements = Array.from(groups.entries()).map(([group, groupItems]) => {
-      const itemElements = groupItems.map((item) => {
-        const idx = globalIndex++;
-        return (
-          <SlashMenuItem
-            key={item.type}
-            blockType={item.type}
-            data-selected={idx === selectedIndex || undefined}
-          >
-            {item.display.title}
-          </SlashMenuItem>
-        );
-      });
-      return (
-        <SlashMenuGroup key={group} heading={group}>
-          {itemElements}
-        </SlashMenuGroup>
-      );
-    });
+		let globalIndex = 0;
+		const groupElements = Array.from(groups.entries()).map(
+			([group, groupItems]) => {
+				const itemElements = groupItems.map((item) => {
+					const idx = globalIndex++;
+					return (
+						<SlashMenuItem
+							key={item.type}
+							blockType={item.type}
+							data-selected={idx === selectedIndex || undefined}
+							onSelect={() => confirm(idx)}
+						>
+							{item.display.title}
+						</SlashMenuItem>
+					);
+				});
+				return (
+					<SlashMenuGroup key={group} heading={group}>
+						{itemElements}
+					</SlashMenuGroup>
+				);
+			},
+		);
 
-    content = groupElements;
-  }
+		content = groupElements;
+	}
 
-  const primitiveProps: Record<string, unknown> = {
-    "data-pen-slash-menu-list": "",
-    role: "listbox",
-  };
+	const primitiveProps: Record<string, unknown> = {
+		"data-pen-slash-menu-list": "",
+		role: "listbox",
+	};
 
-  return renderAsChild(
-    { ...rest, children: content },
-    "div",
-    primitiveProps,
-  );
+	return renderAsChild({ ...rest, children: content }, "div", primitiveProps);
 }

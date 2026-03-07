@@ -1,69 +1,53 @@
 import { useRef, useSyncExternalStore } from "react";
-import type { FieldEditor, SelectionState } from "@pen/core";
+import type {
+	FieldEditorStore,
+	FieldEditorStoreSnapshot,
+} from "../field-editor/store.js";
 
-interface FieldEditorStateSnapshot {
-  activeBlockId: string | null;
-  activeBlockIds: readonly string[];
-  isEditing: boolean;
-  inputMode: "richtext" | "code" | "table" | "none";
-  selection: SelectionState | null;
-}
-
-const EMPTY_FIELD_EDITOR_STATE: FieldEditorStateSnapshot = {
-  activeBlockId: null,
-  activeBlockIds: [],
-  isEditing: false,
-  inputMode: "none",
-  selection: null,
+const EMPTY_FIELD_EDITOR_STATE: FieldEditorStoreSnapshot = {
+	focusBlockId: null,
+	activeBlockIds: [],
+	isEditing: false,
+	isFocused: false,
+	isComposing: false,
+	inputMode: "none",
+	mode: "inactive",
 };
 
 export function useFieldEditorState(
-  fieldEditor: FieldEditor | null,
-): FieldEditorStateSnapshot {
-  const snapshotRef = useRef<FieldEditorStateSnapshot>(EMPTY_FIELD_EDITOR_STATE);
+	fieldEditor: FieldEditorStore | null,
+): FieldEditorStoreSnapshot {
+	const snapshotRef = useRef<FieldEditorStoreSnapshot>(EMPTY_FIELD_EDITOR_STATE);
 
-  return useSyncExternalStore(
-    (callback) => {
-      if (!fieldEditor) return () => {};
+	return useSyncExternalStore(
+		(callback) => {
+			if (!fieldEditor) return () => {};
+			return fieldEditor.subscribe(callback);
+		},
+		() => {
+			if (!fieldEditor) {
+				snapshotRef.current = EMPTY_FIELD_EDITOR_STATE;
+				return EMPTY_FIELD_EDITOR_STATE;
+			}
 
-      const unsubscribeActivate = fieldEditor.onActivate?.(() => callback());
-      const unsubscribeDeactivate = fieldEditor.onDeactivate?.(() => callback());
-      const unsubscribeSelection = fieldEditor.onSelectionChange?.(() => callback());
+			const nextSnapshot = fieldEditor.getSnapshot();
 
-      return () => {
-        unsubscribeActivate?.();
-        unsubscribeDeactivate?.();
-        unsubscribeSelection?.();
-      };
-    },
-    () => {
-      if (!fieldEditor) {
-        snapshotRef.current = EMPTY_FIELD_EDITOR_STATE;
-        return EMPTY_FIELD_EDITOR_STATE;
-      }
+			const prevSnapshot = snapshotRef.current;
+			if (
+				prevSnapshot.focusBlockId === nextSnapshot.focusBlockId &&
+				prevSnapshot.activeBlockIds === nextSnapshot.activeBlockIds &&
+				prevSnapshot.isEditing === nextSnapshot.isEditing &&
+				prevSnapshot.isFocused === nextSnapshot.isFocused &&
+				prevSnapshot.isComposing === nextSnapshot.isComposing &&
+				prevSnapshot.inputMode === nextSnapshot.inputMode &&
+				prevSnapshot.mode === nextSnapshot.mode
+			) {
+				return prevSnapshot;
+			}
 
-      const nextSnapshot: FieldEditorStateSnapshot = {
-        activeBlockId: fieldEditor.activeBlockId,
-        activeBlockIds: fieldEditor.activeBlockIds,
-        isEditing: fieldEditor.isEditing,
-        inputMode: fieldEditor.inputMode,
-        selection: fieldEditor.selection,
-      };
-
-      const prevSnapshot = snapshotRef.current;
-      if (
-        prevSnapshot.activeBlockId === nextSnapshot.activeBlockId &&
-        prevSnapshot.activeBlockIds === nextSnapshot.activeBlockIds &&
-        prevSnapshot.isEditing === nextSnapshot.isEditing &&
-        prevSnapshot.inputMode === nextSnapshot.inputMode &&
-        prevSnapshot.selection === nextSnapshot.selection
-      ) {
-        return prevSnapshot;
-      }
-
-      snapshotRef.current = nextSnapshot;
-      return nextSnapshot;
-    },
-    () => EMPTY_FIELD_EDITOR_STATE,
-  );
+			snapshotRef.current = nextSnapshot;
+			return nextSnapshot;
+		},
+		() => EMPTY_FIELD_EDITOR_STATE,
+	);
 }

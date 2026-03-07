@@ -173,7 +173,9 @@ export class EventEmitter {
       this._handlers.set(event, set);
     }
     set.add(handler);
-    return () => { set!.delete(handler); };
+    return () => {
+      set!.delete(handler);
+    };
   }
 
   off(event: string, handler: Handler): void {
@@ -206,16 +208,16 @@ Each handler is wrapped in `try/catch` — a broken handler must not prevent oth
 
 **`PenEventMap` events** dispatched by the editor:
 
-| Event | Payload | When |
-|---|---|---|
-| `change` | `CRDTEvent[]` | After each `Y.transact()` batch completes and extensions have been notified. Wave 3 emits one-item arrays (`[event]`) to match the canonical `PenEventMap` contract from Wave 0. |
-| `documentChange` | `{ ops: DocumentOp[]; origin: OpOrigin; affectedBlocks: string[] }` | After `apply()` completes and normalization has settled |
-| `decorationsChange` | `number` | After decoration generation increments (explicit request or extension invalidation) |
-| `selectionChange` | `SelectionState` | After any selection mutation |
-| `focus` | `{ blockId: string }` | Field editor activates for a block |
-| `blur` | `{ blockId: string }` | Field editor deactivates |
+| Event               | Payload                                                             | When                                                                                                                                                                             |
+| ------------------- | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `change`            | `CRDTEvent[]`                                                       | After each `Y.transact()` batch completes and extensions have been notified. Wave 3 emits one-item arrays (`[event]`) to match the canonical `PenEventMap` contract from Wave 0. |
+| `documentChange`    | `{ ops: DocumentOp[]; origin: OpOrigin; affectedBlocks: string[] }` | After `apply()` completes and normalization has settled                                                                                                                          |
+| `decorationsChange` | `number`                                                            | After decoration generation increments (explicit request or extension invalidation)                                                                                              |
+| `selectionChange`   | `SelectionState`                                                    | After any selection mutation                                                                                                                                                     |
 
 Extension custom events use `ctx.emit(eventName, payload)`. The extension manager namespaces these as `ext:${extensionName}:${eventName}` to prevent collisions. Consumers listen via `editor.on('ext:search:match', handler)`.
+
+DOM focus and blur are renderer-owned field editor session events, not headless `Editor` core events.
 
 ---
 
@@ -255,9 +257,7 @@ class DecorationSetImpl implements DecorationSet {
 
   inlineForBlock(blockId: string): readonly InlineDecoration[] {
     const all = this.forBlock(blockId);
-    return all.filter(
-      (d): d is InlineDecoration => d.type === 'inline'
-    );
+    return all.filter((d): d is InlineDecoration => d.type === "inline");
   }
 
   equals(other: DecorationSet): boolean {
@@ -274,7 +274,7 @@ class DecorationSetImpl implements DecorationSet {
     const mapped: Decoration[] = [];
 
     for (const dec of this.decorations) {
-      if (dec.type === 'inline' && affected.has(dec.blockId)) {
+      if (dec.type === "inline" && affected.has(dec.blockId)) {
         const newFrom = mapping.mapOffset(dec.blockId, dec.from);
         const newTo = mapping.mapOffset(dec.blockId, dec.to);
 
@@ -388,12 +388,16 @@ export class DocumentStateImpl implements DocumentState {
     }
 
     // Build parent index from parentId props and children arrays
-    for (const [blockId, blockMap] of (this._doc.blocks as CRDTBlockMap).entries()) {
-      const props = blockMap.get('props') as CRDTMap<unknown> | undefined;
-      if (props?.get?.('parentId')) {
-        this._parentIndex.set(blockId, props.get('parentId'));
+    for (const [blockId, blockMap] of (
+      this._doc.blocks as CRDTBlockMap
+    ).entries()) {
+      const props = blockMap.get("props") as CRDTMap<unknown> | undefined;
+      if (props?.get?.("parentId")) {
+        this._parentIndex.set(blockId, props.get("parentId"));
       }
-      const children = blockMap.get('children') as CRDTArray<string> | undefined;
+      const children = blockMap.get("children") as
+        | CRDTArray<string>
+        | undefined;
       if (children) {
         for (let i = 0; i < children.length; i++) {
           this._parentIndex.set(children.get(i), blockId);
@@ -458,9 +462,10 @@ export class DocumentRangeImpl implements DocumentRange {
     const anchorIdx = this._indexOfBlock(anchor.blockId);
     const focusIdx = this._indexOfBlock(focus.blockId);
 
-    if (anchorIdx < focusIdx ||
-        (anchorIdx === focusIdx &&
-         (anchor.offset ?? 0) <= (focus.offset ?? 0))) {
+    if (
+      anchorIdx < focusIdx ||
+      (anchorIdx === focusIdx && (anchor.offset ?? 0) <= (focus.offset ?? 0))
+    ) {
       this.start = anchor;
       this.end = focus;
     } else {
@@ -477,10 +482,18 @@ export class DocumentRangeImpl implements DocumentRange {
     if (idx < startIdx || idx > endIdx) return false;
     if (idx > startIdx && idx < endIdx) return true;
 
-    if (idx === startIdx && offset !== undefined && this.start.offset !== undefined) {
+    if (
+      idx === startIdx &&
+      offset !== undefined &&
+      this.start.offset !== undefined
+    ) {
       if (offset < this.start.offset) return false;
     }
-    if (idx === endIdx && offset !== undefined && this.end.offset !== undefined) {
+    if (
+      idx === endIdx &&
+      offset !== undefined &&
+      this.end.offset !== undefined
+    ) {
       if (offset > this.end.offset) return false;
     }
     return true;
@@ -496,17 +509,20 @@ export class DocumentRangeImpl implements DocumentRange {
   }
 
   equals(other: DocumentRange): boolean {
-    return this.start.blockId === other.start.blockId &&
-           this.start.offset === other.start.offset &&
-           this.end.blockId === other.end.blockId &&
-           this.end.offset === other.end.offset;
+    return (
+      this.start.blockId === other.start.blockId &&
+      this.start.offset === other.start.offset &&
+      this.end.blockId === other.end.blockId &&
+      this.end.offset === other.end.offset
+    );
   }
 
   toTextSelection(): TextSelection | null {
     if (this.start.blockId !== this.end.blockId) return null;
-    if (this.start.offset === undefined || this.end.offset === undefined) return null;
+    if (this.start.offset === undefined || this.end.offset === undefined)
+      return null;
     return {
-      type: 'text',
+      type: "text",
       blockId: this.start.blockId,
       from: this.start.offset,
       to: this.end.offset,
@@ -548,7 +564,12 @@ export class SelectionManagerImpl {
   private readonly _registry: SchemaRegistry;
   private readonly _emitter: EventEmitter;
 
-  constructor(doc: PenDocument, crdtDoc: CRDTDocument, registry: SchemaRegistry, emitter: EventEmitter) {
+  constructor(
+    doc: PenDocument,
+    crdtDoc: CRDTDocument,
+    registry: SchemaRegistry,
+    emitter: EventEmitter,
+  ) {
     this._doc = doc;
     this._crdtDoc = crdtDoc;
     this._registry = registry;
@@ -564,34 +585,34 @@ export class SelectionManagerImpl {
     const prev = this._selection;
     this._selection = selection;
     if (prev !== selection) {
-      this._emitter.emit('selectionChange', selection);
+      this._emitter.emit("selectionChange", selection);
     }
   }
 
   selectBlock(blockId: string): void {
     if (!this._blockExists(blockId)) return;
-    this.setSelection({ type: 'block', blockIds: [blockId] });
+    this.setSelection({ type: "block", blockIds: [blockId] });
   }
 
   selectBlocks(blockIds: string[]): void {
-    const valid = blockIds.filter(id => this._blockExists(id));
+    const valid = blockIds.filter((id) => this._blockExists(id));
     if (valid.length === 0) return;
-    this.setSelection({ type: 'block', blockIds: valid });
+    this.setSelection({ type: "block", blockIds: valid });
   }
 
   selectText(blockId: string, from: number, to: number): void {
     if (!this._blockExists(blockId)) return;
 
     const blockMap = this._doc.blocks.get(blockId) as CRDTMap<unknown>;
-    const content = blockMap?.get('content');
-    if (!content || typeof content.length !== 'number') return;
+    const content = blockMap?.get("content");
+    if (!content || typeof content.length !== "number") return;
 
     const len = content.length as number;
     const clampedFrom = Math.max(0, Math.min(from, len));
     const clampedTo = Math.max(clampedFrom, Math.min(to, len));
 
     this.setSelection({
-      type: 'text',
+      type: "text",
       anchor: { blockId, offset: clampedFrom },
       focus: { blockId, offset: clampedTo },
     });
@@ -603,49 +624,65 @@ export class SelectionManagerImpl {
       ids.push(this._doc.blockOrder.get(i) as string);
     }
     if (ids.length > 0) {
-      this.setSelection({ type: 'block', blockIds: ids });
+      this.setSelection({ type: "block", blockIds: ids });
     }
   }
 
   getSelectedText(): string {
     const sel = this._selection;
-    if (!sel) return '';
+    if (!sel) return "";
 
-    if (sel.type === 'text') {
-      const blockMap = this._doc.blocks.get(sel.anchor.blockId) as CRDTMap<unknown>;
-      const content = blockMap?.get('content');
-      if (!content || typeof content.toString !== 'function') return '';
+    if (sel.type === "text") {
+      const blockMap = this._doc.blocks.get(
+        sel.anchor.blockId,
+      ) as CRDTMap<unknown>;
+      const content = blockMap?.get("content");
+      if (!content || typeof content.toString !== "function") return "";
       const full = content.toString() as string;
       const from = Math.min(sel.anchor.offset, sel.focus.offset);
       const to = Math.max(sel.anchor.offset, sel.focus.offset);
       return full.slice(from, to);
     }
 
-    if (sel.type === 'block') {
+    if (sel.type === "block") {
       const parts: string[] = [];
       for (const id of sel.blockIds) {
-        const handle = createBlockHandle(id, this._doc, this._crdtDoc, this._registry);
+        const handle = createBlockHandle(
+          id,
+          this._doc,
+          this._crdtDoc,
+          this._registry,
+        );
         parts.push(handle.textContent());
       }
-      return parts.join('\n');
+      return parts.join("\n");
     }
 
-    return '';
+    return "";
   }
 
   getSelectedBlocks(): BlockHandle[] {
     const sel = this._selection;
     if (!sel) return [];
 
-    if (sel.type === 'block') {
+    if (sel.type === "block") {
       return sel.blockIds
-        .filter(id => this._blockExists(id))
-        .map(id => createBlockHandle(id, this._doc, this._crdtDoc, this._registry));
+        .filter((id) => this._blockExists(id))
+        .map((id) =>
+          createBlockHandle(id, this._doc, this._crdtDoc, this._registry),
+        );
     }
 
-    if (sel.type === 'text') {
+    if (sel.type === "text") {
       if (this._blockExists(sel.anchor.blockId)) {
-        return [createBlockHandle(sel.anchor.blockId, this._doc, this._crdtDoc, this._registry)];
+        return [
+          createBlockHandle(
+            sel.anchor.blockId,
+            this._doc,
+            this._crdtDoc,
+            this._registry,
+          ),
+        ];
       }
     }
 
@@ -661,10 +698,11 @@ export class SelectionManagerImpl {
 
   private _validateSelection(sel: SelectionState): boolean {
     if (!sel) return true;
-    if (sel.type === 'text') return this._blockExists(sel.anchor.blockId);
-    if (sel.type === 'block') return sel.blockIds.every(id => this._blockExists(id));
-    if (sel.type === 'app') return true;
-    if (sel.type === 'cell') return this._blockExists(sel.blockId);
+    if (sel.type === "text") return this._blockExists(sel.anchor.blockId);
+    if (sel.type === "block")
+      return sel.blockIds.every((id) => this._blockExists(id));
+    if (sel.type === "app") return true;
+    if (sel.type === "cell") return this._blockExists(sel.blockId);
     return false;
   }
 
@@ -1124,33 +1162,45 @@ interface CRDTArray<T = unknown> {
 type CRDTBlockMap = CRDTMap<CRDTMap<unknown>>;
 
 interface CRDTText {
-  insert(offset: number, text: string, attributes?: Record<string, unknown>): void;
+  insert(
+    offset: number,
+    text: string,
+    attributes?: Record<string, unknown>,
+  ): void;
   delete(offset: number, length: number): void;
-  format(offset: number, length: number, attributes: Record<string, unknown>): void;
-  toDelta(): Array<{ insert: string | object; attributes?: Record<string, unknown> }>;
+  format(
+    offset: number,
+    length: number,
+    attributes: Record<string, unknown>,
+  ): void;
+  toDelta(): Array<{
+    insert: string | object;
+    attributes?: Record<string, unknown>;
+  }>;
   readonly length: number;
 }
 ```
 
-  constructor(
-    doc: PenDocument,
-    crdtDoc: CRDTDocument,
-    adapter: CRDTAdapter,
-    registry: SchemaRegistry,
-    engine: SchemaEngineImpl,
-    emitter: EventEmitter,
-    selection: SelectionManagerImpl,
-  ) {
-    this._doc = doc;
-    this._crdtDoc = crdtDoc;
-    this._adapter = adapter;
-    this._registry = registry;
-    this._engine = engine;
-    this._emitter = emitter;
-    this._selection = selection;
-  }
+constructor(
+doc: PenDocument,
+crdtDoc: CRDTDocument,
+adapter: CRDTAdapter,
+registry: SchemaRegistry,
+engine: SchemaEngineImpl,
+emitter: EventEmitter,
+selection: SelectionManagerImpl,
+) {
+this.\_doc = doc;
+this.\_crdtDoc = crdtDoc;
+this.\_adapter = adapter;
+this.\_registry = registry;
+this.\_engine = engine;
+this.\_emitter = emitter;
+this.\_selection = selection;
 }
-```
+}
+
+````
 
 #### Reentry-Safe Apply
 
@@ -1212,7 +1262,7 @@ private _applyInternal(ops: DocumentOp[], origin: OpOrigin): void {
     this._applying = false;
   }
 }
-```
+````
 
 If `apply()` is called during an active `Y.transact()` (e.g., from an extension's `observe()` hook), the ops are enqueued with their origin. After the current batch completes, the queue drains synchronously. Each dequeued batch gets its own `Y.transact()` with its own origin — ensuring correct undo tracking (extension-origin ops don't merge into user undo groups).
 
@@ -1297,7 +1347,7 @@ private _executeOps(ops: DocumentOp[], origin: OpOrigin): void {
 adapter.observe(crdtDoc, (event: CRDTEvent) => {
   if (pipeline.suppressObserver) return;
   extensionManager.dispatchObserve([event], editor);
-  emitter.emit('change', [event]);
+  emitter.emit("change", [event]);
 });
 ```
 
@@ -2079,23 +2129,32 @@ class EditorImpl implements Editor {
 
     // 2. CRDT adapter + document
     this._adapter = options.crdt?.adapter ?? getDefaultAdapter();
-    this._crdtDoc = options.crdt?.document
-      ?? this._adapter.createDocument();
+    this._crdtDoc = options.crdt?.document ?? this._adapter.createDocument();
     this._doc = this._createPenDocument(this._crdtDoc);
 
     // 3. Internal modules
     this._emitter = new EventEmitter();
-    this._engine = new SchemaEngineImpl(this._registry, this._doc, this._crdtDoc);
+    this._engine = new SchemaEngineImpl(
+      this._registry,
+      this._doc,
+      this._crdtDoc,
+    );
     this._selection = new SelectionManagerImpl(
-      this._doc, this._crdtDoc, this._registry, this._emitter
+      this._doc,
+      this._crdtDoc,
+      this._registry,
+      this._emitter,
     );
     this._pipeline = new ApplyPipeline(
-      this._doc, this._crdtDoc, this._adapter, this._registry,
-      this._engine, this._emitter, this._selection,
+      this._doc,
+      this._crdtDoc,
+      this._adapter,
+      this._registry,
+      this._engine,
+      this._emitter,
+      this._selection,
     );
-    this._documentState = new DocumentStateImpl(
-      this._doc, this._registry
-    );
+    this._documentState = new DocumentStateImpl(this._doc, this._registry);
 
     // 4. Extensions
     this._extensions = new ExtensionManagerImpl(this._emitter);
@@ -2118,7 +2177,7 @@ class EditorImpl implements Editor {
         if (this._pipeline.suppressObserver) return;
         this._documentState.incrementalUpdate(event.affectedBlocks);
         this._extensions.dispatchObserve([event], this);
-        this._emitter.emit('change', [event]);
+        this._emitter.emit("change", [event]);
       },
     );
 
@@ -2433,12 +2492,15 @@ export class UndoManagerImpl implements UndoManager {
   setTrackedOrigins(origins: OpOrigin[]): void {
     // Delegate to CRDT undo manager's configuration
     // Yjs UndoManager accepts trackedOrigins as a Set
-    (this._crdtUndo as { trackedOrigins: Set<string> }).trackedOrigins = new Set(origins);
+    (this._crdtUndo as { trackedOrigins: Set<string> }).trackedOrigins =
+      new Set(origins);
   }
 
   onStackChange(callback: () => void): Unsubscribe {
     this._listeners.add(callback);
-    return () => { this._listeners.delete(callback); };
+    return () => {
+      this._listeners.delete(callback);
+    };
   }
 
   // Called by the extension after each CRDT write
@@ -2459,7 +2521,11 @@ export class UndoManagerImpl implements UndoManager {
 
   private _notifyListeners(): void {
     for (const cb of this._listeners) {
-      try { cb(); } catch { /* ignore */ }
+      try {
+        cb();
+      } catch {
+        /* ignore */
+      }
     }
   }
 
@@ -2484,13 +2550,13 @@ export function undoExtension(options?: UndoExtensionOptions): Extension {
   let manager: UndoManagerImpl | null = null;
 
   return defineExtension({
-    name: 'undo',
+    name: "undo",
 
     activateClient: async (ctx) => {
       const { adapter, crdtDoc } = ctx.editor.internals;
 
       const crdtUndo = adapter.createUndoManager(crdtDoc, {
-        trackedOrigins: options?.trackedOrigins ?? ['user', 'ai'],
+        trackedOrigins: options?.trackedOrigins ?? ["user", "ai"],
         captureTimeout: options?.groupTimeout ?? 1000,
       });
 
@@ -2499,7 +2565,7 @@ export function undoExtension(options?: UndoExtensionOptions): Extension {
         manager.setGroupTimeout(options.groupTimeout);
       }
 
-      ctx.editor.internals.setSlot('undo:manager', manager);
+      ctx.editor.internals.setSlot("undo:manager", manager);
     },
 
     deactivateClient: async () => {
@@ -2512,7 +2578,7 @@ export function undoExtension(options?: UndoExtensionOptions): Extension {
 
       // Reset idle timer on every write
       for (const event of events) {
-        if (event.origin === 'user' || event.origin === 'ai') {
+        if (event.origin === "user" || event.origin === "ai") {
           manager.resetIdleTimer();
         }
       }
@@ -2601,7 +2667,7 @@ export class ToolServerImpl implements ToolServer {
       const errors = validateInput(input, def.inputSchema);
       if (errors.length > 0) {
         throw new Error(
-          `Invalid input for tool "${name}": ${errors.join('; ')}`
+          `Invalid input for tool "${name}": ${errors.join("; ")}`,
         );
       }
     }
@@ -2615,8 +2681,8 @@ function validateInput(
   schema: Record<string, unknown>,
 ): string[] {
   const errors: string[] = [];
-  if (typeof input !== 'object' || input === null) {
-    errors.push('Input must be an object');
+  if (typeof input !== "object" || input === null) {
+    errors.push("Input must be an object");
     return errors;
   }
 
@@ -2634,17 +2700,19 @@ function validateInput(
     const propSchema = properties[key];
     if (!propSchema) continue;
 
-    if (propSchema.type === 'string' && typeof value !== 'string') {
+    if (propSchema.type === "string" && typeof value !== "string") {
       errors.push(`Field "${key}" must be a string, got ${typeof value}`);
     }
-    if (propSchema.type === 'number' && typeof value !== 'number') {
+    if (propSchema.type === "number" && typeof value !== "number") {
       errors.push(`Field "${key}" must be a number, got ${typeof value}`);
     }
-    if (propSchema.type === 'boolean' && typeof value !== 'boolean') {
+    if (propSchema.type === "boolean" && typeof value !== "boolean") {
       errors.push(`Field "${key}" must be a boolean, got ${typeof value}`);
     }
     if (propSchema.enum && !propSchema.enum.includes(value)) {
-      errors.push(`Field "${key}" must be one of: ${propSchema.enum.join(', ')}`);
+      errors.push(
+        `Field "${key}" must be one of: ${propSchema.enum.join(", ")}`,
+      );
     }
   }
 
@@ -2685,58 +2753,75 @@ export class ToolContextImpl implements ToolContext {
     const blockId = crypto.randomUUID();
 
     this.emit({
-      type: 'block-insert',
+      type: "block-insert",
       blockId,
       blockType,
       props,
       position,
     } as PenStreamPart);
 
-    this.editor.apply([{
-      type: 'insert-block',
-      blockId,
-      blockType,
-      props,
-      position,
-    }], { origin: 'ai' });
+    this.editor.apply(
+      [
+        {
+          type: "insert-block",
+          blockId,
+          blockType,
+          props,
+          position,
+        },
+      ],
+      { origin: "ai" },
+    );
 
     return blockId;
   }
 
   updateBlock(blockId: string, props: Record<string, unknown>): void {
     this.emit({
-      type: 'block-update',
+      type: "block-update",
       blockId,
       props,
     } as PenStreamPart);
 
-    this.editor.apply([{
-      type: 'update-block',
-      blockId,
-      props,
-    }], { origin: 'ai' });
+    this.editor.apply(
+      [
+        {
+          type: "update-block",
+          blockId,
+          props,
+        },
+      ],
+      { origin: "ai" },
+    );
   }
 
   deleteBlock(blockId: string): void {
     this.emit({
-      type: 'block-delete',
+      type: "block-delete",
       blockId,
     } as PenStreamPart);
 
-    this.editor.apply([{
-      type: 'delete-block',
-      blockId,
-    }], { origin: 'ai' });
+    this.editor.apply(
+      [
+        {
+          type: "delete-block",
+          blockId,
+        },
+      ],
+      { origin: "ai" },
+    );
   }
 
   beginStreaming(blockId: string): string {
     const zoneId = crypto.randomUUID();
     this._activeZones.set(zoneId, { blockId });
 
-    this.emit({ type: 'gen-start', zoneId, blockId } as PenStreamPart);
+    this.emit({ type: "gen-start", zoneId, blockId } as PenStreamPart);
 
     // Coordinate with @pen/delta-stream if available
-    const streaming = this.editor.internals.getSlot<StreamingTargetImpl>('delta-stream:target');
+    const streaming = this.editor.internals.getSlot<StreamingTargetImpl>(
+      "delta-stream:target",
+    );
     if (streaming) {
       streaming.beginStreaming(zoneId, blockId);
     }
@@ -2745,9 +2830,11 @@ export class ToolContextImpl implements ToolContext {
   }
 
   appendDelta(zoneId: string, text: string): void {
-    this.emit({ type: 'gen-delta', zoneId, delta: text } as PenStreamPart);
+    this.emit({ type: "gen-delta", zoneId, delta: text } as PenStreamPart);
 
-    const streaming = this.editor.internals.getSlot<StreamingTargetImpl>('delta-stream:target');
+    const streaming = this.editor.internals.getSlot<StreamingTargetImpl>(
+      "delta-stream:target",
+    );
     if (streaming) {
       streaming.appendDelta(text);
     }
@@ -2755,11 +2842,13 @@ export class ToolContextImpl implements ToolContext {
 
   endStreaming(
     zoneId: string,
-    status: 'complete' | 'cancelled' | 'error',
+    status: "complete" | "cancelled" | "error",
   ): void {
-    this.emit({ type: 'gen-end', zoneId, status } as PenStreamPart);
+    this.emit({ type: "gen-end", zoneId, status } as PenStreamPart);
 
-    const streaming = this.editor.internals.getSlot<StreamingTargetImpl>('delta-stream:target');
+    const streaming = this.editor.internals.getSlot<StreamingTargetImpl>(
+      "delta-stream:target",
+    );
     if (streaming) {
       streaming.endStreaming(status);
     }
@@ -2778,7 +2867,7 @@ export function documentOpsExtension(): Extension {
   let toolServer: ToolServerImpl | null = null;
 
   return defineExtension({
-    name: 'document-ops',
+    name: "document-ops",
 
     activateClient: async (ctx) => {
       toolServer = new ToolServerImpl();
@@ -2794,7 +2883,7 @@ export function documentOpsExtension(): Extension {
       toolServer.registerTool(moveBlockTool(ctx.editor));
 
       // Expose tool server for @pen/delta-stream and @pen/ai
-      ctx.editor.internals.setSlot('document-ops:toolServer', toolServer);
+      ctx.editor.internals.setSlot("document-ops:toolServer", toolServer);
     },
 
     deactivateClient: async () => {
@@ -2812,23 +2901,27 @@ Each tool is a function returning a `ToolDefinition`. Tools follow a common patt
 // tools/read-document.ts
 export function readDocumentTool(editor: Editor): ToolDefinition {
   return {
-    name: 'read_document',
-    description: 'Read document content in the specified format.',
+    name: "read_document",
+    description: "Read document content in the specified format.",
     inputSchema: {
-      type: 'object',
+      type: "object",
       properties: {
-        format: { type: 'string', enum: ['json', 'markdown', 'summary'], default: 'markdown' },
+        format: {
+          type: "string",
+          enum: ["json", "markdown", "summary"],
+          default: "markdown",
+        },
         range: {
-          type: 'object',
+          type: "object",
           properties: {
-            startBlockId: { type: 'string' },
-            endBlockId: { type: 'string' },
+            startBlockId: { type: "string" },
+            endBlockId: { type: "string" },
           },
         },
       },
     },
     handler: async (input: any) => {
-      const format = input?.format ?? 'markdown';
+      const format = input?.format ?? "markdown";
       const blocks: any[] = [];
 
       for (const handle of editor.blocks()) {
@@ -2843,12 +2936,13 @@ export function readDocumentTool(editor: Editor): ToolDefinition {
         });
       }
 
-      if (format === 'summary') {
+      if (format === "summary") {
         return {
           blockCount: editor.blockCount(),
-          types: [...new Set(blocks.map(b => b.type))],
-          preview: blocks.slice(0, 5).map(b => ({
-            type: b.type, content: b.content.slice(0, 100),
+          types: [...new Set(blocks.map((b) => b.type))],
+          preview: blocks.slice(0, 5).map((b) => ({
+            type: b.type,
+            content: b.content.slice(0, 100),
           })),
         };
       }
@@ -2861,26 +2955,31 @@ export function readDocumentTool(editor: Editor): ToolDefinition {
 // tools/insert-block.ts
 export function insertBlockTool(editor: Editor): ToolDefinition {
   return {
-    name: 'insert_block',
-    description: 'Insert a new block at the specified position.',
+    name: "insert_block",
+    description: "Insert a new block at the specified position.",
     inputSchema: {
-      type: 'object',
-      required: ['position', 'blockType'],
+      type: "object",
+      required: ["position", "blockType"],
       properties: {
         position: {},
-        blockType: { type: 'string' },
-        props: { type: 'object' },
+        blockType: { type: "string" },
+        props: { type: "object" },
       },
     },
     handler: async (input: any) => {
       const blockId = crypto.randomUUID();
-      editor.apply([{
-        type: 'insert-block',
-        blockId,
-        blockType: input.blockType,
-        props: input.props ?? {},
-        position: input.position,
-      }], { origin: 'ai' });
+      editor.apply(
+        [
+          {
+            type: "insert-block",
+            blockId,
+            blockType: input.blockType,
+            props: input.props ?? {},
+            position: input.position,
+          },
+        ],
+        { origin: "ai" },
+      );
       return { blockId };
     },
   };
@@ -2889,15 +2988,15 @@ export function insertBlockTool(editor: Editor): ToolDefinition {
 // tools/search-document.ts
 export function searchDocumentTool(editor: Editor): ToolDefinition {
   return {
-    name: 'search_document',
-    description: 'Search for text in the document.',
+    name: "search_document",
+    description: "Search for text in the document.",
     inputSchema: {
-      type: 'object',
-      required: ['query'],
+      type: "object",
+      required: ["query"],
       properties: {
-        query: { type: 'string' },
-        caseSensitive: { type: 'boolean', default: false },
-        maxResults: { type: 'number', default: 20 },
+        query: { type: "string" },
+        caseSensitive: { type: "boolean", default: false },
+        maxResults: { type: "number", default: 20 },
       },
     },
     handler: async (input: any) => {
@@ -2922,7 +3021,7 @@ export function searchDocumentTool(editor: Editor): ToolDefinition {
             length: query.length,
             snippet: text.slice(
               Math.max(0, idx - 30),
-              Math.min(text.length, idx + query.length + 30)
+              Math.min(text.length, idx + query.length + 30),
             ),
           });
           offset = idx + 1;
@@ -2962,15 +3061,12 @@ Token accumulation window for CRDT write batching.
 
 ```typescript
 export class BatchingBuffer {
-  private _buffer = '';
+  private _buffer = "";
   private _timer: ReturnType<typeof setTimeout> | null = null;
   private readonly _flushCallback: (text: string) => void;
   private readonly _windowMs: number;
 
-  constructor(
-    flushCallback: (text: string) => void,
-    windowMs = 50,
-  ) {
+  constructor(flushCallback: (text: string) => void, windowMs = 50) {
     this._flushCallback = flushCallback;
     this._windowMs = windowMs;
   }
@@ -2992,7 +3088,7 @@ export class BatchingBuffer {
     if (this._buffer.length === 0) return;
 
     const text = this._buffer;
-    this._buffer = '';
+    this._buffer = "";
     this._flushCallback(text);
   }
 
@@ -3005,7 +3101,7 @@ export class BatchingBuffer {
       clearTimeout(this._timer);
       this._timer = null;
     }
-    this._buffer = '';
+    this._buffer = "";
   }
 }
 ```
@@ -3042,17 +3138,14 @@ export class StreamingTargetImpl implements StreamingTarget {
       id: zoneId,
       blockId,
       startedAt: Date.now(),
-      status: 'active',
+      status: "active",
     };
 
     // Defer normalization for this block during streaming
     this._engine.deferBlock(blockId);
 
     // Set up batching buffer
-    this._buffer = new BatchingBuffer(
-      (text) => this._flushToYText(text),
-      50,
-    );
+    this._buffer = new BatchingBuffer((text) => this._flushToYText(text), 50);
   }
 
   appendDelta(delta: string): void {
@@ -3060,7 +3153,7 @@ export class StreamingTargetImpl implements StreamingTarget {
     this._buffer.append(delta);
   }
 
-  endStreaming(status: 'complete' | 'cancelled' | 'error'): void {
+  endStreaming(status: "complete" | "cancelled" | "error"): void {
     // Flush remaining buffer
     this._buffer?.flush();
     this._buffer?.destroy();
@@ -3087,24 +3180,28 @@ export class StreamingTargetImpl implements StreamingTarget {
   private _flushToYText(text: string): void {
     if (!this._blockId) return;
 
-    const blockMap = (
-      this._editor.internals.doc.blocks as CRDTBlockMap
-    ).get(this._blockId);
+    const blockMap = (this._editor.internals.doc.blocks as CRDTBlockMap).get(
+      this._blockId,
+    );
     if (!blockMap) return;
 
-    const content = blockMap.get('content');
+    const content = blockMap.get("content");
     if (!content) return;
 
     const { adapter, crdtDoc } = this._editor.internals;
 
-    adapter.transact(crdtDoc, () => {
-      // Insert at end of current text
-      const len = content.length as number;
-      content.insert(len, text);
+    adapter.transact(
+      crdtDoc,
+      () => {
+        // Insert at end of current text
+        const len = content.length as number;
+        content.insert(len, text);
 
-      // Mark dirty (but normalization is deferred)
-      this._engine.markDirty(this._blockId!);
-    }, 'ai');
+        // Mark dirty (but normalization is deferred)
+        this._engine.markDirty(this._blockId!);
+      },
+      "ai",
+    );
   }
 }
 ```
@@ -3132,8 +3229,11 @@ export async function processStream(
     signal?: AbortSignal;
   },
 ): Promise<void> {
-  const streaming = editor.internals.getSlot<StreamingTargetImpl>('delta-stream:target')!;
-  const toolServer = editor.internals.getSlot<ToolServerImpl>('document-ops:toolServer') ?? null;
+  const streaming = editor.internals.getSlot<StreamingTargetImpl>(
+    "delta-stream:target",
+  )!;
+  const toolServer =
+    editor.internals.getSlot<ToolServerImpl>("document-ops:toolServer") ?? null;
   const dataStore = new Map<string, unknown>();
 
   for await (const part of stream) {
@@ -3141,74 +3241,92 @@ export async function processStream(
     options?.onPart?.(part);
 
     switch (part.type) {
-      case 'gen-start':
+      case "gen-start":
         streaming.beginStreaming(part.zoneId, part.blockId);
         break;
 
-      case 'gen-delta':
+      case "gen-delta":
         streaming.appendDelta(part.delta);
         break;
 
-      case 'gen-end':
+      case "gen-end":
         streaming.endStreaming(part.status);
         break;
 
-      case 'block-insert': {
+      case "block-insert": {
         const blockId = part.blockId ?? crypto.randomUUID();
-        editor.apply([{
-          type: 'insert-block',
-          blockId,
-          blockType: part.blockType,
-          props: part.props ?? {},
-          position: part.position,
-        }], { origin: 'ai' });
+        editor.apply(
+          [
+            {
+              type: "insert-block",
+              blockId,
+              blockType: part.blockType,
+              props: part.props ?? {},
+              position: part.position,
+            },
+          ],
+          { origin: "ai" },
+        );
         break;
       }
 
-      case 'block-update':
-        editor.apply([{
-          type: 'update-block',
-          blockId: part.blockId,
-          props: part.props,
-        }], { origin: 'ai' });
+      case "block-update":
+        editor.apply(
+          [
+            {
+              type: "update-block",
+              blockId: part.blockId,
+              props: part.props,
+            },
+          ],
+          { origin: "ai" },
+        );
         break;
 
-      case 'block-delete':
-        editor.apply([{
-          type: 'delete-block',
-          blockId: part.blockId,
-        }], { origin: 'ai' });
+      case "block-delete":
+        editor.apply(
+          [
+            {
+              type: "delete-block",
+              blockId: part.blockId,
+            },
+          ],
+          { origin: "ai" },
+        );
         break;
 
-      case 'block-move':
-        editor.apply([{
-          type: 'move-block',
-          blockId: part.blockId,
-          position: part.position,
-        }], { origin: 'ai' });
+      case "block-move":
+        editor.apply(
+          [
+            {
+              type: "move-block",
+              blockId: part.blockId,
+              position: part.position,
+            },
+          ],
+          { origin: "ai" },
+        );
         break;
 
-      case 'tool-input-available': {
+      case "tool-input-available": {
         if (!toolServer) break;
         try {
           const result = await toolServer.executeTool(
             part.toolName,
             part.input,
-            new ToolContextImpl(
-              editor,
-              '',
-              (emitted) => options?.onPart?.(emitted),
+            new ToolContextImpl(editor, "", (emitted) =>
+              options?.onPart?.(emitted),
             ),
           );
 
           options?.onPart?.({
-            type: 'tool-output',
+            type: "tool-output",
             toolCallId: part.toolCallId,
             output: result,
           } as PenStreamPart);
         } catch (err) {
           options?.onPart?.({
-            type: 'tool-error',
+            type: "tool-error",
             toolCallId: part.toolCallId,
             error: String(err),
           } as PenStreamPart);
@@ -3216,32 +3334,37 @@ export async function processStream(
         break;
       }
 
-      case 'error':
+      case "error":
         // Cancel any active generation
         if (streaming.generationZone) {
-          streaming.endStreaming('error');
+          streaming.endStreaming("error");
         }
         break;
 
-      case 'abort':
+      case "abort":
         if (streaming.generationZone) {
-          streaming.endStreaming('cancelled');
+          streaming.endStreaming("cancelled");
         }
         break;
 
-      case 'ping':
+      case "ping":
         // Keepalive — no-op
         break;
 
-      case 'done':
+      case "done":
         // Stream complete
         break;
 
       default: {
         // Data parts: type matches `data-${string}`
         const partType = (part as { type: string }).type;
-        if (partType.startsWith('data-')) {
-          const dataPart = part as { type: string; id?: string; data: unknown; transient?: boolean };
+        if (partType.startsWith("data-")) {
+          const dataPart = part as {
+            type: string;
+            id?: string;
+            data: unknown;
+            transient?: boolean;
+          };
           const key = dataPart.id ?? partType;
           dataStore.set(key, dataPart.data);
         }
@@ -3252,28 +3375,28 @@ export async function processStream(
 
   // Ensure any active streaming is cleaned up
   if (streaming.generationZone) {
-    streaming.endStreaming('error');
+    streaming.endStreaming("error");
   }
 }
 ```
 
 **Part routing.** Each stream part type maps to a specific editor action:
 
-| Part Type | Action |
-|---|---|
-| `gen-start` | `streaming.beginStreaming(zoneId, blockId)` |
-| `gen-delta` | `streaming.appendDelta(delta)` (batched) |
-| `gen-end` | `streaming.endStreaming(status)` |
-| `block-insert` | validate against schema → `editor.apply([...], { origin: 'ai' })` |
-| `block-update` | `editor.apply([...], { origin: 'ai' })` |
-| `block-delete` | `editor.apply([...], { origin: 'ai' })` |
-| `block-move` | `editor.apply([...], { origin: 'ai' })` |
-| `tool-input-available` | `toolServer.executeTool()` → emit `tool-output` or `tool-error` |
-| `data-*` | reconcile by `id` in data store (Map-based, replace on match) |
-| `error` | cancel active generation |
-| `abort` | cancel active generation |
-| `ping` | no-op (keepalive) |
-| `done` | stream complete |
+| Part Type              | Action                                                            |
+| ---------------------- | ----------------------------------------------------------------- |
+| `gen-start`            | `streaming.beginStreaming(zoneId, blockId)`                       |
+| `gen-delta`            | `streaming.appendDelta(delta)` (batched)                          |
+| `gen-end`              | `streaming.endStreaming(status)`                                  |
+| `block-insert`         | validate against schema → `editor.apply([...], { origin: 'ai' })` |
+| `block-update`         | `editor.apply([...], { origin: 'ai' })`                           |
+| `block-delete`         | `editor.apply([...], { origin: 'ai' })`                           |
+| `block-move`           | `editor.apply([...], { origin: 'ai' })`                           |
+| `tool-input-available` | `toolServer.executeTool()` → emit `tool-output` or `tool-error`   |
+| `data-*`               | reconcile by `id` in data store (Map-based, replace on match)     |
+| `error`                | cancel active generation                                          |
+| `abort`                | cancel active generation                                          |
+| `ping`                 | no-op (keepalive)                                                 |
+| `done`                 | stream complete                                                   |
 
 **Error safety.** If the stream ends (iterator exhausts or is aborted) while a generation is active, `endStreaming('error')` is called to clean up state, flush buffers, and undefer normalization.
 
@@ -3284,18 +3407,18 @@ export function deltaStreamExtension(): Extension {
   let streamingTarget: StreamingTargetImpl | null = null;
 
   return defineExtension({
-    name: 'delta-stream',
+    name: "delta-stream",
 
     activateClient: async (ctx) => {
       const { engine } = ctx.editor.internals;
       streamingTarget = new StreamingTargetImpl(ctx.editor, engine);
 
-      ctx.editor.internals.setSlot('delta-stream:target', streamingTarget);
+      ctx.editor.internals.setSlot("delta-stream:target", streamingTarget);
     },
 
     deactivateClient: async () => {
       if (streamingTarget?.generationZone) {
-        streamingTarget.endStreaming('error');
+        streamingTarget.endStreaming("error");
       }
       streamingTarget = null;
     },
@@ -3337,15 +3460,16 @@ if (awareness) {
 
 ```typescript
 // In the awareness change handler (editor internals):
-import type { AwarenessChangeEvent } from '@pen/types';
+import type { AwarenessChangeEvent } from "@pen/types";
 
 const prevStates = new Map<number, Record<string, unknown>>();
 
-awareness.on('change', ({ removed }: AwarenessChangeEvent) => {
+awareness.on("change", ({ removed }: AwarenessChangeEvent) => {
   for (const clientId of removed) {
     const prev = prevStates.get(clientId);
     if (prev) {
-      const streaming = (prev as { streaming?: { blockId?: string } }).streaming;
+      const streaming = (prev as { streaming?: { blockId?: string } })
+        .streaming;
       if (streaming?.blockId) {
         engine.undeferBlock(streaming.blockId);
       }

@@ -32,23 +32,29 @@
   },
   "dependencies": {
     "@pen/core": "workspace:*",
+    "@pen/shortcuts": "workspace:*",
     "@pen/schema-default": "workspace:*"
   },
   "peerDependencies": {
-    "react": "^18.0.0 || ^19.0.0",
-    "react-dom": "^18.0.0 || ^19.0.0",
     "@pen/import-html": "workspace:*",
-    "@pen/import-markdown": "workspace:*"
+    "@pen/import-markdown": "workspace:*",
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
   },
   "peerDependenciesMeta": {
-    "@pen/import-html": { "optional": true },
-    "@pen/import-markdown": { "optional": true }
+    "@pen/import-html": {
+      "optional": true
+    },
+    "@pen/import-markdown": {
+      "optional": true
+    }
   },
   "devDependencies": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "jsdom": "^28.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "tsup": "^8.4.0",
     "typescript": "^5.7.3",
     "vitest": "^3.0.7"

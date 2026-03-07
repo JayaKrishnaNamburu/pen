@@ -1,85 +1,376 @@
-import type { Editor } from "@pen/core";
+import type { Editor, KeyBindingContext } from "@pen/core";
 import type { FieldEditorImpl } from "./fieldEditorImpl.js";
-import { applyEnterBehavior, type SelectionRange } from "./commands.js";
+import {
+	applyEnterBehavior,
+	mergeBackwardAtBlockStart,
+	moveCaretAcrossBlocks,
+	type SelectionRange,
+} from "./commands.js";
 
 export function handleFieldEditorKeyDown(options: {
-  event: KeyboardEvent;
-  editor: Editor;
-  fieldEditor: FieldEditorImpl;
-  ytext: {
-    length: number;
-    toString(): string;
-    insert(offset: number, text: string): void;
-    delete(offset: number, length: number): void;
-  };
-  range: SelectionRange | null;
+	event: KeyboardEvent;
+	editor: Editor;
+	fieldEditor: FieldEditorImpl;
+	ytext: {
+		length: number;
+		toString(): string;
+		insert(offset: number, text: string): void;
+		delete(offset: number, length: number): void;
+	};
+	range: SelectionRange | null;
 }): boolean {
-  const { event, editor, fieldEditor, ytext, range } = options;
-  const blockId = fieldEditor.activeBlockId;
-  if (!blockId) return false;
+	const { event, editor, fieldEditor, ytext, range } = options;
+	const blockId = fieldEditor.focusBlockId;
+	if (!blockId) return false;
 
-  if (event.key === "Enter" && !event.shiftKey) {
-    const target = applyEnterBehavior(editor, {
-      blockId,
-      inputMode: fieldEditor.inputMode,
-      ytext,
-      range,
-    });
-    if (!target) return false;
+	if (
+		!event.defaultPrevented &&
+		handleHistoryShortcut(editor, event)
+	) {
+		return true;
+	}
 
-    fieldEditor.activateTextSelection(
-      target.blockId,
-      target.anchorOffset,
-      target.focusOffset,
-    );
-    return true;
-  }
+	if (
+		!event.defaultPrevented &&
+		handleSelectAllShortcut(editor, event, fieldEditor)
+	) {
+		return true;
+	}
 
-  const bindings = collectKeyBindings(editor);
-  for (const binding of bindings) {
-    if (matchesKey(binding.key, event) && binding.handler(editor)) {
-      return true;
-    }
-  }
+	if (
+		event.key === "Backspace" &&
+		!event.shiftKey &&
+		!event.metaKey &&
+		!event.ctrlKey &&
+		!event.altKey
+	) {
+		const target = mergeBackwardAtBlockStart(editor, {
+			blockId,
+			ytext,
+			range,
+		});
+		if (target) {
+			fieldEditor.activateTextSelection(
+				target.blockId,
+				target.anchorOffset,
+				target.focusOffset,
+			);
+			return true;
+		}
+	}
 
-  return false;
+	if (event.key === "Enter" && !event.shiftKey) {
+		const target = applyEnterBehavior(editor, {
+			blockId,
+			inputMode: fieldEditor.inputMode,
+			ytext,
+			range,
+		});
+		if (!target) return false;
+
+		fieldEditor.activateTextSelection(
+			target.blockId,
+			target.anchorOffset,
+			target.focusOffset,
+		);
+		return true;
+	}
+
+	if (
+		(event.key === "ArrowLeft" || event.key === "ArrowUp") &&
+		!event.shiftKey &&
+		!event.metaKey &&
+		!event.ctrlKey &&
+		!event.altKey
+	) {
+		const target = moveCaretAcrossBlocks(editor, {
+			blockId,
+			ytext,
+			range,
+			direction: "previous",
+		});
+		if (target) {
+			fieldEditor.activateTextSelection(
+				target.blockId,
+				target.anchorOffset,
+				target.focusOffset,
+			);
+			return true;
+		}
+	}
+
+	if (
+		(event.key === "ArrowRight" || event.key === "ArrowDown") &&
+		!event.shiftKey &&
+		!event.metaKey &&
+		!event.ctrlKey &&
+		!event.altKey
+	) {
+		const target = moveCaretAcrossBlocks(editor, {
+			blockId,
+			ytext,
+			range,
+			direction: "next",
+		});
+		if (target) {
+			fieldEditor.activateTextSelection(
+				target.blockId,
+				target.anchorOffset,
+				target.focusOffset,
+			);
+			return true;
+		}
+	}
+
+	return handleEditorKeyBindings(editor, event, { includeSelectAll: false });
+}
+
+export function handleEditorKeyBindings(
+	editor: Editor,
+	event: KeyboardEvent,
+	options?: { includeSelectAll?: boolean },
+): boolean {
+	if (event.defaultPrevented) {
+		return false;
+	}
+
+	const includeSelectAll = options?.includeSelectAll ?? true;
+	if (handleHistoryShortcut(editor, event)) {
+		return true;
+	}
+
+	if (includeSelectAll && handleSelectAllShortcut(editor, event)) {
+		return true;
+	}
+
+	const bindings = collectKeyBindings(editor);
+	for (const binding of bindings) {
+		if (
+			matchesBindingContext(editor, binding.context) &&
+			matchesKey(binding.key, event) &&
+			binding.handler(editor, event)
+		) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+export function handleSelectAllShortcut(
+	editor: Editor,
+	event: KeyboardEvent,
+	fieldEditor?: FieldEditorImpl,
+	options?: { rootElement?: HTMLElement | null },
+): boolean {
+	if (!isSelectAllShortcut(event)) {
+		return false;
+	}
+
+	if (fieldEditor) {
+		return fieldEditor.selectAll(options?.rootElement);
+	}
+
+	const range = getDocumentTextRange(editor);
+	if (!range) {
+		return true;
+	}
+	editor.selectTextRange(range.start, range.end);
+	return true;
+}
+
+export function handleHistoryShortcut(
+	editor: Editor,
+	event: KeyboardEvent,
+): boolean {
+	if (isUndoShortcut(event)) {
+		editor.undoManager.undo();
+		return true;
+	}
+
+	if (isRedoShortcut(event)) {
+		editor.undoManager.redo();
+		return true;
+	}
+
+	return false;
+}
+
+function getDocumentTextRange(editor: Editor): {
+	start: { blockId: string; offset: number };
+	end: { blockId: string; offset: number };
+	focusBlockId: string;
+} | null {
+	const blockOrder = editor.documentState.blockOrder;
+	const firstBlockId = blockOrder[0];
+	const lastBlockId = blockOrder[blockOrder.length - 1];
+	if (!firstBlockId || !lastBlockId) {
+		return null;
+	}
+
+	const focusBlockId =
+		blockOrder.find((blockId) => {
+			const block = editor.getBlock(blockId);
+			if (!block) return false;
+			const schema = editor.schema.resolve(block.type);
+			return schema?.fieldEditor !== "none";
+		}) ?? firstBlockId;
+
+	return {
+		start: { blockId: firstBlockId, offset: 0 },
+		end: {
+			blockId: lastBlockId,
+			offset: editor.getBlock(lastBlockId)?.textContent().length ?? 0,
+		},
+		focusBlockId,
+	};
 }
 
 function collectKeyBindings(editor: Editor): ReadonlyArray<{
-  key: string;
-  handler: (editor: Editor) => boolean;
+	key: string;
+	context?: KeyBindingContext;
+	handler: (editor: Editor, event: KeyboardEvent) => boolean;
 }> {
-  return (
-    (editor as any)._extensions?.collectKeyBindings?.(editor.schema) ?? []
-  );
+	return (
+		(editor as any)._extensions?.collectKeyBindings?.(editor.schema) ?? []
+	);
+}
+
+function matchesBindingContext(
+	editor: Editor,
+	context: KeyBindingContext | undefined,
+): boolean {
+	if (!context) return true;
+
+	const selection = editor.selection;
+	const activeBlock = getActiveBlock(editor);
+
+	if (
+		context.blockType &&
+		(!activeBlock || !context.blockType.includes(activeBlock.type))
+	) {
+		return false;
+	}
+
+	if (context.hasSelection !== undefined) {
+		const hasSelection =
+			selection?.type === "text"
+				? !selection.isCollapsed
+				: selection !== null;
+		if (hasSelection !== context.hasSelection) {
+			return false;
+		}
+	}
+
+	if (context.collapsed !== undefined) {
+		const isCollapsed = selection?.type === "text" && selection.isCollapsed;
+		if (isCollapsed !== context.collapsed) {
+			return false;
+		}
+	}
+
+	if (
+		context.withinLayout &&
+		(!activeBlock || !isWithinLayout(activeBlock, context.withinLayout))
+	) {
+		return false;
+	}
+
+	return true;
+}
+
+function getActiveBlock(editor: Editor) {
+	const selection = editor.selection;
+	if (!selection) return null;
+
+	if (selection.type === "text") {
+		return editor.getBlock(selection.anchor.blockId);
+	}
+
+	if (selection.type === "block") {
+		const blockId = selection.blockIds[0];
+		return blockId ? editor.getBlock(blockId) : null;
+	}
+
+	if (selection.type === "cell") {
+		return editor.getBlock(selection.blockId);
+	}
+
+	return null;
+}
+
+function isWithinLayout(
+	block: NonNullable<ReturnType<typeof getActiveBlock>>,
+	allowedLayoutTypes: readonly string[],
+): boolean {
+	let parent = block.layoutParent();
+	while (parent) {
+		if (allowedLayoutTypes.includes(parent.type)) {
+			return true;
+		}
+		parent = parent.layoutParent();
+	}
+
+	return false;
 }
 
 function matchesKey(pattern: string, event: KeyboardEvent): boolean {
-  const parts = pattern.split("-");
-  const key = parts.pop()?.toLowerCase() ?? "";
+	const parts = pattern.split("-").map((part) => part.toLowerCase());
+	const key = parts.pop()?.toLowerCase() ?? "";
 
-  const needsCtrl = parts.includes("Ctrl");
-  const needsMeta = parts.includes("Meta");
-  const needsMod = parts.includes("Mod");
-  const needsShift = parts.includes("Shift");
-  const needsAlt = parts.includes("Alt");
+	const needsCtrl = parts.includes("ctrl");
+	const needsMeta = parts.includes("meta");
+	const needsMod = parts.includes("mod");
+	const needsShift = parts.includes("shift");
+	const needsAlt = parts.includes("alt");
 
-  const isMac =
-    typeof navigator !== "undefined" &&
-    /Mac|iPhone|iPad/.test(navigator.platform ?? "");
+	const isMac =
+		typeof navigator !== "undefined" &&
+		/Mac|iPhone|iPad/.test(navigator.platform ?? "");
 
-  const modKey = needsMod ? (isMac ? event.metaKey : event.ctrlKey) : true;
-  const ctrlMatch = needsCtrl ? event.ctrlKey : !needsCtrl || true;
-  const metaMatch = needsMeta ? event.metaKey : !needsMeta || true;
-  const shiftMatch = needsShift ? event.shiftKey : !event.shiftKey;
-  const altMatch = needsAlt ? event.altKey : !event.altKey;
+	const allowCtrl = needsCtrl || (needsMod && !isMac);
+	const allowMeta = needsMeta || (needsMod && isMac);
 
-  return (
-    modKey &&
-    ctrlMatch &&
-    metaMatch &&
-    shiftMatch &&
-    altMatch &&
-    event.key.toLowerCase() === key
-  );
+	const modMatch = needsMod ? (isMac ? event.metaKey : event.ctrlKey) : true;
+	const ctrlMatch = allowCtrl ? event.ctrlKey : !event.ctrlKey;
+	const metaMatch = allowMeta ? event.metaKey : !event.metaKey;
+	const shiftMatch = needsShift ? event.shiftKey : !event.shiftKey;
+	const altMatch = needsAlt ? event.altKey : !event.altKey;
+
+	return (
+		modMatch &&
+		ctrlMatch &&
+		metaMatch &&
+		shiftMatch &&
+		altMatch &&
+		event.key.toLowerCase() === key
+	);
+}
+
+function isSelectAllShortcut(event: KeyboardEvent): boolean {
+	return (
+		event.key.toLowerCase() === "a" &&
+		!event.shiftKey &&
+		!event.altKey &&
+		(event.metaKey || event.ctrlKey)
+	);
+}
+
+function isUndoShortcut(event: KeyboardEvent): boolean {
+	return (
+		event.key.toLowerCase() === "z" &&
+		!event.shiftKey &&
+		!event.altKey &&
+		(event.metaKey || event.ctrlKey)
+	);
+}
+
+function isRedoShortcut(event: KeyboardEvent): boolean {
+	const key = event.key.toLowerCase();
+	const usesMod = event.metaKey || event.ctrlKey;
+	return (
+		usesMod &&
+		!event.altKey &&
+		((key === "z" && event.shiftKey) || (key === "y" && !event.shiftKey))
+	);
 }

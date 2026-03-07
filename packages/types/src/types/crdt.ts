@@ -106,6 +106,23 @@ export interface CRDTUndoManager {
   canUndo(): boolean;
   canRedo(): boolean;
   stopCapturing(): void;
+  onStackItemAdded?(
+    callback: (
+      stackItem: CRDTUndoStackItem,
+      kind: "undo" | "redo",
+    ) => void,
+  ): Unsubscribe;
+  onStackItemPopped?(
+    callback: (
+      stackItem: CRDTUndoStackItem,
+      kind: "undo" | "redo",
+    ) => void,
+  ): Unsubscribe;
+}
+
+export interface CRDTUndoStackItem {
+  getMeta<T>(key: string): T | undefined;
+  setMeta(key: string, value: unknown): void;
 }
 
 // ── Awareness ───────────────────────────────────────────────

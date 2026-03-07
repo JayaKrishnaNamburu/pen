@@ -2,50 +2,51 @@ import React, { useContext } from "react";
 import type { Editor } from "@pen/core";
 import { EditorContext } from "../../context/editorContext.js";
 import {
-  ToolbarContext,
-  type ToolbarContextValue,
+	ToolbarContext,
+	type ToolbarContextValue,
 } from "../../context/toolbarContext.js";
 import { useToolbar } from "../../hooks/useToolbar.js";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild.js";
+import { isDevelopmentEnvironment } from "../../utils/environment.js";
 
 export interface ToolbarRootProps extends AsChildProps {
-  editor?: Editor;
-  ref?: React.Ref<HTMLElement>;
+	editor?: Editor;
+	ref?: React.Ref<HTMLElement>;
 }
 
 export function ToolbarRoot(props: ToolbarRootProps) {
-  const { editor: editorProp, ...rest } = props;
-  const editorContext = useContext(EditorContext);
-  const editor = editorProp ?? editorContext?.editor;
-  if (!editor) {
-    if (typeof process !== "undefined" && process.env.NODE_ENV !== "production") {
-      console.error(
-        "Pen: <Pen.Toolbar.Root> must be used within <Pen.Editor.Root> or receive an editor prop.",
-      );
-    }
-    throw new Error("Missing editor for Pen.Toolbar.Root");
-  }
+	const { editor: editorProp, ...rest } = props;
+	const editorContext = useContext(EditorContext);
+	const editor = editorProp ?? editorContext?.editor;
+	if (!editor) {
+		if (isDevelopmentEnvironment()) {
+			console.error(
+				"Pen: <Pen.Toolbar.Root> must be used within <Pen.Editor.Root> or receive an editor prop.",
+			);
+		}
+		throw new Error("Missing editor for Pen.Toolbar.Root");
+	}
 
-  const state = useToolbar(editor);
-  const editorContextValue = {
-    editor,
-    readonly: editorContext?.readonly ?? false,
-    importers: editorContext?.importers,
-  };
+	const state = useToolbar(editor);
+	const editorContextValue = {
+		editor,
+		readonly: editorContext?.readonly ?? false,
+		importers: editorContext?.importers,
+	};
 
-  const ctx: ToolbarContextValue = { editor, state };
+	const ctx: ToolbarContextValue = { editor, state };
 
-  const primitiveProps: Record<string, unknown> = {
-    role: "toolbar",
-    "aria-label": "Formatting",
-    "data-pen-toolbar": "",
-  };
+	const primitiveProps: Record<string, unknown> = {
+		role: "toolbar",
+		"aria-label": "Formatting",
+		"data-pen-toolbar": "",
+	};
 
-  return (
-    <EditorContext.Provider value={editorContextValue}>
-      <ToolbarContext.Provider value={ctx}>
-        {renderAsChild(rest, "div", primitiveProps)}
-      </ToolbarContext.Provider>
-    </EditorContext.Provider>
-  );
+	return (
+		<EditorContext.Provider value={editorContextValue}>
+			<ToolbarContext.Provider value={ctx}>
+				{renderAsChild(rest, "div", primitiveProps)}
+			</ToolbarContext.Provider>
+		</EditorContext.Provider>
+	);
 }

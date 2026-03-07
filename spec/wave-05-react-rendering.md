@@ -114,8 +114,8 @@ No cycles. `field-editor/` depends on `@pen/core` and `yjs` for CRDT operations.
 ### Module: `context/editor-context.ts`
 
 ```typescript
-import { createContext, useContext } from 'react';
-import type { Editor } from '@pen/types';
+import { createContext, useContext } from "react";
+import type { Editor } from "@pen/types";
 
 interface EditorContextValue {
   editor: Editor;
@@ -127,13 +127,13 @@ export const EditorContext = createContext<EditorContextValue | null>(null);
 export function useEditorContext(): EditorContextValue {
   const ctx = useContext(EditorContext);
   if (!ctx) {
-    if (process.env.NODE_ENV !== 'production') {
+    if (process.env.NODE_ENV !== "production") {
       console.error(
-        'Pen: useEditorContext must be used within <Pen.Editor.Root>. ' +
-        'Wrap your editor components in <Pen.Editor.Root editor={editor}>.',
+        "Pen: useEditorContext must be used within <Pen.Editor.Root>. " +
+          "Wrap your editor components in <Pen.Editor.Root editor={editor}>.",
       );
     }
-    throw new Error('Missing Pen.Editor.Root context');
+    throw new Error("Missing Pen.Editor.Root context");
   }
   return ctx;
 }
@@ -144,8 +144,8 @@ Development-mode diagnostics: `console.error` with actionable message before thr
 ### Module: `context/field-editor-context.ts`
 
 ```typescript
-import { createContext, useContext } from 'react';
-import type { FieldEditor } from '@pen/types';
+import { createContext, useContext } from "react";
+import type { FieldEditor } from "@pen/types";
 
 export const FieldEditorContext = createContext<FieldEditor | null>(null);
 
@@ -161,8 +161,8 @@ export function useFieldEditorContext(): FieldEditor | null {
 The `asChild` composition utility. When `asChild` is `true`, the primitive merges its props, ref, and event handlers onto its single child element instead of rendering a wrapper.
 
 ```typescript
-import React from 'react';
-import { composeRefs } from './compose-refs.js';
+import React from "react";
+import { composeRefs } from "./compose-refs.js";
 
 interface AsChildProps {
   asChild?: boolean;
@@ -197,7 +197,7 @@ export function renderAsChild<P extends Record<string, unknown>>(
 ### Module: `utils/compose-refs.ts`
 
 ```typescript
-import type { Ref, MutableRefObject } from 'react';
+import type { Ref, MutableRefObject } from "react";
 
 export function composeRefs<T>(
   ...refs: (Ref<T> | undefined | null)[]
@@ -205,7 +205,7 @@ export function composeRefs<T>(
   return (node) => {
     for (const ref of refs) {
       if (!ref) continue;
-      if (typeof ref === 'function') {
+      if (typeof ref === "function") {
         ref(node);
       } else {
         (ref as MutableRefObject<T | null>).current = node;
@@ -227,8 +227,26 @@ interface EditorRootProps {
 }
 
 interface PasteImporters {
-  html?: { import(input: string, editor: Editor, options?: { undoGroup?: boolean; position?: import('@pen/types').Position }): void };
-  markdown?: { import(input: string, editor: Editor, options?: { undoGroup?: boolean; position?: import('@pen/types').Position }): void };
+  html?: {
+    import(
+      input: string,
+      editor: Editor,
+      options?: {
+        undoGroup?: boolean;
+        position?: import("@pen/types").Position;
+      },
+    ): void;
+  };
+  markdown?: {
+    import(
+      input: string,
+      editor: Editor,
+      options?: {
+        undoGroup?: boolean;
+        position?: import("@pen/types").Position;
+      },
+    ): void;
+  };
 }
 
 // Data attributes:
@@ -370,16 +388,20 @@ The `FieldEditorImpl` manages the field editor lifecycle. It is NOT a React comp
 
 ```typescript
 import type {
-  FieldEditor, Editor, BlockSchema, SelectionState,
-  Unsubscribe, InputBackend,
-} from '@pen/types';
+  FieldEditor,
+  Editor,
+  BlockSchema,
+  SelectionState,
+  Unsubscribe,
+  InputBackend,
+} from "@pen/types";
 
 export class FieldEditorImpl implements FieldEditor {
-  private _activeBlockId: string | null = null;
+  private _focusBlockId: string | null = null;
   private _activeBlockIds: string[] = [];
   private _isEditing = false;
   private _selection: SelectionState = null;
-  private _inputMode: 'keyboard' | 'ime' | 'voice' | 'ai-stream' = 'keyboard'; // input method; distinct from FieldEditor.inputMode ('richtext'|'code'|'table'|'none') which describes editing mode
+  private _inputMode: "keyboard" | "ime" | "voice" | "ai-stream" = "keyboard"; // input method; distinct from FieldEditor.inputMode ('richtext'|'code'|'table'|'none') which describes editing mode
   private _backend: InputBackend | null = null;
   private _editor: Editor;
   private _activateListeners = new Set<(blockIds: string[]) => void>();
@@ -390,29 +412,39 @@ export class FieldEditorImpl implements FieldEditor {
     this._editor = editor;
   }
 
-  get activeBlockId(): string | null { return this._activeBlockId; }
-  get activeBlockIds(): readonly string[] { return this._activeBlockIds; }
-  get isEditing(): boolean { return this._isEditing; }
-  get selection(): SelectionState { return this._selection; }
-  get inputMode() { return this._inputMode; }
+  get focusBlockId(): string | null {
+    return this._focusBlockId;
+  }
+  get activeBlockIds(): readonly string[] {
+    return this._activeBlockIds;
+  }
+  get isEditing(): boolean {
+    return this._isEditing;
+  }
+  get selection(): SelectionState {
+    return this._selection;
+  }
+  get inputMode() {
+    return this._inputMode;
+  }
   get delegate(): BlockSchema | null {
-    if (!this._activeBlockId) return null;
+    if (!this._focusBlockId) return null;
     return this._editor.schema.resolve(
-      this._editor.getBlock(this._activeBlockId).type,
+      this._editor.getBlock(this._focusBlockId).type,
     );
   }
 
   activate(blockId: string): void {
-    if (this._activeBlockId === blockId) return;
+    if (this._focusBlockId === blockId) return;
     if (this._isEditing) this.deactivate();
 
     const block = this._editor.getBlock(blockId);
     if (!block) return;
 
     const schema = this._editor.schema.resolve(block.type);
-    if (schema?.fieldEditor === 'none') return;
+    if (schema?.fieldEditor === "none") return;
 
-    this._activeBlockId = blockId;
+    this._focusBlockId = blockId;
     this._activeBlockIds = [blockId];
     this._isEditing = true;
 
@@ -430,7 +462,7 @@ export class FieldEditorImpl implements FieldEditor {
     this._backend?.deactivate();
     this._backend = null;
 
-    this._activeBlockId = null;
+    this._focusBlockId = null;
     this._activeBlockIds = [];
     this._isEditing = false;
     this._selection = null;
@@ -439,13 +471,13 @@ export class FieldEditorImpl implements FieldEditor {
   }
 
   attachElement(element: HTMLElement, blockId: string): void {
-    if (!this._backend || this._activeBlockId !== blockId) return;
+    if (!this._backend || this._focusBlockId !== blockId) return;
 
     const adapter = this._editor.internals.adapter;
     const doc = this._editor.internals.crdtDoc;
     const ydoc = adapter.raw(doc);
-    const blockMap = ydoc.getMap('blocks').get(blockId);
-    const ytext = blockMap?.get('content');
+    const blockMap = ydoc.getMap("blocks").get(blockId);
+    const ytext = blockMap?.get("content");
     if (!ytext) return;
 
     this._backend.activate(element, ytext);
@@ -475,7 +507,7 @@ export class FieldEditorImpl implements FieldEditor {
 
   contractToFocused(): void {
     if (this._activeBlockIds.length <= 1) return;
-    const focused = this._activeBlockId;
+    const focused = this._focusBlockId;
     if (!focused) return;
     this._activeBlockIds = [focused];
     for (const cb of this._activateListeners) cb([focused]);
@@ -501,7 +533,7 @@ export class FieldEditorImpl implements FieldEditor {
   // ── Internal ─────────────────────────────────────────────
 
   private createBackend(): InputBackend {
-    if ('EditContext' in globalThis) {
+    if ("EditContext" in globalThis) {
       return new EditContextBackend(this._editor, this);
     }
     return new ContentEditableBackend(this._editor, this);
@@ -522,11 +554,15 @@ export class FieldEditorImpl implements FieldEditor {
 The EditContext backend (Chromium 133+, Android Chrome 144+). Decouples text input from DOM entirely.
 
 ```typescript
-import type { InputBackend, Editor } from '@pen/types';
-import type { FieldEditorImpl } from './field-editor-impl.js';
+import type { InputBackend, Editor } from "@pen/types";
+import type { FieldEditorImpl } from "./field-editor-impl.js";
 
 declare class EditContext {
-  constructor(options?: { text?: string; selectionStart?: number; selectionEnd?: number });
+  constructor(options?: {
+    text?: string;
+    selectionStart?: number;
+    selectionEnd?: number;
+  });
   updateText(start: number, end: number, text: string): void;
   updateSelection(start: number, end: number): void;
   addEventListener(type: string, handler: (event: unknown) => void): void;
@@ -557,14 +593,21 @@ export class EditContextBackend implements InputBackend {
       selectionEnd: 0,
     });
 
-    (element as HTMLElement & { editContext: EditContext | null }).editContext = this.editContext;
+    (element as HTMLElement & { editContext: EditContext | null }).editContext =
+      this.editContext;
 
-    this.editContext.addEventListener('textupdate', this.handleTextUpdate);
-    this.editContext.addEventListener('textformatupdate', this.handleTextFormatUpdate);
-    this.editContext.addEventListener('characterboundsupdate', this.handleCharacterBoundsUpdate);
+    this.editContext.addEventListener("textupdate", this.handleTextUpdate);
+    this.editContext.addEventListener(
+      "textformatupdate",
+      this.handleTextFormatUpdate,
+    );
+    this.editContext.addEventListener(
+      "characterboundsupdate",
+      this.handleCharacterBoundsUpdate,
+    );
 
-    this.observer = this.ytext.observe(
-      (event: any) => this.handleYTextChange(event),
+    this.observer = this.ytext.observe((event: any) =>
+      this.handleYTextChange(event),
     );
 
     fullReconcileToDOM(this.ytext, element, this.editor.schema);
@@ -572,15 +615,23 @@ export class EditContextBackend implements InputBackend {
 
   deactivate(): void {
     if (this.editContext) {
-      this.editContext.removeEventListener('textupdate', this.handleTextUpdate);
-      this.editContext.removeEventListener('textformatupdate', this.handleTextFormatUpdate);
-      this.editContext.removeEventListener('characterboundsupdate', this.handleCharacterBoundsUpdate);
+      this.editContext.removeEventListener("textupdate", this.handleTextUpdate);
+      this.editContext.removeEventListener(
+        "textformatupdate",
+        this.handleTextFormatUpdate,
+      );
+      this.editContext.removeEventListener(
+        "characterboundsupdate",
+        this.handleCharacterBoundsUpdate,
+      );
     }
     if (this.observer && this.ytext) {
       this.ytext.unobserve(this.observer);
     }
     if (this.element) {
-      (this.element as HTMLElement & { editContext: EditContext | null }).editContext = null;
+      (
+        this.element as HTMLElement & { editContext: EditContext | null }
+      ).editContext = null;
     }
     this.editContext = null;
     this.element = null;
@@ -596,7 +647,7 @@ export class EditContextBackend implements InputBackend {
 
   private handleTextUpdate = (event: any): void => {
     const { updateRangeStart, updateRangeEnd, text } = event;
-    const blockId = this.fieldEditor.activeBlockId;
+    const blockId = this.fieldEditor.focusBlockId;
     if (!blockId) return;
 
     const block = this.editor.getBlock(blockId);
@@ -609,14 +660,17 @@ export class EditContextBackend implements InputBackend {
       this.editor.internals.crdtDoc,
       () => {
         if (updateRangeEnd > updateRangeStart) {
-          this.ytext.delete(updateRangeStart, updateRangeEnd - updateRangeStart);
+          this.ytext.delete(
+            updateRangeStart,
+            updateRangeEnd - updateRangeStart,
+          );
         }
         if (text.length > 0) {
           const marks = this.resolveActiveMarks(updateRangeStart);
           this.ytext.insert(updateRangeStart, text, marks);
         }
       },
-      'user',
+      "user",
     );
   };
 
@@ -633,33 +687,39 @@ export class EditContextBackend implements InputBackend {
 
     // Incrementally update the EditContext text buffer using the delta
     // instead of replacing the entire buffer on every keystroke.
-    const delta = event.delta as { retain?: number; insert?: string; delete?: number }[];
+    const delta = event.delta as {
+      retain?: number;
+      insert?: string;
+      delete?: number;
+    }[];
     let offset = 0;
     for (const entry of delta) {
       if (entry.retain != null) {
         offset += entry.retain;
-      } else if (typeof entry.insert === 'string') {
+      } else if (typeof entry.insert === "string") {
         this.editContext.updateText(offset, offset, entry.insert);
         offset += entry.insert.length;
       } else if (entry.delete != null) {
-        this.editContext.updateText(offset, offset + entry.delete, '');
+        this.editContext.updateText(offset, offset + entry.delete, "");
       }
     }
 
     // Reconcile DOM using the event delta (fast path).
     // Falls back to full reconciliation on structural mark changes.
-    const applied = applyDeltaToDOM(event.delta, this.element, this.editor.schema);
+    const applied = applyDeltaToDOM(
+      event.delta,
+      this.element,
+      this.editor.schema,
+    );
     if (!applied) {
       fullReconcileToDOM(this.ytext, this.element, this.editor.schema);
     }
   };
 
-  private resolveActiveMarks(offset: number): Record<string, unknown> | undefined {
-    return resolveMarksAtPosition(
-      this.ytext,
-      offset,
-      this.editor.schema,
-    );
+  private resolveActiveMarks(
+    offset: number,
+  ): Record<string, unknown> | undefined {
+    return resolveMarksAtPosition(this.ytext, offset, this.editor.schema);
   }
 }
 ```
@@ -675,8 +735,8 @@ The ContentEditable backend (Firefox, Safari, older browsers). Three-mode input 
 **Mode 3 (Observation):** `MutationObserver` fallback for unrecognized inputs or Safari edge cases.
 
 ```typescript
-import type { InputBackend, Editor } from '@pen/types';
-import type { FieldEditorImpl } from './field-editor-impl.js';
+import type { InputBackend, Editor } from "@pen/types";
+import type { FieldEditorImpl } from "./field-editor-impl.js";
 
 export class ContentEditableBackend implements InputBackend {
   private element: HTMLElement | null = null;
@@ -696,12 +756,12 @@ export class ContentEditableBackend implements InputBackend {
     this.element = element;
     this.ytext = ytext;
 
-    element.contentEditable = 'true';
+    element.contentEditable = "true";
 
-    element.addEventListener('beforeinput', this.handleBeforeInput);
-    element.addEventListener('compositionstart', this.handleCompositionStart);
-    element.addEventListener('compositionend', this.handleCompositionEnd);
-    element.addEventListener('keydown', this.handleKeyDown);
+    element.addEventListener("beforeinput", this.handleBeforeInput);
+    element.addEventListener("compositionstart", this.handleCompositionStart);
+    element.addEventListener("compositionend", this.handleCompositionEnd);
+    element.addEventListener("keydown", this.handleKeyDown);
 
     this.mutationObserver = new MutationObserver(this.handleMutations);
     this.mutationObserver.observe(element, {
@@ -711,8 +771,8 @@ export class ContentEditableBackend implements InputBackend {
       characterDataOldValue: true,
     });
 
-    this.observer = this.ytext.observe(
-      (event: any) => this.handleYTextChange(event),
+    this.observer = this.ytext.observe((event: any) =>
+      this.handleYTextChange(event),
     );
 
     fullReconcileToDOM(this.ytext, element, this.editor.schema);
@@ -720,11 +780,17 @@ export class ContentEditableBackend implements InputBackend {
 
   deactivate(): void {
     if (this.element) {
-      this.element.contentEditable = 'false';
-      this.element.removeEventListener('beforeinput', this.handleBeforeInput);
-      this.element.removeEventListener('compositionstart', this.handleCompositionStart);
-      this.element.removeEventListener('compositionend', this.handleCompositionEnd);
-      this.element.removeEventListener('keydown', this.handleKeyDown);
+      this.element.contentEditable = "false";
+      this.element.removeEventListener("beforeinput", this.handleBeforeInput);
+      this.element.removeEventListener(
+        "compositionstart",
+        this.handleCompositionStart,
+      );
+      this.element.removeEventListener(
+        "compositionend",
+        this.handleCompositionEnd,
+      );
+      this.element.removeEventListener("keydown", this.handleKeyDown);
     }
     if (this.mutationObserver) {
       this.mutationObserver.disconnect();
@@ -747,7 +813,7 @@ export class ContentEditableBackend implements InputBackend {
   private handleBeforeInput = (event: InputEvent): void => {
     if (this.isComposing) return; // Mode 2 handles this
 
-    const blockId = this.fieldEditor.activeBlockId;
+    const blockId = this.fieldEditor.focusBlockId;
     if (!blockId || !this.editor.getBlock(blockId)) {
       this.fieldEditor.deactivate();
       return;
@@ -785,17 +851,19 @@ export class ContentEditableBackend implements InputBackend {
         this.editor.internals.crdtDoc,
         () => {
           for (const op of diff) {
-            if (op.type === 'delete') {
+            if (op.type === "delete") {
               this.ytext.delete(op.offset, op.length);
-            } else if (op.type === 'insert') {
+            } else if (op.type === "insert") {
               const marks = resolveMarksAtPosition(
-                this.ytext, op.offset, this.editor.schema,
+                this.ytext,
+                op.offset,
+                this.editor.schema,
               );
               this.ytext.insert(op.offset, op.text, marks);
             }
           }
         },
-        'user',
+        "user",
       );
     }
   };
@@ -818,17 +886,19 @@ export class ContentEditableBackend implements InputBackend {
         this.editor.internals.crdtDoc,
         () => {
           for (const op of diff) {
-            if (op.type === 'delete') {
+            if (op.type === "delete") {
               this.ytext.delete(op.offset, op.length);
-            } else if (op.type === 'insert') {
+            } else if (op.type === "insert") {
               const marks = resolveMarksAtPosition(
-                this.ytext, op.offset, this.editor.schema,
+                this.ytext,
+                op.offset,
+                this.editor.schema,
               );
               this.ytext.insert(op.offset, op.text, marks);
             }
           }
         },
-        'user',
+        "user",
       );
     }
   };
@@ -840,7 +910,11 @@ export class ContentEditableBackend implements InputBackend {
     if (!this.element || !this.ytext) return;
 
     // Fast path: apply the incremental delta directly to the DOM.
-    const applied = applyDeltaToDOM(event.delta, this.element, this.editor.schema);
+    const applied = applyDeltaToDOM(
+      event.delta,
+      this.element,
+      this.editor.schema,
+    );
     if (!applied) {
       // Fallback: full reconciliation with selection preservation.
       // saveSelection returns (blockId, characterOffset) pairs — not live DOM nodes —
@@ -870,51 +944,65 @@ const DIRECT_HANDLERS: Record<
   (event: InputEvent, editor: Editor, ytext: any, fe: FieldEditorImpl) => void
 > = {
   insertText: (event, editor, ytext, fe) => {
-    const text = event.data ?? '';
+    const text = event.data ?? "";
     if (!text) return;
     const range = getSelectionOffsets(fe);
     if (!range) return;
 
-    editor.internals.adapter.transact(editor.internals.crdtDoc, () => {
-      if (range.start !== range.end) {
-        ytext.delete(range.start, range.end - range.start);
-      }
-      const marks = resolveMarksAtPosition(ytext, range.start, editor.schema);
-      ytext.insert(range.start, text, marks);
-    }, 'user');
+    editor.internals.adapter.transact(
+      editor.internals.crdtDoc,
+      () => {
+        if (range.start !== range.end) {
+          ytext.delete(range.start, range.end - range.start);
+        }
+        const marks = resolveMarksAtPosition(ytext, range.start, editor.schema);
+        ytext.insert(range.start, text, marks);
+      },
+      "user",
+    );
   },
 
   deleteContentBackward: (_event, editor, ytext, fe) => {
     const range = getSelectionOffsets(fe);
     if (!range) return;
 
-    editor.internals.adapter.transact(editor.internals.crdtDoc, () => {
-      if (range.start !== range.end) {
-        ytext.delete(range.start, range.end - range.start);
-      } else if (range.start > 0) {
-        ytext.delete(range.start - 1, 1);
-      }
-    }, 'user');
+    editor.internals.adapter.transact(
+      editor.internals.crdtDoc,
+      () => {
+        if (range.start !== range.end) {
+          ytext.delete(range.start, range.end - range.start);
+        } else if (range.start > 0) {
+          ytext.delete(range.start - 1, 1);
+        }
+      },
+      "user",
+    );
   },
 
   deleteContentForward: (_event, editor, ytext, fe) => {
     const range = getSelectionOffsets(fe);
     if (!range) return;
 
-    editor.internals.adapter.transact(editor.internals.crdtDoc, () => {
-      if (range.start !== range.end) {
-        ytext.delete(range.start, range.end - range.start);
-      } else if (range.start < ytext.length) {
-        ytext.delete(range.start, 1);
-      }
-    }, 'user');
+    editor.internals.adapter.transact(
+      editor.internals.crdtDoc,
+      () => {
+        if (range.start !== range.end) {
+          ytext.delete(range.start, range.end - range.start);
+        } else if (range.start < ytext.length) {
+          ytext.delete(range.start, 1);
+        }
+      },
+      "user",
+    );
   },
 
   insertParagraph: (_event, editor, _ytext, fe) => {
-    const blockId = fe.activeBlockId;
+    const blockId = fe.focusBlockId;
     if (!blockId) return;
     // Split block at cursor position via editor.apply()
-    editor.apply([{ type: 'split-block', blockId, offset: getCaretOffset(fe) }]);
+    editor.apply([
+      { type: "split-block", blockId, offset: getCaretOffset(fe) },
+    ]);
   },
 
   historyUndo: (_event, editor) => {
@@ -926,7 +1014,12 @@ const DIRECT_HANDLERS: Record<
   },
 
   insertFromPaste: (event, editor, _ytext, fe) => {
-    handlePaste(event, editor, fe, editor.internals.getSlot<PasteImporters>('paste:importers') ?? undefined);
+    handlePaste(
+      event,
+      editor,
+      fe,
+      editor.internals.getSlot<PasteImporters>("paste:importers") ?? undefined,
+    );
   },
 };
 ```
@@ -935,19 +1028,23 @@ const DIRECT_HANDLERS: Record<
 
 The CRDT→DOM reconciler. One-way: always CRDT → DOM. Never DOM → CRDT (that's the input backend's job).
 
-**Dual-mode design.** Yjs's `Y.Text.observe()` passes a `Y.YTextEvent` to the callback. The event's `.delta` property contains the *incremental* change — e.g., `[{ retain: 42 }, { insert: 'x' }]` for a single character insert at position 42. The reconciler uses this delta to patch only the affected DOM nodes (the **fast path**). When the fast path cannot handle a change — mark nesting restructuring, initial activation, or composition end — it falls back to a **full reconciliation** that re-reads the entire Y.Text.
+**Dual-mode design.** Yjs's `Y.Text.observe()` passes a `Y.YTextEvent` to the callback. The event's `.delta` property contains the _incremental_ change — e.g., `[{ retain: 42 }, { insert: 'x' }]` for a single character insert at position 42. The reconciler uses this delta to patch only the affected DOM nodes (the **fast path**). When the fast path cannot handle a change — mark nesting restructuring, initial activation, or composition end — it falls back to a **full reconciliation** that re-reads the entire Y.Text.
 
 This makes the common case (typing, backspace, remote character insert) O(changed_spans) instead of O(total_spans). For a paragraph with 12 mark spans, a single character insert touches exactly 1 text node.
 
 ```typescript
-import type { SchemaRegistry } from '@pen/types';
-import { sortDeltaAttributes } from '@pen/core';
+import type { SchemaRegistry } from "@pen/types";
+import { sortDeltaAttributes } from "@pen/core";
 
 // ── Fast path: event-driven delta application ──────────────
 
 export function applyDeltaToDOM(
-  delta: readonly { retain?: number; insert?: string; delete?: number;
-                    attributes?: Record<string, unknown> }[],
+  delta: readonly {
+    retain?: number;
+    insert?: string;
+    delete?: number;
+    attributes?: Record<string, unknown>;
+  }[],
   element: HTMLElement,
   registry: SchemaRegistry,
 ): boolean {
@@ -969,7 +1066,7 @@ export function applyDeltaToDOM(
       let remaining = entry.retain;
       while (remaining > 0 && childIndex < element.childNodes.length) {
         const span = element.childNodes[childIndex];
-        const spanText = span.textContent ?? '';
+        const spanText = span.textContent ?? "";
         const available = spanText.length - textOffset;
 
         if (remaining < available) {
@@ -988,16 +1085,14 @@ export function applyDeltaToDOM(
       if (entry.attributes != null) {
         return false; // format changes restructure mark wrappers — use fallback
       }
-    }
-
-    else if (typeof entry.insert === 'string') {
+    } else if (typeof entry.insert === "string") {
       const text = entry.insert;
 
       if (!entry.attributes) {
         // Plain text insert — splice into the current text node or create one.
         const span = element.childNodes[childIndex];
         if (span && span.nodeType === Node.TEXT_NODE) {
-          const existing = span.textContent ?? '';
+          const existing = span.textContent ?? "";
           span.textContent =
             existing.slice(0, textOffset) + text + existing.slice(textOffset);
           textOffset += text.length;
@@ -1005,7 +1100,7 @@ export function applyDeltaToDOM(
           // Cursor is inside a mark wrapper — find the leaf text node.
           const leaf = deepLeafText(span);
           if (!leaf) return false;
-          const existing = leaf.textContent ?? '';
+          const existing = leaf.textContent ?? "";
           leaf.textContent =
             existing.slice(0, textOffset) + text + existing.slice(textOffset);
           textOffset += text.length;
@@ -1032,22 +1127,21 @@ export function applyDeltaToDOM(
           return false;
         }
       }
-    }
-
-    else if (entry.delete != null) {
+    } else if (entry.delete != null) {
       let remaining = entry.delete;
       while (remaining > 0 && childIndex < element.childNodes.length) {
         const span = element.childNodes[childIndex];
-        const leaf = span.nodeType === Node.TEXT_NODE
-          ? span : deepLeafText(span);
+        const leaf =
+          span.nodeType === Node.TEXT_NODE ? span : deepLeafText(span);
         if (!leaf) return false;
-        const existing = leaf.textContent ?? '';
+        const existing = leaf.textContent ?? "";
         const available = existing.length - textOffset;
 
         if (remaining < available) {
           // Partial delete within this span.
           leaf.textContent =
-            existing.slice(0, textOffset) + existing.slice(textOffset + remaining);
+            existing.slice(0, textOffset) +
+            existing.slice(textOffset + remaining);
           remaining = 0;
         } else {
           if (textOffset === 0) {
@@ -1095,7 +1189,7 @@ export function fullReconcileToDOM(
 
   const fragment = document.createDocumentFragment();
   for (const delta of orderedDeltas) {
-    if (typeof delta.insert !== 'string') continue;
+    if (typeof delta.insert !== "string") continue;
     let node: Node = document.createTextNode(delta.insert);
     if (delta.attributes) {
       node = wrapWithMarks(node, delta.attributes, registry);
@@ -1133,35 +1227,37 @@ function wrapWithMarks(
   return wrapped;
 }
 
-function createMarkElement(
-  markType: string,
-  props: unknown,
-): HTMLElement {
+function createMarkElement(markType: string, props: unknown): HTMLElement {
   switch (markType) {
-    case 'bold': return document.createElement('strong');
-    case 'italic': return document.createElement('em');
-    case 'underline': return document.createElement('u');
-    case 'strikethrough': return document.createElement('s');
-    case 'code': return document.createElement('code');
-    case 'link': {
-      const a = document.createElement('a');
-      if (typeof props === 'object' && props !== null) {
+    case "bold":
+      return document.createElement("strong");
+    case "italic":
+      return document.createElement("em");
+    case "underline":
+      return document.createElement("u");
+    case "strikethrough":
+      return document.createElement("s");
+    case "code":
+      return document.createElement("code");
+    case "link": {
+      const a = document.createElement("a");
+      if (typeof props === "object" && props !== null) {
         const p = props as Record<string, unknown>;
         if (p.href) a.href = p.href as string;
         if (p.title) a.title = p.title as string;
       }
       return a;
     }
-    case 'highlight': {
-      const mark = document.createElement('mark');
-      if (typeof props === 'object' && props !== null) {
+    case "highlight": {
+      const mark = document.createElement("mark");
+      if (typeof props === "object" && props !== null) {
         const p = props as Record<string, unknown>;
         if (p.color) mark.style.backgroundColor = p.color as string;
       }
       return mark;
     }
     default: {
-      const span = document.createElement('span');
+      const span = document.createElement("span");
       span.dataset.markType = markType;
       return span;
     }
@@ -1216,7 +1312,8 @@ function nodesStructurallyEqual(a: Node, b: Node): boolean {
     }
     if (elA.childNodes.length !== elB.childNodes.length) return false;
     for (let i = 0; i < elA.childNodes.length; i++) {
-      if (!nodesStructurallyEqual(elA.childNodes[i], elB.childNodes[i])) return false;
+      if (!nodesStructurallyEqual(elA.childNodes[i], elB.childNodes[i]))
+        return false;
     }
     return true;
   }
@@ -1224,13 +1321,19 @@ function nodesStructurallyEqual(a: Node, b: Node): boolean {
 }
 
 function updateTextContent(target: Node, source: Node): void {
-  if (target.nodeType === Node.TEXT_NODE && source.nodeType === Node.TEXT_NODE) {
+  if (
+    target.nodeType === Node.TEXT_NODE &&
+    source.nodeType === Node.TEXT_NODE
+  ) {
     if (target.textContent !== source.textContent) {
       target.textContent = source.textContent;
     }
     return;
   }
-  if (target.nodeType === Node.ELEMENT_NODE && source.nodeType === Node.ELEMENT_NODE) {
+  if (
+    target.nodeType === Node.ELEMENT_NODE &&
+    source.nodeType === Node.ELEMENT_NODE
+  ) {
     for (let i = 0; i < target.childNodes.length; i++) {
       updateTextContent(target.childNodes[i], source.childNodes[i]);
     }
@@ -1241,7 +1344,12 @@ function saveSelection(_element: HTMLElement): any {
   const sel = window.getSelection();
   if (!sel || sel.rangeCount === 0) return null;
   const range = sel.getRangeAt(0);
-  return { startOffset: range.startOffset, endOffset: range.endOffset, startContainer: range.startContainer, endContainer: range.endContainer };
+  return {
+    startOffset: range.startOffset,
+    endOffset: range.endOffset,
+    startContainer: range.startContainer,
+    endContainer: range.endContainer,
+  };
 }
 
 function restoreSelection(_element: HTMLElement, saved: any): void {
@@ -1279,7 +1387,7 @@ Enforces `InlineSchema.expand` policy at every text insertion point (Spec Sectio
 > **Note on IME composition handling:** The composition lifecycle and CRDT update deferral strategy are specified in the "IME and Composition Event Handling" section below. The ContentEditable backend's Mode 2 (Composition) implements the core strategy; this section covers the cross-cutting concerns.
 
 ```typescript
-import type { SchemaRegistry } from '@pen/types';
+import type { SchemaRegistry } from "@pen/types";
 
 export function resolveMarksAtPosition(
   ytext: any,
@@ -1291,7 +1399,7 @@ export function resolveMarksAtPosition(
   let activeAttributes: Record<string, unknown> | null = null;
 
   for (const delta of deltas) {
-    const len = typeof delta.insert === 'string' ? delta.insert.length : 1;
+    const len = typeof delta.insert === "string" ? delta.insert.length : 1;
 
     if (offset >= currentOffset && offset <= currentOffset + len) {
       activeAttributes = delta.attributes ?? null;
@@ -1306,7 +1414,7 @@ export function resolveMarksAtPosition(
               filtered[mark] = value;
               continue;
             }
-            if (schema.expand === 'after' || schema.expand === 'both') {
+            if (schema.expand === "after" || schema.expand === "both") {
               filtered[mark] = value;
             }
             // expand: 'none' → exclude (don't propagate mark past boundary)
@@ -1325,7 +1433,11 @@ export function resolveMarksAtPosition(
               filtered[mark] = value;
               continue;
             }
-            if (schema.expand === 'before' || schema.expand === 'both' || schema.expand === 'after') {
+            if (
+              schema.expand === "before" ||
+              schema.expand === "both" ||
+              schema.expand === "after"
+            ) {
               filtered[mark] = value;
             }
           }
@@ -1349,8 +1461,8 @@ export function resolveMarksAtPosition(
 Copy, cut, and paste pipeline (Spec Section 5.9).
 
 ```typescript
-import type { Editor } from '@pen/types';
-import type { FieldEditorImpl } from './field-editor-impl.js';
+import type { Editor } from "@pen/types";
+import type { FieldEditorImpl } from "./field-editor-impl.js";
 
 export function handlePaste(
   event: InputEvent,
@@ -1366,22 +1478,23 @@ export function handlePaste(
 
   // Determine paste position from the field editor's cursor
   const sel = editor.selection;
-  const position = sel?.type === 'text'
-    ? { after: sel.anchor.blockId }
-    : undefined;
+  const position =
+    sel?.type === "text" ? { after: sel.anchor.blockId } : undefined;
 
   // Priority 1: Pen's lossless custom MIME
-  const penPayload = dataTransfer.getData('application/x-pen-blocks');
+  const penPayload = dataTransfer.getData("application/x-pen-blocks");
   if (penPayload) {
     try {
       const blocks = JSON.parse(penPayload);
       applyPastedBlocks(editor, blocks, position);
       return;
-    } catch { /* fall through */ }
+    } catch {
+      /* fall through */
+    }
   }
 
   // Secondary lossless path: format embedded in HTML payload
-  const html = dataTransfer.getData('text/html');
+  const html = dataTransfer.getData("text/html");
   if (html) {
     const penMatch = html.match(/data-pen-blocks="([^"]*)"/);
     if (penMatch) {
@@ -1389,7 +1502,9 @@ export function handlePaste(
         const blocks = JSON.parse(atob(penMatch[1]));
         applyPastedBlocks(editor, blocks, position);
         return;
-      } catch { /* fall through to HTML import */ }
+      } catch {
+        /* fall through to HTML import */
+      }
     }
 
     // Priority 2: HTML (requires @pen/import-html passed via importers)
@@ -1400,7 +1515,7 @@ export function handlePaste(
   }
 
   // Priority 3: Plain text as Markdown (requires @pen/import-markdown passed via importers)
-  const text = dataTransfer.getData('text/plain');
+  const text = dataTransfer.getData("text/plain");
   if (text && importers?.markdown) {
     importers.markdown.import(text, editor, { undoGroup: true, position });
   }
@@ -1432,24 +1547,30 @@ export function handleCopy(editor: Editor): void {
     });
   }
 
-  const htmlContent = htmlParts.join('\n');
+  const htmlContent = htmlParts.join("\n");
   const penBlocksJson = JSON.stringify(penBlocks);
   const htmlWithPenData = `<meta data-pen-blocks="${btoa(penBlocksJson)}" />${htmlContent}`;
 
   navigator.clipboard.write([
     new ClipboardItem({
-      'application/x-pen-blocks': new Blob([penBlocksJson], { type: 'application/x-pen-blocks' }),
-      'text/html': new Blob([htmlWithPenData], { type: 'text/html' }),
-      'text/plain': new Blob([mdParts.join('\n')], { type: 'text/plain' }),
+      "application/x-pen-blocks": new Blob([penBlocksJson], {
+        type: "application/x-pen-blocks",
+      }),
+      "text/html": new Blob([htmlWithPenData], { type: "text/html" }),
+      "text/plain": new Blob([mdParts.join("\n")], { type: "text/plain" }),
     }),
   ]);
 }
 
-function applyPastedBlocks(editor: Editor, blocks: unknown[], position?: Position): void {
+function applyPastedBlocks(
+  editor: Editor,
+  blocks: unknown[],
+  position?: Position,
+): void {
   // Validate against schema, then apply as single undo group
-  const ops: import('@pen/types').DocumentOp[] = [];
+  const ops: import("@pen/types").DocumentOp[] = [];
   // ... block → op conversion (same pattern as importers)
-  editor.apply(ops, { origin: 'user', undoGroup: true });
+  editor.apply(ops, { origin: "user", undoGroup: true });
 }
 ```
 
@@ -1460,14 +1581,16 @@ function applyPastedBlocks(editor: Editor, blocks: unknown[], position?: Positio
 ### `useEditor`
 
 ```typescript
-import { useRef, useEffect } from 'react';
-import { createEditor, type CreateEditorOptions, type Editor } from '@pen/core';
+import { useRef, useEffect } from "react";
+import { createEditor, type CreateEditorOptions, type Editor } from "@pen/core";
 
-export function useEditor(optionsOrEditor?: CreateEditorOptions | Editor): Editor {
+export function useEditor(
+  optionsOrEditor?: CreateEditorOptions | Editor,
+): Editor {
   const editorRef = useRef<Editor | null>(null);
 
   if (!editorRef.current) {
-    if (optionsOrEditor && 'apply' in optionsOrEditor) {
+    if (optionsOrEditor && "apply" in optionsOrEditor) {
       editorRef.current = optionsOrEditor as Editor;
     } else {
       editorRef.current = createEditor(optionsOrEditor);
@@ -1489,12 +1612,12 @@ Creates or wraps an editor instance. Created once (ref-stable), destroyed on unm
 ### `useSelection`
 
 ```typescript
-import { useSyncExternalStore } from 'react';
-import type { Editor, SelectionState } from '@pen/types';
+import { useSyncExternalStore } from "react";
+import type { Editor, SelectionState } from "@pen/types";
 
 export function useSelection(editor: Editor): SelectionState {
   return useSyncExternalStore(
-    (callback) => editor.on('selectionChange', callback),
+    (callback) => editor.on("selectionChange", callback),
     () => editor.selection,
     () => null, // server snapshot
   );
@@ -1504,12 +1627,12 @@ export function useSelection(editor: Editor): SelectionState {
 ### `useDecorations`
 
 ```typescript
-import { useSyncExternalStore } from 'react';
-import type { Editor, DecorationSet } from '@pen/types';
+import { useSyncExternalStore } from "react";
+import type { Editor, DecorationSet } from "@pen/types";
 
 export function useDecorations(editor: Editor): DecorationSet {
   return useSyncExternalStore(
-    (callback) => editor.on('decorationsChange', callback),
+    (callback) => editor.on("decorationsChange", callback),
     () => editor.getDecorations(),
     () => editor.getDecorations(), // server snapshot
   );
@@ -1519,8 +1642,8 @@ export function useDecorations(editor: Editor): DecorationSet {
 ### `useToolbar`
 
 ```typescript
-import { useSyncExternalStore } from 'react';
-import type { Editor } from '@pen/types';
+import { useSyncExternalStore } from "react";
+import type { Editor } from "@pen/types";
 
 interface ToolbarState {
   activeMarks: Record<string, unknown>;
@@ -1537,10 +1660,10 @@ export function useToolbar(editor: Editor): ToolbarState {
   return useSyncExternalStore(
     (callback) => {
       const unsubs = [
-        editor.on('selectionChange', callback),
-        editor.on('documentChange', callback),
+        editor.on("selectionChange", callback),
+        editor.on("documentChange", callback),
       ];
-      return () => unsubs.forEach(u => u());
+      return () => unsubs.forEach((u) => u());
     },
     () => computeToolbarState(editor),
     () => EMPTY_TOOLBAR_STATE,
@@ -1554,7 +1677,7 @@ export function useToolbar(editor: Editor): ToolbarState {
 interface SlashMenuState {
   open: boolean;
   query: string;
-  items: Array<{ type: string; display: import('@pen/types').BlockDisplay }>;
+  items: Array<{ type: string; display: import("@pen/types").BlockDisplay }>;
   selectedIndex: number;
 }
 
@@ -1574,7 +1697,8 @@ export function useSlashMenu(editor: Editor): SlashMenuState & {
 
 ```typescript
 export function useBlockList(editor: Editor): readonly string[] {
-  const subscribe = (callback: () => void) => editor.on('documentChange', callback);
+  const subscribe = (callback: () => void) =>
+    editor.on("documentChange", callback);
 
   const getSnapshot = (): readonly string[] => {
     // DocumentStateImpl.blockOrder returns a cached readonly string[]
@@ -1629,6 +1753,7 @@ Pen.SlashMenu.Root / Input / List / Group / Item / Empty
 **`Pen.SlashMenu.Input`** — Filter input. Drives the `query` state. Renders as `<input>` (or merges via `asChild`).
 
 **`Pen.SlashMenu.List`** — **Two modes:**
+
 - **Auto mode** (no children): Populates from `registry.allBlockDisplays()`. Groups by `BlockDisplay.group`. Filters by fuzzy match against `display.title`, `display.description`, and `display.aliases`.
 - **Manual mode** (has children): Consumer provides explicit `Item` and `Group` children.
 
@@ -1943,17 +2068,17 @@ Mobile support is the second-hardest part of building a browser-based editor, af
 
 M0 targets **desktop browsers** as the primary platform. Mobile browsers will work for basic editing (typing, formatting, block operations) but with known limitations:
 
-| Feature | M0 Status | Notes |
-|---|---|---|
-| Basic text input | Supported | Via ContentEditable backend |
-| IME composition | Supported | See IME section above |
-| Touch to position cursor | Supported | Browser-native behavior |
-| Touch selection handles | Partial | Browser-native handles work, but custom selection UI does not interact with them |
-| Virtual keyboard interaction | Partial | Keyboard appears on focus, but viewport resizing may cause layout issues |
-| Block drag-and-drop | Not supported | HTML5 drag API doesn't work on mobile touch events |
-| Block selection gestures | Not supported | Desktop uses shift-click; mobile needs long-press + drag |
-| Slash menu | Partial | Trigger works, but positioning relative to virtual keyboard is not optimized |
-| Toolbar positioning | Not optimized | Toolbar may be obscured by virtual keyboard |
+| Feature                      | M0 Status     | Notes                                                                            |
+| ---------------------------- | ------------- | -------------------------------------------------------------------------------- |
+| Basic text input             | Supported     | Via ContentEditable backend                                                      |
+| IME composition              | Supported     | See IME section above                                                            |
+| Touch to position cursor     | Supported     | Browser-native behavior                                                          |
+| Touch selection handles      | Partial       | Browser-native handles work, but custom selection UI does not interact with them |
+| Virtual keyboard interaction | Partial       | Keyboard appears on focus, but viewport resizing may cause layout issues         |
+| Block drag-and-drop          | Not supported | HTML5 drag API doesn't work on mobile touch events                               |
+| Block selection gestures     | Not supported | Desktop uses shift-click; mobile needs long-press + drag                         |
+| Slash menu                   | Partial       | Trigger works, but positioning relative to virtual keyboard is not optimized     |
+| Toolbar positioning          | Not optimized | Toolbar may be obscured by virtual keyboard                                      |
 
 ### M1 Scope: First-Class Mobile
 
@@ -1982,11 +2107,11 @@ function useVisualViewport(): { height: number; offsetTop: number } {
     (callback) => {
       const vv = window.visualViewport;
       if (!vv) return () => {};
-      vv.addEventListener('resize', callback);
-      vv.addEventListener('scroll', callback);
+      vv.addEventListener("resize", callback);
+      vv.addEventListener("scroll", callback);
       return () => {
-        vv.removeEventListener('resize', callback);
-        vv.removeEventListener('scroll', callback);
+        vv.removeEventListener("resize", callback);
+        vv.removeEventListener("scroll", callback);
       };
     },
     () => ({
@@ -2038,7 +2163,7 @@ M1 will implement custom selection handles using `PointerEvent`:
 
 ```typescript
 interface TouchSelectionHandle {
-  position: 'start' | 'end';
+  position: "start" | "end";
   blockId: string;
   offset: number;
   rect: DOMRect;
@@ -2046,6 +2171,7 @@ interface TouchSelectionHandle {
 ```
 
 These handles:
+
 1. Render as absolutely-positioned elements at the start and end of the selection.
 2. Respond to `pointerdown` + `pointermove` + `pointerup` for dragging.
 3. Map pointer coordinates to `(blockId, offset)` using `document.caretPositionFromPoint()` (or `document.caretRangeFromPoint()` on WebKit).

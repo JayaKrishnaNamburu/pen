@@ -1,4 +1,8 @@
-import type { CRDTUndoManager, UndoManagerOptions } from "@pen/types";
+import type {
+  CRDTUndoManager,
+  CRDTUndoStackItem,
+  UndoManagerOptions,
+} from "@pen/types";
 import * as Y from "yjs";
 
 import type { YjsCRDTDocument } from "./document.js";
@@ -16,6 +20,17 @@ export function createYjsUndoManager(
     trackedOrigins,
     captureTimeout: options?.captureTimeout ?? 0,
     doc: doc.ydoc,
+  });
+
+  const wrapStackItem = (stackItem: {
+    meta: Map<string, unknown>;
+  }): CRDTUndoStackItem => ({
+    getMeta<T>(key: string): T | undefined {
+      return stackItem.meta.get(key) as T | undefined;
+    },
+    setMeta(key: string, value: unknown): void {
+      stackItem.meta.set(key, value);
+    },
   });
 
   return {
@@ -37,6 +52,32 @@ export function createYjsUndoManager(
     },
     stopCapturing() {
       undoManager.stopCapturing();
+    },
+    onStackItemAdded(callback) {
+      const handler = (event: {
+        stackItem: { meta: Map<string, unknown> };
+        type: "undo" | "redo";
+      }) => {
+        callback(wrapStackItem(event.stackItem), event.type);
+      };
+
+      undoManager.on("stack-item-added", handler);
+      return () => {
+        undoManager.off("stack-item-added", handler);
+      };
+    },
+    onStackItemPopped(callback) {
+      const handler = (event: {
+        stackItem: { meta: Map<string, unknown> };
+        type: "undo" | "redo";
+      }) => {
+        callback(wrapStackItem(event.stackItem), event.type);
+      };
+
+      undoManager.on("stack-item-popped", handler);
+      return () => {
+        undoManager.off("stack-item-popped", handler);
+      };
     },
   };
 }

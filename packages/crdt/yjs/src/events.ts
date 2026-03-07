@@ -28,6 +28,15 @@ const KNOWN_ORIGINS: ReadonlySet<string> = new Set([
 
 function originToOpOrigin(origin: unknown): OpOrigin {
   if (origin === null || origin === undefined) return "user";
+  if (
+    origin instanceof Y.UndoManager ||
+    (typeof origin === "object" &&
+      origin !== null &&
+      (origin as { constructor?: { name?: string } }).constructor?.name ===
+        "UndoManager")
+  ) {
+    return "history";
+  }
   if (typeof origin === "string" && KNOWN_ORIGINS.has(origin))
     return origin as OpOrigin;
   return "extension";

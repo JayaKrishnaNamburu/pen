@@ -1,574 +1,738 @@
 import type { InputBackend, Editor, DocumentOp } from "@pen/core";
 import type { FieldEditorImpl } from "./fieldEditorImpl.js";
+import { fullReconcileToDOM, applyDeltaToDOM } from "./reconciler.js";
 import {
-  fullReconcileToDOM,
-  applyDeltaToDOM,
-} from "./reconciler.js";
-import { resolveMarksAtPosition } from "./markBoundary.js";
-import {
-  computeTextDiff,
-  domSelectionToEditor,
-  extractTextFromDOM,
-  getSelectionOffsets,
+	computeTextDiff,
+	domPointToOffset,
+	domSelectionToEditor,
+	editorSelectionToDOM,
+	extractTextFromDOM,
+	getSelectionOffsets,
 } from "./selectionBridge.js";
 import type { PasteImporters } from "../context/editorContext.js";
 import { handlePaste, handleCopy, handleCut } from "./clipboard.js";
-import { applyEnterBehavior } from "./commands.js";
+import {
+	applyEnterBehavior,
+	mergeBackwardAtBlockStart,
+	toggleInlineMark,
+} from "./commands.js";
 import { handleFieldEditorKeyDown } from "./keyHandling.js";
 
 export class ContentEditableBackend implements InputBackend {
-  private element: HTMLElement | null = null;
-  private ytext: any = null;
-  private observer: any = null;
-  private mutationObserver: MutationObserver | null = null;
-  private isComposing = false;
-  private compositionStartTimestamp = 0;
-  private deferredRemoteDeltas: Array<{ delta: any[] }> = [];
-  private editor: Editor;
-  private fieldEditor: FieldEditorImpl;
+	private element: HTMLElement | null = null;
+	private ytext: any = null;
+	private observer: any = null;
+	private mutationObserver: MutationObserver | null = null;
+	private isApplyingSelection = false;
+	private isComposing = false;
+	private compositionStartTimestamp = 0;
+	private compositionStartText: string | null = null;
+	private deferredRemoteDeltas: Array<{ delta: any[] }> = [];
+	private pendingSelectionOverride: {
+		blockId: string;
+		anchorOffset: number;
+		focusOffset: number;
+	} | null = null;
+	private editor: Editor;
+	private fieldEditor: FieldEditorImpl;
 
-  constructor(editor: Editor, fieldEditor: FieldEditorImpl) {
-    this.editor = editor;
-    this.fieldEditor = fieldEditor;
-  }
+	constructor(editor: Editor, fieldEditor: FieldEditorImpl) {
+		this.editor = editor;
+		this.fieldEditor = fieldEditor;
+	}
 
-  activate(element: HTMLElement, ytext: unknown): void {
-    this.element = element;
-    this.ytext = ytext;
+	activate(element: HTMLElement, ytext: unknown): void {
+		this.element = element;
+		this.ytext = ytext;
 
-    element.contentEditable = "true";
+		element.contentEditable = "true";
+		this.isApplyingSelection = true;
+		this.isComposing = false;
+		this.compositionStartText = null;
+		this.fieldEditor.setComposing(false);
 
-    element.addEventListener("beforeinput", this.handleBeforeInput);
-    element.addEventListener("compositionstart", this.handleCompositionStart);
-    element.addEventListener("compositionend", this.handleCompositionEnd);
-    element.addEventListener("keydown", this.handleKeyDown);
-    element.addEventListener("copy", this.handleCopyEvent);
-    element.addEventListener("cut", this.handleCutEvent);
-    element.ownerDocument?.addEventListener(
-      "selectionchange",
-      this.handleSelectionChange,
-    );
+		element.addEventListener("beforeinput", this.handleBeforeInput);
+		element.addEventListener(
+			"compositionstart",
+			this.handleCompositionStart,
+		);
+		element.addEventListener("compositionend", this.handleCompositionEnd);
+		element.addEventListener("keydown", this.handleKeyDown);
+		element.addEventListener("copy", this.handleCopyEvent);
+		element.addEventListener("cut", this.handleCutEvent);
+		element.addEventListener("dragstart", this.handleDragStart);
+		element.addEventListener("drop", this.handleDrop);
+		element.ownerDocument?.addEventListener(
+			"selectionchange",
+			this.handleSelectionChange,
+		);
 
-    this.mutationObserver = new MutationObserver(this.handleMutations);
-    this.mutationObserver.observe(element, {
-      childList: true,
-      subtree: true,
-      characterData: true,
-      characterDataOldValue: true,
-    });
+		this.mutationObserver = new MutationObserver(this.handleMutations);
+		this.mutationObserver.observe(element, {
+			childList: true,
+			subtree: true,
+			characterData: true,
+			characterDataOldValue: true,
+		});
 
-    this.observer = this.ytext.observe((event: any) =>
-      this.handleYTextChange(event),
-    );
+		this.observer = this.ytext.observe((event: any) =>
+			this.handleYTextChange(event),
+		);
 
-    fullReconcileToDOM(this.ytext, element, this.editor.schema);
-  }
+		fullReconcileToDOM(this.ytext, element, this.editor.schema);
+		this.restoreDOMSelectionFromEditor();
+		requestAnimationFrame(() => {
+			this.isApplyingSelection = false;
+		});
+	}
 
-  deactivate(): void {
-    if (this.element) {
-      this.element.contentEditable = "false";
-      this.element.removeEventListener("beforeinput", this.handleBeforeInput);
-      this.element.removeEventListener(
-        "compositionstart",
-        this.handleCompositionStart,
-      );
-      this.element.removeEventListener(
-        "compositionend",
-        this.handleCompositionEnd,
-      );
-      this.element.removeEventListener("keydown", this.handleKeyDown);
-      this.element.removeEventListener("copy", this.handleCopyEvent);
-      this.element.removeEventListener("cut", this.handleCutEvent);
-      this.element.ownerDocument?.removeEventListener(
-        "selectionchange",
-        this.handleSelectionChange,
-      );
-    }
-    if (this.mutationObserver) {
-      this.mutationObserver.disconnect();
-      this.mutationObserver = null;
-    }
-    if (this.observer && this.ytext) {
-      this.ytext.unobserve(this.observer);
-    }
-    this.element = null;
-    this.ytext = null;
-    this.observer = null;
-    this.deferredRemoteDeltas = [];
-  }
+	deactivate(): void {
+		if (this.element) {
+			this.element.contentEditable = "false";
+			this.element.removeEventListener(
+				"beforeinput",
+				this.handleBeforeInput,
+			);
+			this.element.removeEventListener(
+				"compositionstart",
+				this.handleCompositionStart,
+			);
+			this.element.removeEventListener(
+				"compositionend",
+				this.handleCompositionEnd,
+			);
+			this.element.removeEventListener("keydown", this.handleKeyDown);
+			this.element.removeEventListener("copy", this.handleCopyEvent);
+			this.element.removeEventListener("cut", this.handleCutEvent);
+			this.element.removeEventListener("dragstart", this.handleDragStart);
+			this.element.removeEventListener("drop", this.handleDrop);
+			this.element.ownerDocument?.removeEventListener(
+				"selectionchange",
+				this.handleSelectionChange,
+			);
+		}
+		if (this.mutationObserver) {
+			this.mutationObserver.disconnect();
+			this.mutationObserver = null;
+		}
+		if (this.observer && this.ytext) {
+			this.ytext.unobserve(this.observer);
+		}
+		this.element = null;
+		this.ytext = null;
+		this.observer = null;
+		this.deferredRemoteDeltas = [];
+		this.isApplyingSelection = false;
+		this.isComposing = false;
+		this.compositionStartText = null;
+		this.fieldEditor.setComposing(false);
+	}
 
-  updateSelection(_relPos: unknown): void {
-    // CRDT relative position → DOM selection is handled by editorSelectionToDOM
-    // in the selection-bridge module. This method is reserved for external callers
-    // (e.g., remote cursor updates).
-  }
+	updateSelection(_relPos: unknown): void {
+		this.restoreDOMSelectionFromEditor();
+	}
 
-  // ── Mode 1: Direct ────────────────────────────────────────
+	applyInlineTextEdit(options: {
+		blockId: string;
+		range: { start: number; end: number };
+		text: string;
+		marks?: Record<string, unknown>;
+	}): void {
+		const { blockId, range, text, marks } = options;
+		const ops: DocumentOp[] = [];
+		const nextOffset = range.start + text.length;
+		this.pendingSelectionOverride = {
+			blockId,
+			anchorOffset: nextOffset,
+			focusOffset: nextOffset,
+		};
 
-  private handleBeforeInput = (event: InputEvent): void => {
-    if (this.isComposing) return;
+		if (range.end > range.start) {
+			ops.push({
+				type: "delete-text",
+				blockId,
+				offset: range.start,
+				length: range.end - range.start,
+			});
+		}
 
-    const blockId = this.fieldEditor.activeBlockId;
-    if (!blockId || !this.editor.getBlock(blockId)) {
-      this.fieldEditor.deactivate();
-      return;
-    }
+		if (text.length > 0) {
+			ops.push({
+				type: "insert-text",
+				blockId,
+				offset: range.start,
+				text,
+				marks,
+			});
+		}
 
-    const handler = DIRECT_HANDLERS[event.inputType];
-    if (handler) {
-      event.preventDefault();
-      handler(event, this.editor, this.ytext, this.fieldEditor, this.element!);
-      return;
-    }
+		if (ops.length > 0) {
+			this.editor.apply(ops, { origin: "user" });
+		}
 
-    // Unrecognized inputType → Mode 3 (let mutation observer handle it)
-  };
+		this.fieldEditor.syncTextSelection(blockId, nextOffset, nextOffset);
+		this.restoreDOMSelectionFromEditor();
+		this.pendingSelectionOverride = null;
+	}
 
-  // ── Mode 2: Composition ───────────────────────────────────
+	restoreDOMSelectionFromEditor(): void {
+		if (!this.element) return;
 
-  private handleCompositionStart = (): void => {
-    this.isComposing = true;
-    this.compositionStartTimestamp = Date.now();
-  };
+		const blockId = this.fieldEditor.focusBlockId;
+		if (!blockId) return;
 
-  private handleCompositionEnd = (): void => {
-    this.isComposing = false;
+		const pendingSelection =
+			this.pendingSelectionOverride?.blockId === blockId
+				? this.pendingSelectionOverride
+				: null;
+		const selection = this.editor.selection;
+		const anchor =
+			pendingSelection != null
+				? {
+					blockId: pendingSelection.blockId,
+					offset: pendingSelection.anchorOffset,
+				}
+				: selection?.type === "text"
+					? selection.anchor
+					: null;
+		const focus =
+			pendingSelection != null
+				? {
+					blockId: pendingSelection.blockId,
+					offset: pendingSelection.focusOffset,
+				}
+				: selection?.type === "text"
+					? selection.focus
+					: null;
 
-    const elapsed = Date.now() - this.compositionStartTimestamp;
+		if (!anchor || !focus) return;
+		if (anchor.blockId !== blockId || focus.blockId !== blockId) {
+			return;
+		}
 
-    // GBoard rapid composition optimization: skip full diff for single-char
-    // compositions under 50ms — treat as direct insert.
-    if (elapsed < 50 && this.element) {
-      const domText = extractTextFromDOM(this.element);
-      const crdtText = this.ytext?.toString() ?? "";
-      if (Math.abs(domText.length - crdtText.length) <= 1) {
-        this.reconcileAfterComposition();
-        return;
-      }
-    }
+		const root = this.element.closest(
+			"[data-pen-editor-root]",
+		) as HTMLElement | null;
+		if (!root) return;
 
-    // Safari may fire compositionend before the final DOM mutation.
-    requestAnimationFrame(() => {
-      if (this.isComposing) return;
-      this.reconcileAfterComposition();
-    });
-  };
+		this.isApplyingSelection = true;
+		editorSelectionToDOM(root, anchor, focus);
+		requestAnimationFrame(() => {
+			this.isApplyingSelection = false;
+		});
+	}
 
-  private reconcileAfterComposition(): void {
-    if (!this.element || !this.ytext) return;
+	// ── Direct input handling ─────────────────────────────────
 
-    const domText = extractTextFromDOM(this.element);
-    const crdtText = this.ytext.toString();
+	private handleBeforeInput = (event: InputEvent): void => {
+		if (this.isComposing) return;
 
-    if (domText !== crdtText) {
-      const diff = computeTextDiff(crdtText, domText);
-      this.editor.internals.adapter.transact(
-        this.editor.internals.crdtDoc,
-        () => {
-          for (const op of diff) {
-            if (op.type === "delete") {
-              this.ytext.delete(op.offset, op.length);
-            } else if (op.type === "insert") {
-              const marks = resolveMarksAtPosition(
-                this.ytext,
-                op.offset,
-                this.editor.schema,
-              );
-              this.ytext.insert(op.offset, op.text, marks);
-            }
-          }
-        },
-        "user",
-      );
-    }
+		const blockId = this.fieldEditor.focusBlockId;
+		if (!blockId || !this.editor.getBlock(blockId)) {
+			this.fieldEditor.deactivate();
+			return;
+		}
 
-    if (this.deferredRemoteDeltas.length > 0) {
-      this.deferredRemoteDeltas = [];
-      fullReconcileToDOM(this.ytext, this.element!, this.editor.schema);
-    }
-  }
+		const handler = DIRECT_HANDLERS[event.inputType];
+		if (handler) {
+			event.preventDefault();
+			handler(
+				event,
+				this.editor,
+				this.ytext,
+				this.fieldEditor,
+				this.element!,
+				this,
+			);
+			return;
+		}
 
-  // ── Mode 3: Observation ───────────────────────────────────
+		// Let the mutation observer reconcile input types we do not handle directly.
+	};
 
-  private handleMutations = (_mutations: MutationRecord[]): void => {
-    if (this.isComposing) return;
-    if (!this.element || !this.ytext) return;
+	// ── Composition handling ──────────────────────────────────
 
-    const domText = extractTextFromDOM(this.element);
-    const crdtText = this.ytext.toString();
+	private handleCompositionStart = (): void => {
+		this.isComposing = true;
+		this.compositionStartTimestamp = Date.now();
+		this.compositionStartText = this.ytext?.toString() ?? "";
+		this.deferredRemoteDeltas = [];
+		this.fieldEditor.setComposing(true);
+	};
 
-    if (domText !== crdtText) {
-      const diff = computeTextDiff(crdtText, domText);
-      this.editor.internals.adapter.transact(
-        this.editor.internals.crdtDoc,
-        () => {
-          for (const op of diff) {
-            if (op.type === "delete") {
-              this.ytext.delete(op.offset, op.length);
-            } else if (op.type === "insert") {
-              const marks = resolveMarksAtPosition(
-                this.ytext,
-                op.offset,
-                this.editor.schema,
-              );
-              this.ytext.insert(op.offset, op.text, marks);
-            }
-          }
-        },
-        "user",
-      );
-    }
-  };
+	private handleCompositionEnd = (): void => {
+		this.isComposing = false;
+		this.fieldEditor.setComposing(false);
 
-  // ── CRDT→DOM reconciliation ───────────────────────────────
+		const elapsed = Date.now() - this.compositionStartTimestamp;
 
-  private handleYTextChange = (event: any): void => {
-    if (this.isComposing) {
-      if (
-        event.transaction?.origin === "remote" ||
-        event.transaction?.origin === "collaborator"
-      ) {
-        this.deferredRemoteDeltas.push({ delta: event.delta });
-      }
-      return;
-    }
+		// GBoard rapid composition optimization: skip full diff for single-char
+		// compositions under 50ms — treat as direct insert.
+		if (elapsed < 50 && this.element) {
+			const domText = extractTextFromDOM(this.element);
+			const crdtText = this.ytext?.toString() ?? "";
+			if (Math.abs(domText.length - crdtText.length) <= 1) {
+				this.reconcileAfterComposition();
+				return;
+			}
+		}
 
-    if (!this.element || !this.ytext) return;
+		// Safari may fire compositionend before the final DOM mutation.
+		requestAnimationFrame(() => {
+			if (this.isComposing) return;
+			this.reconcileAfterComposition();
+		});
+	};
 
-    const applied = applyDeltaToDOM(
-      event.delta,
-      this.element,
-      this.editor.schema,
-    );
-    if (!applied) {
-      fullReconcileToDOM(this.ytext, this.element, this.editor.schema);
-    }
-  };
+	private reconcileAfterComposition(): void {
+		if (!this.element || !this.ytext) return;
+		const blockId = this.fieldEditor.focusBlockId;
+		if (!blockId) return;
 
-  // ── Keyboard shortcuts ────────────────────────────────────
+		const domText = extractTextFromDOM(this.element);
+		const baseText = this.compositionStartText ?? this.ytext.toString();
 
-  private handleKeyDown = (event: KeyboardEvent): void => {
-    if (!this.ytext) return;
+		if (domText !== baseText) {
+			const diff = rebaseTextDiffOps(
+				computeTextDiff(baseText, domText),
+				this.deferredRemoteDeltas,
+			);
+			this.applyTextDiffAsOps(blockId, diff);
+		}
 
-    const handled = handleFieldEditorKeyDown({
-      event,
-      editor: this.editor,
-      fieldEditor: this.fieldEditor,
-      ytext: this.ytext,
-      range: this.element ? getSelectionOffsets(this.element) : null,
-    });
-    if (handled) {
-      event.preventDefault();
-      return;
-    }
-  };
+		if (this.deferredRemoteDeltas.length > 0) {
+			this.deferredRemoteDeltas = [];
+			fullReconcileToDOM(this.ytext, this.element!, this.editor.schema);
+		}
 
-  private handleSelectionChange = (): void => {
-    if (!this.element) return;
+		this.compositionStartText = null;
+		this.restoreDOMSelectionFromEditor();
+	}
 
-    const root = this.element.closest("[data-pen-editor-root]") as
-      | HTMLElement
-      | null;
-    if (!root) return;
+	// ── Mutation observation fallback ─────────────────────────
 
-    const selection = domSelectionToEditor(root);
-    if (!selection) return;
-    if (selection.anchor.blockId !== selection.focus.blockId) return;
+	private handleMutations = (_mutations: MutationRecord[]): void => {
+		if (this.isComposing) return;
+		if (!this.element || !this.ytext) return;
+		const blockId = this.fieldEditor.focusBlockId;
+		if (!blockId) return;
 
-    this.fieldEditor.syncTextSelection(
-      selection.anchor.blockId,
-      selection.anchor.offset,
-      selection.focus.offset,
-    );
-  };
+		const domText = extractTextFromDOM(this.element);
+		const crdtText = this.ytext.toString();
 
-  // ── Clipboard events ──────────────────────────────────────
+		if (domText !== crdtText) {
+			const diff = computeTextDiff(crdtText, domText);
+			this.applyTextDiffAsOps(blockId, diff);
+		}
+	};
 
-  private handleCopyEvent = (event: ClipboardEvent): void => {
-    event.preventDefault();
-    handleCopy(this.editor);
-  };
+	// ── CRDT→DOM reconciliation ───────────────────────────────
 
-  private handleCutEvent = (event: ClipboardEvent): void => {
-    event.preventDefault();
-    handleCut(this.editor);
-  };
+	private handleYTextChange = (event: any): void => {
+		if (this.isComposing) {
+			if (
+				event.transaction?.origin === "remote" ||
+				event.transaction?.origin === "collaborator"
+			) {
+				this.deferredRemoteDeltas.push({ delta: event.delta });
+			}
+			return;
+		}
+
+		if (!this.element || !this.ytext) return;
+
+		const applied = applyDeltaToDOM(
+			event.delta,
+			this.element,
+			this.editor.schema,
+		);
+		if (!applied) {
+			fullReconcileToDOM(this.ytext, this.element, this.editor.schema);
+		}
+
+		if (
+			this.pendingSelectionOverride != null ||
+			event.transaction?.origin === "remote" ||
+			event.transaction?.origin === "collaborator"
+		) {
+			this.restoreDOMSelectionFromEditor();
+		}
+	};
+
+	private applyTextDiffAsOps(
+		blockId: string,
+		diff: Array<
+			| { type: "insert"; offset: number; text: string }
+			| { type: "delete"; offset: number; length: number }
+		>,
+	): void {
+		if (diff.length === 0) return;
+
+		const ops: DocumentOp[] = [];
+		for (const op of diff) {
+			if (op.type === "delete") {
+				ops.push({
+					type: "delete-text",
+					blockId,
+					offset: op.offset,
+					length: op.length,
+				});
+				continue;
+			}
+
+			ops.push({
+				type: "insert-text",
+				blockId,
+				offset: op.offset,
+				text: op.text,
+				marks: this.fieldEditor.resolveInsertMarks(this.ytext, op.offset),
+			});
+		}
+
+		if (ops.length === 0) return;
+
+		const range = this.element ? getSelectionOffsets(this.element) : null;
+		if (range) {
+			this.pendingSelectionOverride = {
+				blockId,
+				anchorOffset: range.start,
+				focusOffset: range.end,
+			};
+		}
+
+		this.editor.apply(ops, { origin: "user" });
+
+		if (range) {
+			this.fieldEditor.syncTextSelection(blockId, range.start, range.end);
+		}
+		this.pendingSelectionOverride = null;
+	}
+
+	// ── Keyboard shortcuts ────────────────────────────────────
+
+	private handleKeyDown = (event: KeyboardEvent): void => {
+		if (!this.ytext) return;
+
+		const handled = handleFieldEditorKeyDown({
+			event,
+			editor: this.editor,
+			fieldEditor: this.fieldEditor,
+			ytext: this.ytext,
+			range: this.element ? getSelectionOffsets(this.element) : null,
+		});
+		if (handled) {
+			event.preventDefault();
+			return;
+		}
+	};
+
+	private handleSelectionChange = (): void => {
+		if (!this.element) return;
+		if (this.isApplyingSelection) return;
+
+		const root = this.element.closest(
+			"[data-pen-editor-root]",
+		) as HTMLElement | null;
+		if (!root) return;
+
+		const selection = domSelectionToEditor(root);
+		if (!selection) return;
+
+		if (selection.anchor.blockId !== selection.focus.blockId) {
+			this.editor.selectTextRange(selection.anchor, selection.focus);
+			return;
+		}
+
+		if (selection.anchor.blockId !== this.fieldEditor.focusBlockId) {
+			this.fieldEditor.activateTextSelection(
+				selection.anchor.blockId,
+				selection.anchor.offset,
+				selection.focus.offset,
+			);
+			return;
+		}
+
+		this.fieldEditor.syncTextSelection(
+			selection.anchor.blockId,
+			selection.anchor.offset,
+			selection.focus.offset,
+		);
+	};
+
+	// ── Clipboard events ──────────────────────────────────────
+
+	private handleCopyEvent = (event: ClipboardEvent): void => {
+		event.preventDefault();
+		handleCopy(this.editor);
+	};
+
+	private handleCutEvent = (event: ClipboardEvent): void => {
+		event.preventDefault();
+		handleCut(this.editor);
+	};
+
+	private handleDragStart = (event: DragEvent): void => {
+		event.preventDefault();
+	};
+
+	private handleDrop = (event: DragEvent): void => {
+		event.preventDefault();
+	};
 }
 
 // ── Direct input handlers ──────────────────────────────────
 
 type DirectHandler = (
-  event: InputEvent,
-  editor: Editor,
-  ytext: any,
-  fieldEditor: FieldEditorImpl,
-  element: HTMLElement,
+	event: InputEvent,
+	editor: Editor,
+	ytext: any,
+	fieldEditor: FieldEditorImpl,
+	element: HTMLElement,
+	backend: ContentEditableBackend,
 ) => void;
 
 const DIRECT_HANDLERS: Record<string, DirectHandler> = {
-  insertText: (event, editor, ytext, _fe, element) => {
-    const text = event.data ?? "";
-    if (!text) return;
-    const range = getSelectionOffsets(element);
-    if (!range) return;
+	insertText: (event, editor, ytext, fe, element, backend) => {
+		const text = event.data ?? "";
+		if (!text) return;
+		if (hasMultiBlockTextSelection(editor)) {
+			editor.replaceSelection(text);
+			return;
+		}
+		const blockId = fe.focusBlockId;
+		if (!blockId) return;
+		const range = getSelectionOffsets(element);
+		if (!range) return;
+		const marks = fe.resolveInsertMarks(ytext, range.start);
+		backend.applyInlineTextEdit({
+			blockId,
+			range,
+			text,
+			marks,
+		});
+	},
 
-    editor.internals.adapter.transact(
-      editor.internals.crdtDoc,
-      () => {
-        if (range.start !== range.end) {
-          ytext.delete(range.start, range.end - range.start);
-        }
-        const marks = resolveMarksAtPosition(
-          ytext,
-          range.start,
-          editor.schema,
-        );
-        ytext.insert(range.start, text, marks);
-      },
-      "user",
-    );
-  },
+	insertReplacementText: (event, editor, ytext, fe, element, backend) => {
+		const text = event.data ?? "";
+		if (!text) return;
+		if (hasMultiBlockTextSelection(editor)) {
+			editor.replaceSelection(text);
+			return;
+		}
+		const blockId = fe.focusBlockId;
+		if (!blockId) return;
+		const targetRanges = event.getTargetRanges?.();
+		const range = targetRanges?.length
+			? staticRangeToOffsets(targetRanges[0], element)
+			: getSelectionOffsets(element);
+		if (!range) return;
+		const marks = fe.resolveInsertMarks(ytext, range.start);
+		backend.applyInlineTextEdit({
+			blockId,
+			range,
+			text,
+			marks,
+		});
+	},
 
-  insertReplacementText: (event, editor, ytext, _fe, element) => {
-    const text = event.data ?? "";
-    if (!text) return;
-    const targetRanges = event.getTargetRanges?.();
-    const range = targetRanges?.length
-      ? staticRangeToOffsets(targetRanges[0], element)
-      : getSelectionOffsets(element);
-    if (!range) return;
+	deleteContentBackward: (_event, editor, ytext, fe, element, backend) => {
+		if (hasMultiBlockTextSelection(editor)) {
+			editor.deleteSelection();
+			return;
+		}
+		const range = getSelectionOffsets(element);
+		if (!range) return;
 
-    editor.internals.adapter.transact(
-      editor.internals.crdtDoc,
-      () => {
-        if (range.start !== range.end) {
-          ytext.delete(range.start, range.end - range.start);
-        }
-        const marks = resolveMarksAtPosition(
-          ytext,
-          range.start,
-          editor.schema,
-        );
-        ytext.insert(range.start, text, marks);
-      },
-      "user",
-    );
-  },
+		const target = mergeBackwardAtBlockStart(editor, {
+			blockId: fe.focusBlockId ?? "",
+			ytext,
+			range,
+		});
+		if (target) {
+			fe.activateTextSelection(
+				target.blockId,
+				target.anchorOffset,
+				target.focusOffset,
+			);
+			return;
+		}
 
-  deleteContentBackward: (_event, editor, ytext, _fe, element) => {
-    const range = getSelectionOffsets(element);
-    if (!range) return;
+		if (range.start !== range.end) {
+			backend.applyInlineTextEdit({
+				blockId: fe.focusBlockId ?? "",
+				range,
+				text: "",
+			});
+			return;
+		}
 
-    editor.internals.adapter.transact(
-      editor.internals.crdtDoc,
-      () => {
-        if (range.start !== range.end) {
-          ytext.delete(range.start, range.end - range.start);
-        } else if (range.start > 0) {
-          ytext.delete(range.start - 1, 1);
-        } else {
-          // Backspace at block start — merge with previous block
-          const blockId = _fe.activeBlockId;
-          if (blockId) {
-            const block = editor.getBlock(blockId);
-            if (block?.prev) {
-              editor.apply([
-                {
-                  type: "merge-blocks",
-                  targetBlockId: block.prev.id,
-                  sourceBlockId: blockId,
-                } as DocumentOp,
-              ]);
-            }
-          }
-        }
-      },
-      "user",
-    );
-  },
+		if (range.start > 0) {
+			backend.applyInlineTextEdit({
+				blockId: fe.focusBlockId ?? "",
+				range: { start: range.start - 1, end: range.start },
+				text: "",
+			});
+		}
+	},
 
-  deleteContentForward: (_event, editor, ytext, _fe, element) => {
-    const range = getSelectionOffsets(element);
-    if (!range) return;
+	deleteContentForward: (_event, editor, ytext, fe, element, backend) => {
+		if (hasMultiBlockTextSelection(editor)) {
+			editor.deleteSelection();
+			return;
+		}
+		const range = getSelectionOffsets(element);
+		if (!range) return;
 
-    editor.internals.adapter.transact(
-      editor.internals.crdtDoc,
-      () => {
-        if (range.start !== range.end) {
-          ytext.delete(range.start, range.end - range.start);
-        } else if (range.start < ytext.length) {
-          ytext.delete(range.start, 1);
-        }
-      },
-      "user",
-    );
-  },
+		if (range.start !== range.end) {
+			backend.applyInlineTextEdit({
+				blockId: fe.focusBlockId ?? "",
+				range,
+				text: "",
+			});
+			return;
+		}
 
-  deleteByCut: (_event, editor, ytext, _fe, element) => {
-    const range = getSelectionOffsets(element);
-    if (!range || range.start === range.end) return;
+		if (range.start < ytext.length) {
+			backend.applyInlineTextEdit({
+				blockId: fe.focusBlockId ?? "",
+				range: { start: range.start, end: range.start + 1 },
+				text: "",
+			});
+		}
+	},
 
-    editor.internals.adapter.transact(
-      editor.internals.crdtDoc,
-      () => {
-        ytext.delete(range.start, range.end - range.start);
-      },
-      "user",
-    );
-  },
+	deleteByCut: (_event, editor, _ytext, fe, element, backend) => {
+		if (hasMultiBlockTextSelection(editor)) {
+			editor.deleteSelection();
+			return;
+		}
+		const range = getSelectionOffsets(element);
+		if (!range || range.start === range.end) return;
 
-  deleteWordBackward: (_event, editor, ytext, _fe, element) => {
-    const range = getSelectionOffsets(element);
-    if (!range) return;
+		backend.applyInlineTextEdit({
+			blockId: fe.focusBlockId ?? "",
+			range,
+			text: "",
+		});
+	},
 
-    if (range.start !== range.end) {
-      editor.internals.adapter.transact(
-        editor.internals.crdtDoc,
-        () => ytext.delete(range.start, range.end - range.start),
-        "user",
-      );
-      return;
-    }
+	deleteWordBackward: (_event, editor, ytext, fe, element, backend) => {
+		const range = getSelectionOffsets(element);
+		if (!range) return;
 
-    const text = ytext.toString();
-    let pos = range.start;
-    while (pos > 0 && /\s/.test(text[pos - 1])) pos--;
-    while (pos > 0 && !/\s/.test(text[pos - 1])) pos--;
-    if (pos < range.start) {
-      editor.internals.adapter.transact(
-        editor.internals.crdtDoc,
-        () => ytext.delete(pos, range.start - pos),
-        "user",
-      );
-    }
-  },
+		if (range.start !== range.end) {
+			backend.applyInlineTextEdit({
+				blockId: fe.focusBlockId ?? "",
+				range,
+				text: "",
+			});
+			return;
+		}
 
-  deleteWordForward: (_event, editor, ytext, _fe, element) => {
-    const range = getSelectionOffsets(element);
-    if (!range) return;
+		const text = ytext.toString();
+		let pos = range.start;
+		while (pos > 0 && /\s/.test(text[pos - 1])) pos--;
+		while (pos > 0 && !/\s/.test(text[pos - 1])) pos--;
+		if (pos < range.start) {
+			backend.applyInlineTextEdit({
+				blockId: fe.focusBlockId ?? "",
+				range: { start: pos, end: range.start },
+				text: "",
+			});
+		}
+	},
 
-    if (range.start !== range.end) {
-      editor.internals.adapter.transact(
-        editor.internals.crdtDoc,
-        () => ytext.delete(range.start, range.end - range.start),
-        "user",
-      );
-      return;
-    }
+	deleteWordForward: (_event, editor, ytext, fe, element, backend) => {
+		const range = getSelectionOffsets(element);
+		if (!range) return;
 
-    const text = ytext.toString();
-    let pos = range.end;
-    while (pos < text.length && /\s/.test(text[pos])) pos++;
-    while (pos < text.length && !/\s/.test(text[pos])) pos++;
-    if (pos > range.end) {
-      editor.internals.adapter.transact(
-        editor.internals.crdtDoc,
-        () => ytext.delete(range.end, pos - range.end),
-        "user",
-      );
-    }
-  },
+		if (range.start !== range.end) {
+			backend.applyInlineTextEdit({
+				blockId: fe.focusBlockId ?? "",
+				range,
+				text: "",
+			});
+			return;
+		}
 
-  insertParagraph: (_event, editor, ytext, fe, element) => {
-    const blockId = fe.activeBlockId;
-    if (!blockId) return;
-    const target = applyEnterBehavior(editor, {
-      blockId,
-      inputMode: fe.inputMode,
-      ytext,
-      range: getSelectionOffsets(element),
-    });
-    if (!target) return;
+		const text = ytext.toString();
+		let pos = range.end;
+		while (pos < text.length && /\s/.test(text[pos])) pos++;
+		while (pos < text.length && !/\s/.test(text[pos])) pos++;
+		if (pos > range.end) {
+			backend.applyInlineTextEdit({
+				blockId: fe.focusBlockId ?? "",
+				range: { start: range.end, end: pos },
+				text: "",
+			});
+		}
+	},
 
-    fe.activateTextSelection(
-      target.blockId,
-      target.anchorOffset,
-      target.focusOffset,
-    );
-  },
+	insertParagraph: (_event, editor, ytext, fe, element) => {
+		const blockId = fe.focusBlockId;
+		if (!blockId) return;
+		const target = applyEnterBehavior(editor, {
+			blockId,
+			inputMode: fe.inputMode,
+			ytext,
+			range: getSelectionOffsets(element),
+		});
+		if (!target) return;
 
-  insertLineBreak: (_event, editor, ytext, _fe, element) => {
-    const range = getSelectionOffsets(element);
-    if (!range) return;
+		fe.activateTextSelection(
+			target.blockId,
+			target.anchorOffset,
+			target.focusOffset,
+		);
+	},
 
-    editor.internals.adapter.transact(
-      editor.internals.crdtDoc,
-      () => {
-        if (range.start !== range.end) {
-          ytext.delete(range.start, range.end - range.start);
-        }
-        ytext.insert(range.start, "\n");
-      },
-      "user",
-    );
-  },
+	insertLineBreak: (_event, _editor, ytext, fe, element, backend) => {
+		const range = getSelectionOffsets(element);
+		if (!range) return;
+		const blockId = fe.focusBlockId;
+		if (!blockId) return;
+		backend.applyInlineTextEdit({
+			blockId,
+			range,
+			text: "\n",
+			marks: fe.resolveInsertMarks(ytext, range.start),
+		});
+	},
 
-  historyUndo: (_event, editor) => {
-    editor.undoManager.undo();
-  },
+	historyUndo: (_event, editor) => {
+		editor.undoManager.undo();
+	},
 
-  historyRedo: (_event, editor) => {
-    editor.undoManager.redo();
-  },
+	historyRedo: (_event, editor) => {
+		editor.undoManager.redo();
+	},
 
-  insertFromPaste: (event, editor, _ytext, fe) => {
-    const importers = editor.internals.getSlot<PasteImporters>("paste:importers");
-    handlePaste(event, editor, fe, importers ?? undefined);
-  },
+	insertFromPaste: (event, editor, _ytext, fe) => {
+		const importers =
+			editor.internals.getSlot<PasteImporters>("paste:importers");
+		handlePaste(event, editor, fe, importers ?? undefined);
+	},
 
-  formatBold: (_event, editor, ytext, _fe, element) => {
-    applyFormatToggle(editor, ytext, element, "bold", true);
-  },
+	formatBold: (_event, editor) => {
+		toggleInlineMark(editor, "bold");
+	},
 
-  formatItalic: (_event, editor, ytext, _fe, element) => {
-    applyFormatToggle(editor, ytext, element, "italic", true);
-  },
+	formatItalic: (_event, editor) => {
+		toggleInlineMark(editor, "italic");
+	},
 
-  formatUnderline: (_event, editor, ytext, _fe, element) => {
-    applyFormatToggle(editor, ytext, element, "underline", true);
-  },
+	formatUnderline: (_event, editor) => {
+		toggleInlineMark(editor, "underline");
+	},
 
-  formatStrikeThrough: (_event, editor, ytext, _fe, element) => {
-    applyFormatToggle(editor, ytext, element, "strikethrough", true);
-  },
+	formatStrikeThrough: (_event, editor) => {
+		toggleInlineMark(editor, "strikethrough");
+	},
 };
 
-function applyFormatToggle(
-  editor: Editor,
-  ytext: any,
-  element: HTMLElement,
-  markType: string,
-  _value: unknown,
-): void {
-  const range = getSelectionOffsets(element);
-  if (!range || range.start === range.end) return;
-
-  const deltas = ytext.toDelta();
-  let offset = 0;
-  let hasMarkInRange = false;
-  for (const d of deltas) {
-    const len = typeof d.insert === "string" ? d.insert.length : 1;
-    const segEnd = offset + len;
-    if (segEnd > range.start && offset < range.end) {
-      if (d.attributes?.[markType]) {
-        hasMarkInRange = true;
-        break;
-      }
-    }
-    offset += len;
-  }
-
-  editor.internals.adapter.transact(
-    editor.internals.crdtDoc,
-    () => {
-      ytext.format(
-        range.start,
-        range.end - range.start,
-        { [markType]: hasMarkInRange ? null : true },
-      );
-    },
-    "user",
-  );
+function hasMultiBlockTextSelection(editor: Editor): boolean {
+	const selection = editor.selection;
+	return selection?.type === "text" && selection.isMultiBlock;
 }
 
 /**
@@ -576,33 +740,118 @@ function applyFormatToggle(
  * within the inline content element.
  */
 function staticRangeToOffsets(
-  staticRange: StaticRange,
-  element: HTMLElement,
+	staticRange: StaticRange,
+	element: HTMLElement,
 ): { start: number; end: number } | null {
-  const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null);
-  let charOffset = 0;
-  let startOffset = -1;
-  let endOffset = -1;
-  let textNode: Text | null;
+	if (
+		!element.contains(staticRange.startContainer) ||
+		!element.contains(staticRange.endContainer)
+	) {
+		return null;
+	}
 
-  while ((textNode = walker.nextNode() as Text | null)) {
-    const len = textNode.textContent?.length ?? 0;
+	const startOffset = domPointToOffset(
+		element,
+		staticRange.startContainer,
+		staticRange.startOffset,
+	);
+	const endOffset = domPointToOffset(
+		element,
+		staticRange.endContainer,
+		staticRange.endOffset,
+	);
 
-    if (textNode === staticRange.startContainer) {
-      startOffset = charOffset + staticRange.startOffset;
-    }
-    if (textNode === staticRange.endContainer) {
-      endOffset = charOffset + staticRange.endOffset;
-    }
+	return {
+		start: Math.min(startOffset, endOffset),
+		end: Math.max(startOffset, endOffset),
+	};
+}
 
-    charOffset += len;
-    if (startOffset >= 0 && endOffset >= 0) break;
-  }
+function rebaseTextDiffOps(
+	ops: Array<
+		| { type: "insert"; offset: number; text: string }
+		| { type: "delete"; offset: number; length: number }
+	>,
+	deferredRemoteDeltas: Array<{ delta: any[] }>,
+): Array<
+	| { type: "insert"; offset: number; text: string }
+	| { type: "delete"; offset: number; length: number }
+> {
+	if (deferredRemoteDeltas.length === 0 || ops.length === 0) {
+		return ops;
+	}
 
-  if (startOffset < 0 || endOffset < 0) return null;
-  return {
-    start: Math.min(startOffset, endOffset),
-    end: Math.max(startOffset, endOffset),
-  };
+	return ops
+		.map((op) => {
+			if (op.type === "insert") {
+				return {
+					type: "insert" as const,
+					offset: mapOffsetThroughRemoteDeltas(
+						op.offset,
+						deferredRemoteDeltas,
+					),
+					text: op.text,
+				};
+			}
+
+			const start = mapOffsetThroughRemoteDeltas(
+				op.offset,
+				deferredRemoteDeltas,
+			);
+			const end = mapOffsetThroughRemoteDeltas(
+				op.offset + op.length,
+				deferredRemoteDeltas,
+			);
+			return {
+				type: "delete" as const,
+				offset: start,
+				length: Math.max(0, end - start),
+			};
+		})
+		.filter((op) => {
+			if (op.type === "insert") {
+				return true;
+			}
+			return op.length > 0;
+		});
+}
+
+function mapOffsetThroughRemoteDeltas(
+	originalOffset: number,
+	deferredRemoteDeltas: Array<{ delta: any[] }>,
+): number {
+	let mappedOffset = originalOffset;
+
+	for (const { delta } of deferredRemoteDeltas) {
+		let cursor = 0;
+		for (const part of delta) {
+			if (part.retain != null) {
+				cursor += part.retain;
+				continue;
+			}
+
+			if (part.delete != null) {
+				if (cursor < mappedOffset) {
+					const deletedBeforeOffset = Math.min(
+						part.delete,
+						mappedOffset - cursor,
+					);
+					mappedOffset -= deletedBeforeOffset;
+				}
+				continue;
+			}
+
+			if (part.insert != null) {
+				const insertedLength =
+					typeof part.insert === "string" ? part.insert.length : 1;
+				if (cursor <= mappedOffset) {
+					mappedOffset += insertedLength;
+				}
+				cursor += insertedLength;
+			}
+		}
+	}
+
+	return mappedOffset;
 }
 

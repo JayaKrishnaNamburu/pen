@@ -16,10 +16,12 @@ export class UndoManagerImpl implements UndoManager {
   }
 
   undo(): boolean {
+    this._crdtUndo.stopCapturing();
     return this._crdtUndo.undo();
   }
 
   redo(): boolean {
+    this._crdtUndo.stopCapturing();
     return this._crdtUndo.redo();
   }
 

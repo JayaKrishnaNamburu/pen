@@ -115,15 +115,23 @@ suggestions.ts       ← ops, utility
 ### `types/ids.ts`
 
 ```typescript
-export type BlockId = string & { readonly __brand: 'BlockId' };
-export type AppId   = string & { readonly __brand: 'AppId' };
-export type ZoneId  = string & { readonly __brand: 'ZoneId' };
-export type DocId   = string & { readonly __brand: 'DocId' };
+export type BlockId = string & { readonly __brand: "BlockId" };
+export type AppId = string & { readonly __brand: "AppId" };
+export type ZoneId = string & { readonly __brand: "ZoneId" };
+export type DocId = string & { readonly __brand: "DocId" };
 
-export function blockId(raw: string): BlockId { return raw as BlockId; }
-export function appId(raw: string): AppId     { return raw as AppId; }
-export function zoneId(raw: string): ZoneId   { return raw as ZoneId; }
-export function docId(raw: string): DocId     { return raw as DocId; }
+export function blockId(raw: string): BlockId {
+  return raw as BlockId;
+}
+export function appId(raw: string): AppId {
+  return raw as AppId;
+}
+export function zoneId(raw: string): ZoneId {
+  return raw as ZoneId;
+}
+export function docId(raw: string): DocId {
+  return raw as DocId;
+}
 ```
 
 Factory helpers are identity casts — zero runtime cost. They exist for type narrowing at call sites.
@@ -154,7 +162,7 @@ Add `CellSelection` (Spec Section 4.1.1):
 
 ```typescript
 export interface CellSelection {
-  type: 'cell';
+  type: "cell";
   blockId: string;
   anchor: { row: number; col: number };
   head: { row: number; col: number };
@@ -233,7 +241,7 @@ Imports: `import type { Editor } from './editor.js'` (type-only — no runtime d
 ```typescript
 // Text ops (additions)
 export interface ReplaceTextOp {
-  type: 'replace-text';
+  type: "replace-text";
   blockId: string;
   offset: number;
   length: number;
@@ -242,7 +250,7 @@ export interface ReplaceTextOp {
 }
 
 export interface InsertInlineNodeOp {
-  type: 'insert-inline-node';
+  type: "insert-inline-node";
   blockId: string;
   offset: number;
   nodeType: string;
@@ -250,24 +258,40 @@ export interface InsertInlineNodeOp {
 }
 
 export interface RemoveInlineNodeOp {
-  type: 'remove-inline-node';
+  type: "remove-inline-node";
   blockId: string;
   offset: number;
 }
 
 // Table ops
-export interface InsertTableRowOp    { type: 'insert-table-row';    blockId: string; index: number; }
-export interface DeleteTableRowOp    { type: 'delete-table-row';    blockId: string; index: number; }
-export interface InsertTableColumnOp { type: 'insert-table-column'; blockId: string; index: number; }
-export interface DeleteTableColumnOp { type: 'delete-table-column'; blockId: string; index: number; }
+export interface InsertTableRowOp {
+  type: "insert-table-row";
+  blockId: string;
+  index: number;
+}
+export interface DeleteTableRowOp {
+  type: "delete-table-row";
+  blockId: string;
+  index: number;
+}
+export interface InsertTableColumnOp {
+  type: "insert-table-column";
+  blockId: string;
+  index: number;
+}
+export interface DeleteTableColumnOp {
+  type: "delete-table-column";
+  blockId: string;
+  index: number;
+}
 export interface MergeTableCellsOp {
-  type: 'merge-table-cells';
+  type: "merge-table-cells";
   blockId: string;
   anchor: { row: number; col: number };
   head: { row: number; col: number };
 }
 export interface SplitTableCellOp {
-  type: 'split-table-cell';
+  type: "split-table-cell";
   blockId: string;
   row: number;
   col: number;
@@ -278,7 +302,7 @@ export interface SplitTableCellOp {
 
 ```typescript
 export interface SetMetaOp {
-  type: 'set-meta';
+  type: "set-meta";
   blockId: string;
   namespace: string;
   data: Record<string, unknown> | null;
@@ -290,7 +314,16 @@ export interface SetMetaOp {
 **Add `OpOrigin`** (canonical definition matching Spec Section 6.1):
 
 ```typescript
-export type OpOrigin = 'user' | 'ai' | 'collaborator' | 'extension' | 'history' | 'input-rule' | 'app' | 'import' | 'system';
+export type OpOrigin =
+  | "user"
+  | "ai"
+  | "collaborator"
+  | "extension"
+  | "history"
+  | "input-rule"
+  | "app"
+  | "import"
+  | "system";
 ```
 
 **Add `ApplyOptions`** (used by `editor.apply()` and `onBeforeApply` hooks):
@@ -306,8 +339,8 @@ export interface ApplyOptions {
 
 ```typescript
 export type Position =
-  | 'first'
-  | 'last'
+  | "first"
+  | "last"
   | { before: string }
   | { after: string }
   | { parent: string; index: number };
@@ -348,21 +381,21 @@ export interface PenStreamRequest {
 
 **Fix divergences from spec (Section 11.1):**
 
-| Part | Current | Spec | Fix |
-|---|---|---|---|
-| `GenDeltaPart` | missing `zoneId` | has `zoneId` | Add `zoneId: string` |
-| `GenEndPart` | missing `zoneId` | has `zoneId` | Add `zoneId: string` |
-| `BlockInsertPart` | `props` (required) | `props?` (optional) | Make `props` optional |
-| `StepStartPart` | `stepId`, `label?` | `stepIndex: number` | Rename to `stepIndex` |
-| `StepEndPart` | `stepId` | `stepIndex: number` | Rename to `stepIndex` |
-| `ToolInputStartPart` | `toolName` | `toolCallId`, `toolName` | Add `toolCallId` |
-| `ToolInputDeltaPart` | `delta` | `toolCallId`, `inputDelta` | Add `toolCallId`, rename `delta` → `inputDelta` |
-| `ToolInputAvailablePart` | `toolName`, `input` | `toolCallId`, `toolName`, `input: any` | Add `toolCallId` |
-| `ToolOutputPart` | `toolName`, `output` | `toolCallId`, `output` | Replace `toolName` with `toolCallId` |
-| `ToolErrorPart` | `toolName`, `error` | `toolCallId`, `error` | Replace `toolName` with `toolCallId` |
-| `DataPart` | `key`, `value` | `type: 'data-${string}'`, `id?`, `data`, `transient?` | Rewrite per spec |
-| `ErrorPart` | `message` | `errorText`, `code?` | Rename `message` → `errorText`, add `code?` |
-| `AbortPart` | no `reason` | `reason: string` | Add `reason` |
+| Part                     | Current              | Spec                                                  | Fix                                             |
+| ------------------------ | -------------------- | ----------------------------------------------------- | ----------------------------------------------- |
+| `GenDeltaPart`           | missing `zoneId`     | has `zoneId`                                          | Add `zoneId: string`                            |
+| `GenEndPart`             | missing `zoneId`     | has `zoneId`                                          | Add `zoneId: string`                            |
+| `BlockInsertPart`        | `props` (required)   | `props?` (optional)                                   | Make `props` optional                           |
+| `StepStartPart`          | `stepId`, `label?`   | `stepIndex: number`                                   | Rename to `stepIndex`                           |
+| `StepEndPart`            | `stepId`             | `stepIndex: number`                                   | Rename to `stepIndex`                           |
+| `ToolInputStartPart`     | `toolName`           | `toolCallId`, `toolName`                              | Add `toolCallId`                                |
+| `ToolInputDeltaPart`     | `delta`              | `toolCallId`, `inputDelta`                            | Add `toolCallId`, rename `delta` → `inputDelta` |
+| `ToolInputAvailablePart` | `toolName`, `input`  | `toolCallId`, `toolName`, `input: any`                | Add `toolCallId`                                |
+| `ToolOutputPart`         | `toolName`, `output` | `toolCallId`, `output`                                | Replace `toolName` with `toolCallId`            |
+| `ToolErrorPart`          | `toolName`, `error`  | `toolCallId`, `error`                                 | Replace `toolName` with `toolCallId`            |
+| `DataPart`               | `key`, `value`       | `type: 'data-${string}'`, `id?`, `data`, `transient?` | Rewrite per spec                                |
+| `ErrorPart`              | `message`            | `errorText`, `code?`                                  | Rename `message` → `errorText`, add `code?`     |
+| `AbortPart`              | no `reason`          | `reason: string`                                      | Add `reason`                                    |
 
 **Corrected `DataPart`:**
 
@@ -422,11 +455,15 @@ export interface SchemaRegistry {
   allBlockDisplays(): readonly (BlockSchema & { display: BlockDisplay })[];
 
   // ── Unknown type handlers ──────────────────────────────
-  onUnknownBlock?: (type: string, raw: unknown) =>
-    | BlockSchema | 'drop' | 'passthrough';
+  onUnknownBlock?: (
+    type: string,
+    raw: unknown,
+  ) => BlockSchema | "drop" | "passthrough";
 
-  onUnknownInline?: (type: string, raw: unknown) =>
-    | InlineSchema | 'drop' | 'passthrough';
+  onUnknownInline?: (
+    type: string,
+    raw: unknown,
+  ) => InlineSchema | "drop" | "passthrough";
 }
 ```
 
@@ -522,8 +559,8 @@ export interface AwarenessChangeEvent {
 
 export interface Awareness {
   // ... existing methods (getLocalState, setLocalState, getStates) ...
-  on(event: 'change', callback: (changes: AwarenessChangeEvent) => void): void;
-  off(event: 'change', callback: (changes: AwarenessChangeEvent) => void): void;
+  on(event: "change", callback: (changes: AwarenessChangeEvent) => void): void;
+  off(event: "change", callback: (changes: AwarenessChangeEvent) => void): void;
   destroy(): void;
 }
 ```
@@ -550,7 +587,12 @@ interface CRDTAdapter {
   createMap(): unknown;
   createArray(): unknown;
   createText(): unknown;
-  initBlockMap(doc: CRDTDocument, blockId: string, blockType: string, contentType: 'inline' | 'nested' | 'table' | 'none'): unknown;
+  initBlockMap(
+    doc: CRDTDocument,
+    blockId: string,
+    blockType: string,
+    contentType: "inline" | "nested" | "table" | "none",
+  ): unknown;
 
   // ── Attribution (per-character authorship) ──────────────
   getAttributionRanges?(doc: CRDTDocument, blockId: string): AttributionRange[];
@@ -607,7 +649,7 @@ export interface DocumentState {
 ```typescript
 export interface DiagnosticEvent {
   code: string;
-  level: 'warn' | 'error' | 'info';
+  level: "warn" | "error" | "info";
   source: string;
   message: string;
   remediation?: string;
@@ -621,29 +663,36 @@ export interface DiagnosticEvent {
 ```typescript
 interface PenEventMap {
   change: (events: CRDTEvent[]) => void;
-  documentChange: (event: { ops: DocumentOp[]; origin: OpOrigin; affectedBlocks: string[] }) => void;
+  documentChange: (event: {
+    ops: DocumentOp[];
+    origin: OpOrigin;
+    affectedBlocks: string[];
+  }) => void;
   decorationsChange: (generation: number) => void;
   selectionChange: (selection: SelectionState) => void;
-  focus: (event: { blockId: string | null }) => void;
-  blur: (event: { blockId: string | null }) => void;
   diagnostic: (event: DiagnosticEvent) => void;
 
   // CRDT integrity events (Wave 1 — surfaced at editor level)
-  'crdt:corruption': (errors: DocumentValidationError[]) => void;
-  'crdt:recovered': (method: 'snapshot' | 'repair' | 'reimport') => void;
+  "crdt:corruption": (errors: DocumentValidationError[]) => void;
+  "crdt:recovered": (method: "snapshot" | "repair" | "reimport") => void;
 }
 
 /** Validation error produced by document health checks (Wave 1). */
 interface DocumentValidationError {
-  code: 'MISSING_SHARED_TYPE' | 'INVALID_BLOCK_STRUCTURE' | 'ORPHAN_BLOCK'
-      | 'DUPLICATE_BLOCK_ORDER' | 'UNKNOWN_CONTENT_TYPE' | 'MISSING_BLOCK_MAP_KEY';
+  code:
+    | "MISSING_SHARED_TYPE"
+    | "INVALID_BLOCK_STRUCTURE"
+    | "ORPHAN_BLOCK"
+    | "DUPLICATE_BLOCK_ORDER"
+    | "UNKNOWN_CONTENT_TYPE"
+    | "MISSING_BLOCK_MAP_KEY";
   blockId?: string;
   message: string;
-  severity: 'error' | 'warning';
+  severity: "error" | "warning";
 }
 ```
 
-This `PenEventMap` shape is the canonical contract for all later waves. Downstream specs must not narrow `change` to a single `CRDTEvent` payload.
+This `PenEventMap` shape is the canonical contract for all later waves. Downstream specs must not narrow `change` to a single `CRDTEvent` payload. DOM focus ownership lives in the rendering field-editor layer, not the headless `Editor` event map.
 
 **Add `schema`, `selection`, `documentState`, `requestDecorationUpdate`, `scrollToBlock`, `onBeforeApply`, convenience event methods, and `internals` to `Editor` interface:**
 
@@ -665,8 +714,8 @@ interface Editor {
   ): Unsubscribe;
 
   // ── Convenience event subscriptions ────────────────────
-  onDocumentChange(callback: PenEventMap['documentChange']): Unsubscribe;
-  onSelectionChange(callback: PenEventMap['selectionChange']): Unsubscribe;
+  onDocumentChange(callback: PenEventMap["documentChange"]): Unsubscribe;
+  onSelectionChange(callback: PenEventMap["selectionChange"]): Unsubscribe;
 
   requestDecorationUpdate(): void;
   scrollToBlock?(blockId: string): void;
@@ -694,20 +743,22 @@ interface EditorInternals {
 **Hook priority constants:**
 
 ```typescript
-export const HOOK_PRIORITY_AUTH       = 100;
-export const HOOK_PRIORITY_SUGGEST    = 200;
+export const HOOK_PRIORITY_AUTH = 100;
+export const HOOK_PRIORITY_SUGGEST = 200;
 export const HOOK_PRIORITY_INPUT_RULE = 300;
-export const HOOK_PRIORITY_DEFAULT    = 500;
+export const HOOK_PRIORITY_DEFAULT = 500;
 ```
 
 `onBeforeApply` is a transform hook. Hooks run in **priority order** (lowest number first). Within the same priority, hooks run in registration order. The `priority` option defaults to `HOOK_PRIORITY_DEFAULT` (500), so consumer hooks run after all built-in hooks.
 
 **Hooks run before validation.** The apply pipeline order is: (1) run `onBeforeApply` hooks in priority order, transforming the ops array sequentially, (2) validate each transformed op, (3) execute validated ops inside a CRDT transaction. This ordering is critical because:
+
 - **Suggest mode** (priority 200) transforms `delete-text` ops into `format-text` ops. The new `format-text` ops must be validated (not the original `delete-text`).
 - **Auth guard** (priority 100) may filter ops entirely. Filtered ops must not reach validation or execution.
 - **Input rules** (priority 300) may queue additional ops as microtasks — those are applied in a separate `apply()` call and go through the full hook → validate → execute pipeline again.
 
 The priority ordering matters because hooks transform ops sequentially:
+
 - **Auth guard** (Wave 12, priority 100) runs first — it must see the original ops to evaluate authorization. Denied ops are filtered out before any transformation.
 - **Suggest mode** (Wave 7, priority 200) runs next — it transforms `insert-text` ops to include suggestion marks and converts `delete-text` ops to `format-text` ops. It only sees ops that passed auth.
 - **Input rules** (Wave 9, priority 300) run last — they inspect `insert-text` ops and queue conversion ops as a microtask. They see the final transformed ops.
@@ -738,7 +789,11 @@ export interface ToolServer {
   registerTool(def: ToolDefinition): void;
   unregisterTool(name: string): void;
   listTools(): readonly ToolDefinition[];
-  executeTool(name: string, input: unknown, ctx: ToolContext): Promise<unknown> | AsyncIterable<unknown>;
+  executeTool(
+    name: string,
+    input: unknown,
+    ctx: ToolContext,
+  ): Promise<unknown> | AsyncIterable<unknown>;
 }
 ```
 
@@ -749,7 +804,10 @@ export interface ToolDefinition {
   name: string;
   description: string;
   inputSchema: PropSchema;
-  handler: (input: unknown, ctx: ToolContext) => Promise<unknown> | AsyncIterable<unknown>;
+  handler: (
+    input: unknown,
+    ctx: ToolContext,
+  ) => Promise<unknown> | AsyncIterable<unknown>;
 }
 ```
 
@@ -765,10 +823,10 @@ export interface ModelAdapter {
 }
 
 export type ModelStreamEvent =
-  | { type: 'text-delta'; delta: string }
-  | { type: 'tool-call'; toolCallId: string; toolName: string; input: unknown }
-  | { type: 'done'; usage?: { promptTokens: number; completionTokens: number } }
-  | { type: 'error'; error: unknown };
+  | { type: "text-delta"; delta: string }
+  | { type: "tool-call"; toolCallId: string; toolName: string; input: unknown }
+  | { type: "done"; usage?: { promptTokens: number; completionTokens: number } }
+  | { type: "error"; error: unknown };
 
 export interface ToolSchema {
   name: string;
@@ -777,16 +835,21 @@ export interface ToolSchema {
 }
 
 export interface ModelMessage {
-  role: 'system' | 'user' | 'assistant' | 'tool';
+  role: "system" | "user" | "assistant" | "tool";
   content: string | ModelMessagePart[];
   toolCallId?: string;
   toolName?: string;
 }
 
 export type ModelMessagePart =
-  | { type: 'text'; text: string }
-  | { type: 'tool-call'; toolCallId: string; toolName: string; input: unknown }
-  | { type: 'tool-result'; toolCallId: string; result: unknown; isError?: boolean };
+  | { type: "text"; text: string }
+  | { type: "tool-call"; toolCallId: string; toolName: string; input: unknown }
+  | {
+      type: "tool-result";
+      toolCallId: string;
+      result: unknown;
+      isError?: boolean;
+    };
 ```
 
 `ModelMessage` is provider-neutral. The `content` field accepts either a string (simple messages) or `ModelMessagePart[]` (structured messages with tool calls and results). Each `ModelAdapter` implementation translates this to the provider's native format (OpenAI, Anthropic, Gemini, etc.).
@@ -802,14 +865,24 @@ export interface PenPersistence {
   appendUpdate(docId: string, update: Uint8Array): Promise<void>;
   getUpdates(docId: string, since?: Uint8Array): Promise<Uint8Array[]>;
   compact(docId: string): Promise<void>;
-  saveVersionSnapshot(docId: string, snapshot: Uint8Array, metadata: VersionMetadata): Promise<void>;
-  listVersions(docId: string, options?: { limit?: number; before?: string }): Promise<VersionEntry[]>;
-  loadVersion(docId: string, versionId: string): Promise<{ state: Uint8Array; snapshot: Uint8Array }>;
+  saveVersionSnapshot(
+    docId: string,
+    snapshot: Uint8Array,
+    metadata: VersionMetadata,
+  ): Promise<void>;
+  listVersions(
+    docId: string,
+    options?: { limit?: number; before?: string },
+  ): Promise<VersionEntry[]>;
+  loadVersion(
+    docId: string,
+    versionId: string,
+  ): Promise<{ state: Uint8Array; snapshot: Uint8Array }>;
 }
 
 export interface VersionMetadata {
   label?: string;
-  trigger: 'auto' | 'manual' | 'ai-generation' | 'import';
+  trigger: "auto" | "manual" | "ai-generation" | "import";
   clientId: number;
   timestamp: number;
 }
@@ -879,8 +952,8 @@ export type FieldEditorFactory = (ctx: FieldEditorContext) => FieldEditor;
 ```typescript
 export interface FieldEditorContext {
   blockId: string;
-  schema: BlockSchema;   // import type from schema.ts
-  editor: Editor;        // import type from editor.ts
+  schema: BlockSchema; // import type from schema.ts
+  editor: Editor; // import type from editor.ts
 }
 ```
 
@@ -888,10 +961,10 @@ export interface FieldEditorContext {
 
 ```typescript
 export interface FieldEditor {
-  readonly activeBlockId: string | null;
+  readonly focusBlockId: string | null;
   readonly activeBlockIds: readonly string[];
   readonly isEditing: boolean;
-  readonly inputMode: 'richtext' | 'code' | 'table' | 'none';
+  readonly inputMode: "richtext" | "code" | "table" | "none";
   selection: SelectionState | null;
 
   focus(): void;
@@ -926,7 +999,7 @@ export interface StreamingTarget {
   readonly generationZone: GenerationZone | null;
   beginStreaming(zoneId: string, blockId: string): void;
   appendDelta(delta: string): void;
-  endStreaming(status: 'complete' | 'cancelled' | 'error'): void;
+  endStreaming(status: "complete" | "cancelled" | "error"): void;
 }
 ```
 
@@ -964,7 +1037,9 @@ export interface Exporter<Output = string> {
   exportFragment?(blocks: BlockHandle[], options?: ExportOptions): Output;
 }
 
-export interface ExportOptions<Extra extends Record<string, unknown> = Record<string, never>> {
+export interface ExportOptions<
+  Extra extends Record<string, unknown> = Record<string, never>,
+> {
   includeApps?: boolean;
   includeLayout?: boolean;
   includeMetadata?: boolean;
@@ -976,7 +1051,11 @@ export interface ExportOptions<Extra extends Record<string, unknown> = Record<st
 export interface Importer<Input = string> {
   name: string;
   mimeType: string;
-  import(input: Input, editor: Editor, options?: ImportOptions): void | Promise<void>;
+  import(
+    input: Input,
+    editor: Editor,
+    options?: ImportOptions,
+  ): void | Promise<void>;
 }
 
 export interface ImportOptions {
@@ -996,13 +1075,13 @@ export interface BlockRenderContext {
   editable: boolean;
   selected: boolean;
   decorations: readonly Decoration[];
-  ref: unknown;  // React.Ref<HTMLElement> — framework-agnostic in core
+  ref: unknown; // React.Ref<HTMLElement> — framework-agnostic in core
 }
 
 export type BlockRenderer<Props = Record<string, unknown>> = (
   block: BlockHandle,
   ctx: BlockRenderContext,
-) => unknown;  // ReactElement — framework-agnostic in core
+) => unknown; // ReactElement — framework-agnostic in core
 ```
 
 ### `types/suggestions.ts`
@@ -1012,9 +1091,9 @@ export type BlockRenderer<Props = Record<string, unknown>> = (
 ```typescript
 export interface BlockSuggestion {
   id: string;
-  action: 'insert-block' | 'delete-block' | 'move-block' | 'convert-block';
+  action: "insert-block" | "delete-block" | "move-block" | "convert-block";
   author: string;
-  authorType: 'user' | 'ai';
+  authorType: "user" | "ai";
   createdAt: number;
   model?: string;
   previousState?: {
@@ -1043,22 +1122,40 @@ class PropChainImpl {
     this._schema = { ...init };
   }
 
-  default(value: unknown): this   { this._schema.default = value; return this; }
-  describe(text: string): this    { this._schema.description = text; return this; }
-  min(value: number): this        { this._schema.minimum = value; return this; }
-  max(value: number): this        { this._schema.maximum = value; return this; }
+  default(value: unknown): this {
+    this._schema.default = value;
+    return this;
+  }
+  describe(text: string): this {
+    this._schema.description = text;
+    return this;
+  }
+  min(value: number): this {
+    this._schema.minimum = value;
+    return this;
+  }
+  max(value: number): this {
+    this._schema.maximum = value;
+    return this;
+  }
   optional(): PropChainImpl {
     const currentType = this._schema.type;
-    this._schema.type = currentType ? [currentType, 'null'] : 'null';
+    this._schema.type = currentType ? [currentType, "null"] : "null";
     return this;
   }
 
-  toSchema(): PropSchema { return { ...this._schema } as PropSchema; }
-  toJSON(): Record<string, unknown> { return { ...this._schema }; }
+  toSchema(): PropSchema {
+    return { ...this._schema } as PropSchema;
+  }
+  toJSON(): Record<string, unknown> {
+    return { ...this._schema };
+  }
 }
 
 function resolveSchema(value: unknown): PropSchema {
-  return value instanceof PropChainImpl ? value.toSchema() : value as PropSchema;
+  return value instanceof PropChainImpl
+    ? value.toSchema()
+    : (value as PropSchema);
 }
 ```
 
@@ -1066,15 +1163,30 @@ function resolveSchema(value: unknown): PropSchema {
 
 ```typescript
 export const prop = {
-  string()  { return new PropChainImpl({ type: 'string', default: '' }); },
-  number()  { return new PropChainImpl({ type: 'number', default: 0 }); },
-  boolean() { return new PropChainImpl({ type: 'boolean', default: false }); },
+  string() {
+    return new PropChainImpl({ type: "string", default: "" });
+  },
+  number() {
+    return new PropChainImpl({ type: "number", default: 0 });
+  },
+  boolean() {
+    return new PropChainImpl({ type: "boolean", default: false });
+  },
   enum(values: readonly (string | number)[]) {
-    const inferredType = values.length > 0 && typeof values[0] === 'number' ? 'number' : 'string';
-    return new PropChainImpl({ type: inferredType, default: values[0], enum: [...values] });
+    const inferredType =
+      values.length > 0 && typeof values[0] === "number" ? "number" : "string";
+    return new PropChainImpl({
+      type: inferredType,
+      default: values[0],
+      enum: [...values],
+    });
   },
   array(items: PropChainImpl | PropSchema) {
-    return new PropChainImpl({ type: 'array', default: [], items: resolveSchema(items) });
+    return new PropChainImpl({
+      type: "array",
+      default: [],
+      items: resolveSchema(items),
+    });
   },
   object(properties: Record<string, PropChainImpl | PropSchema>) {
     const resolved: Record<string, PropSchema> = {};
@@ -1082,13 +1194,17 @@ export const prop = {
       resolved[k] = resolveSchema(v);
     }
     return new PropChainImpl({
-      type: 'object',
+      type: "object",
       default: computeDefaults(resolved),
       properties: resolved,
     });
   },
-  json()    { return new PropChainImpl({}); },
-  optional(inner: PropChainImpl): PropChainImpl { return inner.optional(); },
+  json() {
+    return new PropChainImpl({});
+  },
+  optional(inner: PropChainImpl): PropChainImpl {
+    return inner.optional();
+  },
 };
 ```
 
@@ -1102,10 +1218,17 @@ Full implementation. Supports two call patterns (both used in the main spec):
 
 ```typescript
 // Form 1: type as first positional arg, config uses `props` key
-defineBlock('heading', { props: { level: prop.enum([1, 2, 3]) }, content: 'inline' })
+defineBlock("heading", {
+  props: { level: prop.enum([1, 2, 3]) },
+  content: "inline",
+});
 
 // Form 2: single object arg, uses `type` and `propSchema` keys
-defineBlock({ type: 'table', propSchema: { hasHeaderRow: prop.boolean() }, content: 'table' })
+defineBlock({
+  type: "table",
+  propSchema: { hasHeaderRow: prop.boolean() },
+  content: "table",
+});
 ```
 
 **Implementation with overloads:**
@@ -1122,18 +1245,20 @@ export function defineBlock<Type extends string>(
   typeOrConfig: Type | (DefineBlockConfig & { type: Type }),
   maybeConfig?: DefineBlockConfig,
 ): BlockSchema<Type> {
-  const type = typeof typeOrConfig === 'string' ? typeOrConfig : typeOrConfig.type;
-  const config = typeof typeOrConfig === 'string' ? maybeConfig! : typeOrConfig;
+  const type =
+    typeof typeOrConfig === "string" ? typeOrConfig : typeOrConfig.type;
+  const config = typeof typeOrConfig === "string" ? maybeConfig! : typeOrConfig;
   const props = resolveProps(config);
 
   return {
     type,
     propSchema: props,
-    content: config.content ?? 'inline',
+    content: config.content ?? "inline",
     layout: config.layout,
     serialize: config.serialize ?? {},
     normalize: config.normalize,
-    validateProps: Object.keys(props).length > 0 ? generateValidator(props) : undefined,
+    validateProps:
+      Object.keys(props).length > 0 ? generateValidator(props) : undefined,
     fieldEditor: config.fieldEditor,
     keyBindings: config.keyBindings,
     display: config.display ?? { title: typeNameToTitle(type) },
@@ -1158,7 +1283,10 @@ function resolveProps(config: DefineBlockConfig): Record<string, PropSchema> {
 `DefineBlockConfig` accepts both `props` and `propSchema` (mutually exclusive, `props` preferred for new code):
 
 ```typescript
-type DefineBlockConfig = Omit<Partial<BlockSchema>, 'type' | 'propSchema' | 'validateProps' | 'aiDescription'> & {
+type DefineBlockConfig = Omit<
+  Partial<BlockSchema>,
+  "type" | "propSchema" | "validateProps" | "aiDescription"
+> & {
   props?: Record<string, PropChainImpl | PropSchema>;
   propSchema?: Record<string, PropChainImpl | PropSchema>;
 };
@@ -1169,6 +1297,7 @@ type DefineBlockConfig = Omit<Partial<BlockSchema>, 'type' | 'propSchema' | 'val
 **`generateAIDescription(type, props)`** — concatenates `type` with prop descriptions: `"heading: level (Heading level)"`. Overridable via explicit `aiDescription`.
 
 **`generateValidator(propSchemas)`** — returns a function `(raw) => validatedProps` that:
+
 1. Iterates each key in `propSchemas`.
 2. If the raw value is missing, uses the schema `default`.
 3. Type-checks against the schema `type` field (loose — coerce string "3" to number 3 if schema says number).
@@ -1189,12 +1318,15 @@ export function defineExtension<TConfig = void>(
   config: DefineExtensionConfig<TConfig>,
 ): Extension {
   return {
-    version: '0.0.0',
+    version: "0.0.0",
     ...config,
   };
 }
 
-type DefineExtensionConfig<TConfig = void> = Omit<Extension, 'version' | 'setup'> & {
+type DefineExtensionConfig<TConfig = void> = Omit<
+  Extension,
+  "version" | "setup"
+> & {
   version?: string;
   setup?: TConfig extends void
     ? (editor: Editor) => ExtensionCleanup | void
@@ -1231,13 +1363,13 @@ These events use the existing `PenEventMap` mechanism (`editor.on('diagnostic', 
 
 These functions must exist for downstream import but are implemented in later waves:
 
-| Function | Wave |
-|---|---|
-| `createEditor()` | Wave 3 |
-| `createDecorationSet()` | Wave 3 |
-| `emptyDecorationSet()` | Wave 3 |
-| `mergeSchemas()` | Wave 2 |
-| `toZod()` | Wave 2 (or later) |
+| Function                | Wave              |
+| ----------------------- | ----------------- |
+| `createEditor()`        | Wave 3            |
+| `createDecorationSet()` | Wave 3            |
+| `emptyDecorationSet()`  | Wave 3            |
+| `mergeSchemas()`        | Wave 2            |
+| `toZod()`               | Wave 2 (or later) |
 
 Keep them as `throw new Error('Not implemented')` with correct signatures.
 
@@ -1249,12 +1381,12 @@ Simple barrel:
 
 ```typescript
 // Types
-export * from './types/index.js';
+export * from "./types/index.js";
 
 // Runtime
-export { prop } from './prop.js';
-export { defineBlock } from './define-block.js';
-export { defineExtension } from './define-extension.js';
+export { prop } from "./prop.js";
+export { defineBlock } from "./define-block.js";
+export { defineExtension } from "./define-extension.js";
 ```
 
 ## `@pen/core` Package Entry Point
@@ -1263,13 +1395,13 @@ export { defineExtension } from './define-extension.js';
 
 ```typescript
 // Re-export the entire @pen/types surface
-export * from '@pen/types';
+export * from "@pen/types";
 
 // Stubs (to be implemented in later waves)
-export { createEditor } from './create-editor.js';
-export { createDecorationSet, emptyDecorationSet } from './decorations.js';
-export { mergeSchemas } from './merge-schemas.js';
-export { toZod } from './to-zod.js';
+export { createEditor } from "./create-editor.js";
+export { createDecorationSet, emptyDecorationSet } from "./decorations.js";
+export { mergeSchemas } from "./merge-schemas.js";
+export { toZod } from "./to-zod.js";
 ```
 
 ---
