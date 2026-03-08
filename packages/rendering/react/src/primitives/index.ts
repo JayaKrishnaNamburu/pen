@@ -27,6 +27,11 @@ export {
   SlashMenuEmpty,
 } from "./slash-menu/index.js";
 
+export {
+  SelectionToolbarRoot,
+  SelectionToolbarContent,
+} from "./selection-toolbar/index.js";
+
 // ── Pen.* namespace for compound component API ──────────────
 
 import {
@@ -58,6 +63,11 @@ import {
   SlashMenuEmpty,
 } from "./slash-menu/index.js";
 
+import {
+  SelectionToolbarRoot,
+  SelectionToolbarContent,
+} from "./selection-toolbar/index.js";
+
 export const Pen = {
   Editor: {
     Root: EditorRoot,
@@ -84,5 +94,9 @@ export const Pen = {
     Group: SlashMenuGroup,
     Item: SlashMenuItem,
     Empty: SlashMenuEmpty,
+  },
+  SelectionToolbar: {
+    Root: SelectionToolbarRoot,
+    Content: SelectionToolbarContent,
   },
 } as const;

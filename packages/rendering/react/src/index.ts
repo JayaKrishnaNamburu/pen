@@ -66,6 +66,16 @@ export {
 	type SlashMenuEmptyProps,
 } from "./primitives/slash-menu/index.js";
 
+// ── Selection toolbar primitives ────────────────────────────
+export {
+	SelectionToolbarRoot,
+	SelectionToolbarContent,
+	useSelectionToolbarContext,
+	type SelectionToolbarRootProps,
+	type SelectionToolbarContentProps,
+	type SelectionToolbarContextValue,
+} from "./primitives/selection-toolbar/index.js";
+
 // ── Hooks ───────────────────────────────────────────────────
 export {
 	useEditor,
@@ -74,9 +84,11 @@ export {
 	useDecorations,
 	useExtensionState,
 	useToolbar,
+	useSelectionToolbar,
 	useSlashMenu,
 	useBlockList,
 	useVisualViewport,
+	type SelectionToolbarState,
 	type SlashMenuState,
 	type SlashMenuActions,
 	type VisualViewportState,
@@ -91,6 +103,7 @@ export {
 	ToolbarContext,
 	useToolbarContext,
 	EMPTY_TOOLBAR_STATE,
+	SelectionToolbarContext,
 	type EditorContextValue,
 	type PasteImporters,
 	type ToolbarState,

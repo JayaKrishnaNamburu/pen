@@ -13,7 +13,6 @@
   align-items: baseline;
   gap: 10px;
   flex-shrink: 0;
-  flex-grow: 1;
 }
 
 .toolbar-title {
@@ -193,6 +192,7 @@
   background-repeat: no-repeat;
   background-position: right 4px center;
   padding-right: 20px;
+  width: auto;
 }
 
 [data-pen-toolbar-select]:hover {

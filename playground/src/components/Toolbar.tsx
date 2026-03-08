@@ -3,7 +3,7 @@ import type { Editor } from "@pen/core";
 import { htmlExporter } from "@pen/export-html";
 import { markdownExporter } from "@pen/export-markdown";
 import { setInlineMark } from "@pen/shortcuts";
-import { Pen } from "@pen/react";
+import { Pen, useToolbar } from "@pen/react";
 import {
 	useEffect,
 	useRef,
@@ -26,7 +26,11 @@ import {
 	IconUnderline,
 	IconUndo,
 } from "./icons";
-import { canOpenLinkEditor, getActiveLinkMark } from "../utils/linkMarks";
+import {
+	canOpenLinkEditor,
+	getActiveLinkMark,
+	removeLinkMark,
+} from "../utils/linkMarks";
 
 type ToolbarProps = {
 	editor: Editor;
@@ -59,6 +63,13 @@ export function Toolbar({
 
 			<div className="toolbar-right">
 				<Pen.Toolbar.Root editor={editor}>
+					<Pen.Toolbar.Select
+						format="blockType"
+						options={blockTypeOptions}
+					/>
+
+					<Pen.Toolbar.Separator />
+
 					<Pen.Toolbar.Group>
 						<Pen.Toolbar.Toggle format="bold">
 							<IconBold className="toolbar-icon" />
@@ -77,10 +88,6 @@ export function Toolbar({
 						</Pen.Toolbar.Toggle>
 						<LinkButton editor={editor} linkToggleRef={linkToggleRef} />
 					</Pen.Toolbar.Group>
-					<Pen.Toolbar.Select
-						format="blockType"
-						options={blockTypeOptions}
-					/>
 				</Pen.Toolbar.Root>
 
 				<Pen.Toolbar.Separator />
@@ -132,12 +139,17 @@ type LinkButtonProps = {
 };
 
 function LinkButton({ editor, linkToggleRef }: LinkButtonProps) {
+	const toolbarState = useToolbar(editor);
 	const popoverRef = useRef<HTMLDivElement | null>(null);
 	const inputRef = useRef<HTMLInputElement | null>(null);
 	const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 	const [url, setUrl] = useState("");
 
-	const activeLink = getActiveLinkMark(editor);
+	const activeLinkValue = toolbarState.activeMarks.link;
+	const activeLink =
+		activeLinkValue && typeof activeLinkValue === "object"
+			? (activeLinkValue as { href: string; title?: string })
+			: null;
 	const showRemoveButton = activeLink !== null;
 
 	const openPopover = () => {
@@ -164,7 +176,7 @@ function LinkButton({ editor, linkToggleRef }: LinkButtonProps) {
 	};
 
 	const removeLink = () => {
-		setInlineMark(editor, "link", null);
+		removeLinkMark(editor);
 		closePopover();
 	};
 

@@ -4,6 +4,7 @@ export { useSelection } from "./useSelection.js";
 export { useDecorations } from "./useDecorations.js";
 export { useExtensionState } from "./useExtensionState.js";
 export { useToolbar } from "./useToolbar.js";
+export { useSelectionToolbar, type SelectionToolbarState } from "./useSelectionToolbar.js";
 export { useSlashMenu, type SlashMenuState, type SlashMenuActions } from "./useSlashMenu.js";
 export { useBlockList } from "./useBlockList.js";
 export { useVisualViewport, type VisualViewportState } from "./useVisualViewport.js";

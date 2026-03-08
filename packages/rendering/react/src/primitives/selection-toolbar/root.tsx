@@ -1,0 +1,79 @@
+import React, { createContext, useContext } from "react";
+import type { Editor } from "@pen/core";
+import { EditorContext } from "../../context/editorContext.js";
+import {
+	ToolbarContext,
+	type ToolbarContextValue,
+} from "../../context/toolbarContext.js";
+import { useToolbar } from "../../hooks/useToolbar.js";
+import {
+	useSelectionToolbar,
+	type SelectionToolbarState,
+} from "../../hooks/useSelectionToolbar.js";
+import { renderAsChild, type AsChildProps } from "../../utils/asChild.js";
+import { isDevelopmentEnvironment } from "../../utils/environment.js";
+
+export interface SelectionToolbarContextValue {
+	editor: Editor;
+	toolbar: ToolbarContextValue;
+	selectionToolbar: SelectionToolbarState;
+}
+
+export const SelectionToolbarContext =
+	createContext<SelectionToolbarContextValue | null>(null);
+
+export function useSelectionToolbarContext(): SelectionToolbarContextValue {
+	const ctx = useContext(SelectionToolbarContext);
+	if (!ctx) {
+		if (isDevelopmentEnvironment()) {
+			console.error(
+				"Pen: useSelectionToolbarContext must be used within <Pen.SelectionToolbar.Root>.",
+			);
+		}
+		throw new Error("Missing Pen.SelectionToolbar.Root context");
+	}
+	return ctx;
+}
+
+export interface SelectionToolbarRootProps extends AsChildProps {
+	editor?: Editor;
+	ref?: React.Ref<HTMLElement>;
+}
+
+export function SelectionToolbarRoot(props: SelectionToolbarRootProps) {
+	const { editor: editorProp, ...rest } = props;
+	const editorContext = useContext(EditorContext);
+	const editor = editorProp ?? editorContext?.editor;
+
+	if (!editor) {
+		if (isDevelopmentEnvironment()) {
+			console.error(
+				"Pen: <Pen.SelectionToolbar.Root> must be used within <Pen.Editor.Root> or receive an editor prop.",
+			);
+		}
+		throw new Error("Missing editor for Pen.SelectionToolbar.Root");
+	}
+
+	const toolbarState = useToolbar(editor);
+	const selectionToolbar = useSelectionToolbar(editor);
+
+	const toolbarCtx: ToolbarContextValue = { editor, state: toolbarState };
+	const ctx: SelectionToolbarContextValue = {
+		editor,
+		toolbar: toolbarCtx,
+		selectionToolbar,
+	};
+
+	const primitiveProps: Record<string, unknown> = {
+		"data-pen-selection-toolbar": "",
+		"data-open": selectionToolbar.isOpen || undefined,
+	};
+
+	return (
+		<ToolbarContext.Provider value={toolbarCtx}>
+			<SelectionToolbarContext.Provider value={ctx}>
+				{renderAsChild(rest, "div", primitiveProps)}
+			</SelectionToolbarContext.Provider>
+		</ToolbarContext.Provider>
+	);
+}

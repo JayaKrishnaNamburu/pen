@@ -246,3 +246,16 @@ select {
   outline: none;
 }
 
+/* ── Selection toolbar ───────────────────────────────────── */
+
+[data-pen-selection-toolbar-content] {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+

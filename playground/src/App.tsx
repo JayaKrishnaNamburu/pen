@@ -10,6 +10,13 @@ import { SlashMenu } from "./components/SlashMenu";
 import { Toolbar } from "./components/Toolbar";
 import { PLAYGROUND_IMPORTERS } from "./constants/playground";
 import { canOpenLinkEditor } from "./utils/linkMarks";
+import {
+	IconBold,
+	IconCode,
+	IconItalic,
+	IconStrikethrough,
+	IconUnderline,
+} from "./components/icons";
 
 export function App() {
 	const linkToggleRef = useRef<(() => void) | null>(null);
@@ -41,6 +48,27 @@ export function App() {
 					<div className="playground-editor">
 						<Pen.Editor.Content />
 						<SlashMenu />
+						<Pen.SelectionToolbar.Root>
+							<Pen.SelectionToolbar.Content>
+								<Pen.Toolbar.Group>
+									<Pen.Toolbar.Toggle format="bold">
+										<IconBold className="toolbar-icon" />
+									</Pen.Toolbar.Toggle>
+									<Pen.Toolbar.Toggle format="italic">
+										<IconItalic className="toolbar-icon" />
+									</Pen.Toolbar.Toggle>
+									<Pen.Toolbar.Toggle format="underline">
+										<IconUnderline className="toolbar-icon" />
+									</Pen.Toolbar.Toggle>
+									<Pen.Toolbar.Toggle format="strikethrough">
+										<IconStrikethrough className="toolbar-icon" />
+									</Pen.Toolbar.Toggle>
+									<Pen.Toolbar.Toggle format="code">
+										<IconCode className="toolbar-icon" />
+									</Pen.Toolbar.Toggle>
+								</Pen.Toolbar.Group>
+							</Pen.SelectionToolbar.Content>
+						</Pen.SelectionToolbar.Root>
 					</div>
 				</Pen.Editor.Root>
 			</div>

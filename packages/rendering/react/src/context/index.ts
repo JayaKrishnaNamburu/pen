@@ -15,3 +15,8 @@ export {
   type ToolbarState,
   type ToolbarContextValue,
 } from "./toolbarContext.js";
+export {
+  SelectionToolbarContext,
+  useSelectionToolbarContext,
+  type SelectionToolbarContextValue,
+} from "../primitives/selection-toolbar/root.js";
