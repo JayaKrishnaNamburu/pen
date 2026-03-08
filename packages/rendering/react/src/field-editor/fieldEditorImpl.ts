@@ -130,14 +130,15 @@ export class FieldEditorImpl implements FieldEditor {
 	selectAll(rootElement?: HTMLElement | null): boolean {
 		const blockId = this._resolveSelectAllBlockId(rootElement);
 		if (blockId) {
+			const blockLength =
+				this._editor.getBlock(blockId)?.textContent().length ?? 0;
+			const shouldSelectDocument =
+				blockLength === 0 ||
+				(this._selectAllCycle?.blockId === blockId &&
+					this._selectAllCycle.scope === "block");
 			const nextScope =
-				this._selectAllCycle?.blockId === blockId &&
-				this._selectAllCycle.scope === "block"
-					? "document"
-					: "block";
+				shouldSelectDocument ? "document" : "block";
 			if (nextScope === "block") {
-				const blockLength =
-					this._editor.getBlock(blockId)?.textContent().length ?? 0;
 				this.activateTextSelection(blockId, 0, blockLength);
 				this._recordSelectAllScope(blockId, "block");
 				return true;

@@ -616,6 +616,86 @@ describe("@pen/react escape key handling", () => {
 		editor.destroy();
 	});
 
+	it("maps cmd+a from an empty block directly to full-document selection", async () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream", "undo"],
+		});
+		const firstBlockId = editor.firstBlock()!.id;
+		const secondBlockId = crypto.randomUUID();
+		const thirdBlockId = crypto.randomUUID();
+
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: secondBlockId,
+				blockType: "paragraph",
+				props: {},
+				position: { after: firstBlockId },
+			},
+			{
+				type: "insert-text",
+				blockId: secondBlockId,
+				offset: 0,
+				text: "Second",
+			},
+			{
+				type: "insert-block",
+				blockId: thirdBlockId,
+				blockType: "paragraph",
+				props: {},
+				position: { after: secondBlockId },
+			},
+			{
+				type: "insert-text",
+				blockId: thirdBlockId,
+				offset: 0,
+				text: "Third",
+			},
+		]);
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(
+				<Pen.Editor.Root editor={editor}>
+					<Pen.Editor.Content />
+				</Pen.Editor.Root>,
+			);
+		});
+
+		const fieldEditor = getFieldEditor(editor);
+		await act(async () => {
+			fieldEditor.activate(firstBlockId);
+			await flushAnimationFrames(2);
+		});
+
+		await act(async () => {
+			document.dispatchEvent(createSelectAllEvent());
+			await flushAnimationFrames(2);
+		});
+
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId: firstBlockId, offset: 0 },
+			focus: { blockId: thirdBlockId, offset: 5 },
+			isMultiBlock: true,
+		});
+		expect(fieldEditor.getSnapshot()).toMatchObject({
+			focusBlockId: firstBlockId,
+			activeBlockIds: [firstBlockId, secondBlockId, thirdBlockId],
+			isEditing: true,
+			mode: "expanded",
+		});
+
+		await act(async () => {
+			root.unmount();
+		});
+		container.remove();
+		editor.destroy();
+	});
+
 	it("keeps the first cmd+a block-scoped even when the full block is already selected", async () => {
 		const editor = createEditor({
 			without: ["document-ops", "delta-stream", "undo"],
