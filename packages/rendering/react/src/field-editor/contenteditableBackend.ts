@@ -472,12 +472,12 @@ export class ContentEditableBackend implements InputBackend {
 
 	private handleCopyEvent = (event: ClipboardEvent): void => {
 		event.preventDefault();
-		handleCopy(this.editor);
+		handleCopy(this.editor, event);
 	};
 
 	private handleCutEvent = (event: ClipboardEvent): void => {
 		event.preventDefault();
-		handleCut(this.editor);
+		handleCut(this.editor, event);
 	};
 
 	private handleDragStart = (event: DragEvent): void => {

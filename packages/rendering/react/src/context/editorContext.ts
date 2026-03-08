@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react";
-import type { Editor } from "@pen/core";
+import type { Editor, AssetProvider } from "@pen/core";
 import { isDevelopmentEnvironment } from "../utils/environment.js";
 
 export interface PasteImporters {
@@ -23,6 +23,7 @@ export interface PasteImporters {
 			},
 		): void;
 	};
+	assets?: AssetProvider;
 }
 
 export interface EditorContextValue {

@@ -436,6 +436,9 @@ importers:
 
   playground:
     dependencies:
+      '@pen/assets-memory':
+        specifier: workspace:^
+        version: link:../packages/tooling/assets-memory
       '@pen/core':
         specifier: workspace:*
         version: link:../packages/core

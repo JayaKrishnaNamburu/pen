@@ -3,6 +3,7 @@ import { htmlExporter } from "@pen/export-html";
 import { markdownExporter } from "@pen/export-markdown";
 import { htmlImporter } from "@pen/import-html";
 import { markdownImporter } from "@pen/import-markdown";
+import { memoryAssets } from "@pen/assets-memory";
 import {
 	getAttachedFieldEditorStore,
 	Pen,
@@ -23,9 +24,12 @@ const PLAYGROUND_BLOCK_TYPE_ORDER = [
 	"toggle",
 ] as const;
 
+const playgroundAssets = memoryAssets();
+
 const IMPORTERS: PasteImporters = {
 	html: htmlImporter,
 	markdown: markdownImporter,
+	assets: playgroundAssets,
 };
 
 type ToolbarIconName =

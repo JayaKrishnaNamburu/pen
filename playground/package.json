@@ -10,13 +10,14 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@pen/assets-memory": "workspace:^",
     "@pen/core": "workspace:*",
-    "@pen/react": "workspace:*",
-    "@pen/schema-default": "workspace:*",
-    "@pen/import-html": "workspace:*",
-    "@pen/import-markdown": "workspace:*",
     "@pen/export-html": "workspace:*",
     "@pen/export-markdown": "workspace:*",
+    "@pen/import-html": "workspace:*",
+    "@pen/import-markdown": "workspace:*",
+    "@pen/react": "workspace:*",
+    "@pen/schema-default": "workspace:*",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

@@ -33,4 +33,9 @@ export {
 	type FieldEditorSurfaceMode,
 	type FieldEditorSurfaceState,
 } from "./crossBlock.js";
-export { handlePaste, handleCopy, handleCut } from "./clipboard.js";
+export {
+	handlePaste,
+	handleClipboardPaste,
+	handleCopy,
+	handleCut,
+} from "./clipboard.js";

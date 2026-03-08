@@ -71,9 +71,11 @@ export function EditorRoot(props: EditorRootProps) {
 
 	useEffect(() => {
 		editor.internals.setSlot("paste:importers", importers);
+		editor.internals.setSlot("paste:assetProvider", importers?.assets);
 
 		return () => {
 			editor.internals.setSlot("paste:importers", undefined);
+			editor.internals.setSlot("paste:assetProvider", undefined);
 		};
 	}, [editor, importers]);
 

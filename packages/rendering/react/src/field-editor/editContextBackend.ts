@@ -8,6 +8,8 @@ import {
 } from "./selectionBridge.js";
 import { handleFieldEditorKeyDown } from "./keyHandling.js";
 import { isHistoryTransactionOrigin } from "./historyOrigin.js";
+import { handleCopy, handleCut, handleClipboardPaste } from "./clipboard.js";
+import type { PasteImporters } from "../context/editorContext.js";
 
 declare class EditContext {
 	constructor(options?: {
@@ -62,6 +64,9 @@ export class EditContextBackend implements InputBackend {
 		).editContext = ec;
 
 		element.addEventListener("keydown", this.handleKeyDown);
+		element.addEventListener("copy", this.handleCopyEvent);
+		element.addEventListener("cut", this.handleCutEvent);
+		element.addEventListener("paste", this.handlePasteEvent);
 		element.addEventListener("dragstart", this.handleDragStart);
 		element.addEventListener("drop", this.handleDrop);
 		ec.addEventListener("textupdate", this.handleTextUpdate);
@@ -108,6 +113,9 @@ export class EditContextBackend implements InputBackend {
 		}
 		if (this.element) {
 			this.element.removeEventListener("keydown", this.handleKeyDown);
+			this.element.removeEventListener("copy", this.handleCopyEvent);
+			this.element.removeEventListener("cut", this.handleCutEvent);
+			this.element.removeEventListener("paste", this.handlePasteEvent);
 			this.element.removeEventListener("dragstart", this.handleDragStart);
 			this.element.removeEventListener("drop", this.handleDrop);
 			this.element.ownerDocument?.removeEventListener(
@@ -481,6 +489,28 @@ export class EditContextBackend implements InputBackend {
 		if (handled) {
 			event.preventDefault();
 		}
+	};
+
+	private handleCopyEvent = (event: ClipboardEvent): void => {
+		event.preventDefault();
+		handleCopy(this.editor, event);
+	};
+
+	private handleCutEvent = (event: ClipboardEvent): void => {
+		event.preventDefault();
+		handleCut(this.editor, event);
+	};
+
+	private handlePasteEvent = (event: ClipboardEvent): void => {
+		event.preventDefault();
+		const importers =
+			this.editor.internals.getSlot<PasteImporters>("paste:importers");
+		handleClipboardPaste(
+			event,
+			this.editor,
+			this.fieldEditor,
+			importers ?? undefined,
+		);
 	};
 
 	private handleDragStart = (event: DragEvent): void => {

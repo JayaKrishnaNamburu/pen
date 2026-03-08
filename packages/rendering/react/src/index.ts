@@ -152,6 +152,7 @@ export {
 } from "./field-editor/crossBlock.js";
 export {
 	handlePaste,
+	handleClipboardPaste,
 	handleCopy,
 	handleCut,
 } from "./field-editor/clipboard.js";
