@@ -346,6 +346,6 @@ Pen is created by [Input](https://www.input.so/).
 
 ## License
 
-The Pen SDK is provided under the [Pen license](LICENSE.md). You can use the SDK freely in development. Production use requires a license key. Contact [input.so](https://www.input.so/) to learn more.
+The Pen SDK is provided under the [Pen license](LICENSE.md). You can use the SDK freely in development. Production use requires a license. Contact [input.so](https://www.input.so/) to learn more.
 
 Copyright (c) 2025-present Input B.V.

@@ -1,0 +1,20 @@
+[data-pen-slash-menu] {
+  display: none;
+}
+
+[data-pen-slash-menu][data-open] {
+  display: block;
+  position: fixed;
+  z-index: 50;
+  top: 50%;
+  left: 25%;
+  transform: translate(-50%, -50%);
+  width: 280px;
+  max-height: 320px;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  padding: 4px;
+}

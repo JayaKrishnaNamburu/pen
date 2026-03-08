@@ -1,0 +1,9 @@
+export { IconArrowUp } from "./IconArrowUp";
+export { IconBold } from "./IconBold";
+export { IconCode } from "./IconCode";
+export { IconItalic } from "./IconItalic";
+export { IconRedo } from "./IconRedo";
+export { IconSidebarRight } from "./IconSidebarRight";
+export { IconStrikethrough } from "./IconStrikethrough";
+export { IconUnderline } from "./IconUnderline";
+export { IconUndo } from "./IconUndo";

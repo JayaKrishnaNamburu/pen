@@ -10,7 +10,7 @@ Alternative licenses are available from Input for commercial and non-commercial 
 
 "Development Environment" means any internal hosting or deployment of the Software for development, testing, or staging purposes, operated by your organization and not accessible to end users, customers, or the public.
 
-"License Key" means the programmatically generated key that controls Software functionality and usage restrictions.
+"License" means the signed document that gives approval to use the Software.
 
 ## Permissions
 
@@ -26,7 +26,7 @@ Subject to the following conditions, you are permitted to:
 In exchange for these permissions, you agree:
 
 - Not to use the Software in Production Environments.
-- Not to disable, change, or interfere with the Software's License Key enforcement.
+- Not to disable, change, or interfere with the Software's License enforcement.
 - Not to remove any copyright or other notices from the Software.
 - Not to make the Software available under a license that supersedes or negates the effect of this License.
 - Not to distribute the Software or modifications of the Software as a standalone product, but only as part of another application.
@@ -34,11 +34,11 @@ In exchange for these permissions, you agree:
 
 ## Trial license
 
-In the case that Input makes the Software available to you on a trial basis, you are permitted to use the Software in Production Environments for the specified period beginning from the date of the trial's License Key issuance. Business units are limited to one trial period unless otherwise approved by Input in writing.
+In the case that Input makes the Software available to you on a trial basis, you are permitted to use the Software in Production Environments for the specified period beginning from the date of the trial's License issuance. Business units are limited to one trial period unless otherwise approved by Input in writing.
 
 ## Commercial license
 
-In the case that Input makes the Software available to you under the terms of a separate commercial agreement, you are permitted to use the Software in Production Environments for the specified period beginning from the date of the agreement's License Key issuance.
+In the case that Input makes the Software available to you under the terms of a separate commercial agreement, you are permitted to use the Software in Production Environments for the specified period beginning from the date of the agreement's License issuance.
 
 ## Termination
 
@@ -46,7 +46,7 @@ Your license to use the Software will terminate automatically if you breach any 
 
 ## Technical enforcement
 
-The Software includes technical measures to verify License Key validity, detect deployment environments, enforce usage restrictions based on license type, and ensure proper watermark display. The Software may collect and transmit usage data to Input for license compliance purposes.
+The Software includes technical measures to verify License validity, detect deployment environments, enforce usage restrictions based on license type, and ensure proper watermark display. The Software may collect and transmit usage data to Input for license compliance purposes.
 
 ## Ownership of intellectual property
 

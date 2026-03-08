@@ -1,0 +1,40 @@
+.playground-inspector {
+  display: flex;
+  flex-direction: column;
+  flex-basis: 50%;
+  min-width: 0;
+  height: 100%;
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+  background: var(--surface);
+}
+
+.inspector-header {
+  display: flex;
+  align-items: center;
+  height: var(--topbar-h);
+  padding: 0 20px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.inspector-title {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.inspector {
+  height: 100%;
+  overflow-y: auto;
+}
+
+.inspector-json {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-muted);
+  padding: 20px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
