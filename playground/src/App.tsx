@@ -9,7 +9,7 @@ import {
 	useEditor,
 	type PasteImporters,
 } from "@pen/react";
-import { useState, useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore, type MouseEvent } from "react";
 
 const PLAYGROUND_BLOCK_TYPE_ORDER = [
 	"paragraph",
@@ -93,6 +93,20 @@ function Topbar({
 		navigator.clipboard.writeText(html as string);
 	};
 
+	const handleUndo = () => {
+		editor.undoManager.undo();
+	};
+
+	const handleRedo = () => {
+		editor.undoManager.redo();
+	};
+
+	const handleHistoryMouseDown = (event: MouseEvent<HTMLButtonElement>) => {
+		// Keep focus in the editor so history actions don't first tear down the
+		// active field-editor session via button focus.
+		event.preventDefault();
+	};
+
 	return (
 		<header className="topbar">
 			<div className="topbar-left">
@@ -129,7 +143,8 @@ function Topbar({
 			<div className="topbar-right">
 				<button
 					className="topbar-btn"
-					onClick={() => editor.undoManager.undo()}
+					onMouseDown={handleHistoryMouseDown}
+					onClick={handleUndo}
 					type="button"
 					title="Undo"
 					aria-label="Undo"
@@ -138,7 +153,8 @@ function Topbar({
 				</button>
 				<button
 					className="topbar-btn"
-					onClick={() => editor.undoManager.redo()}
+					onMouseDown={handleHistoryMouseDown}
+					onClick={handleRedo}
 					type="button"
 					title="Redo"
 					aria-label="Redo"
@@ -320,7 +336,7 @@ function subscribeToInspectorUpdates(
 
 	const unsubscribers = [
 		editor.on("change", notify),
-		editor.on("documentChange", notify),
+		editor.on("documentCommit", notify),
 		editor.on("selectionChange", notify),
 	];
 	const fieldEditor = getAttachedFieldEditorStore(editor);
@@ -346,30 +362,7 @@ function serializeEditorState(editor: Editor) {
 	const fieldEditor = getAttachedFieldEditorStore(editor);
 	const fieldEditorState = fieldEditor?.getSnapshot() ?? null;
 	const serializedSelection = selection
-		? selection.type === "text"
-			? {
-				type: selection.type,
-				blockId: selection.anchor.blockId,
-				anchor: selection.anchor.offset,
-				focus: selection.focus.offset,
-				collapsed: selection.isCollapsed,
-			}
-			: selection.type === "block"
-				? {
-					type: selection.type,
-					blockIds: selection.blockIds,
-				}
-				: selection.type === "cell"
-					? {
-						type: selection.type,
-						blockId: selection.blockId,
-						anchor: selection.anchor,
-						head: selection.head,
-					}
-					: {
-						type: selection.type,
-						appId: selection.appId,
-					}
+		? serializeSelection(selection)
 		: null;
 
 	return {
@@ -394,5 +387,43 @@ function serializeEditorState(editor: Editor) {
 				text: block.textContent(),
 			};
 		}),
+	};
+}
+
+function serializeSelection(selection: Editor["selection"]) {
+	if (!selection) {
+		return null;
+	}
+
+	if (selection.type === "text") {
+		return {
+			type: selection.type,
+			blockId: selection.anchor.blockId,
+			anchor: selection.anchor.offset,
+			focus: selection.focus.offset,
+			collapsed: selection.isCollapsed,
+			isMultiBlock: selection.isMultiBlock,
+		};
+	}
+
+	if (selection.type === "block") {
+		return {
+			type: selection.type,
+			blockIds: selection.blockIds,
+		};
+	}
+
+	if (selection.type === "cell") {
+		return {
+			type: selection.type,
+			blockId: selection.blockId,
+			anchor: selection.anchor,
+			head: selection.head,
+		};
+	}
+
+	return {
+		type: selection.type,
+		appId: selection.appId,
 	};
 }

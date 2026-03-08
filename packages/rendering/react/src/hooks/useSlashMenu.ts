@@ -32,7 +32,7 @@ export function useSlashMenu(
 	allDisplaysRef.current = allDisplays;
 
 	useEffect(() => {
-		const unsub = editor.on("documentChange", () => {
+		const unsub = editor.onDocumentCommit(() => {
 			const selection = editorRef.current.selection;
 			if (!selection || selection.type !== "text") return;
 

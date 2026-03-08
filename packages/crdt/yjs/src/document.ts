@@ -260,7 +260,9 @@ export function createYjsDocument(
   adapter: CRDTAdapter,
   options?: YjsDocumentOptions,
 ): YjsCRDTDocument {
-  const ydoc = new Y.Doc({ gc: options?.gc ?? true });
+  // Reliable block undo/redo requires deleted Yjs content to remain restorable.
+  // Yjs recommends disabling GC when version/history restoration matters.
+  const ydoc = new Y.Doc({ gc: options?.gc ?? false });
   const blockOrder = ydoc.getArray<string>(BLOCK_ORDER);
   const blocks = ydoc.getMap<Y.Map<unknown>>(BLOCKS);
   const apps = ydoc.getMap<Y.Map<unknown>>(APPS);

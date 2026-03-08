@@ -5,6 +5,7 @@ import type {
   OpOrigin,
   Unsubscribe,
 } from "@pen/types";
+import { HISTORY_ORIGIN_TAG } from "@pen/types";
 import * as Y from "yjs";
 
 import { APPS, BLOCKS, BLOCK_ORDER } from "./document.js";
@@ -26,17 +27,21 @@ const KNOWN_ORIGINS: ReadonlySet<string> = new Set([
   "system",
 ]);
 
+function isHistoryOrigin(origin: unknown): boolean {
+  if (origin instanceof Y.UndoManager) return true;
+  if (
+    origin != null &&
+    typeof origin === "object" &&
+    (origin as Record<string, unknown>)[HISTORY_ORIGIN_TAG] === true
+  ) {
+    return true;
+  }
+  return false;
+}
+
 function originToOpOrigin(origin: unknown): OpOrigin {
   if (origin === null || origin === undefined) return "user";
-  if (
-    origin instanceof Y.UndoManager ||
-    (typeof origin === "object" &&
-      origin !== null &&
-      (origin as { constructor?: { name?: string } }).constructor?.name ===
-        "UndoManager")
-  ) {
-    return "history";
-  }
+  if (isHistoryOrigin(origin)) return "history";
   if (typeof origin === "string" && KNOWN_ORIGINS.has(origin))
     return origin as OpOrigin;
   return "extension";
@@ -250,6 +255,7 @@ export function createObserver(
   };
 
   const txnHandler = (txn: Y.Transaction) => {
+    const derivedOrigin = originToOpOrigin(txn.origin);
     if (txn.changed.size === 0 && pendingTextDeltas.size === 0) {
       return;
     }
@@ -258,7 +264,7 @@ export function createObserver(
     pendingTextDeltas = new Map();
 
     const event: CRDTEvent = {
-      origin: originToOpOrigin(txn.origin),
+      origin: derivedOrigin,
       affectedBlocks: extractAffectedBlocks(txn),
       ops: reconstructOps(txn, textDeltas),
       timestamp: Date.now(),

@@ -212,7 +212,7 @@ export interface AppEditorAPI {
   insertBlock: (blockType: string, props: Record<string, unknown>, position?: any) => string;
   updateBlock: (blockId: string, props: Record<string, unknown>) => void;
   deleteBlock: (blockId: string) => void;
-  onDocumentChange: (cb: () => void) => Unsubscribe;
+  onDocumentCommit: (cb: () => void) => Unsubscribe;
 }
 
 export type AppPlacement = 'inline' | 'anchored';
@@ -349,14 +349,14 @@ export function createAppEditorAPI(editor: Editor): AppEditorAPI {
       }], { origin: 'app' });
     },
 
-    onDocumentChange(cb) {
-      return editor.onDocumentChange(cb);
+    onDocumentCommit(cb) {
+      return editor.onDocumentCommit(cb);
     },
   };
 }
 ```
 
-**Restricted API surface.** Apps get `readBlock`, `readDocument`, `insertBlock`, `updateBlock`, `deleteBlock`, `onDocumentChange`. No access to selection, CRDT internals, decorations, or other extensions. This is the security boundary.
+**Restricted API surface.** Apps get `readBlock`, `readDocument`, `insertBlock`, `updateBlock`, `deleteBlock`, `onDocumentCommit`. No access to selection, CRDT internals, decorations, or other extensions. This is the security boundary.
 
 ---
 

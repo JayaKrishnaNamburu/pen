@@ -18,7 +18,7 @@ export function useBlockModel(
 
 	return useSyncExternalStore(
 		(callback) =>
-			editor.on("documentChange", (event) => {
+			editor.onDocumentCommit((event) => {
 				if (event.affectedBlocks.includes(blockId)) {
 					callback();
 				}

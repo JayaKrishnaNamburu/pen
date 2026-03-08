@@ -16,7 +16,7 @@ Source: `spec/wave-03-editor-core.md`, "Known Errata (Fix During Implementation)
 
 | # | Summary | Disposition | Notes |
 |---|---|---|---|
-| 1 | `documentChange` event must be emitted by the apply pipeline | Implementation-required | Wave 5 rendering depends on this event. |
+| 1 | `documentCommit` event must be emitted by the apply pipeline | Implementation-required | Wave 5 rendering depends on this event. |
 | 2 | `onBeforeApply` hooks must be invoked in priority order | Implementation-required | Wave 7 (suggest mode) and Wave 9 (input rules) depend on this. Hooks run before validation. |
 | 3 | `DocumentStateImpl` must implement full `DocumentState` interface (`blocks`, `isEmpty`, `allBlocks()`) | Implementation-required | `allBlocks()` must recursively walk layout children. `blockAt()` returns `string \| null`. |
 | 4 | `_splitBlock` must use `initBlockMap` to create new blocks (meta Y.Map invariant) | Implementation-required | Violates Wave 1 invariant if meta is missing. |

@@ -3,6 +3,7 @@ import type {
 	EditorInternals,
 	CreateEditorOptions,
 	PenEventMap,
+	DocumentCommitEvent,
 	CRDTAdapter,
 	CRDTDocument,
 	CRDTEvent,
@@ -69,6 +70,8 @@ class EditorImpl implements Editor {
 	private _awareness: Awareness | null = null;
 	private readonly _slots = new Map<string, unknown>();
 	private _clientId: number;
+	private _commitId = 0;
+	private readonly _blockRevisions = new Map<string, number>();
 
 	readonly undoManager: UndoManager;
 
@@ -155,6 +158,9 @@ class EditorImpl implements Editor {
 			doc: this._doc,
 			engine: this._engine,
 			awareness: this._awareness,
+			emit: (event, ...args) => {
+				this._emitter.emit(event, ...args);
+			},
 			getSlot: <T>(key: string): T | undefined =>
 				this._slots.get(key) as T | undefined,
 			setSlot: (key: string, value: unknown): void => {
@@ -264,6 +270,10 @@ class EditorImpl implements Editor {
 
 	blockCount(): number {
 		return this._doc.blockOrder.length;
+	}
+
+	getBlockRevision(blockId: string): number {
+		return this._blockRevisions.get(blockId) ?? 0;
 	}
 
 	// ── Selection ────────────────────────────────────────────
@@ -483,12 +493,16 @@ class EditorImpl implements Editor {
 		return this._emitter.on(event, handler);
 	}
 
-	onDocumentChange(callback: PenEventMap["documentChange"]): Unsubscribe {
-		return this.on("documentChange", callback);
+	onDocumentCommit(callback: PenEventMap["documentCommit"]): Unsubscribe {
+		return this.on("documentCommit", callback);
 	}
 
 	onSelectionChange(callback: PenEventMap["selectionChange"]): Unsubscribe {
 		return this.on("selectionChange", callback);
+	}
+
+	onHistoryApplied(callback: PenEventMap["historyApplied"]): Unsubscribe {
+		return this.on("historyApplied", callback);
 	}
 
 	// ── Extension State ──────────────────────────────────────
@@ -584,19 +598,29 @@ class EditorImpl implements Editor {
 		);
 	}
 
-	private _emitDocumentChange(event: CRDTEvent): void {
-		this._emitter.emit("documentChange", {
+	private _createCommitEvent(event: CRDTEvent): DocumentCommitEvent {
+		const blockRevisions: Record<string, number> = {};
+		for (const blockId of event.affectedBlocks) {
+			const nextRevision = (this._blockRevisions.get(blockId) ?? 0) + 1;
+			this._blockRevisions.set(blockId, nextRevision);
+			blockRevisions[blockId] = nextRevision;
+		}
+		this._commitId += 1;
+		return {
+			commitId: this._commitId,
 			ops: event.ops,
 			origin: event.origin,
 			affectedBlocks: [...event.affectedBlocks],
-		});
+			blockRevisions,
+		};
 	}
 
 	private _dispatchCRDTEvent(event: CRDTEvent): void {
+		const commitEvent = this._createCommitEvent(event);
 		this._documentState.incrementalUpdate(event.affectedBlocks);
 		this._extensions.dispatchObserve([event], this);
 		this._emitter.emit("change", [event]);
-		this._emitDocumentChange(event);
+		this._emitter.emit("documentCommit", commitEvent);
 	}
 
 	private _wireObservation(): void {

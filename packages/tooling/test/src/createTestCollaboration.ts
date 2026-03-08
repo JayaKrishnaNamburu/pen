@@ -6,8 +6,8 @@ import type { TestEditorOptions, TestCollaboration } from "./types.js";
 export function createTestCollaboration(
   options?: TestEditorOptions,
 ): TestCollaboration {
-  const docA = new Y.Doc();
-  const docB = new Y.Doc();
+  const docA = new Y.Doc({ gc: false });
+  const docB = new Y.Doc({ gc: false });
 
   if (options?.blocks) {
     populateYDoc(docA, options.blocks);

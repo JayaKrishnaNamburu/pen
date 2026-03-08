@@ -69,7 +69,7 @@ export function yjsAdapter(options?: YjsAdapterOptions): CRDTAdapter {
     },
 
     loadDocument(binary: Uint8Array) {
-      const ydoc = new Y.Doc({ gc: options?.gc ?? true });
+      const ydoc = new Y.Doc({ gc: options?.gc ?? false });
       Y.applyUpdate(ydoc, binary);
 
       const validation = validateDocument(ydoc);

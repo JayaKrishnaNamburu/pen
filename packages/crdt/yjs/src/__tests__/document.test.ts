@@ -27,9 +27,9 @@ describe("document", () => {
       expect(doc.adapter).toBe(adapter);
     });
 
-    it("defaults gc to true", () => {
+    it("defaults gc to false for reliable history restoration", () => {
       const doc = createYjsDocument(adapter);
-      expect(doc.ydoc.gc).toBe(true);
+      expect(doc.ydoc.gc).toBe(false);
     });
 
     it("respects gc: false option", () => {

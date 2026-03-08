@@ -87,7 +87,7 @@ export function createTestDocument(blocks: TestBlock[]): {
   doc: PenDocument;
   crdtDoc: CRDTDocument;
 } {
-  const ydoc = new Y.Doc();
+  const ydoc = new Y.Doc({ gc: false });
   const adapter = yjsAdapter();
 
   populateYDoc(ydoc, blocks);

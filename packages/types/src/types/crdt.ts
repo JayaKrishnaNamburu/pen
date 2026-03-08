@@ -112,6 +112,12 @@ export interface CRDTUndoManager {
       kind: "undo" | "redo",
     ) => void,
   ): Unsubscribe;
+  onStackItemUpdated?(
+    callback: (
+      stackItem: CRDTUndoStackItem,
+      kind: "undo" | "redo",
+    ) => void,
+  ): Unsubscribe;
   onStackItemPopped?(
     callback: (
       stackItem: CRDTUndoStackItem,

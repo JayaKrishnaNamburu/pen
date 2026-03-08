@@ -1,11 +1,10 @@
-import React, { useRef, useEffect, useLayoutEffect, useState } from "react";
+import React, { useRef, useLayoutEffect } from "react";
 import { useEditorContext } from "../../context/editorContext.js";
 import { useFieldEditorContext } from "../../context/fieldEditorContext.js";
-import {
-	applyDeltaToDOM,
-	fullReconcileToDOM,
-} from "../../field-editor/reconciler.js";
+import { fullReconcileDeltasToDOM } from "../../field-editor/reconciler.js";
 import { useBlockEditingState } from "../../hooks/useBlockEditingState.js";
+import { useBlockCommitState } from "../../hooks/useBlockCommitState.js";
+import { useBlockTextSnapshot } from "../../hooks/useBlockTextSnapshot.js";
 import { useFieldEditorState } from "../../hooks/useFieldEditorState.js";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild.js";
 import { DATA_ATTRS } from "../../utils/dataAttributes.js";
@@ -22,8 +21,13 @@ export function InlineContent(props: InlineContentProps) {
 	const fieldEditor = useFieldEditorContext();
 	const fieldEditorState = useFieldEditorState(fieldEditor);
 	const isActive = useBlockEditingState(fieldEditor, blockId);
+	const blockCommit = useBlockCommitState(editor, blockId);
+	const textSnapshot = useBlockTextSnapshot(editor, blockId);
 	const elementRef = useRef<HTMLElement>(null);
-	const [isEmpty, setIsEmpty] = useState(false);
+	const previousCommitRevisionRef = useRef(blockCommit.revision);
+	const isExpandedOwnedBlock =
+		fieldEditorState.mode === "expanded" &&
+		fieldEditorState.activeBlockIds.includes(blockId);
 
 	useLayoutEffect(() => {
 		if (fieldEditorState.mode === "expanded") {
@@ -34,53 +38,55 @@ export function InlineContent(props: InlineContentProps) {
 		}
 	}, [isActive, fieldEditor, fieldEditorState.mode, blockId]);
 
-	useEffect(() => {
-		if (fieldEditorState.mode === "expanded") {
+	useLayoutEffect(() => {
+		const didCommitAdvance =
+			blockCommit.revision !== previousCommitRevisionRef.current;
+		previousCommitRevisionRef.current = blockCommit.revision;
+
+		const activeElement = elementRef.current?.ownerDocument?.activeElement;
+		const isBackendOwned =
+			!!elementRef.current &&
+			isActive &&
+			(activeElement instanceof Node
+				? elementRef.current.contains(activeElement)
+				: false);
+		const shouldForceCommitReconcile =
+			didCommitAdvance && blockCommit.origin === "history";
+
+		if (isExpandedOwnedBlock || isActive) {
 			return;
 		}
-		if (isActive) {
+		if (!elementRef.current) {
 			return;
 		}
+		if (
+			!shouldForceCommitReconcile &&
+			(isBackendOwned || fieldEditorState.isComposing)
+		) {
+			return;
+		}
+		if (!textSnapshot.exists) {
+			elementRef.current.replaceChildren();
+			return;
+		}
+		fullReconcileDeltasToDOM(
+			[...textSnapshot.deltas],
+			elementRef.current,
+			editor.schema,
+			{ preserveSelection: false },
+		);
+	}, [
+		editor,
+		isExpandedOwnedBlock,
+		fieldEditorState.isComposing,
+		fieldEditorState.activeBlockIds,
+		fieldEditorState.mode,
+		blockCommit,
+		isActive,
+		textSnapshot,
+	]);
 
-		const blockMap = getBlockMap(editor, blockId);
-		const ytext = blockMap?.get("content");
-		if (!ytext) return;
-
-		const syncProjection = () => {
-			const text = ytext.toString();
-			setIsEmpty(!text || text === "\u200B");
-			if (elementRef.current) {
-				fullReconcileToDOM(ytext, elementRef.current, editor.schema);
-			}
-		};
-
-		syncProjection();
-
-		const handler = (event: { delta?: unknown[] }) => {
-			const text = ytext.toString();
-			setIsEmpty(!text || text === "\u200B");
-
-			if (!elementRef.current) {
-				return;
-			}
-
-			const applied =
-				event.delta != null &&
-				applyDeltaToDOM(
-					event.delta as any,
-					elementRef.current,
-					editor.schema,
-				);
-
-			if (!applied) {
-				fullReconcileToDOM(ytext, elementRef.current, editor.schema);
-			}
-		};
-
-		ytext.observe(handler);
-		return () => ytext.unobserve(handler);
-	}, [editor, blockId, fieldEditorState.mode, isActive]);
-
+	const isEmpty = !textSnapshot.text || textSnapshot.text === "\u200B";
 	const showPlaceholder = isEmpty && placeholder;
 
 	const primitiveProps: Record<string, unknown> = {
@@ -95,14 +101,4 @@ export function InlineContent(props: InlineContentProps) {
 	};
 
 	return renderAsChild({ ...rest, ref: elementRef }, "span", primitiveProps);
-}
-
-function getBlockMap(
-	editor: ReturnType<typeof useEditorContext>["editor"],
-	blockId: string,
-) {
-	const adapter = editor.internals.adapter;
-	const doc = editor.internals.crdtDoc;
-	const ydoc = adapter.raw(doc) as any;
-	return ydoc.getMap("blocks").get(blockId);
 }

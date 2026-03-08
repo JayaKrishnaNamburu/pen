@@ -117,15 +117,24 @@ export function fullReconcileToDOM(
   ytext: any,
   element: HTMLElement,
   registry: SchemaRegistry,
+  options?: { preserveSelection?: boolean },
 ): void {
-  const deltas = ytext.toDelta();
+  fullReconcileDeltasToDOM(ytext.toDelta(), element, registry, options);
+}
 
+export function fullReconcileDeltasToDOM(
+  deltas: Array<{ insert?: string; attributes?: Record<string, unknown> }>,
+  element: HTMLElement,
+  registry: SchemaRegistry,
+  options?: { preserveSelection?: boolean },
+): void {
   const orderedDeltas = deltas.map((d: any) => {
     if (!d.attributes || Object.keys(d.attributes).length < 2) return d;
     return { ...d, attributes: sortDeltaAttributes(d.attributes, registry) };
   });
 
-  const savedSel = saveSelection(element);
+  const preserveSelection = options?.preserveSelection ?? true;
+  const savedSel = preserveSelection ? saveSelection(element) : null;
 
   const fragment = document.createDocumentFragment();
   for (const delta of orderedDeltas) {
@@ -138,7 +147,9 @@ export function fullReconcileToDOM(
   }
 
   patchDOM(element, fragment);
-  restoreSelection(element, savedSel);
+  if (savedSel) {
+    restoreSelection(element, savedSel);
+  }
 }
 
 // ── Mark wrapping ──────────────────────────────────────────
@@ -318,11 +329,12 @@ export function restoreSelection(
     const focus = findPositionInDOM(element, saved.focusOffset);
     if (!anchor || !focus) return;
 
-    const range = document.createRange();
-    range.setStart(anchor.node, anchor.offset);
-    range.setEnd(focus.node, focus.offset);
-    sel.removeAllRanges();
-    sel.addRange(range);
+    sel.setBaseAndExtent(
+      anchor.node,
+      anchor.offset,
+      focus.node,
+      focus.offset,
+    );
   } catch {
     // Selection restoration can fail if DOM structure changed
   }

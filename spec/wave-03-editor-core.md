@@ -211,7 +211,7 @@ Each handler is wrapped in `try/catch` — a broken handler must not prevent oth
 | Event               | Payload                                                             | When                                                                                                                                                                             |
 | ------------------- | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `change`            | `CRDTEvent[]`                                                       | After each `Y.transact()` batch completes and extensions have been notified. Wave 3 emits one-item arrays (`[event]`) to match the canonical `PenEventMap` contract from Wave 0. |
-| `documentChange`    | `{ ops: DocumentOp[]; origin: OpOrigin; affectedBlocks: string[] }` | After `apply()` completes and normalization has settled                                                                                                                          |
+| `documentCommit`    | `DocumentCommitEvent`                                               | After `apply()` completes and normalization has settled. Includes `commitId`, `ops`, `origin`, `affectedBlocks`, and per-block `blockRevisions`.                               |
 | `decorationsChange` | `number`                                                            | After decoration generation increments (explicit request or extension invalidation)                                                                                              |
 | `selectionChange`   | `SelectionState`                                                    | After any selection mutation                                                                                                                                                     |
 
@@ -2400,8 +2400,8 @@ on(event: string, handler: (...args: unknown[]) => void): Unsubscribe {
   return this._emitter.on(event, handler);
 }
 
-onDocumentChange(callback: PenEventMap['documentChange']): Unsubscribe {
-  return this.on('documentChange', callback);
+onDocumentCommit(callback: PenEventMap['documentCommit']): Unsubscribe {
+  return this.on('documentCommit', callback);
 }
 
 onSelectionChange(callback: PenEventMap['selectionChange']): Unsubscribe {
@@ -2536,7 +2536,7 @@ export class UndoManagerImpl implements UndoManager {
 }
 ```
 
-**Idle timeout.** After each CRDT write (observed via the extension's `observe()` hook), `resetIdleTimer()` is called. If no further writes occur within `_groupTimeout` ms (default 1000), `stopCapturing()` inserts an undo boundary. This creates "undo by phrase" rather than "undo by character."
+**Idle timeout.** After each CRDT write (observed via the extension's `observe()` hook), `resetIdleTimer()` is called. If no further writes occur within `_groupTimeout` ms (default 400), `stopCapturing()` inserts an undo boundary. This creates "undo by phrase" rather than "undo by character."
 
 ### Module: `undo-extension.ts` — UndoExtension
 
@@ -3631,7 +3631,7 @@ processStream(AsyncIterable<PenStreamPart>)
 
 These issues were identified during pre-build review and must be addressed when implementing this wave:
 
-1. **`documentChange` event must be emitted by the apply pipeline.** After `_executeOps` completes and normalization runs, emit `documentChange` with the processed ops, origin, and affected block IDs. Wave 5's rendering subscribes to this event.
+1. **`documentCommit` event must be emitted by the apply pipeline.** After `_executeOps` completes and normalization runs, emit `documentCommit` with the processed ops, origin, affected block IDs, a monotonic `commitId`, and per-block revisions. Wave 5's rendering subscribes to this event.
 
 2. **`onBeforeApply` hooks must be invoked.** The apply pipeline must call registered `onBeforeApply` hooks in priority order before executing ops. Wave 7 (suggest mode, priority 200) and Wave 9 (input rules, priority 300) depend on this. Store hooks in a priority-sorted array; each hook transforms ops sequentially. **Hooks run before validation** — the transformed ops are what gets validated and executed.
 

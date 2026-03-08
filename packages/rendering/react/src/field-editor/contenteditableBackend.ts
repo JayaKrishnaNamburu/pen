@@ -17,13 +17,14 @@ import {
 	toggleInlineMark,
 } from "./commands.js";
 import { handleFieldEditorKeyDown } from "./keyHandling.js";
+import { isHistoryTransactionOrigin } from "./historyOrigin.js";
 
 export class ContentEditableBackend implements InputBackend {
 	private element: HTMLElement | null = null;
 	private ytext: any = null;
 	private observer: any = null;
 	private mutationObserver: MutationObserver | null = null;
-	private isApplyingSelection = false;
+	private isApplyingSelection = 0;
 	private isComposing = false;
 	private compositionStartTimestamp = 0;
 	private compositionStartText: string | null = null;
@@ -46,7 +47,7 @@ export class ContentEditableBackend implements InputBackend {
 		this.ytext = ytext;
 
 		element.contentEditable = "true";
-		this.isApplyingSelection = true;
+		this.isApplyingSelection++;
 		this.isComposing = false;
 		this.compositionStartText = null;
 		this.fieldEditor.setComposing(false);
@@ -82,7 +83,7 @@ export class ContentEditableBackend implements InputBackend {
 		fullReconcileToDOM(this.ytext, element, this.editor.schema);
 		this.restoreDOMSelectionFromEditor();
 		requestAnimationFrame(() => {
-			this.isApplyingSelection = false;
+			this.isApplyingSelection--;
 		});
 	}
 
@@ -122,7 +123,7 @@ export class ContentEditableBackend implements InputBackend {
 		this.ytext = null;
 		this.observer = null;
 		this.deferredRemoteDeltas = [];
-		this.isApplyingSelection = false;
+		this.isApplyingSelection = 0;
 		this.isComposing = false;
 		this.compositionStartText = null;
 		this.fieldEditor.setComposing(false);
@@ -215,10 +216,10 @@ export class ContentEditableBackend implements InputBackend {
 		) as HTMLElement | null;
 		if (!root) return;
 
-		this.isApplyingSelection = true;
+		this.isApplyingSelection++;
 		editorSelectionToDOM(root, anchor, focus);
 		requestAnimationFrame(() => {
-			this.isApplyingSelection = false;
+			this.isApplyingSelection--;
 		});
 	}
 
@@ -340,6 +341,10 @@ export class ContentEditableBackend implements InputBackend {
 		}
 
 		if (!this.element || !this.ytext) return;
+		const isHistory = isHistoryTransactionOrigin(event.transaction?.origin);
+		if (isHistory) {
+			return;
+		}
 
 		const applied = applyDeltaToDOM(
 			event.delta,
@@ -347,7 +352,9 @@ export class ContentEditableBackend implements InputBackend {
 			this.editor.schema,
 		);
 		if (!applied) {
-			fullReconcileToDOM(this.ytext, this.element, this.editor.schema);
+			fullReconcileToDOM(this.ytext, this.element, this.editor.schema, {
+				preserveSelection: true,
+			});
 		}
 
 		if (
@@ -428,7 +435,9 @@ export class ContentEditableBackend implements InputBackend {
 
 	private handleSelectionChange = (): void => {
 		if (!this.element) return;
-		if (this.isApplyingSelection) return;
+		if (!this.fieldEditor.shouldHandleDomSelectionChange(this.isApplyingSelection)) {
+			return;
+		}
 
 		const root = this.element.closest(
 			"[data-pen-editor-root]",

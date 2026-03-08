@@ -7,6 +7,7 @@ import {
 	getDirectionalSelectionOffsets,
 } from "./selectionBridge.js";
 import { handleFieldEditorKeyDown } from "./keyHandling.js";
+import { isHistoryTransactionOrigin } from "./historyOrigin.js";
 
 declare class EditContext {
 	constructor(options?: {
@@ -29,7 +30,7 @@ export class EditContextBackend implements InputBackend {
 	private element: HTMLElement | null = null;
 	private ytext: any = null;
 	private observer: any = null;
-	private isApplyingSelection = false;
+	private isApplyingSelection = 0;
 	private pendingSelectionOverride: {
 		blockId: string;
 		anchorOffset: number;
@@ -79,11 +80,11 @@ export class EditContextBackend implements InputBackend {
 		);
 
 		fullReconcileToDOM(this.ytext, element, this.editor.schema);
-		this.isApplyingSelection = true;
+		this.isApplyingSelection++;
 		this.updateSelection(null);
 		element.focus({ preventScroll: true });
 		requestAnimationFrame(() => {
-			this.isApplyingSelection = false;
+			this.isApplyingSelection--;
 		});
 	}
 
@@ -142,14 +143,14 @@ export class EditContextBackend implements InputBackend {
 				selection.anchor.offset,
 				selection.focus.offset,
 			);
-			this.isApplyingSelection = true;
+			this.isApplyingSelection++;
 			this.projectDOMSelection(
 				blockId,
 				selection.anchor.offset,
 				selection.focus.offset,
 			);
 			requestAnimationFrame(() => {
-				this.isApplyingSelection = false;
+				this.isApplyingSelection--;
 			});
 			return;
 		}
@@ -305,7 +306,9 @@ export class EditContextBackend implements InputBackend {
 
 	private handleSelectionChange = (): void => {
 		if (!this.element || !this.editContext) return;
-		if (this.isApplyingSelection) return;
+		if (!this.fieldEditor.shouldHandleDomSelectionChange(this.isApplyingSelection)) {
+			return;
+		}
 
 		const root = this.element.closest(
 			"[data-pen-editor-root]",
@@ -350,6 +353,24 @@ export class EditContextBackend implements InputBackend {
 
 	private handleYTextChange = (event: any): void => {
 		if (!this.editContext || !this.element) return;
+		const isHistory = isHistoryTransactionOrigin(event.transaction?.origin);
+		if (isHistory) {
+			const nextText = this.ytext?.toString?.() ?? "";
+			this.editContext.updateText(0, this.editContext.text.length, nextText);
+			const clampedSelectionStart = Math.min(
+				this.editContext.selectionStart,
+				nextText.length,
+			);
+			const clampedSelectionEnd = Math.min(
+				this.editContext.selectionEnd,
+				nextText.length,
+			);
+			this.editContext.updateSelection(
+				clampedSelectionStart,
+				clampedSelectionEnd,
+			);
+			return;
+		}
 
 		const delta = event.delta as {
 			retain?: number;
@@ -374,11 +395,9 @@ export class EditContextBackend implements InputBackend {
 			this.editor.schema,
 		);
 		if (!applied) {
-			fullReconcileToDOM(this.ytext, this.element, this.editor.schema);
-		}
-
-		if (isHistoryTransactionOrigin(event.transaction?.origin)) {
-			return;
+			fullReconcileToDOM(this.ytext, this.element, this.editor.schema, {
+				preserveSelection: true,
+			});
 		}
 
 		this.restoreDOMCaret();
@@ -526,13 +545,4 @@ function findTextPosition(
 		return { node: last, offset: last.textContent?.length ?? 0 };
 	}
 	return { node: container, offset: 0 };
-}
-
-function isHistoryTransactionOrigin(origin: unknown): boolean {
-	return (
-		origin != null &&
-		typeof origin === "object" &&
-		(origin as { constructor?: { name?: string } }).constructor?.name ===
-			"UndoManager"
-	);
 }

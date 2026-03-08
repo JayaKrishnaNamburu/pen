@@ -638,10 +638,10 @@ export interface DocumentState {
 
 **Add `ApplyOptions` import** from `ops.ts`.
 
-**Add `documentChange` and `decorationsChange` to `PenEventMap`:**
+**Add `documentCommit` and `decorationsChange` to `PenEventMap`:**
 
 - `change` — raw CRDT events from the wave-01 observer. Fires for all mutations (local, remote, system).
-- `documentChange` — post-pipeline editor event. Fires after `apply()` completes (ops executed, normalization done). Payload includes the processed ops, origin, and affected block IDs.
+- `documentCommit` — canonical post-pipeline editor event. Fires after `apply()` completes (ops executed, normalization done). Payload includes a monotonic `commitId`, the processed ops, origin, affected block IDs, and per-block revision counters.
 - `decorationsChange` — fires when the decoration `generation` counter increments (after `requestDecorationUpdate()` or internal decoration invalidation).
 
 **Add `DiagnosticEvent`** (referenced by `PenEventMap` but not defined in the stub). All diagnostics must carry a stable `code` following the `PEN_<AREA>_<NNN>` convention defined in Spec Section 22:
@@ -661,13 +661,17 @@ export interface DiagnosticEvent {
 ```
 
 ```typescript
+interface DocumentCommitEvent {
+  commitId: number;
+  ops: readonly DocumentOp[];
+  origin: OpOrigin;
+  affectedBlocks: string[];
+  blockRevisions: Readonly<Record<string, number>>;
+}
+
 interface PenEventMap {
   change: (events: CRDTEvent[]) => void;
-  documentChange: (event: {
-    ops: DocumentOp[];
-    origin: OpOrigin;
-    affectedBlocks: string[];
-  }) => void;
+  documentCommit: (event: DocumentCommitEvent) => void;
   decorationsChange: (generation: number) => void;
   selectionChange: (selection: SelectionState) => void;
   diagnostic: (event: DiagnosticEvent) => void;
@@ -714,7 +718,7 @@ interface Editor {
   ): Unsubscribe;
 
   // ── Convenience event subscriptions ────────────────────
-  onDocumentChange(callback: PenEventMap["documentChange"]): Unsubscribe;
+  onDocumentCommit(callback: PenEventMap["documentCommit"]): Unsubscribe;
   onSelectionChange(callback: PenEventMap["selectionChange"]): Unsubscribe;
 
   requestDecorationUpdate(): void;

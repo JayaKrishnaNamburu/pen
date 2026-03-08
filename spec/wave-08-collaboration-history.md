@@ -1076,7 +1076,7 @@ export class AutoSnapshotScheduler {
       this.opsSinceSnapshot = 0;
     }, this.config.intervalMs);
 
-    const unsubOps = editor.on('documentChange', () => {
+    const unsubOps = editor.on('documentCommit', () => {
       this.opsSinceSnapshot++;
       if (this.opsSinceSnapshot >= this.config.opThreshold) {
         this.manager.createSnapshot(undefined, 'auto').catch(() => {});

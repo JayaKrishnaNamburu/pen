@@ -1184,7 +1184,7 @@ These conflict resolution behaviors are NOT additional code in `@pen/crdt-yjs` â
 | Suggestion status guard | `accept-reject.ts` | Wave 7 |
 | blockOrder dedup | `DocumentStateImpl.rebuild()` | Wave 3 |
 | Unknown block preservation | `SchemaRegistryImpl.resolve()` returning null | Wave 2 |
-| AI generation zone abort | `AIExtension.onDocumentChange` | Wave 7 |
+| AI generation zone abort | `AIExtension.onDocumentCommit` | Wave 7 |
 
 The CRDT layer's responsibility is to guarantee convergence and expose accurate `CRDTEvent`s. The editor layer's responsibility is to interpret those events into sensible user-facing behavior.
 

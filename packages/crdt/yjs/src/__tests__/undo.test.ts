@@ -111,4 +111,35 @@ describe("undo", () => {
     expect(undo.undo()).toBe(false);
     expect(undo.redo()).toBe(false);
   });
+
+  it("restores deleted block content after undo by default", () => {
+    const doc = createYjsDocument(adapter);
+    doc.ydoc.transact(() => {
+      initBlockMap(doc.penDocument.blocks, "b1", "paragraph", "inline");
+      doc.penDocument.blockOrder.push(["b1"]);
+      const block = doc.penDocument.blocks.get("b1")!;
+      const ytext = block.get("content") as Y.Text;
+      ytext.insert(0, "Hello world");
+    });
+
+    const undo = createYjsUndoManager(doc);
+
+    doc.ydoc.transact(() => {
+      doc.penDocument.blockOrder.delete(0, 1);
+      doc.penDocument.blocks.delete("b1");
+    }, "user");
+
+    expect(doc.penDocument.blockOrder.toArray()).toEqual([]);
+    expect(doc.penDocument.blocks.get("b1")).toBeUndefined();
+
+    undo.undo();
+
+    expect(doc.penDocument.blockOrder.toArray()).toEqual(["b1"]);
+    const restoredBlock = doc.penDocument.blocks.get("b1");
+    expect(restoredBlock).toBeDefined();
+    expect(restoredBlock?.get("type")).toBe("paragraph");
+    expect((restoredBlock?.get("content") as Y.Text).toString()).toBe(
+      "Hello world",
+    );
+  });
 });

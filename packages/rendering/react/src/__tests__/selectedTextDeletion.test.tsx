@@ -539,6 +539,79 @@ describe("@pen/react selected text deletion", () => {
 		editor.destroy();
 	});
 
+	it("reconciles expanded active blocks after replaceSelection commits", async () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream", "undo"],
+		});
+		const firstBlockId = editor.firstBlock()!.id;
+		const secondBlockId = crypto.randomUUID();
+
+		editor.apply([
+			{
+				type: "insert-text",
+				blockId: firstBlockId,
+				offset: 0,
+				text: "Hello",
+			},
+			{
+				type: "insert-block",
+				blockId: secondBlockId,
+				blockType: "paragraph",
+				props: {},
+				position: { after: firstBlockId },
+			},
+			{
+				type: "insert-text",
+				blockId: secondBlockId,
+				offset: 0,
+				text: "World",
+			},
+		]);
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(
+				<Pen.Editor.Root editor={editor}>
+					<Pen.Editor.Content />
+				</Pen.Editor.Root>,
+			);
+		});
+
+		const fieldEditor = getFieldEditor(editor);
+
+		await act(async () => {
+			fieldEditor.activate(firstBlockId);
+			editor.selectTextRange(
+				{ blockId: firstBlockId, offset: 1 },
+				{ blockId: secondBlockId, offset: 2 },
+			);
+			await flushAnimationFrames(4);
+		});
+
+		await act(async () => {
+			editor.replaceSelection("X");
+			await flushAnimationFrames(4);
+		});
+
+		const inlineElements = Array.from(
+			container.querySelectorAll("[data-pen-inline-content]"),
+		) as HTMLElement[];
+
+		expect(editor.getBlock(firstBlockId)?.textContent()).toBe("HXrld");
+		expect(editor.getBlock(secondBlockId)).toBeNull();
+		expect(inlineElements).toHaveLength(1);
+		expect(inlineElements[0]?.textContent).toBe("HXrld");
+
+		await act(async () => {
+			root.unmount();
+		});
+		container.remove();
+		editor.destroy();
+	});
+
 	it("prevents native drag and drop on a single-block text selection", async () => {
 		const editor = createEditor({
 			without: ["document-ops", "delta-stream", "undo"],
@@ -805,4 +878,784 @@ describe("@pen/react selected text deletion", () => {
 		container.remove();
 		editor.destroy();
 	});
+
+	it("moves the DOM caret across blocks on undo and redo", async () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream"],
+		});
+		const blockId = editor.firstBlock()!.id;
+
+		editor.apply([
+			{ type: "insert-text", blockId, offset: 0, text: "Hello" },
+		]);
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(
+				<Pen.Editor.Root editor={editor}>
+					<Pen.Editor.Content />
+				</Pen.Editor.Root>,
+			);
+		});
+
+		const fieldEditor = getFieldEditor(editor);
+		const rootElement = container.querySelector(
+			"[data-pen-editor-root]",
+		) as HTMLElement | null;
+		const inlineElement = container.querySelector(
+			"[data-pen-inline-content]",
+		) as HTMLElement | null;
+
+		expect(rootElement).not.toBeNull();
+		expect(inlineElement).not.toBeNull();
+
+		await act(async () => {
+			fieldEditor.activateTextSelection(blockId, 5, 5);
+			await flushAnimationFrames(4);
+		});
+
+		await act(async () => {
+			inlineElement!.dispatchEvent(
+				new InputEvent("beforeinput", {
+					bubbles: true,
+					cancelable: true,
+					inputType: "insertParagraph",
+				}),
+			);
+			await flushAnimationFrames(4);
+		});
+
+		const insertedBlockId = editor.selection?.type === "text"
+			? editor.selection.focus.blockId
+			: null;
+		expect(insertedBlockId).toBeTruthy();
+		expect(domSelectionToEditor(rootElement!)).toMatchObject({
+			anchor: { blockId: insertedBlockId, offset: 0 },
+			focus: { blockId: insertedBlockId, offset: 0 },
+		});
+
+		await act(async () => {
+			editor.undoManager.undo();
+			await flushAnimationFrames(4);
+		});
+
+		expect(editor.documentState.blockOrder).toEqual([blockId]);
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId, offset: 5 },
+			focus: { blockId, offset: 5 },
+		});
+		expect(domSelectionToEditor(rootElement!)).toMatchObject({
+			anchor: { blockId, offset: 5 },
+			focus: { blockId, offset: 5 },
+		});
+
+		await act(async () => {
+			editor.undoManager.redo();
+			await flushAnimationFrames(4);
+		});
+
+		const redoneBlockId = editor.selection?.type === "text"
+			? editor.selection.focus.blockId
+			: null;
+		expect(redoneBlockId).toBeTruthy();
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId: redoneBlockId, offset: 0 },
+			focus: { blockId: redoneBlockId, offset: 0 },
+		});
+		expect(domSelectionToEditor(rootElement!)).toMatchObject({
+			anchor: { blockId: redoneBlockId, offset: 0 },
+			focus: { blockId: redoneBlockId, offset: 0 },
+		});
+
+		await act(async () => {
+			root.unmount();
+		});
+		container.remove();
+		editor.destroy();
+	});
+
+	it("reconciles blurred active blocks during undo and redo", async () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream"],
+		});
+		const blockId = editor.firstBlock()!.id;
+
+		editor.apply([
+			{ type: "insert-text", blockId, offset: 0, text: "Hello" },
+		]);
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(
+				<Pen.Editor.Root editor={editor}>
+					<Pen.Editor.Content />
+				</Pen.Editor.Root>,
+			);
+		});
+
+		const fieldEditor = getFieldEditor(editor);
+		const inlineElement = container.querySelector(
+			"[data-pen-inline-content]",
+		) as HTMLElement | null;
+
+		expect(inlineElement).not.toBeNull();
+
+		await act(async () => {
+			fieldEditor.activateTextSelection(blockId, 2, 2);
+			await flushAnimationFrames(3);
+		});
+
+		await act(async () => {
+			inlineElement!.dispatchEvent(
+				new InputEvent("beforeinput", {
+					bubbles: true,
+					cancelable: true,
+					inputType: "insertText",
+					data: "X",
+				}),
+			);
+			await flushAnimationFrames(3);
+		});
+
+		expect(editor.getBlock(blockId)?.textContent()).toBe("HeXllo");
+		expect(inlineElement?.textContent).toBe("HeXllo");
+
+		await act(async () => {
+			fieldEditor.setFocused(false);
+			editor.undoManager.undo();
+			await flushAnimationFrames(4);
+		});
+
+		expect(editor.getBlock(blockId)?.textContent()).toBe("Hello");
+		expect(inlineElement?.textContent).toBe("Hello");
+
+		await act(async () => {
+			editor.undoManager.redo();
+			await flushAnimationFrames(4);
+		});
+
+		expect(editor.getBlock(blockId)?.textContent()).toBe("HeXllo");
+		expect(inlineElement?.textContent).toBe("HeXllo");
+
+		await act(async () => {
+			root.unmount();
+		});
+		container.remove();
+		editor.destroy();
+	});
+
+	it("reconciles repeated undo steps while focus is on a toolbar button", async () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream"],
+		});
+		const blockId = editor.firstBlock()!.id;
+
+		editor.apply([
+			{ type: "insert-text", blockId, offset: 0, text: "Hello" },
+		]);
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(
+				<Pen.Editor.Root editor={editor}>
+					<button type="button">Undo</button>
+					<Pen.Editor.Content />
+				</Pen.Editor.Root>,
+			);
+		});
+
+		const fieldEditor = getFieldEditor(editor);
+		const inlineElement = container.querySelector(
+			"[data-pen-inline-content]",
+		) as HTMLElement | null;
+		const toolbarButton = container.querySelector("button") as
+			| HTMLButtonElement
+			| null;
+
+		expect(inlineElement).not.toBeNull();
+		expect(toolbarButton).not.toBeNull();
+
+		await act(async () => {
+			fieldEditor.activateTextSelection(blockId, 2, 2);
+			await flushAnimationFrames(3);
+		});
+
+		await act(async () => {
+			inlineElement!.dispatchEvent(
+				new InputEvent("beforeinput", {
+					bubbles: true,
+					cancelable: true,
+					inputType: "insertText",
+					data: "X",
+				}),
+			);
+			await flushAnimationFrames(3);
+		});
+
+		await act(async () => {
+			editor.undoManager.stopCapturing();
+			inlineElement!.dispatchEvent(
+				new InputEvent("beforeinput", {
+					bubbles: true,
+					cancelable: true,
+					inputType: "insertText",
+					data: "Y",
+				}),
+			);
+			await flushAnimationFrames(3);
+		});
+
+		expect(editor.getBlock(blockId)?.textContent()).toBe("HeXYllo");
+		expect(inlineElement?.textContent).toBe("HeXYllo");
+
+		await act(async () => {
+			toolbarButton!.focus();
+			fieldEditor.setFocused(true);
+			await flushAnimationFrames(1);
+		});
+
+		await act(async () => {
+			editor.undoManager.undo();
+			await flushAnimationFrames(4);
+		});
+
+		expect(editor.getBlock(blockId)?.textContent()).toBe("HeXllo");
+		expect(inlineElement?.textContent).toBe("HeXllo");
+
+		await act(async () => {
+			editor.undoManager.undo();
+			await flushAnimationFrames(4);
+		});
+
+		expect(editor.getBlock(blockId)?.textContent()).toBe("Hello");
+		expect(inlineElement?.textContent).toBe("Hello");
+
+		await act(async () => {
+			root.unmount();
+		});
+		container.remove();
+		editor.destroy();
+	});
+
+	it("reconciles repeated undo steps with EditContext while focus is on a toolbar button", async () => {
+		const originalEditContext = (
+			globalThis as typeof globalThis & {
+				EditContext?: typeof FakeEditContext;
+			}
+		).EditContext;
+		(
+			globalThis as typeof globalThis & {
+				EditContext?: typeof FakeEditContext;
+			}
+		).EditContext = FakeEditContext;
+
+		try {
+			const editor = createEditor({
+				without: ["document-ops", "delta-stream"],
+			});
+			const blockId = editor.firstBlock()!.id;
+
+			editor.apply([
+				{ type: "insert-text", blockId, offset: 0, text: "Hello" },
+			]);
+
+			const container = document.createElement("div");
+			document.body.appendChild(container);
+			const root = createRoot(container);
+
+			await act(async () => {
+				root.render(
+					<Pen.Editor.Root editor={editor}>
+						<button type="button">Undo</button>
+						<Pen.Editor.Content />
+					</Pen.Editor.Root>,
+				);
+			});
+
+			const fieldEditor = getFieldEditor(editor);
+			const inlineElement = container.querySelector(
+				"[data-pen-inline-content]",
+			) as (HTMLElement & { editContext?: FakeEditContext | null }) | null;
+			const toolbarButton = container.querySelector("button") as
+				| HTMLButtonElement
+				| null;
+
+			expect(inlineElement).not.toBeNull();
+			expect(toolbarButton).not.toBeNull();
+
+			await act(async () => {
+				fieldEditor.activateTextSelection(blockId, 2, 2);
+				await flushAnimationFrames(3);
+			});
+
+			const editContext = inlineElement?.editContext;
+			expect(editContext).toBeTruthy();
+
+			await act(async () => {
+				editContext!.emit("textupdate", {
+					updateRangeStart: 2,
+					updateRangeEnd: 2,
+					text: "X",
+					selectionStart: 3,
+					selectionEnd: 3,
+				});
+				await flushAnimationFrames(3);
+			});
+
+			await act(async () => {
+				editor.undoManager.stopCapturing();
+				editContext!.emit("textupdate", {
+					updateRangeStart: 3,
+					updateRangeEnd: 3,
+					text: "Y",
+					selectionStart: 4,
+					selectionEnd: 4,
+				});
+				await flushAnimationFrames(3);
+			});
+
+			expect(editor.getBlock(blockId)?.textContent()).toBe("HeXYllo");
+			expect(inlineElement?.textContent).toBe("HeXYllo");
+
+			await act(async () => {
+				toolbarButton!.focus();
+				fieldEditor.setFocused(true);
+				await flushAnimationFrames(1);
+			});
+
+			await act(async () => {
+				editor.undoManager.undo();
+				await flushAnimationFrames(4);
+			});
+
+			expect(editor.getBlock(blockId)?.textContent()).toBe("HeXllo");
+			expect(inlineElement?.textContent).toBe("HeXllo");
+
+			await act(async () => {
+				editor.undoManager.undo();
+				await flushAnimationFrames(4);
+			});
+
+			expect(editor.getBlock(blockId)?.textContent()).toBe("Hello");
+			expect(inlineElement?.textContent).toBe("Hello");
+
+			await act(async () => {
+				root.unmount();
+			});
+			container.remove();
+			editor.destroy();
+		} finally {
+			(
+				globalThis as typeof globalThis & {
+					EditContext?: typeof FakeEditContext;
+				}
+			).EditContext = originalEditContext;
+		}
+	});
+
+	it("reconciles repeated undo steps on the active block with EditContext focus", async () => {
+		const originalEditContext = (
+			globalThis as typeof globalThis & {
+				EditContext?: typeof FakeEditContext;
+			}
+		).EditContext;
+		(
+			globalThis as typeof globalThis & {
+				EditContext?: typeof FakeEditContext;
+			}
+		).EditContext = FakeEditContext;
+
+		try {
+			const editor = createEditor({
+				without: ["document-ops", "delta-stream"],
+			});
+			const blockId = editor.firstBlock()!.id;
+
+			editor.apply([
+				{ type: "insert-text", blockId, offset: 0, text: "Hello" },
+			]);
+
+			const container = document.createElement("div");
+			document.body.appendChild(container);
+			const root = createRoot(container);
+
+			await act(async () => {
+				root.render(
+					<Pen.Editor.Root editor={editor}>
+						<Pen.Editor.Content />
+					</Pen.Editor.Root>,
+				);
+			});
+
+			const fieldEditor = getFieldEditor(editor);
+			const inlineElement = container.querySelector(
+				"[data-pen-inline-content]",
+			) as (HTMLElement & { editContext?: FakeEditContext | null }) | null;
+
+			expect(inlineElement).not.toBeNull();
+
+			await act(async () => {
+				fieldEditor.activateTextSelection(blockId, 2, 2);
+				await flushAnimationFrames(3);
+			});
+
+			const editContext = inlineElement?.editContext;
+			expect(editContext).toBeTruthy();
+
+			await act(async () => {
+				editContext!.emit("textupdate", {
+					updateRangeStart: 2,
+					updateRangeEnd: 2,
+					text: "X",
+					selectionStart: 3,
+					selectionEnd: 3,
+				});
+				await flushAnimationFrames(3);
+			});
+
+			await act(async () => {
+				editor.undoManager.stopCapturing();
+				editContext!.emit("textupdate", {
+					updateRangeStart: 3,
+					updateRangeEnd: 3,
+					text: "Y",
+					selectionStart: 4,
+					selectionEnd: 4,
+				});
+				await flushAnimationFrames(3);
+			});
+
+			expect(editor.getBlock(blockId)?.textContent()).toBe("HeXYllo");
+			expect(inlineElement?.textContent).toBe("HeXYllo");
+
+			await act(async () => {
+				editor.undoManager.undo();
+				await flushAnimationFrames(4);
+			});
+
+			expect(editor.getBlock(blockId)?.textContent()).toBe("HeXllo");
+			expect(inlineElement?.textContent).toBe("HeXllo");
+
+			await act(async () => {
+				editor.undoManager.undo();
+				await flushAnimationFrames(4);
+			});
+
+			expect(editor.getBlock(blockId)?.textContent()).toBe("Hello");
+			expect(inlineElement?.textContent).toBe("Hello");
+
+			await act(async () => {
+				root.unmount();
+			});
+			container.remove();
+			editor.destroy();
+		} finally {
+			(
+				globalThis as typeof globalThis & {
+					EditContext?: typeof FakeEditContext;
+				}
+			).EditContext = originalEditContext;
+		}
+	});
+
+	it("reconciles history changes for passive blocks outside activeBlockIds", async () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream"],
+		});
+		const firstBlockId = editor.firstBlock()!.id;
+		const secondBlockId = crypto.randomUUID();
+
+		editor.apply([
+			{
+				type: "insert-text",
+				blockId: firstBlockId,
+				offset: 0,
+				text: "First",
+			},
+			{
+				type: "insert-block",
+				blockId: secondBlockId,
+				blockType: "paragraph",
+				props: {},
+				position: { after: firstBlockId },
+			},
+			{
+				type: "insert-text",
+				blockId: secondBlockId,
+				offset: 0,
+				text: "Second",
+			},
+		]);
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(
+				<Pen.Editor.Root editor={editor}>
+					<button type="button">Undo</button>
+					<Pen.Editor.Content />
+				</Pen.Editor.Root>,
+			);
+		});
+
+		const fieldEditor = getFieldEditor(editor);
+		const inlineElements = Array.from(
+			container.querySelectorAll("[data-pen-inline-content]"),
+		) as HTMLElement[];
+		const secondInlineElement = inlineElements[1] ?? null;
+		const toolbarButton = container.querySelector("button") as
+			| HTMLButtonElement
+			| null;
+
+		expect(secondInlineElement).not.toBeNull();
+		expect(toolbarButton).not.toBeNull();
+
+		await act(async () => {
+			fieldEditor.activateTextSelection(firstBlockId, 5, 5);
+			await flushAnimationFrames(3);
+		});
+
+		expect(fieldEditor.getSnapshot()).toMatchObject({
+			focusBlockId: firstBlockId,
+			activeBlockIds: [firstBlockId],
+			mode: "single",
+		});
+
+		await act(async () => {
+			editor.apply(
+				[
+					{
+						type: "insert-text",
+						blockId: secondBlockId,
+						offset: 6,
+						text: "!",
+					},
+				],
+				{ origin: "user" },
+			);
+			await flushAnimationFrames(3);
+		});
+
+		expect(editor.getBlock(secondBlockId)?.textContent()).toBe("Second!");
+		expect(secondInlineElement?.textContent).toBe("Second!");
+
+		await act(async () => {
+			toolbarButton!.focus();
+			fieldEditor.setFocused(true);
+			await flushAnimationFrames(1);
+		});
+
+		await act(async () => {
+			editor.undoManager.undo();
+			await flushAnimationFrames(4);
+		});
+
+		expect(fieldEditor.getSnapshot()).toMatchObject({
+			focusBlockId: firstBlockId,
+			activeBlockIds: [firstBlockId],
+			mode: "single",
+		});
+		expect(editor.getBlock(secondBlockId)?.textContent()).toBe("Second");
+		expect(secondInlineElement?.textContent).toBe("Second");
+
+		await act(async () => {
+			editor.undoManager.redo();
+			await flushAnimationFrames(4);
+		});
+
+		expect(fieldEditor.getSnapshot()).toMatchObject({
+			focusBlockId: firstBlockId,
+			activeBlockIds: [firstBlockId],
+			mode: "single",
+		});
+		expect(editor.getBlock(secondBlockId)?.textContent()).toBe("Second!");
+		expect(secondInlineElement?.textContent).toBe("Second!");
+
+		await act(async () => {
+			root.unmount();
+		});
+		container.remove();
+		editor.destroy();
+	});
+
+	it("reconciles repeated history changes outside activeBlockIds during expanded editing", async () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream"],
+		});
+		const firstBlockId = editor.firstBlock()!.id;
+		const secondBlockId = crypto.randomUUID();
+		const thirdBlockId = crypto.randomUUID();
+
+		editor.apply([
+			{
+				type: "insert-text",
+				blockId: firstBlockId,
+				offset: 0,
+				text: "First",
+			},
+			{
+				type: "insert-block",
+				blockId: secondBlockId,
+				blockType: "paragraph",
+				props: {},
+				position: { after: firstBlockId },
+			},
+			{
+				type: "insert-text",
+				blockId: secondBlockId,
+				offset: 0,
+				text: "Second",
+			},
+			{
+				type: "insert-block",
+				blockId: thirdBlockId,
+				blockType: "paragraph",
+				props: {},
+				position: { after: secondBlockId },
+			},
+			{
+				type: "insert-text",
+				blockId: thirdBlockId,
+				offset: 0,
+				text: "Third",
+			},
+		]);
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(
+				<Pen.Editor.Root editor={editor}>
+					<button type="button">Undo</button>
+					<Pen.Editor.Content />
+				</Pen.Editor.Root>,
+			);
+		});
+
+		const fieldEditor = getFieldEditor(editor);
+		const inlineElements = Array.from(
+			container.querySelectorAll("[data-pen-inline-content]"),
+		) as HTMLElement[];
+		const thirdInlineElement = inlineElements[2] ?? null;
+		const toolbarButton = container.querySelector("button") as
+			| HTMLButtonElement
+			| null;
+
+		expect(thirdInlineElement).not.toBeNull();
+		expect(toolbarButton).not.toBeNull();
+
+		await act(async () => {
+			fieldEditor.activate(firstBlockId);
+			editor.selectTextRange(
+				{ blockId: firstBlockId, offset: 0 },
+				{ blockId: secondBlockId, offset: 6 },
+			);
+			await flushAnimationFrames(4);
+		});
+
+		expect(fieldEditor.getSnapshot()).toMatchObject({
+			focusBlockId: firstBlockId,
+			activeBlockIds: [firstBlockId, secondBlockId],
+			mode: "expanded",
+		});
+
+		await act(async () => {
+			editor.apply(
+				[
+					{
+						type: "insert-text",
+						blockId: thirdBlockId,
+						offset: 5,
+						text: "!",
+					},
+				],
+				{ origin: "user" },
+			);
+			await flushAnimationFrames(3);
+		});
+
+		await act(async () => {
+			editor.undoManager.stopCapturing();
+			editor.apply(
+				[
+					{
+						type: "insert-text",
+						blockId: thirdBlockId,
+						offset: 6,
+						text: "?",
+					},
+				],
+				{ origin: "user" },
+			);
+			await flushAnimationFrames(3);
+		});
+
+		expect(editor.getBlock(thirdBlockId)?.textContent()).toBe("Third!?");
+		expect(thirdInlineElement?.textContent).toBe("Third!?");
+
+		await act(async () => {
+			toolbarButton!.focus();
+			fieldEditor.setFocused(true);
+			await flushAnimationFrames(1);
+		});
+
+		await act(async () => {
+			editor.undoManager.undo();
+			await flushAnimationFrames(4);
+		});
+
+		expect(fieldEditor.getSnapshot()).toMatchObject({
+			focusBlockId: firstBlockId,
+			activeBlockIds: [firstBlockId, secondBlockId],
+			mode: "expanded",
+		});
+		expect(editor.getBlock(thirdBlockId)?.textContent()).toBe("Third!");
+		expect(thirdInlineElement?.textContent).toBe("Third!");
+
+		await act(async () => {
+			editor.undoManager.undo();
+			await flushAnimationFrames(4);
+		});
+
+		expect(editor.getBlock(thirdBlockId)?.textContent()).toBe("Third");
+		expect(thirdInlineElement?.textContent).toBe("Third");
+
+		await act(async () => {
+			editor.undoManager.redo();
+			await flushAnimationFrames(4);
+		});
+
+		expect(editor.getBlock(thirdBlockId)?.textContent()).toBe("Third!");
+		expect(thirdInlineElement?.textContent).toBe("Third!");
+
+		await act(async () => {
+			editor.undoManager.redo();
+			await flushAnimationFrames(4);
+		});
+
+		expect(editor.getBlock(thirdBlockId)?.textContent()).toBe("Third!?");
+		expect(thirdInlineElement?.textContent).toBe("Third!?");
+
+		await act(async () => {
+			root.unmount();
+		});
+		container.remove();
+		editor.destroy();
+	});
+
 });

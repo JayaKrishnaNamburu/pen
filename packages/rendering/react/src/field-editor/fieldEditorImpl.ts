@@ -2,6 +2,7 @@ import type {
 	FieldEditor,
 	Editor,
 	BlockSchema,
+	HistoryAppliedEvent,
 	SelectionState,
 	Unsubscribe,
 	InputBackend,
@@ -9,9 +10,11 @@ import type {
 import { EditContextBackend } from "./editContextBackend.js";
 import { ContentEditableBackend } from "./contenteditableBackend.js";
 import { ExpandedContentEditableBackend } from "./expandedContentEditableBackend.js";
+import { HistorySelectionCoordinator } from "./historySelectionCoordinator.js";
+import { SessionReconciler } from "./sessionReconciler.js";
 import { classifySelectionSurface } from "./crossBlock.js";
 import { resolveMarksAtPosition } from "./markBoundary.js";
-import { domSelectionToEditor } from "./selectionBridge.js";
+import { domSelectionToEditor, queryBlockElement, queryInlineElement } from "./selectionBridge.js";
 import type { FieldEditorStoreSnapshot } from "./store.js";
 
 export class FieldEditorImpl implements FieldEditor {
@@ -30,7 +33,11 @@ export class FieldEditorImpl implements FieldEditor {
 	private _deactivateListeners = new Set<(blockIds: string[]) => void>();
 	private _storeListeners = new Set<() => void>();
 	private _unsubscribeSelection: Unsubscribe | null = null;
+	private _unsubscribeHistoryApplied: Unsubscribe | null = null;
 	private _pendingMarks: Record<string, unknown | null> = {};
+	private _syncDomVersion = 0;
+	private readonly _sessionReconciler: SessionReconciler;
+	private readonly _historySelectionCoordinator: HistorySelectionCoordinator;
 	private _selectAllCycle: {
 		blockId: string;
 		scope: "block" | "document";
@@ -39,6 +46,9 @@ export class FieldEditorImpl implements FieldEditor {
 
 	constructor(editor: Editor) {
 		this._editor = editor;
+		this._historySelectionCoordinator = new HistorySelectionCoordinator(
+			this._editor,
+		);
 		this._unsubscribeSelection = this._editor.onSelectionChange(
 			(selection) => {
 				const preserveSelectAllCycle =
@@ -55,9 +65,25 @@ export class FieldEditorImpl implements FieldEditor {
 				) {
 					this._clearPendingMarks(true);
 				}
-				this._recomputeSurfaceFromSelection();
+				const suppressSelectionSync =
+					this._historySelectionCoordinator.shouldSuppressSelectionSync();
+				this._recomputeSurfaceFromSelection({
+					syncSelectionToBackend: !suppressSelectionSync,
+				});
 			},
 		);
+		this._unsubscribeHistoryApplied = this._editor.onHistoryApplied((event) => {
+			this._handleHistoryApplied(event);
+		});
+		this._sessionReconciler = new SessionReconciler(this._editor, {
+			getSnapshot: () => this.getSnapshot(),
+			getAttachedElement: () => this._attachedElement,
+			getInlineElement: (blockId) => this._resolveInlineElement(blockId),
+			getYText: (blockId) => this._getYText(blockId),
+			shouldProjectSelection: () =>
+				this._shouldProjectSelectionAfterReconcile(),
+			projectSelection: () => this._syncDomSelectionOnce(),
+		});
 	}
 
 	get focusBlockId(): string | null {
@@ -90,29 +116,11 @@ export class FieldEditorImpl implements FieldEditor {
 
 	activate(blockId: string): void {
 		if (this._focusBlockId === blockId) return;
-		if (this._isEditing) this._deactivate({ restoreFocus: false });
-
-		const block = this._editor.getBlock(blockId);
-		if (!block) return;
-
-		const schema = this._editor.schema.resolve(block.type);
-		if (schema?.fieldEditor === "none") return;
-
-		this._focusBlockId = blockId;
-		this._activeBlockIds = [blockId];
-		this._isEditing = true;
-		this._isComposing = false;
-		this._mode = "single";
-		this._pendingMarks = {};
-		this._editor.undoManager.stopCapturing();
-
-		this._inputMode = resolveInputMode(schema?.fieldEditor);
-		this._backend = this.createBackend();
-		this._syncActiveElement(false);
-		this._recomputeSurfaceFromSelection();
-
-		for (const cb of this._activateListeners) cb([...this._activeBlockIds]);
-		this._emitStateChange();
+		this._startSession(blockId, {
+			stopCapturing: true,
+			syncSelectionToBackend: true,
+			attachImmediately: true,
+		});
 	}
 
 	deactivate(): void {
@@ -175,6 +183,7 @@ export class FieldEditorImpl implements FieldEditor {
 		this._activeBlockIds = [];
 		this._isEditing = false;
 		this._isComposing = false;
+		this._historySelectionCoordinator.reset();
 		this._inputMode = "none";
 		this._mode = "inactive";
 		this._pendingMarks = {};
@@ -192,9 +201,7 @@ export class FieldEditorImpl implements FieldEditor {
 
 		if (!root) return;
 
-		const blockEl = root.querySelector(
-			`[data-block-id="${this._focusBlockId}"]`,
-		);
+		const blockEl = queryBlockElement(root, this._focusBlockId);
 		const inlineEl = blockEl?.querySelector(
 			"[data-pen-inline-content]",
 		) as HTMLElement | null;
@@ -257,11 +264,7 @@ export class FieldEditorImpl implements FieldEditor {
 			this._backend = this.createBackend();
 		}
 
-		const adapter = this._editor.internals.adapter;
-		const doc = this._editor.internals.crdtDoc;
-		const ydoc = adapter.raw(doc) as any;
-		const blockMap = ydoc.getMap("blocks").get(this._focusBlockId);
-		const ytext = blockMap?.get("content");
+		const ytext = this._getYText(this._focusBlockId);
 		if (!ytext) return;
 
 		this._backend.activate(element, ytext);
@@ -277,6 +280,13 @@ export class FieldEditorImpl implements FieldEditor {
 		if (this._focusBlockId !== blockId) return;
 
 		this.setTextSelection(blockId, anchorOffset, focusOffset);
+	}
+
+	shouldHandleDomSelectionChange(isApplyingSelection: number): boolean {
+		return (
+			isApplyingSelection === 0 &&
+			!this._historySelectionCoordinator.shouldSuppressSelectionSync()
+		);
 	}
 
 	setTextSelection(
@@ -535,6 +545,9 @@ export class FieldEditorImpl implements FieldEditor {
 	destroy(): void {
 		this._unsubscribeSelection?.();
 		this._unsubscribeSelection = null;
+		this._unsubscribeHistoryApplied?.();
+		this._unsubscribeHistoryApplied = null;
+		this._sessionReconciler.destroy();
 		this._deactivate({ restoreFocus: false });
 		this._activateListeners.clear();
 		this._deactivateListeners.clear();
@@ -544,30 +557,32 @@ export class FieldEditorImpl implements FieldEditor {
 	// ── Internal ─────────────────────────────────────────────
 
 	private createBackend(): InputBackend {
+		return new (this._resolveBackendClass())(this._editor, this);
+	}
+
+	private _resolveBackendClass(): new (
+		editor: Editor,
+		fieldEditor: FieldEditorImpl,
+	) => InputBackend {
 		if (this._mode === "expanded") {
-			return new ExpandedContentEditableBackend(this._editor, this);
+			return ExpandedContentEditableBackend as unknown as new (
+				editor: Editor,
+				fieldEditor: FieldEditorImpl,
+			) => InputBackend;
 		}
 		if (
 			"EditContext" in globalThis &&
 			typeof (globalThis as typeof globalThis & { EditContext?: unknown })
 				.EditContext === "function"
 		) {
-			return new EditContextBackend(this._editor, this);
+			return EditContextBackend;
 		}
-		return new ContentEditableBackend(this._editor, this);
+		return ContentEditableBackend;
 	}
 
 	private _syncActiveElement(focus: boolean): void {
 		if (!this._focusBlockId) return;
-		const root = this._findEditorRoot();
-		if (!root) return;
-
-		const blockEl = root.querySelector(
-			`[data-block-id="${this._focusBlockId}"]`,
-		);
-		const inlineEl = blockEl?.querySelector(
-			"[data-pen-inline-content]",
-		) as HTMLElement | null;
+		const inlineEl = this._resolveInlineElement(this._focusBlockId);
 		if (!inlineEl) return;
 
 		this.attachElement(inlineEl);
@@ -581,9 +596,7 @@ export class FieldEditorImpl implements FieldEditor {
 		if (!root) return;
 
 		if (blockId) {
-			const blockEl = root.querySelector(
-				`[data-block-id="${blockId}"]`,
-			) as HTMLElement | null;
+			const blockEl = queryBlockElement(root, blockId);
 			if (blockEl) {
 				blockEl.focus({ preventScroll: true });
 				return;
@@ -640,7 +653,9 @@ export class FieldEditorImpl implements FieldEditor {
 		}
 	}
 
-	private _recomputeSurfaceFromSelection(): void {
+	private _recomputeSurfaceFromSelection(options?: {
+		syncSelectionToBackend?: boolean;
+	}): void {
 		const surface = classifySelectionSurface(
 			this._editor,
 			this._editor.selection,
@@ -648,7 +663,9 @@ export class FieldEditorImpl implements FieldEditor {
 			this._isEditing,
 		);
 		this._updateSurfaceState(surface.mode, surface.blockIds);
-		this._backend?.updateSelection(null);
+		if (options?.syncSelectionToBackend ?? true) {
+			this._backend?.updateSelection(null);
+		}
 	}
 
 	private _updateSurfaceState(
@@ -661,7 +678,6 @@ export class FieldEditorImpl implements FieldEditor {
 			blockIds,
 		);
 		if (!modeChanged && !blockIdsChanged) return;
-
 		this._mode = mode;
 		this._activeBlockIds = blockIds;
 		this._syncBackendForSurfaceMode();
@@ -675,13 +691,13 @@ export class FieldEditorImpl implements FieldEditor {
 
 	private _syncBackendForSurfaceMode(): void {
 		if (!this._isEditing || !this._focusBlockId) return;
-		const nextBackend = this.createBackend();
-		if (this._backend?.constructor === nextBackend.constructor) {
+		const NextBackendClass = this._resolveBackendClass();
+		if (this._backend?.constructor === NextBackendClass) {
 			return;
 		}
 
 		this._backend?.deactivate();
-		this._backend = nextBackend;
+		this._backend = new NextBackendClass(this._editor, this);
 
 		if (this._mode === "expanded") {
 			const expandedHost = this._findExpandedHost();
@@ -695,12 +711,7 @@ export class FieldEditorImpl implements FieldEditor {
 		if (this._mode === "single") {
 			const root = this._findEditorRoot();
 			if (root) {
-				const blockEl = root.querySelector(
-					`[data-block-id="${this._focusBlockId}"]`,
-				) as HTMLElement | null;
-				const inlineEl = blockEl?.querySelector(
-					"[data-pen-inline-content]",
-				) as HTMLElement | null;
+				const inlineEl = queryInlineElement(root, this._focusBlockId);
 				if (inlineEl) {
 					this._attachedElement = null;
 					this.attachElement(inlineEl);
@@ -711,14 +722,119 @@ export class FieldEditorImpl implements FieldEditor {
 
 		if (!this._attachedElement) return;
 
-		const adapter = this._editor.internals.adapter;
-		const doc = this._editor.internals.crdtDoc;
-		const ydoc = adapter.raw(doc) as any;
-		const blockMap = ydoc.getMap("blocks").get(this._focusBlockId);
-		const ytext = blockMap?.get("content");
+		const ytext = this._getYText(this._focusBlockId);
 		if (!ytext) return;
 
 		this._backend.activate(this._attachedElement, ytext);
+	}
+
+	private _startSession(
+		blockId: string,
+		options: {
+			stopCapturing: boolean;
+			syncSelectionToBackend: boolean;
+			attachImmediately: boolean;
+		},
+	): boolean {
+		if (this._isEditing) this._deactivate({ restoreFocus: false });
+
+		const block = this._editor.getBlock(blockId);
+		if (!block) return false;
+
+		const schema = this._editor.schema.resolve(block.type);
+		if (schema?.fieldEditor === "none") return false;
+
+		this._focusBlockId = blockId;
+		this._activeBlockIds = [blockId];
+		this._isEditing = true;
+		this._isComposing = false;
+		this._mode = "single";
+		this._pendingMarks = {};
+
+		if (options.stopCapturing) {
+			this._editor.undoManager.stopCapturing();
+		}
+
+		this._inputMode = resolveInputMode(schema?.fieldEditor);
+		this._backend = this.createBackend();
+		this._attachedElement = null;
+		if (options.attachImmediately) {
+			this._syncActiveElement(false);
+		}
+		this._recomputeSurfaceFromSelection({
+			syncSelectionToBackend: options.syncSelectionToBackend,
+		});
+
+		for (const cb of this._activateListeners) cb([...this._activeBlockIds]);
+		this._emitStateChange();
+		return true;
+	}
+
+	private _handleHistoryApplied(
+		event: HistoryAppliedEvent,
+	): void {
+		const selection = event.selection;
+		const nextFocusBlockId =
+			event.focusBlockId ??
+			(selection?.type === "text" ? selection.focus.blockId : null);
+		if (selection?.type !== "text") {
+			if (this._isEditing) {
+				this._deactivate({ restoreFocus: false });
+			}
+			return;
+		}
+
+		if (!this._isEditing) {
+			return;
+		}
+
+		if (nextFocusBlockId) {
+			this._focusBlockId = nextFocusBlockId;
+		}
+
+		this._historySelectionCoordinator.beginDeferredProjection(event.requestId);
+
+		this._recomputeSurfaceFromSelection({
+			syncSelectionToBackend: false,
+		});
+	}
+
+	private _attachedElementOwnsFocus(): boolean {
+		if (!this._attachedElement) {
+			return false;
+		}
+		const activeElement = this._attachedElement.ownerDocument?.activeElement;
+		return activeElement instanceof Node
+			? this._attachedElement.contains(activeElement)
+			: false;
+	}
+
+	private _shouldProjectSelectionAfterReconcile(): boolean {
+		if (!this._attachedElement) {
+			return false;
+		}
+
+		const ownerDocument = this._attachedElement.ownerDocument;
+		const activeElement = ownerDocument?.activeElement;
+		if (!(activeElement instanceof Node)) {
+			return true;
+		}
+		if (activeElement === ownerDocument?.body) {
+			return true;
+		}
+
+		const root = this._findEditorRoot();
+		if (!root || !root.contains(activeElement)) {
+			return true;
+		}
+
+		return this._attachedElement.contains(activeElement);
+	}
+
+	private _resolveInlineElement(blockId: string): HTMLElement | null {
+		const root = this._findEditorRoot();
+		if (!root) return null;
+		return queryInlineElement(root, blockId);
 	}
 
 	private _projectTextSelection(
@@ -735,11 +851,20 @@ export class FieldEditorImpl implements FieldEditor {
 		this._syncDomSelectionOnce();
 	}
 
-	private _syncDomSelectionOnce(remainingAttempts = 4): void {
+	private _syncDomSelectionOnce(
+		remainingAttempts = 4,
+		version?: number,
+	): void {
+		if (version === undefined) {
+			version = ++this._syncDomVersion;
+		}
+		const v = version;
 		requestAnimationFrame(() => {
-			if (!this._isEditing) return;
+			if (!this._isEditing || this._syncDomVersion !== v) return;
 
 			let projected = false;
+			const pendingProjectionRequestId =
+				this._historySelectionCoordinator.getPendingProjectionRequestId();
 
 			if (this._mode === "expanded") {
 				const expandedHost = this._findExpandedHost();
@@ -750,33 +875,43 @@ export class FieldEditorImpl implements FieldEditor {
 					) {
 						this.attachElement(expandedHost);
 					}
-					this._backend?.updateSelection(null);
 					expandedHost.focus({ preventScroll: true });
+					this._backend?.updateSelection(null);
 					projected = true;
 				}
 			} else if (this._focusBlockId) {
 				const root = this._findEditorRoot();
-				const blockEl = root?.querySelector(
-					`[data-block-id="${this._focusBlockId}"]`,
-				) as HTMLElement | null;
-				const inlineEl = blockEl?.querySelector(
-					"[data-pen-inline-content]",
-				) as HTMLElement | null;
+				const inlineEl = root
+					? queryInlineElement(root, this._focusBlockId)
+					: null;
 				if (inlineEl) {
 					if (
+						this._attachedElement !== inlineEl ||
 						!this._attachedElement ||
 						!this._attachedElement.isConnected
 					) {
 						this.attachElement(inlineEl);
 					}
-					this._backend?.updateSelection(null);
 					inlineEl.focus({ preventScroll: true });
+					this._backend?.updateSelection(null);
 					projected = true;
 				}
 			}
 
+			if (projected) {
+				requestAnimationFrame(() => {
+					if (this._syncDomVersion === v) {
+						this._historySelectionCoordinator.completeDeferredProjection(
+							pendingProjectionRequestId,
+						);
+					}
+				});
+			}
+
 			if (!projected && remainingAttempts > 0) {
-				this._syncDomSelectionOnce(remainingAttempts - 1);
+				this._syncDomSelectionOnce(remainingAttempts - 1, v);
+			} else if (!projected) {
+				this._historySelectionCoordinator.cancelDeferredProjection();
 			}
 		});
 	}

@@ -6,8 +6,6 @@ import {
 import { handlePaste, handleCopy, handleCut } from "./clipboard.js";
 import type { PasteImporters } from "../context/editorContext.js";
 import type { FieldEditorImpl } from "./fieldEditorImpl.js";
-import { getExpandedBlockRole } from "./crossBlock.js";
-import { applyDeltaToDOM, fullReconcileToDOM } from "./reconciler.js";
 import { applyEnterBehavior, toggleInlineMark } from "./commands.js";
 import {
 	handleEditorKeyBindings,
@@ -24,11 +22,7 @@ export class ExpandedContentEditableBackend {
 	private element: HTMLElement | null = null;
 	private editor: Editor;
 	private fieldEditor: FieldEditorImpl;
-	private isApplyingSelection = false;
-	private observedBlocks = new Map<
-		string,
-		{ ytext: any; handler: (event: { delta?: unknown[] }) => void }
-	>();
+	private isApplyingSelection = 0;
 
 	constructor(editor: Editor, fieldEditor: FieldEditorImpl) {
 		this.editor = editor;
@@ -39,7 +33,6 @@ export class ExpandedContentEditableBackend {
 		this.element = element;
 		element.contentEditable = "true";
 		element.tabIndex = -1;
-		this.syncObservedBlocks();
 
 		element.addEventListener("beforeinput", this.handleBeforeInput);
 		element.addEventListener("keydown", this.handleKeyDown);
@@ -54,21 +47,20 @@ export class ExpandedContentEditableBackend {
 
 		const selection = this.editor.selection;
 		if (selection?.type === "text") {
-			this.isApplyingSelection = true;
+			this.isApplyingSelection++;
 			element.focus({ preventScroll: true });
 			editorSelectionToDOM(element, selection.anchor, selection.focus);
 			requestAnimationFrame(() => {
-				this.isApplyingSelection = false;
+				this.isApplyingSelection--;
 			});
 			return;
 		}
 
 		element.focus({ preventScroll: true });
-		this.isApplyingSelection = false;
+		this.isApplyingSelection = 0;
 	}
 
 	deactivate(): void {
-		this.clearObservedBlocks();
 		if (this.element) {
 			this.element.contentEditable = "false";
 			this.element.removeAttribute("tabindex");
@@ -92,7 +84,6 @@ export class ExpandedContentEditableBackend {
 
 	updateSelection(_relPos: unknown): void {
 		if (!this.element) return;
-		this.syncObservedBlocks();
 		this.projectCurrentSelection();
 	}
 
@@ -100,16 +91,18 @@ export class ExpandedContentEditableBackend {
 		if (!this.element) return;
 		const selection = this.editor.selection;
 		if (selection?.type !== "text") return;
-		this.isApplyingSelection = true;
+		this.isApplyingSelection++;
 		editorSelectionToDOM(this.element, selection.anchor, selection.focus);
 		requestAnimationFrame(() => {
-			this.isApplyingSelection = false;
+			this.isApplyingSelection--;
 		});
 	}
 
 	private handleSelectionChange = (): void => {
 		if (!this.element) return;
-		if (this.isApplyingSelection) return;
+		if (!this.fieldEditor.shouldHandleDomSelectionChange(this.isApplyingSelection)) {
+			return;
+		}
 
 		const selection = domSelectionToEditor(this.element);
 		if (!selection) return;
@@ -134,83 +127,6 @@ export class ExpandedContentEditableBackend {
 
 		this.editor.selectTextRange(selection.anchor, selection.focus);
 	};
-
-	private syncObservedBlocks(): void {
-		if (!this.element) return;
-
-		const nextBlockIds = new Set(
-			this.fieldEditor.activeBlockIds.filter(
-				(blockId) =>
-					getExpandedBlockRole(this.editor, blockId) ===
-					"editable-inline",
-			),
-		);
-
-		for (const [blockId, observed] of this.observedBlocks) {
-			if (nextBlockIds.has(blockId)) continue;
-			observed.ytext.unobserve(observed.handler);
-			this.observedBlocks.delete(blockId);
-		}
-
-		for (const blockId of nextBlockIds) {
-			if (this.observedBlocks.has(blockId)) continue;
-			const ytext = getBlockText(this.editor, blockId);
-			if (!ytext) continue;
-
-			const handler = (event: { delta?: unknown[] }) => {
-				this.reconcileObservedBlock(blockId, ytext, event.delta);
-			};
-
-			this.reconcileObservedBlock(blockId, ytext);
-			ytext.observe(handler);
-			this.observedBlocks.set(blockId, { ytext, handler });
-		}
-	}
-
-	private clearObservedBlocks(): void {
-		for (const [, observed] of this.observedBlocks) {
-			observed.ytext.unobserve(observed.handler);
-		}
-		this.observedBlocks.clear();
-	}
-
-	private reconcileObservedBlock(
-		blockId: string,
-		ytext: any,
-		delta?: unknown[],
-	): void {
-		if (!this.element) return;
-
-		const inlineEl = this.element.querySelector(
-			`[data-block-id="${blockId}"] [data-pen-inline-content]`,
-		) as HTMLElement | null;
-		if (!inlineEl) return;
-
-		const selection = this.editor.selection;
-		const shouldRestoreSelection = selection?.type === "text";
-
-		if (delta != null) {
-			const applied = applyDeltaToDOM(
-				delta as Array<{
-					retain?: number;
-					insert?: string;
-					delete?: number;
-					attributes?: Record<string, unknown>;
-				}>,
-				inlineEl,
-				this.editor.schema,
-			);
-			if (!applied) {
-				fullReconcileToDOM(ytext, inlineEl, this.editor.schema);
-			}
-		} else {
-			fullReconcileToDOM(ytext, inlineEl, this.editor.schema);
-		}
-
-		if (shouldRestoreSelection) {
-			this.projectCurrentSelection();
-		}
-	}
 
 	private handleBeforeInput = (event: InputEvent): void => {
 		const selection = this.editor.selection;

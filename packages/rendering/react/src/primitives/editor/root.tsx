@@ -34,7 +34,7 @@ export function EditorRoot(props: EditorRootProps) {
 	}
 
 	useEffect(() => {
-		const unsubDoc = editor.on("documentChange", () => {
+		const unsubDoc = editor.onDocumentCommit(() => {
 			setIsEmpty(editor.documentState.isEmpty);
 		});
 		const root = rootRef.current;
@@ -191,6 +191,15 @@ function shouldHandleEditorKeyboardEvent(
 	}
 
 	if (domSelectionToEditor(root) !== null) {
+		return true;
+	}
+
+	const selection = editor.selection;
+	if (selection?.type === "text" && !selection.isCollapsed) {
+		return true;
+	}
+
+	if (selection?.type === "block" && selection.blockIds.length > 0) {
 		return true;
 	}
 

@@ -5,6 +5,36 @@
 
 import { DATA_ATTRS } from "../utils/dataAttributes.js";
 
+/**
+ * Safely query a block element by ID, escaping special characters to prevent
+ * selector injection from untrusted CRDT data.
+ */
+export function queryBlockElement(
+	root: HTMLElement,
+	blockId: string,
+): HTMLElement | null {
+	const escaped =
+		typeof CSS !== "undefined" && CSS.escape
+			? CSS.escape(blockId)
+			: blockId.replace(/(["\]\\])/g, "\\$1");
+	return root.querySelector(
+		`[${DATA_ATTRS.blockId}="${escaped}"]`,
+	) as HTMLElement | null;
+}
+
+/**
+ * Find the inline content element for a given block.
+ */
+export function queryInlineElement(
+	root: HTMLElement,
+	blockId: string,
+): HTMLElement | null {
+	const blockEl = queryBlockElement(root, blockId);
+	return blockEl?.querySelector(
+		`[${DATA_ATTRS.inlineContent}]`,
+	) as HTMLElement | null;
+}
+
 export type TextDiffOp =
 	| { type: "insert"; offset: number; text: string }
 	| { type: "delete"; offset: number; length: number };
@@ -235,9 +265,7 @@ export function getBlockBoundaryPoint(
 	blockId: string,
 	side: SelectionBoundary,
 ): SelectionPoint | null {
-	const blockEl = root.querySelector(
-		`[data-block-id="${blockId}"]`,
-	) as HTMLElement | null;
+	const blockEl = queryBlockElement(root, blockId);
 	if (!blockEl) return null;
 	return getBoundaryPointForBlockElement(blockEl, side);
 }
@@ -402,10 +430,12 @@ function findDOMPoint(
 	blockId: string,
 	charOffset: number,
 ): { node: Node; offset: number } | null {
-	const blockEl = root.querySelector(`[data-block-id="${blockId}"]`);
+	const blockEl = queryBlockElement(root, blockId);
 	if (!blockEl) return null;
 
-	const inlineEl = blockEl.querySelector(`[${DATA_ATTRS.inlineContent}]`);
+	const inlineEl = blockEl.querySelector(
+		`[${DATA_ATTRS.inlineContent}]`,
+	) as HTMLElement | null;
 	if (!inlineEl) return null;
 
 	const walker = document.createTreeWalker(
@@ -424,8 +454,10 @@ function findDOMPoint(
 		remaining -= len;
 	}
 
-	// Past end — position at end of last text node or container
-	const lastText = inlineEl.lastChild;
+	// Past end — position at end of the last text node. Using the last child
+	// element here is incorrect because element offsets are child indices, not
+	// character positions.
+	const lastText = getLastTextNode(inlineEl);
 	if (lastText) {
 		return {
 			node: lastText,
@@ -433,6 +465,16 @@ function findDOMPoint(
 		};
 	}
 	return { node: inlineEl, offset: 0 };
+}
+
+function getLastTextNode(root: HTMLElement): Text | null {
+	const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+	let lastText: Text | null = null;
+	let current: Text | null;
+	while ((current = walker.nextNode() as Text | null)) {
+		lastText = current;
+	}
+	return lastText;
 }
 
 /**
@@ -563,3 +605,4 @@ function compareDOMPoints(
 
 	return leftRange.compareBoundaryPoints(Range.START_TO_START, rightRange);
 }
+

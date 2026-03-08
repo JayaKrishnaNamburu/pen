@@ -169,7 +169,7 @@ describe("@pen/core createEditor", () => {
 		editor.destroy();
 	});
 
-	it("emits unified change and documentChange events once for a local apply batch", () => {
+	it("emits unified change and documentCommit once for a local apply batch", () => {
 		const observed: unknown[][] = [];
 		const ext = defineExtension({
 			name: "capture-local-dispatch",
@@ -182,18 +182,18 @@ describe("@pen/core createEditor", () => {
 			extensions: [ext],
 		});
 		const changes: unknown[][] = [];
-		const documentChanges: unknown[] = [];
+		const documentCommits: unknown[] = [];
 		const blockId = editor.firstBlock()!.id;
 
 		editor.on("change", (events) => {
 			changes.push(events);
 		});
-		editor.on("documentChange", (event) => {
-			documentChanges.push(event);
+		editor.on("documentCommit", (event) => {
+			documentCommits.push(event);
 		});
 		observed.length = 0;
 		changes.length = 0;
-		documentChanges.length = 0;
+		documentCommits.length = 0;
 
 		editor.apply([
 			{
@@ -210,19 +210,22 @@ describe("@pen/core createEditor", () => {
 			origin: "user",
 			affectedBlocks: [blockId],
 		});
-		expect(documentChanges).toEqual([
-			expect.objectContaining({
-				origin: "user",
-				affectedBlocks: [blockId],
-			}),
-		]);
+		expect(documentCommits).toHaveLength(1);
+		expect(documentCommits[0]).toMatchObject({
+			commitId: 2,
+			origin: "user",
+			affectedBlocks: [blockId],
+		});
+		expect((documentCommits[0] as { blockRevisions: Record<string, number> }).blockRevisions[blockId]).toBe(
+			editor.getBlockRevision(blockId),
+		);
 		expect(observed).toHaveLength(1);
 		expect(observed[0]).toHaveLength(1);
 
 		editor.destroy();
 	});
 
-	it("emits unified change and documentChange events once for observed CRDT updates", () => {
+	it("emits unified change and documentCommit once for observed CRDT updates", () => {
 		const observed: unknown[][] = [];
 		const ext = defineExtension({
 			name: "capture-observed-dispatch",
@@ -235,7 +238,7 @@ describe("@pen/core createEditor", () => {
 			extensions: [ext],
 		});
 		const changes: unknown[][] = [];
-		const documentChanges: unknown[] = [];
+		const documentCommits: unknown[] = [];
 		const adapter = editor.internals.adapter;
 		const editorDoc = editor.internals.crdtDoc;
 		const blockId = editor.firstBlock()!.id;
@@ -249,12 +252,12 @@ describe("@pen/core createEditor", () => {
 		editor.on("change", (events) => {
 			changes.push(events);
 		});
-		editor.on("documentChange", (event) => {
-			documentChanges.push(event);
+		editor.on("documentCommit", (event) => {
+			documentCommits.push(event);
 		});
 		observed.length = 0;
 		changes.length = 0;
-		documentChanges.length = 0;
+		documentCommits.length = 0;
 
 		adapter.transact(
 			remoteDoc,
@@ -270,11 +273,14 @@ describe("@pen/core createEditor", () => {
 		expect(changes[0][0]).toMatchObject({
 			affectedBlocks: [blockId],
 		});
-		expect(documentChanges).toEqual([
-			expect.objectContaining({
-				affectedBlocks: [blockId],
-			}),
-		]);
+		expect(documentCommits).toHaveLength(1);
+		expect(documentCommits[0]).toMatchObject({
+			commitId: 2,
+			affectedBlocks: [blockId],
+		});
+		expect((documentCommits[0] as { blockRevisions: Record<string, number> }).blockRevisions[blockId]).toBe(
+			editor.getBlockRevision(blockId),
+		);
 		expect(observed).toHaveLength(1);
 		expect(observed[0]).toHaveLength(1);
 
@@ -533,14 +539,14 @@ describe("@pen/core createEditor", () => {
 		editor.destroy();
 	});
 
-	it("replaces multi-block text selections in a single document change batch", () => {
+	it("replaces multi-block text selections in a single document commit batch", () => {
 		const editor = createEditor({
 			without: ["document-ops", "delta-stream", "undo"],
 		});
-		const events: Array<{ ops: Array<{ type: string }> }> = [];
+		const events: Array<{ ops: readonly { type: string }[] }> = [];
 
-		editor.on("documentChange", (event) => {
-			events.push(event as { ops: Array<{ type: string }> });
+		editor.on("documentCommit", (event) => {
+			events.push(event as { ops: readonly { type: string }[] });
 		});
 
 		editor.apply([
@@ -841,15 +847,15 @@ describe("@pen/core createEditor", () => {
 		editor.destroy();
 	});
 
-	it("emits history origin for undo transactions", () => {
+	it("emits history origin for undo transactions on documentCommit", () => {
 		const editor = createEditor({
 			without: ["document-ops", "delta-stream"],
 		});
 		const blockId = editor.firstBlock()!.id;
-		const origins: string[] = [];
+		const commitOrigins: string[] = [];
 
-		editor.on("documentChange", (event) => {
-			origins.push(event.origin);
+		editor.on("documentCommit", (event) => {
+			commitOrigins.push(event.origin);
 		});
 
 		editor.apply([
@@ -863,8 +869,8 @@ describe("@pen/core createEditor", () => {
 
 		editor.undoManager.undo();
 
-		expect(origins).toContain("user");
-		expect(origins).toContain("history");
+		expect(commitOrigins).toContain("user");
+		expect(commitOrigins).toContain("history");
 
 		editor.destroy();
 	});

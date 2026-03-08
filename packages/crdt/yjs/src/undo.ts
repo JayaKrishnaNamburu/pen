@@ -3,6 +3,7 @@ import type {
   CRDTUndoStackItem,
   UndoManagerOptions,
 } from "@pen/types";
+import { HISTORY_ORIGIN_TAG } from "@pen/types";
 import * as Y from "yjs";
 
 import type { YjsCRDTDocument } from "./document.js";
@@ -21,6 +22,8 @@ export function createYjsUndoManager(
     captureTimeout: options?.captureTimeout ?? 0,
     doc: doc.ydoc,
   });
+
+  (undoManager as unknown as Record<string, unknown>)[HISTORY_ORIGIN_TAG] = true;
 
   const wrapStackItem = (stackItem: {
     meta: Map<string, unknown>;
@@ -64,6 +67,19 @@ export function createYjsUndoManager(
       undoManager.on("stack-item-added", handler);
       return () => {
         undoManager.off("stack-item-added", handler);
+      };
+    },
+    onStackItemUpdated(callback) {
+      const handler = (event: {
+        stackItem: { meta: Map<string, unknown> };
+        type: "undo" | "redo";
+      }) => {
+        callback(wrapStackItem(event.stackItem), event.type);
+      };
+
+      undoManager.on("stack-item-updated", handler);
+      return () => {
+        undoManager.off("stack-item-updated", handler);
       };
     },
     onStackItemPopped(callback) {

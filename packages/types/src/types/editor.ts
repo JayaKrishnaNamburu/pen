@@ -45,6 +45,26 @@ export interface UndoManager {
 	onStackChange(callback: () => void): Unsubscribe;
 }
 
+export interface UndoHistoryRestore {
+	focusBlockId: string | null;
+	requestId: number;
+}
+
+export interface HistoryAppliedEvent {
+	kind: "undo" | "redo";
+	selection: SelectionState;
+	focusBlockId: string | null;
+	requestId: number;
+}
+
+export interface DocumentCommitEvent {
+	commitId: number;
+	ops: readonly DocumentOp[];
+	origin: OpOrigin;
+	affectedBlocks: string[];
+	blockRevisions: Readonly<Record<string, number>>;
+}
+
 // ── Schema Engine ───────────────────────────────────────────
 
 export interface SchemaEngine {
@@ -84,11 +104,8 @@ export interface DocumentValidationError {
 
 export interface PenEventMap {
 	change: (events: CRDTEvent[]) => void;
-	documentChange: (event: {
-		ops: DocumentOp[];
-		origin: OpOrigin;
-		affectedBlocks: string[];
-	}) => void;
+	documentCommit: (event: DocumentCommitEvent) => void;
+	historyApplied: (event: HistoryAppliedEvent) => void;
 	decorationsChange: (generation: number) => void;
 	selectionChange: (selection: SelectionState) => void;
 	diagnostic: (event: DiagnosticEvent) => void;
@@ -143,6 +160,7 @@ export interface Editor {
 	firstBlock(): BlockHandle | null;
 	lastBlock(): BlockHandle | null;
 	blockCount(): number;
+	getBlockRevision(blockId: string): number;
 
 	setSelection(selection: SelectionState): void;
 	getSelection(): SelectionState;
@@ -163,8 +181,9 @@ export interface Editor {
 	requestDecorationUpdate(): void;
 	scrollToBlock?(blockId: string): void;
 
-	onDocumentChange(callback: PenEventMap["documentChange"]): Unsubscribe;
+	onDocumentCommit(callback: PenEventMap["documentCommit"]): Unsubscribe;
 	onSelectionChange(callback: PenEventMap["selectionChange"]): Unsubscribe;
+	onHistoryApplied(callback: PenEventMap["historyApplied"]): Unsubscribe;
 
 	on<K extends keyof PenEventMap>(
 		event: K,
@@ -186,6 +205,10 @@ export interface EditorInternals {
 	readonly doc: PenDocument;
 	readonly engine: SchemaEngine;
 	readonly awareness: Awareness | null;
+	emit<K extends keyof PenEventMap>(
+		event: K,
+		...args: Parameters<PenEventMap[K]>
+	): void;
 	getSlot<T>(key: string): T | undefined;
 	setSlot(key: string, value: unknown): void;
 }

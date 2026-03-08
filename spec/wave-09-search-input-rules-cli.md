@@ -402,7 +402,7 @@ export const search = defineExtension({
   setup(editor) {
     const engine = new SearchEngine(editor);
 
-    const unsubDoc = editor.onDocumentChange(() => {
+    const unsubDoc = editor.onDocumentCommit(() => {
       engine.recompute();
     });
 
@@ -1072,7 +1072,7 @@ Uses `@clack/prompts` for interactive CLI prompts (beautiful, minimal dependency
 
 ## Key Decisions
 
-1. **Search recomputes on every document change (debounced).** The search engine listens to `onDocumentChange` and re-runs the query. Recomputation is debounced with a 100ms trailing delay to avoid thrashing during rapid typing. For M1 this is fine — with 10k blocks, linear scan over text content takes <5ms. The debounce interval is configurable via `SearchOptions.debounceMs`.
+1. **Search recomputes on every document commit (debounced).** The search engine listens to `onDocumentCommit` and re-runs the query. Recomputation is debounced with a 100ms trailing delay to avoid thrashing during rapid typing. For M1 this is fine — with 10k blocks, linear scan over text content takes <5ms. The debounce interval is configurable via `SearchOptions.debounceMs`.
 
 2. **Replace-all uses descending offset order per block.** Same pattern as track-changes accept: prevents offset invalidation.
 
@@ -1099,7 +1099,7 @@ Uses `@clack/prompts` for interactive CLI prompts (beautiful, minimal dependency
 5. Active match is highlighted differently from other matches (`pen-search-match-active`).
 6. Replace replaces the active match and advances to the next.
 7. Replace All replaces all matches in a single undo group.
-8. Search decorations update when the document changes.
+8. Search decorations update when the document commits.
 9. Typing `# ` at the start of a paragraph converts it to a heading level 1.
 10. Typing `- ` converts to unordered list, `1. ` to ordered list, `> ` to blockquote.
 11. Typing `` ``` `` converts to code block, `---` to divider.

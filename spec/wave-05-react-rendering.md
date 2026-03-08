@@ -283,7 +283,7 @@ interface EditorContentProps {
 **Implementation outline:**
 
 1. Reads `EditorContext` to access the editor.
-2. Subscribes to `editor.on('documentChange')` to get the block list.
+2. Subscribes to `editor.on('documentCommit')` to get the block list.
 3. Renders the block list: maps `blockOrder` IDs to `<Pen.Editor.Block>` instances.
 4. Hosts the `FieldEditorContext.Provider` — the field editor lives here.
 5. **Virtualization (opt-in):** When `virtualize` is truthy, uses `IntersectionObserver` to mount/unmount blocks outside the viewport + overscan buffer. Placeholder divs with cached heights maintain scroll position. Default: off for <100 blocks, on above.
@@ -1380,6 +1380,8 @@ For a document with N mark spans, a plain character insert touches exactly 1 tex
 
 **`Pen.Editor.InlineContent` static rendering.** Blocks at rest (field editor not active) continue to use `fullReconcileToDOM` for their one-time render. The fast path only applies inside active field editor backends where the `Y.YTextEvent` is available.
 
+**History replay invariant.** Undo/redo is not allowed to rely on incidental browser selection state. The rendering layer must restore the logical editor selection first, reconcile every history-affected block including passive blocks outside the current `activeBlockIds`, and only then project the caret back into the DOM. While that deferred projection is pending, DOM-driven `selectionchange` handlers are suppressed so stale native selection does not overwrite the restored history cursor.
+
 ### Module: `field-editor/mark-boundary.ts`
 
 Enforces `InlineSchema.expand` policy at every text insertion point (Spec Section 4.3).
@@ -1661,7 +1663,7 @@ export function useToolbar(editor: Editor): ToolbarState {
     (callback) => {
       const unsubs = [
         editor.on("selectionChange", callback),
-        editor.on("documentChange", callback),
+        editor.on("documentCommit", callback),
       ];
       return () => unsubs.forEach((u) => u());
     },
@@ -1698,7 +1700,7 @@ export function useSlashMenu(editor: Editor): SlashMenuState & {
 ```typescript
 export function useBlockList(editor: Editor): readonly string[] {
   const subscribe = (callback: () => void) =>
-    editor.on("documentChange", callback);
+    editor.on("documentCommit", callback);
 
   const getSnapshot = (): readonly string[] => {
     // DocumentStateImpl.blockOrder returns a cached readonly string[]

@@ -10,6 +10,7 @@ export class UndoManagerImpl implements UndoManager {
   private readonly _listeners = new Set<() => void>();
   private _idleTimer: ReturnType<typeof setTimeout> | null = null;
   private _groupTimeout = 1000;
+  _isHistoryOperation = false;
 
   constructor(crdtUndo: CRDTUndoManager) {
     this._crdtUndo = crdtUndo;
@@ -17,12 +18,22 @@ export class UndoManagerImpl implements UndoManager {
 
   undo(): boolean {
     this._crdtUndo.stopCapturing();
-    return this._crdtUndo.undo();
+    this._isHistoryOperation = true;
+    try {
+      return this._crdtUndo.undo();
+    } finally {
+      this._isHistoryOperation = false;
+    }
   }
 
   redo(): boolean {
     this._crdtUndo.stopCapturing();
-    return this._crdtUndo.redo();
+    this._isHistoryOperation = true;
+    try {
+      return this._crdtUndo.redo();
+    } finally {
+      this._isHistoryOperation = false;
+    }
   }
 
   canUndo(): boolean {
