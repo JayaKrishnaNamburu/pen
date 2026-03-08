@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img width="96" height="96" alt="pen-tile@2x" src="https://github.com/user-attachments/assets/d2bc5660-5c1e-467b-b6cd-5f5ecc438062" /><br/>
+  <<img width="76" height="76" alt="pen-tile@2x" src="https://github.com/user-attachments/assets/5fe5403b-3e85-4770-a82d-4b47baee6500" /><br/>
   Pen
 </h1>
 <h3 align="center">
