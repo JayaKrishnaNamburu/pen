@@ -245,124 +245,145 @@ export function EditorContent(props: EditorContentProps) {
 			if (!gesture) return;
 			clearPointerSelectionState();
 
-			const root = gestureEl.closest(
-				"[data-pen-editor-root]",
-			) as HTMLElement | null;
-			const mappedSelection = root ? domSelectionToEditor(root) : null;
+			const clickCount = event.detail;
+			const clientX = event.clientX;
+			const clientY = event.clientY;
 			const moved =
-				Math.abs(event.clientX - gesture.clientX) > 3 ||
-				Math.abs(event.clientY - gesture.clientY) > 3;
+				Math.abs(clientX - gesture.clientX) > 3 ||
+				Math.abs(clientY - gesture.clientY) > 3;
 
-			if (root && mappedSelection) {
-				const collapsed =
-					mappedSelection.anchor.blockId ===
-						mappedSelection.focus.blockId &&
-					mappedSelection.anchor.offset ===
-						mappedSelection.focus.offset;
+			const finalizePointerSelection = () => {
+				const root = gestureEl.closest(
+					"[data-pen-editor-root]",
+				) as HTMLElement | null;
+				const mappedSelection = root ? domSelectionToEditor(root) : null;
 
-				if (!collapsed) {
-					const focusBlockEl = root.querySelector(
-						`[data-block-id="${mappedSelection.focus.blockId}"]`,
-					) as HTMLElement | null;
-					const focusRole =
-						focusBlockEl?.getAttribute(DATA_ATTRS.surfaceRole) ?? null;
-					const focusType = focusBlockEl?.getAttribute("data-block-type");
-					const needsBoundarySnap =
-						focusRole === "structural" ||
-						focusRole === "delegated" ||
-						focusType === "divider" ||
-						focusType === "image" ||
-						focusType === "codeBlock" ||
-						focusType === "table";
+				if (root && mappedSelection) {
+					const collapsed =
+						mappedSelection.anchor.blockId ===
+							mappedSelection.focus.blockId &&
+						mappedSelection.anchor.offset ===
+							mappedSelection.focus.offset;
 
-					if (needsBoundarySnap) {
-						const selectingForward = (() => {
-							const blockOrder = editor.documentState.blockOrder;
-							const anchorIdx = blockOrder.indexOf(
-								mappedSelection.anchor.blockId,
-							);
-							const focusIdx = blockOrder.indexOf(
-								mappedSelection.focus.blockId,
-							);
-							if (anchorIdx === focusIdx) {
-								return (
-									mappedSelection.anchor.offset <=
-									mappedSelection.focus.offset
+					if (!collapsed) {
+						const focusBlockEl = root.querySelector(
+							`[data-block-id="${mappedSelection.focus.blockId}"]`,
+						) as HTMLElement | null;
+						const focusRole =
+							focusBlockEl?.getAttribute(DATA_ATTRS.surfaceRole) ?? null;
+						const focusType =
+							focusBlockEl?.getAttribute("data-block-type");
+						const needsBoundarySnap =
+							focusRole === "structural" ||
+							focusRole === "delegated" ||
+							focusType === "divider" ||
+							focusType === "image" ||
+							focusType === "codeBlock" ||
+							focusType === "table";
+
+						if (needsBoundarySnap) {
+							const selectingForward = (() => {
+								const blockOrder = editor.documentState.blockOrder;
+								const anchorIdx = blockOrder.indexOf(
+									mappedSelection.anchor.blockId,
 								);
-							}
-							return anchorIdx <= focusIdx;
-						})();
-						const snappedPoint = pointToEditorSelectionPoint(
-							root,
-							event.clientX,
-							event.clientY,
-							{
-								preferredBoundary: selectingForward
-									? "end"
-									: "start",
-							},
-						);
+								const focusIdx = blockOrder.indexOf(
+									mappedSelection.focus.blockId,
+								);
+								if (anchorIdx === focusIdx) {
+									return (
+										mappedSelection.anchor.offset <=
+										mappedSelection.focus.offset
+									);
+								}
+								return anchorIdx <= focusIdx;
+							})();
+							const snappedPoint = pointToEditorSelectionPoint(
+								root,
+								clientX,
+								clientY,
+								{
+									preferredBoundary: selectingForward
+										? "end"
+										: "start",
+								},
+							);
+							activateCanonicalSelection(
+								mappedSelection.anchor,
+								snappedPoint ?? mappedSelection.focus,
+							);
+							ensureEditorFocus(root);
+							skipNextClickRef.current = true;
+							return;
+						}
+
 						activateCanonicalSelection(
 							mappedSelection.anchor,
-							snappedPoint ?? mappedSelection.focus,
+							mappedSelection.focus,
 						);
 						ensureEditorFocus(root);
 						skipNextClickRef.current = true;
 						return;
 					}
 
-					activateCanonicalSelection(
-						mappedSelection.anchor,
-						mappedSelection.focus,
-					);
-					ensureEditorFocus(root);
+					if (moved) {
+						activateCanonicalSelection(
+							mappedSelection.anchor,
+							mappedSelection.focus,
+						);
+						ensureEditorFocus(root);
+						skipNextClickRef.current = true;
+						return;
+					}
+				}
+
+				const blockId = resolveClickedBlockId(event) ?? gesture.blockId;
+				if (!blockId) return;
+
+				const block = editor.getBlock(blockId);
+				if (!block) return;
+
+				const schema = editor.schema.resolve(block.type);
+				if (schema?.fieldEditor === "none") {
+					editor.selectBlock(blockId);
 					skipNextClickRef.current = true;
 					return;
 				}
 
-				if (moved) {
-					activateCanonicalSelection(
-						mappedSelection.anchor,
-						mappedSelection.focus,
-					);
-					ensureEditorFocus(root);
+				if (clickCount >= 3) {
+					const blockStart = getBoundaryPoint(blockId, "start");
+					const blockEnd = getBoundaryPoint(blockId, "end");
+					activateCanonicalSelection(blockStart, blockEnd);
+					if (root) {
+						ensureEditorFocus(root);
+					}
 					skipNextClickRef.current = true;
 					return;
 				}
-			}
 
-			const blockId = resolveClickedBlockId(event);
-			if (!blockId) return;
+				if (!root) {
+					fieldEditor.activate(blockId);
+					skipNextClickRef.current = true;
+					return;
+				}
 
-			const block = editor.getBlock(blockId);
-			if (!block) return;
+				const pointerPoint = pointToEditorSelectionPoint(root, clientX, clientY);
+				if (!pointerPoint) {
+					fieldEditor.activate(blockId);
+					skipNextClickRef.current = true;
+					return;
+				}
 
-			const schema = editor.schema.resolve(block.type);
-			if (schema?.fieldEditor === "none") {
-				editor.selectBlock(blockId);
+				activateCanonicalSelection(pointerPoint, pointerPoint);
 				skipNextClickRef.current = true;
+			};
+
+			if (clickCount > 1) {
+				requestAnimationFrame(finalizePointerSelection);
 				return;
 			}
 
-			if (!root) {
-				fieldEditor.activate(blockId);
-				skipNextClickRef.current = true;
-				return;
-			}
-
-			const pointerPoint = pointToEditorSelectionPoint(
-				root,
-				event.clientX,
-				event.clientY,
-			);
-			if (!pointerPoint) {
-				fieldEditor.activate(blockId);
-				skipNextClickRef.current = true;
-				return;
-			}
-
-			activateCanonicalSelection(pointerPoint, pointerPoint);
-			skipNextClickRef.current = true;
+			finalizePointerSelection();
 		};
 
 		const ensureEditorFocus = (root: HTMLElement) => {

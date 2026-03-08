@@ -44,6 +44,20 @@ function getFieldEditor(
 	return fieldEditor;
 }
 
+function setNativeSelectionRange(
+	startElement: HTMLElement,
+	startOffset: number,
+	endElement: HTMLElement,
+	endOffset: number,
+): void {
+	const selection = document.getSelection();
+	const range = document.createRange();
+	range.setStart(startElement.firstChild ?? startElement, startOffset);
+	range.setEnd(endElement.firstChild ?? endElement, endOffset);
+	selection?.removeAllRanges();
+	selection?.addRange(range);
+}
+
 class FakeEditContext {
 	text: string;
 	selectionStart: number;
@@ -194,6 +208,121 @@ describe("@pen/react selected text deletion", () => {
 		expect(domSelectionToEditor(rootElement!)).toMatchObject({
 			anchor: { blockId, offset: 0 },
 			focus: { blockId, offset: 5 },
+		});
+
+		await act(async () => {
+			root.unmount();
+		});
+		container.remove();
+		editor.destroy();
+	});
+
+	it("preserves third-click block selection when the native range settles after mouseup", async () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream", "undo"],
+		});
+		const blockId = editor.firstBlock()!.id;
+
+		editor.apply([
+			{ type: "insert-text", blockId, offset: 0, text: "Hello world" },
+		]);
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(
+				<Pen.Editor.Root editor={editor}>
+					<Pen.Editor.Content />
+				</Pen.Editor.Root>,
+			);
+		});
+
+		const fieldEditor = getFieldEditor(editor);
+		const rootElement = container.querySelector(
+			"[data-pen-editor-root]",
+		) as HTMLElement | null;
+		const inlineElement = container.querySelector(
+			"[data-pen-inline-content]",
+		) as HTMLElement | null;
+
+		expect(rootElement).not.toBeNull();
+		expect(inlineElement).not.toBeNull();
+
+		await act(async () => {
+			fieldEditor.activate(blockId);
+			await flushAnimationFrames(2);
+		});
+
+		const originalCaretRangeFromPoint = (
+			document as Document & {
+				caretRangeFromPoint?: (x: number, y: number) => Range | null;
+			}
+		).caretRangeFromPoint;
+
+		try {
+			(
+				document as Document & {
+					caretRangeFromPoint?: (x: number, y: number) => Range | null;
+				}
+			).caretRangeFromPoint = () => {
+				const range = document.createRange();
+				range.setStart(inlineElement!.firstChild ?? inlineElement!, 2);
+				range.collapse(true);
+				return range;
+			};
+
+			await act(async () => {
+				inlineElement!.dispatchEvent(
+					new MouseEvent("mousedown", {
+						bubbles: true,
+						button: 0,
+						clientX: 12,
+						clientY: 8,
+						detail: 3,
+					}),
+				);
+
+				const collapsedRange = document.createRange();
+				collapsedRange.setStart(
+					inlineElement!.firstChild ?? inlineElement!,
+					2,
+				);
+				collapsedRange.collapse(true);
+				document.getSelection()?.removeAllRanges();
+				document.getSelection()?.addRange(collapsedRange);
+
+				document.dispatchEvent(
+					new MouseEvent("mouseup", {
+						bubbles: true,
+						button: 0,
+						clientX: 12,
+						clientY: 8,
+						detail: 3,
+					}),
+				);
+
+				setNativeSelectionRange(inlineElement!, 0, inlineElement!, 11);
+				await flushAnimationFrames(3);
+			});
+		} finally {
+			(
+				document as Document & {
+					caretRangeFromPoint?: (x: number, y: number) => Range | null;
+				}
+			).caretRangeFromPoint = originalCaretRangeFromPoint;
+		}
+
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId, offset: 0 },
+			focus: { blockId, offset: 11 },
+			isCollapsed: false,
+		});
+		expect(domSelectionToEditor(rootElement!)).toMatchObject({
+			anchor: { blockId, offset: 0 },
+			focus: { blockId, offset: 11 },
 		});
 
 		await act(async () => {
