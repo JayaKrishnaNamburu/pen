@@ -1,4 +1,4 @@
-![banner](https://github.com/user-attachments/assets/603f7a83-a84c-4550-9a38-34cfacf4e800)
+![banner-pen](https://github.com/user-attachments/assets/f811d78d-2c02-4578-b7e8-80115f274fb4)
 
 <h3 align="center">
   Headless, extension-first editor<br/> engine for human-AI co-authoring
