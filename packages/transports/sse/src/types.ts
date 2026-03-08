@@ -1,4 +1,9 @@
-import type { PenStreamPart, PenStreamRequest } from "@pen/core";
+import type {
+  Editor,
+  PenStreamPart,
+  PenStreamRequest,
+  ToolServer,
+} from "@pen/core";
 
 export interface SSEEvent {
   id?: string;
@@ -19,8 +24,8 @@ export interface SSEClientOptions {
 }
 
 export interface SSEServerOptions {
-  toolServer?: import("@pen/core").ToolServer;
-  editor?: import("@pen/core").Editor;
+  toolServer?: ToolServer;
+  editor?: Editor;
   onRequest?: (request: PenStreamRequest) => void;
   onError?: (error: unknown) => void;
   pingInterval?: number;

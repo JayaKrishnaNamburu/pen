@@ -1,9 +1,12 @@
 import React, { useRef, useLayoutEffect } from "react";
+import type { Editor } from "@pen/core";
+import { useEditorContentContext } from "../../context/editorContentContext.js";
 import { useEditorContext } from "../../context/editorContext.js";
 import { useFieldEditorContext } from "../../context/fieldEditorContext.js";
 import { fullReconcileDeltasToDOM } from "../../field-editor/reconciler.js";
 import { useBlockEditingState } from "../../hooks/useBlockEditingState.js";
 import { useBlockCommitState } from "../../hooks/useBlockCommitState.js";
+import { useSelection } from "../../hooks/useSelection.js";
 import { useBlockTextSnapshot } from "../../hooks/useBlockTextSnapshot.js";
 import { useFieldEditorState } from "../../hooks/useFieldEditorState.js";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild.js";
@@ -16,11 +19,14 @@ export interface InlineContentProps extends AsChildProps {
 }
 
 export function InlineContent(props: InlineContentProps) {
-	const { blockId, placeholder, ...rest } = props;
+	const { blockId, placeholder: placeholderProp, ...rest } = props;
 	const { editor } = useEditorContext();
+	const { emptyPlaceholder, isEmpty: isDocumentEmpty } =
+		useEditorContentContext();
 	const fieldEditor = useFieldEditorContext();
 	const fieldEditorState = useFieldEditorState(fieldEditor);
 	const isActive = useBlockEditingState(fieldEditor, blockId);
+	const selection = useSelection(editor);
 	const blockCommit = useBlockCommitState(editor, blockId);
 	const textSnapshot = useBlockTextSnapshot(editor, blockId);
 	const elementRef = useRef<HTMLElement>(null);
@@ -28,6 +34,38 @@ export function InlineContent(props: InlineContentProps) {
 	const isExpandedOwnedBlock =
 		fieldEditorState.mode === "expanded" &&
 		fieldEditorState.activeBlockIds.includes(blockId);
+
+	const isFirstBlock = editor.documentState.blockOrder[0] === blockId;
+	const schemaPlaceholder = resolveSchemaPlaceholder(editor, blockId);
+	const isFocusedBlock =
+		isActive ||
+		(selection?.type === "text" &&
+			selection.isCollapsed &&
+			selection.focus.blockId === blockId);
+
+	const blockTextEmpty = !textSnapshot.text || textSnapshot.text === "\u200B";
+	const showDocumentPlaceholder =
+		blockTextEmpty && isFirstBlock && isDocumentEmpty && !!emptyPlaceholder;
+	const showExplicitPlaceholder =
+		blockTextEmpty &&
+		isFocusedBlock &&
+		!!placeholderProp &&
+		!showDocumentPlaceholder;
+	const showBlockPlaceholder =
+		blockTextEmpty &&
+		isFocusedBlock &&
+		!placeholderProp &&
+		!!schemaPlaceholder &&
+		!showDocumentPlaceholder;
+
+	const placeholder =
+		showDocumentPlaceholder
+			? emptyPlaceholder
+			: showExplicitPlaceholder
+				? placeholderProp
+				: showBlockPlaceholder
+					? schemaPlaceholder
+					: undefined;
 
 	useLayoutEffect(() => {
 		if (fieldEditorState.mode === "expanded") {
@@ -86,19 +124,28 @@ export function InlineContent(props: InlineContentProps) {
 		textSnapshot,
 	]);
 
-	const isEmpty = !textSnapshot.text || textSnapshot.text === "\u200B";
-	const showPlaceholder = isEmpty && placeholder;
+	const showPlaceholder =
+		showDocumentPlaceholder || showExplicitPlaceholder || showBlockPlaceholder;
 
 	const primitiveProps: Record<string, unknown> = {
 		[DATA_ATTRS.inlineContent]: "",
-		"data-placeholder-visible": showPlaceholder ? "" : undefined,
-		"data-placeholder": placeholder,
+		[DATA_ATTRS.placeholderVisible]: showPlaceholder ? "" : undefined,
+		"data-placeholder": showPlaceholder ? placeholder : undefined,
 		style: showPlaceholder
 			? {
-					position: "relative" as const,
-				}
+				position: "relative" as const,
+			}
 			: undefined,
 	};
 
 	return renderAsChild({ ...rest, ref: elementRef }, "span", primitiveProps);
+}
+
+function resolveSchemaPlaceholder(
+	editor: Pick<Editor, "getBlock" | "schema">,
+	blockId: string,
+): string | undefined {
+	const block = editor.getBlock(blockId);
+	if (!block) return undefined;
+	return editor.schema.resolve(block.type)?.placeholder;
 }

@@ -7,6 +7,7 @@ export const bulletListItem = defineBlock("bulletListItem", {
   },
   content: "inline",
   fieldEditor: "richtext",
+  placeholder: "List",
   display: {
     title: "Bullet List",
     description: "Unordered list item",

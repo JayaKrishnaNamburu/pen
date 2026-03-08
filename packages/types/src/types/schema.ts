@@ -74,6 +74,7 @@ export interface BlockSchema<
   validateProps?: (raw: Record<string, unknown>) => InferProps<Props>;
   fieldEditor?: FieldEditorType;
   keyBindings?: readonly KeyBinding[];
+  placeholder?: string;
   display?: BlockDisplay;
   isContainer?: boolean;
   aiDescription?: string;

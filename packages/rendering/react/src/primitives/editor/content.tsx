@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useLayoutEffect } from "react";
 import { flushSync } from "react-dom";
+import { EditorContentContext } from "../../context/editorContentContext.js";
 import { useEditorContext } from "../../context/editorContext.js";
 import { useFieldEditorContext } from "../../context/fieldEditorContext.js";
 import { shouldUseBlockSelection } from "../../field-editor/crossBlock.js";
@@ -10,6 +11,10 @@ import {
 } from "../../field-editor/selectionBridge.js";
 import { useFieldEditorState } from "../../hooks/useFieldEditorState.js";
 import { useBlockList } from "../../hooks/useBlockList.js";
+import {
+	useDocumentEmptyState,
+	useDocumentPlaceholderState,
+} from "../../hooks/useDocumentEmptyState.js";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild.js";
 import { DATA_ATTRS } from "../../utils/dataAttributes.js";
 import { EditorBlock } from "./block.js";
@@ -22,11 +27,12 @@ export interface EditorContentProps extends AsChildProps {
 				estimatedHeight?: number;
 				mobileOverscan?: number;
 		  };
+	emptyPlaceholder?: string;
 	ref?: React.Ref<HTMLElement>;
 }
 
 export function EditorContent(props: EditorContentProps) {
-	const { virtualize: _virtualize, ...rest } = props;
+	const { virtualize: _virtualize, emptyPlaceholder, ...rest } = props;
 	const { editor, readonly } = useEditorContext();
 	const fieldEditor = useFieldEditorContext();
 	const fieldEditorState = useFieldEditorState(fieldEditor);
@@ -40,7 +46,8 @@ export function EditorContent(props: EditorContentProps) {
 	} | null>(null);
 	const skipNextClickRef = useRef(false);
 
-	const isEmpty = blockIds.length === 0;
+	const isEmpty = useDocumentEmptyState(editor);
+	const isDocumentPlaceholderVisible = useDocumentPlaceholderState(editor);
 
 	useLayoutEffect(() => {
 		if (!fieldEditor || fieldEditorState.mode !== "expanded") return;
@@ -424,13 +431,19 @@ export function EditorContent(props: EditorContentProps) {
 		[DATA_ATTRS.empty]: isEmpty || undefined,
 	};
 
-	return renderAsChild(
-		{
-			...rest,
-			ref: contentRef,
-			children: contentChildren,
-		},
-		"div",
-		primitiveProps,
+	return (
+		<EditorContentContext.Provider
+			value={{ emptyPlaceholder, isEmpty: isDocumentPlaceholderVisible }}
+		>
+			{renderAsChild(
+				{
+					...rest,
+					ref: contentRef,
+					children: contentChildren,
+				},
+				"div",
+				primitiveProps,
+			)}
+		</EditorContentContext.Provider>
 	);
 }

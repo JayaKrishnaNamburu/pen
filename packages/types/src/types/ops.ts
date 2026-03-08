@@ -103,7 +103,7 @@ export interface InsertTextOp {
   blockId: string;
   offset: number;
   text: string;
-  marks?: Record<string, unknown>;
+  marks?: Record<string, unknown | null>;
 }
 export interface DeleteTextOp {
   type: "delete-text";
@@ -124,7 +124,7 @@ export interface ReplaceTextOp {
   offset: number;
   length: number;
   text: string;
-  marks?: Record<string, unknown>;
+  marks?: Record<string, unknown | null>;
 }
 export interface InsertInlineNodeOp {
   type: "insert-inline-node";

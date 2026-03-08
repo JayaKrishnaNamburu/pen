@@ -39,7 +39,7 @@ interface CRDTText {
 	insert(
 		offset: number,
 		text: string,
-		attributes?: Record<string, unknown>,
+		attributes?: Record<string, unknown | null>,
 	): void;
 	delete(offset: number, length: number): void;
 	format(
@@ -777,9 +777,9 @@ export class ApplyPipeline {
 	}
 
 	private _resolveMarks(
-		marks: Record<string, unknown>,
-	): Record<string, unknown> {
-		const resolved: Record<string, unknown> = {};
+		marks: Record<string, unknown | null>,
+	): Record<string, unknown | null> {
+		const resolved: Record<string, unknown | null> = {};
 		for (const [type, value] of Object.entries(marks)) {
 			const schema = this._registry.resolveInline(type);
 			if (!schema) continue;

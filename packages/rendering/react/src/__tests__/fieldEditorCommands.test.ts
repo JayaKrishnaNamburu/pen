@@ -131,6 +131,37 @@ describe("@pen/react field-editor commands", () => {
 		editor.destroy();
 	});
 
+	it("returns explicit null marks when pending marks disable boundary formatting", () => {
+		const editor = createEditor(editorOpts());
+		const blockId = editor.firstBlock()!.id;
+		const fieldEditor = new FieldEditorImpl(editor);
+		const ytext = getYText(editor, blockId);
+
+		editor.internals.setSlot(FIELD_EDITOR_SLOT_KEY, fieldEditor);
+		editor.internals.setSlot(CORE_FIELD_EDITOR_SLOT_KEY, fieldEditor);
+		editor.apply([
+			{
+				type: "insert-text",
+				blockId,
+				offset: 0,
+				text: "Hello",
+				marks: { bold: true, italic: true },
+			},
+		]);
+		fieldEditor.activate(blockId);
+		fieldEditor.setTextSelection(blockId, 5, 5);
+
+		expect(toggleInlineMark(editor, "bold")).toBe(true);
+		expect(fieldEditor.getPendingMarks()).toEqual({ bold: null });
+		expect(fieldEditor.resolveInsertMarks(ytext, 5)).toEqual({
+			bold: null,
+			italic: true,
+		});
+
+		fieldEditor.destroy();
+		editor.destroy();
+	});
+
 	it("splits a block and returns the next selection target", () => {
 		const editor = createEditor(editorOpts());
 		const blockId = editor.firstBlock()!.id;

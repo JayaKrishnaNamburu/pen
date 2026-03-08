@@ -130,6 +130,7 @@ export function defineBlock<Type extends string>(
       Object.keys(props).length > 0 ? generateValidator(props) : undefined,
     fieldEditor: config.fieldEditor,
     keyBindings: config.keyBindings,
+    placeholder: config.placeholder,
     display: config.display ?? { title: typeNameToTitle(type) },
     isContainer: config.isContainer,
     aiDescription: config.aiDescription ?? generateAIDescription(type, props),

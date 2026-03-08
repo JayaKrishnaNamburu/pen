@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react";
-import type { Editor, AssetProvider } from "@pen/core";
+import type { Editor, AssetProvider, Position } from "@pen/core";
 import { isDevelopmentEnvironment } from "../utils/environment.js";
 
 export interface PasteImporters {
@@ -9,7 +9,7 @@ export interface PasteImporters {
 			editor: Editor,
 			options?: {
 				undoGroup?: boolean;
-				position?: import("@pen/core").Position;
+				position?: Position;
 			},
 		): void;
 	};
@@ -19,7 +19,7 @@ export interface PasteImporters {
 			editor: Editor,
 			options?: {
 				undoGroup?: boolean;
-				position?: import("@pen/core").Position;
+				position?: Position;
 			},
 		): void;
 	};

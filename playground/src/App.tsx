@@ -1,10 +1,10 @@
-import "./App.css";
+import { Pen, useEditor } from "@pen/react";
 import {
 	RICH_TEXT_SHORTCUTS_EXTENSION_NAME,
 	richTextShortcutsExtension,
 } from "@pen/shortcuts";
-import { Pen, useEditor } from "@pen/react";
 import { useRef, useState } from "react";
+import "./App.css";
 import { InspectorPanel } from "./components/InspectorPanel";
 import { SelectionToolbar } from "./components/SelectionToolbar";
 import { SlashMenu } from "./components/SlashMenu";
@@ -26,28 +26,35 @@ export function App() {
 			}),
 		],
 	});
-	const [isInspectorOpen, setIsInspectorOpen] = useState(true);
+	const [isInspectorOpen, setIsInspectorOpen] = useState(false);
+	const handleToggleInspector = () => {
+		setIsInspectorOpen((value) => !value);
+	};
 
 	return (
 		<div className="playground">
 			<div className="playground-body">
-				<Pen.Editor.Root editor={editor} importers={PLAYGROUND_IMPORTERS}>
-					<Toolbar
-						editor={editor}
-						isInspectorOpen={isInspectorOpen}
-						onToggleInspector={() => setIsInspectorOpen((value) => !value)}
-						linkToggleRef={linkToggleRef}
-					/>
+				<Pen.Editor.Root
+					editor={editor}
+					importers={PLAYGROUND_IMPORTERS}
+				>
+					<Toolbar editor={editor} linkToggleRef={linkToggleRef} />
 
 					<div className="playground-editor">
-						<Pen.Editor.Content />
-						<SlashMenu />
+						<Pen.Editor.Content
+							emptyPlaceholder="Start writing, or press / for commands..."
+						/>
+						<SlashMenu editor={editor} />
 						<SelectionToolbar />
 					</div>
 				</Pen.Editor.Root>
 			</div>
 
-			{isInspectorOpen ? <InspectorPanel editor={editor} /> : null}
+			<InspectorPanel
+				editor={editor}
+				isOpen={isInspectorOpen}
+				onToggle={handleToggleInspector}
+			/>
 		</div>
 	);
 }

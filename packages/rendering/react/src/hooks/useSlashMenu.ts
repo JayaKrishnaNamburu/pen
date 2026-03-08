@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import type { Editor, BlockDisplay } from "@pen/core";
+import type { Editor, BlockDisplay, BlockSchema } from "@pen/core";
 
 export interface SlashMenuState {
 	open: boolean;
@@ -141,7 +141,7 @@ export function useSlashMenu(
 }
 
 function filterItems(
-	displays: readonly (import("@pen/core").BlockSchema & {
+	displays: readonly (BlockSchema & {
 		display: BlockDisplay;
 	})[],
 	query: string,

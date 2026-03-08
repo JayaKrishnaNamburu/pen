@@ -8,6 +8,7 @@ import {
 import { FieldEditorContext } from "../../context/fieldEditorContext.js";
 import { FIELD_EDITOR_SLOT_KEY } from "../../constants/fieldEditor.js";
 import { FieldEditorImpl } from "../../field-editor/fieldEditorImpl.js";
+import { useDocumentEmptyState } from "../../hooks/useDocumentEmptyState.js";
 import { domSelectionToEditor } from "../../field-editor/selectionBridge.js";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild.js";
 import { composeRefs } from "../../utils/composeRefs.js";
@@ -25,7 +26,7 @@ export interface EditorRootProps extends AsChildProps {
 export function EditorRoot(props: EditorRootProps) {
 	const { editor, readonly = false, importers, ref, ...rest } = props;
 	const [focused, setFocused] = useState(false);
-	const [isEmpty, setIsEmpty] = useState(editor.documentState.isEmpty);
+	const isEmpty = useDocumentEmptyState(editor);
 	const fieldEditorRef = useRef<FieldEditorImpl | null>(null);
 	const rootRef = useRef<HTMLElement | null>(null);
 
@@ -34,15 +35,10 @@ export function EditorRoot(props: EditorRootProps) {
 	}
 
 	useEffect(() => {
-		const unsubDoc = editor.onDocumentCommit(() => {
-			setIsEmpty(editor.documentState.isEmpty);
-		});
 		const root = rootRef.current;
 		const fieldEditor = fieldEditorRef.current;
 		if (!root || !fieldEditor) {
-			return () => {
-				unsubDoc();
-			};
+			return;
 		}
 
 		const handleFocusIn = () => {
@@ -65,7 +61,6 @@ export function EditorRoot(props: EditorRootProps) {
 		return () => {
 			root.removeEventListener("focusin", handleFocusIn);
 			root.removeEventListener("focusout", handleFocusOut);
-			unsubDoc();
 		};
 	}, [editor]);
 
@@ -140,7 +135,7 @@ export function EditorRoot(props: EditorRootProps) {
 				return;
 			}
 
-			if (handleDeleteSelectionShortcut(event, editor, fieldEditor)) {
+			if (handleDeleteSelectionShortcut(event, editor, fieldEditor, root)) {
 				event.preventDefault();
 			}
 		};
@@ -236,6 +231,7 @@ function handleDeleteSelectionShortcut(
 	event: KeyboardEvent,
 	editor: Editor,
 	fieldEditor: FieldEditorImpl,
+	root: HTMLElement,
 ): boolean {
 	if (
 		(event.key !== "Backspace" && event.key !== "Delete") ||
@@ -255,6 +251,12 @@ function handleDeleteSelectionShortcut(
 	}
 
 	if (selection.type === "text" && !selection.isCollapsed) {
+		if (
+			!selection.isMultiBlock &&
+			!shouldUseDocumentTextDeletionFallback(root, fieldEditor)
+		) {
+			return false;
+		}
 		if (selection.isMultiBlock) {
 			fieldEditor.deactivate();
 		}
@@ -280,3 +282,31 @@ function handleDeleteSelectionShortcut(
 
 	return false;
 }
+
+function shouldUseDocumentTextDeletionFallback(
+	root: HTMLElement,
+	fieldEditor: FieldEditorImpl,
+): boolean {
+	if (!fieldEditor.isEditing) {
+		return true;
+	}
+
+	if (domSelectionToEditor(root) !== null) {
+		return false;
+	}
+
+	const activeElement = root.ownerDocument?.activeElement;
+	if (!(activeElement instanceof HTMLElement) || !root.contains(activeElement)) {
+		return true;
+	}
+
+	if (activeElement === root) {
+		return true;
+	}
+
+	const activeInlineSurface = activeElement.closest(
+		`[${DATA_ATTRS.inlineContent}]`,
+	);
+	return activeInlineSurface === null;
+}
+

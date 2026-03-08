@@ -5,6 +5,11 @@ export {
   type PasteImporters,
 } from "./editorContext.js";
 export {
+  EditorContentContext,
+  useEditorContentContext,
+  type EditorContentContextValue,
+} from "./editorContentContext.js";
+export {
   FieldEditorContext,
   useFieldEditorContext,
 } from "./fieldEditorContext.js";

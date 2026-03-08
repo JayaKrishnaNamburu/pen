@@ -1,5 +1,6 @@
 import type {
 	FieldEditor,
+	FieldEditorType,
 	Editor,
 	BlockSchema,
 	HistoryAppliedEvent,
@@ -467,11 +468,19 @@ export class FieldEditorImpl implements FieldEditor {
 	resolveInsertMarks(
 		ytext: { toDelta(): unknown[] },
 		offset: number,
-	): Record<string, unknown> | undefined {
+	): Record<string, unknown | null> | undefined {
 		const baseMarks =
 			resolveMarksAtPosition(ytext, offset, this._editor.schema) ?? {};
 		const resolved = this._applyPendingMarks(baseMarks);
-		return Object.keys(resolved).length > 0 ? resolved : undefined;
+		const insertMarks: Record<string, unknown | null> = { ...resolved };
+
+		for (const [markType, value] of Object.entries(this._pendingMarks)) {
+			if (value == null && markType in baseMarks) {
+				insertMarks[markType] = null;
+			}
+		}
+
+		return Object.keys(insertMarks).length > 0 ? insertMarks : undefined;
 	}
 
 	// ── Cross-block expansion ────────────────────────────────
@@ -926,7 +935,7 @@ export class FieldEditorImpl implements FieldEditor {
 }
 
 function resolveInputMode(
-	fieldEditor?: import("@pen/core").FieldEditorType,
+	fieldEditor?: FieldEditorType,
 ): "richtext" | "code" | "table" | "none" {
 	if (
 		!fieldEditor ||

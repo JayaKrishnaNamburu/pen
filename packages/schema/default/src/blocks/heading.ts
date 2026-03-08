@@ -6,6 +6,7 @@ export const heading = defineBlock("heading", {
   },
   content: "inline",
   fieldEditor: "richtext",
+  placeholder: "Heading",
   display: {
     title: "Heading",
     description: "Large section heading",

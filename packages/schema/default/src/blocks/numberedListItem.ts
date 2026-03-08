@@ -11,6 +11,7 @@ export const numberedListItem = defineBlock("numberedListItem", {
   },
   content: "inline",
   fieldEditor: "richtext",
+  placeholder: "List",
   display: {
     title: "Numbered List",
     description: "Ordered list item",

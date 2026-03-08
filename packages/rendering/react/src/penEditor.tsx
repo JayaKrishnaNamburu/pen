@@ -4,19 +4,31 @@ import { EditorRoot, type EditorRootProps } from "./primitives/editor/root.js";
 import { EditorContent, type EditorContentProps } from "./primitives/editor/content.js";
 
 export interface PenEditorProps
-  extends Omit<EditorRootProps, "children">,
-    Omit<EditorContentProps, "children"> {
-  children?: React.ReactNode;
+	extends Omit<EditorRootProps, "children">,
+	Omit<EditorContentProps, "children"> {
+	children?: React.ReactNode;
 }
 
 export function PenEditor(props: PenEditorProps) {
-  const { editor, readonly, importers, virtualize, children, ...rest } = props;
+	const {
+		editor,
+		readonly,
+		importers,
+		virtualize,
+		emptyPlaceholder,
+		children,
+		...rest
+	} = props;
 
-  return (
-    <EditorRoot editor={editor} readonly={readonly} importers={importers}>
-      <EditorContent virtualize={virtualize} {...rest}>
-        {children}
-      </EditorContent>
-    </EditorRoot>
-  );
+	return (
+		<EditorRoot editor={editor} readonly={readonly} importers={importers}>
+			<EditorContent
+				virtualize={virtualize}
+				emptyPlaceholder={emptyPlaceholder}
+				{...rest}
+			>
+				{children}
+			</EditorContent>
+		</EditorRoot>
+	);
 }

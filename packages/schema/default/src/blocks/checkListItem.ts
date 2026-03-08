@@ -11,6 +11,7 @@ export const checkListItem = defineBlock("checkListItem", {
   },
   content: "inline",
   fieldEditor: "richtext",
+  placeholder: "To-do",
   display: {
     title: "Check List",
     description: "To-do list item with checkbox",

@@ -21,7 +21,6 @@ import {
 	IconCode,
 	IconItalic,
 	IconRedo,
-	IconSidebarRight,
 	IconStrikethrough,
 	IconUnderline,
 	IconUndo,
@@ -34,17 +33,10 @@ import {
 
 type ToolbarProps = {
 	editor: Editor;
-	isInspectorOpen: boolean;
-	onToggleInspector: () => void;
 	linkToggleRef: RefObject<(() => void) | null>;
 };
 
-export function Toolbar({
-	editor,
-	isInspectorOpen,
-	onToggleInspector,
-	linkToggleRef,
-}: ToolbarProps) {
+export function Toolbar({ editor, linkToggleRef }: ToolbarProps) {
 	const blockTypeOptions = getBlockTypeOptions(editor);
 
 	const handleUndo = () => {
@@ -116,16 +108,6 @@ export function Toolbar({
 				<Pen.Toolbar.Separator />
 
 				<ExportMenu editor={editor} />
-				<button
-					className="toolbar-button toolbar-icon-button"
-					onClick={onToggleInspector}
-					type="button"
-					data-active={isInspectorOpen || undefined}
-					title="Toggle inspector"
-					aria-label="Toggle inspector"
-				>
-					<IconSidebarRight className="toolbar-button-icon" />
-				</button>
 			</div>
 		</header>
 	);
