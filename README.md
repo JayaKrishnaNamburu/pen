@@ -1,4 +1,4 @@
-<img width="100%" height="auto" alt="pen-banner@2x" src="https://github.com/user-attachments/assets/e0254b5c-3ab1-4c44-a05d-ae389a7648ff" />
+<img width="7200" height="1840" alt="banner-github@2x" src="https://github.com/user-attachments/assets/db99d565-cd11-435f-9438-e9fa6122637f" />
 
 <h3 align="center">
   Headless, extension-first editor<br/> engine for human-AI co-authoring
