@@ -1,7 +1,7 @@
 <img width="100%" height="auto" alt="cover@2x" src="https://github.com/user-attachments/assets/20356e3d-4a7c-4e65-b687-e680db017547" />
 
 <h3 align="center">
-  Headless, extension-first editor<br/> engine for human-AI co-authoring
+  Headless, extension-first editor<br/> engine for human-AI collaboration
 </h3>
 
 <p align="center">
