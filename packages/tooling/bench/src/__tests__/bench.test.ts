@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { bench, runSuite } from "../bench.js";
-import type { BenchResult } from "../bench.js";
-import { createLargeDocument } from "../fixtures/large-doc.js";
+import { bench, runSuite } from "../bench";
+import type { BenchResult } from "../bench";
+import { createLargeDocument } from "../fixtures/large-doc";
 
 describe("@pen/bench runner", () => {
   // AC 16: bench() returns BenchResult with averageMs, minMs, maxMs, opsPerSecond

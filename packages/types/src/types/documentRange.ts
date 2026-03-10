@@ -1,4 +1,4 @@
-import type { TextSelection } from "./selection.js";
+import type { TextSelection } from "./selection";
 
 export interface DocumentRange {
   start: { blockId: string; offset: number };

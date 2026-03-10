@@ -1,5 +1,5 @@
 import type { Editor, PenStreamPart } from "@pen/types";
-import type { StreamingTargetImpl } from "./streamingTarget.js";
+import type { StreamingTargetImpl } from "./streamingTarget";
 import { ToolContextImpl } from "@pen/document-ops";
 import type { ToolServerImpl } from "@pen/document-ops";
 

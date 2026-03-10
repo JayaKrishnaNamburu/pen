@@ -23,7 +23,7 @@ import {
   code,
   mention,
   inlineApp,
-} from "../index.js";
+} from "../index";
 
 // ── AC 11: All blocks have serialize.toMarkdown ───────────
 describe("AC 11 — serialize.toMarkdown", () => {

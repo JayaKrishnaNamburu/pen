@@ -1,4 +1,4 @@
-import type { Position } from "./ops.js";
+import type { Position } from "./ops";
 
 export interface BlockSuggestion {
   id: string;

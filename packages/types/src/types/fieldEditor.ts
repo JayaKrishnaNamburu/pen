@@ -1,16 +1,8 @@
-import type { BlockSchema } from "./schema.js";
-import type { Editor } from "./editor.js";
-import type { SelectionState } from "./selection.js";
-import type { GenerationZone } from "./crdt.js";
-import type { Unsubscribe } from "./utility.js";
-
-export type FieldEditorFactory = (ctx: FieldEditorContext) => FieldEditor;
-
-export interface FieldEditorContext {
-	blockId: string;
-	schema: BlockSchema;
-	editor: Editor;
-}
+import type { BlockSchema } from "./schema";
+import type { SelectionState } from "./selection";
+import type { GenerationZone } from "./crdt";
+import type { Unsubscribe } from "./utility";
+import type { FieldEditorInputMode } from "./fieldEditorCapabilities";
 
 export interface FieldEditor {
 	readonly focusBlockId: string | null;
@@ -18,12 +10,19 @@ export interface FieldEditor {
 	readonly isEditing: boolean;
 	readonly isFocused: boolean;
 	readonly isComposing: boolean;
-	readonly inputMode: "richtext" | "code" | "table" | "none";
+	readonly inputMode: FieldEditorInputMode;
 	selection: SelectionState | null;
 
 	focus(): void;
 	blur(): void;
 	activate(blockId: string): void;
+	activateCell?(blockId: string, row: number, col: number): void;
+	activateCellFromElement?(
+		blockId: string,
+		row: number,
+		col: number,
+		element: HTMLElement,
+	): void;
 	deactivate(): void;
 	selectAll?(rootElement?: HTMLElement | null): boolean;
 	resetSelectAllCycle?(): void;

@@ -1,6 +1,12 @@
-import type { AppPlacement } from "./block.js";
-import type { SelectionState } from "./selection.js";
-import type { LayoutProps } from "./layout.js";
+import type { AppPlacement } from "./block";
+import type { SelectionState } from "./selection";
+import type { LayoutProps } from "./layout";
+import type {
+  ColumnType,
+  DatabaseViewState,
+  SelectOption,
+} from "./database";
+import type { TableColumnSchema } from "./handles";
 
 export type OpOrigin =
   | "user"
@@ -48,6 +54,25 @@ export type DocumentOp =
   | DeleteTableColumnOp
   | MergeTableCellsOp
   | SplitTableCellOp
+  | InsertTableCellTextOp
+  | DeleteTableCellTextOp
+  | FormatTableCellTextOp
+  | UpdateTableColumnsOp
+  | DatabaseAddColumnOp
+  | DatabaseUpdateColumnOp
+  | DatabaseConvertColumnOp
+  | DatabaseRemoveColumnOp
+  | DatabaseInsertRowOp
+  | DatabaseUpdateCellOp
+  | DatabaseDeleteRowOp
+  | DatabaseDeleteRowsOp
+  | DatabaseDuplicateRowOp
+  | DatabaseMoveRowOp
+  | DatabaseAddViewOp
+  | DatabaseUpdateViewOp
+  | DatabaseRemoveViewOp
+  | DatabaseSetActiveViewOp
+  | DatabaseUpdateSelectOptionsOp
   | SetMetaOp
   | CreateAppOp
   | UpdateAppOp
@@ -180,6 +205,148 @@ export interface SplitTableCellOp {
   blockId: string;
   row: number;
   col: number;
+}
+
+export interface InsertTableCellTextOp {
+  type: "insert-table-cell-text";
+  blockId: string;
+  row: number;
+  col: number;
+  offset: number;
+  text: string;
+}
+
+export interface DeleteTableCellTextOp {
+  type: "delete-table-cell-text";
+  blockId: string;
+  row: number;
+  col: number;
+  offset: number;
+  length: number;
+}
+
+export interface FormatTableCellTextOp {
+  type: "format-table-cell-text";
+  blockId: string;
+  row: number;
+  col: number;
+  offset: number;
+  length: number;
+  marks: Record<string, unknown>;
+}
+
+export interface UpdateTableColumnsOp {
+  type: "update-table-columns";
+  blockId: string;
+  columns: TableColumnSchema[];
+}
+
+export interface DatabaseAddColumnOp {
+  type: "database-add-column";
+  blockId: string;
+  column: TableColumnSchema;
+  index?: number;
+  viewId?: string;
+}
+
+export interface DatabaseUpdateColumnOp {
+  type: "database-update-column";
+  blockId: string;
+  columnId: string;
+  patch: Partial<Omit<TableColumnSchema, "id" | "type">>;
+}
+
+export interface DatabaseConvertColumnOp {
+  type: "database-convert-column";
+  blockId: string;
+  columnId: string;
+  toType: ColumnType;
+}
+
+export interface DatabaseRemoveColumnOp {
+  type: "database-remove-column";
+  blockId: string;
+  columnId: string;
+}
+
+export interface DatabaseInsertRowOp {
+  type: "database-insert-row";
+  blockId: string;
+  index?: number;
+  rowId?: string;
+  values?: Record<string, string>;
+}
+
+export interface DatabaseUpdateCellOp {
+  type: "database-update-cell";
+  blockId: string;
+  rowId: string;
+  columnId: string;
+  value: string;
+}
+
+export interface DatabaseDeleteRowOp {
+  type: "database-delete-row";
+  blockId: string;
+  rowId: string;
+}
+
+export interface DatabaseDeleteRowsOp {
+  type: "database-delete-rows";
+  blockId: string;
+  rowIds: string[];
+}
+
+export interface DatabaseDuplicateRowOp {
+  type: "database-duplicate-row";
+  blockId: string;
+  rowId: string;
+  newRowId?: string;
+}
+
+export interface DatabaseMoveRowOp {
+  type: "database-move-row";
+  blockId: string;
+  rowId: string;
+  index: number;
+}
+
+export interface DatabaseAddViewOp {
+  type: "database-add-view";
+  blockId: string;
+  view: DatabaseViewState;
+  index?: number;
+}
+
+export interface DatabaseUpdateViewOp {
+  type: "database-update-view";
+  blockId: string;
+  viewId?: string;
+  patch: Partial<DatabaseViewState>;
+}
+
+export interface DatabaseRemoveViewOp {
+  type: "database-remove-view";
+  blockId: string;
+  viewId: string;
+}
+
+export interface DatabaseSetActiveViewOp {
+  type: "database-set-active-view";
+  blockId: string;
+  viewId: string;
+}
+
+export interface DatabaseUpdateSelectOptionsOp {
+  type: "database-update-select-options";
+  blockId: string;
+  columnId: string;
+  action: "add" | "remove" | "rename" | "recolor" | "reorder";
+  optionId?: string;
+  option?: SelectOption;
+  value?: string;
+  color?: string;
+  order?: string[];
 }
 
 // ── Meta ops ────────────────────────────────────────────────

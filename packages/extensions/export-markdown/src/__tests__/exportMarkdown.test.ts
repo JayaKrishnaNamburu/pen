@@ -1,12 +1,26 @@
 import { describe, it, expect } from "vitest";
-import { createEditor } from "@pen/core";
-import { markdownExporter } from "../exporter.js";
+import { createEditor, blocksToOps } from "@pen/core";
+import { markdownExporter } from "../exporter";
 
 function editorWithBlocks(ops: Parameters<ReturnType<typeof createEditor>["apply"]>[0]) {
   const editor = createEditor({
     without: ["document-ops", "delta-stream", "undo"],
   });
   editor.apply(ops);
+  return editor;
+}
+
+function editorWithTable(
+  insertOp: Parameters<ReturnType<typeof createEditor>["apply"]>[0][0],
+  cellOps: Parameters<ReturnType<typeof createEditor>["apply"]>[0],
+) {
+  const editor = createEditor({
+    without: ["document-ops", "delta-stream", "undo"],
+  });
+  editor.apply([insertOp]);
+  if (cellOps.length > 0) {
+    editor.apply(cellOps);
+  }
   return editor;
 }
 
@@ -68,6 +82,31 @@ describe("@pen/export-markdown", () => {
     const md = markdownExporter.export(editor);
     expect(md).toContain("## Title");
     expect(md).toContain("Body");
+    editor.destroy();
+  });
+
+  it("exports numbered list items with their visible sequence values", () => {
+    const editor = editorWithBlocks([
+      {
+        type: "insert-block",
+        blockId: "b1",
+        blockType: "numberedListItem",
+        props: { start: 3 },
+        position: "last",
+      },
+      { type: "insert-text", blockId: "b1", offset: 0, text: "Third" },
+      {
+        type: "insert-block",
+        blockId: "b2",
+        blockType: "numberedListItem",
+        props: {},
+        position: "last",
+      },
+      { type: "insert-text", blockId: "b2", offset: 0, text: "Fourth" },
+    ]);
+
+    const md = markdownExporter.export(editor);
+    expect(md).toContain("3. Third\n4. Fourth");
     editor.destroy();
   });
 
@@ -134,5 +173,216 @@ describe("@pen/export-markdown", () => {
     expect(markdownExporter.name).toBe("markdown");
     expect(markdownExporter.mimeType).toBe("text/markdown");
     expect(markdownExporter.fileExtension).toBe(".md");
+  });
+
+  it("exports a table block as a GFM pipe table", () => {
+    const editor = editorWithTable(
+      {
+        type: "insert-block",
+        blockId: "t1",
+        blockType: "table",
+        props: { hasHeaderRow: true },
+        position: "last",
+      },
+      [
+        {
+          type: "insert-table-cell-text",
+          blockId: "t1",
+          row: 0,
+          col: 0,
+          offset: 0,
+          text: "Name",
+        } as any,
+        {
+          type: "insert-table-cell-text",
+          blockId: "t1",
+          row: 0,
+          col: 1,
+          offset: 0,
+          text: "Age",
+        } as any,
+        {
+          type: "insert-table-cell-text",
+          blockId: "t1",
+          row: 1,
+          col: 0,
+          offset: 0,
+          text: "Alice",
+        } as any,
+        {
+          type: "insert-table-cell-text",
+          blockId: "t1",
+          row: 1,
+          col: 1,
+          offset: 0,
+          text: "30",
+        } as any,
+      ],
+    );
+
+    const md = markdownExporter.export(editor);
+    expect(md).toContain("| Name | Age |");
+    expect(md).toContain("| --- | --- |");
+    expect(md).toContain("| Alice | 30 |");
+    editor.destroy();
+  });
+
+  it("exports a table with pipe characters escaped", () => {
+    const editor = editorWithTable(
+      {
+        type: "insert-block",
+        blockId: "t1",
+        blockType: "table",
+        props: { hasHeaderRow: false },
+        position: "last",
+      },
+      [
+        {
+          type: "insert-table-cell-text",
+          blockId: "t1",
+          row: 0,
+          col: 0,
+          offset: 0,
+          text: "a|b",
+        } as any,
+      ],
+    );
+
+    const md = markdownExporter.export(editor);
+    expect(md).toContain("<table>");
+    expect(md).toContain("a|b");
+    expect(md).not.toContain("| --- |");
+    editor.destroy();
+  });
+
+  it("preserves inline formatting inside table cells", () => {
+    const editor = editorWithTable(
+      {
+        type: "insert-block",
+        blockId: "t2",
+        blockType: "table",
+        props: { hasHeaderRow: true },
+        position: "last",
+      },
+      [
+        {
+          type: "insert-table-cell-text",
+          blockId: "t2",
+          row: 0,
+          col: 0,
+          offset: 0,
+          text: "Name",
+        } as any,
+        {
+          type: "format-table-cell-text",
+          blockId: "t2",
+          row: 0,
+          col: 0,
+          offset: 0,
+          length: 4,
+          marks: { bold: true },
+        } as any,
+      ],
+    );
+
+    const md = markdownExporter.export(editor);
+    expect(md).toContain("**Name**");
+    editor.destroy();
+  });
+});
+
+describe("table markdown round-trip", () => {
+  it("import → editor → export produces equivalent markdown", () => {
+    const inputBlocks = [
+      {
+        type: "table",
+        props: { hasHeaderRow: true, hasHeaderColumn: false },
+        children: [
+          {
+            type: "__table_row",
+            props: { _rowIndex: 0 },
+            children: [
+              { type: "__table_cell", props: {}, content: "Name" },
+              { type: "__table_cell", props: {}, content: "Value" },
+            ],
+          },
+          {
+            type: "__table_row",
+            props: { _rowIndex: 1 },
+            children: [
+              { type: "__table_cell", props: {}, content: "foo" },
+              { type: "__table_cell", props: {}, content: "42" },
+            ],
+          },
+        ],
+      },
+    ];
+
+    const ops = blocksToOps(inputBlocks as any);
+    const editor = createEditor({
+      without: ["document-ops", "delta-stream", "undo"],
+    });
+    editor.apply(ops);
+
+    const tableBlockId = (ops[0] as any).blockId as string;
+    const cell00 = editor.getBlock(tableBlockId)?.tableCell(0, 0);
+    const cell01 = editor.getBlock(tableBlockId)?.tableCell(0, 1);
+    const cell10 = editor.getBlock(tableBlockId)?.tableCell(1, 0);
+    const cell11 = editor.getBlock(tableBlockId)?.tableCell(1, 1);
+    expect(cell00?.textContent()).toBe("Name");
+    expect(cell01?.textContent()).toBe("Value");
+    expect(cell10?.textContent()).toBe("foo");
+    expect(cell11?.textContent()).toBe("42");
+
+    const md = markdownExporter.export(editor);
+    expect(md).toContain("| Name | Value |");
+    expect(md).toContain("| --- | --- |");
+    expect(md).toContain("| foo | 42 |");
+
+    editor.destroy();
+  });
+
+  it("round-trips a 2-column table through import and export", () => {
+    const inputBlocks = [
+      {
+        type: "table",
+        props: { hasHeaderRow: true, hasHeaderColumn: false },
+        children: [
+          {
+            type: "__table_row",
+            props: { _rowIndex: 0 },
+            children: [
+              { type: "__table_cell", props: {}, content: "X" },
+              { type: "__table_cell", props: {}, content: "Y" },
+            ],
+          },
+          {
+            type: "__table_row",
+            props: { _rowIndex: 1 },
+            children: [
+              { type: "__table_cell", props: {}, content: "10" },
+              { type: "__table_cell", props: {}, content: "20" },
+            ],
+          },
+        ],
+      },
+    ];
+
+    const ops = blocksToOps(inputBlocks as any);
+    const editor = createEditor({
+      without: ["document-ops", "delta-stream", "undo"],
+    });
+    editor.apply(ops);
+
+    const block = editor.getBlock((ops[0] as any).blockId);
+    expect(block?.tableRowCount()).toBe(2);
+    expect(block?.tableColumnCount()).toBe(2);
+
+    const md = markdownExporter.export(editor);
+    expect(md).toContain("| X | Y |");
+    expect(md).toContain("| --- | --- |");
+    expect(md).toContain("| 10 | 20 |");
+
+    editor.destroy();
   });
 });

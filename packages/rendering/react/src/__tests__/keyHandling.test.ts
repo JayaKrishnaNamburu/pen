@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createEditor, defineExtension } from "@pen/core";
-import { handleEditorKeyBindings } from "../field-editor/keyHandling.js";
+import { handleEditorKeyBindings } from "../field-editor/keyHandling";
 
 function createKeyEvent(
 	key: string,

@@ -4,7 +4,7 @@ import type {
 	FieldEditor,
 	TextSelection,
 } from "@pen/types";
-import { FIELD_EDITOR_SLOT_KEY } from "@pen/types";
+import { FIELD_EDITOR_SLOT_KEY, supportsInlineMarks } from "@pen/types";
 
 export function toggleInlineMark(editor: Editor, markType: string): boolean {
 	const selection = editor.selection;
@@ -42,9 +42,7 @@ function isInlineMarkEditableBlock(editor: Editor, blockId: string): boolean {
 	if (!block) return false;
 
 	const schema = editor.schema.resolve(block.type);
-	if (!schema || schema.content !== "inline") return false;
-
-	return !schema.fieldEditor || schema.fieldEditor === "richtext";
+	return supportsInlineMarks(schema);
 }
 
 function getBlockTextLength(editor: Editor, blockId: string): number {

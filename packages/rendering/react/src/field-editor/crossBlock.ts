@@ -1,5 +1,6 @@
 import type { Editor, SelectionState } from "@pen/core";
-import type { FieldEditorImpl } from "./fieldEditorImpl.js";
+import type { FieldEditor } from "@pen/core";
+import { getBlockSelectionRoleFromSchema } from "../utils/blockSelectionSemantics";
 
 /**
  * Cross-block expansion and contraction.
@@ -32,7 +33,7 @@ export interface FieldEditorSurfaceState {
  * Called on shift-click or drag gestures.
  */
 export function expandFieldEditorRange(
-	fieldEditor: FieldEditorImpl,
+	fieldEditor: Pick<FieldEditor, "expandTo">,
 	targetBlockId: string,
 ): void {
 	fieldEditor.expandTo(targetBlockId);
@@ -41,7 +42,9 @@ export function expandFieldEditorRange(
 /**
  * Contract back to a single block (the focused one).
  */
-export function contractFieldEditorRange(fieldEditor: FieldEditorImpl): void {
+export function contractFieldEditorRange(
+	fieldEditor: Pick<FieldEditor, "contractToFocused">,
+): void {
 	fieldEditor.contractToFocused();
 }
 
@@ -65,14 +68,7 @@ export function getExpandedBlockRole(
 	const block = editor.getBlock(blockId);
 	if (!block) return null;
 
-	const schema = editor.schema.resolve(block.type);
-	if (!schema) return null;
-
-	if (schema.fieldEditor === "none") return "structural";
-	if (schema.fieldEditor === "code" || schema.fieldEditor === "table") {
-		return "delegated";
-	}
-	return "editable-inline";
+	return getBlockSelectionRoleFromSchema(editor.schema.resolve(block.type));
 }
 
 export function classifySelectionSurface(
@@ -112,7 +108,7 @@ export function classifySelectionSurface(
 	}
 
 	if (selection?.type === "cell" && selection.blockId === focusBlockId) {
-		return { mode: "block", blockIds: [selection.blockId] };
+		return { mode: "inactive", blockIds: [] };
 	}
 
 	return { mode: "single", blockIds: [focusBlockId] };

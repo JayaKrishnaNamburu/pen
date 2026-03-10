@@ -1,18 +1,14 @@
-export { FieldEditorImpl } from "./fieldEditorImpl.js";
 export type {
 	FieldEditorStore,
 	FieldEditorStoreSnapshot,
-} from "./store.js";
-export { EditContextBackend } from "./editContextBackend.js";
-export { ContentEditableBackend } from "./contenteditableBackend.js";
-export { ExpandedContentEditableBackend } from "./expandedContentEditableBackend.js";
+} from "./store";
 export {
 	applyDeltaToDOM,
 	fullReconcileToDOM,
 	saveSelection,
 	restoreSelection,
-} from "./reconciler.js";
-export { resolveMarksAtPosition } from "./markBoundary.js";
+} from "./reconciler";
+export { resolveMarksAtPosition } from "./markBoundary";
 export {
 	computeTextDiff,
 	extractTextFromDOM,
@@ -22,7 +18,7 @@ export {
 	getCaretOffset,
 	type SelectionPoint,
 	type TextDiffOp,
-} from "./selectionBridge.js";
+} from "./selectionBridge";
 export {
 	expandFieldEditorRange,
 	contractFieldEditorRange,
@@ -32,10 +28,10 @@ export {
 	type ExpandedBlockRole,
 	type FieldEditorSurfaceMode,
 	type FieldEditorSurfaceState,
-} from "./crossBlock.js";
+} from "./crossBlock";
 export {
 	handlePaste,
 	handleClipboardPaste,
 	handleCopy,
 	handleCut,
-} from "./clipboard.js";
+} from "./clipboard";

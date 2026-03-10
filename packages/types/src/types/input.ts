@@ -1,5 +1,5 @@
-import type { Editor } from "./editor.js";
-import type { DocumentOp } from "./ops.js";
+import type { Editor } from "./editor";
+import type { DocumentOp } from "./ops";
 
 export interface KeyBindingContext {
 	blockType?: string[];

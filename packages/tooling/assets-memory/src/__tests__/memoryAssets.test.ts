@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { memoryAssets } from "../index.js";
+import { memoryAssets } from "../index";
 
 describe("AC 20 — memoryAssets", () => {
   it("upload returns a valid AssetRef", async () => {

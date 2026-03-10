@@ -1,5 +1,5 @@
-import { useEditorContext } from "../context/editorContext.js";
-import { useFieldEditorContext } from "../context/fieldEditorContext.js";
+import { useEditorContext } from "../context/editorContext";
+import { useFieldEditorContext } from "../context/fieldEditorContext";
 import type { FieldEditor } from "@pen/core";
 
 export function useFieldEditor(): FieldEditor | null {

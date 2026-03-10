@@ -2,9 +2,9 @@ import * as Y from "yjs";
 import { defaultSchema } from "@pen/schema-default";
 import { createEditor } from "@pen/core";
 import { yjsAdapter, wrapYjsDocument } from "@pen/crdt-yjs";
-import { createTestDocument } from "./createTestDocument.js";
-import type { TestEditor, TestEditorOptions } from "./types.js";
-import { simulateKeypress, simulateTyping } from "./simulation.js";
+import { createTestDocument } from "./createTestDocument";
+import type { TestEditor, TestEditorOptions } from "./types";
+import { simulateKeypress, simulateTyping } from "./simulation";
 
 export function createTestEditor(options?: TestEditorOptions): TestEditor {
   const schema = options?.schema ?? defaultSchema;

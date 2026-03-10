@@ -1,6 +1,6 @@
 import type { Extension } from "@pen/types";
 import { defineExtension } from "@pen/types";
-import { StreamingTargetImpl } from "./streamingTarget.js";
+import { StreamingTargetImpl } from "./streamingTarget";
 
 interface DeferredSchemaEngine {
   markDirty(blockId: string): void;

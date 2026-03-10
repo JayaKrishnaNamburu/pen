@@ -1,4 +1,4 @@
-import type { BenchContext } from "../bench.js";
+import type { BenchContext } from "../bench";
 import type { Editor } from "@pen/types";
 import { createTestEditor } from "@pen/test";
 import { defineExtension } from "@pen/types";

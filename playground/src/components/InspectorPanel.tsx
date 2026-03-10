@@ -1,6 +1,6 @@
 import "./InspectorPanel.css";
 import type { Editor } from "@pen/core";
-import { IconClose, IconConsole } from "./icons";
+import { IconConsole } from "./icons";
 import { useEditorInspector } from "../hooks/useEditorInspector";
 
 type InspectorPanelProps = {
@@ -20,15 +20,6 @@ export function InspectorPanel({
 		<aside className="playground-inspector" data-open={isOpen || undefined}>
 			<header className="inspector-header">
 				<h4 className="inspector-title">Document</h4>
-				<button
-					className="inspector-close-button"
-					type="button"
-					onClick={onToggle}
-					title="Close document inspector"
-					aria-label="Close document inspector"
-				>
-					<IconClose className="inspector-close-icon" />
-				</button>
 			</header>
 
 			<div className="inspector">

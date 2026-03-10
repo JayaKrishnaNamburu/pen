@@ -6,6 +6,8 @@ interface BlockModelSnapshot {
 	id: string;
 	type: string | null;
 	props: Readonly<Record<string, unknown>> | null;
+	tableRowCount: number;
+	tableColumnCount: number;
 }
 
 export function useBlockModel(
@@ -49,6 +51,8 @@ function getBlockModelSnapshot(
 		id: block.id,
 		type: block.type,
 		props: block.props,
+		tableRowCount: block.tableRowCount(),
+		tableColumnCount: block.tableColumnCount(),
 	};
 }
 
@@ -58,6 +62,8 @@ function createMissingSnapshot(blockId: string): BlockModelSnapshot {
 		id: blockId,
 		type: null,
 		props: null,
+		tableRowCount: 0,
+		tableColumnCount: 0,
 	};
 }
 
@@ -69,6 +75,8 @@ function blockModelEqual(
 		a.exists === b.exists &&
 		a.id === b.id &&
 		a.type === b.type &&
+		a.tableRowCount === b.tableRowCount &&
+		a.tableColumnCount === b.tableColumnCount &&
 		shallowEqual(a.props, b.props)
 	);
 }

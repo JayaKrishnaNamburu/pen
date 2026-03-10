@@ -1,5 +1,5 @@
 import type { PenStreamRequest, PenStreamPart, ToolServer } from "@pen/core";
-import type { SSEServerOptions } from "./types.js";
+import type { SSEServerOptions } from "./types";
 
 export function createSSEHandler(
   options: SSEServerOptions,

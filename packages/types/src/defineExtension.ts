@@ -1,6 +1,6 @@
-import type { Extension } from "./types/extension.js";
-import type { DocumentState, Editor } from "./types/editor.js";
-import type { DecorationSet } from "./types/decorations.js";
+import type { Extension } from "./types/extension";
+import type { DocumentState, Editor } from "./types/editor";
+import type { DecorationSet } from "./types/decorations";
 
 type ExtensionCleanup = {
   expose?: Record<string, unknown>;

@@ -1,12 +1,12 @@
 import React, { createContext, useContext, useEffect } from "react";
-import { useEditorContext } from "../../context/editorContext.js";
+import { useEditorContext } from "../../context/editorContext";
 import {
 	useSlashMenu,
 	type SlashMenuState,
 	type SlashMenuActions,
-} from "../../hooks/useSlashMenu.js";
-import { renderAsChild, type AsChildProps } from "../../utils/asChild.js";
-import { isDevelopmentEnvironment } from "../../utils/environment.js";
+} from "../../hooks/useSlashMenu";
+import { renderAsChild, type AsChildProps } from "../../utils/asChild";
+import { isDevelopmentEnvironment } from "../../utils/environment";
 
 type SlashMenuContextValue = SlashMenuState & SlashMenuActions;
 

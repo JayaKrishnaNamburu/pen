@@ -9,9 +9,13 @@ import {
   createYjsDocument,
   initBlockMap,
   isYjsCRDTDocument,
+  validateDocument,
   wrapYjsDocument,
-} from "../document.js";
-import { yjsAdapter } from "../adapter.js";
+  createTableCell,
+  createTableRow,
+  seedTableContent,
+} from "../document";
+import { yjsAdapter } from "../adapter";
 
 describe("document", () => {
   const adapter = yjsAdapter();
@@ -69,7 +73,7 @@ describe("document", () => {
       expect(block.has("tableContent")).toBe(false);
     });
 
-    it("creates table block with Y.Array tableContent", () => {
+    it("creates table block with seeded 2x2 tableContent", () => {
       const doc = createYjsDocument(adapter);
       doc.ydoc.transact(() => {
         initBlockMap(doc.penDocument.blocks, "b2", "table", "table");
@@ -77,7 +81,20 @@ describe("document", () => {
 
       const block = doc.penDocument.blocks.get("b2")!;
       expect(block.get("type")).toBe("table");
-      expect(block.get("tableContent")).toBeInstanceOf(Y.Array);
+      const tableContent = block.get("tableContent") as Y.Array<Y.Map<unknown>>;
+      expect(tableContent).toBeInstanceOf(Y.Array);
+      expect(tableContent.length).toBe(2);
+
+      const row0 = tableContent.get(0);
+      expect(row0.get("id")).toEqual(expect.any(String));
+      const cells0 = row0.get("cells") as Y.Array<Y.Map<unknown>>;
+      expect(cells0).toBeInstanceOf(Y.Array);
+      expect(cells0.length).toBe(2);
+
+      const cell00 = cells0.get(0);
+      expect(cell00.get("id")).toEqual(expect.any(String));
+      expect(cell00.get("content")).toBeInstanceOf(Y.Text);
+
       expect(block.has("content")).toBe(false);
       expect(block.has("children")).toBe(false);
     });
@@ -139,6 +156,123 @@ describe("document", () => {
       expect(BLOCKS).toBe("blocks");
       expect(APPS).toBe("apps");
       expect(METADATA).toBe("metadata");
+    });
+  });
+
+  describe("validateDocument", () => {
+    it("fails when required shared roots are missing", () => {
+      const ydoc = new Y.Doc();
+      ydoc.getMap(BLOCKS);
+      ydoc.getMap(APPS);
+
+      const validation = validateDocument(ydoc);
+
+      expect(validation.valid).toBe(false);
+      expect(validation.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            code: "MISSING_SHARED_TYPE",
+            message: "Shared type 'blockOrder' is missing",
+          }),
+          expect.objectContaining({
+            code: "MISSING_SHARED_TYPE",
+            message: "Shared type 'metadata' is missing",
+          }),
+        ]),
+      );
+    });
+  });
+
+  describe("table helpers", () => {
+    it("createTableCell returns a Y.Map with id and content when integrated", () => {
+      const doc = createYjsDocument(adapter);
+      const container = new Y.Array<Y.Map<unknown>>();
+      doc.ydoc.transact(() => {
+        doc.ydoc.getMap("_test").set("container", container);
+        container.push([createTableCell()]);
+      });
+      const cell = container.get(0);
+      expect(cell.get("id")).toEqual(expect.any(String));
+      expect(cell.get("content")).toBeInstanceOf(Y.Text);
+    });
+
+    it("createTableRow returns a Y.Map with id and cells array when integrated", () => {
+      const doc = createYjsDocument(adapter);
+      const container = new Y.Array<Y.Map<unknown>>();
+      doc.ydoc.transact(() => {
+        doc.ydoc.getMap("_test").set("container", container);
+        container.push([createTableRow(3)]);
+      });
+      const row = container.get(0);
+      expect(row.get("id")).toEqual(expect.any(String));
+      const cells = row.get("cells") as Y.Array<Y.Map<unknown>>;
+      expect(cells).toBeInstanceOf(Y.Array);
+      expect(cells.length).toBe(3);
+      for (let i = 0; i < 3; i++) {
+        expect(cells.get(i).get("content")).toBeInstanceOf(Y.Text);
+      }
+    });
+
+    it("seedTableContent populates with given dimensions", () => {
+      const doc = createYjsDocument(adapter);
+      const tc = new Y.Array<Y.Map<unknown>>();
+      doc.ydoc.transact(() => {
+        doc.ydoc.getMap("_test").set("tc", tc);
+        seedTableContent(tc, 3, 4);
+      });
+      expect(tc.length).toBe(3);
+      for (let r = 0; r < 3; r++) {
+        const row = tc.get(r);
+        const cells = row.get("cells") as Y.Array<Y.Map<unknown>>;
+        expect(cells.length).toBe(4);
+      }
+    });
+
+    it("seedTableContent defaults to 2x2", () => {
+      const doc = createYjsDocument(adapter);
+      const tc = new Y.Array<Y.Map<unknown>>();
+      doc.ydoc.transact(() => {
+        doc.ydoc.getMap("_test").set("tc", tc);
+        seedTableContent(tc);
+      });
+      expect(tc.length).toBe(2);
+      const cells = (tc.get(0).get("cells") as Y.Array<Y.Map<unknown>>);
+      expect(cells.length).toBe(2);
+    });
+
+    it("each cell id is unique", () => {
+      const doc = createYjsDocument(adapter);
+      const tc = new Y.Array<Y.Map<unknown>>();
+      doc.ydoc.transact(() => {
+        doc.ydoc.getMap("_test").set("tc", tc);
+        seedTableContent(tc, 2, 2);
+      });
+      const ids = new Set<string>();
+      for (let r = 0; r < 2; r++) {
+        const row = tc.get(r);
+        ids.add(row.get("id") as string);
+        const cells = row.get("cells") as Y.Array<Y.Map<unknown>>;
+        for (let c = 0; c < 2; c++) {
+          ids.add(cells.get(c).get("id") as string);
+        }
+      }
+      expect(ids.size).toBe(6);
+    });
+
+    it("initBlockMap seeds table blocks with 2x2 grid", () => {
+      const doc = createYjsDocument(adapter);
+      doc.ydoc.transact(() => {
+        initBlockMap(doc.penDocument.blocks, "t1", "table", "table");
+      });
+
+      const block = doc.penDocument.blocks.get("t1")!;
+      const tc = block.get("tableContent") as Y.Array<Y.Map<unknown>>;
+      expect(tc.length).toBe(2);
+      const row0 = tc.get(0);
+      expect(row0.get("id")).toEqual(expect.any(String));
+      const cells0 = row0.get("cells") as Y.Array<Y.Map<unknown>>;
+      expect(cells0.length).toBe(2);
+      expect(cells0.get(0).get("content")).toBeInstanceOf(Y.Text);
     });
   });
 });

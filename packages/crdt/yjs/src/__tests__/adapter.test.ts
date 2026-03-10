@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import * as Y from "yjs";
 
-import { yjsAdapter } from "../adapter.js";
-import type { YjsAdapterOptions } from "../adapter.js";
-import { isYjsCRDTDocument } from "../document.js";
-import type { YjsCRDTDocument } from "../document.js";
+import { yjsAdapter } from "../adapter";
+import type { YjsAdapterOptions } from "../adapter";
+import { isYjsCRDTDocument } from "../document";
+import type { YjsCRDTDocument } from "../document";
 
 describe("adapter", () => {
   const adapter = yjsAdapter();
@@ -36,6 +36,23 @@ describe("adapter", () => {
       expect(restored.penDocument.blockOrder.toArray()).toEqual(["b1", "b2"]);
       const restoredB1 = restored.penDocument.blocks.get("b1")!;
       expect((restoredB1.get("content") as Y.Text).toString()).toBe("Hello");
+    });
+
+    it("initializes missing shared roots when loading partial updates", () => {
+      const diagnostics: Array<{ code: string; message: string }> = [];
+      const adapterWithDiagnostics = yjsAdapter({
+        onDiagnostic: (diagnostic) => diagnostics.push(diagnostic),
+      });
+      const ydoc = new Y.Doc();
+      ydoc.getMap("blocks");
+      const binary = Y.encodeStateAsUpdate(ydoc);
+
+      const restored = adapterWithDiagnostics.loadDocument(binary) as YjsCRDTDocument;
+
+      expect(restored).toBeTruthy();
+      expect(diagnostics).toEqual([]);
+      expect(restored.penDocument.blocks).toBeInstanceOf(Y.Map);
+      expect(restored.penDocument.blockOrder).toBeInstanceOf(Y.Array);
     });
   });
 

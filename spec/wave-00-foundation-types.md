@@ -481,7 +481,9 @@ export interface ComposableSchema extends SchemaRegistry {
 **Existing types to keep as-is (already correct in stub):**
 
 - `InlineSchema` — full interface with `kind`, `expand`, `system`, `priority`, `apply`, `remove`, `query`, `serialize`, `aiDescription` fields. No changes needed.
-- `ContentType` — union of `'inline' | 'none' | 'table' | BlockSchema[]`. No changes needed.
+- `ContentType` — union of `'inline' | 'none' | 'table' | 'database' | BlockSchema[]`.
+  `database` is a first-class content type that reuses the shared table/grid storage
+  model while adding typed column schema and optional view state.
 - `isNestedContent(content: ContentType): content is BlockSchema[]` — type guard function, already implemented in stub. No changes needed.
 - `AppSchema` — generic interface for app schemas. Already in stub. No changes needed.
 - `ComposableSchema` — extends `SchemaRegistry` with `extend()`, `without()`, `override()`, and `overrideSystemMark()`. Already in stub (minus `overrideSystemMark` — add it).
@@ -492,7 +494,77 @@ export interface ComposableSchema extends SchemaRegistry {
 
 **`BlockHandle` and `AppHandle`** — already defined in the stub (lines 335–369). These are high-traffic interfaces used by `rendering.ts`, `serialization.ts`, `editor.ts`, and `DocumentState`. They get their own module to avoid bloating `schema.ts` and to keep the import DAG clean.
 
-No changes needed to the interfaces themselves — the existing stub definitions are correct, with two exceptions:
+The existing stub definitions need to be extended so shared grid/database access is part
+of the public contract, not hidden implementation detail.
+
+Add these shared interfaces:
+
+```typescript
+export interface SelectOption {
+  id: string;
+  value: string;
+  color?: string;
+}
+
+export type ColumnType =
+  | "text"
+  | "number"
+  | "checkbox"
+  | "select"
+  | "multiSelect"
+  | "date"
+  | "url"
+  | "email"
+  | "relation"
+  | "formula";
+
+export interface NumberFormat {
+  style: "plain" | "currency" | "percent";
+  decimals?: number;
+  currency?: string;
+}
+
+export interface DateFormat {
+  includeTime?: boolean;
+  dateStyle?: "short" | "medium" | "long";
+}
+
+export interface TableColumnSchema {
+  id: string;
+  title: string;
+  type: ColumnType;                 // plain tables use "text"
+  width?: number;
+  hidden?: boolean;
+  pinned?: "left" | "right";
+  options?: SelectOption[];
+  format?: NumberFormat | DateFormat;
+  readonly?: boolean;
+}
+
+export interface TableRowHandle {
+  readonly id: string;              // stable UUID, never derived from row index
+  readonly index: number;
+}
+```
+
+Update `BlockHandle` so the shared grid APIs are explicit:
+
+```typescript
+interface BlockHandle {
+  // ... existing ...
+  tableRowCount(): number;
+  tableColumnCount(): number;
+  tableRow(row: number): TableRowHandle | null;
+  tableCell(row: number, col: number): TableCellHandle | null;
+  tableColumns(): readonly TableColumnSchema[];
+}
+```
+
+Plain `table` blocks use the same `TableColumnSchema` type but treat columns as rich-text
+content columns (`type: "text"` unless explicitly extended in a later wave). `database`
+blocks use the full schema shape.
+
+Beyond that, two existing behaviors still change:
 
 1. `setMeta` is removed as a write method. The canonical mutation path for metadata is `editor.apply({ type: 'set-meta', blockId, namespace, data })`, which ensures auth guards, undo grouping, and CRDT transactions all see metadata changes. `BlockHandle` retains `meta(namespace)` as a read-only accessor, and `setMeta` becomes a throw-stub directing callers to `editor.apply()`.
 
@@ -510,7 +582,8 @@ When `resolved: true`, suggestion marks are resolved: `action: 'insert'` suggest
 
 **`textDeltas()`** returns the block's inline content as an array of attributed text segments — the same shape as a `Y.Text.toDelta()` but CRDT-agnostic. Each segment has an `insert` string and optional `attributes` (mark names to values). This method is the canonical way for serialization, export, and decoration code to read inline content with formatting without importing CRDT types directly. The `CRDTAdapter` abstraction is preserved: `@pen/crdt-yjs` implements this by calling `Y.Text.toDelta()`, a future `@pen/crdt-loro` would call Loro's equivalent. Code that needs formatted inline content MUST use `textDeltas()`, not `adapter.raw<Y.Doc>(doc)` casts.
 
-Just move them from the monolithic `index.ts` to this dedicated file.
+Just move them from the monolithic `index.ts` to this dedicated file, plus the new
+shared grid/database types above.
 
 `BlockHandle` depends on: `LayoutProps` (from `layout.ts`), `AppPlacement` (from `block.ts`), `AppHandle` (co-located).
 `AppHandle` depends on: `AppPlacement` (from `block.ts`), `BlockHandle` (co-located).

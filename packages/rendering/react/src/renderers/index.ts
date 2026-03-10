@@ -1,17 +1,17 @@
 import type { BlockHandle, BlockRenderContext, BlockRenderer } from "@pen/core";
-import { ParagraphRenderer } from "./paragraph.js";
-import { HeadingRenderer } from "./heading.js";
-import { BulletListItemRenderer } from "./bulletListItem.js";
-import { NumberedListItemRenderer } from "./numberedListItem.js";
-import { CheckListItemRenderer } from "./checkListItem.js";
-import { CodeBlockRenderer } from "./codeBlock.js";
-import { ImageRenderer } from "./image.js";
-import { TableRenderer } from "./table.js";
-import { DividerRenderer } from "./divider.js";
-import { CalloutRenderer } from "./callout.js";
-import { ToggleRenderer } from "./toggle.js";
-import { BlockquoteRenderer } from "./blockquote.js";
-import { DefaultRenderer } from "./defaultRenderer.js";
+import { ParagraphRenderer } from "./paragraph";
+import { HeadingRenderer } from "./heading";
+import { BulletListItemRenderer } from "./bulletListItem";
+import { NumberedListItemRenderer } from "./numberedListItem";
+import { CheckListItemRenderer } from "./checkListItem";
+import { CodeBlockRenderer } from "./codeBlock";
+import { ImageRenderer } from "./image";
+import { TableRenderer } from "./table";
+import { DividerRenderer } from "./divider";
+import { CalloutRenderer } from "./callout";
+import { ToggleRenderer } from "./toggle";
+import { BlockquoteRenderer } from "./blockquote";
+import { DefaultRenderer } from "./defaultRenderer";
 
 const RENDERER_MAP: Record<string, BlockRenderer> = {
   paragraph: ParagraphRenderer,
@@ -54,3 +54,4 @@ export {
   BlockquoteRenderer,
   DefaultRenderer,
 };
+

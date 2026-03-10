@@ -32,6 +32,7 @@ npm install @pen/core @pen/react
 - **Headless:** Behavior and state separated from rendering. Same engine powers Notion-style, Docs-style, Markdown-first, or headless CMS.
 - **AI-native:** Document model, operation format, and extension architecture designed around how LLMs generate and how humans collaborate with them.
 - **Extension-first:** Core is tiny. Everything -- blocks, formatting, AI, multiplayer, execution, apps -- is an extension.
+- **Shared field editor:** One content-editing engine powers blocks, table cells, database surfaces, and other structured text contexts.
 - **Schema-driven:** Block types, layout rules, and content as declarative schemas. Compile to React, Vue, Svelte, HTML, or SSR without changing the definition.
 - **CRDT-first:** Documents stored and transmitted as binary CRDT state. Yjs default, with future portability to Loro or Automerge.
 - **Model-agnostic:** A minimal `ModelAdapter` interface works with any LLM client, including the Vercel AI SDK and its 25+ providers.
@@ -86,6 +87,23 @@ function App() {
     </Pen.Editor.Root>
   )
 }
+```
+
+Enable markdown-style autoformat as an extension:
+
+```tsx
+import { createEditor } from '@pen/core'
+import { inputRulesExtension } from '@pen/input-rules'
+
+const editor = createEditor({
+  extensions: [inputRulesExtension()],
+})
+```
+
+Leave the extension out to keep markdown autoformat disabled:
+
+```tsx
+const editor = createEditor()
 ```
 
 Add AI streaming with any model provider:
@@ -241,6 +259,7 @@ Three layers: **Schema** (data), **Headless** (behavior), **Rendering** (UI). Ea
 |---|---|
 | `@pen/document-ops` | Block CRUD, generation zones |
 | `@pen/delta-stream` | Streaming protocol, processing pipeline |
+| `@pen/input-rules` | Opt-in markdown autoformat extension |
 | `@pen/undo` | Undo groups, origin tagging, field editor integration |
 | `@pen/import-html` | HTML importer with sanitization |
 | `@pen/import-markdown` | Markdown importer |

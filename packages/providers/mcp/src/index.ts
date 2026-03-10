@@ -1,4 +1,4 @@
-export { createMCPServer, createMCPRequestHandler } from "./server.js";
+export { createMCPServer, createMCPRequestHandler } from "./server";
 export type {
   MCPServerOptions,
   MCPServerInstance,
@@ -6,5 +6,5 @@ export type {
   MCPRequestHandler,
   MCPNodeRequest,
   MCPNodeResponse,
-} from "./types.js";
-export { listMCPTools, executeMCPTool } from "./tool-bridge.js";
+} from "./types";
+export { listMCPTools, executeMCPTool } from "./tool-bridge";

@@ -1,5 +1,5 @@
 import type { Editor, OpOrigin } from "@pen/core";
-import { fullReconcileToDOM } from "./reconciler.js";
+import { fullReconcileToDOM } from "./reconciler";
 
 interface SessionSnapshot {
 	focusBlockId: string | null;

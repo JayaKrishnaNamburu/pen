@@ -8,11 +8,11 @@ import type {
   MCPServerInstance,
   MCPRequestHandler,
   MCPRequestHandlerOptions,
-} from "./types.js";
-import { listMCPTools, executeMCPTool } from "./tool-bridge.js";
-import { createStdioTransport } from "./transport-stdio.js";
-import { createSSEHandler } from "./transport-sse.js";
-import { createStreamableHTTPHandler } from "./transport-http.js";
+} from "./types";
+import { listMCPTools, executeMCPTool } from "./tool-bridge";
+import { createStdioTransport } from "./transport-stdio";
+import { createSSEHandler } from "./transport-sse";
+import { createStreamableHTTPHandler } from "./transport-http";
 import type {
   ToolServer,
   ToolContext,

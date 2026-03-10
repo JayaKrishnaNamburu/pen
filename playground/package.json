@@ -12,10 +12,12 @@
   "dependencies": {
     "@pen/assets-memory": "workspace:^",
     "@pen/core": "workspace:*",
+    "@pen/database": "workspace:*",
     "@pen/export-html": "workspace:*",
     "@pen/export-markdown": "workspace:*",
     "@pen/import-html": "workspace:*",
     "@pen/import-markdown": "workspace:*",
+    "@pen/input-rules": "workspace:*",
     "@pen/react": "workspace:*",
     "@pen/schema-default": "workspace:*",
     "@pen/shortcuts": "workspace:*",

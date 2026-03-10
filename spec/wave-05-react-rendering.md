@@ -77,6 +77,7 @@ packages/react/src/
 │   ├── code-block.tsx
 │   ├── image.tsx
 │   ├── table.tsx
+│   ├── database.tsx
 │   ├── divider.tsx
 │   ├── callout.tsx
 │   ├── toggle.tsx
@@ -287,6 +288,7 @@ interface EditorContentProps {
 3. Renders the block list: maps `blockOrder` IDs to `<Pen.Editor.Block>` instances.
 4. Hosts the `FieldEditorContext.Provider` — the field editor lives here.
 5. **Virtualization (opt-in):** When `virtualize` is truthy, uses `IntersectionObserver` to mount/unmount blocks outside the viewport + overscan buffer. Placeholder divs with cached heights maintain scroll position. Default: off for <100 blocks, on above.
+   Top-level block virtualization does not virtualize rows inside a single grid surface. Lightweight document tables are expected to stay modest in size. `database` blocks may opt into their own row virtualization + pagination strategy, but that behavior lives inside the `DatabaseRenderer`; it does not change the outer block virtualization contract.
 6. **Block rendering:** For each block ID, resolves the block type from the CRDT, looks up the renderer from the renderer registry, and renders `<Pen.Editor.Block>` with the correct renderer.
 
 ### Primitive: `Pen.Editor.Block`
@@ -1824,6 +1826,7 @@ const RENDERER_MAP: Record<string, BlockRenderer> = {
   codeBlock: CodeBlockRenderer,
   image: ImageRenderer,
   table: TableRenderer,
+  database: DatabaseRenderer,
   divider: DividerRenderer,
   callout: CalloutRenderer,
   toggle: ToggleRenderer,
@@ -1849,7 +1852,9 @@ export function resolveRenderer(blockType: string): BlockRenderer {
 
 **ImageRenderer** — `<figure>` with `<img>` and optional `<figcaption>`. No `InlineContent` (`content: 'none'`). Click selects the block. Resize handles when selected.
 
-**TableRenderer** — `<table>` structure. Each cell contains its own `InlineContent` instance. Cell selection via `CellSelection`. Tab navigation between cells.
+**TableRenderer** — `<table>` structure for the lightweight document-table block. Reads the block's canonical `tableContent` row/cell model, not generic `block.children` nesting. Each cell renders against that cell's `Y.Text`; single-cell editing reuses the field editor, while rectangular multi-cell selection uses `CellSelection`. Tab navigation moves between cells. `table` stays focused on authored rich-text tables with minimal per-column behavior.
+
+**DatabaseRenderer** — grid/table renderer for `content: 'database'`. It reuses the same canonical row/cell storage (`tableContent`) and `CellSelection` semantics as `TableRenderer`, but also reads structured `tableColumns` metadata and view state. It is responsible for database-specific concerns such as typed cell editors, column visibility/pinning, filter/sort UI, row selection, empty states, and optional row virtualization or pagination inside the block.
 
 **DividerRenderer** — `<hr />`. No content, no interaction beyond selection.
 
@@ -2274,13 +2279,14 @@ React 18+ for `useSyncExternalStore`. No other runtime dependencies. The package
 12. Backspace deletes characters from the CRDT.
 13. Bold shortcut (Ctrl/Cmd+B) toggles bold mark on selected text.
 14. Pressing Enter splits the current block into two blocks.
-15. Backspace at block start merges with previous block.
-16. IME input (Chinese/Japanese) works without duplication or loss. Composition is handled by Mode 2.
-17. EditContext backend is selected when `'EditContext' in globalThis` is true.
-18. ContentEditable backend is used as fallback.
-19. Block existence guard: writing to a deleted block silently deactivates the field editor.
-20. Mark boundary `expand` enforcement: typing at the end of a link does NOT extend the link mark.
-21. Mark boundary `expand` enforcement: typing at the end of bold text DOES extend the bold mark.
+15. Backspace at block start merges with the previous compatible block; empty list items and blockquotes exit to `paragraph` instead of getting stuck in their current type.
+16. Typing markdown-style list prefixes in an empty paragraph (for example `-` plus space or `3.` plus space) converts the block to the matching list item and removes the trigger text.
+17. IME input (Chinese/Japanese) works without duplication or loss. Composition is handled by Mode 2.
+18. EditContext backend is selected when `'EditContext' in globalThis` is true.
+19. ContentEditable backend is used as fallback.
+20. Block existence guard: writing to a deleted block silently deactivates the field editor.
+21. Mark boundary `expand` enforcement: typing at the end of a link does NOT extend the link mark.
+22. Mark boundary `expand` enforcement: typing at the end of bold text DOES extend the bold mark.
 
 ### Cross-block (5b)
 

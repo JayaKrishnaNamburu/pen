@@ -11,8 +11,8 @@ import {
   toolDefinitionToMCPDescriptor,
   listMCPTools,
   executeMCPTool,
-} from "../tool-bridge.js";
-import { createMCPRequestHandler, createMCPServer } from "../server.js";
+} from "../tool-bridge";
+import { createMCPRequestHandler, createMCPServer } from "../server";
 
 // ── Helpers ─────────────────────────────────────────────────
 

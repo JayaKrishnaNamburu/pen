@@ -1,8 +1,8 @@
-import type { CRDTEvent } from "./crdt.js";
-import type { BlockSchema, InlineSchema } from "./schema.js";
-import type { KeyBinding, InputRule } from "./input.js";
-import type { DecorationSet } from "./decorations.js";
-import type { DocumentState, Editor } from "./editor.js";
+import type { CRDTEvent } from "./crdt";
+import type { BlockSchema, InlineSchema } from "./schema";
+import type { KeyBinding, InputRule } from "./input";
+import type { DecorationSet } from "./decorations";
+import type { DocumentState, Editor } from "./editor";
 
 export interface ServerExtensionContext {
   editor: Editor;

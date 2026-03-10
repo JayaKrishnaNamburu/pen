@@ -1,12 +1,26 @@
 import { describe, it, expect } from "vitest";
 import { createEditor } from "@pen/core";
-import { htmlExporter } from "../exporter.js";
+import { htmlExporter } from "../exporter";
 
 function editorWithBlocks(ops: Parameters<ReturnType<typeof createEditor>["apply"]>[0]) {
   const editor = createEditor({
     without: ["document-ops", "delta-stream", "undo"],
   });
   editor.apply(ops);
+  return editor;
+}
+
+function editorWithTable(
+  insertOp: Parameters<ReturnType<typeof createEditor>["apply"]>[0][0],
+  cellOps: Parameters<ReturnType<typeof createEditor>["apply"]>[0],
+) {
+  const editor = createEditor({
+    without: ["document-ops", "delta-stream", "undo"],
+  });
+  editor.apply([insertOp]);
+  if (cellOps.length > 0) {
+    editor.apply(cellOps);
+  }
   return editor;
 }
 
@@ -102,6 +116,33 @@ describe("@pen/export-html", () => {
     editor.destroy();
   });
 
+  it("wraps list items in list containers", () => {
+    const editor = editorWithBlocks([
+      {
+        type: "insert-block",
+        blockId: "l1",
+        blockType: "bulletListItem",
+        props: {},
+        position: "last",
+      },
+      { type: "insert-text", blockId: "l1", offset: 0, text: "First" },
+      {
+        type: "insert-block",
+        blockId: "l2",
+        blockType: "bulletListItem",
+        props: {},
+        position: "last",
+      },
+      { type: "insert-text", blockId: "l2", offset: 0, text: "Second" },
+    ]);
+
+    const html = htmlExporter.export(editor);
+    expect(html).toContain("<ul>");
+    expect(html).toContain("<li>First</li>");
+    expect(html).toContain("<li>Second</li>");
+    editor.destroy();
+  });
+
   it("exports nested layout children via documentState.allBlocks()", () => {
     const editor = editorWithBlocks([
       {
@@ -135,5 +176,161 @@ describe("@pen/export-html", () => {
     expect(htmlExporter.name).toBe("html");
     expect(htmlExporter.mimeType).toBe("text/html");
     expect(htmlExporter.fileExtension).toBe(".html");
+  });
+
+  it("exports a table block as HTML table", () => {
+    const editor = editorWithTable(
+      {
+        type: "insert-block",
+        blockId: "t1",
+        blockType: "table",
+        props: { hasHeaderRow: true },
+        position: "last",
+      },
+      [
+        {
+          type: "insert-table-cell-text",
+          blockId: "t1",
+          row: 0,
+          col: 0,
+          offset: 0,
+          text: "Name",
+        } as any,
+        {
+          type: "insert-table-cell-text",
+          blockId: "t1",
+          row: 0,
+          col: 1,
+          offset: 0,
+          text: "Age",
+        } as any,
+        {
+          type: "insert-table-cell-text",
+          blockId: "t1",
+          row: 1,
+          col: 0,
+          offset: 0,
+          text: "Alice",
+        } as any,
+        {
+          type: "insert-table-cell-text",
+          blockId: "t1",
+          row: 1,
+          col: 1,
+          offset: 0,
+          text: "30",
+        } as any,
+      ],
+    );
+
+    const html = htmlExporter.export(editor);
+    expect(html).toContain("<table>");
+    expect(html).toContain("<thead>");
+    expect(html).toContain("<th>Name</th>");
+    expect(html).toContain("<th>Age</th>");
+    expect(html).toContain("<tbody>");
+    expect(html).toContain("<td>Alice</td>");
+    expect(html).toContain("<td>30</td>");
+    expect(html).toContain("</table>");
+    editor.destroy();
+  });
+
+  it("exports a table without header row (no thead)", () => {
+    const editor = editorWithTable(
+      {
+        type: "insert-block",
+        blockId: "t1",
+        blockType: "table",
+        props: { hasHeaderRow: false },
+        position: "last",
+      },
+      [
+        {
+          type: "insert-table-cell-text",
+          blockId: "t1",
+          row: 0,
+          col: 0,
+          offset: 0,
+          text: "A",
+        } as any,
+        {
+          type: "insert-table-cell-text",
+          blockId: "t1",
+          row: 1,
+          col: 0,
+          offset: 0,
+          text: "B",
+        } as any,
+      ],
+    );
+
+    const html = htmlExporter.export(editor);
+    expect(html).not.toContain("<thead>");
+    expect(html).toContain("<tbody>");
+    expect(html).toContain("<td>A</td>");
+    expect(html).toContain("<td>B</td>");
+    editor.destroy();
+  });
+
+  it("escapes HTML entities in table cells", () => {
+    const editor = editorWithTable(
+      {
+        type: "insert-block",
+        blockId: "t1",
+        blockType: "table",
+        props: { hasHeaderRow: false },
+        position: "last",
+      },
+      [
+        {
+          type: "insert-table-cell-text",
+          blockId: "t1",
+          row: 0,
+          col: 0,
+          offset: 0,
+          text: "<script>",
+        } as any,
+      ],
+    );
+
+    const html = htmlExporter.export(editor);
+    expect(html).toContain("&lt;script&gt;");
+    expect(html).not.toContain("<script>");
+    editor.destroy();
+  });
+
+  it("preserves inline formatting inside table cells", () => {
+    const editor = editorWithTable(
+      {
+        type: "insert-block",
+        blockId: "t2",
+        blockType: "table",
+        props: { hasHeaderRow: false },
+        position: "last",
+      },
+      [
+        {
+          type: "insert-table-cell-text",
+          blockId: "t2",
+          row: 0,
+          col: 0,
+          offset: 0,
+          text: "Alpha",
+        } as any,
+        {
+          type: "format-table-cell-text",
+          blockId: "t2",
+          row: 0,
+          col: 0,
+          offset: 0,
+          length: 5,
+          marks: { bold: true },
+        } as any,
+      ],
+    );
+
+    const html = htmlExporter.export(editor);
+    expect(html).toContain("<strong>Alpha</strong>");
+    editor.destroy();
   });
 });

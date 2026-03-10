@@ -1,2 +1,2 @@
-export { directTransport } from "./directTransport.js";
-export type { DirectTransportOptions } from "./directTransport.js";
+export { directTransport } from "./directTransport";
+export type { DirectTransportOptions } from "./directTransport";

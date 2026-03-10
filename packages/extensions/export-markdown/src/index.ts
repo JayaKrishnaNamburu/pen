@@ -1,1 +1,1 @@
-export { markdownExporter } from "./exporter.js";
+export { markdownExporter } from "./exporter";

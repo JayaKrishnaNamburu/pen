@@ -3,11 +3,11 @@ import type { Editor } from "@pen/core";
 import {
 	EMPTY_TOOLBAR_STATE,
 	type ToolbarState,
-} from "../context/toolbarContext.js";
+} from "../context/toolbarContext";
 import {
 	getAttachedFieldEditor,
 	getAttachedFieldEditorStore,
-} from "../utils/fieldEditor.js";
+} from "../utils/fieldEditor";
 import type { FieldEditor } from "@pen/core";
 
 export function useToolbar(editor: Editor): ToolbarState {

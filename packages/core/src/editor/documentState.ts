@@ -7,7 +7,7 @@ import type {
   SchemaRegistry,
   BlockHandle,
 } from "@pen/types";
-import { createBlockHandle } from "../schema/handles.js";
+import { createBlockHandle } from "../schema/handles";
 
 type CRDTBlockMap = CRDTMap<CRDTMap<unknown>>;
 

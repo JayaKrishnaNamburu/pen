@@ -8,8 +8,8 @@ import type {
 import { HISTORY_ORIGIN_TAG } from "@pen/types";
 import * as Y from "yjs";
 
-import { APPS, BLOCKS, BLOCK_ORDER } from "./document.js";
-import type { YjsCRDTDocument } from "./document.js";
+import { APPS, BLOCKS, BLOCK_ORDER } from "./document";
+import type { YjsCRDTDocument } from "./document";
 
 // Yjs internal type used as keys in txn.changed
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

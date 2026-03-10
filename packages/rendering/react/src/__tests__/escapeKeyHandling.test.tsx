@@ -4,13 +4,13 @@ import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
 import { createEditor, DocumentRangeImpl } from "@pen/core";
-import type { FieldEditorImpl } from "../field-editor/fieldEditorImpl.js";
-import { Pen } from "../primitives/index.js";
-import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor.js";
+import type { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
+import { Pen } from "../primitives/index";
+import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
 import {
 	domSelectionToEditor,
 	editorSelectionToDOM,
-} from "../field-editor/selectionBridge.js";
+} from "../field-editor/selectionBridge";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -101,8 +101,15 @@ describe("@pen/react escape key handling", () => {
 		const rootElement = container.querySelector(
 			"[data-pen-editor-root]",
 		) as HTMLElement | null;
+		const inlineElement = container.querySelector(
+			"[data-pen-inline-content]",
+		) as HTMLElement | null;
 
 		expect(rootElement).not.toBeNull();
+		expect(inlineElement).not.toBeNull();
+		expect(
+			inlineElement?.hasAttribute("data-pen-field-editor-active-surface"),
+		).toBe(false);
 
 		await act(async () => {
 			fieldEditor.activate(blockId);
@@ -130,6 +137,9 @@ describe("@pen/react escape key handling", () => {
 			anchor: { blockId, offset: 5 },
 			focus: { blockId, offset: 2 },
 		});
+		expect(
+			inlineElement?.hasAttribute("data-pen-field-editor-active-surface"),
+		).toBe(true);
 
 		await act(async () => {
 			rootElement?.dispatchEvent(createEscapeEvent());
@@ -1111,6 +1121,9 @@ describe("@pen/react escape key handling", () => {
 		});
 
 		const fieldEditor = getFieldEditor(editor);
+		const blocksHost = container.querySelector(
+			"[data-pen-editor-blocks-host]",
+		) as HTMLElement | null;
 		const inlineElements = container.querySelectorAll(
 			"[data-pen-inline-content]",
 		);
@@ -1118,6 +1131,13 @@ describe("@pen/react escape key handling", () => {
 			| HTMLElement
 			| undefined;
 
+		expect(blocksHost).not.toBeNull();
+		expect(blocksHost?.hasAttribute("data-pen-field-editor-surface")).toBe(
+			false,
+		);
+		expect(
+			blocksHost?.hasAttribute("data-pen-field-editor-active-surface"),
+		).toBe(false);
 		expect(secondInlineElement).toBeDefined();
 
 		await act(async () => {
@@ -1133,6 +1153,12 @@ describe("@pen/react escape key handling", () => {
 			activeBlockIds: [firstBlockId, secondBlockId],
 			mode: "expanded",
 		});
+		expect(
+			blocksHost?.hasAttribute("data-pen-field-editor-surface"),
+		).toBe(true);
+		expect(
+			blocksHost?.hasAttribute("data-pen-field-editor-active-surface"),
+		).toBe(true);
 
 		await act(async () => {
 			editor.apply([
@@ -1975,8 +2001,7 @@ describe("@pen/react escape key handling", () => {
 			| HTMLElement
 			| undefined;
 		const secondBlockElement = blockElements[1] as HTMLElement | undefined;
-		const secondBlockLength =
-			editor.getBlock(secondBlockId)?.textContent().length ?? 0;
+		const secondBlockBoundary = 1;
 
 		expect(rootElement).not.toBeNull();
 		expect(firstInlineElement).toBeDefined();
@@ -2027,12 +2052,12 @@ describe("@pen/react escape key handling", () => {
 		expect(editor.selection).toMatchObject({
 			type: "text",
 			anchor: { blockId: firstBlockId, offset: 1 },
-			focus: { blockId: secondBlockId, offset: secondBlockLength },
+			focus: { blockId: secondBlockId, offset: secondBlockBoundary },
 			isMultiBlock: true,
 		});
 		expect(domSelectionToEditor(rootElement!)).toMatchObject({
 			anchor: { blockId: firstBlockId, offset: 1 },
-			focus: { blockId: secondBlockId, offset: secondBlockLength },
+			focus: { blockId: secondBlockId, offset: secondBlockBoundary },
 		});
 		expect(fieldEditor.getSnapshot()).toMatchObject({
 			focusBlockId: secondBlockId,

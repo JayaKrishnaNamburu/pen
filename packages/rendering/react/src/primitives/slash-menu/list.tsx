@@ -1,8 +1,8 @@
 import React from "react";
-import { useSlashMenuContext } from "./root.js";
-import { renderAsChild, type AsChildProps } from "../../utils/asChild.js";
-import { SlashMenuGroup } from "./group.js";
-import { SlashMenuItem } from "./item.js";
+import { useSlashMenuContext } from "./root";
+import { renderAsChild, type AsChildProps } from "../../utils/asChild";
+import { SlashMenuGroup } from "./group";
+import { SlashMenuItem } from "./item";
 
 export interface SlashMenuListProps extends AsChildProps {
 	ref?: React.Ref<HTMLElement>;

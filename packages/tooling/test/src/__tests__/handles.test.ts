@@ -6,7 +6,7 @@ import {
   createTestDocument,
   createTestEditor,
   resetTestIdCounter,
-} from "../index.js";
+} from "../index";
 import { yjsAdapter, initBlockMap, wrapYjsDocument } from "@pen/crdt-yjs";
 
 beforeEach(() => {

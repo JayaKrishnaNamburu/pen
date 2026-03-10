@@ -1,16 +1,16 @@
 import React, { useRef, useLayoutEffect } from "react";
 import type { Editor } from "@pen/core";
-import { useEditorContentContext } from "../../context/editorContentContext.js";
-import { useEditorContext } from "../../context/editorContext.js";
-import { useFieldEditorContext } from "../../context/fieldEditorContext.js";
-import { fullReconcileDeltasToDOM } from "../../field-editor/reconciler.js";
-import { useBlockEditingState } from "../../hooks/useBlockEditingState.js";
-import { useBlockCommitState } from "../../hooks/useBlockCommitState.js";
-import { useSelection } from "../../hooks/useSelection.js";
-import { useBlockTextSnapshot } from "../../hooks/useBlockTextSnapshot.js";
-import { useFieldEditorState } from "../../hooks/useFieldEditorState.js";
-import { renderAsChild, type AsChildProps } from "../../utils/asChild.js";
-import { DATA_ATTRS } from "../../utils/dataAttributes.js";
+import { useEditorContentContext } from "../../context/editorContentContext";
+import { useEditorContext } from "../../context/editorContext";
+import { useFieldEditorContext } from "../../context/fieldEditorContext";
+import { fullReconcileDeltasToDOM } from "../../field-editor/reconciler";
+import { useBlockEditingState } from "../../hooks/useBlockEditingState";
+import { useBlockCommitState } from "../../hooks/useBlockCommitState";
+import { useSelection } from "../../hooks/useSelection";
+import { useBlockTextSnapshot } from "../../hooks/useBlockTextSnapshot";
+import { useFieldEditorState } from "../../hooks/useFieldEditorState";
+import { renderAsChild, type AsChildProps } from "../../utils/asChild";
+import { DATA_ATTRS } from "../../utils/dataAttributes";
 
 export interface InlineContentProps extends AsChildProps {
 	blockId: string;
@@ -126,9 +126,12 @@ export function InlineContent(props: InlineContentProps) {
 
 	const showPlaceholder =
 		showDocumentPlaceholder || showExplicitPlaceholder || showBlockPlaceholder;
+	const isActiveSurface = isActive && fieldEditorState.mode !== "expanded";
 
 	const primitiveProps: Record<string, unknown> = {
 		[DATA_ATTRS.inlineContent]: "",
+		[DATA_ATTRS.fieldEditorSurface]: "",
+		[DATA_ATTRS.fieldEditorActiveSurface]: isActiveSurface ? "" : undefined,
 		[DATA_ATTRS.placeholderVisible]: showPlaceholder ? "" : undefined,
 		"data-placeholder": showPlaceholder ? placeholder : undefined,
 		style: showPlaceholder

@@ -1,4 +1,4 @@
-import type { TestEditor } from "./types.js";
+import type { TestEditor } from "./types";
 
 const INLINE_MARK_KEYS: Record<string, string> = {
   "mod-b": "bold",

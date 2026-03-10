@@ -3,8 +3,8 @@ export {
 	useSelectionToolbarContext,
 	type SelectionToolbarRootProps,
 	type SelectionToolbarContextValue,
-} from "./root.js";
+} from "./root";
 export {
 	SelectionToolbarContent,
 	type SelectionToolbarContentProps,
-} from "./content.js";
+} from "./content";

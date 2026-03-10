@@ -52,38 +52,6 @@
   letter-spacing: -0.01em;
 }
 
-.inspector-close-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  color: var(--text-muted);
-  background: transparent;
-  border: 1.5px solid transparent;
-  border-radius: 999px;
-  cursor: pointer;
-  transition: all 0.12s ease;
-}
-
-.inspector-close-button:hover {
-  color: var(--text);
-  background: var(--bg);
-  border-color: var(--border);
-}
-
-.inspector-close-button:focus-visible {
-  outline: 2px solid var(--border-focus);
-  outline-offset: 2px;
-}
-
-.inspector-close-icon {
-  display: block;
-  flex-shrink: 0;
-  pointer-events: none;
-}
-
 .inspector {
   flex: 1 1 auto;
   min-height: 0;

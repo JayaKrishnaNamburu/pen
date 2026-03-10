@@ -6,7 +6,7 @@ import type {
 import { HISTORY_ORIGIN_TAG } from "@pen/types";
 import * as Y from "yjs";
 
-import type { YjsCRDTDocument } from "./document.js";
+import type { YjsCRDTDocument } from "./document";
 
 export function createYjsUndoManager(
   doc: YjsCRDTDocument,

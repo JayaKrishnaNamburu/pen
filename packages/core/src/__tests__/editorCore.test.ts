@@ -1,12 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { processStream } from "@pen/delta-stream";
+import { inputRulesExtension } from "@pen/input-rules";
 import type { PenStreamPart } from "@pen/types";
 
-import { createEditor, defineExtension } from "../index.js";
+import { createEditor, defineExtension } from "../index";
 
 async function* createStream(parts: PenStreamPart[]) {
 	for (const part of parts) {
 		yield part;
+	}
+}
+
+async function flushMicrotasks(count = 2): Promise<void> {
+	for (let index = 0; index < count; index++) {
+		await Promise.resolve();
 	}
 }
 
@@ -117,6 +124,104 @@ describe("@pen/core createEditor", () => {
 		editor.destroy();
 	});
 
+	it("preserves full text offsets for code blocks", () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream", "undo"],
+		});
+		const blockId = editor.firstBlock()!.id;
+
+		editor.apply([
+			{ type: "convert-block", blockId, newType: "codeBlock" },
+			{ type: "insert-text", blockId, offset: 0, text: "abcd" },
+		]);
+
+		editor.selectTextRange(
+			{ blockId, offset: 1 },
+			{ blockId, offset: 3 },
+		);
+
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId, offset: 1 },
+			focus: { blockId, offset: 3 },
+		});
+		expect(editor.getSelectedText()).toBe("bc");
+
+		editor.destroy();
+	});
+
+	it("clears stale grid state when converting table or database blocks", () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream", "undo"],
+		});
+
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "table-block",
+				blockType: "table",
+				props: {},
+				position: "last",
+			},
+			{
+				type: "insert-block",
+				blockId: "database-block",
+				blockType: "database",
+				props: {},
+				position: "last",
+			},
+		]);
+
+		editor.apply([
+			{
+				type: "database-insert-row",
+				blockId: "database-block",
+				rowId: "row-1",
+				values: {
+					name: "Alpha",
+					tags: "todo",
+					status: "true",
+				},
+			},
+			{
+				type: "convert-block",
+				blockId: "table-block",
+				newType: "paragraph",
+			},
+			{
+				type: "convert-block",
+				blockId: "database-block",
+				newType: "paragraph",
+			},
+		]);
+
+		const tableBlock = editor.getBlock("table-block")!;
+		const databaseBlock = editor.getBlock("database-block")!;
+		expect(tableBlock.type).toBe("paragraph");
+		expect(tableBlock.tableRowCount()).toBe(0);
+		expect(tableBlock.tableColumns()).toEqual([]);
+		expect(tableBlock.databaseViews()).toEqual([]);
+
+		expect(databaseBlock.type).toBe("paragraph");
+		expect(databaseBlock.tableRowCount()).toBe(0);
+		expect(databaseBlock.tableColumns()).toEqual([]);
+		expect(databaseBlock.databaseViews()).toEqual([]);
+		expect(databaseBlock.databasePrimaryViewId()).toBeNull();
+
+		const tableBlockMap = (editor.internals.doc.blocks as any).get("table-block");
+		const databaseBlockMap = (editor.internals.doc.blocks as any).get("database-block");
+		expect(tableBlockMap.get("tableContent")).toBeUndefined();
+		expect(tableBlockMap.get("tableColumns")).toBeUndefined();
+		expect(tableBlockMap.get("databaseViews")).toBeUndefined();
+		expect(tableBlockMap.get("databasePrimaryViewId")).toBeUndefined();
+		expect(databaseBlockMap.get("tableContent")).toBeUndefined();
+		expect(databaseBlockMap.get("tableColumns")).toBeUndefined();
+		expect(databaseBlockMap.get("databaseViews")).toBeUndefined();
+		expect(databaseBlockMap.get("databasePrimaryViewId")).toBeUndefined();
+
+		editor.destroy();
+	});
+
 	it("queues reentrant apply calls from observe hooks", () => {
 		let appended = false;
 		const ext = defineExtension({
@@ -165,6 +270,95 @@ describe("@pen/core createEditor", () => {
 		]);
 
 		expect(editor.getBlock("b1")?.textContent()).toBe("hello!");
+
+		editor.destroy();
+	});
+
+	it("activates input-rules extensions and applies block conversions", async () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream", "undo"],
+			extensions: [inputRulesExtension()],
+		});
+		const blockId = editor.firstBlock()!.id;
+
+		editor.selectTextRange(
+			{ blockId, offset: 0 },
+			{ blockId, offset: 0 },
+		);
+
+		editor.apply(
+			[
+				{
+					type: "insert-text",
+					blockId,
+					offset: 0,
+					text: "#",
+				},
+			],
+			{ origin: "user" },
+		);
+		editor.selectTextRange(
+			{ blockId, offset: 1 },
+			{ blockId, offset: 1 },
+		);
+		editor.apply(
+			[
+				{
+					type: "insert-text",
+					blockId,
+					offset: 1,
+					text: " ",
+				},
+			],
+			{ origin: "user" },
+		);
+		await flushMicrotasks();
+
+		expect(editor.getBlock(blockId)?.type).toBe("heading");
+		expect(editor.getBlock(blockId)?.props.level).toBe(1);
+		expect(visibleText(editor.getBlock(blockId)!.textContent())).toBe("");
+
+		editor.destroy();
+	});
+
+	it("activates input-rules extensions and applies inline markdown conversions", async () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream", "undo"],
+			extensions: [inputRulesExtension()],
+		});
+		const blockId = editor.firstBlock()!.id;
+
+		editor.apply(
+			[
+				{
+					type: "insert-text",
+					blockId,
+					offset: 0,
+					text: "**hello*",
+				},
+			],
+			{ origin: "user" },
+		);
+		editor.apply(
+			[
+				{
+					type: "insert-text",
+					blockId,
+					offset: 8,
+					text: "*",
+				},
+			],
+			{ origin: "user" },
+		);
+		await flushMicrotasks();
+
+		expect(visibleText(editor.getBlock(blockId)!.textContent())).toBe("hello");
+		expect(editor.getBlock(blockId)?.textDeltas()).toEqual([
+			{
+				insert: "hello",
+				attributes: { bold: true },
+			},
+		]);
 
 		editor.destroy();
 	});
@@ -433,6 +627,102 @@ describe("@pen/core createEditor", () => {
 			focus: { blockId: "b1", offset: 2 },
 			isMultiBlock: false,
 			blockRange: ["b1"],
+		});
+
+		editor.destroy();
+	});
+
+	it("deletes a fully selected structural block", () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream", "undo"],
+		});
+
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "d1",
+				blockType: "divider",
+				props: {},
+				position: "last",
+			},
+		]);
+
+		editor.selectTextRange(
+			{ blockId: "d1", offset: 0 },
+			{ blockId: "d1", offset: 1 },
+		);
+		editor.deleteSelection();
+
+		expect(editor.getBlock("d1")).toBeNull();
+		expect(editor.getSelection()).toBeNull();
+
+		editor.destroy();
+	});
+
+	it("deletes a fully selected delegated block", () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream", "undo"],
+		});
+
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "t1",
+				blockType: "table",
+				props: {},
+				position: "last",
+			},
+		]);
+
+		editor.selectTextRange(
+			{ blockId: "t1", offset: 0 },
+			{ blockId: "t1", offset: 1 },
+		);
+		editor.deleteSelection();
+
+		expect(editor.getBlock("t1")).toBeNull();
+		expect(editor.getSelection()).toBeNull();
+
+		editor.destroy();
+	});
+
+	it("deletes structural blocks at multi-block selection boundaries", () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream", "undo"],
+		});
+
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "p1",
+				blockType: "paragraph",
+				props: {},
+				position: "last",
+			},
+			{
+				type: "insert-block",
+				blockId: "d1",
+				blockType: "divider",
+				props: {},
+				position: "last",
+			},
+			{ type: "insert-text", blockId: "p1", offset: 0, text: "Hello" },
+		]);
+
+		editor.selectTextRange(
+			{ blockId: "p1", offset: 2 },
+			{ blockId: "d1", offset: 1 },
+		);
+		editor.deleteSelection();
+
+		expect(editor.getBlock("p1")?.textContent()).toBe("He");
+		expect(editor.getBlock("d1")).toBeNull();
+		expect(editor.getSelection()).toMatchObject({
+			type: "text",
+			anchor: { blockId: "p1", offset: 2 },
+			focus: { blockId: "p1", offset: 2 },
+			isMultiBlock: false,
+			blockRange: ["p1"],
 		});
 
 		editor.destroy();
@@ -871,6 +1161,432 @@ describe("@pen/core createEditor", () => {
 
 		expect(commitOrigins).toContain("user");
 		expect(commitOrigins).toContain("history");
+
+		editor.destroy();
+	});
+});
+
+describe("@pen/core table operations", () => {
+	it("insert-block with table type produces seeded 2x2 grid", () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream", "undo"],
+		});
+
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "t1",
+				blockType: "table",
+				props: {},
+				position: "last",
+			},
+		]);
+
+		const block = editor.getBlock("t1")!;
+		expect(block.type).toBe("table");
+		expect(block.tableRowCount()).toBe(2);
+		expect(block.tableColumnCount()).toBe(2);
+
+		const cell = block.tableCell(0, 0)!;
+		expect(cell).not.toBeNull();
+		expect(cell.id).toEqual(expect.any(String));
+		expect(cell.textContent()).toBe("");
+
+		editor.destroy();
+	});
+
+	it("insert-table-row adds a row matching existing column count", () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream", "undo"],
+		});
+
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "t1",
+				blockType: "table",
+				props: {},
+				position: "last",
+			},
+		]);
+
+		editor.apply([
+			{
+				type: "insert-table-row",
+				blockId: "t1",
+				index: 2,
+			},
+		]);
+
+		const block = editor.getBlock("t1")!;
+		expect(block.tableRowCount()).toBe(3);
+		expect(block.tableColumnCount()).toBe(2);
+		expect(block.tableCell(2, 0)).not.toBeNull();
+		expect(block.tableCell(2, 1)).not.toBeNull();
+
+		editor.destroy();
+	});
+
+	it("repairs table width from the widest row when legacy rows are short", () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream", "undo"],
+		});
+
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "t1",
+				blockType: "table",
+				props: {},
+				position: "last",
+			},
+		]);
+
+		editor.apply([
+			{
+				type: "insert-table-column",
+				blockId: "t1",
+				index: 2,
+			},
+		]);
+
+		const blockMap = (editor.internals.doc.blocks as any).get("t1");
+		const tableContent = blockMap.get("tableContent");
+		const firstRow = tableContent.get(0);
+		firstRow.get("cells").delete(2, 1);
+
+		let block = editor.getBlock("t1")!;
+		expect(block.tableColumnCount()).toBe(3);
+
+		editor.apply([
+			{
+				type: "insert-table-row",
+				blockId: "t1",
+				index: block.tableRowCount(),
+			},
+			{
+				type: "insert-table-cell-text",
+				blockId: "t1",
+				row: 0,
+				col: 2,
+				offset: 0,
+				text: "Recovered",
+			},
+		]);
+
+		block = editor.getBlock("t1")!;
+		expect(block.tableRowCount()).toBe(3);
+		expect(block.tableCell(0, 2)?.textContent()).toBe("Recovered");
+		expect(block.tableCell(2, 0)).not.toBeNull();
+		expect(block.tableCell(2, 1)).not.toBeNull();
+		expect(block.tableCell(2, 2)).not.toBeNull();
+
+		editor.destroy();
+	});
+
+	it("insert-table-column adds a column to all rows", () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream", "undo"],
+		});
+
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "t1",
+				blockType: "table",
+				props: {},
+				position: "last",
+			},
+		]);
+
+		editor.apply([
+			{
+				type: "insert-table-column",
+				blockId: "t1",
+				index: 2,
+			},
+		]);
+
+		const block = editor.getBlock("t1")!;
+		expect(block.tableRowCount()).toBe(2);
+		expect(block.tableColumnCount()).toBe(3);
+		expect(block.tableCell(0, 2)).not.toBeNull();
+		expect(block.tableCell(1, 2)).not.toBeNull();
+
+		editor.destroy();
+	});
+
+	it("delete-table-row removes a row", () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream", "undo"],
+		});
+
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "t1",
+				blockType: "table",
+				props: {},
+				position: "last",
+			},
+		]);
+
+		editor.apply([
+			{
+				type: "delete-table-row",
+				blockId: "t1",
+				index: 0,
+			},
+		]);
+
+		expect(editor.getBlock("t1")!.tableRowCount()).toBe(1);
+
+		editor.destroy();
+	});
+
+	it("delete-table-column removes a column from all rows", () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream", "undo"],
+		});
+
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "t1",
+				blockType: "table",
+				props: {},
+				position: "last",
+			},
+		]);
+
+		editor.apply([
+			{
+				type: "delete-table-column",
+				blockId: "t1",
+				index: 0,
+			},
+		]);
+
+		expect(editor.getBlock("t1")!.tableColumnCount()).toBe(1);
+
+		editor.destroy();
+	});
+
+	it("insert-table-cell-text writes text into a specific cell", () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream", "undo"],
+		});
+
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "t1",
+				blockType: "table",
+				props: {},
+				position: "last",
+			},
+		]);
+
+		editor.apply([
+			{
+				type: "insert-table-cell-text",
+				blockId: "t1",
+				row: 0,
+				col: 1,
+				offset: 0,
+				text: "Hello",
+			},
+		]);
+
+		const cell = editor.getBlock("t1")!.tableCell(0, 1)!;
+		expect(cell.textContent()).toBe("Hello");
+
+		editor.destroy();
+	});
+
+	it("delete-table-cell-text removes text from a specific cell", () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream", "undo"],
+		});
+
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "t1",
+				blockType: "table",
+				props: {},
+				position: "last",
+			},
+			{
+				type: "insert-table-cell-text",
+				blockId: "t1",
+				row: 0,
+				col: 0,
+				offset: 0,
+				text: "Hello",
+			},
+			{
+				type: "delete-table-cell-text",
+				blockId: "t1",
+				row: 0,
+				col: 0,
+				offset: 1,
+				length: 3,
+			},
+		]);
+
+		const cell = editor.getBlock("t1")!.tableCell(0, 0)!;
+		expect(cell.textContent()).toBe("Ho");
+
+		editor.destroy();
+	});
+
+	it("format-table-cell-text applies formatting to cell text", () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream", "undo"],
+		});
+
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "t1",
+				blockType: "table",
+				props: {},
+				position: "last",
+			},
+			{
+				type: "insert-table-cell-text",
+				blockId: "t1",
+				row: 0,
+				col: 0,
+				offset: 0,
+				text: "bold text",
+			},
+			{
+				type: "format-table-cell-text",
+				blockId: "t1",
+				row: 0,
+				col: 0,
+				offset: 0,
+				length: 4,
+				marks: { bold: true },
+			},
+		]);
+
+		const cell = editor.getBlock("t1")!.tableCell(0, 0)!;
+		const deltas = cell.textDeltas();
+		expect(deltas[0].insert).toBe("bold");
+		expect(deltas[0].attributes).toEqual({ bold: true });
+		expect(deltas[1].insert).toBe(" text");
+
+		editor.destroy();
+	});
+
+	it("convert-block to table seeds tableContent", () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream", "undo"],
+		});
+
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "b1",
+				blockType: "paragraph",
+				props: {},
+				position: "last",
+			},
+		]);
+
+		editor.apply([
+			{
+				type: "convert-block",
+				blockId: "b1",
+				newType: "table",
+				newProps: {},
+			},
+		]);
+
+		const block = editor.getBlock("b1")!;
+		expect(block.type).toBe("table");
+		expect(block.tableRowCount()).toBe(2);
+		expect(block.tableColumnCount()).toBe(2);
+
+		editor.destroy();
+	});
+
+	it("convert-block to table preserves inline text in the first cell", () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream", "undo"],
+		});
+
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "b1",
+				blockType: "paragraph",
+				props: {},
+				position: "last",
+			},
+			{
+				type: "insert-text",
+				blockId: "b1",
+				offset: 0,
+				text: "Hello table",
+			},
+		]);
+
+		editor.apply([
+			{
+				type: "convert-block",
+				blockId: "b1",
+				newType: "table",
+				newProps: {},
+			},
+		]);
+
+		const block = editor.getBlock("b1")!;
+		expect(block.type).toBe("table");
+		expect(block.tableCell(0, 0)?.textContent()).toBe("Hello table");
+		expect(block.tableCell(0, 1)?.textContent()).toBe("");
+		expect(block.tableCell(1, 0)?.textContent()).toBe("");
+		expect(block.tableCell(1, 1)?.textContent()).toBe("");
+
+		editor.destroy();
+	});
+
+	it("tableCell returns null for out-of-bounds coordinates", () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream", "undo"],
+		});
+
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "t1",
+				blockType: "table",
+				props: {},
+				position: "last",
+			},
+		]);
+
+		const block = editor.getBlock("t1")!;
+		expect(block.tableCell(-1, 0)).toBeNull();
+		expect(block.tableCell(0, -1)).toBeNull();
+		expect(block.tableCell(99, 0)).toBeNull();
+		expect(block.tableCell(0, 99)).toBeNull();
+
+		editor.destroy();
+	});
+
+	it("tableRowCount/tableColumnCount return 0 for non-table blocks", () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream", "undo"],
+		});
+
+		const block = editor.firstBlock()!;
+		expect(block.tableRowCount()).toBe(0);
+		expect(block.tableColumnCount()).toBe(0);
+		expect(block.tableCell(0, 0)).toBeNull();
 
 		editor.destroy();
 	});

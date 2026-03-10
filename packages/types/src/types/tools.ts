@@ -1,7 +1,7 @@
-import type { PenStreamPart } from "./stream.js";
-import type { Editor } from "./editor.js";
-import type { Position } from "./ops.js";
-import type { PropSchema } from "./schema.js";
+import type { PenStreamPart } from "./stream";
+import type { Editor } from "./editor";
+import type { Position } from "./ops";
+import type { PropSchema } from "./schema";
 
 // ── Tool Server ─────────────────────────────────────────────
 

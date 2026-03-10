@@ -1,7 +1,7 @@
 import * as Y from "yjs";
-import { createTestEditor } from "./createTestEditor.js";
-import { populateYDoc } from "./createTestDocument.js";
-import type { TestEditorOptions, TestCollaboration } from "./types.js";
+import { createTestEditor } from "./createTestEditor";
+import { populateYDoc } from "./createTestDocument";
+import type { TestEditorOptions, TestCollaboration } from "./types";
 
 export function createTestCollaboration(
   options?: TestEditorOptions,

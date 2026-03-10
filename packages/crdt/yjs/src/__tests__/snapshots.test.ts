@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest";
 import * as Y from "yjs";
 
-import { yjsAdapter } from "../adapter.js";
-import { createYjsDocument, initBlockMap } from "../document.js";
+import { yjsAdapter } from "../adapter";
+import { createYjsDocument, initBlockMap } from "../document";
 import {
   createYjsSnapshot,
   forkDocument,
   mergeDocuments,
   mergeYjsUpdates,
   restoreYjsSnapshot,
-} from "../snapshots.js";
+} from "../snapshots";
 
 describe("snapshots", () => {
   const adapter = yjsAdapter({ gc: false });

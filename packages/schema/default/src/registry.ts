@@ -6,7 +6,7 @@ import type {
   BlockSchema,
 } from "@pen/types";
 import { SchemaRegistryImpl } from "@pen/core";
-import { defaultBlocks, defaultInlines } from "./defs.js";
+import { defaultBlocks, defaultInlines } from "./defs";
 
 export function createDefaultSchema(): ComposableSchema {
   return new SchemaRegistryImpl({

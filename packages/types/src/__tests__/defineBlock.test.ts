@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { defineBlock } from "../defineBlock.js";
-import { prop } from "../prop.js";
+import { defineBlock } from "../defineBlock";
+import { prop } from "../prop";
 
 describe("defineBlock", () => {
   it("Form 1: type as first arg", () => {

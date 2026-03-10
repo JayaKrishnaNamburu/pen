@@ -1,8 +1,8 @@
-import type { AppPlacement } from "./block.js";
-import type { Position } from "./ops.js";
-import type { SelectionState } from "./selection.js";
-import type { LayoutProps } from "./layout.js";
-import type { ModelMessage, ToolSchema } from "./tools.js";
+import type { AppPlacement } from "./block";
+import type { Position } from "./ops";
+import type { SelectionState } from "./selection";
+import type { LayoutProps } from "./layout";
+import type { ModelMessage, ToolSchema } from "./tools";
 
 // ── Stream Part Union ───────────────────────────────────────
 

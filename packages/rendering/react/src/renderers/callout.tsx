@@ -1,17 +1,13 @@
 import React from "react";
 import type { BlockHandle, BlockRenderContext } from "@pen/core";
-import { InlineContent } from "../primitives/editor/inlineContent.js";
+import { InlineContent } from "../primitives/editor/inlineContent";
+import { ParentIdChildren } from "../primitives/editor/parentIdChildren";
 
 export function CalloutRenderer(
   block: BlockHandle,
   ctx: BlockRenderContext,
 ): React.ReactElement {
   const calloutType = (block.props?.type as string) ?? "info";
-
-  const childHandles = block.children;
-  const childElements = childHandles.map((child) => (
-    <CalloutChild key={child.id} child={child} />
-  ));
 
   const iconMap: Record<string, string> = {
     info: "\u2139\uFE0F",
@@ -32,18 +28,11 @@ export function CalloutRenderer(
       </span>
       <div data-pen-callout-body="">
         <InlineContent blockId={block.id} />
-        {childElements.length > 0 ? (
-          <div data-pen-callout-children="">{childElements}</div>
-        ) : null}
+        <ParentIdChildren
+          parentBlockId={block.id}
+          containerProps={{ "data-pen-callout-children": "" }}
+        />
       </div>
-    </div>
-  );
-}
-
-function CalloutChild({ child }: { child: BlockHandle }) {
-  return (
-    <div data-block-type={child.type} data-block-id={child.id}>
-      <InlineContent blockId={child.id} />
     </div>
   );
 }

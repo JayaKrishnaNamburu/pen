@@ -4,8 +4,8 @@ import type {
   PenStreamPart,
   Unsubscribe,
 } from "@pen/core";
-import type { SSEClientOptions } from "./types.js";
-import { parseSSEStream } from "./parser.js";
+import type { SSEClientOptions } from "./types";
+import { parseSSEStream } from "./parser";
 
 export function sseTransport(options: SSEClientOptions): PenTransport {
   const {

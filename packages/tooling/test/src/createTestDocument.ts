@@ -1,8 +1,8 @@
 import * as Y from "yjs";
 import { yjsAdapter, initBlockMap, wrapYjsDocument } from "@pen/crdt-yjs";
 import type { PenDocument, CRDTDocument } from "@pen/types";
-import { generateTestId } from "./helpers.js";
-import type { TestBlock } from "./types.js";
+import { generateTestId } from "./helpers";
+import type { TestBlock } from "./types";
 
 const NONE_CONTENT_TYPES = new Set(["image", "divider"]);
 const TABLE_CONTENT_TYPES = new Set(["table"]);

@@ -1,6 +1,5 @@
 import type {
 	FieldEditor,
-	FieldEditorType,
 	Editor,
 	BlockSchema,
 	HistoryAppliedEvent,
@@ -8,17 +7,36 @@ import type {
 	Unsubscribe,
 	InputBackend,
 } from "@pen/core";
-import { EditContextBackend } from "./editContextBackend.js";
-import { ContentEditableBackend } from "./contenteditableBackend.js";
-import { ExpandedContentEditableBackend } from "./expandedContentEditableBackend.js";
-import { HistorySelectionCoordinator } from "./historySelectionCoordinator.js";
-import { SessionReconciler } from "./sessionReconciler.js";
-import { classifySelectionSurface } from "./crossBlock.js";
-import { resolveMarksAtPosition } from "./markBoundary.js";
-import { domSelectionToEditor, queryBlockElement, queryInlineElement } from "./selectionBridge.js";
-import type { FieldEditorStoreSnapshot } from "./store.js";
+import {
+	hasFieldEditorSurface,
+	resolveFieldEditorInputMode,
+	usesInlineTextSelection,
+} from "@pen/core";
+import { EditContextBackend } from "./editContextBackend";
+import { ContentEditableBackend } from "./contenteditableBackend";
+import { ExpandedContentEditableBackend } from "./expandedContentEditableBackend";
+import { HistorySelectionCoordinator } from "./historySelectionCoordinator";
+import { SessionReconciler } from "./sessionReconciler";
+import { classifySelectionSurface } from "./crossBlock";
+import { resolveMarksAtPosition } from "./markBoundary";
+import type {
+	ActiveCellCoord,
+	FieldEditorInputController,
+	FieldEditorSession,
+} from "./controller";
+import {
+	getCellYText,
+	getResolvedYText,
+	resolveCellInlineElement,
+} from "./contentResolution";
+import { domSelectionToEditor, queryBlockElement, queryInlineElement } from "./selectionBridge";
+import {
+	getEditorBlockSelectionLength,
+	getEditorBlockSelectionRole,
+} from "../utils/blockSelectionSemantics";
+import type { FieldEditorStoreSnapshot } from "./store";
 
-export class FieldEditorImpl implements FieldEditor {
+export class FieldEditorImpl implements FieldEditorSession {
 	private _focusBlockId: string | null = null;
 	private _activeBlockIds: string[] = [];
 	private _attachedElement: HTMLElement | null = null;
@@ -44,6 +62,7 @@ export class FieldEditorImpl implements FieldEditor {
 		scope: "block" | "document";
 	} | null = null;
 	private _preserveSelectAllCycle = false;
+	private _activeCellCoord: ActiveCellCoord | null = null;
 
 	constructor(editor: Editor) {
 		this._editor = editor;
@@ -112,6 +131,9 @@ export class FieldEditorImpl implements FieldEditor {
 		this._editor.setSelection(sel);
 		this._emitStateChange();
 	}
+	get activeCellCoord(): ActiveCellCoord | null {
+		return this._activeCellCoord;
+	}
 
 	// ── Lifecycle ─────────────────────────────────────────────
 
@@ -124,15 +146,100 @@ export class FieldEditorImpl implements FieldEditor {
 		});
 	}
 
+	activateCell(blockId: string, row: number, col: number): void {
+		this._activateCell(blockId, row, col);
+		this._trySyncCellBackend(0);
+	}
+
+	activateCellFromElement(
+		blockId: string,
+		row: number,
+		col: number,
+		element: HTMLElement,
+	): void {
+		this._activateCell(blockId, row, col);
+		this.attachElement(element);
+		this._placeCaretInCell(element);
+	}
+
+	private _activateCell(blockId: string, row: number, col: number): void {
+		this._activeCellCoord = { blockId, row, col };
+		if (!this._isEditing || this._focusBlockId !== blockId) {
+			this._startSession(blockId, {
+				stopCapturing: true,
+				syncSelectionToBackend: false,
+				attachImmediately: false,
+			});
+		}
+		this._inputMode = "table";
+		this._emitStateChange();
+	}
+
+	private _trySyncCellBackend(attempt: number): void {
+		const coord = this._activeCellCoord;
+		if (!coord) return;
+
+		const ytext = this._getYTextForCell(coord.blockId, coord.row, coord.col);
+		if (!ytext) return;
+
+		const root = this._findEditorRoot();
+		if (!root) return;
+
+		const cellEl = this._resolveCellElement(
+			coord.blockId,
+			coord.row,
+			coord.col,
+			root,
+		);
+
+		if (cellEl) {
+			this._attachedElement = null;
+			this.attachElement(cellEl);
+			this._placeCaretInCell(cellEl);
+			return;
+		}
+
+		if (attempt < 3) {
+			requestAnimationFrame(() => this._trySyncCellBackend(attempt + 1));
+		}
+	}
+
+	private _placeCaretInCell(cellEl: HTMLElement): void {
+		cellEl.focus({ preventScroll: true });
+		const selection = cellEl.ownerDocument?.getSelection();
+		if (!selection) return;
+
+		const range = cellEl.ownerDocument.createRange();
+		range.selectNodeContents(cellEl);
+		range.collapse(false);
+		selection.removeAllRanges();
+		selection.addRange(range);
+	}
+
 	deactivate(): void {
 		this._deactivate({ restoreFocus: true });
 	}
 
 	selectAll(rootElement?: HTMLElement | null): boolean {
+		const activeCellElement = this._resolveActiveCellElement(rootElement);
+		if (
+			activeCellElement &&
+			!isDomSelectionCoveringElementContents(activeCellElement)
+		) {
+			if (
+				this._attachedElement !== activeCellElement ||
+				!this._attachedElement?.isConnected
+			) {
+				this.attachElement(activeCellElement);
+			}
+			selectElementContents(activeCellElement);
+			return true;
+		}
+
 		const blockId = this._resolveSelectAllBlockId(rootElement);
 		if (blockId) {
-			const blockLength =
-				this._editor.getBlock(blockId)?.textContent().length ?? 0;
+			const blockLength = getEditorBlockSelectionLength(this._editor, blockId);
+			const blockRole = getEditorBlockSelectionRole(this._editor, blockId);
 			const shouldSelectDocument =
 				blockLength === 0 ||
 				(this._selectAllCycle?.blockId === blockId &&
@@ -140,6 +247,12 @@ export class FieldEditorImpl implements FieldEditor {
 			const nextScope =
 				shouldSelectDocument ? "document" : "block";
 			if (nextScope === "block") {
+				if (blockRole && blockRole !== "editable-inline") {
+					this.deactivate();
+					this._editor.selectBlock(blockId);
+					this._recordSelectAllScope(blockId, "block");
+					return true;
+				}
 				this.activateTextSelection(blockId, 0, blockLength);
 				this._recordSelectAllScope(blockId, "block");
 				return true;
@@ -180,6 +293,7 @@ export class FieldEditorImpl implements FieldEditor {
 		this._backend?.deactivate();
 		this._backend = null;
 		this._attachedElement = null;
+		this._activeCellCoord = null;
 
 		this._focusBlockId = null;
 		this._activeBlockIds = [];
@@ -259,12 +373,10 @@ export class FieldEditorImpl implements FieldEditor {
 	}
 
 	attachElement(element: HTMLElement): void {
-		if (!this._backend || !this._focusBlockId) return;
-		if (this._attachedElement === element) return;
-		if (this._attachedElement) {
-			this._backend.deactivate();
-			this._backend = this.createBackend();
-		}
+		if (!this._focusBlockId) return;
+		if (this._attachedElement === element && this._backend) return;
+		this._backend?.deactivate();
+		this._backend = this.createBackend();
 
 		const ytext = this._getYText(this._focusBlockId);
 		if (!ytext) return;
@@ -343,7 +455,7 @@ export class FieldEditorImpl implements FieldEditor {
 	}
 
 	delegate(blockSchema: BlockSchema): boolean {
-		return blockSchema.fieldEditor !== "none";
+		return hasFieldEditorSurface(blockSchema);
 	}
 
 	getPendingMarks(): Readonly<Record<string, unknown | null>> {
@@ -413,13 +525,27 @@ export class FieldEditorImpl implements FieldEditor {
 		selection: SelectionState | null,
 	): boolean {
 		const cycle = this._selectAllCycle;
-		if (!cycle || selection?.type !== "text") {
+		if (!cycle) {
 			return false;
 		}
 
 		if (cycle.scope === "block") {
-			const blockLength =
-				this._editor.getBlock(cycle.blockId)?.textContent().length ?? 0;
+			const blockLength = getEditorBlockSelectionLength(
+				this._editor,
+				cycle.blockId,
+			);
+			const blockRole = getEditorBlockSelectionRole(this._editor, cycle.blockId);
+			if (blockRole && blockRole !== "editable-inline") {
+				return (
+					selection?.type === "block" &&
+					selection.blockIds.length === 1 &&
+					selection.blockIds[0] === cycle.blockId
+				);
+			}
+
+			if (selection?.type !== "text") {
+				return false;
+			}
 			return (
 				!selection.isMultiBlock &&
 				selection.anchor.blockId === cycle.blockId &&
@@ -433,6 +559,10 @@ export class FieldEditorImpl implements FieldEditor {
 
 		const range = getFullDocumentTextRange(this._editor);
 		if (!range) {
+			return false;
+		}
+
+		if (selection?.type !== "text") {
 			return false;
 		}
 
@@ -544,6 +674,7 @@ export class FieldEditorImpl implements FieldEditor {
 			isComposing: this._isComposing,
 			inputMode: this._inputMode,
 			mode: this._mode,
+			activeCellCoord: this._activeCellCoord,
 		};
 	}
 
@@ -572,13 +703,16 @@ export class FieldEditorImpl implements FieldEditor {
 
 	private _resolveBackendClass(): new (
 		editor: Editor,
-		fieldEditor: FieldEditorImpl,
+		fieldEditor: FieldEditorInputController,
 	) => InputBackend {
 		if (this._mode === "expanded") {
 			return ExpandedContentEditableBackend as unknown as new (
 				editor: Editor,
-				fieldEditor: FieldEditorImpl,
+				fieldEditor: FieldEditorInputController,
 			) => InputBackend;
+		}
+		if (this._activeCellCoord) {
+			return ContentEditableBackend;
 		}
 		if (
 			"EditContext" in globalThis &&
@@ -719,14 +853,11 @@ export class FieldEditorImpl implements FieldEditor {
 		}
 
 		if (this._mode === "single") {
-			const root = this._findEditorRoot();
-			if (root) {
-				const inlineEl = queryInlineElement(root, this._focusBlockId);
-				if (inlineEl) {
-					this._attachedElement = null;
-					this.attachElement(inlineEl);
-					return;
-				}
+			const inlineEl = this._resolveInlineElement(this._focusBlockId);
+			if (inlineEl) {
+				this._attachedElement = null;
+				this.attachElement(inlineEl);
+				return;
 			}
 		}
 
@@ -765,7 +896,7 @@ export class FieldEditorImpl implements FieldEditor {
 			this._editor.undoManager.stopCapturing();
 		}
 
-		this._inputMode = resolveInputMode(schema?.fieldEditor);
+		this._inputMode = resolveInputMode(schema);
 		this._backend = this.createBackend();
 		this._attachedElement = null;
 		if (options.attachImmediately) {
@@ -844,6 +975,15 @@ export class FieldEditorImpl implements FieldEditor {
 	private _resolveInlineElement(blockId: string): HTMLElement | null {
 		const root = this._findEditorRoot();
 		if (!root) return null;
+		const activeCell = this._activeCellCoord;
+		if (activeCell?.blockId === blockId) {
+			return this._resolveCellElement(
+				activeCell.blockId,
+				activeCell.row,
+				activeCell.col,
+				root,
+			);
+		}
 		return queryInlineElement(root, blockId);
 	}
 
@@ -890,10 +1030,7 @@ export class FieldEditorImpl implements FieldEditor {
 					projected = true;
 				}
 			} else if (this._focusBlockId) {
-				const root = this._findEditorRoot();
-				const inlineEl = root
-					? queryInlineElement(root, this._focusBlockId)
-					: null;
+				const inlineEl = this._resolveInlineElement(this._focusBlockId);
 				if (inlineEl) {
 					if (
 						this._attachedElement !== inlineEl ||
@@ -927,26 +1064,77 @@ export class FieldEditorImpl implements FieldEditor {
 	}
 
 	private _getYText(blockId: string): any {
-		const adapter = this._editor.internals.adapter;
-		const doc = this._editor.internals.crdtDoc;
-		const ydoc = adapter.raw(doc) as any;
-		return ydoc.getMap("blocks").get(blockId)?.get("content") ?? null;
+		return getResolvedYText(this._editor, blockId, this._activeCellCoord);
+	}
+
+	private _getYTextForCell(
+		blockId: string,
+		row: number,
+		col: number,
+	): any {
+		return getCellYText(this._editor, blockId, row, col);
+	}
+
+	private _resolveCellElement(
+		blockId: string,
+		row: number,
+		col: number,
+		root?: HTMLElement | null,
+	): HTMLElement | null {
+		return resolveCellInlineElement(blockId, row, col, root ?? this._findEditorRoot());
+	}
+
+	private _resolveActiveCellElement(
+		rootElement?: HTMLElement | null,
+	): HTMLElement | null {
+		const coord = this._activeCellCoord;
+		if (!coord) return null;
+		return this._resolveCellElement(
+			coord.blockId,
+			coord.row,
+			coord.col,
+			rootElement ?? undefined,
+		);
 	}
 }
 
 function resolveInputMode(
-	fieldEditor?: FieldEditorType,
+	schema?: BlockSchema | null,
 ): "richtext" | "code" | "table" | "none" {
+	return resolveFieldEditorInputMode(schema);
+}
+
+function selectElementContents(element: HTMLElement): void {
+	element.focus({ preventScroll: true });
+	const selection = element.ownerDocument?.getSelection();
+	if (!selection) return;
+
+	const range = element.ownerDocument.createRange();
+	range.selectNodeContents(element);
+	selection.removeAllRanges();
+	selection.addRange(range);
+}
+
+function isDomSelectionCoveringElementContents(element: HTMLElement): boolean {
+	const selection = element.ownerDocument?.getSelection();
+	if (!selection || selection.rangeCount === 0) {
+		return false;
+	}
+
+	const range = selection.getRangeAt(0);
 	if (
-		!fieldEditor ||
-		fieldEditor === "richtext" ||
-		fieldEditor === "plaintext"
-	)
-		return "richtext";
-	if (fieldEditor === "code") return "code";
-	if (fieldEditor === "table") return "table";
-	if (fieldEditor === "none") return "none";
-	return "richtext";
+		!element.contains(range.startContainer) ||
+		!element.contains(range.endContainer)
+	) {
+		return false;
+	}
+
+	const fullRange = element.ownerDocument.createRange();
+	fullRange.selectNodeContents(element);
+	return (
+		range.compareBoundaryPoints(Range.START_TO_START, fullRange) === 0 &&
+		range.compareBoundaryPoints(Range.END_TO_END, fullRange) === 0
+	);
 }
 
 function areBlockIdsEqual(
@@ -977,14 +1165,14 @@ function getFullDocumentTextRange(editor: Editor): {
 			const block = editor.getBlock(blockId);
 			if (!block) return false;
 			const schema = editor.schema.resolve(block.type);
-			return schema?.fieldEditor !== "none";
+			return usesInlineTextSelection(schema);
 		}) ?? firstBlockId;
 
 	return {
 		start: { blockId: firstBlockId, offset: 0 },
 		end: {
 			blockId: lastBlockId,
-			offset: editor.getBlock(lastBlockId)?.textContent().length ?? 0,
+			offset: getEditorBlockSelectionLength(editor, lastBlockId),
 		},
 		focusBlockId,
 	};

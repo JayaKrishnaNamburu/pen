@@ -8,6 +8,7 @@ export interface FieldEditorStoreSnapshot {
 	isComposing: boolean;
 	inputMode: "richtext" | "code" | "table" | "none";
 	mode: "inactive" | "single" | "expanded" | "block";
+	activeCellCoord: { blockId: string; row: number; col: number } | null;
 }
 
 export interface FieldEditorStore extends FieldEditor {

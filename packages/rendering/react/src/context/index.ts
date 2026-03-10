@@ -3,25 +3,26 @@ export {
   useEditorContext,
   type EditorContextValue,
   type PasteImporters,
-} from "./editorContext.js";
+  type RendererOverrides,
+} from "./editorContext";
 export {
   EditorContentContext,
   useEditorContentContext,
   type EditorContentContextValue,
-} from "./editorContentContext.js";
+} from "./editorContentContext";
 export {
   FieldEditorContext,
   useFieldEditorContext,
-} from "./fieldEditorContext.js";
+} from "./fieldEditorContext";
 export {
   ToolbarContext,
   useToolbarContext,
   EMPTY_TOOLBAR_STATE,
   type ToolbarState,
   type ToolbarContextValue,
-} from "./toolbarContext.js";
+} from "./toolbarContext";
 export {
   SelectionToolbarContext,
   useSelectionToolbarContext,
   type SelectionToolbarContextValue,
-} from "../primitives/selection-toolbar/root.js";
+} from "../primitives/selection-toolbar/root";

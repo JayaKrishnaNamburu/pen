@@ -1,21 +1,22 @@
-export { defaultBlocks, defaultInlines } from "./defs.js";
-export { createDefaultSchema } from "./registry.js";
+export { defaultBlocks, defaultInlines } from "./defs";
+export { createDefaultSchema } from "./registry";
 
-import { createDefaultSchema } from "./registry.js";
+import { createDefaultSchema } from "./registry";
 export const defaultSchema = createDefaultSchema();
 
-export { paragraph } from "./blocks/paragraph.js";
-export { heading } from "./blocks/heading.js";
-export { bulletListItem } from "./blocks/bulletListItem.js";
-export { numberedListItem } from "./blocks/numberedListItem.js";
-export { checkListItem } from "./blocks/checkListItem.js";
-export { codeBlock } from "./blocks/codeBlock.js";
-export { image } from "./blocks/image.js";
-export { table } from "./blocks/table.js";
-export { divider } from "./blocks/divider.js";
-export { callout } from "./blocks/callout.js";
-export { toggle } from "./blocks/toggle.js";
-export { blockquote } from "./blocks/blockquote.js";
+export { paragraph } from "./blocks/paragraph";
+export { heading } from "./blocks/heading";
+export { bulletListItem } from "./blocks/bulletListItem";
+export { numberedListItem } from "./blocks/numberedListItem";
+export { checkListItem } from "./blocks/checkListItem";
+export { codeBlock } from "./blocks/codeBlock";
+export { image } from "./blocks/image";
+export { table } from "./blocks/table";
+export { database } from "./blocks/database";
+export { divider } from "./blocks/divider";
+export { callout } from "./blocks/callout";
+export { toggle } from "./blocks/toggle";
+export { blockquote } from "./blocks/blockquote";
 
 export {
   bold,
@@ -27,5 +28,5 @@ export {
   highlight,
   textColor,
   backgroundColor,
-} from "./inlines/marks.js";
-export { mention, inlineApp } from "./inlines/nodes.js";
+} from "./inlines/marks";
+export { mention, inlineApp } from "./inlines/nodes";

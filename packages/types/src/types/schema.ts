@@ -1,9 +1,12 @@
-import type { Block, AppPlacement, Range } from "./block.js";
-import type { MarkdownNode, XMLElement } from "./serialization.js";
-import type { LayoutSchema, LayoutProps, LayoutChildProps } from "./layout.js";
-import type { KeyBinding } from "./input.js";
-import type { FieldEditorFactory } from "./fieldEditor.js";
-import type { SelectionState } from "./selection.js";
+import type { Block, AppPlacement, Range } from "./block";
+import type {
+  HTMLImportElement,
+  MarkdownNode,
+  XMLElement,
+} from "./serialization";
+import type { LayoutSchema, LayoutProps, LayoutChildProps } from "./layout";
+import type { KeyBinding } from "./input";
+import type { SelectionState } from "./selection";
 
 // ── Prop Schema (JSON Schema subset) ────────────────────────
 
@@ -21,7 +24,7 @@ export type PropSchema = {
 
 // ── Content type ────────────────────────────────────────────
 
-export type ContentType = "inline" | "none" | "table" | BlockSchema[];
+export type ContentType = "inline" | "none" | "table" | "database" | BlockSchema[];
 
 export function isNestedContent(content: ContentType): content is BlockSchema[] {
   return Array.isArray(content);
@@ -35,6 +38,32 @@ export interface BlockDisplay {
   icon?: string;
   group?: string;
   aliases?: string[];
+  hidden?: boolean;
+}
+
+export interface ImportInlineMark {
+  type: string;
+  props?: Record<string, unknown>;
+  start: number;
+  end: number;
+}
+
+export interface ImportContentSource {
+  markdownNodes?: MarkdownNode[];
+  markdownHtml?: string;
+  htmlElement?: HTMLImportElement;
+}
+
+export interface BlockImportMatch<
+  Type extends string = string,
+  Props extends Record<string, unknown> = Record<string, unknown>,
+> {
+  type: Type;
+  props: Props;
+  content?: string;
+  marks?: ImportInlineMark[];
+  children?: BlockImportMatch[];
+  importContentSource?: ImportContentSource;
 }
 
 // ── Block Schema ────────────────────────────────────────────
@@ -48,8 +77,8 @@ export type FieldEditorType =
   | "plaintext"
   | "code"
   | "table"
-  | "none"
-  | FieldEditorFactory;
+  | "database"
+  | "none";
 
 export interface BlockSchema<
   Type extends string = string,
@@ -63,9 +92,11 @@ export interface BlockSchema<
 
   serialize: {
     toMarkdown?: (block: Block<Type, InferProps<Props>>) => string;
-    fromMarkdown?: (node: MarkdownNode) => Block<Type, InferProps<Props>> | null;
+    fromMarkdown?: (node: MarkdownNode) => BlockImportMatch<Type, InferProps<Props>> | null;
     toHTML?: (block: Block<Type, InferProps<Props>>) => string;
-    fromHTML?: (element: HTMLElement) => Block<Type, InferProps<Props>> | null;
+    fromHTML?: (
+      element: HTMLImportElement,
+    ) => BlockImportMatch<Type, InferProps<Props>> | null;
     toXML?: (block: Block<Type, InferProps<Props>>) => string;
     fromXML?: (element: XMLElement) => Block<Type, InferProps<Props>> | null;
   };
@@ -121,9 +152,9 @@ export interface AppSchema<
   isolation?: "none" | "error-boundary" | "iframe";
 
   serialize: {
-    toMarkdown?: (app: import("./block.js").App<Type>) => string;
-    toHTML?: (app: import("./block.js").App<Type>) => string;
-    toXML?: (app: import("./block.js").App<Type>) => string;
+    toMarkdown?: (app: import("./block").App<Type>) => string;
+    toHTML?: (app: import("./block").App<Type>) => string;
+    toXML?: (app: import("./block").App<Type>) => string;
   };
 
   aiDescription?: string;

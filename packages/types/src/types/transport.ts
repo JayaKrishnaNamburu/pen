@@ -1,5 +1,5 @@
-import type { Unsubscribe } from "./utility.js";
-import type { PenStreamPart, PenStreamRequest } from "./stream.js";
+import type { Unsubscribe } from "./utility";
+import type { PenStreamPart, PenStreamRequest } from "./stream";
 
 export interface PenTransport {
   stream(request: PenStreamRequest): AsyncIterable<PenStreamPart>;

@@ -8,10 +8,10 @@ export {
 	appId,
 	zoneId,
 	docId,
-} from "./ids.js";
+} from "./ids";
 
 // ── Utility ─────────────────────────────────────────────────
-export type { Unsubscribe, Spacing, BorderDef } from "./utility.js";
+export type { Unsubscribe, Spacing, BorderDef } from "./utility";
 
 // ── Block ───────────────────────────────────────────────────
 export type {
@@ -20,7 +20,7 @@ export type {
 	Range,
 	AppPlacement,
 	AnchorPosition,
-} from "./block.js";
+} from "./block";
 
 // ── Selection ───────────────────────────────────────────────
 export type {
@@ -29,13 +29,13 @@ export type {
 	BlockSelection,
 	AppSelection,
 	CellSelection,
-} from "./selection.js";
+} from "./selection";
 
 // ── Document Range ──────────────────────────────────────────
-export type { DocumentRange } from "./documentRange.js";
+export type { DocumentRange } from "./documentRange";
 
 // ── Layout ──────────────────────────────────────────────────
-export type { LayoutSchema, LayoutProps, LayoutChildProps } from "./layout.js";
+export type { LayoutSchema, LayoutProps, LayoutChildProps } from "./layout";
 
 // ── Input ───────────────────────────────────────────────────
 export type {
@@ -44,7 +44,7 @@ export type {
 	InputRule,
 	InputRuleHandler,
 	InputRuleContext,
-} from "./input.js";
+} from "./input";
 
 // ── Operations ──────────────────────────────────────────────
 export type {
@@ -72,12 +72,31 @@ export type {
 	DeleteTableColumnOp,
 	MergeTableCellsOp,
 	SplitTableCellOp,
+	InsertTableCellTextOp,
+	DeleteTableCellTextOp,
+	FormatTableCellTextOp,
+	UpdateTableColumnsOp,
+	DatabaseAddColumnOp,
+	DatabaseUpdateColumnOp,
+	DatabaseConvertColumnOp,
+	DatabaseRemoveColumnOp,
+	DatabaseInsertRowOp,
+	DatabaseUpdateCellOp,
+	DatabaseDeleteRowOp,
+	DatabaseDeleteRowsOp,
+	DatabaseDuplicateRowOp,
+	DatabaseMoveRowOp,
+	DatabaseAddViewOp,
+	DatabaseUpdateViewOp,
+	DatabaseRemoveViewOp,
+	DatabaseSetActiveViewOp,
+	DatabaseUpdateSelectOptionsOp,
 	SetMetaOp,
 	CreateAppOp,
 	UpdateAppOp,
 	DeleteAppOp,
 	SetSelectionOp,
-} from "./ops.js";
+} from "./ops";
 
 // ── Stream ──────────────────────────────────────────────────
 export type {
@@ -106,13 +125,16 @@ export type {
 	AbortPart,
 	PingPart,
 	DonePart,
-} from "./stream.js";
+} from "./stream";
 
 // ── Schema ──────────────────────────────────────────────────
 export {
 	type PropSchema,
 	type ContentType,
 	type BlockDisplay,
+	type ImportInlineMark,
+	type ImportContentSource,
+	type BlockImportMatch,
 	type BlockSchema,
 	type InlineSchema,
 	type AppSchema,
@@ -120,19 +142,52 @@ export {
 	type ComposableSchema,
 	type FieldEditorType,
 	isNestedContent,
-} from "./schema.js";
+} from "./schema";
 
 // ── Handles ─────────────────────────────────────────────────
-export type { BlockHandle, AppHandle } from "./handles.js";
+export type {
+	BlockHandle,
+	AppHandle,
+	TableCellHandle,
+	TableColumnSchema,
+	TableRowHandle,
+} from "./handles";
+
+// ── Database ────────────────────────────────────────────────
+export type {
+	ColumnType,
+	SelectOption,
+	NumberFormat,
+	DateFormat,
+	DatabaseSort,
+	FilterOperator,
+	FilterCondition,
+	FilterGroup,
+	DatabaseRowPinning,
+	DatabaseViewState,
+	DatabaseQuery,
+} from "./database";
+export { DEFAULT_DATABASE_COLUMN_WIDTH } from "./database";
 
 // ── Field Editor ────────────────────────────────────────────
 export type {
 	FieldEditor,
-	FieldEditorFactory,
-	FieldEditorContext,
 	InputBackend,
 	StreamingTarget,
-} from "./fieldEditor.js";
+} from "./fieldEditor";
+export type {
+	FieldEditorBehavior,
+	FieldEditorInputMode,
+} from "./fieldEditorCapabilities";
+export {
+	delegatesToGridEditing,
+	hasFieldEditorSurface,
+	resolveFieldEditorBehavior,
+	resolveFieldEditorInputMode,
+	supportsInlineInputRules,
+	supportsInlineMarks,
+	usesInlineTextSelection,
+} from "./fieldEditorCapabilities";
 
 // ── CRDT ────────────────────────────────────────────────────
 export type {
@@ -149,7 +204,7 @@ export type {
 	GenerationZone,
 	UndoManagerOptions,
 	AttributionRange,
-} from "./crdt.js";
+} from "./crdt";
 
 // ── Extension ───────────────────────────────────────────────
 export type {
@@ -157,7 +212,7 @@ export type {
 	ExtensionStateSpec,
 	ServerExtensionContext,
 	ClientExtensionContext,
-} from "./extension.js";
+} from "./extension";
 
 // ── Editor ──────────────────────────────────────────────────
 export {
@@ -178,7 +233,7 @@ export {
 	HOOK_PRIORITY_SUGGEST,
 	HOOK_PRIORITY_INPUT_RULE,
 	HOOK_PRIORITY_DEFAULT,
-} from "./editor.js";
+} from "./editor";
 
 // ── Tools ───────────────────────────────────────────────────
 export type {
@@ -190,7 +245,7 @@ export type {
 	ModelStreamEvent,
 	ModelMessage,
 	ModelMessagePart,
-} from "./tools.js";
+} from "./tools";
 
 // ── Persistence ─────────────────────────────────────────────
 export type {
@@ -200,7 +255,7 @@ export type {
 	AssetRef,
 	AssetUploadOptions,
 	AssetProvider,
-} from "./persistence.js";
+} from "./persistence";
 
 // ── Decorations ─────────────────────────────────────────────
 export type {
@@ -210,23 +265,26 @@ export type {
 	AppDecoration,
 	DecorationSet,
 	PositionMapping,
-} from "./decorations.js";
+} from "./decorations";
 
 // ── Transport ───────────────────────────────────────────────
-export type { PenTransport, ServerConfig } from "./transport.js";
+export type { PenTransport, ServerConfig } from "./transport";
 
 // ── Serialization ───────────────────────────────────────────
 export type {
 	MarkdownNode,
+	HTMLImportElement,
+	HTMLImportNode,
+	HTMLImportTextNode,
 	XMLElement,
 	Exporter,
 	ExportOptions,
 	Importer,
 	ImportOptions,
-} from "./serialization.js";
+} from "./serialization";
 
 // ── Rendering ───────────────────────────────────────────────
-export type { BlockRenderContext, BlockRenderer } from "./rendering.js";
+export type { BlockRenderContext, BlockRenderer } from "./rendering";
 
 // ── Suggestions ─────────────────────────────────────────────
-export type { BlockSuggestion } from "./suggestions.js";
+export type { BlockSuggestion } from "./suggestions";

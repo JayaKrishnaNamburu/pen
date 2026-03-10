@@ -1,4 +1,4 @@
-import type { PropSchema } from "./types/schema.js";
+import type { PropSchema } from "./types/schema";
 
 class PropChainImpl {
   private _schema: Record<string, unknown>;

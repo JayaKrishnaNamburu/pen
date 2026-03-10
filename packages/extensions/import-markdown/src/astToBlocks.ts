@@ -5,10 +5,14 @@ import type {
   MdastRoot,
   MdastList,
   MdastListItem,
-} from "./types.js";
-import { processInlineNodes } from "./inlineMarks.js";
-import { parseTable } from "./tableParser.js";
-import type { SchemaRegistry } from "@pen/core";
+} from "./types";
+import { collectInlineHtmlContent } from "./htmlInline";
+import { collectInlineContent, processInlineNodes } from "./inlineMarks";
+import {
+  parseDatabaseMarkdownMarker,
+  parseTable,
+} from "./tableParser";
+import type { BlockImportMatch, SchemaRegistry } from "@pen/core";
 
 const BLOCK_MAPPINGS: Record<
   string,
@@ -74,7 +78,18 @@ function walkNodes(
   registry: SchemaRegistry,
   listIndent: number,
 ): void {
+  let pendingDatabasePayload: ReturnType<typeof parseDatabaseMarkdownMarker> =
+    null;
+
   for (const node of nodes) {
+    if (node.type === "html") {
+      const payload = parseDatabaseMarkdownMarker(node.value);
+      if (payload) {
+        pendingDatabasePayload = payload;
+        continue;
+      }
+    }
+
     if (
       node.type === "paragraph" &&
       node.children?.length === 1 &&
@@ -94,14 +109,33 @@ function walkNodes(
 
     const schemaBlock = resolveFromSchema(node, registry);
     if (schemaBlock) {
+      const inlineSourceHtml = getMarkdownInlineHtml(schemaBlock);
+      if (inlineSourceHtml !== null) {
+        const inline = collectInlineHtmlContent(inlineSourceHtml);
+        schemaBlock.content = inline.text;
+        schemaBlock.marks = inline.marks;
+      } else {
+        const inlineSourceNodes = getMarkdownInlineSource(schemaBlock, node);
+        if (!inlineSourceNodes) {
+          blocks.push(schemaBlock);
+          continue;
+        }
+        const inline = collectInlineContent(inlineSourceNodes);
+        schemaBlock.content = inline.text;
+        schemaBlock.marks = inline.marks;
+      }
       blocks.push(schemaBlock);
       continue;
     }
 
     const mapping = BLOCK_MAPPINGS[node.type];
     if (mapping) {
-      const block = mapping(node);
+      const block =
+        node.type === "table"
+          ? parseTable(node as any, pendingDatabasePayload)
+          : mapping(node);
       if (!block) continue;
+      pendingDatabasePayload = null;
 
       if (
         node.children &&
@@ -119,11 +153,13 @@ function walkNodes(
     }
 
     if (node.type === "list") {
+      pendingDatabasePayload = null;
       walkListItems(node as MdastList, blocks, registry, listIndent);
       continue;
     }
 
     if (node.type === "listItem") {
+      pendingDatabasePayload = null;
       const block = listItemToBlock(node as MdastListItem, listIndent);
       blocks.push(block);
 
@@ -143,6 +179,7 @@ function walkNodes(
     }
 
     if (node.children && Array.isArray(node.children)) {
+      pendingDatabasePayload = null;
       walkNodes(node.children, blocks, registry, listIndent);
     }
   }
@@ -232,14 +269,37 @@ function listItemToBlock(
 function resolveFromSchema(
   node: MdastNode,
   registry: SchemaRegistry,
-): PendingBlock | null {
+): BlockImportMatch | null {
   if (!registry.resolve) return null;
   const blockSchemas = registry.allBlocks?.() ?? [];
   for (const schema of blockSchemas) {
     if (schema.serialize?.fromMarkdown) {
       const result = schema.serialize.fromMarkdown(node as any);
-      if (result) return result as PendingBlock;
+      if (result) return result;
     }
   }
   return null;
+}
+
+function getMarkdownInlineSource(
+  block: BlockImportMatch,
+  node: MdastNode,
+): MdastNode[] | null {
+  if (block.type === "codeBlock" || block.type === "table") {
+    return null;
+  }
+
+  if (block.importContentSource?.markdownNodes) {
+    return block.importContentSource.markdownNodes;
+  }
+
+  if (block.content === undefined && node.children) {
+    return node.children;
+  }
+
+  return null;
+}
+
+function getMarkdownInlineHtml(block: BlockImportMatch): string | null {
+  return block.importContentSource?.markdownHtml ?? null;
 }

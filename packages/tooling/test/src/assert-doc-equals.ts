@@ -1,6 +1,6 @@
 import type { PenDocument } from "@pen/types";
 import { deepEqual } from "@pen/core";
-import type { TestBlock, TestEditor } from "./types.js";
+import type { TestBlock, TestEditor } from "./types";
 
 class PenAssertionError extends Error {
 	constructor(message: string) {

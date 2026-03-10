@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { defineExtension } from "../defineExtension.js";
+import { defineExtension } from "../defineExtension";
 
 describe("defineExtension", () => {
   it("produces extension with default version", () => {

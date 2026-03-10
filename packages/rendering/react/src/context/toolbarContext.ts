@@ -1,6 +1,6 @@
 import { createContext, useContext } from "react";
 import type { Editor } from "@pen/core";
-import { isDevelopmentEnvironment } from "../utils/environment.js";
+import { isDevelopmentEnvironment } from "../utils/environment";
 
 export interface ToolbarState {
 	activeMarks: Record<string, unknown>;

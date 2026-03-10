@@ -10,10 +10,10 @@
 // - Utilities
 
 // ── Convenience component ───────────────────────────────────
-export { PenEditor, type PenEditorProps } from "./penEditor.js";
+export { PenEditor, type PenEditorProps } from "./penEditor";
 
 // ── Compound component namespace ────────────────────────────
-export { Pen } from "./primitives/index.js";
+export { Pen } from "./primitives/index";
 
 // ── Editor primitives ───────────────────────────────────────
 export {
@@ -33,7 +33,7 @@ export {
 	type DragOverlayProps,
 	type SelectionRectProps,
 	type FieldEditorWrapperProps,
-} from "./primitives/editor/index.js";
+} from "./primitives/editor/index";
 
 // ── Toolbar primitives ──────────────────────────────────────
 export {
@@ -48,7 +48,7 @@ export {
 	type ToolbarButtonProps,
 	type ToolbarToggleProps,
 	type ToolbarSelectProps,
-} from "./primitives/toolbar/index.js";
+} from "./primitives/toolbar/index";
 
 // ── Slash menu primitives ───────────────────────────────────
 export {
@@ -64,7 +64,7 @@ export {
 	type SlashMenuGroupProps,
 	type SlashMenuItemProps,
 	type SlashMenuEmptyProps,
-} from "./primitives/slash-menu/index.js";
+} from "./primitives/slash-menu/index";
 
 // ── Selection toolbar primitives ────────────────────────────
 export {
@@ -74,7 +74,7 @@ export {
 	type SelectionToolbarRootProps,
 	type SelectionToolbarContentProps,
 	type SelectionToolbarContextValue,
-} from "./primitives/selection-toolbar/index.js";
+} from "./primitives/selection-toolbar/index";
 
 // ── Hooks ───────────────────────────────────────────────────
 export {
@@ -92,7 +92,7 @@ export {
 	type SlashMenuState,
 	type SlashMenuActions,
 	type VisualViewportState,
-} from "./hooks/index.js";
+} from "./hooks/index";
 
 // ── Contexts (for advanced composition) ─────────────────────
 export {
@@ -106,9 +106,10 @@ export {
 	SelectionToolbarContext,
 	type EditorContextValue,
 	type PasteImporters,
+	type RendererOverrides,
 	type ToolbarState,
 	type ToolbarContextValue,
-} from "./context/index.js";
+} from "./context/index";
 
 // ── Renderer registry ───────────────────────────────────────
 export {
@@ -127,7 +128,7 @@ export {
 	ToggleRenderer,
 	BlockquoteRenderer,
 	DefaultRenderer,
-} from "./renderers/index.js";
+} from "./renderers/index";
 
 // ── Extensions ───────────────────────────────────────────────
 export {
@@ -136,48 +137,59 @@ export {
 	type RichTextShortcutsOptions,
 } from "@pen/shortcuts";
 
-// ── Field editor internals (for extension authors) ──────────
-export { FieldEditorImpl } from "./field-editor/fieldEditorImpl.js";
+// ── Field editor extension helpers ───────────────────────────
 export type {
 	FieldEditorStore,
 	FieldEditorStoreSnapshot,
-} from "./field-editor/store.js";
-export { ExpandedContentEditableBackend } from "./field-editor/expandedContentEditableBackend.js";
+} from "./field-editor/store";
 export {
 	applyDeltaToDOM,
 	fullReconcileToDOM,
+	fullReconcileDeltasToDOM,
 	saveSelection,
 	restoreSelection,
-} from "./field-editor/reconciler.js";
-export { resolveMarksAtPosition } from "./field-editor/markBoundary.js";
+} from "./field-editor/reconciler";
+export { resolveMarksAtPosition } from "./field-editor/markBoundary";
 export {
 	computeTextDiff,
 	extractTextFromDOM,
+	getSelectionOffsets,
 	type TextDiffOp,
 	type SelectionPoint,
-} from "./field-editor/selectionBridge.js";
+} from "./field-editor/selectionBridge";
 export {
 	classifySelectionSurface,
 	getExpandedBlockRole,
 	type ExpandedBlockRole,
 	type FieldEditorSurfaceMode,
 	type FieldEditorSurfaceState,
-} from "./field-editor/crossBlock.js";
+} from "./field-editor/crossBlock";
 export {
 	handlePaste,
 	handleClipboardPaste,
 	handleCopy,
 	handleCut,
-} from "./field-editor/clipboard.js";
+} from "./field-editor/clipboard";
+
+// ── Internal hooks (for extension authors) ──────────────────
+export { useFieldEditorState } from "./hooks/useFieldEditorState";
+export { useCellTextSnapshot } from "./hooks/useCellTextSnapshot";
+
+// ── Table primitives (for extension authors) ────────────────
+export {
+	TableCellContent,
+	type TableCellContentProps,
+} from "./primitives/editor/tableCellContent";
 
 // ── Utilities ───────────────────────────────────────────────
-export { composeRefs } from "./utils/composeRefs.js";
-export { renderAsChild, type AsChildProps } from "./utils/asChild.js";
-export { DATA_ATTRS, buildDataAttributes } from "./utils/dataAttributes.js";
+export { composeRefs } from "./utils/composeRefs";
+export { renderAsChild, type AsChildProps } from "./utils/asChild";
+export { DATA_ATTRS, buildDataAttributes } from "./utils/dataAttributes";
 export {
 	getAttachedFieldEditor,
 	getAttachedFieldEditorStore,
-} from "./utils/fieldEditor.js";
+} from "./utils/fieldEditor";
+export { isCellInSelection } from "./utils/cellSelection";
 
 // ── Re-export key types from @pen/core for convenience ──────
 export type {

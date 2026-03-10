@@ -7,7 +7,7 @@ import type {
   LayoutSchema,
   SchemaRegistry,
 } from "@pen/types";
-import { suggestion as coreSuggestionMark } from "./system-marks/suggestion.js";
+import { suggestion as coreSuggestionMark } from "./system-marks/suggestion";
 
 // ── Config (not exported to consumers) ──────────────────────
 
@@ -132,7 +132,7 @@ export class SchemaRegistryImpl implements ComposableSchema {
   allBlockDisplays(): readonly (BlockSchema & { display: BlockDisplay })[] {
     const result: (BlockSchema & { display: BlockDisplay })[] = [];
     for (const schema of this._blocks.values()) {
-      if (schema.display) {
+      if (schema.display && !schema.display.hidden) {
         result.push(schema as BlockSchema & { display: BlockDisplay });
       }
     }

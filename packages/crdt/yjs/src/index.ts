@@ -1,15 +1,15 @@
-export { yjsAdapter } from "./adapter.js";
-export type { YjsAdapterOptions, CRDTDiagnostic } from "./adapter.js";
+export { yjsAdapter } from "./adapter";
+export type { YjsAdapterOptions, CRDTDiagnostic } from "./adapter";
 export {
   initBlockMap,
   isYjsCRDTDocument,
   wrapYjsDocument,
   validateDocument,
-} from "./document.js";
+} from "./document";
 export type {
   BlockContentType,
   YjsCRDTDocument,
   YjsPenDocument,
   DocumentValidationResult,
   DocumentValidationError,
-} from "./document.js";
+} from "./document";

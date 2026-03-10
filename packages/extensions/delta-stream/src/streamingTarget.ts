@@ -3,7 +3,7 @@ import type {
   GenerationZone,
   CRDTMap,
 } from "@pen/types";
-import { BatchingBuffer } from "./batch.js";
+import { BatchingBuffer } from "./batch";
 
 export interface StreamingTarget {
   readonly generationZone: GenerationZone | null;

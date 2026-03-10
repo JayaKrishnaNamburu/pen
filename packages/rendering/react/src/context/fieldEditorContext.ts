@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react";
-import type { FieldEditorStore } from "../field-editor/store.js";
+import type { FieldEditorStore } from "../field-editor/store";
 
 export const FieldEditorContext = createContext<FieldEditorStore | null>(null);
 

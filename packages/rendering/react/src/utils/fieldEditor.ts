@@ -1,7 +1,7 @@
 import type { Editor, FieldEditor } from "@pen/core";
 import { FIELD_EDITOR_SLOT_KEY } from "@pen/core";
-import { FIELD_EDITOR_SLOT_KEY as REACT_FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor.js";
-import type { FieldEditorStore } from "../field-editor/store.js";
+import { FIELD_EDITOR_SLOT_KEY as REACT_FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
+import type { FieldEditorStore } from "../field-editor/store";
 
 export function getAttachedFieldEditor(editor: Editor): FieldEditor | null {
 	return editor.internals.getSlot<FieldEditor>(FIELD_EDITOR_SLOT_KEY) ?? null;

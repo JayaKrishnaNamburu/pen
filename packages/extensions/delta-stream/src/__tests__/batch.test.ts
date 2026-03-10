@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { BatchingBuffer } from "../batch.js";
+import { BatchingBuffer } from "../batch";
 
 describe("@pen/delta-stream BatchingBuffer", () => {
   it("flushes accumulated text", () => {

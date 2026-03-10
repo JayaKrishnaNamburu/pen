@@ -11,7 +11,7 @@ import {
 	FIELD_EDITOR_SLOT_KEY,
 	UNDO_HISTORY_RESTORE_SLOT_KEY,
 } from "@pen/types";
-import { UndoManagerImpl } from "./undoManager.js";
+import { UndoManagerImpl } from "./undoManager";
 
 export interface UndoExtensionOptions {
 	groupTimeout?: number;

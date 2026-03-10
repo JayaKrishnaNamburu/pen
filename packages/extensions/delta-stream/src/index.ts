@@ -1,10 +1,10 @@
 export {
   deltaStreamExtension,
-} from "./deltaStreamExtension.js";
-export type { DeltaStreamOptions } from "./deltaStreamExtension.js";
+} from "./deltaStreamExtension";
+export type { DeltaStreamOptions } from "./deltaStreamExtension";
 export {
   StreamingTargetImpl,
   type StreamingTarget,
-} from "./streamingTarget.js";
-export { processStream } from "./processStream.js";
-export { BatchingBuffer } from "./batch.js";
+} from "./streamingTarget";
+export { processStream } from "./processStream";
+export { BatchingBuffer } from "./batch";

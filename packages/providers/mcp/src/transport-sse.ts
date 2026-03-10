@@ -3,7 +3,7 @@ import type { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import type {
   MCPNodeRequest,
   MCPNodeResponse,
-} from "./types.js";
+} from "./types";
 
 interface SSESession {
   server: Server;

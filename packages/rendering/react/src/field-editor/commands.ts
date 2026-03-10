@@ -1,8 +1,19 @@
-import type { DocumentOp, Editor } from "@pen/core";
+import {
+	INPUT_RULES_ENGINE_SLOT_KEY,
+	generateId,
+	type DocumentOp,
+	type Editor,
+} from "@pen/core";
 import {
 	toggleInlineMark as toggleInlineMarkCommand,
 	setInlineMark as setInlineMarkCommand,
 } from "@pen/shortcuts";
+import { matchListInputRule } from "../utils/listInputRule";
+import {
+	getAdjacentVisibleBlockId,
+	isInsideParentIdContainer,
+} from "../utils/parentIdTree";
+import { isInlineEditableBlock } from "../utils/blockSelectionSemantics";
 
 const ZERO_WIDTH_SPACE = "\u200B";
 
@@ -15,6 +26,7 @@ export interface SelectionTarget {
 	blockId: string;
 	anchorOffset: number;
 	focusOffset: number;
+	selectBlock?: boolean;
 }
 
 type InlineTextLike = {
@@ -22,12 +34,28 @@ type InlineTextLike = {
 	toString(): string;
 };
 
+type BlockInputRuleEngine = {
+	tryMatch(
+		editor: Editor,
+		blockId: string,
+		insertedText: string,
+		options?: { offset?: number },
+	): DocumentOp[] | null;
+};
+
 // ── Enter action resolution ──────────────────────────────────
 
 type EnterAction =
 	| { action: "split"; newBlockType: string | undefined }
 	| { action: "convert"; newType: string }
+	| { action: "lift" }
 	| { action: "insert-text"; text: string };
+
+type BackspaceAction =
+	| { action: "convert"; newType: string }
+	| { action: "delete"; targetBlockId: string }
+	| { action: "select-block"; targetBlockId: string }
+	| { action: "merge"; targetBlockId: string };
 
 const LIST_BLOCK_TYPES = new Set([
 	"bulletListItem",
@@ -38,17 +66,13 @@ const LIST_BLOCK_TYPES = new Set([
 const HEADING_TYPES = new Set(["heading"]);
 
 const CONTAINER_EXIT_TYPES = new Set(["blockquote", "callout"]);
+const BACKSPACE_EXIT_TYPES = new Set([
+	...LIST_BLOCK_TYPES,
+	...CONTAINER_EXIT_TYPES,
+]);
 
 function isBlockEmpty(ytext: InlineTextLike): boolean {
 	return getLogicalInlineLength(ytext) === 0;
-}
-
-function isInlineBlockEditable(editor: Editor, blockId: string): boolean {
-	const block = editor.getBlock(blockId);
-	if (!block) return false;
-
-	const schema = editor.schema.resolve(block.type);
-	return schema?.content === "inline" && schema.fieldEditor !== "none";
 }
 
 function getAdjacentEditableBlock(
@@ -56,11 +80,17 @@ function getAdjacentEditableBlock(
 	blockId: string,
 	direction: "previous" | "next",
 ): ReturnType<Editor["getBlock"]> {
-	let block = editor.getBlock(blockId);
-	while (block) {
-		block = direction === "previous" ? block.prev : block.next;
-		if (!block) return null;
-		if (isInlineBlockEditable(editor, block.id)) return block;
+	let adjacentBlockId = getAdjacentVisibleBlockId(editor, blockId, direction);
+	while (adjacentBlockId) {
+		const adjacentBlock = editor.getBlock(adjacentBlockId);
+		if (adjacentBlock && isInlineEditableBlock(editor, adjacentBlock.id)) {
+			return adjacentBlock;
+		}
+		adjacentBlockId = getAdjacentVisibleBlockId(
+			editor,
+			adjacentBlockId,
+			direction,
+		);
 	}
 	return null;
 }
@@ -110,7 +140,19 @@ export function moveCaretAcrossBlocks(
 			: currentOffset === logicalLength;
 	if (!isAtBoundary) return null;
 
-	const adjacentBlock = getAdjacentEditableBlock(editor, blockId, direction);
+	const immediateId = getAdjacentVisibleBlockId(editor, blockId, direction);
+	if (!immediateId) return null;
+
+	if (!isInlineEditableBlock(editor, immediateId)) {
+		return {
+			blockId: immediateId,
+			anchorOffset: 0,
+			focusOffset: 0,
+			selectBlock: true,
+		};
+	}
+
+	const adjacentBlock = editor.getBlock(immediateId);
 	if (!adjacentBlock) return null;
 
 	const targetOffset = direction === "previous" ? adjacentBlock.length() : 0;
@@ -121,7 +163,56 @@ export function moveCaretAcrossBlocks(
 	};
 }
 
-export function mergeBackwardAtBlockStart(
+export function resolveBackspaceAction(
+	editor: Editor,
+	options: {
+		blockId: string;
+		ytext: InlineTextLike;
+		range: SelectionRange | null;
+	},
+): BackspaceAction | null {
+	const { blockId, ytext } = options;
+	const range = normalizeInlineRange(ytext, options.range);
+	if (!isCollapsedRange(range)) return null;
+	if ((range?.start ?? 0) !== 0) return null;
+	if (!isInlineEditableBlock(editor, blockId)) return null;
+
+	const block = editor.getBlock(blockId);
+	if (!block) return null;
+
+	if (isBlockEmpty(ytext) && block.type === "toggle" && block.children.length === 0) {
+		const previousBlock = getAdjacentEditableBlock(editor, blockId, "previous");
+		if (previousBlock) {
+			return {
+				action: "delete",
+				targetBlockId: previousBlock.id,
+			};
+		}
+		return { action: "convert", newType: "paragraph" };
+	}
+
+	if (isBlockEmpty(ytext) && BACKSPACE_EXIT_TYPES.has(block.type)) {
+		return { action: "convert", newType: "paragraph" };
+	}
+
+	const immediateBlockId = getAdjacentVisibleBlockId(editor, blockId, "previous");
+	if (immediateBlockId && !isInlineEditableBlock(editor, immediateBlockId)) {
+		return {
+			action: "select-block",
+			targetBlockId: immediateBlockId,
+		};
+	}
+
+	const previousBlock = getAdjacentEditableBlock(editor, blockId, "previous");
+	if (!previousBlock) return null;
+
+	return {
+		action: "merge",
+		targetBlockId: previousBlock.id,
+	};
+}
+
+export function applyBackspaceBehavior(
 	editor: Editor,
 	options: {
 		blockId: string;
@@ -130,16 +221,30 @@ export function mergeBackwardAtBlockStart(
 	},
 ): SelectionTarget | null {
 	const { blockId, ytext } = options;
-	const range = normalizeInlineRange(ytext, options.range);
-	if (!isCollapsedRange(range)) return null;
-	if ((range?.start ?? 0) !== 0) return null;
-	if (!isInlineBlockEditable(editor, blockId)) return null;
+	const action = resolveBackspaceAction(editor, options);
+	if (!action) return null;
 
-	const previousBlock = getAdjacentEditableBlock(editor, blockId, "previous");
+	if (action.action === "convert") {
+		return convertBlock(editor, {
+			blockId,
+			newType: action.newType,
+		});
+	}
+
+	if (action.action === "select-block") {
+		return {
+			blockId: action.targetBlockId,
+			anchorOffset: 0,
+			focusOffset: 0,
+			selectBlock: true,
+		};
+	}
+
+	const previousBlock = editor.getBlock(action.targetBlockId);
 	if (!previousBlock) return null;
 
 	const targetOffset = previousBlock.length();
-	if (getLogicalInlineLength(ytext) === 0) {
+	if (action.action === "delete" || getLogicalInlineLength(ytext) === 0) {
 		editor.apply([
 			{
 				type: "delete-block",
@@ -161,6 +266,17 @@ export function mergeBackwardAtBlockStart(
 		anchorOffset: targetOffset,
 		focusOffset: targetOffset,
 	};
+}
+
+export function mergeBackwardAtBlockStart(
+	editor: Editor,
+	options: {
+		blockId: string;
+		ytext: InlineTextLike;
+		range: SelectionRange | null;
+	},
+): SelectionTarget | null {
+	return applyBackspaceBehavior(editor, options);
 }
 
 export function resolveEnterAction(
@@ -189,6 +305,10 @@ export function resolveEnterAction(
 
 	if (empty && CONTAINER_EXIT_TYPES.has(blockType)) {
 		return { action: "convert", newType: "paragraph" };
+	}
+
+	if (empty && isInsideParentIdContainer(editor, blockId)) {
+		return { action: "lift" };
 	}
 
 	if (HEADING_TYPES.has(blockType)) {
@@ -230,7 +350,7 @@ export function splitBlockAtOffset(
 	},
 ): SelectionTarget {
 	const { blockId, offset, newBlockType } = options;
-	const newBlockId = crypto.randomUUID();
+	const newBlockId = generateId();
 
 	editor.apply([
 		{
@@ -254,21 +374,45 @@ export function convertBlock(
 	options: {
 		blockId: string;
 		newType: string;
+		newProps?: Record<string, unknown>;
 	},
 ): SelectionTarget {
-	editor.apply([
-		{
-			type: "convert-block",
-			blockId: options.blockId,
-			newType: options.newType,
-		} as DocumentOp,
-	]);
+	editor.apply(getConvertBlockOps(editor, options), { origin: "user" });
 
 	return {
 		blockId: options.blockId,
 		anchorOffset: 0,
 		focusOffset: 0,
 	};
+}
+
+export function getConvertBlockOps(
+	editor: Editor,
+	options: {
+		blockId: string;
+		newType: string;
+		newProps?: Record<string, unknown>;
+	},
+): DocumentOp[] {
+	const existingParentId = editor.documentState.parentOf(options.blockId);
+	const ops: DocumentOp[] = [
+		{
+			type: "convert-block",
+			blockId: options.blockId,
+			newType: options.newType,
+			newProps: options.newProps,
+		} as DocumentOp,
+	];
+
+	if (existingParentId) {
+		ops.push({
+			type: "update-block",
+			blockId: options.blockId,
+			props: { parentId: existingParentId },
+		} as DocumentOp);
+	}
+
+	return ops;
 }
 
 export function insertTextAtRange(
@@ -314,6 +458,75 @@ export function insertTextAtRange(
 	};
 }
 
+export function applyListInputRule(
+	editor: Editor,
+	options: {
+		blockId: string;
+		range: SelectionRange | null;
+		text: string;
+	},
+): SelectionTarget | null {
+	const { blockId, range, text } = options;
+	if (!range || range.start !== range.end) {
+		return null;
+	}
+
+	const block = editor.getBlock(blockId);
+	if (!block) {
+		return null;
+	}
+
+	const inputRuleEngine =
+		editor.internals.getSlot<BlockInputRuleEngine>(INPUT_RULES_ENGINE_SLOT_KEY) ??
+		null;
+	if (inputRuleEngine) {
+		const ops = inputRuleEngine.tryMatch(editor, blockId, text, {
+			offset: range.start,
+		});
+		if (ops) {
+			editor.apply(ops, { origin: "input-rule" });
+			return {
+				blockId,
+				anchorOffset: 0,
+				focusOffset: 0,
+			};
+		}
+	}
+
+	if (block.type !== "paragraph") {
+		return null;
+	}
+
+	const match = matchListInputRule(block.textContent(), range, text);
+	if (!match) {
+		return null;
+	}
+
+	editor.apply(
+		[
+			{
+				type: "delete-text",
+				blockId,
+				offset: match.deleteRange.start,
+				length: match.deleteRange.end - match.deleteRange.start,
+			} as DocumentOp,
+			{
+				type: "convert-block",
+				blockId,
+				newType: match.blockType,
+				newProps: match.newProps,
+			} as DocumentOp,
+		],
+		{ origin: "input-rule" },
+	);
+
+	return {
+		blockId,
+		anchorOffset: 0,
+		focusOffset: 0,
+	};
+}
+
 export function applyEnterBehavior(
 	editor: Editor,
 	options: {
@@ -347,6 +560,9 @@ export function applyEnterBehavior(
 				newType: enterAction.newType,
 			});
 
+		case "lift":
+			return liftBlockOutOfParent(editor, { blockId });
+
 		case "split":
 			return splitBlockAtOffset(editor, {
 				blockId,
@@ -357,4 +573,26 @@ export function applyEnterBehavior(
 				newBlockType: enterAction.newBlockType,
 			});
 	}
+}
+
+function liftBlockOutOfParent(
+	editor: Editor,
+	options: { blockId: string },
+): SelectionTarget {
+	editor.apply(
+		[
+			{
+				type: "update-block",
+				blockId: options.blockId,
+				props: { parentId: null },
+			} as DocumentOp,
+		],
+		{ origin: "user" },
+	);
+
+	return {
+		blockId: options.blockId,
+		anchorOffset: 0,
+		focusOffset: 0,
+	};
 }

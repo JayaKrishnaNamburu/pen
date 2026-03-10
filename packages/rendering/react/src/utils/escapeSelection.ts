@@ -1,10 +1,10 @@
 import type { Editor } from "@pen/core";
-import type { FieldEditorImpl } from "../field-editor/fieldEditorImpl.js";
+import type { FieldEditorEscapeController } from "../field-editor/controller";
 
 export function handleEscapeSelectionTransition(options: {
 	event: KeyboardEvent;
 	editor: Editor;
-	fieldEditor: FieldEditorImpl;
+	fieldEditor: FieldEditorEscapeController;
 	root: HTMLElement;
 }): boolean {
 	const { event, editor, fieldEditor, root } = options;
@@ -23,6 +23,15 @@ export function handleEscapeSelectionTransition(options: {
 	}
 
 	const selection = editor.selection;
+
+	if (fieldEditor.activeCellCoord && fieldEditor.isEditing) {
+		const coord = fieldEditor.activeCellCoord;
+		fieldEditor.deactivate();
+		editor.selectCell(coord.blockId, coord.row, coord.col);
+		focusBlockContainer(root, coord.blockId);
+		return true;
+	}
+
 	if (selection?.type === "text" && !selection.isCollapsed) {
 		fieldEditor.collapseSelectionToFocus();
 		return true;
@@ -31,6 +40,21 @@ export function handleEscapeSelectionTransition(options: {
 	if (selection?.type === "text") {
 		const blockId = selection.focus.blockId;
 		fieldEditor.deactivate();
+		editor.selectBlock(blockId);
+		focusBlockContainer(root, blockId);
+		return true;
+	}
+
+	if (selection?.type === "cell") {
+		const { blockId, anchor, head } = selection;
+		const isMultiCell =
+			anchor.row !== head.row || anchor.col !== head.col;
+
+		if (isMultiCell) {
+			editor.selectCell(blockId, anchor.row, anchor.col);
+			return true;
+		}
+
 		editor.selectBlock(blockId);
 		focusBlockContainer(root, blockId);
 		return true;

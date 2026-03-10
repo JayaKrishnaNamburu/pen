@@ -1,7 +1,7 @@
-import type { BenchContext } from "../bench.js";
+import type { BenchContext } from "../bench";
 import { defaultSchema } from "@pen/schema-default";
 import { SchemaEngineImpl } from "@pen/core";
-import { createLargeDocument } from "../fixtures/large-doc.js";
+import { createLargeDocument } from "../fixtures/large-doc";
 
 export const schemaBenchmarks: Array<{
   name: string;

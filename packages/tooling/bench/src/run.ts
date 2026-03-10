@@ -1,14 +1,14 @@
 declare const process: { argv: string[]; exit(code: number): never };
 
-import { runSuite } from "./bench.js";
-import { crdtBenchmarks } from "./suites/crdt.bench.js";
-import { schemaBenchmarks } from "./suites/schema.bench.js";
-import { streamingBenchmarks } from "./suites/streaming.bench.js";
-import { editorBenchmarks } from "./suites/editor.bench.js";
-import { extensionBenchmarks } from "./suites/extension.bench.js";
-import { reportConsole } from "./reporters/console.js";
-import { reportJSON } from "./reporters/json.js";
-import type { BenchResult } from "./bench.js";
+import { runSuite } from "./bench";
+import { crdtBenchmarks } from "./suites/crdt.bench";
+import { schemaBenchmarks } from "./suites/schema.bench";
+import { streamingBenchmarks } from "./suites/streaming.bench";
+import { editorBenchmarks } from "./suites/editor.bench";
+import { extensionBenchmarks } from "./suites/extension.bench";
+import { reportConsole } from "./reporters/console";
+import { reportJSON } from "./reporters/json";
+import type { BenchResult } from "./bench";
 
 const reporter = process.argv.includes("--json") ? "json" : "console";
 const allResults: Array<{ suite: string; results: BenchResult[] }> = [];

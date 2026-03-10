@@ -37,7 +37,7 @@ import { defineBlock, prop } from "@pen/types";
 describe("SchemaRegistryImpl", () => {
   // ── AC 1: resolves all default block and inline types ───
   describe("AC 1 — resolves all default block and inline types by name", () => {
-    it("resolves all 12 default block types", () => {
+    it("resolves all 13 default block types", () => {
       const blockTypes = [
         "paragraph",
         "heading",
@@ -47,6 +47,7 @@ describe("SchemaRegistryImpl", () => {
         "codeBlock",
         "image",
         "table",
+        "database",
         "divider",
         "callout",
         "toggle",
@@ -158,9 +159,9 @@ describe("SchemaRegistryImpl", () => {
   });
 
   // ── AC 17: resolves correct counts ──────────────────────
-  describe("AC 17 — resolves all 12 blocks, 9 marks, 2 nodes, 1 system mark", () => {
-    it("has 12 block schemas", () => {
-      expect(defaultSchema.allBlocks()).toHaveLength(12);
+  describe("AC 17 — resolves all 13 blocks, 9 marks, 2 nodes, 1 system mark", () => {
+    it("has 13 block schemas", () => {
+      expect(defaultSchema.allBlocks()).toHaveLength(13);
     });
 
     it("has 12 inline schemas (9 marks + 2 nodes + 1 system mark)", () => {
@@ -203,10 +204,10 @@ describe("SchemaRegistryImpl", () => {
   });
 
   // ── AC 19: allBlockDisplays ─────────────────────────────
-  describe("AC 19 — allBlockDisplays returns entries for all 12 blocks", () => {
-    it("returns 12 entries with display metadata", () => {
+  describe("AC 19 — allBlockDisplays returns visible block entries", () => {
+    it("returns 13 entries with display metadata", () => {
       const displays = defaultSchema.allBlockDisplays();
-      expect(displays).toHaveLength(12);
+      expect(displays).toHaveLength(13);
       for (const entry of displays) {
         expect(entry.display).toBeDefined();
         expect(entry.display.title).toBeTruthy();

@@ -7,7 +7,7 @@ export {
   EditorDragOverlay,
   EditorSelectionRect,
   EditorFieldEditor,
-} from "./editor/index.js";
+} from "./editor/index";
 
 export {
   ToolbarRoot,
@@ -16,7 +16,7 @@ export {
   ToolbarToggle,
   ToolbarSelect,
   ToolbarSeparator,
-} from "./toolbar/index.js";
+} from "./toolbar/index";
 
 export {
   SlashMenuRoot,
@@ -25,12 +25,12 @@ export {
   SlashMenuGroup,
   SlashMenuItem,
   SlashMenuEmpty,
-} from "./slash-menu/index.js";
+} from "./slash-menu/index";
 
 export {
   SelectionToolbarRoot,
   SelectionToolbarContent,
-} from "./selection-toolbar/index.js";
+} from "./selection-toolbar/index";
 
 // ── Pen.* namespace for compound component API ──────────────
 
@@ -43,7 +43,7 @@ import {
   EditorDragOverlay,
   EditorSelectionRect,
   EditorFieldEditor,
-} from "./editor/index.js";
+} from "./editor/index";
 
 import {
   ToolbarRoot,
@@ -52,7 +52,7 @@ import {
   ToolbarToggle,
   ToolbarSelect,
   ToolbarSeparator,
-} from "./toolbar/index.js";
+} from "./toolbar/index";
 
 import {
   SlashMenuRoot,
@@ -61,12 +61,12 @@ import {
   SlashMenuGroup,
   SlashMenuItem,
   SlashMenuEmpty,
-} from "./slash-menu/index.js";
+} from "./slash-menu/index";
 
 import {
   SelectionToolbarRoot,
   SelectionToolbarContent,
-} from "./selection-toolbar/index.js";
+} from "./selection-toolbar/index";
 
 export const Pen = {
   Editor: {

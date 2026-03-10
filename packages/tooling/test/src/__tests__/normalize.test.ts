@@ -17,7 +17,7 @@ import {
   createTestDocument,
   createTestEditor,
   resetTestIdCounter,
-} from "../index.js";
+} from "../index";
 import { yjsAdapter, initBlockMap, wrapYjsDocument } from "@pen/crdt-yjs";
 import type { BlockSchema, InlineSchema } from "@pen/types";
 import { defineBlock } from "@pen/types";

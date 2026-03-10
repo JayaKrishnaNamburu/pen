@@ -1,4 +1,4 @@
-import type { BenchContext } from "../bench.js";
+import type { BenchContext } from "../bench";
 import type { StreamingTarget } from "@pen/types";
 import { createTestEditor } from "@pen/test";
 

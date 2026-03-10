@@ -1,5 +1,13 @@
 import { useState, useRef, useEffect } from "react";
-import type { Editor, BlockDisplay, BlockSchema } from "@pen/core";
+import { generateId, type Editor, type BlockDisplay, type BlockSchema } from "@pen/core";
+import { getAttachedFieldEditor } from "../utils/fieldEditor";
+import { getConvertBlockOps } from "../field-editor/commands";
+import { getInsertSiblingBlockOp } from "../utils/parentIdTree";
+import {
+	getStarterTableProps,
+	getTableActivationTarget,
+	createDefaultTableColumns,
+} from "../utils/tableDefaults";
 
 export interface SlashMenuState {
 	open: boolean;
@@ -32,26 +40,36 @@ export function useSlashMenu(
 	allDisplaysRef.current = allDisplays;
 
 	useEffect(() => {
-		const unsub = editor.onDocumentCommit(() => {
-			const selection = editorRef.current.selection;
-			if (!selection || selection.type !== "text") return;
-
-			const blockId = selection.anchor.blockId;
-			const block = editorRef.current.getBlock(blockId);
-			if (!block) return;
-
-			const text = block.textContent();
-			if (text === "/") {
-				const items = filterItems(allDisplaysRef.current, "");
-				setState({
-					open: true,
-					query: "",
-					items,
-					selectedIndex: 0,
-				});
+		const syncSlashMenu = () => {
+			const query = getSlashQuery(editorRef.current);
+			if (query == null) {
+				setState((prev) =>
+					prev.open
+						? { open: false, query: "", items: [], selectedIndex: 0 }
+						: prev,
+				);
+				return;
 			}
-		});
-		return unsub;
+
+			const items = filterItems(allDisplaysRef.current, query);
+			setState((prev) => ({
+				open: true,
+				query,
+				items,
+				selectedIndex:
+					items.length === 0
+						? 0
+						: Math.min(prev.selectedIndex, items.length - 1),
+			}));
+		};
+
+		syncSlashMenu();
+		const unsubDocument = editor.onDocumentCommit(syncSlashMenu);
+		const unsubSelection = editor.onSelectionChange(syncSlashMenu);
+		return () => {
+			unsubDocument();
+			unsubSelection();
+		};
 	}, [editor]);
 
 	const setQuery = (query: string) => {
@@ -82,6 +100,7 @@ export function useSlashMenu(
 		if (selection?.type === "text") {
 			const blockId = selection.anchor.blockId;
 			const block = ed.getBlock(blockId);
+			let insertedOrConvertedBlockId: string | null = null;
 
 			if (block) {
 				const currentText = block.textContent();
@@ -89,6 +108,11 @@ export function useSlashMenu(
 					!currentText ||
 					currentText === "/" ||
 					currentText === "\u200B";
+				const isTableInsert = item.type === "table";
+				const tableActivationTarget = isTableInsert
+					? getTableActivationTarget(undefined)
+					: null;
+				const tableProps = isTableInsert ? getStarterTableProps() : undefined;
 
 				if (isEmptyOrSlash) {
 					const ops = [];
@@ -101,26 +125,51 @@ export function useSlashMenu(
 						});
 					}
 					if (block.type !== item.type) {
-						ops.push({
-							type: "convert-block" as const,
-							blockId,
-							newType: item.type,
-						});
+						ops.push(
+							...getConvertBlockOps(ed, {
+								blockId,
+								newType: item.type,
+								newProps: tableProps,
+							}),
+						);
+						insertedOrConvertedBlockId = blockId;
 					}
 					if (ops.length > 0) {
 						ed.apply(ops, { origin: "user" });
 					}
 				} else {
-					const newBlockId = crypto.randomUUID();
+					const newBlockId = generateId();
 					ed.apply([
-						{
-							type: "insert-block",
+						getInsertSiblingBlockOp(ed, {
+							siblingBlockId: blockId,
 							blockId: newBlockId,
 							blockType: item.type,
-							props: {},
-							position: { after: blockId },
-						},
+							props: tableProps ?? {},
+						}),
 					]);
+					insertedOrConvertedBlockId = newBlockId;
+				}
+
+				if (isTableInsert && insertedOrConvertedBlockId && tableActivationTarget) {
+					const defaultCols = createDefaultTableColumns(2);
+					ed.apply([{
+						type: "update-table-columns",
+						blockId: insertedOrConvertedBlockId,
+						columns: defaultCols,
+					}]);
+					const fieldEditor = getAttachedFieldEditor(ed);
+					const activateStarterTable = () => {
+						fieldEditor?.activateCell?.(
+							insertedOrConvertedBlockId!,
+							tableActivationTarget.row,
+							tableActivationTarget.col,
+						);
+					};
+					if (typeof window !== "undefined") {
+						window.requestAnimationFrame(activateStarterTable);
+					} else {
+						activateStarterTable();
+					}
 				}
 			}
 		}
@@ -138,6 +187,25 @@ export function useSlashMenu(
 	};
 
 	return { ...state, setQuery, select, confirm, dismiss };
+}
+
+function getSlashQuery(editor: Editor): string | null {
+	const selection = editor.selection;
+	if (!selection || selection.type !== "text" || !selection.isCollapsed) {
+		return null;
+	}
+
+	if (selection.anchor.blockId !== selection.focus.blockId) {
+		return null;
+	}
+
+	const block = editor.getBlock(selection.anchor.blockId);
+	const text = block?.textContent() ?? "";
+	if (!text.startsWith("/")) {
+		return null;
+	}
+
+	return text.slice(1);
 }
 
 function filterItems(

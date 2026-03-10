@@ -1,3 +1,3 @@
-export { undoExtension } from "./undoExtension.js";
-export type { UndoExtensionOptions } from "./undoExtension.js";
-export { UndoManagerImpl } from "./undoManager.js";
+export { undoExtension } from "./undoExtension";
+export type { UndoExtensionOptions } from "./undoExtension";
+export { UndoManagerImpl } from "./undoManager";

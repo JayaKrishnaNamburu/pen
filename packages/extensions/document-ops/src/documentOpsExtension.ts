@@ -1,15 +1,15 @@
 import type { Extension } from "@pen/types";
 import { defineExtension } from "@pen/types";
-import { ToolServerImpl } from "./toolServer.js";
-import { readDocumentTool } from "./tools/readDocument.js";
-import { writeDocumentTool } from "./tools/writeDocument.js";
-import { getContextTool } from "./tools/getContext.js";
-import { searchDocumentTool } from "./tools/searchDocument.js";
-import { listBlockTypesTool } from "./tools/listBlockTypes.js";
-import { insertBlockTool } from "./tools/insertBlock.js";
-import { updateBlockTool } from "./tools/updateBlock.js";
-import { deleteBlockTool } from "./tools/deleteBlock.js";
-import { moveBlockTool } from "./tools/moveBlock.js";
+import { ToolServerImpl } from "./toolServer";
+import { readDocumentTool } from "./tools/readDocument";
+import { writeDocumentTool } from "./tools/writeDocument";
+import { getContextTool } from "./tools/getContext";
+import { searchDocumentTool } from "./tools/searchDocument";
+import { listBlockTypesTool } from "./tools/listBlockTypes";
+import { insertBlockTool } from "./tools/insertBlock";
+import { updateBlockTool } from "./tools/updateBlock";
+import { deleteBlockTool } from "./tools/deleteBlock";
+import { moveBlockTool } from "./tools/moveBlock";
 
 export interface DocumentOpsOptions {
   enableGenerationZones?: boolean;

@@ -2,10 +2,12 @@ import { describe, it, expect } from "vitest";
 import { fromMarkdown } from "mdast-util-from-markdown";
 import { gfm } from "micromark-extension-gfm";
 import { gfmFromMarkdown } from "mdast-util-gfm";
-import { astToBlocks } from "../astToBlocks.js";
-import { blocksToOps } from "@pen/core";
-import type { MdastRoot } from "../types.js";
+import { blocksToOps, createEditor } from "@pen/core";
 import type { SchemaRegistry } from "@pen/core";
+import { markdownExporter } from "@pen/export-markdown";
+import { createDefaultSchema } from "@pen/schema-default";
+import { astToBlocks } from "../astToBlocks";
+import type { MdastRoot } from "../types";
 
 function parse(md: string) {
   return fromMarkdown(md, {
@@ -25,9 +27,64 @@ const stubRegistry: SchemaRegistry = {
   allBlockDisplays: () => [],
 };
 
-function convert(md: string) {
+const defaultRegistry = createDefaultSchema();
+
+function convert(md: string, registry: SchemaRegistry = stubRegistry) {
   const tree = parse(md);
-  return astToBlocks(tree as MdastRoot, stubRegistry);
+  return astToBlocks(tree as MdastRoot, registry);
+}
+
+function databaseEditor() {
+  const editor = createEditor({
+    schema: defaultRegistry,
+    without: ["document-ops", "delta-stream", "undo"],
+  });
+  editor.apply([{
+    type: "insert-block",
+    blockId: "d1",
+    blockType: "database",
+    props: { title: "Roadmap", dataSource: "local" },
+    position: "last",
+  }]);
+  editor.apply([{
+    type: "update-table-columns",
+    blockId: "d1",
+    columns: [
+      { id: "name", title: "Name", type: "text" },
+      {
+        id: "tags",
+        title: "Tags",
+        type: "multiSelect",
+        options: [
+          { id: "bug", value: "Bug", color: "red" },
+          { id: "feature", value: "Feature", color: "blue" },
+        ],
+      },
+      { id: "done", title: "Done", type: "checkbox" },
+    ],
+  }]);
+  editor.apply([{
+    type: "database-insert-row",
+    blockId: "d1",
+    rowId: "roadmap-1",
+    values: {
+      name: "Ship importer",
+      tags: JSON.stringify(["Feature"]),
+      done: "false",
+    },
+  }]);
+  editor.apply([{
+    type: "database-update-view",
+    blockId: "d1",
+    patch: {
+      title: "Main",
+      type: "table",
+      visibleColumnIds: ["name", "tags"],
+      columnOrder: ["name", "tags", "done"],
+      sort: [{ columnId: "name", direction: "asc" }],
+    },
+  }]);
+  return editor;
 }
 
 describe("@pen/import-markdown", () => {
@@ -175,6 +232,105 @@ describe("@pen/import-markdown", () => {
     expect(blocks[0].children![0].children).toHaveLength(2);
   });
 
+  it("round-trips exported database markdown back into a database block", async () => {
+    const source = databaseEditor();
+    const markdown = await markdownExporter.export(source);
+
+    const blocks = convert(markdown, defaultRegistry);
+    const databaseBlock = blocks.find((block) => block.type === "database");
+    expect(databaseBlock).toMatchObject({
+      type: "database",
+      props: { title: "Roadmap", dataSource: "local" },
+    });
+    expect(databaseBlock?.database).toEqual(
+      expect.objectContaining({
+        primaryViewId: expect.any(String),
+        rows: [
+          expect.objectContaining({
+            id: expect.any(String),
+            values: {
+              name: "Ship importer",
+              tags: JSON.stringify(["feature"]),
+              done: "false",
+            },
+          }),
+        ],
+      }),
+    );
+
+    const target = createEditor({
+      schema: defaultRegistry,
+      without: ["document-ops", "delta-stream", "undo"],
+    });
+    const ops = blocksToOps(blocks);
+    target.apply(ops, { origin: "import", undoGroup: true });
+    const imported = Array.from(target.documentState.allBlocks()).find(
+      (block) => block.type === "database",
+    );
+    expect(imported?.props.title).toBe("Roadmap");
+    expect(imported?.tableColumns().map((column) => column.id)).toEqual(["name", "tags", "done"]);
+    expect(imported?.tableRow(0)?.id).toEqual(expect.any(String));
+    expect(imported?.tableCell(0, 1)?.textContent()).toBe(JSON.stringify(["feature"]));
+    expect(imported?.databaseActiveView()).toEqual(
+      expect.objectContaining({
+        title: "Main",
+        visibleColumnIds: ["name", "tags"],
+        columnOrder: ["name", "tags", "done"],
+      }),
+    );
+
+    source.destroy();
+    target.destroy();
+  });
+
+  it("preserves intentionally empty database rows when round-tripping markdown", async () => {
+    const source = databaseEditor();
+    source.apply([{
+      type: "database-insert-row",
+      blockId: "d1",
+      rowId: "empty-row",
+    }]);
+    const markdown = await markdownExporter.export(source);
+
+    const blocks = convert(markdown, defaultRegistry);
+    const databaseBlock = blocks.find((block) => block.type === "database");
+    expect(databaseBlock?.database?.rows).toEqual([
+      expect.objectContaining({
+        values: {
+          name: "Ship importer",
+          tags: JSON.stringify(["feature"]),
+          done: "false",
+        },
+      }),
+      {
+        id: "empty-row",
+        values: {
+          name: "",
+          tags: "",
+          done: "",
+        },
+      },
+    ]);
+
+    const target = createEditor({
+      schema: defaultRegistry,
+      without: ["document-ops", "delta-stream", "undo"],
+    });
+    target.apply(blocksToOps(blocks), { origin: "import", undoGroup: true });
+
+    const imported = Array.from(target.documentState.allBlocks()).find(
+      (block) => block.type === "database",
+    );
+    expect(imported?.tableRowCount()).toBe(2);
+    expect(imported?.tableRow(1)?.id).toBe("empty-row");
+    expect(imported?.tableCell(1, 0)?.textContent()).toBe("");
+    expect(imported?.tableCell(1, 1)?.textContent()).toBe("");
+    expect(imported?.tableCell(1, 2)?.textContent()).toBe("");
+
+    source.destroy();
+    target.destroy();
+  });
+
   it("numbered list items", () => {
     const blocks = convert("1. first\n2. second\n3. third");
 
@@ -241,5 +397,91 @@ describe("@pen/import-markdown", () => {
 
     expect(ops.length).toBeGreaterThan(0);
     expect(ops.every((o) => o.type === "insert-block" || o.type === "insert-text" || o.type === "format-text")).toBe(true);
+  });
+
+  it("> **Note:** text → callout block via schema fromMarkdown", () => {
+    const blocks = convert("> **Note:** This is important", defaultRegistry);
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toMatchObject({
+      type: "callout",
+      props: { type: "info" },
+    });
+    expect(blocks[0].content).toContain("This is important");
+  });
+
+  it("> **Warning:** text → callout with warning type", () => {
+    const blocks = convert("> **Warning:** Be careful here", defaultRegistry);
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toMatchObject({
+      type: "callout",
+      props: { type: "warning" },
+    });
+  });
+
+  it("> **Error:** text → callout with error type", () => {
+    const blocks = convert("> **Error:** Something went wrong", defaultRegistry);
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toMatchObject({
+      type: "callout",
+      props: { type: "error" },
+    });
+  });
+
+  it("preserves inline formatting after a markdown callout prefix", () => {
+    const blocks = convert(
+      "> **Note:** This is *very* [important](https://example.com)",
+      defaultRegistry,
+    );
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toMatchObject({
+      type: "callout",
+      props: { type: "info" },
+      content: "This is very important",
+    });
+
+    const italicMark = blocks[0].marks?.find((mark) => mark.type === "italic");
+    expect(italicMark).toMatchObject({ start: 8, end: 12 });
+
+    const linkMark = blocks[0].marks?.find((mark) => mark.type === "link");
+    expect(linkMark).toMatchObject({
+      start: 13,
+      end: 22,
+      props: { href: "https://example.com" },
+    });
+  });
+
+  it("preserves inline formatting inside a toggle summary HTML block", () => {
+    const blocks = convert(
+      "<details><summary><em>Very</em> <a href=\"https://example.com\">important</a></summary></details>",
+      defaultRegistry,
+    );
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toMatchObject({
+      type: "toggle",
+      props: { open: false },
+      content: "Very important",
+    });
+
+    const italicMark = blocks[0].marks?.find((mark) => mark.type === "italic");
+    expect(italicMark).toMatchObject({ start: 0, end: 4 });
+
+    const linkMark = blocks[0].marks?.find((mark) => mark.type === "link");
+    expect(linkMark).toMatchObject({
+      start: 5,
+      end: 14,
+      props: { href: "https://example.com" },
+    });
+  });
+
+  it("plain blockquote stays blockquote (not callout)", () => {
+    const blocks = convert("> Just a regular quote", defaultRegistry);
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0].type).toBe("blockquote");
   });
 });

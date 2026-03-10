@@ -2,7 +2,7 @@ import { useRef, useSyncExternalStore } from "react";
 import type {
 	FieldEditorStore,
 	FieldEditorStoreSnapshot,
-} from "../field-editor/store.js";
+} from "../field-editor/store";
 
 const EMPTY_FIELD_EDITOR_STATE: FieldEditorStoreSnapshot = {
 	focusBlockId: null,
@@ -12,6 +12,7 @@ const EMPTY_FIELD_EDITOR_STATE: FieldEditorStoreSnapshot = {
 	isComposing: false,
 	inputMode: "none",
 	mode: "inactive",
+	activeCellCoord: null,
 };
 
 export function useFieldEditorState(
@@ -40,7 +41,8 @@ export function useFieldEditorState(
 				prevSnapshot.isFocused === nextSnapshot.isFocused &&
 				prevSnapshot.isComposing === nextSnapshot.isComposing &&
 				prevSnapshot.inputMode === nextSnapshot.inputMode &&
-				prevSnapshot.mode === nextSnapshot.mode
+				prevSnapshot.mode === nextSnapshot.mode &&
+				prevSnapshot.activeCellCoord === nextSnapshot.activeCellCoord
 			) {
 				return prevSnapshot;
 			}

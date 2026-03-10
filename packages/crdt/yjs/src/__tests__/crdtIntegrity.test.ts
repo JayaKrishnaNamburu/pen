@@ -1,16 +1,16 @@
 import { describe, expect, it, vi } from "vitest";
 import * as Y from "yjs";
 
-import { yjsAdapter } from "../adapter.js";
-import type { CRDTDiagnostic } from "../adapter.js";
+import { yjsAdapter } from "../adapter";
+import type { CRDTDiagnostic } from "../adapter";
 import {
   BLOCK_ORDER,
   BLOCKS,
   createYjsDocument,
   initBlockMap,
   validateDocument,
-} from "../document.js";
-import type { YjsCRDTDocument } from "../document.js";
+} from "../document";
+import type { YjsCRDTDocument } from "../document";
 
 describe("CRDT integrity", () => {
   describe("validateDocument", () => {
@@ -32,6 +32,8 @@ describe("CRDT integrity", () => {
       const ydoc = new Y.Doc();
       const blocks = ydoc.getMap<Y.Map<unknown>>(BLOCKS);
       const blockOrder = ydoc.getArray<string>(BLOCK_ORDER);
+      ydoc.getMap("apps");
+      ydoc.getMap("metadata");
 
       ydoc.transact(() => {
         const malformed = new Y.Map<unknown>();
@@ -53,6 +55,8 @@ describe("CRDT integrity", () => {
       const ydoc = new Y.Doc();
       const blocks = ydoc.getMap<Y.Map<unknown>>(BLOCKS);
       const blockOrder = ydoc.getArray<string>(BLOCK_ORDER);
+      ydoc.getMap("apps");
+      ydoc.getMap("metadata");
 
       ydoc.transact(() => {
         const malformed = new Y.Map<unknown>();
@@ -75,6 +79,8 @@ describe("CRDT integrity", () => {
       const ydoc = new Y.Doc();
       const blocks = ydoc.getMap<Y.Map<unknown>>(BLOCKS);
       const blockOrder = ydoc.getArray<string>(BLOCK_ORDER);
+      ydoc.getMap("apps");
+      ydoc.getMap("metadata");
 
       ydoc.transact(() => {
         const malformed = new Y.Map<unknown>();
@@ -97,6 +103,8 @@ describe("CRDT integrity", () => {
       const ydoc = new Y.Doc();
       const blocks = ydoc.getMap<Y.Map<unknown>>(BLOCKS);
       const blockOrder = ydoc.getArray<string>(BLOCK_ORDER);
+      ydoc.getMap("apps");
+      ydoc.getMap("metadata");
 
       ydoc.transact(() => {
         const malformed = new Y.Map<unknown>();

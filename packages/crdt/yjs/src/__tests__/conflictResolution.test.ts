@@ -1,17 +1,17 @@
 import { describe, expect, it } from "vitest";
 import * as Y from "yjs";
 
-import { yjsAdapter } from "../adapter.js";
+import { yjsAdapter } from "../adapter";
 import {
   createYjsDocument,
   initBlockMap,
   validateDocument,
-} from "../document.js";
-import type { YjsCRDTDocument } from "../document.js";
+} from "../document";
+import type { YjsCRDTDocument } from "../document";
 import {
   forkDocument,
   mergeDocuments,
-} from "../snapshots.js";
+} from "../snapshots";
 
 function syncDocs(a: YjsCRDTDocument, b: YjsCRDTDocument) {
   const svA = Y.encodeStateVector(a.ydoc);

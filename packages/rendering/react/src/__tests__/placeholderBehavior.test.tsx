@@ -5,12 +5,12 @@ import { afterEach, describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
 import type { BlockHandle, BlockRenderContext } from "@pen/core";
 import { createEditor } from "@pen/core";
-import { InlineContent } from "../primitives/editor/inlineContent.js";
-import { Pen } from "../primitives/index.js";
+import { InlineContent } from "../primitives/editor/inlineContent";
+import { Pen } from "../primitives/index";
 import {
 	ParagraphRenderer,
 	registerRenderer,
-} from "../renderers/index.js";
+} from "../renderers/index";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -62,6 +62,9 @@ describe("@pen/react placeholder behavior", () => {
 		expect(placeholders[0]?.getAttribute("data-placeholder")).toBe(
 			"Start writing...",
 		);
+		expect(
+			placeholders[0]?.hasAttribute("data-pen-field-editor-surface"),
+		).toBe(true);
 
 		await act(async () => {
 			root.unmount();

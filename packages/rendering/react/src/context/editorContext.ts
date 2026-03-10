@@ -1,35 +1,27 @@
 import { createContext, useContext } from "react";
-import type { Editor, AssetProvider, Position } from "@pen/core";
-import { isDevelopmentEnvironment } from "../utils/environment.js";
+import type {
+	Editor,
+	AssetProvider,
+	BlockRenderer,
+	Importer,
+	PendingBlock,
+} from "@pen/core";
+import { isDevelopmentEnvironment } from "../utils/environment";
 
 export interface PasteImporters {
-	html?: {
-		import(
-			input: string,
-			editor: Editor,
-			options?: {
-				undoGroup?: boolean;
-				position?: Position;
-			},
-		): void;
-	};
-	markdown?: {
-		import(
-			input: string,
-			editor: Editor,
-			options?: {
-				undoGroup?: boolean;
-				position?: Position;
-			},
-		): void;
-	};
+	html?: Importer<string, PendingBlock[]>;
+	markdown?: Importer<string, PendingBlock[]>;
 	assets?: AssetProvider;
 }
+
+export type RendererOverrides = Partial<Record<string, BlockRenderer>>;
 
 export interface EditorContextValue {
 	editor: Editor;
 	readonly: boolean;
 	importers?: PasteImporters;
+	assets?: AssetProvider;
+	renderers?: RendererOverrides;
 }
 
 export const EditorContext = createContext<EditorContextValue | null>(null);

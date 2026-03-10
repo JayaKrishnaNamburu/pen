@@ -1,16 +1,21 @@
-import type { Editor, KeyBindingContext } from "@pen/core";
-import type { FieldEditorImpl } from "./fieldEditorImpl.js";
 import {
+	type Editor,
+	type KeyBindingContext,
+	usesInlineTextSelection,
+} from "@pen/core";
+import type { FieldEditorKeyboardController } from "./controller";
+import {
+	applyBackspaceBehavior,
 	applyEnterBehavior,
-	mergeBackwardAtBlockStart,
 	moveCaretAcrossBlocks,
 	type SelectionRange,
-} from "./commands.js";
+} from "./commands";
+import { getEditorBlockSelectionLength } from "../utils/blockSelectionSemantics";
 
 export function handleFieldEditorKeyDown(options: {
 	event: KeyboardEvent;
 	editor: Editor;
-	fieldEditor: FieldEditorImpl;
+	fieldEditor: FieldEditorKeyboardController;
 	ytext: {
 		length: number;
 		toString(): string;
@@ -37,6 +42,79 @@ export function handleFieldEditorKeyDown(options: {
 		return true;
 	}
 
+	if (fieldEditor.activeCellCoord) {
+		if (
+			event.key === "Tab" &&
+			!event.metaKey &&
+			!event.ctrlKey &&
+			!event.altKey
+		) {
+			event.preventDefault();
+			const coord = fieldEditor.activeCellCoord;
+			if (!coord) return true;
+			const block = editor.getBlock(coord.blockId);
+			if (block) {
+				const rowCount = block.tableRowCount();
+				const colCount = block.tableColumnCount();
+				let nextRow = coord.row;
+				let nextCol = coord.col;
+
+				if (event.shiftKey) {
+					nextCol--;
+					if (nextCol < 0) {
+						nextRow--;
+						nextCol = colCount - 1;
+					}
+					if (nextRow < 0) {
+						nextRow = 0;
+						nextCol = 0;
+					}
+				} else {
+					nextCol++;
+					if (nextCol >= colCount) {
+						nextRow++;
+						nextCol = 0;
+					}
+					if (nextRow >= rowCount) {
+						nextRow = rowCount - 1;
+						nextCol = colCount - 1;
+					}
+				}
+
+				fieldEditor.activateCell(coord.blockId, nextRow, nextCol);
+			}
+			return true;
+		}
+
+		if (
+			event.key === "Enter" &&
+			!event.shiftKey &&
+			!event.metaKey &&
+			!event.ctrlKey &&
+			!event.altKey
+		) {
+			event.preventDefault();
+			const coord = fieldEditor.activeCellCoord;
+			if (!coord) return true;
+			const block = editor.getBlock(coord.blockId);
+			if (block) {
+				const rowCount = block.tableRowCount();
+				const nextRow = Math.min(coord.row + 1, rowCount - 1);
+				fieldEditor.activateCell(coord.blockId, nextRow, coord.col);
+			}
+			return true;
+		}
+
+		if (
+			event.key === "ArrowLeft" ||
+			event.key === "ArrowRight" ||
+			event.key === "ArrowUp" ||
+			event.key === "ArrowDown"
+		) {
+			return false;
+		}
+	}
+
 	if (
 		event.key === "Backspace" &&
 		!event.shiftKey &&
@@ -44,17 +122,22 @@ export function handleFieldEditorKeyDown(options: {
 		!event.ctrlKey &&
 		!event.altKey
 	) {
-		const target = mergeBackwardAtBlockStart(editor, {
+		const target = applyBackspaceBehavior(editor, {
 			blockId,
 			ytext,
 			range,
 		});
 		if (target) {
-			fieldEditor.activateTextSelection(
-				target.blockId,
-				target.anchorOffset,
-				target.focusOffset,
-			);
+			if (target.selectBlock) {
+				fieldEditor.deactivate();
+				editor.selectBlock(target.blockId);
+			} else {
+				fieldEditor.activateTextSelection(
+					target.blockId,
+					target.anchorOffset,
+					target.focusOffset,
+				);
+			}
 			return true;
 		}
 	}
@@ -90,11 +173,16 @@ export function handleFieldEditorKeyDown(options: {
 			direction: "previous",
 		});
 		if (target) {
-			fieldEditor.activateTextSelection(
-				target.blockId,
-				target.anchorOffset,
-				target.focusOffset,
-			);
+			if (target.selectBlock) {
+				fieldEditor.deactivate();
+				editor.selectBlock(target.blockId);
+			} else {
+				fieldEditor.activateTextSelection(
+					target.blockId,
+					target.anchorOffset,
+					target.focusOffset,
+				);
+			}
 			return true;
 		}
 	}
@@ -113,11 +201,16 @@ export function handleFieldEditorKeyDown(options: {
 			direction: "next",
 		});
 		if (target) {
-			fieldEditor.activateTextSelection(
-				target.blockId,
-				target.anchorOffset,
-				target.focusOffset,
-			);
+			if (target.selectBlock) {
+				fieldEditor.deactivate();
+				editor.selectBlock(target.blockId);
+			} else {
+				fieldEditor.activateTextSelection(
+					target.blockId,
+					target.anchorOffset,
+					target.focusOffset,
+				);
+			}
 			return true;
 		}
 	}
@@ -160,7 +253,7 @@ export function handleEditorKeyBindings(
 export function handleSelectAllShortcut(
 	editor: Editor,
 	event: KeyboardEvent,
-	fieldEditor?: FieldEditorImpl,
+	fieldEditor?: FieldEditorKeyboardController,
 	options?: { rootElement?: HTMLElement | null },
 ): boolean {
 	if (!isSelectAllShortcut(event)) {
@@ -213,14 +306,14 @@ function getDocumentTextRange(editor: Editor): {
 			const block = editor.getBlock(blockId);
 			if (!block) return false;
 			const schema = editor.schema.resolve(block.type);
-			return schema?.fieldEditor !== "none";
+			return usesInlineTextSelection(schema);
 		}) ?? firstBlockId;
 
 	return {
 		start: { blockId: firstBlockId, offset: 0 },
 		end: {
 			blockId: lastBlockId,
-			offset: editor.getBlock(lastBlockId)?.textContent().length ?? 0,
+			offset: getEditorBlockSelectionLength(editor, lastBlockId),
 		},
 		focusBlockId,
 	};

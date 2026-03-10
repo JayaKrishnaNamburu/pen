@@ -1,7 +1,14 @@
 import React from "react";
-import { useToolbarContext } from "../../context/toolbarContext.js";
-import { useEditorContext } from "../../context/editorContext.js";
-import { renderAsChild, type AsChildProps } from "../../utils/asChild.js";
+import { useToolbarContext } from "../../context/toolbarContext";
+import { useEditorContext } from "../../context/editorContext";
+import { renderAsChild, type AsChildProps } from "../../utils/asChild";
+import { getAttachedFieldEditor } from "../../utils/fieldEditor";
+import { getConvertBlockOps } from "../../field-editor/commands";
+import {
+	getStarterTableProps,
+	getTableActivationTarget,
+	hasMeaningfulBlockText,
+} from "../../utils/tableDefaults";
 
 export interface ToolbarSelectProps extends AsChildProps {
   format: string;
@@ -31,13 +38,38 @@ export function ToolbarSelect(props: ToolbarSelectProps) {
 
       if (!blockId) return;
 
-      editor.apply([
-        {
-          type: "convert-block",
-          blockId,
-          newType: value,
-        },
-      ]);
+		const block = editor.getBlock(blockId);
+		const currentText = block?.textContent() ?? "";
+		const isTable = value === "table";
+		const tableActivationTarget = isTable
+			? getTableActivationTarget(currentText)
+			: null;
+		const tableProps = isTable ? getStarterTableProps() : undefined;
+
+		editor.apply(
+			getConvertBlockOps(editor, {
+				blockId,
+				newType: value,
+				newProps: tableProps,
+			}),
+		);
+
+		if (isTable && tableActivationTarget) {
+			const fieldEditor = getAttachedFieldEditor(editor);
+			const activateTableCell = () => {
+				fieldEditor?.activateCell?.(
+					blockId,
+					tableActivationTarget.row,
+					tableActivationTarget.col,
+				);
+			};
+
+			if (typeof window !== "undefined") {
+				window.requestAnimationFrame(activateTableCell);
+			} else {
+				activateTableCell();
+			}
+		}
     }
   };
 

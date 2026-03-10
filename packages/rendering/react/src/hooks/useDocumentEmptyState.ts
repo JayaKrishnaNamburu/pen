@@ -3,7 +3,7 @@ import type { Editor } from "@pen/core";
 import {
 	computeDocumentEmpty,
 	computeDocumentPlaceholderVisible,
-} from "../utils/editorEmptyState.js";
+} from "../utils/editorEmptyState";
 
 export function useDocumentEmptyState(editor: Editor): boolean {
 	const snapshotRef = useRef(computeDocumentEmpty(editor));

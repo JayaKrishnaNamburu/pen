@@ -1,5 +1,5 @@
 import React from "react";
-import { composeRefs } from "./composeRefs.js";
+import { composeRefs } from "./composeRefs";
 
 export interface AsChildProps {
   asChild?: boolean;

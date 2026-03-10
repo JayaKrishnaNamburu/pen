@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { directTransport } from "../directTransport.js";
+import { directTransport } from "../directTransport";
 import type { PenStreamPart, PenStreamRequest, ToolServer } from "@pen/core";
 
 function createMockToolServer(

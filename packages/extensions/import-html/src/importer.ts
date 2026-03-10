@@ -1,24 +1,31 @@
-import type { Importer, ImportOptions, Editor } from "@pen/core";
+import type { Importer, ImportOptions, Editor, PendingBlock } from "@pen/core";
 import { blocksToOps } from "@pen/core";
-import { sanitizeHTML } from "./sanitize.js";
-import { parseHTML } from "./domAdapter.js";
-import { domToBlocks } from "./domToBlocks.js";
+import { sanitizeHTML } from "./sanitize";
+import { parseHTML } from "./domAdapter";
+import { domToBlocks } from "./domToBlocks";
 
-export const htmlImporter: Importer<string> = {
+export function parseHtmlToBlocks(
+  input: string,
+  editor: Editor,
+): PendingBlock[] {
+  const sanitized = sanitizeHTML(input);
+  const dom = parseHTML(sanitized);
+  return domToBlocks(dom, editor.schema);
+}
+
+export const htmlImporter: Importer<string, PendingBlock[]> = {
   name: "html",
   mimeType: "text/html",
+  parse(input: string, editor: Editor): PendingBlock[] {
+    return parseHtmlToBlocks(input, editor);
+  },
 
   async import(
     input: string,
     editor: Editor,
     options?: ImportOptions,
   ): Promise<void> {
-    const sanitized = sanitizeHTML(input);
-    const dom = parseHTML(sanitized);
-
-    const registry = editor.schema;
-    const blocks = domToBlocks(dom, registry);
-
+    const blocks = parseHtmlToBlocks(input, editor);
     if (blocks.length === 0) return;
 
     const ops = blocksToOps(blocks, options);

@@ -96,7 +96,10 @@ No runtime check — this is a type assertion. All `CRDTDocument` values produce
 
 ### Per-block Y.Map structure
 
-Every block in the `blocks` Y.Map has this shape. Content keys are mutually exclusive, determined by the block's content type.
+Every block in the `blocks` Y.Map has this shape. Content keys are mutually exclusive,
+determined by the block's content type. `table` and `database` share the same row/cell
+grid storage under `tableContent`; `database` additionally stores structured column
+schema and optional view state.
 
 ```text
 Y.Map (block) {
@@ -104,7 +107,10 @@ Y.Map (block) {
   'props':        Y.Map<unknown>             // always present, schema-validated properties
   'content':      Y.Text                     // present when content: 'inline'
   'children':     Y.Array<string>            // present when content: BlockSchema[] (nested)
-  'tableContent': Y.Array<Y.Map>             // present when content: 'table'
+  'tableContent': Y.Array<Y.Map>             // present when content: 'table' | 'database'
+  'tableColumns': Y.Array<Y.Map>             // present when content: 'database', optional for 'table'
+  'databaseViews': Y.Array<Y.Map>            // optional, present when content: 'database'
+  'databasePrimaryViewId': string            // optional, present when content: 'database'
   'meta':         Y.Map<unknown>             // always present, keyed by extension namespace
   'layout':       Y.Map<unknown>             // optional, for layout containers (M2)
 }
@@ -112,11 +118,12 @@ Y.Map (block) {
 
 #### Table content structure
 
-When `content: 'table'`, the block stores rows as `Y.Array<Y.Map>` under `tableContent`. Each row Y.Map has this shape:
+When `content: 'table'` or `content: 'database'`, the block stores rows as `Y.Array<Y.Map>`
+under `tableContent`. Each row Y.Map has this shape:
 
 ```text
 Y.Map (table row) {
-  'id':    string                // row identifier
+  'id':    string                // stable row UUID
   'cells': Y.Array<Y.Map>       // ordered cells in this row
 }
 
@@ -132,6 +139,49 @@ Y.Map (table cell) {
 Each cell's `content` is a `Y.Text` — the same type used for inline block content. This means cells support the same inline formatting (bold, italic, links, etc.) as paragraph blocks. Cell-level operations (`insert-table-row`, `delete-table-column`, `merge-table-cells`, `split-table-cell`) manipulate this structure directly.
 
 The table field editor (Wave 5) manages cell focus and tab navigation. Cell selection (`CellSelection` from Wave 0) identifies anchor and head cells for multi-cell operations.
+
+#### Database column schema structure
+
+When `content: 'database'`, the block additionally stores structured column schema under
+`tableColumns`:
+
+```text
+Y.Array (tableColumns)
+  [colIndex]: Y.Map {
+    'id': string
+    'title': string
+    'type': string                  // ColumnType
+    'width': number?
+    'hidden': boolean?
+    'pinned': "left" | "right"?
+    'readonly': boolean?
+    'format': Y.Map?                // number/date formatting
+    'options': Y.Array<Y.Map>?      // select / multiSelect options
+  }
+```
+
+This is intentionally structured Yjs data, not a serialized JSON blob. Column metadata
+must survive incremental edits, collaboration, and undo/redo without lossy reserialization.
+
+#### Database view state structure
+
+When `content: 'database'`, the block may also store table-view state:
+
+```text
+Y.Array (databaseViews)
+  [viewIndex]: Y.Map {
+    'id': string
+    'title': string
+    'type': string                  // "table" | "board" | "calendar" | "gallery" | "list"
+    'visibleColumnIds': Y.Array<string>
+    'columnOrder': Y.Array<string>
+    'sort': Y.Array<Y.Map>
+    'filter': Y.Map?
+    'groupBy': string?
+    'pageIndex': number?
+    'pageSize': number?
+  }
+```
 
 ---
 
@@ -207,7 +257,7 @@ function wrapYjsDocument(
 Creates a per-block Y.Map with the correct structure based on content type and inserts it into the `blocks` map. Called by the schema engine (Wave 2) and test harness.
 
 ```typescript
-type BlockContentType = 'inline' | 'table' | 'nested' | 'none';
+type BlockContentType = 'inline' | 'table' | 'database' | 'nested' | 'none';
 
 function initBlockMap(
   blocks: Y.Map<Y.Map<unknown>>,
@@ -227,6 +277,11 @@ function initBlockMap(
     case 'table':
       blockMap.set('tableContent', new Y.Array<Y.Map<unknown>>());
       break;
+    case 'database':
+      blockMap.set('tableContent', new Y.Array<Y.Map<unknown>>());
+      blockMap.set('tableColumns', new Y.Array<Y.Map<unknown>>());
+      blockMap.set('databaseViews', new Y.Array<Y.Map<unknown>>());
+      break;
     case 'nested':
       blockMap.set('children', new Y.Array<string>());
       break;
@@ -241,9 +296,24 @@ function initBlockMap(
 
 > **Props are intentionally empty.** Normalization rule 4 (Spec Section 4.8) states that prop values equal to their schema default are omitted from CRDT storage. Defaults are derived from the `BlockSchema` at read time by the `BlockHandle` API (Wave 2). Storing defaults would bloat CRDT state and cause spurious diffs during collaborative merges.
 >
-> **`BlockContentType` mapping from `@pen/core`.** The `@pen/core` `ContentType` union includes `BlockSchema[]` for nested content. Callers map this to `'nested'` when calling `initBlockMap`: `Array.isArray(contentType) ? 'nested' : contentType`. `BlockContentType` is exported from the package entry for callers that need to type this argument.
+> **`BlockContentType` mapping from `@pen/core`.** The `@pen/core` `ContentType` union
+> includes `BlockSchema[]` for nested content. Callers map this to `'nested'` when
+> calling `initBlockMap`: `Array.isArray(contentType) ? 'nested' : contentType`.
+> `BlockContentType` is exported from the package entry for callers that need to type
+> this argument.
 
 **Key detail:** `meta` is always created, even if no extensions use it. This avoids lazy-init checks in extension code. The `meta` map is keyed by extension namespace (`block.meta.get('ai')`, `block.meta.get('comments')`) — see Spec Section 4.6.
+
+**Database seeding rule:** `initBlockMap(..., contentType: 'database')` creates the
+shared structures (`tableContent`, `tableColumns`, `databaseViews`) but higher layers in
+`@pen/core` seed the initial database state:
+
+- `tableColumns` gets 3 default columns: `Name/text`, `Tags/select`, `Status/checkbox`
+- `tableContent` starts with 0 data rows
+- one implicit or explicit default table view is created
+
+The CRDT adapter is responsible for creating the containers; the schema/apply layer is
+responsible for seeding product-level defaults.
 
 **Edge case — `gc` option:** Defaults to `true` for memory efficiency. Set to `false` when snapshots/version-history are needed — garbage collection destroys deleted content, breaking `Y.createDocFromSnapshot()`. The `YjsAdapterOptions.gc` flag controls this.
 
@@ -1392,9 +1462,10 @@ These events are for observability. The editor remains functional during corrupt
 1. `createYjsDocument()` produces a `YjsCRDTDocument` with all four shared types (`blockOrder`, `blocks`, `apps`, `metadata`) accessible and correctly typed.
 2. `initBlockMap` with `contentType: 'inline'` creates a Y.Map containing `type`, `props: Y.Map`, `content: Y.Text`, and `meta: Y.Map`.
 3. `initBlockMap` with `contentType: 'table'` creates a Y.Map containing `tableContent: Y.Array` (no `content` or `children`).
-4. `initBlockMap` with `contentType: 'nested'` creates a Y.Map containing `children: Y.Array` (no `content` or `tableContent`).
-5. `initBlockMap` with `contentType: 'none'` creates a Y.Map with only `type`, `props`, and `meta` (no content key).
-6. `isYjsCRDTDocument` returns `true` for adapter-created docs and `false` for plain objects.
+4. `initBlockMap` with `contentType: 'database'` creates a Y.Map containing `tableContent: Y.Array`, `tableColumns: Y.Array`, and `databaseViews: Y.Array`.
+5. `initBlockMap` with `contentType: 'nested'` creates a Y.Map containing `children: Y.Array` (no `content` or `tableContent`).
+6. `initBlockMap` with `contentType: 'none'` creates a Y.Map with only `type`, `props`, and `meta` (no content key).
+7. `isYjsCRDTDocument` returns `true` for adapter-created docs and `false` for plain objects.
 
 ### `events.ts`
 

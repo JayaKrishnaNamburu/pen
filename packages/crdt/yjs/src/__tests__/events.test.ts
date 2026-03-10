@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import * as Y from "yjs";
 
-import { yjsAdapter } from "../adapter.js";
-import { createYjsDocument, initBlockMap } from "../document.js";
-import { createObserver } from "../events.js";
-import type { YjsCRDTDocument } from "../document.js";
+import { yjsAdapter } from "../adapter";
+import { createYjsDocument, initBlockMap } from "../document";
+import { createObserver } from "../events";
+import type { YjsCRDTDocument } from "../document";
 
 function createTestDoc(): YjsCRDTDocument {
   const adapter = yjsAdapter();

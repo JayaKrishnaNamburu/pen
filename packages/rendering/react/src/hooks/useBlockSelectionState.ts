@@ -1,5 +1,5 @@
 import type { Editor, SelectionState } from "@pen/core";
-import { useSyncExternalStoreWithSelector } from "../utils/useSyncExternalStoreWithSelector.js";
+import { useSyncExternalStoreWithSelector } from "../utils/useSyncExternalStoreWithSelector";
 
 export function useBlockSelectionState(
 	editor: Editor,

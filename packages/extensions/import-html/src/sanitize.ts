@@ -1,5 +1,10 @@
 import DOMPurify from "isomorphic-dompurify";
 
+const ALLOWED_INLINE_STYLE_PROPS = new Set([
+  "color",
+  "background-color",
+]);
+
 const PURIFY_CONFIG = {
   ALLOWED_TAGS: [
     "p",
@@ -55,6 +60,7 @@ const PURIFY_CONFIG = {
     "checked",
     "disabled",
     "style",
+    "start",
     "data-*",
     "open",
   ],
@@ -77,5 +83,30 @@ const PURIFY_CONFIG = {
 };
 
 export function sanitizeHTML(html: string): string {
-  return DOMPurify.sanitize(html, PURIFY_CONFIG) as string;
+  const sanitized = DOMPurify.sanitize(html, PURIFY_CONFIG) as string;
+  return sanitized.replace(/\sstyle=(['"])(.*?)\1/gi, (_match, quote, value) => {
+    const nextStyle = value
+      .split(";")
+      .map((declaration: string) => declaration.trim())
+      .filter(Boolean)
+      .map((declaration: string) => {
+        const separatorIndex = declaration.indexOf(":");
+        if (separatorIndex < 0) {
+          return null;
+        }
+        const property = declaration.slice(0, separatorIndex).trim().toLowerCase();
+        const propertyValue = declaration.slice(separatorIndex + 1).trim();
+        if (
+          !ALLOWED_INLINE_STYLE_PROPS.has(property) ||
+          propertyValue.length === 0
+        ) {
+          return null;
+        }
+        return `${property}: ${propertyValue}`;
+      })
+      .filter((declaration: string | null): declaration is string => declaration !== null)
+      .join("; ");
+
+    return nextStyle ? ` style=${quote}${nextStyle}${quote}` : "";
+  });
 }

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useEditorContext } from "../../context/editorContext.js";
-import { useSelection } from "../../hooks/useSelection.js";
-import { renderAsChild, type AsChildProps } from "../../utils/asChild.js";
+import { useEditorContext } from "../../context/editorContext";
+import { useSelection } from "../../hooks/useSelection";
+import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 
 export interface SelectionRectProps extends AsChildProps {
   ref?: React.Ref<HTMLElement>;

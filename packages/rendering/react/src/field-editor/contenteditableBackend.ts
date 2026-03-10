@@ -1,6 +1,6 @@
 import type { InputBackend, Editor, DocumentOp } from "@pen/core";
-import type { FieldEditorImpl } from "./fieldEditorImpl.js";
-import { fullReconcileToDOM, applyDeltaToDOM } from "./reconciler.js";
+import type { FieldEditorInputController } from "./controller";
+import { fullReconcileToDOM, applyDeltaToDOM } from "./reconciler";
 import {
 	computeTextDiff,
 	domPointToOffset,
@@ -8,16 +8,17 @@ import {
 	editorSelectionToDOM,
 	extractTextFromDOM,
 	getSelectionOffsets,
-} from "./selectionBridge.js";
-import type { PasteImporters } from "../context/editorContext.js";
-import { handlePaste, handleCopy, handleCut } from "./clipboard.js";
+} from "./selectionBridge";
+import type { PasteImporters } from "../context/editorContext";
+import { handlePaste, handleCopy, handleCut } from "./clipboard";
 import {
+	applyListInputRule,
+	applyBackspaceBehavior,
 	applyEnterBehavior,
-	mergeBackwardAtBlockStart,
 	toggleInlineMark,
-} from "./commands.js";
-import { handleFieldEditorKeyDown } from "./keyHandling.js";
-import { isHistoryTransactionOrigin } from "./historyOrigin.js";
+} from "./commands";
+import { handleFieldEditorKeyDown } from "./keyHandling";
+import { isHistoryTransactionOrigin } from "./historyOrigin";
 
 export class ContentEditableBackend implements InputBackend {
 	private element: HTMLElement | null = null;
@@ -33,11 +34,13 @@ export class ContentEditableBackend implements InputBackend {
 		blockId: string;
 		anchorOffset: number;
 		focusOffset: number;
+		cell?: { row: number; col: number };
 	} | null = null;
+	private activeCellSelection: { start: number; end: number } | null = null;
 	private editor: Editor;
-	private fieldEditor: FieldEditorImpl;
+	private fieldEditor: FieldEditorInputController;
 
-	constructor(editor: Editor, fieldEditor: FieldEditorImpl) {
+	constructor(editor: Editor, fieldEditor: FieldEditorInputController) {
 		this.editor = editor;
 		this.fieldEditor = fieldEditor;
 	}
@@ -50,6 +53,7 @@ export class ContentEditableBackend implements InputBackend {
 		this.isApplyingSelection++;
 		this.isComposing = false;
 		this.compositionStartText = null;
+		this.activeCellSelection = null;
 		this.fieldEditor.setComposing(false);
 
 		element.addEventListener("beforeinput", this.handleBeforeInput);
@@ -126,11 +130,24 @@ export class ContentEditableBackend implements InputBackend {
 		this.isApplyingSelection = 0;
 		this.isComposing = false;
 		this.compositionStartText = null;
+		this.activeCellSelection = null;
 		this.fieldEditor.setComposing(false);
 	}
 
 	updateSelection(_relPos: unknown): void {
 		this.restoreDOMSelectionFromEditor();
+	}
+
+	private _getActiveCellCoord(blockId: string): {
+		blockId: string;
+		row: number;
+		col: number;
+	} | null {
+		const coord = this.fieldEditor.activeCellCoord;
+		if (!coord || coord.blockId !== blockId) {
+			return null;
+		}
+		return coord;
 	}
 
 	applyInlineTextEdit(options: {
@@ -140,40 +157,97 @@ export class ContentEditableBackend implements InputBackend {
 		marks?: Record<string, unknown>;
 	}): void {
 		const { blockId, range, text, marks } = options;
+		const cellCoord = this._getActiveCellCoord(blockId);
 		const ops: DocumentOp[] = [];
 		const nextOffset = range.start + text.length;
 		this.pendingSelectionOverride = {
 			blockId,
 			anchorOffset: nextOffset,
 			focusOffset: nextOffset,
+			cell: cellCoord
+				? { row: cellCoord.row, col: cellCoord.col }
+				: undefined,
 		};
 
 		if (range.end > range.start) {
-			ops.push({
-				type: "delete-text",
-				blockId,
-				offset: range.start,
-				length: range.end - range.start,
-			});
+			if (cellCoord) {
+				ops.push({
+					type: "delete-table-cell-text",
+					blockId,
+					row: cellCoord.row,
+					col: cellCoord.col,
+					offset: range.start,
+					length: range.end - range.start,
+				});
+			} else {
+				ops.push({
+					type: "delete-text",
+					blockId,
+					offset: range.start,
+					length: range.end - range.start,
+				});
+			}
 		}
 
 		if (text.length > 0) {
-			ops.push({
-				type: "insert-text",
-				blockId,
-				offset: range.start,
-				text,
-				marks,
-			});
+			if (cellCoord) {
+				ops.push({
+					type: "insert-table-cell-text",
+					blockId,
+					row: cellCoord.row,
+					col: cellCoord.col,
+					offset: range.start,
+					text,
+				});
+			} else {
+				ops.push({
+					type: "insert-text",
+					blockId,
+					offset: range.start,
+					text,
+					marks,
+				});
+			}
 		}
 
 		if (ops.length > 0) {
 			this.editor.apply(ops, { origin: "user" });
 		}
 
-		this.fieldEditor.syncTextSelection(blockId, nextOffset, nextOffset);
+		if (cellCoord) {
+			this.activeCellSelection = {
+				start: nextOffset,
+				end: nextOffset,
+			};
+		} else {
+			this.fieldEditor.syncTextSelection(blockId, nextOffset, nextOffset);
+		}
 		this.restoreDOMSelectionFromEditor();
 		this.pendingSelectionOverride = null;
+	}
+
+	applyListInputRule(options: {
+		blockId: string;
+		range: { start: number; end: number };
+		text: string;
+	}): boolean {
+		const target = applyListInputRule(this.editor, options);
+		if (!target) return false;
+
+		this.pendingSelectionOverride = {
+			blockId: target.blockId,
+			anchorOffset: target.anchorOffset,
+			focusOffset: target.focusOffset,
+		};
+
+		this.fieldEditor.syncTextSelection(
+			target.blockId,
+			target.anchorOffset,
+			target.focusOffset,
+		);
+		this.restoreDOMSelectionFromEditor();
+		this.pendingSelectionOverride = null;
+		return true;
 	}
 
 	restoreDOMSelectionFromEditor(): void {
@@ -181,12 +255,45 @@ export class ContentEditableBackend implements InputBackend {
 
 		const blockId = this.fieldEditor.focusBlockId;
 		if (!blockId) return;
+		const selection = this.editor.selection;
 
 		const pendingSelection =
 			this.pendingSelectionOverride?.blockId === blockId
 				? this.pendingSelectionOverride
 				: null;
-		const selection = this.editor.selection;
+		const activeCell = this._getActiveCellCoord(blockId);
+		if (
+			activeCell &&
+			(!pendingSelection ||
+				(pendingSelection.cell?.row === activeCell.row &&
+					pendingSelection.cell?.col === activeCell.col))
+		) {
+			const activeSelection =
+				pendingSelection ??
+				(this.activeCellSelection
+					? {
+							anchorOffset: this.activeCellSelection.start,
+							focusOffset: this.activeCellSelection.end,
+						}
+					: null) ??
+				(selection?.type === "text" &&
+				selection.anchor.blockId === blockId &&
+				selection.focus.blockId === blockId
+					? {
+							anchorOffset: selection.anchor.offset,
+							focusOffset: selection.focus.offset,
+						}
+					: null);
+			if (!activeSelection) return;
+			const start = activeSelection.anchorOffset;
+			const end = activeSelection.focusOffset;
+			this.isApplyingSelection++;
+			setSelectionOffsets(this.element, start, end);
+			requestAnimationFrame(() => {
+				this.isApplyingSelection--;
+			});
+			return;
+		}
 		const anchor =
 			pendingSelection != null
 				? {
@@ -346,6 +453,22 @@ export class ContentEditableBackend implements InputBackend {
 			return;
 		}
 
+		const blockId = this.fieldEditor.focusBlockId;
+		const isActiveCell = blockId ? !!this._getActiveCellCoord(blockId) : false;
+		if (isActiveCell) {
+			fullReconcileToDOM(this.ytext, this.element, this.editor.schema, {
+				preserveSelection: true,
+			});
+			if (
+				this.pendingSelectionOverride != null ||
+				event.transaction?.origin === "remote" ||
+				event.transaction?.origin === "collaborator"
+			) {
+				this.restoreDOMSelectionFromEditor();
+			}
+			return;
+		}
+
 		const applied = applyDeltaToDOM(
 			event.delta,
 			this.element,
@@ -376,24 +499,47 @@ export class ContentEditableBackend implements InputBackend {
 		if (diff.length === 0) return;
 
 		const ops: DocumentOp[] = [];
+		const cellCoord = this._getActiveCellCoord(blockId);
 		for (const op of diff) {
 			if (op.type === "delete") {
-				ops.push({
-					type: "delete-text",
-					blockId,
-					offset: op.offset,
-					length: op.length,
-				});
+				if (cellCoord) {
+					ops.push({
+						type: "delete-table-cell-text",
+						blockId,
+						row: cellCoord.row,
+						col: cellCoord.col,
+						offset: op.offset,
+						length: op.length,
+					});
+				} else {
+					ops.push({
+						type: "delete-text",
+						blockId,
+						offset: op.offset,
+						length: op.length,
+					});
+				}
 				continue;
 			}
 
-			ops.push({
-				type: "insert-text",
-				blockId,
-				offset: op.offset,
-				text: op.text,
-				marks: this.fieldEditor.resolveInsertMarks(this.ytext, op.offset),
-			});
+			if (cellCoord) {
+				ops.push({
+					type: "insert-table-cell-text",
+					blockId,
+					row: cellCoord.row,
+					col: cellCoord.col,
+					offset: op.offset,
+					text: op.text,
+				});
+			} else {
+				ops.push({
+					type: "insert-text",
+					blockId,
+					offset: op.offset,
+					text: op.text,
+					marks: this.fieldEditor.resolveInsertMarks(this.ytext, op.offset),
+				});
+			}
 		}
 
 		if (ops.length === 0) return;
@@ -404,13 +550,18 @@ export class ContentEditableBackend implements InputBackend {
 				blockId,
 				anchorOffset: range.start,
 				focusOffset: range.end,
+				cell: cellCoord ? { row: cellCoord.row, col: cellCoord.col } : undefined,
 			};
 		}
 
 		this.editor.apply(ops, { origin: "user" });
 
 		if (range) {
-			this.fieldEditor.syncTextSelection(blockId, range.start, range.end);
+			if (cellCoord) {
+				this.activeCellSelection = range;
+			} else {
+				this.fieldEditor.syncTextSelection(blockId, range.start, range.end);
+			}
 		}
 		this.pendingSelectionOverride = null;
 	}
@@ -436,6 +587,17 @@ export class ContentEditableBackend implements InputBackend {
 	private handleSelectionChange = (): void => {
 		if (!this.element) return;
 		if (!this.fieldEditor.shouldHandleDomSelectionChange(this.isApplyingSelection)) {
+			return;
+		}
+
+		const focusBlockId = this.fieldEditor.focusBlockId;
+		const activeCell = focusBlockId
+			? this._getActiveCellCoord(focusBlockId)
+			: null;
+		if (activeCell) {
+			const range = getSelectionOffsets(this.element);
+			if (!range) return;
+			this.activeCellSelection = range;
 			return;
 		}
 
@@ -495,7 +657,7 @@ type DirectHandler = (
 	event: InputEvent,
 	editor: Editor,
 	ytext: any,
-	fieldEditor: FieldEditorImpl,
+	fieldEditor: FieldEditorInputController,
 	element: HTMLElement,
 	backend: ContentEditableBackend,
 ) => void;
@@ -512,6 +674,9 @@ const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 		if (!blockId) return;
 		const range = getSelectionOffsets(element);
 		if (!range) return;
+		if (backend.applyListInputRule({ blockId, range, text })) {
+			return;
+		}
 		const marks = fe.resolveInsertMarks(ytext, range.start);
 		backend.applyInlineTextEdit({
 			blockId,
@@ -535,6 +700,9 @@ const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 			? staticRangeToOffsets(targetRanges[0], element)
 			: getSelectionOffsets(element);
 		if (!range) return;
+		if (backend.applyListInputRule({ blockId, range, text })) {
+			return;
+		}
 		const marks = fe.resolveInsertMarks(ytext, range.start);
 		backend.applyInlineTextEdit({
 			blockId,
@@ -552,17 +720,22 @@ const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 		const range = getSelectionOffsets(element);
 		if (!range) return;
 
-		const target = mergeBackwardAtBlockStart(editor, {
+		const target = applyBackspaceBehavior(editor, {
 			blockId: fe.focusBlockId ?? "",
 			ytext,
 			range,
 		});
 		if (target) {
-			fe.activateTextSelection(
-				target.blockId,
-				target.anchorOffset,
-				target.focusOffset,
-			);
+			if (target.selectBlock) {
+				fe.deactivate();
+				editor.selectBlock(target.blockId);
+			} else {
+				fe.activateTextSelection(
+					target.blockId,
+					target.anchorOffset,
+					target.focusOffset,
+				);
+			}
 			return;
 		}
 
@@ -753,8 +926,10 @@ function staticRangeToOffsets(
 	element: HTMLElement,
 ): { start: number; end: number } | null {
 	if (
-		!element.contains(staticRange.startContainer) ||
-		!element.contains(staticRange.endContainer)
+		(staticRange.startContainer !== element &&
+			!element.contains(staticRange.startContainer)) ||
+		(staticRange.endContainer !== element &&
+			!element.contains(staticRange.endContainer))
 	) {
 		return null;
 	}
@@ -774,6 +949,101 @@ function staticRangeToOffsets(
 		start: Math.min(startOffset, endOffset),
 		end: Math.max(startOffset, endOffset),
 	};
+}
+
+function setSelectionOffsets(
+	element: HTMLElement,
+	startOffset: number,
+	endOffset: number,
+): void {
+	const selection = element.ownerDocument?.getSelection();
+	if (!selection) return;
+
+	const startPoint = resolveDomPointForOffset(element, startOffset);
+	const endPoint = resolveDomPointForOffset(element, endOffset);
+	if (!startPoint || !endPoint) return;
+
+	selection.removeAllRanges();
+
+	const setBaseAndExtent = (
+		selection as Selection & {
+			setBaseAndExtent?: (
+				anchorNode: Node,
+				anchorOffset: number,
+				focusNode: Node,
+				focusOffset: number,
+			) => void;
+		}
+	).setBaseAndExtent;
+	if (typeof setBaseAndExtent === "function") {
+		try {
+			setBaseAndExtent.call(
+				selection,
+				startPoint.node,
+				startPoint.offset,
+				endPoint.node,
+				endPoint.offset,
+			);
+			return;
+		} catch {
+			// Fall back to the range-based path in non-browser test environments.
+		}
+	}
+
+	const collapseRange = element.ownerDocument.createRange();
+	collapseRange.setStart(startPoint.node, startPoint.offset);
+	collapseRange.collapse(true);
+	selection.addRange(collapseRange);
+
+	if (
+		(startPoint.node !== endPoint.node || startPoint.offset !== endPoint.offset) &&
+		typeof selection.extend === "function"
+	) {
+		selection.extend(endPoint.node, endPoint.offset);
+		return;
+	}
+
+	selection.removeAllRanges();
+	const range = element.ownerDocument.createRange();
+	range.setStart(startPoint.node, startPoint.offset);
+	range.setEnd(endPoint.node, endPoint.offset);
+	selection.addRange(range);
+}
+
+function resolveDomPointForOffset(
+	element: HTMLElement,
+	targetOffset: number,
+): { node: Node; offset: number } | null {
+	const walker = element.ownerDocument.createTreeWalker(
+		element,
+		NodeFilter.SHOW_TEXT,
+		null,
+	);
+	let remaining = Math.max(0, targetOffset);
+	let textNode = walker.nextNode() as Text | null;
+
+	while (textNode) {
+		const length = textNode.textContent?.length ?? 0;
+		if (remaining <= length) {
+			return { node: textNode, offset: remaining };
+		}
+		remaining -= length;
+		textNode = walker.nextNode() as Text | null;
+	}
+
+	if (element.lastChild) {
+		if (element.lastChild.nodeType === Node.TEXT_NODE) {
+			const textLength = element.lastChild.textContent?.length ?? 0;
+			return {
+				node: element.lastChild,
+				offset: textLength,
+			};
+		}
+		const childCount = element.lastChild.childNodes.length;
+		return { node: element.lastChild, offset: childCount };
+	}
+
+	return { node: element, offset: 0 };
 }
 
 function rebaseTextDiffOps(

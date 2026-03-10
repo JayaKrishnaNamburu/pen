@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ToolServerImpl } from "../toolServer.js";
+import { ToolServerImpl } from "../toolServer";
 
 describe("@pen/document-ops ToolServerImpl", () => {
   it("throws for unknown tools", async () => {

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { useEditorContext } from "../../context/editorContext.js";
-import { renderAsChild, type AsChildProps } from "../../utils/asChild.js";
-import { DATA_ATTRS } from "../../utils/dataAttributes.js";
+import { useEditorContext } from "../../context/editorContext";
+import { renderAsChild, type AsChildProps } from "../../utils/asChild";
+import { DATA_ATTRS } from "../../utils/dataAttributes";
 
 export interface BlockHandleProps extends AsChildProps {
   blockId: string;

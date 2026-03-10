@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { renderAsChild, type AsChildProps } from "../../utils/asChild.js";
+import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 
 export interface DragOverlayProps extends AsChildProps {
   ref?: React.Ref<HTMLElement>;

@@ -1,28 +1,31 @@
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@pen/core";
 import {
-	FieldEditorImpl,
-	EditContextBackend,
-	ContentEditableBackend,
-	ExpandedContentEditableBackend,
 	expandFieldEditorRange,
 	contractFieldEditorRange,
 	shouldUseBlockSelection,
 	getExpandedBlockRole,
 	computeTextDiff,
-} from "../field-editor/index.js";
-import { richTextShortcutsExtension } from "../index.js";
+} from "../field-editor/index";
+import { ContentEditableBackend } from "../field-editor/contenteditableBackend";
+import { EditContextBackend } from "../field-editor/editContextBackend";
+import { ExpandedContentEditableBackend } from "../field-editor/expandedContentEditableBackend";
+import { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
+import { richTextShortcutsExtension } from "../index";
 
 describe("@pen/react field-editor exports", () => {
-	it("loads the field-editor barrel on all platforms", () => {
-		expect(typeof FieldEditorImpl).toBe("function");
-		expect(typeof EditContextBackend).toBe("function");
-		expect(typeof ContentEditableBackend).toBe("function");
-		expect(typeof ExpandedContentEditableBackend).toBe("function");
+	it("loads the field-editor helper barrel on all platforms", () => {
 		expect(typeof expandFieldEditorRange).toBe("function");
 		expect(typeof contractFieldEditorRange).toBe("function");
 		expect(typeof shouldUseBlockSelection).toBe("function");
 		expect(typeof getExpandedBlockRole).toBe("function");
+	});
+
+	it("keeps concrete field-editor runtime pieces internal to source imports", () => {
+		expect(typeof FieldEditorImpl).toBe("function");
+		expect(typeof EditContextBackend).toBe("function");
+		expect(typeof ContentEditableBackend).toBe("function");
+		expect(typeof ExpandedContentEditableBackend).toBe("function");
 	});
 
 	it("computes a minimal text diff", () => {
@@ -65,6 +68,7 @@ describe("@pen/react field-editor exports", () => {
 			isComposing: false,
 			inputMode: "none",
 			mode: "inactive",
+			activeCellCoord: null,
 		});
 		expect(snapshots).toContainEqual({
 			focusBlockId: blockId,
@@ -74,6 +78,7 @@ describe("@pen/react field-editor exports", () => {
 			isComposing: false,
 			inputMode: "richtext",
 			mode: "single",
+			activeCellCoord: null,
 		});
 		expect(snapshots).toContainEqual({
 			focusBlockId: blockId,
@@ -83,6 +88,7 @@ describe("@pen/react field-editor exports", () => {
 			isComposing: false,
 			inputMode: "richtext",
 			mode: "single",
+			activeCellCoord: null,
 		});
 		expect(editor.selection).toMatchObject({
 			type: "text",
@@ -97,6 +103,7 @@ describe("@pen/react field-editor exports", () => {
 			isComposing: false,
 			inputMode: "none",
 			mode: "inactive",
+			activeCellCoord: null,
 		});
 
 		unsubscribe();

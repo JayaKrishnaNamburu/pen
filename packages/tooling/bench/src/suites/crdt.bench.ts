@@ -1,5 +1,5 @@
-import type { BenchContext } from "../bench.js";
-import { createLargeDocument } from "../fixtures/large-doc.js";
+import type { BenchContext } from "../bench";
+import { createLargeDocument } from "../fixtures/large-doc";
 import { yjsAdapter, initBlockMap } from "@pen/crdt-yjs";
 import type { YjsCRDTDocument } from "@pen/crdt-yjs";
 

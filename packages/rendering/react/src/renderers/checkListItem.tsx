@@ -1,7 +1,7 @@
 import React from "react";
 import type { BlockHandle, BlockRenderContext } from "@pen/core";
-import { InlineContent } from "../primitives/editor/inlineContent.js";
-import { useEditorContext } from "../context/editorContext.js";
+import { useEditorContext } from "../context/editorContext";
+import { ListItemLayout } from "../utils/listItemLayout";
 
 export function CheckListItemRenderer(
   block: BlockHandle,
@@ -11,17 +11,15 @@ export function CheckListItemRenderer(
   const checked = (block.props?.checked as boolean) ?? false;
 
   return (
-    <div
+    <ListItemLayout
       ref={ctx.ref as React.Ref<HTMLDivElement>}
-      data-block-type="checkListItem"
-      data-indent={indent}
-      data-checked={checked || undefined}
-      data-selected={ctx.selected || undefined}
-      style={{ paddingLeft: `${indent * 24}px` }}
-    >
-      <CheckboxToggle blockId={block.id} checked={checked} />
-      <InlineContent blockId={block.id} />
-    </div>
+      blockId={block.id}
+      blockType="checkListItem"
+      indent={indent}
+      selected={ctx.selected}
+      extraAttributes={{ "data-checked": checked || undefined }}
+      marker={<CheckboxToggle blockId={block.id} checked={checked} />}
+    />
   );
 }
 

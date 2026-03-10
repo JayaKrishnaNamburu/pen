@@ -12,13 +12,16 @@ export const PLAYGROUND_BLOCK_TYPE_ORDER = [
 	"codeBlock",
 	"blockquote",
 	"callout",
+	"table",
+	"database",
 	"toggle",
 ] as const;
 
 const playgroundAssets = memoryAssets();
 
+export const PLAYGROUND_ASSETS = playgroundAssets;
+
 export const PLAYGROUND_IMPORTERS: PasteImporters = {
 	html: htmlImporter,
 	markdown: markdownImporter,
-	assets: playgroundAssets,
 };

@@ -4,10 +4,10 @@ import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
 import { createEditor } from "@pen/core";
-import type { FieldEditorImpl } from "../field-editor/fieldEditorImpl.js";
-import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor.js";
-import { domSelectionToEditor } from "../field-editor/selectionBridge.js";
-import { Pen } from "../primitives/index.js";
+import type { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
+import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
+import { domSelectionToEditor } from "../field-editor/selectionBridge";
+import { Pen } from "../primitives/index";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -419,6 +419,473 @@ describe("@pen/react selected text deletion", () => {
 		expect(domSelectionToEditor(rootElement!)).toMatchObject({
 			anchor: { blockId, offset: 1 },
 			focus: { blockId, offset: 1 },
+		});
+
+		await act(async () => {
+			root.unmount();
+		});
+		container.remove();
+		editor.destroy();
+	});
+
+	it("backspace exits an empty blockquote via beforeinput", async () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream", "undo"],
+		});
+		const blockId = editor.firstBlock()!.id;
+
+		editor.apply([{ type: "convert-block", blockId, newType: "blockquote" }]);
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(
+				<Pen.Editor.Root editor={editor}>
+					<Pen.Editor.Content />
+				</Pen.Editor.Root>,
+			);
+		});
+
+		const fieldEditor = getFieldEditor(editor);
+		const rootElement = container.querySelector(
+			"[data-pen-editor-root]",
+		) as HTMLElement | null;
+		const inlineElement = container.querySelector(
+			"[data-pen-inline-content]",
+		) as HTMLElement | null;
+
+		expect(rootElement).not.toBeNull();
+		expect(inlineElement).not.toBeNull();
+
+		await act(async () => {
+			fieldEditor.activateTextSelection(blockId, 0, 0);
+			await flushAnimationFrames(3);
+		});
+
+		await act(async () => {
+			inlineElement!.dispatchEvent(
+				new InputEvent("beforeinput", {
+					bubbles: true,
+					cancelable: true,
+					inputType: "deleteContentBackward",
+				}),
+			);
+			await flushAnimationFrames(2);
+		});
+
+		expect(editor.getBlock(blockId)?.type).toBe("paragraph");
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId, offset: 0 },
+			focus: { blockId, offset: 0 },
+			isCollapsed: true,
+			isMultiBlock: false,
+		});
+		expect(domSelectionToEditor(rootElement!)).toMatchObject({
+			anchor: { blockId, offset: 0 },
+			focus: { blockId, offset: 0 },
+		});
+
+		await act(async () => {
+			root.unmount();
+		});
+		container.remove();
+		editor.destroy();
+	});
+
+	it("backspace exits an empty bullet list item via beforeinput", async () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream", "undo"],
+		});
+		const blockId = editor.firstBlock()!.id;
+
+		editor.apply([
+			{ type: "convert-block", blockId, newType: "bulletListItem" },
+		]);
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(
+				<Pen.Editor.Root editor={editor}>
+					<Pen.Editor.Content />
+				</Pen.Editor.Root>,
+			);
+		});
+
+		const fieldEditor = getFieldEditor(editor);
+		const rootElement = container.querySelector(
+			"[data-pen-editor-root]",
+		) as HTMLElement | null;
+		const inlineElement = container.querySelector(
+			"[data-pen-inline-content]",
+		) as HTMLElement | null;
+
+		expect(rootElement).not.toBeNull();
+		expect(inlineElement).not.toBeNull();
+
+		await act(async () => {
+			fieldEditor.activateTextSelection(blockId, 0, 0);
+			await flushAnimationFrames(3);
+		});
+
+		await act(async () => {
+			inlineElement!.dispatchEvent(
+				new InputEvent("beforeinput", {
+					bubbles: true,
+					cancelable: true,
+					inputType: "deleteContentBackward",
+				}),
+			);
+			await flushAnimationFrames(2);
+		});
+
+		expect(editor.getBlock(blockId)?.type).toBe("paragraph");
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId, offset: 0 },
+			focus: { blockId, offset: 0 },
+			isCollapsed: true,
+			isMultiBlock: false,
+		});
+		expect(domSelectionToEditor(rootElement!)).toMatchObject({
+			anchor: { blockId, offset: 0 },
+			focus: { blockId, offset: 0 },
+		});
+
+		await act(async () => {
+			root.unmount();
+		});
+		container.remove();
+		editor.destroy();
+	});
+
+	it("converts '- ' into a bullet list item via beforeinput", async () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream", "undo"],
+		});
+		const blockId = editor.firstBlock()!.id;
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(
+				<Pen.Editor.Root editor={editor}>
+					<Pen.Editor.Content />
+				</Pen.Editor.Root>,
+			);
+		});
+
+		const fieldEditor = getFieldEditor(editor);
+		const rootElement = container.querySelector(
+			"[data-pen-editor-root]",
+		) as HTMLElement | null;
+		const inlineElement = container.querySelector(
+			"[data-pen-inline-content]",
+		) as HTMLElement | null;
+
+		expect(rootElement).not.toBeNull();
+		expect(inlineElement).not.toBeNull();
+
+		await act(async () => {
+			fieldEditor.activateTextSelection(blockId, 0, 0);
+			await flushAnimationFrames(3);
+		});
+
+		await act(async () => {
+			inlineElement!.dispatchEvent(
+				new InputEvent("beforeinput", {
+					bubbles: true,
+					cancelable: true,
+					inputType: "insertText",
+					data: "-",
+				}),
+			);
+			await flushAnimationFrames(2);
+		});
+
+		await act(async () => {
+			inlineElement!.dispatchEvent(
+				new InputEvent("beforeinput", {
+					bubbles: true,
+					cancelable: true,
+					inputType: "insertText",
+					data: " ",
+				}),
+			);
+			await flushAnimationFrames(2);
+		});
+
+		expect(editor.getBlock(blockId)?.type).toBe("bulletListItem");
+		expect(editor.getBlock(blockId)?.textContent()).toBe("");
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId, offset: 0 },
+			focus: { blockId, offset: 0 },
+			isCollapsed: true,
+			isMultiBlock: false,
+		});
+		expect(domSelectionToEditor(rootElement!)).toMatchObject({
+			anchor: { blockId, offset: 0 },
+			focus: { blockId, offset: 0 },
+		});
+
+		await act(async () => {
+			root.unmount();
+		});
+		container.remove();
+		editor.destroy();
+	});
+
+	it("converts '3. ' into a numbered list item via beforeinput", async () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream", "undo"],
+		});
+		const blockId = editor.firstBlock()!.id;
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(
+				<Pen.Editor.Root editor={editor}>
+					<Pen.Editor.Content />
+				</Pen.Editor.Root>,
+			);
+		});
+
+		const fieldEditor = getFieldEditor(editor);
+		const rootElement = container.querySelector(
+			"[data-pen-editor-root]",
+		) as HTMLElement | null;
+		const inlineElement = container.querySelector(
+			"[data-pen-inline-content]",
+		) as HTMLElement | null;
+
+		expect(rootElement).not.toBeNull();
+		expect(inlineElement).not.toBeNull();
+
+		await act(async () => {
+			fieldEditor.activateTextSelection(blockId, 0, 0);
+			await flushAnimationFrames(3);
+		});
+
+		await act(async () => {
+			inlineElement!.dispatchEvent(
+				new InputEvent("beforeinput", {
+					bubbles: true,
+					cancelable: true,
+					inputType: "insertText",
+					data: "3",
+				}),
+			);
+			inlineElement!.dispatchEvent(
+				new InputEvent("beforeinput", {
+					bubbles: true,
+					cancelable: true,
+					inputType: "insertText",
+					data: ".",
+				}),
+			);
+			inlineElement!.dispatchEvent(
+				new InputEvent("beforeinput", {
+					bubbles: true,
+					cancelable: true,
+					inputType: "insertText",
+					data: " ",
+				}),
+			);
+			await flushAnimationFrames(3);
+		});
+
+		expect(editor.getBlock(blockId)?.type).toBe("numberedListItem");
+		expect(editor.getBlock(blockId)?.props?.start).toBe(3);
+		expect(editor.getBlock(blockId)?.textContent()).toBe("");
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId, offset: 0 },
+			focus: { blockId, offset: 0 },
+			isCollapsed: true,
+			isMultiBlock: false,
+		});
+		expect(domSelectionToEditor(rootElement!)).toMatchObject({
+			anchor: { blockId, offset: 0 },
+			focus: { blockId, offset: 0 },
+		});
+
+		await act(async () => {
+			root.unmount();
+		});
+		container.remove();
+		editor.destroy();
+	});
+
+	it("converts '[ ] ' into a check list item via beforeinput", async () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream", "undo"],
+		});
+		const blockId = editor.firstBlock()!.id;
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(
+				<Pen.Editor.Root editor={editor}>
+					<Pen.Editor.Content />
+				</Pen.Editor.Root>,
+			);
+		});
+
+		const fieldEditor = getFieldEditor(editor);
+		const rootElement = container.querySelector(
+			"[data-pen-editor-root]",
+		) as HTMLElement | null;
+		const inlineElement = container.querySelector(
+			"[data-pen-inline-content]",
+		) as HTMLElement | null;
+
+		expect(rootElement).not.toBeNull();
+		expect(inlineElement).not.toBeNull();
+
+		await act(async () => {
+			fieldEditor.activateTextSelection(blockId, 0, 0);
+			await flushAnimationFrames(3);
+		});
+
+		await act(async () => {
+			inlineElement!.dispatchEvent(
+				new InputEvent("beforeinput", {
+					bubbles: true,
+					cancelable: true,
+					inputType: "insertText",
+					data: "[",
+				}),
+			);
+			inlineElement!.dispatchEvent(
+				new InputEvent("beforeinput", {
+					bubbles: true,
+					cancelable: true,
+					inputType: "insertText",
+					data: " ",
+				}),
+			);
+			inlineElement!.dispatchEvent(
+				new InputEvent("beforeinput", {
+					bubbles: true,
+					cancelable: true,
+					inputType: "insertText",
+					data: "]",
+				}),
+			);
+			inlineElement!.dispatchEvent(
+				new InputEvent("beforeinput", {
+					bubbles: true,
+					cancelable: true,
+					inputType: "insertText",
+					data: " ",
+				}),
+			);
+			await flushAnimationFrames(3);
+		});
+
+		expect(editor.getBlock(blockId)?.type).toBe("checkListItem");
+		expect(editor.getBlock(blockId)?.textContent()).toBe("");
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId, offset: 0 },
+			focus: { blockId, offset: 0 },
+			isCollapsed: true,
+			isMultiBlock: false,
+		});
+		expect(domSelectionToEditor(rootElement!)).toMatchObject({
+			anchor: { blockId, offset: 0 },
+			focus: { blockId, offset: 0 },
+		});
+
+		await act(async () => {
+			root.unmount();
+		});
+		container.remove();
+		editor.destroy();
+	});
+
+	it("does not convert headings with list triggers via beforeinput", async () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream", "undo"],
+		});
+		const blockId = editor.firstBlock()!.id;
+
+		editor.apply([{ type: "convert-block", blockId, newType: "heading" }]);
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(
+				<Pen.Editor.Root editor={editor}>
+					<Pen.Editor.Content />
+				</Pen.Editor.Root>,
+			);
+		});
+
+		const fieldEditor = getFieldEditor(editor);
+		const rootElement = container.querySelector(
+			"[data-pen-editor-root]",
+		) as HTMLElement | null;
+		const inlineElement = container.querySelector(
+			"[data-pen-inline-content]",
+		) as HTMLElement | null;
+
+		expect(rootElement).not.toBeNull();
+		expect(inlineElement).not.toBeNull();
+
+		await act(async () => {
+			fieldEditor.activateTextSelection(blockId, 0, 0);
+			await flushAnimationFrames(3);
+		});
+
+		await act(async () => {
+			inlineElement!.dispatchEvent(
+				new InputEvent("beforeinput", {
+					bubbles: true,
+					cancelable: true,
+					inputType: "insertText",
+					data: "-",
+				}),
+			);
+			inlineElement!.dispatchEvent(
+				new InputEvent("beforeinput", {
+					bubbles: true,
+					cancelable: true,
+					inputType: "insertText",
+					data: " ",
+				}),
+			);
+			await flushAnimationFrames(3);
+		});
+
+		expect(editor.getBlock(blockId)?.type).toBe("heading");
+		expect(editor.getBlock(blockId)?.textContent()).toBe("- ");
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId, offset: 2 },
+			focus: { blockId, offset: 2 },
+			isCollapsed: true,
+			isMultiBlock: false,
+		});
+		expect(domSelectionToEditor(rootElement!)).toMatchObject({
+			anchor: { blockId, offset: 2 },
+			focus: { blockId, offset: 2 },
 		});
 
 		await act(async () => {
@@ -847,6 +1314,72 @@ describe("@pen/react selected text deletion", () => {
 		editor.destroy();
 	});
 
+	it("shows the next ordered-list marker after Enter continues a numbered list", async () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream", "undo"],
+		});
+		const blockId = editor.firstBlock()!.id;
+
+		editor.apply([
+			{
+				type: "convert-block",
+				blockId,
+				newType: "numberedListItem",
+				newProps: { start: 3 },
+			},
+			{ type: "insert-text", blockId, offset: 0, text: "Third" },
+		]);
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(
+				<Pen.Editor.Root editor={editor}>
+					<Pen.Editor.Content />
+				</Pen.Editor.Root>,
+			);
+		});
+
+		const fieldEditor = getFieldEditor(editor);
+		const inlineElement = container.querySelector(
+			"[data-pen-inline-content]",
+		) as HTMLElement | null;
+
+		expect(inlineElement).not.toBeNull();
+
+		await act(async () => {
+			fieldEditor.activateTextSelection(blockId, 5, 5);
+			await flushAnimationFrames(4);
+		});
+
+		await act(async () => {
+			inlineElement!.dispatchEvent(
+				new InputEvent("beforeinput", {
+					bubbles: true,
+					cancelable: true,
+					inputType: "insertParagraph",
+				}),
+			);
+			await flushAnimationFrames(4);
+		});
+
+		const markerTexts = Array.from(
+			container.querySelectorAll(
+				"[data-pen-list-item-layout][data-block-type='numberedListItem'] [data-pen-list-marker]",
+			),
+		).map((marker) => marker.textContent ?? "");
+
+		expect(markerTexts).toEqual(["3.", "4."]);
+
+		await act(async () => {
+			root.unmount();
+		});
+		container.remove();
+		editor.destroy();
+	});
+
 	it("deletes a promoted cross-block selection from document keydown", async () => {
 		const editor = createEditor({
 			without: ["document-ops", "delta-stream", "undo"],
@@ -1163,6 +1696,204 @@ describe("@pen/react selected text deletion", () => {
 			expect(domSelectionToEditor(rootElement!)).toMatchObject({
 				anchor: { blockId, offset: 4 },
 				focus: { blockId, offset: 4 },
+			});
+
+			await act(async () => {
+				root.unmount();
+			});
+			container.remove();
+			editor.destroy();
+		} finally {
+			(
+				globalThis as typeof globalThis & {
+					EditContext?: typeof FakeEditContext;
+				}
+			).EditContext = originalEditContext;
+		}
+	});
+
+	it("applies inline markdown input rules for EditContext textupdate events", async () => {
+		const originalEditContext = (
+			globalThis as typeof globalThis & {
+				EditContext?: typeof FakeEditContext;
+			}
+		).EditContext;
+		(
+			globalThis as typeof globalThis & {
+				EditContext?: typeof FakeEditContext;
+			}
+		).EditContext = FakeEditContext;
+
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream", "undo"],
+		});
+		const blockId = editor.firstBlock()!.id;
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		try {
+			await act(async () => {
+				root.render(
+					<Pen.Editor.Root editor={editor}>
+						<Pen.Editor.Content />
+					</Pen.Editor.Root>,
+				);
+			});
+
+			const fieldEditor = getFieldEditor(editor);
+			const inlineElement = container.querySelector(
+				"[data-pen-inline-content]",
+			) as
+				| (HTMLElement & { editContext?: FakeEditContext | null })
+				| null;
+
+			expect(inlineElement).not.toBeNull();
+
+			await act(async () => {
+				fieldEditor.activateTextSelection(blockId, 0, 0);
+				await flushAnimationFrames(3);
+			});
+
+			const editContext = inlineElement?.editContext;
+			expect(editContext).toBeTruthy();
+
+			const updates = ["*", "*", "h", "e", "y", "*", "*"];
+			for (const [index, text] of updates.entries()) {
+				await act(async () => {
+					editContext!.emit("textupdate", {
+						updateRangeStart: index,
+						updateRangeEnd: index,
+						text,
+						selectionStart: index + 1,
+						selectionEnd: index + 1,
+					});
+					await flushAnimationFrames(2);
+					await Promise.resolve();
+					await Promise.resolve();
+				});
+			}
+
+			expect(editor.getBlock(blockId)?.textContent()).toBe("hey");
+			expect(editor.getBlock(blockId)?.textDeltas()).toEqual([
+				{
+					insert: "hey",
+					attributes: { bold: true },
+				},
+			]);
+
+			await act(async () => {
+				root.unmount();
+			});
+			container.remove();
+			editor.destroy();
+		} finally {
+			(
+				globalThis as typeof globalThis & {
+					EditContext?: typeof FakeEditContext;
+				}
+			).EditContext = originalEditContext;
+		}
+	});
+
+	it("converts '3. ' into a numbered list item via EditContext textupdate", async () => {
+		const originalEditContext = (
+			globalThis as typeof globalThis & {
+				EditContext?: typeof FakeEditContext;
+			}
+		).EditContext;
+		(
+			globalThis as typeof globalThis & {
+				EditContext?: typeof FakeEditContext;
+			}
+		).EditContext = FakeEditContext;
+
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream", "undo"],
+		});
+		const blockId = editor.firstBlock()!.id;
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		try {
+			await act(async () => {
+				root.render(
+					<Pen.Editor.Root editor={editor}>
+						<Pen.Editor.Content />
+					</Pen.Editor.Root>,
+				);
+			});
+
+			const fieldEditor = getFieldEditor(editor);
+			const rootElement = container.querySelector(
+				"[data-pen-editor-root]",
+			) as HTMLElement | null;
+			const inlineElement = container.querySelector(
+				"[data-pen-inline-content]",
+			) as
+				| (HTMLElement & { editContext?: FakeEditContext | null })
+				| null;
+
+			expect(rootElement).not.toBeNull();
+			expect(inlineElement).not.toBeNull();
+
+			await act(async () => {
+				fieldEditor.activateTextSelection(blockId, 0, 0);
+				await flushAnimationFrames(3);
+			});
+
+			const editContext = inlineElement?.editContext;
+			expect(editContext).toBeTruthy();
+
+			await act(async () => {
+				editContext!.emit("textupdate", {
+					updateRangeStart: 0,
+					updateRangeEnd: 0,
+					text: "3",
+					selectionStart: 1,
+					selectionEnd: 1,
+				});
+				await flushAnimationFrames(2);
+			});
+
+			await act(async () => {
+				editContext!.emit("textupdate", {
+					updateRangeStart: 1,
+					updateRangeEnd: 1,
+					text: ".",
+					selectionStart: 2,
+					selectionEnd: 2,
+				});
+				await flushAnimationFrames(2);
+			});
+
+			await act(async () => {
+				editContext!.emit("textupdate", {
+					updateRangeStart: 2,
+					updateRangeEnd: 2,
+					text: " ",
+					selectionStart: 3,
+					selectionEnd: 3,
+				});
+				await flushAnimationFrames(2);
+			});
+
+			expect(editor.getBlock(blockId)?.type).toBe("numberedListItem");
+			expect(editor.getBlock(blockId)?.props?.start).toBe(3);
+			expect(editor.getBlock(blockId)?.textContent()).toBe("");
+			expect(editor.selection).toMatchObject({
+				type: "text",
+				anchor: { blockId, offset: 0 },
+				focus: { blockId, offset: 0 },
+				isCollapsed: true,
+				isMultiBlock: false,
+			});
+			expect(domSelectionToEditor(rootElement!)).toMatchObject({
+				anchor: { blockId, offset: 0 },
+				focus: { blockId, offset: 0 },
 			});
 
 			await act(async () => {

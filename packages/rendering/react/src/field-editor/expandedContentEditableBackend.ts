@@ -2,15 +2,15 @@ import type { Editor } from "@pen/core";
 import {
 	editorSelectionToDOM,
 	domSelectionToEditor,
-} from "./selectionBridge.js";
-import { handlePaste, handleCopy, handleCut } from "./clipboard.js";
-import type { PasteImporters } from "../context/editorContext.js";
-import type { FieldEditorImpl } from "./fieldEditorImpl.js";
-import { applyEnterBehavior, toggleInlineMark } from "./commands.js";
+} from "./selectionBridge";
+import { handlePaste, handleCopy, handleCut } from "./clipboard";
+import type { PasteImporters } from "../context/editorContext";
+import type { FieldEditorInputController } from "./controller";
+import { applyEnterBehavior, toggleInlineMark } from "./commands";
 import {
 	handleEditorKeyBindings,
 	handleSelectAllShortcut,
-} from "./keyHandling.js";
+} from "./keyHandling";
 
 /**
  * Expanded mode owns the shared cross-block selected state on the real block
@@ -21,10 +21,10 @@ import {
 export class ExpandedContentEditableBackend {
 	private element: HTMLElement | null = null;
 	private editor: Editor;
-	private fieldEditor: FieldEditorImpl;
+	private fieldEditor: FieldEditorInputController;
 	private isApplyingSelection = 0;
 
-	constructor(editor: Editor, fieldEditor: FieldEditorImpl) {
+	constructor(editor: Editor, fieldEditor: FieldEditorInputController) {
 		this.editor = editor;
 		this.fieldEditor = fieldEditor;
 	}

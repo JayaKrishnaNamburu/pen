@@ -1,4 +1,4 @@
-import type { BenchResult } from "../bench.js";
+import type { BenchResult } from "../bench";
 
 export function reportConsole(
   suiteName: string,

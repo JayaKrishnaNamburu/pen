@@ -1,4 +1,4 @@
-import type { BenchContext } from "../bench.js";
+import type { BenchContext } from "../bench";
 import { createTestEditor } from "@pen/test";
 
 export const editorBenchmarks: Array<{

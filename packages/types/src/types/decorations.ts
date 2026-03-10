@@ -1,4 +1,4 @@
-import type { Unsubscribe } from "./utility.js";
+import type { Unsubscribe } from "./utility";
 
 export type Decoration =
   | InlineDecoration

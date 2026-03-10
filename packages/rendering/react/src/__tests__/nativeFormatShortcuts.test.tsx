@@ -4,9 +4,9 @@ import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
 import { createEditor } from "@pen/core";
-import type { FieldEditorImpl } from "../field-editor/fieldEditorImpl.js";
-import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor.js";
-import { Pen } from "../primitives/index.js";
+import type { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
+import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
+import { Pen } from "../primitives/index";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { yjsAdapter } from "../adapter.js";
-import { createYjsDocument } from "../document.js";
-import { createYjsAwareness } from "../awareness.js";
+import { yjsAdapter } from "../adapter";
+import { createYjsDocument } from "../document";
+import { createYjsAwareness } from "../awareness";
 
 describe("awareness", () => {
   const adapter = yjsAdapter();

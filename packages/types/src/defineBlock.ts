@@ -2,8 +2,8 @@ import type {
   BlockSchema,
   PropSchema,
   ContentType,
-} from "./types/schema.js";
-import { resolveSchema } from "./prop.js";
+} from "./types/schema";
+import { resolveSchema } from "./prop";
 
 type DefineBlockConfig = Omit<
   Partial<BlockSchema<string, Record<string, PropSchema>, ContentType>>,

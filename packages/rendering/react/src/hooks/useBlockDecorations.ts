@@ -1,6 +1,6 @@
 import type { Decoration, DecorationSet, Editor } from "@pen/core";
 import { emptyDecorationSet } from "@pen/core";
-import { useSyncExternalStoreWithSelector } from "../utils/useSyncExternalStoreWithSelector.js";
+import { useSyncExternalStoreWithSelector } from "../utils/useSyncExternalStoreWithSelector";
 
 export function useBlockDecorations(
 	editor: Editor,

@@ -1,7 +1,7 @@
 import React from "react";
 import type { Editor } from "@pen/core";
-import { EditorRoot, type EditorRootProps } from "./primitives/editor/root.js";
-import { EditorContent, type EditorContentProps } from "./primitives/editor/content.js";
+import { EditorRoot, type EditorRootProps } from "./primitives/editor/root";
+import { EditorContent, type EditorContentProps } from "./primitives/editor/content";
 
 export interface PenEditorProps
 	extends Omit<EditorRootProps, "children">,
@@ -14,6 +14,8 @@ export function PenEditor(props: PenEditorProps) {
 		editor,
 		readonly,
 		importers,
+		assets,
+		renderers,
 		virtualize,
 		emptyPlaceholder,
 		children,
@@ -21,7 +23,13 @@ export function PenEditor(props: PenEditorProps) {
 	} = props;
 
 	return (
-		<EditorRoot editor={editor} readonly={readonly} importers={importers}>
+		<EditorRoot
+			editor={editor}
+			readonly={readonly}
+			importers={importers}
+			assets={assets}
+			renderers={renderers}
+		>
 			<EditorContent
 				virtualize={virtualize}
 				emptyPlaceholder={emptyPlaceholder}

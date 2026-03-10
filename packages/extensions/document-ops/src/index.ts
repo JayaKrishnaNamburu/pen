@@ -1,6 +1,6 @@
 export {
   documentOpsExtension,
-} from "./documentOpsExtension.js";
-export type { DocumentOpsOptions } from "./documentOpsExtension.js";
-export { ToolServerImpl } from "./toolServer.js";
-export { ToolContextImpl } from "./toolContext.js";
+} from "./documentOpsExtension";
+export type { DocumentOpsOptions } from "./documentOpsExtension";
+export { ToolServerImpl } from "./toolServer";
+export { ToolContextImpl } from "./toolContext";

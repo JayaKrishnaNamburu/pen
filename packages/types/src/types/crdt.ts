@@ -1,6 +1,6 @@
-import type { DocumentOp, OpOrigin } from "./ops.js";
-import type { Unsubscribe } from "./utility.js";
-import type { DocumentRange } from "./documentRange.js";
+import type { DocumentOp, OpOrigin } from "./ops";
+import type { Unsubscribe } from "./utility";
+import type { DocumentRange } from "./documentRange";
 
 // ── Abstract CRDT Collections ───────────────────────────────
 
@@ -63,7 +63,7 @@ export interface CRDTAdapter {
     doc: CRDTDocument,
     blockId: string,
     blockType: string,
-    contentType: "inline" | "nested" | "table" | "none",
+    contentType: "inline" | "nested" | "table" | "database" | "none",
   ): unknown;
 
   // Attribution (per-character authorship)

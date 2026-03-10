@@ -1,6 +1,6 @@
 import React from "react";
 import type { BlockHandle, BlockRenderContext } from "@pen/core";
-import { InlineContent } from "../primitives/editor/inlineContent.js";
+import { InlineContent } from "../primitives/editor/inlineContent";
 
 export function HeadingRenderer(
   block: BlockHandle,

@@ -27,13 +27,40 @@ import type {
 	UpdateAppOp,
 	DeleteAppOp,
 	SetSelectionOp,
+	UpdateTableColumnsOp,
 } from "@pen/types";
-import type { SchemaEngineImpl } from "../schema/normalize.js";
-import type { EventEmitter } from "./events.js";
-import type { SelectionManagerImpl } from "./selection.js";
+import { generateId } from "@pen/types";
+import { resolveRuntimeContentType } from "../schema/contentType";
+import type { SchemaEngineImpl } from "../schema/normalize";
+import {
+	type CRDTUnknownArray,
+	type CRDTUnknownMap,
+	getArrayProp,
+	getMapProp,
+	getStringProp,
+	getTableColumns,
+	getTableContent,
+	isCRDTMap,
+} from "./crdtShapes";
+import { DatabaseOpExecutor } from "./databaseOpExecutor";
+import type { EventEmitter } from "./events";
+import type { SelectionManagerImpl } from "./selection";
+import { TableGridExecutor } from "./tableGridExecutor";
 
 // Typed CRDT structure interfaces used by the op executor.
 type CRDTBlockMap = CRDTMap<CRDTMap<unknown>>;
+type MutableMap = CRDTUnknownMap & { delete(key: string): void };
+type MutableBlockStore = MutableMap & {
+	get(key: string): CRDTUnknownMap | undefined;
+};
+type MutableAppStore = MutableMap & {
+	get(key: string): CRDTUnknownMap | undefined;
+};
+type MutableStringArray = CRDTUnknownArray<string>;
+
+interface CRDTInlineText extends CRDTText {
+	insertEmbed(offset: number, value: Record<string, unknown>): void;
+}
 
 interface CRDTText {
 	insert(
@@ -62,6 +89,8 @@ export class ApplyPipeline {
 	private _crdtDoc: CRDTDocument;
 	private readonly _adapter: CRDTAdapter;
 	private readonly _registry: SchemaRegistry;
+	private readonly _tableGrid: TableGridExecutor;
+	private readonly _databaseOps: DatabaseOpExecutor;
 	private _engine: SchemaEngineImpl;
 	private readonly _emitter: EventEmitter;
 	private readonly _selection: SelectionManagerImpl;
@@ -85,12 +114,24 @@ export class ApplyPipeline {
 		return this._doc.blocks as CRDTBlockMap;
 	}
 
+	private get mutableBlocks(): MutableBlockStore {
+		return this._doc.blocks as unknown as MutableBlockStore;
+	}
+
 	private get blockOrder(): CRDTArray<string> {
 		return this._doc.blockOrder as CRDTArray<string>;
 	}
 
+	private get mutableBlockOrder(): MutableStringArray {
+		return this._doc.blockOrder as unknown as MutableStringArray;
+	}
+
 	private get apps(): CRDTMap<CRDTMap<unknown>> {
 		return this._doc.apps as CRDTMap<CRDTMap<unknown>>;
+	}
+
+	private get mutableApps(): MutableAppStore {
+		return this._doc.apps as unknown as MutableAppStore;
 	}
 
 	constructor(
@@ -106,6 +147,8 @@ export class ApplyPipeline {
 		this._crdtDoc = crdtDoc;
 		this._adapter = adapter;
 		this._registry = registry;
+		this._tableGrid = new TableGridExecutor(adapter);
+		this._databaseOps = new DatabaseOpExecutor(adapter, this._tableGrid);
 		this._engine = engine;
 		this._emitter = emitter;
 		this._selection = selection;
@@ -380,7 +423,27 @@ export class ApplyPipeline {
 			case "delete-table-column":
 			case "merge-table-cells":
 			case "split-table-cell":
+			case "insert-table-cell-text":
+			case "delete-table-cell-text":
+			case "format-table-cell-text":
+			case "update-table-columns":
 				return this._tableOp(op);
+			case "database-add-column":
+			case "database-update-column":
+			case "database-convert-column":
+			case "database-remove-column":
+			case "database-insert-row":
+			case "database-update-cell":
+			case "database-delete-row":
+			case "database-delete-rows":
+			case "database-duplicate-row":
+			case "database-move-row":
+			case "database-add-view":
+			case "database-update-view":
+			case "database-remove-view":
+			case "database-set-active-view":
+			case "database-update-select-options":
+				return this._databaseOp(op);
 			case "set-meta":
 				return this._setMeta(op);
 			default:
@@ -394,59 +457,45 @@ export class ApplyPipeline {
 		const schema = this._registry.resolve(op.blockType);
 		if (!schema) return [];
 
-		const contentType = Array.isArray(schema.content)
-			? "nested"
-			: schema.content === "inline"
-				? "inline"
-				: schema.content === "table"
-					? "table"
-					: "none";
+		const contentType = resolveRuntimeContentType(schema);
 		const blockMap = this._adapter.initBlockMap(
 			this._crdtDoc,
 			op.blockId,
 			op.blockType,
 			contentType,
-		);
+		) as MutableMap;
 
 		if (op.props && Object.keys(op.props).length > 0) {
-			const propsMap = (blockMap as CRDTMap<unknown>).get("props") as
-				| CRDTMap<unknown>
-				| undefined;
-			if (propsMap) {
-				for (const [key, value] of Object.entries(op.props)) {
-					(propsMap as any).set(key, value);
-				}
+			const propsMap = this._getOrCreateMapProp(blockMap, "props");
+			for (const [key, value] of Object.entries(op.props)) {
+				propsMap.set(key, value);
 			}
 		}
 
 		if (typeof op.position === "object" && "parent" in op.position) {
-			const parentMap = this.blocks.get(op.position.parent);
+			const parentMap = this._getMutableBlockMap(op.position.parent);
 			if (parentMap) {
-				let children = parentMap.get("children") as any;
-				if (!children) {
-					children = this._adapter.createArray();
-					(parentMap as any).set("children", children);
-				}
+				const children = this._getOrCreateStringArrayProp(parentMap, "children");
 				const idx = Math.min(op.position.index, children.length);
 				children.insert(idx, [op.blockId]);
 			}
 		} else {
 			const idx = this._resolvePosition(op.position);
-			(this.blockOrder as any).insert(idx, [op.blockId]);
+			this.mutableBlockOrder.insert(idx, [op.blockId]);
+		}
+
+		if ((schema as { content: unknown }).content === "database") {
+			this._databaseOps.seedDatabaseBlock(blockMap);
 		}
 
 		return [op.blockId];
 	}
 
 	private _updateBlock(op: UpdateBlockOp): string[] {
-		const blockMap = this.blocks.get(op.blockId);
+		const blockMap = this._getMutableBlockMap(op.blockId);
 		if (!blockMap) return [];
 
-		let propsMap = blockMap.get("props") as any;
-		if (!propsMap) {
-			propsMap = this._adapter.createMap();
-			(blockMap as any).set("props", propsMap);
-		}
+		const propsMap = this._getOrCreateMapProp(blockMap, "props");
 
 		for (const [key, value] of Object.entries(op.props)) {
 			if (value === undefined || value === null) {
@@ -460,68 +509,35 @@ export class ApplyPipeline {
 	}
 
 	private _deleteBlock(op: DeleteBlockOp): string[] {
-		(this.blocks as any).delete(op.blockId);
-
-		for (let i = (this.blockOrder as any).length - 1; i >= 0; i--) {
-			if (this.blockOrder.get(i) === op.blockId) {
-				(this.blockOrder as any).delete(i, 1);
-			}
-		}
-
-		for (const [, parentMap] of this.blocks.entries()) {
-			const children = parentMap.get("children") as any;
-			if (!children) continue;
-			for (let i = children.length - 1; i >= 0; i--) {
-				if (children.get(i) === op.blockId) {
-					children.delete(i, 1);
-				}
-			}
-		}
+		this.mutableBlocks.delete(op.blockId);
+		this._removeBlockIdFromArray(this.mutableBlockOrder, op.blockId);
+		this._removeBlockIdFromAllChildren(op.blockId);
 
 		return [op.blockId];
 	}
 
 	private _moveBlock(op: MoveBlockOp): string[] {
-		// Remove from current position
-		for (let i = (this.blockOrder as any).length - 1; i >= 0; i--) {
-			if (this.blockOrder.get(i) === op.blockId) {
-				(this.blockOrder as any).delete(i, 1);
-				break;
-			}
-		}
-
-		for (const [, parentMap] of this.blocks.entries()) {
-			const children = parentMap.get("children") as any;
-			if (!children) continue;
-			for (let i = children.length - 1; i >= 0; i--) {
-				if (children.get(i) === op.blockId) {
-					children.delete(i, 1);
-				}
-			}
-		}
+		this._removeBlockIdFromArray(this.mutableBlockOrder, op.blockId, true);
+		this._removeBlockIdFromAllChildren(op.blockId);
 
 		// Insert at new position
 		if (typeof op.position === "object" && "parent" in op.position) {
-			const parentMap = this.blocks.get(op.position.parent);
+			const parentMap = this._getMutableBlockMap(op.position.parent);
 			if (parentMap) {
-				let children = parentMap.get("children") as any;
-				if (!children) {
-					children = this._adapter.createArray();
-					(parentMap as any).set("children", children);
-				}
+				const children = this._getOrCreateStringArrayProp(parentMap, "children");
 				const idx = Math.min(op.position.index, children.length);
 				children.insert(idx, [op.blockId]);
 			}
 		} else {
 			const idx = this._resolvePosition(op.position);
-			(this.blockOrder as any).insert(idx, [op.blockId]);
+			this.mutableBlockOrder.insert(idx, [op.blockId]);
 		}
 
 		return [op.blockId];
 	}
 
 	private _convertBlock(op: ConvertBlockOp): string[] {
-		const blockMap = this.blocks.get(op.blockId);
+		const blockMap = this._getMutableBlockMap(op.blockId);
 		if (!blockMap) return [];
 
 		const oldType = blockMap.get("type") as string;
@@ -529,26 +545,23 @@ export class ApplyPipeline {
 		const newSchema = this._registry.resolve(op.newType);
 		if (!newSchema) return [];
 
-		(blockMap as any).set("type", op.newType);
+		blockMap.set("type", op.newType);
 
-		const propsMap = blockMap.get("props") as any;
+		const propsMap = getMapProp(blockMap, "props");
 		if (propsMap) {
+			const mutablePropsMap = propsMap as MutableMap;
 			const newPropKeys = new Set(
 				Object.keys(newSchema.propSchema ?? {}),
 			);
-			for (const key of [...(propsMap.keys?.() ?? [])]) {
+			for (const key of [...(mutablePropsMap.keys?.() ?? [])]) {
 				if (!newPropKeys.has(key)) {
-					propsMap.delete(key);
+					mutablePropsMap.delete(key);
 				}
 			}
 		}
 
 		if (op.newProps) {
-			let props = blockMap.get("props") as any;
-			if (!props) {
-				props = this._adapter.createMap();
-				(blockMap as any).set("props", props);
-			}
+			const props = this._getOrCreateMapProp(blockMap, "props");
 			for (const [key, value] of Object.entries(op.newProps)) {
 				props.set(key, value);
 			}
@@ -556,6 +569,10 @@ export class ApplyPipeline {
 
 		const oldContent = oldSchema?.content;
 		const newContent = newSchema.content;
+		const preservedInlineDeltas =
+			oldContent === "inline"
+				? this._getPreservedInlineDeltas(this._getTextContent(blockMap))
+				: [];
 
 		if (oldContent === "inline" && newContent !== "inline") {
 			if (
@@ -563,22 +580,94 @@ export class ApplyPipeline {
 				newContent === "table" ||
 				Array.isArray(newContent)
 			) {
-				(blockMap as any).delete("content");
+				blockMap.delete("content");
 			}
 		} else if (oldContent !== "inline" && newContent === "inline") {
 			const ytext = this._adapter.createText();
-			(blockMap as any).set("content", ytext);
+			blockMap.set("content", ytext);
+		}
+
+		const targetContent = resolveRuntimeContentType(newSchema);
+		if (targetContent !== "database") {
+			this._clearDatabaseState(blockMap);
+		}
+		if (targetContent === "table") {
+			blockMap.delete("tableColumns");
+		} else if (targetContent !== "database") {
+			this._clearTableState(blockMap);
+		}
+
+		if (targetContent === "table" && !getTableContent(blockMap)) {
+			this._tableGrid.seedTableBlock(blockMap, {
+				rowCount: 2,
+				colCount: 2,
+				preservedInlineDeltas,
+			});
+		}
+
+		if (targetContent === "database") {
+			if (oldType === "table") {
+				this._migrateTableToDatabase(blockMap, propsMap);
+			}
+			this._databaseOps.seedDatabaseBlock(blockMap);
 		}
 
 		return [op.blockId];
 	}
 
+	private _migrateTableToDatabase(
+		blockMap: MutableMap,
+		propsMap: CRDTUnknownMap | null,
+	): void {
+		const tableContent = getTableContent(blockMap);
+		if (!tableContent) {
+			return;
+		}
+
+		const hasHeaderRow = propsMap?.get("hasHeaderRow") !== false;
+		const existingColumns = getTableColumns(blockMap);
+		if (!existingColumns || existingColumns.length === 0) {
+			const columnCount = this._tableGrid.resolveGridColumnCount(blockMap);
+			const columns = Array.from({ length: columnCount }, (_, index) => {
+				const title =
+					hasHeaderRow && tableContent.length > 0
+						? this._tableGrid.readTableCellText(
+								tableContent.get(0) as CRDTUnknownMap,
+								index,
+						  ).trim() || `Column ${index + 1}`
+						: `Column ${index + 1}`;
+				return {
+					id: `column-${index + 1}`,
+					title,
+					type: "text" as const,
+				};
+			});
+			if (columns.length > 0) {
+				this._tableGrid.setStructuredTableColumns(blockMap, columns);
+			}
+		}
+
+		if (hasHeaderRow && tableContent.length > 0) {
+			tableContent.delete(0, 1);
+		}
+
+		for (let rowIndex = 0; rowIndex < tableContent.length; rowIndex++) {
+			const row = tableContent.get(rowIndex);
+			if (!row || !isCRDTMap(row)) {
+				continue;
+			}
+			if (!getStringProp(row, "id")) {
+				row.set("id", generateId());
+			}
+		}
+	}
+
 	private _splitBlock(op: SplitBlockOp): string[] {
-		const blockMap = this.blocks.get(op.blockId);
+		const blockMap = this._getMutableBlockMap(op.blockId);
 		if (!blockMap) return [];
 
-		const content = blockMap.get("content") as CRDTText | undefined;
-		if (!content || typeof content.toDelta !== "function") return [];
+		const content = this._getTextContent(blockMap);
+		if (!content) return [];
 
 		const oldType = blockMap.get("type") as string;
 		const newType = op.newBlockType ?? oldType;
@@ -620,24 +709,15 @@ export class ApplyPipeline {
 		}
 
 		// Initialize the new block through the adapter so shared CRDT state stays consistent.
-		const contentType =
-			schema && Array.isArray(schema.content)
-				? "nested"
-				: schema?.content === "inline"
-					? "inline"
-					: schema?.content === "table"
-						? "table"
-						: "none";
+		const contentType = resolveRuntimeContentType(schema);
 		const newBlockMap = this._adapter.initBlockMap(
 			this._crdtDoc,
 			op.newBlockId,
 			newType,
-			contentType as "inline" | "nested" | "table" | "none",
-		) as CRDTMap<unknown>;
+			contentType,
+		) as MutableMap;
 
-		const newContent = (newBlockMap as any).get("content") as
-			| CRDTText
-			| undefined;
+		const newContent = this._getTextContent(newBlockMap);
 		if (newContent) {
 			for (const delta of tailDeltas) {
 				newContent.insert(
@@ -649,9 +729,9 @@ export class ApplyPipeline {
 		}
 
 		// Copy parentId if present
-		const propsMap = blockMap.get("props") as CRDTMap<unknown> | undefined;
+		const propsMap = getMapProp(blockMap, "props");
 		if (propsMap?.get?.("parentId")) {
-			const newProps = (newBlockMap as any).get("props") as any;
+			const newProps = getMapProp(newBlockMap, "props");
 			if (newProps) {
 				newProps.set("parentId", propsMap.get("parentId"));
 			}
@@ -660,7 +740,7 @@ export class ApplyPipeline {
 		// Insert new block right after original in blockOrder
 		for (let i = 0; i < this.blockOrder.length; i++) {
 			if (this.blockOrder.get(i) === op.blockId) {
-				(this.blockOrder as any).insert(i + 1, [op.newBlockId]);
+				this.mutableBlockOrder.insert(i + 1, [op.newBlockId]);
 				break;
 			}
 		}
@@ -669,12 +749,12 @@ export class ApplyPipeline {
 	}
 
 	private _mergeBlocks(op: MergeBlocksOp): string[] {
-		const targetMap = this.blocks.get(op.targetBlockId);
-		const sourceMap = this.blocks.get(op.sourceBlockId);
+		const targetMap = this._getMutableBlockMap(op.targetBlockId);
+		const sourceMap = this._getMutableBlockMap(op.sourceBlockId);
 		if (!targetMap || !sourceMap) return [];
 
-		const targetContent = targetMap.get("content") as CRDTText | undefined;
-		const sourceContent = sourceMap.get("content") as CRDTText | undefined;
+		const targetContent = this._getTextContent(targetMap);
+		const sourceContent = this._getTextContent(sourceMap);
 
 		if (
 			targetContent &&
@@ -712,10 +792,10 @@ export class ApplyPipeline {
 			}
 		}
 
-		(this.blocks as any).delete(op.sourceBlockId);
-		for (let i = (this.blockOrder as any).length - 1; i >= 0; i--) {
+		this.mutableBlocks.delete(op.sourceBlockId);
+		for (let i = this.mutableBlockOrder.length - 1; i >= 0; i--) {
 			if (this.blockOrder.get(i) === op.sourceBlockId) {
-				(this.blockOrder as any).delete(i, 1);
+				this.mutableBlockOrder.delete(i, 1);
 				break;
 			}
 		}
@@ -726,9 +806,9 @@ export class ApplyPipeline {
 	// ── Text Ops ─────────────────────────────────────────────
 
 	private _insertText(op: InsertTextOp): string[] {
-		const blockMap = this.blocks.get(op.blockId);
+		const blockMap = this._getMutableBlockMap(op.blockId);
 		if (!blockMap) return [];
-		const content = blockMap.get("content") as CRDTText | undefined;
+		const content = this._getTextContent(blockMap);
 		if (!content) return [];
 
 		if (content.length === 1 && content.toString() === ZERO_WIDTH_SPACE) {
@@ -741,9 +821,9 @@ export class ApplyPipeline {
 	}
 
 	private _deleteText(op: DeleteTextOp): string[] {
-		const blockMap = this.blocks.get(op.blockId);
+		const blockMap = this._getMutableBlockMap(op.blockId);
 		if (!blockMap) return [];
-		const content = blockMap.get("content") as CRDTText | undefined;
+		const content = this._getTextContent(blockMap);
 		if (!content) return [];
 
 		content.delete(op.offset, op.length);
@@ -751,9 +831,9 @@ export class ApplyPipeline {
 	}
 
 	private _formatText(op: FormatTextOp): string[] {
-		const blockMap = this.blocks.get(op.blockId);
+		const blockMap = this._getMutableBlockMap(op.blockId);
 		if (!blockMap) return [];
-		const content = blockMap.get("content") as CRDTText | undefined;
+		const content = this._getTextContent(blockMap);
 		if (!content) return [];
 
 		content.format(op.offset, op.length, op.marks);
@@ -761,9 +841,9 @@ export class ApplyPipeline {
 	}
 
 	private _replaceText(op: ReplaceTextOp): string[] {
-		const blockMap = this.blocks.get(op.blockId);
+		const blockMap = this._getMutableBlockMap(op.blockId);
 		if (!blockMap) return [];
-		const content = blockMap.get("content") as CRDTText | undefined;
+		const content = this._getTextContent(blockMap);
 		if (!content) return [];
 
 		if (content.length === 1 && content.toString() === ZERO_WIDTH_SPACE) {
@@ -791,9 +871,9 @@ export class ApplyPipeline {
 	// ── Inline Node Ops ──────────────────────────────────────
 
 	private _insertInlineNode(op: InsertInlineNodeOp): string[] {
-		const blockMap = this.blocks.get(op.blockId);
+		const blockMap = this._getMutableBlockMap(op.blockId);
 		if (!blockMap) return [];
-		const content = blockMap.get("content") as any;
+		const content = this._getInlineTextContent(blockMap);
 		if (!content) return [];
 
 		content.insertEmbed(op.offset, {
@@ -804,9 +884,9 @@ export class ApplyPipeline {
 	}
 
 	private _removeInlineNode(op: RemoveInlineNodeOp): string[] {
-		const blockMap = this.blocks.get(op.blockId);
+		const blockMap = this._getMutableBlockMap(op.blockId);
 		if (!blockMap) return [];
-		const content = blockMap.get("content") as CRDTText | undefined;
+		const content = this._getTextContent(blockMap);
 		if (!content) return [];
 
 		content.delete(op.offset, 1);
@@ -823,14 +903,10 @@ export class ApplyPipeline {
 	// ── Layout Op ────────────────────────────────────────────
 
 	private _updateLayout(op: UpdateLayoutOp): string[] {
-		const blockMap = this.blocks.get(op.blockId);
+		const blockMap = this._getMutableBlockMap(op.blockId);
 		if (!blockMap) return [];
 
-		let layoutMap = blockMap.get("layout") as any;
-		if (!layoutMap) {
-			layoutMap = this._adapter.createMap();
-			(blockMap as any).set("layout", layoutMap);
-		}
+		const layoutMap = this._getOrCreateMapProp(blockMap, "layout");
 
 		for (const [key, value] of Object.entries(op.layout)) {
 			if (value === undefined || value === null) {
@@ -846,31 +922,27 @@ export class ApplyPipeline {
 	// ── App Ops ──────────────────────────────────────────────
 
 	private _createApp(op: CreateAppOp): string[] {
-		const appMap = this._adapter.createMap() as CRDTMap<unknown>;
-		(appMap as any).set("type", op.appType);
-		(appMap as any).set("placement", op.placement);
+		const appMap = this._createMutableMap();
+		appMap.set("type", op.appType);
+		appMap.set("placement", op.placement);
 
 		if (op.config && Object.keys(op.config).length > 0) {
-			const configMap = this._adapter.createMap() as any;
+			const configMap = this._createMutableMap();
 			for (const [key, value] of Object.entries(op.config)) {
 				configMap.set(key, value);
 			}
-			(appMap as any).set("config", configMap);
+			appMap.set("config", configMap);
 		}
 
-		(this.apps as any).set(op.appId, appMap);
+		this.mutableApps.set(op.appId, appMap);
 		return [];
 	}
 
 	private _updateApp(op: UpdateAppOp): string[] {
-		const appMap = this.apps.get(op.appId);
+		const appMap = this._getMutableAppMap(op.appId);
 		if (!appMap) return [];
 
-		let configMap = appMap.get("config") as any;
-		if (!configMap) {
-			configMap = this._adapter.createMap();
-			(appMap as any).set("config", configMap);
-		}
+		const configMap = this._getOrCreateMapProp(appMap, "config");
 
 		for (const [key, value] of Object.entries(op.patch)) {
 			if (value === undefined || value === null) {
@@ -883,78 +955,102 @@ export class ApplyPipeline {
 	}
 
 	private _deleteApp(op: DeleteAppOp): string[] {
-		(this.apps as any).delete(op.appId);
+		this.mutableApps.delete(op.appId);
 		return [];
 	}
 
 	// ── Table Ops ────────────────────────────────────────────
 
 	private _tableOp(op: DocumentOp): string[] {
-		const tableOp = op as { type: string; blockId: string; index: number };
-		const blockMap = this.blocks.get(tableOp.blockId);
+		const tableOp = op as { blockId: string; type: string };
+		const blockMap = this._getMutableBlockMap(tableOp.blockId);
 		if (!blockMap) return [];
 
-		const tableContent = blockMap.get("tableContent") as any;
-		if (!tableContent) return [];
+		const blockType = blockMap.get("type");
+		if (blockType === "database") {
+			if (op.type === "update-table-columns") {
+				return this._databaseOps.replaceColumns(
+					blockMap,
+					(op as UpdateTableColumnsOp).columns,
+				)
+					? [tableOp.blockId]
+					: [];
+			}
 
-		switch (op.type) {
-			case "insert-table-row": {
-				const row = this._adapter.createArray() as any;
-				const colCount =
-					tableContent.length > 0
-						? (tableContent.get(0) as CRDTArray<unknown>).length
-						: 1;
-				for (let c = 0; c < colCount; c++) {
-					const cell = this._adapter.createMap() as any;
-					cell.set("content", this._adapter.createText());
-					row.insert(row.length, [cell]);
-				}
-				tableContent.insert(tableOp.index, [row]);
-				break;
+			if (this._isDatabaseStructuralTableOp(op.type)) {
+				this._emitter.emit("diagnostic", {
+					code: "PEN_APPLY_006",
+					level: "warn",
+					source: "apply",
+					message: `apply: skipping ${op.type} for database block "${tableOp.blockId}"`,
+					remediation:
+						"Use database operations for structural database changes so row ids, column schema, and views stay in sync.",
+					op,
+				});
+				return [];
 			}
-			case "delete-table-row": {
-				if (tableOp.index < tableContent.length) {
-					tableContent.delete(tableOp.index, 1);
-				}
-				break;
-			}
-			case "insert-table-column": {
-				for (let r = 0; r < tableContent.length; r++) {
-					const row = tableContent.get(r) as any;
-					const cell = this._adapter.createMap() as any;
-					cell.set("content", this._adapter.createText());
-					row.insert(tableOp.index, [cell]);
-				}
-				break;
-			}
-			case "delete-table-column": {
-				for (let r = 0; r < tableContent.length; r++) {
-					const row = tableContent.get(r) as any;
-					if (tableOp.index < row.length) {
-						row.delete(tableOp.index, 1);
-					}
-				}
-				break;
-			}
-			case "merge-table-cells":
-			case "split-table-cell":
-				break;
 		}
 
-		return [tableOp.blockId];
+		return this._tableGrid.execute(blockMap, op);
+	}
+
+	private _databaseOp(op: DocumentOp): string[] {
+		const databaseOp = op as { type: string; blockId: string };
+		const blockMap = this._getMutableBlockMap(databaseOp.blockId);
+		if (!blockMap) return [];
+
+		return this._databaseOps.execute(blockMap, op);
+	}
+
+	private _clearTableState(blockMap: MutableMap): void {
+		blockMap.delete("tableContent");
+		blockMap.delete("tableColumns");
+	}
+
+	private _clearDatabaseState(blockMap: MutableMap): void {
+		blockMap.delete("databaseViews");
+		blockMap.delete("databasePrimaryViewId");
+	}
+
+	private _isDatabaseStructuralTableOp(type: string): boolean {
+		return (
+			type === "insert-table-row" ||
+			type === "delete-table-row" ||
+			type === "insert-table-column" ||
+			type === "delete-table-column" ||
+			type === "merge-table-cells" ||
+			type === "split-table-cell"
+		);
+	}
+
+	private _getPreservedInlineDeltas(
+		content: CRDTText | undefined,
+	): Array<{
+		insert: string;
+		attributes?: Record<string, unknown>;
+	}> {
+		if (!content || typeof content.toDelta !== "function") {
+			return [];
+		}
+
+		return content
+			.toDelta()
+			.filter(
+				(delta): delta is {
+					insert: string;
+					attributes?: Record<string, unknown>;
+				} =>
+					typeof delta.insert === "string" && delta.insert !== ZERO_WIDTH_SPACE,
+			);
 	}
 
 	// ── Meta Op ──────────────────────────────────────────────
 
 	private _setMeta(op: SetMetaOp): string[] {
-		const blockMap = this.blocks.get(op.blockId);
+		const blockMap = this._getMutableBlockMap(op.blockId);
 		if (!blockMap) return [];
 
-		let metaMap = blockMap.get("meta") as any;
-		if (!metaMap) {
-			metaMap = this._adapter.createMap();
-			(blockMap as any).set("meta", metaMap);
-		}
+		const metaMap = this._getOrCreateMapProp(blockMap, "meta");
 
 		// Persist metadata as plain JSON so adapters can round-trip it predictably.
 		if (op.data === null) {
@@ -970,6 +1066,92 @@ export class ApplyPipeline {
 
 	private _blockExists(blockId: string): boolean {
 		return this.blocks.has(blockId);
+	}
+
+	private _createMutableMap(): MutableMap {
+		return this._adapter.createMap() as MutableMap;
+	}
+
+	private _getMutableBlockMap(blockId: string): MutableMap | null {
+		return (this.blocks.get(blockId) as unknown as MutableMap | undefined) ?? null;
+	}
+
+	private _getMutableAppMap(appId: string): MutableMap | null {
+		return (this.apps.get(appId) as unknown as MutableMap | undefined) ?? null;
+	}
+
+	private _getOrCreateMapProp(container: CRDTUnknownMap, key: string): MutableMap {
+		const existing = getMapProp(container, key);
+		if (existing) {
+			return existing as MutableMap;
+		}
+		const map = this._createMutableMap();
+		container.set(key, map);
+		return map;
+	}
+
+	private _getOrCreateStringArrayProp(
+		container: CRDTUnknownMap,
+		key: string,
+	): MutableStringArray {
+		const existing = getArrayProp<string>(container, key);
+		if (existing) {
+			return existing as MutableStringArray;
+		}
+		const array = this._adapter.createArray() as MutableStringArray;
+		container.set(key, array);
+		return array;
+	}
+
+	private _removeBlockIdFromArray(
+		array: MutableStringArray,
+		blockId: string,
+		stopAfterFirst = false,
+	): void {
+		for (let index = array.length - 1; index >= 0; index--) {
+			if (array.get(index) !== blockId) {
+				continue;
+			}
+			array.delete(index, 1);
+			if (stopAfterFirst) {
+				return;
+			}
+		}
+	}
+
+	private _removeBlockIdFromAllChildren(blockId: string): void {
+		for (const [, parentMap] of this.blocks.entries()) {
+			const children = getArrayProp<string>(
+				parentMap as unknown as CRDTUnknownMap,
+				"children",
+			);
+			if (!children) {
+				continue;
+			}
+			this._removeBlockIdFromArray(children as MutableStringArray, blockId);
+		}
+	}
+
+	private _getTextContent(blockMap: CRDTUnknownMap): CRDTText | undefined {
+		const content = blockMap.get("content");
+		return content &&
+			typeof content === "object" &&
+			typeof (content as { insert?: unknown }).insert === "function" &&
+			typeof (content as { delete?: unknown }).delete === "function" &&
+			typeof (content as { format?: unknown }).format === "function" &&
+			typeof (content as { toDelta?: unknown }).toDelta === "function" &&
+			typeof (content as { toString?: unknown }).toString === "function" &&
+			typeof (content as { length?: unknown }).length === "number"
+			? (content as CRDTText)
+			: undefined;
+	}
+
+	private _getInlineTextContent(blockMap: CRDTUnknownMap): CRDTInlineText | undefined {
+		const content = this._getTextContent(blockMap);
+		return content &&
+			typeof (content as { insertEmbed?: unknown }).insertEmbed === "function"
+			? (content as CRDTInlineText)
+			: undefined;
 	}
 
 	private _opBlockId(op: DocumentOp): string | null {

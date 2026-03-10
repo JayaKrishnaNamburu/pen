@@ -1,7 +1,7 @@
 import type { Editor } from "@pen/core";
-import { useSyncExternalStoreWithSelector } from "../utils/useSyncExternalStoreWithSelector.js";
-import { getExpandedBlockRole } from "../field-editor/crossBlock.js";
-import type { FieldEditorStore } from "../field-editor/store.js";
+import { useSyncExternalStoreWithSelector } from "../utils/useSyncExternalStoreWithSelector";
+import { getExpandedBlockRole } from "../field-editor/crossBlock";
+import type { FieldEditorStore } from "../field-editor/store";
 
 const EMPTY_FIELD_EDITOR_SNAPSHOT = {
 	activeBlockIds: [],

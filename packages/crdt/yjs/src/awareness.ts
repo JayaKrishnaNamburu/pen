@@ -1,7 +1,7 @@
 import type { Awareness, AwarenessChangeEvent } from "@pen/types";
 import { Awareness as YAwareness } from "y-protocols/awareness";
 
-import type { YjsCRDTDocument } from "./document.js";
+import type { YjsCRDTDocument } from "./document";
 
 export function createYjsAwareness(doc: YjsCRDTDocument): Awareness {
   const awareness = new YAwareness(doc.ydoc);

@@ -1,1 +1,1 @@
-export { htmlExporter } from "./exporter.js";
+export { htmlExporter } from "./exporter";

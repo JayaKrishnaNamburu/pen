@@ -1,5 +1,5 @@
 import React from "react";
-import { renderAsChild, type AsChildProps } from "../../utils/asChild.js";
+import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 
 export interface SlashMenuGroupProps extends AsChildProps {
   heading?: string;

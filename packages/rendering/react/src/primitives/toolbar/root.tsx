@@ -1,13 +1,13 @@
 import React, { useContext } from "react";
 import type { Editor } from "@pen/core";
-import { EditorContext } from "../../context/editorContext.js";
+import { EditorContext } from "../../context/editorContext";
 import {
 	ToolbarContext,
 	type ToolbarContextValue,
-} from "../../context/toolbarContext.js";
-import { useToolbar } from "../../hooks/useToolbar.js";
-import { renderAsChild, type AsChildProps } from "../../utils/asChild.js";
-import { isDevelopmentEnvironment } from "../../utils/environment.js";
+} from "../../context/toolbarContext";
+import { useToolbar } from "../../hooks/useToolbar";
+import { renderAsChild, type AsChildProps } from "../../utils/asChild";
+import { isDevelopmentEnvironment } from "../../utils/environment";
 
 export interface ToolbarRootProps extends AsChildProps {
 	editor?: Editor;

@@ -1,11 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { sanitizeHTML } from "../sanitize.js";
-import { parseHTML } from "../domAdapter.js";
-import { domToBlocks } from "../domToBlocks.js";
-import { parseInlineContent } from "../inlineParser.js";
-import { blocksToOps } from "@pen/core";
-import type { SchemaRegistry } from "@pen/core";
-import type { DOMNode } from "../domAdapter.js";
+import { blocksToOps, createEditor } from "@pen/core";
+import type { HTMLImportElement, SchemaRegistry } from "@pen/core";
+import { createDefaultSchema } from "@pen/schema-default";
+import { htmlExporter } from "@pen/export-html";
+import { sanitizeHTML } from "../sanitize";
+import { parseHTML } from "../domAdapter";
+import { domToBlocks } from "../domToBlocks";
+import { parseInlineContent } from "../inlineParser";
+import type { DOMNode } from "../domAdapter";
 
 const stubRegistry: SchemaRegistry = {
   resolve: () => null,
@@ -18,10 +20,65 @@ const stubRegistry: SchemaRegistry = {
   allBlockDisplays: () => [],
 };
 
-function convert(html: string) {
+const defaultRegistry = createDefaultSchema();
+
+function convert(html: string, registry: SchemaRegistry = stubRegistry) {
   const sanitized = sanitizeHTML(html);
   const dom = parseHTML(sanitized);
-  return domToBlocks(dom, stubRegistry);
+  return domToBlocks(dom, registry);
+}
+
+function databaseEditor() {
+  const editor = createEditor({
+    schema: defaultRegistry,
+    without: ["document-ops", "delta-stream", "undo"],
+  });
+  editor.apply([{
+    type: "insert-block",
+    blockId: "d1",
+    blockType: "database",
+    props: { title: "Roadmap", dataSource: "local" },
+    position: "last",
+  }]);
+  editor.apply([{
+    type: "update-table-columns",
+    blockId: "d1",
+    columns: [
+      { id: "name", title: "Name", type: "text" },
+      {
+        id: "tags",
+        title: "Tags",
+        type: "multiSelect",
+        options: [
+          { id: "bug", value: "Bug", color: "red" },
+          { id: "feature", value: "Feature", color: "blue" },
+        ],
+      },
+      { id: "done", title: "Done", type: "checkbox" },
+    ],
+  }]);
+  editor.apply([{
+    type: "database-insert-row",
+    blockId: "d1",
+    rowId: "roadmap-1",
+    values: {
+      name: "Ship importer",
+      tags: JSON.stringify(["Feature"]),
+      done: "false",
+    },
+  }]);
+  editor.apply([{
+    type: "database-update-view",
+    blockId: "d1",
+    patch: {
+      title: "Main",
+      type: "table",
+      visibleColumnIds: ["name", "tags"],
+      columnOrder: ["name", "tags", "done"],
+      sort: [{ columnId: "name", direction: "asc" }],
+    },
+  }]);
+  return editor;
 }
 
 describe("sanitizeHTML", () => {
@@ -64,6 +121,15 @@ describe("sanitizeHTML", () => {
     const result = sanitizeHTML('<img src="photo.jpg" alt="photo" />');
     expect(result).toContain("src");
     expect(result).toContain("alt");
+  });
+
+  it("only preserves the inline styles the importer understands", () => {
+    const result = sanitizeHTML(
+      '<p style="color: red; position: fixed; background-color: blue; z-index: 1">styled</p>',
+    );
+    expect(result).toContain('style="color: red; background-color: blue"');
+    expect(result).not.toContain("position:");
+    expect(result).not.toContain("z-index:");
   });
 });
 
@@ -295,6 +361,174 @@ describe("@pen/import-html dom-to-blocks", () => {
     expect(blocks[0].children).toHaveLength(2);
   });
 
+  it("round-trips exported database HTML back into a database block", async () => {
+    const source = databaseEditor();
+    const html = await htmlExporter.export(source);
+
+    const blocks = convert(html, defaultRegistry);
+    const databaseBlock = blocks.find((block) => block.type === "database");
+    expect(databaseBlock).toMatchObject({
+      type: "database",
+      props: { title: "Roadmap", dataSource: "local" },
+    });
+    expect(databaseBlock?.database).toEqual(
+      expect.objectContaining({
+        primaryViewId: expect.any(String),
+        columns: [
+          expect.objectContaining({ id: "name", title: "Name", type: "text" }),
+          expect.objectContaining({ id: "tags", title: "Tags", type: "multiSelect" }),
+          expect.objectContaining({ id: "done", title: "Done", type: "checkbox" }),
+        ],
+        rows: expect.arrayContaining([
+          expect.objectContaining({
+            id: expect.any(String),
+            values: {
+              name: "Ship importer",
+              tags: JSON.stringify(["feature"]),
+              done: "false",
+            },
+          }),
+        ]),
+      }),
+    );
+
+    const target = createEditor({
+      schema: defaultRegistry,
+      without: ["document-ops", "delta-stream", "undo"],
+    });
+    const ops = blocksToOps(blocks);
+    target.apply(ops, { origin: "import", undoGroup: true });
+    const imported = Array.from(target.documentState.allBlocks()).find(
+      (block) => block.type === "database",
+    );
+    expect(imported?.props.title).toBe("Roadmap");
+    expect(imported?.tableColumns().map((column) => column.id)).toEqual(["name", "tags", "done"]);
+    expect(imported?.tableRow(0)?.id).toEqual(expect.any(String));
+    expect(imported?.tableCell(0, 1)?.textContent()).toBe(JSON.stringify(["feature"]));
+    expect(imported?.databaseActiveView()).toEqual(
+      expect.objectContaining({
+        title: "Main",
+        visibleColumnIds: ["name", "tags"],
+        columnOrder: ["name", "tags", "done"],
+      }),
+    );
+
+    source.destroy();
+    target.destroy();
+  });
+
+  it("preserves intentionally empty database rows when round-tripping HTML", async () => {
+    const source = databaseEditor();
+    source.apply([{
+      type: "database-insert-row",
+      blockId: "d1",
+      rowId: "empty-row",
+    }]);
+    const html = await htmlExporter.export(source);
+
+    const blocks = convert(html, defaultRegistry);
+    const databaseBlock = blocks.find((block) => block.type === "database");
+    expect(databaseBlock?.database?.rows).toEqual([
+      expect.objectContaining({
+        values: {
+          name: "Ship importer",
+          tags: JSON.stringify(["feature"]),
+          done: "false",
+        },
+      }),
+      {
+        id: "empty-row",
+        values: {
+          name: "",
+          tags: "",
+          done: "",
+        },
+      },
+    ]);
+
+    const target = createEditor({
+      schema: defaultRegistry,
+      without: ["document-ops", "delta-stream", "undo"],
+    });
+    target.apply(blocksToOps(blocks), { origin: "import", undoGroup: true });
+
+    const imported = Array.from(target.documentState.allBlocks()).find(
+      (block) => block.type === "database",
+    );
+    expect(imported?.tableRowCount()).toBe(2);
+    expect(imported?.tableRow(1)?.id).toBe("empty-row");
+    expect(imported?.tableCell(1, 0)?.textContent()).toBe("");
+    expect(imported?.tableCell(1, 1)?.textContent()).toBe("");
+    expect(imported?.tableCell(1, 2)?.textContent()).toBe("");
+
+    source.destroy();
+    target.destroy();
+  });
+
+  it("imports typed HTML tables as database blocks without Pen payload", () => {
+    const blocks = convert(
+      '<table><thead><tr><th data-col-id="name" data-col-type="text">Name</th><th data-col-id="status" data-col-type="select" data-col-options="%5B%7B%22id%22%3A%22todo%22%2C%22value%22%3A%22Todo%22%7D%5D">Status</th></tr></thead><tbody><tr><td>Ship it</td><td>todo</td></tr></tbody></table>',
+      defaultRegistry,
+    );
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toMatchObject({
+      type: "database",
+      props: { title: "Untitled", dataSource: "local" },
+      database: {
+        columns: [
+          expect.objectContaining({ id: "name", title: "Name", type: "text" }),
+          expect.objectContaining({
+            id: "status",
+            title: "Status",
+            type: "select",
+            options: [{ id: "todo", value: "Todo" }],
+          }),
+        ],
+        rows: [
+          expect.objectContaining({
+            values: { name: "Ship it", status: "todo" },
+          }),
+        ],
+      },
+    });
+  });
+
+  it("coerces select labels to option IDs during typed HTML import", () => {
+    const blocks = convert(
+      '<table><thead><tr><th data-col-id="name" data-col-type="text">Name</th><th data-col-id="status" data-col-type="select" data-col-options="%5B%7B%22id%22%3A%22todo%22%2C%22value%22%3A%22Todo%22%7D%2C%7B%22id%22%3A%22done%22%2C%22value%22%3A%22Done%22%7D%5D">Status</th></tr></thead><tbody><tr><td>Task A</td><td>Todo</td></tr><tr><td>Task B</td><td>done</td></tr></tbody></table>',
+      defaultRegistry,
+    );
+
+    expect(blocks).toHaveLength(1);
+    const rows = blocks[0].database!.rows;
+    expect(rows[0].values.status).toBe("todo");
+    expect(rows[1].values.status).toBe("done");
+  });
+
+  it("coerces multiSelect labels to option IDs during typed HTML import", () => {
+    const blocks = convert(
+      '<table><thead><tr><th data-col-id="tags" data-col-type="multiSelect" data-col-options="%5B%7B%22id%22%3A%22bug%22%2C%22value%22%3A%22Bug%22%7D%2C%7B%22id%22%3A%22feat%22%2C%22value%22%3A%22Feature%22%7D%5D">Tags</th></tr></thead><tbody><tr><td>Bug, Feature</td></tr></tbody></table>',
+      defaultRegistry,
+    );
+
+    expect(blocks).toHaveLength(1);
+    const rows = blocks[0].database!.rows;
+    expect(rows[0].values.tags).toBe(JSON.stringify(["bug", "feat"]));
+  });
+
+  it("preserves hidden and readonly false values during typed HTML import", () => {
+    const blocks = convert(
+      '<table><thead><tr><th data-col-id="a" data-col-type="text" data-col-hidden="false" data-col-readonly="false">A</th></tr></thead><tbody><tr><td>x</td></tr></tbody></table>',
+      defaultRegistry,
+    );
+
+    expect(blocks).toHaveLength(1);
+    const col = blocks[0].database!.columns[0];
+    expect(col.hidden).toBe(false);
+    expect(col.readonly).toBe(false);
+  });
+
   it("blocksToOps generates correct ops (AC 41)", () => {
     const blocks = convert("<h1>Title</h1><p><strong>bold</strong></p>");
     const ops = blocksToOps(blocks);
@@ -335,5 +569,159 @@ describe("@pen/import-html dom-to-blocks", () => {
         expect(block.props).toBeDefined();
       }
     }
+  });
+
+  it("<details> → toggle block via schema fromHTML", () => {
+    const blocks = convert(
+      "<details><summary>Toggle title</summary></details>",
+      defaultRegistry,
+    );
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toMatchObject({
+      type: "toggle",
+      props: { open: false },
+      content: "Toggle title",
+    });
+  });
+
+  it("passes the public HTML import element to schema fromHTML hooks", () => {
+    let receivedElement: HTMLImportElement | null = null;
+    const registry: SchemaRegistry = {
+      ...stubRegistry,
+      allBlocks: () => [{
+        type: "custom",
+        propSchema: {},
+        content: "inline",
+        serialize: {
+          fromHTML(element: HTMLImportElement) {
+            receivedElement = element;
+            if (element.tagName !== "div") {
+              return null;
+            }
+            return {
+              type: "paragraph",
+              props: {},
+              content: element.getAttribute("data-title") ?? "",
+            };
+          },
+        },
+      }],
+      resolve: (type) => (type === "custom" ? registry.allBlocks()[0] : null),
+    };
+
+    const blocks = convert('<div data-title="From hook"></div>', registry);
+
+    expect(receivedElement).toMatchObject({
+      type: "element",
+      tagName: "div",
+      attributes: { "data-title": "From hook" },
+    });
+    if (!receivedElement) {
+      throw new Error("Expected schema fromHTML hook to receive an element");
+    }
+    const hookElement = receivedElement as unknown as HTMLImportElement;
+    expect(hookElement.getAttribute("data-title")).toBe("From hook");
+    expect(hookElement.hasAttribute("data-title")).toBe(true);
+    expect(blocks).toMatchObject([
+      {
+        type: "paragraph",
+        content: "From hook",
+      },
+    ]);
+  });
+
+  it("<details open> → toggle block with open=true", () => {
+    const blocks = convert(
+      '<details open><summary>Open toggle</summary></details>',
+      defaultRegistry,
+    );
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toMatchObject({
+      type: "toggle",
+      props: { open: true },
+      content: "Open toggle",
+    });
+  });
+
+  it("preserves inline formatting inside an HTML toggle summary", () => {
+    const blocks = convert(
+      "<details><summary><strong>Bold</strong> and <em>italic</em></summary></details>",
+      defaultRegistry,
+    );
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toMatchObject({
+      type: "toggle",
+      content: "Bold and italic",
+    });
+    expect(blocks[0].marks?.some((mark) => mark.type === "bold")).toBe(true);
+    expect(blocks[0].marks?.some((mark) => mark.type === "italic")).toBe(true);
+  });
+
+  it("<div class='callout callout-warning'> → callout block", () => {
+    const blocks = convert(
+      '<div class="callout callout-warning">Be careful</div>',
+      defaultRegistry,
+    );
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toMatchObject({
+      type: "callout",
+      props: { type: "warning" },
+      content: "Be careful",
+    });
+  });
+
+  it("<div class='callout callout-error'> → callout block", () => {
+    const blocks = convert(
+      '<div class="callout callout-error">Something failed</div>',
+      defaultRegistry,
+    );
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toMatchObject({
+      type: "callout",
+      props: { type: "error" },
+      content: "Something failed",
+    });
+  });
+
+  it("<div class='callout callout-info'> → callout block", () => {
+    const blocks = convert(
+      '<div class="callout callout-info">FYI</div>',
+      defaultRegistry,
+    );
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toMatchObject({
+      type: "callout",
+      props: { type: "info" },
+      content: "FYI",
+    });
+  });
+
+  it("<ol start='5'> preserves start value on first list item", () => {
+    const blocks = convert('<ol start="5"><li>fifth</li><li>sixth</li></ol>');
+
+    expect(blocks).toHaveLength(2);
+    expect(blocks[0]).toMatchObject({
+      type: "numberedListItem",
+      content: "fifth",
+      props: { indent: 0, start: 5 },
+    });
+    expect(blocks[1]).toMatchObject({
+      type: "numberedListItem",
+      content: "sixth",
+      props: { indent: 0 },
+    });
+  });
+
+  it("<ol> without start attribute does not set start", () => {
+    const blocks = convert("<ol><li>first</li></ol>");
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0].props.start).toBeUndefined();
   });
 });

@@ -1,8 +1,8 @@
 import {
   defaultBlocks,
   defaultInlines,
-} from "../../schema/default/src/defs.js";
-import { SchemaRegistryImpl } from "./schema/registry.js";
+} from "../../schema/default/src/defs";
+import { SchemaRegistryImpl } from "./schema/registry";
 
 export function createBuiltInDefaultSchema(): SchemaRegistryImpl {
   return new SchemaRegistryImpl({

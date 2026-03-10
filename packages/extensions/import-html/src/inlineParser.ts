@@ -1,4 +1,4 @@
-import type { DOMNode } from "./domAdapter.js";
+import type { DOMNode } from "./domAdapter";
 
 interface InlineResult {
   text: string;

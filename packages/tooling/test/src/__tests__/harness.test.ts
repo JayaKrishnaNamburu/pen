@@ -6,7 +6,7 @@ import {
   assertDocEquals,
   createTestCollaboration,
   resetTestIdCounter,
-} from "../index.js";
+} from "../index";
 
 beforeEach(() => {
   resetTestIdCounter();

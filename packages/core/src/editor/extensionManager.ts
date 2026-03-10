@@ -8,8 +8,8 @@ import type {
 	KeyBinding,
 	SchemaRegistry,
 } from "@pen/types";
-import { EventEmitter } from "./events.js";
-import { emptyDecorationSet, mergeDecorationSets } from "./decorations.js";
+import { EventEmitter } from "./events";
+import { emptyDecorationSet, mergeDecorationSets } from "./decorations";
 
 export class ExtensionManagerImpl {
 	private readonly _extensions = new Map<string, Extension>();

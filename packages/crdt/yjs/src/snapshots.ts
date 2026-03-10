@@ -1,8 +1,8 @@
 import type { CRDTAdapter } from "@pen/types";
 import * as Y from "yjs";
 
-import { wrapYjsDocument } from "./document.js";
-import type { YjsCRDTDocument } from "./document.js";
+import { wrapYjsDocument } from "./document";
+import type { YjsCRDTDocument } from "./document";
 
 export function createYjsSnapshot(doc: YjsCRDTDocument): Uint8Array {
   return Y.encodeSnapshot(Y.snapshot(doc.ydoc));

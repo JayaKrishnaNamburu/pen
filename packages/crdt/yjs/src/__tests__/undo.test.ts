@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import * as Y from "yjs";
 
-import { yjsAdapter } from "../adapter.js";
-import { createYjsDocument, initBlockMap } from "../document.js";
-import { createYjsUndoManager } from "../undo.js";
+import { yjsAdapter } from "../adapter";
+import { createYjsDocument, initBlockMap } from "../document";
+import { createYjsUndoManager } from "../undo";
 
 describe("undo", () => {
   const adapter = yjsAdapter();

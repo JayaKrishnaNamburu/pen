@@ -1,2 +1,2 @@
-export { htmlImporter } from "./importer.js";
-export { sanitizeHTML } from "./sanitize.js";
+export { htmlImporter, parseHtmlToBlocks } from "./importer";
+export { sanitizeHTML } from "./sanitize";

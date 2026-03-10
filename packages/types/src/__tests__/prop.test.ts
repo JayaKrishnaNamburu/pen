@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { prop } from "../prop.js";
+import { prop } from "../prop";
 
 describe("prop builder", () => {
   it("prop.string() produces correct schema", () => {

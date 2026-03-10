@@ -1,32 +1,46 @@
 import React, { useRef, useEffect, useLayoutEffect } from "react";
+import type { Editor } from "@pen/core";
+import {
+	delegatesToGridEditing,
+	generateId,
+	usesInlineTextSelection,
+} from "@pen/core";
 import { flushSync } from "react-dom";
-import { EditorContentContext } from "../../context/editorContentContext.js";
-import { useEditorContext } from "../../context/editorContext.js";
-import { useFieldEditorContext } from "../../context/fieldEditorContext.js";
-import { shouldUseBlockSelection } from "../../field-editor/crossBlock.js";
+import { EditorContentContext } from "../../context/editorContentContext";
+import { useEditorContext } from "../../context/editorContext";
+import { useFieldEditorContext } from "../../context/fieldEditorContext";
+import { shouldUseBlockSelection } from "../../field-editor/crossBlock";
 import {
 	domSelectionToEditor,
 	getBlockBoundaryPoint,
 	pointToEditorSelectionPoint,
-} from "../../field-editor/selectionBridge.js";
-import { useFieldEditorState } from "../../hooks/useFieldEditorState.js";
-import { useBlockList } from "../../hooks/useBlockList.js";
+} from "../../field-editor/selectionBridge";
+import { useFieldEditorState } from "../../hooks/useFieldEditorState";
+import { useBlockList } from "../../hooks/useBlockList";
+import {
+	getEditorBlockSelectionLength,
+	getEditorBlockSelectionRole,
+} from "../../utils/blockSelectionSemantics";
 import {
 	useDocumentEmptyState,
 	useDocumentPlaceholderState,
-} from "../../hooks/useDocumentEmptyState.js";
-import { renderAsChild, type AsChildProps } from "../../utils/asChild.js";
-import { DATA_ATTRS } from "../../utils/dataAttributes.js";
-import { EditorBlock } from "./block.js";
+} from "../../hooks/useDocumentEmptyState";
+import { renderAsChild, type AsChildProps } from "../../utils/asChild";
+import { DATA_ATTRS } from "../../utils/dataAttributes";
+import { EditorBlock } from "./block";
+import {
+	DropPreviewProvider,
+} from "./dropPreviewContext";
+import { useTransferSession } from "./useTransferSession";
 
 export interface EditorContentProps extends AsChildProps {
 	virtualize?:
-		| boolean
-		| {
-				overscan?: number;
-				estimatedHeight?: number;
-				mobileOverscan?: number;
-		  };
+	| boolean
+	| {
+		overscan?: number;
+		estimatedHeight?: number;
+		mobileOverscan?: number;
+	};
 	emptyPlaceholder?: string;
 	ref?: React.Ref<HTMLElement>;
 }
@@ -43,11 +57,18 @@ export function EditorContent(props: EditorContentProps) {
 		blockId: string;
 		clientX: number;
 		clientY: number;
+		startSelection: ReturnType<Editor["getSelection"]>;
 	} | null>(null);
 	const skipNextClickRef = useRef(false);
 
 	const isEmpty = useDocumentEmptyState(editor);
 	const isDocumentPlaceholderVisible = useDocumentPlaceholderState(editor);
+	const { isDropActive, dropPreview, inlineDropCaretStyle } =
+		useTransferSession({
+			editor,
+			readonly,
+			contentRef,
+		});
 
 	useLayoutEffect(() => {
 		if (!fieldEditor || fieldEditorState.mode !== "expanded") return;
@@ -71,21 +92,106 @@ export function EditorContent(props: EditorContentProps) {
 						: null;
 			if (!target) return null;
 
-			// Walk up to find the nearest block element
 			let blockEl: HTMLElement | null = target;
 			while (blockEl && blockEl !== gestureEl) {
 				if (blockEl.hasAttribute(DATA_ATTRS.editorBlock)) break;
 				blockEl = blockEl.parentElement;
 			}
 
-			let blockId = blockEl?.getAttribute("data-block-id") ?? null;
-			if (!blockId) {
-				const firstBlock = editor.firstBlock();
-				if (!firstBlock) return null;
-				blockId = firstBlock.id;
+			const blockId = blockEl?.getAttribute("data-block-id") ?? null;
+			return blockId;
+		};
+
+		const handleClickOutsideBlocks = (event: MouseEvent): boolean => {
+			const fe = fieldEditor;
+			if (readonly || !fe) return false;
+			const blocksHost = blocksHostRef.current;
+			if (!blocksHost) return false;
+
+			const firstBlockEl = blocksHost.querySelector(
+				`[${DATA_ATTRS.editorBlock}]`,
+			) as HTMLElement | null;
+			const lastBlockEl = blocksHost.querySelector(
+				`[${DATA_ATTRS.editorBlock}]:last-child`,
+			) as HTMLElement | null;
+			if (!firstBlockEl || !lastBlockEl) return false;
+
+			const firstRect = firstBlockEl.getBoundingClientRect();
+			const lastRect = lastBlockEl.getBoundingClientRect();
+			const clickedAbove = event.clientY < firstRect.top;
+			const clickedBelow = event.clientY > lastRect.bottom;
+
+			if (!clickedAbove && !clickedBelow) return false;
+
+			const adjacentBlock = clickedAbove ? editor.firstBlock() : editor.lastBlock();
+			if (!adjacentBlock) return false;
+
+			const schema = editor.schema.resolve(adjacentBlock.type);
+			if (
+				usesInlineTextSelection(schema) &&
+				adjacentBlock.textContent().length === 0
+			) {
+				fe.activateTextSelection?.(adjacentBlock.id, 0, 0);
+				return true;
 			}
 
-			return blockId;
+			const newBlockId = generateId();
+			const position = clickedAbove
+				? { before: adjacentBlock.id }
+				: { after: adjacentBlock.id };
+			editor.apply([{
+				type: "insert-block",
+				blockId: newBlockId,
+				blockType: "paragraph",
+				props: {},
+				position,
+			}], { origin: "user" });
+			requestAnimationFrame(() => {
+				fe.activateTextSelection?.(newBlockId, 0, 0);
+			});
+			return true;
+		};
+
+		const resolveClickedCellCoord = (
+			event: MouseEvent,
+			blockId: string,
+		): { row: number; col: number } | null => {
+			const rawTarget = event.target;
+			const target =
+				rawTarget instanceof HTMLElement
+					? rawTarget
+					: rawTarget instanceof Node
+						? rawTarget.parentElement
+						: null;
+			if (!target) return null;
+
+			const cellEl = target.closest(
+				`[${DATA_ATTRS.tableCell}]`,
+			) as HTMLElement | null;
+			if (!cellEl) return null;
+
+			const rowAttr = cellEl.getAttribute(DATA_ATTRS.tableCellRow);
+			const colAttr = cellEl.getAttribute(DATA_ATTRS.tableCellCol);
+			if (rowAttr == null || colAttr == null) return null;
+
+			const row = parseInt(rowAttr, 10);
+			const col = parseInt(colAttr, 10);
+			if (isNaN(row) || isNaN(col)) return null;
+
+			return { row, col };
+		};
+
+		const shouldIgnorePointerGesture = (event: MouseEvent): boolean => {
+			const rawTarget = event.target;
+			const target =
+				rawTarget instanceof HTMLElement
+					? rawTarget
+					: rawTarget instanceof Node
+						? rawTarget.parentElement
+						: null;
+			if (!target) return false;
+
+			return !!target.closest("[data-pen-ignore-pointer-gesture]");
 		};
 
 		const getBoundaryPoint = (
@@ -101,8 +207,7 @@ export function EditorContent(props: EditorContentProps) {
 					offset:
 						side === "start"
 							? 0
-							: (editor.getBlock(blockId)?.textContent().length ??
-								0),
+							: getEditorBlockSelectionLength(editor, blockId),
 				}
 			);
 		};
@@ -160,6 +265,10 @@ export function EditorContent(props: EditorContentProps) {
 		};
 
 		const handleClick = (event: MouseEvent) => {
+			if (shouldIgnorePointerGesture(event)) {
+				return;
+			}
+
 			if (skipNextClickRef.current) {
 				skipNextClickRef.current = false;
 				event.preventDefault();
@@ -167,7 +276,12 @@ export function EditorContent(props: EditorContentProps) {
 			}
 
 			const blockId = resolveClickedBlockId(event);
-			if (!blockId) return;
+			if (!blockId) {
+				if (handleClickOutsideBlocks(event)) {
+					event.preventDefault();
+				}
+				return;
+			}
 
 			// Shift-click: select a range of blocks
 			if (event.shiftKey) {
@@ -176,16 +290,16 @@ export function EditorContent(props: EditorContentProps) {
 					currentSelection?.type === "text"
 						? currentSelection.anchor
 						: currentSelection?.type === "block" &&
-							  currentSelection.blockIds.length > 0
+							currentSelection.blockIds.length > 0
 							? getBoundaryPoint(
-									currentSelection.blockIds[0],
-									"start",
-								)
+								currentSelection.blockIds[0],
+								"start",
+							)
 							: fieldEditor.focusBlockId
 								? getBoundaryPoint(
-										fieldEditor.focusBlockId,
-										"start",
-									)
+									fieldEditor.focusBlockId,
+									"start",
+								)
 								: null;
 
 				if (anchorPoint && anchorPoint.blockId !== blockId) {
@@ -221,6 +335,7 @@ export function EditorContent(props: EditorContentProps) {
 		const handleMouseDown = (event: MouseEvent) => {
 			if (event.shiftKey || event.button !== 0) return;
 			if (fieldEditor.isComposing) return;
+			if (shouldIgnorePointerGesture(event)) return;
 
 			const blockId = resolveClickedBlockId(event);
 			if (!blockId) return;
@@ -229,6 +344,7 @@ export function EditorContent(props: EditorContentProps) {
 				blockId,
 				clientX: event.clientX,
 				clientY: event.clientY,
+				startSelection: editor.getSelection(),
 			};
 			skipNextClickRef.current = false;
 			fieldEditor.resetSelectAllCycle?.();
@@ -268,9 +384,9 @@ export function EditorContent(props: EditorContentProps) {
 				if (root && mappedSelection) {
 					const collapsed =
 						mappedSelection.anchor.blockId ===
-							mappedSelection.focus.blockId &&
+						mappedSelection.focus.blockId &&
 						mappedSelection.anchor.offset ===
-							mappedSelection.focus.offset;
+						mappedSelection.focus.offset;
 
 					if (!collapsed) {
 						const focusBlockEl = root.querySelector(
@@ -286,7 +402,8 @@ export function EditorContent(props: EditorContentProps) {
 							focusType === "divider" ||
 							focusType === "image" ||
 							focusType === "codeBlock" ||
-							focusType === "table";
+							focusType === "table" ||
+							focusType === "database";
 
 						if (needsBoundarySnap) {
 							const selectingForward = (() => {
@@ -344,13 +461,111 @@ export function EditorContent(props: EditorContentProps) {
 					}
 				}
 
+				if (root && moved) {
+					const focusPoint = pointToEditorSelectionPoint(root, clientX, clientY);
+					if (focusPoint) {
+						const anchorRole = getEditorBlockSelectionRole(
+							editor,
+							gesture.blockId,
+						);
+						const focusRole = getEditorBlockSelectionRole(
+							editor,
+							focusPoint.blockId,
+						);
+						if (
+							anchorRole === "editable-inline" &&
+							focusRole === "editable-inline"
+						) {
+							// Let native cross-block selection remain the source of truth
+							// when both ends are inline-editable and the browser gave us no range.
+						} else {
+						const blockOrder = editor.documentState.blockOrder;
+						const anchorIdx = blockOrder.indexOf(gesture.blockId);
+						const focusIdx = blockOrder.indexOf(focusPoint.blockId);
+						if (anchorIdx >= 0 && focusIdx >= 0) {
+							const selectingForward = anchorIdx <= focusIdx;
+							const anchorPoint =
+								anchorRole === "editable-inline"
+									? getBoundaryPoint(
+										gesture.blockId,
+										selectingForward ? "end" : "start",
+									)
+									: getBoundaryPoint(
+										gesture.blockId,
+										selectingForward ? "start" : "end",
+									);
+							const normalizedFocusPoint =
+								focusRole === "editable-inline"
+									? focusPoint
+									: getBoundaryPoint(
+										focusPoint.blockId,
+										selectingForward ? "end" : "start",
+									);
+							activateCanonicalSelection(anchorPoint, normalizedFocusPoint);
+							ensureEditorFocus(root);
+							skipNextClickRef.current = true;
+							return;
+						}
+						}
+					}
+				}
+
 				const blockId = resolveClickedBlockId(event) ?? gesture.blockId;
-				if (!blockId) return;
+				if (!blockId) {
+					if (handleClickOutsideBlocks(event)) {
+						skipNextClickRef.current = true;
+					}
+					return;
+				}
 
 				const block = editor.getBlock(blockId);
 				if (!block) return;
 
+				const cellCoord = resolveClickedCellCoord(event, blockId);
+				if (cellCoord) {
+					if (clickCount >= 2) {
+						fieldEditor.activateCell?.(blockId, cellCoord.row, cellCoord.col);
+						skipNextClickRef.current = true;
+						return;
+					}
+
+					const selection = editor.selection;
+					const startedOnSameSingleCell =
+						gesture.startSelection?.type === "cell" &&
+						gesture.startSelection.blockId === blockId &&
+						gesture.startSelection.anchor.row === cellCoord.row &&
+						gesture.startSelection.anchor.col === cellCoord.col &&
+						gesture.startSelection.head.row === cellCoord.row &&
+						gesture.startSelection.head.col === cellCoord.col;
+					const isSameSingleCell =
+						selection?.type === "cell" &&
+						selection.blockId === blockId &&
+						selection.anchor.row === cellCoord.row &&
+						selection.anchor.col === cellCoord.col &&
+						selection.head.row === cellCoord.row &&
+						selection.head.col === cellCoord.col;
+					if (startedOnSameSingleCell && isSameSingleCell) {
+						editor.selectBlock(blockId);
+						if (root) {
+							ensureEditorFocus(root);
+						}
+						skipNextClickRef.current = true;
+						return;
+					}
+
+					editor.selectCell(blockId, cellCoord.row, cellCoord.col);
+					skipNextClickRef.current = true;
+					return;
+				}
+
 				const schema = editor.schema.resolve(block.type);
+
+				if (delegatesToGridEditing(schema) && !cellCoord) {
+					editor.selectBlock(blockId);
+					skipNextClickRef.current = true;
+					return;
+				}
+
 				if (schema?.fieldEditor === "none") {
 					editor.selectBlock(blockId);
 					skipNextClickRef.current = true;
@@ -417,17 +632,41 @@ export function EditorContent(props: EditorContentProps) {
 		<EditorBlock key={blockId} blockId={blockId} />
 	));
 
+	const inlineDropCaret =
+		isDropActive && inlineDropCaretStyle ? (
+			<div
+				aria-hidden="true"
+				{...{ [DATA_ATTRS.dropCaret]: "" }}
+				style={{
+					left: `${inlineDropCaretStyle.left}px`,
+					top: `${inlineDropCaretStyle.top}px`,
+					height: `${inlineDropCaretStyle.height}px`,
+				}}
+			/>
+		) : null;
+
 	const contentChildren = (
 		<>
-			<div data-pen-editor-blocks-host="" ref={blocksHostRef}>
+			<div
+				data-pen-editor-blocks-host=""
+				{...(fieldEditorState.mode === "expanded"
+					? {
+						[DATA_ATTRS.fieldEditorSurface]: "",
+						[DATA_ATTRS.fieldEditorActiveSurface]: "",
+					}
+					: {})}
+				ref={blocksHostRef}
+			>
 				{blockElements}
 			</div>
+			{inlineDropCaret}
 			{rest.children}
 		</>
 	);
 
 	const primitiveProps: Record<string, unknown> = {
 		[DATA_ATTRS.editorContent]: "",
+		[DATA_ATTRS.dropTarget]: isDropActive || undefined,
 		[DATA_ATTRS.empty]: isEmpty || undefined,
 	};
 
@@ -435,15 +674,17 @@ export function EditorContent(props: EditorContentProps) {
 		<EditorContentContext.Provider
 			value={{ emptyPlaceholder, isEmpty: isDocumentPlaceholderVisible }}
 		>
-			{renderAsChild(
-				{
-					...rest,
-					ref: contentRef,
-					children: contentChildren,
-				},
-				"div",
-				primitiveProps,
-			)}
+			<DropPreviewProvider value={dropPreview}>
+				{renderAsChild(
+					{
+						...rest,
+						ref: contentRef,
+						children: contentChildren,
+					},
+					"div",
+					primitiveProps,
+				)}
+			</DropPreviewProvider>
 		</EditorContentContext.Provider>
 	);
 }

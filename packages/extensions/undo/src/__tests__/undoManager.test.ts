@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { UndoManagerImpl } from "../undoManager.js";
+import { UndoManagerImpl } from "../undoManager";
 
 describe("@pen/undo UndoManagerImpl", () => {
   it("delegates undo/redo operations to the CRDT undo manager", () => {

@@ -26,22 +26,30 @@ import type {
 	Position,
 	DecorationSet,
 } from "@pen/types";
+import { usesInlineTextSelection } from "@pen/types";
 import { yjsAdapter } from "@pen/crdt-yjs";
 import { undoExtension } from "@pen/undo";
 import { documentOpsExtension } from "@pen/document-ops";
 import { deltaStreamExtension } from "@pen/delta-stream";
 import { richTextShortcutsExtension } from "@pen/shortcuts";
-import { builtInDefaultSchema } from "../defaultSchema.js";
-import { SchemaEngineImpl } from "../schema/normalize.js";
-import { createBlockHandle } from "../schema/handles.js";
-import { EventEmitter } from "./events.js";
-import { ApplyPipeline } from "./apply.js";
-import { ExtensionManagerImpl } from "./extensionManager.js";
-import { SelectionManagerImpl } from "./selection.js";
-import { DocumentStateImpl } from "./documentState.js";
-import { DocumentRangeImpl } from "./range.js";
+import { builtInDefaultSchema } from "../defaultSchema";
+import { SchemaEngineImpl } from "../schema/normalize";
+import { createBlockHandle } from "../schema/handles";
+import { EventEmitter } from "./events";
+import { ApplyPipeline } from "./apply";
+import { resolveCellSelectionMatrix } from "./cellSelection";
+import type { CRDTUnknownMap } from "./crdtShapes";
+import { getTextProp, getTableContent, getCellText as getCellTextFromRow, isCRDTMap } from "./crdtShapes";
+import { ExtensionManagerImpl } from "./extensionManager";
+import { SelectionManagerImpl } from "./selection";
+import { DocumentStateImpl } from "./documentState";
+import { DocumentRangeImpl } from "./range";
 
 type CRDTBlockMap = CRDTMap<CRDTMap<unknown>>;
+
+function createGeneratedBlockId(): string {
+	return crypto.randomUUID();
+}
 
 // Stub undo manager for when @pen/undo is excluded
 const NOOP_UNDO: UndoManager = {
@@ -151,6 +159,11 @@ class EditorImpl implements Editor {
 		return this._documentState;
 	}
 
+	private _getRawBlockMap(blockId: string): CRDTUnknownMap | null {
+		const blockMap = (this._doc.blocks as CRDTBlockMap).get(blockId);
+		return (blockMap as unknown as CRDTUnknownMap) ?? null;
+	}
+
 	get internals(): EditorInternals {
 		return {
 			adapter: this._adapter,
@@ -165,6 +178,20 @@ class EditorImpl implements Editor {
 				this._slots.get(key) as T | undefined,
 			setSlot: (key: string, value: unknown): void => {
 				this._slots.set(key, value);
+			},
+			getBlockText: (blockId: string): unknown => {
+				const blockMap = this._getRawBlockMap(blockId);
+				if (!blockMap) return null;
+				return getTextProp(blockMap, "content");
+			},
+			getCellText: (blockId: string, row: number, col: number): unknown => {
+				const blockMap = this._getRawBlockMap(blockId);
+				if (!blockMap) return null;
+				const tableContent = getTableContent(blockMap);
+				if (!tableContent || row < 0 || row >= tableContent.length) return null;
+				const rowMap = tableContent.get(row);
+				if (!rowMap || !isCRDTMap(rowMap)) return null;
+				return getCellTextFromRow(rowMap, col);
 			},
 		};
 	}
@@ -294,6 +321,18 @@ class EditorImpl implements Editor {
 		this._selection.selectBlocks(blockIds);
 	}
 
+	selectCell(blockId: string, row: number, col: number): void {
+		this._selection.selectCell(blockId, row, col);
+	}
+
+	selectCellRange(
+		blockId: string,
+		anchor: { row: number; col: number },
+		head: { row: number; col: number },
+	): void {
+		this._selection.selectCellRange(blockId, anchor, head);
+	}
+
 	selectText(blockId: string, from: number, to: number): void {
 		this._selection.selectText(blockId, from, to);
 	}
@@ -382,7 +421,7 @@ class EditorImpl implements Editor {
 						};
 
 			if (typeof content === "string") {
-				const newId = crypto.randomUUID();
+				const newId = createGeneratedBlockId();
 				ops.push({
 					type: "insert-block",
 					blockId: newId,
@@ -401,7 +440,7 @@ class EditorImpl implements Editor {
 			} else if (Array.isArray(content)) {
 				let prevPosition = insertPosition;
 				for (const block of content) {
-					const newId = crypto.randomUUID();
+					const newId = createGeneratedBlockId();
 					ops.push({
 						type: "insert-block",
 						blockId: newId,
@@ -439,6 +478,24 @@ class EditorImpl implements Editor {
 				return;
 			}
 
+			if (
+				!this._usesInlineTextSelection(range.start.blockId) &&
+				this._isWholeBlockSelection(
+					range.start.blockId,
+					range.start.offset,
+					range.end.offset,
+				)
+			) {
+				this.apply([
+					{
+						type: "delete-block",
+						blockId: range.start.blockId,
+					},
+				]);
+				this.setSelection(null);
+				return;
+			}
+
 			const from = range.start.offset;
 			const to = range.end.offset;
 			if (to > from) {
@@ -465,6 +522,36 @@ class EditorImpl implements Editor {
 			}));
 			this.apply(ops);
 			this.setSelection(null);
+		}
+
+		if (sel.type === "cell") {
+			const block = this.getBlock(sel.blockId);
+			if (!block) return;
+			const ops: DocumentOp[] = [];
+			for (const rowCells of resolveCellSelectionMatrix(block, sel)) {
+				for (const cellCoord of rowCells) {
+					const cell = block.tableCell(cellCoord.row, cellCoord.col);
+					if (!cell) continue;
+					const len = cell.length();
+					if (len > 0) {
+						ops.push({
+							type: "delete-table-cell-text",
+							blockId: sel.blockId,
+							row: cellCoord.row,
+							col: cellCoord.col,
+							offset: 0,
+							length: len,
+						} as DocumentOp);
+					}
+				}
+			}
+			if (ops.length > 0) {
+				this.apply(ops, { origin: "user" });
+			}
+			this.setSelection({
+				...sel,
+				head: sel.anchor,
+			});
 		}
 	}
 
@@ -588,7 +675,7 @@ class EditorImpl implements Editor {
 			[
 				{
 					type: "insert-block",
-					blockId: crypto.randomUUID(),
+					blockId: createGeneratedBlockId(),
 					blockType: "paragraph",
 					props: {},
 					position: "last",
@@ -646,6 +733,39 @@ class EditorImpl implements Editor {
 
 	private _getSelectionRange(sel: TextSelection): DocumentRange {
 		return sel.toRange();
+	}
+
+	private _usesInlineTextSelection(blockId: string): boolean {
+		const block = this.getBlock(blockId);
+		if (!block) {
+			return false;
+		}
+
+		const schema = this._registry.resolve(block.type);
+		if (!schema) {
+			return false;
+		}
+
+		return usesInlineTextSelection(schema);
+	}
+
+	private _getBlockSelectionSpan(blockId: string): number {
+		if (this._usesInlineTextSelection(blockId)) {
+			return this._getTextForBlock(blockId).length;
+		}
+		return this.getBlock(blockId) ? 1 : 0;
+	}
+
+	private _isWholeBlockSelection(
+		blockId: string,
+		startOffset: number,
+		endOffset: number,
+	): boolean {
+		const span = this._getBlockSelectionSpan(blockId);
+		if (span <= 0) {
+			return false;
+		}
+		return startOffset <= 0 && endOffset >= span;
 	}
 
 	private _collapseToPoint(point: { blockId: string; offset: number }): void {
@@ -765,10 +885,9 @@ class EditorImpl implements Editor {
 		};
 	}
 
-	private _deleteMultiBlockTextRange(range: DocumentRange): {
-		blockId: string;
-		offset: number;
-	} {
+	private _deleteMultiBlockTextRange(
+		range: DocumentRange,
+	): { blockId: string; offset: number } | null {
 		const startId = range.start.blockId;
 		const endId = range.end.blockId;
 		if (startId === endId) {
@@ -789,9 +908,84 @@ class EditorImpl implements Editor {
 			return caret;
 		}
 
-		const { ops, caret } = this._buildMultiBlockTextReplacement(range, "");
-		this.apply(ops);
-		this._collapseToPoint(caret);
+		const startInline = this._usesInlineTextSelection(startId);
+		const endInline = this._usesInlineTextSelection(endId);
+		if (startInline && endInline) {
+			const { ops, caret } = this._buildMultiBlockTextReplacement(range, "");
+			this.apply(ops);
+			this._collapseToPoint(caret);
+			return caret;
+		}
+
+		const middleIds = range.blockRange.slice(1, -1);
+		const ops: DocumentOp[] = [];
+
+		if (startInline) {
+			const startText = this._getTextForBlock(startId);
+			if (range.start.offset < startText.length) {
+				ops.push({
+					type: "delete-text",
+					blockId: startId,
+					offset: range.start.offset,
+					length: startText.length - range.start.offset,
+				});
+			}
+		} else if (
+			this._isWholeBlockSelection(
+				startId,
+				range.start.offset,
+				this._getBlockSelectionSpan(startId),
+			)
+		) {
+			ops.push({
+				type: "delete-block",
+				blockId: startId,
+			});
+		}
+
+		for (const blockId of middleIds) {
+			ops.push({
+				type: "delete-block",
+				blockId,
+			});
+		}
+
+		if (endInline) {
+			if (range.end.offset > 0) {
+				ops.push({
+					type: "delete-text",
+					blockId: endId,
+					offset: 0,
+					length: range.end.offset,
+				});
+			}
+		} else if (
+			this._isWholeBlockSelection(
+				endId,
+				0,
+				range.end.offset,
+			)
+		) {
+			ops.push({
+				type: "delete-block",
+				blockId: endId,
+			});
+		}
+
+		if (ops.length > 0) {
+			this.apply(ops);
+		}
+
+		const caret = startInline
+			? { blockId: startId, offset: range.start.offset }
+			: endInline
+				? { blockId: endId, offset: 0 }
+				: null;
+		if (caret) {
+			this._collapseToPoint(caret);
+		} else {
+			this.setSelection(null);
+		}
 		return caret;
 	}
 

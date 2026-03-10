@@ -6,9 +6,11 @@ import type {
 	SchemaRegistry,
 	BlockHandle,
 } from "@pen/types";
-import { createBlockHandle } from "../schema/handles.js";
-import { EventEmitter } from "./events.js";
-import { DocumentRangeImpl } from "./range.js";
+import { usesInlineTextSelection } from "@pen/types";
+import { createBlockHandle } from "../schema/handles";
+import { resolveCellSelectionMatrix } from "./cellSelection";
+import { EventEmitter } from "./events";
+import { DocumentRangeImpl } from "./range";
 
 type CRDTBlockMap = CRDTMap<CRDTMap<unknown>>;
 const ZERO_WIDTH_SPACE = "\u200B";
@@ -54,6 +56,25 @@ export class SelectionManagerImpl {
 		const valid = blockIds.filter((id) => this._blockExists(id));
 		if (valid.length === 0) return;
 		this.setSelection({ type: "block", blockIds: valid });
+	}
+
+	selectCell(blockId: string, row: number, col: number): void {
+		if (!this._blockExists(blockId)) return;
+		this.setSelection({
+			type: "cell",
+			blockId,
+			anchor: { row, col },
+			head: { row, col },
+		});
+	}
+
+	selectCellRange(
+		blockId: string,
+		anchor: { row: number; col: number },
+		head: { row: number; col: number },
+	): void {
+		if (!this._blockExists(blockId)) return;
+		this.setSelection({ type: "cell", blockId, anchor, head });
 	}
 
 	selectTextRange(
@@ -164,6 +185,10 @@ export class SelectionManagerImpl {
 			return parts.join("\n");
 		}
 
+		if (sel.type === "cell") {
+			return this._getSelectedCellText(sel);
+		}
+
 		return "";
 	}
 
@@ -222,10 +247,45 @@ export class SelectionManagerImpl {
 
 	private _clampOffset(blockId: string, offset: number): number {
 		const blockMap = (this._doc.blocks as CRDTBlockMap).get(blockId);
+		const blockType = blockMap?.get("type");
+		if (typeof blockType === "string") {
+			const schema = this._registry.resolve(blockType);
+			if (schema && !usesInlineTextSelection(schema)) {
+				return Math.max(0, Math.min(offset, 1));
+			}
+		}
+
 		const content = blockMap?.get("content") as
 			| { length: number }
 			| undefined;
 		if (!content || typeof content.length !== "number") return 0;
 		return Math.max(0, Math.min(offset, content.length));
+	}
+
+	private _getSelectedCellText(sel: {
+		type: "cell";
+		blockId: string;
+		anchor: { row: number; col: number };
+		head: { row: number; col: number };
+		rowIds?: string[];
+		columnIds?: string[];
+	}): string {
+		const block = createBlockHandle(
+			sel.blockId,
+			this._doc,
+			this._crdtDoc,
+			this._registry,
+		);
+		const matrix = resolveCellSelectionMatrix(block, sel);
+		const rowParts: string[] = [];
+		for (const rowCells of matrix) {
+			const cellParts: string[] = [];
+			for (const cellCoord of rowCells) {
+				const cell = block.tableCell(cellCoord.row, cellCoord.col);
+				cellParts.push(cell?.textContent() ?? "");
+			}
+			rowParts.push(cellParts.join("\t"));
+		}
+		return rowParts.join("\n");
 	}
 }

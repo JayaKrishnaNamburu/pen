@@ -1,5 +1,5 @@
-import type { FieldEditorStore } from "../field-editor/store.js";
-import { useSyncExternalStoreWithSelector } from "../utils/useSyncExternalStoreWithSelector.js";
+import type { FieldEditorStore } from "../field-editor/store";
+import { useSyncExternalStoreWithSelector } from "../utils/useSyncExternalStoreWithSelector";
 
 const EMPTY_FIELD_EDITOR_SNAPSHOT = {
 	focusBlockId: null,

@@ -1,9 +1,15 @@
 import type { CRDTAdapter, CRDTDocument, PenDocument } from "@pen/types";
+import { generateId } from "@pen/types";
 import * as Y from "yjs";
 
 // ── Internal Types ──────────────────────────────────────────
 
-export type BlockContentType = "inline" | "table" | "nested" | "none";
+export type BlockContentType =
+  | "inline"
+  | "table"
+  | "database"
+  | "nested"
+  | "none";
 
 export interface YjsCRDTDocument extends CRDTDocument {
   readonly adapter: CRDTAdapter;
@@ -72,7 +78,15 @@ export function validateDocument(
 
   for (const [name, expectedCtor] of expectedTypes) {
     const existing = share.get(name);
-    if (existing && !(existing instanceof expectedCtor)) {
+    if (!existing) {
+      errors.push({
+        code: "MISSING_SHARED_TYPE",
+        message: `Shared type '${name}' is missing`,
+        severity: "error",
+      });
+      continue;
+    }
+    if (!(existing instanceof expectedCtor)) {
       errors.push({
         code: "MISSING_SHARED_TYPE",
         message: `Shared type '${name}' exists but is not a ${expectedCtor.name}`,
@@ -299,6 +313,39 @@ export function wrapYjsDocument(
   return { adapter, ydoc, penDocument };
 }
 
+// ── Table Helpers ───────────────────────────────────────────
+
+const DEFAULT_TABLE_ROWS = 2;
+const DEFAULT_TABLE_COLS = 2;
+
+export function createTableCell(): Y.Map<unknown> {
+  const cell = new Y.Map<unknown>();
+  cell.set("id", generateId());
+  cell.set("content", new Y.Text());
+  return cell;
+}
+
+export function createTableRow(colCount: number): Y.Map<unknown> {
+  const row = new Y.Map<unknown>();
+  row.set("id", generateId());
+  const cells = new Y.Array<Y.Map<unknown>>();
+  for (let c = 0; c < colCount; c++) {
+    cells.push([createTableCell()]);
+  }
+  row.set("cells", cells);
+  return row;
+}
+
+export function seedTableContent(
+  tableContent: Y.Array<Y.Map<unknown>>,
+  rows: number = DEFAULT_TABLE_ROWS,
+  cols: number = DEFAULT_TABLE_COLS,
+): void {
+  for (let r = 0; r < rows; r++) {
+    tableContent.push([createTableRow(cols)]);
+  }
+}
+
 // ── Block Factory ───────────────────────────────────────────
 
 export function initBlockMap(
@@ -316,9 +363,18 @@ export function initBlockMap(
     case "inline":
       blockMap.set("content", new Y.Text());
       break;
-    case "table":
-      blockMap.set("tableContent", new Y.Array<Y.Map<unknown>>());
+    case "table": {
+      const tableContent = new Y.Array<Y.Map<unknown>>();
+      seedTableContent(tableContent);
+      blockMap.set("tableContent", tableContent);
       break;
+    }
+    case "database": {
+      blockMap.set("tableContent", new Y.Array<Y.Map<unknown>>());
+      blockMap.set("tableColumns", new Y.Array<Y.Map<unknown>>());
+      blockMap.set("databaseViews", new Y.Array<Y.Map<unknown>>());
+      break;
+    }
     case "nested":
       blockMap.set("children", new Y.Array<string>());
       break;

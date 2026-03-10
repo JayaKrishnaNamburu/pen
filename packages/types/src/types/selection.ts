@@ -1,4 +1,4 @@
-import type { DocumentRange } from "./documentRange.js";
+import type { DocumentRange } from "./documentRange";
 
 export interface TextSelection {
   type: "text";
@@ -27,6 +27,8 @@ export interface CellSelection {
   blockId: string;
   anchor: { row: number; col: number };
   head: { row: number; col: number };
+  rowIds?: string[];
+  columnIds?: string[];
 }
 
 export type SelectionState =

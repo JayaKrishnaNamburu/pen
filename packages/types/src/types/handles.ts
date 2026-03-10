@@ -1,5 +1,41 @@
-import type { AppPlacement } from "./block.js";
-import type { LayoutProps } from "./layout.js";
+import type { AppPlacement } from "./block";
+import type { LayoutProps } from "./layout";
+import type {
+  ColumnType,
+  SelectOption,
+  NumberFormat,
+  DateFormat,
+  DatabaseViewState,
+} from "./database";
+
+export interface TableRowHandle {
+  readonly id: string;
+  readonly index: number;
+}
+
+export interface TableColumnSchema {
+  id: string;
+  title: string;
+  type: ColumnType;
+  width?: number;
+  hidden?: boolean;
+  pinned?: "left" | "right";
+  options?: SelectOption[];
+  format?: NumberFormat | DateFormat;
+  readonly?: boolean;
+}
+
+export interface TableCellHandle {
+  readonly id: string;
+  readonly row: number;
+  readonly col: number;
+  textContent(): string;
+  length(): number;
+  textDeltas(): Array<{
+    insert: string;
+    attributes?: Record<string, unknown>;
+  }>;
+}
 
 export interface BlockHandle {
   readonly id: string;
@@ -30,6 +66,15 @@ export interface BlockHandle {
   length(): number;
 
   meta(namespace: string): Readonly<Record<string, unknown>> | null;
+
+  tableRowCount(): number;
+  tableColumnCount(): number;
+  tableRow(row: number): TableRowHandle | null;
+  tableCell(row: number, col: number): TableCellHandle | null;
+  tableColumns(): readonly TableColumnSchema[];
+  databaseViews(): readonly DatabaseViewState[];
+  databasePrimaryViewId(): string | null;
+  databaseActiveView(): DatabaseViewState | null;
 }
 
 export interface AppHandle {

@@ -1,5 +1,5 @@
-import type { BlockHandle } from "./handles.js";
-import type { Decoration } from "./decorations.js";
+import type { BlockHandle } from "./handles";
+import type { Decoration } from "./decorations";
 
 export interface BlockRenderContext {
   editable: boolean;

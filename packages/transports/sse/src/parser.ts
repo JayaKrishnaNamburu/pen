@@ -1,4 +1,4 @@
-import type { SSEEvent } from "./types.js";
+import type { SSEEvent } from "./types";
 
 export function parseSSELine(
   line: string,

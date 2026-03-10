@@ -1,18 +1,33 @@
 import React from "react";
-import type { BlockHandle, BlockRenderContext } from "@pen/core";
-import { InlineContent } from "../primitives/editor/inlineContent.js";
-import { useEditorContext } from "../context/editorContext.js";
+import { generateId, type BlockHandle, type BlockRenderContext } from "@pen/core";
+import { InlineContent } from "../primitives/editor/inlineContent";
+import { useEditorContext } from "../context/editorContext";
+import { getAttachedFieldEditor } from "../utils/fieldEditor";
+import { appendParentIdChildBlock } from "../utils/parentIdTree";
+import { useParentIdChildBlockIds } from "../hooks/useParentIdChildBlockIds";
+import { ParentIdChildren } from "../primitives/editor/parentIdChildren";
 
 export function ToggleRenderer(
   block: BlockHandle,
   ctx: BlockRenderContext,
 ): React.ReactElement {
-  const open = (block.props?.open as boolean) ?? false;
+  return <ToggleView block={block} ctx={ctx} />;
+}
 
-  const childHandles = block.children;
-  const childElements = childHandles.map((child) => (
-    <ToggleChild key={child.id} blockId={child.id} />
-  ));
+function ToggleView({
+  block,
+  ctx,
+}: {
+  block: BlockHandle;
+  ctx: BlockRenderContext;
+}): React.ReactElement {
+  const open = (block.props?.open as boolean) ?? false;
+  const { editor } = useEditorContext();
+  const childBlockIds = useParentIdChildBlockIds(editor, block.id);
+  const toggleBodyProps: React.HTMLAttributes<HTMLDivElement> &
+    Record<string, unknown> = {
+    "data-pen-toggle-body": "",
+  };
 
   return (
     <div
@@ -20,58 +35,120 @@ export function ToggleRenderer(
       data-block-type="toggle"
       data-selected={ctx.selected || undefined}
     >
-      <ToggleDetails blockId={block.id} open={open}>
-        <summary>
+      <div data-pen-toggle-header="">
+        <ToggleTrigger blockId={block.id} open={open} />
+        <div data-pen-toggle-title="">
           <InlineContent blockId={block.id} />
-        </summary>
-        {open && childElements.length > 0 ? (
-          <div data-pen-toggle-body="">{childElements}</div>
-        ) : null}
-      </ToggleDetails>
+        </div>
+      </div>
+      {open ? (
+        childBlockIds.length > 0 ? (
+          <ParentIdChildren
+            parentBlockId={block.id}
+            containerProps={toggleBodyProps}
+          />
+        ) : (
+          <ToggleEmptyState parentBlockId={block.id} />
+        )
+      ) : null}
     </div>
   );
 }
 
-function ToggleDetails({
+function ToggleTrigger({
   blockId,
   open,
-  children,
 }: {
   blockId: string;
   open: boolean;
-  children: React.ReactNode;
 }) {
   const { editor, readonly } = useEditorContext();
 
-  const handleToggle = (event: React.SyntheticEvent<HTMLDetailsElement>) => {
+  const handleMouseDown = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const fieldEditor = getAttachedFieldEditor(editor);
+    fieldEditor?.blur();
+    fieldEditor?.suspendForPointerSelection?.();
+  };
+
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
     if (readonly) return;
-    const newOpen = (event.target as HTMLDetailsElement).open;
-    if (newOpen !== open) {
-      editor.apply([
+    editor.apply(
+      [
         {
           type: "update-block",
           blockId,
-          props: { open: newOpen },
+          props: { open: !open },
         },
-      ]);
+      ],
+      { origin: "user" },
+    );
+  };
+
+  return (
+    <button
+      type="button"
+      data-pen-toggle-trigger=""
+      data-pen-ignore-pointer-gesture=""
+      aria-expanded={open}
+      aria-label={open ? "Collapse toggle" : "Expand toggle"}
+      onMouseDown={handleMouseDown}
+      onClick={handleClick}
+    >
+      <span data-pen-toggle-trigger-icon="" aria-hidden="true">
+        {open ? "▾" : "▸"}
+      </span>
+    </button>
+  );
+}
+
+function ToggleEmptyState({ parentBlockId }: { parentBlockId: string }) {
+  const { editor, readonly } = useEditorContext();
+
+  const handleMouseDown = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (readonly) return;
+
+    const newBlockId = generateId();
+		appendParentIdChildBlock(editor, {
+			parentBlockId,
+			childBlockId: newBlockId,
+			blockType: "paragraph",
+		});
+
+    const fieldEditor = getAttachedFieldEditor(editor);
+    const activateChild = () => {
+      fieldEditor?.activateTextSelection?.(newBlockId, 0, 0);
+    };
+
+    if (typeof window !== "undefined") {
+      window.requestAnimationFrame(activateChild);
+    } else {
+      activateChild();
     }
   };
 
   return (
-    <details open={open || undefined} onToggle={handleToggle}>
-      {children}
-    </details>
-  );
-}
-
-function ToggleChild({ blockId }: { blockId: string }) {
-  const { editor } = useEditorContext();
-  const block = editor.getBlock(blockId);
-  if (!block) return null;
-
-  return (
-    <div data-block-type={block.type} data-block-id={blockId}>
-      <InlineContent blockId={blockId} />
+    <div data-pen-toggle-empty-state="">
+      <button
+        type="button"
+        data-pen-toggle-empty-button=""
+        data-pen-ignore-pointer-gesture=""
+        onMouseDown={handleMouseDown}
+        onClick={handleClick}
+      >
+        Empty toggle. Click to add a block.
+      </button>
     </div>
   );
 }

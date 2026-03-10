@@ -1,15 +1,23 @@
-import type { InputBackend, Editor } from "@pen/core";
-import type { FieldEditorImpl } from "./fieldEditorImpl.js";
-import { fullReconcileToDOM, applyDeltaToDOM } from "./reconciler.js";
+import {
+	INPUT_RULES_ENGINE_SLOT_KEY,
+	type DocumentOp,
+	type InputBackend,
+	type Editor,
+	supportsInlineInputRules,
+} from "@pen/core";
+import type { FieldEditorInputController } from "./controller";
+import { fullReconcileToDOM, applyDeltaToDOM } from "./reconciler";
 import {
 	domSelectionToEditor,
 	editorSelectionToDOM,
 	getDirectionalSelectionOffsets,
-} from "./selectionBridge.js";
-import { handleFieldEditorKeyDown } from "./keyHandling.js";
-import { isHistoryTransactionOrigin } from "./historyOrigin.js";
-import { handleCopy, handleCut, handleClipboardPaste } from "./clipboard.js";
-import type { PasteImporters } from "../context/editorContext.js";
+} from "./selectionBridge";
+import { handleFieldEditorKeyDown } from "./keyHandling";
+import { isHistoryTransactionOrigin } from "./historyOrigin";
+import { handleCopy, handleCut, handleClipboardPaste } from "./clipboard";
+import type { PasteImporters } from "../context/editorContext";
+import { applyListInputRule } from "./commands";
+import { matchInlineInputRule } from "../utils/inlineInputRule";
 
 declare class EditContext {
 	constructor(options?: {
@@ -39,9 +47,9 @@ export class EditContextBackend implements InputBackend {
 		focusOffset: number;
 	} | null = null;
 	private editor: Editor;
-	private fieldEditor: FieldEditorImpl;
+	private fieldEditor: FieldEditorInputController;
 
-	constructor(editor: Editor, fieldEditor: FieldEditorImpl) {
+	constructor(editor: Editor, fieldEditor: FieldEditorInputController) {
 		this.editor = editor;
 		this.fieldEditor = fieldEditor;
 	}
@@ -201,6 +209,48 @@ export class EditContextBackend implements InputBackend {
 			return;
 		}
 
+		const range = {
+			start: updateRangeStart,
+			end: updateRangeEnd,
+		};
+		const listInputRuleTarget = applyListInputRule(this.editor, {
+			blockId,
+			range,
+			text,
+		});
+		if (listInputRuleTarget) {
+			this.pendingSelectionOverride = {
+				blockId: listInputRuleTarget.blockId,
+				anchorOffset: listInputRuleTarget.anchorOffset,
+				focusOffset: listInputRuleTarget.focusOffset,
+			};
+			this.fieldEditor.syncTextSelection(
+				listInputRuleTarget.blockId,
+				listInputRuleTarget.anchorOffset,
+				listInputRuleTarget.focusOffset,
+			);
+			this.restoreDOMCaret();
+			this.pendingSelectionOverride = null;
+			return;
+		}
+
+		const inlineInputRuleTarget = this.applyInlineInputRule(
+			blockId,
+			range.start,
+			text,
+		);
+		if (inlineInputRuleTarget) {
+			this.pendingSelectionOverride = inlineInputRuleTarget;
+			this.fieldEditor.syncTextSelection(
+				inlineInputRuleTarget.blockId,
+				inlineInputRuleTarget.anchorOffset,
+				inlineInputRuleTarget.focusOffset,
+			);
+			this.restoreDOMCaret();
+			this.pendingSelectionOverride = null;
+			return;
+		}
+
 		this.pendingSelectionOverride =
 			typeof selectionStart === "number" &&
 			typeof selectionEnd === "number"
@@ -216,19 +266,19 @@ export class EditContextBackend implements InputBackend {
 			ops.push({
 				type: "delete-text" as const,
 				blockId,
-				offset: updateRangeStart,
-				length: updateRangeEnd - updateRangeStart,
+				offset: range.start,
+				length: range.end - range.start,
 			});
 		}
 		if (text.length > 0) {
 			ops.push({
 				type: "insert-text" as const,
 				blockId,
-				offset: updateRangeStart,
+				offset: range.start,
 				text,
 				marks: this.fieldEditor.resolveInsertMarks(
 					this.ytext,
-					updateRangeStart,
+					range.start,
 				),
 			});
 		}
@@ -250,6 +300,85 @@ export class EditContextBackend implements InputBackend {
 
 		this.pendingSelectionOverride = null;
 	};
+
+	private applyInlineInputRule(
+		blockId: string,
+		offset: number,
+		text: string,
+	):
+		| {
+				blockId: string;
+				anchorOffset: number;
+				focusOffset: number;
+		  }
+		| null {
+		if (text.length !== 1) {
+			return null;
+		}
+
+		const block = this.editor.getBlock(blockId);
+		if (!block) {
+			return null;
+		}
+
+		const blockSchema = this.editor.schema.resolve(block.type);
+		if (!supportsInlineInputRules(blockSchema)) {
+			return null;
+		}
+
+		const inputRuleEngine =
+			this.editor.internals.getSlot<InlineInputRuleEngine>(
+				INPUT_RULES_ENGINE_SLOT_KEY,
+			) ?? null;
+		const ops =
+			inputRuleEngine?.tryMatchInline(this.editor, blockId, text, {
+				offset,
+			}) ?? this.resolveFallbackInlineInputRule(blockId, block.textContent(), offset, text);
+		if (!ops) {
+			return null;
+		}
+
+		const selectionTarget = resolveInlineSelectionTarget(blockId, ops);
+		if (!selectionTarget) {
+			return null;
+		}
+
+		this.editor.apply(ops, { origin: "input-rule" });
+		return selectionTarget;
+	}
+
+	private resolveFallbackInlineInputRule(
+		blockId: string,
+		blockText: string,
+		offset: number,
+		text: string,
+	): DocumentOp[] | null {
+		const match = matchInlineInputRule(blockText, offset, text);
+		if (!match) {
+			return null;
+		}
+
+		const markType = Object.keys(match.marks)[0];
+		if (!markType || !this.editor.schema.resolveInline(markType)) {
+			return null;
+		}
+
+		return [
+			{
+				type: "delete-text",
+				blockId,
+				offset: match.deleteRange.start,
+				length: match.deleteRange.end - match.deleteRange.start,
+			},
+			{
+				type: "insert-text",
+				blockId,
+				offset: match.deleteRange.start,
+				text: match.text,
+				marks: match.marks,
+			},
+		];
+	}
 
 	private handleTextFormatUpdate = (event: any): void => {
 		// IME composition underline rendering.
@@ -519,6 +648,43 @@ export class EditContextBackend implements InputBackend {
 
 	private handleDrop = (event: DragEvent): void => {
 		event.preventDefault();
+	};
+}
+
+type InlineInputRuleEngine = {
+	tryMatchInline(
+		editor: Editor,
+		blockId: string,
+		insertedText: string,
+		options?: { offset?: number },
+	): DocumentOp[] | null;
+};
+
+function resolveInlineSelectionTarget(
+	blockId: string,
+	ops: DocumentOp[],
+):
+	| {
+			blockId: string;
+			anchorOffset: number;
+			focusOffset: number;
+	  }
+	| null {
+	let nextOffset: number | null = null;
+	for (const op of ops) {
+		if (op.type === "insert-text" && op.blockId === blockId) {
+			nextOffset = op.offset + op.text.length;
+		}
+	}
+
+	if (nextOffset == null) {
+		return null;
+	}
+
+	return {
+		blockId,
+		anchorOffset: nextOffset,
+		focusOffset: nextOffset,
 	};
 }
 

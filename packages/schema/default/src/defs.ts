@@ -1,17 +1,18 @@
 import type { BlockSchema, InlineSchema } from "@pen/types";
 
-import { paragraph } from "./blocks/paragraph.js";
-import { heading } from "./blocks/heading.js";
-import { bulletListItem } from "./blocks/bulletListItem.js";
-import { numberedListItem } from "./blocks/numberedListItem.js";
-import { checkListItem } from "./blocks/checkListItem.js";
-import { codeBlock } from "./blocks/codeBlock.js";
-import { image } from "./blocks/image.js";
-import { table } from "./blocks/table.js";
-import { divider } from "./blocks/divider.js";
-import { callout } from "./blocks/callout.js";
-import { toggle } from "./blocks/toggle.js";
-import { blockquote } from "./blocks/blockquote.js";
+import { paragraph } from "./blocks/paragraph";
+import { heading } from "./blocks/heading";
+import { bulletListItem } from "./blocks/bulletListItem";
+import { numberedListItem } from "./blocks/numberedListItem";
+import { checkListItem } from "./blocks/checkListItem";
+import { codeBlock } from "./blocks/codeBlock";
+import { image } from "./blocks/image";
+import { table } from "./blocks/table";
+import { database } from "./blocks/database";
+import { divider } from "./blocks/divider";
+import { callout } from "./blocks/callout";
+import { toggle } from "./blocks/toggle";
+import { blockquote } from "./blocks/blockquote";
 import {
   bold,
   italic,
@@ -22,8 +23,8 @@ import {
   highlight,
   textColor,
   backgroundColor,
-} from "./inlines/marks.js";
-import { mention, inlineApp } from "./inlines/nodes.js";
+} from "./inlines/marks";
+import { mention, inlineApp } from "./inlines/nodes";
 
 export const defaultBlocks = [
   paragraph,
@@ -34,6 +35,7 @@ export const defaultBlocks = [
   codeBlock,
   image,
   table,
+  database,
   divider,
   callout,
   toggle,

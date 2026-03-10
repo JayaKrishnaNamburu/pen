@@ -1,1 +1,1 @@
-export { markdownImporter } from "./importer.js";
+export { markdownImporter, parseMarkdownToBlocks } from "./importer";

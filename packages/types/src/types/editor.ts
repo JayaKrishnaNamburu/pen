@@ -1,19 +1,19 @@
-import type { Block } from "./block.js";
-import type { SelectionState } from "./selection.js";
+import type { Block } from "./block";
+import type { SelectionState } from "./selection";
 import type {
 	CRDTAdapter,
 	CRDTDocument,
 	CRDTEvent,
 	PenDocument,
 	Awareness,
-} from "./crdt.js";
-import type { DocumentOp, OpOrigin, ApplyOptions } from "./ops.js";
-import type { DecorationSet } from "./decorations.js";
-import type { Extension } from "./extension.js";
-import type { BlockHandle, AppHandle } from "./handles.js";
-import type { Unsubscribe } from "./utility.js";
-import type { SchemaRegistry } from "./schema.js";
-import type { AssetProvider } from "./persistence.js";
+} from "./crdt";
+import type { DocumentOp, OpOrigin, ApplyOptions } from "./ops";
+import type { DecorationSet } from "./decorations";
+import type { Extension } from "./extension";
+import type { BlockHandle, AppHandle } from "./handles";
+import type { Unsubscribe } from "./utility";
+import type { SchemaRegistry } from "./schema";
+import type { AssetProvider } from "./persistence";
 
 // ── Document State ──────────────────────────────────────────
 
@@ -166,6 +166,12 @@ export interface Editor {
 	getSelection(): SelectionState;
 	selectBlock(blockId: string): void;
 	selectBlocks(blockIds: string[]): void;
+	selectCell(blockId: string, row: number, col: number): void;
+	selectCellRange(
+		blockId: string,
+		anchor: { row: number; col: number },
+		head: { row: number; col: number },
+	): void;
 	selectText(blockId: string, from: number, to: number): void;
 	selectTextRange(
 		anchor: { blockId: string; offset: number },
@@ -211,4 +217,6 @@ export interface EditorInternals {
 	): void;
 	getSlot<T>(key: string): T | undefined;
 	setSlot(key: string, value: unknown): void;
+	getBlockText(blockId: string): unknown;
+	getCellText(blockId: string, row: number, col: number): unknown;
 }

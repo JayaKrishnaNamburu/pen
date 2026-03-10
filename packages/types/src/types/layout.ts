@@ -1,4 +1,4 @@
-import type { Spacing, BorderDef } from "./utility.js";
+import type { Spacing, BorderDef } from "./utility";
 
 export interface LayoutSchema {
   modes: readonly ("flex" | "grid")[];

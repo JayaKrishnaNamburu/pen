@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useSelectionToolbarContext } from "./root.js";
-import { renderAsChild, type AsChildProps } from "../../utils/asChild.js";
-import { composeRefs } from "../../utils/composeRefs.js";
+import { useSelectionToolbarContext } from "./root";
+import { renderAsChild, type AsChildProps } from "../../utils/asChild";
+import { composeRefs } from "../../utils/composeRefs";
 
 type Side = "top" | "bottom";
 

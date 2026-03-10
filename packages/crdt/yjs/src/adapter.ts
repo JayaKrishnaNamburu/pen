@@ -5,24 +5,23 @@ import type {
 } from "@pen/types";
 import * as Y from "yjs";
 
-import { createYjsAwareness } from "./awareness.js";
+import { createYjsAwareness } from "./awareness";
 import {
   asYjsDoc,
   createYjsDocument,
   initBlockMap,
   validateDocument,
-  wrapYjsDocument,
-} from "./document.js";
-import type { BlockContentType } from "./document.js";
-import { createObserver } from "./events.js";
+} from "./document";
+import type { BlockContentType } from "./document";
+import { createObserver } from "./events";
 import {
   createYjsSnapshot,
   forkDocument,
   mergeDocuments,
   mergeYjsUpdates,
   restoreYjsSnapshot,
-} from "./snapshots.js";
-import { createYjsUndoManager } from "./undo.js";
+} from "./snapshots";
+import { createYjsUndoManager } from "./undo";
 
 export interface CRDTDiagnostic {
   code: string;
@@ -69,10 +68,10 @@ export function yjsAdapter(options?: YjsAdapterOptions): CRDTAdapter {
     },
 
     loadDocument(binary: Uint8Array) {
-      const ydoc = new Y.Doc({ gc: options?.gc ?? false });
-      Y.applyUpdate(ydoc, binary);
+      const doc = createYjsDocument(adapter, options);
+      Y.applyUpdate(doc.ydoc, binary);
 
-      const validation = validateDocument(ydoc);
+      const validation = validateDocument(doc.ydoc);
 
       if (!validation.valid) {
         emitDiagnostic({
@@ -83,7 +82,7 @@ export function yjsAdapter(options?: YjsAdapterOptions): CRDTAdapter {
         });
       }
 
-      return wrapYjsDocument(adapter, ydoc);
+      return doc;
     },
 
     encodeState(doc) {

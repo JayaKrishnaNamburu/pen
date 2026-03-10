@@ -1,8 +1,8 @@
 import React from "react";
-import { useFieldEditorContext } from "../../context/fieldEditorContext.js";
-import { useFieldEditorState } from "../../hooks/useFieldEditorState.js";
-import { renderAsChild, type AsChildProps } from "../../utils/asChild.js";
-import { DATA_ATTRS } from "../../utils/dataAttributes.js";
+import { useFieldEditorContext } from "../../context/fieldEditorContext";
+import { useFieldEditorState } from "../../hooks/useFieldEditorState";
+import { renderAsChild, type AsChildProps } from "../../utils/asChild";
+import { DATA_ATTRS } from "../../utils/dataAttributes";
 
 export interface FieldEditorWrapperProps extends AsChildProps {
 	ref?: React.Ref<HTMLElement>;

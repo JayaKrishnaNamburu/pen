@@ -5,39 +5,49 @@ export * from "@pen/types";
 export {
   SchemaRegistryImpl,
   mergeSchemas,
-} from "./schema/registry.js";
-export type { SchemaRegistryConfig } from "./schema/registry.js";
+} from "./schema/registry";
+export type { SchemaRegistryConfig } from "./schema/registry";
 
 export {
   SchemaEngineImpl,
   deepEqual,
   sortDeltaAttributes,
-} from "./schema/normalize.js";
+} from "./schema/normalize";
 
 export {
   createBlockHandle,
   createAppHandle,
-} from "./schema/handles.js";
+} from "./schema/handles";
 
-export { suggestion } from "./schema/system-marks/suggestion.js";
+export { suggestion } from "./schema/system-marks/suggestion";
 
 // Editor runtime
-export { createEditor } from "./editor/editor.js";
-export { EventEmitter } from "./editor/events.js";
+export { createEditor } from "./editor/editor";
+export { EventEmitter } from "./editor/events";
 export {
   createDecorationSet,
   emptyDecorationSet,
   mergeDecorationSets,
-} from "./editor/decorations.js";
-export { DocumentStateImpl } from "./editor/documentState.js";
-export { DocumentRangeImpl } from "./editor/range.js";
-export { SelectionManagerImpl } from "./editor/selection.js";
-export { ExtensionManagerImpl } from "./editor/extensionManager.js";
-export { ApplyPipeline } from "./editor/apply.js";
+} from "./editor/decorations";
+export { DocumentStateImpl } from "./editor/documentState";
+export { DocumentRangeImpl } from "./editor/range";
+export { SelectionManagerImpl } from "./editor/selection";
+export { ExtensionManagerImpl } from "./editor/extensionManager";
+export { ApplyPipeline } from "./editor/apply";
+export {
+	hasIndexedCellSelectionMetadata,
+	resolveCellSelectionCoord,
+	resolveCellSelectionMatrix,
+} from "./editor/cellSelection";
+export { getNumberedListItemValue } from "./editor/orderedList";
 
 // Importer utilities (used by Wave 4 importers)
-export { blocksToOps } from "./importerUtils.js";
-export type { PendingBlock, ImportOptions as ImporterOptions } from "./importerUtils.js";
+export { blocksToOps } from "./importerUtils";
+export type { PendingBlock, ImportOptions as ImporterOptions } from "./importerUtils";
+
+// Exporter utilities (shared by Wave 4 exporters)
+export { buildTableChildren, buildDatabaseData } from "./exporterUtils";
+export type { ExportedDatabaseData } from "./exporterUtils";
 
 // Stub (to be implemented in later waves)
-export { toZod } from "./toZod.js";
+export { toZod } from "./toZod";

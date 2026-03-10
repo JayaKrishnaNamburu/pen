@@ -1,4 +1,4 @@
-import type { InlineMark, MdastNode } from "./types.js";
+import type { InlineMark, MdastNode } from "./types";
 
 interface InlineContext {
   text: string;
@@ -82,6 +82,15 @@ export function processInlineNodes(
         break;
     }
   }
+}
+
+export function collectInlineContent(nodes: MdastNode[]): {
+  text: string;
+  marks: InlineMark[];
+} {
+  const ctx: InlineContext = { text: "", marks: [], offset: 0 };
+  processInlineNodes(nodes, ctx);
+  return { text: ctx.text, marks: ctx.marks };
 }
 
 function stripHTMLTags(html: string): string {

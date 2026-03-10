@@ -45,6 +45,9 @@ importers:
         specifier: workspace:*
         version: link:../extensions/undo
     devDependencies:
+      '@pen/input-rules':
+        specifier: workspace:*
+        version: link:../extensions/input-rules
       tsup:
         specifier: ^8.4.0
         version: 8.5.1(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)
@@ -70,6 +73,40 @@ importers:
         specifier: ^13.6.29
         version: 13.6.29
     devDependencies:
+      tsup:
+        specifier: ^8.4.0
+        version: 8.5.1(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.7
+        version: 3.2.4(@types/debug@4.1.12)(jsdom@28.1.0)(tsx@4.21.0)
+
+  packages/extensions/database:
+    dependencies:
+      '@pen/core':
+        specifier: workspace:*
+        version: link:../../core
+      '@pen/react':
+        specifier: workspace:*
+        version: link:../../rendering/react
+      '@pen/types':
+        specifier: workspace:*
+        version: link:../../types
+      react:
+        specifier: ^18.0.0 || ^19.0.0
+        version: 19.2.4
+      react-dom:
+        specifier: ^18.0.0 || ^19.0.0
+        version: 19.2.4(react@19.2.4)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.14)
       tsup:
         specifier: ^8.4.0
         version: 8.5.1(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)
@@ -120,6 +157,9 @@ importers:
       '@pen/core':
         specifier: workspace:*
         version: link:../../core
+      '@pen/schema-default':
+        specifier: workspace:*
+        version: link:../../schema/default
     devDependencies:
       tsup:
         specifier: ^8.4.0
@@ -136,6 +176,9 @@ importers:
       '@pen/core':
         specifier: workspace:*
         version: link:../../core
+      '@pen/schema-default':
+        specifier: workspace:*
+        version: link:../../schema/default
     devDependencies:
       tsup:
         specifier: ^8.4.0
@@ -162,6 +205,12 @@ importers:
         specifier: ^2.0.0
         version: 2.36.0
     devDependencies:
+      '@pen/export-html':
+        specifier: workspace:*
+        version: link:../export-html
+      '@pen/schema-default':
+        specifier: workspace:*
+        version: link:../../schema/default
       tsup:
         specifier: ^8.4.0
         version: 8.5.1(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)
@@ -177,6 +226,9 @@ importers:
       '@pen/core':
         specifier: workspace:*
         version: link:../../core
+      htmlparser2:
+        specifier: ^9.0.0
+        version: 9.1.0
       mdast-util-from-markdown:
         specifier: ^2.0.0
         version: 2.0.3
@@ -186,6 +238,28 @@ importers:
       micromark-extension-gfm:
         specifier: ^3.0.0
         version: 3.0.0
+    devDependencies:
+      '@pen/export-markdown':
+        specifier: workspace:*
+        version: link:../export-markdown
+      '@pen/schema-default':
+        specifier: workspace:*
+        version: link:../../schema/default
+      tsup:
+        specifier: ^8.4.0
+        version: 8.5.1(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.7
+        version: 3.2.4(@types/debug@4.1.12)(jsdom@28.1.0)(tsx@4.21.0)
+
+  packages/extensions/input-rules:
+    dependencies:
+      '@pen/types':
+        specifier: workspace:*
+        version: link:../../types
     devDependencies:
       tsup:
         specifier: ^8.4.0
@@ -442,6 +516,9 @@ importers:
       '@pen/core':
         specifier: workspace:*
         version: link:../packages/core
+      '@pen/database':
+        specifier: workspace:*
+        version: link:../packages/extensions/database
       '@pen/export-html':
         specifier: workspace:*
         version: link:../packages/extensions/export-html
@@ -454,6 +531,9 @@ importers:
       '@pen/import-markdown':
         specifier: workspace:*
         version: link:../packages/extensions/import-markdown
+      '@pen/input-rules':
+        specifier: workspace:*
+        version: link:../packages/extensions/input-rules
       '@pen/react':
         specifier: workspace:*
         version: link:../packages/rendering/react
