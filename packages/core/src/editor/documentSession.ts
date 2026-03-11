@@ -5,6 +5,7 @@ import type {
   CRDTEvent,
   CreateSubdocumentOptions,
   DocumentScope,
+  DocumentScopeLookupOptions,
   DocumentSession,
   Unsubscribe,
 } from "@pen/types";
@@ -33,6 +34,7 @@ export interface CreateDocumentSessionOptions {
   adapter: CRDTAdapter;
   document?: CRDTDocument;
   destroyWhenIdle?: boolean;
+  ownsDocuments?: boolean;
 }
 
 function getDocumentGuid(doc: Y.Doc): string {
@@ -58,8 +60,10 @@ export class DocumentSessionImpl implements DocumentSession {
   readonly rootScope: DocumentScope;
 
   private readonly _destroyWhenIdle: boolean;
+  private readonly _ownsDocuments: boolean;
   private readonly _scopes = new Map<string, ScopeEntry>();
   private readonly _guidToScopeId = new Map<string, string>();
+  private readonly _scopeIdsByOwnerKey = new Map<string, string>();
   private readonly _listenersByScope = new Map<string, Set<ScopeListener>>();
   private readonly _allListeners = new Set<ScopeListener>();
   private _attachedEditors = 0;
@@ -70,6 +74,7 @@ export class DocumentSessionImpl implements DocumentSession {
     const rootDoc = options.document ?? adapter.createDocument();
     this.adapter = adapter;
     this._destroyWhenIdle = options.destroyWhenIdle === true;
+    this._ownsDocuments = options.ownsDocuments ?? options.document == null;
     this.rootScope = this._registerScope(rootDoc, {
       parentId: null,
       ownerBlockId: null,
@@ -85,33 +90,32 @@ export class DocumentSessionImpl implements DocumentSession {
     return scopeId ? this._getScope(scopeId) : null;
   }
 
-  getScopeForBlock(blockId: string): DocumentScope | null {
-    for (const entry of this._scopes.values()) {
-      if (entry.scope.ownerBlockId === blockId) {
-        return cloneScope(entry.scope);
+  getScopeForBlock(
+    blockId: string,
+    options?: DocumentScopeLookupOptions,
+  ): DocumentScope | null {
+    const scopeId = options?.scopeId;
+    if (scopeId) {
+      const ownedScopeId = this._scopeIdsByOwnerKey.get(
+        this._toOwnerKey(scopeId, blockId),
+      );
+      if (ownedScopeId) {
+        return this._getScope(ownedScopeId);
       }
+      return this._findRegisteredScopeForBlock(scopeId, blockId);
     }
 
+    let match: DocumentScope | null = null;
     for (const entry of this._scopes.values()) {
-      if (!isYjsCRDTDocument(entry.scope.doc)) {
+      if (entry.scope.ownerBlockId !== blockId) {
         continue;
       }
-      const blockMap = entry.scope.doc.penDocument.blocks.get(blockId);
-      const blockType = blockMap?.get("type");
-      if (blockMap && blockType === "subdocument" && !blockMap.has(SUBDOCUMENT)) {
-        return this.createSubdocument(blockId, { scopeId: entry.scope.id });
+      if (match) {
+        return null;
       }
-      const subdoc = blockMap?.get(SUBDOCUMENT);
-      if (!(subdoc instanceof Y.Doc)) {
-        continue;
-      }
-      return this._registerScope(wrapYjsDocument(this.adapter, subdoc), {
-        parentId: entry.scope.id,
-        ownerBlockId: blockId,
-      });
+      match = cloneScope(entry.scope);
     }
-
-    return null;
+    return match;
   }
 
   listScopes(): readonly DocumentScope[] {
@@ -231,13 +235,14 @@ export class DocumentSessionImpl implements DocumentSession {
       if (entry.subdocsHandler && isYjsCRDTDocument(entry.scope.doc)) {
         entry.scope.doc.ydoc.off("subdocs", entry.subdocsHandler);
       }
-      if (isYjsCRDTDocument(entry.scope.doc)) {
+      if (this._ownsDocuments && isYjsCRDTDocument(entry.scope.doc)) {
         entry.scope.doc.ydoc.destroy();
       }
     }
 
     this._scopes.clear();
     this._guidToScopeId.clear();
+    this._scopeIdsByOwnerKey.clear();
     this._listenersByScope.clear();
     this._allListeners.clear();
   }
@@ -250,8 +255,10 @@ export class DocumentSessionImpl implements DocumentSession {
     if (existingId) {
       const existing = this._scopes.get(existingId);
       if (existing) {
+        this._removeOwnerIndex(existing.scope);
         existing.scope.parentId = location.parentId;
         existing.scope.ownerBlockId = location.ownerBlockId;
+        this._indexOwnerScope(existing.scope);
         return cloneScope(existing.scope);
       }
     }
@@ -269,17 +276,22 @@ export class DocumentSessionImpl implements DocumentSession {
     const entry: ScopeEntry = {
       scope,
       awareness: this.adapter.createAwareness?.(doc) ?? null,
-      observerUnsub: this.adapter.observe(doc, (event) => {
-        this._emit(scope, event);
-      }),
+      observerUnsub: () => {},
       subdocsHandler: null,
     };
 
+    entry.observerUnsub = this.adapter.observe(doc, (event) => {
+      this._syncOwnedSubdocumentScopes(entry, event.affectedBlocks);
+      this._emit(scope, event);
+    });
+
     this._scopes.set(scopeId, entry);
     this._guidToScopeId.set(scope.guid, scope.id);
+    this._indexOwnerScope(scope);
 
     if (isYjsCRDTDocument(doc)) {
       this._attachSubdocumentDiscovery(entry, doc);
+      this._syncOwnedSubdocumentScopes(entry);
     }
 
     return cloneScope(scope);
@@ -291,6 +303,9 @@ export class DocumentSessionImpl implements DocumentSession {
   ): void {
     const registerSubdoc = (subdoc: Y.Doc) => {
       const ownerBlockId = this._resolveOwnerBlockId(doc, subdoc);
+      if (!ownerBlockId) {
+        return;
+      }
       this._registerScope(wrapYjsDocument(this.adapter, subdoc), {
         parentId: entry.scope.id,
         ownerBlockId,
@@ -349,6 +364,7 @@ export class DocumentSessionImpl implements DocumentSession {
     if (entry.subdocsHandler && isYjsCRDTDocument(entry.scope.doc)) {
       entry.scope.doc.ydoc.off("subdocs", entry.subdocsHandler);
     }
+    this._removeOwnerIndex(entry.scope);
     this._scopes.delete(scopeId);
     this._guidToScopeId.delete(guid);
     this._listenersByScope.delete(scopeId);
@@ -392,6 +408,70 @@ export class DocumentSessionImpl implements DocumentSession {
       }
     }
     return null;
+  }
+
+  private _findRegisteredScopeForBlock(
+    scopeId: string,
+    blockId: string,
+  ): DocumentScope | null {
+    const parentEntry = this._getScopeEntry(scopeId);
+    if (!parentEntry || !isYjsCRDTDocument(parentEntry.scope.doc)) {
+      return null;
+    }
+    const subdoc = parentEntry.scope.doc.penDocument.blocks.get(blockId)?.get(
+      SUBDOCUMENT,
+    );
+    if (!(subdoc instanceof Y.Doc)) {
+      return null;
+    }
+    return this.getScopeByGuid(getDocumentGuid(subdoc));
+  }
+
+  private _syncOwnedSubdocumentScopes(
+    entry: ScopeEntry,
+    blockIds?: Iterable<string>,
+  ): void {
+    if (!isYjsCRDTDocument(entry.scope.doc)) {
+      return;
+    }
+
+    const targetBlockIds =
+      blockIds ?? entry.scope.doc.penDocument.blocks.keys();
+
+    for (const blockId of targetBlockIds) {
+      const blockMap = entry.scope.doc.penDocument.blocks.get(blockId);
+      const subdoc = blockMap?.get(SUBDOCUMENT);
+      if (!(subdoc instanceof Y.Doc)) {
+        continue;
+      }
+      this._registerScope(wrapYjsDocument(this.adapter, subdoc), {
+        parentId: entry.scope.id,
+        ownerBlockId: blockId,
+      });
+    }
+  }
+
+  private _indexOwnerScope(scope: DocumentScope): void {
+    if (!scope.parentId || !scope.ownerBlockId) {
+      return;
+    }
+    this._scopeIdsByOwnerKey.set(
+      this._toOwnerKey(scope.parentId, scope.ownerBlockId),
+      scope.id,
+    );
+  }
+
+  private _removeOwnerIndex(scope: DocumentScope): void {
+    if (!scope.parentId || !scope.ownerBlockId) {
+      return;
+    }
+    this._scopeIdsByOwnerKey.delete(
+      this._toOwnerKey(scope.parentId, scope.ownerBlockId),
+    );
+  }
+
+  private _toOwnerKey(scopeId: string, blockId: string): string {
+    return `${scopeId}:${blockId}`;
   }
 
   private _getScope(scopeId: string): DocumentScope | null {

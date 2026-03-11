@@ -67,6 +67,35 @@ describe("@pen/core createEditor", () => {
 		session.destroy();
 	});
 
+	it("does not destroy caller-owned documents on editor teardown", () => {
+		const adapter = yjsAdapter();
+		const document = adapter.createDocument();
+		const editorA = createEditor({
+			document,
+			without: ["document-ops", "delta-stream", "undo"],
+		});
+		const blockId = editorA.firstBlock()!.id;
+
+		editorA.apply([
+			{
+				type: "insert-text",
+				blockId,
+				offset: 0,
+				text: "Persisted",
+			},
+		]);
+		editorA.destroy();
+
+		const editorB = createEditor({
+			document,
+			without: ["document-ops", "delta-stream", "undo"],
+		});
+
+		expect(editorB.getBlock(blockId)?.textContent()).toBe("Persisted");
+
+		editorB.destroy();
+	});
+
 	it("discovers subdocument scopes and lets nested editors edit them", () => {
 		const session = createDocumentSession({
 			adapter: yjsAdapter(),
@@ -86,7 +115,9 @@ describe("@pen/core createEditor", () => {
 			},
 		]);
 
-		const childScope = session.getScopeForBlock("subdoc-block");
+		const childScope = session.getScopeForBlock("subdoc-block", {
+			scopeId: rootEditor.documentScope.id,
+		});
 		expect(childScope).not.toBeNull();
 		expect(rootEditor.getBlock("subdoc-block")?.props.subdocumentGuid).toBe(
 			childScope?.guid,
@@ -113,6 +144,23 @@ describe("@pen/core createEditor", () => {
 		);
 		expect(childEditor.documentScope.parentId).toBe(rootEditor.documentScope.id);
 		expect(childEditor.documentScope.ownerBlockId).toBe("subdoc-block");
+
+		childEditor.apply([
+			{
+				type: "insert-block",
+				blockId: "subdoc-block",
+				blockType: "subdocument",
+				props: { title: "Nested Nested" },
+				position: "last",
+			},
+		]);
+
+		const nestedScope = session.getScopeForBlock("subdoc-block", {
+			scopeId: childEditor.documentScope.id,
+		});
+		expect(nestedScope).not.toBeNull();
+		expect(nestedScope?.id).not.toBe(childScope?.id);
+		expect(session.getScopeForBlock("subdoc-block")).toBeNull();
 
 		childEditor.destroy();
 		rootEditor.destroy();

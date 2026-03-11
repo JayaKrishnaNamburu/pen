@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { createEditor, type BlockHandle, type BlockRenderContext, type Editor } from "@pen/core";
 import { PenEditor } from "../penEditor";
 import { useEditorContext } from "../context/editorContext";
@@ -15,35 +15,36 @@ function SubdocumentRendererInner(props: {
 		assets,
 		renderers,
 	} = useEditorContext();
-	const childEditorRef = useRef<Editor | null>(null);
-	const childScopeIdRef = useRef<string | null>(null);
+	const [childEditor, setChildEditor] = useState<Editor | null>(null);
 
 	const session = parentEditor.internals.documentSession;
-	const childScope = session?.getScopeForBlock(block.id) ?? null;
-
-	if (
-		session &&
-		childScope &&
-		(childEditorRef.current == null || childScopeIdRef.current !== childScope.id)
-	) {
-		childEditorRef.current?.destroy();
-		childEditorRef.current = createEditor({
-			schema: parentEditor.schema,
-			documentSession: session,
-			documentScopeId: childScope.id,
-		});
-		childScopeIdRef.current = childScope.id;
-	}
+	const childScope = session?.getScopeForBlock(block.id, {
+		scopeId: parentEditor.documentScope.id,
+	}) ?? null;
+	const childScopeId = childScope?.id ?? null;
 
 	useEffect(() => {
-		return () => {
-			childEditorRef.current?.destroy();
-			childEditorRef.current = null;
-			childScopeIdRef.current = null;
-		};
-	}, []);
+		if (!session || !childScopeId) {
+			setChildEditor(null);
+			return;
+		}
 
-	const childEditor = childEditorRef.current;
+		const nextChildEditor = createEditor({
+			schema: parentEditor.schema,
+			documentSession: session,
+			documentScopeId: childScopeId,
+		});
+		setChildEditor(nextChildEditor);
+
+		return () => {
+			nextChildEditor.destroy();
+		};
+	}, [childScopeId, parentEditor.schema, session]);
+
+	const activeChildEditor =
+		childEditor && childEditor.documentScope.id === childScopeId
+			? childEditor
+			: null;
 
 	return (
 		<div
@@ -54,9 +55,9 @@ function SubdocumentRendererInner(props: {
 			data-subdocument-guid={childScope?.guid}
 		>
 			<div data-pen-ignore-pointer-gesture="">
-				{childEditor ? (
+				{activeChildEditor ? (
 					<PenEditor
-						editor={childEditor}
+						editor={activeChildEditor}
 						readonly={readonly}
 						importers={importers}
 						assets={assets}

@@ -6,6 +6,8 @@ Proposed.
 
 This RFC translates the existing selection and field-editor requirements in `spec/v01.md`, `spec/wave-03-editor-core.md`, and `spec/wave-05-react-rendering.md` into an implementation architecture for cross-block selection and editing.
 
+It also serves as a core enabling spec for `spec/flow-mode-rfc.md`: cross-block text editing is the main way Pen's block-native model can feel continuous for writing-first documents without introducing a second document architecture.
+
 It is intended to guide implementation work for the current post-wave-06 debugging effort in the playground and to resolve ambiguity around selection ownership, expanded field-editor behavior, and fallback policy.
 
 ## Problem
@@ -43,6 +45,7 @@ This RFC assumes and preserves the following requirements from the existing spec
 - Support mixed block ranges in expanded mode.
 - Provide a clear fallback policy for large selections and select-all behavior.
 - Land changes in phases without painting the implementation into a corner.
+- Make continuity across adjacent inline-richtext blocks strong enough to power Pen's flow-mode writing experience while preserving the universal block model.
 
 ## Non-Goals
 
@@ -85,6 +88,12 @@ The visible editing surface is derived from:
 - per-block role inside an expanded surface
 
 This allows the editor to preserve stable session ownership while still expanding or contracting the visible editing surface around the canonical selection.
+
+### 4. Block-Native Continuity
+
+Cross-block selection is not a bridge toward replacing the block model.
+
+It is the way the existing block model becomes a more continuous writing surface for prose-oriented documents and flow mode.
 
 ## Architecture
 

@@ -8,6 +8,8 @@
 
 Implement the full React rendering layer: editor primitives, the field editor with its dual-backend input strategy, hooks, toolbar, slash menu, clipboard pipeline, and block renderers. After this wave, Pen is a usable editor in the browser.
 
+This wave must support both structured block presentation and lighter writing-first flow presentation on the same underlying block model. React rendering stays block-native; flow documents change policy, chrome, and interaction bias rather than introducing a second renderer root.
+
 **This is the highest-risk wave.** The field editor dual-backend, IME handling, DOM-CRDT reconciler, and cross-block selection are the hardest pieces in the entire project. Budget 3-4x the time of any other wave.
 
 ---
@@ -107,6 +109,15 @@ index.ts            ← pen-editor.tsx, primitives/*, hooks/*
 ```
 
 No cycles. `field-editor/` depends on `@pen/core` and `yjs` for CRDT operations. Renderers depend on context and hooks only. Primitives compose everything.
+
+### Flow Profile Alignment
+
+Wave 5 does not implement a second rich-text renderer architecture. Instead, it makes the existing block renderer capable of different document profiles:
+
+- `structured` documents expose more explicit block affordances
+- `flow` documents reduce block chrome and bias the field editor toward continuous cross-block writing interactions
+
+This keeps `Pen.Editor.Content` block-based while still allowing Pen to present a simpler writing-first experience.
 
 ---
 

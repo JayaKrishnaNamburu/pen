@@ -99,6 +99,7 @@ class EditorImpl implements Editor {
 				adapter: this._adapter,
 				document: options.document,
 				destroyWhenIdle: true,
+				ownsDocuments: options.document == null,
 			});
 		this._bindSession(documentSession, options.documentScopeId);
 		this._clientId = this._adapter.getClientId(this._crdtDoc);
@@ -237,6 +238,7 @@ class EditorImpl implements Editor {
 				adapter: this._adapter,
 				document: doc,
 				destroyWhenIdle: true,
+				ownsDocuments: false,
 			}),
 		);
 		this._clientId = this._adapter.getClientId(this._crdtDoc);

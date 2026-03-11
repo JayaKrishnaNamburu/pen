@@ -6,7 +6,7 @@
 
 ## Goal
 
-Implement `createEditor()` — the central factory that wires schema, CRDT, extensions, and the mutation pipeline. After this wave, you can programmatically create an editor, insert/delete/move blocks, format text, observe changes, undo/redo, stream AI deltas, and run the full extension lifecycle — all headless, no DOM required.
+Implement `createEditor()` — the central factory that wires schema, CRDT, extensions, document profile, and the mutation pipeline. After this wave, you can programmatically create an editor, insert/delete/move blocks, format text, observe changes, undo/redo, stream AI deltas, and run the full extension lifecycle — all headless, no DOM required.
 
 ---
 
@@ -120,6 +120,19 @@ No cycles. `editor.ts` is the root that composes all other modules. Leaf modules
 ```
 
 No cross-package cycles. `@pen/core` depends on `@pen/types`. All three extension packages depend on `@pen/core`. `@pen/delta-stream` has an optional runtime dependency on `@pen/document-ops` for tool dispatch, but this is injected via the editor's extension context, not a hard import.
+
+### Flow Profile Alignment
+
+Wave 3 remains fully block-native.
+
+The headless core does **not** gain a second authored root model for simpler rich-text editing. Instead, richer continuity for writing-first documents comes from:
+
+- canonical multi-block `TextSelection`
+- multi-block replacement and deletion
+- persisted `documentProfile` metadata such as `structured` or `flow`
+- profile-aware command, importer, tool, and extension policy
+
+This wave therefore owns the semantic foundation of flow mode, even though most visual differences land in Wave 5.
 
 ### `EditorInternals` — Typed Extension Access
 

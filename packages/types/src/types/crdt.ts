@@ -105,13 +105,20 @@ export interface CreateSubdocumentOptions {
   autoLoad?: boolean;
 }
 
+export interface DocumentScopeLookupOptions {
+  scopeId?: string;
+}
+
 export interface DocumentSession {
   readonly adapter: CRDTAdapter;
   readonly rootScope: DocumentScope;
 
   getScope(scopeId: string): DocumentScope | null;
   getScopeByGuid(guid: string): DocumentScope | null;
-  getScopeForBlock(blockId: string): DocumentScope | null;
+  getScopeForBlock(
+    blockId: string,
+    options?: DocumentScopeLookupOptions,
+  ): DocumentScope | null;
   listScopes(): readonly DocumentScope[];
 
   getAwareness(scopeId?: string): Awareness | null;

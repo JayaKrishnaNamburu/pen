@@ -207,6 +207,7 @@ export type {
 	DocumentScopeKind,
 	DocumentScopeInfo,
 	DocumentScope,
+	DocumentScopeLookupOptions,
 	CreateSubdocumentOptions,
 	DocumentSession,
 } from "./crdt";
