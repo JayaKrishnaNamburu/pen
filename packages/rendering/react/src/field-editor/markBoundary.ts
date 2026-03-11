@@ -1,11 +1,12 @@
 import type { SchemaRegistry } from "@pen/core";
+import type { FieldEditorTextLike } from "./crdt";
 
 /**
  * Enforces InlineSchema.expand policy at every text insertion point.
  * See Spec Section 4.3.
  */
 export function resolveMarksAtPosition(
-  ytext: any,
+  ytext: FieldEditorTextLike,
   offset: number,
   registry: SchemaRegistry,
 ): Record<string, unknown> | undefined {

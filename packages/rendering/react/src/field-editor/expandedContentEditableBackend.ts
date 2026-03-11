@@ -6,6 +6,7 @@ import {
 import { handlePaste, handleCopy, handleCut } from "./clipboard";
 import type { PasteImporters } from "../context/editorContext";
 import type { FieldEditorInputController } from "./controller";
+import type { FieldEditorTextLike } from "./crdt";
 import { applyEnterBehavior, toggleInlineMark } from "./commands";
 import { normalizeSelectionFormation } from "../utils/selectionFormation";
 import {
@@ -319,7 +320,10 @@ export class ExpandedContentEditableBackend {
 	};
 }
 
-function getBlockText(editor: Editor, blockId: string): any {
+function getBlockText(
+	editor: Editor,
+	blockId: string,
+): FieldEditorTextLike | null {
 	const adapter = editor.internals.adapter;
 	const doc = editor.internals.crdtDoc;
 	const ydoc = adapter.raw<{
@@ -327,5 +331,7 @@ function getBlockText(editor: Editor, blockId: string): any {
 			get(key: string): { get(field: string): unknown } | undefined;
 		};
 	}>(doc);
-	return ydoc.getMap("blocks").get(blockId)?.get("content");
+	return (
+		ydoc.getMap("blocks").get(blockId)?.get("content") as FieldEditorTextLike | null
+	) ?? null;
 }

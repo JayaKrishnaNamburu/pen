@@ -9,6 +9,18 @@ import { handleCopy } from "../field-editor/clipboard";
 import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
 import { Pen } from "../primitives/index";
 
+type TableRowLike = {
+	get(field: "cells"): { delete(index: number, length: number): void };
+};
+
+type TableContentLike = {
+	get(index: number): TableRowLike;
+};
+
+type TableBlockMapLike = {
+	get(field: "tableContent"): TableContentLike;
+};
+
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
 ).IS_REACT_ACT_ENVIRONMENT = true;
@@ -344,7 +356,9 @@ describe("@pen/react table rendering", () => {
 			},
 		]);
 
-		const blockMap = (editor.internals.doc.blocks as any).get("t4-short-row");
+		const blockMap = editor.internals.doc.blocks.get(
+			"t4-short-row",
+		) as TableBlockMapLike;
 		const tableContent = blockMap.get("tableContent");
 		const firstRow = tableContent.get(0);
 		firstRow.get("cells").delete(2, 1);

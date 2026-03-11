@@ -1,8 +1,12 @@
 import type { Editor } from "@pen/core";
 import type { ActiveCellCoord } from "./controller";
+import type { FieldEditorTextLike } from "./crdt";
 
-export function getBlockYText(editor: Editor, blockId: string): unknown {
-	return editor.internals.getBlockText(blockId);
+export function getBlockYText(
+	editor: Editor,
+	blockId: string,
+): FieldEditorTextLike | null {
+	return (editor.internals.getBlockText(blockId) as FieldEditorTextLike | null) ?? null;
 }
 
 export function getCellYText(
@@ -10,15 +14,17 @@ export function getCellYText(
 	blockId: string,
 	row: number,
 	col: number,
-): unknown {
-	return editor.internals.getCellText(blockId, row, col);
+): FieldEditorTextLike | null {
+	return (
+		editor.internals.getCellText(blockId, row, col) as FieldEditorTextLike | null
+	) ?? null;
 }
 
 export function getResolvedYText(
 	editor: Editor,
 	blockId: string,
 	activeCellCoord: ActiveCellCoord | null,
-): unknown {
+): FieldEditorTextLike | null {
 	if (activeCellCoord?.blockId === blockId) {
 		return getCellYText(
 			editor,

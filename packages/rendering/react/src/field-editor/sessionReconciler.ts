@@ -1,5 +1,6 @@
 import type { Editor, OpOrigin } from "@pen/core";
 import { fullReconcileToDOM } from "./reconciler";
+import type { FieldEditorTextLike } from "./crdt";
 
 interface SessionSnapshot {
 	focusBlockId: string | null;
@@ -12,7 +13,7 @@ interface SessionReconcilerOptions {
 	getSnapshot: () => SessionSnapshot;
 	getAttachedElement: () => HTMLElement | null;
 	getInlineElement: (blockId: string) => HTMLElement | null;
-	getYText: (blockId: string) => any;
+	getYText: (blockId: string) => FieldEditorTextLike | null;
 	shouldProjectSelection: () => boolean;
 	projectSelection: () => void;
 }

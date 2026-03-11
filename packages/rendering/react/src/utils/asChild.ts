@@ -6,20 +6,25 @@ export interface AsChildProps {
   children?: React.ReactNode;
 }
 
+type AsChildElementProps = Record<string, unknown>;
+type AsChildElement = React.ReactElement<AsChildElementProps>;
+
 export function renderAsChild(
-  props: AsChildProps & { ref?: React.Ref<HTMLElement> } & Record<string, any>,
+  props: AsChildProps &
+    { ref?: React.Ref<HTMLElement> } &
+    object,
   defaultTag: keyof React.JSX.IntrinsicElements,
   primitiveProps: Record<string, unknown>,
 ): React.ReactElement {
   const { asChild, children, ref, ...restProps } = props;
 
-  if (asChild && React.isValidElement(children)) {
-    const child = React.Children.only(children) as React.ReactElement<any>;
+  if (asChild && React.isValidElement<AsChildElementProps>(children)) {
+    const child = React.Children.only(children) as AsChildElement;
     return React.cloneElement(child, {
       ...primitiveProps,
       ...restProps,
       ...child.props,
-      ref: composeRefs(ref, (child as { ref?: React.Ref<unknown> }).ref),
+      ref: composeRefs(ref, (child as AsChildElement & { ref?: React.Ref<unknown> }).ref),
     });
   }
 

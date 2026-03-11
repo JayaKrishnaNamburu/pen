@@ -20,6 +20,15 @@ import {
 } from "../field-editor/commands";
 import { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
 import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
+import type { FieldEditorTextLike } from "../field-editor/crdt";
+
+type BlocksMapLike = {
+	get(key: string): { get(field: string): unknown } | undefined;
+};
+
+type RawDocLike = {
+	getMap(name: string): BlocksMapLike;
+};
 
 function visibleText(text: string): string {
 	return text.replace(/\u200B/g, "");
@@ -28,11 +37,13 @@ function visibleText(text: string): string {
 function getYText(
 	editor: ReturnType<typeof createEditor>,
 	blockId: string,
-): any {
+): FieldEditorTextLike | null {
 	const adapter = editor.internals.adapter;
 	const doc = editor.internals.crdtDoc;
-	const ydoc = adapter.raw(doc) as any;
-	return ydoc.getMap("blocks").get(blockId)?.get("content");
+	const ydoc = adapter.raw<RawDocLike>(doc);
+	return ydoc.getMap("blocks").get(blockId)?.get("content") as
+		| FieldEditorTextLike
+		| null;
 }
 
 function editorOpts() {
@@ -899,19 +910,23 @@ describe("resolveEnterAction – schema-aware Enter", () => {
 	});
 
 	it("returns null for table mode", () => {
-		const action = resolveEnterAction({} as any, "x", "table", {
+		const editor = createEditor(editorOpts());
+		const action = resolveEnterAction(editor, "x", "table", {
 			length: 0,
 			toString: () => "",
 		});
 		expect(action).toBeNull();
+		editor.destroy();
 	});
 
 	it("returns null for none mode", () => {
-		const action = resolveEnterAction({} as any, "x", "none", {
+		const editor = createEditor(editorOpts());
+		const action = resolveEnterAction(editor, "x", "none", {
 			length: 0,
 			toString: () => "",
 		});
 		expect(action).toBeNull();
+		editor.destroy();
 	});
 
 	it("splits paragraph with no newBlockType override", () => {

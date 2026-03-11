@@ -18,7 +18,37 @@ import { isHistoryTransactionOrigin } from "./historyOrigin";
 import { handleCopy, handleCut, handleClipboardPaste } from "./clipboard";
 import type { PasteImporters } from "../context/editorContext";
 import { applyListInputRule } from "./commands";
+import type {
+	FieldEditorObserver,
+	FieldEditorTextChangeEvent,
+	FieldEditorTextLike,
+	InlineInputRuleEngine,
+} from "./crdt";
 import { matchInlineInputRule } from "../utils/inlineInputRule";
+
+type EditContextTextUpdateEvent = Event & {
+	updateRangeStart: number;
+	updateRangeEnd: number;
+	text: string;
+	selectionStart?: number;
+	selectionEnd?: number;
+};
+
+type EditContextTextFormat = {
+	rangeStart: number;
+	rangeEnd: number;
+	underlineStyle?: string;
+	underlineThickness?: string;
+};
+
+type EditContextTextFormatUpdateEvent = Event & {
+	getTextFormats?(): EditContextTextFormat[];
+};
+
+type EditContextCharacterBoundsUpdateEvent = Event & {
+	rangeStart: number;
+	rangeEnd: number;
+};
 
 declare class EditContext {
 	constructor(options?: {
@@ -29,8 +59,8 @@ declare class EditContext {
 	updateText(start: number, end: number, text: string): void;
 	updateSelection(start: number, end: number): void;
 	updateCharacterBounds(start: number, rects: DOMRect[]): void;
-	addEventListener(type: string, handler: (event: any) => void): void;
-	removeEventListener(type: string, handler: (event: any) => void): void;
+	addEventListener(type: string, handler: (event: Event) => void): void;
+	removeEventListener(type: string, handler: (event: Event) => void): void;
 	readonly text: string;
 	readonly selectionStart: number;
 	readonly selectionEnd: number;
@@ -44,8 +74,8 @@ type EditContextGlobal = typeof globalThis & {
 export class EditContextBackend implements InputBackend {
 	private editContext: EditContext | null = null;
 	private element: HTMLElement | null = null;
-	private ytext: any = null;
-	private observer: any = null;
+	private ytext: FieldEditorTextLike | null = null;
+	private observer: FieldEditorObserver | null = null;
 	private isApplyingSelection = 0;
 	private pendingSelectionOverride: {
 		blockId: string;
@@ -62,7 +92,7 @@ export class EditContextBackend implements InputBackend {
 
 	activate(element: HTMLElement, ytext: unknown): void {
 		this.element = element;
-		this.ytext = ytext;
+		this.ytext = ytext as FieldEditorTextLike;
 		this.fieldEditor.setComposing(false);
 
 		const editContextConstructor = (globalThis as EditContextGlobal).EditContext;
@@ -99,9 +129,8 @@ export class EditContextBackend implements InputBackend {
 			this.handleSelectionChange,
 		);
 
-		this.observer = this.ytext.observe((event: any) =>
-			this.handleYTextChange(event),
-		);
+		this.observer = (event) => this.handleYTextChange(event);
+		this.ytext.observe(this.observer);
 
 		fullReconcileToDOM(this.ytext, element, this.editor.schema);
 		this.isApplyingSelection++;
@@ -203,14 +232,15 @@ export class EditContextBackend implements InputBackend {
 		);
 	}
 
-	private handleTextUpdate = (event: any): void => {
+	private handleTextUpdate = (event: Event): void => {
+		if (!this.ytext) return;
 		const {
 			updateRangeStart,
 			updateRangeEnd,
 			text,
 			selectionStart,
 			selectionEnd,
-		} = event;
+		} = event as EditContextTextUpdateEvent;
 		const blockId = this.fieldEditor.focusBlockId;
 		if (!blockId) return;
 
@@ -272,7 +302,7 @@ export class EditContextBackend implements InputBackend {
 					}
 				: null;
 
-		const ops = [];
+		const ops: DocumentOp[] = [];
 		if (updateRangeEnd > updateRangeStart) {
 			ops.push({
 				type: "delete-text" as const,
@@ -287,10 +317,7 @@ export class EditContextBackend implements InputBackend {
 				blockId,
 				offset: range.start,
 				text,
-				marks: this.fieldEditor.resolveInsertMarks(
-					this.ytext,
-					range.start,
-				),
+				marks: this.fieldEditor.resolveInsertMarks(this.ytext, range.start),
 			});
 		}
 		if (ops.length > 0) {
@@ -391,7 +418,7 @@ export class EditContextBackend implements InputBackend {
 		];
 	}
 
-	private handleTextFormatUpdate = (event: any): void => {
+	private handleTextFormatUpdate = (event: Event): void => {
 		// IME composition underline rendering.
 		// The textformatupdate event provides ranges with underline styles
 		// for visual feedback during IME composition. These are rendered
@@ -399,7 +426,8 @@ export class EditContextBackend implements InputBackend {
 		// textupdate confirms the final text.
 		if (!this.element) return;
 
-		const ranges = event.getTextFormats?.() ?? [];
+		const ranges =
+			(event as EditContextTextFormatUpdateEvent).getTextFormats?.() ?? [];
 		for (const fmt of ranges) {
 			const { rangeStart, rangeEnd, underlineStyle, underlineThickness } =
 				fmt;
@@ -438,10 +466,11 @@ export class EditContextBackend implements InputBackend {
 		}
 	};
 
-	private handleCharacterBoundsUpdate = (event: any): void => {
+	private handleCharacterBoundsUpdate = (event: Event): void => {
 		if (!this.element || !this.editContext) return;
 
-		const { rangeStart, rangeEnd } = event;
+		const { rangeStart, rangeEnd } =
+			event as EditContextCharacterBoundsUpdateEvent;
 		const rects: DOMRect[] = [];
 
 		for (let i = rangeStart; i < rangeEnd; i++) {
@@ -516,8 +545,8 @@ export class EditContextBackend implements InputBackend {
 		);
 	};
 
-	private handleYTextChange = (event: any): void => {
-		if (!this.editContext || !this.element) return;
+	private handleYTextChange = (event: FieldEditorTextChangeEvent): void => {
+		if (!this.editContext || !this.element || !this.ytext) return;
 		const isHistory = isHistoryTransactionOrigin(event.transaction?.origin);
 		if (isHistory) {
 			const nextText = this.ytext?.toString?.() ?? "";
@@ -537,11 +566,7 @@ export class EditContextBackend implements InputBackend {
 			return;
 		}
 
-		const delta = event.delta as {
-			retain?: number;
-			insert?: string;
-			delete?: number;
-		}[];
+		const delta = event.delta;
 		let offset = 0;
 		for (const entry of delta) {
 			if (entry.retain != null) {
@@ -678,15 +703,6 @@ export class EditContextBackend implements InputBackend {
 		event.preventDefault();
 	};
 }
-
-type InlineInputRuleEngine = {
-	tryMatchInline(
-		editor: Editor,
-		blockId: string,
-		insertedText: string,
-		options?: { offset?: number },
-	): DocumentOp[] | null;
-};
 
 function resolveInlineSelectionTarget(
 	blockId: string,

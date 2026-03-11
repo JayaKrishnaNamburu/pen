@@ -20,17 +20,23 @@ import {
 } from "./commands";
 import { handleFieldEditorKeyDown } from "./keyHandling";
 import { isHistoryTransactionOrigin } from "./historyOrigin";
+import type {
+	FieldEditorDelta,
+	FieldEditorObserver,
+	FieldEditorTextChangeEvent,
+	FieldEditorTextLike,
+} from "./crdt";
 
 export class ContentEditableBackend implements InputBackend {
 	private element: HTMLElement | null = null;
-	private ytext: any = null;
-	private observer: any = null;
+	private ytext: FieldEditorTextLike | null = null;
+	private observer: FieldEditorObserver | null = null;
 	private mutationObserver: MutationObserver | null = null;
 	private isApplyingSelection = 0;
 	private isComposing = false;
 	private compositionStartTimestamp = 0;
 	private compositionStartText: string | null = null;
-	private deferredRemoteDeltas: Array<{ delta: any[] }> = [];
+	private deferredRemoteDeltas: Array<{ delta: FieldEditorDelta[] }> = [];
 	private pendingSelectionOverride: {
 		blockId: string;
 		anchorOffset: number;
@@ -48,7 +54,7 @@ export class ContentEditableBackend implements InputBackend {
 
 	activate(element: HTMLElement, ytext: unknown): void {
 		this.element = element;
-		this.ytext = ytext;
+		this.ytext = ytext as FieldEditorTextLike;
 
 		element.contentEditable = "true";
 		this.isApplyingSelection++;
@@ -81,9 +87,8 @@ export class ContentEditableBackend implements InputBackend {
 			characterDataOldValue: true,
 		});
 
-		this.observer = this.ytext.observe((event: any) =>
-			this.handleYTextChange(event),
-		);
+		this.observer = (event) => this.handleYTextChange(event);
+		this.ytext.observe(this.observer);
 
 		fullReconcileToDOM(this.ytext, element, this.editor.schema);
 		this.restoreDOMSelectionFromEditor();
@@ -335,6 +340,7 @@ export class ContentEditableBackend implements InputBackend {
 
 	private handleBeforeInput = (event: InputEvent): void => {
 		if (this.isComposing) return;
+		if (!this.ytext || !this.element) return;
 
 		const blockId = this.fieldEditor.focusBlockId;
 		if (!blockId || !this.editor.getBlock(blockId)) {
@@ -350,7 +356,7 @@ export class ContentEditableBackend implements InputBackend {
 				this.editor,
 				this.ytext,
 				this.fieldEditor,
-				this.element!,
+				this.element,
 				this,
 			);
 			return;
@@ -437,7 +443,7 @@ export class ContentEditableBackend implements InputBackend {
 
 	// ── CRDT→DOM reconciliation ───────────────────────────────
 
-	private handleYTextChange = (event: any): void => {
+	private handleYTextChange = (event: FieldEditorTextChangeEvent): void => {
 		if (this.isComposing) {
 			if (
 				event.transaction?.origin === "remote" ||
@@ -498,6 +504,8 @@ export class ContentEditableBackend implements InputBackend {
 		>,
 	): void {
 		if (diff.length === 0) return;
+		const ytext = this.ytext;
+		if (!ytext) return;
 
 		const ops: DocumentOp[] = [];
 		const cellCoord = this._getActiveCellCoord(blockId);
@@ -538,7 +546,7 @@ export class ContentEditableBackend implements InputBackend {
 					blockId,
 					offset: op.offset,
 					text: op.text,
-					marks: this.fieldEditor.resolveInsertMarks(this.ytext, op.offset),
+					marks: this.fieldEditor.resolveInsertMarks(ytext, op.offset),
 				});
 			}
 		}
@@ -677,7 +685,7 @@ export class ContentEditableBackend implements InputBackend {
 type DirectHandler = (
 	event: InputEvent,
 	editor: Editor,
-	ytext: any,
+	ytext: FieldEditorTextLike,
 	fieldEditor: FieldEditorInputController,
 	element: HTMLElement,
 	backend: ContentEditableBackend,
@@ -1072,7 +1080,7 @@ function rebaseTextDiffOps(
 		| { type: "insert"; offset: number; text: string }
 		| { type: "delete"; offset: number; length: number }
 	>,
-	deferredRemoteDeltas: Array<{ delta: any[] }>,
+	deferredRemoteDeltas: Array<{ delta: FieldEditorDelta[] }>,
 ): Array<
 	| { type: "insert"; offset: number; text: string }
 	| { type: "delete"; offset: number; length: number }
@@ -1118,7 +1126,7 @@ function rebaseTextDiffOps(
 
 function mapOffsetThroughRemoteDeltas(
 	originalOffset: number,
-	deferredRemoteDeltas: Array<{ delta: any[] }>,
+	deferredRemoteDeltas: Array<{ delta: FieldEditorDelta[] }>,
 ): number {
 	let mappedOffset = originalOffset;
 

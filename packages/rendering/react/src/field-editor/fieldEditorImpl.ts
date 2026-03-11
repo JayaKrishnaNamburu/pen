@@ -29,6 +29,7 @@ import {
 	getResolvedYText,
 	resolveCellInlineElement,
 } from "./contentResolution";
+import type { FieldEditorTextLike } from "./crdt";
 import { domSelectionToEditor, queryBlockElement, queryInlineElement } from "./selectionBridge";
 import {
 	getEditorBlockSelectionLength,
@@ -666,7 +667,7 @@ export class FieldEditorImpl implements FieldEditorSession {
 	}
 
 	resolveInsertMarks(
-		ytext: { toDelta(): unknown[] },
+		ytext: FieldEditorTextLike,
 		offset: number,
 	): Record<string, unknown | null> | undefined {
 		const baseMarks =
@@ -1133,7 +1134,7 @@ export class FieldEditorImpl implements FieldEditorSession {
 		});
 	}
 
-	private _getYText(blockId: string): any {
+	private _getYText(blockId: string): FieldEditorTextLike | null {
 		return getResolvedYText(this._editor, blockId, this._activeCellCoord);
 	}
 
@@ -1141,7 +1142,7 @@ export class FieldEditorImpl implements FieldEditorSession {
 		blockId: string,
 		row: number,
 		col: number,
-	): any {
+	): FieldEditorTextLike | null {
 		return getCellYText(this._editor, blockId, row, col);
 	}
 

@@ -9,7 +9,7 @@ import { useBlockSurfaceRole } from "../../hooks/useBlockSurfaceRole";
 import { resolveRenderer } from "../../renderers/index";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { DATA_ATTRS } from "../../utils/dataAttributes";
-import type { BlockRenderContext } from "@pen/core";
+import type { BlockRenderContext, Decoration } from "@pen/core";
 import { useBlockDropPreview } from "./dropPreviewContext";
 
 export interface EditorBlockProps extends AsChildProps {
@@ -62,7 +62,8 @@ export function EditorBlock(props: EditorBlockProps) {
 	});
 
 	const isAiGenerating = blockDecorations.some(
-		(d: any) => d.type === "ai-generating" || d.attrs?.["ai-generating"],
+		(d: Decoration) =>
+			"attributes" in d && Boolean(d.attributes["ai-generating"]),
 	);
 
 	const primitiveProps: Record<string, unknown> = {

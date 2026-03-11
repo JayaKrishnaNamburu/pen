@@ -1,15 +1,11 @@
 import type { SchemaRegistry } from "@pen/core";
 import { sortDeltaAttributes } from "@pen/core";
+import type { FieldEditorDelta, FieldEditorTextLike } from "./crdt";
 
 // ── Fast path: event-driven delta application ──────────────
 
 export function applyDeltaToDOM(
-  delta: readonly {
-    retain?: number;
-    insert?: string;
-    delete?: number;
-    attributes?: Record<string, unknown>;
-  }[],
+  delta: readonly FieldEditorDelta[],
   element: HTMLElement,
   _registry: SchemaRegistry,
 ): boolean {
@@ -114,7 +110,7 @@ function deepLeafText(node: Node): Text | null {
 // ── Full reconciliation fallback ───────────────────────────
 
 export function fullReconcileToDOM(
-  ytext: any,
+  ytext: FieldEditorTextLike,
   element: HTMLElement,
   registry: SchemaRegistry,
   options?: { preserveSelection?: boolean },
@@ -123,12 +119,12 @@ export function fullReconcileToDOM(
 }
 
 export function fullReconcileDeltasToDOM(
-  deltas: Array<{ insert?: string; attributes?: Record<string, unknown> }>,
+  deltas: FieldEditorDelta[],
   element: HTMLElement,
   registry: SchemaRegistry,
   options?: { preserveSelection?: boolean },
 ): void {
-  const orderedDeltas = deltas.map((d: any) => {
+  const orderedDeltas = deltas.map((d) => {
     if (!d.attributes || Object.keys(d.attributes).length < 2) return d;
     return { ...d, attributes: sortDeltaAttributes(d.attributes, registry) };
   });

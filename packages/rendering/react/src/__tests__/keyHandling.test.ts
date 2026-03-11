@@ -4,6 +4,15 @@ import {
 	handleEditorKeyBindings,
 	handleFieldEditorKeyDown,
 } from "../field-editor/keyHandling";
+import type { FieldEditorTextLike } from "../field-editor/crdt";
+
+type BlocksMapLike = {
+	get(key: string): { get(field: string): unknown } | undefined;
+};
+
+type RawDocLike = {
+	getMap(name: string): BlocksMapLike;
+};
 
 function createKeyEvent(
 	key: string,
@@ -37,11 +46,17 @@ function withNavigatorPlatform<T>(platform: string, run: () => T): T {
 function getYText(
 	editor: ReturnType<typeof createEditor>,
 	blockId: string,
-): any {
+): FieldEditorTextLike {
 	const adapter = editor.internals.adapter;
 	const doc = editor.internals.crdtDoc;
-	const ydoc = adapter.raw(doc) as any;
-	return ydoc.getMap("blocks").get(blockId)?.get("content");
+	const ydoc = adapter.raw<RawDocLike>(doc);
+	const ytext = ydoc.getMap("blocks").get(blockId)?.get("content") as
+		| FieldEditorTextLike
+		| null;
+	if (!ytext) {
+		throw new Error(`Missing test Y.Text for block ${blockId}`);
+	}
+	return ytext;
 }
 
 function createFieldEditorMock(blockId: string) {

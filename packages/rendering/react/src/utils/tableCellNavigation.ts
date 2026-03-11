@@ -1,4 +1,4 @@
-import type { Editor, CellSelection } from "@pen/core";
+import type { Editor, CellSelection, DocumentOp } from "@pen/core";
 import {
 	delegatesToGridEditing,
 	hasIndexedCellSelectionMetadata,
@@ -557,7 +557,7 @@ function applyPastedCells(editor: Editor, selection: CellSelection, cellData: st
 	const startRow = Math.min(selection.anchor.row, selection.head.row);
 	const startCol = Math.min(selection.anchor.col, selection.head.col);
 
-	const ops: any[] = [];
+	const ops: DocumentOp[] = [];
 	for (let r = 0; r < cellData.length; r++) {
 		const targetRow = startRow + r;
 		if (targetRow >= rowCount) break;

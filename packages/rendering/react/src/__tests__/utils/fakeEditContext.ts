@@ -1,8 +1,13 @@
+type FakeEditContextEvent = Record<string, unknown>;
+
 export class FakeEditContext {
 	text: string;
 	selectionStart: number;
 	selectionEnd: number;
-	private listeners = new Map<string, Set<(event: any) => void>>();
+	private listeners = new Map<
+		string,
+		Set<(event: FakeEditContextEvent) => void>
+	>();
 
 	constructor(options?: {
 		text?: string;
@@ -27,7 +32,10 @@ export class FakeEditContext {
 		// no-op for tests
 	}
 
-	addEventListener(type: string, handler: (event: any) => void): void {
+	addEventListener(
+		type: string,
+		handler: (event: FakeEditContextEvent) => void,
+	): void {
 		let handlers = this.listeners.get(type);
 		if (!handlers) {
 			handlers = new Set();
@@ -36,11 +44,14 @@ export class FakeEditContext {
 		handlers.add(handler);
 	}
 
-	removeEventListener(type: string, handler: (event: any) => void): void {
+	removeEventListener(
+		type: string,
+		handler: (event: FakeEditContextEvent) => void,
+	): void {
 		this.listeners.get(type)?.delete(handler);
 	}
 
-	emit(type: string, event: any): void {
+	emit(type: string, event: FakeEditContextEvent): void {
 		for (const handler of this.listeners.get(type) ?? []) {
 			handler(event);
 		}
