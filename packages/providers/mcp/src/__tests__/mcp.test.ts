@@ -1,10 +1,15 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { createServer } from "node:http";
+import type { IncomingMessage } from "node:http";
+import type { AddressInfo } from "node:net";
+import { describe, expect, it, vi } from "vitest";
 import type {
   ToolServer,
   ToolDefinition,
   ToolContext,
   Editor,
 } from "@pen/types";
+import { Client } from "@modelcontextprotocol/sdk/client";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { createEditor } from "@pen/core";
 import {
@@ -20,10 +25,17 @@ type MockResponse = MCPNodeResponse & {
   body: string;
 };
 
+type MCPCallToolResponse =
+  | CallToolResult
+  | Awaited<ReturnType<Client["callTool"]>>;
+
 // ── Helpers ─────────────────────────────────────────────────
 
-function textOf(result: CallToolResult, index = 0): string {
-  const item = result.content[index];
+function textOf(result: MCPCallToolResponse, index = 0): string {
+  const normalized = "toolResult" in result
+    ? (result.toolResult as CallToolResult)
+    : result;
+  const item = normalized.content[index];
   if (item.type !== "text") throw new Error(`Expected text content, got ${item.type}`);
   return item.text;
 }
@@ -90,6 +102,63 @@ function createMockResponse(): MockResponse {
   };
 
   return response as unknown as MockResponse;
+}
+
+async function readJSONBody(req: IncomingMessage): Promise<unknown> {
+  const chunks: Buffer[] = [];
+
+  for await (const chunk of req) {
+    chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk);
+  }
+
+  if (chunks.length === 0) {
+    return undefined;
+  }
+
+  return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+}
+
+async function withStreamableHTTPServer(
+  handler: ReturnType<typeof createMCPRequestHandler>,
+  run: (url: string) => Promise<void>,
+): Promise<void> {
+  const server = createServer(async (req, res) => {
+    if (req.url !== "/mcp") {
+      res.writeHead(404).end("Not found");
+      return;
+    }
+
+    const parsedBody = req.method === "POST" ? await readJSONBody(req) : undefined;
+    await handler.handleStreamableHTTP(
+      req as MCPNodeRequest,
+      res as MCPNodeResponse,
+      parsedBody,
+    );
+  });
+
+  await new Promise<void>((resolve) => {
+    server.listen(0, "127.0.0.1", () => resolve());
+  });
+
+  const address = server.address();
+  if (!address || typeof address === "string") {
+    throw new Error("Failed to bind MCP test server");
+  }
+
+  try {
+    await run(`http://127.0.0.1:${(address as AddressInfo).port}/mcp`);
+  } finally {
+    await new Promise<void>((resolve, reject) => {
+      server.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+
+        resolve();
+      });
+    });
+  }
 }
 
 function echoTool(): ToolDefinition {
@@ -608,6 +677,196 @@ describe("@pen/mcp createMCPRequestHandler", () => {
     expect(() => createMCPRequestHandler({})).toThrow(
       "MCP server helpers require either a toolServer or an editor with a toolServer",
     );
+  });
+
+  it("serves real document-op MCP calls over streamable HTTP", async () => {
+    const editor = createEditor();
+    const handler = createMCPRequestHandler({
+      editor,
+      sessionIdGenerator: () => "wave-6-session",
+    });
+
+    await withStreamableHTTPServer(handler, async (url) => {
+      const client = new Client({
+        name: "pen-wave-6-test-client",
+        version: "0.0.0",
+      });
+      const transport = new StreamableHTTPClientTransport(new URL(url));
+      const replicatedEditor = createEditor();
+
+      try {
+        await client.connect(transport);
+
+        const { tools } = await client.listTools();
+        const toolNames = tools.map((tool) => tool.name);
+        expect(toolNames).toEqual(
+          expect.arrayContaining([
+            "read_document",
+            "write_document",
+            "get_context",
+            "search_document",
+            "list_block_types",
+            "insert_block",
+            "update_block",
+            "delete_block",
+            "move_block",
+          ]),
+        );
+
+        const insertResult = await client.callTool({
+          name: "insert_block",
+          arguments: {
+            position: "last",
+            blockType: "heading",
+            props: { level: 2 },
+            content: "Wave 6 heading",
+          },
+        });
+        const { blockId: headingId } = JSON.parse(textOf(insertResult)) as {
+          blockId: string;
+        };
+
+        expect(editor.getBlock(headingId)?.textContent()).toBe("Wave 6 heading");
+        expect(editor.getBlock(headingId)?.props.level).toBe(2);
+
+        await client.callTool({
+          name: "move_block",
+          arguments: {
+            blockId: headingId,
+            position: "first",
+          },
+        });
+        expect(editor.firstBlock()?.id).toBe(headingId);
+
+        const writeResult = await client.callTool({
+          name: "write_document",
+          arguments: {
+            position: { after: headingId },
+            blocks: [
+              {
+                blockType: "paragraph",
+                content: "Streamable MCP paragraph",
+              },
+            ],
+          },
+        });
+        const { blockIds } = JSON.parse(textOf(writeResult)) as {
+          blockIds: string[];
+        };
+        const paragraphId = blockIds[0]!;
+
+        expect(editor.getBlock(paragraphId)?.textContent()).toBe(
+          "Streamable MCP paragraph",
+        );
+
+        await client.callTool({
+          name: "update_block",
+          arguments: {
+            blockId: headingId,
+            props: { level: 3 },
+          },
+        });
+        expect(editor.getBlock(headingId)?.props.level).toBe(3);
+
+        const searchResult = await client.callTool({
+          name: "search_document",
+          arguments: { query: "MCP paragraph" },
+        });
+        const matches = JSON.parse(textOf(searchResult)) as Array<{
+          blockId: string;
+          snippet: string;
+        }>;
+        expect(matches).toContainEqual(
+          expect.objectContaining({
+            blockId: paragraphId,
+            snippet: expect.stringContaining("MCP paragraph"),
+          }),
+        );
+
+        const contextResult = await client.callTool({
+          name: "get_context",
+          arguments: {},
+        });
+        const context = JSON.parse(textOf(contextResult)) as {
+          blockCount: number;
+        };
+        expect(context.blockCount).toBe(editor.blockCount());
+
+        const readResult = await client.callTool({
+          name: "read_document",
+          arguments: { format: "summary" },
+        });
+        const summary = JSON.parse(textOf(readResult)) as {
+          blockCount: number;
+        };
+        expect(summary.blockCount).toBe(editor.blockCount());
+
+        const encodedState = editor.internals.adapter.encodeState(
+          editor.internals.crdtDoc,
+        );
+        replicatedEditor.loadDocument(
+          editor.internals.adapter.loadDocument(encodedState),
+        );
+
+        expect(replicatedEditor.firstBlock()?.id).toBe(headingId);
+        expect(replicatedEditor.getBlock(headingId)?.textContent()).toBe(
+          "Wave 6 heading",
+        );
+        expect(replicatedEditor.getBlock(paragraphId)?.textContent()).toBe(
+          "Streamable MCP paragraph",
+        );
+
+        await client.callTool({
+          name: "delete_block",
+          arguments: { blockId: paragraphId },
+        });
+        expect(editor.getBlock(paragraphId)).toBeNull();
+      } finally {
+        await client.close();
+        replicatedEditor.destroy();
+      }
+    });
+
+    editor.destroy();
+  });
+
+  it("returns buffered async results and tool errors over streamable HTTP", async () => {
+    const toolServer = createMockToolServer([streamingTool(), errorTool()]);
+    const handler = createMCPRequestHandler({
+      toolServer,
+      sessionIdGenerator: () => "protocol-session",
+    });
+
+    await withStreamableHTTPServer(handler, async (url) => {
+      const client = new Client({
+        name: "pen-wave-6-protocol-test-client",
+        version: "0.0.0",
+      });
+      const transport = new StreamableHTTPClientTransport(new URL(url));
+
+      try {
+        await client.connect(transport);
+
+        const streamingResult = await client.callTool({
+          name: "streaming_tool",
+          arguments: {},
+        });
+        expect(JSON.parse(textOf(streamingResult))).toEqual([
+          { part: 1 },
+          { part: 2 },
+          { part: 3 },
+        ]);
+
+        const errorResult = await client.callTool({
+          name: "error_tool",
+          arguments: {},
+        });
+        expect(errorResult.isError).toBe(true);
+        expect(textOf(errorResult)).toContain("Intentional tool error");
+      } finally {
+        await client.close();
+      }
+    });
   });
 
   it("returns 400 for SSE POST requests without a sessionId", async () => {

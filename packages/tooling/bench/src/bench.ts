@@ -10,6 +10,8 @@ export interface BenchResult {
   averageMs: number;
   minMs: number;
   maxMs: number;
+  p50Ms: number;
+  p95Ms: number;
   opsPerSecond: number;
 }
 
@@ -17,6 +19,11 @@ export interface BenchOptions {
   iterations?: number;
   warmup?: number;
   reporter?: "console" | "json";
+}
+
+export interface BenchDefinition {
+  name: string;
+  fn: (b: BenchContext) => void | Promise<void>;
 }
 
 export async function bench(
@@ -45,6 +52,8 @@ export async function bench(
   const averageMs = totalMs / times.length;
   const minMs = Math.min(...times);
   const maxMs = Math.max(...times);
+  const p50Ms = percentile(times, 50);
+  const p95Ms = percentile(times, 95);
   const opsPerSecond = 1000 / averageMs;
 
   return {
@@ -54,33 +63,22 @@ export async function bench(
     averageMs,
     minMs,
     maxMs,
+    p50Ms,
+    p95Ms,
     opsPerSecond,
   };
 }
 
 export async function runSuite(
   name: string,
-  benchmarks: Array<{
-    name: string;
-    fn: (b: BenchContext) => void | Promise<void>;
-  }>,
+  benchmarks: BenchDefinition[],
   options?: BenchOptions,
 ): Promise<BenchResult[]> {
   const results: BenchResult[] = [];
 
-  console.error(`\n  Suite: ${name}\n`);
-
   for (const benchmark of benchmarks) {
     const result = await bench(benchmark.name, benchmark.fn, options);
     results.push(result);
-
-    const status =
-      result.averageMs < getTarget(benchmark.name) ? "\u2713" : "\u2717";
-    console.error(
-      `  ${status} ${result.name}: ${result.averageMs.toFixed(2)}ms avg ` +
-        `(min: ${result.minMs.toFixed(2)}ms, max: ${result.maxMs.toFixed(2)}ms, ` +
-        `${result.opsPerSecond.toFixed(0)} ops/s)`,
-    );
   }
 
   return results;
@@ -96,7 +94,7 @@ const TARGETS: Record<string, number> = {
   "extension dispatch": 1,
 };
 
-function getTarget(name: string): number {
+export function getBenchTarget(name: string): number {
   const lower = name.toLowerCase();
   for (const [key, target] of Object.entries(TARGETS)) {
     if (lower.includes(key)) return target;
@@ -116,4 +114,18 @@ function createBenchContext(): BenchContext & { _elapsed: number | null } {
     },
   };
   return ctx;
+}
+
+function percentile(values: number[], percentileRank: number): number {
+  if (values.length === 0) {
+    return 0;
+  }
+
+  const sorted = [...values].sort((a, b) => a - b);
+  const index = Math.min(
+    sorted.length - 1,
+    Math.max(0, Math.ceil((percentileRank / 100) * sorted.length) - 1),
+  );
+
+  return sorted[index] ?? 0;
 }

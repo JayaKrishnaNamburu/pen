@@ -10,35 +10,72 @@ import { reportConsole } from "./reporters/console";
 import { reportJSON } from "./reporters/json";
 import type { BenchResult } from "./bench";
 
-const reporter = process.argv.includes("--json") ? "json" : "console";
-const allResults: Array<{ suite: string; results: BenchResult[] }> = [];
+export interface BenchSuite {
+  name: string;
+  benchmarks: Array<{
+    name: string;
+    fn: Parameters<typeof runSuite>[1][number]["fn"];
+  }>;
+}
 
-async function main() {
-  const suites = [
+export interface RunAllSuitesOptions {
+  iterations?: number;
+  warmup?: number;
+  reporter?: "console" | "json";
+  reportResults?: boolean;
+}
+
+export function createBenchSuites(): BenchSuite[] {
+  return [
     { name: "CRDT", benchmarks: crdtBenchmarks },
     { name: "Schema", benchmarks: schemaBenchmarks },
     { name: "Editor", benchmarks: editorBenchmarks },
     { name: "Streaming", benchmarks: streamingBenchmarks },
     { name: "Extensions", benchmarks: extensionBenchmarks },
   ];
+}
+
+export async function runAllSuites(
+  options: RunAllSuitesOptions = {},
+): Promise<Array<{ suite: string; results: BenchResult[] }>> {
+  const reporter = options.reporter ?? "console";
+  const reportResults = options.reportResults ?? false;
+  const allResults: Array<{ suite: string; results: BenchResult[] }> = [];
+
+  const suites = createBenchSuites();
 
   for (const suite of suites) {
     const results = await runSuite(suite.name, suite.benchmarks, {
-      iterations: 50,
-      warmup: 3,
+      iterations: options.iterations ?? 50,
+      warmup: options.warmup ?? 3,
+      reporter,
     });
+
     allResults.push({ suite: suite.name, results });
 
-    if (reporter === "console") {
+    if (reportResults && reporter === "console") {
       reportConsole(suite.name, results);
     }
   }
 
-  if (reporter === "json") {
+  if (reportResults && reporter === "json") {
     for (const { suite, results } of allResults) {
       console.log(reportJSON(suite, results));
     }
   }
+
+  return allResults;
+}
+
+const reporter = process.argv.includes("--json") ? "json" : "console";
+
+async function main() {
+  await runAllSuites({
+    iterations: 50,
+    warmup: 3,
+    reporter,
+    reportResults: true,
+  });
 }
 
 main().catch((err) => {

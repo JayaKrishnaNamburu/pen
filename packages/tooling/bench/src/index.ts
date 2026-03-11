@@ -1,5 +1,10 @@
-export { bench, runSuite } from "./bench";
-export type { BenchContext, BenchResult, BenchOptions } from "./bench";
+export { bench, runSuite, getBenchTarget } from "./bench";
+export type {
+  BenchContext,
+  BenchResult,
+  BenchOptions,
+  BenchDefinition,
+} from "./bench";
 
 export { crdtBenchmarks } from "./suites/crdt.bench";
 export { schemaBenchmarks } from "./suites/schema.bench";
@@ -11,4 +16,6 @@ export { generateGenDeltaParts } from "./fixtures/streaming-parts";
 
 export { reportConsole } from "./reporters/console";
 export { reportJSON } from "./reporters/json";
-export type { BenchReport } from "./reporters/json";
+export type { BenchReport, BenchReportResult } from "./reporters/json";
+export { createBenchSuites, runAllSuites } from "./run";
+export type { BenchSuite, RunAllSuitesOptions } from "./run";

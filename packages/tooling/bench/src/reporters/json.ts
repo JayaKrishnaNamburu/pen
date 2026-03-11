@@ -1,9 +1,15 @@
+import { getBenchTarget } from "../bench";
 import type { BenchResult } from "../bench";
+
+export interface BenchReportResult extends BenchResult {
+  targetMs?: number;
+  meetsTarget: boolean;
+}
 
 export interface BenchReport {
   suite: string;
   timestamp: string;
-  results: BenchResult[];
+  results: BenchReportResult[];
 }
 
 export function reportJSON(
@@ -13,7 +19,15 @@ export function reportJSON(
   const report: BenchReport = {
     suite: suiteName,
     timestamp: new Date().toISOString(),
-    results,
+    results: results.map((result) => {
+      const targetMs = getBenchTarget(result.name);
+
+      return {
+        ...result,
+        targetMs: targetMs === Infinity ? undefined : targetMs,
+        meetsTarget: targetMs === Infinity || result.p95Ms <= targetMs,
+      };
+    }),
   };
   return JSON.stringify(report, null, 2);
 }
