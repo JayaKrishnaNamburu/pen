@@ -3,6 +3,7 @@ import { defaultSchema } from "@pen/schema-default";
 import { createEditor } from "@pen/core";
 import { yjsAdapter, wrapYjsDocument } from "@pen/crdt-yjs";
 import { createTestDocument } from "./createTestDocument";
+import type { SchemaEngine } from "@pen/types";
 import type { TestEditor, TestEditorOptions } from "./types";
 import { simulateKeypress, simulateTyping } from "./simulation";
 
@@ -31,6 +32,7 @@ export function createTestEditor(options?: TestEditorOptions): TestEditor {
 
   const testEditor = editor as TestEditor;
   const getBlock = editor.getBlock.bind(editor);
+  const engine: SchemaEngine = editor.internals.engine;
 
   Object.defineProperties(testEditor, {
     document: {
@@ -51,16 +53,10 @@ export function createTestEditor(options?: TestEditorOptions): TestEditor {
   });
 
   testEditor.markDirty = (blockId: string) => {
-    (editor.internals.engine as unknown as { markDirty(id: string): void }).markDirty(
-      blockId,
-    );
+    engine.markDirty(blockId);
   };
   testEditor.normalizeDirty = () => {
-    (
-      editor.internals.engine as unknown as {
-        normalizeDirty(): void;
-      }
-    ).normalizeDirty();
+    engine.normalizeDirty();
   };
   testEditor.getBlock = (blockId: string) => {
     const handle = getBlock(blockId);

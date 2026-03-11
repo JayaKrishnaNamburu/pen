@@ -3,6 +3,7 @@ import * as Y from "yjs";
 import {
   SchemaEngineImpl,
   SchemaRegistryImpl,
+  mergeSchemas,
   sortDeltaAttributes,
   deepEqual,
 } from "@pen/core";
@@ -19,7 +20,7 @@ import {
   resetTestIdCounter,
 } from "../index";
 import { yjsAdapter, initBlockMap, wrapYjsDocument } from "@pen/crdt-yjs";
-import type { BlockSchema, InlineSchema, LayoutSchema } from "@pen/types";
+import type { BlockSchema, LayoutSchema } from "@pen/types";
 import { defineBlock } from "@pen/types";
 
 type YBlockMap = Y.Map<unknown>;
@@ -434,10 +435,10 @@ describe("SchemaEngineImpl — Normalization Rules", () => {
         blockOrder.push(["lr1"]);
       });
 
-      const reg = new SchemaRegistryImpl({
-        blocks: [...defaultSchema.allBlocks(), layoutBlock as unknown as BlockSchema],
-        inlines: defaultSchema.allInlines().filter((i) => !i.system) as InlineSchema[],
-      });
+      const reg = mergeSchemas(
+        defaultSchema,
+        new SchemaRegistryImpl({ blocks: [layoutBlock as BlockSchema] }),
+      );
 
       const crdtDoc = wrapYjsDocument(adapter, ydoc);
       const doc = crdtDoc.penDocument;
@@ -604,10 +605,10 @@ describe("SchemaEngineImpl — Normalization Rules", () => {
         blockOrder.push(["parent", "child"]);
       });
 
-      const reg = new SchemaRegistryImpl({
-        blocks: [...defaultSchema.allBlocks(), layoutBlock as unknown as BlockSchema],
-        inlines: defaultSchema.allInlines().filter((i) => !i.system) as InlineSchema[],
-      });
+      const reg = mergeSchemas(
+        defaultSchema,
+        new SchemaRegistryImpl({ blocks: [layoutBlock as BlockSchema] }),
+      );
 
       const crdtDoc = wrapYjsDocument(adapter, ydoc);
       const doc = crdtDoc.penDocument;
@@ -643,10 +644,10 @@ describe("SchemaEngineImpl — Normalization Rules", () => {
         blockOrder.push(["parent", "child"]);
       });
 
-      const reg = new SchemaRegistryImpl({
-        blocks: [...defaultSchema.allBlocks(), layoutBlock as unknown as BlockSchema],
-        inlines: defaultSchema.allInlines().filter((i) => !i.system) as InlineSchema[],
-      });
+      const reg = mergeSchemas(
+        defaultSchema,
+        new SchemaRegistryImpl({ blocks: [layoutBlock as BlockSchema] }),
+      );
 
       const crdtDoc = wrapYjsDocument(adapter, ydoc);
       const doc = crdtDoc.penDocument;

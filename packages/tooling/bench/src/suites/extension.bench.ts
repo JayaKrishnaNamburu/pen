@@ -1,5 +1,4 @@
 import type { BenchContext } from "../bench";
-import type { Editor } from "@pen/types";
 import { emptyDecorationSet } from "@pen/core";
 import { createTestEditor } from "@pen/test";
 import { defineExtension } from "@pen/types";
@@ -51,7 +50,7 @@ export const extensionBenchmarks: Array<{
   {
     name: "extension collectDecorations with 5 extensions",
     fn(b) {
-      const editor = createTestEditorWithExtensions(5) as unknown as Editor;
+      const editor = createTestEditorWithExtensions(5);
 
       b.start();
       for (let i = 0; i < 1000; i++) {

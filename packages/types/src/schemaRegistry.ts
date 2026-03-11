@@ -24,7 +24,9 @@ export interface SchemaRegistryConfig {
 	) => InlineSchema | "drop" | "passthrough";
 }
 
-function passthroughBlockSchema(type: string): BlockSchema {
+function passthroughBlockSchema(
+	type: string,
+): BlockSchema {
 	return {
 		type,
 		propSchema: {},

@@ -3,6 +3,7 @@ import type {
   BlockSchema,
   CRDTDocument,
   InlineSchema,
+  LayoutSchema,
   PenDocument,
   SchemaEngine,
   SchemaRegistry,
@@ -72,6 +73,28 @@ function arraysEqual(a: readonly unknown[], b: readonly unknown[]): boolean {
 
 function getMapEntries(map: CRDTUnknownMap | null): Iterable<[string, unknown]> {
   return map?.entries?.() ?? [];
+}
+
+function getLayoutDefaultValue(
+  layout: LayoutSchema | undefined,
+  key: string,
+): unknown {
+  if (!layout) return undefined;
+
+  switch (key) {
+    case "modes":
+      return layout.modes;
+    case "defaultMode":
+      return layout.defaultMode;
+    case "allowedChildren":
+      return layout.allowedChildren;
+    case "minChildren":
+      return layout.minChildren;
+    case "maxChildren":
+      return layout.maxChildren;
+    default:
+      return undefined;
+  }
 }
 
 // ── SchemaEngineImpl ────────────────────────────────────────
@@ -334,7 +357,7 @@ export class SchemaEngineImpl implements SchemaEngine {
     const layoutProps = getMapProp(blockMap, "layout");
     if (layoutProps) {
       for (const [key, value] of [...getMapEntries(layoutProps)]) {
-        const defaultValue = (schema.layout as unknown as Record<string, unknown>)?.[key];
+        const defaultValue = getLayoutDefaultValue(schema.layout, key);
         if (defaultValue !== undefined && deepEqual(value, defaultValue)) {
           layoutProps.delete?.(key);
         }
