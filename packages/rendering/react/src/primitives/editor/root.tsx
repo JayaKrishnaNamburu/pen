@@ -17,8 +17,16 @@ import type { FieldEditorSession } from "../../field-editor/controller";
 import { FieldEditorImpl } from "../../field-editor/fieldEditorImpl";
 import { useDocumentEmptyState } from "../../hooks/useDocumentEmptyState";
 import { domSelectionToEditor } from "../../field-editor/selectionBridge";
+import {
+	EditorRegionSelectionContext,
+	RegionSelectionStore,
+} from "./regionSelectionState";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { composeRefs } from "../../utils/composeRefs";
+import {
+	DEFAULT_SELECT_ALL_BEHAVIOR,
+	type EditorSelectAllBehavior,
+} from "../../constants/selectAll";
 import { DATA_ATTRS } from "../../utils/dataAttributes";
 import { handleEscapeSelectionTransition } from "../../utils/escapeSelection";
 import { handleSelectAllShortcut, handleHistoryShortcut } from "../../field-editor/keyHandling";
@@ -31,12 +39,15 @@ type DatabaseRowSelectionController = {
 	deleteSelectedRows: (blockId: string) => boolean;
 };
 
+export type { EditorSelectAllBehavior } from "../../constants/selectAll";
+
 export interface EditorRootProps extends AsChildProps {
 	editor: Editor;
 	readonly?: boolean;
 	importers?: PasteImporters;
 	assets?: AssetProvider;
 	renderers?: RendererOverrides;
+	selectAllBehavior?: EditorSelectAllBehavior;
 	ref?: React.Ref<HTMLElement>;
 }
 
@@ -47,18 +58,30 @@ export function EditorRoot(props: EditorRootProps) {
 		importers,
 		assets,
 		renderers,
+		selectAllBehavior = DEFAULT_SELECT_ALL_BEHAVIOR,
 		ref,
 		...rest
 	} = props;
 	const [focused, setFocused] = useState(false);
+	const [rootElement, setRootElement] = useState<HTMLElement | null>(null);
 	const isEmpty = useDocumentEmptyState(editor);
 	const fieldEditorRef = useRef<FieldEditorSession | null>(null);
+	const regionSelectionStoreRef = useRef<RegionSelectionStore | null>(null);
 	const rootRef = useRef<HTMLElement | null>(null);
 	const resolvedAssets = assets ?? importers?.assets;
 
 	if (!fieldEditorRef.current) {
-		fieldEditorRef.current = new FieldEditorImpl(editor);
+		fieldEditorRef.current = new FieldEditorImpl(editor, {
+			selectAllBehavior,
+		});
 	}
+	if (!regionSelectionStoreRef.current) {
+		regionSelectionStoreRef.current = new RegionSelectionStore();
+	}
+
+	useEffect(() => {
+		fieldEditorRef.current?.setSelectAllBehavior(selectAllBehavior);
+	}, [selectAllBehavior]);
 
 	useEffect(() => {
 		const root = rootRef.current;
@@ -115,8 +138,10 @@ export function EditorRoot(props: EditorRootProps) {
 
 	useEffect(() => {
 		fieldEditorRef.current?.setRootElement(rootRef.current);
+		setRootElement(rootRef.current);
 		return () => {
 			fieldEditorRef.current?.setRootElement(null);
+			setRootElement(null);
 		};
 	}, []);
 
@@ -229,16 +254,24 @@ export function EditorRoot(props: EditorRootProps) {
 				renderers,
 			}}
 		>
-			<FieldEditorContext.Provider value={fieldEditorRef.current}>
-				{renderAsChild(
-					{
-						...rest,
-						ref: composeRefs(ref, rootRef),
-					},
-					"div",
-					primitiveProps,
-				)}
-			</FieldEditorContext.Provider>
+			<EditorRegionSelectionContext.Provider
+				value={{
+					rootElement,
+					setRootElement,
+					store: regionSelectionStoreRef.current,
+				}}
+			>
+				<FieldEditorContext.Provider value={fieldEditorRef.current}>
+					{renderAsChild(
+						{
+							...rest,
+							ref: composeRefs(ref, rootRef),
+						},
+						"div",
+						primitiveProps,
+					)}
+				</FieldEditorContext.Provider>
+			</EditorRegionSelectionContext.Provider>
 		</EditorContext.Provider>
 	);
 }
@@ -249,7 +282,10 @@ function shouldHandleEditorKeyboardEvent(
 	event: KeyboardEvent,
 ): boolean {
 	if (isTextEntryTarget(event.target)) {
-		return false;
+		const target = event.target;
+		if (!(target instanceof Node) || !root.contains(target)) {
+			return false;
+		}
 	}
 
 	const ownerDocument = root.ownerDocument;

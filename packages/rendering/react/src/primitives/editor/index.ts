@@ -1,8 +1,13 @@
-export { EditorRoot, type EditorRootProps } from "./root";
+export {
+	EditorRoot,
+	type EditorRootProps,
+	type EditorSelectAllBehavior,
+} from "./root";
 export { EditorContent, type EditorContentProps } from "./content";
 export { EditorBlock, type EditorBlockProps } from "./block";
 export { InlineContent, type InlineContentProps } from "./inlineContent";
 export { EditorBlockHandle, type BlockHandleProps } from "./blockHandle";
 export { EditorDragOverlay, type DragOverlayProps } from "./dragOverlay";
+export { EditorRegionSelector, type RegionSelectorProps } from "./regionSelector";
 export { EditorSelectionRect, type SelectionRectProps } from "./selectionRect";
 export { EditorFieldEditor, type FieldEditorWrapperProps } from "./fieldEditor";

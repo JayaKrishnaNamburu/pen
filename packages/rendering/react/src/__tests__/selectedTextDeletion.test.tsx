@@ -1054,7 +1054,7 @@ describe("@pen/react selected text deletion", () => {
 		editor.destroy();
 	});
 
-	it("deletes the promoted full-document selection after second cmd+a", async () => {
+	it("deletes the full-document selection after first cmd+a by default", async () => {
 		const editor = createEditor({
 			without: ["document-ops", "delta-stream", "undo"],
 		});
@@ -1095,19 +1095,6 @@ describe("@pen/react selected text deletion", () => {
 		await act(async () => {
 			fieldEditor.activate(firstBlockId);
 			await flushAnimationFrames(2);
-		});
-
-		await act(async () => {
-			document.dispatchEvent(createSelectAllEvent());
-			await flushAnimationFrames(2);
-		});
-
-		expect(editor.selection).toMatchObject({
-			type: "text",
-			anchor: { blockId: firstBlockId, offset: 0 },
-			focus: { blockId: firstBlockId, offset: 5 },
-			isCollapsed: false,
-			isMultiBlock: false,
 		});
 
 		await act(async () => {

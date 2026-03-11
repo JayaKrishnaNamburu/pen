@@ -115,8 +115,35 @@ export function normalizeInlineRange(
 	};
 }
 
+function getSelectionTarget(
+	blockId: string,
+	ytext: InlineTextLike,
+	range: SelectionRange | null,
+): SelectionTarget {
+	const normalizedRange = normalizeInlineRange(ytext, range);
+
+	return {
+		blockId,
+		anchorOffset: normalizedRange?.start ?? 0,
+		focusOffset: normalizedRange?.end ?? 0,
+	};
+}
+
 function isCollapsedRange(range: SelectionRange | null): boolean {
 	return !range || range.start === range.end;
+}
+
+function getListIndent(
+	block: NonNullable<ReturnType<Editor["getBlock"]>>,
+): number {
+	const rawIndent = block.props?.indent;
+	return typeof rawIndent === "number" && rawIndent >= 0 ? rawIndent : 0;
+}
+
+function isListBlock(
+	block: ReturnType<Editor["getBlock"]>,
+): block is NonNullable<ReturnType<Editor["getBlock"]>> {
+	return !!block && LIST_BLOCK_TYPES.has(block.type);
 }
 
 export function moveCaretAcrossBlocks(
@@ -161,6 +188,63 @@ export function moveCaretAcrossBlocks(
 		anchorOffset: targetOffset,
 		focusOffset: targetOffset,
 	};
+}
+
+export function applyListTabBehavior(
+	editor: Editor,
+	options: {
+		blockId: string;
+		ytext: InlineTextLike;
+		range: SelectionRange | null;
+		shiftKey: boolean;
+	},
+): SelectionTarget | null {
+	const { blockId, ytext, range, shiftKey } = options;
+	const block = editor.getBlock(blockId);
+	if (!isListBlock(block)) {
+		return null;
+	}
+
+	const currentIndent = getListIndent(block);
+	let nextIndent = currentIndent;
+
+	if (shiftKey) {
+		nextIndent = Math.max(0, currentIndent - 1);
+	} else {
+		const previousBlockId = getAdjacentVisibleBlockId(editor, blockId, "previous");
+		const previousBlock = previousBlockId
+			? editor.getBlock(previousBlockId)
+			: null;
+		const sharesParent =
+			previousBlockId !== null &&
+			editor.documentState.parentOf(previousBlockId) ===
+				editor.documentState.parentOf(blockId);
+
+		if (
+			isListBlock(previousBlock) &&
+			sharesParent &&
+			getListIndent(previousBlock) >= currentIndent
+		) {
+			nextIndent = currentIndent + 1;
+		}
+	}
+
+	if (nextIndent === currentIndent) {
+		return null;
+	}
+
+	editor.apply(
+		[
+			{
+				type: "update-block",
+				blockId,
+				props: { indent: nextIndent },
+			} as DocumentOp,
+		],
+		{ origin: "user" },
+	);
+
+	return getSelectionTarget(blockId, ytext, range);
 }
 
 export function resolveBackspaceAction(

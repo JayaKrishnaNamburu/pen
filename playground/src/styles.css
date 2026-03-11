@@ -126,6 +126,20 @@ select {
   pointer-events: none;
 }
 
+[data-pen-selection-rect] {
+  border: 1px solid color-mix(in srgb, var(--pen-caret-color) 80%, transparent);
+  background: color-mix(in srgb, var(--pen-caret-color) 12%, transparent);
+  border-radius: 10px;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--pen-caret-color) 18%, transparent),
+    0 8px 24px color-mix(in srgb, var(--pen-caret-color) 10%, transparent);
+}
+
+[data-pen-selection-rect][data-selecting] {
+  background: color-mix(in srgb, var(--pen-caret-color) 16%, transparent);
+  border-style: dashed;
+}
+
 [data-pen-inline-content] {
   display: block;
   min-height: 1.5em;

@@ -1,5 +1,6 @@
 import type { BlockSchema } from "@pen/core";
 import type { FieldEditorStore } from "./store";
+import type { EditorSelectAllBehavior } from "../constants/selectAll";
 
 export type ActiveCellCoord = {
 	blockId: string;
@@ -21,6 +22,7 @@ type FieldEditorSelectionState = Pick<
 export interface FieldEditorRootHandle {
 	setRootElement(element: HTMLElement | null): void;
 	setFocused(focused: boolean): void;
+	setSelectAllBehavior(behavior: EditorSelectAllBehavior): void;
 	deactivate(): void;
 	activateTextSelection(
 		blockId: string,

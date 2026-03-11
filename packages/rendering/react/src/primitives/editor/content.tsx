@@ -31,6 +31,11 @@ import { EditorBlock } from "./block";
 import {
 	DropPreviewProvider,
 } from "./dropPreviewContext";
+import {
+	useEditorRegionSelectionContext,
+	type RegionSelectionRect,
+	type RegionSelectorConfig,
+} from "./regionSelectionState";
 import { useTransferSession } from "./useTransferSession";
 
 export interface EditorContentProps extends AsChildProps {
@@ -49,10 +54,16 @@ export function EditorContent(props: EditorContentProps) {
 	const { virtualize: _virtualize, emptyPlaceholder, ...rest } = props;
 	const { editor, readonly } = useEditorContext();
 	const fieldEditor = useFieldEditorContext();
+	const { store: regionSelectionStore } = useEditorRegionSelectionContext();
 	const fieldEditorState = useFieldEditorState(fieldEditor);
 	const blockIds = useBlockList(editor);
 	const contentRef = useRef<HTMLElement>(null);
 	const blocksHostRef = useRef<HTMLDivElement>(null);
+	const regionGestureRef = useRef<{
+		clientX: number;
+		clientY: number;
+		isSelecting: boolean;
+	} | null>(null);
 	const pointerGestureRef = useRef<{
 		blockId: string;
 		clientX: number;
@@ -114,7 +125,31 @@ export function EditorContent(props: EditorContentProps) {
 			const lastBlockEl = blocksHost.querySelector(
 				`[${DATA_ATTRS.editorBlock}]:last-child`,
 			) as HTMLElement | null;
-			if (!firstBlockEl || !lastBlockEl) return false;
+			if (!firstBlockEl || !lastBlockEl) {
+				const newBlockId = generateId();
+				editor.apply([{
+					type: "insert-block",
+					blockId: newBlockId,
+					blockType: "paragraph",
+					props: {},
+					position: "first",
+				}], { origin: "user" });
+				requestAnimationFrame(() => {
+					fe.activateTextSelection?.(newBlockId, 0, 0);
+				});
+				return true;
+			}
+
+			if (isDocumentPlaceholderVisible) {
+				const firstBlock = editor.firstBlock();
+				if (firstBlock) {
+					const schema = editor.schema.resolve(firstBlock.type);
+					if (usesInlineTextSelection(schema)) {
+						fe.activateTextSelection?.(firstBlock.id, 0, 0);
+						return true;
+					}
+				}
+			}
 
 			const firstRect = firstBlockEl.getBoundingClientRect();
 			const lastRect = lastBlockEl.getBoundingClientRect();
@@ -226,8 +261,63 @@ export function EditorContent(props: EditorContentProps) {
 			return blockOrder.slice(from, to + 1);
 		};
 
+		const getRegionSelectorConfig = (
+			event: MouseEvent,
+		): RegionSelectorConfig | null => {
+			const config = regionSelectionStore.getSnapshot().config;
+			if (!config?.enabled) return null;
+			if (config.selectionMode !== "block") return null;
+			if (config.activation !== "whenInactive") return null;
+			if (event.shiftKey || event.button !== 0) return null;
+			if (fieldEditor.isComposing) return null;
+			if (fieldEditor.focusBlockId) return null;
+			if (fieldEditor.isEditing) return null;
+			if (shouldIgnorePointerGesture(event)) return null;
+			if (resolveClickedBlockId(event)) return null;
+			return config;
+		};
+
+		const getIntersectedBlockIds = (
+			rect: RegionSelectionRect,
+		): string[] => {
+			const blocksHost = blocksHostRef.current;
+			if (!blocksHost) return [];
+
+			const selectedIds: string[] = [];
+			const blockElements = Array.from(blocksHost.children);
+			for (const child of blockElements) {
+				if (
+					!(child instanceof HTMLElement) ||
+					!child.hasAttribute(DATA_ATTRS.editorBlock)
+				) {
+					continue;
+				}
+
+				const blockId = child.getAttribute(DATA_ATTRS.blockId);
+				if (!blockId) continue;
+
+				if (rectsIntersect(rect, child.getBoundingClientRect())) {
+					selectedIds.push(blockId);
+				}
+			}
+
+			return selectedIds;
+		};
+
 		const clearPointerSelectionState = () => {
 			pointerGestureRef.current = null;
+		};
+
+		const clearRegionSelectionState = () => {
+			regionGestureRef.current = null;
+			regionSelectionStore.clearLiveRect();
+		};
+
+		const ensureEditorFocus = (root: HTMLElement) => {
+			const doc = root.ownerDocument;
+			const activeEl = doc?.activeElement;
+			if (activeEl instanceof Node && root.contains(activeEl)) return;
+			root.focus({ preventScroll: true });
 		};
 
 		const activateCanonicalSelection = (
@@ -337,6 +427,18 @@ export function EditorContent(props: EditorContentProps) {
 			if (fieldEditor.isComposing) return;
 			if (shouldIgnorePointerGesture(event)) return;
 
+			const regionSelectorConfig = getRegionSelectorConfig(event);
+			if (regionSelectorConfig) {
+				regionGestureRef.current = {
+					clientX: event.clientX,
+					clientY: event.clientY,
+					isSelecting: false,
+				};
+				skipNextClickRef.current = false;
+				fieldEditor.resetSelectAllCycle?.();
+				return;
+			}
+
 			const blockId = resolveClickedBlockId(event);
 			if (!blockId) return;
 
@@ -363,7 +465,79 @@ export function EditorContent(props: EditorContentProps) {
 			}
 		};
 
+		const handleMouseMove = (event: MouseEvent) => {
+			const gesture = regionGestureRef.current;
+			if (!gesture) return;
+
+			const config = regionSelectionStore.getSnapshot().config;
+			if (!config?.enabled) {
+				clearRegionSelectionState();
+				return;
+			}
+
+			const moved =
+				Math.abs(event.clientX - gesture.clientX) > config.threshold ||
+				Math.abs(event.clientY - gesture.clientY) > config.threshold;
+			if (!gesture.isSelecting && !moved) {
+				return;
+			}
+
+			if (!gesture.isSelecting) {
+				gesture.isSelecting = true;
+				skipNextClickRef.current = true;
+				gestureEl.ownerDocument?.getSelection()?.removeAllRanges();
+			}
+
+			event.preventDefault();
+
+			const liveRect = createClientRect(
+				gesture.clientX,
+				gesture.clientY,
+				event.clientX,
+				event.clientY,
+			);
+			regionSelectionStore.setLiveRect(liveRect);
+
+			const selectedIds = getIntersectedBlockIds(liveRect);
+			if (selectedIds.length > 0) {
+				editor.selectBlocks(selectedIds);
+			} else {
+				editor.setSelection(null);
+			}
+			fieldEditor.deactivate();
+		};
+
 		const handleMouseUp = (event: MouseEvent) => {
+			const regionGesture = regionGestureRef.current;
+			if (regionGesture) {
+				const wasSelecting = regionGesture.isSelecting;
+				const root = gestureEl.closest(
+					"[data-pen-editor-root]",
+				) as HTMLElement | null;
+				if (wasSelecting) {
+					const liveRect = createClientRect(
+						regionGesture.clientX,
+						regionGesture.clientY,
+						event.clientX,
+						event.clientY,
+					);
+					const selectedIds = getIntersectedBlockIds(liveRect);
+					if (selectedIds.length > 0) {
+						editor.selectBlocks(selectedIds);
+						if (root) {
+							ensureEditorFocus(root);
+						}
+					} else {
+						editor.setSelection(null);
+					}
+					skipNextClickRef.current = true;
+				}
+				clearRegionSelectionState();
+				if (wasSelecting) {
+					return;
+				}
+			}
+
 			const gesture = pointerGestureRef.current;
 			if (!gesture) return;
 			clearPointerSelectionState();
@@ -608,25 +782,24 @@ export function EditorContent(props: EditorContentProps) {
 			finalizePointerSelection();
 		};
 
-		const ensureEditorFocus = (root: HTMLElement) => {
-			const doc = root.ownerDocument;
-			const activeEl = doc?.activeElement;
-			if (activeEl instanceof Node && root.contains(activeEl)) return;
-			root.focus({ preventScroll: true });
-		};
-
 		gestureEl.addEventListener("mousedown", handleMouseDown);
 		gestureEl.addEventListener("click", handleClick);
+		gestureEl.ownerDocument?.addEventListener("mousemove", handleMouseMove);
 		gestureEl.ownerDocument?.addEventListener("mouseup", handleMouseUp);
 		return () => {
 			gestureEl.removeEventListener("mousedown", handleMouseDown);
 			gestureEl.removeEventListener("click", handleClick);
 			gestureEl.ownerDocument?.removeEventListener(
+				"mousemove",
+				handleMouseMove,
+			);
+			gestureEl.ownerDocument?.removeEventListener(
 				"mouseup",
 				handleMouseUp,
 			);
+			clearRegionSelectionState();
 		};
-	}, [editor, fieldEditor, readonly]);
+	}, [editor, fieldEditor, readonly, regionSelectionStore]);
 
 	const blockElements = blockIds.map((blockId) => (
 		<EditorBlock key={blockId} blockId={blockId} />
@@ -686,5 +859,36 @@ export function EditorContent(props: EditorContentProps) {
 				)}
 			</DropPreviewProvider>
 		</EditorContentContext.Provider>
+	);
+}
+
+function createClientRect(
+	startX: number,
+	startY: number,
+	endX: number,
+	endY: number,
+): RegionSelectionRect {
+	const left = Math.min(startX, endX);
+	const top = Math.min(startY, endY);
+	return {
+		left,
+		top,
+		width: Math.abs(endX - startX),
+		height: Math.abs(endY - startY),
+	};
+}
+
+function rectsIntersect(
+	selectionRect: RegionSelectionRect,
+	blockRect: DOMRect,
+): boolean {
+	const selectionRight = selectionRect.left + selectionRect.width;
+	const selectionBottom = selectionRect.top + selectionRect.height;
+
+	return !(
+		selectionRight < blockRect.left ||
+		selectionRect.left > blockRect.right ||
+		selectionBottom < blockRect.top ||
+		selectionRect.top > blockRect.bottom
 	);
 }

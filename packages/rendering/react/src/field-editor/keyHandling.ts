@@ -7,6 +7,7 @@ import type { FieldEditorKeyboardController } from "./controller";
 import {
 	applyBackspaceBehavior,
 	applyEnterBehavior,
+	applyListTabBehavior,
 	moveCaretAcrossBlocks,
 	type SelectionRange,
 } from "./commands";
@@ -112,6 +113,28 @@ export function handleFieldEditorKeyDown(options: {
 			event.key === "ArrowDown"
 		) {
 			return false;
+		}
+	}
+
+	if (
+		event.key === "Tab" &&
+		!event.metaKey &&
+		!event.ctrlKey &&
+		!event.altKey
+	) {
+		const target = applyListTabBehavior(editor, {
+			blockId,
+			ytext,
+			range,
+			shiftKey: event.shiftKey,
+		});
+		if (target) {
+			fieldEditor.activateTextSelection(
+				target.blockId,
+				target.anchorOffset,
+				target.focusOffset,
+			);
+			return true;
 		}
 	}
 

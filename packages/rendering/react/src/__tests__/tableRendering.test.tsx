@@ -698,7 +698,7 @@ describe("@pen/react table rendering", () => {
 		editor.destroy();
 	});
 
-	it("keeps the first cmd+a block-scoped for a selected table", async () => {
+	it("maps cmd+a from a selected table directly to full-document selection by default", async () => {
 		const editor = createEditor({
 			without: ["document-ops", "delta-stream", "undo"],
 		});
@@ -747,16 +747,6 @@ describe("@pen/react table rendering", () => {
 		await act(async () => {
 			editor.selectBlock("t8");
 			tableBlock?.focus();
-		});
-
-		await act(async () => {
-			document.dispatchEvent(createSelectAllEvent());
-			await flushAnimationFrames(2);
-		});
-
-		expect(editor.selection).toEqual({
-			type: "block",
-			blockIds: ["t8"],
 		});
 
 		await act(async () => {
@@ -835,10 +825,11 @@ describe("@pen/react table rendering", () => {
 		editor.destroy();
 	});
 
-	it("selects the active table cell text before promoting cmd+a to the table block", async () => {
+	it("keeps the first cmd+a cell-local before promoting to the document", async () => {
 		const editor = createEditor({
 			without: ["document-ops", "delta-stream", "undo"],
 		});
+		const paragraphId = crypto.randomUUID();
 
 		editor.apply([
 			{
@@ -863,6 +854,19 @@ describe("@pen/react table rendering", () => {
 				col: 1,
 				offset: 0,
 				text: "Bravo",
+			},
+			{
+				type: "insert-block",
+				blockId: paragraphId,
+				blockType: "paragraph",
+				props: {},
+				position: "last",
+			},
+			{
+				type: "insert-text",
+				blockId: paragraphId,
+				offset: 0,
+				text: "After",
 			},
 		]);
 
@@ -908,10 +912,14 @@ describe("@pen/react table rendering", () => {
 			await flushAnimationFrames(2);
 		});
 
-		expect(editor.selection).toEqual({
-			type: "block",
-			blockIds: ["t8-cell"],
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			focus: { blockId: paragraphId, offset: 5 },
+			isMultiBlock: true,
 		});
+		expect(
+			editor.selection?.type === "text" ? editor.selection.blockRange : [],
+		).toEqual(expect.arrayContaining(["t8-cell", paragraphId]));
 
 		await act(async () => {
 			root.unmount();

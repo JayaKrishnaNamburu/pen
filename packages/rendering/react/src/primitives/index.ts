@@ -5,6 +5,7 @@ export {
   InlineContent,
   EditorBlockHandle,
   EditorDragOverlay,
+  EditorRegionSelector,
   EditorSelectionRect,
   EditorFieldEditor,
 } from "./editor/index";
@@ -41,6 +42,7 @@ import {
   InlineContent,
   EditorBlockHandle,
   EditorDragOverlay,
+  EditorRegionSelector,
   EditorSelectionRect,
   EditorFieldEditor,
 } from "./editor/index";
@@ -76,6 +78,7 @@ export const Pen = {
     InlineContent,
     BlockHandle: EditorBlockHandle,
     DragOverlay: EditorDragOverlay,
+    RegionSelector: EditorRegionSelector,
     SelectionRect: EditorSelectionRect,
     FieldEditor: EditorFieldEditor,
   },

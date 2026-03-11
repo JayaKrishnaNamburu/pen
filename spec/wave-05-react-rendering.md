@@ -378,6 +378,8 @@ export function PenEditor({ editor, readonly, importers, ...props }: PenEditorPr
 
 **`Pen.Editor.DragOverlay`** — ghost element during drag. Client-only (SSR renders null). Follows the pointer with a translucent clone of the dragged block.
 
+**`Pen.Editor.RegionSelector`** — optional headless gesture primitive. When mounted, dragging a marquee on the editor surface while no block is focused resolves intersected blocks into canonical `BlockSelection`.
+
 **`Pen.Editor.SelectionRect`** — visual overlay for block selection. Renders a rectangle covering selected blocks. Sets `data-selecting` during active selection gestures.
 
 ---
@@ -2293,6 +2295,8 @@ React 18+ for `useSyncExternalStore`. No other runtime dependencies. The package
 22. Shift-clicking from block 3 to block 7 selects blocks 3-7.
 23. Typing while blocks are selected replaces the selection.
 24. Cross-block selection announces range via aria-live.
+24a. Dragging a marquee on the editor surface while no block is focused selects the intersected blocks as canonical `BlockSelection`.
+24b. `Pen.Editor.SelectionRect` renders the live marquee rectangle during an active block-region gesture and the committed bounds after release.
 
 ### Hooks (5c)
 

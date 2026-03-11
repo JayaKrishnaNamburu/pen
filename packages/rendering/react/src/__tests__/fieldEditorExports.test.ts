@@ -11,7 +11,12 @@ import { ContentEditableBackend } from "../field-editor/contenteditableBackend";
 import { EditContextBackend } from "../field-editor/editContextBackend";
 import { ExpandedContentEditableBackend } from "../field-editor/expandedContentEditableBackend";
 import { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
-import { richTextShortcutsExtension } from "../index";
+import {
+	EditorRegionSelector,
+	Pen,
+	richTextShortcutsExtension,
+	type EditorSelectAllBehavior,
+} from "../index";
 
 describe("@pen/react field-editor exports", () => {
 	it("loads the field-editor helper barrel on all platforms", () => {
@@ -42,6 +47,16 @@ describe("@pen/react field-editor exports", () => {
 			"Mod-i",
 			"Mod-u",
 		]);
+	});
+
+	it("exports the optional region selector primitive", () => {
+		expect(typeof EditorRegionSelector).toBe("function");
+		expect(Pen.Editor.RegionSelector).toBe(EditorRegionSelector);
+	});
+
+	it("exports the public select-all behavior type", () => {
+		const behavior: EditorSelectAllBehavior = "document-first";
+		expect(behavior).toBe("document-first");
 	});
 
 	it("exposes a stable field-editor snapshot store", () => {

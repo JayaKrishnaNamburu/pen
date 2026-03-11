@@ -912,7 +912,7 @@ Section 3.9).
 | Enter / F2 | Activate cell editing | Insert paragraph after block |
 | Backspace / Delete | Clear selected cells | Delete block |
 | Escape | See escape hierarchy | Deselect |
-| Cmd+A | Select all cells | — |
+| Cmd+A | Select all cells in the current grid block | — |
 | Cmd+C | Copy cell range | — |
 | Cmd+X | Cut cell range | — |
 | Cmd+V | Paste into cells | — |

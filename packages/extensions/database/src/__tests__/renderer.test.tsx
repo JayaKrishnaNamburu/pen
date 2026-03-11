@@ -746,7 +746,7 @@ describe("@pen/database renderer", () => {
 		await unmountDatabase(root, container, editor);
 	});
 
-	it("keeps the first cmd+a block-scoped for a selected database", async () => {
+	it("maps cmd+a from a selected database directly to full-document selection by default", async () => {
 		const editor = createEditor({
 			without: ["document-ops", "delta-stream", "undo"],
 		});
@@ -798,16 +798,6 @@ describe("@pen/database renderer", () => {
 		await act(async () => {
 			editor.selectBlock("db2");
 			databaseBlock?.focus();
-		});
-
-		await act(async () => {
-			document.dispatchEvent(createSelectAllEvent());
-			await flushAnimationFrames(2);
-		});
-
-		expect(editor.selection).toEqual({
-			type: "block",
-			blockIds: ["db2"],
 		});
 
 		await act(async () => {

@@ -264,6 +264,15 @@ Final intended behavior:
 - selection bridge resolves endpoints to canonical positions
 - field editor expands and contracts around the resulting `TextSelection`
 
+### Rectangle drag
+
+For top-level block selection when no block is focused:
+
+- an optional React-side region selector may own the pointer gesture
+- intersected blocks resolve directly to canonical `BlockSelection`
+- the field editor remains inactive during the gesture
+- `Pen.Editor.SelectionRect` may render the live marquee rectangle, but it does not become a second semantic selection model
+
 ## H. Fallback Policy
 
 The size policy is:

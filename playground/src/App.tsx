@@ -60,6 +60,8 @@ export function App() {
 						<Pen.Editor.Content
 							emptyPlaceholder="Start writing, or press / for commands..."
 						/>
+						<Pen.Editor.RegionSelector />
+						<Pen.Editor.SelectionRect />
 						<SlashMenu editor={editor} />
 						<SelectionToolbar />
 					</div>

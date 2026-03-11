@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { createEditor, defineExtension } from "@pen/core";
-import { handleEditorKeyBindings } from "../field-editor/keyHandling";
+import {
+	handleEditorKeyBindings,
+	handleFieldEditorKeyDown,
+} from "../field-editor/keyHandling";
 
 function createKeyEvent(
 	key: string,
@@ -29,6 +32,47 @@ function withNavigatorPlatform<T>(platform: string, run: () => T): T {
 			Object.defineProperty(navigator, "platform", descriptor);
 		}
 	}
+}
+
+function getYText(
+	editor: ReturnType<typeof createEditor>,
+	blockId: string,
+): any {
+	const adapter = editor.internals.adapter;
+	const doc = editor.internals.crdtDoc;
+	const ydoc = adapter.raw(doc) as any;
+	return ydoc.getMap("blocks").get(blockId)?.get("content");
+}
+
+function createFieldEditorMock(blockId: string) {
+	const activations: Array<{
+		blockId: string;
+		anchorOffset: number;
+		focusOffset: number;
+	}> = [];
+
+	return {
+		controller: {
+			focusBlockId: blockId,
+			inputMode: "richtext" as const,
+			activeCellCoord: null,
+			activateCell: () => {},
+			activateTextSelection: (
+				targetBlockId: string,
+				anchorOffset: number,
+				focusOffset: number,
+			) => {
+				activations.push({
+					blockId: targetBlockId,
+					anchorOffset,
+					focusOffset,
+				});
+			},
+			deactivate: () => {},
+			selectAll: () => false,
+		},
+		activations,
+	};
 }
 
 describe("@pen/react key binding contexts", () => {
@@ -264,6 +308,72 @@ describe("@pen/react key binding contexts", () => {
 			).toBe(true);
 			expect(editor.getBlock(blockId)?.textContent()).toBe("Hello");
 		});
+
+		editor.destroy();
+	});
+});
+
+describe("@pen/react field editor Tab handling", () => {
+	it("handles Tab for list nesting and preserves selection", () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream", "undo", "rich-text-shortcuts"],
+		});
+		const firstBlockId = editor.firstBlock()!.id;
+		const secondBlockId = crypto.randomUUID();
+
+		editor.apply([
+			{ type: "convert-block", blockId: firstBlockId, newType: "bulletListItem" },
+			{
+				type: "insert-block",
+				blockId: secondBlockId,
+				blockType: "bulletListItem",
+				props: { indent: 0 },
+				position: { after: firstBlockId },
+			},
+			{ type: "insert-text", blockId: secondBlockId, offset: 0, text: "child" },
+		]);
+
+		const fieldEditor = createFieldEditorMock(secondBlockId);
+		const handled = handleFieldEditorKeyDown({
+			event: createKeyEvent("Tab"),
+			editor,
+			fieldEditor: fieldEditor.controller,
+			ytext: getYText(editor, secondBlockId),
+			range: { start: 2, end: 2 },
+		});
+
+		expect(handled).toBe(true);
+		expect(editor.getBlock(secondBlockId)?.props.indent).toBe(1);
+		expect(fieldEditor.activations).toEqual([
+			{ blockId: secondBlockId, anchorOffset: 2, focusOffset: 2 },
+		]);
+
+		editor.destroy();
+	});
+
+	it("does not handle Tab when a top-level list item cannot nest deeper", () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream", "undo", "rich-text-shortcuts"],
+		});
+		const blockId = editor.firstBlock()!.id;
+
+		editor.apply([
+			{ type: "convert-block", blockId, newType: "bulletListItem" },
+			{ type: "insert-text", blockId, offset: 0, text: "root" },
+		]);
+
+		const fieldEditor = createFieldEditorMock(blockId);
+		const handled = handleFieldEditorKeyDown({
+			event: createKeyEvent("Tab"),
+			editor,
+			fieldEditor: fieldEditor.controller,
+			ytext: getYText(editor, blockId),
+			range: { start: 4, end: 4 },
+		});
+
+		expect(handled).toBe(false);
+		expect(editor.getBlock(blockId)?.props.indent).toBe(0);
+		expect(fieldEditor.activations).toEqual([]);
 
 		editor.destroy();
 	});

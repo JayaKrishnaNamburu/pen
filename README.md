@@ -89,6 +89,28 @@ function App() {
 }
 ```
 
+Selection behavior defaults:
+
+- `Cmd/Ctrl+A` is document-first in ordinary editor selection.
+- When table or database cell selection is active, `Cmd/Ctrl+A` stays scoped to the current grid block.
+- If you need the legacy two-step behavior, pass `selectAllBehavior="block-first"` to `Pen.Editor.Root` or `PenEditor`.
+
+```tsx
+import { createEditor } from '@pen/core'
+import { PenEditor } from '@pen/react'
+
+const editor = createEditor()
+
+function App() {
+  return (
+    <PenEditor
+      editor={editor}
+      selectAllBehavior="block-first"
+    />
+  )
+}
+```
+
 Enable markdown-style autoformat as an extension:
 
 ```tsx

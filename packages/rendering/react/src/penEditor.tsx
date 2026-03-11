@@ -16,6 +16,7 @@ export function PenEditor(props: PenEditorProps) {
 		importers,
 		assets,
 		renderers,
+		selectAllBehavior,
 		virtualize,
 		emptyPlaceholder,
 		children,
@@ -29,6 +30,7 @@ export function PenEditor(props: PenEditorProps) {
 			importers={importers}
 			assets={assets}
 			renderers={renderers}
+			selectAllBehavior={selectAllBehavior}
 		>
 			<EditorContent
 				virtualize={virtualize}

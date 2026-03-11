@@ -35,6 +35,14 @@ import {
 	getEditorBlockSelectionRole,
 } from "../utils/blockSelectionSemantics";
 import type { FieldEditorStoreSnapshot } from "./store";
+import {
+	DEFAULT_SELECT_ALL_BEHAVIOR,
+	type EditorSelectAllBehavior,
+} from "../constants/selectAll";
+
+type FieldEditorOptions = {
+	selectAllBehavior?: EditorSelectAllBehavior;
+};
 
 export class FieldEditorImpl implements FieldEditorSession {
 	private _focusBlockId: string | null = null;
@@ -57,6 +65,7 @@ export class FieldEditorImpl implements FieldEditorSession {
 	private _syncDomVersion = 0;
 	private readonly _sessionReconciler: SessionReconciler;
 	private readonly _historySelectionCoordinator: HistorySelectionCoordinator;
+	private _selectAllBehavior: EditorSelectAllBehavior;
 	private _selectAllCycle: {
 		blockId: string;
 		scope: "block" | "document";
@@ -64,8 +73,10 @@ export class FieldEditorImpl implements FieldEditorSession {
 	private _preserveSelectAllCycle = false;
 	private _activeCellCoord: ActiveCellCoord | null = null;
 
-	constructor(editor: Editor) {
+	constructor(editor: Editor, options?: FieldEditorOptions) {
 		this._editor = editor;
+		this._selectAllBehavior =
+			options?.selectAllBehavior ?? DEFAULT_SELECT_ALL_BEHAVIOR;
 		this._historySelectionCoordinator = new HistorySelectionCoordinator(
 			this._editor,
 		);
@@ -133,6 +144,14 @@ export class FieldEditorImpl implements FieldEditorSession {
 	}
 	get activeCellCoord(): ActiveCellCoord | null {
 		return this._activeCellCoord;
+	}
+
+	setSelectAllBehavior(behavior: EditorSelectAllBehavior): void {
+		if (this._selectAllBehavior === behavior) {
+			return;
+		}
+		this._selectAllBehavior = behavior;
+		this.resetSelectAllCycle();
 	}
 
 	// ── Lifecycle ─────────────────────────────────────────────
@@ -236,6 +255,10 @@ export class FieldEditorImpl implements FieldEditorSession {
 			return true;
 		}
 
+		if (this._selectAllBehavior === "document-first") {
+			return this._selectEntireDocument();
+		}
+
 		const blockId = this._resolveSelectAllBlockId(rootElement);
 		if (blockId) {
 			const blockLength = getEditorBlockSelectionLength(this._editor, blockId);
@@ -259,6 +282,10 @@ export class FieldEditorImpl implements FieldEditorSession {
 			}
 		}
 
+		return this._selectEntireDocument(blockId ?? null);
+	}
+
+	private _selectEntireDocument(blockId?: string | null): boolean {
 		const range = getFullDocumentTextRange(this._editor);
 		if (!range) {
 			return true;
@@ -269,7 +296,9 @@ export class FieldEditorImpl implements FieldEditorSession {
 		}
 		this._editor.selectTextRange(range.start, range.end);
 		this._recomputeSurfaceFromSelection();
-		this._recordSelectAllScope(blockId ?? range.focusBlockId, "document");
+		if (this._selectAllBehavior === "block-first") {
+			this._recordSelectAllScope(blockId ?? range.focusBlockId, "document");
+		}
 		this._syncSelectionToDOM();
 		return true;
 	}

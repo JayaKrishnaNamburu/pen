@@ -196,6 +196,10 @@ Key events when a `CellSelection` is active are handled at the **root** level
 (`root.tsx` `handleKeyDown`), before the field editor key handler. This is
 because the field editor is inactive during cell selection.
 
+This table-scoped `Cmd+A` behavior takes precedence over the editor's ordinary
+document-level select-all behavior. Outside active `CellSelection`, the default
+editor expectation remains document-first select-all.
+
 Flow:
 1. `root.tsx:handleKeyDown` checks `editor.selection?.type === "cell"`.
 2. If yes, delegates to `handleTableCellSelectionKeyDown(...)`.

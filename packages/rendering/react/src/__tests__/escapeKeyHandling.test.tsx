@@ -518,7 +518,7 @@ describe("@pen/react escape key handling", () => {
 		editor.destroy();
 	});
 
-	it("maps cmd+a from block selection to full-document selection on repeat", async () => {
+	it("maps cmd+a from block selection directly to full-document selection by default", async () => {
 		const editor = createEditor({
 			without: ["document-ops", "delta-stream", "undo"],
 		});
@@ -581,24 +581,6 @@ describe("@pen/react escape key handling", () => {
 				{ blockId: firstBlockId, offset: 2 },
 			);
 			await flushAnimationFrames(2);
-		});
-
-		await act(async () => {
-			document.dispatchEvent(createSelectAllEvent());
-			await flushAnimationFrames(2);
-		});
-
-		expect(editor.selection).toMatchObject({
-			type: "text",
-			anchor: { blockId: firstBlockId, offset: 0 },
-			focus: { blockId: firstBlockId, offset: 5 },
-			isMultiBlock: false,
-		});
-		expect(fieldEditor.getSnapshot()).toMatchObject({
-			focusBlockId: firstBlockId,
-			activeBlockIds: [firstBlockId],
-			isEditing: true,
-			mode: "single",
 		});
 
 		await act(async () => {
@@ -706,7 +688,7 @@ describe("@pen/react escape key handling", () => {
 		editor.destroy();
 	});
 
-	it("keeps the first cmd+a block-scoped even when the full block is already selected", async () => {
+	it("preserves block-first cmd+a when explicitly configured", async () => {
 		const editor = createEditor({
 			without: ["document-ops", "delta-stream", "undo"],
 		});
@@ -741,7 +723,7 @@ describe("@pen/react escape key handling", () => {
 
 		await act(async () => {
 			root.render(
-				<Pen.Editor.Root editor={editor}>
+				<Pen.Editor.Root editor={editor} selectAllBehavior="block-first">
 					<Pen.Editor.Content />
 				</Pen.Editor.Root>,
 			);
@@ -868,6 +850,113 @@ describe("@pen/react escape key handling", () => {
 		expect(fieldEditor.getSnapshot()).toMatchObject({
 			focusBlockId: secondBlockId,
 			activeBlockIds: [secondBlockId],
+			isEditing: true,
+			mode: "single",
+		});
+
+		await act(async () => {
+			root.unmount();
+		});
+		container.remove();
+		editor.destroy();
+	});
+
+	it("handles Escape from the active expanded host after cmd+a", async () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream", "undo"],
+		});
+		const firstBlockId = editor.firstBlock()!.id;
+		const secondBlockId = crypto.randomUUID();
+		const thirdBlockId = crypto.randomUUID();
+
+		editor.apply([
+			{
+				type: "insert-text",
+				blockId: firstBlockId,
+				offset: 0,
+				text: "First",
+			},
+			{
+				type: "insert-block",
+				blockId: secondBlockId,
+				blockType: "paragraph",
+				props: {},
+				position: { after: firstBlockId },
+			},
+			{
+				type: "insert-text",
+				blockId: secondBlockId,
+				offset: 0,
+				text: "Second",
+			},
+			{
+				type: "insert-block",
+				blockId: thirdBlockId,
+				blockType: "paragraph",
+				props: {},
+				position: { after: secondBlockId },
+			},
+			{
+				type: "insert-text",
+				blockId: thirdBlockId,
+				offset: 0,
+				text: "Third",
+			},
+		]);
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(
+				<Pen.Editor.Root editor={editor}>
+					<Pen.Editor.Content />
+				</Pen.Editor.Root>,
+			);
+		});
+
+		const fieldEditor = getFieldEditor(editor);
+		const blocksHost = container.querySelector(
+			"[data-pen-editor-blocks-host]",
+		) as HTMLElement | null;
+
+		expect(blocksHost).not.toBeNull();
+
+		await act(async () => {
+			fieldEditor.activate(firstBlockId);
+			document.dispatchEvent(createSelectAllEvent());
+			await flushAnimationFrames(2);
+		});
+
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId: firstBlockId, offset: 0 },
+			focus: { blockId: thirdBlockId, offset: 5 },
+			isMultiBlock: true,
+		});
+		expect(fieldEditor.getSnapshot()).toMatchObject({
+			focusBlockId: firstBlockId,
+			activeBlockIds: [firstBlockId, secondBlockId, thirdBlockId],
+			isEditing: true,
+			mode: "expanded",
+		});
+
+		await act(async () => {
+			blocksHost?.dispatchEvent(createEscapeEvent());
+			await flushAnimationFrames(2);
+		});
+
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId: thirdBlockId, offset: 5 },
+			focus: { blockId: thirdBlockId, offset: 5 },
+			isCollapsed: true,
+			isMultiBlock: false,
+		});
+		expect(fieldEditor.getSnapshot()).toMatchObject({
+			focusBlockId: thirdBlockId,
+			activeBlockIds: [thirdBlockId],
 			isEditing: true,
 			mode: "single",
 		});
