@@ -25,10 +25,6 @@ function createTestEditorWithExtensions(count: number) {
   });
 }
 
-type EditorWithDecorations = Editor & {
-  getDecorations(): unknown;
-};
-
 export const extensionBenchmarks: Array<{
   name: string;
   fn: (b: BenchContext) => void | Promise<void>;
@@ -54,7 +50,7 @@ export const extensionBenchmarks: Array<{
   {
     name: "extension collectDecorations with 5 extensions",
     fn(b) {
-      const editor = createTestEditorWithExtensions(5) as unknown as EditorWithDecorations;
+      const editor = createTestEditorWithExtensions(5) as unknown as Editor;
 
       b.start();
       for (let i = 0; i < 1000; i++) {

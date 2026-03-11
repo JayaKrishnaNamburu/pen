@@ -30,7 +30,10 @@ import type {
 	DecorationSet,
 	EditorViewMode,
 } from "@pen/types";
-import { usesInlineTextSelection } from "@pen/types";
+import {
+	COLLECT_KEY_BINDINGS_SLOT_KEY,
+	usesInlineTextSelection,
+} from "@pen/types";
 import { yjsAdapter } from "@pen/crdt-yjs";
 import { undoExtension } from "@pen/undo";
 import { documentOpsExtension } from "@pen/document-ops";
@@ -736,6 +739,10 @@ class EditorImpl implements Editor {
 
 	private _refreshCoreSlots(): void {
 		this._slots.set("core:engine", this._engine);
+		this._slots.set(
+			COLLECT_KEY_BINDINGS_SLOT_KEY,
+			(registry: SchemaRegistry) => this._extensions.collectKeyBindings(registry),
+		);
 	}
 
 	private _bindSession(

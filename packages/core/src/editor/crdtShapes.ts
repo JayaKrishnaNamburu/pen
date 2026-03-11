@@ -10,6 +10,10 @@ export interface CRDTTextLike {
 		length: number,
 		attributes: Record<string, unknown>,
 	): void;
+	toDelta?(): Array<{
+		insert: string | Record<string, unknown>;
+		attributes?: Record<string, unknown>;
+	}>;
 	toString(): string;
 	readonly length: number;
 }

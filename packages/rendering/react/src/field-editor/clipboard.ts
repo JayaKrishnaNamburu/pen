@@ -16,6 +16,10 @@ import {
 	writePenClipboard,
 } from "../utils/clipboardSerialization";
 
+type PasteInputEvent = InputEvent & {
+	dataTransfer?: DataTransfer | null;
+};
+
 // ── Paste entry points ──────────────────────────────────────
 
 /**
@@ -27,7 +31,7 @@ export function handlePaste(
 	fieldEditor: FieldEditorTransferController,
 	importers?: PasteImporters,
 ): void {
-	const dataTransfer = (event as any).dataTransfer as DataTransfer | null;
+	const dataTransfer = (event as PasteInputEvent).dataTransfer ?? null;
 	if (!dataTransfer) return;
 	applyPasteFromDataTransfer(dataTransfer, editor, fieldEditor, importers);
 }

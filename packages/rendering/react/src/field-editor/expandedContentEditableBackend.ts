@@ -322,6 +322,10 @@ export class ExpandedContentEditableBackend {
 function getBlockText(editor: Editor, blockId: string): any {
 	const adapter = editor.internals.adapter;
 	const doc = editor.internals.crdtDoc;
-	const ydoc = adapter.raw(doc) as any;
+	const ydoc = adapter.raw<{
+		getMap(name: string): {
+			get(key: string): { get(field: string): unknown } | undefined;
+		};
+	}>(doc);
 	return ydoc.getMap("blocks").get(blockId)?.get("content");
 }

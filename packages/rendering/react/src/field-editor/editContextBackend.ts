@@ -36,6 +36,11 @@ declare class EditContext {
 	readonly selectionEnd: number;
 }
 
+type EditContextConstructor = typeof EditContext;
+type EditContextGlobal = typeof globalThis & {
+	EditContext?: EditContextConstructor;
+};
+
 export class EditContextBackend implements InputBackend {
 	private editContext: EditContext | null = null;
 	private element: HTMLElement | null = null;
@@ -60,7 +65,12 @@ export class EditContextBackend implements InputBackend {
 		this.ytext = ytext;
 		this.fieldEditor.setComposing(false);
 
-		this.editContext = new (globalThis as any).EditContext({
+		const editContextConstructor = (globalThis as EditContextGlobal).EditContext;
+		if (!editContextConstructor) {
+			throw new Error("EditContext is not available in this environment.");
+		}
+
+		this.editContext = new editContextConstructor({
 			text: this.ytext.toString(),
 			selectionStart: 0,
 			selectionEnd: 0,

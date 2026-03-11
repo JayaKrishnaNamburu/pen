@@ -16,13 +16,7 @@ export function useBlockDecorations(
 }
 
 function getDecorationSet(editor: Editor): DecorationSet {
-	const editorWithDecorations = editor as unknown as {
-		getDecorations?: () => DecorationSet;
-	};
-	if (typeof editorWithDecorations.getDecorations === "function") {
-		return editorWithDecorations.getDecorations();
-	}
-	return emptyDecorationSet();
+	return editor.getDecorations();
 }
 
 function decorationsEqual(

@@ -60,7 +60,7 @@ export class ExtensionManagerImpl {
 						dom:
 							typeof globalThis.document !== "undefined"
 								? globalThis.document
-								: (undefined as any),
+								: undefined,
 						emit: (event: string, payload?: unknown) => {
 							this._emitter.emit(
 								`ext:${ext.name}:${event}`,

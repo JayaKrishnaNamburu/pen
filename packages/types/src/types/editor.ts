@@ -203,6 +203,7 @@ export interface Editor {
 	deleteSelection(options?: ApplyOptions): void;
 
 	requestDecorationUpdate(): void;
+	getDecorations(): DecorationSet;
 	scrollToBlock?(blockId: string): void;
 
 	onDocumentCommit(callback: PenEventMap["documentCommit"]): Unsubscribe;

@@ -1,4 +1,5 @@
 import {
+	COLLECT_KEY_BINDINGS_SLOT_KEY,
 	type Editor,
 	type KeyBindingContext,
 	usesInlineTextSelection,
@@ -347,9 +348,15 @@ function collectKeyBindings(editor: Editor): ReadonlyArray<{
 	context?: KeyBindingContext;
 	handler: (editor: Editor, event: KeyboardEvent) => boolean;
 }> {
-	return (
-		(editor as any)._extensions?.collectKeyBindings?.(editor.schema) ?? []
-	);
+	const collect =
+		editor.internals.getSlot<
+			(registry: Editor["schema"]) => ReadonlyArray<{
+				key: string;
+				context?: KeyBindingContext;
+				handler: (editor: Editor, event: KeyboardEvent) => boolean;
+			}>
+		>(COLLECT_KEY_BINDINGS_SLOT_KEY) ?? null;
+	return collect?.(editor.schema) ?? [];
 }
 
 function matchesBindingContext(

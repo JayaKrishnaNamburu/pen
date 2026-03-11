@@ -11,8 +11,24 @@ import type {
 	PenDocument,
 	SchemaRegistry,
 } from "@pen/types";
-import type { YjsPenDocument } from "@pen/crdt-yjs";
-import { crdtMapToPlainRecord, crdtValueToPlain } from "../editor/crdtShapes";
+import {
+	crdtMapToPlainRecord,
+	crdtValueToPlain,
+	getArrayProp,
+	getCellMap,
+	getDatabaseViews,
+	getMapProp,
+	getRowCells,
+	getStringProp,
+	getTableColumns,
+	getTableContent,
+	getTextProp,
+	isCRDTMap,
+	type CRDTTextLike,
+	type CRDTUnknownArray,
+	type CRDTUnknownMap,
+	type TableCellMap,
+} from "../editor/crdtShapes";
 
 // ── Factory Functions ───────────────────────────────────────
 
@@ -38,6 +54,30 @@ export function createAppHandle(
 
 const EMPTY_TABLE_COLUMNS: readonly TableColumnSchema[] = [];
 const EMPTY_DATABASE_VIEWS: readonly DatabaseViewState[] = [];
+type TextDelta = {
+	insert: unknown;
+	attributes?: Record<string, unknown>;
+};
+
+function getMapEntries(map: CRDTUnknownMap | null): Iterable<[string, unknown]> {
+	return map?.entries?.() ?? [];
+}
+
+function getChildrenArray(blockMap: CRDTUnknownMap): CRDTUnknownArray<string> | null {
+	return getArrayProp<string>(blockMap, "children");
+}
+
+function getPropsMap(blockMap: CRDTUnknownMap): CRDTUnknownMap | null {
+	return getMapProp(blockMap, "props");
+}
+
+function getDeltaFragments(text: CRDTTextLike | null): TextDelta[] {
+	return typeof text?.toDelta === "function" ? text.toDelta() : [];
+}
+
+function arrayValues<T>(array: CRDTUnknownArray<T>): T[] {
+	return array.toArray?.() ?? Array.from({ length: array.length }, (_, index) => array.get(index));
+}
 
 class TableRowHandleImpl implements TableRowHandle {
 	constructor(
@@ -64,9 +104,6 @@ class BlockHandleImpl implements BlockHandle {
 
 	get props(): Readonly<Record<string, unknown>> {
 		const schema = this._registry.resolve(this.type);
-		const raw = this.blockMap.get("props") as
-			| Map<string, unknown>
-			| undefined;
 		const props: Record<string, unknown> = {};
 
 		if (schema?.propSchema) {
@@ -74,18 +111,15 @@ class BlockHandleImpl implements BlockHandle {
 				props[key] = (propDef as Record<string, unknown>).default;
 			}
 		}
-		if (raw) {
-			for (const [key, value] of (raw as any).entries()) {
-				props[key] = value;
-			}
+		for (const [key, value] of getMapEntries(getPropsMap(this.blockMap))) {
+			props[key] = value;
 		}
 		return props;
 	}
 
 	get index(): number {
-		const yjsDoc = this._doc as YjsPenDocument;
-		for (let i = 0; i < yjsDoc.blockOrder.length; i++) {
-			if (yjsDoc.blockOrder.get(i) === this._id) return i;
+		for (let i = 0; i < this._doc.blockOrder.length; i++) {
+			if (this._doc.blockOrder.get(i) === this._id) return i;
 		}
 		return -1;
 	}
@@ -93,9 +127,8 @@ class BlockHandleImpl implements BlockHandle {
 	get prev(): BlockHandle | null {
 		const idx = this.index;
 		if (idx <= 0) return null;
-		const yjsDoc = this._doc as YjsPenDocument;
 		return new BlockHandleImpl(
-			yjsDoc.blockOrder.get(idx - 1),
+			this._doc.blockOrder.get(idx - 1),
 			this._doc,
 			this._crdtDoc,
 			this._registry,
@@ -103,11 +136,10 @@ class BlockHandleImpl implements BlockHandle {
 	}
 
 	get next(): BlockHandle | null {
-		const yjsDoc = this._doc as YjsPenDocument;
 		const idx = this.index;
-		if (idx < 0 || idx >= yjsDoc.blockOrder.length - 1) return null;
+		if (idx < 0 || idx >= this._doc.blockOrder.length - 1) return null;
 		return new BlockHandleImpl(
-			yjsDoc.blockOrder.get(idx + 1),
+			this._doc.blockOrder.get(idx + 1),
 			this._doc,
 			this._crdtDoc,
 			this._registry,
@@ -126,9 +158,9 @@ class BlockHandleImpl implements BlockHandle {
 			);
 		}
 
-		const yjsDoc = this._doc as YjsPenDocument;
-		for (const [id, blockMap] of yjsDoc.blocks.entries()) {
-			const children = (blockMap as any).get("children");
+		for (const [id, rawBlockMap] of this._doc.blocks.entries()) {
+			if (!isCRDTMap(rawBlockMap)) continue;
+			const children = getChildrenArray(rawBlockMap);
 			if (!children) continue;
 			for (let i = 0; i < children.length; i++) {
 				if (children.get(i) === this._id) {
@@ -147,13 +179,13 @@ class BlockHandleImpl implements BlockHandle {
 
 	get children(): readonly BlockHandle[] {
 		const result: BlockHandle[] = [];
-		const yjsDoc = this._doc as YjsPenDocument;
 
 		// parentId-based children (toggle/callout/blockquote)
-		for (let i = 0; i < yjsDoc.blockOrder.length; i++) {
-			const childId = yjsDoc.blockOrder.get(i);
-			const childMap = yjsDoc.blocks.get(childId);
-			const childProps = (childMap as any)?.get("props");
+		for (let i = 0; i < this._doc.blockOrder.length; i++) {
+			const childId = this._doc.blockOrder.get(i);
+			const childMap = this._doc.blocks.get(childId);
+			if (!isCRDTMap(childMap)) continue;
+			const childProps = getPropsMap(childMap);
 			if (childProps?.get("parentId") === this._id) {
 				result.push(
 					new BlockHandleImpl(
@@ -167,8 +199,7 @@ class BlockHandleImpl implements BlockHandle {
 		}
 
 		// children Y.Array (layout containers)
-		const blockMap = this.blockMap;
-		const childrenArr = (blockMap as any).get("children");
+		const childrenArr = getChildrenArray(this.blockMap);
 		if (childrenArr) {
 			for (let i = 0; i < childrenArr.length; i++) {
 				result.push(
@@ -204,17 +235,17 @@ class BlockHandleImpl implements BlockHandle {
 
 	*siblings(): Iterable<BlockHandle> {
 		const par = this.parent;
-		const yjsDoc = this._doc as YjsPenDocument;
 		if (par) {
 			for (const child of par.children) {
 				if (child.id !== this._id) yield child;
 			}
 		} else {
-			for (let i = 0; i < yjsDoc.blockOrder.length; i++) {
-				const sibId = yjsDoc.blockOrder.get(i);
+			for (let i = 0; i < this._doc.blockOrder.length; i++) {
+				const sibId = this._doc.blockOrder.get(i);
 				if (sibId === this._id) continue;
-				const sibMap = yjsDoc.blocks.get(sibId);
-				const sibProps = (sibMap as any)?.get("props");
+				const sibMap = this._doc.blocks.get(sibId);
+				if (!isCRDTMap(sibMap)) continue;
+				const sibProps = getPropsMap(sibMap);
 				if (!sibProps?.get("parentId")) {
 					yield new BlockHandleImpl(
 						sibId,
@@ -230,11 +261,10 @@ class BlockHandleImpl implements BlockHandle {
 	// ── Layout queries ────────────────────────────────────
 
 	get layout(): LayoutProps | null {
-		const blockMap = this.blockMap;
-		const layoutMap = (blockMap as any).get("layout");
+		const layoutMap = getMapProp(this.blockMap, "layout");
 		if (!layoutMap) return null;
 		const result: Record<string, unknown> = {};
-		for (const [key, value] of layoutMap.entries()) {
+		for (const [key, value] of getMapEntries(layoutMap)) {
 			result[key] = value;
 		}
 		return result as unknown as LayoutProps;
@@ -245,9 +275,9 @@ class BlockHandleImpl implements BlockHandle {
 	}
 
 	layoutParent(): BlockHandle | null {
-		const yjsDoc = this._doc as YjsPenDocument;
-		for (const [id, blockMap] of yjsDoc.blocks.entries()) {
-			const children = (blockMap as any).get("children");
+		for (const [id, rawBlockMap] of this._doc.blocks.entries()) {
+			if (!isCRDTMap(rawBlockMap)) continue;
+			const children = getChildrenArray(rawBlockMap);
 			if (!children) continue;
 			for (let i = 0; i < children.length; i++) {
 				if (children.get(i) === this._id) {
@@ -267,11 +297,9 @@ class BlockHandleImpl implements BlockHandle {
 
 	anchoredApps(): readonly AppHandle[] {
 		const result: AppHandle[] = [];
-		const yjsDoc = this._doc as YjsPenDocument;
-		for (const [appId, appMap] of yjsDoc.apps.entries()) {
-			const placement = (appMap as any).get("placement") as
-				| AppPlacement
-				| undefined;
+		for (const [appId, rawAppMap] of this._doc.apps.entries()) {
+			if (!isCRDTMap(rawAppMap)) continue;
+			const placement = rawAppMap.get("placement") as AppPlacement | undefined;
 			if (placement && "blockId" in placement && placement.blockId === this._id) {
 				result.push(
 					new AppHandleImpl(
@@ -289,9 +317,8 @@ class BlockHandleImpl implements BlockHandle {
 	// ── Content access ────────────────────────────────────
 
 	textContent(options?: { resolved?: boolean }): string {
-		const blockMap = this.blockMap;
-		const content = (blockMap as any).get("content");
-		if (content && typeof content.toString === "function" && typeof content.toDelta === "function") {
+		const content = getTextProp(this.blockMap, "content");
+		if (content) {
 			const text = content.toString();
 			if (text === "\u200B") return "";
 			if (options?.resolved) {
@@ -306,10 +333,9 @@ class BlockHandleImpl implements BlockHandle {
 		insert: string;
 		attributes?: Record<string, unknown>;
 	}> {
-		const blockMap = this.blockMap;
-		const content = (blockMap as any).get("content");
-		if (content && typeof content.toDelta === "function") {
-			return content.toDelta().map((d: any) => ({
+		const content = getTextProp(this.blockMap, "content");
+		if (typeof content?.toDelta === "function") {
+			return getDeltaFragments(content).map((d) => ({
 				insert: typeof d.insert === "string" ? d.insert : "",
 				...(d.attributes ? { attributes: d.attributes } : {}),
 			}));
@@ -324,16 +350,12 @@ class BlockHandleImpl implements BlockHandle {
 	// ── Metadata ──────────────────────────────────────────
 
 	meta(namespace: string): Readonly<Record<string, unknown>> | null {
-		const metaMap = (this.blockMap as any).get("meta");
+		const metaMap = getMapProp(this.blockMap, "meta");
 		if (!metaMap) return null;
 		const nsData = metaMap.get(namespace);
 		if (!nsData) return null;
-		if (nsData && typeof nsData.entries === "function") {
-			const result: Record<string, unknown> = {};
-			for (const [key, value] of nsData.entries()) {
-				result[key] = value;
-			}
-			return result;
+		if (isCRDTMap(nsData)) {
+			return crdtMapToPlainRecord(nsData);
 		}
 		return nsData as Record<string, unknown>;
 	}
@@ -348,19 +370,19 @@ class BlockHandleImpl implements BlockHandle {
 
 	tableRowCount(): number {
 		if (!this.isGridBlock()) return 0;
-		const tc = (this.blockMap as any).get("tableContent");
-		return tc ? tc.length : 0;
+		return getTableContent(this.blockMap)?.length ?? 0;
 	}
 
 	tableColumnCount(): number {
 		if (!this.isGridBlock()) return 0;
-		const tc = (this.blockMap as any).get("tableContent");
+		const tc = getTableContent(this.blockMap);
 		const structuredColumnCount = this.tableColumns().length;
 		if (!tc || tc.length === 0) return structuredColumnCount;
 		let rowCellCount = 0;
 		for (let rowIndex = 0; rowIndex < tc.length; rowIndex++) {
-			const rowMap = tc.get(rowIndex) as any;
-			const cells = rowMap?.get?.("cells");
+			const rowMap = tc.get(rowIndex);
+			if (!isCRDTMap(rowMap)) continue;
+			const cells = getRowCells(rowMap);
 			const cellCount = cells ? cells.length : 0;
 			rowCellCount = Math.max(rowCellCount, cellCount);
 		}
@@ -369,30 +391,29 @@ class BlockHandleImpl implements BlockHandle {
 
 	tableRow(row: number): TableRowHandle | null {
 		if (!this.isGridBlock()) return null;
-		const tc = (this.blockMap as any).get("tableContent");
+		const tc = getTableContent(this.blockMap);
 		if (!tc || row < 0 || row >= tc.length) return null;
-		const rowMap = tc.get(row) as any;
-		const id = rowMap?.get?.("id");
+		const rowMap = tc.get(row);
+		if (!isCRDTMap(rowMap)) return null;
+		const id = getStringProp(rowMap, "id");
 		if (typeof id !== "string" || id.length === 0) return null;
 		return new TableRowHandleImpl(id, row);
 	}
 
 	tableCell(row: number, col: number): TableCellHandle | null {
 		if (!this.isGridBlock()) return null;
-		const tc = (this.blockMap as any).get("tableContent");
+		const tc = getTableContent(this.blockMap);
 		if (!tc || row < 0 || row >= tc.length) return null;
-		const rowMap = tc.get(row) as any;
-		if (!rowMap) return null;
-		const cells = rowMap.get("cells");
-		if (!cells || col < 0 || col >= cells.length) return null;
-		const cellMap = cells.get(col) as any;
+		const rowMap = tc.get(row);
+		if (!isCRDTMap(rowMap)) return null;
+		const cellMap = getCellMap(rowMap, col);
 		if (!cellMap) return null;
 		return new TableCellHandleImpl(cellMap, row, col);
 	}
 
 	tableColumns(): readonly TableColumnSchema[] {
 		if (this.type !== "database") return EMPTY_TABLE_COLUMNS;
-		const raw = (this.blockMap as any).get("tableColumns") as unknown;
+		const raw = this.blockMap.get("tableColumns");
 		if (!raw) return EMPTY_TABLE_COLUMNS;
 		if (typeof raw === "string") {
 			try {
@@ -401,30 +422,25 @@ class BlockHandleImpl implements BlockHandle {
 				return EMPTY_TABLE_COLUMNS;
 			}
 		}
-		if (typeof (raw as { toArray?: () => unknown[] }).toArray === "function") {
-			return (raw as { toArray: () => unknown[] })
-				.toArray()
-				.map((column) => this.toTableColumnSchema(column))
-				.filter((column): column is TableColumnSchema => column !== null);
-		}
-		return EMPTY_TABLE_COLUMNS;
+		const columns = getTableColumns(this.blockMap);
+		if (!columns) return EMPTY_TABLE_COLUMNS;
+		return arrayValues(columns)
+			.map((column) => this.toTableColumnSchema(column))
+			.filter((column): column is TableColumnSchema => column !== null);
 	}
 
 	databaseViews(): readonly DatabaseViewState[] {
 		if (this.type !== "database") return EMPTY_DATABASE_VIEWS;
-		const raw = (this.blockMap as any).get("databaseViews") as unknown;
-		if (!raw || typeof (raw as { toArray?: () => unknown[] }).toArray !== "function") {
-			return EMPTY_DATABASE_VIEWS;
-		}
-		return (raw as { toArray: () => unknown[] })
-			.toArray()
+		const views = getDatabaseViews(this.blockMap);
+		if (!views) return EMPTY_DATABASE_VIEWS;
+		return arrayValues(views)
 			.map((view) => this.toDatabaseViewState(view))
 			.filter((view): view is DatabaseViewState => view !== null);
 	}
 
 	databasePrimaryViewId(): string | null {
 		if (this.type !== "database") return null;
-		const value = (this.blockMap as any).get("databasePrimaryViewId");
+		const value = getStringProp(this.blockMap, "databasePrimaryViewId");
 		return typeof value === "string" && value.length > 0 ? value : null;
 	}
 
@@ -443,8 +459,8 @@ class BlockHandleImpl implements BlockHandle {
 		return this.type === "table" || this.type === "database";
 	}
 
-	private resolveText(content: any): string {
-		const deltas = content.toDelta();
+	private resolveText(content: CRDTTextLike): string {
+		const deltas = getDeltaFragments(content);
 		let result = "";
 		for (const d of deltas) {
 			if (typeof d.insert !== "string") continue;
@@ -580,10 +596,9 @@ class BlockHandleImpl implements BlockHandle {
 		return value === "left" || value === "right" ? value : undefined;
 	}
 
-	private get blockMap(): any {
-		const yjsDoc = this._doc as YjsPenDocument;
-		const map = yjsDoc.blocks.get(this._id);
-		if (!map) throw new Error(`Block not found: ${this._id}`);
+	private get blockMap(): CRDTUnknownMap {
+		const map = this._doc.blocks.get(this._id);
+		if (!isCRDTMap(map)) throw new Error(`Block not found: ${this._id}`);
 		return map;
 	}
 }
@@ -611,16 +626,7 @@ class AppHandleImpl implements AppHandle {
 	}
 
 	get config(): Readonly<Record<string, unknown>> {
-		const configMap = this.appMap.get("config");
-		if (!configMap) return {};
-		if (typeof (configMap as any).entries === "function") {
-			const result: Record<string, unknown> = {};
-			for (const [key, value] of (configMap as any).entries()) {
-				result[key] = value;
-			}
-			return result;
-		}
-		return {};
+		return crdtMapToPlainRecord(getMapProp(this.appMap, "config")) ?? {};
 	}
 
 	get anchorBlock(): BlockHandle | null {
@@ -636,10 +642,9 @@ class AppHandleImpl implements AppHandle {
 		return null;
 	}
 
-	private get appMap(): any {
-		const yjsDoc = this._doc as YjsPenDocument;
-		const map = yjsDoc.apps.get(this._id);
-		if (!map) throw new Error(`App not found: ${this._id}`);
+	private get appMap(): CRDTUnknownMap {
+		const map = this._doc.apps.get(this._id);
+		if (!isCRDTMap(map)) throw new Error(`App not found: ${this._id}`);
 		return map;
 	}
 }
@@ -648,13 +653,13 @@ class AppHandleImpl implements AppHandle {
 
 class TableCellHandleImpl implements TableCellHandle {
 	constructor(
-		private readonly _cellMap: any,
+		private readonly _cellMap: TableCellMap,
 		private readonly _row: number,
 		private readonly _col: number,
 	) { }
 
 	get id(): string {
-		return this._cellMap.get("id") as string;
+		return getStringProp(this._cellMap, "id") ?? "";
 	}
 
 	get row(): number {
@@ -666,8 +671,8 @@ class TableCellHandleImpl implements TableCellHandle {
 	}
 
 	textContent(): string {
-		const content = this._cellMap.get("content");
-		if (content && typeof content.toString === "function") {
+		const content = getTextProp(this._cellMap, "content");
+		if (content) {
 			const text = content.toString();
 			if (text === "\u200B") return "";
 			return text;
@@ -676,9 +681,9 @@ class TableCellHandleImpl implements TableCellHandle {
 	}
 
 	length(): number {
-		const content = this._cellMap.get("content");
-		if (content && typeof content.toDelta === "function") {
-			return content.toDelta().reduce((total: number, delta: any) => {
+		const content = getTextProp(this._cellMap, "content");
+		if (typeof content?.toDelta === "function") {
+			return getDeltaFragments(content).reduce((total: number, delta) => {
 				if (typeof delta.insert === "string") {
 					return total + delta.insert.length;
 				}
@@ -692,9 +697,9 @@ class TableCellHandleImpl implements TableCellHandle {
 		insert: string;
 		attributes?: Record<string, unknown>;
 	}> {
-		const content = this._cellMap.get("content");
-		if (content && typeof content.toDelta === "function") {
-			return content.toDelta().map((d: any) => ({
+		const content = getTextProp(this._cellMap, "content");
+		if (typeof content?.toDelta === "function") {
+			return getDeltaFragments(content).map((d) => ({
 				insert: typeof d.insert === "string" ? d.insert : "",
 				...(d.attributes ? { attributes: d.attributes } : {}),
 			}));

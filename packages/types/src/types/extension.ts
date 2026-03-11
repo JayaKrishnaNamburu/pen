@@ -11,7 +11,7 @@ export interface ServerExtensionContext {
 }
 
 export interface ClientExtensionContext extends ServerExtensionContext {
-  dom: Document;
+  dom?: Document;
 }
 
 export interface Extension {
