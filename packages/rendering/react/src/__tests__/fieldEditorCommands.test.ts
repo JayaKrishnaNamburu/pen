@@ -37,13 +37,17 @@ function visibleText(text: string): string {
 function getYText(
 	editor: ReturnType<typeof createEditor>,
 	blockId: string,
-): FieldEditorTextLike | null {
+): FieldEditorTextLike {
 	const adapter = editor.internals.adapter;
 	const doc = editor.internals.crdtDoc;
 	const ydoc = adapter.raw<RawDocLike>(doc);
-	return ydoc.getMap("blocks").get(blockId)?.get("content") as
+	const ytext = ydoc.getMap("blocks").get(blockId)?.get("content") as
 		| FieldEditorTextLike
 		| null;
+	if (!ytext) {
+		throw new Error(`Missing test Y.Text for block ${blockId}`);
+	}
+	return ytext;
 }
 
 function editorOpts() {
