@@ -2,6 +2,15 @@ import type { PenDocument } from "@pen/types";
 import { deepEqual } from "@pen/core";
 import type { TestBlock, TestEditor } from "./types";
 
+type TestBlockMapLike = {
+	get(key: string): unknown;
+};
+
+type TestPropsMapLike = {
+	size: number;
+	entries(): Iterable<[string, unknown]>;
+};
+
 class PenAssertionError extends Error {
 	constructor(message: string) {
 		super(message);
@@ -17,11 +26,11 @@ function extractBlocks(
 
 	for (let i = 0; i < doc.blockOrder.length; i++) {
 		const id = doc.blockOrder.get(i);
-		const blockMap = doc.blocks.get(id) as any;
+		const blockMap = doc.blocks.get(id) as TestBlockMapLike | undefined;
 		if (!blockMap) continue;
 
 		const type = blockMap.get("type") as string;
-		const propsMap = blockMap.get("props") as any;
+		const propsMap = blockMap.get("props") as TestPropsMapLike | undefined;
 		const content = blockMap.get("content");
 
 		const block: TestBlock = { type };

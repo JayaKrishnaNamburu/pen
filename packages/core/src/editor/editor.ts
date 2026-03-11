@@ -56,8 +56,21 @@ import { createDocumentSession } from "./documentSession";
 
 type CRDTBlockMap = CRDTMap<CRDTMap<unknown>>;
 
+type RawPenDocumentLike = {
+	getArray?(name: "blockOrder"): CRDTArray<string>;
+	getMap?(name: "blocks" | "apps" | "metadata"): CRDTMap<unknown>;
+	blockOrder?: CRDTArray<string>;
+	blocks?: CRDTMap<unknown>;
+	apps?: CRDTMap<unknown>;
+	metadata?: CRDTMap<unknown>;
+};
+
 function createGeneratedBlockId(): string {
 	return crypto.randomUUID();
+}
+
+function missingPenDocumentRoot(name: string): never {
+	throw new Error(`CRDT document is missing required Pen root "${name}".`);
 }
 
 // Stub undo manager for when @pen/undo is excluded
@@ -679,14 +692,24 @@ class EditorImpl implements Editor {
 			return wrapped.penDocument;
 		}
 
-		const raw = this._adapter.raw<any>(crdtDoc);
+		const raw = this._adapter.raw<RawPenDocumentLike>(crdtDoc);
+		const blockOrder =
+			(raw.getArray ? raw.getArray("blockOrder") : raw.blockOrder) ??
+			missingPenDocumentRoot("blockOrder");
+		const blocks =
+			(raw.getMap ? raw.getMap("blocks") : raw.blocks) ??
+			missingPenDocumentRoot("blocks");
+		const apps =
+			(raw.getMap ? raw.getMap("apps") : raw.apps) ??
+			missingPenDocumentRoot("apps");
+		const metadata =
+			(raw.getMap ? raw.getMap("metadata") : raw.metadata) ??
+			missingPenDocumentRoot("metadata");
 		return {
-			blockOrder: raw.getArray
-				? raw.getArray("blockOrder")
-				: raw.blockOrder,
-			blocks: raw.getMap ? raw.getMap("blocks") : raw.blocks,
-			apps: raw.getMap ? raw.getMap("apps") : raw.apps,
-			metadata: raw.getMap ? raw.getMap("metadata") : raw.metadata,
+			blockOrder,
+			blocks,
+			apps,
+			metadata,
 			adapter: this._adapter,
 		};
 	}

@@ -22,6 +22,30 @@ function visibleText(text: string): string {
 	return text.replace(/\u200B/g, "");
 }
 
+type TestYTextLike = {
+	insert(offset: number, text: string): void;
+};
+
+type TestBlockMapLike = {
+	get(key: string): unknown;
+};
+
+type TestBlocksMapLike = {
+	get(key: string): TestBlockMapLike | undefined;
+};
+
+type TestRawDocLike = {
+	getMap(name: "blocks"): TestBlocksMapLike;
+};
+
+type TestTableRowLike = {
+	get(field: "cells"): { delete(index: number, length: number): void };
+};
+
+type TestTableContentLike = {
+	get(index: number): TestTableRowLike;
+};
+
 describe("@pen/core createEditor", () => {
 	it("supports multiple editors sharing one document session", () => {
 		const session = createDocumentSession({
@@ -542,8 +566,12 @@ describe("@pen/core createEditor", () => {
 		expect(databaseBlock.databaseViews()).toEqual([]);
 		expect(databaseBlock.databasePrimaryViewId()).toBeNull();
 
-		const tableBlockMap = (editor.internals.doc.blocks as any).get("table-block");
-		const databaseBlockMap = (editor.internals.doc.blocks as any).get("database-block");
+		const tableBlockMap = editor.internals.doc.blocks.get(
+			"table-block",
+		) as TestBlockMapLike;
+		const databaseBlockMap = editor.internals.doc.blocks.get(
+			"database-block",
+		) as TestBlockMapLike;
 		expect(tableBlockMap.get("tableContent")).toBeUndefined();
 		expect(tableBlockMap.get("tableColumns")).toBeUndefined();
 		expect(tableBlockMap.get("databaseViews")).toBeUndefined();
@@ -771,11 +799,14 @@ describe("@pen/core createEditor", () => {
 		const editorDoc = editor.internals.crdtDoc;
 		const blockId = editor.firstBlock()!.id;
 		const remoteDoc = adapter.loadDocument(adapter.encodeState(editorDoc));
-		const remoteYDoc = adapter.raw<any>(remoteDoc);
+		const remoteYDoc = adapter.raw<TestRawDocLike>(remoteDoc);
 		const remoteYText = remoteYDoc
 			.getMap("blocks")
 			.get(blockId)
-			?.get("content");
+			?.get("content") as TestYTextLike | undefined;
+		if (!remoteYText) {
+			throw new Error(`Missing collaborator text for block ${blockId}`);
+		}
 
 		editor.on("change", (events) => {
 			changes.push(events);
@@ -1584,8 +1615,8 @@ describe("@pen/core table operations", () => {
 			},
 		]);
 
-		const blockMap = (editor.internals.doc.blocks as any).get("t1");
-		const tableContent = blockMap.get("tableContent");
+		const blockMap = editor.internals.doc.blocks.get("t1") as TestBlockMapLike;
+		const tableContent = blockMap.get("tableContent") as TestTableContentLike;
 		const firstRow = tableContent.get(0);
 		firstRow.get("cells").delete(2, 1);
 
