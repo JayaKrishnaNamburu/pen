@@ -13,6 +13,7 @@ import { divider } from "./blocks/divider";
 import { callout } from "./blocks/callout";
 import { toggle } from "./blocks/toggle";
 import { blockquote } from "./blocks/blockquote";
+import { subdocument } from "./blocks/subdocument";
 import {
   bold,
   italic,
@@ -40,6 +41,7 @@ export const defaultBlocks = [
   callout,
   toggle,
   blockquote,
+  subdocument,
 ] as BlockSchema[];
 
 export const defaultInlines = [

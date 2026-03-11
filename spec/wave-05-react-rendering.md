@@ -2403,3 +2403,21 @@ React 18+ for `useSyncExternalStore`. No other runtime dependencies. The package
 15. **`useVisualViewport` hook.** Not currently in the file structure. Add to `hooks/` as `use-visual-viewport.ts`. Export from the hooks barrel.
 
 16. **Virtualization threshold.** The virtualization `<100 blocks default:off` should be lowered to `<50 blocks` on mobile devices. Detect via `navigator.maxTouchPoints > 0`. Update `Pen.Editor.Content` to accept a `mobileOverscan` option.
+
+## Runtime Update: Multi-view and Nested Editors
+
+The React layer now treats mounted roots as editor views over document scopes, not as the owner of the logical document itself.
+
+Current runtime rules:
+
+- each mounted `Pen.Editor.Root` still owns exactly one `FieldEditorImpl`
+- multiple mounted roots should use separate `Editor` instances that attach to the same `DocumentSession`
+- nested `subdocument` blocks render a child `PenEditor` bound to the child document scope
+
+Nested editor boundaries are explicit:
+
+- parent keyboard handlers ignore events that originate from a nested `data-pen-editor-root`
+- parent pointer-selection handlers ignore targets inside nested editor roots
+- the nested editor has its own field editor, selection state, and DOM ownership
+
+This preserves the field-editor model while allowing real nested Pen surfaces backed by Yjs subdocuments.

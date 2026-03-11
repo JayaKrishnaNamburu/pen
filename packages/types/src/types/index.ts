@@ -204,6 +204,11 @@ export type {
 	GenerationZone,
 	UndoManagerOptions,
 	AttributionRange,
+	DocumentScopeKind,
+	DocumentScopeInfo,
+	DocumentScope,
+	CreateSubdocumentOptions,
+	DocumentSession,
 } from "./crdt";
 
 // ── Extension ───────────────────────────────────────────────

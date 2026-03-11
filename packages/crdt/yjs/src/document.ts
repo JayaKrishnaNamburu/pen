@@ -8,6 +8,7 @@ export type BlockContentType =
   | "inline"
   | "table"
   | "database"
+  | "subdocument"
   | "nested"
   | "none";
 
@@ -35,6 +36,7 @@ export const BLOCK_ORDER = "blockOrder";
 export const BLOCKS = "blocks";
 export const APPS = "apps";
 export const METADATA = "metadata";
+export const SUBDOCUMENT = "subdocument";
 
 // ── Document Validation ─────────────────────────────────────
 
@@ -51,7 +53,8 @@ export interface DocumentValidationError {
     | "ORPHAN_BLOCK"
     | "DUPLICATE_BLOCK_ORDER"
     | "UNKNOWN_CONTENT_TYPE"
-    | "MISSING_BLOCK_MAP_KEY";
+    | "MISSING_BLOCK_MAP_KEY"
+    | "INVALID_SUBDOCUMENT";
   blockId?: string;
   message: string;
   severity: "error" | "warning";
@@ -141,8 +144,12 @@ export function validateDocument(
     const hasContent = block.has("content");
     const hasTable = block.has("tableContent");
     const hasChildren = block.has("children");
+    const hasSubdocument = block.has(SUBDOCUMENT);
     const contentKeyCount =
-      (hasContent ? 1 : 0) + (hasTable ? 1 : 0) + (hasChildren ? 1 : 0);
+      (hasContent ? 1 : 0) +
+      (hasTable ? 1 : 0) +
+      (hasChildren ? 1 : 0) +
+      (hasSubdocument ? 1 : 0);
 
     if (contentKeyCount > 1) {
       errors.push({
@@ -176,6 +183,15 @@ export function validateDocument(
         code: "UNKNOWN_CONTENT_TYPE",
         blockId,
         message: `Block '${blockId}' has 'children' but it is not a Y.Array`,
+        severity: "error",
+      });
+    }
+
+    if (hasSubdocument && !(block.get(SUBDOCUMENT) instanceof Y.Doc)) {
+      errors.push({
+        code: "INVALID_SUBDOCUMENT",
+        blockId,
+        message: `Block '${blockId}' has '${SUBDOCUMENT}' but it is not a Y.Doc`,
         severity: "error",
       });
     }
@@ -375,6 +391,9 @@ export function initBlockMap(
       blockMap.set("databaseViews", new Y.Array<Y.Map<unknown>>());
       break;
     }
+    case "subdocument":
+      blockMap.set(SUBDOCUMENT, new Y.Doc({ autoLoad: true }));
+      break;
     case "nested":
       blockMap.set("children", new Y.Array<string>());
       break;

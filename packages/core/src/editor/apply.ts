@@ -472,6 +472,20 @@ export class ApplyPipeline {
 			}
 		}
 
+		if ((schema as { content: unknown }).content === "subdocument") {
+			const propsMap = this._getOrCreateMapProp(blockMap, "props");
+			const subdocument = blockMap.get("subdocument") as
+				| { guid?: unknown }
+				| undefined;
+			if (
+				subdocument &&
+				typeof subdocument === "object" &&
+				typeof subdocument.guid === "string"
+			) {
+				propsMap.set("subdocumentGuid", subdocument.guid);
+			}
+		}
+
 		if (typeof op.position === "object" && "parent" in op.position) {
 			const parentMap = this._getMutableBlockMap(op.position.parent);
 			if (parentMap) {

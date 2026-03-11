@@ -451,3 +451,13 @@ Implement cross-block selection as a first-class canonical text-range feature wi
 Do not treat mixed block presence as a reason to abandon expanded mode for ordinary cross-block selection.
 
 Do treat large ranges and select-all as explicit fallback paths.
+
+## Runtime Update: Subdocument Boundaries
+
+This RFC now has an explicit v1 boundary for nested Yjs subdocuments:
+
+- `TextSelection` and `DocumentRange` stay document-local
+- a nested `subdocument` block is a hard selection boundary
+- keyboard traversal may move focus into or out of a nested editor, but the active text range does not span both scopes
+
+If cross-subdocument selection is ever added, it must introduce a new explicit cross-document selection type rather than overloading the current `TextSelection` model.

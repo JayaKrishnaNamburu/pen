@@ -1538,3 +1538,19 @@ These events are for observability. The editor remains functional during corrupt
 6. `applyUpdate` with a malformed binary does NOT throw. It emits a `crdt:diagnostic` event and drops the update.
 7. Runtime health check after a remote merge that introduces a dangling `blockOrder` reference detects the inconsistency and emits `crdt:corruption`.
 8. Recovery from snapshot: given a corrupt document and a valid snapshot, `recoverFromSnapshot` produces a clean document that passes validation.
+
+## Runtime Update: Subdocument Scopes
+
+The CRDT layer now recognizes a fifth block content shape for nested Pen surfaces:
+
+- `subdocument` blocks store a child `Y.Doc` under the block map's `subdocument` key
+- that child doc is a full Pen document with its own `blockOrder`, `blocks`, `apps`, and `metadata`
+- validation rejects malformed `subdocument` payloads with `INVALID_SUBDOCUMENT`
+
+The runtime owner above the adapter is `DocumentSession`:
+
+- it keeps the root document plus discovered subdocument scopes together
+- it exposes scope-aware observation so emitted `CRDTEvent`s can carry document-scope metadata
+- it resolves subdocument ownership via the host block that stores the child `Y.Doc`
+
+Undo and awareness remain per document scope. Higher-level view coordination happens above the adapter.

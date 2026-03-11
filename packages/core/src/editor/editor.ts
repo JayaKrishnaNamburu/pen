@@ -10,6 +10,8 @@ import type {
 	PenDocument,
 	SchemaRegistry,
 	Awareness,
+	DocumentSession,
+	DocumentScope,
 	Extension,
 	DocumentOp,
 	ApplyOptions,
@@ -44,6 +46,7 @@ import { ExtensionManagerImpl } from "./extensionManager";
 import { SelectionManagerImpl } from "./selection";
 import { DocumentStateImpl } from "./documentState";
 import { DocumentRangeImpl } from "./range";
+import { createDocumentSession } from "./documentSession";
 
 type CRDTBlockMap = CRDTMap<CRDTMap<unknown>>;
 
@@ -72,22 +75,32 @@ class EditorImpl implements Editor {
 	private readonly _emitter: EventEmitter;
 	private _pipeline: ApplyPipeline;
 	private _documentState: DocumentStateImpl;
-	private _doc: PenDocument;
-	private _crdtDoc: CRDTDocument;
+	private _doc!: PenDocument;
+	private _crdtDoc!: CRDTDocument;
+	private _documentSession: DocumentSession | null = null;
+	private _documentScope!: DocumentScope;
+	private _releaseSession: Unsubscribe | null = null;
 	private _unsubObserve: Unsubscribe | null = null;
 	private _awareness: Awareness | null = null;
 	private readonly _slots = new Map<string, unknown>();
 	private _clientId: number;
 	private _commitId = 0;
 	private readonly _blockRevisions = new Map<string, number>();
+	private readonly _viewId = crypto.randomUUID();
 
 	readonly undoManager: UndoManager;
 
 	constructor(options: CreateEditorOptions = {}) {
 		this._registry = options.schema ?? builtInDefaultSchema;
-		this._adapter = options.crdt ?? yjsAdapter();
-		this._crdtDoc = this._adapter.createDocument();
-		this._doc = this._createPenDocument(this._crdtDoc);
+		this._adapter = options.documentSession?.adapter ?? options.crdt ?? yjsAdapter();
+		const documentSession =
+			options.documentSession ??
+			createDocumentSession({
+				adapter: this._adapter,
+				document: options.document,
+				destroyWhenIdle: true,
+			});
+		this._bindSession(documentSession, options.documentScopeId);
 		this._clientId = this._adapter.getClientId(this._crdtDoc);
 
 		this._emitter = new EventEmitter();
@@ -130,10 +143,6 @@ class EditorImpl implements Editor {
 		this.undoManager = NOOP_UNDO;
 		this._refreshCoreSlots();
 
-		if (this._adapter.createAwareness) {
-			this._awareness = this._adapter.createAwareness(this._crdtDoc);
-		}
-
 		this._wireObservation();
 		this._activateExtensions();
 		this._ensureInitialParagraph();
@@ -145,6 +154,10 @@ class EditorImpl implements Editor {
 
 	get clientId(): number {
 		return this._clientId;
+	}
+
+	get documentScope(): DocumentScope {
+		return this._documentScope;
 	}
 
 	get schema(): SchemaRegistry {
@@ -171,6 +184,9 @@ class EditorImpl implements Editor {
 			doc: this._doc,
 			engine: this._engine,
 			awareness: this._awareness,
+			documentSession: this._documentSession,
+			documentScope: this._documentScope,
+			viewId: this._viewId,
 			emit: (event, ...args) => {
 				this._emitter.emit(event, ...args);
 			},
@@ -214,13 +230,16 @@ class EditorImpl implements Editor {
 	loadDocument(doc: CRDTDocument): void {
 		void this._extensions.deactivateAll(this);
 		this._teardownObservation();
-		this._crdtDoc = doc;
-		this._doc = this._createPenDocument(doc);
+		this._releaseSession?.();
+		this._releaseSession = null;
+		this._bindSession(
+			createDocumentSession({
+				adapter: this._adapter,
+				document: doc,
+				destroyWhenIdle: true,
+			}),
+		);
 		this._clientId = this._adapter.getClientId(this._crdtDoc);
-		this._awareness?.destroy();
-		this._awareness = this._adapter.createAwareness
-			? this._adapter.createAwareness(this._crdtDoc)
-			: null;
 
 		this._engine = new SchemaEngineImpl(
 			this._registry,
@@ -608,8 +627,9 @@ class EditorImpl implements Editor {
 
 	destroy(): void {
 		void this._extensions.deactivateAll(this);
-		this._awareness?.destroy();
 		this._teardownObservation();
+		this._releaseSession?.();
+		this._releaseSession = null;
 		this._emitter.removeAllListeners();
 	}
 
@@ -648,6 +668,28 @@ class EditorImpl implements Editor {
 
 	private _refreshCoreSlots(): void {
 		this._slots.set("core:engine", this._engine);
+	}
+
+	private _bindSession(
+		session: DocumentSession,
+		scopeId?: string,
+	): void {
+		this._documentSession = session;
+		const scope =
+			(scopeId ? session.getScope(scopeId) : null) ?? session.rootScope;
+		this._documentScope = scope;
+		this._crdtDoc = scope.doc;
+		this._doc = this._createPenDocument(scope.doc);
+		this._awareness = session.getAwareness(scope.id);
+		if (
+			"attachEditor" in session &&
+			typeof (session as { attachEditor?: () => Unsubscribe }).attachEditor ===
+				"function"
+		) {
+			this._releaseSession = (
+				session as { attachEditor: () => Unsubscribe }
+			).attachEditor();
+		}
 	}
 
 	private _refreshUndoManager(): void {
@@ -699,6 +741,7 @@ class EditorImpl implements Editor {
 			origin: event.origin,
 			affectedBlocks: [...event.affectedBlocks],
 			blockRevisions,
+			scope: this._documentScope,
 		};
 	}
 
@@ -711,13 +754,21 @@ class EditorImpl implements Editor {
 	}
 
 	private _wireObservation(): void {
-		this._unsubObserve = this._adapter.observe(
-			this._crdtDoc,
-			(event: CRDTEvent) => {
-				if (this._pipeline.suppressObserver) return;
-				this._dispatchCRDTEvent(event);
-			},
-		);
+		if (this._documentSession) {
+			this._unsubObserve = this._documentSession.observe(
+				this._documentScope.id,
+				(event: CRDTEvent) => {
+					if (this._pipeline.suppressObserver) return;
+					this._dispatchCRDTEvent(event);
+				},
+			);
+			return;
+		}
+
+		this._unsubObserve = this._adapter.observe(this._crdtDoc, (event: CRDTEvent) => {
+			if (this._pipeline.suppressObserver) return;
+			this._dispatchCRDTEvent(event);
+		});
 	}
 
 	private _teardownObservation(): void {

@@ -6,6 +6,7 @@ import {
   BLOCKS,
   BLOCK_ORDER,
   METADATA,
+  SUBDOCUMENT,
   createYjsDocument,
   initBlockMap,
   isYjsCRDTDocument,
@@ -108,6 +109,19 @@ describe("document", () => {
       const block = doc.penDocument.blocks.get("b3")!;
       expect(block.get("children")).toBeInstanceOf(Y.Array);
       expect(block.has("content")).toBe(false);
+      expect(block.has("tableContent")).toBe(false);
+    });
+
+    it("creates subdocument blocks with a nested Y.Doc", () => {
+      const doc = createYjsDocument(adapter);
+      doc.ydoc.transact(() => {
+        initBlockMap(doc.penDocument.blocks, "b-sub", "subdocument", "subdocument");
+      });
+
+      const block = doc.penDocument.blocks.get("b-sub")!;
+      expect(block.get(SUBDOCUMENT)).toBeInstanceOf(Y.Doc);
+      expect(block.has("content")).toBe(false);
+      expect(block.has("children")).toBe(false);
       expect(block.has("tableContent")).toBe(false);
     });
 

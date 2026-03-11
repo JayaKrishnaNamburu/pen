@@ -5,6 +5,7 @@ export {
   isYjsCRDTDocument,
   wrapYjsDocument,
   validateDocument,
+  SUBDOCUMENT,
 } from "./document";
 export type {
   BlockContentType,

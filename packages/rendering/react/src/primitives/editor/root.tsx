@@ -281,6 +281,11 @@ function shouldHandleEditorKeyboardEvent(
 	editor: Editor,
 	event: KeyboardEvent,
 ): boolean {
+	const targetRoot = getClosestEditorRoot(event.target);
+	if (targetRoot && targetRoot !== root) {
+		return false;
+	}
+
 	if (isTextEntryTarget(event.target)) {
 		const target = event.target;
 		if (!(target instanceof Node) || !root.contains(target)) {
@@ -290,6 +295,11 @@ function shouldHandleEditorKeyboardEvent(
 
 	const ownerDocument = root.ownerDocument;
 	const activeElement = ownerDocument?.activeElement;
+	const activeRoot = getClosestEditorRoot(activeElement);
+	if (activeRoot && activeRoot !== root) {
+		return false;
+	}
+
 	if (activeElement instanceof Node && root.contains(activeElement)) {
 		if (isTextEntryTarget(activeElement)) {
 			const selection = editor.selection;
@@ -323,6 +333,15 @@ function shouldHandleEditorKeyboardEvent(
 	}
 
 	return false;
+}
+
+function getClosestEditorRoot(target: EventTarget | null): HTMLElement | null {
+	if (!(target instanceof Node)) {
+		return null;
+	}
+	const element =
+		target instanceof HTMLElement ? target : target.parentElement;
+	return element?.closest("[data-pen-editor-root]") as HTMLElement | null;
 }
 
 function isTextEntryTarget(target: EventTarget | null): boolean {

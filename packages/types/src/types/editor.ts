@@ -6,6 +6,8 @@ import type {
 	CRDTEvent,
 	PenDocument,
 	Awareness,
+	DocumentSession,
+	DocumentScope,
 } from "./crdt";
 import type { DocumentOp, OpOrigin, ApplyOptions } from "./ops";
 import type { DecorationSet } from "./decorations";
@@ -63,6 +65,7 @@ export interface DocumentCommitEvent {
 	origin: OpOrigin;
 	affectedBlocks: string[];
 	blockRevisions: Readonly<Record<string, number>>;
+	scope?: DocumentScope;
 }
 
 // ── Schema Engine ───────────────────────────────────────────
@@ -94,7 +97,8 @@ export interface DocumentValidationError {
 		| "ORPHAN_BLOCK"
 		| "DUPLICATE_BLOCK_ORDER"
 		| "UNKNOWN_CONTENT_TYPE"
-		| "MISSING_BLOCK_MAP_KEY";
+		| "MISSING_BLOCK_MAP_KEY"
+		| "INVALID_SUBDOCUMENT";
 	blockId?: string;
 	message: string;
 	severity: "error" | "warning";
@@ -128,6 +132,9 @@ export interface CreateEditorOptions {
 	without?: string[];
 	crdt?: CRDTAdapter;
 	assets?: AssetProvider;
+	document?: CRDTDocument;
+	documentSession?: DocumentSession;
+	documentScopeId?: string;
 }
 
 // ── Command Context ─────────────────────────────────────────
@@ -154,6 +161,7 @@ export interface Editor {
 	readonly documentState: DocumentState;
 	readonly internals: EditorInternals;
 	readonly clientId: number;
+	readonly documentScope: DocumentScope;
 
 	blocks(type?: string): Iterable<BlockHandle>;
 	getBlock(blockId: string): BlockHandle | null;
@@ -211,6 +219,9 @@ export interface EditorInternals {
 	readonly doc: PenDocument;
 	readonly engine: SchemaEngine;
 	readonly awareness: Awareness | null;
+	readonly documentSession: DocumentSession | null;
+	readonly documentScope: DocumentScope;
+	readonly viewId: string;
 	emit<K extends keyof PenEventMap>(
 		event: K,
 		...args: Parameters<PenEventMap[K]>

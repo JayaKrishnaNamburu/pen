@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { processStream } from "@pen/delta-stream";
 import { inputRulesExtension } from "@pen/input-rules";
+import { yjsAdapter } from "@pen/crdt-yjs";
 import type { PenStreamPart } from "@pen/types";
 
-import { createEditor, defineExtension } from "../index";
+import { createDocumentSession, createEditor, defineExtension } from "../index";
 
 async function* createStream(parts: PenStreamPart[]) {
 	for (const part of parts) {
@@ -22,6 +23,102 @@ function visibleText(text: string): string {
 }
 
 describe("@pen/core createEditor", () => {
+	it("supports multiple editors sharing one document session", () => {
+		const session = createDocumentSession({
+			adapter: yjsAdapter(),
+		});
+		const editorA = createEditor({
+			documentSession: session,
+			without: ["document-ops", "delta-stream", "undo"],
+		});
+		const editorB = createEditor({
+			documentSession: session,
+			without: ["document-ops", "delta-stream", "undo"],
+		});
+		const blockId = editorA.firstBlock()!.id;
+
+		editorA.apply([
+			{
+				type: "insert-text",
+				blockId,
+				offset: 0,
+				text: "Shared",
+			},
+		]);
+
+		expect(editorB.getBlock(blockId)?.textContent()).toBe("Shared");
+		expect(editorA.documentScope.id).toBe(editorB.documentScope.id);
+		expect(editorA.internals.documentSession).toBe(session);
+		expect(editorB.internals.documentSession).toBe(session);
+
+		editorA.destroy();
+		editorB.apply([
+			{
+				type: "insert-text",
+				blockId,
+				offset: 6,
+				text: " doc",
+			},
+		]);
+
+		expect(editorB.getBlock(blockId)?.textContent()).toBe("Shared doc");
+
+		editorB.destroy();
+		session.destroy();
+	});
+
+	it("discovers subdocument scopes and lets nested editors edit them", () => {
+		const session = createDocumentSession({
+			adapter: yjsAdapter(),
+		});
+		const rootEditor = createEditor({
+			documentSession: session,
+			without: ["document-ops", "delta-stream", "undo"],
+		});
+
+		rootEditor.apply([
+			{
+				type: "insert-block",
+				blockId: "subdoc-block",
+				blockType: "subdocument",
+				props: { title: "Nested" },
+				position: "last",
+			},
+		]);
+
+		const childScope = session.getScopeForBlock("subdoc-block");
+		expect(childScope).not.toBeNull();
+		expect(rootEditor.getBlock("subdoc-block")?.props.subdocumentGuid).toBe(
+			childScope?.guid,
+		);
+
+		const childEditor = createEditor({
+			documentSession: session,
+			documentScopeId: childScope!.id,
+			without: ["document-ops", "delta-stream", "undo"],
+		});
+		const childBlockId = childEditor.firstBlock()!.id;
+
+		childEditor.apply([
+			{
+				type: "insert-text",
+				blockId: childBlockId,
+				offset: 0,
+				text: "Nested content",
+			},
+		]);
+
+		expect(childEditor.getBlock(childBlockId)?.textContent()).toBe(
+			"Nested content",
+		);
+		expect(childEditor.documentScope.parentId).toBe(rootEditor.documentScope.id);
+		expect(childEditor.documentScope.ownerBlockId).toBe("subdoc-block");
+
+		childEditor.destroy();
+		rootEditor.destroy();
+		session.destroy();
+	});
+
 	it("creates a working editor with default schema and extensions", () => {
 		const editor = createEditor();
 

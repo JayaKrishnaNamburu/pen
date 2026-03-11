@@ -1596,3 +1596,19 @@ No dependency on `y-websocket` — the WebSocket provider reimplements the wire 
 24. Malformed sync payloads are dropped and surfaced via diagnostics without crashing the editor.
 25. A malformed remote CRDT update received via WebSocket does not crash the editor. It emits a `crdt:diagnostic` event and the sync session continues.
 26. After a remote merge that introduces an orphan block (in `blocks` but not `blockOrder`), the `DocumentHealthMonitor` detects and reports the inconsistency.
+
+## Runtime Update: Awareness and Document Scope
+
+Collaboration state is now defined per document scope, not per mounted editor root.
+
+Rules:
+
+- multiple local `Editor` views attached to the same `DocumentSession` share the same awareness instance for that scope
+- mounting two local views must not present the same human as two separate collaborators
+- child subdocuments are independent scopes and may publish their own awareness when they are synced independently
+
+Selection remains v1-local:
+
+- remote cursor and remote selection payloads still target one document scope at a time
+- if a product needs parent-routed awareness for nested docs, the payload must include explicit scope metadata
+- cross-subdocument remote text selections are out of scope for the current model

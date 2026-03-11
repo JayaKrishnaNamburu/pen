@@ -23,6 +23,10 @@ export { suggestion } from "./schema/system-marks/suggestion";
 
 // Editor runtime
 export { createEditor } from "./editor/editor";
+export {
+  createDocumentSession,
+  DocumentSessionImpl,
+} from "./editor/documentSession";
 export { EventEmitter } from "./editor/events";
 export {
   createDecorationSet,

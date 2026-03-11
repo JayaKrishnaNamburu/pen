@@ -3654,3 +3654,17 @@ These issues were identified during pre-build review and must be addressed when 
 11. ~~**`EditorImpl.destroy()` must call `awareness?.destroy()`.**~~ Fixed inline — awareness is destroyed after extensions are deactivated but before the CRDT observer is removed, ensuring extensions can still read awareness state during their `deactivate` hooks.
 
 12. **`importer-utils.ts` must be implemented in this wave.** Wave 4's markdown and HTML importers both depend on `blocksToOps()` and `PendingBlock` from `@pen/core/importer-utils.ts`. This module converts an array of `PendingBlock` objects (type, props, content, children) into `DocumentOp[]` (insert-block + insert-text ops). Must be implemented and exported from `@pen/core` before Wave 4 can begin.
+
+## Runtime Update: Editor Views and Sessions
+
+The editor core now binds to a `DocumentSession` instead of implicitly owning the lifetime of one CRDT document:
+
+- `createEditor({ documentSession, documentScopeId })` attaches a new editor view to an existing logical document session
+- `editor.documentScope` identifies the root or subdocument scope the view is editing
+- `editor.internals.documentSession` exposes the shared session for advanced renderers and extensions
+
+This means:
+
+- two editor views can share one logical root document without destroying each other
+- nested editors can bind directly to child subdocument scopes
+- `loadDocument()` still works, but it rebinds the editor to a fresh standalone session for the new document

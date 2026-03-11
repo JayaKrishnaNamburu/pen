@@ -92,6 +92,21 @@ export function EditorContent(props: EditorContentProps) {
 	useEffect(() => {
 		const gestureEl = contentRef.current;
 		if (!gestureEl || readonly || !fieldEditor) return;
+		const currentEditorRoot = gestureEl.closest(
+			"[data-pen-editor-root]",
+		) as HTMLElement | null;
+
+		const isWithinNestedEditorRoot = (target: EventTarget | null): boolean => {
+			if (!(target instanceof Node)) {
+				return false;
+			}
+			const element =
+				target instanceof HTMLElement ? target : target.parentElement;
+			const targetRoot = element?.closest(
+				"[data-pen-editor-root]",
+			) as HTMLElement | null;
+			return targetRoot != null && targetRoot !== currentEditorRoot;
+		};
 
 		const resolveClickedBlockId = (event: MouseEvent): string | null => {
 			const rawTarget = event.target;
@@ -102,6 +117,7 @@ export function EditorContent(props: EditorContentProps) {
 						? rawTarget.parentElement
 						: null;
 			if (!target) return null;
+			if (isWithinNestedEditorRoot(target)) return null;
 
 			let blockEl: HTMLElement | null = target;
 			while (blockEl && blockEl !== gestureEl) {
@@ -199,6 +215,7 @@ export function EditorContent(props: EditorContentProps) {
 						? rawTarget.parentElement
 						: null;
 			if (!target) return null;
+			if (isWithinNestedEditorRoot(target)) return null;
 
 			const cellEl = target.closest(
 				`[${DATA_ATTRS.tableCell}]`,
@@ -225,6 +242,7 @@ export function EditorContent(props: EditorContentProps) {
 						? rawTarget.parentElement
 						: null;
 			if (!target) return false;
+			if (isWithinNestedEditorRoot(target)) return true;
 
 			return !!target.closest("[data-pen-ignore-pointer-gesture]");
 		};

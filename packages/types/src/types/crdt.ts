@@ -63,7 +63,13 @@ export interface CRDTAdapter {
     doc: CRDTDocument,
     blockId: string,
     blockType: string,
-    contentType: "inline" | "nested" | "table" | "database" | "none",
+    contentType:
+      | "inline"
+      | "nested"
+      | "table"
+      | "database"
+      | "subdocument"
+      | "none",
   ): unknown;
 
   // Attribution (per-character authorship)
@@ -77,6 +83,52 @@ export interface AttributionRange {
   offset: number;
   length: number;
   clientId: number;
+}
+
+export type DocumentScopeKind = "root" | "subdocument";
+
+export interface DocumentScopeInfo {
+  id: string;
+  guid: string;
+  kind: DocumentScopeKind;
+  parentId: string | null;
+  ownerBlockId: string | null;
+}
+
+export interface DocumentScope extends DocumentScopeInfo {
+  readonly doc: CRDTDocument;
+}
+
+export interface CreateSubdocumentOptions {
+  scopeId?: string;
+  guid?: string;
+  autoLoad?: boolean;
+}
+
+export interface DocumentSession {
+  readonly adapter: CRDTAdapter;
+  readonly rootScope: DocumentScope;
+
+  getScope(scopeId: string): DocumentScope | null;
+  getScopeByGuid(guid: string): DocumentScope | null;
+  getScopeForBlock(blockId: string): DocumentScope | null;
+  listScopes(): readonly DocumentScope[];
+
+  getAwareness(scopeId?: string): Awareness | null;
+
+  observe(
+    scopeId: string,
+    callback: (event: CRDTEvent) => void,
+  ): Unsubscribe;
+  observeAll(callback: (event: CRDTEvent) => void): Unsubscribe;
+
+  createSubdocument(
+    blockId: string,
+    options?: CreateSubdocumentOptions,
+  ): DocumentScope | null;
+  loadSubdocument(scopeId: string): void;
+
+  destroy(): void;
 }
 
 // ── CRDT Document ───────────────────────────────────────────
@@ -170,4 +222,5 @@ export interface CRDTEvent {
   readonly affectedBlocks: readonly string[];
   ops: readonly DocumentOp[];
   timestamp: number;
+  scope?: DocumentScopeInfo;
 }

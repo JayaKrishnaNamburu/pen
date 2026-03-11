@@ -130,6 +130,7 @@ export {
 	CalloutRenderer,
 	ToggleRenderer,
 	BlockquoteRenderer,
+	SubdocumentRenderer,
 	DefaultRenderer,
 } from "./renderers/index";
 

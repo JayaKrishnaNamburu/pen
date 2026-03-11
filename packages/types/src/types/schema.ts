@@ -24,7 +24,13 @@ export type PropSchema = {
 
 // ── Content type ────────────────────────────────────────────
 
-export type ContentType = "inline" | "none" | "table" | "database" | BlockSchema[];
+export type ContentType =
+  | "inline"
+  | "none"
+  | "table"
+  | "database"
+  | "subdocument"
+  | BlockSchema[];
 
 export function isNestedContent(content: ContentType): content is BlockSchema[] {
   return Array.isArray(content);
@@ -78,6 +84,7 @@ export type FieldEditorType =
   | "code"
   | "table"
   | "database"
+  | "subdocument"
   | "none";
 
 export interface BlockSchema<

@@ -11,6 +11,7 @@ import { DividerRenderer } from "./divider";
 import { CalloutRenderer } from "./callout";
 import { ToggleRenderer } from "./toggle";
 import { BlockquoteRenderer } from "./blockquote";
+import { SubdocumentRenderer } from "./subdocument";
 import { DefaultRenderer } from "./defaultRenderer";
 
 const RENDERER_MAP: Record<string, BlockRenderer> = {
@@ -26,6 +27,7 @@ const RENDERER_MAP: Record<string, BlockRenderer> = {
   callout: CalloutRenderer,
   toggle: ToggleRenderer,
   blockquote: BlockquoteRenderer,
+  subdocument: SubdocumentRenderer,
 };
 
 export function resolveRenderer(blockType: string): BlockRenderer {
@@ -52,6 +54,7 @@ export {
   CalloutRenderer,
   ToggleRenderer,
   BlockquoteRenderer,
+  SubdocumentRenderer,
   DefaultRenderer,
 };
 
