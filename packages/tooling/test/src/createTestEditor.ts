@@ -11,19 +11,16 @@ export function createTestEditor(options?: TestEditorOptions): TestEditor {
   const adapter = yjsAdapter();
 
   let ydoc: Y.Doc;
-  let doc: ReturnType<typeof wrapYjsDocument>["penDocument"];
   let crdtDoc: ReturnType<typeof wrapYjsDocument>;
 
   if (options?.doc) {
     ydoc = options.doc;
     const wrapped = wrapYjsDocument(adapter, ydoc);
-    doc = wrapped.penDocument;
     crdtDoc = wrapped;
   } else {
     const result = createTestDocument(options?.blocks ?? []);
     ydoc = result.ydoc;
-    doc = result.doc as any;
-    crdtDoc = result.crdtDoc as any;
+    crdtDoc = result.crdtDoc as ReturnType<typeof wrapYjsDocument>;
   }
 
   const editor = createEditor({

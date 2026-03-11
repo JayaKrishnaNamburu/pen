@@ -31,8 +31,8 @@ export const schemaBenchmarks: Array<{
   {
     name: "normalize 500-block document",
     fn(b) {
-      const { doc, adapter } = createLargeDocument(500);
-      const penDoc = (doc as any).penDocument;
+      const { doc } = createLargeDocument(500);
+      const penDoc = doc.penDocument;
       const engine = new SchemaEngineImpl(defaultSchema, penDoc, doc);
 
       b.start();

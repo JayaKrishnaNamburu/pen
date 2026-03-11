@@ -62,17 +62,17 @@ describe("@pen/bench fixtures", () => {
   // AC 18: createLargeDocument(500) produces valid 500-block document
   it("createLargeDocument produces a document with correct block count", () => {
     const { doc } = createLargeDocument(100);
-    const penDoc = (doc as any).penDocument;
+    const penDoc = doc.penDocument;
     expect(penDoc.blockOrder.length).toBe(100);
   });
 
   it("createLargeDocument produces mixed block types", () => {
     const { doc } = createLargeDocument(20);
-    const penDoc = (doc as any).penDocument;
+    const penDoc = doc.penDocument;
     const types = new Set<string>();
     for (let i = 0; i < penDoc.blockOrder.length; i++) {
       const id = penDoc.blockOrder.get(i);
-      const blockMap = penDoc.blocks.get(id) as any;
+      const blockMap = penDoc.blocks.get(id);
       if (blockMap) types.add(blockMap.get("type") as string);
     }
     expect(types.has("paragraph")).toBe(true);

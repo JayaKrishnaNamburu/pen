@@ -2,11 +2,13 @@ import { describe, it, expect, vi } from "vitest";
 import { directTransport } from "../directTransport";
 import type { PenStreamPart, PenStreamRequest, ToolServer } from "@pen/core";
 
+type ToolExecutionContext = Parameters<ToolServer["executeTool"]>[2];
+
 function createMockToolServer(
   handler: (
     name: string,
     input: unknown,
-    ctx: any,
+    ctx: ToolExecutionContext,
   ) => Promise<unknown> | AsyncIterable<unknown>,
 ): ToolServer {
   return {

@@ -13,6 +13,12 @@ import {
   executeMCPTool,
 } from "../tool-bridge";
 import { createMCPRequestHandler, createMCPServer } from "../server";
+import type { MCPNodeRequest, MCPNodeResponse } from "../types";
+
+type MockResponse = MCPNodeResponse & {
+  statusCode: number;
+  body: string;
+};
 
 // ── Helpers ─────────────────────────────────────────────────
 
@@ -46,7 +52,9 @@ function createMockToolServer(
 
 function createMockToolContext(): ToolContext {
   return {
-    editor: null as unknown as Editor,
+    get editor(): Editor {
+      throw new Error("Mock tool context does not expose an editor");
+    },
     docId: "test",
     emit: vi.fn(),
     insertBlock: vi.fn(() => "block-1"),
@@ -64,24 +72,24 @@ function createMockRequest(overrides: Partial<Record<string, unknown>> = {}) {
     headers: {},
     url: "/mcp",
     ...overrides,
-  } as any;
+  } as unknown as MCPNodeRequest;
 }
 
-function createMockResponse() {
+function createMockResponse(): MockResponse {
   const response = {
     statusCode: 200,
     body: "",
-    writeHead: vi.fn(function writeHead(this: any, statusCode: number) {
-      this.statusCode = statusCode;
-      return this;
+    writeHead: vi.fn((statusCode: number) => {
+      response.statusCode = statusCode;
+      return response;
     }),
-    end: vi.fn(function end(this: any, body?: string) {
-      this.body = body ?? "";
-      return this;
+    end: vi.fn((body?: string) => {
+      response.body = body ?? "";
+      return response;
     }),
   };
 
-  return response as any;
+  return response as unknown as MockResponse;
 }
 
 function echoTool(): ToolDefinition {
@@ -308,7 +316,7 @@ describe("@pen/mcp tool-bridge", () => {
     const def: ToolDefinition = {
       name: "simple",
       description: "Simple tool",
-      inputSchema: { type: "string" } as any,
+      inputSchema: { type: "string" } as unknown as ToolDefinition["inputSchema"],
       handler: async (input) => input,
     };
 

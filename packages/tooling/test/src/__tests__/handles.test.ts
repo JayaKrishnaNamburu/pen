@@ -9,6 +9,9 @@ import {
 } from "../index";
 import { yjsAdapter, initBlockMap, wrapYjsDocument } from "@pen/crdt-yjs";
 
+type YBlockMap = Y.Map<unknown>;
+type YBlocksMap = Y.Map<YBlockMap>;
+
 beforeEach(() => {
   resetTestIdCounter();
 });
@@ -44,12 +47,12 @@ describe("BlockHandle", () => {
       const ydoc = new Y.Doc();
       const adapter = yjsAdapter();
       const blockOrder = ydoc.getArray<string>("blockOrder");
-      const blocksMap = ydoc.getMap("blocks");
+      const blocksMap = ydoc.getMap("blocks") as YBlocksMap;
       ydoc.getMap("apps");
       ydoc.getMap("metadata");
 
       ydoc.transact(() => {
-        initBlockMap(blocksMap as any, "p1", "paragraph", "inline");
+        initBlockMap(blocksMap, "p1", "paragraph", "inline");
         blockOrder.push(["p1"]);
         const content = (blocksMap.get("p1") as Y.Map<unknown>).get(
           "content",
@@ -173,13 +176,13 @@ describe("BlockHandle", () => {
       const ydoc = new Y.Doc();
       const adapter = yjsAdapter();
       const blockOrder = ydoc.getArray<string>("blockOrder");
-      const blocksMap = ydoc.getMap("blocks");
+      const blocksMap = ydoc.getMap("blocks") as YBlocksMap;
       ydoc.getMap("apps");
       ydoc.getMap("metadata");
 
       ydoc.transact(() => {
-        initBlockMap(blocksMap as any, "toggle1", "toggle", "inline");
-        initBlockMap(blocksMap as any, "child1", "paragraph", "inline");
+        initBlockMap(blocksMap, "toggle1", "toggle", "inline");
+        initBlockMap(blocksMap, "child1", "paragraph", "inline");
         const childProps = (blocksMap.get("child1") as Y.Map<unknown>).get(
           "props",
         ) as Y.Map<unknown>;
@@ -206,14 +209,14 @@ describe("BlockHandle", () => {
       const ydoc = new Y.Doc();
       const adapter = yjsAdapter();
       const blockOrder = ydoc.getArray<string>("blockOrder");
-      const blocksMap = ydoc.getMap("blocks");
+      const blocksMap = ydoc.getMap("blocks") as YBlocksMap;
       ydoc.getMap("apps");
       ydoc.getMap("metadata");
 
       ydoc.transact(() => {
-        initBlockMap(blocksMap as any, "toggle1", "toggle", "inline");
-        initBlockMap(blocksMap as any, "p1", "paragraph", "inline");
-        initBlockMap(blocksMap as any, "p2", "paragraph", "inline");
+        initBlockMap(blocksMap, "toggle1", "toggle", "inline");
+        initBlockMap(blocksMap, "p1", "paragraph", "inline");
+        initBlockMap(blocksMap, "p2", "paragraph", "inline");
         const p1Props = (blocksMap.get("p1") as Y.Map<unknown>).get(
           "props",
         ) as Y.Map<unknown>;
@@ -237,13 +240,13 @@ describe("BlockHandle", () => {
       const ydoc = new Y.Doc();
       const adapter = yjsAdapter();
       const blockOrder = ydoc.getArray<string>("blockOrder");
-      const blocksMap = ydoc.getMap("blocks");
+      const blocksMap = ydoc.getMap("blocks") as YBlocksMap;
       ydoc.getMap("apps");
       ydoc.getMap("metadata");
 
       ydoc.transact(() => {
-        initBlockMap(blocksMap as any, "toggle1", "toggle", "inline");
-        initBlockMap(blocksMap as any, "child1", "paragraph", "inline");
+        initBlockMap(blocksMap, "toggle1", "toggle", "inline");
+        initBlockMap(blocksMap, "child1", "paragraph", "inline");
         const childProps = (blocksMap.get("child1") as Y.Map<unknown>).get(
           "props",
         ) as Y.Map<unknown>;
@@ -279,12 +282,12 @@ describe("BlockHandle", () => {
       const ydoc = new Y.Doc();
       const adapter = yjsAdapter();
       const blockOrder = ydoc.getArray<string>("blockOrder");
-      const blocksMap = ydoc.getMap("blocks");
+      const blocksMap = ydoc.getMap("blocks") as YBlocksMap;
       ydoc.getMap("apps");
       ydoc.getMap("metadata");
 
       ydoc.transact(() => {
-        initBlockMap(blocksMap as any, "p1", "paragraph", "inline");
+        initBlockMap(blocksMap, "p1", "paragraph", "inline");
         blockOrder.push(["p1"]);
         const content = (blocksMap.get("p1") as Y.Map<unknown>).get(
           "content",
@@ -326,12 +329,12 @@ describe("BlockHandle", () => {
       const ydoc = new Y.Doc();
       const adapter = yjsAdapter();
       const blockOrder = ydoc.getArray<string>("blockOrder");
-      const blocksMap = ydoc.getMap("blocks");
+      const blocksMap = ydoc.getMap("blocks") as YBlocksMap;
       ydoc.getMap("apps");
       ydoc.getMap("metadata");
 
       ydoc.transact(() => {
-        initBlockMap(blocksMap as any, "p1", "paragraph", "inline");
+        initBlockMap(blocksMap, "p1", "paragraph", "inline");
         blockOrder.push(["p1"]);
         const meta = (blocksMap.get("p1") as Y.Map<unknown>).get(
           "meta",
@@ -389,7 +392,7 @@ describe("AppHandle", () => {
     ydoc.getMap("metadata");
 
     ydoc.transact(() => {
-      initBlockMap(blocksMap as any, "p1", "paragraph", "inline");
+      initBlockMap(blocksMap as YBlocksMap, "p1", "paragraph", "inline");
       blockOrder.push(["p1"]);
 
       const appMap = new Y.Map<unknown>();

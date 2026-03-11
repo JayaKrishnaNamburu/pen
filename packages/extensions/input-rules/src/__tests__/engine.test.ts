@@ -1,7 +1,29 @@
 import { describe, it, expect } from "vitest";
 import { InputRuleEngine } from "../engine";
 import { defaultBlockRules } from "../defaultRules";
-import type { InputRule } from "@pen/types";
+import type { Editor, InputRule } from "@pen/types";
+
+type InputRuleTestEditor = {
+	getBlock(): {
+		type: string;
+		textContent(): string;
+	};
+	selection:
+		| {
+				type: "text";
+				anchor: { blockId: string; offset: number };
+				focus: { blockId: string; offset: number };
+				isCollapsed: boolean;
+		  }
+		| null;
+	schema: {
+		resolve(): {
+			content: "inline";
+			fieldEditor: "richtext" | "code";
+		};
+		resolveInline(): { kind: "mark" } | null;
+	};
+};
 
 function mockEditor(opts: {
 	blockType: string;
@@ -9,7 +31,7 @@ function mockEditor(opts: {
 	cursorOffset?: number;
 }) {
 	const offset = opts.cursorOffset ?? opts.textContent.length;
-	return {
+	const editor = {
 		getBlock: () => ({
 			type: opts.blockType,
 			textContent: () => opts.textContent,
@@ -27,7 +49,9 @@ function mockEditor(opts: {
 			}),
 			resolveInline: () => ({ kind: "mark" }),
 		},
-	} as any;
+	} satisfies InputRuleTestEditor;
+
+	return editor as unknown as Editor;
 }
 
 function mockEditorWithSelection(opts: {
@@ -36,7 +60,7 @@ function mockEditorWithSelection(opts: {
 	anchorOffset: number;
 	focusOffset: number;
 }) {
-	return {
+	const editor = {
 		getBlock: () => ({
 			type: opts.blockType,
 			textContent: () => opts.textContent,
@@ -54,7 +78,9 @@ function mockEditorWithSelection(opts: {
 			}),
 			resolveInline: () => ({ kind: "mark" }),
 		},
-	} as any;
+	} satisfies InputRuleTestEditor;
+
+	return editor as unknown as Editor;
 }
 
 function engineWithDefaults() {
@@ -382,8 +408,8 @@ describe("InputRuleEngine", () => {
 			const editor = {
 				...mockEditor({ blockType: "paragraph", textContent: "#" }),
 				selection: null,
-			} as any;
-			const result = engine.tryMatch(editor, "b1", " ");
+			};
+			const result = engine.tryMatch(editor as unknown as Editor, "b1", " ");
 			expect(result).toBeNull();
 		});
 	});
@@ -416,9 +442,9 @@ describe("InputRuleEngine", () => {
 					}),
 					resolveInline: () => ({ kind: "mark" }),
 				},
-			} as any;
+			} satisfies InputRuleTestEditor;
 
-			expect(engine.tryMatchInline(editor, "b1", "*")).toBeNull();
+			expect(engine.tryMatchInline(editor as unknown as Editor, "b1", "*")).toBeNull();
 		});
 	});
 });

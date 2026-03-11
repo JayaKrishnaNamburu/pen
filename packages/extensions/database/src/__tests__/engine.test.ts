@@ -1,10 +1,38 @@
 import { describe, expect, it, vi } from "vitest";
 import { DatabaseEngine } from "../engine";
+import type { Editor } from "@pen/core";
 import {
 	isContentEditableColumnType,
 	DEFAULT_COLUMNS,
 	type DatabaseRow,
+	type DatabaseDataProvider,
 } from "../types";
+
+type DatabaseEngineTestBlock = {
+	id: string;
+	type: string;
+	props: { title: string; dataSource: string };
+	tableRowCount(): number;
+	tableColumnCount(): number;
+	tableColumns(): Array<{
+		id: string;
+		title: string;
+		type: string;
+		width: number;
+	}>;
+	tableCell(r: number, c: number): {
+		id: string;
+		textContent(): string;
+	};
+};
+
+type DatabaseEngineTestEditor = {
+	getBlock(id: string): DatabaseEngineTestBlock | null;
+	selection: null;
+	apply(): void;
+	selectCell(): void;
+	selectCellRange(): void;
+};
 
 function createMockEditor(rowCount = 3, colCount = 3) {
 	const columns = [
@@ -40,17 +68,20 @@ function createMockEditor(rowCount = 3, colCount = 3) {
 				textContent: () => text,
 			};
 		},
-	};
+	} satisfies DatabaseEngineTestBlock;
 
 	const editor = {
 		getBlock: (id: string) => (id === "block-1" ? block : null),
 		selection: null,
-		apply: () => {},
-		selectCell: () => {},
-		selectCellRange: () => {},
-	} as any;
+		apply: () => { },
+		selectCell: () => { },
+		selectCellRange: () => { },
+	} satisfies DatabaseEngineTestEditor;
 
-	return { editor, block };
+	return {
+		editor: editor as unknown as Editor,
+		block,
+	};
 }
 
 describe("DatabaseEngine", () => {
@@ -679,8 +710,10 @@ describe("DatabaseEngine data provider", () => {
 		const engine = new DatabaseEngine(editor, "block-1");
 		expect(engine.dataProvider).toBeNull();
 
-		const provider = { fetch: async () => ({ rows: [], totalRows: 0, pageIndex: 0, pageSize: 50 }) };
-		engine.setDataProvider(provider as any);
+		const provider: DatabaseDataProvider = {
+			fetch: async () => ({ rows: [], totalRows: 0, pageIndex: 0, pageSize: 50 }),
+		};
+		engine.setDataProvider(provider);
 		expect(engine.dataProvider).toBe(provider);
 	});
 

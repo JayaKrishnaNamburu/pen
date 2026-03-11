@@ -6,6 +6,7 @@ import type { TestBlock } from "./types";
 
 const NONE_CONTENT_TYPES = new Set(["image", "divider"]);
 const TABLE_CONTENT_TYPES = new Set(["table"]);
+type YBlocksMap = Y.Map<Y.Map<unknown>>;
 
 function resolveContentType(
   block: TestBlock,
@@ -17,12 +18,12 @@ function resolveContentType(
 }
 
 function populateBlock(
-  blocksMap: Y.Map<unknown>,
+  blocksMap: YBlocksMap,
   block: TestBlock,
   id: string,
 ): void {
   const contentType = resolveContentType(block);
-  initBlockMap(blocksMap as any, id, block.type, contentType);
+  initBlockMap(blocksMap, id, block.type, contentType);
   const blockMap = blocksMap.get(id) as Y.Map<unknown>;
 
   if (block.props && Object.keys(block.props).length > 0) {
@@ -45,7 +46,7 @@ export function populateYDoc(
   blocks: TestBlock[],
 ): void {
   const blockOrder = ydoc.getArray<string>("blockOrder");
-  const blocksMap = ydoc.getMap("blocks");
+  const blocksMap = ydoc.getMap("blocks") as YBlocksMap;
   ydoc.getMap("apps");
   ydoc.getMap("metadata");
 
@@ -62,7 +63,7 @@ export function populateYDoc(
           const childId = child.id ?? generateTestId();
           childrenArr.push([childId]);
           const childContentType = resolveContentType(child);
-          initBlockMap(blocksMap as any, childId, child.type, childContentType);
+          initBlockMap(blocksMap, childId, child.type, childContentType);
           const childMap = blocksMap.get(childId) as Y.Map<unknown>;
           if (child.props && Object.keys(child.props).length > 0) {
             const childPropsMap = childMap.get("props") as Y.Map<unknown>;
@@ -95,7 +96,7 @@ export function createTestDocument(blocks: TestBlock[]): {
   const crdtDoc = wrapYjsDocument(adapter, ydoc);
   return {
     ydoc,
-    doc: (crdtDoc as any).penDocument,
+    doc: crdtDoc.penDocument,
     crdtDoc,
   };
 }

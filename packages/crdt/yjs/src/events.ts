@@ -11,9 +11,11 @@ import * as Y from "yjs";
 import { APPS, BLOCKS, BLOCK_ORDER } from "./document";
 import type { YjsCRDTDocument } from "./document";
 
-// Yjs internal type used as keys in txn.changed
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyAbstractType = Y.AbstractType<any>;
+// Yjs internal types inferred from Yjs APIs to avoid leaking `any`.
+type AnyAbstractType = Parameters<Y.Transaction["changed"]["get"]>[0];
+type DeepObserveEvents = Parameters<
+  Parameters<Y.Map<unknown>["observeDeep"]>[0]
+>[0];
 
 const KNOWN_ORIGINS: ReadonlySet<string> = new Set([
   "user",
@@ -58,7 +60,7 @@ function resolveBlockId(
     if (item.parent === blocksMap && item.parentSub != null) {
       return item.parentSub;
     }
-    current = item.parent as AnyAbstractType | null;
+    current = item.parent as unknown as AnyAbstractType | null;
   }
   return null;
 }
@@ -94,7 +96,7 @@ function reconstructOpsFromBlocksMap(
   blocksMap: Y.Map<Y.Map<unknown>>,
 ): DocumentOp[] {
   const ops: DocumentOp[] = [];
-  const blocksChanges = txn.changed.get(blocksMap as AnyAbstractType);
+  const blocksChanges = txn.changed.get(blocksMap as unknown as AnyAbstractType);
   if (!blocksChanges) return ops;
 
   for (const key of blocksChanges) {
@@ -191,7 +193,7 @@ function reconstructOpsFromAppsMap(
   appsMap: Y.Map<Y.Map<unknown>>,
 ): DocumentOp[] {
   const ops: DocumentOp[] = [];
-  const appsChanges = txn.changed.get(appsMap as AnyAbstractType);
+  const appsChanges = txn.changed.get(appsMap as unknown as AnyAbstractType);
   if (!appsChanges) return ops;
 
   for (const key of appsChanges) {
@@ -243,11 +245,13 @@ export function createObserver(
 
   let pendingTextDeltas = new Map<string, { delta: unknown[] }>();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const deepHandler = (events: Y.YEvent<any>[]) => {
+  const deepHandler = (events: DeepObserveEvents) => {
     for (const event of events) {
       if (!(event instanceof Y.YTextEvent)) continue;
-      const blockId = resolveBlockId(event.target as AnyAbstractType, blocksMap);
+      const blockId = resolveBlockId(
+        event.target as unknown as AnyAbstractType,
+        blocksMap,
+      );
       if (blockId) {
         pendingTextDeltas.set(blockId, { delta: event.delta });
       }

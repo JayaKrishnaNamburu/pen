@@ -1,6 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { createEditor, blocksToOps } from "@pen/core";
+import { createEditor, blocksToOps, type DocumentOp, type PendingBlock } from "@pen/core";
 import { markdownExporter } from "../exporter";
+
+type InsertTableCellTextOp = Extract<DocumentOp, { type: "insert-table-cell-text" }>;
+type FormatTableCellTextOp = Extract<DocumentOp, { type: "format-table-cell-text" }>;
+type UpdateTableColumnsOp = Extract<DocumentOp, { type: "update-table-columns" }>;
+type DatabaseInsertRowOp = Extract<DocumentOp, { type: "database-insert-row" }>;
+type InsertBlockOp = Extract<DocumentOp, { type: "insert-block" }>;
 
 function editorWithBlocks(ops: Parameters<ReturnType<typeof createEditor>["apply"]>[0]) {
   const editor = createEditor({
@@ -211,7 +217,7 @@ describe("@pen/export-markdown", () => {
           col: 0,
           offset: 0,
           text: "Name",
-        } as any,
+        } as InsertTableCellTextOp,
         {
           type: "insert-table-cell-text",
           blockId: "t1",
@@ -219,7 +225,7 @@ describe("@pen/export-markdown", () => {
           col: 1,
           offset: 0,
           text: "Age",
-        } as any,
+        } as InsertTableCellTextOp,
         {
           type: "insert-table-cell-text",
           blockId: "t1",
@@ -227,7 +233,7 @@ describe("@pen/export-markdown", () => {
           col: 0,
           offset: 0,
           text: "Alice",
-        } as any,
+        } as InsertTableCellTextOp,
         {
           type: "insert-table-cell-text",
           blockId: "t1",
@@ -235,7 +241,7 @@ describe("@pen/export-markdown", () => {
           col: 1,
           offset: 0,
           text: "30",
-        } as any,
+        } as InsertTableCellTextOp,
       ],
     );
 
@@ -263,7 +269,7 @@ describe("@pen/export-markdown", () => {
           col: 0,
           offset: 0,
           text: "a|b",
-        } as any,
+        } as InsertTableCellTextOp,
       ],
     );
 
@@ -291,7 +297,7 @@ describe("@pen/export-markdown", () => {
           col: 0,
           offset: 0,
           text: "Name",
-        } as any,
+        } as InsertTableCellTextOp,
         {
           type: "format-table-cell-text",
           blockId: "t2",
@@ -300,7 +306,7 @@ describe("@pen/export-markdown", () => {
           offset: 0,
           length: 4,
           marks: { bold: true },
-        } as any,
+        } as FormatTableCellTextOp,
       ],
     );
 
@@ -323,13 +329,13 @@ describe("@pen/export-markdown", () => {
           type: "update-table-columns",
           blockId: "db1",
           columns: [{ id: "name", title: "Name", type: "text" }],
-        } as any,
+        } as UpdateTableColumnsOp,
         {
           type: "database-insert-row",
           blockId: "db1",
           rowId: "row-1",
           values: { name: "Alice" },
-        } as any,
+        } as DatabaseInsertRowOp,
         {
           type: "insert-block",
           blockId: "sub-1",
@@ -353,7 +359,7 @@ describe("@pen/export-markdown", () => {
 
 describe("table markdown round-trip", () => {
   it("import → editor → export produces equivalent markdown", () => {
-    const inputBlocks = [
+    const inputBlocks: PendingBlock[] = [
       {
         type: "table",
         props: { hasHeaderRow: true, hasHeaderColumn: false },
@@ -378,13 +384,13 @@ describe("table markdown round-trip", () => {
       },
     ];
 
-    const ops = blocksToOps(inputBlocks as any);
+    const ops = blocksToOps(inputBlocks);
     const editor = createEditor({
       without: ["document-ops", "delta-stream", "undo"],
     });
     editor.apply(ops);
 
-    const tableBlockId = (ops[0] as any).blockId as string;
+    const tableBlockId = (ops[0] as InsertBlockOp).blockId;
     const cell00 = editor.getBlock(tableBlockId)?.tableCell(0, 0);
     const cell01 = editor.getBlock(tableBlockId)?.tableCell(0, 1);
     const cell10 = editor.getBlock(tableBlockId)?.tableCell(1, 0);
@@ -403,7 +409,7 @@ describe("table markdown round-trip", () => {
   });
 
   it("round-trips a 2-column table through import and export", () => {
-    const inputBlocks = [
+    const inputBlocks: PendingBlock[] = [
       {
         type: "table",
         props: { hasHeaderRow: true, hasHeaderColumn: false },
@@ -428,13 +434,13 @@ describe("table markdown round-trip", () => {
       },
     ];
 
-    const ops = blocksToOps(inputBlocks as any);
+    const ops = blocksToOps(inputBlocks);
     const editor = createEditor({
       without: ["document-ops", "delta-stream", "undo"],
     });
     editor.apply(ops);
 
-    const block = editor.getBlock((ops[0] as any).blockId);
+    const block = editor.getBlock((ops[0] as InsertBlockOp).blockId);
     expect(block?.tableRowCount()).toBe(2);
     expect(block?.tableColumnCount()).toBe(2);
 

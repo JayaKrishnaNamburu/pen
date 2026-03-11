@@ -1,10 +1,36 @@
 import { describe, expect, it, vi } from "vitest";
 import { inputRulesExtension } from "../extension";
+import type { DocumentOp, Editor } from "@pen/types";
 
 type BeforeApplyHook = (
-	ops: any[],
+	ops: DocumentOp[],
 	options: { origin?: string },
-) => any[];
+) => DocumentOp[];
+
+type InputRulesExtensionTestEditor = {
+	apply: ReturnType<typeof vi.fn>;
+	getBlock(): {
+		type: string;
+		textContent(): string;
+	};
+	onBeforeApply: ReturnType<typeof vi.fn>;
+	internals: {
+		setSlot: ReturnType<typeof vi.fn>;
+	};
+	selection: {
+		type: "text";
+		anchor: { blockId: string; offset: number };
+		focus: { blockId: string; offset: number };
+		isCollapsed: boolean;
+	};
+	schema: {
+		resolve(): {
+			content: "inline";
+			fieldEditor: "richtext";
+		};
+		resolveInline(): { kind: "mark" };
+	};
+};
 
 function createMockEditor(textContent: string) {
 	let beforeApplyHook: BeforeApplyHook | null = null;
@@ -38,10 +64,10 @@ function createMockEditor(textContent: string) {
 			}),
 			resolveInline: () => ({ kind: "mark" }),
 		},
-	} as any;
+	} satisfies InputRulesExtensionTestEditor;
 
 	return {
-		editor,
+		editor: editor as unknown as Editor,
 		apply,
 		getHook: () => beforeApplyHook,
 	};
@@ -91,7 +117,7 @@ describe("inputRulesExtension", () => {
 			getState: () => undefined,
 		});
 
-		const originalOps = [
+		const originalOps: DocumentOp[] = [
 			{ type: "insert-text", blockId: "b1", offset: 1, text: " " },
 		];
 		const ops = getHook()!(originalOps, { origin: "input-rule" });

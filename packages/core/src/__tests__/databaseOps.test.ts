@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { createEditor } from "../index";
+import type { DocumentOp } from "@pen/types";
+
+type RawDatabaseBlockMap = {
+	get(key: string): unknown;
+};
+
+type LengthLike = {
+	length: number;
+};
 
 function databaseEditor() {
 	const editor = createEditor({
@@ -29,11 +38,16 @@ describe("database core operations", () => {
 		expect(columns.map((column) => column.title)).toEqual(["Name", "Tags", "Done"]);
 		expect(columns.map((column) => column.type)).toEqual(["text", "select", "checkbox"]);
 
-		const blockMap = (editor.internals.doc.blocks as any).get("d1");
+		const blockMap = editor.internals.doc.blocks.get("d1") as
+			| RawDatabaseBlockMap
+			| undefined;
+		if (!blockMap) {
+			throw new Error("Expected database block to exist");
+		}
 		expect(blockMap.get("collectionContent")).toBeUndefined();
-		expect(blockMap.get("tableContent").length).toBe(0);
-		expect(blockMap.get("tableColumns").length).toBe(3);
-		expect(blockMap.get("databaseViews").length).toBe(1);
+		expect((blockMap.get("tableContent") as LengthLike).length).toBe(0);
+		expect((blockMap.get("tableColumns") as LengthLike).length).toBe(3);
+		expect((blockMap.get("databaseViews") as LengthLike).length).toBe(1);
 		expect(typeof blockMap.get("databasePrimaryViewId")).toBe("string");
 		editor.destroy();
 	});
@@ -159,9 +173,14 @@ describe("database core operations", () => {
 			},
 		]);
 
-		const blockMap = (editor.internals.doc.blocks as any).get("d1");
+		const blockMap = editor.internals.doc.blocks.get("d1") as
+			| RawDatabaseBlockMap
+			| undefined;
+		if (!blockMap) {
+			throw new Error("Expected database block to exist");
+		}
 		expect(typeof blockMap.get("tableColumns")).not.toBe("string");
-		expect(blockMap.get("tableColumns").length).toBe(2);
+		expect((blockMap.get("tableColumns") as LengthLike).length).toBe(2);
 		expect(block.databaseActiveView()).toEqual(
 			expect.objectContaining({
 				columnOrder: ["name", "status"],
@@ -591,8 +610,8 @@ describe("database core operations", () => {
 			patch: {
 				type: "number",
 				title: "Name field",
-			} as any,
-		}]);
+			},
+		} as DocumentOp]);
 
 		const block = editor.getBlock("d1")!;
 		expect(block.tableColumns()[0]).toEqual(

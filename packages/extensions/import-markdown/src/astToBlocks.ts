@@ -5,6 +5,7 @@ import type {
   MdastRoot,
   MdastList,
   MdastListItem,
+  MdastTable,
 } from "./types";
 import { collectInlineHtmlContent } from "./htmlInline";
 import { collectInlineContent, processInlineNodes } from "./inlineMarks";
@@ -12,7 +13,7 @@ import {
   parseDatabaseMarkdownMarker,
   parseTable,
 } from "./tableParser";
-import type { BlockImportMatch, SchemaRegistry } from "@pen/core";
+import type { BlockImportMatch, MarkdownNode, SchemaRegistry } from "@pen/core";
 
 const BLOCK_MAPPINGS: Record<
   string,
@@ -60,7 +61,7 @@ const BLOCK_MAPPINGS: Record<
     },
   }),
 
-  table: (node) => parseTable(node as any),
+  table: (node) => parseTable(node as MdastTable),
 };
 
 export function astToBlocks(
@@ -132,7 +133,7 @@ function walkNodes(
     if (mapping) {
       const block =
         node.type === "table"
-          ? parseTable(node as any, pendingDatabasePayload)
+          ? parseTable(node as MdastTable, pendingDatabasePayload)
           : mapping(node);
       if (!block) continue;
       pendingDatabasePayload = null;
@@ -274,7 +275,7 @@ function resolveFromSchema(
   const blockSchemas = registry.allBlocks?.() ?? [];
   for (const schema of blockSchemas) {
     if (schema.serialize?.fromMarkdown) {
-      const result = schema.serialize.fromMarkdown(node as any);
+      const result = schema.serialize.fromMarkdown(node as MarkdownNode);
       if (result) return result;
     }
   }

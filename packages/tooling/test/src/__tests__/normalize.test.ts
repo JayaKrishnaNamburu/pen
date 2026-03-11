@@ -19,8 +19,19 @@ import {
   resetTestIdCounter,
 } from "../index";
 import { yjsAdapter, initBlockMap, wrapYjsDocument } from "@pen/crdt-yjs";
-import type { BlockSchema, InlineSchema } from "@pen/types";
+import type { BlockSchema, InlineSchema, LayoutSchema } from "@pen/types";
 import { defineBlock } from "@pen/types";
+
+type YBlockMap = Y.Map<unknown>;
+type YBlocksMap = Y.Map<YBlockMap>;
+type DeltaWithAttributes = {
+  attributes?: Record<string, unknown>;
+};
+
+const FLEX_LAYOUT_SCHEMA = {
+  modes: ["flex"],
+  defaultMode: "flex",
+} satisfies LayoutSchema;
 
 beforeEach(() => {
   resetTestIdCounter();
@@ -102,12 +113,12 @@ describe("SchemaEngineImpl — Normalization Rules", () => {
       const ydoc = new Y.Doc();
       const adapter = yjsAdapter();
       const blockOrder = ydoc.getArray<string>("blockOrder");
-      const blocksMap = ydoc.getMap("blocks");
+      const blocksMap = ydoc.getMap("blocks") as YBlocksMap;
       ydoc.getMap("apps");
       ydoc.getMap("metadata");
 
       ydoc.transact(() => {
-        initBlockMap(blocksMap as any, "b1", "paragraph", "inline");
+        initBlockMap(blocksMap, "b1", "paragraph", "inline");
         const content = (blocksMap.get("b1") as Y.Map<unknown>).get(
           "content",
         ) as Y.Text;
@@ -130,12 +141,12 @@ describe("SchemaEngineImpl — Normalization Rules", () => {
       const ydoc = new Y.Doc();
       const adapter = yjsAdapter();
       const blockOrder = ydoc.getArray<string>("blockOrder");
-      const blocksMap = ydoc.getMap("blocks");
+      const blocksMap = ydoc.getMap("blocks") as YBlocksMap;
       ydoc.getMap("apps");
       ydoc.getMap("metadata");
 
       ydoc.transact(() => {
-        initBlockMap(blocksMap as any, "b1", "paragraph", "inline");
+        initBlockMap(blocksMap, "b1", "paragraph", "inline");
         blockOrder.push(["b1", "b1"]);
       });
 
@@ -184,12 +195,12 @@ describe("SchemaEngineImpl — Normalization Rules", () => {
       const ydoc = new Y.Doc();
       const adapter = yjsAdapter();
       const blockOrder = ydoc.getArray<string>("blockOrder");
-      const blocksMap = ydoc.getMap("blocks");
+      const blocksMap = ydoc.getMap("blocks") as YBlocksMap;
       ydoc.getMap("apps");
       ydoc.getMap("metadata");
 
       ydoc.transact(() => {
-        initBlockMap(blocksMap as any, "b1", "paragraph", "inline");
+        initBlockMap(blocksMap, "b1", "paragraph", "inline");
         blockOrder.push(["b1"]);
         const content = (blocksMap.get("b1") as Y.Map<unknown>).get(
           "content",
@@ -223,12 +234,12 @@ describe("SchemaEngineImpl — Normalization Rules", () => {
       const ydoc = new Y.Doc();
       const adapter = yjsAdapter();
       const blockOrder = ydoc.getArray<string>("blockOrder");
-      const blocksMap = ydoc.getMap("blocks");
+      const blocksMap = ydoc.getMap("blocks") as YBlocksMap;
       ydoc.getMap("apps");
       ydoc.getMap("metadata");
 
       ydoc.transact(() => {
-        initBlockMap(blocksMap as any, "b1", "paragraph", "inline");
+        initBlockMap(blocksMap, "b1", "paragraph", "inline");
         blockOrder.push(["b1"]);
         const content = (blocksMap.get("b1") as Y.Map<unknown>).get(
           "content",
@@ -253,7 +264,7 @@ describe("SchemaEngineImpl — Normalization Rules", () => {
       ).toDelta();
 
       const marked = content.find(
-        (d: any) => d.attributes?.suggestion,
+        (d: DeltaWithAttributes) => d.attributes?.["suggestion"] !== undefined,
       );
       expect(marked).toBeDefined();
       expect(marked.attributes.suggestion.action).toBe("insert");
@@ -263,12 +274,12 @@ describe("SchemaEngineImpl — Normalization Rules", () => {
       const ydoc = new Y.Doc();
       const adapter = yjsAdapter();
       const blockOrder = ydoc.getArray<string>("blockOrder");
-      const blocksMap = ydoc.getMap("blocks");
+      const blocksMap = ydoc.getMap("blocks") as YBlocksMap;
       ydoc.getMap("apps");
       ydoc.getMap("metadata");
 
       ydoc.transact(() => {
-        initBlockMap(blocksMap as any, "b1", "paragraph", "inline");
+        initBlockMap(blocksMap, "b1", "paragraph", "inline");
         blockOrder.push(["b1"]);
         const content = (blocksMap.get("b1") as Y.Map<unknown>).get(
           "content",
@@ -342,12 +353,12 @@ describe("SchemaEngineImpl — Normalization Rules", () => {
       const ydoc = new Y.Doc();
       const adapter = yjsAdapter();
       const blockOrder = ydoc.getArray<string>("blockOrder");
-      const blocksMap = ydoc.getMap("blocks");
+      const blocksMap = ydoc.getMap("blocks") as YBlocksMap;
       ydoc.getMap("apps");
       ydoc.getMap("metadata");
 
       ydoc.transact(() => {
-        initBlockMap(blocksMap as any, "h1", "heading", "inline");
+        initBlockMap(blocksMap, "h1", "heading", "inline");
         blockOrder.push(["h1"]);
         const props = (blocksMap.get("h1") as Y.Map<unknown>).get(
           "props",
@@ -372,12 +383,12 @@ describe("SchemaEngineImpl — Normalization Rules", () => {
       const ydoc = new Y.Doc();
       const adapter = yjsAdapter();
       const blockOrder = ydoc.getArray<string>("blockOrder");
-      const blocksMap = ydoc.getMap("blocks");
+      const blocksMap = ydoc.getMap("blocks") as YBlocksMap;
       ydoc.getMap("apps");
       ydoc.getMap("metadata");
 
       ydoc.transact(() => {
-        initBlockMap(blocksMap as any, "h1", "heading", "inline");
+        initBlockMap(blocksMap, "h1", "heading", "inline");
         blockOrder.push(["h1"]);
         const props = (blocksMap.get("h1") as Y.Map<unknown>).get(
           "props",
@@ -407,19 +418,19 @@ describe("SchemaEngineImpl — Normalization Rules", () => {
       const ydoc = new Y.Doc();
       const adapter = yjsAdapter();
       const blockOrder = ydoc.getArray<string>("blockOrder");
-      const blocksMap = ydoc.getMap("blocks");
+      const blocksMap = ydoc.getMap("blocks") as YBlocksMap;
       ydoc.getMap("apps");
       ydoc.getMap("metadata");
 
       const layoutBlock = defineBlock("layoutRow", {
         content: "none",
         fieldEditor: "none",
-        layout: { defaultMode: "row" } as any,
+        layout: FLEX_LAYOUT_SCHEMA,
         serialize: {},
       });
 
       ydoc.transact(() => {
-        initBlockMap(blocksMap as any, "lr1", "layoutRow", "nested");
+        initBlockMap(blocksMap, "lr1", "layoutRow", "nested");
         blockOrder.push(["lr1"]);
       });
 
@@ -446,12 +457,12 @@ describe("SchemaEngineImpl — Normalization Rules", () => {
       const ydoc = new Y.Doc();
       const adapter = yjsAdapter();
       const blockOrder = ydoc.getArray<string>("blockOrder");
-      const blocksMap = ydoc.getMap("blocks");
+      const blocksMap = ydoc.getMap("blocks") as YBlocksMap;
       ydoc.getMap("apps");
       ydoc.getMap("metadata");
 
       ydoc.transact(() => {
-        initBlockMap(blocksMap as any, "p1", "paragraph", "inline");
+        initBlockMap(blocksMap, "p1", "paragraph", "inline");
         blockOrder.push(["p1"]);
         const meta = (blocksMap.get("p1") as Y.Map<unknown>).get(
           "meta",
@@ -482,14 +493,14 @@ describe("SchemaEngineImpl — Normalization Rules", () => {
       const ydoc = new Y.Doc();
       const adapter = yjsAdapter();
       const blockOrder = ydoc.getArray<string>("blockOrder");
-      const blocksMap = ydoc.getMap("blocks");
+      const blocksMap = ydoc.getMap("blocks") as YBlocksMap;
       ydoc.getMap("apps");
       ydoc.getMap("metadata");
 
       ydoc.transact(() => {
-        initBlockMap(blocksMap as any, "toggle1", "toggle", "inline");
-        initBlockMap(blocksMap as any, "child1", "paragraph", "inline");
-        initBlockMap(blocksMap as any, "child2", "paragraph", "inline");
+        initBlockMap(blocksMap, "toggle1", "toggle", "inline");
+        initBlockMap(blocksMap, "child1", "paragraph", "inline");
+        initBlockMap(blocksMap, "child2", "paragraph", "inline");
 
         const child1Props = (
           blocksMap.get("child1") as Y.Map<unknown>
@@ -531,13 +542,13 @@ describe("SchemaEngineImpl — Normalization Rules", () => {
       const ydoc = new Y.Doc();
       const adapter = yjsAdapter();
       const blockOrder = ydoc.getArray<string>("blockOrder");
-      const blocksMap = ydoc.getMap("blocks");
+      const blocksMap = ydoc.getMap("blocks") as YBlocksMap;
       ydoc.getMap("apps");
       ydoc.getMap("metadata");
 
       ydoc.transact(() => {
-        initBlockMap(blocksMap as any, "toggle1", "toggle", "inline");
-        initBlockMap(blocksMap as any, "child1", "paragraph", "inline");
+        initBlockMap(blocksMap, "toggle1", "toggle", "inline");
+        initBlockMap(blocksMap, "child1", "paragraph", "inline");
         const child1Props = (
           blocksMap.get("child1") as Y.Map<unknown>
         ).get("props") as Y.Map<unknown>;
@@ -573,20 +584,20 @@ describe("SchemaEngineImpl — Normalization Rules", () => {
       const ydoc = new Y.Doc();
       const adapter = yjsAdapter();
       const blockOrder = ydoc.getArray<string>("blockOrder");
-      const blocksMap = ydoc.getMap("blocks");
+      const blocksMap = ydoc.getMap("blocks") as YBlocksMap;
       ydoc.getMap("apps");
       ydoc.getMap("metadata");
 
       const layoutBlock = defineBlock("layoutRow", {
         content: "none",
         fieldEditor: "none",
-        layout: { defaultMode: "row" } as any,
+        layout: FLEX_LAYOUT_SCHEMA,
         serialize: {},
       });
 
       ydoc.transact(() => {
-        initBlockMap(blocksMap as any, "parent", "layoutRow", "nested");
-        initBlockMap(blocksMap as any, "child", "paragraph", "inline");
+        initBlockMap(blocksMap, "parent", "layoutRow", "nested");
+        initBlockMap(blocksMap, "child", "paragraph", "inline");
         const parentMap = blocksMap.get("parent") as Y.Map<unknown>;
         const children = parentMap.get("children") as Y.Array<string>;
         children.push(["child"]);
@@ -612,20 +623,20 @@ describe("SchemaEngineImpl — Normalization Rules", () => {
       const ydoc = new Y.Doc();
       const adapter = yjsAdapter();
       const blockOrder = ydoc.getArray<string>("blockOrder");
-      const blocksMap = ydoc.getMap("blocks");
+      const blocksMap = ydoc.getMap("blocks") as YBlocksMap;
       ydoc.getMap("apps");
       ydoc.getMap("metadata");
 
       const layoutBlock = defineBlock("layoutRow", {
         content: "none",
         fieldEditor: "none",
-        layout: { defaultMode: "row" } as any,
+        layout: FLEX_LAYOUT_SCHEMA,
         serialize: {},
       });
 
       ydoc.transact(() => {
-        initBlockMap(blocksMap as any, "parent", "layoutRow", "nested");
-        initBlockMap(blocksMap as any, "child", "paragraph", "inline");
+        initBlockMap(blocksMap, "parent", "layoutRow", "nested");
+        initBlockMap(blocksMap, "child", "paragraph", "inline");
         const parentMap = blocksMap.get("parent") as Y.Map<unknown>;
         const children = parentMap.get("children") as Y.Array<string>;
         children.push(["child"]);
@@ -659,12 +670,12 @@ describe("SchemaEngineImpl — Normalization Rules", () => {
       const ydoc = new Y.Doc();
       const adapter = yjsAdapter();
       const blockOrder = ydoc.getArray<string>("blockOrder");
-      const blocksMap = ydoc.getMap("blocks");
+      const blocksMap = ydoc.getMap("blocks") as YBlocksMap;
       ydoc.getMap("apps");
       ydoc.getMap("metadata");
 
       ydoc.transact(() => {
-        initBlockMap(blocksMap as any, "p1", "paragraph", "inline");
+        initBlockMap(blocksMap, "p1", "paragraph", "inline");
         blockOrder.push(["p1"]);
         const props = (blocksMap.get("p1") as Y.Map<unknown>).get(
           "props",

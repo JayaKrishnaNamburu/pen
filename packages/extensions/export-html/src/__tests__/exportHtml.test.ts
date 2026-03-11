@@ -1,6 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { createEditor } from "@pen/core";
+import { createEditor, type DocumentOp } from "@pen/core";
 import { htmlExporter } from "../exporter";
+
+type InsertTableCellTextOp = Extract<DocumentOp, { type: "insert-table-cell-text" }>;
+type FormatTableCellTextOp = Extract<DocumentOp, { type: "format-table-cell-text" }>;
+type UpdateTableColumnsOp = Extract<DocumentOp, { type: "update-table-columns" }>;
+type DatabaseInsertRowOp = Extract<DocumentOp, { type: "database-insert-row" }>;
 
 function editorWithBlocks(ops: Parameters<ReturnType<typeof createEditor>["apply"]>[0]) {
   const editor = createEditor({
@@ -214,7 +219,7 @@ describe("@pen/export-html", () => {
           col: 0,
           offset: 0,
           text: "Name",
-        } as any,
+        } as InsertTableCellTextOp,
         {
           type: "insert-table-cell-text",
           blockId: "t1",
@@ -222,7 +227,7 @@ describe("@pen/export-html", () => {
           col: 1,
           offset: 0,
           text: "Age",
-        } as any,
+        } as InsertTableCellTextOp,
         {
           type: "insert-table-cell-text",
           blockId: "t1",
@@ -230,7 +235,7 @@ describe("@pen/export-html", () => {
           col: 0,
           offset: 0,
           text: "Alice",
-        } as any,
+        } as InsertTableCellTextOp,
         {
           type: "insert-table-cell-text",
           blockId: "t1",
@@ -238,7 +243,7 @@ describe("@pen/export-html", () => {
           col: 1,
           offset: 0,
           text: "30",
-        } as any,
+        } as InsertTableCellTextOp,
       ],
     );
 
@@ -271,7 +276,7 @@ describe("@pen/export-html", () => {
           col: 0,
           offset: 0,
           text: "A",
-        } as any,
+        } as InsertTableCellTextOp,
         {
           type: "insert-table-cell-text",
           blockId: "t1",
@@ -279,7 +284,7 @@ describe("@pen/export-html", () => {
           col: 0,
           offset: 0,
           text: "B",
-        } as any,
+        } as InsertTableCellTextOp,
       ],
     );
 
@@ -308,7 +313,7 @@ describe("@pen/export-html", () => {
           col: 0,
           offset: 0,
           text: "<script>",
-        } as any,
+        } as InsertTableCellTextOp,
       ],
     );
 
@@ -335,7 +340,7 @@ describe("@pen/export-html", () => {
           col: 0,
           offset: 0,
           text: "Alpha",
-        } as any,
+        } as InsertTableCellTextOp,
         {
           type: "format-table-cell-text",
           blockId: "t2",
@@ -344,7 +349,7 @@ describe("@pen/export-html", () => {
           offset: 0,
           length: 5,
           marks: { bold: true },
-        } as any,
+        } as FormatTableCellTextOp,
       ],
     );
 
@@ -367,13 +372,13 @@ describe("@pen/export-html", () => {
           type: "update-table-columns",
           blockId: "db1",
           columns: [{ id: "name", title: "Name", type: "text" }],
-        } as any,
+        } as UpdateTableColumnsOp,
         {
           type: "database-insert-row",
           blockId: "db1",
           rowId: "row-1",
           values: { name: "Alice" },
-        } as any,
+        } as DatabaseInsertRowOp,
         {
           type: "insert-block",
           blockId: "sub-1",

@@ -7,6 +7,20 @@ interface InlineContext {
   offset: number;
 }
 
+type ParsedHtmlNode = {
+  type: string;
+  data?: string;
+  name?: string;
+  attribs?: Record<string, string>;
+  children?: ParsedHtmlNode[];
+};
+
+type ParsedHtmlElement = ParsedHtmlNode & {
+  name: string;
+  attribs?: Record<string, string>;
+  children?: ParsedHtmlNode[];
+};
+
 const INLINE_MARK_MAP: Record<string, string> = {
   strong: "bold",
   b: "bold",
@@ -34,7 +48,7 @@ export function collectInlineHtmlContent(html: string): {
   return { text: ctx.text, marks: ctx.marks };
 }
 
-function walkHtmlNode(node: any, ctx: InlineContext): void {
+function walkHtmlNode(node: ParsedHtmlNode, ctx: InlineContext): void {
   if (node.type === "text") {
     const text = "data" in node ? String(node.data) : "";
     ctx.text += text;
@@ -47,11 +61,7 @@ function walkHtmlNode(node: any, ctx: InlineContext): void {
   }
 
   if (node.type === "tag" || node.type === "script" || node.type === "style") {
-    const el = node as {
-      name: string;
-      attribs?: Record<string, string>;
-      children?: any[];
-    };
+    const el = node as ParsedHtmlElement;
     const markType = INLINE_MARK_MAP[el.name];
     if (markType) {
       const start = ctx.offset;

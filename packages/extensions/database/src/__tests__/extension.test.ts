@@ -1,5 +1,20 @@
 import { describe, expect, it, vi } from "vitest";
 import { databaseExtension, DATABASE_CELL_KEYDOWN_SLOT } from "../extension";
+import type { Editor } from "@pen/core";
+
+type DatabaseExtensionTestEditor = {
+	getBlock(blockId: string): {
+		tableColumns(): Array<{ id: string; type: string }>;
+		tableRow(index: number): { id: string } | null;
+		tableCell(row: number, col: number): {
+			textContent(): string;
+		};
+	} | null;
+	apply: ReturnType<typeof vi.fn>;
+	internals: {
+		setSlot(key: string, value: unknown): void;
+	};
+};
 
 function createKeyEvent(key: string): KeyboardEvent {
 	return {
@@ -31,9 +46,9 @@ function createMockEditor() {
 				slots.set(key, value);
 			},
 		},
-	} as any;
+	} satisfies DatabaseExtensionTestEditor;
 
-	return { editor, apply, slots };
+	return { editor: editor as unknown as Editor, apply, slots };
 }
 
 describe("databaseExtension", () => {

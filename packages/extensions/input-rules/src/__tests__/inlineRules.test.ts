@@ -1,6 +1,29 @@
 import { describe, it, expect } from "vitest";
 import { InputRuleEngine } from "../engine";
 import { defaultInlineRules } from "../inlineRules";
+import type { Editor } from "@pen/types";
+
+type InlineRulesTestEditor = {
+	getBlock(): {
+		type: string;
+		textContent(): string;
+	};
+	selection:
+		| {
+				type: "text";
+				anchor: { blockId: string; offset: number };
+				focus: { blockId: string; offset: number };
+				isCollapsed: boolean;
+		  }
+		| null;
+	schema: {
+		resolve(): {
+			content: "inline" | "none";
+			fieldEditor: string;
+		};
+		resolveInline(): { kind: "mark" } | null;
+	};
+};
 
 function mockEditor(opts: {
 	textContent: string;
@@ -10,7 +33,7 @@ function mockEditor(opts: {
 	hasInlineMark?: boolean;
 }) {
 	const offset = opts.cursorOffset ?? opts.textContent.length;
-	return {
+	const editor = {
 		getBlock: () => ({
 			type: opts.blockType ?? "paragraph",
 			textContent: () => opts.textContent,
@@ -29,7 +52,9 @@ function mockEditor(opts: {
 			resolveInline: () =>
 				opts.hasInlineMark === false ? null : { kind: "mark" },
 		},
-	} as any;
+	} satisfies InlineRulesTestEditor;
+
+	return editor as unknown as Editor;
 }
 
 function engineWithInlineRules() {
@@ -43,7 +68,7 @@ describe("InputRuleEngine — inline rules", () => {
 		it("matches **hello** when closing * is typed", () => {
 			const engine = engineWithInlineRules();
 			const editor = mockEditor({ textContent: "**hello*" });
-			const result = engine.tryMatchInline(editor, "b1", "*");
+			const result = engine.tryMatchInline(editor as unknown as Editor, "b1", "*");
 
 			expect(result).not.toBeNull();
 			expect(result).toHaveLength(2);
@@ -65,7 +90,7 @@ describe("InputRuleEngine — inline rules", () => {
 		it("matches bold after other text: 'hey **world*' + '*'", () => {
 			const engine = engineWithInlineRules();
 			const editor = mockEditor({ textContent: "hey **world*" });
-			const result = engine.tryMatchInline(editor, "b1", "*");
+			const result = engine.tryMatchInline(editor as unknown as Editor, "b1", "*");
 
 			expect(result).not.toBeNull();
 			expect(result![0]).toMatchObject({
@@ -84,7 +109,7 @@ describe("InputRuleEngine — inline rules", () => {
 		it("does not match with empty inner text '***' + '*'", () => {
 			const engine = engineWithInlineRules();
 			const editor = mockEditor({ textContent: "***" });
-			const result = engine.tryMatchInline(editor, "b1", "*");
+			const result = engine.tryMatchInline(editor as unknown as Editor, "b1", "*");
 			expect(result).toBeNull();
 		});
 	});
@@ -204,8 +229,8 @@ describe("InputRuleEngine — inline rules", () => {
 					resolve: () => ({ content: "none", fieldEditor: "none" }),
 					resolveInline: () => ({ kind: "mark" }),
 				},
-			} as any;
-			const result = engine.tryMatchInline(editor, "b1", "*");
+			};
+			const result = engine.tryMatchInline(editor as unknown as Editor, "b1", "*");
 			expect(result).toBeNull();
 		});
 
@@ -229,8 +254,8 @@ describe("InputRuleEngine — inline rules", () => {
 					focus: { blockId: "b1", offset: 5 },
 					isCollapsed: false,
 				},
-			} as any;
-			const result = engine.tryMatchInline(editor, "b1", "*");
+			};
+			const result = engine.tryMatchInline(editor as unknown as Editor, "b1", "*");
 			expect(result).toBeNull();
 		});
 
@@ -239,8 +264,8 @@ describe("InputRuleEngine — inline rules", () => {
 			const editor = {
 				...mockEditor({ textContent: "**hello*" }),
 				selection: null,
-			} as any;
-			const result = engine.tryMatchInline(editor, "b1", "*");
+			};
+			const result = engine.tryMatchInline(editor as unknown as Editor, "b1", "*");
 			expect(result).toBeNull();
 		});
 

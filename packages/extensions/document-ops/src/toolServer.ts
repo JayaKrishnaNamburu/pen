@@ -55,7 +55,10 @@ function validateInput(
   const required = (schema.required ?? []) as string[];
   const properties = (schema.properties ?? {}) as Record<
     string,
-    any
+    {
+      type?: string;
+      enum?: unknown[];
+    }
   >;
   const inputObj = input as Record<string, unknown>;
 

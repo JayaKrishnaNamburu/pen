@@ -5,6 +5,8 @@ import { sseTransport } from "../client";
 import type { PenStreamPart, PenStreamRequest } from "@pen/core";
 import type { SSEEvent } from "../types";
 
+type FetchCall = [input: string | URL | globalThis.Request, init?: RequestInit];
+
 function makeRequest(
   overrides: Partial<PenStreamRequest> = {},
 ): PenStreamRequest {
@@ -382,8 +384,9 @@ describe("SSE client transport", () => {
     await transport.connect();
     expect(transport.connected).toBe(true);
 
-    const fetchCalls = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls;
-    const headCall = fetchCalls.find((c: any[]) => c[1]?.method === "HEAD");
+    const fetchCalls = (globalThis.fetch as ReturnType<typeof vi.fn>).mock
+      .calls as FetchCall[];
+    const headCall = fetchCalls.find((c) => c[1]?.method === "HEAD");
     expect(headCall).toBeDefined();
   });
 
@@ -413,7 +416,9 @@ describe("SSE client transport", () => {
       code: "REPLAY_UNSUPPORTED",
     });
 
-    const getCall = fetchSpy.mock.calls.find((c: any[]) => c[1]?.method === "GET");
+    const getCall = (fetchSpy.mock.calls as FetchCall[]).find(
+      (c) => c[1]?.method === "GET",
+    );
     expect(getCall).toBeDefined();
     const sentHeaders = getCall![1]?.headers as Record<string, string>;
     expect(sentHeaders["Last-Event-ID"]).toBe("stream-123:5");

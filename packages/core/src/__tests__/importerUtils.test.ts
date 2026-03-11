@@ -6,7 +6,14 @@ import {
 	reportPendingBlockImportViolations,
 } from "../index";
 import { blocksToOps } from "../importerUtils";
+import type { DocumentOp } from "@pen/types";
 import type { PendingBlock } from "../importerUtils";
+
+type InsertBlockOp = Extract<DocumentOp, { type: "insert-block" }>;
+type InsertTableCellTextOp = Extract<DocumentOp, { type: "insert-table-cell-text" }>;
+type InsertTableRowOp = Extract<DocumentOp, { type: "insert-table-row" }>;
+type InsertTableColumnOp = Extract<DocumentOp, { type: "insert-table-column" }>;
+type FormatTableCellTextOp = Extract<DocumentOp, { type: "format-table-cell-text" }>;
 
 describe("blocksToOps table materialization", () => {
 	it("materializes __table_row / __table_cell into table ops", () => {
@@ -57,23 +64,24 @@ describe("blocksToOps table materialization", () => {
 
 		const ops = blocksToOps(blocks);
 
-		expect(ops[0].type).toBe("insert-block");
-		expect((ops[0] as any).blockType).toBe("table");
+		const insertBlock = ops[0] as InsertBlockOp;
+		expect(insertBlock.type).toBe("insert-block");
+		expect(insertBlock.blockType).toBe("table");
 
-		const tableBlockId = (ops[0] as any).blockId;
+		const tableBlockId = insertBlock.blockId;
 
 		const cellTextOps = ops.filter(
 			(op) => op.type === "insert-table-cell-text",
 		);
 		expect(cellTextOps.length).toBe(4);
 
-		const firstCellText = cellTextOps[0] as any;
+		const firstCellText = cellTextOps[0] as InsertTableCellTextOp;
 		expect(firstCellText.blockId).toBe(tableBlockId);
 		expect(firstCellText.row).toBe(0);
 		expect(firstCellText.col).toBe(0);
 		expect(firstCellText.text).toBe("Name");
 
-		const lastCellText = cellTextOps[3] as any;
+		const lastCellText = cellTextOps[3] as InsertTableCellTextOp;
 		expect(lastCellText.row).toBe(1);
 		expect(lastCellText.col).toBe(1);
 		expect(lastCellText.text).toBe("30");
@@ -125,7 +133,7 @@ describe("blocksToOps table materialization", () => {
 		const ops = blocksToOps(blocks);
 		const rowOps = ops.filter((op) => op.type === "insert-table-row");
 		expect(rowOps.length).toBe(1);
-		expect((rowOps[0] as any).index).toBe(2);
+		expect((rowOps[0] as InsertTableRowOp).index).toBe(2);
 	});
 
 	it("generates insert-table-column for columns beyond the seed", () => {
@@ -150,7 +158,7 @@ describe("blocksToOps table materialization", () => {
 		const ops = blocksToOps(blocks);
 		const colOps = ops.filter((op) => op.type === "insert-table-column");
 		expect(colOps.length).toBe(1);
-		expect((colOps[0] as any).index).toBe(2);
+		expect((colOps[0] as InsertTableColumnOp).index).toBe(2);
 	});
 
 	it("generates format-table-cell-text for marks on cells", () => {
@@ -180,9 +188,10 @@ describe("blocksToOps table materialization", () => {
 			(op) => op.type === "format-table-cell-text",
 		);
 		expect(fmtOps.length).toBe(1);
-		expect((fmtOps[0] as any).marks).toEqual({ bold: true });
-		expect((fmtOps[0] as any).offset).toBe(0);
-		expect((fmtOps[0] as any).length).toBe(4);
+		const formatOp = fmtOps[0] as FormatTableCellTextOp;
+		expect(formatOp.marks).toEqual({ bold: true });
+		expect(formatOp.offset).toBe(0);
+		expect(formatOp.length).toBe(4);
 	});
 
 	it("does not recurse __table children as regular blocks", () => {
@@ -205,7 +214,7 @@ describe("blocksToOps table materialization", () => {
 		const ops = blocksToOps(blocks);
 		const blockOps = ops.filter((op) => op.type === "insert-block");
 		expect(blockOps.length).toBe(1);
-		expect((blockOps[0] as any).blockType).toBe("table");
+		expect((blockOps[0] as InsertBlockOp).blockType).toBe("table");
 	});
 
 	it("shrinks seeded tables to 1x1 during import materialization", () => {
