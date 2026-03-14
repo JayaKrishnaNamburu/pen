@@ -34,6 +34,17 @@ export interface FieldEditorRootHandle {
 export interface FieldEditorDomController extends FieldEditorSelectionState {
 	setComposing(composing: boolean): void;
 	shouldHandleDomSelectionChange(isApplyingSelection: number): boolean;
+	applyDocumentTextSelection(
+		anchor: { blockId: string; offset: number },
+		focus: { blockId: string; offset: number },
+	): void;
+	applyDomTextSelection(
+		anchor: { blockId: string; offset: number },
+		focus: { blockId: string; offset: number },
+		options?: {
+			focusBlockId?: string;
+		},
+	): void;
 	resolveInsertMarks(
 		ytext: { toDelta(): unknown[] },
 		offset: number,
@@ -107,6 +118,8 @@ export type FieldEditorSession = FieldEditorStore &
 	FieldEditorInputController &
 	FieldEditorTableNavigationController &
 	FieldEditorEscapeController & {
+		beginPointerSelection(): void;
+		endPointerSelection(): void;
 	selectAll(rootElement?: HTMLElement | null): boolean;
 	resetSelectAllCycle(): void;
 	suspendForPointerSelection(): void;

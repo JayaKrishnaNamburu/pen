@@ -1,8 +1,8 @@
 import { createContext, useContext } from "react";
-import type { FieldEditorStore } from "../field-editor/store";
+import type { FieldEditorSession } from "../field-editor/controller";
 
-export const FieldEditorContext = createContext<FieldEditorStore | null>(null);
+export const FieldEditorContext = createContext<FieldEditorSession | null>(null);
 
-export function useFieldEditorContext(): FieldEditorStore | null {
+export function useFieldEditorContext(): FieldEditorSession | null {
 	return useContext(FieldEditorContext);
 }

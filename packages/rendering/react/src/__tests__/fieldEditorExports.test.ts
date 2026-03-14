@@ -166,4 +166,55 @@ describe("@pen/react field-editor exports", () => {
 		fieldEditor.destroy();
 		editor.destroy();
 	});
+
+	it("switches large cross-block selections to block mode after 50 blocks", () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream", "undo"],
+		});
+		const firstBlockId = editor.firstBlock()!.id;
+		const additionalBlockIds = Array.from({ length: 50 }, () =>
+			crypto.randomUUID(),
+		);
+		const insertOps = additionalBlockIds.flatMap((blockId) => [
+			{
+				type: "insert-block" as const,
+				blockId,
+				blockType: "paragraph" as const,
+				props: {},
+				position: "last" as const,
+			},
+			{
+				type: "insert-text" as const,
+				blockId,
+				offset: 0,
+				text: blockId,
+			},
+		]);
+
+		editor.apply([
+			{
+				type: "insert-text",
+				blockId: firstBlockId,
+				offset: 0,
+				text: "first",
+			},
+			...insertOps,
+		]);
+
+		const fieldEditor = new FieldEditorImpl(editor);
+		const lastBlockId = additionalBlockIds[additionalBlockIds.length - 1]!;
+		fieldEditor.activate(firstBlockId);
+		fieldEditor.expandTo(lastBlockId);
+
+		expect(shouldUseBlockSelection(editor, 51)).toBe(true);
+		expect(fieldEditor.getSnapshot()).toMatchObject({
+			focusBlockId: firstBlockId,
+			isEditing: true,
+			mode: "block",
+		});
+		expect(fieldEditor.getSnapshot().activeBlockIds).toHaveLength(51);
+
+		fieldEditor.destroy();
+		editor.destroy();
+	});
 });

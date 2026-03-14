@@ -1,12 +1,13 @@
-import type { BenchContext } from "../bench";
+import type { BenchContext, BenchDefinition } from "../bench";
 import { createTestEditor } from "@pen/test";
+import {
+  EDITOR_APPLY_INSERT_DELETE_BLOCK_X500_BENCH,
+  EDITOR_APPLY_INSERT_TEXT_X1000_BENCH,
+} from "../constants/benchmarks";
 
-export const editorBenchmarks: Array<{
-  name: string;
-  fn: (b: BenchContext) => void | Promise<void>;
-}> = [
+export const editorBenchmarks: BenchDefinition[] = [
   {
-    name: "editor.apply insert-text x1000",
+    ...EDITOR_APPLY_INSERT_TEXT_X1000_BENCH,
     fn(b) {
       const editor = createTestEditor({
         blocks: [{ type: "paragraph" }],
@@ -28,7 +29,7 @@ export const editorBenchmarks: Array<{
     },
   },
   {
-    name: "editor.apply insert-block + delete-block x500",
+    ...EDITOR_APPLY_INSERT_DELETE_BLOCK_X500_BENCH,
     fn(b) {
       const editor = createTestEditor();
 

@@ -1,14 +1,16 @@
-import type { BenchContext } from "../bench";
+import type { BenchContext, BenchDefinition } from "../bench";
 import { defaultSchema } from "@pen/schema-default";
 import { SchemaEngineImpl } from "@pen/core";
-import { createLargeDocument } from "../fixtures/large-doc";
+import { createLargeDocument } from "../fixtures/largeDoc";
+import {
+  SCHEMA_ALL_BLOCK_DISPLAYS_BENCH,
+  SCHEMA_NORMALIZE_500_BLOCK_DOCUMENT_BENCH,
+  SCHEMA_RESOLVE_X10000_BENCH,
+} from "../constants/benchmarks";
 
-export const schemaBenchmarks: Array<{
-  name: string;
-  fn: (b: BenchContext) => void | Promise<void>;
-}> = [
+export const schemaBenchmarks: BenchDefinition[] = [
   {
-    name: "schema resolve x10000",
+    ...SCHEMA_RESOLVE_X10000_BENCH,
     fn(b) {
       const types = [
         "paragraph",
@@ -29,7 +31,7 @@ export const schemaBenchmarks: Array<{
     },
   },
   {
-    name: "normalize 500-block document",
+    ...SCHEMA_NORMALIZE_500_BLOCK_DOCUMENT_BENCH,
     fn(b) {
       const { doc } = createLargeDocument(500);
       const penDoc = doc.penDocument;
@@ -41,7 +43,7 @@ export const schemaBenchmarks: Array<{
     },
   },
   {
-    name: "allBlockDisplays (slash menu population)",
+    ...SCHEMA_ALL_BLOCK_DISPLAYS_BENCH,
     fn(b) {
       b.start();
       for (let i = 0; i < 10000; i++) {

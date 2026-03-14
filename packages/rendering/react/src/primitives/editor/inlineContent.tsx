@@ -1,16 +1,18 @@
 import React, { useRef, useLayoutEffect } from "react";
-import type { Editor } from "@pen/core";
+import type { Editor, InlineDecoration, Decoration } from "@pen/core";
 import { useEditorContentContext } from "../../context/editorContentContext";
 import { useEditorContext } from "../../context/editorContext";
 import { useFieldEditorContext } from "../../context/fieldEditorContext";
 import { fullReconcileDeltasToDOM } from "../../field-editor/reconciler";
 import { useBlockEditingState } from "../../hooks/useBlockEditingState";
 import { useBlockCommitState } from "../../hooks/useBlockCommitState";
+import { useBlockDecorations } from "../../hooks/useBlockDecorations";
 import { useSelection } from "../../hooks/useSelection";
 import { useBlockTextSnapshot } from "../../hooks/useBlockTextSnapshot";
 import { useFieldEditorState } from "../../hooks/useFieldEditorState";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { DATA_ATTRS } from "../../utils/dataAttributes";
+import { applyInlineDecorationsToDeltas } from "../../utils/inlineDecorations";
 
 export interface InlineContentProps extends AsChildProps {
 	blockId: string;
@@ -28,6 +30,7 @@ export function InlineContent(props: InlineContentProps) {
 	const isActive = useBlockEditingState(fieldEditor, blockId);
 	const selection = useSelection(editor);
 	const blockCommit = useBlockCommitState(editor, blockId);
+	const blockDecorations = useBlockDecorations(editor, blockId);
 	const textSnapshot = useBlockTextSnapshot(editor, blockId);
 	const elementRef = useRef<HTMLElement>(null);
 	const previousCommitRevisionRef = useRef(blockCommit.revision);
@@ -66,6 +69,17 @@ export function InlineContent(props: InlineContentProps) {
 				: showBlockPlaceholder
 					? schemaPlaceholder
 					: undefined;
+	const affectedRangeDecorations = blockDecorations.filter(
+		(decoration): decoration is InlineDecoration =>
+			isAffectedRangeDecoration(decoration),
+	);
+	const renderedDeltas =
+		affectedRangeDecorations.length > 0
+			? applyInlineDecorationsToDeltas(
+				textSnapshot.deltas,
+				affectedRangeDecorations,
+			)
+			: textSnapshot.deltas;
 
 	useLayoutEffect(() => {
 		if (fieldEditorState.mode === "expanded") {
@@ -108,7 +122,7 @@ export function InlineContent(props: InlineContentProps) {
 			return;
 		}
 		fullReconcileDeltasToDOM(
-			[...textSnapshot.deltas],
+			[...renderedDeltas],
 			elementRef.current,
 			editor.schema,
 			{ preserveSelection: false },
@@ -121,6 +135,7 @@ export function InlineContent(props: InlineContentProps) {
 		fieldEditorState.mode,
 		blockCommit,
 		isActive,
+		renderedDeltas,
 		textSnapshot,
 	]);
 
@@ -142,6 +157,15 @@ export function InlineContent(props: InlineContentProps) {
 	};
 
 	return renderAsChild({ ...rest, ref: elementRef }, "span", primitiveProps);
+}
+
+function isAffectedRangeDecoration(
+	decoration: Decoration,
+): decoration is InlineDecoration {
+	return (
+		decoration.type === "inline" &&
+		"data-ai-affected-range" in decoration.attributes
+	);
 }
 
 function resolveSchemaPlaceholder(

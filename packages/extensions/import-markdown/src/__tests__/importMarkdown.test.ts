@@ -1,21 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { fromMarkdown } from "mdast-util-from-markdown";
-import { gfm } from "micromark-extension-gfm";
-import { gfmFromMarkdown } from "mdast-util-gfm";
 import { blocksToOps, createEditor } from "@pen/core";
 import type { SchemaRegistry } from "@pen/core";
 import { markdownExporter } from "@pen/export-markdown";
 import { createDefaultSchema } from "@pen/schema-default";
 import { markdownImporter, parseMarkdownToBlocks } from "../importer";
-import { astToBlocks } from "../astToBlocks";
-import type { MdastRoot } from "../types";
-
-function parse(md: string) {
-	return fromMarkdown(md, {
-		extensions: [gfm()],
-		mdastExtensions: [gfmFromMarkdown()],
-	});
-}
 
 const stubRegistry: SchemaRegistry = {
 	resolve: () => null,
@@ -31,8 +19,9 @@ const stubRegistry: SchemaRegistry = {
 const defaultRegistry = createDefaultSchema();
 
 function convert(md: string, registry: SchemaRegistry = stubRegistry) {
-	const tree = parse(md);
-	return astToBlocks(tree as MdastRoot, registry);
+	return parseMarkdownToBlocks(md, {
+		schema: registry,
+	} as never);
 }
 
 function databaseEditor() {

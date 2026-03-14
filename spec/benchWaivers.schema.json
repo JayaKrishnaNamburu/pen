@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Pen Benchmark Waivers",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["waivers"],
+  "properties": {
+    "waivers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["benchId", "rationale", "owner"],
+        "properties": {
+          "benchId": {
+            "type": "string",
+            "description": "Stable benchmark identifier from @pen/bench metadata."
+          },
+          "rationale": {
+            "type": "string",
+            "description": "Why the failure is temporarily acceptable."
+          },
+          "owner": {
+            "type": "string",
+            "description": "Person or team accountable for removing the waiver."
+          },
+          "issue": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Optional tracking reference such as a GitHub issue, Linear ticket, or incident link."
+          },
+          "expiresOn": {
+            "type": "string",
+            "format": "date",
+            "description": "Optional UTC calendar date after which the waiver is no longer active."
+          }
+        }
+      }
+    }
+  }
+}

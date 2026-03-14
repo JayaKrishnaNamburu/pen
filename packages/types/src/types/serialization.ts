@@ -6,6 +6,14 @@ export interface MarkdownNode {
   type: string;
   children?: MarkdownNode[];
   value?: string;
+  url?: string;
+  alt?: string;
+  title?: string | null;
+  depth?: number;
+  lang?: string | null;
+  ordered?: boolean;
+  start?: number | null;
+  checked?: boolean | null;
   attributes?: Record<string, unknown>;
 }
 

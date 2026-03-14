@@ -1,20 +1,21 @@
 import { describe, it, expect, vi } from "vitest";
 import { directTransport } from "../directTransport";
-import type { PenStreamPart, PenStreamRequest, ToolServer } from "@pen/core";
+import type { PenStreamPart, PenStreamRequest, ToolRuntime } from "@pen/core";
 
-type ToolExecutionContext = Parameters<ToolServer["executeTool"]>[2];
+type ToolExecutionContext = Parameters<ToolRuntime["executeTool"]>[2];
 
-function createMockToolServer(
+function createMockToolRuntime(
   handler: (
     name: string,
     input: unknown,
     ctx: ToolExecutionContext,
   ) => Promise<unknown> | AsyncIterable<unknown>,
-): ToolServer {
+): ToolRuntime {
   return {
     registerTool: vi.fn(),
     unregisterTool: vi.fn(),
     listTools: () => [],
+    getTool: () => null,
     executeTool: handler,
   };
 }
@@ -41,17 +42,17 @@ async function collectParts(
 
 describe("@pen/transport-direct", () => {
   it("returns a PenTransport with connected === true (AC 1)", () => {
-    const toolServer = createMockToolServer(async () => "ok");
-    const transport = directTransport({ toolServer });
+    const toolRuntime = createMockToolRuntime(async () => "ok");
+    const transport = directTransport({ toolRuntime });
 
     expect(transport.connected).toBe(true);
   });
 
   it("yields tool-output + done from a Promise-returning tool (AC 2)", async () => {
-    const toolServer = createMockToolServer(async () => ({
+    const toolRuntime = createMockToolRuntime(async () => ({
       result: "hello",
     }));
-    const transport = directTransport({ toolServer });
+    const transport = directTransport({ toolRuntime });
 
     const parts = await collectParts(transport.stream(makeRequest()));
 
@@ -76,8 +77,8 @@ describe("@pen/transport-direct", () => {
       };
     }
 
-    const toolServer = createMockToolServer(() => streamingTool());
-    const transport = directTransport({ toolServer });
+    const toolRuntime = createMockToolRuntime(() => streamingTool());
+    const transport = directTransport({ toolRuntime });
 
     const parts = await collectParts(transport.stream(makeRequest()));
 
@@ -110,8 +111,8 @@ describe("@pen/transport-direct", () => {
       }
     }
 
-    const toolServer = createMockToolServer(() => slowTool());
-    const transport = directTransport({ toolServer });
+    const toolRuntime = createMockToolRuntime(() => slowTool());
+    const transport = directTransport({ toolRuntime });
 
     const partsPromise = collectParts(transport.stream(makeRequest()));
 
@@ -124,10 +125,10 @@ describe("@pen/transport-direct", () => {
 
   it("tool execution error yields error part, not thrown (AC 5)", async () => {
     const onError = vi.fn();
-    const toolServer = createMockToolServer(async () => {
+    const toolRuntime = createMockToolRuntime(async () => {
       throw new Error("tool failed");
     });
-    const transport = directTransport({ toolServer, onError });
+    const transport = directTransport({ toolRuntime, onError });
 
     const parts = await collectParts(transport.stream(makeRequest()));
 
@@ -140,8 +141,8 @@ describe("@pen/transport-direct", () => {
   });
 
   it("onConnectionChange() never fires (AC 6)", async () => {
-    const toolServer = createMockToolServer(async () => "ok");
-    const transport = directTransport({ toolServer });
+    const toolRuntime = createMockToolRuntime(async () => "ok");
+    const transport = directTransport({ toolRuntime });
 
     const callback = vi.fn();
     const unsub = transport.onConnectionChange(callback);

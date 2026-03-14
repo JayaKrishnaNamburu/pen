@@ -1,4 +1,6 @@
 import type { Editor, ToolDefinition, Position } from "@pen/types";
+import { POSITION_SCHEMA } from "../constants/toolSchemas";
+import { assertToolCanMutateBlock } from "../utils/mutationPolicy";
 
 export function moveBlockTool(editor: Editor): ToolDefinition {
   return {
@@ -9,7 +11,7 @@ export function moveBlockTool(editor: Editor): ToolDefinition {
       required: ["blockId", "position"],
       properties: {
         blockId: { type: "string" },
-        position: {},
+        position: POSITION_SCHEMA,
       },
     },
     handler: async (input: unknown) => {
@@ -17,6 +19,7 @@ export function moveBlockTool(editor: Editor): ToolDefinition {
         blockId: string;
         position: Position;
       };
+      assertToolCanMutateBlock(editor, opts.blockId);
       editor.apply(
         [
           {

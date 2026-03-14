@@ -2,6 +2,7 @@
   display: flex;
   flex: 0 0 auto;
   flex-direction: column;
+  align-self: stretch;
   width: 56px;
   min-width: 56px;
   max-width: min(50vw, 520px);

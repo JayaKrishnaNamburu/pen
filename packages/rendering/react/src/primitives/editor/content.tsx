@@ -15,6 +15,7 @@ import {
 	pointToEditorSelectionPoint,
 } from "../../field-editor/selectionBridge";
 import { useFieldEditorState } from "../../hooks/useFieldEditorState";
+import { useAIStructuredPreviewContent } from "../../hooks/useAIStructuredPreview";
 import { useBlockList } from "../../hooks/useBlockList";
 import {
 	getEditorBlockSelectionLength,
@@ -29,8 +30,13 @@ import {
 	useDocumentEmptyState,
 	useDocumentPlaceholderState,
 } from "../../hooks/useDocumentEmptyState";
+import {
+	getEditorFlowCapability,
+	shouldFallbackMixedSelectionToBlock,
+} from "../../utils/flowCapabilities";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { DATA_ATTRS } from "../../utils/dataAttributes";
+import { AIStructuredTargetPreviewItem } from "../ai/structuredTargetPreview";
 import { EditorBlock } from "./block";
 import {
 	DropPreviewProvider,
@@ -50,6 +56,11 @@ import {
 	type RegionSelectorConfig,
 } from "./regionSelectionState";
 import { useTransferSession } from "./useTransferSession";
+import {
+	createPointerSelectionGesture,
+	resolvePointerDragSelection,
+	type PointerSelectionGesture,
+} from "../../selection/interactionController";
 
 export interface EditorContentProps extends AsChildProps {
 	virtualize?:
@@ -70,6 +81,7 @@ export function EditorContent(props: EditorContentProps) {
 	const { store: regionSelectionStore } = useEditorRegionSelectionContext();
 	const fieldEditorState = useFieldEditorState(fieldEditor);
 	const blockIds = useBlockList(editor);
+	const contentItems = useAIStructuredPreviewContent(editor, blockIds);
 	const blockDragSession = useBlockDragSession();
 	const contentRef = useRef<HTMLElement>(null);
 	const blocksHostRef = blockDragSession.blocksHostRef as React.RefObject<HTMLDivElement | null>;
@@ -78,12 +90,8 @@ export function EditorContent(props: EditorContentProps) {
 		clientY: number;
 		isSelecting: boolean;
 	} | null>(null);
-	const pointerGestureRef = useRef<{
-		blockId: string;
-		clientX: number;
-		clientY: number;
-		startSelection: ReturnType<Editor["getSelection"]>;
-	} | null>(null);
+	const pointerGestureRef = useRef<PointerSelectionGesture | null>(null);
+	const pointerGestureVersionRef = useRef(0);
 	const skipNextClickRef = useRef(false);
 	const interactionModelRef = useRef(interactionModel);
 	interactionModelRef.current = interactionModel;
@@ -145,7 +153,9 @@ export function EditorContent(props: EditorContentProps) {
 
 			let blockEl: HTMLElement | null = target;
 			while (blockEl && blockEl !== gestureEl) {
-				if (blockEl.hasAttribute(DATA_ATTRS.editorBlock)) break;
+				if (blockEl.hasAttribute(DATA_ATTRS.editorBlock)) {
+					break;
+				}
 				blockEl = blockEl.parentElement;
 			}
 
@@ -398,11 +408,10 @@ export function EditorContent(props: EditorContentProps) {
 				return;
 			}
 
-			editor.selectTextRange(
+			fieldEditor.applyDocumentTextSelection(
 				normalizedSelection.anchor,
 				normalizedSelection.focus,
 			);
-			fieldEditor.activate(normalizedSelection.focus.blockId);
 		};
 
 		const handleClick = (event: MouseEvent) => {
@@ -412,7 +421,6 @@ export function EditorContent(props: EditorContentProps) {
 
 			if (skipNextClickRef.current) {
 				skipNextClickRef.current = false;
-				event.preventDefault();
 				return;
 			}
 
@@ -492,21 +500,77 @@ export function EditorContent(props: EditorContentProps) {
 
 			const blockId = resolveClickedBlockId(event);
 			if (!blockId) return;
+			pointerGestureVersionRef.current += 1;
 
-			pointerGestureRef.current = {
+			pointerGestureRef.current = createPointerSelectionGesture(editor, {
 				blockId,
 				clientX: event.clientX,
 				clientY: event.clientY,
-				startSelection: editor.getSelection(),
-			};
+			});
+			fieldEditor.beginPointerSelection();
 			skipNextClickRef.current = false;
 			fieldEditor.resetSelectAllCycle?.();
+			const clickedBlock = editor.getBlock(blockId);
+			const clickedSchema = clickedBlock
+				? editor.schema.resolve(clickedBlock.type)
+				: null;
+			const root = gestureEl.closest(
+				"[data-pen-editor-root]",
+			) as HTMLElement | null;
+			if (
+				pointerGestureRef.current &&
+				root &&
+				clickedSchema &&
+				usesInlineTextSelection(clickedSchema) &&
+				pointerGestureRef.current.anchorPoint == null
+			) {
+				const initialPointerPoint = pointToEditorSelectionPoint(
+					root,
+					event.clientX,
+					event.clientY,
+				);
+				if (initialPointerPoint?.blockId === blockId) {
+					pointerGestureRef.current.anchorPoint = initialPointerPoint;
+				}
+			}
+			const shouldSeedBlockSelection =
+				shouldFallbackMixedSelectionToBlock(
+					editor.documentProfile,
+					getEditorFlowCapability(editor, blockId),
+				);
+			if (
+				pointerGestureRef.current &&
+				clickedSchema &&
+				!usesInlineTextSelection(clickedSchema) &&
+				pointerGestureRef.current.anchorPoint == null
+			) {
+				pointerGestureRef.current.anchorPoint = getBoundaryPoint(blockId, "start");
+			}
+			if (
+				pointerGestureRef.current &&
+				clickedSchema &&
+				!usesInlineTextSelection(clickedSchema) &&
+				shouldSeedBlockSelection &&
+				pointerGestureRef.current.startSelection == null
+			) {
+				pointerGestureRef.current.startSelection = {
+					type: "block",
+					blockIds: [blockId],
+				};
+			}
+			const shouldPreserveNativeInlinePointerSelection =
+				fieldEditor.isEditing &&
+				fieldEditor.focusBlockId === blockId &&
+				usesInlineTextSelection(clickedSchema);
 
 			if (interactionModelRef.current.clickToSelect) {
 				if (fieldEditor.isEditing && fieldEditor.focusBlockId !== blockId) {
 					fieldEditor.deactivate();
 				}
-			} else if (fieldEditor.isEditing) {
+			} else if (
+				fieldEditor.isEditing &&
+				!shouldPreserveNativeInlinePointerSelection
+			) {
 				flushSync(() => {
 					if (
 						typeof fieldEditor.suspendForPointerSelection ===
@@ -530,48 +594,107 @@ export function EditorContent(props: EditorContentProps) {
 
 		const handleMouseMove = (event: MouseEvent) => {
 			const gesture = regionGestureRef.current;
-			if (!gesture) return;
+			if (gesture) {
+				const config = regionSelectionStore.getSnapshot().config;
+				if (!config?.enabled) {
+					clearRegionSelectionState();
+					return;
+				}
 
-			const config = regionSelectionStore.getSnapshot().config;
-			if (!config?.enabled) {
-				clearRegionSelectionState();
+				const moved =
+					Math.abs(event.clientX - gesture.clientX) > config.threshold ||
+					Math.abs(event.clientY - gesture.clientY) > config.threshold;
+				if (!gesture.isSelecting && !moved) {
+					return;
+				}
+
+				if (!gesture.isSelecting) {
+					gesture.isSelecting = true;
+					skipNextClickRef.current = true;
+					gestureEl.ownerDocument?.getSelection()?.removeAllRanges();
+				}
+
+				event.preventDefault();
+
+				const liveRect = createClientRect(
+					gesture.clientX,
+					gesture.clientY,
+					event.clientX,
+					event.clientY,
+				);
+				const boundedRect = intersectRegionSelectionRect(
+					liveRect,
+					resolveRegionRect(config),
+				);
+				regionSelectionStore.setLiveRect(boundedRect);
+
+				const selectedIds = boundedRect ? getIntersectedBlockIds(boundedRect) : [];
+				if (selectedIds.length > 0) {
+					editor.selectBlocks(selectedIds);
+				} else {
+					editor.setSelection(null);
+				}
+				fieldEditor.deactivate();
+				return;
+			}
+
+			const pointerGesture = pointerGestureRef.current;
+			if (!pointerGesture) {
+				return;
+			}
+
+			const root = gestureEl.closest(
+				"[data-pen-editor-root]",
+			) as HTMLElement | null;
+			if (!root) {
 				return;
 			}
 
 			const moved =
-				Math.abs(event.clientX - gesture.clientX) > config.threshold ||
-				Math.abs(event.clientY - gesture.clientY) > config.threshold;
-			if (!gesture.isSelecting && !moved) {
+				Math.abs(event.clientX - pointerGesture.clientX) > 3 ||
+				Math.abs(event.clientY - pointerGesture.clientY) > 3;
+			if (!moved) {
 				return;
 			}
 
-			if (!gesture.isSelecting) {
-				gesture.isSelecting = true;
-				skipNextClickRef.current = true;
-				gestureEl.ownerDocument?.getSelection()?.removeAllRanges();
+			const resolvedSelection = resolvePointerDragSelection(
+				editor,
+				root,
+				pointerGesture,
+				{
+					clientX: event.clientX,
+					clientY: event.clientY,
+					getBoundaryPoint,
+				},
+			);
+			if (!resolvedSelection) {
+				return;
 			}
 
-			event.preventDefault();
-
-			const liveRect = createClientRect(
-				gesture.clientX,
-				gesture.clientY,
-				event.clientX,
-				event.clientY,
-			);
-			const boundedRect = intersectRegionSelectionRect(
-				liveRect,
-				resolveRegionRect(config),
-			);
-			regionSelectionStore.setLiveRect(boundedRect);
-
-			const selectedIds = boundedRect ? getIntersectedBlockIds(boundedRect) : [];
-			if (selectedIds.length > 0) {
-				editor.selectBlocks(selectedIds);
-			} else {
-				editor.setSelection(null);
+			if (resolvedSelection.mode !== "block") {
+				pointerGesture.anchorPoint = resolvedSelection.anchorPoint;
 			}
-			fieldEditor.deactivate();
+
+			pointerGesture.promotedDuringDrag = true;
+			skipNextClickRef.current = true;
+			if (resolvedSelection.mode === "block") {
+				editor.selectBlocks(resolvedSelection.blockIds);
+				fieldEditor.deactivate();
+				return;
+			}
+
+			if (resolvedSelection.mode === "mapped-text") {
+				fieldEditor.applyDocumentTextSelection(
+					resolvedSelection.anchorPoint,
+					resolvedSelection.focusPoint,
+				);
+				return;
+			}
+
+			activateCanonicalSelection(
+				resolvedSelection.anchorPoint,
+				resolvedSelection.focusPoint,
+			);
 		};
 
 		const handleMouseUp = (event: MouseEvent) => {
@@ -614,6 +737,7 @@ export function EditorContent(props: EditorContentProps) {
 
 			const gesture = pointerGestureRef.current;
 			if (!gesture) return;
+			const gestureVersion = pointerGestureVersionRef.current;
 			clearPointerSelectionState();
 
 			const clickCount = event.detail;
@@ -650,14 +774,99 @@ export function EditorContent(props: EditorContentProps) {
 				return anchorIdx <= focusIdx;
 			};
 
+			const isExpandedSingleBlockTextSelection = (
+				selection: ReturnType<Editor["getSelection"]>,
+			): boolean =>
+				selection?.type === "text" &&
+				!selection.isCollapsed &&
+				!selection.isMultiBlock &&
+				selection.anchor.blockId === selection.focus.blockId;
+
+			const shouldPreferNativeInlineSelection = (
+				anchorPoint: { blockId: string; offset: number },
+				focusPoint: { blockId: string; offset: number },
+			): boolean => {
+				const anchorRole = getEditorBlockSelectionRole(
+					editor,
+					anchorPoint.blockId,
+				);
+				const focusRole = getEditorBlockSelectionRole(editor, focusPoint.blockId);
+				return (
+					anchorRole === "editable-inline" &&
+					focusRole === "editable-inline"
+				);
+			};
+
+			const commitMappedTextSelection = (
+				anchorPoint: { blockId: string; offset: number },
+				focusPoint: { blockId: string; offset: number },
+			): true => {
+				if (anchorPoint.blockId !== focusPoint.blockId) {
+					fieldEditor.applyDocumentTextSelection(anchorPoint, focusPoint);
+					return true;
+				}
+
+				if (shouldPreferNativeInlineSelection(anchorPoint, focusPoint)) {
+					fieldEditor.applyDomTextSelection(anchorPoint, focusPoint);
+					return true;
+				}
+
+				commitCanonicalSelection(anchorPoint, focusPoint);
+				return true;
+			};
+
 			const tryHandleMappedDomSelection = (): boolean => {
 				if (!root) {
 					return false;
 				}
 
+				const startedWithExpandedTextSelection =
+					gesture.startSelection?.type === "text" &&
+					!gesture.startSelection.isCollapsed;
+				if (clickCount === 1 && !moved && startedWithExpandedTextSelection) {
+					const pointerPoint = pointToEditorSelectionPoint(
+						root,
+						clientX,
+						clientY,
+					);
+					if (pointerPoint) {
+						fieldEditor.collapseSelectionToPoint(pointerPoint);
+						return true;
+					}
+				}
+
 				const mappedSelection = domSelectionToEditor(root);
 				if (!mappedSelection) {
 					return false;
+				}
+
+				const startedWithExpandedSingleBlockTextSelection =
+					isExpandedSingleBlockTextSelection(gesture.startSelection);
+				const hasExpandedSingleBlockTextSelectionAtMouseUp =
+					startedWithExpandedSingleBlockTextSelection ||
+					isExpandedSingleBlockTextSelection(editor.selection) ||
+					(mappedSelection.anchor.blockId === mappedSelection.focus.blockId &&
+						(mappedSelection.anchor.offset !== mappedSelection.focus.offset));
+
+				if (
+					(clickCount === 1 || clickCount >= 4) &&
+					hasExpandedSingleBlockTextSelectionAtMouseUp &&
+					!moved &&
+					mappedSelection.anchor.blockId === mappedSelection.focus.blockId &&
+					shouldPreferNativeInlineSelection(
+						mappedSelection.anchor,
+						mappedSelection.focus,
+					)
+				) {
+					const pointerPoint = pointToEditorSelectionPoint(
+						root,
+						clientX,
+						clientY,
+					);
+					if (pointerPoint) {
+						fieldEditor.collapseSelectionToPoint(pointerPoint);
+						return true;
+					}
 				}
 
 				const collapsed =
@@ -700,19 +909,35 @@ export function EditorContent(props: EditorContentProps) {
 						return true;
 					}
 
-					commitCanonicalSelection(
+					return commitMappedTextSelection(
 						mappedSelection.anchor,
 						mappedSelection.focus,
 					);
-					return true;
+				}
+
+				if (startedWithExpandedTextSelection && clickCount < 3) {
+					return commitMappedTextSelection(
+						mappedSelection.anchor,
+						mappedSelection.focus,
+					);
+				}
+
+				const startedFromFallbackBlock =
+					getEditorBlockSelectionRole(editor, gesture.blockId) !==
+						"editable-inline" &&
+					shouldFallbackMixedSelectionToBlock(
+						editor.documentProfile,
+						getEditorFlowCapability(editor, gesture.blockId),
+					);
+				if (moved && collapsed && startedFromFallbackBlock) {
+					return false;
 				}
 
 				if (moved) {
-					commitCanonicalSelection(
+					return commitMappedTextSelection(
 						mappedSelection.anchor,
 						mappedSelection.focus,
 					);
-					return true;
 				}
 
 				return false;
@@ -723,48 +948,57 @@ export function EditorContent(props: EditorContentProps) {
 					return false;
 				}
 
-				const focusPoint = pointToEditorSelectionPoint(root, clientX, clientY);
-				if (!focusPoint) {
+				const resolvedSelection = resolvePointerDragSelection(editor, root, gesture, {
+					clientX,
+					clientY,
+					getBoundaryPoint,
+				});
+				if (!resolvedSelection) {
 					return false;
 				}
 
-				const anchorRole = getEditorBlockSelectionRole(editor, gesture.blockId);
-				const focusRole = getEditorBlockSelectionRole(editor, focusPoint.blockId);
-				if (
-					anchorRole === "editable-inline" &&
-					focusRole === "editable-inline"
-				) {
-					// Let native cross-block selection remain the source of truth
-					// when both ends are inline-editable and the browser gave us no range.
+				if (resolvedSelection.mode === "block") {
+					editor.selectBlocks(resolvedSelection.blockIds);
+					fieldEditor.deactivate();
+					if (root) {
+						ensureEditorFocus(root);
+					}
+					skipNextClickRef.current = true;
+					return true;
+				}
+
+				if (resolvedSelection.mode === "mapped-text") {
+					return commitMappedTextSelection(
+						resolvedSelection.anchorPoint,
+						resolvedSelection.focusPoint,
+					);
+				}
+
+				commitCanonicalSelection(
+					resolvedSelection.anchorPoint,
+					resolvedSelection.focusPoint,
+				);
+				return true;
+			};
+
+			const tryHandleDraggedBlockSelection = (): boolean => {
+				if (!root || !moved) {
 					return false;
 				}
 
-				const blockOrder = editor.documentState.blockOrder;
-				const anchorIdx = blockOrder.indexOf(gesture.blockId);
-				const focusIdx = blockOrder.indexOf(focusPoint.blockId);
-				if (anchorIdx < 0 || focusIdx < 0) {
+				const resolvedSelection = resolvePointerDragSelection(editor, root, gesture, {
+					clientX,
+					clientY,
+					getBoundaryPoint,
+				});
+				if (resolvedSelection?.mode !== "block") {
 					return false;
 				}
 
-				const selectingForward = anchorIdx <= focusIdx;
-				const anchorPoint =
-					anchorRole === "editable-inline"
-						? getBoundaryPoint(
-							gesture.blockId,
-							selectingForward ? "end" : "start",
-						)
-						: getBoundaryPoint(
-							gesture.blockId,
-							selectingForward ? "start" : "end",
-						);
-				const normalizedFocusPoint =
-					focusRole === "editable-inline"
-						? focusPoint
-						: getBoundaryPoint(
-							focusPoint.blockId,
-							selectingForward ? "end" : "start",
-						);
-				commitCanonicalSelection(anchorPoint, normalizedFocusPoint);
+				editor.selectBlocks(resolvedSelection.blockIds);
+				fieldEditor.deactivate();
+				ensureEditorFocus(root);
+				skipNextClickRef.current = true;
 				return true;
 			};
 
@@ -871,6 +1105,22 @@ export function EditorContent(props: EditorContentProps) {
 			};
 
 			const finalizePointerSelection = () => {
+				if (gestureVersion !== pointerGestureVersionRef.current) {
+					return;
+				}
+
+				if (gesture.promotedDuringDrag) {
+					if (root) {
+						ensureEditorFocus(root);
+					}
+					skipNextClickRef.current = true;
+					return;
+				}
+
+				if (tryHandleDraggedBlockSelection()) {
+					return;
+				}
+
 				if (tryHandleMappedDomSelection()) {
 					return;
 				}
@@ -887,6 +1137,28 @@ export function EditorContent(props: EditorContentProps) {
 					return;
 				}
 
+				if (
+					moved &&
+					gesture.blockId !== blockId &&
+					getEditorBlockSelectionRole(editor, gesture.blockId) !==
+						"editable-inline" &&
+					shouldFallbackMixedSelectionToBlock(
+						editor.documentProfile,
+						getEditorFlowCapability(editor, gesture.blockId),
+					)
+				) {
+					const blockIds = getBlockIdRange(gesture.blockId, blockId);
+					if (blockIds) {
+						editor.selectBlocks(blockIds);
+						fieldEditor.deactivate();
+						if (root) {
+							ensureEditorFocus(root);
+						}
+						skipNextClickRef.current = true;
+						return;
+					}
+				}
+
 				const block = editor.getBlock(blockId);
 				if (!block) return;
 
@@ -897,21 +1169,29 @@ export function EditorContent(props: EditorContentProps) {
 				tryHandleBlockSelection(blockId, block.type);
 			};
 
+			const completePointerSelection = () => {
+				try {
+					finalizePointerSelection();
+				} finally {
+					fieldEditor.endPointerSelection();
+				}
+			};
+
 			if (clickCount > 1) {
-				requestAnimationFrame(finalizePointerSelection);
+				requestAnimationFrame(completePointerSelection);
 				return;
 			}
 
-			finalizePointerSelection();
+			completePointerSelection();
 		};
 
-		gestureEl.addEventListener("mousedown", handleMouseDown);
+		gestureEl.addEventListener("mousedown", handleMouseDown, true);
 		currentEditorRoot?.addEventListener("mousedown", handleRootMouseDown);
 		gestureEl.addEventListener("click", handleClick);
 		gestureEl.ownerDocument?.addEventListener("mousemove", handleMouseMove);
 		gestureEl.ownerDocument?.addEventListener("mouseup", handleMouseUp);
 		return () => {
-			gestureEl.removeEventListener("mousedown", handleMouseDown);
+			gestureEl.removeEventListener("mousedown", handleMouseDown, true);
 			currentEditorRoot?.removeEventListener("mousedown", handleRootMouseDown);
 			gestureEl.removeEventListener("click", handleClick);
 			gestureEl.ownerDocument?.removeEventListener(
@@ -922,13 +1202,34 @@ export function EditorContent(props: EditorContentProps) {
 				"mouseup",
 				handleMouseUp,
 			);
+			if (pointerGestureRef.current) {
+				fieldEditor.endPointerSelection();
+				clearPointerSelectionState();
+			}
 			clearRegionSelectionState();
 		};
 	}, [editor, fieldEditor, readonly, regionSelectionStore]);
 
-	const blockElements = blockIds.map((blockId) => (
-		<EditorBlock key={blockId} blockId={blockId} />
-	));
+	const blockElements: React.ReactElement[] = [];
+	for (const contentItem of contentItems) {
+		if (contentItem.kind === "block") {
+			blockElements.push(
+				<EditorBlock key={contentItem.blockId} blockId={contentItem.blockId} />,
+			);
+			continue;
+		}
+		blockElements.push(
+			<div
+				key={`virtual-target:${contentItem.target.blockId}`}
+				data-pen-ai-structured-virtual-target=""
+				data-block-type={contentItem.target.targetKind}
+				data-plan-state={contentItem.planState}
+				{...{ [DATA_ATTRS.ignorePointerGesture]: "" }}
+			>
+				<AIStructuredTargetPreviewItem target={contentItem.target} />
+			</div>,
+		);
+	}
 
 	const inlineDropCaret =
 		isDropActive && inlineDropCaretStyle ? (

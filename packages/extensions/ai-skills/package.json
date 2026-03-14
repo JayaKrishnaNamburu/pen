@@ -1,0 +1,41 @@
+{
+  "name": "@pen/ai-skills",
+  "version": "0.0.0",
+  "description": "Agent skill artifacts for Pen AI tools",
+  "license": "LICENSE.md",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./src/index.ts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./src/index.ts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./src/index.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@pen/ai-tools": "workspace:*"
+  },
+  "devDependencies": {
+    "tsup": "^8.4.0",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.7"
+  }
+}

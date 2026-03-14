@@ -511,7 +511,7 @@ export class EditContextBackend implements InputBackend {
 		if (
 			normalizedSelection.anchor.blockId !== normalizedSelection.focus.blockId
 		) {
-			this.editor.selectTextRange(
+			this.fieldEditor.applyDocumentTextSelection(
 				normalizedSelection.anchor,
 				normalizedSelection.focus,
 			);
@@ -652,21 +652,32 @@ export class EditContextBackend implements InputBackend {
 	private handleKeyDown = (event: KeyboardEvent): void => {
 		if (!this.editContext || !this.element || !this.ytext) return;
 
+		const liveDomOffsets = getDirectionalSelectionOffsets(this.element);
+		const range = liveDomOffsets
+			? {
+					start: liveDomOffsets.start,
+					end: liveDomOffsets.end,
+				}
+			: {
+					start: Math.min(
+						this.editContext.selectionStart,
+						this.editContext.selectionEnd,
+					),
+					end: Math.max(
+						this.editContext.selectionStart,
+						this.editContext.selectionEnd,
+					),
+				};
+		if (liveDomOffsets) {
+			this.editContext.updateSelection(range.start, range.end);
+		}
+
 		const handled = handleFieldEditorKeyDown({
 			event,
 			editor: this.editor,
 			fieldEditor: this.fieldEditor,
 			ytext: this.ytext,
-			range: {
-				start: Math.min(
-					this.editContext.selectionStart,
-					this.editContext.selectionEnd,
-				),
-				end: Math.max(
-					this.editContext.selectionStart,
-					this.editContext.selectionEnd,
-				),
-			},
+			range,
 		});
 		if (handled) {
 			event.preventDefault();

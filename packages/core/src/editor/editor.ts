@@ -51,6 +51,7 @@ import { getTextProp, getTableContent, getCellText as getCellTextFromRow, isCRDT
 import { ExtensionManagerImpl } from "./extensionManager";
 import { SelectionManagerImpl } from "./selection";
 import { DocumentStateImpl } from "./documentState";
+import { emptyDecorationSet } from "./decorations";
 import { DocumentRangeImpl } from "./range";
 import { createDocumentSession } from "./documentSession";
 
@@ -79,10 +80,10 @@ const NOOP_UNDO: UndoManager = {
 	redo: () => false,
 	canUndo: () => false,
 	canRedo: () => false,
-	stopCapturing: () => {},
-	setGroupTimeout: () => {},
-	setTrackedOrigins: () => {},
-	onStackChange: () => () => {},
+	stopCapturing: () => { },
+	setGroupTimeout: () => { },
+	setTrackedOrigins: () => { },
+	onStackChange: () => () => { },
 };
 
 class EditorImpl implements Editor {
@@ -108,6 +109,7 @@ class EditorImpl implements Editor {
 	private _editorViewMode: EditorViewMode;
 	private _commitId = 0;
 	private readonly _blockRevisions = new Map<string, number>();
+	private _decorations: DecorationSet;
 	private readonly _viewId = crypto.randomUUID();
 
 	readonly undoManager: UndoManager;
@@ -170,6 +172,7 @@ class EditorImpl implements Editor {
 		this._installProfilePolicyHook();
 
 		this.undoManager = NOOP_UNDO;
+		this._decorations = emptyDecorationSet();
 		this._refreshCoreSlots();
 
 		this._wireObservation();
@@ -177,6 +180,7 @@ class EditorImpl implements Editor {
 		this._ensureInitialParagraph();
 
 		this._engine.normalizeAll();
+		this._refreshDecorations();
 	}
 
 	// ── Public API ───────────────────────────────────────────
@@ -227,6 +231,7 @@ class EditorImpl implements Editor {
 			emit: (event, ...args) => {
 				this._emitter.emit(event, ...args);
 			},
+			onApplyBoundary: (hook) => this._pipeline.addApplyBoundaryHook(hook),
 			getSlot: <T>(key: string): T | undefined =>
 				this._slots.get(key) as T | undefined,
 			setSlot: (key: string, value: unknown): void => {
@@ -253,11 +258,11 @@ class EditorImpl implements Editor {
 
 	apply(ops: DocumentOp[], options?: ApplyOptions): void {
 		const origin = options?.origin ?? "user";
+		const undo = this._slots.get("undo:manager") as
+			| UndoManager
+			| undefined;
 
 		if (options?.undoGroup) {
-			const undo = this._slots.get("undo:manager") as
-				| UndoManager
-				| undefined;
 			undo?.stopCapturing();
 		}
 
@@ -479,10 +484,10 @@ class EditorImpl implements Editor {
 				firstIndex === 0
 					? "first"
 					: {
-							after: (
-								this._doc.blockOrder as CRDTArray<string>
-							).get(firstIndex - 1) as string,
-						};
+						after: (
+							this._doc.blockOrder as CRDTArray<string>
+						).get(firstIndex - 1) as string,
+					};
 
 			if (typeof content === "string") {
 				const newId = createGeneratedBlockId();
@@ -628,15 +633,12 @@ class EditorImpl implements Editor {
 	// ── Decorations ──────────────────────────────────────────
 
 	requestDecorationUpdate(): void {
-		const decoSet = this._extensions.collectDecorations(
-			this._documentState,
-			this,
-		);
+		const decoSet = this._refreshDecorations();
 		this._emitter.emit("decorationsChange", decoSet.generation);
 	}
 
 	getDecorations(): DecorationSet {
-		return this._extensions.collectDecorations(this._documentState, this);
+		return this._decorations;
 	}
 
 	// ── Events ───────────────────────────────────────────────
@@ -648,6 +650,14 @@ class EditorImpl implements Editor {
 	on(event: string, handler: (...args: unknown[]) => void): Unsubscribe;
 	on(event: string, handler: (...args: unknown[]) => void): Unsubscribe {
 		return this._emitter.on(event, handler);
+	}
+
+	private _refreshDecorations(): DecorationSet {
+		this._decorations = this._extensions.collectDecorations(
+			this._documentState,
+			this,
+		);
+		return this._decorations;
 	}
 
 	onDocumentCommit(callback: PenEventMap["documentCommit"]): Unsubscribe {
@@ -782,7 +792,7 @@ class EditorImpl implements Editor {
 		if (
 			"attachEditor" in session &&
 			typeof (session as { attachEditor?: () => Unsubscribe }).attachEditor ===
-				"function"
+			"function"
 		) {
 			this._releaseSession = (
 				session as { attachEditor: () => Unsubscribe }
@@ -860,6 +870,11 @@ class EditorImpl implements Editor {
 		const commitEvent = this._createCommitEvent(event);
 		this._documentState.incrementalUpdate(event.affectedBlocks);
 		this._extensions.dispatchObserve([event], this);
+		const previousDecorationGeneration = this._decorations.generation;
+		const nextDecorations = this._refreshDecorations();
+		if (nextDecorations.generation !== previousDecorationGeneration) {
+			this._emitter.emit("decorationsChange", nextDecorations.generation);
+		}
 		this._emitter.emit("change", [event]);
 		this._emitter.emit("documentCommit", commitEvent);
 	}

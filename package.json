@@ -10,7 +10,6 @@
     "test:e2e": "playwright test",
     "typecheck": "turbo run typecheck",
     "lint": "pnpm lint:imports && turbo run lint",
-    "lint:imports": "node ./scripts/check-import-extensions.mjs",
     "clean": "turbo run clean && rm -rf node_modules"
   },
   "devDependencies": {

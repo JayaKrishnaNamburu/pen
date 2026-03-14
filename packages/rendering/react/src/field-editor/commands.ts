@@ -57,6 +57,8 @@ type BackspaceAction =
 	| { action: "select-block"; targetBlockId: string }
 	| { action: "merge"; targetBlockId: string };
 
+type DeleteDirection = "backward" | "forward";
+
 const LIST_BLOCK_TYPES = new Set([
 	"bulletListItem",
 	"numberedListItem",
@@ -69,6 +71,7 @@ const CONTAINER_EXIT_TYPES = new Set(["blockquote", "callout"]);
 const BACKSPACE_EXIT_TYPES = new Set([
 	...LIST_BLOCK_TYPES,
 	...CONTAINER_EXIT_TYPES,
+	...HEADING_TYPES,
 ]);
 
 function isBlockEmpty(ytext: InlineTextLike): boolean {
@@ -227,7 +230,7 @@ export function applyListTabBehavior(
 		const sharesParent =
 			previousBlockId !== null &&
 			editor.documentState.parentOf(previousBlockId) ===
-				editor.documentState.parentOf(blockId);
+			editor.documentState.parentOf(blockId);
 
 		if (
 			isListBlock(previousBlock) &&
@@ -368,6 +371,55 @@ export function applyBackspaceBehavior(
 		anchorOffset: targetOffset,
 		focusOffset: targetOffset,
 	};
+}
+
+function getCollapsedTextSelectionTarget(editor: Editor): SelectionTarget | null {
+	const selection = editor.selection;
+	if (!selection || selection.type !== "text") {
+		return null;
+	}
+
+	return {
+		blockId: selection.focus.blockId,
+		anchorOffset: selection.focus.offset,
+		focusOffset: selection.focus.offset,
+	};
+}
+
+export function applyDeleteBehavior(
+	editor: Editor,
+	options: {
+		blockId: string;
+		ytext: InlineTextLike;
+		range: SelectionRange | null;
+		direction: DeleteDirection;
+	},
+): SelectionTarget | null {
+	const { blockId, ytext, direction } = options;
+	const range = normalizeInlineRange(ytext, options.range);
+	if (!range) return null;
+
+	if (!isCollapsedRange(range)) {
+		editor.selectText(blockId, range.start, range.end);
+		editor.deleteSelection({ origin: "user" });
+		return (
+			getCollapsedTextSelectionTarget(editor) ?? {
+				blockId,
+				anchorOffset: range.start,
+				focusOffset: range.start,
+			}
+		);
+	}
+
+	if (direction === "backward") {
+		return applyBackspaceBehavior(editor, {
+			blockId,
+			ytext,
+			range,
+		});
+	}
+
+	return null;
 }
 
 export function mergeBackwardAtBlockStart(

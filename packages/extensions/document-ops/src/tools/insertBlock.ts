@@ -1,4 +1,5 @@
 import type { Editor, ToolDefinition, Position } from "@pen/types";
+import { POSITION_SCHEMA } from "../constants/toolSchemas";
 import { assertToolCanUseBlockType } from "../utils/blockTypePolicy";
 
 export function insertBlockTool(editor: Editor): ToolDefinition {
@@ -9,7 +10,7 @@ export function insertBlockTool(editor: Editor): ToolDefinition {
       type: "object",
       required: ["position", "blockType"],
       properties: {
-        position: {},
+        position: POSITION_SCHEMA,
         blockType: { type: "string" },
         props: { type: "object" },
         content: { type: "string" },

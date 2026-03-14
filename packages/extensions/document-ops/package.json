@@ -31,6 +31,8 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
+    "@pen/content-ops": "workspace:*",
+    "@pen/markdown-serialization": "workspace:*",
     "@pen/types": "workspace:*"
   },
   "devDependencies": {

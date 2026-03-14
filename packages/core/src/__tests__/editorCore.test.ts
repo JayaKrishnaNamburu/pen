@@ -1,10 +1,15 @@
-import { describe, expect, it } from "vitest";
+import { yjsAdapter } from "@pen/crdt-yjs";
 import { processStream } from "@pen/delta-stream";
 import { inputRulesExtension } from "@pen/input-rules";
-import { yjsAdapter } from "@pen/crdt-yjs";
 import type { PenStreamPart } from "@pen/types";
+import { describe, expect, it } from "vitest";
 
-import { createDocumentSession, createEditor, defineExtension } from "../index";
+import {
+	createDecorationSet,
+	createDocumentSession,
+	createEditor,
+	defineExtension,
+} from "../index";
 
 async function* createStream(parts: PenStreamPart[]) {
 	for (const part of parts) {
@@ -389,7 +394,7 @@ describe("@pen/core createEditor", () => {
 			editor.internals.engine,
 		);
 		expect(
-			editor.internals.getSlot("document-ops:toolServer"),
+			editor.internals.getSlot("document-ops:toolRuntime"),
 		).toBeTruthy();
 		expect(editor.internals.getSlot("undo:manager")).toBeTruthy();
 
@@ -1475,6 +1480,136 @@ describe("@pen/core createEditor", () => {
 		editor.destroy();
 	});
 
+	it("keeps concurrent user edits outside the generation zone in a separate undo group", async () => {
+		const editor = createEditor();
+		const firstBlockId = editor.firstBlock()!.id;
+		const secondBlockId = crypto.randomUUID();
+
+		editor.apply(
+			[
+				{
+					type: "insert-block",
+					blockId: secondBlockId,
+					blockType: "paragraph",
+					props: {},
+					position: "last",
+				},
+			],
+			{ origin: "system" },
+		);
+
+		await processStream(
+			(async function* (): AsyncIterable<PenStreamPart> {
+				yield {
+					type: "gen-start",
+					zoneId: "zone-concurrent",
+					blockId: secondBlockId,
+				};
+
+				editor.apply(
+					[
+						{
+							type: "insert-text",
+							blockId: firstBlockId,
+							offset: 0,
+							text: "user edit",
+						},
+					],
+					{ origin: "user" },
+				);
+
+				yield {
+					type: "gen-delta",
+					zoneId: "zone-concurrent",
+					delta: "AI output",
+				};
+				yield {
+					type: "gen-end",
+					zoneId: "zone-concurrent",
+					status: "complete",
+				};
+			})(),
+			editor,
+		);
+
+		expect(visibleText(editor.getBlock(firstBlockId)!.textContent())).toBe(
+			"user edit",
+		);
+		expect(visibleText(editor.getBlock(secondBlockId)!.textContent())).toBe(
+			"AI output",
+		);
+
+		expect(editor.undoManager.undo()).toBe(true);
+		expect(visibleText(editor.getBlock(firstBlockId)!.textContent())).toBe(
+			"user edit",
+		);
+		expect(visibleText(editor.getBlock(secondBlockId)!.textContent())).toBe(
+			"",
+		);
+
+		expect(editor.undoManager.redo()).toBe(true);
+		expect(visibleText(editor.getBlock(secondBlockId)!.textContent())).toBe(
+			"AI output",
+		);
+
+		expect(editor.undoManager.undo()).toBe(true);
+		expect(editor.undoManager.undo()).toBe(true);
+		expect(visibleText(editor.getBlock(firstBlockId)!.textContent())).toBe("");
+		expect(visibleText(editor.getBlock(secondBlockId)!.textContent())).toBe("");
+
+		editor.destroy();
+	});
+
+	it("keeps user edits inside the generation zone in the same undo group", async () => {
+		const editor = createEditor();
+		const blockId = editor.firstBlock()!.id;
+
+		await processStream(
+			(async function* (): AsyncIterable<PenStreamPart> {
+				yield { type: "gen-start", zoneId: "zone-shared", blockId };
+				yield { type: "gen-delta", zoneId: "zone-shared", delta: "AI " };
+
+				editor.apply(
+					[
+						{
+							type: "insert-text",
+							blockId,
+							offset: 3,
+							text: "user ",
+						},
+					],
+					{ origin: "user" },
+				);
+
+				yield {
+					type: "gen-delta",
+					zoneId: "zone-shared",
+					delta: "output",
+				};
+				yield {
+					type: "gen-end",
+					zoneId: "zone-shared",
+					status: "complete",
+				};
+			})(),
+			editor,
+		);
+
+		expect(visibleText(editor.getBlock(blockId)!.textContent())).toBe(
+			"user AI output",
+		);
+
+		expect(editor.undoManager.undo()).toBe(true);
+		expect(visibleText(editor.getBlock(blockId)!.textContent())).toBe("");
+
+		expect(editor.undoManager.redo()).toBe(true);
+		expect(visibleText(editor.getBlock(blockId)!.textContent())).toBe(
+			"user AI output",
+		);
+
+		editor.destroy();
+	});
+
 	it("tracks imported edits in the undo stack", () => {
 		const editor = createEditor({
 			without: ["document-ops", "delta-stream"],
@@ -1952,6 +2087,59 @@ describe("@pen/core table operations", () => {
 		expect(block.tableRowCount()).toBe(0);
 		expect(block.tableColumnCount()).toBe(0);
 		expect(block.tableCell(0, 0)).toBeNull();
+
+		editor.destroy();
+	});
+
+	it("caches decoration snapshots between decoration updates", () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream", "undo"],
+			extensions: [
+				defineExtension({
+					name: "test-decorations",
+					decorations(_state, currentEditor) {
+						const blockId = currentEditor.firstBlock()?.id;
+						if (!blockId) {
+							return createDecorationSet([]);
+						}
+
+						return createDecorationSet([
+							{
+								type: "block",
+								blockId,
+								attributes: { active: true },
+							},
+						]);
+					},
+				}),
+			],
+		});
+
+		const initialDecorations = editor.getDecorations();
+		const repeatedDecorations = editor.getDecorations();
+		expect(repeatedDecorations).toBe(initialDecorations);
+
+		editor.apply(
+			[
+				{
+					type: "insert-text",
+					blockId: editor.firstBlock()!.id,
+					offset: 0,
+					text: "trigger",
+				},
+			],
+			{ origin: "user" },
+		);
+
+		const autoRefreshedDecorations = editor.getDecorations();
+		expect(autoRefreshedDecorations).not.toBe(initialDecorations);
+		expect(editor.getDecorations()).toBe(autoRefreshedDecorations);
+
+		editor.requestDecorationUpdate();
+
+		const refreshedDecorations = editor.getDecorations();
+		expect(refreshedDecorations).not.toBe(autoRefreshedDecorations);
+		expect(editor.getDecorations()).toBe(refreshedDecorations);
 
 		editor.destroy();
 	});

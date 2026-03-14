@@ -1,5 +1,5 @@
 import type { Editor, ToolDefinition } from "@pen/types";
-import { getAvailableToolBlockSchemas } from "../utils/blockTypePolicy";
+import { listAvailableToolBlockTypes } from "../utils/structuredTargets";
 
 export function listBlockTypesTool(editor: Editor): ToolDefinition {
   return {
@@ -11,23 +11,7 @@ export function listBlockTypesTool(editor: Editor): ToolDefinition {
       properties: {},
     },
     handler: async () => {
-      const types: Array<{
-        type: string;
-        content: string;
-        props: string[];
-      }> = [];
-
-      for (const schema of getAvailableToolBlockSchemas(editor)) {
-        types.push({
-          type: schema.type,
-          content: Array.isArray(schema.content)
-            ? "nested"
-            : (schema.content as string),
-          props: Object.keys(schema.propSchema ?? {}),
-        });
-      }
-
-      return types;
+      return listAvailableToolBlockTypes(editor);
     },
   };
 }

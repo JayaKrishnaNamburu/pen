@@ -13,7 +13,8 @@ import {
   shouldForceBlockScopedSelectAll,
 } from "./editor/profilePolicy";
 
-// Re-export the entire @pen/types surface
+// Re-export the entire @pen/types surface.
+// Prefer @pen/types for contracts and @pen/core for runtime entrypoints.
 export * from "@pen/types";
 
 // Schema engine runtime

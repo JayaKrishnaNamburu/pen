@@ -255,6 +255,7 @@ export function EditorRoot(props: EditorRootProps) {
 
 	const primitiveProps: Record<string, unknown> = {
 		[DATA_ATTRS.editorRoot]: "",
+		[DATA_ATTRS.viewId]: editor.internals.viewId,
 		[DATA_ATTRS.focused]: focused || undefined,
 		[DATA_ATTRS.readonly]: readonly || undefined,
 		[DATA_ATTRS.empty]: isEmpty || undefined,
@@ -342,6 +343,9 @@ function shouldHandleEditorKeyboardEvent(
 
 	if (activeElement instanceof Node && root.contains(activeElement)) {
 		if (isTextEntryTarget(activeElement)) {
+			if (!isFieldEditorTextEntryTarget(activeElement)) {
+				return false;
+			}
 			const selection = editor.selection;
 			if (
 				selection?.type === "block" ||
@@ -425,6 +429,14 @@ function shouldHandleCollapsedFieldEditorSelectAll(
 		isSelectAllShortcut(event) &&
 		target.closest(`[${DATA_ATTRS.fieldEditorSurface}]`) !== null
 	);
+}
+
+function isFieldEditorTextEntryTarget(target: EventTarget | null): boolean {
+	if (!(target instanceof HTMLElement)) {
+		return false;
+	}
+
+	return target.closest(`[${DATA_ATTRS.fieldEditorSurface}]`) !== null;
 }
 
 function isSelectAllShortcut(event: KeyboardEvent): boolean {
@@ -646,10 +658,6 @@ function shouldUseDocumentTextDeletionFallback(
 		return true;
 	}
 
-	if (domSelectionToEditor(root) !== null) {
-		return false;
-	}
-
 	const activeElement = root.ownerDocument?.activeElement;
 	if (!(activeElement instanceof HTMLElement) || !root.contains(activeElement)) {
 		return true;
@@ -662,6 +670,10 @@ function shouldUseDocumentTextDeletionFallback(
 	const activeInlineSurface = activeElement.closest(
 		`[${DATA_ATTRS.inlineContent}]`,
 	);
-	return activeInlineSurface === null;
+	if (activeInlineSurface === null) {
+		return true;
+	}
+
+	return false;
 }
 

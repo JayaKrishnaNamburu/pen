@@ -35,7 +35,7 @@ npm install @pen/core @pen/react
 - **Shared field editor:** One content-editing engine powers blocks, table cells, database surfaces, and other structured text contexts.
 - **Schema-driven:** Block types, layout rules, and content as declarative schemas. Compile to React, Vue, Svelte, HTML, or SSR without changing the definition.
 - **CRDT-first:** Documents stored and transmitted as binary CRDT state. Yjs default, with future portability to Loro or Automerge.
-- **Model-agnostic:** A minimal `ModelAdapter` interface works with any LLM client, including the Vercel AI SDK and its 25+ providers.
+- **Model-agnostic:** A minimal `ModelAdapter` interface works with any LLM client, including the Vercel AI SDK and its 25+ providers. Native tool execution is package-first through `@pen/ai-tools`, and agent-facing skill artifacts can be surfaced through `@pen/ai-skills`.
 - **Zero-config to start:** createEditor() with zero args gives you a working editor.
 
 ```
@@ -212,6 +212,49 @@ function App() {
 }
 ```
 
+Style inline suggestion keep/undo controls your way:
+
+```tsx
+import { createEditor } from '@pen/core'
+import * as Pen from '@pen/react'
+
+const editor = createEditor()
+
+function App() {
+  return (
+    <Pen.Editor.Root editor={editor}>
+      <Pen.AI.Root editor={editor}>
+        <Pen.Editor.Content />
+
+        <Pen.AI.InlineSuggestionControls>
+          <Pen.AI.InlineSuggestionFloatingSurface>
+            <div data-pen-ai-inline-suggestion-nav="">
+              <Pen.AI.InlineSuggestionPrevious />
+              <Pen.AI.InlineSuggestionCount />
+              <Pen.AI.InlineSuggestionNext />
+            </div>
+            <Pen.AI.InlineSuggestionReject>Undo</Pen.AI.InlineSuggestionReject>
+            <Pen.AI.InlineSuggestionAccept>Keep</Pen.AI.InlineSuggestionAccept>
+          </Pen.AI.InlineSuggestionFloatingSurface>
+        </Pen.AI.InlineSuggestionControls>
+      </Pen.AI.Root>
+    </Pen.Editor.Root>
+  )
+}
+```
+
+`Pen.AI.InlineSuggestionControls` is the headless state root for persistent inline suggestions. Use the built-in floating surface, or replace it with your own toolbar layout:
+
+```tsx
+<Pen.AI.InlineSuggestionControls asChild>
+  <div className="my-review-toolbar">
+    <Pen.AI.InlineSuggestionCount />
+    <Pen.AI.InlineSuggestionReject />
+    <Pen.AI.InlineSuggestionAccept />
+  </div>
+</Pen.AI.InlineSuggestionControls>
+```
+
 Progressive capability -- same engine, different surface:
 
 ```tsx
@@ -229,12 +272,45 @@ const editor = createEditor({
 //
 // const editor = createEditor({
 //   schema: defaultSchema.extend([myCustomBlock]),
-//   extensions: [
+//   extensions: [Ø
 //     search(),
 //     collaboration({ room: 'doc-123' }),
 //   ],
 // })
 ```
+
+## Tool API
+
+Pen's agent/tool surface is package-first. `createEditor()` installs `@pen/document-ops` by default, `@pen/ai-tools` gives you the canonical agent-facing tool runtime, and `@pen/ai-skills` packages those tools into agent skill artifacts.
+
+```ts
+import { createEditor } from "@pen/core";
+import { getAIToolRuntime } from "@pen/ai-tools";
+import { directTransport } from "@pen/transport-direct";
+
+const editor = createEditor();
+const toolRuntime = getAIToolRuntime(editor);
+
+if (!toolRuntime) {
+  throw new Error("AI tools are unavailable.");
+}
+
+const transport = directTransport({ toolRuntime });
+```
+
+Recommended package entrypoints:
+
+- `@pen/types`: contracts such as `ToolRegistry`, `ToolRuntime`, `ToolDefinition`, `ToolContext`, and `PenTransport`
+- `@pen/core`: runtime entrypoints such as `createEditor()` and `createDocumentSession()`
+- `@pen/document-ops`: document semantics and advanced low-level tool internals
+- `@pen/ai-tools`: canonical agent/tool package, tool descriptors, execution helpers, and tool runtime accessors
+- `@pen/ai-skills`: agent-facing skill registry and generated skill artifacts
+- `@pen/transport-direct`: in-process tool execution
+- `@pen/transport-sse`: Pen-native remote streaming
+
+When you need low-level mutation helpers outside the built-in AI/runtime flows, `ToolContextImpl` and `ToolRuntimeImpl` remain available from `@pen/document-ops` as advanced APIs. When you need to surface those tools to agents, build skills from `@pen/ai-skills` rather than introducing a second execution protocol.
+
+The playground backend follows the same shape: it exposes native tool routes under `/api/tools` and skill artifacts under `/api/skills`.
 
 ## Architecture
 
@@ -309,7 +385,8 @@ In practice:
 
 | Package | Description |
 |---|---|
-| `@pen/core` | Extension manager, schema engine, field editor host, selection, decorations, undo, document pool, tool server |
+| `@pen/core` | Runtime host: `createEditor()`, document sessions, schema engine, field editor host, selection, decorations, undo |
+| `@pen/types` | Zero-dependency contracts: `ToolRegistry`, `ToolRuntime`, `ToolDefinition`, `ToolContext`, `PenTransport`, editor types |
 | `@pen/crdt-yjs` | Yjs CRDT adapter (default) |
 | `@pen/schema-default` | Default block schemas (paragraph, heading, list, code, image, table, divider, callout, toggle, blockquote) |
 
@@ -323,7 +400,9 @@ In practice:
 
 | Package | Description |
 |---|---|
-| `@pen/document-ops` | Block CRUD, generation zones |
+| `@pen/document-ops` | Default document tool suite, `getDocumentToolRuntime()`, advanced `ToolContextImpl`/`ToolRuntimeImpl` APIs |
+| `@pen/ai-tools` | Canonical public AI tool surface for agents, transports, and direct editor-attached tool execution |
+| `@pen/ai-skills` | Agent skill registry and generated skill artifacts built on top of `@pen/ai-tools` |
 | `@pen/delta-stream` | Streaming protocol, processing pipeline |
 | `@pen/input-rules` | Opt-in markdown autoformat extension |
 | `@pen/undo` | Undo groups, origin tagging, field editor integration |
@@ -336,14 +415,6 @@ In practice:
 |---|---|
 | `@pen/transport-sse` | Server-Sent Events transport |
 | `@pen/transport-direct` | In-process transport |
-
-### Providers
-
-| Package | Description |
-|---|---|
-| `@pen/mcp` | MCP tool server for bidirectional protocol clients |
-
-See `packages/providers/mcp/README.md` for `stdio`, Streamable HTTP, and SSE wiring examples.
 
 ### Tooling
 
@@ -378,27 +449,27 @@ The fastest way to a working editor:
 3. **Run tests.** `pnpm test` — headless test suite passes (no browser required).
 4. **Typecheck.** `pnpm typecheck` — monorepo-wide type safety.
 5. **Scaffold an app.** Once M0 packages are published: `npx @pen/cli create my-editor` scaffolds a React + Vite app with the default editor. The bootstrap scaffold is an M0 requirement (see DX Sequencing in `spec/v01.md` Section 21); full CLI features ship in Wave 9.
-6. **Explore the spec.** Start with `spec/v01.md` for architecture and design principles, then dive into wave specs (`spec/wave-00-foundation-types.md` onward) for implementation details.
+6. **Explore the spec.** Start with `spec/v01.md` for architecture and design principles, then dive into wave specs (`spec/wave00FoundationTypes.md` onward) for implementation details.
 
 ### Spec Navigation
 
 | Document | What it covers |
 |---|---|
 | `spec/v01.md` | Full technical specification: architecture, types, schema, selection, extensions, streaming, milestones |
-| `spec/wave-00-foundation-types.md` | `@pen/types` — type definitions, `prop` builder, `defineBlock`, `defineExtension` |
-| `spec/wave-01-crdt-layer.md` | `@pen/crdt-yjs` — Yjs adapter, CRDT events, conflict resolution |
-| `spec/wave-02-schema-engine.md` | Schema engine, normalization, `BlockHandle` API, default schema, `@pen/test` |
-| `spec/wave-03-editor-core.md` | `createEditor()`, apply pipeline, extensions, undo, streaming |
-| `spec/wave-04-transports-importers.md` | SSE/direct transports, markdown/HTML importers and exporters |
-| `spec/wave-05-react-rendering.md` | React primitives, field editor, hooks, toolbar, clipboard |
-| `spec/wave-06-mcp-bench-integration.md` | MCP server, benchmarks, M0 exit criteria |
-| `spec/wave-07-ai-track-changes.md` | AI extension, suggestions, track changes |
-| `spec/wave-08-collaboration-history.md` | Multiplayer, presence, awareness, version history |
-| `spec/wave-09-search-input-rules-cli.md` | Search, input rules, `pen create` CLI |
-| `spec/wave-10-layout.md` | Layout containers, flex/grid blocks, responsive stacks |
-| `spec/wave-11-apps-execution.md` | Embedded apps, execution sandboxing, document branching |
-| `spec/wave-12-production-ecosystem.md` | Auth, rate limiting, Vue/Svelte, Loro, documentation site |
-| `spec/errata-ledger.md` | Consolidated errata triage across all waves |
+| `spec/wave00FoundationTypes.md` | `@pen/types` — type definitions, `prop` builder, `defineBlock`, `defineExtension` |
+| `spec/wave01CrdtLayer.md` | `@pen/crdt-yjs` — Yjs adapter, CRDT events, conflict resolution |
+| `spec/wave02SchemaEngine.md` | Schema engine, normalization, `BlockHandle` API, default schema, `@pen/test` |
+| `spec/wave03EditorCore.md` | `createEditor()`, apply pipeline, extensions, undo, streaming |
+| `spec/wave04TransportsImporters.md` | SSE/direct transports, markdown/HTML importers and exporters |
+| `spec/wave05ReactRendering.md` | React primitives, field editor, hooks, toolbar, clipboard |
+| `spec/wave06AiToolsBenchIntegration.md` | AI tools, benchmarks, M0 exit criteria |
+| `spec/wave07AiTrackChanges.md` | AI extension, suggestions, track changes |
+| `spec/wave08CollaborationHistory.md` | Multiplayer, presence, awareness, version history |
+| `spec/wave09SearchInputRulesCli.md` | Search, input rules, `pen create` CLI |
+| `spec/wave10Layout.md` | Layout containers, flex/grid blocks, responsive stacks |
+| `spec/wave11AppsExecution.md` | Embedded apps, execution sandboxing, document branching |
+| `spec/wave12ProductionEcosystem.md` | Auth, rate limiting, Vue/Svelte, Loro, documentation site |
+| `spec/errataLedger.md` | Consolidated errata triage across all waves |
 
 ## Milestones
 
@@ -419,7 +490,7 @@ By contributing to Pen, you agree to the [Contributor License Agreement](CLA.md)
 
 Before implementation starts on any wave, the following must be satisfied:
 
-- **Errata lock.** All items in `spec/errata-ledger.md` for that wave must be triaged (fixed in spec, implementation-required, or deferred).
+- **Errata lock.** All items in `spec/errataLedger.md` for that wave must be triaged (fixed in spec, implementation-required, or deferred).
 - **Diagnostics contract.** All diagnostic emissions must use structured codes per `spec/v01.md` Section 22.
 - **API stability.** Public API changes follow the stability policy in `spec/v01.md` Section 23.
 

@@ -18,6 +18,7 @@ export function buildDataAttributes(
 export const DATA_ATTRS = {
 	editorRoot: "data-pen-editor-root",
 	editorContent: "data-pen-editor-content",
+	viewId: "data-pen-view-id",
 	editorBlock: "data-pen-editor-block",
 	inlineContent: "data-pen-inline-content",
 	fieldEditorSurface: "data-pen-field-editor-surface",

@@ -6,6 +6,7 @@ import {
 	getNumberedListItemValue,
 } from "@pen/core";
 import {
+	applyDeleteBehavior,
 	applyListInputRule,
 	applyBackspaceBehavior,
 	applyEnterBehavior,
@@ -179,6 +180,27 @@ describe("@pen/react field-editor commands", () => {
 		});
 
 		fieldEditor.destroy();
+		editor.destroy();
+	});
+
+	it("resets pointer-selection suppression on deactivate and destroy", () => {
+		const editor = createEditor(editorOpts());
+		const blockId = editor.firstBlock()!.id;
+		const fieldEditor = new FieldEditorImpl(editor);
+
+		fieldEditor.activate(blockId);
+		fieldEditor.beginPointerSelection();
+		expect(fieldEditor.shouldHandleDomSelectionChange(0)).toBe(false);
+
+		fieldEditor.deactivate();
+		expect(fieldEditor.shouldHandleDomSelectionChange(0)).toBe(true);
+
+		fieldEditor.beginPointerSelection();
+		expect(fieldEditor.shouldHandleDomSelectionChange(0)).toBe(false);
+
+		fieldEditor.destroy();
+		expect((fieldEditor as any)._pointerSelectionDepth).toBe(0);
+
 		editor.destroy();
 	});
 
@@ -563,6 +585,23 @@ describe("@pen/react field-editor commands", () => {
 });
 
 describe("resolveBackspaceAction – schema-aware Backspace", () => {
+	it("converts an empty heading to paragraph", () => {
+		const editor = createEditor(editorOpts());
+		const blockId = editor.firstBlock()!.id;
+
+		editor.apply([{ type: "convert-block", blockId, newType: "heading" }]);
+
+		const action = resolveBackspaceAction(editor, {
+			blockId,
+			ytext: getYText(editor, blockId),
+			range: { start: 0, end: 0 },
+		});
+
+		expect(action).toEqual({ action: "convert", newType: "paragraph" });
+
+		editor.destroy();
+	});
+
 	it("converts an empty bullet list item to paragraph", () => {
 		const editor = createEditor(editorOpts());
 		const blockId = editor.firstBlock()!.id;
@@ -695,6 +734,39 @@ describe("resolveBackspaceAction – schema-aware Backspace", () => {
 		expect(action).toEqual({
 			action: "merge",
 			targetBlockId: firstBlockId,
+		});
+
+		editor.destroy();
+	});
+});
+
+describe("applyDeleteBehavior", () => {
+	it("deletes selected text before falling back to character deletion", () => {
+		const editor = createEditor(editorOpts());
+		const blockId = editor.firstBlock()!.id;
+
+		editor.apply([
+			{ type: "insert-text", blockId, offset: 0, text: "Hello" },
+		]);
+
+		const target = applyDeleteBehavior(editor, {
+			blockId,
+			ytext: getYText(editor, blockId),
+			range: { start: 1, end: 4 },
+			direction: "backward",
+		});
+
+		expect(visibleText(editor.getBlock(blockId)!.textContent())).toBe("Ho");
+		expect(target).toEqual({
+			blockId,
+			anchorOffset: 1,
+			focusOffset: 1,
+		});
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId, offset: 1 },
+			focus: { blockId, offset: 1 },
+			isCollapsed: true,
 		});
 
 		editor.destroy();

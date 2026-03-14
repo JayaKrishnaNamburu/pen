@@ -8,6 +8,7 @@ import type {
 	InputBackend,
 } from "@pen/core";
 import {
+	DocumentRangeImpl,
 	hasFieldEditorSurface,
 	resolveFieldEditorInputMode,
 	usesInlineTextSelection,
@@ -68,6 +69,9 @@ export class FieldEditorImpl implements FieldEditorSession {
 	private _unsubscribeHistoryApplied: Unsubscribe | null = null;
 	private _pendingMarks: Record<string, unknown | null> = {};
 	private _syncDomVersion = 0;
+	private _suppressNextDomSelectionProjection = false;
+	private _pointerSelectionDepth = 0;
+	private _pendingSelectionProjectionVersion: number | null = null;
 	private readonly _sessionReconciler: SessionReconciler;
 	private readonly _historySelectionCoordinator: HistorySelectionCoordinator;
 	private _selectAllBehavior: EditorSelectAllBehavior;
@@ -102,7 +106,8 @@ export class FieldEditorImpl implements FieldEditorSession {
 					this._clearPendingMarks(true);
 				}
 				const suppressSelectionSync =
-					this._historySelectionCoordinator.shouldSuppressSelectionSync();
+					this._consumeDomSelectionProjectionSuppression() ||
+					this._shouldSuppressSelectionSync();
 				this._recomputeSurfaceFromSelection({
 					syncSelectionToBackend: !suppressSelectionSync,
 				});
@@ -333,6 +338,17 @@ export class FieldEditorImpl implements FieldEditorSession {
 		this._deactivate({ restoreFocus: false });
 	}
 
+	beginPointerSelection(): void {
+		this._pointerSelectionDepth += 1;
+	}
+
+	endPointerSelection(): void {
+		if (this._pointerSelectionDepth === 0) {
+			return;
+		}
+		this._pointerSelectionDepth -= 1;
+	}
+
 	setComposing(composing: boolean): void {
 		if (this._isComposing === composing) return;
 		this._isComposing = composing;
@@ -354,6 +370,8 @@ export class FieldEditorImpl implements FieldEditorSession {
 		this._isEditing = false;
 		this._isComposing = false;
 		this._historySelectionCoordinator.reset();
+		this._suppressNextDomSelectionProjection = false;
+		this._pointerSelectionDepth = 0;
 		this._inputMode = "none";
 		this._mode = "inactive";
 		this._pendingMarks = {};
@@ -450,10 +468,75 @@ export class FieldEditorImpl implements FieldEditorSession {
 		this.setTextSelection(blockId, anchorOffset, focusOffset);
 	}
 
+	applyDocumentTextSelection(
+		anchor: { blockId: string; offset: number },
+		focus: { blockId: string; offset: number },
+	): void {
+		this._suppressNextDomSelectionProjection = true;
+
+		if (!this._isEditing || !this._focusBlockId) {
+			this._startSession(anchor.blockId, {
+				stopCapturing: false,
+				syncSelectionToBackend: false,
+				attachImmediately: false,
+			});
+		} else {
+			const blockRange = new DocumentRangeImpl(
+				anchor,
+				focus,
+				this._editor.internals.doc,
+			).blockRange;
+			if (!blockRange.includes(this._focusBlockId)) {
+				this._focusBlockId = anchor.blockId;
+			}
+		}
+
+		this._editor.selectTextRange(anchor, focus);
+		this._emitStateChange();
+	}
+
+	applyDomTextSelection(
+		anchor: { blockId: string; offset: number },
+		focus: { blockId: string; offset: number },
+		options?: {
+			focusBlockId?: string;
+		},
+	): void {
+		if (anchor.blockId !== focus.blockId) {
+			this.applyDocumentTextSelection(anchor, focus);
+			return;
+		}
+
+		this._suppressNextDomSelectionProjection = true;
+
+		if (
+			anchor.blockId === focus.blockId &&
+			(!this._isEditing || this._focusBlockId !== anchor.blockId)
+		) {
+			this._startSession(anchor.blockId, {
+				stopCapturing: false,
+				syncSelectionToBackend: false,
+				attachImmediately: false,
+			});
+		}
+
+		if (anchor.blockId === focus.blockId) {
+			this.setTextSelection(anchor.blockId, anchor.offset, focus.offset);
+			return;
+		}
+
+		if (options?.focusBlockId) {
+			this._focusBlockId = options.focusBlockId;
+		}
+		this._editor.selectTextRange(anchor, focus);
+		this._emitStateChange();
+	}
+
 	shouldHandleDomSelectionChange(isApplyingSelection: number): boolean {
 		return (
 			isApplyingSelection === 0 &&
-			!this._historySelectionCoordinator.shouldSuppressSelectionSync()
+			this._pointerSelectionDepth === 0 &&
+			!this._shouldSuppressSelectionSync()
 		);
 	}
 
@@ -622,9 +705,9 @@ export class FieldEditorImpl implements FieldEditorSession {
 				selection.anchor.blockId === cycle.blockId &&
 				selection.focus.blockId === cycle.blockId &&
 				Math.min(selection.anchor.offset, selection.focus.offset) ===
-					0 &&
+				0 &&
 				Math.max(selection.anchor.offset, selection.focus.offset) ===
-					blockLength
+				blockLength
 			);
 		}
 
@@ -692,7 +775,7 @@ export class FieldEditorImpl implements FieldEditorSession {
 		const selection = this._editor.selection;
 		const anchor =
 			selection?.type === "text" &&
-			selection.blockRange.includes(this._focusBlockId)
+				selection.blockRange.includes(this._focusBlockId)
 				? selection.anchor
 				: { blockId: this._focusBlockId, offset: 0 };
 		const doc = this._editor.documentState;
@@ -761,6 +844,7 @@ export class FieldEditorImpl implements FieldEditorSession {
 		this._unsubscribeHistoryApplied = null;
 		this._sessionReconciler.destroy();
 		this._deactivate({ restoreFocus: false });
+		this._pointerSelectionDepth = 0;
 		this._activateListeners.clear();
 		this._deactivateListeners.clear();
 		this._storeListeners.clear();
@@ -825,6 +909,12 @@ export class FieldEditorImpl implements FieldEditorSession {
 		for (const callback of this._storeListeners) {
 			callback();
 		}
+	}
+
+	private _consumeDomSelectionProjectionSuppression(): boolean {
+		const shouldSuppress = this._suppressNextDomSelectionProjection;
+		this._suppressNextDomSelectionProjection = false;
+		return shouldSuppress;
 	}
 
 	private _resolveBaseInsertMarks(): Record<string, unknown> {
@@ -1078,6 +1168,7 @@ export class FieldEditorImpl implements FieldEditorSession {
 	): void {
 		if (version === undefined) {
 			version = ++this._syncDomVersion;
+			this._pendingSelectionProjectionVersion = version;
 		}
 		const v = version;
 		requestAnimationFrame(() => {
@@ -1119,6 +1210,9 @@ export class FieldEditorImpl implements FieldEditorSession {
 			if (projected) {
 				requestAnimationFrame(() => {
 					if (this._syncDomVersion === v) {
+						if (this._pendingSelectionProjectionVersion === v) {
+							this._pendingSelectionProjectionVersion = null;
+						}
 						this._historySelectionCoordinator.completeDeferredProjection(
 							pendingProjectionRequestId,
 						);
@@ -1129,9 +1223,19 @@ export class FieldEditorImpl implements FieldEditorSession {
 			if (!projected && remainingAttempts > 0) {
 				this._syncDomSelectionOnce(remainingAttempts - 1, v);
 			} else if (!projected) {
+				if (this._pendingSelectionProjectionVersion === v) {
+					this._pendingSelectionProjectionVersion = null;
+				}
 				this._historySelectionCoordinator.cancelDeferredProjection();
 			}
 		});
+	}
+
+	private _shouldSuppressSelectionSync(): boolean {
+		return (
+			this._historySelectionCoordinator.shouldSuppressSelectionSync() ||
+			this._pendingSelectionProjectionVersion !== null
+		);
 	}
 
 	private _getYText(blockId: string): FieldEditorTextLike | null {

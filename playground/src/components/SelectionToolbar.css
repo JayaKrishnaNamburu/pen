@@ -14,3 +14,219 @@
 	border-radius: 200px;
 	box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
 }
+
+.selection-toolbar-ai-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	padding: 0 10px;
+	min-height: 30px;
+	border: 0;
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--accent) 18%, var(--surface));
+	color: var(--text);
+	font: inherit;
+	cursor: pointer;
+}
+
+.playground-inline-session {
+	position: absolute;
+	top: var(--pen-ai-contextual-prompt-top);
+	left: var(--pen-ai-contextual-prompt-left);
+	z-index: 60;
+	display: grid;
+	gap: 0;
+	min-width: 420px;
+	max-width: min(680px, calc(100% - 24px));
+	padding: 0;
+	background: color-mix(in srgb, var(--surface) 94%, black);
+	border: 1px solid var(--border);
+	border-radius: 14px;
+	box-shadow: 0 18px 48px rgba(0, 0, 0, 0.3);
+	overflow: hidden;
+}
+
+.playground-inline-session[data-mode="inserted"] {
+	left: max(20px, calc((100% - 760px) / 2 + 20px));
+}
+
+.playground-inline-session:not([data-layout-ready]) {
+	visibility: hidden;
+}
+
+.playground-inline-session [data-pen-ai-contextual-prompt-form],
+.playground-inline-session [data-pen-ai-inline-session-form] {
+	display: grid;
+	gap: 0;
+}
+
+.playground-inline-session [data-pen-ai-contextual-prompt-header],
+.playground-inline-session [data-pen-ai-inline-session-header] {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	padding: 12px 14px 10px;
+	min-height: 48px;
+}
+
+.playground-inline-session [data-pen-ai-contextual-prompt-target],
+.playground-inline-session [data-pen-ai-inline-session-target] {
+	display: grid;
+	gap: 4px;
+}
+
+.playground-inline-session [data-pen-ai-contextual-prompt-label],
+.playground-inline-session [data-pen-ai-inline-session-label] {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+}
+
+.playground-inline-session [data-pen-ai-contextual-prompt-target-hint],
+.playground-inline-session [data-pen-ai-inline-session-target-hint] {
+	font-size: 12px;
+	color: var(--text);
+}
+
+.playground-inline-session [data-target-state="pinned"] {
+	color: color-mix(in srgb, var(--accent) 72%, var(--text));
+}
+
+.playground-inline-session [data-pen-ai-contextual-prompt-history],
+.playground-inline-session [data-pen-ai-inline-session-history] {
+	display: grid;
+	gap: 6px;
+	padding: 0 14px 10px;
+	font-size: 12px;
+	color: var(--text-muted);
+}
+
+.playground-inline-session [data-pen-ai-contextual-prompt-turn],
+.playground-inline-session [data-pen-ai-inline-session-turn] {
+	display: grid;
+	gap: 8px;
+	padding: 8px;
+	background: color-mix(in srgb, var(--surface) 86%, black);
+	border: 1px solid var(--border);
+	border-radius: 10px;
+}
+
+.playground-inline-session [data-pen-ai-contextual-prompt-prompt],
+.playground-inline-session [data-pen-ai-inline-session-prompt] {
+	color: var(--text);
+}
+
+.playground-inline-session [data-pen-ai-contextual-prompt-turn-meta],
+.playground-inline-session [data-pen-ai-inline-session-turn-meta] {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.playground-inline-session [data-pen-ai-contextual-prompt-turn-status],
+.playground-inline-session [data-pen-ai-inline-session-turn-status] {
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.playground-inline-session [data-pen-ai-contextual-prompt-turn-actions],
+.playground-inline-session [data-pen-ai-inline-session-turn-actions] {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.playground-inline-session [data-pen-ai-contextual-prompt-input],
+.playground-inline-session [data-pen-ai-inline-session-input] {
+	width: 100%;
+	min-height: 96px;
+	padding: 14px;
+	border: 0;
+	border-top: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+	border-bottom: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+	border-radius: 0;
+	background: color-mix(in srgb, var(--surface) 90%, black);
+	color: var(--text);
+	font: inherit;
+	line-height: 1.45;
+	resize: none;
+	outline: none;
+}
+
+.playground-inline-session [data-pen-ai-contextual-prompt-input]::placeholder,
+.playground-inline-session [data-pen-ai-inline-session-input]::placeholder {
+	color: var(--text-muted);
+}
+
+.playground-inline-session [data-pen-ai-contextual-prompt-controls],
+.playground-inline-session [data-pen-ai-inline-session-controls] {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	padding: 10px 14px 12px;
+}
+
+.playground-inline-session [data-pen-ai-contextual-prompt-actions],
+.playground-inline-session [data-pen-ai-inline-session-actions] {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 8px;
+	margin-left: auto;
+	min-width: 184px;
+}
+
+.playground-inline-session button {
+	border: 1px solid var(--border);
+	border-radius: 10px;
+	background: color-mix(in srgb, var(--surface) 88%, black);
+	color: var(--text);
+	font: inherit;
+	padding: 7px 12px;
+	cursor: pointer;
+	transition:
+		background-color 120ms ease,
+		border-color 120ms ease,
+		color 120ms ease;
+}
+
+.playground-inline-session button:hover:not(:disabled) {
+	background: color-mix(in srgb, var(--surface) 78%, black);
+	border-color: color-mix(in srgb, var(--accent) 24%, var(--border));
+}
+
+.playground-inline-session [data-pen-ai-inline-session-accept-all],
+.playground-inline-session [data-pen-ai-inline-session-submit] {
+	background: color-mix(in srgb, var(--accent) 20%, var(--surface));
+	border-color: color-mix(in srgb, var(--accent) 38%, var(--border));
+}
+
+.playground-inline-session [data-pen-ai-inline-session-accept-all],
+.playground-inline-session [data-pen-ai-inline-session-reject-all] {
+	min-width: 88px;
+}
+
+.playground-inline-session [data-pen-ai-inline-session-submit] {
+	min-width: 108px;
+	justify-self: end;
+}
+
+.playground-inline-session [data-pen-ai-inline-session-spacer] {
+	min-height: 1px;
+	flex: 1 1 auto;
+}
+
+.playground-inline-session button:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+

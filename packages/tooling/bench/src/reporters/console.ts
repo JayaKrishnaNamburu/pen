@@ -1,9 +1,10 @@
-import { getBenchTarget } from "../bench";
-import type { BenchResult } from "../bench";
+import { evaluateBenchResult } from "../bench";
+import type { BenchResult, BenchWaiver } from "../bench";
 
 export function reportConsole(
   suiteName: string,
   results: BenchResult[],
+  waivers: readonly BenchWaiver[] = [],
 ): void {
   const nameWidth = Math.max(...results.map((r) => r.name.length), 10);
 
@@ -17,13 +18,37 @@ export function reportConsole(
   console.error(`  ${"-".repeat(nameWidth + 83)}`);
 
   for (const r of results) {
-    const targetMs = getBenchTarget(r.name);
-    const status = targetMs === Infinity || r.p95Ms <= targetMs ? "\u2713" : "\u2717";
-    const targetLabel = targetMs === Infinity ? "baseline" : `<${targetMs}ms`;
+    const evaluation = evaluateBenchResult(r, waivers);
+    const status =
+      evaluation.meetsTarget || (evaluation.waiver && !evaluation.waiverExpired)
+        ? "\u2713"
+        : "\u2717";
+    const targetLabel =
+      evaluation.targetMs === undefined
+        ? "baseline"
+        : `<${evaluation.targetMs}ms`;
+    const gateLabel = evaluation.waiver
+      ? evaluation.waiverExpired
+        ? `expired:${evaluation.waiver.owner}`
+        : `waived:${evaluation.waiver.owner}`
+      : evaluation.isCritical
+        ? "critical"
+        : "tracked";
     console.error(
-      `  ${`${status} ${r.name}`.padEnd(nameWidth + 2)}  ${r.averageMs.toFixed(2).padStart(10)}  ${r.p50Ms.toFixed(2).padStart(10)}  ${r.p95Ms.toFixed(2).padStart(10)}  ${r.minMs.toFixed(2).padStart(10)}  ${r.maxMs.toFixed(2).padStart(10)}  ${r.opsPerSecond.toFixed(0).padStart(10)}  ${targetLabel.padStart(10)}`,
+      `  ${`${status} ${r.name}`.padEnd(nameWidth + 2)}  ${r.averageMs.toFixed(2).padStart(10)}  ${r.p50Ms.toFixed(2).padStart(10)}  ${r.p95Ms.toFixed(2).padStart(10)}  ${r.minMs.toFixed(2).padStart(10)}  ${r.maxMs.toFixed(2).padStart(10)}  ${r.opsPerSecond.toFixed(0).padStart(10)}  ${`${targetLabel} ${gateLabel}`.padStart(19)}`,
     );
+    if (r.metrics && Object.keys(r.metrics).length > 0) {
+      console.error(`    metrics: ${formatBenchMetrics(r.metrics)}`);
+    }
   }
 
   console.error("");
+}
+
+function formatBenchMetrics(
+  metrics: Record<string, string | number | boolean>,
+): string {
+  return Object.entries(metrics)
+    .map(([key, value]) => `${key}=${String(value)}`)
+    .join(" ");
 }

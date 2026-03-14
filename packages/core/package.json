@@ -31,9 +31,11 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
+    "@pen/content-ops": "workspace:*",
     "@pen/crdt-yjs": "workspace:*",
     "@pen/delta-stream": "workspace:*",
     "@pen/document-ops": "workspace:*",
+    "@pen/markdown-serialization": "workspace:*",
     "@pen/schema-default": "workspace:^",
     "@pen/shortcuts": "workspace:*",
     "@pen/types": "workspace:*",

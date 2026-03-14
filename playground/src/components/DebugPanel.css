@@ -1,0 +1,85 @@
+.playground-debug-shell {
+	display: flex;
+	width: 100%;
+	min-width: 0;
+	position: sticky;
+	top: 10px;
+	pointer-events: auto;
+}
+
+.playground-debug-shell[data-variant="dock"] {
+	position: static;
+	top: auto;
+}
+
+.playground-debug-panel {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	width: 100%;
+	padding: 15px;
+	border: 1px solid var(--border);
+	border-radius: 20px;
+	background: color-mix(in srgb, var(--surface) 92%, var(--bg) 8%);
+	box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
+}
+
+.playground-debug-shell[data-variant="dock"] .playground-debug-panel {
+	padding: 0;
+	border: 0;
+	border-radius: 0;
+	background: transparent;
+	box-shadow: none;
+}
+
+.playground-debug-shell[data-variant="dock"] .playground-debug-summary {
+	padding: 0;
+}
+
+.playground-debug-section,
+.playground-debug-summary {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+}
+
+.playground-debug-section-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 5px;
+}
+
+.playground-debug-caption,
+.playground-debug-metric-label,
+.playground-debug-metric-value {
+	font-size: 12px;
+	line-height: 1.5;
+}
+
+.playground-debug-caption,
+.playground-debug-metric-label {
+	color: var(--text-muted);
+}
+
+.playground-debug-metric-label {
+	font-weight: 500;
+}
+
+.playground-debug-metric {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+}
+
+@media (max-width: 1100px) {
+	.playground-debug-shell {
+		top: 10px;
+	}
+
+	.playground-debug-section-header {
+		flex-direction: column;
+		align-items: stretch;
+	}
+}

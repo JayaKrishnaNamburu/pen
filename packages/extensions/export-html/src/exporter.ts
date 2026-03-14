@@ -1,5 +1,14 @@
-import type { Exporter, ExportOptions, Editor, BlockHandle, TableCellHandle } from "@pen/core";
-import { buildDatabaseData, sortDeltaAttributes } from "@pen/core";
+import type {
+  BlockHandle,
+  Editor,
+  Exporter,
+  ExportOptions,
+  TableCellHandle,
+} from "@pen/types";
+import {
+  buildDatabaseData,
+  sortDeltaAttributes,
+} from "@pen/markdown-serialization";
 
 export const htmlExporter: Exporter<string> = {
   name: "html",

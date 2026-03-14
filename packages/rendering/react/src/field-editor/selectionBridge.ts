@@ -746,6 +746,65 @@ export function getSelectionPointRect(
 	return getInlineCaretRectFromOffset(inlineEl, point.offset);
 }
 
+export function getTextSelectionClientRects(
+	root: HTMLElement,
+	selection: {
+		anchor: SelectionPoint;
+		focus: SelectionPoint;
+	},
+): DOMRect[] {
+	const doc = root.ownerDocument;
+	if (!doc) {
+		return [];
+	}
+
+	const anchorPoint = findDOMPoint(
+		root,
+		selection.anchor.blockId,
+		selection.anchor.offset,
+	);
+	const focusPoint = findDOMPoint(
+		root,
+		selection.focus.blockId,
+		selection.focus.offset,
+	);
+	if (!anchorPoint || !focusPoint) {
+		return [];
+	}
+
+	const range = doc.createRange();
+	try {
+		range.setStart(anchorPoint.node, anchorPoint.offset);
+		range.setEnd(focusPoint.node, focusPoint.offset);
+	} catch {
+		range.setStart(focusPoint.node, focusPoint.offset);
+		range.setEnd(anchorPoint.node, anchorPoint.offset);
+	}
+
+	const rangeClientRectGetter = (
+		range as Range & { getClientRects?: () => DOMRectList | DOMRect[] }
+	).getClientRects;
+	const clientRects =
+		typeof rangeClientRectGetter === "function"
+			? Array.from(rangeClientRectGetter.call(range))
+			: [];
+	if (clientRects.length > 0) {
+		return clientRects.filter((rect) => rect.width > 0 || rect.height > 0);
+	}
+
+	const rangeRectGetter = (
+		range as Range & { getBoundingClientRect?: () => DOMRect }
+	).getBoundingClientRect;
+	if (typeof rangeRectGetter !== "function") {
+		return [];
+	}
+
+	const boundingRect = rangeRectGetter.call(range);
+	return boundingRect.width > 0 || boundingRect.height > 0
+		? [boundingRect]
+		: [];
+}
+
 /**
  * Find the DOM text node and offset for a given (blockId, characterOffset).
  */

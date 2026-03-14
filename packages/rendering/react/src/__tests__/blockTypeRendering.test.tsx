@@ -172,6 +172,41 @@ describe("@pen/react block type rendering", () => {
 		editor.destroy();
 	});
 
+	it("rerenders rendered block text after a text-only document commit", async () => {
+		const editor = createEditor({
+			without: ["document-ops", "delta-stream", "undo"],
+		});
+		const blockId = editor.firstBlock()!.id;
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(
+				<Pen.Editor.Root editor={editor}>
+					<Pen.Editor.Content />
+				</Pen.Editor.Root>,
+			);
+		});
+
+		expect(visibleText(container.textContent)).not.toContain("Hello streamed world");
+
+		await act(async () => {
+			editor.apply([
+				{ type: "insert-text", blockId, offset: 0, text: "Hello streamed world" },
+			]);
+		});
+
+		expect(visibleText(container.textContent)).toContain("Hello streamed world");
+
+		await act(async () => {
+			root.unmount();
+		});
+		container.remove();
+		editor.destroy();
+	});
+
 	it("converts a rendered paragraph to a toggle without violating hook order", async () => {
 		const editor = createEditor({
 			without: ["document-ops", "delta-stream", "undo"],

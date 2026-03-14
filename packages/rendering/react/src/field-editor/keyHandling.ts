@@ -6,7 +6,7 @@ import {
 } from "@pen/core";
 import type { FieldEditorKeyboardController } from "./controller";
 import {
-	applyBackspaceBehavior,
+	applyDeleteBehavior,
 	applyEnterBehavior,
 	applyListTabBehavior,
 	moveCaretAcrossBlocks,
@@ -140,16 +140,17 @@ export function handleFieldEditorKeyDown(options: {
 	}
 
 	if (
-		event.key === "Backspace" &&
+		(event.key === "Backspace" || event.key === "Delete") &&
 		!event.shiftKey &&
 		!event.metaKey &&
 		!event.ctrlKey &&
 		!event.altKey
 	) {
-		const target = applyBackspaceBehavior(editor, {
+		const target = applyDeleteBehavior(editor, {
 			blockId,
 			ytext,
 			range,
+			direction: event.key === "Backspace" ? "backward" : "forward",
 		});
 		if (target) {
 			if (target.selectBlock) {

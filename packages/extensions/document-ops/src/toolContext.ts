@@ -5,12 +5,18 @@ import type {
   Position,
 } from "@pen/types";
 import { assertToolCanUseBlockType } from "./utils/blockTypePolicy";
+import { assertToolCanMutateBlock } from "./utils/mutationPolicy";
 
 export class ToolContextImpl implements ToolContext {
   readonly editor: Editor;
   readonly docId: string;
   private readonly _emitFn: (part: PenStreamPart) => void;
-  private _activeZones = new Map<string, { blockId: string }>();
+  private _activeStreamingZone:
+    | {
+        zoneId: string;
+        blockId: string;
+      }
+    | null = null;
 
   constructor(
     editor: Editor,
@@ -62,6 +68,7 @@ export class ToolContextImpl implements ToolContext {
     blockId: string,
     props: Record<string, unknown>,
   ): void {
+    assertToolCanMutateBlock(this.editor, blockId);
     this.emit({
       type: "block-update",
       blockId,
@@ -75,6 +82,7 @@ export class ToolContextImpl implements ToolContext {
   }
 
   deleteBlock(blockId: string): void {
+    assertToolCanMutateBlock(this.editor, blockId);
     this.emit({
       type: "block-delete",
       blockId,
@@ -87,7 +95,8 @@ export class ToolContextImpl implements ToolContext {
   }
 
   beginStreaming(zoneId: string, blockId: string): void {
-    this._activeZones.set(zoneId, { blockId });
+    this.stopUndoCapture();
+    this._activeStreamingZone = { zoneId, blockId };
     this.emit({ type: "gen-start", zoneId, blockId });
 
     const streaming = this.editor.internals.getSlot<{
@@ -99,8 +108,16 @@ export class ToolContextImpl implements ToolContext {
   }
 
   appendDelta(delta: string): void {
-    // Zone ID is not tracked per-delta in the simple path;
-    // the streaming target manages its own active zone.
+    const activeZone = this._activeStreamingZone;
+    if (!activeZone) {
+      throw new Error("appendDelta() called before beginStreaming()");
+    }
+    this.emit({
+      type: "gen-delta",
+      zoneId: activeZone.zoneId,
+      delta,
+    });
+
     const streaming = this.editor.internals.getSlot<{
       appendDelta(delta: string): void;
     }>("delta-stream:target");
@@ -112,11 +129,32 @@ export class ToolContextImpl implements ToolContext {
   endStreaming(
     status: "complete" | "cancelled" | "error",
   ): void {
+    const activeZone = this._activeStreamingZone;
+    if (!activeZone) {
+      throw new Error("endStreaming() called before beginStreaming()");
+    }
+    this.emit({
+      type: "gen-end",
+      zoneId: activeZone.zoneId,
+      status,
+    });
+    this._activeStreamingZone = null;
+
     const streaming = this.editor.internals.getSlot<{
       endStreaming(status: "complete" | "cancelled" | "error"): void;
     }>("delta-stream:target");
     if (streaming) {
       streaming.endStreaming(status);
     }
+    this.stopUndoCapture();
+  }
+
+  private stopUndoCapture(): void {
+    const undoManager = (
+      this.editor as Editor & {
+        undoManager?: { stopCapturing?: () => void };
+      }
+    ).undoManager;
+    undoManager?.stopCapturing?.();
   }
 }

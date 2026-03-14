@@ -1,4 +1,5 @@
 import type { Editor, ToolDefinition } from "@pen/types";
+import { assertToolCanMutateBlock } from "../utils/mutationPolicy";
 
 export function updateBlockTool(editor: Editor): ToolDefinition {
   return {
@@ -17,6 +18,7 @@ export function updateBlockTool(editor: Editor): ToolDefinition {
         blockId: string;
         props: Record<string, unknown>;
       };
+      assertToolCanMutateBlock(editor, opts.blockId);
       editor.apply(
         [
           {

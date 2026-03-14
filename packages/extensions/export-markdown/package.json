@@ -31,10 +31,12 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@pen/core": "workspace:*",
-    "@pen/schema-default": "workspace:*"
+    "@pen/markdown-serialization": "workspace:*",
+    "@pen/types": "workspace:*"
   },
   "devDependencies": {
+    "@pen/core": "workspace:*",
+    "@pen/schema-default": "workspace:*",
     "tsup": "^8.4.0",
     "typescript": "^5.7.3",
     "vitest": "^3.0.7"

@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { createEditor, blocksToOps, type DocumentOp, type PendingBlock } from "@pen/core";
+import {
+  blocksToOps,
+  createEditor,
+  type DocumentOp,
+  type PendingBlock,
+} from "@pen/core";
 import { markdownExporter } from "../exporter";
 
 type InsertTableCellTextOp = Extract<DocumentOp, { type: "insert-table-cell-text" }>;
@@ -198,6 +203,57 @@ describe("@pen/export-markdown", () => {
     expect(markdownExporter.name).toBe("markdown");
     expect(markdownExporter.mimeType).toBe("text/markdown");
     expect(markdownExporter.fileExtension).toBe(".md");
+  });
+
+  it("maps generic export options to resolved view mode and range export", () => {
+    const editor = editorWithBlocks([
+      {
+        type: "insert-block",
+        blockId: "b1",
+        blockType: "paragraph",
+        props: {},
+        position: "last",
+      },
+      { type: "insert-text", blockId: "b1", offset: 0, text: "Keep" },
+      {
+        type: "insert-text",
+        blockId: "b1",
+        offset: 4,
+        text: " draft",
+      },
+      {
+        type: "format-text",
+        blockId: "b1",
+        offset: 4,
+        length: 6,
+        marks: {
+          suggestion: {
+            action: "delete",
+          },
+        },
+      },
+      {
+        type: "insert-block",
+        blockId: "b2",
+        blockType: "paragraph",
+        props: {},
+        position: "last",
+      },
+      { type: "insert-text", blockId: "b2", offset: 0, text: "Tail" },
+    ]);
+
+    const md = markdownExporter.export(editor, {
+      includeSuggestions: false,
+      extra: {
+        range: {
+          startBlockId: "b1",
+          endBlockId: "b1",
+        },
+      },
+    });
+
+    expect(md).toBe("Keep");
+    editor.destroy();
   });
 
   it("exports a table block as a GFM pipe table", () => {

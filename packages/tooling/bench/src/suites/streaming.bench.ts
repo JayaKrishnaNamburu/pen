@@ -1,6 +1,10 @@
-import type { BenchContext } from "../bench";
+import type { BenchContext, BenchDefinition } from "../bench";
 import type { StreamingTarget } from "@pen/types";
 import { createTestEditor } from "@pen/test";
+import {
+  STREAMING_BATCH_FLUSH_LATENCY_BENCH,
+  STREAMING_GEN_DELTA_1000_PARTS_BENCH,
+} from "../constants/benchmarks";
 
 function getStreamingTarget(editor: ReturnType<typeof createTestEditor>): StreamingTarget {
   return editor.internals.getSlot<StreamingTarget>("delta-stream:target")!;
@@ -24,12 +28,9 @@ function flushMicrotasks(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, 0));
 }
 
-export const streamingBenchmarks: Array<{
-  name: string;
-  fn: (b: BenchContext) => void | Promise<void>;
-}> = [
+export const streamingBenchmarks: BenchDefinition[] = [
   {
-    name: "streaming 1000 gen-delta parts at 100/sec",
+    ...STREAMING_GEN_DELTA_1000_PARTS_BENCH,
     async fn(b) {
       const editor = createTestEditor({
         blocks: [{ type: "paragraph" }],
@@ -54,7 +55,7 @@ export const streamingBenchmarks: Array<{
     },
   },
   {
-    name: "streaming batch flush latency",
+    ...STREAMING_BATCH_FLUSH_LATENCY_BENCH,
     async fn(b) {
       const editor = createTestEditor({
         blocks: [{ type: "paragraph" }],

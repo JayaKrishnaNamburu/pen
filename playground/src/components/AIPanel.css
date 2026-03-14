@@ -1,0 +1,77 @@
+.playground-ai-shell {
+	display: flex;
+	width: 100%;
+	min-width: 0;
+	position: sticky;
+	top: 16px;
+	pointer-events: auto;
+}
+
+.playground-ai-panel {
+	border: 1px solid var(--border);
+	border-radius: 16px;
+	width: 240px;
+	background: color-mix(in srgb, var(--surface) 92%, var(--bg) 8%);
+	box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
+	backdrop-filter: blur(20px);
+}
+
+.playground-ai-title {
+	font-size: 14px;
+	font-weight: 650;
+	letter-spacing: -0.01em;
+}
+
+.playground-ai-panel {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	padding: 16px;
+}
+
+.playground-ai-summary,
+.playground-ai-section {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.playground-ai-section-header {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	justify-content: space-between;
+}
+
+.playground-ai-label,
+.playground-ai-metric-label {
+	font-size: 11px;
+	font-weight: 700;
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.playground-ai-caption {
+	font-size: 11px;
+	line-height: 1.5;
+	color: var(--text-muted);
+}
+
+.playground-ai-metric {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+@media (max-width: 1100px) {
+	.playground-ai-shell {
+		top: 12px;
+	}
+
+	.playground-ai-section-header {
+		flex-direction: column;
+		align-items: stretch;
+	}
+}

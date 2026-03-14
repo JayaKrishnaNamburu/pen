@@ -14,7 +14,7 @@ import type { PasteImporters } from "../context/editorContext";
 import { handlePaste, handleCopy, handleCut } from "./clipboard";
 import {
 	applyListInputRule,
-	applyBackspaceBehavior,
+	applyDeleteBehavior,
 	applyEnterBehavior,
 	toggleInlineMark,
 } from "./commands";
@@ -631,31 +631,9 @@ export class ContentEditableBackend implements InputBackend {
 			return;
 		}
 
-		if (
-			normalizedSelection.anchor.blockId !== normalizedSelection.focus.blockId
-		) {
-			this.editor.selectTextRange(
-				normalizedSelection.anchor,
-				normalizedSelection.focus,
-			);
-			return;
-		}
-
-		if (
-			normalizedSelection.anchor.blockId !== this.fieldEditor.focusBlockId
-		) {
-			this.fieldEditor.activateTextSelection(
-				normalizedSelection.anchor.blockId,
-				normalizedSelection.anchor.offset,
-				normalizedSelection.focus.offset,
-			);
-			return;
-		}
-
-		this.fieldEditor.syncTextSelection(
-			normalizedSelection.anchor.blockId,
-			normalizedSelection.anchor.offset,
-			normalizedSelection.focus.offset,
+		this.fieldEditor.applyDomTextSelection(
+			normalizedSelection.anchor,
+			normalizedSelection.focus,
 		);
 	};
 
@@ -749,10 +727,11 @@ const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 		const range = getSelectionOffsets(element);
 		if (!range) return;
 
-		const target = applyBackspaceBehavior(editor, {
+		const target = applyDeleteBehavior(editor, {
 			blockId: fe.focusBlockId ?? "",
 			ytext,
 			range,
+			direction: "backward",
 		});
 		if (target) {
 			if (target.selectBlock) {
@@ -794,12 +773,23 @@ const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 		const range = getSelectionOffsets(element);
 		if (!range) return;
 
-		if (range.start !== range.end) {
-			backend.applyInlineTextEdit({
-				blockId: fe.focusBlockId ?? "",
-				range,
-				text: "",
-			});
+		const target = applyDeleteBehavior(editor, {
+			blockId: fe.focusBlockId ?? "",
+			ytext,
+			range,
+			direction: "forward",
+		});
+		if (target) {
+			if (target.selectBlock) {
+				fe.deactivate();
+				editor.selectBlock(target.blockId);
+			} else {
+				fe.activateTextSelection(
+					target.blockId,
+					target.anchorOffset,
+					target.focusOffset,
+				);
+			}
 			return;
 		}
 

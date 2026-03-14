@@ -122,30 +122,7 @@ export class ExpandedContentEditableBackend {
 			return;
 		}
 
-		if (
-			normalizedSelection.anchor.blockId ===
-			normalizedSelection.focus.blockId
-		) {
-			if (
-				normalizedSelection.anchor.blockId === this.fieldEditor.focusBlockId
-			) {
-				this.fieldEditor.syncTextSelection(
-					normalizedSelection.anchor.blockId,
-					normalizedSelection.anchor.offset,
-					normalizedSelection.focus.offset,
-				);
-				return;
-			}
-
-			this.fieldEditor.activateTextSelection(
-				normalizedSelection.anchor.blockId,
-				normalizedSelection.anchor.offset,
-				normalizedSelection.focus.offset,
-			);
-			return;
-		}
-
-		this.editor.selectTextRange(
+		this.fieldEditor.applyDomTextSelection(
 			normalizedSelection.anchor,
 			normalizedSelection.focus,
 		);

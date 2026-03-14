@@ -77,15 +77,11 @@ export function classifySelectionSurface(
 	focusBlockId: string | null,
 	isEditing: boolean,
 ): FieldEditorSurfaceState {
-	if (!isEditing || !focusBlockId) {
+	if (!isEditing) {
 		return { mode: "inactive", blockIds: [] };
 	}
 
 	if (selection?.type === "text") {
-		if (!selection.blockRange.includes(focusBlockId)) {
-			return { mode: "single", blockIds: [focusBlockId] };
-		}
-
 		if (selection.isMultiBlock) {
 			return {
 				mode: shouldUseBlockSelection(
@@ -98,7 +94,19 @@ export function classifySelectionSurface(
 			};
 		}
 
+		if (!focusBlockId) {
+			return { mode: "inactive", blockIds: [] };
+		}
+
+		if (!selection.blockRange.includes(focusBlockId)) {
+			return { mode: "single", blockIds: [focusBlockId] };
+		}
+
 		return { mode: "single", blockIds: [focusBlockId] };
+	}
+
+	if (!focusBlockId) {
+		return { mode: "inactive", blockIds: [] };
 	}
 
 	if (selection?.type === "block") {

@@ -248,8 +248,16 @@ export {
 } from "./editor";
 
 // ── Tools ───────────────────────────────────────────────────
+export {
+	isAsyncIterable,
+	resolveToolExecution,
+	collectToolExecutionOutput,
+} from "./tools";
 export type {
+	ToolRegistry,
+	ToolRuntime,
 	ToolServer,
+	ToolExecutionResult,
 	ToolDefinition,
 	ToolContext,
 	ToolSchema,

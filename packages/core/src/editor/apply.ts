@@ -98,6 +98,14 @@ export class ApplyPipeline {
 	private _applying = false;
 	private _suppressObserver = false;
 	private readonly _queue: { ops: DocumentOp[]; origin: OpOrigin }[] = [];
+	private _applyBoundaryHooks: Array<
+		(event: {
+			phase: "before" | "after";
+			ops: readonly DocumentOp[];
+			origin: OpOrigin;
+			applied: boolean;
+		}) => void
+	> = [];
 	private _beforeApplyHooks: Array<{
 		hook: (
 			ops: DocumentOp[],
@@ -183,6 +191,21 @@ export class ApplyPipeline {
 		};
 	}
 
+	addApplyBoundaryHook(
+		hook: (event: {
+			phase: "before" | "after";
+			ops: readonly DocumentOp[];
+			origin: OpOrigin;
+			applied: boolean;
+		}) => void,
+	): () => void {
+		this._applyBoundaryHooks.push(hook);
+		return () => {
+			const idx = this._applyBoundaryHooks.indexOf(hook);
+			if (idx >= 0) this._applyBoundaryHooks.splice(idx, 1);
+		};
+	}
+
 	setFinalBeforeApplyHook(
 		hook:
 			| ((
@@ -257,6 +280,13 @@ export class ApplyPipeline {
 			}
 		}
 
+		this._emitApplyBoundary({
+			phase: "before",
+			ops: transformedOps,
+			origin,
+			applied: false,
+		});
+
 		const affectedBlocks: string[] = [];
 		const validatedOps: DocumentOp[] = [];
 		const pendingBlockIds = new Set<string>();
@@ -288,7 +318,15 @@ export class ApplyPipeline {
 			validatedOps.push(op);
 		}
 
-		if (validatedOps.length === 0) return;
+		if (validatedOps.length === 0) {
+			this._emitApplyBoundary({
+				phase: "after",
+				ops: transformedOps,
+				origin,
+				applied: false,
+			});
+			return;
+		}
 
 		this._suppressObserver = true;
 
@@ -321,6 +359,35 @@ export class ApplyPipeline {
 		};
 
 		this._onDidApply?.(event);
+		this._emitApplyBoundary({
+			phase: "after",
+			ops: validatedOps,
+			origin,
+			applied: true,
+		});
+	}
+
+	private _emitApplyBoundary(event: {
+		phase: "before" | "after";
+		ops: readonly DocumentOp[];
+		origin: OpOrigin;
+		applied: boolean;
+	}): void {
+		for (const hook of this._applyBoundaryHooks) {
+			try {
+				hook(event);
+			} catch (err) {
+				this._emitter.emit("diagnostic", {
+					code: "PEN_APPLY_008",
+					level: "error",
+					source: "apply",
+					message: "apply boundary hook threw",
+					remediation:
+						"Update the apply boundary hook to avoid throwing during transaction lifecycle notifications.",
+					error: err,
+				});
+			}
+		}
 	}
 
 	// ── Schema Validation ────────────────────────────────────

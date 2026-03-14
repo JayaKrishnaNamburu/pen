@@ -1,57 +1,65 @@
 import type { Editor, ToolDefinition } from "@pen/types";
+import {
+	exportDocumentRangeAsMarkdown,
+	normalizeContextToolOptions,
+	resolveDocumentBlocks,
+	summarizeBlocks,
+} from "../utils/documentContext";
 
 export function readDocumentTool(editor: Editor): ToolDefinition {
-  return {
-    name: "read_document",
-    description: "Read document content in the specified format.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        format: {
-          type: "string",
-          enum: ["json", "markdown", "summary"],
-          default: "markdown",
-        },
-        range: {
-          type: "object",
-          properties: {
-            startBlockId: { type: "string" },
-            endBlockId: { type: "string" },
-          },
-        },
-      },
-    },
-    handler: async (input: unknown) => {
-      const opts = (input ?? {}) as Record<string, unknown>;
-      const format = (opts.format as string) ?? "markdown";
-      const blocks: Array<{
-        id: string;
-        type: string;
-        props: Record<string, unknown>;
-        content: string;
-      }> = [];
+	return {
+		name: "read_document",
+		description: "Read document content in the specified format.",
+		inputSchema: {
+			type: "object",
+			properties: {
+				format: {
+					type: "string",
+					enum: ["json", "markdown", "summary"],
+					default: "summary",
+				},
+				range: {
+					type: "object",
+					properties: {
+						startBlockId: { type: "string" },
+						endBlockId: { type: "string" },
+					},
+				},
+				includeSuggestions: {
+					type: "boolean",
+					default: false,
+				},
+			},
+		},
+		handler: async (input: unknown) => {
+			const options = normalizeContextToolOptions(input);
+			const viewMode = options.includeSuggestions ? "raw" : "resolved";
+			const blocks = resolveDocumentBlocks(editor, options.range, viewMode);
 
-      for (const handle of editor.blocks()) {
-        blocks.push({
-          id: handle.id,
-          type: handle.type,
-          props: handle.props,
-          content: handle.textContent(),
-        });
-      }
+			if (options.format === "summary") {
+				return {
+					format: "summary",
+					viewMode,
+					blockCount: blocks.length,
+					types: [...new Set(blocks.map((block) => block.type))],
+					preview: summarizeBlocks(blocks).map((block) => ({
+						id: block.id,
+						type: block.type,
+						content: block.preview,
+					})),
+				};
+			}
 
-      if (format === "summary") {
-        return {
-          blockCount: editor.blockCount(),
-          types: [...new Set(blocks.map((b) => b.type))],
-          preview: blocks.slice(0, 5).map((b) => ({
-            type: b.type,
-            content: b.content.slice(0, 100),
-          })),
-        };
-      }
+			if (options.format === "markdown") {
+				return exportDocumentRangeAsMarkdown(editor, options.range, viewMode);
+			}
 
-      return blocks;
-    },
-  };
+			return {
+				format: "json",
+				viewMode,
+				blockCount: blocks.length,
+				blocks,
+			};
+		},
+	};
 }

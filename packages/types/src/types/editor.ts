@@ -237,6 +237,14 @@ export interface EditorInternals {
 		event: K,
 		...args: Parameters<PenEventMap[K]>
 	): void;
+	onApplyBoundary(
+		hook: (event: {
+			phase: "before" | "after";
+			ops: readonly DocumentOp[];
+			origin: OpOrigin;
+			applied: boolean;
+		}) => void,
+	): Unsubscribe;
 	getSlot<T>(key: string): T | undefined;
 	setSlot(key: string, value: unknown): void;
 	getBlockText(blockId: string): unknown;

@@ -1,46 +1,214 @@
-.playground {
+/* ── Shell ──────────────────────────────────────────────── */
+
+#root > [data-pen-editor-root] {
   display: flex;
+  flex-direction: column;
   height: 100%;
-  width: 100%;
-  min-width: 0;
 }
 
-.playground-body {
+#root > [data-pen-editor-root] > [data-pen-ai-root] {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0%;
+  min-height: 0;
+}
+
+.playground-shell {
+  display: flex;
+  flex: 1 1 0%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Editor column (toolbar + scrollable editor) ───────── */
+
+.playground-editor-column {
+  display: flex;
+  flex-direction: column;
   flex: 1 1 0%;
   min-width: 0;
   min-height: 0;
-  overflow: hidden;
 }
 
-.playground-body > [data-pen-editor-root] {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
-  min-width: 0;
+.playground-editor-column > .playground-editor-viewport {
+  flex: 1 1 0%;
   min-height: 0;
-  overflow: hidden;
-}
-
-.playground-editor {
   position: relative;
-  flex: 1 1 auto;
-  width: 100%;
-  min-width: 0;
-  min-height: 0;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
-.playground-editor > [data-pen-editor-content] {
+.playground-editor-viewport > [data-pen-editor-content] {
+  position: relative;
   box-sizing: border-box;
   width: min(100%, 760px);
   min-height: 100%;
   margin: 0 auto;
-  min-width: 0;
-  padding: 20px;
+  padding: 20px 20px 96px;
 }
 
-/* ── Placeholder styling ───────────────────────────────────── */
+
+/* ── Side panel (chat / debug) ─────────────────────────── */
+
+.playground-side-panel {
+  flex: 0 0 380px;
+  min-height: 0;
+  border-left: 1px solid var(--border);
+}
+
+/* ── Inline suggestion controls ────────────────────────── */
+
+[data-pen-ai-inline-suggestion-control] {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+[data-pen-ai-inline-suggestion-control] button {
+  border: 0;
+  border-radius: 10px;
+  background: rgba(30, 41, 59, 0.92);
+  color: rgba(226, 232, 240, 0.94);
+  font: inherit;
+  min-height: 32px;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease, transform 120ms ease;
+  box-shadow: 0 12px 32px rgba(2, 6, 23, 0.24);
+  backdrop-filter: blur(22px);
+}
+
+[data-pen-ai-inline-suggestion-control] button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+[data-pen-ai-inline-suggestion-nav] {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 11px;
+  background: rgba(15, 23, 42, 0.9);
+  box-shadow:
+    0 12px 32px rgba(2, 6, 23, 0.28),
+    inset 0 0 0 1px rgba(148, 163, 184, 0.08);
+  backdrop-filter: blur(22px);
+}
+
+[data-pen-ai-inline-suggestion-nav] button {
+  min-width: 26px;
+  min-height: 26px;
+  padding: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: rgba(226, 232, 240, 0.76);
+  font-size: 15px;
+  line-height: 1;
+}
+
+[data-pen-ai-inline-suggestion-nav] button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+[data-pen-ai-inline-suggestion-count] {
+  min-width: 58px;
+  padding: 0 9px;
+  color: rgba(241, 245, 249, 0.94);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+}
+
+[data-pen-ai-inline-suggestion-control] [data-pen-ai-inline-suggestion-accept] {
+  background: linear-gradient(180deg, #9fe870 0%, #89d35f 100%);
+  color: #0f172a;
+}
+
+[data-pen-ai-inline-suggestion-control] [data-pen-ai-inline-suggestion-reject] {
+  background: rgba(30, 41, 59, 0.96);
+  color: rgba(226, 232, 240, 0.86);
+}
+
+[data-pen-ai-inline-suggestion-control][data-placement="right-rail"] [data-pen-ai-inline-suggestion-accept],
+[data-pen-ai-inline-suggestion-control][data-placement="right-rail"] [data-pen-ai-inline-suggestion-reject] {
+  display: none;
+}
+
+/* ── Suggestion marks ──────────────────────────────────── */
+
+[data-pen-editor-content] .pen-suggestion-insert,
+[data-pen-editor-content] [data-suggestion-action="insert"] {
+  color: color-mix(in srgb, var(--text) 94%, #dbeafe 6%);
+  background: color-mix(in srgb, #2563eb 16%, transparent);
+  border-radius: 3px;
+  box-shadow:
+    inset 0 -1px 0 rgba(96, 165, 250, 0.72),
+    inset 0 0 0 1px rgba(96, 165, 250, 0.18);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+[data-pen-editor-content] .pen-suggestion-delete,
+[data-pen-editor-content] [data-suggestion-action="delete"] {
+  color: color-mix(in srgb, var(--text) 58%, #94a3b8 42%);
+  background: color-mix(in srgb, #7f1d1d 18%, transparent);
+  border-radius: 3px;
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+  text-decoration-color: rgba(248, 113, 113, 0.78);
+  box-shadow:
+    inset 0 -1px 0 rgba(248, 113, 113, 0.48),
+    inset 0 0 0 1px rgba(248, 113, 113, 0.14);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+[data-pen-editor-content] .pen-ai-affected-range,
+[data-pen-editor-content] [data-ai-affected-range] {
+  color: inherit;
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  border-radius: 4px;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--accent) 32%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--accent) 48%, transparent);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+.pen-block-suggestion,
+[class*="pen-block-suggestion"] {
+  position: relative;
+  border-radius: 12px;
+}
+
+.pen-block-suggestion::after,
+[class*="pen-block-suggestion"]::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 14px;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.28);
+  background: linear-gradient(
+    180deg,
+    rgba(191, 219, 254, 0.16) 0%,
+    rgba(219, 234, 254, 0.08) 100%
+  );
+}
+
+/* ── Placeholder styling ───────────────────────────────── */
 
 [data-placeholder-visible]::before {
   content: attr(data-placeholder);

@@ -20,11 +20,12 @@ export function renderAsChild(
 
   if (asChild && React.isValidElement<AsChildElementProps>(children)) {
     const child = React.Children.only(children) as AsChildElement;
+    const childRef = (child.props as { ref?: React.Ref<unknown> }).ref;
     return React.cloneElement(child, {
       ...primitiveProps,
       ...restProps,
       ...child.props,
-      ref: composeRefs(ref, (child as AsChildElement & { ref?: React.Ref<unknown> }).ref),
+      ref: composeRefs(ref, childRef),
     });
   }
 

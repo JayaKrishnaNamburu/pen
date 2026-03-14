@@ -1,15 +1,25 @@
-import type { Editor, ToolDefinition, Position } from "@pen/types";
+import type { Editor, Position, ToolDefinition } from "@pen/types";
+import type {
+	DocumentWriteBlockInput,
+	DocumentWriteFormat,
+} from "@pen/content-ops";
+import { buildDocumentWriteOps } from "@pen/content-ops";
+import { POSITION_SCHEMA } from "../constants/toolSchemas";
 import { assertToolCanUseBlockType } from "../utils/blockTypePolicy";
 
 export function writeDocumentTool(editor: Editor): ToolDefinition {
   return {
     name: "write_document",
     description:
-      "Write or replace content in the document using blocks.",
+      "Write or replace content in the document using text, markdown, or blocks.",
     inputSchema: {
       type: "object",
-      required: ["blocks"],
       properties: {
+        format: {
+          type: "string",
+          enum: ["text", "markdown", "blocks"],
+        },
+        content: { type: "string" },
         blocks: {
           type: "array",
           items: {
@@ -21,49 +31,39 @@ export function writeDocumentTool(editor: Editor): ToolDefinition {
             },
           },
         },
-        position: {},
+        position: POSITION_SCHEMA,
       },
     },
     handler: async (input: unknown) => {
       const opts = input as {
-        blocks: Array<{
-          blockType: string;
-          content?: string;
-          props?: Record<string, unknown>;
-        }>;
+        format?: DocumentWriteFormat;
+        content?: string;
+        blocks?: DocumentWriteBlockInput[];
         position?: Position;
       };
 
-      const insertedIds: string[] = [];
-      let position = opts.position ?? ("last" as const);
-      const ops: Parameters<Editor["apply"]>[0] = [];
-
-      for (const block of opts.blocks) {
-        assertToolCanUseBlockType(editor, block.blockType);
+      if (!opts.content && (!opts.blocks || opts.blocks.length === 0)) {
+        throw new Error(
+          'write_document expects either a non-empty "content" string or a non-empty "blocks" array.',
+        );
       }
 
-      for (const block of opts.blocks) {
-        const blockId = crypto.randomUUID();
-        ops.push({
-          type: "insert-block",
-          blockId,
-          blockType: block.blockType,
-          props: block.props ?? {},
-          position,
-        });
-
-        if (block.content) {
-          ops.push({
-            type: "insert-text",
-            blockId,
-            offset: 0,
-            text: block.content,
-          });
+      if ((opts.format === "blocks" || opts.format == null) && opts.blocks) {
+        for (const block of opts.blocks) {
+          assertToolCanUseBlockType(editor, block.blockType);
         }
-
-        insertedIds.push(blockId);
-        position = { after: blockId };
       }
+
+      const { ops } = buildDocumentWriteOps(editor, {
+        format: opts.format,
+        content: opts.content,
+        blocks: opts.blocks,
+        position: opts.position ?? "last",
+        surface: "write-document",
+      });
+      const insertedIds = ops
+        .filter((op) => op.type === "insert-block")
+        .map((op) => op.blockId);
 
       if (ops.length > 0) {
         editor.apply(ops, { origin: "ai" });
