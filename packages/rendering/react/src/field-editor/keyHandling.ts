@@ -6,7 +6,6 @@ import {
 	COLLECT_KEY_BINDINGS_SLOT_KEY,
 	usesInlineTextSelection,
 } from "@pen/types";
-import { getAutocompleteController } from "@pen/ai-autocomplete";
 import type { FieldEditorKeyboardController } from "./controller";
 import {
 	applyDeleteBehavior,
@@ -16,6 +15,7 @@ import {
 	type SelectionRange,
 } from "./commands";
 import { getEditorBlockSelectionLength } from "../utils/blockSelectionSemantics";
+import { getAutocompleteController } from "../utils/autocompleteController";
 
 export function handleFieldEditorKeyDown(options: {
 	event: KeyboardEvent;

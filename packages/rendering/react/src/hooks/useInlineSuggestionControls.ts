@@ -1,5 +1,6 @@
 import React from "react";
 import type { Editor } from "@pen/types";
+import type { PersistentSuggestion, PersistentTextSuggestion } from "@pen/ai";
 import { useActiveAISession } from "./useActiveAISession";
 import { useAIActions } from "./useAIActions";
 import { useSuggestions } from "./useSuggestions";
@@ -70,19 +71,22 @@ export function useInlineSuggestionControls(
 		[resolvingSuggestionIds],
 	);
 	const scopedSuggestions = React.useMemo(
-		() =>
-			dedupeSuggestionsById(
-				activeSession
-					? suggestions.filter(
-						(suggestion) =>
+		() => {
+			const filteredSuggestions: PersistentTextSuggestion[] = activeSession
+				? suggestions.filter(
+						(suggestion): suggestion is PersistentTextSuggestion =>
+							isTextSuggestion(suggestion) &&
 							(suggestion.sessionId === activeSession.id ||
 								sessionSuggestionIds.has(suggestion.id)) &&
 							!resolvingSuggestionIdSet.has(suggestion.id),
 					)
-					: suggestions.filter(
-						(suggestion) => !resolvingSuggestionIdSet.has(suggestion.id),
-					),
-			),
+				: suggestions.filter(
+						(suggestion): suggestion is PersistentTextSuggestion =>
+							isTextSuggestion(suggestion) &&
+							!resolvingSuggestionIdSet.has(suggestion.id),
+					);
+			return dedupeSuggestionsById(filteredSuggestions);
+		},
 		[activeSession, resolvingSuggestionIdSet, suggestions],
 	);
 
@@ -222,6 +226,12 @@ function dedupeSuggestionsById<
 		dedupedSuggestions.push(suggestion);
 	}
 	return dedupedSuggestions;
+}
+
+function isTextSuggestion(
+	suggestion: PersistentSuggestion,
+): suggestion is PersistentTextSuggestion {
+	return suggestion.kind === "text";
 }
 
 function resolveSuggestionControlPositions(

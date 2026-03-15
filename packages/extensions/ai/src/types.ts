@@ -341,18 +341,36 @@ export interface EphemeralSuggestion {
 export type AIInlineCompletionState = CoreInlineCompletionState;
 export type AIInlineCompletionController = CoreInlineCompletionController;
 
-export interface PersistentSuggestion {
+interface PersistentSuggestionBase {
 	id: string;
-	action: "insert" | "delete";
 	author: string;
 	authorType: "user" | "ai";
 	createdAt: number;
 	model?: string;
 	sessionId?: string;
 	blockId: string;
+}
+
+export interface PersistentTextSuggestion extends PersistentSuggestionBase {
+	kind: "text";
+	action: "insert" | "delete";
 	offset: number;
 	length: number;
 }
+
+export interface PersistentBlockSuggestion extends PersistentSuggestionBase {
+	kind: "block";
+	action: "insert-block" | "delete-block" | "move-block" | "convert-block";
+	previousState?: {
+		type?: string;
+		position?: import("@pen/types").Position;
+		props?: Record<string, unknown>;
+	};
+}
+
+export type PersistentSuggestion =
+	| PersistentTextSuggestion
+	| PersistentBlockSuggestion;
 
 export interface BlockSuggestionMeta {
 	id: string;

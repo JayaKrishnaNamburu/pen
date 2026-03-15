@@ -65,12 +65,6 @@ export function InspectorPanel({
 			value: autocomplete.state.activeRequestId ?? "None",
 		},
 		{
-			label: "Sequence",
-			value: autocomplete.state.sequence
-				? `${autocomplete.state.sequence.acceptedSegments}/${autocomplete.state.sequence.totalSegments}`
-				: "None",
-		},
-		{
 			label: "Acceptance",
 			value: autocomplete.state.settings.acceptanceStrategy,
 		},
@@ -105,10 +99,6 @@ export function InspectorPanel({
 		{
 			label: "Accepts",
 			value: `${autocomplete.state.metrics.acceptCount}`,
-		},
-		{
-			label: "Partial accepts",
-			value: `${autocomplete.state.metrics.partialAcceptCount}`,
 		},
 		{
 			label: "Policy scheduled",
@@ -251,7 +241,6 @@ export function InspectorPanel({
 									)
 								}
 							>
-								<option value="sequence">Sequence</option>
 								<option value="full">Full</option>
 							</select>
 						</label>

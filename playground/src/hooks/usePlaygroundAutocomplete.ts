@@ -18,11 +18,10 @@ const EMPTY_AUTOCOMPLETE_STATE: AutocompleteControllerState = {
 	status: "idle",
 	activeRequestId: null,
 	visibleSuggestionId: null,
-	sequence: null,
 	settings: {
 		debounceMs: 0,
 		prefetchAfterAccept: false,
-		acceptanceStrategy: "sequence",
+		acceptanceStrategy: "full",
 		staleAfterMs: 0,
 	},
 	blockPolicy: {
@@ -36,7 +35,6 @@ const EMPTY_AUTOCOMPLETE_STATE: AutocompleteControllerState = {
 		staleDropCount: 0,
 		explicitTabTriggerCount: 0,
 		acceptCount: 0,
-		partialAcceptCount: 0,
 		policyInvalidationScheduledCount: 0,
 		policyInvalidationRequestingCount: 0,
 		policyInvalidationShowingCount: 0,

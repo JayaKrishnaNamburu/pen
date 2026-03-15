@@ -7,6 +7,11 @@ import {
 	type InlineCompletionSuggestion,
 } from "@pen/types";
 
+const inlineCompletionLeases = new WeakMap<
+	Editor,
+	{ controller: InlineCompletionController; refCount: number }
+>();
+
 class InlineCompletionControllerImpl implements InlineCompletionController {
 	private _state: InlineCompletionState = {
 		visibleSuggestion: null,
@@ -143,20 +148,70 @@ export function getInlineCompletionController(
 
 export function ensureInlineCompletionController(
 	editor: Editor,
-): { controller: InlineCompletionController; isOwner: boolean } {
+): {
+	controller: InlineCompletionController;
+	isOwner: boolean;
+	release: () => void;
+} {
+	const existingLease = inlineCompletionLeases.get(editor);
+	if (existingLease) {
+		existingLease.refCount += 1;
+		return {
+			controller: existingLease.controller,
+			isOwner: false,
+			release: createInlineCompletionRelease(editor, existingLease.controller),
+		};
+	}
+
 	const existingController = getInlineCompletionController(editor);
 	if (existingController) {
+		inlineCompletionLeases.set(editor, {
+			controller: existingController,
+			refCount: 1,
+		});
 		return {
 			controller: existingController,
 			isOwner: false,
+			release: createInlineCompletionRelease(editor, existingController),
 		};
 	}
 
 	const controller = new InlineCompletionControllerImpl(editor);
 	editor.internals.setSlot(INLINE_COMPLETION_SLOT, controller);
+	inlineCompletionLeases.set(editor, {
+		controller,
+		refCount: 1,
+	});
 	return {
 		controller,
 		isOwner: true,
+		release: createInlineCompletionRelease(editor, controller),
+	};
+}
+
+function createInlineCompletionRelease(
+	editor: Editor,
+	controller: InlineCompletionController,
+): () => void {
+	let released = false;
+	return () => {
+		if (released) {
+			return;
+		}
+		released = true;
+		const lease = inlineCompletionLeases.get(editor);
+		if (!lease || lease.controller !== controller) {
+			return;
+		}
+		lease.refCount -= 1;
+		if (lease.refCount > 0) {
+			return;
+		}
+		inlineCompletionLeases.delete(editor);
+		if (editor.internals.getSlot(INLINE_COMPLETION_SLOT) === controller) {
+			editor.internals.setSlot(INLINE_COMPLETION_SLOT, null);
+		}
+		controller.destroy();
 	};
 }
 

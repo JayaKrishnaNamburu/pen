@@ -6,6 +6,7 @@ export {
 } from "./extension";
 export { createAutocompleteProvider } from "./providers/types";
 export { builtinAutocompleteProviders } from "./providers/builtins";
+export { AUTOCOMPLETE_SYSTEM_PROMPT } from "./promptBuilder";
 
 export type {
 	AutocompleteAcceptanceStrategy,
@@ -21,7 +22,6 @@ export type {
 	AutocompletePolicyInvalidationStage,
 	AutocompleteRequestContext,
 	AutocompleteRuntimeSettings,
-	AutocompleteSequenceState,
 } from "./types";
 export type {
 	AutocompleteContextProvider,

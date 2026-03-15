@@ -8,14 +8,12 @@ type AutocompleteDebugSummary = {
 	status: AutocompleteControllerState["status"];
 	activeRequestId: string | null;
 	visibleSuggestionId: string | null;
-	sequence: AutocompleteControllerState["sequence"];
 	requestCount: number;
 	successCount: number;
 	cancelCount: number;
 	staleDropCount: number;
 	explicitTabTriggerCount: number;
 	acceptCount: number;
-	partialAcceptCount: number;
 	lastDismissReason: AutocompleteControllerState["diagnostics"]["lastDismissReason"];
 	lastBlockedReason: AutocompleteControllerState["diagnostics"]["lastBlockedReason"];
 	lastPolicyInvalidationStage:
@@ -35,14 +33,12 @@ export function summarizeAutocompleteState(
 		status: state.status,
 		activeRequestId: state.activeRequestId,
 		visibleSuggestionId: state.visibleSuggestionId,
-		sequence: state.sequence,
 		requestCount: state.metrics.requestCount,
 		successCount: state.metrics.successCount,
 		cancelCount: state.metrics.cancelCount,
 		staleDropCount: state.metrics.staleDropCount,
 		explicitTabTriggerCount: state.metrics.explicitTabTriggerCount,
 		acceptCount: state.metrics.acceptCount,
-		partialAcceptCount: state.metrics.partialAcceptCount,
 		lastDismissReason: state.diagnostics.lastDismissReason,
 		lastBlockedReason: state.diagnostics.lastBlockedReason,
 		lastPolicyInvalidationStage: state.diagnostics.lastPolicyInvalidationStage,

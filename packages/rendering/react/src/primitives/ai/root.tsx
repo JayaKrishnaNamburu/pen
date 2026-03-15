@@ -4,10 +4,10 @@ import {
 	getAIController,
 	type AIController,
 } from "@pen/ai";
-import { getAutocompleteController } from "@pen/ai-autocomplete";
 import { EditorContext } from "../../context/editorContext";
 import { useAI } from "../../hooks/useAI";
 import { DATA_ATTRS } from "../../utils/dataAttributes";
+import { getAutocompleteController } from "../../utils/autocompleteController";
 import { shouldIgnoreAIKeyboardEvent } from "../../utils/aiKeyboardScope";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { isDevelopmentEnvironment } from "../../utils/environment";

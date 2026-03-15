@@ -48,12 +48,17 @@ export interface PlaygroundPlannerConfig {
 const NEARBY_BLOCK_RADIUS = 2;
 const STRUCTURED_PLANNER_PROMPT_PREFIX =
 	"Produce a structured Pen document mutation plan.";
+const utf8Encoder = new TextEncoder();
 
 export function buildPlaygroundRequestPlan(
 	editor: Editor,
 	prompt: string,
 	config: PlaygroundPlannerConfig,
+	requestedMode: PlaygroundRequestMode | null = null,
 ): PlaygroundRequestPlan {
+	if (requestedMode === "inline-autocomplete") {
+		return buildInlineAutocompletePlanFromRequest(prompt, config);
+	}
 	if (parseStructuredIntentRequestPrompt(prompt)) {
 		return {
 			mode: "structured-planner",
@@ -140,7 +145,7 @@ export function buildPromptContext(
 
 	return {
 		json,
-		jsonBytes: Buffer.byteLength(json, "utf8"),
+		jsonBytes: utf8Encoder.encode(json).byteLength,
 		estimatedJsonTokens: estimateTokens(json),
 	};
 }
@@ -223,6 +228,25 @@ function buildInlineAutocompletePlan(
 		temperature: 0,
 		stopSequences: undefined,
 		useTools: false,
+		promptContext: null,
+		selectedTextLength: null,
+	};
+}
+
+function buildInlineAutocompletePlanFromRequest(
+	prompt: string,
+	config: PlaygroundPlannerConfig,
+): PlaygroundRequestPlan {
+	return {
+		mode: "inline-autocomplete",
+		modelId: config.selectionModel,
+		contextFormat: "none",
+		systemPrompt: config.autocompleteSystemPrompt,
+		prompt,
+		useTools: false,
+		maxOutputTokens: config.autocompleteOutputTokenCap,
+		temperature: 0,
+		stopSequences: undefined,
 		promptContext: null,
 		selectedTextLength: null,
 	};

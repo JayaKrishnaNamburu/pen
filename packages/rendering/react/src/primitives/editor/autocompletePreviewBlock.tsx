@@ -24,13 +24,13 @@ export function AutocompletePreviewBlock(props: AutocompletePreviewBlockProps) {
 			? block.props.level
 			: anchorBlockType === "heading" && typeof anchorProps?.level === "number"
 				? anchorProps.level
-			: undefined;
+				: undefined;
 	const calloutType =
 		block.blockType === "callout" && typeof block.props?.type === "string"
 			? block.props.type
 			: anchorBlockType === "callout" && typeof anchorProps?.type === "string"
 				? anchorProps.type
-			: undefined;
+				: undefined;
 	const listPreview = buildListPreview({
 		blockType: block.blockType,
 		blockProps: block.props,
@@ -58,7 +58,6 @@ export function AutocompletePreviewBlock(props: AutocompletePreviewBlockProps) {
 				data-anchor-list-block-type={listPreview.blockType}
 				data-anchor-level={headingLevel}
 				data-anchor-callout-type={calloutType}
-				data-suggestion-action="insert"
 				{...{ [DATA_ATTRS.ignorePointerGesture]: "" }}
 			>
 				<div
@@ -101,7 +100,6 @@ export function AutocompletePreviewBlock(props: AutocompletePreviewBlockProps) {
 			data-anchor-block-type={anchorBlockType ?? undefined}
 			data-anchor-level={headingLevel}
 			data-anchor-callout-type={calloutType}
-			data-suggestion-action="insert"
 			{...{ [DATA_ATTRS.ignorePointerGesture]: "" }}
 		>
 			{wrappedSurface}
@@ -133,8 +131,8 @@ function buildListPreview(options: {
 	} = options;
 	const previewBlockType =
 		blockType === "bulletListItem" ||
-		blockType === "checkListItem" ||
-		blockType === "numberedListItem"
+			blockType === "checkListItem" ||
+			blockType === "numberedListItem"
 			? blockType
 			: anchorBlockType;
 	const previewProps =

@@ -15,11 +15,20 @@ export function AIDiffView(props: AIDiffViewProps) {
 	const mode = modeProp ?? "inline";
 	const defaultItems = suggestions.map((suggestion) => {
 		const block = editor.getBlock(suggestion.blockId);
-		const text = block
-			?.textContent()
-			.slice(suggestion.offset, suggestion.offset + suggestion.length) ?? "";
-		const beforeText = suggestion.action === "delete" ? text : "";
-		const afterText = suggestion.action === "insert" ? text : "";
+		const text =
+			suggestion.kind === "text"
+				? (block
+						?.textContent()
+						.slice(suggestion.offset, suggestion.offset + suggestion.length) ?? "")
+				: describeBlockSuggestion(suggestion.action, block?.type ?? null);
+		const beforeText =
+			suggestion.action === "delete" || suggestion.action === "delete-block"
+				? text
+				: "";
+		const afterText =
+			suggestion.action === "insert" || suggestion.action === "insert-block"
+				? text
+				: "";
 
 		return (
 			<div
@@ -34,7 +43,9 @@ export function AIDiffView(props: AIDiffViewProps) {
 						<div data-diff-after>{afterText}</div>
 					</>
 				) : (
-					<span data-diff-inline>{suggestion.action === "delete" ? `- ${text}` : `+ ${text}`}</span>
+					<span data-diff-inline>
+						{beforeText ? `- ${text}` : `+ ${text}`}
+					</span>
 				)}
 			</div>
 		);
@@ -53,4 +64,23 @@ export function AIDiffView(props: AIDiffViewProps) {
 			"data-mode": mode,
 		},
 	);
+}
+
+function describeBlockSuggestion(
+	action: string,
+	blockType: string | null,
+): string {
+	const typeLabel = blockType ?? "block";
+	switch (action) {
+		case "insert-block":
+			return `Insert ${typeLabel}`;
+		case "delete-block":
+			return `Delete ${typeLabel}`;
+		case "move-block":
+			return `Move ${typeLabel}`;
+		case "convert-block":
+			return `Convert ${typeLabel}`;
+		default:
+			return typeLabel;
+	}
 }

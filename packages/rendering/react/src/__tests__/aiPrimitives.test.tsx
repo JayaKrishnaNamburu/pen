@@ -2173,6 +2173,7 @@ describe("@pen/react AI primitives", () => {
 		(controller as unknown as { _suggestions: unknown })._suggestions = suggestionIds.map(
 			(suggestionId) => ({
 				id: suggestionId,
+				kind: "text" as const,
 				action: "insert" as const,
 				author: "AI",
 				authorType: "ai" as const,

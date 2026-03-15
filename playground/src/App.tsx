@@ -66,7 +66,7 @@ export function App() {
 			enabled: true,
 			debounceMs: PLAYGROUND_AI_AUTOCOMPLETE_DEBOUNCE_MS,
 			prefetchAfterAccept: true,
-			acceptanceStrategy: "sequence",
+			acceptanceStrategy: "full",
 			blockPolicy: DEFAULT_PLAYGROUND_AUTOCOMPLETE_BLOCK_POLICY,
 		});
 	const editor = usePlaygroundEditor(

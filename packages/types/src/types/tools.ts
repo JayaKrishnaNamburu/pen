@@ -49,6 +49,7 @@ export interface ModelAdapter {
     messages: ModelMessage[];
     tools: ToolSchema[];
     signal?: AbortSignal;
+    requestMode?: string;
   }): AsyncIterable<ModelStreamEvent>;
 }
 

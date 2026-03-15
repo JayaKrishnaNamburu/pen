@@ -32,7 +32,6 @@
   },
   "dependencies": {
     "@pen/ai": "workspace:*",
-    "@pen/ai-autocomplete": "workspace:*",
     "@pen/core": "workspace:*",
     "@pen/schema-default": "workspace:*",
     "@pen/shortcuts": "workspace:*",

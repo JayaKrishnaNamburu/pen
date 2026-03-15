@@ -1,4 +1,5 @@
 import type { DocumentOp, Editor } from "@pen/types";
+import type { PersistentTextSuggestion } from "../types";
 import {
 	readAllSuggestions,
 	readBlockSuggestionMeta,
@@ -80,7 +81,10 @@ function buildResolutionOps(
 		}
 
 		const matches = readSuggestionsFromBlock(editor, block.id)
-			.filter((item) => remainingIds.has(item.id))
+			.filter(
+				(item): item is PersistentTextSuggestion =>
+					item.kind === "text" && remainingIds.has(item.id),
+			)
 			.sort((left, right) => right.offset - left.offset);
 		if (matches.length === 0) {
 			continue;

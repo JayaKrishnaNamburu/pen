@@ -72,6 +72,22 @@ export {
 	resolveGenerationTargetKind,
 	resolvePlannerMode,
 } from "./runtime/structuredPlanner";
+export {
+	buildPlaygroundRequestPlan,
+	buildPromptContext,
+	createPlaygroundRequestMetricsSeed,
+} from "./runtime/playgroundPlanner";
+export type {
+	PlaygroundPromptContextEnvelope,
+	PlaygroundRequestMode,
+	PlaygroundRequestPlan,
+	PlaygroundResolvedContextFormat,
+} from "./runtime/playgroundPlanner";
+export {
+	buildStructuredIntentModelPrompt,
+	getStructuredIntentOutputSchema,
+	parseStructuredIntentRequestPrompt,
+} from "./runtime/structuredIntent";
 
 export {
 	acceptSuggestion,
@@ -115,6 +131,8 @@ export type {
 	GenerationState,
 	EphemeralSuggestion,
 	PersistentSuggestion,
+	PersistentTextSuggestion,
+	PersistentBlockSuggestion,
 	BlockSuggestionMeta,
 	AICommandBinding,
 	AICommandContext,

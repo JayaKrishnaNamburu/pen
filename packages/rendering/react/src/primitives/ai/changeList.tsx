@@ -111,10 +111,12 @@ export function AIChangeList(props: AIChangeListProps) {
 	const suggestionItems = suggestions.map((suggestion) => {
 		const block = editor.getBlock(suggestion.blockId);
 		const text =
-			block?.textContent().slice(
-				suggestion.offset,
-				suggestion.offset + suggestion.length,
-			) ?? "";
+			suggestion.kind === "text"
+				? (block?.textContent().slice(
+						suggestion.offset,
+						suggestion.offset + suggestion.length,
+					) ?? "")
+				: describeBlockSuggestion(suggestion.action, block?.type ?? null);
 
 		return (
 			<div
@@ -126,7 +128,7 @@ export function AIChangeList(props: AIChangeListProps) {
 			>
 				<div data-suggestion-summary>
 					<span data-suggestion-action>
-						{suggestion.action === "insert" ? "Insert" : "Delete"}
+						{formatSuggestionAction(suggestion.action)}
 					</span>
 					<span data-suggestion-text>
 						{text || "(structural suggestion)"}
@@ -892,6 +894,42 @@ function formatReviewItemSectionLabel(
 	section: StructuralReviewItem["section"],
 ): string {
 	return REVIEW_ITEM_SECTION_LABELS[section];
+}
+
+function formatSuggestionAction(action: string): string {
+	switch (action) {
+		case "insert":
+		case "insert-block":
+			return "Insert";
+		case "delete":
+		case "delete-block":
+			return "Delete";
+		case "move-block":
+			return "Move";
+		case "convert-block":
+			return "Convert";
+		default:
+			return "Change";
+	}
+}
+
+function describeBlockSuggestion(
+	action: string,
+	blockType: string | null,
+): string {
+	const typeLabel = blockType ?? "block";
+	switch (action) {
+		case "insert-block":
+			return `Insert ${typeLabel}`;
+		case "delete-block":
+			return `Delete ${typeLabel}`;
+		case "move-block":
+			return `Move ${typeLabel}`;
+		case "convert-block":
+			return `Convert ${typeLabel}`;
+		default:
+			return typeLabel;
+	}
 }
 
 function formatReviewSubgroupLabel(

@@ -32,6 +32,7 @@ export function readSuggestionsFromBlock(
 		const suggestion = asSuggestion(delta.attributes?.suggestion);
 		if (suggestion) {
 			suggestions.push({
+				kind: "text",
 				id: suggestion.id,
 				action: suggestion.action,
 				author: suggestion.author,
@@ -56,16 +57,16 @@ export function readAllSuggestions(editor: Editor): PersistentSuggestion[] {
 		const blockSuggestion = readBlockSuggestionMeta(block);
 		if (blockSuggestion) {
 			suggestions.push({
+				kind: "block",
 				id: blockSuggestion.id,
-				action: blockSuggestion.action === "delete-block" ? "delete" : "insert",
+				action: blockSuggestion.action,
 				author: blockSuggestion.author,
 				authorType: blockSuggestion.authorType,
 				createdAt: blockSuggestion.createdAt,
 				model: blockSuggestion.model,
 				sessionId: blockSuggestion.sessionId,
 				blockId: block.id,
-				offset: 0,
-				length: 0,
+				previousState: blockSuggestion.previousState,
 			});
 		}
 		suggestions.push(...readSuggestionsFromBlock(editor, block.id));

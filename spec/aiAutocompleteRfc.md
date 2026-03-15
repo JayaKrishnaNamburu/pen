@@ -761,21 +761,10 @@ export interface AutocompleteContextProvider {
   describe?(): AutocompleteProviderDescriptor;
 }
 
-export interface AutocompleteSequence {
-  id: string;
-  blockId: string;
-  offset: number;
-  fullText: string;
-  remainingText: string;
-  segments: readonly string[];
-  acceptedSegments: number;
-}
-
 export interface AutocompleteState {
   enabled: boolean;
   status: "idle" | "scheduled" | "requesting" | "showing";
   activeRequestId: string | null;
-  activeSequence: AutocompleteSequence | null;
   metrics: AutocompleteMetrics;
 }
 
@@ -786,7 +775,6 @@ export interface AutocompleteMetrics {
   staleDropCount: number;
   explicitTabTriggerCount: number;
   acceptCount: number;
-  partialAcceptCount: number;
 }
 
 export interface AutocompleteController {

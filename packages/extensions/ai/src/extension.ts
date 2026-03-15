@@ -20,6 +20,7 @@ import { buildDocumentWriteOps, getDocumentToolRuntime } from "@pen/document-ops
 import type { HistoryAppliedEvent } from "@pen/types";
 import {
 	AI_CONTROLLER_SLOT as CORE_AI_CONTROLLER_SLOT,
+	AI_AUTOCOMPLETE_CONTROLLER_SLOT,
 	INLINE_COMPLETION_SLOT as CORE_INLINE_COMPLETION_SLOT,
 	AI_INLINE_HISTORY_SLOT as CORE_AI_INLINE_HISTORY_SLOT,
 	AI_REVIEW_CONTROLLER_SLOT as CORE_AI_REVIEW_CONTROLLER_SLOT,
@@ -273,7 +274,6 @@ class AIControllerImpl implements AIController {
 	private readonly _editor: Editor;
 	private readonly _registry = new AICommandRegistry();
 	private readonly _inlineCompletion: AIInlineCompletionController;
-	private readonly _renderInlineCompletionDecorations: boolean;
 	private readonly _listeners = new Set<() => void>();
 	private readonly _sessionListeners = new Set<() => void>();
 	private readonly _streamEventListeners = new Set<() => void>();
@@ -292,6 +292,7 @@ class AIControllerImpl implements AIController {
 	private _lastCommandId: string | null = null;
 	private _documentVersion = 0;
 	private _unsubscribeHistoryApplied: (() => void) | null = null;
+	private _unsubscribeInlineCompletion: (() => void) | null = null;
 	private _inlineHistory: AIInlineHistorySnapshot[] = [];
 	private _inlineHistoryIndex = -1;
 	private _pendingInlineHistoryRestore: AIInlineHistoryRestoreRequest | null = null;
@@ -302,13 +303,10 @@ class AIControllerImpl implements AIController {
 		config: AIExtensionConfig,
 		services: {
 			inlineCompletion: AIInlineCompletionController;
-			renderInlineCompletionDecorations: boolean;
 		},
 	) {
 		this._editor = editor;
 		this._inlineCompletion = services.inlineCompletion;
-		this._renderInlineCompletionDecorations =
-			services.renderInlineCompletionDecorations;
 		this._model = config.model;
 		this._author = config.author ?? "assistant";
 		this._maxAgenticSteps = config.maxAgenticSteps ?? 10;
@@ -335,7 +333,7 @@ class AIControllerImpl implements AIController {
 
 		this._syncSuggestionsFromDocument();
 
-		this._inlineCompletion.subscribe(() => {
+		this._unsubscribeInlineCompletion = this._inlineCompletion.subscribe(() => {
 			this._setState({
 				ephemeralSuggestion: this._inlineCompletion.getState().visibleSuggestion,
 			});
@@ -346,6 +344,8 @@ class AIControllerImpl implements AIController {
 	}
 
 	destroy(): void {
+		this._unsubscribeInlineCompletion?.();
+		this._unsubscribeInlineCompletion = null;
 		this._unsubscribeHistoryApplied?.();
 		this._unsubscribeHistoryApplied = null;
 	}
@@ -1128,9 +1128,6 @@ class AIControllerImpl implements AIController {
 				this._state.activeSessionId,
 			),
 			...buildGenerationZoneDecorations(this._state.activeGeneration),
-			...(this._renderInlineCompletionDecorations
-				? this._inlineCompletion.buildDecorations()
-				: []),
 		];
 		return decorations;
 	}
@@ -4086,7 +4083,7 @@ export function aiExtension(config: AIExtensionConfig = {}): Extension {
 	let unsubscribeTrackedOrigins: (() => void) | null = null;
 	let controller: AIControllerImpl | null = null;
 	let inlineCompletion: AIInlineCompletionController | null = null;
-	let ownsInlineCompletion = false;
+	let releaseInlineCompletion: (() => void) | null = null;
 	let inlineHistory: AIInlineHistoryService | null = null;
 	let reviewController: AIReviewService | null = null;
 	let activeEditor: Editor | null = null;
@@ -4100,10 +4097,9 @@ export function aiExtension(config: AIExtensionConfig = {}): Extension {
 			activeEditor = editor;
 			const inlineCompletionRegistration = ensureInlineCompletionController(editor);
 			inlineCompletion = inlineCompletionRegistration.controller;
-			ownsInlineCompletion = inlineCompletionRegistration.isOwner;
+			releaseInlineCompletion = inlineCompletionRegistration.release;
 			controller = new AIControllerImpl(editor, config, {
 				inlineCompletion,
-				renderInlineCompletionDecorations: ownsInlineCompletion,
 			});
 			inlineHistory = new AIInlineHistoryService({
 				canUndoInlineHistory: () =>
@@ -4160,17 +4156,14 @@ export function aiExtension(config: AIExtensionConfig = {}): Extension {
 			activeEditor?.internals.setSlot(AI_CONTROLLER_SLOT, null);
 			activeEditor?.internals.setSlot(AI_INLINE_HISTORY_SLOT, null);
 			activeEditor?.internals.setSlot(AI_REVIEW_CONTROLLER_SLOT, null);
-			if (ownsInlineCompletion) {
-				inlineCompletion?.destroy();
-				activeEditor?.internals.setSlot(INLINE_COMPLETION_SLOT, null);
-			}
+			releaseInlineCompletion?.();
 			unsubscribeTrackedOrigins?.();
 			unsubscribeTrackedOrigins = null;
 			unsubscribeBeforeApply?.();
 			unsubscribeBeforeApply = null;
 			controller = null;
 			inlineCompletion = null;
-			ownsInlineCompletion = false;
+			releaseInlineCompletion = null;
 			inlineHistory = null;
 			reviewController = null;
 			activeEditor = null;
@@ -4186,7 +4179,11 @@ export function aiExtension(config: AIExtensionConfig = {}): Extension {
 
 		decorations: () => {
 			const decorations = controller?.buildDecorations() ?? [];
-			return createDecorationSet(decorations);
+			const inlineDecorations =
+				activeEditor?.internals.getSlot(AI_AUTOCOMPLETE_CONTROLLER_SLOT) == null
+					? (inlineCompletion?.buildDecorations() ?? [])
+					: [];
+			return createDecorationSet([...decorations, ...inlineDecorations]);
 		},
 	});
 }
@@ -4950,15 +4947,30 @@ function areSuggestionsEqual(
 		const nextSuggestion = next[index];
 		if (
 			previousSuggestion.id !== nextSuggestion.id ||
+			previousSuggestion.kind !== nextSuggestion.kind ||
 			previousSuggestion.blockId !== nextSuggestion.blockId ||
 			previousSuggestion.action !== nextSuggestion.action ||
-			previousSuggestion.offset !== nextSuggestion.offset ||
-			previousSuggestion.length !== nextSuggestion.length ||
 			previousSuggestion.author !== nextSuggestion.author ||
 			previousSuggestion.authorType !== nextSuggestion.authorType ||
 			previousSuggestion.createdAt !== nextSuggestion.createdAt ||
 			previousSuggestion.model !== nextSuggestion.model ||
 			previousSuggestion.sessionId !== nextSuggestion.sessionId
+		) {
+			return false;
+		}
+		if (
+			previousSuggestion.kind === "text" &&
+			nextSuggestion.kind === "text" &&
+			(previousSuggestion.offset !== nextSuggestion.offset ||
+				previousSuggestion.length !== nextSuggestion.length)
+		) {
+			return false;
+		}
+		if (
+			previousSuggestion.kind === "block" &&
+			nextSuggestion.kind === "block" &&
+			JSON.stringify(previousSuggestion.previousState) !==
+				JSON.stringify(nextSuggestion.previousState)
 		) {
 			return false;
 		}

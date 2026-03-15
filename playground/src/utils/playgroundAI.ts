@@ -30,7 +30,7 @@ export function createPlaygroundAIModel(
 				}
 
 				const prompt = getLatestPrompt(options.messages);
-				const isolatedSession = isInlineAutocompleteRequest(options.messages);
+				const isolatedSession = options.requestMode === "inline-autocomplete";
 				logAutocompleteDebug("model stream started", {
 					promptPreview: prompt.slice(0, 160),
 					promptLength: prompt.length,
@@ -40,7 +40,10 @@ export function createPlaygroundAIModel(
 					editor,
 					prompt,
 					options.signal,
-					{ isolatedSession },
+					{
+						isolatedSession,
+						requestMode: options.requestMode,
+					},
 				)) {
 					logAutocompleteDebug("model stream chunk", {
 						type: chunk.type ?? "unknown",
@@ -128,15 +131,6 @@ function getLatestPrompt(messages: ModelMessage[]): string {
 		return "";
 	}
 	return flattenMessageContent(lastMessage.content).trim();
-}
-
-function isInlineAutocompleteRequest(messages: ModelMessage[]): boolean {
-	const systemMessage = messages[0];
-	if (!systemMessage || systemMessage.role !== "system") {
-		return false;
-	}
-	const systemContent = flattenMessageContent(systemMessage.content);
-	return systemContent.includes("You are generating inline editor autocomplete.");
 }
 
 function flattenMessageContent(content: string | ModelMessagePart[]): string {

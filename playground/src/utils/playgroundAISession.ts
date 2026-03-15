@@ -196,6 +196,7 @@ export async function requestPlaygroundAIResponse(
 	signal?: AbortSignal,
 	options?: {
 		isolatedSession?: boolean;
+		requestMode?: string;
 	},
 ): Promise<Response> {
 	const updateClientState = options?.isolatedSession !== true;
@@ -250,6 +251,7 @@ export async function requestPlaygroundAIResponse(
 			body: JSON.stringify({
 				sessionId,
 				prompt,
+				requestMode: options?.requestMode ?? null,
 			}),
 			signal,
 		});
@@ -298,6 +300,7 @@ export async function* streamPlaygroundAIResponse(
 	signal?: AbortSignal,
 	options?: {
 		isolatedSession?: boolean;
+		requestMode?: string;
 	},
 ): AsyncIterable<PlaygroundStreamChunk> {
 	const updateClientState = options?.isolatedSession !== true;

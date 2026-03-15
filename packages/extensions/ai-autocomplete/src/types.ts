@@ -27,7 +27,6 @@ export interface AutocompleteControllerState {
 	status: "idle" | "scheduled" | "requesting" | "showing";
 	activeRequestId: string | null;
 	visibleSuggestionId: string | null;
-	sequence: AutocompleteSequenceState | null;
 	settings: AutocompleteRuntimeSettings;
 	blockPolicy: AutocompleteBlockPolicy;
 	metrics: AutocompleteMetrics;
@@ -40,12 +39,6 @@ export interface AutocompleteControllerSnapshot {
 	providerDescriptors: readonly AutocompleteProviderDescriptor[];
 }
 
-export interface AutocompleteSequenceState {
-	totalSegments: number;
-	acceptedSegments: number;
-	remainingSegments: number;
-}
-
 export interface AutocompleteRuntimeSettings {
 	debounceMs: number;
 	prefetchAfterAccept: boolean;
@@ -53,7 +46,7 @@ export interface AutocompleteRuntimeSettings {
 	staleAfterMs: number;
 }
 
-export type AutocompleteAcceptanceStrategy = "sequence" | "full";
+export type AutocompleteAcceptanceStrategy = "full";
 
 export interface AutocompleteBlockPolicy {
 	allowedBlockTypes?: readonly string[];
@@ -69,7 +62,6 @@ export interface AutocompleteMetrics {
 	staleDropCount: number;
 	explicitTabTriggerCount: number;
 	acceptCount: number;
-	partialAcceptCount: number;
 	policyInvalidationScheduledCount: number;
 	policyInvalidationRequestingCount: number;
 	policyInvalidationShowingCount: number;

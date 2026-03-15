@@ -544,7 +544,7 @@ function handleBlockSelectionEnter(
 			props: {},
 			position: { after: anchorBlockId },
 		},
-	]);
+	], { origin: "user" });
 
 	fieldEditor.activateTextSelection(newBlockId, 0, 0);
 	return true;

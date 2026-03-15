@@ -343,7 +343,10 @@ export const aiBenchmarks: BenchDefinition[] = [
 
 			b.start();
 			expectControllerRequest(controller.request({ explicit: true }));
-			await waitForCondition(() => controller.hasVisibleSuggestion());
+			await waitForCondition(
+				() => controller.getState().providerTimings.length > 0,
+				80,
+			);
 			b.end();
 
 			const providerTimings = controller.getState().providerTimings;
@@ -377,8 +380,8 @@ export const aiBenchmarks: BenchDefinition[] = [
 			expectControllerRequest(controller.request({ explicit: true }));
 			await waitForCondition(() => controller.hasVisibleSuggestion());
 
-			const initialSegmentCount =
-				controller.getState().sequence?.totalSegments ?? 0;
+			const initialVisibleSuggestionLength =
+				getInlineCompletionController(editor)?.getState().visibleSuggestion?.text.length ?? 0;
 			let acceptStepCount = 0;
 
 			b.start();
@@ -391,9 +394,8 @@ export const aiBenchmarks: BenchDefinition[] = [
 			const metrics = controller.getState().metrics;
 			b.setMetrics({
 				acceptStepCount,
-				initialSegmentCount,
+				initialVisibleSuggestionLength,
 				acceptCount: metrics.acceptCount,
-				partialAcceptCount: metrics.partialAcceptCount,
 				modelCallCount: getModelCallCount(),
 			});
 			editor.destroy();
@@ -415,14 +417,11 @@ export const aiBenchmarks: BenchDefinition[] = [
 			b.start();
 			expectControllerRequest(controller.acceptVisibleSuggestion());
 			await waitForCondition(() => getModelCallCount() === 2);
-			expectControllerRequest(controller.acceptVisibleSuggestion());
-			await waitForCondition(() => getVisibleSuggestionText() === " again");
 			b.end();
 
 			const metrics = controller.getState().metrics;
 			b.setMetrics({
 				acceptCount: metrics.acceptCount,
-				partialAcceptCount: metrics.partialAcceptCount,
 				modelCallCount: getModelCallCount(),
 				finalVisibleSuggestionLength: getVisibleSuggestionText().length,
 			});

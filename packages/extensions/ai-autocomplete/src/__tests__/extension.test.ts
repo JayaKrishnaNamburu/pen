@@ -399,12 +399,6 @@ describe("@pen/ai-autocomplete", () => {
 				" world from pen",
 		);
 
-		expect(controller?.getState().sequence).toMatchObject({
-			acceptedSegments: 0,
-			remainingSegments: 1,
-			totalSegments: 1,
-		});
-
 		expect(controller?.acceptVisibleSuggestion()).toBe(true);
 		expect(editor.getBlock(blockId)?.textContent()).toBe("Hello world from pen");
 		expect(editor.selection).toMatchObject({
@@ -416,8 +410,6 @@ describe("@pen/ai-autocomplete", () => {
 			},
 		});
 		expect(inlineCompletion?.getState().visibleSuggestion).toBeNull();
-		expect(controller?.getState().sequence).toBeNull();
-
 		editor.destroy();
 	});
 
@@ -625,9 +617,7 @@ describe("@pen/ai-autocomplete", () => {
 		expect(controller?.acceptVisibleSuggestion()).toBe(true);
 		expect(editor.getBlock(blockId)?.textContent()).toBe("Hello world from pen");
 		expect(inlineCompletion?.getState().visibleSuggestion).toBeNull();
-		expect(controller?.getState().sequence).toBeNull();
 		expect(controller?.getState().metrics.acceptCount).toBe(1);
-		expect(controller?.getState().metrics.partialAcceptCount).toBe(0);
 
 		editor.destroy();
 	});
@@ -1294,18 +1284,17 @@ describe("@pen/ai-autocomplete", () => {
 				requestId: string;
 				blockId: string;
 				startOffset: number;
-				segments: readonly string[];
-				acceptedSegmentCount: number;
+				candidate: {
+					inlineText: string;
+					appendedBlocks: readonly unknown[];
+					previewBlocks: readonly unknown[];
+				};
+				continuationDepth: number;
 			} | null;
 			_setState: (nextState: {
 				status: "showing";
 				activeRequestId: string;
 				visibleSuggestionId: string;
-				sequence: {
-					totalSegments: number;
-					acceptedSegments: number;
-					remainingSegments: number;
-				};
 			}) => void;
 		};
 		controllerImpl._state.blockPolicy = {
@@ -1316,18 +1305,17 @@ describe("@pen/ai-autocomplete", () => {
 			requestId: "manual-policy-recheck",
 			blockId: codeBlockId,
 			startOffset: 14,
-			segments: [" value"],
-			acceptedSegmentCount: 0,
+			candidate: {
+				inlineText: " value",
+				appendedBlocks: [],
+				previewBlocks: [],
+			},
+			continuationDepth: 0,
 		};
 		controllerImpl._setState({
 			status: "showing",
 			activeRequestId: "manual-policy-recheck",
 			visibleSuggestionId: "manual-policy-recheck",
-			sequence: {
-				totalSegments: 1,
-				acceptedSegments: 0,
-				remainingSegments: 1,
-			},
 		});
 		expect(controller?.acceptVisibleSuggestion()).toBe(false);
 		expect(controller?.getState().metrics.policyInvalidationShowingCount).toBe(2);

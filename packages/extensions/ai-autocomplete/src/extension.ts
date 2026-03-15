@@ -56,6 +56,12 @@ import {
 export const AI_AUTOCOMPLETE_EXTENSION_NAME = "ai-autocomplete";
 export const AUTOCOMPLETE_CONTROLLER_SLOT = AI_AUTOCOMPLETE_CONTROLLER_SLOT;
 const AI_AUTOCOMPLETE_LOG_PREFIX = "[ai-autocomplete]";
+const AUTOCOMPLETE_DEBUG_ENABLED =
+	typeof globalThis === "object" &&
+	"process" in globalThis &&
+	(globalThis as {
+		process?: { env?: Record<string, string | undefined> };
+	}).process?.env?.PEN_AUTOCOMPLETE_DEBUG === "true";
 const PROSE_BLOCK_TYPES = new Set(["paragraph", "heading", "blockquote", "callout"]);
 const MIN_PROSE_SINGLE_WORD_COMPLETION_CHARS = 8;
 
@@ -83,11 +89,10 @@ class AutocompleteControllerImpl implements AutocompleteController {
 		status: "idle",
 		activeRequestId: null,
 		visibleSuggestionId: null,
-		sequence: null,
 		settings: {
 			debounceMs: DEFAULT_DEBOUNCE_MS,
 			prefetchAfterAccept: DEFAULT_PREFETCH_AFTER_ACCEPT,
-			acceptanceStrategy: DEFAULT_ACCEPTANCE_STRATEGY,
+			acceptanceStrategy: "full",
 			staleAfterMs: DEFAULT_STALE_AFTER_MS,
 		},
 		blockPolicy: {
@@ -102,7 +107,6 @@ class AutocompleteControllerImpl implements AutocompleteController {
 			staleDropCount: 0,
 			explicitTabTriggerCount: 0,
 			acceptCount: 0,
-			partialAcceptCount: 0,
 			policyInvalidationScheduledCount: 0,
 			policyInvalidationRequestingCount: 0,
 			policyInvalidationShowingCount: 0,
@@ -151,8 +155,7 @@ class AutocompleteControllerImpl implements AutocompleteController {
 		this._inlineCompletion = services.inlineCompletion;
 		this._model = config.model;
 		this._debounceMs = config.debounceMs ?? DEFAULT_DEBOUNCE_MS;
-		this._acceptanceStrategy =
-			config.acceptanceStrategy ?? DEFAULT_ACCEPTANCE_STRATEGY;
+		this._acceptanceStrategy = config.acceptanceStrategy ?? "full";
 		this._staleAfterMs = config.staleAfterMs ?? DEFAULT_STALE_AFTER_MS;
 		this._state.blockPolicy = {
 			allowInCodeBlocks: true,
@@ -312,7 +315,7 @@ class AutocompleteControllerImpl implements AutocompleteController {
 			return false;
 		}
 		return this._acceptFullVisibleSuggestion({
-			activateContinuation: this._acceptanceStrategy === "sequence",
+			activateContinuation: true,
 		});
 	}
 
@@ -459,8 +462,7 @@ class AutocompleteControllerImpl implements AutocompleteController {
 		}
 
 		if (
-			(nextAcceptanceStrategy === "sequence" ||
-				nextAcceptanceStrategy === "full") &&
+			nextAcceptanceStrategy === "full" &&
 			nextAcceptanceStrategy !== this._acceptanceStrategy
 		) {
 			this._acceptanceStrategy = nextAcceptanceStrategy;
@@ -521,7 +523,6 @@ class AutocompleteControllerImpl implements AutocompleteController {
 			status: "idle",
 			activeRequestId: null,
 			visibleSuggestionId: null,
-			sequence: null,
 			metrics: {
 				...this._state.metrics,
 				cancelCount:
@@ -893,11 +894,6 @@ class AutocompleteControllerImpl implements AutocompleteController {
 			status: "showing",
 			activeRequestId: this._sequence.requestId,
 			visibleSuggestionId: suggestionId,
-			sequence: {
-				totalSegments: 1,
-				acceptedSegments: 0,
-				remainingSegments: 1,
-			},
 		});
 	}
 
@@ -1066,7 +1062,6 @@ class AutocompleteControllerImpl implements AutocompleteController {
 			status: "idle",
 			activeRequestId: null,
 			visibleSuggestionId: null,
-			sequence: null,
 			diagnostics: {
 				...this._state.diagnostics,
 				lastDismissReason: "accept",
@@ -1241,7 +1236,7 @@ export function autocompleteExtension(
 ): Extension {
 	let controller: AutocompleteControllerImpl | null = null;
 	let inlineCompletion: InlineCompletionController | null = null;
-	let ownsInlineCompletion = false;
+	let releaseInlineCompletion: (() => void) | null = null;
 	let activeEditor: Editor | null = null;
 
 	return defineExtension({
@@ -1250,7 +1245,7 @@ export function autocompleteExtension(
 			activeEditor = editor;
 			const inlineCompletionRegistration = ensureInlineCompletionController(editor);
 			inlineCompletion = inlineCompletionRegistration.controller;
-			ownsInlineCompletion = inlineCompletionRegistration.isOwner;
+			releaseInlineCompletion = inlineCompletionRegistration.release;
 			controller = new AutocompleteControllerImpl(editor, config, {
 				inlineCompletion,
 			});
@@ -1259,19 +1254,14 @@ export function autocompleteExtension(
 		deactivateClient: async () => {
 			controller?.destroy();
 			activeEditor?.internals.setSlot(AUTOCOMPLETE_CONTROLLER_SLOT, null);
-			if (ownsInlineCompletion) {
-				inlineCompletion?.destroy();
-				activeEditor?.internals.setSlot(INLINE_COMPLETION_SLOT, null);
-			}
+			releaseInlineCompletion?.();
 			controller = null;
 			inlineCompletion = null;
-			ownsInlineCompletion = false;
+			releaseInlineCompletion = null;
 			activeEditor = null;
 		},
 		decorations: () => createDecorationSet([
-			...(ownsInlineCompletion
-				? (inlineCompletion?.buildDecorations() ?? [])
-				: []),
+			...(inlineCompletion?.buildDecorations() ?? []),
 		]),
 	});
 }
@@ -1582,7 +1572,6 @@ function cloneAutocompleteControllerState(
 		status: state.status,
 		activeRequestId: state.activeRequestId,
 		visibleSuggestionId: state.visibleSuggestionId,
-		sequence: state.sequence ? { ...state.sequence } : null,
 		settings: { ...state.settings },
 		blockPolicy: cloneBlockPolicy(state.blockPolicy),
 		metrics: { ...state.metrics },
@@ -1606,9 +1595,6 @@ function freezeBlockPolicy(
 function freezeAutocompleteControllerState(
 	state: AutocompleteControllerState,
 ): AutocompleteControllerState {
-	if (state.sequence) {
-		Object.freeze(state.sequence);
-	}
 	Object.freeze(state.settings);
 	freezeBlockPolicy(state.blockPolicy);
 	Object.freeze(state.metrics);
@@ -1651,6 +1637,9 @@ function incrementPolicyInvalidationMetrics(
 }
 
 function logAutocompleteEvent(message: string, details?: unknown): void {
+	if (!AUTOCOMPLETE_DEBUG_ENABLED) {
+		return;
+	}
 	if (details === undefined) {
 		console.log(`${AI_AUTOCOMPLETE_LOG_PREFIX} ${message}`);
 		return;

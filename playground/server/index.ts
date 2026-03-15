@@ -4,38 +4,33 @@ import { config as loadEnv } from "dotenv";
 import { randomUUID } from "node:crypto";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { fileURLToPath } from "node:url";
-import {
-	createEditor,
-} from "../../packages/core/src/index";
-import type {
-	Editor,
-	TableColumnSchema,
-	ToolRuntime,
-} from "../../packages/types/src/index";
+import { createEditor } from "@pen/core";
 import {
 	buildPlaygroundRequestPlan as buildSharedPlaygroundRequestPlan,
 	buildPromptContext as buildSharedPromptContext,
-	createPlaygroundRequestMetricsSeed,
-} from "../../packages/extensions/ai/src/runtime/playgroundPlanner";
-import {
 	buildStructuredIntentModelPrompt,
+	createPlaygroundRequestMetricsSeed,
 	getStructuredIntentOutputSchema,
 	parseStructuredIntentRequestPrompt,
-} from "../../packages/extensions/ai/src/runtime/structuredIntent";
+} from "@pen/ai";
+import {
+	AUTOCOMPLETE_SYSTEM_PROMPT,
+	getAutocompleteController,
+} from "@pen/ai-autocomplete";
 import {
 	AIToolContextImpl,
 	executeAITool,
 	getAIToolRuntime,
 	listAITools,
-} from "../../packages/extensions/ai-tools/src/index";
-import {
-	listDefaultAISkills,
-	renderSkillFiles,
-} from "../../packages/extensions/ai-skills/src/index";
-import { getAutocompleteController } from "../../packages/extensions/ai-autocomplete/src/index";
-import { AUTOCOMPLETE_SYSTEM_PROMPT } from "../../packages/extensions/ai-autocomplete/src/promptBuilder";
-import { createDefaultSchema } from "../../packages/schema/default/src/index";
-import { defaultPreset } from "../../packages/presets/default/src/index";
+} from "@pen/ai-tools";
+import { listDefaultAISkills, renderSkillFiles } from "@pen/ai-skills";
+import { defaultPreset } from "@pen/preset-default";
+import { createDefaultSchema } from "@pen/schema-default";
+import type {
+	Editor,
+	TableColumnSchema,
+	ToolRuntime,
+} from "@pen/types";
 
 loadEnv({
 	path: fileURLToPath(new URL("../.env.local", import.meta.url)),
@@ -153,6 +148,7 @@ interface AIRequestBody {
 	prompt?: unknown;
 	sessionId?: unknown;
 	contextFormat?: unknown;
+	requestMode?: unknown;
 }
 
 interface ToolExecuteBody {
@@ -389,6 +385,7 @@ async function handleAIRequest(
 		typeof body.prompt === "string" ? body.prompt.trim() : "";
 	const sessionId =
 		typeof body.sessionId === "string" ? body.sessionId : null;
+	const requestedMode = parsePlaygroundRequestMode(body.requestMode);
 
 	if (!prompt) {
 		logPlaygroundEvent("ai:request-rejected", {
@@ -435,6 +432,7 @@ async function handleAIRequest(
 	const requestPlan = buildPlaygroundRequestPlan(
 		session.editor,
 		prompt,
+		requestedMode,
 	);
 	const structuredIntentRequest = parseStructuredIntentRequestPrompt(prompt);
 	const metrics: PlaygroundRequestMetrics = {
@@ -797,6 +795,7 @@ function cleanupIdleSessions(): void {
 function buildPlaygroundRequestPlan(
 	editor: Editor,
 	prompt: string,
+	requestedMode: PlaygroundRequestMode | null,
 ): PlaygroundRequestPlan {
 	return buildSharedPlaygroundRequestPlan(editor, prompt, {
 		documentModel: PLAYGROUND_DOCUMENT_MODEL,
@@ -813,7 +812,16 @@ function buildPlaygroundRequestPlan(
 		selectionExpandOutputTokens: PLAYGROUND_SELECTION_EXPAND_OUTPUT_TOKENS,
 		selectionSummarizeOutputTokens: PLAYGROUND_SELECTION_SUMMARIZE_OUTPUT_TOKENS,
 		selectionTranslateOutputTokens: PLAYGROUND_SELECTION_TRANSLATE_OUTPUT_TOKENS,
-	});
+	}, requestedMode);
+}
+
+function parsePlaygroundRequestMode(value: unknown): PlaygroundRequestMode | null {
+	return value === "document-agent" ||
+		value === "structured-planner" ||
+		value === "selection-fast" ||
+		value === "inline-autocomplete"
+		? value
+		: null;
 }
 
 function buildPromptContext(editor: Editor): PromptContextEnvelope {
