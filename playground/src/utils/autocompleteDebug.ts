@@ -24,6 +24,8 @@ type AutocompleteDebugSummary = {
 const PLAYGROUND_AUTOCOMPLETE_LOG_PREFIX = "[playground:autocomplete]";
 const PLAYGROUND_AUTOCOMPLETE_DEBUG_ATTACHED =
 	"__playgroundAutocompleteDebugAttached__";
+const PLAYGROUND_AUTOCOMPLETE_DEBUG_ENABLED =
+	import.meta.env.VITE_PLAYGROUND_AUTOCOMPLETE_DEBUG === "true";
 
 export function summarizeAutocompleteState(
 	state: AutocompleteControllerState,
@@ -59,6 +61,9 @@ export function didAutocompleteSummaryChange(
 }
 
 export function logAutocompleteDebug(message: string, details?: unknown): void {
+	if (!PLAYGROUND_AUTOCOMPLETE_DEBUG_ENABLED) {
+		return;
+	}
 	if (details === undefined) {
 		console.log(`${PLAYGROUND_AUTOCOMPLETE_LOG_PREFIX} ${message}`);
 		return;

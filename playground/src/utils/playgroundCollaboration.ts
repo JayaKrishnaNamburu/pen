@@ -1,6 +1,12 @@
 import { createYjsProviderSession, getYjsAwareness, getYjsDoc } from "@pen/crdt-yjs";
 import { multiplayerExtension } from "@pen/multiplayer";
-import type { Extension, MultiplayerSession, MultiplayerSessionContext } from "@pen/types";
+import type {
+	DocumentOp,
+	Editor,
+	Extension,
+	MultiplayerSession,
+	MultiplayerSessionContext,
+} from "@pen/types";
 import { WebsocketProvider } from "y-websocket";
 
 const PLAYGROUND_COLLAB_USER_STORAGE_KEY = "pen:playground:collaboration-user";
@@ -74,6 +80,40 @@ export function createPlaygroundCollaborationExtension(): Extension {
 			room: collaboration.room,
 		}),
 	});
+}
+
+export function normalizePlaygroundCollaborationDocument(editor: Editor): boolean {
+	const blockIds = [...editor.documentState.blockOrder];
+	if (blockIds.length === 0) {
+		editor.apply(
+			[
+				{
+					type: "insert-block",
+					blockId: crypto.randomUUID(),
+					blockType: "paragraph",
+					props: {},
+					position: "last",
+				},
+			],
+			{ origin: "system" },
+		);
+		return true;
+	}
+
+	if (!isEmptyParagraphOnlyDocument(editor, blockIds)) {
+		return false;
+	}
+
+	if (blockIds.length === 1) {
+		return false;
+	}
+
+	const deleteOps: DocumentOp[] = blockIds.slice(1).map((blockId) => ({
+		type: "delete-block",
+		blockId,
+	}));
+	editor.apply(deleteOps, { origin: "system" });
+	return true;
 }
 
 function createYWebsocketSessionFactory(options: {
@@ -153,6 +193,26 @@ function resolvePlaygroundCollaborationServerUrl(): string {
 function getConfiguredPlaygroundCollaborationUserName(): string | null {
 	const configuredName = import.meta.env.VITE_PLAYGROUND_COLLAB_USER_NAME?.trim();
 	return configuredName ? configuredName : null;
+}
+
+function isEmptyParagraphOnlyDocument(
+	editor: Editor,
+	blockIds: readonly string[],
+): boolean {
+	for (const blockId of blockIds) {
+		const block = editor.getBlock(blockId);
+		if (!block || block.type !== "paragraph") {
+			return false;
+		}
+		if (block.textContent().trim().length > 0) {
+			return false;
+		}
+		if (Object.keys(block.props).length > 0) {
+			return false;
+		}
+	}
+
+	return true;
 }
 
 function getStoredPlaygroundUser(): PlaygroundCollaborationUser {

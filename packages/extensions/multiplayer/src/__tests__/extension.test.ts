@@ -142,6 +142,36 @@ describe("multiplayerExtension", () => {
 		session.destroy();
 	});
 
+	it("clears local awareness when the last shared-session editor disconnects", async () => {
+		const session = createDocumentSession({
+			adapter: yjsAdapter(),
+		});
+		const editor = createEditor({
+			documentSession: session,
+			extensions: [
+				multiplayerExtension({
+					user: { id: "u1", name: "Ada" },
+				}),
+			],
+		});
+		const awareness = editor.internals.awareness;
+
+		expect(awareness?.getLocalState()).toMatchObject({
+			user: { id: "u1", name: "Ada" },
+		});
+
+		editor.destroy();
+		await (
+			editor.internals.getSlot<() => Promise<void>>(
+				AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY,
+			)?.() ?? Promise.resolve()
+		);
+
+		expect(awareness?.getLocalState()).toBeNull();
+
+		session.destroy();
+	});
+
 	it("wires provider connection state through the controller", () => {
 		const session = new FakeSession();
 		const editor = createEditor({

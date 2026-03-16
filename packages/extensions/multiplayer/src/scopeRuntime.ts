@@ -168,11 +168,12 @@ class MultiplayerScopeRuntime {
 		const remainingEditor = this.editors.values().next().value as
 			| Editor
 			| undefined;
+		if (!remainingEditor) {
+			this.awareness.setLocalState(null);
+			return;
+		}
 		this.awareness.setLocalState(
-			this.buildLocalAwarenessState(
-				this.user,
-				remainingEditor?.selection ?? null,
-			),
+			this.buildLocalAwarenessState(this.user, remainingEditor.selection),
 		);
 	}
 
@@ -181,6 +182,7 @@ class MultiplayerScopeRuntime {
 	}
 
 	destroy(): void {
+		this.awareness.setLocalState(null);
 		for (const unsubscribe of this.selectionUnsubscribers.values()) {
 			unsubscribe();
 		}

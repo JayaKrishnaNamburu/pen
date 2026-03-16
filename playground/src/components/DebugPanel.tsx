@@ -1,7 +1,6 @@
 import "./DebugPanel.css";
 import type { Editor } from "@pen/types";
 import { useAIDebugLog } from "@pen/react";
-import { useEffect, useRef } from "react";
 import { PLAYGROUND_AI_SESSION_ID_PREVIEW_LENGTH } from "../constants/playgroundAI";
 import { usePlaygroundAIState } from "../hooks/usePlaygroundAISession";
 
@@ -26,7 +25,6 @@ export function DebugPanel({
 }: DebugPanelProps) {
 	const debugLog = useAIDebugLog(editor, { sessionId });
 	const playgroundAIState = usePlaygroundAIState();
-	const lastLoggedEntryIdRef = useRef<string | null>(null);
 
 	const sessionLabel = playgroundAIState.sessionId
 		? playgroundAIState.sessionId.slice(
@@ -142,28 +140,6 @@ export function DebugPanel({
 			</label>,
 		);
 	}
-
-	useEffect(() => {
-		const latestEntry = debugLog.entries[debugLog.entries.length - 1];
-		if (!latestEntry || latestEntry.id === lastLoggedEntryIdRef.current) {
-			return;
-		}
-
-		lastLoggedEntryIdRef.current = latestEntry.id;
-		console.log("[Pen playground debug]", {
-			entry: latestEntry,
-			controllerStatus: debugLog.status,
-			activeGenerationId: debugLog.activeGenerationId,
-			activeSessionId: debugLog.activeSessionId,
-			fastApplySessionId: debugLog.fastApplySessionId,
-			sessionCount: debugLog.sessionCount,
-			pendingSuggestionCount: debugLog.pendingSuggestionCount,
-			pendingReviewItemCount: debugLog.pendingReviewItemCount,
-			activeSessionFastApply: debugLog.activeSessionFastApply,
-			aggregateFastApply: debugLog.aggregateFastApply,
-			playgroundState: playgroundAIState,
-		});
-	}, [debugLog, playgroundAIState]);
 
 	return (
 		<div

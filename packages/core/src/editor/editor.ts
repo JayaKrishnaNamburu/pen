@@ -873,6 +873,7 @@ class EditorImpl implements Editor {
 		this._wireObservation();
 		await this._activateExtensions();
 		this._engine.normalizeAll();
+		this._refreshDecorations();
 	}
 
 	private _refreshUndoManager(): void {

@@ -1,5 +1,6 @@
 import {
 	Pen,
+	useMultiplayer,
 	type RendererOverrides,
 } from "@pen/react";
 import { aiExtension } from "@pen/ai";
@@ -10,6 +11,7 @@ import {
 	type AutocompleteBlockPolicy,
 } from "@pen/ai-autocomplete";
 import { createEditor } from "@pen/core";
+import { getMultiplayerController } from "@pen/multiplayer";
 import type { Editor, InteractionModel } from "@pen/types";
 import { inputRulesExtension } from "@pen/input-rules";
 import { defaultPreset } from "@pen/preset-default";
@@ -37,6 +39,7 @@ import {
 	getPlaygroundCollaborationConfig,
 	getPlaygroundCollaborationRoom,
 	getPlaygroundCollaborationUserName,
+	normalizePlaygroundCollaborationDocument,
 	savePlaygroundCollaborationUserName,
 } from "./utils/playgroundCollaboration";
 import { canOpenLinkEditor } from "./utils/linkMarks";
@@ -181,6 +184,7 @@ export function App() {
 			blockDragAndDrop={PLAYGROUND_BLOCK_DRAG_AND_DROP}
 			interactionModel={interactionModel}
 		>
+			<PlaygroundCollaborationBootstrap editor={activeEditor} />
 			<Pen.AI.Root editor={activeEditor}>
 				<div className="playground-shell">
 					<div className="playground-editor-column">
@@ -233,6 +237,20 @@ export function App() {
 	);
 }
 
+function PlaygroundCollaborationBootstrap({ editor }: { editor: Editor }) {
+	const multiplayerState = useMultiplayer(editor);
+
+	useEffect(() => {
+		if (multiplayerState.connectionState !== "connected") {
+			return;
+		}
+
+		normalizePlaygroundCollaborationDocument(editor);
+	}, [editor, multiplayerState.connectionState]);
+
+	return null;
+}
+
 function usePlaygroundEditor(
 	editorRef: MutableRefObject<Editor | null>,
 	linkToggleRef: MutableRefObject<(() => void) | null>,
@@ -258,6 +276,7 @@ function usePlaygroundEditor(
 			if (editorRef.current === nextEditor) {
 				editorRef.current = null;
 			}
+			getMultiplayerController(nextEditor)?.disconnect();
 			nextEditor.destroy();
 		};
 	}, [collaborationReady, editorRef, linkToggleRef]);

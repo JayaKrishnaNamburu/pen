@@ -17,7 +17,7 @@ export function createYjsAwareness(doc: YjsCRDTDocument): Awareness {
     getLocalState(): Record<string, unknown> | null {
       return awareness.getLocalState() as Record<string, unknown> | null;
     },
-    setLocalState(state: Record<string, unknown>) {
+    setLocalState(state: Record<string, unknown> | null) {
       awareness.setLocalState(state);
     },
     getStates(): Map<number, Record<string, unknown>> {

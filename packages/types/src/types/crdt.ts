@@ -227,7 +227,7 @@ export interface AwarenessChangeEvent {
 
 export interface Awareness {
   getLocalState(): Record<string, unknown> | null;
-  setLocalState(state: Record<string, unknown>): void;
+  setLocalState(state: Record<string, unknown> | null): void;
   getStates(): Map<number, Record<string, unknown>>;
   on(
     event: "change",
