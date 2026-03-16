@@ -112,7 +112,12 @@ export async function runAgenticLoop(
 			const failures = consecutiveErrors.get(tool.name) ?? 0;
 			return failures < 3;
 		});
-		const stream = model.stream({ messages, tools: availableTools, signal });
+		const stream = model.stream({
+			messages,
+			tools: availableTools,
+			signal,
+			requestMode: options.requestMode,
+		});
 		const pendingToolCalls: Array<{
 			toolCallId: string;
 			toolName: string;

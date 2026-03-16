@@ -1,8 +1,15 @@
+import {
+	createDecorationSet,
+	ensureInlineCompletionController,
+	getInlineCompletionController as getInlineCompletionControllerFromCore,
+} from "@pen/core";
+import { buildDocumentWriteOps, getDocumentToolRuntime } from "@pen/document-ops";
 import type {
 	Decoration,
 	DocumentOp,
 	Editor,
 	Extension,
+	HistoryAppliedEvent,
 	KeyBinding,
 	ModelAdapter,
 	SelectionState,
@@ -10,22 +17,17 @@ import type {
 	TextSelection,
 	ToolDefinition,
 	ToolRuntime,
+	UndoHistoryMetadataController,
 } from "@pen/types";
 import {
-	createDecorationSet,
-	ensureInlineCompletionController,
-	getInlineCompletionController as getInlineCompletionControllerFromCore,
-} from "@pen/core";
-import { buildDocumentWriteOps, getDocumentToolRuntime } from "@pen/document-ops";
-import type { HistoryAppliedEvent } from "@pen/types";
-import {
-	AI_CONTROLLER_SLOT as CORE_AI_CONTROLLER_SLOT,
 	AI_AUTOCOMPLETE_CONTROLLER_SLOT,
-	INLINE_COMPLETION_SLOT as CORE_INLINE_COMPLETION_SLOT,
+	AI_CONTROLLER_SLOT as CORE_AI_CONTROLLER_SLOT,
 	AI_INLINE_HISTORY_SLOT as CORE_AI_INLINE_HISTORY_SLOT,
 	AI_REVIEW_CONTROLLER_SLOT as CORE_AI_REVIEW_CONTROLLER_SLOT,
+	INLINE_COMPLETION_SLOT as CORE_INLINE_COMPLETION_SLOT,
 	defineExtension,
 	shouldExposeBlockInTooling,
+	UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY,
 } from "@pen/types";
 import { runAgenticLoop } from "./agentic/loop";
 import { defaultAICommands } from "./commands/defaultCommands";
@@ -44,11 +46,11 @@ import {
 	MARKDOWN_FAST_APPLY_ROOT_TAG,
 	normalizeFlowMarkdownOutput,
 } from "./runtime/flowMarkdown";
-import { parseMarkdownPatchPlanContract } from "./runtime/markdownPatchPlan";
 import {
 	applyMarkdownFastApply,
 	parseMarkdownFastApplyContract,
 } from "./runtime/markdownFastApply";
+import { parseMarkdownPatchPlanContract } from "./runtime/markdownPatchPlan";
 import { buildMutationReceipt } from "./runtime/mutationReceipt";
 import { buildDocumentMutationPlanExecution } from "./runtime/planExecutor";
 import { validateDocumentMutationPlanShape } from "./runtime/planValidation";
@@ -86,8 +88,8 @@ import { readAllSuggestions } from "./suggestions/persistent";
 import {
 	AI_SESSION_SUGGESTION_ORIGIN,
 	interceptApplyForSuggestMode,
-	SUGGESTION_RESOLUTION_ORIGIN,
 	shouldBypassSuggestMode,
+	SUGGESTION_RESOLUTION_ORIGIN,
 } from "./suggestions/suggestMode";
 import type {
 	AICommandBinding,
@@ -101,10 +103,9 @@ import type {
 	AIInlineHistoryController,
 	AIInlineHistoryDirection,
 	AIInlineHistorySnapshot,
-	AIReviewController,
 	AIMutationReceipt,
+	AIReviewController,
 	AISession,
-	FastApplyDebugState,
 	AISessionMetrics,
 	AISessionResolution,
 	AISessionSelectionSnapshot,
@@ -113,6 +114,7 @@ import type {
 	AISurface,
 	AIWorkingSetEnvelope,
 	AIWorkingSetRetrievedSpan,
+	FastApplyDebugState,
 	GenerationState,
 	GenerationStructuredPreviewState,
 	PersistentSuggestion,
@@ -180,6 +182,18 @@ interface GenerationExecutionContext {
 	surface?: AISurface;
 }
 
+function resolveGenerationRequestMode(
+	context?: GenerationExecutionContext,
+): string | undefined {
+	if (context?.surface === "inline-edit") {
+		return "inline-edit";
+	}
+	if (context?.surface === "bottom-chat") {
+		return "bottom-chat";
+	}
+	return undefined;
+}
+
 const EMPTY_TOOL_RUNTIME: ToolRuntime = {
 	registerTool(_def: ToolDefinition): void { },
 	unregisterTool(_name: string): void { },
@@ -195,10 +209,32 @@ const EMPTY_TOOL_RUNTIME: ToolRuntime = {
 };
 
 const MAX_STREAM_EVENTS = 200;
+const AI_UNDO_HISTORY_METADATA_KEY = "ai:inline-session-history";
 
 interface AIInlineHistoryRestoreRequest {
 	direction: AIInlineHistoryDirection;
 	targetSnapshotId: string;
+	targetDocumentVersion: number;
+	shortcutOnly?: boolean;
+	sessionId?: string | null;
+	targetState?: AIInlineShortcutHistoryState | null;
+}
+
+type AIInlineShortcutHistoryPhase = "none" | "review" | "resolved";
+
+interface AIInlineShortcutHistoryState {
+	sessionId: string | null;
+	phase: AIInlineShortcutHistoryPhase;
+	turnCount: number;
+	turnId: string | null;
+	resolution?: "accepted" | "rejected";
+}
+
+interface AIInlineShortcutHistoryWaypoint {
+	startIndex: number;
+	endIndex: number;
+	representativeIndex: number;
+	state: AIInlineShortcutHistoryState;
 }
 
 class AIInlineHistoryService implements AIInlineHistoryController {
@@ -293,10 +329,15 @@ class AIControllerImpl implements AIController {
 	private _documentVersion = 0;
 	private _unsubscribeHistoryApplied: (() => void) | null = null;
 	private _unsubscribeInlineCompletion: (() => void) | null = null;
+	private _unsubscribeUndoHistoryMetadata: (() => void) | null = null;
+	private readonly _undoHistoryMetadata: UndoHistoryMetadataController | null;
 	private _inlineHistory: AIInlineHistorySnapshot[] = [];
 	private _inlineHistoryIndex = -1;
 	private _pendingInlineHistoryRestore: AIInlineHistoryRestoreRequest | null = null;
+	private _queuedInlineHistoryShortcutDirections: AIInlineHistoryDirection[] = [];
+	private _queuedInlineHistoryShortcutFlushScheduled = false;
 	private _isRestoringInlineHistory = false;
+	private _handledUndoHistoryRequestId: number | null = null;
 
 	constructor(
 		editor: Editor,
@@ -314,6 +355,10 @@ class AIControllerImpl implements AIController {
 			blockGeneration: config.contentFormat?.blockGeneration ?? "text",
 			selectionRewrite: config.contentFormat?.selectionRewrite ?? "text",
 		};
+		this._undoHistoryMetadata =
+			this._editor.internals.getSlot<UndoHistoryMetadataController>(
+				UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY,
+			) ?? null;
 		this._state = {
 			status: "idle",
 			activeGeneration: null,
@@ -341,6 +386,17 @@ class AIControllerImpl implements AIController {
 		this._unsubscribeHistoryApplied = this._editor.onHistoryApplied((event) => {
 			this._handleHistoryApplied(event);
 		});
+		this._unsubscribeUndoHistoryMetadata =
+			this._undoHistoryMetadata?.registerMetadataRestorer<AIInlineHistorySnapshot>(
+				AI_UNDO_HISTORY_METADATA_KEY,
+				(snapshot, context) => {
+					if (!snapshot) {
+						return;
+					}
+					this._handledUndoHistoryRequestId = context.requestId;
+					this._restoreInlineHistorySnapshotFromUndo(snapshot);
+				},
+			) ?? null;
 	}
 
 	destroy(): void {
@@ -348,6 +404,8 @@ class AIControllerImpl implements AIController {
 		this._unsubscribeInlineCompletion = null;
 		this._unsubscribeHistoryApplied?.();
 		this._unsubscribeHistoryApplied = null;
+		this._unsubscribeUndoHistoryMetadata?.();
+		this._unsubscribeUndoHistoryMetadata = null;
 	}
 
 	getState(): AIControllerState {
@@ -469,8 +527,10 @@ class AIControllerImpl implements AIController {
 							draftPrompt: "",
 							isSubmitting: false,
 							canSubmitFollowUp: true,
+							openReason: "user",
 						}),
 						isOpen: true,
+						openReason: "user",
 					},
 				},
 			});
@@ -665,7 +725,9 @@ class AIControllerImpl implements AIController {
 	}
 
 	resumeInlineSession(sessionId: string): void {
-		this._setInlineSessionComposerOpen(sessionId, true);
+		this._setInlineSessionComposerOpen(sessionId, true, {
+			openReason: "user",
+		});
 	}
 
 	canUndoInlineHistory(): boolean {
@@ -687,12 +749,19 @@ class AIControllerImpl implements AIController {
 	canHandleInlineHistoryShortcut(
 		direction: AIInlineHistoryDirection,
 	): boolean {
+		if (this._pendingInlineHistoryRestore) {
+			return true;
+		}
 		return this._canHandleInlineHistoryShortcut(direction, { shortcutOnly: true });
 	}
 
 	handleInlineHistoryShortcut(
 		direction: AIInlineHistoryDirection,
 	): boolean {
+		if (this._pendingInlineHistoryRestore) {
+			this._queuedInlineHistoryShortcutDirections.push(direction);
+			return true;
+		}
 		return this._navigateInlineHistory(direction, { shortcutOnly: true });
 	}
 
@@ -1103,20 +1172,40 @@ class AIControllerImpl implements AIController {
 		}
 	}
 
+	private _syncSuggestionResolutionState(): void {
+		const suggestionsChanged = this._syncSuggestionsFromDocument();
+		const sessionsChanged = this._syncSessionsFromDocument();
+		if (!suggestionsChanged && !sessionsChanged) {
+			return;
+		}
+		this._editor.requestDecorationUpdate();
+		this._emit();
+	}
+
 	acceptSuggestion(id: string): boolean {
-		return acceptSuggestion(this._editor, id);
+		const accepted = acceptSuggestion(this._editor, id);
+		if (accepted) {
+			this._syncSuggestionResolutionState();
+		}
+		return accepted;
 	}
 
 	rejectSuggestion(id: string): boolean {
-		return rejectSuggestion(this._editor, id);
+		const rejected = rejectSuggestion(this._editor, id);
+		if (rejected) {
+			this._syncSuggestionResolutionState();
+		}
+		return rejected;
 	}
 
 	acceptAllSuggestions(): void {
 		acceptAllSuggestions(this._editor);
+		this._syncSuggestionResolutionState();
 	}
 
 	rejectAllSuggestions(): void {
 		rejectAllSuggestions(this._editor);
+		this._syncSuggestionResolutionState();
 	}
 
 	buildDecorations(): Decoration[] {
@@ -1462,6 +1551,7 @@ class AIControllerImpl implements AIController {
 								draftPrompt: "",
 								isSubmitting: true,
 								isOpen: true,
+								openReason: "user",
 							},
 						}
 						: undefined,
@@ -1500,6 +1590,7 @@ class AIControllerImpl implements AIController {
 				zoneId: seedGeneration.zoneId,
 				maxSteps: route.allowToolUse ? (maxSteps ?? this._maxAgenticSteps) : 1,
 				signal: abortController.signal,
+				requestMode: resolveGenerationRequestMode(context),
 				workingSet,
 				validateWorkingSet: (activeWorkingSet) =>
 					this._validateWorkingSet(route, target, activeWorkingSet),
@@ -1549,6 +1640,7 @@ class AIControllerImpl implements AIController {
 									text: nextDelta,
 								}],
 								context?.sessionId,
+								{ undoGroupId: seedGeneration.undoGroupId },
 							);
 							streamedSuggestionInitialized = true;
 							streamedSuggestionLength = nextDelta.length;
@@ -1561,6 +1653,7 @@ class AIControllerImpl implements AIController {
 									text: nextDelta,
 								}],
 								context?.sessionId,
+								{ undoGroupId: seedGeneration.undoGroupId },
 							);
 							streamedSuggestionLength += nextDelta.length;
 						}
@@ -1574,6 +1667,7 @@ class AIControllerImpl implements AIController {
 									text: nextDelta,
 								}],
 								context?.sessionId,
+								{ undoGroupId: seedGeneration.undoGroupId },
 							);
 							streamedSuggestionLength += nextDelta.length;
 						}
@@ -1997,10 +2091,10 @@ class AIControllerImpl implements AIController {
 					metrics: {
 						...(this._state.sessions.find((session) => session.id === context.sessionId)
 							?.metrics ?? {
-								streamEventCount: 0,
-								patchCount: 0,
-								fastApply: createDefaultSessionFastApplyMetrics(),
-							}),
+							streamEventCount: 0,
+							patchCount: 0,
+							fastApply: createDefaultSessionFastApplyMetrics(),
+						}),
 						firstTokenMs: resolvedGenerationDebug?.firstVisibleTextMs ?? undefined,
 						totalMs: resolvedGenerationDebug?.messageAssemblyLatencyMs != null
 							? resolvedGenerationDebug.messageAssemblyLatencyMs +
@@ -3341,9 +3435,15 @@ class AIControllerImpl implements AIController {
 	private _applySuggestedAIOps(
 		ops: DocumentOp[],
 		sessionId?: string,
+		options?: { undoGroupId?: string },
 	): void {
 		if (this._state.suggestMode && !sessionId) {
-			this._editor.apply(ops, { origin: "ai", undoGroup: true });
+			this._editor.apply(ops, {
+				origin: "ai",
+				...(options?.undoGroupId
+					? { undoGroupId: options.undoGroupId }
+					: { undoGroup: true }),
+			});
 			return;
 		}
 
@@ -3356,7 +3456,12 @@ class AIControllerImpl implements AIController {
 			sessionId,
 		);
 		const origin = sessionId ? AI_SESSION_SUGGESTION_ORIGIN : "extension";
-		this._editor.apply(intercepted, { origin, undoGroup: true });
+		this._editor.apply(intercepted, {
+			origin,
+			...(options?.undoGroupId
+				? { undoGroupId: options.undoGroupId }
+				: { undoGroup: true }),
+		});
 	}
 
 	private _captureBlockRevisions(blockIds: string[]): Record<string, number> {
@@ -3512,12 +3617,15 @@ class AIControllerImpl implements AIController {
 		if (!session || !turn) {
 			return false;
 		}
+		const undoHistoryBeforeSnapshot = this._undoHistoryMetadata
+			? this._createInlineTurnUndoBeforeSnapshot(sessionId, turnId)
+			: null;
 		const resolveSuggestionsForTurn =
 			resolution === "accept"
 				? (suggestionIds: readonly string[]) =>
-						acceptSuggestions(this._editor, suggestionIds)
+					acceptSuggestions(this._editor, suggestionIds)
 				: (suggestionIds: readonly string[]) =>
-						rejectSuggestions(this._editor, suggestionIds);
+					rejectSuggestions(this._editor, suggestionIds);
 		const resolveReviewItems =
 			resolution === "accept"
 				? (reviewItemIds: readonly string[]) => this.acceptReviewItems(reviewItemIds)
@@ -3543,6 +3651,21 @@ class AIControllerImpl implements AIController {
 			structuredPreview: null,
 		});
 		if (options?.finalizeSession === false) {
+			if (undoHistoryBeforeSnapshot) {
+				this._undoHistoryMetadata?.setCurrentEntryMetadata(
+					AI_UNDO_HISTORY_METADATA_KEY,
+					{
+						before: undoHistoryBeforeSnapshot,
+						after: createInlineHistorySnapshot(
+							this._editor,
+							this._state.sessions,
+							this._state.activeSessionId ?? null,
+							this._documentVersion,
+							{ kind: "document-coupled" },
+						),
+					},
+				);
+			}
 			return true;
 		}
 		const nextSession =
@@ -3551,7 +3674,110 @@ class AIControllerImpl implements AIController {
 			status: "complete",
 			contextualPrompt: closeInlineSessionPrompt(nextSession),
 		});
+		if (undoHistoryBeforeSnapshot) {
+			this._undoHistoryMetadata?.setCurrentEntryMetadata(
+				AI_UNDO_HISTORY_METADATA_KEY,
+				{
+					before: undoHistoryBeforeSnapshot,
+					after: createInlineHistorySnapshot(
+						this._editor,
+						this._state.sessions,
+						this._state.activeSessionId ?? null,
+						this._documentVersion,
+						{ kind: "document-coupled" },
+					),
+				},
+			);
+		}
 		return true;
+	}
+
+	private _createInlineTurnUndoBeforeSnapshot(
+		sessionId: string,
+		turnId: string,
+	): AIInlineHistorySnapshot {
+		const session =
+			this._state.sessions.find((item) => item.id === sessionId) ?? null;
+		if (session?.surface === "inline-edit") {
+			const reviewSnapshot = this._findInlineHistorySnapshotForResolvedTurn(
+				session,
+				"undo",
+			);
+			if (reviewSnapshot) {
+				const restoredSessions = reviewSnapshot.sessions.map((snapshotSession) => {
+					if (
+						snapshotSession.id !== sessionId ||
+						snapshotSession.surface !== "inline-edit" ||
+						!snapshotSession.contextualPrompt
+					) {
+						return snapshotSession;
+					}
+					const snapshotTurn =
+						snapshotSession.turns.find((turn) => turn.id === turnId) ?? null;
+					if (!snapshotTurn) {
+						return snapshotSession;
+					}
+					return {
+						...snapshotSession,
+						contextualPrompt: {
+							...snapshotSession.contextualPrompt,
+							composer: {
+								...snapshotSession.contextualPrompt.composer,
+								draftPrompt:
+									snapshotSession.contextualPrompt.composer.draftPrompt ||
+									snapshotTurn.prompt,
+							},
+						},
+					};
+				});
+				return createInlineHistorySnapshot(
+					this._editor,
+					restoredSessions,
+					sessionId,
+					this._documentVersion,
+					{ kind: "document-coupled" },
+				);
+			}
+		}
+		const historySessions = this._state.sessions.map((session) => {
+			if (
+				session.id !== sessionId ||
+				session.surface !== "inline-edit" ||
+				!session.contextualPrompt
+			) {
+				return session;
+			}
+			const targetTurn = session.turns.find((turn) => turn.id === turnId) ?? null;
+			if (targetTurn?.status !== "review") {
+				return session;
+			}
+			return {
+				...session,
+				contextualPrompt: {
+					...session.contextualPrompt,
+					composer: {
+						...session.contextualPrompt.composer,
+						isOpen: true,
+						isSubmitting: false,
+					},
+				},
+			};
+		});
+		const nextActiveSessionId = historySessions.some(
+			(session) =>
+				session.id === sessionId &&
+				session.surface === "inline-edit" &&
+				session.contextualPrompt?.composer.isOpen,
+		)
+			? sessionId
+			: (this._state.activeSessionId ?? null);
+		return createInlineHistorySnapshot(
+			this._editor,
+			historySessions,
+			nextActiveSessionId,
+			this._documentVersion,
+			{ kind: "document-coupled" },
+		);
 	}
 
 	private _updateSession(
@@ -3814,6 +4040,23 @@ class AIControllerImpl implements AIController {
 		if (currentSnapshot && areInlineHistorySnapshotsEqual(currentSnapshot, snapshot)) {
 			return;
 		}
+		const currentUndoMetadata =
+			this._undoHistoryMetadata?.getCurrentEntryMetadata<AIInlineHistorySnapshot>(
+				AI_UNDO_HISTORY_METADATA_KEY,
+			) ?? null;
+		const shouldPersistUndoSnapshot =
+			previousSnapshot != null &&
+			(snapshot.kind === "document-coupled" ||
+				currentUndoMetadata?.after?.documentVersion === this._documentVersion);
+		if (shouldPersistUndoSnapshot && previousSnapshot) {
+			this._undoHistoryMetadata?.setCurrentEntryMetadata(
+				AI_UNDO_HISTORY_METADATA_KEY,
+				{
+					before: currentUndoMetadata?.before ?? previousSnapshot,
+					after: snapshot,
+				},
+			);
+		}
 		nextHistory.push(snapshot);
 		this._inlineHistory = nextHistory;
 		this._inlineHistoryIndex = nextHistory.length - 1;
@@ -3879,27 +4122,26 @@ class AIControllerImpl implements AIController {
 		const currentSnapshot = this._inlineHistory[this._inlineHistoryIndex] ?? null;
 		const scopedSessionId = this._resolveShortcutInlineHistorySessionId(
 			currentSnapshot,
+			direction,
 		);
-		const currentSettledTurnCount = currentSnapshot
-			? countSettledInlineTurns(currentSnapshot, scopedSessionId)
-			: 0;
-		let targetIndex = this._inlineHistoryIndex + step;
-		while (targetIndex >= 0 && targetIndex < this._inlineHistory.length) {
-			const targetSnapshot = this._inlineHistory[targetIndex];
-			if (
-				targetSnapshot &&
-				targetSnapshot.kind !== "ui-local" &&
-				countSettledInlineTurns(targetSnapshot, scopedSessionId) !== currentSettledTurnCount
-			) {
-				return targetIndex;
-			}
-			targetIndex += step;
+		const waypoints = this._buildInlineShortcutHistoryWaypoints(scopedSessionId);
+		if (waypoints.length === 0) {
+			return -1;
 		}
-		return -1;
+		const currentWaypointIndex = this._resolveCurrentInlineShortcutWaypointIndex(
+			waypoints,
+			scopedSessionId,
+		);
+		if (currentWaypointIndex < 0) {
+			return -1;
+		}
+		const targetWaypoint = waypoints[currentWaypointIndex + step];
+		return targetWaypoint?.representativeIndex ?? -1;
 	}
 
 	private _resolveShortcutInlineHistorySessionId(
 		currentSnapshot: AIInlineHistorySnapshot | null,
+		direction: AIInlineHistoryDirection,
 	): string | null {
 		const activeSession = this.getActiveSession();
 		if (activeSession?.surface === "inline-edit") {
@@ -3928,12 +4170,113 @@ class AIControllerImpl implements AIController {
 		) {
 			return currentSnapshot.activeSessionId;
 		}
-		return (
+		const currentInlineSession =
 			[...(currentSnapshot?.sessions ?? [])]
 				.reverse()
-				.find((session) => session.surface === "inline-edit")
-				?.id ?? null
-		);
+				.find((session) => session.surface === "inline-edit") ?? null;
+		if (currentInlineSession) {
+			return currentInlineSession.id;
+		}
+		const step = direction === "undo" ? -1 : 1;
+		let searchIndex = this._inlineHistoryIndex + step;
+		while (searchIndex >= 0 && searchIndex < this._inlineHistory.length) {
+			const searchSnapshot = this._inlineHistory[searchIndex];
+			const matchingSelectionSession =
+				selection?.type === "text" && !selection.isCollapsed
+					? [...(searchSnapshot?.sessions ?? [])]
+						.reverse()
+						.find(
+							(session) =>
+								session.surface === "inline-edit" &&
+								sessionSelectionMatches(session, selection),
+						) ?? null
+					: null;
+			if (matchingSelectionSession) {
+				return matchingSelectionSession.id;
+			}
+			const searchInlineSession =
+				[...(searchSnapshot?.sessions ?? [])]
+					.reverse()
+					.find((session) => session.surface === "inline-edit") ?? null;
+			if (searchInlineSession) {
+				return searchInlineSession.id;
+			}
+			searchIndex += step;
+		}
+		return null;
+	}
+
+	private _buildInlineShortcutHistoryWaypoints(
+		sessionId: string | null,
+	): AIInlineShortcutHistoryWaypoint[] {
+		const waypoints: AIInlineShortcutHistoryWaypoint[] = [];
+		for (let index = 0; index < this._inlineHistory.length; index += 1) {
+			const snapshot = this._inlineHistory[index];
+			if (!snapshot || snapshot.kind === "ui-local") {
+				continue;
+			}
+			const state = resolveInlineShortcutHistoryState(snapshot, sessionId);
+			if (!state) {
+				continue;
+			}
+			const previousWaypoint = waypoints[waypoints.length - 1] ?? null;
+			if (
+				previousWaypoint &&
+				areInlineShortcutHistoryStatesEqual(previousWaypoint.state, state)
+			) {
+				previousWaypoint.endIndex = index;
+				if (
+					shouldReplaceInlineShortcutWaypointRepresentative(
+						previousWaypoint.state,
+						this._inlineHistory[previousWaypoint.representativeIndex] ?? null,
+						snapshot,
+					)
+				) {
+					previousWaypoint.representativeIndex = index;
+				}
+				continue;
+			}
+			waypoints.push({
+				startIndex: index,
+				endIndex: index,
+				representativeIndex: index,
+				state,
+			});
+		}
+		return waypoints;
+	}
+
+	private _resolveCurrentInlineShortcutWaypointIndex(
+		waypoints: readonly AIInlineShortcutHistoryWaypoint[],
+		sessionId: string | null,
+	): number {
+		const currentSnapshot = this._inlineHistory[this._inlineHistoryIndex] ?? null;
+		const currentState = currentSnapshot
+			? resolveInlineShortcutHistoryState(currentSnapshot, sessionId)
+			: null;
+		if (currentState) {
+			const currentIndex = waypoints.findIndex(
+				(waypoint) =>
+					this._inlineHistoryIndex >= waypoint.startIndex &&
+					this._inlineHistoryIndex <= waypoint.endIndex &&
+					areInlineShortcutHistoryStatesEqual(waypoint.state, currentState),
+			);
+			if (currentIndex >= 0) {
+				return currentIndex;
+			}
+			const matchingIndex = waypoints.findIndex((waypoint) =>
+				areInlineShortcutHistoryStatesEqual(waypoint.state, currentState),
+			);
+			if (matchingIndex >= 0) {
+				return matchingIndex;
+			}
+		}
+		for (let index = waypoints.length - 1; index >= 0; index -= 1) {
+			if (waypoints[index]!.representativeIndex <= this._inlineHistoryIndex) {
+				return index;
+			}
+		}
+		return waypoints.length > 0 ? 0 : -1;
 	}
 
 	private _canHandleInlineHistoryShortcut(
@@ -3963,8 +4306,13 @@ class AIControllerImpl implements AIController {
 			return false;
 		}
 		const currentSnapshot = this._inlineHistory[this._inlineHistoryIndex] ?? null;
+		const shortcutSessionId = options?.shortcutOnly
+			? this._resolveShortcutInlineHistorySessionId(currentSnapshot, direction)
+			: null;
 		if (targetSnapshot.kind === "ui-local") {
-			this._applyInlineHistorySnapshot(targetSnapshot);
+			this._applyInlineHistorySnapshot(targetSnapshot, {
+				historyTraversal: true,
+			});
 			this._inlineHistoryIndex = targetIndex;
 			return true;
 		}
@@ -3972,9 +4320,20 @@ class AIControllerImpl implements AIController {
 			currentSnapshot &&
 			currentSnapshot.documentVersion !== targetSnapshot.documentVersion
 		) {
+			const targetState = resolveInlineShortcutHistoryState(
+				targetSnapshot,
+				shortcutSessionId ??
+					targetSnapshot.sessionId ??
+					targetSnapshot.activeSessionId ??
+					null,
+			);
 			this._pendingInlineHistoryRestore = {
 				direction,
 				targetSnapshotId: targetSnapshot.id,
+				targetDocumentVersion: targetSnapshot.documentVersion,
+				shortcutOnly: options?.shortcutOnly === true,
+				sessionId: shortcutSessionId,
+				targetState,
 			};
 			const restored =
 				direction === "undo"
@@ -3985,16 +4344,50 @@ class AIControllerImpl implements AIController {
 			}
 			return restored;
 		}
-		this._applyInlineHistorySnapshot(targetSnapshot);
+		const resolvedTargetSnapshot = options?.shortcutOnly
+			? this._resolveShortcutInlineHistoryTraversalSnapshot(
+				targetSnapshot,
+				shortcutSessionId,
+			)
+			: targetSnapshot;
+		this._applyInlineHistorySnapshot(resolvedTargetSnapshot, {
+			historyTraversal: true,
+		});
 		this._inlineHistoryIndex = targetIndex;
 		return true;
 	}
 
-	private _applyInlineHistorySnapshot(snapshot: AIInlineHistorySnapshot): void {
+	private _applyInlineHistorySnapshot(
+		snapshot: AIInlineHistorySnapshot,
+		options?: { historyTraversal?: boolean },
+	): void {
 		this._isRestoringInlineHistory = true;
 		try {
+			const restoredSessions = cloneInlineHistorySessions(
+				this._editor,
+				snapshot.sessions,
+			).map((session) => {
+				if (
+					!options?.historyTraversal ||
+					!session.contextualPrompt?.composer.isOpen
+				) {
+					return session;
+				}
+				return {
+					...session,
+					contextualPrompt: {
+						...session.contextualPrompt,
+						composer: {
+							...session.contextualPrompt.composer,
+							openReason: "history" as const,
+						},
+					},
+				};
+			});
 			this._setState({
-				sessions: cloneInlineHistorySessions(this._editor, snapshot.sessions),
+				status: "idle",
+				activeGeneration: null,
+				sessions: restoredSessions,
 				activeSessionId: snapshot.activeSessionId,
 			});
 		} finally {
@@ -4002,20 +4395,240 @@ class AIControllerImpl implements AIController {
 		}
 	}
 
+	private _restoreInlineHistorySnapshotFromUndo(
+		snapshot: AIInlineHistorySnapshot,
+	): void {
+		const targetIndex = this._inlineHistory.findIndex(
+			(item) => item.id === snapshot.id,
+		);
+		if (targetIndex >= 0) {
+			this._inlineHistoryIndex = targetIndex;
+			this._applyInlineHistorySnapshot(this._inlineHistory[targetIndex]!, {
+				historyTraversal: true,
+			});
+			return;
+		}
+		this._applyInlineHistorySnapshot(snapshot, { historyTraversal: true });
+		const nextHistory = this._inlineHistory.slice(0, this._inlineHistoryIndex + 1);
+		nextHistory.push(snapshot);
+		this._inlineHistory = nextHistory;
+		this._inlineHistoryIndex = nextHistory.length - 1;
+	}
+
+	private _findInlineHistorySnapshotForResolvedTurn(
+		session: AISession,
+		direction: AIInlineHistoryDirection,
+	): AIInlineHistorySnapshot | null {
+		const latestTurnId = session.turns[session.turns.length - 1]?.id ?? null;
+		if (!latestTurnId) {
+			return null;
+		}
+		for (let index = this._inlineHistory.length - 1; index >= 0; index -= 1) {
+			const snapshot = this._inlineHistory[index];
+			const snapshotSession =
+				snapshot?.sessions.find(
+					(item) => item.id === session.id && item.surface === "inline-edit",
+				) ?? null;
+			if (!snapshotSession) {
+				continue;
+			}
+			const snapshotTurn =
+				snapshotSession.turns.find((turn) => turn.id === latestTurnId) ?? null;
+			if (!snapshotTurn) {
+				continue;
+			}
+			if (
+				direction === "undo" &&
+				snapshotSession.contextualPrompt?.composer.isOpen &&
+				snapshotTurn.status === "review"
+			) {
+				return snapshot;
+			}
+			if (
+				direction === "redo" &&
+				!snapshotSession.contextualPrompt?.composer.isOpen &&
+				(snapshotTurn.status === "accepted" ||
+					snapshotTurn.status === "rejected")
+			) {
+				return snapshot;
+			}
+		}
+		return null;
+	}
+
+	private _resolveInlineHistoryTraversalSnapshot(
+		targetSnapshot: AIInlineHistorySnapshot,
+	): AIInlineHistorySnapshot {
+		if (targetSnapshot.kind === "ui-local") {
+			return targetSnapshot;
+		}
+		const scopedSessionId =
+			targetSnapshot.sessionId ?? targetSnapshot.activeSessionId;
+		const targetState = resolveInlineShortcutHistoryState(
+			targetSnapshot,
+			scopedSessionId,
+		);
+		if (!targetState) {
+			return targetSnapshot;
+		}
+		let resolvedSnapshot = targetSnapshot;
+		for (const snapshot of this._inlineHistory) {
+			if (snapshot.documentVersion !== targetSnapshot.documentVersion) {
+				continue;
+			}
+			const snapshotState = resolveInlineShortcutHistoryState(
+				snapshot,
+				scopedSessionId,
+			);
+			if (
+				!snapshotState ||
+				!areInlineShortcutHistoryStatesEqual(snapshotState, targetState)
+			) {
+				continue;
+			}
+			if (
+				shouldReplaceInlineShortcutWaypointRepresentative(
+					targetState,
+					resolvedSnapshot,
+					snapshot,
+				)
+			) {
+				resolvedSnapshot = snapshot;
+			}
+		}
+		return resolvedSnapshot;
+	}
+
+	private _resolveShortcutInlineHistoryTraversalSnapshot(
+		targetSnapshot: AIInlineHistorySnapshot,
+		fallbackSessionId?: string | null,
+	): AIInlineHistorySnapshot {
+		const scopedSessionId =
+			targetSnapshot.sessionId ??
+			targetSnapshot.activeSessionId ??
+			fallbackSessionId ??
+			null;
+		const targetState = resolveInlineShortcutHistoryState(
+			targetSnapshot,
+			scopedSessionId,
+		);
+		if (targetState?.phase !== "none" || !scopedSessionId) {
+			return this._resolveInlineHistoryTraversalSnapshot(targetSnapshot);
+		}
+		return createInlineHistorySnapshot(
+			this._editor,
+			targetSnapshot.sessions.filter((session) => session.id !== scopedSessionId),
+			targetSnapshot.activeSessionId === scopedSessionId
+				? null
+				: targetSnapshot.activeSessionId,
+			targetSnapshot.documentVersion,
+			{ kind: targetSnapshot.kind },
+		);
+	}
+
+	private _scheduleQueuedInlineHistoryShortcutFlush(): void {
+		if (
+			this._queuedInlineHistoryShortcutFlushScheduled ||
+			this._queuedInlineHistoryShortcutDirections.length === 0
+		) {
+			return;
+		}
+		this._queuedInlineHistoryShortcutFlushScheduled = true;
+		queueMicrotask(() => {
+			this._queuedInlineHistoryShortcutFlushScheduled = false;
+			if (this._pendingInlineHistoryRestore) {
+				this._scheduleQueuedInlineHistoryShortcutFlush();
+				return;
+			}
+			const nextDirection =
+				this._queuedInlineHistoryShortcutDirections.shift() ?? null;
+			if (!nextDirection) {
+				return;
+			}
+			this._navigateInlineHistory(nextDirection, { shortcutOnly: true });
+			if (this._queuedInlineHistoryShortcutDirections.length > 0) {
+				this._scheduleQueuedInlineHistoryShortcutFlush();
+			}
+		});
+	}
+
+	private _resolvePendingInlineHistoryRestoreTargetIndex(
+		request: AIInlineHistoryRestoreRequest,
+	): number {
+		const exactTargetIndex = this._inlineHistory.findIndex(
+			(snapshot) => snapshot.id === request.targetSnapshotId,
+		);
+		if (exactTargetIndex >= 0) {
+			return exactTargetIndex;
+		}
+		if (!request.targetState) {
+			return -1;
+		}
+		let resolvedTargetIndex = -1;
+		const scopedSessionId = request.sessionId ?? request.targetState.sessionId;
+		for (let index = 0; index < this._inlineHistory.length; index += 1) {
+			const snapshot = this._inlineHistory[index];
+			if (!snapshot || snapshot.kind === "ui-local") {
+				continue;
+			}
+			if (snapshot.documentVersion !== request.targetDocumentVersion) {
+				continue;
+			}
+			const snapshotState = resolveInlineShortcutHistoryState(
+				snapshot,
+				scopedSessionId ?? null,
+			);
+			if (
+				!snapshotState ||
+				!areInlineShortcutHistoryStatesEqual(snapshotState, request.targetState)
+			) {
+				continue;
+			}
+			if (
+				resolvedTargetIndex < 0 ||
+				shouldReplaceInlineShortcutWaypointRepresentative(
+					request.targetState,
+					this._inlineHistory[resolvedTargetIndex] ?? null,
+					snapshot,
+				)
+			) {
+				resolvedTargetIndex = index;
+			}
+		}
+		return resolvedTargetIndex;
+	}
+
 	private _handleHistoryApplied(event: HistoryAppliedEvent): void {
 		if (
 			this._pendingInlineHistoryRestore &&
 			this._pendingInlineHistoryRestore.direction === event.kind
 		) {
-			const targetIndex = this._inlineHistory.findIndex(
-				(snapshot) =>
-					snapshot.id === this._pendingInlineHistoryRestore?.targetSnapshotId,
+			const targetIndex = this._resolvePendingInlineHistoryRestoreTargetIndex(
+				this._pendingInlineHistoryRestore,
 			);
 			if (targetIndex >= 0) {
 				this._inlineHistoryIndex = targetIndex;
-				this._applyInlineHistorySnapshot(this._inlineHistory[targetIndex]!);
+				const targetSnapshot = this._inlineHistory[targetIndex]!;
+				const resolvedTargetSnapshot =
+					this._pendingInlineHistoryRestore.shortcutOnly
+						? this._resolveShortcutInlineHistoryTraversalSnapshot(
+							targetSnapshot,
+							this._pendingInlineHistoryRestore.sessionId ?? null,
+						)
+						: this._resolveInlineHistoryTraversalSnapshot(targetSnapshot);
+				this._applyInlineHistorySnapshot(
+					resolvedTargetSnapshot,
+					{
+						historyTraversal: true,
+					},
+				);
 			}
 			this._pendingInlineHistoryRestore = null;
+			this._scheduleQueuedInlineHistoryShortcutFlush();
+			return;
+		}
+		if (this._handledUndoHistoryRequestId === event.requestId) {
+			this._handledUndoHistoryRequestId = null;
 			return;
 		}
 		const selection = event.selection;
@@ -4033,10 +4646,16 @@ class AIControllerImpl implements AIController {
 		if (!matchingSession) {
 			return;
 		}
-		this._setInlineSessionComposerOpen(matchingSession.id, true);
+		this._setInlineSessionComposerOpen(matchingSession.id, true, {
+			openReason: "history",
+		});
 	}
 
-	private _setInlineSessionComposerOpen(sessionId: string, isOpen: boolean): void {
+	private _setInlineSessionComposerOpen(
+		sessionId: string,
+		isOpen: boolean,
+		options?: { openReason?: "user" | "history" },
+	): void {
 		const session = this._state.sessions.find((item) => item.id === sessionId);
 		if (
 			!session ||
@@ -4066,6 +4685,9 @@ class AIControllerImpl implements AIController {
 						composer: {
 							...item.contextualPrompt!.composer,
 							isOpen,
+							openReason: isOpen
+								? (options?.openReason ?? "user")
+								: item.contextualPrompt!.composer.openReason,
 						},
 					},
 					updatedAt: Date.now(),
@@ -4380,9 +5002,10 @@ function resolveSessionTarget(
 		!selection.isCollapsed
 	) {
 		const range = selection.toRange();
+		const selectionSnapshot = resolveSessionSelectionSnapshot(selection);
 		return {
 			kind: "selection",
-			selection,
+			selection: recreateTextSelection(editor, selectionSnapshot),
 			blockId: range.start.blockId,
 		};
 	}
@@ -4460,6 +5083,7 @@ function resolveContextualPromptState(
 			isOpen: true,
 			isSubmitting: false,
 			canSubmitFollowUp: true,
+			openReason: "user",
 		},
 	};
 }
@@ -4970,7 +5594,7 @@ function areSuggestionsEqual(
 			previousSuggestion.kind === "block" &&
 			nextSuggestion.kind === "block" &&
 			JSON.stringify(previousSuggestion.previousState) !==
-				JSON.stringify(nextSuggestion.previousState)
+			JSON.stringify(nextSuggestion.previousState)
 		) {
 			return false;
 		}
@@ -5209,6 +5833,128 @@ function countSettledInlineTurns(
 				count + session.turns.filter((turn) => turn.status !== "streaming").length,
 			0,
 		);
+}
+
+function hasStreamingInlineTurns(
+	snapshot: AIInlineHistorySnapshot,
+	sessionId?: string | null,
+): boolean {
+	if (sessionId) {
+		const session = snapshot.sessions.find(
+			(item) => item.id === sessionId && item.surface === "inline-edit",
+		);
+		return session?.turns.some((turn) => turn.status === "streaming") ?? false;
+	}
+	return snapshot.sessions
+		.filter((session) => session.surface === "inline-edit")
+		.some((session) =>
+			session.turns.some((turn) => turn.status === "streaming"),
+		);
+}
+
+function resolveInlineShortcutHistoryState(
+	snapshot: AIInlineHistorySnapshot,
+	sessionId: string | null,
+): AIInlineShortcutHistoryState | null {
+	const session = sessionId
+		? snapshot.sessions.find(
+			(item) => item.id === sessionId && item.surface === "inline-edit",
+		) ?? null
+		: null;
+	if (!session) {
+		return {
+			sessionId: null,
+			phase: "none",
+			turnCount: 0,
+			turnId: null,
+		};
+	}
+	const durableTurns = session.turns.filter(
+		(turn) => turn.status !== "streaming" && turn.status !== "cancelled",
+	);
+	if (durableTurns.length === 0) {
+		return {
+			sessionId: null,
+			phase: "none",
+			turnCount: 0,
+			turnId: null,
+		};
+	}
+	const latestTurn = durableTurns[durableTurns.length - 1] ?? null;
+	if (!latestTurn) {
+		return null;
+	}
+	if (latestTurn.status === "review") {
+		return {
+			sessionId,
+			phase: "review",
+			turnCount: durableTurns.length,
+			turnId: latestTurn.id,
+		};
+	}
+	if (
+		latestTurn.status === "accepted" ||
+		latestTurn.status === "rejected"
+	) {
+		return {
+			sessionId,
+			phase: "resolved",
+			turnCount: durableTurns.length,
+			turnId: latestTurn.id,
+			resolution: latestTurn.status,
+		};
+	}
+	return null;
+}
+
+function areInlineShortcutHistoryStatesEqual(
+	left: AIInlineShortcutHistoryState,
+	right: AIInlineShortcutHistoryState,
+): boolean {
+	return (
+		left.sessionId === right.sessionId &&
+		left.phase === right.phase &&
+		left.turnCount === right.turnCount &&
+		left.turnId === right.turnId &&
+		left.resolution === right.resolution
+	);
+}
+
+function shouldReplaceInlineShortcutWaypointRepresentative(
+	state: AIInlineShortcutHistoryState,
+	currentSnapshot: AIInlineHistorySnapshot | null,
+	nextSnapshot: AIInlineHistorySnapshot,
+): boolean {
+	if (!currentSnapshot) {
+		return true;
+	}
+	const currentSession = state.sessionId
+		? currentSnapshot.sessions.find(
+			(session) =>
+				session.id === state.sessionId && session.surface === "inline-edit",
+		) ?? null
+		: null;
+	const nextSession = state.sessionId
+		? nextSnapshot.sessions.find(
+			(session) =>
+				session.id === state.sessionId && session.surface === "inline-edit",
+		) ?? null
+		: null;
+	if (state.phase === "review") {
+		const currentOpen = currentSession?.contextualPrompt?.composer.isOpen === true;
+		const nextOpen = nextSession?.contextualPrompt?.composer.isOpen === true;
+		if (currentOpen !== nextOpen) {
+			return nextOpen;
+		}
+	}
+	if (state.phase === "resolved") {
+		const currentOpen = currentSession?.contextualPrompt?.composer.isOpen === true;
+		const nextOpen = nextSession?.contextualPrompt?.composer.isOpen === true;
+		if (currentOpen !== nextOpen) {
+			return !nextOpen;
+		}
+	}
+	return true;
 }
 
 function areEphemeralSuggestionsEqual(

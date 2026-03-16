@@ -10,6 +10,7 @@ describe("@pen/undo UndoManagerImpl", () => {
       canUndo: vi.fn(() => true),
       canRedo: vi.fn(() => false),
       stopCapturing: vi.fn(),
+      setCaptureTimeout: vi.fn(),
       addTrackedOrigin: vi.fn(),
       removeTrackedOrigin: vi.fn(),
     };
@@ -34,6 +35,7 @@ describe("@pen/undo UndoManagerImpl", () => {
       canUndo: vi.fn(() => true),
       canRedo: vi.fn(() => true),
       stopCapturing: vi.fn(),
+      setCaptureTimeout: vi.fn(),
       addTrackedOrigin: vi.fn(),
       removeTrackedOrigin: vi.fn(),
     };
@@ -58,6 +60,7 @@ describe("@pen/undo UndoManagerImpl", () => {
       canUndo: vi.fn(() => true),
       canRedo: vi.fn(() => true),
       stopCapturing: vi.fn(),
+      setCaptureTimeout: vi.fn(),
       addTrackedOrigin: vi.fn(),
       removeTrackedOrigin: vi.fn(),
     };
@@ -75,5 +78,39 @@ describe("@pen/undo UndoManagerImpl", () => {
     unregisterB();
     expect(manager.hasTrackedOrigin("ai")).toBe(false);
     expect(crdtUndo.removeTrackedOrigin).toHaveBeenCalledTimes(1);
+  });
+
+  it("notifies capture boundary listeners when explicit undo groups change", () => {
+    const crdtUndo = {
+      undo: vi.fn(() => true),
+      redo: vi.fn(() => true),
+      canUndo: vi.fn(() => true),
+      canRedo: vi.fn(() => true),
+      stopCapturing: vi.fn(),
+      setCaptureTimeout: vi.fn(),
+      addTrackedOrigin: vi.fn(),
+      removeTrackedOrigin: vi.fn(),
+    };
+
+    const manager = new UndoManagerImpl(crdtUndo);
+    const onCaptureBoundary = vi.fn();
+    manager._onCaptureBoundary = onCaptureBoundary;
+
+    manager.syncExplicitUndoGroup("group-a");
+    manager.syncExplicitUndoGroup("group-a");
+    manager.syncExplicitUndoGroup("group-b");
+    manager.syncExplicitUndoGroup(null);
+
+    expect(onCaptureBoundary).toHaveBeenCalledTimes(3);
+    expect(crdtUndo.stopCapturing).toHaveBeenCalledTimes(3);
+    expect(crdtUndo.setCaptureTimeout).toHaveBeenNthCalledWith(
+      1,
+      2_147_483_647,
+    );
+    expect(crdtUndo.setCaptureTimeout).toHaveBeenNthCalledWith(
+      2,
+      2_147_483_647,
+    );
+    expect(crdtUndo.setCaptureTimeout).toHaveBeenNthCalledWith(3, 1000);
   });
 });

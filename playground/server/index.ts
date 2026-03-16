@@ -198,9 +198,14 @@ interface PromptContextEnvelope {
 
 type PlaygroundRequestMode =
 	| "document-agent"
-	| "structured-planner"
+	| "structured-generation"
 	| "selection-fast"
 	| "inline-autocomplete";
+type PlaygroundRequestedMode =
+	| PlaygroundRequestMode
+	| "bottom-chat"
+	| "inline-edit"
+	| "structured-planner";
 type PlaygroundResolvedContextFormat = "json" | "none";
 
 interface PlaygroundRequestPlan {
@@ -816,12 +821,29 @@ function buildPlaygroundRequestPlan(
 }
 
 function parsePlaygroundRequestMode(value: unknown): PlaygroundRequestMode | null {
-	return value === "document-agent" ||
-		value === "structured-planner" ||
+	const requestedMode =
+		value === "document-agent" ||
+		value === "structured-generation" ||
 		value === "selection-fast" ||
-		value === "inline-autocomplete"
-		? value
-		: null;
+		value === "inline-autocomplete" ||
+		value === "bottom-chat" ||
+		value === "inline-edit" ||
+		value === "structured-planner"
+			? (value as PlaygroundRequestedMode)
+			: null;
+	if (!requestedMode) {
+		return null;
+	}
+	if (requestedMode === "bottom-chat") {
+		return "document-agent";
+	}
+	if (requestedMode === "inline-edit") {
+		return "selection-fast";
+	}
+	if (requestedMode === "structured-planner") {
+		return "structured-generation";
+	}
+	return requestedMode;
 }
 
 function buildPromptContext(editor: Editor): PromptContextEnvelope {

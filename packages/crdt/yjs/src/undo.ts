@@ -62,6 +62,9 @@ export function createYjsUndoManager(
     stopCapturing() {
       undoManager.stopCapturing();
     },
+    setCaptureTimeout(ms) {
+      (undoManager as Y.UndoManager & { captureTimeout?: number }).captureTimeout = ms;
+    },
     onStackItemAdded(callback) {
       const handler = (event: {
         stackItem: { meta: Map<string, unknown> };

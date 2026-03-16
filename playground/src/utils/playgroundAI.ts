@@ -5,6 +5,7 @@ import type {
 	ModelMessagePart,
 } from "@pen/types";
 import {
+	type PlaygroundExecutionLane,
 	streamPlaygroundAIResponse,
 } from "./playgroundAISession";
 import { logAutocompleteDebug } from "./autocompleteDebug";
@@ -30,18 +31,19 @@ export function createPlaygroundAIModel(
 				}
 
 				const prompt = getLatestPrompt(options.messages);
-				const isolatedSession = options.requestMode === "inline-autocomplete";
+				const lane = resolvePlaygroundExecutionLane(options.requestMode);
 				logAutocompleteDebug("model stream started", {
 					promptPreview: prompt.slice(0, 160),
 					promptLength: prompt.length,
-					isolatedSession,
+					lane,
+					isolatedSession: lane !== "bottom-chat",
 				});
 				for await (const chunk of streamPlaygroundAIResponse(
 					editor,
 					prompt,
 					options.signal,
 					{
-						isolatedSession,
+						lane,
 						requestMode: options.requestMode,
 					},
 				)) {
@@ -149,4 +151,16 @@ function flattenMessageContent(content: string | ModelMessagePart[]): string {
 	});
 
 	return textParts.join("\n");
+}
+
+function resolvePlaygroundExecutionLane(
+	requestMode?: string,
+): PlaygroundExecutionLane {
+	if (requestMode === "inline-autocomplete") {
+		return "autocomplete";
+	}
+	if (requestMode === "inline-edit") {
+		return "inline-edit";
+	}
+	return "bottom-chat";
 }

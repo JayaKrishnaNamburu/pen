@@ -1516,6 +1516,7 @@ describe("@pen/ai-autocomplete", () => {
 	it("prefetches a continuation after accepting the current suggestion", async () => {
 		let activeEditor: ReturnType<typeof createEditor> | null = null;
 		let callCount = 0;
+		const requestModes: Array<string | undefined> = [];
 		let secondPrompt = "";
 		let thirdPrompt = "";
 		const fieldEditor = {
@@ -1532,6 +1533,7 @@ describe("@pen/ai-autocomplete", () => {
 					model: {
 						async *stream(options) {
 							callCount += 1;
+							requestModes.push(options.requestMode);
 							if (callCount === 1) {
 								yield { type: "text-delta" as const, delta: " world from pen" };
 								yield { type: "done" as const };
@@ -1595,6 +1597,10 @@ describe("@pen/ai-autocomplete", () => {
 		expect(editor.getBlock(blockId)?.textContent()).toBe("Hello world from pen");
 		expect(secondPrompt).toContain('prefix="Hello world from pen"');
 		expect(secondPrompt).toContain("target_scope=finish-paragraph");
+		expect(requestModes).toEqual([
+			"inline-autocomplete",
+			"inline-autocomplete",
+		]);
 		expect(inlineCompletion?.getState().visibleSuggestion?.text).toBe(
 			". Hope you had a lovely vacation in Ibiza last week and came back with great stories to tell.",
 		);
@@ -1645,6 +1651,11 @@ describe("@pen/ai-autocomplete", () => {
 				offset: 61,
 			},
 		});
+		expect(requestModes).toEqual([
+			"inline-autocomplete",
+			"inline-autocomplete",
+			"inline-autocomplete",
+		]);
 		expect(inlineCompletion?.getState().visibleSuggestion).toBeNull();
 
 		editor.destroy();

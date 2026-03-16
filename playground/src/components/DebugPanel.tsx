@@ -34,7 +34,7 @@ export function DebugPanel({
 	const contextFormatLabel = formatContextFormat(lastRequest?.contextFormat ?? null);
 	const contextTokensLabel = formatContextTokens(
 		lastRequest?.contextEstimatedTokensJson ?? null,
-		lastRequest?.requestMode ?? null,
+		lastRequest?.contextFormat ?? null,
 	);
 	const aggregateFastApply = debugLog.aggregateFastApply;
 	const performanceMetricItems = [
@@ -175,9 +175,9 @@ function formatPhaseLabel(value: string): string {
 
 function formatContextTokens(
 	jsonTokens: number | null,
-	requestMode: string | null,
+	contextFormat: string | null,
 ): string {
-	if (requestMode === "selection-fast") {
+	if (contextFormat === "none") {
 		return "Bypassed";
 	}
 
@@ -195,6 +195,14 @@ function formatRequestMode(value: string | null): string {
 
 	if (value === "document-agent") {
 		return "Document agent";
+	}
+
+	if (value === "structured-generation") {
+		return "Structured generation";
+	}
+
+	if (value === "inline-autocomplete") {
+		return "Inline autocomplete";
 	}
 
 	return "Pending";

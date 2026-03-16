@@ -113,6 +113,7 @@ export interface AIContextualPromptComposerState {
 	isOpen: boolean;
 	isSubmitting: boolean;
 	canSubmitFollowUp: boolean;
+	openReason?: "user" | "history";
 }
 
 export interface AIContextualPromptState {
@@ -533,6 +534,7 @@ export interface AgenticLoopOptions {
 	zoneId?: string;
 	maxSteps?: number;
 	signal?: AbortSignal;
+	requestMode?: string;
 	onStatusChange?: (status: AIAwarenessState["status"]) => void;
 	onStep?: (step: AgenticStep) => void;
 	onTextDelta?: (delta: string) => void;

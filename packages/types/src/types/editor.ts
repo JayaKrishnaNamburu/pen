@@ -46,11 +46,38 @@ export interface UndoManager {
 	canRedo(): boolean;
 
 	stopCapturing(): void;
+	syncExplicitUndoGroup(groupId: string | null): void;
 	setGroupTimeout(ms: number): void;
 
 	registerTrackedOrigins(origins: OpOrigin[]): Unsubscribe;
 
 	onStackChange(callback: () => void): Unsubscribe;
+}
+
+export interface UndoHistoryMetadataEntry<T = unknown> {
+	before: T | null;
+	after: T | null;
+}
+
+export interface UndoHistoryMetadataRestoreContext {
+	editor: Editor;
+	direction: "undo" | "redo";
+	requestId: number;
+}
+
+export interface UndoHistoryMetadataController {
+	getCurrentEntryMetadata<T>(key: string): UndoHistoryMetadataEntry<T> | null;
+	setCurrentEntryMetadata<T>(
+		key: string,
+		value: UndoHistoryMetadataEntry<T>,
+	): boolean;
+	registerMetadataRestorer<T>(
+		key: string,
+		restore: (
+			value: T | null,
+			context: UndoHistoryMetadataRestoreContext,
+		) => void,
+	): Unsubscribe;
 }
 
 export interface UndoHistoryRestore {
@@ -98,13 +125,13 @@ export interface DiagnosticEvent {
 
 export interface DocumentValidationError {
 	code:
-		| "MISSING_SHARED_TYPE"
-		| "INVALID_BLOCK_STRUCTURE"
-		| "ORPHAN_BLOCK"
-		| "DUPLICATE_BLOCK_ORDER"
-		| "UNKNOWN_CONTENT_TYPE"
-		| "MISSING_BLOCK_MAP_KEY"
-		| "INVALID_SUBDOCUMENT";
+	| "MISSING_SHARED_TYPE"
+	| "INVALID_BLOCK_STRUCTURE"
+	| "ORPHAN_BLOCK"
+	| "DUPLICATE_BLOCK_ORDER"
+	| "UNKNOWN_CONTENT_TYPE"
+	| "MISSING_BLOCK_MAP_KEY"
+	| "INVALID_SUBDOCUMENT";
 	blockId?: string;
 	message: string;
 	severity: "error" | "warning";

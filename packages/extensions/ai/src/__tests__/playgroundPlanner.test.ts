@@ -52,7 +52,7 @@ describe("playground planner", () => {
 			TEST_PLANNER_CONFIG,
 		);
 
-		expect(plan.mode).toBe("structured-planner");
+		expect(plan.mode).toBe("structured-generation");
 		expect(plan.systemPrompt).toBe("Structured planner system prompt");
 		expect(plan.prompt).toBe(prompt);
 		expect(plan.contextFormat).toBe("none");
@@ -78,7 +78,7 @@ describe("playground planner", () => {
 			TEST_PLANNER_CONFIG,
 		);
 
-		expect(plan.mode).toBe("structured-planner");
+		expect(plan.mode).toBe("structured-generation");
 		expect(plan.prompt).toBe(wrappedPrompt);
 		expect(plan.useTools).toBe(false);
 	});
@@ -97,7 +97,7 @@ describe("playground planner", () => {
 			TEST_PLANNER_CONFIG,
 		);
 
-		expect(plan.mode).toBe("structured-planner");
+		expect(plan.mode).toBe("structured-generation");
 		expect(plan.prompt).toBe(prompt);
 		expect(plan.useTools).toBe(false);
 		expect(plan.contextFormat).toBe("none");
@@ -153,6 +153,44 @@ describe("playground planner", () => {
 		expect(plan.prompt).toContain("Selected text:\nHello");
 	});
 
+	it("honors explicit selection-fast requests for inline edit flows", () => {
+		const editor = createEditor();
+		const blockId = editor.firstBlock()!.id;
+		editor.apply([{
+			type: "insert-text",
+			blockId,
+			offset: 0,
+			text: "Hello there",
+		}]);
+		editor.selectText(blockId, 0, 5);
+
+		const plan = buildPlaygroundRequestPlan(
+			editor,
+			"Make this friendlier",
+			TEST_PLANNER_CONFIG,
+			"selection-fast",
+		);
+
+		expect(plan.mode).toBe("selection-fast");
+		expect(plan.prompt).toContain("Instruction:\nMake this friendlier");
+		expect(plan.prompt).toContain("Selected text:\nHello");
+	});
+
+	it("rejects explicit selection-fast requests when no selection is available", () => {
+		const editor = createEditor();
+
+		expect(() =>
+			buildPlaygroundRequestPlan(
+				editor,
+				"Make this friendlier",
+				TEST_PLANNER_CONFIG,
+				"selection-fast",
+			),
+		).toThrow(
+			"Explicit selection-fast requests require a live or pinned text selection.",
+		);
+	});
+
 	it("keeps selection prompts on the fast path when the prompt is pinned to a selection", () => {
 		const editor = createEditor();
 		const prompt = [
@@ -203,6 +241,44 @@ describe("playground planner", () => {
 		);
 
 		expect(plan.mode).toBe("document-agent");
+	});
+
+	it("honors explicit document-agent requests even when a live selection exists", () => {
+		const editor = createEditor();
+		const blockId = editor.firstBlock()!.id;
+		editor.apply([{
+			type: "insert-text",
+			blockId,
+			offset: 0,
+			text: "Hello there",
+		}]);
+		editor.selectText(blockId, 0, 5);
+
+		const plan = buildPlaygroundRequestPlan(
+			editor,
+			"Rewrite to be friendlier\n\nHello",
+			TEST_PLANNER_CONFIG,
+			"document-agent",
+		);
+
+		expect(plan.mode).toBe("document-agent");
+		expect(plan.useTools).toBe(true);
+		expect(plan.contextFormat).toBe("json");
+	});
+
+	it("honors explicit structured-generation requests for ordinary prompts", () => {
+		const editor = createEditor();
+		const plan = buildPlaygroundRequestPlan(
+			editor,
+			"Create a table with names",
+			TEST_PLANNER_CONFIG,
+			"structured-generation",
+		);
+
+		expect(plan.mode).toBe("structured-generation");
+		expect(plan.prompt).toBe("Create a table with names");
+		expect(plan.useTools).toBe(false);
+		expect(plan.contextFormat).toBe("none");
 	});
 
 	it("increases autocomplete output tokens for paragraph continuations", () => {

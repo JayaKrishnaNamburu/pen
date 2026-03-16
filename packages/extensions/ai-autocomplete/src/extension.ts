@@ -62,6 +62,7 @@ const AUTOCOMPLETE_DEBUG_ENABLED =
 	(globalThis as {
 		process?: { env?: Record<string, string | undefined> };
 	}).process?.env?.PEN_AUTOCOMPLETE_DEBUG === "true";
+const AUTOCOMPLETE_REQUEST_MODE = "inline-autocomplete";
 const PROSE_BLOCK_TYPES = new Set(["paragraph", "heading", "blockquote", "callout"]);
 const MIN_PROSE_SINGLE_WORD_COMPLETION_CHARS = 8;
 
@@ -600,6 +601,7 @@ class AutocompleteControllerImpl implements AutocompleteController {
 				messages,
 				tools: [],
 				signal: abortController.signal,
+				requestMode: AUTOCOMPLETE_REQUEST_MODE,
 			})) {
 				if (!this._shouldContinueRequest(requestId, context)) {
 					logAutocompleteEvent("request cancelled during stream", {
@@ -954,6 +956,7 @@ class AutocompleteControllerImpl implements AutocompleteController {
 				messages,
 				tools: [],
 				signal: abortController.signal,
+				requestMode: AUTOCOMPLETE_REQUEST_MODE,
 			})) {
 				if (abortController.signal.aborted) {
 					return;

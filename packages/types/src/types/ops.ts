@@ -24,6 +24,7 @@ export type OpOrigin =
 export interface ApplyOptions {
 	origin?: OpOrigin;
 	undoGroup?: boolean;
+	undoGroupId?: string;
 }
 
 export type Position =

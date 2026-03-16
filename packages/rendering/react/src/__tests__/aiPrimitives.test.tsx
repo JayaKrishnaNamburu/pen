@@ -39,6 +39,21 @@ function createDeferred() {
 	return { promise, resolve };
 }
 
+function withNavigatorPlatform<T>(platform: string, run: () => T): T {
+	const descriptor = Object.getOwnPropertyDescriptor(navigator, "platform");
+	Object.defineProperty(navigator, "platform", {
+		configurable: true,
+		value: platform,
+	});
+	try {
+		return run();
+	} finally {
+		if (descriptor) {
+			Object.defineProperty(navigator, "platform", descriptor);
+		}
+	}
+}
+
 function mockSelectionToolbarRect(rect: {
 	top: number;
 	left: number;
@@ -1050,6 +1065,137 @@ describe("@pen/react AI primitives", () => {
 		container.remove();
 	});
 
+	it("submits a new inline selection edit after keeping bottom-chat changes", async () => {
+		const restoreSelectionRect = mockSelectionToolbarRect({
+			top: 120,
+			left: 160,
+			width: 120,
+			height: 18,
+		});
+		let pass = 0;
+		const editor = createEditor({
+			extensions: [
+				aiExtension({
+					contentFormat: {
+						blockGeneration: "markdown",
+						selectionRewrite: "text",
+					},
+					model: {
+						async *stream() {
+							pass += 1;
+							yield {
+								type: "text-delta" as const,
+								delta: pass === 1 ? "Hello world" : "planet",
+							};
+							yield { type: "done" as const };
+						},
+					},
+				}),
+			],
+		});
+		const controller = getAIController(editor);
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(
+				<Pen.Editor.Root editor={editor}>
+					<Pen.AI.Root editor={editor}>
+						<Pen.Editor.Content />
+						<Pen.SelectionToolbar.Root>
+							<Pen.SelectionToolbar.Content>
+								<Pen.AI.SelectionTrigger shortcut="ctrl+j">
+									AI
+								</Pen.AI.SelectionTrigger>
+							</Pen.SelectionToolbar.Content>
+							<Pen.AI.InlineSession />
+						</Pen.SelectionToolbar.Root>
+					</Pen.AI.Root>
+				</Pen.Editor.Root>,
+			);
+			for (let tick = 0; tick < 4; tick += 1) {
+				await Promise.resolve();
+			}
+		});
+
+		await act(async () => {
+			const bottomChatSession = controller?.startSession({
+				surface: "bottom-chat",
+				target: "document",
+			});
+			if (bottomChatSession) {
+				await controller?.runSessionPrompt(
+					bottomChatSession.id,
+					"Write something in the document",
+					{ target: "document" },
+				);
+				const keptTurnId = controller
+					?.getSessions()
+					.find((session) => session.id === bottomChatSession.id)
+					?.turns[0]?.id;
+				if (keptTurnId) {
+					controller?.acceptSessionTurn(bottomChatSession.id, keptTurnId);
+				}
+			}
+			for (let tick = 0; tick < 6; tick += 1) {
+				await Promise.resolve();
+			}
+		});
+
+		const blockId = editor.firstBlock()!.id;
+		await act(async () => {
+			editor.selectTextRange(
+				{ blockId, offset: 6 },
+				{ blockId, offset: 11 },
+			);
+			for (let tick = 0; tick < 4; tick += 1) {
+				await Promise.resolve();
+			}
+		});
+
+		const trigger = container.querySelector(
+			"[data-pen-ai-selection-trigger]",
+		) as HTMLButtonElement | null;
+		expect(trigger).not.toBeNull();
+
+		await act(async () => {
+			trigger?.dispatchEvent(
+				new Event("pointerdown", {
+					bubbles: true,
+					cancelable: true,
+				}),
+			);
+			for (let tick = 0; tick < 4; tick += 1) {
+				await Promise.resolve();
+			}
+		});
+
+		await act(async () => {
+			const activeSessionId = controller?.getState().activeSessionId ?? null;
+			if (activeSessionId) {
+				await controller?.runSessionPrompt(activeSessionId, "Rewrite this", {
+					target: "selection",
+				});
+			}
+			for (let tick = 0; tick < 6; tick += 1) {
+				await Promise.resolve();
+			}
+		});
+
+		const activeSession = controller?.getActiveSession() ?? null;
+		expect(activeSession?.surface).toBe("inline-edit");
+		expect(activeSession?.turns).toHaveLength(1);
+		expect(activeSession?.turns[0]?.status).toBe("review");
+
+		await act(async () => {
+			root.unmount();
+		});
+		restoreSelectionRect();
+		container.remove();
+	});
+
 	it("renders a durable affected-range decoration while the inline session is visible", async () => {
 		const restoreSelectionRect = mockSelectionToolbarRect({
 			top: 120,
@@ -1582,6 +1728,188 @@ describe("@pen/react AI primitives", () => {
 		});
 
 		expect(textarea?.dispatchEvent(backspaceEvent)).toBe(true);
+
+		await act(async () => {
+			root.unmount();
+		});
+		restoreSelectionRect();
+		container.remove();
+	});
+
+	it("does not autofocus the inline session input when history reopens it", async () => {
+		const restoreSelectionRect = mockSelectionToolbarRect({
+			top: 120,
+			left: 180,
+			width: 80,
+			height: 20,
+		});
+		const editor = createEditor({
+			extensions: [
+				aiExtension({
+					model: {
+						async *stream() {
+							yield { type: "done" as const };
+						},
+					},
+				}),
+			],
+		});
+		const blockId = editor.firstBlock()!.id;
+		editor.apply(
+			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			{ origin: "system" },
+		);
+		editor.selectTextRange(
+			{ blockId, offset: 0 },
+			{ blockId, offset: 5 },
+		);
+		const controller = getAIController(editor)!;
+		const session = controller.openContextualPrompt({
+			surface: "inline-edit",
+			target: "selection",
+		});
+		expect(session).not.toBeNull();
+		const originalFocus = HTMLTextAreaElement.prototype.focus;
+		let focusCalls = 0;
+		HTMLTextAreaElement.prototype.focus = function focusPatched(
+			this: HTMLTextAreaElement,
+			options?: FocusOptions,
+		) {
+			focusCalls += 1;
+			return originalFocus.call(this, options);
+		};
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+		try {
+			controller.suspendInlineSession(session!.id);
+			editor.internals.emit("historyApplied", {
+				kind: "undo",
+				selection: editor.selection,
+				focusBlockId: blockId,
+				requestId: 1,
+			});
+			expect(
+				controller.getState().sessions[0]?.contextualPrompt?.composer.openReason,
+			).toBe("history");
+
+			await act(async () => {
+				root.render(
+					<Pen.Editor.Root editor={editor}>
+						<Pen.AI.Root editor={editor}>
+							<Pen.SelectionToolbar.Root>
+								<Pen.SelectionToolbar.Content>
+									<Pen.AI.SelectionTrigger shortcut="ctrl+j">
+										AI
+									</Pen.AI.SelectionTrigger>
+								</Pen.SelectionToolbar.Content>
+								<Pen.AI.InlineSession />
+							</Pen.SelectionToolbar.Root>
+						</Pen.AI.Root>
+					</Pen.Editor.Root>,
+				);
+				for (let tick = 0; tick < 4; tick += 1) {
+					await Promise.resolve();
+				}
+			});
+
+			const reopenedTextarea = container.querySelector(
+				"[data-pen-ai-inline-session-input]",
+			) as HTMLTextAreaElement | null;
+			expect(reopenedTextarea).not.toBeNull();
+			expect(focusCalls).toBe(0);
+
+			await act(async () => {
+				root.unmount();
+			});
+		} finally {
+			HTMLTextAreaElement.prototype.focus = originalFocus;
+		}
+		restoreSelectionRect();
+		container.remove();
+	});
+
+	it("reopens the inline prompt on the first undo shortcut after accepting a turn", async () => {
+		const restoreSelectionRect = mockSelectionToolbarRect({
+			top: 120,
+			left: 180,
+			width: 80,
+			height: 20,
+		});
+		const editor = createEditor({
+			extensions: [
+				aiExtension({
+					model: {
+						async *stream() {
+							yield { type: "text-delta" as const, delta: "planet" };
+							yield { type: "done" as const };
+						},
+					},
+				}),
+			],
+		});
+		const blockId = editor.firstBlock()!.id;
+		editor.apply(
+			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			{ origin: "system" },
+		);
+		editor.selectTextRange(
+			{ blockId, offset: 6 },
+			{ blockId, offset: 11 },
+		);
+		const controller = getAIController(editor)!;
+		const session = controller.openContextualPrompt({
+			surface: "inline-edit",
+			target: "selection",
+		});
+		expect(session).not.toBeNull();
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+		await act(async () => {
+			root.render(
+				<Pen.Editor.Root editor={editor}>
+					<Pen.AI.Root editor={editor}>
+						<Pen.Editor.Content />
+						<Pen.AI.InlineSession />
+					</Pen.AI.Root>
+				</Pen.Editor.Root>,
+			);
+			for (let tick = 0; tick < 4; tick += 1) {
+				await Promise.resolve();
+			}
+		});
+
+		await act(async () => {
+			await controller.runSessionPrompt(session!.id, "Rewrite the selection");
+			const reviewTurnId = controller.getActiveSession()?.turns[0]?.id;
+			if (reviewTurnId) {
+				controller.acceptSessionTurn(session!.id, reviewTurnId);
+			}
+			for (let tick = 0; tick < 6; tick += 1) {
+				await Promise.resolve();
+			}
+		});
+
+		expect(container.querySelector("[data-pen-ai-inline-session-input]")).toBeNull();
+
+		await act(async () => {
+			withNavigatorPlatform("MacIntel", () => {
+				document.dispatchEvent(createKeyDownEvent("z", { metaKey: true }));
+			});
+			for (let tick = 0; tick < 6; tick += 1) {
+				await Promise.resolve();
+			}
+		});
+
+		const reopenedTextarea = container.querySelector(
+			"[data-pen-ai-inline-session-input]",
+		) as HTMLTextAreaElement | null;
+		expect(reopenedTextarea).not.toBeNull();
+		expect(controller.getActiveSession()?.contextualPrompt?.composer.draftPrompt).toBe(
+			"Rewrite the selection",
+		);
 
 		await act(async () => {
 			root.unmount();

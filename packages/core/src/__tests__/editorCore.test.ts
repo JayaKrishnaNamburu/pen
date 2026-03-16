@@ -1308,6 +1308,7 @@ describe("@pen/core createEditor", () => {
 			canUndo: () => false,
 			canRedo: () => false,
 			stopCapturing: () => { },
+			syncExplicitUndoGroup: () => { },
 			setGroupTimeout: () => { },
 			registerTrackedOrigins: () => () => { },
 			onStackChange: () => () => { },

@@ -5,12 +5,17 @@ import type {
   Unsubscribe,
 } from "@pen/types";
 
+const EXPLICIT_GROUP_CAPTURE_TIMEOUT_MS = 2_147_483_647;
+
 export class UndoManagerImpl implements UndoManager {
   private readonly _crdtUndo: CRDTUndoManager;
   private readonly _trackedOrigins = new Map<OpOrigin, number>();
   private readonly _listeners = new Set<() => void>();
   private _idleTimer: ReturnType<typeof setTimeout> | null = null;
   private _groupTimeout = 1000;
+  private _baseCaptureTimeout = 1000;
+  private _explicitUndoGroupId: string | null = null;
+  _onCaptureBoundary: (() => void) | null = null;
   _isHistoryOperation = false;
 
   constructor(crdtUndo: CRDTUndoManager, trackedOrigins?: Iterable<OpOrigin>) {
@@ -21,7 +26,10 @@ export class UndoManagerImpl implements UndoManager {
   }
 
   undo(): boolean {
-    this._crdtUndo.stopCapturing();
+    this._explicitUndoGroupId = null;
+    this._crdtUndo.setCaptureTimeout?.(this._baseCaptureTimeout);
+    this._clearIdleTimer();
+    this._stopCapturingWithBoundary();
     this._isHistoryOperation = true;
     try {
       return this._crdtUndo.undo();
@@ -31,7 +39,10 @@ export class UndoManagerImpl implements UndoManager {
   }
 
   redo(): boolean {
-    this._crdtUndo.stopCapturing();
+    this._explicitUndoGroupId = null;
+    this._crdtUndo.setCaptureTimeout?.(this._baseCaptureTimeout);
+    this._clearIdleTimer();
+    this._stopCapturingWithBoundary();
     this._isHistoryOperation = true;
     try {
       return this._crdtUndo.redo();
@@ -49,13 +60,41 @@ export class UndoManagerImpl implements UndoManager {
   }
 
   stopCapturing(): void {
-    this._crdtUndo.stopCapturing();
+    this._explicitUndoGroupId = null;
+    this._crdtUndo.setCaptureTimeout?.(this._baseCaptureTimeout);
+    this._stopCapturingWithBoundary();
+    this._clearIdleTimer();
+    this._notifyListeners();
+  }
+
+  syncExplicitUndoGroup(groupId: string | null): void {
+    if (this._explicitUndoGroupId === groupId) {
+      if (groupId !== null) {
+        this._clearIdleTimer();
+      }
+      return;
+    }
+
+    if (this._explicitUndoGroupId !== null || groupId !== null) {
+      this._stopCapturingWithBoundary();
+    }
+
+    this._explicitUndoGroupId = groupId;
+    this._crdtUndo.setCaptureTimeout?.(
+      groupId === null
+        ? this._baseCaptureTimeout
+        : EXPLICIT_GROUP_CAPTURE_TIMEOUT_MS,
+    );
     this._clearIdleTimer();
     this._notifyListeners();
   }
 
   setGroupTimeout(ms: number): void {
     this._groupTimeout = ms;
+    this._baseCaptureTimeout = ms;
+    if (this._explicitUndoGroupId === null) {
+      this._crdtUndo.setCaptureTimeout?.(ms);
+    }
   }
 
   registerTrackedOrigins(origins: OpOrigin[]): Unsubscribe {
@@ -91,9 +130,12 @@ export class UndoManagerImpl implements UndoManager {
   }
 
   resetIdleTimer(): void {
+    if (this._explicitUndoGroupId !== null) {
+      return;
+    }
     this._clearIdleTimer();
     this._idleTimer = setTimeout(() => {
-      this._crdtUndo.stopCapturing();
+      this._stopCapturingWithBoundary();
       this._notifyListeners();
     }, this._groupTimeout);
   }
@@ -109,6 +151,8 @@ export class UndoManagerImpl implements UndoManager {
   }
 
   destroy(): void {
+    this._crdtUndo.setCaptureTimeout?.(this._baseCaptureTimeout);
+    this._explicitUndoGroupId = null;
     this._clearIdleTimer();
     this._listeners.clear();
   }
@@ -136,5 +180,10 @@ export class UndoManagerImpl implements UndoManager {
       clearTimeout(this._idleTimer);
       this._idleTimer = null;
     }
+  }
+
+  private _stopCapturingWithBoundary(): void {
+    this._onCaptureBoundary?.();
+    this._crdtUndo.stopCapturing();
   }
 }

@@ -2,6 +2,8 @@ export const FIELD_EDITOR_SLOT_KEY = "field-editor";
 export const COLLECT_KEY_BINDINGS_SLOT_KEY = "core:collect-key-bindings";
 export const INPUT_RULES_ENGINE_SLOT_KEY = "input-rules:engine";
 export const UNDO_HISTORY_RESTORE_SLOT_KEY = "undo:history-restore";
+export const UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY =
+	"undo:history-metadata-controller";
 export const INLINE_COMPLETION_SLOT = "ai:inline-completion";
 export const AI_CONTROLLER_SLOT = "ai:controller";
 export const AI_INLINE_COMPLETION_SLOT = INLINE_COMPLETION_SLOT;

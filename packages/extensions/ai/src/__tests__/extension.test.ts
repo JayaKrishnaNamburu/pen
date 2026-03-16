@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@pen/core";
-import { defineExtension, type ToolRuntime } from "@pen/types";
+import {
+	defineExtension,
+	type ToolRuntime,
+} from "@pen/types";
 import {
 	acceptAllSuggestions,
 	acceptSuggestion,
@@ -468,6 +471,458 @@ describe("aiExtension", () => {
 		expect(editor.getBlock(blockId)!.textContent({ resolved: true })).toBe(
 			"Hello planet",
 		);
+	});
+
+	it("keeps inline prompt targets stable after the live selection changes", async () => {
+		const editor = createEditor({
+			extensions: [
+				aiExtension({
+					model: {
+						async *stream() {
+							yield { type: "text-delta" as const, delta: "planet" };
+							yield { type: "done" as const };
+						},
+					},
+				}),
+			],
+		});
+		const blockId = editor.firstBlock()!.id;
+		editor.apply(
+			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			{ origin: "system" },
+		);
+		editor.selectTextRange(
+			{ blockId, offset: 6 },
+			{ blockId, offset: 11 },
+		);
+
+		const controller = getAIController(editor)!;
+		const session = controller.openContextualPrompt({
+			surface: "inline-edit",
+			target: "selection",
+		});
+		expect(session).not.toBeNull();
+
+		editor.selectTextRange(
+			{ blockId, offset: 11 },
+			{ blockId, offset: 11 },
+		);
+
+		const originalSelectTextRange = editor.selectTextRange.bind(editor);
+		editor.selectTextRange = () => {
+			// Simulate a selection target that can no longer be reselected from live state.
+		};
+
+		try {
+			const generation = await controller.runSessionPrompt(
+				session!.id,
+				"Rewrite the selection",
+			);
+
+			expect(generation.status).toBe("complete");
+			expect(generation.target).toBe("selection");
+			expect(
+				controller
+					.getSessions()
+					.find((item) => item.id === session!.id)
+					?.turns[0]?.target,
+			).toBe("selection");
+		} finally {
+			editor.selectTextRange = originalSelectTextRange;
+		}
+	});
+
+	it("restores inline edit review state through document undo and redo", async () => {
+		const editor = createEditor({
+			extensions: [
+				aiExtension({
+					model: {
+						async *stream() {
+							yield { type: "text-delta" as const, delta: "planet" };
+							yield { type: "done" as const };
+						},
+					},
+				}),
+			],
+		});
+		const blockId = editor.firstBlock()!.id;
+		editor.apply(
+			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			{ origin: "system" },
+		);
+		editor.selectTextRange(
+			{ blockId, offset: 6 },
+			{ blockId, offset: 11 },
+		);
+
+		const controller = getAIController(editor)!;
+		const session = controller.openContextualPrompt({
+			surface: "inline-edit",
+			target: "selection",
+		});
+		expect(session).not.toBeNull();
+
+		await controller.runSessionPrompt(session!.id, "Rewrite the selection");
+		const reviewTurnId = controller.getActiveSession()?.turns[0]?.id;
+		expect(reviewTurnId).toBeTruthy();
+		expect(controller.acceptSessionTurn(session!.id, reviewTurnId!)).toBe(true);
+
+		const acceptedSession = controller.getActiveSession();
+		expect(acceptedSession?.contextualPrompt?.composer.isOpen).toBe(false);
+		expect(acceptedSession?.turns[0]?.status).toBe("accepted");
+		expect(editor.getBlock(blockId)?.textContent({ resolved: true })).toBe(
+			"Hello planet",
+		);
+
+		editor.selectTextRange(
+			{ blockId, offset: 0 },
+			{ blockId, offset: 0 },
+		);
+		expect(editor.undoManager.undo()).toBe(true);
+
+		const restoredSession = controller.getActiveSession();
+		expect(restoredSession?.id).toBe(session!.id);
+		expect(restoredSession?.contextualPrompt?.composer.isOpen).toBe(true);
+		expect(restoredSession?.turns).toHaveLength(1);
+		expect(restoredSession?.turns[0]?.status).toBe("review");
+		expect(restoredSession?.turns[0]?.suggestionIds.length ?? 0).toBeGreaterThan(0);
+
+		expect(editor.undoManager.redo()).toBe(true);
+
+		const redoneSession = controller.getActiveSession();
+		expect(redoneSession?.id).toBe(session!.id);
+		expect(redoneSession?.contextualPrompt?.composer.isOpen).toBe(false);
+		expect(redoneSession?.turns[0]?.status).toBe("accepted");
+		expect(editor.getBlock(blockId)?.textContent({ resolved: true })).toBe(
+			"Hello planet",
+		);
+	});
+
+	it("lets inline edit continue from an undone review state", async () => {
+		let pass = 0;
+		const editor = createEditor({
+			extensions: [
+				aiExtension({
+					model: {
+						async *stream() {
+							pass += 1;
+							yield {
+								type: "text-delta" as const,
+								delta: pass === 1 ? "planet" : "galaxy",
+							};
+							yield { type: "done" as const };
+						},
+					},
+				}),
+			],
+		});
+		const blockId = editor.firstBlock()!.id;
+		editor.apply(
+			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			{ origin: "system" },
+		);
+		editor.selectTextRange(
+			{ blockId, offset: 6 },
+			{ blockId, offset: 11 },
+		);
+
+		const controller = getAIController(editor)!;
+		const session = controller.openContextualPrompt({
+			surface: "inline-edit",
+			target: "selection",
+		});
+		expect(session).not.toBeNull();
+
+		await controller.runSessionPrompt(session!.id, "Rewrite the selection");
+		const reviewTurnId = controller.getActiveSession()?.turns[0]?.id;
+		expect(reviewTurnId).toBeTruthy();
+		expect(controller.acceptSessionTurn(session!.id, reviewTurnId!)).toBe(true);
+		expect(editor.undoManager.undo()).toBe(true);
+
+		const restoredSession = controller.getActiveSession();
+		expect(restoredSession?.contextualPrompt?.composer.isOpen).toBe(true);
+
+		await controller.runSessionPrompt(session!.id, "Try another rewrite");
+
+		const resumedSession = controller.getActiveSession();
+		expect(resumedSession?.turns).toHaveLength(2);
+		expect(resumedSession?.turns[1]?.prompt).toBe("Try another rewrite");
+		expect(resumedSession?.turns[1]?.status).toBe("review");
+	});
+
+	it("undoes a streamed inline turn as one step even when deltas span capture timeouts", async () => {
+		const editor = createEditor({
+			extensions: [
+				aiExtension({
+					model: {
+						async *stream() {
+							yield { type: "text-delta" as const, delta: "pla" };
+							await new Promise((resolve) => setTimeout(resolve, 550));
+							yield { type: "text-delta" as const, delta: "net" };
+							yield { type: "done" as const };
+						},
+					},
+				}),
+			],
+		});
+		const blockId = editor.firstBlock()!.id;
+		editor.apply(
+			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			{ origin: "system" },
+		);
+		editor.selectTextRange(
+			{ blockId, offset: 6 },
+			{ blockId, offset: 11 },
+		);
+
+		const controller = getAIController(editor)!;
+		const session = controller.openContextualPrompt({
+			surface: "inline-edit",
+			target: "selection",
+		});
+		expect(session).not.toBeNull();
+
+		await controller.runSessionPrompt(session!.id, "Rewrite the selection");
+		const reviewTurnId = controller.getActiveSession()?.turns[0]?.id;
+		expect(reviewTurnId).toBeTruthy();
+		expect(controller.acceptSessionTurn(session!.id, reviewTurnId!)).toBe(true);
+
+		expect(editor.undoManager.undo()).toBe(true);
+		const restoredReviewSession = controller.getActiveSession();
+		expect(restoredReviewSession?.id).toBe(session!.id);
+		expect(restoredReviewSession?.contextualPrompt?.composer.isOpen).toBe(true);
+		expect(restoredReviewSession?.turns).toHaveLength(1);
+		expect(restoredReviewSession?.turns[0]?.status).toBe("review");
+
+		expect(editor.undoManager.undo()).toBe(true);
+		const restoredPromptSession = controller.getActiveSession();
+		expect(restoredPromptSession?.id).toBe(session!.id);
+		expect(restoredPromptSession?.contextualPrompt?.composer.isOpen).toBe(true);
+		expect(restoredPromptSession?.turns).toHaveLength(0);
+		expect(restoredPromptSession?.contextualPrompt?.composer.draftPrompt).toBe(
+			"Rewrite the selection",
+		);
+
+		expect(editor.undoManager.redo()).toBe(true);
+		const redoneReviewSession = controller.getActiveSession();
+		expect(redoneReviewSession?.turns).toHaveLength(1);
+		expect(redoneReviewSession?.turns[0]?.status).toBe("review");
+
+		expect(editor.undoManager.redo()).toBe(true);
+		const redoneAcceptedSession = controller.getActiveSession();
+		expect(redoneAcceptedSession?.turns[0]?.status).toBe("accepted");
+	});
+
+	it("does not reopen accepted inline review for unrelated undo operations", async () => {
+		const editor = createEditor({
+			extensions: [
+				aiExtension({
+					model: {
+						async *stream() {
+							yield { type: "text-delta" as const, delta: "planet" };
+							yield { type: "done" as const };
+						},
+					},
+				}),
+			],
+		});
+		const firstBlockId = editor.firstBlock()!.id;
+		const secondBlockId = crypto.randomUUID();
+		editor.apply(
+			[
+				{ type: "insert-text", blockId: firstBlockId, offset: 0, text: "Hello world" },
+				{
+					type: "insert-block",
+					blockId: secondBlockId,
+					blockType: "paragraph",
+					props: {},
+					position: "last",
+				},
+				{ type: "insert-text", blockId: secondBlockId, offset: 0, text: "Other block" },
+			],
+			{ origin: "system" },
+		);
+		editor.selectTextRange(
+			{ blockId: firstBlockId, offset: 6 },
+			{ blockId: firstBlockId, offset: 11 },
+		);
+
+		const controller = getAIController(editor)!;
+		const session = controller.openContextualPrompt({
+			surface: "inline-edit",
+			target: "selection",
+		});
+		expect(session).not.toBeNull();
+
+		await controller.runSessionPrompt(session!.id, "Rewrite the selection");
+		const reviewTurnId = controller.getActiveSession()?.turns[0]?.id;
+		expect(reviewTurnId).toBeTruthy();
+		expect(controller.acceptSessionTurn(session!.id, reviewTurnId!)).toBe(true);
+		expect(controller.getActiveSession()?.contextualPrompt?.composer.isOpen).toBe(
+			false,
+		);
+		editor.undoManager.stopCapturing();
+
+		editor.selectText(secondBlockId, 11, 11);
+		editor.apply(
+			[{ type: "insert-text", blockId: secondBlockId, offset: 11, text: "!" }],
+			{ origin: "user" },
+		);
+
+		expect(editor.undoManager.undo()).toBe(true);
+		expect(editor.getBlock(secondBlockId)?.textContent()).toBe("Other block");
+		expect(controller.getActiveSession()?.id).toBe(session!.id);
+		expect(controller.getActiveSession()?.contextualPrompt?.composer.isOpen).toBe(
+			false,
+		);
+		expect(controller.getActiveSession()?.turns[0]?.status).toBe("accepted");
+	});
+
+	it("restores the latest inline review turn even when no inline session is active", async () => {
+		const editor = createEditor({
+			extensions: [
+				aiExtension({
+					model: {
+						async *stream() {
+							yield { type: "text-delta" as const, delta: "planet" };
+							yield { type: "done" as const };
+						},
+					},
+				}),
+			],
+		});
+		const blockId = editor.firstBlock()!.id;
+		editor.apply(
+			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			{ origin: "system" },
+		);
+		editor.selectTextRange(
+			{ blockId, offset: 6 },
+			{ blockId, offset: 11 },
+		);
+
+		const controller = getAIController(editor)!;
+		const session = controller.openContextualPrompt({
+			surface: "inline-edit",
+			target: "selection",
+		});
+		expect(session).not.toBeNull();
+
+		await controller.runSessionPrompt(session!.id, "Rewrite the selection");
+		const reviewTurnId = controller.getActiveSession()?.turns[0]?.id;
+		expect(reviewTurnId).toBeTruthy();
+		expect(controller.acceptSessionTurn(session!.id, reviewTurnId!)).toBe(true);
+		controller.suspendInlineSession(session!.id);
+		expect(controller.getState().activeSessionId).toBeNull();
+
+		expect(editor.undoManager.undo()).toBe(true);
+
+		const restoredSession = controller.getActiveSession();
+		expect(restoredSession?.id).toBe(session!.id);
+		expect(restoredSession?.contextualPrompt?.composer.isOpen).toBe(true);
+		expect(restoredSession?.turns[0]?.status).toBe("review");
+	});
+
+	it("restores the inline prompt in the same undo step after accepting a suspended review turn", async () => {
+		const editor = createEditor({
+			extensions: [
+				aiExtension({
+					model: {
+						async *stream() {
+							yield { type: "text-delta" as const, delta: "planet" };
+							yield { type: "done" as const };
+						},
+					},
+				}),
+			],
+		});
+		const blockId = editor.firstBlock()!.id;
+		editor.apply(
+			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			{ origin: "system" },
+		);
+		editor.selectTextRange(
+			{ blockId, offset: 6 },
+			{ blockId, offset: 11 },
+		);
+
+		const controller = getAIController(editor)!;
+		const session = controller.openContextualPrompt({
+			surface: "inline-edit",
+			target: "selection",
+		});
+		expect(session).not.toBeNull();
+
+		await controller.runSessionPrompt(session!.id, "Rewrite the selection");
+		const reviewTurnId = controller.getActiveSession()?.turns[0]?.id;
+		expect(reviewTurnId).toBeTruthy();
+
+		controller.suspendInlineSession(session!.id);
+		expect(controller.getState().activeSessionId).toBeNull();
+		expect(
+			controller.getState().sessions[0]?.contextualPrompt?.composer.isOpen,
+		).toBe(false);
+
+		expect(controller.acceptSessionTurn(session!.id, reviewTurnId!)).toBe(true);
+		expect(editor.undoManager.undo()).toBe(true);
+
+		const restoredSession = controller.getActiveSession();
+		expect(restoredSession?.id).toBe(session!.id);
+		expect(restoredSession?.contextualPrompt?.composer.isOpen).toBe(true);
+		expect(restoredSession?.contextualPrompt?.composer.draftPrompt).toBe(
+			"Rewrite the selection",
+		);
+		expect(restoredSession?.turns).toHaveLength(1);
+		expect(restoredSession?.turns[0]?.status).toBe("review");
+	});
+
+	it("restores prompt and review state on the first inline history undo shortcut", async () => {
+		const editor = createEditor({
+			extensions: [
+				aiExtension({
+					model: {
+						async *stream() {
+							yield { type: "text-delta" as const, delta: "planet" };
+							yield { type: "done" as const };
+						},
+					},
+				}),
+			],
+		});
+		const blockId = editor.firstBlock()!.id;
+		editor.apply(
+			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			{ origin: "system" },
+		);
+		editor.selectTextRange(
+			{ blockId, offset: 6 },
+			{ blockId, offset: 11 },
+		);
+
+		const controller = getAIController(editor)!;
+		const inlineHistory = getAIInlineHistoryController(editor)!;
+		const session = controller.openContextualPrompt({
+			surface: "inline-edit",
+			target: "selection",
+		});
+		expect(session).not.toBeNull();
+
+		await controller.runSessionPrompt(session!.id, "Rewrite the selection");
+		const reviewTurnId = controller.getActiveSession()?.turns[0]?.id;
+		expect(reviewTurnId).toBeTruthy();
+		expect(controller.acceptSessionTurn(session!.id, reviewTurnId!)).toBe(true);
+
+		expect(inlineHistory.canHandleShortcut("undo")).toBe(true);
+		expect(inlineHistory.handleShortcut("undo")).toBe(true);
+
+		const restoredSession = controller.getActiveSession();
+		expect(restoredSession?.id).toBe(session!.id);
+		expect(restoredSession?.contextualPrompt?.composer.isOpen).toBe(true);
+		expect(restoredSession?.contextualPrompt?.composer.draftPrompt).toBe(
+			"Rewrite the selection",
+		);
+		expect(restoredSession?.turns).toHaveLength(1);
+		expect(restoredSession?.turns[0]?.status).toBe("review");
 	});
 
 	it("rewrites text that was previously accepted from AI", async () => {
@@ -1806,6 +2261,74 @@ describe("aiExtension", () => {
 		expect(generation.contentFormat).toBe("markdown");
 		expect(generation.suggestionIds?.length ?? 0).toBeGreaterThan(0);
 		expect(visibleBlockTexts).toEqual(["Once upon a time"]);
+	});
+
+	it("allows inline selection edits after keeping bottom-chat changes", async () => {
+		let pass = 0;
+		const editor = createEditor({
+			extensions: [
+				aiExtension({
+					contentFormat: {
+						blockGeneration: "markdown",
+						selectionRewrite: "text",
+					},
+					model: {
+						async *stream() {
+							pass += 1;
+							yield {
+								type: "text-delta" as const,
+								delta: pass === 1 ? "Hello world" : "planet",
+							};
+							yield { type: "done" as const };
+						},
+					},
+				}),
+			],
+		});
+
+		const controller = getAIController(editor)!;
+		const bottomChatSession = controller.startSession({
+			surface: "bottom-chat",
+			target: "document",
+		});
+		await controller.runSessionPrompt(
+			bottomChatSession.id,
+			"Write something in the document",
+			{ target: "document" },
+		);
+
+		const keptTurnId = controller
+			.getSessions()
+			.find((session) => session.id === bottomChatSession.id)
+			?.turns[0]?.id;
+		expect(keptTurnId).toBeTruthy();
+		expect(controller.acceptSessionTurn(bottomChatSession.id, keptTurnId!)).toBe(true);
+
+		const blockId = editor.firstBlock()!.id;
+		editor.selectTextRange(
+			{ blockId, offset: 6 },
+			{ blockId, offset: 11 },
+		);
+
+		const inlineSession = controller.openContextualPrompt({
+			surface: "inline-edit",
+			target: "selection",
+		});
+		expect(inlineSession).not.toBeNull();
+
+		const generation = await controller.runSessionPrompt(
+			inlineSession!.id,
+			"Rewrite the selection",
+			{ target: "selection" },
+		);
+
+		expect(generation.target).toBe("selection");
+		expect(
+			controller
+				.getSessions()
+				.find((session) => session.id === inlineSession!.id)
+				?.turns,
+		).toHaveLength(1);
 	});
 
 	it("trims leading blank lines when bottom-chat writes into an empty block", async () => {

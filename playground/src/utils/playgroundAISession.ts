@@ -68,10 +68,25 @@ export interface PlaygroundStreamChunk {
 	contextEstimatedTokensJson?: unknown;
 }
 
+export type PlaygroundExecutionLane =
+	| "bottom-chat"
+	| "inline-edit"
+	| "autocomplete"
+	| "prefetch";
+
+interface PlaygroundAIRequestOptions {
+	lane?: PlaygroundExecutionLane;
+	requestMode?: string;
+}
+
 const PLAYGROUND_AI_ACTIVE_SYNC_CONFLICT =
 	"Cannot sync a playground session while an AI request is active.";
 const PLAYGROUND_AI_ACTIVE_REQUEST_CONFLICT =
 	"This playground session already has an active AI request.";
+const PLAYGROUND_AI_ACTIVE_SYNC_RETRY_LIMIT = 8;
+const PLAYGROUND_AI_ACTIVE_SYNC_RETRY_MS = 75;
+const PLAYGROUND_AI_ACTIVE_REQUEST_RETRY_LIMIT = 2;
+const PLAYGROUND_AI_ACTIVE_REQUEST_RETRY_MS = 75;
 
 const INITIAL_STATE: PlaygroundAIClientState = {
 	sessionId: null,
@@ -87,9 +102,9 @@ const INITIAL_STATE: PlaygroundAIClientState = {
 let state = INITIAL_STATE;
 const subscribers = new Set<() => void>();
 let pendingSyncTimer: number | null = null;
-let pendingSyncPromise: Promise<void> | null = null;
+let pendingSyncPromise: Promise<PlaygroundAISyncResult> | null = null;
 let pendingSessionPromise: Promise<string> | null = null;
-let activeRequestCount = 0;
+let activeSharedRequestCount = 0;
 let pendingSyncEditor: Editor | null = null;
 let pendingSyncReason = "background";
 let latestRequestStartedAt = 0;
@@ -135,7 +150,7 @@ export function queuePlaygroundAISessionSync(editor: Editor, reason = "backgroun
 	pendingSyncReason = reason;
 	updateState({ hasPendingSync: syncState.revision > syncState.syncedRevision });
 
-	if (activeRequestCount > 0) {
+	if (activeSharedRequestCount > 0) {
 		return;
 	}
 
@@ -157,140 +172,204 @@ export async function flushPlaygroundAISessionSync(
 	reason = "manual",
 	signal?: AbortSignal,
 ): Promise<void> {
-	const syncState = getEditorSyncState(editor);
-	pendingSyncEditor = editor;
-	pendingSyncReason = reason;
+	for (let retryCount = 0; ; retryCount += 1) {
+		const syncState = getEditorSyncState(editor);
+		pendingSyncEditor = editor;
+		pendingSyncReason = reason;
 
-	if (pendingSyncTimer != null) {
-		window.clearTimeout(pendingSyncTimer);
-		pendingSyncTimer = null;
-	}
-
-	if (activeRequestCount > 0) {
-		updateState({ hasPendingSync: syncState.revision > syncState.syncedRevision });
-		return;
-	}
-
-	if (syncState.revision <= syncState.syncedRevision) {
-		updateState({ hasPendingSync: false });
-		return;
-	}
-
-	if (pendingSyncPromise) {
-		return pendingSyncPromise;
-	}
-
-	pendingSyncPromise = syncPlaygroundAISession(editor, signal).finally(() => {
-		pendingSyncPromise = null;
-		if (activeRequestCount === 0 && state.hasPendingSync && pendingSyncEditor) {
-			queuePlaygroundAISessionSync(pendingSyncEditor, pendingSyncReason);
+		if (pendingSyncTimer != null) {
+			window.clearTimeout(pendingSyncTimer);
+			pendingSyncTimer = null;
 		}
-	});
 
-	return pendingSyncPromise;
+		if (activeSharedRequestCount > 0) {
+			updateState({ hasPendingSync: syncState.revision > syncState.syncedRevision });
+			return;
+		}
+
+		if (syncState.revision <= syncState.syncedRevision) {
+			updateState({ hasPendingSync: false });
+			return;
+		}
+
+		if (pendingSyncPromise) {
+			const result = await pendingSyncPromise;
+			if (syncState.revision <= syncState.syncedRevision) {
+				updateState({ hasPendingSync: false });
+				return;
+			}
+			if (
+				result === "deferred" &&
+				reason === "request" &&
+				retryCount < PLAYGROUND_AI_ACTIVE_SYNC_RETRY_LIMIT
+			) {
+				await delayPlaygroundAIRequestRetry(
+					PLAYGROUND_AI_ACTIVE_SYNC_RETRY_MS,
+					signal,
+				);
+			}
+			continue;
+		}
+
+		pendingSyncPromise = syncPlaygroundAISession(editor, signal).finally(() => {
+			pendingSyncPromise = null;
+			if (
+				activeSharedRequestCount === 0 &&
+				state.hasPendingSync &&
+				pendingSyncEditor
+			) {
+				queuePlaygroundAISessionSync(pendingSyncEditor, pendingSyncReason);
+			}
+		});
+
+		const result = await pendingSyncPromise;
+		if (syncState.revision <= syncState.syncedRevision) {
+			updateState({ hasPendingSync: false });
+			return;
+		}
+		if (
+			result === "deferred" &&
+			reason === "request" &&
+			retryCount < PLAYGROUND_AI_ACTIVE_SYNC_RETRY_LIMIT
+		) {
+			await delayPlaygroundAIRequestRetry(
+				PLAYGROUND_AI_ACTIVE_SYNC_RETRY_MS,
+				signal,
+			);
+			continue;
+		}
+		return;
+	}
 }
 
 export async function requestPlaygroundAIResponse(
 	editor: Editor,
 	prompt: string,
 	signal?: AbortSignal,
-	options?: {
-		isolatedSession?: boolean;
-		requestMode?: string;
-	},
+	options?: PlaygroundAIRequestOptions,
 ): Promise<Response> {
-	const updateClientState = options?.isolatedSession !== true;
-	const sessionId = options?.isolatedSession
-		? await createPlaygroundAISession(signal, { persistToState: false })
-		: await ensurePlaygroundAISession(signal);
-	if (options?.isolatedSession) {
-		await syncPlaygroundAISessionWithId(sessionId, editor, signal, {
-			updateClientState: false,
-		});
-	} else {
-		await flushPlaygroundAISessionSync(editor, "request", signal);
-	}
-	logAutocompleteDebug("ai request starting", {
-		sessionId,
-		promptLength: prompt.length,
-		isolatedSession: options?.isolatedSession ?? false,
-	});
-
-	activeRequestCount += 1;
-	latestRequestStartedAt = performance.now();
-	if (updateClientState) {
-		updateState({
-			phase: "thinking",
-			lastError: null,
-			lastRequest: {
-				requestId: null,
-				sessionId,
-				requestMode: null,
-				requestModel: null,
-				contextFormat: null,
-				firstToolStartMs: null,
-				firstToolResultMs: null,
-				firstTextDeltaServerMs: null,
-				firstTextDeltaBrowserMs: null,
-				totalServerMs: null,
-				totalBrowserMs: null,
-				toolCallCount: 0,
-				toolExecutionMs: null,
-				contextBytesJson: null,
-				contextEstimatedTokensJson: null,
-			},
-		});
-	}
-
-	try {
-		const response = await fetch(PLAYGROUND_AI_ENDPOINT, {
-			method: "POST",
-			headers: {
-				"content-type": "application/json",
-			},
-			body: JSON.stringify({
-				sessionId,
-				prompt,
-				requestMode: options?.requestMode ?? null,
-			}),
-			signal,
-		});
-		logAutocompleteDebug("ai request response received", {
-			ok: response.ok,
-			status: response.status,
-			statusText: response.statusText,
-		});
-
-		if (!response.ok) {
-			const message = await readErrorMessage(response);
-			logAutocompleteDebug("ai request failed before stream", {
-				status: response.status,
-				message,
+	const behavior = resolvePlaygroundExecutionBehavior(options);
+	const sessionId = behavior.usesSharedSession
+		? await ensurePlaygroundAISession(signal)
+		: await createPlaygroundAISession(signal, { persistToState: false });
+	for (
+		let retryCount = 0;
+		;
+		retryCount += 1
+	) {
+		if (!behavior.usesSharedSession) {
+			await syncPlaygroundAISessionWithId(sessionId, editor, signal, {
+				updateClientState: false,
 			});
-			if (
-				options?.isolatedSession &&
-				response.status === 409 &&
-				message === PLAYGROUND_AI_ACTIVE_REQUEST_CONFLICT
-			) {
-				throw new Error(
-					"Autocomplete isolated session unexpectedly had an active AI request.",
-				);
-			}
-			throw new Error(message);
+		} else {
+			await flushPlaygroundAISessionSync(editor, "request", signal);
 		}
-
-		return response;
-	} catch (error) {
-		logAutocompleteDebug("ai request threw", {
-			error: error instanceof Error ? error.message : String(error),
+		logAutocompleteDebug("ai request starting", {
+			sessionId,
+			promptLength: prompt.length,
+			lane: behavior.lane,
+			isolatedSession: !behavior.usesSharedSession,
+			retryCount,
 		});
-		finishActiveRequest("error", { updateClientState });
-		if (updateClientState) {
+
+		if (behavior.usesSharedSession) {
+			activeSharedRequestCount += 1;
+			latestRequestStartedAt = performance.now();
+		}
+		if (behavior.updateClientState) {
 			updateState({
-				lastError: error instanceof Error ? error.message : String(error),
+				phase: "thinking",
+				lastError: null,
+				lastRequest: {
+					requestId: null,
+					sessionId,
+					requestMode: null,
+					requestModel: null,
+					contextFormat: null,
+					firstToolStartMs: null,
+					firstToolResultMs: null,
+					firstTextDeltaServerMs: null,
+					firstTextDeltaBrowserMs: null,
+					totalServerMs: null,
+					totalBrowserMs: null,
+					toolCallCount: 0,
+					toolExecutionMs: null,
+					contextBytesJson: null,
+					contextEstimatedTokensJson: null,
+				},
 			});
 		}
-		throw error;
+
+		try {
+			const response = await fetch(PLAYGROUND_AI_ENDPOINT, {
+				method: "POST",
+				headers: {
+					"content-type": "application/json",
+				},
+				body: JSON.stringify({
+					sessionId,
+					prompt,
+					requestMode: options?.requestMode ?? null,
+				}),
+				signal,
+			});
+			logAutocompleteDebug("ai request response received", {
+				ok: response.ok,
+				status: response.status,
+				statusText: response.statusText,
+				retryCount,
+			});
+
+			if (!response.ok) {
+				const message = await readErrorMessage(response);
+				logAutocompleteDebug("ai request failed before stream", {
+					status: response.status,
+					message,
+					retryCount,
+				});
+				if (
+					behavior.usesSharedSession &&
+					response.status === 409 &&
+					message === PLAYGROUND_AI_ACTIVE_REQUEST_CONFLICT &&
+					retryCount < PLAYGROUND_AI_ACTIVE_REQUEST_RETRY_LIMIT
+				) {
+					finishActiveRequest("complete", behavior);
+					logAutocompleteDebug("ai request retrying after active-request conflict", {
+						sessionId,
+						retryCount,
+					});
+					await delayPlaygroundAIRequestRetry(
+						PLAYGROUND_AI_ACTIVE_REQUEST_RETRY_MS,
+						signal,
+					);
+					continue;
+				}
+				if (
+					!behavior.usesSharedSession &&
+					response.status === 409 &&
+					message === PLAYGROUND_AI_ACTIVE_REQUEST_CONFLICT
+				) {
+					throw new Error(
+						`Isolated ${behavior.lane} request unexpectedly had an active AI request.`,
+					);
+				}
+				throw new Error(message);
+			}
+
+			return response;
+		} catch (error) {
+			logAutocompleteDebug("ai request threw", {
+				error: error instanceof Error ? error.message : String(error),
+				retryCount,
+			});
+			finishActiveRequest("error", behavior);
+			if (behavior.updateClientState) {
+				updateState({
+					lastError: error instanceof Error ? error.message : String(error),
+				});
+			}
+			throw error;
+		}
 	}
 }
 
@@ -298,19 +377,18 @@ export async function* streamPlaygroundAIResponse(
 	editor: Editor,
 	prompt: string,
 	signal?: AbortSignal,
-	options?: {
-		isolatedSession?: boolean;
-		requestMode?: string;
-	},
+	options?: PlaygroundAIRequestOptions,
 ): AsyncIterable<PlaygroundStreamChunk> {
-	const updateClientState = options?.isolatedSession !== true;
+	const behavior = resolvePlaygroundExecutionBehavior(options);
 	const response = await requestPlaygroundAIResponse(
 		editor,
 		prompt,
 		signal,
 		options,
 	);
-	let finishedRequest = false;
+	let terminalPhase: Extract<PlaygroundAIPhase, "complete" | "error"> | null =
+		null;
+	let terminalChunk: PlaygroundStreamChunk | null = null;
 	logAutocompleteDebug("ai stream opened");
 
 	if (!response.body) {
@@ -322,36 +400,53 @@ export async function* streamPlaygroundAIResponse(
 			type: "error",
 			error: message,
 		} satisfies PlaygroundStreamChunk;
-		if (updateClientState) {
+		if (behavior.updateClientState) {
 			applyPlaygroundAIChunk(chunk);
 		}
-		finishedRequest = true;
+		terminalPhase = "error";
 		yield chunk;
 		return;
 	}
 
 	try {
-		for await (const chunk of readPlaygroundAIStream(response.body)) {
+		for await (const chunk of readPlaygroundAIStream(response.body, signal)) {
 			logAutocompleteDebug("ai stream chunk received", {
 				type: chunk.type ?? "unknown",
 			});
-			if (updateClientState) {
-				applyPlaygroundAIChunk(chunk);
+			if (chunk.type === "done") {
+				if (behavior.updateClientState) {
+					applyPlaygroundAIChunk(chunk);
+				}
+				terminalPhase = "complete";
+				terminalChunk = chunk;
+				continue;
 			}
-			if (chunk.type === "done" || chunk.type === "error") {
-				finishedRequest = true;
+			if (chunk.type === "error") {
+				if (behavior.updateClientState) {
+					applyPlaygroundAIChunk(chunk);
+				}
+				terminalPhase = "error";
+				terminalChunk = chunk;
+				continue;
+			}
+			if (behavior.updateClientState) {
+				applyPlaygroundAIChunk(chunk);
 			}
 			yield chunk;
 		}
+		if (terminalChunk) {
+			yield terminalChunk;
+		}
 	} finally {
-		if (!finishedRequest) {
+		if (terminalPhase == null) {
 			logAutocompleteDebug("ai stream closed without terminal chunk", {
 				aborted: signal?.aborted ?? false,
 			});
-			finishActiveRequest(signal?.aborted ? "complete" : "error", {
-				updateClientState,
-			});
 		}
+		finishActiveRequest(
+			terminalPhase ?? (signal?.aborted ? "complete" : "error"),
+			behavior,
+		);
 	}
 }
 
@@ -447,12 +542,10 @@ export function applyPlaygroundAIChunk(
 	}
 
 	if (chunk.type === "done") {
-		finishActiveRequest("complete");
 		return;
 	}
 
 	if (chunk.type === "error") {
-		finishActiveRequest("error");
 		updateState({
 			lastError:
 				typeof chunk.error === "string"
@@ -466,15 +559,39 @@ export function applyPlaygroundAIChunk(
 
 export async function* readPlaygroundAIStream(
 	stream: ReadableStream<Uint8Array>,
+	signal?: AbortSignal,
 ): AsyncIterable<PlaygroundStreamChunk> {
 	const reader = stream.getReader();
 	const decoder = new TextDecoder();
 	let buffer = "";
+	let completed = false;
+	let cancelPromise: Promise<void> | null = null;
+
+	const cancelReader = () => {
+		if (cancelPromise) {
+			return cancelPromise;
+		}
+		cancelPromise = reader.cancel(signal?.reason).catch(() => { });
+		return cancelPromise;
+	};
+
+	const handleAbort = () => {
+		void cancelReader();
+	};
+
+	if (signal) {
+		if (signal.aborted) {
+			await cancelReader();
+		} else {
+			signal.addEventListener("abort", handleAbort, { once: true });
+		}
+	}
 
 	try {
 		while (true) {
 			const { done, value } = await reader.read();
 			if (done) {
+				completed = true;
 				break;
 			}
 
@@ -497,6 +614,10 @@ export async function* readPlaygroundAIStream(
 			yield JSON.parse(trailingLine) as PlaygroundStreamChunk;
 		}
 	} finally {
+		signal?.removeEventListener("abort", handleAbort);
+		if (!completed) {
+			await cancelReader();
+		}
 		reader.releaseLock();
 	}
 }
@@ -511,10 +632,10 @@ export function cancelQueuedPlaygroundAISessionSync(): void {
 async function syncPlaygroundAISession(
 	editor: Editor,
 	signal?: AbortSignal,
-): Promise<void> {
+): Promise<PlaygroundAISyncResult> {
 	const sessionId = await ensurePlaygroundAISession(signal);
 	try {
-		await syncPlaygroundAISessionWithId(sessionId, editor, signal, {
+		return await syncPlaygroundAISessionWithId(sessionId, editor, signal, {
 			updateClientState: true,
 		});
 	} catch (error) {
@@ -528,10 +649,9 @@ async function syncPlaygroundAISession(
 				lastError: null,
 			});
 			const nextSessionId = await ensurePlaygroundAISession(signal);
-			await syncPlaygroundAISessionWithId(nextSessionId, editor, signal, {
+			return await syncPlaygroundAISessionWithId(nextSessionId, editor, signal, {
 				updateClientState: true,
 			});
-			return;
 		}
 		throw error;
 	}
@@ -599,7 +719,7 @@ async function syncPlaygroundAISessionWithId(
 	options?: {
 		updateClientState?: boolean;
 	},
-): Promise<void> {
+): Promise<PlaygroundAISyncResult> {
 	const startedAt = performance.now();
 	const syncState = getEditorSyncState(editor);
 
@@ -632,12 +752,12 @@ async function syncPlaygroundAISessionWithId(
 			if (options?.updateClientState !== false) {
 				updateState({
 					syncStatus: "idle",
-					phase: activeRequestCount > 0 ? state.phase : "idle",
+					phase: activeSharedRequestCount > 0 ? state.phase : "idle",
 					hasPendingSync: true,
 					lastError: null,
 				});
 			}
-			return;
+			return "deferred";
 		}
 		if (options?.updateClientState !== false) {
 			updateState({
@@ -657,13 +777,14 @@ async function syncPlaygroundAISessionWithId(
 			sessionId:
 				typeof payload.sessionId === "string" ? payload.sessionId : state.sessionId,
 			syncStatus: "idle",
-			phase: activeRequestCount > 0 ? state.phase : "idle",
+			phase: activeSharedRequestCount > 0 ? state.phase : "idle",
 			lastSyncMs: performance.now() - startedAt,
 			lastSyncAt: Date.now(),
 			hasPendingSync: false,
 			lastError: null,
 		});
 	}
+	return "synced";
 }
 
 function getEditorSyncState(editor: Editor): {
@@ -682,16 +803,21 @@ function getEditorSyncState(editor: Editor): {
 	return initial;
 }
 
+type PlaygroundAISyncResult = "synced" | "deferred";
+
 function finishActiveRequest(
 	nextPhase: Extract<PlaygroundAIPhase, "complete" | "error">,
-	options?: {
-		updateClientState?: boolean;
+	behavior?: {
+		updateClientState: boolean;
+		usesSharedSession: boolean;
 	},
 ) {
-	activeRequestCount = Math.max(0, activeRequestCount - 1);
-	if (options?.updateClientState !== false) {
+	if (behavior?.usesSharedSession) {
+		activeSharedRequestCount = Math.max(0, activeSharedRequestCount - 1);
+	}
+	if (behavior?.updateClientState) {
 		updateState({
-			phase: activeRequestCount > 0 ? state.phase : "idle",
+			phase: activeSharedRequestCount > 0 ? state.phase : "idle",
 			lastRequest: {
 				...getLastRequest(),
 				totalBrowserMs: performance.now() - latestRequestStartedAt,
@@ -699,13 +825,32 @@ function finishActiveRequest(
 		});
 	}
 
-	if (activeRequestCount === 0 && state.hasPendingSync && pendingSyncEditor) {
+	if (
+		activeSharedRequestCount === 0 &&
+		state.hasPendingSync &&
+		pendingSyncEditor
+	) {
 		queuePlaygroundAISessionSync(pendingSyncEditor, pendingSyncReason);
 	}
 
-	if (nextPhase === "error" && options?.updateClientState !== false) {
+	if (nextPhase === "error" && behavior?.updateClientState) {
 		updateState({ phase: "error" });
 	}
+}
+
+function resolvePlaygroundExecutionBehavior(
+	options?: PlaygroundAIRequestOptions,
+): {
+	lane: PlaygroundExecutionLane;
+	updateClientState: boolean;
+	usesSharedSession: boolean;
+} {
+	const lane = options?.lane ?? "bottom-chat";
+	return {
+		lane,
+		updateClientState: lane === "bottom-chat",
+		usesSharedSession: lane === "bottom-chat",
+	};
 }
 
 function getLastRequest(): PlaygroundAIRequestMetrics {
@@ -763,6 +908,31 @@ function toPhase(value: unknown): PlaygroundAIPhase {
 		default:
 			return "idle";
 	}
+}
+
+async function delayPlaygroundAIRequestRetry(
+	delayMs: number,
+	signal?: AbortSignal,
+): Promise<void> {
+	if (delayMs <= 0) {
+		return;
+	}
+	await new Promise<void>((resolve, reject) => {
+		if (signal?.aborted) {
+			reject(signal.reason ?? new Error("The playground AI request was aborted."));
+			return;
+		}
+		const timeoutId = globalThis.setTimeout(() => {
+			signal?.removeEventListener("abort", handleAbort);
+			resolve();
+		}, delayMs);
+		function handleAbort() {
+			globalThis.clearTimeout(timeoutId);
+			signal?.removeEventListener("abort", handleAbort);
+			reject(signal?.reason ?? new Error("The playground AI request was aborted."));
+		}
+		signal?.addEventListener("abort", handleAbort, { once: true });
+	});
 }
 
 async function readErrorMessage(response: Response): Promise<string> {

@@ -9,7 +9,7 @@ export interface PlaygroundPromptContextEnvelope {
 
 export type PlaygroundRequestMode =
 	| "document-agent"
-	| "structured-planner"
+	| "structured-generation"
 	| "selection-fast"
 	| "inline-autocomplete";
 export type PlaygroundResolvedContextFormat = "json" | "none";
@@ -48,6 +48,8 @@ export interface PlaygroundPlannerConfig {
 const NEARBY_BLOCK_RADIUS = 2;
 const STRUCTURED_PLANNER_PROMPT_PREFIX =
 	"Produce a structured Pen document mutation plan.";
+const EXPLICIT_SELECTION_FAST_REQUEST_ERROR =
+	"Explicit selection-fast requests require a live or pinned text selection.";
 const utf8Encoder = new TextEncoder();
 
 export function buildPlaygroundRequestPlan(
@@ -56,22 +58,17 @@ export function buildPlaygroundRequestPlan(
 	config: PlaygroundPlannerConfig,
 	requestedMode: PlaygroundRequestMode | null = null,
 ): PlaygroundRequestPlan {
-	if (requestedMode === "inline-autocomplete") {
-		return buildInlineAutocompletePlanFromRequest(prompt, config);
+	const explicitPlan = buildExplicitRequestPlan(
+		editor,
+		prompt,
+		config,
+		requestedMode,
+	);
+	if (explicitPlan) {
+		return explicitPlan;
 	}
 	if (parseStructuredIntentRequestPrompt(prompt)) {
-		return {
-			mode: "structured-planner",
-			modelId: config.documentModel,
-			contextFormat: "none",
-			systemPrompt: config.structuredPlannerSystemPrompt,
-			prompt,
-			useTools: false,
-			temperature: undefined,
-			stopSequences: undefined,
-			promptContext: null,
-			selectedTextLength: null,
-		};
+		return buildStructuredGenerationPlan(prompt, config);
 	}
 
 	const inlineAutocompletePlan = buildInlineAutocompletePlan(prompt, config);
@@ -85,20 +82,64 @@ export function buildPlaygroundRequestPlan(
 	}
 
 	if (isStructuredPlannerPrompt(prompt)) {
-		return {
-			mode: "structured-planner",
-			modelId: config.documentModel,
-			contextFormat: "none",
-			systemPrompt: config.structuredPlannerSystemPrompt,
-			prompt,
-			useTools: false,
-			temperature: undefined,
-			stopSequences: undefined,
-			promptContext: null,
-			selectedTextLength: null,
-		};
+		return buildStructuredGenerationPlan(prompt, config);
 	}
 
+	return buildDocumentAgentPlan(editor, prompt, config);
+}
+
+function buildExplicitRequestPlan(
+	editor: Editor,
+	prompt: string,
+	config: PlaygroundPlannerConfig,
+	requestedMode: PlaygroundRequestMode | null,
+): PlaygroundRequestPlan | null {
+	if (requestedMode === "inline-autocomplete") {
+		return buildInlineAutocompletePlanFromRequest(prompt, config);
+	}
+	if (requestedMode === "selection-fast") {
+		const selectionFastPathPlan = buildSelectionFastPathPlan(
+			editor,
+			prompt,
+			config,
+		);
+		if (selectionFastPathPlan) {
+			return selectionFastPathPlan;
+		}
+		throw new Error(EXPLICIT_SELECTION_FAST_REQUEST_ERROR);
+	}
+	if (requestedMode === "structured-generation") {
+		return buildStructuredGenerationPlan(prompt, config);
+	}
+	if (requestedMode === "document-agent") {
+		return buildDocumentAgentPlan(editor, prompt, config);
+	}
+	return null;
+}
+
+function buildStructuredGenerationPlan(
+	prompt: string,
+	config: PlaygroundPlannerConfig,
+): PlaygroundRequestPlan {
+	return {
+		mode: "structured-generation",
+		modelId: config.documentModel,
+		contextFormat: "none",
+		systemPrompt: config.structuredPlannerSystemPrompt,
+		prompt,
+		useTools: false,
+		temperature: undefined,
+		stopSequences: undefined,
+		promptContext: null,
+		selectedTextLength: null,
+	};
+}
+
+function buildDocumentAgentPlan(
+	editor: Editor,
+	prompt: string,
+	config: PlaygroundPlannerConfig,
+): PlaygroundRequestPlan {
 	const promptContext = buildPromptContext(editor);
 	return {
 		mode: "document-agent",

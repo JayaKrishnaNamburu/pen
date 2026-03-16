@@ -675,7 +675,11 @@ export function AIContextualPromptComposer(
 	const latestTurnId = sessionTurns[sessionTurns.length - 1]?.id ?? null;
 
 	React.useLayoutEffect(() => {
-		if (!autoFocus || !session?.contextualPrompt?.composer.isOpen) {
+		if (
+			!autoFocus ||
+			!session?.contextualPrompt?.composer.isOpen ||
+			session.contextualPrompt.composer.openReason === "history"
+		) {
 			return;
 		}
 		let frameId = 0;
@@ -704,6 +708,7 @@ export function AIContextualPromptComposer(
 		};
 	}, [
 		autoFocus,
+		session?.contextualPrompt?.composer.openReason,
 		session?.contextualPrompt?.composer.isOpen,
 		session?.id,
 		sessionTurns.length,

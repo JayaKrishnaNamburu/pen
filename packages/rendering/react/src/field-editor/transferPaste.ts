@@ -70,6 +70,7 @@ export async function executePasteTransfer(
 		}
 	}
 
+	const plainText = dataTransfer.getData("text/plain");
 	const html = dataTransfer.getData("text/html");
 	if (html) {
 		const penMatch = html.match(/data-pen-blocks="([^"]*)"/);
@@ -101,13 +102,29 @@ export async function executePasteTransfer(
 		}
 
 		if (importers?.html) {
-			const handled = await applyParsedImporterPaste({
+			const htmlBlocks = await parseImportedBlocks(importers.html, html, editor);
+			let parsedBlocks = htmlBlocks;
+			let parsedSurface = "paste-html:parse";
+			if (
+				shouldPreferMarkdownParagraphPaste(htmlBlocks, plainText) &&
+				importers.markdown?.parse
+			) {
+				const markdownBlocks = await parseImportedBlocks(
+					importers.markdown,
+					plainText,
+					editor,
+				);
+				if (Array.isArray(markdownBlocks) && markdownBlocks.length > 1) {
+					parsedBlocks = markdownBlocks;
+					parsedSurface = "paste-markdown:parse";
+				}
+			}
+			const handled = applyParsedBlocksPaste({
 				editor,
 				fieldEditor,
-				importer: importers.html,
-				input: html,
+				blocks: parsedBlocks,
 				cursorBefore,
-				surface: "paste-html:parse",
+				surface: parsedSurface,
 				undoGroup: false,
 			});
 			if (handled) {
@@ -158,14 +175,13 @@ export async function executePasteTransfer(
 		});
 	}
 
-	const text = dataTransfer.getData("text/plain");
-	if (text) {
+	if (plainText) {
 		if (importers?.markdown) {
 			const handled = await applyParsedImporterPaste({
 				editor,
 				fieldEditor,
 				importer: importers.markdown,
-				input: text,
+				input: plainText,
 				cursorBefore,
 				surface: "paste-markdown:parse",
 				undoGroup: false,
@@ -179,7 +195,7 @@ export async function executePasteTransfer(
 				emptyBlockToRemove,
 			} = deleteSelectionForTransfer(editor, cursorBefore);
 			const blockCountBefore = editor.documentState.blockOrder.length;
-			importers.markdown.import(text, editor, {
+			importers.markdown.import(plainText, editor, {
 				position,
 				undoGroup: false,
 			});
@@ -195,7 +211,7 @@ export async function executePasteTransfer(
 			return true;
 		}
 		const { cursorAfter } = deleteSelectionForTransfer(editor, cursorBefore);
-		pasteInlineText(editor, fieldEditor, text, cursorAfter, {
+		pasteInlineText(editor, fieldEditor, plainText, cursorAfter, {
 			undoGroup: false,
 		});
 		return true;
@@ -263,7 +279,48 @@ async function applyParsedImporterPaste(options: {
 		return false;
 	}
 
+	const blocks = await parseImportedBlocks(importer, input, editor);
+	return applyParsedBlocksPaste({
+		editor,
+		fieldEditor,
+		blocks,
+		cursorBefore,
+		surface,
+		undoGroup,
+	});
+}
+
+async function parseImportedBlocks(
+	importer: {
+		parse?: (input: string, editor: Editor) => PendingBlock[] | Promise<PendingBlock[]>;
+	},
+	input: string,
+	editor: Editor,
+): Promise<PendingBlock[] | null> {
+	if (!importer.parse) {
+		return null;
+	}
+
 	const blocks = await importer.parse(input, editor);
+	return Array.isArray(blocks) ? blocks : null;
+}
+
+function applyParsedBlocksPaste(options: {
+	editor: Editor;
+	fieldEditor: FieldEditorTransferController;
+	blocks: PendingBlock[] | null;
+	cursorBefore: ReturnType<typeof getTransferCursorContext>;
+	surface: string;
+	undoGroup: boolean;
+}): boolean {
+	const {
+		editor,
+		fieldEditor,
+		blocks,
+		cursorBefore,
+		surface,
+		undoGroup,
+	} = options;
 	if (!Array.isArray(blocks) || blocks.length === 0) {
 		return false;
 	}
@@ -296,6 +353,31 @@ async function applyParsedImporterPaste(options: {
 	});
 	restoreCursorAfterParsedPaste(editor, fieldEditor, lastInsertedBlockId, lastBlock);
 	return true;
+}
+
+function shouldPreferMarkdownParagraphPaste(
+	htmlBlocks: PendingBlock[] | null,
+	plainText: string,
+): boolean {
+	if (!plainText.includes("\n\n")) {
+		return false;
+	}
+	if (!Array.isArray(htmlBlocks) || htmlBlocks.length !== 1) {
+		return false;
+	}
+
+	const [block] = htmlBlocks;
+	return (
+		block.type === "paragraph" &&
+		(block.marks?.length ?? 0) === 0 &&
+		(block.children?.length ?? 0) === 0 &&
+		block.database == null &&
+		normalizePastedText(block.content) === normalizePastedText(plainText)
+	);
+}
+
+function normalizePastedText(text: string | undefined): string {
+	return (text ?? "").replace(/\r\n?/g, "\n").trim();
 }
 
 function getLastTopLevelInsertedBlockId(ops: DocumentOp[]): string | null {

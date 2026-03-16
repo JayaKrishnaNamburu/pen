@@ -83,6 +83,7 @@ const NOOP_UNDO: UndoManager = {
 	canUndo: () => false,
 	canRedo: () => false,
 	stopCapturing: () => { },
+	syncExplicitUndoGroup: () => { },
 	setGroupTimeout: () => { },
 	registerTrackedOrigins: () => () => { },
 	onStackChange: () => () => { },
@@ -267,7 +268,9 @@ class EditorImpl implements Editor {
 			| UndoManager
 			| undefined;
 
-		if (options?.undoGroup) {
+		undo?.syncExplicitUndoGroup(options?.undoGroupId ?? null);
+
+		if (options?.undoGroup && !options?.undoGroupId) {
 			undo?.stopCapturing();
 		}
 

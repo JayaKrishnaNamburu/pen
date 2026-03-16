@@ -378,6 +378,109 @@ describe("@pen/react clipboard", () => {
 		editor.destroy();
 	});
 
+	it("prefers markdown paragraph parsing when HTML collapses blank-line text", async () => {
+		const editor = createEditor();
+		const emptyBlockId = editor.firstBlock()!.id;
+		const clipboardData = createClipboardData();
+		const fieldEditor = createFieldEditorStub();
+		const importers: PasteImporters = {
+			html: {
+				parse: vi.fn().mockReturnValue([
+					{ type: "paragraph", props: {}, content: "First paragraph.\n\nSecond paragraph." },
+				]),
+				import: vi.fn(),
+				name: "html",
+				mimeType: "text/html",
+			},
+			markdown: {
+				parse: vi.fn().mockReturnValue([
+					{ type: "paragraph", props: {}, content: "First paragraph." },
+					{ type: "paragraph", props: {}, content: "Second paragraph." },
+				]),
+				import: vi.fn(),
+				name: "markdown",
+				mimeType: "text/plain",
+			},
+		};
+
+		clipboardData.setData("text/html", "<span>First paragraph.<br><br>Second paragraph.</span>");
+		clipboardData.setData("text/plain", "First paragraph.\n\nSecond paragraph.");
+		editor.selectText(emptyBlockId, 0, 0);
+
+		handleClipboardPaste(
+			{ clipboardData } as ClipboardEvent,
+			editor,
+			fieldEditor,
+			importers,
+		);
+		await new Promise((resolve) => setTimeout(resolve, 0));
+
+		const blockOrder = editor.documentState.blockOrder;
+		expect(blockOrder).toHaveLength(2);
+		expect(editor.getBlock(blockOrder[0])?.textContent()).toBe("First paragraph.");
+		expect(editor.getBlock(blockOrder[1])?.textContent()).toBe("Second paragraph.");
+		expect(importers.html?.import).not.toHaveBeenCalled();
+		expect(importers.markdown?.parse).toHaveBeenCalledWith(
+			"First paragraph.\n\nSecond paragraph.",
+			editor,
+		);
+
+		editor.destroy();
+	});
+
+	it("keeps HTML paragraph parsing when inline marks are preserved", async () => {
+		const editor = createEditor();
+		const emptyBlockId = editor.firstBlock()!.id;
+		const clipboardData = createClipboardData();
+		const fieldEditor = createFieldEditorStub();
+		const importers: PasteImporters = {
+			html: {
+				parse: vi.fn().mockReturnValue([
+					{
+						type: "paragraph",
+						props: {},
+						content: "First paragraph.\n\nSecond paragraph.",
+						marks: [{ type: "bold", start: 0, end: 5 }],
+					},
+				]),
+				import: vi.fn(),
+				name: "html",
+				mimeType: "text/html",
+			},
+			markdown: {
+				parse: vi.fn().mockReturnValue([
+					{ type: "paragraph", props: {}, content: "First paragraph." },
+					{ type: "paragraph", props: {}, content: "Second paragraph." },
+				]),
+				import: vi.fn(),
+				name: "markdown",
+				mimeType: "text/plain",
+			},
+		};
+
+		clipboardData.setData("text/html", "<span><strong>First</strong> paragraph.<br><br>Second paragraph.</span>");
+		clipboardData.setData("text/plain", "First paragraph.\n\nSecond paragraph.");
+		editor.selectText(emptyBlockId, 0, 0);
+
+		handleClipboardPaste(
+			{ clipboardData } as ClipboardEvent,
+			editor,
+			fieldEditor,
+			importers,
+		);
+		await new Promise((resolve) => setTimeout(resolve, 0));
+
+		const block = editor.getBlock(editor.documentState.blockOrder[0]!)!;
+		expect(block.textDeltas()).toEqual([
+			{ insert: "First", attributes: { bold: true } },
+			{ insert: " paragraph.\n\nSecond paragraph." },
+		]);
+		expect(importers.markdown?.parse).not.toHaveBeenCalled();
+		expect(importers.html?.import).not.toHaveBeenCalled();
+
+		editor.destroy();
+	});
+
 	it("keeps an empty block when importer parse yields no blocks", async () => {
 		const editor = createEditor();
 		const emptyBlockId = editor.firstBlock()!.id;

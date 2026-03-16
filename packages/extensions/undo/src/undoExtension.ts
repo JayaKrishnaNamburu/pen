@@ -2,13 +2,18 @@ import type {
 	CRDTUndoStackItem,
 	Extension,
 	FieldEditor,
+	Editor,
 	HistoryAppliedEvent,
 	OpOrigin,
 	SelectionState,
+	UndoHistoryMetadataController,
+	UndoHistoryMetadataEntry,
+	UndoHistoryMetadataRestoreContext,
 } from "@pen/types";
 import {
 	defineExtension,
 	FIELD_EDITOR_SLOT_KEY,
+	UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY,
 	UNDO_HISTORY_RESTORE_SLOT_KEY,
 } from "@pen/types";
 import { UndoManagerImpl } from "./undoManager";
@@ -79,6 +84,7 @@ export interface UndoExtensionOptions {
  *   generic selectionChange path.
  */
 export function undoExtension(options?: UndoExtensionOptions): Extension {
+	let activeEditor: Editor | null = null;
 	let manager: UndoManagerImpl | null = null;
 	let unsubscribeStackItemAdded: (() => void) | null = null;
 	let unsubscribeStackItemUpdated: (() => void) | null = null;
@@ -92,6 +98,7 @@ export function undoExtension(options?: UndoExtensionOptions): Extension {
 		name: "undo",
 
 		activateClient: async (ctx) => {
+			activeEditor = ctx.editor;
 			const { adapter, crdtDoc } = ctx.editor.internals;
 
 			const crdtUndo = adapter.createUndoManager(crdtDoc, {
@@ -100,7 +107,63 @@ export function undoExtension(options?: UndoExtensionOptions): Extension {
 			});
 
 			let pendingReverseItem: CRDTUndoStackItem | null = null;
+			let activeUndoStackItem: CRDTUndoStackItem | null = null;
 			let afterCaptureVersion = 0;
+			const pendingMetadataEntries = new Map<
+				string,
+				UndoHistoryMetadataEntry<unknown>
+			>();
+			const metadataRestorers = new Map<
+				string,
+				(value: unknown | null, context: UndoHistoryMetadataRestoreContext) => void
+			>();
+			const trackedMetadataKeys = new Set<string>();
+			function flushPendingMetadata(stackItem: CRDTUndoStackItem) {
+				for (const [key, value] of pendingMetadataEntries) {
+					stackItem.setMeta(resolveHistoryMetadataKey(key), value);
+				}
+				pendingMetadataEntries.clear();
+			}
+			const historyMetadataController: UndoHistoryMetadataController = {
+				getCurrentEntryMetadata<T>(key: string): UndoHistoryMetadataEntry<T> | null {
+					if (activeUndoStackItem) {
+						return (
+							activeUndoStackItem.getMeta(resolveHistoryMetadataKey(key)) ?? null
+						) as UndoHistoryMetadataEntry<T> | null;
+					}
+					return (pendingMetadataEntries.get(key) ?? null) as
+						| UndoHistoryMetadataEntry<T>
+						| null;
+				},
+				setCurrentEntryMetadata(key, value) {
+					trackedMetadataKeys.add(key);
+					if (!activeUndoStackItem) {
+						pendingMetadataEntries.set(
+							key,
+							value as UndoHistoryMetadataEntry<unknown>,
+						);
+						return true;
+					}
+					activeUndoStackItem.setMeta(resolveHistoryMetadataKey(key), value);
+					return true;
+				},
+				registerMetadataRestorer(key, restore) {
+					trackedMetadataKeys.add(key);
+					metadataRestorers.set(
+						key,
+						restore as (
+							value: unknown | null,
+							context: UndoHistoryMetadataRestoreContext,
+						) => void,
+					);
+					return () => {
+						const currentRestore = metadataRestorers.get(key);
+						if (currentRestore === restore) {
+							metadataRestorers.delete(key);
+						}
+					};
+				},
+			};
 
 			function scheduleCursorAfterCapture(stackItem: CRDTUndoStackItem) {
 				const version = ++afterCaptureVersion;
@@ -111,11 +174,13 @@ export function undoExtension(options?: UndoExtensionOptions): Extension {
 			}
 
 			unsubscribeStackItemAdded =
-				crdtUndo.onStackItemAdded?.((stackItem) => {
+				crdtUndo.onStackItemAdded?.((stackItem, kind) => {
 					if (manager?._isHistoryOperation) {
 						pendingReverseItem = stackItem;
 					} else {
 						pendingReverseItem = null;
+						activeUndoStackItem = stackItem;
+						flushPendingMetadata(stackItem);
 						stackItem.setMeta(
 							CURSOR_BEFORE_KEY,
 							captureCursor(ctx.editor),
@@ -125,8 +190,10 @@ export function undoExtension(options?: UndoExtensionOptions): Extension {
 				}) ?? null;
 
 			unsubscribeStackItemUpdated =
-				crdtUndo.onStackItemUpdated?.((stackItem) => {
+				crdtUndo.onStackItemUpdated?.((stackItem, kind) => {
 					if (!manager?._isHistoryOperation) {
+						activeUndoStackItem = stackItem;
+						flushPendingMetadata(stackItem);
 						scheduleCursorAfterCapture(stackItem);
 					}
 				}) ?? null;
@@ -144,11 +211,17 @@ export function undoExtension(options?: UndoExtensionOptions): Extension {
 							CURSOR_AFTER_KEY,
 							poppedMeta.after,
 						);
+						copyHistoryMetadata(
+							stackItem,
+							pendingReverseItem,
+							trackedMetadataKeys,
+						);
 						pendingReverseItem = null;
 					}
 
 					const cursor =
 						kind === "undo" ? poppedMeta.before : poppedMeta.after;
+					activeUndoStackItem = null;
 					ctx.editor.internals.setSlot(
 						UNDO_HISTORY_RESTORE_SLOT_KEY,
 						true,
@@ -157,13 +230,30 @@ export function undoExtension(options?: UndoExtensionOptions): Extension {
 						if (cursor) {
 							restoreSelection(ctx.editor, cursor.selection);
 						}
+						const requestId = ++historyRestoreRequestId;
+						for (const [key, restore] of metadataRestorers) {
+							const metadata =
+								stackItem.getMeta<UndoHistoryMetadataEntry<unknown>>(
+									resolveHistoryMetadataKey(key),
+								);
+							const value = metadata
+								? kind === "undo"
+									? metadata.before
+									: metadata.after
+								: null;
+							restore(value, {
+								editor: ctx.editor,
+								direction: kind,
+								requestId,
+							});
+						}
 
 						const historyApplied: HistoryAppliedEvent = {
 							kind,
 							selection: ctx.editor.selection,
 							focusBlockId:
 								cursor?.focusBlockId ?? captureFocusBlockId(ctx.editor),
-							requestId: ++historyRestoreRequestId,
+							requestId,
 						};
 						ctx.editor.internals.emit("historyApplied", historyApplied);
 					} finally {
@@ -175,20 +265,33 @@ export function undoExtension(options?: UndoExtensionOptions): Extension {
 				}) ?? null;
 
 			manager = new UndoManagerImpl(crdtUndo, trackedOrigins);
-			if (options?.groupTimeout !== undefined) {
-				manager.setGroupTimeout(options.groupTimeout);
-			}
+			manager._onCaptureBoundary = () => {
+				activeUndoStackItem = null;
+			};
+			manager.setGroupTimeout(options?.groupTimeout ?? 400);
 
+			ctx.editor.internals.setSlot(
+				UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY,
+				historyMetadataController,
+			);
 			ctx.editor.internals.setSlot("undo:manager", manager);
 		},
 
 		deactivateClient: async () => {
+			activeEditor?.internals.setSlot(
+				UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY,
+				null,
+			);
+			activeEditor = null;
 			unsubscribeStackItemAdded?.();
 			unsubscribeStackItemAdded = null;
 			unsubscribeStackItemUpdated?.();
 			unsubscribeStackItemUpdated = null;
 			unsubscribeStackItemPopped?.();
 			unsubscribeStackItemPopped = null;
+			if (manager) {
+				manager._onCaptureBoundary = null;
+			}
 			manager?.destroy();
 			manager = null;
 		},
@@ -216,6 +319,7 @@ const DEFAULT_TRACKED_ORIGINS: OpOrigin[] = [
 ];
 const CURSOR_BEFORE_KEY = "pen:cursor-before";
 const CURSOR_AFTER_KEY = "pen:cursor-after";
+const HISTORY_METADATA_PREFIX = "pen:history-metadata:";
 
 // ── Cursor snapshot types ────────────────────────────────────
 
@@ -336,4 +440,24 @@ function readCursorMeta(stackItem: {
 		before: stackItem.getMeta<CursorSnapshot>(CURSOR_BEFORE_KEY) ?? null,
 		after: stackItem.getMeta<CursorSnapshot>(CURSOR_AFTER_KEY) ?? null,
 	};
+}
+
+function resolveHistoryMetadataKey(key: string): string {
+	return `${HISTORY_METADATA_PREFIX}${key}`;
+}
+
+function copyHistoryMetadata(
+	source: CRDTUndoStackItem,
+	target: CRDTUndoStackItem,
+	keys: Iterable<string>,
+): void {
+	for (const key of keys) {
+		const metadata = source.getMeta<UndoHistoryMetadataEntry<unknown>>(
+			resolveHistoryMetadataKey(key),
+		);
+		if (metadata === undefined) {
+			continue;
+		}
+		target.setMeta(resolveHistoryMetadataKey(key), metadata);
+	}
 }
