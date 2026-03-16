@@ -27,9 +27,9 @@ export function usePlaygroundAISession(editor: Editor | null): void {
 		};
 
 		const unsubscribeEditorEvents = [
-			editor.on("change", scheduleSync),
-			editor.on("documentCommit", scheduleSync),
-			editor.on("selectionChange", scheduleSync),
+			editor.onDocumentCommit((event) => {
+				scheduleSync();
+			}),
 		];
 
 		return () => {

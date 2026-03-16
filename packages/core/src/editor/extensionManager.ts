@@ -21,6 +21,26 @@ export class ExtensionManagerImpl {
 		this._emitter = emitter;
 	}
 
+	private _emitLifecycleDiagnostic(
+		code: string,
+		ext: Extension,
+		phase: "activation" | "deactivation",
+		error: unknown,
+	): void {
+		this._emitter.emit("diagnostic", {
+			code,
+			level: "error",
+			source: "extension",
+			message: `Extension "${ext.name}" ${phase} failed`,
+			remediation:
+				phase === "activation"
+					? `Fix the "${ext.name}" activateClient() implementation so rejected async startup does not leave the editor in a partial state.`
+					: `Fix the "${ext.name}" deactivateClient() implementation so rejected async teardown does not leave stale extension resources behind.`,
+			error,
+			extension: ext.name,
+		});
+	}
+
 	// ── Registration ─────────────────────────────────────────
 
 	register(ext: Extension): void {
@@ -71,7 +91,16 @@ export class ExtensionManagerImpl {
 							this._stateMap.get(name) as T | undefined,
 					});
 					if (activation && typeof activation.then === "function") {
-						pending.push(activation);
+						pending.push(
+							activation.catch((error) => {
+								this._emitLifecycleDiagnostic(
+									"PEN_EXT_004",
+									ext,
+									"activation",
+									error,
+								);
+							}),
+						);
 					}
 				}
 				if (ext.state) {
@@ -101,7 +130,16 @@ export class ExtensionManagerImpl {
 						deactivation &&
 						typeof deactivation.then === "function"
 					) {
-						pending.push(deactivation);
+						pending.push(
+							deactivation.catch((error) => {
+								this._emitLifecycleDiagnostic(
+									"PEN_EXT_005",
+									ext,
+									"deactivation",
+									error,
+								);
+							}),
+						);
 					}
 				}
 			} catch (err) {

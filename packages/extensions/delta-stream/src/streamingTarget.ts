@@ -23,6 +23,8 @@ interface DeferredSchemaEngine {
 	undeferBlock(blockId: string): void;
 }
 
+const DEFAULT_STREAM_BATCH_INTERVAL_MS = 50;
+
 function createPlaceholderRange(blockId: string): DocumentRange {
 	return {
 		start: { blockId, offset: 0 },
@@ -73,13 +75,19 @@ function createPlaceholderRange(blockId: string): DocumentRange {
 export class StreamingTargetImpl implements StreamingTarget {
 	private readonly _editor: Editor;
 	private readonly _engine: DeferredSchemaEngine;
+	private readonly _batchInterval: number;
 	private _buffer: BatchingBuffer | null = null;
 	private _zone: GenerationZone | null = null;
 	private _blockId: string | null = null;
 
-	constructor(editor: Editor, engine: DeferredSchemaEngine) {
+	constructor(
+		editor: Editor,
+		engine: DeferredSchemaEngine,
+		batchInterval = DEFAULT_STREAM_BATCH_INTERVAL_MS,
+	) {
 		this._editor = editor;
 		this._engine = engine;
+		this._batchInterval = batchInterval;
 	}
 
 	get generationZone(): GenerationZone | null {
@@ -101,7 +109,7 @@ export class StreamingTargetImpl implements StreamingTarget {
 
 		this._buffer = new BatchingBuffer(
 			(text) => this._flushToYText(text),
-			50,
+			this._batchInterval,
 		);
 
 		// Set awareness streaming state

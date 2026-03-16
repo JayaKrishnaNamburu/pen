@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
 
+import {
+  applyYjsAwarenessUpdate,
+  encodeYjsAwarenessUpdate,
+} from "../index";
 import { yjsAdapter } from "../adapter";
 import { createYjsDocument } from "../document";
 import { createYjsAwareness } from "../awareness";
@@ -68,5 +72,30 @@ describe("awareness", () => {
     const postDestroy: unknown[] = [];
     awareness.on("change", (e) => postDestroy.push(e));
     expect(postDestroy).toHaveLength(0);
+  });
+
+  it("encodes and applies awareness updates across instances", () => {
+    const sourceDoc = createYjsDocument(adapter);
+    const targetDoc = createYjsDocument(adapter);
+    const sourceAwareness = createYjsAwareness(sourceDoc);
+    const targetAwareness = createYjsAwareness(targetDoc);
+
+    sourceAwareness.setLocalState({
+      user: { id: "u1", name: "Ada" },
+      cursor: { blockId: "b1", offset: 2 },
+    });
+    const update = encodeYjsAwarenessUpdate(
+      sourceAwareness,
+      Array.from(sourceAwareness.getStates().keys()),
+    );
+
+    applyYjsAwarenessUpdate(targetAwareness, update);
+
+    expect(Array.from(targetAwareness.getStates().values())).toContainEqual(
+      expect.objectContaining({
+        user: { id: "u1", name: "Ada" },
+        cursor: { blockId: "b1", offset: 2 },
+      }),
+    );
   });
 });

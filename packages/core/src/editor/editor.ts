@@ -12,6 +12,7 @@ import type {
 	Awareness,
 	DocumentSession,
 	DocumentScope,
+	DocumentScopeReplacementEvent,
 	DocumentProfile,
 	Extension,
 	DocumentOp,
@@ -31,6 +32,7 @@ import type {
 	EditorViewMode,
 } from "@pen/types";
 import {
+	AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY,
 	COLLECT_KEY_BINDINGS_SLOT_KEY,
 	usesInlineTextSelection,
 } from "@pen/types";
@@ -114,6 +116,8 @@ class EditorImpl implements Editor {
 	private readonly _blockRevisions = new Map<string, number>();
 	private _decorations: DecorationSet;
 	private readonly _viewId = crypto.randomUUID();
+	private _extensionLifecycle: Promise<void> = Promise.resolve();
+	private _isDestroyed = false;
 
 	readonly undoManager: UndoManager;
 
@@ -179,7 +183,7 @@ class EditorImpl implements Editor {
 		this._refreshCoreSlots();
 
 		this._wireObservation();
-		this._activateExtensions();
+		this._extensionLifecycle = this._activateExtensions();
 		this._ensureInitialParagraph();
 
 		this._engine.normalizeAll();
@@ -278,43 +282,24 @@ class EditorImpl implements Editor {
 	}
 
 	loadDocument(doc: CRDTDocument): void {
-		void this._extensions.deactivateAll(this);
-		this._teardownObservation();
-		this._releaseSession?.();
-		this._releaseSession = null;
-		this._bindSession(
-			createDocumentSession({
-				adapter: this._adapter,
-				document: doc,
-				destroyWhenIdle: true,
-				ownsDocuments: false,
-			}),
-		);
-		this._documentProfile = this._resolveDocumentProfile();
-		this._editorViewMode =
-			this._explicitEditorViewMode ?? this._documentProfile;
-		this._clientId = this._adapter.getClientId(this._crdtDoc);
-
-		this._engine = new SchemaEngineImpl(
-			this._registry,
-			this._doc,
-			this._crdtDoc,
-		);
-		this._selection.updateDocument(this._doc, this._crdtDoc);
-		this._pipeline.updateDocument(this._doc, this._crdtDoc, this._engine);
-		this._documentState.updateDocument(
-			this._doc,
-			this._crdtDoc,
-			this._documentProfile,
-		);
-		this._pipeline._init((event) => {
-			this._dispatchCRDTEvent(event);
+		this._queueExtensionLifecycle(async () => {
+			await this._extensions.deactivateAll(this);
+			if (this._isDestroyed) {
+				return;
+			}
+			this._teardownObservation();
+			this._releaseSession?.();
+			this._releaseSession = null;
+			this._bindSession(
+				createDocumentSession({
+					adapter: this._adapter,
+					document: doc,
+					destroyWhenIdle: true,
+					ownsDocuments: false,
+				}),
+			);
+			await this._rebindActiveScope();
 		});
-		this._refreshCoreSlots();
-
-		this._wireObservation();
-		this._activateExtensions();
-		this._engine.normalizeAll();
 	}
 
 	onBeforeApply(
@@ -695,11 +680,17 @@ class EditorImpl implements Editor {
 	// ── Destroy ──────────────────────────────────────────────
 
 	destroy(): void {
-		void this._extensions.deactivateAll(this);
-		this._teardownObservation();
-		this._releaseSession?.();
-		this._releaseSession = null;
-		this._emitter.removeAllListeners();
+		if (this._isDestroyed) {
+			return;
+		}
+		this._isDestroyed = true;
+		this._queueExtensionLifecycle(async () => {
+			await this._extensions.deactivateAll(this);
+			this._teardownObservation();
+			this._releaseSession?.();
+			this._releaseSession = null;
+			this._emitter.removeAllListeners();
+		});
 	}
 
 	// ── Private ──────────────────────────────────────────────
@@ -792,12 +783,28 @@ class EditorImpl implements Editor {
 	private _refreshCoreSlots(): void {
 		this._slots.set("core:engine", this._engine);
 		this._slots.set(
+			AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY,
+			() => this._extensionLifecycle,
+		);
+		this._slots.set(
 			COLLECT_KEY_BINDINGS_SLOT_KEY,
 			(registry: SchemaRegistry) => this._extensions.collectKeyBindings(registry),
 		);
 	}
 
 	private _bindSession(
+		session: DocumentSession,
+		scopeId?: string,
+	): void {
+		this._bindScope(session, scopeId);
+		this._releaseSession = session.attachEditor({
+			onScopeReplaced: (event) => {
+				this._handleScopeReplacement(session, event);
+			},
+		});
+	}
+
+	private _bindScope(
 		session: DocumentSession,
 		scopeId?: string,
 	): void {
@@ -808,15 +815,24 @@ class EditorImpl implements Editor {
 		this._crdtDoc = scope.doc;
 		this._doc = this._createPenDocument(scope.doc);
 		this._awareness = session.getAwareness(scope.id);
-		if (
-			"attachEditor" in session &&
-			typeof (session as { attachEditor?: () => Unsubscribe }).attachEditor ===
-			"function"
-		) {
-			this._releaseSession = (
-				session as { attachEditor: () => Unsubscribe }
-			).attachEditor();
+	}
+
+	private _handleScopeReplacement(
+		session: DocumentSession,
+		event: DocumentScopeReplacementEvent,
+	): void {
+		if (event.previousScope.id !== this._documentScope.id) {
+			return;
 		}
+		this._queueExtensionLifecycle(async () => {
+			await this._extensions.deactivateAll(this);
+			if (this._isDestroyed) {
+				return;
+			}
+			this._teardownObservation();
+			this._bindScope(session, event.scope.id);
+			await this._rebindActiveScope();
+		});
 	}
 
 	private _resolveDocumentProfile(
@@ -831,6 +847,34 @@ class EditorImpl implements Editor {
 		return resolvedProfile;
 	}
 
+	private async _rebindActiveScope(): Promise<void> {
+		this._documentProfile = this._resolveDocumentProfile();
+		this._editorViewMode =
+			this._explicitEditorViewMode ?? this._documentProfile;
+		this._clientId = this._adapter.getClientId(this._crdtDoc);
+
+		this._engine = new SchemaEngineImpl(
+			this._registry,
+			this._doc,
+			this._crdtDoc,
+		);
+		this._selection.updateDocument(this._doc, this._crdtDoc);
+		this._pipeline.updateDocument(this._doc, this._crdtDoc, this._engine);
+		this._documentState.updateDocument(
+			this._doc,
+			this._crdtDoc,
+			this._documentProfile,
+		);
+		this._pipeline._init((event) => {
+			this._dispatchCRDTEvent(event);
+		});
+		this._refreshCoreSlots();
+
+		this._wireObservation();
+		await this._activateExtensions();
+		this._engine.normalizeAll();
+	}
+
 	private _refreshUndoManager(): void {
 		const slotUndo = this._slots.get("undo:manager") as
 			| UndoManager
@@ -839,12 +883,34 @@ class EditorImpl implements Editor {
 			slotUndo ?? NOOP_UNDO;
 	}
 
-	private _activateExtensions(): void {
+	private async _activateExtensions(): Promise<void> {
 		const activation = this._extensions.activateAll(this);
 		this._refreshUndoManager();
-		void activation.then(() => {
-			this._refreshUndoManager();
-		});
+		await activation;
+		this._refreshUndoManager();
+	}
+
+	private _queueExtensionLifecycle(task: () => Promise<void>): void {
+		const runTask = async (): Promise<void> => {
+			try {
+				await task();
+			} catch (error) {
+				if (this._isDestroyed) {
+					return;
+				}
+				this._emitter.emit("diagnostic", {
+					code: "PEN_EXT_006",
+					level: "error",
+					source: "extension",
+					message: "Editor extension lifecycle transition failed",
+					remediation:
+						"Inspect async extension activate/deactivate hooks involved in document reload or scope replacement and ensure they resolve safely.",
+					error,
+				});
+			}
+		};
+
+		this._extensionLifecycle = this._extensionLifecycle.then(runTask, runTask);
 	}
 
 	private _ensureInitialParagraph(): void {

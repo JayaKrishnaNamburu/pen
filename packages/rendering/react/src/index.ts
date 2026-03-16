@@ -21,6 +21,7 @@ export {
 	EditorContent,
 	EditorBlock,
 	InlineContent,
+	EditorCaretOverlay,
 	EditorBlockHandle,
 	EditorDragOverlay,
 	EditorRegionSelector,
@@ -30,6 +31,8 @@ export {
 	type EditorContentProps,
 	type EditorBlockProps,
 	type InlineContentProps,
+	type EditorCaretOverlayProps,
+	type EditorCaretRenderProps,
 	type BlockHandleProps,
 	type DragOverlayProps,
 	type RegionSelectorProps,
@@ -144,6 +147,15 @@ export {
 	type AIInlineSessionProps,
 	type AIInlineSessionActionsProps,
 } from "./primitives/ai/index";
+export {
+	MultiplayerPresenceList,
+	MultiplayerRemoteCursors,
+	MultiplayerCaretOverlay,
+	type MultiplayerPresenceListProps,
+	type MultiplayerCaretOverlayProps,
+	type MultiplayerCaretRenderProps,
+	type MultiplayerRemoteCursorsProps,
+} from "./primitives/multiplayer/index";
 
 // ── Hooks ───────────────────────────────────────────────────
 export {
@@ -160,8 +172,13 @@ export {
 	useContextualPromptPlacement,
 	useAIActions,
 	useAISessionActions,
+	useAttribution,
 	useEditor,
 	useFieldEditor,
+	useHistory,
+	useMultiplayer,
+	useRemoteCursors,
+	useRemoteSelections,
 	useSelection,
 	useDecorations,
 	useGeneration,
@@ -178,6 +195,7 @@ export {
 	type AIDebugLogEntry,
 	type AIDebugLogFastApplyMetrics,
 	type AIDebugLogState,
+	type AttributionState,
 	type AIStructuredPreviewSelection,
 	type AIStructuredTargetPreviewSelection,
 	type ContextualPromptMode,
@@ -311,5 +329,16 @@ export type {
 	FieldEditor,
 	InputBackend,
 } from "@pen/types";
+
+export type {
+	BlameRange,
+	CharacterAttribution,
+	HistoryState,
+} from "@pen/history";
+export type { MultiplayerState, PeerState } from "@pen/multiplayer";
+export type {
+	RemoteCursorState,
+	RemoteSelectionState,
+} from "@pen/multiplayer";
 
 export type { CreateEditorOptions } from "@pen/types";

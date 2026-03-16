@@ -77,6 +77,106 @@
   color: var(--text);
 }
 
+.toolbar-collaboration {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 0 10px;
+  height: 30px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 92%, var(--bg) 8%);
+}
+
+.toolbar-collaboration-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.toolbar-collaboration-status,
+.toolbar-collaboration-room,
+.toolbar-collaboration-self,
+.toolbar-collaboration-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.toolbar-collaboration-status {
+  color: var(--text);
+}
+
+.toolbar-collaboration-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.toolbar-collaboration-status[data-tone="success"] {
+  color: #16a34a;
+}
+
+.toolbar-collaboration-status[data-tone="active"] {
+  color: #2563eb;
+}
+
+.toolbar-collaboration-status[data-tone="pending"] {
+  color: #d97706;
+}
+
+.toolbar-collaboration-status[data-tone="danger"] {
+  color: #dc2626;
+}
+
+.toolbar-collaboration-status[data-tone="muted"] {
+  color: var(--text-muted);
+}
+
+.toolbar-collaboration-room,
+.toolbar-collaboration-self,
+.toolbar-collaboration-count {
+  color: var(--text-muted);
+}
+
+.toolbar-collaboration-peers {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.toolbar-collaboration-peers [data-pen-multiplayer-presence-list] {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.toolbar-collaboration-avatar,
+.toolbar-collaboration-peers [data-pen-multiplayer-presence-overflow] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.toolbar-collaboration-peers [data-pen-multiplayer-presence-overflow] {
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  color: var(--text);
+}
+
 .toolbar-right {
   display: flex;
   align-items: center;

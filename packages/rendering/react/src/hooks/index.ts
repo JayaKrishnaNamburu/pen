@@ -18,6 +18,7 @@ export {
 	type UseContextualPromptPlacementOptions,
 } from "../primitives/ai/contextualPrompt";
 export { useAIStreamEvents } from "./useAIStreamEvents";
+export { useAttribution, type AttributionState } from "./useAttribution";
 export {
 	useAIStructuredPreview,
 	useActiveAIStructuredPreview,
@@ -29,6 +30,10 @@ export {
 export { useAIActions } from "./useAIActions";
 export { useAISessionActions } from "./useAISessionActions";
 export { useFieldEditor } from "./useFieldEditor";
+export { useHistory } from "./useHistory";
+export { useMultiplayer } from "./useMultiplayer";
+export { useRemoteCursors } from "./useRemoteCursors";
+export { useRemoteSelections } from "./useRemoteSelections";
 export { useSelection } from "./useSelection";
 export { useDecorations } from "./useDecorations";
 export { useGeneration } from "./useGeneration";

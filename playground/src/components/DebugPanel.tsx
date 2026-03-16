@@ -8,12 +8,20 @@ import { usePlaygroundAIState } from "../hooks/usePlaygroundAISession";
 type DebugPanelProps = {
 	editor: Editor;
 	sessionId?: string;
+	autocompleteEnabled?: boolean;
+	customCaretEnabled?: boolean;
+	onAutocompleteEnabledChange?: (enabled: boolean) => void;
+	onCustomCaretEnabledChange?: (enabled: boolean) => void;
 	variant?: "sidebar" | "dock";
 };
 
 export function DebugPanel({
 	editor,
 	sessionId,
+	autocompleteEnabled = true,
+	customCaretEnabled = false,
+	onAutocompleteEnabledChange,
+	onCustomCaretEnabledChange,
 	variant = "sidebar",
 }: DebugPanelProps) {
 	const debugLog = useAIDebugLog(editor, { sessionId });
@@ -105,6 +113,35 @@ export function DebugPanel({
 			<span className="playground-debug-metric-value">{item.value}</span>
 		</div>
 	));
+	const debugControlRows = [];
+	if (onAutocompleteEnabledChange) {
+		debugControlRows.push(
+			<label className="playground-debug-toggle-row" key="autocomplete">
+				<span>Autocomplete</span>
+				<input
+					type="checkbox"
+					checked={autocompleteEnabled}
+					onChange={(event) =>
+						onAutocompleteEnabledChange(event.target.checked)
+					}
+				/>
+			</label>,
+		);
+	}
+	if (onCustomCaretEnabledChange) {
+		debugControlRows.push(
+			<label className="playground-debug-toggle-row" key="custom-caret">
+				<span>Custom caret</span>
+				<input
+					type="checkbox"
+					checked={customCaretEnabled}
+					onChange={(event) =>
+						onCustomCaretEnabledChange(event.target.checked)
+					}
+				/>
+			</label>,
+		);
+	}
 
 	useEffect(() => {
 		const latestEntry = debugLog.entries[debugLog.entries.length - 1];
@@ -135,6 +172,16 @@ export function DebugPanel({
 			data-variant={variant}
 		>
 			<div className="playground-debug-panel">
+				{debugControlRows.length > 0 ? (
+					<div className="playground-debug-section">
+						<div className="playground-debug-section-header">
+							<h4>Controls</h4>
+						</div>
+						<div className="playground-debug-controls">
+							{debugControlRows}
+						</div>
+					</div>
+				) : null}
 				<div className="playground-debug-section">
 					<div className="playground-debug-section-header">
 						<h4>Debug</h4>

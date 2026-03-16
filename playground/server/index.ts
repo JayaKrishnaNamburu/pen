@@ -1,9 +1,12 @@
 import { anthropic } from "@ai-sdk/anthropic";
+import { docs as collaborationDocs, setupWSConnection } from "@y/websocket-server/utils";
 import { jsonSchema, Output, stepCountIs, streamText, tool } from "ai";
 import { config as loadEnv } from "dotenv";
 import { randomUUID } from "node:crypto";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
+import type { Duplex } from "node:stream";
 import { fileURLToPath } from "node:url";
+import { WebSocketServer, type WebSocket } from "ws";
 import { createEditor } from "@pen/core";
 import {
 	buildPlaygroundRequestPlan as buildSharedPlaygroundRequestPlan,
@@ -28,9 +31,14 @@ import { defaultPreset } from "@pen/preset-default";
 import { createDefaultSchema } from "@pen/schema-default";
 import type {
 	Editor,
-	TableColumnSchema,
 	ToolRuntime,
 } from "@pen/types";
+import {
+	parseSerializedEditorState,
+	type SerializedBlock,
+	type SerializedEditorState,
+	type SerializedSelection,
+} from "./utils/sessionSyncValidation";
 
 loadEnv({
 	path: fileURLToPath(new URL("../.env.local", import.meta.url)),
@@ -38,6 +46,8 @@ loadEnv({
 
 const PLAYGROUND_SERVER_HOST = process.env.PLAYGROUND_AI_HOST ?? "127.0.0.1";
 const PLAYGROUND_SERVER_PORT = Number(process.env.PLAYGROUND_AI_PORT ?? "8787");
+const PLAYGROUND_COLLAB_ROUTE_PREFIX = "/collaboration";
+const PLAYGROUND_COLLAB_DEFAULT_DOC_NAME = "pen-playground";
 const PLAYGROUND_DOCUMENT_MODEL = normalizePlaygroundModelName(
 	process.env.PLAYGROUND_AI_MODEL,
 );
@@ -78,71 +88,6 @@ const PLAYGROUND_DIRECT_TOOL_NAMES = new Set([
 	"search_document",
 	"list_block_types",
 ]);
-
-interface SerializedTableCell {
-	id: string;
-	row: number;
-	col: number;
-	text: string;
-}
-
-interface SerializedTableRow {
-	id: string;
-	index: number;
-	cells: SerializedTableCell[];
-}
-
-interface SerializedTableColumn extends TableColumnSchema {
-	[key: string]: unknown;
-}
-
-interface SerializedTableContent {
-	columnCount: number;
-	rowCount: number;
-	columns: readonly SerializedTableColumn[];
-	rows: SerializedTableRow[];
-}
-
-interface SerializedBlock {
-	id: string;
-	type: string;
-	props: Record<string, unknown>;
-	text: string;
-	children?: SerializedBlock[];
-	table?: SerializedTableContent;
-}
-
-type SerializedSelection =
-	| {
-		type: "text";
-		blockId: string;
-		anchor: number;
-		focus: number;
-		collapsed: boolean;
-		isMultiBlock: boolean;
-	}
-	| {
-		type: "block";
-		blockIds: string[];
-	}
-	| {
-		type: "cell";
-		blockId: string;
-		anchor: { row: number; col: number };
-		head: { row: number; col: number };
-	}
-	| {
-		type: "app";
-		appId: string;
-	}
-	| null;
-
-interface SerializedEditorState {
-	blockCount: number;
-	selection: SerializedSelection;
-	fieldEditor: unknown;
-	blocks: SerializedBlock[];
-}
 
 interface AIRequestBody {
 	prompt?: unknown;
@@ -229,13 +174,23 @@ const sessionCleanupTimer = setInterval(
 	PLAYGROUND_SESSION_CLEANUP_INTERVAL_MS,
 );
 sessionCleanupTimer.unref?.();
+const collaborationWebSocketServer = new WebSocketServer({ noServer: true });
 
 const server = createServer(async (req, res) => {
 	try {
 		const url = new URL(req.url ?? "/", serverOrigin);
 
 		if (url.pathname === "/health") {
-			sendJson(res, 200, { ok: true });
+			sendJson(res, 200, {
+				ok: true,
+				collaboration: {
+					documents: collaborationDocs.size,
+					connections: Array.from(collaborationDocs.values()).reduce(
+						(total, doc) => total + doc.conns.size,
+						0,
+					),
+				},
+			});
 			return;
 		}
 
@@ -281,11 +236,25 @@ server.on("error", (error) => {
 	console.error("Pen playground AI backend server error:", error);
 });
 
+server.on("upgrade", (request, socket, head) => {
+	handleCollaborationUpgrade(request, socket, head);
+});
+
 server.listen(PLAYGROUND_SERVER_PORT, PLAYGROUND_SERVER_HOST, () => {
 	console.log(
 		`Pen playground AI backend listening on ${serverOrigin}`,
 	);
 });
+
+collaborationWebSocketServer.on(
+	"connection",
+	(socket: WebSocket, request: IncomingMessage) => {
+	setupWSConnection(socket, request, {
+		docName: resolveCollaborationDocName(request),
+		gc: true,
+	});
+	},
+);
 
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
 	process.once(signal, () => {
@@ -308,9 +277,7 @@ async function handleSessionSync(
 	const body = (await readJsonBody<SessionSyncBody>(req)) ?? {};
 	const sessionId =
 		typeof body.sessionId === "string" ? body.sessionId : null;
-	const editorState = isSerializedEditorState(body.editorState)
-		? body.editorState
-		: null;
+	const editorState = parseSerializedEditorState(body.editorState);
 
 	if (!sessionId) {
 		logPlaygroundEvent("session:sync-rejected", {
@@ -1114,15 +1081,6 @@ async function readJsonBody<T = unknown>(
 	return body ? (JSON.parse(body) as T) : undefined;
 }
 
-function isSerializedEditorState(value: unknown): value is SerializedEditorState {
-	if (!value || typeof value !== "object") {
-		return false;
-	}
-
-	const candidate = value as Partial<SerializedEditorState>;
-	return Array.isArray(candidate.blocks);
-}
-
 function sendJson(
 	res: ServerResponse,
 	statusCode: number,
@@ -1203,6 +1161,42 @@ function logPlaygroundEvent(
 	console.log(`[playground-ai] ${timestamp} ${event}`, payload);
 }
 
+function handleCollaborationUpgrade(
+	request: IncomingMessage,
+	socket: Duplex,
+	head: Buffer,
+): void {
+	const requestUrl = new URL(
+		request.url ?? PLAYGROUND_COLLAB_ROUTE_PREFIX,
+		`ws://${request.headers.host ?? `${PLAYGROUND_SERVER_HOST}:${PLAYGROUND_SERVER_PORT}`}`,
+	);
+	if (!requestUrl.pathname.startsWith(PLAYGROUND_COLLAB_ROUTE_PREFIX)) {
+		socket.write("HTTP/1.1 404 Not Found\r\n\r\n");
+		socket.destroy();
+		return;
+	}
+
+	collaborationWebSocketServer.handleUpgrade(
+		request,
+		socket,
+		head,
+		(ws: WebSocket) => {
+			collaborationWebSocketServer.emit("connection", ws, request);
+		},
+	);
+}
+
+function resolveCollaborationDocName(request: IncomingMessage): string {
+	const requestUrl = new URL(
+		request.url ?? PLAYGROUND_COLLAB_ROUTE_PREFIX,
+		`ws://${request.headers.host ?? `${PLAYGROUND_SERVER_HOST}:${PLAYGROUND_SERVER_PORT}`}`,
+	);
+	const roomPath = requestUrl.pathname
+		.slice(PLAYGROUND_COLLAB_ROUTE_PREFIX.length)
+		.replace(/^\/+/, "");
+	return roomPath || PLAYGROUND_COLLAB_DEFAULT_DOC_NAME;
+}
+
 function shutdownPlaygroundServer(signal: NodeJS.Signals): void {
 	if (isShuttingDown) {
 		return;
@@ -1217,6 +1211,7 @@ function shutdownPlaygroundServer(signal: NodeJS.Signals): void {
 	exitTimer.unref?.();
 
 	server.close((error) => {
+		collaborationWebSocketServer.close();
 		clearTimeout(exitTimer);
 		if (error) {
 			console.error("Failed to close playground AI backend cleanly:", error);

@@ -1,5 +1,7 @@
 export const FIELD_EDITOR_SLOT_KEY = "field-editor";
 export const COLLECT_KEY_BINDINGS_SLOT_KEY = "core:collect-key-bindings";
+export const AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY =
+	"core:await-extension-lifecycle";
 export const INPUT_RULES_ENGINE_SLOT_KEY = "input-rules:engine";
 export const UNDO_HISTORY_RESTORE_SLOT_KEY = "undo:history-restore";
 export const UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY =
@@ -10,6 +12,8 @@ export const AI_INLINE_COMPLETION_SLOT = INLINE_COMPLETION_SLOT;
 export const AI_INLINE_HISTORY_SLOT = "ai:inline-history";
 export const AI_REVIEW_CONTROLLER_SLOT = "ai:review";
 export const AI_AUTOCOMPLETE_CONTROLLER_SLOT = "ai-autocomplete:controller";
+export const MULTIPLAYER_CONTROLLER_SLOT = "multiplayer:controller";
+export const HISTORY_CONTROLLER_SLOT = "history:controller";
 
 /**
  * Tag placed on Yjs transaction origins by the undo manager. The rendering

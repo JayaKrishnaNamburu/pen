@@ -17,6 +17,7 @@ import { databaseExtension, databaseRenderers } from "@pen/database";
 import { useEffect, useRef, useState, type MutableRefObject } from "react";
 import "./App.css";
 import { PlaygroundBlockDragHandle } from "./components/BlockDragHandle";
+import { CollaborationNameModal } from "./components/CollaborationNameModal";
 import { PlaygroundImageRenderer } from "./components/ImageBlockRenderer";
 import { PlaygroundChatDock } from "./components/PlaygroundChatDock";
 import { PlaygroundEditorViewport } from "./components/PlaygroundEditorViewport";
@@ -24,12 +25,20 @@ import { usePlaygroundAISession } from "./hooks/usePlaygroundAISession";
 import { InspectorPanel } from "./components/InspectorPanel";
 import { Toolbar } from "./components/Toolbar";
 import { PLAYGROUND_ASSETS, PLAYGROUND_IMPORTERS } from "./constants/playground";
+import { PLAYGROUND_AI_DIRECT_STREAM_BATCH_INTERVAL_MS } from "./constants/playgroundAI";
 import {
 	attachPlaygroundAutocompleteLogging,
 	logAutocompleteDebug,
 	summarizeAutocompleteState,
 } from "./utils/autocompleteDebug";
 import { createPlaygroundAIModel } from "./utils/playgroundAI";
+import {
+	createPlaygroundCollaborationExtension,
+	getPlaygroundCollaborationConfig,
+	getPlaygroundCollaborationRoom,
+	getPlaygroundCollaborationUserName,
+	savePlaygroundCollaborationUserName,
+} from "./utils/playgroundCollaboration";
 import { canOpenLinkEditor } from "./utils/linkMarks";
 
 const PLAYGROUND_RENDERERS = {
@@ -61,6 +70,9 @@ type PlaygroundAutocompleteSettings = {
 export function App() {
 	const editorRef = useRef<Editor | null>(null);
 	const linkToggleRef = useRef<(() => void) | null>(null);
+	const [collaborationName, setCollaborationName] = useState(() =>
+		getPlaygroundCollaborationUserName(),
+	);
 	const [autocompleteSettings, setAutocompleteSettings] =
 		useState<PlaygroundAutocompleteSettings>({
 			enabled: true,
@@ -69,16 +81,23 @@ export function App() {
 			acceptanceStrategy: "full",
 			blockPolicy: DEFAULT_PLAYGROUND_AUTOCOMPLETE_BLOCK_POLICY,
 		});
+	const collaborationReady = collaborationName.trim().length > 0;
+	const collaboration = collaborationReady
+		? getPlaygroundCollaborationConfig()
+		: null;
+	const collaborationRoom = getPlaygroundCollaborationRoom();
 	const editor = usePlaygroundEditor(
 		editorRef,
 		linkToggleRef,
 		autocompleteSettings,
+		collaborationReady,
 	);
 	usePlaygroundAISession(editor);
 	const [isInspectorOpen, setIsInspectorOpen] = useState(false);
 	const [interactionModel, setInteractionModel] = useState<InteractionModel>("content-first");
+	const [customCaretEnabled, setCustomCaretEnabled] = useState(true);
 
-	if (!editor) {
+	if (collaborationReady && !editor) {
 		return null;
 	}
 
@@ -95,6 +114,9 @@ export function App() {
 			...current,
 			enabled,
 		}));
+	};
+	const handleCustomCaretEnabledChange = (enabled: boolean) => {
+		setCustomCaretEnabled(enabled);
 	};
 	const handleAutocompletePrefetchChange = (prefetchAfterAccept: boolean) => {
 		setAutocompleteSettings((current) => ({
@@ -127,10 +149,31 @@ export function App() {
 			},
 		}));
 	};
+	const handleCollaborationNameSubmit = (name: string) => {
+		const nextUser = savePlaygroundCollaborationUserName(name);
+		setCollaborationName(nextUser.name);
+	};
+
+	if (!collaborationReady) {
+		return (
+			<CollaborationNameModal
+				defaultName={collaborationName}
+				room={collaborationRoom}
+				onSubmit={handleCollaborationNameSubmit}
+			/>
+		);
+	}
+
+	if (!editor || !collaboration) {
+		return null;
+	}
+
+	const activeEditor = editor;
+	const activeCollaboration = collaboration;
 
 	return (
 		<Pen.Editor.Root
-			editor={editor}
+			editor={activeEditor}
 			importers={PLAYGROUND_IMPORTERS}
 			assets={PLAYGROUND_ASSETS}
 			renderers={PLAYGROUND_RENDERERS}
@@ -138,29 +181,38 @@ export function App() {
 			blockDragAndDrop={PLAYGROUND_BLOCK_DRAG_AND_DROP}
 			interactionModel={interactionModel}
 		>
-			<Pen.AI.Root editor={editor}>
+			<Pen.AI.Root editor={activeEditor}>
 				<div className="playground-shell">
 					<div className="playground-editor-column">
 						<Toolbar
-							editor={editor}
+							editor={activeEditor}
 							linkToggleRef={linkToggleRef}
+							collaboration={activeCollaboration}
 							interactionModel={interactionModel}
 							onToggleInteractionModel={handleToggleInteractionModel}
-							autocompleteEnabled={autocompleteSettings.enabled}
-							onAutocompleteEnabledChange={
-								handleAutocompleteEnabledChange
-							}
 						/>
-						<PlaygroundEditorViewport editor={editor} />
+						<PlaygroundEditorViewport
+							editor={activeEditor}
+							collaborationEnabled={true}
+							customCaretEnabled={customCaretEnabled}
+						/>
 					</div>
 					<div className="playground-side-panel">
-						<PlaygroundChatDock editor={editor} />
+						<PlaygroundChatDock
+							editor={activeEditor}
+							autocompleteEnabled={autocompleteSettings.enabled}
+							customCaretEnabled={customCaretEnabled}
+							onAutocompleteEnabledChange={handleAutocompleteEnabledChange}
+							onCustomCaretEnabledChange={handleCustomCaretEnabledChange}
+						/>
 					</div>
 					<InspectorPanel
-						editor={editor}
+						editor={activeEditor}
 						isOpen={isInspectorOpen}
 						onToggle={handleToggleInspector}
 						autocompleteSettings={autocompleteSettings}
+						customCaretEnabled={customCaretEnabled}
+						onCustomCaretEnabledChange={handleCustomCaretEnabledChange}
 						onAutocompleteEnabledChange={
 							handleAutocompleteEnabledChange
 						}
@@ -185,9 +237,15 @@ function usePlaygroundEditor(
 	editorRef: MutableRefObject<Editor | null>,
 	linkToggleRef: MutableRefObject<(() => void) | null>,
 	autocompleteSettings: PlaygroundAutocompleteSettings,
+	collaborationReady: boolean,
 ): Editor | null {
 	const [editor, setEditor] = useState<Editor | null>(null);
 	useEffect(() => {
+		if (!collaborationReady) {
+			setEditor(null);
+			return;
+		}
+
 		const nextEditor = createPlaygroundEditor(
 			linkToggleRef,
 			editorRef,
@@ -202,7 +260,7 @@ function usePlaygroundEditor(
 			}
 			nextEditor.destroy();
 		};
-	}, [editorRef, linkToggleRef]);
+	}, [collaborationReady, editorRef, linkToggleRef]);
 
 	useEffect(() => {
 		if (!editor) {
@@ -239,9 +297,32 @@ function createPlaygroundEditor(
 	autocompleteSettings: PlaygroundAutocompleteSettings,
 ): Editor {
 	const model = createPlaygroundAIModel(() => editorRef.current);
+	const collaborationExtension = createPlaygroundCollaborationExtension();
+	const extensions = [
+		aiExtension({
+			model,
+			contentFormat: PLAYGROUND_AI_CONTENT_FORMAT,
+		}),
+		autocompleteExtension({
+			model,
+			enabled: autocompleteSettings.enabled,
+			debounceMs: autocompleteSettings.debounceMs,
+			prefetchAfterAccept: autocompleteSettings.prefetchAfterAccept,
+			acceptanceStrategy: autocompleteSettings.acceptanceStrategy,
+			staleAfterMs: PLAYGROUND_AI_AUTOCOMPLETE_STALE_AFTER_MS,
+			blockPolicy: autocompleteSettings.blockPolicy,
+		}),
+		inputRulesExtension(),
+		databaseExtension(),
+		collaborationExtension,
+	];
+
 	return createEditor({
 		documentProfile: PLAYGROUND_DOCUMENT_PROFILE,
 		preset: defaultPreset({
+			deltaStream: {
+				batchInterval: PLAYGROUND_AI_DIRECT_STREAM_BATCH_INTERVAL_MS,
+			},
 			shortcuts: {
 				onToggleLink: (ed) => {
 					if (!canOpenLinkEditor(ed)) return false;
@@ -250,22 +331,6 @@ function createPlaygroundEditor(
 				},
 			},
 		}),
-		extensions: [
-			aiExtension({
-				model,
-				contentFormat: PLAYGROUND_AI_CONTENT_FORMAT,
-			}),
-			autocompleteExtension({
-				model,
-				enabled: autocompleteSettings.enabled,
-				debounceMs: autocompleteSettings.debounceMs,
-				prefetchAfterAccept: autocompleteSettings.prefetchAfterAccept,
-				acceptanceStrategy: autocompleteSettings.acceptanceStrategy,
-				staleAfterMs: PLAYGROUND_AI_AUTOCOMPLETE_STALE_AFTER_MS,
-				blockPolicy: autocompleteSettings.blockPolicy,
-			}),
-			inputRulesExtension(),
-			databaseExtension(),
-		],
+		extensions,
 	});
 }

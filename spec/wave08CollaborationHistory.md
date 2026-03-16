@@ -1,135 +1,252 @@
 # Wave 8 — Collaboration & Version History
 
-**Milestone:** M1 · **Packages:** `@pen/collab`, `@pen/history` · **Depends on:** M0 (Waves 0-6), Wave 7
+**Milestone:** M1 · **Packages:** `@pen/multiplayer`, `@pen/history` · **Depends on:** M0 (Waves 0-6), Wave 7
+
+**Implementation status:** foundation shipped and hardened; richer product UI remains a follow-up milestone
+
+**Follow-up hardening RFC:** `spec/wave08HardeningRfc.md`
 
 ---
 
 ## Goal
 
-Ship real-time collaboration primitives (remote cursors, presence indicators, WebSocket sync provider) and snapshot-based version history with per-character attribution. After this wave, multiple users can co-edit a document with visible cursors, browse historical snapshots, and see who wrote each character.
+Ship real-time collaboration primitives (remote cursors, presence indicators, provider-backed multiplayer sessions) and snapshot-based version history with per-character attribution. After this wave, multiple users can co-edit a document with visible cursors, browse historical snapshots, and see who wrote each character.
+
+## Current Scope
+
+The current branch now lands the Wave 8 foundation and the hardening work described in `spec/wave08HardeningRfc.md`:
+
+- scope-owned multiplayer runtime per `DocumentSession` scope
+- provider-backed multiplayer sessions via `@pen/crdt-yjs`
+- shared awareness and shared session lifecycle across multiple local editors
+- retained author identity for history/blame after peers disconnect
+- session-level snapshot restore that rebinds all attached editors for the replaced scope
+- React hooks plus a small multiplayer primitive surface in `@pen/react`
+
+The richer history and multiplayer product UI described later in this doc is still a follow-up milestone, not part of the currently shipped Wave 8 surface.
 
 ---
 
 ## File Structure
 
-### `@pen/collab`
+### `@pen/multiplayer`
 
-```
-packages/extensions/collab/src/
+```text
+packages/extensions/multiplayer/src/
 ├── extension.ts                defineExtension — entry point
-├── sync/
-│   ├── websocket-provider.ts   WebSocket sync provider (y-websocket compatible)
-│   ├── reconnect.ts            Reconnection state machine (exponential backoff)
-│   └── awareness-protocol.ts   Awareness encode/decode (y-protocols/awareness wrapper)
+├── controller.ts               MultiplayerController — state + subscription surface
+├── scopeRuntime.ts             Shared runtime per document scope
 ├── presence/
-│   ├── cursor-manager.ts       Remote cursor state management
-│   ├── selection-manager.ts    Remote selection state management
-│   ├── identity-map.ts         ClientIdentityMap — clientID → user metadata
-│   └── color-assignment.ts     Deterministic color assignment from userId
+│   ├── cursorManager.ts        Remote cursor state management
+│   ├── selectionManager.ts     Remote selection state management
+│   ├── identityMap.ts          ClientIdentityMap — clientID → user metadata
+│   ├── authorLedger.ts         Retained author identity for history/blame
+│   └── colorAssignment.ts      Deterministic color assignment from userId
 ├── decorations/
-│   ├── remote-cursors.ts       CRDT-derived cursor decorations
-│   ├── remote-selections.ts    CRDT-derived selection decorations
-│   └── ai-presence.ts          AI agent presence decorations
-├── primitives/
-│   ├── root.tsx                Pen.Collab.Root — context provider
-│   ├── cursors.tsx             Pen.Collab.RemoteCursors
-│   ├── cursor.tsx              Pen.Collab.RemoteCursor
-│   ├── selections.tsx          Pen.Collab.RemoteSelections
-│   ├── selection.tsx           Pen.Collab.RemoteSelection
-│   ├── presence-list.tsx       Pen.Collab.PresenceList
-│   ├── presence-avatar.tsx     Pen.Collab.PresenceAvatar
-│   ├── ai-presence.tsx         Pen.Collab.AIPresence
-│   ├── connection-status.tsx   Pen.Collab.ConnectionStatus
-│   └── index.ts                Barrel
-├── hooks/
-│   ├── use-collab.ts           useCollab() — connection state, peers
-│   ├── use-remote-cursors.ts   useRemoteCursors() — list of remote cursor states
-│   ├── use-presence.ts         usePresence() — local + remote presence
-│   └── index.ts                Barrel
-├── types.ts                    Collab-specific types
+│   ├── remoteCursors.ts        CRDT-derived cursor decorations
+│   └── remoteSelections.ts     CRDT-derived selection decorations
+├── types.ts                    Multiplayer-specific types
 └── index.ts                    Package entry
+```
+
+### `@pen/crdt-yjs`
+
+```text
+packages/crdt/yjs/src/
+├── adapter.ts                  Yjs CRDT adapter
+├── awareness.ts               Yjs awareness wrapper + raw awareness helper
+├── collaboration/
+│   └── providerSession.ts     Wrap external Yjs providers as MultiplayerSession
+└── index.ts                   Package entry
 ```
 
 ### `@pen/history`
 
-```
+```text
 packages/extensions/history/src/
 ├── extension.ts                defineExtension — entry point
+├── controller.ts               HistoryController — state + snapshot API surface
 ├── snapshots/
-│   ├── snapshot-manager.ts     Create, list, restore snapshots
-│   ├── auto-snapshot.ts        Auto-snapshot triggers (time, ops, sessions)
-│   ├── snapshot-diff.ts        Compute diffs between two snapshots
-│   └── storage.ts              In-memory PenPersistence impl for testing
+│   ├── snapshotManager.ts      Create, list, restore snapshots
+│   └── autoSnapshot.ts         Auto-snapshot triggers (time, ops, sessions)
 ├── attribution/
-│   ├── character-attribution.ts  Per-character attribution from CRDT metadata
-│   ├── blame-view.ts             Build blame data for a block
-│   └── identity-resolver.ts      Resolve clientID to user name/color
-├── primitives/
-│   ├── root.tsx                Pen.History.Root
-│   ├── timeline.tsx            Pen.History.Timeline
-│   ├── entry.tsx               Pen.History.Entry
-│   ├── snapshot-diff.tsx       Pen.History.SnapshotDiff
-│   ├── blame-gutter.tsx        Pen.History.BlameGutter
-│   ├── restore-button.tsx      Pen.History.RestoreButton
-│   └── index.ts                Barrel
-├── hooks/
-│   ├── use-history.ts          useHistory() — snapshot list, active snapshot
-│   ├── use-attribution.ts     useAttribution() — per-character blame
-│   └── index.ts                Barrel
+│   ├── characterAttribution.ts   Per-character attribution from CRDT metadata
+│   ├── blameView.ts              Build blame data for a block
+│   └── identityResolver.ts       Resolve author identity for blame
 ├── types.ts                    History-specific types
+└── index.ts                    Package entry
+```
+
+### `@pen/react` additions for Wave 8
+
+```text
+packages/rendering/react/src/
+├── hooks/
+│   ├── useMultiplayer.ts       useMultiplayer() — connection state, peers
+│   ├── useRemoteCursors.ts     useRemoteCursors() — list of remote cursor states
+│   ├── useRemoteSelections.ts  useRemoteSelections() — list of remote selections
+│   ├── useHistory.ts           useHistory() — snapshot list, active snapshot
+│   ├── useAttribution.ts       useAttribution() — per-character blame
+│   └── index.ts                Barrel
+├── primitives/
+│   ├── multiplayer/
+│   │   ├── presenceList.tsx    Pen.Multiplayer.PresenceList
+│   │   ├── remoteCursors.tsx   Pen.Multiplayer.RemoteCursors
+│   │   ├── caretOverlay.tsx    Pen.Multiplayer.CaretOverlay
+│   │   └── index.ts            Barrel
+│   └── index.ts                Barrel
 └── index.ts                    Package entry
 ```
 
 ### Import DAG
 
-```
-@pen/collab:
-  types.ts                         ← (@pen/core)
-  sync/websocket-provider.ts       ← sync/reconnect.ts, sync/awareness-protocol.ts, types.ts
-  sync/reconnect.ts                ← types.ts
-  sync/awareness-protocol.ts       ← types.ts
-  presence/cursor-manager.ts       ← types.ts, sync/awareness-protocol.ts
-  presence/selection-manager.ts    ← types.ts, sync/awareness-protocol.ts
-  presence/identity-map.ts         ← types.ts
-  presence/color-assignment.ts     ← (standalone)
-  decorations/remote-cursors.ts    ← presence/cursor-manager.ts
-  decorations/remote-selections.ts ← presence/selection-manager.ts
-  decorations/ai-presence.ts       ← presence/cursor-manager.ts
-  extension.ts                     ← sync/*, presence/*, decorations/*
-  primitives/*                     ← hooks/*, extension.ts
-  hooks/*                          ← extension.ts, types.ts
+```text
+@pen/types:
+  types/collaboration.ts            ← editor.ts, crdt.ts, utility.ts
+
+@pen/multiplayer:
+  types.ts                          ← @pen/types
+  controller.ts                     ← @pen/types, presence/*, types.ts
+  scopeRuntime.ts                   ← @pen/types, controller.ts, presence/*, types.ts
+  presence/cursorManager.ts         ← types.ts
+  presence/selectionManager.ts      ← types.ts
+  presence/identityMap.ts           ← types.ts
+  presence/authorLedger.ts          ← types.ts
+  presence/colorAssignment.ts       ← (standalone)
+  decorations/remoteCursors.ts      ← types.ts
+  decorations/remoteSelections.ts   ← types.ts
+  extension.ts                      ← @pen/types, @pen/core, scopeRuntime.ts, decorations/*, types.ts
+
+@pen/crdt-yjs:
+  awareness.ts                      ← @pen/types, y-protocols/awareness
+  collaboration/providerSession.ts  ← @pen/types, yjs
+  index.ts                          ← awareness.ts, collaboration/providerSession.ts, adapter.ts, document.ts
 
 @pen/history:
   types.ts                            ← (@pen/core)
-  snapshots/snapshot-manager.ts        ← snapshots/storage.ts, types.ts, (@pen/core)
-  snapshots/auto-snapshot.ts           ← snapshots/snapshot-manager.ts, types.ts
-  snapshots/snapshot-diff.ts           ← types.ts, (@pen/core)
-  snapshots/storage.ts                 ← types.ts
-  attribution/character-attribution.ts ← types.ts, (@pen/core)
-  attribution/blame-view.ts            ← attribution/character-attribution.ts, types.ts
-  attribution/identity-resolver.ts     ← (@pen/collab types)
-  extension.ts                         ← snapshots/*, attribution/*
-  primitives/*                         ← hooks/*, extension.ts
-  hooks/*                              ← extension.ts, types.ts
+  controller.ts                       ← snapshots/*, attribution/*, types.ts
+  snapshots/snapshotManager.ts        ← types.ts, (@pen/core)
+  snapshots/autoSnapshot.ts           ← snapshots/snapshotManager.ts, types.ts
+  attribution/characterAttribution.ts ← types.ts, (@pen/core)
+  attribution/blameView.ts            ← attribution/characterAttribution.ts, types.ts
+  attribution/identityResolver.ts     ← (@pen/multiplayer types)
+  extension.ts                        ← controller.ts, snapshots/*, attribution/*
+
+@pen/react:
+  hooks/useMultiplayer.ts              ← @pen/multiplayer
+  hooks/useRemoteCursors.ts            ← @pen/multiplayer
+  hooks/useRemoteSelections.ts         ← @pen/multiplayer
+  hooks/useHistory.ts                  ← @pen/history
+  hooks/useAttribution.ts              ← @pen/history
+  primitives/multiplayer/*             ← hooks/useMultiplayer.ts, hooks/useRemoteCursors.ts
 ```
 
 No cycles.
 
 ---
 
-## Module: `@pen/collab — types.ts`
+## Current Collaboration Surface
+
+`@pen/multiplayer` is transport-agnostic. It owns local awareness publishing, peer derivation, controller state, and remote cursor/selection decorations. It does not implement WebSocket setup, reconnect policies, or the Yjs sync wire protocol.
+
+`@pen/crdt-yjs` exposes only the Yjs integration boundary Pen needs:
+
+```typescript
+export interface YjsProviderAdapter {
+  connect(): void;
+  disconnect(): void;
+  destroy(): void;
+  getStatus?(): 'disconnected' | 'connecting' | 'connected';
+  getIsSynced?(): boolean;
+  onStatusChange(
+    listener: (status: 'disconnected' | 'connecting' | 'connected') => void,
+  ): Unsubscribe;
+  onSync?(listener: (isSynced: boolean) => void): Unsubscribe;
+}
+
+export function getYjsDoc(editor: Editor): Y.Doc;
+export function getYjsAwareness(awareness: Awareness): YAwareness;
+export function createYjsProviderSession(
+  provider: YjsProviderAdapter,
+): MultiplayerSession;
+```
+
+### Canonical `y-websocket` integration
+
+```typescript
+import { WebsocketProvider } from 'y-websocket';
+
+import { createEditor } from '@pen/core';
+import {
+  createYjsProviderSession,
+  getYjsAwareness,
+  getYjsDoc,
+} from '@pen/crdt-yjs';
+import { multiplayerExtension } from '@pen/multiplayer';
+
+const editor = createEditor({
+  extensions: [
+    multiplayerExtension({
+      user: { id: 'u1', name: 'Ada' },
+      sessionFactory: ({ editor, awareness }) => {
+        const provider = new WebsocketProvider(
+          'ws://localhost:1234',
+          'room-a',
+          getYjsDoc(editor),
+          {
+            awareness: getYjsAwareness(awareness),
+            connect: false,
+          },
+        );
+
+        return createYjsProviderSession({
+          connect: () => provider.connect(),
+          disconnect: () => provider.disconnect(),
+          destroy: () => provider.destroy(),
+          getStatus: () => {
+            if (provider.wsconnected) return 'connected';
+            if (provider.wsconnecting) return 'connecting';
+            return 'disconnected';
+          },
+          getIsSynced: () => provider.synced,
+          onStatusChange: (listener) => {
+            const handleStatus = (event: {
+              status: 'disconnected' | 'connecting' | 'connected';
+            }) => {
+              listener(event.status);
+            };
+
+            provider.on('status', handleStatus);
+            return () => provider.off('status', handleStatus);
+          },
+          onSync: (listener) => {
+            provider.on('sync', listener);
+            return () => provider.off('sync', listener);
+          },
+        });
+      },
+    }),
+  ],
+});
+```
+
+This matches the provider lifecycle documented by [`y-websocket`](https://docs.yjs.dev/ecosystem/connection-provider/y-websocket): shared `awareness`, optional manual connect via `connect: false`, lifecycle control through `connect()` / `disconnect()` / `destroy()`, and connection/sync events via `status` and `sync`.
+
+---
+
+## Legacy Design Reference: `@pen/multiplayer — types.ts`
 
 ```typescript
 import type { Editor, Unsubscribe, Position, SelectionState } from '@pen/types';
 
-export interface CollabConfig {
+export interface MultiplayerConfig {
   wsUrl?: string;
   roomId?: string;
-  user: CollabUser;
+  user: MultiplayerUser;
   autoConnect?: boolean;
 }
 
-export interface CollabUser {
+export interface MultiplayerUser {
   id: string;
   name: string;
   color?: string;
@@ -140,7 +257,7 @@ export type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'syn
 
 export interface RemoteCursorState {
   clientId: number;
-  user: CollabUser;
+  user: MultiplayerUser;
   blockId: string;
   offset: number;
   clock: number;
@@ -148,7 +265,7 @@ export interface RemoteCursorState {
 
 export interface RemoteSelectionState {
   clientId: number;
-  user: CollabUser;
+  user: MultiplayerUser;
   anchor: { blockId: string; offset: number };
   head: { blockId: string; offset: number };
   clock: number;
@@ -156,7 +273,7 @@ export interface RemoteSelectionState {
 
 export interface PeerState {
   clientId: number;
-  user: CollabUser;
+  user: MultiplayerUser;
   cursor: RemoteCursorState | null;
   selection: RemoteSelectionState | null;
   lastSeen: number;
@@ -180,11 +297,11 @@ export interface SyncMessage {
 
 ---
 
-## Module: `sync/websocket-provider.ts` — WebSocket Sync
+## Legacy Design Reference: `sync/websocket-provider.ts` — WebSocket Sync
 
 ```typescript
 import type { Editor, CRDTDocument, Unsubscribe } from '@pen/types';
-import type { CollabConfig, ConnectionState, SyncMessage } from '../types.js';
+import type { MultiplayerConfig, ConnectionState, SyncMessage } from '../types.js';
 import { ReconnectStateMachine } from './reconnect.js';
 import { encodeAwareness, decodeAwareness, applyAwareness } from './awareness-protocol.js';
 import * as Y from 'yjs';
@@ -194,12 +311,12 @@ export class WebSocketSyncProvider {
   private reconnect: ReconnectStateMachine;
   private doc: CRDTDocument;
   private editor: Editor;
-  private config: CollabConfig;
+  private config: MultiplayerConfig;
   private listeners = new Set<(state: ConnectionState) => void>();
   private _state: ConnectionState = 'disconnected';
   private cleanup: (() => void)[] = [];
 
-  constructor(editor: Editor, doc: CRDTDocument, config: CollabConfig) {
+  constructor(editor: Editor, doc: CRDTDocument, config: MultiplayerConfig) {
     this.editor = editor;
     this.doc = doc;
     this.config = config;
@@ -369,25 +486,9 @@ function applyUpdate(ydoc: any, update: Uint8Array): void {
 }
 ```
 
-> **CRDT abstraction note:** This is one of the six `raw()` blast-radius modules (Spec Section 10.1). The WebSocket sync provider requires direct Y.Doc access for `Y.encodeStateAsUpdate`, `Y.applyUpdate`, and `Y.encodeStateVector`. This is acceptable because sync is transport-layer code tightly coupled to the CRDT wire format. A Loro adapter would have its own sync provider.
+> **CRDT abstraction note:** Collaboration depends on direct `Y.Doc` and `Awareness` access only at the integration boundary. Pen exposes helpers for `Y.Doc` and raw Yjs `Awareness`, but external provider packages such as `y-websocket` own transport, reconnection, cross-tab sync, and wire protocol behavior.
 
-**Wire protocol.** Two-byte header + payload: `[typeByte][protocolVersion][payload...]`. Compatible with `y-websocket` payload semantics while adding explicit protocol negotiation. Message types: `0` = sync-step-1 (state vector), `1` = sync-step-2 (update), `2` = incremental update, `3` = awareness.
-
-**Protocol envelope contract (M0 minimum).**
-
-- `protocolVersion` is required on all `SyncMessage`s (current `1`).
-- `features` is optional and advertises non-core capabilities.
-- Unknown message types are ignored (do not crash or disconnect).
-- Higher `protocolVersion` from a peer transitions state to `error` with `UNSUPPORTED_PROTOCOL` and surfaces a user-facing diagnostic.
-
-**Failure behavior contract.**
-
-| Case | Behavior |
-|---|---|
-| Unknown type byte | Ignore frame, continue session |
-| Unsupported protocol version | Move connection to `error`, do not apply frame |
-| Malformed payload | Drop frame, emit diagnostic, continue if possible |
-| Reconnect exhausted | Transition to `error`, keep local editing active |
+**Provider model.** Pen does not implement a WebSocket transport or Yjs sync wire protocol. Instead, applications create or choose a Yjs provider and wrap its lifecycle/status in `MultiplayerSession`. The canonical example is `y-websocket`, which already supports shared awareness, manual `connect()`, reconnection, and provider status events.
 
 ---
 
@@ -456,7 +557,7 @@ Listens to awareness changes, extracts cursor states from `localState.cursor`, a
 
 ```typescript
 import type { Unsubscribe } from '@pen/types';
-import type { RemoteCursorState, CollabUser, AwarenessChangeEvent } from '../types.js';
+import type { RemoteCursorState, MultiplayerUser, AwarenessChangeEvent } from '../types.js';
 
 export class RemoteCursorManager {
   private cursors = new Map<number, RemoteCursorState>();
@@ -567,20 +668,20 @@ export class RemoteSelectionManager {
 Maps Yjs `clientID` (number) to user metadata. Used for attribution and presence display. Populated from awareness states.
 
 ```typescript
-import type { CollabUser } from '../types.js';
+import type { MultiplayerUser } from '../types.js';
 
 export class ClientIdentityMap {
-  private map = new Map<number, CollabUser>();
+  private map = new Map<number, MultiplayerUser>();
 
-  set(clientId: number, user: CollabUser): void {
+  set(clientId: number, user: MultiplayerUser): void {
     this.map.set(clientId, user);
   }
 
-  get(clientId: number): CollabUser | null {
+  get(clientId: number): MultiplayerUser | null {
     return this.map.get(clientId) ?? null;
   }
 
-  resolve(clientId: number): CollabUser {
+  resolve(clientId: number): MultiplayerUser {
     return this.map.get(clientId) ?? {
       id: String(clientId),
       name: `User ${clientId}`,
@@ -595,7 +696,7 @@ export class ClientIdentityMap {
     }
   }
 
-  entries(): ReadonlyMap<number, CollabUser> {
+  entries(): ReadonlyMap<number, MultiplayerUser> {
     return this.map;
   }
 }
@@ -736,12 +837,12 @@ export function buildAIPresenceDecorations(
 
 ---
 
-## Collab Extension Entry Point
+## Legacy Design Reference: Multiplayer Extension Entry Point
 
 ```typescript
 import type { ExtensionDefinition, Editor, Unsubscribe, DecorationSet } from '@pen/types';
 import { defineExtension } from '@pen/types';
-import type { CollabConfig } from './types.js';
+import type { MultiplayerConfig } from './types.js';
 import { WebSocketSyncProvider } from './sync/websocket-provider.js';
 import { RemoteCursorManager } from './presence/cursor-manager.js';
 import { RemoteSelectionManager } from './presence/selection-manager.js';
@@ -751,12 +852,12 @@ import { buildCursorDecorations } from './decorations/remote-cursors.js';
 import { buildSelectionDecorations } from './decorations/remote-selections.js';
 import { buildAIPresenceDecorations } from './decorations/ai-presence.js';
 
-export const collab = defineExtension<CollabConfig>({
-  name: 'collab',
+export const multiplayer = defineExtension<MultiplayerConfig>({
+  name: 'multiplayer',
 
   setup(editor, config) {
     const awareness = editor.internals.awareness;
-    if (!awareness) throw new Error('Collab extension requires CRDT awareness');
+    if (!awareness) throw new Error('Multiplayer extension requires CRDT awareness');
 
     const identityMap = new ClientIdentityMap();
     const cursorManager = new RemoteCursorManager(awareness.clientID);
@@ -853,22 +954,11 @@ function observeAwareness(
 
 ---
 
-## Collab Primitives
+## React Multiplayer Primitives
 
-### `Pen.Collab.Root`
+Wave 8 currently ships a small multiplayer primitive surface in `@pen/react`:
 
-```typescript
-interface CollabRootProps {
-  children: React.ReactNode;
-}
-
-// Data attributes:
-// [data-pen-collab-root]
-// [data-connected]   - WebSocket is connected
-// [data-peer-count]  - number of remote peers
-```
-
-### `Pen.Collab.RemoteCursors`
+### `Pen.Multiplayer.RemoteCursors`
 
 Container that renders all remote cursors. Renders one `RemoteCursor` per remote peer.
 
@@ -879,7 +969,7 @@ interface RemoteCursorsProps {
 }
 ```
 
-### `Pen.Collab.PresenceList`
+### `Pen.Multiplayer.PresenceList`
 
 Avatar list of all connected peers. Renders `PresenceAvatar` for each.
 
@@ -887,42 +977,32 @@ Avatar list of all connected peers. Renders `PresenceAvatar` for each.
 interface PresenceListProps {
   children?: React.ReactNode;
   maxVisible?: number;
-  renderAvatar?: (user: CollabUser) => React.ReactNode;
+  renderAvatar?: (peer: PeerState) => React.ReactNode;
 }
 
 // Data attributes:
-// [data-pen-collab-presence-list]
+// [data-pen-multiplayer-presence-list]
 // [data-overflow-count]   - number of peers beyond maxVisible
 ```
 
-### `Pen.Collab.AIPresence`
-
-Shows which block an AI agent is working on and its current status.
+### `Pen.Multiplayer.CaretOverlay`
 
 ```typescript
-interface AIPresenceProps {
+interface CaretOverlayProps {
   children?: React.ReactNode;
-  asChild?: boolean;
+  renderCaret?: (cursor: RemoteCursorState) => React.ReactNode;
 }
 
 // Data attributes:
-// [data-pen-collab-ai-presence]
-// [data-ai-status]
-// [data-ai-model]
+// [data-pen-multiplayer-caret-overlay]
 ```
 
-### `Pen.Collab.ConnectionStatus`
+Deferred multiplayer UI follow-up:
 
-```typescript
-interface ConnectionStatusProps {
-  children?: React.ReactNode;
-  asChild?: boolean;
-}
-
-// Data attributes:
-// [data-pen-collab-connection-status]
-// [data-state]   - ConnectionState value
-```
+- `Pen.Multiplayer.ConnectionStatus`
+- `Pen.Multiplayer.RemoteSelections`
+- `Pen.Multiplayer.PresenceAvatar`
+- AI presence-specific primitives if they remain part of the product plan
 
 ---
 
@@ -1023,8 +1103,15 @@ export class SnapshotManager {
     await this.createSnapshot('Pre-restore auto-save', 'manual');
 
     const adapter = this.editor.internals.adapter;
-    const doc = this.editor.internals.crdtDoc;
-    adapter.restoreSnapshot(doc, entry.snapshot);
+    const restoredDoc = adapter.restoreSnapshot(
+      this.editor.internals.crdtDoc,
+      entry.snapshot,
+    );
+
+    // Snapshot restore returns a new CRDT document instance. Rebind the editor
+    // through the normal document/session loading path so observers, awareness,
+    // and extension state stay coherent.
+    this.editor.loadDocument(restoredDoc);
   }
 
   async listSnapshots(): Promise<VersionEntry[]> {
@@ -1035,6 +1122,8 @@ export class SnapshotManager {
 ```
 
 **Auto-save on restore.** Before restoring a snapshot, the current state is saved as a "Pre-restore auto-save" snapshot. This ensures the user can always return to the state before the restore.
+
+**Restore semantics.** `CRDTAdapter.restoreSnapshot()` returns a restored document. If the editor is attached to a `DocumentSession`, the history layer replaces that shared scope through the session so every attached editor rebinds coherently. If there is no session, history falls back to the standalone editor reload path. This keeps document observation, awareness, and extension state aligned with the restored scope.
 
 ---
 
@@ -1261,7 +1350,7 @@ export function getCharacterAttribution(
 
 **Uses `CRDTAdapter.getAttributionRanges`.** Delegates to the adapter to extract per-character authorship ranges from the underlying CRDT. Adjacent characters from the same client are already merged by the adapter.
 
-**Identity resolution is separate.** The attribution returns raw `clientId` values. The `ClientIdentityMap` from `@pen/collab` resolves these to user names and colors. This keeps `@pen/history` independent of the collab extension.
+**Identity resolution is separate.** The attribution returns raw `clientId` values. In multiplayer mode, history first resolves those through the retained author ledger owned by the shared collaboration runtime, then falls back to the live `ClientIdentityMap`, then to a `User ${clientId}` placeholder. This keeps `@pen/history` independent of transport/session details while preserving blame after peers disconnect.
 
 ---
 
@@ -1332,103 +1421,21 @@ export const history = defineExtension<HistoryConfig>({
 
 ---
 
-## History Primitives
+## React History Primitives
 
-### `Pen.History.Root`
+Wave 8 currently ships the history hook surface in `@pen/react`:
 
-Context provider. Exposes history state to children.
+- `useHistory()`
+- `useAttribution()`
 
-```typescript
-interface HistoryRootProps {
-  children: React.ReactNode;
-}
+Deferred history product UI follow-up:
 
-// Data attributes:
-// [data-pen-history-root]
-// [data-viewing-snapshot]   - user is viewing a historical snapshot
-// [data-snapshot-count]     - total number of snapshots
-```
-
-### `Pen.History.Timeline`
-
-Renders a chronological list of snapshots. Each entry is a `Pen.History.Entry`.
-
-```typescript
-interface TimelineProps {
-  children?: React.ReactNode;
-  renderEntry?: (entry: VersionEntry) => React.ReactNode;
-}
-
-// Data attributes:
-// [data-pen-history-timeline]
-```
-
-### `Pen.History.Entry`
-
-Single snapshot entry in the timeline.
-
-```typescript
-interface EntryProps {
-  entry: VersionEntry;
-  children?: React.ReactNode;
-  asChild?: boolean;
-}
-
-// Data attributes:
-// [data-pen-history-entry]
-// [data-trigger]     - VersionMetadata trigger value
-// [data-active]      - this snapshot is currently being viewed
-// [data-client-id]
-```
-
-### `Pen.History.SnapshotDiff`
-
-Renders the diff between two snapshots.
-
-```typescript
-interface SnapshotDiffProps {
-  fromId: string;
-  toId: string;
-  mode?: 'inline' | 'side-by-side';
-  children?: React.ReactNode;
-}
-
-// Data attributes:
-// [data-pen-history-diff]
-// [data-mode]
-// [data-change-count]  - total added + removed + modified blocks
-```
-
-### `Pen.History.BlameGutter`
-
-Per-block blame gutter showing character attribution ranges.
-
-```typescript
-interface BlameGutterProps {
-  blockId: string;
-  children?: React.ReactNode;
-}
-
-// Data attributes:
-// [data-pen-history-blame-gutter]
-// [data-author-count]   - distinct authors for this block
-```
-
-### `Pen.History.RestoreButton`
-
-Restores a selected snapshot.
-
-```typescript
-interface RestoreButtonProps {
-  snapshotId: string;
-  children?: React.ReactNode;
-  asChild?: boolean;
-}
-
-// Data attributes:
-// [data-pen-history-restore]
-// [data-restoring]   - restore is in progress
-```
+- `Pen.History.Root`
+- `Pen.History.Timeline`
+- `Pen.History.Entry`
+- `Pen.History.SnapshotDiff`
+- `Pen.History.BlameGutter`
+- `Pen.History.RestoreButton`
 
 ---
 
@@ -1506,31 +1513,35 @@ export function buildCrossBlockSelectionDecorations(
 
 ## Dependencies
 
-### `@pen/collab`
+### Package `@pen/multiplayer`
 
 ```json
 {
   "dependencies": {
-    "@pen/core": "workspace:*",
-    "@pen/react": "workspace:*",
-    "react": "^19.0.0"
-  },
-  "peerDependencies": {
-    "react": "^18.0.0 || ^19.0.0",
-    "react-dom": "^18.0.0 || ^19.0.0"
+    "@pen/core": "workspace:*"
   }
 }
 ```
 
-No dependency on `y-websocket` — the WebSocket provider reimplements the wire protocol for control and bundle-size. The `y-protocols/awareness` dependency is used through the already-bundled `@pen/crdt-yjs`.
+`@pen/multiplayer` stays transport-agnostic. Yjs-specific collaboration helpers live in `@pen/crdt-yjs`, and applications may depend on external provider packages like `y-websocket` directly.
 
-### `@pen/history`
+### Package `@pen/history`
 
 ```json
 {
   "dependencies": {
-    "@pen/core": "workspace:*",
-    "@pen/react": "workspace:*",
+    "@pen/core": "workspace:*"
+  }
+}
+```
+
+### Package `@pen/react`
+
+```json
+{
+  "dependencies": {
+    "@pen/multiplayer": "workspace:*",
+    "@pen/history": "workspace:*",
     "react": "^19.0.0"
   },
   "peerDependencies": {
@@ -1544,58 +1555,61 @@ No dependency on `y-websocket` — the WebSocket provider reimplements the wire 
 
 ## Key Decisions
 
-1. **Custom WebSocket provider, not `y-websocket`.** Full control over reconnection, message framing, and awareness lifecycle. Wire-compatible with existing `y-websocket` servers.
+1. **External provider, not Pen-owned transport.** Pen stops at the session boundary. Provider packages like `y-websocket` or application-specific transports own connection setup, reconnection, protocol framing, and awareness transport.
 
-2. **Jittered exponential backoff.** Prevents thundering herd when many clients reconnect simultaneously after server restart.
+2. **Cursor and selection are separate awareness fields.** Cursor is the caret position. Selection is the anchor/head range. This allows rendering cursor labels even when there's no selection.
 
-3. **Cursor and selection are separate awareness fields.** Cursor is the caret position. Selection is the anchor/head range. This allows rendering cursor labels even when there's no selection.
+3. **Live identity and retained author identity are separate.** `ClientIdentityMap` handles live peer resolution from awareness, while a scope-owned author ledger retains normalized identities for history and blame after peers disconnect.
 
-4. **`ClientIdentityMap` is the attribution bridge.** Maps Yjs numeric `clientID` to user metadata. Populated from awareness states. Used by both collab presence and history attribution.
+4. **Snapshot = `Y.encodeStateVector` + `Y.encodeStateAsUpdate`.** Binary format, not a full document copy. Compact and fast to create/restore.
 
-5. **Snapshot = `Y.encodeStateVector` + `Y.encodeStateAsUpdate`.** Binary format, not a full document copy. Compact and fast to create/restore.
+5. **Auto-save before restore.** Restoring a snapshot always creates a "Pre-restore" snapshot first. No data loss.
 
-6. **Auto-save before restore.** Restoring a snapshot always creates a "Pre-restore" snapshot first. No data loss.
+6. **Restore flows through the shared scope boundary.** Snapshot restore yields a restored CRDT document, then the history layer rebinds through `DocumentSession.replaceScopeDocument()` when a session exists so every attached editor for that scope updates coherently. Standalone editors still use the direct editor reload path.
 
 7. **Per-character attribution uses `CRDTAdapter.getAttributionRanges`.** Delegates to the adapter to extract authorship ranges without touching Yjs internals. Adjacent same-author characters are merged into ranges.
 
-8. **History is independent of collab.** `@pen/history` reads CRDT metadata directly. It works in single-user mode too. Identity resolution is optional via a `resolveUser` callback.
+8. **History is independent of live collaboration.** `@pen/history` reads CRDT metadata directly and works in single-user mode too. Multiplayer improves identity fidelity through a retained author ledger, but the history package does not own transport/session concerns.
 
-9. **Decorations are the rendering contract.** Remote cursors, selections, and AI presence are all expressed as `InlineDecoration` / `BlockDecoration` — the same system that track changes uses. No special rendering path.
+9. **Decorations are the rendering contract.** Remote cursors and selections are expressed as decorations, using the same rendering contract as the rest of the editor.
 
-10. **CRDT corruption during collaboration is detected and recoverable.** The `DocumentHealthMonitor` (Wave 1, "CRDT Integrity" section) runs validation after every remote merge. If a corrupt update from a buggy peer introduces invalid state, the corruption event propagates through `crdt:corruption`, and the collaboration layer can trigger a re-sync or snapshot-based recovery. The WebSocket provider's `handleMessage` wraps `Y.applyUpdate` in error handling (see Wave 1, `applyUpdate` Error Handling) to drop malformed updates without crashing the session.
+10. **React integration stays in `@pen/react`.** Headless extension packages expose controllers/state, and React hooks/primitives compose those surfaces in the rendering package, matching the rest of the repo.
 
-11. **Conflict resolution for collaborative edits is specified in Wave 1.** The "Conflict Resolution Semantics" section in Wave 1 defines the editor-level behavior for concurrent text edits, block type conversions, delete-while-editing, and block reorder conflicts. The collaboration layer surfaces these conflicts through awareness (remote cursor visibility) and decorations (remote selection highlighting), but does not attempt to prevent them — CRDT convergence handles the data layer, and normalization handles the semantic layer.
+11. **CRDT corruption during collaboration is detected and recoverable.** The `DocumentHealthMonitor` (Wave 1, "CRDT Integrity" section) runs validation after every remote merge. If a corrupt update from a buggy peer introduces invalid state, the corruption event propagates through `crdt:corruption`, and the collaboration layer can trigger a re-sync or snapshot-based recovery. Provider-level wire handling stays outside Pen; Pen remains responsible for surfacing diagnostics and preserving local editability.
+
+12. **Conflict resolution for collaborative edits is specified in Wave 1.** The "Conflict Resolution Semantics" section in Wave 1 defines the editor-level behavior for concurrent text edits, block type conversions, delete-while-editing, and block reorder conflicts. The collaboration layer surfaces these conflicts through awareness (remote cursor visibility) and decorations (remote selection highlighting), but does not attempt to prevent them — CRDT convergence handles the data layer, and normalization handles the semantic layer.
 
 ---
 
 ## Acceptance Criteria
 
-1. WebSocket sync provider connects to `y-websocket`-compatible server and syncs documents.
-2. Disconnect triggers exponential backoff reconnection. Reconnection succeeds and resumes sync.
-3. Local selection changes are published to awareness. Remote peers see cursor position and selection range.
-4. Remote cursors render as `InlineDecoration` with user color and name.
-5. Remote selections render as highlighted ranges with user color.
-6. Cross-block selections render correctly across multiple blocks.
-7. AI presence decorations show which block an AI agent is working on and its status.
-8. `Pen.Collab.PresenceList` shows all connected peers with avatars.
-9. `Pen.Collab.ConnectionStatus` reflects connection state changes.
-10. Color assignment is deterministic — same userId always produces the same color.
-11. Manual snapshot creation captures document state as binary data.
-12. Snapshot restoration loads a previous document state. Pre-restore auto-save is created.
-13. Auto-snapshot fires on: session start, time interval (5 min), operation threshold (100 ops).
-14. AI extension can trigger pre-generation snapshots via `scheduler.triggerAISnapshot()`.
-15. `Pen.History.Timeline` lists snapshots sorted by creation time (newest first).
-16. `Pen.History.SnapshotDiff` renders block-level diffs between two snapshots.
-17. Per-character attribution uses `CRDTAdapter.getAttributionRanges` and returns `clientId` per character range.
-18. `Pen.History.BlameGutter` renders author attribution alongside block content.
-19. `ClientIdentityMap` resolves `clientId` to user metadata from awareness states.
-20. History extension works without the collab extension (single-user mode with local snapshots).
-21. All primitives support `asChild`, forward refs, render no styles, and expose `data-*` attributes.
-22. Sync messages include `protocolVersion`; mismatched higher versions produce deterministic `UNSUPPORTED_PROTOCOL` diagnostics.
-23. Unknown message types are ignored without disconnecting healthy peers.
-24. Malformed sync payloads are dropped and surfaced via diagnostics without crashing the editor.
-25. A malformed remote CRDT update received via WebSocket does not crash the editor. It emits a `crdt:diagnostic` event and the sync session continues.
-26. After a remote merge that introduces an orphan block (in `blocks` but not `blockOrder`), the `DocumentHealthMonitor` detects and reports the inconsistency.
+### Shipped Foundation
+
+1. `@pen/multiplayer` accepts a `MultiplayerSession` or `sessionFactory` instead of owning transport config directly.
+2. `@pen/crdt-yjs` exposes helpers to access raw `Y.Doc` and raw Yjs `Awareness` so apps can integrate external providers such as `y-websocket`.
+3. The multiplayer runtime is owned per `DocumentSession` scope, not per mounted editor.
+4. Multiple local `Editor` views attached to the same `DocumentSession` share awareness and a shared multiplayer runtime for that scope.
+5. Local selection changes are published to awareness. Remote peers see cursor position and selection range.
+6. Remote cursors render as decorations with user color and name.
+7. Remote selections render as decorations with user color, including cross-block selection ranges.
+8. `Pen.Multiplayer.PresenceList`, `Pen.Multiplayer.RemoteCursors`, and `Pen.Multiplayer.CaretOverlay` ship in `@pen/react`.
+9. `useMultiplayer()`, `useRemoteCursors()`, `useRemoteSelections()`, `useHistory()`, and `useAttribution()` ship in `@pen/react`.
+10. Connection status surfaces external provider lifecycle through `ConnectionState`.
+11. Color assignment is deterministic. The same userId always produces the same fallback color.
+12. Manual snapshot creation captures document state as binary data.
+13. Snapshot restoration creates a pre-restore auto-save and replaces the active shared scope through `DocumentSession` when one exists.
+14. Auto-snapshot fires on session start, time interval, operation threshold, and optional AI generation events.
+15. Per-character attribution uses `CRDTAdapter.getAttributionRanges` and returns `clientId` per character range.
+16. Retained author identity survives peer disconnects and is used for history/blame before falling back to live identity resolution.
+17. History works without the multiplayer extension in single-user mode with local snapshots.
+18. After a remote merge that introduces an orphan block (in `blocks` but not `blockOrder`), the existing document health monitoring surface can still report the inconsistency.
+
+### Deferred Follow-Up
+
+1. `Pen.History.Timeline`, `Pen.History.Entry`, `Pen.History.SnapshotDiff`, `Pen.History.BlameGutter`, and `Pen.History.RestoreButton`.
+2. Additional multiplayer UI such as `Pen.Multiplayer.ConnectionStatus`, `Pen.Multiplayer.RemoteSelections`, and dedicated presence avatar primitives.
+3. Any AI-presence-specific multiplayer primitives, if they remain part of the product plan.
+4. Transport-owned protocol/version diagnostics. Because Pen no longer owns websocket framing or the Yjs sync wire protocol, criteria such as unsupported sync message versions or malformed provider payload handling belong to the external provider/integration layer rather than the core Wave 8 foundation.
 
 ## Runtime Update: Awareness and Document Scope
 

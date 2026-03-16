@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import * as Y from "yjs";
 
 import { yjsAdapter } from "../adapter";
-import { createYjsDocument, initBlockMap } from "../document";
+import { SUBDOCUMENT, createYjsDocument, initBlockMap } from "../document";
 import {
   createYjsSnapshot,
   forkDocument,
@@ -38,6 +38,41 @@ describe("snapshots", () => {
       const restoredBlock = restored.penDocument.blocks.get("b1")!;
       const restoredText = restoredBlock.get("content") as Y.Text;
       expect(restoredText.toString()).toBe("Snapshot state");
+    });
+
+    it("restores nested subdocument content with the root snapshot", () => {
+      const doc = createYjsDocument(adapter, { gc: false });
+      doc.ydoc.transact(() => {
+        initBlockMap(doc.penDocument.blocks, "subdoc", "subdocument", "subdocument");
+        doc.penDocument.blockOrder.push(["subdoc"]);
+      });
+
+      const subdocBlock = doc.penDocument.blocks.get("subdoc")!;
+      const subdoc = subdocBlock.get(SUBDOCUMENT) as Y.Doc;
+      const subdocBlocks = subdoc.getMap<Y.Map<unknown>>("blocks");
+      const subdocOrder = subdoc.getArray<string>("blockOrder");
+      subdoc.transact(() => {
+        initBlockMap(subdocBlocks, "nested-1", "paragraph", "inline");
+        subdocOrder.push(["nested-1"]);
+        const content = subdocBlocks.get("nested-1")?.get("content") as Y.Text;
+        content.insert(0, "Nested snapshot state");
+      });
+
+      const snapshot = createYjsSnapshot(doc);
+
+      subdoc.transact(() => {
+        const content = subdocBlocks.get("nested-1")?.get("content") as Y.Text;
+        content.delete(0, content.length);
+        content.insert(0, "Nested updated state");
+      });
+
+      const restored = restoreYjsSnapshot(adapter, doc, snapshot);
+      const restoredSubdocBlock = restored.penDocument.blocks.get("subdoc")!;
+      const restoredSubdoc = restoredSubdocBlock.get(SUBDOCUMENT) as Y.Doc;
+      const restoredSubdocBlocks = restoredSubdoc.getMap<Y.Map<unknown>>("blocks");
+      const restoredText = restoredSubdocBlocks.get("nested-1")?.get("content") as Y.Text;
+
+      expect(restoredText.toString()).toBe("Nested snapshot state");
     });
   });
 

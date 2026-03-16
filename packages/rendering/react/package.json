@@ -27,12 +27,14 @@
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",
-    "test": "pnpm --filter @pen/preset-default build && vitest run",
+    "test": "pnpm --filter @pen/preset-default build && pnpm --filter @pen/history build && vitest run",
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
     "@pen/ai": "workspace:*",
     "@pen/core": "workspace:*",
+    "@pen/history": "workspace:*",
+    "@pen/multiplayer": "workspace:*",
     "@pen/schema-default": "workspace:*",
     "@pen/shortcuts": "workspace:*",
     "@pen/types": "workspace:^"

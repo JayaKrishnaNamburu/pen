@@ -13,6 +13,13 @@ export {
 // ── Utility ─────────────────────────────────────────────────
 export type { Unsubscribe, Spacing, BorderDef } from "./utility";
 
+// ── Collaboration ───────────────────────────────────────────
+export type {
+	ConnectionState,
+	MultiplayerSession,
+	MultiplayerSessionContext,
+} from "./collaboration";
+
 // ── Block ───────────────────────────────────────────────────
 export type {
 	Block,
@@ -212,7 +219,10 @@ export type {
 	DocumentScopeInfo,
 	DocumentScope,
 	DocumentScopeLookupOptions,
+	DocumentScopeReplacementEvent,
 	CreateSubdocumentOptions,
+	DocumentSessionAttachOptions,
+	ReplaceScopeDocumentOptions,
 	DocumentSession,
 } from "./crdt";
 
@@ -229,9 +239,9 @@ export {
 	type Editor,
 	type EditorInternals,
 	type CreateEditorOptions,
-		type EditorPreset,
-		type EditorPresetContext,
-		type EditorPresetResult,
+	type EditorPreset,
+	type EditorPresetContext,
+	type EditorPresetResult,
 	type DocumentState,
 	type PenEventMap,
 	type UndoManager,

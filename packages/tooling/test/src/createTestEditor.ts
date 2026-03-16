@@ -8,27 +8,36 @@ import type { TestEditor, TestEditorOptions } from "./types";
 import { simulateKeypress, simulateTyping } from "./simulation";
 
 export function createTestEditor(options?: TestEditorOptions): TestEditor {
-  const schema = options?.schema ?? defaultSchema;
+  const {
+    blocks,
+    doc,
+    schema: providedSchema,
+    crdt: _ignoredCrdt,
+    document: _ignoredDocument,
+    ...editorOptions
+  } = options ?? {};
+  const schema = providedSchema ?? defaultSchema;
   const adapter = yjsAdapter();
 
   let ydoc: Y.Doc;
   let crdtDoc: ReturnType<typeof wrapYjsDocument>;
 
-  if (options?.doc) {
-    ydoc = options.doc;
+  if (doc) {
+    ydoc = doc;
     const wrapped = wrapYjsDocument(adapter, ydoc);
     crdtDoc = wrapped;
   } else {
-    const result = createTestDocument(options?.blocks ?? []);
+    const result = createTestDocument(blocks ?? []);
     ydoc = result.ydoc;
     crdtDoc = result.crdtDoc as ReturnType<typeof wrapYjsDocument>;
   }
 
   const editor = createEditor({
-    schema,
+    ...editorOptions,
     crdt: adapter,
+    document: crdtDoc,
+    schema,
   });
-  editor.loadDocument(crdtDoc);
 
   const testEditor = editor as TestEditor;
   const getBlock = editor.getBlock.bind(editor);

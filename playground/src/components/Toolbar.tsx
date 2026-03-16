@@ -3,7 +3,7 @@ import type { Editor } from "@pen/types";
 import { htmlExporter } from "@pen/export-html";
 import { markdownExporter } from "@pen/export-markdown";
 import { setInlineMark } from "@pen/shortcuts";
-import { Pen, useToolbar } from "@pen/react";
+import { Pen, useMultiplayer, useToolbar } from "@pen/react";
 import {
 	useEffect,
 	useRef,
@@ -14,6 +14,7 @@ import {
 	type RefObject,
 } from "react";
 import { PLAYGROUND_BLOCK_TYPE_ORDER } from "../constants/playground";
+import type { PlaygroundCollaborationConfig } from "../utils/playgroundCollaboration";
 import {
 	IconArrowUp,
 	IconBold,
@@ -34,19 +35,17 @@ import {
 type ToolbarProps = {
 	editor: Editor;
 	linkToggleRef: RefObject<(() => void) | null>;
+	collaboration?: PlaygroundCollaborationConfig | null;
 	interactionModel?: "content-first" | "block-first";
-	autocompleteEnabled?: boolean;
 	onToggleInteractionModel?: () => void;
-	onAutocompleteEnabledChange?: (enabled: boolean) => void;
 };
 
 export function Toolbar({
 	editor,
 	linkToggleRef,
+	collaboration = null,
 	interactionModel = "content-first",
-	autocompleteEnabled = true,
 	onToggleInteractionModel,
-	onAutocompleteEnabledChange,
 }: ToolbarProps) {
 	const blockTypeOptions = getBlockTypeOptions(editor);
 	const interactionModeLabel =
@@ -64,6 +63,13 @@ export function Toolbar({
 		<header className="toolbar" data-pen-ignore-pointer-gesture="">
 			<div className="toolbar-left">
 				<h4 className="toolbar-title">Pen</h4>
+				{collaboration ? (
+					<CollaborationStatus
+						editor={editor}
+						room={collaboration.room}
+						userName={collaboration.user.name}
+					/>
+				) : null}
 				{onToggleInteractionModel ? (
 					<button
 						className="toolbar-mode-toggle"
@@ -76,32 +82,6 @@ export function Toolbar({
 					>
 						{interactionModeLabel}
 					</button>
-				) : null}
-				{onAutocompleteEnabledChange ? (
-					<label
-						className="toolbar-checkbox-toggle"
-						onMouseDown={preventEditorBlur}
-						title={
-							autocompleteEnabled
-								? "Disable autocomplete"
-								: "Enable autocomplete"
-						}
-						aria-label={
-							autocompleteEnabled
-								? "Disable autocomplete"
-								: "Enable autocomplete"
-						}
-					>
-						<input
-							className="toolbar-checkbox-input"
-							type="checkbox"
-							checked={autocompleteEnabled}
-							onChange={(event) =>
-								onAutocompleteEnabledChange(event.target.checked)
-							}
-						/>
-						<span>Autocomplete</span>
-					</label>
 				) : null}
 			</div>
 
@@ -162,6 +142,62 @@ export function Toolbar({
 				<ExportMenu editor={editor} />
 			</div>
 		</header>
+	);
+}
+
+type CollaborationStatusProps = {
+	editor: Editor;
+	room: string;
+	userName: string;
+};
+
+function CollaborationStatus({
+	editor,
+	room,
+	userName,
+}: CollaborationStatusProps) {
+	const multiplayerState = useMultiplayer(editor);
+	const statusLabel = getCollaborationStatusLabel(
+		multiplayerState.connectionState,
+	);
+	const statusTone = getCollaborationStatusTone(multiplayerState.connectionState);
+
+	return (
+		<div className="toolbar-collaboration">
+			<div className="toolbar-collaboration-summary">
+				<span
+					className="toolbar-collaboration-status"
+					data-tone={statusTone}
+					title={`Connection: ${statusLabel}`}
+				>
+					<span className="toolbar-collaboration-status-dot" />
+					<span>{statusLabel}</span>
+				</span>
+				<span
+					className="toolbar-collaboration-self"
+					title={`You are ${userName}`}
+				>
+					{userName}
+				</span>
+			</div>
+			<div className="toolbar-collaboration-peers">
+				<Pen.Multiplayer.PresenceList
+					editor={editor}
+					maxVisible={4}
+					renderAvatar={(peer) => (
+						<span
+							className="toolbar-collaboration-avatar"
+							style={{
+								backgroundColor: peer.user.color ?? "var(--accent)",
+							}}
+							title={peer.user.name}
+						>
+							{getInitials(peer.user.name)}
+						</span>
+					)}
+				/>
+			</div>
+		</div>
 	);
 }
 
@@ -426,6 +462,50 @@ function getBlockTypeOptions(editor: Editor) {
 		value: type,
 		label: displayByType.get(type) ?? type,
 	}));
+}
+
+function getCollaborationStatusLabel(status: string): string {
+	switch (status) {
+		case "connected":
+			return "Live";
+		case "syncing":
+			return "Syncing";
+		case "connecting":
+			return "Connecting";
+		case "error":
+			return "Error";
+		default:
+			return "Offline";
+	}
+}
+
+function getCollaborationStatusTone(status: string): string {
+	switch (status) {
+		case "connected":
+			return "success";
+		case "syncing":
+			return "active";
+		case "connecting":
+			return "pending";
+		case "error":
+			return "danger";
+		default:
+			return "muted";
+	}
+}
+
+function getInitials(name: string): string {
+	const parts = name
+		.split(" ")
+		.map((part) => part.trim())
+		.filter(Boolean)
+		.slice(0, 2);
+
+	if (parts.length === 0) {
+		return "?";
+	}
+
+	return parts.map((part) => part[0]?.toUpperCase() ?? "").join("");
 }
 
 function preventEditorBlur(event: MouseEvent<HTMLElement>) {

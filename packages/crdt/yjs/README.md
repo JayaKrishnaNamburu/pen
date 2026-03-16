@@ -1,0 +1,116 @@
+# `@pen/crdt-yjs`
+
+Yjs integration for Pen.
+
+This package provides:
+
+- the Pen Yjs CRDT adapter via `yjsAdapter()`
+- Yjs awareness helpers
+- a thin provider wrapper for multiplayer sessions
+
+It does **not** implement WebSocket transport or a custom Yjs sync provider.
+
+## Collaboration boundary
+
+When using multiplayer with Yjs, Pen expects the application to choose the provider and hand Pen a `MultiplayerSession`.
+
+`@pen/crdt-yjs` exposes the minimal helpers needed for that:
+
+```ts
+import {
+  createYjsProviderSession,
+  getYjsAwareness,
+  getYjsDoc,
+} from "@pen/crdt-yjs";
+```
+
+## Canonical `y-websocket` setup
+
+This is the recommended setup when using [`y-websocket`](https://docs.yjs.dev/ecosystem/connection-provider/y-websocket):
+
+```ts
+import { createEditor } from "@pen/core";
+import {
+  createYjsProviderSession,
+  getYjsAwareness,
+  getYjsDoc,
+} from "@pen/crdt-yjs";
+import { multiplayerExtension } from "@pen/multiplayer";
+import { WebsocketProvider } from "y-websocket";
+
+const editor = createEditor({
+  extensions: [
+    multiplayerExtension({
+      user: { id: "u1", name: "Ada" },
+      sessionFactory: ({ editor, awareness }) => {
+        const provider = new WebsocketProvider(
+          "ws://localhost:1234",
+          "room-a",
+          getYjsDoc(editor),
+          {
+            awareness: getYjsAwareness(awareness),
+            connect: false,
+          },
+        );
+
+        return createYjsProviderSession({
+          connect: () => provider.connect(),
+          disconnect: () => provider.disconnect(),
+          destroy: () => provider.destroy(),
+          getStatus: () => {
+            if (provider.wsconnected) {
+              return "connected";
+            }
+
+            if (provider.wsconnecting) {
+              return "connecting";
+            }
+
+            return "disconnected";
+          },
+          getIsSynced: () => provider.synced,
+          onStatusChange: (listener) => {
+            const handleStatus = (event: {
+              status: "disconnected" | "connecting" | "connected";
+            }) => {
+              listener(event.status);
+            };
+
+            provider.on("status", handleStatus);
+            return () => {
+              provider.off("status", handleStatus);
+            };
+          },
+          onSync: (listener) => {
+            provider.on("sync", listener);
+            return () => {
+              provider.off("sync", listener);
+            };
+          },
+        });
+      },
+    }),
+  ],
+});
+```
+
+There is also a repo example in `examples/y-websocket/`, including a reusable `createYWebsocketSessionFactory()` helper.
+
+## Why `getYjsAwareness()` exists
+
+Pen exposes a generic awareness interface through `@pen/types`, but Yjs providers such as `y-websocket` expect the underlying native Yjs `Awareness` instance.
+
+Use:
+
+- `getYjsDoc(editor)` to access the raw `Y.Doc`
+- `getYjsAwareness(awareness)` to access the raw Yjs awareness object
+
+## Provider adapter notes
+
+`createYjsProviderSession()` works best when the provider adapter supplies:
+
+- `onStatusChange()`
+- `onSync()` when the provider distinguishes connected from fully synced
+- `getStatus()` and `getIsSynced()` when the provider may already be active before Pen wraps it
+
+If `onSync()` is omitted, a connected provider is treated as fully connected rather than `syncing`.

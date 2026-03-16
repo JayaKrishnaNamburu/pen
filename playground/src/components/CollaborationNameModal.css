@@ -1,0 +1,107 @@
+.playground-collaboration-modal-backdrop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 100vh;
+  padding: 24px;
+  background:
+    radial-gradient(circle at top, color-mix(in srgb, var(--accent) 14%, transparent), transparent 42%),
+    color-mix(in srgb, var(--bg) 94%, black 6%);
+}
+
+.playground-collaboration-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: min(100%, 420px);
+  padding: 28px;
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--surface) 94%, var(--bg) 6%);
+  box-shadow:
+    0 24px 80px rgba(15, 23, 42, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.playground-collaboration-modal-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.playground-collaboration-modal-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.playground-collaboration-modal-title {
+  font-size: 28px;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+
+.playground-collaboration-modal-description,
+.playground-collaboration-modal-room {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.playground-collaboration-modal-room {
+  font-family: var(--font-mono);
+}
+
+.playground-collaboration-modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.playground-collaboration-modal-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.playground-collaboration-modal-input {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--surface) 90%, var(--bg) 10%);
+  font-size: 15px;
+}
+
+.playground-collaboration-modal-input:focus {
+  outline: 2px solid color-mix(in srgb, var(--accent) 18%, transparent);
+  border-color: var(--border-focus);
+}
+
+.playground-collaboration-modal-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.playground-collaboration-modal-submit:hover:not(:disabled) {
+  opacity: 0.96;
+  transform: translateY(-1px);
+}
+
+.playground-collaboration-modal-submit:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

@@ -114,6 +114,19 @@ export interface DocumentScopeLookupOptions {
   scopeId?: string;
 }
 
+export interface ReplaceScopeDocumentOptions {
+  destroyReplacedDoc?: boolean;
+}
+
+export interface DocumentScopeReplacementEvent {
+  previousScope: DocumentScopeInfo;
+  scope: DocumentScope;
+}
+
+export interface DocumentSessionAttachOptions {
+  onScopeReplaced?: (event: DocumentScopeReplacementEvent) => void;
+}
+
 export interface DocumentSession {
   readonly adapter: CRDTAdapter;
   readonly rootScope: DocumentScope;
@@ -139,6 +152,12 @@ export interface DocumentSession {
     options?: CreateSubdocumentOptions,
   ): DocumentScope | null;
   loadSubdocument(scopeId: string): void;
+  replaceScopeDocument(
+    scopeId: string,
+    doc: CRDTDocument,
+    options?: ReplaceScopeDocumentOptions,
+  ): void;
+  attachEditor(options?: DocumentSessionAttachOptions): Unsubscribe;
 
   destroy(): void;
 }

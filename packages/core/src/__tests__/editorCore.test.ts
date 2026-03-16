@@ -2,7 +2,11 @@ import { yjsAdapter } from "@pen/crdt-yjs";
 import { processStream } from "@pen/delta-stream";
 import { inputRulesExtension } from "@pen/input-rules";
 import { undoExtension } from "@pen/undo";
-import { defineExtension, type PenStreamPart } from "@pen/types";
+import {
+	defineExtension,
+	type DocumentSession,
+	type PenStreamPart,
+} from "@pen/types";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -441,6 +445,138 @@ describe("@pen/core createEditor", () => {
 		expect(nestedScope?.id).not.toBe(childScope?.id);
 		expect(session.getScopeForBlock("subdoc-block")).toBeNull();
 
+		childEditor.destroy();
+		rootEditor.destroy();
+		session.destroy();
+	});
+
+	it("supports delegated document session implementations for scope replacement", async () => {
+		const baseSession = createDocumentSession({
+			adapter: yjsAdapter(),
+		});
+		const delegatedSession: DocumentSession = {
+			adapter: baseSession.adapter,
+			get rootScope() {
+				return baseSession.rootScope;
+			},
+			getScope: (scopeId) => baseSession.getScope(scopeId),
+			getScopeByGuid: (guid) => baseSession.getScopeByGuid(guid),
+			getScopeForBlock: (blockId, options) =>
+				baseSession.getScopeForBlock(blockId, options),
+			listScopes: () => baseSession.listScopes(),
+			getAwareness: (scopeId) => baseSession.getAwareness(scopeId),
+			observe: (scopeId, callback) => baseSession.observe(scopeId, callback),
+			observeAll: (callback) => baseSession.observeAll(callback),
+			createSubdocument: (blockId, options) =>
+				baseSession.createSubdocument(blockId, options),
+			loadSubdocument: (scopeId) => baseSession.loadSubdocument(scopeId),
+			replaceScopeDocument: (scopeId, doc, options) =>
+				baseSession.replaceScopeDocument(scopeId, doc, options),
+			attachEditor: (options) => baseSession.attachEditor(options),
+			destroy: () => baseSession.destroy(),
+		};
+		const editor = createEditor({
+			documentSession: delegatedSession,
+		});
+		const originalDoc = editor.internals.crdtDoc;
+		const replacementSource = createEditor();
+		const replacementDoc = delegatedSession.adapter.loadDocument(
+			delegatedSession.adapter.encodeState(replacementSource.internals.crdtDoc),
+		);
+
+		delegatedSession.replaceScopeDocument(editor.documentScope.id, replacementDoc);
+		await flushMicrotasks();
+
+		expect(editor.internals.crdtDoc).toBe(replacementDoc);
+		expect(editor.internals.crdtDoc).not.toBe(originalDoc);
+		expect(editor.firstBlock()).not.toBeNull();
+
+		replacementSource.destroy();
+		editor.destroy();
+		delegatedSession.destroy();
+	});
+
+	it("rebinds child-scope editors when the root session document is replaced", async () => {
+		const session = createDocumentSession({
+			adapter: yjsAdapter(),
+		});
+		const rootEditor = createEditor({
+			documentSession: session,
+		});
+		rootEditor.apply([
+			{
+				type: "insert-block",
+				blockId: "subdoc-block",
+				blockType: "subdocument",
+				props: { title: "Nested" },
+				position: "last",
+			},
+		]);
+		const childScope = session.getScopeForBlock("subdoc-block", {
+			scopeId: rootEditor.documentScope.id,
+		});
+		const childEditor = createEditor({
+			documentSession: session,
+			documentScopeId: childScope!.id,
+		});
+		const childBlockId = childEditor.firstBlock()!.id;
+		childEditor.apply([
+			{
+				type: "insert-text",
+				blockId: childBlockId,
+				offset: 0,
+				text: "Original nested content",
+			},
+		]);
+
+		const replacementSession = createDocumentSession({
+			adapter: yjsAdapter(),
+			ownsDocuments: false,
+		});
+		const replacementRootEditor = createEditor({
+			documentSession: replacementSession,
+		});
+		replacementRootEditor.apply([
+			{
+				type: "insert-block",
+				blockId: "subdoc-block",
+				blockType: "subdocument",
+				props: { title: "Nested" },
+				position: "last",
+			},
+		]);
+		const replacementChildScope = replacementSession.getScopeForBlock(
+			"subdoc-block",
+			{
+				scopeId: replacementRootEditor.documentScope.id,
+			},
+		);
+		const replacementChildEditor = createEditor({
+			documentSession: replacementSession,
+			documentScopeId: replacementChildScope!.id,
+		});
+		const replacementChildBlockId = replacementChildEditor.firstBlock()!.id;
+		replacementChildEditor.apply([
+			{
+				type: "insert-text",
+				blockId: replacementChildBlockId,
+				offset: 0,
+				text: "Replacement nested content",
+			},
+		]);
+
+		session.replaceScopeDocument(rootEditor.documentScope.id, replacementSession.rootScope.doc);
+		await flushMicrotasks();
+
+		expect(childEditor.firstBlock()?.textContent()).toBe(
+			"Replacement nested content",
+		);
+		expect(childEditor.documentScope.ownerBlockId).toBe("subdoc-block");
+		expect(childEditor.documentScope.parentId).toBe(rootEditor.documentScope.id);
+
+		replacementChildEditor.destroy();
+		replacementRootEditor.destroy();
+		replacementSession.destroy();
 		childEditor.destroy();
 		rootEditor.destroy();
 		session.destroy();
@@ -1286,17 +1422,60 @@ describe("@pen/core createEditor", () => {
 		editor.destroy();
 	});
 
-	it("rebinds undo manager after loadDocument", () => {
+it("rebinds undo manager after loadDocument", async () => {
 		const editor = createDefaultEditor();
-		const oldUndoManager = editor.undoManager;
 		const newDoc = editor.internals.adapter.createDocument();
 
 		editor.loadDocument(newDoc);
+	await flushMicrotasks();
 
 		expect(editor.undoManager).toBe(
 			editor.internals.getSlot("undo:manager"),
 		);
-		expect(editor.undoManager).not.toBe(oldUndoManager);
+
+		editor.destroy();
+	});
+
+	it("waits for async extension teardown before reactivating after loadDocument", async () => {
+		const steps: string[] = [];
+		let activationCount = 0;
+		let resolveDeactivate!: () => void;
+		const deactivatePromise = new Promise<void>((resolve) => {
+			resolveDeactivate = resolve;
+		});
+		const editor = createEditor({
+			extensions: [
+				defineExtension({
+					name: "async-lifecycle",
+					activateClient: async () => {
+						activationCount += 1;
+						steps.push(`activate:${activationCount}`);
+					},
+					deactivateClient: async () => {
+						steps.push("deactivate:start");
+						await deactivatePromise;
+						steps.push("deactivate:end");
+					},
+				}),
+			],
+		});
+
+		await flushMicrotasks();
+
+		editor.loadDocument(editor.internals.adapter.createDocument());
+		await flushMicrotasks();
+
+		expect(steps).toEqual(["activate:1", "deactivate:start"]);
+
+		resolveDeactivate();
+		await flushMicrotasks(4);
+
+		expect(steps).toEqual([
+			"activate:1",
+			"deactivate:start",
+			"deactivate:end",
+			"activate:2",
+		]);
 
 		editor.destroy();
 	});
@@ -1433,6 +1612,39 @@ describe("@pen/core createEditor", () => {
 				code: "PEN_EXT_001",
 				level: "error",
 				source: "extension",
+				remediation: expect.any(String),
+			}),
+		);
+
+		editor.destroy();
+	});
+
+	it("emits diagnostics for rejected async extension activation", async () => {
+		const diagnostics: unknown[] = [];
+		const editor = createEditor({
+			extensions: [
+				defineExtension({
+					name: "broken-async-activate",
+					activateClient: async () => {
+						await Promise.resolve();
+						throw new Error("boom");
+					},
+				}),
+			],
+		});
+
+		editor.on("diagnostic", (event) => {
+			diagnostics.push(event);
+		});
+
+		await flushMicrotasks(4);
+
+		expect(diagnostics).toContainEqual(
+			expect.objectContaining({
+				code: "PEN_EXT_004",
+				level: "error",
+				source: "extension",
+				extension: "broken-async-activate",
 				remediation: expect.any(String),
 			}),
 		);

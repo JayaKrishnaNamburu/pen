@@ -2,11 +2,13 @@ import React from "react";
 import type { Editor } from "@pen/types";
 import { EditorRoot, type EditorRootProps } from "./primitives/editor/root";
 import { EditorContent, type EditorContentProps } from "./primitives/editor/content";
+import { EditorCaretOverlay } from "./primitives/editor/caretOverlay";
 
 export interface PenEditorProps
 	extends Omit<EditorRootProps, "children">,
 	Omit<EditorContentProps, "children"> {
 	children?: React.ReactNode;
+	customCaret?: boolean;
 }
 
 export function PenEditor(props: PenEditorProps) {
@@ -21,6 +23,7 @@ export function PenEditor(props: PenEditorProps) {
 		virtualize,
 		emptyPlaceholder,
 		children,
+		customCaret = false,
 		...rest
 	} = props;
 
@@ -41,6 +44,7 @@ export function PenEditor(props: PenEditorProps) {
 			>
 				{children}
 			</EditorContent>
+			{customCaret ? <EditorCaretOverlay /> : null}
 		</EditorRoot>
 	);
 }

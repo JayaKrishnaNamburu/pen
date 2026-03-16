@@ -14,7 +14,7 @@ export interface DeltaStreamOptions {
 }
 
 export function deltaStreamExtension(
-  _options?: DeltaStreamOptions,
+  options?: DeltaStreamOptions,
 ): Extension {
   let editor: Editor | null = null;
   let streamingTarget: StreamingTargetImpl | null = null;
@@ -31,6 +31,7 @@ export function deltaStreamExtension(
       streamingTarget = new StreamingTargetImpl(
         ctx.editor,
         engine,
+        options?.batchInterval,
       );
 
       ctx.editor.internals.setSlot(

@@ -72,6 +72,10 @@ select {
   min-width: 0;
   min-height: 0;
   --pen-caret-color: #0a84ff;
+  --pen-editor-caret-width: 2px;
+  --pen-editor-caret-radius: 999px;
+  --pen-editor-caret-shadow: 0 0 0 0.5px color-mix(in srgb, var(--pen-caret-color) 35%, transparent);
+  --pen-editor-caret-animation: pen-editor-caret-blink 1.12s step-end infinite;
   --pen-drop-caret-width: 1px;
   --pen-drop-caret-offset: calc(var(--pen-drop-caret-width) / -2);
   --pen-drop-caret-halo: color-mix(in srgb, var(--surface) 78%, transparent);
@@ -140,6 +144,10 @@ select {
   border-style: dashed;
 }
 
+[data-pen-editor-caret] {
+  animation: var(--pen-editor-caret-animation);
+}
+
 [data-pen-inline-content] {
   display: block;
   min-height: 1.5em;
@@ -161,6 +169,18 @@ select {
 [data-pen-field-editor-active-surface]::-moz-selection {
   background: var(--pen-selection-color);
   color: var(--pen-selection-text-color);
+}
+
+@keyframes pen-editor-caret-blink {
+  0%,
+  45% {
+    opacity: 1;
+  }
+
+  55%,
+  100% {
+    opacity: 0;
+  }
 }
 
 [data-pen-editor-block] {

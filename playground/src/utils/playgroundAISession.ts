@@ -110,7 +110,7 @@ let pendingSyncReason = "background";
 let latestRequestStartedAt = 0;
 const editorSyncState = new WeakMap<
 	Editor,
-	{ revision: number; syncedRevision: number }
+	{ revision: number; syncedRevision: number; syncedGeneration: number }
 >();
 
 export function subscribeToPlaygroundAIState(callback: () => void): () => void {
@@ -148,7 +148,7 @@ export function queuePlaygroundAISessionSync(editor: Editor, reason = "backgroun
 	syncState.revision += 1;
 	pendingSyncEditor = editor;
 	pendingSyncReason = reason;
-	updateState({ hasPendingSync: syncState.revision > syncState.syncedRevision });
+	updateState({ hasPendingSync: hasUnsyncedEditorState(editor, syncState) });
 
 	if (activeSharedRequestCount > 0) {
 		return;
@@ -183,18 +183,18 @@ export async function flushPlaygroundAISessionSync(
 		}
 
 		if (activeSharedRequestCount > 0) {
-			updateState({ hasPendingSync: syncState.revision > syncState.syncedRevision });
+			updateState({ hasPendingSync: hasUnsyncedEditorState(editor, syncState) });
 			return;
 		}
 
-		if (syncState.revision <= syncState.syncedRevision) {
+		if (!hasUnsyncedEditorState(editor, syncState)) {
 			updateState({ hasPendingSync: false });
 			return;
 		}
 
 		if (pendingSyncPromise) {
 			const result = await pendingSyncPromise;
-			if (syncState.revision <= syncState.syncedRevision) {
+			if (!hasUnsyncedEditorState(editor, syncState)) {
 				updateState({ hasPendingSync: false });
 				return;
 			}
@@ -223,7 +223,7 @@ export async function flushPlaygroundAISessionSync(
 		});
 
 		const result = await pendingSyncPromise;
-		if (syncState.revision <= syncState.syncedRevision) {
+		if (!hasUnsyncedEditorState(editor, syncState)) {
 			updateState({ hasPendingSync: false });
 			return;
 		}
@@ -771,6 +771,7 @@ async function syncPlaygroundAISessionWithId(
 
 	const payload = (await response.json()) as { sessionId?: unknown };
 	syncState.syncedRevision = syncState.revision;
+	syncState.syncedGeneration = editor.documentState.generation;
 
 	if (options?.updateClientState !== false) {
 		updateState({
@@ -790,6 +791,7 @@ async function syncPlaygroundAISessionWithId(
 function getEditorSyncState(editor: Editor): {
 	revision: number;
 	syncedRevision: number;
+	syncedGeneration: number;
 } {
 	const existing = editorSyncState.get(editor);
 	if (existing) {
@@ -798,9 +800,20 @@ function getEditorSyncState(editor: Editor): {
 	const initial = {
 		revision: 0,
 		syncedRevision: -1,
+		syncedGeneration: -1,
 	};
 	editorSyncState.set(editor, initial);
 	return initial;
+}
+
+function hasUnsyncedEditorState(
+	editor: Editor,
+	syncState = getEditorSyncState(editor),
+): boolean {
+	return (
+		syncState.revision > syncState.syncedRevision ||
+		editor.documentState.generation > syncState.syncedGeneration
+	);
 }
 
 type PlaygroundAISyncResult = "synced" | "deferred";

@@ -5,8 +5,12 @@ import type {
   CRDTEvent,
   CreateSubdocumentOptions,
   DocumentScope,
+  DocumentScopeInfo,
   DocumentScopeLookupOptions,
+  DocumentScopeReplacementEvent,
+  DocumentSessionAttachOptions,
   DocumentSession,
+  ReplaceScopeDocumentOptions,
   Unsubscribe,
 } from "@pen/types";
 import {
@@ -21,6 +25,12 @@ import {
 } from "@pen/crdt-yjs";
 
 type ScopeListener = (event: CRDTEvent) => void;
+type ScopeReplacementListener = (event: DocumentScopeReplacementEvent) => void;
+
+type ScopeReplacementTarget = {
+  previousScope: DocumentScope;
+  ownerPath: string[];
+};
 
 type ScopeEntry = {
   scope: DocumentScope;
@@ -58,6 +68,16 @@ function cloneScope(scope: DocumentScope): DocumentScope {
   return { ...scope };
 }
 
+function toScopeInfo(scope: DocumentScope): DocumentScopeInfo {
+  return {
+    id: scope.id,
+    guid: scope.guid,
+    kind: scope.kind,
+    parentId: scope.parentId,
+    ownerBlockId: scope.ownerBlockId,
+  };
+}
+
 export class DocumentSessionImpl implements DocumentSession {
   readonly adapter: CRDTAdapter;
   readonly rootScope: DocumentScope;
@@ -69,6 +89,7 @@ export class DocumentSessionImpl implements DocumentSession {
   private readonly _scopeIdsByOwnerKey = new Map<string, string>();
   private readonly _listenersByScope = new Map<string, Set<ScopeListener>>();
   private readonly _allListeners = new Set<ScopeListener>();
+  private readonly _scopeReplacementListeners = new Set<ScopeReplacementListener>();
   private _attachedEditors = 0;
   private _destroyed = false;
 
@@ -207,14 +228,75 @@ export class DocumentSessionImpl implements DocumentSession {
     scope.scope.doc.ydoc.load();
   }
 
-  attachEditor(): Unsubscribe {
+  replaceScopeDocument(
+    scopeId: string,
+    doc: CRDTDocument,
+    options?: ReplaceScopeDocumentOptions,
+  ): void {
+    const entry = this._getScopeEntry(scopeId);
+    if (!entry) {
+      throw new Error(`Unknown document scope: ${scopeId}`);
+    }
+
+    const previousDoc = entry.scope.doc;
+    const previousGuid = entry.scope.guid;
+    const replacementTargets = this._collectReplacementTargets(scopeId);
+
+    this._removeDescendantScopes(scopeId);
+    entry.observerUnsub();
+    entry.awareness?.destroy();
+    if (entry.subdocsHandler && isYjsCRDTDocument(previousDoc)) {
+      previousDoc.ydoc.off("subdocs", entry.subdocsHandler);
+    }
+
+    const nextGuid = toScopeId(doc);
+    (entry.scope as { doc: CRDTDocument }).doc = doc;
+    entry.scope.guid = nextGuid;
+    if (this.rootScope.id === scopeId) {
+      (this.rootScope as { doc: CRDTDocument; guid: string }).doc = doc;
+      (this.rootScope as { guid: string }).guid = nextGuid;
+    }
+
+    this._guidToScopeId.delete(previousGuid);
+    this._guidToScopeId.set(nextGuid, scopeId);
+    entry.awareness = this.adapter.createAwareness?.(doc) ?? null;
+    entry.subdocsHandler = null;
+    entry.observerUnsub = this._createScopeObserver(entry);
+
+    if (isYjsCRDTDocument(doc)) {
+      this._attachSubdocumentDiscovery(entry, doc);
+      this._syncOwnedSubdocumentScopes(entry);
+    }
+
+    if (options?.destroyReplacedDoc !== false && this._ownsDocuments && isYjsCRDTDocument(previousDoc)) {
+      previousDoc.ydoc.destroy();
+    }
+
+    for (const target of replacementTargets) {
+      const event: DocumentScopeReplacementEvent = {
+        previousScope: toScopeInfo(target.previousScope),
+        scope: this._resolveReplacementScope(scopeId, target.ownerPath),
+      };
+      for (const listener of this._scopeReplacementListeners) {
+        listener(event);
+      }
+    }
+  }
+
+  attachEditor(options?: DocumentSessionAttachOptions): Unsubscribe {
     this._attachedEditors += 1;
+    if (options?.onScopeReplaced) {
+      this._scopeReplacementListeners.add(options.onScopeReplaced);
+    }
     let released = false;
     return () => {
       if (released) {
         return;
       }
       released = true;
+      if (options?.onScopeReplaced) {
+        this._scopeReplacementListeners.delete(options.onScopeReplaced);
+      }
       this._attachedEditors = Math.max(0, this._attachedEditors - 1);
       if (this._destroyWhenIdle && this._attachedEditors === 0) {
         this.destroy();
@@ -244,6 +326,7 @@ export class DocumentSessionImpl implements DocumentSession {
     this._scopeIdsByOwnerKey.clear();
     this._listenersByScope.clear();
     this._allListeners.clear();
+    this._scopeReplacementListeners.clear();
   }
 
   private _registerScope(
@@ -279,10 +362,7 @@ export class DocumentSessionImpl implements DocumentSession {
       subdocsHandler: null,
     };
 
-    entry.observerUnsub = this.adapter.observe(doc, (event) => {
-      this._syncOwnedSubdocumentScopes(entry, event.affectedBlocks);
-      this._emit(scope, event);
-    });
+    entry.observerUnsub = this._createScopeObserver(entry);
 
     this._scopes.set(scopeId, entry);
     this._guidToScopeId.set(scope.guid, scope.id);
@@ -367,6 +447,67 @@ export class DocumentSessionImpl implements DocumentSession {
     this._scopes.delete(scopeId);
     this._guidToScopeId.delete(guid);
     this._listenersByScope.delete(scopeId);
+  }
+
+  private _removeDescendantScopes(scopeId: string): void {
+    const childGuids = Array.from(this._scopes.values())
+      .filter((entry) => entry.scope.parentId === scopeId)
+      .map((entry) => entry.scope.guid);
+
+    for (const childGuid of childGuids) {
+      const childScope = this.getScopeByGuid(childGuid);
+      if (childScope) {
+        this._removeDescendantScopes(childScope.id);
+      }
+      this._removeScopeByGuid(childGuid);
+    }
+  }
+
+  private _collectReplacementTargets(scopeId: string): ScopeReplacementTarget[] {
+    const rootEntry = this._getScopeEntry(scopeId);
+    if (!rootEntry) {
+      return [];
+    }
+
+    const targets: ScopeReplacementTarget[] = [];
+    const walk = (currentScope: DocumentScope, ownerPath: string[]) => {
+      targets.push({
+        previousScope: cloneScope(currentScope),
+        ownerPath: [...ownerPath],
+      });
+
+      const childScopes = Array.from(this._scopes.values())
+        .filter((entry) => entry.scope.parentId === currentScope.id)
+        .map((entry) => cloneScope(entry.scope));
+
+      for (const childScope of childScopes) {
+        if (childScope.ownerBlockId == null) {
+          walk(childScope, ownerPath);
+          continue;
+        }
+        walk(childScope, [...ownerPath, childScope.ownerBlockId]);
+      }
+    };
+
+    walk(cloneScope(rootEntry.scope), []);
+    return targets;
+  }
+
+  private _resolveReplacementScope(
+    scopeId: string,
+    ownerPath: readonly string[],
+  ): DocumentScope {
+    let resolvedScope = this.getScope(scopeId) ?? cloneScope(this.rootScope);
+    for (const ownerBlockId of ownerPath) {
+      const childScope = this.getScopeForBlock(ownerBlockId, {
+        scopeId: resolvedScope.id,
+      });
+      if (!childScope) {
+        break;
+      }
+      resolvedScope = childScope;
+    }
+    return resolvedScope;
   }
 
   private _emit(scope: DocumentScope, event: CRDTEvent): void {
@@ -480,6 +621,13 @@ export class DocumentSessionImpl implements DocumentSession {
 
   private _getScopeEntry(scopeId: string): ScopeEntry | null {
     return this._scopes.get(scopeId) ?? null;
+  }
+
+  private _createScopeObserver(entry: ScopeEntry): Unsubscribe {
+    return this.adapter.observe(entry.scope.doc, (event) => {
+      this._syncOwnedSubdocumentScopes(entry, event.affectedBlocks);
+      this._emit(entry.scope, event);
+    });
   }
 }
 

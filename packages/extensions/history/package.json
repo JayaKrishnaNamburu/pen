@@ -1,0 +1,45 @@
+{
+  "name": "@pen/history",
+  "version": "0.0.0",
+  "description": "Snapshot history and attribution primitives for Pen",
+  "license": "LICENSE.md",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./src/index.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./src/index.ts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./src/index.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@pen/types": "workspace:*"
+  },
+  "devDependencies": {
+    "@pen/core": "workspace:*",
+    "@pen/crdt-yjs": "workspace:*",
+    "@pen/test": "workspace:*",
+    "tsup": "^8.4.0",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.7",
+    "yjs": "^13.6.29"
+  }
+}

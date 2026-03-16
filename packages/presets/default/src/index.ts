@@ -1,4 +1,5 @@
 import { deltaStreamExtension } from "@pen/delta-stream";
+import type { DeltaStreamOptions } from "@pen/delta-stream";
 import { documentOpsExtension } from "@pen/document-ops";
 import {
 	richTextShortcutsExtension,
@@ -9,7 +10,7 @@ import { undoExtension } from "@pen/undo";
 
 export interface DefaultPresetOptions {
 	documentOps?: boolean;
-	deltaStream?: boolean;
+	deltaStream?: boolean | DeltaStreamOptions;
 	undo?: boolean;
 	shortcuts?: boolean | RichTextShortcutsOptions;
 }
@@ -26,7 +27,9 @@ export function defaultPreset(
 			}
 
 			if (options.deltaStream !== false) {
-				extensions.push(deltaStreamExtension());
+				extensions.push(
+					deltaStreamExtension(resolveDeltaStreamOptions(options.deltaStream)),
+				);
 			}
 
 			if (options.undo !== false) {
@@ -41,6 +44,16 @@ export function defaultPreset(
 			return { extensions };
 		},
 	};
+}
+
+function resolveDeltaStreamOptions(
+	deltaStream: DefaultPresetOptions["deltaStream"],
+): DeltaStreamOptions | undefined {
+	if (deltaStream === false || deltaStream == null || deltaStream === true) {
+		return undefined;
+	}
+
+	return deltaStream;
 }
 
 function resolveShortcutsOptions(

@@ -7,10 +7,14 @@ import { SlashMenu } from "./SlashMenu";
 
 type PlaygroundEditorViewportProps = {
 	editor: Editor;
+	collaborationEnabled?: boolean;
+	customCaretEnabled?: boolean;
 };
 
 export function PlaygroundEditorViewport({
 	editor,
+	collaborationEnabled = false,
+	customCaretEnabled = false,
 }: PlaygroundEditorViewportProps) {
 	const viewportRef = useRef<HTMLDivElement | null>(null);
 
@@ -26,6 +30,8 @@ export function PlaygroundEditorViewport({
 			<PlaygroundContextualPrompt viewportRef={viewportRef} />
 			<Pen.Editor.RegionSelector getRegionRect={getViewportRect} />
 			<Pen.Editor.SelectionRect />
+			{customCaretEnabled ? <Pen.Editor.CaretOverlay /> : null}
+			{collaborationEnabled ? <Pen.Multiplayer.CaretOverlay /> : null}
 			<SlashMenu editor={editor} />
 			<SelectionToolbar />
 			<Pen.AI.InlineSuggestionControls>

@@ -19,6 +19,8 @@ type InspectorPanelProps = {
 		acceptanceStrategy: AutocompleteAcceptanceStrategy;
 		blockPolicy: AutocompleteBlockPolicy;
 	};
+	customCaretEnabled: boolean;
+	onCustomCaretEnabledChange: (enabled: boolean) => void;
 	onAutocompleteEnabledChange: (enabled: boolean) => void;
 	onAutocompletePrefetchChange: (enabled: boolean) => void;
 	onAutocompleteDebounceChange: (debounceMs: number) => void;
@@ -35,6 +37,8 @@ export function InspectorPanel({
 	isOpen,
 	onToggle,
 	autocompleteSettings,
+	customCaretEnabled,
+	onCustomCaretEnabledChange,
 	onAutocompleteEnabledChange,
 	onAutocompletePrefetchChange,
 	onAutocompleteDebounceChange,
@@ -320,6 +324,23 @@ export function InspectorPanel({
 							</ul>
 						</div>
 					) : null}
+				</section>
+				<section className="inspector-section">
+					<div className="inspector-section-header">
+						<h5 className="inspector-section-title">Caret</h5>
+					</div>
+					<div className="inspector-controls">
+						<label className="inspector-toggle-row">
+							<span>Custom caret</span>
+							<input
+								type="checkbox"
+								checked={customCaretEnabled}
+								onChange={(event) =>
+									onCustomCaretEnabledChange(event.target.checked)
+								}
+							/>
+						</label>
+					</div>
 				</section>
 				<pre className="inspector-json">{inspectorJson}</pre>
 			</div>

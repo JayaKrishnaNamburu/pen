@@ -43,6 +43,12 @@
 	gap: 5px;
 }
 
+.playground-debug-controls {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
 .playground-debug-section-header {
 	display: flex;
 	align-items: center;
@@ -52,7 +58,8 @@
 
 .playground-debug-caption,
 .playground-debug-metric-label,
-.playground-debug-metric-value {
+.playground-debug-metric-value,
+.playground-debug-toggle-row {
 	font-size: 12px;
 	line-height: 1.5;
 }
@@ -64,6 +71,14 @@
 
 .playground-debug-metric-label {
 	font-weight: 500;
+}
+
+.playground-debug-toggle-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	color: var(--text);
 }
 
 .playground-debug-metric {

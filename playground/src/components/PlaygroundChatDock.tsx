@@ -14,6 +14,10 @@ import "./PlaygroundChatDock.css";
 
 type PlaygroundChatDockProps = {
 	editor: Editor;
+	autocompleteEnabled: boolean;
+	customCaretEnabled: boolean;
+	onAutocompleteEnabledChange: (enabled: boolean) => void;
+	onCustomCaretEnabledChange: (enabled: boolean) => void;
 };
 
 type PlaygroundChatMessageRole = "user" | "assistant";
@@ -36,6 +40,10 @@ const PLAYGROUND_CHAT_MODE_LABEL = "Auto";
 
 export function PlaygroundChatDock({
 	editor,
+	autocompleteEnabled,
+	customCaretEnabled,
+	onAutocompleteEnabledChange,
+	onCustomCaretEnabledChange,
 }: PlaygroundChatDockProps) {
 	const sessionActions = useAISessionActions(editor);
 	const sessions = useAISessions(editor);
@@ -434,6 +442,10 @@ export function PlaygroundChatDock({
 						<DebugPanel
 							editor={editor}
 							sessionId={bottomChatSession?.id ?? bottomChatSessionIdRef.current ?? undefined}
+							autocompleteEnabled={autocompleteEnabled}
+							customCaretEnabled={customCaretEnabled}
+							onAutocompleteEnabledChange={onAutocompleteEnabledChange}
+							onCustomCaretEnabledChange={onCustomCaretEnabledChange}
 							variant="dock"
 						/>
 					</div>

@@ -3,6 +3,7 @@ export {
 	EditorContent,
 	EditorBlock,
 	InlineContent,
+	EditorCaretOverlay,
 	EditorBlockHandle,
 	EditorDragOverlay,
 	EditorRegionSelector,
@@ -66,6 +67,11 @@ export {
 	AIInlineSession,
 	AIInlineSessionActions,
 } from "./ai/index";
+export {
+	MultiplayerPresenceList,
+	MultiplayerRemoteCursors,
+	MultiplayerCaretOverlay,
+} from "./multiplayer/index";
 
 // ── Pen.* namespace for compound component API ──────────────
 
@@ -74,6 +80,7 @@ import {
 	EditorContent,
 	EditorBlock,
 	InlineContent,
+	EditorCaretOverlay,
 	EditorBlockHandle,
 	EditorDragOverlay,
 	EditorRegionSelector,
@@ -137,6 +144,11 @@ import {
 	AIInlineSession,
 	AIInlineSessionActions,
 } from "./ai/index";
+import {
+	MultiplayerPresenceList,
+	MultiplayerRemoteCursors,
+	MultiplayerCaretOverlay,
+} from "./multiplayer/index";
 
 export const Pen = {
 	Editor: {
@@ -144,6 +156,7 @@ export const Pen = {
 		Content: EditorContent,
 		Block: EditorBlock,
 		InlineContent,
+		CaretOverlay: EditorCaretOverlay,
 		BlockHandle: EditorBlockHandle,
 		DragOverlay: EditorDragOverlay,
 		RegionSelector: EditorRegionSelector,
@@ -202,5 +215,10 @@ export const Pen = {
 		InlineSuggestionReject: AIInlineSuggestionRejectButton,
 		InlineSession: AIInlineSession,
 		InlineSessionActions: AIInlineSessionActions,
+	},
+	Multiplayer: {
+		PresenceList: MultiplayerPresenceList,
+		RemoteCursors: MultiplayerRemoteCursors,
+		CaretOverlay: MultiplayerCaretOverlay,
 	},
 } as const;

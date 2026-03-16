@@ -35,6 +35,9 @@ const PEN_SOURCE_ALIASES = {
 	"@pen/import-markdown": fileURLToPath(
 		new URL("../packages/extensions/import-markdown/src/index.ts", import.meta.url),
 	),
+	"@pen/multiplayer": fileURLToPath(
+		new URL("../packages/extensions/multiplayer/src/index.ts", import.meta.url),
+	),
 	"@pen/react": fileURLToPath(
 		new URL("../packages/rendering/react/src/index.ts", import.meta.url),
 	),

@@ -5,7 +5,12 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "jsx": "react-jsx",
     "noEmit": true,
-    "types": ["vite/client"]
+    "types": ["vite/client"],
+    "baseUrl": ".",
+    "paths": {
+      "@pen/crdt-yjs": ["../packages/crdt/yjs/src/index.ts"],
+      "@pen/multiplayer": ["../packages/extensions/multiplayer/src/index.ts"]
+    }
   },
   "include": ["src"]
 }
