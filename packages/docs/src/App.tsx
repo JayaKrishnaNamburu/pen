@@ -21,10 +21,6 @@ const docsUtilityLinks = [
     label: "Specs",
   },
 ] as const;
-const docsSidebarStats = [
-  `${sitePages.length} pages`,
-  `${siteSections.length} sections`,
-] as const;
 const docsTopNavItems = ["Docs", "Examples", "Guides"] as const;
 
 function resolvePageId(hash: string): string {
@@ -108,25 +104,18 @@ export function App() {
     );
   });
 
-  const utilityLinkItems = docsUtilityLinks.map((link) => {
+  const topbarLink = docsUtilityLinks[0];
+  const railLinkItems = docsUtilityLinks.slice(1).map((link) => {
     return (
       <a
         key={link.href}
-        className="docs-utility-link"
+        className="docs-rail-utility-link"
         href={link.href}
         target="_blank"
         rel="noreferrer"
       >
         {link.label}
       </a>
-    );
-  });
-
-  const sidebarStats = docsSidebarStats.map((stat) => {
-    return (
-      <span key={stat} className="docs-sidebar-stat">
-        {stat}
-      </span>
     );
   });
 
@@ -177,12 +166,7 @@ export function App() {
           </div>
           <span className="docs-eyebrow">Current Surface</span>
           <h1>Shipped editor docs</h1>
-          <p>
-            Reference docs for the shipped Pen surface area: React-first adoption, the
-            Vue renderer, canonical JSON, XML interoperability, and shipped extensions.
-          </p>
         </div>
-        <div className="docs-sidebar-stats">{sidebarStats}</div>
         <nav aria-label="Documentation navigation">{navGroups}</nav>
       </aside>
       <main className="docs-main">
@@ -192,7 +176,14 @@ export function App() {
             <span className="docs-topbar-subtitle">{currentSectionLabel}</span>
           </div>
           <div className="docs-top-nav">{topNavItems}</div>
-          <div className="docs-topbar-links">{utilityLinkItems}</div>
+          <a
+            className="docs-topbar-action"
+            href={topbarLink.href}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {topbarLink.label}
+          </a>
         </div>
         <div className="docs-main-grid">
           <section className="docs-content-column">
@@ -209,17 +200,16 @@ export function App() {
           </section>
           <aside className="docs-rail">
             <div className="docs-rail-panel">
-              <span className="docs-rail-label">In this section</span>
+              <span className="docs-rail-label">On this page</span>
               <div className="docs-rail-links">{sectionRailItems}</div>
             </div>
             <div className="docs-rail-card">
-              <span className="docs-rail-card-label">Repository</span>
-              <strong>Shipped surface only</strong>
+              <span className="docs-rail-card-label">Resources</span>
+              <strong>Repository links</strong>
               <p>
-                Pen documents the packages and editor features that already exist in this
-                repository.
+                README and architecture specs for the current shipped Pen surface.
               </p>
-              <div className="docs-rail-card-links">{utilityLinkItems}</div>
+              <div className="docs-rail-card-links">{railLinkItems}</div>
             </div>
           </aside>
         </div>
