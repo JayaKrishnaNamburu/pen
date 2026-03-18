@@ -7,6 +7,24 @@ import {
 } from "./content/siteContent";
 
 const pageIds = new Set(sitePages.map((page) => page.id));
+const docsUtilityLinks = [
+  {
+    href: "https://github.com/lemni/pen",
+    label: "GitHub",
+  },
+  {
+    href: "https://github.com/lemni/pen/blob/main/README.md",
+    label: "README",
+  },
+  {
+    href: "https://github.com/lemni/pen/tree/main/spec",
+    label: "Specs",
+  },
+] as const;
+const docsSidebarStats = [
+  `${sitePages.length} pages`,
+  `${siteSections.length} sections`,
+] as const;
 
 function resolvePageId(hash: string): string {
   const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
@@ -77,7 +95,6 @@ export function App() {
           onClick={() => handlePageSelect(page.id)}
         >
           <span className="docs-nav-link-title">{page.title}</span>
-          <span className="docs-nav-link-summary">{page.summary}</span>
         </button>
       );
     });
@@ -91,22 +108,31 @@ export function App() {
     );
   });
 
-  const pagePills = pageGroups
-    .find((group) => group.section.id === currentPage.sectionId)
-    ?.pages.map((page) => {
-      const isActive = page.id === currentPage.id;
+  const utilityLinkItems = docsUtilityLinks.map((link) => {
+    return (
+      <a
+        key={link.href}
+        className="docs-utility-link"
+        href={link.href}
+        target="_blank"
+        rel="noreferrer"
+      >
+        {link.label}
+      </a>
+    );
+  });
 
-      return (
-        <button
-          key={page.id}
-          type="button"
-          className={isActive ? "docs-page-pill is-active" : "docs-page-pill"}
-          onClick={() => handlePageSelect(page.id)}
-        >
-          {page.title}
-        </button>
-      );
-    });
+  const sidebarStats = docsSidebarStats.map((stat) => {
+    return (
+      <span key={stat} className="docs-sidebar-stat">
+        {stat}
+      </span>
+    );
+  });
+
+  const currentSectionLabel = currentSection
+    ? `${currentSection.title} section`
+    : "Documentation";
 
   const article = renderArticle(currentPage, currentSection?.title ?? "Docs");
 
@@ -114,16 +140,28 @@ export function App() {
     <div className="docs-shell">
       <aside className="docs-sidebar">
         <div className="docs-sidebar-header">
+          <div className="docs-sidebar-brand">
+            <span className="docs-sidebar-brand-mark" />
+            <span className="docs-sidebar-brand-name">Pen</span>
+          </div>
           <span className="docs-eyebrow">Current Surface</span>
-          <h1>Pen Docs</h1>
+          <h1>Shipped editor docs</h1>
           <p>
             Reference docs for the shipped Pen surface area: React-first adoption, the
             Vue renderer, canonical JSON, XML interoperability, and shipped extensions.
           </p>
         </div>
+        <div className="docs-sidebar-stats">{sidebarStats}</div>
         <nav aria-label="Documentation navigation">{navGroups}</nav>
       </aside>
       <main className="docs-main">
+        <div className="docs-topbar">
+          <div className="docs-topbar-copy">
+            <span className="docs-topbar-label">Documentation</span>
+            <span className="docs-topbar-subtitle">{currentSectionLabel}</span>
+          </div>
+          <div className="docs-topbar-links">{utilityLinkItems}</div>
+        </div>
         <header className="docs-main-header">
           <div>
             <span className="docs-section-label">
@@ -132,17 +170,7 @@ export function App() {
             <h1>{currentPage.title}</h1>
             <p>{currentPage.summary}</p>
           </div>
-          <div className="docs-status-card">
-            <strong>Scope guard</strong>
-            <span>
-              This site documents shipped editor surfaces only. Deferred areas such as
-              layout, apps, execution, and auth platform features stay out of scope.
-            </span>
-          </div>
         </header>
-        <div className="docs-page-pills" aria-label="Section pages">
-          {pagePills}
-        </div>
         {article}
       </main>
     </div>
@@ -154,7 +182,6 @@ function renderArticle(page: SitePage, sectionTitle: string) {
     <article className="docs-article">
       <div className="docs-article-meta">
         <span>{sectionTitle}</span>
-        <span>{page.id}</span>
       </div>
       <div className="docs-article-body">{page.content}</div>
     </article>
