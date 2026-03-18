@@ -1,6 +1,6 @@
-# @pen/assets-memory
+# `@pen/assets-memory`
 
-In-memory asset provider for Pen
+In-memory asset provider for Pen.
 
 ## Install
 
@@ -8,6 +8,29 @@ In-memory asset provider for Pen
 pnpm add @pen/assets-memory
 ```
 
-## Notes
+## What It Provides
 
-This package is part of the Pen monorepo. Pair it with the relevant core, schema, rendering, or extension packages for your editor setup.
+- `memoryAssets()` to create an in-memory `AssetProvider`
+- upload, resolve, and delete behavior backed by a local object store
+- object-URL based asset refs for local development and tests
+
+## Usage
+
+```ts
+import { memoryAssets } from "@pen/assets-memory";
+
+const assets = memoryAssets();
+
+const ref = await assets.upload(new Blob(["hello"], { type: "text/plain" }), {
+  mimeType: "text/plain",
+});
+
+const url = assets.resolve(ref);
+await assets.delete(ref);
+```
+
+## Integration Notes
+
+- This provider is useful for tests, demos, and local playground flows.
+- It is not intended to be a durable production storage layer.
+- Uploaded refs are kept in memory for the lifetime of the provider instance.

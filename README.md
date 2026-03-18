@@ -44,7 +44,11 @@ export function App() {
 
 `PenEditor` is the fastest path. If you want to own the shell, layout, and controls, use the compound primitives directly.
 
-## Editor Example
+## Headless UI Examples
+
+Pen keeps runtime state and document mutation in the editor. Your app can subscribe to that state and render any UI system around it.
+
+### Editor Example
 
 This example keeps Pen headless where it matters while still giving you a batteries-included editor surface in React.
 
@@ -92,10 +96,6 @@ export function App() {
 ```
 
 You can stop at `PenEditor`, compose `Pen.*` primitives, or replace the UI entirely with your own controls.
-
-## Headless UI Examples
-
-Pen keeps runtime state and document mutation in the editor. Your app can subscribe to that state and render any UI system around it.
 
 ### Bring Your Own Toolbar
 

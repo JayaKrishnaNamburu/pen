@@ -63,7 +63,10 @@ export function EditorBlock(props: EditorBlockProps) {
 
 	const isAiGenerating = blockDecorations.some(
 		(d: Decoration) =>
-			"attributes" in d && Boolean(d.attributes["ai-generating"]),
+			"attributes" in d &&
+			Boolean(
+				d.attributes[DATA_ATTRS.aiGenerating] ?? d.attributes["ai-generating"],
+			),
 	);
 	const blockDecorationAttributes = mergeBlockDecorationAttributes(blockDecorations);
 

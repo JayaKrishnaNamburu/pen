@@ -9,8 +9,8 @@ export function buildGenerationZoneDecorations(
 		type: "block",
 		blockId: generation.blockId,
 		attributes: {
-			"ai-generating": generation.status === "streaming",
-			"data-generationZone-id": generation.zoneId,
+			"data-ai-generating": generation.status === "streaming",
+			"data-generation-zone-id": generation.zoneId,
 			"data-generation-status": generation.status,
 		},
 	}];

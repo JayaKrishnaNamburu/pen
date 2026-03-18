@@ -1,13 +1,33 @@
-# @pen/import-markdown
+# `@pen/import-markdown`
 
-Markdown importer for Pen
+Markdown importer for Pen.
 
 ## Install
 
 ```bash
-pnpm add @pen/import-markdown
+pnpm add @pen/core @pen/import-markdown
 ```
 
-## Notes
+## What It Provides
 
-This package is part of the Pen monorepo. Pair it with the relevant core, schema, rendering, or extension packages for your editor setup.
+- `markdownImporter` for parsing and importing Markdown into a Pen editor
+- `parseMarkdownToBlocks()` for block conversion without mutating the editor
+
+## Usage
+
+```ts
+import { createEditor } from "@pen/core";
+import { markdownImporter } from "@pen/import-markdown";
+
+const editor = createEditor();
+
+markdownImporter.import("# Hello\n\nThis came from Markdown.", editor, {
+  replace: true,
+});
+```
+
+## Integration Notes
+
+- This package is useful for paste, file import, and migration flows from Markdown content.
+- Like the other importers, it applies edits through Pen's import operation path instead of bypassing editor authority.
+- Use `parseMarkdownToBlocks()` when you want to inspect or transform the converted blocks before applying them.

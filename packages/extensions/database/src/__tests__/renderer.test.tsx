@@ -184,13 +184,15 @@ function updatePrimaryView(
 	blockId: string,
 	patch: Partial<Omit<DatabaseViewState, "id">>,
 ) {
-	const block = editor.getBlock(blockId);
-	editor.apply([{
-		type: "database-update-view",
-		blockId,
-		viewId: block?.databasePrimaryViewId() ?? undefined,
-		patch,
-	}], { origin: "user" });
+	act(() => {
+		const block = editor.getBlock(blockId);
+		editor.apply([{
+			type: "database-update-view",
+			blockId,
+			viewId: block?.databasePrimaryViewId() ?? undefined,
+			patch,
+		}], { origin: "user" });
+	});
 }
 
 function getButtonByText(container: HTMLElement, text: string): HTMLButtonElement | null {
