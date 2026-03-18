@@ -8,8 +8,26 @@
     "types": ["vite/client"],
     "baseUrl": ".",
     "paths": {
+      "@pen/ai": ["../packages/extensions/ai/src/index.ts"],
+      "@pen/ai-autocomplete": ["../packages/extensions/ai-autocomplete/src/index.ts"],
+      "@pen/ai-skills": ["../packages/extensions/ai-skills/src/index.ts"],
+      "@pen/ai-suggestions": ["../packages/extensions/ai-suggestions/src/index.ts"],
+      "@pen/ai-tools": ["../packages/extensions/ai-tools/src/index.ts"],
+      "@pen/core": ["../packages/core/src/index.ts"],
       "@pen/crdt-yjs": ["../packages/crdt/yjs/src/index.ts"],
-      "@pen/multiplayer": ["../packages/extensions/multiplayer/src/index.ts"]
+      "@pen/database": ["../packages/extensions/database/src/index.ts"],
+      "@pen/export-html": ["../packages/extensions/export-html/src/index.ts"],
+      "@pen/export-markdown": ["../packages/extensions/export-markdown/src/index.ts"],
+      "@pen/import-html": ["../packages/extensions/import-html/src/index.ts"],
+      "@pen/import-markdown": ["../packages/extensions/import-markdown/src/index.ts"],
+      "@pen/input-rules": ["../packages/extensions/input-rules/src/index.ts"],
+      "@pen/multiplayer": ["../packages/extensions/multiplayer/src/index.ts"],
+      "@pen/preset-default": ["../packages/presets/default/src/index.ts"],
+      "@pen/react": ["../packages/rendering/react/src/index.ts"],
+      "@pen/schema-default": ["../packages/schema/default/src/index.ts"],
+      "@pen/search": ["../packages/extensions/search/src/index.ts"],
+      "@pen/shortcuts": ["../packages/extensions/shortcuts/src/index.ts"],
+      "@pen/types": ["../packages/types/src/index.ts"]
     }
   },
   "include": ["src"]

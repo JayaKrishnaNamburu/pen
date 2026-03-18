@@ -1,7 +1,14 @@
 import { defineConfig } from "tsup";
 
 export default defineConfig({
-  entry: ["src/index.ts"],
+  entry: [
+    "src/index.ts",
+    "src/ai.ts",
+    "src/aiSuggestions.ts",
+    "src/history.ts",
+    "src/multiplayer.ts",
+    "src/search.ts",
+  ],
   format: ["esm", "cjs"],
   dts: true,
   outDir: "dist",

@@ -1,0 +1,59 @@
+{
+  "name": "@pen/export-xml",
+  "version": "0.0.0",
+  "description": "XML exporter and importer for Pen",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "homepage": "https://github.com/niceperson/pen#readme",
+  "bugs": {
+    "url": "https://github.com/niceperson/pen/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/niceperson/pen.git",
+    "directory": "packages/extensions/export-xml"
+  },
+  "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@pen/export-json": "workspace:*",
+    "@pen/types": "workspace:*",
+    "domhandler": "^5.0.0",
+    "htmlparser2": "^9.0.0"
+  },
+  "devDependencies": {
+    "@pen/core": "workspace:*",
+    "@pen/schema-default": "workspace:*",
+    "tsup": "^8.4.0",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.7"
+  }
+}

@@ -39,6 +39,7 @@ interface SerializedFieldEditorState {
 }
 
 export interface SerializedEditorState {
+	generation: number;
 	blockCount: number;
 	selection: ReturnType<typeof serializeSelection>;
 	fieldEditor: SerializedFieldEditorState | null;
@@ -56,6 +57,7 @@ export function serializeEditorState(editor: Editor): SerializedEditorState {
 		.map((block) => serializeBlock(block));
 
 	return {
+		generation: editor.documentState.generation,
 		blockCount: blockIds.length,
 		selection: selection ? serializeSelection(selection) : null,
 		fieldEditor: fieldEditorState

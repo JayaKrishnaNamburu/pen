@@ -1,4 +1,4 @@
-import type { Editor, SelectionState } from "@pen/types";
+import type { Editor, ModelRequestedOperation, SelectionState } from "@pen/types";
 import { parseStructuredIntentRequestPrompt } from "./structuredIntent";
 
 export interface PlaygroundPromptContextEnvelope {
@@ -50,6 +50,12 @@ const STRUCTURED_PLANNER_PROMPT_PREFIX =
 	"Produce a structured Pen document mutation plan.";
 const EXPLICIT_SELECTION_FAST_REQUEST_ERROR =
 	"Explicit selection-fast requests require a live or pinned text selection.";
+const SESSION_PROMPT_HISTORY_HEADER = "Earlier user requests in this same session:\n";
+const SESSION_PROMPT_LATEST_HEADER = "\nLatest request:\n";
+const SESSION_PROMPT_INTROS = new Set([
+	"You are continuing an existing inline editor edit session.",
+	"You are continuing an existing editor chat session.",
+]);
 const utf8Encoder = new TextEncoder();
 
 export function buildPlaygroundRequestPlan(
@@ -57,12 +63,14 @@ export function buildPlaygroundRequestPlan(
 	prompt: string,
 	config: PlaygroundPlannerConfig,
 	requestedMode: PlaygroundRequestMode | null = null,
+	requestedOperation: ModelRequestedOperation | null = null,
 ): PlaygroundRequestPlan {
 	const explicitPlan = buildExplicitRequestPlan(
 		editor,
 		prompt,
 		config,
 		requestedMode,
+		requestedOperation,
 	);
 	if (explicitPlan) {
 		return explicitPlan;
@@ -85,7 +93,7 @@ export function buildPlaygroundRequestPlan(
 		return buildStructuredGenerationPlan(prompt, config);
 	}
 
-	return buildDocumentAgentPlan(editor, prompt, config);
+	return buildDocumentAgentPlan(editor, prompt, config, requestedOperation);
 }
 
 function buildExplicitRequestPlan(
@@ -93,15 +101,20 @@ function buildExplicitRequestPlan(
 	prompt: string,
 	config: PlaygroundPlannerConfig,
 	requestedMode: PlaygroundRequestMode | null,
+	requestedOperation: ModelRequestedOperation | null,
 ): PlaygroundRequestPlan | null {
 	if (requestedMode === "inline-autocomplete") {
 		return buildInlineAutocompletePlanFromRequest(prompt, config);
 	}
 	if (requestedMode === "selection-fast") {
+		if (requestedOperation && isExplicitLocalOperation(requestedOperation)) {
+			return buildExplicitLocalOperationPlan(prompt, config, requestedOperation);
+		}
 		const selectionFastPathPlan = buildSelectionFastPathPlan(
 			editor,
 			prompt,
 			config,
+			requestedOperation,
 		);
 		if (selectionFastPathPlan) {
 			return selectionFastPathPlan;
@@ -112,9 +125,134 @@ function buildExplicitRequestPlan(
 		return buildStructuredGenerationPlan(prompt, config);
 	}
 	if (requestedMode === "document-agent") {
-		return buildDocumentAgentPlan(editor, prompt, config);
+		return buildDocumentAgentPlan(editor, prompt, config, requestedOperation);
 	}
 	return null;
+}
+
+function buildExplicitLocalOperationPlan(
+	prompt: string,
+	config: PlaygroundPlannerConfig,
+	operation: ModelRequestedOperation,
+): PlaygroundRequestPlan {
+	return {
+		mode: "selection-fast",
+		modelId: config.selectionModel,
+		contextFormat: "none",
+		systemPrompt: config.selectionFastPathSystemPrompt,
+		prompt: buildExplicitLocalOperationPrompt(prompt, operation),
+		useTools: false,
+		maxOutputTokens: config.selectionOutputTokenCap,
+		temperature: 0,
+		stopSequences: undefined,
+		promptContext: null,
+		selectedTextLength: resolveExplicitLocalOperationSourceText(operation).length,
+	};
+}
+
+export function buildExplicitLocalOperationPrompt(
+	prompt: string,
+	operation: ModelRequestedOperation,
+): string {
+	const parsedPrompt = parseSessionExecutionPrompt(prompt);
+	const latestPrompt = parsedPrompt?.latestPrompt ?? prompt;
+	const previousPromptSection =
+		(parsedPrompt?.previousPrompts.length ?? 0) > 0
+			? [
+				"Earlier requests in this same session:",
+				...parsedPrompt!.previousPrompts.map(
+					(previousPrompt, index) => `${index + 1}. ${previousPrompt}`,
+				),
+				"",
+			]
+			: [];
+	if (operation.kind === "rewrite-selection") {
+		const target =
+			operation.target.kind === "selection" ||
+				operation.target.kind === "scoped-range"
+				? operation.target
+				: null;
+		if (!target) {
+			return prompt;
+		}
+		if (
+			target.kind === "scoped-range" &&
+			target.contentFormat === "markdown"
+		) {
+			return [
+				"Instruction:",
+				latestPrompt,
+				"",
+				...previousPromptSection,
+				"Treat the latest instruction as authoritative.",
+				"If the instruction asks for a rewrite, replace the full target scope instead of continuing from it.",
+				"If the instruction removes the target content, return an empty payload wrapper.",
+				"Return the full replacement markdown for the selected target scope.",
+				"",
+				"Target content (rough markdown):",
+				target.sourceText || "(empty)",
+				"",
+				"Wrap the resulting markdown content exactly like this:",
+				"<pen_local_operation>markdown content</pen_local_operation>",
+				"Do not output anything before or after the wrapper.",
+			].join("\n");
+		}
+		return [
+			"Instruction:",
+			latestPrompt,
+			"",
+			...previousPromptSection,
+			"Selected text to replace:",
+			target.sourceText,
+			"",
+			"Wrap the rewritten replacement text exactly like this:",
+			"<pen_local_operation>replacement text</pen_local_operation>",
+			"Do not output anything before or after the wrapper.",
+		].join("\n");
+	}
+	if (operation.kind === "rewrite-block") {
+		const target = operation.target.kind === "block" ? operation.target : null;
+		if (!target) {
+			return prompt;
+		}
+		return [
+			"Instruction:",
+			latestPrompt,
+			"",
+			...previousPromptSection,
+			`Block type: ${target.blockType ?? "unknown"}`,
+			"Current block content:",
+			target.sourceText,
+			"",
+			"Wrap the rewritten replacement content exactly like this:",
+			"<pen_local_operation>replacement content</pen_local_operation>",
+			"Do not output anything before or after the wrapper.",
+		].join("\n");
+	}
+	if (operation.kind === "continue-block") {
+		const target = operation.target.kind === "block" ? operation.target : null;
+		if (!target) {
+			return prompt;
+		}
+		const insertionOffset = target.insertionOffset ?? target.sourceText.length;
+		return [
+			"Instruction:",
+			latestPrompt,
+			"",
+			...previousPromptSection,
+			`Block type: ${target.blockType ?? "unknown"}`,
+			"Text before cursor:",
+			target.sourceText.slice(0, insertionOffset),
+			"",
+			"Text after cursor:",
+			target.sourceText.slice(insertionOffset),
+			"",
+			"Wrap the continuation text exactly like this:",
+			"<pen_local_operation>continuation text</pen_local_operation>",
+			"Do not output anything before or after the wrapper.",
+		].join("\n");
+	}
+	return prompt;
 }
 
 function buildStructuredGenerationPlan(
@@ -139,6 +277,7 @@ function buildDocumentAgentPlan(
 	editor: Editor,
 	prompt: string,
 	config: PlaygroundPlannerConfig,
+	requestedOperation?: ModelRequestedOperation | null,
 ): PlaygroundRequestPlan {
 	const promptContext = buildPromptContext(editor);
 	return {
@@ -146,8 +285,8 @@ function buildDocumentAgentPlan(
 		modelId: config.documentModel,
 		contextFormat: "json",
 		systemPrompt: config.documentSystemPrompt,
-		prompt: buildPromptEnvelope(prompt, promptContext.json),
-		useTools: true,
+		prompt: buildPromptEnvelope(prompt, promptContext.json, requestedOperation),
+		useTools: false,
 		temperature: undefined,
 		stopSequences: undefined,
 		promptContext,
@@ -237,11 +376,27 @@ function isStructuredPlannerPrompt(prompt: string): boolean {
 function buildPromptEnvelope(
 	prompt: string,
 	context: string,
+	requestedOperation?: ModelRequestedOperation | null,
 ): string {
+	const operationEnvelope =
+		requestedOperation == null
+			? null
+			: JSON.stringify({
+				kind: requestedOperation.kind,
+				target: requestedOperation.target,
+				provenance: requestedOperation.provenance ?? null,
+			});
 	return [
 		"Direct document context (JSON, compact summary):",
 		context,
 		"",
+		...(operationEnvelope
+			? [
+				"Resolved operation envelope (authoritative target and scope):",
+				operationEnvelope,
+				"",
+			]
+			: []),
 		"Use this summary first. Call tools only when you need more precise or broader context.",
 		"When you answer with document content, return only the content to insert or apply.",
 		'Do not add conversational lead-ins like "Here is", "Here\'s", or "I wrote".',
@@ -327,10 +482,18 @@ function buildSelectionFastPathPlan(
 	editor: Editor,
 	prompt: string,
 	config: PlaygroundPlannerConfig,
+	requestedOperation?: ModelRequestedOperation | null,
 ): PlaygroundRequestPlan | null {
 	const parsedPromptSelection = parsePinnedSelectionPrompt(prompt);
+	const explicitOperationSelection =
+		requestedOperation?.kind === "rewrite-selection" &&
+		requestedOperation.target.kind === "selection"
+			? requestedOperation.target.sourceText
+			: null;
 	const selectedText = (
-		parsedPromptSelection?.selectedText ?? resolveLiveSelectedText(editor)
+		explicitOperationSelection ??
+		parsedPromptSelection?.selectedText ??
+		resolveLiveSelectedText(editor)
 	).trim();
 	if (!selectedText || selectedText.length > config.selectionSourceCharLimit) {
 		return null;
@@ -361,6 +524,78 @@ function buildSelectionFastPathPlan(
 		useTools: false,
 		promptContext: null,
 		selectedTextLength: selectedText.length,
+	};
+}
+
+function isExplicitLocalOperation(
+	operation: ModelRequestedOperation,
+): operation is ModelRequestedOperation {
+	return (
+		operation.kind === "rewrite-selection" ||
+		operation.kind === "rewrite-block" ||
+		operation.kind === "continue-block"
+	);
+}
+
+function resolveExplicitLocalOperationSourceText(
+	operation: ModelRequestedOperation,
+): string {
+	if (
+		operation.target.kind === "selection" ||
+		operation.target.kind === "scoped-range" ||
+		operation.target.kind === "block"
+	) {
+		return operation.target.sourceText;
+	}
+	return "";
+}
+
+function parseSessionExecutionPrompt(
+	prompt: string,
+): {
+	latestPrompt: string;
+	previousPrompts: string[];
+} | null {
+	const normalizedPrompt = prompt.replace(/\r\n?/g, "\n").trim();
+	const historyHeaderIndex = normalizedPrompt.indexOf(SESSION_PROMPT_HISTORY_HEADER);
+	const latestHeaderIndex = normalizedPrompt.indexOf(SESSION_PROMPT_LATEST_HEADER);
+	if (
+		historyHeaderIndex < 0 ||
+		latestHeaderIndex < 0 ||
+		latestHeaderIndex <= historyHeaderIndex
+	) {
+		return null;
+	}
+
+	const intro = normalizedPrompt.slice(0, historyHeaderIndex).trim();
+	if (!SESSION_PROMPT_INTROS.has(intro)) {
+		return null;
+	}
+
+	const historyAndInstruction = normalizedPrompt.slice(
+		historyHeaderIndex + SESSION_PROMPT_HISTORY_HEADER.length,
+		latestHeaderIndex,
+	);
+	const historySection = historyAndInstruction.split("\n\n")[0]?.trim() ?? "";
+	const latestPrompt = normalizedPrompt
+		.slice(latestHeaderIndex + SESSION_PROMPT_LATEST_HEADER.length)
+		.trim();
+	if (!historySection || !latestPrompt) {
+		return null;
+	}
+
+	const previousPrompts = Array.from(
+		historySection.matchAll(/(?:^|\n)\d+\.\s([\s\S]*?)(?=(?:\n\d+\.\s)|$)/g),
+	)
+		.map((match) => match[1]?.trim() ?? "")
+		.filter((item) => item.length > 0);
+	if (previousPrompts.length === 0) {
+		return null;
+	}
+
+	return {
+		latestPrompt,
+		previousPrompts,
 	};
 }
 

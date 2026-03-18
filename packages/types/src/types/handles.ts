@@ -13,6 +13,16 @@ export interface TableRowHandle {
   readonly index: number;
 }
 
+export interface InlineNodeDeltaInsert {
+  type: string;
+  props: Record<string, unknown>;
+}
+
+export interface InlineDelta {
+  insert: string | InlineNodeDeltaInsert;
+  attributes?: Record<string, unknown>;
+}
+
 export interface TableColumnSchema {
   id: string;
   title: string;
@@ -31,6 +41,7 @@ export interface TableCellHandle {
   readonly col: number;
   textContent(): string;
   length(): number;
+  inlineDeltas(): InlineDelta[];
   textDeltas(): Array<{
     insert: string;
     attributes?: Record<string, unknown>;
@@ -59,6 +70,7 @@ export interface BlockHandle {
   anchoredApps(): readonly AppHandle[];
 
   textContent(options?: { resolved?: boolean }): string;
+  inlineDeltas(): InlineDelta[];
   textDeltas(): Array<{
     insert: string;
     attributes?: Record<string, unknown>;

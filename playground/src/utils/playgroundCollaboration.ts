@@ -13,6 +13,7 @@ const PLAYGROUND_COLLAB_USER_STORAGE_KEY = "pen:playground:collaboration-user";
 const DEFAULT_PLAYGROUND_COLLAB_SERVER_PORT = "8787";
 const DEFAULT_PLAYGROUND_COLLAB_SERVER_PATH = "/collaboration";
 const DEFAULT_PLAYGROUND_COLLAB_ROOM = "pen-playground";
+const PLAYGROUND_COLLAB_ROOM_QUERY_PARAM = "room";
 const PLAYGROUND_USER_COLORS = [
 	"#2563eb",
 	"#7c3aed",
@@ -50,10 +51,24 @@ export function getPlaygroundCollaborationConfig(): PlaygroundCollaborationConfi
 }
 
 export function getPlaygroundCollaborationRoom(): string {
+	const roomFromUrl = getPlaygroundCollaborationRoomFromUrl();
+	if (roomFromUrl) {
+		return roomFromUrl;
+	}
 	return (
 		import.meta.env.VITE_PLAYGROUND_COLLAB_ROOM ??
 		DEFAULT_PLAYGROUND_COLLAB_ROOM
 	);
+}
+
+export function startFreshPlaygroundCollaborationRoom(): string {
+	const nextRoom = createFreshPlaygroundCollaborationRoomId();
+	if (typeof window !== "undefined") {
+		window.location.assign(
+			buildPlaygroundCollaborationRoomUrl(window.location.href, nextRoom),
+		);
+	}
+	return nextRoom;
 }
 
 export function getPlaygroundCollaborationUserName(): string {
@@ -188,6 +203,33 @@ function resolvePlaygroundCollaborationServerUrl(): string {
 
 	const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
 	return `${protocol}//${window.location.hostname}:${DEFAULT_PLAYGROUND_COLLAB_SERVER_PORT}${DEFAULT_PLAYGROUND_COLLAB_SERVER_PATH}`;
+}
+
+function getPlaygroundCollaborationRoomFromUrl(): string | null {
+	if (typeof window === "undefined") {
+		return null;
+	}
+	const room = new URL(window.location.href).searchParams
+		.get(PLAYGROUND_COLLAB_ROOM_QUERY_PARAM)
+		?.trim();
+	return room ? room : null;
+}
+
+function createFreshPlaygroundCollaborationRoomId(): string {
+	const suffix =
+		typeof crypto !== "undefined" && "randomUUID" in crypto
+			? crypto.randomUUID().slice(0, 8)
+			: Math.random().toString(36).slice(2, 10);
+	return `${DEFAULT_PLAYGROUND_COLLAB_ROOM}-${suffix}`;
+}
+
+function buildPlaygroundCollaborationRoomUrl(
+	currentUrl: string,
+	room: string,
+): string {
+	const nextUrl = new URL(currentUrl);
+	nextUrl.searchParams.set(PLAYGROUND_COLLAB_ROOM_QUERY_PARAM, room);
+	return nextUrl.toString();
 }
 
 function getConfiguredPlaygroundCollaborationUserName(): string | null {

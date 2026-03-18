@@ -147,6 +147,56 @@ describe("@pen/export-html", () => {
     editor.destroy();
   });
 
+  it("supports raw and resolved suggestion export for inline content", () => {
+    const editor = editorWithBlocks([
+      {
+        type: "insert-block",
+        blockId: "b1",
+        blockType: "paragraph",
+        props: {},
+        position: "last",
+      },
+      {
+        type: "insert-text",
+        blockId: "b1",
+        offset: 0,
+        text: "ab",
+      },
+      {
+        type: "format-text",
+        blockId: "b1",
+        offset: 0,
+        length: 1,
+        marks: {
+          suggestion: { id: "s-insert", action: "insert" },
+        },
+      },
+      {
+        type: "format-text",
+        blockId: "b1",
+        offset: 1,
+        length: 1,
+        marks: {
+          suggestion: { id: "s-delete", action: "delete" },
+        },
+      },
+    ]);
+
+    const rawHtml = htmlExporter.export(editor);
+    expect(rawHtml).toContain('<ins data-suggestion-id="s-insert">a</ins>');
+    expect(rawHtml).toContain('<del data-suggestion-id="s-delete">b</del>');
+
+    const resolvedHtml = htmlExporter.export(editor, {
+      includeSuggestions: false,
+    });
+    expect(resolvedHtml).toContain("<p>a</p>");
+    expect(resolvedHtml).not.toContain("<ins");
+    expect(resolvedHtml).not.toContain("<del");
+    expect(resolvedHtml).not.toContain(">b<");
+
+    editor.destroy();
+  });
+
   it("wraps list items in list containers", () => {
     const editor = editorWithBlocks([
       {
@@ -362,6 +412,64 @@ describe("@pen/export-html", () => {
 
     const html = htmlExporter.export(editor);
     expect(html).toContain("<strong>Alpha</strong>");
+    editor.destroy();
+  });
+
+  it("supports resolved suggestion export inside table cells", () => {
+    const editor = editorWithTable(
+      {
+        type: "insert-block",
+        blockId: "t3",
+        blockType: "table",
+        props: { hasHeaderRow: false },
+        position: "last",
+      },
+      [
+        {
+          type: "insert-table-cell-text",
+          blockId: "t3",
+          row: 0,
+          col: 0,
+          offset: 0,
+          text: "ab",
+        } as InsertTableCellTextOp,
+        {
+          type: "format-table-cell-text",
+          blockId: "t3",
+          row: 0,
+          col: 0,
+          offset: 0,
+          length: 1,
+          marks: {
+            suggestion: { id: "cell-insert", action: "insert" },
+          },
+        } as FormatTableCellTextOp,
+        {
+          type: "format-table-cell-text",
+          blockId: "t3",
+          row: 0,
+          col: 0,
+          offset: 1,
+          length: 1,
+          marks: {
+            suggestion: { id: "cell-delete", action: "delete" },
+          },
+        } as FormatTableCellTextOp,
+      ],
+    );
+
+    const rawHtml = htmlExporter.export(editor);
+    expect(rawHtml).toContain('<ins data-suggestion-id="cell-insert">a</ins>');
+    expect(rawHtml).toContain('<del data-suggestion-id="cell-delete">b</del>');
+
+    const resolvedHtml = htmlExporter.export(editor, {
+      includeSuggestions: false,
+    });
+    expect(resolvedHtml).toContain("<td>a</td>");
+    expect(resolvedHtml).not.toContain("<ins");
+    expect(resolvedHtml).not.toContain("<del");
+    expect(resolvedHtml).not.toContain(">b<");
+
     editor.destroy();
   });
 

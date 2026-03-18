@@ -4,6 +4,9 @@ import type {
 	InlineCompletionState as CoreInlineCompletionState,
 	ModelAdapter,
 	ModelMessage,
+	ModelOperationScopedRangeTarget,
+	ModelOperationSelectionTarget,
+	ModelRequestedOperation,
 	SelectionState,
 	TextSelection,
 	ToolRuntime,
@@ -41,7 +44,16 @@ export interface AIExtensionConfig {
 
 export interface AIContentFormatOptions {
 	blockGeneration?: AIContentFormat;
-	selectionRewrite?: "text";
+	selectionRewrite?: AIContentFormat;
+}
+
+export type ResolvedEditTarget =
+	| ModelOperationSelectionTarget
+	| ModelOperationScopedRangeTarget;
+
+export interface ResolvedEditProposal {
+	promptIntent: string;
+	target: ResolvedEditTarget;
 }
 
 export type AIStatus =
@@ -80,6 +92,7 @@ export interface AISessionPrompt {
 	prompt: string;
 	createdAt: number;
 	generationId?: string;
+	operation?: AIRequestedOperation;
 }
 
 export interface AISessionSelectionSnapshot {
@@ -134,11 +147,14 @@ export interface AISessionTurn {
 	id: string;
 	prompt: string;
 	createdAt: number;
+	undoGroupId?: string;
 	generationId?: string;
 	target: Exclude<AIPromptTarget, "auto">;
 	status: AISessionTurnStatus;
 	suggestionIds: string[];
 	reviewItemIds: string[];
+	generatedBlockIds: string[];
+	operation?: AIRequestedOperation;
 	structuredPreview?: GenerationStructuredPreviewState | null;
 	anchor?: AISessionAnchor;
 	selection?: AISessionSelectionSnapshot;
@@ -172,6 +188,7 @@ export interface AISession {
 	surface: AISurface;
 	status: AISessionStatus;
 	target: AISessionTarget;
+	operation?: AIRequestedOperation | null;
 	contextualPrompt?: AIContextualPromptState;
 	turns: AISessionTurn[];
 	activeTurnId?: string;
@@ -208,6 +225,7 @@ export type AIStreamEventType =
 	| "generation-start"
 	| "status"
 	| "text-delta"
+	| "operation"
 	| "app-partial"
 	| "tool-call"
 	| "tool-output"
@@ -270,6 +288,13 @@ export type AIStreamEvent =
 		patches: readonly StructuredPreviewPatchOperation[];
 	})
 	| (AIStreamEventBase & {
+		type: "operation";
+		operation: AIRequestedOperation;
+		phase: "preview" | "final" | "conflict";
+		text?: string;
+		reason?: string;
+	})
+	| (AIStreamEventBase & {
 		type: "generation-finish";
 		status: GenerationState["status"];
 		text: string;
@@ -297,6 +322,7 @@ export interface GenerationState {
 	turnId?: string;
 	surface?: AISurface;
 	prompt: string;
+	operation?: AIRequestedOperation | null;
 	status: "streaming" | "complete" | "cancelled" | "error";
 	tokenCount: number;
 	steps: AgenticStep[];
@@ -454,7 +480,10 @@ export interface AICommandExecutionOptions {
 	blockId?: string | null;
 	maxSteps?: number;
 	target?: AIPromptTarget;
+	operation?: AIRequestedOperation | null;
 }
+
+export type AIRequestedOperation = ModelRequestedOperation;
 
 export interface AIController {
 	getState(): AIControllerState;
@@ -484,6 +513,11 @@ export interface AIController {
 		prompt: string,
 		options?: AICommandExecutionOptions,
 	): Promise<GenerationState>;
+	canReuseSessionPrompt(
+		sessionId: string,
+		prompt: string,
+		options?: AICommandExecutionOptions,
+	): boolean;
 	resolveSessionTurn(
 		sessionId: string,
 		turnId: string,

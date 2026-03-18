@@ -232,6 +232,114 @@
   z-index: 20;
 }
 
+.toolbar-search-menu {
+  align-items: center;
+}
+
+.toolbar-search-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 360px;
+  padding: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  z-index: 30;
+}
+
+.toolbar-search-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.toolbar-search-input,
+.toolbar-search-results,
+.toolbar-search-action,
+.toolbar-search-toggle {
+  height: 28px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.toolbar-search-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0 10px;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  outline: none;
+}
+
+.toolbar-search-input:focus {
+  border-color: var(--border-focus);
+}
+
+.toolbar-search-input::placeholder {
+  color: var(--text-muted);
+}
+
+.toolbar-search-replace-input {
+  min-width: 140px;
+}
+
+.toolbar-search-results {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 0 8px;
+  color: var(--text-muted);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.toolbar-search-action,
+.toolbar-search-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.12s ease;
+  white-space: nowrap;
+}
+
+.toolbar-search-action:hover,
+.toolbar-search-toggle:hover,
+.toolbar-search-toggle[data-active] {
+  color: var(--text);
+  background: var(--bg);
+}
+
+.toolbar-search-toggle[data-active] {
+  color: var(--accent-fg);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+}
+
+.toolbar-search-action:disabled,
+.toolbar-search-toggle:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.toolbar-search-commit {
+  color: var(--accent-fg);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+}
+
 .toolbar-menu-item {
   display: flex;
   align-items: center;

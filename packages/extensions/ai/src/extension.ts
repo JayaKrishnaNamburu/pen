@@ -12,6 +12,8 @@ import type {
 	HistoryAppliedEvent,
 	KeyBinding,
 	ModelAdapter,
+	ModelOperationScopedRangeTarget,
+	ModelOperationSelectionTarget,
 	SelectionState,
 	StreamingTarget,
 	TextSelection,
@@ -26,8 +28,12 @@ import {
 	AI_REVIEW_CONTROLLER_SLOT as CORE_AI_REVIEW_CONTROLLER_SLOT,
 	INLINE_COMPLETION_SLOT as CORE_INLINE_COMPLETION_SLOT,
 	defineExtension,
+	isScopedSelectionTarget,
+	renderSelectionTargetBlockText,
+	resolveSelectionTargetBlockIds,
 	shouldExposeBlockInTooling,
 	UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY,
+	usesInlineTextSelection,
 } from "@pen/types";
 import { runAgenticLoop } from "./agentic/loop";
 import { defaultAICommands } from "./commands/defaultCommands";
@@ -105,6 +111,7 @@ import type {
 	AIInlineHistorySnapshot,
 	AIMutationReceipt,
 	AIReviewController,
+	AIRequestedOperation,
 	AISession,
 	AISessionMetrics,
 	AISessionResolution,
@@ -117,7 +124,10 @@ import type {
 	FastApplyDebugState,
 	GenerationState,
 	GenerationStructuredPreviewState,
+	PersistentTextSuggestion,
 	PersistentSuggestion,
+	ResolvedEditProposal,
+	ResolvedEditTarget,
 } from "./types";
 
 export const AI_EXTENSION_NAME = "ai";
@@ -180,11 +190,31 @@ type GenerationTarget =
 interface GenerationExecutionContext {
 	sessionId?: string;
 	surface?: AISurface;
+	targetType?: GenerationTarget["type"];
+	operation?: AIRequestedOperation | null;
+	replaceTargetBlock?: boolean;
+	replaceBlockIds?: string[];
 }
 
 function resolveGenerationRequestMode(
 	context?: GenerationExecutionContext,
 ): string | undefined {
+	if (context?.operation?.kind === "rewrite-selection") {
+		if (context.surface === "inline-edit") {
+			return "inline-edit";
+		}
+		if (context.surface === "bottom-chat") {
+			return "selection-fast";
+		}
+	}
+	if (context?.targetType === "selection") {
+		if (context.surface === "inline-edit") {
+			return "inline-edit";
+		}
+		if (context.surface === "bottom-chat") {
+			return "selection-fast";
+		}
+	}
 	if (context?.surface === "inline-edit") {
 		return "inline-edit";
 	}
@@ -192,6 +222,25 @@ function resolveGenerationRequestMode(
 		return "bottom-chat";
 	}
 	return undefined;
+}
+
+function isLocalRequestedOperation(
+	operation: AIRequestedOperation | null | undefined,
+): operation is AIRequestedOperation {
+	return (
+		operation?.kind === "rewrite-selection" ||
+		operation?.kind === "rewrite-block" ||
+		operation?.kind === "continue-block" ||
+		(
+			operation?.kind === "document-transform" &&
+			operation.target.kind === "document" &&
+			(
+				operation.target.transform === "rewrite" ||
+				operation.target.transform === "remove" ||
+				operation.target.placement === "replace-blocks"
+			)
+		)
+	);
 }
 
 const EMPTY_TOOL_RUNTIME: ToolRuntime = {
@@ -318,7 +367,7 @@ class AIControllerImpl implements AIController {
 	private readonly _maxAgenticSteps: number;
 	private readonly _contentFormat: {
 		blockGeneration: AIContentFormat;
-		selectionRewrite: "text";
+		selectionRewrite: AIContentFormat;
 	};
 	private _state: AIControllerState;
 	private _suggestions: readonly PersistentSuggestion[] = [];
@@ -514,7 +563,11 @@ class AIControllerImpl implements AIController {
 				session.surface === surface &&
 				session.status !== "cancelled",
 		);
-		if (activeSession && sessionTargetMatches(activeSession, target)) {
+		if (
+			activeSession &&
+			activeSession.status !== "complete" &&
+			sessionTargetMatches(activeSession, target)
+		) {
 			this._updateSession(activeSession.id, {
 				target,
 				anchor: resolveSessionAnchor(this._editor.selection),
@@ -609,45 +662,60 @@ class AIControllerImpl implements AIController {
 			return Promise.reject(new Error(`Unknown AI session "${sessionId}"`));
 		}
 		this._recordInlinePromptSubmissionCheckpoint(sessionId, prompt);
-		const target = resolvePromptTargetForSession(
-			this._editor,
-			session,
-			options?.target,
-			prompt,
-		);
-		if (target === "selection") {
-			const selection = resolveSessionSelectionTarget(this._editor, session);
+
+		const operation =
+			options?.operation ??
+			resolveRequestedOperationForSession(
+				this._editor,
+				session,
+				prompt,
+				options,
+				this._documentVersion,
+			);
+		if (operation.kind === "rewrite-selection") {
+			const selection = resolveSelectionForRequestedOperation(this._editor, operation);
 			if (!selection) {
 				return Promise.reject(
 					new Error("Cannot run a session prompt without a valid text selection"),
 				);
 			}
-			return this._runSelectionGeneration(
-				prompt,
-				selection,
-				undefined,
-				options?.maxSteps,
-				{
-					sessionId,
-					surface: session.surface,
-				},
-			);
+			return this._runSelectionGeneration(prompt, selection, undefined, options?.maxSteps, {
+				sessionId,
+				surface: session.surface,
+				operation,
+			});
 		}
-		if (target === "document") {
+		if (operation.kind === "document-transform") {
+			const targetBlockIds =
+				operation.target.kind === "document" &&
+					(operation.target.blockIds?.length ?? 0) > 0
+					? [...(operation.target.blockIds ?? [])]
+					: undefined;
+			const replacePreviousGeneratedBlocks = shouldReplacePreviousGeneratedBlocks(
+				session,
+				prompt,
+			);
 			return this._runDocumentGeneration(
 				prompt,
-				options?.blockId,
+				options?.blockId ??
+				(operation.target.kind === "document"
+					? operation.target.activeBlockId
+					: null),
 				undefined,
 				options?.maxSteps,
 				{
 					sessionId,
 					surface: session.surface,
+					operation,
+					replaceBlockIds: targetBlockIds ??
+						(replacePreviousGeneratedBlocks
+							? resolvePreviousGeneratedBlockIds(session)
+							: undefined),
 				},
 			);
 		}
 		const blockId =
-			options?.blockId ??
-			resolveSessionBlockId(this._editor, session) ??
+			options?.blockId ?? resolveBlockIdForRequestedOperation(operation) ??
 			this._editor.lastBlock()?.id ??
 			this._editor.firstBlock()?.id;
 		if (!blockId) {
@@ -663,8 +731,33 @@ class AIControllerImpl implements AIController {
 			{
 				sessionId,
 				surface: session.surface,
+				operation,
 			},
 		);
+	}
+
+	canReuseSessionPrompt(
+		sessionId: string,
+		prompt: string,
+		options?: AICommandExecutionOptions,
+	): boolean {
+		const session = this._state.sessions.find((item) => item.id === sessionId);
+		if (!session) {
+			return false;
+		}
+		if (session.surface !== "bottom-chat" || !session.operation) {
+			return true;
+		}
+		const nextOperation =
+			options?.operation ??
+			resolveRequestedOperationForSession(
+				this._editor,
+				session,
+				prompt,
+				options,
+				this._documentVersion,
+			);
+		return canReuseBottomChatSessionOperation(session.operation, nextOperation);
 	}
 
 	resolveSession(sessionId: string, resolution: AISessionResolution): boolean {
@@ -870,6 +963,28 @@ class AIControllerImpl implements AIController {
 		}
 
 		if (generation.suggestionIds && generation.suggestionIds.length > 0) {
+			const existingSession =
+				generation.sessionId != null
+					? (this._state.sessions.find(
+						(session) => session.id === generation.sessionId,
+					) ?? null)
+					: null;
+			const existingTurn =
+				generation.turnId != null
+					? (existingSession?.turns.find((turn) => turn.id === generation.turnId) ?? null)
+					: null;
+			const refreshSuggestionIds =
+				existingTurn?.suggestionIds.length
+					? existingTurn.suggestionIds
+					: generation.suggestionIds;
+			const refreshedInlineSelectionTarget =
+				generation.surface === "inline-edit"
+					? resolveAcceptedInlineSelectionTarget(
+							this._editor,
+							existingTurn?.operation ?? generation.operation ?? undefined,
+							refreshSuggestionIds,
+						) ?? resolveLiveInlineSelectionTarget(this._editor)
+					: null;
 			const accepted = acceptSuggestions(this._editor, generation.suggestionIds);
 			if (accepted) {
 				this._resolveActiveGeneration({
@@ -882,11 +997,35 @@ class AIControllerImpl implements AIController {
 							status: "accepted",
 							suggestionIds: [],
 							structuredPreview: null,
+							anchor: refreshedInlineSelectionTarget
+								? resolveSessionAnchor(refreshedInlineSelectionTarget.selection)
+								: undefined,
+							selection: refreshedInlineSelectionTarget
+								? resolveSessionSelectionSnapshot(
+										refreshedInlineSelectionTarget.selection,
+									)
+								: undefined,
 						});
 					}
 					this._updateSession(generation.sessionId, {
 						status: "complete",
 						pendingSuggestionIds: [],
+						...(refreshedInlineSelectionTarget
+							? {
+									target: refreshedInlineSelectionTarget,
+									anchor: resolveSessionAnchor(
+										refreshedInlineSelectionTarget.selection,
+									),
+									contextualPrompt: existingSession?.contextualPrompt
+										? {
+												...existingSession.contextualPrompt,
+												anchor: resolveContextualPromptAnchor(
+													refreshedInlineSelectionTarget,
+												),
+											}
+										: undefined,
+								}
+							: {}),
 					});
 				}
 			}
@@ -1198,6 +1337,19 @@ class AIControllerImpl implements AIController {
 		return rejected;
 	}
 
+	private _rejectPreviewSuggestions(suggestionIds: readonly string[]): void {
+		if (suggestionIds.length === 0) {
+			return;
+		}
+		const rejected = rejectSuggestions(this._editor, suggestionIds, {
+			origin: AI_SESSION_SUGGESTION_ORIGIN,
+			undoGroupId: this._state.activeGeneration?.undoGroupId,
+		});
+		if (rejected) {
+			this._syncSuggestionResolutionState();
+		}
+	}
+
 	acceptAllSuggestions(): void {
 		acceptAllSuggestions(this._editor);
 		this._syncSuggestionResolutionState();
@@ -1269,8 +1421,18 @@ class AIControllerImpl implements AIController {
 		maxSteps?: number,
 		context?: GenerationExecutionContext,
 	): Promise<GenerationState> {
+		const documentTarget =
+			context?.operation?.target.kind === "document"
+				? context.operation.target
+				: null;
+		const replaceBlockIds =
+			documentTarget?.blockIds && documentTarget.blockIds.length > 0
+				? [...documentTarget.blockIds]
+				: context?.replaceBlockIds;
 		const insertionAnchor = resolveDocumentInsertionAnchor(this._editor, {
 			preferredBlockId:
+				documentTarget?.activeBlockId ??
+				documentTarget?.blockIds?.[0] ??
 				preferredBlockId ??
 				resolveActiveBlockId(this._editor.selection) ??
 				null,
@@ -1284,7 +1446,15 @@ class AIControllerImpl implements AIController {
 			insertionAnchor.blockId,
 			commandId,
 			maxSteps,
-			context,
+			{
+				...context,
+				replaceTargetBlock:
+					documentTarget?.placement === "replace-blocks" ||
+					documentTarget?.placement === "replace-empty-block" ||
+					insertionAnchor.strategy === "replace-empty-block" ||
+					(replaceBlockIds?.length ?? 0) > 0,
+				replaceBlockIds,
+			},
 		);
 	}
 
@@ -1302,6 +1472,497 @@ class AIControllerImpl implements AIController {
 			maxSteps,
 			context,
 		);
+	}
+
+	private async _executeLocalOperation(input: {
+		prompt: string;
+		target: GenerationTarget;
+		blockId: string;
+		commandId?: string;
+		context?: GenerationExecutionContext;
+		abortController: AbortController;
+		baselineSuggestionIds: Set<string>;
+		operation: AIRequestedOperation;
+	}): Promise<GenerationState> {
+		const {
+			prompt,
+			target,
+			blockId,
+			commandId,
+			context,
+			abortController,
+			baselineSuggestionIds,
+			operation,
+		} = input;
+		const sessionTurnId = context?.sessionId ? crypto.randomUUID() : undefined;
+		const mutationMode: NonNullable<GenerationState["mutationMode"]> =
+			"persistent-suggestions";
+		const contentFormat = resolveLocalOperationContentFormat(
+			this._editor,
+			operation,
+			this._resolveContentFormat("block", context?.surface),
+		);
+		const streamsMarkdownSelectionPreview =
+			operation.kind === "rewrite-selection" &&
+			operation.target.kind === "scoped-range" &&
+			contentFormat === "markdown" &&
+			operation.target.blockIds.length > 0;
+		const applyStrategy: AIApplyStrategy | undefined =
+			(
+				operation.kind === "rewrite-block" ||
+				streamsMarkdownSelectionPreview ||
+				(
+					operation.kind === "document-transform" &&
+					operation.target.kind === "document" &&
+					(
+						operation.target.placement === "replace-blocks" ||
+						operation.target.placement === "replace-empty-block"
+					)
+				)
+			) && contentFormat === "markdown"
+				? "markdown-full-replace"
+				: undefined;
+		const seedGeneration: GenerationState = {
+			id: crypto.randomUUID(),
+			zoneId: crypto.randomUUID(),
+			blockId,
+			target: target.type,
+			sessionId: context?.sessionId,
+			turnId: sessionTurnId,
+			surface: context?.surface,
+			prompt,
+			operation,
+			status: "streaming",
+			tokenCount: 0,
+			steps: [],
+			undoGroupId: crypto.randomUUID(),
+			text: "",
+			commandId,
+			suggestionIds: [],
+			route:
+				operation.kind === "rewrite-selection"
+					? "selection-rewrite"
+					: operation.kind === "continue-block"
+						? "cursor-context"
+						: "context-first",
+			mutationMode,
+			contentFormat,
+			applyStrategy,
+			planState: "none",
+			plan: null,
+			structuredIntent: null,
+			reviewItems: [],
+			structuredPreview: null,
+			targetKind: undefined,
+			blockClass: "flow",
+			adapterId: "flow-markdown",
+			transportKind: "flow-text",
+			mutationReceipt: null,
+			debug: {
+				messageAssemblyLatencyMs: 0,
+				firstToolStartMs: null,
+				firstToolResultMs: null,
+				firstVisibleTextMs: null,
+				toolExecutionMs: 0,
+				qualitySignals: {},
+			},
+		};
+		const existingSession =
+			context?.sessionId != null
+				? (this._state.sessions.find(
+					(session) => session.id === context.sessionId,
+				) ?? null)
+				: null;
+		const executionPrompt = buildSessionExecutionPrompt(existingSession, prompt);
+
+		if (context?.sessionId) {
+			const nextSelectionSnapshot =
+				target.type === "selection"
+					? resolveSessionSelectionSnapshot(target.selection)
+					: undefined;
+			this._updateSession(context.sessionId, {
+				status: "streaming",
+				operation,
+				activeTurnId: sessionTurnId,
+				anchor:
+					target.type === "selection"
+						? resolveSessionAnchor(target.selection)
+						: resolveSessionAnchor(this._editor.selection),
+				generationIds: appendUniqueString(
+					existingSession?.generationIds ?? [],
+					seedGeneration.id,
+				),
+				promptHistory: [
+					...(existingSession?.promptHistory ?? []),
+					{
+						id: crypto.randomUUID(),
+						prompt,
+						createdAt: Date.now(),
+						generationId: seedGeneration.id,
+						operation,
+					},
+				],
+				turns: sessionTurnId
+					? [
+						...(existingSession?.turns ?? []),
+						{
+							id: sessionTurnId,
+							prompt,
+							createdAt: Date.now(),
+							undoGroupId: seedGeneration.undoGroupId,
+							generationId: seedGeneration.id,
+							target: target.type,
+							operation,
+							status: "streaming",
+							suggestionIds: [],
+							reviewItemIds: [],
+							generatedBlockIds: [],
+							structuredPreview: null,
+							anchor:
+								target.type === "selection"
+									? resolveSessionAnchor(target.selection)
+									: undefined,
+							selection:
+								target.type === "selection"
+									? resolveSessionSelectionSnapshot(target.selection)
+									: undefined,
+						},
+					]
+					: existingSession?.turns,
+				contextualPrompt:
+					existingSession?.contextualPrompt
+						? {
+							...existingSession.contextualPrompt,
+							anchor:
+								target.type === "selection"
+									? {
+										...existingSession.contextualPrompt.anchor,
+										selectionSnapshot: nextSelectionSnapshot,
+										focusBlockId: target.selection.toRange().start.blockId,
+										status: "valid",
+									}
+									: existingSession.contextualPrompt.anchor,
+							composer: {
+								...existingSession.contextualPrompt.composer,
+								draftPrompt: "",
+								isSubmitting: true,
+								isOpen: true,
+								openReason: "user",
+							},
+						}
+						: undefined,
+			});
+		}
+
+		this._setState({
+			status: "thinking",
+			activeGeneration: seedGeneration,
+			commandMenuOpen: false,
+			lastRoute: seedGeneration.route,
+			activeSessionId: context?.sessionId ?? this._state.activeSessionId,
+		});
+		this._setStreamEvents([
+			createAIStreamEvent(seedGeneration, {
+				type: "generation-start",
+				prompt,
+				target: target.type,
+			}),
+			createAIStreamEvent(seedGeneration, {
+				type: "status",
+				status: "thinking",
+			}),
+		]);
+
+		let currentText = "";
+		let currentMutationReceipt: AIMutationReceipt | null = null;
+		let sawStructuredFinalFrame = false;
+		let streamedSelectionSuggestionIds: string[] = [];
+		let lastStreamedSelectionPreviewText = "";
+		const updatePreview = (
+			text: string,
+			phase: "preview" | "final",
+		) => {
+			currentText = text;
+			const nextStatus =
+				phase === "preview" && text.length > 0 ? "writing" : this._state.status;
+			if (phase === "preview" && text.length > 0) {
+				this._setState({ status: "writing" });
+				this._appendStreamEvent(
+					createAIStreamEvent(seedGeneration, {
+						type: "status",
+						status: "writing",
+					}),
+				);
+			}
+			this._resolveActiveGeneration({
+				text,
+				status: "streaming",
+				operation,
+			});
+			this._appendStreamEvent(
+				createAIStreamEvent(seedGeneration, {
+					type: "operation",
+					operation,
+					phase,
+					text,
+				}),
+			);
+			void nextStatus;
+		};
+
+		try {
+			const stream = this._model!.stream({
+				messages: [{ role: "user", content: executionPrompt }],
+				tools: [],
+				signal: abortController.signal,
+				requestMode: resolveGenerationRequestMode({
+					...context,
+					targetType: target.type,
+					operation,
+				}),
+				operation,
+			});
+
+			for await (const event of stream) {
+				if (abortController.signal.aborted) {
+					break;
+				}
+
+				if (event.type === "error") {
+					throw event.error;
+				}
+
+				if (event.type === "conflict") {
+					this._appendStreamEvent(
+						createAIStreamEvent(seedGeneration, {
+							type: "operation",
+							operation,
+							phase: "conflict",
+							reason: event.reason,
+						}),
+					);
+					throw new Error(event.reason);
+				}
+
+				if (event.type === "text-delta") {
+					if (
+						operation.kind === "document-transform" ||
+						streamsMarkdownSelectionPreview
+					) {
+						currentText += event.delta;
+						if (
+							streamsMarkdownSelectionPreview &&
+							operation.target.kind === "scoped-range"
+						) {
+							updatePreview(currentText, "preview");
+							const previewRefresh = this._refreshStreamingMarkdownBlockPreview(
+								operation.target.blockIds?.[0] ?? operation.target.anchor.blockId,
+								currentText,
+								mutationMode,
+								context?.sessionId,
+								baselineSuggestionIds,
+								streamedSelectionSuggestionIds,
+								lastStreamedSelectionPreviewText,
+								true,
+								operation.target.blockIds,
+							);
+							streamedSelectionSuggestionIds = previewRefresh.suggestionIds;
+							lastStreamedSelectionPreviewText = previewRefresh.normalizedText;
+						}
+						continue;
+					}
+					throw new Error(
+						"Local AI operations must stream typed operation payloads, not raw text deltas.",
+					);
+				}
+
+				if (
+					event.type === "replace-preview" ||
+					event.type === "insert-preview"
+				) {
+					updatePreview(event.text, "preview");
+					if (
+						streamsMarkdownSelectionPreview &&
+						operation.target.kind === "scoped-range"
+					) {
+						const previewRefresh = this._refreshStreamingMarkdownBlockPreview(
+							operation.target.blockIds?.[0] ?? operation.target.anchor.blockId,
+							event.text,
+							mutationMode,
+							context?.sessionId,
+							baselineSuggestionIds,
+							streamedSelectionSuggestionIds,
+							lastStreamedSelectionPreviewText,
+							true,
+							operation.target.blockIds,
+						);
+						streamedSelectionSuggestionIds = previewRefresh.suggestionIds;
+						lastStreamedSelectionPreviewText = previewRefresh.normalizedText;
+					}
+					continue;
+				}
+
+				if (
+					event.type === "replace-final" ||
+					event.type === "insert-final"
+				) {
+					sawStructuredFinalFrame = true;
+					updatePreview(event.text, "final");
+					if (
+						streamsMarkdownSelectionPreview &&
+						operation.target.kind === "scoped-range"
+					) {
+						this._rejectPreviewSuggestions(streamedSelectionSuggestionIds);
+						streamedSelectionSuggestionIds = [];
+						lastStreamedSelectionPreviewText = "";
+					}
+					currentMutationReceipt = this._commitRequestedOperationResult(
+						operation,
+						event.text,
+						context?.sessionId,
+						{
+							contentFormat,
+							applyStrategy,
+						},
+					);
+					continue;
+				}
+
+				if (event.type === "done") {
+					break;
+				}
+			}
+
+			if (
+				!sawStructuredFinalFrame &&
+				currentText.length > 0 &&
+				operation.kind !== "document-transform" &&
+				!streamsMarkdownSelectionPreview
+			) {
+				throw new Error(
+					"Local AI operations must return a validated final payload before they can be applied.",
+				);
+			}
+			if (
+				!sawStructuredFinalFrame &&
+				currentText.length > 0 &&
+				operation.kind === "document-transform"
+			) {
+				currentMutationReceipt = this._commitRequestedOperationResult(
+					operation,
+					currentText,
+					context?.sessionId,
+					{
+						contentFormat,
+						applyStrategy,
+					},
+				);
+			} else if (
+				!sawStructuredFinalFrame &&
+				currentText.length > 0 &&
+				streamsMarkdownSelectionPreview
+			) {
+				this._rejectPreviewSuggestions(streamedSelectionSuggestionIds);
+				streamedSelectionSuggestionIds = [];
+				lastStreamedSelectionPreviewText = "";
+				currentMutationReceipt = this._commitRequestedOperationResult(
+					operation,
+					currentText,
+					context?.sessionId,
+					{
+						contentFormat,
+						applyStrategy,
+					},
+				);
+			}
+
+			const suggestionIds = this.getSuggestions()
+				.map((item) => item.id)
+				.filter((id) => !baselineSuggestionIds.has(id));
+			const mutationReceipt =
+				currentMutationReceipt ??
+				buildMutationReceipt({
+					status: currentText.length > 0 ? "noop" : "noop",
+					adapterId: "flow-markdown",
+					blockClass: "flow",
+					transportKind: "flow-text",
+				});
+			const finalStatus = abortController.signal.aborted ? "cancelled" : "complete";
+			this._setState({
+				status: "idle",
+				activeGeneration: {
+					...seedGeneration,
+					text: currentText,
+					status: finalStatus,
+					suggestionIds,
+					mutationReceipt,
+				},
+			});
+			this._appendStreamEvent(
+				createAIStreamEvent(seedGeneration, {
+					type: "generation-finish",
+					status: finalStatus,
+					text: currentText,
+				}),
+			);
+			if (context?.sessionId) {
+				if (sessionTurnId) {
+					const localReceiptEvidence = mutationReceipt?.evidence;
+					const localGeneratedBlockIds = localReceiptEvidence
+						? [
+							...new Set([
+								...localReceiptEvidence.affectedBlockIds,
+								...localReceiptEvidence.createdBlockIds,
+							]),
+						]
+						: operation.kind === "rewrite-selection" &&
+							operation.target.kind === "scoped-range"
+							? [...operation.target.blockIds]
+							: [];
+					this._updateSessionTurn(context.sessionId, sessionTurnId, {
+						status: finalStatus === "cancelled" ? "cancelled" : "complete",
+						suggestionIds,
+						generatedBlockIds: localGeneratedBlockIds,
+					});
+				}
+				this._updateSession(context.sessionId, {
+					status: finalStatus === "cancelled" ? "cancelled" : "complete",
+					pendingSuggestionIds: suggestionIds,
+					pendingReviewItemIds: [],
+				});
+			}
+			return {
+				...seedGeneration,
+				text: currentText,
+				status: finalStatus,
+				suggestionIds,
+				mutationReceipt,
+			};
+		} catch (error) {
+			this._setState({
+				status: "idle",
+				activeGeneration: {
+					...seedGeneration,
+					text: currentText,
+					status: abortController.signal.aborted ? "cancelled" : "error",
+				},
+			});
+			if (context?.sessionId) {
+				if (sessionTurnId) {
+					this._updateSessionTurn(context.sessionId, sessionTurnId, {
+						status: abortController.signal.aborted ? "cancelled" : "error",
+					});
+				}
+				this._updateSession(context.sessionId, {
+					status: abortController.signal.aborted ? "cancelled" : "error",
+				});
+			}
+			throw error;
+		} finally {
+			if (this._abortController === abortController) {
+				this._abortController = null;
+			}
+		}
 	}
 
 	private async _executeGeneration(
@@ -1327,6 +1988,22 @@ class AIControllerImpl implements AIController {
 			target.type === "block"
 				? target.blockId
 				: target.selection.toRange().start.blockId;
+		const requestedOperation = context?.operation ?? null;
+		if (
+			context?.surface === "bottom-chat" &&
+			isLocalRequestedOperation(requestedOperation)
+		) {
+			return this._executeLocalOperation({
+				prompt,
+				target,
+				blockId,
+				commandId,
+				context,
+				abortController,
+				baselineSuggestionIds,
+				operation: requestedOperation,
+			});
+		}
 		const requestedContentFormat = this._resolveContentFormat(
 			target.type,
 			context?.surface,
@@ -1380,14 +2057,17 @@ class AIControllerImpl implements AIController {
 			route.plannerMode !== "structured" &&
 			contentFormat === "text";
 		const shouldReplaceMarkdownTarget =
-			route.plannerMode !== "structured" &&
-			contentFormat === "markdown" &&
-			target.type === "block" &&
+			(context?.replaceTargetBlock === true) ||
 			(
-				route.targetKind === "table" ||
+				route.plannerMode !== "structured" &&
+				contentFormat === "markdown" &&
+				target.type === "block" &&
 				(
-					context?.surface === "bottom-chat" &&
-					shouldReplaceEmptyMarkdownTarget(this._editor.getBlock(blockId))
+					route.targetKind === "table" ||
+					(
+						context?.surface === "bottom-chat" &&
+						shouldReplaceEmptyMarkdownTarget(this._editor.getBlock(blockId))
+					)
 				)
 			);
 		const canStreamSelectionSuggestions =
@@ -1408,6 +2088,13 @@ class AIControllerImpl implements AIController {
 		let streamedMarkdownSuggestionIds: string[] = [];
 		let lastStreamedMarkdownPreviewText = "";
 		const sessionTurnId = context?.sessionId ? crypto.randomUUID() : undefined;
+		const existingSession =
+			context?.sessionId != null
+				? (this._state.sessions.find(
+					(session) => session.id === context.sessionId,
+				) ?? null)
+				: null;
+		const executionPrompt = buildSessionExecutionPrompt(existingSession, prompt);
 		let shouldTrimLeadingBlankBlockText =
 			target.type === "block" &&
 			shouldTrimLeadingBlankBlockGenerationText(this._editor.getBlock(blockId));
@@ -1417,7 +2104,7 @@ class AIControllerImpl implements AIController {
 			useStructuredIntentTransport ||
 				(adapter.id === "flow-markdown" && contentFormat === "markdown")
 				? adapter.buildPrompt({
-					prompt,
+					prompt: executionPrompt,
 					targetKind: route.targetKind,
 					activeBlockId: blockId,
 					workingSet,
@@ -1425,11 +2112,11 @@ class AIControllerImpl implements AIController {
 				})
 				: route.plannerMode === "structured"
 					? buildPlannerPrompt({
-						prompt,
+						prompt: executionPrompt,
 						targetKind: route.targetKind,
 						workingSet,
 					})
-					: prompt;
+					: executionPrompt;
 
 		const seedGeneration: GenerationState = {
 			id: crypto.randomUUID(),
@@ -1440,6 +2127,7 @@ class AIControllerImpl implements AIController {
 			turnId: sessionTurnId,
 			surface: context?.surface,
 			prompt,
+			operation: requestedOperation,
 			status: "streaming",
 			tokenCount: 0,
 			steps: [],
@@ -1482,15 +2170,13 @@ class AIControllerImpl implements AIController {
 			},
 		};
 		if (context?.sessionId) {
-			const existingSession = this._state.sessions.find(
-				(session) => session.id === context.sessionId,
-			);
 			const nextSelectionSnapshot =
 				target.type === "selection"
 					? resolveSessionSelectionSnapshot(target.selection)
 					: undefined;
 			this._updateSession(context.sessionId, {
 				status: "streaming",
+				operation: requestedOperation,
 				activeTurnId: sessionTurnId,
 				anchor:
 					target.type === "selection"
@@ -1507,6 +2193,7 @@ class AIControllerImpl implements AIController {
 						prompt,
 						createdAt: Date.now(),
 						generationId: seedGeneration.id,
+						operation: requestedOperation ?? undefined,
 					},
 				],
 				turns: sessionTurnId
@@ -1516,11 +2203,14 @@ class AIControllerImpl implements AIController {
 							id: sessionTurnId,
 							prompt,
 							createdAt: Date.now(),
+							undoGroupId: seedGeneration.undoGroupId,
 							generationId: seedGeneration.id,
 							target: target.type,
+							operation: requestedOperation ?? undefined,
 							status: "streaming",
 							suggestionIds: [],
 							reviewItemIds: [],
+							generatedBlockIds: [],
 							structuredPreview: null,
 							anchor:
 								target.type === "selection"
@@ -1590,7 +2280,10 @@ class AIControllerImpl implements AIController {
 				zoneId: seedGeneration.zoneId,
 				maxSteps: route.allowToolUse ? (maxSteps ?? this._maxAgenticSteps) : 1,
 				signal: abortController.signal,
-				requestMode: resolveGenerationRequestMode(context),
+				requestMode: resolveGenerationRequestMode({
+					...context,
+					targetType: target.type,
+				}),
 				workingSet,
 				validateWorkingSet: (activeWorkingSet) =>
 					this._validateWorkingSet(route, target, activeWorkingSet),
@@ -1681,6 +2374,7 @@ class AIControllerImpl implements AIController {
 							streamedMarkdownSuggestionIds,
 							lastStreamedMarkdownPreviewText,
 							shouldReplaceMarkdownTarget,
+							context?.replaceBlockIds,
 						);
 						streamedMarkdownSuggestionIds = previewRefresh.suggestionIds;
 						lastStreamedMarkdownPreviewText = previewRefresh.normalizedText;
@@ -1918,6 +2612,7 @@ class AIControllerImpl implements AIController {
 						insertionOffset: target.offset,
 						workingSet,
 						replaceTargetBlock: shouldReplaceMarkdownTarget,
+						replaceBlockIds: context?.replaceBlockIds,
 					},
 				);
 				this._inlineCompletion.dismissSuggestion();
@@ -2063,7 +2758,24 @@ class AIControllerImpl implements AIController {
 				);
 				const lastStructuredPreviewEvent =
 					structuredPreviewEvents[structuredPreviewEvents.length - 1];
+				const refreshedInlineReviewSelectionTarget =
+					context?.surface === "inline-edit" && suggestionIds.length > 0
+						? resolvePendingInlineSelectionTarget(
+								this._editor,
+								requestedOperation ?? undefined,
+								suggestionIds,
+							) ?? resolveLiveInlineSelectionTarget(this._editor)
+						: null;
 				if (sessionTurnId) {
+					const receiptEvidence = currentMutationReceipt?.evidence;
+					const generatedBlockIds = receiptEvidence
+						? [
+							...new Set([
+								...receiptEvidence.affectedBlockIds,
+								...receiptEvidence.createdBlockIds,
+							]),
+						]
+						: [];
 					this._updateSessionTurn(context.sessionId, sessionTurnId, {
 						status:
 							suggestionIds.length > 0 || reviewItems.length > 0
@@ -2073,7 +2785,18 @@ class AIControllerImpl implements AIController {
 									: finalGeneration.status,
 						suggestionIds,
 						reviewItemIds: reviewItems.map((item) => item.id),
+						generatedBlockIds,
 						structuredPreview: finalGeneration.structuredPreview ?? null,
+						anchor: refreshedInlineReviewSelectionTarget
+							? resolveSessionAnchor(
+									refreshedInlineReviewSelectionTarget.selection,
+								)
+							: undefined,
+						selection: refreshedInlineReviewSelectionTarget
+							? resolveSessionSelectionSnapshot(
+									refreshedInlineReviewSelectionTarget.selection,
+								)
+							: undefined,
 					});
 				}
 				const resolvedGenerationDebug =
@@ -2180,6 +2903,204 @@ class AIControllerImpl implements AIController {
 		}
 	}
 
+	private _commitRequestedOperationResult(
+		operation: AIRequestedOperation,
+		text: string,
+		sessionId: string | undefined,
+		options: {
+			contentFormat: AIContentFormat;
+			applyStrategy?: AIApplyStrategy;
+		},
+	): AIMutationReceipt {
+		const conflictReason = resolveRequestedOperationConflict(
+			this._editor,
+			operation,
+			this._createSelectionSignature(this._editor.selection),
+		);
+		if (conflictReason) {
+			return buildMutationReceipt({
+				status: "invalid",
+				adapterId: "flow-markdown",
+				blockClass: "flow",
+				transportKind: "flow-text",
+				issues: [conflictReason],
+			});
+		}
+
+		if (operation.kind === "rewrite-selection") {
+			const selection = resolveSelectionForRequestedOperation(
+				this._editor,
+				operation,
+			);
+			if (!selection) {
+				return buildMutationReceipt({
+					status: "invalid",
+					adapterId: "flow-markdown",
+					blockClass: "flow",
+					transportKind: "flow-text",
+					issues: ["The requested selection rewrite target is no longer available."],
+				});
+			}
+			const markdownBlockIds =
+				options.contentFormat === "markdown" &&
+					operation.target.kind === "scoped-range" &&
+					operation.target.blockIds.length > 0
+					? operation.target.blockIds
+					: null;
+			if (markdownBlockIds) {
+				return this._commitBufferedBlockGeneration(
+					markdownBlockIds[0],
+					text,
+					"persistent-suggestions",
+					"markdown",
+					sessionId,
+					{
+						applyStrategy: options.applyStrategy,
+						replaceTargetBlock: true,
+						replaceBlockIds: markdownBlockIds,
+					},
+				);
+			}
+			return this._commitSelectionRewrite(
+				selection,
+				text,
+				"persistent-suggestions",
+				sessionId,
+			);
+		}
+
+		if (operation.kind === "rewrite-block") {
+			const target = operation.target.kind === "block" ? operation.target : null;
+			if (!target) {
+				return buildMutationReceipt({
+					status: "invalid",
+					adapterId: "flow-markdown",
+					blockClass: "flow",
+					transportKind: "flow-text",
+					issues: ["The requested block rewrite target is invalid."],
+				});
+			}
+			const selection = resolveFullBlockTextSelection(
+				this._editor,
+				target.blockId,
+			);
+			if (selection && options.contentFormat === "text") {
+				return this._commitSelectionRewrite(
+					selection,
+					text,
+					"persistent-suggestions",
+					sessionId,
+				);
+			}
+			return this._commitBufferedBlockGeneration(
+				target.blockId,
+				text,
+				"persistent-suggestions",
+				options.contentFormat,
+				sessionId,
+				{
+					applyStrategy: options.applyStrategy,
+					replaceTargetBlock: true,
+				},
+			);
+		}
+
+		if (operation.kind === "document-transform") {
+			const target = operation.target.kind === "document" ? operation.target : null;
+			if (!target) {
+				return buildMutationReceipt({
+					status: "invalid",
+					adapterId: "flow-markdown",
+					blockClass: "flow",
+					transportKind: "flow-text",
+					issues: ["The requested document transform target is invalid."],
+				});
+			}
+			const replaceBlockIds = target.blockIds?.filter(
+				(blockId) => this._editor.getBlock(blockId) != null,
+			);
+			if (target.transform === "remove") {
+				const deleteBlockIds =
+					replaceBlockIds && replaceBlockIds.length > 0
+						? replaceBlockIds
+						: this._editor.documentState.blockOrder.filter(
+							(blockId) => this._editor.getBlock(blockId) != null,
+						);
+				const ops = deleteBlockIds.map((blockId) => ({
+					type: "delete-block" as const,
+					blockId,
+				}));
+				if (ops.length === 0) {
+					return buildMutationReceipt({
+						status: "noop",
+						adapterId: "flow-markdown",
+						blockClass: "flow",
+						transportKind: "flow-text",
+					});
+				}
+				this._applySuggestedAIOps(ops, sessionId);
+				return buildMutationReceipt({
+					status: "staged_suggestions",
+					ops,
+					adapterId: "flow-markdown",
+					blockClass: "flow",
+					transportKind: "flow-text",
+				});
+			}
+			const targetBlockId =
+				target.activeBlockId ??
+				replaceBlockIds?.[0] ??
+				this._editor.lastBlock()?.id ??
+				this._editor.firstBlock()?.id ??
+				null;
+			if (!targetBlockId) {
+				return buildMutationReceipt({
+					status: "invalid",
+					adapterId: "flow-markdown",
+					blockClass: "flow",
+					transportKind: "flow-text",
+					issues: ["The requested document transform target is no longer available."],
+				});
+			}
+			return this._commitBufferedBlockGeneration(
+				targetBlockId,
+				text,
+				"persistent-suggestions",
+				options.contentFormat,
+				sessionId,
+				{
+					applyStrategy: options.applyStrategy,
+					replaceTargetBlock:
+						target.placement === "replace-blocks" ||
+						target.placement === "replace-empty-block" ||
+						(replaceBlockIds?.length ?? 0) > 0,
+					replaceBlockIds,
+				},
+			);
+		}
+
+		const target = operation.target.kind === "block" ? operation.target : null;
+		if (!target) {
+			return buildMutationReceipt({
+				status: "invalid",
+				adapterId: "flow-markdown",
+				blockClass: "flow",
+				transportKind: "flow-text",
+				issues: ["The requested continuation target is invalid."],
+			});
+		}
+		return this._commitBufferedBlockGeneration(
+			target.blockId,
+			text,
+			"persistent-suggestions",
+			"text",
+			sessionId,
+			{
+				insertionOffset: target.insertionOffset,
+			},
+		);
+	}
+
 	private _commitSelectionRewrite(
 		selection: TextSelection,
 		text: string,
@@ -2278,6 +3199,7 @@ class AIControllerImpl implements AIController {
 			insertionOffset?: number;
 			workingSet?: AIWorkingSetEnvelope | null;
 			replaceTargetBlock?: boolean;
+			replaceBlockIds?: readonly string[];
 		},
 	): AIMutationReceipt {
 		let fastApplyFallbackMode:
@@ -2285,7 +3207,8 @@ class AIControllerImpl implements AIController {
 			| null = null;
 		if (
 			contentFormat === "markdown" &&
-			options?.applyStrategy === "markdown-fast-apply"
+			options?.applyStrategy === "markdown-fast-apply" &&
+			(options?.replaceBlockIds?.length ?? 0) === 0
 		) {
 			const fastApplyReceipt = this._commitBufferedMarkdownFastApply(
 				blockId,
@@ -2316,6 +3239,70 @@ class AIControllerImpl implements AIController {
 			contentFormat === "markdown"
 				? normalizeFlowMarkdownOutput(text)
 				: text;
+		const scopedReplaceBlockIds =
+			contentFormat === "markdown"
+				? options?.replaceBlockIds?.filter(
+					(candidateBlockId, index, allBlockIds) =>
+						allBlockIds.indexOf(candidateBlockId) === index &&
+						this._editor.getBlock(candidateBlockId) != null,
+				) ?? []
+				: [];
+		if (contentFormat === "markdown" && scopedReplaceBlockIds.length > 0) {
+			if (normalizedText.trim().length > 0) {
+				const verification = this._verifyMarkdownFastApplyResult(
+					scopedReplaceBlockIds,
+					normalizedText,
+				);
+				if (!verification.valid) {
+					return buildMutationReceipt({
+						status: "invalid",
+						adapterId: "flow-markdown",
+						blockClass: "flow",
+						transportKind: "flow-text",
+						issues: ["Scoped markdown replacement could not be verified safely."],
+					});
+				}
+			}
+			const ops = this._buildMarkdownScopedReplacementOps(
+				scopedReplaceBlockIds,
+				normalizedText,
+			);
+			const scopedReplacementFallback = this._summarizeFastApplyFallbackOps(
+				"scoped-replacement",
+				ops,
+				scopedReplaceBlockIds.length,
+			);
+			if (
+				mutationMode === "persistent-suggestions" ||
+				mutationMode === "streaming-suggestions" ||
+				mutationMode === "staged-review"
+			) {
+				this._applySuggestedAIOps(ops, sessionId);
+				this._recordFastApplyDebug({
+					executionPath: "scoped-replacement",
+					fallback: scopedReplacementFallback,
+				});
+				return buildMutationReceipt({
+					status: ops.length > 0 ? "staged_suggestions" : "noop",
+					ops,
+					adapterId: "flow-markdown",
+					blockClass: "flow",
+					transportKind: "flow-text",
+				});
+			}
+			this._editor.apply(ops, { origin: "ai", undoGroup: true });
+			this._recordFastApplyDebug({
+				executionPath: "scoped-replacement",
+				fallback: scopedReplacementFallback,
+			});
+			return buildMutationReceipt({
+				status: ops.length > 0 ? "applied" : "noop",
+				ops,
+				adapterId: "flow-markdown",
+				blockClass: "flow",
+				transportKind: "flow-text",
+			});
+		}
 		if (
 			contentFormat === "markdown" &&
 			(mutationMode === "persistent-suggestions" ||
@@ -2326,6 +3313,7 @@ class AIControllerImpl implements AIController {
 				normalizedText,
 				sessionId,
 				options?.replaceTargetBlock,
+				options?.replaceBlockIds,
 			)
 		) {
 			if (fastApplyFallbackMode) {
@@ -2351,6 +3339,7 @@ class AIControllerImpl implements AIController {
 					blockId,
 					normalizedText,
 					options?.replaceTargetBlock,
+					options?.replaceBlockIds,
 				)
 				: this._buildTextBlockGenerationOps(
 					blockId,
@@ -2904,6 +3893,7 @@ class AIControllerImpl implements AIController {
 		text: string,
 		sessionId?: string,
 		replaceTargetBlock?: boolean,
+		replaceBlockIds?: readonly string[],
 	): DocumentOp[] | null {
 		const targetBlock = this._editor.getBlock(blockId);
 		if (
@@ -2923,9 +3913,17 @@ class AIControllerImpl implements AIController {
 			return null;
 		}
 
+		const deleteBlockIds = resolveReplacementDeleteBlockIds(
+			this._editor,
+			blockId,
+			replaceBlockIds,
+		);
 		const replacementOps = [
 			...ops,
-			{ type: "delete-block", blockId },
+			...deleteBlockIds.map((nextBlockId) => ({
+				type: "delete-block" as const,
+				blockId: nextBlockId,
+			})),
 		] satisfies DocumentOp[];
 		this._applySuggestedAIOps(replacementOps, sessionId);
 		return replacementOps;
@@ -2940,6 +3938,7 @@ class AIControllerImpl implements AIController {
 		previewSuggestionIds: readonly string[],
 		previousNormalizedText: string,
 		replaceTargetBlock?: boolean,
+		replaceBlockIds?: readonly string[],
 	): { suggestionIds: string[]; normalizedText: string } {
 		const normalizedText = normalizeFlowMarkdownOutput(text);
 		if (normalizedText === previousNormalizedText) {
@@ -2949,11 +3948,13 @@ class AIControllerImpl implements AIController {
 			};
 		}
 
-		for (const suggestionId of previewSuggestionIds) {
-			this.rejectSuggestion(suggestionId);
-		}
+		this._rejectPreviewSuggestions(previewSuggestionIds);
 
-		if (normalizedText.trim().length === 0) {
+		if (
+			normalizedText.trim().length === 0 &&
+			!replaceTargetBlock &&
+			(replaceBlockIds?.length ?? 0) === 0
+		) {
 			return {
 				suggestionIds: [],
 				normalizedText,
@@ -2966,7 +3967,7 @@ class AIControllerImpl implements AIController {
 			mutationMode,
 			"markdown",
 			sessionId,
-			{ replaceTargetBlock },
+			{ replaceTargetBlock, replaceBlockIds },
 		);
 
 		return {
@@ -3437,11 +4438,23 @@ class AIControllerImpl implements AIController {
 		sessionId?: string,
 		options?: { undoGroupId?: string },
 	): void {
+		const session =
+			sessionId != null
+				? this._state.sessions.find((item) => item.id === sessionId) ?? null
+				: null;
+		const activeGeneration = this._state.activeGeneration;
+		const undoGroupId =
+			options?.undoGroupId ??
+			(session?.surface === "bottom-chat" &&
+				activeGeneration != null &&
+				activeGeneration.sessionId === sessionId
+				? activeGeneration.undoGroupId
+				: undefined);
 		if (this._state.suggestMode && !sessionId) {
 			this._editor.apply(ops, {
 				origin: "ai",
-				...(options?.undoGroupId
-					? { undoGroupId: options.undoGroupId }
+				...(undoGroupId
+					? { undoGroupId }
 					: { undoGroup: true }),
 			});
 			return;
@@ -3458,8 +4471,8 @@ class AIControllerImpl implements AIController {
 		const origin = sessionId ? AI_SESSION_SUGGESTION_ORIGIN : "extension";
 		this._editor.apply(intercepted, {
 			origin,
-			...(options?.undoGroupId
-				? { undoGroupId: options.undoGroupId }
+			...(undoGroupId
+				? { undoGroupId }
 				: { undoGroup: true }),
 		});
 	}
@@ -3507,6 +4520,7 @@ class AIControllerImpl implements AIController {
 		blockId: string,
 		text: string,
 		replaceTargetBlock?: boolean,
+		replaceBlockIds?: readonly string[],
 	): DocumentOp[] {
 		const targetBlock = this._editor.getBlock(blockId);
 		if (!targetBlock) {
@@ -3526,9 +4540,17 @@ class AIControllerImpl implements AIController {
 			return ops;
 		}
 
+		const deleteBlockIds = resolveReplacementDeleteBlockIds(
+			this._editor,
+			blockId,
+			replaceBlockIds,
+		);
 		return [
 			...ops,
-			{ type: "delete-block", blockId },
+			...deleteBlockIds.map((nextBlockId) => ({
+				type: "delete-block" as const,
+				blockId: nextBlockId,
+			})),
 		];
 	}
 
@@ -3617,15 +4639,44 @@ class AIControllerImpl implements AIController {
 		if (!session || !turn) {
 			return false;
 		}
+		const isBottomChatDocumentTurn =
+			session.surface === "bottom-chat" &&
+			(turn.target === "document" ||
+				turn.operation?.kind === "document-transform" ||
+				(
+					turn.operation?.kind === "rewrite-selection" &&
+					turn.operation.target.kind === "scoped-range" &&
+					(turn.operation.target.scope === "document" ||
+						turn.operation.target.contentFormat === "markdown")
+				));
+		const turnUndoGroupId = isBottomChatDocumentTurn
+			? turn.undoGroupId
+			: undefined;
+		const turnSuggestionResolutionOrigin =
+			turnUndoGroupId != null ? AI_SESSION_SUGGESTION_ORIGIN : undefined;
 		const undoHistoryBeforeSnapshot = this._undoHistoryMetadata
 			? this._createInlineTurnUndoBeforeSnapshot(sessionId, turnId)
 			: null;
+		const refreshedInlineSelectionTarget =
+			session.surface === "inline-edit" && resolution === "accept"
+				? resolveAcceptedInlineSelectionTarget(
+						this._editor,
+						turn.operation,
+						turn.suggestionIds,
+					) ?? resolveLiveInlineSelectionTarget(this._editor)
+				: null;
 		const resolveSuggestionsForTurn =
 			resolution === "accept"
 				? (suggestionIds: readonly string[]) =>
-					acceptSuggestions(this._editor, suggestionIds)
+					acceptSuggestions(this._editor, suggestionIds, {
+						origin: turnSuggestionResolutionOrigin,
+						undoGroupId: turnUndoGroupId,
+					})
 				: (suggestionIds: readonly string[]) =>
-					rejectSuggestions(this._editor, suggestionIds);
+					rejectSuggestions(this._editor, suggestionIds, {
+						origin: turnSuggestionResolutionOrigin,
+						undoGroupId: turnUndoGroupId,
+					});
 		const resolveReviewItems =
 			resolution === "accept"
 				? (reviewItemIds: readonly string[]) => this.acceptReviewItems(reviewItemIds)
@@ -3649,7 +4700,27 @@ class AIControllerImpl implements AIController {
 			suggestionIds: [],
 			reviewItemIds: [],
 			structuredPreview: null,
+			anchor: refreshedInlineSelectionTarget
+				? resolveSessionAnchor(refreshedInlineSelectionTarget.selection)
+				: undefined,
+			selection: refreshedInlineSelectionTarget
+				? resolveSessionSelectionSnapshot(
+						refreshedInlineSelectionTarget.selection,
+					)
+				: undefined,
 		});
+		if (refreshedInlineSelectionTarget) {
+				this._updateSession(sessionId, {
+					target: refreshedInlineSelectionTarget,
+					anchor: resolveSessionAnchor(refreshedInlineSelectionTarget.selection),
+					contextualPrompt: session.contextualPrompt
+						? {
+								...session.contextualPrompt,
+								anchor: resolveContextualPromptAnchor(refreshedInlineSelectionTarget),
+							}
+						: undefined,
+				});
+		}
 		if (options?.finalizeSession === false) {
 			if (undoHistoryBeforeSnapshot) {
 				this._undoHistoryMetadata?.setCurrentEntryMetadata(
@@ -4323,9 +5394,9 @@ class AIControllerImpl implements AIController {
 			const targetState = resolveInlineShortcutHistoryState(
 				targetSnapshot,
 				shortcutSessionId ??
-					targetSnapshot.sessionId ??
-					targetSnapshot.activeSessionId ??
-					null,
+				targetSnapshot.sessionId ??
+				targetSnapshot.activeSessionId ??
+				null,
 			);
 			this._pendingInlineHistoryRestore = {
 				direction,
@@ -4919,6 +5990,13 @@ type AIStreamEventInput =
 		text: string;
 	}
 	| {
+		type: "operation";
+		operation: AIRequestedOperation;
+		phase: "preview" | "final" | "conflict";
+		text?: string;
+		reason?: string;
+	}
+	| {
 		type: "app-partial";
 		data: unknown;
 		final: boolean;
@@ -5308,39 +6386,924 @@ function resolveSelectionSnapshotRangeEnd(
 		: { ...snapshot.focus };
 }
 
-function resolvePromptTargetForSession(
+function resolveRequestedOperationForSession(
 	editor: Editor,
 	session: AISession,
-	target: "auto" | "selection" | "block" | "document" | undefined,
-	prompt?: string,
-): "selection" | "block" | "document" {
-	if (session.surface === "inline-edit" && session.target.kind === "selection") {
-		return "selection";
-	}
-	if (target === "selection") {
-		return "selection";
-	}
-	if (target === "block") {
-		return "block";
-	}
-	if (target === "document") {
-		return "document";
-	}
-	if (session.target.kind === "selection") {
-		const promptIntent = prompt ? classifyPromptIntent(prompt) : null;
-		if (
-			session.surface === "inline-edit" &&
-			promptIntent != null &&
-			promptIntent !== "rewrite"
-		) {
-			return "block";
+	prompt: string,
+	options: AICommandExecutionOptions | undefined,
+	documentVersion: number,
+): AIRequestedOperation {
+	const explicitTarget = options?.target;
+	const promptIntent = classifyPromptIntent(prompt);
+	const capturedSelection = resolveSessionSelectionTarget(editor, session);
+	const liveSelection =
+		session.surface === "inline-edit"
+			? capturedSelection
+			: editor.selection?.type === "text" && !editor.selection.isCollapsed
+				? editor.selection
+				: capturedSelection;
+	const activeBlockId =
+		options?.blockId ??
+		resolveSessionBlockId(editor, session) ??
+		resolveActiveBlockId(editor.selection) ??
+		editor.lastBlock()?.id ??
+		editor.firstBlock()?.id ??
+		null;
+	const documentActiveBlockId =
+		options?.blockId ??
+		resolveActiveBlockId(editor.selection) ??
+		session.anchor?.blockId ??
+		null;
+	const resolvedEditProposal = resolveResolvedEditProposal(
+		editor,
+		session,
+		prompt,
+		promptIntent,
+		explicitTarget,
+		liveSelection,
+		"markdown",
+	);
+	const clearDocument =
+		session.target.kind === "document" && isClearDocumentPrompt(prompt);
+	const documentBlockIds = editor.documentState.blockOrder.filter(
+		(blockId) => editor.getBlock(blockId) != null,
+	);
+	const documentTransformPlan = clearDocument
+		? {
+			blockIds: documentBlockIds,
+			placement: "replace-blocks" as const,
+			transform: "remove" as const,
 		}
-		return "selection";
+		: undefined;
+
+	if (resolvedEditProposal) {
+		return createRewriteSelectionOperationFromResolvedTarget(
+			editor,
+			resolvedEditProposal.target,
+			resolvedEditProposal.promptIntent,
+			documentVersion,
+		);
 	}
-	if (session.target.kind === "document") {
-		return "document";
+	if (promptIntent === "continue" && activeBlockId) {
+		if (!canUseLocalBlockTextOperation(editor, activeBlockId)) {
+			return createDocumentTransformOperation(
+				editor,
+				activeBlockId,
+				promptIntent,
+				documentVersion,
+				{
+					blockIds: [activeBlockId],
+					placement: "append-after-block",
+					transform: "write",
+				},
+			);
+		}
+		return createContinueBlockOperation(
+			editor,
+			activeBlockId,
+			promptIntent,
+			documentVersion,
+		);
 	}
-	return resolvePromptTarget(editor.selection, target);
+	if (
+		activeBlockId &&
+		(promptIntent === "rewrite" ||
+			(promptIntent === "local-edit" &&
+				(editor.getBlock(activeBlockId)?.textContent().length ?? 0) > 0) ||
+			explicitTarget === "block")
+	) {
+		if (!canUseLocalBlockTextOperation(editor, activeBlockId)) {
+			return createDocumentTransformOperation(
+				editor,
+				activeBlockId,
+				promptIntent,
+				documentVersion,
+				{
+					blockIds: [activeBlockId],
+					placement: "replace-blocks",
+					transform: "rewrite",
+				},
+			);
+		}
+		return createRewriteBlockOperation(
+			editor,
+			activeBlockId,
+			promptIntent,
+			documentVersion,
+		);
+	}
+	if (explicitTarget === "document") {
+		return createDocumentTransformOperation(
+			editor,
+			documentActiveBlockId,
+			promptIntent,
+			documentVersion,
+			documentTransformPlan,
+		);
+	}
+	return createDocumentTransformOperation(
+		editor,
+		session.target.kind === "document" ? documentActiveBlockId : activeBlockId,
+		promptIntent,
+		documentVersion,
+		documentTransformPlan,
+	);
+}
+
+function resolveLocalOperationContentFormat(
+	editor: Editor,
+	operation: AIRequestedOperation,
+	defaultBlockFormat: AIContentFormat,
+): AIContentFormat {
+	if (operation.kind === "rewrite-selection") {
+		return operation.target.kind === "scoped-range"
+			? operation.target.contentFormat
+			: "text";
+	}
+	if (operation.kind === "document-transform") {
+		return defaultBlockFormat;
+	}
+	if (operation.kind !== "rewrite-block") {
+		return "text";
+	}
+	const blockId = operation.target.kind === "block" ? operation.target.blockId : null;
+	if (blockId && resolveFullBlockTextSelection(editor, blockId)) {
+		return "text";
+	}
+	return defaultBlockFormat;
+}
+
+function canUseLocalBlockTextOperation(editor: Editor, blockId: string): boolean {
+	const block = editor.getBlock(blockId);
+	if (!block) {
+		return false;
+	}
+	const schema = editor.schema.resolve(block.type);
+	if (!schema || !usesInlineTextSelection(schema)) {
+		return false;
+	}
+	return resolveFullBlockTextSelection(editor, blockId) != null;
+}
+
+function canReuseBottomChatSessionOperation(
+	previousOperation: AIRequestedOperation,
+	nextOperation: AIRequestedOperation,
+): boolean {
+	const previousResolvedTarget =
+		resolveResolvedEditTargetFromRequestedOperation(previousOperation);
+	const nextResolvedTarget =
+		resolveResolvedEditTargetFromRequestedOperation(nextOperation);
+	if (previousResolvedTarget && nextResolvedTarget) {
+		return areResolvedEditTargetsEqual(previousResolvedTarget, nextResolvedTarget);
+	}
+	if (previousOperation.kind !== nextOperation.kind) {
+		return false;
+	}
+	if (previousOperation.target.kind !== nextOperation.target.kind) {
+		return false;
+	}
+	if (
+		previousOperation.target.kind === "selection" ||
+		previousOperation.target.kind === "scoped-range"
+	) {
+		if (
+			nextOperation.target.kind !== "selection" &&
+			nextOperation.target.kind !== "scoped-range"
+		) {
+			return false;
+		}
+		return (
+			previousOperation.provenance?.selectionSignature ===
+			nextOperation.provenance?.selectionSignature &&
+			previousOperation.target.sourceText === nextOperation.target.sourceText
+		);
+	}
+	if (previousOperation.target.kind === "block") {
+		if (nextOperation.target.kind !== "block") {
+			return false;
+		}
+		return (
+			previousOperation.target.blockId === nextOperation.target.blockId &&
+			previousOperation.provenance?.blockRevision ===
+			nextOperation.provenance?.blockRevision
+		);
+	}
+	if (nextOperation.target.kind !== "document") {
+		return false;
+	}
+	return (
+		previousOperation.target.activeBlockId === nextOperation.target.activeBlockId &&
+		areStructuredValuesEqual(
+			previousOperation.target.blockIds ?? [],
+			nextOperation.target.blockIds ?? [],
+		) &&
+		(previousOperation.target.placement ?? null) ===
+		(nextOperation.target.placement ?? null) &&
+		(previousOperation.target.transform ?? null) ===
+		(nextOperation.target.transform ?? null)
+	);
+}
+
+function resolveResolvedEditTargetFromRequestedOperation(
+	operation: AIRequestedOperation,
+): ResolvedEditTarget | null {
+	if (
+		operation.target.kind !== "selection" &&
+		operation.target.kind !== "scoped-range"
+	) {
+		return null;
+	}
+	return operation.target;
+}
+
+function areResolvedEditTargetsEqual(
+	previousTarget: ResolvedEditTarget,
+	nextTarget: ResolvedEditTarget,
+): boolean {
+	if (previousTarget.kind !== nextTarget.kind) {
+		return false;
+	}
+	if (
+		previousTarget.blockId !== nextTarget.blockId ||
+		previousTarget.sourceText !== nextTarget.sourceText ||
+		previousTarget.anchor.blockId !== nextTarget.anchor.blockId ||
+		previousTarget.anchor.offset !== nextTarget.anchor.offset ||
+		previousTarget.focus.blockId !== nextTarget.focus.blockId ||
+		previousTarget.focus.offset !== nextTarget.focus.offset
+	) {
+		return false;
+	}
+	if (previousTarget.kind === "scoped-range" && nextTarget.kind === "scoped-range") {
+		return (
+			previousTarget.scope === nextTarget.scope &&
+			previousTarget.contentFormat === nextTarget.contentFormat &&
+			areStructuredValuesEqual(previousTarget.blockIds, nextTarget.blockIds)
+		);
+	}
+	return true;
+}
+
+function isClearDocumentPrompt(prompt: string): boolean {
+	const normalizedPrompt = prompt.trim().toLowerCase();
+	return (
+		/\b(remove|delete|clear|erase|wipe)\b/.test(normalizedPrompt) &&
+		/\b(all|entire|whole|everything)\b/.test(normalizedPrompt) &&
+		/\b(document|content|contents|text|story|page)\b/.test(normalizedPrompt)
+	);
+}
+
+function isWholeDocumentRewritePrompt(prompt: string): boolean {
+	const normalizedPrompt = prompt.trim().toLowerCase();
+	return (
+		/\b(rewrite|redo|revise|rework|replace)\s+(?:the|this|my)?\s*(?:entire|whole|full|all)?\s*(?:document|content|contents|text|story|page)\b/.test(
+			normalizedPrompt,
+		) || /\bmake (?:it|this) about\b/.test(normalizedPrompt)
+	);
+}
+
+function isDocumentResetPrompt(prompt: string): boolean {
+	const normalizedPrompt = prompt.trim().toLowerCase();
+	return /\b(start(?:ing)?\s+(?:over|again|from scratch)|begin\s+again|from scratch|restart)\b/.test(
+		normalizedPrompt,
+	);
+}
+
+function isDocumentFollowUpEditPrompt(prompt: string): boolean {
+	const normalizedPrompt = prompt.trim().toLowerCase();
+	if (/\b(continue|append|add|insert|another|more|next)\b/.test(normalizedPrompt)) {
+		return false;
+	}
+	return (
+		/\b(change|update|adjust|edit|fix|improve|polish|revise|rework|rename|retitle|make)\b/.test(
+			normalizedPrompt,
+		) &&
+		(/\b(title|heading|story|document|content|contents|text|tone|voice|ending|opening|intro|introduction|theme)\b/.test(
+			normalizedPrompt,
+		) || /\bmake (?:it|this)\b/.test(normalizedPrompt))
+	);
+}
+
+function buildSessionExecutionPrompt(
+	session: AISession | null,
+	prompt: string,
+): string {
+	if (!session) {
+		return prompt;
+	}
+	const previousPrompts = session.promptHistory
+		.map((item) => item.prompt.trim())
+		.filter((item) => item.length > 0)
+		.slice(-4);
+	if (previousPrompts.length === 0) {
+		return prompt;
+	}
+	const historyLines = previousPrompts.map(
+		(previousPrompt, index) => `${index + 1}. ${previousPrompt}`,
+	);
+	const intro =
+		session.surface === "inline-edit"
+			? "You are continuing an existing inline editor edit session."
+			: "You are continuing an existing editor chat session.";
+	const applyInstruction =
+		session.surface === "inline-edit"
+			? "Apply the latest request to the current selected document state."
+			: "Apply the latest request to the current document state.";
+	return [
+		intro,
+		"Earlier user requests in this same session:",
+		...historyLines,
+		"",
+		applyInstruction,
+		"Latest request:",
+		prompt,
+	].join("\n");
+}
+
+function createRewriteSelectionOperation(
+	editor: Editor,
+	selection: TextSelection,
+	promptIntent: string,
+	documentVersion: number,
+	options?: {
+		sourceText?: string;
+	},
+): AIRequestedOperation {
+	const range = selection.toRange();
+	return {
+		kind: "rewrite-selection",
+		applyPolicy: "selection-replace",
+		promptIntent,
+		target: {
+			kind: "selection",
+			blockId: range.start.blockId,
+			anchor: { ...selection.anchor },
+			focus: { ...selection.focus },
+			sourceText: options?.sourceText ?? resolveSelectionText(editor, selection),
+		},
+		provenance: {
+			documentVersion,
+			blockRevision: editor.getBlockRevision(range.start.blockId),
+			selectionSignature: createSelectionSignature(selection),
+			syncedGeneration: editor.documentState.generation,
+		},
+	};
+}
+
+function createRewriteSelectionOperationFromResolvedTarget(
+	editor: Editor,
+	target: ResolvedEditTarget,
+	promptIntent: string,
+	documentVersion: number,
+): AIRequestedOperation {
+	const selection = recreateTextSelection(editor, {
+		anchor: target.anchor,
+		focus: target.focus,
+		blockRange: resolveSelectionTargetBlockIds(editor, target),
+		isMultiBlock:
+			resolveSelectionTargetBlockIds(editor, target).length > 1 ||
+			target.anchor.blockId !== target.focus.blockId,
+	});
+	if (target.kind === "selection") {
+		return createRewriteSelectionOperation(
+			editor,
+			selection,
+			promptIntent,
+			documentVersion,
+			{
+				sourceText: target.sourceText,
+			},
+		);
+	}
+	return {
+		kind: "rewrite-selection",
+		applyPolicy: "selection-replace",
+		promptIntent,
+		target: {
+			kind: "scoped-range",
+			blockId: target.blockId,
+			anchor: { ...target.anchor },
+			focus: { ...target.focus },
+			sourceText: target.sourceText,
+			blockIds: [...target.blockIds],
+			contentFormat: target.contentFormat,
+			scope: target.scope,
+		},
+		provenance: {
+			documentVersion,
+			blockRevision: editor.getBlockRevision(target.blockId ?? selection.anchor.blockId),
+			selectionSignature: createSelectionSignature(selection),
+			syncedGeneration: editor.documentState.generation,
+		},
+	};
+}
+
+function createRewriteBlockOperation(
+	editor: Editor,
+	blockId: string,
+	promptIntent: string,
+	documentVersion: number,
+): AIRequestedOperation {
+	const block = editor.getBlock(blockId);
+	return {
+		kind: "rewrite-block",
+		applyPolicy: "block-replace",
+		promptIntent,
+		target: {
+			kind: "block",
+			blockId,
+			blockType: block?.type ?? null,
+			sourceText: block?.textContent() ?? "",
+		},
+		provenance: {
+			documentVersion,
+			blockRevision: editor.getBlockRevision(blockId),
+			syncedGeneration: editor.documentState.generation,
+		},
+	};
+}
+
+function createContinueBlockOperation(
+	editor: Editor,
+	blockId: string,
+	promptIntent: string,
+	documentVersion: number,
+): AIRequestedOperation {
+	const block = editor.getBlock(blockId);
+	return {
+		kind: "continue-block",
+		applyPolicy: "block-continue",
+		promptIntent,
+		target: {
+			kind: "block",
+			blockId,
+			blockType: block?.type ?? null,
+			sourceText: block?.textContent() ?? "",
+			insertionOffset: resolveContinueInsertionOffset(editor, blockId),
+		},
+		provenance: {
+			documentVersion,
+			blockRevision: editor.getBlockRevision(blockId),
+			syncedGeneration: editor.documentState.generation,
+		},
+	};
+}
+
+function createDocumentTransformOperation(
+	editor: Editor,
+	activeBlockId: string | null,
+	promptIntent: string,
+	documentVersion: number,
+	options?: {
+		blockIds?: readonly string[];
+		placement?: "append-after-block" | "replace-empty-block" | "replace-blocks";
+		transform?: "write" | "rewrite" | "remove";
+	},
+): AIRequestedOperation {
+	return {
+		kind: "document-transform",
+		applyPolicy: "document-review",
+		promptIntent,
+		target: {
+			kind: "document",
+			activeBlockId,
+			blockIds: options?.blockIds,
+			placement: options?.placement,
+			transform: options?.transform,
+		},
+		provenance: {
+			documentVersion,
+			syncedGeneration: editor.documentState.generation,
+		},
+	};
+}
+
+function resolvePreviousGeneratedBlockIds(session: AISession): string[] {
+	const completedTurns = session.turns.filter(
+		(turn) => turn.status === "complete" || turn.status === "accepted",
+	);
+	const lastTurnWithBlocks = completedTurns
+		.slice()
+		.reverse()
+		.find((turn) => turn.generatedBlockIds.length > 0);
+	return lastTurnWithBlocks?.generatedBlockIds ?? [];
+}
+
+function shouldReplacePreviousGeneratedBlocks(
+	session: AISession,
+	prompt: string,
+): boolean {
+	return (
+		session.surface === "bottom-chat" &&
+		session.target.kind === "document" &&
+		(classifyPromptIntent(prompt) === "rewrite" ||
+			isDocumentResetPrompt(prompt) ||
+			isDocumentFollowUpEditPrompt(prompt))
+	);
+}
+
+function resolveReplacementDeleteBlockIds(
+	editor: Editor,
+	blockId: string,
+	replaceBlockIds?: readonly string[],
+): string[] {
+	const requestedIds =
+		replaceBlockIds && replaceBlockIds.length > 0 ? replaceBlockIds : [blockId];
+	const deleteBlockIds = requestedIds.filter(
+		(candidateBlockId, index, allBlockIds) =>
+			allBlockIds.indexOf(candidateBlockId) === index &&
+			editor.getBlock(candidateBlockId) != null,
+	);
+	return deleteBlockIds.length > 0 ? deleteBlockIds : [blockId];
+}
+
+function createResolvedSelectionEditTarget(
+	editor: Editor,
+	selection: TextSelection,
+): ResolvedEditTarget {
+	const range = selection.toRange();
+	return {
+		kind: "selection",
+		blockId: range.start.blockId,
+		anchor: { ...selection.anchor },
+		focus: { ...selection.focus },
+		sourceText: resolveSelectionText(editor, selection),
+	};
+}
+
+function createResolvedScopedEditTarget(
+	editor: Editor,
+	selection: TextSelection,
+	scope: ModelOperationScopedRangeTarget["scope"],
+	contentFormat: AIContentFormat,
+): ResolvedEditTarget {
+	const range = selection.toRange();
+	return {
+		kind: "scoped-range",
+		scope,
+		blockId: range.start.blockId,
+		anchor: { ...selection.anchor },
+		focus: { ...selection.focus },
+		blockIds: [...range.blockRange],
+		sourceText: resolveSelectionText(editor, selection),
+		contentFormat,
+	};
+}
+
+function createResolvedEditProposal(
+	promptIntent: string,
+	target: ResolvedEditTarget,
+): ResolvedEditProposal {
+	return {
+		promptIntent,
+		target,
+	};
+}
+
+function resolveResolvedEditProposal(
+	editor: Editor,
+	session: AISession,
+	prompt: string,
+	promptIntent: string,
+	explicitTarget: AICommandExecutionOptions["target"] | undefined,
+	liveSelection: TextSelection | null,
+	defaultBlockFormat: AIContentFormat,
+): ResolvedEditProposal | null {
+	if (liveSelection && explicitTarget === "selection") {
+		return createResolvedEditProposal(
+			promptIntent,
+			createResolvedSelectionEditTarget(editor, liveSelection),
+		);
+	}
+
+	const selectionScopedSession = session.target.kind === "selection";
+	if (
+		liveSelection &&
+		(session.surface === "inline-edit" ||
+			(selectionScopedSession &&
+				(promptIntent === "rewrite" || promptIntent === "local-edit")))
+	) {
+		return createResolvedEditProposal(
+			promptIntent,
+			createResolvedSelectionEditTarget(editor, liveSelection),
+		);
+	}
+
+	if (session.target.kind !== "document" && explicitTarget !== "document") {
+		return null;
+	}
+	if (
+		promptIntent === "continue" ||
+		promptIntent === "review" ||
+		promptIntent === "search" ||
+		promptIntent === "structural"
+	) {
+		return null;
+	}
+
+	const titleSelection = resolveDocumentTitleSelection(editor, prompt);
+	if (titleSelection) {
+		return createResolvedEditProposal(
+			promptIntent,
+			createResolvedScopedEditTarget(
+				editor,
+				titleSelection,
+				"heading",
+				defaultBlockFormat,
+			),
+		);
+	}
+
+	const paragraphSelection = resolveDocumentParagraphSelection(editor, prompt);
+	if (paragraphSelection) {
+		return createResolvedEditProposal(
+			promptIntent,
+			createResolvedScopedEditTarget(
+				editor,
+				paragraphSelection,
+				"paragraph",
+				defaultBlockFormat,
+			),
+		);
+	}
+
+	const documentBlockIds = editor.documentState.blockOrder.filter(
+		(blockId) => editor.getBlock(blockId) != null,
+	);
+	const documentHasMeaningfulContent = documentBlockIds.some((blockId) => {
+		const block = editor.getBlock(blockId);
+		return (block?.textContent().trim().length ?? 0) > 0;
+	});
+	const shouldRewriteDocumentScope =
+		!documentHasMeaningfulContent ||
+		promptIntent === "rewrite" ||
+		isClearDocumentPrompt(prompt) ||
+		isWholeDocumentRewritePrompt(prompt) ||
+		isDocumentResetPrompt(prompt) ||
+		isDocumentFollowUpEditPrompt(prompt);
+	if (!shouldRewriteDocumentScope) {
+		return null;
+	}
+
+	const documentSelection = resolveDocumentBlockRangeSelection(
+		editor,
+		documentBlockIds,
+	);
+	if (!documentSelection) {
+		return null;
+	}
+	return createResolvedEditProposal(
+		promptIntent,
+		createResolvedScopedEditTarget(
+			editor,
+			documentSelection,
+			"document",
+			defaultBlockFormat,
+		),
+	);
+}
+
+function resolveSelectionForRequestedOperation(
+	editor: Editor,
+	operation: AIRequestedOperation,
+): TextSelection | null {
+	if (
+		operation.target.kind !== "selection" &&
+		operation.target.kind !== "scoped-range"
+	) {
+		return null;
+	}
+	return recreateTextSelection(editor, {
+		anchor: operation.target.anchor,
+		focus: operation.target.focus,
+		blockRange: resolveSelectionTargetBlockIds(editor, operation.target),
+		isMultiBlock:
+			resolveSelectionTargetBlockIds(editor, operation.target).length > 1 ||
+			operation.target.anchor.blockId !== operation.target.focus.blockId,
+	});
+}
+
+function resolveFullBlockTextSelection(
+	editor: Editor,
+	blockId: string,
+): TextSelection | null {
+	const block = editor.getBlock(blockId);
+	if (!block) {
+		return null;
+	}
+	return recreateTextSelection(editor, {
+		anchor: { blockId, offset: 0 },
+		focus: { blockId, offset: block.textContent().length },
+		blockRange: [blockId],
+		isMultiBlock: false,
+	});
+}
+
+function resolveDocumentBlockRangeSelection(
+	editor: Editor,
+	blockIds: readonly string[],
+): TextSelection | null {
+	const resolvedBlockIds = blockIds.filter(
+		(blockId, index, allBlockIds) =>
+			allBlockIds.indexOf(blockId) === index && editor.getBlock(blockId) != null,
+	);
+	const firstBlockId = resolvedBlockIds[0];
+	const lastBlockId = resolvedBlockIds[resolvedBlockIds.length - 1];
+	if (!firstBlockId || !lastBlockId) {
+		return null;
+	}
+	const lastBlock = editor.getBlock(lastBlockId);
+	return recreateTextSelection(editor, {
+		anchor: { blockId: firstBlockId, offset: 0 },
+		focus: {
+			blockId: lastBlockId,
+			offset: lastBlock?.textContent().length ?? 0,
+		},
+		blockRange: resolvedBlockIds,
+		isMultiBlock: resolvedBlockIds.length > 1,
+	});
+}
+
+function resolveDocumentTitleSelection(
+	editor: Editor,
+	prompt: string,
+): TextSelection | null {
+	if (!/\b(title|heading)\b/i.test(prompt)) {
+		return null;
+	}
+	const headingBlockId =
+		editor.documentState.blockOrder.find((blockId) => {
+			const block = editor.getBlock(blockId);
+			return block?.type === "heading" || block?.type.startsWith("heading-");
+		}) ??
+		editor.firstBlock()?.id ??
+		null;
+	return headingBlockId
+		? resolveDocumentBlockRangeSelection(editor, [headingBlockId])
+		: null;
+}
+
+function resolveDocumentParagraphSelection(
+	editor: Editor,
+	prompt: string,
+): TextSelection | null {
+	const paragraphIndex = parseParagraphReference(prompt);
+	if (paragraphIndex == null) {
+		return null;
+	}
+	const paragraphBlockIds = editor.documentState.blockOrder.filter((blockId) => {
+		const block = editor.getBlock(blockId);
+		if (!block) {
+			return false;
+		}
+		return (
+			block.type === "paragraph" ||
+			(block.textContent().trim().length > 0 &&
+				block.type !== "heading" &&
+				!block.type.startsWith("heading-"))
+		);
+	});
+	const targetParagraphBlockId = paragraphBlockIds[paragraphIndex - 1] ?? null;
+	return targetParagraphBlockId
+		? resolveDocumentBlockRangeSelection(editor, [targetParagraphBlockId])
+		: null;
+}
+
+function parseParagraphReference(prompt: string): number | null {
+	const match = prompt.match(
+		/\b(?:(first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth)|(\d+)(?:st|nd|rd|th))\s+paragraph\b/i,
+	);
+	if (!match) {
+		return null;
+	}
+	const wordOrdinal = match[1]?.toLowerCase();
+	if (wordOrdinal) {
+		return resolveWordOrdinal(wordOrdinal);
+	}
+	const numericOrdinal = Number.parseInt(match[2] ?? "", 10);
+	return Number.isFinite(numericOrdinal) && numericOrdinal > 0
+		? numericOrdinal
+		: null;
+}
+
+function resolveWordOrdinal(word: string): number | null {
+	switch (word) {
+		case "first":
+			return 1;
+		case "second":
+			return 2;
+		case "third":
+			return 3;
+		case "fourth":
+			return 4;
+		case "fifth":
+			return 5;
+		case "sixth":
+			return 6;
+		case "seventh":
+			return 7;
+		case "eighth":
+			return 8;
+		case "ninth":
+			return 9;
+		case "tenth":
+			return 10;
+		default:
+			return null;
+	}
+}
+
+function resolveBlockIdForRequestedOperation(
+	operation: AIRequestedOperation,
+): string | null {
+	if (operation.target.kind === "block") {
+		return operation.target.blockId;
+	}
+	if (
+		operation.target.kind === "selection" ||
+		operation.target.kind === "scoped-range"
+	) {
+		return operation.target.blockId;
+	}
+	return operation.target.activeBlockId;
+}
+
+function resolveRequestedOperationConflict(
+	editor: Editor,
+	operation: AIRequestedOperation,
+	currentSelectionSignature: string | null,
+): string | null {
+	if (
+		operation.target.kind === "selection" ||
+		operation.target.kind === "scoped-range"
+	) {
+		const selection = resolveSelectionForRequestedOperation(editor, operation);
+		if (!selection) {
+			return "The selected range no longer exists.";
+		}
+		if (isScopedSelectionTarget(operation.target)) {
+			if (
+				renderSelectionTargetBlockText(editor, operation.target) !==
+				operation.target.sourceText
+			) {
+				return "The selected text changed before the rewrite completed.";
+			}
+			return null;
+		}
+		if (
+			operation.provenance?.selectionSignature != null &&
+			operation.provenance.selectionSignature !== currentSelectionSignature
+		) {
+			return "The selected range changed before the rewrite completed.";
+		}
+		if (resolveSelectionText(editor, selection) !== operation.target.sourceText) {
+			return "The selected text changed before the rewrite completed.";
+		}
+		return null;
+	}
+	if (operation.target.kind === "block") {
+		const block = editor.getBlock(operation.target.blockId);
+		if (!block) {
+			return "The target block no longer exists.";
+		}
+		if (
+			operation.provenance?.blockRevision != null &&
+			editor.getBlockRevision(operation.target.blockId) !==
+			operation.provenance.blockRevision
+		) {
+			return "The target block changed before the operation completed.";
+		}
+		return null;
+	}
+	if (
+		operation.provenance?.syncedGeneration != null &&
+		editor.documentState.generation !== operation.provenance.syncedGeneration
+	) {
+		return "The document changed before the operation completed.";
+	}
+	return null;
+}
+
+function resolveContinueInsertionOffset(editor: Editor, blockId: string): number {
+	const selection = editor.selection;
+	if (
+		selection?.type === "text" &&
+		selection.isCollapsed &&
+		selection.anchor.blockId === blockId
+	) {
+		return selection.anchor.offset;
+	}
+	return resolveBlockInsertionOffset(editor, blockId);
+}
+
+function createSelectionSignature(selection: TextSelection): string {
+	return [
+		"text",
+		selection.anchor.blockId,
+		selection.anchor.offset,
+		selection.focus.blockId,
+		selection.focus.offset,
+		String(selection.isCollapsed),
+	].join(":");
 }
 
 function resolveSessionSelectionTarget(
@@ -5350,6 +7313,15 @@ function resolveSessionSelectionTarget(
 	const anchorSelection = session.contextualPrompt?.anchor.selectionSnapshot;
 	if (session.target.kind !== "selection" && !anchorSelection) {
 		return null;
+	}
+	const activeTurnSelection = session.activeTurnId
+		? session.turns.find((turn) => turn.id === session.activeTurnId)?.selection
+		: session.turns[session.turns.length - 1]?.selection;
+	if (activeTurnSelection) {
+		const restoredSelection = recreateTextSelection(editor, activeTurnSelection);
+		if (!restoredSelection.isCollapsed) {
+			return restoredSelection;
+		}
 	}
 	const selection = editor.selection;
 	if (
@@ -5364,29 +7336,119 @@ function resolveSessionSelectionTarget(
 	) {
 		return selection;
 	}
-	const activeTurnSelection = session.activeTurnId
-		? session.turns.find((turn) => turn.id === session.activeTurnId)?.selection
-		: session.turns[session.turns.length - 1]?.selection;
-	if (activeTurnSelection) {
-		editor.selectTextRange(
-			activeTurnSelection.anchor,
-			activeTurnSelection.focus,
-		);
-		const restoredSelection = editor.selection;
-		if (restoredSelection?.type === "text" && !restoredSelection.isCollapsed) {
-			return restoredSelection;
-		}
-	}
 	if (anchorSelection) {
-		editor.selectTextRange(anchorSelection.anchor, anchorSelection.focus);
-		const restoredSelection = editor.selection;
-		if (restoredSelection?.type === "text" && !restoredSelection.isCollapsed) {
+		const restoredSelection = recreateTextSelection(editor, anchorSelection);
+		if (!restoredSelection.isCollapsed) {
 			return restoredSelection;
 		}
 	}
-	return session.target.kind === "selection" && !session.target.selection.isCollapsed
-		? session.target.selection
-		: null;
+	if (session.target.kind === "selection" && !session.target.selection.isCollapsed) {
+		return session.target.selection;
+	}
+	return null;
+}
+
+function resolveLiveInlineSelectionTarget(
+	editor: Editor,
+): Extract<AISessionTarget, { kind: "selection" }> | null {
+	const selection = editor.selection;
+	if (selection?.type !== "text" || selection.isCollapsed) {
+		return null;
+	}
+	const target = resolveSessionTarget(editor, "selection");
+	return target.kind === "selection" ? target : null;
+}
+
+function resolvePendingInlineSelectionTarget(
+	editor: Editor,
+	operation: AIRequestedOperation | undefined,
+	suggestionIds: readonly string[],
+): Extract<AISessionTarget, { kind: "selection" }> | null {
+	if (
+		operation?.kind !== "rewrite-selection" ||
+		operation.target.kind !== "selection" ||
+		operation.target.anchor.blockId !== operation.target.focus.blockId
+	) {
+		return null;
+	}
+	const textSuggestions = readAllSuggestions(editor).filter(
+		(suggestion): suggestion is PersistentTextSuggestion =>
+			suggestion.kind === "text" &&
+			(suggestion.action === "insert" || suggestion.action === "delete") &&
+			suggestionIds.includes(suggestion.id),
+	);
+	if (textSuggestions.length === 0) {
+		return null;
+	}
+	const blockId = operation.target.anchor.blockId;
+	const startOffset = Math.min(
+		operation.target.anchor.offset,
+		operation.target.focus.offset,
+	);
+	const previewSpanLength = textSuggestions.reduce(
+		(totalLength, suggestion) => totalLength + suggestion.length,
+		0,
+	);
+	const endOffset = startOffset + previewSpanLength;
+	if (endOffset <= startOffset) {
+		return null;
+	}
+	return {
+		kind: "selection",
+		blockId,
+		selection: recreateTextSelection(editor, {
+			anchor: { blockId, offset: startOffset },
+			focus: { blockId, offset: endOffset },
+			blockRange: [blockId],
+			isMultiBlock: false,
+		}),
+	};
+}
+
+function resolveAcceptedInlineSelectionTarget(
+	editor: Editor,
+	operation: AIRequestedOperation | undefined,
+	suggestionIds: readonly string[],
+): Extract<AISessionTarget, { kind: "selection" }> | null {
+	if (
+		operation?.kind !== "rewrite-selection" ||
+		operation.target.kind !== "selection" ||
+		operation.target.anchor.blockId !== operation.target.focus.blockId
+	) {
+		return null;
+	}
+	const insertSuggestions = readAllSuggestions(editor).filter(
+		(suggestion): suggestion is PersistentTextSuggestion =>
+			suggestion.kind === "text" &&
+			suggestion.action === "insert" &&
+			suggestionIds.includes(suggestion.id),
+	);
+	if (insertSuggestions.length === 0) {
+		return null;
+	}
+	const blockId = operation.target.anchor.blockId;
+	const startOffset = Math.min(
+		operation.target.anchor.offset,
+		operation.target.focus.offset,
+	);
+	const insertedLength = insertSuggestions.reduce(
+		(totalLength, suggestion) => totalLength + suggestion.length,
+		0,
+	);
+	const endOffset = startOffset + insertedLength;
+	if (endOffset <= startOffset) {
+		return null;
+	}
+	return {
+		kind: "selection",
+		blockId,
+		selection: recreateTextSelection(editor, {
+			anchor: { blockId, offset: startOffset },
+			focus: { blockId, offset: endOffset },
+			blockRange: [blockId],
+			isMultiBlock: false,
+		}),
+	};
 }
 
 function shouldCloseInlineSessionPrompt(session: AISession): boolean {

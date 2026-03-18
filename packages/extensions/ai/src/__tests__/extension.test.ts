@@ -383,6 +383,535 @@ describe("aiExtension", () => {
 		expect(controller.getSuggestions().length).toBeGreaterThan(0);
 	});
 
+	it("uses selection-fast request mode for bottom-chat selection rewrites", async () => {
+		let requestMode: string | undefined;
+		const editor = createEditor({
+			extensions: [
+				aiExtension({
+					model: {
+						async *stream(options) {
+							requestMode = options.requestMode;
+							yield {
+								type: "replace-final" as const,
+								operation: options.operation!,
+								text: "planet",
+							};
+							yield { type: "done" as const };
+						},
+					},
+				}),
+			],
+		});
+		const blockId = editor.firstBlock()!.id;
+		editor.apply(
+			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			{ origin: "system" },
+		);
+		editor.selectTextRange(
+			{ blockId, offset: 6 },
+			{ blockId, offset: 11 },
+		);
+
+		const controller = getAIController(editor)!;
+		const session = controller.startSession({
+			surface: "bottom-chat",
+			target: "selection",
+		});
+		await controller.runSessionPrompt(session.id, "Rewrite the selection");
+
+		expect(requestMode).toBe("selection-fast");
+	});
+
+	it("keeps document-targeted bottom-chat rewrites off selection-fast even with a live selection", async () => {
+		let requestMode: string | undefined;
+		let operationKind: string | undefined;
+		const editor = createEditor({
+			extensions: [
+				aiExtension({
+					contentFormat: {
+						blockGeneration: "text",
+					},
+					model: {
+						async *stream(options) {
+							requestMode = options.requestMode;
+							operationKind = options.operation?.kind;
+							yield {
+								type: "replace-final" as const,
+								operation: options.operation!,
+								text: "planet",
+							};
+							yield { type: "done" as const };
+						},
+					},
+				}),
+			],
+		});
+		const blockId = editor.firstBlock()!.id;
+		editor.apply(
+			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			{ origin: "system" },
+		);
+		editor.selectTextRange(
+			{ blockId, offset: 6 },
+			{ blockId, offset: 11 },
+		);
+
+		const controller = getAIController(editor)!;
+		const session = controller.startSession({
+			surface: "bottom-chat",
+			target: "document",
+		});
+		await controller.runSessionPrompt(session.id, "Rewrite this");
+
+		expect(requestMode).toBe("selection-fast");
+		expect(operationKind).toBe("rewrite-selection");
+	});
+
+	it("routes bottom-chat block rewrites through typed local replace operations", async () => {
+		let requestMode: string | undefined;
+		let operationKind: string | undefined;
+		const editor = createEditor({
+			extensions: [
+				aiExtension({
+					contentFormat: {
+						blockGeneration: "text",
+					},
+					model: {
+						async *stream(options) {
+							requestMode = options.requestMode;
+							operationKind = options.operation?.kind;
+							yield {
+								type: "replace-final" as const,
+								operation: options.operation!,
+								text: "Hello planet",
+							};
+							yield { type: "done" as const };
+						},
+					},
+				}),
+			],
+		});
+		const blockId = editor.firstBlock()!.id;
+		editor.apply(
+			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			{ origin: "system" },
+		);
+		editor.selectTextRange(
+			{ blockId, offset: 5 },
+			{ blockId, offset: 5 },
+		);
+
+		const controller = getAIController(editor)!;
+		const session = controller.startSession({
+			surface: "bottom-chat",
+		});
+		const generation = await controller.runSessionPrompt(session.id, "Rewrite this");
+
+		expect(requestMode).toBe("selection-fast");
+		expect(operationKind).toBe("rewrite-selection");
+		expect(generation.mutationReceipt?.status).toBe("staged_suggestions");
+		const turnId =
+			controller
+				.getSessions()
+				.find((item) => item.id === session.id)
+				?.turns[0]?.id ?? null;
+		expect(turnId).toBeTruthy();
+		expect(controller.acceptSessionTurn(session.id, turnId!)).toBe(true);
+		expect(editor.firstBlock()!.textContent({ resolved: true })).toBe(
+			"Hello planet",
+		);
+	});
+
+	it("routes whole-document rewrites through typed local replace operations", async () => {
+		let operation:
+			| {
+				kind?: string;
+				target?: {
+					kind?: string;
+					blockIds?: readonly string[];
+					contentFormat?: string;
+					scope?: string;
+				};
+			}
+			| undefined;
+		const editor = createEditor({
+			extensions: [
+				aiExtension({
+					contentFormat: {
+						blockGeneration: "markdown",
+					},
+					model: {
+						async *stream(options) {
+							operation = options.operation;
+							yield {
+								type: "replace-final" as const,
+								operation: options.operation!,
+								text: "# The Cat Keeper\n\nA cat story.",
+							};
+							yield { type: "done" as const };
+						},
+					},
+				}),
+			],
+		});
+		const blockId = editor.firstBlock()!.id;
+		editor.apply(
+			[
+				{ type: "insert-text", blockId, offset: 0, text: "The Lighthouse Keeper" },
+				{ type: "convert-block", blockId, newType: "heading" },
+				{
+					type: "insert-block",
+					blockId: "paragraph-1",
+					blockType: "paragraph",
+					props: {},
+					position: { after: blockId },
+				},
+				{
+					type: "insert-text",
+					blockId: "paragraph-1",
+					offset: 0,
+					text: "A lighthouse story.",
+				},
+			],
+			{ origin: "system" },
+		);
+
+		const controller = getAIController(editor)!;
+		const session = controller.startSession({
+			surface: "bottom-chat",
+			target: "document",
+		});
+		const generation = await controller.runSessionPrompt(
+			session.id,
+			"Rewrite the whole story. Make it about cats.",
+			{ target: "document" },
+		);
+
+		expect(operation?.kind).toBe("rewrite-selection");
+		expect(operation?.target?.kind).toBe("scoped-range");
+		expect(operation?.target?.contentFormat).toBe("markdown");
+		expect(operation?.target?.scope).toBe("document");
+		expect(operation?.target?.blockIds).toContain("paragraph-1");
+		expect(operation?.target?.blockIds).toHaveLength(2);
+		expect(generation.mutationReceipt?.status).toBe("staged_suggestions");
+		const turnId =
+			controller
+				.getSessions()
+				.find((item) => item.id === session.id)
+				?.turns[0]?.id ?? null;
+		expect(turnId).toBeTruthy();
+		expect(controller.acceptSessionTurn(session.id, turnId!)).toBe(true);
+		const visibleBlockTexts = editor.documentState.blockOrder
+			.map((id) => editor.getBlock(id)?.textContent({ resolved: true }) ?? "")
+			.filter((text) => text.trim().length > 0);
+		expect(visibleBlockTexts).toEqual(["The Cat Keeper", "A cat story."]);
+	});
+
+	it("routes remove-all document edits through typed local delete suggestions", async () => {
+		let operation:
+			| {
+				kind?: string;
+				target?: {
+					kind?: string;
+					blockIds?: readonly string[];
+					contentFormat?: string;
+					scope?: string;
+				};
+			}
+			| undefined;
+		const editor = createEditor({
+			extensions: [
+				aiExtension({
+					contentFormat: {
+						blockGeneration: "markdown",
+					},
+					model: {
+						async *stream(options) {
+							operation = options.operation;
+							yield {
+								type: "replace-final" as const,
+								operation: options.operation!,
+								text: "",
+							};
+							yield { type: "done" as const };
+						},
+					},
+				}),
+			],
+		});
+		const blockId = editor.firstBlock()!.id;
+		editor.apply(
+			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			{ origin: "system" },
+		);
+
+		const controller = getAIController(editor)!;
+		const session = controller.startSession({
+			surface: "bottom-chat",
+			target: "document",
+		});
+		const generation = await controller.runSessionPrompt(
+			session.id,
+			"Remove all content in the document.",
+			{ target: "document" },
+		);
+
+		expect(operation).toMatchObject({
+			kind: "rewrite-selection",
+			target: {
+				kind: "scoped-range",
+				blockIds: editor.documentState.blockOrder,
+				contentFormat: "markdown",
+				scope: "document",
+			},
+		});
+		expect(generation.mutationReceipt?.status).toBe("staged_suggestions");
+		const turnId =
+			controller
+				.getSessions()
+				.find((item) => item.id === session.id)
+				?.turns[0]?.id ?? null;
+		expect(turnId).toBeTruthy();
+		expect(controller.acceptSessionTurn(session.id, turnId!)).toBe(true);
+		const visibleBlockTexts = editor.documentState.blockOrder
+			.map((id) => editor.getBlock(id)?.textContent({ resolved: true }) ?? "")
+			.filter((text) => text.trim().length > 0);
+		expect(visibleBlockTexts).toEqual([]);
+	});
+
+	it("keeps heading rewrites block-bounded instead of inserting a new markdown block", async () => {
+		const editor = createEditor({
+			extensions: [
+				aiExtension({
+					contentFormat: {
+						blockGeneration: "markdown",
+					},
+					model: {
+						async *stream(options) {
+							yield {
+								type: "replace-final" as const,
+								operation: options.operation!,
+								text: "# The Keeper's Final Watch",
+							};
+							yield { type: "done" as const };
+						},
+					},
+				}),
+			],
+		});
+		const blockId = editor.firstBlock()!.id;
+		editor.apply(
+			[
+				{ type: "insert-text", blockId, offset: 0, text: "The Lighthouse Keeper's Last Night" },
+				{ type: "convert-block", blockId, newType: "heading" },
+			],
+			{ origin: "system" },
+		);
+		editor.selectTextRange(
+			{ blockId, offset: 0 },
+			{ blockId, offset: 0 },
+		);
+
+		const controller = getAIController(editor)!;
+		const session = controller.startSession({
+			surface: "bottom-chat",
+		});
+		const generation = await controller.runSessionPrompt(session.id, "Rewrite this");
+
+		expect(generation.mutationReceipt?.status).toBe("staged_suggestions");
+		const turnId =
+			controller
+				.getSessions()
+				.find((item) => item.id === session.id)
+				?.turns[0]?.id ?? null;
+		expect(turnId).toBeTruthy();
+		expect(controller.acceptSessionTurn(session.id, turnId!)).toBe(true);
+		expect(editor.firstBlock()?.type).toBe("heading");
+		expect(editor.firstBlock()!.textContent({ resolved: true })).toBe(
+			"The Keeper's Final Watch",
+		);
+		expect(editor.documentState.blockOrder).toHaveLength(1);
+	});
+
+	it("routes bottom-chat continue prompts to typed insert operations", async () => {
+		let operationKind: string | undefined;
+		const editor = createEditor({
+			extensions: [
+				aiExtension({
+					contentFormat: {
+						blockGeneration: "text",
+					},
+					model: {
+						async *stream(options) {
+							operationKind = options.operation?.kind;
+							yield {
+								type: "insert-final" as const,
+								operation: options.operation!,
+								text: " and beyond",
+							};
+							yield { type: "done" as const };
+						},
+					},
+				}),
+			],
+		});
+		const blockId = editor.firstBlock()!.id;
+		editor.apply(
+			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			{ origin: "system" },
+		);
+		editor.selectTextRange(
+			{ blockId, offset: 6 },
+			{ blockId, offset: 11 },
+		);
+
+		const controller = getAIController(editor)!;
+		const session = controller.startSession({
+			surface: "bottom-chat",
+		});
+		await controller.runSessionPrompt(session.id, "Continue writing");
+
+		expect(operationKind).toBe("continue-block");
+		expect(editor.getBlock(blockId)!.textContent({ resolved: true })).toBe(
+			"Hello world and beyond",
+		);
+	});
+
+	it("falls back to document review mode for bottom-chat rewrites on non-text blocks", async () => {
+		let requestMode: string | undefined;
+		const editor = createEditor({
+			extensions: [
+				aiExtension({
+					contentFormat: {
+						blockGeneration: "markdown",
+					},
+					model: {
+						async *stream(options) {
+							requestMode = options.requestMode;
+							yield { type: "done" as const };
+						},
+					},
+				}),
+			],
+		});
+		const blockId = editor.firstBlock()!.id;
+		editor.apply(
+			[
+				{ type: "insert-text", blockId, offset: 0, text: "Hello table" },
+				{ type: "convert-block", blockId, newType: "table", newProps: {} },
+			],
+			{ origin: "system" },
+		);
+
+		const controller = getAIController(editor)!;
+		const session = controller.startSession({
+			surface: "bottom-chat",
+		});
+		const generation = await controller.runSessionPrompt(session.id, "Rewrite this");
+
+		expect(requestMode).toBe("selection-fast");
+		expect(generation.route).toBe("selection-rewrite");
+		expect(generation.mutationReceipt?.status).toBe("noop");
+		expect(editor.getBlock(blockId)?.type).toBe("table");
+	});
+
+	it("marks local bottom-chat rewrites invalid when target provenance changes", async () => {
+		const releaseFinalFrame = createDeferred();
+		const editor = createEditor({
+			extensions: [
+				aiExtension({
+					contentFormat: {
+						blockGeneration: "text",
+					},
+					model: {
+						async *stream(options) {
+							yield {
+								type: "replace-preview" as const,
+								operation: options.operation!,
+								text: "Hello planet",
+							};
+							await releaseFinalFrame.promise;
+							yield {
+								type: "replace-final" as const,
+								operation: options.operation!,
+								text: "Hello planet",
+							};
+							yield { type: "done" as const };
+						},
+					},
+				}),
+			],
+		});
+		const blockId = editor.firstBlock()!.id;
+		editor.apply(
+			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			{ origin: "system" },
+		);
+		editor.selectTextRange(
+			{ blockId, offset: 5 },
+			{ blockId, offset: 5 },
+		);
+
+		const controller = getAIController(editor)!;
+		const session = controller.startSession({
+			surface: "bottom-chat",
+		});
+		const generationPromise = controller.runSessionPrompt(session.id, "Rewrite this");
+		for (let tick = 0; tick < 4; tick += 1) {
+			await Promise.resolve();
+		}
+		editor.apply(
+			[{ type: "insert-text", blockId, offset: 11, text: "!" }],
+			{ origin: "user" },
+		);
+		releaseFinalFrame.resolve();
+		const generation = await generationPromise;
+
+		expect(generation.mutationReceipt?.status).toBe("invalid");
+		expect(editor.getBlock(blockId)!.textContent({ resolved: true })).toBe(
+			"Hello world!",
+		);
+	});
+
+	it("accepts typed local bottom-chat document rewrites", async () => {
+		const editor = createEditor({
+			extensions: [
+				aiExtension({
+					contentFormat: {
+						blockGeneration: "text",
+					},
+					model: {
+						async *stream(options) {
+							yield {
+								type: "replace-final" as const,
+								operation: options.operation!,
+								text: "# Hello planet",
+							};
+							yield { type: "done" as const };
+						},
+					},
+				}),
+			],
+		});
+		const blockId = editor.firstBlock()!.id;
+		editor.apply(
+			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			{ origin: "system" },
+		);
+		editor.selectTextRange(
+			{ blockId, offset: 5 },
+			{ blockId, offset: 5 },
+		);
+
+		const controller = getAIController(editor)!;
+		const session = controller.startSession({
+			surface: "bottom-chat",
+		});
+		const generation = await controller.runSessionPrompt(session.id, "Rewrite this");
+		expect(generation.status).toBe("complete");
+		expect(generation.mutationReceipt?.status).toBe("staged_suggestions");
+	});
+
 	it("streams selection rewrites into persistent suggestions before completion", async () => {
 		const releaseSecondDelta = createDeferred();
 		const editor = createEditor({
@@ -471,6 +1000,242 @@ describe("aiExtension", () => {
 		expect(editor.getBlock(blockId)!.textContent({ resolved: true })).toBe(
 			"Hello planet",
 		);
+	});
+
+	it("includes prior inline prompts when continuing the same inline edit session", async () => {
+		const capturedPrompts: string[] = [];
+		let streamCount = 0;
+		const editor = createEditor({
+			extensions: [
+				aiExtension({
+					model: {
+						async *stream(options) {
+							capturedPrompts.push(String(options.messages[0]?.content ?? ""));
+							streamCount += 1;
+							yield {
+								type: "text-delta" as const,
+								delta: streamCount === 1 ? "planet" : "forest",
+							};
+							yield { type: "done" as const };
+						},
+					},
+				}),
+			],
+		});
+		const blockId = editor.firstBlock()!.id;
+		editor.apply(
+			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			{ origin: "system" },
+		);
+		editor.selectTextRange(
+			{ blockId, offset: 6 },
+			{ blockId, offset: 11 },
+		);
+
+		const controller = getAIController(editor)!;
+		const session = controller.startSession({
+			surface: "inline-edit",
+			target: "selection",
+		});
+
+		await controller.runSessionPrompt(session.id, "Rewrite the selection");
+		const firstTurnId =
+			controller
+				.getSessions()
+				.find((item) => item.id === session.id)
+				?.turns[0]?.id ?? null;
+		expect(firstTurnId).toBeTruthy();
+		expect(controller.acceptSessionTurn(session.id, firstTurnId!)).toBe(true);
+
+		editor.selectTextRange(
+			{ blockId, offset: 6 },
+			{ blockId, offset: 12 },
+		);
+		await controller.runSessionPrompt(session.id, "Make it more whimsical");
+
+		expect(capturedPrompts[1]).toContain(
+			"You are continuing an existing inline editor edit session.",
+		);
+		expect(capturedPrompts[1]).toContain(
+			"Earlier user requests in this same session:",
+		);
+		expect(capturedPrompts[1]).toContain("1. Rewrite the selection");
+		expect(capturedPrompts[1]).toContain(
+			"Latest request:\nMake it more whimsical",
+		);
+	});
+
+	it("refreshes the inline follow-up target after accepting a rewritten selection", async () => {
+		let streamCount = 0;
+		const editor = createEditor({
+			extensions: [
+				aiExtension({
+					model: {
+						async *stream(options) {
+							streamCount += 1;
+							yield {
+								type: "text-delta" as const,
+								delta: streamCount === 1 ? "planet" : "galaxy",
+							};
+							yield { type: "done" as const };
+						},
+					},
+				}),
+			],
+		});
+		const blockId = editor.firstBlock()!.id;
+		editor.apply(
+			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			{ origin: "system" },
+		);
+		editor.selectTextRange(
+			{ blockId, offset: 6 },
+			{ blockId, offset: 11 },
+		);
+
+		const controller = getAIController(editor)!;
+		const session = controller.startSession({
+			surface: "inline-edit",
+			target: "selection",
+		});
+
+		await controller.runSessionPrompt(session.id, "Rewrite the selection");
+		const firstTurnId =
+			controller
+				.getSessions()
+				.find((item) => item.id === session.id)
+				?.turns[0]?.id ?? null;
+		expect(firstTurnId).toBeTruthy();
+		expect(controller.acceptSessionTurn(session.id, firstTurnId!)).toBe(true);
+
+		await controller.runSessionPrompt(session.id, "Make it more whimsical");
+
+		const secondOperation =
+			controller
+				.getSessions()
+				.find((item) => item.id === session.id)
+				?.turns[1]?.operation;
+		expect(secondOperation?.kind).toBe("rewrite-selection");
+		expect(secondOperation?.target.kind).toBe("selection");
+		if (secondOperation?.target.kind !== "selection") {
+			throw new Error("Expected selection target for inline follow-up");
+		}
+		expect(secondOperation.target.sourceText).toBe("planet");
+		expect(
+			secondOperation.target.focus.offset - secondOperation.target.anchor.offset,
+		).toBeGreaterThanOrEqual("planet".length);
+	});
+
+	it("refreshes the inline follow-up target after keeping a rewritten selection", async () => {
+		let streamCount = 0;
+		const editor = createEditor({
+			extensions: [
+				aiExtension({
+					model: {
+						async *stream() {
+							streamCount += 1;
+							yield {
+								type: "text-delta" as const,
+								delta: streamCount === 1 ? "planet" : "galaxy",
+							};
+							yield { type: "done" as const };
+						},
+					},
+				}),
+			],
+		});
+		const blockId = editor.firstBlock()!.id;
+		editor.apply(
+			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			{ origin: "system" },
+		);
+		editor.selectTextRange(
+			{ blockId, offset: 6 },
+			{ blockId, offset: 11 },
+		);
+
+		const controller = getAIController(editor)!;
+		const session = controller.startSession({
+			surface: "inline-edit",
+			target: "selection",
+		});
+
+		await controller.runSessionPrompt(session.id, "Rewrite the selection");
+		expect(controller.acceptActiveGeneration()).toBe(true);
+
+		await controller.runSessionPrompt(session.id, "Make it more whimsical");
+
+		const secondOperation =
+			controller
+				.getSessions()
+				.find((item) => item.id === session.id)
+				?.turns[1]?.operation;
+		expect(secondOperation?.kind).toBe("rewrite-selection");
+		expect(secondOperation?.target.kind).toBe("selection");
+		if (secondOperation?.target.kind !== "selection") {
+			throw new Error("Expected selection target for kept inline follow-up");
+		}
+		expect(secondOperation.target.sourceText).toBe("planet");
+		expect(
+			secondOperation.target.focus.offset - secondOperation.target.anchor.offset,
+		).toBeGreaterThanOrEqual("planet".length);
+	});
+
+	it("refreshes the inline follow-up target while the prior turn is still in review", async () => {
+		let streamCount = 0;
+		const editor = createEditor({
+			extensions: [
+				aiExtension({
+					model: {
+						async *stream() {
+							streamCount += 1;
+							yield {
+								type: "text-delta" as const,
+								delta: streamCount === 1 ? "planet" : "galaxy",
+							};
+							yield { type: "done" as const };
+						},
+					},
+				}),
+			],
+		});
+		const blockId = editor.firstBlock()!.id;
+		editor.apply(
+			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			{ origin: "system" },
+		);
+		editor.selectTextRange(
+			{ blockId, offset: 6 },
+			{ blockId, offset: 11 },
+		);
+
+		const controller = getAIController(editor)!;
+		const session = controller.startSession({
+			surface: "inline-edit",
+			target: "selection",
+		});
+
+		await controller.runSessionPrompt(session.id, "Rewrite the selection");
+		expect(
+			controller.getSessions().find((item) => item.id === session.id)?.turns[0]?.status,
+		).toBe("review");
+
+		await controller.runSessionPrompt(session.id, "Make it more whimsical");
+
+		const secondOperation =
+			controller
+				.getSessions()
+				.find((item) => item.id === session.id)
+				?.turns[1]?.operation;
+		expect(secondOperation?.kind).toBe("rewrite-selection");
+		expect(secondOperation?.target.kind).toBe("selection");
+		if (secondOperation?.target.kind !== "selection") {
+			throw new Error("Expected selection target for inline follow-up review");
+		}
+		expect(secondOperation.target.sourceText).toBe("planet");
+		expect(
+			secondOperation.target.focus.offset - secondOperation.target.anchor.offset,
+		).toBeGreaterThanOrEqual("planet".length);
 	});
 
 	it("keeps inline prompt targets stable after the live selection changes", async () => {
@@ -2214,10 +2979,18 @@ describe("aiExtension", () => {
 						selectionRewrite: "text",
 					},
 					model: {
-						async *stream() {
-							yield { type: "text-delta" as const, delta: "\n\nOnce upon " };
+						async *stream(options) {
+							yield {
+								type: "replace-preview" as const,
+								operation: options.operation!,
+								text: "\n\nOnce upon ",
+							};
 							await releaseFinalDelta.promise;
-							yield { type: "text-delta" as const, delta: "a time" };
+							yield {
+								type: "replace-final" as const,
+								operation: options.operation!,
+								text: "\n\nOnce upon a time",
+							};
 							yield { type: "done" as const };
 						},
 					},
@@ -2253,14 +3026,25 @@ describe("aiExtension", () => {
 
 		releaseFinalDelta.resolve();
 		const generation = await generationPromise;
-		const visibleBlockTexts = editor.documentState.blockOrder
-			.map((id) => editor.getBlock(id)?.textContent({ resolved: true }) ?? "")
-			.filter((text) => text.trim().length > 0);
 
 		expect(generation.status).toBe("complete");
 		expect(generation.contentFormat).toBe("markdown");
+		expect(generation.text).toBe("\n\nOnce upon a time");
+		expect(generation.mutationReceipt?.status).toBe("staged_suggestions");
 		expect(generation.suggestionIds?.length ?? 0).toBeGreaterThan(0);
-		expect(visibleBlockTexts).toEqual(["Once upon a time"]);
+		const visibleFinalTexts = editor.documentState.blockOrder
+			.map((id) => editor.getBlock(id)?.textContent({ resolved: true }) ?? "")
+			.filter((text) => text.trim().length > 0);
+		expect(visibleFinalTexts).toEqual(["Once upon a time"]);
+		const turnId = controller
+			.getState()
+			.sessions.find((item) => item.id === session.id)
+			?.turns[0]?.id;
+		expect(controller.acceptSessionTurn(session.id, turnId!)).toBe(true);
+		const keptTexts = editor.documentState.blockOrder
+			.map((id) => editor.getBlock(id)?.textContent({ resolved: true }) ?? "")
+			.filter((text) => text.trim().length > 0);
+		expect(keptTexts).toEqual(["Once upon a time"]);
 	});
 
 	it("allows inline selection edits after keeping bottom-chat changes", async () => {
@@ -2273,11 +3057,12 @@ describe("aiExtension", () => {
 						selectionRewrite: "text",
 					},
 					model: {
-						async *stream() {
+						async *stream(options) {
 							pass += 1;
 							yield {
-								type: "text-delta" as const,
-								delta: pass === 1 ? "Hello world" : "planet",
+								type: "replace-final" as const,
+								operation: options.operation!,
+								text: pass === 1 ? "Hello world" : "planet",
 							};
 							yield { type: "done" as const };
 						},
@@ -2331,6 +3116,374 @@ describe("aiExtension", () => {
 		).toHaveLength(1);
 	});
 
+	it("treats whole-document rewrite prompts as explicit multi-block replace plans", async () => {
+		const editor = createEditor({
+			extensions: [
+				aiExtension({
+					contentFormat: {
+						blockGeneration: "markdown",
+					},
+					model: {
+						async *stream(options) {
+							yield {
+								type: "replace-final" as const,
+								operation: options.operation!,
+								text: "# The Founder's Last Email\n\nA startup story set in Amsterdam.",
+							};
+							yield { type: "done" as const };
+						},
+					},
+				}),
+			],
+		});
+		const firstBlockId = editor.firstBlock()!.id;
+		editor.apply(
+			[
+				{ type: "insert-text", blockId: firstBlockId, offset: 0, text: "The Lighthouse Keeper's Last Letter" },
+				{
+					type: "insert-block",
+					blockId: "paragraph-2",
+					blockType: "paragraph",
+					props: {},
+					position: { after: firstBlockId },
+				},
+				{
+					type: "insert-text",
+					blockId: "paragraph-2",
+					offset: 0,
+					text: "The storm had been building for three days.",
+				},
+			],
+			{ origin: "system" },
+		);
+		const originalBlockIds = [...editor.documentState.blockOrder];
+
+		const controller = getAIController(editor)!;
+		const session = controller.startSession({
+			surface: "bottom-chat",
+			target: "document",
+		});
+		const generation = await controller.runSessionPrompt(
+			session.id,
+			"Rewrite the whole story. Make it about a startup from Amsterdam.",
+			{ target: "document" },
+		);
+
+		const activeSession = controller.getSessions().find((item) => item.id === session.id);
+		expect(activeSession?.operation?.kind).toBe("rewrite-selection");
+		expect(activeSession?.operation?.target.kind).toBe("scoped-range");
+		const documentTarget =
+			activeSession?.operation?.target.kind === "scoped-range"
+				? activeSession.operation.target
+				: null;
+		expect(documentTarget?.blockIds).toEqual(originalBlockIds);
+		expect(documentTarget?.contentFormat).toBe("markdown");
+		expect(documentTarget?.scope).toBe("document");
+		expect(generation.status).toBe("complete");
+		expect(generation.mutationReceipt?.status).toBe("staged_suggestions");
+		const turnId = activeSession?.turns[0]?.id;
+		expect(turnId).toBeTruthy();
+		expect(controller.acceptSessionTurn(session.id, turnId!)).toBe(true);
+
+		const finalVisibleBlockTexts = editor.documentState.blockOrder
+			.map((id) => editor.getBlock(id)?.textContent({ resolved: true }) ?? "")
+			.filter((text) => text.trim().length > 0);
+		expect(finalVisibleBlockTexts).toEqual([
+			"The Founder's Last Email",
+			"A startup story set in Amsterdam.",
+		]);
+	});
+
+	it("treats rewrite-the-story prompts as explicit multi-block replace plans", async () => {
+		const editor = createEditor({
+			extensions: [
+				aiExtension({
+					contentFormat: {
+						blockGeneration: "markdown",
+					},
+					model: {
+						async *stream(options) {
+							yield {
+								type: "replace-final" as const,
+								operation: options.operation!,
+								text: "# The Pharaoh's Last Scroll\n\nA cat story set in Egypt.",
+							};
+							yield { type: "done" as const };
+						},
+					},
+				}),
+			],
+		});
+		const firstBlockId = editor.firstBlock()!.id;
+		editor.apply(
+			[
+				{
+					type: "insert-text",
+					blockId: firstBlockId,
+					offset: 0,
+					text: "The Founder's Last Email",
+				},
+				{
+					type: "insert-block",
+					blockId: "paragraph-2",
+					blockType: "paragraph",
+					props: {},
+					position: { after: firstBlockId },
+				},
+				{
+					type: "insert-text",
+					blockId: "paragraph-2",
+					offset: 0,
+					text: "The Slack notification had been pinging for three days.",
+				},
+			],
+			{ origin: "system" },
+		);
+		const originalBlockIds = [...editor.documentState.blockOrder];
+
+		const controller = getAIController(editor)!;
+		const session = controller.startSession({
+			surface: "bottom-chat",
+			target: "document",
+		});
+		const generation = await controller.runSessionPrompt(
+			session.id,
+			"Rewrite the story. Make it about a cat from Egypt.",
+			{ target: "document" },
+		);
+
+		const activeSession = controller.getSessions().find((item) => item.id === session.id);
+		expect(activeSession?.operation?.kind).toBe("rewrite-selection");
+		expect(activeSession?.operation?.target.kind).toBe("scoped-range");
+		const documentTarget =
+			activeSession?.operation?.target.kind === "scoped-range"
+				? activeSession.operation.target
+				: null;
+		expect(documentTarget?.blockIds).toEqual(originalBlockIds);
+		expect(documentTarget?.contentFormat).toBe("markdown");
+		expect(documentTarget?.scope).toBe("document");
+		expect(generation.status).toBe("complete");
+		expect(generation.mutationReceipt?.status).toBe("staged_suggestions");
+		const turnId = activeSession?.turns[0]?.id;
+		expect(turnId).toBeTruthy();
+		expect(controller.acceptSessionTurn(session.id, turnId!)).toBe(true);
+
+		const finalVisibleBlockTexts = editor.documentState.blockOrder
+			.map((id) => editor.getBlock(id)?.textContent({ resolved: true }) ?? "")
+			.filter((text) => text.trim().length > 0);
+		expect(finalVisibleBlockTexts).toEqual([
+			"The Pharaoh's Last Scroll",
+			"A cat story set in Egypt.",
+		]);
+	});
+
+	it("carries bottom-chat history into follow-up title edits and replaces prior generated blocks", async () => {
+		const capturedPrompts: string[] = [];
+		let streamCount = 0;
+		const editor = createEditor({
+			extensions: [
+				aiExtension({
+					contentFormat: {
+						blockGeneration: "markdown",
+					},
+					model: {
+						async *stream(options) {
+							streamCount += 1;
+							capturedPrompts.push(
+								options.messages
+									.map((message) =>
+										typeof message.content === "string"
+											? message.content
+											: JSON.stringify(message.content),
+									)
+									.join("\n\n"),
+							);
+							yield {
+								type: "replace-final" as const,
+								operation: options.operation!,
+								text:
+									streamCount === 1
+										? "# Salt and Shadow\n\nA lighthouse story."
+										: "# Amsterdam Sprint\n\nA startup story with a new title.",
+							};
+							yield { type: "done" as const };
+						},
+					},
+				}),
+			],
+		});
+
+		const controller = getAIController(editor)!;
+		const session = controller.startSession({
+			surface: "bottom-chat",
+			target: "document",
+		});
+
+		await controller.runSessionPrompt(session.id, "Write a story", {
+			target: "document",
+		});
+
+		const firstTurnId =
+			controller
+				.getSessions()
+				.find((item) => item.id === session.id)
+				?.turns[0]?.id ?? null;
+		expect(firstTurnId).toBeTruthy();
+		expect(controller.acceptSessionTurn(session.id, firstTurnId!)).toBe(true);
+
+		await controller.runSessionPrompt(
+			session.id,
+			"Also change the title.",
+			{ target: "document" },
+		);
+
+		expect(capturedPrompts[1]).toContain(
+			"Earlier user requests in this same session:",
+		);
+		expect(capturedPrompts[1]).toContain("1. Write a story");
+		expect(capturedPrompts[1]).toContain(
+			"Latest request:\nAlso change the title.",
+		);
+		const activeSession = controller.getSessions().find((item) => item.id === session.id);
+		expect(activeSession?.operation?.kind).toBe("rewrite-selection");
+		expect(activeSession?.operation?.target.kind).toBe("scoped-range");
+		const documentTarget =
+			activeSession?.operation?.target.kind === "scoped-range"
+				? activeSession.operation.target
+				: null;
+		expect(documentTarget?.scope).toBe("heading");
+		expect(documentTarget?.contentFormat).toBe("markdown");
+		expect(documentTarget?.blockIds).toHaveLength(1);
+	});
+
+	it("replaces the previous story after accepting a follow-up make-it-about rewrite", async () => {
+		let streamCount = 0;
+		const editor = createEditor({
+			extensions: [
+				aiExtension({
+					contentFormat: {
+						blockGeneration: "markdown",
+					},
+					model: {
+						async *stream(options) {
+							streamCount += 1;
+							yield {
+								type: "replace-final" as const,
+								operation: options.operation!,
+								text:
+									streamCount === 1
+										? "# The Lighthouse Keeper's Last Signal\n\nA lighthouse story."
+										: "# The Cat Keeper's Last Purr\n\nA cat story.",
+							};
+							yield { type: "done" as const };
+						},
+					},
+				}),
+			],
+		});
+
+		const controller = getAIController(editor)!;
+		const session = controller.startSession({
+			surface: "bottom-chat",
+			target: "document",
+		});
+
+		await controller.runSessionPrompt(session.id, "Write a story", {
+			target: "document",
+		});
+		const firstTurnId =
+			controller
+				.getSessions()
+				.find((item) => item.id === session.id)
+				?.turns[0]?.id ?? null;
+		expect(firstTurnId).toBeTruthy();
+		expect(controller.acceptSessionTurn(session.id, firstTurnId!)).toBe(true);
+
+		await controller.runSessionPrompt(session.id, "Actually make it about cats", {
+			target: "document",
+		});
+		const secondTurnId =
+			controller
+				.getSessions()
+				.find((item) => item.id === session.id)
+				?.turns[1]?.id ?? null;
+		expect(secondTurnId).toBeTruthy();
+		expect(controller.acceptSessionTurn(session.id, secondTurnId!)).toBe(true);
+
+		const finalVisibleBlockTexts = editor.documentState.blockOrder
+			.map((id) => editor.getBlock(id)?.textContent({ resolved: true }) ?? "")
+			.filter((text) => text.trim().length > 0);
+		expect(finalVisibleBlockTexts).toEqual([
+			"The Cat Keeper's Last Purr",
+			"A cat story.",
+		]);
+	});
+
+	it("restores the previous accepted story when undoing a kept follow-up rewrite", async () => {
+		let streamCount = 0;
+		const editor = createEditor({
+			extensions: [
+				aiExtension({
+					contentFormat: {
+						blockGeneration: "markdown",
+					},
+					model: {
+						async *stream(options) {
+							streamCount += 1;
+							yield {
+								type: "replace-final" as const,
+								operation: options.operation!,
+								text:
+									streamCount === 1
+										? "# The Lighthouse Keeper's Last Signal\n\nA lighthouse story."
+										: "# The Cat Keeper's Last Purr\n\nA cat story.",
+							};
+							yield { type: "done" as const };
+						},
+					},
+				}),
+			],
+		});
+
+		const controller = getAIController(editor)!;
+		const session = controller.startSession({
+			surface: "bottom-chat",
+			target: "document",
+		});
+
+		await controller.runSessionPrompt(session.id, "Write a story", {
+			target: "document",
+		});
+		const firstTurnId =
+			controller
+				.getSessions()
+				.find((item) => item.id === session.id)
+				?.turns[0]?.id ?? null;
+		expect(firstTurnId).toBeTruthy();
+		expect(controller.acceptSessionTurn(session.id, firstTurnId!)).toBe(true);
+
+		await controller.runSessionPrompt(session.id, "Actually make it about cats", {
+			target: "document",
+		});
+		const secondTurnId =
+			controller
+				.getSessions()
+				.find((item) => item.id === session.id)
+				?.turns[1]?.id ?? null;
+		expect(secondTurnId).toBeTruthy();
+		expect(controller.acceptSessionTurn(session.id, secondTurnId!)).toBe(true);
+
+		expect(editor.undoManager.undo()).toBe(true);
+
+		const visibleBlockTextsAfterUndo = editor.documentState.blockOrder
+			.map((id) => editor.getBlock(id)?.textContent({ resolved: true }) ?? "")
+			.filter((text) => text.trim().length > 0);
+		expect(visibleBlockTextsAfterUndo).toEqual([
+			"The Lighthouse Keeper's Last Signal",
+			"A lighthouse story.",
+		]);
+	});
+
 	it("trims leading blank lines when bottom-chat writes into an empty block", async () => {
 		const editor = createEditor({
 			extensions: [
@@ -2339,8 +3492,12 @@ describe("aiExtension", () => {
 						blockGeneration: "markdown",
 					},
 					model: {
-						async *stream() {
-							yield { type: "text-delta" as const, delta: "\n\nOnce upon a time" };
+						async *stream(options) {
+							yield {
+								type: "replace-final" as const,
+								operation: options.operation!,
+								text: "\n\nOnce upon a time",
+							};
 							yield { type: "done" as const };
 						},
 					},
@@ -2376,10 +3533,11 @@ describe("aiExtension", () => {
 						blockGeneration: "markdown",
 					},
 					model: {
-						async *stream() {
+						async *stream(options) {
 							yield {
-								type: "text-delta" as const,
-								delta: "First paragraph.\n\nSecond paragraph.",
+								type: "replace-final" as const,
+								operation: options.operation!,
+								text: "First paragraph.\n\nSecond paragraph.",
 							};
 							yield { type: "done" as const };
 						},

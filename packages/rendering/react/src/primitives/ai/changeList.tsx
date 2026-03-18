@@ -3,6 +3,7 @@ import type { StructuralReviewComparisonRow, StructuralReviewItem } from "@pen/a
 import { useAIStructuredPreview } from "../../hooks/useAIStructuredPreview";
 import { useSuggestions } from "../../hooks/useSuggestions";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
+import { cancelStreamingAIGenerationAfterResolution } from "../../utils/cancelStreamingAIGeneration";
 import { composeRefs } from "../../utils/composeRefs";
 import { useAIContext } from "./root";
 
@@ -80,6 +81,71 @@ export function AIChangeList(props: AIChangeListProps) {
 	const generation = state.activeGeneration;
 	const structuredPreview = useAIStructuredPreview(editor, generation);
 	const rootRef = React.useRef<HTMLElement | null>(null);
+	const activeSessionId = generation?.sessionId ?? null;
+
+	function acceptSuggestionAndStop(suggestionId: string): void {
+		const accepted = controller?.acceptSuggestion(suggestionId) ?? false;
+		if (!accepted) {
+			return;
+		}
+		cancelStreamingAIGenerationAfterResolution(controller, {
+			sessionId: activeSessionId,
+			suggestionIds: [suggestionId],
+			suggestions,
+		});
+	}
+
+	function rejectSuggestionAndStop(suggestionId: string): void {
+		const rejected = controller?.rejectSuggestion(suggestionId) ?? false;
+		if (!rejected) {
+			return;
+		}
+		cancelStreamingAIGenerationAfterResolution(controller, {
+			sessionId: activeSessionId,
+			suggestionIds: [suggestionId],
+			suggestions,
+		});
+	}
+
+	function acceptReviewItemsAndStop(reviewItemIds: readonly string[]): void {
+		const accepted = controller?.acceptReviewItems(reviewItemIds) ?? false;
+		if (!accepted) {
+			return;
+		}
+		cancelStreamingAIGenerationAfterResolution(controller, {
+			sessionId: activeSessionId,
+		});
+	}
+
+	function rejectReviewItemsAndStop(reviewItemIds: readonly string[]): void {
+		const rejected = controller?.rejectReviewItems(reviewItemIds) ?? false;
+		if (!rejected) {
+			return;
+		}
+		cancelStreamingAIGenerationAfterResolution(controller, {
+			sessionId: activeSessionId,
+		});
+	}
+
+	function acceptReviewItemAndStop(reviewItemId: string): void {
+		const accepted = controller?.acceptReviewItem(reviewItemId) ?? false;
+		if (!accepted) {
+			return;
+		}
+		cancelStreamingAIGenerationAfterResolution(controller, {
+			sessionId: activeSessionId,
+		});
+	}
+
+	function rejectReviewItemAndStop(reviewItemId: string): void {
+		const rejected = controller?.rejectReviewItem(reviewItemId) ?? false;
+		if (!rejected) {
+			return;
+		}
+		cancelStreamingAIGenerationAfterResolution(controller, {
+			sessionId: activeSessionId,
+		});
+	}
 	const [subgroupExpandedState, setSubgroupExpandedState] = React.useState<
 		Record<string, boolean>
 	>({});
@@ -139,7 +205,7 @@ export function AIChangeList(props: AIChangeListProps) {
 						type="button"
 						data-suggestion-button=""
 						onMouseDown={preventEditorBlur}
-						onClick={() => controller?.acceptSuggestion(suggestion.id)}
+						onClick={() => acceptSuggestionAndStop(suggestion.id)}
 					>
 						Accept
 					</button>
@@ -147,7 +213,7 @@ export function AIChangeList(props: AIChangeListProps) {
 						type="button"
 						data-suggestion-button=""
 						onMouseDown={preventEditorBlur}
-						onClick={() => controller?.rejectSuggestion(suggestion.id)}
+						onClick={() => rejectSuggestionAndStop(suggestion.id)}
 					>
 						Reject
 					</button>
@@ -166,12 +232,12 @@ export function AIChangeList(props: AIChangeListProps) {
 			type: "group",
 			accept: canApplyReviewActions
 				? () => {
-						controller?.acceptReviewItems(groupItemIds);
+						acceptReviewItemsAndStop(groupItemIds);
 					}
 				: undefined,
 			reject: canApplyReviewActions
 				? () => {
-						controller?.rejectReviewItems(groupItemIds);
+						rejectReviewItemsAndStop(groupItemIds);
 					}
 				: undefined,
 		});
@@ -202,7 +268,7 @@ export function AIChangeList(props: AIChangeListProps) {
 					data-review-group-button=""
 					disabled={!canApplyReviewActions}
 					onMouseDown={preventEditorBlur}
-					onClick={() => controller?.acceptReviewItems(groupItemIds)}
+					onClick={() => acceptReviewItemsAndStop(groupItemIds)}
 				>
 					Accept group
 				</button>
@@ -211,7 +277,7 @@ export function AIChangeList(props: AIChangeListProps) {
 					data-review-group-button=""
 					disabled={!canApplyReviewActions}
 					onMouseDown={preventEditorBlur}
-					onClick={() => controller?.rejectReviewItems(groupItemIds)}
+					onClick={() => rejectReviewItemsAndStop(groupItemIds)}
 				>
 					Reject group
 				</button>
@@ -249,12 +315,12 @@ export function AIChangeList(props: AIChangeListProps) {
 					: undefined,
 				accept: () => {
 					if (canApplyReviewActions) {
-						controller?.acceptReviewItems(subgroupItemIds);
+						acceptReviewItemsAndStop(subgroupItemIds);
 					}
 				},
 				reject: () => {
 					if (canApplyReviewActions) {
-						controller?.rejectReviewItems(subgroupItemIds);
+						rejectReviewItemsAndStop(subgroupItemIds);
 					}
 				},
 			});
@@ -273,7 +339,7 @@ export function AIChangeList(props: AIChangeListProps) {
 						data-review-subgroup-button=""
 						disabled={!canApplyReviewActions}
 						onMouseDown={preventEditorBlur}
-						onClick={() => controller?.acceptReviewItems(subgroupItemIds)}
+						onClick={() => acceptReviewItemsAndStop(subgroupItemIds)}
 					>
 						Accept subgroup
 					</button>
@@ -282,7 +348,7 @@ export function AIChangeList(props: AIChangeListProps) {
 						data-review-subgroup-button=""
 						disabled={!canApplyReviewActions}
 						onMouseDown={preventEditorBlur}
-						onClick={() => controller?.rejectReviewItems(subgroupItemIds)}
+						onClick={() => rejectReviewItemsAndStop(subgroupItemIds)}
 					>
 						Reject subgroup
 					</button>
@@ -300,12 +366,12 @@ export function AIChangeList(props: AIChangeListProps) {
 						},
 						accept: () => {
 							if (canApplyReviewActions) {
-								controller?.acceptReviewItem(item.id);
+								acceptReviewItemAndStop(item.id);
 							}
 						},
 						reject: () => {
 							if (canApplyReviewActions) {
-								controller?.rejectReviewItem(item.id);
+								rejectReviewItemAndStop(item.id);
 							}
 						},
 					});
@@ -413,7 +479,7 @@ export function AIChangeList(props: AIChangeListProps) {
 								data-suggestion-button=""
 								disabled={!canApplyReviewActions}
 								onMouseDown={preventEditorBlur}
-								onClick={() => controller?.acceptReviewItem(item.id)}
+								onClick={() => acceptReviewItemAndStop(item.id)}
 							>
 								Accept
 							</button>
@@ -422,7 +488,7 @@ export function AIChangeList(props: AIChangeListProps) {
 								data-suggestion-button=""
 								disabled={!canApplyReviewActions}
 								onMouseDown={preventEditorBlur}
-								onClick={() => controller?.rejectReviewItem(item.id)}
+								onClick={() => rejectReviewItemAndStop(item.id)}
 							>
 								Reject
 							</button>

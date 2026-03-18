@@ -1,0 +1,58 @@
+{
+  "name": "@pen/export-json",
+  "version": "0.0.0",
+  "description": "JSON exporter and importer for Pen",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "homepage": "https://github.com/niceperson/pen#readme",
+  "bugs": {
+    "url": "https://github.com/niceperson/pen/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/niceperson/pen.git",
+    "directory": "packages/extensions/export-json"
+  },
+  "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@pen/content-ops": "workspace:*",
+    "@pen/markdown-serialization": "workspace:*",
+    "@pen/types": "workspace:*"
+  },
+  "devDependencies": {
+    "@pen/core": "workspace:*",
+    "@pen/schema-default": "workspace:*",
+    "tsup": "^8.4.0",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.7"
+  }
+}

@@ -191,6 +191,100 @@ describe("playground planner", () => {
 		);
 	});
 
+	it("honors explicit selection-fast requests from a rewrite-selection operation without live selection", () => {
+		const editor = createEditor();
+		const plan = buildPlaygroundRequestPlan(
+			editor,
+			"Make this friendlier",
+			TEST_PLANNER_CONFIG,
+			"selection-fast",
+			{
+				kind: "rewrite-selection",
+				applyPolicy: "selection-replace",
+				target: {
+					kind: "selection",
+					blockId: "block-1",
+					anchor: { blockId: "block-1", offset: 0 },
+					focus: { blockId: "block-1", offset: 5 },
+					sourceText: "Hello",
+				},
+				provenance: {
+					documentVersion: 1,
+				},
+			},
+		);
+
+		expect(plan.mode).toBe("selection-fast");
+		expect(plan.prompt).toContain("Instruction:\nMake this friendlier");
+		expect(plan.prompt).toContain("Selected text to replace:\nHello");
+		expect(plan.prompt).toContain(
+			"Wrap the rewritten replacement text exactly like this:",
+		);
+		expect(plan.selectedTextLength).toBe(5);
+	});
+
+	it("honors explicit selection-fast requests from block-local operations without live selection", () => {
+		const editor = createEditor();
+		const plan = buildPlaygroundRequestPlan(
+			editor,
+			"Rewrite this",
+			TEST_PLANNER_CONFIG,
+			"selection-fast",
+			{
+				kind: "rewrite-block",
+				applyPolicy: "block-replace",
+				target: {
+					kind: "block",
+					blockId: "block-1",
+					blockType: "paragraph",
+					sourceText: "Hello",
+				},
+				provenance: {
+					documentVersion: 1,
+					blockRevision: 2,
+				},
+			},
+		);
+
+		expect(plan.mode).toBe("selection-fast");
+		expect(plan.modelId).toBe("test-selection-model");
+		expect(plan.prompt).toContain("Instruction:\nRewrite this");
+		expect(plan.prompt).toContain("Block type: paragraph");
+		expect(plan.prompt).toContain("Current block content:\nHello");
+		expect(plan.selectedTextLength).toBe(5);
+	});
+
+	it("preserves authoritative source text for explicit continue-block operations", () => {
+		const editor = createEditor();
+		const plan = buildPlaygroundRequestPlan(
+			editor,
+			"Continue this thought",
+			TEST_PLANNER_CONFIG,
+			"selection-fast",
+			{
+				kind: "continue-block",
+				applyPolicy: "block-continue",
+				target: {
+					kind: "block",
+					blockId: "block-1",
+					blockType: "paragraph",
+					sourceText: "Hello there",
+					insertionOffset: 5,
+				},
+				provenance: {
+					documentVersion: 1,
+					blockRevision: 2,
+				},
+			},
+		);
+
+		expect(plan.mode).toBe("selection-fast");
+		expect(plan.prompt).toContain("Instruction:\nContinue this thought");
+		expect(plan.prompt).toContain("Text before cursor:\nHello");
+		expect(plan.prompt).toContain("Text after cursor:\n there");
+		expect(plan.selectedTextLength).toBe("Hello there".length);
+	});
+
 	it("keeps selection prompts on the fast path when the prompt is pinned to a selection", () => {
 		const editor = createEditor();
 		const prompt = [
@@ -262,8 +356,37 @@ describe("playground planner", () => {
 		);
 
 		expect(plan.mode).toBe("document-agent");
-		expect(plan.useTools).toBe(true);
+		expect(plan.useTools).toBe(false);
 		expect(plan.contextFormat).toBe("json");
+	});
+
+	it("includes explicit document operation envelopes in document-agent prompts", () => {
+		const editor = createEditor();
+		const plan = buildPlaygroundRequestPlan(
+			editor,
+			"Remove all content",
+			TEST_PLANNER_CONFIG,
+			"document-agent",
+			{
+				kind: "document-transform",
+				applyPolicy: "document-review",
+				target: {
+					kind: "document",
+					activeBlockId: "block-1",
+					blockIds: ["block-1", "block-2"],
+					placement: "replace-blocks",
+					transform: "remove",
+				},
+				provenance: {
+					documentVersion: 3,
+					syncedGeneration: 5,
+				},
+			},
+		);
+
+		expect(plan.prompt).toContain("Resolved operation envelope");
+		expect(plan.prompt).toContain('"transform":"remove"');
+		expect(plan.prompt).toContain('"blockIds":["block-1","block-2"]');
 	});
 
 	it("honors explicit structured-generation requests for ordinary prompts", () => {

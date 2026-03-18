@@ -4,6 +4,7 @@ import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
 import { createEditor, ensureInlineCompletionController } from "@pen/core";
+import { aiExtension } from "@pen/ai";
 import { defaultPreset } from "@pen/preset-default";
 import { Pen } from "../primitives";
 
@@ -94,6 +95,65 @@ describe("@pen/react suggestion rendering", () => {
 			"delete",
 		);
 		expect(deleteSuggestion?.classList.contains("pen-suggestion-delete")).toBe(
+			true,
+		);
+
+		await act(async () => {
+			root.unmount();
+		});
+		container.remove();
+		editor.destroy();
+	});
+
+	it("renders block suggestion decorations on the block DOM node", async () => {
+		const editor = createEditor({
+			documentProfile: "flow",
+			extensions: [aiExtension({ author: "tester" })],
+			preset: defaultPreset({}),
+		});
+		const blockId = editor.firstBlock()!.id;
+
+		editor.apply([
+			{
+				type: "insert-text",
+				blockId,
+				offset: 0,
+				text: "Delete me",
+			},
+			{
+				type: "set-meta",
+				blockId,
+				namespace: "suggestion",
+				data: {
+					id: "suggestion-delete-block-1",
+					action: "delete-block",
+					author: "ai",
+					authorType: "ai",
+					createdAt: 1,
+				},
+			},
+		]);
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(
+				<Pen.Editor.Root editor={editor}>
+					<Pen.Editor.Content />
+				</Pen.Editor.Root>,
+			);
+		});
+
+		const blockElement = container.querySelector(
+			`[data-block-id="${blockId}"]`,
+		);
+		expect(blockElement).toBeTruthy();
+		expect(blockElement?.getAttribute("data-suggestion-action")).toBe(
+			"delete-block",
+		);
+		expect(blockElement?.classList.contains("pen-block-suggestion-delete-block")).toBe(
 			true,
 		);
 

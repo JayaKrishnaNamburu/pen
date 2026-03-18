@@ -2,6 +2,8 @@ import type {
 	AppPlacement,
 	BlockHandle,
 	AppHandle,
+	InlineDelta,
+	InlineNodeDeltaInsert,
 	TableCellHandle,
 	TableColumnSchema,
 	TableRowHandle,
@@ -73,6 +75,38 @@ function getPropsMap(blockMap: CRDTUnknownMap): CRDTUnknownMap | null {
 
 function getDeltaFragments(text: CRDTTextLike | null): TextDelta[] {
 	return typeof text?.toDelta === "function" ? text.toDelta() : [];
+}
+
+function toInlineDeltaInsert(value: unknown): string | InlineNodeDeltaInsert {
+	if (typeof value === "string") {
+		return value;
+	}
+	if (!value || typeof value !== "object") {
+		return "";
+	}
+	const record = value as Record<string, unknown>;
+	const type = typeof record.type === "string" ? record.type : "";
+	if (!type) {
+		return "";
+	}
+	const props: Record<string, unknown> = {};
+	for (const [key, entry] of Object.entries(record)) {
+		if (key === "type") {
+			continue;
+		}
+		props[key] = entry;
+	}
+	return { type, props };
+}
+
+function toInlineDeltas(content: CRDTTextLike | null): InlineDelta[] {
+	if (typeof content?.toDelta !== "function") {
+		return [];
+	}
+	return getDeltaFragments(content).map((delta) => ({
+		insert: toInlineDeltaInsert(delta.insert),
+		...(delta.attributes ? { attributes: delta.attributes } : {}),
+	}));
 }
 
 function arrayValues<T>(array: CRDTUnknownArray<T>): T[] {
@@ -329,18 +363,19 @@ class BlockHandleImpl implements BlockHandle {
 		return "";
 	}
 
+	inlineDeltas(): InlineDelta[] {
+		const content = getTextProp(this.blockMap, "content");
+		return toInlineDeltas(content);
+	}
+
 	textDeltas(): Array<{
 		insert: string;
 		attributes?: Record<string, unknown>;
 	}> {
-		const content = getTextProp(this.blockMap, "content");
-		if (typeof content?.toDelta === "function") {
-			return getDeltaFragments(content).map((d) => ({
-				insert: typeof d.insert === "string" ? d.insert : "",
-				...(d.attributes ? { attributes: d.attributes } : {}),
-			}));
-		}
-		return [];
+		return this.inlineDeltas().map((delta) => ({
+			insert: typeof delta.insert === "string" ? delta.insert : "",
+			...(delta.attributes ? { attributes: delta.attributes } : {}),
+		}));
 	}
 
 	length(): number {
@@ -693,18 +728,19 @@ class TableCellHandleImpl implements TableCellHandle {
 		return this.textContent().length;
 	}
 
+	inlineDeltas(): InlineDelta[] {
+		const content = getTextProp(this._cellMap, "content");
+		return toInlineDeltas(content);
+	}
+
 	textDeltas(): Array<{
 		insert: string;
 		attributes?: Record<string, unknown>;
 	}> {
-		const content = getTextProp(this._cellMap, "content");
-		if (typeof content?.toDelta === "function") {
-			return getDeltaFragments(content).map((d) => ({
-				insert: typeof d.insert === "string" ? d.insert : "",
-				...(d.attributes ? { attributes: d.attributes } : {}),
-			}));
-		}
-		return [];
+		return this.inlineDeltas().map((delta) => ({
+			insert: typeof delta.insert === "string" ? delta.insert : "",
+			...(delta.attributes ? { attributes: delta.attributes } : {}),
+		}));
 	}
 }
 

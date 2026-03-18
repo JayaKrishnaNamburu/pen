@@ -217,6 +217,66 @@ describe("@pen/ai-autocomplete", () => {
 		editor.destroy();
 	});
 
+	it("keeps short but meaningful single-word prose continuations", async () => {
+		let activeEditor: ReturnType<typeof createEditor> | null = null;
+		const fieldEditor = {
+			focusBlockId: null as string | null,
+			isEditing: true,
+			isFocused: true,
+			isComposing: false,
+		};
+		const editor = createEditor({
+			extensions: [
+				autocompleteExtension({
+					debounceMs: 0,
+					model: {
+						async *stream() {
+							yield {
+								type: "text-delta" as const,
+								delta: "cat",
+							};
+							yield { type: "done" as const };
+						},
+					},
+				}),
+				defineExtension({
+					name: "test-field-editor-slot",
+					activateClient: async ({ editor: nextEditor }) => {
+						activeEditor = nextEditor;
+						nextEditor.internals.setSlot(FIELD_EDITOR_SLOT_KEY, fieldEditor);
+					},
+					deactivateClient: async () => {
+						activeEditor?.internals.setSlot(FIELD_EDITOR_SLOT_KEY, null);
+						activeEditor = null;
+					},
+				}),
+			],
+		});
+		const blockId = editor.firstBlock()!.id;
+		fieldEditor.focusBlockId = blockId;
+		editor.apply([
+			{
+				type: "insert-text",
+				blockId,
+				offset: 0,
+				text: "The ",
+			},
+		]);
+		editor.selectText(blockId, 4, 4);
+
+		const controller = getAutocompleteController(editor);
+		const inlineCompletion = getInlineCompletionController(editor);
+		expect(controller?.request({ explicit: true })).toBe(true);
+		await waitForCondition(
+			() => inlineCompletion?.getState().visibleSuggestion?.text === "cat",
+		);
+
+		expect(controller?.acceptVisibleSuggestion()).toBe(true);
+		expect(editor.getBlock(blockId)?.textContent()).toBe("The cat");
+
+		editor.destroy();
+	});
+
 	it("drops stray continuation commas after sentence-ending punctuation", async () => {
 		let activeEditor: ReturnType<typeof createEditor> | null = null;
 		const fieldEditor = {
@@ -520,7 +580,7 @@ describe("@pen/ai-autocomplete", () => {
 		editor.destroy();
 	});
 
-	it("rejects short single-word prose suggestions", async () => {
+	it("rejects tiny single-word prose suggestions", async () => {
 		let activeEditor: ReturnType<typeof createEditor> | null = null;
 		const fieldEditor = {
 			focusBlockId: null as string | null,
@@ -534,7 +594,7 @@ describe("@pen/ai-autocomplete", () => {
 					debounceMs: 0,
 					model: {
 						async *stream() {
-							yield { type: "text-delta" as const, delta: "friend" };
+							yield { type: "text-delta" as const, delta: "go" };
 							yield { type: "done" as const };
 						},
 					},

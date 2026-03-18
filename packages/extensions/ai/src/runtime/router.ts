@@ -72,8 +72,9 @@ export type PromptIntent =
 	| "review"
 	| "unknown";
 
-const REWRITE_PATTERNS = /\b(rewrite|summari[sz]e|translate|simplify|fix|improve|shorten|expand|polish|paraphrase)\b/i;
+const REWRITE_PATTERNS = /\b(rewrite|retry|redo|again|do.?over|summari[sz]e|translate|simplify|fix|improve|shorten|expand|polish|paraphrase)\b/i;
 const CONTINUE_PATTERNS = /\b(continue|finish|complete|keep writing|next paragraph|next section)\b/i;
+const GENERATIVE_PATTERNS = /\b(write|create|draft|compose|generate|brainstorm)\b/i;
 const SEARCH_PATTERNS = /\b(find|search|where|which|list|scan|inspect|look for)\b/i;
 const STRUCTURAL_PATTERNS = /\b(restructure|reorganize|outline|move|delete section|insert section|change blocks|convert block|table|heading hierarchy)\b/i;
 const REVIEW_PATTERNS = /\b(review|critique|audit|compare|analyze entire|check whole)\b/i;
@@ -342,6 +343,9 @@ export function classifyPromptIntent(prompt: string): PromptIntent {
 	}
 	if (SEARCH_PATTERNS.test(prompt)) {
 		return "search";
+	}
+	if (GENERATIVE_PATTERNS.test(prompt)) {
+		return "unknown";
 	}
 	if (prompt.trim().length <= 80) {
 		return "local-edit";

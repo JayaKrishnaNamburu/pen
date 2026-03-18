@@ -1,6 +1,6 @@
 import "./DebugPanel.css";
 import type { Editor } from "@pen/types";
-import { useAIDebugLog } from "@pen/react";
+import { useAIDebugLog, useAISuggestionsMetrics } from "@pen/react";
 import { PLAYGROUND_AI_SESSION_ID_PREVIEW_LENGTH } from "../constants/playgroundAI";
 import { usePlaygroundAIState } from "../hooks/usePlaygroundAISession";
 
@@ -24,6 +24,7 @@ export function DebugPanel({
 	variant = "sidebar",
 }: DebugPanelProps) {
 	const debugLog = useAIDebugLog(editor, { sessionId });
+	const aiSuggestionsMetrics = useAISuggestionsMetrics(editor);
 	const playgroundAIState = usePlaygroundAIState();
 
 	const sessionLabel = playgroundAIState.sessionId
@@ -103,6 +104,26 @@ export function DebugPanel({
 		{
 			label: "Fast apply failed",
 			value: formatFastApplyMetricCount(aggregateFastApply.failedCount),
+		},
+		{
+			label: "AI suggestions shown",
+			value: `${aiSuggestionsMetrics.suggestionShownCount}`,
+		},
+		{
+			label: "AI suggestions applied",
+			value: `${aiSuggestionsMetrics.suggestionAppliedCount}`,
+		},
+		{
+			label: "AI suggestions dismissed",
+			value: `${aiSuggestionsMetrics.suggestionDismissedCount}`,
+		},
+		{
+			label: "AI suggestions cache hits",
+			value: `${aiSuggestionsMetrics.cacheHitCount}`,
+		},
+		{
+			label: "AI suggestions tokens",
+			value: `${aiSuggestionsMetrics.promptTokens}/${aiSuggestionsMetrics.completionTokens}`,
 		},
 	];
 	const performanceMetricRows = performanceMetricItems.map((item) => (

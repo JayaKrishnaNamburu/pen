@@ -16,6 +16,18 @@ export interface ImportedDatabaseData {
   primaryViewId?: string | null;
 }
 
+export type PendingInlineSegment =
+  | {
+      type: "text";
+      text: string;
+      attributes?: Record<string, unknown>;
+    }
+  | {
+      type: "node";
+      nodeType: string;
+      props?: Record<string, unknown>;
+    };
+
 export interface PendingBlock {
   type: string;
   props: Record<string, unknown>;
@@ -26,6 +38,7 @@ export interface PendingBlock {
     start: number;
     end: number;
   }>;
+  segments?: PendingInlineSegment[];
   children?: PendingBlock[];
   database?: ImportedDatabaseData;
 }
@@ -55,25 +68,7 @@ export function blocksToOps(
     } else if (block.type === "table" && block.children) {
       materializeTableChildren(ops, blockId, block.children);
     } else {
-      if (block.content) {
-        ops.push({
-          type: "insert-text",
-          blockId,
-          offset: 0,
-          text: block.content,
-        });
-
-        for (const mark of block.marks ?? []) {
-          if (mark.start >= mark.end) continue;
-          ops.push({
-            type: "format-text",
-            blockId,
-            offset: mark.start,
-            length: mark.end - mark.start,
-            marks: { [mark.type]: mark.props ?? true },
-          });
-        }
-      }
+      materializeInlineContent(ops, blockId, block);
 
       if (block.children) {
         for (let i = 0; i < block.children.length; i += 1) {
@@ -202,31 +197,140 @@ function materializeTableChildren(
 
     for (let colIdx = 0; colIdx < cells.length; colIdx += 1) {
       const cell = cells[colIdx];
+      materializeTableCellContent(ops, blockId, rowIdx, colIdx, cell);
+    }
+  }
+}
 
-      if (cell.content) {
+function materializeInlineContent(
+  ops: DocumentOp[],
+  blockId: string,
+  block: PendingBlock,
+): void {
+  if (block.segments && block.segments.length > 0) {
+    let offset = 0;
+    for (const segment of block.segments) {
+      if (segment.type === "text") {
+        if (segment.text.length === 0) {
+          continue;
+        }
+        ops.push({
+          type: "insert-text",
+          blockId,
+          offset,
+          text: segment.text,
+        });
+        if (segment.attributes) {
+          ops.push({
+            type: "format-text",
+            blockId,
+            offset,
+            length: segment.text.length,
+            marks: segment.attributes,
+          });
+        }
+        offset += segment.text.length;
+        continue;
+      }
+
+      ops.push({
+        type: "insert-inline-node",
+        blockId,
+        offset,
+        nodeType: segment.nodeType,
+        props: segment.props ?? {},
+      });
+      offset += 1;
+    }
+    return;
+  }
+
+  if (!block.content) {
+    return;
+  }
+
+  ops.push({
+    type: "insert-text",
+    blockId,
+    offset: 0,
+    text: block.content,
+  });
+
+  for (const mark of block.marks ?? []) {
+    if (mark.start >= mark.end) continue;
+    ops.push({
+      type: "format-text",
+      blockId,
+      offset: mark.start,
+      length: mark.end - mark.start,
+      marks: { [mark.type]: mark.props ?? true },
+    });
+  }
+}
+
+function materializeTableCellContent(
+  ops: DocumentOp[],
+  blockId: string,
+  row: number,
+  col: number,
+  cell: PendingBlock,
+): void {
+  if (cell.segments && cell.segments.length > 0) {
+    let offset = 0;
+    for (const segment of cell.segments) {
+      if (segment.type === "text") {
+        if (segment.text.length === 0) {
+          continue;
+        }
         ops.push({
           type: "insert-table-cell-text",
           blockId,
-          row: rowIdx,
-          col: colIdx,
-          offset: 0,
-          text: cell.content,
+          row,
+          col,
+          offset,
+          text: segment.text,
         } as DocumentOp);
-
-        for (const mark of cell.marks ?? []) {
-          if (mark.start >= mark.end) continue;
+        if (segment.attributes) {
           ops.push({
             type: "format-table-cell-text",
             blockId,
-            row: rowIdx,
-            col: colIdx,
-            offset: mark.start,
-            length: mark.end - mark.start,
-            marks: { [mark.type]: mark.props ?? true },
+            row,
+            col,
+            offset,
+            length: segment.text.length,
+            marks: segment.attributes,
           } as DocumentOp);
         }
+        offset += segment.text.length;
       }
     }
+    return;
+  }
+
+  if (!cell.content) {
+    return;
+  }
+
+  ops.push({
+    type: "insert-table-cell-text",
+    blockId,
+    row,
+    col,
+    offset: 0,
+    text: cell.content,
+  } as DocumentOp);
+
+  for (const mark of cell.marks ?? []) {
+    if (mark.start >= mark.end) continue;
+    ops.push({
+      type: "format-table-cell-text",
+      blockId,
+      row,
+      col,
+      offset: mark.start,
+      length: mark.end - mark.start,
+      marks: { [mark.type]: mark.props ?? true },
+    } as DocumentOp);
   }
 }
 

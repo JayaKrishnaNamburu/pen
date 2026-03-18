@@ -81,6 +81,30 @@ export {
 	type SelectionToolbarContextValue,
 } from "./primitives/selection-toolbar/index";
 
+// ── Search primitives ────────────────────────────────────────
+export {
+	SearchRoot,
+	SearchInput,
+	SearchResults,
+	SearchNext,
+	SearchPrevious,
+	SearchReplaceInput,
+	SearchReplace,
+	SearchReplaceAll,
+	SearchCaseSensitive,
+	SearchRegExpToggle,
+	SearchWholeWord,
+	useSearchContext,
+	type SearchRootProps,
+	type SearchInputProps,
+	type SearchResultsProps,
+	type SearchNavigationButtonProps,
+	type SearchReplaceInputProps,
+	type SearchReplaceButtonProps,
+	type SearchToggleProps,
+	type SearchContextValue,
+} from "./primitives/search/index";
+
 // ── AI primitives ────────────────────────────────────────────
 export {
 	AIRoot,
@@ -148,6 +172,12 @@ export {
 	type AIInlineSessionActionsProps,
 } from "./primitives/ai/index";
 export {
+	AISuggestionsRoot,
+	AISuggestionsPopover,
+	type AISuggestionsRootProps,
+	type AISuggestionsPopoverProps,
+} from "./primitives/aiSuggestions/index";
+export {
 	MultiplayerPresenceList,
 	MultiplayerRemoteCursors,
 	MultiplayerCaretOverlay,
@@ -160,6 +190,9 @@ export {
 // ── Hooks ───────────────────────────────────────────────────
 export {
 	useAI,
+	useAISuggestions,
+	useAISuggestionPopover,
+	useAISuggestionsMetrics,
 	useAIDebugLog,
 	useAISessions,
 	useActiveAISession,
@@ -176,6 +209,7 @@ export {
 	useEditor,
 	useFieldEditor,
 	useHistory,
+	useSearch,
 	useMultiplayer,
 	useRemoteCursors,
 	useRemoteSelections,
@@ -198,6 +232,7 @@ export {
 	type AttributionState,
 	type AIStructuredPreviewSelection,
 	type AIStructuredTargetPreviewSelection,
+	type AISuggestionPopoverPosition,
 	type ContextualPromptMode,
 	type ContextualPromptPlacement,
 	type ContextualPromptSide,

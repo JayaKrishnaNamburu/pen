@@ -1,5 +1,6 @@
 import React from "react";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
+import { cancelStreamingAIGenerationAfterResolution } from "../../utils/cancelStreamingAIGeneration";
 import { useAIContext } from "./root";
 
 export interface AIActionBarProps extends AsChildProps {
@@ -30,7 +31,10 @@ export function AIAcceptButton(props: AIAcceptButtonProps) {
 	const hasPendingPlan = state.activeGeneration?.planState === "validated";
 	const canAccept = suggestionIds.length > 0 || hasPendingPlan;
 	function handleAcceptClick() {
-		controller?.acceptActiveGeneration();
+		const accepted = controller?.acceptActiveGeneration() ?? false;
+		if (accepted) {
+			cancelStreamingAIGenerationAfterResolution(controller);
+		}
 	}
 	const buttonProps: AsChildProps & {
 		ref?: React.Ref<HTMLElement>;
@@ -55,11 +59,17 @@ export interface AIRejectButtonProps extends AsChildProps {
 
 export function AIRejectButton(props: AIRejectButtonProps) {
 	const { controller } = useAIContext();
+	function handleRejectClick() {
+		const rejected = controller?.rejectActiveGeneration() ?? false;
+		if (rejected) {
+			cancelStreamingAIGenerationAfterResolution(controller);
+		}
+	}
 	const buttonProps: AsChildProps & {
 		ref?: React.Ref<HTMLElement>;
 	} & Record<string, unknown> = {
 		...props,
-		onClick: () => controller?.rejectActiveGeneration(),
+		onClick: handleRejectClick,
 	};
 	return renderAsChild(
 		buttonProps,

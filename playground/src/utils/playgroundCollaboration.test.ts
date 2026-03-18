@@ -1,7 +1,11 @@
 import { createEditor } from "@pen/core";
 import { defaultPreset } from "@pen/preset-default";
-import { describe, expect, it } from "vitest";
-import { normalizePlaygroundCollaborationDocument } from "./playgroundCollaboration";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+	normalizePlaygroundCollaborationDocument,
+	getPlaygroundCollaborationRoom,
+	startFreshPlaygroundCollaborationRoom,
+} from "./playgroundCollaboration";
 
 type RawBlockOrder = {
 	length: number;
@@ -18,6 +22,10 @@ type RawDocument = {
 };
 
 describe("normalizePlaygroundCollaborationDocument", () => {
+	afterEach(() => {
+		vi.unstubAllGlobals();
+	});
+
 	it("collapses empty paragraph-only collaboration docs to one block", () => {
 		const editor = createEditor({
 			preset: defaultPreset(),
@@ -76,5 +84,30 @@ describe("normalizePlaygroundCollaborationDocument", () => {
 		expect(editor.firstBlock()?.type).toBe("paragraph");
 
 		editor.destroy();
+	});
+
+	it("prefers the room query parameter over the shared default", () => {
+		vi.stubGlobal("window", {
+			location: new URL("http://127.0.0.1:4173/?room=pen-playground-clean"),
+		});
+
+		expect(getPlaygroundCollaborationRoom()).toBe("pen-playground-clean");
+	});
+
+	it("navigates to a fresh collaboration room", () => {
+		const assign = vi.fn();
+		vi.stubGlobal("window", {
+			location: {
+				href: "http://127.0.0.1:4173/",
+				assign,
+			},
+		});
+
+		const nextRoom = startFreshPlaygroundCollaborationRoom();
+
+		expect(nextRoom.startsWith("pen-playground-")).toBe(true);
+		expect(assign).toHaveBeenCalledTimes(1);
+		const nextUrl = new URL(assign.mock.calls[0]![0]);
+		expect(nextUrl.searchParams.get("room")).toBe(nextRoom);
 	});
 });

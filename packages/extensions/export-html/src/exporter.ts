@@ -10,12 +10,24 @@ import {
   sortDeltaAttributes,
 } from "@pen/markdown-serialization";
 
-export const htmlExporter: Exporter<string> = {
+export type HtmlExportViewMode = "resolved" | "raw";
+
+type HtmlExporterExtraOptions = Record<string, unknown> & {
+  viewMode?: HtmlExportViewMode;
+};
+
+const ZERO_WIDTH_SPACE = "\u200B";
+const DELETE_SUGGESTION_ACTION = "delete";
+
+export const htmlExporter: Exporter<string, HtmlExporterExtraOptions> = {
   name: "html",
   mimeType: "text/html",
   fileExtension: ".html",
 
-  export(editor: Editor, _options?: ExportOptions): string {
+  export(editor: Editor, options?: ExportOptions<HtmlExporterExtraOptions>): string {
+    const viewMode =
+      options?.extra?.viewMode ??
+      (options?.includeSuggestions === false ? "resolved" : "raw");
     // Export is a document-preservation surface: serialize the actual document
     // graph, including nested and non-default-authoring blocks that already exist.
     const handles = [...editor.documentState.allBlocks()];
@@ -24,14 +36,19 @@ export const htmlExporter: Exporter<string> = {
       const handle = handles[index]!;
 
       if (isListHandle(handle)) {
-        const { html, nextIndex } = renderListRunHTML(handles, index, editor);
+        const { html, nextIndex } = renderListRunHTML(
+          handles,
+          index,
+          editor,
+          viewMode,
+        );
         parts.push(html);
         index = nextIndex - 1;
         continue;
       }
 
       if (handle.type === "table") {
-        parts.push(renderTableHTML(handle, editor));
+        parts.push(renderTableHTML(handle, editor, viewMode));
         continue;
       }
 
@@ -45,7 +62,7 @@ export const htmlExporter: Exporter<string> = {
         id: handle.id,
         type: handle.type,
         props: handle.props,
-        content: serializeInlineContentHTML(handle, editor),
+        content: serializeInlineContentHTML(handle, editor, viewMode),
         ...(handle.type === "database"
           ? { databaseData: buildDatabaseData(handle) }
           : {}),
@@ -61,21 +78,38 @@ export const htmlExporter: Exporter<string> = {
 function serializeInlineContentHTML(
   handle: BlockHandle,
   editor: Editor,
+  viewMode: HtmlExportViewMode,
 ): string {
   const deltas = handle.textDeltas();
-  if (!deltas || deltas.length === 0) return escapeHTML(handle.textContent());
+  if (!deltas || deltas.length === 0) {
+    return escapeHTML(
+      viewMode === "resolved"
+        ? handle.textContent({ resolved: true })
+        : handle.textContent(),
+    );
+  }
 
   let result = "";
 
   for (const delta of deltas) {
     let text =
       typeof delta.insert === "string" ? escapeHTML(delta.insert) : "";
-    if (delta.insert === "\u200B") continue;
+    if (delta.insert === ZERO_WIDTH_SPACE) continue;
+
+    const suggestion = delta.attributes?.suggestion as
+      | { action?: string }
+      | undefined;
+    if (viewMode === "resolved" && suggestion?.action === DELETE_SUGGESTION_ACTION) {
+      continue;
+    }
 
     if (delta.attributes) {
       const ordered = sortDeltaAttributes(delta.attributes, editor.schema);
       const marks = Object.entries(ordered);
       for (const [mark, props] of marks) {
+        if (viewMode === "resolved" && mark === "suggestion") {
+          continue;
+        }
         const inlineSchema = editor.schema.resolveInline(mark);
         if (!inlineSchema?.serialize?.toHTML) continue;
         text = inlineSchema.serialize.toHTML(
@@ -99,7 +133,11 @@ function escapeHTML(str: string): string {
     .replace(/"/g, "&quot;");
 }
 
-function renderTableHTML(handle: BlockHandle, editor: Editor): string {
+function renderTableHTML(
+  handle: BlockHandle,
+  editor: Editor,
+  viewMode: HtmlExportViewMode,
+): string {
   const rowCount = handle.tableRowCount();
   const colCount = handle.tableColumnCount();
   const hasHeaderRow = handle.props.hasHeaderRow !== false;
@@ -109,7 +147,7 @@ function renderTableHTML(handle: BlockHandle, editor: Editor): string {
     parts.push("<thead><tr>");
     for (let columnIndex = 0; columnIndex < colCount; columnIndex++) {
       parts.push(
-        `<th>${serializeTableCellHTML(handle.tableCell(0, columnIndex), editor)}</th>`,
+        `<th>${serializeTableCellHTML(handle.tableCell(0, columnIndex), editor, viewMode)}</th>`,
       );
     }
     parts.push("</tr></thead>");
@@ -122,7 +160,7 @@ function renderTableHTML(handle: BlockHandle, editor: Editor): string {
       parts.push("<tr>");
       for (let columnIndex = 0; columnIndex < colCount; columnIndex++) {
         parts.push(
-          `<td>${serializeTableCellHTML(handle.tableCell(rowIndex, columnIndex), editor)}</td>`,
+          `<td>${serializeTableCellHTML(handle.tableCell(rowIndex, columnIndex), editor, viewMode)}</td>`,
         );
       }
       parts.push("</tr>");
@@ -137,6 +175,7 @@ function renderTableHTML(handle: BlockHandle, editor: Editor): string {
 function serializeTableCellHTML(
   cell: TableCellHandle | null,
   editor: Editor,
+  viewMode: HtmlExportViewMode,
 ): string {
   if (!cell) {
     return "";
@@ -145,13 +184,23 @@ function serializeTableCellHTML(
   let result = "";
   for (const delta of cell.textDeltas()) {
     let text = typeof delta.insert === "string" ? escapeHTML(delta.insert) : "";
-    if (delta.insert === "\u200B") {
+    if (delta.insert === ZERO_WIDTH_SPACE) {
+      continue;
+    }
+
+    const suggestion = delta.attributes?.suggestion as
+      | { action?: string }
+      | undefined;
+    if (viewMode === "resolved" && suggestion?.action === DELETE_SUGGESTION_ACTION) {
       continue;
     }
 
     if (delta.attributes) {
       const ordered = sortDeltaAttributes(delta.attributes, editor.schema);
       for (const [mark, props] of Object.entries(ordered)) {
+        if (viewMode === "resolved" && mark === "suggestion") {
+          continue;
+        }
         const inlineSchema = editor.schema.resolveInline(mark);
         if (!inlineSchema?.serialize?.toHTML) {
           continue;
@@ -181,6 +230,7 @@ function renderListRunHTML(
   handles: BlockHandle[],
   startIndex: number,
   editor: Editor,
+  viewMode: HtmlExportViewMode,
 ): { html: string; nextIndex: number } {
   const run: BlockHandle[] = [];
   let index = startIndex;
@@ -221,7 +271,7 @@ function renderListRunHTML(
       }
     }
 
-    html += `<li>${renderListItemInnerHTML(handle, editor)}`;
+    html += `<li>${renderListItemInnerHTML(handle, editor, viewMode)}`;
   }
 
   while (stack.length > 0) {
@@ -231,7 +281,11 @@ function renderListRunHTML(
   return { html, nextIndex: index };
 }
 
-function renderListItemInnerHTML(handle: BlockHandle, editor: Editor): string {
+function renderListItemInnerHTML(
+  handle: BlockHandle,
+  editor: Editor,
+  viewMode: HtmlExportViewMode,
+): string {
   const schema = editor.schema.resolve(handle.type);
   if (!schema?.serialize?.toHTML) {
     return escapeHTML(handle.textContent());
@@ -241,7 +295,7 @@ function renderListItemInnerHTML(handle: BlockHandle, editor: Editor): string {
     id: handle.id,
     type: handle.type,
     props: handle.props,
-    content: serializeInlineContentHTML(handle, editor),
+    content: serializeInlineContentHTML(handle, editor, viewMode),
   };
   const html = schema.serialize.toHTML(block);
   return html.replace(/^<li>/, "").replace(/<\/li>$/, "");

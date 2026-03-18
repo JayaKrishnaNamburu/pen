@@ -3,6 +3,7 @@ import {
 	createEditor,
 	getInlineCompletionController,
 } from "@pen/core";
+import { getSearchController, searchExtension } from "@pen/search";
 import {
 	AI_AUTOCOMPLETE_CONTROLLER_SLOT,
 	defineExtension,
@@ -28,12 +29,21 @@ function createKeyEvent(
 	key: string,
 	options: Partial<KeyboardEvent> = {},
 ): KeyboardEvent {
+	let defaultPrevented = false;
 	return {
 		key,
 		ctrlKey: false,
 		metaKey: false,
 		shiftKey: false,
 		altKey: false,
+		defaultPrevented,
+		preventDefault() {
+			defaultPrevented = true;
+			Object.defineProperty(this, "defaultPrevented", {
+				configurable: true,
+				value: true,
+			});
+		},
 		...options,
 	} as KeyboardEvent;
 }
@@ -399,6 +409,163 @@ describe("@pen/react key binding contexts", () => {
 		});
 		expect(handled).toBe(1);
 		expect(editor.getBlock(blockId)?.textContent()).toBe("Hello");
+
+		editor.destroy();
+	});
+
+	it("opens search with Mod-f on macOS and Windows", () => {
+		const editor = createPresetEditor({
+			preset: {
+				documentOps: false,
+				deltaStream: false,
+				undo: false,
+				shortcuts: false,
+			},
+			extensions: [searchExtension()],
+		});
+
+		withNavigatorPlatform("MacIntel", () => {
+			expect(
+				handleEditorKeyBindings(
+					editor,
+					createKeyEvent("f", { metaKey: true }),
+				),
+			).toBe(true);
+		});
+		expect(getSearchController(editor)?.getState().open).toBe(true);
+
+		getSearchController(editor)?.close();
+
+		withNavigatorPlatform("Win32", () => {
+			expect(
+				handleEditorKeyBindings(
+					editor,
+					createKeyEvent("f", { ctrlKey: true }),
+				),
+			).toBe(true);
+		});
+		expect(getSearchController(editor)?.getState().open).toBe(true);
+
+		editor.destroy();
+	});
+
+	it("navigates and closes search with Enter, Shift-Enter, and Escape", () => {
+		const editor = createPresetEditor({
+			preset: {
+				documentOps: false,
+				deltaStream: false,
+				undo: false,
+				shortcuts: false,
+			},
+			extensions: [searchExtension()],
+		});
+		const blockId = editor.firstBlock()!.id;
+
+		editor.apply([
+			{ type: "insert-text", blockId, offset: 0, text: "alpha beta alpha" },
+		]);
+
+		const controller = getSearchController(editor);
+		controller?.open();
+		controller?.setQuery("alpha");
+
+		expect(handleEditorKeyBindings(editor, createKeyEvent("Enter"))).toBe(true);
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId, offset: 11 },
+			focus: { blockId, offset: 16 },
+		});
+
+		expect(
+			handleEditorKeyBindings(editor, createKeyEvent("Enter", { shiftKey: true })),
+		).toBe(true);
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId, offset: 0 },
+			focus: { blockId, offset: 5 },
+		});
+
+		expect(handleEditorKeyBindings(editor, createKeyEvent("Escape"))).toBe(true);
+		expect(controller?.getState().open).toBe(false);
+
+		editor.destroy();
+	});
+
+	it("navigates search with Mod-g and Shift-Mod-g on macOS and Windows", () => {
+		const editor = createPresetEditor({
+			preset: {
+				documentOps: false,
+				deltaStream: false,
+				undo: false,
+				shortcuts: false,
+			},
+			extensions: [searchExtension()],
+		});
+		const blockId = editor.firstBlock()!.id;
+
+		editor.apply([
+			{ type: "insert-text", blockId, offset: 0, text: "alpha beta alpha" },
+		]);
+
+		const controller = getSearchController(editor);
+		controller?.open();
+		controller?.setQuery("alpha");
+
+		withNavigatorPlatform("MacIntel", () => {
+			expect(
+				handleEditorKeyBindings(
+					editor,
+					createKeyEvent("g", { metaKey: true }),
+				),
+			).toBe(true);
+		});
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId, offset: 11 },
+			focus: { blockId, offset: 16 },
+		});
+
+		withNavigatorPlatform("MacIntel", () => {
+			expect(
+				handleEditorKeyBindings(
+					editor,
+					createKeyEvent("g", { metaKey: true, shiftKey: true }),
+				),
+			).toBe(true);
+		});
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId, offset: 0 },
+			focus: { blockId, offset: 5 },
+		});
+
+		withNavigatorPlatform("Win32", () => {
+			expect(
+				handleEditorKeyBindings(
+					editor,
+					createKeyEvent("g", { ctrlKey: true }),
+				),
+			).toBe(true);
+		});
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId, offset: 11 },
+			focus: { blockId, offset: 16 },
+		});
+
+		withNavigatorPlatform("Win32", () => {
+			expect(
+				handleEditorKeyBindings(
+					editor,
+					createKeyEvent("g", { ctrlKey: true, shiftKey: true }),
+				),
+			).toBe(true);
+		});
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId, offset: 0 },
+			focus: { blockId, offset: 5 },
+		});
 
 		editor.destroy();
 	});

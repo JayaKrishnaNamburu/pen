@@ -65,6 +65,7 @@ export function EditorBlock(props: EditorBlockProps) {
 		(d: Decoration) =>
 			"attributes" in d && Boolean(d.attributes["ai-generating"]),
 	);
+	const blockDecorationAttributes = mergeBlockDecorationAttributes(blockDecorations);
 
 	const primitiveProps: Record<string, unknown> = {
 		[DATA_ATTRS.editorBlock]: "",
@@ -82,6 +83,10 @@ export function EditorBlock(props: EditorBlockProps) {
 			surfaceRole != null && surfaceRole !== "editable-inline"
 				? false
 				: undefined,
+		spellCheck: isBlockEditable ? false : undefined,
+		autoCorrect: isBlockEditable ? "off" : undefined,
+		autoCapitalize: isBlockEditable ? "off" : undefined,
+		...blockDecorationAttributes,
 	};
 
 	return renderAsChild(
@@ -98,4 +103,36 @@ export function EditorBlock(props: EditorBlockProps) {
 		"div",
 		primitiveProps,
 	);
+}
+
+function mergeBlockDecorationAttributes(
+	decorations: readonly Decoration[],
+): Record<string, unknown> {
+	const attributes: Record<string, unknown> = {};
+	const classNames: string[] = [];
+
+	for (const decoration of decorations) {
+		if (decoration.type !== "block") {
+			continue;
+		}
+		if (
+			decoration.position != null &&
+			decoration.position !== "wrap"
+		) {
+			continue;
+		}
+		for (const [key, value] of Object.entries(decoration.attributes)) {
+			if (key === "class") {
+				classNames.push(String(value));
+				continue;
+			}
+			attributes[key] = value;
+		}
+	}
+
+	if (classNames.length > 0) {
+		attributes.className = classNames.join(" ");
+	}
+
+	return attributes;
 }

@@ -1,10 +1,15 @@
 import React from "react";
 import type { Editor } from "@pen/types";
-import type { PersistentSuggestion, PersistentTextSuggestion } from "@pen/ai";
+import {
+	getAIController,
+	type PersistentSuggestion,
+	type PersistentTextSuggestion,
+} from "@pen/ai";
 import { useActiveAISession } from "./useActiveAISession";
 import { useAIActions } from "./useAIActions";
 import { useSuggestions } from "./useSuggestions";
 import { querySuggestionAnchorElements } from "../utils/aiDomScope";
+import { cancelStreamingAIGenerationAfterResolution } from "../utils/cancelStreamingAIGeneration";
 
 export interface InlineSuggestionControlPosition {
 	id: string;
@@ -40,6 +45,7 @@ const SUGGESTION_CONTROL_HEIGHT_ESTIMATE = 40;
 export function useInlineSuggestionControls(
 	editor: Editor,
 ): InlineSuggestionControlsState {
+	const controller = getAIController(editor);
 	const actions = useAIActions(editor);
 	const suggestions = useSuggestions(editor);
 	const activeSession = useActiveAISession(editor);
@@ -173,26 +179,40 @@ export function useInlineSuggestionControls(
 		if (!activePosition) {
 			return false;
 		}
-		return (
-			resolveSuggestionGroupOptimistically(
-				setResolvingSuggestionIds,
-				activePosition.suggestionIds,
-				() => acceptSuggestionGroup(actions, activePosition.suggestionIds),
-			).length > 0
+		const acceptedSuggestionIds = resolveSuggestionGroupOptimistically(
+			setResolvingSuggestionIds,
+			activePosition.suggestionIds,
+			() => acceptSuggestionGroup(actions, activePosition.suggestionIds),
 		);
+		if (acceptedSuggestionIds.length === 0) {
+			return false;
+		}
+		cancelStreamingAIGenerationAfterResolution(controller, {
+			sessionId: activeSession?.id ?? null,
+			suggestionIds: acceptedSuggestionIds,
+			suggestions,
+		});
+		return true;
 	}
 
 	function rejectActiveSuggestionGroup(): boolean {
 		if (!activePosition) {
 			return false;
 		}
-		return (
-			resolveSuggestionGroupOptimistically(
-				setResolvingSuggestionIds,
-				activePosition.suggestionIds,
-				() => rejectSuggestionGroup(actions, activePosition.suggestionIds),
-			).length > 0
+		const rejectedSuggestionIds = resolveSuggestionGroupOptimistically(
+			setResolvingSuggestionIds,
+			activePosition.suggestionIds,
+			() => rejectSuggestionGroup(actions, activePosition.suggestionIds),
 		);
+		if (rejectedSuggestionIds.length === 0) {
+			return false;
+		}
+		cancelStreamingAIGenerationAfterResolution(controller, {
+			sessionId: activeSession?.id ?? null,
+			suggestionIds: rejectedSuggestionIds,
+			suggestions,
+		});
+		return true;
 	}
 
 	return {

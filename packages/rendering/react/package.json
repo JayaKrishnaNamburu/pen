@@ -2,39 +2,105 @@
   "name": "@pen/react",
   "version": "0.0.0",
   "description": "React primitives, hooks, and renderers for Pen",
-  "license": "LICENSE.md",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "homepage": "https://github.com/niceperson/pen#readme",
+  "bugs": {
+    "url": "https://github.com/niceperson/pen/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/niceperson/pen.git",
+    "directory": "packages/rendering/react"
+  },
   "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
   "exports": {
     ".": {
       "import": {
-        "types": "./src/index.ts",
+        "types": "./dist/index.d.ts",
         "default": "./dist/index.mjs"
       },
       "require": {
-        "types": "./src/index.ts",
+        "types": "./dist/index.d.cts",
         "default": "./dist/index.cjs"
+      }
+    },
+    "./ai": {
+      "import": {
+        "types": "./dist/ai.d.ts",
+        "default": "./dist/ai.mjs"
+      },
+      "require": {
+        "types": "./dist/ai.d.cts",
+        "default": "./dist/ai.cjs"
+      }
+    },
+    "./ai-suggestions": {
+      "import": {
+        "types": "./dist/aiSuggestions.d.ts",
+        "default": "./dist/aiSuggestions.mjs"
+      },
+      "require": {
+        "types": "./dist/aiSuggestions.d.cts",
+        "default": "./dist/aiSuggestions.cjs"
+      }
+    },
+    "./history": {
+      "import": {
+        "types": "./dist/history.d.ts",
+        "default": "./dist/history.mjs"
+      },
+      "require": {
+        "types": "./dist/history.d.cts",
+        "default": "./dist/history.cjs"
+      }
+    },
+    "./multiplayer": {
+      "import": {
+        "types": "./dist/multiplayer.d.ts",
+        "default": "./dist/multiplayer.mjs"
+      },
+      "require": {
+        "types": "./dist/multiplayer.d.cts",
+        "default": "./dist/multiplayer.cjs"
+      }
+    },
+    "./search": {
+      "import": {
+        "types": "./dist/search.d.ts",
+        "default": "./dist/search.mjs"
+      },
+      "require": {
+        "types": "./dist/search.d.cts",
+        "default": "./dist/search.cjs"
       }
     }
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
-  "types": "./src/index.ts",
+  "types": "./dist/index.d.ts",
   "files": [
     "dist",
-    "src"
+    "README.md",
+    "LICENSE.md"
   ],
   "sideEffects": false,
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",
-    "test": "pnpm --filter @pen/preset-default build && pnpm --filter @pen/history build && vitest run",
+    "test": "pnpm --filter @pen/preset-default build && pnpm --filter @pen/history build && pnpm --filter @pen/search build && vitest run",
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
+    "@pen/ai-suggestions": "workspace:*",
     "@pen/ai": "workspace:*",
     "@pen/core": "workspace:*",
+    "@pen/dom": "workspace:*",
     "@pen/history": "workspace:*",
     "@pen/multiplayer": "workspace:*",
+    "@pen/search": "workspace:*",
     "@pen/schema-default": "workspace:*",
     "@pen/shortcuts": "workspace:*",
     "@pen/types": "workspace:^"

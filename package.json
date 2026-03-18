@@ -5,14 +5,19 @@
   "packageManager": "pnpm@9.15.4",
   "scripts": {
     "build": "turbo run build",
+    "changeset": "changeset",
     "dev": "turbo run dev",
+    "sync:package-metadata": "node sync-package-metadata.mjs",
     "test": "turbo run test",
     "test:e2e": "playwright test",
     "typecheck": "turbo run typecheck",
     "lint": "pnpm lint:imports && turbo run lint",
+    "version-packages": "changeset version",
+    "release": "changeset publish",
     "clean": "turbo run clean && rm -rf node_modules"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.30.0",
     "@playwright/test": "^1.58.2",
     "tsup": "^8.4.0",
     "turbo": "^2.4.4",

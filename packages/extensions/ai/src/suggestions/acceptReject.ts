@@ -1,4 +1,4 @@
-import type { DocumentOp, Editor } from "@pen/types";
+import type { DocumentOp, Editor, OpOrigin } from "@pen/types";
 import type { PersistentTextSuggestion } from "../types";
 import {
 	readAllSuggestions,
@@ -21,15 +21,17 @@ export function rejectSuggestion(editor: Editor, suggestionId: string): boolean 
 export function acceptSuggestions(
 	editor: Editor,
 	suggestionIds: readonly string[],
+	options?: { origin?: OpOrigin; undoGroupId?: string },
 ): boolean {
-	return resolveSuggestions(editor, suggestionIds, "accept");
+	return resolveSuggestions(editor, suggestionIds, "accept", options);
 }
 
 export function rejectSuggestions(
 	editor: Editor,
 	suggestionIds: readonly string[],
+	options?: { origin?: OpOrigin; undoGroupId?: string },
 ): boolean {
-	return resolveSuggestions(editor, suggestionIds, "reject");
+	return resolveSuggestions(editor, suggestionIds, "reject", options);
 }
 
 export function acceptAllSuggestions(editor: Editor): void {
@@ -44,12 +46,18 @@ function resolveSuggestions(
 	editor: Editor,
 	suggestionIds: readonly string[],
 	resolution: SuggestionResolution,
+	options?: { origin?: OpOrigin; undoGroupId?: string },
 ): boolean {
 	const ops = buildResolutionOps(editor, suggestionIds, resolution);
 	if (ops.length === 0) {
 		return false;
 	}
-	editor.apply(ops, { origin: RESOLUTION_ORIGIN, undoGroup: true });
+	editor.apply(ops, {
+		origin: options?.origin ?? RESOLUTION_ORIGIN,
+		...(options?.undoGroupId
+			? { undoGroupId: options.undoGroupId }
+			: { undoGroup: true }),
+	});
 	return true;
 }
 

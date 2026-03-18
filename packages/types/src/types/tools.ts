@@ -50,11 +50,103 @@ export interface ModelAdapter {
     tools: ToolSchema[];
     signal?: AbortSignal;
     requestMode?: string;
+    operation?: ModelRequestedOperation;
   }): AsyncIterable<ModelStreamEvent>;
+}
+
+export type ModelOperationKind =
+  | "rewrite-selection"
+  | "rewrite-block"
+  | "continue-block"
+  | "document-transform";
+
+export type ModelOperationApplyPolicy =
+  | "selection-replace"
+  | "block-replace"
+  | "block-continue"
+  | "document-review";
+
+export interface ModelOperationSelectionTarget {
+  kind: "selection";
+  blockId: string | null;
+  anchor: { blockId: string; offset: number };
+  focus: { blockId: string; offset: number };
+  sourceText: string;
+}
+
+export interface ModelOperationScopedRangeTarget {
+  kind: "scoped-range";
+  blockId: string | null;
+  anchor: { blockId: string; offset: number };
+  focus: { blockId: string; offset: number };
+  sourceText: string;
+  blockIds: readonly string[];
+  contentFormat: "text" | "markdown";
+  scope: "block" | "paragraph" | "document" | "heading";
+}
+
+export interface ModelOperationBlockTarget {
+  kind: "block";
+  blockId: string;
+  blockType: string | null;
+  sourceText: string;
+  insertionOffset?: number;
+}
+
+export interface ModelOperationDocumentTarget {
+  kind: "document";
+  activeBlockId: string | null;
+  blockIds?: readonly string[];
+  placement?: "append-after-block" | "replace-empty-block" | "replace-blocks";
+  transform?: "write" | "rewrite" | "remove";
+}
+
+export interface ModelOperationProvenance {
+  documentVersion?: number | null;
+  blockRevision?: number | null;
+  selectionSignature?: string | null;
+  syncedGeneration?: number | null;
+}
+
+export interface ModelRequestedOperation {
+  kind: ModelOperationKind;
+  applyPolicy: ModelOperationApplyPolicy;
+  target:
+    | ModelOperationSelectionTarget
+    | ModelOperationScopedRangeTarget
+    | ModelOperationBlockTarget
+    | ModelOperationDocumentTarget;
+  promptIntent?: string;
+  provenance?: ModelOperationProvenance | null;
 }
 
 export type ModelStreamEvent =
   | { type: "text-delta"; delta: string }
+  | {
+      type: "replace-preview";
+      operation: ModelRequestedOperation;
+      text: string;
+    }
+  | {
+      type: "replace-final";
+      operation: ModelRequestedOperation;
+      text: string;
+    }
+  | {
+      type: "insert-preview";
+      operation: ModelRequestedOperation;
+      text: string;
+    }
+  | {
+      type: "insert-final";
+      operation: ModelRequestedOperation;
+      text: string;
+    }
+  | {
+      type: "conflict";
+      reason: string;
+      operation?: ModelRequestedOperation;
+    }
   | {
       type: "structured-data";
       contract?: "grid" | "app";

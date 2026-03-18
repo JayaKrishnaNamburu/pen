@@ -23,6 +23,12 @@ export {
 } from "./utils/databaseValues";
 export { generateId } from "./utils/generateId";
 export {
+	isScopedSelectionTarget,
+	renderSelectionTargetBlockText,
+	renderSelectionTargetText,
+	resolveSelectionTargetBlockIds,
+} from "./utils/operationSelectionTargets";
+export {
   getBlockSelectionRoleFromSchema,
   getBlockSelectionRoleFromType,
   getFlowCapabilityFromSchema,
@@ -48,6 +54,8 @@ export {
   AI_INLINE_HISTORY_SLOT,
   AI_REVIEW_CONTROLLER_SLOT,
   AI_AUTOCOMPLETE_CONTROLLER_SLOT,
+  AI_SUGGESTIONS_CONTROLLER_SLOT,
+  SEARCH_CONTROLLER_SLOT,
   MULTIPLAYER_CONTROLLER_SLOT,
   HISTORY_CONTROLLER_SLOT,
 	HISTORY_ORIGIN_TAG,

@@ -17,7 +17,7 @@ interface SerializedTableRow {
 	cells: SerializedTableCell[];
 }
 
-interface SerializedTableContent {
+export interface SerializedTableContent {
 	columnCount: number;
 	rowCount: number;
 	columns: readonly SerializedTableColumn[];
@@ -59,6 +59,7 @@ export type SerializedSelection =
 	| null;
 
 export interface SerializedEditorState {
+	generation: number;
 	blockCount: number;
 	selection: SerializedSelection;
 	fieldEditor: unknown;
@@ -74,6 +75,7 @@ export function parseSerializedEditorState(
 
 	const candidate = value as Partial<SerializedEditorState>;
 	if (
+		!isNonNegativeInteger(candidate.generation) ||
 		!isNonNegativeInteger(candidate.blockCount) ||
 		!Array.isArray(candidate.blocks) ||
 		!candidate.blocks.every((block) => isSerializedBlock(block)) ||

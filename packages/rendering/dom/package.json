@@ -1,0 +1,126 @@
+{
+  "name": "@pen/dom",
+  "version": "0.0.0",
+  "description": "DOM field-editor engine and helpers for Pen",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "homepage": "https://github.com/niceperson/pen#readme",
+  "bugs": {
+    "url": "https://github.com/niceperson/pen/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/niceperson/pen.git",
+    "directory": "packages/rendering/dom"
+  },
+  "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./field-editor": {
+      "import": {
+        "types": "./dist/field-editor/index.d.ts",
+        "default": "./dist/field-editor/index.mjs"
+      },
+      "require": {
+        "types": "./dist/field-editor/index.d.cts",
+        "default": "./dist/field-editor/index.cjs"
+      }
+    },
+    "./field-editor/*": {
+      "import": {
+        "types": "./dist/field-editor/*.d.ts",
+        "default": "./dist/field-editor/*.mjs"
+      },
+      "require": {
+        "types": "./dist/field-editor/*.d.cts",
+        "default": "./dist/field-editor/*.cjs"
+      }
+    },
+    "./constants/selectAll": {
+      "import": {
+        "types": "./dist/constants/selectAll.d.ts",
+        "default": "./dist/constants/selectAll.mjs"
+      },
+      "require": {
+        "types": "./dist/constants/selectAll.d.cts",
+        "default": "./dist/constants/selectAll.cjs"
+      }
+    },
+    "./types/paste": {
+      "import": {
+        "types": "./dist/types/paste.d.ts",
+        "default": "./dist/types/paste.mjs"
+      },
+      "require": {
+        "types": "./dist/types/paste.d.cts",
+        "default": "./dist/types/paste.cjs"
+      }
+    },
+    "./utils/dataAttributes": {
+      "import": {
+        "types": "./dist/utils/dataAttributes.d.ts",
+        "default": "./dist/utils/dataAttributes.mjs"
+      },
+      "require": {
+        "types": "./dist/utils/dataAttributes.d.cts",
+        "default": "./dist/utils/dataAttributes.cjs"
+      }
+    },
+    "./utils/inlineDecorations": {
+      "import": {
+        "types": "./dist/utils/inlineDecorations.d.ts",
+        "default": "./dist/utils/inlineDecorations.mjs"
+      },
+      "require": {
+        "types": "./dist/utils/inlineDecorations.d.cts",
+        "default": "./dist/utils/inlineDecorations.cjs"
+      }
+    },
+    "./utils/parentIdTree": {
+      "import": {
+        "types": "./dist/utils/parentIdTree.d.ts",
+        "default": "./dist/utils/parentIdTree.mjs"
+      },
+      "require": {
+        "types": "./dist/utils/parentIdTree.d.cts",
+        "default": "./dist/utils/parentIdTree.cjs"
+      }
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@pen/core": "workspace:*",
+    "@pen/shortcuts": "workspace:*",
+    "@pen/types": "workspace:*"
+  },
+  "devDependencies": {
+    "tsup": "^8.4.0",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.7"
+  }
+}

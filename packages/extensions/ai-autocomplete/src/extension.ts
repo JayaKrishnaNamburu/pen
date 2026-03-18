@@ -64,7 +64,7 @@ const AUTOCOMPLETE_DEBUG_ENABLED =
 	}).process?.env?.PEN_AUTOCOMPLETE_DEBUG === "true";
 const AUTOCOMPLETE_REQUEST_MODE = "inline-autocomplete";
 const PROSE_BLOCK_TYPES = new Set(["paragraph", "heading", "blockquote", "callout"]);
-const MIN_PROSE_SINGLE_WORD_COMPLETION_CHARS = 8;
+const MIN_PROSE_SINGLE_WORD_COMPLETION_CHARS = 3;
 
 class AutocompleteControllerImpl implements AutocompleteController {
 	private readonly _editor: Editor;
@@ -1466,6 +1466,8 @@ function shouldRejectLowQualityCompletion(
 		trimmed.length < MIN_PROSE_SINGLE_WORD_COMPLETION_CHARS &&
 		!/[.!?]$/.test(trimmed)
 	) {
+		// Single-character or two-character prose guesses tend to feel like flicker.
+		// Allow short but still meaningful continuations such as "cat", "the", or "and".
 		return true;
 	}
 	return false;

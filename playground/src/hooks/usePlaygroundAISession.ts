@@ -30,6 +30,9 @@ export function usePlaygroundAISession(editor: Editor | null): void {
 			editor.onDocumentCommit((event) => {
 				scheduleSync();
 			}),
+			editor.onSelectionChange(() => {
+				scheduleSync();
+			}),
 		];
 
 		return () => {

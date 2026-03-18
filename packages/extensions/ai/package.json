@@ -2,26 +2,39 @@
   "name": "@pen/ai",
   "version": "0.0.0",
   "description": "AI extension, suggest mode, and track changes for Pen",
-  "license": "LICENSE.md",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "homepage": "https://github.com/niceperson/pen#readme",
+  "bugs": {
+    "url": "https://github.com/niceperson/pen/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/niceperson/pen.git",
+    "directory": "packages/extensions/ai"
+  },
   "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
   "exports": {
     ".": {
       "import": {
-        "types": "./src/index.ts",
+        "types": "./dist/index.d.ts",
         "default": "./dist/index.mjs"
       },
       "require": {
-        "types": "./src/index.ts",
+        "types": "./dist/index.d.cts",
         "default": "./dist/index.cjs"
       }
     }
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
-  "types": "./src/index.ts",
+  "types": "./dist/index.d.ts",
   "files": [
     "dist",
-    "src"
+    "README.md",
+    "LICENSE.md"
   ],
   "sideEffects": false,
   "scripts": {

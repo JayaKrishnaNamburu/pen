@@ -5,6 +5,7 @@ describe("parseSerializedEditorState", () => {
 	it("accepts a structurally valid editor state payload", () => {
 		expect(
 			parseSerializedEditorState({
+				generation: 2,
 				blockCount: 1,
 				selection: {
 					type: "text",
@@ -57,6 +58,7 @@ describe("parseSerializedEditorState", () => {
 	it("rejects blocks with malformed recursive children", () => {
 		expect(
 			parseSerializedEditorState({
+				generation: 1,
 				blockCount: 1,
 				selection: null,
 				fieldEditor: null,
@@ -76,6 +78,7 @@ describe("parseSerializedEditorState", () => {
 	it("rejects malformed table payloads", () => {
 		expect(
 			parseSerializedEditorState({
+				generation: 1,
 				blockCount: 1,
 				selection: null,
 				fieldEditor: null,
@@ -106,6 +109,7 @@ describe("parseSerializedEditorState", () => {
 	it("rejects malformed selections", () => {
 		expect(
 			parseSerializedEditorState({
+				generation: 1,
 				blockCount: 1,
 				selection: {
 					type: "cell",

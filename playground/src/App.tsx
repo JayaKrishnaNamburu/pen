@@ -5,6 +5,11 @@ import {
 } from "@pen/react";
 import { aiExtension } from "@pen/ai";
 import {
+	type AISuggestionsExtensionConfig,
+	aiSuggestionsExtension,
+	getAISuggestionsController,
+} from "@pen/ai-suggestions";
+import {
 	autocompleteExtension,
 	getAutocompleteController,
 	type AutocompleteAcceptanceStrategy,
@@ -12,6 +17,7 @@ import {
 } from "@pen/ai-autocomplete";
 import { createEditor } from "@pen/core";
 import { getMultiplayerController } from "@pen/multiplayer";
+import { searchExtension } from "@pen/search";
 import type { Editor, InteractionModel } from "@pen/types";
 import { inputRulesExtension } from "@pen/input-rules";
 import { defaultPreset } from "@pen/preset-default";
@@ -34,6 +40,8 @@ import {
 	summarizeAutocompleteState,
 } from "./utils/autocompleteDebug";
 import { createPlaygroundAIModel } from "./utils/playgroundAI";
+import { createPlaygroundAISuggestionsAnalyzer } from "./utils/playgroundAISuggestions";
+import { installPlaygroundAISuggestionsDebug } from "./utils/playgroundAISuggestionsDebug";
 import {
 	createPlaygroundCollaborationExtension,
 	getPlaygroundCollaborationConfig,
@@ -41,6 +49,7 @@ import {
 	getPlaygroundCollaborationUserName,
 	normalizePlaygroundCollaborationDocument,
 	savePlaygroundCollaborationUserName,
+	startFreshPlaygroundCollaborationRoom,
 } from "./utils/playgroundCollaboration";
 import { canOpenLinkEditor } from "./utils/linkMarks";
 
@@ -70,6 +79,30 @@ type PlaygroundAutocompleteSettings = {
 	blockPolicy: AutocompleteBlockPolicy;
 };
 
+type PlaygroundAISuggestionsSettings = Pick<
+	AISuggestionsExtensionConfig,
+	| "enabled"
+	| "debounceMs"
+	| "minChangedChars"
+	| "minStableMs"
+	| "cooldownMs"
+	| "maxScopeChars"
+	| "maxSuggestionsPerScope"
+	| "minConfidence"
+>;
+
+const DEFAULT_PLAYGROUND_AI_SUGGESTIONS_SETTINGS: PlaygroundAISuggestionsSettings =
+	{
+		enabled: true,
+		debounceMs: 1000,
+		minChangedChars: 10,
+		minStableMs: 800,
+		cooldownMs: 6500,
+		maxScopeChars: 500,
+		maxSuggestionsPerScope: 3,
+		minConfidence: 0.8,
+	};
+
 export function App() {
 	const editorRef = useRef<Editor | null>(null);
 	const linkToggleRef = useRef<(() => void) | null>(null);
@@ -84,6 +117,10 @@ export function App() {
 			acceptanceStrategy: "full",
 			blockPolicy: DEFAULT_PLAYGROUND_AUTOCOMPLETE_BLOCK_POLICY,
 		});
+	const [aiSuggestionsSettings, setAISuggestionsSettings] =
+		useState<PlaygroundAISuggestionsSettings>(
+			DEFAULT_PLAYGROUND_AI_SUGGESTIONS_SETTINGS,
+		);
 	const collaborationReady = collaborationName.trim().length > 0;
 	const collaboration = collaborationReady
 		? getPlaygroundCollaborationConfig()
@@ -93,6 +130,7 @@ export function App() {
 		editorRef,
 		linkToggleRef,
 		autocompleteSettings,
+		aiSuggestionsSettings,
 		collaborationReady,
 	);
 	usePlaygroundAISession(editor);
@@ -152,9 +190,64 @@ export function App() {
 			},
 		}));
 	};
+	const handleAISuggestionsEnabledChange = (enabled: boolean) => {
+		setAISuggestionsSettings((current) => ({
+			...current,
+			enabled,
+		}));
+	};
+	const handleAISuggestionsDebounceChange = (debounceMs: number) => {
+		setAISuggestionsSettings((current) => ({
+			...current,
+			debounceMs,
+		}));
+	};
+	const handleAISuggestionsMinChangedCharsChange = (
+		minChangedChars: number,
+	) => {
+		setAISuggestionsSettings((current) => ({
+			...current,
+			minChangedChars,
+		}));
+	};
+	const handleAISuggestionsMinStableMsChange = (minStableMs: number) => {
+		setAISuggestionsSettings((current) => ({
+			...current,
+			minStableMs,
+		}));
+	};
+	const handleAISuggestionsCooldownMsChange = (cooldownMs: number) => {
+		setAISuggestionsSettings((current) => ({
+			...current,
+			cooldownMs,
+		}));
+	};
+	const handleAISuggestionsMaxScopeCharsChange = (maxScopeChars: number) => {
+		setAISuggestionsSettings((current) => ({
+			...current,
+			maxScopeChars,
+		}));
+	};
+	const handleAISuggestionsMaxSuggestionsPerScopeChange = (
+		maxSuggestionsPerScope: number,
+	) => {
+		setAISuggestionsSettings((current) => ({
+			...current,
+			maxSuggestionsPerScope,
+		}));
+	};
+	const handleAISuggestionsMinConfidenceChange = (minConfidence: number) => {
+		setAISuggestionsSettings((current) => ({
+			...current,
+			minConfidence,
+		}));
+	};
 	const handleCollaborationNameSubmit = (name: string) => {
 		const nextUser = savePlaygroundCollaborationUserName(name);
 		setCollaborationName(nextUser.name);
+	};
+	const handleStartFreshRoom = () => {
+		startFreshPlaygroundCollaborationRoom();
 	};
 
 	if (!collaborationReady) {
@@ -194,6 +287,7 @@ export function App() {
 							collaboration={activeCollaboration}
 							interactionModel={interactionModel}
 							onToggleInteractionModel={handleToggleInteractionModel}
+							onStartFreshRoom={handleStartFreshRoom}
 						/>
 						<PlaygroundEditorViewport
 							editor={activeEditor}
@@ -215,6 +309,7 @@ export function App() {
 						isOpen={isInspectorOpen}
 						onToggle={handleToggleInspector}
 						autocompleteSettings={autocompleteSettings}
+						aiSuggestionsSettings={aiSuggestionsSettings}
 						customCaretEnabled={customCaretEnabled}
 						onCustomCaretEnabledChange={handleCustomCaretEnabledChange}
 						onAutocompleteEnabledChange={
@@ -230,6 +325,26 @@ export function App() {
 							handleAutocompleteAcceptanceStrategyChange
 						}
 						onAutocompleteBlockPolicyChange={handleAutocompleteBlockPolicyChange}
+						onAISuggestionsEnabledChange={handleAISuggestionsEnabledChange}
+						onAISuggestionsDebounceChange={handleAISuggestionsDebounceChange}
+						onAISuggestionsMinChangedCharsChange={
+							handleAISuggestionsMinChangedCharsChange
+						}
+						onAISuggestionsMinStableMsChange={
+							handleAISuggestionsMinStableMsChange
+						}
+						onAISuggestionsCooldownMsChange={
+							handleAISuggestionsCooldownMsChange
+						}
+						onAISuggestionsMaxScopeCharsChange={
+							handleAISuggestionsMaxScopeCharsChange
+						}
+						onAISuggestionsMaxSuggestionsPerScopeChange={
+							handleAISuggestionsMaxSuggestionsPerScopeChange
+						}
+						onAISuggestionsMinConfidenceChange={
+							handleAISuggestionsMinConfidenceChange
+						}
 					/>
 				</div>
 			</Pen.AI.Root>
@@ -255,6 +370,7 @@ function usePlaygroundEditor(
 	editorRef: MutableRefObject<Editor | null>,
 	linkToggleRef: MutableRefObject<(() => void) | null>,
 	autocompleteSettings: PlaygroundAutocompleteSettings,
+	aiSuggestionsSettings: PlaygroundAISuggestionsSettings,
 	collaborationReady: boolean,
 ): Editor | null {
 	const [editor, setEditor] = useState<Editor | null>(null);
@@ -268,6 +384,7 @@ function usePlaygroundEditor(
 			linkToggleRef,
 			editorRef,
 			autocompleteSettings,
+			aiSuggestionsSettings,
 		);
 		editorRef.current = nextEditor;
 		setEditor(nextEditor);
@@ -307,6 +424,33 @@ function usePlaygroundEditor(
 		});
 	}, [autocompleteSettings, editor]);
 
+	useEffect(() => {
+		if (!editor) {
+			return;
+		}
+		const controller = getAISuggestionsController(editor);
+		if (!controller) {
+			return;
+		}
+		controller.setEnabled(aiSuggestionsSettings.enabled ?? true);
+		controller.updateRuntimeSettings({
+			debounceMs: aiSuggestionsSettings.debounceMs,
+			minChangedChars: aiSuggestionsSettings.minChangedChars,
+			minStableMs: aiSuggestionsSettings.minStableMs,
+			cooldownMs: aiSuggestionsSettings.cooldownMs,
+			maxScopeChars: aiSuggestionsSettings.maxScopeChars,
+			maxSuggestionsPerScope: aiSuggestionsSettings.maxSuggestionsPerScope,
+			minConfidence: aiSuggestionsSettings.minConfidence,
+		});
+	}, [aiSuggestionsSettings, editor]);
+
+	useEffect(() => {
+		if (!editor) {
+			return;
+		}
+		return installPlaygroundAISuggestionsDebug(editor);
+	}, [editor]);
+
 	return editor;
 }
 
@@ -314,6 +458,7 @@ function createPlaygroundEditor(
 	linkToggleRef: MutableRefObject<(() => void) | null>,
 	editorRef: MutableRefObject<Editor | null>,
 	autocompleteSettings: PlaygroundAutocompleteSettings,
+	aiSuggestionsSettings: PlaygroundAISuggestionsSettings,
 ): Editor {
 	const model = createPlaygroundAIModel(() => editorRef.current);
 	const collaborationExtension = createPlaygroundCollaborationExtension();
@@ -321,6 +466,18 @@ function createPlaygroundEditor(
 		aiExtension({
 			model,
 			contentFormat: PLAYGROUND_AI_CONTENT_FORMAT,
+		}),
+		aiSuggestionsExtension({
+			mode: "balanced",
+			analyzer: createPlaygroundAISuggestionsAnalyzer(),
+			enabled: aiSuggestionsSettings.enabled,
+			debounceMs: aiSuggestionsSettings.debounceMs,
+			minChangedChars: aiSuggestionsSettings.minChangedChars,
+			minStableMs: aiSuggestionsSettings.minStableMs,
+			cooldownMs: aiSuggestionsSettings.cooldownMs,
+			maxScopeChars: aiSuggestionsSettings.maxScopeChars,
+			maxSuggestionsPerScope: aiSuggestionsSettings.maxSuggestionsPerScope,
+			minConfidence: aiSuggestionsSettings.minConfidence,
 		}),
 		autocompleteExtension({
 			model,
@@ -331,6 +488,7 @@ function createPlaygroundEditor(
 			staleAfterMs: PLAYGROUND_AI_AUTOCOMPLETE_STALE_AFTER_MS,
 			blockPolicy: autocompleteSettings.blockPolicy,
 		}),
+		searchExtension(),
 		inputRulesExtension(),
 		databaseExtension(),
 		collaborationExtension,

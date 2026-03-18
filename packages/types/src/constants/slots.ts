@@ -12,6 +12,8 @@ export const AI_INLINE_COMPLETION_SLOT = INLINE_COMPLETION_SLOT;
 export const AI_INLINE_HISTORY_SLOT = "ai:inline-history";
 export const AI_REVIEW_CONTROLLER_SLOT = "ai:review";
 export const AI_AUTOCOMPLETE_CONTROLLER_SLOT = "ai-autocomplete:controller";
+export const AI_SUGGESTIONS_CONTROLLER_SLOT = "ai-suggestions:controller";
+export const SEARCH_CONTROLLER_SLOT = "search:controller";
 export const MULTIPLAYER_CONTROLLER_SLOT = "multiplayer:controller";
 export const HISTORY_CONTROLLER_SLOT = "history:controller";
 

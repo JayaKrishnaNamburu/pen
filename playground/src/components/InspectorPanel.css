@@ -137,6 +137,43 @@
   text-align: right;
 }
 
+.inspector-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.inspector-action-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 30px;
+  padding: 0 10px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease;
+}
+
+.inspector-action-button:hover:not(:disabled) {
+  background: var(--bg);
+  border-color: var(--border-focus);
+}
+
+.inspector-action-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .inspector-provider-list {
   display: flex;
   flex-direction: column;

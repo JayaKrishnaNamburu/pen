@@ -22,8 +22,7 @@ import {
 } from "../../context/editorContext";
 import { FieldEditorContext } from "../../context/fieldEditorContext";
 import { FIELD_EDITOR_SLOT_KEY } from "../../constants/fieldEditor";
-import type { FieldEditorSession } from "../../field-editor/controller";
-import { FieldEditorImpl } from "../../field-editor/fieldEditorImpl";
+import { FieldEditorImpl, type FieldEditorSession } from "@pen/dom";
 import { useDocumentEmptyState } from "../../hooks/useDocumentEmptyState";
 import { domSelectionToEditor } from "../../field-editor/selectionBridge";
 import {

@@ -628,7 +628,7 @@ function ContextualPromptSelectionOverlay(
 				width: `${segment.width}px`,
 				height: `${segment.height}px`,
 				pointerEvents: "none",
-				background: "color-mix(in srgb, #2563eb 26%, transparent)",
+				background: "color-mix(in srgb, #2563eb 12%, transparent)",
 				boxShadow:
 					"inset 0 0 0 1px rgba(96, 165, 250, 0.72), inset 0 -1px 0 rgba(147, 197, 253, 0.92)",
 				borderRadius: "4px",
@@ -674,6 +674,19 @@ export function AIContextualPromptComposer(
 	const hasSubmittedPrompt = sessionTurns.length > 0;
 	const latestTurnId = sessionTurns[sessionTurns.length - 1]?.id ?? null;
 
+	const focusComposerInput = React.useCallback(() => {
+		const input = inputRef.current;
+		if (!input) {
+			return false;
+		}
+		if (input.ownerDocument.activeElement !== input) {
+			input.focus({ preventScroll: true });
+		}
+		const endOffset = input.value.length;
+		input.setSelectionRange(endOffset, endOffset);
+		return input.ownerDocument.activeElement === input;
+	}, []);
+
 	React.useLayoutEffect(() => {
 		if (
 			!autoFocus ||
@@ -686,17 +699,10 @@ export function AIContextualPromptComposer(
 		let remainingAttempts = 3;
 
 		const focusInput = () => {
-			const input = inputRef.current;
-			if (!input) {
+			if (focusComposerInput()) {
 				return;
 			}
-			if (input.ownerDocument.activeElement === input) {
-				return;
-			}
-			input.focus({ preventScroll: true });
-			const endOffset = input.value.length;
-			input.setSelectionRange(endOffset, endOffset);
-			if (input.ownerDocument.activeElement !== input && remainingAttempts > 0) {
+			if (remainingAttempts > 0) {
 				remainingAttempts -= 1;
 				frameId = window.requestAnimationFrame(focusInput);
 			}
@@ -708,10 +714,12 @@ export function AIContextualPromptComposer(
 		};
 	}, [
 		autoFocus,
+		focusComposerInput,
+		isRunningCurrentSession,
+		latestTurnId,
 		session?.contextualPrompt?.composer.openReason,
 		session?.contextualPrompt?.composer.isOpen,
 		session?.id,
-		sessionTurns.length,
 	]);
 
 	if (!session) {
@@ -735,7 +743,14 @@ export function AIContextualPromptComposer(
 		if (!nextPrompt) {
 			return;
 		}
-		void actions.runSessionPrompt(sessionId, nextPrompt, { target: "selection" });
+		focusComposerInput();
+		void actions
+			.runSessionPrompt(sessionId, nextPrompt, { target: "selection" })
+			.finally(() => {
+				window.requestAnimationFrame(() => {
+					focusComposerInput();
+				});
+			});
 	}
 
 	function handleAcceptTurn(turnId: string) {
@@ -850,6 +865,7 @@ export function AIContextualPromptComposer(
 					: liveRange?.commonAncestorContainer?.parentElement ?? null;
 			if (
 				nextTargetState === "pinned" &&
+				!hasSubmittedPrompt &&
 				liveSelection &&
 				!liveSelection.isCollapsed &&
 				liveCommonAncestor &&
@@ -872,6 +888,7 @@ export function AIContextualPromptComposer(
 		};
 	}, [
 		actions,
+		hasSubmittedPrompt,
 		selectionSnapshot,
 		session,
 		session.contextualPrompt?.composer.isOpen,

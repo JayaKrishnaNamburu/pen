@@ -1,6 +1,6 @@
 import { anthropic } from "@ai-sdk/anthropic";
 import { docs as collaborationDocs, setupWSConnection } from "@y/websocket-server/utils";
-import { jsonSchema, Output, stepCountIs, streamText, tool } from "ai";
+import { generateText, jsonSchema, Output, stepCountIs, streamText, tool } from "ai";
 import { config as loadEnv } from "dotenv";
 import { randomUUID } from "node:crypto";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
@@ -10,12 +10,18 @@ import { WebSocketServer, type WebSocket } from "ws";
 import { createEditor } from "@pen/core";
 import {
 	buildPlaygroundRequestPlan as buildSharedPlaygroundRequestPlan,
+	buildExplicitLocalOperationPrompt,
 	buildPromptContext as buildSharedPromptContext,
 	buildStructuredIntentModelPrompt,
 	createPlaygroundRequestMetricsSeed,
 	getStructuredIntentOutputSchema,
 	parseStructuredIntentRequestPrompt,
 } from "@pen/ai";
+import {
+	AI_SUGGESTIONS_REQUEST_MODE,
+	AI_SUGGESTIONS_SYSTEM_PROMPT,
+	parseSuggestionResponse,
+} from "@pen/ai-suggestions";
 import {
 	AUTOCOMPLETE_SYSTEM_PROMPT,
 	getAutocompleteController,
@@ -31,7 +37,13 @@ import { defaultPreset } from "@pen/preset-default";
 import { createDefaultSchema } from "@pen/schema-default";
 import type {
 	Editor,
+	ModelRequestedOperation,
 	ToolRuntime,
+} from "@pen/types";
+import {
+	isScopedSelectionTarget,
+	renderSelectionTargetText,
+	resolveSelectionTargetBlockIds,
 } from "@pen/types";
 import {
 	parseSerializedEditorState,
@@ -39,6 +51,12 @@ import {
 	type SerializedEditorState,
 	type SerializedSelection,
 } from "./utils/sessionSyncValidation";
+import { buildTableSnapshotOps } from "./utils/tableSnapshot";
+import {
+	LOCAL_OPERATION_PAYLOAD_END,
+	LOCAL_OPERATION_PAYLOAD_START,
+	createLocalOperationPayloadCollector,
+} from "./utils/localOperationPayload";
 
 loadEnv({
 	path: fileURLToPath(new URL("../.env.local", import.meta.url)),
@@ -61,9 +79,11 @@ const PLAYGROUND_SELECTION_FAST_PATH_SYSTEM_PROMPT =
 const PLAYGROUND_AUTOCOMPLETE_OUTPUT_TOKEN_CAP = 128;
 const PLAYGROUND_DOCUMENT_SYSTEM_PROMPT =
 	"You are the local AI assistant for the Pen playground. " +
-	"Use the inline document context first, and call tools only when you need more precision or broader context. " +
-	"When producing document text, return only the text to insert into the editor. " +
-	'Do not add assistant framing such as "Here is", "Here\'s", or "I wrote".';
+	"Return only the document content to insert into the editor, wrapped in <pen_local_operation>...</pen_local_operation> tags. " +
+	"The resolved operation envelope in the prompt is authoritative for scope, placement, and replace-vs-remove behavior. " +
+	"If the operation requests removal, return an empty payload wrapper with no refusal text. " +
+	"Do not add commentary, analysis, or assistant framing outside the tags. " +
+	"Use markdown for headings and structure within the payload wrapper.";
 const PLAYGROUND_STRUCTURED_PLANNER_SYSTEM_PROMPT =
 	"You are the structured intent generator for the Pen playground. " +
 	"Return exactly one valid Pen structured intent object as JSON. " +
@@ -80,6 +100,10 @@ const PLAYGROUND_SELECTION_EXPAND_OUTPUT_TOKENS = 640;
 const PLAYGROUND_SELECTION_SUMMARIZE_OUTPUT_TOKENS = 160;
 const PLAYGROUND_SELECTION_TRANSLATE_OUTPUT_TOKENS = 480;
 const PLAYGROUND_SELECTION_STOP_SENTINEL = "<pen:end>";
+const PLAYGROUND_LOCAL_REWRITE_SYSTEM_PROMPT =
+	"You are a precise local editor operation. Return only the final replacement content for the requested target inside the required payload wrapper. Do not include analysis, narration, tool chatter, labels, or quotes outside the wrapper.";
+const PLAYGROUND_LOCAL_CONTINUE_SYSTEM_PROMPT =
+	"You are a precise local editor operation. Return only the continuation text that should be inserted at the requested cursor position inside the required payload wrapper. Do not repeat the existing content, and do not include analysis, narration, tool chatter, labels, or quotes outside the wrapper.";
 const PLAYGROUND_SKILLS_ROUTE = "/api/skills";
 const PLAYGROUND_TOOL_ROUTE_PREFIX = "/api/tools/";
 const PLAYGROUND_DIRECT_TOOL_NAMES = new Set([
@@ -94,6 +118,10 @@ interface AIRequestBody {
 	sessionId?: unknown;
 	contextFormat?: unknown;
 	requestMode?: unknown;
+	operation?: unknown;
+	expectedSyncRevision?: unknown;
+	expectedSyncedGeneration?: unknown;
+	suggestionScope?: unknown;
 }
 
 interface ToolExecuteBody {
@@ -107,14 +135,19 @@ interface SessionCreateResponse {
 interface SessionSyncBody {
 	sessionId?: unknown;
 	editorState?: unknown;
+	revision?: unknown;
+	generation?: unknown;
 }
 
 interface PlaygroundSession {
 	id: string;
 	editor: Editor;
+	clientToServerBlockIds: Map<string, string>;
 	createdAt: number;
 	lastTouchedAt: number;
 	lastSyncedAt: number | null;
+	syncedRevision: number | null;
+	syncedGeneration: number | null;
 	activeRequestCount: number;
 }
 
@@ -139,6 +172,13 @@ interface PromptContextEnvelope {
 	json: string;
 	jsonBytes: number;
 	estimatedJsonTokens: number;
+}
+
+interface AISuggestionRequestScope {
+	blockType: string | null;
+	targetText: string;
+	contextBefore: string;
+	contextAfter: string;
 }
 
 type PlaygroundRequestMode =
@@ -166,6 +206,29 @@ interface PlaygroundRequestPlan {
 	promptContext: PromptContextEnvelope | null;
 	selectedTextLength: number | null;
 }
+
+const buildTypedSharedPlaygroundRequestPlan = buildSharedPlaygroundRequestPlan as (
+	editor: Editor,
+	prompt: string,
+	config: {
+		documentModel: string;
+		selectionModel: string;
+		documentSystemPrompt: string;
+		structuredPlannerSystemPrompt: string;
+		selectionFastPathSystemPrompt: string;
+		autocompleteSystemPrompt: string;
+		selectionSourceCharLimit: number;
+		selectionStopSentinel: string;
+		selectionOutputTokenCap: number;
+		autocompleteOutputTokenCap: number;
+		selectionDefaultOutputTokens: number;
+		selectionExpandOutputTokens: number;
+		selectionSummarizeOutputTokens: number;
+		selectionTranslateOutputTokens: number;
+	},
+	requestedMode?: PlaygroundRequestMode | null,
+	requestedOperation?: ModelRequestedOperation | null,
+) => PlaygroundRequestPlan;
 
 const sessions = new Map<string, PlaygroundSession>();
 const serverOrigin = `http://${PLAYGROUND_SERVER_HOST}:${PLAYGROUND_SERVER_PORT}`;
@@ -249,10 +312,10 @@ server.listen(PLAYGROUND_SERVER_PORT, PLAYGROUND_SERVER_HOST, () => {
 collaborationWebSocketServer.on(
 	"connection",
 	(socket: WebSocket, request: IncomingMessage) => {
-	setupWSConnection(socket, request, {
-		docName: resolveCollaborationDocName(request),
-		gc: true,
-	});
+		setupWSConnection(socket, request, {
+			docName: resolveCollaborationDocName(request),
+			gc: true,
+		});
 	},
 );
 
@@ -278,6 +341,18 @@ async function handleSessionSync(
 	const sessionId =
 		typeof body.sessionId === "string" ? body.sessionId : null;
 	const editorState = parseSerializedEditorState(body.editorState);
+	const revision =
+		typeof body.revision === "number" &&
+			Number.isInteger(body.revision) &&
+			body.revision >= 0
+			? body.revision
+			: null;
+	const generation =
+		typeof body.generation === "number" &&
+			Number.isInteger(body.generation) &&
+			body.generation >= 0
+			? body.generation
+			: null;
 
 	if (!sessionId) {
 		logPlaygroundEvent("session:sync-rejected", {
@@ -293,6 +368,12 @@ async function handleSessionSync(
 			reason: "missing-editor-state",
 		});
 		sendJson(res, 400, { error: "Expected a serialized editor state payload." });
+		return;
+	}
+	if (revision == null || generation == null) {
+		sendJson(res, 400, {
+			error: "Expected synchronized revision and generation metadata.",
+		});
 		return;
 	}
 
@@ -319,11 +400,15 @@ async function handleSessionSync(
 	}
 
 	const nextEditor = createPlaygroundEditor();
-	hydrateEditor(nextEditor, editorState);
+	const clientToServerBlockIds = hydrateEditor(nextEditor, editorState);
+	const syncedGeneration = nextEditor.documentState.generation;
 
 	const previousEditor = session.editor;
 	session.editor = nextEditor;
+	session.clientToServerBlockIds = clientToServerBlockIds;
 	session.lastSyncedAt = Date.now();
+	session.syncedRevision = revision;
+	session.syncedGeneration = syncedGeneration;
 	touchSession(session);
 	previousEditor.destroy();
 	logPlaygroundEvent("session:sync-complete", {
@@ -334,6 +419,8 @@ async function handleSessionSync(
 	sendJson(res, 200, {
 		sessionId: session.id,
 		lastSyncedAt: session.lastSyncedAt,
+		revision: session.syncedRevision,
+		generation: session.syncedGeneration,
 	});
 }
 
@@ -357,13 +444,36 @@ async function handleAIRequest(
 		typeof body.prompt === "string" ? body.prompt.trim() : "";
 	const sessionId =
 		typeof body.sessionId === "string" ? body.sessionId : null;
+	const isAISuggestionsRequest =
+		body.requestMode === AI_SUGGESTIONS_REQUEST_MODE;
+	const suggestionScope = parseAISuggestionRequestScope(body.suggestionScope);
 	const requestedMode = parsePlaygroundRequestMode(body.requestMode);
+	const requestedOperation = parseRequestedOperation(body.operation);
+	const expectedSyncRevision =
+		typeof body.expectedSyncRevision === "number" &&
+			Number.isInteger(body.expectedSyncRevision) &&
+			body.expectedSyncRevision >= 0
+			? body.expectedSyncRevision
+			: null;
+	const expectedSyncedGeneration =
+		typeof body.expectedSyncedGeneration === "number" &&
+			Number.isInteger(body.expectedSyncedGeneration) &&
+			body.expectedSyncedGeneration >= 0
+			? body.expectedSyncedGeneration
+			: null;
 
-	if (!prompt) {
+	if (!isAISuggestionsRequest && !prompt) {
 		logPlaygroundEvent("ai:request-rejected", {
 			reason: "empty-prompt",
 		});
 		sendJson(res, 400, { error: "Expected a non-empty prompt." });
+		return;
+	}
+
+	if (isAISuggestionsRequest && !suggestionScope) {
+		sendJson(res, 400, {
+			error: "Expected a valid AI suggestions scope payload.",
+		});
 		return;
 	}
 
@@ -396,33 +506,109 @@ async function handleAIRequest(
 		});
 		return;
 	}
+	if (
+		expectedSyncRevision != null &&
+		session.syncedRevision != null &&
+		expectedSyncRevision !== session.syncedRevision
+	) {
+		sendJson(res, 409, {
+			error: "The playground AI session is out of sync with the editor state.",
+		});
+		return;
+	}
+	if (
+		expectedSyncedGeneration != null &&
+		session.syncedGeneration != null &&
+		expectedSyncedGeneration !== session.syncedGeneration
+	) {
+		sendJson(res, 409, {
+			error: "The playground AI session is out of sync with the editor document.",
+		});
+		return;
+	}
 
 	session.activeRequestCount += 1;
 	touchSession(session);
 	const abortController = new AbortController();
 	const requestId = randomUUID();
+	const resolvedOperation =
+		requestedOperation != null
+			? remapRequestedOperationBlockIds(
+				requestedOperation,
+				session.clientToServerBlockIds,
+			)
+			: null;
 	const requestPlan = buildPlaygroundRequestPlan(
 		session.editor,
 		prompt,
-		requestedMode,
+		resolveOperationRequestMode(resolvedOperation, requestedMode),
+		resolvedOperation,
 	);
-	const structuredIntentRequest = parseStructuredIntentRequestPrompt(prompt);
+	const structuredIntentRequest = resolvedOperation
+		? null
+		: parseStructuredIntentRequestPrompt(prompt);
 	const metrics: PlaygroundRequestMetrics = {
 		requestId,
 		sessionId,
 		startedAt: performance.now(),
 		...createPlaygroundRequestMetricsSeed(requestPlan),
 	};
-
-	req.on("close", () => {
+	const abortActiveRequest = () => {
+		if (abortController.signal.aborted || res.writableEnded) {
+			return;
+		}
 		abortController.abort();
 		logPlaygroundEvent("ai:request-abort-signal", {
 			requestId,
 			sessionId,
 		});
-	});
+	};
+
+	req.on("aborted", abortActiveRequest);
+	req.on("close", abortActiveRequest);
+	res.on("close", abortActiveRequest);
 
 	try {
+		if (isAISuggestionsRequest && suggestionScope) {
+			const result = await generateText({
+				model: createPlaygroundLanguageModel(PLAYGROUND_SELECTION_MODEL),
+				system: AI_SUGGESTIONS_SYSTEM_PROMPT,
+				prompt: JSON.stringify(
+					{
+						language: "en",
+						blockType: suggestionScope.blockType,
+						targetText: suggestionScope.targetText,
+						contextBefore: suggestionScope.contextBefore,
+						contextAfter: suggestionScope.contextAfter,
+						rules: {
+							maxSuggestions: 3,
+							allowedKinds: [
+								"spelling",
+								"grammar",
+								"rephrase",
+								"clarity",
+							],
+						},
+					},
+					null,
+					2,
+				),
+				temperature: 0,
+				abortSignal: abortController.signal,
+			});
+			sendJson(res, 200, {
+				suggestions: parseSuggestionResponse(result.text),
+				usage: {
+					promptTokens: resolveUsageTokenValue(result.usage, "inputTokens"),
+					completionTokens: resolveUsageTokenValue(
+						result.usage,
+						"outputTokens",
+					),
+				},
+			});
+			return;
+		}
+
 		logPlaygroundEvent("ai:request-start", {
 			requestId,
 			sessionId,
@@ -454,7 +640,39 @@ async function handleAIRequest(
 		});
 		writeJsonLine(res, { type: "phase", phase: "thinking" });
 
-		if (structuredIntentRequest) {
+		const isLocalOperation =
+			resolvedOperation != null &&
+			(resolvedOperation.kind === "rewrite-selection" ||
+				resolvedOperation.kind === "rewrite-block" ||
+				resolvedOperation.kind === "continue-block" ||
+				(
+					resolvedOperation.kind === "document-transform" &&
+					resolvedOperation.target.kind === "document" &&
+					(
+						resolvedOperation.target.transform === "rewrite" ||
+						resolvedOperation.target.transform === "remove" ||
+						resolvedOperation.target.placement === "replace-blocks"
+					)
+				));
+
+		if (isLocalOperation) {
+			await streamLocalOperationResponse({
+				res,
+				editor: session.editor,
+				prompt,
+				operation: resolvedOperation,
+				requestedMode: body.requestMode === "bottom-chat" ||
+					body.requestMode === "inline-edit" ||
+					body.requestMode === "structured-planner"
+					? body.requestMode
+					: requestedMode,
+				requestPlan,
+				abortSignal: abortController.signal,
+				metrics,
+				requestId,
+				sessionId,
+			});
+		} else if (structuredIntentRequest) {
 			const structuredChunkTypePrefix =
 				structuredIntentRequest.targetKind === "table" ? "grid" : "app";
 			const result = streamText({
@@ -516,6 +734,11 @@ async function handleAIRequest(
 				abortSignal: abortController.signal,
 			});
 
+			const shouldStreamRawText = requestPlan.mode === "inline-autocomplete";
+			const documentPayloadCollector = shouldStreamRawText
+				? null
+				: createLocalOperationPayloadCollector();
+			let lastSentLength = 0;
 			for await (const part of result.fullStream) {
 				if (part.type === "tool-call") {
 					if (metrics.firstToolStartMs == null) {
@@ -541,16 +764,40 @@ async function handleAIRequest(
 							elapsedMs: roundMs(metrics.firstTextDeltaServerMs),
 						});
 					}
-					writeJsonLine(res, { type: "phase", phase: "writing" });
-					writeJsonLine(res, {
-						type: "text-delta",
-						delta: part.text,
-					});
+					if (shouldStreamRawText) {
+						writeJsonLine(res, { type: "phase", phase: "writing" });
+						writeJsonLine(res, {
+							type: "text-delta",
+							delta: part.text,
+						});
+						continue;
+					}
+					const preview = documentPayloadCollector?.push(part.text);
+					if (preview?.changed && preview.text.length > lastSentLength) {
+						const increment = preview.text.slice(lastSentLength);
+						lastSentLength = preview.text.length;
+						writeJsonLine(res, { type: "phase", phase: "writing" });
+						writeJsonLine(res, {
+							type: "text-delta",
+							delta: increment,
+						});
+					}
 					continue;
 				}
 
 				if (part.type === "error") {
 					throw part.error;
+				}
+			}
+
+			if (!shouldStreamRawText) {
+				const documentPayload = documentPayloadCollector?.finalize();
+				if (documentPayload && !documentPayload.ok) {
+					logPlaygroundEvent("ai:document-payload-invalid", {
+						requestId,
+						sessionId,
+						reason: documentPayload.reason,
+					});
 				}
 			}
 		}
@@ -713,9 +960,12 @@ function createPlaygroundSession(): PlaygroundSession {
 	const session: PlaygroundSession = {
 		id: randomUUID(),
 		editor: createPlaygroundEditor(),
+		clientToServerBlockIds: new Map(),
 		createdAt: Date.now(),
 		lastTouchedAt: Date.now(),
 		lastSyncedAt: null,
+		syncedRevision: null,
+		syncedGeneration: null,
 		activeRequestCount: 0,
 	};
 	sessions.set(session.id, session);
@@ -768,8 +1018,9 @@ function buildPlaygroundRequestPlan(
 	editor: Editor,
 	prompt: string,
 	requestedMode: PlaygroundRequestMode | null,
+	requestedOperation: ModelRequestedOperation | null,
 ): PlaygroundRequestPlan {
-	return buildSharedPlaygroundRequestPlan(editor, prompt, {
+	return buildTypedSharedPlaygroundRequestPlan(editor, prompt, {
 		documentModel: PLAYGROUND_DOCUMENT_MODEL,
 		selectionModel: PLAYGROUND_SELECTION_MODEL,
 		documentSystemPrompt: PLAYGROUND_DOCUMENT_SYSTEM_PROMPT,
@@ -784,18 +1035,18 @@ function buildPlaygroundRequestPlan(
 		selectionExpandOutputTokens: PLAYGROUND_SELECTION_EXPAND_OUTPUT_TOKENS,
 		selectionSummarizeOutputTokens: PLAYGROUND_SELECTION_SUMMARIZE_OUTPUT_TOKENS,
 		selectionTranslateOutputTokens: PLAYGROUND_SELECTION_TRANSLATE_OUTPUT_TOKENS,
-	}, requestedMode);
+	}, requestedMode, requestedOperation);
 }
 
 function parsePlaygroundRequestMode(value: unknown): PlaygroundRequestMode | null {
 	const requestedMode =
 		value === "document-agent" ||
-		value === "structured-generation" ||
-		value === "selection-fast" ||
-		value === "inline-autocomplete" ||
-		value === "bottom-chat" ||
-		value === "inline-edit" ||
-		value === "structured-planner"
+			value === "structured-generation" ||
+			value === "selection-fast" ||
+			value === "inline-autocomplete" ||
+			value === "bottom-chat" ||
+			value === "inline-edit" ||
+			value === "structured-planner"
 			? (value as PlaygroundRequestedMode)
 			: null;
 	if (!requestedMode) {
@@ -811,6 +1062,377 @@ function parsePlaygroundRequestMode(value: unknown): PlaygroundRequestMode | nul
 		return "structured-generation";
 	}
 	return requestedMode;
+}
+
+function resolveOperationRequestMode(
+	operation: ModelRequestedOperation | null,
+	requestedMode: PlaygroundRequestMode | null,
+): PlaygroundRequestMode | null {
+	if (
+		operation?.kind === "rewrite-selection" ||
+		operation?.kind === "rewrite-block" ||
+		operation?.kind === "continue-block"
+	) {
+		return "selection-fast";
+	}
+	if (operation) {
+		return requestedMode ?? "document-agent";
+	}
+	return requestedMode;
+}
+
+function parseRequestedOperation(value: unknown): ModelRequestedOperation | null {
+	if (!value || typeof value !== "object") {
+		return null;
+	}
+	const candidate = value as ModelRequestedOperation;
+	if (
+		candidate.kind !== "rewrite-selection" &&
+		candidate.kind !== "rewrite-block" &&
+		candidate.kind !== "continue-block" &&
+		candidate.kind !== "document-transform"
+	) {
+		return null;
+	}
+	if (
+		candidate.applyPolicy !== "selection-replace" &&
+		candidate.applyPolicy !== "block-replace" &&
+		candidate.applyPolicy !== "block-continue" &&
+		candidate.applyPolicy !== "document-review"
+	) {
+		return null;
+	}
+	if (!candidate.target || typeof candidate.target !== "object") {
+		return null;
+	}
+	if (
+		candidate.target.kind === "selection" ||
+		candidate.target.kind === "scoped-range"
+	) {
+		return (candidate.target.blockId == null ||
+			typeof candidate.target.blockId === "string") &&
+			typeof candidate.target.anchor?.blockId === "string" &&
+			typeof candidate.target.anchor?.offset === "number" &&
+			typeof candidate.target.focus?.blockId === "string" &&
+			typeof candidate.target.focus?.offset === "number" &&
+			typeof candidate.target.sourceText === "string" &&
+			(candidate.target.kind !== "scoped-range" ||
+				(Array.isArray(candidate.target.blockIds) &&
+					candidate.target.blockIds.every((blockId) => typeof blockId === "string") &&
+					(candidate.target.contentFormat === "text" ||
+						candidate.target.contentFormat === "markdown") &&
+					(candidate.target.scope === "block" ||
+						candidate.target.scope === "paragraph" ||
+						candidate.target.scope === "document" ||
+						candidate.target.scope === "heading")))
+			? candidate
+			: null;
+	}
+	if (candidate.target.kind === "block") {
+		return typeof candidate.target.blockId === "string" &&
+			typeof candidate.target.sourceText === "string"
+			? candidate
+			: null;
+	}
+	if (candidate.target.kind === "document") {
+		return (
+			(candidate.target.blockIds === undefined ||
+				(Array.isArray(candidate.target.blockIds) &&
+					candidate.target.blockIds.every((blockId) => typeof blockId === "string"))) &&
+			(candidate.target.placement === undefined ||
+				candidate.target.placement === "append-after-block" ||
+				candidate.target.placement === "replace-empty-block" ||
+				candidate.target.placement === "replace-blocks") &&
+			(candidate.target.transform === undefined ||
+				candidate.target.transform === "write" ||
+				candidate.target.transform === "rewrite" ||
+				candidate.target.transform === "remove")
+		)
+			? candidate
+			: null;
+	}
+	return null;
+}
+
+function parseAISuggestionRequestScope(
+	value: unknown,
+): AISuggestionRequestScope | null {
+	if (!value || typeof value !== "object") {
+		return null;
+	}
+
+	const candidate = value as Record<string, unknown>;
+	return typeof candidate.targetText === "string" &&
+		typeof candidate.contextBefore === "string" &&
+		typeof candidate.contextAfter === "string" &&
+		(candidate.blockType === null || typeof candidate.blockType === "string")
+		? {
+			blockType: (candidate.blockType as string | null) ?? null,
+			targetText: candidate.targetText,
+			contextBefore: candidate.contextBefore,
+			contextAfter: candidate.contextAfter,
+		}
+		: null;
+}
+
+function resolveUsageTokenValue(
+	usage: unknown,
+	key: "inputTokens" | "outputTokens",
+): number {
+	if (!usage || typeof usage !== "object") {
+		return 0;
+	}
+
+	const value = (usage as Record<string, unknown>)[key];
+	return typeof value === "number" ? value : 0;
+}
+
+async function streamLocalOperationResponse(input: {
+	res: ServerResponse;
+	editor: Editor;
+	prompt: string;
+	operation: ModelRequestedOperation;
+	requestedMode: PlaygroundRequestedMode | null;
+	requestPlan: PlaygroundRequestPlan;
+	abortSignal: AbortSignal;
+	metrics: PlaygroundRequestMetrics;
+	requestId: string;
+	sessionId: string;
+}): Promise<void> {
+	const {
+		res,
+		editor,
+		prompt,
+		operation,
+		requestedMode,
+		requestPlan,
+		abortSignal,
+		metrics,
+		requestId,
+		sessionId,
+	} = input;
+	const usesClientInlineSelectionPreview = requestedMode === "inline-edit";
+	const conflictReason = resolveRequestedOperationConflict(editor, operation, {
+		allowSelectionTextMismatch: usesClientInlineSelectionPreview,
+	});
+	if (conflictReason) {
+		writeJsonLine(res, {
+			type: "conflict",
+			reason: conflictReason,
+			operation,
+		});
+		return;
+	}
+
+	const result = streamText({
+		model: createPlaygroundLanguageModel(requestPlan.modelId),
+		system:
+			operation.kind === "continue-block"
+				? PLAYGROUND_LOCAL_CONTINUE_SYSTEM_PROMPT
+				: PLAYGROUND_LOCAL_REWRITE_SYSTEM_PROMPT,
+		prompt: usesClientInlineSelectionPreview
+			? buildExplicitLocalOperationPrompt(prompt, operation)
+			: requestPlan.prompt,
+		...(requestPlan.maxOutputTokens != null
+			? { maxOutputTokens: requestPlan.maxOutputTokens }
+			: {}),
+		...(requestPlan.temperature != null
+			? { temperature: requestPlan.temperature }
+			: {}),
+		...(requestPlan.stopSequences ? { stopSequences: requestPlan.stopSequences } : {}),
+		abortSignal,
+	});
+
+	const payloadCollector = createLocalOperationPayloadCollector();
+	for await (const part of result.fullStream) {
+		if (part.type === "text-delta") {
+			if (metrics.firstTextDeltaServerMs == null) {
+				metrics.firstTextDeltaServerMs = performance.now() - metrics.startedAt;
+				logPlaygroundEvent("ai:first-text-delta", {
+					requestId,
+					sessionId,
+					elapsedMs: roundMs(metrics.firstTextDeltaServerMs),
+				});
+			}
+			const preview = payloadCollector.push(part.text);
+			if (preview.changed && preview.text.length > 0) {
+				writeJsonLine(res, { type: "phase", phase: "writing" });
+				writeJsonLine(res, {
+					type: resolveLocalOperationFrameType(operation, "preview"),
+					text: preview.text,
+					operation,
+				});
+			}
+			continue;
+		}
+		if (part.type === "error") {
+			throw part.error;
+		}
+	}
+
+	const payload = payloadCollector.finalize();
+	if (!payload.ok) {
+		throw new Error(payload.reason);
+	}
+
+	writeJsonLine(res, {
+		type: resolveLocalOperationFrameType(operation, "final"),
+		text: payload.text,
+		operation,
+	});
+}
+
+function resolveLocalOperationFrameType(
+	operation: ModelRequestedOperation,
+	phase: "preview" | "final",
+): "replace-preview" | "replace-final" | "insert-preview" | "insert-final" {
+	if (
+		operation.kind === "continue-block" ||
+		(
+			operation.kind === "document-transform" &&
+			operation.target.kind === "document" &&
+			operation.target.placement === "append-after-block"
+		)
+	) {
+		return phase === "preview" ? "insert-preview" : "insert-final";
+	}
+	return phase === "preview" ? "replace-preview" : "replace-final";
+}
+
+function resolveDocumentTransformTargetBlockIds(
+	editor: Editor,
+	target: Extract<ModelRequestedOperation["target"], { kind: "document" }>,
+): string[] {
+	const requestedBlockIds =
+		target.blockIds?.filter((blockId) => editor.getBlock(blockId) != null) ?? [];
+	if (requestedBlockIds.length > 0) {
+		return requestedBlockIds;
+	}
+	if (target.activeBlockId && editor.getBlock(target.activeBlockId)) {
+		return [target.activeBlockId];
+	}
+	return editor.documentState.blockOrder.filter(
+		(blockId) => editor.getBlock(blockId) != null,
+	);
+}
+
+function remapRequestedOperationBlockIds(
+	operation: ModelRequestedOperation,
+	clientToServerBlockIds: ReadonlyMap<string, string>,
+): ModelRequestedOperation {
+	const remapBlockId = (blockId: string | null | undefined): string | null =>
+		blockId == null ? null : (clientToServerBlockIds.get(blockId) ?? blockId);
+	if (
+		operation.target.kind === "selection" ||
+		operation.target.kind === "scoped-range"
+	) {
+		return {
+			...operation,
+			target: {
+				...operation.target,
+				blockId: remapBlockId(operation.target.blockId),
+				...(operation.target.kind === "scoped-range"
+					? {
+						blockIds: operation.target.blockIds.map(
+							(blockId) => clientToServerBlockIds.get(blockId) ?? blockId,
+						),
+					}
+					: {}),
+				anchor: {
+					...operation.target.anchor,
+					blockId:
+						clientToServerBlockIds.get(operation.target.anchor.blockId) ??
+						operation.target.anchor.blockId,
+				},
+				focus: {
+					...operation.target.focus,
+					blockId:
+						clientToServerBlockIds.get(operation.target.focus.blockId) ??
+						operation.target.focus.blockId,
+				},
+			},
+		};
+	}
+	if (operation.target.kind === "block") {
+		return {
+			...operation,
+			target: {
+				...operation.target,
+				blockId:
+					clientToServerBlockIds.get(operation.target.blockId) ??
+					operation.target.blockId,
+			},
+		};
+	}
+	return {
+		...operation,
+		target: {
+			...operation.target,
+			activeBlockId: remapBlockId(operation.target.activeBlockId),
+			blockIds: operation.target.blockIds?.map(
+				(blockId) => clientToServerBlockIds.get(blockId) ?? blockId,
+			),
+		},
+	};
+}
+
+function resolveRequestedOperationConflict(
+	editor: Editor,
+	operation: ModelRequestedOperation,
+	options?: {
+		allowSelectionTextMismatch?: boolean;
+	},
+): string | null {
+	if (
+		operation.target.kind === "selection" ||
+		operation.target.kind === "scoped-range"
+	) {
+		const target = operation.target;
+		const targetBlockIds = resolveSelectionTargetBlockIds(editor, target);
+		if (targetBlockIds.length === 0) {
+			return "The selected range no longer exists.";
+		}
+		if (
+			isScopedSelectionTarget(target) &&
+			operation.provenance?.syncedGeneration != null &&
+			operation.provenance.syncedGeneration >= 0 &&
+			editor.documentState.generation !== operation.provenance.syncedGeneration
+		) {
+			return "The document changed before the operation started.";
+		}
+		const currentText = renderSelectionTargetText(editor, target, {
+			resolved: true,
+		});
+		if (options?.allowSelectionTextMismatch) {
+			return null;
+		}
+		if (currentText === operation.target.sourceText) {
+			return null;
+		}
+		return "The selected text changed before the operation started.";
+	}
+	if (operation.target.kind === "block") {
+		const block = editor.getBlock(operation.target.blockId);
+		if (!block) {
+			return "The target block no longer exists.";
+		}
+		if (
+			operation.provenance?.blockRevision != null &&
+			editor.getBlockRevision(operation.target.blockId) !==
+			operation.provenance.blockRevision
+		) {
+			return "The target block changed before the operation started.";
+		}
+	}
+	if (
+		operation.target.kind === "document" &&
+		operation.provenance?.syncedGeneration != null &&
+		operation.provenance.syncedGeneration >= 0 &&
+		editor.documentState.generation !== operation.provenance.syncedGeneration
+	) {
+		return "The document changed before the operation started.";
+	}
+	return null;
 }
 
 function buildPromptContext(editor: Editor): PromptContextEnvelope {
@@ -860,7 +1482,10 @@ function buildPlaygroundTools(
 	);
 }
 
-function hydrateEditor(editor: Editor, state: SerializedEditorState): void {
+function hydrateEditor(
+	editor: Editor,
+	state: SerializedEditorState,
+): Map<string, string> {
 	const firstSerializedBlock = state.blocks[0];
 	const firstEditorBlock = editor.firstBlock();
 	const idMap = new Map<string, string>();
@@ -875,6 +1500,7 @@ function hydrateEditor(editor: Editor, state: SerializedEditorState): void {
 	}
 
 	restoreSelection(editor, state.selection, idMap);
+	return idMap;
 }
 
 function insertBlockSnapshot(
@@ -952,58 +1578,13 @@ function applyTableSnapshot(
 	if (!block.table) {
 		return;
 	}
-
-	if (block.table.columns.length > 0) {
-		editor.apply([
-			{
-				type: "update-table-columns",
-				blockId,
-				columns: [...block.table.columns],
-			},
-		]);
-	}
-
-	for (let index = 0; index < block.table.rowCount; index += 1) {
-		editor.apply([
-			{
-				type: "insert-table-row",
-				blockId,
-				index,
-			},
-		]);
-	}
-
-	for (
-		let index = block.table.columns.length;
-		index < block.table.columnCount;
-		index += 1
-	) {
-		editor.apply([
-			{
-				type: "insert-table-column",
-				blockId,
-				index,
-			},
-		]);
-	}
-
-	for (const row of block.table.rows) {
-		for (const cell of row.cells) {
-			if (!cell.text) {
-				continue;
-			}
-
-			editor.apply([
-				{
-					type: "insert-table-cell-text",
-					blockId,
-					row: cell.row,
-					col: cell.col,
-					offset: 0,
-					text: cell.text,
-				},
-			]);
-		}
+	const currentBlock = editor.getBlock(blockId);
+	const ops = buildTableSnapshotOps(blockId, block.table, {
+		rowCount: currentBlock?.tableRowCount() ?? 0,
+		columnCount: currentBlock?.tableColumnCount() ?? 0,
+	});
+	if (ops.length > 0) {
+		editor.apply(ops);
 	}
 }
 

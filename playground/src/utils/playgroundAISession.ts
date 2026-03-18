@@ -1,4 +1,5 @@
-import type { Editor } from "@pen/types";
+import type { Editor, ModelRequestedOperation } from "@pen/types";
+import { isScopedSelectionTarget } from "@pen/types";
 import {
 	PLAYGROUND_AI_ENDPOINT,
 	PLAYGROUND_AI_SESSION_ENDPOINT,
@@ -52,6 +53,9 @@ export interface PlaygroundStreamChunk {
 	delta?: unknown;
 	data?: unknown;
 	error?: unknown;
+	text?: unknown;
+	reason?: unknown;
+	operation?: unknown;
 	requestId?: unknown;
 	sessionId?: unknown;
 	requestMode?: unknown;
@@ -77,16 +81,24 @@ export type PlaygroundExecutionLane =
 interface PlaygroundAIRequestOptions {
 	lane?: PlaygroundExecutionLane;
 	requestMode?: string;
+	operation?: ModelRequestedOperation | null;
 }
 
 const PLAYGROUND_AI_ACTIVE_SYNC_CONFLICT =
 	"Cannot sync a playground session while an AI request is active.";
 const PLAYGROUND_AI_ACTIVE_REQUEST_CONFLICT =
 	"This playground session already has an active AI request.";
-const PLAYGROUND_AI_ACTIVE_SYNC_RETRY_LIMIT = 8;
+const PLAYGROUND_AI_ACTIVE_LOCK_RETRY_WINDOW_MS = 2_000;
 const PLAYGROUND_AI_ACTIVE_SYNC_RETRY_MS = 75;
-const PLAYGROUND_AI_ACTIVE_REQUEST_RETRY_LIMIT = 2;
+const PLAYGROUND_AI_ACTIVE_SYNC_RETRY_LIMIT = Math.ceil(
+	PLAYGROUND_AI_ACTIVE_LOCK_RETRY_WINDOW_MS /
+		PLAYGROUND_AI_ACTIVE_SYNC_RETRY_MS,
+);
 const PLAYGROUND_AI_ACTIVE_REQUEST_RETRY_MS = 75;
+const PLAYGROUND_AI_ACTIVE_REQUEST_RETRY_LIMIT = Math.ceil(
+	PLAYGROUND_AI_ACTIVE_LOCK_RETRY_WINDOW_MS /
+		PLAYGROUND_AI_ACTIVE_REQUEST_RETRY_MS,
+);
 
 const INITIAL_STATE: PlaygroundAIClientState = {
 	sessionId: null,
@@ -301,6 +313,10 @@ export async function requestPlaygroundAIResponse(
 		}
 
 		try {
+			const requestOperation = alignOperationWithEditorSyncState(
+				editor,
+				options?.operation ?? null,
+			);
 			const response = await fetch(PLAYGROUND_AI_ENDPOINT, {
 				method: "POST",
 				headers: {
@@ -310,6 +326,9 @@ export async function requestPlaygroundAIResponse(
 					sessionId,
 					prompt,
 					requestMode: options?.requestMode ?? null,
+					operation: requestOperation,
+					expectedSyncRevision: getEditorSyncState(editor).syncedRevision,
+					expectedSyncedGeneration: getEditorSyncState(editor).syncedGeneration,
 				}),
 				signal,
 			});
@@ -536,6 +555,25 @@ export function applyPlaygroundAIChunk(
 		return;
 	}
 
+	if (
+		(chunk.type === "replace-preview" ||
+			chunk.type === "replace-final" ||
+			chunk.type === "insert-preview" ||
+			chunk.type === "insert-final") &&
+		typeof chunk.text === "string"
+	) {
+		if (getLastRequest().firstTextDeltaBrowserMs == null) {
+			updateState({
+				lastRequest: {
+					...getLastRequest(),
+					firstTextDeltaBrowserMs: performance.now() - latestRequestStartedAt,
+				},
+			});
+		}
+		updateState({ phase: "writing" });
+		return;
+	}
+
 	if (chunk.type === "app-partial" || chunk.type === "app-final") {
 		updateState({ phase: "writing" });
 		return;
@@ -553,6 +591,16 @@ export function applyPlaygroundAIChunk(
 					: chunk.error instanceof Error
 						? chunk.error.message
 						: "The playground AI request failed.",
+		});
+		return;
+	}
+
+	if (chunk.type === "conflict") {
+		updateState({
+			lastError:
+				typeof chunk.reason === "string"
+					? chunk.reason
+					: "The requested local AI operation conflicted with document changes.",
 		});
 	}
 }
@@ -739,6 +787,8 @@ async function syncPlaygroundAISessionWithId(
 		body: JSON.stringify({
 			sessionId,
 			editorState: serializeEditorState(editor),
+			revision: syncState.revision,
+			generation: editor.documentState.generation,
 		}),
 		signal,
 	});
@@ -769,9 +819,23 @@ async function syncPlaygroundAISessionWithId(
 		throw new Error(message);
 	}
 
-	const payload = (await response.json()) as { sessionId?: unknown };
-	syncState.syncedRevision = syncState.revision;
-	syncState.syncedGeneration = editor.documentState.generation;
+	const payload = (await response.json()) as {
+		sessionId?: unknown;
+		revision?: unknown;
+		generation?: unknown;
+	};
+	syncState.syncedRevision =
+		typeof payload.revision === "number" &&
+		Number.isInteger(payload.revision) &&
+		payload.revision >= 0
+			? payload.revision
+			: syncState.revision;
+	syncState.syncedGeneration =
+		typeof payload.generation === "number" &&
+		Number.isInteger(payload.generation) &&
+		payload.generation >= 0
+			? payload.generation
+			: editor.documentState.generation;
 
 	if (options?.updateClientState !== false) {
 		updateState({
@@ -804,6 +868,34 @@ function getEditorSyncState(editor: Editor): {
 	};
 	editorSyncState.set(editor, initial);
 	return initial;
+}
+
+function alignOperationWithEditorSyncState(
+	editor: Editor,
+	operation: ModelRequestedOperation | null,
+): ModelRequestedOperation | null {
+	if (!operation) {
+		return operation;
+	}
+	const shouldAlignSyncedGeneration =
+		operation.target.kind === "document" ||
+		operation.target.kind === "scoped-range" ||
+		(operation.target.kind === "selection" &&
+			isScopedSelectionTarget(operation.target));
+	if (!shouldAlignSyncedGeneration) {
+		return operation;
+	}
+	const syncedGeneration = getEditorSyncState(editor).syncedGeneration;
+	if (syncedGeneration < 0) {
+		return operation;
+	}
+	return {
+		...operation,
+		provenance: {
+			...(operation.provenance ?? {}),
+			syncedGeneration,
+		},
+	};
 }
 
 function hasUnsyncedEditorState(

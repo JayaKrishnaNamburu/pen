@@ -56,6 +56,7 @@ describe("playground editor state serialization", () => {
 
 		const state = serializeEditorState(editor);
 
+		expect(state.generation).toBe(editor.documentState.generation);
 		expect(state.blockCount).toBe(2);
 		expect(state.blocks).toHaveLength(1);
 		expect(state.blocks[0]).toMatchObject({
@@ -107,6 +108,7 @@ describe("playground editor state serialization", () => {
 		const state = serializeEditorState(editor);
 		const databaseBlock = state.blocks.find((block) => block.id === "db-1");
 
+		expect(state.generation).toBe(editor.documentState.generation);
 		expect(databaseBlock).toMatchObject({
 			type: "database",
 			table: {

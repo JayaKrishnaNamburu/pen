@@ -74,6 +74,7 @@ export {
 } from "./runtime/structuredPlanner";
 export {
 	buildPlaygroundRequestPlan,
+	buildExplicitLocalOperationPrompt,
 	buildPromptContext,
 	createPlaygroundRequestMetricsSeed,
 } from "./runtime/playgroundPlanner";

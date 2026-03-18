@@ -52,6 +52,19 @@ export function querySuggestionAnchorElements(editor: Editor): HTMLElement[] {
 	return [...scopeRoot.querySelectorAll<HTMLElement>("[data-suggestion-id]")];
 }
 
+export function queryAISuggestionAnchorElement(
+	editor: Editor,
+	suggestionId: string,
+): HTMLElement | null {
+	const scopeRoot = resolveAIRootElement(editor) ?? resolveEditorRootElement(editor);
+	if (!scopeRoot) {
+		return null;
+	}
+	return scopeRoot.querySelector<HTMLElement>(
+		`[data-ai-suggestion-id="${escapeForAttributeSelector(suggestionId)}"]`,
+	);
+}
+
 function escapeForAttributeSelector(value: string): string {
 	return typeof CSS !== "undefined" && CSS.escape
 		? CSS.escape(value)

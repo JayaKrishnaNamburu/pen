@@ -1,14 +1,12 @@
+import type { AISession } from "@pen/ai";
 import type { Editor } from "@pen/types";
-import { useAISessionActions, useAISessions, useSuggestions } from "@pen/react";
+import { useAISessionActions, useAISessions } from "@pen/react";
 import {
 	useEffect,
-	useMemo,
 	useRef,
 	useState,
 	type FormEvent,
 } from "react";
-import { usePlaygroundAIState } from "../hooks/usePlaygroundAISession";
-import { collectNewlyResolvedTurnIds } from "../utils/chatTurnResolution";
 import { DebugPanel } from "./DebugPanel";
 import "./PlaygroundChatDock.css";
 
@@ -23,21 +21,17 @@ type PlaygroundChatDockProps = {
 type PlaygroundChatMessageRole = "user" | "assistant";
 type PlaygroundChatMessageStatus = "complete" | "streaming" | "error";
 type PlaygroundDockPanel = "chat" | "debug";
+type BottomChatTarget = "selection" | "block" | "document";
 
 interface PlaygroundChatMessage {
 	id: string;
 	role: PlaygroundChatMessageRole;
 	content: string;
 	status: PlaygroundChatMessageStatus;
-	sessionId?: string;
-	turnId?: string;
 }
 
 const DEFAULT_CHAT_PROMPT =
 	"Write a story";
-const PLAYGROUND_CHAT_CONTEXT_LABEL = "Document";
-const PLAYGROUND_CHAT_MODE_LABEL = "Auto";
-
 export function PlaygroundChatDock({
 	editor,
 	autocompleteEnabled,
@@ -47,54 +41,24 @@ export function PlaygroundChatDock({
 }: PlaygroundChatDockProps) {
 	const sessionActions = useAISessionActions(editor);
 	const sessions = useAISessions(editor);
-	const suggestions = useSuggestions(editor);
-	const playgroundAIState = usePlaygroundAIState();
 	const bottomChatSessionIdRef = useRef<string | null>(null);
+	const activeSubmitRequestIdRef = useRef(0);
 	const transcriptRef = useRef<HTMLDivElement | null>(null);
 	const [draft, setDraft] = useState(DEFAULT_CHAT_PROMPT);
 	const [isStreaming, setIsStreaming] = useState(false);
 	const [activePanel, setActivePanel] = useState<PlaygroundDockPanel>("chat");
-	const [messages, setMessages] = useState<readonly PlaygroundChatMessage[]>(() => []);
 	const [lastError, setLastError] = useState<string | null>(null);
-	const [resolvingTurnIds, setResolvingTurnIds] = useState<readonly string[]>([]);
-	const [resolvedTurnIds, setResolvedTurnIds] = useState<readonly string[]>([]);
-	const previousPendingChangeCountsRef = useRef<ReadonlyMap<string, number>>(new Map());
+	const latestBottomChatSession = sessions
+		.filter((session) => session.surface === "bottom-chat")
+		.slice()
+		.sort((left, right) => left.createdAt - right.createdAt)
+		.at(-1) ?? null;
+	const activeBottomChatSessionId =
+		bottomChatSessionIdRef.current ?? latestBottomChatSession?.id ?? null;
 
 	const bottomChatSession =
-		sessions.find((session) => session.id === bottomChatSessionIdRef.current) ?? null;
-	const bottomChatTurnPendingState = useMemo(() => {
-		if (!bottomChatSession) {
-			return new Map<string, { suggestionIds: readonly string[]; pendingReviewItemCount: number }>();
-		}
-		const pendingSuggestionIdSet = new Set(bottomChatSession.pendingSuggestionIds);
-		const pendingReviewItemIdSet = new Set(bottomChatSession.pendingReviewItemIds);
-		const documentSuggestionIdSet = new Set(
-			suggestions
-				.filter((suggestion) => suggestion.sessionId === bottomChatSession.id)
-				.map((suggestion) => suggestion.id),
-		);
-		return new Map(
-			bottomChatSession.turns.map((turn) => {
-				const suggestionIds = turn.suggestionIds.filter(
-					(suggestionId) =>
-						pendingSuggestionIdSet.has(suggestionId) &&
-						documentSuggestionIdSet.has(suggestionId),
-				);
-				const pendingReviewItemCount = turn.reviewItemIds.filter((reviewItemId) =>
-					pendingReviewItemIdSet.has(reviewItemId),
-				).length;
-				return [turn.id, { suggestionIds, pendingReviewItemCount }];
-			}),
-		);
-	}, [bottomChatSession, suggestions]);
-	const sessionPreview = playgroundAIState.sessionId
-		? playgroundAIState.sessionId.slice(0, 8)
-		: "pending";
-	const statusLabel = isStreaming
-		? formatBackendPhase(playgroundAIState.phase)
-		: lastError
-			? "Error"
-			: "Ready";
+		sessions.find((session) => session.id === activeBottomChatSessionId) ?? null;
+	const bottomChatMessages = buildBottomChatMessages(sessions, lastError);
 
 	const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
@@ -103,33 +67,28 @@ export function PlaygroundChatDock({
 			return;
 		}
 
-		const userMessageId = crypto.randomUUID();
-		const assistantMessageId = crypto.randomUUID();
 		setIsStreaming(true);
 		setLastError(null);
 		setDraft("");
-		setMessages((currentMessages) => [
-			...currentMessages,
-			{
-				id: userMessageId,
-				role: "user",
-				content: prompt,
-				status: "complete",
-			},
-			{
-				id: assistantMessageId,
-				role: "assistant",
-				content: "Writing in the editor...",
-				status: "streaming",
-			},
-		]);
+		const submitRequestId = activeSubmitRequestIdRef.current + 1;
+		activeSubmitRequestIdRef.current = submitRequestId;
 
 		try {
-			let sessionId = bottomChatSessionIdRef.current;
+			const submitTarget = resolveBottomChatTarget(editor, prompt);
+			let sessionId = activeBottomChatSessionId;
+			if (
+				sessionId &&
+				!sessionActions.canReuseSessionPrompt(sessionId, prompt, {
+					target: submitTarget,
+				})
+			) {
+				sessionId = null;
+				bottomChatSessionIdRef.current = null;
+			}
 			if (!sessionId) {
 				const session = sessionActions.startSession({
 					surface: "bottom-chat",
-					target: "document",
+					target: submitTarget,
 				});
 				sessionId = session?.id ?? null;
 				bottomChatSessionIdRef.current = sessionId;
@@ -139,145 +98,40 @@ export function PlaygroundChatDock({
 			}
 
 			const generation = await sessionActions.runSessionPrompt(sessionId, prompt, {
-				target: "document",
+				target: submitTarget,
 			});
+			if (activeSubmitRequestIdRef.current !== submitRequestId) {
+				return;
+			}
 			const reviewItemCount = generation?.reviewItems?.length ?? 0;
 			const suggestionCount = generation?.suggestionIds?.length ?? 0;
 			const receiptStatus = generation?.mutationReceipt?.status ?? null;
-			const assistantContent =
-				receiptStatus === "invalid" || generation?.planState === "rejected"
-					? "The agent response could not be applied."
-					: receiptStatus === "staged_review" ||
-						reviewItemCount > 0
-						? "Staged changes for review."
-						: receiptStatus === "staged_suggestions" ||
-							suggestionCount > 0
-							? "Staged suggestions in the editor."
-							: receiptStatus === "applied"
-								? "Wrote to the editor."
-								: "No changes were produced.";
-
-			setMessages((currentMessages) =>
-				updateChatMessage(currentMessages, assistantMessageId, (message) => ({
-					...message,
-					status: "complete",
-					content: assistantContent,
-					sessionId,
-					turnId: generation?.turnId,
-				})),
-			);
+			void reviewItemCount;
+			void suggestionCount;
+			void receiptStatus;
 		} catch (error) {
+			if (activeSubmitRequestIdRef.current !== submitRequestId) {
+				return;
+			}
 			const message =
 				error instanceof Error ? error.message : "The playground agent failed.";
 			setLastError(message);
-			setMessages((currentMessages) =>
-				updateChatMessage(currentMessages, assistantMessageId, (chatMessage) => ({
-					...chatMessage,
-					status: "error",
-					content: message,
-				})),
-			);
 		} finally {
-			setIsStreaming(false);
+			if (activeSubmitRequestIdRef.current === submitRequestId) {
+				setIsStreaming(false);
+			}
 		}
 	};
 
 	const handleStop = () => {
+		activeSubmitRequestIdRef.current += 1;
 		const sessionId = bottomChatSessionIdRef.current;
 		if (sessionId) {
 			sessionActions.cancelSession(sessionId);
 		}
+		bottomChatSessionIdRef.current = null;
 		setIsStreaming(false);
-		setMessages((currentMessages) => {
-			const lastAssistantMessage = [...currentMessages]
-				.reverse()
-				.find((message) => message.role === "assistant");
-			if (!lastAssistantMessage) {
-				return currentMessages;
-			}
-
-			return updateChatMessage(
-				currentMessages,
-				lastAssistantMessage.id,
-				(message) => ({
-					...message,
-					status: "complete",
-					content: "Stopped.",
-				}),
-			);
-		});
 	};
-
-	const handleKeepAllForTurn = (sessionId: string, turnId: string) => {
-		const pendingState = bottomChatTurnPendingState.get(turnId);
-		const pendingChangeCount =
-			(pendingState?.suggestionIds.length ?? 0) +
-			(pendingState?.pendingReviewItemCount ?? 0);
-		if (pendingChangeCount === 0) {
-			return;
-		}
-		setResolvingTurnIds((currentTurnIds) =>
-			currentTurnIds.includes(turnId)
-				? currentTurnIds
-				: [...currentTurnIds, turnId],
-		);
-		const accepted = sessionActions.acceptSessionTurn(sessionId, turnId);
-		if (!accepted) {
-			setResolvingTurnIds((currentTurnIds) =>
-				currentTurnIds.filter((currentTurnId) => currentTurnId !== turnId),
-			);
-			setLastError("Unable to keep all pending AI changes.");
-			return;
-		}
-		setLastError(null);
-		setResolvedTurnIds((currentTurnIds) =>
-			currentTurnIds.includes(turnId)
-				? currentTurnIds
-				: [...currentTurnIds, turnId],
-		);
-	};
-
-	useEffect(() => {
-		if (resolvingTurnIds.length === 0) {
-			return;
-		}
-		setResolvingTurnIds((currentTurnIds) =>
-			currentTurnIds.filter((turnId) => {
-				const pendingState = bottomChatTurnPendingState.get(turnId);
-				return (
-					(pendingState?.suggestionIds.length ?? 0) +
-						(pendingState?.pendingReviewItemCount ?? 0) >
-					0
-				);
-			}),
-		);
-	}, [
-		bottomChatTurnPendingState,
-		resolvingTurnIds.length,
-	]);
-
-	useEffect(() => {
-		const nextPendingChangeCounts = new Map<string, number>();
-		for (const message of messages) {
-			if (message.role !== "assistant" || !message.turnId) {
-				continue;
-			}
-			const pendingState = bottomChatTurnPendingState.get(message.turnId);
-			const pendingChangeCount =
-				(pendingState?.suggestionIds.length ?? 0) +
-				(pendingState?.pendingReviewItemCount ?? 0);
-			nextPendingChangeCounts.set(message.turnId, pendingChangeCount);
-		}
-
-		setResolvedTurnIds((currentTurnIds) =>
-			collectNewlyResolvedTurnIds({
-				currentResolvedTurnIds: currentTurnIds,
-				previousPendingChangeCounts: previousPendingChangeCountsRef.current,
-				nextPendingChangeCounts,
-			}),
-		);
-		previousPendingChangeCountsRef.current = nextPendingChangeCounts;
-	}, [bottomChatTurnPendingState, messages]);
 
 	useEffect(() => {
 		const transcript = transcriptRef.current;
@@ -286,16 +140,22 @@ export function PlaygroundChatDock({
 		}
 
 		transcript.scrollTop = transcript.scrollHeight;
-	}, [messages]);
+	}, [bottomChatMessages]);
 
 	useEffect(() => {
 		if (!bottomChatSession || !bottomChatSessionIdRef.current) {
+			return;
+		}
+		if (bottomChatSession.status === "cancelled") {
+			bottomChatSessionIdRef.current = null;
+			setIsStreaming(false);
 			return;
 		}
 		if (bottomChatSession.status !== "error") {
 			return;
 		}
 
+		bottomChatSessionIdRef.current = null;
 		setIsStreaming(false);
 	}, [bottomChatSession]);
 
@@ -323,29 +183,7 @@ export function PlaygroundChatDock({
 			</button>
 		</div>
 	);
-	const chatMessageItems = messages.map((message) => {
-		const pendingState =
-			message.role === "assistant" && message.turnId
-				? bottomChatTurnPendingState.get(message.turnId)
-				: undefined;
-		const pendingChangeCount =
-			(pendingState?.suggestionIds.length ?? 0) +
-			(pendingState?.pendingReviewItemCount ?? 0);
-		const isResolvingTurn =
-			message.turnId != null && resolvingTurnIds.includes(message.turnId);
-		const visiblePendingChangeCount = isResolvingTurn ? 0 : pendingChangeCount;
-		const canKeepAll =
-			message.role === "assistant" &&
-			message.status === "complete" &&
-			!!message.sessionId &&
-			!!message.turnId &&
-			!isResolvingTurn &&
-			pendingChangeCount > 0;
-		const shouldShowAcceptedState =
-			message.role === "assistant" &&
-			message.turnId != null &&
-			resolvedTurnIds.includes(message.turnId) &&
-			pendingChangeCount === 0;
+	const chatMessageItems = bottomChatMessages.map((message) => {
 		return (
 			<article
 				key={message.id}
@@ -364,25 +202,6 @@ export function PlaygroundChatDock({
 				<div className="playground-chat-message-body">
 					{message.content || (message.role === "assistant" ? "Thinking..." : "")}
 				</div>
-				{canKeepAll ? (
-					<div className="playground-chat-message-actions">
-						<div className="playground-chat-message-note">
-							{visiblePendingChangeCount} pending change
-							{visiblePendingChangeCount === 1 ? "" : "s"}
-						</div>
-						<button
-							className="toolbar-button playground-chat-message-button"
-							type="button"
-							onClick={() => handleKeepAllForTurn(message.sessionId!, message.turnId!)}
-						>
-							Keep All
-						</button>
-					</div>
-				) : shouldShowAcceptedState ? (
-					<div className="playground-chat-message-actions">
-						<div className="playground-chat-message-note">Changes resolved</div>
-					</div>
-				) : null}
 			</article>
 		);
 	});
@@ -441,7 +260,7 @@ export function PlaygroundChatDock({
 					<div className="playground-chat-debug-view">
 						<DebugPanel
 							editor={editor}
-							sessionId={bottomChatSession?.id ?? bottomChatSessionIdRef.current ?? undefined}
+							sessionId={bottomChatSession?.id ?? activeBottomChatSessionId ?? undefined}
 							autocompleteEnabled={autocompleteEnabled}
 							customCaretEnabled={customCaretEnabled}
 							onAutocompleteEnabledChange={onAutocompleteEnabledChange}
@@ -455,31 +274,113 @@ export function PlaygroundChatDock({
 	);
 }
 
-function updateChatMessage(
-	messages: readonly PlaygroundChatMessage[],
-	messageId: string,
-	updater: (message: PlaygroundChatMessage) => PlaygroundChatMessage,
-): readonly PlaygroundChatMessage[] {
-	return messages.map((message) =>
-		message.id === messageId ? updater(message) : message,
+function resolveBottomChatTarget(
+	editor: Editor,
+	prompt: string,
+): BottomChatTarget {
+	const normalizedPrompt = prompt.trim().toLowerCase();
+	const hasExpandedTextSelection =
+		editor.selection?.type === "text" && !editor.selection.isCollapsed;
+	if (isDocumentWideChatPrompt(normalizedPrompt)) {
+		return "document";
+	}
+	if (hasExpandedTextSelection && isSelectionScopedChatPrompt(normalizedPrompt)) {
+		return "selection";
+	}
+	if (isBlockScopedChatPrompt(normalizedPrompt)) {
+		return "block";
+	}
+	return "document";
+}
+
+function isSelectionScopedChatPrompt(prompt: string): boolean {
+	return /\b(rewrite|retry|redo|again|summari[sz]e|translate|simplify|fix|improve|shorten|expand|polish|paraphrase)\b/i.test(
+		prompt,
 	);
 }
 
-function formatBackendPhase(phase: string): string {
-	switch (phase) {
-		case "creating-session":
-			return "Starting session";
-		case "tool-calling":
-			return "Calling tools";
-		case "thinking":
-			return "Thinking";
-		case "writing":
-			return "Streaming";
-		case "syncing":
-			return "Syncing";
-		case "error":
-			return "Error";
-		default:
-			return "Ready";
+function isBlockScopedChatPrompt(prompt: string): boolean {
+	return /\b(rewrite|retry|redo|again|continue|finish|complete|fix|improve|shorten|expand|polish|paraphrase)\b/i.test(
+		prompt,
+	);
+}
+
+function isDocumentWideChatPrompt(prompt: string): boolean {
+	return (
+		/\b(remove|delete|clear|erase|wipe|rewrite|replace|write|create|draft|compose|generate)\b/i.test(
+			prompt,
+		) &&
+		/\b(all|entire|whole|document|content|contents|story|page)\b/i.test(prompt)
+	);
+}
+
+function buildBottomChatMessages(
+	sessions: readonly AISession[],
+	lastError: string | null,
+): readonly PlaygroundChatMessage[] {
+	const bottomChatSessions = sessions
+		.filter((session) => session.surface === "bottom-chat")
+		.slice()
+		.sort((left, right) => left.createdAt - right.createdAt);
+	const messages: PlaygroundChatMessage[] = [];
+
+	for (const session of bottomChatSessions) {
+		const sessionTurnMessages = session.turns
+			.slice()
+			.sort((left, right) => left.createdAt - right.createdAt)
+			.flatMap((turn) => {
+				const assistantStatus: PlaygroundChatMessageStatus =
+					turn.status === "streaming"
+						? "streaming"
+						: turn.status === "error"
+							? "error"
+							: "complete";
+				const assistantContent = describeBottomChatTurnResult(turn, lastError);
+				return [
+					{
+						id: `${turn.id}:user`,
+						role: "user" as const,
+						content: turn.prompt,
+						status: "complete" as const,
+					},
+					{
+						id: `${turn.id}:assistant`,
+						role: "assistant" as const,
+						content: assistantContent,
+						status: assistantStatus,
+					},
+				];
+			});
+		messages.push(...sessionTurnMessages);
 	}
+
+	return messages;
+}
+
+function describeBottomChatTurnResult(
+	turn: AISession["turns"][number],
+	lastError: string | null,
+): string {
+	if (turn.status === "streaming") {
+		return "Writing in the editor...";
+	}
+	if (turn.status === "cancelled") {
+		return "Stopped.";
+	}
+	if (turn.status === "error") {
+		return lastError ?? "The playground agent failed.";
+	}
+	if (turn.reviewItemIds.length > 0) {
+		return "Staged changes for review.";
+	}
+	if (turn.suggestionIds.length > 0) {
+		return "Staged suggestions in the editor.";
+	}
+	if (turn.status === "accepted") {
+		return "Wrote to the editor.";
+	}
+	if (turn.generatedBlockIds.length > 0) {
+		return "Wrote to the editor.";
+	}
+	return "No changes were produced.";
 }

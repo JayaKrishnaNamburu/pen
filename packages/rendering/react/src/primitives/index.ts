@@ -35,6 +35,20 @@ export {
 } from "./selection-toolbar/index";
 
 export {
+	SearchRoot,
+	SearchInput,
+	SearchResults,
+	SearchNext,
+	SearchPrevious,
+	SearchReplaceInput,
+	SearchReplace,
+	SearchReplaceAll,
+	SearchCaseSensitive,
+	SearchRegExpToggle,
+	SearchWholeWord,
+} from "./search/index";
+
+export {
 	AIRoot,
 	AITrigger,
 	AISelectionTrigger,
@@ -67,6 +81,10 @@ export {
 	AIInlineSession,
 	AIInlineSessionActions,
 } from "./ai/index";
+export {
+	AISuggestionsRoot,
+	AISuggestionsPopover,
+} from "./aiSuggestions/index";
 export {
 	MultiplayerPresenceList,
 	MultiplayerRemoteCursors,
@@ -112,6 +130,20 @@ import {
 } from "./selection-toolbar/index";
 
 import {
+	SearchRoot,
+	SearchInput,
+	SearchResults,
+	SearchNext,
+	SearchPrevious,
+	SearchReplaceInput,
+	SearchReplace,
+	SearchReplaceAll,
+	SearchCaseSensitive,
+	SearchRegExpToggle,
+	SearchWholeWord,
+} from "./search/index";
+
+import {
 	AIRoot,
 	AITrigger,
 	AISelectionTrigger,
@@ -144,6 +176,10 @@ import {
 	AIInlineSession,
 	AIInlineSessionActions,
 } from "./ai/index";
+import {
+	AISuggestionsRoot,
+	AISuggestionsPopover,
+} from "./aiSuggestions/index";
 import {
 	MultiplayerPresenceList,
 	MultiplayerRemoteCursors,
@@ -183,6 +219,19 @@ export const Pen = {
 		Root: SelectionToolbarRoot,
 		Content: SelectionToolbarContent,
 	},
+	Search: {
+		Root: SearchRoot,
+		Input: SearchInput,
+		Results: SearchResults,
+		Next: SearchNext,
+		Previous: SearchPrevious,
+		ReplaceInput: SearchReplaceInput,
+		Replace: SearchReplace,
+		ReplaceAll: SearchReplaceAll,
+		CaseSensitive: SearchCaseSensitive,
+		RegExp: SearchRegExpToggle,
+		WholeWord: SearchWholeWord,
+	},
 	AI: {
 		Root: AIRoot,
 		Trigger: AITrigger,
@@ -215,6 +264,10 @@ export const Pen = {
 		InlineSuggestionReject: AIInlineSuggestionRejectButton,
 		InlineSession: AIInlineSession,
 		InlineSessionActions: AIInlineSessionActions,
+	},
+	AISuggestions: {
+		Root: AISuggestionsRoot,
+		Popover: AISuggestionsPopover,
 	},
 	Multiplayer: {
 		PresenceList: MultiplayerPresenceList,

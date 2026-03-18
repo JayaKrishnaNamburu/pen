@@ -1,5 +1,11 @@
 export { useEditor } from "./useEditor";
 export { useAI } from "./useAI";
+export { useAISuggestions } from "./useAISuggestions";
+export {
+	useAISuggestionPopover,
+	type AISuggestionPopoverPosition,
+} from "./useAISuggestionPopover";
+export { useAISuggestionsMetrics } from "./useAISuggestionsMetrics";
 export {
 	useAIDebugLog,
 	type AIDebugLogEntry,
@@ -31,6 +37,7 @@ export { useAIActions } from "./useAIActions";
 export { useAISessionActions } from "./useAISessionActions";
 export { useFieldEditor } from "./useFieldEditor";
 export { useHistory } from "./useHistory";
+export { useSearch } from "./useSearch";
 export { useMultiplayer } from "./useMultiplayer";
 export { useRemoteCursors } from "./useRemoteCursors";
 export { useRemoteSelections } from "./useRemoteSelections";

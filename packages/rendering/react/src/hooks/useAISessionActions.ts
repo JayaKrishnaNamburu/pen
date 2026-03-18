@@ -23,6 +23,11 @@ export function useAISessionActions(editor: Editor): {
 		prompt: string,
 		options?: AICommandExecutionOptions,
 	) => Promise<GenerationState | null>;
+	canReuseSessionPrompt: (
+		sessionId: string,
+		prompt: string,
+		options?: AICommandExecutionOptions,
+	) => boolean;
 	resolveSessionTurn: (
 		sessionId: string,
 		turnId: string,
@@ -54,6 +59,9 @@ export function useAISessionActions(editor: Editor): {
 				return Promise.resolve(null);
 			}
 			return controller.runSessionPrompt(sessionId, prompt, options);
+		},
+		canReuseSessionPrompt(sessionId, prompt, options) {
+			return controller?.canReuseSessionPrompt(sessionId, prompt, options) ?? false;
 		},
 		resolveSessionTurn(sessionId, turnId, resolution) {
 			return controller?.resolveSessionTurn(sessionId, turnId, resolution) ?? false;

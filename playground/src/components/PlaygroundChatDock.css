@@ -166,27 +166,6 @@
 	color: var(--text);
 }
 
-.playground-chat-message-actions {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 8px;
-}
-
-.playground-chat-message[data-role="user"] .playground-chat-message-actions {
-	justify-content: flex-end;
-}
-
-.playground-chat-message-button {
-	min-height: 32px;
-}
-
-.playground-chat-message-note {
-	font-size: 12px;
-	line-height: 1.45;
-	color: var(--text-muted);
-}
-
 .playground-chat-message-error {
 	font-size: 12px;
 	line-height: 1.45;

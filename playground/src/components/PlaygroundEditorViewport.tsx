@@ -45,6 +45,9 @@ export function PlaygroundEditorViewport({
 					<Pen.AI.InlineSuggestionAccept />
 				</Pen.AI.InlineSuggestionFloatingSurface>
 			</Pen.AI.InlineSuggestionControls>
+			<Pen.AISuggestions.Root editor={editor}>
+				<Pen.AISuggestions.Popover />
+			</Pen.AISuggestions.Root>
 		</div>
 	);
 }

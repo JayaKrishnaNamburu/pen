@@ -725,6 +725,224 @@ describe("@pen/react AI primitives", () => {
 		container.remove();
 	});
 
+	it("keeps the inline prompt focused after submitting a prompt", async () => {
+		const restoreSelectionRect = mockSelectionToolbarRect({
+			top: 120,
+			left: 180,
+			width: 80,
+			height: 20,
+		});
+		const editor = createEditor({
+			extensions: [
+				aiExtension({
+					model: {
+						async *stream() {
+							yield { type: "text-delta" as const, delta: "planet" };
+							yield { type: "done" as const };
+						},
+					},
+				}),
+			],
+		});
+		const blockId = editor.firstBlock()!.id;
+		editor.apply(
+			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			{ origin: "system" },
+		);
+		editor.selectTextRange(
+			{ blockId, offset: 6 },
+			{ blockId, offset: 11 },
+		);
+		const controller = getAIController(editor)!;
+		const session = controller.openContextualPrompt({
+			surface: "inline-edit",
+			target: "selection",
+		});
+		expect(session).not.toBeNull();
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(
+				<Pen.Editor.Root editor={editor}>
+					<Pen.AI.Root editor={editor}>
+						<Pen.Editor.Content />
+						<Pen.SelectionToolbar.Root>
+							<Pen.SelectionToolbar.Content>
+								<Pen.AI.SelectionTrigger shortcut="ctrl+j">
+									AI
+								</Pen.AI.SelectionTrigger>
+							</Pen.SelectionToolbar.Content>
+							<Pen.AI.InlineSession />
+						</Pen.SelectionToolbar.Root>
+					</Pen.AI.Root>
+				</Pen.Editor.Root>,
+			);
+			for (let tick = 0; tick < 4; tick += 1) {
+				await Promise.resolve();
+			}
+		});
+
+		const inlineSessionInput = container.querySelector(
+			"[data-pen-ai-inline-session-input]",
+		) as HTMLTextAreaElement | null;
+		const inlineSessionForm = container.querySelector(
+			"[data-pen-ai-inline-session-form]",
+		) as HTMLFormElement | null;
+		expect(inlineSessionInput).not.toBeNull();
+		expect(inlineSessionForm).not.toBeNull();
+
+		await act(async () => {
+			inlineSessionInput?.focus();
+			controller.updateContextualPromptDraft(session!.id, "Rewrite this");
+			for (let tick = 0; tick < 2; tick += 1) {
+				await Promise.resolve();
+			}
+		});
+
+		await act(async () => {
+			inlineSessionForm?.dispatchEvent(
+				new Event("submit", { bubbles: true, cancelable: true }),
+			);
+			for (let tick = 0; tick < 8; tick += 1) {
+				await Promise.resolve();
+			}
+		});
+
+		const inlineSessionInputAfterSubmit = container.querySelector(
+			"[data-pen-ai-inline-session-input]",
+		) as HTMLTextAreaElement | null;
+		expect(inlineSessionInputAfterSubmit).not.toBeNull();
+		expect(document.activeElement).toBe(inlineSessionInputAfterSubmit);
+
+		await act(async () => {
+			root.unmount();
+		});
+		restoreSelectionRect();
+		container.remove();
+	});
+
+	it("keeps the inline session open after a second submitted edit", async () => {
+		const restoreSelectionRect = mockSelectionToolbarRect({
+			top: 120,
+			left: 180,
+			width: 80,
+			height: 20,
+		});
+		let streamCount = 0;
+		const editor = createEditor({
+			extensions: [
+				aiExtension({
+					model: {
+						async *stream() {
+							streamCount += 1;
+							yield {
+								type: "text-delta" as const,
+								delta: streamCount === 1 ? "planet" : "galaxy",
+							};
+							yield { type: "done" as const };
+						},
+					},
+				}),
+			],
+		});
+		const blockId = editor.firstBlock()!.id;
+		editor.apply(
+			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			{ origin: "system" },
+		);
+		editor.selectTextRange(
+			{ blockId, offset: 6 },
+			{ blockId, offset: 11 },
+		);
+		const controller = getAIController(editor)!;
+		const session = controller.openContextualPrompt({
+			surface: "inline-edit",
+			target: "selection",
+		});
+		expect(session).not.toBeNull();
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(
+				<Pen.Editor.Root editor={editor}>
+					<Pen.AI.Root editor={editor}>
+						<Pen.Editor.Content />
+						<Pen.AI.InlineSession />
+					</Pen.AI.Root>
+				</Pen.Editor.Root>,
+			);
+			for (let tick = 0; tick < 4; tick += 1) {
+				await Promise.resolve();
+			}
+		});
+
+		const inlineSessionInput = container.querySelector(
+			"[data-pen-ai-inline-session-input]",
+		) as HTMLTextAreaElement | null;
+		const inlineSessionForm = container.querySelector(
+			"[data-pen-ai-inline-session-form]",
+		) as HTMLFormElement | null;
+		expect(inlineSessionInput).not.toBeNull();
+		expect(inlineSessionForm).not.toBeNull();
+
+		await act(async () => {
+			inlineSessionInput?.focus();
+			controller.updateContextualPromptDraft(session!.id, "Rewrite this");
+			for (let tick = 0; tick < 2; tick += 1) {
+				await Promise.resolve();
+			}
+		});
+
+		await act(async () => {
+			inlineSessionForm?.dispatchEvent(
+				new Event("submit", { bubbles: true, cancelable: true }),
+			);
+			for (let tick = 0; tick < 8; tick += 1) {
+				await Promise.resolve();
+			}
+		});
+
+		const inlineSessionInputAfterFirstSubmit = container.querySelector(
+			"[data-pen-ai-inline-session-input]",
+		) as HTMLTextAreaElement | null;
+		expect(inlineSessionInputAfterFirstSubmit).not.toBeNull();
+
+		await act(async () => {
+			controller.updateContextualPromptDraft(
+				session!.id,
+				"Make it more whimsical",
+			);
+			for (let tick = 0; tick < 2; tick += 1) {
+				await Promise.resolve();
+			}
+		});
+
+		await act(async () => {
+			inlineSessionForm?.dispatchEvent(
+				new Event("submit", { bubbles: true, cancelable: true }),
+			);
+			for (let tick = 0; tick < 6; tick += 1) {
+				await Promise.resolve();
+			}
+		});
+
+		expect(
+			container.querySelector("[data-pen-ai-inline-session-input]"),
+		).not.toBeNull();
+
+		await act(async () => {
+			root.unmount();
+		});
+		restoreSelectionRect();
+		container.remove();
+	});
+
 	it("keeps the inline AI selection overlay visible from the captured session target", async () => {
 		const restoreSelectionRect = mockSelectionToolbarRect({
 			top: 120,
@@ -3190,6 +3408,143 @@ describe("@pen/react AI primitives", () => {
 			releaseFinalDelta.resolve();
 			await generationPromise;
 		});
+
+		await act(async () => {
+			root.unmount();
+		});
+		blockElement.remove();
+		container.remove();
+		editor.destroy();
+	});
+
+	it("cancels a streaming inline suggestion when keep is clicked", async () => {
+		const abortObserved = createDeferred();
+		const editor = createEditor({
+			extensions: [
+				aiExtension({
+					model: {
+						async *stream(options: { signal?: AbortSignal }) {
+							yield { type: "text-delta" as const, delta: "planet" };
+							await new Promise<void>((resolve) => {
+								if (options.signal?.aborted) {
+									abortObserved.resolve();
+									resolve();
+									return;
+								}
+								options.signal?.addEventListener(
+									"abort",
+									() => {
+										abortObserved.resolve();
+										resolve();
+									},
+									{ once: true },
+								);
+							});
+						},
+					},
+				}),
+			],
+		});
+		const controller = getAIController(editor);
+		expect(controller).toBeTruthy();
+		const blockId = editor.firstBlock()!.id;
+		editor.apply(
+			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			{ origin: "system" },
+		);
+		editor.selectTextRange(
+			{ blockId, offset: 6 },
+			{ blockId, offset: 11 },
+		);
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(
+				<Pen.Editor.Root editor={editor}>
+					<Pen.AI.Root editor={editor}>
+						<Pen.Editor.Content />
+						<Pen.AI.InlineSuggestionControls />
+					</Pen.AI.Root>
+				</Pen.Editor.Root>,
+			);
+			await Promise.resolve();
+		});
+
+		let generationPromise: Promise<unknown> | null = null;
+		await act(async () => {
+			generationPromise = controller?.runPrompt("Rewrite the selection") ?? null;
+			await new Promise((resolve) => setTimeout(resolve, 120));
+		});
+
+		const suggestionIds = [
+			...new Set((controller?.getSuggestions() ?? []).map((suggestion) => suggestion.id)),
+		];
+		expect(suggestionIds.length).toBeGreaterThan(0);
+
+		const editorContent = container.querySelector(
+			"[data-pen-editor-content]",
+		) as HTMLElement | null;
+		expect(editorContent).not.toBeNull();
+		Object.defineProperty(editorContent, "clientWidth", {
+			configurable: true,
+			value: 800,
+		});
+		Object.defineProperty(editorContent, "clientHeight", {
+			configurable: true,
+			value: 800,
+		});
+
+		const blockElement = document.createElement("div");
+		blockElement.setAttribute("data-block-id", blockId);
+		editorContent?.appendChild(blockElement);
+
+		for (const [index, suggestionId] of suggestionIds.entries()) {
+			const suggestionAnchor = document.createElement("span");
+			suggestionAnchor.setAttribute("data-suggestion-id", suggestionId);
+			suggestionAnchor.textContent = "change";
+			Object.defineProperty(suggestionAnchor, "getBoundingClientRect", {
+				configurable: true,
+				value: () => ({
+					top: 180 + Math.floor(index / 3) * 24,
+					left: 140 + (index % 3) * 88,
+					width: 80,
+					height: 18,
+					right: 220 + (index % 3) * 88,
+					bottom: 198 + Math.floor(index / 3) * 24,
+					x: 140 + (index % 3) * 88,
+					y: 180 + Math.floor(index / 3) * 24,
+					toJSON() {
+						return this;
+					},
+				}),
+			});
+			if (index > 0) {
+				blockElement.appendChild(document.createTextNode(" "));
+			}
+			blockElement.appendChild(suggestionAnchor);
+		}
+
+		await act(async () => {
+			window.dispatchEvent(new Event("resize"));
+			await Promise.resolve();
+		});
+
+		const keepButton = container.querySelector(
+			"[data-pen-ai-inline-suggestion-accept]",
+		) as HTMLButtonElement | null;
+		expect(keepButton).not.toBeNull();
+
+		await act(async () => {
+			keepButton?.click();
+			await abortObserved.promise;
+			await generationPromise;
+		});
+
+		expect(controller?.getState().status).toBe("idle");
+		expect(controller?.getState().activeGeneration?.status).toBe("cancelled");
 
 		await act(async () => {
 			root.unmount();

@@ -10,6 +10,12 @@ const PEN_SOURCE_ALIASES = {
 	"@pen/ai-skills": fileURLToPath(
 		new URL("../packages/extensions/ai-skills/src/index.ts", import.meta.url),
 	),
+	"@pen/ai-autocomplete": fileURLToPath(
+		new URL("../packages/extensions/ai-autocomplete/src/index.ts", import.meta.url),
+	),
+	"@pen/ai-suggestions": fileURLToPath(
+		new URL("../packages/extensions/ai-suggestions/src/index.ts", import.meta.url),
+	),
 	"@pen/ai-tools": fileURLToPath(
 		new URL("../packages/extensions/ai-tools/src/index.ts", import.meta.url),
 	),
@@ -23,6 +29,9 @@ const PEN_SOURCE_ALIASES = {
 	"@pen/document-ops": fileURLToPath(
 		new URL("../packages/extensions/document-ops/src/index.ts", import.meta.url),
 	),
+	"@pen/database": fileURLToPath(
+		new URL("../packages/extensions/database/src/index.ts", import.meta.url),
+	),
 	"@pen/export-html": fileURLToPath(
 		new URL("../packages/extensions/export-html/src/index.ts", import.meta.url),
 	),
@@ -35,14 +44,26 @@ const PEN_SOURCE_ALIASES = {
 	"@pen/import-markdown": fileURLToPath(
 		new URL("../packages/extensions/import-markdown/src/index.ts", import.meta.url),
 	),
+	"@pen/input-rules": fileURLToPath(
+		new URL("../packages/extensions/input-rules/src/index.ts", import.meta.url),
+	),
 	"@pen/multiplayer": fileURLToPath(
 		new URL("../packages/extensions/multiplayer/src/index.ts", import.meta.url),
+	),
+	"@pen/preset-default": fileURLToPath(
+		new URL("../packages/presets/default/src/index.ts", import.meta.url),
 	),
 	"@pen/react": fileURLToPath(
 		new URL("../packages/rendering/react/src/index.ts", import.meta.url),
 	),
+	"@pen/search": fileURLToPath(
+		new URL("../packages/extensions/search/src/index.ts", import.meta.url),
+	),
 	"@pen/schema-default": fileURLToPath(
 		new URL("../packages/schema/default/src/index.ts", import.meta.url),
+	),
+	"@pen/shortcuts": fileURLToPath(
+		new URL("../packages/extensions/shortcuts/src/index.ts", import.meta.url),
 	),
 	"@pen/types": fileURLToPath(new URL("../packages/types/src/index.ts", import.meta.url)),
 	"@pen/undo": fileURLToPath(
