@@ -260,10 +260,7 @@ export function EditorRoot(props: EditorRootProps) {
 		[DATA_ATTRS.focused]: focused || undefined,
 		[DATA_ATTRS.readonly]: readonly || undefined,
 		[DATA_ATTRS.empty]: isEmpty || undefined,
-		role: "textbox",
 		tabIndex: -1,
-		"aria-multiline": "true",
-		"aria-readonly": readonly,
 	};
 
 	return (

@@ -37,6 +37,7 @@ import {
 } from "../../utils/flowCapabilities";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { DATA_ATTRS } from "../../utils/dataAttributes";
+import { fieldEditorTextEntryAttrs } from "../../utils/fieldEditorTextEntryAttrs";
 import { AIStructuredTargetPreviewItem } from "../ai/structuredTargetPreview";
 import { AutocompletePreviewBlock } from "./autocompletePreviewBlock";
 import { EditorBlock } from "./block";
@@ -1362,7 +1363,7 @@ export function EditorContent(props: EditorContentProps) {
 				{...(fieldEditorState.mode === "expanded"
 					? {
 						[DATA_ATTRS.fieldEditorSurface]: "",
-						[DATA_ATTRS.fieldEditorActiveSurface]: "",
+						...fieldEditorTextEntryAttrs(true),
 					}
 					: {})}
 				ref={blocksHostRef}
