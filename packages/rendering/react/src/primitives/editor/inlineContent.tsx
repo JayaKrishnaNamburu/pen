@@ -12,6 +12,7 @@ import { useBlockTextSnapshot } from "../../hooks/useBlockTextSnapshot";
 import { useFieldEditorState } from "../../hooks/useFieldEditorState";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { DATA_ATTRS } from "../../utils/dataAttributes";
+import { fieldEditorTextEntryAttrs } from "../../utils/fieldEditorTextEntryAttrs";
 import { applyInlineDecorationsToDeltas } from "../../utils/inlineDecorations";
 
 export interface InlineContentProps extends AsChildProps {
@@ -145,7 +146,7 @@ export function InlineContent(props: InlineContentProps) {
 	const primitiveProps: Record<string, unknown> = {
 		[DATA_ATTRS.inlineContent]: "",
 		[DATA_ATTRS.fieldEditorSurface]: "",
-		[DATA_ATTRS.fieldEditorActiveSurface]: isActiveSurface ? "" : undefined,
+		...fieldEditorTextEntryAttrs(isActiveSurface),
 		[DATA_ATTRS.placeholderVisible]: showPlaceholder ? "" : undefined,
 		"data-placeholder": showPlaceholder ? placeholder : undefined,
 		style: showPlaceholder

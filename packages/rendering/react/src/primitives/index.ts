@@ -22,6 +22,7 @@ export {
 
 export {
 	SlashMenuRoot,
+	SlashMenuContent,
 	SlashMenuInput,
 	SlashMenuList,
 	SlashMenuGroup,
@@ -81,10 +82,7 @@ export {
 	AIInlineSession,
 	AIInlineSessionActions,
 } from "./ai/index";
-export {
-	AISuggestionsRoot,
-	AISuggestionsPopover,
-} from "./aiSuggestions/index";
+export { AISuggestionsRoot, AISuggestionsPopover } from "./aiSuggestions/index";
 export {
 	MultiplayerPresenceList,
 	MultiplayerRemoteCursors,
@@ -117,6 +115,7 @@ import {
 
 import {
 	SlashMenuRoot,
+	SlashMenuContent,
 	SlashMenuInput,
 	SlashMenuList,
 	SlashMenuGroup,
@@ -176,10 +175,7 @@ import {
 	AIInlineSession,
 	AIInlineSessionActions,
 } from "./ai/index";
-import {
-	AISuggestionsRoot,
-	AISuggestionsPopover,
-} from "./aiSuggestions/index";
+import { AISuggestionsRoot, AISuggestionsPopover } from "./aiSuggestions/index";
 import {
 	MultiplayerPresenceList,
 	MultiplayerRemoteCursors,
@@ -209,6 +205,7 @@ export const Pen = {
 	},
 	SlashMenu: {
 		Root: SlashMenuRoot,
+		Content: SlashMenuContent,
 		Input: SlashMenuInput,
 		List: SlashMenuList,
 		Group: SlashMenuGroup,

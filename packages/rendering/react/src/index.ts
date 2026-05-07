@@ -53,17 +53,22 @@ export {
 	type ToolbarButtonProps,
 	type ToolbarToggleProps,
 	type ToolbarSelectProps,
+	type ToolbarSeparatorProps,
 } from "./primitives/toolbar/index";
 
 // ── Slash menu primitives ───────────────────────────────────
 export {
 	SlashMenuRoot,
+	SlashMenuContent,
 	SlashMenuInput,
 	SlashMenuList,
 	SlashMenuGroup,
 	SlashMenuItem,
 	SlashMenuEmpty,
+	useSlashMenuContext,
+	type SlashMenuContextValue,
 	type SlashMenuRootProps,
+	type SlashMenuContentProps,
 	type SlashMenuInputProps,
 	type SlashMenuListProps,
 	type SlashMenuGroupProps,
@@ -371,9 +376,6 @@ export type {
 	HistoryState,
 } from "@pen/history";
 export type { MultiplayerState, PeerState } from "@pen/multiplayer";
-export type {
-	RemoteCursorState,
-	RemoteSelectionState,
-} from "@pen/multiplayer";
+export type { RemoteCursorState, RemoteSelectionState } from "@pen/multiplayer";
 
 export type { CreateEditorOptions } from "@pen/types";
