@@ -1724,7 +1724,7 @@ function normalizePlaygroundSelectionModelName(
 	modelName: string | undefined,
 ): string {
 	if (!modelName) {
-		return "claude-3-haiku-20240307";
+		return "claude-haiku-4-5";
 	}
 
 	return normalizePlaygroundModelName(modelName);
