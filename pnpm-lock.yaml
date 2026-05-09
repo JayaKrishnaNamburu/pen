@@ -879,6 +879,9 @@ importers:
       '@pen/crdt-yjs':
         specifier: workspace:*
         version: link:../../crdt/yjs
+      '@pen/export-json':
+        specifier: workspace:*
+        version: link:../../extensions/export-json
       '@pen/schema-default':
         specifier: workspace:*
         version: link:../../schema/default
