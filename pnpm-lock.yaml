@@ -987,6 +987,9 @@ importers:
       '@pen/export-html':
         specifier: workspace:*
         version: link:../packages/extensions/export-html
+      '@pen/export-json':
+        specifier: workspace:^
+        version: link:../packages/extensions/export-json
       '@pen/export-markdown':
         specifier: workspace:*
         version: link:../packages/extensions/export-markdown
