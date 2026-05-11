@@ -35,6 +35,7 @@ export function InlineContent(props: InlineContentProps) {
 	const textSnapshot = useBlockTextSnapshot(editor, blockId);
 	const elementRef = useRef<HTMLElement>(null);
 	const previousCommitRevisionRef = useRef(blockCommit.revision);
+	const previousRenderedDeltasSignatureRef = useRef<string | null>(null);
 	const isExpandedOwnedBlock =
 		fieldEditorState.mode === "expanded" &&
 		fieldEditorState.activeBlockIds.includes(blockId);
@@ -62,24 +63,26 @@ export function InlineContent(props: InlineContentProps) {
 		!!schemaPlaceholder &&
 		!showDocumentPlaceholder;
 
-	const placeholder =
-		showDocumentPlaceholder
-			? emptyPlaceholder
-			: showExplicitPlaceholder
-				? placeholderProp
-				: showBlockPlaceholder
-					? schemaPlaceholder
-					: undefined;
+	const placeholder = showDocumentPlaceholder
+		? emptyPlaceholder
+		: showExplicitPlaceholder
+			? placeholderProp
+			: showBlockPlaceholder
+				? schemaPlaceholder
+				: undefined;
 	const inlineDecorations = blockDecorations.filter(
-		(decoration): decoration is InlineDecoration => decoration.type === "inline",
+		(decoration): decoration is InlineDecoration =>
+			decoration.type === "inline",
 	);
 	const renderedDeltas =
 		inlineDecorations.length > 0
 			? applyInlineDecorationsToDeltas(
-				textSnapshot.deltas,
-				inlineDecorations,
-			)
+					textSnapshot.deltas,
+					inlineDecorations,
+				)
 			: textSnapshot.deltas;
+	const renderedDeltasText = getDeltaText(renderedDeltas);
+	const renderedDeltasSignature = getDeltaSignature(renderedDeltas);
 
 	useLayoutEffect(() => {
 		if (fieldEditorState.mode === "expanded") {
@@ -106,6 +109,29 @@ export function InlineContent(props: InlineContentProps) {
 			didCommitAdvance && blockCommit.origin === "history";
 
 		if (isExpandedOwnedBlock || isActive) {
+			if (!elementRef.current || fieldEditorState.isComposing) {
+				return;
+			}
+			if (!textSnapshot.exists) {
+				elementRef.current.replaceChildren();
+				previousRenderedDeltasSignatureRef.current = null;
+				return;
+			}
+			if (
+				elementRef.current.textContent === renderedDeltasText &&
+				previousRenderedDeltasSignatureRef.current ===
+					renderedDeltasSignature
+			) {
+				return;
+			}
+			fullReconcileDeltasToDOM(
+				[...renderedDeltas],
+				elementRef.current,
+				editor.schema,
+				{ preserveSelection: true },
+			);
+			previousRenderedDeltasSignatureRef.current =
+				renderedDeltasSignature;
 			return;
 		}
 		if (!elementRef.current) {
@@ -119,6 +145,7 @@ export function InlineContent(props: InlineContentProps) {
 		}
 		if (!textSnapshot.exists) {
 			elementRef.current.replaceChildren();
+			previousRenderedDeltasSignatureRef.current = null;
 			return;
 		}
 		fullReconcileDeltasToDOM(
@@ -127,6 +154,7 @@ export function InlineContent(props: InlineContentProps) {
 			editor.schema,
 			{ preserveSelection: false },
 		);
+		previousRenderedDeltasSignatureRef.current = renderedDeltasSignature;
 	}, [
 		editor,
 		isExpandedOwnedBlock,
@@ -136,11 +164,15 @@ export function InlineContent(props: InlineContentProps) {
 		blockCommit,
 		isActive,
 		renderedDeltas,
+		renderedDeltasSignature,
+		renderedDeltasText,
 		textSnapshot,
 	]);
 
 	const showPlaceholder =
-		showDocumentPlaceholder || showExplicitPlaceholder || showBlockPlaceholder;
+		showDocumentPlaceholder ||
+		showExplicitPlaceholder ||
+		showBlockPlaceholder;
 	const isActiveSurface = isActive && fieldEditorState.mode !== "expanded";
 
 	const primitiveProps: Record<string, unknown> = {
@@ -151,8 +183,8 @@ export function InlineContent(props: InlineContentProps) {
 		"data-placeholder": showPlaceholder ? placeholder : undefined,
 		style: showPlaceholder
 			? {
-				position: "relative" as const,
-			}
+					position: "relative" as const,
+				}
 			: undefined,
 	};
 
@@ -166,4 +198,16 @@ function resolveSchemaPlaceholder(
 	const block = editor.getBlock(blockId);
 	if (!block) return undefined;
 	return editor.schema.resolve(block.type)?.placeholder;
+}
+
+function getDeltaText(deltas: readonly { insert: string }[]): string {
+	return deltas.map((delta) => delta.insert).join("");
+}
+
+function getDeltaSignature(
+	deltas: readonly { attributes?: Record<string, unknown>; insert: string }[],
+): string {
+	return JSON.stringify(
+		deltas.map((delta) => [delta.insert, delta.attributes ?? null]),
+	);
 }

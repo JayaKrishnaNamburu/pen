@@ -7,9 +7,7 @@ import type {
 	Unsubscribe,
 	InputBackend,
 } from "@pen/types";
-import {
-	DocumentRangeImpl,
-} from "@pen/core";
+import { DocumentRangeImpl } from "@pen/core";
 import {
 	hasFieldEditorSurface,
 	resolveFieldEditorInputMode,
@@ -33,7 +31,11 @@ import {
 	resolveCellInlineElement,
 } from "./contentResolution";
 import type { FieldEditorTextLike } from "./crdt";
-import { domSelectionToEditor, queryBlockElement, queryInlineElement } from "./selectionBridge";
+import {
+	domSelectionToEditor,
+	queryBlockElement,
+	queryInlineElement,
+} from "./selectionBridge";
 import {
 	getEditorBlockSelectionLength,
 	getEditorBlockSelectionRole,
@@ -50,6 +52,7 @@ import {
 
 type FieldEditorOptions = {
 	selectAllBehavior?: EditorSelectAllBehavior;
+	inputBackend?: "contenteditable" | "edit-context";
 };
 
 export class FieldEditorImpl implements FieldEditorSession {
@@ -77,6 +80,7 @@ export class FieldEditorImpl implements FieldEditorSession {
 	private readonly _sessionReconciler: SessionReconciler;
 	private readonly _historySelectionCoordinator: HistorySelectionCoordinator;
 	private _selectAllBehavior: EditorSelectAllBehavior;
+	private _inputBackend: "contenteditable" | "edit-context";
 	private _selectAllCycle: {
 		blockId: string;
 		scope: "cell" | "block" | "document";
@@ -87,7 +91,9 @@ export class FieldEditorImpl implements FieldEditorSession {
 	constructor(editor: Editor, options?: FieldEditorOptions) {
 		this._editor = editor;
 		this._selectAllBehavior =
-			options?.selectAllBehavior ?? resolveSelectAllBehavior("content-first");
+			options?.selectAllBehavior ??
+			resolveSelectAllBehavior("content-first");
+		this._inputBackend = options?.inputBackend ?? "edit-context";
 		this._historySelectionCoordinator = new HistorySelectionCoordinator(
 			this._editor,
 		);
@@ -115,9 +121,11 @@ export class FieldEditorImpl implements FieldEditorSession {
 				});
 			},
 		);
-		this._unsubscribeHistoryApplied = this._editor.onHistoryApplied((event) => {
-			this._handleHistoryApplied(event);
-		});
+		this._unsubscribeHistoryApplied = this._editor.onHistoryApplied(
+			(event) => {
+				this._handleHistoryApplied(event);
+			},
+		);
 		this._sessionReconciler = new SessionReconciler(this._editor, {
 			getSnapshot: () => this.getSnapshot(),
 			getAttachedElement: () => this._attachedElement,
@@ -212,7 +220,11 @@ export class FieldEditorImpl implements FieldEditorSession {
 		const coord = this._activeCellCoord;
 		if (!coord) return;
 
-		const ytext = this._getYTextForCell(coord.blockId, coord.row, coord.col);
+		const ytext = this._getYTextForCell(
+			coord.blockId,
+			coord.row,
+			coord.col,
+		);
 		if (!ytext) return;
 
 		const root = this._findEditorRoot();
@@ -295,14 +307,19 @@ export class FieldEditorImpl implements FieldEditorSession {
 
 		const blockId = this._resolveSelectAllBlockId(rootElement);
 		if (blockId) {
-			const blockLength = getEditorBlockSelectionLength(this._editor, blockId);
-			const blockRole = getEditorBlockSelectionRole(this._editor, blockId);
+			const blockLength = getEditorBlockSelectionLength(
+				this._editor,
+				blockId,
+			);
+			const blockRole = getEditorBlockSelectionRole(
+				this._editor,
+				blockId,
+			);
 			const shouldSelectDocument =
 				blockLength === 0 ||
 				(this._selectAllCycle?.blockId === blockId &&
 					this._selectAllCycle.scope === "block");
-			const nextScope =
-				shouldSelectDocument ? "document" : "block";
+			const nextScope = shouldSelectDocument ? "document" : "block";
 			if (nextScope === "block") {
 				if (blockRole && blockRole !== "editable-inline") {
 					this.deactivate();
@@ -331,7 +348,10 @@ export class FieldEditorImpl implements FieldEditorSession {
 		this._editor.selectTextRange(range.start, range.end);
 		this._recomputeSurfaceFromSelection();
 		if (this._selectAllBehavior === "block-first") {
-			this._recordSelectAllScope(blockId ?? range.focusBlockId, "document");
+			this._recordSelectAllScope(
+				blockId ?? range.focusBlockId,
+				"document",
+			);
 		}
 		this._syncSelectionToDOM();
 		return true;
@@ -692,7 +712,10 @@ export class FieldEditorImpl implements FieldEditorSession {
 				this._editor,
 				cycle.blockId,
 			);
-			const blockRole = getEditorBlockSelectionRole(this._editor, cycle.blockId);
+			const blockRole = getEditorBlockSelectionRole(
+				this._editor,
+				cycle.blockId,
+			);
 			if (blockRole && blockRole !== "editable-inline") {
 				return (
 					selection?.type === "block" &&
@@ -709,9 +732,9 @@ export class FieldEditorImpl implements FieldEditorSession {
 				selection.anchor.blockId === cycle.blockId &&
 				selection.focus.blockId === cycle.blockId &&
 				Math.min(selection.anchor.offset, selection.focus.offset) ===
-				0 &&
+					0 &&
 				Math.max(selection.anchor.offset, selection.focus.offset) ===
-				blockLength
+					blockLength
 			);
 		}
 
@@ -779,7 +802,7 @@ export class FieldEditorImpl implements FieldEditorSession {
 		const selection = this._editor.selection;
 		const anchor =
 			selection?.type === "text" &&
-				selection.blockRange.includes(this._focusBlockId)
+			selection.blockRange.includes(this._focusBlockId)
 				? selection.anchor
 				: { blockId: this._focusBlockId, offset: 0 };
 		const doc = this._editor.documentState;
@@ -874,6 +897,7 @@ export class FieldEditorImpl implements FieldEditorSession {
 			return ContentEditableBackend;
 		}
 		if (
+			this._inputBackend === "edit-context" &&
 			"EditContext" in globalThis &&
 			typeof (globalThis as typeof globalThis & { EditContext?: unknown })
 				.EditContext === "function"
@@ -1076,9 +1100,7 @@ export class FieldEditorImpl implements FieldEditorSession {
 		return true;
 	}
 
-	private _handleHistoryApplied(
-		event: HistoryAppliedEvent,
-	): void {
+	private _handleHistoryApplied(event: HistoryAppliedEvent): void {
 		const selection = event.selection;
 		const nextFocusBlockId =
 			event.focusBlockId ??
@@ -1098,7 +1120,9 @@ export class FieldEditorImpl implements FieldEditorSession {
 			this._focusBlockId = nextFocusBlockId;
 		}
 
-		this._historySelectionCoordinator.beginDeferredProjection(event.requestId);
+		this._historySelectionCoordinator.beginDeferredProjection(
+			event.requestId,
+		);
 
 		this._recomputeSurfaceFromSelection({
 			syncSelectionToBackend: false,
@@ -1109,7 +1133,8 @@ export class FieldEditorImpl implements FieldEditorSession {
 		if (!this._attachedElement) {
 			return false;
 		}
-		const activeElement = this._attachedElement.ownerDocument?.activeElement;
+		const activeElement =
+			this._attachedElement.ownerDocument?.activeElement;
 		return activeElement instanceof Node
 			? this._attachedElement.contains(activeElement)
 			: false;
@@ -1260,7 +1285,12 @@ export class FieldEditorImpl implements FieldEditorSession {
 		col: number,
 		root?: HTMLElement | null,
 	): HTMLElement | null {
-		return resolveCellInlineElement(blockId, row, col, root ?? this._findEditorRoot());
+		return resolveCellInlineElement(
+			blockId,
+			row,
+			col,
+			root ?? this._findEditorRoot(),
+		);
 	}
 
 	private _resolveActiveCellElement(

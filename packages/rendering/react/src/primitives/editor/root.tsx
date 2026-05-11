@@ -1,8 +1,6 @@
 import React, { useRef, useEffect, useState } from "react";
 import { FIELD_EDITOR_SLOT_KEY as CORE_FIELD_EDITOR_SLOT_KEY } from "@pen/types";
-import {
-	generateId,
-} from "@pen/types";
+import { generateId } from "@pen/types";
 import type {
 	AssetProvider,
 	Editor,
@@ -33,7 +31,10 @@ import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { composeRefs } from "../../utils/composeRefs";
 import { DATA_ATTRS } from "../../utils/dataAttributes";
 import { handleEscapeSelectionTransition } from "../../utils/escapeSelection";
-import { handleSelectAllShortcut, handleHistoryShortcut } from "../../field-editor/keyHandling";
+import {
+	handleSelectAllShortcut,
+	handleHistoryShortcut,
+} from "../../field-editor/keyHandling";
 import { getAdjacentVisibleBlockId } from "../../utils/parentIdTree";
 import { handleTableCellSelectionKeyDown } from "../../utils/tableCellNavigation";
 import { BlockDragSessionProvider } from "./blockDragSession";
@@ -47,6 +48,7 @@ type DatabaseRowSelectionController = {
 export interface EditorRootProps extends AsChildProps {
 	editor: Editor;
 	readonly?: boolean;
+	inputBackend?: "contenteditable" | "edit-context";
 	importers?: PasteImporters;
 	assets?: AssetProvider;
 	renderers?: RendererOverrides;
@@ -61,6 +63,7 @@ export function EditorRoot(props: EditorRootProps) {
 	const {
 		editor,
 		readonly = false,
+		inputBackend = "edit-context",
 		importers,
 		assets,
 		renderers,
@@ -92,6 +95,7 @@ export function EditorRoot(props: EditorRootProps) {
 	if (!fieldEditorRef.current) {
 		fieldEditorRef.current = new FieldEditorImpl(editor, {
 			selectAllBehavior: resolvedInteractionModel.selectAllBehavior,
+			inputBackend,
 		});
 	}
 	if (!regionSelectionStoreRef.current) {
@@ -197,14 +201,21 @@ export function EditorRoot(props: EditorRootProps) {
 				return;
 			}
 
-			if (handleDeleteSelectionShortcut(event, editor, fieldEditor, root)) {
+			if (
+				handleDeleteSelectionShortcut(event, editor, fieldEditor, root)
+			) {
 				event.preventDefault();
 				event.stopImmediatePropagation();
 				return;
 			}
 
 			if (
-				handleTableCellSelectionKeyDown({ event, editor, fieldEditor, root })
+				handleTableCellSelectionKeyDown({
+					event,
+					editor,
+					fieldEditor,
+					root,
+				})
 			) {
 				event.preventDefault();
 				event.stopImmediatePropagation();
@@ -221,7 +232,14 @@ export function EditorRoot(props: EditorRootProps) {
 				return;
 			}
 
-			if (handleBlockSelectionEnter(event, editor, fieldEditor, interactionModelRef.current)) {
+			if (
+				handleBlockSelectionEnter(
+					event,
+					editor,
+					fieldEditor,
+					interactionModelRef.current,
+				)
+			) {
 				event.preventDefault();
 				event.stopImmediatePropagation();
 				return;
@@ -352,7 +370,10 @@ function shouldHandleEditorKeyboardEvent(
 			) {
 				return true;
 			}
-			return shouldHandleCollapsedFieldEditorSelectAll(event, activeElement);
+			return shouldHandleCollapsedFieldEditorSelectAll(
+				event,
+				activeElement,
+			);
 		}
 		return true;
 	}
@@ -520,7 +541,10 @@ function handleBlockSelectionEnter(
 		return false;
 	}
 
-	if (interactionModelResolved.model === "block-first" && selection.blockIds.length === 1) {
+	if (
+		interactionModelResolved.model === "block-first" &&
+		selection.blockIds.length === 1
+	) {
 		const schema = editor.schema.resolve(anchorBlock.type);
 		if (usesInlineTextSelection(schema)) {
 			const offset = anchorBlock.length();
@@ -532,15 +556,18 @@ function handleBlockSelectionEnter(
 	const anchorSchema = editor.schema.resolve(anchorBlock.type);
 	const newBlockId = generateId();
 
-	editor.apply([
-		{
-			type: "insert-block",
-			blockId: newBlockId,
-			blockType: "paragraph",
-			props: {},
-			position: { after: anchorBlockId },
-		},
-	], { origin: "user" });
+	editor.apply(
+		[
+			{
+				type: "insert-block",
+				blockId: newBlockId,
+				blockType: "paragraph",
+				props: {},
+				position: { after: anchorBlockId },
+			},
+		],
+		{ origin: "user" },
+	);
 
 	fieldEditor.activateTextSelection(newBlockId, 0, 0);
 	return true;
@@ -622,15 +649,18 @@ function tryDeleteSelectedDatabaseRows(
 	root: HTMLElement,
 	editor: Editor,
 ): boolean {
-	const controller = editor.internals.getSlot(
-		DATABASE_ROW_SELECTION_SLOT,
-	) as DatabaseRowSelectionController | undefined;
+	const controller = editor.internals.getSlot(DATABASE_ROW_SELECTION_SLOT) as
+		| DatabaseRowSelectionController
+		| undefined;
 	if (!controller) {
 		return false;
 	}
 
 	const activeElement = root.ownerDocument?.activeElement;
-	if (!(activeElement instanceof HTMLElement) || !root.contains(activeElement)) {
+	if (
+		!(activeElement instanceof HTMLElement) ||
+		!root.contains(activeElement)
+	) {
 		return false;
 	}
 
@@ -657,7 +687,10 @@ function shouldUseDocumentTextDeletionFallback(
 	}
 
 	const activeElement = root.ownerDocument?.activeElement;
-	if (!(activeElement instanceof HTMLElement) || !root.contains(activeElement)) {
+	if (
+		!(activeElement instanceof HTMLElement) ||
+		!root.contains(activeElement)
+	) {
 		return true;
 	}
 
@@ -674,4 +707,3 @@ function shouldUseDocumentTextDeletionFallback(
 
 	return false;
 }
-

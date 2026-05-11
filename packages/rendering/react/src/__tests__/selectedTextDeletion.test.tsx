@@ -3,8 +3,12 @@
 import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
-import { createEditor as createCoreEditor } from "@pen/core";
+import {
+	createDecorationSet,
+	createEditor as createCoreEditor,
+} from "@pen/core";
 import { defaultPreset } from "@pen/preset-default";
+import { defineExtension } from "@pen/types";
 import type { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
 import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
 import { domSelectionToEditor } from "../field-editor/selectionBridge";
@@ -132,6 +136,399 @@ function setNativeSelectionRange(
 }
 
 describe("@pen/react selected text deletion", () => {
+	it("keeps the active inline DOM synchronized after direct text input", async () => {
+		const editor = createEditor();
+		const blockId = editor.firstBlock()!.id;
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(
+				<Pen.Editor.Root editor={editor}>
+					<Pen.Editor.Content />
+				</Pen.Editor.Root>,
+			);
+		});
+
+		const fieldEditor = getFieldEditor(editor);
+		const inlineElement = container.querySelector(
+			"[data-pen-inline-content]",
+		) as HTMLElement | null;
+
+		expect(inlineElement).not.toBeNull();
+
+		await act(async () => {
+			fieldEditor.activate(blockId);
+			await flushAnimationFrames(2);
+		});
+
+		setNativeSelectionRange(inlineElement!, 0, inlineElement!, 0);
+
+		await act(async () => {
+			for (const character of "Hello") {
+				inlineElement!.dispatchEvent(
+					new InputEvent("beforeinput", {
+						bubbles: true,
+						cancelable: true,
+						inputType: "insertText",
+						data: character,
+					}),
+				);
+			}
+			await flushAnimationFrames(2);
+		});
+
+		expect(editor.getBlock(blockId)?.textContent()).toBe("Hello");
+		expect(inlineElement!.textContent).toBe("Hello");
+
+		await act(async () => {
+			root.unmount();
+		});
+		container.remove();
+		editor.destroy();
+	});
+
+	it("keeps active inline text visible after a parent rerender", async () => {
+		const editor = createEditor();
+		const blockId = editor.firstBlock()!.id;
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		function RerenderingEditor() {
+			const [, setCommitCount] = React.useState(0);
+
+			React.useEffect(
+				() =>
+					editor.onDocumentCommit(() =>
+						setCommitCount((count) => count + 1),
+					),
+				[],
+			);
+
+			return (
+				<Pen.Editor.Root editor={editor}>
+					<Pen.Editor.Content />
+				</Pen.Editor.Root>
+			);
+		}
+
+		await act(async () => {
+			root.render(<RerenderingEditor />);
+		});
+
+		const fieldEditor = getFieldEditor(editor);
+		const inlineElement = container.querySelector(
+			"[data-pen-inline-content]",
+		) as HTMLElement | null;
+
+		expect(inlineElement).not.toBeNull();
+
+		await act(async () => {
+			fieldEditor.activate(blockId);
+			await flushAnimationFrames(2);
+		});
+
+		setNativeSelectionRange(inlineElement!, 0, inlineElement!, 0);
+
+		await act(async () => {
+			for (const character of "Hello") {
+				inlineElement!.dispatchEvent(
+					new InputEvent("beforeinput", {
+						bubbles: true,
+						cancelable: true,
+						inputType: "insertText",
+						data: character,
+					}),
+				);
+				await flushAnimationFrames(1);
+			}
+			await flushAnimationFrames(2);
+		});
+
+		expect(editor.getBlock(blockId)?.textContent()).toBe("Hello");
+		expect(inlineElement!.textContent).toBe("Hello");
+
+		await act(async () => {
+			root.unmount();
+		});
+		container.remove();
+		editor.destroy();
+	});
+
+	it("reconciles active inline decorations when text is unchanged", async () => {
+		let decorationState = "initial";
+		const editor = createEditor({
+			extensions: [
+				defineExtension({
+					name: "active-inline-decoration-test",
+					decorations(_state, currentEditor) {
+						const firstBlock = currentEditor.firstBlock();
+						if (!firstBlock || firstBlock.length() === 0) {
+							return createDecorationSet([]);
+						}
+
+						return createDecorationSet([
+							{
+								type: "inline",
+								blockId: firstBlock.id,
+								from: 0,
+								to: firstBlock.length(),
+								attributes: {
+									"data-decoration-state": decorationState,
+								},
+							},
+						]);
+					},
+				}),
+			],
+		});
+		const blockId = editor.firstBlock()!.id;
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(
+				<Pen.Editor.Root editor={editor}>
+					<Pen.Editor.Content />
+				</Pen.Editor.Root>,
+			);
+		});
+
+		const fieldEditor = getFieldEditor(editor);
+		const inlineElement = container.querySelector(
+			"[data-pen-inline-content]",
+		) as HTMLElement | null;
+
+		expect(inlineElement).not.toBeNull();
+
+		await act(async () => {
+			fieldEditor.activate(blockId);
+			await flushAnimationFrames(2);
+		});
+
+		setNativeSelectionRange(inlineElement!, 0, inlineElement!, 0);
+
+		await act(async () => {
+			for (const character of "Hello") {
+				inlineElement!.dispatchEvent(
+					new InputEvent("beforeinput", {
+						bubbles: true,
+						cancelable: true,
+						inputType: "insertText",
+						data: character,
+					}),
+				);
+			}
+			await flushAnimationFrames(2);
+		});
+
+		expect(
+			inlineElement!.querySelector('[data-decoration-state="initial"]'),
+		).not.toBeNull();
+
+		decorationState = "updated";
+		await act(async () => {
+			editor.requestDecorationUpdate();
+			await flushAnimationFrames(2);
+		});
+
+		expect(inlineElement!.textContent).toBe("Hello");
+		expect(
+			inlineElement!.querySelector('[data-decoration-state="updated"]'),
+		).not.toBeNull();
+
+		await act(async () => {
+			root.unmount();
+		});
+		container.remove();
+		editor.destroy();
+	});
+
+	it("can opt into contenteditable even when EditContext is available", async () => {
+		const originalEditContext = (
+			globalThis as typeof globalThis & {
+				EditContext?: typeof FakeEditContext;
+			}
+		).EditContext;
+		(
+			globalThis as typeof globalThis & {
+				EditContext?: typeof FakeEditContext;
+			}
+		).EditContext = FakeEditContext;
+
+		const editor = createEditor();
+		const blockId = editor.firstBlock()!.id;
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		try {
+			await act(async () => {
+				root.render(
+					<Pen.Editor.Root
+						editor={editor}
+						inputBackend="contenteditable"
+					>
+						<Pen.Editor.Content />
+					</Pen.Editor.Root>,
+				);
+			});
+
+			const fieldEditor = getFieldEditor(editor);
+			const inlineElement = container.querySelector(
+				"[data-pen-inline-content]",
+			) as
+				| (HTMLElement & { editContext?: FakeEditContext | null })
+				| null;
+			const rootElement = container.querySelector(
+				"[data-pen-editor-root]",
+			) as HTMLElement | null;
+
+			expect(inlineElement).not.toBeNull();
+			expect(rootElement).not.toBeNull();
+
+			await act(async () => {
+				fieldEditor.activate(blockId);
+				await flushAnimationFrames(2);
+			});
+
+			expect(inlineElement!.editContext).toBeFalsy();
+			expect(inlineElement!.contentEditable).toBe("true");
+
+			setNativeSelectionRange(inlineElement!, 0, inlineElement!, 0);
+
+			await act(async () => {
+				for (const character of "Hey") {
+					inlineElement!.dispatchEvent(
+						new InputEvent("beforeinput", {
+							bubbles: true,
+							cancelable: true,
+							inputType: "insertText",
+							data: character,
+						}),
+					);
+				}
+				await flushAnimationFrames(2);
+			});
+
+			expect(editor.getBlock(blockId)?.textContent()).toBe("Hey");
+			expect(inlineElement!.textContent).toBe("Hey");
+			expect(editor.selection).toMatchObject({
+				type: "text",
+				anchor: { blockId, offset: 3 },
+				focus: { blockId, offset: 3 },
+			});
+		} finally {
+			await act(async () => {
+				root.unmount();
+			});
+			container.remove();
+			editor.destroy();
+			(
+				globalThis as typeof globalThis & {
+					EditContext?: typeof FakeEditContext;
+				}
+			).EditContext = originalEditContext;
+		}
+	});
+
+	it("keeps active EditContext text visible after a parent rerender", async () => {
+		const originalEditContext = (
+			globalThis as typeof globalThis & {
+				EditContext?: typeof FakeEditContext;
+			}
+		).EditContext;
+		(
+			globalThis as typeof globalThis & {
+				EditContext?: typeof FakeEditContext;
+			}
+		).EditContext = FakeEditContext;
+
+		const editor = createEditor();
+		const blockId = editor.firstBlock()!.id;
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		function RerenderingEditor() {
+			const [, setCommitCount] = React.useState(0);
+
+			React.useEffect(
+				() =>
+					editor.onDocumentCommit(() =>
+						setCommitCount((count) => count + 1),
+					),
+				[],
+			);
+
+			return (
+				<Pen.Editor.Root editor={editor} inputBackend="edit-context">
+					<Pen.Editor.Content />
+				</Pen.Editor.Root>
+			);
+		}
+
+		try {
+			await act(async () => {
+				root.render(<RerenderingEditor />);
+			});
+
+			const fieldEditor = getFieldEditor(editor);
+			const inlineElement = container.querySelector(
+				"[data-pen-inline-content]",
+			) as
+				| (HTMLElement & { editContext?: FakeEditContext | null })
+				| null;
+			const rootElement = container.querySelector(
+				"[data-pen-editor-root]",
+			) as HTMLElement | null;
+
+			expect(inlineElement).not.toBeNull();
+			expect(rootElement).not.toBeNull();
+
+			await act(async () => {
+				fieldEditor.activate(blockId);
+				await flushAnimationFrames(2);
+			});
+
+			const editContext = inlineElement!.editContext;
+			expect(editContext).toBeInstanceOf(FakeEditContext);
+
+			await act(async () => {
+				for (const character of "Hello") {
+					const start = editContext!.selectionStart;
+					const end = editContext!.selectionEnd;
+					editContext!.emit("textupdate", {
+						updateRangeStart: start,
+						updateRangeEnd: end,
+						text: character,
+						selectionStart: start + character.length,
+						selectionEnd: start + character.length,
+					});
+					await flushAnimationFrames(1);
+				}
+				await flushAnimationFrames(2);
+			});
+
+			expect(editor.getBlock(blockId)?.textContent()).toBe("Hello");
+			expect(inlineElement!.textContent).toBe("Hello");
+		} finally {
+			await act(async () => {
+				root.unmount();
+			});
+			container.remove();
+			editor.destroy();
+			(
+				globalThis as typeof globalThis & {
+					EditContext?: typeof FakeEditContext;
+				}
+			).EditContext = originalEditContext;
+		}
+	});
+
 	it("preserves the full native selection on mouseup after a word select gesture", async () => {
 		const editor = createEditor();
 		const blockId = editor.firstBlock()!.id;
@@ -177,7 +574,10 @@ describe("@pen/react selected text deletion", () => {
 		try {
 			(
 				document as Document & {
-					caretRangeFromPoint?: (x: number, y: number) => Range | null;
+					caretRangeFromPoint?: (
+						x: number,
+						y: number,
+					) => Range | null;
 				}
 			).caretRangeFromPoint = () => {
 				const range = document.createRange();
@@ -216,7 +616,10 @@ describe("@pen/react selected text deletion", () => {
 		} finally {
 			(
 				document as Document & {
-					caretRangeFromPoint?: (x: number, y: number) => Range | null;
+					caretRangeFromPoint?: (
+						x: number,
+						y: number,
+					) => Range | null;
 				}
 			).caretRangeFromPoint = originalCaretRangeFromPoint;
 		}
@@ -284,7 +687,10 @@ describe("@pen/react selected text deletion", () => {
 		try {
 			(
 				document as Document & {
-					caretRangeFromPoint?: (x: number, y: number) => Range | null;
+					caretRangeFromPoint?: (
+						x: number,
+						y: number,
+					) => Range | null;
 				}
 			).caretRangeFromPoint = () => {
 				const range = document.createRange();
@@ -325,7 +731,10 @@ describe("@pen/react selected text deletion", () => {
 		} finally {
 			(
 				document as Document & {
-					caretRangeFromPoint?: (x: number, y: number) => Range | null;
+					caretRangeFromPoint?: (
+						x: number,
+						y: number,
+					) => Range | null;
 				}
 			).caretRangeFromPoint = originalCaretRangeFromPoint;
 		}
@@ -393,7 +802,10 @@ describe("@pen/react selected text deletion", () => {
 		try {
 			(
 				document as Document & {
-					caretRangeFromPoint?: (x: number, y: number) => Range | null;
+					caretRangeFromPoint?: (
+						x: number,
+						y: number,
+					) => Range | null;
 				}
 			).caretRangeFromPoint = () => {
 				const range = document.createRange();
@@ -438,7 +850,10 @@ describe("@pen/react selected text deletion", () => {
 		} finally {
 			(
 				document as Document & {
-					caretRangeFromPoint?: (x: number, y: number) => Range | null;
+					caretRangeFromPoint?: (
+						x: number,
+						y: number,
+					) => Range | null;
 				}
 			).caretRangeFromPoint = originalCaretRangeFromPoint;
 		}
@@ -506,7 +921,10 @@ describe("@pen/react selected text deletion", () => {
 		try {
 			(
 				document as Document & {
-					caretRangeFromPoint?: (x: number, y: number) => Range | null;
+					caretRangeFromPoint?: (
+						x: number,
+						y: number,
+					) => Range | null;
 				}
 			).caretRangeFromPoint = () => {
 				const range = document.createRange();
@@ -542,7 +960,10 @@ describe("@pen/react selected text deletion", () => {
 		} finally {
 			(
 				document as Document & {
-					caretRangeFromPoint?: (x: number, y: number) => Range | null;
+					caretRangeFromPoint?: (
+						x: number,
+						y: number,
+					) => Range | null;
 				}
 			).caretRangeFromPoint = originalCaretRangeFromPoint;
 		}
@@ -610,7 +1031,10 @@ describe("@pen/react selected text deletion", () => {
 		try {
 			(
 				document as Document & {
-					caretRangeFromPoint?: (x: number, y: number) => Range | null;
+					caretRangeFromPoint?: (
+						x: number,
+						y: number,
+					) => Range | null;
 				}
 			).caretRangeFromPoint = () => {
 				const range = document.createRange();
@@ -646,7 +1070,10 @@ describe("@pen/react selected text deletion", () => {
 		} finally {
 			(
 				document as Document & {
-					caretRangeFromPoint?: (x: number, y: number) => Range | null;
+					caretRangeFromPoint?: (
+						x: number,
+						y: number,
+					) => Range | null;
 				}
 			).caretRangeFromPoint = originalCaretRangeFromPoint;
 		}
@@ -714,7 +1141,10 @@ describe("@pen/react selected text deletion", () => {
 		try {
 			(
 				document as Document & {
-					caretRangeFromPoint?: (x: number, y: number) => Range | null;
+					caretRangeFromPoint?: (
+						x: number,
+						y: number,
+					) => Range | null;
 				}
 			).caretRangeFromPoint = () => {
 				const range = document.createRange();
@@ -783,7 +1213,10 @@ describe("@pen/react selected text deletion", () => {
 		} finally {
 			(
 				document as Document & {
-					caretRangeFromPoint?: (x: number, y: number) => Range | null;
+					caretRangeFromPoint?: (
+						x: number,
+						y: number,
+					) => Range | null;
 				}
 			).caretRangeFromPoint = originalCaretRangeFromPoint;
 		}
@@ -851,7 +1284,10 @@ describe("@pen/react selected text deletion", () => {
 		try {
 			(
 				document as Document & {
-					caretRangeFromPoint?: (x: number, y: number) => Range | null;
+					caretRangeFromPoint?: (
+						x: number,
+						y: number,
+					) => Range | null;
 				}
 			).caretRangeFromPoint = () => {
 				const range = document.createRange();
@@ -927,7 +1363,10 @@ describe("@pen/react selected text deletion", () => {
 		} finally {
 			(
 				document as Document & {
-					caretRangeFromPoint?: (x: number, y: number) => Range | null;
+					caretRangeFromPoint?: (
+						x: number,
+						y: number,
+					) => Range | null;
 				}
 			).caretRangeFromPoint = originalCaretRangeFromPoint;
 		}
@@ -995,7 +1434,10 @@ describe("@pen/react selected text deletion", () => {
 		try {
 			(
 				document as Document & {
-					caretRangeFromPoint?: (x: number, y: number) => Range | null;
+					caretRangeFromPoint?: (
+						x: number,
+						y: number,
+					) => Range | null;
 				}
 			).caretRangeFromPoint = () => {
 				const range = document.createRange();
@@ -1052,7 +1494,10 @@ describe("@pen/react selected text deletion", () => {
 		} finally {
 			(
 				document as Document & {
-					caretRangeFromPoint?: (x: number, y: number) => Range | null;
+					caretRangeFromPoint?: (
+						x: number,
+						y: number,
+					) => Range | null;
 				}
 			).caretRangeFromPoint = originalCaretRangeFromPoint;
 		}
@@ -1120,7 +1565,10 @@ describe("@pen/react selected text deletion", () => {
 		try {
 			(
 				document as Document & {
-					caretRangeFromPoint?: (x: number, y: number) => Range | null;
+					caretRangeFromPoint?: (
+						x: number,
+						y: number,
+					) => Range | null;
 				}
 			).caretRangeFromPoint = () => {
 				const range = document.createRange();
@@ -1156,7 +1604,10 @@ describe("@pen/react selected text deletion", () => {
 		} finally {
 			(
 				document as Document & {
-					caretRangeFromPoint?: (x: number, y: number) => Range | null;
+					caretRangeFromPoint?: (
+						x: number,
+						y: number,
+					) => Range | null;
 				}
 			).caretRangeFromPoint = originalCaretRangeFromPoint;
 		}
@@ -1270,7 +1721,9 @@ describe("@pen/react selected text deletion", () => {
 		const editor = createEditor();
 		const blockId = editor.firstBlock()!.id;
 
-		editor.apply([{ type: "convert-block", blockId, newType: "blockquote" }]);
+		editor.apply([
+			{ type: "convert-block", blockId, newType: "blockquote" },
+		]);
 
 		const container = document.createElement("div");
 		document.body.appendChild(container);
@@ -1767,7 +2220,9 @@ describe("@pen/react selected text deletion", () => {
 		});
 
 		await act(async () => {
-			inlineElement!.dispatchEvent(createKeyEvent("Backspace", { cancelable: true }));
+			inlineElement!.dispatchEvent(
+				createKeyEvent("Backspace", { cancelable: true }),
+			);
 			await flushAnimationFrames(2);
 		});
 
@@ -1821,7 +2276,9 @@ describe("@pen/react selected text deletion", () => {
 		});
 
 		await act(async () => {
-			inlineElement!.dispatchEvent(createKeyEvent("Backspace", { cancelable: true }));
+			inlineElement!.dispatchEvent(
+				createKeyEvent("Backspace", { cancelable: true }),
+			);
 			await flushAnimationFrames(2);
 		});
 
@@ -1875,7 +2332,9 @@ describe("@pen/react selected text deletion", () => {
 		});
 
 		await act(async () => {
-			inlineElement!.dispatchEvent(createKeyEvent("Backspace", { cancelable: true }));
+			inlineElement!.dispatchEvent(
+				createKeyEvent("Backspace", { cancelable: true }),
+			);
 			await flushAnimationFrames(2);
 		});
 
@@ -1918,9 +2377,9 @@ describe("@pen/react selected text deletion", () => {
 		});
 
 		const fieldEditor = getFieldEditor(editor);
-		const toolbarButton = container.querySelector("button") as
-			| HTMLButtonElement
-			| null;
+		const toolbarButton = container.querySelector(
+			"button",
+		) as HTMLButtonElement | null;
 		const inlineElement = container.querySelector(
 			"[data-pen-inline-content]",
 		) as HTMLElement | null;
@@ -1983,9 +2442,9 @@ describe("@pen/react selected text deletion", () => {
 		});
 
 		const fieldEditor = getFieldEditor(editor);
-		const toolbarButton = container.querySelector("button") as
-			| HTMLButtonElement
-			| null;
+		const toolbarButton = container.querySelector(
+			"button",
+		) as HTMLButtonElement | null;
 
 		expect(toolbarButton).not.toBeNull();
 
@@ -2064,7 +2523,9 @@ describe("@pen/react selected text deletion", () => {
 		});
 
 		await act(async () => {
-			inlineElement!.dispatchEvent(createKeyEvent("Backspace", { cancelable: true }));
+			inlineElement!.dispatchEvent(
+				createKeyEvent("Backspace", { cancelable: true }),
+			);
 			await flushAnimationFrames(2);
 		});
 
@@ -2096,7 +2557,12 @@ describe("@pen/react selected text deletion", () => {
 		const secondBlockId = crypto.randomUUID();
 
 		editor.apply([
-			{ type: "insert-text", blockId: firstBlockId, offset: 0, text: "Hello" },
+			{
+				type: "insert-text",
+				blockId: firstBlockId,
+				offset: 0,
+				text: "Hello",
+			},
 			{
 				type: "insert-block",
 				blockId: secondBlockId,
@@ -2104,7 +2570,12 @@ describe("@pen/react selected text deletion", () => {
 				props: {},
 				position: { after: firstBlockId },
 			},
-			{ type: "insert-text", blockId: secondBlockId, offset: 0, text: "World" },
+			{
+				type: "insert-text",
+				blockId: secondBlockId,
+				offset: 0,
+				text: "World",
+			},
 		]);
 
 		const container = document.createElement("div");
@@ -2149,7 +2620,9 @@ describe("@pen/react selected text deletion", () => {
 		});
 
 		await act(async () => {
-			inlineElement!.dispatchEvent(createKeyEvent("Backspace", { cancelable: true }));
+			inlineElement!.dispatchEvent(
+				createKeyEvent("Backspace", { cancelable: true }),
+			);
 			await flushAnimationFrames(4);
 		});
 
@@ -2261,6 +2734,76 @@ describe("@pen/react selected text deletion", () => {
 		await act(async () => {
 			root.unmount();
 		});
+		container.remove();
+		editor.destroy();
+	});
+
+	it("restores the DOM selection before insertText when the active selection is stale", async () => {
+		const editor = createEditor();
+		const blockId = editor.firstBlock()!.id;
+
+		editor.apply([
+			{ type: "insert-text", blockId, offset: 0, text: "Hello" },
+		]);
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(
+				<Pen.Editor.Root editor={editor}>
+					<Pen.Editor.Content />
+				</Pen.Editor.Root>,
+			);
+		});
+
+		const fieldEditor = getFieldEditor(editor);
+		const inlineElement = container.querySelector(
+			"[data-pen-inline-content]",
+		) as HTMLElement | null;
+
+		expect(inlineElement).not.toBeNull();
+
+		await act(async () => {
+			fieldEditor.activateTextSelection(blockId, 5, 5);
+			await flushAnimationFrames(3);
+		});
+
+		const outsideText = document.createTextNode("outside");
+		document.body.appendChild(outsideText);
+		const outsideRange = document.createRange();
+		outsideRange.setStart(outsideText, 0);
+		outsideRange.collapse(true);
+		const selection = document.getSelection();
+		selection?.removeAllRanges();
+		selection?.addRange(outsideRange);
+
+		const inputEvent = new InputEvent("beforeinput", {
+			bubbles: true,
+			cancelable: true,
+			inputType: "insertText",
+			data: "!",
+		});
+
+		await act(async () => {
+			inlineElement!.dispatchEvent(inputEvent);
+			await flushAnimationFrames(2);
+		});
+
+		expect(inputEvent.defaultPrevented).toBe(true);
+		expect(editor.getBlock(blockId)?.textContent()).toBe("Hello!");
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId, offset: 6 },
+			focus: { blockId, offset: 6 },
+			isCollapsed: true,
+		});
+
+		await act(async () => {
+			root.unmount();
+		});
+		outsideText.remove();
 		container.remove();
 		editor.destroy();
 	});
@@ -2636,7 +3179,10 @@ describe("@pen/react selected text deletion", () => {
 		try {
 			await act(async () => {
 				root.render(
-					<Pen.Editor.Root editor={editor}>
+					<Pen.Editor.Root
+						editor={editor}
+						inputBackend="edit-context"
+					>
 						<Pen.Editor.Content />
 					</Pen.Editor.Root>,
 				);
@@ -2662,6 +3208,13 @@ describe("@pen/react selected text deletion", () => {
 
 			const editContext = inlineElement?.editContext;
 			expect(editContext).toBeTruthy();
+			const originalUpdateText =
+				editContext!.updateText.bind(editContext);
+			editContext!.updateText = (start, end, text) => {
+				originalUpdateText(start, end, text);
+				editContext!.selectionStart = start;
+				editContext!.selectionEnd = start;
+			};
 
 			await act(async () => {
 				editContext!.emit("textupdate", {
@@ -2723,6 +3276,461 @@ describe("@pen/react selected text deletion", () => {
 		}
 	});
 
+	it("uses the editor caret when EditContext reports a stale collapsed insert range", async () => {
+		const originalEditContext = (
+			globalThis as typeof globalThis & {
+				EditContext?: typeof FakeEditContext;
+			}
+		).EditContext;
+		(
+			globalThis as typeof globalThis & {
+				EditContext?: typeof FakeEditContext;
+			}
+		).EditContext = FakeEditContext;
+
+		const editor = createEditor();
+		const blockId = editor.firstBlock()!.id;
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		try {
+			await act(async () => {
+				root.render(
+					<Pen.Editor.Root
+						editor={editor}
+						inputBackend="edit-context"
+					>
+						<Pen.Editor.Content />
+					</Pen.Editor.Root>,
+				);
+			});
+
+			const fieldEditor = getFieldEditor(editor);
+			const inlineElement = container.querySelector(
+				"[data-pen-inline-content]",
+			) as
+				| (HTMLElement & { editContext?: FakeEditContext | null })
+				| null;
+			const rootElement = container.querySelector(
+				"[data-pen-editor-root]",
+			) as HTMLElement | null;
+
+			expect(inlineElement).not.toBeNull();
+			expect(rootElement).not.toBeNull();
+
+			await act(async () => {
+				fieldEditor.activateTextSelection(blockId, 0, 0);
+				await flushAnimationFrames(2);
+			});
+
+			const editContext = inlineElement?.editContext;
+			expect(editContext).toBeTruthy();
+
+			await act(async () => {
+				editContext!.emit("textupdate", {
+					updateRangeStart: 0,
+					updateRangeEnd: 0,
+					text: "H",
+					selectionStart: 0,
+					selectionEnd: 0,
+				});
+				await flushAnimationFrames(2);
+				setNativeSelectionRange(inlineElement!, 0, inlineElement!, 0);
+				document.dispatchEvent(new Event("selectionchange"));
+				await flushAnimationFrames(2);
+			});
+			expect(domSelectionToEditor(rootElement!)).toMatchObject({
+				anchor: { blockId, offset: 1 },
+				focus: { blockId, offset: 1 },
+			});
+
+			await act(async () => {
+				editContext!.emit("textupdate", {
+					updateRangeStart: 1,
+					updateRangeEnd: 1,
+					text: "e",
+					selectionStart: 1,
+					selectionEnd: 1,
+				});
+				await flushAnimationFrames(2);
+			});
+
+			expect(editor.selection).toMatchObject({
+				type: "text",
+				anchor: { blockId, offset: 2 },
+				focus: { blockId, offset: 2 },
+			});
+			await act(async () => {
+				fieldEditor.syncTextSelection(blockId, 1, 1);
+				await flushAnimationFrames(1);
+			});
+			expect(editor.selection).toMatchObject({
+				type: "text",
+				anchor: { blockId, offset: 1 },
+				focus: { blockId, offset: 1 },
+			});
+
+			await act(async () => {
+				editContext!.emit("textupdate", {
+					updateRangeStart: 1,
+					updateRangeEnd: 1,
+					text: "y",
+					selectionStart: 1,
+					selectionEnd: 1,
+				});
+				await flushAnimationFrames(2);
+			});
+
+			expect(editor.getBlock(blockId)?.textContent()).toBe("Hey");
+			expect(inlineElement!.textContent).toBe("Hey");
+			expect(editor.selection).toMatchObject({
+				type: "text",
+				anchor: { blockId, offset: 3 },
+				focus: { blockId, offset: 3 },
+			});
+			expect(domSelectionToEditor(rootElement!)).toMatchObject({
+				anchor: { blockId, offset: 3 },
+				focus: { blockId, offset: 3 },
+			});
+			expect(editContext?.selectionStart).toBe(3);
+			expect(editContext?.selectionEnd).toBe(3);
+
+			await act(async () => {
+				root.unmount();
+			});
+			container.remove();
+			editor.destroy();
+		} finally {
+			(
+				globalThis as typeof globalThis & {
+					EditContext?: typeof FakeEditContext;
+				}
+			).EditContext = originalEditContext;
+		}
+	});
+
+	it("treats the initial zero-width placeholder as offset zero for EditContext input", async () => {
+		const originalEditContext = (
+			globalThis as typeof globalThis & {
+				EditContext?: typeof FakeEditContext;
+			}
+		).EditContext;
+		(
+			globalThis as typeof globalThis & {
+				EditContext?: typeof FakeEditContext;
+			}
+		).EditContext = FakeEditContext;
+
+		const editor = createEditor();
+		const blockId = editor.firstBlock()!.id;
+		editor.apply(
+			[{ type: "insert-text", blockId, offset: 0, text: "\u200B" }],
+			{ origin: "import" },
+		);
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		try {
+			await act(async () => {
+				root.render(
+					<Pen.Editor.Root
+						editor={editor}
+						inputBackend="edit-context"
+					>
+						<Pen.Editor.Content />
+					</Pen.Editor.Root>,
+				);
+			});
+
+			const fieldEditor = getFieldEditor(editor);
+			const inlineElement = container.querySelector(
+				"[data-pen-inline-content]",
+			) as
+				| (HTMLElement & { editContext?: FakeEditContext | null })
+				| null;
+			const rootElement = container.querySelector(
+				"[data-pen-editor-root]",
+			) as HTMLElement | null;
+
+			expect(inlineElement).not.toBeNull();
+			expect(rootElement).not.toBeNull();
+
+			await act(async () => {
+				fieldEditor.activateTextSelection(blockId, 1, 1);
+				await flushAnimationFrames(2);
+			});
+
+			const editContext = inlineElement?.editContext;
+			expect(editContext).toBeTruthy();
+			expect(editContext?.text).toBe("");
+			expect(editContext?.selectionStart).toBe(0);
+			expect(editContext?.selectionEnd).toBe(0);
+
+			await act(async () => {
+				editContext!.emit("textupdate", {
+					updateRangeStart: 1,
+					updateRangeEnd: 1,
+					text: "H",
+					selectionStart: 1,
+					selectionEnd: 1,
+				});
+				await flushAnimationFrames(2);
+				setNativeSelectionRange(inlineElement!, 0, inlineElement!, 0);
+				document.dispatchEvent(new Event("selectionchange"));
+				await flushAnimationFrames(2);
+			});
+			expect(domSelectionToEditor(rootElement!)).toMatchObject({
+				anchor: { blockId, offset: 1 },
+				focus: { blockId, offset: 1 },
+			});
+
+			await act(async () => {
+				editContext!.emit("textupdate", {
+					updateRangeStart: 0,
+					updateRangeEnd: 0,
+					text: "e",
+					selectionStart: 0,
+					selectionEnd: 0,
+				});
+				await flushAnimationFrames(2);
+				setNativeSelectionRange(inlineElement!, 0, inlineElement!, 0);
+				document.dispatchEvent(new Event("selectionchange"));
+				await flushAnimationFrames(2);
+			});
+			expect(domSelectionToEditor(rootElement!)).toMatchObject({
+				anchor: { blockId, offset: 2 },
+				focus: { blockId, offset: 2 },
+			});
+
+			await act(async () => {
+				editContext!.emit("textupdate", {
+					updateRangeStart: 0,
+					updateRangeEnd: 0,
+					text: "y",
+					selectionStart: 0,
+					selectionEnd: 0,
+				});
+				await flushAnimationFrames(2);
+				setNativeSelectionRange(inlineElement!, 0, inlineElement!, 0);
+				document.dispatchEvent(new Event("selectionchange"));
+				await flushAnimationFrames(2);
+			});
+
+			expect(editor.getBlock(blockId)?.textContent()).toBe("Hey");
+			expect(inlineElement!.textContent).toBe("Hey");
+			expect(editor.selection).toMatchObject({
+				type: "text",
+				anchor: { blockId, offset: 3 },
+				focus: { blockId, offset: 3 },
+			});
+			expect(domSelectionToEditor(rootElement!)).toMatchObject({
+				anchor: { blockId, offset: 3 },
+				focus: { blockId, offset: 3 },
+			});
+			expect(editContext?.selectionStart).toBe(3);
+			expect(editContext?.selectionEnd).toBe(3);
+
+			await act(async () => {
+				root.unmount();
+			});
+			container.remove();
+			editor.destroy();
+		} finally {
+			(
+				globalThis as typeof globalThis & {
+					EditContext?: typeof FakeEditContext;
+				}
+			).EditContext = originalEditContext;
+		}
+	});
+
+	it("updates EditContext text before projecting the post-insert selection", async () => {
+		const originalEditContext = (
+			globalThis as typeof globalThis & {
+				EditContext?: typeof FakeEditContext;
+			}
+		).EditContext;
+		(
+			globalThis as typeof globalThis & {
+				EditContext?: typeof FakeEditContext;
+			}
+		).EditContext = FakeEditContext;
+
+		const editor = createEditor();
+		const blockId = editor.firstBlock()!.id;
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		try {
+			await act(async () => {
+				root.render(
+					<Pen.Editor.Root
+						editor={editor}
+						inputBackend="edit-context"
+					>
+						<Pen.Editor.Content />
+					</Pen.Editor.Root>,
+				);
+			});
+
+			const fieldEditor = getFieldEditor(editor);
+			const inlineElement = container.querySelector(
+				"[data-pen-inline-content]",
+			) as
+				| (HTMLElement & { editContext?: FakeEditContext | null })
+				| null;
+
+			expect(inlineElement).not.toBeNull();
+
+			await act(async () => {
+				fieldEditor.activateTextSelection(blockId, 0, 0);
+				await flushAnimationFrames(2);
+			});
+
+			const editContext = inlineElement?.editContext;
+			expect(editContext).toBeTruthy();
+			const calls: string[] = [];
+			const originalUpdateText =
+				editContext!.updateText.bind(editContext);
+			const originalUpdateSelection =
+				editContext!.updateSelection.bind(editContext);
+			editContext!.updateText = (start, end, text) => {
+				calls.push(
+					`dom-before-text:${inlineElement!.textContent ?? ""}`,
+				);
+				calls.push(`text:${start}:${end}:${text}`);
+				originalUpdateText(start, end, text);
+			};
+			editContext!.updateSelection = (start, end) => {
+				calls.push(`selection:${start}:${end}`);
+				originalUpdateSelection(start, end);
+			};
+
+			await act(async () => {
+				editContext!.emit("textupdate", {
+					updateRangeStart: 0,
+					updateRangeEnd: 0,
+					text: "H",
+					selectionStart: 0,
+					selectionEnd: 0,
+				});
+				await flushAnimationFrames(2);
+			});
+
+			const textUpdateIndex = calls.indexOf("text:0:0:H");
+			const postInsertSelectionIndex = calls.indexOf("selection:1:1");
+			expect(calls).toContain("dom-before-text:H");
+			expect(textUpdateIndex).toBeGreaterThanOrEqual(0);
+			expect(postInsertSelectionIndex).toBeGreaterThan(textUpdateIndex);
+			expect(editor.getBlock(blockId)?.textContent()).toBe("H");
+			expect(editor.selection).toMatchObject({
+				type: "text",
+				anchor: { blockId, offset: 1 },
+				focus: { blockId, offset: 1 },
+			});
+			expect(editContext?.selectionStart).toBe(1);
+			expect(editContext?.selectionEnd).toBe(1);
+
+			await act(async () => {
+				root.unmount();
+			});
+			container.remove();
+			editor.destroy();
+		} finally {
+			(
+				globalThis as typeof globalThis & {
+					EditContext?: typeof FakeEditContext;
+				}
+			).EditContext = originalEditContext;
+		}
+	});
+
+	it("ignores stale native selectionchange while projecting the EditContext caret", async () => {
+		const originalEditContext = (
+			globalThis as typeof globalThis & {
+				EditContext?: typeof FakeEditContext;
+			}
+		).EditContext;
+		(
+			globalThis as typeof globalThis & {
+				EditContext?: typeof FakeEditContext;
+			}
+		).EditContext = FakeEditContext;
+
+		const editor = createEditor();
+		const blockId = editor.firstBlock()!.id;
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		try {
+			await act(async () => {
+				root.render(
+					<Pen.Editor.Root
+						editor={editor}
+						inputBackend="edit-context"
+					>
+						<Pen.Editor.Content />
+					</Pen.Editor.Root>,
+				);
+			});
+
+			const fieldEditor = getFieldEditor(editor);
+			const inlineElement = container.querySelector(
+				"[data-pen-inline-content]",
+			) as
+				| (HTMLElement & { editContext?: FakeEditContext | null })
+				| null;
+
+			expect(inlineElement).not.toBeNull();
+
+			await act(async () => {
+				fieldEditor.activateTextSelection(blockId, 0, 0);
+				await flushAnimationFrames(2);
+			});
+
+			const editContext = inlineElement?.editContext;
+			expect(editContext).toBeTruthy();
+
+			await act(async () => {
+				editContext!.emit("textupdate", {
+					updateRangeStart: 0,
+					updateRangeEnd: 0,
+					text: "H",
+					selectionStart: 0,
+					selectionEnd: 0,
+				});
+				setNativeSelectionRange(inlineElement!, 0, inlineElement!, 0);
+				document.dispatchEvent(new Event("selectionchange"));
+				await flushAnimationFrames(2);
+			});
+
+			expect(editor.getBlock(blockId)?.textContent()).toBe("H");
+			expect(editor.selection).toMatchObject({
+				type: "text",
+				anchor: { blockId, offset: 1 },
+				focus: { blockId, offset: 1 },
+			});
+			expect(editContext?.selectionStart).toBe(1);
+			expect(editContext?.selectionEnd).toBe(1);
+
+			await act(async () => {
+				root.unmount();
+			});
+			container.remove();
+			editor.destroy();
+		} finally {
+			(
+				globalThis as typeof globalThis & {
+					EditContext?: typeof FakeEditContext;
+				}
+			).EditContext = originalEditContext;
+		}
+	});
+
 	it("applies inline markdown input rules for EditContext textupdate events", async () => {
 		const originalEditContext = (
 			globalThis as typeof globalThis & {
@@ -2745,7 +3753,10 @@ describe("@pen/react selected text deletion", () => {
 		try {
 			await act(async () => {
 				root.render(
-					<Pen.Editor.Root editor={editor}>
+					<Pen.Editor.Root
+						editor={editor}
+						inputBackend="edit-context"
+					>
 						<Pen.Editor.Content />
 					</Pen.Editor.Root>,
 				);
@@ -2828,7 +3839,10 @@ describe("@pen/react selected text deletion", () => {
 		try {
 			await act(async () => {
 				root.render(
-					<Pen.Editor.Root editor={editor}>
+					<Pen.Editor.Root
+						editor={editor}
+						inputBackend="edit-context"
+					>
 						<Pen.Editor.Content />
 					</Pen.Editor.Root>,
 				);
@@ -2943,7 +3957,10 @@ describe("@pen/react selected text deletion", () => {
 		try {
 			await act(async () => {
 				root.render(
-					<Pen.Editor.Root editor={editor}>
+					<Pen.Editor.Root
+						editor={editor}
+						inputBackend="edit-context"
+					>
 						<Pen.Editor.Content />
 					</Pen.Editor.Root>,
 				);
@@ -2952,7 +3969,9 @@ describe("@pen/react selected text deletion", () => {
 			const fieldEditor = getFieldEditor(editor);
 			const inlineElement = container.querySelector(
 				"[data-pen-inline-content]",
-			) as (HTMLElement & { editContext?: FakeEditContext | null }) | null;
+			) as
+				| (HTMLElement & { editContext?: FakeEditContext | null })
+				| null;
 
 			expect(inlineElement).not.toBeNull();
 
@@ -3024,7 +4043,10 @@ describe("@pen/react selected text deletion", () => {
 		try {
 			await act(async () => {
 				root.render(
-					<Pen.Editor.Root editor={editor}>
+					<Pen.Editor.Root
+						editor={editor}
+						inputBackend="edit-context"
+					>
 						<Pen.Editor.Content />
 					</Pen.Editor.Root>,
 				);
@@ -3033,7 +4055,9 @@ describe("@pen/react selected text deletion", () => {
 			const fieldEditor = getFieldEditor(editor);
 			const inlineElement = container.querySelector(
 				"[data-pen-inline-content]",
-			) as (HTMLElement & { editContext?: FakeEditContext | null }) | null;
+			) as
+				| (HTMLElement & { editContext?: FakeEditContext | null })
+				| null;
 
 			expect(inlineElement).not.toBeNull();
 
@@ -3069,6 +4093,99 @@ describe("@pen/react selected text deletion", () => {
 			});
 			expect(editContext?.selectionStart).toBe(0);
 			expect(editContext?.selectionEnd).toBe(0);
+
+			await act(async () => {
+				root.unmount();
+			});
+			container.remove();
+			editor.destroy();
+		} finally {
+			(
+				globalThis as typeof globalThis & {
+					EditContext?: typeof FakeEditContext;
+				}
+			).EditContext = originalEditContext;
+		}
+	});
+
+	it("deletes a cmd+a selection on Backspace when the native EditContext range is collapsed", async () => {
+		const originalEditContext = (
+			globalThis as typeof globalThis & {
+				EditContext?: typeof FakeEditContext;
+			}
+		).EditContext;
+		(
+			globalThis as typeof globalThis & {
+				EditContext?: typeof FakeEditContext;
+			}
+		).EditContext = FakeEditContext;
+
+		const editor = createEditor();
+		const blockId = editor.firstBlock()!.id;
+
+		editor.apply([
+			{ type: "insert-text", blockId, offset: 0, text: "Title" },
+		]);
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		try {
+			await act(async () => {
+				root.render(
+					<Pen.Editor.Root
+						editor={editor}
+						inputBackend="edit-context"
+					>
+						<Pen.Editor.Content />
+					</Pen.Editor.Root>,
+				);
+			});
+
+			const fieldEditor = getFieldEditor(editor);
+			const inlineElement = container.querySelector(
+				"[data-pen-inline-content]",
+			) as
+				| (HTMLElement & { editContext?: FakeEditContext | null })
+				| null;
+
+			expect(inlineElement).not.toBeNull();
+
+			await act(async () => {
+				fieldEditor.activate(blockId);
+				await flushAnimationFrames(2);
+			});
+
+			await act(async () => {
+				inlineElement!.dispatchEvent(createSelectAllEvent());
+				await flushAnimationFrames(2);
+			});
+
+			expect(editor.selection).toMatchObject({
+				type: "text",
+				anchor: { blockId, offset: 0 },
+				focus: { blockId, offset: 5 },
+				isCollapsed: false,
+				isMultiBlock: false,
+			});
+
+			await act(async () => {
+				setNativeSelectionRange(inlineElement!, 0, inlineElement!, 0);
+				inlineElement!.dispatchEvent(
+					createKeyEvent("Backspace", { cancelable: true }),
+				);
+				await flushAnimationFrames(2);
+			});
+
+			expect(editor.getBlock(blockId)?.textContent()).toBe("");
+			expect(editor.selection).toMatchObject({
+				type: "text",
+				anchor: { blockId, offset: 0 },
+				focus: { blockId, offset: 0 },
+				isCollapsed: true,
+				isMultiBlock: false,
+			});
 
 			await act(async () => {
 				root.unmount();
@@ -3225,9 +4342,10 @@ describe("@pen/react selected text deletion", () => {
 			await flushAnimationFrames(4);
 		});
 
-		const insertedBlockId = editor.selection?.type === "text"
-			? editor.selection.focus.blockId
-			: null;
+		const insertedBlockId =
+			editor.selection?.type === "text"
+				? editor.selection.focus.blockId
+				: null;
 		expect(insertedBlockId).toBeTruthy();
 		expect(domSelectionToEditor(rootElement!)).toMatchObject({
 			anchor: { blockId: insertedBlockId, offset: 0 },
@@ -3255,9 +4373,10 @@ describe("@pen/react selected text deletion", () => {
 			await flushAnimationFrames(4);
 		});
 
-		const redoneBlockId = editor.selection?.type === "text"
-			? editor.selection.focus.blockId
-			: null;
+		const redoneBlockId =
+			editor.selection?.type === "text"
+				? editor.selection.focus.blockId
+				: null;
 		expect(redoneBlockId).toBeTruthy();
 		expect(editor.selection).toMatchObject({
 			type: "text",
@@ -3372,9 +4491,9 @@ describe("@pen/react selected text deletion", () => {
 		const inlineElement = container.querySelector(
 			"[data-pen-inline-content]",
 		) as HTMLElement | null;
-		const toolbarButton = container.querySelector("button") as
-			| HTMLButtonElement
-			| null;
+		const toolbarButton = container.querySelector(
+			"button",
+		) as HTMLButtonElement | null;
 
 		expect(inlineElement).not.toBeNull();
 		expect(toolbarButton).not.toBeNull();
@@ -3467,7 +4586,10 @@ describe("@pen/react selected text deletion", () => {
 
 			await act(async () => {
 				root.render(
-					<Pen.Editor.Root editor={editor}>
+					<Pen.Editor.Root
+						editor={editor}
+						inputBackend="edit-context"
+					>
 						<button type="button">Undo</button>
 						<Pen.Editor.Content />
 					</Pen.Editor.Root>,
@@ -3477,10 +4599,12 @@ describe("@pen/react selected text deletion", () => {
 			const fieldEditor = getFieldEditor(editor);
 			const inlineElement = container.querySelector(
 				"[data-pen-inline-content]",
-			) as (HTMLElement & { editContext?: FakeEditContext | null }) | null;
-			const toolbarButton = container.querySelector("button") as
-				| HTMLButtonElement
+			) as
+				| (HTMLElement & { editContext?: FakeEditContext | null })
 				| null;
+			const toolbarButton = container.querySelector(
+				"button",
+			) as HTMLButtonElement | null;
 
 			expect(inlineElement).not.toBeNull();
 			expect(toolbarButton).not.toBeNull();
@@ -3581,7 +4705,10 @@ describe("@pen/react selected text deletion", () => {
 
 			await act(async () => {
 				root.render(
-					<Pen.Editor.Root editor={editor}>
+					<Pen.Editor.Root
+						editor={editor}
+						inputBackend="edit-context"
+					>
 						<Pen.Editor.Content />
 					</Pen.Editor.Root>,
 				);
@@ -3590,7 +4717,9 @@ describe("@pen/react selected text deletion", () => {
 			const fieldEditor = getFieldEditor(editor);
 			const inlineElement = container.querySelector(
 				"[data-pen-inline-content]",
-			) as (HTMLElement & { editContext?: FakeEditContext | null }) | null;
+			) as
+				| (HTMLElement & { editContext?: FakeEditContext | null })
+				| null;
 
 			expect(inlineElement).not.toBeNull();
 
@@ -3703,9 +4832,9 @@ describe("@pen/react selected text deletion", () => {
 			container.querySelectorAll("[data-pen-inline-content]"),
 		) as HTMLElement[];
 		const secondInlineElement = inlineElements[1] ?? null;
-		const toolbarButton = container.querySelector("button") as
-			| HTMLButtonElement
-			| null;
+		const toolbarButton = container.querySelector(
+			"button",
+		) as HTMLButtonElement | null;
 
 		expect(secondInlineElement).not.toBeNull();
 		expect(toolbarButton).not.toBeNull();
@@ -3837,9 +4966,9 @@ describe("@pen/react selected text deletion", () => {
 			container.querySelectorAll("[data-pen-inline-content]"),
 		) as HTMLElement[];
 		const thirdInlineElement = inlineElements[2] ?? null;
-		const toolbarButton = container.querySelector("button") as
-			| HTMLButtonElement
-			| null;
+		const toolbarButton = container.querySelector(
+			"button",
+		) as HTMLButtonElement | null;
 
 		expect(thirdInlineElement).not.toBeNull();
 		expect(toolbarButton).not.toBeNull();
@@ -3942,5 +5071,4 @@ describe("@pen/react selected text deletion", () => {
 		container.remove();
 		editor.destroy();
 	});
-
 });

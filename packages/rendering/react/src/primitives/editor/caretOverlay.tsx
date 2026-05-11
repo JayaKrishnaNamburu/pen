@@ -46,14 +46,15 @@ export function EditorCaretOverlay(props: EditorCaretOverlayProps) {
 
 	const selection = useSelection(editor);
 	const fieldEditorState = useFieldEditorState(fieldEditor);
-	const { elementRef, rootElement, layoutVersion } = useOverlayLayout<HTMLElement>([
-		selection,
-		fieldEditorState.focusBlockId,
-		fieldEditorState.isEditing,
-		fieldEditorState.isFocused,
-		fieldEditorState.isComposing,
-		fieldEditorState.mode,
-	]);
+	const { elementRef, rootElement, layoutVersion } =
+		useOverlayLayout<HTMLElement>([
+			selection,
+			fieldEditorState.focusBlockId,
+			fieldEditorState.isEditing,
+			fieldEditorState.isFocused,
+			fieldEditorState.isComposing,
+			fieldEditorState.mode,
+		]);
 
 	const caretSelection = resolveCaretSelection(selection, fieldEditorState);
 	const rect =
@@ -110,11 +111,11 @@ export function EditorCaretOverlay(props: EditorCaretOverlayProps) {
 			rect,
 			blinkPaused,
 		);
-		caretNode = renderCaret
-			? renderCaret(renderProps)
-			: (
-				<div {...renderProps.attributes} style={renderProps.caretStyle} />
-			);
+		caretNode = renderCaret ? (
+			renderCaret(renderProps)
+		) : (
+			<div {...renderProps.attributes} style={renderProps.caretStyle} />
+		);
 	}
 
 	return renderAsChild(
@@ -162,15 +163,20 @@ function createCaretRenderProps(
 ): EditorCaretRenderProps {
 	const height = Math.max(rect.height, 16);
 	const point = selection.focus;
+	const isMacOS = isMacOSPlatform();
+	const defaultCaretColor = isMacOS
+		? "var(--palette-blue, #0a84ff)"
+		: "var(--palette-b100, currentColor)";
+	const defaultCaretWidth = isMacOS ? "2px" : "1px";
+	const defaultCaretRadius = isMacOS ? "999px" : "0px";
 	const caretStyle: CaretStyle = {
 		position: "fixed",
 		left: `${rect.left}px`,
 		top: `${rect.top}px`,
 		height: `${height}px`,
-		width: "var(--pen-editor-caret-width, var(--pen-caret-width, 1px))",
-		borderRadius: "var(--pen-editor-caret-radius, 999px)",
-		background:
-			"var(--pen-editor-caret-color, var(--pen-caret-color, currentColor))",
+		width: `var(--pen-editor-caret-width, var(--pen-caret-width, ${defaultCaretWidth}))`,
+		borderRadius: `var(--pen-editor-caret-radius, var(--pen-caret-radius, ${defaultCaretRadius}))`,
+		background: `var(--pen-editor-caret-color, var(--pen-caret-color, ${defaultCaretColor}))`,
 		boxShadow: "var(--pen-editor-caret-shadow, none)",
 		animation: blinkPaused
 			? "none"
@@ -194,13 +200,21 @@ function createCaretRenderProps(
 	};
 }
 
+function isMacOSPlatform(): boolean {
+	return (
+		typeof navigator !== "undefined" &&
+		/\bMacintosh\b|\bMac OS X\b/.test(navigator.userAgent)
+	);
+}
+
 function useCaretBlinkPauseState(options: {
 	rootElement: HTMLElement | null;
 	layoutVersion: number;
 	caretSelection: TextSelection | null;
 	isCaretVisible: boolean;
 }): boolean {
-	const { rootElement, layoutVersion, caretSelection, isCaretVisible } = options;
+	const { rootElement, layoutVersion, caretSelection, isCaretVisible } =
+		options;
 	const [blinkPaused, setBlinkPaused] = useState(false);
 	const resumeTimeoutRef = useRef<number | null>(null);
 
