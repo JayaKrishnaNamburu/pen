@@ -200,14 +200,49 @@ function resolveSchemaPlaceholder(
 	return editor.schema.resolve(block.type)?.placeholder;
 }
 
-function getDeltaText(deltas: readonly { insert: string }[]): string {
-	return deltas.map((delta) => delta.insert).join("");
+function getDeltaText(
+	deltas: readonly { insert: string | Record<string, unknown> }[],
+): string {
+	return deltas
+		.map((delta) =>
+			typeof delta.insert === "string"
+				? delta.insert
+				: getInlineNodeText(delta.insert),
+		)
+		.join("");
 }
 
 function getDeltaSignature(
-	deltas: readonly { attributes?: Record<string, unknown>; insert: string }[],
+	deltas: readonly {
+		attributes?: Record<string, unknown>;
+		insert: string | Record<string, unknown>;
+	}[],
 ): string {
 	return JSON.stringify(
 		deltas.map((delta) => [delta.insert, delta.attributes ?? null]),
 	);
+}
+
+function getInlineNodeText(insert: Record<string, unknown>): string {
+	const props =
+		insert.props && typeof insert.props === "object"
+			? (insert.props as Record<string, unknown>)
+			: insert;
+
+	const label = props.label;
+	if (typeof label === "string" && label.length > 0) {
+		return label;
+	}
+
+	const name = props.name;
+	if (typeof name === "string" && name.length > 0) {
+		return name;
+	}
+
+	const id = props.id;
+	if (typeof id === "string" && id.length > 0) {
+		return id;
+	}
+
+	return typeof insert.type === "string" ? insert.type : "";
 }

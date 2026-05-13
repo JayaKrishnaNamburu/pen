@@ -941,7 +941,7 @@ export function EditorContent(props: EditorContentProps) {
 
 				const startedFromFallbackBlock =
 					getEditorBlockSelectionRole(editor, gesture.blockId) !==
-						"editable-inline" &&
+					"editable-inline" &&
 					shouldFallbackMixedSelectionToBlock(
 						editor.documentProfile,
 						getEditorFlowCapability(editor, gesture.blockId),
@@ -1174,7 +1174,7 @@ export function EditorContent(props: EditorContentProps) {
 					moved &&
 					gesture.blockId !== blockId &&
 					getEditorBlockSelectionRole(editor, gesture.blockId) !==
-						"editable-inline" &&
+					"editable-inline" &&
 					shouldFallbackMixedSelectionToBlock(
 						editor.documentProfile,
 						getEditorFlowCapability(editor, gesture.blockId),

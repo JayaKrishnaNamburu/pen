@@ -830,7 +830,7 @@ export class FieldEditorImpl implements FieldEditorSession {
 
 		const targetOffset =
 			targetIdx >= activeIdx
-				? (this._editor.getBlock(blockId)?.textContent().length ?? 0)
+				? (this._editor.getBlock(blockId)?.length() ?? 0)
 				: 0;
 
 		this._editor.selectTextRange(anchor, {
