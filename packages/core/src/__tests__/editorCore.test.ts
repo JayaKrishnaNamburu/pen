@@ -15,6 +15,7 @@ import {
 	createDocumentSession,
 	createEditor as createCoreEditor,
 	createHeadlessEditor,
+	ensureInlineCompletionController,
 } from "../index";
 
 const noDefaultExtensionsPreset = {
@@ -670,6 +671,35 @@ describe("@pen/core createEditor", () => {
 		]);
 
 		expect(editor.getBlock("b1")?.textContent()).toBe("hello");
+
+		editor.destroy();
+	});
+
+	it("moves the text selection after accepting an inline completion", () => {
+		const editor = createEditor();
+		const blockId = editor.firstBlock()!.id;
+		const { controller } = ensureInlineCompletionController(editor);
+
+		editor.apply([
+			{ type: "insert-text", blockId, offset: 0, text: "Hello" },
+		]);
+		editor.selectText(blockId, 5, 5);
+		controller.showSuggestion({
+			id: "suggestion-1",
+			blockId,
+			offset: 5,
+			text: " world",
+			type: "inline",
+		});
+
+		expect(controller.acceptSuggestion()).toBe(true);
+
+		expect(editor.getBlock(blockId)?.textContent()).toBe("Hello world");
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId, offset: 11 },
+			focus: { blockId, offset: 11 },
+		});
 
 		editor.destroy();
 	});

@@ -152,7 +152,11 @@ export function handleFieldEditorKeyDown(options: {
 			if (autocomplete?.hasVisibleSuggestion()) {
 				return autocomplete.acceptVisibleSuggestion();
 			}
-			return inlineCompletion.acceptSuggestion();
+			const accepted = inlineCompletion.acceptSuggestion();
+			if (accepted) {
+				syncAcceptedInlineCompletionSelection(editor, fieldEditor);
+			}
+			return accepted;
 		}
 
 		if (!event.shiftKey) {
@@ -265,6 +269,29 @@ export function handleFieldEditorKeyDown(options: {
 	}
 
 	return handleEditorKeyBindings(editor, event, { includeSelectAll: false });
+}
+
+function syncAcceptedInlineCompletionSelection(
+	editor: Editor,
+	fieldEditor: FieldEditorKeyboardController,
+): void {
+	const selection = editor.selection;
+	if (
+		selection?.type !== "text" ||
+		!selection.isCollapsed ||
+		selection.isMultiBlock
+	) {
+		return;
+	}
+
+	const blockId = selection.focus.blockId;
+	const offset = selection.focus.offset;
+	if (typeof fieldEditor.commitProgrammaticTextSelection === "function") {
+		fieldEditor.commitProgrammaticTextSelection(blockId, offset, offset);
+		return;
+	}
+
+	fieldEditor.activateTextSelection(blockId, offset, offset);
 }
 
 function shouldDismissAutocompleteOnKeyDown(

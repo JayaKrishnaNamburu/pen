@@ -85,6 +85,11 @@ function createFieldEditorMock(blockId: string) {
 		anchorOffset: number;
 		focusOffset: number;
 	}> = [];
+	const programmaticSelections: Array<{
+		blockId: string;
+		anchorOffset: number;
+		focusOffset: number;
+	}> = [];
 
 	return {
 		controller: {
@@ -103,10 +108,22 @@ function createFieldEditorMock(blockId: string) {
 					focusOffset,
 				});
 			},
+			commitProgrammaticTextSelection: (
+				targetBlockId: string,
+				anchorOffset: number,
+				focusOffset: number,
+			) => {
+				programmaticSelections.push({
+					blockId: targetBlockId,
+					anchorOffset,
+					focusOffset,
+				});
+			},
 			deactivate: () => { },
 			selectAll: () => false,
 		},
 		activations,
+		programmaticSelections,
 	};
 }
 
@@ -850,6 +867,45 @@ describe("@pen/react field editor Tab handling", () => {
 		expect(handled).toBe(true);
 		expect(acceptVisibleSuggestionCount).toBe(1);
 		expect(prevented).toBe(true);
+
+		editor.destroy();
+	});
+
+	it("commits programmatic selection after accepting raw inline completions", () => {
+		const editor = createPresetEditor({
+			preset: {
+				shortcuts: false,
+			},
+			extensions: [aiExtension()],
+		});
+		const blockId = editor.firstBlock()!.id;
+		const fieldEditor = createFieldEditorMock(blockId);
+		const inlineCompletion = getInlineCompletionController(editor);
+		editor.apply([
+			{ type: "insert-text", blockId, offset: 0, text: "Hello" },
+		]);
+		editor.selectText(blockId, 5, 5);
+		inlineCompletion?.showSuggestion({
+			id: "suggestion-1",
+			blockId,
+			offset: 5,
+			text: " world",
+			type: "inline",
+		});
+
+		const handled = handleFieldEditorKeyDown({
+			event: createKeyEvent("Tab"),
+			editor,
+			fieldEditor: fieldEditor.controller,
+			ytext: getYText(editor, blockId),
+			range: { start: 5, end: 5 },
+		});
+
+		expect(handled).toBe(true);
+		expect(editor.getBlock(blockId)?.textContent()).toBe("Hello world");
+		expect(fieldEditor.programmaticSelections).toEqual([
+			{ blockId, anchorOffset: 11, focusOffset: 11 },
+		]);
 
 		editor.destroy();
 	});

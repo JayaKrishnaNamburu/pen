@@ -88,6 +88,11 @@ export interface FieldEditorKeyboardController extends Pick<
 		anchorOffset: number,
 		focusOffset: number,
 	): void;
+	commitProgrammaticTextSelection?(
+		blockId: string,
+		anchorOffset: number,
+		focusOffset: number,
+	): void;
 	deactivate(): void;
 	selectAll(rootElement?: HTMLElement | null): boolean;
 }

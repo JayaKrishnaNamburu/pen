@@ -3,7 +3,11 @@
 import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
-import { createEditor as createCoreEditor, DocumentRangeImpl } from "@pen/core";
+import {
+	createEditor as createCoreEditor,
+	DocumentRangeImpl,
+	ensureInlineCompletionController,
+} from "@pen/core";
 import { defaultPreset } from "@pen/preset-default";
 import type { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
 import { Pen } from "../primitives/index";
@@ -2902,6 +2906,102 @@ describe("@pen/react escape key handling", () => {
 		});
 		container.remove();
 		editor.destroy();
+	});
+
+	it("uses the accepted inline completion caret for immediate enter with stale EditContext state", async () => {
+		const originalEditContext = (
+			globalThis as typeof globalThis & {
+				EditContext?: typeof FakeEditContext;
+			}
+		).EditContext;
+		(
+			globalThis as typeof globalThis & {
+				EditContext?: typeof FakeEditContext;
+			}
+		).EditContext = FakeEditContext;
+
+		try {
+			const editor = createEditor();
+			const blockId = editor.firstBlock()!.id;
+			const { controller: inlineCompletion } =
+				ensureInlineCompletionController(editor);
+
+			editor.apply([
+				{ type: "insert-text", blockId, offset: 0, text: "Hel" },
+			]);
+
+			const container = document.createElement("div");
+			document.body.appendChild(container);
+			const root = createRoot(container);
+
+			await act(async () => {
+				root.render(
+					<Pen.Editor.Root editor={editor}>
+						<Pen.Editor.Content />
+					</Pen.Editor.Root>,
+				);
+			});
+
+			const fieldEditor = getFieldEditor(editor);
+			const inlineElement = container.querySelector(
+				"[data-pen-inline-content]",
+			) as (HTMLElement & { editContext?: FakeEditContext }) | null;
+
+			expect(inlineElement).not.toBeNull();
+
+			await act(async () => {
+				fieldEditor.activateTextSelection(blockId, 3, 3);
+				await flushAnimationFrames(2);
+			});
+
+			await act(async () => {
+				inlineElement?.editContext?.emit("textupdate", {
+					updateRangeStart: 3,
+					updateRangeEnd: 3,
+					text: "",
+					selectionStart: 3,
+					selectionEnd: 3,
+				});
+				inlineCompletion.showSuggestion({
+					id: "suggestion-1",
+					blockId,
+					offset: 3,
+					text: "lo world",
+					type: "inline",
+				});
+				setNativeSelectionRange(inlineElement!, 3, inlineElement!, 3);
+				inlineElement?.dispatchEvent(
+					new KeyboardEvent("keydown", {
+						key: "Tab",
+						bubbles: true,
+						cancelable: true,
+					}),
+				);
+				await flushAnimationFrames(2);
+				setNativeSelectionRange(inlineElement!, 11, inlineElement!, 11);
+				inlineElement?.dispatchEvent(
+					new KeyboardEvent("keydown", {
+						key: "Enter",
+						bubbles: true,
+						cancelable: true,
+					}),
+				);
+			});
+
+			expect(editor.getBlock(blockId)?.textContent()).toBe("Hello world");
+
+			await act(async () => {
+				root.unmount();
+			});
+			container.remove();
+			editor.destroy();
+		} finally {
+			(
+				globalThis as typeof globalThis & {
+					EditContext?: typeof FakeEditContext;
+				}
+			).EditContext = originalEditContext;
+		}
 	});
 
 	it("uses the programmatic post-commit caret for stale EditContext text updates", async () => {

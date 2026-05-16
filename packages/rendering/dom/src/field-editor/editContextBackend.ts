@@ -529,6 +529,9 @@ export class EditContextBackend implements InputBackend {
 		this.editContextSelection = resolvedSelection;
 		if (options?.source === "text-update") {
 			this.authoritativeTextInputSelection = resolvedSelection;
+		} else {
+			// Programmatic/editor selections supersede stale EditContext text-update carets.
+			this.authoritativeTextInputSelection = null;
 		}
 		this.editContext?.updateSelection(
 			resolvedSelection.anchorOffset,
@@ -1068,6 +1071,24 @@ export class EditContextBackend implements InputBackend {
 		}
 
 		const editorSelectionRange = this.resolveEditorSelectionRange(blockId);
+		const liveRange = liveDomOffsets
+			? directionalSelectionToRange(liveDomOffsets)
+			: null;
+		const programmaticInputRange =
+			isFieldEditorTextEditingKey(event)
+				? this.fieldEditor.resolveProgrammaticInputRange(
+						blockId,
+						liveRange,
+					)
+				: null;
+		if (programmaticInputRange) {
+			return {
+				range: programmaticInputRange,
+				nextSelection: rangeToSelection(blockId, programmaticInputRange),
+				shouldSyncEditContextSelection: true,
+			};
+		}
+
 		const trustedKeyRange = this.resolveTrustedKeyDownRange(
 			blockId,
 			event,
