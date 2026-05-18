@@ -6,9 +6,13 @@ import {
 	INLINE_DECORATION_ATTRIBUTE_KEY,
 } from "../utils/inlineDecorations";
 import {
+	areInlineAtomElementDataEqual,
+	copyInlineAtomElementData,
 	createInlineAtomElement,
 	domPointToLogicalOffset,
 	findLogicalDOMPoint,
+	getLogicalNodeLength,
+	isInlineAtomNode,
 } from "./inlineAtomDom";
 
 // ── Fast path: event-driven delta application ──────────────
@@ -26,8 +30,7 @@ export function applyDeltaToDOM(
 			let remaining = entry.retain;
 			while (remaining > 0 && childIndex < element.childNodes.length) {
 				const span = element.childNodes[childIndex];
-				const spanText = span.textContent ?? "";
-				const available = spanText.length - textOffset;
+				const available = getLogicalNodeLength(span) - textOffset;
 
 				if (remaining < available) {
 					textOffset += remaining;
@@ -56,6 +59,16 @@ export function applyDeltaToDOM(
 						existing.slice(textOffset);
 					textOffset += text.length;
 				} else if (span && span.nodeType === Node.ELEMENT_NODE) {
+					if (isInlineAtomNode(span)) {
+						if (textOffset !== 0) return false;
+						element.insertBefore(
+							document.createTextNode(text),
+							span,
+						);
+						childIndex++;
+						textOffset = 0;
+						continue;
+					}
 					const leaf = deepLeafText(span);
 					if (!leaf) return false;
 					const existing = leaf.textContent ?? "";
@@ -89,13 +102,19 @@ export function applyDeltaToDOM(
 			let remaining = entry.delete;
 			while (remaining > 0 && childIndex < element.childNodes.length) {
 				const span = element.childNodes[childIndex];
+				if (isInlineAtomNode(span)) {
+					if (textOffset !== 0) return false;
+					element.removeChild(span);
+					remaining -= 1;
+					continue;
+				}
 				const leaf =
 					span.nodeType === Node.TEXT_NODE
 						? span
 						: deepLeafText(span);
 				if (!leaf) return false;
 				const existing = leaf.textContent ?? "";
-				const available = existing.length - textOffset;
+				const available = getLogicalNodeLength(span) - textOffset;
 
 				if (remaining < available) {
 					leaf.textContent =
@@ -149,9 +168,9 @@ export function fullReconcileToDOM(
 	const renderedDeltas =
 		options?.inlineDecorations && options.inlineDecorations.length > 0
 			? applyInlineDecorationsToDeltas(
-				textDeltas,
-				options.inlineDecorations,
-			)
+					textDeltas,
+					options.inlineDecorations,
+				)
 			: textDeltas;
 	fullReconcileDeltasToDOM(renderedDeltas, element, registry, options);
 }
@@ -356,17 +375,22 @@ function patchDOM(target: HTMLElement, source: DocumentFragment): void {
 			const targetNode = targetNodes[ti];
 
 			if (nodesStructurallyEqual(targetNode, sourceNode)) {
+				if (
+					isInlineAtomNode(targetNode) &&
+					isInlineAtomNode(sourceNode)
+				) {
+					copyInlineAtomElementData(sourceNode, targetNode);
+				}
 				updateTextContent(targetNode, sourceNode);
 				ti++;
 				si++;
 			} else {
-				const cloned = sourceNode.cloneNode(true);
-				target.replaceChild(cloned, targetNode);
+				target.replaceChild(sourceNode, targetNode);
 				ti++;
 				si++;
 			}
 		} else {
-			target.appendChild(sourceNode.cloneNode(true));
+			target.appendChild(sourceNode);
 			si++;
 		}
 	}
@@ -382,6 +406,14 @@ function nodesStructurallyEqual(a: Node, b: Node): boolean {
 	if (a.nodeType === Node.ELEMENT_NODE) {
 		const elA = a as Element;
 		const elB = b as Element;
+		if (isInlineAtomNode(elA) || isInlineAtomNode(elB)) {
+			if (!isInlineAtomNode(elA) || !isInlineAtomNode(elB)) {
+				return false;
+			}
+			if (!areInlineAtomElementDataEqual(elA, elB)) {
+				return false;
+			}
+		}
 		if (elA.tagName !== elB.tagName) return false;
 		if (elA.attributes.length !== elB.attributes.length) return false;
 		for (let i = 0; i < elA.attributes.length; i++) {

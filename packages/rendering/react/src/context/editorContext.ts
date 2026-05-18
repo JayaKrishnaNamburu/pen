@@ -22,6 +22,17 @@ export interface PasteImporters {
 
 export type RendererOverrides = Partial<Record<string, BlockRenderer>>;
 
+export interface InlineAtomRenderProps {
+	type: string;
+	props: Record<string, unknown>;
+	text: string;
+	selected: boolean;
+}
+
+export type InlineAtomRenderer = (props: InlineAtomRenderProps) => ReactNode;
+
+export type InlineAtomRenderers = Partial<Record<string, InlineAtomRenderer>>;
+
 export interface BlockDragAndDropOptions {
 	enabled?: boolean;
 }
@@ -89,9 +100,7 @@ export interface BlockControlsProps {
 	selected: boolean;
 }
 
-export type BlockControlsRenderer = (
-	props: BlockControlsProps,
-) => ReactNode;
+export type BlockControlsRenderer = (props: BlockControlsProps) => ReactNode;
 
 export interface EditorContextValue {
 	editor: Editor;
@@ -105,6 +114,7 @@ export interface EditorContextValue {
 	importers?: PasteImporters;
 	assets?: AssetProvider;
 	renderers?: RendererOverrides;
+	inlineAtomRenderers?: InlineAtomRenderers;
 }
 
 export const EditorContext = createContext<EditorContextValue | null>(null);
@@ -115,7 +125,7 @@ export function useEditorContext(): EditorContextValue {
 		if (isDevelopmentEnvironment()) {
 			console.error(
 				"Pen: useEditorContext must be used within <Pen.Editor.Root>. " +
-				"Wrap your editor components in <Pen.Editor.Root editor={editor}>.",
+					"Wrap your editor components in <Pen.Editor.Root editor={editor}>.",
 			);
 		}
 		throw new Error("Missing Pen.Editor.Root context");

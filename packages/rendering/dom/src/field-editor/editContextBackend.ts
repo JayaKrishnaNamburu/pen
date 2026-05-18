@@ -173,6 +173,9 @@ export class EditContextBackend implements InputBackend {
 		fullReconcileToDOM(this.ytext, element, this.editor.schema, {
 			inlineDecorations: this.getInlineDecorationsForBlock(),
 		});
+		this.fieldEditor.notifyDomReconciled(
+			this.fieldEditor.focusBlockId ?? undefined,
+		);
 		this.isApplyingSelection++;
 		this.updateSelection();
 		element.focus({ preventScroll: true });
@@ -883,6 +886,12 @@ export class EditContextBackend implements InputBackend {
 						focusOffset: clampedSelectionEnd,
 					}
 				: null;
+			fullReconcileToDOM(this.ytext, this.element, this.editor.schema, {
+				preserveSelection: true,
+				inlineDecorations: this.getInlineDecorationsForBlock(),
+			});
+			this.fieldEditor.notifyDomReconciled(blockId ?? undefined);
+			this.restoreDOMCaret();
 			return;
 		}
 
@@ -896,6 +905,9 @@ export class EditContextBackend implements InputBackend {
 				preserveSelection: true,
 				inlineDecorations: this.getInlineDecorationsForBlock(),
 			});
+			this.fieldEditor.notifyDomReconciled(
+				this.fieldEditor.focusBlockId ?? undefined,
+			);
 		}
 
 		if (
@@ -1074,17 +1086,16 @@ export class EditContextBackend implements InputBackend {
 		const liveRange = liveDomOffsets
 			? directionalSelectionToRange(liveDomOffsets)
 			: null;
-		const programmaticInputRange =
-			isFieldEditorTextEditingKey(event)
-				? this.fieldEditor.resolveProgrammaticInputRange(
-						blockId,
-						liveRange,
-					)
-				: null;
+		const programmaticInputRange = isFieldEditorTextEditingKey(event)
+			? this.fieldEditor.resolveProgrammaticInputRange(blockId, liveRange)
+			: null;
 		if (programmaticInputRange) {
 			return {
 				range: programmaticInputRange,
-				nextSelection: rangeToSelection(blockId, programmaticInputRange),
+				nextSelection: rangeToSelection(
+					blockId,
+					programmaticInputRange,
+				),
 				shouldSyncEditContextSelection: true,
 			};
 		}

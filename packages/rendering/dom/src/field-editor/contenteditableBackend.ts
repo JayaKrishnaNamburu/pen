@@ -99,6 +99,9 @@ export class ContentEditableBackend implements InputBackend {
 		fullReconcileToDOM(this.ytext, element, this.editor.schema, {
 			inlineDecorations: this.getInlineDecorationsForBlock(),
 		});
+		this.fieldEditor.notifyDomReconciled(
+			this.fieldEditor.focusBlockId ?? undefined,
+		);
 		this.restoreDOMSelectionFromEditor();
 		requestAnimationFrame(() => {
 			this.isApplyingSelection--;
@@ -454,6 +457,9 @@ export class ContentEditableBackend implements InputBackend {
 			fullReconcileToDOM(this.ytext, this.element!, this.editor.schema, {
 				inlineDecorations: this.getInlineDecorationsForBlock(),
 			});
+			this.fieldEditor.notifyDomReconciled(
+				this.fieldEditor.focusBlockId ?? undefined,
+			);
 		}
 
 		this.compositionStartText = null;
@@ -493,6 +499,14 @@ export class ContentEditableBackend implements InputBackend {
 		if (!this.element || !this.ytext) return;
 		const isHistory = isHistoryTransactionOrigin(event.transaction?.origin);
 		if (isHistory) {
+			fullReconcileToDOM(this.ytext, this.element, this.editor.schema, {
+				preserveSelection: true,
+				inlineDecorations: this.getInlineDecorationsForBlock(),
+			});
+			this.fieldEditor.notifyDomReconciled(
+				this.fieldEditor.focusBlockId ?? undefined,
+			);
+			this.restoreDOMSelectionFromEditor();
 			return;
 		}
 
@@ -505,6 +519,7 @@ export class ContentEditableBackend implements InputBackend {
 				preserveSelection: true,
 				inlineDecorations: this.getInlineDecorationsForBlock(),
 			});
+			this.fieldEditor.notifyDomReconciled(blockId ?? undefined);
 			if (
 				this.pendingSelectionOverride != null ||
 				event.transaction?.origin === "remote" ||
@@ -525,6 +540,7 @@ export class ContentEditableBackend implements InputBackend {
 				preserveSelection: true,
 				inlineDecorations: this.getInlineDecorationsForBlock(),
 			});
+			this.fieldEditor.notifyDomReconciled(blockId ?? undefined);
 		}
 
 		if (
@@ -637,6 +653,9 @@ export class ContentEditableBackend implements InputBackend {
 			preserveSelection: true,
 			inlineDecorations: this.getInlineDecorationsForBlock(),
 		});
+		this.fieldEditor.notifyDomReconciled(
+			this.fieldEditor.focusBlockId ?? undefined,
+		);
 		return true;
 	}
 

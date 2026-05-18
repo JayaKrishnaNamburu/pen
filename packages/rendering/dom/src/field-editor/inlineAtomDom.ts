@@ -8,6 +8,12 @@ interface InlineAtomInsert {
 	props: Record<string, unknown>;
 }
 
+export interface InlineAtomElementData extends InlineAtomInsert {
+	text: string;
+}
+
+const inlineAtomElementData = new WeakMap<HTMLElement, InlineAtomElementData>();
+
 export function resolveInlineAtomInsert(
 	insert: unknown,
 ): InlineAtomInsert | null {
@@ -53,15 +59,82 @@ export function createInlineAtomElement(
 	}
 
 	element.setAttribute(DATA_ATTRS.inlineAtomType, atom.type);
-	element.setAttribute("aria-label", getInlineAtomText(atom, registry));
-	element.textContent = getInlineAtomText(atom, registry);
+	const text = getInlineAtomText(atom, registry);
+	element.setAttribute("aria-label", text);
+	element.textContent = text;
+	inlineAtomElementData.set(element, {
+		...atom,
+		text,
+	});
 	return element;
+}
+
+export function getInlineAtomElementData(
+	element: Element,
+): InlineAtomElementData | null {
+	return element instanceof HTMLElement
+		? (inlineAtomElementData.get(element) ?? null)
+		: null;
+}
+
+export function copyInlineAtomElementData(
+	source: Element,
+	target: Element,
+): void {
+	if (!(target instanceof HTMLElement)) {
+		return;
+	}
+
+	const data = getInlineAtomElementData(source);
+	if (!data) {
+		return;
+	}
+
+	inlineAtomElementData.set(target, {
+		type: data.type,
+		props: { ...data.props },
+		text: data.text,
+	});
+}
+
+export function areInlineAtomElementDataEqual(
+	left: Element,
+	right: Element,
+): boolean {
+	const leftData = getInlineAtomElementData(left);
+	const rightData = getInlineAtomElementData(right);
+	if (!leftData || !rightData) {
+		return leftData === rightData;
+	}
+
+	return (
+		leftData.type === rightData.type &&
+		leftData.text === rightData.text &&
+		shallowEqualRecords(leftData.props, rightData.props)
+	);
 }
 
 export function isInlineAtomNode(node: Node | null): node is HTMLElement {
 	return (
 		node instanceof HTMLElement && node.hasAttribute(DATA_ATTRS.inlineAtom)
 	);
+}
+
+function shallowEqualRecords(
+	left: Record<string, unknown>,
+	right: Record<string, unknown>,
+): boolean {
+	if (left === right) {
+		return true;
+	}
+
+	const leftKeys = Object.keys(left);
+	const rightKeys = Object.keys(right);
+	if (leftKeys.length !== rightKeys.length) {
+		return false;
+	}
+
+	return leftKeys.every((key) => Object.is(left[key], right[key]));
 }
 
 export function getLogicalNodeLength(node: Node): number {
@@ -94,8 +167,12 @@ export function domPointToLogicalOffset(
 	targetOffset: number,
 ): number {
 	const atomAncestor = findInlineAtomAncestor(targetNode, container);
-	if (atomAncestor && atomAncestor !== targetNode) {
-		return getOffsetBeforeNode(container, atomAncestor);
+	if (atomAncestor) {
+		const atomOffset = getOffsetBeforeNode(container, atomAncestor);
+		if (atomAncestor === targetNode) {
+			return targetOffset <= 0 ? atomOffset : atomOffset + 1;
+		}
+		return atomOffset + 1;
 	}
 
 	const resolved = resolveLogicalOffset(container, targetNode, targetOffset);
@@ -202,6 +279,10 @@ function resolveLogicalOffset(
 	targetOffset: number,
 ): number | null {
 	if (current === targetNode) {
+		if (isInlineAtomNode(current)) {
+			return targetOffset <= 0 ? 0 : 1;
+		}
+
 		if (current.nodeType === Node.TEXT_NODE) {
 			return Math.min(targetOffset, current.textContent?.length ?? 0);
 		}

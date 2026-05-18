@@ -64,6 +64,7 @@ export interface FieldEditorDomController extends FieldEditorSelectionState {
 		anchorOffset: number,
 		focusOffset: number,
 	): void;
+	notifyDomReconciled(blockId?: string): void;
 	activateTextSelection(
 		blockId: string,
 		anchorOffset: number,

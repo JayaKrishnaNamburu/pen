@@ -74,6 +74,7 @@ export class FieldEditorImpl implements FieldEditorSession {
 	private _unsubscribeHistoryApplied: Unsubscribe | null = null;
 	private _pendingMarks: Record<string, unknown | null> = {};
 	private _syncDomVersion = 0;
+	private _domSyncVersion = 0;
 	private _suppressNextDomSelectionProjection = false;
 	private _pointerSelectionDepth = 0;
 	private _pendingSelectionProjectionVersion: number | null = null;
@@ -146,6 +147,7 @@ export class FieldEditorImpl implements FieldEditorSession {
 			shouldProjectSelection: () =>
 				this._shouldProjectSelectionAfterReconcile(),
 			projectSelection: () => this._syncDomSelectionOnce(),
+			notifyDomReconciled: (blockId) => this.notifyDomReconciled(blockId),
 		});
 	}
 
@@ -976,10 +978,16 @@ export class FieldEditorImpl implements FieldEditorSession {
 			isEditing: this._isEditing,
 			isFocused: this._isFocused,
 			isComposing: this._isComposing,
+			domSyncVersion: this._domSyncVersion,
 			inputMode: this._inputMode,
 			mode: this._mode,
 			activeCellCoord: this._activeCellCoord,
 		};
+	}
+
+	notifyDomReconciled(_blockId?: string): void {
+		this._domSyncVersion += 1;
+		this._emitStateChange();
 	}
 
 	subscribe(callback: () => void): Unsubscribe {

@@ -11,6 +11,7 @@ import {
 	type BlockControlsRenderer,
 	type BlockDragAndDropOptions,
 	type BlockSelectionOptions,
+	type InlineAtomRenderers,
 	type ResolvedBlockDragAndDropOptions,
 	type PasteImporters,
 	type RendererOverrides,
@@ -42,6 +43,7 @@ export interface EditorRootProps extends AsChildProps {
 	importers?: PasteImporters;
 	assets?: AssetProvider;
 	renderers?: RendererOverrides;
+	inlineAtomRenderers?: InlineAtomRenderers;
 	blockControls?: BlockControlsRenderer;
 	editorViewMode?: EditorViewMode;
 	interactionModel?: InteractionModel;
@@ -57,6 +59,7 @@ export function EditorRoot(props: EditorRootProps) {
 		importers,
 		assets,
 		renderers,
+		inlineAtomRenderers,
 		blockControls,
 		editorViewMode = editor.editorViewMode,
 		interactionModel,
@@ -235,6 +238,7 @@ export function EditorRoot(props: EditorRootProps) {
 				importers,
 				assets: resolvedAssets,
 				renderers,
+				inlineAtomRenderers,
 			}}
 		>
 			<BlockDragSessionProvider viewId={editor.internals.viewId}>
