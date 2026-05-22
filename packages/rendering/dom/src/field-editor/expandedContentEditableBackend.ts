@@ -21,7 +21,6 @@ export class ExpandedContentEditableBackend {
 	private element: HTMLElement | null = null;
 	private editor: Editor;
 	private fieldEditor: FieldEditorInputController;
-	private isApplyingSelection = 0;
 
 	constructor(editor: Editor, fieldEditor: FieldEditorInputController) {
 		this.editor = editor;
@@ -32,6 +31,7 @@ export class ExpandedContentEditableBackend {
 		this.element = element;
 		element.contentEditable = "true";
 		element.tabIndex = -1;
+		this.fieldEditor.resetBackendSelectionAuthority();
 
 		element.addEventListener("beforeinput", this.handleBeforeInput);
 		element.addEventListener("keydown", this.handleKeyDown);
@@ -46,28 +46,21 @@ export class ExpandedContentEditableBackend {
 
 		const selection = this.editor.selection;
 		if (selection?.type === "text") {
-			this.isApplyingSelection++;
+			this.fieldEditor.applyBackendSelectionUntilNextFrame();
 			if (
 				!this.fieldEditor.requestDomFocus(element, "backend-activate", {
 					preventScroll: true,
 				})
 			) {
-				requestAnimationFrame(() => {
-					this.isApplyingSelection--;
-				});
 				return;
 			}
 			editorSelectionToDOM(element, selection.anchor, selection.focus);
-			requestAnimationFrame(() => {
-				this.isApplyingSelection--;
-			});
 			return;
 		}
 
 		this.fieldEditor.requestDomFocus(element, "backend-activate", {
 			preventScroll: true,
 		});
-		this.isApplyingSelection = 0;
 	}
 
 	deactivate(): void {
@@ -101,18 +94,15 @@ export class ExpandedContentEditableBackend {
 		if (!this.element) return;
 		const selection = this.editor.selection;
 		if (selection?.type !== "text") return;
-		this.isApplyingSelection++;
+		this.fieldEditor.applyBackendSelectionUntilNextFrame();
 		editorSelectionToDOM(this.element, selection.anchor, selection.focus);
-		requestAnimationFrame(() => {
-			this.isApplyingSelection--;
-		});
 	}
 
 	private handleSelectionChange = (): void => {
 		if (!this.element) return;
 		if (
 			!this.fieldEditor.shouldHandleDomSelectionChange(
-				this.isApplyingSelection,
+				this.fieldEditor.getBackendSelectionApplicationDepth(),
 			)
 		) {
 			return;

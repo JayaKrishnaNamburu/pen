@@ -517,16 +517,19 @@ describe("@pen/ai-autocomplete", () => {
 			() => inlineCompletion?.getState().visibleSuggestion?.text === " world!",
 		);
 
-		expect(inlineCompletion?.buildDecorations()).toEqual([
-			expect.objectContaining({
-				blockId,
-				from: 4,
-				to: 5,
-				attributes: expect.objectContaining({
-					"data-suggestion-placement": "after",
+		expect(inlineCompletion?.buildDecorations()).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					type: "inline",
+					blockId,
+					from: 4,
+					to: 5,
+					attributes: expect.objectContaining({
+						"data-suggestion-placement": "after",
+					}),
 				}),
-			}),
-		]);
+			]),
+		);
 
 		editor.destroy();
 	});
@@ -1387,17 +1390,20 @@ describe("@pen/ai-autocomplete", () => {
 					deniedBlockTypes?: readonly string[];
 				};
 			};
-			_sequence: {
-				requestId: string;
-				blockId: string;
-				startOffset: number;
-				candidate: {
-					inlineText: string;
-					appendedBlocks: readonly unknown[];
-					previewBlocks: readonly unknown[];
-				};
-				continuationDepth: number;
-			} | null;
+			_continuation: {
+				setSequence(sequence: {
+					requestId: string;
+					blockId: string;
+					startOffset: number;
+					candidate: {
+						rawText: string;
+						inlineText: string;
+						appendedBlocks: readonly [];
+						previewBlocks: readonly [];
+					};
+					continuationDepth: number;
+				}): void;
+			};
 			_setState: (nextState: {
 				status: "showing";
 				activeRequestId: string;
@@ -1408,17 +1414,18 @@ describe("@pen/ai-autocomplete", () => {
 			...controller!.getBlockPolicy(),
 			allowInCodeBlocks: false,
 		};
-		controllerImpl._sequence = {
+		controllerImpl._continuation.setSequence({
 			requestId: "manual-policy-recheck",
 			blockId: codeBlockId,
 			startOffset: 14,
 			candidate: {
+				rawText: " value",
 				inlineText: " value",
 				appendedBlocks: [],
 				previewBlocks: [],
 			},
 			continuationDepth: 0,
-		};
+		});
 		controllerImpl._setState({
 			status: "showing",
 			activeRequestId: "manual-policy-recheck",

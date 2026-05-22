@@ -1,6 +1,10 @@
 import type { BlockSchema, Editor, FieldEditorFocusOptions } from "@pen/types";
 import type { FieldEditorStore } from "./store";
 import type { EditorSelectAllBehavior } from "../constants/selectAll";
+import type {
+	FieldEditorSelectionSnapshot,
+	FieldEditorSelectionSource,
+} from "./selectionAuthority";
 
 export type FieldEditorFocusReason =
 	| "activate"
@@ -136,6 +140,25 @@ export interface FieldEditorDomController extends FieldEditorSelectionState {
 		options?: FocusOptions,
 	): boolean;
 	shouldHandleDomSelectionChange(isApplyingSelection: number): boolean;
+	resetBackendSelectionAuthority(): void;
+	setBackendSelectionAuthority(
+		source: FieldEditorSelectionSource,
+		selection: FieldEditorSelectionSnapshot | null,
+	): void;
+	getBackendSelectionAuthority(
+		source: FieldEditorSelectionSource,
+		blockId?: string | null,
+	): FieldEditorSelectionSnapshot | null;
+	hasBackendSelectionAuthority(source: FieldEditorSelectionSource): boolean;
+	clearBackendSelectionAuthority(source: FieldEditorSelectionSource): void;
+	applyBackendSelectionUntilNextFrame(): void;
+	getBackendSelectionApplicationDepth(): number;
+	setEditContextSelectionSnapshot(
+		selection: FieldEditorSelectionSnapshot | null,
+	): void;
+	getEditContextSelectionSnapshot(
+		blockId?: string | null,
+	): FieldEditorSelectionSnapshot | null;
 	resolveProgrammaticInputRange(
 		blockId: string | null,
 		liveRange: { start: number; end: number } | null,

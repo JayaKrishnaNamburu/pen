@@ -12,6 +12,8 @@ import {
 	domPointToLogicalOffset,
 	findLogicalDOMPoint,
 	getLogicalNodeLength,
+	isInlineAtomChipNode,
+	isInlineAtomHostNode,
 	isInlineAtomNode,
 } from "./inlineAtomDom";
 
@@ -376,6 +378,11 @@ function patchDOM(target: HTMLElement, source: DocumentFragment): void {
 
 			if (nodesStructurallyEqual(targetNode, sourceNode)) {
 				if (
+					isInlineAtomHostNode(targetNode) &&
+					isInlineAtomHostNode(sourceNode)
+				) {
+					copyInlineAtomElementData(sourceNode, targetNode);
+				} else if (
 					isInlineAtomNode(targetNode) &&
 					isInlineAtomNode(sourceNode)
 				) {
@@ -406,7 +413,14 @@ function nodesStructurallyEqual(a: Node, b: Node): boolean {
 	if (a.nodeType === Node.ELEMENT_NODE) {
 		const elA = a as Element;
 		const elB = b as Element;
-		if (isInlineAtomNode(elA) || isInlineAtomNode(elB)) {
+		if (isInlineAtomHostNode(elA) || isInlineAtomHostNode(elB)) {
+			if (!isInlineAtomHostNode(elA) || !isInlineAtomHostNode(elB)) {
+				return false;
+			}
+			if (!areInlineAtomElementDataEqual(elA, elB)) {
+				return false;
+			}
+		} else if (isInlineAtomNode(elA) || isInlineAtomNode(elB)) {
 			if (!isInlineAtomNode(elA) || !isInlineAtomNode(elB)) {
 				return false;
 			}
@@ -444,9 +458,33 @@ function updateTextContent(target: Node, source: Node): void {
 		target.nodeType === Node.ELEMENT_NODE &&
 		source.nodeType === Node.ELEMENT_NODE
 	) {
+		if (isInlineAtomHostNode(target) && isInlineAtomHostNode(source)) {
+			updateInlineAtomHostTextContent(target, source);
+			return;
+		}
 		for (let i = 0; i < target.childNodes.length; i++) {
 			updateTextContent(target.childNodes[i], source.childNodes[i]);
 		}
+	}
+}
+
+function updateInlineAtomHostTextContent(target: Node, source: Node): void {
+	for (let i = 0; i < target.childNodes.length; i += 1) {
+		const targetChild = target.childNodes[i];
+		const sourceChild = source.childNodes[i];
+		if (!sourceChild) {
+			continue;
+		}
+		if (
+			isInlineAtomChipNode(targetChild) &&
+			isInlineAtomChipNode(sourceChild)
+		) {
+			if (targetChild.textContent !== sourceChild.textContent) {
+				targetChild.textContent = sourceChild.textContent;
+			}
+			continue;
+		}
+		updateTextContent(targetChild, sourceChild);
 	}
 }
 

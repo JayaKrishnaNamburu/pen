@@ -31,6 +31,7 @@ export interface SelectionTarget {
 type InlineTextLike = {
 	length: number;
 	toString(): string;
+	toDelta?(): Array<{ insert?: string | Record<string, unknown> }>;
 };
 
 type BlockInputRuleEngine = {
@@ -103,6 +104,21 @@ function getAdjacentEditableBlock(
 }
 
 export function getLogicalInlineLength(ytext: InlineTextLike): number {
+	const delta = ytext.toDelta?.();
+	if (delta) {
+		return delta.reduce((length, entry) => {
+			if (typeof entry.insert === "string") {
+				return (
+					length +
+					(entry.insert === ZERO_WIDTH_SPACE
+						? 0
+						: entry.insert.length)
+				);
+			}
+			return entry.insert ? length + 1 : length;
+		}, 0);
+	}
+
 	const text = ytext.toString();
 	if (!text || text === ZERO_WIDTH_SPACE) {
 		return 0;
@@ -283,7 +299,7 @@ export function applyListTabBehavior(
 		const sharesParent =
 			previousBlockId !== null &&
 			editor.documentState.parentOf(previousBlockId) ===
-			editor.documentState.parentOf(blockId);
+				editor.documentState.parentOf(blockId);
 
 		if (
 			isListBlock(previousBlock) &&

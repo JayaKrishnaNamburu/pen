@@ -1,12 +1,19 @@
 import type { SchemaRegistry } from "@pen/types";
 import { DATA_ATTRS } from "../utils/dataAttributes";
+import {
+	INLINE_ATOM_CARET_BOUNDARY_TEXT,
+	INLINE_ATOM_REPLACEMENT_TEXT,
+	resolveInlineAtomDisplayText,
+	resolveInlineAtomInsert,
+	type InlineAtomInsert,
+} from "./inlineAtomModel";
+export {
+	INLINE_ATOM_CARET_BOUNDARY_TEXT,
+	INLINE_ATOM_REPLACEMENT_TEXT,
+	resolveInlineAtomInsert,
+} from "./inlineAtomModel";
 
-export const INLINE_ATOM_REPLACEMENT_TEXT = "\uFFFC";
-
-interface InlineAtomInsert {
-	type: string;
-	props: Record<string, unknown>;
-}
+export type InlineAtomCaretBoundarySide = "before" | "after";
 
 export interface InlineAtomElementData extends InlineAtomInsert {
 	text: string;
@@ -14,37 +21,19 @@ export interface InlineAtomElementData extends InlineAtomInsert {
 
 const inlineAtomElementData = new WeakMap<HTMLElement, InlineAtomElementData>();
 
-export function resolveInlineAtomInsert(
-	insert: unknown,
-): InlineAtomInsert | null {
-	if (!insert || typeof insert !== "object") {
-		return null;
-	}
-
-	const record = insert as Record<string, unknown>;
-	const type = typeof record.type === "string" ? record.type : "";
-	if (!type) {
-		return null;
-	}
-
-	if (record.props && typeof record.props === "object") {
-		return {
-			type,
-			props: record.props as Record<string, unknown>,
-		};
-	}
-
-	const props: Record<string, unknown> = {};
-	for (const [key, value] of Object.entries(record)) {
-		if (key !== "type") {
-			props[key] = value;
-		}
-	}
-
-	return { type, props };
+export function createInlineAtomCaretBoundaryElement(
+	side: InlineAtomCaretBoundarySide,
+): HTMLElement {
+	const element = document.createElement("span");
+	element.setAttribute(DATA_ATTRS.inlineAtomCaretBoundary, "");
+	element.setAttribute(DATA_ATTRS.inlineAtomCaretSide, side);
+	element.appendChild(
+		document.createTextNode(INLINE_ATOM_CARET_BOUNDARY_TEXT),
+	);
+	return element;
 }
 
-export function createInlineAtomElement(
+function createInlineAtomChipElement(
 	insert: unknown,
 	registry: SchemaRegistry,
 ): HTMLElement {
@@ -59,7 +48,8 @@ export function createInlineAtomElement(
 	}
 
 	element.setAttribute(DATA_ATTRS.inlineAtomType, atom.type);
-	const text = getInlineAtomText(atom, registry);
+	element.setAttribute(DATA_ATTRS.inlineAtomProps, serializeInlineAtomProps(atom.props));
+	const text = resolveInlineAtomDisplayText(atom, registry);
 	element.setAttribute("aria-label", text);
 	element.textContent = text;
 	inlineAtomElementData.set(element, {
@@ -69,32 +59,87 @@ export function createInlineAtomElement(
 	return element;
 }
 
+export function createInlineAtomElement(
+	insert: unknown,
+	registry: SchemaRegistry,
+): HTMLElement {
+	const host = document.createElement("span");
+	host.setAttribute(DATA_ATTRS.inlineAtomHost, "");
+	host.appendChild(createInlineAtomCaretBoundaryElement("before"));
+	host.appendChild(createInlineAtomChipElement(insert, registry));
+	host.appendChild(createInlineAtomCaretBoundaryElement("after"));
+	return host;
+}
+
 export function getInlineAtomElementData(
 	element: Element,
 ): InlineAtomElementData | null {
-	return element instanceof HTMLElement
-		? (inlineAtomElementData.get(element) ?? null)
-		: null;
+	const chip = getInlineAtomChipElement(element);
+	if (!chip) {
+		return null;
+	}
+	return inlineAtomElementData.get(chip) ?? deserializeInlineAtomElementData(chip);
 }
 
 export function copyInlineAtomElementData(
 	source: Element,
 	target: Element,
 ): void {
-	if (!(target instanceof HTMLElement)) {
+	const sourceChip = getInlineAtomChipElement(source);
+	const targetChip = getInlineAtomChipElement(target);
+	if (!sourceChip || !targetChip) {
 		return;
 	}
 
-	const data = getInlineAtomElementData(source);
+	const data = getInlineAtomElementData(sourceChip);
 	if (!data) {
 		return;
 	}
 
-	inlineAtomElementData.set(target, {
+	inlineAtomElementData.set(targetChip, {
 		type: data.type,
 		props: { ...data.props },
 		text: data.text,
 	});
+	targetChip.setAttribute(DATA_ATTRS.inlineAtomType, data.type);
+	targetChip.setAttribute(DATA_ATTRS.inlineAtomProps, serializeInlineAtomProps(data.props));
+	targetChip.setAttribute("aria-label", data.text);
+}
+
+function serializeInlineAtomProps(props: Record<string, unknown>): string {
+	try {
+		return JSON.stringify(props);
+	} catch {
+		return "{}";
+	}
+}
+
+function deserializeInlineAtomElementData(
+	element: HTMLElement,
+): InlineAtomElementData | null {
+	const type = element.getAttribute(DATA_ATTRS.inlineAtomType);
+	if (!type) {
+		return null;
+	}
+	return {
+		type,
+		props: parseInlineAtomProps(element.getAttribute(DATA_ATTRS.inlineAtomProps)),
+		text: element.getAttribute("aria-label") ?? element.textContent ?? "",
+	};
+}
+
+function parseInlineAtomProps(value: string | null): Record<string, unknown> {
+	if (!value) {
+		return {};
+	}
+	try {
+		const props = JSON.parse(value);
+		return props && typeof props === "object" && !Array.isArray(props)
+			? (props as Record<string, unknown>)
+			: {};
+	} catch {
+		return {};
+	}
 }
 
 export function areInlineAtomElementDataEqual(
@@ -114,10 +159,32 @@ export function areInlineAtomElementDataEqual(
 	);
 }
 
-export function isInlineAtomNode(node: Node | null): node is HTMLElement {
+export function isInlineAtomCaretBoundaryNode(
+	node: Node | null,
+): node is HTMLElement {
 	return (
-		node instanceof HTMLElement && node.hasAttribute(DATA_ATTRS.inlineAtom)
+		node instanceof HTMLElement &&
+		node.hasAttribute(DATA_ATTRS.inlineAtomCaretBoundary)
 	);
+}
+
+export function isInlineAtomHostNode(node: Node | null): node is HTMLElement {
+	return (
+		node instanceof HTMLElement &&
+		node.hasAttribute(DATA_ATTRS.inlineAtomHost)
+	);
+}
+
+export function isInlineAtomChipNode(node: Node | null): node is HTMLElement {
+	return (
+		node instanceof HTMLElement &&
+		node.hasAttribute(DATA_ATTRS.inlineAtom) &&
+		!isInlineAtomHostNode(node)
+	);
+}
+
+export function isInlineAtomNode(node: Node | null): node is HTMLElement {
+	return isInlineAtomHostNode(node) || isInlineAtomChipNode(node);
 }
 
 function shallowEqualRecords(
@@ -137,13 +204,101 @@ function shallowEqualRecords(
 	return leftKeys.every((key) => Object.is(left[key], right[key]));
 }
 
-export function getLogicalNodeLength(node: Node): number {
-	if (node.nodeType === Node.TEXT_NODE) {
-		return node.textContent?.length ?? 0;
+function getInlineAtomChipElement(element: Element): HTMLElement | null {
+	if (element instanceof HTMLElement && isInlineAtomChipNode(element)) {
+		return element;
 	}
 
-	if (isInlineAtomNode(node)) {
+	if (element instanceof HTMLElement && isInlineAtomHostNode(element)) {
+		for (const child of Array.from(element.childNodes)) {
+			if (isInlineAtomChipNode(child)) {
+				return child;
+			}
+		}
+	}
+
+	return null;
+}
+
+function getInlineAtomHostElement(node: Node): HTMLElement | null {
+	if (node instanceof HTMLElement && isInlineAtomHostNode(node)) {
+		return node;
+	}
+
+	if (node instanceof HTMLElement && isInlineAtomChipNode(node)) {
+		const parent = node.parentElement;
+		return parent && isInlineAtomHostNode(parent) ? parent : null;
+	}
+
+	if (isInlineAtomCaretBoundaryNode(node)) {
+		const parent = node.parentElement;
+		return parent && isInlineAtomHostNode(parent) ? parent : null;
+	}
+
+	return null;
+}
+
+function getInlineAtomCaretBoundaryElement(
+	host: HTMLElement,
+	side: InlineAtomCaretBoundarySide,
+): HTMLElement | null {
+	for (const child of Array.from(host.childNodes)) {
+		if (
+			isInlineAtomCaretBoundaryNode(child) &&
+			child.getAttribute(DATA_ATTRS.inlineAtomCaretSide) === side
+		) {
+			return child;
+		}
+	}
+	return null;
+}
+
+function getInlineAtomCaretBoundaryTextPoint(
+	host: HTMLElement,
+	side: InlineAtomCaretBoundarySide,
+): { node: Node; offset: number } | null {
+	const boundary = getInlineAtomCaretBoundaryElement(host, side);
+	if (!boundary) {
+		return null;
+	}
+
+	const textNode = boundary.firstChild;
+	if (!textNode || textNode.nodeType !== Node.TEXT_NODE) {
+		return null;
+	}
+
+	return {
+		node: textNode,
+		offset: side === "before" ? 0 : (textNode.textContent?.length ?? 0),
+	};
+}
+
+function resolveLogicalInlineAtomUnit(node: HTMLElement): HTMLElement {
+	const host = getInlineAtomHostElement(node);
+	if (host) {
+		return host;
+	}
+	return node;
+}
+
+export function getLogicalNodeLength(node: Node): number {
+	if (
+		isInlineAtomCaretBoundaryNode(node) ||
+		hasInlineAtomCaretBoundaryAncestor(node)
+	) {
+		return 0;
+	}
+
+	if (isInlineAtomHostNode(node)) {
 		return 1;
+	}
+
+	if (isInlineAtomChipNode(node)) {
+		return getInlineAtomHostElement(node) ? 0 : 1;
+	}
+
+	if (node.nodeType === Node.TEXT_NODE) {
+		return node.textContent?.length ?? 0;
 	}
 
 	let length = 0;
@@ -197,7 +352,8 @@ export function getInlineAtomPointerOffset(
 			continue;
 		}
 
-		const atomOffset = getOffsetBeforeNode(container, atomElement);
+		const logicalAtom = resolveLogicalInlineAtomUnit(atomElement);
+		const atomOffset = getOffsetBeforeNode(container, logicalAtom);
 		bestOffset =
 			clientX <= rect.left + rect.width / 2 ? atomOffset : atomOffset + 1;
 		bestScore = score;
@@ -211,10 +367,26 @@ export function domPointToLogicalOffset(
 	targetNode: Node,
 	targetOffset: number,
 ): number {
+	const boundaryAncestor = findInlineAtomCaretBoundaryAncestor(
+		targetNode,
+		container,
+	);
+	if (boundaryAncestor) {
+		const side = boundaryAncestor.getAttribute(
+			DATA_ATTRS.inlineAtomCaretSide,
+		) as InlineAtomCaretBoundarySide | null;
+		const host = getInlineAtomHostElement(boundaryAncestor);
+		if (host && (side === "before" || side === "after")) {
+			const hostOffset = getOffsetBeforeNode(container, host);
+			return side === "before" ? hostOffset : hostOffset + 1;
+		}
+	}
+
 	const atomAncestor = findInlineAtomAncestor(targetNode, container);
 	if (atomAncestor) {
-		const atomOffset = getOffsetBeforeNode(container, atomAncestor);
-		if (atomAncestor === targetNode) {
+		const logicalAtom = resolveLogicalInlineAtomUnit(atomAncestor);
+		const atomOffset = getOffsetBeforeNode(container, logicalAtom);
+		if (logicalAtom === targetNode || isInlineAtomChipNode(atomAncestor)) {
 			return targetOffset <= 0 ? atomOffset : atomOffset + 1;
 		}
 		return atomOffset + 1;
@@ -231,42 +403,26 @@ export function findLogicalDOMPoint(
 	return findLogicalDOMPointInElement(container, Math.max(0, offset));
 }
 
-function getInlineAtomText(
-	atom: InlineAtomInsert,
-	registry: SchemaRegistry,
-): string {
-	const schemaText = registry
-		.resolveInline(atom.type)
-		?.serialize.toMarkdown?.("", atom.props);
-	if (schemaText) {
-		return schemaText;
-	}
-
-	const label = atom.props.label;
-	if (typeof label === "string" && label.length > 0) {
-		return label;
-	}
-
-	const name = atom.props.name;
-	if (typeof name === "string" && name.length > 0) {
-		return name;
-	}
-
-	const id = atom.props.id;
-	if (typeof id === "string" && id.length > 0) {
-		return id;
-	}
-
-	return atom.type;
-}
-
 function getLogicalNodeText(node: Node): string {
+	if (
+		isInlineAtomCaretBoundaryNode(node) ||
+		hasInlineAtomCaretBoundaryAncestor(node)
+	) {
+		return "";
+	}
+
+	if (isInlineAtomHostNode(node)) {
+		return INLINE_ATOM_REPLACEMENT_TEXT;
+	}
+
+	if (isInlineAtomChipNode(node)) {
+		return getInlineAtomHostElement(node)
+			? ""
+			: INLINE_ATOM_REPLACEMENT_TEXT;
+	}
+
 	if (node.nodeType === Node.TEXT_NODE) {
 		return node.textContent ?? "";
-	}
-
-	if (isInlineAtomNode(node)) {
-		return INLINE_ATOM_REPLACEMENT_TEXT;
 	}
 
 	let text = "";
@@ -274,6 +430,34 @@ function getLogicalNodeText(node: Node): string {
 		text += getLogicalNodeText(child);
 	}
 	return text;
+}
+
+function findInlineAtomCaretBoundaryAncestor(
+	node: Node,
+	container: HTMLElement,
+): HTMLElement | null {
+	let current: Node | null = node;
+	while (current && current !== container) {
+		if (isInlineAtomCaretBoundaryNode(current)) {
+			return current;
+		}
+		current = current.parentNode;
+	}
+	return null;
+}
+
+function hasInlineAtomCaretBoundaryAncestor(node: Node): boolean {
+	let current: Node | null = node.parentNode;
+	while (current) {
+		if (isInlineAtomCaretBoundaryNode(current)) {
+			return true;
+		}
+		if (isInlineAtomHostNode(current)) {
+			return false;
+		}
+		current = current.parentNode;
+	}
+	return false;
 }
 
 function findInlineAtomAncestor(
@@ -324,8 +508,20 @@ function resolveLogicalOffset(
 	targetOffset: number,
 ): number | null {
 	if (current === targetNode) {
-		if (isInlineAtomNode(current)) {
+		if (isInlineAtomHostNode(current)) {
 			return targetOffset <= 0 ? 0 : 1;
+		}
+
+		if (isInlineAtomChipNode(current)) {
+			return getInlineAtomHostElement(current)
+				? null
+				: targetOffset <= 0
+					? 0
+					: 1;
+		}
+
+		if (isInlineAtomCaretBoundaryNode(current)) {
+			return 0;
 		}
 
 		if (current.nodeType === Node.TEXT_NODE) {
@@ -344,7 +540,12 @@ function resolveLogicalOffset(
 		return offset;
 	}
 
-	if (current.nodeType === Node.TEXT_NODE || isInlineAtomNode(current)) {
+	if (
+		current.nodeType === Node.TEXT_NODE ||
+		isInlineAtomHostNode(current) ||
+		isInlineAtomChipNode(current) ||
+		isInlineAtomCaretBoundaryNode(current)
+	) {
 		return null;
 	}
 
@@ -376,6 +577,15 @@ function findLogicalDOMPointInElement(
 		const length = getLogicalNodeLength(child);
 
 		if (remaining === 0) {
+			if (isInlineAtomHostNode(child)) {
+				const boundaryPoint = getInlineAtomCaretBoundaryTextPoint(
+					child,
+					"before",
+				);
+				if (boundaryPoint) {
+					return boundaryPoint;
+				}
+			}
 			return { node: element, offset: index };
 		}
 
@@ -387,11 +597,30 @@ function findLogicalDOMPointInElement(
 			continue;
 		}
 
-		if (isInlineAtomNode(child)) {
+		if (isInlineAtomHostNode(child)) {
+			if (remaining <= 1) {
+				const boundaryPoint = getInlineAtomCaretBoundaryTextPoint(
+					child,
+					remaining === 0 ? "before" : "after",
+				);
+				if (boundaryPoint) {
+					return boundaryPoint;
+				}
+				return { node: element, offset: index + 1 };
+			}
+			remaining -= 1;
+			continue;
+		}
+
+		if (isInlineAtomChipNode(child)) {
 			if (remaining <= 1) {
 				return { node: element, offset: index + 1 };
 			}
 			remaining -= 1;
+			continue;
+		}
+
+		if (isInlineAtomCaretBoundaryNode(child)) {
 			continue;
 		}
 

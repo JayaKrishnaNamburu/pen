@@ -13,7 +13,12 @@ import {
 import {
 	getInlineAtomElementData,
 	getLogicalTextContent,
+	getLogicalNodeLength,
+	INLINE_ATOM_CARET_BOUNDARY_TEXT,
 	INLINE_ATOM_REPLACEMENT_TEXT,
+	findLogicalDOMPoint,
+	isInlineAtomCaretBoundaryNode,
+	isInlineAtomHostNode,
 } from "@pen/dom/field-editor/inlineAtomDom";
 import {
 	applyDeltaToDOM,
@@ -25,8 +30,10 @@ import {
 	domPointToOffset,
 	domSelectionToEditor,
 	editorSelectionToDOM,
+	getSelectionOffsets,
 	pointToEditorSelectionPoint,
 } from "../field-editor/selectionBridge";
+import { handleFieldEditorKeyDown } from "../field-editor/keyHandling";
 import { Pen } from "../primitives/index";
 
 (
@@ -216,9 +223,9 @@ describe("Pen inline atom editing", () => {
 
 		try {
 			fieldEditor.activate(blockId);
-			expect(fieldEditor.requestDomFocus(inline, "selection-project")).toBe(
-				true,
-			);
+			expect(
+				fieldEditor.requestDomFocus(inline, "selection-project"),
+			).toBe(true);
 			expect(focusSpy).not.toHaveBeenCalled();
 			expect(decide).toHaveBeenCalledWith(
 				expect.objectContaining({
@@ -267,6 +274,315 @@ describe("Pen inline atom editing", () => {
 			await flushAnimationFrames(1);
 		} finally {
 			fieldEditor.destroy();
+			editor.destroy();
+		}
+	});
+
+	it("projects activated text selections before the next input event can use a stale DOM range", () => {
+		const editor = createPresetEditor();
+		const blockId = seedInlineAtomDocument(editor);
+		const fieldEditor = new FieldEditorImpl(editor);
+		const block = editor.getBlock(blockId)!;
+		const endOffset = block.length();
+		const root = document.createElement("div");
+		const blockElement = document.createElement("div");
+		const inlineElement = document.createElement("span");
+
+		root.setAttribute(DATA_ATTRS.editorRoot, "");
+		blockElement.setAttribute(DATA_ATTRS.editorBlock, "");
+		blockElement.setAttribute(DATA_ATTRS.blockId, blockId);
+		blockElement.setAttribute(DATA_ATTRS.blockType, "paragraph");
+		inlineElement.setAttribute(DATA_ATTRS.inlineContent, "");
+		fullReconcileDeltasToDOM(
+			block.inlineDeltas() as unknown as Parameters<
+				typeof fullReconcileDeltasToDOM
+			>[0],
+			inlineElement,
+			editor.schema,
+		);
+		blockElement.appendChild(inlineElement);
+		root.appendChild(blockElement);
+		document.body.appendChild(root);
+		fieldEditor.setRootElement(root);
+
+		try {
+			fieldEditor.activate(blockId);
+			editorSelectionToDOM(
+				root,
+				{ blockId, offset: 0 },
+				{ blockId, offset: 0 },
+			);
+			expect(getSelectionOffsets(inlineElement)).toEqual({
+				start: 0,
+				end: 0,
+			});
+
+			fieldEditor.activateTextSelection(blockId, endOffset, endOffset);
+
+			expect(getSelectionOffsets(inlineElement)).toEqual({
+				start: endOffset,
+				end: endOffset,
+			});
+		} finally {
+			fieldEditor.destroy();
+			root.remove();
+			editor.destroy();
+		}
+	});
+
+	it("projects activated inline atom range selections synchronously", () => {
+		const editor = createPresetEditor();
+		const blockId = seedInlineAtomDocument(editor);
+		const fieldEditor = new FieldEditorImpl(editor);
+		const block = editor.getBlock(blockId)!;
+		const root = document.createElement("div");
+		const blockElement = document.createElement("div");
+		const inlineElement = document.createElement("span");
+
+		root.setAttribute(DATA_ATTRS.editorRoot, "");
+		blockElement.setAttribute(DATA_ATTRS.editorBlock, "");
+		blockElement.setAttribute(DATA_ATTRS.blockId, blockId);
+		blockElement.setAttribute(DATA_ATTRS.blockType, "paragraph");
+		inlineElement.setAttribute(DATA_ATTRS.inlineContent, "");
+		fullReconcileDeltasToDOM(
+			block.inlineDeltas() as unknown as Parameters<
+				typeof fullReconcileDeltasToDOM
+			>[0],
+			inlineElement,
+			editor.schema,
+		);
+		blockElement.appendChild(inlineElement);
+		root.appendChild(blockElement);
+		document.body.appendChild(root);
+		fieldEditor.setRootElement(root);
+
+		try {
+			fieldEditor.activate(blockId);
+			fieldEditor.activateTextSelection(blockId, 1, 2);
+
+			expect(getSelectionOffsets(inlineElement)).toEqual({
+				start: 1,
+				end: 2,
+			});
+		} finally {
+			fieldEditor.destroy();
+			root.remove();
+			editor.destroy();
+		}
+	});
+
+	it("keeps programmatic focus after native focus reports a start caret", async () => {
+		const editor = createPresetEditor();
+		const blockId = seedInlineAtomDocument(editor);
+		const fieldEditor = new FieldEditorImpl(editor);
+		const block = editor.getBlock(blockId)!;
+		const root = document.createElement("div");
+		const blockElement = document.createElement("div");
+		const inlineElement = document.createElement("span");
+
+		root.setAttribute(DATA_ATTRS.editorRoot, "");
+		blockElement.setAttribute(DATA_ATTRS.editorBlock, "");
+		blockElement.setAttribute(DATA_ATTRS.blockId, blockId);
+		blockElement.setAttribute(DATA_ATTRS.blockType, "paragraph");
+		inlineElement.setAttribute(DATA_ATTRS.inlineContent, "");
+		fullReconcileDeltasToDOM(
+			block.inlineDeltas() as unknown as Parameters<
+				typeof fullReconcileDeltasToDOM
+			>[0],
+			inlineElement,
+			editor.schema,
+		);
+		blockElement.appendChild(inlineElement);
+		root.appendChild(blockElement);
+		document.body.appendChild(root);
+		fieldEditor.setRootElement(root);
+
+		try {
+			await fieldEditor.focusTextSelection(blockId, 2, 2);
+			editorSelectionToDOM(
+				root,
+				{ blockId, offset: 0 },
+				{ blockId, offset: 0 },
+			);
+			document.dispatchEvent(new Event("selectionchange"));
+			await flushAnimationFrames(2);
+
+			expect(editor.selection).toMatchObject({
+				type: "text",
+				anchor: { blockId, offset: 2 },
+				focus: { blockId, offset: 2 },
+			});
+			expect(getSelectionOffsets(inlineElement)).toEqual({
+				start: 2,
+				end: 2,
+			});
+		} finally {
+			fieldEditor.destroy();
+			root.remove();
+			editor.destroy();
+		}
+	});
+
+	it("selects an inline atom with ArrowLeft and then collapses before it", () => {
+		const editor = createPresetEditor();
+		const blockId = seedInlineAtomDocument(editor);
+		const activations: Array<{
+			blockId: string;
+			anchorOffset: number;
+			focusOffset: number;
+		}> = [];
+		const fieldEditor = {
+			focusBlockId: blockId,
+			inputMode: "richtext" as const,
+			activeCellCoord: null,
+			activateCell: vi.fn(),
+			activateTextSelection: (
+				nextBlockId: string,
+				anchorOffset: number,
+				focusOffset: number,
+			) => {
+				activations.push({
+					blockId: nextBlockId,
+					anchorOffset,
+					focusOffset,
+				});
+			},
+			deactivate: vi.fn(),
+			selectAll: vi.fn(() => false),
+		};
+		const ytext = {
+			length: 3,
+			toString: () => `A${INLINE_ATOM_REPLACEMENT_TEXT}B`,
+			toDelta: () => [
+				{ insert: "A" },
+				{
+					insert: {
+						type: "mention",
+						props: { id: "user-1", label: "Ada" },
+					},
+				},
+				{ insert: "B" },
+			],
+			insert: vi.fn(),
+			delete: vi.fn(),
+		};
+
+		try {
+			expect(
+				handleFieldEditorKeyDown({
+					editor,
+					fieldEditor,
+					ytext,
+					range: { start: 2, end: 2 },
+					event: new KeyboardEvent("keydown", {
+						key: "ArrowLeft",
+						bubbles: true,
+						cancelable: true,
+					}),
+				}),
+			).toBe(true);
+
+			expect(activations.at(-1)).toEqual({
+				blockId,
+				anchorOffset: 1,
+				focusOffset: 2,
+			});
+
+			expect(
+				handleFieldEditorKeyDown({
+					editor,
+					fieldEditor,
+					ytext,
+					range: { start: 1, end: 2 },
+					event: new KeyboardEvent("keydown", {
+						key: "ArrowLeft",
+						bubbles: true,
+						cancelable: true,
+					}),
+				}),
+			).toBe(true);
+
+			expect(activations.at(-1)).toEqual({
+				blockId,
+				anchorOffset: 1,
+				focusOffset: 1,
+			});
+
+			expect(
+				handleFieldEditorKeyDown({
+					editor,
+					fieldEditor,
+					ytext,
+					range: { start: 2, end: 2 },
+					event: new KeyboardEvent("keydown", {
+						key: "ArrowLeft",
+						shiftKey: true,
+						bubbles: true,
+						cancelable: true,
+					}),
+				}),
+			).toBe(true);
+
+			expect(activations.at(-1)).toEqual({
+				blockId,
+				anchorOffset: 1,
+				focusOffset: 2,
+			});
+		} finally {
+			editor.destroy();
+		}
+	});
+
+	it("projects caret selections into inline atom boundary text nodes", () => {
+		const editor = createPresetEditor();
+		const blockId = seedInlineAtomDocument(editor);
+		const block = editor.getBlock(blockId)!;
+		const inlineElement = document.createElement("span");
+		inlineElement.setAttribute(DATA_ATTRS.inlineContent, "");
+		fullReconcileDeltasToDOM(
+			block.inlineDeltas() as unknown as Parameters<
+				typeof fullReconcileDeltasToDOM
+			>[0],
+			inlineElement,
+			editor.schema,
+		);
+		document.body.appendChild(inlineElement);
+
+		try {
+			const host = inlineElement.querySelector(
+				`[${DATA_ATTRS.inlineAtomHost}]`,
+			) as HTMLElement | null;
+			expect(host).not.toBeNull();
+			expect(isInlineAtomHostNode(host)).toBe(true);
+
+			const afterAtomPoint = findLogicalDOMPoint(inlineElement, 2);
+			expect(
+				isInlineAtomCaretBoundaryNode(
+					afterAtomPoint.node.parentElement,
+				),
+			).toBe(true);
+			expect(afterAtomPoint.node.textContent).toBe(
+				INLINE_ATOM_CARET_BOUNDARY_TEXT,
+			);
+			expect(getLogicalNodeLength(afterAtomPoint.node)).toBe(0);
+			expect(getLogicalTextContent(inlineElement)).toBe(
+				`A${INLINE_ATOM_REPLACEMENT_TEXT}B`,
+			);
+
+			const selection = window.getSelection();
+			expect(selection).not.toBeNull();
+			selection!.removeAllRanges();
+			const range = document.createRange();
+			range.setStart(afterAtomPoint.node, afterAtomPoint.offset);
+			range.collapse(true);
+			selection!.addRange(range);
+
+			expect(getSelectionOffsets(inlineElement)).toEqual({
+				start: 2,
+				end: 2,
+			});
+		} finally {
+			inlineElement.remove();
 			editor.destroy();
 		}
 	});
@@ -624,463 +940,4 @@ describe("Pen inline atom editing", () => {
 		}
 	});
 
-	it("applies text deltas around inline atoms at logical boundaries", () => {
-		const editor = createPresetEditor();
-		const element = document.createElement("span");
-
-		fullReconcileDeltasToDOM(
-			[
-				{ insert: "A" },
-				{
-					insert: {
-						type: "mention",
-						props: { id: "user-1", label: "Ada" },
-					},
-				},
-				{ insert: "B" },
-			],
-			element,
-			editor.schema,
-		);
-
-		const atom = element.querySelector(
-			`[${DATA_ATTRS.inlineAtom}]`,
-		) as HTMLElement | null;
-		expect(atom).not.toBeNull();
-
-		expect(
-			applyDeltaToDOM(
-				[{ retain: 2 }, { insert: "C" }],
-				element,
-				editor.schema,
-			),
-		).toBe(true);
-		expect(getLogicalTextContent(element)).toBe(
-			`A${INLINE_ATOM_REPLACEMENT_TEXT}CB`,
-		);
-		expect(getInlineAtomElementData(atom!)).toEqual({
-			type: "mention",
-			props: { id: "user-1", label: "Ada" },
-			text: "@Ada",
-		});
-		expect(atom?.textContent).toBe("@Ada");
-
-		expect(
-			applyDeltaToDOM(
-				[{ retain: 1 }, { delete: 1 }],
-				element,
-				editor.schema,
-			),
-		).toBe(true);
-		expect(getLogicalTextContent(element)).toBe("ACB");
-		expect(atom?.isConnected).toBe(false);
-
-		editor.destroy();
-	});
-
-	it("resolves inline-container tail clicks after an atom to the logical end", () => {
-		const blockId = "atom-block";
-		const container = document.createElement("div");
-		container.setAttribute(DATA_ATTRS.editorRoot, "");
-		const block = document.createElement("div");
-		block.setAttribute(DATA_ATTRS.editorBlock, "");
-		block.setAttribute(DATA_ATTRS.blockId, blockId);
-		block.setAttribute(DATA_ATTRS.blockType, "paragraph");
-		const inlineElement = document.createElement("span");
-		inlineElement.setAttribute(DATA_ATTRS.inlineContent, "");
-		const atom = document.createElement("span");
-		atom.setAttribute(DATA_ATTRS.inlineAtom, "");
-		atom.setAttribute(DATA_ATTRS.inlineAtomType, "mention");
-		atom.contentEditable = "false";
-		atom.textContent = "Ada";
-
-		inlineElement.appendChild(atom);
-		block.appendChild(inlineElement);
-		container.appendChild(block);
-		document.body.appendChild(container);
-
-		Object.defineProperty(inlineElement, "getBoundingClientRect", {
-			configurable: true,
-			value: () => new DOMRect(0, 0, 200, 20),
-		});
-
-		const documentWithCaret = document as Document & {
-			caretPositionFromPoint?: (
-				x: number,
-				y: number,
-			) => CaretPosition | null;
-		};
-		const originalCaretPositionFromPoint =
-			documentWithCaret.caretPositionFromPoint;
-		const originalCreateRange = document.createRange.bind(document);
-
-		documentWithCaret.caretPositionFromPoint = () => ({
-			offsetNode: inlineElement,
-			offset: 0,
-			getClientRect: () => new DOMRect(0, 0, 0, 20),
-		});
-		document.createRange = () => {
-			const range = originalCreateRange();
-			const originalSetStart = range.setStart.bind(range);
-			let startContainer: Node | null = null;
-			let startOffset = 0;
-			range.setStart = (node: Node, offset: number) => {
-				startContainer = node;
-				startOffset = offset;
-				originalSetStart(node, offset);
-			};
-			(
-				range as Range & { getBoundingClientRect: () => DOMRect }
-			).getBoundingClientRect = () => {
-				if (startContainer === inlineElement && startOffset === 0) {
-					return new DOMRect(0, 0, 80, 20);
-				}
-				return new DOMRect(80, 0, 0, 20);
-			};
-			return range;
-		};
-
-		try {
-			expect(pointToEditorSelectionPoint(container, 160, 10)).toEqual({
-				blockId,
-				offset: 1,
-			});
-		} finally {
-			documentWithCaret.caretPositionFromPoint =
-				originalCaretPositionFromPoint;
-			document.createRange = originalCreateRange;
-			container.remove();
-		}
-	});
-
-	it("resolves inline-wrapper tail clicks after an atom to the logical end", () => {
-		const blockId = "atom-block";
-		const container = document.createElement("div");
-		container.setAttribute(DATA_ATTRS.editorRoot, "");
-		const block = document.createElement("div");
-		block.setAttribute(DATA_ATTRS.editorBlock, "");
-		block.setAttribute(DATA_ATTRS.blockId, blockId);
-		block.setAttribute(DATA_ATTRS.blockType, "paragraph");
-		const wrapper = document.createElement("div");
-		wrapper.setAttribute(DATA_ATTRS.blockType, "paragraph");
-		const inlineElement = document.createElement("span");
-		inlineElement.setAttribute(DATA_ATTRS.inlineContent, "");
-		const atom = document.createElement("span");
-		atom.setAttribute(DATA_ATTRS.inlineAtom, "");
-		atom.setAttribute(DATA_ATTRS.inlineAtomType, "mention");
-		atom.contentEditable = "false";
-		atom.textContent = "Ada";
-
-		inlineElement.appendChild(atom);
-		wrapper.appendChild(inlineElement);
-		block.appendChild(wrapper);
-		container.appendChild(block);
-		document.body.appendChild(container);
-
-		Object.defineProperty(inlineElement, "getBoundingClientRect", {
-			configurable: true,
-			value: () => new DOMRect(0, 0, 200, 20),
-		});
-
-		const documentWithCaret = document as Document & {
-			caretPositionFromPoint?: (
-				x: number,
-				y: number,
-			) => CaretPosition | null;
-		};
-		const originalCaretPositionFromPoint =
-			documentWithCaret.caretPositionFromPoint;
-		const originalCreateRange = document.createRange.bind(document);
-
-		documentWithCaret.caretPositionFromPoint = () => ({
-			offsetNode: wrapper,
-			offset: 0,
-			getClientRect: () => new DOMRect(0, 0, 0, 20),
-		});
-		document.createRange = () => {
-			const range = originalCreateRange();
-			const originalSetStart = range.setStart.bind(range);
-			let startContainer: Node | null = null;
-			let startOffset = 0;
-			range.setStart = (node: Node, offset: number) => {
-				startContainer = node;
-				startOffset = offset;
-				originalSetStart(node, offset);
-			};
-			(
-				range as Range & { getBoundingClientRect: () => DOMRect }
-			).getBoundingClientRect = () => {
-				if (startContainer === inlineElement && startOffset === 0) {
-					return new DOMRect(0, 0, 80, 20);
-				}
-				return new DOMRect(80, 0, 0, 20);
-			};
-			return range;
-		};
-
-		try {
-			expect(pointToEditorSelectionPoint(container, 160, 10)).toEqual({
-				blockId,
-				offset: 1,
-			});
-		} finally {
-			documentWithCaret.caretPositionFromPoint =
-				originalCaretPositionFromPoint;
-			document.createRange = originalCreateRange;
-			container.remove();
-		}
-	});
-
-	it("moves an inline atom within one editor", () => {
-		const editor = createPresetEditor();
-		const blockId = seedInlineAtomDocument(editor);
-
-		try {
-			expect(
-				moveInlineAtom({
-					source: { editor, blockId, offset: 1 },
-					target: { editor, blockId, offset: 3 },
-				}),
-			).toBe(true);
-			expect(editor.getBlock(blockId)?.inlineDeltas()).toEqual([
-				{ insert: "AB" },
-				{
-					insert: {
-						type: "mention",
-						props: { id: "user-1", label: "Ada" },
-					},
-				},
-			]);
-			expect(editor.selection).toMatchObject({
-				type: "text",
-				anchor: { blockId, offset: 3 },
-			});
-		} finally {
-			editor.destroy();
-		}
-	});
-
-	it("moves an inline atom between compatible editors", () => {
-		const sourceEditor = createPresetEditor();
-		const targetEditor = createPresetEditor();
-		const sourceBlockId = seedInlineAtomDocument(sourceEditor);
-		const targetBlockId = targetEditor.firstBlock()!.id;
-		targetEditor.apply([
-			{
-				type: "insert-text",
-				blockId: targetBlockId,
-				offset: 0,
-				text: "Z",
-			},
-		]);
-
-		try {
-			expect(
-				moveInlineAtom({
-					source: {
-						editor: sourceEditor,
-						blockId: sourceBlockId,
-						offset: 1,
-					},
-					target: {
-						editor: targetEditor,
-						blockId: targetBlockId,
-						offset: 1,
-					},
-				}),
-			).toBe(true);
-			expect(
-				sourceEditor.getBlock(sourceBlockId)?.inlineDeltas(),
-			).toEqual([{ insert: "AB" }]);
-			expect(
-				targetEditor.getBlock(targetBlockId)?.inlineDeltas(),
-			).toEqual([
-				{ insert: "Z" },
-				{
-					insert: {
-						type: "mention",
-						props: { id: "user-1", label: "Ada" },
-					},
-				},
-			]);
-			expect(targetEditor.selection).toMatchObject({
-				type: "text",
-				anchor: { blockId: targetBlockId, offset: 2 },
-			});
-		} finally {
-			sourceEditor.destroy();
-			targetEditor.destroy();
-		}
-	});
-
-	it("rejects cross-editor moves when the target schema does not support the atom", () => {
-		const sourceEditor = createPresetEditor();
-		const targetEditor = createEditor({
-			schema: createDefaultSchema().without(["mention"]),
-			preset: defaultPreset({
-				documentOps: false,
-				deltaStream: false,
-				undo: false,
-			}),
-		});
-		const sourceBlockId = seedInlineAtomDocument(sourceEditor);
-		const targetBlockId = targetEditor.firstBlock()!.id;
-
-		try {
-			expect(
-				moveInlineAtom({
-					source: {
-						editor: sourceEditor,
-						blockId: sourceBlockId,
-						offset: 1,
-					},
-					target: {
-						editor: targetEditor,
-						blockId: targetBlockId,
-						offset: 0,
-					},
-				}),
-			).toBe(false);
-			expect(
-				sourceEditor.getBlock(sourceBlockId)?.inlineDeltas(),
-			).toEqual([
-				{ insert: "A" },
-				{
-					insert: {
-						type: "mention",
-						props: { id: "user-1", label: "Ada" },
-					},
-				},
-				{ insert: "B" },
-			]);
-			expect(
-				targetEditor.getBlock(targetBlockId)?.inlineDeltas(),
-			).toEqual([{ insert: "\u200B" }]);
-		} finally {
-			sourceEditor.destroy();
-			targetEditor.destroy();
-		}
-	});
-
-	it("destructures an inline atom into selected editable text", () => {
-		const editor = createPresetEditor();
-		const blockId = seedInlineAtomDocument(editor);
-
-		try {
-			expect(
-				replaceInlineAtomWithText({
-					source: { editor, blockId, offset: 1 },
-					text: "Ada Lovelace <ada@example.com>",
-					selection: "all",
-				}),
-			).toBe(true);
-			expect(editor.getBlock(blockId)?.inlineDeltas()).toEqual([
-				{ insert: "AAda Lovelace <ada@example.com>B" },
-			]);
-			expect(editor.selection).toMatchObject({
-				type: "text",
-				anchor: { blockId, offset: 1 },
-				focus: { blockId, offset: 31 },
-			});
-		} finally {
-			editor.destroy();
-		}
-	});
-
-	it("refreshes inline atom metadata when reconciliation changes atom props", () => {
-		const editor = createPresetEditor();
-		const element = document.createElement("span");
-		const firstDelta = [
-			{ insert: "A" },
-			{
-				insert: {
-					type: "mention",
-					props: { id: "user-1", label: "Ada" },
-				},
-			},
-			{ insert: "B" },
-		];
-		const secondDelta = [
-			{ insert: "A" },
-			{
-				insert: {
-					type: "mention",
-					props: { id: "user-2", label: "Ada" },
-				},
-			},
-			{ insert: "B" },
-		];
-
-		fullReconcileDeltasToDOM(firstDelta, element, editor.schema);
-		const firstAtom = element.querySelector(
-			`[${DATA_ATTRS.inlineAtom}]`,
-		) as HTMLElement | null;
-		expect(getInlineAtomElementData(firstAtom!)).toEqual({
-			type: "mention",
-			props: { id: "user-1", label: "Ada" },
-			text: "@Ada",
-		});
-
-		fullReconcileDeltasToDOM(secondDelta, element, editor.schema);
-		const secondAtom = element.querySelector(
-			`[${DATA_ATTRS.inlineAtom}]`,
-		) as HTMLElement | null;
-
-		expect(secondAtom).not.toBe(firstAtom);
-		expect(firstAtom?.isConnected).toBe(false);
-		expect(getInlineAtomElementData(secondAtom!)).toEqual({
-			type: "mention",
-			props: { id: "user-2", label: "Ada" },
-			text: "@Ada",
-		});
-
-		editor.destroy();
-	});
-
-	it("round-trips DOM selection offsets around inline atoms", async () => {
-		const editor = createPresetEditor();
-		const blockId = seedInlineAtomDocument(editor);
-		const container = document.createElement("div");
-		document.body.appendChild(container);
-		const root = createRoot(container);
-
-		try {
-			await act(async () => {
-				root.render(
-					<Pen.Editor.Root editor={editor}>
-						<Pen.Editor.Content />
-					</Pen.Editor.Root>,
-				);
-				await flushAnimationFrames(2);
-			});
-
-			const rootElement = container.querySelector(
-				`[${DATA_ATTRS.editorRoot}]`,
-			) as HTMLElement | null;
-			const inlineElement = container.querySelector(
-				`[${DATA_ATTRS.inlineContent}]`,
-			) as HTMLElement | null;
-			expect(rootElement).not.toBeNull();
-			expect(inlineElement).not.toBeNull();
-			expect(domPointToOffset(inlineElement!, inlineElement!, 1)).toBe(1);
-			expect(domPointToOffset(inlineElement!, inlineElement!, 2)).toBe(2);
-
-			editorSelectionToDOM(
-				rootElement!,
-				{ blockId, offset: 2 },
-				{ blockId, offset: 2 },
-			);
-
-			expect(domSelectionToEditor(rootElement!)).toEqual({
-				anchor: { blockId, offset: 2 },
-				focus: { blockId, offset: 2 },
-			});
-		} finally {
-			await act(async () => {
-				root.unmount();
-			});
-			container.remove();
-			editor.destroy();
-		}
-	});
 });

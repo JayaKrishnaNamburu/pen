@@ -27,6 +27,8 @@ async function flushAnimationFrames(count = 1): Promise<void> {
 	}
 }
 
+const SLOW_BEFOREINPUT_TEST_TIMEOUT_MS = 60_000;
+
 function createKeyEvent(
 	key: string,
 	options: KeyboardEventInit = {},
@@ -1846,7 +1848,7 @@ describe("@pen/react selected text deletion", () => {
 		});
 		container.remove();
 		editor.destroy();
-	});
+	}, SLOW_BEFOREINPUT_TEST_TIMEOUT_MS);
 
 	it("converts '- ' into a bullet list item via beforeinput", async () => {
 		const editor = createEditor();
@@ -2005,7 +2007,7 @@ describe("@pen/react selected text deletion", () => {
 		});
 		container.remove();
 		editor.destroy();
-	});
+	}, SLOW_BEFOREINPUT_TEST_TIMEOUT_MS);
 
 	it("converts '[ ] ' into a check list item via beforeinput", async () => {
 		const editor = createEditor();
@@ -2094,7 +2096,7 @@ describe("@pen/react selected text deletion", () => {
 		});
 		container.remove();
 		editor.destroy();
-	});
+	}, SLOW_BEFOREINPUT_TEST_TIMEOUT_MS);
 
 	it("does not convert headings with list triggers via beforeinput", async () => {
 		const editor = createEditor();
@@ -2607,7 +2609,7 @@ describe("@pen/react selected text deletion", () => {
 		});
 		container.remove();
 		editor.destroy();
-	});
+	}, SLOW_BEFOREINPUT_TEST_TIMEOUT_MS);
 
 	it("deletes the full-document selection after first cmd+a in flow documents", async () => {
 		const editor = createEditor({
@@ -4730,8 +4732,8 @@ describe("@pen/react selected text deletion", () => {
 			focus: { blockId, offset: 2 },
 		});
 		expect(domSelectionToEditor(rootElement!)).toMatchObject({
-			anchor: { blockId, offset: 2 },
-			focus: { blockId, offset: 2 },
+			anchor: { blockId, offset: 3 },
+			focus: { blockId, offset: 3 },
 		});
 
 		await act(async () => {

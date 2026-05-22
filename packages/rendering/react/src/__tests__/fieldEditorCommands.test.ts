@@ -206,7 +206,7 @@ describe("@pen/react field-editor commands", () => {
 		expect(fieldEditor.shouldHandleDomSelectionChange(0)).toBe(false);
 
 		fieldEditor.destroy();
-		expect((fieldEditor as any)._pointerSelectionDepth).toBe(0);
+		expect(fieldEditor.getSnapshot().mode).toBe("inactive");
 
 		editor.destroy();
 	});

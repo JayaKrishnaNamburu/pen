@@ -1,8 +1,4 @@
-import type {
-	DocumentOp,
-	Editor,
-	InlineDecoration,
-} from "@pen/types";
+import type { Editor, InlineDecoration } from "@pen/types";
 import type { FieldEditorInputController } from "./controller";
 import { fullReconcileToDOM, applyDeltaToDOM } from "./reconciler";
 import {
@@ -24,6 +20,11 @@ import {
 } from "./commands";
 import { handleFieldEditorKeyDown } from "./keyHandling";
 import { isHistoryTransactionOrigin } from "./historyOrigin";
+import {
+	buildInlineTextDiffOps,
+	buildInlineTextEditTransaction,
+	type InlineTextDiffOp,
+} from "./inlineTextTransaction";
 import type {
 	FieldEditorDelta,
 	FieldEditorObserver,
@@ -36,19 +37,11 @@ export class ContentEditableBackend {
 	private ytext: FieldEditorTextLike | null = null;
 	private observer: FieldEditorObserver | null = null;
 	private mutationObserver: MutationObserver | null = null;
-	private isApplyingSelection = 0;
 	private isComposing = false;
 	private compositionStartTimestamp = 0;
 	private compositionStartText: string | null = null;
 	private deferredRemoteDeltas: Array<{ delta: FieldEditorDelta[] }> = [];
 	private pendingDomSyncFrame: number | null = null;
-	private pendingSelectionOverride: {
-		blockId: string;
-		anchorOffset: number;
-		focusOffset: number;
-		cell?: { row: number; col: number };
-	} | null = null;
-	private activeCellSelection: { start: number; end: number } | null = null;
 	private editor: Editor;
 	private fieldEditor: FieldEditorInputController;
 
@@ -62,10 +55,10 @@ export class ContentEditableBackend {
 		this.ytext = ytext as FieldEditorTextLike;
 
 		element.contentEditable = "true";
-		this.isApplyingSelection++;
+		this.fieldEditor.resetBackendSelectionAuthority();
+		this.fieldEditor.applyBackendSelectionUntilNextFrame();
 		this.isComposing = false;
 		this.compositionStartText = null;
-		this.activeCellSelection = null;
 		this.fieldEditor.setComposing(false);
 
 		element.addEventListener("beforeinput", this.handleBeforeInput);
@@ -79,6 +72,7 @@ export class ContentEditableBackend {
 		element.addEventListener("cut", this.handleCutEvent);
 		element.addEventListener("dragstart", this.handleDragStart);
 		element.addEventListener("drop", this.handleDrop);
+		element.addEventListener("pointerdown", this.handlePointerDown);
 		element.ownerDocument?.addEventListener(
 			"selectionchange",
 			this.handleSelectionChange,
@@ -102,9 +96,6 @@ export class ContentEditableBackend {
 			this.fieldEditor.focusBlockId ?? undefined,
 		);
 		this.restoreDOMSelectionFromEditor();
-		requestAnimationFrame(() => {
-			this.isApplyingSelection--;
-		});
 	}
 
 	deactivate(): void {
@@ -127,6 +118,10 @@ export class ContentEditableBackend {
 			this.element.removeEventListener("cut", this.handleCutEvent);
 			this.element.removeEventListener("dragstart", this.handleDragStart);
 			this.element.removeEventListener("drop", this.handleDrop);
+			this.element.removeEventListener(
+				"pointerdown",
+				this.handlePointerDown,
+			);
 			this.element.ownerDocument?.removeEventListener(
 				"selectionchange",
 				this.handleSelectionChange,
@@ -147,10 +142,9 @@ export class ContentEditableBackend {
 		this.ytext = null;
 		this.observer = null;
 		this.deferredRemoteDeltas = [];
-		this.isApplyingSelection = 0;
+		this.fieldEditor.resetBackendSelectionAuthority();
 		this.isComposing = false;
 		this.compositionStartText = null;
-		this.activeCellSelection = null;
 		this.fieldEditor.setComposing(false);
 	}
 
@@ -178,74 +172,38 @@ export class ContentEditableBackend {
 	}): void {
 		const { blockId, range, text, marks } = options;
 		const cellCoord = this._getActiveCellCoord(blockId);
-		const ops: DocumentOp[] = [];
-		const nextOffset = range.start + text.length;
-		this.pendingSelectionOverride = {
+		const transaction = buildInlineTextEditTransaction({
 			blockId,
-			anchorOffset: nextOffset,
-			focusOffset: nextOffset,
-			cell: cellCoord
-				? { row: cellCoord.row, col: cellCoord.col }
-				: undefined,
-		};
+			range,
+			text,
+			marks,
+			cellCoord,
+		});
+		this.fieldEditor.setBackendSelectionAuthority(
+			"programmatic",
+			transaction.selection,
+		);
 
-		if (range.end > range.start) {
-			if (cellCoord) {
-				ops.push({
-					type: "delete-table-cell-text",
-					blockId,
-					row: cellCoord.row,
-					col: cellCoord.col,
-					offset: range.start,
-					length: range.end - range.start,
-				});
-			} else {
-				ops.push({
-					type: "delete-text",
-					blockId,
-					offset: range.start,
-					length: range.end - range.start,
-				});
-			}
-		}
-
-		if (text.length > 0) {
-			if (cellCoord) {
-				ops.push({
-					type: "insert-table-cell-text",
-					blockId,
-					row: cellCoord.row,
-					col: cellCoord.col,
-					offset: range.start,
-					text,
-				});
-			} else {
-				ops.push({
-					type: "insert-text",
-					blockId,
-					offset: range.start,
-					text,
-					marks,
-				});
-			}
-		}
-
-		if (ops.length > 0) {
-			this.editor.apply(ops, { origin: "user" });
+		if (transaction.ops.length > 0) {
+			this.editor.apply(transaction.ops, { origin: "user" });
 		}
 
 		if (cellCoord) {
-			this.activeCellSelection = {
-				start: nextOffset,
-				end: nextOffset,
-			};
+			this.fieldEditor.setBackendSelectionAuthority(
+				"cell",
+				transaction.selection,
+			);
 		} else {
-			this.fieldEditor.syncTextSelection(blockId, nextOffset, nextOffset);
+			this.fieldEditor.syncTextSelection(
+				blockId,
+				transaction.selection.anchorOffset,
+				transaction.selection.focusOffset,
+			);
 		}
 		this.ensureActiveDOMMatchesYText();
 		this.restoreDOMSelectionFromEditor();
 		this.scheduleActiveDOMMatchCheck();
-		this.pendingSelectionOverride = null;
+		this.fieldEditor.clearBackendSelectionAuthority("programmatic");
 	}
 
 	applyListInputRule(options: {
@@ -256,11 +214,11 @@ export class ContentEditableBackend {
 		const target = applyListInputRule(this.editor, options);
 		if (!target) return false;
 
-		this.pendingSelectionOverride = {
+		this.fieldEditor.setBackendSelectionAuthority("programmatic", {
 			blockId: target.blockId,
 			anchorOffset: target.anchorOffset,
 			focusOffset: target.focusOffset,
-		};
+		});
 
 		this.fieldEditor.syncTextSelection(
 			target.blockId,
@@ -268,7 +226,7 @@ export class ContentEditableBackend {
 			target.focusOffset,
 		);
 		this.restoreDOMSelectionFromEditor();
-		this.pendingSelectionOverride = null;
+		this.fieldEditor.clearBackendSelectionAuthority("programmatic");
 		return true;
 	}
 
@@ -279,10 +237,10 @@ export class ContentEditableBackend {
 		if (!blockId) return;
 		const selection = this.editor.selection;
 
-		const pendingSelection =
-			this.pendingSelectionOverride?.blockId === blockId
-				? this.pendingSelectionOverride
-				: null;
+		const pendingSelection = this.fieldEditor.getBackendSelectionAuthority(
+			"programmatic",
+			blockId,
+		);
 		const activeCell = this._getActiveCellCoord(blockId);
 		if (
 			activeCell &&
@@ -292,12 +250,7 @@ export class ContentEditableBackend {
 		) {
 			const activeSelection =
 				pendingSelection ??
-				(this.activeCellSelection
-					? {
-							anchorOffset: this.activeCellSelection.start,
-							focusOffset: this.activeCellSelection.end,
-						}
-					: null) ??
+				this.fieldEditor.getBackendSelectionAuthority("cell", blockId) ??
 				(selection?.type === "text" &&
 				selection.anchor.blockId === blockId &&
 				selection.focus.blockId === blockId
@@ -309,11 +262,8 @@ export class ContentEditableBackend {
 			if (!activeSelection) return;
 			const start = activeSelection.anchorOffset;
 			const end = activeSelection.focusOffset;
-			this.isApplyingSelection++;
+			this.fieldEditor.applyBackendSelectionUntilNextFrame();
 			setSelectionOffsets(this.element, start, end);
-			requestAnimationFrame(() => {
-				this.isApplyingSelection--;
-			});
 			return;
 		}
 		const anchor =
@@ -339,17 +289,26 @@ export class ContentEditableBackend {
 		if (anchor.blockId !== blockId || focus.blockId !== blockId) {
 			return;
 		}
+		if (
+			pendingSelection == null &&
+			anchor.offset === focus.offset &&
+			selection?.type === "text" &&
+			selection.isCollapsed
+		) {
+			this.fieldEditor.setBackendSelectionAuthority("programmatic", {
+				blockId,
+				anchorOffset: anchor.offset,
+				focusOffset: focus.offset,
+			});
+		}
 
 		const root = this.element.closest(
 			"[data-pen-editor-root]",
 		) as HTMLElement | null;
 		if (!root) return;
 
-		this.isApplyingSelection++;
+		this.fieldEditor.applyBackendSelectionUntilNextFrame();
 		editorSelectionToDOM(root, anchor, focus);
-		requestAnimationFrame(() => {
-			this.isApplyingSelection--;
-		});
 	}
 
 	// ── Direct input handling ─────────────────────────────────
@@ -520,7 +479,7 @@ export class ContentEditableBackend {
 			});
 			this.fieldEditor.notifyDomReconciled(blockId ?? undefined);
 			if (
-				this.pendingSelectionOverride != null ||
+				this.fieldEditor.hasBackendSelectionAuthority("programmatic") ||
 				event.transaction?.origin === "remote" ||
 				event.transaction?.origin === "collaborator"
 			) {
@@ -543,7 +502,7 @@ export class ContentEditableBackend {
 		}
 
 		if (
-			this.pendingSelectionOverride != null ||
+			this.fieldEditor.hasBackendSelectionAuthority("programmatic") ||
 			event.transaction?.origin === "remote" ||
 			event.transaction?.origin === "collaborator"
 		) {
@@ -553,81 +512,46 @@ export class ContentEditableBackend {
 
 	private applyTextDiffAsOps(
 		blockId: string,
-		diff: Array<
-			| { type: "insert"; offset: number; text: string }
-			| { type: "delete"; offset: number; length: number }
-		>,
+		diff: InlineTextDiffOp[],
 	): void {
 		if (diff.length === 0) return;
 		const ytext = this.ytext;
 		if (!ytext) return;
 
-		const ops: DocumentOp[] = [];
 		const cellCoord = this._getActiveCellCoord(blockId);
-		for (const op of diff) {
-			if (op.type === "delete") {
-				if (cellCoord) {
-					ops.push({
-						type: "delete-table-cell-text",
-						blockId,
-						row: cellCoord.row,
-						col: cellCoord.col,
-						offset: op.offset,
-						length: op.length,
-					});
-				} else {
-					ops.push({
-						type: "delete-text",
-						blockId,
-						offset: op.offset,
-						length: op.length,
-					});
-				}
-				continue;
-			}
-
-			if (cellCoord) {
-				ops.push({
-					type: "insert-table-cell-text",
-					blockId,
-					row: cellCoord.row,
-					col: cellCoord.col,
-					offset: op.offset,
-					text: op.text,
-				});
-			} else {
-				ops.push({
-					type: "insert-text",
-					blockId,
-					offset: op.offset,
-					text: op.text,
-					marks: this.fieldEditor.resolveInsertMarks(
-						ytext,
-						op.offset,
-					),
-				});
-			}
-		}
+		const ops = buildInlineTextDiffOps({
+			blockId,
+			diff,
+			ytext,
+			resolveInsertMarks: (sourceText, offset) =>
+				this.fieldEditor.resolveInsertMarks(sourceText, offset),
+			cellCoord,
+		});
 
 		if (ops.length === 0) return;
 
 		const range = this.element ? getSelectionOffsets(this.element) : null;
 		if (range) {
-			this.pendingSelectionOverride = {
+			this.fieldEditor.setBackendSelectionAuthority("programmatic", {
 				blockId,
 				anchorOffset: range.start,
 				focusOffset: range.end,
 				cell: cellCoord
 					? { row: cellCoord.row, col: cellCoord.col }
 					: undefined,
-			};
+			});
 		}
 
 		this.editor.apply(ops, { origin: "user" });
 
 		if (range) {
 			if (cellCoord) {
-				this.activeCellSelection = range;
+				this.fieldEditor.setBackendSelectionAuthority("cell", {
+					blockId,
+					anchorOffset: range.start,
+					focusOffset: range.end,
+					cell: { row: cellCoord.row, col: cellCoord.col },
+				});
 			} else {
 				this.fieldEditor.syncTextSelection(
 					blockId,
@@ -639,7 +563,7 @@ export class ContentEditableBackend {
 		this.ensureActiveDOMMatchesYText();
 		this.restoreDOMSelectionFromEditor();
 		this.scheduleActiveDOMMatchCheck();
-		this.pendingSelectionOverride = null;
+		this.fieldEditor.clearBackendSelectionAuthority("programmatic");
 	}
 
 	private ensureActiveDOMMatchesYText(): boolean {
@@ -689,6 +613,10 @@ export class ContentEditableBackend {
 
 	private handleKeyDown = (event: KeyboardEvent): void => {
 		if (!this.ytext) return;
+		if (isNavigationSelectionKey(event)) {
+			this.fieldEditor.clearBackendSelectionAuthority("programmatic");
+			this.fieldEditor.clearBackendSelectionAuthority("user-dom");
+		}
 
 		const handled = handleFieldEditorKeyDown({
 			event,
@@ -707,24 +635,31 @@ export class ContentEditableBackend {
 		start: number;
 		end: number;
 	} | null {
+		const blockId = this.fieldEditor.focusBlockId;
 		const liveRange = this.element
 			? getSelectionOffsets(this.element)
 			: null;
 		return (
 			this.fieldEditor.resolveProgrammaticInputRange(
-				this.fieldEditor.focusBlockId,
+				blockId,
 				liveRange,
-			) ?? liveRange
+			) ??
+			liveRange
 		);
 	}
 
 	private handleSelectionChange = (): void => {
 		if (!this.element) return;
+		const isApplyingSelection =
+			this.fieldEditor.getBackendSelectionApplicationDepth();
 		if (
 			!this.fieldEditor.shouldHandleDomSelectionChange(
-				this.isApplyingSelection,
+				isApplyingSelection,
 			)
 		) {
+			if (this.shouldRestoreSuppressedFullBlockSelection()) {
+				this.restoreDOMSelectionFromEditor();
+			}
 			return;
 		}
 
@@ -735,7 +670,12 @@ export class ContentEditableBackend {
 		if (activeCell) {
 			const range = getSelectionOffsets(this.element);
 			if (!range) return;
-			this.activeCellSelection = range;
+			this.fieldEditor.setBackendSelectionAuthority("cell", {
+				blockId: activeCell.blockId,
+				anchorOffset: range.start,
+				focusOffset: range.end,
+				cell: { row: activeCell.row, col: activeCell.col },
+			});
 			return;
 		}
 
@@ -750,6 +690,16 @@ export class ContentEditableBackend {
 			this.editor,
 			selection,
 		);
+
+		if (this.shouldRestoreStaleFullBlockSelection(normalizedSelection)) {
+			this.restoreDOMSelectionFromEditor();
+			return;
+		}
+
+		if (this.shouldRestoreStaleProjectedSelection(normalizedSelection)) {
+			this.restoreDOMSelectionFromEditor();
+			return;
+		}
 
 		if (normalizedSelection.type === "block") {
 			this.fieldEditor.deactivate();
@@ -770,11 +720,110 @@ export class ContentEditableBackend {
 			return;
 		}
 
+		this.fieldEditor.setBackendSelectionAuthority("user-dom", {
+			blockId: normalizedSelection.anchor.blockId,
+			anchorOffset: normalizedSelection.anchor.offset,
+			focusOffset: normalizedSelection.focus.offset,
+		});
+		const projectedSelection = this.fieldEditor.getBackendSelectionAuthority(
+			"programmatic",
+			normalizedSelection.anchor.blockId,
+		);
+		if (
+			!projectedSelection ||
+			projectedSelection.anchorOffset !== normalizedSelection.anchor.offset ||
+			projectedSelection.focusOffset !== normalizedSelection.focus.offset
+		) {
+			this.fieldEditor.clearBackendSelectionAuthority("programmatic");
+		}
 		this.fieldEditor.applyDomTextSelection(
 			normalizedSelection.anchor,
 			normalizedSelection.focus,
 		);
 	};
+
+	private shouldRestoreStaleFullBlockSelection(
+		selection: ReturnType<typeof normalizeSelectionFormation>,
+	): boolean {
+		if (selection.type === "block") {
+			return false;
+		}
+		if (selection.anchor.blockId !== selection.focus.blockId) {
+			return false;
+		}
+
+		const currentSelection = this.fieldEditor.selection;
+		if (
+			currentSelection?.type !== "text" ||
+			!currentSelection.isCollapsed ||
+			currentSelection.focus.blockId !== selection.anchor.blockId
+		) {
+			return false;
+		}
+
+		const block = this.editor.getBlock(selection.anchor.blockId);
+		const blockLength = block?.length() ?? null;
+		if (blockLength == null) {
+			return false;
+		}
+
+		const selectionStart = Math.min(
+			selection.anchor.offset,
+			selection.focus.offset,
+		);
+		const selectionEnd = Math.max(
+			selection.anchor.offset,
+			selection.focus.offset,
+		);
+		return selectionStart === 0 && selectionEnd === blockLength;
+	}
+
+	private shouldRestoreStaleProjectedSelection(
+		selection: ReturnType<typeof normalizeSelectionFormation>,
+	): boolean {
+		if (
+			selection.type === "block" ||
+			selection.anchor.blockId !== selection.focus.blockId ||
+			selection.anchor.offset !== selection.focus.offset
+		) {
+			return false;
+		}
+		const projectedSelection = this.fieldEditor.getBackendSelectionAuthority(
+			"programmatic",
+			selection.anchor.blockId,
+		) ?? this.fieldEditor.getBackendSelectionAuthority(
+			"user-dom",
+			selection.anchor.blockId,
+		);
+		if (!projectedSelection) {
+			return false;
+		}
+		return (
+			selection.anchor.offset !== projectedSelection.anchorOffset ||
+			selection.focus.offset !== projectedSelection.focusOffset
+		);
+	}
+
+	private shouldRestoreSuppressedFullBlockSelection(): boolean {
+		if (!this.element) {
+			return false;
+		}
+		const root = this.element.closest(
+			"[data-pen-editor-root]",
+		) as HTMLElement | null;
+		if (!root) {
+			return false;
+		}
+
+		const selection = domSelectionToEditor(root);
+		if (!selection) {
+			return false;
+		}
+
+		return this.shouldRestoreStaleFullBlockSelection(
+			normalizeSelectionFormation(this.editor, selection),
+		);
+	}
 
 	// ── Clipboard events ──────────────────────────────────────
 
@@ -794,6 +843,10 @@ export class ContentEditableBackend {
 
 	private handleDrop = (event: DragEvent): void => {
 		event.preventDefault();
+	};
+
+	private handlePointerDown = (): void => {
+		this.fieldEditor.clearBackendSelectionAuthority("programmatic");
 	};
 }
 
@@ -863,11 +916,13 @@ const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 			editor.deleteSelection();
 			return;
 		}
+		const blockId = fe.focusBlockId;
+		if (!blockId) return;
 		const range = backend.resolveCurrentInputRange();
 		if (!range) return;
 
 		const target = applyDeleteBehavior(editor, {
-			blockId: fe.focusBlockId ?? "",
+			blockId,
 			ytext,
 			range,
 			direction: "backward",
@@ -888,7 +943,7 @@ const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 
 		if (range.start !== range.end) {
 			backend.applyInlineTextEdit({
-				blockId: fe.focusBlockId ?? "",
+				blockId,
 				range,
 				text: "",
 			});
@@ -897,7 +952,7 @@ const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 
 		if (range.start > 0) {
 			backend.applyInlineTextEdit({
-				blockId: fe.focusBlockId ?? "",
+				blockId,
 				range: { start: range.start - 1, end: range.start },
 				text: "",
 			});
@@ -909,11 +964,13 @@ const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 			editor.deleteSelection();
 			return;
 		}
+		const blockId = fe.focusBlockId;
+		if (!blockId) return;
 		const range = backend.resolveCurrentInputRange();
 		if (!range) return;
 
 		const target = applyDeleteBehavior(editor, {
-			blockId: fe.focusBlockId ?? "",
+			blockId,
 			ytext,
 			range,
 			direction: "forward",
@@ -934,7 +991,7 @@ const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 
 		if (range.start < ytext.length) {
 			backend.applyInlineTextEdit({
-				blockId: fe.focusBlockId ?? "",
+				blockId,
 				range: { start: range.start, end: range.start + 1 },
 				text: "",
 			});
@@ -946,23 +1003,27 @@ const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 			editor.deleteSelection();
 			return;
 		}
+		const blockId = fe.focusBlockId;
+		if (!blockId) return;
 		const range = backend.resolveCurrentInputRange();
 		if (!range || range.start === range.end) return;
 
 		backend.applyInlineTextEdit({
-			blockId: fe.focusBlockId ?? "",
+			blockId,
 			range,
 			text: "",
 		});
 	},
 
 	deleteWordBackward: (_event, editor, ytext, fe, element, backend) => {
+		const blockId = fe.focusBlockId;
+		if (!blockId) return;
 		const range = backend.resolveCurrentInputRange();
 		if (!range) return;
 
 		if (range.start !== range.end) {
 			backend.applyInlineTextEdit({
-				blockId: fe.focusBlockId ?? "",
+				blockId,
 				range,
 				text: "",
 			});
@@ -975,7 +1036,7 @@ const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 		while (pos > 0 && !/\s/.test(text[pos - 1])) pos--;
 		if (pos < range.start) {
 			backend.applyInlineTextEdit({
-				blockId: fe.focusBlockId ?? "",
+				blockId,
 				range: { start: pos, end: range.start },
 				text: "",
 			});
@@ -983,12 +1044,14 @@ const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 	},
 
 	deleteWordForward: (_event, editor, ytext, fe, element, backend) => {
+		const blockId = fe.focusBlockId;
+		if (!blockId) return;
 		const range = backend.resolveCurrentInputRange();
 		if (!range) return;
 
 		if (range.start !== range.end) {
 			backend.applyInlineTextEdit({
-				blockId: fe.focusBlockId ?? "",
+				blockId,
 				range,
 				text: "",
 			});
@@ -1001,7 +1064,7 @@ const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 		while (pos < text.length && !/\s/.test(text[pos])) pos++;
 		if (pos > range.end) {
 			backend.applyInlineTextEdit({
-				blockId: fe.focusBlockId ?? "",
+				blockId,
 				range: { start: range.end, end: pos },
 				text: "",
 			});
@@ -1318,4 +1381,17 @@ function mapOffsetThroughRemoteDeltas(
 	}
 
 	return mappedOffset;
+}
+
+function isNavigationSelectionKey(event: KeyboardEvent): boolean {
+	return (
+		event.key === "ArrowLeft" ||
+		event.key === "ArrowRight" ||
+		event.key === "ArrowUp" ||
+		event.key === "ArrowDown" ||
+		event.key === "Home" ||
+		event.key === "End" ||
+		event.key === "PageUp" ||
+		event.key === "PageDown"
+	);
 }

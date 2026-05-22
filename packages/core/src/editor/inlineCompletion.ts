@@ -1,4 +1,5 @@
 import {
+	INLINE_COMPLETION_VISIBLE_BLOCK_ATTRIBUTE,
 	INLINE_COMPLETION_SLOT,
 	type Decoration,
 	type Editor,
@@ -108,26 +109,39 @@ class InlineCompletionControllerImpl implements InlineCompletionController {
 
 	buildDecorations(): readonly Decoration[] {
 		const suggestion = this._state.visibleSuggestion;
-		if (!suggestion || suggestion.type !== "inline") {
+		if (!suggestion) {
 			return [];
+		}
+		const blockDecoration: Decoration = {
+			type: "block",
+			blockId: suggestion.blockId,
+			attributes: {
+				[INLINE_COMPLETION_VISIBLE_BLOCK_ATTRIBUTE]: true,
+			},
+		};
+		if (suggestion.type !== "inline") {
+			return [blockDecoration];
 		}
 		const anchor = resolveInlineSuggestionAnchor(this._editor, suggestion);
 		if (!anchor) {
-			return [];
+			return [blockDecoration];
 		}
-		return [{
-			type: "inline",
-			blockId: suggestion.blockId,
-			from: anchor.from,
-			to: anchor.to,
-			attributes: {
-				class: "pen-ephemeral-suggestion",
-				"data-suggestion-id": suggestion.id,
-				"data-suggestion-text": suggestion.text,
-				"data-suggestion-type": suggestion.type,
-				"data-suggestion-placement": anchor.placement,
+		return [
+			blockDecoration,
+			{
+				type: "inline",
+				blockId: suggestion.blockId,
+				from: anchor.from,
+				to: anchor.to,
+				attributes: {
+					class: "pen-ephemeral-suggestion",
+					"data-suggestion-id": suggestion.id,
+					"data-suggestion-text": suggestion.text,
+					"data-suggestion-type": suggestion.type,
+					"data-suggestion-placement": anchor.placement,
+				},
 			},
-		}];
+		];
 	}
 
 	destroy(): void {

@@ -50,8 +50,8 @@ import type {
 import {
 	createAutocompleteStructuredCandidate,
 	materializeStructuredCandidateAcceptance,
-	type AutocompleteStructuredCandidate,
 } from "./structuredCandidate";
+import { AutocompleteContinuationState } from "./continuationState";
 
 export const AI_AUTOCOMPLETE_EXTENSION_NAME = "ai-autocomplete";
 export const AUTOCOMPLETE_CONTROLLER_SLOT = AI_AUTOCOMPLETE_CONTROLLER_SLOT;
@@ -130,29 +130,8 @@ class AutocompleteControllerImpl implements AutocompleteController {
 	private _abortController: AbortController | null = null;
 	private _unsubscribeSelection: (() => void) | null = null;
 	private _unsubscribeCommit: (() => void) | null = null;
-	private _sequence: {
-		requestId: string;
-		blockId: string;
-		startOffset: number;
-		candidate: AutocompleteStructuredCandidate;
-		continuationDepth: number;
-	} | null = null;
-	private _isAcceptingSequenceSegment = false;
+	private readonly _continuation = new AutocompleteContinuationState();
 	private _prefetchAbortController: AbortController | null = null;
-	private _prefetchedContinuation: {
-		sourceRequestId: string;
-		requestId: string;
-		blockId: string;
-		startOffset: number;
-		candidate: AutocompleteStructuredCandidate;
-		continuationDepth: number;
-	} | null = null;
-	private _pendingAcceptedContinuation: {
-		sourceRequestId: string;
-		blockId: string;
-		startOffset: number;
-		continuationDepth: number;
-	} | null = null;
 
 	constructor(
 		editor: Editor,
@@ -204,8 +183,7 @@ class AutocompleteControllerImpl implements AutocompleteController {
 			if (!this._state.enabled) {
 				return;
 			}
-			if (this._isAcceptingSequenceSegment && event.origin === "ai") {
-				this._isAcceptingSequenceSegment = false;
+			if (this._continuation.consumeAcceptedAiCommit(event.origin)) {
 				return;
 			}
 			if (event.origin !== "user" && event.origin !== "input-rule") {
@@ -230,7 +208,7 @@ class AutocompleteControllerImpl implements AutocompleteController {
 		this._abortController = null;
 		this._prefetchAbortController?.abort();
 		this._prefetchAbortController = null;
-		this._pendingAcceptedContinuation = null;
+		this._continuation.clearContinuations();
 	}
 
 	getSnapshot(): AutocompleteControllerSnapshot {
@@ -320,11 +298,12 @@ class AutocompleteControllerImpl implements AutocompleteController {
 	}
 
 	acceptVisibleSuggestion(): boolean {
-		if (!this._sequence || !this.hasVisibleSuggestion()) {
+		const sequence = this._continuation.sequence;
+		if (!sequence || !this.hasVisibleSuggestion()) {
 			return false;
 		}
 		const policyFailure = this._resolveCurrentBlockFailure(
-			this._sequence.blockId,
+			sequence.blockId,
 		);
 		if (policyFailure) {
 			this._recordPolicyInvalidation(policyFailure, "showing");
@@ -338,10 +317,11 @@ class AutocompleteControllerImpl implements AutocompleteController {
 	private _acceptFullVisibleSuggestion(options?: {
 		activateContinuation?: boolean;
 	}): boolean {
-		if (!this._sequence) {
+		const sequence = this._continuation.sequence;
+		if (!sequence) {
 			return false;
 		}
-		const candidate = this._sequence.candidate;
+		const candidate = sequence.candidate;
 		if (
 			candidate.inlineText.length === 0 &&
 			candidate.previewBlocks.length === 0
@@ -349,18 +329,18 @@ class AutocompleteControllerImpl implements AutocompleteController {
 			this.dismiss();
 			return false;
 		}
-		const blockId = this._sequence.blockId;
-		const requestId = this._sequence.requestId;
-		const continuationDepth = this._sequence.continuationDepth + 1;
+		const blockId = sequence.blockId;
+		const requestId = sequence.requestId;
+		const continuationDepth = sequence.continuationDepth + 1;
 		const acceptanceResult = materializeStructuredCandidateAcceptance({
 			blockId,
-			offset: this._sequence.startOffset,
+			offset: sequence.startOffset,
 			candidate,
 		});
 		logAutocompleteEvent("accept visible suggestion", {
 			requestId,
 			blockId,
-			startOffset: this._sequence.startOffset,
+			startOffset: sequence.startOffset,
 			inlineLength: candidate.inlineText.length,
 			inlinePreview: previewAutocompleteTextForLog(candidate.inlineText),
 			appendedBlockCount: candidate.appendedBlocks.length,
@@ -371,7 +351,7 @@ class AutocompleteControllerImpl implements AutocompleteController {
 			nextCaretBlockId: acceptanceResult.selection.blockId,
 			nextCaretOffset: acceptanceResult.selection.offset,
 		});
-		this._isAcceptingSequenceSegment = true;
+		this._continuation.beginAcceptingSequenceSegment();
 		this._editor.apply(acceptanceResult.ops, {
 			origin: "ai",
 			undoGroup: true,
@@ -431,12 +411,12 @@ class AutocompleteControllerImpl implements AutocompleteController {
 		}
 
 		if (options?.activateContinuation && this._prefetchAfterAccept) {
-			this._pendingAcceptedContinuation = {
+			this._continuation.setPendingAcceptedContinuation({
 				sourceRequestId: requestId,
 				blockId: nextCaretBlockId,
 				startOffset: nextCaretOffset,
 				continuationDepth,
-			};
+			});
 			this._clearVisibleSuggestionAfterAccept();
 			this._startPrefetchForAcceptedContinuation({
 				sourceRequestId: requestId,
@@ -452,7 +432,8 @@ class AutocompleteControllerImpl implements AutocompleteController {
 
 	hasVisibleSuggestion(): boolean {
 		return (
-			this._sequence !== null && this._state.visibleSuggestionId !== null
+			this._continuation.sequence !== null &&
+			this._state.visibleSuggestionId !== null
 		);
 	}
 
@@ -497,8 +478,7 @@ class AutocompleteControllerImpl implements AutocompleteController {
 			if (!nextPrefetchAfterAccept) {
 				this._prefetchAbortController?.abort();
 				this._prefetchAbortController = null;
-				this._prefetchedContinuation = null;
-				this._pendingAcceptedContinuation = null;
+				this._continuation.clearContinuations();
 			}
 			changed = true;
 		}
@@ -560,8 +540,7 @@ class AutocompleteControllerImpl implements AutocompleteController {
 		this._prefetchAbortController?.abort();
 		this._prefetchAbortController = null;
 		this._clearSequence();
-		this._prefetchedContinuation = null;
-		this._pendingAcceptedContinuation = null;
+		this._continuation.clearContinuations();
 		this._setState({
 			status: "idle",
 			activeRequestId: null,
@@ -739,13 +718,13 @@ class AutocompleteControllerImpl implements AutocompleteController {
 				continuationDepth: 0,
 			},
 		);
-		this._sequence = {
+		this._continuation.setSequence({
 			requestId,
 			blockId: context.blockId,
 			startOffset: context.offset,
 			candidate,
 			continuationDepth: 0,
-		};
+		});
 		this._setState({
 			metrics: {
 				...this._state.metrics,
@@ -958,22 +937,23 @@ class AutocompleteControllerImpl implements AutocompleteController {
 	}
 
 	private _showSequenceSuggestion(): void {
-		if (!this._sequence) {
+		const sequence = this._continuation.sequence;
+		if (!sequence) {
 			return;
 		}
-		const suggestionId = this._sequence.requestId;
-		const preview = this._sequence.candidate;
+		const suggestionId = sequence.requestId;
+		const preview = sequence.candidate;
 		this._inlineCompletion.showSuggestion({
 			id: suggestionId,
-			blockId: this._sequence.blockId,
-			offset: this._sequence.startOffset,
+			blockId: sequence.blockId,
+			offset: sequence.startOffset,
 			text: preview.inlineText,
 			type: "inline",
 			previewBlocks: preview.previewBlocks,
 		});
 		this._setState({
 			status: "showing",
-			activeRequestId: this._sequence.requestId,
+			activeRequestId: sequence.requestId,
 			visibleSuggestionId: suggestionId,
 		});
 	}
@@ -1090,56 +1070,31 @@ class AutocompleteControllerImpl implements AutocompleteController {
 			),
 			previewBlockCount: candidate.previewBlocks.length,
 		});
-		this._prefetchedContinuation = {
+		this._continuation.setPrefetchedContinuation({
 			sourceRequestId,
 			requestId,
 			blockId: context.blockId,
 			startOffset: context.offset,
 			candidate,
 			continuationDepth,
-		};
+		});
 		this._activatePendingAcceptedContinuation();
 	}
 
 	private _activatePendingAcceptedContinuation(): boolean {
-		const prefetched = this._prefetchedContinuation;
-		const pending = this._pendingAcceptedContinuation;
-		if (!prefetched || !pending) {
-			return false;
-		}
 		if (
-			prefetched.sourceRequestId !== pending.sourceRequestId ||
-			prefetched.blockId !== pending.blockId ||
-			prefetched.startOffset !== pending.startOffset
+			!this._continuation.activatePendingAcceptedContinuation(
+				this._editor.selection,
+			)
 		) {
 			return false;
 		}
-		const selection = this._editor.selection;
-		if (
-			selection?.type !== "text" ||
-			!selection.isCollapsed ||
-			selection.isMultiBlock ||
-			selection.focus.blockId !== pending.blockId ||
-			selection.focus.offset !== pending.startOffset
-		) {
-			return false;
-		}
-		this._pendingAcceptedContinuation = null;
-		this._sequence = {
-			requestId: prefetched.requestId,
-			blockId: prefetched.blockId,
-			startOffset: prefetched.startOffset,
-			candidate: prefetched.candidate,
-			continuationDepth: prefetched.continuationDepth,
-		};
-		this._prefetchedContinuation = null;
 		this._showSequenceSuggestion();
 		return true;
 	}
 
 	private _clearSequence(): void {
-		this._sequence = null;
-		this._isAcceptingSequenceSegment = false;
+		this._continuation.clearSequence();
 	}
 
 	private _clearVisibleSuggestionAfterAccept(): void {
@@ -1182,14 +1137,15 @@ class AutocompleteControllerImpl implements AutocompleteController {
 				},
 			});
 		}
-		if (invalidationStage || this._prefetchedContinuation) {
+		if (invalidationStage || this._continuation.hasPrefetchedContinuation) {
 			this.dismiss("policy-change");
 		}
 	}
 
 	private _invalidateForPolicyChange(): void {
 		const activeBlockId =
-			this._sequence?.blockId ?? this._getActiveSelectionBlockId();
+			this._continuation.sequence?.blockId ??
+			this._getActiveSelectionBlockId();
 		if (!activeBlockId) {
 			return;
 		}
@@ -1215,8 +1171,8 @@ class AutocompleteControllerImpl implements AutocompleteController {
 		}
 		if (
 			this._state.status === "showing" ||
-			this._sequence ||
-			this._prefetchedContinuation
+			this._continuation.sequence ||
+			this._continuation.hasPrefetchedContinuation
 		) {
 			return "showing";
 		}
@@ -1478,6 +1434,10 @@ function maybeInsertMissingBoundarySpace(
 		return completion;
 	}
 	if (!hasLikelyWordBoundary(completion)) {
+		return completion;
+	}
+	const leadingWord = completion.match(/^[A-Za-z0-9_'-]+/)?.[0] ?? "";
+	if (leadingWord.length > 0 && leadingWord.length <= 2) {
 		return completion;
 	}
 	return ` ${completion}`;

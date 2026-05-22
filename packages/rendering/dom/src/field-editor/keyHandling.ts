@@ -13,6 +13,10 @@ import {
 	normalizeInlineRange,
 	type SelectionRange,
 } from "./commands";
+import {
+	getInlineAtomRangeAtOffset,
+	isInlineAtomRange,
+} from "./inlineAtomModel";
 import { getEditorBlockSelectionLength } from "../utils/blockSelectionSemantics";
 import { getAutocompleteController } from "../utils/autocompleteController";
 
@@ -211,7 +215,6 @@ export function handleFieldEditorKeyDown(options: {
 
 	if (
 		(event.key === "ArrowLeft" || event.key === "ArrowUp") &&
-		!event.shiftKey &&
 		!event.metaKey &&
 		!event.ctrlKey &&
 		!event.altKey
@@ -220,6 +223,7 @@ export function handleFieldEditorKeyDown(options: {
 			event.key === "ArrowLeft" &&
 			selectInlineAtomWithArrowKey({
 				blockId,
+				editor,
 				event,
 				fieldEditor,
 				range,
@@ -227,6 +231,10 @@ export function handleFieldEditorKeyDown(options: {
 			})
 		) {
 			return true;
+		}
+
+		if (event.shiftKey) {
+			return false;
 		}
 
 		const target = moveCaretAcrossBlocks(editor, {
@@ -252,7 +260,6 @@ export function handleFieldEditorKeyDown(options: {
 
 	if (
 		(event.key === "ArrowRight" || event.key === "ArrowDown") &&
-		!event.shiftKey &&
 		!event.metaKey &&
 		!event.ctrlKey &&
 		!event.altKey
@@ -261,6 +268,7 @@ export function handleFieldEditorKeyDown(options: {
 			event.key === "ArrowRight" &&
 			selectInlineAtomWithArrowKey({
 				blockId,
+				editor,
 				event,
 				fieldEditor,
 				range,
@@ -268,6 +276,10 @@ export function handleFieldEditorKeyDown(options: {
 			})
 		) {
 			return true;
+		}
+
+		if (event.shiftKey) {
+			return false;
 		}
 
 		const target = moveCaretAcrossBlocks(editor, {
@@ -296,6 +308,7 @@ export function handleFieldEditorKeyDown(options: {
 
 function selectInlineAtomWithArrowKey(options: {
 	blockId: string;
+	editor: Editor;
 	event: KeyboardEvent;
 	fieldEditor: FieldEditorKeyboardController;
 	range: SelectionRange | null;
@@ -305,13 +318,24 @@ function selectInlineAtomWithArrowKey(options: {
 		toDelta(): Array<{ insert?: string | Record<string, unknown> }>;
 	};
 }): boolean {
-	const { blockId, event, fieldEditor, ytext } = options;
+	const { blockId, editor, event, fieldEditor, ytext } = options;
 	const range = normalizeInlineRange(ytext, options.range);
 	if (!range) {
 		return false;
 	}
 
 	const direction = event.key === "ArrowLeft" ? "previous" : "next";
+	if (event.shiftKey) {
+		return extendInlineAtomSelectionWithArrowKey({
+			blockId,
+			direction,
+			editor,
+			fieldEditor,
+			range,
+			ytext,
+		});
+	}
+
 	if (range.start !== range.end) {
 		if (!isInlineAtomRange(ytext, range.start, range.end)) {
 			return false;
@@ -331,41 +355,73 @@ function selectInlineAtomWithArrowKey(options: {
 	return true;
 }
 
-function isInlineAtomRange(
-	ytext: { toDelta(): Array<{ insert?: string | Record<string, unknown> }> },
-	start: number,
-	end: number,
-): boolean {
-	const atomRange = getInlineAtomRangeAtOffset(ytext, start);
-	return atomRange?.end === end;
-}
-
-function getInlineAtomRangeAtOffset(
-	ytext: { toDelta(): Array<{ insert?: string | Record<string, unknown> }> },
-	targetOffset: number,
-): SelectionRange | null {
-	if (targetOffset < 0) {
-		return null;
+function extendInlineAtomSelectionWithArrowKey(options: {
+	blockId: string;
+	direction: "previous" | "next";
+	editor: Editor;
+	fieldEditor: FieldEditorKeyboardController;
+	range: SelectionRange;
+	ytext: {
+		toDelta(): Array<{ insert?: string | Record<string, unknown> }>;
+	};
+}): boolean {
+	const { blockId, direction, editor, fieldEditor, range, ytext } = options;
+	const selection = editor.selection;
+	if (
+		selection?.type === "text" &&
+		!selection.isCollapsed &&
+		!selection.isMultiBlock &&
+		selection.anchor.blockId === blockId &&
+		selection.focus.blockId === blockId
+	) {
+		const focusAtomOffset =
+			direction === "previous"
+				? selection.focus.offset - 1
+				: selection.focus.offset;
+		const focusAtomRange = getInlineAtomRangeAtOffset(
+			ytext,
+			focusAtomOffset,
+		);
+		if (focusAtomRange) {
+			const nextFocusOffset =
+				direction === "previous"
+					? focusAtomRange.start
+					: focusAtomRange.end;
+			fieldEditor.activateTextSelection(
+				blockId,
+				selection.anchor.offset,
+				nextFocusOffset,
+			);
+			return true;
+		}
 	}
 
-	let offset = 0;
-	for (const delta of ytext.toDelta()) {
-		if (delta.insert == null) {
-			continue;
+	if (range.start === range.end) {
+		const atomOffset =
+			direction === "previous" ? range.start - 1 : range.end;
+		const atomRange = getInlineAtomRangeAtOffset(ytext, atomOffset);
+		if (!atomRange) {
+			return false;
 		}
-
-		if (typeof delta.insert === "string") {
-			offset += delta.insert.length;
-			continue;
-		}
-
-		if (offset === targetOffset) {
-			return { start: offset, end: offset + 1 };
-		}
-		offset += 1;
+		const anchorOffset =
+			direction === "previous" ? atomRange.end : atomRange.start;
+		const focusOffset =
+			direction === "previous" ? atomRange.start : atomRange.end;
+		fieldEditor.activateTextSelection(blockId, anchorOffset, focusOffset);
+		return true;
 	}
 
-	return null;
+	const atomOffset = direction === "previous" ? range.start - 1 : range.end;
+	const atomRange = getInlineAtomRangeAtOffset(ytext, atomOffset);
+	if (!atomRange) {
+		return false;
+	}
+
+	const anchorOffset =
+		direction === "previous" ? atomRange.start : range.start;
+	const focusOffset = direction === "previous" ? range.end : atomRange.end;
+	fieldEditor.activateTextSelection(blockId, anchorOffset, focusOffset);
+	return true;
 }
 
 function syncAcceptedInlineCompletionSelection(

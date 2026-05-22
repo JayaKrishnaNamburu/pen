@@ -1,9 +1,8 @@
 import type { DocumentOp, Editor, OpOrigin } from "@pen/types";
 import type { PersistentSuggestion } from "../types";
-import { readAllSuggestions } from "./persistent";
 import {
 	AI_SESSION_SUGGESTION_ORIGIN,
-	interceptApplyForSuggestMode,
+	interceptApplyForSuggestModeWithMetadata,
 } from "./suggestMode";
 
 export type ApplySuggestedAIOperationsOptions = {
@@ -34,10 +33,7 @@ export function applySuggestedAIOperations(
 		return { suggestionIds: [], suggestions: [] };
 	}
 
-	const beforeSuggestionIds = new Set(
-		readAllSuggestions(editor).map((suggestion) => suggestion.id),
-	);
-	const intercepted = interceptApplyForSuggestMode(
+	const intercepted = interceptApplyForSuggestModeWithMetadata(
 		[...options.operations],
 		editor,
 		options.author ?? "assistant",
@@ -53,19 +49,15 @@ export function applySuggestedAIOperations(
 		},
 	);
 
-	editor.apply(intercepted, {
+	editor.apply(intercepted.operations, {
 		origin: options.origin ?? AI_SESSION_SUGGESTION_ORIGIN,
 		...(options.undoGroupId
 			? { undoGroupId: options.undoGroupId }
 			: { undoGroup: true }),
 	});
 
-	const suggestions = readAllSuggestions(editor).filter(
-		(suggestion) => !beforeSuggestionIds.has(suggestion.id),
-	);
-
 	return {
-		suggestionIds: suggestions.map((suggestion) => suggestion.id),
-		suggestions,
+		suggestionIds: intercepted.suggestionIds,
+		suggestions: intercepted.suggestions,
 	};
 }

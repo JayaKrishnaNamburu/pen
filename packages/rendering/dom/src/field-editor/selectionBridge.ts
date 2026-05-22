@@ -10,92 +10,32 @@ import {
 } from "../utils/blockSelectionSemantics";
 import {
 	domPointToLogicalOffset,
-	getInlineAtomPointerOffset,
 	findLogicalDOMPoint,
 	getLogicalNodeLength,
-	getLogicalTextContent,
 	isInlineAtomNode,
 } from "./inlineAtomDom";
-
-/**
- * Safely query a block element by ID, escaping special characters to prevent
- * selector injection from untrusted CRDT data.
- */
-export function queryBlockElement(
-	root: HTMLElement,
-	blockId: string,
-): HTMLElement | null {
-	const escaped =
-		typeof CSS !== "undefined" && CSS.escape
-			? CSS.escape(blockId)
-			: blockId.replace(/(["\]\\])/g, "\\$1");
-	return root.querySelector(
-		`[${DATA_ATTRS.blockId}="${escaped}"]`,
-	) as HTMLElement | null;
-}
-
-/**
- * Find the inline content element for a given block.
- */
-export function queryInlineElement(
-	root: HTMLElement,
-	blockId: string,
-): HTMLElement | null {
-	const blockEl = queryBlockElement(root, blockId);
-	return blockEl?.querySelector(
-		`[${DATA_ATTRS.inlineContent}]`,
-	) as HTMLElement | null;
-}
-
-export type TextDiffOp =
-	| { type: "insert"; offset: number; text: string }
-	| { type: "delete"; offset: number; length: number };
-
-/**
- * O(n) scan from both ends to find the changed region.
- * Returns delete + insert ops for the diff.
- */
-export function computeTextDiff(
-	oldText: string,
-	newText: string,
-): TextDiffOp[] {
-	if (oldText === newText) return [];
-
-	let prefixLen = 0;
-	const minLen = Math.min(oldText.length, newText.length);
-	while (prefixLen < minLen && oldText[prefixLen] === newText[prefixLen]) {
-		prefixLen++;
-	}
-
-	let oldSuffix = oldText.length;
-	let newSuffix = newText.length;
-	while (
-		oldSuffix > prefixLen &&
-		newSuffix > prefixLen &&
-		oldText[oldSuffix - 1] === newText[newSuffix - 1]
-	) {
-		oldSuffix--;
-		newSuffix--;
-	}
-
-	const ops: TextDiffOp[] = [];
-
-	const deleteLen = oldSuffix - prefixLen;
-	if (deleteLen > 0) {
-		ops.push({ type: "delete", offset: prefixLen, length: deleteLen });
-	}
-
-	const insertText = newText.slice(prefixLen, newSuffix);
-	if (insertText.length > 0) {
-		ops.push({ type: "insert", offset: prefixLen, text: insertText });
-	}
-
-	return ops;
-}
-
-export function extractTextFromDOM(element: HTMLElement): string {
-	return getLogicalTextContent(element);
-}
+import {
+	approximateInlineOffsetFromPoint,
+	getDistanceToRect,
+	getInlineCaretRectFromOffset,
+} from "./selectionGeometry";
+import {
+	findBlockElement,
+	findInlineContentElement,
+	queryBlockElement,
+	queryInlineElement,
+} from "./selectionDomQueries";
+export {
+	findBlockElement,
+	findInlineContentElement,
+	queryBlockElement,
+	queryInlineElement,
+} from "./selectionDomQueries";
+export {
+	computeTextDiff,
+	extractTextFromDOM,
+	type TextDiffOp,
+} from "./textDiff";
 
 export interface SelectionPoint {
 	blockId: string;
@@ -125,10 +65,6 @@ interface ResolveSelectionPointOptions {
 	previousPoint?: SelectionPoint | null;
 }
 
-const WRAPPED_LINE_HYSTERESIS_PX = 6;
-const WRAPPED_LINE_HORIZONTAL_SLACK_PX = 12;
-const WRAPPED_LINE_DELTA_PX = 1;
-
 function fallbackCharacterOffset(
 	container: HTMLElement,
 	targetNode: Node,
@@ -152,268 +88,6 @@ export function domPointToOffset(
 	}
 
 	return domPointToLogicalOffset(container, targetNode, targetOffset);
-}
-
-/**
- * Find the ancestor block element for a given DOM node.
- */
-function findBlockElement(node: Node, root: HTMLElement): HTMLElement | null {
-	let current: Node | null = node;
-	while (current && current !== root) {
-		if (
-			current instanceof HTMLElement &&
-			current.hasAttribute(DATA_ATTRS.editorBlock)
-		) {
-			return current;
-		}
-		current = current.parentNode;
-	}
-	return null;
-}
-
-/**
- * Find the inline content element inside a block.
- */
-function findInlineContentElement(blockEl: HTMLElement): HTMLElement | null {
-	return blockEl.querySelector(`[${DATA_ATTRS.inlineContent}]`);
-}
-
-function getDistanceToRect(
-	rect: DOMRect,
-	clientX: number,
-	clientY: number,
-): { dx: number; dy: number } {
-	return {
-		dx:
-			clientX < rect.left
-				? rect.left - clientX
-				: clientX > rect.right
-					? clientX - rect.right
-					: 0,
-		dy:
-			clientY < rect.top
-				? rect.top - clientY
-				: clientY > rect.bottom
-					? clientY - rect.bottom
-					: 0,
-	};
-}
-
-function getCharacterRectAtOffset(
-	container: HTMLElement,
-	charOffset: number,
-): DOMRect | null {
-	const domPoint = findLogicalDOMPoint(container, charOffset);
-	const range = document.createRange();
-	try {
-		range.setStart(domPoint.node, domPoint.offset);
-		range.setEnd(domPoint.node, domPoint.offset);
-	} catch {
-		return null;
-	}
-	const rangeRectGetter = (
-		range as Range & { getBoundingClientRect?: () => DOMRect }
-	).getBoundingClientRect;
-	if (typeof rangeRectGetter === "function") {
-		const rect = rangeRectGetter.call(range);
-		if (rect.width > 0 || rect.height > 0) {
-			return rect;
-		}
-	}
-
-	return null;
-}
-
-function getInlineCaretRectFromOffset(
-	inlineEl: HTMLElement,
-	offset: number,
-): DOMRect {
-	const textLength = getLogicalNodeLength(inlineEl);
-	const inlineRect = inlineEl.getBoundingClientRect();
-	if (textLength <= 0) {
-		return {
-			x: inlineRect.left,
-			y: inlineRect.top,
-			left: inlineRect.left,
-			top: inlineRect.top,
-			right: inlineRect.left,
-			bottom: inlineRect.bottom,
-			width: 0,
-			height: inlineRect.height,
-			toJSON() {
-				return {};
-			},
-		} as DOMRect;
-	}
-
-	if (offset <= 0) {
-		const firstRect = getCharacterRectAtOffset(inlineEl, 0);
-		const left = firstRect?.left ?? inlineRect.left;
-		const top = firstRect?.top ?? inlineRect.top;
-		const height = firstRect?.height ?? inlineRect.height;
-		return {
-			x: left,
-			y: top,
-			left,
-			top,
-			right: left,
-			bottom: top + height,
-			width: 0,
-			height,
-			toJSON() {
-				return {};
-			},
-		} as DOMRect;
-	}
-
-	if (offset >= textLength) {
-		const lastRect = getCharacterRectAtOffset(inlineEl, textLength - 1);
-		const left = lastRect?.right ?? inlineRect.right;
-		const top = lastRect?.top ?? inlineRect.top;
-		const height = lastRect?.height ?? inlineRect.height;
-		return {
-			x: left,
-			y: top,
-			left,
-			top,
-			right: left,
-			bottom: top + height,
-			width: 0,
-			height,
-			toJSON() {
-				return {};
-			},
-		} as DOMRect;
-	}
-
-	const previousRect = getCharacterRectAtOffset(inlineEl, offset - 1);
-	const nextRect = getCharacterRectAtOffset(inlineEl, offset);
-	const useNextRect =
-		previousRect && nextRect && nextRect.top > previousRect.top + 1;
-	const sourceRect = useNextRect
-		? nextRect
-		: (previousRect ?? nextRect ?? inlineRect);
-	const left = useNextRect
-		? (nextRect?.left ?? inlineRect.left)
-		: (previousRect?.right ?? nextRect?.left ?? inlineRect.left);
-
-	return {
-		x: left,
-		y: sourceRect.top,
-		left,
-		top: sourceRect.top,
-		right: left,
-		bottom: sourceRect.top + sourceRect.height,
-		width: 0,
-		height: sourceRect.height,
-		toJSON() {
-			return {};
-		},
-	} as DOMRect;
-}
-
-function getCaretDistanceMetrics(
-	rect: DOMRect,
-	clientX: number,
-	clientY: number,
-): {
-	dx: number;
-	dy: number;
-} {
-	return {
-		dx: Math.abs(clientX - rect.left),
-		dy:
-			clientY < rect.top
-				? rect.top - clientY
-				: clientY > rect.bottom
-					? clientY - rect.bottom
-					: 0,
-	};
-}
-
-function stabilizeWrappedLineOffset(
-	inlineEl: HTMLElement,
-	candidateOffset: number,
-	clientX: number,
-	clientY: number,
-	previousOffset: number | null | undefined,
-): number {
-	if (previousOffset == null || previousOffset === candidateOffset) {
-		return candidateOffset;
-	}
-
-	const previousRect = getInlineCaretRectFromOffset(inlineEl, previousOffset);
-	const candidateRect = getInlineCaretRectFromOffset(
-		inlineEl,
-		candidateOffset,
-	);
-	if (
-		Math.abs(previousRect.top - candidateRect.top) <= WRAPPED_LINE_DELTA_PX
-	) {
-		return candidateOffset;
-	}
-
-	const previousMetrics = getCaretDistanceMetrics(
-		previousRect,
-		clientX,
-		clientY,
-	);
-	const candidateMetrics = getCaretDistanceMetrics(
-		candidateRect,
-		clientX,
-		clientY,
-	);
-	const isNearWrappedBoundary =
-		previousMetrics.dy <= WRAPPED_LINE_HYSTERESIS_PX &&
-		candidateMetrics.dy <= WRAPPED_LINE_HYSTERESIS_PX;
-	if (!isNearWrappedBoundary) {
-		return candidateOffset;
-	}
-
-	const shouldPreservePreviousLine =
-		previousMetrics.dx <=
-			candidateMetrics.dx + WRAPPED_LINE_HORIZONTAL_SLACK_PX &&
-		previousMetrics.dy <= candidateMetrics.dy + WRAPPED_LINE_DELTA_PX;
-	return shouldPreservePreviousLine ? previousOffset : candidateOffset;
-}
-
-function approximateInlineOffsetFromPoint(
-	inlineEl: HTMLElement,
-	clientX: number,
-	clientY: number,
-	previousOffset?: number | null,
-): number {
-	const textLength = getLogicalNodeLength(inlineEl);
-	if (textLength <= 0) return 0;
-	const inlineAtomOffset = getInlineAtomPointerOffset(
-		inlineEl,
-		clientX,
-		clientY,
-	);
-	if (inlineAtomOffset !== null) {
-		return inlineAtomOffset;
-	}
-
-	let bestOffset = 0;
-	let bestScore = Number.POSITIVE_INFINITY;
-
-	for (let offset = 0; offset <= textLength; offset++) {
-		const rect = getInlineCaretRectFromOffset(inlineEl, offset);
-		const { dx, dy } = getCaretDistanceMetrics(rect, clientX, clientY);
-		const score = dy * 1000 + dx;
-		if (score < bestScore) {
-			bestScore = score;
-			bestOffset = offset;
-		}
-	}
-
-	return stabilizeWrappedLineOffset(
-		inlineEl,
-		bestOffset,
-		clientX,
-		clientY,
-		previousOffset,
-	);
 }
 
 function getBlockSurfaceRole(

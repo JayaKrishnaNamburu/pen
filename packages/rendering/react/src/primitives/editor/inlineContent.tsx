@@ -2,26 +2,19 @@ import React, {
 	useRef,
 	useLayoutEffect,
 	useState,
-	useSyncExternalStore,
 } from "react";
-import { createPortal } from "react-dom";
 import {
 	getOpOriginType,
 	type Editor,
 	type InlineDecoration,
-	type SelectionState,
 } from "@pen/types";
 import {
-	domPointToLogicalOffset,
-	getInlineAtomElementData,
 	getLogicalTextContent,
-	INLINE_ATOM_REPLACEMENT_TEXT,
 } from "@pen/dom/field-editor/inlineAtomDom";
+import { INLINE_ATOM_REPLACEMENT_TEXT } from "@pen/dom/field-editor/inlineAtomModel";
 import { useEditorContentContext } from "../../context/editorContentContext";
 import {
 	useEditorContext,
-	type InlineAtomRenderer,
-	type InlineAtomRenderers,
 } from "../../context/editorContext";
 import { useFieldEditorContext } from "../../context/fieldEditorContext";
 import { fullReconcileDeltasToDOM } from "../../field-editor/reconciler";
@@ -38,29 +31,17 @@ import { fieldEditorTextEntryAttrs } from "../../utils/fieldEditorTextEntryAttrs
 import { applyInlineDecorationsToDeltas } from "../../utils/inlineDecorations";
 import { isInlineContentEmpty } from "../../utils/editorEmptyState";
 import { resolveInlinePlaceholderVisibility } from "../../utils/placeholderVisibility";
+import { InlineAtomPortalLayer } from "./InlineAtomPortalLayer";
 import {
-	attachInlineAtomWrapperInteractions,
-	getInlineAtomDragSnapshot,
-	getInlineAtomRenderInteractionProps,
-	isInlineAtomDragSource,
-	subscribeInlineAtomDragSnapshot,
-} from "./inlineAtomInteraction";
+	resolveNextInlineAtomTargets,
+	type InlineAtomRenderTarget,
+} from "./inlineAtomTargets";
 
 export interface InlineContentProps extends AsChildProps {
 	blockId: string;
 	className?: string;
 	placeholder?: string;
 	ref?: React.Ref<HTMLElement>;
-}
-
-interface InlineAtomRenderTarget {
-	key: string;
-	element: HTMLElement;
-	renderer?: InlineAtomRenderer;
-	type: string;
-	props: Record<string, unknown>;
-	text: string;
-	offset: number;
 }
 
 export function InlineContent(props: InlineContentProps) {
@@ -84,11 +65,6 @@ export function InlineContent(props: InlineContentProps) {
 	const [inlineAtomTargets, setInlineAtomTargets] = useState<
 		InlineAtomRenderTarget[]
 	>([]);
-	const inlineAtomDragSnapshot = useSyncExternalStore(
-		subscribeInlineAtomDragSnapshot,
-		getInlineAtomDragSnapshot,
-		getInlineAtomDragSnapshot,
-	);
 	const isExpandedOwnedBlock =
 		fieldEditorState.mode === "expanded" &&
 		fieldEditorState.activeBlockIds.includes(blockId);
@@ -159,6 +135,8 @@ export function InlineContent(props: InlineContentProps) {
 			const nextTargets = resolveNextInlineAtomTargets(
 				elementRef.current,
 				inlineAtomRenderers,
+				editor.schema,
+				renderedDeltas,
 				inlineAtomTargetsRef.current,
 			);
 			if (nextTargets !== inlineAtomTargetsRef.current) {
@@ -292,103 +270,6 @@ export function InlineContent(props: InlineContentProps) {
 				}
 			: undefined,
 	};
-	const inlineAtomPortals = inlineAtomTargets.flatMap((target) => {
-		if (!target.renderer) {
-			return [];
-		}
-
-		const selected = isInlineAtomSelected(
-			selection,
-			blockId,
-			target.offset,
-		);
-		const dragging = isInlineAtomDragSource(
-			inlineAtomDragSnapshot,
-			editor,
-			blockId,
-			target.offset,
-		);
-		return [
-			createPortal(
-				target.renderer({
-					blockId,
-					offset: target.offset,
-					type: target.type,
-					props: target.props,
-					text: target.text,
-					selected,
-					interaction: getInlineAtomRenderInteractionProps(
-						{
-							element: target.element,
-							editor,
-							blockId,
-							offset: target.offset,
-							type: target.type,
-							text: target.text,
-							props: target.props,
-							selected,
-							interactions: inlineAtomInteractions,
-							readonly,
-						},
-						dragging,
-					),
-				}),
-				target.element,
-				target.key,
-			),
-		];
-	});
-
-	useLayoutEffect(() => {
-		inlineAtomTargets.forEach((target) => {
-			target.element.toggleAttribute(
-				DATA_ATTRS.selected,
-				isInlineAtomSelected(selection, blockId, target.offset),
-			);
-			target.element.toggleAttribute(
-				DATA_ATTRS.inlineAtomDragging,
-				isInlineAtomDragSource(
-					inlineAtomDragSnapshot,
-					editor,
-					blockId,
-					target.offset,
-				),
-			);
-		});
-	}, [blockId, editor, inlineAtomDragSnapshot, inlineAtomTargets, selection]);
-
-	useLayoutEffect(() => {
-		const cleanups = inlineAtomTargets.map((target) =>
-			attachInlineAtomWrapperInteractions({
-				element: target.element,
-				editor,
-				blockId,
-				offset: target.offset,
-				type: target.type,
-				text: target.text,
-				props: target.props,
-				selected: isInlineAtomSelected(
-					selection,
-					blockId,
-					target.offset,
-				),
-				interactions: inlineAtomInteractions,
-				readonly,
-			}),
-		);
-
-		return () => {
-			cleanups.forEach((cleanup) => cleanup());
-		};
-	}, [
-		blockId,
-		editor,
-		inlineAtomInteractions,
-		inlineAtomTargets,
-		readonly,
-		selection,
-	]);
-
 	return (
 		<>
 			{renderAsChild(
@@ -396,141 +277,16 @@ export function InlineContent(props: InlineContentProps) {
 				"span",
 				primitiveProps,
 			)}
-			{inlineAtomPortals}
+			<InlineAtomPortalLayer
+				editor={editor}
+				blockId={blockId}
+				targets={inlineAtomTargets}
+				selection={selection}
+				interactions={inlineAtomInteractions}
+				readonly={readonly}
+			/>
 		</>
 	);
-}
-
-function resolveNextInlineAtomTargets(
-	root: HTMLElement | null,
-	renderers: InlineAtomRenderers | undefined,
-	currentTargets: InlineAtomRenderTarget[],
-): InlineAtomRenderTarget[] {
-	if (!root) {
-		return currentTargets.length === 0 ? currentTargets : [];
-	}
-
-	const nextTargets = Array.from(
-		root.querySelectorAll<HTMLElement>(`[${DATA_ATTRS.inlineAtom}]`),
-	).flatMap((element, index): InlineAtomRenderTarget[] => {
-		const data = getInlineAtomElementData(element);
-		if (!data) {
-			return [];
-		}
-
-		const renderer = renderers?.[data.type];
-		if (renderer) {
-			clearInlineAtomFallbackText(element, data.text);
-		}
-		const offset = domPointToLogicalOffset(root, element, 0);
-
-		return [
-			{
-				key: getInlineAtomTargetKey(data, index),
-				element,
-				renderer,
-				type: data.type,
-				props: data.props,
-				text: data.text,
-				offset,
-			},
-		];
-	});
-
-	return areInlineAtomTargetsEqual(currentTargets, nextTargets)
-		? currentTargets
-		: nextTargets;
-}
-
-function areInlineAtomTargetsEqual(
-	currentTargets: InlineAtomRenderTarget[],
-	nextTargets: InlineAtomRenderTarget[],
-): boolean {
-	if (currentTargets.length !== nextTargets.length) {
-		return false;
-	}
-
-	return currentTargets.every((target, index) => {
-		const nextTarget = nextTargets[index];
-		return (
-			target.key === nextTarget.key &&
-			target.element === nextTarget.element &&
-			target.renderer === nextTarget.renderer &&
-			target.offset === nextTarget.offset &&
-			target.text === nextTarget.text &&
-			shallowEqualRecords(target.props, nextTarget.props)
-		);
-	});
-}
-
-function getInlineAtomTargetKey(
-	data: { type: string; props: Record<string, unknown>; text: string },
-	index: number,
-): string {
-	return `${index}:${data.type}:${data.text}:${JSON.stringify(data.props)}`;
-}
-
-function isInlineAtomSelected(
-	selection: SelectionState,
-	blockId: string,
-	offset: number,
-): boolean {
-	if (
-		selection?.type !== "text" ||
-		selection.isCollapsed ||
-		selection.anchor.blockId !== blockId ||
-		selection.focus.blockId !== blockId
-	) {
-		return false;
-	}
-
-	const selectionStart = Math.min(
-		selection.anchor.offset,
-		selection.focus.offset,
-	);
-	const selectionEnd = Math.max(
-		selection.anchor.offset,
-		selection.focus.offset,
-	);
-	return selectionStart <= offset && selectionEnd >= offset + 1;
-}
-
-function clearInlineAtomFallbackText(element: HTMLElement, text: string): void {
-	if (
-		element.childNodes.length === 1 &&
-		element.firstChild?.nodeType === Node.TEXT_NODE &&
-		element.textContent === text
-	) {
-		element.replaceChildren();
-		return;
-	}
-
-	for (const child of Array.from(element.childNodes)) {
-		if (
-			child.nodeType === Node.TEXT_NODE &&
-			(child.textContent === text ||
-				child.textContent === INLINE_ATOM_REPLACEMENT_TEXT)
-		) {
-			child.remove();
-		}
-	}
-}
-
-function shallowEqualRecords(
-	left: Record<string, unknown>,
-	right: Record<string, unknown>,
-): boolean {
-	if (left === right) {
-		return true;
-	}
-
-	const leftKeys = Object.keys(left);
-	const rightKeys = Object.keys(right);
-	if (leftKeys.length !== rightKeys.length) {
-		return false;
-	}
-
-	return leftKeys.every((key) => Object.is(left[key], right[key]));
 }
 
 function getInlineContentClassName(

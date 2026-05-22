@@ -15,6 +15,7 @@ import { getAdjacentVisibleBlockId } from "./parentIdTree";
 import { handleTableCellSelectionKeyDown } from "./tableCellNavigation";
 
 const DATABASE_ROW_SELECTION_SLOT = "database:row-selection";
+const ZERO_WIDTH_SPACE = "\u200B";
 
 type DatabaseRowSelectionController = {
 	deleteSelectedRows: (blockId: string) => boolean;
@@ -36,7 +37,12 @@ export function handleEditorDocumentKeyDown(options: {
 		handleSelectAllShortcut(editor, event, fieldEditor, {
 			rootElement: root,
 		}) ||
-		handleBlockSelectionEnter(event, editor, fieldEditor, interactionModel) ||
+		handleBlockSelectionEnter(
+			event,
+			editor,
+			fieldEditor,
+			interactionModel,
+		) ||
 		handleBlockSelectionArrow(event, editor, fieldEditor) ||
 		handleHistoryShortcut(editor, event)
 	);
@@ -176,6 +182,7 @@ function handleDeleteSelectionShortcut(
 	if (selection.type === "text" && !selection.isCollapsed) {
 		if (
 			!selection.isMultiBlock &&
+			!textSelectionContainsInlineAtom(editor, selection) &&
 			!shouldUseDocumentTextDeletionFallback(root, fieldEditor)
 		) {
 			return false;
@@ -213,6 +220,51 @@ function handleDeleteSelectionShortcut(
 	if (selection.type === "cell") {
 		editor.deleteSelection({ origin: "user" });
 		return true;
+	}
+
+	return false;
+}
+
+function textSelectionContainsInlineAtom(
+	editor: Editor,
+	selection: Extract<NonNullable<Editor["selection"]>, { type: "text" }>,
+): boolean {
+	if (
+		selection.isMultiBlock ||
+		selection.anchor.blockId !== selection.focus.blockId
+	) {
+		return false;
+	}
+
+	const block = editor.getBlock(selection.anchor.blockId);
+	if (!block) {
+		return false;
+	}
+
+	const selectionStart = Math.min(
+		selection.anchor.offset,
+		selection.focus.offset,
+	);
+	const selectionEnd = Math.max(
+		selection.anchor.offset,
+		selection.focus.offset,
+	);
+	if (selectionEnd <= selectionStart) {
+		return false;
+	}
+
+	let offset = 0;
+	for (const delta of block.inlineDeltas()) {
+		const length =
+			typeof delta.insert === "string"
+				? delta.insert.replaceAll(ZERO_WIDTH_SPACE, "").length
+				: 1;
+		const overlapsSelection =
+			offset < selectionEnd && offset + length > selectionStart;
+		if (typeof delta.insert !== "string" && overlapsSelection) {
+			return true;
+		}
+		offset += length;
 	}
 
 	return false;

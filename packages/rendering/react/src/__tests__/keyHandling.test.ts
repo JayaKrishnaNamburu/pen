@@ -12,6 +12,7 @@ import {
 	handleEditorKeyBindings,
 	handleFieldEditorKeyDown,
 } from "../field-editor/keyHandling";
+import { resolveShiftClickInlineAtomSelection } from "../primitives/editor/inlineAtomInteraction";
 import type { FieldEditorTextLike } from "../field-editor/crdt";
 
 type BlocksMapLike = {
@@ -673,6 +674,175 @@ describe("@pen/react key binding contexts", () => {
 			type: "text",
 			anchor: { blockId, offset: 0 },
 			focus: { blockId, offset: 5 },
+		});
+
+		editor.destroy();
+	});
+});
+
+describe("@pen/react field editor inline atom navigation", () => {
+	const createAtomText = (): FieldEditorTextLike => ({
+		length: 1,
+		toString: () => "",
+		toDelta: () => [
+			{ insert: { type: "contact", props: { label: "Ada" } } },
+		],
+		insert: () => {},
+		delete: () => {},
+		observe: () => {},
+		unobserve: () => {},
+	});
+
+	it("selects the atom to the left when the atom-only text serializes empty", () => {
+		const editor = createPresetEditor({
+			preset: {
+				shortcuts: false,
+			},
+		});
+		const blockId = editor.firstBlock()!.id;
+		const fieldEditor = createFieldEditorMock(blockId);
+		const atomText = createAtomText();
+
+		const handled = handleFieldEditorKeyDown({
+			event: createKeyEvent("ArrowLeft"),
+			editor,
+			fieldEditor: fieldEditor.controller,
+			ytext: atomText,
+			range: { start: 1, end: 1 },
+		});
+
+		expect(handled).toBe(true);
+		expect(fieldEditor.activations).toEqual([
+			{ blockId, anchorOffset: 0, focusOffset: 1 },
+		]);
+
+		editor.destroy();
+	});
+
+	it("preserves selection direction when shift-selecting an atom to the left", () => {
+		const editor = createPresetEditor({
+			preset: {
+				shortcuts: false,
+			},
+		});
+		const blockId = editor.firstBlock()!.id;
+		const fieldEditor = createFieldEditorMock(blockId);
+
+		const handled = handleFieldEditorKeyDown({
+			event: createKeyEvent("ArrowLeft", { shiftKey: true }),
+			editor,
+			fieldEditor: fieldEditor.controller,
+			ytext: createAtomText(),
+			range: { start: 1, end: 1 },
+		});
+
+		expect(handled).toBe(true);
+		expect(fieldEditor.activations).toEqual([
+			{ blockId, anchorOffset: 1, focusOffset: 0 },
+		]);
+
+		editor.destroy();
+	});
+
+	it("shrinks a shift-selected atom when extending back to the anchor", () => {
+		const editor = createPresetEditor({
+			preset: {
+				shortcuts: false,
+			},
+		});
+		const blockId = editor.firstBlock()!.id;
+		editor.selectText(blockId, 1, 0);
+		const fieldEditor = createFieldEditorMock(blockId);
+
+		const handled = handleFieldEditorKeyDown({
+			event: createKeyEvent("ArrowRight", { shiftKey: true }),
+			editor,
+			fieldEditor: fieldEditor.controller,
+			ytext: createAtomText(),
+			range: { start: 0, end: 1 },
+		});
+
+		expect(handled).toBe(true);
+		expect(fieldEditor.activations).toEqual([
+			{ blockId, anchorOffset: 1, focusOffset: 1 },
+		]);
+
+		editor.destroy();
+	});
+});
+
+describe("@pen/react inline atom shift-click selection", () => {
+	it("extends a selected atom range to the clicked atom on the right", () => {
+		const editor = createPresetEditor({ preset: { shortcuts: false } });
+		const blockId = editor.firstBlock()!.id;
+		editor.apply([
+			{ type: "insert-text", blockId, offset: 0, text: "xxx" },
+		]);
+		editor.selectText(blockId, 0, 1);
+
+		expect(
+			resolveShiftClickInlineAtomSelection(editor, blockId, 1),
+		).toEqual({
+			blockId,
+			anchorOffset: 0,
+			focusOffset: 2,
+		});
+
+		editor.destroy();
+	});
+
+	it("extends a selected atom range to the clicked atom on the left", () => {
+		const editor = createPresetEditor({ preset: { shortcuts: false } });
+		const blockId = editor.firstBlock()!.id;
+		editor.apply([
+			{ type: "insert-text", blockId, offset: 0, text: "xxx" },
+		]);
+		editor.selectText(blockId, 1, 2);
+
+		expect(
+			resolveShiftClickInlineAtomSelection(editor, blockId, 0),
+		).toEqual({
+			blockId,
+			anchorOffset: 2,
+			focusOffset: 0,
+		});
+
+		editor.destroy();
+	});
+
+	it("deselects the right edge atom when shift-clicking it again", () => {
+		const editor = createPresetEditor({ preset: { shortcuts: false } });
+		const blockId = editor.firstBlock()!.id;
+		editor.apply([
+			{ type: "insert-text", blockId, offset: 0, text: "xxx" },
+		]);
+		editor.selectText(blockId, 0, 2);
+
+		expect(
+			resolveShiftClickInlineAtomSelection(editor, blockId, 1),
+		).toEqual({
+			blockId,
+			anchorOffset: 0,
+			focusOffset: 1,
+		});
+
+		editor.destroy();
+	});
+
+	it("deselects the left edge atom when shift-clicking it again", () => {
+		const editor = createPresetEditor({ preset: { shortcuts: false } });
+		const blockId = editor.firstBlock()!.id;
+		editor.apply([
+			{ type: "insert-text", blockId, offset: 0, text: "xxx" },
+		]);
+		editor.selectText(blockId, 0, 2);
+
+		expect(
+			resolveShiftClickInlineAtomSelection(editor, blockId, 0),
+		).toEqual({
+			blockId,
+			anchorOffset: 2,
+			focusOffset: 1,
 		});
 
 		editor.destroy();

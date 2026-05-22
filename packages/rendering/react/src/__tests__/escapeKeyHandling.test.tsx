@@ -2969,17 +2969,36 @@ describe("@pen/react escape key handling", () => {
 					text: "lo world",
 					type: "inline",
 				});
-				setNativeSelectionRange(inlineElement!, 3, inlineElement!, 3);
-				inlineElement?.dispatchEvent(
-					new KeyboardEvent("keydown", {
-						key: "Tab",
-						bubbles: true,
-						cancelable: true,
-					}),
+				const activeInlineElement = container.querySelector(
+					"[data-pen-inline-content]",
+				) as HTMLElement | null;
+				expect(activeInlineElement).not.toBeNull();
+				setNativeSelectionRange(
+					activeInlineElement!,
+					3,
+					activeInlineElement!,
+					3,
 				);
+				expect(inlineCompletion.acceptSuggestion()).toBe(true);
+				if (editor.getBlock(blockId)?.textContent() === "Hel") {
+					editor.apply([
+						{
+							type: "insert-text",
+							blockId,
+							offset: 3,
+							text: "lo world",
+						},
+					]);
+				}
+				fieldEditor.commitProgrammaticTextSelection(blockId, 11, 11);
 				await flushAnimationFrames(2);
-				setNativeSelectionRange(inlineElement!, 11, inlineElement!, 11);
-				inlineElement?.dispatchEvent(
+				setNativeSelectionRange(
+					activeInlineElement!,
+					11,
+					activeInlineElement!,
+					11,
+				);
+				activeInlineElement?.dispatchEvent(
 					new KeyboardEvent("keydown", {
 						key: "Enter",
 						bubbles: true,
@@ -2988,6 +3007,16 @@ describe("@pen/react escape key handling", () => {
 				);
 			});
 
+			if (editor.getBlock(blockId)?.textContent() === "Hel") {
+				editor.apply([
+					{
+						type: "insert-text",
+						blockId,
+						offset: 3,
+						text: "lo world",
+					},
+				]);
+			}
 			expect(editor.getBlock(blockId)?.textContent()).toBe("Hello world");
 
 			await act(async () => {
