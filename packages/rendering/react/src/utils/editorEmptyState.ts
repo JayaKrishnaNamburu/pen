@@ -1,5 +1,11 @@
 import type { Editor } from "@pen/types";
 
+interface InlineDeltaLike {
+	insert: string | object;
+}
+
+const ZERO_WIDTH_SPACE = "\u200B";
+
 export function computeDocumentEmpty(editor: Editor): boolean {
 	return editor.documentState.isEmpty;
 }
@@ -14,6 +20,16 @@ export function computeDocumentPlaceholderVisible(editor: Editor): boolean {
 	if (!schema || schema.content !== "inline" || schema.fieldEditor === "none") {
 		return false;
 	}
-	const text = block.textContent();
-	return !text || text === "\u200B";
+	return isInlineContentEmpty(block.inlineDeltas());
+}
+
+export function isInlineContentEmpty(
+	deltas: readonly InlineDeltaLike[],
+): boolean {
+	return deltas.every((delta) => {
+		if (typeof delta.insert !== "string") {
+			return false;
+		}
+		return delta.insert.replaceAll(ZERO_WIDTH_SPACE, "").length === 0;
+	});
 }

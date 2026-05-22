@@ -36,6 +36,15 @@ export {
 export { useAIActions } from "./useAIActions";
 export { useAISessionActions } from "./useAISessionActions";
 export { useFieldEditor } from "./useFieldEditor";
+export {
+	useEditorFocusController,
+	useFocusController,
+	type PenFocusController,
+	type PenFocusOptions,
+	type PenFocusOffset,
+	type PenRangeFocusRequest,
+	type PenTextFocusRequest,
+} from "./useFocusController";
 export { useHistory } from "./useHistory";
 export { useSearch } from "./useSearch";
 export { useMultiplayer } from "./useMultiplayer";

@@ -1,8 +1,5 @@
 import type { Editor } from "@pen/types";
-import {
-	editorSelectionToDOM,
-	domSelectionToEditor,
-} from "./selectionBridge";
+import { editorSelectionToDOM, domSelectionToEditor } from "./selectionBridge";
 import { handlePaste, handleCopy, handleCut } from "./clipboard";
 import type { PasteImporters } from "../types/paste";
 import type { FieldEditorInputController } from "./controller";
@@ -50,7 +47,16 @@ export class ExpandedContentEditableBackend {
 		const selection = this.editor.selection;
 		if (selection?.type === "text") {
 			this.isApplyingSelection++;
-			element.focus({ preventScroll: true });
+			if (
+				!this.fieldEditor.requestDomFocus(element, "backend-activate", {
+					preventScroll: true,
+				})
+			) {
+				requestAnimationFrame(() => {
+					this.isApplyingSelection--;
+				});
+				return;
+			}
 			editorSelectionToDOM(element, selection.anchor, selection.focus);
 			requestAnimationFrame(() => {
 				this.isApplyingSelection--;
@@ -58,7 +64,9 @@ export class ExpandedContentEditableBackend {
 			return;
 		}
 
-		element.focus({ preventScroll: true });
+		this.fieldEditor.requestDomFocus(element, "backend-activate", {
+			preventScroll: true,
+		});
 		this.isApplyingSelection = 0;
 	}
 
@@ -102,7 +110,11 @@ export class ExpandedContentEditableBackend {
 
 	private handleSelectionChange = (): void => {
 		if (!this.element) return;
-		if (!this.fieldEditor.shouldHandleDomSelectionChange(this.isApplyingSelection)) {
+		if (
+			!this.fieldEditor.shouldHandleDomSelectionChange(
+				this.isApplyingSelection,
+			)
+		) {
 			return;
 		}
 
@@ -309,6 +321,9 @@ function getBlockText(
 		};
 	}>(doc);
 	return (
-		ydoc.getMap("blocks").get(blockId)?.get("content") as FieldEditorTextLike | null
-	) ?? null;
+		(ydoc
+			.getMap("blocks")
+			.get(blockId)
+			?.get("content") as FieldEditorTextLike | null) ?? null
+	);
 }

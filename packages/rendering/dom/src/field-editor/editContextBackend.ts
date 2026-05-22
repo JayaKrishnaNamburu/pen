@@ -3,7 +3,6 @@ import type {
 	DocumentOp,
 	Editor,
 	InlineDecoration,
-	InputBackend,
 } from "@pen/types";
 import { supportsInlineInputRules } from "@pen/types";
 import type { FieldEditorInputController } from "./controller";
@@ -100,7 +99,7 @@ type EditContextGlobal = typeof globalThis & {
 	EditContext?: EditContextConstructor;
 };
 
-export class EditContextBackend implements InputBackend {
+export class EditContextBackend {
 	private editContext: EditContext | null = null;
 	private element: HTMLElement | null = null;
 	private ytext: FieldEditorTextLike | null = null;
@@ -178,7 +177,9 @@ export class EditContextBackend implements InputBackend {
 		);
 		this.isApplyingSelection++;
 		this.updateSelection();
-		element.focus({ preventScroll: true });
+		this.fieldEditor.requestDomFocus(element, "backend-activate", {
+			preventScroll: true,
+		});
 		requestAnimationFrame(() => {
 			this.isApplyingSelection--;
 		});

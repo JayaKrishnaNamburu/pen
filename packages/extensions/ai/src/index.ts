@@ -108,6 +108,7 @@ export {
 	SUGGESTION_RESOLUTION_ORIGIN,
 	shouldBypassSuggestMode,
 } from "./suggestions/suggestMode";
+export { applySuggestedAIOperations } from "./suggestions/applySuggestedAIOperations";
 export { EphemeralSuggestionManager } from "./suggestions/ephemeral";
 
 export type {
@@ -162,6 +163,10 @@ export type {
 	AIMutationReceiptEvidence,
 	AIMutationReceiptStatus,
 } from "./types";
+export type {
+	ApplySuggestedAIOperationsOptions,
+	ApplySuggestedAIOperationsResult,
+} from "./suggestions/applySuggestedAIOperations";
 export type {
 	DocumentMutationPlan,
 	DocumentMutationPlanKind,

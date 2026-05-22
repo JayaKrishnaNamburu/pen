@@ -186,7 +186,12 @@ export type {
 export { DEFAULT_DATABASE_COLUMN_WIDTH } from "./database";
 
 // ── Field Editor ────────────────────────────────────────────
-export type { FieldEditor, InputBackend, StreamingTarget } from "./fieldEditor";
+export type {
+	FieldEditor,
+	FieldEditorFocusOptions,
+	FieldEditorFocusReason,
+	StreamingTarget,
+} from "./fieldEditor";
 export type {
 	FieldEditorBehavior,
 	FieldEditorInputMode,

@@ -1,6 +1,8 @@
 export { EditorRoot, type EditorRootProps } from "./root";
 export type {
+	InlineAtomInteractions,
 	InlineAtomRenderProps,
+	InlineAtomRenderInteractionProps,
 	InlineAtomRenderer,
 	InlineAtomRenderers,
 } from "../../context/editorContext";

@@ -7,6 +7,10 @@ export interface BlockSuggestion {
   authorType: "user" | "ai";
   createdAt: number;
   model?: string;
+  sessionId?: string;
+  requestId?: string;
+  turnId?: string;
+  generationId?: string;
   previousState?: {
     type?: string;
     position?: Position;

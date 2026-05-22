@@ -375,6 +375,9 @@ interface PersistentSuggestionBase {
 	createdAt: number;
 	model?: string;
 	sessionId?: string;
+	requestId?: string;
+	turnId?: string;
+	generationId?: string;
 	blockId: string;
 }
 
@@ -407,6 +410,9 @@ export interface BlockSuggestionMeta {
 	createdAt: number;
 	model?: string;
 	sessionId?: string;
+	requestId?: string;
+	turnId?: string;
+	generationId?: string;
 	previousState?: {
 		type?: string;
 		position?: import("@pen/types").Position;

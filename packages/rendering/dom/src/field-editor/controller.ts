@@ -1,6 +1,84 @@
-import type { BlockSchema } from "@pen/types";
+import type { BlockSchema, Editor, FieldEditorFocusOptions } from "@pen/types";
 import type { FieldEditorStore } from "./store";
 import type { EditorSelectAllBehavior } from "../constants/selectAll";
+
+export type FieldEditorFocusReason =
+	| "activate"
+	| "backend-activate"
+	| "backend-attach"
+	| "selection-project"
+	| "selection-activate"
+	| "selection-sync"
+	| "restore"
+	| "cell"
+	| "select-all";
+
+export type PenFocusAction =
+	| "activate"
+	| "attach-backend"
+	| "focus-dom"
+	| "project-selection"
+	| "restore"
+	| "select-all";
+
+export type PenFocusReason = NonNullable<FieldEditorFocusOptions["reason"]>;
+
+export type PenFocusDecision =
+	| { type: "allow" }
+	| { type: "allow-passive" }
+	| { type: "deny" };
+
+export interface FieldEditorFocusRequest {
+	editor: Editor;
+	target: HTMLElement;
+	root: HTMLElement | null;
+	reason: FieldEditorFocusReason;
+	action: PenFocusAction;
+	source: PenFocusReason;
+	blockId: string | null;
+	passive?: boolean;
+}
+
+export type PenFocusRequest = FieldEditorFocusRequest;
+
+export interface PenFocusPolicy {
+	decide(request: FieldEditorFocusRequest): PenFocusDecision;
+	onDenied?(request: FieldEditorFocusRequest): void;
+}
+
+export type PenFieldEditorFocusOptions = FieldEditorFocusOptions;
+
+export type PenFocusLifecycleEvent =
+	| {
+			type: "field-editor-attached";
+			editor: Editor;
+			root: HTMLElement | null;
+	  }
+	| {
+			type: "backend-attach-started" | "backend-attach-completed";
+			editor: Editor;
+			target: HTMLElement;
+			blockId: string | null;
+	  }
+	| {
+			type: "selection-projected";
+			editor: Editor;
+			blockId: string | null;
+	  }
+	| {
+			type: "focus-request-denied";
+			request: FieldEditorFocusRequest;
+	  }
+	| {
+			type: "activation-changed";
+			editor: Editor;
+			activeBlockIds: readonly string[];
+			isEditing: boolean;
+	  };
+
+export type PenFocusLifecycleListener = (
+	event: PenFocusLifecycleEvent,
+) => void;
 
 export type ActiveCellCoord = {
 	blockId: string;
@@ -18,7 +96,7 @@ type FieldEditorSelectionState = Pick<
 export interface FieldEditorRootHandle {
 	setRootElement(element: HTMLElement | null): void;
 	setFocused(focused: boolean): void;
-	setInputBackend(inputBackend: "contenteditable" | "edit-context"): void;
+	setFocusPolicy(focusPolicy: PenFocusPolicy | undefined): void;
 	setSelectAllBehavior(behavior: EditorSelectAllBehavior): void;
 	deactivate(): void;
 	activateTextSelection(
@@ -31,10 +109,32 @@ export interface FieldEditorRootHandle {
 		anchorOffset: number,
 		focusOffset: number,
 	): void;
+	focusTextSelection(
+		blockId: string,
+		anchorOffset: number,
+		focusOffset: number,
+		options?: PenFieldEditorFocusOptions,
+	): Promise<boolean>;
 }
 
 export interface FieldEditorDomController extends FieldEditorSelectionState {
 	setComposing(composing: boolean): void;
+	requestDomFocus(
+		target: HTMLElement,
+		reason: FieldEditorFocusReason,
+		options?: FocusOptions,
+		policyOptions?: PenFieldEditorFocusOptions,
+	): boolean;
+	requestActivation(
+		target: HTMLElement,
+		reason: FieldEditorFocusReason,
+		options?: PenFieldEditorFocusOptions,
+	): boolean;
+	requestRootFocus(
+		target: HTMLElement,
+		reason: FieldEditorFocusReason,
+		options?: FocusOptions,
+	): boolean;
 	shouldHandleDomSelectionChange(isApplyingSelection: number): boolean;
 	resolveProgrammaticInputRange(
 		blockId: string | null,
@@ -153,5 +253,9 @@ export type FieldEditorSession = FieldEditorStore &
 			blockId: string;
 			offset: number;
 		}): void;
+		onFocusLifecycle(
+			listener: PenFocusLifecycleListener,
+		): () => void;
+		waitForAttachment(blockId?: string | null): Promise<boolean>;
 		delegate(blockSchema: BlockSchema): boolean;
 	};

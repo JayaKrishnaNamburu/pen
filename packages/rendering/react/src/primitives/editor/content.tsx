@@ -369,7 +369,17 @@ export function EditorContent(props: EditorContentProps) {
 			const doc = root.ownerDocument;
 			const activeEl = doc?.activeElement;
 			if (activeEl instanceof Node && root.contains(activeEl)) return;
-			root.focus({ preventScroll: true });
+			if (
+				typeof fieldEditor.requestRootFocus === "function" &&
+				!fieldEditor.requestRootFocus(root, "activate", {
+					preventScroll: true,
+				})
+			) {
+				return;
+			}
+			if (typeof fieldEditor.requestRootFocus !== "function") {
+				root.focus({ preventScroll: true });
+			}
 		};
 
 		const activateCanonicalSelection = (

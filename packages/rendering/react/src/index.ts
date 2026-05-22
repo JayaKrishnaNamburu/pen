@@ -30,7 +30,9 @@ export {
 	EditorFieldEditor,
 	type EditorCaretVariant,
 	type EditorRootProps,
+	type InlineAtomInteractions,
 	type InlineAtomRenderProps,
+	type InlineAtomRenderInteractionProps,
 	type InlineAtomRenderer,
 	type InlineAtomRenderers,
 	type EditorContentProps,
@@ -236,6 +238,8 @@ export {
 	useAttribution,
 	useEditor,
 	useFieldEditor,
+	useEditorFocusController,
+	useFocusController,
 	useHistory,
 	useSearch,
 	useMultiplayer,
@@ -260,6 +264,11 @@ export {
 	type AIDebugLogFastApplyMetrics,
 	type AIDebugLogState,
 	type AttributionState,
+	type PenFocusController,
+	type PenFocusOptions,
+	type PenFocusOffset,
+	type PenRangeFocusRequest,
+	type PenTextFocusRequest,
 	type AIStructuredPreviewSelection,
 	type AIStructuredTargetPreviewSelection,
 	type AISuggestionPopoverPosition,
@@ -391,6 +400,17 @@ export {
 	getAttachedFieldEditor,
 	getAttachedFieldEditorStore,
 } from "./utils/fieldEditor";
+export type {
+	FieldEditorFocusRequest,
+	PenFocusAction,
+	PenFocusDecision,
+	PenFieldEditorFocusOptions,
+	PenFocusLifecycleEvent,
+	PenFocusLifecycleListener,
+	PenFocusPolicy,
+	PenFocusRequest,
+	PenFocusReason,
+} from "@pen/dom";
 export { isCellInSelection } from "./utils/cellSelection";
 
 // ── Re-export key types from @pen/types for convenience ─────
@@ -405,7 +425,6 @@ export type {
 	InlineDecoration,
 	BlockDecoration,
 	FieldEditor,
-	InputBackend,
 } from "@pen/types";
 
 export type {

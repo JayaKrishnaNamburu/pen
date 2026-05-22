@@ -4,14 +4,14 @@ import React, { act } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
 import { createEditor, ensureInlineCompletionController } from "@pen/core";
-import type { BlockHandle, BlockRenderContext } from "@pen/types";
+import {
+	type BlockHandle,
+	type BlockRenderContext,
+} from "@pen/types";
 import { defaultPreset } from "@pen/preset-default";
 import { InlineContent } from "../primitives/editor/inlineContent";
 import { Pen } from "../primitives/index";
-import {
-	ParagraphRenderer,
-	registerRenderer,
-} from "../renderers/index";
+import { ParagraphRenderer, registerRenderer } from "../renderers/index";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -62,7 +62,9 @@ describe("@pen/react placeholder behavior", () => {
 			);
 		});
 
-		const placeholders = container.querySelectorAll("[data-placeholder-visible]");
+		const placeholders = container.querySelectorAll(
+			"[data-placeholder-visible]",
+		);
 		expect(placeholders).toHaveLength(1);
 		expect(placeholders[0]?.getAttribute("data-placeholder")).toBe(
 			"Start writing...",
@@ -70,6 +72,53 @@ describe("@pen/react placeholder behavior", () => {
 		expect(
 			placeholders[0]?.hasAttribute("data-pen-field-editor-surface"),
 		).toBe(true);
+
+		await act(async () => {
+			root.unmount();
+		});
+		container.remove();
+		editor.destroy();
+	});
+
+	it("hides the document empty placeholder for a single atom-only block", async () => {
+		registerRenderer("paragraph", PlaceholderParagraphRenderer);
+
+		const editor = createEditor({
+			preset: defaultPreset({
+				documentOps: false,
+				deltaStream: false,
+				undo: false,
+			}),
+		});
+		const blockId = editor.firstBlock()!.id;
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		editor.apply([
+			{
+				type: "insert-inline-node",
+				blockId,
+				offset: 0,
+				nodeType: "mention",
+				props: { id: "user-1", label: "Ada" },
+			},
+		]);
+
+		await act(async () => {
+			root.render(
+				<Pen.Editor.Root editor={editor}>
+					<Pen.Editor.Content emptyPlaceholder="Start writing..." />
+				</Pen.Editor.Root>,
+			);
+		});
+
+		expect(
+			container.querySelectorAll("[data-placeholder-visible]"),
+		).toHaveLength(0);
+		expect(
+			container.querySelector("[data-pen-inline-atom]"),
+		).not.toBeNull();
 
 		await act(async () => {
 			root.unmount();
@@ -169,7 +218,9 @@ describe("@pen/react placeholder behavior", () => {
 			editor.selectText(blockId, 0, 0);
 		});
 
-		const placeholders = container.querySelectorAll("[data-placeholder-visible]");
+		const placeholders = container.querySelectorAll(
+			"[data-placeholder-visible]",
+		);
 		expect(placeholders).toHaveLength(1);
 		expect(placeholders[0]?.getAttribute("data-placeholder")).toContain(
 			"/ for commands",
@@ -237,16 +288,18 @@ describe("@pen/react placeholder behavior", () => {
 			});
 		});
 
-		const suggestionSurface = container.querySelector(".pen-ephemeral-suggestion");
+		const suggestionSurface = container.querySelector(
+			".pen-ephemeral-suggestion",
+		);
 		expect(suggestionSurface?.getAttribute("data-suggestion-id")).toBe(
 			"suggestion-1",
 		);
 		expect(suggestionSurface?.getAttribute("data-suggestion-text")).toBe(
 			"Thanks for the update.",
 		);
-		expect(suggestionSurface?.getAttribute("data-suggestion-placement")).toBe(
-			"after",
-		);
+		expect(
+			suggestionSurface?.getAttribute("data-suggestion-placement"),
+		).toBe("after");
 		expect(
 			container.querySelectorAll("[data-placeholder-visible]"),
 		).toHaveLength(0);
@@ -391,14 +444,83 @@ describe("@pen/react placeholder behavior", () => {
 			editor.selectText(secondBlockId, 0, 0);
 		});
 
-		const placeholders = container.querySelectorAll("[data-placeholder-visible]");
+		const placeholders = container.querySelectorAll(
+			"[data-placeholder-visible]",
+		);
 		expect(placeholders).toHaveLength(1);
 		expect(placeholders[0]?.getAttribute("data-placeholder")).toBe(
 			"Type ⌘I for AI Agent, or / for commands",
 		);
 		expect(
-			placeholders[0]?.closest("[data-block-id]")?.getAttribute("data-block-id"),
+			placeholders[0]
+				?.closest("[data-block-id]")
+				?.getAttribute("data-block-id"),
 		).toBe(secondBlockId);
+
+		await act(async () => {
+			root.unmount();
+		});
+		container.remove();
+		editor.destroy();
+	});
+
+	it("hides active block placeholders for an atom-only block", async () => {
+		registerRenderer("paragraph", PlaceholderParagraphRenderer);
+
+		const editor = createEditor({
+			preset: defaultPreset({
+				documentOps: false,
+				deltaStream: false,
+				undo: false,
+			}),
+		});
+		const firstBlockId = editor.firstBlock()!.id;
+		const secondBlockId = crypto.randomUUID();
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		editor.apply([
+			{
+				type: "insert-text",
+				blockId: firstBlockId,
+				offset: 0,
+				text: "Hello",
+			},
+			{
+				type: "insert-block",
+				blockId: secondBlockId,
+				blockType: "paragraph",
+				props: {},
+				position: { after: firstBlockId },
+			},
+			{
+				type: "insert-inline-node",
+				blockId: secondBlockId,
+				offset: 0,
+				nodeType: "mention",
+				props: { id: "user-1", label: "Ada" },
+			},
+		]);
+
+		await act(async () => {
+			root.render(
+				<Pen.Editor.Root editor={editor}>
+					<Pen.Editor.Content emptyPlaceholder="Start writing..." />
+				</Pen.Editor.Root>,
+			);
+		});
+
+		await act(async () => {
+			editor.selectText(secondBlockId, 0, 0);
+		});
+
+		expect(
+			container.querySelectorAll("[data-placeholder-visible]"),
+		).toHaveLength(0);
+		expect(
+			container.querySelector("[data-pen-inline-atom]"),
+		).not.toBeNull();
 
 		await act(async () => {
 			root.unmount();

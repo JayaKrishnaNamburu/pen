@@ -199,8 +199,14 @@ import {
 	MultiplayerRemoteCursors,
 	MultiplayerCaretOverlay,
 } from "./multiplayer/index";
+import {
+	useEditorFocusController,
+	useFocusController,
+} from "../hooks/useFocusController";
 
 export const Pen = {
+	useEditorFocusController,
+	useFocusController,
 	Editor: {
 		Root: EditorRoot,
 		Content: EditorContent,

@@ -6,18 +6,18 @@ import type { PropSchema } from "./schema";
 // ── Tool Registry + Runtime ────────────────────────────────
 
 export interface ToolRegistry {
-  registerTool(def: ToolDefinition): void;
-  unregisterTool(name: string): void;
-  listTools(): readonly ToolDefinition[];
-  getTool(name: string): ToolDefinition | null;
+	registerTool(def: ToolDefinition): void;
+	unregisterTool(name: string): void;
+	listTools(): readonly ToolDefinition[];
+	getTool(name: string): ToolDefinition | null;
 }
 
 export interface ToolRuntime extends ToolRegistry {
-  executeTool(
-    name: string,
-    input: unknown,
-    ctx: ToolContext,
-  ): Promise<unknown> | AsyncIterable<unknown>;
+	executeTool(
+		name: string,
+		input: unknown,
+		ctx: ToolContext,
+	): Promise<unknown> | AsyncIterable<unknown>;
 }
 
 /**
@@ -25,223 +25,226 @@ export interface ToolRuntime extends ToolRegistry {
  */
 export interface ToolServer extends ToolRuntime {}
 
-export type ToolExecutionResult =
-  | Promise<unknown>
-  | AsyncIterable<unknown>;
+export type ToolExecutionResult = Promise<unknown> | AsyncIterable<unknown>;
 
 export interface ToolDefinition {
-  name: string;
-  description: string;
-  inputSchema: PropSchema;
-  handler: (
-    input: unknown,
-    ctx: ToolContext,
-  ) => Promise<unknown> | AsyncIterable<unknown>;
+	name: string;
+	description: string;
+	inputSchema: PropSchema;
+	handler: (
+		input: unknown,
+		ctx: ToolContext,
+	) => Promise<unknown> | AsyncIterable<unknown>;
 }
 
 // ── Model Adapter ───────────────────────────────────────────
 
 export interface ModelAdapter {
-  capabilities?: {
-    structuredIntent?: boolean;
-  };
-  stream(options: {
-    messages: ModelMessage[];
-    tools: ToolSchema[];
-    signal?: AbortSignal;
-    requestMode?: string;
-    operation?: ModelRequestedOperation;
-  }): AsyncIterable<ModelStreamEvent>;
+	capabilities?: {
+		structuredIntent?: boolean;
+	};
+	stream(options: {
+		messages: ModelMessage[];
+		tools: ToolSchema[];
+		signal?: AbortSignal;
+		requestMode?: string;
+		operation?: ModelRequestedOperation;
+		sessionId?: string;
+		turnId?: string;
+		generationId?: string;
+	}): AsyncIterable<ModelStreamEvent>;
 }
 
 export type ModelOperationKind =
-  | "rewrite-selection"
-  | "rewrite-block"
-  | "continue-block"
-  | "document-transform";
+	| "rewrite-selection"
+	| "rewrite-block"
+	| "continue-block"
+	| "document-transform";
 
 export type ModelOperationApplyPolicy =
-  | "selection-replace"
-  | "block-replace"
-  | "block-continue"
-  | "document-review";
+	| "selection-replace"
+	| "block-replace"
+	| "block-continue"
+	| "document-review";
 
 export interface ModelOperationSelectionTarget {
-  kind: "selection";
-  blockId: string | null;
-  anchor: { blockId: string; offset: number };
-  focus: { blockId: string; offset: number };
-  sourceText: string;
+	kind: "selection";
+	blockId: string | null;
+	anchor: { blockId: string; offset: number };
+	focus: { blockId: string; offset: number };
+	sourceText: string;
 }
 
 export interface ModelOperationScopedRangeTarget {
-  kind: "scoped-range";
-  blockId: string | null;
-  anchor: { blockId: string; offset: number };
-  focus: { blockId: string; offset: number };
-  sourceText: string;
-  blockIds: readonly string[];
-  contentFormat: "text" | "markdown";
-  scope: "block" | "paragraph" | "document" | "heading";
+	kind: "scoped-range";
+	blockId: string | null;
+	anchor: { blockId: string; offset: number };
+	focus: { blockId: string; offset: number };
+	sourceText: string;
+	blockIds: readonly string[];
+	contentFormat: "text" | "markdown";
+	scope: "block" | "paragraph" | "document" | "heading";
 }
 
 export interface ModelOperationBlockTarget {
-  kind: "block";
-  blockId: string;
-  blockType: string | null;
-  sourceText: string;
-  insertionOffset?: number;
+	kind: "block";
+	blockId: string;
+	blockType: string | null;
+	sourceText: string;
+	insertionOffset?: number;
 }
 
 export interface ModelOperationDocumentTarget {
-  kind: "document";
-  activeBlockId: string | null;
-  blockIds?: readonly string[];
-  placement?: "append-after-block" | "replace-empty-block" | "replace-blocks";
-  transform?: "write" | "rewrite" | "remove";
+	kind: "document";
+	activeBlockId: string | null;
+	blockIds?: readonly string[];
+	placement?: "append-after-block" | "replace-empty-block" | "replace-blocks";
+	transform?: "write" | "rewrite" | "remove";
 }
 
 export interface ModelOperationProvenance {
-  documentVersion?: number | null;
-  blockRevision?: number | null;
-  selectionSignature?: string | null;
-  syncedGeneration?: number | null;
+	documentVersion?: number | null;
+	blockRevision?: number | null;
+	selectionSignature?: string | null;
+	syncedGeneration?: number | null;
 }
 
 export interface ModelRequestedOperation {
-  kind: ModelOperationKind;
-  applyPolicy: ModelOperationApplyPolicy;
-  target:
-    | ModelOperationSelectionTarget
-    | ModelOperationScopedRangeTarget
-    | ModelOperationBlockTarget
-    | ModelOperationDocumentTarget;
-  promptIntent?: string;
-  provenance?: ModelOperationProvenance | null;
+	kind: ModelOperationKind;
+	applyPolicy: ModelOperationApplyPolicy;
+	target:
+		| ModelOperationSelectionTarget
+		| ModelOperationScopedRangeTarget
+		| ModelOperationBlockTarget
+		| ModelOperationDocumentTarget;
+	promptIntent?: string;
+	provenance?: ModelOperationProvenance | null;
 }
 
 export type ModelStreamEvent =
-  | { type: "text-delta"; delta: string }
-  | {
-      type: "replace-preview";
-      operation: ModelRequestedOperation;
-      text: string;
-    }
-  | {
-      type: "replace-final";
-      operation: ModelRequestedOperation;
-      text: string;
-    }
-  | {
-      type: "insert-preview";
-      operation: ModelRequestedOperation;
-      text: string;
-    }
-  | {
-      type: "insert-final";
-      operation: ModelRequestedOperation;
-      text: string;
-    }
-  | {
-      type: "conflict";
-      reason: string;
-      operation?: ModelRequestedOperation;
-    }
-  | {
-      type: "structured-data";
-      contract?: "grid" | "app";
-      data: unknown;
-      final?: boolean;
-    }
-  | {
-      type: "tool-call";
-      toolCallId: string;
-      toolName: string;
-      input: unknown;
-    }
-  | {
-      type: "done";
-      usage?: { promptTokens: number; completionTokens: number };
-    }
-  | { type: "error"; error: unknown };
+	| { type: "text-delta"; delta: string }
+	| {
+			type: "replace-preview";
+			operation: ModelRequestedOperation;
+			text: string;
+	  }
+	| {
+			type: "replace-final";
+			operation: ModelRequestedOperation;
+			text: string;
+	  }
+	| {
+			type: "insert-preview";
+			operation: ModelRequestedOperation;
+			text: string;
+	  }
+	| {
+			type: "insert-final";
+			operation: ModelRequestedOperation;
+			text: string;
+	  }
+	| {
+			type: "conflict";
+			reason: string;
+			operation?: ModelRequestedOperation;
+	  }
+	| {
+			type: "structured-data";
+			contract?: "grid" | "app";
+			data: unknown;
+			final?: boolean;
+	  }
+	| {
+			type: "tool-call";
+			toolCallId: string;
+			toolName: string;
+			input: unknown;
+	  }
+	| {
+			type: "done";
+			usage?: { promptTokens: number; completionTokens: number };
+	  }
+	| { type: "error"; error: unknown };
 
 export interface ToolSchema {
-  name: string;
-  description: string;
-  inputSchema: PropSchema;
+	name: string;
+	description: string;
+	inputSchema: PropSchema;
 }
 
 // ── Model Messages ──────────────────────────────────────────
 
 export interface ModelMessage {
-  role: "system" | "user" | "assistant" | "tool";
-  content: string | ModelMessagePart[];
-  toolCallId?: string;
-  toolName?: string;
+	role: "system" | "user" | "assistant" | "tool";
+	content: string | ModelMessagePart[];
+	toolCallId?: string;
+	toolName?: string;
 }
 
 export type ModelMessagePart =
-  | { type: "text"; text: string }
-  | {
-      type: "tool-call";
-      toolCallId: string;
-      toolName: string;
-      input: unknown;
-    }
-  | {
-      type: "tool-result";
-      toolCallId: string;
-      result: unknown;
-      isError?: boolean;
-    };
+	| { type: "text"; text: string }
+	| {
+			type: "tool-call";
+			toolCallId: string;
+			toolName: string;
+			input: unknown;
+	  }
+	| {
+			type: "tool-result";
+			toolCallId: string;
+			result: unknown;
+			isError?: boolean;
+	  };
 
 // ── Tool Context ────────────────────────────────────────────
 
 export interface ToolContext {
-  readonly editor: Editor;
-  readonly docId: string;
-  emit(part: PenStreamPart): void;
+	readonly editor: Editor;
+	readonly docId: string;
+	emit(part: PenStreamPart): void;
 
-  insertBlock(
-    blockType: string,
-    props: Record<string, unknown>,
-    position: Position,
-  ): string;
-  updateBlock(blockId: string, props: Record<string, unknown>): void;
-  deleteBlock(blockId: string): void;
-  beginStreaming(zoneId: string, blockId: string): void;
-  appendDelta(delta: string): void;
-  endStreaming(status: "complete" | "cancelled" | "error"): void;
+	insertBlock(
+		blockType: string,
+		props: Record<string, unknown>,
+		position: Position,
+	): string;
+	updateBlock(blockId: string, props: Record<string, unknown>): void;
+	deleteBlock(blockId: string): void;
+	beginStreaming(zoneId: string, blockId: string): void;
+	appendDelta(delta: string): void;
+	endStreaming(status: "complete" | "cancelled" | "error"): void;
 }
 
-export function isAsyncIterable(value: unknown): value is AsyncIterable<unknown> {
-  return (
-    value != null &&
-    typeof value === "object" &&
-    Symbol.asyncIterator in (value as object)
-  );
+export function isAsyncIterable(
+	value: unknown,
+): value is AsyncIterable<unknown> {
+	return (
+		value != null &&
+		typeof value === "object" &&
+		Symbol.asyncIterator in (value as object)
+	);
 }
 
 export async function resolveToolExecution(
-  result: ToolExecutionResult,
+	result: ToolExecutionResult,
 ): Promise<unknown | AsyncIterable<unknown>> {
-  return await result;
+	return await result;
 }
 
 export async function collectToolExecutionOutput(
-  result: ToolExecutionResult,
-  onPart?: (part: unknown, output: unknown) => void,
+	result: ToolExecutionResult,
+	onPart?: (part: unknown, output: unknown) => void,
 ): Promise<unknown> {
-  const resolved = await resolveToolExecution(result);
-  if (!isAsyncIterable(resolved)) {
-    return resolved;
-  }
+	const resolved = await resolveToolExecution(result);
+	if (!isAsyncIterable(resolved)) {
+		return resolved;
+	}
 
-  const parts: unknown[] = [];
-  for await (const part of resolved) {
-    parts.push(part);
-    onPart?.(part, parts.length <= 1 ? parts[0] : [...parts]);
-  }
+	const parts: unknown[] = [];
+	for await (const part of resolved) {
+		parts.push(part);
+		onPart?.(part, parts.length <= 1 ? parts[0] : [...parts]);
+	}
 
-  return parts.length <= 1 ? parts[0] : parts;
+	return parts.length <= 1 ? parts[0] : parts;
 }

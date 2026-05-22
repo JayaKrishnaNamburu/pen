@@ -10,9 +10,11 @@ import {
 } from "../utils/blockSelectionSemantics";
 import {
 	domPointToLogicalOffset,
+	getInlineAtomPointerOffset,
 	findLogicalDOMPoint,
 	getLogicalNodeLength,
 	getLogicalTextContent,
+	isInlineAtomNode,
 } from "./inlineAtomDom";
 
 /**
@@ -383,6 +385,14 @@ function approximateInlineOffsetFromPoint(
 ): number {
 	const textLength = getLogicalNodeLength(inlineEl);
 	if (textLength <= 0) return 0;
+	const inlineAtomOffset = getInlineAtomPointerOffset(
+		inlineEl,
+		clientX,
+		clientY,
+	);
+	if (inlineAtomOffset !== null) {
+		return inlineAtomOffset;
+	}
 
 	let bestOffset = 0;
 	let bestScore = Number.POSITIVE_INFINITY;
@@ -602,6 +612,8 @@ export function pointToEditorSelectionPoint(
 ): SelectionPoint | null {
 	const doc = root.ownerDocument;
 	if (!doc) return null;
+	const atomPoint = resolveInlineAtomPoint(root, clientX, clientY, options);
+	if (atomPoint) return atomPoint;
 	const caretFromPoint = doc as Document & {
 		caretPositionFromPoint?: (
 			x: number,
@@ -612,6 +624,16 @@ export function pointToEditorSelectionPoint(
 
 	const position = caretFromPoint.caretPositionFromPoint?.(clientX, clientY);
 	if (position) {
+		const inlineBoundaryPoint = resolveInlineContainerBoundaryPoint(
+			root,
+			position.offsetNode,
+			position.offset,
+			clientX,
+			clientY,
+			options,
+		);
+		if (inlineBoundaryPoint) return inlineBoundaryPoint;
+
 		const resolved = resolveSelectionPoint(
 			root,
 			position.offsetNode,
@@ -623,6 +645,16 @@ export function pointToEditorSelectionPoint(
 
 	const range = caretFromPoint.caretRangeFromPoint?.(clientX, clientY);
 	if (range) {
+		const inlineBoundaryPoint = resolveInlineContainerBoundaryPoint(
+			root,
+			range.startContainer,
+			range.startOffset,
+			clientX,
+			clientY,
+			options,
+		);
+		if (inlineBoundaryPoint) return inlineBoundaryPoint;
+
 		const resolved = resolveSelectionPoint(
 			root,
 			range.startContainer,
@@ -644,6 +676,91 @@ export function pointToEditorSelectionPoint(
 		clientY,
 		options,
 	);
+}
+
+function resolveInlineAtomPoint(
+	root: HTMLElement,
+	clientX: number,
+	clientY: number,
+	options: ResolveSelectionPointOptions,
+): SelectionPoint | null {
+	const hitElement =
+		typeof root.ownerDocument.elementFromPoint === "function"
+			? root.ownerDocument.elementFromPoint(clientX, clientY)
+			: null;
+	if (!hitElement || !root.contains(hitElement)) {
+		return null;
+	}
+
+	const atomElement = findInlineAtomElement(hitElement, root);
+	if (!atomElement) {
+		return null;
+	}
+
+	const blockEl = findBlockElement(atomElement, root);
+	if (!blockEl || getBlockSurfaceRole(blockEl) !== "editable-inline") {
+		return null;
+	}
+
+	return getSelectionPointForBlockAtPointer(
+		blockEl,
+		clientX,
+		clientY,
+		options,
+	);
+}
+
+function findInlineAtomElement(
+	element: Element,
+	root: HTMLElement,
+): HTMLElement | null {
+	let current: Element | null = element;
+	while (current && current !== root) {
+		if (isInlineAtomNode(current)) {
+			return current;
+		}
+		current = current.parentElement;
+	}
+	return null;
+}
+
+function resolveInlineContainerBoundaryPoint(
+	root: HTMLElement,
+	node: Node,
+	offset: number,
+	clientX: number,
+	clientY: number,
+	options: ResolveSelectionPointOptions,
+): SelectionPoint | null {
+	const blockEl = findBlockElement(node, root);
+	if (!blockEl || getBlockSurfaceRole(blockEl) !== "editable-inline") {
+		return null;
+	}
+
+	const inlineEl = findInlineContentElement(blockEl);
+	if (!inlineEl || !isInlineBoundaryFallbackPoint(inlineEl, node, offset)) {
+		return null;
+	}
+
+	const geometricPoint = getSelectionPointForBlockAtPointer(
+		blockEl,
+		clientX,
+		clientY,
+		options,
+	);
+	return geometricPoint && geometricPoint.offset > 0 ? geometricPoint : null;
+}
+
+function isInlineBoundaryFallbackPoint(
+	inlineEl: HTMLElement,
+	node: Node,
+	offset: number,
+): boolean {
+	if (node === inlineEl) {
+		return offset === 0;
+	}
+
+	return node instanceof HTMLElement && node.contains(inlineEl);
 }
 
 /**

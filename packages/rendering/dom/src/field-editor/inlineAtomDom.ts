@@ -161,6 +161,51 @@ export function getLogicalTextContent(root: HTMLElement): string {
 	return text;
 }
 
+export function getInlineAtomPointerOffset(
+	container: HTMLElement,
+	clientX: number,
+	clientY: number,
+): number | null {
+	const atomElements = Array.from(
+		container.querySelectorAll(`[${DATA_ATTRS.inlineAtom}]`),
+	).filter(
+		(element): element is HTMLElement => element instanceof HTMLElement,
+	);
+	if (atomElements.length === 0) {
+		return null;
+	}
+
+	let bestOffset: number | null = null;
+	let bestScore = Number.POSITIVE_INFINITY;
+
+	for (const atomElement of atomElements) {
+		const rect = atomElement.getBoundingClientRect();
+		const dx =
+			clientX < rect.left
+				? rect.left - clientX
+				: clientX > rect.right
+					? clientX - rect.right
+					: 0;
+		const dy =
+			clientY < rect.top
+				? rect.top - clientY
+				: clientY > rect.bottom
+					? clientY - rect.bottom
+					: 0;
+		const score = dy * 1000 + dx;
+		if (score >= bestScore) {
+			continue;
+		}
+
+		const atomOffset = getOffsetBeforeNode(container, atomElement);
+		bestOffset =
+			clientX <= rect.left + rect.width / 2 ? atomOffset : atomOffset + 1;
+		bestScore = score;
+	}
+
+	return bestOffset;
+}
+
 export function domPointToLogicalOffset(
 	container: HTMLElement,
 	targetNode: Node,

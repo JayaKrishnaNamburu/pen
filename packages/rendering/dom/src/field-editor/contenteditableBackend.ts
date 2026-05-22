@@ -2,7 +2,6 @@ import type {
 	DocumentOp,
 	Editor,
 	InlineDecoration,
-	InputBackend,
 } from "@pen/types";
 import type { FieldEditorInputController } from "./controller";
 import { fullReconcileToDOM, applyDeltaToDOM } from "./reconciler";
@@ -32,7 +31,7 @@ import type {
 	FieldEditorTextLike,
 } from "./crdt";
 
-export class ContentEditableBackend implements InputBackend {
+export class ContentEditableBackend {
 	private element: HTMLElement | null = null;
 	private ytext: FieldEditorTextLike | null = null;
 	private observer: FieldEditorObserver | null = null;

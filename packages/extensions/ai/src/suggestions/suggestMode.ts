@@ -1,6 +1,9 @@
 import type { DocumentOp, Editor, OpOrigin } from "@pen/types";
 import { getOpOriginType } from "@pen/types";
-import { createSuggestionMark } from "./persistent";
+import {
+	createSuggestionMark,
+	type SuggestionCreationOptions,
+} from "./persistent";
 import type { BlockSuggestionMeta } from "../types";
 
 export const SUGGESTION_RESOLUTION_ORIGIN = "suggestion-resolution";
@@ -27,8 +30,18 @@ export function interceptApplyForSuggestMode(
 	authorType: "user" | "ai",
 	model?: string,
 	sessionId?: string,
+	options: SuggestModeSuggestionOptions = {},
 ): DocumentOp[] {
 	const intercepted: DocumentOp[] = [];
+	let suggestionIdIndex = 0;
+	const nextSuggestionOptions = (): SuggestionCreationOptions => ({
+		requestId: options.requestId,
+		sessionId,
+		turnId: options.turnId,
+		generationId: options.generationId,
+		createdAt: options.createdAt,
+		suggestionId: options.suggestionIds?.[suggestionIdIndex++],
+	});
 
 	for (const op of ops) {
 		switch (op.type) {
@@ -43,6 +56,7 @@ export function interceptApplyForSuggestMode(
 							authorType,
 							model,
 							sessionId,
+							nextSuggestionOptions(),
 						),
 					},
 				});
@@ -62,6 +76,7 @@ export function interceptApplyForSuggestMode(
 							authorType,
 							model,
 							sessionId,
+							nextSuggestionOptions(),
 						),
 					});
 				}
@@ -79,6 +94,7 @@ export function interceptApplyForSuggestMode(
 								authorType,
 								model,
 								sessionId,
+								nextSuggestionOptions(),
 							),
 						},
 					});
@@ -98,6 +114,7 @@ export function interceptApplyForSuggestMode(
 						authorType,
 						model,
 						sessionId,
+						nextSuggestionOptions(),
 					),
 				});
 				break;
@@ -116,6 +133,7 @@ export function interceptApplyForSuggestMode(
 						model,
 						undefined,
 						sessionId,
+						nextSuggestionOptions(),
 					),
 				});
 				break;
@@ -133,6 +151,7 @@ export function interceptApplyForSuggestMode(
 						model,
 						undefined,
 						sessionId,
+						nextSuggestionOptions(),
 					),
 				});
 				break;
@@ -162,6 +181,7 @@ export function interceptApplyForSuggestMode(
 									: "first",
 						},
 						sessionId,
+						nextSuggestionOptions(),
 					),
 				});
 				break;
@@ -184,6 +204,7 @@ export function interceptApplyForSuggestMode(
 							props: block ? { ...block.props } : undefined,
 						},
 						sessionId,
+						nextSuggestionOptions(),
 					),
 				});
 				break;
@@ -197,6 +218,14 @@ export function interceptApplyForSuggestMode(
 	return intercepted;
 }
 
+export type SuggestModeSuggestionOptions = {
+	requestId?: string;
+	turnId?: string;
+	generationId?: string;
+	createdAt?: number;
+	suggestionIds?: readonly string[];
+};
+
 function createBlockSuggestionMeta(
 	action: BlockSuggestionMeta["action"],
 	author: string,
@@ -204,15 +233,20 @@ function createBlockSuggestionMeta(
 	model?: string,
 	previousState?: BlockSuggestionMeta["previousState"],
 	sessionId?: string,
+	options: SuggestionCreationOptions = {},
 ): Record<string, unknown> {
+	const resolvedSessionId = options.sessionId ?? sessionId;
 	return {
-		id: crypto.randomUUID(),
+		id: options.suggestionId ?? crypto.randomUUID(),
 		action,
 		author,
 		authorType,
-		createdAt: Date.now(),
+		createdAt: options.createdAt ?? Date.now(),
 		model,
 		previousState,
-		sessionId,
+		sessionId: resolvedSessionId,
+		requestId: options.requestId,
+		turnId: options.turnId,
+		generationId: options.generationId,
 	};
 }

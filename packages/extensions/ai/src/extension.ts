@@ -1881,6 +1881,9 @@ class AIControllerImpl implements AIController {
 					operation,
 				}),
 				operation,
+				sessionId: context?.sessionId,
+				turnId: sessionTurnId,
+				generationId: seedGeneration.id,
 			});
 
 			for await (const event of stream) {

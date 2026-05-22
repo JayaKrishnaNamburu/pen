@@ -1,5 +1,17 @@
 export { FieldEditorImpl } from "./field-editor/fieldEditorImpl";
-export type { FieldEditorSession } from "./field-editor/controller";
+export type {
+	FieldEditorFocusReason,
+	FieldEditorFocusRequest,
+	FieldEditorSession,
+	PenFocusAction,
+	PenFocusDecision,
+	PenFieldEditorFocusOptions,
+	PenFocusLifecycleEvent,
+	PenFocusLifecycleListener,
+	PenFocusPolicy,
+	PenFocusRequest,
+	PenFocusReason,
+} from "./field-editor/controller";
 export { handleEditorDocumentKeyDown } from "./utils/documentShortcuts";
 export { handleEscapeSelectionTransition } from "./utils/escapeSelection";
 export { handleTableCellSelectionKeyDown } from "./utils/tableCellNavigation";

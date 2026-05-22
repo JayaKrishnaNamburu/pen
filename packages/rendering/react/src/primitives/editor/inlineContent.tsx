@@ -1,4 +1,9 @@
-import React, { useRef, useLayoutEffect, useState } from "react";
+import React, {
+	useRef,
+	useLayoutEffect,
+	useState,
+	useSyncExternalStore,
+} from "react";
 import { createPortal } from "react-dom";
 import {
 	getOpOriginType,
@@ -31,7 +36,15 @@ import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { DATA_ATTRS } from "../../utils/dataAttributes";
 import { fieldEditorTextEntryAttrs } from "../../utils/fieldEditorTextEntryAttrs";
 import { applyInlineDecorationsToDeltas } from "../../utils/inlineDecorations";
+import { isInlineContentEmpty } from "../../utils/editorEmptyState";
 import { resolveInlinePlaceholderVisibility } from "../../utils/placeholderVisibility";
+import {
+	attachInlineAtomWrapperInteractions,
+	getInlineAtomDragSnapshot,
+	getInlineAtomRenderInteractionProps,
+	isInlineAtomDragSource,
+	subscribeInlineAtomDragSnapshot,
+} from "./inlineAtomInteraction";
 
 export interface InlineContentProps extends AsChildProps {
 	blockId: string;
@@ -43,7 +56,7 @@ export interface InlineContentProps extends AsChildProps {
 interface InlineAtomRenderTarget {
 	key: string;
 	element: HTMLElement;
-	renderer: InlineAtomRenderer;
+	renderer?: InlineAtomRenderer;
 	type: string;
 	props: Record<string, unknown>;
 	text: string;
@@ -52,7 +65,8 @@ interface InlineAtomRenderTarget {
 
 export function InlineContent(props: InlineContentProps) {
 	const { blockId, className, placeholder: placeholderProp, ...rest } = props;
-	const { editor, inlineAtomRenderers } = useEditorContext();
+	const { editor, inlineAtomInteractions, inlineAtomRenderers, readonly } =
+		useEditorContext();
 	const { emptyPlaceholder, isEmpty: isDocumentEmpty } =
 		useEditorContentContext();
 	const fieldEditor = useFieldEditorContext();
@@ -70,6 +84,11 @@ export function InlineContent(props: InlineContentProps) {
 	const [inlineAtomTargets, setInlineAtomTargets] = useState<
 		InlineAtomRenderTarget[]
 	>([]);
+	const inlineAtomDragSnapshot = useSyncExternalStore(
+		subscribeInlineAtomDragSnapshot,
+		getInlineAtomDragSnapshot,
+		getInlineAtomDragSnapshot,
+	);
 	const isExpandedOwnedBlock =
 		fieldEditorState.mode === "expanded" &&
 		fieldEditorState.activeBlockIds.includes(blockId);
@@ -82,7 +101,7 @@ export function InlineContent(props: InlineContentProps) {
 			selection.isCollapsed &&
 			selection.focus.blockId === blockId);
 
-	const blockTextEmpty = !textSnapshot.text || textSnapshot.text === "\u200B";
+	const blockTextEmpty = isInlineContentEmpty(textSnapshot.deltas);
 	const emptyInlineCompletionText =
 		visibleInlineCompletion?.type === "inline" &&
 		visibleInlineCompletion.blockId === blockId &&
@@ -273,22 +292,52 @@ export function InlineContent(props: InlineContentProps) {
 				}
 			: undefined,
 	};
-	const inlineAtomPortals = inlineAtomTargets.map((target) =>
-		createPortal(
-			target.renderer({
-				type: target.type,
-				props: target.props,
-				text: target.text,
-				selected: isInlineAtomSelected(
-					selection,
+	const inlineAtomPortals = inlineAtomTargets.flatMap((target) => {
+		if (!target.renderer) {
+			return [];
+		}
+
+		const selected = isInlineAtomSelected(
+			selection,
+			blockId,
+			target.offset,
+		);
+		const dragging = isInlineAtomDragSource(
+			inlineAtomDragSnapshot,
+			editor,
+			blockId,
+			target.offset,
+		);
+		return [
+			createPortal(
+				target.renderer({
 					blockId,
-					target.offset,
-				),
-			}),
-			target.element,
-			target.key,
-		),
-	);
+					offset: target.offset,
+					type: target.type,
+					props: target.props,
+					text: target.text,
+					selected,
+					interaction: getInlineAtomRenderInteractionProps(
+						{
+							element: target.element,
+							editor,
+							blockId,
+							offset: target.offset,
+							type: target.type,
+							text: target.text,
+							props: target.props,
+							selected,
+							interactions: inlineAtomInteractions,
+							readonly,
+						},
+						dragging,
+					),
+				}),
+				target.element,
+				target.key,
+			),
+		];
+	});
 
 	useLayoutEffect(() => {
 		inlineAtomTargets.forEach((target) => {
@@ -296,8 +345,49 @@ export function InlineContent(props: InlineContentProps) {
 				DATA_ATTRS.selected,
 				isInlineAtomSelected(selection, blockId, target.offset),
 			);
+			target.element.toggleAttribute(
+				DATA_ATTRS.inlineAtomDragging,
+				isInlineAtomDragSource(
+					inlineAtomDragSnapshot,
+					editor,
+					blockId,
+					target.offset,
+				),
+			);
 		});
-	}, [blockId, inlineAtomTargets, selection]);
+	}, [blockId, editor, inlineAtomDragSnapshot, inlineAtomTargets, selection]);
+
+	useLayoutEffect(() => {
+		const cleanups = inlineAtomTargets.map((target) =>
+			attachInlineAtomWrapperInteractions({
+				element: target.element,
+				editor,
+				blockId,
+				offset: target.offset,
+				type: target.type,
+				text: target.text,
+				props: target.props,
+				selected: isInlineAtomSelected(
+					selection,
+					blockId,
+					target.offset,
+				),
+				interactions: inlineAtomInteractions,
+				readonly,
+			}),
+		);
+
+		return () => {
+			cleanups.forEach((cleanup) => cleanup());
+		};
+	}, [
+		blockId,
+		editor,
+		inlineAtomInteractions,
+		inlineAtomTargets,
+		readonly,
+		selection,
+	]);
 
 	return (
 		<>
@@ -316,7 +406,7 @@ function resolveNextInlineAtomTargets(
 	renderers: InlineAtomRenderers | undefined,
 	currentTargets: InlineAtomRenderTarget[],
 ): InlineAtomRenderTarget[] {
-	if (!root || !renderers) {
+	if (!root) {
 		return currentTargets.length === 0 ? currentTargets : [];
 	}
 
@@ -328,11 +418,10 @@ function resolveNextInlineAtomTargets(
 			return [];
 		}
 
-		const renderer = renderers[data.type];
-		if (!renderer) {
-			return [];
+		const renderer = renderers?.[data.type];
+		if (renderer) {
+			clearInlineAtomFallbackText(element, data.text);
 		}
-		clearInlineAtomFallbackText(element, data.text);
 		const offset = domPointToLogicalOffset(root, element, 0);
 
 		return [

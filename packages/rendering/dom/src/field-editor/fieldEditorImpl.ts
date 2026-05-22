@@ -5,7 +5,6 @@ import type {
 	HistoryAppliedEvent,
 	SelectionState,
 	Unsubscribe,
-	InputBackend,
 } from "@pen/types";
 import { DocumentRangeImpl } from "@pen/core";
 import {
@@ -18,12 +17,22 @@ import { ContentEditableBackend } from "./contenteditableBackend";
 import { ExpandedContentEditableBackend } from "./expandedContentEditableBackend";
 import { HistorySelectionCoordinator } from "./historySelectionCoordinator";
 import { SessionReconciler } from "./sessionReconciler";
+import type { InputBackend } from "../internal/inputBackend";
 import { classifySelectionSurface } from "./crossBlock";
 import { resolveMarksAtPosition } from "./markBoundary";
 import type {
 	ActiveCellCoord,
+	FieldEditorFocusReason,
+	FieldEditorFocusRequest,
 	FieldEditorInputController,
 	FieldEditorSession,
+	PenFocusAction,
+	PenFocusDecision,
+	PenFieldEditorFocusOptions,
+	PenFocusLifecycleEvent,
+	PenFocusLifecycleListener,
+	PenFocusPolicy,
+	PenFocusReason,
 } from "./controller";
 import {
 	getCellYText,
@@ -52,7 +61,16 @@ import {
 
 type FieldEditorOptions = {
 	selectAllBehavior?: EditorSelectAllBehavior;
-	inputBackend?: "contenteditable" | "edit-context";
+	focusPolicy?: PenFocusPolicy;
+};
+
+const ALLOW_FOCUS_DECISION: PenFocusDecision = { type: "allow" };
+
+type ProgrammaticTextSelection = {
+	blockId: string;
+	anchorOffset: number;
+	focusOffset: number;
+	selectionIntentEpoch: number;
 };
 
 export class FieldEditorImpl implements FieldEditorSession {
@@ -78,25 +96,21 @@ export class FieldEditorImpl implements FieldEditorSession {
 	private _suppressNextDomSelectionProjection = false;
 	private _pointerSelectionDepth = 0;
 	private _pendingSelectionProjectionVersion: number | null = null;
+	private _selectionIntentEpoch = 0;
 	private readonly _sessionReconciler: SessionReconciler;
 	private readonly _historySelectionCoordinator: HistorySelectionCoordinator;
 	private _selectAllBehavior: EditorSelectAllBehavior;
-	private _inputBackend: "contenteditable" | "edit-context";
+	private _focusPolicy: PenFocusPolicy | undefined;
+	private _focusLifecycleListeners = new Set<PenFocusLifecycleListener>();
+	private _attachmentResolvers = new Set<() => void>();
 	private _selectAllCycle: {
 		blockId: string;
 		scope: "cell" | "block" | "document";
 	} | null = null;
 	private _preserveSelectAllCycle = false;
-	private _programmaticTextSelection: {
-		blockId: string;
-		anchorOffset: number;
-		focusOffset: number;
-	} | null = null;
-	private _pendingProgrammaticTextSelection: {
-		blockId: string;
-		anchorOffset: number;
-		focusOffset: number;
-	} | null = null;
+	private _programmaticTextSelection: ProgrammaticTextSelection | null = null;
+	private _pendingProgrammaticTextSelection: ProgrammaticTextSelection | null =
+		null;
 	private _activeCellCoord: ActiveCellCoord | null = null;
 
 	constructor(editor: Editor, options?: FieldEditorOptions) {
@@ -104,7 +118,7 @@ export class FieldEditorImpl implements FieldEditorSession {
 		this._selectAllBehavior =
 			options?.selectAllBehavior ??
 			resolveSelectAllBehavior("content-first");
-		this._inputBackend = options?.inputBackend ?? "edit-context";
+		this._focusPolicy = options?.focusPolicy;
 		this._historySelectionCoordinator = new HistorySelectionCoordinator(
 			this._editor,
 		);
@@ -188,12 +202,8 @@ export class FieldEditorImpl implements FieldEditorSession {
 		this.resetSelectAllCycle();
 	}
 
-	setInputBackend(inputBackend: "contenteditable" | "edit-context"): void {
-		if (this._inputBackend === inputBackend) {
-			return;
-		}
-		this._inputBackend = inputBackend;
-		this._syncBackendForSurfaceMode();
+	setFocusPolicy(focusPolicy: PenFocusPolicy | undefined): void {
+		this._focusPolicy = focusPolicy;
 	}
 
 	// ── Lifecycle ─────────────────────────────────────────────
@@ -270,7 +280,9 @@ export class FieldEditorImpl implements FieldEditorSession {
 	}
 
 	private _placeCaretInCell(cellEl: HTMLElement): void {
-		cellEl.focus({ preventScroll: true });
+		if (!this.requestDomFocus(cellEl, "cell", { preventScroll: true })) {
+			return;
+		}
 		const selection = cellEl.ownerDocument?.getSelection();
 		if (!selection) return;
 
@@ -302,7 +314,7 @@ export class FieldEditorImpl implements FieldEditorSession {
 				) {
 					this.attachElement(activeCellElement);
 				}
-				selectElementContents(activeCellElement);
+				this._selectElementContents(activeCellElement);
 				if (activeCellBlockId) {
 					this._recordSelectAllScope(activeCellBlockId, "cell");
 				}
@@ -383,8 +395,7 @@ export class FieldEditorImpl implements FieldEditorSession {
 	}
 
 	beginPointerSelection(): void {
-		this._programmaticTextSelection = null;
-		this._pendingProgrammaticTextSelection = null;
+		this._recordUserSelectionIntent();
 		this._pointerSelectionDepth += 1;
 	}
 
@@ -393,6 +404,7 @@ export class FieldEditorImpl implements FieldEditorSession {
 			return;
 		}
 		this._pointerSelectionDepth -= 1;
+		this._recordUserSelectionIntent();
 	}
 
 	setComposing(composing: boolean): void {
@@ -425,27 +437,44 @@ export class FieldEditorImpl implements FieldEditorSession {
 		this._pendingMarks = {};
 
 		for (const cb of this._deactivateListeners) cb(blockIds);
+		this._emitFocusLifecycle({
+			type: "activation-changed",
+			editor: this._editor,
+			activeBlockIds: [],
+			isEditing: false,
+		});
 		if (options.restoreFocus) {
 			this._restoreFocusAfterDeactivate(focusTargetId);
 		}
 		this._emitStateChange();
 	}
 
-	focus(): void {
-		if (!this._isEditing || !this._focusBlockId) return;
+	focus(options: PenFieldEditorFocusOptions = {}): boolean {
+		if (!this._isEditing || !this._focusBlockId) return false;
 		const root = this._findEditorRoot();
 
-		if (!root) return;
+		if (!root) return false;
 
 		const blockEl = queryBlockElement(root, this._focusBlockId);
 		const inlineEl = blockEl?.querySelector(
 			"[data-pen-inline-content]",
 		) as HTMLElement | null;
 
-		if (!inlineEl) return;
+		if (!inlineEl) return false;
 
 		const selection = this._editor.selection;
-		inlineEl.focus({ preventScroll: false });
+		if (
+			!this.requestDomFocus(
+				inlineEl,
+				"activate",
+				{
+					preventScroll: false,
+				},
+				options,
+			)
+		) {
+			return false;
+		}
 
 		if (
 			selection?.type === "text" &&
@@ -453,11 +482,11 @@ export class FieldEditorImpl implements FieldEditorSession {
 			selection.focus.blockId === this._focusBlockId
 		) {
 			this._backend?.updateSelection(null);
-			return;
+			return true;
 		}
 
 		const nativeSelection = root.ownerDocument?.getSelection();
-		if (!nativeSelection) return;
+		if (!nativeSelection) return true;
 
 		const range = root.ownerDocument.createRange();
 		range.selectNodeContents(inlineEl);
@@ -465,6 +494,7 @@ export class FieldEditorImpl implements FieldEditorSession {
 
 		nativeSelection.removeAllRanges();
 		nativeSelection.addRange(range);
+		return true;
 	}
 
 	blur(): void {
@@ -476,8 +506,95 @@ export class FieldEditorImpl implements FieldEditorSession {
 		}
 	}
 
+	requestDomFocus(
+		target: HTMLElement,
+		reason: FieldEditorFocusReason,
+		options?: FocusOptions,
+		policyOptions: PenFieldEditorFocusOptions = {},
+	): boolean {
+		const request = this._createFocusRequest(target, reason, policyOptions);
+		const decision = this._decideFocus(request);
+		if (decision.type === "deny") {
+			this._emitFocusDenied(request);
+			return false;
+		}
+		if (decision.type === "allow") {
+			target.focus(options);
+		}
+		return true;
+	}
+
+	requestActivation(
+		target: HTMLElement,
+		reason: FieldEditorFocusReason,
+		options: PenFieldEditorFocusOptions = {},
+	): boolean {
+		const request = this._createFocusRequest(target, reason, options);
+		const decision = this._decideFocus(request);
+		if (decision.type === "deny") {
+			this._emitFocusDenied(request);
+			return false;
+		}
+		return true;
+	}
+
+	requestRootFocus(
+		target: HTMLElement,
+		reason: FieldEditorFocusReason,
+		options?: FocusOptions,
+	): boolean {
+		return this.requestDomFocus(target, reason, options);
+	}
+
+	private _createFocusRequest(
+		target: HTMLElement,
+		reason: FieldEditorFocusReason,
+		options: PenFieldEditorFocusOptions = {},
+	): FieldEditorFocusRequest {
+		return {
+			editor: this._editor,
+			target,
+			root: this._findEditorRoot(),
+			reason,
+			action: resolvePenFocusAction(reason),
+			source: options.reason ?? resolvePenFocusReason(reason),
+			blockId: this._focusBlockId,
+			passive: options.passive ?? options.domFocus === false,
+		};
+	}
+
+	private _decideFocus(
+		request: ReturnType<FieldEditorImpl["_createFocusRequest"]>,
+	): PenFocusDecision {
+		const policyDecision = this._focusPolicy?.decide(request);
+		if (policyDecision) {
+			return request.passive && policyDecision.type === "allow"
+				? { type: "allow-passive" }
+				: policyDecision;
+		}
+
+		return request.passive ? { type: "allow-passive" } : ALLOW_FOCUS_DECISION;
+	}
+
+	private _emitFocusDenied(
+		request: ReturnType<FieldEditorImpl["_createFocusRequest"]>,
+	): void {
+		this._focusPolicy?.onDenied?.(request);
+		this._emitFocusLifecycle({
+			type: "focus-request-denied",
+			request,
+		});
+	}
+
 	setRootElement(element: HTMLElement | null): void {
 		this._rootElement = element;
+		if (element) {
+			this._emitFocusLifecycle({
+				type: "field-editor-attached",
+				editor: this._editor,
+				root: element,
+			});
+		}
 		if (element && this._isEditing) {
 			this._syncActiveElement(false);
 		}
@@ -502,17 +619,35 @@ export class FieldEditorImpl implements FieldEditorSession {
 		) as HTMLElement | null;
 	}
 
-	attachElement(element: HTMLElement): void {
-		if (!this._focusBlockId) return;
-		if (this._attachedElement === element && this._backend) return;
+	attachElement(
+		element: HTMLElement,
+		options: PenFieldEditorFocusOptions = {},
+	): boolean {
+		if (!this._focusBlockId) return false;
+		if (this._attachedElement === element && this._backend) return true;
+		if (!this.requestActivation(element, "backend-attach", options)) return false;
+		this._emitFocusLifecycle({
+			type: "backend-attach-started",
+			editor: this._editor,
+			target: element,
+			blockId: this._focusBlockId,
+		});
 		this._backend?.deactivate();
 		this._backend = this.createBackend();
 
 		const ytext = this._getYText(this._focusBlockId);
-		if (!ytext) return;
+		if (!ytext) return false;
 
 		this._backend.activate(element, ytext);
 		this._attachedElement = element;
+		this._emitFocusLifecycle({
+			type: "backend-attach-completed",
+			editor: this._editor,
+			target: element,
+			blockId: this._focusBlockId,
+		});
+		this._resolveAttachmentWaiters();
+		return true;
 	}
 
 	syncTextSelection(
@@ -523,23 +658,46 @@ export class FieldEditorImpl implements FieldEditorSession {
 		if (!this._isEditing) return;
 		if (this._focusBlockId !== blockId) return;
 
-		this.setTextSelection(blockId, anchorOffset, focusOffset);
+		const currentSelection = this._editor.selection;
 		const pendingProgrammaticSelection =
 			this._pendingProgrammaticTextSelection;
+		const isAlreadyCurrentSelection =
+			currentSelection?.type === "text" &&
+			!currentSelection.isMultiBlock &&
+			currentSelection.anchor.blockId === blockId &&
+			currentSelection.focus.blockId === blockId &&
+			currentSelection.anchor.offset === anchorOffset &&
+			currentSelection.focus.offset === focusOffset;
+		if (isAlreadyCurrentSelection) {
+			if (
+				pendingProgrammaticSelection &&
+				pendingProgrammaticSelection.blockId === blockId &&
+				pendingProgrammaticSelection.anchorOffset === anchorOffset &&
+				pendingProgrammaticSelection.focusOffset === focusOffset
+			) {
+				this._pendingProgrammaticTextSelection = null;
+			}
+			return;
+		}
+
 		if (
 			pendingProgrammaticSelection &&
 			(pendingProgrammaticSelection.blockId !== blockId ||
 				pendingProgrammaticSelection.anchorOffset !== anchorOffset ||
 				pendingProgrammaticSelection.focusOffset !== focusOffset)
 		) {
-			this._pendingProgrammaticTextSelection = null;
+			this._recordUserSelectionIntent();
+		} else if (!pendingProgrammaticSelection) {
+			this._selectionIntentEpoch += 1;
 		}
+		this.setTextSelection(blockId, anchorOffset, focusOffset);
 	}
 
 	applyDocumentTextSelection(
 		anchor: { blockId: string; offset: number },
 		focus: { blockId: string; offset: number },
 	): void {
+		this._recordUserSelectionIntent();
 		this._suppressNextDomSelectionProjection = true;
 
 		if (!this._isEditing || !this._focusBlockId) {
@@ -570,6 +728,7 @@ export class FieldEditorImpl implements FieldEditorSession {
 			focusBlockId?: string;
 		},
 	): void {
+		this._recordUserSelectionIntent();
 		if (anchor.blockId !== focus.blockId) {
 			this.applyDocumentTextSelection(anchor, focus);
 			return;
@@ -676,6 +835,16 @@ export class FieldEditorImpl implements FieldEditorSession {
 		) {
 			this._programmaticTextSelection = null;
 		}
+		const pendingProgrammaticSelection =
+			this._pendingProgrammaticTextSelection;
+		if (
+			pendingProgrammaticSelection &&
+			(pendingProgrammaticSelection.blockId !== blockId ||
+				pendingProgrammaticSelection.anchorOffset !== anchorOffset ||
+				pendingProgrammaticSelection.focusOffset !== focusOffset)
+		) {
+			this._pendingProgrammaticTextSelection = null;
+		}
 		this._emitStateChange();
 	}
 
@@ -683,10 +852,28 @@ export class FieldEditorImpl implements FieldEditorSession {
 		blockId: string,
 		anchorOffset: number,
 		focusOffset: number,
+		options?: PenFieldEditorFocusOptions,
 	): void {
 		this._programmaticTextSelection = null;
 		this._pendingProgrammaticTextSelection = null;
-		this._projectTextSelection(blockId, anchorOffset, focusOffset);
+		this._projectTextSelection(blockId, anchorOffset, focusOffset, options);
+	}
+
+	async focusTextSelection(
+		blockId: string,
+		anchorOffset: number,
+		focusOffset: number,
+		options: PenFieldEditorFocusOptions = {},
+	): Promise<boolean> {
+		this.activateTextSelection(blockId, anchorOffset, focusOffset, options);
+		const attached = await this.waitForAttachment(blockId);
+		if (!attached) {
+			return false;
+		}
+		if (options.domFocus === false || options.passive) {
+			return true;
+		}
+		return this.focus(options);
 	}
 
 	commitProgrammaticTextSelection(
@@ -698,11 +885,13 @@ export class FieldEditorImpl implements FieldEditorSession {
 			blockId,
 			anchorOffset,
 			focusOffset,
+			selectionIntentEpoch: this._selectionIntentEpoch,
 		};
 		this._pendingProgrammaticTextSelection = {
 			blockId,
 			anchorOffset,
 			focusOffset,
+			selectionIntentEpoch: this._selectionIntentEpoch,
 		};
 		this._projectTextSelection(blockId, anchorOffset, focusOffset, {
 			syncBackendImmediately: true,
@@ -967,6 +1156,11 @@ export class FieldEditorImpl implements FieldEditorSession {
 		return () => this._deactivateListeners.delete(cb);
 	}
 
+	onFocusLifecycle(listener: PenFocusLifecycleListener): Unsubscribe {
+		this._focusLifecycleListeners.add(listener);
+		return () => this._focusLifecycleListeners.delete(listener);
+	}
+
 	onSelectionChange(cb: (sel: SelectionState) => void): Unsubscribe {
 		return this._editor.onSelectionChange(cb);
 	}
@@ -995,6 +1189,36 @@ export class FieldEditorImpl implements FieldEditorSession {
 		return () => this._storeListeners.delete(callback);
 	}
 
+	waitForAttachment(blockId = this._focusBlockId): Promise<boolean> {
+		if (
+			this._attachedElement?.isConnected &&
+			(blockId == null || this._focusBlockId === blockId)
+		) {
+			return Promise.resolve(true);
+		}
+		return new Promise((resolve) => {
+			let frame = 0;
+			const check = () => {
+				if (
+					this._attachedElement?.isConnected &&
+					(blockId == null || this._focusBlockId === blockId)
+				) {
+					resolve(true);
+					return;
+				}
+				if (frame >= 4) {
+					this._attachmentResolvers.delete(check);
+					resolve(false);
+					return;
+				}
+				frame += 1;
+				requestAnimationFrame(check);
+			};
+			this._attachmentResolvers.add(check);
+			requestAnimationFrame(check);
+		});
+	}
+
 	destroy(): void {
 		this._unsubscribeSelection?.();
 		this._unsubscribeSelection = null;
@@ -1006,6 +1230,8 @@ export class FieldEditorImpl implements FieldEditorSession {
 		this._activateListeners.clear();
 		this._deactivateListeners.clear();
 		this._storeListeners.clear();
+		this._focusLifecycleListeners.clear();
+		this._attachmentResolvers.clear();
 	}
 
 	// ── Internal ─────────────────────────────────────────────
@@ -1028,7 +1254,6 @@ export class FieldEditorImpl implements FieldEditorSession {
 			return ContentEditableBackend;
 		}
 		if (
-			this._inputBackend === "edit-context" &&
 			"EditContext" in globalThis &&
 			typeof (globalThis as typeof globalThis & { EditContext?: unknown })
 				.EditContext === "function"
@@ -1056,18 +1281,33 @@ export class FieldEditorImpl implements FieldEditorSession {
 		if (blockId) {
 			const blockEl = queryBlockElement(root, blockId);
 			if (blockEl) {
-				blockEl.focus({ preventScroll: true });
+				this.requestDomFocus(blockEl, "restore", {
+					preventScroll: true,
+				});
 				return;
 			}
 		}
 
-		root.focus({ preventScroll: true });
+		this.requestDomFocus(root, "restore", { preventScroll: true });
 	}
 
 	private _emitStateChange(): void {
 		for (const callback of this._storeListeners) {
 			callback();
 		}
+	}
+
+	private _emitFocusLifecycle(event: PenFocusLifecycleEvent): void {
+		for (const listener of this._focusLifecycleListeners) {
+			listener(event);
+		}
+	}
+
+	private _resolveAttachmentWaiters(): void {
+		for (const resolve of this._attachmentResolvers) {
+			resolve();
+		}
+		this._attachmentResolvers.clear();
 	}
 
 	private _consumeDomSelectionProjectionSuppression(): boolean {
@@ -1148,6 +1388,12 @@ export class FieldEditorImpl implements FieldEditorSession {
 
 		if (this._isEditing && blockIdsChanged) {
 			for (const cb of this._activateListeners) cb([...blockIds]);
+			this._emitFocusLifecycle({
+				type: "activation-changed",
+				editor: this._editor,
+				activeBlockIds: [...blockIds],
+				isEditing: true,
+			});
 		}
 
 		this._emitStateChange();
@@ -1185,6 +1431,9 @@ export class FieldEditorImpl implements FieldEditorSession {
 
 		const ytext = this._getYText(this._focusBlockId);
 		if (!ytext) return;
+		if (!this.requestActivation(this._attachedElement, "backend-attach")) {
+			return;
+		}
 
 		this._backend.activate(this._attachedElement, ytext);
 	}
@@ -1227,6 +1476,12 @@ export class FieldEditorImpl implements FieldEditorSession {
 		});
 
 		for (const cb of this._activateListeners) cb([...this._activeBlockIds]);
+		this._emitFocusLifecycle({
+			type: "activation-changed",
+			editor: this._editor,
+			activeBlockIds: [...this._activeBlockIds],
+			isEditing: true,
+		});
 		this._emitStateChange();
 		return true;
 	}
@@ -1314,7 +1569,7 @@ export class FieldEditorImpl implements FieldEditorSession {
 		focusOffset: number,
 		options?: {
 			syncBackendImmediately?: boolean;
-		},
+		} & PenFieldEditorFocusOptions,
 	): void {
 		this.setTextSelection(blockId, anchorOffset, focusOffset);
 
@@ -1325,12 +1580,14 @@ export class FieldEditorImpl implements FieldEditorSession {
 		if (options?.syncBackendImmediately) {
 			this._backend?.updateSelection(null);
 		}
-		this._syncDomSelectionOnce();
+		this._syncDomSelectionOnce(4, undefined, options);
 	}
 
 	private _syncDomSelectionOnce(
 		remainingAttempts = 4,
 		version?: number,
+		options: PenFieldEditorFocusOptions = {},
+		selectionIntentEpoch = this._selectionIntentEpoch,
 	): void {
 		if (version === undefined) {
 			version = ++this._syncDomVersion;
@@ -1339,6 +1596,10 @@ export class FieldEditorImpl implements FieldEditorSession {
 		const v = version;
 		requestAnimationFrame(() => {
 			if (!this._isEditing || this._syncDomVersion !== v) return;
+			if (selectionIntentEpoch !== this._selectionIntentEpoch) {
+				this._cancelSelectionProjection(v);
+				return;
+			}
 
 			let projected = false;
 			const pendingProjectionRequestId =
@@ -1347,33 +1608,62 @@ export class FieldEditorImpl implements FieldEditorSession {
 			if (this._mode === "expanded") {
 				const expandedHost = this._findExpandedHost();
 				if (expandedHost) {
+					let didAttach = true;
 					if (
 						this._attachedElement !== expandedHost ||
 						!this._attachedElement?.isConnected
 					) {
-						this.attachElement(expandedHost);
+						didAttach = this.attachElement(expandedHost, options);
 					}
-					expandedHost.focus({ preventScroll: true });
-					this._backend?.updateSelection(null);
-					projected = true;
+					if (
+						didAttach &&
+						this.requestDomFocus(
+							expandedHost,
+							"selection-project",
+							{
+								preventScroll: true,
+							},
+							options,
+						)
+					) {
+						this._backend?.updateSelection(null);
+						projected = true;
+					}
 				}
 			} else if (this._focusBlockId) {
 				const inlineEl = this._resolveInlineElement(this._focusBlockId);
 				if (inlineEl) {
+					let didAttach = true;
 					if (
 						this._attachedElement !== inlineEl ||
 						!this._attachedElement ||
 						!this._attachedElement.isConnected
 					) {
-						this.attachElement(inlineEl);
+						didAttach = this.attachElement(inlineEl, options);
 					}
-					inlineEl.focus({ preventScroll: true });
-					this._backend?.updateSelection(null);
-					projected = true;
+					if (
+						didAttach &&
+						this.requestDomFocus(
+							inlineEl,
+							"selection-project",
+							{
+								preventScroll: true,
+							},
+							options,
+						)
+					) {
+						this._backend?.updateSelection(null);
+						projected = true;
+					}
 				}
 			}
 
 			if (projected) {
+				this._emitFocusLifecycle({
+					type: "selection-projected",
+					editor: this._editor,
+					blockId: this._focusBlockId,
+				});
 				requestAnimationFrame(() => {
 					if (this._syncDomVersion === v) {
 						if (this._pendingSelectionProjectionVersion === v) {
@@ -1387,21 +1677,39 @@ export class FieldEditorImpl implements FieldEditorSession {
 			}
 
 			if (!projected && remainingAttempts > 0) {
-				this._syncDomSelectionOnce(remainingAttempts - 1, v);
+				this._syncDomSelectionOnce(
+					remainingAttempts - 1,
+					v,
+					options,
+					selectionIntentEpoch,
+				);
 			} else if (!projected) {
-				if (this._pendingSelectionProjectionVersion === v) {
-					this._pendingSelectionProjectionVersion = null;
-				}
-				this._historySelectionCoordinator.cancelDeferredProjection();
+				this._cancelSelectionProjection(v);
 			}
 		});
 	}
 
-	private _getActiveProgrammaticTextSelection(blockId: string | null): {
-		blockId: string;
-		anchorOffset: number;
-		focusOffset: number;
-	} | null {
+	private _recordUserSelectionIntent(): void {
+		this._selectionIntentEpoch += 1;
+		this._programmaticTextSelection = null;
+		this._pendingProgrammaticTextSelection = null;
+		const pendingProjectionVersion = this._pendingSelectionProjectionVersion;
+		if (pendingProjectionVersion !== null) {
+			this._syncDomVersion += 1;
+			this._cancelSelectionProjection(pendingProjectionVersion);
+		}
+	}
+
+	private _cancelSelectionProjection(version: number): void {
+		if (this._pendingSelectionProjectionVersion === version) {
+			this._pendingSelectionProjectionVersion = null;
+		}
+		this._historySelectionCoordinator.cancelDeferredProjection();
+	}
+
+	private _getActiveProgrammaticTextSelection(
+		blockId: string | null,
+	): ProgrammaticTextSelection | null {
 		const programmaticSelection =
 			this._programmaticTextSelection ??
 			this._pendingProgrammaticTextSelection;
@@ -1428,6 +1736,23 @@ export class FieldEditorImpl implements FieldEditorSession {
 		col: number,
 	): FieldEditorTextLike | null {
 		return getCellYText(this._editor, blockId, row, col);
+	}
+
+	private _selectElementContents(element: HTMLElement): void {
+		if (
+			!this.requestDomFocus(element, "select-all", {
+				preventScroll: true,
+			})
+		) {
+			return;
+		}
+		const selection = element.ownerDocument?.getSelection();
+		if (!selection) return;
+
+		const range = element.ownerDocument.createRange();
+		range.selectNodeContents(element);
+		selection.removeAllRanges();
+		selection.addRange(range);
 	}
 
 	private _resolveCellElement(
@@ -1464,17 +1789,6 @@ function resolveInputMode(
 	return resolveFieldEditorInputMode(schema);
 }
 
-function selectElementContents(element: HTMLElement): void {
-	element.focus({ preventScroll: true });
-	const selection = element.ownerDocument?.getSelection();
-	if (!selection) return;
-
-	const range = element.ownerDocument.createRange();
-	range.selectNodeContents(element);
-	selection.removeAllRanges();
-	selection.addRange(range);
-}
-
 function isDomSelectionCoveringElementContents(element: HTMLElement): boolean {
 	const selection = element.ownerDocument?.getSelection();
 	if (!selection || selection.rangeCount === 0) {
@@ -1506,6 +1820,47 @@ function areBlockIdsEqual(
 		if (left[i] !== right[i]) return false;
 	}
 	return true;
+}
+
+function resolvePenFocusAction(
+	reason: FieldEditorFocusReason,
+): PenFocusAction {
+	switch (reason) {
+		case "backend-attach":
+		case "backend-activate":
+			return "attach-backend";
+		case "selection-project":
+		case "selection-activate":
+		case "selection-sync":
+			return "project-selection";
+		case "restore":
+			return "restore";
+		case "select-all":
+			return "select-all";
+		case "activate":
+		case "cell":
+			return "activate";
+	}
+}
+
+function resolvePenFocusReason(
+	reason: FieldEditorFocusReason,
+): PenFocusReason {
+	switch (reason) {
+		case "backend-attach":
+		case "backend-activate":
+			return "backend";
+		case "selection-project":
+		case "selection-activate":
+		case "selection-sync":
+			return "selection-sync";
+		case "select-all":
+		case "cell":
+			return "keyboard";
+		case "activate":
+		case "restore":
+			return "programmatic";
+	}
 }
 
 function getFullDocumentTextRange(editor: Editor): {

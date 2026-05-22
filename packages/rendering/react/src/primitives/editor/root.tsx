@@ -11,11 +11,13 @@ import {
 	type BlockControlsRenderer,
 	type BlockDragAndDropOptions,
 	type BlockSelectionOptions,
+	type InlineAtomInteractions,
 	type InlineAtomRenderers,
 	type ResolvedBlockDragAndDropOptions,
 	type PasteImporters,
 	type RendererOverrides,
 	resolveBlockSelection,
+	resolveInlineAtomInteractions,
 	resolveInteractionModel,
 } from "../../context/editorContext";
 import { FieldEditorContext } from "../../context/fieldEditorContext";
@@ -25,6 +27,8 @@ import {
 	handleEditorDocumentKeyDown,
 	shouldHandleEditorKeyboardEvent as shouldHandlePenEditorKeyboardEvent,
 	type FieldEditorSession,
+	type PenFocusLifecycleListener,
+	type PenFocusPolicy,
 } from "@pen/dom";
 import { useDocumentEmptyState } from "../../hooks/useDocumentEmptyState";
 import { domSelectionToEditor } from "../../field-editor/selectionBridge";
@@ -36,14 +40,18 @@ import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { composeRefs } from "../../utils/composeRefs";
 import { DATA_ATTRS } from "../../utils/dataAttributes";
 import { BlockDragSessionProvider } from "./blockDragSession";
+import { registerInlineAtomInteractionRoot } from "./inlineAtomInteraction";
 
 export interface EditorRootProps extends AsChildProps {
 	editor: Editor;
 	readonly?: boolean;
+	focusPolicy?: PenFocusPolicy;
+	onFocusLifecycle?: PenFocusLifecycleListener;
 	importers?: PasteImporters;
 	assets?: AssetProvider;
 	renderers?: RendererOverrides;
 	inlineAtomRenderers?: InlineAtomRenderers;
+	inlineAtomInteractions?: InlineAtomInteractions;
 	blockControls?: BlockControlsRenderer;
 	editorViewMode?: EditorViewMode;
 	interactionModel?: InteractionModel;
@@ -56,10 +64,13 @@ export function EditorRoot(props: EditorRootProps) {
 	const {
 		editor,
 		readonly = false,
+		focusPolicy,
+		onFocusLifecycle,
 		importers,
 		assets,
 		renderers,
 		inlineAtomRenderers,
+		inlineAtomInteractions,
 		blockControls,
 		editorViewMode = editor.editorViewMode,
 		interactionModel,
@@ -77,6 +88,9 @@ export function EditorRoot(props: EditorRootProps) {
 		interactionModel,
 	);
 	const resolvedBlockSelection = resolveBlockSelection(blockSelection);
+	const resolvedInlineAtomInteractions = resolveInlineAtomInteractions(
+		inlineAtomInteractions,
+	);
 	const [focused, setFocused] = useState(false);
 	const [rootElement, setRootElement] = useState<HTMLElement | null>(null);
 	const isEmpty = useDocumentEmptyState(editor);
@@ -88,6 +102,7 @@ export function EditorRoot(props: EditorRootProps) {
 	if (!fieldEditorRef.current) {
 		const fieldEditorOptions = {
 			selectAllBehavior: resolvedInteractionModel.selectAllBehavior,
+			focusPolicy,
 		};
 		fieldEditorRef.current = new FieldEditorImpl(
 			editor,
@@ -103,6 +118,17 @@ export function EditorRoot(props: EditorRootProps) {
 			resolvedInteractionModel.selectAllBehavior,
 		);
 	}, [resolvedInteractionModel.selectAllBehavior]);
+
+	useEffect(() => {
+		fieldEditorRef.current?.setFocusPolicy(focusPolicy);
+	}, [focusPolicy]);
+
+	useEffect(() => {
+		if (!onFocusLifecycle) {
+			return;
+		}
+		return fieldEditorRef.current?.onFocusLifecycle(onFocusLifecycle);
+	}, [onFocusLifecycle]);
 
 	useEffect(() => {
 		const root = rootRef.current;
@@ -165,6 +191,19 @@ export function EditorRoot(props: EditorRootProps) {
 			setRootElement(null);
 		};
 	}, []);
+
+	useEffect(() => {
+		const root = rootElement;
+		if (!root) {
+			return;
+		}
+
+		return registerInlineAtomInteractionRoot(root, {
+			editor,
+			readonly,
+			interactions: resolvedInlineAtomInteractions,
+		});
+	}, [editor, readonly, resolvedInlineAtomInteractions, rootElement]);
 
 	useEffect(() => {
 		const root = rootRef.current;
@@ -239,6 +278,7 @@ export function EditorRoot(props: EditorRootProps) {
 				assets: resolvedAssets,
 				renderers,
 				inlineAtomRenderers,
+				inlineAtomInteractions: resolvedInlineAtomInteractions,
 			}}
 		>
 			<BlockDragSessionProvider viewId={editor.internals.viewId}>
