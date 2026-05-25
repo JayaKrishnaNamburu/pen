@@ -1,0 +1,11 @@
+export { getDocumentToolRuntime } from "@pen/document-ops";
+export { runAgenticLoop } from "../agentic/loop";
+export { getBlockAdapter } from "../runtime/blockAdapters";
+export { buildPlannerPrompt, parseStructuredPlanPreview, parseStructuredPlanResult, resolveExecutionMode } from "../runtime/structuredPlanner";
+export { buildGenerationStructuredPreviewState, buildStructuredPreviewPatchOperations } from "../runtime/structuredPreview";
+export { compileStructuredIntentToPlan } from "../runtime/structuredIntentCompiler";
+export { buildDocumentMutationPlanExecution } from "../runtime/planExecutor";
+export { buildStructuralReviewItems } from "../runtime/reviewArtifacts";
+export { routeAIRequest } from "../runtime/router";
+export * from "./extensionHelpers";
+export { buildMutationReceipt } from "../runtime/mutationReceipt";

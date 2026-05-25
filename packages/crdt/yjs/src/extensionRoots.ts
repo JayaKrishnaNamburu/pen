@@ -32,7 +32,7 @@ export class YjsExtensionRootError extends Error {
 	}
 }
 
-const DEFAULT_ROOT_NAME = "apps";
+const DEFAULT_ROOT_NAME = "extensionRoots";
 const VERSION_KEY = "version";
 
 export function ensureExtensionRoot(

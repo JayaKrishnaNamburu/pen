@@ -13,40 +13,28 @@ import type {
 } from "@pen/types";
 import { generateId } from "@pen/types";
 import {
-	type CRDTTextLike,
 	type CRDTUnknownArray,
 	type CRDTUnknownMap,
-	getCellText,
 	getRowCells,
 	getStringProp,
 	getTableColumns,
 	getTableContent,
 	isCRDTMap,
 } from "./crdtShapes";
+import {
+	captureTableRowSnapshot,
+	createRecordMap,
+	ensureCellContent,
+	getCellContent,
+	type TableRowSnapshot,
+	writeCellDeltas,
+} from "./tableGridCellHelpers";
 
 const ZERO_WIDTH_SPACE = "\u200B";
 
 export type TableCellDelta = {
 	insert: string;
 	attributes?: Record<string, unknown>;
-};
-
-type CRDTDelta = {
-	insert: string | Record<string, unknown>;
-	attributes?: Record<string, unknown>;
-};
-
-type TableRowSnapshot = {
-	rowId?: string;
-	cells: Array<{
-		cellId?: string;
-		deltas: CRDTDelta[];
-	}>;
-};
-
-type CRDTTextWithDelta = CRDTTextLike & {
-	toDelta?: () => CRDTDelta[];
-	insertEmbed?: (offset: number, value: Record<string, unknown>) => void;
 };
 
 export class TableGridExecutor {
@@ -123,9 +111,10 @@ export class TableGridExecutor {
 				break;
 			case "insert-table-cell-text": {
 				const cellOp = op as InsertTableCellTextOp;
-				const content = this._ensureCellContent(
+				const content = ensureCellContent(
 					tableContent.get(cellOp.row),
 					cellOp.col,
+					() => this.createTableCell(),
 				);
 				if (content && typeof content.insert === "function") {
 					content.insert(cellOp.offset, cellOp.text);
@@ -134,7 +123,7 @@ export class TableGridExecutor {
 			}
 			case "delete-table-cell-text": {
 				const cellOp = op as DeleteTableCellTextOp;
-				const content = this._getCellContent(
+				const content = getCellContent(
 					tableContent.get(cellOp.row),
 					cellOp.col,
 				);
@@ -145,7 +134,7 @@ export class TableGridExecutor {
 			}
 			case "format-table-cell-text": {
 				const cellOp = op as FormatTableCellTextOp;
-				const content = this._getCellContent(
+				const content = getCellContent(
 					tableContent.get(cellOp.row),
 					cellOp.col,
 				);
@@ -211,7 +200,7 @@ export class TableGridExecutor {
 		col: number,
 		deltas: TableCellDelta[],
 	): void {
-		const content = getCellText(row, col);
+		const content = getCellContent(row, col);
 		if (!content) {
 			return;
 		}
@@ -222,7 +211,7 @@ export class TableGridExecutor {
 	}
 
 	readTableCellText(rowMap: CRDTUnknownMap, columnIndex: number): string {
-		const content = this._getCellContent(rowMap, columnIndex);
+		const content = getCellContent(rowMap, columnIndex);
 		if (content && typeof content.toString === "function") {
 			const text = content.toString();
 			return text === ZERO_WIDTH_SPACE ? "" : text;
@@ -235,7 +224,9 @@ export class TableGridExecutor {
 		columnIndex: number,
 		value: string,
 	): void {
-		const content = this._ensureCellContent(rowMap, columnIndex);
+		const content = ensureCellContent(rowMap, columnIndex, () =>
+			this.createTableCell(),
+		);
 		if (!content) {
 			return;
 		}
@@ -310,28 +301,7 @@ export class TableGridExecutor {
 	}
 
 	captureTableRowSnapshot(sourceRow: CRDTUnknownMap): TableRowSnapshot {
-		const sourceCells = getRowCells(sourceRow);
-		const snapshot: TableRowSnapshot = {
-			rowId: getStringProp(sourceRow, "id"),
-			cells: [],
-		};
-		if (!sourceCells) {
-			return snapshot;
-		}
-
-		for (let columnIndex = 0; columnIndex < sourceCells.length; columnIndex++) {
-			const sourceCell = sourceCells.get(columnIndex);
-			if (!sourceCell || !isCRDTMap(sourceCell)) {
-				snapshot.cells.push({ deltas: [] });
-				continue;
-			}
-			snapshot.cells.push({
-				cellId: getStringProp(sourceCell, "id"),
-				deltas: this.readTableCellDeltas(sourceCell),
-			});
-		}
-
-		return snapshot;
+		return captureTableRowSnapshot(sourceRow);
 	}
 
 	applyTableRowSnapshot(
@@ -363,7 +333,7 @@ export class TableGridExecutor {
 				targetCell.set("id", cellSnapshot.cellId);
 			}
 
-			this.writeCellDeltas(targetCell, cellSnapshot.deltas);
+			writeCellDeltas(targetCell, cellSnapshot.deltas);
 		}
 	}
 
@@ -420,7 +390,10 @@ export class TableGridExecutor {
 				optionsArray.insert(
 					0,
 					value.map((option) =>
-						this._createRecordMap(option as Record<string, unknown>),
+						createRecordMap(
+							() => this._adapter.createMap() as CRDTUnknownMap,
+							option as Record<string, unknown>,
+						),
 					),
 				);
 				columnMap.set(key, optionsArray);
@@ -429,7 +402,10 @@ export class TableGridExecutor {
 			if (key === "format" && value && typeof value === "object") {
 				columnMap.set(
 					key,
-					this._createRecordMap(value as Record<string, unknown>),
+					createRecordMap(
+						() => this._adapter.createMap() as CRDTUnknownMap,
+						value as Record<string, unknown>,
+					),
 				);
 				continue;
 			}
@@ -453,7 +429,10 @@ export class TableGridExecutor {
 				optionsArray.insert(
 					0,
 					value.map((option: unknown) =>
-						this._createRecordMap(option as Record<string, unknown>),
+						createRecordMap(
+							() => this._adapter.createMap() as CRDTUnknownMap,
+							option as Record<string, unknown>,
+						),
 					),
 				);
 			}
@@ -463,7 +442,10 @@ export class TableGridExecutor {
 		if (key === "format" && value && typeof value === "object") {
 			columnMap.set(
 				key,
-				this._createRecordMap(value as Record<string, unknown>),
+				createRecordMap(
+					() => this._adapter.createMap() as CRDTUnknownMap,
+					value as Record<string, unknown>,
+				),
 			);
 			return;
 		}
@@ -486,81 +468,5 @@ export class TableGridExecutor {
 			}
 		}
 		return ids;
-	}
-
-	private _getCellContent(
-		rowMap: CRDTUnknownMap,
-		columnIndex: number,
-	): CRDTTextLike | null {
-		return getCellText(rowMap, columnIndex);
-	}
-
-	private _ensureCellContent(
-		rowMap: CRDTUnknownMap,
-		columnIndex: number,
-	): CRDTTextLike | null {
-		const cells = getRowCells(rowMap);
-		if (!cells || columnIndex < 0) {
-			return null;
-		}
-		while (cells.length <= columnIndex) {
-			cells.insert(cells.length, [this.createTableCell()]);
-		}
-		return getCellText(rowMap, columnIndex);
-	}
-
-	private cloneTableCellContent(
-		sourceCell: CRDTUnknownMap,
-		targetCell: CRDTUnknownMap,
-	): void {
-		this.writeCellDeltas(targetCell, this.readTableCellDeltas(sourceCell));
-	}
-
-	private readTableCellDeltas(cellMap: CRDTUnknownMap): CRDTDelta[] {
-		const sourceContent = cellMap.get("content") as CRDTTextWithDelta | undefined;
-		if (!sourceContent) {
-			return [];
-		}
-		return typeof sourceContent.toDelta === "function"
-			? sourceContent.toDelta()
-			: [{ insert: sourceContent.toString() }];
-	}
-
-	private writeCellDeltas(cellMap: CRDTUnknownMap, deltas: CRDTDelta[]): void {
-		const targetContent = cellMap.get("content") as CRDTTextWithDelta | undefined;
-		if (!targetContent) {
-			return;
-		}
-
-		let offset = 0;
-		for (const delta of deltas) {
-			if (typeof delta.insert === "string") {
-				if (delta.insert.length > 0) {
-					targetContent.insert(offset, delta.insert, delta.attributes);
-					offset += delta.insert.length;
-				}
-				continue;
-			}
-
-			if (typeof targetContent.insertEmbed === "function") {
-				targetContent.insertEmbed(offset, delta.insert);
-				if (delta.attributes) {
-					targetContent.format(offset, 1, delta.attributes);
-				}
-				offset += 1;
-			}
-		}
-	}
-
-	private _createRecordMap(
-		record: TableColumnSchema | Record<string, unknown>,
-	): CRDTUnknownMap {
-		const map = this._adapter.createMap() as CRDTUnknownMap;
-		for (const [key, value] of Object.entries(record)) {
-			if (value !== undefined) {
-				map.set(key, value);
-			}
-		}
-		return map;
 	}
 }

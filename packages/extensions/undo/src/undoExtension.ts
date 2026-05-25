@@ -13,6 +13,7 @@ import type {
 import {
 	defineExtension,
 	FIELD_EDITOR_SLOT_KEY,
+	getOpOriginType,
 	UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY,
 	UNDO_HISTORY_RESTORE_SLOT_KEY,
 } from "@pen/types";
@@ -102,7 +103,7 @@ export function undoExtension(options?: UndoExtensionOptions): Extension {
 			const { adapter, crdtDoc } = ctx.editor.internals;
 
 			const crdtUndo = adapter.createUndoManager(crdtDoc, {
-				trackedOrigins: [...trackedOrigins],
+				trackedOriginTypes: [...trackedOrigins].map(getOpOriginType),
 				captureTimeout: options?.groupTimeout ?? 400,
 			});
 

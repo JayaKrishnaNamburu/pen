@@ -1,7 +1,6 @@
 import type {
 	CRDTUndoManager,
 	CRDTUndoStackItem,
-	OpOrigin,
 	UndoManagerOptions,
 } from "@pen/types";
 import { HISTORY_ORIGIN_TAG } from "@pen/types";
@@ -14,8 +13,8 @@ export function createYjsUndoManager(
 	options?: UndoManagerOptions,
 ): CRDTUndoManager {
 	const { blockOrder, blocks } = doc.penDocument;
-	const trackedOrigins = new Set<OpOrigin>(
-		options?.trackedOrigins ?? ["user", "ai"],
+	const trackedOrigins = new Set<string>(
+		options?.trackedOriginTypes ?? ["user", "ai"],
 	);
 
 	const undoManager = new Y.UndoManager([blockOrder, blocks], {

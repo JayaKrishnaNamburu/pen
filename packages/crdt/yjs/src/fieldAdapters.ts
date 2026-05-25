@@ -37,10 +37,17 @@ export interface CreateYArrayFieldAdapterOptions<T extends object> {
 	origin?: unknown;
 }
 
+export class YjsFieldAdapterError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = "YjsFieldAdapterError";
+	}
+}
+
 export function createYTextFieldAdapter(
 	options: CreateYTextFieldAdapterOptions,
 ): YTextFieldAdapter {
-	const text = ensureYText(options.root, options.key);
+	const text = ensureYText(options);
 
 	return {
 		read() {
@@ -66,7 +73,7 @@ export function createYTextFieldAdapter(
 export function createYArrayFieldAdapter<T extends object>(
 	options: CreateYArrayFieldAdapterOptions<T>,
 ): YArrayFieldAdapter<T> {
-	const array = ensureYArray<Y.Map<unknown>>(options.root, options.key);
+	const array = ensureYArray(options);
 	const readItem = options.fromYMap ?? defaultFromYMap<T>;
 	const serializeItem = options.toYMap ?? defaultToYMap<T>;
 	const writeItem = (item: T) =>
@@ -144,23 +151,50 @@ export function createYArrayFieldAdapter<T extends object>(
 	};
 }
 
-function ensureYText(root: Y.Map<unknown>, key: string): Y.Text {
-	const current = root.get(key);
-	if (current instanceof Y.Text) {
-		return current;
+function ensureYText(options: CreateYTextFieldAdapterOptions): Y.Text {
+	const current = options.root.get(options.key);
+	if (current !== undefined) {
+		if (current instanceof Y.Text) {
+			return current;
+		}
+		throw new YjsFieldAdapterError(
+			`Yjs field "${options.key}" exists but is not text.`,
+		);
 	}
+
 	const next = new Y.Text();
-	root.set(key, next);
+	options.doc.transact(
+		() => {
+			options.root.set(options.key, next);
+		},
+		options.origin ?? `pen:y-text-field:${options.key}:ensure`,
+	);
 	return next;
 }
 
-function ensureYArray<T>(root: Y.Map<unknown>, key: string): Y.Array<T> {
-	const current = root.get(key);
-	if (current instanceof Y.Array) {
-		return current as Y.Array<T>;
+function ensureYArray(options: {
+	doc: Y.Doc;
+	root: Y.Map<unknown>;
+	key: string;
+	origin?: unknown;
+}): Y.Array<Y.Map<unknown>> {
+	const current = options.root.get(options.key);
+	if (current !== undefined) {
+		if (current instanceof Y.Array) {
+			return current as Y.Array<Y.Map<unknown>>;
+		}
+		throw new YjsFieldAdapterError(
+			`Yjs field "${options.key}" exists but is not array.`,
+		);
 	}
-	const next = new Y.Array<T>();
-	root.set(key, next);
+
+	const next = new Y.Array<Y.Map<unknown>>();
+	options.doc.transact(
+		() => {
+			options.root.set(options.key, next);
+		},
+		options.origin ?? `pen:y-array-field:${options.key}:ensure`,
+	);
 	return next;
 }
 

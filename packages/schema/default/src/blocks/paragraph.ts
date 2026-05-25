@@ -3,7 +3,7 @@ import { defineBlock } from "@pen/types";
 export const paragraph = defineBlock("paragraph", {
 	content: "inline",
 	fieldEditor: "richtext",
-	placeholder: "Type ⌘I for AI Agent, or / for commands",
+	placeholder: "Text",
 	display: {
 		title: "Paragraph",
 		description: "Plain text paragraph",

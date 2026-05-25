@@ -1,4 +1,5 @@
-import type { SelectionState } from "@pen/types";
+import type { OpOrigin, SelectionState } from "@pen/types";
+import { getOpOriginType } from "@pen/types";
 import type { AutocompleteStructuredCandidate } from "./structuredCandidate";
 
 export type AutocompleteSequence = {
@@ -66,8 +67,11 @@ export class AutocompleteContinuationState {
 		this._isAcceptingSequenceSegment = true;
 	}
 
-	consumeAcceptedAiCommit(origin: unknown): boolean {
-		if (!this._isAcceptingSequenceSegment || origin !== "ai") {
+	consumeAcceptedAiCommit(origin: OpOrigin): boolean {
+		if (
+			!this._isAcceptingSequenceSegment ||
+			getOpOriginType(origin) !== "ai"
+		) {
 			return false;
 		}
 		this._isAcceptingSequenceSegment = false;

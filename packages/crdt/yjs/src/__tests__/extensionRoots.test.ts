@@ -20,6 +20,8 @@ describe("extensionRoots", () => {
 		});
 
 		expect(root.map.get("version")).toBe(1);
+		expect(doc.getMap("extensionRoots").get("example.tags")).toBe(root.map);
+		expect(doc.getMap("apps").get("example.tags")).toBeUndefined();
 		expect(root.map.get("title")).toBeInstanceOf(Y.Text);
 		expect(root.map.get("tags")).toBeInstanceOf(Y.Array);
 		expect(root.map.get("settings")).toBeInstanceOf(Y.Map);

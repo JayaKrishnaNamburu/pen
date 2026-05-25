@@ -1,107 +1,46 @@
-import {
-	Pen,
-	useMultiplayer,
-	type RendererOverrides,
-} from "@pen/react";
-import { aiExtension } from "@pen/ai";
-import {
-	type AISuggestionsExtensionConfig,
-	aiSuggestionsExtension,
-	getAISuggestionsController,
-} from "@pen/ai-suggestions";
-import {
-	autocompleteExtension,
-	getAutocompleteController,
-	type AutocompleteAcceptanceStrategy,
-	type AutocompleteBlockPolicy,
+import { Pen, type RendererOverrides } from "@pen/react";
+import type {
+	AutocompleteAcceptanceStrategy,
+	AutocompleteBlockPolicy,
 } from "@pen/ai-autocomplete";
-import { createEditor } from "@pen/core";
-import { getMultiplayerController } from "@pen/multiplayer";
-import { searchExtension } from "@pen/search";
+import { databaseRenderers } from "@pen/database";
 import type { Editor, InteractionModel } from "@pen/types";
-import { inputRulesExtension } from "@pen/input-rules";
-import { defaultPreset } from "@pen/preset-default";
-import { databaseExtension, databaseRenderers } from "@pen/database";
-import { useEffect, useRef, useState, type MutableRefObject } from "react";
+import { useRef, useState } from "react";
 import "./App.css";
 import { PlaygroundBlockDragHandle } from "./components/BlockDragHandle";
 import { CollaborationNameModal } from "./components/CollaborationNameModal";
 import { PlaygroundImageRenderer } from "./components/ImageBlockRenderer";
+import { InspectorPanel } from "./components/InspectorPanel";
 import { PlaygroundChatDock } from "./components/PlaygroundChatDock";
 import { PlaygroundEditorViewport } from "./components/PlaygroundEditorViewport";
-import { usePlaygroundAISession } from "./hooks/usePlaygroundAISession";
-import { InspectorPanel } from "./components/InspectorPanel";
 import { Toolbar } from "./components/Toolbar";
-import { PLAYGROUND_ASSETS, PLAYGROUND_IMPORTERS } from "./constants/playground";
-import { PLAYGROUND_AI_DIRECT_STREAM_BATCH_INTERVAL_MS } from "./constants/playgroundAI";
 import {
-	attachPlaygroundAutocompleteLogging,
-	logAutocompleteDebug,
-	summarizeAutocompleteState,
-} from "./utils/autocompleteDebug";
-import { createPlaygroundAIModel } from "./utils/playgroundAI";
-import { createPlaygroundAISuggestionsAnalyzer } from "./utils/playgroundAISuggestions";
-import { installPlaygroundAISuggestionsDebug } from "./utils/playgroundAISuggestionsDebug";
+	PLAYGROUND_ASSETS,
+	PLAYGROUND_IMPORTERS,
+} from "./constants/playground";
+import { usePlaygroundAISession } from "./hooks/usePlaygroundAISession";
 import {
-	createPlaygroundCollaborationExtension,
+	DEFAULT_PLAYGROUND_AI_SUGGESTIONS_SETTINGS,
+	DEFAULT_PLAYGROUND_AUTOCOMPLETE_BLOCK_POLICY,
+	PLAYGROUND_AI_AUTOCOMPLETE_DEBOUNCE_MS,
+	PlaygroundCollaborationBootstrap,
+	type PlaygroundAISuggestionsSettings,
+	type PlaygroundAutocompleteSettings,
+	usePlaygroundEditor,
+} from "./hooks/usePlaygroundEditor";
+import {
 	getPlaygroundCollaborationConfig,
 	getPlaygroundCollaborationRoom,
 	getPlaygroundCollaborationUserName,
-	normalizePlaygroundCollaborationDocument,
 	savePlaygroundCollaborationUserName,
 	startFreshPlaygroundCollaborationRoom,
 } from "./utils/playgroundCollaboration";
-import { canOpenLinkEditor } from "./utils/linkMarks";
 
 const PLAYGROUND_RENDERERS = {
 	...databaseRenderers,
 	image: PlaygroundImageRenderer,
 } satisfies RendererOverrides;
 const PLAYGROUND_BLOCK_DRAG_AND_DROP = { enabled: true } as const;
-const PLAYGROUND_DOCUMENT_PROFILE = "structured" as const;
-const PLAYGROUND_AI_CONTENT_FORMAT = {
-	blockGeneration: "markdown",
-	selectionRewrite: "text",
-} as const;
-const PLAYGROUND_AI_AUTOCOMPLETE_DEBOUNCE_MS = 220;
-const PLAYGROUND_AI_AUTOCOMPLETE_STALE_AFTER_MS = 5000;
-const DEFAULT_PLAYGROUND_AUTOCOMPLETE_BLOCK_POLICY: AutocompleteBlockPolicy = {
-	allowInCodeBlocks: true,
-	allowInTables: false,
-	deniedBlockTypes: ["database"],
-};
-
-type PlaygroundAutocompleteSettings = {
-	enabled: boolean;
-	debounceMs: number;
-	prefetchAfterAccept: boolean;
-	acceptanceStrategy: AutocompleteAcceptanceStrategy;
-	blockPolicy: AutocompleteBlockPolicy;
-};
-
-type PlaygroundAISuggestionsSettings = Pick<
-	AISuggestionsExtensionConfig,
-	| "enabled"
-	| "debounceMs"
-	| "minChangedChars"
-	| "minStableMs"
-	| "cooldownMs"
-	| "maxScopeChars"
-	| "maxSuggestionsPerScope"
-	| "minConfidence"
->;
-
-const DEFAULT_PLAYGROUND_AI_SUGGESTIONS_SETTINGS: PlaygroundAISuggestionsSettings =
-	{
-		enabled: true,
-		debounceMs: 1000,
-		minChangedChars: 10,
-		minStableMs: 800,
-		cooldownMs: 6500,
-		maxScopeChars: 500,
-		maxSuggestionsPerScope: 3,
-		minConfidence: 0.8,
-	};
 
 export function App() {
 	const editorRef = useRef<Editor | null>(null);
@@ -135,7 +74,8 @@ export function App() {
 	);
 	usePlaygroundAISession(editor);
 	const [isInspectorOpen, setIsInspectorOpen] = useState(false);
-	const [interactionModel, setInteractionModel] = useState<InteractionModel>("content-first");
+	const [interactionModel, setInteractionModel] =
+		useState<InteractionModel>("content-first");
 	const [customCaretEnabled, setCustomCaretEnabled] = useState(true);
 
 	if (collaborationReady && !editor) {
@@ -286,7 +226,9 @@ export function App() {
 							linkToggleRef={linkToggleRef}
 							collaboration={activeCollaboration}
 							interactionModel={interactionModel}
-							onToggleInteractionModel={handleToggleInteractionModel}
+							onToggleInteractionModel={
+								handleToggleInteractionModel
+							}
 							onStartFreshRoom={handleStartFreshRoom}
 						/>
 						<PlaygroundEditorViewport
@@ -300,8 +242,12 @@ export function App() {
 							editor={activeEditor}
 							autocompleteEnabled={autocompleteSettings.enabled}
 							customCaretEnabled={customCaretEnabled}
-							onAutocompleteEnabledChange={handleAutocompleteEnabledChange}
-							onCustomCaretEnabledChange={handleCustomCaretEnabledChange}
+							onAutocompleteEnabledChange={
+								handleAutocompleteEnabledChange
+							}
+							onCustomCaretEnabledChange={
+								handleCustomCaretEnabledChange
+							}
 						/>
 					</div>
 					<InspectorPanel
@@ -311,7 +257,9 @@ export function App() {
 						autocompleteSettings={autocompleteSettings}
 						aiSuggestionsSettings={aiSuggestionsSettings}
 						customCaretEnabled={customCaretEnabled}
-						onCustomCaretEnabledChange={handleCustomCaretEnabledChange}
+						onCustomCaretEnabledChange={
+							handleCustomCaretEnabledChange
+						}
 						onAutocompleteEnabledChange={
 							handleAutocompleteEnabledChange
 						}
@@ -324,9 +272,15 @@ export function App() {
 						onAutocompleteAcceptanceStrategyChange={
 							handleAutocompleteAcceptanceStrategyChange
 						}
-						onAutocompleteBlockPolicyChange={handleAutocompleteBlockPolicyChange}
-						onAISuggestionsEnabledChange={handleAISuggestionsEnabledChange}
-						onAISuggestionsDebounceChange={handleAISuggestionsDebounceChange}
+						onAutocompleteBlockPolicyChange={
+							handleAutocompleteBlockPolicyChange
+						}
+						onAISuggestionsEnabledChange={
+							handleAISuggestionsEnabledChange
+						}
+						onAISuggestionsDebounceChange={
+							handleAISuggestionsDebounceChange
+						}
 						onAISuggestionsMinChangedCharsChange={
 							handleAISuggestionsMinChangedCharsChange
 						}
@@ -350,164 +304,4 @@ export function App() {
 			</Pen.AI.Root>
 		</Pen.Editor.Root>
 	);
-}
-
-function PlaygroundCollaborationBootstrap({ editor }: { editor: Editor }) {
-	const multiplayerState = useMultiplayer(editor);
-
-	useEffect(() => {
-		if (multiplayerState.connectionState !== "connected") {
-			return;
-		}
-
-		normalizePlaygroundCollaborationDocument(editor);
-	}, [editor, multiplayerState.connectionState]);
-
-	return null;
-}
-
-function usePlaygroundEditor(
-	editorRef: MutableRefObject<Editor | null>,
-	linkToggleRef: MutableRefObject<(() => void) | null>,
-	autocompleteSettings: PlaygroundAutocompleteSettings,
-	aiSuggestionsSettings: PlaygroundAISuggestionsSettings,
-	collaborationReady: boolean,
-): Editor | null {
-	const [editor, setEditor] = useState<Editor | null>(null);
-	useEffect(() => {
-		if (!collaborationReady) {
-			setEditor(null);
-			return;
-		}
-
-		const nextEditor = createPlaygroundEditor(
-			linkToggleRef,
-			editorRef,
-			autocompleteSettings,
-			aiSuggestionsSettings,
-		);
-		editorRef.current = nextEditor;
-		setEditor(nextEditor);
-
-		return () => {
-			if (editorRef.current === nextEditor) {
-				editorRef.current = null;
-			}
-			getMultiplayerController(nextEditor)?.disconnect();
-			nextEditor.destroy();
-		};
-	}, [collaborationReady, editorRef, linkToggleRef]);
-
-	useEffect(() => {
-		if (!editor) {
-			return;
-		}
-		const controller = getAutocompleteController(editor);
-		if (!controller) {
-			logAutocompleteDebug("controller missing while applying settings", {
-				configuredSettings: autocompleteSettings,
-			});
-			return;
-		}
-		attachPlaygroundAutocompleteLogging(controller);
-		controller.setEnabled(autocompleteSettings.enabled);
-		controller.updateRuntimeSettings({
-			debounceMs: autocompleteSettings.debounceMs,
-			prefetchAfterAccept: autocompleteSettings.prefetchAfterAccept,
-			acceptanceStrategy: autocompleteSettings.acceptanceStrategy,
-			staleAfterMs: PLAYGROUND_AI_AUTOCOMPLETE_STALE_AFTER_MS,
-		});
-		controller.updateBlockPolicy(autocompleteSettings.blockPolicy);
-		logAutocompleteDebug("applied settings", {
-			configuredSettings: autocompleteSettings,
-			runtimeState: summarizeAutocompleteState(controller.getState()),
-		});
-	}, [autocompleteSettings, editor]);
-
-	useEffect(() => {
-		if (!editor) {
-			return;
-		}
-		const controller = getAISuggestionsController(editor);
-		if (!controller) {
-			return;
-		}
-		controller.setEnabled(aiSuggestionsSettings.enabled ?? true);
-		controller.updateRuntimeSettings({
-			debounceMs: aiSuggestionsSettings.debounceMs,
-			minChangedChars: aiSuggestionsSettings.minChangedChars,
-			minStableMs: aiSuggestionsSettings.minStableMs,
-			cooldownMs: aiSuggestionsSettings.cooldownMs,
-			maxScopeChars: aiSuggestionsSettings.maxScopeChars,
-			maxSuggestionsPerScope: aiSuggestionsSettings.maxSuggestionsPerScope,
-			minConfidence: aiSuggestionsSettings.minConfidence,
-		});
-	}, [aiSuggestionsSettings, editor]);
-
-	useEffect(() => {
-		if (!editor) {
-			return;
-		}
-		return installPlaygroundAISuggestionsDebug(editor);
-	}, [editor]);
-
-	return editor;
-}
-
-function createPlaygroundEditor(
-	linkToggleRef: MutableRefObject<(() => void) | null>,
-	editorRef: MutableRefObject<Editor | null>,
-	autocompleteSettings: PlaygroundAutocompleteSettings,
-	aiSuggestionsSettings: PlaygroundAISuggestionsSettings,
-): Editor {
-	const model = createPlaygroundAIModel(() => editorRef.current);
-	const collaborationExtension = createPlaygroundCollaborationExtension();
-	const extensions = [
-		aiExtension({
-			model,
-			contentFormat: PLAYGROUND_AI_CONTENT_FORMAT,
-		}),
-		aiSuggestionsExtension({
-			mode: "balanced",
-			analyzer: createPlaygroundAISuggestionsAnalyzer(),
-			enabled: aiSuggestionsSettings.enabled,
-			debounceMs: aiSuggestionsSettings.debounceMs,
-			minChangedChars: aiSuggestionsSettings.minChangedChars,
-			minStableMs: aiSuggestionsSettings.minStableMs,
-			cooldownMs: aiSuggestionsSettings.cooldownMs,
-			maxScopeChars: aiSuggestionsSettings.maxScopeChars,
-			maxSuggestionsPerScope: aiSuggestionsSettings.maxSuggestionsPerScope,
-			minConfidence: aiSuggestionsSettings.minConfidence,
-		}),
-		autocompleteExtension({
-			model,
-			enabled: autocompleteSettings.enabled,
-			debounceMs: autocompleteSettings.debounceMs,
-			prefetchAfterAccept: autocompleteSettings.prefetchAfterAccept,
-			acceptanceStrategy: autocompleteSettings.acceptanceStrategy,
-			staleAfterMs: PLAYGROUND_AI_AUTOCOMPLETE_STALE_AFTER_MS,
-			blockPolicy: autocompleteSettings.blockPolicy,
-		}),
-		searchExtension(),
-		inputRulesExtension(),
-		databaseExtension(),
-		collaborationExtension,
-	];
-
-	return createEditor({
-		documentProfile: PLAYGROUND_DOCUMENT_PROFILE,
-		preset: defaultPreset({
-			deltaStream: {
-				batchInterval: PLAYGROUND_AI_DIRECT_STREAM_BATCH_INTERVAL_MS,
-			},
-			shortcuts: {
-				onToggleLink: (ed) => {
-					if (!canOpenLinkEditor(ed)) return false;
-					linkToggleRef.current?.();
-					return true;
-				},
-			},
-		}),
-		extensions,
-	});
 }

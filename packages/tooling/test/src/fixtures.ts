@@ -35,6 +35,7 @@ export const DEFAULT_PEN_ROOTS = [
 	{ name: "blockOrder", type: "array" },
 	{ name: "blocks", type: "map" },
 	{ name: "apps", type: "map" },
+	{ name: "extensionRoots", type: "map", optional: true },
 	{ name: "metadata", type: "map" },
 ] satisfies YjsRootExpectation[];
 

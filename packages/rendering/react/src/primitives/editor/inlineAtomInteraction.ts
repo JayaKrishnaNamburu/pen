@@ -1,7 +1,6 @@
 import {
 	getInlineAtomAtOffset,
 	moveInlineAtom,
-	replaceInlineAtomWithText,
 	resolveInlineAtomDropTarget,
 	type InlineAtomDropTarget,
 	type InlineAtomSnapshot,
@@ -20,6 +19,12 @@ import {
 	createInlineAtomDragPreview,
 	type InlineAtomDragPreview,
 } from "../../utils/inlineAtomDragPreview";
+import {
+	canDestructure,
+	destructureInlineAtom,
+	notifyRejected,
+	selectInlineAtomRangeFromShiftClick,
+} from "./inlineAtomSelectionInteraction";
 
 const DRAG_THRESHOLD_PX = 4;
 
@@ -58,29 +63,34 @@ interface PointerSession {
 
 export interface InlineAtomDragSnapshot {
 	source: InlineAtomSource | null;
+	target: InlineAtomDropTarget | null;
 	dragging: boolean;
 	version: number;
 }
 
 const rootRegistry = new Map<HTMLElement, InlineAtomInteractionRootState>();
+const documentListenerCounts = new Map<Document, number>();
+const documentPointerSessions = new Map<Document, PointerSession>();
 const dragListeners = new Set<() => void>();
 let dragSnapshot: InlineAtomDragSnapshot = {
 	source: null,
+	target: null,
 	dragging: false,
 	version: 0,
 };
-let pointerSession: PointerSession | null = null;
 
 export function registerInlineAtomInteractionRoot(
 	root: HTMLElement,
 	state: InlineAtomInteractionRootState,
 ): () => void {
+	attachDocumentListeners(root.ownerDocument);
 	rootRegistry.set(root, state);
 	return () => {
 		const current = rootRegistry.get(root);
 		if (current === state) {
 			rootRegistry.delete(root);
 		}
+		detachDocumentListeners(root.ownerDocument);
 	};
 }
 
@@ -100,7 +110,7 @@ export function attachInlineAtomWrapperInteractions(
 			event.button !== 0 ||
 			options.readonly ||
 			!options.interactions.drag ||
-			pointerSession
+			documentPointerSessions.has(options.element.ownerDocument)
 		) {
 			return;
 		}
@@ -119,7 +129,7 @@ export function attachInlineAtomWrapperInteractions(
 			return;
 		}
 
-		pointerSession = {
+		documentPointerSessions.set(options.element.ownerDocument, {
 			source: {
 				editor: options.editor,
 				blockId: options.blockId,
@@ -135,7 +145,7 @@ export function attachInlineAtomWrapperInteractions(
 			isDragging: false,
 			animationFrameId: null,
 			preview: null,
-		};
+		});
 		options.element.setPointerCapture?.(event.pointerId);
 	};
 
@@ -188,6 +198,8 @@ export function getInlineAtomDragSnapshot(): InlineAtomDragSnapshot {
 	return dragSnapshot;
 }
 
+export { resolveShiftClickInlineAtomSelection } from "./inlineAtomSelectionInteraction";
+
 export function isInlineAtomDragSource(
 	snapshot: InlineAtomDragSnapshot,
 	editor: Editor,
@@ -203,7 +215,7 @@ export function isInlineAtomDragSource(
 }
 
 function handleDocumentPointerMove(event: PointerEvent): void {
-	const session = pointerSession;
+	const session = getPointerSessionForEvent(event);
 	if (!session) {
 		return;
 	}
@@ -229,15 +241,22 @@ function handleDocumentPointerMove(event: PointerEvent): void {
 }
 
 function handleDocumentPointerUp(event: PointerEvent): void {
-	const session = pointerSession;
-	pointerSession = null;
+	const doc = getEventDocument(event);
+	const session = doc ? (documentPointerSessions.get(doc) ?? null) : null;
+	if (doc) {
+		documentPointerSessions.delete(doc);
+	}
 	if (!session?.isDragging) {
 		cleanupPointerSession(session);
 		return;
 	}
 
 	event.preventDefault();
-	const target = resolveTargetFromPoint(event.clientX, event.clientY);
+	const target = resolveTargetFromPoint(
+		session.sourceRoot.ownerDocument,
+		event.clientX,
+		event.clientY,
+	);
 	const sourceState = rootRegistry.get(session.sourceRoot);
 	cleanupPointerSession(session);
 	if (!sourceState) {
@@ -287,9 +306,12 @@ function handleDocumentPointerUp(event: PointerEvent): void {
 	});
 }
 
-function handleDocumentPointerCancel(): void {
-	const session = pointerSession;
-	pointerSession = null;
+function handleDocumentPointerCancel(event: PointerEvent): void {
+	const doc = getEventDocument(event);
+	const session = doc ? (documentPointerSessions.get(doc) ?? null) : null;
+	if (doc) {
+		documentPointerSessions.delete(doc);
+	}
 	cleanupPointerSession(session);
 }
 
@@ -303,6 +325,7 @@ function startInlineAtomDrag(session: PointerSession): void {
 	});
 	setDragSnapshot({
 		source: session.source,
+		target: null,
 		dragging: true,
 		version: dragSnapshot.version + 1,
 	});
@@ -315,11 +338,23 @@ function schedulePointerMoveFrame(session: PointerSession): void {
 
 	session.animationFrameId = requestAnimationFrame(() => {
 		session.animationFrameId = null;
-		if (pointerSession !== session || !session.isDragging) {
+		if (
+			documentPointerSessions.get(session.sourceRoot.ownerDocument) !==
+				session ||
+			!session.isDragging
+		) {
 			return;
 		}
 
 		session.preview?.updatePosition(session.latestX, session.latestY);
+		updateInlineAtomDragTarget(
+			session,
+			resolveTargetFromPoint(
+				session.sourceRoot.ownerDocument,
+				session.latestX,
+				session.latestY,
+			),
+		);
 	});
 }
 
@@ -340,10 +375,40 @@ function cleanupPointerSession(session: PointerSession | null): void {
 	if (dragSnapshot.dragging && dragSnapshot.source === session.source) {
 		setDragSnapshot({
 			source: null,
+			target: null,
 			dragging: false,
 			version: dragSnapshot.version + 1,
 		});
 	}
+}
+
+function updateInlineAtomDragTarget(
+	session: PointerSession,
+	target: InlineAtomDropTarget | null,
+): void {
+	if (!dragSnapshot.dragging || dragSnapshot.source !== session.source) {
+		return;
+	}
+	if (areInlineAtomDropTargetsEqual(dragSnapshot.target, target)) {
+		return;
+	}
+
+	setDragSnapshot({
+		...dragSnapshot,
+		target,
+		version: dragSnapshot.version + 1,
+	});
+}
+
+function areInlineAtomDropTargetsEqual(
+	left: InlineAtomDropTarget | null,
+	right: InlineAtomDropTarget | null,
+): boolean {
+	return (
+		left?.editor === right?.editor &&
+		left?.blockId === right?.blockId &&
+		left?.offset === right?.offset
+	);
 }
 
 function setDragSnapshot(nextSnapshot: InlineAtomDragSnapshot): void {
@@ -352,10 +417,10 @@ function setDragSnapshot(nextSnapshot: InlineAtomDragSnapshot): void {
 }
 
 function resolveTargetFromPoint(
+	doc: Document,
 	clientX: number,
 	clientY: number,
 ): InlineAtomDropTarget | null {
-	const doc = document;
 	const element = doc.elementFromPoint(clientX, clientY);
 	const root =
 		element instanceof HTMLElement
@@ -378,216 +443,46 @@ function resolveTargetFromPoint(
 	});
 }
 
-function destructureInlineAtom(
-	options: InlineAtomWrapperInteractionOptions,
-): boolean {
-	const atom = getInlineAtomAtOffset(options.editor, {
-		blockId: options.blockId,
-		offset: options.offset,
-	});
-	if (!atom) {
-		notifyRejected(options, { reason: "stale-source" });
-		return false;
-	}
-
-	const text = resolveDestructureText(options.interactions.destructure, atom);
-	if (text == null) {
-		return false;
-	}
-
-	const didReplace = replaceInlineAtomWithText({
-		source: {
-			editor: options.editor,
-			blockId: options.blockId,
-			offset: options.offset,
-		},
-		text,
-		selection: "end",
-	});
-	if (!didReplace) {
-		return false;
-	}
-
-	options.interactions.onAfterDestructure?.({
-		editor: options.editor,
-		atom,
-		blockId: options.blockId,
-		startOffset: options.offset,
-		endOffset: options.offset + text.length,
-		text,
-	});
-	const fieldEditor = getAttachedFieldEditor(
-		options.editor,
-	) as FieldEditorSession | null;
-	requestAnimationFrame(() => {
-		fieldEditor?.activateTextSelection(
-			options.blockId,
-			options.offset + text.length,
-			options.offset + text.length,
-		);
-		fieldEditor?.focus();
-	});
-	return true;
-}
-
-export function resolveShiftClickInlineAtomSelection(
-	editor: Editor,
-	blockId: string,
-	atomOffset: number,
-): { blockId: string; anchorOffset: number; focusOffset: number } {
-	const atomStart = atomOffset;
-	const atomEnd = atomOffset + 1;
-	const selection = editor.selection;
-	if (
-		selection?.type !== "text" ||
-		selection.isMultiBlock ||
-		selection.anchor.blockId !== blockId ||
-		selection.focus.blockId !== blockId
-	) {
-		return {
-			blockId,
-			anchorOffset: atomStart,
-			focusOffset: atomEnd,
-		};
-	}
-
-	const selectionStart = Math.min(
-		selection.anchor.offset,
-		selection.focus.offset,
-	);
-	const selectionEnd = Math.max(
-		selection.anchor.offset,
-		selection.focus.offset,
-	);
-	if (!selection.isCollapsed) {
-		if (atomEnd <= selectionStart) {
-			return {
-				blockId,
-				anchorOffset: selectionEnd,
-				focusOffset: atomStart,
-			};
-		}
-		if (atomStart >= selectionEnd) {
-			return {
-				blockId,
-				anchorOffset: selectionStart,
-				focusOffset: atomEnd,
-			};
-		}
-		if (atomStart === selectionStart && atomEnd === selectionEnd) {
-			return {
-				blockId,
-				anchorOffset: atomEnd,
-				focusOffset: atomEnd,
-			};
-		}
-		if (atomStart === selectionStart) {
-			return {
-				blockId,
-				anchorOffset: selectionEnd,
-				focusOffset: atomEnd,
-			};
-		}
-		if (atomEnd === selectionEnd) {
-			return {
-				blockId,
-				anchorOffset: selectionStart,
-				focusOffset: atomStart,
-			};
-		}
-		return {
-			blockId,
-			anchorOffset: selection.anchor.offset,
-			focusOffset: selection.focus.offset,
-		};
-	}
-
-	const anchorOffset = selection.anchor.offset;
-	return {
-		blockId,
-		anchorOffset,
-		focusOffset: anchorOffset <= atomStart ? atomEnd : atomStart,
-	};
-}
-
-function selectInlineAtomRangeFromShiftClick(
-	options: InlineAtomWrapperInteractionOptions,
-): boolean {
-	const target = resolveShiftClickInlineAtomSelection(
-		options.editor,
-		options.blockId,
-		options.offset,
-	);
-	const fieldEditor = getAttachedFieldEditor(
-		options.editor,
-	) as FieldEditorSession | null;
-	if (fieldEditor?.activateTextSelection) {
-		fieldEditor.activateTextSelection(
-			target.blockId,
-			target.anchorOffset,
-			target.focusOffset,
-		);
-		fieldEditor.focus();
-		return true;
-	}
-
-	options.editor.selectText(
-		target.blockId,
-		target.anchorOffset,
-		target.focusOffset,
-	);
-	return true;
-}
-
-function canDestructure(options: InlineAtomWrapperInteractionOptions): boolean {
-	return options.interactions.destructure !== false;
-}
-
-function resolveDestructureText(
-	destructure: ResolvedInlineAtomInteractions["destructure"],
-	atom: InlineAtomSnapshot,
-): string | null | undefined {
-	if (typeof destructure === "function") {
-		return destructure(atom);
-	}
-	if (destructure === true) {
-		return atom.text;
-	}
-	if (destructure && typeof destructure === "object") {
-		return destructure[atom.type]?.(atom);
-	}
-	return null;
-}
-
-function notifyRejected(
-	options: InlineAtomWrapperInteractionOptions,
-	event: Omit<
-		Parameters<
-			NonNullable<ResolvedInlineAtomInteractions["onMoveRejected"]>
-		>[0],
-		"source"
-	>,
-): void {
-	options.interactions.onMoveRejected?.({
-		source: {
-			editor: options.editor,
-			blockId: options.blockId,
-			offset: options.offset,
-		},
-		...event,
-	});
-}
-
 function getRegisteredRootForElement(element: HTMLElement): HTMLElement | null {
 	return element.closest<HTMLElement>(`[${DATA_ATTRS.editorRoot}]`);
 }
 
-if (typeof document !== "undefined") {
-	document.addEventListener("pointermove", handleDocumentPointerMove, true);
-	document.addEventListener("pointerup", handleDocumentPointerUp, true);
-	document.addEventListener(
-		"pointercancel",
-		handleDocumentPointerCancel,
-		true,
-	);
+function attachDocumentListeners(doc: Document): void {
+	const count = documentListenerCounts.get(doc) ?? 0;
+	if (count > 0) {
+		documentListenerCounts.set(doc, count + 1);
+		return;
+	}
+	doc.addEventListener("pointermove", handleDocumentPointerMove, true);
+	doc.addEventListener("pointerup", handleDocumentPointerUp, true);
+	doc.addEventListener("pointercancel", handleDocumentPointerCancel, true);
+	documentListenerCounts.set(doc, 1);
+}
+
+function detachDocumentListeners(doc: Document): void {
+	const count = documentListenerCounts.get(doc) ?? 0;
+	if (count > 1) {
+		documentListenerCounts.set(doc, count - 1);
+		return;
+	}
+	if (count === 0) {
+		return;
+	}
+	doc.removeEventListener("pointermove", handleDocumentPointerMove, true);
+	doc.removeEventListener("pointerup", handleDocumentPointerUp, true);
+	doc.removeEventListener("pointercancel", handleDocumentPointerCancel, true);
+	const session = documentPointerSessions.get(doc) ?? null;
+	documentPointerSessions.delete(doc);
+	cleanupPointerSession(session);
+	documentListenerCounts.delete(doc);
+}
+
+function getPointerSessionForEvent(event: PointerEvent): PointerSession | null {
+	const doc = getEventDocument(event);
+	return doc ? (documentPointerSessions.get(doc) ?? null) : null;
+}
+
+function getEventDocument(event: Event): Document | null {
+	const currentTarget = event.currentTarget;
+	return currentTarget instanceof Document ? currentTarget : null;
 }

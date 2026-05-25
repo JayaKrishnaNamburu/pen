@@ -59,6 +59,12 @@ class InlineCompletionControllerImpl implements InlineCompletionController {
 			visibleSuggestion: null,
 		};
 
+		if (suggestion.accept) {
+			const accepted = suggestion.accept(this._editor, suggestion);
+			this._emit();
+			return accepted;
+		}
+
 		if (suggestion.type === "inline") {
 			const nextOffset = suggestion.offset + suggestion.text.length;
 			this._editor.apply(

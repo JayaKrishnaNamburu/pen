@@ -176,7 +176,7 @@ export interface PenDocument {
 // ── Undo Manager ────────────────────────────────────────────
 
 export interface UndoManagerOptions {
-	trackedOrigins?: OpOrigin[];
+	trackedOriginTypes?: string[];
 	captureTimeout?: number;
 }
 
@@ -187,8 +187,8 @@ export interface CRDTUndoManager {
 	canRedo(): boolean;
 	stopCapturing(): void;
 	setCaptureTimeout?(ms: number): void;
-	addTrackedOrigin(origin: OpOrigin): void;
-	removeTrackedOrigin(origin: OpOrigin): void;
+	addTrackedOrigin(originType: string): void;
+	removeTrackedOrigin(originType: string): void;
 	onStackItemAdded?(
 		callback: (stackItem: CRDTUndoStackItem, kind: "undo" | "redo") => void,
 	): Unsubscribe;

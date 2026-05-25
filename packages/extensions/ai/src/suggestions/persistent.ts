@@ -1,6 +1,9 @@
 import type { BlockHandle, Editor, Position } from "@pen/types";
 import type { BlockSuggestionMeta, PersistentSuggestion } from "../types";
 
+export type BlockSuggestionMetaPayload = BlockSuggestionMeta &
+	Record<string, unknown>;
+
 export type SuggestionCreationOptions = {
 	suggestionId?: string;
 	requestId?: string;
@@ -88,18 +91,43 @@ export function readBlockSuggestionMeta(
 ): BlockSuggestionMeta | null {
 	if (!block) return null;
 	const meta = block.meta("suggestion");
-	if (!meta) return null;
+	return parseBlockSuggestionMeta(meta);
+}
+
+export function serializeBlockSuggestionMeta(
+	meta: BlockSuggestionMeta,
+): BlockSuggestionMetaPayload {
+	return {
+		id: meta.id,
+		action: meta.action,
+		author: meta.author,
+		authorType: meta.authorType,
+		createdAt: meta.createdAt,
+		model: meta.model,
+		sessionId: meta.sessionId,
+		requestId: meta.requestId,
+		turnId: meta.turnId,
+		generationId: meta.generationId,
+		previousState: meta.previousState,
+	};
+}
+
+export function parseBlockSuggestionMeta(
+	meta: unknown,
+): BlockSuggestionMeta | null {
+	if (!meta || typeof meta !== "object") return null;
+	const record = meta as Record<string, unknown>;
 	if (
-		typeof meta.id !== "string" ||
-		typeof meta.action !== "string" ||
-		typeof meta.author !== "string" ||
-		typeof meta.authorType !== "string" ||
-		typeof meta.createdAt !== "number"
+		typeof record.id !== "string" ||
+		typeof record.action !== "string" ||
+		typeof record.author !== "string" ||
+		typeof record.authorType !== "string" ||
+		typeof record.createdAt !== "number"
 	) {
 		return null;
 	}
 
-	const action = meta.action;
+	const action = record.action;
 	if (
 		action !== "insert-block" &&
 		action !== "delete-block" &&
@@ -110,22 +138,22 @@ export function readBlockSuggestionMeta(
 	}
 
 	return {
-		id: meta.id,
+		id: record.id,
 		action,
-		author: meta.author,
-		authorType: meta.authorType === "ai" ? "ai" : "user",
-		createdAt: meta.createdAt,
-		model: typeof meta.model === "string" ? meta.model : undefined,
+		author: record.author,
+		authorType: record.authorType === "ai" ? "ai" : "user",
+		createdAt: record.createdAt,
+		model: typeof record.model === "string" ? record.model : undefined,
 		sessionId:
-			typeof meta.sessionId === "string" ? meta.sessionId : undefined,
+			typeof record.sessionId === "string" ? record.sessionId : undefined,
 		requestId:
-			typeof meta.requestId === "string" ? meta.requestId : undefined,
-		turnId: typeof meta.turnId === "string" ? meta.turnId : undefined,
+			typeof record.requestId === "string" ? record.requestId : undefined,
+		turnId: typeof record.turnId === "string" ? record.turnId : undefined,
 		generationId:
-			typeof meta.generationId === "string"
-				? meta.generationId
+			typeof record.generationId === "string"
+				? record.generationId
 				: undefined,
-		previousState: readPreviousState(meta.previousState),
+		previousState: readPreviousState(record.previousState),
 	};
 }
 

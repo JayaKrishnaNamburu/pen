@@ -16,6 +16,10 @@ describe("fieldAdapters", () => {
 	it("reads, writes, normalizes, and observes Y.Text fields", () => {
 		const doc = new Y.Doc();
 		const root = doc.getMap("fields");
+		const origins: unknown[] = [];
+		doc.on("afterTransaction", (transaction) => {
+			origins.push(transaction.origin);
+		});
 		const onChange = vi.fn();
 		const field = createYTextFieldAdapter({
 			doc,
@@ -27,6 +31,7 @@ describe("fieldAdapters", () => {
 		const unsubscribe = field.observe(onChange);
 		field.replace("  Hello  ");
 
+		expect(origins).toContain("pen:y-text-field:title:ensure");
 		expect(field.read()).toBe("Hello");
 		expect(onChange).toHaveBeenCalledTimes(1);
 		unsubscribe();
@@ -103,5 +108,29 @@ describe("fieldAdapters", () => {
 		unsubscribe();
 		field.update("a", { label: "A++" });
 		expect(onChange).toHaveBeenCalledTimes(1);
+	});
+
+	it("fails safely when existing fields have the wrong Yjs type", () => {
+		const doc = new Y.Doc();
+		const root = doc.getMap("fields");
+		root.set("title", new Y.Array());
+		root.set("items", new Y.Text());
+
+		expect(() =>
+			createYTextFieldAdapter({
+				doc,
+				root,
+				key: "title",
+			}),
+		).toThrow('Yjs field "title" exists but is not text');
+
+		expect(() =>
+			createYArrayFieldAdapter<TestItem>({
+				doc,
+				root,
+				key: "items",
+				getId: (item) => item.id,
+			}),
+		).toThrow('Yjs field "items" exists but is not array');
 	});
 });

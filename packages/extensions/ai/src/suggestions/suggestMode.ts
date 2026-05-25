@@ -2,6 +2,8 @@ import type { DocumentOp, Editor, OpOrigin } from "@pen/types";
 import { getOpOriginType } from "@pen/types";
 import {
 	createSuggestionMark,
+	serializeBlockSuggestionMeta,
+	type BlockSuggestionMetaPayload,
 	type SuggestionCreationOptions,
 } from "./persistent";
 import type { BlockSuggestionMeta, PersistentSuggestion } from "../types";
@@ -383,9 +385,9 @@ function createBlockSuggestionMeta(
 	previousState?: BlockSuggestionMeta["previousState"],
 	sessionId?: string,
 	options: SuggestionCreationOptions = {},
-): Record<string, unknown> {
+): BlockSuggestionMetaPayload {
 	const resolvedSessionId = options.sessionId ?? sessionId;
-	return {
+	const meta: BlockSuggestionMeta = {
 		id: options.suggestionId ?? crypto.randomUUID(),
 		action,
 		author,
@@ -398,4 +400,5 @@ function createBlockSuggestionMeta(
 		turnId: options.turnId,
 		generationId: options.generationId,
 	};
+	return serializeBlockSuggestionMeta(meta);
 }
