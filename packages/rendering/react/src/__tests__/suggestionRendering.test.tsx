@@ -4,7 +4,11 @@ import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
 import { createEditor, ensureInlineCompletionController } from "@pen/core";
-import { aiExtension } from "@pen/ai";
+import {
+	aiExtension,
+	applySuggestedAIOperations,
+	getAIController,
+} from "@pen/ai";
 import { defaultPreset } from "@pen/preset-default";
 import { Pen } from "../primitives";
 
@@ -86,17 +90,216 @@ describe("@pen/react suggestion rendering", () => {
 		expect(insertSuggestion?.getAttribute("data-suggestion-action")).toBe(
 			"insert",
 		);
-		expect(insertSuggestion?.classList.contains("pen-suggestion-insert")).toBe(
-			true,
-		);
+		expect(
+			insertSuggestion?.classList.contains("pen-suggestion-insert"),
+		).toBe(true);
 
 		expect(deleteSuggestion).toBeTruthy();
 		expect(deleteSuggestion?.getAttribute("data-suggestion-action")).toBe(
 			"delete",
 		);
-		expect(deleteSuggestion?.classList.contains("pen-suggestion-delete")).toBe(
-			true,
+		expect(
+			deleteSuggestion?.classList.contains("pen-suggestion-delete"),
+		).toBe(true);
+
+		await act(async () => {
+			root.unmount();
+		});
+		container.remove();
+		editor.destroy();
+	});
+
+	it("renders final-text review suggestions without visible deleted text", async () => {
+		const editor = createEditor({
+			documentProfile: "flow",
+			extensions: [
+				aiExtension({
+					suggestionPresentation: "final-text",
+				}),
+			],
+			preset: defaultPreset({}),
+		});
+		const blockId = editor.firstBlock()!.id;
+		editor.apply(
+			[
+				{
+					type: "insert-text",
+					blockId,
+					offset: 0,
+					text: "Thanks for joining us",
+				},
+			],
+			{ origin: "system" },
 		);
+		applySuggestedAIOperations(editor, {
+			operations: [
+				{ type: "delete-text", blockId, offset: 11, length: 7 },
+				{ type: "insert-text", blockId, offset: 18, text: "meeting" },
+			],
+			suggestionIds: ["suggestion-delete-1", "suggestion-insert-1"],
+		});
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(
+				<Pen.Editor.Root editor={editor}>
+					<Pen.Editor.Content />
+				</Pen.Editor.Root>,
+			);
+		});
+
+		expect(container.textContent).toContain("Thanks for meeting us");
+		expect(container.textContent).not.toContain("joining");
+		expect(
+			container.querySelector(
+				'[data-suggestion-id="suggestion-delete-1"]',
+			),
+		).toBeNull();
+		expect(
+			container.querySelector(
+				'[data-suggestion-id="suggestion-insert-1"]',
+			),
+		).toBeTruthy();
+
+		await act(async () => {
+			root.unmount();
+		});
+		container.remove();
+		editor.destroy();
+	});
+
+	it("renders streaming review preview text without mutating document text", async () => {
+		const editor = createEditor({
+			documentProfile: "flow",
+			extensions: [
+				aiExtension({
+					suggestionPresentation: "final-text",
+				}),
+			],
+			preset: defaultPreset({}),
+		});
+		const blockId = editor.firstBlock()!.id;
+		editor.apply(
+			[
+				{
+					type: "insert-text",
+					blockId,
+					offset: 0,
+					text: "Hello world",
+				},
+			],
+			{ origin: "system" },
+		);
+		editor.selectTextRange({ blockId, offset: 0 }, { blockId, offset: 5 });
+		const session = getAIController(editor)?.openContextualPrompt({
+			surface: "inline-edit",
+			target: "selection",
+		});
+		getAIController(editor)?.setStreamingReviewPreview({
+			sessionId: session!.id,
+			turnId: "turn-1",
+			target: {
+				kind: "text-range",
+				blockId,
+				from: 0,
+				to: 5,
+			},
+			text: "Hi there",
+		});
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(
+				<Pen.Editor.Root editor={editor}>
+					<Pen.AI.Root editor={editor}>
+						<Pen.Editor.Content />
+					</Pen.AI.Root>
+				</Pen.Editor.Root>,
+			);
+		});
+
+		expect(container.textContent).toContain("Hi there world");
+		expect(container.textContent).not.toContain("Hello world");
+		expect(editor.firstBlock()?.textContent()).toBe("Hello world");
+		expect(
+			container.querySelector("[data-pen-ai-preview-streaming]"),
+		).toBeTruthy();
+
+		await act(async () => {
+			root.unmount();
+		});
+		container.remove();
+		editor.destroy();
+	});
+
+	it("does not merge affected-range styling onto final-text inserted suggestions", async () => {
+		const editor = createEditor({
+			documentProfile: "flow",
+			extensions: [
+				aiExtension({
+					suggestionPresentation: "final-text",
+				}),
+			],
+			preset: defaultPreset({}),
+		});
+		const blockId = editor.firstBlock()!.id;
+		editor.apply(
+			[
+				{
+					type: "insert-text",
+					blockId,
+					offset: 0,
+					text: "Sounds great",
+				},
+			],
+			{ origin: "system" },
+		);
+		editor.selectTextRange({ blockId, offset: 0 }, { blockId, offset: 12 });
+		getAIController(editor)?.openContextualPrompt({
+			surface: "inline-edit",
+			target: "selection",
+		});
+		applySuggestedAIOperations(editor, {
+			operations: [
+				{ type: "insert-text", blockId, offset: 4, text: " good" },
+			],
+			suggestionIds: ["suggestion-insert-1"],
+		});
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(
+				<Pen.Editor.Root editor={editor}>
+					<Pen.Editor.Content />
+				</Pen.Editor.Root>,
+			);
+		});
+
+		const insertSuggestion = container.querySelector(
+			'[data-suggestion-id="suggestion-insert-1"]',
+		);
+		expect(insertSuggestion).toBeTruthy();
+		expect(insertSuggestion?.hasAttribute("data-ai-affected-range")).toBe(
+			false,
+		);
+		expect(insertSuggestion?.getAttribute("data-pen-ai-review-role")).toBe(
+			"insert",
+		);
+		expect(insertSuggestion?.getAttribute("style") ?? "").not.toContain(
+			"pen-ai-affected-range",
+		);
+		expect(
+			container.querySelectorAll("[data-ai-affected-range]").length,
+		).toBeGreaterThan(0);
 
 		await act(async () => {
 			root.unmount();
@@ -153,9 +356,11 @@ describe("@pen/react suggestion rendering", () => {
 		expect(blockElement?.getAttribute("data-suggestion-action")).toBe(
 			"delete-block",
 		);
-		expect(blockElement?.classList.contains("pen-block-suggestion-delete-block")).toBe(
-			true,
-		);
+		expect(
+			blockElement?.classList.contains(
+				"pen-block-suggestion-delete-block",
+			),
+		).toBe(true);
 
 		await act(async () => {
 			root.unmount();
@@ -174,14 +379,17 @@ describe("@pen/react suggestion rendering", () => {
 			}),
 		});
 		const blockId = editor.firstBlock()!.id;
-		editor.apply([{
-			type: "insert-text",
-			blockId,
-			offset: 0,
-			text: "Hello world",
-		}]);
+		editor.apply([
+			{
+				type: "insert-text",
+				blockId,
+				offset: 0,
+				text: "Hello world",
+			},
+		]);
 
-		const { controller: inlineCompletion } = ensureInlineCompletionController(editor);
+		const { controller: inlineCompletion } =
+			ensureInlineCompletionController(editor);
 		inlineCompletion.showSuggestion({
 			id: "autocomplete-preview-1",
 			blockId,
@@ -224,7 +432,9 @@ describe("@pen/react suggestion rendering", () => {
 		expect(previewBlocks[1]?.textContent).toContain(
 			"This should render as a second ghost paragraph.",
 		);
-		expect(previewBlocks[0]?.classList.contains("pen-block-suggestion")).toBe(true);
+		expect(
+			previewBlocks[0]?.classList.contains("pen-block-suggestion"),
+		).toBe(true);
 
 		await act(async () => {
 			root.unmount();
@@ -243,14 +453,17 @@ describe("@pen/react suggestion rendering", () => {
 			}),
 		});
 		const blockId = editor.firstBlock()!.id;
-		editor.apply([{
-			type: "insert-text",
-			blockId,
-			offset: 0,
-			text: "Trip",
-		}]);
+		editor.apply([
+			{
+				type: "insert-text",
+				blockId,
+				offset: 0,
+				text: "Trip",
+			},
+		]);
 
-		const { controller: inlineCompletion } = ensureInlineCompletionController(editor);
+		const { controller: inlineCompletion } =
+			ensureInlineCompletionController(editor);
 		inlineCompletion.showSuggestion({
 			id: "autocomplete-preview-markdown-1",
 			blockId,
@@ -295,9 +508,12 @@ describe("@pen/react suggestion rendering", () => {
 				?.getAttribute("data-block-type"),
 		).toBe("bulletListItem");
 		expect(
-			previewBlocks[0]?.querySelector("[data-pen-list-marker]")?.textContent,
+			previewBlocks[0]?.querySelector("[data-pen-list-marker]")
+				?.textContent,
 		).toBe("•");
-		expect(previewBlocks[1]?.getAttribute("data-block-type")).toBe("heading");
+		expect(previewBlocks[1]?.getAttribute("data-block-type")).toBe(
+			"heading",
+		);
 		expect(previewBlocks[1]?.getAttribute("data-anchor-level")).toBe("2");
 
 		await act(async () => {
@@ -336,7 +552,8 @@ describe("@pen/react suggestion rendering", () => {
 			},
 		]);
 
-		const { controller: inlineCompletion } = ensureInlineCompletionController(editor);
+		const { controller: inlineCompletion } =
+			ensureInlineCompletionController(editor);
 		inlineCompletion.showSuggestion({
 			id: "autocomplete-preview-list-1",
 			blockId,
@@ -376,10 +593,13 @@ describe("@pen/react suggestion rendering", () => {
 		const listLayouts = previewBlocks.map((element) =>
 			element.querySelector("[data-pen-list-item-layout]"),
 		);
-		expect(listLayouts[0]?.getAttribute("data-block-type")).toBe("numberedListItem");
+		expect(listLayouts[0]?.getAttribute("data-block-type")).toBe(
+			"numberedListItem",
+		);
 		expect(listLayouts[0]?.getAttribute("data-indent")).toBe("1");
-		const markers = previewBlocks.map((element) =>
-			element.querySelector("[data-pen-list-marker]")?.textContent,
+		const markers = previewBlocks.map(
+			(element) =>
+				element.querySelector("[data-pen-list-marker]")?.textContent,
 		);
 		expect(markers).toEqual(["2.", "3."]);
 
@@ -421,7 +641,8 @@ describe("@pen/react suggestion rendering", () => {
 			]);
 		});
 
-		const { controller: inlineCompletion } = ensureInlineCompletionController(editor);
+		const { controller: inlineCompletion } =
+			ensureInlineCompletionController(editor);
 		await act(async () => {
 			inlineCompletion.showSuggestion({
 				id: "autocomplete-preview-toggle-1",
@@ -451,8 +672,12 @@ describe("@pen/react suggestion rendering", () => {
 			);
 		});
 
-		const togglePreview = container.querySelector("[data-pen-autocomplete-preview-block]");
-		expect(togglePreview?.querySelector("[data-pen-toggle-body]")).toBeTruthy();
+		const togglePreview = container.querySelector(
+			"[data-pen-autocomplete-preview-block]",
+		);
+		expect(
+			togglePreview?.querySelector("[data-pen-toggle-body]"),
+		).toBeTruthy();
 
 		await act(async () => {
 			inlineCompletion.showSuggestion({
@@ -487,8 +712,12 @@ describe("@pen/react suggestion rendering", () => {
 			);
 		});
 
-		const subdocumentPreview = container.querySelector("[data-pen-autocomplete-preview-block]");
-		expect(subdocumentPreview?.querySelector("[data-pen-subdocument-host]")).toBeTruthy();
+		const subdocumentPreview = container.querySelector(
+			"[data-pen-autocomplete-preview-block]",
+		);
+		expect(
+			subdocumentPreview?.querySelector("[data-pen-subdocument-host]"),
+		).toBeTruthy();
 
 		await act(async () => {
 			root.unmount();

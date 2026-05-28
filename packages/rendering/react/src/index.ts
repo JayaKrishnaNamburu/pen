@@ -17,6 +17,7 @@ export { Pen } from "./primitives/index";
 
 // ── Editor primitives ───────────────────────────────────────
 export {
+	CARET,
 	EditorRoot,
 	EditorContent,
 	EditorBlock,
@@ -27,7 +28,13 @@ export {
 	EditorRegionSelector,
 	EditorSelectionRect,
 	EditorFieldEditor,
+	type EditorCaretVariant,
 	type EditorRootProps,
+	type InlineAtomInteractions,
+	type InlineAtomRenderProps,
+	type InlineAtomRenderInteractionProps,
+	type InlineAtomRenderer,
+	type InlineAtomRenderers,
 	type EditorContentProps,
 	type EditorBlockProps,
 	type InlineContentProps,
@@ -53,23 +60,46 @@ export {
 	type ToolbarButtonProps,
 	type ToolbarToggleProps,
 	type ToolbarSelectProps,
+	type ToolbarSeparatorProps,
 } from "./primitives/toolbar/index";
 
 // ── Slash menu primitives ───────────────────────────────────
 export {
 	SlashMenuRoot,
+	SlashMenuContent,
 	SlashMenuInput,
 	SlashMenuList,
 	SlashMenuGroup,
 	SlashMenuItem,
 	SlashMenuEmpty,
+	useSlashMenuContext,
+	type SlashMenuContextValue,
 	type SlashMenuRootProps,
+	type SlashMenuContentProps,
 	type SlashMenuInputProps,
 	type SlashMenuListProps,
 	type SlashMenuGroupProps,
 	type SlashMenuItemProps,
 	type SlashMenuEmptyProps,
 } from "./primitives/slash-menu/index";
+
+// ── Suggestion menu primitives ───────────────────────────────
+export {
+	SuggestionMenuRoot,
+	SuggestionMenuContent,
+	SuggestionMenuList,
+	SuggestionMenuGroup,
+	SuggestionMenuItem,
+	SuggestionMenuEmpty,
+	useSuggestionMenuContext,
+	type SuggestionMenuContextValue,
+	type SuggestionMenuRootProps,
+	type SuggestionMenuContentProps,
+	type SuggestionMenuListProps,
+	type SuggestionMenuGroupProps,
+	type SuggestionMenuItemProps,
+	type SuggestionMenuEmptyProps,
+} from "./primitives/suggestion-menu/index";
 
 // ── Selection toolbar primitives ────────────────────────────
 export {
@@ -208,6 +238,8 @@ export {
 	useAttribution,
 	useEditor,
 	useFieldEditor,
+	useEditorFocusController,
+	useFocusController,
 	useHistory,
 	useSearch,
 	useMultiplayer,
@@ -223,6 +255,8 @@ export {
 	useToolbar,
 	useSelectionToolbar,
 	useSlashMenu,
+	useSuggestionMenu,
+	resolveSuggestionMenuTarget,
 	useBlockList,
 	useBlockDragHandle,
 	useVisualViewport,
@@ -230,6 +264,11 @@ export {
 	type AIDebugLogFastApplyMetrics,
 	type AIDebugLogState,
 	type AttributionState,
+	type PenFocusController,
+	type PenFocusOptions,
+	type PenFocusOffset,
+	type PenRangeFocusRequest,
+	type PenTextFocusRequest,
 	type AIStructuredPreviewSelection,
 	type AIStructuredTargetPreviewSelection,
 	type AISuggestionPopoverPosition,
@@ -243,6 +282,17 @@ export {
 	type SelectionToolbarState,
 	type SlashMenuState,
 	type SlashMenuActions,
+	type SlashMenuTarget,
+	type SuggestionMenuActions,
+	type SuggestionMenuBoundary,
+	type SuggestionMenuController,
+	type SuggestionMenuGetItemsOptions,
+	type SuggestionMenuSelectOptions,
+	type SuggestionMenuState,
+	type SuggestionMenuStatus,
+	type SuggestionMenuTarget,
+	type SuggestionMenuTrigger,
+	type UseSuggestionMenuOptions,
 	type VisualViewportState,
 } from "./hooks/index";
 
@@ -260,7 +310,9 @@ export {
 	type BlockControlsProps,
 	type BlockControlsRenderer,
 	type BlockDragAndDropOptions,
+	type BlockSelectionOptions,
 	type ResolvedBlockDragAndDropOptions,
+	type ResolvedBlockSelectionOptions,
 	type ResolvedInteractionModel,
 	type PasteImporters,
 	type RendererOverrides,
@@ -348,6 +400,17 @@ export {
 	getAttachedFieldEditor,
 	getAttachedFieldEditorStore,
 } from "./utils/fieldEditor";
+export type {
+	FieldEditorFocusRequest,
+	PenFocusAction,
+	PenFocusDecision,
+	PenFieldEditorFocusOptions,
+	PenFocusLifecycleEvent,
+	PenFocusLifecycleListener,
+	PenFocusPolicy,
+	PenFocusRequest,
+	PenFocusReason,
+} from "@pen/dom";
 export { isCellInSelection } from "./utils/cellSelection";
 
 // ── Re-export key types from @pen/types for convenience ─────
@@ -362,7 +425,6 @@ export type {
 	InlineDecoration,
 	BlockDecoration,
 	FieldEditor,
-	InputBackend,
 } from "@pen/types";
 
 export type {
@@ -371,9 +433,6 @@ export type {
 	HistoryState,
 } from "@pen/history";
 export type { MultiplayerState, PeerState } from "@pen/multiplayer";
-export type {
-	RemoteCursorState,
-	RemoteSelectionState,
-} from "@pen/multiplayer";
+export type { RemoteCursorState, RemoteSelectionState } from "@pen/multiplayer";
 
 export type { CreateEditorOptions } from "@pen/types";

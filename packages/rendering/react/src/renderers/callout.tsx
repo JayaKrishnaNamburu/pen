@@ -27,7 +27,7 @@ export function CalloutRenderer(
         {iconMap[calloutType] ?? iconMap.info}
       </span>
       <div data-pen-callout-body="">
-        <InlineContent blockId={block.id} />
+        <InlineContent blockId={block.id} decorations={ctx.decorations} />
         <ParentIdChildren
           parentBlockId={block.id}
           containerProps={{ "data-pen-callout-children": "" }}

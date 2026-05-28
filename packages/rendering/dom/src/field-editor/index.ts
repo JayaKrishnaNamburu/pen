@@ -1,7 +1,4 @@
-export type {
-	FieldEditorStore,
-	FieldEditorStoreSnapshot,
-} from "./store";
+export type { FieldEditorStore, FieldEditorStoreSnapshot } from "./store";
 export {
 	applyDeltaToDOM,
 	fullReconcileToDOM,
@@ -19,6 +16,32 @@ export {
 	type SelectionPoint,
 	type TextDiffOp,
 } from "./selectionBridge";
+export {
+	INLINE_ATOM_LOGICAL_LENGTH,
+	buildMoveInlineAtomOps,
+	getInlineAtomAtOffset,
+	moveInlineAtom,
+	replaceInlineAtomWithText,
+	resolveInlineAtomDropTarget,
+	type InlineAtomDropTarget,
+	type InlineAtomSnapshot,
+	type InlineAtomSource,
+	type MoveInlineAtomOptions,
+	type ReplaceInlineAtomWithTextOptions,
+	type ResolveInlineAtomDropTargetOptions,
+} from "./inlineAtomInteraction";
+export type {
+	FieldEditorFocusReason,
+	FieldEditorFocusRequest,
+	PenFocusAction,
+	PenFocusDecision,
+	PenFieldEditorFocusOptions,
+	PenFocusLifecycleEvent,
+	PenFocusLifecycleListener,
+	PenFocusPolicy,
+	PenFocusRequest,
+	PenFocusReason,
+} from "./controller";
 export {
 	expandFieldEditorRange,
 	contractFieldEditorRange,

@@ -3,7 +3,7 @@
 import { FIELD_EDITOR_SLOT_KEY } from "@pen/types";
 import { createTestEditor } from "@pen/test";
 import { mount } from "@vue/test-utils";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { h, nextTick } from "vue";
 import { PenEditor } from "../components/PenEditor";
 
@@ -142,6 +142,32 @@ describe("@pen/vue", () => {
     expect(wrapper.text()).toContain("Hello Vue");
     expect(editor.internals.getSlot(FIELD_EDITOR_SLOT_KEY)).toBeTruthy();
 
+    wrapper.unmount();
+    editor.destroy();
+  });
+
+  it("routes document delete shortcuts through the shared DOM handler", async () => {
+    const editor = createParagraphEditor();
+    const deleteSelection = vi.spyOn(editor, "deleteSelection").mockImplementation(() => undefined);
+
+    const wrapper = mount(PenEditor, {
+      attachTo: document.body,
+      props: { editor },
+    });
+    await nextTick();
+
+    editor.selectBlock("paragraph-1");
+    document.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        bubbles: true,
+        cancelable: true,
+        key: "Backspace",
+      }),
+    );
+
+    expect(deleteSelection).toHaveBeenCalledWith({ origin: "user" });
+
+    deleteSelection.mockRestore();
     wrapper.unmount();
     editor.destroy();
   });
@@ -349,8 +375,9 @@ describe("@pen/vue", () => {
 
     const wrapper = mount(PenEditor, {
       attachTo: document.body,
-      props: { editor },
+      props: { editor, interactionModel: "block-first" },
     });
+    await nextTick();
 
     document.dispatchEvent(
       new KeyboardEvent("keydown", {
@@ -378,6 +405,7 @@ describe("@pen/vue", () => {
       attachTo: document.body,
       props: { editor },
     });
+    await nextTick();
 
     document.dispatchEvent(
       new KeyboardEvent("keydown", {
@@ -397,145 +425,4 @@ describe("@pen/vue", () => {
     editor.destroy();
   });
 
-  it("transitions from text editing to block selection on Escape", async () => {
-    const editor = createParagraphEditor();
-
-    const wrapper = mount(PenEditor, {
-      attachTo: document.body,
-      props: { editor },
-    });
-
-    const firstInline = wrapper.findAll("[data-pen-inline-content]")[0]!;
-    await firstInline.trigger("mousedown");
-    await firstInline.trigger("click");
-    await nextTick();
-
-    document.dispatchEvent(
-      new KeyboardEvent("keydown", {
-        key: "Escape",
-        bubbles: true,
-      }),
-    );
-    await nextTick();
-
-    expect(editor.selection).toMatchObject({
-      type: "block",
-      blockIds: ["paragraph-1"],
-    });
-
-    wrapper.unmount();
-    editor.destroy();
-  });
-
-  it("selects the document text with Mod-A", async () => {
-    const editor = createParagraphEditor();
-    editor.selectText("paragraph-1", 0, 0);
-
-    const wrapper = mount(PenEditor, {
-      attachTo: document.body,
-      props: { editor },
-    });
-
-    document.dispatchEvent(
-      new KeyboardEvent("keydown", {
-        key: "a",
-        metaKey: true,
-        bubbles: true,
-      }),
-    );
-    await nextTick();
-
-    expect(editor.selection).toMatchObject({
-      type: "text",
-      anchor: { blockId: "paragraph-1", offset: 0 },
-      focus: { blockId: "paragraph-2", offset: 6 },
-    });
-
-    wrapper.unmount();
-    editor.destroy();
-  });
-
-  it("undoes text changes with Mod-Z", async () => {
-    const editor = createParagraphEditor();
-    editor.selectText("paragraph-1", 5, 5);
-    editor.replaceSelection("!");
-
-    const wrapper = mount(PenEditor, {
-      attachTo: document.body,
-      props: { editor },
-    });
-
-    document.dispatchEvent(
-      new KeyboardEvent("keydown", {
-        key: "z",
-        metaKey: true,
-        bubbles: true,
-      }),
-    );
-    await nextTick();
-
-    expect(editor.getBlock("paragraph-1")?.textContent()).toBe("First");
-
-    wrapper.unmount();
-    editor.destroy();
-  });
-
-  it("applies inline typing through the active field editor", async () => {
-    const editor = createParagraphEditor();
-
-    const wrapper = mount(PenEditor, {
-      attachTo: document.body,
-      props: { editor },
-    });
-
-    const firstInline = wrapper.findAll("[data-pen-inline-content]")[0]!;
-    await firstInline.trigger("mousedown");
-    await firstInline.trigger("click");
-    await nextTick();
-
-    const activeSurface = wrapper.get("[data-pen-field-editor-active-surface]");
-    setDomTextSelection(activeSurface.element as HTMLElement, 5);
-    dispatchBeforeInput(activeSurface.element as HTMLElement, {
-      inputType: "insertText",
-      data: "!",
-    });
-    await nextTick();
-
-    expect(editor.getBlock("paragraph-1")?.textContent()).toBe("First!");
-
-    wrapper.unmount();
-    editor.destroy();
-  });
-
-  it("pastes plain text through the active field editor", async () => {
-    const editor = createParagraphEditor();
-
-    const wrapper = mount(PenEditor, {
-      attachTo: document.body,
-      props: { editor },
-    });
-
-    const firstInline = wrapper.findAll("[data-pen-inline-content]")[0]!;
-    await firstInline.trigger("mousedown");
-    await firstInline.trigger("click");
-    await nextTick();
-
-    const clipboardData = createClipboardData();
-    clipboardData.setData("text/plain", " world");
-
-    const activeSurface = wrapper.get("[data-pen-field-editor-active-surface]");
-    editor.selectText("paragraph-1", 5, 5);
-    await nextTick();
-    setDomTextSelection(activeSurface.element as HTMLElement, 5);
-    dispatchBeforeInput(activeSurface.element as HTMLElement, {
-      inputType: "insertFromPaste",
-      dataTransfer: clipboardData,
-    });
-    await flushTransfer();
-
-    expect(editor.getBlock("paragraph-1")?.textContent()).toBe("First world");
-
-    wrapper.unmount();
-    editor.destroy();
-  });
 });

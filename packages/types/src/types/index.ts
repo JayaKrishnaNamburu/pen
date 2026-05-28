@@ -21,13 +21,7 @@ export type {
 } from "./collaboration";
 
 // ── Block ───────────────────────────────────────────────────
-export type {
-	Block,
-	App,
-	Range,
-	AppPlacement,
-	AnchorPosition,
-} from "./block";
+export type { Block, App, Range, AppPlacement, AnchorPosition } from "./block";
 
 // ── Selection ───────────────────────────────────────────────
 export type {
@@ -56,7 +50,10 @@ export type {
 // ── Operations ──────────────────────────────────────────────
 export type {
 	DocumentOp,
+	OpOriginType,
 	OpOrigin,
+	StructuredOpOrigin,
+	MutationGroupMetadata,
 	ApplyOptions,
 	Position,
 	InsertBlockOp,
@@ -103,6 +100,13 @@ export type {
 	UpdateAppOp,
 	DeleteAppOp,
 	SetSelectionOp,
+} from "./ops";
+export {
+	MUTATION_GROUP_METADATA_KEY,
+	createMutationGroupMetadata,
+	getApplyOptionsGroupId,
+	getOpOriginGroupId,
+	getOpOriginType,
 } from "./ops";
 
 // ── Stream ──────────────────────────────────────────────────
@@ -184,7 +188,8 @@ export { DEFAULT_DATABASE_COLUMN_WIDTH } from "./database";
 // ── Field Editor ────────────────────────────────────────────
 export type {
 	FieldEditor,
-	InputBackend,
+	FieldEditorFocusOptions,
+	FieldEditorFocusReason,
 	StreamingTarget,
 } from "./fieldEditor";
 export type {
@@ -308,6 +313,9 @@ export type {
 } from "./persistence";
 
 // ── Decorations ─────────────────────────────────────────────
+export {
+	INLINE_COMPLETION_VISIBLE_BLOCK_ATTRIBUTE,
+} from "../constants/decorations";
 export type {
 	Decoration,
 	InlineDecoration,
@@ -316,6 +324,7 @@ export type {
 	DecorationSet,
 	PositionMapping,
 } from "./decorations";
+export { DECORATION_OMIT_FROM_RENDER_ATTRIBUTE } from "./decorations";
 
 // ── Transport ───────────────────────────────────────────────
 export type { PenTransport, ServerConfig } from "./transport";

@@ -4,6 +4,20 @@ import type { GenerationZone } from "./crdt";
 import type { Unsubscribe } from "./utility";
 import type { FieldEditorInputMode } from "./fieldEditorCapabilities";
 
+export type FieldEditorFocusReason =
+	| "user-pointer"
+	| "keyboard"
+	| "programmatic"
+	| "default"
+	| "backend"
+	| "selection-sync";
+
+export type FieldEditorFocusOptions = {
+	reason?: FieldEditorFocusReason;
+	domFocus?: boolean;
+	passive?: boolean;
+};
+
 export interface FieldEditor {
 	readonly focusBlockId: string | null;
 	readonly activeBlockIds: readonly string[];
@@ -13,7 +27,7 @@ export interface FieldEditor {
 	readonly inputMode: FieldEditorInputMode;
 	selection: SelectionState | null;
 
-	focus(): void;
+	focus(options?: FieldEditorFocusOptions): boolean;
 	blur(): void;
 	activate(blockId: string): void;
 	activateCell?(blockId: string, row: number, col: number): void;
@@ -36,7 +50,20 @@ export interface FieldEditor {
 		blockId: string,
 		anchorOffset: number,
 		focusOffset: number,
+		options?: FieldEditorFocusOptions,
 	): void;
+	focusTextSelection?(
+		blockId: string,
+		anchorOffset: number,
+		focusOffset: number,
+		options?: FieldEditorFocusOptions,
+	): Promise<boolean>;
+	commitProgrammaticTextSelection?(
+		blockId: string,
+		anchorOffset: number,
+		focusOffset: number,
+	): void;
+	waitForAttachment?(blockId?: string | null): Promise<boolean>;
 
 	expandTo(blockId: string): void;
 	contractToFocused(): void;
@@ -54,12 +81,6 @@ export interface FieldEditor {
 	onSelectionChange?(
 		callback: (selection: SelectionState) => void,
 	): Unsubscribe;
-}
-
-export interface InputBackend {
-	activate(element: HTMLElement, ytext: unknown): void;
-	deactivate(): void;
-	updateSelection(relPos: unknown): void;
 }
 
 export interface StreamingTarget {

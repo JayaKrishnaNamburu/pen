@@ -125,6 +125,9 @@ importers:
 
   packages/extensions/ai:
     dependencies:
+      '@pen/content-ops':
+        specifier: workspace:*
+        version: link:../../shared/content-ops
       '@pen/core':
         specifier: workspace:*
         version: link:../../core
@@ -879,6 +882,9 @@ importers:
       '@pen/crdt-yjs':
         specifier: workspace:*
         version: link:../../crdt/yjs
+      '@pen/export-json':
+        specifier: workspace:*
+        version: link:../../extensions/export-json
       '@pen/schema-default':
         specifier: workspace:*
         version: link:../../schema/default
@@ -984,6 +990,9 @@ importers:
       '@pen/export-html':
         specifier: workspace:*
         version: link:../packages/extensions/export-html
+      '@pen/export-json':
+        specifier: workspace:^
+        version: link:../packages/extensions/export-json
       '@pen/export-markdown':
         specifier: workspace:*
         version: link:../packages/extensions/export-markdown

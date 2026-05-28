@@ -1,5 +1,8 @@
 import React from "react";
-import { InlineContent } from "../primitives/editor/inlineContent";
+import {
+	InlineContent,
+	type InlineContentProps,
+} from "../primitives/editor/inlineContent";
 
 const LIST_ITEM_INDENT_PX = 24;
 const LIST_ITEM_COLUMN_GAP_PX = 8;
@@ -10,6 +13,7 @@ export interface ListItemLayoutProps {
 	blockType: "bulletListItem" | "numberedListItem" | "checkListItem";
 	indent: number;
 	selected?: boolean;
+	decorations?: InlineContentProps["decorations"];
 	marker: React.ReactNode;
 	ref?: React.Ref<HTMLDivElement>;
 	extraAttributes?: Record<string, unknown>;
@@ -21,6 +25,7 @@ export function ListItemLayout(props: ListItemLayoutProps): React.ReactElement {
 		blockType,
 		indent,
 		selected,
+		decorations,
 		marker,
 		ref,
 		extraAttributes,
@@ -53,7 +58,7 @@ export function ListItemLayout(props: ListItemLayoutProps): React.ReactElement {
 				{marker}
 			</div>
 			<div data-pen-list-item-content="" style={{ minWidth: 0 }}>
-				<InlineContent blockId={blockId} />
+				<InlineContent blockId={blockId} decorations={decorations} />
 			</div>
 		</div>
 	);

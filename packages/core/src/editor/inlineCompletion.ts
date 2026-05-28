@@ -1,4 +1,5 @@
 import {
+	INLINE_COMPLETION_VISIBLE_BLOCK_ATTRIBUTE,
 	INLINE_COMPLETION_SLOT,
 	type Decoration,
 	type Editor,
@@ -58,7 +59,14 @@ class InlineCompletionControllerImpl implements InlineCompletionController {
 			visibleSuggestion: null,
 		};
 
+		if (suggestion.accept) {
+			const accepted = suggestion.accept(this._editor, suggestion);
+			this._emit();
+			return accepted;
+		}
+
 		if (suggestion.type === "inline") {
+			const nextOffset = suggestion.offset + suggestion.text.length;
 			this._editor.apply(
 				[{
 					type: "insert-text",
@@ -68,6 +76,7 @@ class InlineCompletionControllerImpl implements InlineCompletionController {
 				}],
 				{ origin: "ai", undoGroup: true },
 			);
+			this._editor.selectText(suggestion.blockId, nextOffset, nextOffset);
 			this._emit();
 			return true;
 		}
@@ -91,6 +100,11 @@ class InlineCompletionControllerImpl implements InlineCompletionController {
 			],
 			{ origin: "ai", undoGroup: true },
 		);
+		this._editor.selectText(
+			blockId,
+			suggestion.text.length,
+			suggestion.text.length,
+		);
 		this._emit();
 		return true;
 	}
@@ -101,26 +115,39 @@ class InlineCompletionControllerImpl implements InlineCompletionController {
 
 	buildDecorations(): readonly Decoration[] {
 		const suggestion = this._state.visibleSuggestion;
-		if (!suggestion || suggestion.type !== "inline") {
+		if (!suggestion) {
 			return [];
+		}
+		const blockDecoration: Decoration = {
+			type: "block",
+			blockId: suggestion.blockId,
+			attributes: {
+				[INLINE_COMPLETION_VISIBLE_BLOCK_ATTRIBUTE]: true,
+			},
+		};
+		if (suggestion.type !== "inline") {
+			return [blockDecoration];
 		}
 		const anchor = resolveInlineSuggestionAnchor(this._editor, suggestion);
 		if (!anchor) {
-			return [];
+			return [blockDecoration];
 		}
-		return [{
-			type: "inline",
-			blockId: suggestion.blockId,
-			from: anchor.from,
-			to: anchor.to,
-			attributes: {
-				class: "pen-ephemeral-suggestion",
-				"data-suggestion-id": suggestion.id,
-				"data-suggestion-text": suggestion.text,
-				"data-suggestion-type": suggestion.type,
-				"data-suggestion-placement": anchor.placement,
+		return [
+			blockDecoration,
+			{
+				type: "inline",
+				blockId: suggestion.blockId,
+				from: anchor.from,
+				to: anchor.to,
+				attributes: {
+					class: "pen-ephemeral-suggestion",
+					"data-suggestion-id": suggestion.id,
+					"data-suggestion-text": suggestion.text,
+					"data-suggestion-type": suggestion.type,
+					"data-suggestion-placement": anchor.placement,
+				},
 			},
-		}];
+		];
 	}
 
 	destroy(): void {

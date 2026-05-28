@@ -16,7 +16,7 @@ export function CodeBlockRenderer(
       data-selected={ctx.selected || undefined}
     >
       <code className={language ? `language-${language}` : undefined}>
-        <InlineContent blockId={block.id} />
+        <InlineContent blockId={block.id} decorations={ctx.decorations} />
       </code>
     </pre>
   );

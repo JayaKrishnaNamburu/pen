@@ -1,12 +1,17 @@
-import type {
-	BlockHandle,
-	Editor,
-	Position,
-} from "@pen/types";
-import type {
-	BlockSuggestionMeta,
-	PersistentSuggestion,
-} from "../types";
+import type { BlockHandle, Editor, Position } from "@pen/types";
+import type { BlockSuggestionMeta, PersistentSuggestion } from "../types";
+
+export type BlockSuggestionMetaPayload = BlockSuggestionMeta &
+	Record<string, unknown>;
+
+export type SuggestionCreationOptions = {
+	suggestionId?: string;
+	requestId?: string;
+	sessionId?: string;
+	turnId?: string;
+	generationId?: string;
+	createdAt?: number;
+};
 
 type DeltaFragment = {
 	insert: string | object;
@@ -28,7 +33,8 @@ export function readSuggestionsFromBlock(
 	let offset = 0;
 
 	for (const delta of ytext.toDelta()) {
-		const length = typeof delta.insert === "string" ? delta.insert.length : 1;
+		const length =
+			typeof delta.insert === "string" ? delta.insert.length : 1;
 		const suggestion = asSuggestion(delta.attributes?.suggestion);
 		if (suggestion) {
 			suggestions.push({
@@ -40,6 +46,9 @@ export function readSuggestionsFromBlock(
 				createdAt: suggestion.createdAt,
 				model: suggestion.model,
 				sessionId: suggestion.sessionId,
+				requestId: suggestion.requestId,
+				turnId: suggestion.turnId,
+				generationId: suggestion.generationId,
 				blockId,
 				offset,
 				length,
@@ -65,6 +74,9 @@ export function readAllSuggestions(editor: Editor): PersistentSuggestion[] {
 				createdAt: blockSuggestion.createdAt,
 				model: blockSuggestion.model,
 				sessionId: blockSuggestion.sessionId,
+				requestId: blockSuggestion.requestId,
+				turnId: blockSuggestion.turnId,
+				generationId: blockSuggestion.generationId,
 				blockId: block.id,
 				previousState: blockSuggestion.previousState,
 			});
@@ -79,18 +91,43 @@ export function readBlockSuggestionMeta(
 ): BlockSuggestionMeta | null {
 	if (!block) return null;
 	const meta = block.meta("suggestion");
-	if (!meta) return null;
+	return parseBlockSuggestionMeta(meta);
+}
+
+export function serializeBlockSuggestionMeta(
+	meta: BlockSuggestionMeta,
+): BlockSuggestionMetaPayload {
+	return {
+		id: meta.id,
+		action: meta.action,
+		author: meta.author,
+		authorType: meta.authorType,
+		createdAt: meta.createdAt,
+		model: meta.model,
+		sessionId: meta.sessionId,
+		requestId: meta.requestId,
+		turnId: meta.turnId,
+		generationId: meta.generationId,
+		previousState: meta.previousState,
+	};
+}
+
+export function parseBlockSuggestionMeta(
+	meta: unknown,
+): BlockSuggestionMeta | null {
+	if (!meta || typeof meta !== "object") return null;
+	const record = meta as Record<string, unknown>;
 	if (
-		typeof meta.id !== "string" ||
-		typeof meta.action !== "string" ||
-		typeof meta.author !== "string" ||
-		typeof meta.authorType !== "string" ||
-		typeof meta.createdAt !== "number"
+		typeof record.id !== "string" ||
+		typeof record.action !== "string" ||
+		typeof record.author !== "string" ||
+		typeof record.authorType !== "string" ||
+		typeof record.createdAt !== "number"
 	) {
 		return null;
 	}
 
-	const action = meta.action;
+	const action = record.action;
 	if (
 		action !== "insert-block" &&
 		action !== "delete-block" &&
@@ -101,14 +138,22 @@ export function readBlockSuggestionMeta(
 	}
 
 	return {
-		id: meta.id,
+		id: record.id,
 		action,
-		author: meta.author,
-		authorType: meta.authorType === "ai" ? "ai" : "user",
-		createdAt: meta.createdAt,
-		model: typeof meta.model === "string" ? meta.model : undefined,
-		sessionId: typeof meta.sessionId === "string" ? meta.sessionId : undefined,
-		previousState: readPreviousState(meta.previousState),
+		author: record.author,
+		authorType: record.authorType === "ai" ? "ai" : "user",
+		createdAt: record.createdAt,
+		model: typeof record.model === "string" ? record.model : undefined,
+		sessionId:
+			typeof record.sessionId === "string" ? record.sessionId : undefined,
+		requestId:
+			typeof record.requestId === "string" ? record.requestId : undefined,
+		turnId: typeof record.turnId === "string" ? record.turnId : undefined,
+		generationId:
+			typeof record.generationId === "string"
+				? record.generationId
+				: undefined,
+		previousState: readPreviousState(record.previousState),
 	};
 }
 
@@ -118,16 +163,21 @@ export function createSuggestionMark(
 	authorType: "user" | "ai",
 	model?: string,
 	sessionId?: string,
+	options: SuggestionCreationOptions = {},
 ): Record<string, unknown> {
+	const resolvedSessionId = options.sessionId ?? sessionId;
 	return {
 		suggestion: {
-			id: crypto.randomUUID(),
+			id: options.suggestionId ?? crypto.randomUUID(),
 			action,
 			author,
 			authorType,
-			createdAt: Date.now(),
+			createdAt: options.createdAt ?? Date.now(),
 			model,
-			sessionId,
+			sessionId: resolvedSessionId,
+			requestId: options.requestId,
+			turnId: options.turnId,
+			generationId: options.generationId,
 		},
 	};
 }
@@ -160,9 +210,7 @@ function isPosition(value: unknown): value is Position {
 	);
 }
 
-function asSuggestion(
-	value: unknown,
-): {
+function asSuggestion(value: unknown): {
 	id: string;
 	action: "insert" | "delete";
 	author: string;
@@ -170,6 +218,9 @@ function asSuggestion(
 	createdAt: number;
 	model?: string;
 	sessionId?: string;
+	requestId?: string;
+	turnId?: string;
+	generationId?: string;
 } | null {
 	if (!value || typeof value !== "object") return null;
 	const record = value as Record<string, unknown>;
@@ -193,12 +244,21 @@ function asSuggestion(
 		model: typeof record.model === "string" ? record.model : undefined,
 		sessionId:
 			typeof record.sessionId === "string" ? record.sessionId : undefined,
+		requestId:
+			typeof record.requestId === "string" ? record.requestId : undefined,
+		turnId: typeof record.turnId === "string" ? record.turnId : undefined,
+		generationId:
+			typeof record.generationId === "string"
+				? record.generationId
+				: undefined,
 	};
 }
 
 function getYText(editor: Editor, blockId: string): YTextLike | null {
 	try {
-		return (editor.internals.getBlockText(blockId) as YTextLike | null) ?? null;
+		return (
+			(editor.internals.getBlockText(blockId) as YTextLike | null) ?? null
+		);
 	} catch {
 		return null;
 	}

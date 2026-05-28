@@ -114,11 +114,10 @@ export function useTransferSession(
 			setDropPreview(preview);
 			if (preview?.kind === "inline-caret") {
 				const caretRect = getSelectionPointRect(rootElement, preview.point);
-				const contentRect = contentElement.getBoundingClientRect();
 				if (caretRect) {
 					setInlineDropCaretStyle({
-						left: caretRect.left - contentRect.left,
-						top: caretRect.top - contentRect.top,
+						left: caretRect.left,
+						top: caretRect.top,
 						height: Math.max(caretRect.height, 18),
 					});
 				} else {

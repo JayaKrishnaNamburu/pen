@@ -54,6 +54,7 @@ const EMPTY_FIELD_EDITOR_STATE: FieldEditorStoreSnapshot = {
   inputMode: "none",
   mode: "inactive",
   activeCellCoord: null,
+  domSyncVersion: 0,
 };
 
 export function useDocumentEmptyState(editor: Editor) {

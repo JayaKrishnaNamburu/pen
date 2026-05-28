@@ -204,6 +204,7 @@ export interface InlineCompletionSuggestion {
 	blockType?: string;
 	props?: Record<string, unknown>;
 	previewBlocks?: readonly InlineCompletionPreviewBlock[];
+	accept?: (editor: Editor, suggestion: InlineCompletionSuggestion) => boolean;
 }
 
 export interface InlineCompletionPreviewBlock {

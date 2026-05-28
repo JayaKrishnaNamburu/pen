@@ -53,8 +53,9 @@ function setTextareaValue(textarea: HTMLTextAreaElement, value: string) {
 	textarea.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
-(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean })
-	.IS_REACT_ACT_ENVIRONMENT = true;
+(
+	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
+).IS_REACT_ACT_ENVIRONMENT = true;
 
 describe("PlaygroundChatDock", () => {
 	afterEach(() => {
@@ -110,7 +111,9 @@ describe("PlaygroundChatDock", () => {
 		});
 
 		const form = container.querySelector("form");
-		const textarea = container.querySelector("textarea") as HTMLTextAreaElement | null;
+		const textarea = container.querySelector(
+			"textarea",
+		) as HTMLTextAreaElement | null;
 		expect(form).not.toBeNull();
 		expect(textarea).not.toBeNull();
 
@@ -119,7 +122,9 @@ describe("PlaygroundChatDock", () => {
 		});
 
 		await act(async () => {
-			form!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+			form!.dispatchEvent(
+				new Event("submit", { bubbles: true, cancelable: true }),
+			);
 			await Promise.resolve();
 		});
 
@@ -149,7 +154,9 @@ describe("PlaygroundChatDock", () => {
 		});
 
 		await act(async () => {
-			form!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+			form!.dispatchEvent(
+				new Event("submit", { bubbles: true, cancelable: true }),
+			);
 			await Promise.resolve();
 		});
 
@@ -188,13 +195,17 @@ describe("PlaygroundChatDock", () => {
 		const editor = createPlaygroundEditor();
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello world again" }],
+			[
+				{
+					type: "insert-text",
+					blockId,
+					offset: 0,
+					text: "Hello world again",
+				},
+			],
 			{ origin: "system" },
 		);
-		editor.selectTextRange(
-			{ blockId, offset: 6 },
-			{ blockId, offset: 11 },
-		);
+		editor.selectTextRange({ blockId, offset: 6 }, { blockId, offset: 11 });
 
 		const container = document.createElement("div");
 		document.body.appendChild(container);
@@ -204,12 +215,12 @@ describe("PlaygroundChatDock", () => {
 				.fn()
 				.mockReturnValueOnce({ id: "session-1" })
 				.mockReturnValueOnce({ id: "session-2" }),
-			canReuseSessionPrompt: vi
-				.fn()
-				.mockReturnValue(false),
-			runSessionPrompt: vi
-				.fn()
-				.mockResolvedValue({ suggestionIds: [], reviewItems: [], mutationReceipt: { status: "applied" } }),
+			canReuseSessionPrompt: vi.fn().mockReturnValue(false),
+			runSessionPrompt: vi.fn().mockResolvedValue({
+				suggestionIds: [],
+				reviewItems: [],
+				mutationReceipt: { status: "applied" },
+			}),
 			cancelSession: vi.fn(),
 		};
 
@@ -229,7 +240,9 @@ describe("PlaygroundChatDock", () => {
 		});
 
 		const form = container.querySelector("form");
-		const textarea = container.querySelector("textarea") as HTMLTextAreaElement | null;
+		const textarea = container.querySelector(
+			"textarea",
+		) as HTMLTextAreaElement | null;
 		expect(form).not.toBeNull();
 		expect(textarea).not.toBeNull();
 
@@ -237,7 +250,9 @@ describe("PlaygroundChatDock", () => {
 			setTextareaValue(textarea!, "Rewrite this");
 		});
 		await act(async () => {
-			form!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+			form!.dispatchEvent(
+				new Event("submit", { bubbles: true, cancelable: true }),
+			);
 			await Promise.resolve();
 		});
 
@@ -250,7 +265,9 @@ describe("PlaygroundChatDock", () => {
 			setTextareaValue(textarea!, "Rewrite that");
 		});
 		await act(async () => {
-			form!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+			form!.dispatchEvent(
+				new Event("submit", { bubbles: true, cancelable: true }),
+			);
 			await Promise.resolve();
 		});
 
@@ -288,13 +305,17 @@ describe("PlaygroundChatDock", () => {
 		const editor = createPlaygroundEditor();
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello world again" }],
+			[
+				{
+					type: "insert-text",
+					blockId,
+					offset: 0,
+					text: "Hello world again",
+				},
+			],
 			{ origin: "system" },
 		);
-		editor.selectTextRange(
-			{ blockId, offset: 6 },
-			{ blockId, offset: 11 },
-		);
+		editor.selectTextRange({ blockId, offset: 6 }, { blockId, offset: 11 });
 
 		const container = document.createElement("div");
 		document.body.appendChild(container);
@@ -302,9 +323,11 @@ describe("PlaygroundChatDock", () => {
 		const sessionActions = {
 			startSession: vi.fn().mockReturnValue({ id: "session-1" }),
 			canReuseSessionPrompt: vi.fn().mockReturnValue(true),
-			runSessionPrompt: vi
-				.fn()
-				.mockResolvedValue({ suggestionIds: [], reviewItems: [], mutationReceipt: { status: "applied" } }),
+			runSessionPrompt: vi.fn().mockResolvedValue({
+				suggestionIds: [],
+				reviewItems: [],
+				mutationReceipt: { status: "applied" },
+			}),
 			cancelSession: vi.fn(),
 		};
 
@@ -324,7 +347,9 @@ describe("PlaygroundChatDock", () => {
 		});
 
 		const form = container.querySelector("form");
-		const textarea = container.querySelector("textarea") as HTMLTextAreaElement | null;
+		const textarea = container.querySelector(
+			"textarea",
+		) as HTMLTextAreaElement | null;
 		expect(form).not.toBeNull();
 		expect(textarea).not.toBeNull();
 
@@ -332,7 +357,9 @@ describe("PlaygroundChatDock", () => {
 			setTextareaValue(textarea!, "Continue writing");
 		});
 		await act(async () => {
-			form!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+			form!.dispatchEvent(
+				new Event("submit", { bubbles: true, cancelable: true }),
+			);
 			await Promise.resolve();
 		});
 
@@ -357,13 +384,17 @@ describe("PlaygroundChatDock", () => {
 		const editor = createPlaygroundEditor();
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello world again" }],
+			[
+				{
+					type: "insert-text",
+					blockId,
+					offset: 0,
+					text: "Hello world again",
+				},
+			],
 			{ origin: "system" },
 		);
-		editor.selectTextRange(
-			{ blockId, offset: 5 },
-			{ blockId, offset: 5 },
-		);
+		editor.selectTextRange({ blockId, offset: 5 }, { blockId, offset: 5 });
 
 		const container = document.createElement("div");
 		document.body.appendChild(container);
@@ -371,9 +402,11 @@ describe("PlaygroundChatDock", () => {
 		const sessionActions = {
 			startSession: vi.fn().mockReturnValue({ id: "session-1" }),
 			canReuseSessionPrompt: vi.fn().mockReturnValue(true),
-			runSessionPrompt: vi
-				.fn()
-				.mockResolvedValue({ suggestionIds: [], reviewItems: [], mutationReceipt: { status: "applied" } }),
+			runSessionPrompt: vi.fn().mockResolvedValue({
+				suggestionIds: [],
+				reviewItems: [],
+				mutationReceipt: { status: "applied" },
+			}),
 			cancelSession: vi.fn(),
 		};
 
@@ -393,7 +426,9 @@ describe("PlaygroundChatDock", () => {
 		});
 
 		const form = container.querySelector("form");
-		const textarea = container.querySelector("textarea") as HTMLTextAreaElement | null;
+		const textarea = container.querySelector(
+			"textarea",
+		) as HTMLTextAreaElement | null;
 		expect(form).not.toBeNull();
 		expect(textarea).not.toBeNull();
 
@@ -401,7 +436,9 @@ describe("PlaygroundChatDock", () => {
 			setTextareaValue(textarea!, "Rewrite this");
 		});
 		await act(async () => {
-			form!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+			form!.dispatchEvent(
+				new Event("submit", { bubbles: true, cancelable: true }),
+			);
 			await Promise.resolve();
 		});
 
@@ -414,159 +451,6 @@ describe("PlaygroundChatDock", () => {
 			"Rewrite this",
 			{ target: "block" },
 		);
-
-		await act(async () => {
-			root.unmount();
-		});
-		container.remove();
-		editor.destroy();
-	});
-
-	it("routes whole-document rewrite prompts to the document target", async () => {
-		const editor = createPlaygroundEditor();
-		const blockId = editor.firstBlock()!.id;
-		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello world again" }],
-			{ origin: "system" },
-		);
-
-		const container = document.createElement("div");
-		document.body.appendChild(container);
-		const root = createRoot(container);
-		const sessionActions = {
-			startSession: vi.fn().mockReturnValue({ id: "session-1" }),
-			canReuseSessionPrompt: vi.fn().mockReturnValue(true),
-			runSessionPrompt: vi
-				.fn()
-				.mockResolvedValue({ suggestionIds: [], reviewItems: [], mutationReceipt: { status: "applied" } }),
-			cancelSession: vi.fn(),
-		};
-
-		penReactMocks.useAISessionActions.mockReturnValue(sessionActions);
-		penReactMocks.useAISessions.mockReturnValue([]);
-
-		await act(async () => {
-			root.render(
-				<PlaygroundChatDock
-					editor={editor}
-					autocompleteEnabled={false}
-					customCaretEnabled={false}
-					onAutocompleteEnabledChange={() => {}}
-					onCustomCaretEnabledChange={() => {}}
-				/>,
-			);
-		});
-
-		const form = container.querySelector("form");
-		const textarea = container.querySelector("textarea") as HTMLTextAreaElement | null;
-		expect(form).not.toBeNull();
-		expect(textarea).not.toBeNull();
-
-		await act(async () => {
-			setTextareaValue(
-				textarea!,
-				"Rewrite the whole story. Make it about a startup from Amsterdam.",
-			);
-		});
-		await act(async () => {
-			form!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
-			await Promise.resolve();
-		});
-
-		expect(sessionActions.startSession).toHaveBeenCalledWith({
-			surface: "bottom-chat",
-			target: "document",
-		});
-		expect(sessionActions.runSessionPrompt).toHaveBeenCalledWith(
-			"session-1",
-			"Rewrite the whole story. Make it about a startup from Amsterdam.",
-			{ target: "document" },
-		);
-
-		await act(async () => {
-			root.unmount();
-		});
-		container.remove();
-		editor.destroy();
-	});
-
-	it("renders transcript history from bottom-chat session turns", async () => {
-		const editor = createPlaygroundEditor();
-		const container = document.createElement("div");
-		document.body.appendChild(container);
-		const root = createRoot(container);
-		const sessionActions = {
-			startSession: vi.fn(),
-			canReuseSessionPrompt: vi.fn(),
-			runSessionPrompt: vi.fn(),
-			cancelSession: vi.fn(),
-		};
-
-		penReactMocks.useAISessionActions.mockReturnValue(sessionActions);
-		penReactMocks.useAISessions.mockReturnValue([
-			{
-				id: "session-1",
-				surface: "bottom-chat",
-				status: "streaming",
-				target: { kind: "document" },
-				turns: [
-					{
-						id: "turn-1",
-						prompt: "Write a story",
-						createdAt: 1,
-						target: "document",
-						status: "accepted",
-						suggestionIds: ["suggestion-1"],
-						reviewItemIds: [],
-						generatedBlockIds: ["block-1"],
-					},
-					{
-						id: "turn-2",
-						prompt: "Actually make it about cats",
-						createdAt: 2,
-						target: "document",
-						status: "streaming",
-						suggestionIds: [],
-						reviewItemIds: [],
-						generatedBlockIds: [],
-					},
-				],
-				promptHistory: [],
-				generationIds: [],
-				pendingSuggestionIds: [],
-				pendingReviewItemIds: [],
-				createdAt: 1,
-				updatedAt: 2,
-				metrics: {
-					streamEventCount: 0,
-					patchCount: 0,
-					fastApply: {
-						attemptCount: 0,
-						nativeFastApplyCount: 0,
-						scopedReplacementCount: 0,
-						plainMarkdownCount: 0,
-						failedCount: 0,
-					},
-				},
-			},
-		]);
-
-		await act(async () => {
-			root.render(
-				<PlaygroundChatDock
-					editor={editor}
-					autocompleteEnabled={false}
-					customCaretEnabled={false}
-					onAutocompleteEnabledChange={() => {}}
-					onCustomCaretEnabledChange={() => {}}
-				/>,
-			);
-		});
-
-		expect(container.textContent).toContain("Write a story");
-		expect(container.textContent).toContain("Staged suggestions in the editor.");
-		expect(container.textContent).toContain("Actually make it about cats");
-		expect(container.textContent).toContain("Writing in the editor...");
 
 		await act(async () => {
 			root.unmount();

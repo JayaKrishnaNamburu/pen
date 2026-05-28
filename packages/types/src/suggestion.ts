@@ -26,6 +26,13 @@ export const suggestion: InlineSchema = {
 			.describe("Whether the author is a human or AI"),
 		createdAt: prop.number().default(0).describe("Unix timestamp"),
 		model: prop.string().optional().describe("AI model identifier"),
+		sessionId: prop.string().optional().describe("AI session identifier"),
+		requestId: prop.string().optional().describe("AI request identifier"),
+		turnId: prop.string().optional().describe("AI turn identifier"),
+		generationId: prop
+			.string()
+			.optional()
+			.describe("AI generation identifier"),
 	}),
 	kind: "mark",
 	system: true,

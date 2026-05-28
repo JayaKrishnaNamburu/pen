@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { Children, cloneElement, isValidElement, useRef } from "react";
 import type { BlockRenderContext, Decoration } from "@pen/types";
 import { useEditorContext } from "../../context/editorContext";
 import { useFieldEditorContext } from "../../context/fieldEditorContext";
@@ -51,6 +51,11 @@ export function EditorBlock(props: EditorBlockProps) {
 	};
 
 	const Renderer = renderers?.[blockType] ?? resolveRenderer(blockType);
+	const renderedBlock = injectBlockDecorationsIntoInlineContent(
+		Renderer(block, renderCtx) as React.ReactNode,
+		blockId,
+		blockDecorations,
+	);
 	const headingLevel =
 		blockType === "heading" && typeof block.props?.level === "number"
 			? block.props.level
@@ -98,7 +103,7 @@ export function EditorBlock(props: EditorBlockProps) {
 			children: (
 				<>
 					{blockControl}
-					{Renderer(block, renderCtx) as React.ReactNode}
+					{renderedBlock}
 				</>
 			),
 			ref: blockRef,
@@ -106,6 +111,45 @@ export function EditorBlock(props: EditorBlockProps) {
 		"div",
 		primitiveProps,
 	);
+}
+
+function injectBlockDecorationsIntoInlineContent(
+	node: React.ReactNode,
+	blockId: string,
+	decorations: readonly Decoration[],
+): React.ReactNode {
+	if (!isValidElement(node)) {
+		return node;
+	}
+
+	const props = node.props as {
+		blockId?: string;
+		children?: React.ReactNode;
+		decorations?: readonly Decoration[];
+	};
+	const nextProps: {
+		children?: React.ReactNode;
+		decorations?: readonly Decoration[];
+	} = {};
+
+	if (props.blockId === blockId && props.decorations == null) {
+		nextProps.decorations = decorations;
+	}
+
+	if (props.children) {
+		const nextChildren = Children.map(props.children, (child) =>
+			injectBlockDecorationsIntoInlineContent(child, blockId, decorations),
+		);
+		if (nextChildren !== props.children) {
+			nextProps.children = nextChildren;
+		}
+	}
+
+	if (Object.keys(nextProps).length === 0) {
+		return node;
+	}
+
+	return cloneElement(node, nextProps);
 }
 
 function mergeBlockDecorationAttributes(

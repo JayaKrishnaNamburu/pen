@@ -48,23 +48,15 @@ export {
 	applyMarkdownFastApply,
 	parseMarkdownFastApplyContract,
 } from "./runtime/markdownFastApply";
-export {
-	parseMarkdownPatchPlanContract,
-} from "./runtime/markdownPatchPlan";
-export {
-	DOCUMENT_MUTATION_PLAN_KINDS,
-} from "./runtime/planTypes";
+export { parseMarkdownPatchPlanContract } from "./runtime/markdownPatchPlan";
+export { DOCUMENT_MUTATION_PLAN_KINDS } from "./runtime/planTypes";
 export {
 	PLAN_VALIDATION_SEVERITIES,
 	isDocumentMutationPlan,
 	validateDocumentMutationPlanShape,
 } from "./runtime/planValidation";
-export {
-	buildStructuralReviewItems,
-} from "./runtime/reviewArtifacts";
-export {
-	buildDocumentMutationPlanExecution,
-} from "./runtime/planExecutor";
+export { buildStructuralReviewItems } from "./runtime/reviewArtifacts";
+export { buildDocumentMutationPlanExecution } from "./runtime/planExecutor";
 export {
 	buildPlannerPrompt,
 	parseStructuredPlanResult,
@@ -108,6 +100,25 @@ export {
 	SUGGESTION_RESOLUTION_ORIGIN,
 	shouldBypassSuggestMode,
 } from "./suggestions/suggestMode";
+export { applySuggestedAIOperations } from "./suggestions/applySuggestedAIOperations";
+export {
+	compileRangeReplacementSuggestionOps,
+	compileReplacementSuggestionOps,
+} from "./suggestions/textDiffOperations";
+export {
+	AI_REVIEW_ROLE_ATTRIBUTE,
+	AI_REVIEW_STATE_ATTRIBUTE,
+	AI_REVIEW_PREVIEW_NEW_ATTRIBUTE,
+	AI_REVIEW_PREVIEW_VIRTUAL_ATTRIBUTE,
+	FINAL_TEXT_REVIEW_HIDDEN_ATTRIBUTE,
+	buildAIReviewPresentationDecorations,
+	buildStreamingReviewPreviewDecorations,
+	resolveAIReviewPresentationState,
+} from "./review/reviewPresentation";
+export type {
+	AIReviewPresentationRole,
+	AIReviewPresentationState,
+} from "./review/reviewPresentation";
 export { EphemeralSuggestionManager } from "./suggestions/ephemeral";
 
 export type {
@@ -121,6 +132,9 @@ export type {
 	AIContextualPromptState,
 	AISession,
 	AISessionAnchor,
+	AIStreamingReviewPreview,
+	AIStreamingReviewPreviewInput,
+	AIStreamingReviewPreviewTarget,
 	AISessionMetrics,
 	AISessionFastApplyMetrics,
 	AISessionPrompt,
@@ -128,6 +142,7 @@ export type {
 	AISessionTarget,
 	AISurface,
 	AIAwarenessState,
+	AIExternalInlineTurnResult,
 	AgenticStep,
 	GenerationState,
 	EphemeralSuggestion,
@@ -149,6 +164,7 @@ export type {
 	AIPromptTarget,
 	AISessionResolution,
 	AIContentFormatOptions,
+	AISuggestionPresentation,
 	GenerationPlanState,
 	GenerationTargetKind,
 	StructuredGenerationDebugState,
@@ -162,6 +178,14 @@ export type {
 	AIMutationReceiptEvidence,
 	AIMutationReceiptStatus,
 } from "./types";
+export type {
+	ApplySuggestedAIOperationsOptions,
+	ApplySuggestedAIOperationsResult,
+} from "./suggestions/applySuggestedAIOperations";
+export type {
+	CompileReplacementSuggestionOpsInput,
+	ReplacementTextDiffOperation,
+} from "./suggestions/textDiffOperations";
 export type {
 	DocumentMutationPlan,
 	DocumentMutationPlanKind,

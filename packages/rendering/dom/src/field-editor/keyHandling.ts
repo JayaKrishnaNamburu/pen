@@ -1,11 +1,5 @@
-import {
-	getInlineCompletionController,
-} from "@pen/core";
-import type { Editor, KeyBindingContext } from "@pen/types";
-import {
-	COLLECT_KEY_BINDINGS_SLOT_KEY,
-	usesInlineTextSelection,
-} from "@pen/types";
+import { getInlineCompletionController } from "@pen/core";
+import type { Editor } from "@pen/types";
 import type { FieldEditorKeyboardController } from "./controller";
 import {
 	applyDeleteBehavior,
@@ -14,8 +8,18 @@ import {
 	moveCaretAcrossBlocks,
 	type SelectionRange,
 } from "./commands";
-import { getEditorBlockSelectionLength } from "../utils/blockSelectionSemantics";
 import { getAutocompleteController } from "../utils/autocompleteController";
+import { selectInlineAtomWithArrowKey } from "./keyHandlingInlineAtoms";
+import {
+	collectKeyBindings,
+	getDocumentTextRange,
+	isRedoShortcut,
+	isSelectAllShortcut,
+	isUndoShortcut,
+	matchesBindingContext,
+	matchesKey,
+	tryHandleHistoryOverrideBinding,
+} from "./keyBindingShortcuts";
 
 export function handleFieldEditorKeyDown(options: {
 	event: KeyboardEvent;
@@ -24,6 +28,7 @@ export function handleFieldEditorKeyDown(options: {
 	ytext: {
 		length: number;
 		toString(): string;
+		toDelta(): Array<{ insert?: string | Record<string, unknown> }>;
 		insert(offset: number, text: string): void;
 		delete(offset: number, length: number): void;
 	};
@@ -38,10 +43,7 @@ export function handleFieldEditorKeyDown(options: {
 		autocomplete?.dismiss("typing");
 	}
 
-	if (
-		!event.defaultPrevented &&
-		handleHistoryShortcut(editor, event)
-	) {
+	if (!event.defaultPrevented && handleHistoryShortcut(editor, event)) {
 		return true;
 	}
 
@@ -152,7 +154,11 @@ export function handleFieldEditorKeyDown(options: {
 			if (autocomplete?.hasVisibleSuggestion()) {
 				return autocomplete.acceptVisibleSuggestion();
 			}
-			return inlineCompletion.acceptSuggestion();
+			const accepted = inlineCompletion.acceptSuggestion();
+			if (accepted) {
+				syncAcceptedInlineCompletionSelection(editor, fieldEditor);
+			}
+			return accepted;
 		}
 
 		if (!event.shiftKey) {
@@ -210,11 +216,28 @@ export function handleFieldEditorKeyDown(options: {
 
 	if (
 		(event.key === "ArrowLeft" || event.key === "ArrowUp") &&
-		!event.shiftKey &&
 		!event.metaKey &&
 		!event.ctrlKey &&
 		!event.altKey
 	) {
+		if (
+			event.key === "ArrowLeft" &&
+			selectInlineAtomWithArrowKey({
+				blockId,
+				editor,
+				event,
+				fieldEditor,
+				range,
+				ytext,
+			})
+		) {
+			return true;
+		}
+
+		if (event.shiftKey) {
+			return false;
+		}
+
 		const target = moveCaretAcrossBlocks(editor, {
 			blockId,
 			ytext,
@@ -238,11 +261,28 @@ export function handleFieldEditorKeyDown(options: {
 
 	if (
 		(event.key === "ArrowRight" || event.key === "ArrowDown") &&
-		!event.shiftKey &&
 		!event.metaKey &&
 		!event.ctrlKey &&
 		!event.altKey
 	) {
+		if (
+			event.key === "ArrowRight" &&
+			selectInlineAtomWithArrowKey({
+				blockId,
+				editor,
+				event,
+				fieldEditor,
+				range,
+				ytext,
+			})
+		) {
+			return true;
+		}
+
+		if (event.shiftKey) {
+			return false;
+		}
+
 		const target = moveCaretAcrossBlocks(editor, {
 			blockId,
 			ytext,
@@ -265,6 +305,30 @@ export function handleFieldEditorKeyDown(options: {
 	}
 
 	return handleEditorKeyBindings(editor, event, { includeSelectAll: false });
+}
+
+
+function syncAcceptedInlineCompletionSelection(
+	editor: Editor,
+	fieldEditor: FieldEditorKeyboardController,
+): void {
+	const selection = editor.selection;
+	if (
+		selection?.type !== "text" ||
+		!selection.isCollapsed ||
+		selection.isMultiBlock
+	) {
+		return;
+	}
+
+	const blockId = selection.focus.blockId;
+	const offset = selection.focus.offset;
+	if (typeof fieldEditor.commitProgrammaticTextSelection === "function") {
+		fieldEditor.commitProgrammaticTextSelection(blockId, offset, offset);
+		return;
+	}
+
+	fieldEditor.activateTextSelection(blockId, offset, offset);
 }
 
 function shouldDismissAutocompleteOnKeyDown(
@@ -358,211 +422,4 @@ export function handleHistoryShortcut(
 	}
 
 	return false;
-}
-
-function tryHandleHistoryOverrideBinding(
-	editor: Editor,
-	event: KeyboardEvent,
-): boolean {
-	if (!isUndoShortcut(event) && !isRedoShortcut(event)) {
-		return false;
-	}
-
-	const bindings = collectKeyBindings(editor);
-	for (const binding of bindings) {
-		if (
-			matchesBindingContext(editor, binding.context) &&
-			matchesKey(binding.key, event) &&
-			binding.handler(editor, event)
-		) {
-			return true;
-		}
-	}
-
-	return false;
-}
-
-function getDocumentTextRange(editor: Editor): {
-	start: { blockId: string; offset: number };
-	end: { blockId: string; offset: number };
-	focusBlockId: string;
-} | null {
-	const blockOrder = editor.documentState.blockOrder;
-	const firstBlockId = blockOrder[0];
-	const lastBlockId = blockOrder[blockOrder.length - 1];
-	if (!firstBlockId || !lastBlockId) {
-		return null;
-	}
-
-	const focusBlockId =
-		blockOrder.find((blockId) => {
-			const block = editor.getBlock(blockId);
-			if (!block) return false;
-			const schema = editor.schema.resolve(block.type);
-			return usesInlineTextSelection(schema);
-		}) ?? firstBlockId;
-
-	return {
-		start: { blockId: firstBlockId, offset: 0 },
-		end: {
-			blockId: lastBlockId,
-			offset: getEditorBlockSelectionLength(editor, lastBlockId),
-		},
-		focusBlockId,
-	};
-}
-
-function collectKeyBindings(editor: Editor): ReadonlyArray<{
-	key: string;
-	context?: KeyBindingContext;
-	handler: (editor: Editor, event: KeyboardEvent) => boolean;
-}> {
-	const collect =
-		editor.internals.getSlot<
-			(registry: Editor["schema"]) => ReadonlyArray<{
-				key: string;
-				context?: KeyBindingContext;
-				handler: (editor: Editor, event: KeyboardEvent) => boolean;
-			}>
-		>(COLLECT_KEY_BINDINGS_SLOT_KEY) ?? null;
-	return collect?.(editor.schema) ?? [];
-}
-
-function matchesBindingContext(
-	editor: Editor,
-	context: KeyBindingContext | undefined,
-): boolean {
-	if (!context) return true;
-
-	const selection = editor.selection;
-	const activeBlock = getActiveBlock(editor);
-
-	if (
-		context.blockType &&
-		(!activeBlock || !context.blockType.includes(activeBlock.type))
-	) {
-		return false;
-	}
-
-	if (context.hasSelection !== undefined) {
-		const hasSelection =
-			selection?.type === "text"
-				? !selection.isCollapsed
-				: selection !== null;
-		if (hasSelection !== context.hasSelection) {
-			return false;
-		}
-	}
-
-	if (context.collapsed !== undefined) {
-		const isCollapsed = selection?.type === "text" && selection.isCollapsed;
-		if (isCollapsed !== context.collapsed) {
-			return false;
-		}
-	}
-
-	if (
-		context.withinLayout &&
-		(!activeBlock || !isWithinLayout(activeBlock, context.withinLayout))
-	) {
-		return false;
-	}
-
-	return true;
-}
-
-function getActiveBlock(editor: Editor) {
-	const selection = editor.selection;
-	if (!selection) return null;
-
-	if (selection.type === "text") {
-		return editor.getBlock(selection.anchor.blockId);
-	}
-
-	if (selection.type === "block") {
-		const blockId = selection.blockIds[0];
-		return blockId ? editor.getBlock(blockId) : null;
-	}
-
-	if (selection.type === "cell") {
-		return editor.getBlock(selection.blockId);
-	}
-
-	return null;
-}
-
-function isWithinLayout(
-	block: NonNullable<ReturnType<typeof getActiveBlock>>,
-	allowedLayoutTypes: readonly string[],
-): boolean {
-	let parent = block.layoutParent();
-	while (parent) {
-		if (allowedLayoutTypes.includes(parent.type)) {
-			return true;
-		}
-		parent = parent.layoutParent();
-	}
-
-	return false;
-}
-
-function matchesKey(pattern: string, event: KeyboardEvent): boolean {
-	const parts = pattern.split("-").map((part) => part.toLowerCase());
-	const key = parts.pop()?.toLowerCase() ?? "";
-
-	const needsCtrl = parts.includes("ctrl");
-	const needsMeta = parts.includes("meta");
-	const needsMod = parts.includes("mod");
-	const needsShift = parts.includes("shift");
-	const needsAlt = parts.includes("alt");
-
-	const isMac =
-		typeof navigator !== "undefined" &&
-		/Mac|iPhone|iPad/.test(navigator.platform ?? "");
-
-	const allowCtrl = needsCtrl || (needsMod && !isMac);
-	const allowMeta = needsMeta || (needsMod && isMac);
-
-	const modMatch = needsMod ? (isMac ? event.metaKey : event.ctrlKey) : true;
-	const ctrlMatch = allowCtrl ? event.ctrlKey : !event.ctrlKey;
-	const metaMatch = allowMeta ? event.metaKey : !event.metaKey;
-	const shiftMatch = needsShift ? event.shiftKey : !event.shiftKey;
-	const altMatch = needsAlt ? event.altKey : !event.altKey;
-
-	return (
-		modMatch &&
-		ctrlMatch &&
-		metaMatch &&
-		shiftMatch &&
-		altMatch &&
-		event.key.toLowerCase() === key
-	);
-}
-
-function isSelectAllShortcut(event: KeyboardEvent): boolean {
-	return (
-		event.key.toLowerCase() === "a" &&
-		!event.shiftKey &&
-		!event.altKey &&
-		(event.metaKey || event.ctrlKey)
-	);
-}
-
-function isUndoShortcut(event: KeyboardEvent): boolean {
-	return (
-		event.key.toLowerCase() === "z" &&
-		!event.shiftKey &&
-		!event.altKey &&
-		(event.metaKey || event.ctrlKey)
-	);
-}
-
-function isRedoShortcut(event: KeyboardEvent): boolean {
-	const key = event.key.toLowerCase();
-	const usesMod = event.metaKey || event.ctrlKey;
-	return (
-		usesMod &&
-		!event.altKey &&
-		((key === "z" && event.shiftKey) || (key === "y" && !event.shiftKey))
-	);
 }

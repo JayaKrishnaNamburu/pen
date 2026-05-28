@@ -44,6 +44,7 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
+    "@pen/content-ops": "workspace:*",
     "@pen/core": "workspace:*",
     "@pen/document-ops": "workspace:*",
     "@pen/types": "workspace:*"

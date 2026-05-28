@@ -4,12 +4,13 @@ import type {
   OpOrigin,
   Unsubscribe,
 } from "@pen/types";
+import { getOpOriginType } from "@pen/types";
 
 const EXPLICIT_GROUP_CAPTURE_TIMEOUT_MS = 2_147_483_647;
 
 export class UndoManagerImpl implements UndoManager {
   private readonly _crdtUndo: CRDTUndoManager;
-  private readonly _trackedOrigins = new Map<OpOrigin, number>();
+  private readonly _trackedOriginTypes = new Map<string, number>();
   private readonly _listeners = new Set<() => void>();
   private _idleTimer: ReturnType<typeof setTimeout> | null = null;
   private _groupTimeout = 1000;
@@ -21,7 +22,7 @@ export class UndoManagerImpl implements UndoManager {
   constructor(crdtUndo: CRDTUndoManager, trackedOrigins?: Iterable<OpOrigin>) {
     this._crdtUndo = crdtUndo;
     for (const origin of trackedOrigins ?? []) {
-      this._trackedOrigins.set(origin, 1);
+      this._trackedOriginTypes.set(getOpOriginType(origin), 1);
     }
   }
 
@@ -119,7 +120,7 @@ export class UndoManagerImpl implements UndoManager {
   }
 
   hasTrackedOrigin(origin: OpOrigin): boolean {
-    return (this._trackedOrigins.get(origin) ?? 0) > 0;
+    return (this._trackedOriginTypes.get(getOpOriginType(origin)) ?? 0) > 0;
   }
 
   onStackChange(callback: () => void): Unsubscribe {
@@ -158,21 +159,23 @@ export class UndoManagerImpl implements UndoManager {
   }
 
   private _incrementTrackedOrigin(origin: OpOrigin): void {
-    const count = this._trackedOrigins.get(origin) ?? 0;
+    const originType = getOpOriginType(origin);
+    const count = this._trackedOriginTypes.get(originType) ?? 0;
     if (count === 0) {
-      this._crdtUndo.addTrackedOrigin(origin);
+      this._crdtUndo.addTrackedOrigin(originType);
     }
-    this._trackedOrigins.set(origin, count + 1);
+    this._trackedOriginTypes.set(originType, count + 1);
   }
 
   private _decrementTrackedOrigin(origin: OpOrigin): void {
-    const count = this._trackedOrigins.get(origin) ?? 0;
+    const originType = getOpOriginType(origin);
+    const count = this._trackedOriginTypes.get(originType) ?? 0;
     if (count <= 1) {
-      this._trackedOrigins.delete(origin);
-      this._crdtUndo.removeTrackedOrigin(origin);
+      this._trackedOriginTypes.delete(originType);
+      this._crdtUndo.removeTrackedOrigin(originType);
       return;
     }
-    this._trackedOrigins.set(origin, count - 1);
+    this._trackedOriginTypes.set(originType, count - 1);
   }
 
   private _clearIdleTimer(): void {
