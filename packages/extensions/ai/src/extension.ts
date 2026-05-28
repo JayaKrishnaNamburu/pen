@@ -25,6 +25,7 @@ import { AICommandRegistry } from "./commands/registry";
 import { AIInlineHistoryService, AIReviewService } from "./controllers";
 import type { AIContentFormat } from "./runtime/contracts";
 import { SuggestedAIOperationRunner } from "./runtime/suggestedOperationRunner";
+import { ExternalInlineTurnRegistry } from "./runtime/externalInlineTurnRegistry";
 import {
 	AI_SESSION_SUGGESTION_ORIGIN,
 	interceptApplyForSuggestMode,
@@ -39,6 +40,7 @@ import type {
 	AIController,
 	AIControllerState,
 	AIExtensionConfig,
+	AIExternalInlineTurnResult,
 	AIInlineCompletionController,
 	AIInlineHistoryController,
 	AIInlineHistoryDirection,
@@ -63,7 +65,11 @@ import { aiControllerMethodsPart13 } from "./extensionParts/aiControllerMethodsP
 import { aiControllerMethodsPart14 } from "./extensionParts/aiControllerMethodsPart14";
 import { aiControllerMethodsPart15 } from "./extensionParts/aiControllerMethodsPart15";
 import { aiControllerMethodsPart16 } from "./extensionParts/aiControllerMethodsPart16";
-import { AI_UNDO_HISTORY_METADATA_KEY, createDefaultSessionFastApplyMetrics, readModelId } from "./extensionParts/extensionHelpers";
+import {
+	AI_UNDO_HISTORY_METADATA_KEY,
+	createDefaultSessionFastApplyMetrics,
+	readModelId,
+} from "./extensionParts/extensionHelpers";
 import type { AIInlineHistoryRestoreRequest } from "./extensionParts/extensionHelpers";
 
 export const AI_EXTENSION_NAME = "ai";
@@ -138,10 +144,14 @@ class AIControllerImpl {
 
 	private readonly _maxAgenticSteps: number;
 
+	private readonly _suggestionPresentation: NonNullable<
+		AIExtensionConfig["suggestionPresentation"]
+	>;
+
 	private readonly _contentFormat: {
-			blockGeneration: AIContentFormat;
-			selectionRewrite: AIContentFormat;
-		};
+		blockGeneration: AIContentFormat;
+		selectionRewrite: AIContentFormat;
+	};
 
 	private _state: AIControllerState;
 
@@ -169,11 +179,13 @@ class AIControllerImpl {
 
 	private _inlineHistoryIndex = -1;
 
+	private _externalInlineTurnRegistry = new ExternalInlineTurnRegistry();
+
 	private _pendingInlineHistoryRestore: AIInlineHistoryRestoreRequest | null =
-			null;
+		null;
 
 	private _queuedInlineHistoryShortcutDirections: AIInlineHistoryDirection[] =
-			[];
+		[];
 
 	private _queuedInlineHistoryShortcutFlushScheduled = false;
 
@@ -182,83 +194,85 @@ class AIControllerImpl {
 	private _handledUndoHistoryRequestId: number | null = null;
 
 	constructor(
-			editor: Editor,
-			config: AIExtensionConfig,
-			services: {
-				inlineCompletion: AIInlineCompletionController;
-			},
-		) {
-			this._editor = editor;
-			this._inlineCompletion = services.inlineCompletion;
-			this._model = config.model;
-			this._author = config.author ?? "assistant";
-			this._suggestedOperationRunner = new SuggestedAIOperationRunner({
-				editor: this._editor,
-				author: this._author,
-				model: readModelId(this._model),
-				getSession: (sessionId) =>
-					this._state.sessions.find((session) => session.id === sessionId) ??
-					null,
-				getActiveGeneration: () => this._state.activeGeneration,
-			});
-			this._maxAgenticSteps = config.maxAgenticSteps ?? 10;
-			this._contentFormat = {
-				blockGeneration: config.contentFormat?.blockGeneration ?? "text",
-				selectionRewrite: config.contentFormat?.selectionRewrite ?? "text",
-			};
-			this._undoHistoryMetadata =
-				this._editor.internals.getSlot<UndoHistoryMetadataController>(
-					UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY,
-				) ?? null;
-			this._state = {
-				status: "idle",
-				activeGeneration: null,
-				sessions: [],
-				activeSessionId: null,
-				suggestMode: config.suggestMode ?? false,
-				ephemeralSuggestion: null,
-				commandMenuOpen: false,
-			};
+		editor: Editor,
+		config: AIExtensionConfig,
+		services: {
+			inlineCompletion: AIInlineCompletionController;
+		},
+	) {
+		this._editor = editor;
+		this._inlineCompletion = services.inlineCompletion;
+		this._model = config.model;
+		this._author = config.author ?? "assistant";
+		this._suggestedOperationRunner = new SuggestedAIOperationRunner({
+			editor: this._editor,
+			author: this._author,
+			model: readModelId(this._model),
+			getSession: (sessionId) =>
+				this._state.sessions.find(
+					(session) => session.id === sessionId,
+				) ?? null,
+			getActiveGeneration: () => this._state.activeGeneration,
+		});
+		this._maxAgenticSteps = config.maxAgenticSteps ?? 10;
+		this._suggestionPresentation =
+			config.suggestionPresentation ?? "track-changes";
+		this._contentFormat = {
+			blockGeneration: config.contentFormat?.blockGeneration ?? "text",
+			selectionRewrite: config.contentFormat?.selectionRewrite ?? "text",
+		};
+		this._undoHistoryMetadata =
+			this._editor.internals.getSlot<UndoHistoryMetadataController>(
+				UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY,
+			) ?? null;
+		this._state = {
+			status: "idle",
+			activeGeneration: null,
+			sessions: [],
+			activeSessionId: null,
+			suggestMode: config.suggestMode ?? false,
+			ephemeralSuggestion: null,
+			streamingReviewPreview: null,
+			commandMenuOpen: false,
+		};
 
-			for (const command of defaultAICommands) {
-				this._registry.register(command);
-			}
-			for (const command of config.commands ?? []) {
-				this._registry.register(command);
-			}
-
-			this._syncSuggestionsFromDocument();
-
-			this._unsubscribeInlineCompletion = this._inlineCompletion.subscribe(
-				() => {
-					this._setState({
-						ephemeralSuggestion:
-							this._inlineCompletion.getState().visibleSuggestion,
-					});
-				},
-			);
-			this._unsubscribeHistoryApplied = this._editor.onHistoryApplied(
-				(event) => {
-					this._handleHistoryApplied(event);
-				},
-			);
-			this._unsubscribeUndoHistoryMetadata =
-				this._undoHistoryMetadata?.registerMetadataRestorer<AIInlineHistorySnapshot>(
-					AI_UNDO_HISTORY_METADATA_KEY,
-					(snapshot, context) => {
-						if (!snapshot) {
-							return;
-						}
-						this._handledUndoHistoryRequestId = context.requestId;
-						this._restoreInlineHistorySnapshotFromUndo(snapshot);
-					},
-				) ?? null;
+		for (const command of defaultAICommands) {
+			this._registry.register(command);
 		}
+		for (const command of config.commands ?? []) {
+			this._registry.register(command);
+		}
+
+		this._syncSuggestionsFromDocument();
+
+		this._unsubscribeInlineCompletion = this._inlineCompletion.subscribe(
+			() => {
+				this._setState({
+					ephemeralSuggestion:
+						this._inlineCompletion.getState().visibleSuggestion,
+				});
+			},
+		);
+		this._unsubscribeHistoryApplied = this._editor.onHistoryApplied(
+			(event) => {
+				this._handleHistoryApplied(event);
+			},
+		);
+		this._unsubscribeUndoHistoryMetadata =
+			this._undoHistoryMetadata?.registerMetadataRestorer<AIInlineHistorySnapshot>(
+				AI_UNDO_HISTORY_METADATA_KEY,
+				(snapshot, context) => {
+					if (!snapshot) {
+						return;
+					}
+					this._handledUndoHistoryRequestId = context.requestId;
+					this._restoreInlineHistorySnapshotFromUndo(snapshot);
+				},
+			) ?? null;
+	}
 }
 
-interface AIControllerImpl extends AIController {
-	[key: string]: any;
-}
+interface AIControllerImpl extends AIController {}
 
 Object.assign(
 	AIControllerImpl.prototype,

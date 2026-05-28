@@ -39,7 +39,7 @@ function ToggleView({
       <div data-pen-toggle-header="">
         <ToggleTrigger blockId={block.id} open={open} />
         <div data-pen-toggle-title="">
-          <InlineContent blockId={block.id} />
+          <InlineContent blockId={block.id} decorations={ctx.decorations} />
         </div>
       </div>
       {open ? (

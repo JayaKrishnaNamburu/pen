@@ -1,21 +1,14 @@
-import React, {
-	useRef,
-	useLayoutEffect,
-	useState,
-} from "react";
+import React, { useRef, useLayoutEffect, useState } from "react";
 import {
 	getOpOriginType,
+	type Decoration,
 	type Editor,
 	type InlineDecoration,
 } from "@pen/types";
-import {
-	getLogicalTextContent,
-} from "@pen/dom/field-editor/inlineAtomDom";
+import { getLogicalTextContent } from "@pen/dom/field-editor/inlineAtomDom";
 import { INLINE_ATOM_REPLACEMENT_TEXT } from "@pen/dom/field-editor/inlineAtomModel";
 import { useEditorContentContext } from "../../context/editorContentContext";
-import {
-	useEditorContext,
-} from "../../context/editorContext";
+import { useEditorContext } from "../../context/editorContext";
 import { useFieldEditorContext } from "../../context/fieldEditorContext";
 import { fullReconcileDeltasToDOM } from "../../field-editor/reconciler";
 import { useBlockEditingState } from "../../hooks/useBlockEditingState";
@@ -28,7 +21,10 @@ import { useInlineCompletionState } from "../../hooks/useInlineCompletionState";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { DATA_ATTRS } from "../../utils/dataAttributes";
 import { fieldEditorTextEntryAttrs } from "../../utils/fieldEditorTextEntryAttrs";
-import { applyInlineDecorationsToDeltas } from "../../utils/inlineDecorations";
+import {
+	applyInlineDecorationsToDeltas,
+	filterVisibleInlineDecorationDeltas,
+} from "../../utils/inlineDecorations";
 import { isInlineContentEmpty } from "../../utils/editorEmptyState";
 import { resolveInlinePlaceholderVisibility } from "../../utils/placeholderVisibility";
 import { InlineAtomPortalLayer } from "./InlineAtomPortalLayer";
@@ -40,12 +36,19 @@ import {
 export interface InlineContentProps extends AsChildProps {
 	blockId: string;
 	className?: string;
+	decorations?: readonly Decoration[];
 	placeholder?: string;
 	ref?: React.Ref<HTMLElement>;
 }
 
 export function InlineContent(props: InlineContentProps) {
-	const { blockId, className, placeholder: placeholderProp, ...rest } = props;
+	const {
+		blockId,
+		className,
+		decorations: blockDecorationsProp,
+		placeholder: placeholderProp,
+		...rest
+	} = props;
 	const { editor, inlineAtomInteractions, inlineAtomRenderers, readonly } =
 		useEditorContext();
 	const { emptyPlaceholder, isEmpty: isDocumentEmpty } =
@@ -55,7 +58,8 @@ export function InlineContent(props: InlineContentProps) {
 	const isActive = useBlockEditingState(fieldEditor, blockId);
 	const selection = useSelection(editor);
 	const blockCommit = useBlockCommitState(editor, blockId);
-	const blockDecorations = useBlockDecorations(editor, blockId);
+	const subscribedBlockDecorations = useBlockDecorations(editor, blockId);
+	const blockDecorations = blockDecorationsProp ?? subscribedBlockDecorations;
 	const textSnapshot = useBlockTextSnapshot(editor, blockId);
 	const visibleInlineCompletion = useInlineCompletionState(editor);
 	const elementRef = useRef<HTMLElement>(null);
@@ -111,13 +115,14 @@ export function InlineContent(props: InlineContentProps) {
 		(decoration): decoration is InlineDecoration =>
 			decoration.type === "inline",
 	);
-	const renderedDeltas =
+	const decoratedDeltas =
 		inlineDecorations.length > 0
 			? applyInlineDecorationsToDeltas(
 					textSnapshot.deltas,
 					inlineDecorations,
 				)
 			: textSnapshot.deltas;
+	const renderedDeltas = filterVisibleInlineDecorationDeltas(decoratedDeltas);
 	const renderedDeltasText = getDeltaText(renderedDeltas);
 	const renderedDeltasSignature = getDeltaSignature(renderedDeltas);
 
@@ -281,6 +286,7 @@ export function InlineContent(props: InlineContentProps) {
 				editor={editor}
 				blockId={blockId}
 				targets={inlineAtomTargets}
+				renderers={inlineAtomRenderers}
 				selection={selection}
 				interactions={inlineAtomInteractions}
 				readonly={readonly}

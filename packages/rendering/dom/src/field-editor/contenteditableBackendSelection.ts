@@ -1,4 +1,5 @@
 import type { InlineDecoration } from "@pen/types";
+import { buildInlineDecorationsRenderSignature } from "../utils/inlineDecorations";
 import { fullReconcileToDOM } from "./reconciler";
 import {
 	domSelectionToEditor,
@@ -55,7 +56,11 @@ export class ContentEditableBackendSelection extends ContentEditableBackendEvent
 
 	protected ensureActiveDOMMatchesYText(): boolean {
 		if (!this.element || !this.ytext) return false;
-		if (extractTextFromDOM(this.element) === this.ytext.toString()) {
+		const nextInlineDecorationsSignature = this.getInlineDecorationsSignature();
+		if (
+			extractTextFromDOM(this.element) === this.ytext.toString() &&
+			nextInlineDecorationsSignature === this.inlineDecorationsSignature
+		) {
 			return false;
 		}
 
@@ -66,8 +71,19 @@ export class ContentEditableBackendSelection extends ContentEditableBackendEvent
 		this.fieldEditor.notifyDomReconciled(
 			this.fieldEditor.focusBlockId ?? undefined,
 		);
+		this.inlineDecorationsSignature = nextInlineDecorationsSignature;
 		return true;
 	}
+
+	protected handleDecorationsChange = (): void => {
+		if (this.isComposing) {
+			return;
+		}
+		if (this.getInlineDecorationsSignature() === this.inlineDecorationsSignature) {
+			return;
+		}
+		this.scheduleActiveDOMMatchCheck();
+	};
 
 	protected scheduleActiveDOMMatchCheck(): void {
 		if (this.pendingDomSyncFrame != null) {
@@ -94,6 +110,12 @@ export class ContentEditableBackendSelection extends ContentEditableBackendEvent
 				(decoration): decoration is InlineDecoration =>
 					decoration.type === "inline",
 			);
+	}
+
+	protected getInlineDecorationsSignature(): string {
+		return buildInlineDecorationsRenderSignature(
+			this.getInlineDecorationsForBlock(),
+		);
 	}
 
 	// ── Keyboard shortcuts ────────────────────────────────────

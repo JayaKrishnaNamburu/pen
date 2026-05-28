@@ -1,5 +1,6 @@
 import type {
 	Editor,
+	DocumentOp,
 	InlineCompletionController as CoreInlineCompletionController,
 	InlineCompletionState as CoreInlineCompletionState,
 	ModelAdapter,
@@ -32,16 +33,46 @@ import type {
 	StructuredPreviewTargetState,
 } from "../runtime/reviewArtifacts";
 import type { StructuredIntent } from "../runtime/structuredIntent";
-import type { PersistentBlockSuggestion, PersistentSuggestion, BlockSuggestionMeta, AIAwarenessState, AICommandContext, AICommandGuard, AICommandBinding, AIControllerState, AIPromptTarget, AISessionResolution, AIInlineHistoryDirection, AIInlineHistoryController, AIReviewController, AICommandExecutionOptions, AIRequestedOperation, AIController, AgenticLoopOptions, AIWorkingSetEnvelope, AIWorkingSetRetrievedSpan, GenerationDebugState, StructuredGenerationDebugState, FastApplyDebugState, FastApplyFallbackMetrics, AIMutationReceiptStatus, AIMutationReceiptEvidence, AIMutationReceipt } from "./typesPart2";
+import type {
+	PersistentBlockSuggestion,
+	PersistentSuggestion,
+	BlockSuggestionMeta,
+	AIAwarenessState,
+	AICommandContext,
+	AICommandGuard,
+	AICommandBinding,
+	AIControllerState,
+	AIPromptTarget,
+	AISessionResolution,
+	AIInlineHistoryDirection,
+	AIInlineHistoryController,
+	AIReviewController,
+	AICommandExecutionOptions,
+	AIRequestedOperation,
+	AIController,
+	AgenticLoopOptions,
+	AIWorkingSetEnvelope,
+	AIWorkingSetRetrievedSpan,
+	GenerationDebugState,
+	StructuredGenerationDebugState,
+	FastApplyDebugState,
+	FastApplyFallbackMetrics,
+	AIMutationReceiptStatus,
+	AIMutationReceiptEvidence,
+	AIMutationReceipt,
+} from "./typesPart2";
 
 export interface AIExtensionConfig {
 	model?: ModelAdapter;
 	suggestMode?: boolean;
+	suggestionPresentation?: AISuggestionPresentation;
 	commands?: AICommandBinding[];
 	maxAgenticSteps?: number;
 	author?: string;
 	contentFormat?: AIContentFormatOptions;
 }
+
+export type AISuggestionPresentation = "track-changes" | "final-text";
 
 export interface AIContentFormatOptions {
 	blockGeneration?: AIContentFormat;
@@ -76,17 +107,17 @@ export type AISessionStatus =
 
 export type AISessionTarget =
 	| {
-		kind: "selection";
-		selection: TextSelection;
-		blockId: string | null;
-	}
+			kind: "selection";
+			selection: TextSelection;
+			blockId: string | null;
+	  }
 	| {
-		kind: "block";
-		blockId: string;
-	}
+			kind: "block";
+			blockId: string;
+	  }
 	| {
-		kind: "document";
-	};
+			kind: "document";
+	  };
 
 export interface AISessionPrompt {
 	id: string;
@@ -184,6 +215,38 @@ export interface AISessionAnchor {
 	to?: number;
 }
 
+export type AIStreamingReviewPreviewTarget =
+	| {
+			kind: "text-range";
+			blockId: string;
+			from: number;
+			to: number;
+	  }
+	| {
+			kind: "block-range";
+			start: { blockId: string; offset: number };
+			end: { blockId: string; offset: number };
+			blockIds: string[];
+	  }
+	| {
+			kind: "insertion-point";
+			blockId: string;
+			offset: number;
+	  };
+
+export interface AIStreamingReviewPreviewInput {
+	sessionId: string;
+	turnId?: string;
+	target: AIStreamingReviewPreviewTarget;
+	text: string;
+}
+
+export interface AIStreamingReviewPreview extends AIStreamingReviewPreviewInput {
+	previousTextLength: number;
+	revision: number;
+	updatedAt: number;
+}
+
 export interface AISession {
 	id: string;
 	surface: AISurface;
@@ -210,6 +273,14 @@ export interface AIInlineHistorySnapshot {
 	activeSessionId: string | null;
 	documentVersion: number;
 	kind: "document-coupled" | "ui-local";
+}
+
+export interface AIExternalInlineTurnResult {
+	sessionId: string;
+	turnId: string;
+	historyId: string;
+	operations: readonly DocumentOp[];
+	suggestionIds: readonly string[];
 }
 
 export interface AgenticStep {
@@ -245,61 +316,61 @@ export interface AIStreamEventBase {
 
 export type AIStreamEvent =
 	| (AIStreamEventBase & {
-		type: "generation-start";
-		prompt: string;
-		target: GenerationState["target"];
-	})
+			type: "generation-start";
+			prompt: string;
+			target: GenerationState["target"];
+	  })
 	| (AIStreamEventBase & {
-		type: "status";
-		status: AIStatus;
-	})
+			type: "status";
+			status: AIStatus;
+	  })
 	| (AIStreamEventBase & {
-		type: "text-delta";
-		delta: string;
-		text: string;
-	})
+			type: "text-delta";
+			delta: string;
+			text: string;
+	  })
 	| (AIStreamEventBase & {
-		type: "app-partial";
-		data: unknown;
-		final: boolean;
-	})
+			type: "app-partial";
+			data: unknown;
+			final: boolean;
+	  })
 	| (AIStreamEventBase & {
-		type: "tool-call";
-		toolCallId: string;
-		toolName: string;
-		input: unknown;
-	})
+			type: "tool-call";
+			toolCallId: string;
+			toolName: string;
+			input: unknown;
+	  })
 	| (AIStreamEventBase & {
-		type: "tool-output";
-		toolCallId: string;
-		toolName: string;
-		part: unknown;
-		output: unknown;
-	})
+			type: "tool-output";
+			toolCallId: string;
+			toolName: string;
+			part: unknown;
+			output: unknown;
+	  })
 	| (AIStreamEventBase & {
-		type: "tool-result";
-		toolCallId: string;
-		toolName: string;
-		output: unknown;
-		state: "complete" | "error";
-	})
+			type: "tool-result";
+			toolCallId: string;
+			toolName: string;
+			output: unknown;
+			state: "complete" | "error";
+	  })
 	| (AIStreamEventBase & {
-		type: "structured-preview";
-		preview: GenerationStructuredPreviewState;
-		patches: readonly StructuredPreviewPatchOperation[];
-	})
+			type: "structured-preview";
+			preview: GenerationStructuredPreviewState;
+			patches: readonly StructuredPreviewPatchOperation[];
+	  })
 	| (AIStreamEventBase & {
-		type: "operation";
-		operation: AIRequestedOperation;
-		phase: "preview" | "final" | "conflict";
-		text?: string;
-		reason?: string;
-	})
+			type: "operation";
+			operation: AIRequestedOperation;
+			phase: "preview" | "final" | "conflict";
+			text?: string;
+			reason?: string;
+	  })
 	| (AIStreamEventBase & {
-		type: "generation-finish";
-		status: GenerationState["status"];
-		text: string;
-	});
+			type: "generation-finish";
+			status: GenerationState["status"];
+			text: string;
+	  });
 
 export interface StructuredPreviewPatchOperation {
 	op: "add" | "remove" | "replace";
@@ -348,11 +419,7 @@ export interface GenerationState {
 	debug?: GenerationDebugState;
 }
 
-export type GenerationPlanState =
-	| "none"
-	| "drafted"
-	| "validated"
-	| "rejected";
+export type GenerationPlanState = "none" | "drafted" | "validated" | "rejected";
 
 export type GenerationTargetKind = AITargetKind;
 

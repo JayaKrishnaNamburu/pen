@@ -12,7 +12,7 @@ export function ParagraphRenderer(
       data-block-type="paragraph"
       data-selected={ctx.selected || undefined}
     >
-      <InlineContent blockId={block.id} />
+      <InlineContent blockId={block.id} decorations={ctx.decorations} />
     </div>
   );
 }

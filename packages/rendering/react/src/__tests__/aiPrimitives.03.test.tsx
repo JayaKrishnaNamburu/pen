@@ -61,8 +61,10 @@ function mockSelectionToolbarRect(rect: {
 	height: number;
 }) {
 	const originalGetSelection = window.getSelection.bind(window);
-	const originalRequestAnimationFrame = window.requestAnimationFrame.bind(window);
-	const originalCancelAnimationFrame = window.cancelAnimationFrame.bind(window);
+	const originalRequestAnimationFrame =
+		window.requestAnimationFrame.bind(window);
+	const originalCancelAnimationFrame =
+		window.cancelAnimationFrame.bind(window);
 	const rangeRect = {
 		top: rect.top,
 		left: rect.left,
@@ -95,7 +97,7 @@ function mockSelectionToolbarRect(rect: {
 	});
 	Object.defineProperty(window, "cancelAnimationFrame", {
 		configurable: true,
-		value: () => { },
+		value: () => {},
 	});
 
 	return () => {
@@ -122,8 +124,10 @@ function mockMutableSelectionToolbarRect(initialRect: {
 }) {
 	const rect = { ...initialRect };
 	const originalGetSelection = window.getSelection.bind(window);
-	const originalRequestAnimationFrame = window.requestAnimationFrame.bind(window);
-	const originalCancelAnimationFrame = window.cancelAnimationFrame.bind(window);
+	const originalRequestAnimationFrame =
+		window.requestAnimationFrame.bind(window);
+	const originalCancelAnimationFrame =
+		window.cancelAnimationFrame.bind(window);
 
 	Object.defineProperty(window, "getSelection", {
 		configurable: true,
@@ -156,7 +160,7 @@ function mockMutableSelectionToolbarRect(initialRect: {
 	});
 	Object.defineProperty(window, "cancelAnimationFrame", {
 		configurable: true,
-		value: () => { },
+		value: () => {},
 	});
 
 	return {
@@ -211,7 +215,10 @@ function testStreamingToolExtension() {
 		name: "test-streaming-tool",
 		dependencies: ["document-ops"],
 		activateClient: async ({ editor }) => {
-			toolRuntime = editor.internals.getSlot<ToolRuntime>("document-ops:toolRuntime") ?? null;
+			toolRuntime =
+				editor.internals.getSlot<ToolRuntime>(
+					"document-ops:toolRuntime",
+				) ?? null;
 			toolRuntime?.registerTool({
 				name: "test_search",
 				description: "Test streaming search tool",
@@ -249,7 +256,10 @@ describe("@pen/react AI primitives", () => {
 				aiExtension({
 					model: {
 						async *stream() {
-							yield { type: "text-delta" as const, delta: "planet" };
+							yield {
+								type: "text-delta" as const,
+								delta: "planet",
+							};
 							yield { type: "done" as const };
 						},
 					},
@@ -261,10 +271,7 @@ describe("@pen/react AI primitives", () => {
 			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
 			{ origin: "system" },
 		);
-		editor.selectTextRange(
-			{ blockId, offset: 6 },
-			{ blockId, offset: 11 },
-		);
+		editor.selectTextRange({ blockId, offset: 6 }, { blockId, offset: 11 });
 		const controller = getAIController(editor);
 		expect(controller).toBeTruthy();
 
@@ -328,15 +335,22 @@ describe("@pen/react AI primitives", () => {
 			),
 		).not.toBeNull();
 		expect(
-			container.querySelector("[data-pen-ai-inline-session-turn-actions]"),
+			container.querySelector(
+				"[data-pen-ai-inline-session-turn-actions]",
+			),
 		).toBeNull();
 
 		await act(async () => {
-			const activeSessionId = controller?.getState().activeSessionId ?? null;
+			const activeSessionId =
+				controller?.getState().activeSessionId ?? null;
 			if (activeSessionId) {
-				await controller?.runSessionPrompt(activeSessionId, "Rewrite this", {
-					target: "selection",
-				});
+				await controller?.runSessionPrompt(
+					activeSessionId,
+					"Rewrite this",
+					{
+						target: "selection",
+					},
+				);
 			}
 			for (let tick = 0; tick < 6; tick += 1) {
 				await Promise.resolve();
@@ -347,8 +361,15 @@ describe("@pen/react AI primitives", () => {
 		const sessionTurns = controller?.getState().sessions[0]?.turns ?? [];
 		expect(sessionTurns).toHaveLength(1);
 		expect(
-			container.querySelector("[data-pen-ai-inline-session-turn-actions]"),
+			container.querySelector(
+				"[data-pen-ai-inline-session-turn-actions]",
+			),
 		).not.toBeNull();
+		expect(
+			container.querySelector(
+				"[data-pen-ai-contextual-prompt-selection-overlay]",
+			),
+		).toBeNull();
 
 		await act(async () => {
 			if (sessionId && sessionTurns[0]) {
@@ -369,6 +390,4 @@ describe("@pen/react AI primitives", () => {
 		restoreSelectionRect();
 		container.remove();
 	});
-
-
 });

@@ -11,6 +11,7 @@ import {
 	rebaseTextDiffOps,
 	requiresResolvedInputRange,
 } from "./contenteditableDomHelpers";
+import { inlineDecorationsRequireFullReconcile } from "../utils/inlineDecorations";
 
 export abstract class ContentEditableBackendEvents extends ContentEditableBackendCore {
 	protected handleBeforeInput = (event: InputEvent): void => {
@@ -176,6 +177,23 @@ export abstract class ContentEditableBackendEvents extends ContentEditableBacken
 			fullReconcileToDOM(this.ytext, this.element, this.editor.schema, {
 				preserveSelection: true,
 				inlineDecorations: this.getInlineDecorationsForBlock(),
+			});
+			this.fieldEditor.notifyDomReconciled(blockId ?? undefined);
+			if (
+				this.fieldEditor.hasBackendSelectionAuthority("programmatic") ||
+				event.transaction?.origin === "remote" ||
+				event.transaction?.origin === "collaborator"
+			) {
+				this.restoreDOMSelectionFromEditor();
+			}
+			return;
+		}
+
+		const inlineDecorations = this.getInlineDecorationsForBlock();
+		if (inlineDecorationsRequireFullReconcile(inlineDecorations)) {
+			fullReconcileToDOM(this.ytext, this.element, this.editor.schema, {
+				preserveSelection: true,
+				inlineDecorations,
 			});
 			this.fieldEditor.notifyDomReconciled(blockId ?? undefined);
 			if (

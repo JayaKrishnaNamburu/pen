@@ -32,7 +32,7 @@ import type {
 	StructuredPreviewTargetState,
 } from "../runtime/reviewArtifacts";
 import type { StructuredIntent } from "../runtime/structuredIntent";
-import type { AIExtensionConfig, AIContentFormatOptions, ResolvedEditTarget, ResolvedEditProposal, AIStatus, AISurface, AISessionStatus, AISessionTarget, AISessionPrompt, AISessionSelectionSnapshot, AIContextualPromptRect, AIContextualPromptAnchorKind, AIContextualPromptAnchorStatus, AIContextualPromptAnchor, AIContextualPromptComposerState, AIContextualPromptState, AISessionTurnStatus, AISessionTurn, AISessionMetrics, AISessionFastApplyMetrics, AISessionAnchor, AISession, AIInlineHistorySnapshot, AgenticStep, AIStreamEventType, AIStreamEventBase, AIStreamEvent, StructuredPreviewPatchOperation, GenerationStructuredPreviewState, GenerationState, GenerationPlanState, GenerationTargetKind, EphemeralSuggestion, AIInlineCompletionState, AIInlineCompletionController, PersistentSuggestionBase, PersistentTextSuggestion } from "./typesPart1";
+import type { AIExtensionConfig, AIContentFormatOptions, ResolvedEditTarget, ResolvedEditProposal, AIStatus, AISurface, AISessionStatus, AISessionTarget, AISessionPrompt, AISessionSelectionSnapshot, AIContextualPromptRect, AIContextualPromptAnchorKind, AIContextualPromptAnchorStatus, AIContextualPromptAnchor, AIContextualPromptComposerState, AIContextualPromptState, AISessionTurnStatus, AISessionTurn, AISessionMetrics, AISessionFastApplyMetrics, AISessionAnchor, AISession, AIStreamingReviewPreview, AIStreamingReviewPreviewInput, AIInlineHistorySnapshot, AIExternalInlineTurnResult, AgenticStep, AIStreamEventType, AIStreamEventBase, AIStreamEvent, StructuredPreviewPatchOperation, GenerationStructuredPreviewState, GenerationState, GenerationPlanState, GenerationTargetKind, EphemeralSuggestion, AIInlineCompletionState, AIInlineCompletionController, PersistentSuggestionBase, PersistentTextSuggestion } from "./typesPart1";
 
 export interface PersistentBlockSuggestion extends PersistentSuggestionBase {
 	kind: "block";
@@ -103,6 +103,7 @@ export interface AIControllerState {
 	activeSessionId?: string | null;
 	suggestMode: boolean;
 	ephemeralSuggestion: EphemeralSuggestion | null;
+	streamingReviewPreview: AIStreamingReviewPreview | null;
 	commandMenuOpen: boolean;
 	lastRoute?: AIRouteLane;
 }
@@ -182,6 +183,7 @@ export interface AIController {
 	resolveSession(sessionId: string, resolution: AISessionResolution): boolean;
 	acceptSession(sessionId: string): boolean;
 	rejectSession(sessionId: string): boolean;
+	registerExternalInlineTurnResult(input: AIExternalInlineTurnResult): boolean;
 	cancelSession(sessionId: string): void;
 	suspendInlineSession(sessionId: string): void;
 	resumeInlineSession(sessionId: string): void;
@@ -202,6 +204,8 @@ export interface AIController {
 	openCommandMenu(): void;
 	closeCommandMenu(): void;
 	setSuggestMode(enabled: boolean): void;
+	setStreamingReviewPreview(input: AIStreamingReviewPreviewInput): void;
+	clearStreamingReviewPreview(sessionId?: string): void;
 	showEphemeralSuggestion(suggestion: EphemeralSuggestion): void;
 	dismissEphemeralSuggestion(): void;
 	acceptEphemeralSuggestion(): void;
@@ -223,6 +227,9 @@ export interface AgenticLoopOptions {
 	maxSteps?: number;
 	signal?: AbortSignal;
 	requestMode?: string;
+	operation?: AIRequestedOperation | null;
+	sessionId?: string;
+	turnId?: string;
 	onStatusChange?: (status: AIAwarenessState["status"]) => void;
 	onStep?: (step: AgenticStep) => void;
 	onTextDelta?: (delta: string) => void;

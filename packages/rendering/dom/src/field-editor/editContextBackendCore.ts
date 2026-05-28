@@ -56,6 +56,8 @@ export abstract class EditContextBackendCore {
 	protected element: HTMLElement | null = null;
 	protected ytext: FieldEditorTextLike | null = null;
 	protected observer: FieldEditorObserver | null = null;
+	protected unsubscribeDecorationsChange: (() => void) | null = null;
+	protected inlineDecorationsSignature: string | null = null;
 	protected editor: Editor;
 	protected fieldEditor: FieldEditorInputController;
 
@@ -114,6 +116,11 @@ export abstract class EditContextBackendCore {
 
 		this.observer = (event) => this.handleYTextChange(event);
 		this.ytext.observe(this.observer);
+		this.unsubscribeDecorationsChange = this.editor.on(
+			"decorationsChange",
+			this.handleDecorationsChange,
+		);
+		this.inlineDecorationsSignature = this.getInlineDecorationsSignature();
 
 		fullReconcileToDOM(this.ytext, element, this.editor.schema, {
 			inlineDecorations: this.getInlineDecorationsForBlock(),
@@ -147,6 +154,8 @@ export abstract class EditContextBackendCore {
 		if (this.observer && this.ytext) {
 			this.ytext.unobserve(this.observer);
 		}
+		this.unsubscribeDecorationsChange?.();
+		this.unsubscribeDecorationsChange = null;
 		if (this.element) {
 			this.element.removeEventListener("keydown", this.handleKeyDown);
 			this.element.removeEventListener("copy", this.handleCopyEvent);
@@ -172,6 +181,7 @@ export abstract class EditContextBackendCore {
 		this.element = null;
 		this.ytext = null;
 		this.observer = null;
+		this.inlineDecorationsSignature = null;
 		this.fieldEditor.resetBackendSelectionAuthority();
 		this.fieldEditor.setComposing(false);
 	}
@@ -240,6 +250,7 @@ export abstract class EditContextBackendCore {
 	protected abstract handleCharacterBoundsUpdate: (event: Event) => void;
 	protected abstract handleSelectionChange: () => void;
 	protected abstract handleYTextChange: (event: FieldEditorTextChangeEvent) => void;
+	protected abstract handleDecorationsChange: () => void;
 	protected abstract handleKeyDown: (event: KeyboardEvent) => void;
 	protected abstract handleCopyEvent: (event: ClipboardEvent) => void;
 	protected abstract handleCutEvent: (event: ClipboardEvent) => void;
@@ -249,6 +260,7 @@ export abstract class EditContextBackendCore {
 	protected abstract handlePointerDown: () => void;
 	protected abstract restoreDOMCaret(): void;
 	protected abstract getInlineDecorationsForBlock(): readonly InlineDecoration[];
+	protected abstract getInlineDecorationsSignature(): string;
 	protected abstract setEditContextSelection(
 		selection: EditContextSelection,
 		options?: EditContextSelectionOptions,

@@ -2,9 +2,19 @@ import React from "react";
 import type { AISession } from "@pen/ai";
 import { queryBlockElement } from "../../field-editor/selectionBridge";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
-import { areRectListsEqual, resolvePromptHostElement, resolvePromptSelectionRects } from "./contextualPromptGeometry";
-import { useContextualPromptPlacement, useContextualPromptSession } from "./contextualPromptPlacement";
-import type { ContextualPromptMode, ContextualPromptSide } from "./contextualPromptTypes";
+import {
+	areRectListsEqual,
+	resolvePromptHostElement,
+	resolvePromptSelectionRects,
+} from "./contextualPromptGeometry";
+import {
+	useContextualPromptPlacement,
+	useContextualPromptSession,
+} from "./contextualPromptPlacement";
+import type {
+	ContextualPromptMode,
+	ContextualPromptSide,
+} from "./contextualPromptTypes";
 import { useAIContext } from "./root";
 
 export interface AIContextualPromptSurfaceProps extends AsChildProps {
@@ -53,7 +63,8 @@ export function AIContextualPromptSurface(
 	React.useLayoutEffect(() => {
 		const previousAnchorSpacing = previousAnchorSpacingRef.current;
 		if (previousAnchorSpacing) {
-			previousAnchorSpacing.block.style.marginTop = previousAnchorSpacing.marginTop;
+			previousAnchorSpacing.block.style.marginTop =
+				previousAnchorSpacing.marginTop;
 			delete previousAnchorSpacing.block.dataset.penAiInsertedAnchor;
 			previousAnchorSpacingRef.current = null;
 		}
@@ -78,7 +89,10 @@ export function AIContextualPromptSurface(
 			return;
 		}
 
-		const anchorBlock = queryBlockElement(hostElement, layout.anchorBlockId);
+		const anchorBlock = queryBlockElement(
+			hostElement,
+			layout.anchorBlockId,
+		);
 		if (!(anchorBlock instanceof HTMLElement)) {
 			return;
 		}
@@ -108,7 +122,8 @@ export function AIContextualPromptSurface(
 			if (!currentAnchorSpacing) {
 				return;
 			}
-			currentAnchorSpacing.block.style.marginTop = currentAnchorSpacing.marginTop;
+			currentAnchorSpacing.block.style.marginTop =
+				currentAnchorSpacing.marginTop;
 			delete currentAnchorSpacing.block.dataset.penAiInsertedAnchor;
 			previousAnchorSpacingRef.current = null;
 			insertedSpacingRef.current = {
@@ -122,30 +137,40 @@ export function AIContextualPromptSurface(
 		return null;
 	}
 
-	const selectionOverlay = (
-		<ContextualPromptSelectionOverlay
-			session={session}
-			layoutRevision={layoutRevision}
-		/>
-	);
+	const pendingReviewCount =
+		session.pendingSuggestionIds.length +
+		session.pendingReviewItemIds.length;
+	const selectionOverlay =
+		mode !== "inserted" && pendingReviewCount === 0 ? (
+			<ContextualPromptSelectionOverlay
+				session={session}
+				layoutRevision={layoutRevision}
+			/>
+		) : null;
 	const surfaceChildren =
-		props.asChild && React.isValidElement(props.children)
-			? React.cloneElement(
-				props.children as React.ReactElement<{ children?: React.ReactNode }>,
+		props.asChild && React.isValidElement(props.children) ? (
+			React.cloneElement(
+				props.children as React.ReactElement<{
+					children?: React.ReactNode;
+				}>,
 				{},
 				<>
 					{selectionOverlay}
-					{(
-						props.children as React.ReactElement<{ children?: React.ReactNode }>
-					).props.children}
+					{
+						(
+							props.children as React.ReactElement<{
+								children?: React.ReactNode;
+							}>
+						).props.children
+					}
 				</>,
 			)
-			: (
-				<>
-					{selectionOverlay}
-					{props.children}
-				</>
-			);
+		) : (
+			<>
+				{selectionOverlay}
+				{props.children}
+			</>
+		);
 
 	return renderAsChild(
 		{
@@ -163,10 +188,8 @@ export function AIContextualPromptSurface(
 			"data-mode": mode,
 			"data-layout-ready": layout ? "" : undefined,
 			"data-anchor-block-id": layout?.anchorBlockId,
-			"data-pending-count":
-				session.pendingSuggestionIds.length + session.pendingReviewItemIds.length,
-			"data-running":
-				session.status === "streaming" ? "" : undefined,
+			"data-pending-count": pendingReviewCount,
+			"data-running": session.status === "streaming" ? "" : undefined,
 			"data-pen-ignore-pointer-gesture": "",
 			"data-pen-ignore-transfer": "",
 			style: {
@@ -239,7 +262,10 @@ function ContextualPromptSelectionOverlay(
 		let resizeObserver: ResizeObserver | null = null;
 
 		const measureSelection = () => {
-			const nextSegments = resolvePromptSelectionRects(hostElement, session);
+			const nextSegments = resolvePromptSelectionRects(
+				hostElement,
+				session,
+			);
 			setSegments((currentSegments) =>
 				areRectListsEqual(currentSegments, nextSegments)
 					? currentSegments

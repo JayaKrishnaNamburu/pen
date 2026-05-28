@@ -305,7 +305,11 @@ export function areAIControllerStatesEqual(
 		previous.activeSessionId !== next.activeSessionId ||
 		previous.suggestMode !== next.suggestMode ||
 		previous.commandMenuOpen !== next.commandMenuOpen ||
-		previous.lastRoute !== next.lastRoute
+		previous.lastRoute !== next.lastRoute ||
+		!areStructuredValuesEqual(
+			previous.streamingReviewPreview,
+			next.streamingReviewPreview,
+		)
 	) {
 		return false;
 	}

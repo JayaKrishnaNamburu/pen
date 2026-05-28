@@ -19,6 +19,8 @@ export type {
 
 export { parseMarkdownToBlocks } from "./markdown";
 
+export { splitPlainTextBlocks, splitPlainTextLineBlocks } from "./plainTextBlocks";
+
 export { buildDocumentWriteOps } from "./writeContent";
 export type {
   BuildDocumentWriteOpsOptions,

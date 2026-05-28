@@ -61,8 +61,10 @@ function mockSelectionToolbarRect(rect: {
 	height: number;
 }) {
 	const originalGetSelection = window.getSelection.bind(window);
-	const originalRequestAnimationFrame = window.requestAnimationFrame.bind(window);
-	const originalCancelAnimationFrame = window.cancelAnimationFrame.bind(window);
+	const originalRequestAnimationFrame =
+		window.requestAnimationFrame.bind(window);
+	const originalCancelAnimationFrame =
+		window.cancelAnimationFrame.bind(window);
 	const rangeRect = {
 		top: rect.top,
 		left: rect.left,
@@ -95,7 +97,7 @@ function mockSelectionToolbarRect(rect: {
 	});
 	Object.defineProperty(window, "cancelAnimationFrame", {
 		configurable: true,
-		value: () => { },
+		value: () => {},
 	});
 
 	return () => {
@@ -122,8 +124,10 @@ function mockMutableSelectionToolbarRect(initialRect: {
 }) {
 	const rect = { ...initialRect };
 	const originalGetSelection = window.getSelection.bind(window);
-	const originalRequestAnimationFrame = window.requestAnimationFrame.bind(window);
-	const originalCancelAnimationFrame = window.cancelAnimationFrame.bind(window);
+	const originalRequestAnimationFrame =
+		window.requestAnimationFrame.bind(window);
+	const originalCancelAnimationFrame =
+		window.cancelAnimationFrame.bind(window);
 
 	Object.defineProperty(window, "getSelection", {
 		configurable: true,
@@ -156,7 +160,7 @@ function mockMutableSelectionToolbarRect(initialRect: {
 	});
 	Object.defineProperty(window, "cancelAnimationFrame", {
 		configurable: true,
-		value: () => { },
+		value: () => {},
 	});
 
 	return {
@@ -211,7 +215,10 @@ function testStreamingToolExtension() {
 		name: "test-streaming-tool",
 		dependencies: ["document-ops"],
 		activateClient: async ({ editor }) => {
-			toolRuntime = editor.internals.getSlot<ToolRuntime>("document-ops:toolRuntime") ?? null;
+			toolRuntime =
+				editor.internals.getSlot<ToolRuntime>(
+					"document-ops:toolRuntime",
+				) ?? null;
 			toolRuntime?.registerTool({
 				name: "test_search",
 				description: "Test streaming search tool",
@@ -250,7 +257,10 @@ describe("@pen/react AI primitives", () => {
 					aiExtension({
 						model: {
 							async *stream() {
-								yield { type: "text-delta" as const, delta: "planet" };
+								yield {
+									type: "text-delta" as const,
+									delta: "planet",
+								};
 								yield { type: "done" as const };
 							},
 						},
@@ -259,7 +269,14 @@ describe("@pen/react AI primitives", () => {
 			});
 			const blockId = editor.firstBlock()!.id;
 			editor.apply(
-				[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+				[
+					{
+						type: "insert-text",
+						blockId,
+						offset: 0,
+						text: "Hello world",
+					},
+				],
 				{ origin: "system" },
 			);
 			editor.selectTextRange(
@@ -295,11 +312,16 @@ describe("@pen/react AI primitives", () => {
 					createKeyDownEvent("j", { ctrlKey: true }),
 				);
 				await Promise.resolve();
-				const activeSessionId = controller?.getState().activeSessionId ?? null;
+				const activeSessionId =
+					controller?.getState().activeSessionId ?? null;
 				if (activeSessionId) {
-					await controller?.runSessionPrompt(activeSessionId, "Rewrite this", {
-						target: "selection",
-					});
+					await controller?.runSessionPrompt(
+						activeSessionId,
+						"Rewrite this",
+						{
+							target: "selection",
+						},
+					);
 				}
 				for (let tick = 0; tick < 4; tick += 1) {
 					await Promise.resolve();
@@ -326,7 +348,8 @@ describe("@pen/react AI primitives", () => {
 				container.querySelector("[data-pen-ai-inline-session-input]"),
 			).toBeNull();
 			expect(
-				getAIController(editor)?.getState().sessions[0]?.contextualPrompt?.composer.isOpen,
+				getAIController(editor)?.getState().sessions[0]
+					?.contextualPrompt?.composer.isOpen,
 			).toBe(false);
 
 			await act(async () => {
@@ -363,10 +386,7 @@ describe("@pen/react AI primitives", () => {
 			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
 			{ origin: "system" },
 		);
-		editor.selectTextRange(
-			{ blockId, offset: 0 },
-			{ blockId, offset: 5 },
-		);
+		editor.selectTextRange({ blockId, offset: 0 }, { blockId, offset: 5 });
 
 		const container = document.createElement("div");
 		document.body.appendChild(container);
@@ -413,9 +433,7 @@ describe("@pen/react AI primitives", () => {
 		});
 
 		await act(async () => {
-			document.dispatchEvent(
-				createKeyDownEvent("j", { ctrlKey: true }),
-			);
+			document.dispatchEvent(createKeyDownEvent("j", { ctrlKey: true }));
 			for (let tick = 0; tick < 4; tick += 1) {
 				await Promise.resolve();
 			}
@@ -423,16 +441,18 @@ describe("@pen/react AI primitives", () => {
 
 		expect(blockElement?.style.marginTop).not.toBe("");
 		const insertedPrompt = container.querySelector(
-			"[data-pen-ai-inline-session][data-mode=\"inserted\"]",
+			'[data-pen-ai-inline-session][data-mode="inserted"]',
 		) as HTMLElement | null;
 		expect(insertedPrompt).not.toBeNull();
 		expect(
 			container.querySelector(
 				"[data-pen-ai-contextual-prompt-selection-overlay]",
 			),
-		).not.toBeNull();
+		).toBeNull();
 		expect(
-			insertedPrompt?.style.getPropertyValue("--pen-ai-contextual-prompt-top"),
+			insertedPrompt?.style.getPropertyValue(
+				"--pen-ai-contextual-prompt-top",
+			),
 		).not.toBe("0px");
 
 		await act(async () => {
@@ -442,5 +462,100 @@ describe("@pen/react AI primitives", () => {
 		container.remove();
 	});
 
+	it("reserves document space for inserted contextual prompts opened from a collapsed caret", async () => {
+		const restoreSelectionRect = mockSelectionToolbarRect({
+			top: 120,
+			left: 180,
+			width: 80,
+			height: 20,
+		});
+		const editor = createEditor({
+			extensions: [
+				aiExtension({
+					model: {
+						async *stream() {
+							yield { type: "done" as const };
+						},
+					},
+				}),
+			],
+		});
+		const blockId = editor.firstBlock()!.id;
+		editor.apply(
+			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			{ origin: "system" },
+		);
+		editor.selectTextRange({ blockId, offset: 5 }, { blockId, offset: 5 });
 
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(
+				<Pen.Editor.Root editor={editor}>
+					<Pen.AI.Root editor={editor}>
+						<Pen.Editor.Content />
+						<Pen.AI.ContextualPromptSurface mode="inserted">
+							<div>
+								<Pen.AI.ContextualPromptComposer />
+							</div>
+						</Pen.AI.ContextualPromptSurface>
+					</Pen.AI.Root>
+				</Pen.Editor.Root>,
+			);
+			await Promise.resolve();
+		});
+
+		const blockElement = container.querySelector(
+			`[data-block-id="${blockId}"]`,
+		) as HTMLElement | null;
+		expect(blockElement).not.toBeNull();
+		Object.defineProperty(blockElement, "getBoundingClientRect", {
+			configurable: true,
+			value: () => ({
+				top: 120,
+				left: 120,
+				width: 320,
+				height: 24,
+				right: 440,
+				bottom: 144,
+				x: 120,
+				y: 120,
+				toJSON() {
+					return this;
+				},
+			}),
+		});
+
+		await act(async () => {
+			const session = getAIController(editor)?.openContextualPrompt({
+				surface: "inline-edit",
+				target: "auto",
+			});
+			expect(session?.contextualPrompt?.anchor).toMatchObject({
+				kind: "block",
+				focusBlockId: blockId,
+			});
+			await waitForCondition(() => blockElement?.style.marginTop !== "");
+		});
+
+		const insertedPrompt = container.querySelector(
+			'[data-pen-ai-inline-session][data-mode="inserted"]',
+		) as HTMLElement | null;
+		expect(insertedPrompt).not.toBeNull();
+		expect(insertedPrompt?.dataset.anchorBlockId).toBe(blockId);
+		expect(blockElement?.style.marginTop).not.toBe("");
+		expect(
+			insertedPrompt?.style.getPropertyValue(
+				"--pen-ai-contextual-prompt-top",
+			),
+		).not.toBe("0px");
+
+		await act(async () => {
+			root.unmount();
+		});
+		restoreSelectionRect();
+		container.remove();
+	});
 });

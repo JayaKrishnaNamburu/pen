@@ -215,6 +215,7 @@ _resolveSessionTurn(this: any,
 		if (!resolved) {
 			return false;
 		}
+		this.clearStreamingReviewPreview(sessionId);
 		this._updateSessionTurn(sessionId, turnId, {
 			status: resolution === "accept" ? "accepted" : "rejected",
 			suggestionIds: [],

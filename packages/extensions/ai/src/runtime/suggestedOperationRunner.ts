@@ -1,4 +1,4 @@
-import type { Editor } from "@pen/types";
+import type { Editor, OpOrigin } from "@pen/types";
 import type { DocumentOp } from "@pen/types";
 import type { GenerationState, AISession } from "../types";
 import { applySuggestedAIOperations } from "../suggestions/applySuggestedAIOperations";
@@ -18,7 +18,15 @@ export class SuggestedAIOperationRunner {
 	apply(
 		operations: DocumentOp[],
 		sessionId?: string,
-		options?: { undoGroupId?: string },
+		options?: {
+			createdAt?: number;
+			generationId?: string;
+			origin?: OpOrigin;
+			requestId?: string;
+			suggestionIds?: readonly string[];
+			turnId?: string;
+			undoGroupId?: string;
+		},
 	): void {
 		const session =
 			sessionId != null ? this.options.getSession(sessionId) : null;
@@ -36,8 +44,13 @@ export class SuggestedAIOperationRunner {
 			author: this.options.author,
 			authorType: "ai",
 			model: this.options.model,
+			createdAt: options?.createdAt,
+			generationId: options?.generationId,
+			requestId: options?.requestId,
 			sessionId,
-			origin: sessionId ? AI_SESSION_SUGGESTION_ORIGIN : "extension",
+			suggestionIds: options?.suggestionIds,
+			turnId: options?.turnId,
+			origin: options?.origin ?? (sessionId ? AI_SESSION_SUGGESTION_ORIGIN : "extension"),
 			undoGroupId,
 		});
 	}

@@ -13,7 +13,7 @@ export function BlockquoteRenderer(
       data-block-type="blockquote"
       data-selected={ctx.selected || undefined}
     >
-      <InlineContent blockId={block.id} />
+      <InlineContent blockId={block.id} decorations={ctx.decorations} />
       <ParentIdChildren
         parentBlockId={block.id}
         containerProps={{ "data-pen-blockquote-children": "" }}

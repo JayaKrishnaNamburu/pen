@@ -9,8 +9,9 @@ const EMPTY_AI_STATE: AIControllerState = {
 	activeSessionId: null,
 	suggestMode: false,
 	ephemeralSuggestion: null,
+	streamingReviewPreview: null,
 	commandMenuOpen: false,
-};
+} as AIControllerState;
 
 export function useAI(editor: Editor): AIControllerState {
 	const controller = getAIController(editor);

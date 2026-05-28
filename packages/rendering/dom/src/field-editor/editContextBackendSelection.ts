@@ -47,6 +47,10 @@ import type {
 	FieldEditorTextLike,
 } from "./crdt";
 import { EditContextBackendInput } from "./editContextBackendInput";
+import {
+	buildInlineDecorationsRenderSignature,
+	inlineDecorationsRequireFullReconcile,
+} from "../utils/inlineDecorations";
 
 export abstract class EditContextBackendSelection extends EditContextBackendInput {
 	protected handleSelectionChange = (): void => {
@@ -211,19 +215,30 @@ export abstract class EditContextBackendSelection extends EditContextBackendInpu
 			return;
 		}
 
-		const applied = applyDeltaToDOM(
-			event.delta,
-			this.element,
-			this.editor.schema,
-		);
-		if (!applied) {
+		const inlineDecorations = this.getInlineDecorationsForBlock();
+		if (inlineDecorationsRequireFullReconcile(inlineDecorations)) {
 			fullReconcileToDOM(this.ytext, this.element, this.editor.schema, {
 				preserveSelection: true,
-				inlineDecorations: this.getInlineDecorationsForBlock(),
+				inlineDecorations,
 			});
 			this.fieldEditor.notifyDomReconciled(
 				this.fieldEditor.focusBlockId ?? undefined,
 			);
+		} else {
+			const applied = applyDeltaToDOM(
+				event.delta,
+				this.element,
+				this.editor.schema,
+			);
+			if (!applied) {
+				fullReconcileToDOM(this.ytext, this.element, this.editor.schema, {
+					preserveSelection: true,
+					inlineDecorations,
+				});
+				this.fieldEditor.notifyDomReconciled(
+					this.fieldEditor.focusBlockId ?? undefined,
+				);
+			}
 		}
 
 		if (
@@ -268,6 +283,25 @@ export abstract class EditContextBackendSelection extends EditContextBackendInpu
 				source: "text-update",
 			});
 		}
+		this.restoreDOMCaret();
+	};
+
+	protected handleDecorationsChange = (): void => {
+		if (!this.element || !this.ytext) {
+			return;
+		}
+		const nextInlineDecorationsSignature = this.getInlineDecorationsSignature();
+		if (nextInlineDecorationsSignature === this.inlineDecorationsSignature) {
+			return;
+		}
+		fullReconcileToDOM(this.ytext, this.element, this.editor.schema, {
+			preserveSelection: true,
+			inlineDecorations: this.getInlineDecorationsForBlock(),
+		});
+		this.inlineDecorationsSignature = nextInlineDecorationsSignature;
+		this.fieldEditor.notifyDomReconciled(
+			this.fieldEditor.focusBlockId ?? undefined,
+		);
 		this.restoreDOMCaret();
 	};
 
@@ -355,6 +389,12 @@ export abstract class EditContextBackendSelection extends EditContextBackendInpu
 				(decoration): decoration is InlineDecoration =>
 					decoration.type === "inline",
 			);
+	}
+
+	protected getInlineDecorationsSignature(): string {
+		return buildInlineDecorationsRenderSignature(
+			this.getInlineDecorationsForBlock(),
+		);
 	}
 
 }

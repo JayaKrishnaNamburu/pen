@@ -16,6 +16,6 @@ export function HeadingRenderer(
       "data-level": level,
       "data-selected": ctx.selected || undefined,
     },
-    <InlineContent blockId={block.id} />,
+    <InlineContent blockId={block.id} decorations={ctx.decorations} />,
   );
 }

@@ -27,6 +27,7 @@ function NumberedListItemView({
 			blockType="numberedListItem"
 			indent={indent}
 			selected={ctx.selected}
+			decorations={ctx.decorations}
 			extraAttributes={{ "data-counter": counterValue }}
 			marker={
 				<span data-pen-list-marker="" aria-hidden="true">

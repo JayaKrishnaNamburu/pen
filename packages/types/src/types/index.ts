@@ -324,6 +324,7 @@ export type {
 	DecorationSet,
 	PositionMapping,
 } from "./decorations";
+export { DECORATION_OMIT_FROM_RENDER_ATTRIBUTE } from "./decorations";
 
 // ── Transport ───────────────────────────────────────────────
 export type { PenTransport, ServerConfig } from "./transport";

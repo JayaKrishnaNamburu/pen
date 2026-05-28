@@ -117,6 +117,10 @@ export async function runAgenticLoop(
 			tools: availableTools,
 			signal,
 			requestMode: options.requestMode,
+			operation: options.operation ?? undefined,
+			sessionId: options.sessionId,
+			turnId: options.turnId,
+			generationId,
 		});
 		const pendingToolCalls: Array<{
 			toolCallId: string;

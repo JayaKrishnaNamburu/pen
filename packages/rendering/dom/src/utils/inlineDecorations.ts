@@ -1,17 +1,24 @@
 import type { InlineDecoration } from "@pen/types";
+import { DECORATION_OMIT_FROM_RENDER_ATTRIBUTE } from "@pen/types";
 
 const INLINE_DECORATION_ATTRIBUTE_KEY = "__penInlineDecoration";
+const VIRTUAL_INLINE_DECORATION_ATTRIBUTE = "data-pen-virtual-inline";
 
 interface TextDelta {
 	insert: string | Record<string, unknown>;
 	attributes?: Readonly<Record<string, unknown>>;
 }
 
+type VirtualInlineDecoration = InlineDecoration & {
+	virtualText?: string;
+	virtualPlacement?: "before" | "after";
+};
+
 export function applyInlineDecorationsToDeltas(
 	deltas: readonly TextDelta[],
 	decorations: readonly InlineDecoration[],
 ): TextDelta[] {
-	if (deltas.length === 0 || decorations.length === 0) {
+	if (decorations.length === 0) {
 		return [...deltas];
 	}
 
@@ -22,17 +29,55 @@ export function applyInlineDecorationsToDeltas(
 				? left.to - right.to
 				: left.from - right.from,
 		);
-	if (normalizedDecorations.length === 0) {
+	const virtualDecorations = decorations
+		.flatMap((decoration) => {
+			const virtualDecoration = decoration as VirtualInlineDecoration;
+			const text = virtualDecoration.virtualText;
+			if (!text) {
+				return [];
+			}
+			return [{
+				decoration,
+				offset:
+					virtualDecoration.virtualPlacement === "before"
+						? virtualDecoration.from
+						: virtualDecoration.to,
+				text,
+			}];
+		})
+		.sort((left, right) => left.offset - right.offset);
+	if (normalizedDecorations.length === 0 && virtualDecorations.length === 0) {
 		return [...deltas];
 	}
 
 	const result: TextDelta[] = [];
 	let offset = 0;
+	let virtualIndex = 0;
+
+	const appendVirtualDecorationsAt = (targetOffset: number) => {
+		while (
+			virtualIndex < virtualDecorations.length &&
+			virtualDecorations[virtualIndex]!.offset === targetOffset
+		) {
+			const { decoration, text } = virtualDecorations[virtualIndex]!;
+			appendDelta(result, {
+				insert: text,
+				attributes: mergeDeltaAttributes(undefined, {
+					...decoration.attributes,
+					[VIRTUAL_INLINE_DECORATION_ATTRIBUTE]: true,
+				}),
+			});
+			virtualIndex += 1;
+		}
+	};
 
 	for (const delta of deltas) {
+		appendVirtualDecorationsAt(offset);
+
 		if (typeof delta.insert !== "string") {
 			result.push({ ...delta });
 			offset += 1;
+			appendVirtualDecorationsAt(offset);
 			continue;
 		}
 
@@ -56,6 +101,11 @@ export function applyInlineDecorationsToDeltas(
 			boundaries.add(Math.max(decoration.from, segmentStart));
 			boundaries.add(Math.min(decoration.to, segmentEnd));
 		}
+		for (const { offset: virtualOffset } of virtualDecorations) {
+			if (virtualOffset >= segmentStart && virtualOffset <= segmentEnd) {
+				boundaries.add(virtualOffset);
+			}
+		}
 
 		const sortedBoundaries = [...boundaries].sort(
 			(left, right) => left - right,
@@ -63,6 +113,7 @@ export function applyInlineDecorationsToDeltas(
 		for (let index = 0; index < sortedBoundaries.length - 1; index += 1) {
 			const from = sortedBoundaries[index];
 			const to = sortedBoundaries[index + 1];
+			appendVirtualDecorationsAt(from);
 			if (to <= from) {
 				continue;
 			}
@@ -86,14 +137,97 @@ export function applyInlineDecorationsToDeltas(
 				...(attributes ? { attributes } : {}),
 			});
 		}
+		appendVirtualDecorationsAt(segmentEnd);
 
 		offset = segmentEnd;
+	}
+	while (virtualIndex < virtualDecorations.length) {
+		const { decoration, text } = virtualDecorations[virtualIndex]!;
+		appendDelta(result, {
+			insert: text,
+			attributes: mergeDeltaAttributes(undefined, {
+				...decoration.attributes,
+				[VIRTUAL_INLINE_DECORATION_ATTRIBUTE]: true,
+			}),
+		});
+		virtualIndex += 1;
 	}
 
 	return result;
 }
 
-export { INLINE_DECORATION_ATTRIBUTE_KEY };
+export function filterVisibleInlineDecorationDeltas(
+	deltas: readonly TextDelta[],
+): TextDelta[] {
+	let filteredDeltas: TextDelta[] | null = null;
+
+	for (let index = 0; index < deltas.length; index += 1) {
+		const delta = deltas[index]!;
+		const decorationAttributes =
+			delta.attributes?.[INLINE_DECORATION_ATTRIBUTE_KEY];
+		if (!decorationAttributes || typeof decorationAttributes !== "object") {
+			filteredDeltas?.push(delta);
+			continue;
+		}
+		const isHidden =
+			(decorationAttributes as Record<string, unknown>)[
+				DECORATION_OMIT_FROM_RENDER_ATTRIBUTE
+			] === true;
+		if (!isHidden) {
+			filteredDeltas?.push(delta);
+			continue;
+		}
+		filteredDeltas = filteredDeltas ?? deltas.slice(0, index);
+	}
+
+	return filteredDeltas ?? (deltas as TextDelta[]);
+}
+
+export function inlineDecorationsRequireFullReconcile(
+	decorations: readonly InlineDecoration[],
+): boolean {
+	return decorations.some((decoration) => {
+		if ("virtualText" in decoration && decoration.virtualText) {
+			return true;
+		}
+		if (decoration.omitFromRender === true) {
+			return true;
+		}
+		const attributes = decoration.attributes;
+		if (
+			attributes &&
+			attributes[DECORATION_OMIT_FROM_RENDER_ATTRIBUTE] === true
+		) {
+			return true;
+		}
+		return false;
+	});
+}
+
+export function serializeInlineDecorationForRender(
+	decoration: InlineDecoration,
+): unknown[] {
+	return [
+		decoration.blockId,
+		decoration.from,
+		decoration.to,
+		decoration.key ?? null,
+		decoration.omitFromRender ?? null,
+		"virtualText" in decoration ? decoration.virtualText : null,
+		"virtualPlacement" in decoration ? decoration.virtualPlacement : null,
+		decoration.attributes,
+	];
+}
+
+export function buildInlineDecorationsRenderSignature(
+	decorations: readonly InlineDecoration[],
+): string {
+	return JSON.stringify(
+		decorations.map(serializeInlineDecorationForRender),
+	);
+}
+
+export { INLINE_DECORATION_ATTRIBUTE_KEY, VIRTUAL_INLINE_DECORATION_ATTRIBUTE };
 
 function mergeDecorationAttributes(
 	decorations: readonly InlineDecoration[],
@@ -109,6 +243,9 @@ function mergeDecorationAttributes(
 		mergedAttributes = {
 			...(mergedAttributes ?? {}),
 			...decoration.attributes,
+			...(decoration.omitFromRender
+				? { [DECORATION_OMIT_FROM_RENDER_ATTRIBUTE]: true }
+				: {}),
 		};
 	}
 

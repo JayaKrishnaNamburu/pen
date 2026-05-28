@@ -22,6 +22,9 @@ export async function runGenerationLoop(controller: any, state: any): Promise<an
 					...context,
 					targetType: target.type,
 				}),
+				operation: context?.operation,
+				sessionId: context?.sessionId,
+				turnId: sessionTurnId,
 				workingSet,
 				validateWorkingSet: (activeWorkingSet) =>
 					controller._validateWorkingSet(route, target, activeWorkingSet),

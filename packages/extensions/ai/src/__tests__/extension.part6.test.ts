@@ -3,13 +3,13 @@ import { createEditor } from "@pen/core";
 import {
 	acceptAllSuggestions,
 	acceptSuggestion,
+	applySuggestedAIOperations,
 	aiExtension,
 	getAIInlineHistoryController,
 	getAIController,
 	rejectSuggestion,
 } from "../index";
 import {
-	readAllSuggestions,
 	readBlockSuggestionMeta,
 	readSuggestionsFromBlock,
 } from "../suggestions/persistent";
@@ -201,6 +201,351 @@ describe("aiExtension", () => {
 
 			expect(inlineHistory.handleShortcut("redo")).toBe(true);
 			expect(controller.getState().sessions[0]?.turns).toHaveLength(2);
+		});
+
+	it("undoes and redoes a server-authored inline turn result without a local undo stack item", async () => {
+			const editor = createEditor({
+				extensions: [
+					aiExtension({
+						model: {
+							async *stream() {
+								yield { type: "done" as const };
+							},
+						},
+					}),
+				],
+			});
+			const blockId = editor.firstBlock()!.id;
+			editor.apply(
+				[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+				{ origin: "system" },
+			);
+			editor.selectTextRange(
+				{ blockId, offset: 6 },
+				{ blockId, offset: 11 },
+			);
+
+			const controller = getAIController(editor)!;
+			const session = controller.openContextualPrompt({
+				surface: "inline-edit",
+				target: "selection",
+			});
+			expect(session).not.toBeNull();
+
+			await controller.runSessionPrompt(session!.id, "Rewrite this");
+			const turn = controller.getState().sessions[0]?.turns[0];
+			expect(turn).toBeTruthy();
+
+			const operations = [
+				{
+					type: "replace-text" as const,
+					blockId,
+					offset: 6,
+					length: 5,
+					text: "planet",
+				},
+			];
+			const applyResult = applySuggestedAIOperations(editor, {
+				operations,
+				sessionId: session!.id,
+				turnId: turn!.id,
+				generationId: "server-generation-1",
+				origin: "system",
+			});
+			(controller as any)._syncSuggestionsFromDocument();
+			(controller as any)._updateSessionTurn(session!.id, turn!.id, {
+				status: "review",
+				generationId: "server-generation-1",
+				suggestionIds: applyResult.suggestionIds,
+			});
+			expect(
+				controller.registerExternalInlineTurnResult({
+					sessionId: session!.id,
+					turnId: turn!.id,
+					historyId: "server-generation-1",
+					operations,
+					suggestionIds: applyResult.suggestionIds,
+				}),
+			).toBe(true);
+			expect(editor.getBlock(blockId)?.textContent({ resolved: true })).toBe(
+				"Hello planet",
+			);
+			expect(editor.undoManager.canUndo()).toBe(false);
+
+			expect(controller.undoInlineHistory()).toBe(true);
+			expect(editor.getBlock(blockId)?.textContent({ resolved: true })).toBe(
+				"Hello world",
+			);
+			expect(controller.getState().sessions[0]?.turns).toHaveLength(0);
+
+			expect(controller.redoInlineHistory()).toBe(true);
+			expect(editor.getBlock(blockId)?.textContent({ resolved: true })).toBe(
+				"Hello planet",
+			);
+			expect(controller.getState().sessions[0]?.turns[0]?.status).toBe(
+				"review",
+			);
+		});
+
+	it("undoes a server-authored result when the prompt has a newer UI-only snapshot", async () => {
+			const editor = createEditor({
+				extensions: [
+					aiExtension({
+						model: {
+							async *stream() {
+								yield { type: "done" as const };
+							},
+						},
+					}),
+				],
+			});
+			const blockId = editor.firstBlock()!.id;
+			editor.apply(
+				[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+				{ origin: "system" },
+			);
+			editor.selectTextRange(
+				{ blockId, offset: 6 },
+				{ blockId, offset: 11 },
+			);
+
+			const controller = getAIController(editor)!;
+			const session = controller.openContextualPrompt({
+				surface: "inline-edit",
+				target: "selection",
+			});
+			await controller.runSessionPrompt(session!.id, "Rewrite this");
+			const turn = controller.getState().sessions[0]?.turns[0];
+			const operations = [
+				{
+					type: "replace-text" as const,
+					blockId,
+					offset: 6,
+					length: 5,
+					text: "planet",
+				},
+			];
+			const applyResult = applySuggestedAIOperations(editor, {
+				operations,
+				sessionId: session!.id,
+				turnId: turn!.id,
+				generationId: "server-generation-1",
+				origin: "system",
+			});
+			(controller as any)._syncSuggestionsFromDocument();
+			(controller as any)._updateSessionTurn(session!.id, turn!.id, {
+				status: "review",
+				generationId: "server-generation-1",
+				suggestionIds: applyResult.suggestionIds,
+			});
+			controller.registerExternalInlineTurnResult({
+				sessionId: session!.id,
+				turnId: turn!.id,
+				historyId: "server-generation-1",
+				operations,
+				suggestionIds: applyResult.suggestionIds,
+			});
+			controller.updateContextualPromptDraft(session!.id, "Make it warmer");
+
+			expect(editor.getBlock(blockId)?.textContent({ resolved: true })).toBe(
+				"Hello planet",
+			);
+			expect((controller as any).handleInlineHistoryShortcut("undo")).toBe(true);
+			expect(editor.getBlock(blockId)?.textContent({ resolved: true })).toBe(
+				"Hello world",
+			);
+		});
+
+	it("walks server-authored inline turn results one turn at a time", async () => {
+			const editor = createEditor({
+				extensions: [
+					aiExtension({
+						model: {
+							async *stream() {
+								yield { type: "done" as const };
+							},
+						},
+					}),
+				],
+			});
+			const blockId = editor.firstBlock()!.id;
+			editor.apply([{ type: "insert-text", blockId, offset: 0, text: "Hello" }], {
+				origin: "system",
+			});
+
+			const controller = getAIController(editor)!;
+			editor.selectTextRange({ blockId, offset: 0 }, { blockId, offset: 5 });
+			const session = controller.openContextualPrompt({
+				surface: "inline-edit",
+				target: "selection",
+			});
+			expect(session).not.toBeNull();
+
+			await controller.runSessionPrompt(session!.id, "Add greeting detail");
+			const firstTurn = controller.getState().sessions[0]?.turns[0];
+			const firstOperations = [
+				{ type: "insert-text" as const, blockId, offset: 5, text: " there" },
+			];
+			const firstApplyResult = applySuggestedAIOperations(editor, {
+				operations: firstOperations,
+				sessionId: session!.id,
+				turnId: firstTurn!.id,
+				generationId: "server-generation-1",
+				origin: "system",
+			});
+			(controller as any)._syncSuggestionsFromDocument();
+			(controller as any)._updateSessionTurn(session!.id, firstTurn!.id, {
+				status: "review",
+				generationId: "server-generation-1",
+				suggestionIds: firstApplyResult.suggestionIds,
+			});
+			controller.registerExternalInlineTurnResult({
+				sessionId: session!.id,
+				turnId: firstTurn!.id,
+				historyId: "server-generation-1",
+				operations: firstOperations,
+				suggestionIds: firstApplyResult.suggestionIds,
+			});
+
+			await controller.runSessionPrompt(session!.id, "Add recipient detail");
+			const secondTurn = controller.getState().sessions[0]?.turns[1];
+			const secondOperations = [
+				{ type: "insert-text" as const, blockId, offset: 11, text: " friend" },
+			];
+			const secondApplyResult = applySuggestedAIOperations(editor, {
+				operations: secondOperations,
+				sessionId: session!.id,
+				turnId: secondTurn!.id,
+				generationId: "server-generation-2",
+				origin: "system",
+			});
+			(controller as any)._syncSuggestionsFromDocument();
+			(controller as any)._updateSessionTurn(session!.id, secondTurn!.id, {
+				status: "review",
+				generationId: "server-generation-2",
+				suggestionIds: secondApplyResult.suggestionIds,
+			});
+			controller.registerExternalInlineTurnResult({
+				sessionId: session!.id,
+				turnId: secondTurn!.id,
+				historyId: "server-generation-2",
+				operations: secondOperations,
+				suggestionIds: secondApplyResult.suggestionIds,
+			});
+
+			expect(editor.getBlock(blockId)?.textContent({ resolved: true })).toBe(
+				"Hello there friend",
+			);
+			const firstUndoTargetIndex = (controller as any)._resolveInlineHistoryTargetIndex(
+				"undo",
+				{ shortcutOnly: true },
+			);
+			expect(
+				(controller as any)._inlineHistory[firstUndoTargetIndex]?.sessions[0]
+					?.turns,
+			).toHaveLength(1);
+			expect(
+				(controller as any)._inlineHistory[firstUndoTargetIndex]?.sessions[0]
+					?.turns[0]?.status,
+			).toBe("review");
+			expect((controller as any).handleInlineHistoryShortcut("undo")).toBe(true);
+			expect(editor.getBlock(blockId)?.textContent({ resolved: true })).toBe(
+				"Hello there",
+			);
+
+			expect((controller as any).handleInlineHistoryShortcut("redo")).toBe(true);
+			expect(editor.getBlock(blockId)?.textContent({ resolved: true })).toBe(
+				"Hello there friend",
+			);
+		});
+
+	it("builds per-turn external history when multiple server turns hydrate together", async () => {
+			const editor = createEditor({
+				extensions: [
+					aiExtension({
+						model: {
+							async *stream() {
+								yield { type: "done" as const };
+							},
+						},
+					}),
+				],
+			});
+			const blockId = editor.firstBlock()!.id;
+			editor.apply([{ type: "insert-text", blockId, offset: 0, text: "Hello" }], {
+				origin: "system",
+			});
+
+			const controller = getAIController(editor)!;
+			editor.selectTextRange({ blockId, offset: 0 }, { blockId, offset: 5 });
+			const session = controller.openContextualPrompt({
+				surface: "inline-edit",
+				target: "selection",
+			});
+			await controller.runSessionPrompt(session!.id, "Add greeting detail");
+			const firstTurn = controller.getState().sessions[0]?.turns[0];
+			const firstOperations = [
+				{ type: "insert-text" as const, blockId, offset: 5, text: " there" },
+			];
+			const firstApplyResult = applySuggestedAIOperations(editor, {
+				operations: firstOperations,
+				sessionId: session!.id,
+				turnId: firstTurn!.id,
+				generationId: "server-generation-1",
+				origin: "system",
+			});
+			(controller as any)._syncSuggestionsFromDocument();
+			(controller as any)._updateSessionTurn(session!.id, firstTurn!.id, {
+				status: "review",
+				generationId: "server-generation-1",
+				suggestionIds: firstApplyResult.suggestionIds,
+			});
+
+			await controller.runSessionPrompt(session!.id, "Add recipient detail");
+			const secondTurn = controller.getState().sessions[0]?.turns[1];
+			const secondOperations = [
+				{ type: "insert-text" as const, blockId, offset: 11, text: " friend" },
+			];
+			const secondApplyResult = applySuggestedAIOperations(editor, {
+				operations: secondOperations,
+				sessionId: session!.id,
+				turnId: secondTurn!.id,
+				generationId: "server-generation-2",
+				origin: "system",
+			});
+			(controller as any)._syncSuggestionsFromDocument();
+			(controller as any)._updateSessionTurn(session!.id, secondTurn!.id, {
+				status: "review",
+				generationId: "server-generation-2",
+				suggestionIds: secondApplyResult.suggestionIds,
+			});
+
+			controller.registerExternalInlineTurnResult({
+				sessionId: session!.id,
+				turnId: firstTurn!.id,
+				historyId: "server-generation-1",
+				operations: firstOperations,
+				suggestionIds: firstApplyResult.suggestionIds,
+			});
+			controller.registerExternalInlineTurnResult({
+				sessionId: session!.id,
+				turnId: secondTurn!.id,
+				historyId: "server-generation-2",
+				operations: secondOperations,
+				suggestionIds: secondApplyResult.suggestionIds,
+			});
+
+			expect(editor.getBlock(blockId)?.textContent({ resolved: true })).toBe(
+				"Hello there friend",
+			);
+			expect((controller as any).handleInlineHistoryShortcut("undo")).toBe(true);
+			expect(editor.getBlock(blockId)?.textContent({ resolved: true })).toBe(
+				"Hello there",
+			);
+			expect((controller as any).handleInlineHistoryShortcut("undo")).toBe(true);
+			expect(editor.getBlock(blockId)?.textContent({ resolved: true })).toBe(
+				"Hello",
+			);
 		});
 
 	it("keeps the public AI controller inline history methods available", async () => {

@@ -7,6 +7,7 @@ import {
 	blocksToOps,
 	normalizePendingBlocksForImport,
 	parseMarkdownToBlocks,
+	splitPlainTextBlocks,
 	type PendingBlock,
 } from "@pen/content-ops";
 
@@ -105,10 +106,22 @@ function parseStructuredSuggestion(
 	blocks: PendingBlock[];
 } | null {
 	const normalizedText = text.replace(/\r/g, "");
+	if (
+		isProseBlockType(options?.activeBlockType) &&
+		normalizedText.includes("\n") &&
+		!containsStructuredBlockContinuation(normalizedText)
+	) {
+		const proseStructuredSuggestion = parseProseLineStructuredSuggestion(normalizedText);
+		if (proseStructuredSuggestion) {
+			return proseStructuredSuggestion;
+		}
+	}
+
 	const splitIndex = findStructuredSuggestionBoundary(normalizedText);
 	if (splitIndex >= 0) {
 		const inlineText = normalizedText.slice(0, splitIndex);
-		const markdownTail = normalizedText.slice(splitIndex).replace(/^\n+/, "");
+		const tail = normalizedText.slice(splitIndex);
+		const markdownTail = tail.replace(/^\n+/, "");
 		if (markdownTail.trim().length > 0) {
 			const parsedBlocks = parseMarkdownToBlocks(markdownTail, editor);
 			const normalizedBlocks = normalizePendingBlocksForImport(
@@ -122,6 +135,15 @@ function parseStructuredSuggestion(
 					blocks: normalizedBlocks,
 				};
 			}
+		} else if (/^\n{2,}/.test(tail)) {
+			return {
+				inlineText,
+				blocks: [{
+					type: "paragraph",
+					props: {},
+					content: "",
+				}],
+			};
 		}
 	}
 
@@ -140,6 +162,19 @@ function parseStructuredSuggestion(
 		}
 	}
 	return null;
+}
+
+function containsStructuredBlockContinuation(text: string): boolean {
+	if (/\n(?=(?:#{1,6}\s|>\s|[+*]\s|\d+[.)]\s|\[[ xX]\]\s|```))/.test(text)) {
+		return true;
+	}
+
+	const dashLineMatches = text.match(/\n-\s+\S/g) ?? [];
+	if (dashLineMatches.length > 1) {
+		return true;
+	}
+
+	return /^\n-\s+\S/.test(text);
 }
 
 function findStructuredSuggestionBoundary(text: string): number {
@@ -196,25 +231,68 @@ function parseProseLineStructuredSuggestion(text: string): {
 	inlineText: string;
 	blocks: PendingBlock[];
 } | null {
-	const lines = text.split("\n");
-	if (lines.length <= 1) {
+	const suggestion = splitAutocompleteProseBlocks(text);
+	if (!suggestion) {
 		return null;
 	}
-	const [inlineText, ...tailLines] = lines;
-	const paragraphLines = tailLines
-		.map((line) => line.trim())
-		.filter((line) => line.length > 0);
-	if (paragraphLines.length === 0) {
-		return null;
-	}
+
 	return {
-		inlineText,
-		blocks: paragraphLines.map((line) => ({
+		inlineText: suggestion.inlineText,
+		blocks: suggestion.blocks.map((content) => ({
 			type: "paragraph",
 			props: {},
-			content: line,
+			content,
 		})),
 	};
+}
+
+function splitAutocompleteProseBlocks(text: string): {
+	inlineText: string;
+	blocks: string[];
+} | null {
+	const normalizedText = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+	const leadingNewlineMatch = /^\n+/.exec(normalizedText);
+	if (leadingNewlineMatch) {
+		const tailBlocks = splitPlainTextBlocks(normalizedText.slice(leadingNewlineMatch[0].length));
+		const leadingEmptyBlocks = createEmptyBlocks(
+			tailBlocks.length > 0 ? leadingNewlineMatch[0].length - 1 : leadingNewlineMatch[0].length,
+		);
+		const blocks = [...leadingEmptyBlocks, ...tailBlocks];
+		return blocks.length > 0 ? { inlineText: "", blocks } : null;
+	}
+
+	const paragraphs = splitPlainTextBlocks(normalizedText);
+	const trailingEmptyBlocks = createTrailingEmptyBlocks(normalizedText);
+	if (paragraphs.length <= 1 && trailingEmptyBlocks.length === 0) {
+		return null;
+	}
+
+	const [inlineParagraph, ...tailParagraphs] = paragraphs;
+	return {
+		inlineText: resolveAutocompleteInlineParagraphText(normalizedText, inlineParagraph ?? ""),
+		blocks: [...tailParagraphs, ...trailingEmptyBlocks],
+	};
+}
+
+function createTrailingEmptyBlocks(text: string): string[] {
+	const trailingNewlineMatch = /\n+$/.exec(text);
+	return createEmptyBlocks(trailingNewlineMatch?.[0].length ?? 0);
+}
+
+function createEmptyBlocks(count: number): string[] {
+	return Array.from({ length: Math.max(0, count) }, () => "");
+}
+
+function resolveAutocompleteInlineParagraphText(text: string, fallback: string): string {
+	const firstNonEmptyLine = text
+		.replace(/\r\n/g, "\n")
+		.replace(/\r/g, "\n")
+		.split("\n")
+		.find((line) => line.trim().length > 0);
+
+	return firstNonEmptyLine?.trim() === fallback
+		? firstNonEmptyLine.replace(/[ \t]+$/u, "")
+		: fallback;
 }
 
 function isProseBlockType(blockType: string | null | undefined): boolean {

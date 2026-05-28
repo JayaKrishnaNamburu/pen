@@ -43,6 +43,8 @@ export abstract class ContentEditableBackendCore {
 	protected compositionStartText: string | null = null;
 	protected deferredRemoteDeltas: Array<{ delta: FieldEditorDelta[] }> = [];
 	protected pendingDomSyncFrame: number | null = null;
+	protected unsubscribeDecorationsChange: (() => void) | null = null;
+	protected inlineDecorationsSignature: string | null = null;
 	protected editor: Editor;
 	protected fieldEditor: FieldEditorInputController;
 
@@ -89,6 +91,11 @@ export abstract class ContentEditableBackendCore {
 
 		this.observer = (event) => this.handleYTextChange(event);
 		this.ytext.observe(this.observer);
+		this.unsubscribeDecorationsChange = this.editor.on(
+			"decorationsChange",
+			this.handleDecorationsChange,
+		);
+		this.inlineDecorationsSignature = this.getInlineDecorationsSignature();
 
 		fullReconcileToDOM(this.ytext, element, this.editor.schema, {
 			inlineDecorations: this.getInlineDecorationsForBlock(),
@@ -139,9 +146,12 @@ export abstract class ContentEditableBackendCore {
 		if (this.observer && this.ytext) {
 			this.ytext.unobserve(this.observer);
 		}
+		this.unsubscribeDecorationsChange?.();
+		this.unsubscribeDecorationsChange = null;
 		this.element = null;
 		this.ytext = null;
 		this.observer = null;
+		this.inlineDecorationsSignature = null;
 		this.deferredRemoteDeltas = [];
 		this.fieldEditor.resetBackendSelectionAuthority();
 		this.isComposing = false;
@@ -305,6 +315,7 @@ export abstract class ContentEditableBackendCore {
 	protected abstract handleSelectionChange: () => void;
 	protected abstract handleMutations: (mutations: MutationRecord[]) => void;
 	protected abstract handleYTextChange(event: FieldEditorTextChangeEvent): void;
+	protected abstract handleDecorationsChange: () => void;
 	abstract resolveCurrentInputRange(): { start: number; end: number } | null;
 	protected abstract applyTextDiffAsOps(
 		blockId: string,
@@ -313,4 +324,5 @@ export abstract class ContentEditableBackendCore {
 	protected abstract ensureActiveDOMMatchesYText(): boolean;
 	protected abstract scheduleActiveDOMMatchCheck(): void;
 	protected abstract getInlineDecorationsForBlock(): readonly InlineDecoration[];
+	protected abstract getInlineDecorationsSignature(): string;
 }

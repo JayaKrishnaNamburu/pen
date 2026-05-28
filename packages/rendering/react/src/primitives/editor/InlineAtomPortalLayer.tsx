@@ -1,7 +1,10 @@
 import React, { useLayoutEffect, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import type { Editor, SelectionState } from "@pen/types";
-import type { ResolvedInlineAtomInteractions } from "../../context/editorContext";
+import type {
+	InlineAtomRenderers,
+	ResolvedInlineAtomInteractions,
+} from "../../context/editorContext";
 import { DATA_ATTRS } from "../../utils/dataAttributes";
 import {
 	attachInlineAtomWrapperInteractions,
@@ -19,12 +22,20 @@ export function InlineAtomPortalLayer(props: {
 	editor: Editor;
 	blockId: string;
 	targets: InlineAtomRenderTarget[];
+	renderers?: InlineAtomRenderers;
 	selection: SelectionState;
 	interactions: ResolvedInlineAtomInteractions;
 	readonly: boolean;
 }) {
-	const { editor, blockId, targets, selection, interactions, readonly } =
-		props;
+	const {
+		editor,
+		blockId,
+		targets,
+		renderers,
+		selection,
+		interactions,
+		readonly,
+	} = props;
 	const inlineAtomDragSnapshot = useSyncExternalStore(
 		subscribeInlineAtomDragSnapshot,
 		getInlineAtomDragSnapshot,
@@ -32,11 +43,16 @@ export function InlineAtomPortalLayer(props: {
 	);
 
 	const inlineAtomPortals = targets.flatMap((target) => {
-		if (!target.renderer) {
+		const renderer = renderers?.[target.type];
+		if (!renderer) {
 			return [];
 		}
 
-		const selected = isInlineAtomSelected(selection, blockId, target.offset);
+		const selected = isInlineAtomSelected(
+			selection,
+			blockId,
+			target.offset,
+		);
 		const dragging = isInlineAtomDragSource(
 			inlineAtomDragSnapshot,
 			editor,
@@ -45,7 +61,7 @@ export function InlineAtomPortalLayer(props: {
 		);
 		return [
 			createPortal(
-				target.renderer({
+				renderer({
 					blockId,
 					offset: target.offset,
 					type: target.type,

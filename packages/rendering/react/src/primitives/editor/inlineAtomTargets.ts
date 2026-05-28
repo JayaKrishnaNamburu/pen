@@ -13,7 +13,6 @@ import { DATA_ATTRS } from "../../utils/dataAttributes";
 export interface InlineAtomRenderTarget {
 	key: string;
 	element: HTMLElement;
-	renderer?: InlineAtomRenderer;
 	type: string;
 	props: Record<string, unknown>;
 	text: string;
@@ -53,7 +52,6 @@ export function resolveNextInlineAtomTargets(
 				{
 					key: getInlineAtomTargetKey(data, index),
 					element,
-					renderer,
 					type: data.type,
 					props: data.props,
 					text: data.text,
@@ -145,7 +143,6 @@ function areInlineAtomTargetsEqual(
 		return (
 			target.key === nextTarget.key &&
 			target.element === nextTarget.element &&
-			target.renderer === nextTarget.renderer &&
 			target.offset === nextTarget.offset &&
 			target.text === nextTarget.text &&
 			shallowEqualRecords(target.props, nextTarget.props)

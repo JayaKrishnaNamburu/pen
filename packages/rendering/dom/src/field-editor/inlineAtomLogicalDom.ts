@@ -8,6 +8,8 @@ import {
 	type InlineAtomCaretBoundarySide,
 } from "./inlineAtomDom";
 
+const VIRTUAL_INLINE_DECORATION_ATTRIBUTE = "data-pen-virtual-inline";
+
 function getInlineAtomHostElement(node: Node): HTMLElement | null {
 	if (node instanceof HTMLElement && isInlineAtomHostNode(node)) {
 		return node;
@@ -70,6 +72,9 @@ function resolveLogicalInlineAtomUnit(node: HTMLElement): HTMLElement {
 }
 
 export function getLogicalNodeLength(node: Node): number {
+	if (isVirtualInlineDecorationNode(node)) {
+		return 0;
+	}
 	if (
 		isInlineAtomCaretBoundaryNode(node) ||
 		hasInlineAtomCaretBoundaryAncestor(node)
@@ -192,6 +197,9 @@ export function findLogicalDOMPoint(
 }
 
 function getLogicalNodeText(node: Node): string {
+	if (isVirtualInlineDecorationNode(node)) {
+		return "";
+	}
 	if (
 		isInlineAtomCaretBoundaryNode(node) ||
 		hasInlineAtomCaretBoundaryAncestor(node)
@@ -218,6 +226,13 @@ function getLogicalNodeText(node: Node): string {
 		text += getLogicalNodeText(child);
 	}
 	return text;
+}
+
+function isVirtualInlineDecorationNode(node: Node | null): node is HTMLElement {
+	return (
+		node instanceof HTMLElement &&
+		node.hasAttribute(VIRTUAL_INLINE_DECORATION_ATTRIBUTE)
+	);
 }
 
 function findInlineAtomCaretBoundaryAncestor(
@@ -295,6 +310,9 @@ function resolveLogicalOffset(
 	targetNode: Node,
 	targetOffset: number,
 ): number | null {
+	if (isVirtualInlineDecorationNode(current)) {
+		return current === targetNode || current.contains(targetNode) ? 0 : null;
+	}
 	if (current === targetNode) {
 		if (isInlineAtomHostNode(current)) {
 			return targetOffset <= 0 ? 0 : 1;
