@@ -65,6 +65,19 @@ const PEN_SOURCE_ALIASES = {
 	"@pen/shortcuts": fileURLToPath(
 		new URL("../packages/extensions/shortcuts/src/index.ts", import.meta.url),
 	),
+	"@pen/content-ops": fileURLToPath(
+		new URL("../packages/shared/content-ops/src/index.ts", import.meta.url),
+	),
+	"@pen/dom": fileURLToPath(new URL("../packages/rendering/dom/src", import.meta.url)),
+	"@pen/history": fileURLToPath(
+		new URL("../packages/extensions/history/src/index.ts", import.meta.url),
+	),
+	"@pen/markdown-serialization": fileURLToPath(
+		new URL("../packages/shared/markdown-serialization/src/index.ts", import.meta.url),
+	),
+	"@pen/assets-memory": fileURLToPath(
+		new URL("../packages/tooling/assets-memory/src/index.ts", import.meta.url)
+	),
 	"@pen/types": fileURLToPath(new URL("../packages/types/src/index.ts", import.meta.url)),
 	"@pen/undo": fileURLToPath(
 		new URL("../packages/extensions/undo/src/index.ts", import.meta.url),
