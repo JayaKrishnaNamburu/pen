@@ -3,6 +3,7 @@ import { useSlashMenuContext } from "./root";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { SlashMenuGroup } from "./group";
 import { SlashMenuItem } from "./item";
+import { buildItemGroups } from "./utils";
 
 export interface SlashMenuListProps extends AsChildProps {
 	ref?: React.Ref<HTMLElement>;
@@ -23,36 +24,28 @@ export function SlashMenuList(props: SlashMenuListProps) {
 	if (hasManualChildren) {
 		content = children;
 	} else {
-		const groups = new Map<string, typeof items>();
-		for (const item of items) {
-			const group = item.display.group ?? "Other";
-			const existing = groups.get(group) ?? [];
-			existing.push(item);
-			groups.set(group, existing);
-		}
+		const groups = buildItemGroups(items);
 
 		let globalIndex = 0;
-		const groupElements = Array.from(groups.entries()).map(
-			([group, groupItems]) => {
-				const itemElements = groupItems.map((item) => {
-					const idx = globalIndex++;
-					return (
-						<SlashMenuItem
-							key={item.type}
-							blockType={item.type}
-							index={idx}
-						>
-							{item.display.title}
-						</SlashMenuItem>
-					);
-				});
+		const groupElements = groups.map(({ group, items: groupItems }) => {
+			const itemElements = groupItems.map((item) => {
+				const idx = globalIndex++;
 				return (
-					<SlashMenuGroup key={group} heading={group}>
-						{itemElements}
-					</SlashMenuGroup>
+					<SlashMenuItem
+						key={item.type}
+						blockType={item.type}
+						index={idx}
+					>
+						{item.display.title}
+					</SlashMenuItem>
 				);
-			},
-		);
+			});
+			return (
+				<SlashMenuGroup key={group} heading={group}>
+					{itemElements}
+				</SlashMenuGroup>
+			);
+		});
 
 		content = groupElements;
 	}

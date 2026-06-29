@@ -8,6 +8,7 @@ import {
 } from "../../hooks/useSlashMenu";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { isDevelopmentEnvironment } from "../../utils/environment";
+import { buildItemGroups } from "./utils";
 
 export type SlashMenuContextValue = SlashMenuState &
 	SlashMenuActions & {
@@ -87,6 +88,41 @@ type SlashMenuRootContentProps = Omit<
 	editor?: Editor;
 };
 
+function navigateInGroup(
+	items: ReadonlyArray<{ display: { group?: string } }>,
+	selectedIndex: number,
+	direction: -1 | 1,
+): number {
+	const len = items.length;
+	if (len === 0) {
+		return 0;
+	}
+
+	const groups = buildItemGroups(items);
+	if (groups.length <= 1) {
+		return (selectedIndex + direction + len) % len;
+	}
+
+	for (let g = 0; g < groups.length; g++) {
+		const { indices } = groups[g];
+		const pos = indices.indexOf(selectedIndex);
+		if (pos !== -1) {
+			const nextPos = pos + direction;
+			if (nextPos >= 0 && nextPos < indices.length) {
+				return indices[nextPos];
+			}
+			const nextGroup =
+				(g + direction + groups.length) % groups.length;
+			const { indices: nextIndices } = groups[nextGroup];
+			return direction === 1
+				? nextIndices[0]
+				: nextIndices[nextIndices.length - 1];
+		}
+	}
+
+	return (selectedIndex + direction + len) % len;
+}
+
 function SlashMenuRootContent(props: SlashMenuRootContentProps) {
 	const {
 		controller,
@@ -132,11 +168,11 @@ function SlashMenuRootContent(props: SlashMenuRootContentProps) {
 				case "ArrowDown": {
 					event.preventDefault();
 					event.stopPropagation();
-					const nextIndex =
-						currentState.items.length === 0
-							? 0
-							: (currentState.selectedIndex + 1) %
-								currentState.items.length;
+					const nextIndex = navigateInGroup(
+						currentState.items,
+						currentState.selectedIndex,
+						1,
+					);
 					wrappedStateRef.current = {
 						...currentState,
 						selectedIndex: nextIndex,
@@ -147,13 +183,11 @@ function SlashMenuRootContent(props: SlashMenuRootContentProps) {
 				case "ArrowUp": {
 					event.preventDefault();
 					event.stopPropagation();
-					const nextIndex =
-						currentState.items.length === 0
-							? 0
-							: (currentState.selectedIndex -
-									1 +
-									currentState.items.length) %
-								currentState.items.length;
+					const nextIndex = navigateInGroup(
+						currentState.items,
+						currentState.selectedIndex,
+						-1,
+					);
 					wrappedStateRef.current = {
 						...currentState,
 						selectedIndex: nextIndex,
