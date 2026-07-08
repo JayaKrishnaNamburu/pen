@@ -1,5 +1,5 @@
-import type { Editor } from "@pen/types";
-import { AI_AUTOCOMPLETE_CONTROLLER_SLOT } from "@pen/types";
+import type { Editor } from "@input/pen-types";
+import { AI_AUTOCOMPLETE_CONTROLLER_SLOT } from "@input/pen-types";
 
 interface ReactAutocompleteController {
 	acceptVisibleSuggestion(): boolean;

@@ -1,9 +1,9 @@
-import type { SchemaRegistry, SelectionState } from "@pen/types";
+import type { SchemaRegistry, SelectionState } from "@input/pen-types";
 import {
 	INLINE_ATOM_REPLACEMENT_TEXT,
 	resolveInlineAtomDisplayText,
 	resolveInlineAtomInsert,
-} from "@pen/dom/field-editor/inlineAtomModel";
+} from "@input/pen-dom/field-editor/inlineAtomModel";
 import type {
 	InlineAtomRenderer,
 	InlineAtomRenderers,

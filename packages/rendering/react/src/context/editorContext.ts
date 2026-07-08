@@ -6,13 +6,13 @@ import type {
 	EditorViewMode,
 	Importer,
 	InteractionModel,
-} from "@pen/types";
-import type { PendingBlock } from "@pen/core";
+} from "@input/pen-types";
+import type { PendingBlock } from "@input/pen-core";
 import type {
 	InlineAtomDropTarget,
 	InlineAtomSnapshot,
 	InlineAtomSource,
-} from "@pen/dom/field-editor/inlineAtomInteraction";
+} from "@input/pen-dom/field-editor/inlineAtomInteraction";
 import {
 	resolveSelectAllBehavior,
 	type EditorSelectAllBehavior,

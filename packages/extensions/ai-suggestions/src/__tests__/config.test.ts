@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { resolveAISuggestionsConfig } from "../config";
 
-describe("@pen/ai-suggestions config", () => {
+describe("@input/pen-ai-suggestions config", () => {
 	it("resolves the cheap preset", () => {
 		const resolved = resolveAISuggestionsConfig({ mode: "cheap" });
 

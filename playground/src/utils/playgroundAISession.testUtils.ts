@@ -1,5 +1,5 @@
-import { createEditor } from "@pen/core";
-import { createDefaultSchema } from "@pen/schema-default";
+import { createEditor } from "@input/pen-core";
+import { createDefaultSchema } from "@input/pen-schema-default";
 
 const noDefaultExtensionsPreset = {
 	resolve() {

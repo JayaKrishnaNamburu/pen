@@ -3,7 +3,7 @@ import type {
   TextSelection,
   PenDocument,
   CRDTArray,
-} from "@pen/types";
+} from "@input/pen-types";
 
 export class DocumentRangeImpl implements DocumentRange {
   readonly start: { blockId: string; offset: number };

@@ -1,8 +1,8 @@
-# @pen/import-html
+# @input/pen-import-html
 
 ## Purpose
 
-`@pen/import-html` imports HTML into Pen. It sanitizes untrusted markup, parses the DOM into pending blocks and inline content, normalizes those blocks against the active schema and document profile, and then applies them through the editor.
+`@input/pen-import-html` imports HTML into Pen. It sanitizes untrusted markup, parses the DOM into pending blocks and inline content, normalizes those blocks against the active schema and document profile, and then applies them through the editor.
 
 ## Public Role
 
@@ -17,7 +17,7 @@ This package is Pen's main external-rich-content ingest boundary for HTML. Its j
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@pen/core`, `@pen/types`, `domhandler`, `htmlparser2`, `isomorphic-dompurify`
+- Runtime dependencies: `@input/pen-core`, `@input/pen-types`, `domhandler`, `htmlparser2`, `isomorphic-dompurify`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: This package owns safe HTML ingestion and mapping into Pen blocks, but it does not become a renderer or a second editor runtime.
 
@@ -32,7 +32,7 @@ flowchart TD
   Parse[ParseDOM]
   Map[DOMToPendingBlocks]
   Normalize[NormalizeToSchemaAndProfile]
-  Core["@pen/core"]
+  Core["@input/pen-core"]
 
   HTML --> Sanitize
   Sanitize --> Parse

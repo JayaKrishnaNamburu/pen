@@ -1,11 +1,11 @@
-# `@pen/ai-autocomplete`
+# `@input/pen-ai-autocomplete`
 
 Low-latency inline autocomplete extension for Pen.
 
 ## Install
 
 ```bash
-pnpm add @pen/core @pen/ai-autocomplete
+pnpm add @input/pen-core @input/pen-ai-autocomplete
 ```
 
 ## What It Provides
@@ -18,11 +18,11 @@ pnpm add @pen/core @pen/ai-autocomplete
 ## Minimal Setup
 
 ```ts
-import { createEditor } from "@pen/core";
+import { createEditor } from "@input/pen-core";
 import {
   autocompleteExtension,
   getAutocompleteController,
-} from "@pen/ai-autocomplete";
+} from "@input/pen-ai-autocomplete";
 
 const editor = createEditor({
   extensions: [

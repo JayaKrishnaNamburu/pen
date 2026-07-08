@@ -1,5 +1,5 @@
 import React from "react";
-import type { AIStreamEvent } from "@pen/ai";
+import type { AIStreamEvent } from "@input/pen-ai";
 import { useAIStreamEvents } from "../../hooks/useAIStreamEvents";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { useAIContext } from "./root";

@@ -1,4 +1,4 @@
-import type { BlockHandle, CellSelection } from "@pen/types";
+import type { BlockHandle, CellSelection } from "@input/pen-types";
 
 export interface ResolvedCellSelectionCell {
 	row: number;

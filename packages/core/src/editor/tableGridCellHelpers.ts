@@ -1,4 +1,4 @@
-import type { TableColumnSchema } from "@pen/types";
+import type { TableColumnSchema } from "@input/pen-types";
 import {
 	type CRDTTextLike,
 	type CRDTUnknownMap,

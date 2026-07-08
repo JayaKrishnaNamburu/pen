@@ -1,6 +1,6 @@
 {
-  "name": "@pen/react",
-  "version": "0.0.0",
+  "name": "@input/pen-react",
+  "version": "0.0.1",
   "description": "React primitives, hooks, and renderers for Pen",
   "license": "SEE LICENSE IN LICENSE.md",
   "homepage": "https://github.com/niceperson/pen#readme",
@@ -14,7 +14,8 @@
   },
   "type": "module",
   "publishConfig": {
-    "access": "public"
+    "access": "restricted",
+    "registry": "https://registry.npmjs.org/"
   },
   "exports": {
     ".": {
@@ -90,37 +91,37 @@
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",
-    "test": "pnpm --filter @pen/preset-default build && pnpm --filter @pen/history build && pnpm --filter @pen/search build && vitest run",
+    "test": "pnpm --filter @input/pen-preset-default build && pnpm --filter @input/pen-history build && pnpm --filter @input/pen-search build && vitest run",
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@pen/ai-suggestions": "workspace:*",
-    "@pen/ai": "workspace:*",
-    "@pen/core": "workspace:*",
-    "@pen/dom": "workspace:*",
-    "@pen/history": "workspace:*",
-    "@pen/multiplayer": "workspace:*",
-    "@pen/search": "workspace:*",
-    "@pen/schema-default": "workspace:*",
-    "@pen/shortcuts": "workspace:*",
-    "@pen/types": "workspace:^"
+    "@input/pen-ai-suggestions": "workspace:*",
+    "@input/pen-ai": "workspace:*",
+    "@input/pen-core": "workspace:*",
+    "@input/pen-dom": "workspace:*",
+    "@input/pen-history": "workspace:*",
+    "@input/pen-multiplayer": "workspace:*",
+    "@input/pen-search": "workspace:*",
+    "@input/pen-schema-default": "workspace:*",
+    "@input/pen-shortcuts": "workspace:*",
+    "@input/pen-types": "workspace:^"
   },
   "peerDependencies": {
-    "@pen/import-html": "workspace:*",
-    "@pen/import-markdown": "workspace:*",
+    "@input/pen-import-html": "workspace:*",
+    "@input/pen-import-markdown": "workspace:*",
     "react": "^18.0.0 || ^19.0.0",
     "react-dom": "^18.0.0 || ^19.0.0"
   },
   "peerDependenciesMeta": {
-    "@pen/import-html": {
+    "@input/pen-import-html": {
       "optional": true
     },
-    "@pen/import-markdown": {
+    "@input/pen-import-markdown": {
       "optional": true
     }
   },
   "devDependencies": {
-    "@pen/preset-default": "workspace:*",
+    "@input/pen-preset-default": "workspace:*",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "jsdom": "^28.1.0",

@@ -1,4 +1,4 @@
-import type { InlineDecoration } from "@pen/types";
+import type { InlineDecoration } from "@input/pen-types";
 import { buildInlineDecorationsRenderSignature } from "../utils/inlineDecorations";
 import { fullReconcileToDOM } from "./reconciler";
 import {

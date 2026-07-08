@@ -32,35 +32,35 @@ importers:
 
   packages/core:
     dependencies:
-      '@pen/content-ops':
+      '@input/pen-content-ops':
         specifier: workspace:*
         version: link:../shared/content-ops
-      '@pen/crdt-yjs':
+      '@input/pen-crdt-yjs':
         specifier: workspace:*
         version: link:../crdt/yjs
-      '@pen/delta-stream':
+      '@input/pen-delta-stream':
         specifier: workspace:*
         version: link:../extensions/delta-stream
-      '@pen/document-ops':
+      '@input/pen-document-ops':
         specifier: workspace:*
         version: link:../extensions/document-ops
-      '@pen/markdown-serialization':
+      '@input/pen-markdown-serialization':
         specifier: workspace:*
         version: link:../shared/markdown-serialization
-      '@pen/schema-default':
+      '@input/pen-schema-default':
         specifier: workspace:^
         version: link:../schema/default
-      '@pen/shortcuts':
+      '@input/pen-shortcuts':
         specifier: workspace:*
         version: link:../extensions/shortcuts
-      '@pen/types':
+      '@input/pen-types':
         specifier: workspace:*
         version: link:../types
-      '@pen/undo':
+      '@input/pen-undo':
         specifier: workspace:*
         version: link:../extensions/undo
     devDependencies:
-      '@pen/input-rules':
+      '@input/pen-input-rules':
         specifier: workspace:*
         version: link:../extensions/input-rules
       tsup:
@@ -78,7 +78,7 @@ importers:
 
   packages/crdt/yjs:
     dependencies:
-      '@pen/types':
+      '@input/pen-types':
         specifier: workspace:*
         version: link:../../types
       y-protocols:
@@ -125,20 +125,20 @@ importers:
 
   packages/extensions/ai:
     dependencies:
-      '@pen/content-ops':
+      '@input/pen-content-ops':
         specifier: workspace:*
         version: link:../../shared/content-ops
-      '@pen/core':
+      '@input/pen-core':
         specifier: workspace:*
         version: link:../../core
-      '@pen/document-ops':
+      '@input/pen-document-ops':
         specifier: workspace:*
         version: link:../document-ops
-      '@pen/types':
+      '@input/pen-types':
         specifier: workspace:*
         version: link:../../types
     devDependencies:
-      '@pen/schema-default':
+      '@input/pen-schema-default':
         specifier: workspace:^
         version: link:../../schema/default
       tsup:
@@ -153,13 +153,13 @@ importers:
 
   packages/extensions/ai-autocomplete:
     dependencies:
-      '@pen/content-ops':
+      '@input/pen-content-ops':
         specifier: workspace:*
         version: link:../../shared/content-ops
-      '@pen/core':
+      '@input/pen-core':
         specifier: workspace:*
         version: link:../../core
-      '@pen/types':
+      '@input/pen-types':
         specifier: workspace:*
         version: link:../../types
     devDependencies:
@@ -175,10 +175,10 @@ importers:
 
   packages/extensions/ai-skills:
     dependencies:
-      '@pen/ai-autocomplete':
+      '@input/pen-ai-autocomplete':
         specifier: workspace:*
         version: link:../ai-autocomplete
-      '@pen/ai-tools':
+      '@input/pen-ai-tools':
         specifier: workspace:*
         version: link:../ai-tools
     devDependencies:
@@ -194,10 +194,10 @@ importers:
 
   packages/extensions/ai-suggestions:
     dependencies:
-      '@pen/core':
+      '@input/pen-core':
         specifier: workspace:*
         version: link:../../core
-      '@pen/types':
+      '@input/pen-types':
         specifier: workspace:*
         version: link:../../types
     devDependencies:
@@ -213,10 +213,10 @@ importers:
 
   packages/extensions/ai-tools:
     dependencies:
-      '@pen/document-ops':
+      '@input/pen-document-ops':
         specifier: workspace:*
         version: link:../document-ops
-      '@pen/types':
+      '@input/pen-types':
         specifier: workspace:*
         version: link:../../types
     devDependencies:
@@ -232,13 +232,13 @@ importers:
 
   packages/extensions/database:
     dependencies:
-      '@pen/core':
+      '@input/pen-core':
         specifier: workspace:*
         version: link:../../core
-      '@pen/react':
+      '@input/pen-react':
         specifier: workspace:*
         version: link:../../rendering/react
-      '@pen/types':
+      '@input/pen-types':
         specifier: workspace:*
         version: link:../../types
       react:
@@ -266,10 +266,10 @@ importers:
 
   packages/extensions/delta-stream:
     dependencies:
-      '@pen/document-ops':
+      '@input/pen-document-ops':
         specifier: workspace:*
         version: link:../document-ops
-      '@pen/types':
+      '@input/pen-types':
         specifier: workspace:*
         version: link:../../types
     devDependencies:
@@ -285,17 +285,17 @@ importers:
 
   packages/extensions/document-ops:
     dependencies:
-      '@pen/content-ops':
+      '@input/pen-content-ops':
         specifier: workspace:*
         version: link:../../shared/content-ops
-      '@pen/markdown-serialization':
+      '@input/pen-markdown-serialization':
         specifier: workspace:*
         version: link:../../shared/markdown-serialization
-      '@pen/types':
+      '@input/pen-types':
         specifier: workspace:*
         version: link:../../types
     devDependencies:
-      '@pen/schema-default':
+      '@input/pen-schema-default':
         specifier: workspace:^
         version: link:../../schema/default
       tsup:
@@ -310,17 +310,17 @@ importers:
 
   packages/extensions/export-html:
     dependencies:
-      '@pen/markdown-serialization':
+      '@input/pen-markdown-serialization':
         specifier: workspace:*
         version: link:../../shared/markdown-serialization
-      '@pen/types':
+      '@input/pen-types':
         specifier: workspace:*
         version: link:../../types
     devDependencies:
-      '@pen/core':
+      '@input/pen-core':
         specifier: workspace:*
         version: link:../../core
-      '@pen/schema-default':
+      '@input/pen-schema-default':
         specifier: workspace:*
         version: link:../../schema/default
       tsup:
@@ -335,20 +335,20 @@ importers:
 
   packages/extensions/export-json:
     dependencies:
-      '@pen/content-ops':
+      '@input/pen-content-ops':
         specifier: workspace:*
         version: link:../../shared/content-ops
-      '@pen/markdown-serialization':
+      '@input/pen-markdown-serialization':
         specifier: workspace:*
         version: link:../../shared/markdown-serialization
-      '@pen/types':
+      '@input/pen-types':
         specifier: workspace:*
         version: link:../../types
     devDependencies:
-      '@pen/core':
+      '@input/pen-core':
         specifier: workspace:*
         version: link:../../core
-      '@pen/schema-default':
+      '@input/pen-schema-default':
         specifier: workspace:*
         version: link:../../schema/default
       tsup:
@@ -363,17 +363,17 @@ importers:
 
   packages/extensions/export-markdown:
     dependencies:
-      '@pen/markdown-serialization':
+      '@input/pen-markdown-serialization':
         specifier: workspace:*
         version: link:../../shared/markdown-serialization
-      '@pen/types':
+      '@input/pen-types':
         specifier: workspace:*
         version: link:../../types
     devDependencies:
-      '@pen/core':
+      '@input/pen-core':
         specifier: workspace:*
         version: link:../../core
-      '@pen/schema-default':
+      '@input/pen-schema-default':
         specifier: workspace:*
         version: link:../../schema/default
       tsup:
@@ -388,10 +388,10 @@ importers:
 
   packages/extensions/export-xml:
     dependencies:
-      '@pen/export-json':
+      '@input/pen-export-json':
         specifier: workspace:*
         version: link:../export-json
-      '@pen/types':
+      '@input/pen-types':
         specifier: workspace:*
         version: link:../../types
       domhandler:
@@ -401,10 +401,10 @@ importers:
         specifier: ^9.0.0
         version: 9.1.0
     devDependencies:
-      '@pen/core':
+      '@input/pen-core':
         specifier: workspace:*
         version: link:../../core
-      '@pen/schema-default':
+      '@input/pen-schema-default':
         specifier: workspace:*
         version: link:../../schema/default
       tsup:
@@ -419,17 +419,17 @@ importers:
 
   packages/extensions/history:
     dependencies:
-      '@pen/types':
+      '@input/pen-types':
         specifier: workspace:*
         version: link:../../types
     devDependencies:
-      '@pen/core':
+      '@input/pen-core':
         specifier: workspace:*
         version: link:../../core
-      '@pen/crdt-yjs':
+      '@input/pen-crdt-yjs':
         specifier: workspace:*
         version: link:../../crdt/yjs
-      '@pen/test':
+      '@input/pen-test':
         specifier: workspace:*
         version: link:../../tooling/test
       tsup:
@@ -447,10 +447,10 @@ importers:
 
   packages/extensions/import-html:
     dependencies:
-      '@pen/core':
+      '@input/pen-core':
         specifier: workspace:*
         version: link:../../core
-      '@pen/types':
+      '@input/pen-types':
         specifier: workspace:*
         version: link:../../types
       domhandler:
@@ -463,10 +463,10 @@ importers:
         specifier: ^2.0.0
         version: 2.36.0
     devDependencies:
-      '@pen/export-html':
+      '@input/pen-export-html':
         specifier: workspace:*
         version: link:../export-html
-      '@pen/schema-default':
+      '@input/pen-schema-default':
         specifier: workspace:*
         version: link:../../schema/default
       tsup:
@@ -481,20 +481,20 @@ importers:
 
   packages/extensions/import-markdown:
     dependencies:
-      '@pen/content-ops':
+      '@input/pen-content-ops':
         specifier: workspace:*
         version: link:../../shared/content-ops
-      '@pen/types':
+      '@input/pen-types':
         specifier: workspace:*
         version: link:../../types
     devDependencies:
-      '@pen/core':
+      '@input/pen-core':
         specifier: workspace:*
         version: link:../../core
-      '@pen/export-markdown':
+      '@input/pen-export-markdown':
         specifier: workspace:*
         version: link:../export-markdown
-      '@pen/schema-default':
+      '@input/pen-schema-default':
         specifier: workspace:*
         version: link:../../schema/default
       tsup:
@@ -509,7 +509,7 @@ importers:
 
   packages/extensions/input-rules:
     dependencies:
-      '@pen/types':
+      '@input/pen-types':
         specifier: workspace:*
         version: link:../../types
     devDependencies:
@@ -525,17 +525,17 @@ importers:
 
   packages/extensions/multiplayer:
     dependencies:
-      '@pen/core':
+      '@input/pen-core':
         specifier: workspace:*
         version: link:../../core
-      '@pen/types':
+      '@input/pen-types':
         specifier: workspace:*
         version: link:../../types
     devDependencies:
-      '@pen/crdt-yjs':
+      '@input/pen-crdt-yjs':
         specifier: workspace:*
         version: link:../../crdt/yjs
-      '@pen/test':
+      '@input/pen-test':
         specifier: workspace:*
         version: link:../../tooling/test
       tsup:
@@ -550,10 +550,10 @@ importers:
 
   packages/extensions/search:
     dependencies:
-      '@pen/core':
+      '@input/pen-core':
         specifier: workspace:*
         version: link:../../core
-      '@pen/types':
+      '@input/pen-types':
         specifier: workspace:*
         version: link:../../types
     devDependencies:
@@ -569,7 +569,7 @@ importers:
 
   packages/extensions/shortcuts:
     dependencies:
-      '@pen/types':
+      '@input/pen-types':
         specifier: workspace:*
         version: link:../../types
     devDependencies:
@@ -585,7 +585,7 @@ importers:
 
   packages/extensions/undo:
     dependencies:
-      '@pen/types':
+      '@input/pen-types':
         specifier: workspace:*
         version: link:../../types
     devDependencies:
@@ -601,19 +601,19 @@ importers:
 
   packages/presets/default:
     dependencies:
-      '@pen/delta-stream':
+      '@input/pen-delta-stream':
         specifier: workspace:*
         version: link:../../extensions/delta-stream
-      '@pen/document-ops':
+      '@input/pen-document-ops':
         specifier: workspace:*
         version: link:../../extensions/document-ops
-      '@pen/shortcuts':
+      '@input/pen-shortcuts':
         specifier: workspace:*
         version: link:../../extensions/shortcuts
-      '@pen/types':
+      '@input/pen-types':
         specifier: workspace:*
         version: link:../../types
-      '@pen/undo':
+      '@input/pen-undo':
         specifier: workspace:*
         version: link:../../extensions/undo
     devDependencies:
@@ -629,13 +629,13 @@ importers:
 
   packages/rendering/dom:
     dependencies:
-      '@pen/core':
+      '@input/pen-core':
         specifier: workspace:*
         version: link:../../core
-      '@pen/shortcuts':
+      '@input/pen-shortcuts':
         specifier: workspace:*
         version: link:../../extensions/shortcuts
-      '@pen/types':
+      '@input/pen-types':
         specifier: workspace:*
         version: link:../../types
     devDependencies:
@@ -651,44 +651,44 @@ importers:
 
   packages/rendering/react:
     dependencies:
-      '@pen/ai':
+      '@input/pen-ai':
         specifier: workspace:*
         version: link:../../extensions/ai
-      '@pen/ai-suggestions':
+      '@input/pen-ai-suggestions':
         specifier: workspace:*
         version: link:../../extensions/ai-suggestions
-      '@pen/core':
+      '@input/pen-core':
         specifier: workspace:*
         version: link:../../core
-      '@pen/dom':
+      '@input/pen-dom':
         specifier: workspace:*
         version: link:../dom
-      '@pen/history':
+      '@input/pen-history':
         specifier: workspace:*
         version: link:../../extensions/history
-      '@pen/import-html':
+      '@input/pen-import-html':
         specifier: workspace:*
         version: link:../../extensions/import-html
-      '@pen/import-markdown':
+      '@input/pen-import-markdown':
         specifier: workspace:*
         version: link:../../extensions/import-markdown
-      '@pen/multiplayer':
+      '@input/pen-multiplayer':
         specifier: workspace:*
         version: link:../../extensions/multiplayer
-      '@pen/schema-default':
+      '@input/pen-schema-default':
         specifier: workspace:*
         version: link:../../schema/default
-      '@pen/search':
+      '@input/pen-search':
         specifier: workspace:*
         version: link:../../extensions/search
-      '@pen/shortcuts':
+      '@input/pen-shortcuts':
         specifier: workspace:*
         version: link:../../extensions/shortcuts
-      '@pen/types':
+      '@input/pen-types':
         specifier: workspace:^
         version: link:../../types
     devDependencies:
-      '@pen/preset-default':
+      '@input/pen-preset-default':
         specifier: workspace:*
         version: link:../../presets/default
       '@types/react':
@@ -718,20 +718,20 @@ importers:
 
   packages/rendering/vue:
     dependencies:
-      '@pen/core':
+      '@input/pen-core':
         specifier: workspace:*
         version: link:../../core
-      '@pen/dom':
+      '@input/pen-dom':
         specifier: workspace:*
         version: link:../dom
-      '@pen/types':
+      '@input/pen-types':
         specifier: workspace:*
         version: link:../../types
     devDependencies:
-      '@pen/preset-default':
+      '@input/pen-preset-default':
         specifier: workspace:*
         version: link:../../presets/default
-      '@pen/test':
+      '@input/pen-test':
         specifier: workspace:*
         version: link:../../tooling/test
       '@vue/test-utils':
@@ -755,7 +755,7 @@ importers:
 
   packages/schema/default:
     dependencies:
-      '@pen/types':
+      '@input/pen-types':
         specifier: workspace:*
         version: link:../../types
     devDependencies:
@@ -771,7 +771,7 @@ importers:
 
   packages/shared/content-ops:
     dependencies:
-      '@pen/types':
+      '@input/pen-types':
         specifier: workspace:*
         version: link:../../types
       htmlparser2:
@@ -787,7 +787,7 @@ importers:
         specifier: ^3.0.0
         version: 3.0.0
     devDependencies:
-      '@pen/schema-default':
+      '@input/pen-schema-default':
         specifier: workspace:*
         version: link:../../schema/default
       tsup:
@@ -802,7 +802,7 @@ importers:
 
   packages/shared/markdown-serialization:
     dependencies:
-      '@pen/types':
+      '@input/pen-types':
         specifier: workspace:*
         version: link:../../types
     devDependencies:
@@ -818,7 +818,7 @@ importers:
 
   packages/tooling/assets-memory:
     dependencies:
-      '@pen/types':
+      '@input/pen-types':
         specifier: workspace:*
         version: link:../../types
     devDependencies:
@@ -834,25 +834,25 @@ importers:
 
   packages/tooling/bench:
     devDependencies:
-      '@pen/ai':
+      '@input/pen-ai':
         specifier: workspace:*
         version: link:../../extensions/ai
-      '@pen/ai-autocomplete':
+      '@input/pen-ai-autocomplete':
         specifier: workspace:*
         version: link:../../extensions/ai-autocomplete
-      '@pen/core':
+      '@input/pen-core':
         specifier: workspace:*
         version: link:../../core
-      '@pen/crdt-yjs':
+      '@input/pen-crdt-yjs':
         specifier: workspace:*
         version: link:../../crdt/yjs
-      '@pen/schema-default':
+      '@input/pen-schema-default':
         specifier: workspace:*
         version: link:../../schema/default
-      '@pen/test':
+      '@input/pen-test':
         specifier: workspace:*
         version: link:../test
-      '@pen/types':
+      '@input/pen-types':
         specifier: workspace:*
         version: link:../../types
       '@types/node':
@@ -876,19 +876,19 @@ importers:
 
   packages/tooling/test:
     dependencies:
-      '@pen/core':
+      '@input/pen-core':
         specifier: workspace:*
         version: link:../../core
-      '@pen/crdt-yjs':
+      '@input/pen-crdt-yjs':
         specifier: workspace:*
         version: link:../../crdt/yjs
-      '@pen/export-json':
+      '@input/pen-export-json':
         specifier: workspace:*
         version: link:../../extensions/export-json
-      '@pen/schema-default':
+      '@input/pen-schema-default':
         specifier: workspace:*
         version: link:../../schema/default
-      '@pen/types':
+      '@input/pen-types':
         specifier: workspace:*
         version: link:../../types
       yjs:
@@ -907,10 +907,10 @@ importers:
 
   packages/transports/direct:
     dependencies:
-      '@pen/core':
+      '@input/pen-core':
         specifier: workspace:*
         version: link:../../core
-      '@pen/types':
+      '@input/pen-types':
         specifier: workspace:*
         version: link:../../types
     devDependencies:
@@ -926,10 +926,10 @@ importers:
 
   packages/transports/sse:
     dependencies:
-      '@pen/core':
+      '@input/pen-core':
         specifier: workspace:*
         version: link:../../core
-      '@pen/types':
+      '@input/pen-types':
         specifier: workspace:*
         version: link:../../types
     devDependencies:
@@ -960,70 +960,70 @@ importers:
       '@ai-sdk/anthropic':
         specifier: ^3.0.58
         version: 3.0.58(zod@4.3.6)
-      '@pen/ai':
+      '@input/pen-ai':
         specifier: workspace:*
         version: link:../packages/extensions/ai
-      '@pen/ai-autocomplete':
+      '@input/pen-ai-autocomplete':
         specifier: workspace:*
         version: link:../packages/extensions/ai-autocomplete
-      '@pen/ai-skills':
+      '@input/pen-ai-skills':
         specifier: workspace:*
         version: link:../packages/extensions/ai-skills
-      '@pen/ai-suggestions':
+      '@input/pen-ai-suggestions':
         specifier: workspace:*
         version: link:../packages/extensions/ai-suggestions
-      '@pen/ai-tools':
+      '@input/pen-ai-tools':
         specifier: workspace:*
         version: link:../packages/extensions/ai-tools
-      '@pen/assets-memory':
+      '@input/pen-assets-memory':
         specifier: workspace:^
         version: link:../packages/tooling/assets-memory
-      '@pen/core':
+      '@input/pen-core':
         specifier: workspace:*
         version: link:../packages/core
-      '@pen/crdt-yjs':
+      '@input/pen-crdt-yjs':
         specifier: workspace:^
         version: link:../packages/crdt/yjs
-      '@pen/database':
+      '@input/pen-database':
         specifier: workspace:*
         version: link:../packages/extensions/database
-      '@pen/export-html':
+      '@input/pen-export-html':
         specifier: workspace:*
         version: link:../packages/extensions/export-html
-      '@pen/export-json':
+      '@input/pen-export-json':
         specifier: workspace:^
         version: link:../packages/extensions/export-json
-      '@pen/export-markdown':
+      '@input/pen-export-markdown':
         specifier: workspace:*
         version: link:../packages/extensions/export-markdown
-      '@pen/import-html':
+      '@input/pen-import-html':
         specifier: workspace:*
         version: link:../packages/extensions/import-html
-      '@pen/import-markdown':
+      '@input/pen-import-markdown':
         specifier: workspace:*
         version: link:../packages/extensions/import-markdown
-      '@pen/input-rules':
+      '@input/pen-input-rules':
         specifier: workspace:*
         version: link:../packages/extensions/input-rules
-      '@pen/multiplayer':
+      '@input/pen-multiplayer':
         specifier: workspace:^
         version: link:../packages/extensions/multiplayer
-      '@pen/preset-default':
+      '@input/pen-preset-default':
         specifier: workspace:*
         version: link:../packages/presets/default
-      '@pen/react':
+      '@input/pen-react':
         specifier: workspace:*
         version: link:../packages/rendering/react
-      '@pen/schema-default':
+      '@input/pen-schema-default':
         specifier: workspace:*
         version: link:../packages/schema/default
-      '@pen/search':
+      '@input/pen-search':
         specifier: workspace:*
         version: link:../packages/extensions/search
-      '@pen/shortcuts':
+      '@input/pen-shortcuts':
         specifier: workspace:*
         version: link:../packages/extensions/shortcuts
-      '@pen/types':
+      '@input/pen-types':
         specifier: workspace:*
         version: link:../packages/types
       '@y/websocket-server':

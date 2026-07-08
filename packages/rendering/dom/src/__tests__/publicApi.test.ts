@@ -17,7 +17,7 @@ import {
 	penDataAttr,
 } from "../utils/dataAttributes";
 
-describe("@pen/dom public helpers", () => {
+describe("@input/pen-dom public helpers", () => {
 	it("resolves select-all behavior from the interaction model", () => {
 		expect(DEFAULT_SELECT_ALL_BEHAVIOR).toBe("document-first");
 		expect(resolveSelectAllBehavior("block-first")).toBe("block-first");

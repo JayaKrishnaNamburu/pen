@@ -1,5 +1,5 @@
 // @ts-nocheck
-import type { Editor, ModelRequestedOperation, SelectionState } from "@pen/types";
+import type { Editor, ModelRequestedOperation, SelectionState } from "@input/pen-types";
 import { parseStructuredIntentRequestPrompt } from "../structuredIntent";
 import { NEARBY_BLOCK_RADIUS, STRUCTURED_PLANNER_PROMPT_PREFIX, EXPLICIT_SELECTION_FAST_REQUEST_ERROR, SESSION_PROMPT_HISTORY_HEADER, SESSION_PROMPT_LATEST_HEADER, SESSION_PROMPT_INTROS, utf8Encoder, buildPlaygroundRequestPlan, buildExplicitRequestPlan, buildExplicitLocalOperationPlan, buildExplicitLocalOperationPrompt, buildStructuredGenerationPlan, buildDocumentAgentPlan, buildPromptContext } from "./playgroundPlannerPart1";
 import type { PlaygroundPromptContextEnvelope, PlaygroundRequestMode, PlaygroundResolvedContextFormat, PlaygroundRequestPlan, PlaygroundPlannerConfig } from "./playgroundPlannerPart1";

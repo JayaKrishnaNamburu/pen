@@ -4,8 +4,8 @@ import type {
   InlineSchema,
   PropSchema,
   BlockSchema,
-} from "@pen/types";
-import { SchemaRegistryImpl } from "@pen/types";
+} from "@input/pen-types";
+import { SchemaRegistryImpl } from "@input/pen-types";
 import { defaultBlocks, defaultInlines } from "./defs";
 
 export function createDefaultSchema(): ComposableSchema {

@@ -1,5 +1,5 @@
-import type { Editor } from "@pen/types";
-import { getAttachedFieldEditorStore } from "@pen/react";
+import type { Editor } from "@input/pen-types";
+import { getAttachedFieldEditorStore } from "@input/pen-react";
 import { useSyncExternalStore } from "react";
 import { serializeEditorState } from "../utils/editorState";
 

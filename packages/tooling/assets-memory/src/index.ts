@@ -1,4 +1,4 @@
-import type { AssetProvider, AssetRef, AssetUploadOptions } from "@pen/types";
+import type { AssetProvider, AssetRef, AssetUploadOptions } from "@input/pen-types";
 
 export function memoryAssets(): AssetProvider {
   const store = new Map<string, { blob: Blob; ref: AssetRef }>();

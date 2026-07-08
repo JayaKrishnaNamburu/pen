@@ -1,10 +1,10 @@
-import type { BlockHandle, BlockRenderContext } from "@pen/types";
+import type { BlockHandle, BlockRenderContext } from "@input/pen-types";
 import {
 	DATA_ATTRS,
 	useEditorContext,
 	useAIStructuredTargetPreview,
 	type AIStructuredTargetPreviewSelection,
-} from "@pen/react";
+} from "@input/pen-react";
 import React from "react";
 import {
 	DatabasePagination,

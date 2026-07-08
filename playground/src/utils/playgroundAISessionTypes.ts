@@ -1,4 +1,4 @@
-import type { ModelRequestedOperation } from "@pen/types";
+import type { ModelRequestedOperation } from "@input/pen-types";
 
 export type PlaygroundAIPhase =
 	| "idle"

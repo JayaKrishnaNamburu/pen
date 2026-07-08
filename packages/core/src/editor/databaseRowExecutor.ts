@@ -7,8 +7,8 @@ import type {
 	DatabaseUpdateCellOp,
 	DocumentOp,
 	SelectOption,
-} from "@pen/types";
-import { normalizeDatabaseValueForType } from "@pen/types";
+} from "@input/pen-types";
+import { normalizeDatabaseValueForType } from "@input/pen-types";
 import {
 	type TableContentArray,
 	type CRDTUnknownMap,

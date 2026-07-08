@@ -28,13 +28,13 @@ Then read package specs by layer:
 
 ## Core Conventions
 
-- Runtime authority lives with `@pen/core` and the `Editor` API.
+- Runtime authority lives with `@input/pen-core` and the `Editor` API.
 - `DocumentOp[]` and `editor.apply(...)` remain the canonical mutation path.
-- `@pen/types` is the shared contract layer, not a hidden runtime layer.
+- `@input/pen-types` is the shared contract layer, not a hidden runtime layer.
 - Renderer packages bind to the editor runtime but do not own document truth.
 - JSON is the canonical machine-readable format. XML is an interoperability surface layered on top of that model.
 - React is the primary documented renderer. Vue is a shipped renderer proof built on the shared DOM engine.
-- Private apps such as `@pen/docs` and `@pen/playground` are specified because they are part of the workspace, but they are not publishable runtime packages.
+- Private apps such as `@input/pen-docs` and `@input/pen-playground` are specified because they are part of the workspace, but they are not publishable runtime packages.
 
 ## What Changed
 

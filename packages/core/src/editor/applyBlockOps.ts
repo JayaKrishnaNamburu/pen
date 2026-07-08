@@ -22,8 +22,8 @@ import type {
 	SetSelectionOp,
 	UpdateTableColumnsOp,
 	CRDTArray,
-} from "@pen/types";
-import { generateId, getOpOriginType } from "@pen/types";
+} from "@input/pen-types";
+import { generateId, getOpOriginType } from "@input/pen-types";
 import { resolveRuntimeContentType } from "../schema/contentType";
 import {
 	type CRDTUnknownArray,

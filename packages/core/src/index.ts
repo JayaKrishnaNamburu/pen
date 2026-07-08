@@ -13,8 +13,8 @@ import {
 	shouldForceBlockScopedSelectAll,
 } from "./editor/profilePolicy";
 
-// Contracts live in @pen/types.
-// Keep @pen/core focused on runtime entrypoints and advanced internals.
+// Contracts live in @input/pen-types.
+// Keep @input/pen-core focused on runtime entrypoints and advanced internals.
 
 // Schema engine runtime
 export { SchemaRegistryImpl, mergeSchemas } from "./schema/registry";

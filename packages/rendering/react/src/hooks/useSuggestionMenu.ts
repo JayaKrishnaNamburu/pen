@@ -5,7 +5,7 @@ import {
 	useRef,
 	useState,
 } from "react";
-import type { Editor } from "@pen/types";
+import type { Editor } from "@input/pen-types";
 
 export type SuggestionMenuStatus = "idle" | "loading" | "ready" | "error";
 

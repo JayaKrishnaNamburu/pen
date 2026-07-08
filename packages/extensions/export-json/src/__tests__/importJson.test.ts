@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { createEditor } from "@pen/core";
-import type { DocumentOp } from "@pen/types";
+import { createEditor } from "@input/pen-core";
+import type { DocumentOp } from "@input/pen-types";
 import { jsonExporter } from "../exporter";
 import { jsonImporter } from "../importer";
 
@@ -31,7 +31,7 @@ function createBareEditor() {
   return editor;
 }
 
-describe("@pen/export-json import", () => {
+describe("@input/pen-export-json import", () => {
   it("imports a valid document and preserves block ids", async () => {
     const editor = createBareEditor();
 

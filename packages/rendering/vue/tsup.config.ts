@@ -6,7 +6,7 @@ export default defineConfig({
   dts: true,
   outDir: "dist",
   clean: true,
-  external: ["@pen/core", "@pen/dom", "@pen/types", "vue"],
+  external: ["@input/pen-core", "@input/pen-dom", "@input/pen-types", "vue"],
   outExtension({ format }) {
     return { js: format === "esm" ? ".mjs" : ".cjs" };
   },

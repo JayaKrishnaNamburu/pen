@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { createEditor } from "@pen/core";
-import type { DocumentOp } from "@pen/types";
+import { createEditor } from "@input/pen-core";
+import type { DocumentOp } from "@input/pen-types";
 import { xmlExporter } from "../exporter";
 
 type InsertTableCellTextOp = Extract<DocumentOp, { type: "insert-table-cell-text" }>;
@@ -32,7 +32,7 @@ function editorWithOps(ops: Parameters<ReturnType<typeof createEditor>["apply"]>
   return editor;
 }
 
-describe("@pen/export-xml", () => {
+describe("@input/pen-export-xml", () => {
   it("exports nested blocks and marks as XML", async () => {
     const editor = editorWithOps([
       {

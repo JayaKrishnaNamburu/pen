@@ -1,4 +1,4 @@
-import type { Editor, InlineDecoration } from "@pen/types";
+import type { Editor, InlineDecoration } from "@input/pen-types";
 import type { AIExtensionConfig, AISession } from "../types";
 import {
 	AI_REVIEW_ROLE_ATTRIBUTE,

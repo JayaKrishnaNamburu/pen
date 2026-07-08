@@ -1,9 +1,9 @@
-import type { Editor, ModelRequestedOperation } from "@pen/types";
+import type { Editor, ModelRequestedOperation } from "@input/pen-types";
 import {
 	isScopedSelectionTarget,
 	renderSelectionTargetText,
 	resolveSelectionTargetBlockIds,
-} from "@pen/types";
+} from "@input/pen-types";
 
 export function parseRequestedOperation(
 	value: unknown,

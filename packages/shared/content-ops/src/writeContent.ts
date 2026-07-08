@@ -1,4 +1,4 @@
-import type { Editor, Position } from "@pen/types";
+import type { Editor, Position } from "@input/pen-types";
 import { blocksToOps, type PendingBlock } from "./blocks";
 import {
   normalizePendingBlocksForImport,

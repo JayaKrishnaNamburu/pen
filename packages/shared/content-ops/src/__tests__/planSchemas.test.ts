@@ -4,7 +4,7 @@ import {
 	normalizePlanSteps,
 } from "../plan/planSchemas";
 
-describe("@pen/content-ops plan schemas", () => {
+describe("@input/pen-content-ops plan schemas", () => {
 	it("normalizes non-record plan payloads to empty objects", () => {
 		expect(normalizePlanRecord(null)).toEqual({});
 		expect(normalizePlanRecord("plan")).toEqual({});

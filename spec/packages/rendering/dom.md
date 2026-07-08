@@ -1,12 +1,12 @@
-# @pen/dom
+# @input/pen-dom
 
 ## Purpose
 
-`@pen/dom` provides the shared DOM field-editor engine, document-keyboard routing, and low-level DOM reconciliation helpers used by Pen renderers. It is the package that turns editor state into browser editing behavior without tying that behavior to React or Vue.
+`@input/pen-dom` provides the shared DOM field-editor engine, document-keyboard routing, and low-level DOM reconciliation helpers used by Pen renderers. It is the package that turns editor state into browser editing behavior without tying that behavior to React or Vue.
 
 ## Public Role
 
-This package sits between `@pen/core` and renderer packages. It owns DOM-specific editing concerns like reconciliation, selection bridging, clipboard handling, text-entry target detection, document shortcuts, table-cell navigation, and select-all behavior, while leaving component structure and framework lifecycle to the renderer layer.
+This package sits between `@input/pen-core` and renderer packages. It owns DOM-specific editing concerns like reconciliation, selection bridging, clipboard handling, text-entry target detection, document shortcuts, table-cell navigation, and select-all behavior, while leaving component structure and framework lifecycle to the renderer layer.
 
 ## Key Exports / Entrypoints
 
@@ -18,24 +18,24 @@ This package sits between `@pen/core` and renderer packages. It owns DOM-specifi
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@pen/core`, `@pen/shortcuts`, `@pen/types`
+- Runtime dependencies: `@input/pen-core`, `@input/pen-shortcuts`, `@input/pen-types`
 - Peer dependencies: No peer dependencies declared.
-- Boundary: `@pen/dom` sits between the core runtime and framework bindings and should remain framework-agnostic.
+- Boundary: `@input/pen-dom` sits between the core runtime and framework bindings and should remain framework-agnostic.
 
 ## Runtime Model
 
-`@pen/dom` is the browser editing engine that both reads from and writes back to the headless editor:
+`@input/pen-dom` is the browser editing engine that both reads from and writes back to the headless editor:
 
 ```mermaid
 flowchart TD
   Renderer[RendererPackage]
-  Dom["@pen/dom"]
+  Dom["@input/pen-dom"]
   Reconcile[DOMReconciliation]
   Selection[SelectionBridge]
   Keyboard[DocumentKeyboardRouting]
   TextEntry[TextEntryTargetModel]
   Clipboard[ClipboardAndPaste]
-  Core["@pen/core"]
+  Core["@input/pen-core"]
 
   Renderer --> Dom
   Dom --> Reconcile

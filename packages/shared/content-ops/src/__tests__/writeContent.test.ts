@@ -1,4 +1,4 @@
-import { createDefaultSchema } from "@pen/schema-default";
+import { createDefaultSchema } from "@input/pen-schema-default";
 import { describe, expect, it, vi } from "vitest";
 import { parseMarkdownToBlocks } from "../markdown";
 import { buildDocumentWriteOps } from "../writeContent";
@@ -15,7 +15,7 @@ function createEditorStub(documentProfile: "structured" | "flow") {
 	};
 }
 
-describe("@pen/content-ops", () => {
+describe("@input/pen-content-ops", () => {
 	it("builds structured ops from markdown content", () => {
 		const editor = createEditorStub("structured");
 

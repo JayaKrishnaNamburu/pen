@@ -5,7 +5,7 @@ import {
   type PenDocumentJSON,
   type PenInlineSegmentJSON,
   type PenMarkJSON,
-} from "@pen/export-json";
+} from "@input/pen-export-json";
 import { parseDocument } from "htmlparser2";
 import type { ChildNode, Document, Element } from "domhandler";
 import type {
@@ -14,7 +14,7 @@ import type {
   ImportOptions,
   ImportResult,
   XMLElement,
-} from "@pen/types";
+} from "@input/pen-types";
 
 export const xmlImporter: Importer<string, PenDocumentJSON> = {
   name: "xml",

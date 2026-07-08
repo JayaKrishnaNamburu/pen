@@ -1,7 +1,7 @@
 // @ts-nocheck
-import type { DocumentOp, Editor } from "@pen/types";
-import { buildDocumentWriteOps } from "@pen/document-ops";
-import { generateId } from "@pen/types";
+import type { DocumentOp, Editor } from "@input/pen-types";
+import { buildDocumentWriteOps } from "@input/pen-document-ops";
+import { generateId } from "@input/pen-types";
 import type {
 	BlockConvertPlan,
 	BlockInsertPlan,

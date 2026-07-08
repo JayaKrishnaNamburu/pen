@@ -1,20 +1,20 @@
-# `@pen/vue`
+# `@input/pen-vue`
 
 Vue rendering primitives for Pen.
 
-`@pen/vue` is the first non-React renderer in the Pen monorepo. It is intentionally lean: it proves that editor lifecycle, rendering, selection, decorations, and field-editor integration are not tied to React.
+`@input/pen-vue` is the first non-React renderer in the Pen monorepo. It is intentionally lean: it proves that editor lifecycle, rendering, selection, decorations, and field-editor integration are not tied to React.
 
 ## Install
 
 ```bash
-pnpm add @pen/vue vue
+pnpm add @input/pen-vue vue
 ```
 
 ## Quick Start
 
 ```ts
 import { createApp } from "vue";
-import { PenVuePlugin, useEditor } from "@pen/vue";
+import { PenVuePlugin, useEditor } from "@input/pen-vue";
 
 const app = createApp({
   setup() {
@@ -36,7 +36,7 @@ app.mount("#app");
 You can also import the components directly instead of registering the plugin:
 
 ```ts
-import { PenEditor, useEditor } from "@pen/vue";
+import { PenEditor, useEditor } from "@input/pen-vue";
 ```
 
 ## Public Surface
@@ -50,7 +50,7 @@ import { PenEditor, useEditor } from "@pen/vue";
 
 ```ts
 import { defineComponent, h } from "vue";
-import { PenEditor, useEditor } from "@pen/vue";
+import { PenEditor, useEditor } from "@input/pen-vue";
 
 export const PenExample = defineComponent({
   name: "PenExample",
@@ -68,6 +68,6 @@ export const PenExample = defineComponent({
 
 ## Notes
 
-- `PenEditor` installs the shared DOM field-editor engine from `@pen/dom`.
+- `PenEditor` installs the shared DOM field-editor engine from `@input/pen-dom`.
 - Renderer overrides let host apps customize block rendering without forking the editor runtime.
 - Paste importers can be passed through the `importers` prop on `PenEditor`.

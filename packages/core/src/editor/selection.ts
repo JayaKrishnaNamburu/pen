@@ -5,8 +5,8 @@ import type {
 	CRDTMap,
 	SchemaRegistry,
 	BlockHandle,
-} from "@pen/types";
-import { usesInlineTextSelection } from "@pen/types";
+} from "@input/pen-types";
+import { usesInlineTextSelection } from "@input/pen-types";
 import { createBlockHandle } from "../schema/handles";
 import { resolveCellSelectionMatrix } from "./cellSelection";
 import { EventEmitter } from "./events";

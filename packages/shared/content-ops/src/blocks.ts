@@ -4,10 +4,10 @@ import type {
   ImportOptions,
   Position,
   TableColumnSchema,
-} from "@pen/types";
-import { generateId } from "@pen/types";
+} from "@input/pen-types";
+import { generateId } from "@input/pen-types";
 
-export type { ImportOptions } from "@pen/types";
+export type { ImportOptions } from "@input/pen-types";
 
 export interface ImportedDatabaseData {
   columns: TableColumnSchema[];

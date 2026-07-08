@@ -1,5 +1,5 @@
 import React from "react";
-import type { Editor } from "@pen/types";
+import type { Editor } from "@input/pen-types";
 import { EditorRoot, type EditorRootProps } from "./primitives/editor/root";
 import { EditorContent, type EditorContentProps } from "./primitives/editor/content";
 import { EditorCaretOverlay } from "./primitives/editor/caretOverlay";

@@ -1,6 +1,6 @@
 {
-  "name": "@pen/delta-stream",
-  "version": "0.0.0",
+  "name": "@input/pen-delta-stream",
+  "version": "0.0.1",
   "description": "Streaming protocol and processing pipeline for Pen",
   "license": "SEE LICENSE IN LICENSE.md",
   "homepage": "https://github.com/niceperson/pen#readme",
@@ -14,7 +14,8 @@
   },
   "type": "module",
   "publishConfig": {
-    "access": "public"
+    "access": "restricted",
+    "registry": "https://registry.npmjs.org/"
   },
   "exports": {
     ".": {
@@ -44,8 +45,8 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@pen/types": "workspace:*",
-    "@pen/document-ops": "workspace:*"
+    "@input/pen-types": "workspace:*",
+    "@input/pen-document-ops": "workspace:*"
   },
   "devDependencies": {
     "tsup": "^8.4.0",

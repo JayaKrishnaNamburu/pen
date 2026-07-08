@@ -1,8 +1,8 @@
-import type { BlockHandle } from "@pen/types";
+import type { BlockHandle } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 import { getNumberedListItemValue } from "../orderedList";
 
-describe("@pen/markdown-serialization", () => {
+describe("@input/pen-markdown-serialization", () => {
   it("derives numbered list values from prior siblings at the same indent", () => {
     const firstItem = createNumberedListBlock("b1", null, { start: 3 });
     const secondItem = createNumberedListBlock("b2", firstItem);

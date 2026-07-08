@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { blocksToOps, createEditor } from "@pen/core";
-import type { HTMLImportElement, SchemaRegistry } from "@pen/types";
-import { createDefaultSchema } from "@pen/schema-default";
-import { htmlExporter } from "@pen/export-html";
+import { blocksToOps, createEditor } from "@input/pen-core";
+import type { HTMLImportElement, SchemaRegistry } from "@input/pen-types";
+import { createDefaultSchema } from "@input/pen-schema-default";
+import { htmlExporter } from "@input/pen-export-html";
 import { htmlImporter, parseHtmlToBlocks } from "../importer";
 import { sanitizeHTML } from "../sanitize";
 import { parseHTML } from "../domAdapter";
@@ -88,7 +88,7 @@ function databaseEditor() {
 	return editor;
 }
 
-describe("@pen/import-html dom-to-blocks", () => {
+describe("@input/pen-import-html dom-to-blocks", () => {
 	it("heading + paragraph (AC 28)", () => {
 		const blocks = convert("<h1>Title</h1><p>Body</p>");
 

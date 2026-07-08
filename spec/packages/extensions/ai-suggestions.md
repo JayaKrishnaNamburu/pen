@@ -1,4 +1,4 @@
-# @pen/ai-suggestions
+# @input/pen-ai-suggestions
 
 ## Purpose
 
@@ -6,7 +6,7 @@ Proactive AI writing suggestions for Pen.
 
 ## Public Role
 
-`@pen/ai-suggestions` adds Grammarly-style suggestion behavior on top of the editor without changing Pen's mutation authority. It is a headless extension that detects eligible local edits, asks a host-provided analyzer for bounded suggestion candidates, stages those suggestions against live document ranges, and exposes controller state for renderer UIs.
+`@input/pen-ai-suggestions` adds Grammarly-style suggestion behavior on top of the editor without changing Pen's mutation authority. It is a headless extension that detects eligible local edits, asks a host-provided analyzer for bounded suggestion candidates, stages those suggestions against live document ranges, and exposes controller state for renderer UIs.
 
 The package is responsible for proactive suggestion lifecycle, not for renderer ownership or host-specific model policy.
 
@@ -21,13 +21,13 @@ The package is responsible for proactive suggestion lifecycle, not for renderer 
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@pen/core`, `@pen/types`
+- Runtime dependencies: `@input/pen-core`, `@input/pen-types`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: The extension composes through editor slots, events, and decorations rather than renderer-specific side channels.
 
 ## Runtime Model
 
-`@pen/ai-suggestions` stays local-first and bounded:
+`@input/pen-ai-suggestions` stays local-first and bounded:
 
 ```mermaid
 flowchart TD
@@ -38,7 +38,7 @@ flowchart TD
   Scope[ScopeBuilder]
   Analyzer[Host Analyzer]
   Match[MatcherAndGrouping]
-  Core["@pen/core"]
+  Core["@input/pen-core"]
   Apply["editor.apply(...)"]
 
   Host --> Ext
@@ -76,7 +76,7 @@ The current package stages proactive edits in a few explicit phases:
 - Path in workspace: `packages/extensions/ai-suggestions`
 - Spec path mirrors workspace path: `packages/extensions/ai-suggestions.md`
 - Typical integration installs `aiSuggestionsExtension({ analyzer })` on the editor and then uses renderer-specific primitives or hooks to expose UI
-- `@pen/react` currently provides the main UI surface through `Pen.AISuggestions.Root`, `Pen.AISuggestions.Popover`, and related hooks
+- `@input/pen-react` currently provides the main UI surface through `Pen.AISuggestions.Root`, `Pen.AISuggestions.Popover`, and related hooks
 - Hosts should treat the controller as the source of truth for active suggestions, groups, metrics, and runtime tuning
 - Playground integration is expected to exercise both the analyzer request path and the renderer lifecycle for underline, popover, apply, and dismiss behavior
 

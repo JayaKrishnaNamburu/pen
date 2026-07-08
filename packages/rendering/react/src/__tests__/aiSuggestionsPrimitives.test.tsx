@@ -3,11 +3,11 @@
 import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
-import { createEditor } from "@pen/core";
+import { createEditor } from "@input/pen-core";
 import {
 	aiSuggestionsExtension,
 	getAISuggestionsController,
-} from "@pen/ai-suggestions";
+} from "@input/pen-ai-suggestions";
 import { Pen } from "../index";
 
 (

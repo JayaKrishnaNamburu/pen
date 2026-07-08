@@ -1,4 +1,4 @@
-# `@pen/input-rules`
+# `@input/pen-input-rules`
 
 Opt-in markdown autoformat for Pen.
 
@@ -7,15 +7,15 @@ This package is intentionally **not** included in `defaultPreset()`. Library use
 ## Install
 
 ```bash
-pnpm add @pen/input-rules
+pnpm add @input/pen-input-rules
 ```
 
 ## Usage
 
 ```ts
-import { createEditor } from "@pen/core";
-import { defaultPreset } from "@pen/preset-default";
-import { inputRulesExtension } from "@pen/input-rules";
+import { createEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
+import { inputRulesExtension } from "@input/pen-input-rules";
 
 const editor = createEditor({
   preset: defaultPreset(),
@@ -57,5 +57,5 @@ Inline shortcuts:
 ## Notes
 
 - This package is headless and renderer-agnostic.
-- `@pen/react` keeps a small fallback list-input convenience path, but full markdown autoformat lives here.
+- `@input/pen-react` keeps a small fallback list-input convenience path, but full markdown autoformat lives here.
 - If you want custom rules, pass them through `inputRulesExtension({ rules, inlineRules })`.

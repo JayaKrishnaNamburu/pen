@@ -1,6 +1,6 @@
 {
-  "name": "@pen/types",
-  "version": "0.0.0",
+  "name": "@input/pen-types",
+  "version": "0.0.1",
   "description": "Type definitions and lightweight runtime helpers for Pen",
   "license": "SEE LICENSE IN LICENSE.md",
   "homepage": "https://github.com/niceperson/pen#readme",
@@ -14,7 +14,8 @@
   },
   "type": "module",
   "publishConfig": {
-    "access": "public"
+    "access": "restricted",
+    "registry": "https://registry.npmjs.org/"
   },
   "exports": {
     ".": {

@@ -3,8 +3,8 @@
 import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
-import { createEditor as createCoreEditor } from "@pen/core";
-import { defaultPreset } from "@pen/preset-default";
+import { createEditor as createCoreEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
 import type { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
 import { handleCopy } from "../field-editor/clipboard";
 import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
@@ -106,7 +106,7 @@ function getFieldEditor(
 	return fieldEditor;
 }
 
-describe("@pen/react table rendering", () => {
+describe("@input/pen-react table rendering", () => {
 	it("keeps the first cmd+a cell-local before promoting to the document in flow documents", async () => {
 		const editor = createEditor({
 			documentProfile: "flow",

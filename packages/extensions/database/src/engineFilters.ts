@@ -3,7 +3,7 @@ import {
 	formatStoredSelectValue,
 	parseDatabaseMultiSelectValue,
 	resolveStoredSelectOption,
-} from "@pen/types";
+} from "@input/pen-types";
 import type { DatabaseEngine } from "./engineCore";
 import {
 	DatabaseEngine as DatabaseEngineClass,

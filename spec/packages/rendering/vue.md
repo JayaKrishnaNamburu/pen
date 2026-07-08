@@ -1,8 +1,8 @@
-# @pen/vue
+# @input/pen-vue
 
 ## Purpose
 
-`@pen/vue` provides Vue rendering primitives for Pen. It is the shipped proof that Pen's editor lifecycle, field-editor integration, selection model, and renderer overrides work outside React.
+`@input/pen-vue` provides Vue rendering primitives for Pen. It is the shipped proof that Pen's editor lifecycle, field-editor integration, selection model, and renderer overrides work outside React.
 
 ## Public Role
 
@@ -19,9 +19,9 @@ This package gives Vue applications a lean but real renderer surface: core edito
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@pen/core`, `@pen/dom`, `@pen/types`
+- Runtime dependencies: `@input/pen-core`, `@input/pen-dom`, `@input/pen-types`
 - Peer dependencies: `vue`
-- Boundary: `@pen/vue` depends on `@pen/dom` and `@pen/core` and should stay lean.
+- Boundary: `@input/pen-vue` depends on `@input/pen-dom` and `@input/pen-core` and should stay lean.
 
 ## Runtime Model
 
@@ -32,8 +32,8 @@ flowchart TD
   VueApp[VueApp]
   Components[VueComponents]
   Composables[VueComposables]
-  Dom["@pen/dom"]
-  Core["@pen/core"]
+  Dom["@input/pen-dom"]
+  Core["@input/pen-core"]
 
   VueApp --> Components
   Components --> Composables
@@ -46,7 +46,7 @@ Important responsibilities:
 
 - Mount the editor and shared field-editor engine in a Vue host
 - Expose key editor-derived state through composables instead of duplicating state inside components
-- Register the shared field-editor slots, paste importer/assets slots, focused/read-only/empty root attributes, and captured document-keyboard handling from `@pen/dom`
+- Register the shared field-editor slots, paste importer/assets slots, focused/read-only/empty root attributes, and captured document-keyboard handling from `@input/pen-dom`
 - Support renderer overrides so host apps can customize block rendering without forking the runtime
 - Validate that keyboard routing, Escape selection transitions, select-all behavior, clipboard, and table-editing behavior stay portable across frameworks
 
@@ -55,7 +55,7 @@ Important responsibilities:
 - Path in workspace: `packages/rendering/vue`
 - Spec path mirrors workspace path: `packages/rendering/vue.md`
 - `PenEditor` is the main integration entrypoint; it renders default `PenContent` when no default slot is provided, and `PenVuePlugin` is optional convenience for global registration
-- The package intentionally exposes fewer primitives than `@pen/react`; that is a design choice, not necessarily a gap
+- The package intentionally exposes fewer primitives than `@input/pen-react`; that is a design choice, not necessarily a gap
 - Use this package when a Vue host needs Pen without rebuilding the editing engine
 
 ## Current Maturity / Intended Usage
@@ -65,5 +65,5 @@ Workspace package at version `0.0.0`; intended usage is current-state but still 
 ## Non-goals
 
 - Do not force full React surface parity before the shared cross-framework boundaries are stable.
-- Do not move shared editing behavior from `@pen/dom` into Vue-only code.
+- Do not move shared editing behavior from `@input/pen-dom` into Vue-only code.
 - Do not let Vue component-local state become the authority for selection, decorations, or document mutations.

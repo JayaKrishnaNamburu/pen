@@ -1,11 +1,11 @@
-# @pen/markdown-serialization
+# @input/pen-markdown-serialization
 
 Shared markdown serialization helpers for Pen
 
 ## Install
 
 ```bash
-pnpm add @pen/markdown-serialization
+pnpm add @input/pen-markdown-serialization
 ```
 
 ## Notes

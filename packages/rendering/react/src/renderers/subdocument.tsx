@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import type { BlockHandle, BlockRenderContext, Editor } from "@pen/types";
-import { createEditor } from "@pen/core";
+import type { BlockHandle, BlockRenderContext, Editor } from "@input/pen-types";
+import { createEditor } from "@input/pen-core";
 import { PenEditor } from "../penEditor";
 import { useEditorContext } from "../context/editorContext";
 

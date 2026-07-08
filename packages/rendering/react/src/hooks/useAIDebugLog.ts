@@ -1,6 +1,6 @@
 import { useMemo } from "react";
-import type { Editor } from "@pen/types";
-import type { AIStreamEvent } from "@pen/ai";
+import type { Editor } from "@input/pen-types";
+import type { AIStreamEvent } from "@input/pen-ai";
 import { useAI } from "./useAI";
 import { useAISessions } from "./useAISessions";
 import { useActiveAISession } from "./useActiveAISession";

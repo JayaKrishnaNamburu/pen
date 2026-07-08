@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { richTextShortcutsExtension } from "../index";
 
-describe("@pen/shortcuts", () => {
+describe("@input/pen-shortcuts", () => {
 	it("creates default rich-text shortcut bindings", () => {
 		const extension = richTextShortcutsExtension();
 

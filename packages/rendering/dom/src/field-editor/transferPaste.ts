@@ -3,9 +3,9 @@ import {
 	normalizePendingBlocksForImport,
 	reportPendingBlockImportViolations,
 	resolveBlockFlowCapability,
-} from "@pen/core";
-import type { DocumentOp, Editor, Position } from "@pen/types";
-import type { PendingBlock } from "@pen/core";
+} from "@input/pen-core";
+import type { DocumentOp, Editor, Position } from "@input/pen-types";
+import type { PendingBlock } from "@input/pen-core";
 import type { FieldEditorTransferController } from "./controller";
 import { decodePenBlocksFromHtml, type PenBlock } from "../utils/clipboardPayload";
 import { pasteBlocks, pasteInlineText } from "./transferBlocks";

@@ -1,23 +1,23 @@
-import { aiExtension } from "@pen/ai";
-import type { AISuggestionsExtensionConfig } from "@pen/ai-suggestions";
+import { aiExtension } from "@input/pen-ai";
+import type { AISuggestionsExtensionConfig } from "@input/pen-ai-suggestions";
 import {
 	aiSuggestionsExtension,
 	getAISuggestionsController,
-} from "@pen/ai-suggestions";
+} from "@input/pen-ai-suggestions";
 import {
 	autocompleteExtension,
 	getAutocompleteController,
 	type AutocompleteAcceptanceStrategy,
 	type AutocompleteBlockPolicy,
-} from "@pen/ai-autocomplete";
-import { createEditor } from "@pen/core";
-import { databaseExtension } from "@pen/database";
-import { inputRulesExtension } from "@pen/input-rules";
-import { getMultiplayerController } from "@pen/multiplayer";
-import { defaultPreset } from "@pen/preset-default";
-import { useMultiplayer } from "@pen/react";
-import { searchExtension } from "@pen/search";
-import type { Editor } from "@pen/types";
+} from "@input/pen-ai-autocomplete";
+import { createEditor } from "@input/pen-core";
+import { databaseExtension } from "@input/pen-database";
+import { inputRulesExtension } from "@input/pen-input-rules";
+import { getMultiplayerController } from "@input/pen-multiplayer";
+import { defaultPreset } from "@input/pen-preset-default";
+import { useMultiplayer } from "@input/pen-react";
+import { searchExtension } from "@input/pen-search";
+import type { Editor } from "@input/pen-types";
 import { useEffect, useState, type MutableRefObject } from "react";
 import { PLAYGROUND_AI_DIRECT_STREAM_BATCH_INTERVAL_MS } from "../constants/playgroundAI";
 import {

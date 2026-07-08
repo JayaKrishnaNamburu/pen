@@ -1,4 +1,4 @@
-# @pen/assets-memory
+# @input/pen-assets-memory
 
 ## Purpose
 
@@ -15,7 +15,7 @@ Support development, testing, benchmarking, or local integration workflows aroun
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@pen/types`
+- Runtime dependencies: `@input/pen-types`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: Tooling packages serve the workspace and advanced integrators more than standard runtime embedding.
 

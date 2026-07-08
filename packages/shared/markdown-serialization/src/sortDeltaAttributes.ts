@@ -1,4 +1,4 @@
-import type { SchemaRegistry } from "@pen/types";
+import type { SchemaRegistry } from "@input/pen-types";
 
 export function sortDeltaAttributes(
   attributes: Record<string, unknown>,

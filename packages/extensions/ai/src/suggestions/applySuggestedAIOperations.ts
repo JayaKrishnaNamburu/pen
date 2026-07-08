@@ -1,4 +1,4 @@
-import type { DocumentOp, Editor, OpOrigin } from "@pen/types";
+import type { DocumentOp, Editor, OpOrigin } from "@input/pen-types";
 import type { PersistentSuggestion } from "../types";
 import {
 	AI_SESSION_SUGGESTION_ORIGIN,

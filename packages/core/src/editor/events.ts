@@ -1,4 +1,4 @@
-import type { Unsubscribe } from "@pen/types";
+import type { Unsubscribe } from "@input/pen-types";
 
 type Handler = (...args: unknown[]) => void;
 

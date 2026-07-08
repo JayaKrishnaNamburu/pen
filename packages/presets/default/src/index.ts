@@ -1,12 +1,12 @@
-import { deltaStreamExtension } from "@pen/delta-stream";
-import type { DeltaStreamOptions } from "@pen/delta-stream";
-import { documentOpsExtension } from "@pen/document-ops";
+import { deltaStreamExtension } from "@input/pen-delta-stream";
+import type { DeltaStreamOptions } from "@input/pen-delta-stream";
+import { documentOpsExtension } from "@input/pen-document-ops";
 import {
 	richTextShortcutsExtension,
 	type RichTextShortcutsOptions,
-} from "@pen/shortcuts";
-import type { EditorPreset, Extension } from "@pen/types";
-import { undoExtension } from "@pen/undo";
+} from "@input/pen-shortcuts";
+import type { EditorPreset, Extension } from "@input/pen-types";
+import { undoExtension } from "@input/pen-undo";
 
 export interface DefaultPresetOptions {
 	documentOps?: boolean;

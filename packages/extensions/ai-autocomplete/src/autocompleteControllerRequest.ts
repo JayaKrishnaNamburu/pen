@@ -1,5 +1,5 @@
-import type { Editor, FieldEditor, ModelAdapter } from "@pen/types";
-import { FIELD_EDITOR_SLOT_KEY } from "@pen/types";
+import type { Editor, FieldEditor, ModelAdapter } from "@input/pen-types";
+import { FIELD_EDITOR_SLOT_KEY } from "@input/pen-types";
 import { buildAutocompleteMessages } from "./promptBuilder";
 import type { AutocompleteProviderRegistry } from "./providers/registry";
 import type { AutocompleteContextProvider, AutocompleteProviderDescriptor } from "./providers/types";
@@ -47,7 +47,7 @@ type AutocompleteControllerRuntime = {
 	_maxProviderTimeMs: number;
 	_prefetchAfterAccept: boolean;
 	_providerRegistry: AutocompleteProviderRegistry;
-	_inlineCompletion: import("@pen/types").InlineCompletionController;
+	_inlineCompletion: import("@input/pen-types").InlineCompletionController;
 	_listeners: Set<() => void>;
 	_snapshot: AutocompleteControllerSnapshot | null;
 	_providerDescriptorsSnapshot: readonly AutocompleteProviderDescriptor[] | null;

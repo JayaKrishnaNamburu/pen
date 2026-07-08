@@ -16,11 +16,11 @@ export default defineConfig({
   external: [
     "react",
     "react-dom",
-    "@pen/core",
-    "@pen/types",
-    "@pen/schema-default",
-    "@pen/import-html",
-    "@pen/import-markdown",
+    "@input/pen-core",
+    "@input/pen-types",
+    "@input/pen-schema-default",
+    "@input/pen-import-html",
+    "@input/pen-import-markdown",
   ],
   outExtension({ format }) {
     return { js: format === "esm" ? ".mjs" : ".cjs" };

@@ -3,10 +3,10 @@
 import React, { act, type Ref } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { createRoot } from "react-dom/client";
-import { createEditor } from "@pen/core";
-import type { BlockHandle, BlockRenderContext, Editor } from "@pen/types";
-import { generateId } from "@pen/types";
-import { defaultPreset } from "@pen/preset-default";
+import { createEditor } from "@input/pen-core";
+import type { BlockHandle, BlockRenderContext, Editor } from "@input/pen-types";
+import { generateId } from "@input/pen-types";
+import { defaultPreset } from "@input/pen-preset-default";
 import { Pen } from "../primitives/index";
 import type { BlockControlsProps } from "../context/editorContext";
 import { useBlockDragHandle } from "../hooks/useBlockDragHandle";
@@ -210,7 +210,7 @@ function GlobalHandle(props: BlockControlsProps): React.ReactElement {
 	);
 }
 
-describe("@pen/react block drag and drop", () => {
+describe("@input/pen-react block drag and drop", () => {
 	it("does not auto-enable handle drag in flow mode when block-first interaction is enabled", async () => {
 		const editor = createBlockDragEditor({
 			editorViewMode: "flow",

@@ -1,18 +1,18 @@
 import type {
   PendingBlock,
-} from "@pen/core";
+} from "@input/pen-core";
 import type {
   Editor,
   ImportResult,
   Importer,
   ImportOptions,
-} from "@pen/types";
+} from "@input/pen-types";
 import {
   blocksToOps,
   createImportResult,
   normalizePendingBlocksForImport,
   reportPendingBlockImportViolations,
-} from "@pen/core";
+} from "@input/pen-core";
 import { sanitizeHTML } from "./sanitize";
 import { parseHTML } from "./domAdapter";
 import { domToBlocks } from "./domToBlocks";

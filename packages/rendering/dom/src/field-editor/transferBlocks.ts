@@ -1,4 +1,4 @@
-import type { Block, DocumentOp, Editor, Position } from "@pen/types";
+import type { Block, DocumentOp, Editor, Position } from "@input/pen-types";
 import type { FieldEditorTransferController } from "./controller";
 import type { Delta, PenBlock } from "../utils/clipboardPayload";
 import type { TransferCursorContext } from "./transferSelection";

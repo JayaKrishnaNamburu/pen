@@ -1,4 +1,4 @@
-import type { CRDTAdapter } from "@pen/types";
+import type { CRDTAdapter } from "@input/pen-types";
 import * as Y from "yjs";
 
 import { BLOCKS, SUBDOCUMENT, wrapYjsDocument } from "./document";

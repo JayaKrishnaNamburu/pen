@@ -3,8 +3,8 @@
 import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
-import { createEditor as createCoreEditor } from "@pen/core";
-import { defaultPreset } from "@pen/preset-default";
+import { createEditor as createCoreEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
 import { Pen } from "../primitives/index";
 
 (
@@ -72,7 +72,7 @@ function getInlineSurface(container: HTMLElement, blockId: string): HTMLElement 
 	return inlineSurface;
 }
 
-describe("@pen/react block selection", () => {
+describe("@input/pen-react block selection", () => {
 	it("prevents region selector block selection when root block selection is disabled", async () => {
 		const editor = createEditor({ documentProfile: "flow" });
 		const firstBlockId = editor.firstBlock()!.id;

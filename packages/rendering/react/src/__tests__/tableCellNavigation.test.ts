@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createEditor } from "@pen/core";
-import { handleTableCellSelectionKeyDown } from "@pen/dom";
-import { defaultPreset } from "@pen/preset-default";
+import { createEditor } from "@input/pen-core";
+import { handleTableCellSelectionKeyDown } from "@input/pen-dom";
+import { defaultPreset } from "@input/pen-preset-default";
 import type { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
 
 class MockClipboardItem {
@@ -98,7 +98,7 @@ afterEach(() => {
 	vi.unstubAllGlobals();
 });
 
-describe("@pen/react table cell navigation clipboard", () => {
+describe("@input/pen-react table cell navigation clipboard", () => {
 	it("does not cut cells when clipboard writes fail", async () => {
 		const editor = createTableEditor();
 		const fieldEditor = createFieldEditorStub();

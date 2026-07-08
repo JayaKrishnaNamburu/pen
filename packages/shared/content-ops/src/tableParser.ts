@@ -1,4 +1,4 @@
-import type { DatabaseViewState, TableColumnSchema } from "@pen/types";
+import type { DatabaseViewState, TableColumnSchema } from "@input/pen-types";
 import type { InlineMark, MdastTable, PendingBlock } from "./markdownTypes";
 import { processInlineNodes } from "./inlineMarks";
 

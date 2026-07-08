@@ -1,4 +1,4 @@
-import { DATA_ATTRS } from "@pen/react";
+import { DATA_ATTRS } from "@input/pen-react";
 import React from "react";
 import type { DatabaseViewBodyProps, RowSectionOptions } from "./rendererViewTypes";
 import { DatabaseCellContent } from "./cellEditors";

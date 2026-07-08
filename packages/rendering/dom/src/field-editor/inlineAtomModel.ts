@@ -3,7 +3,7 @@ import type {
 	InlineDelta,
 	InlineNodeDeltaInsert,
 	SchemaRegistry,
-} from "@pen/types";
+} from "@input/pen-types";
 
 export const INLINE_ATOM_LOGICAL_LENGTH = 1;
 export const INLINE_ATOM_REPLACEMENT_TEXT = "\uFFFC";

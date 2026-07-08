@@ -2,11 +2,11 @@ export {
 	createDecorationSet,
 	ensureInlineCompletionController,
 	getInlineCompletionController as getInlineCompletionControllerFromCore,
-} from "@pen/core";
+} from "@input/pen-core";
 export {
 	buildDocumentWriteOps,
 	getDocumentToolRuntime,
-} from "@pen/document-ops";
+} from "@input/pen-document-ops";
 export type {
 	Decoration,
 	DocumentOp,
@@ -24,7 +24,7 @@ export type {
 	ToolDefinition,
 	ToolRuntime,
 	UndoHistoryMetadataController,
-} from "@pen/types";
+} from "@input/pen-types";
 export {
 	AI_AUTOCOMPLETE_CONTROLLER_SLOT,
 	AI_CONTROLLER_SLOT as CORE_AI_CONTROLLER_SLOT,
@@ -39,7 +39,7 @@ export {
 	shouldExposeBlockInTooling,
 	UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY,
 	usesInlineTextSelection,
-} from "@pen/types";
+} from "@input/pen-types";
 export { runAgenticLoop } from "../../agentic/loop";
 export { defaultAICommands } from "../../commands/defaultCommands";
 export { AICommandRegistry } from "../../commands/registry";

@@ -1,4 +1,4 @@
-import type { Editor, PenPersistence, VersionEntry, VersionMetadata } from "@pen/types";
+import type { Editor, PenPersistence, VersionEntry, VersionMetadata } from "@input/pen-types";
 
 export class SnapshotManager {
 	private editor: Editor;

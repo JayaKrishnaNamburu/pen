@@ -1,6 +1,6 @@
 {
-  "name": "@pen/crdt-yjs",
-  "version": "0.0.0",
+  "name": "@input/pen-crdt-yjs",
+  "version": "0.0.1",
   "description": "Yjs CRDT adapter for Pen",
   "license": "SEE LICENSE IN LICENSE.md",
   "homepage": "https://github.com/niceperson/pen#readme",
@@ -14,7 +14,8 @@
   },
   "type": "module",
   "publishConfig": {
-    "access": "public"
+    "access": "restricted",
+    "registry": "https://registry.npmjs.org/"
   },
   "exports": {
     ".": {
@@ -44,7 +45,7 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@pen/types": "workspace:*",
+    "@input/pen-types": "workspace:*",
     "y-protocols": "^1.0.7",
     "yjs": "^13.6.29"
   },

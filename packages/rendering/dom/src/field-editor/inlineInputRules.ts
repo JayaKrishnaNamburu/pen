@@ -1,5 +1,5 @@
-import { INPUT_RULES_ENGINE_SLOT_KEY, supportsInlineInputRules } from "@pen/types";
-import type { DocumentOp, Editor } from "@pen/types";
+import { INPUT_RULES_ENGINE_SLOT_KEY, supportsInlineInputRules } from "@input/pen-types";
+import type { DocumentOp, Editor } from "@input/pen-types";
 import { matchInlineInputRule } from "../utils/inlineInputRule";
 import type { InlineInputRuleEngine } from "./crdt";
 

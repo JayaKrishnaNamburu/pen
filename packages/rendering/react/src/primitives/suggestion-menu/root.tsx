@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useRef } from "react";
-import type { Editor } from "@pen/types";
+import type { Editor } from "@input/pen-types";
 import { EditorContext } from "../../context/editorContext";
 import {
 	useSuggestionMenu,

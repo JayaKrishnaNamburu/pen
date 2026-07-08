@@ -1,1 +1,1 @@
-export { suggestion } from "@pen/types";
+export { suggestion } from "@input/pen-types";

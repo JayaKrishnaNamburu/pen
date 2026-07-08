@@ -1,4 +1,4 @@
-import type { Editor } from "@pen/types";
+import type { Editor } from "@input/pen-types";
 import { HistoryControllerImpl } from "./controller";
 import type { HistoryConfig } from "./types";
 

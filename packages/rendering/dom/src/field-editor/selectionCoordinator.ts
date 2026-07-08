@@ -1,4 +1,4 @@
-import type { SelectionState } from "@pen/types";
+import type { SelectionState } from "@input/pen-types";
 import type { PenFieldEditorFocusOptions } from "./controller";
 import {
 	FieldEditorSelectionAuthority,

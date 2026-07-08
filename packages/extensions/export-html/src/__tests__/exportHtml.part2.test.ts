@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { createEditor } from "@pen/core";
-import type { DocumentOp } from "@pen/types";
+import { createEditor } from "@input/pen-core";
+import type { DocumentOp } from "@input/pen-types";
 import { htmlExporter } from "../exporter";
 
 type InsertTableCellTextOp = Extract<DocumentOp, { type: "insert-table-cell-text" }>;
@@ -55,7 +55,7 @@ function createFlowEditorFromSeededDocument(
   return editor;
 }
 
-describe("@pen/export-html", () => {
+describe("@input/pen-export-html", () => {
   it("supports resolved suggestion export inside table cells", () => {
     const editor = editorWithTable(
       {

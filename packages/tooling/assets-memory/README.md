@@ -1,11 +1,11 @@
-# `@pen/assets-memory`
+# `@input/pen-assets-memory`
 
 In-memory asset provider for Pen.
 
 ## Install
 
 ```bash
-pnpm add @pen/assets-memory
+pnpm add @input/pen-assets-memory
 ```
 
 ## What It Provides
@@ -17,7 +17,7 @@ pnpm add @pen/assets-memory
 ## Usage
 
 ```ts
-import { memoryAssets } from "@pen/assets-memory";
+import { memoryAssets } from "@input/pen-assets-memory";
 
 const assets = memoryAssets();
 

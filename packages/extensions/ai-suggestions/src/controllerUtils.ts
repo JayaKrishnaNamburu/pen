@@ -1,4 +1,4 @@
-import type { Editor, TextSelection } from "@pen/types";
+import type { Editor, TextSelection } from "@input/pen-types";
 import type { AISuggestionCandidate } from "./types";
 
 export function resolveSelectedBlockId(editor: Editor): string | null {

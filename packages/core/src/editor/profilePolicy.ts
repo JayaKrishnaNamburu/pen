@@ -13,22 +13,22 @@ import {
 	type InsertBlockOp,
 	type SchemaRegistry,
 	type SplitBlockOp,
-} from "@pen/types";
+} from "@input/pen-types";
 import type {
 	PendingBlockImportPolicyViolation,
 	PendingBlockProfilePolicyViolation,
-} from "@pen/content-ops";
+} from "@input/pen-content-ops";
 export {
 	createImportResult,
 	filterPendingBlocksForDocumentProfile,
 	normalizePendingBlocksForImport,
 	reportPendingBlockImportViolations,
 	reportPendingBlockProfileViolations,
-} from "@pen/content-ops";
+} from "@input/pen-content-ops";
 export type {
 	PendingBlockImportPolicyViolation,
 	PendingBlockProfilePolicyViolation,
-} from "@pen/content-ops";
+} from "@input/pen-content-ops";
 
 export function resolveBlockFlowCapability(
 	registry: SchemaRegistry,

@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from "react";
-import type { Editor } from "@pen/types";
-import { getAIController, type AIControllerState } from "@pen/ai";
+import type { Editor } from "@input/pen-types";
+import { getAIController, type AIControllerState } from "@input/pen-ai";
 
 const EMPTY_AI_STATE: AIControllerState = {
 	status: "idle",

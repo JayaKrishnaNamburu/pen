@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { inputRulesExtension } from "../extension";
-import type { DocumentOp, Editor } from "@pen/types";
+import type { DocumentOp, Editor } from "@input/pen-types";
 
 type BeforeApplyHook = (
 	ops: DocumentOp[],

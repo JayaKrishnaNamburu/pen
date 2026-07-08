@@ -1,6 +1,6 @@
 import type React from "react";
-import { DATA_ATTRS } from "@pen/react";
-import type { CellSelection } from "@pen/types";
+import { DATA_ATTRS } from "@input/pen-react";
+import type { CellSelection } from "@input/pen-types";
 import type { DatabaseViewModelColumn, DatabaseViewModelRow } from "./types";
 import { getNextRowPinningState } from "./utils/databaseRenderer";
 

@@ -1,5 +1,5 @@
-import { getInlineCompletionController } from "@pen/core";
-import { buildDocumentWriteOps } from "@pen/document-ops";
+import { getInlineCompletionController } from "@input/pen-core";
+import { buildDocumentWriteOps } from "@input/pen-document-ops";
 import {
 	applyBenchMarkdownFastApply,
 	parseBenchMarkdownFastApplyContract,

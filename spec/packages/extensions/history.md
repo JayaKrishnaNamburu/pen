@@ -1,8 +1,8 @@
-# @pen/history
+# @input/pen-history
 
 ## Purpose
 
-`@pen/history` provides snapshot history, restore flows, and attribution primitives for Pen. It manages version snapshots, auto-snapshot scheduling, cross-editor restore coordination, and blame-style author attribution views.
+`@input/pen-history` provides snapshot history, restore flows, and attribution primitives for Pen. It manages version snapshots, auto-snapshot scheduling, cross-editor restore coordination, and blame-style author attribution views.
 
 ## Public Role
 
@@ -21,18 +21,18 @@ This package adds document-history capabilities around the editor without replac
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@pen/types`
+- Runtime dependencies: `@input/pen-types`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: This package owns snapshot orchestration and attribution views, but it does not become the live document runtime or undo stack.
 
 ## Runtime Model
 
-`@pen/history` operates at document-scope level and coordinates multiple attached editors when restoring or listing snapshots:
+`@input/pen-history` operates at document-scope level and coordinates multiple attached editors when restoring or listing snapshots:
 
 ```mermaid
 flowchart TD
   Editors[EditorsInDocumentScope]
-  History["@pen/history"]
+  History["@input/pen-history"]
   Controller[HistoryController]
   Snapshots[SnapshotManager]
   Auto[AutoSnapshotScheduler]
@@ -58,7 +58,7 @@ Important rules:
 - Path in workspace: `packages/extensions/history`
 - Spec path mirrors workspace path: `packages/extensions/history.md`
 - Install `historyExtension()` when a host needs version snapshots, restore flows, or attribution tooling
-- This package is complementary to `@pen/undo`: snapshots are for durable version history, while undo is for local reversible editing operations
+- This package is complementary to `@input/pen-undo`: snapshots are for durable version history, while undo is for local reversible editing operations
 - Hosts should treat persistence configuration as a boundary concern supplied to the package, not something the package invents internally
 
 ## Current Maturity / Intended Usage

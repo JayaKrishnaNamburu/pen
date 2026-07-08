@@ -1,4 +1,4 @@
-import type { CellSelection } from "@pen/types";
+import type { CellSelection } from "@input/pen-types";
 
 export function isCellInSelection(
 	selection: CellSelection,

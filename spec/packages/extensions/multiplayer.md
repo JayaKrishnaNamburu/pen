@@ -1,8 +1,8 @@
-# @pen/multiplayer
+# @input/pen-multiplayer
 
 ## Purpose
 
-`@pen/multiplayer` provides multiplayer presence and sync primitives for Pen. It manages connection state, peer identity resolution, remote cursor and selection state, author ledgers, and renderer-facing remote decorations.
+`@input/pen-multiplayer` provides multiplayer presence and sync primitives for Pen. It manages connection state, peer identity resolution, remote cursor and selection state, author ledgers, and renderer-facing remote decorations.
 
 ## Public Role
 
@@ -20,22 +20,22 @@ This package adds collaboration awareness around the editor without turning itse
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@pen/core`, `@pen/types`
+- Runtime dependencies: `@input/pen-core`, `@input/pen-types`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: This package owns collaboration awareness and renderer-facing remote state, but it does not replace core mutation authority or the underlying CRDT transport.
 
 ## Runtime Model
 
-`@pen/multiplayer` turns awareness state into Pen controller state and remote decorations:
+`@input/pen-multiplayer` turns awareness state into Pen controller state and remote decorations:
 
 ```mermaid
 flowchart TD
   Transport[CRDTOrTransportAwareness]
-  Multiplayer["@pen/multiplayer"]
+  Multiplayer["@input/pen-multiplayer"]
   Controller[MultiplayerController]
   Presence[PeersCursorsSelections]
   Decorations[RemoteDecorations]
-  Core["@pen/core"]
+  Core["@input/pen-core"]
 
   Transport --> Multiplayer
   Multiplayer --> Controller

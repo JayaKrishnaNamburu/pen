@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { DECORATION_OMIT_FROM_RENDER_ATTRIBUTE } from "@pen/types";
-import type { InlineDecoration } from "@pen/types";
+import { DECORATION_OMIT_FROM_RENDER_ATTRIBUTE } from "@input/pen-types";
+import type { InlineDecoration } from "@input/pen-types";
 import {
 	applyInlineDecorationsToDeltas,
 	buildInlineDecorationsRenderSignature,

@@ -1,4 +1,4 @@
-# @pen/ai-skills
+# @input/pen-ai-skills
 
 ## Purpose
 
@@ -15,7 +15,7 @@ Add optional runtime behavior on top of the editor core without changing the can
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@pen/ai-autocomplete`, `@pen/ai-tools`
+- Runtime dependencies: `@input/pen-ai-autocomplete`, `@input/pen-ai-tools`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: Extensions compose through the core editor and slots/events rather than side channels.
 

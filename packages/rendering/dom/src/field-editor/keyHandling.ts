@@ -1,5 +1,5 @@
-import { getInlineCompletionController } from "@pen/core";
-import type { Editor } from "@pen/types";
+import { getInlineCompletionController } from "@input/pen-core";
+import type { Editor } from "@input/pen-types";
 import type { FieldEditorKeyboardController } from "./controller";
 import {
 	applyDeleteBehavior,

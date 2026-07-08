@@ -1,5 +1,5 @@
-import { FIELD_EDITOR_SLOT_KEY } from "@pen/types";
-import type { DocumentCommitEvent, Editor, FieldEditor } from "@pen/types";
+import { FIELD_EDITOR_SLOT_KEY } from "@input/pen-types";
+import type { DocumentCommitEvent, Editor, FieldEditor } from "@input/pen-types";
 import { buildApplySuggestionOps } from "./apply";
 import {
 	buildSuggestionFingerprint,

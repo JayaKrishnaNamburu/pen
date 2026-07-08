@@ -1,10 +1,10 @@
 import { useSyncExternalStore } from "react";
-import type { Editor, Unsubscribe } from "@pen/types";
+import type { Editor, Unsubscribe } from "@input/pen-types";
 import {
 	getHistoryController,
 	type HistoryController,
 	type HistoryState,
-} from "@pen/history";
+} from "@input/pen-history";
 
 const EMPTY_HISTORY_STATE: HistoryState = {
 	snapshots: [],

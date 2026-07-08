@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { UndoManagerImpl } from "../undoManager";
 
-describe("@pen/undo UndoManagerImpl", () => {
+describe("@input/pen-undo UndoManagerImpl", () => {
   it("delegates undo/redo operations to the CRDT undo manager", () => {
     const crdtUndo = {
       undo: vi.fn(() => true),

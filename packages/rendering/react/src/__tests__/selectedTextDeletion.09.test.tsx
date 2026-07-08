@@ -6,9 +6,9 @@ import { createRoot } from "react-dom/client";
 import {
 	createDecorationSet,
 	createEditor as createCoreEditor,
-} from "@pen/core";
-import { defaultPreset } from "@pen/preset-default";
-import { defineExtension } from "@pen/types";
+} from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
+import { defineExtension } from "@input/pen-types";
 import type { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
 import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
 import { domSelectionToEditor } from "../field-editor/selectionBridge";
@@ -137,7 +137,7 @@ function setNativeSelectionRange(
 	selection?.addRange(range);
 }
 
-describe("@pen/react selected text deletion", () => {
+describe("@input/pen-react selected text deletion", () => {
 	it("deletes the full selected paragraph on backspace keydown in the active surface", async () => {
 		const editor = createEditor();
 		const blockId = editor.firstBlock()!.id;

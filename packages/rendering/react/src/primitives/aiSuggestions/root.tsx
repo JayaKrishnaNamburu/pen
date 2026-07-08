@@ -1,5 +1,5 @@
 import React from "react";
-import type { Editor } from "@pen/types";
+import type { Editor } from "@input/pen-types";
 import { EditorContext } from "../../context/editorContext";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { useAISuggestionPopover } from "../../hooks/useAISuggestionPopover";

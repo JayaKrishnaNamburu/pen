@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { defaultPreset } from "../index";
 
-describe("@pen/preset-default", () => {
+describe("@input/pen-preset-default", () => {
 	it("returns the standard default extension stack", () => {
 		const preset = defaultPreset();
 		const result = preset.resolve({

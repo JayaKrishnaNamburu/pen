@@ -1,4 +1,4 @@
-import type { ModelMessage } from "@pen/types";
+import type { ModelMessage } from "@input/pen-types";
 import { AI_SUGGESTIONS_REQUEST_MODE } from "./constants";
 import { buildAISuggestionMessages } from "./promptBuilder";
 import type { BuiltSuggestionScope } from "./scopeBuilder";
@@ -18,7 +18,7 @@ export interface AnalyzeSuggestionScopeResult {
 }
 
 export async function analyzeSuggestionScope(input: {
-	editor: import("@pen/types").Editor;
+	editor: import("@input/pen-types").Editor;
 	scope: BuiltSuggestionScope;
 	config: AISuggestionsExtensionConfig;
 	signal?: AbortSignal;
@@ -79,7 +79,7 @@ export async function analyzeSuggestionScope(input: {
 
 async function analyzeWithCustomAnalyzer(
 	analyzer: AISuggestionsAnalyzer,
-	editor: import("@pen/types").Editor,
+	editor: import("@input/pen-types").Editor,
 	scope: BuiltSuggestionScope,
 	signal?: AbortSignal,
 ): Promise<AnalyzeSuggestionScopeResult> {

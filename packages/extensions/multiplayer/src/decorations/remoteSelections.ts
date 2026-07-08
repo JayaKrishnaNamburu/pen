@@ -1,4 +1,4 @@
-import type { BlockDecoration, Decoration, Editor, InlineDecoration } from "@pen/types";
+import type { BlockDecoration, Decoration, Editor, InlineDecoration } from "@input/pen-types";
 import type { RemoteSelectionState } from "../types";
 
 export function buildRemoteSelectionDecorations(

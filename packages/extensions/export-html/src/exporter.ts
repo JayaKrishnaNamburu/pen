@@ -4,11 +4,11 @@ import type {
   Exporter,
   ExportOptions,
   TableCellHandle,
-} from "@pen/types";
+} from "@input/pen-types";
 import {
   buildDatabaseData,
   sortDeltaAttributes,
-} from "@pen/markdown-serialization";
+} from "@input/pen-markdown-serialization";
 
 export type HtmlExportViewMode = "resolved" | "raw";
 

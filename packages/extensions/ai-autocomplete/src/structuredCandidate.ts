@@ -2,14 +2,14 @@ import type {
 	DocumentOp,
 	Editor,
 	InlineCompletionPreviewBlock,
-} from "@pen/types";
+} from "@input/pen-types";
 import {
 	blocksToOps,
 	normalizePendingBlocksForImport,
 	parseMarkdownToBlocks,
 	splitPlainTextBlocks,
 	type PendingBlock,
-} from "@pen/content-ops";
+} from "@input/pen-content-ops";
 
 export interface AutocompleteStructuredCandidate {
 	rawText: string;

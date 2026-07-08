@@ -1,4 +1,4 @@
-import { defineBlock, prop } from "@pen/types";
+import { defineBlock, prop } from "@input/pen-types";
 
 export const codeBlock = defineBlock("codeBlock", {
   props: {

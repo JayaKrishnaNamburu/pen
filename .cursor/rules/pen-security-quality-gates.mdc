@@ -12,4 +12,4 @@ alwaysApply: true
   - `pnpm build`
   - `pnpm typecheck`
   - `pnpm test`
-- For perf-sensitive paths, avoid regressions and respect benchmark expectations in `@pen/bench`.
+- For perf-sensitive paths, avoid regressions and respect benchmark expectations in `@input/pen-bench`.

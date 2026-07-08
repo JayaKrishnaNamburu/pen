@@ -1,4 +1,4 @@
-import type { BlockDecoration, InlineDecoration } from "@pen/types";
+import type { BlockDecoration, InlineDecoration } from "@input/pen-types";
 import type { AIExtensionConfig } from "../types";
 import {
 	AI_REVIEW_ROLE_ATTRIBUTE,

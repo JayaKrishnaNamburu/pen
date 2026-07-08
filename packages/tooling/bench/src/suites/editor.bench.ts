@@ -1,5 +1,5 @@
 import type { BenchContext, BenchDefinition } from "../bench";
-import { createTestEditor } from "@pen/test";
+import { createTestEditor } from "@input/pen-test";
 import {
   EDITOR_APPLY_INSERT_DELETE_BLOCK_X500_BENCH,
   EDITOR_APPLY_INSERT_TEXT_X1000_BENCH,

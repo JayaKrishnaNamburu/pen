@@ -1,6 +1,6 @@
 // @ts-nocheck
-import type { Editor } from "@pen/types";
-import type { DatabaseViewState, TableColumnSchema } from "@pen/types";
+import type { Editor } from "@input/pen-types";
+import type { DatabaseViewState, TableColumnSchema } from "@input/pen-types";
 import type { DocumentMutationPlan } from "../planTypes";
 import type { AITargetKind } from "../contracts";
 import { selectPlanAtPath, removePlanAtPath, describeTextEditLabel, describeTextEditChangeKind, describeDatabaseStepLabel, describeDatabaseStepChangeKind, describeDatabaseStepSection, describeDatabaseStepSummary, describeDatabaseStepDetail, describeDatabaseStepPreview, describeDatabaseStepBefore, describeDatabaseStepAfter, describeDatabaseStepComparisonRows, stringifyReviewValue, readTextEditBefore, readBlockPropsPreview, readBlockTypePreview } from "./reviewArtifactsPart2";

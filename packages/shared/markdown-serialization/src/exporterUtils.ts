@@ -1,4 +1,4 @@
-import type { Block, BlockHandle, DatabaseViewState, TableColumnSchema } from "@pen/types";
+import type { Block, BlockHandle, DatabaseViewState, TableColumnSchema } from "@input/pen-types";
 
 export function buildTableChildren(handle: BlockHandle): Block[] | undefined {
   const rowCount = handle.tableRowCount();

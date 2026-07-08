@@ -6,7 +6,7 @@ export default defineConfig({
   dts: true,
   outDir: "dist",
   clean: true,
-  external: ["@pen/types", "@pen/document-ops", "@pen/core"],
+  external: ["@input/pen-types", "@input/pen-document-ops", "@input/pen-core"],
   outExtension({ format }) {
     return { js: format === "esm" ? ".mjs" : ".cjs" };
   },

@@ -3,8 +3,8 @@ import {
   blocksToOps,
   createEditor,
   type PendingBlock,
-} from "@pen/core";
-import type { DocumentOp } from "@pen/types";
+} from "@input/pen-core";
+import type { DocumentOp } from "@input/pen-types";
 import { markdownExporter } from "../exporter";
 
 type InsertTableCellTextOp = Extract<DocumentOp, { type: "insert-table-cell-text" }>;

@@ -1,5 +1,5 @@
-import { defaultSchema } from "@pen/schema-default";
-import type { ApplyOptions, DocumentOp, Editor } from "@pen/types";
+import { defaultSchema } from "@input/pen-schema-default";
+import type { ApplyOptions, DocumentOp, Editor } from "@input/pen-types";
 import { describe, expect, it, vi } from "vitest";
 import { buildToolContext } from "../contextBuilder";
 

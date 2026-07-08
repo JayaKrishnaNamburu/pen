@@ -1,5 +1,5 @@
 import { useRef, useSyncExternalStore } from "react";
-import type { Editor } from "@pen/types";
+import type { Editor } from "@input/pen-types";
 import {
 	computeDocumentEmpty,
 	computeDocumentPlaceholderVisible,

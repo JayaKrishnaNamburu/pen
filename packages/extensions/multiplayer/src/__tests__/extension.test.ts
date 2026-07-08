@@ -1,10 +1,10 @@
-import { createDocumentSession, createEditor } from "@pen/core";
-import { yjsAdapter } from "@pen/crdt-yjs";
+import { createDocumentSession, createEditor } from "@input/pen-core";
+import { yjsAdapter } from "@input/pen-crdt-yjs";
 import {
 	AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY,
 	type ConnectionState,
 	type MultiplayerSession,
-} from "@pen/types";
+} from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 import {
 	getMultiplayerController,

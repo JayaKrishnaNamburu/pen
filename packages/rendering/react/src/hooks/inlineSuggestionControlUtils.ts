@@ -1,5 +1,5 @@
-import type { Editor } from "@pen/types";
-import type { PersistentSuggestion, PersistentTextSuggestion } from "@pen/ai";
+import type { Editor } from "@input/pen-types";
+import type { PersistentSuggestion, PersistentTextSuggestion } from "@input/pen-ai";
 import type { useAIActions } from "./useAIActions";
 import type { InlineSuggestionControlPosition } from "./useInlineSuggestionControls";
 import { querySuggestionAnchorElements } from "../utils/aiDomScope";

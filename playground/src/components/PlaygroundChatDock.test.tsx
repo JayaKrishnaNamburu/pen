@@ -3,8 +3,8 @@
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createEditor } from "@pen/core";
-import { createDefaultSchema } from "@pen/schema-default";
+import { createEditor } from "@input/pen-core";
+import { createDefaultSchema } from "@input/pen-schema-default";
 import { PlaygroundChatDock } from "./PlaygroundChatDock";
 
 const penReactMocks = vi.hoisted(() => ({
@@ -12,7 +12,7 @@ const penReactMocks = vi.hoisted(() => ({
 	useAISessions: vi.fn(),
 }));
 
-vi.mock("@pen/react", () => ({
+vi.mock("@input/pen-react", () => ({
 	useAISessionActions: penReactMocks.useAISessionActions,
 	useAISessions: penReactMocks.useAISessions,
 }));

@@ -5,8 +5,8 @@ import type {
 	FieldEditor,
 	InlineDelta,
 	InlineNodeDeltaInsert,
-} from "@pen/types";
-import { FIELD_EDITOR_SLOT_KEY } from "@pen/types";
+} from "@input/pen-types";
+import { FIELD_EDITOR_SLOT_KEY } from "@input/pen-types";
 import {
 	pointToEditorSelectionPoint,
 	type SelectionPoint,

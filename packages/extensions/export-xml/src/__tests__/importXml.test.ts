@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { createEditor } from "@pen/core";
-import type { DocumentOp } from "@pen/types";
+import { createEditor } from "@input/pen-core";
+import type { DocumentOp } from "@input/pen-types";
 import { xmlExporter } from "../exporter";
 import { xmlImporter } from "../importer";
 
@@ -31,7 +31,7 @@ function createBareEditor() {
   return editor;
 }
 
-describe("@pen/export-xml import", () => {
+describe("@input/pen-export-xml import", () => {
   it("imports valid XML and preserves block ids", async () => {
     const editor = createBareEditor();
 

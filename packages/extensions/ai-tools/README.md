@@ -1,6 +1,6 @@
-# `@pen/ai-tools`
+# `@input/pen-ai-tools`
 
-`@pen/ai-tools` is the canonical public tool surface for Pen agents and direct editor-attached AI flows.
+`@input/pen-ai-tools` is the canonical public tool surface for Pen agents and direct editor-attached AI flows.
 
 Start here when you need to:
 
@@ -12,14 +12,14 @@ Start here when you need to:
 ## Usage
 
 ```ts
-import { createEditor } from "@pen/core";
-import { defaultPreset } from "@pen/preset-default";
+import { createEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
 import {
   getAIToolRuntime,
   listAITools,
   executeAITool,
   AIToolContextImpl,
-} from "@pen/ai-tools";
+} from "@input/pen-ai-tools";
 
 const editor = createEditor({
   preset: defaultPreset(),
@@ -35,4 +35,4 @@ const context = new AIToolContextImpl(editor, "doc-1", () => {});
 const result = await executeAITool(toolRuntime, "read_document", {}, context);
 ```
 
-`@pen/ai-tools` builds on the same document semantics as `@pen/document-ops`; it does not fork or replace them.
+`@input/pen-ai-tools` builds on the same document semantics as `@input/pen-document-ops`; it does not fork or replace them.

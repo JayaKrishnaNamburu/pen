@@ -1,9 +1,9 @@
-import type { BlockHandle, BlockRenderContext } from "@pen/types";
+import type { BlockHandle, BlockRenderContext } from "@input/pen-types";
 import {
 	DATA_ATTRS,
 	ImageRenderer,
 	useEditorContext,
-} from "@pen/react";
+} from "@input/pen-react";
 import {
 	type DragEvent,
 	type ChangeEvent,

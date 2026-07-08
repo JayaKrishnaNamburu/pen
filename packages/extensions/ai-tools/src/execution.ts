@@ -1,7 +1,7 @@
 import {
   collectToolExecutionOutput,
   type ToolContext,
-} from "@pen/types";
+} from "@input/pen-types";
 import type { AIToolRuntime } from "./types";
 
 export async function executeAITool(

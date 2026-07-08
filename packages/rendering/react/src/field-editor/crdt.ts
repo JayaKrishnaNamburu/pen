@@ -1,1 +1,1 @@
-export * from "@pen/dom/field-editor/crdt";
+export * from "@input/pen-dom/field-editor/crdt";

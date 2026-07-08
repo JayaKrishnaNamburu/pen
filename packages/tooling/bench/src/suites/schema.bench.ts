@@ -1,6 +1,6 @@
 import type { BenchContext, BenchDefinition } from "../bench";
-import { defaultSchema } from "@pen/schema-default";
-import { SchemaEngineImpl } from "@pen/core";
+import { defaultSchema } from "@input/pen-schema-default";
+import { SchemaEngineImpl } from "@input/pen-core";
 import { createLargeDocument } from "../fixtures/largeDoc";
 import {
   SCHEMA_ALL_BLOCK_DISPLAYS_BENCH,

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useId, useState } from "react";
-import type { AICommandBinding } from "@pen/ai";
+import type { AICommandBinding } from "@input/pen-ai";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { isDevelopmentEnvironment } from "../../utils/environment";
 import { useAIContext } from "./root";

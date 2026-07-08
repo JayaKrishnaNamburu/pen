@@ -3,7 +3,7 @@ import type {
 	DocumentOp,
 	Editor,
 	Position,
-} from "@pen/types";
+} from "@input/pen-types";
 import type { ResolvedDropTarget } from "./dropResolver";
 import { IMAGE_BLOCK_TYPE, type UploadedImage } from "./transferTypes";
 

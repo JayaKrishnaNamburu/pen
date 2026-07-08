@@ -2,8 +2,8 @@ import React, { useContext } from "react";
 import type {
 	PeerState,
 	RemoteCursorState,
-} from "@pen/multiplayer";
-import type { Editor } from "@pen/types";
+} from "@input/pen-multiplayer";
+import type { Editor } from "@input/pen-types";
 import { EditorContext } from "../../context/editorContext";
 import { getSelectionPointRect } from "../../field-editor/selectionBridge";
 import { useMultiplayer } from "../../hooks/useMultiplayer";

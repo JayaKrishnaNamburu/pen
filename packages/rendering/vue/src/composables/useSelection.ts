@@ -1,4 +1,4 @@
-import type { Editor } from "@pen/types";
+import type { Editor } from "@input/pen-types";
 import { useEditorContext } from "../internal/editorContext";
 import { useExternalStore } from "../internal/useExternalStore";
 

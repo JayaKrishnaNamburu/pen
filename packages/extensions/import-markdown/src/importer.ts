@@ -3,7 +3,7 @@ import type {
 	Importer,
 	ImportOptions,
 	Editor,
-} from "@pen/types";
+} from "@input/pen-types";
 import {
 	blocksToOps,
 	createImportResult,
@@ -11,7 +11,7 @@ import {
 	type PendingBlock,
 	reportPendingBlockImportViolations,
 	parseMarkdownToBlocks as parseMarkdownContentToBlocks,
-} from "@pen/content-ops";
+} from "@input/pen-content-ops";
 
 function normalizeMarkdownToBlocks(
 	input: string,

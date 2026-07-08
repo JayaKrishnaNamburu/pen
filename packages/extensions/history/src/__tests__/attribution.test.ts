@@ -1,6 +1,6 @@
-import { createEditor } from "@pen/core";
-import { MULTIPLAYER_CONTROLLER_SLOT } from "@pen/types";
-import type { PenPersistence, VersionEntry } from "@pen/types";
+import { createEditor } from "@input/pen-core";
+import { MULTIPLAYER_CONTROLLER_SLOT } from "@input/pen-types";
+import type { PenPersistence, VersionEntry } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 import {
 	buildBlameRanges,

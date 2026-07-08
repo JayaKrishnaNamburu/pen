@@ -6,7 +6,7 @@
 </h3>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@pen/core"><img src="https://img.shields.io/npm/v/@pen/core?color=0368FF&label=version" alt="npm version" /></a>
+  <a href="https://www.npmjs.com/package/@input/pen-core"><img src="https://img.shields.io/npm/v/@input/pen-core?color=0368FF&label=version" alt="npm version" /></a>
   <img src="https://img.shields.io/github/stars/niceperson/pen?style=flat&color=8D30FF" alt="GitHub stars" />
   <img src="https://img.shields.io/badge/license-Pen-FF2B6E" alt="license" />
 </p>
@@ -17,7 +17,7 @@
 Pen is a source-available SDK published as public npm packages. You can evaluate and develop with it freely, but production use requires a commercial license from Input.
 
 ```bash
-pnpm add @pen/core @pen/preset-default @pen/react
+pnpm add @input/pen-core @input/pen-preset-default @input/pen-react
 ```
 
 ## What Pen Is
@@ -29,9 +29,9 @@ Pen is a package-first editor toolkit built around a headless runtime, schema-dr
 The smallest recommended setup uses the core runtime, the default preset, and the React renderer.
 
 ```tsx
-import { createEditor } from "@pen/core";
-import { defaultPreset } from "@pen/preset-default";
-import { PenEditor } from "@pen/react";
+import { createEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
+import { PenEditor } from "@input/pen-react";
 
 const editor = createEditor({
   preset: defaultPreset(),
@@ -53,15 +53,15 @@ Pen keeps runtime state and document mutation in the editor. Your app can subscr
 This example keeps Pen headless where it matters while still giving you a batteries-included editor surface in React.
 
 ```bash
-pnpm add @pen/ai @pen/input-rules @pen/search @pen/shortcuts
+pnpm add @input/pen-ai @input/pen-input-rules @input/pen-search @input/pen-shortcuts
 ```
 
 ```tsx
-import { createEditor } from "@pen/core";
-import { defaultPreset } from "@pen/preset-default";
-import { inputRulesExtension } from "@pen/input-rules";
-import { searchExtension, getSearchController } from "@pen/search";
-import { Pen } from "@pen/react";
+import { createEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
+import { inputRulesExtension } from "@input/pen-input-rules";
+import { searchExtension, getSearchController } from "@input/pen-search";
+import { Pen } from "@input/pen-react";
 
 const editor = createEditor({
   preset: defaultPreset(),
@@ -99,13 +99,13 @@ You can stop at `PenEditor`, compose `Pen.*` primitives, or replace the UI entir
 
 ### Bring Your Own Toolbar
 
-`useToolbar(editor)` exposes formatting state, and `@pen/shortcuts` gives you reusable formatting commands. That lets you render your own toolbar shell without giving up Pen's selection-aware behavior.
+`useToolbar(editor)` exposes formatting state, and `@input/pen-shortcuts` gives you reusable formatting commands. That lets you render your own toolbar shell without giving up Pen's selection-aware behavior.
 
 ```tsx
-import { createEditor } from "@pen/core";
-import { defaultPreset } from "@pen/preset-default";
-import { toggleInlineMark } from "@pen/shortcuts";
-import { Pen, useToolbar } from "@pen/react";
+import { createEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
+import { toggleInlineMark } from "@input/pen-shortcuts";
+import { Pen, useToolbar } from "@input/pen-react";
 
 const editor = createEditor({
   preset: defaultPreset(),
@@ -165,14 +165,14 @@ export function App() {
 
 ### Bring Your Own AI UI
 
-`@pen/ai` owns sessions, generation state, and suggest-mode behavior. In React, you can wire that state into your own chat panel, action bar, or review surface.
+`@input/pen-ai` owns sessions, generation state, and suggest-mode behavior. In React, you can wire that state into your own chat panel, action bar, or review surface.
 
 ```tsx
 import { useState } from "react";
-import { createEditor } from "@pen/core";
-import { defaultPreset } from "@pen/preset-default";
-import { aiExtension } from "@pen/ai";
-import { Pen, useAI, useAIActions, useAISessions } from "@pen/react";
+import { createEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
+import { aiExtension } from "@input/pen-ai";
+import { Pen, useAI, useAIActions, useAISessions } from "@input/pen-react";
 
 const editor = createEditor({
   preset: defaultPreset(),
@@ -252,52 +252,52 @@ export function App() {
 }
 ```
 
-If you want less custom UI code, `@pen/react` also ships `Pen.Toolbar.*` and `Pen.AI.*` primitives on top of the same runtime.
+If you want less custom UI code, `@input/pen-react` also ships `Pen.Toolbar.*` and `Pen.AI.*` primitives on top of the same runtime.
 
 ## Recommended Packages
 
-- `@pen/core`: create editors and access the headless runtime
-- `@pen/types`: contracts and shared type-level helpers
-- `@pen/schema-default`: default blocks and inline definitions
-- `@pen/preset-default`: standard runtime composition for most adopters
-- `@pen/react`: primary documented renderer surface
-- `@pen/crdt-yjs`: Yjs adapter for collaborative setups
+- `@input/pen-core`: create editors and access the headless runtime
+- `@input/pen-types`: contracts and shared type-level helpers
+- `@input/pen-schema-default`: default blocks and inline definitions
+- `@input/pen-preset-default`: standard runtime composition for most adopters
+- `@input/pen-react`: primary documented renderer surface
+- `@input/pen-crdt-yjs`: Yjs adapter for collaborative setups
 
 ## Optional Capabilities
 
 ### Rendering
 
-- `@pen/vue`: shipped Vue renderer proof built on the shared DOM engine
-- `@pen/dom`: shared DOM field-editor engine and low-level DOM helpers
+- `@input/pen-vue`: shipped Vue renderer proof built on the shared DOM engine
+- `@input/pen-dom`: shared DOM field-editor engine and low-level DOM helpers
 
 ### Editing And Extensions
 
-- `@pen/search`: document search and replacement primitives
-- `@pen/input-rules`: opt-in markdown shortcut typing
-- `@pen/undo`: undo and redo with origin tagging
-- `@pen/shortcuts`: headless keyboard shortcut extension
-- `@pen/history`: snapshot history and attribution primitives
-- `@pen/database`: database block behaviors
-- `@pen/document-ops`: document tool and generation-zone helpers
+- `@input/pen-search`: document search and replacement primitives
+- `@input/pen-input-rules`: opt-in markdown shortcut typing
+- `@input/pen-undo`: undo and redo with origin tagging
+- `@input/pen-shortcuts`: headless keyboard shortcut extension
+- `@input/pen-history`: snapshot history and attribution primitives
+- `@input/pen-database`: database block behaviors
+- `@input/pen-document-ops`: document tool and generation-zone helpers
 
 ### AI
 
-- `@pen/ai`: AI extension, suggest mode, and track changes
-- `@pen/ai-autocomplete`: inline autocomplete
-- `@pen/ai-tools`: canonical AI tool surface
-- `@pen/ai-skills`: agent-facing skill artifacts
+- `@input/pen-ai`: AI extension, suggest mode, and track changes
+- `@input/pen-ai-autocomplete`: inline autocomplete
+- `@input/pen-ai-tools`: canonical AI tool surface
+- `@input/pen-ai-skills`: agent-facing skill artifacts
 
 ### Collaboration And Transport
 
-- `@pen/multiplayer`: multiplayer presence and sync primitives
-- `@pen/delta-stream`: streaming protocol and processing pipeline
-- `@pen/transport-direct`: in-process transport
-- `@pen/transport-sse`: Server-Sent Events transport
+- `@input/pen-multiplayer`: multiplayer presence and sync primitives
+- `@input/pen-delta-stream`: streaming protocol and processing pipeline
+- `@input/pen-transport-direct`: in-process transport
+- `@input/pen-transport-sse`: Server-Sent Events transport
 
 ### Import And Export
 
-- `@pen/import-markdown` and `@pen/import-html`
-- `@pen/export-markdown`, `@pen/export-html`, `@pen/export-json`, and `@pen/export-xml`
+- `@input/pen-import-markdown` and `@input/pen-import-html`
+- `@input/pen-export-markdown`, `@input/pen-export-html`, `@input/pen-export-json`, and `@input/pen-export-xml`
 
 ## Architecture
 

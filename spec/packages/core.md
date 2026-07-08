@@ -1,12 +1,12 @@
-# @pen/core
+# @input/pen-core
 
 ## Purpose
 
-`@pen/core` is the headless runtime authority for Pen. It owns editor creation, document state, selection, extension dispatch, normalization, decorations, and the canonical mutation path.
+`@input/pen-core` is the headless runtime authority for Pen. It owns editor creation, document state, selection, extension dispatch, normalization, decorations, and the canonical mutation path.
 
 ## Public Role
 
-Every higher-level package depends on the contracts and runtime behavior established here. Renderer packages mount the editor, extension packages add behavior, and import/export packages prepare or consume document state, but `@pen/core` remains the place where document truth is created and mutated.
+Every higher-level package depends on the contracts and runtime behavior established here. Renderer packages mount the editor, extension packages add behavior, and import/export packages prepare or consume document state, but `@input/pen-core` remains the place where document truth is created and mutated.
 
 ## Key Exports / Entrypoints
 
@@ -20,9 +20,9 @@ Every higher-level package depends on the contracts and runtime behavior establi
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@pen/content-ops`, `@pen/crdt-yjs`, `@pen/delta-stream`, `@pen/document-ops`, `@pen/markdown-serialization`, `@pen/schema-default`, `@pen/shortcuts`, `@pen/types`, `@pen/undo`
+- Runtime dependencies: `@input/pen-content-ops`, `@input/pen-crdt-yjs`, `@input/pen-delta-stream`, `@input/pen-document-ops`, `@input/pen-markdown-serialization`, `@input/pen-schema-default`, `@input/pen-shortcuts`, `@input/pen-types`, `@input/pen-undo`
 - Peer dependencies: No peer dependencies declared.
-- Boundary: `@pen/core` is the runtime center of gravity for Pen and should remain headless.
+- Boundary: `@input/pen-core` is the runtime center of gravity for Pen and should remain headless.
 
 ## Runtime Model
 
@@ -33,7 +33,7 @@ flowchart TD
   HostApp[HostApp]
   Renderer[RendererOrTooling]
   Extension[ExtensionPackage]
-  Core["@pen/core"]
+  Core["@input/pen-core"]
   Editor[Editor]
   Apply["editor.apply(ops, options)"]
   Pipeline[ApplyPipeline]
@@ -68,7 +68,7 @@ Headless editors default to the core apply pipeline only. Hosts can opt into def
 
 - Path in workspace: `packages/core`
 - Spec path mirrors workspace path: `packages/core.md`
-- Typical adoption starts with `createEditor()` plus `@pen/schema-default` and `@pen/preset-default`
+- Typical adoption starts with `createEditor()` plus `@input/pen-schema-default` and `@input/pen-preset-default`
 - Use `createEditor({ preset: defaultPreset(...) })` or explicit `extensions` for feature composition instead of the deprecated `without` option.
 - Server/workflow adoption starts with `createHeadlessEditor()` plus a wrapped CRDT document.
 - Schema composition happens here through the registry/merge APIs, not in renderer packages
@@ -80,6 +80,6 @@ Workspace package at version `0.0.0`; intended usage is current-state but still 
 
 ## Non-goals
 
-- Do not make `@pen/core` renderer-specific.
+- Do not make `@input/pen-core` renderer-specific.
 - Do not turn it into an application shell, transport layer, or auth surface.
 - Do not let convenience helpers replace the editor as the source of mutation truth.

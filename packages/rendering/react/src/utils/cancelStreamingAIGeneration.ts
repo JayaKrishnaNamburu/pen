@@ -1,4 +1,4 @@
-import type { AIController, PersistentSuggestion } from "@pen/ai";
+import type { AIController, PersistentSuggestion } from "@input/pen-ai";
 
 interface CancelStreamingAIGenerationOptions {
 	sessionId?: string | null;

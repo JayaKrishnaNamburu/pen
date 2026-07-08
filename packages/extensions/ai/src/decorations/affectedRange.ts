@@ -1,4 +1,4 @@
-import type { Decoration, Editor, InlineDecoration } from "@pen/types";
+import type { Decoration, Editor, InlineDecoration } from "@input/pen-types";
 import type { AISession, AISessionSelectionSnapshot } from "../types";
 
 interface InlineRange {

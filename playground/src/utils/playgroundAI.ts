@@ -4,7 +4,7 @@ import type {
 	ModelMessage,
 	ModelMessagePart,
 	ModelRequestedOperation,
-} from "@pen/types";
+} from "@input/pen-types";
 import {
 	type PlaygroundExecutionLane,
 	streamPlaygroundAIResponse,

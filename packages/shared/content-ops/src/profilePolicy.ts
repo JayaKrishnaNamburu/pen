@@ -6,7 +6,7 @@ import {
 	type FlowBlockCapability,
 	type ImportResult,
 	type SchemaRegistry,
-} from "@pen/types";
+} from "@input/pen-types";
 import type { PendingBlock } from "./blocks";
 
 type ImportNormalizationEditor = {

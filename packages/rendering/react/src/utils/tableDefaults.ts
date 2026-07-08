@@ -1,5 +1,5 @@
-import type { TableColumnSchema } from "@pen/types";
-import { generateId } from "@pen/types";
+import type { TableColumnSchema } from "@input/pen-types";
+import { generateId } from "@input/pen-types";
 
 const ZERO_WIDTH_SPACE = "\u200B";
 

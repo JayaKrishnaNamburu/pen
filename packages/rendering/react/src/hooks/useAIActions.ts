@@ -1,11 +1,11 @@
-import type { Editor } from "@pen/types";
+import type { Editor } from "@input/pen-types";
 import {
 	getAIController,
 	type AICommandExecutionOptions,
 	type AISession,
 	type AISessionResolution,
 	type AISurface,
-} from "@pen/ai";
+} from "@input/pen-ai";
 
 export function useAIActions(editor: Editor): {
 	runPrompt: (prompt: string, options?: AICommandExecutionOptions) => Promise<unknown>;

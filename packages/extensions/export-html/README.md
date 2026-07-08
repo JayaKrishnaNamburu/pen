@@ -1,11 +1,11 @@
-# @pen/export-html
+# @input/pen-export-html
 
 HTML exporter for Pen
 
 ## Install
 
 ```bash
-pnpm add @pen/export-html
+pnpm add @input/pen-export-html
 ```
 
 ## Notes

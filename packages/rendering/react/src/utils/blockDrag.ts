@@ -1,5 +1,5 @@
 import type React from "react";
-import type { SelectionState } from "@pen/types";
+import type { SelectionState } from "@input/pen-types";
 import {
 	BLOCK_DRAG_MIME,
 	LEGACY_BLOCK_ID_DRAG_MIME,

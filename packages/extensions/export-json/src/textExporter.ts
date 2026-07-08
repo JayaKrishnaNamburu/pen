@@ -1,4 +1,4 @@
-import type { Editor, Exporter, ExportOptions } from "@pen/types";
+import type { Editor, Exporter, ExportOptions } from "@input/pen-types";
 import { exportEditorToJson } from "./exporter";
 import type {
 	PenBlockJSON,

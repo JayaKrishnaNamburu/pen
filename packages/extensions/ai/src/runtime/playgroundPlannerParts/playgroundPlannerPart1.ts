@@ -1,5 +1,5 @@
 // @ts-nocheck
-import type { Editor, ModelRequestedOperation, SelectionState } from "@pen/types";
+import type { Editor, ModelRequestedOperation, SelectionState } from "@input/pen-types";
 import { parseStructuredIntentRequestPrompt } from "../structuredIntent";
 import { createPlaygroundRequestMetricsSeed, estimateTokens, isStructuredPlannerPrompt, buildPromptEnvelope, buildInlineAutocompletePlan, buildInlineAutocompletePlanFromRequest, resolveAutocompleteOutputTokenCap, extractAutocompleteContinuationTargetScope, buildSelectionFastPathPlan, isExplicitLocalOperation, resolveExplicitLocalOperationSourceText, parseSessionExecutionPrompt, resolveLiveSelectedText, isInlineAutocompletePrompt, buildSelectionPromptEnvelope, parsePinnedSelectionPrompt, extractSelectionInstruction } from "./playgroundPlannerPart2";
 import { classifySelectionPrompt, resolveSelectionOutputTokenBudget, resolveSelectionTemperature, resolveNearbyBlocks, resolveSelectionBlockId, truncateText } from "./playgroundPlannerPart3";

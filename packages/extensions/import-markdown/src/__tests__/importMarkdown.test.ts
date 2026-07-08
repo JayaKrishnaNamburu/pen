@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { blocksToOps, createEditor } from "@pen/core";
-import type { SchemaRegistry } from "@pen/types";
-import { markdownExporter } from "@pen/export-markdown";
-import { createDefaultSchema } from "@pen/schema-default";
+import { blocksToOps, createEditor } from "@input/pen-core";
+import type { SchemaRegistry } from "@input/pen-types";
+import { markdownExporter } from "@input/pen-export-markdown";
+import { createDefaultSchema } from "@input/pen-schema-default";
 import { markdownImporter, parseMarkdownToBlocks } from "../importer";
 
 const noDefaultExtensionsPreset = {
@@ -83,7 +83,7 @@ function databaseEditor() {
 	return editor;
 }
 
-describe("@pen/import-markdown", () => {
+describe("@input/pen-import-markdown", () => {
 	it("heading + paragraph (AC 16)", () => {
 		const blocks = convert("# Hello\n\nWorld");
 

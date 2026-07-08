@@ -1,8 +1,8 @@
-import { fullReconcileDeltasToDOM } from "@pen/dom/field-editor/reconciler";
-import { pointToEditorSelectionPoint } from "@pen/dom/field-editor/selectionBridge";
-import { DATA_ATTRS } from "@pen/dom/utils/dataAttributes";
-import { applyInlineDecorationsToDeltas } from "@pen/dom/utils/inlineDecorations";
-import type { InlineDecoration } from "@pen/types";
+import { fullReconcileDeltasToDOM } from "@input/pen-dom/field-editor/reconciler";
+import { pointToEditorSelectionPoint } from "@input/pen-dom/field-editor/selectionBridge";
+import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
+import { applyInlineDecorationsToDeltas } from "@input/pen-dom/utils/inlineDecorations";
+import type { InlineDecoration } from "@input/pen-types";
 import {
   computed,
   defineComponent,

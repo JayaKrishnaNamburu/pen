@@ -1,4 +1,4 @@
-# @pen/search
+# @input/pen-search
 
 Document search and replacement primitives for Pen.
 
@@ -7,7 +7,7 @@ This package is published publicly as part of the Pen source-available SDK. Prod
 ## Install
 
 ```bash
-pnpm add @pen/search
+pnpm add @input/pen-search
 ```
 
 ## What It Provides

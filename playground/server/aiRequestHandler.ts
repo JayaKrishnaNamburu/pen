@@ -6,8 +6,8 @@ import {
 	createPlaygroundRequestMetricsSeed,
 	getStructuredIntentOutputSchema,
 	parseStructuredIntentRequestPrompt,
-} from "@pen/ai";
-import { AI_SUGGESTIONS_REQUEST_MODE } from "@pen/ai-suggestions";
+} from "@input/pen-ai";
+import { AI_SUGGESTIONS_REQUEST_MODE } from "@input/pen-ai-suggestions";
 import {
 	PLAYGROUND_MAX_TOOL_STEPS,
 	createPlaygroundLanguageModel,

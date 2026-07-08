@@ -1,4 +1,4 @@
-# `@pen/ai`
+# `@input/pen-ai`
 
 AI extension, suggest mode, review state, and planning/runtime helpers for Pen.
 
@@ -8,10 +8,10 @@ use requires a license from Input.
 ## Install
 
 ```bash
-pnpm add @pen/core @pen/ai
+pnpm add @input/pen-core @input/pen-ai
 ```
 
-Most app integrations also pair it with a renderer such as `@pen/react`.
+Most app integrations also pair it with a renderer such as `@input/pen-react`.
 
 ## What It Provides
 
@@ -23,8 +23,8 @@ Most app integrations also pair it with a renderer such as `@pen/react`.
 ## Minimal Setup
 
 ```ts
-import { createEditor } from "@pen/core";
-import { aiExtension, getAIController } from "@pen/ai";
+import { createEditor } from "@input/pen-core";
+import { aiExtension, getAIController } from "@input/pen-ai";
 
 const editor = createEditor({
   extensions: [
@@ -40,13 +40,13 @@ const ai = getAIController(editor);
 
 ## Integration Notes
 
-- `@pen/ai` is headless. It installs runtime behavior and controller state, not a fixed UI.
+- `@input/pen-ai` is headless. It installs runtime behavior and controller state, not a fixed UI.
 - Suggest mode lets AI-authored edits flow through Pen's suggestion and review pipeline instead of immediately replacing document content.
 - The host application still owns model adapters, auth, transport, and any product-specific orchestration.
 
 ## Typical Pairing
 
-- `@pen/core` for editor authority and document mutation
-- `@pen/react` for AI surfaces, prompts, and review UI
-- `@pen/ai-autocomplete` or `@pen/ai-suggestions` for narrower inline flows
-- `@pen/document-ops` when AI actions should route through document tools
+- `@input/pen-core` for editor authority and document mutation
+- `@input/pen-react` for AI surfaces, prompts, and review UI
+- `@input/pen-ai-autocomplete` or `@input/pen-ai-suggestions` for narrower inline flows
+- `@input/pen-document-ops` when AI actions should route through document tools

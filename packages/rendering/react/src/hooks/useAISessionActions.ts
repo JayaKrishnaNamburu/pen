@@ -1,12 +1,12 @@
-import type { Editor } from "@pen/types";
+import type { Editor } from "@input/pen-types";
 import type {
 	AICommandExecutionOptions,
 	AISession,
 	AISessionResolution,
 	AISurface,
 	GenerationState,
-} from "@pen/ai";
-import { getAIController } from "@pen/ai";
+} from "@input/pen-ai";
+import { getAIController } from "@input/pen-ai";
 
 export function useAISessionActions(editor: Editor): {
 	startSession: (input: {

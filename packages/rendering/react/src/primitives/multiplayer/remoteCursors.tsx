@@ -1,6 +1,6 @@
 import React, { useContext } from "react";
-import type { Editor } from "@pen/types";
-import type { RemoteCursorState } from "@pen/multiplayer";
+import type { Editor } from "@input/pen-types";
+import type { RemoteCursorState } from "@input/pen-multiplayer";
 import { EditorContext } from "../../context/editorContext";
 import { useRemoteCursors } from "../../hooks/useRemoteCursors";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";

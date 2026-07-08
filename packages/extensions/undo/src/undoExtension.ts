@@ -9,14 +9,14 @@ import type {
 	UndoHistoryMetadataController,
 	UndoHistoryMetadataEntry,
 	UndoHistoryMetadataRestoreContext,
-} from "@pen/types";
+} from "@input/pen-types";
 import {
 	defineExtension,
 	FIELD_EDITOR_SLOT_KEY,
 	getOpOriginType,
 	UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY,
 	UNDO_HISTORY_RESTORE_SLOT_KEY,
-} from "@pen/types";
+} from "@input/pen-types";
 import { UndoManagerImpl } from "./undoManager";
 
 export interface UndoExtensionOptions {

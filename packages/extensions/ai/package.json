@@ -1,6 +1,6 @@
 {
-  "name": "@pen/ai",
-  "version": "0.0.0",
+  "name": "@input/pen-ai",
+  "version": "0.0.1",
   "description": "AI extension, suggest mode, and track changes for Pen",
   "license": "SEE LICENSE IN LICENSE.md",
   "homepage": "https://github.com/niceperson/pen#readme",
@@ -14,7 +14,8 @@
   },
   "type": "module",
   "publishConfig": {
-    "access": "public"
+    "access": "restricted",
+    "registry": "https://registry.npmjs.org/"
   },
   "exports": {
     ".": {
@@ -44,13 +45,13 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@pen/content-ops": "workspace:*",
-    "@pen/core": "workspace:*",
-    "@pen/document-ops": "workspace:*",
-    "@pen/types": "workspace:*"
+    "@input/pen-content-ops": "workspace:*",
+    "@input/pen-core": "workspace:*",
+    "@input/pen-document-ops": "workspace:*",
+    "@input/pen-types": "workspace:*"
   },
   "devDependencies": {
-    "@pen/schema-default": "workspace:^",
+    "@input/pen-schema-default": "workspace:^",
     "tsup": "^8.4.0",
     "typescript": "^5.7.3",
     "vitest": "^3.0.7"

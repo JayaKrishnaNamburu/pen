@@ -1,5 +1,5 @@
-import type { Editor, ModelRequestedOperation } from "@pen/types";
-import { isScopedSelectionTarget } from "@pen/types";
+import type { Editor, ModelRequestedOperation } from "@input/pen-types";
+import { isScopedSelectionTarget } from "@input/pen-types";
 import {
 	PLAYGROUND_AI_SESSION_ENDPOINT,
 	PLAYGROUND_AI_SESSION_SYNC_ENDPOINT,

@@ -1,4 +1,4 @@
-import type { DiagnosticEvent, Editor, Unsubscribe } from "@pen/types";
+import type { DiagnosticEvent, Editor, Unsubscribe } from "@input/pen-types";
 import type { AutoSnapshotConfig } from "../types";
 import { SnapshotManager } from "./snapshotManager";
 

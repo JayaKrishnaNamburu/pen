@@ -1,9 +1,9 @@
-import type { AIToolDescriptor } from "@pen/ai-tools";
-import type { AutocompleteProviderDescriptor } from "@pen/ai-autocomplete";
+import type { AIToolDescriptor } from "@input/pen-ai-tools";
+import type { AutocompleteProviderDescriptor } from "@input/pen-ai-autocomplete";
 import type { AISkillDefinition } from "../types";
 
 const DEFAULT_USAGE = [
-  "Use this skill when you need to inspect or edit a Pen document through the native @pen/ai-tools surface.",
+  "Use this skill when you need to inspect or edit a Pen document through the native @input/pen-ai-tools surface.",
   "Start by listing tools, then execute only the tool calls that are necessary for the current task.",
 ].join("\n");
 
@@ -14,12 +14,12 @@ export function createDocumentAgentSkill(
     name: "pen-document-agent",
     title: "Pen Document Agent",
     description:
-      "Use when an agent needs to inspect, rewrite, or structurally edit a Pen document through @pen/ai-tools.",
+      "Use when an agent needs to inspect, rewrite, or structurally edit a Pen document through @input/pen-ai-tools.",
     tools,
     usage: DEFAULT_USAGE,
     instructions: [
       "Prefer read-focused tools before mutation tools so the agent builds enough context.",
-      "Treat @pen/ai-tools as the source of truth; the skill only packages instructions and helper artifacts for agents.",
+      "Treat @input/pen-ai-tools as the source of truth; the skill only packages instructions and helper artifacts for agents.",
       "Return concise summaries of the mutations you apply and note any tools you used.",
     ],
     scripts: [
@@ -49,7 +49,7 @@ export function createAutocompleteProviderSkill(
     name: "pen-autocomplete-context",
     title: "Pen Autocomplete Context",
     description:
-      "Use when an agent needs to understand or document the runtime autocomplete context that Pen injects through @pen/ai-autocomplete providers.",
+      "Use when an agent needs to understand or document the runtime autocomplete context that Pen injects through @input/pen-ai-autocomplete providers.",
     tools: [],
     usage: [
       "Use this skill when you need to inspect which runtime context providers participate in Pen autocomplete prompts.",

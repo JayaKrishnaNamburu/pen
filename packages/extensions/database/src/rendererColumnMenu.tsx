@@ -1,4 +1,4 @@
-import { DATA_ATTRS } from "@pen/react";
+import { DATA_ATTRS } from "@input/pen-react";
 import { useEffect, useState } from "react";
 import type { ColumnType, DatabaseColumnDef } from "./types";
 

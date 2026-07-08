@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from "react";
-import type { Editor } from "@pen/types";
-import { getAIController, type PersistentSuggestion } from "@pen/ai";
+import type { Editor } from "@input/pen-types";
+import { getAIController, type PersistentSuggestion } from "@input/pen-ai";
 
 const EMPTY_SUGGESTIONS: readonly PersistentSuggestion[] = [];
 

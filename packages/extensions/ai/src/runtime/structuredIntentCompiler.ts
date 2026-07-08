@@ -1,5 +1,5 @@
-import { generateId } from "@pen/types";
-import type { Position, TableColumnSchema } from "@pen/types";
+import { generateId } from "@input/pen-types";
+import type { Position, TableColumnSchema } from "@input/pen-types";
 import type {
 	BlockConvertPlan,
 	BlockInsertPlan,

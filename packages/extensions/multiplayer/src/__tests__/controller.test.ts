@@ -1,4 +1,4 @@
-import { createEditor } from "@pen/core";
+import { createEditor } from "@input/pen-core";
 import { describe, expect, it, vi } from "vitest";
 import { MultiplayerControllerImpl } from "../controller";
 import { AuthorLedger } from "../presence/authorLedger";

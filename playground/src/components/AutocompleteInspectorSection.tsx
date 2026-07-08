@@ -1,8 +1,8 @@
 import type {
 	AutocompleteAcceptanceStrategy,
 	AutocompleteBlockPolicy,
-} from "@pen/ai-autocomplete";
-import type { Editor } from "@pen/types";
+} from "@input/pen-ai-autocomplete";
+import type { Editor } from "@input/pen-types";
 import { usePlaygroundAutocomplete } from "../hooks/usePlaygroundAutocomplete";
 import {
 	formatBlockTypeList,

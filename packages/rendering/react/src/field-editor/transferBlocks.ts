@@ -1,1 +1,1 @@
-export * from "@pen/dom/field-editor/transferBlocks";
+export * from "@input/pen-dom/field-editor/transferBlocks";

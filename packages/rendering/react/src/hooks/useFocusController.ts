@@ -1,5 +1,5 @@
-import type { Editor } from "@pen/types";
-import type { FieldEditorSession, PenFocusReason } from "@pen/dom";
+import type { Editor } from "@input/pen-types";
+import type { FieldEditorSession, PenFocusReason } from "@input/pen-dom";
 import { getAttachedFieldEditor } from "../utils/fieldEditor";
 import { useEditorContext } from "../context/editorContext";
 

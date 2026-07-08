@@ -3,7 +3,7 @@ import type {
 	GenerationZone,
 	CRDTMap,
 	DocumentRange,
-} from "@pen/types";
+} from "@input/pen-types";
 import { BatchingBuffer } from "./batch";
 
 export interface StreamingTarget {

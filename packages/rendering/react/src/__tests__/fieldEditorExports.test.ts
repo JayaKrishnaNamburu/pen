@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { createEditor } from "@pen/core";
-import { defaultPreset } from "@pen/preset-default";
+import { createEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
 import {
 	expandFieldEditorRange,
 	contractFieldEditorRange,
@@ -28,7 +28,7 @@ function createFieldEditorExportsEditor() {
 	});
 }
 
-describe("@pen/react field-editor exports", () => {
+describe("@input/pen-react field-editor exports", () => {
 	it("loads the field-editor helper barrel on all platforms", () => {
 		expect(typeof expandFieldEditorRange).toBe("function");
 		expect(typeof contractFieldEditorRange).toBe("function");

@@ -1,17 +1,17 @@
-import { emptyDecorationSet, getNumberedListItemValue } from "@pen/core";
-import { getExpandedBlockRole } from "@pen/dom/field-editor";
+import { emptyDecorationSet, getNumberedListItemValue } from "@input/pen-core";
+import { getExpandedBlockRole } from "@input/pen-dom/field-editor";
 import type {
   FieldEditorStore,
   FieldEditorStoreSnapshot,
-} from "@pen/dom/field-editor/store";
-import { getParentIdChildBlockIds } from "@pen/dom/utils/parentIdTree";
+} from "@input/pen-dom/field-editor/store";
+import { getParentIdChildBlockIds } from "@input/pen-dom/utils/parentIdTree";
 import type {
   CellSelection,
   Decoration,
   DecorationSet,
   Editor,
   TableCellHandle,
-} from "@pen/types";
+} from "@input/pen-types";
 import { useExternalStore } from "./useExternalStore";
 
 interface BlockTextDelta {

@@ -3,8 +3,8 @@
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import { describe, expect, it, vi } from "vitest";
-import { createEditor } from "@pen/core";
-import { defaultPreset } from "@pen/preset-default";
+import { createEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
 import {
 	useSuggestionMenu,
 	type SuggestionMenuController,
@@ -78,7 +78,7 @@ function requireMenu<TItem>(
 	return menu;
 }
 
-describe("@pen/react suggestion menu", () => {
+describe("@input/pen-react suggestion menu", () => {
 	it("ignores stale async results after the query changes", async () => {
 		const editor = createSuggestionMenuEditor();
 		const blockId = editor.firstBlock()!.id;

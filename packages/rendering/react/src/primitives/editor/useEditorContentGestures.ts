@@ -1,7 +1,7 @@
 import { useEffect, type RefObject } from "react";
 import { flushSync } from "react-dom";
-import type { Editor } from "@pen/types";
-import { generateId, usesInlineTextSelection } from "@pen/types";
+import type { Editor } from "@input/pen-types";
+import { generateId, usesInlineTextSelection } from "@input/pen-types";
 import type { FieldEditorSession } from "../../field-editor/controller";
 import { shouldUseBlockSelection } from "../../field-editor/crossBlock";
 import { domSelectionToEditor, getBlockBoundaryPoint, pointToEditorSelectionPoint } from "../../field-editor/selectionBridge";

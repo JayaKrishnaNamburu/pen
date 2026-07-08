@@ -1,4 +1,4 @@
-import type { DatabaseViewState, Position, TableColumnSchema } from "@pen/types";
+import type { DatabaseViewState, Position, TableColumnSchema } from "@input/pen-types";
 
 export const DOCUMENT_MUTATION_PLAN_KINDS = [
 	"text_edit",

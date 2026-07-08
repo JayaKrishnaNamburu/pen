@@ -5,8 +5,8 @@ import type {
   HTMLImportElement,
   HTMLImportNode,
   SchemaRegistry,
-} from "@pen/types";
-import type { PendingBlock } from "@pen/core";
+} from "@input/pen-types";
+import type { PendingBlock } from "@input/pen-core";
 import {
 	collectTableRows,
 	parseDatabasePayload,

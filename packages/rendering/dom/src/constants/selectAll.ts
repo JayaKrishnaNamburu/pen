@@ -1,4 +1,4 @@
-import type { InteractionModel } from "@pen/types";
+import type { InteractionModel } from "@input/pen-types";
 
 export type EditorSelectAllBehavior = "document-first" | "block-first";
 

@@ -1,4 +1,4 @@
-import type { SchemaRegistry } from "@pen/types";
+import type { SchemaRegistry } from "@input/pen-types";
 import { INLINE_DECORATION_ATTRIBUTE_KEY } from "../utils/inlineDecorations";
 
 export function wrapWithMarks(

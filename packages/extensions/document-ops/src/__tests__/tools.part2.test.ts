@@ -1,5 +1,5 @@
-import { defaultSchema } from "@pen/schema-default";
-import type { ApplyOptions, DocumentOp, Editor } from "@pen/types";
+import { defaultSchema } from "@input/pen-schema-default";
+import type { ApplyOptions, DocumentOp, Editor } from "@input/pen-types";
 import { describe, expect, it, vi } from "vitest";
 import { ToolContextImpl } from "../toolContext";
 import { ToolRuntimeImpl } from "../toolServer";
@@ -287,7 +287,7 @@ function createNestedDocumentEditor(): Editor {
 	} as unknown as Editor;
 }
 
-describe("@pen/document-ops tools", () => {
+describe("@input/pen-document-ops tools", () => {
 	it("guards ToolContext block insertion with the same policy", () => {
 		const editor = createFakeEditor("flow");
 		const emit = vi.fn();

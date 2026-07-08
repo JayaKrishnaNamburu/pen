@@ -1,21 +1,21 @@
-# @pen/react
+# @input/pen-react
 
 React renderer, primitives, and hooks for Pen.
 
-`@pen/react` is the batteries-included renderer surface. If you want clearer optional-feature boundaries, you can import the dedicated subpaths: `@pen/react/ai`, `@pen/react/ai-suggestions`, `@pen/react/search`, `@pen/react/history`, and `@pen/react/multiplayer`.
+`@input/pen-react` is the batteries-included renderer surface. If you want clearer optional-feature boundaries, you can import the dedicated subpaths: `@input/pen-react/ai`, `@input/pen-react/ai-suggestions`, `@input/pen-react/search`, `@input/pen-react/history`, and `@input/pen-react/multiplayer`.
 
 ## Install
 
 ```bash
-pnpm add @pen/core @pen/preset-default @pen/react react react-dom
+pnpm add @input/pen-core @input/pen-preset-default @input/pen-react react react-dom
 ```
 
 ## Quick Start
 
 ```tsx
-import { createEditor } from "@pen/core";
-import { defaultPreset } from "@pen/preset-default";
-import { PenEditor } from "@pen/react";
+import { createEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
+import { PenEditor } from "@input/pen-react";
 
 const editor = createEditor({
   preset: defaultPreset(),

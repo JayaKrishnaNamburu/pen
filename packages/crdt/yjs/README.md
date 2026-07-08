@@ -1,4 +1,4 @@
-# `@pen/crdt-yjs`
+# `@input/pen-crdt-yjs`
 
 Yjs integration for Pen.
 
@@ -19,7 +19,7 @@ It does **not** implement WebSocket transport or a custom Yjs sync provider.
 import {
   encodeYjsStateVectorBase64,
   isYjsStateVectorBase64Satisfied,
-} from "@pen/crdt-yjs";
+} from "@input/pen-crdt-yjs";
 
 const required = encodeYjsStateVectorBase64(ydoc);
 const ready = isYjsStateVectorBase64Satisfied(currentStateVector, required);
@@ -33,7 +33,7 @@ Use state-vector helpers when a host workflow needs to wait until a synced docum
 import {
   createYArrayFieldAdapter,
   createYTextFieldAdapter,
-} from "@pen/crdt-yjs";
+} from "@input/pen-crdt-yjs";
 
 const title = createYTextFieldAdapter({
   doc: ydoc,
@@ -55,7 +55,7 @@ Adapters are storage helpers only. Product validation, labels, contacts, auth, a
 ## Extension roots
 
 ```ts
-import { ensureExtensionRoot, readExtensionRoot } from "@pen/crdt-yjs";
+import { ensureExtensionRoot, readExtensionRoot } from "@input/pen-crdt-yjs";
 
 const root = ensureExtensionRoot({
   doc: ydoc,
@@ -79,14 +79,14 @@ Extension roots give host apps a predictable place for CRDT-backed data that tra
 
 When using multiplayer with Yjs, Pen expects the application to choose the provider and hand Pen a `MultiplayerSession`.
 
-`@pen/crdt-yjs` exposes the minimal helpers needed for that:
+`@input/pen-crdt-yjs` exposes the minimal helpers needed for that:
 
 ```ts
 import {
   createYjsProviderSession,
   getYjsAwareness,
   getYjsDoc,
-} from "@pen/crdt-yjs";
+} from "@input/pen-crdt-yjs";
 ```
 
 ## Canonical `y-websocket` setup
@@ -94,13 +94,13 @@ import {
 This is the recommended setup when using [`y-websocket`](https://docs.yjs.dev/ecosystem/connection-provider/y-websocket):
 
 ```ts
-import { createEditor } from "@pen/core";
+import { createEditor } from "@input/pen-core";
 import {
   createYjsProviderSession,
   getYjsAwareness,
   getYjsDoc,
-} from "@pen/crdt-yjs";
-import { multiplayerExtension } from "@pen/multiplayer";
+} from "@input/pen-crdt-yjs";
+import { multiplayerExtension } from "@input/pen-multiplayer";
 import { WebsocketProvider } from "y-websocket";
 
 const editor = createEditor({
@@ -166,7 +166,7 @@ setup.
 
 ## Why `getYjsAwareness()` exists
 
-Pen exposes a generic awareness interface through `@pen/types`, but Yjs providers such as `y-websocket` expect the underlying native Yjs `Awareness` instance.
+Pen exposes a generic awareness interface through `@input/pen-types`, but Yjs providers such as `y-websocket` expect the underlying native Yjs `Awareness` instance.
 
 Use:
 

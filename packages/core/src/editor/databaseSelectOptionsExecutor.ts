@@ -1,8 +1,8 @@
 import type {
 	CRDTAdapter,
 	DatabaseUpdateSelectOptionsOp,
-} from "@pen/types";
-import { generateId, parseDatabaseMultiSelectValue } from "@pen/types";
+} from "@input/pen-types";
+import { generateId, parseDatabaseMultiSelectValue } from "@input/pen-types";
 import {
 	type CRDTUnknownArray,
 	type CRDTUnknownMap,

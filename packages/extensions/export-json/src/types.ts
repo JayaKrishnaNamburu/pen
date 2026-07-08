@@ -1,4 +1,4 @@
-import type { DatabaseViewState, TableColumnSchema } from "@pen/types";
+import type { DatabaseViewState, TableColumnSchema } from "@input/pen-types";
 
 export interface PenMarkJSON {
   type: string;

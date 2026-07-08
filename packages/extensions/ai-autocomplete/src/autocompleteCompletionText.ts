@@ -1,4 +1,4 @@
-import type { ModelStreamEvent } from "@pen/types";
+import type { ModelStreamEvent } from "@input/pen-types";
 import type { AutocompleteRequestContext } from "./types";
 import { previewAutocompleteTextForLog } from "./autocompleteDebug";
 

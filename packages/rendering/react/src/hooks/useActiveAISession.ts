@@ -1,6 +1,6 @@
-import type { Editor } from "@pen/types";
-import type { AISession } from "@pen/ai";
-import { getAIController } from "@pen/ai";
+import type { Editor } from "@input/pen-types";
+import type { AISession } from "@input/pen-ai";
+import { getAIController } from "@input/pen-ai";
 import { useSyncExternalStoreWithSelector } from "../utils/useSyncExternalStoreWithSelector";
 
 export function useActiveAISession(editor: Editor): AISession | null {

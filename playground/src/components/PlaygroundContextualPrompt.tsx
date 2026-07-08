@@ -1,4 +1,4 @@
-import { Pen } from "@pen/react";
+import { Pen } from "@input/pen-react";
 import type { RefObject } from "react";
 
 type PlaygroundContextualPromptProps = {

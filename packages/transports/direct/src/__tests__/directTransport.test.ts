@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { directTransport } from "../directTransport";
-import type { PenStreamPart, PenStreamRequest, ToolRuntime } from "@pen/types";
+import type { PenStreamPart, PenStreamRequest, ToolRuntime } from "@input/pen-types";
 
 type ToolExecutionContext = Parameters<ToolRuntime["executeTool"]>[2];
 
@@ -40,7 +40,7 @@ async function collectParts(
   return parts;
 }
 
-describe("@pen/transport-direct", () => {
+describe("@input/pen-transport-direct", () => {
   it("returns a PenTransport with connected === true (AC 1)", () => {
     const toolRuntime = createMockToolRuntime(async () => "ok");
     const transport = directTransport({ toolRuntime });

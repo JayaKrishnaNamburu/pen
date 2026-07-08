@@ -15,4 +15,4 @@ export type {
 	PeerState,
 	RemoteCursorState,
 	RemoteSelectionState,
-} from "@pen/multiplayer";
+} from "@input/pen-multiplayer";

@@ -1,4 +1,4 @@
-import type { Decoration, InlineDecoration } from "@pen/types";
+import type { Decoration, InlineDecoration } from "@input/pen-types";
 import type { AIStreamingReviewPreview } from "../types";
 import {
 	AI_REVIEW_PREVIEW_NEW_ATTRIBUTE,

@@ -1,6 +1,6 @@
 import "./Toolbar.css";
-import { Pen } from "@pen/react";
-import type { Editor } from "@pen/types";
+import { Pen } from "@input/pen-react";
+import type { Editor } from "@input/pen-types";
 import type { RefObject } from "react";
 import { PLAYGROUND_BLOCK_TYPE_ORDER } from "../constants/playground";
 import type { PlaygroundCollaborationConfig } from "../utils/playgroundCollaboration";

@@ -1,5 +1,5 @@
 import React from "react";
-import { DATA_ATTRS } from "@pen/react";
+import { DATA_ATTRS } from "@input/pen-react";
 import type { DatabaseController } from "../useDatabaseController";
 
 export function DatabasePagination(props: { controller: DatabaseController }) {

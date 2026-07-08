@@ -1,5 +1,5 @@
-import { fullReconcileDeltasToDOM } from "@pen/dom/field-editor/reconciler";
-import { DATA_ATTRS } from "@pen/dom/utils/dataAttributes";
+import { fullReconcileDeltasToDOM } from "@input/pen-dom/field-editor/reconciler";
+import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 import {
   computed,
   defineComponent,

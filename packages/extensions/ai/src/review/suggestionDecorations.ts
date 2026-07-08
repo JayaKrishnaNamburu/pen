@@ -3,7 +3,7 @@ import type {
 	Decoration,
 	Editor,
 	InlineDecoration,
-} from "@pen/types";
+} from "@input/pen-types";
 import { readBlockSuggestionMeta } from "../suggestions/persistent";
 import type { AIExtensionConfig } from "../types";
 import {

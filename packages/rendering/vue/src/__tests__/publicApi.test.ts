@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 
-import { createDecorationSet } from "@pen/core";
-import { createTestEditor } from "@pen/test";
-import type { Editor } from "@pen/types";
-import { defineExtension } from "@pen/types";
+import { createDecorationSet } from "@input/pen-core";
+import { createTestEditor } from "@input/pen-test";
+import type { Editor } from "@input/pen-types";
+import { defineExtension } from "@input/pen-types";
 import { mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it } from "vitest";
 import {
@@ -31,7 +31,7 @@ const editorProp = {
   required: true,
 };
 
-describe("@pen/vue public API", () => {
+describe("@input/pen-vue public API", () => {
   it("registers PenEditor through the plugin", () => {
     const editor = createTestEditor({
       blocks: [

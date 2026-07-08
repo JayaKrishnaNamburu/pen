@@ -1,13 +1,13 @@
-import { yjsAdapter } from "@pen/crdt-yjs";
-import { processStream } from "@pen/delta-stream";
-import { inputRulesExtension } from "@pen/input-rules";
-import { undoExtension } from "@pen/undo";
+import { yjsAdapter } from "@input/pen-crdt-yjs";
+import { processStream } from "@input/pen-delta-stream";
+import { inputRulesExtension } from "@input/pen-input-rules";
+import { undoExtension } from "@input/pen-undo";
 import {
 	defineExtension,
 	type DocumentSession,
 	type PenStreamPart,
 	getOpOriginType,
-} from "@pen/types";
+} from "@input/pen-types";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -93,7 +93,7 @@ type TestTableContentLike = {
 };
 
 
-describe("@pen/core table operations", () => {
+describe("@input/pen-core table operations", () => {
 	it("convert-block to table preserves inline text in the first cell", () => {
 		const editor = createEditor();
 

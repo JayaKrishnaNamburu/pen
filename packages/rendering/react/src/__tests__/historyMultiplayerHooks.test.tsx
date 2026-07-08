@@ -3,18 +3,18 @@
 import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
-import { createDocumentSession, createEditor } from "@pen/core";
-import { getHistoryController, historyExtension } from "@pen/history";
+import { createDocumentSession, createEditor } from "@input/pen-core";
+import { getHistoryController, historyExtension } from "@input/pen-history";
 import {
 	getMultiplayerController,
 	multiplayerExtension,
-} from "@pen/multiplayer";
+} from "@input/pen-multiplayer";
 import {
 	HISTORY_CONTROLLER_SLOT,
 	MULTIPLAYER_CONTROLLER_SLOT,
 	type VersionMetadata,
 	type VersionEntry,
-} from "@pen/types";
+} from "@input/pen-types";
 import {
 	Pen,
 	useAttribution,
@@ -28,7 +28,7 @@ import {
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
 ).IS_REACT_ACT_ENVIRONMENT = true;
 
-describe("@pen/react history and multiplayer hooks", () => {
+describe("@input/pen-react history and multiplayer hooks", () => {
 	it("renders multiplayer primitives while hooks expose the same controller state", async () => {
 		const editor = createEditor({
 			extensions: [

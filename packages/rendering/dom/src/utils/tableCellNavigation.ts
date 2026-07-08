@@ -4,16 +4,16 @@ import {
 	isPasteShortcut,
 	pasteCellSelection,
 } from "./tableCellClipboard";
-import type { CellSelection, DocumentOp, Editor } from "@pen/types";
+import type { CellSelection, DocumentOp, Editor } from "@input/pen-types";
 import {
 	hasIndexedCellSelectionMetadata,
 	resolveCellSelectionCoord,
 	resolveCellSelectionMatrix,
-} from "@pen/core";
+} from "@input/pen-core";
 import {
 	delegatesToGridEditing,
 	usesInlineTextSelection,
-} from "@pen/types";
+} from "@input/pen-types";
 import type { FieldEditorTableNavigationController } from "../field-editor/controller";
 import { getAdjacentVisibleBlockId } from "./parentIdTree";
 

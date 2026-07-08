@@ -1,6 +1,6 @@
-import type { PeerState } from "@pen/multiplayer";
-import { useMultiplayer } from "@pen/react";
-import type { Editor } from "@pen/types";
+import type { PeerState } from "@input/pen-multiplayer";
+import { useMultiplayer } from "@input/pen-react";
+import type { Editor } from "@input/pen-types";
 import {
 	getCollaborationStatusLabel,
 	getCollaborationStatusTone,

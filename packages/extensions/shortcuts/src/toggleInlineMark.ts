@@ -3,8 +3,8 @@ import type {
 	Editor,
 	FieldEditor,
 	TextSelection,
-} from "@pen/types";
-import { FIELD_EDITOR_SLOT_KEY, supportsInlineMarks } from "@pen/types";
+} from "@input/pen-types";
+import { FIELD_EDITOR_SLOT_KEY, supportsInlineMarks } from "@input/pen-types";
 
 export function toggleInlineMark(editor: Editor, markType: string): boolean {
 	const selection = editor.selection;

@@ -1,6 +1,6 @@
 // @ts-nocheck
 import type { AIWorkingSetEnvelope } from "../../types";
-import type { DatabaseViewState, TableColumnSchema } from "@pen/types";
+import type { DatabaseViewState, TableColumnSchema } from "@input/pen-types";
 import type { AITargetKind } from "../contracts";
 import type { PlanConfidence } from "../planTypes";
 import { STRUCTURED_INTENT_REQUEST_PREFIX, getStructuredIntentOutputSchema, buildStructuredIntentRequestPrompt, parseStructuredIntentRequestPrompt, buildStructuredIntentModelPrompt } from "./structuredIntentPart1";

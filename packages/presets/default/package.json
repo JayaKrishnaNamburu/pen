@@ -1,6 +1,6 @@
 {
-  "name": "@pen/preset-default",
-  "version": "0.0.0",
+  "name": "@input/pen-preset-default",
+  "version": "0.0.1",
   "description": "Default batteries-included editor preset for Pen",
   "license": "SEE LICENSE IN LICENSE.md",
   "homepage": "https://github.com/niceperson/pen#readme",
@@ -14,7 +14,8 @@
   },
   "type": "module",
   "publishConfig": {
-    "access": "public"
+    "access": "restricted",
+    "registry": "https://registry.npmjs.org/"
   },
   "exports": {
     ".": {
@@ -44,11 +45,11 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@pen/delta-stream": "workspace:*",
-    "@pen/document-ops": "workspace:*",
-    "@pen/shortcuts": "workspace:*",
-    "@pen/types": "workspace:*",
-    "@pen/undo": "workspace:*"
+    "@input/pen-delta-stream": "workspace:*",
+    "@input/pen-document-ops": "workspace:*",
+    "@input/pen-shortcuts": "workspace:*",
+    "@input/pen-types": "workspace:*",
+    "@input/pen-undo": "workspace:*"
   },
   "devDependencies": {
     "tsup": "^8.4.0",

@@ -1,6 +1,6 @@
 import React from "react";
-import type { Editor } from "@pen/types";
-import { getAIController, type PersistentTextSuggestion } from "@pen/ai";
+import type { Editor } from "@input/pen-types";
+import { getAIController, type PersistentTextSuggestion } from "@input/pen-ai";
 import { useActiveAISession } from "./useActiveAISession";
 import { useAIActions } from "./useAIActions";
 import { useSuggestions } from "./useSuggestions";

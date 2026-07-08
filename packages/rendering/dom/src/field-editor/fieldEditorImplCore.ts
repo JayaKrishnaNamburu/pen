@@ -5,12 +5,12 @@ import type {
 	HistoryAppliedEvent,
 	SelectionState,
 	Unsubscribe,
-} from "@pen/types";
+} from "@input/pen-types";
 import {
 	hasFieldEditorSurface,
 	resolveFieldEditorInputMode,
 	usesInlineTextSelection,
-} from "@pen/types";
+} from "@input/pen-types";
 import { EditContextBackend } from "./editContextBackend";
 import { ContentEditableBackend } from "./contenteditableBackend";
 import {

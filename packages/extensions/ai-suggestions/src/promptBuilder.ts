@@ -1,4 +1,4 @@
-import type { ModelMessage } from "@pen/types";
+import type { ModelMessage } from "@input/pen-types";
 import { DEFAULT_MAX_SUGGESTIONS_PER_SCOPE } from "./constants";
 import type { AISuggestionsExtensionConfig } from "./types";
 import type { BuiltSuggestionScope } from "./scopeBuilder";

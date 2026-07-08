@@ -1,14 +1,14 @@
-import { createHeadlessEditor } from "@pen/core";
+import { createHeadlessEditor } from "@input/pen-core";
 import {
 	encodeYjsStateVectorBase64,
 	ensureExtensionRoot,
 	getYjsDoc,
 	readExtensionRoot,
-} from "@pen/crdt-yjs";
-import { exportPlainText } from "@pen/export-json";
-import { defaultPreset } from "@pen/preset-default";
-import { createDefaultSchema } from "@pen/schema-default";
-import type { Editor } from "@pen/types";
+} from "@input/pen-crdt-yjs";
+import { exportPlainText } from "@input/pen-export-json";
+import { defaultPreset } from "@input/pen-preset-default";
+import { createDefaultSchema } from "@input/pen-schema-default";
+import type { Editor } from "@input/pen-types";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import * as Y from "yjs";
 import { getPlaygroundCollaborationStats } from "./collaborationServer";

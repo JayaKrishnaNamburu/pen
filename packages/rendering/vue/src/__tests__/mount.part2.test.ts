@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
-import { FIELD_EDITOR_SLOT_KEY } from "@pen/types";
-import { createTestEditor } from "@pen/test";
+import { FIELD_EDITOR_SLOT_KEY } from "@input/pen-types";
+import { createTestEditor } from "@input/pen-test";
 import { mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { h, nextTick } from "vue";
@@ -121,7 +121,7 @@ async function flushTransfer() {
   await nextTick();
 }
 
-describe("@pen/vue", () => {
+describe("@input/pen-vue", () => {
   it("transitions from text editing to block selection on Escape", async () => {
     const editor = createParagraphEditor();
 

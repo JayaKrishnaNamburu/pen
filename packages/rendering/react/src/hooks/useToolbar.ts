@@ -1,5 +1,5 @@
 import { useRef, useSyncExternalStore } from "react";
-import type { Editor, FieldEditor } from "@pen/types";
+import type { Editor, FieldEditor } from "@input/pen-types";
 import {
 	EMPTY_TOOLBAR_STATE,
 	type ToolbarState,

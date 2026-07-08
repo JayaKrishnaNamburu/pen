@@ -1,4 +1,4 @@
-import type { DocumentProfile, Editor } from "@pen/types";
+import type { DocumentProfile, Editor } from "@input/pen-types";
 import {
 	getFlowCapabilityFromSchema as getSharedFlowCapabilityFromSchema,
 	getFlowCapabilityFromType as getSharedFlowCapabilityFromType,
@@ -9,8 +9,8 @@ import {
 	shouldFallbackMixedSelectionToBlock as shouldFallbackSharedMixedSelectionToBlock,
 	shouldForceBlockScopedSelectAll as shouldForceSharedBlockScopedSelectAll,
 	type FlowBlockCapability,
-} from "@pen/types";
-export type { FlowBlockCapability } from "@pen/types";
+} from "@input/pen-types";
+export type { FlowBlockCapability } from "@input/pen-types";
 
 export function getFlowCapabilityFromSchema(
 	schema: Parameters<typeof getSharedFlowCapabilityFromSchema>[0],

@@ -1,4 +1,4 @@
-import type { ModelMessage } from "@pen/types";
+import type { ModelMessage } from "@input/pen-types";
 import type { AutocompleteRequestContext } from "./providers/types";
 import { AutocompleteProviderRegistry } from "./providers/registry";
 import type {

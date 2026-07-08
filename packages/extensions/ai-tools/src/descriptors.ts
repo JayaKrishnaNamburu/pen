@@ -1,4 +1,4 @@
-import type { ToolDefinition } from "@pen/types";
+import type { ToolDefinition } from "@input/pen-types";
 import type { AIToolDescriptor, AIToolRuntime } from "./types";
 
 export function toAIToolDescriptor(definition: ToolDefinition): AIToolDescriptor {

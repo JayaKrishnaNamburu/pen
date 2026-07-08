@@ -3,9 +3,9 @@
 import React, { act } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { createRoot } from "react-dom/client";
-import { createEditor as createCoreEditor } from "@pen/core";
-import type { DatabaseViewState, TableColumnSchema } from "@pen/types";
-import { Pen, getAttachedFieldEditor, handleCopy } from "@pen/react";
+import { createEditor as createCoreEditor } from "@input/pen-core";
+import type { DatabaseViewState, TableColumnSchema } from "@input/pen-types";
+import { Pen, getAttachedFieldEditor, handleCopy } from "@input/pen-react";
 import { DatabaseRenderer } from "../renderer";
 import { ColumnMenu } from "../rendererPanels";
 import { useDatabaseController } from "../useDatabaseController";
@@ -200,7 +200,7 @@ function getButtonByText(container: HTMLElement, text: string): HTMLButtonElemen
 	return (buttons.find((button) => button.textContent?.trim() === text) as HTMLButtonElement | undefined) ?? null;
 }
 
-describe("@pen/database renderer", () => {
+describe("@input/pen-database renderer", () => {
 	it("falls back to block selection when shift-clicking from a database into text in structured documents", async () => {
 		const editor = createEditor({
 		});

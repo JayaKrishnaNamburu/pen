@@ -2,7 +2,7 @@ export type {
 	InputRule,
 	InputRuleHandler,
 	InputRuleContext,
-} from "@pen/types";
+} from "@input/pen-types";
 
 export interface InlineInputRule {
 	id: string;
@@ -12,7 +12,7 @@ export interface InlineInputRule {
 }
 
 export interface InputRulesConfig {
-	rules?: import("@pen/types").InputRule[];
+	rules?: import("@input/pen-types").InputRule[];
 	inlineRules?: InlineInputRule[];
 	disableDefaults?: boolean;
 	disableDefaultInlineRules?: boolean;

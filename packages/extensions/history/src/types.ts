@@ -4,7 +4,7 @@ import type {
 	Unsubscribe,
 	VersionEntry,
 	VersionMetadata,
-} from "@pen/types";
+} from "@input/pen-types";
 
 export interface CharacterAttribution {
 	blockId: string;

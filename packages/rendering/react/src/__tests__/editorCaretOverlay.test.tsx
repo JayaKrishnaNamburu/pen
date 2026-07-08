@@ -3,8 +3,8 @@
 import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
-import { createEditor } from "@pen/core";
-import { defaultPreset } from "@pen/preset-default";
+import { createEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
 import { Pen } from "../primitives/index";
 import { PenEditor } from "../penEditor";
 import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
@@ -13,7 +13,7 @@ import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
 ).IS_REACT_ACT_ENVIRONMENT = true;
 
-describe("@pen/react editor caret overlay", () => {
+describe("@input/pen-react editor caret overlay", () => {
 	it("renders a custom local caret for collapsed selections only", async () => {
 		const editor = createEditor({
 			preset: defaultPreset({

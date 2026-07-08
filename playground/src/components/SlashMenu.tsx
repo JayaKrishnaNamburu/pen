@@ -1,6 +1,6 @@
 import "./SlashMenu.css";
-import type { Editor } from "@pen/types";
-import { Pen, useSlashMenuContext, type SlashMenuState } from "@pen/react";
+import type { Editor } from "@input/pen-types";
+import { Pen, useSlashMenuContext, type SlashMenuState } from "@input/pen-react";
 
 interface SlashMenuProps {
 	editor: Editor;

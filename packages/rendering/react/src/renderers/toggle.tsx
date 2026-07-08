@@ -1,6 +1,6 @@
 import React from "react";
-import type { BlockHandle, BlockRenderContext } from "@pen/types";
-import { generateId } from "@pen/types";
+import type { BlockHandle, BlockRenderContext } from "@input/pen-types";
+import { generateId } from "@input/pen-types";
 import { InlineContent } from "../primitives/editor/inlineContent";
 import { useEditorContext } from "../context/editorContext";
 import { getAttachedFieldEditor } from "../utils/fieldEditor";

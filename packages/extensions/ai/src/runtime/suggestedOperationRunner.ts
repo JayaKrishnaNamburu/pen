@@ -1,5 +1,5 @@
-import type { Editor, OpOrigin } from "@pen/types";
-import type { DocumentOp } from "@pen/types";
+import type { Editor, OpOrigin } from "@input/pen-types";
+import type { DocumentOp } from "@input/pen-types";
 import type { GenerationState, AISession } from "../types";
 import { applySuggestedAIOperations } from "../suggestions/applySuggestedAIOperations";
 import { AI_SESSION_SUGGESTION_ORIGIN } from "../suggestions/suggestMode";

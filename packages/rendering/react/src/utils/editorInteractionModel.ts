@@ -3,7 +3,7 @@ import {
 	usesInlineTextSelection,
 	type BlockSchema,
 	type SelectionState,
-} from "@pen/types";
+} from "@input/pen-types";
 import type { ResolvedInteractionModel } from "../context/editorContext";
 
 export type PointerCellCoord = {

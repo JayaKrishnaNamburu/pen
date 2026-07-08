@@ -1,4 +1,4 @@
-import type { InlineDecoration } from "@pen/types";
+import type { InlineDecoration } from "@input/pen-types";
 import { fullReconcileToDOM, applyDeltaToDOM } from "./reconciler";
 import { computeTextDiff, extractTextFromDOM } from "./selectionBridge";
 import { isHistoryTransactionOrigin } from "./historyOrigin";

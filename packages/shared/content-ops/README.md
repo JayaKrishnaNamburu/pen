@@ -1,11 +1,11 @@
-# @pen/content-ops
+# @input/pen-content-ops
 
 Shared content parsing and write ops for Pen
 
 ## Install
 
 ```bash
-pnpm add @pen/content-ops
+pnpm add @input/pen-content-ops
 ```
 
 ## Notes

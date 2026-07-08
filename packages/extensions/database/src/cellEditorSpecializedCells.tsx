@@ -1,4 +1,4 @@
-import { useCellTextSnapshot, useEditorContext } from "@pen/react";
+import { useCellTextSnapshot, useEditorContext } from "@input/pen-react";
 import { useState } from "react";
 import type { DatabaseCellContentProps } from "./cellEditors";
 import { setCellText, widgetCellAttrs } from "./cellEditorUtils";

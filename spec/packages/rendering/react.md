@@ -1,12 +1,12 @@
-# @pen/react
+# @input/pen-react
 
 ## Purpose
 
-`@pen/react` is the primary documented renderer surface for Pen. It binds the headless runtime to React components, hooks, contexts, and higher-level primitives for editor composition.
+`@input/pen-react` is the primary documented renderer surface for Pen. It binds the headless runtime to React components, hooks, contexts, and higher-level primitives for editor composition.
 
 ## Public Role
 
-This package is where most adopters start when embedding Pen in a React application. It provides both a high-level convenience entrypoint and a lower-level compound-component surface, while keeping runtime authority in `@pen/core` and editing engine behavior in `@pen/dom`.
+This package is where most adopters start when embedding Pen in a React application. It provides both a high-level convenience entrypoint and a lower-level compound-component surface, while keeping runtime authority in `@input/pen-core` and editing engine behavior in `@input/pen-dom`.
 
 ## Key Exports / Entrypoints
 
@@ -21,9 +21,9 @@ This package is where most adopters start when embedding Pen in a React applicat
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@pen/ai`, `@pen/ai-suggestions`, `@pen/core`, `@pen/dom`, `@pen/history`, `@pen/multiplayer`, `@pen/schema-default`, `@pen/search`, `@pen/shortcuts`, `@pen/types`
-- Peer dependencies: `@pen/import-html`, `@pen/import-markdown`, `react`, `react-dom`
-- Boundary: `@pen/react` binds the headless runtime to React without taking ownership of document truth.
+- Runtime dependencies: `@input/pen-ai`, `@input/pen-ai-suggestions`, `@input/pen-core`, `@input/pen-dom`, `@input/pen-history`, `@input/pen-multiplayer`, `@input/pen-schema-default`, `@input/pen-search`, `@input/pen-shortcuts`, `@input/pen-types`
+- Peer dependencies: `@input/pen-import-html`, `@input/pen-import-markdown`, `react`, `react-dom`
+- Boundary: `@input/pen-react` binds the headless runtime to React without taking ownership of document truth.
 
 ## Runtime Model
 
@@ -34,8 +34,8 @@ flowchart TD
   App[ReactApp]
   Primitives[PenPrimitivesAndHooks]
   Contexts[ReactContexts]
-  Dom["@pen/dom"]
-  Core["@pen/core"]
+  Dom["@input/pen-dom"]
+  Core["@input/pen-core"]
   Extensions[InstalledExtensions]
 
   App --> Primitives
@@ -51,7 +51,7 @@ Important responsibilities:
 - Mount editor roots and block rendering surfaces
 - Subscribe React state to editor state through hooks and contexts
 - Install the shared field-editor session, paste importer slots, and captured document-keyboard handlers for the active editor root
-- Delegate shared DOM editing, selection transition, table-cell navigation, and shortcut routing behavior to `@pen/dom`
+- Delegate shared DOM editing, selection transition, table-cell navigation, and shortcut routing behavior to `@input/pen-dom`
 - Surface extension state through React-friendly primitives rather than reimplementing extension logic locally
 
 ## Integration Notes

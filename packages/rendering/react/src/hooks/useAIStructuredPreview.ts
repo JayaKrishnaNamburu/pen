@@ -1,10 +1,10 @@
-import type { Editor } from "@pen/types";
+import type { Editor } from "@input/pen-types";
 import type {
 	AIStreamEvent,
 	GenerationState,
 	GenerationStructuredPreviewState,
-} from "@pen/ai";
-import { getAIController } from "@pen/ai";
+} from "@input/pen-ai";
+import { getAIController } from "@input/pen-ai";
 import {
 	areAIStructuredPreviewSelectionsEqual,
 	buildAIStructuredPreviewContentItems,

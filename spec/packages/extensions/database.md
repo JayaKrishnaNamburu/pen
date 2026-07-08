@@ -1,4 +1,4 @@
-# @pen/database
+# @input/pen-database
 
 ## Purpose
 
@@ -15,7 +15,7 @@ Add optional runtime behavior on top of the editor core without changing the can
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@pen/core`, `@pen/react`, `@pen/types`
+- Runtime dependencies: `@input/pen-core`, `@input/pen-react`, `@input/pen-types`
 - Peer dependencies: `react`, `react-dom`
 - Boundary: Extensions compose through the core editor and slots/events rather than side channels.
 

@@ -1,5 +1,5 @@
-import { defineBlock, prop } from "@pen/types";
-import type { HTMLImportElement } from "@pen/types";
+import { defineBlock, prop } from "@input/pen-types";
+import type { HTMLImportElement } from "@input/pen-types";
 
 export const toggle = defineBlock("toggle", {
   props: {

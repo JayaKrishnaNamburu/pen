@@ -2,7 +2,7 @@ import {
 	INLINE_COMPLETION_VISIBLE_BLOCK_ATTRIBUTE,
 	type BlockDecoration,
 	type InlineDecoration,
-} from "@pen/types";
+} from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 import { createEditor, ensureInlineCompletionController } from "../index";
 

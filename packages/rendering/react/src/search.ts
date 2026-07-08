@@ -26,4 +26,4 @@ export type {
 	SearchMatch,
 	SearchOptions,
 	SearchState,
-} from "@pen/search";
+} from "@input/pen-search";

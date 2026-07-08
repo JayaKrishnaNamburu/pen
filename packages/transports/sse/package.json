@@ -1,6 +1,6 @@
 {
-  "name": "@pen/transport-sse",
-  "version": "0.0.0",
+  "name": "@input/pen-transport-sse",
+  "version": "0.0.1",
   "description": "Server-Sent Events transport for Pen",
   "license": "SEE LICENSE IN LICENSE.md",
   "homepage": "https://github.com/niceperson/pen#readme",
@@ -14,7 +14,8 @@
   },
   "type": "module",
   "publishConfig": {
-    "access": "public"
+    "access": "restricted",
+    "registry": "https://registry.npmjs.org/"
   },
   "exports": {
     ".": {
@@ -44,8 +45,8 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@pen/core": "workspace:*",
-    "@pen/types": "workspace:*"
+    "@input/pen-core": "workspace:*",
+    "@input/pen-types": "workspace:*"
   },
   "devDependencies": {
     "tsup": "^8.4.0",

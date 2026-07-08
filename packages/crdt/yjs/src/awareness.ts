@@ -1,4 +1,4 @@
-import type { Awareness, AwarenessChangeEvent } from "@pen/types";
+import type { Awareness, AwarenessChangeEvent } from "@input/pen-types";
 import { Awareness as YAwareness } from "y-protocols/awareness";
 import * as awarenessProtocol from "y-protocols/awareness";
 

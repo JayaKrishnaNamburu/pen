@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { ModelRequestedOperation } from "@pen/types";
+import type { ModelRequestedOperation } from "@input/pen-types";
 import type { PlaygroundStreamChunk } from "./playgroundAISession";
 import { streamPlaygroundAIResponse } from "./playgroundAISession";
 import {

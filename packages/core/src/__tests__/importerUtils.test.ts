@@ -6,7 +6,7 @@ import {
 	reportPendingBlockImportViolations,
 } from "../index";
 import { blocksToOps } from "../importerUtils";
-import type { DocumentOp } from "@pen/types";
+import type { DocumentOp } from "@input/pen-types";
 import type { PendingBlock } from "../importerUtils";
 
 const noDefaultExtensionsPreset = {

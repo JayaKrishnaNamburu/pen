@@ -1,5 +1,5 @@
-import type { Editor } from "@pen/types";
-import type { AIContextualPromptAnchor, AISession } from "@pen/ai";
+import type { Editor } from "@input/pen-types";
+import type { AIContextualPromptAnchor, AISession } from "@input/pen-ai";
 import { domSelectionToEditor, getTextSelectionClientRects, queryBlockElement } from "../../field-editor/selectionBridge";
 import { queryEditorBlockElement, resolveEditorContentElement } from "../../utils/aiDomScope";
 import type { ContextualPromptPlacement } from "./contextualPromptTypes";

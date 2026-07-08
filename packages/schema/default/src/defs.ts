@@ -1,4 +1,4 @@
-import type { BlockSchema, InlineSchema } from "@pen/types";
+import type { BlockSchema, InlineSchema } from "@input/pen-types";
 
 import { paragraph } from "./blocks/paragraph";
 import { heading } from "./blocks/heading";

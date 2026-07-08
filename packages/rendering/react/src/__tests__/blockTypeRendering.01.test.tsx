@@ -3,8 +3,8 @@
 import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
-import { createEditor } from "@pen/core";
-import { defaultPreset } from "@pen/preset-default";
+import { createEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
 import { Pen } from "../primitives/index";
 import { getAttachedFieldEditor } from "../utils/fieldEditor";
 
@@ -47,7 +47,7 @@ function createBlockTypeEditor(
 	});
 }
 
-describe("@pen/react block type rendering", () => {
+describe("@input/pen-react block type rendering", () => {
 	it("derives flow-aware default block type options from schema metadata", async () => {
 		const editor = createBlockTypeEditor({
 			documentProfile: "flow",

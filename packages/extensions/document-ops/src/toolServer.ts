@@ -1,4 +1,4 @@
-import type { ToolRuntime, ToolDefinition, ToolContext } from "@pen/types";
+import type { ToolRuntime, ToolDefinition, ToolContext } from "@input/pen-types";
 
 export class ToolRuntimeImpl implements ToolRuntime {
   private readonly _tools = new Map<string, ToolDefinition>();

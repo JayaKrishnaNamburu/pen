@@ -1,5 +1,5 @@
-import { createEditor } from "@pen/core";
-import { createTestDocument } from "@pen/test";
+import { createEditor } from "@input/pen-core";
+import { createTestDocument } from "@input/pen-test";
 import { describe, expect, it } from "vitest";
 import { getMultiplayerController, multiplayerExtension } from "../index";
 import type { MultiplayerAwarenessState } from "../types";

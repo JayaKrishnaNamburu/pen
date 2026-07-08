@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { Editor } from "@pen/types";
+import type { Editor } from "@input/pen-types";
 
 export interface PlaygroundSession {
 	id: string;

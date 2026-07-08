@@ -17,7 +17,7 @@ export type {
 	ConnectionState,
 	MultiplayerSession,
 	MultiplayerSessionContext,
-} from "@pen/types";
+} from "@input/pen-types";
 
 export type {
 	AuthorIdentity,

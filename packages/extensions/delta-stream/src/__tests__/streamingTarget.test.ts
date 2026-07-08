@@ -1,4 +1,4 @@
-import type { Editor } from "@pen/types";
+import type { Editor } from "@input/pen-types";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { StreamingTargetImpl } from "../streamingTarget";
 
@@ -61,7 +61,7 @@ function createStreamingHarness(batchInterval: number) {
 	};
 }
 
-describe("@pen/delta-stream StreamingTargetImpl", () => {
+describe("@input/pen-delta-stream StreamingTargetImpl", () => {
 	afterEach(() => {
 		vi.useRealTimers();
 	});

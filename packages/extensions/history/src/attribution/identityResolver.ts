@@ -1,5 +1,5 @@
-import { MULTIPLAYER_CONTROLLER_SLOT } from "@pen/types";
-import type { Editor } from "@pen/types";
+import { MULTIPLAYER_CONTROLLER_SLOT } from "@input/pen-types";
+import type { Editor } from "@input/pen-types";
 import type { HistoryAuthor } from "../types";
 
 interface MultiplayerIdentityResolver {

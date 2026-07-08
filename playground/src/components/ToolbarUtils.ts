@@ -1,5 +1,5 @@
 import type { MouseEvent } from "react";
-import type { ConnectionState } from "@pen/types";
+import type { ConnectionState } from "@input/pen-types";
 
 export function preventEditorBlur(event: MouseEvent<HTMLElement>) {
 	event.preventDefault();

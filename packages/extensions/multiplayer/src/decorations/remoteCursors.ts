@@ -1,4 +1,4 @@
-import type { InlineDecoration } from "@pen/types";
+import type { InlineDecoration } from "@input/pen-types";
 import type { RemoteCursorState } from "../types";
 
 export function buildRemoteCursorDecorations(

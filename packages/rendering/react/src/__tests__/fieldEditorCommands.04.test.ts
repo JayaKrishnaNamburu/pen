@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { createEditor, getNumberedListItemValue } from "@pen/core";
+import { createEditor, getNumberedListItemValue } from "@input/pen-core";
 import {
 	FIELD_EDITOR_SLOT_KEY as CORE_FIELD_EDITOR_SLOT_KEY,
 	INPUT_RULES_ENGINE_SLOT_KEY,
-} from "@pen/types";
-import { defaultPreset } from "@pen/preset-default";
+} from "@input/pen-types";
+import { defaultPreset } from "@input/pen-preset-default";
 import {
 	applyDeleteBehavior,
 	applyListInputRule,

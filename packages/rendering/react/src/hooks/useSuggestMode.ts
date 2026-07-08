@@ -1,5 +1,5 @@
-import type { Editor } from "@pen/types";
-import { getAIController } from "@pen/ai";
+import type { Editor } from "@input/pen-types";
+import { getAIController } from "@input/pen-ai";
 import { useAI } from "./useAI";
 
 export function useSuggestMode(editor: Editor): {

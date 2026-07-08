@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createEditor } from "@pen/core";
+import { createEditor } from "@input/pen-core";
 import { buildPlaygroundRequestPlan } from "../runtime/playgroundPlanner";
 import { buildStructuredIntentRequestPrompt } from "../runtime/structuredIntent";
 

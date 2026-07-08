@@ -1,11 +1,11 @@
-# @pen/export-xml
+# @input/pen-export-xml
 
 XML exporter and importer for Pen documents.
 
 ## Install
 
 ```bash
-pnpm add @pen/export-xml
+pnpm add @input/pen-export-xml
 ```
 
 ## What It Provides

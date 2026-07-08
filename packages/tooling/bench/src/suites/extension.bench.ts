@@ -1,7 +1,7 @@
 import type { BenchContext, BenchDefinition } from "../bench";
-import { emptyDecorationSet } from "@pen/core";
-import { createTestEditor } from "@pen/test";
-import { defineExtension } from "@pen/types";
+import { emptyDecorationSet } from "@input/pen-core";
+import { createTestEditor } from "@input/pen-test";
+import { defineExtension } from "@input/pen-types";
 import {
 	EXTENSION_COLLECT_DECORATIONS_X5_BENCH,
 	EXTENSION_DISPATCH_OBSERVE_X5_BENCH,

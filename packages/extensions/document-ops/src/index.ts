@@ -47,10 +47,10 @@ export type {
 	StructuredTargetSchemaSnapshot,
 	ToolBlockTypeEntry,
 } from "./utils/structuredTargets";
-export { buildDocumentWriteOps } from "@pen/content-ops";
+export { buildDocumentWriteOps } from "@input/pen-content-ops";
 export type {
 	BuildDocumentWriteOpsOptions,
 	BuildDocumentWriteOpsResult,
 	DocumentWriteBlockInput,
 	DocumentWriteFormat,
-} from "@pen/content-ops";
+} from "@input/pen-content-ops";

@@ -3,15 +3,15 @@ import {
 	handleEditorDocumentKeyDown,
 	resolveSelectAllBehavior,
 	shouldHandleEditorKeyboardEvent as shouldHandlePenEditorKeyboardEvent,
-} from "@pen/dom";
-import { domSelectionToEditor } from "@pen/dom/field-editor/selectionBridge";
-import { DATA_ATTRS } from "@pen/dom/utils/dataAttributes";
+} from "@input/pen-dom";
+import { domSelectionToEditor } from "@input/pen-dom/field-editor/selectionBridge";
+import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 import type {
 	AssetProvider,
 	Editor,
 	InteractionModel,
-} from "@pen/types";
-import { FIELD_EDITOR_SLOT_KEY as CORE_FIELD_EDITOR_SLOT_KEY } from "@pen/types";
+} from "@input/pen-types";
+import { FIELD_EDITOR_SLOT_KEY as CORE_FIELD_EDITOR_SLOT_KEY } from "@input/pen-types";
 import {
 	defineComponent,
 	h,

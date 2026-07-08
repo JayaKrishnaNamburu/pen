@@ -1,5 +1,5 @@
-import { exportMarkdownForBlocks } from "@pen/markdown-serialization";
-import type { Editor, SelectionState, TextSelection } from "@pen/types";
+import { exportMarkdownForBlocks } from "@input/pen-markdown-serialization";
+import type { Editor, SelectionState, TextSelection } from "@input/pen-types";
 import type { StructuredTargetInspection } from "./structuredTargets";
 import { inspectStructuredTarget } from "./structuredTargets";
 

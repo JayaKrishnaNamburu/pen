@@ -3,4 +3,4 @@ export {
 	filterVisibleInlineDecorationDeltas,
 	INLINE_DECORATION_ATTRIBUTE_KEY,
 	VIRTUAL_INLINE_DECORATION_ATTRIBUTE,
-} from "@pen/dom/utils/inlineDecorations";
+} from "@input/pen-dom/utils/inlineDecorations";

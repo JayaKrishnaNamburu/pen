@@ -1,6 +1,6 @@
 import type { BenchContext, BenchDefinition } from "../bench";
-import type { StreamingTarget } from "@pen/types";
-import { createTestEditor } from "@pen/test";
+import type { StreamingTarget } from "@input/pen-types";
+import { createTestEditor } from "@input/pen-test";
 import {
   STREAMING_BATCH_FLUSH_LATENCY_BENCH,
   STREAMING_GEN_DELTA_1000_PARTS_BENCH,

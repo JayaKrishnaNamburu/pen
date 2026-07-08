@@ -1,5 +1,5 @@
-import { defineBlock, prop } from "@pen/types";
-import type { HTMLImportElement } from "@pen/types";
+import { defineBlock, prop } from "@input/pen-types";
+import type { HTMLImportElement } from "@input/pen-types";
 
 const CALLOUT_TYPE_PATTERN =
   /\bcallout[- ]?(info|warning|error)\b/i;

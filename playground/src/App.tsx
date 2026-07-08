@@ -1,10 +1,10 @@
-import { Pen, type RendererOverrides } from "@pen/react";
+import { Pen, type RendererOverrides } from "@input/pen-react";
 import type {
 	AutocompleteAcceptanceStrategy,
 	AutocompleteBlockPolicy,
-} from "@pen/ai-autocomplete";
-import { databaseRenderers } from "@pen/database";
-import type { Editor, InteractionModel } from "@pen/types";
+} from "@input/pen-ai-autocomplete";
+import { databaseRenderers } from "@input/pen-database";
+import type { Editor, InteractionModel } from "@input/pen-types";
 import { useRef, useState } from "react";
 import "./App.css";
 import { PlaygroundBlockDragHandle } from "./components/BlockDragHandle";

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useRef, useState } from "react";
-import type { MoveBlockOp } from "@pen/types";
+import type { MoveBlockOp } from "@input/pen-types";
 import { clearBlockDragPreviewImage } from "../../utils/blockDragPreview";
 import { DATA_ATTRS } from "../../utils/dataAttributes";
 

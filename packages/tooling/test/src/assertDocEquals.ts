@@ -1,5 +1,5 @@
-import type { PenDocument } from "@pen/types";
-import { deepEqual } from "@pen/core";
+import type { PenDocument } from "@input/pen-types";
+import { deepEqual } from "@input/pen-core";
 import type { TestBlock, TestEditor } from "./types";
 
 type TestBlockMapLike = {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { SelectionState } from "@pen/types";
+import type { SelectionState } from "@input/pen-types";
 import { AutocompleteContinuationState } from "../continuationState";
 import type { AutocompleteStructuredCandidate } from "../structuredCandidate";
 

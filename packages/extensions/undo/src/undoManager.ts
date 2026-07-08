@@ -3,8 +3,8 @@ import type {
   UndoManager,
   OpOrigin,
   Unsubscribe,
-} from "@pen/types";
-import { getOpOriginType } from "@pen/types";
+} from "@input/pen-types";
+import { getOpOriginType } from "@input/pen-types";
 
 const EXPLICIT_GROUP_CAPTURE_TIMEOUT_MS = 2_147_483_647;
 

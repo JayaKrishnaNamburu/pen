@@ -1,5 +1,5 @@
 import React from "react";
-import type { AISession } from "@pen/ai";
+import type { AISession } from "@input/pen-ai";
 import { queryBlockElement } from "../../field-editor/selectionBridge";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import {

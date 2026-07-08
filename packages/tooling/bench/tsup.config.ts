@@ -7,11 +7,11 @@ export default defineConfig({
   outDir: "dist",
   clean: true,
   external: [
-    "@pen/core",
-    "@pen/types",
-    "@pen/crdt-yjs",
-    "@pen/schema-default",
-    "@pen/test",
+    "@input/pen-core",
+    "@input/pen-types",
+    "@input/pen-crdt-yjs",
+    "@input/pen-schema-default",
+    "@input/pen-test",
     "yjs",
   ],
   outExtension({ format }) {

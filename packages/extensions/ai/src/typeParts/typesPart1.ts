@@ -11,7 +11,7 @@ import type {
 	SelectionState,
 	TextSelection,
 	ToolRuntime,
-} from "@pen/types";
+} from "@input/pen-types";
 import type {
 	AIApplyStrategy,
 	AIMutationMode,

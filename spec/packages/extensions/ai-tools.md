@@ -1,4 +1,4 @@
-# @pen/ai-tools
+# @input/pen-ai-tools
 
 ## Purpose
 
@@ -15,7 +15,7 @@ Add optional runtime behavior on top of the editor core without changing the can
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@pen/document-ops`, `@pen/types`
+- Runtime dependencies: `@input/pen-document-ops`, `@input/pen-types`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: Extensions compose through the core editor and slots/events rather than side channels.
 

@@ -3,22 +3,22 @@
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import { describe, expect, it } from "vitest";
-import { createEditor } from "@pen/core";
-import { defaultPreset } from "@pen/preset-default";
-import { createDefaultSchema } from "@pen/schema-default";
+import { createEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
+import { createDefaultSchema } from "@input/pen-schema-default";
 import {
 	moveInlineAtom,
 	replaceInlineAtomWithText,
-} from "@pen/dom/field-editor/inlineAtomInteraction";
+} from "@input/pen-dom/field-editor/inlineAtomInteraction";
 import {
 	getInlineAtomElementData,
 	getLogicalTextContent,
 	INLINE_ATOM_REPLACEMENT_TEXT,
-} from "@pen/dom/field-editor/inlineAtomDom";
+} from "@input/pen-dom/field-editor/inlineAtomDom";
 import {
 	applyDeltaToDOM,
 	fullReconcileDeltasToDOM,
-} from "@pen/dom/field-editor/reconciler";
+} from "@input/pen-dom/field-editor/reconciler";
 import { DATA_ATTRS } from "../utils/dataAttributes";
 import {
 	domPointToOffset,

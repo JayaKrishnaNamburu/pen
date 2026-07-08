@@ -5,9 +5,9 @@ import {
 	type InlineAtomDropTarget,
 	type InlineAtomSnapshot,
 	type InlineAtomSource,
-} from "@pen/dom/field-editor/inlineAtomInteraction";
-import type { Editor } from "@pen/types";
-import type { FieldEditorSession } from "@pen/dom";
+} from "@input/pen-dom/field-editor/inlineAtomInteraction";
+import type { Editor } from "@input/pen-types";
+import type { FieldEditorSession } from "@input/pen-dom";
 import { DATA_ATTRS } from "../../utils/dataAttributes";
 import { getAttachedFieldEditor } from "../../utils/fieldEditor";
 import type {

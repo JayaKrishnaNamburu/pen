@@ -1,4 +1,4 @@
-import type { BlockHandle, Editor, TableCellHandle } from "@pen/types";
+import type { BlockHandle, Editor, TableCellHandle } from "@input/pen-types";
 import { buildDatabaseData, buildTableChildren } from "./exporterUtils";
 import { groupListItems } from "./listGrouper";
 import { getNumberedListItemValue } from "./orderedList";

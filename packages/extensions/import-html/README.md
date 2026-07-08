@@ -1,11 +1,11 @@
-# `@pen/import-html`
+# `@input/pen-import-html`
 
 HTML importer with sanitization for Pen.
 
 ## Install
 
 ```bash
-pnpm add @pen/core @pen/import-html
+pnpm add @input/pen-core @input/pen-import-html
 ```
 
 ## What It Provides
@@ -17,8 +17,8 @@ pnpm add @pen/core @pen/import-html
 ## Usage
 
 ```ts
-import { createEditor } from "@pen/core";
-import { htmlImporter } from "@pen/import-html";
+import { createEditor } from "@input/pen-core";
+import { htmlImporter } from "@input/pen-import-html";
 
 const editor = createEditor();
 

@@ -1,6 +1,6 @@
 import React, { useLayoutEffect, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
-import type { Editor, SelectionState } from "@pen/types";
+import type { Editor, SelectionState } from "@input/pen-types";
 import type {
 	InlineAtomRenderers,
 	ResolvedInlineAtomInteractions,

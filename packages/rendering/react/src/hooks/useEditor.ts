@@ -1,6 +1,6 @@
 import { useRef, useEffect } from "react";
-import { createEditor } from "@pen/core";
-import type { CreateEditorOptions, Editor } from "@pen/types";
+import { createEditor } from "@input/pen-core";
+import type { CreateEditorOptions, Editor } from "@input/pen-types";
 
 export function useEditor(optionsOrEditor?: CreateEditorOptions | Editor): Editor {
   const editorRef = useRef<Editor | null>(null);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createEditor } from "@pen/core";
+import { createEditor } from "@input/pen-core";
 import {
 	aiSuggestionsExtension,
 	getAISuggestionsController,
@@ -21,7 +21,7 @@ function createDeferred<T>() {
 	return { promise, resolve, reject };
 }
 
-describe("@pen/ai-suggestions extension", () => {
+describe("@input/pen-ai-suggestions extension", () => {
 	it("registers a controller and materializes proactive suggestions", async () => {
 		const editor = createEditor({
 			extensions: [

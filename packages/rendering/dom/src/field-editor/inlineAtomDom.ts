@@ -1,4 +1,4 @@
-import type { SchemaRegistry } from "@pen/types";
+import type { SchemaRegistry } from "@input/pen-types";
 import { DATA_ATTRS } from "../utils/dataAttributes";
 import {
 	INLINE_ATOM_CARET_BOUNDARY_TEXT,

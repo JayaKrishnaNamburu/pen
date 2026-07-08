@@ -1,4 +1,4 @@
-import type { OpOrigin } from "@pen/types";
+import type { OpOrigin } from "@input/pen-types";
 import type { AIInlineCompletionController } from "../../types";
 import type { AIControllerMethodHost } from "./aiControllerMethodHost";
 import {

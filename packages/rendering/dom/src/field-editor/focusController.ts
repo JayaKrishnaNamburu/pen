@@ -1,4 +1,4 @@
-import type { Editor, Unsubscribe } from "@pen/types";
+import type { Editor, Unsubscribe } from "@input/pen-types";
 import type {
 	FieldEditorFocusReason,
 	FieldEditorFocusRequest,

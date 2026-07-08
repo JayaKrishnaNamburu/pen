@@ -1,4 +1,4 @@
-# @pen/bench
+# @input/pen-bench
 
 ## Purpose
 

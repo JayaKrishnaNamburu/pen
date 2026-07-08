@@ -6,7 +6,7 @@ import {
 	type InlineCompletionController,
 	type InlineCompletionState,
 	type InlineCompletionSuggestion,
-} from "@pen/types";
+} from "@input/pen-types";
 
 const inlineCompletionLeases = new WeakMap<
 	Editor,

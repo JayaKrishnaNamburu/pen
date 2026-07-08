@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { createEditor, getInlineCompletionController } from "@pen/core";
-import { getSearchController, searchExtension } from "@pen/search";
+import { createEditor, getInlineCompletionController } from "@input/pen-core";
+import { getSearchController, searchExtension } from "@input/pen-search";
 import {
 	AI_AUTOCOMPLETE_CONTROLLER_SLOT,
 	defineExtension,
 	FIELD_EDITOR_SLOT_KEY,
-} from "@pen/types";
-import { aiExtension } from "@pen/ai";
-import { defaultPreset } from "@pen/preset-default";
+} from "@input/pen-types";
+import { aiExtension } from "@input/pen-ai";
+import { defaultPreset } from "@input/pen-preset-default";
 import {
 	handleEditorKeyBindings,
 	handleFieldEditorKeyDown,
@@ -140,7 +140,7 @@ function createPresetEditor(
 	});
 }
 
-describe("@pen/react inline atom shift-click selection", () => {
+describe("@input/pen-react inline atom shift-click selection", () => {
 	it("extends a selected atom range to the clicked atom on the right", () => {
 		const editor = createPresetEditor({ preset: { shortcuts: false } });
 		const blockId = editor.firstBlock()!.id;

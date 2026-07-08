@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { BatchingBuffer } from "../batch";
 
-describe("@pen/delta-stream BatchingBuffer", () => {
+describe("@input/pen-delta-stream BatchingBuffer", () => {
   it("flushes accumulated text", () => {
     const flushed: string[] = [];
     const buffer = new BatchingBuffer((text) => flushed.push(text), 50);

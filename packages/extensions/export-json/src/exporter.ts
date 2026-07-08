@@ -4,8 +4,8 @@ import type {
   ExportOptions,
   Editor,
   InlineDelta,
-} from "@pen/types";
-import { buildDatabaseData } from "@pen/markdown-serialization";
+} from "@input/pen-types";
+import { buildDatabaseData } from "@input/pen-markdown-serialization";
 import type {
   PenBlockJSON,
   PenDocumentJSON,

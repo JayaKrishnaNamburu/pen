@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { createEditor } from "@pen/core";
+import { createEditor } from "@input/pen-core";
 import { buildApplySuggestionOps } from "../apply";
 import type { AISuggestion } from "../types";
 
-describe("@pen/ai-suggestions apply", () => {
+describe("@input/pen-ai-suggestions apply", () => {
 	it("builds replace-text ops when the source text still matches", () => {
 		const editor = createEditor();
 		const blockId = editor.firstBlock()!.id;

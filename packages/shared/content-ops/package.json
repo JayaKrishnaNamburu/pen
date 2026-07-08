@@ -1,6 +1,6 @@
 {
-  "name": "@pen/content-ops",
-  "version": "0.0.0",
+  "name": "@input/pen-content-ops",
+  "version": "0.0.1",
   "description": "Shared content parsing and write ops for Pen",
   "license": "SEE LICENSE IN LICENSE.md",
   "homepage": "https://github.com/niceperson/pen#readme",
@@ -14,7 +14,8 @@
   },
   "type": "module",
   "publishConfig": {
-    "access": "public"
+    "access": "restricted",
+    "registry": "https://registry.npmjs.org/"
   },
   "exports": {
     ".": {
@@ -44,14 +45,14 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@pen/types": "workspace:*",
+    "@input/pen-types": "workspace:*",
     "htmlparser2": "^9.0.0",
     "mdast-util-from-markdown": "^2.0.0",
     "mdast-util-gfm": "^3.0.0",
     "micromark-extension-gfm": "^3.0.0"
   },
   "devDependencies": {
-    "@pen/schema-default": "workspace:*",
+    "@input/pen-schema-default": "workspace:*",
     "tsup": "^8.4.0",
     "typescript": "^5.7.3",
     "vitest": "^3.0.7"

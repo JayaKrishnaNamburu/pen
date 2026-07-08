@@ -1,5 +1,5 @@
 import React from "react";
-import { DATA_ATTRS } from "@pen/react";
+import { DATA_ATTRS } from "@input/pen-react";
 import type { DatabaseController } from "../useDatabaseController";
 import { ROW_SELECT_COLUMN_WIDTH } from "../useDatabaseController";
 import {

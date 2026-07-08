@@ -2,8 +2,8 @@ import {
 	getAISuggestionsController,
 	type AISuggestionsExtensionConfig,
 	type AISuggestionsState,
-} from "@pen/ai-suggestions";
-import type { Editor } from "@pen/types";
+} from "@input/pen-ai-suggestions";
+import type { Editor } from "@input/pen-types";
 import { useEffect, useState } from "react";
 
 const EMPTY_AI_SUGGESTIONS_STATE: AISuggestionsState = {

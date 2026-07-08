@@ -5,7 +5,7 @@ import type {
 	PenDocument,
 	SchemaRegistry,
 	BlockHandle,
-} from "@pen/types";
+} from "@input/pen-types";
 import type * as Y from "yjs";
 
 export interface TestBlock {

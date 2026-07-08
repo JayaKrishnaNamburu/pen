@@ -3,8 +3,8 @@ import type {
   CRDTDocument,
   DocumentProfile,
   PenDocument,
-} from "@pen/types";
-import { generateId } from "@pen/types";
+} from "@input/pen-types";
+import { generateId } from "@input/pen-types";
 import * as Y from "yjs";
 
 // ── Internal Types ──────────────────────────────────────────

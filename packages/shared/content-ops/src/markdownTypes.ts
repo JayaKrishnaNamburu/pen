@@ -1,4 +1,4 @@
-import type { MarkdownNode } from "@pen/types";
+import type { MarkdownNode } from "@input/pen-types";
 import type { PendingBlock } from "./blocks";
 
 export interface InlineMark {

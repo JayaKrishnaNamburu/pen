@@ -1,4 +1,4 @@
-import type { Editor, InlineDecoration } from "@pen/types";
+import type { Editor, InlineDecoration } from "@input/pen-types";
 import type { FieldEditorInputController } from "./controller";
 import { fullReconcileToDOM, applyDeltaToDOM } from "./reconciler";
 import {

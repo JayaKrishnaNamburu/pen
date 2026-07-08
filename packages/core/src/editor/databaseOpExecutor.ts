@@ -17,8 +17,8 @@ import type {
 	DatabaseSetActiveViewOp,
 	DatabaseUpdateSelectOptionsOp,
 	TableColumnSchema,
-} from "@pen/types";
-import { coerceDatabaseValue } from "@pen/types";
+} from "@input/pen-types";
+import { coerceDatabaseValue } from "@input/pen-types";
 import {
 	type CRDTUnknownMap,
 	type TableColumnArray,

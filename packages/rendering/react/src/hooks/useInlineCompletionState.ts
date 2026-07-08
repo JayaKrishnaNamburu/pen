@@ -1,5 +1,5 @@
-import type { Editor, InlineCompletionSuggestion } from "@pen/types";
-import { getInlineCompletionController } from "@pen/core";
+import type { Editor, InlineCompletionSuggestion } from "@input/pen-types";
+import { getInlineCompletionController } from "@input/pen-core";
 import { useSyncExternalStoreWithSelector } from "../utils/useSyncExternalStoreWithSelector";
 
 export function useInlineCompletionState(

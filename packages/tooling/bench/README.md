@@ -1,11 +1,11 @@
-# @pen/bench
+# @input/pen-bench
 
 Performance benchmarks for Pen
 
 ## Install
 
 ```bash
-pnpm add @pen/bench
+pnpm add @input/pen-bench
 ```
 
 ## Notes

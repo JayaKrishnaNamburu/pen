@@ -3,9 +3,9 @@ import type {
 	BlameRange,
 	CharacterAttribution,
 	HistoryController,
-} from "@pen/history";
-import { getHistoryController } from "@pen/history";
-import type { Editor, Unsubscribe } from "@pen/types";
+} from "@input/pen-history";
+import { getHistoryController } from "@input/pen-history";
+import type { Editor, Unsubscribe } from "@input/pen-types";
 import { useHistory } from "./useHistory";
 import { useMultiplayer } from "./useMultiplayer";
 

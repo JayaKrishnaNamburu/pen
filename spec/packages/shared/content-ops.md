@@ -1,8 +1,8 @@
-# @pen/content-ops
+# @input/pen-content-ops
 
 ## Purpose
 
-`@pen/content-ops` provides shared parsing, normalization, and operation-building helpers for Pen. It is where Markdown-to-block parsing, pending-block normalization, profile-policy filtering, and generic write-op construction live.
+`@input/pen-content-ops` provides shared parsing, normalization, and operation-building helpers for Pen. It is where Markdown-to-block parsing, pending-block normalization, profile-policy filtering, and generic write-op construction live.
 
 ## Public Role
 
@@ -20,13 +20,13 @@ This package is a lower-level transformation layer used by higher-level import, 
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@pen/types`, `htmlparser2`, `mdast-util-from-markdown`, `mdast-util-gfm`, `micromark-extension-gfm`
+- Runtime dependencies: `@input/pen-types`, `htmlparser2`, `mdast-util-from-markdown`, `mdast-util-gfm`, `micromark-extension-gfm`
 - Peer dependencies: No peer dependencies declared.
-- Boundary: `@pen/content-ops` is a shared transformation library and should not become an end-user entrypoint or runtime authority package.
+- Boundary: `@input/pen-content-ops` is a shared transformation library and should not become an end-user entrypoint or runtime authority package.
 
 ## Runtime Model
 
-`@pen/content-ops` turns content-like inputs into normalized pending blocks and operation lists that higher-level packages can safely apply:
+`@input/pen-content-ops` turns content-like inputs into normalized pending blocks and operation lists that higher-level packages can safely apply:
 
 ```mermaid
 flowchart TD

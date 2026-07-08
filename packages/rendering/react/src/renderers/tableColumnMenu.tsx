@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useLayoutEffect } from "react";
-import type { Editor, TableColumnSchema } from "@pen/types";
-import { generateId } from "@pen/types";
+import type { Editor, TableColumnSchema } from "@input/pen-types";
+import { generateId } from "@input/pen-types";
 import { DATA_ATTRS } from "../utils/dataAttributes";
 
 const COLUMN_TYPES: { value: TableColumnSchema["type"]; label: string; icon: string }[] = [

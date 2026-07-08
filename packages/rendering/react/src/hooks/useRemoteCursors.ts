@@ -2,9 +2,9 @@ import { useSyncExternalStore } from "react";
 import type {
 	MultiplayerController,
 	RemoteCursorState,
-} from "@pen/multiplayer";
-import { getMultiplayerController } from "@pen/multiplayer";
-import type { Editor, Unsubscribe } from "@pen/types";
+} from "@input/pen-multiplayer";
+import { getMultiplayerController } from "@input/pen-multiplayer";
+import type { Editor, Unsubscribe } from "@input/pen-types";
 
 const EMPTY_REMOTE_CURSORS: readonly RemoteCursorState[] = [];
 

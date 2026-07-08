@@ -1,4 +1,4 @@
-// ── @pen/react — React rendering layer for Pen ─────────────
+// ── @input/pen-react — React rendering layer for Pen ─────────────
 //
 // Package entry. Re-exports all public API:
 // - Pen.* compound component namespace
@@ -345,7 +345,7 @@ export {
 	richTextShortcutsExtension,
 	RICH_TEXT_SHORTCUTS_EXTENSION_NAME,
 	type RichTextShortcutsOptions,
-} from "@pen/shortcuts";
+} from "@input/pen-shortcuts";
 
 // ── Field editor extension helpers ───────────────────────────
 export type {
@@ -410,10 +410,10 @@ export type {
 	PenFocusPolicy,
 	PenFocusRequest,
 	PenFocusReason,
-} from "@pen/dom";
+} from "@input/pen-dom";
 export { isCellInSelection } from "./utils/cellSelection";
 
-// ── Re-export key types from @pen/types for convenience ─────
+// ── Re-export key types from @input/pen-types for convenience ─────
 export type {
 	BlockRenderContext,
 	BlockRenderer,
@@ -425,14 +425,14 @@ export type {
 	InlineDecoration,
 	BlockDecoration,
 	FieldEditor,
-} from "@pen/types";
+} from "@input/pen-types";
 
 export type {
 	BlameRange,
 	CharacterAttribution,
 	HistoryState,
-} from "@pen/history";
-export type { MultiplayerState, PeerState } from "@pen/multiplayer";
-export type { RemoteCursorState, RemoteSelectionState } from "@pen/multiplayer";
+} from "@input/pen-history";
+export type { MultiplayerState, PeerState } from "@input/pen-multiplayer";
+export type { RemoteCursorState, RemoteSelectionState } from "@input/pen-multiplayer";
 
-export type { CreateEditorOptions } from "@pen/types";
+export type { CreateEditorOptions } from "@input/pen-types";

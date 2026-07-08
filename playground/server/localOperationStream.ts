@@ -1,7 +1,7 @@
-import { buildExplicitLocalOperationPrompt } from "@pen/ai";
+import { buildExplicitLocalOperationPrompt } from "@input/pen-ai";
 import { streamText } from "ai";
 import type { ServerResponse } from "node:http";
-import type { Editor, ModelRequestedOperation } from "@pen/types";
+import type { Editor, ModelRequestedOperation } from "@input/pen-types";
 import {
 	LOCAL_OPERATION_PAYLOAD_END,
 	LOCAL_OPERATION_PAYLOAD_START,

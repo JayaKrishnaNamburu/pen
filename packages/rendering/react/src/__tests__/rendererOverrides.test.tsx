@@ -8,9 +8,9 @@ import {
 } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { createRoot } from "react-dom/client";
-import { createEditor } from "@pen/core";
-import type { AssetProvider, BlockHandle, BlockRenderContext } from "@pen/types";
-import { defaultPreset } from "@pen/preset-default";
+import { createEditor } from "@input/pen-core";
+import type { AssetProvider, BlockHandle, BlockRenderContext } from "@input/pen-types";
+import { defaultPreset } from "@input/pen-preset-default";
 import { Pen } from "../primitives/index";
 import { useEditorContext } from "../context/editorContext";
 import { DATA_ATTRS } from "../utils/dataAttributes";
@@ -158,7 +158,7 @@ function createImageEditor() {
 	return { editor, blockId };
 }
 
-describe("@pen/react renderer overrides", () => {
+describe("@input/pen-react renderer overrides", () => {
 	it("scopes custom renderers to a single editor root", async () => {
 		const first = createImageEditor();
 		const second = createImageEditor();

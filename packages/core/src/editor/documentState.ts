@@ -7,7 +7,7 @@ import type {
   PenDocument,
   SchemaRegistry,
   BlockHandle,
-} from "@pen/types";
+} from "@input/pen-types";
 import { createBlockHandle } from "../schema/handles";
 
 type CRDTBlockMap = CRDTMap<CRDTMap<unknown>>;

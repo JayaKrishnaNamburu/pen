@@ -1,6 +1,6 @@
-import { createDocumentSession, createEditor } from "@pen/core";
-import { yjsAdapter } from "@pen/crdt-yjs";
-import type { PenPersistence, VersionEntry, VersionMetadata } from "@pen/types";
+import { createDocumentSession, createEditor } from "@input/pen-core";
+import { yjsAdapter } from "@input/pen-crdt-yjs";
+import type { PenPersistence, VersionEntry, VersionMetadata } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 import * as Y from "yjs";
 import {

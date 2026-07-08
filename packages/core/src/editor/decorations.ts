@@ -3,7 +3,7 @@ import type {
   DecorationSet,
   InlineDecoration,
   PositionMapping,
-} from "@pen/types";
+} from "@input/pen-types";
 
 let nextGeneration = 1;
 

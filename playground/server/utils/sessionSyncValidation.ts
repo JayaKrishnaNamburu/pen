@@ -1,4 +1,4 @@
-import type { TableColumnSchema } from "@pen/types";
+import type { TableColumnSchema } from "@input/pen-types";
 
 interface SerializedTableColumn extends TableColumnSchema {
 	[key: string]: unknown;

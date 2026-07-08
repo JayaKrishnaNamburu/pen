@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { isCellInSelection } from "../utils";
-import type { CellSelection } from "@pen/types";
+import type { CellSelection } from "@input/pen-types";
 
 function sel(anchorRow: number, anchorCol: number, headRow: number, headCol: number): CellSelection {
 	return {

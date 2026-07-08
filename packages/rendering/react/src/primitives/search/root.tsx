@@ -1,10 +1,10 @@
 import React, { createContext, useContext } from "react";
-import type { Editor } from "@pen/types";
+import type { Editor } from "@input/pen-types";
 import {
 	getSearchController,
 	type SearchController,
 	type SearchState,
-} from "@pen/search";
+} from "@input/pen-search";
 import { useSearch } from "../../hooks/useSearch";
 import { EditorContext } from "../../context/editorContext";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";

@@ -1,4 +1,4 @@
-import type { InlineDelta, TableCellHandle } from "@pen/types";
+import type { InlineDelta, TableCellHandle } from "@input/pen-types";
 import {
 	getStringProp,
 	getTextProp,

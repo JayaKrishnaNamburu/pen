@@ -10,7 +10,7 @@ import type {
   DocumentSession,
   ReplaceScopeDocumentOptions,
   Unsubscribe,
-} from "@pen/types";
+} from "@input/pen-types";
 import {
   SUBDOCUMENT,
   createYjsSubdocument,
@@ -20,7 +20,7 @@ import {
   wrapYjsDocument,
   type YjsDoc,
   type YjsCRDTDocument,
-} from "@pen/crdt-yjs";
+} from "@input/pen-crdt-yjs";
 import {
   cloneScope,
   collectReplacementTargets,

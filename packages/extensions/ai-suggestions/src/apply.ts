@@ -1,4 +1,4 @@
-import type { DocumentOp, Editor } from "@pen/types";
+import type { DocumentOp, Editor } from "@input/pen-types";
 import type { AISuggestion } from "./types";
 
 export function buildApplySuggestionOps(

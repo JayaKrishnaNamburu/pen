@@ -3,10 +3,10 @@
 import React, { act, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { describe, expect, it, vi } from "vitest";
-import { createEditor } from "@pen/core";
-import { defaultPreset } from "@pen/preset-default";
-import type { Editor } from "@pen/types";
-import type { PenFocusPolicy } from "@pen/dom";
+import { createEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
+import type { Editor } from "@input/pen-types";
+import type { PenFocusPolicy } from "@input/pen-dom";
 import { DATA_ATTRS } from "../utils/dataAttributes";
 import { Pen } from "../primitives/index";
 import {

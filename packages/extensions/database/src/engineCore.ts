@@ -4,8 +4,8 @@ import {
 	formatStoredSelectValue,
 	parseDatabaseMultiSelectValue,
 	resolveStoredSelectOption,
-} from "@pen/types";
-import type { BlockHandle, Editor } from "@pen/types";
+} from "@input/pen-types";
+import type { BlockHandle, Editor } from "@input/pen-types";
 import type {
 	ColumnType,
 	DatabaseColumnDef,

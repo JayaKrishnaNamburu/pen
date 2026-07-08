@@ -10,7 +10,7 @@ import type {
 	SelectionState,
 	TextSelection,
 	ToolRuntime,
-} from "@pen/types";
+} from "@input/pen-types";
 import type {
 	AIApplyStrategy,
 	AIMutationMode,
@@ -39,7 +39,7 @@ export interface PersistentBlockSuggestion extends PersistentSuggestionBase {
 	action: "insert-block" | "delete-block" | "move-block" | "convert-block";
 	previousState?: {
 		type?: string;
-		position?: import("@pen/types").Position;
+		position?: import("@input/pen-types").Position;
 		props?: Record<string, unknown>;
 	};
 }
@@ -61,7 +61,7 @@ export interface BlockSuggestionMeta {
 	generationId?: string;
 	previousState?: {
 		type?: string;
-		position?: import("@pen/types").Position;
+		position?: import("@input/pen-types").Position;
 		props?: Record<string, unknown>;
 	};
 }

@@ -1,4 +1,4 @@
-import type { Editor } from "@pen/types";
+import type { Editor } from "@input/pen-types";
 import { editorSelectionToDOM, domSelectionToEditor } from "./selectionBridge";
 import { handlePaste, handleCopy, handleCut } from "./clipboard";
 import type { PasteImporters } from "../types/paste";

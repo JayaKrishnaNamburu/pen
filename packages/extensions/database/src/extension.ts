@@ -1,5 +1,5 @@
-import type { Editor, Extension } from "@pen/types";
-import { defineExtension } from "@pen/types";
+import type { Editor, Extension } from "@input/pen-types";
+import { defineExtension } from "@input/pen-types";
 import type { DatabaseDataProvider } from "./types";
 import type { CellEditorRegistry } from "./cellEditorRegistry";
 import { DATABASE_CELL_EDITOR_REGISTRY_SLOT } from "./cellEditors";

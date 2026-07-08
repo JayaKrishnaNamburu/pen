@@ -1,11 +1,11 @@
-# @pen/undo
+# @input/pen-undo
 
 Undo/redo extension with origin tagging for Pen
 
 ## Install
 
 ```bash
-pnpm add @pen/undo
+pnpm add @input/pen-undo
 ```
 
 ## Notes

@@ -1,9 +1,9 @@
-import type { BlockSelectionRole, Editor } from "@pen/types";
+import type { BlockSelectionRole, Editor } from "@input/pen-types";
 import {
 	getBlockSelectionRoleFromSchema as getSharedBlockSelectionRoleFromSchema,
 	getBlockSelectionRoleFromType as getSharedBlockSelectionRoleFromType,
-} from "@pen/types";
-export type { BlockSelectionRole } from "@pen/types";
+} from "@input/pen-types";
+export type { BlockSelectionRole } from "@input/pen-types";
 
 const ZERO_WIDTH_SPACE = "\u200B";
 

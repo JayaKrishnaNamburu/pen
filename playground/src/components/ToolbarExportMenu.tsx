@@ -1,6 +1,6 @@
-import { htmlExporter } from "@pen/export-html";
-import { markdownExporter } from "@pen/export-markdown";
-import type { Editor } from "@pen/types";
+import { htmlExporter } from "@input/pen-export-html";
+import { markdownExporter } from "@input/pen-export-markdown";
+import type { Editor } from "@input/pen-types";
 import { useEffect, useRef, useState } from "react";
 import { IconArrowUp } from "./icons";
 import { preventEditorBlur } from "./ToolbarUtils";

@@ -1,4 +1,4 @@
-import type { BlockHandle, CellSelection } from "@pen/types";
+import type { BlockHandle, CellSelection } from "@input/pen-types";
 import type React from "react";
 import type { DatabaseEngine } from "./engine";
 import type {

@@ -1,8 +1,8 @@
-import type { CellSelection, DocumentOp, Editor } from "@pen/types";
+import type { CellSelection, DocumentOp, Editor } from "@input/pen-types";
 import {
 	resolveCellSelectionCoord,
 	resolveCellSelectionMatrix,
-} from "@pen/core";
+} from "@input/pen-core";
 
 export function isPasteShortcut(event: KeyboardEvent): boolean {
 	return (

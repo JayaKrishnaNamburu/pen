@@ -1,5 +1,5 @@
 import React from "react";
-import type { StructuralReviewComparisonRow, StructuralReviewItem } from "@pen/ai";
+import type { StructuralReviewComparisonRow, StructuralReviewItem } from "@input/pen-ai";
 
 const REVIEW_COMPARISON_SECTION_LABELS = {
 	schema: "Schema changes",

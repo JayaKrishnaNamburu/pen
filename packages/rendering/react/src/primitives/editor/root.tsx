@@ -1,11 +1,11 @@
 import React, { useRef, useEffect, useState } from "react";
-import { FIELD_EDITOR_SLOT_KEY as CORE_FIELD_EDITOR_SLOT_KEY } from "@pen/types";
+import { FIELD_EDITOR_SLOT_KEY as CORE_FIELD_EDITOR_SLOT_KEY } from "@input/pen-types";
 import type {
 	AssetProvider,
 	Editor,
 	EditorViewMode,
 	InteractionModel,
-} from "@pen/types";
+} from "@input/pen-types";
 import {
 	EditorContext,
 	type BlockControlsRenderer,
@@ -29,7 +29,7 @@ import {
 	type FieldEditorSession,
 	type PenFocusLifecycleListener,
 	type PenFocusPolicy,
-} from "@pen/dom";
+} from "@input/pen-dom";
 import { useDocumentEmptyState } from "../../hooks/useDocumentEmptyState";
 import { domSelectionToEditor } from "../../field-editor/selectionBridge";
 import {

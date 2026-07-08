@@ -4,4 +4,4 @@ export type {
 	BlameRange,
 	CharacterAttribution,
 	HistoryState,
-} from "@pen/history";
+} from "@input/pen-history";

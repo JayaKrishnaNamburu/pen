@@ -1,5 +1,5 @@
-import type { OpOrigin, SelectionState } from "@pen/types";
-import { getOpOriginType } from "@pen/types";
+import type { OpOrigin, SelectionState } from "@input/pen-types";
+import { getOpOriginType } from "@input/pen-types";
 import type { AutocompleteStructuredCandidate } from "./structuredCandidate";
 
 export type AutocompleteSequence = {

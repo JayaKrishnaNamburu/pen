@@ -1,13 +1,13 @@
-import type { Editor, Exporter, ExportOptions } from "@pen/types";
+import type { Editor, Exporter, ExportOptions } from "@input/pen-types";
 import {
   exportMarkdownForBlocks,
   exportMarkdownRange,
-} from "@pen/markdown-serialization";
+} from "@input/pen-markdown-serialization";
 import type {
   MarkdownExportConfig,
   MarkdownExportRange,
   MarkdownExportViewMode,
-} from "@pen/markdown-serialization";
+} from "@input/pen-markdown-serialization";
 
 type MarkdownExporterExtraOptions = Record<string, unknown> & {
   range?: MarkdownExportRange;

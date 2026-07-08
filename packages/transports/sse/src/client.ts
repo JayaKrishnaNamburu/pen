@@ -3,7 +3,7 @@ import type {
   PenStreamRequest,
   PenStreamPart,
   Unsubscribe,
-} from "@pen/types";
+} from "@input/pen-types";
 import type { SSEClientOptions } from "./types";
 import { parseSSEStream } from "./parser";
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { AIToolDescriptor } from "@pen/ai-tools";
-import type { AutocompleteProviderDescriptor } from "@pen/ai-autocomplete";
+import type { AIToolDescriptor } from "@input/pen-ai-tools";
+import type { AutocompleteProviderDescriptor } from "@input/pen-ai-autocomplete";
 import {
   AISkillRegistry,
   createAutocompleteProviderSkill,
@@ -31,7 +31,7 @@ const providers: readonly AutocompleteProviderDescriptor[] = [
   },
 ];
 
-describe("@pen/ai-skills", () => {
+describe("@input/pen-ai-skills", () => {
   it("creates a default document skill from ai-tools descriptors", () => {
     const [skill] = listDefaultAISkills(tools);
 

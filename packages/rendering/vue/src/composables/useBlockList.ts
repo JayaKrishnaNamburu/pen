@@ -1,5 +1,5 @@
-import type { Editor } from "@pen/types";
-import { getRootBlockIds } from "@pen/dom/utils/parentIdTree";
+import type { Editor } from "@input/pen-types";
+import { getRootBlockIds } from "@input/pen-dom/utils/parentIdTree";
 import { useEditorContext } from "../internal/editorContext";
 import { useExternalStore } from "../internal/useExternalStore";
 

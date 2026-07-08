@@ -11,7 +11,7 @@ import type {
 	LayoutProps,
 	PenDocument,
 	SchemaRegistry,
-} from "@pen/types";
+} from "@input/pen-types";
 import {
 	crdtMapToPlainRecord,
 	getDatabaseViews,

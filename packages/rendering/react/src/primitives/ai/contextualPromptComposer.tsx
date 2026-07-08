@@ -1,5 +1,5 @@
 import React from "react";
-import type { AIContextualPromptAnchor, AISession } from "@pen/ai";
+import type { AIContextualPromptAnchor, AISession } from "@input/pen-ai";
 import { domSelectionToEditor } from "../../field-editor/selectionBridge";
 import { useAISessionActions } from "../../hooks/useAISessionActions";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";

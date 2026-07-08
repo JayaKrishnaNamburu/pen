@@ -1,9 +1,9 @@
-import { AUTOCOMPLETE_SYSTEM_PROMPT } from "@pen/ai-autocomplete";
+import { AUTOCOMPLETE_SYSTEM_PROMPT } from "@input/pen-ai-autocomplete";
 import {
 	buildPlaygroundRequestPlan as buildSharedPlaygroundRequestPlan,
 	buildPromptContext as buildSharedPromptContext,
-} from "@pen/ai";
-import type { Editor, ModelRequestedOperation } from "@pen/types";
+} from "@input/pen-ai";
+import type { Editor, ModelRequestedOperation } from "@input/pen-types";
 import {
 	PLAYGROUND_AUTOCOMPLETE_OUTPUT_TOKEN_CAP,
 	PLAYGROUND_DOCUMENT_MODEL,

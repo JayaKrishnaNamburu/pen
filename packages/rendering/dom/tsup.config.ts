@@ -14,7 +14,7 @@ export default defineConfig({
   dts: true,
   outDir: "dist",
   clean: true,
-  external: ["@pen/core", "@pen/shortcuts", "@pen/types"],
+  external: ["@input/pen-core", "@input/pen-shortcuts", "@input/pen-types"],
   outExtension({ format }) {
     return { js: format === "esm" ? ".mjs" : ".cjs" };
   },

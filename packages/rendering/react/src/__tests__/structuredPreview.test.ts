@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { AIStreamEvent, GenerationStructuredPreviewState } from "@pen/ai";
+import type { AIStreamEvent, GenerationStructuredPreviewState } from "@input/pen-ai";
 import {
 	buildAIStructuredPreviewContentItems,
 	buildAIStructuredPreviewSelection,

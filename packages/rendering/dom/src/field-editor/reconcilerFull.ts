@@ -1,5 +1,5 @@
-import type { InlineDecoration, SchemaRegistry } from "@pen/types";
-import { sortDeltaAttributes } from "@pen/core";
+import type { InlineDecoration, SchemaRegistry } from "@input/pen-types";
+import { sortDeltaAttributes } from "@input/pen-core";
 import type { FieldEditorDelta, FieldEditorTextLike } from "./crdt";
 import { restoreSelection, saveSelection } from "./reconcilerSelection";
 import {

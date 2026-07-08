@@ -3,7 +3,7 @@ import {
 	SchemaRegistryImpl,
 	mergeSchemas,
 	suggestion,
-} from "@pen/core";
+} from "@input/pen-core";
 import {
 	defaultSchema,
 	createDefaultSchema,
@@ -30,9 +30,9 @@ import {
 	code,
 	mention,
 	inlineApp,
-} from "@pen/schema-default";
-import type { BlockSchema, InlineSchema } from "@pen/types";
-import { defineBlock, prop } from "@pen/types";
+} from "@input/pen-schema-default";
+import type { BlockSchema, InlineSchema } from "@input/pen-types";
+import { defineBlock, prop } from "@input/pen-types";
 
 describe("SchemaRegistryImpl", () => {
 	// ── AC 1: resolves all default block and inline types ───

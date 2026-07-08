@@ -4,17 +4,17 @@ import type {
 	Editor,
 	FieldEditorType,
 	FlowBlockCapability,
-} from "@pen/types";
+} from "@input/pen-types";
 import {
 	getBlockSelectionRoleFromSchema,
 	getFlowCapabilityFromSchema,
 	isNestedContent,
 	shouldExposeBlockInTooling,
-} from "@pen/types";
+} from "@input/pen-types";
 import type {
 	StructuredTargetDescriptor,
 	TargetEditability,
-} from "@pen/content-ops";
+} from "@input/pen-content-ops";
 import { getAvailableToolBlockSchemas } from "./blockTypePolicy";
 
 const INLINE_CONTENT_TYPE = "inline";

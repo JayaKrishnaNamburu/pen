@@ -1,11 +1,11 @@
-# @pen/history
+# @input/pen-history
 
 Snapshot history and attribution primitives for Pen
 
 ## Install
 
 ```bash
-pnpm add @pen/history
+pnpm add @input/pen-history
 ```
 
 ## Notes

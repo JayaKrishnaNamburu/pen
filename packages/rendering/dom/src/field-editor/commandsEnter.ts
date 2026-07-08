@@ -1,4 +1,4 @@
-import type { DocumentOp, Editor } from "@pen/types";
+import type { DocumentOp, Editor } from "@input/pen-types";
 import { isInsideParentIdContainer } from "../utils/parentIdTree";
 import {
 	CONTAINER_EXIT_TYPES,

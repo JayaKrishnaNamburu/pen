@@ -1,4 +1,4 @@
-import type { DocumentOp, Editor, OpOrigin } from "@pen/types";
+import type { DocumentOp, Editor, OpOrigin } from "@input/pen-types";
 import type { PersistentTextSuggestion } from "../types";
 import {
 	readAllSuggestions,

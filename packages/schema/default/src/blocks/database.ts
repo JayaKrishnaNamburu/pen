@@ -4,8 +4,8 @@ import {
 	formatStoredMultiSelectValue,
 	formatStoredSelectValue,
 	prop,
-} from "@pen/types";
-import type { Block, DatabaseViewState, TableColumnSchema } from "@pen/types";
+} from "@input/pen-types";
+import type { Block, DatabaseViewState, TableColumnSchema } from "@input/pen-types";
 
 function escapeHTML(str: string): string {
 	return str

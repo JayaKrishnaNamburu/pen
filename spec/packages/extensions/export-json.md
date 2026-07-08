@@ -1,12 +1,12 @@
-# @pen/export-json
+# @input/pen-export-json
 
 ## Purpose
 
-`@pen/export-json` provides JSON export and import for Pen. It defines the structured interchange shape for Pen documents, including document versioning, block trees, inline content, marks, and optional metadata.
+`@input/pen-export-json` provides JSON export and import for Pen. It defines the structured interchange shape for Pen documents, including document versioning, block trees, inline content, marks, and optional metadata.
 
 ## Public Role
 
-This package is the canonical structured serialization boundary for Pen. It does not replace `@pen/core`, but it is the main package that turns editor state into portable structured data and turns structured data back into importable editor operations.
+This package is the canonical structured serialization boundary for Pen. It does not replace `@input/pen-core`, but it is the main package that turns editor state into portable structured data and turns structured data back into importable editor operations.
 
 ## Key Exports / Entrypoints
 
@@ -19,18 +19,18 @@ This package is the canonical structured serialization boundary for Pen. It does
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@pen/content-ops`, `@pen/markdown-serialization`, `@pen/types`
+- Runtime dependencies: `@input/pen-content-ops`, `@input/pen-markdown-serialization`, `@input/pen-types`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: This package serializes and prepares import/export flows, but it does not become an alternate editor runtime.
 
 ## Runtime Model
 
-`@pen/export-json` sits just outside the editor runtime and converts between editor state and a stable document envelope:
+`@input/pen-export-json` sits just outside the editor runtime and converts between editor state and a stable document envelope:
 
 ```mermaid
 flowchart TD
-  Core["@pen/core"]
-  Json["@pen/export-json"]
+  Core["@input/pen-core"]
+  Json["@input/pen-export-json"]
   Export[ExportToPenDocumentJSON]
   Parse[ParseAndValidateJSON]
   Import[NormalizeAndImport]

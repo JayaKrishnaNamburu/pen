@@ -113,4 +113,4 @@ export type {
 	PersistentSuggestion,
 	StructuralReviewItem,
 	StructuralReviewComparisonRow,
-} from "@pen/ai";
+} from "@input/pen-ai";

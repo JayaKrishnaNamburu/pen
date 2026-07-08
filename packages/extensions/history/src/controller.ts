@@ -3,7 +3,7 @@ import {
 	type Unsubscribe,
 	type VersionEntry,
 	type VersionMetadata,
-} from "@pen/types";
+} from "@input/pen-types";
 import { buildBlameRanges } from "./attribution/blameView";
 import { getCharacterAttribution } from "./attribution/characterAttribution";
 import { AutoSnapshotScheduler } from "./snapshots/autoSnapshot";

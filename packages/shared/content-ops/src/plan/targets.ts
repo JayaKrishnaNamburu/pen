@@ -3,7 +3,7 @@ import type {
   DocumentProfile,
   FlowBlockCapability,
   TableColumnSchema,
-} from "@pen/types";
+} from "@input/pen-types";
 
 export const STRUCTURED_TARGET_KINDS = [
   "block",

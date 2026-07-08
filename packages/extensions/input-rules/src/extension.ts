@@ -1,5 +1,5 @@
-import type { DocumentOp, Extension, OpOrigin } from "@pen/types";
-import { defineExtension, INPUT_RULES_ENGINE_SLOT_KEY } from "@pen/types";
+import type { DocumentOp, Extension, OpOrigin } from "@input/pen-types";
+import { defineExtension, INPUT_RULES_ENGINE_SLOT_KEY } from "@input/pen-types";
 import { InputRuleEngine } from "./engine";
 import { defaultBlockRules } from "./defaultRules";
 import { defaultInlineRules } from "./inlineRules";

@@ -4,8 +4,8 @@ import type {
 	PenStreamRequest,
 	Position,
 	ToolContext,
-} from "@pen/types";
-import { isAsyncIterable, resolveToolExecution } from "@pen/types";
+} from "@input/pen-types";
+import { isAsyncIterable, resolveToolExecution } from "@input/pen-types";
 import type { SSEServerOptions } from "./types";
 
 export function createSSEHandler(

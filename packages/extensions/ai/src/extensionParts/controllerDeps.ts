@@ -1,4 +1,4 @@
-export { getDocumentToolRuntime } from "@pen/document-ops";
+export { getDocumentToolRuntime } from "@input/pen-document-ops";
 export { runAgenticLoop } from "../agentic/loop";
 export { getBlockAdapter } from "../runtime/blockAdapters";
 export { buildPlannerPrompt, parseStructuredPlanPreview, parseStructuredPlanResult, resolveExecutionMode } from "../runtime/structuredPlanner";

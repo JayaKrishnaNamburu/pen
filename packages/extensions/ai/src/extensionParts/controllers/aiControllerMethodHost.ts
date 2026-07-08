@@ -1,4 +1,4 @@
-import type { DocumentOp, Editor, OpOrigin, TextSelection, UndoHistoryMetadataController } from "@pen/types";
+import type { DocumentOp, Editor, OpOrigin, TextSelection, UndoHistoryMetadataController } from "@input/pen-types";
 import type { SuggestedAIOperationRunner } from "../../runtime/suggestedOperationRunner";
 import type { ExternalInlineTurnRegistry } from "../../runtime/externalInlineTurnRegistry";
 import type {

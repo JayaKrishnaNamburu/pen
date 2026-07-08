@@ -1,12 +1,12 @@
-# @pen/types
+# @input/pen-types
 
 ## Purpose
 
-`@pen/types` provides the shared contracts and lightweight runtime helpers for Pen. It defines editor, schema, extension, decoration, selection, tooling, history, undo, AI, and multiplayer interfaces, plus shared slot keys and low-level helper utilities that other packages rely on.
+`@input/pen-types` provides the shared contracts and lightweight runtime helpers for Pen. It defines editor, schema, extension, decoration, selection, tooling, history, undo, AI, and multiplayer interfaces, plus shared slot keys and low-level helper utilities that other packages rely on.
 
 ## Public Role
 
-This is the contract package for the monorepo. It is the place where packages agree on shared shapes, lifecycle hooks, slot names, and protocol-level helpers without importing heavier runtime packages like `@pen/core` or any renderer.
+This is the contract package for the monorepo. It is the place where packages agree on shared shapes, lifecycle hooks, slot names, and protocol-level helpers without importing heavier runtime packages like `@input/pen-core` or any renderer.
 
 ## Key Exports / Entrypoints
 
@@ -22,16 +22,16 @@ This is the contract package for the monorepo. It is the place where packages ag
 
 - Runtime dependencies: No runtime workspace dependencies declared.
 - Peer dependencies: No peer dependencies declared.
-- Boundary: `@pen/types` should stay lightweight and avoid owning editor state, schema normalization, or renderer behavior.
+- Boundary: `@input/pen-types` should stay lightweight and avoid owning editor state, schema normalization, or renderer behavior.
 
 ## Runtime Model
 
-`@pen/types` is not a runtime authority package. It is the contract layer that the rest of the monorepo composes around:
+`@input/pen-types` is not a runtime authority package. It is the contract layer that the rest of the monorepo composes around:
 
 ```mermaid
 flowchart TD
-  Types["@pen/types"]
-  Core["@pen/core"]
+  Types["@input/pen-types"]
+  Core["@input/pen-core"]
   Shared[SharedPackages]
   Extensions[Extensions]
   Renderers[Renderers]
@@ -47,7 +47,7 @@ Important rules:
 - Slot keys and interfaces defined here are cross-package contracts and should remain stable unless a real architectural change requires otherwise.
 - Lightweight helpers are acceptable when they support contract authoring or schema declarations, but heavier behavior belongs elsewhere.
 - Other packages should depend on this package to agree on shapes, not to inherit hidden runtime behavior.
-- Structured mutation metadata belongs here because `@pen/core`, undo/history packages, AI extensions, and host workflows all need to agree on attribution and grouping semantics.
+- Structured mutation metadata belongs here because `@input/pen-core`, undo/history packages, AI extensions, and host workflows all need to agree on attribution and grouping semantics.
 - If multiple packages need to agree on AI mutation target semantics, that target contract belongs here rather than being duplicated in package-local types.
 
 ## Structured Mutation Origins
@@ -62,7 +62,7 @@ Important rules:
 
 ## Shared AI Target Contract
 
-`@pen/types` is the canonical home for shared AI operation target shapes.
+`@input/pen-types` is the canonical home for shared AI operation target shapes.
 
 - `ModelOperationSelectionTarget` represents an explicit live selection with `anchor`, `focus`, `blockId`, and `sourceText`.
 - `ModelOperationScopedRangeTarget` represents a selection-like synthetic scope such as `block`, `paragraph`, `heading`, or `document`.
@@ -85,7 +85,7 @@ Workspace package at version `0.0.0`; intended usage is current-state but still 
 
 ## Non-goals
 
-- Do not move editor state, schema normalization, or framework behavior into `@pen/types`.
+- Do not move editor state, schema normalization, or framework behavior into `@input/pen-types`.
 - Do not hide meaningful runtime logic behind what should remain a contract package.
 - Do not let convenience exports turn this package into a dumping ground for unrelated helpers.
 - Do not allow multiple competing definitions of the same protocol-level target contract across packages.

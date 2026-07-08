@@ -1,11 +1,11 @@
-# @pen/export-json
+# @input/pen-export-json
 
 Canonical JSON exporter and importer for Pen documents.
 
 ## Install
 
 ```bash
-pnpm add @pen/export-json
+pnpm add @input/pen-export-json
 ```
 
 ## What It Provides
@@ -24,7 +24,7 @@ import {
   exportEditorToText,
   exportPenDocumentToText,
   exportPlainText,
-} from "@pen/export-json";
+} from "@input/pen-export-json";
 
 const textFromEditor = exportEditorToText(editor);
 const plainText = exportPlainText(editor);

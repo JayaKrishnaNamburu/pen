@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 
 import { describe, expect, it, vi } from "vitest";
-import { createEditor as createCoreEditor } from "@pen/core";
-import type { AssetProvider } from "@pen/types";
-import { defaultPreset } from "@pen/preset-default";
+import { createEditor as createCoreEditor } from "@input/pen-core";
+import type { AssetProvider } from "@input/pen-types";
+import { defaultPreset } from "@input/pen-preset-default";
 import {
 	handleClipboardPaste,
 	handleCopy,
@@ -111,7 +111,7 @@ function seedDatabase(
 	]);
 }
 
-describe("@pen/react clipboard", () => {
+describe("@input/pen-react clipboard", () => {
 	it("keeps HTML paragraph parsing when inline marks are preserved", async () => {
 		const editor = createEditor();
 		const emptyBlockId = editor.firstBlock()!.id;

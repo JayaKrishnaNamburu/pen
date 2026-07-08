@@ -1,4 +1,4 @@
-import type { DocumentCommitEvent, DocumentOp, Editor } from "@pen/types";
+import type { DocumentCommitEvent, DocumentOp, Editor } from "@input/pen-types";
 import {
 	DEFAULT_ALLOWED_BLOCK_TYPES,
 	DEFAULT_COOLDOWN_MS,

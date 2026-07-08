@@ -10,8 +10,8 @@ import type {
 	InsertTableRowOp,
 	TableColumnSchema,
 	UpdateTableColumnsOp,
-} from "@pen/types";
-import { generateId } from "@pen/types";
+} from "@input/pen-types";
+import { generateId } from "@input/pen-types";
 import {
 	type CRDTUnknownArray,
 	type CRDTUnknownMap,

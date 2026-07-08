@@ -3,8 +3,8 @@ import {
 	type AISuggestionsAnalyzer,
 	type AISuggestionsAnalyzerResult,
 	type AISuggestionScope,
-} from "@pen/ai-suggestions";
-import type { Editor } from "@pen/types";
+} from "@input/pen-ai-suggestions";
+import type { Editor } from "@input/pen-types";
 import { PLAYGROUND_AI_ENDPOINT } from "../constants/playgroundAI";
 import {
 	ensurePlaygroundAISession,

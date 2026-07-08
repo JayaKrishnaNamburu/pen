@@ -8,7 +8,7 @@ function ContextConsumer() {
   return React.createElement("div", null, "ok");
 }
 
-describe("@pen/react editor context", () => {
+describe("@input/pen-react editor context", () => {
   it("throws with an actionable error outside Pen.Editor.Root", () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 

@@ -1,4 +1,4 @@
-# `@pen/multiplayer`
+# `@input/pen-multiplayer`
 
 Headless collaboration primitives for Pen.
 
@@ -14,7 +14,7 @@ It does **not** own transport, reconnect, auth, or Yjs wire protocol behavior.
 
 ## Design
 
-`@pen/multiplayer` is built around a small session interface from `@pen/types`:
+`@input/pen-multiplayer` is built around a small session interface from `@input/pen-types`:
 
 ```ts
 export interface MultiplayerSession {
@@ -29,7 +29,7 @@ export interface MultiplayerSession {
 The extension accepts either a ready-made session or a `sessionFactory`:
 
 ```ts
-import { multiplayerExtension } from "@pen/multiplayer";
+import { multiplayerExtension } from "@input/pen-multiplayer";
 
 multiplayerExtension({
   user: { id: "u1", name: "Ada" },
@@ -38,7 +38,7 @@ multiplayerExtension({
 ```
 
 ```ts
-import { multiplayerExtension } from "@pen/multiplayer";
+import { multiplayerExtension } from "@input/pen-multiplayer";
 
 multiplayerExtension({
   user: { id: "u1", name: "Ada" },
@@ -52,15 +52,15 @@ multiplayerExtension({
 
 If you are using Yjs, prefer:
 
-- `@pen/multiplayer` for the multiplayer extension and controller state
-- `@pen/crdt-yjs` for Yjs integration helpers
+- `@input/pen-multiplayer` for the multiplayer extension and controller state
+- `@input/pen-crdt-yjs` for Yjs integration helpers
 - an external provider such as [`y-websocket`](https://docs.yjs.dev/ecosystem/connection-provider/y-websocket) for transport
 
 That keeps Pen transport-agnostic and lets the application choose its own provider model.
 
 ## Example
 
-See `@pen/crdt-yjs` for the canonical `y-websocket` integration example using:
+See `@input/pen-crdt-yjs` for the canonical `y-websocket` integration example using:
 
 - `getYjsDoc()`
 - `getYjsAwareness()`

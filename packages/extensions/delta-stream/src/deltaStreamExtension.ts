@@ -1,7 +1,7 @@
-import type { Editor, Extension } from "@pen/types";
-import { defineExtension } from "@pen/types";
+import type { Editor, Extension } from "@input/pen-types";
+import { defineExtension } from "@input/pen-types";
 import { StreamingTargetImpl } from "./streamingTarget";
-import type { DocumentOp, GenerationZone } from "@pen/types";
+import type { DocumentOp, GenerationZone } from "@input/pen-types";
 
 interface DeferredSchemaEngine {
   markDirty(blockId: string): void;

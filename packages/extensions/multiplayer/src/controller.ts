@@ -1,4 +1,4 @@
-import type { ConnectionState, Unsubscribe } from "@pen/types";
+import type { ConnectionState, Unsubscribe } from "@input/pen-types";
 import type {
 	AuthorLedgerLike,
 	ClientIdentityMapLike,

@@ -3,8 +3,8 @@
 import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
-import { createEditor } from "@pen/core";
-import { defaultPreset } from "@pen/preset-default";
+import { createEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
 import { Pen } from "../primitives/index";
 
 (
@@ -97,7 +97,7 @@ function createThreeBlockEditor() {
 	return { editor, firstBlockId, secondBlockId, thirdBlockId };
 }
 
-describe("@pen/react region selection", () => {
+describe("@input/pen-react region selection", () => {
 	it("focuses the existing empty placeholder block on background click", async () => {
 		const editor = createEditor({
 			preset: defaultPreset({

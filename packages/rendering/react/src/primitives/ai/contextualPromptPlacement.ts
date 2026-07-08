@@ -1,6 +1,6 @@
-import type { Editor } from "@pen/types";
-import type { AIContextualPromptAnchor, AISession } from "@pen/ai";
-import { getAIController } from "@pen/ai";
+import type { Editor } from "@input/pen-types";
+import type { AIContextualPromptAnchor, AISession } from "@input/pen-ai";
+import { getAIController } from "@input/pen-ai";
 import React from "react";
 import { useSyncExternalStoreWithSelector } from "../../utils/useSyncExternalStoreWithSelector";
 import { areContextualPromptLayoutsEqual, areRectsEqual, resolveAnchorRect, resolveFallbackRect, resolveInsertedAnchorRect, resolveLiveSelectionRect } from "./contextualPromptGeometry";

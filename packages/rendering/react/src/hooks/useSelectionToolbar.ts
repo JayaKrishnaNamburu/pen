@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from "react";
-import type { Editor } from "@pen/types";
-import { getAIController } from "@pen/ai";
+import type { Editor } from "@input/pen-types";
+import { getAIController } from "@input/pen-ai";
 import { DATA_ATTRS } from "../utils/dataAttributes";
 import { queryBlockElement } from "../field-editor/selectionBridge";
 import { resolveSelectionRect } from "../selection/placement";

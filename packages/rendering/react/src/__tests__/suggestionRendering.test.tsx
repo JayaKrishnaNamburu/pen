@@ -3,20 +3,20 @@
 import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
-import { createEditor, ensureInlineCompletionController } from "@pen/core";
+import { createEditor, ensureInlineCompletionController } from "@input/pen-core";
 import {
 	aiExtension,
 	applySuggestedAIOperations,
 	getAIController,
-} from "@pen/ai";
-import { defaultPreset } from "@pen/preset-default";
+} from "@input/pen-ai";
+import { defaultPreset } from "@input/pen-preset-default";
 import { Pen } from "../primitives";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
 ).IS_REACT_ACT_ENVIRONMENT = true;
 
-describe("@pen/react suggestion rendering", () => {
+describe("@input/pen-react suggestion rendering", () => {
 	it("renders suggestion marks with DOM attributes for diff styling and controls", async () => {
 		const editor = createEditor({
 			documentProfile: "flow",

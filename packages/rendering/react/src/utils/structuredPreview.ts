@@ -2,7 +2,7 @@ import type {
 	AIStreamEvent,
 	GenerationStructuredPreviewState,
 	StructuredPreviewPatchOperation,
-} from "@pen/ai";
+} from "@input/pen-ai";
 
 export interface AIStructuredPreviewSelection {
 	preview: GenerationStructuredPreviewState | null;

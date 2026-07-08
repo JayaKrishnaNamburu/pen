@@ -1,6 +1,6 @@
-import type { Editor, Extension, KeyBinding } from "@pen/types";
-import { defineExtension, SEARCH_CONTROLLER_SLOT } from "@pen/types";
-import { createDecorationSet } from "@pen/core";
+import type { Editor, Extension, KeyBinding } from "@input/pen-types";
+import { defineExtension, SEARCH_CONTROLLER_SLOT } from "@input/pen-types";
+import { createDecorationSet } from "@input/pen-core";
 import { SearchControllerImpl } from "./controller";
 import { buildSearchDecorations } from "./decorations";
 import type { SearchController } from "./types";

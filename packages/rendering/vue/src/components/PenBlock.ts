@@ -1,5 +1,5 @@
-import { DATA_ATTRS } from "@pen/dom/utils/dataAttributes";
-import type { BlockHandle, CellSelection } from "@pen/types";
+import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
+import type { BlockHandle, CellSelection } from "@input/pen-types";
 import { defineComponent, h, type VNode, type VNodeChild } from "vue";
 import { useSelection } from "../composables/useSelection";
 import {

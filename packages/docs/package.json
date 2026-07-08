@@ -1,7 +1,7 @@
 {
-  "name": "@pen/docs",
+  "name": "@input/pen-docs",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Repository documentation site for Pen",
   "license": "LICENSE.md",
   "type": "module",

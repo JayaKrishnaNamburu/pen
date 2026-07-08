@@ -1,12 +1,12 @@
-import { collectToolExecutionOutput, type Editor, type PenStreamPart } from "@pen/types";
+import { collectToolExecutionOutput, type Editor, type PenStreamPart } from "@input/pen-types";
 import type { StreamingTargetImpl } from "./streamingTarget";
 import {
   assertToolCanMutateBlock,
   assertToolCanUseBlockType,
   getDocumentToolRuntime,
   ToolContextImpl,
-} from "@pen/document-ops";
-import type { ToolRuntimeImpl } from "@pen/document-ops";
+} from "@input/pen-document-ops";
+import type { ToolRuntimeImpl } from "@input/pen-document-ops";
 
 export async function processStream(
   stream: AsyncIterable<PenStreamPart>,

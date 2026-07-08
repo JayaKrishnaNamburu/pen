@@ -1,4 +1,4 @@
-import type { DocumentOp, Editor } from "@pen/types";
+import type { DocumentOp, Editor } from "@input/pen-types";
 import type { FieldEditorInputController, ActiveCellCoord } from "./controller";
 import type { FieldEditorTextLike } from "./crdt";
 import {

@@ -1,5 +1,5 @@
-import { createEditor } from "@pen/core";
-import { defaultPreset } from "@pen/preset-default";
+import { createEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
 	normalizePlaygroundCollaborationDocument,

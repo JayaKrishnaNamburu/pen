@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { dedupeOverlappingSuggestions, materializeSuggestionsFromCandidates } from "../matcher";
 
-describe("@pen/ai-suggestions matcher", () => {
+describe("@input/pen-ai-suggestions matcher", () => {
 	it("materializes suggestions from unique matches only", () => {
 		const suggestions = materializeSuggestionsFromCandidates({
 			blockId: "block-1",

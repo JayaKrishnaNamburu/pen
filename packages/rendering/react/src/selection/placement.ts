@@ -1,4 +1,4 @@
-import type { SelectionState } from "@pen/types";
+import type { SelectionState } from "@input/pen-types";
 import { getSelectionPointRect } from "../field-editor/selectionBridge";
 
 export function resolveSelectionRect(

@@ -3,8 +3,8 @@
 import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
-import { createEditor } from "@pen/core";
-import { defaultPreset } from "@pen/preset-default";
+import { createEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
 import type { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
 import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
 import { Pen } from "../primitives/index";
@@ -33,7 +33,7 @@ function getFieldEditor(
 	return fieldEditor;
 }
 
-describe("@pen/react native format shortcuts", () => {
+describe("@input/pen-react native format shortcuts", () => {
 	it("stops bold expansion after native formatBold toggles bold off", async () => {
 		const editor = createEditor({
 			preset: defaultPreset({

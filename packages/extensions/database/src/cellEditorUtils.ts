@@ -1,5 +1,5 @@
-import { DATA_ATTRS } from "@pen/react";
-import type { Editor } from "@pen/types";
+import { DATA_ATTRS } from "@input/pen-react";
+import type { Editor } from "@input/pen-types";
 
 export function setCellText(editor: Editor, blockId: string, row: number, col: number, text: string): void {
 	const block = editor.getBlock(blockId);

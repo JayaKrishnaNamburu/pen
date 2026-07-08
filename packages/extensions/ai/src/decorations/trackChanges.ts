@@ -1,4 +1,4 @@
-import type { Decoration, Editor } from "@pen/types";
+import type { Decoration, Editor } from "@input/pen-types";
 import { buildAIReviewPresentationDecorations } from "../review/reviewPresentation";
 
 export function buildTrackChangesDecorations(editor: Editor): Decoration[] {

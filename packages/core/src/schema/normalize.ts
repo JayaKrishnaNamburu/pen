@@ -7,8 +7,8 @@ import type {
   PenDocument,
   SchemaEngine,
   SchemaRegistry,
-} from "@pen/types";
-export { sortDeltaAttributes } from "@pen/markdown-serialization";
+} from "@input/pen-types";
+export { sortDeltaAttributes } from "@input/pen-markdown-serialization";
 import {
   getArrayProp,
   getMapProp,

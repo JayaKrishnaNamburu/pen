@@ -1,4 +1,4 @@
-import type { CRDTDocument, CRDTArray, CRDTMap, DocumentOp } from "@pen/types";
+import type { CRDTDocument, CRDTArray, CRDTMap, DocumentOp } from "@input/pen-types";
 import {
 	type CRDTUnknownArray,
 	type CRDTUnknownMap,

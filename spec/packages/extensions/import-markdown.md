@@ -1,8 +1,8 @@
-# @pen/import-markdown
+# @input/pen-import-markdown
 
 ## Purpose
 
-`@pen/import-markdown` imports Markdown into Pen. It parses markdown into pending blocks, normalizes those blocks against the active schema and document profile, and applies the resulting operations through the editor runtime.
+`@input/pen-import-markdown` imports Markdown into Pen. It parses markdown into pending blocks, normalizes those blocks against the active schema and document profile, and applies the resulting operations through the editor runtime.
 
 ## Public Role
 
@@ -16,7 +16,7 @@ This package is the main plain-text authoring ingest layer for Pen. It handles M
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@pen/content-ops`, `@pen/types`
+- Runtime dependencies: `@input/pen-content-ops`, `@input/pen-types`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: This package owns Markdown-to-Pen conversion and import orchestration, but it does not replace the core mutation pipeline.
 
@@ -30,7 +30,7 @@ flowchart TD
   Parse[ParseMarkdownToPendingBlocks]
   Normalize[NormalizeToSchemaAndProfile]
   Ops[BuildImportOps]
-  Core["@pen/core"]
+  Core["@input/pen-core"]
 
   Markdown --> Parse
   Parse --> Normalize
@@ -50,7 +50,7 @@ Important rules:
 - Spec path mirrors workspace path: `packages/extensions/import-markdown.md`
 - `parseMarkdownToBlocks()` is useful when hosts want to inspect or transform parsed blocks before insertion
 - `markdownImporter.import()` is the higher-level path for inserting or replacing content in a live editor
-- This package depends on `@pen/content-ops` because the markdown parsing primitives live there, while this package owns the integration boundary into editor import flows
+- This package depends on `@input/pen-content-ops` because the markdown parsing primitives live there, while this package owns the integration boundary into editor import flows
 
 ## Current Maturity / Intended Usage
 

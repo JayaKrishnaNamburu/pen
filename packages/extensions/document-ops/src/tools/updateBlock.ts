@@ -1,4 +1,4 @@
-import type { Editor, ToolDefinition } from "@pen/types";
+import type { Editor, ToolDefinition } from "@input/pen-types";
 import { assertToolCanMutateBlock } from "../utils/mutationPolicy";
 
 export function updateBlockTool(editor: Editor): ToolDefinition {

@@ -7,13 +7,13 @@ export default defineConfig({
   outDir: "dist",
   clean: true,
   external: [
-    "@pen/content-ops",
-    "@pen/types",
-    "@pen/crdt-yjs",
-    "@pen/undo",
-    "@pen/document-ops",
-    "@pen/delta-stream",
-    "@pen/markdown-serialization",
+    "@input/pen-content-ops",
+    "@input/pen-types",
+    "@input/pen-crdt-yjs",
+    "@input/pen-undo",
+    "@input/pen-document-ops",
+    "@input/pen-delta-stream",
+    "@input/pen-markdown-serialization",
   ],
   outExtension({ format }) {
     return { js: format === "esm" ? ".mjs" : ".cjs" };

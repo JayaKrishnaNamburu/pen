@@ -2,14 +2,14 @@ import {
 	createDecorationSet,
 	ensureInlineCompletionController,
 	getInlineCompletionController as getInlineCompletionControllerFromCore,
-} from "@pen/core";
+} from "@input/pen-core";
 import type {
 	Editor,
 	Extension,
 	KeyBinding,
 	ModelAdapter,
 	UndoHistoryMetadataController,
-} from "@pen/types";
+} from "@input/pen-types";
 import {
 	AI_AUTOCOMPLETE_CONTROLLER_SLOT,
 	AI_CONTROLLER_SLOT as CORE_AI_CONTROLLER_SLOT,
@@ -19,7 +19,7 @@ import {
 	defineExtension,
 	getOpOriginType,
 	UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY,
-} from "@pen/types";
+} from "@input/pen-types";
 import { defaultAICommands } from "./commands/defaultCommands";
 import { AICommandRegistry } from "./commands/registry";
 import { AIInlineHistoryService, AIReviewService } from "./controllers";

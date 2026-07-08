@@ -10,7 +10,7 @@ alwaysApply: true
 - Prefer:
   - `./types`
   - `../utils/normalize`
-  - `@pen/core`
+  - `@input/pen-core`
 - Avoid:
   - `./types.js`
   - `../utils/normalize.ts`

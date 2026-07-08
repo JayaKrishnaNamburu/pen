@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useRef, useState } from "react";
-import type { Editor, TextSelection } from "@pen/types";
+import type { Editor, TextSelection } from "@input/pen-types";
 import { EditorContext } from "../../context/editorContext";
 import { useFieldEditorContext } from "../../context/fieldEditorContext";
 import { getSelectionPointRect } from "../../field-editor/selectionBridge";

@@ -1,5 +1,5 @@
-import type { InlineSchema, PropSchema } from "@pen/types";
-import { prop, resolveSchema } from "@pen/types";
+import type { InlineSchema, PropSchema } from "@input/pen-types";
+import { prop, resolveSchema } from "@input/pen-types";
 
 function resolveProps(
   props: Record<string, unknown>,

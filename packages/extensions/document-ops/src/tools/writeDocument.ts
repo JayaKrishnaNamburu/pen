@@ -1,9 +1,9 @@
-import type { Editor, Position, ToolDefinition } from "@pen/types";
+import type { Editor, Position, ToolDefinition } from "@input/pen-types";
 import type {
 	DocumentWriteBlockInput,
 	DocumentWriteFormat,
-} from "@pen/content-ops";
-import { buildDocumentWriteOps } from "@pen/content-ops";
+} from "@input/pen-content-ops";
+import { buildDocumentWriteOps } from "@input/pen-content-ops";
 import { POSITION_SCHEMA } from "../constants/toolSchemas";
 import { assertToolCanUseBlockType } from "../utils/blockTypePolicy";
 

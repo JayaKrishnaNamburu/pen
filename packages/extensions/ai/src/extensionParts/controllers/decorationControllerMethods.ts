@@ -1,4 +1,4 @@
-import type { Decoration } from "@pen/types";
+import type { Decoration } from "@input/pen-types";
 import { buildGenerationZoneDecorations } from "../../decorations/generationZone";
 import { buildAIReviewPresentationDecorations } from "../../review/reviewPresentation";
 import type {

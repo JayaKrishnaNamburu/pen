@@ -1,6 +1,6 @@
 {
-  "name": "@pen/export-xml",
-  "version": "0.0.0",
+  "name": "@input/pen-export-xml",
+  "version": "0.0.1",
   "description": "XML exporter and importer for Pen",
   "license": "SEE LICENSE IN LICENSE.md",
   "homepage": "https://github.com/niceperson/pen#readme",
@@ -14,7 +14,8 @@
   },
   "type": "module",
   "publishConfig": {
-    "access": "public"
+    "access": "restricted",
+    "registry": "https://registry.npmjs.org/"
   },
   "exports": {
     ".": {
@@ -44,14 +45,14 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@pen/export-json": "workspace:*",
-    "@pen/types": "workspace:*",
+    "@input/pen-export-json": "workspace:*",
+    "@input/pen-types": "workspace:*",
     "domhandler": "^5.0.0",
     "htmlparser2": "^9.0.0"
   },
   "devDependencies": {
-    "@pen/core": "workspace:*",
-    "@pen/schema-default": "workspace:*",
+    "@input/pen-core": "workspace:*",
+    "@input/pen-schema-default": "workspace:*",
     "tsup": "^8.4.0",
     "typescript": "^5.7.3",
     "vitest": "^3.0.7"

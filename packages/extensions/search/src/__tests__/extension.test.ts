@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { createEditor } from "@pen/core";
+import { createEditor } from "@input/pen-core";
 import { getSearchController, searchExtension } from "../index";
 
-describe("@pen/search extension", () => {
+describe("@input/pen-search extension", () => {
 	it("registers a controller and finds matches across blocks", () => {
 		const editor = createEditor({
 			extensions: [searchExtension()],

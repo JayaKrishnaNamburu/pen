@@ -1,4 +1,4 @@
-# @pen/preset-default
+# @input/pen-preset-default
 
 ## Purpose
 
@@ -16,7 +16,7 @@ Package the standard runtime stack for most adopters so they can start from a co
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@pen/delta-stream`, `@pen/document-ops`, `@pen/shortcuts`, `@pen/types`, `@pen/undo`
+- Runtime dependencies: `@input/pen-delta-stream`, `@input/pen-document-ops`, `@input/pen-shortcuts`, `@input/pen-types`, `@input/pen-undo`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: Presets compose existing runtime packages rather than becoming new architecture layers.
 

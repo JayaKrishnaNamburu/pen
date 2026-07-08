@@ -1,4 +1,4 @@
-import type { Block } from "@pen/types";
+import type { Block } from "@input/pen-types";
 
 export type Delta = {
 	insert: string;

@@ -4,7 +4,7 @@ import type {
 	MultiplayerSession,
 	SelectionState,
 	Unsubscribe,
-} from "@pen/types";
+} from "@input/pen-types";
 import { MultiplayerControllerImpl } from "./controller";
 import { AuthorLedger } from "./presence/authorLedger";
 import { ClientIdentityMap } from "./presence/identityMap";

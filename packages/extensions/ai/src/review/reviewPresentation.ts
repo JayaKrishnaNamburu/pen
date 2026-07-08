@@ -1,4 +1,4 @@
-import type { Decoration, Editor } from "@pen/types";
+import type { Decoration, Editor } from "@input/pen-types";
 import type {
 	AIExtensionConfig,
 	AISession,

@@ -1,11 +1,11 @@
-# `@pen/transport-direct`
+# `@input/pen-transport-direct`
 
 In-process transport for Pen.
 
 ## Install
 
 ```bash
-pnpm add @pen/core @pen/transport-direct
+pnpm add @input/pen-core @input/pen-transport-direct
 ```
 
 ## What It Provides
@@ -16,7 +16,7 @@ pnpm add @pen/core @pen/transport-direct
 ## Usage
 
 ```ts
-import { directTransport } from "@pen/transport-direct";
+import { directTransport } from "@input/pen-transport-direct";
 
 const transport = directTransport({
   toolRuntime,
@@ -30,4 +30,4 @@ const transport = directTransport({
 
 - This transport requires a Pen `toolRuntime`.
 - It is useful for local agent loops, embedded runtime execution, and tests where the host app and tool runtime live in the same process.
-- Use `@pen/transport-sse` or another external transport when the tool runtime lives outside the current process.
+- Use `@input/pen-transport-sse` or another external transport when the tool runtime lives outside the current process.

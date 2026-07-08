@@ -5,7 +5,7 @@ import { documentOpsExtension } from "../documentOpsExtension";
 import { ToolRuntimeImpl } from "../toolServer";
 import { getDocumentToolRuntime } from "../utils/toolServer";
 
-describe("@pen/document-ops ToolRuntimeImpl", () => {
+describe("@input/pen-document-ops ToolRuntimeImpl", () => {
 	it("throws for unknown tools", async () => {
 		const runtime = new ToolRuntimeImpl();
 

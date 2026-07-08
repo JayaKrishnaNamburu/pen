@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ToolDefinition } from "@pen/types";
+import type { ToolDefinition } from "@input/pen-types";
 import {
 	AI_TOOL_RUNTIME_SLOT,
 	AIToolContextImpl,
@@ -10,7 +10,7 @@ import {
 	listAITools,
 } from "../index";
 
-describe("@pen/ai-tools", () => {
+describe("@input/pen-ai-tools", () => {
 	it("reads the canonical tool runtime slot from the editor", () => {
 		const runtime = new AIToolRuntimeImpl();
 		const editor = {

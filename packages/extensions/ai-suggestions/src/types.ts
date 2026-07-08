@@ -1,4 +1,4 @@
-import type { Editor, ModelAdapter, Unsubscribe } from "@pen/types";
+import type { Editor, ModelAdapter, Unsubscribe } from "@input/pen-types";
 
 export type AISuggestionKind =
 	| "spelling"
@@ -141,7 +141,7 @@ export interface AISuggestionsController {
 	dismissAllInBlock(blockId: string): number;
 	clearInvalidSuggestions(): void;
 	handleDocumentCommit(
-		event: import("@pen/types").DocumentCommitEvent,
+		event: import("@input/pen-types").DocumentCommitEvent,
 	): void;
 	destroy(): void;
 }

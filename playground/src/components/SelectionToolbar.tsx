@@ -1,5 +1,5 @@
 import "./SelectionToolbar.css";
-import { Pen } from "@pen/react";
+import { Pen } from "@input/pen-react";
 import {
 	IconBold,
 	IconCode,

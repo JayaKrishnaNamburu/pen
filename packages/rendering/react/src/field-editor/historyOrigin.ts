@@ -1,1 +1,1 @@
-export * from "@pen/dom/field-editor/historyOrigin";
+export * from "@input/pen-dom/field-editor/historyOrigin";

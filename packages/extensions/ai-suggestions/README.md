@@ -1,24 +1,24 @@
-# @pen/ai-suggestions
+# @input/pen-ai-suggestions
 
 Proactive AI writing suggestions for Pen.
 
 ## Install
 
 ```bash
-pnpm add @pen/ai-suggestions
+pnpm add @input/pen-ai-suggestions
 ```
 
 ## What It Does
 
-`@pen/ai-suggestions` adds proactive writing suggestions on top of Pen. It watches user-originated edits, waits for a bounded debounce/stability window, asks a host-provided analyzer for structured suggestion candidates, and stages those candidates as inline suggestion marks that can be applied or dismissed.
+`@input/pen-ai-suggestions` adds proactive writing suggestions on top of Pen. It watches user-originated edits, waits for a bounded debounce/stability window, asks a host-provided analyzer for structured suggestion candidates, and stages those candidates as inline suggestion marks that can be applied or dismissed.
 
 The package is headless. It owns scheduling, scope building, matching, grouping, caching, and safe apply behavior. Renderer packages own presentation.
 
 ## Basic Setup
 
 ```ts
-import { createEditor } from "@pen/core";
-import { aiSuggestionsExtension } from "@pen/ai-suggestions";
+import { createEditor } from "@input/pen-core";
+import { aiSuggestionsExtension } from "@input/pen-ai-suggestions";
 
 const editor = createEditor({
   extensions: [
@@ -105,7 +105,7 @@ Useful options:
 Use the controller to inspect state or drive host behavior:
 
 ```ts
-import { getAISuggestionsController } from "@pen/ai-suggestions";
+import { getAISuggestionsController } from "@input/pen-ai-suggestions";
 
 const controller = getAISuggestionsController(editor);
 
@@ -126,7 +126,7 @@ The controller exposes:
 
 ## React UI
 
-`@pen/react` provides the current UI surface for proactive suggestions:
+`@input/pen-react` provides the current UI surface for proactive suggestions:
 
 ```tsx
 <Pen.Editor.Root editor={editor}>

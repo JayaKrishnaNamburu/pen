@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { createEditor } from "@pen/core";
-import { createDefaultSchema } from "@pen/schema-default";
+import { createEditor } from "@input/pen-core";
+import { createDefaultSchema } from "@input/pen-schema-default";
 import { markdownExporter } from "../exporter";
 
 const noDefaultExtensionsPreset = {

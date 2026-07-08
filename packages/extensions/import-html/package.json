@@ -1,6 +1,6 @@
 {
-  "name": "@pen/import-html",
-  "version": "0.0.0",
+  "name": "@input/pen-import-html",
+  "version": "0.0.1",
   "description": "HTML importer with sanitization for Pen",
   "license": "SEE LICENSE IN LICENSE.md",
   "homepage": "https://github.com/niceperson/pen#readme",
@@ -14,7 +14,8 @@
   },
   "type": "module",
   "publishConfig": {
-    "access": "public"
+    "access": "restricted",
+    "registry": "https://registry.npmjs.org/"
   },
   "exports": {
     ".": {
@@ -44,15 +45,15 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@pen/core": "workspace:*",
-    "@pen/types": "workspace:*",
+    "@input/pen-core": "workspace:*",
+    "@input/pen-types": "workspace:*",
     "htmlparser2": "^9.0.0",
     "domhandler": "^5.0.0",
     "isomorphic-dompurify": "^2.0.0"
   },
   "devDependencies": {
-    "@pen/export-html": "workspace:*",
-    "@pen/schema-default": "workspace:*",
+    "@input/pen-export-html": "workspace:*",
+    "@input/pen-schema-default": "workspace:*",
     "tsup": "^8.4.0",
     "typescript": "^5.7.3",
     "vitest": "^3.0.7"

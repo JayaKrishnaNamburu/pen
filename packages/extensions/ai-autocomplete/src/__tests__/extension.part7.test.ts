@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
 	createEditor,
 	getInlineCompletionController,
-} from "@pen/core";
-import { FIELD_EDITOR_SLOT_KEY, defineExtension } from "@pen/types";
+} from "@input/pen-core";
+import { FIELD_EDITOR_SLOT_KEY, defineExtension } from "@input/pen-types";
 import {
 	autocompleteExtension,
 	createAutocompleteProvider,
@@ -24,7 +24,7 @@ async function waitForCondition(
 	throw new Error("Condition was not met in time.");
 }
 
-describe("@pen/ai-autocomplete", () => {
+describe("@input/pen-ai-autocomplete", () => {
 	it("promotes long depth-two prose continuations into a new paragraph earlier", async () => {
 		let activeEditor: ReturnType<typeof createEditor> | null = null;
 		let callCount = 0;

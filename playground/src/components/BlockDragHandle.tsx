@@ -1,4 +1,4 @@
-import { useBlockDragHandle, type BlockControlsProps } from "@pen/react";
+import { useBlockDragHandle, type BlockControlsProps } from "@input/pen-react";
 import { IconDragHandle } from "./icons";
 import "./BlockDragHandle.css";
 

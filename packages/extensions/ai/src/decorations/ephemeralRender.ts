@@ -1,4 +1,4 @@
-import type { Decoration } from "@pen/types";
+import type { Decoration } from "@input/pen-types";
 import { EphemeralSuggestionManager } from "../suggestions/ephemeral";
 
 export function buildEphemeralDecorations(

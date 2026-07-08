@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react";
-import type { Editor } from "@pen/types";
+import type { Editor } from "@input/pen-types";
 import { isDevelopmentEnvironment } from "../utils/environment";
 
 export interface ToolbarState {

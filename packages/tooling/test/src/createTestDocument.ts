@@ -1,6 +1,6 @@
 import * as Y from "yjs";
-import { yjsAdapter, initBlockMap, wrapYjsDocument } from "@pen/crdt-yjs";
-import type { PenDocument, CRDTDocument } from "@pen/types";
+import { yjsAdapter, initBlockMap, wrapYjsDocument } from "@input/pen-crdt-yjs";
+import type { PenDocument, CRDTDocument } from "@input/pen-types";
 import { generateTestId } from "./helpers";
 import type { TestBlock } from "./types";
 

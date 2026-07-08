@@ -1,10 +1,10 @@
-import type { Editor } from "@pen/types";
+import type { Editor } from "@input/pen-types";
 import {
   DOCUMENT_OPS_TOOL_RUNTIME_SLOT,
   getDocumentToolRuntime,
   ToolContextImpl,
   ToolRuntimeImpl,
-} from "@pen/document-ops";
+} from "@input/pen-document-ops";
 import type { AIToolRuntime } from "./types";
 
 export const AI_TOOL_RUNTIME_SLOT = DOCUMENT_OPS_TOOL_RUNTIME_SLOT;

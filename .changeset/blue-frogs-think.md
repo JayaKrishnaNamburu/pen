@@ -1,11 +1,11 @@
 ---
-"@pen/content-ops": patch
-"@pen/core": patch
-"@pen/export-json": patch
-"@pen/export-xml": patch
-"@pen/react": patch
-"@pen/search": patch
-"@pen/types": patch
+"@input/pen-content-ops": patch
+"@input/pen-core": patch
+"@input/pen-export-json": patch
+"@input/pen-export-xml": patch
+"@input/pen-react": patch
+"@input/pen-search": patch
+"@input/pen-types": patch
 ---
 
 Improve document fidelity and in-editor search for richer content.

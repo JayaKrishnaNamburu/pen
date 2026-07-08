@@ -1,4 +1,4 @@
-# @pen/shortcuts
+# @input/pen-shortcuts
 
 ## Purpose
 
@@ -15,7 +15,7 @@ Add optional runtime behavior on top of the editor core without changing the can
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@pen/types`
+- Runtime dependencies: `@input/pen-types`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: Extensions compose through the core editor and slots/events rather than side channels.
 

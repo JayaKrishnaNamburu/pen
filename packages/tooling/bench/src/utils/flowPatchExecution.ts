@@ -1,4 +1,4 @@
-import type { Editor } from "@pen/types";
+import type { Editor } from "@input/pen-types";
 
 export interface BenchFlowPatchAlignmentMetrics {
 	preservedBlockCount: number;

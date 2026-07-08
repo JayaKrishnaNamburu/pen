@@ -1,11 +1,11 @@
-# @pen/database
+# @input/pen-database
 
 Database extension for Pen — typed columns, views, sorting, and filtering
 
 ## Install
 
 ```bash
-pnpm add @pen/database
+pnpm add @input/pen-database
 ```
 
 ## Notes

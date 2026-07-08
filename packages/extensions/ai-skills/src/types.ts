@@ -1,4 +1,4 @@
-import type { AIToolDescriptor } from "@pen/ai-tools";
+import type { AIToolDescriptor } from "@input/pen-ai-tools";
 
 export interface AISkillScript {
   path: string;

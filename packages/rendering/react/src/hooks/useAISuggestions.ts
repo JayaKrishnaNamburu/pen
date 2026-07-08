@@ -1,10 +1,10 @@
 import { useCallback, useRef, useSyncExternalStore } from "react";
-import type { Editor } from "@pen/types";
+import type { Editor } from "@input/pen-types";
 import {
 	getAISuggestionsController,
 	type AISuggestion,
 	type AISuggestionsState,
-} from "@pen/ai-suggestions";
+} from "@input/pen-ai-suggestions";
 
 const EMPTY_STATE: AISuggestionsState = {
 	enabled: true,

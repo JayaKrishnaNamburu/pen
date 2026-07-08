@@ -3,9 +3,9 @@
 import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
-import { createEditor } from "@pen/core";
-import { defaultPreset } from "@pen/preset-default";
-import { searchExtension } from "@pen/search";
+import { createEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
+import { searchExtension } from "@input/pen-search";
 import { Pen } from "../primitives/index";
 import type { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
 import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
@@ -30,7 +30,7 @@ function getFieldEditor(editor: ReturnType<typeof createEditor>): FieldEditorImp
 	return fieldEditor;
 }
 
-describe("@pen/react search primitives", () => {
+describe("@input/pen-react search primitives", () => {
 	it("updates search state from the input and renders results", async () => {
 		const editor = createEditor({
 			extensions: [searchExtension()],

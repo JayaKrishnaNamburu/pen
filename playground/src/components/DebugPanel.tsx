@@ -1,6 +1,6 @@
 import "./DebugPanel.css";
-import type { Editor } from "@pen/types";
-import { useAIDebugLog, useAISuggestionsMetrics } from "@pen/react";
+import type { Editor } from "@input/pen-types";
+import { useAIDebugLog, useAISuggestionsMetrics } from "@input/pen-react";
 import { useEffect, useState } from "react";
 import { PLAYGROUND_AI_SESSION_ID_PREVIEW_LENGTH } from "../constants/playgroundAI";
 import { PLAYGROUND_AI_SESSION_DIAGNOSTICS_ENDPOINT } from "../constants/playgroundAI";

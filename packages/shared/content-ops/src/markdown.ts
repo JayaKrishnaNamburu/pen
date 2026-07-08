@@ -1,6 +1,6 @@
 import type {
   Editor,
-} from "@pen/types";
+} from "@input/pen-types";
 import { fromMarkdown } from "mdast-util-from-markdown";
 import { gfmFromMarkdown } from "mdast-util-gfm";
 import { gfm } from "micromark-extension-gfm";

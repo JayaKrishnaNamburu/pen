@@ -1,4 +1,4 @@
-# @pen/core
+# @input/pen-core
 
 Headless editor runtime for Pen.
 
@@ -7,7 +7,7 @@ This package is published publicly, but the Pen SDK is source-available rather t
 ## Install
 
 ```bash
-pnpm add @pen/core
+pnpm add @input/pen-core
 ```
 
 ## What It Provides
@@ -20,8 +20,8 @@ pnpm add @pen/core
 ## Headless Usage
 
 ```ts
-import { createHeadlessEditor } from "@pen/core";
-import { yjsAdapter, wrapYjsDocument } from "@pen/crdt-yjs";
+import { createHeadlessEditor } from "@input/pen-core";
+import { yjsAdapter, wrapYjsDocument } from "@input/pen-crdt-yjs";
 
 const adapter = yjsAdapter();
 const editor = createHeadlessEditor({
@@ -34,9 +34,9 @@ Use this shape for migrations, AI workers, export workers, and tests that should
 
 ## Typical Pairing
 
-Most apps use `@pen/core` with:
+Most apps use `@input/pen-core` with:
 
-- `@pen/preset-default`
-- `@pen/react` or `@pen/vue`
+- `@input/pen-preset-default`
+- `@input/pen-react` or `@input/pen-vue`
 
 See the repository root README for the broader package map and licensing details.

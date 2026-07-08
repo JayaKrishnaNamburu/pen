@@ -1,5 +1,5 @@
-import type { PendingBlock } from "@pen/core";
-import type { AssetProvider, BlockHandle, Importer } from "@pen/types";
+import type { PendingBlock } from "@input/pen-core";
+import type { AssetProvider, BlockHandle, Importer } from "@input/pen-types";
 import type { VNode, VNodeChild } from "vue";
 
 export interface PasteImporters {

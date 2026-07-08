@@ -12,7 +12,7 @@ beforeEach(() => {
   resetTestIdCounter();
 });
 
-describe("@pen/test harness", () => {
+describe("@input/pen-test harness", () => {
   // ── AC 9: createTestDocument ────────────────────────────
   describe("AC 9 — createTestDocument", () => {
     it("produces a valid CRDT document with one heading block", () => {

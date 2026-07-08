@@ -3,7 +3,7 @@ import type {
 	InlineDelta,
 	InlineNodeDeltaInsert,
 	TableColumnSchema,
-} from "@pen/types";
+} from "@input/pen-types";
 import {
 	crdtMapToPlainRecord,
 	crdtValueToPlain,

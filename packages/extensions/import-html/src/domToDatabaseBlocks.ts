@@ -1,8 +1,8 @@
 import type { DOMNode } from "./domAdapter";
 import { parseInlineContent } from "./inlineParser";
-import type { DatabaseViewState, TableColumnSchema } from "@pen/types";
-import type { PendingBlock } from "@pen/core";
-import { normalizeStoredSelectValue } from "@pen/types";
+import type { DatabaseViewState, TableColumnSchema } from "@input/pen-types";
+import type { PendingBlock } from "@input/pen-core";
+import { normalizeStoredSelectValue } from "@input/pen-types";
 
 export function parseTypedDatabaseTable(node: DOMNode): PendingBlock | null {
   const headerCells = collectDatabaseHeaderCells(node);

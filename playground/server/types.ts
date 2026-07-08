@@ -1,4 +1,4 @@
-import type { Editor, ModelRequestedOperation } from "@pen/types";
+import type { Editor, ModelRequestedOperation } from "@input/pen-types";
 
 export interface AIRequestBody {
 	prompt?: unknown;

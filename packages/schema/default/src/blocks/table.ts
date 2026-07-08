@@ -1,5 +1,5 @@
-import { defineBlock, prop } from "@pen/types";
-import type { Block } from "@pen/types";
+import { defineBlock, prop } from "@input/pen-types";
+import type { Block } from "@input/pen-types";
 
 function escapeMarkdownPipe(text: string): string {
   return text.replace(/\|/g, "\\|");

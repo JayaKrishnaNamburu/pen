@@ -40,7 +40,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build docs site
-        run: pnpm --filter @pen/docs build
+        run: pnpm --filter @input/pen-docs build
         env:
           PEN_DOCS_BASE: ${{ steps.pages.outputs.base_path }}
 

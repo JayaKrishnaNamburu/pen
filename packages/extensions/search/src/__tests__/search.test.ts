@@ -7,7 +7,7 @@ import {
 	getPreviousActiveIndex,
 } from "../index";
 
-describe("@pen/search helpers", () => {
+describe("@input/pen-search helpers", () => {
 	it("falls back to literal matching for invalid regex input", () => {
 		const regex = buildSearchRegex("(", {
 			...DEFAULT_SEARCH_OPTIONS,

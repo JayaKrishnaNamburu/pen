@@ -3,8 +3,8 @@
 import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
-import { createEditor as createCoreEditor } from "@pen/core";
-import { defaultPreset } from "@pen/preset-default";
+import { createEditor as createCoreEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
 import type { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
 import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
 import { Pen } from "../primitives/index";
@@ -74,7 +74,7 @@ function getFieldEditor(editor: ReturnType<typeof createEditor>): FieldEditorImp
 	return fieldEditor;
 }
 
-describe("@pen/react text entry surface semantics", () => {
+describe("@input/pen-react text entry surface semantics", () => {
 	it("marks only the active inline edit surface as a multiline textbox", async () => {
 		const editor = createEditor();
 		const firstBlockId = editor.firstBlock()!.id;

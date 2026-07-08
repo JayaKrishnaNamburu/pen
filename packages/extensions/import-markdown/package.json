@@ -1,6 +1,6 @@
 {
-  "name": "@pen/import-markdown",
-  "version": "0.0.0",
+  "name": "@input/pen-import-markdown",
+  "version": "0.0.1",
   "description": "Markdown importer for Pen",
   "license": "SEE LICENSE IN LICENSE.md",
   "homepage": "https://github.com/niceperson/pen#readme",
@@ -14,7 +14,8 @@
   },
   "type": "module",
   "publishConfig": {
-    "access": "public"
+    "access": "restricted",
+    "registry": "https://registry.npmjs.org/"
   },
   "exports": {
     ".": {
@@ -44,13 +45,13 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@pen/content-ops": "workspace:*",
-    "@pen/types": "workspace:*"
+    "@input/pen-content-ops": "workspace:*",
+    "@input/pen-types": "workspace:*"
   },
   "devDependencies": {
-    "@pen/core": "workspace:*",
-    "@pen/export-markdown": "workspace:*",
-    "@pen/schema-default": "workspace:*",
+    "@input/pen-core": "workspace:*",
+    "@input/pen-export-markdown": "workspace:*",
+    "@input/pen-schema-default": "workspace:*",
     "tsup": "^8.4.0",
     "typescript": "^5.7.3",
     "vitest": "^3.0.7"

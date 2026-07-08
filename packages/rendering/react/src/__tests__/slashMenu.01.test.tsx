@@ -3,8 +3,8 @@
 import React, { act } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { createRoot } from "react-dom/client";
-import { createEditor } from "@pen/core";
-import { defaultPreset } from "@pen/preset-default";
+import { createEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
 import { Pen } from "../primitives/index";
 import { useSlashMenu } from "../hooks/useSlashMenu";
 import { getAttachedFieldEditor } from "../utils/fieldEditor";
@@ -44,7 +44,7 @@ function dispatchKey(key: string, target: EventTarget = document) {
 	);
 }
 
-describe("@pen/react slash menu", () => {
+describe("@input/pen-react slash menu", () => {
 	it("handles navigation keys without transform-based placement or downstream propagation", async () => {
 		const editor = createSlashMenuEditor();
 		const blockId = editor.firstBlock()!.id;

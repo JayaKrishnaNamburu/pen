@@ -3,7 +3,7 @@ import {
 	type Editor,
 	type InteractionModel,
 	usesInlineTextSelection,
-} from "@pen/types";
+} from "@input/pen-types";
 import type { FieldEditorSession } from "../field-editor/controller";
 import {
 	handleHistoryShortcut,

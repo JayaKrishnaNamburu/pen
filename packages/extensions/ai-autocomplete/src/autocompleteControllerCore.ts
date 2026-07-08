@@ -3,8 +3,8 @@ import type {
 	FieldEditor,
 	InlineCompletionController,
 	ModelAdapter,
-} from "@pen/types";
-import { getOpOriginType } from "@pen/types";
+} from "@input/pen-types";
+import { getOpOriginType } from "@input/pen-types";
 import {
 	DEFAULT_DEBOUNCE_MS,
 	DEFAULT_ACCEPTANCE_STRATEGY,

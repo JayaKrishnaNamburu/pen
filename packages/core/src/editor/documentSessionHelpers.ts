@@ -6,13 +6,13 @@ import type {
 	DocumentScopeInfo,
 	DocumentScopeReplacementEvent,
 	Unsubscribe,
-} from "@pen/types";
+} from "@input/pen-types";
 import {
 	SUBDOCUMENT,
 	isYjsCRDTDocument,
 	isYjsDoc,
 	type YjsDoc,
-} from "@pen/crdt-yjs";
+} from "@input/pen-crdt-yjs";
 
 export type ScopeListener = (event: CRDTEvent) => void;
 export type ScopeReplacementListener = (

@@ -1,6 +1,6 @@
 import React, { useSyncExternalStore } from "react";
-import { getNumberedListItemValue as getOrderedListValue } from "@pen/core";
-import type { BlockHandle, InlineCompletionPreviewBlock } from "@pen/types";
+import { getNumberedListItemValue as getOrderedListValue } from "@input/pen-core";
+import type { BlockHandle, InlineCompletionPreviewBlock } from "@input/pen-types";
 import { useEditorContext } from "../../context/editorContext";
 import { DATA_ATTRS } from "../../utils/dataAttributes";
 

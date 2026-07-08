@@ -11,8 +11,8 @@ import type {
 	FilterCondition,
 	FilterOperator,
 	DatabaseViewState,
-} from "@pen/types";
-import { DEFAULT_DATABASE_COLUMN_WIDTH } from "@pen/types";
+} from "@input/pen-types";
+import { DEFAULT_DATABASE_COLUMN_WIDTH } from "@input/pen-types";
 
 export type {
 	ColumnType,

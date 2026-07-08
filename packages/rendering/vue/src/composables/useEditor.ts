@@ -1,5 +1,5 @@
-import { createEditor } from "@pen/core";
-import type { CreateEditorOptions, Editor } from "@pen/types";
+import { createEditor } from "@input/pen-core";
+import type { CreateEditorOptions, Editor } from "@input/pen-types";
 import { onScopeDispose } from "vue";
 
 export function useEditor(optionsOrEditor?: CreateEditorOptions | Editor): Editor {

@@ -1,4 +1,4 @@
-import type { BlockSchema, Editor, FieldEditorFocusOptions } from "@pen/types";
+import type { BlockSchema, Editor, FieldEditorFocusOptions } from "@input/pen-types";
 import type { FieldEditorStore } from "./store";
 import type { EditorSelectAllBehavior } from "../constants/selectAll";
 import type {

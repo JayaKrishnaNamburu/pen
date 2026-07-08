@@ -1,4 +1,4 @@
-import type { Editor, InlineDecoration, OpOrigin } from "@pen/types";
+import type { Editor, InlineDecoration, OpOrigin } from "@input/pen-types";
 import { fullReconcileToDOM } from "./reconciler";
 import type { FieldEditorTextLike } from "./crdt";
 

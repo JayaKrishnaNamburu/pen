@@ -1,8 +1,8 @@
-import { SchemaRegistryImpl } from "@pen/types";
+import { SchemaRegistryImpl } from "@input/pen-types";
 import {
   defaultBlocks,
   defaultInlines,
-} from "@pen/schema-default";
+} from "@input/pen-schema-default";
 
 export function createBuiltInDefaultSchema(): SchemaRegistryImpl {
   return new SchemaRegistryImpl({

@@ -23,8 +23,8 @@ import type {
 	SetSelectionOp,
 	UpdateTableColumnsOp,
 	CRDTArray,
-} from "@pen/types";
-import { generateId, getOpOriginType } from "@pen/types";
+} from "@input/pen-types";
+import { generateId, getOpOriginType } from "@input/pen-types";
 import { resolveRuntimeContentType } from "../schema/contentType";
 import {
 	type CRDTUnknownArray,
@@ -275,7 +275,7 @@ switch (op.type) {
 }
 }
 
-export function resolvePosition(pipeline: ApplyPipeline, position: import("@pen/types").Position): number {
+export function resolvePosition(pipeline: ApplyPipeline, position: import("@input/pen-types").Position): number {
 	const self = pipeline as ApplyPipelineRuntime;
 const blockOrder = self._doc.blockOrder;
 

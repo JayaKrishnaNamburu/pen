@@ -9,9 +9,9 @@ export default defineConfig({
   external: [
     "react",
     "react-dom",
-    "@pen/core",
-    "@pen/types",
-    "@pen/react",
+    "@input/pen-core",
+    "@input/pen-types",
+    "@input/pen-react",
   ],
   outExtension({ format }) {
     return { js: format === "esm" ? ".mjs" : ".cjs" };

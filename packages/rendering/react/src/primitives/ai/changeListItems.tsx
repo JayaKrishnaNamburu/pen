@@ -1,6 +1,6 @@
 import React from "react";
-import type { Editor } from "@pen/types";
-import type { PersistentSuggestion, StructuralReviewItem } from "@pen/ai";
+import type { Editor } from "@input/pen-types";
+import type { PersistentSuggestion, StructuralReviewItem } from "@input/pen-ai";
 import {
 	createReviewGroupFocusTargetId,
 	createReviewItemFocusTargetId,

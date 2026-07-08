@@ -4,7 +4,7 @@ import {
 	type UndoHistoryMetadataController,
 	MUTATION_GROUP_METADATA_KEY,
 	UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY,
-} from "@pen/types";
+} from "@input/pen-types";
 import { createEditor } from "../index";
 
 function getHistoryMetadataController(editor: ReturnType<typeof createEditor>) {
@@ -13,7 +13,7 @@ function getHistoryMetadataController(editor: ReturnType<typeof createEditor>) {
 	);
 }
 
-describe("@pen/core undo history metadata", () => {
+describe("@input/pen-core undo history metadata", () => {
 	it("buffers metadata for the next history entry after capture stops", () => {
 		const editor = createEditor();
 		const controller = getHistoryMetadataController(editor);

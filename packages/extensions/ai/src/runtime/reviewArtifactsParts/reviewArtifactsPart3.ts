@@ -1,6 +1,6 @@
 // @ts-nocheck
-import type { Editor } from "@pen/types";
-import type { DatabaseViewState, TableColumnSchema } from "@pen/types";
+import type { Editor } from "@input/pen-types";
+import type { DatabaseViewState, TableColumnSchema } from "@input/pen-types";
 import type { DocumentMutationPlan } from "../planTypes";
 import type { AITargetKind } from "../contracts";
 import { buildStructuralReviewItems, buildStructuredPreviewTargets, buildStructuralPreviewArtifacts, selectStructuralReviewItemPlan, removeStructuralReviewItemPlan, buildReviewItemsForPlan, serializeStructuredPreviewTargets, buildDatabaseReviewItems, createReviewItem, createReviewItemId } from "./reviewArtifactsPart1";

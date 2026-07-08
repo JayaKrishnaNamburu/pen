@@ -1,4 +1,4 @@
-import type { ModelAdapter } from "@pen/types";
+import type { ModelAdapter } from "@input/pen-types";
 import type {
 	AutocompleteContextProvider,
 	AutocompleteProviderDescriptor,

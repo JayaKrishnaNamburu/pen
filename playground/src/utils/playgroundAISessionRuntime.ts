@@ -1,4 +1,4 @@
-import type { Editor } from "@pen/types";
+import type { Editor } from "@input/pen-types";
 import {
 	PLAYGROUND_AI_ENDPOINT,
 	PLAYGROUND_AI_SESSION_ENDPOINT,

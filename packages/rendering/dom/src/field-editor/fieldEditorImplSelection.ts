@@ -5,13 +5,13 @@ import type {
 	HistoryAppliedEvent,
 	SelectionState,
 	Unsubscribe,
-} from "@pen/types";
-import { DocumentRangeImpl } from "@pen/core";
+} from "@input/pen-types";
+import { DocumentRangeImpl } from "@input/pen-core";
 import {
 	hasFieldEditorSurface,
 	resolveFieldEditorInputMode,
 	usesInlineTextSelection,
-} from "@pen/types";
+} from "@input/pen-types";
 import { EditContextBackend } from "./editContextBackend";
 import { ContentEditableBackend } from "./contenteditableBackend";
 import {

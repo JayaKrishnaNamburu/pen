@@ -1,5 +1,5 @@
 // @ts-nocheck
-import type { DocumentProfile } from "@pen/types";
+import type { DocumentProfile } from "@input/pen-types";
 import type { AITargetKind } from "../contracts";
 import {
 	DOCUMENT_MUTATION_PLAN_KINDS,

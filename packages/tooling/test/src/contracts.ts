@@ -1,13 +1,13 @@
 import * as Y from "yjs";
-import { createHeadlessEditor } from "@pen/core";
-import { yjsAdapter } from "@pen/crdt-yjs";
+import { createHeadlessEditor } from "@input/pen-core";
+import { yjsAdapter } from "@input/pen-crdt-yjs";
 import {
 	compareYjsStateVectors,
 	encodeYjsStateVector,
 	wrapYjsDocument,
-} from "@pen/crdt-yjs";
-import { exportEditorToJson, exportEditorToText } from "@pen/export-json";
-import type { Editor, SchemaRegistry } from "@pen/types";
+} from "@input/pen-crdt-yjs";
+import { exportEditorToJson, exportEditorToText } from "@input/pen-export-json";
+import type { Editor, SchemaRegistry } from "@input/pen-types";
 import type {
 	DeterministicYDocFixture,
 	DeterministicYDocFixtureOptions,

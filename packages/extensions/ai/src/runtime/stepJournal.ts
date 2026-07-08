@@ -1,4 +1,4 @@
-import type { ModelMessage, ModelMessagePart } from "@pen/types";
+import type { ModelMessage, ModelMessagePart } from "@input/pen-types";
 
 export interface ToolJournalEntry {
 	toolCallId: string;

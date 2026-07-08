@@ -1,4 +1,4 @@
-import type { BlockHandle, DocumentOp, Editor } from "@pen/types";
+import type { BlockHandle, DocumentOp, Editor } from "@input/pen-types";
 import type { SearchMatch, SearchOptions, SearchState } from "./types";
 
 export const DEFAULT_SEARCH_OPTIONS: SearchOptions = {

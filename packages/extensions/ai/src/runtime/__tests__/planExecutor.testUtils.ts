@@ -1,4 +1,4 @@
-import { createEditor } from "@pen/core";
+import { createEditor } from "@input/pen-core";
 
 const noDefaultExtensionsPreset = {
 	resolve() {

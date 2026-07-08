@@ -1,5 +1,5 @@
-import type { Editor } from "@pen/types";
-import { setInlineMark } from "@pen/shortcuts";
+import type { Editor } from "@input/pen-types";
+import { setInlineMark } from "@input/pen-shortcuts";
 
 export type LinkMark = {
 	href: string;

@@ -3,8 +3,8 @@
 import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
-import { createEditor } from "@pen/core";
-import { defaultPreset } from "@pen/preset-default";
+import { createEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
 import { PenEditor } from "../penEditor";
 import { resolveRenderer, SubdocumentRenderer } from "../index";
 
@@ -20,7 +20,7 @@ async function flushAnimationFrames(count = 1): Promise<void> {
 	}
 }
 
-describe("@pen/react subdocument rendering", () => {
+describe("@input/pen-react subdocument rendering", () => {
 	it("registers the subdocument renderer in the public renderer map", () => {
 		expect(resolveRenderer("subdocument")).toBe(SubdocumentRenderer);
 		expect(typeof SubdocumentRenderer).toBe("function");

@@ -4,7 +4,7 @@ import {
   reportPendingBlockImportViolations,
   type PendingBlock,
   type ImportedDatabaseData,
-} from "@pen/content-ops";
+} from "@input/pen-content-ops";
 import {
   generateId,
   type DocumentOp,
@@ -13,7 +13,7 @@ import {
   type ImportOptions,
   type ImportResult,
   type Position,
-} from "@pen/types";
+} from "@input/pen-types";
 import { isSupportedPenDocumentVersion } from "./schema";
 import type {
   PenBlockJSON,

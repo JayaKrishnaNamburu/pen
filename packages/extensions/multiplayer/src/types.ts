@@ -5,7 +5,7 @@ import type {
 	MultiplayerSession,
 	MultiplayerSessionContext,
 	Unsubscribe,
-} from "@pen/types";
+} from "@input/pen-types";
 
 export interface MultiplayerConfig {
 	user: MultiplayerUser;

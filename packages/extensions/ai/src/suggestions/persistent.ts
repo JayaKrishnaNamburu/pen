@@ -1,4 +1,4 @@
-import type { BlockHandle, Editor, Position } from "@pen/types";
+import type { BlockHandle, Editor, Position } from "@input/pen-types";
 import type { BlockSuggestionMeta, PersistentSuggestion } from "../types";
 
 export type BlockSuggestionMetaPayload = BlockSuggestionMeta &

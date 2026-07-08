@@ -1,12 +1,12 @@
-import { createYjsProviderSession, getYjsAwareness, getYjsDoc } from "@pen/crdt-yjs";
-import { multiplayerExtension } from "@pen/multiplayer";
+import { createYjsProviderSession, getYjsAwareness, getYjsDoc } from "@input/pen-crdt-yjs";
+import { multiplayerExtension } from "@input/pen-multiplayer";
 import type {
 	DocumentOp,
 	Editor,
 	Extension,
 	MultiplayerSession,
 	MultiplayerSessionContext,
-} from "@pen/types";
+} from "@input/pen-types";
 import { WebsocketProvider } from "y-websocket";
 
 const PLAYGROUND_COLLAB_USER_STORAGE_KEY = "pen:playground:collaboration-user";

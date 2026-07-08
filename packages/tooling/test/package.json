@@ -1,6 +1,6 @@
 {
-  "name": "@pen/test",
-  "version": "0.0.0",
+  "name": "@input/pen-test",
+  "version": "0.0.1",
   "description": "Headless testing utilities for Pen",
   "license": "SEE LICENSE IN LICENSE.md",
   "homepage": "https://github.com/niceperson/pen#readme",
@@ -14,7 +14,8 @@
   },
   "type": "module",
   "publishConfig": {
-    "access": "public"
+    "access": "restricted",
+    "registry": "https://registry.npmjs.org/"
   },
   "exports": {
     ".": {
@@ -44,11 +45,11 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@pen/core": "workspace:*",
-    "@pen/crdt-yjs": "workspace:*",
-    "@pen/export-json": "workspace:*",
-    "@pen/schema-default": "workspace:*",
-    "@pen/types": "workspace:*",
+    "@input/pen-core": "workspace:*",
+    "@input/pen-crdt-yjs": "workspace:*",
+    "@input/pen-export-json": "workspace:*",
+    "@input/pen-schema-default": "workspace:*",
+    "@input/pen-types": "workspace:*",
     "yjs": "^13.6.29"
   },
   "devDependencies": {

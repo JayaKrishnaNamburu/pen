@@ -1,4 +1,4 @@
-import type { BlockHandle } from "@pen/types";
+import type { BlockHandle } from "@input/pen-types";
 
 const NUMBERED_LIST_BLOCK_TYPE = "numberedListItem";
 

@@ -10,7 +10,7 @@ Capture the mutation rules that keep editor behavior predictable across packages
 
 ## Responsibilities
 
-`@pen/core` owns:
+`@input/pen-core` owns:
 
 - operation validation
 - normalization and policy enforcement
@@ -23,5 +23,5 @@ Capture the mutation rules that keep editor behavior predictable across packages
 
 - Packages should not bypass the core mutation boundary for document writes.
 - Extension hooks should stay deterministic and bounded.
-- Importers, tools, AI, and renderers may prepare ops, but `@pen/core` remains the authority that applies them.
+- Importers, tools, AI, and renderers may prepare ops, but `@input/pen-core` remains the authority that applies them.
 - Origin tagging matters so undo, diagnostics, and collaboration surfaces can interpret writes correctly.

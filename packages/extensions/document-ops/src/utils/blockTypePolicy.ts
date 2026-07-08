@@ -2,7 +2,7 @@ import {
   shouldExposeBlockInTooling,
   type BlockSchema,
   type Editor,
-} from "@pen/types";
+} from "@input/pen-types";
 
 export function getAvailableToolBlockSchemas(editor: Editor): BlockSchema[] {
   return editor.schema

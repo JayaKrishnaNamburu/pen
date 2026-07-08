@@ -3,7 +3,7 @@ export {
 	AI_SUGGESTIONS_EXTENSION_NAME,
 	getAISuggestionsController,
 } from "./extension";
-export { AI_SUGGESTIONS_CONTROLLER_SLOT } from "@pen/types";
+export { AI_SUGGESTIONS_CONTROLLER_SLOT } from "@input/pen-types";
 
 export { AISuggestionsControllerImpl } from "./controller";
 export { resolveAISuggestionsConfig } from "./config";

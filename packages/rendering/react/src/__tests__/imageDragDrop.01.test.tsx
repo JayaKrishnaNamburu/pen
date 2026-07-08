@@ -3,9 +3,9 @@
 import React, { act } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { createRoot } from "react-dom/client";
-import { createEditor } from "@pen/core";
-import type { AssetProvider } from "@pen/types";
-import { defaultPreset } from "@pen/preset-default";
+import { createEditor } from "@input/pen-core";
+import type { AssetProvider } from "@input/pen-types";
+import { defaultPreset } from "@input/pen-preset-default";
 import { Pen } from "../primitives/index";
 
 (
@@ -58,7 +58,7 @@ function createDragEvent(
 	return event;
 }
 
-describe("@pen/react image drag and drop", () => {
+describe("@input/pen-react image drag and drop", () => {
 	it("splits inline text when dropping an image at a caret position", async () => {
 		const editor = createEditor({
 			preset: defaultPreset({

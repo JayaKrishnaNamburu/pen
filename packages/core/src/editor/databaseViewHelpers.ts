@@ -5,7 +5,7 @@ import type {
 	DatabaseViewState,
 	FilterCondition,
 	FilterGroup,
-} from "@pen/types";
+} from "@input/pen-types";
 import {
 	type CRDTUnknownArray,
 	type CRDTUnknownMap,

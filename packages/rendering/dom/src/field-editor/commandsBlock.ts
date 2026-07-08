@@ -1,9 +1,9 @@
-import { INPUT_RULES_ENGINE_SLOT_KEY, generateId } from "@pen/types";
-import type { DocumentOp, Editor } from "@pen/types";
+import { INPUT_RULES_ENGINE_SLOT_KEY, generateId } from "@input/pen-types";
+import type { DocumentOp, Editor } from "@input/pen-types";
 import {
 	toggleInlineMark as toggleInlineMarkCommand,
 	setInlineMark as setInlineMarkCommand,
-} from "@pen/shortcuts";
+} from "@input/pen-shortcuts";
 import { matchListInputRule } from "../utils/listInputRule";
 import {
 	getLogicalInlineLength,

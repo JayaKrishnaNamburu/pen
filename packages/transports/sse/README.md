@@ -1,11 +1,11 @@
-# `@pen/transport-sse`
+# `@input/pen-transport-sse`
 
 Server-Sent Events transport for Pen.
 
 ## Install
 
 ```bash
-pnpm add @pen/core @pen/transport-sse
+pnpm add @input/pen-core @input/pen-transport-sse
 ```
 
 ## What It Provides
@@ -17,7 +17,7 @@ pnpm add @pen/core @pen/transport-sse
 ## Server Example
 
 ```ts
-import { createSSEHandler } from "@pen/transport-sse";
+import { createSSEHandler } from "@input/pen-transport-sse";
 
 const handler = createSSEHandler({
   toolRuntime,
@@ -30,7 +30,7 @@ const handler = createSSEHandler({
 ## Client Example
 
 ```ts
-import { sseTransport } from "@pen/transport-sse";
+import { sseTransport } from "@input/pen-transport-sse";
 
 const transport = sseTransport({
   url: "https://example.com/api/stream",

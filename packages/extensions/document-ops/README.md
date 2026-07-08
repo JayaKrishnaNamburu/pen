@@ -1,6 +1,6 @@
-# `@pen/document-ops`
+# `@input/pen-document-ops`
 
-`@pen/document-ops` owns Pen's built-in document tool semantics.
+`@input/pen-document-ops` owns Pen's built-in document tool semantics.
 
 The standard `defaultPreset()` installs this extension, so most editors start with the document read/write/context tools already registered.
 
@@ -13,9 +13,9 @@ Use this package when you need to:
 ## Usage
 
 ```ts
-import { createEditor } from "@pen/core";
-import { defaultPreset } from "@pen/preset-default";
-import { getDocumentToolRuntime } from "@pen/document-ops";
+import { createEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
+import { getDocumentToolRuntime } from "@input/pen-document-ops";
 
 const editor = createEditor({
   preset: defaultPreset(),
@@ -29,4 +29,4 @@ if (!toolRuntime) {
 const tools = toolRuntime.listTools();
 ```
 
-Prefer `@pen/ai-tools` for the main public agent/tool integration story. Reach for `@pen/document-ops` when you need the underlying document semantics or lower-level runtime escape hatches.
+Prefer `@input/pen-ai-tools` for the main public agent/tool integration story. Reach for `@input/pen-document-ops` when you need the underlying document semantics or lower-level runtime escape hatches.

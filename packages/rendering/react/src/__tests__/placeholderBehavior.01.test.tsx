@@ -3,12 +3,12 @@
 import React, { act } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
-import { createEditor, ensureInlineCompletionController } from "@pen/core";
+import { createEditor, ensureInlineCompletionController } from "@input/pen-core";
 import {
 	type BlockHandle,
 	type BlockRenderContext,
-} from "@pen/types";
-import { defaultPreset } from "@pen/preset-default";
+} from "@input/pen-types";
+import { defaultPreset } from "@input/pen-preset-default";
 import { InlineContent } from "../primitives/editor/inlineContent";
 import { Pen } from "../primitives/index";
 import { ParagraphRenderer, registerRenderer } from "../renderers/index";
@@ -39,7 +39,7 @@ afterEach(() => {
 	registerRenderer("paragraph", ParagraphRenderer);
 });
 
-describe("@pen/react placeholder behavior", () => {
+describe("@input/pen-react placeholder behavior", () => {
 	it("shows the document empty placeholder for a single empty block", async () => {
 		registerRenderer("paragraph", PlaceholderParagraphRenderer);
 

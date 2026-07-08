@@ -1,4 +1,4 @@
-import type { InputRule, InputRuleContext, DocumentOp } from "@pen/types";
+import type { InputRule, InputRuleContext, DocumentOp } from "@input/pen-types";
 
 export const defaultBlockRules: InputRule[] = [
 	headingRule(1, /^#\s$/),

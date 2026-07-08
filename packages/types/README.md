@@ -1,4 +1,4 @@
-# @pen/types
+# @input/pen-types
 
 Type definitions and lightweight runtime helpers for Pen
 
@@ -7,7 +7,7 @@ This package is published publicly as part of the Pen source-available SDK. Prod
 ## Install
 
 ```bash
-pnpm add @pen/types
+pnpm add @input/pen-types
 ```
 
 ## Notes

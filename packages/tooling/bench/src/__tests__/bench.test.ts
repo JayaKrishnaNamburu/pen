@@ -21,7 +21,7 @@ import {
 	runAllSuites,
 } from "../run";
 
-describe("@pen/bench runner", () => {
+describe("@input/pen-bench runner", () => {
 	// AC 16: bench() returns BenchResult with averageMs, minMs, maxMs, opsPerSecond
 	it("returns BenchResult with timing fields", async () => {
 		const result = await bench(
@@ -391,7 +391,7 @@ describe("@pen/bench runner", () => {
 	});
 });
 
-describe("@pen/bench fixtures", () => {
+describe("@input/pen-bench fixtures", () => {
 	// AC 18: createLargeDocument(500) produces valid 500-block document
 	it("createLargeDocument produces a document with correct block count", () => {
 		const { doc } = createLargeDocument(100);

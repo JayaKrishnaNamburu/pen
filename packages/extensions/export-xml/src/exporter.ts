@@ -1,5 +1,5 @@
-import { exportEditorToJson } from "@pen/export-json";
-import type { Editor, Exporter, ExportOptions } from "@pen/types";
+import { exportEditorToJson } from "@input/pen-export-json";
+import type { Editor, Exporter, ExportOptions } from "@input/pen-types";
 import { serializePenDocumentToXml } from "./serializer";
 import type { XmlExporterExtraOptions } from "./types";
 

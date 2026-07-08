@@ -2,8 +2,8 @@ import type {
 	CRDTUndoManager,
 	CRDTUndoStackItem,
 	UndoManagerOptions,
-} from "@pen/types";
-import { HISTORY_ORIGIN_TAG } from "@pen/types";
+} from "@input/pen-types";
+import { HISTORY_ORIGIN_TAG } from "@input/pen-types";
 import * as Y from "yjs";
 
 import type { YjsCRDTDocument } from "./document";

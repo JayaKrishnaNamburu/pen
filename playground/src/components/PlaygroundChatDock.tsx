@@ -1,6 +1,6 @@
-import type { AISession } from "@pen/ai";
-import type { Editor } from "@pen/types";
-import { useAISessionActions, useAISessions } from "@pen/react";
+import type { AISession } from "@input/pen-ai";
+import type { Editor } from "@input/pen-types";
+import { useAISessionActions, useAISessions } from "@input/pen-react";
 import {
 	useEffect,
 	useRef,

@@ -1,4 +1,4 @@
-# @pen/schema-default
+# @input/pen-schema-default
 
 ## Purpose
 
@@ -15,7 +15,7 @@ Ship the default block and inline definitions used by most applications and test
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@pen/types`
+- Runtime dependencies: `@input/pen-types`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: It defines the standard authored surface but does not own runtime authority.
 

@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { createEditor, getInlineCompletionController } from "@pen/core";
-import { getSearchController, searchExtension } from "@pen/search";
+import { createEditor, getInlineCompletionController } from "@input/pen-core";
+import { getSearchController, searchExtension } from "@input/pen-search";
 import {
 	AI_AUTOCOMPLETE_CONTROLLER_SLOT,
 	defineExtension,
 	FIELD_EDITOR_SLOT_KEY,
-} from "@pen/types";
-import { aiExtension } from "@pen/ai";
-import { defaultPreset } from "@pen/preset-default";
+} from "@input/pen-types";
+import { aiExtension } from "@input/pen-ai";
+import { defaultPreset } from "@input/pen-preset-default";
 import {
 	handleEditorKeyBindings,
 	handleFieldEditorKeyDown,
@@ -140,7 +140,7 @@ function createPresetEditor(
 	});
 }
 
-describe("@pen/react key binding contexts", () => {
+describe("@input/pen-react key binding contexts", () => {
 	it("selects inline atoms before arrow navigation moves past them", () => {
 		const editor = createPresetEditor({
 			preset: {

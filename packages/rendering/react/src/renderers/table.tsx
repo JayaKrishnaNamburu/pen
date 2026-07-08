@@ -1,5 +1,5 @@
 import React from "react";
-import type { BlockHandle, BlockRenderContext, CellSelection } from "@pen/types";
+import type { BlockHandle, BlockRenderContext, CellSelection } from "@input/pen-types";
 import { useEditorContext } from "../context/editorContext";
 import { useFieldEditorContext } from "../context/fieldEditorContext";
 import { useFieldEditorState } from "../hooks/useFieldEditorState";

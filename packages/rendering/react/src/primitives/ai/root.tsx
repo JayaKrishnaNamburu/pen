@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useEffect } from "react";
-import type { Editor } from "@pen/types";
+import type { Editor } from "@input/pen-types";
 import {
 	getAIController,
 	type AIController,
-} from "@pen/ai";
+} from "@input/pen-ai";
 import { EditorContext } from "../../context/editorContext";
 import { useAI } from "../../hooks/useAI";
 import { DATA_ATTRS } from "../../utils/dataAttributes";

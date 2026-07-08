@@ -1,4 +1,4 @@
-import type { ApplyOptions, DocumentOp, Editor, PenStreamPart } from "@pen/types";
+import type { ApplyOptions, DocumentOp, Editor, PenStreamPart } from "@input/pen-types";
 import { describe, expect, it, vi } from "vitest";
 import { processStream } from "../processStream";
 
@@ -89,7 +89,7 @@ async function* createStream(parts: PenStreamPart[]): AsyncIterable<PenStreamPar
 	}
 }
 
-describe("@pen/delta-stream processStream", () => {
+describe("@input/pen-delta-stream processStream", () => {
 	it("rejects streamed block mutations against read-only targets", async () => {
 		const editor = createReadOnlyTargetEditor();
 

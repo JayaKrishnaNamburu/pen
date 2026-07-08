@@ -1,6 +1,6 @@
 {
-  "name": "@pen/vue",
-  "version": "0.0.0",
+  "name": "@input/pen-vue",
+  "version": "0.0.1",
   "description": "Vue rendering primitives for Pen",
   "license": "SEE LICENSE IN LICENSE.md",
   "homepage": "https://github.com/niceperson/pen#readme",
@@ -14,7 +14,8 @@
   },
   "type": "module",
   "publishConfig": {
-    "access": "public"
+    "access": "restricted",
+    "registry": "https://registry.npmjs.org/"
   },
   "exports": {
     ".": {
@@ -50,20 +51,20 @@
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",
-    "test": "pnpm --filter @pen/preset-default build && vitest run",
+    "test": "pnpm --filter @input/pen-preset-default build && vitest run",
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@pen/core": "workspace:*",
-    "@pen/dom": "workspace:*",
-    "@pen/types": "workspace:*"
+    "@input/pen-core": "workspace:*",
+    "@input/pen-dom": "workspace:*",
+    "@input/pen-types": "workspace:*"
   },
   "peerDependencies": {
     "vue": "^3.4.0"
   },
   "devDependencies": {
-    "@pen/preset-default": "workspace:*",
-    "@pen/test": "workspace:*",
+    "@input/pen-preset-default": "workspace:*",
+    "@input/pen-test": "workspace:*",
     "@vue/test-utils": "^2.4.6",
     "jsdom": "^28.1.0",
     "tsup": "^8.4.0",

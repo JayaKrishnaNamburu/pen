@@ -4,7 +4,7 @@ import type {
   PenInlineContentJSON,
   PenInlineSegmentJSON,
   PenMarkJSON,
-} from "@pen/export-json";
+} from "@input/pen-export-json";
 
 const INDENT = "  ";
 

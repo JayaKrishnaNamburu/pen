@@ -11,6 +11,6 @@ Pen uses [Changesets](https://github.com/changesets/changesets) for versioning a
 
 ## Notes
 
-- `@pen/docs` is private and excluded from release versioning.
-- Public package access is configured repo-wide in `.changeset/config.json` and reinforced in each public package manifest.
+- `@input/pen-docs` is private and excluded from release versioning.
+- Private package access is configured repo-wide in `.changeset/config.json` and reinforced in each public package manifest.
 - Package metadata can be re-synced with `pnpm sync:package-metadata`.

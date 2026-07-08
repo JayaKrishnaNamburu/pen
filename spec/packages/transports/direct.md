@@ -1,4 +1,4 @@
-# @pen/transport-direct
+# @input/pen-transport-direct
 
 ## Purpose
 
@@ -15,7 +15,7 @@ Provide transport-specific wiring around Pen protocols and sessions.
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@pen/core`, `@pen/types`
+- Runtime dependencies: `@input/pen-core`, `@input/pen-types`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: Transport packages should stay below product policy and above raw network wiring.
 

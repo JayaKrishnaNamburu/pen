@@ -1,4 +1,4 @@
-# @pen/markdown-serialization
+# @input/pen-markdown-serialization
 
 ## Purpose
 
@@ -15,7 +15,7 @@ Provide shared lower-level helpers used by higher-level packages.
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@pen/types`
+- Runtime dependencies: `@input/pen-types`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: Shared packages support package boundaries without becoming end-user entrypoints.
 

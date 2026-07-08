@@ -8,8 +8,8 @@ import type {
 	ToolServer,
 	ToolRuntime,
 	Unsubscribe,
-} from "@pen/types";
-import { isAsyncIterable, resolveToolExecution } from "@pen/types";
+} from "@input/pen-types";
+import { isAsyncIterable, resolveToolExecution } from "@input/pen-types";
 
 export interface DirectTransportOptions {
 	toolRuntime?: ToolRuntime;

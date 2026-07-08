@@ -1,4 +1,4 @@
-import type { Editor } from "@pen/types";
+import type { Editor } from "@input/pen-types";
 import type { FieldEditorEscapeController } from "../field-editor/controller";
 
 export function handleEscapeSelectionTransition(options: {

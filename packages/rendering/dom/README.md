@@ -1,11 +1,11 @@
-# @pen/dom
+# @input/pen-dom
 
 Shared DOM field-editor engine and low-level DOM helpers for Pen renderers.
 
 ## Install
 
 ```bash
-pnpm add @pen/dom
+pnpm add @input/pen-dom
 ```
 
 ## What It Provides

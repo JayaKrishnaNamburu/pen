@@ -1,11 +1,11 @@
-# @pen/export-markdown
+# @input/pen-export-markdown
 
 Markdown exporter for Pen
 
 ## Install
 
 ```bash
-pnpm add @pen/export-markdown
+pnpm add @input/pen-export-markdown
 ```
 
 ## Notes

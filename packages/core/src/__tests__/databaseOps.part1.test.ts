@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createEditor } from "../index";
-import type { DocumentOp } from "@pen/types";
+import type { DocumentOp } from "@input/pen-types";
 
 const noDefaultExtensionsPreset = {
 	resolve() {

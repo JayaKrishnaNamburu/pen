@@ -1,4 +1,4 @@
-import type { Editor, ToolDefinition, Position } from "@pen/types";
+import type { Editor, ToolDefinition, Position } from "@input/pen-types";
 import { POSITION_SCHEMA } from "../constants/toolSchemas";
 import { assertToolCanMutateBlock } from "../utils/mutationPolicy";
 

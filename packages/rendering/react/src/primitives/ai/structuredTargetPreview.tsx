@@ -1,5 +1,5 @@
 import React from "react";
-import type { GenerationStructuredPreviewState } from "@pen/ai";
+import type { GenerationStructuredPreviewState } from "@input/pen-ai";
 import { useActiveAIStructuredPreview } from "../../hooks/useAIStructuredPreview";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { DATA_ATTRS } from "../../utils/dataAttributes";

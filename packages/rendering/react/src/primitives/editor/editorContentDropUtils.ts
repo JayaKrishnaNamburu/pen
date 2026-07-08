@@ -1,4 +1,4 @@
-import type { Editor, MoveBlockOp } from "@pen/types";
+import type { Editor, MoveBlockOp } from "@input/pen-types";
 import type React from "react";
 import { getSelectionPointRect } from "../../field-editor/selectionBridge";
 import { DATA_ATTRS } from "../../utils/dataAttributes";

@@ -1,5 +1,5 @@
 export {
   SchemaRegistryImpl,
   mergeSchemas,
-} from "@pen/types";
-export type { SchemaRegistryConfig } from "@pen/types";
+} from "@input/pen-types";
+export type { SchemaRegistryConfig } from "@input/pen-types";

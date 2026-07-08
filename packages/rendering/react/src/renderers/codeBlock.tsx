@@ -1,5 +1,5 @@
 import React from "react";
-import type { BlockHandle, BlockRenderContext } from "@pen/types";
+import type { BlockHandle, BlockRenderContext } from "@input/pen-types";
 import { InlineContent } from "../primitives/editor/inlineContent";
 
 export function CodeBlockRenderer(

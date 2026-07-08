@@ -1,8 +1,8 @@
-# @pen/document-ops
+# @input/pen-document-ops
 
 ## Purpose
 
-`@pen/document-ops` provides the document tool/runtime layer for Pen. It exposes block CRUD tools, document context and retrieval helpers, structured target inspection, and shared tool runtime plumbing for systems that need to read from or write to the document programmatically.
+`@input/pen-document-ops` provides the document tool/runtime layer for Pen. It exposes block CRUD tools, document context and retrieval helpers, structured target inspection, and shared tool runtime plumbing for systems that need to read from or write to the document programmatically.
 
 ## Public Role
 
@@ -21,23 +21,23 @@ This package is the bridge between Pen's headless editor and tool-driven executi
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@pen/content-ops`, `@pen/markdown-serialization`, `@pen/types`
+- Runtime dependencies: `@input/pen-content-ops`, `@input/pen-markdown-serialization`, `@input/pen-types`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: This package owns tool-facing document inspection and mutation preparation, but it does not replace the core mutation pipeline or renderer layer.
 
 ## Runtime Model
 
-`@pen/document-ops` wraps editor-aware tools around shared write and context utilities:
+`@input/pen-document-ops` wraps editor-aware tools around shared write and context utilities:
 
 ```mermaid
 flowchart TD
   Host[AIOrToolHost]
-  DocOps["@pen/document-ops"]
+  DocOps["@input/pen-document-ops"]
   Runtime[ToolRuntime]
   Context[ContextAndRetrieval]
   Targets[StructuredTargetInspection]
   Write[WriteOpPreparation]
-  Core["@pen/core"]
+  Core["@input/pen-core"]
 
   Host --> DocOps
   DocOps --> Runtime
@@ -51,7 +51,7 @@ Important rules:
 
 - Tool-facing operations still resolve back into editor mutations.
 - Context retrieval and structured target inspection should stay explicit and bounded so tools do not mutate blindly.
-- Shared write-op construction comes from `@pen/content-ops`; this package owns the editor-aware tooling boundary built around it.
+- Shared write-op construction comes from `@input/pen-content-ops`; this package owns the editor-aware tooling boundary built around it.
 
 ## Integration Notes
 

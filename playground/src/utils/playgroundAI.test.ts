@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createEditor } from "@pen/core";
-import { createDefaultSchema } from "@pen/schema-default";
-import type { ModelRequestedOperation } from "@pen/types";
+import { createEditor } from "@input/pen-core";
+import { createDefaultSchema } from "@input/pen-schema-default";
+import type { ModelRequestedOperation } from "@input/pen-types";
 import { createPlaygroundAIModel } from "./playgroundAI";
 
 const noDefaultExtensionsPreset = {

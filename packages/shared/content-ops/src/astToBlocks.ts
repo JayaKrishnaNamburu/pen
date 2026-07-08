@@ -1,4 +1,4 @@
-import type { BlockImportMatch, MarkdownNode, SchemaRegistry } from "@pen/types";
+import type { BlockImportMatch, MarkdownNode, SchemaRegistry } from "@input/pen-types";
 import { collectInlineHtmlContent } from "./htmlInline";
 import { collectInlineContent, processInlineNodes } from "./inlineMarks";
 import {

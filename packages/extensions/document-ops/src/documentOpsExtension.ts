@@ -1,5 +1,5 @@
-import type { Editor, Extension } from "@pen/types";
-import { defineExtension } from "@pen/types";
+import type { Editor, Extension } from "@input/pen-types";
+import { defineExtension } from "@input/pen-types";
 import { ToolRuntimeImpl } from "./toolServer";
 import { readDocumentTool } from "./tools/readDocument";
 import { writeDocumentTool } from "./tools/writeDocument";

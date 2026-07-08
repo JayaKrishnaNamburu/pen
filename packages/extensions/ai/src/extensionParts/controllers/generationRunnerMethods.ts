@@ -1,6 +1,6 @@
-import type { OpOrigin, TextSelection } from "@pen/types";
+import type { OpOrigin, TextSelection } from "@input/pen-types";
 import type { AIControllerMethodHost } from "./aiControllerMethodHost";
-import { getOpOriginType } from "@pen/types";
+import { getOpOriginType } from "@input/pen-types";
 import { resolveDocumentInsertionAnchor } from "../../runtime/documentInsertionAnchor";
 import { AI_SESSION_SUGGESTION_ORIGIN } from "../../suggestions/suggestMode";
 import type { GenerationState } from "../../types";

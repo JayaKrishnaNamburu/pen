@@ -1,11 +1,11 @@
-# @pen/shortcuts
+# @input/pen-shortcuts
 
 Headless keyboard shortcut extension for Pen
 
 ## Install
 
 ```bash
-pnpm add @pen/shortcuts
+pnpm add @input/pen-shortcuts
 ```
 
 ## Notes

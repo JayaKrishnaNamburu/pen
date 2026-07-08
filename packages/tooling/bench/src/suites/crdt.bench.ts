@@ -1,7 +1,7 @@
 import type { BenchContext, BenchDefinition } from "../bench";
 import { createLargeDocument } from "../fixtures/largeDoc";
-import { yjsAdapter, initBlockMap } from "@pen/crdt-yjs";
-import type { YjsCRDTDocument } from "@pen/crdt-yjs";
+import { yjsAdapter, initBlockMap } from "@input/pen-crdt-yjs";
+import type { YjsCRDTDocument } from "@input/pen-crdt-yjs";
 import {
   CRDT_ENCODE_STATE_500_BENCH,
   CRDT_FORK_MERGE_100_BENCH,

@@ -1,11 +1,11 @@
-# `@pen/import-markdown`
+# `@input/pen-import-markdown`
 
 Markdown importer for Pen.
 
 ## Install
 
 ```bash
-pnpm add @pen/core @pen/import-markdown
+pnpm add @input/pen-core @input/pen-import-markdown
 ```
 
 ## What It Provides
@@ -16,8 +16,8 @@ pnpm add @pen/core @pen/import-markdown
 ## Usage
 
 ```ts
-import { createEditor } from "@pen/core";
-import { markdownImporter } from "@pen/import-markdown";
+import { createEditor } from "@input/pen-core";
+import { markdownImporter } from "@input/pen-import-markdown";
 
 const editor = createEditor();
 

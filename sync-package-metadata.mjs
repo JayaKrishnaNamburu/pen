@@ -34,7 +34,8 @@ function buildPublicPackageManifest(packageJson, packageDirectory, options) {
   const files = ensureFiles(packageJson.files, options);
   const publishConfig = {
     ...(packageJson.publishConfig ?? {}),
-    access: "public",
+    access: "restricted",
+    registry: "https://registry.npmjs.org/",
   };
   const exports = normalizeExports(packageJson.exports);
   const types = resolveRootTypesPath(packageJson, exports);

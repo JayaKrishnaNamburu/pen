@@ -1,5 +1,5 @@
 import React, { Children, cloneElement, isValidElement, useRef } from "react";
-import type { BlockRenderContext, Decoration } from "@pen/types";
+import type { BlockRenderContext, Decoration } from "@input/pen-types";
 import { useEditorContext } from "../../context/editorContext";
 import { useFieldEditorContext } from "../../context/fieldEditorContext";
 import { useBlockDecorations } from "../../hooks/useBlockDecorations";

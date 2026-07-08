@@ -4,9 +4,9 @@ import {
 	type Decoration,
 	type Editor,
 	type InlineDecoration,
-} from "@pen/types";
-import { getLogicalTextContent } from "@pen/dom/field-editor/inlineAtomDom";
-import { INLINE_ATOM_REPLACEMENT_TEXT } from "@pen/dom/field-editor/inlineAtomModel";
+} from "@input/pen-types";
+import { getLogicalTextContent } from "@input/pen-dom/field-editor/inlineAtomDom";
+import { INLINE_ATOM_REPLACEMENT_TEXT } from "@input/pen-dom/field-editor/inlineAtomModel";
 import { useEditorContentContext } from "../../context/editorContentContext";
 import { useEditorContext } from "../../context/editorContext";
 import { useFieldEditorContext } from "../../context/fieldEditorContext";

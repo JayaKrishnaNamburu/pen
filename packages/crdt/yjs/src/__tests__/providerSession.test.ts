@@ -1,4 +1,4 @@
-import type { ConnectionState } from "@pen/types";
+import type { ConnectionState } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 
 import {

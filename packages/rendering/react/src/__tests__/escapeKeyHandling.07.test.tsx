@@ -7,8 +7,8 @@ import {
 	createEditor as createCoreEditor,
 	DocumentRangeImpl,
 	ensureInlineCompletionController,
-} from "@pen/core";
-import { defaultPreset } from "@pen/preset-default";
+} from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
 import type { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
 import { Pen } from "../primitives/index";
 import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
@@ -92,7 +92,7 @@ function createMouseUpEvent(clientX = 40, clientY = 40): MouseEvent {
 	});
 }
 
-describe("@pen/react escape key handling", () => {
+describe("@input/pen-react escape key handling", () => {
 	it("preserves a cross-block drag when the native range clears before mouseup", async () => {
 		const editor = createEditor();
 		const firstBlockId = editor.firstBlock()!.id;

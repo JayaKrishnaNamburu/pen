@@ -1,11 +1,11 @@
-# @pen/delta-stream
+# @input/pen-delta-stream
 
 Streaming protocol and processing pipeline for Pen
 
 ## Install
 
 ```bash
-pnpm add @pen/delta-stream
+pnpm add @input/pen-delta-stream
 ```
 
 ## Notes

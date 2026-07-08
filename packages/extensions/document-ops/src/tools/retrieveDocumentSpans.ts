@@ -1,4 +1,4 @@
-import type { Editor, ToolDefinition } from "@pen/types";
+import type { Editor, ToolDefinition } from "@input/pen-types";
 import {
 	DEFAULT_RETRIEVE_SPANS_MAX_RESULTS,
 	MAX_TOOL_RESULT_LIMIT,

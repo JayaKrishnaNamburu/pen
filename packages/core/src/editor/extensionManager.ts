@@ -7,7 +7,7 @@ import type {
 	InputRule,
 	KeyBinding,
 	SchemaRegistry,
-} from "@pen/types";
+} from "@input/pen-types";
 import { EventEmitter } from "./events";
 import { emptyDecorationSet, mergeDecorationSets } from "./decorations";
 

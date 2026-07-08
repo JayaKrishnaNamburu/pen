@@ -1,11 +1,11 @@
-import { getAutocompleteController } from "@pen/ai-autocomplete";
+import { getAutocompleteController } from "@input/pen-ai-autocomplete";
 import type {
 	AutocompleteBlockPolicy,
 	AutocompleteControllerState,
 	AutocompleteControllerSnapshot,
 	AutocompleteProviderDescriptor,
-} from "@pen/ai-autocomplete";
-import type { Editor } from "@pen/types";
+} from "@input/pen-ai-autocomplete";
+import type { Editor } from "@input/pen-types";
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import {
 	didAutocompleteSummaryChange,

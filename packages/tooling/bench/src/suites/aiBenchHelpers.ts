@@ -1,18 +1,18 @@
 import {
 	createEditor,
 	getInlineCompletionController,
-} from "@pen/core";
-import { FIELD_EDITOR_SLOT_KEY, defineExtension } from "@pen/types";
-import { aiExtension } from "@pen/ai";
+} from "@input/pen-core";
+import { FIELD_EDITOR_SLOT_KEY, defineExtension } from "@input/pen-types";
+import { aiExtension } from "@input/pen-ai";
 import {
 	autocompleteExtension,
 	createAutocompleteProvider,
 	getAutocompleteController,
-} from "@pen/ai-autocomplete";
-import type { AutocompleteContextProvider } from "@pen/ai-autocomplete";
-import { createTestEditor } from "@pen/test";
-import type { ToolRuntime } from "@pen/types";
-import { buildDocumentWriteOps } from "@pen/document-ops";
+} from "@input/pen-ai-autocomplete";
+import type { AutocompleteContextProvider } from "@input/pen-ai-autocomplete";
+import { createTestEditor } from "@input/pen-test";
+import type { ToolRuntime } from "@input/pen-types";
+import { buildDocumentWriteOps } from "@input/pen-document-ops";
 
 export const AI_BENCH_BLOCK_COUNT = 200;
 export const AI_RANGE_START_BLOCK_ID = "block-90";

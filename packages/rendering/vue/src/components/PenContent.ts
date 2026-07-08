@@ -1,4 +1,4 @@
-import { DATA_ATTRS } from "@pen/dom/utils/dataAttributes";
+import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 import {
   defineComponent,
   h,

@@ -5,7 +5,7 @@ import type {
 	CRDTDocument,
 	PenDocument,
 	SchemaRegistry,
-} from "@pen/types";
+} from "@input/pen-types";
 import {
 	crdtMapToPlainRecord,
 	getMapProp,

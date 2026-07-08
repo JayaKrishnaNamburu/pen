@@ -2,7 +2,7 @@ import type {
 	Decoration,
 	Editor,
 	InlineDecoration,
-} from "@pen/types";
+} from "@input/pen-types";
 import type { AIExtensionConfig, AIStreamingReviewPreview } from "../types";
 import { mapStreamingBlockRangeTextOffset } from "../suggestions/replacementPlan/blockRangeTextOffset";
 import {

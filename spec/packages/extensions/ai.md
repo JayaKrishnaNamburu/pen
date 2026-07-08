@@ -1,14 +1,14 @@
-# @pen/ai
+# @input/pen-ai
 
 ## Purpose
 
-`@pen/ai` adds AI-oriented editor behavior to Pen: controller state, session orchestration, suggest mode, track-changes flows, review artifacts, contextual prompting, planner and execution helpers, and mutation receipts.
+`@input/pen-ai` adds AI-oriented editor behavior to Pen: controller state, session orchestration, suggest mode, track-changes flows, review artifacts, contextual prompting, planner and execution helpers, and mutation receipts.
 
 ## Public Role
 
 This package extends the editor with AI behavior without taking over document authority. It is responsible for orchestrating AI flows around the editor, not for replacing the editor mutation pipeline or becoming a renderer package.
 
-In current usage, `@pen/ai` is the headless orchestration layer for both inline edits and chat-driven edits. It owns session lifecycle, target resolution, prompt sequencing, reviewable suggestion staging, and the translation from model output into bounded editor mutations.
+In current usage, `@input/pen-ai` is the headless orchestration layer for both inline edits and chat-driven edits. It owns session lifecycle, target resolution, prompt sequencing, reviewable suggestion staging, and the translation from model output into bounded editor mutations.
 
 ## Key Exports / Entrypoints
 
@@ -25,13 +25,13 @@ In current usage, `@pen/ai` is the headless orchestration layer for both inline 
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@pen/core`, `@pen/document-ops`, `@pen/types`
+- Runtime dependencies: `@input/pen-core`, `@input/pen-document-ops`, `@input/pen-types`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: The extension composes through the core editor and slots/events rather than side channels.
 
 ## Runtime Model
 
-`@pen/ai` wraps model-facing workflows around the editor rather than bypassing it:
+`@input/pen-ai` wraps model-facing workflows around the editor rather than bypassing it:
 
 ```mermaid
 flowchart TD
@@ -40,7 +40,7 @@ flowchart TD
   Controllers[AIControllersAndSessions]
   Planner[PlannerAndValidation]
   Suggest[SuggestModeAndSuggestions]
-  Core["@pen/core"]
+  Core["@input/pen-core"]
   Apply["editor.apply(...)"]
 
   HostApp --> AIExt
@@ -86,8 +86,8 @@ Sessions are first-class runtime state, not renderer-local convenience state.
 - Path in workspace: `packages/extensions/ai`
 - Spec path mirrors workspace path: `packages/extensions/ai.md`
 - Typical integration installs `aiExtension()` on the editor and then uses renderer-specific primitives or hooks to expose AI UI
-- `@pen/react` provides the broadest AI UI surface today, but the extension itself stays headless
-- `@pen/document-ops` is a key dependency because AI flows need document-tool and mutation preparation helpers
+- `@input/pen-react` provides the broadest AI UI surface today, but the extension itself stays headless
+- `@input/pen-document-ops` is a key dependency because AI flows need document-tool and mutation preparation helpers
 - Hosts should treat the controller as the source of truth for AI session state, review items, and pending suggestion lifecycle
 - Renderer UIs may expose separate inline and chat surfaces, but both surfaces should flow through the same session and mutation contracts exposed here
 

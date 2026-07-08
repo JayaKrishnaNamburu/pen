@@ -1,4 +1,4 @@
-import { defineExtension, type Extension, type KeyBinding } from "@pen/types";
+import { defineExtension, type Extension, type KeyBinding } from "@input/pen-types";
 import { toggleInlineMark, setInlineMark } from "./toggleInlineMark";
 
 export const RICH_TEXT_SHORTCUTS_EXTENSION_NAME = "rich-text-shortcuts";

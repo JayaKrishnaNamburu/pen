@@ -6,22 +6,22 @@ import {
   mergeSchemas,
   sortDeltaAttributes,
   deepEqual,
-} from "@pen/core";
+} from "@input/pen-core";
 import {
   defaultSchema,
   bold,
   italic,
   code,
   link,
-} from "@pen/schema-default";
+} from "@input/pen-schema-default";
 import {
   createTestDocument,
   createTestEditor,
   resetTestIdCounter,
 } from "../index";
-import { yjsAdapter, initBlockMap, wrapYjsDocument } from "@pen/crdt-yjs";
-import type { BlockSchema, LayoutSchema } from "@pen/types";
-import { defineBlock } from "@pen/types";
+import { yjsAdapter, initBlockMap, wrapYjsDocument } from "@input/pen-crdt-yjs";
+import type { BlockSchema, LayoutSchema } from "@input/pen-types";
+import { defineBlock } from "@input/pen-types";
 
 type YBlockMap = Y.Map<unknown>;
 type YBlocksMap = Y.Map<YBlockMap>;

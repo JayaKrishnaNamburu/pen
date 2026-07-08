@@ -1,10 +1,10 @@
 import { useSyncExternalStore } from "react";
-import type { Editor, Unsubscribe } from "@pen/types";
+import type { Editor, Unsubscribe } from "@input/pen-types";
 import {
 	type MultiplayerController,
 	getMultiplayerController,
 	type MultiplayerState,
-} from "@pen/multiplayer";
+} from "@input/pen-multiplayer";
 
 const EMPTY_MULTIPLAYER_STATE: MultiplayerState = {
 	connectionState: "disconnected",

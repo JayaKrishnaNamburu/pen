@@ -1,6 +1,6 @@
-import { getSearchController } from "@pen/search";
-import { Pen, useSearch } from "@pen/react";
-import type { Editor } from "@pen/types";
+import { getSearchController } from "@input/pen-search";
+import { Pen, useSearch } from "@input/pen-react";
+import type { Editor } from "@input/pen-types";
 import {
 	useEffect,
 	useRef,

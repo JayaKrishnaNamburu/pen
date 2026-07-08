@@ -1,4 +1,4 @@
-import type { Editor } from "@pen/types";
+import type { Editor } from "@input/pen-types";
 import { DEFAULT_MAX_SCOPE_CHARS } from "./constants";
 import type { AISuggestionScope, AISuggestionsExtensionConfig } from "./types";
 import type { DirtyBlockState } from "./scheduler";

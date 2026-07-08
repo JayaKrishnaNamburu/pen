@@ -1,4 +1,4 @@
-import type { Editor, ToolDefinition } from "@pen/types";
+import type { Editor, ToolDefinition } from "@input/pen-types";
 import {
 	inspectStructuredTarget,
 	listValidOperationsForTarget,

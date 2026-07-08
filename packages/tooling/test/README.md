@@ -1,11 +1,11 @@
-# `@pen/test`
+# `@input/pen-test`
 
 Headless testing utilities for Pen.
 
 ## Install
 
 ```bash
-pnpm add -D @pen/test
+pnpm add -D @input/pen-test
 ```
 
 ## What It Provides
@@ -20,7 +20,7 @@ pnpm add -D @pen/test
 ## Minimal Setup
 
 ```ts
-import { assertDocEquals, createTestEditor } from "@pen/test";
+import { assertDocEquals, createTestEditor } from "@input/pen-test";
 
 const editor = createTestEditor({
   blocks: [{ type: "paragraph", content: "Hello" }],
@@ -34,7 +34,7 @@ assertDocEquals(editor, [{ type: "paragraph", content: "Hello world" }]);
 ## Collaboration Harness
 
 ```ts
-import { assertDocEquals, createTestCollaboration } from "@pen/test";
+import { assertDocEquals, createTestCollaboration } from "@input/pen-test";
 
 const collab = createTestCollaboration({
   blocks: [{ type: "paragraph", content: "Shared" }],
@@ -52,7 +52,7 @@ assertDocEquals(collab.editorA, collab.editorB);
 import {
   createDeterministicYDocFixture,
   runCRDTStateVectorContract,
-} from "@pen/test";
+} from "@input/pen-test";
 
 const fixture = createDeterministicYDocFixture({
   blocks: [{ id: "p1", type: "paragraph", content: "Stable text" }],

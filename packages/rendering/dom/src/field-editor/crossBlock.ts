@@ -1,4 +1,4 @@
-import type { Editor, FieldEditor, SelectionState } from "@pen/types";
+import type { Editor, FieldEditor, SelectionState } from "@input/pen-types";
 import { getBlockSelectionRoleFromSchema } from "../utils/blockSelectionSemantics";
 
 /**

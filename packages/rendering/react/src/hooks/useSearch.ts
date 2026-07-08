@@ -1,10 +1,10 @@
 import { useSyncExternalStore } from "react";
-import type { Editor, Unsubscribe } from "@pen/types";
+import type { Editor, Unsubscribe } from "@input/pen-types";
 import {
 	getSearchController,
 	type SearchController,
 	type SearchState,
-} from "@pen/search";
+} from "@input/pen-search";
 
 const EMPTY_SEARCH_STATE: SearchState = {
 	open: false,

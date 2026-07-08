@@ -1,4 +1,4 @@
-import type { ToolDefinition, ToolRuntime } from "@pen/types";
+import type { ToolDefinition, ToolRuntime } from "@input/pen-types";
 
 export type AIToolRuntime = ToolRuntime;
 

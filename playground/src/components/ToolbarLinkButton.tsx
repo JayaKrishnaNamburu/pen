@@ -1,6 +1,6 @@
-import { setInlineMark } from "@pen/shortcuts";
-import type { Editor } from "@pen/types";
-import { useToolbar } from "@pen/react";
+import { setInlineMark } from "@input/pen-shortcuts";
+import type { Editor } from "@input/pen-types";
+import { useToolbar } from "@input/pen-react";
 import {
 	useEffect,
 	useRef,

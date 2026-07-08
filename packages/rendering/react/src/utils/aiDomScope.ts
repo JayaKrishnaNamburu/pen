@@ -1,4 +1,4 @@
-import type { Editor } from "@pen/types";
+import type { Editor } from "@input/pen-types";
 import { queryBlockElement } from "../field-editor/selectionBridge";
 import { DATA_ATTRS } from "./dataAttributes";
 

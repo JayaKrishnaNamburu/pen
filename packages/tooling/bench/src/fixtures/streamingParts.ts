@@ -1,4 +1,4 @@
-import type { PenStreamPart } from "@pen/types";
+import type { PenStreamPart } from "@input/pen-types";
 
 export function generateGenDeltaParts(
   count: number,

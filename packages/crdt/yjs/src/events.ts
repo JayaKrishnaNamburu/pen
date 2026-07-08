@@ -4,8 +4,8 @@ import type {
   DocumentOp,
   OpOrigin,
   Unsubscribe,
-} from "@pen/types";
-import { HISTORY_ORIGIN_TAG } from "@pen/types";
+} from "@input/pen-types";
+import { HISTORY_ORIGIN_TAG } from "@input/pen-types";
 import * as Y from "yjs";
 
 import { APPS, BLOCKS, BLOCK_ORDER } from "./document";

@@ -3,7 +3,7 @@ import type {
   ToolContext,
   PenStreamPart,
   Position,
-} from "@pen/types";
+} from "@input/pen-types";
 import { assertToolCanUseBlockType } from "./utils/blockTypePolicy";
 import { assertToolCanMutateBlock } from "./utils/mutationPolicy";
 

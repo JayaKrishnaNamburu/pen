@@ -1,4 +1,4 @@
-import { createEditor } from "@pen/core";
+import { createEditor } from "@input/pen-core";
 import { describe, expect, it } from "vitest";
 import {
 	acceptAllSuggestions,

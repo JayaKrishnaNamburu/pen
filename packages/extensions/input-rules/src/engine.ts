@@ -1,5 +1,5 @@
-import type { Editor, DocumentOp, InputRule, InputRuleContext } from "@pen/types";
-import { supportsInlineInputRules } from "@pen/types";
+import type { Editor, DocumentOp, InputRule, InputRuleContext } from "@input/pen-types";
+import { supportsInlineInputRules } from "@input/pen-types";
 import type { InlineInputRule } from "./types";
 
 interface InputRuleMatchOptions {

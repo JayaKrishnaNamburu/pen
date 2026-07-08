@@ -1,5 +1,5 @@
-import { defaultSchema } from "@pen/schema-default";
-import type { ApplyOptions, DocumentOp, Editor } from "@pen/types";
+import { defaultSchema } from "@input/pen-schema-default";
+import type { ApplyOptions, DocumentOp, Editor } from "@input/pen-types";
 import { describe, expect, it, vi } from "vitest";
 import { ToolContextImpl } from "../toolContext";
 import { ToolRuntimeImpl } from "../toolServer";
@@ -287,7 +287,7 @@ function createNestedDocumentEditor(): Editor {
 	} as unknown as Editor;
 }
 
-describe("@pen/document-ops tools", () => {
+describe("@input/pen-document-ops tools", () => {
 	it("uses bounded neighbor traversal for cursor context when block links exist", async () => {
 		const blocks: Array<{
 			id: string;

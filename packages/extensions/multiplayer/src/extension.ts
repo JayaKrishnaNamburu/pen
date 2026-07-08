@@ -2,12 +2,12 @@ import type {
 	Editor,
 	Extension,
 	SelectionState,
-} from "@pen/types";
+} from "@input/pen-types";
 import {
 	defineExtension,
 	MULTIPLAYER_CONTROLLER_SLOT,
-} from "@pen/types";
-import { createDecorationSet } from "@pen/core";
+} from "@input/pen-types";
+import { createDecorationSet } from "@input/pen-core";
 import type { MultiplayerControllerImpl } from "./controller";
 import { buildRemoteCursorDecorations } from "./decorations/remoteCursors";
 import { buildRemoteSelectionDecorations } from "./decorations/remoteSelections";

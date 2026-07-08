@@ -3,10 +3,10 @@
 import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
-import { createEditor } from "@pen/core";
-import { defineExtension, type ToolRuntime } from "@pen/types";
-import { aiExtension, getAIController } from "@pen/ai";
-import { defaultPreset } from "@pen/preset-default";
+import { createEditor } from "@input/pen-core";
+import { defineExtension, type ToolRuntime } from "@input/pen-types";
+import { aiExtension, getAIController } from "@input/pen-ai";
+import { defaultPreset } from "@input/pen-preset-default";
 import {
 	Pen,
 	useAIActions,
@@ -236,7 +236,7 @@ function testStreamingToolExtension() {
 	});
 }
 
-describe("@pen/react AI primitives", () => {
+describe("@input/pen-react AI primitives", () => {
 	it("cancels a streaming inline suggestion when keep is clicked", async () => {
 		const abortObserved = createDeferred();
 		const editor = createEditor({

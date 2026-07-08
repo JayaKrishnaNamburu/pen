@@ -2,8 +2,8 @@ import {
 	getAISuggestionsController,
 	type AISuggestionsController,
 	type AISuggestionsExtensionConfig,
-} from "@pen/ai-suggestions";
-import type { Editor } from "@pen/types";
+} from "@input/pen-ai-suggestions";
+import type { Editor } from "@input/pen-types";
 
 type AISuggestionsRuntimePatch = Partial<
 	Omit<AISuggestionsExtensionConfig, "model" | "analyzer" | "blockPolicy">

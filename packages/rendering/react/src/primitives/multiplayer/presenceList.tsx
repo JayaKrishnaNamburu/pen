@@ -1,6 +1,6 @@
 import React, { useContext } from "react";
-import type { Editor } from "@pen/types";
-import type { PeerState } from "@pen/multiplayer";
+import type { Editor } from "@input/pen-types";
+import type { PeerState } from "@input/pen-multiplayer";
 import { EditorContext } from "../../context/editorContext";
 import { useMultiplayer } from "../../hooks/useMultiplayer";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";

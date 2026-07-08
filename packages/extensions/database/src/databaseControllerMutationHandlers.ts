@@ -1,5 +1,5 @@
 import type React from "react";
-import { generateId } from "@pen/types";
+import { generateId } from "@input/pen-types";
 import type { ColumnType, DatabaseColumnDef, DatabaseViewModelColumn, DatabaseViewModelRow, DatabaseViewState, FilterGroup } from "./types";
 import { isCellInSelection } from "./utils";
 import {

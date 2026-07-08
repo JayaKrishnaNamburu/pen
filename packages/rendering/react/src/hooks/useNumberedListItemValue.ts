@@ -1,8 +1,8 @@
 import { useSyncExternalStore } from "react";
 import {
   getNumberedListItemValue as getOrderedListValue,
-} from "@pen/core";
-import type { BlockHandle } from "@pen/types";
+} from "@input/pen-core";
+import type { BlockHandle } from "@input/pen-types";
 import { useEditorContext } from "../context/editorContext";
 
 export function useNumberedListItemValue(block: BlockHandle): number {

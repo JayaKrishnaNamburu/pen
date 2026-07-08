@@ -1,4 +1,4 @@
-# @pen/test
+# @input/pen-test
 
 ## Purpose
 
@@ -15,7 +15,7 @@ Support development, testing, benchmarking, or local integration workflows aroun
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@pen/core`, `@pen/crdt-yjs`, `@pen/export-json`, `@pen/schema-default`, `@pen/types`, `yjs`
+- Runtime dependencies: `@input/pen-core`, `@input/pen-crdt-yjs`, `@input/pen-export-json`, `@input/pen-schema-default`, `@input/pen-types`, `yjs`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: Tooling packages serve the workspace and advanced integrators more than standard runtime embedding.
 
@@ -23,7 +23,7 @@ Support development, testing, benchmarking, or local integration workflows aroun
 
 Tooling packages in Pen should stay package-first and explicit about ownership. Use these packages in development flows, tests, or benchmarks.
 
-`@pen/test` provides deterministic Yjs fixtures and opt-in contract helpers for host apps and Pen packages. Fixture helpers generate stable updates, state vectors, and normalized snapshots without relying on product data. Contract helpers exercise CRDT state-vector satisfaction, headless editor creation, and export behavior while leaving the choice of test runner to the host.
+`@input/pen-test` provides deterministic Yjs fixtures and opt-in contract helpers for host apps and Pen packages. Fixture helpers generate stable updates, state vectors, and normalized snapshots without relying on product data. Contract helpers exercise CRDT state-vector satisfaction, headless editor creation, and export behavior while leaving the choice of test runner to the host.
 
 ## Integration Notes
 

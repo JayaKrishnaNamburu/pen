@@ -1,10 +1,10 @@
-import type { Editor, EditorInternals, CreateEditorOptions, PenEventMap, DocumentCommitEvent, CRDTAdapter, CRDTDocument, CRDTEvent, PenDocument, SchemaRegistry, Awareness, DocumentSession, DocumentScope, DocumentScopeReplacementEvent, DocumentProfile, Extension, DocumentOp, ApplyOptions, OpOrigin, MutationGroupMetadata, SelectionState, TextSelection, DocumentRange, BlockHandle, Block, DocumentState, UndoManager, Unsubscribe, CRDTMap, CRDTArray, Position, DecorationSet, EditorViewMode } from "@pen/types";
-import { AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY, COLLECT_KEY_BINDINGS_SLOT_KEY, usesInlineTextSelection, createMutationGroupMetadata, getApplyOptionsGroupId, MUTATION_GROUP_METADATA_KEY, UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY } from "@pen/types";
-import { yjsAdapter } from "@pen/crdt-yjs";
-import { undoExtension } from "@pen/undo";
-import { documentOpsExtension } from "@pen/document-ops";
-import { deltaStreamExtension } from "@pen/delta-stream";
-import { richTextShortcutsExtension } from "@pen/shortcuts";
+import type { Editor, EditorInternals, CreateEditorOptions, PenEventMap, DocumentCommitEvent, CRDTAdapter, CRDTDocument, CRDTEvent, PenDocument, SchemaRegistry, Awareness, DocumentSession, DocumentScope, DocumentScopeReplacementEvent, DocumentProfile, Extension, DocumentOp, ApplyOptions, OpOrigin, MutationGroupMetadata, SelectionState, TextSelection, DocumentRange, BlockHandle, Block, DocumentState, UndoManager, Unsubscribe, CRDTMap, CRDTArray, Position, DecorationSet, EditorViewMode } from "@input/pen-types";
+import { AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY, COLLECT_KEY_BINDINGS_SLOT_KEY, usesInlineTextSelection, createMutationGroupMetadata, getApplyOptionsGroupId, MUTATION_GROUP_METADATA_KEY, UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY } from "@input/pen-types";
+import { yjsAdapter } from "@input/pen-crdt-yjs";
+import { undoExtension } from "@input/pen-undo";
+import { documentOpsExtension } from "@input/pen-document-ops";
+import { deltaStreamExtension } from "@input/pen-delta-stream";
+import { richTextShortcutsExtension } from "@input/pen-shortcuts";
 import { builtInDefaultSchema } from "../defaultSchema";
 import { SchemaEngineImpl } from "../schema/normalize";
 import { createBlockHandle } from "../schema/handles";
@@ -26,7 +26,7 @@ import { createPenDocumentForEditor, resolveEditorExtensions, installProfilePoli
 import { replaceEditorSelection, deleteEditorSelection, getTextForBlock, getSelectionRange, usesInlineTextSelectionForBlock, getBlockSelectionSpan, isWholeBlockSelection, collapseToPoint, sliceInlineDeltas, buildMultiBlockTextReplacement, deleteMultiBlockTextRange, replaceMultiBlockTextRange } from "./editorSelectionMutations";
 type CRDTBlockMap = CRDTMap<CRDTMap<unknown>>;
 
-// Stub undo manager for when @pen/undo is excluded
+// Stub undo manager for when @input/pen-undo is excluded
 const NOOP_UNDO: UndoManager = { undo: () => false, redo: () => false, canUndo: () => false, canRedo: () => false, stopCapturing: () => {}, syncExplicitUndoGroup: () => {}, setGroupTimeout: () => {}, registerTrackedOrigins: () => () => {}, onStackChange: () => () => {} };
 
 class EditorImpl implements Editor {

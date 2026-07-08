@@ -2,7 +2,7 @@ import type {
 	AttributionRange,
 	CRDTAdapter,
 	CRDTDocument,
-} from "@pen/types";
+} from "@input/pen-types";
 import * as Y from "yjs";
 
 import { createYjsAwareness } from "./awareness";

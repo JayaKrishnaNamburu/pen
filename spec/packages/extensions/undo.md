@@ -1,8 +1,8 @@
-# @pen/undo
+# @input/pen-undo
 
 ## Purpose
 
-`@pen/undo` provides undo/redo behavior for Pen on top of the CRDT adapter. It manages tracked origins, capture boundaries, explicit undo groups, cursor restoration metadata, and renderer-facing history restore coordination.
+`@input/pen-undo` provides undo/redo behavior for Pen on top of the CRDT adapter. It manages tracked origins, capture boundaries, explicit undo groups, cursor restoration metadata, and renderer-facing history restore coordination.
 
 ## Public Role
 
@@ -18,18 +18,18 @@ This package is the reversible-editing layer for live editing sessions. It does 
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@pen/types`
+- Runtime dependencies: `@input/pen-types`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: This package owns undo/redo orchestration around the CRDT undo manager, but it does not become the editor mutation authority.
 
 ## Runtime Model
 
-`@pen/undo` wraps the underlying CRDT undo stack and adds Pen-specific grouping and restore semantics:
+`@input/pen-undo` wraps the underlying CRDT undo stack and adds Pen-specific grouping and restore semantics:
 
 ```mermaid
 flowchart TD
-  Core["@pen/core"]
-  Undo["@pen/undo"]
+  Core["@input/pen-core"]
+  Undo["@input/pen-undo"]
   CRDT[CRDTUndoManager]
   Groups[OriginTrackingAndCaptureBoundaries]
   Restore[CursorAndMetadataRestore]
@@ -52,7 +52,7 @@ Important rules:
 - Spec path mirrors workspace path: `packages/extensions/undo.md`
 - Install `undoExtension()` when a host wants live reversible editing semantics with Pen's origin-aware grouping
 - Treat `trackedOrigins` and group boundaries as part of the editing architecture, not just UX polish
-- This package complements `@pen/history`: undo is short-horizon reversible editing, while history is durable snapshot/version management
+- This package complements `@input/pen-history`: undo is short-horizon reversible editing, while history is durable snapshot/version management
 
 ## Current Maturity / Intended Usage
 

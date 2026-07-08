@@ -1,5 +1,5 @@
 import React from "react";
-import type { SearchOptions } from "@pen/search";
+import type { SearchOptions } from "@input/pen-search";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { useSearchContext } from "./root";
 

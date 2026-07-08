@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { InputRuleEngine } from "../engine";
 import { defaultInlineRules } from "../inlineRules";
-import type { Editor } from "@pen/types";
+import type { Editor } from "@input/pen-types";
 
 type InlineRulesTestEditor = {
 	getBlock(): {

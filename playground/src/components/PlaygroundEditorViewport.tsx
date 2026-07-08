@@ -1,5 +1,5 @@
-import { Pen } from "@pen/react";
-import type { Editor } from "@pen/types";
+import { Pen } from "@input/pen-react";
+import type { Editor } from "@input/pen-types";
 import { useRef } from "react";
 import { PlaygroundContextualPrompt } from "./PlaygroundContextualPrompt";
 import { SelectionToolbar } from "./SelectionToolbar";

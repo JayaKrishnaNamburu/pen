@@ -1,6 +1,6 @@
-import type { Editor, Extension, InlineCompletionController } from "@pen/types";
-import { createDecorationSet, ensureInlineCompletionController } from "@pen/core";
-import { AI_AUTOCOMPLETE_CONTROLLER_SLOT, defineExtension } from "@pen/types";
+import type { Editor, Extension, InlineCompletionController } from "@input/pen-types";
+import { createDecorationSet, ensureInlineCompletionController } from "@input/pen-core";
+import { AI_AUTOCOMPLETE_CONTROLLER_SLOT, defineExtension } from "@input/pen-types";
 import type { AutocompleteController, AutocompleteExtensionConfig } from "./types";
 import { AutocompleteControllerImpl } from "./autocompleteController";
 

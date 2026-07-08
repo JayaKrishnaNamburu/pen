@@ -1,11 +1,11 @@
-# `@pen/schema-default`
+# `@input/pen-schema-default`
 
 Default block and inline schemas for Pen.
 
 ## Install
 
 ```bash
-pnpm add @pen/core @pen/schema-default
+pnpm add @input/pen-core @input/pen-schema-default
 ```
 
 ## What It Provides
@@ -18,8 +18,8 @@ pnpm add @pen/core @pen/schema-default
 ## Minimal Setup
 
 ```ts
-import { createEditor } from "@pen/core";
-import { createDefaultSchema } from "@pen/schema-default";
+import { createEditor } from "@input/pen-core";
+import { createDefaultSchema } from "@input/pen-schema-default";
 
 const editor = createEditor({
   schema: createDefaultSchema(),

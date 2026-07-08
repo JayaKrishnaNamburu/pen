@@ -1,4 +1,4 @@
-import { DATA_ATTRS } from "@pen/react";
+import { DATA_ATTRS } from "@input/pen-react";
 import type { DatabaseColumnDef, DatabaseViewState } from "./types";
 
 export { ColumnMenu } from "./rendererColumnMenu";
