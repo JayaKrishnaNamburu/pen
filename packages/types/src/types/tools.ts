@@ -19,12 +19,6 @@ export interface ToolRuntime extends ToolRegistry {
 		ctx: ToolContext,
 	): Promise<unknown> | AsyncIterable<unknown>;
 }
-
-/**
- * @deprecated Use `ToolRuntime`.
- */
-export interface ToolServer extends ToolRuntime {}
-
 export type ToolExecutionResult = Promise<unknown> | AsyncIterable<unknown>;
 
 export interface ToolDefinition {

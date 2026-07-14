@@ -18,7 +18,6 @@ type CRDTBlockMap = CRDTMap<CRDTMap<unknown>>;
 type RawPenDocumentLike = { getArray?(name: "blockOrder"): CRDTArray<string>; getMap?(name: "blocks" | "apps" | "metadata"): CRDTMap<unknown>; blockOrder?: CRDTArray<string>; blocks?: CRDTMap<unknown>; apps?: CRDTMap<unknown>; metadata?: CRDTMap<unknown>; };
 function createGeneratedBlockId(): string { return crypto.randomUUID(); }
 function missingPenDocumentRoot(name: string): never { throw new Error(`CRDT document is missing required Pen root "${name}".`); }
-let hasWarnedAboutWithoutOption = false;
 const NOOP_UNDO: UndoManager = { undo: () => false, redo: () => false, canUndo: () => false, canRedo: () => false, stopCapturing: () => {}, syncExplicitUndoGroup: () => {}, setGroupTimeout: () => {}, registerTrackedOrigins: () => () => {}, onStackChange: () => () => {} };
 
 
@@ -53,13 +52,6 @@ return {
 
 export function resolveEditorExtensions(editor: EditorImplRuntime, options: CreateEditorOptions): Extension[] {
 	const self = editor as EditorImplRuntime;
-const without = new Set(options.without ?? []);
-if (without.size > 0 && !hasWarnedAboutWithoutOption) {
-	hasWarnedAboutWithoutOption = true;
-	console.warn(
-		"Pen: createEditor({ without }) is deprecated. Prefer createEditor({ preset: defaultPreset(...) }) for default feature composition.",
-	);
-}
 const defaultExtensions = options.preset?.resolve({
 	schema: self._registry,
 	documentProfile: self._documentProfile,
@@ -69,12 +61,9 @@ const defaultExtensions = options.preset?.resolve({
 	undoExtension(),
 	richTextShortcutsExtension(),
 ];
-const defaults = defaultExtensions.filter(
-	(ext) => !without.has(ext.name),
-);
 
 const userExtensions = options.extensions ?? [];
-return [...defaults, ...userExtensions];
+return [...defaultExtensions, ...userExtensions];
 }
 
 export function installProfilePolicyHook(editor: EditorImplRuntime, ): void {

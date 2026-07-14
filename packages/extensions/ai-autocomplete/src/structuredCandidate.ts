@@ -7,7 +7,7 @@ import {
 	blocksToOps,
 	normalizePendingBlocksForImport,
 	parseMarkdownToBlocks,
-	splitPlainTextBlocks,
+	splitPlainTextLineBlocks,
 	type PendingBlock,
 } from "@input/pen-content-ops";
 
@@ -253,7 +253,7 @@ function splitAutocompleteProseBlocks(text: string): {
 	const normalizedText = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
 	const leadingNewlineMatch = /^\n+/.exec(normalizedText);
 	if (leadingNewlineMatch) {
-		const tailBlocks = splitPlainTextBlocks(normalizedText.slice(leadingNewlineMatch[0].length));
+		const tailBlocks = splitPlainTextLineBlocks(normalizedText.slice(leadingNewlineMatch[0].length));
 		const leadingEmptyBlocks = createEmptyBlocks(
 			tailBlocks.length > 0 ? leadingNewlineMatch[0].length - 1 : leadingNewlineMatch[0].length,
 		);
@@ -261,7 +261,7 @@ function splitAutocompleteProseBlocks(text: string): {
 		return blocks.length > 0 ? { inlineText: "", blocks } : null;
 	}
 
-	const paragraphs = splitPlainTextBlocks(normalizedText);
+	const paragraphs = splitPlainTextLineBlocks(normalizedText);
 	const trailingEmptyBlocks = createTrailingEmptyBlocks(normalizedText);
 	if (paragraphs.length <= 1 && trailingEmptyBlocks.length === 0) {
 		return null;

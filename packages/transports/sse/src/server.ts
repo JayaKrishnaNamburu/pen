@@ -11,8 +11,8 @@ import type { SSEServerOptions } from "./types";
 export function createSSEHandler(
 	options: SSEServerOptions,
 ): (request: Request) => Response | Promise<Response> {
-	const toolRuntime = options.toolRuntime ?? options.toolServer;
 	const {
+		toolRuntime,
 		editor: _editor,
 		onRequest,
 		onError,

@@ -11,10 +11,6 @@ export function splitPlainTextLineBlocks(text: string): string[] {
     findLastNonEmptyBlockIndex(blocks) + 1,
   );
 }
-
-/** @deprecated Use {@link splitPlainTextLineBlocks} for explicit line-block semantics. */
-export const splitPlainTextBlocks = splitPlainTextLineBlocks;
-
 function findFirstNonEmptyBlockIndex(blocks: readonly string[]): number {
   const index = blocks.findIndex((block) => block.length > 0);
   return index < 0 ? 0 : index;

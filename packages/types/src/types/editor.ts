@@ -176,8 +176,6 @@ export interface CreateEditorOptions {
 	schema?: SchemaRegistry;
 	preset?: EditorPreset;
 	extensions?: Extension[];
-	/** @deprecated Prefer `preset` for default feature composition. */
-	without?: string[];
 	crdt?: CRDTAdapter;
 	assets?: AssetProvider;
 	document?: CRDTDocument;

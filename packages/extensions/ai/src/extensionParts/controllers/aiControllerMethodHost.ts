@@ -1,4 +1,11 @@
-import type { DocumentOp, Editor, OpOrigin, TextSelection, UndoHistoryMetadataController } from "@input/pen-types";
+import type {
+	DocumentOp,
+	Editor,
+	HistoryAppliedEvent,
+	OpOrigin,
+	TextSelection,
+	UndoHistoryMetadataController,
+} from "@input/pen-types";
 import type { SuggestedAIOperationRunner } from "../../runtime/suggestedOperationRunner";
 import type { ExternalInlineTurnRegistry } from "../../runtime/externalInlineTurnRegistry";
 import type {
@@ -171,4 +178,8 @@ export interface AIControllerMethodHost {
 		turnId: string,
 		includeTurn: boolean,
 	): readonly AISession[];
+	_restoreInlineHistorySnapshotFromUndo(
+		snapshot: AIInlineHistorySnapshot,
+	): void;
+	_handleHistoryApplied(event: HistoryAppliedEvent): void;
 }

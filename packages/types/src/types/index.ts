@@ -283,7 +283,6 @@ export {
 export type {
 	ToolRegistry,
 	ToolRuntime,
-	ToolServer,
 	ToolExecutionResult,
 	ToolDefinition,
 	ToolContext,

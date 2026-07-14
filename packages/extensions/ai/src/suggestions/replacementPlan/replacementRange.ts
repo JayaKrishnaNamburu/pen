@@ -1,4 +1,4 @@
-import { splitPlainTextBlocks } from "@input/pen-content-ops";
+import { splitPlainTextLineBlocks } from "@input/pen-content-ops";
 import { hasLineBreak } from "./sharedTextDiff";
 
 export interface ReplacementRangeBlock {
@@ -87,7 +87,7 @@ export function splitReplacementParagraphs(text: string): string[] | undefined {
 		return undefined;
 	}
 
-	return splitPlainTextBlocks(text);
+	return splitPlainTextLineBlocks(text);
 }
 
 export function readBlockRangeOriginalText(

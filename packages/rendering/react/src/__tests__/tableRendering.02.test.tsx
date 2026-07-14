@@ -29,9 +29,8 @@ type TableBlockMapLike = {
 function createEditor(
 	options: Parameters<typeof createCoreEditor>[0] = {},
 ) {
-	const { without: _without, ...restOptions } = options;
 	return createCoreEditor({
-		...restOptions,
+		...options,
 		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,

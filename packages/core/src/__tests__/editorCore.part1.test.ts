@@ -94,21 +94,6 @@ type TestTableContentLike = {
 
 
 describe("@input/pen-core createEditor", () => {
-	it("warns once when using the deprecated without option", () => {
-		const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-
-		const editor = createCoreEditor({
-			without: ["document-ops"],
-		});
-		editor.destroy();
-
-		expect(warnSpy).toHaveBeenCalledWith(
-			"Pen: createEditor({ without }) is deprecated. Prefer createEditor({ preset: defaultPreset(...) }) for default feature composition.",
-		);
-
-		warnSpy.mockRestore();
-	});
-
 	it("installs extensions from presets before user extensions", () => {
 		const editor = createEditor({
 			preset: {

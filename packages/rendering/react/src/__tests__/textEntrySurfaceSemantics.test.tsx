@@ -14,9 +14,8 @@ import { Pen } from "../primitives/index";
 ).IS_REACT_ACT_ENVIRONMENT = true;
 
 function createEditor(options: Parameters<typeof createCoreEditor>[0] = {}) {
-	const { without: _without, ...restOptions } = options;
 	return createCoreEditor({
-		...restOptions,
+		...options,
 		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,

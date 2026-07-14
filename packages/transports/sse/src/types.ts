@@ -2,7 +2,6 @@ import type {
 	Editor,
 	PenStreamPart,
 	PenStreamRequest,
-	ToolServer,
 	ToolRuntime,
 } from "@input/pen-types";
 
@@ -26,10 +25,6 @@ export interface SSEClientOptions {
 
 export interface SSEServerOptions {
 	toolRuntime?: ToolRuntime;
-	/**
-	 * @deprecated Use `toolRuntime`.
-	 */
-	toolServer?: ToolServer;
 	editor?: Editor;
 	onRequest?: (request: PenStreamRequest) => void;
 	onError?: (error: unknown) => void;

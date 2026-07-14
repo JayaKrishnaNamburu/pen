@@ -1,0 +1,92 @@
+import { createEditor as createCoreEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
+import type { FieldEditorImpl } from "../../field-editor/fieldEditorImpl";
+import { FIELD_EDITOR_SLOT_KEY } from "../../constants/fieldEditor";
+
+(
+	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
+).IS_REACT_ACT_ENVIRONMENT = true;
+
+export const SLOW_BEFOREINPUT_TEST_TIMEOUT_MS = 60_000;
+
+export async function flushAnimationFrames(count = 1): Promise<void> {
+	for (let i = 0; i < count; i++) {
+		await new Promise<void>((resolve) => {
+			requestAnimationFrame(() => resolve());
+		});
+	}
+}
+
+export function createKeyEvent(
+	key: string,
+	options: KeyboardEventInit = {},
+): KeyboardEvent {
+	return new KeyboardEvent("keydown", {
+		key,
+		bubbles: true,
+		...options,
+	});
+}
+
+export function createSelectAllEvent(): KeyboardEvent {
+	return createKeyEvent("a", {
+		metaKey: true,
+		cancelable: true,
+	});
+}
+
+export function createEditor(
+	options: Parameters<typeof createCoreEditor>[0] = {},
+): ReturnType<typeof createCoreEditor> {
+	if (options.preset == null && options.extensions == null) {
+		return createCoreEditor({
+			...options,
+			preset: defaultPreset({
+				documentOps: false,
+				deltaStream: false,
+				undo: false,
+			}),
+		});
+	}
+
+	return createCoreEditor(options);
+}
+
+export function createUndoSelectionDeletionEditor(
+	options: Parameters<typeof createCoreEditor>[0] = {},
+): ReturnType<typeof createCoreEditor> {
+	return createCoreEditor({
+		...options,
+		preset: defaultPreset({
+			documentOps: false,
+			deltaStream: false,
+			undo: true,
+		}),
+	});
+}
+
+export function getFieldEditor(
+	editor: ReturnType<typeof createEditor>,
+): FieldEditorImpl {
+	const fieldEditor = editor.internals.getSlot<FieldEditorImpl>(
+		FIELD_EDITOR_SLOT_KEY,
+	);
+	if (!fieldEditor) {
+		throw new Error("Missing attached field editor");
+	}
+	return fieldEditor;
+}
+
+export function setNativeSelectionRange(
+	startElement: HTMLElement,
+	startOffset: number,
+	endElement: HTMLElement,
+	endOffset: number,
+): void {
+	const selection = document.getSelection();
+	const range = document.createRange();
+	range.setStart(startElement.firstChild ?? startElement, startOffset);
+	range.setEnd(endElement.firstChild ?? endElement, endOffset);
+	selection?.removeAllRanges();
+	selection?.addRange(range);
+}

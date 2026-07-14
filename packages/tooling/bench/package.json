@@ -50,6 +50,7 @@
     "@input/pen-ai-autocomplete": "workspace:*",
     "@input/pen-core": "workspace:*",
     "@input/pen-crdt-yjs": "workspace:*",
+    "@input/pen-document-ops": "workspace:*",
     "@input/pen-schema-default": "workspace:*",
     "@input/pen-test": "workspace:*",
     "@input/pen-types": "workspace:*",

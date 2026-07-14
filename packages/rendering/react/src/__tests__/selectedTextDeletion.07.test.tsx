@@ -3,140 +3,21 @@
 import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
-import {
-	createDecorationSet,
-	createEditor as createCoreEditor,
-} from "@input/pen-core";
-import { defaultPreset } from "@input/pen-preset-default";
+import { createDecorationSet } from "@input/pen-core";
 import { defineExtension } from "@input/pen-types";
-import type { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
-import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
 import { domSelectionToEditor } from "../field-editor/selectionBridge";
 import { Pen } from "../primitives/index";
 import { FakeEditContext } from "./utils/fakeEditContext";
-
-(
-	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
-).IS_REACT_ACT_ENVIRONMENT = true;
-
-async function flushAnimationFrames(count = 1): Promise<void> {
-	for (let i = 0; i < count; i++) {
-		await new Promise<void>((resolve) => {
-			requestAnimationFrame(() => resolve());
-		});
-	}
-}
-
-const SLOW_BEFOREINPUT_TEST_TIMEOUT_MS = 60_000;
-
-function createKeyEvent(
-	key: string,
-	options: KeyboardEventInit = {},
-): KeyboardEvent {
-	return new KeyboardEvent("keydown", {
-		key,
-		bubbles: true,
-		...options,
-	});
-}
-
-function createSelectAllEvent(): KeyboardEvent {
-	return createKeyEvent("a", {
-		metaKey: true,
-		cancelable: true,
-	});
-}
-
-function createEditor(
-	options: Parameters<typeof createCoreEditor>[0] = {},
-): ReturnType<typeof createCoreEditor> {
-	if (shouldUseSelectionDeletionPreset(options)) {
-		const { without: _without, ...rest } = options;
-		return createCoreEditor({
-			...rest,
-			preset: defaultPreset({
-				documentOps: false,
-				deltaStream: false,
-				undo: false,
-			}),
-		});
-	}
-
-	if (usesLegacySelectionDeletionDefaults(options.without)) {
-		const { without: _without, ...rest } = options;
-		return createCoreEditor({
-			...rest,
-			preset: defaultPreset({
-				documentOps: false,
-				deltaStream: false,
-				undo: false,
-			}),
-		});
-	}
-
-	return createCoreEditor(options);
-}
-
-function createUndoSelectionDeletionEditor(
-	options: Parameters<typeof createCoreEditor>[0] = {},
-): ReturnType<typeof createCoreEditor> {
-	return createCoreEditor({
-		...options,
-		preset: defaultPreset({
-			documentOps: false,
-			deltaStream: false,
-			undo: true,
-		}),
-	});
-}
-
-function shouldUseSelectionDeletionPreset(
-	options: NonNullable<Parameters<typeof createCoreEditor>[0]>,
-): boolean {
-	return (
-		options.without == null &&
-		options.preset == null &&
-		options.extensions == null
-	);
-}
-
-function usesLegacySelectionDeletionDefaults(
-	without: NonNullable<Parameters<typeof createCoreEditor>[0]>["without"],
-): boolean {
-	return (
-		without?.length === 3 &&
-		without[0] === "document-ops" &&
-		without[1] === "delta-stream" &&
-		without[2] === "undo"
-	);
-}
-
-function getFieldEditor(
-	editor: ReturnType<typeof createEditor>,
-): FieldEditorImpl {
-	const fieldEditor = editor.internals.getSlot<FieldEditorImpl>(
-		FIELD_EDITOR_SLOT_KEY,
-	);
-	if (!fieldEditor) {
-		throw new Error("Missing attached field editor");
-	}
-	return fieldEditor;
-}
-
-function setNativeSelectionRange(
-	startElement: HTMLElement,
-	startOffset: number,
-	endElement: HTMLElement,
-	endOffset: number,
-): void {
-	const selection = document.getSelection();
-	const range = document.createRange();
-	range.setStart(startElement.firstChild ?? startElement, startOffset);
-	range.setEnd(endElement.firstChild ?? endElement, endOffset);
-	selection?.removeAllRanges();
-	selection?.addRange(range);
-}
-
+import {
+	createEditor,
+	createKeyEvent,
+	createSelectAllEvent,
+	createUndoSelectionDeletionEditor,
+	flushAnimationFrames,
+	getFieldEditor,
+	setNativeSelectionRange,
+	SLOW_BEFOREINPUT_TEST_TIMEOUT_MS,
+} from "./utils/selectionDeletionTestHelpers";
 describe("@input/pen-react selected text deletion", () => {
 	it("collapses backspace deletion to the normalized range start", async () => {
 		const editor = createEditor();

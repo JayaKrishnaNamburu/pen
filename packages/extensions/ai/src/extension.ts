@@ -4,10 +4,13 @@ import {
 	getInlineCompletionController as getInlineCompletionControllerFromCore,
 } from "@input/pen-core";
 import type {
+	Decoration,
 	Editor,
 	Extension,
+	HistoryAppliedEvent,
 	KeyBinding,
 	ModelAdapter,
+	OpOrigin,
 	UndoHistoryMetadataController,
 } from "@input/pen-types";
 import {
@@ -272,7 +275,29 @@ class AIControllerImpl {
 	}
 }
 
-interface AIControllerImpl extends AIController {}
+interface AIControllerExtensionSurface {
+	destroy(): void;
+	handleDocumentChange(
+		events: readonly {
+			origin: OpOrigin;
+			affectedBlocks: readonly string[];
+		}[],
+	): void;
+	buildDecorations(): Decoration[];
+	canHandleInlineHistoryShortcut(
+		direction: AIInlineHistoryDirection,
+	): boolean;
+	handleInlineHistoryShortcut(direction: AIInlineHistoryDirection): boolean;
+}
+
+interface AIControllerImpl extends AIController, AIControllerExtensionSurface {
+	_setState(partial: Partial<AIControllerState>): void;
+	_syncSuggestionsFromDocument(): boolean;
+	_handleHistoryApplied(event: HistoryAppliedEvent): void;
+	_restoreInlineHistorySnapshotFromUndo(
+		snapshot: AIInlineHistorySnapshot,
+	): void;
+}
 
 Object.assign(
 	AIControllerImpl.prototype,

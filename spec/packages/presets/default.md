@@ -31,7 +31,7 @@ The default preset composes document tools, delta stream, undo, and rich-text sh
 - Path in workspace: `packages/presets/default`
 - Spec path mirrors workspace path: `packages/presets/default.md`
 - This package is part of the current package surface and should stay aligned with the headless runtime architecture.
-- Prefer `createEditor({ preset: defaultPreset(...) })` over the deprecated `createEditor({ without })` shape when customizing default feature composition.
+- Use `createEditor({ preset: defaultPreset(...) })` when customizing default feature composition.
 
 ## Current Maturity / Intended Usage
 

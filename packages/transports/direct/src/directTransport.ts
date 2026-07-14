@@ -5,7 +5,6 @@ import type {
 	PenTransport,
 	Position,
 	ToolContext,
-	ToolServer,
 	ToolRuntime,
 	Unsubscribe,
 } from "@input/pen-types";
@@ -13,17 +12,13 @@ import { isAsyncIterable, resolveToolExecution } from "@input/pen-types";
 
 export interface DirectTransportOptions {
 	toolRuntime?: ToolRuntime;
-	/**
-	 * @deprecated Use `toolRuntime`.
-	 */
-	toolServer?: ToolServer;
 	onError?: (error: unknown) => void;
 }
 
 export function directTransport(
 	options: DirectTransportOptions,
 ): PenTransport {
-	const toolRuntime = options.toolRuntime ?? options.toolServer;
+	const { toolRuntime } = options;
 	const { onError } = options;
 	if (!toolRuntime) {
 		throw new Error("directTransport requires a tool runtime");

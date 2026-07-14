@@ -846,6 +846,9 @@ importers:
       '@input/pen-crdt-yjs':
         specifier: workspace:*
         version: link:../../crdt/yjs
+      '@input/pen-document-ops':
+        specifier: workspace:*
+        version: link:../../extensions/document-ops
       '@input/pen-schema-default':
         specifier: workspace:*
         version: link:../../schema/default
