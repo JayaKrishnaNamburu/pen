@@ -6,7 +6,7 @@
   Headless, extension-first rich text<br/>editor engine for AI collaboration
 </h3>
 
-<h5>Work in progress, not yet ready for use</h5>
+<h5 align="center">Work in progress, not yet ready for use</h5>
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@pen/core"><img src="https://img.shields.io/npm/v/@pen/core?color=0368FF&label=version" alt="npm version" /></a>
