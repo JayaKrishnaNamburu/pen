@@ -6,6 +6,8 @@
   Headless, extension-first rich text<br/>editor engine for AI collaboration
 </h3>
 
+<h5>Work in progress, not yet ready for use</h5>
+
 <p align="center">
   <a href="https://www.npmjs.com/package/@pen/core"><img src="https://img.shields.io/npm/v/@pen/core?color=0368FF&label=version" alt="npm version" /></a>
   <img src="https://img.shields.io/github/stars/niceperson/pen?style=flat&color=8D30FF" alt="GitHub stars" />
