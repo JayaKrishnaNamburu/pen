@@ -51,6 +51,7 @@
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
     "test": "vitest run",
     "clean": "rm -rf dist *.tsbuildinfo"
   },

@@ -8,7 +8,7 @@ import { h, nextTick } from "vue";
 import { PenEditor } from "../components/PenEditor";
 
 afterEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
 });
 
 function createTableEditor() {

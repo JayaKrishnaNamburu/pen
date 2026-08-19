@@ -23,7 +23,7 @@ import {
 } from "../index";
 
 afterEach(() => {
-  document.body.innerHTML = "";
+  document.body.replaceChildren();
 });
 
 const editorProp = {

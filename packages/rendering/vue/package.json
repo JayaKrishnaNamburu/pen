@@ -51,6 +51,7 @@
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
     "test": "pnpm --filter @input/pen-preset-default build && vitest run",
     "clean": "rm -rf dist *.tsbuildinfo"
   },

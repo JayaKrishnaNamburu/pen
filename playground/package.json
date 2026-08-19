@@ -8,7 +8,8 @@
     "dev:backend": "tsx watch --clear-screen=false --exclude \"../packages/**/dist/**\" --tsconfig tsconfig.server.json server/index.ts",
     "dev:e2e": "vite --host 127.0.0.1 --port 4173 --strictPort",
     "build": "vite build",
-    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.server.json"
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.server.json",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.58",

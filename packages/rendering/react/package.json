@@ -91,6 +91,7 @@
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
     "test": "pnpm --filter @input/pen-preset-default build && pnpm --filter @input/pen-history build && pnpm --filter @input/pen-search build && vitest run",
     "clean": "rm -rf dist *.tsbuildinfo"
   },

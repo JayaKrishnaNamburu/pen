@@ -29,7 +29,7 @@ export function createDocumentAgentSkill(
           "#!/usr/bin/env bash",
           "set -euo pipefail",
           "echo \"Pen document agent tools:\"",
-          ...tools.map((tool) => `echo \"- ${tool.name}: ${tool.description}\"`),
+          ...tools.map((tool) => `echo "- ${tool.name}: ${tool.description}"`),
         ].join("\n"),
       },
     ],

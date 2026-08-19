@@ -1,0 +1,20 @@
+{
+  "name": "@input/pen-eslint-plugin",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Pen's custom ESLint rules: the invariants the spec-v2 waves enforce mechanically",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "main": "./src/index.js",
+  "scripts": {
+    "test": "vitest run",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "eslint": "^10.8.1",
+    "typescript-eslint": "^8.67.0",
+    "vitest": "^3.0.7"
+  }
+}
