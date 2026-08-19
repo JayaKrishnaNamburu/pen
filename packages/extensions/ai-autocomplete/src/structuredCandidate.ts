@@ -246,6 +246,13 @@ function parseProseLineStructuredSuggestion(text: string): {
 	};
 }
 
+// A blank line between paragraphs separates them; it is not a paragraph of its own. Leading and
+// trailing newline runs are handled separately, where an empty block is deliberate — that is the
+// block the caret lands in after acceptance.
+function splitProseParagraphs(text: string): string[] {
+	return splitPlainTextLineBlocks(text).filter((paragraph) => paragraph.length > 0);
+}
+
 function splitAutocompleteProseBlocks(text: string): {
 	inlineText: string;
 	blocks: string[];
@@ -253,7 +260,7 @@ function splitAutocompleteProseBlocks(text: string): {
 	const normalizedText = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
 	const leadingNewlineMatch = /^\n+/.exec(normalizedText);
 	if (leadingNewlineMatch) {
-		const tailBlocks = splitPlainTextLineBlocks(normalizedText.slice(leadingNewlineMatch[0].length));
+		const tailBlocks = splitProseParagraphs(normalizedText.slice(leadingNewlineMatch[0].length));
 		const leadingEmptyBlocks = createEmptyBlocks(
 			tailBlocks.length > 0 ? leadingNewlineMatch[0].length - 1 : leadingNewlineMatch[0].length,
 		);
@@ -261,7 +268,7 @@ function splitAutocompleteProseBlocks(text: string): {
 		return blocks.length > 0 ? { inlineText: "", blocks } : null;
 	}
 
-	const paragraphs = splitPlainTextLineBlocks(normalizedText);
+	const paragraphs = splitProseParagraphs(normalizedText);
 	const trailingEmptyBlocks = createTrailingEmptyBlocks(normalizedText);
 	if (paragraphs.length <= 1 && trailingEmptyBlocks.length === 0) {
 		return null;

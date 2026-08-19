@@ -23,7 +23,7 @@ describe("createAutocompleteStructuredCandidate", () => {
 		editor.destroy();
 	});
 
-	it("preserves blank-line paragraph separators from double newlines", () => {
+	it("treats blank lines between paragraphs as separators, not empty blocks", () => {
 		const editor = createEditor();
 
 		const candidate = createAutocompleteStructuredCandidate(
@@ -36,9 +36,7 @@ describe("createAutocompleteStructuredCandidate", () => {
 
 		expect(candidate.inlineText).toBe("Hey Oleksandr,");
 		expect(candidate.appendedBlocks.map((block) => block.content ?? "")).toEqual([
-			"",
 			"Happy to set that up.",
-			"",
 			"- Krijn",
 		]);
 
@@ -114,7 +112,6 @@ describe("createAutocompleteStructuredCandidate", () => {
 		expect(candidate.appendedBlocks.map((block) => block.content ?? "")).toEqual([
 			"",
 			"Sure thing – I can share that repo.",
-			"",
 			"- Krijn",
 		]);
 
