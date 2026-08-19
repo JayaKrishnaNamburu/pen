@@ -11,7 +11,7 @@
     "test": "turbo run test",
     "test:e2e": "playwright test",
     "typecheck": "turbo run typecheck",
-    "lint:format": "prettier --check \"README.md\" \"CLA.md\" \"CODE_OF_CONDUCT.md\" \"CONTRIBUTING.md\" \"LICENSE.md\" \"SECURITY.md\" \"SUPPORT.md\" \"package.json\" \"pnpm-workspace.yaml\" \"turbo.json\" \"tsconfig.base.json\" \"playwright.config.ts\" \"vitest.workspace.ts\" \".github/**/*.yml\" \"packages/**/README.md\" \"packages/**/package.json\" \"playground/package.json\" \"spec/**/*.md\"",
+    "lint:format": "prettier --check \"README.md\" \"AGENTS.md\" \"CLA.md\" \"CODE_OF_CONDUCT.md\" \"CONTRIBUTING.md\" \"LICENSE.md\" \"SECURITY.md\" \"SUPPORT.md\" \"package.json\" \"pnpm-workspace.yaml\" \"turbo.json\" \"tsconfig.base.json\" \"playwright.config.ts\" \"vitest.workspace.ts\" \".github/**/*.yml\" \"packages/**/README.md\" \"packages/**/package.json\" \"playground/package.json\" \"spec/**/*.md\" \"spec-v2/**/*.md\"",
     "lint": "pnpm lint:format && pnpm exec turbo run lint",
     "version-packages": "changeset version",
     "release": "changeset publish",
