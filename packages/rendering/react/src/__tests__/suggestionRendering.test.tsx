@@ -238,7 +238,7 @@ describe("@input/pen-react suggestion rendering", () => {
 		editor.destroy();
 	});
 
-	it("does not merge affected-range styling onto final-text inserted suggestions", async () => {
+	it("suppresses affected-range styling once final-text suggestions exist", async () => {
 		const editor = createEditor({
 			documentProfile: "flow",
 			extensions: [
@@ -297,9 +297,11 @@ describe("@input/pen-react suggestion rendering", () => {
 		expect(insertSuggestion?.getAttribute("style") ?? "").not.toContain(
 			"pen-ai-affected-range",
 		);
-		expect(
-			container.querySelectorAll("[data-ai-affected-range]").length,
-		).toBeGreaterThan(0);
+		// `shouldShowSelectionContext`: in final-text presentation the selection context highlight is
+		// suppressed entirely once suggestions exist, so nothing renders it — not just the insert.
+		expect(container.querySelectorAll("[data-ai-affected-range]")).toHaveLength(
+			0,
+		);
 
 		await act(async () => {
 			root.unmount();
