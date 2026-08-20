@@ -6,6 +6,7 @@ import { createRoot } from "react-dom/client";
 import { createEditor } from "@input/pen-core";
 import { searchExtension } from "@input/pen-search";
 import { Pen } from "../primitives/index";
+import { defaultSchema } from "@input/pen-schema-default";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -14,7 +15,7 @@ import { Pen } from "../primitives/index";
 describe("@input/pen-react search primitives a11y", () => {
 	it("AX3: find UI exposes a search landmark and labeled inputs", async () => {
 		const editor = createEditor({
-			extensions: [searchExtension()],
+			schema: defaultSchema,extensions: [searchExtension()],
 		});
 		const container = document.createElement("div");
 		document.body.appendChild(container);

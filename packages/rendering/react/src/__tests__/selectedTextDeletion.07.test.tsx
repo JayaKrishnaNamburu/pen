@@ -4,10 +4,11 @@ import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
 import { createDecorationSet } from "@input/pen-core";
-import { defineExtension } from "@input/pen-types";
+import { defineExtension } from "@input/pen-core";
 import { domSelectionToEditor } from "../field-editor/selectionBridge";
 import { Pen } from "../primitives/index";
 import { FakeEditContext } from "./utils/fakeEditContext";
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	createEditor,
 	createKeyEvent,
@@ -20,7 +21,7 @@ import {
 } from "./utils/selectionDeletionTestHelpers";
 describe("@input/pen-react selected text deletion", () => {
 	it("collapses backspace deletion to the normalized range start", async () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
@@ -107,7 +108,7 @@ describe("@input/pen-react selected text deletion", () => {
 	});
 
 	it("backspace exits an empty blockquote via beforeinput", async () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
@@ -174,7 +175,7 @@ describe("@input/pen-react selected text deletion", () => {
 	});
 
 	it("backspace exits an empty bullet list item via beforeinput", async () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
@@ -241,7 +242,7 @@ describe("@input/pen-react selected text deletion", () => {
 	}, SLOW_BEFOREINPUT_TEST_TIMEOUT_MS);
 
 	it("converts '- ' into a bullet list item via beforeinput", async () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 
 		const container = document.createElement("div");

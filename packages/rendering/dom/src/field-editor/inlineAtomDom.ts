@@ -1,3 +1,4 @@
+import { resolveA11ySpec } from "@input/pen-core";
 import type { SchemaRegistry } from "@input/pen-types";
 import { DATA_ATTRS } from "../utils/dataAttributes";
 import {
@@ -50,7 +51,15 @@ function createInlineAtomChipElement(
 	element.setAttribute(DATA_ATTRS.inlineAtomType, atom.type);
 	element.setAttribute(DATA_ATTRS.inlineAtomProps, serializeInlineAtomProps(atom.props));
 	const text = resolveInlineAtomDisplayText(atom, registry);
-	element.setAttribute("aria-label", text);
+	const a11y = resolveA11ySpec(
+		registry.resolveInline(atom.type)?.a11y,
+		atom.type,
+		atom.props,
+	);
+	element.setAttribute("aria-label", a11y.label);
+	if (a11y.roleDescription) {
+		element.setAttribute("aria-roledescription", a11y.roleDescription);
+	}
 	element.textContent = text;
 	inlineAtomElementData.set(element, {
 		...atom,
@@ -103,7 +112,11 @@ export function copyInlineAtomElementData(
 	});
 	targetChip.setAttribute(DATA_ATTRS.inlineAtomType, data.type);
 	targetChip.setAttribute(DATA_ATTRS.inlineAtomProps, serializeInlineAtomProps(data.props));
-	targetChip.setAttribute("aria-label", data.text);
+	targetChip.setAttribute("aria-label", sourceChip.getAttribute("aria-label") ?? data.text);
+	const roleDescription = sourceChip.getAttribute("aria-roledescription");
+	if (roleDescription) {
+		targetChip.setAttribute("aria-roledescription", roleDescription);
+	}
 }
 
 function serializeInlineAtomProps(props: Record<string, unknown>): string {

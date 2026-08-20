@@ -3,6 +3,7 @@ import { createEditor } from "@input/pen-core";
 import { escapeMarkupAttribute, escapeMarkupText } from "../escapeMarkup";
 import { xmlExporter } from "../exporter";
 import { xmlImporter } from "../importer";
+import { defaultSchema } from "@input/pen-schema-default";
 
 const noDefaultExtensionsPreset = {
   resolve() {
@@ -18,7 +19,7 @@ const HOSTILE_PLAIN_TEXTS = [
 
 function createBareEditor() {
   const editor = createEditor({
-    preset: noDefaultExtensionsPreset,
+    schema: defaultSchema, preset: noDefaultExtensionsPreset,
   });
   const existingBlockIds = [...editor.documentState.allBlocks()]
     .filter((handle) => handle.parent === null)

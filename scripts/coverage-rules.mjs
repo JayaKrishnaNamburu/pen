@@ -30,7 +30,7 @@ const EXTRA_PREFIXES = ["DUR", "COL", "AIB", "IOP", "SCALE"];
 const TEST_FILE_RE = /\.(?:test|spec)\.(?:[cm]?[jt]sx?)$/;
 const SKIP_DIR_NAMES = new Set(["node_modules", "dist", "coverage", ".git", ".turbo"]);
 const TEST_NAME_RE =
-	/\b(?:describe|it|test)(?:\.(?:skip|only|todo))*\s*\(\s*(['"`])((?:\\.|[^\\])*?)\1/g;
+	/\b(?:describe|it|test|scenario)(?:\.(?:skip|only|todo))*\s*\(\s*(['"`])((?:\\.|[^\\])*?)\1/g;
 
 export function parseInventoryRanges(markdown) {
 	const ruleLine = markdown.split(/\r?\n/).find((line) => line.startsWith("Rule:"));

@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from "react";
 import { htmlImporter } from "@input/pen-import-html";
-import { resolveEditorMessage } from "@input/pen-core";
+import { readOnlyFacet, resolveEditorA11yLabel } from "@input/pen-core";
 import { FIELD_EDITOR_SLOT_KEY as CORE_FIELD_EDITOR_SLOT_KEY } from "@input/pen-types";
 import type {
 	AssetProvider,
@@ -272,8 +272,8 @@ export function EditorRoot(props: EditorRootProps) {
 		tabIndex: -1,
 		role: "textbox",
 		"aria-multiline": true,
-		"aria-label": resolveEditorMessage(editor, "pen.editor.label"),
-		"aria-readonly": readonly || undefined,
+		...resolveEditorA11yLabel(editor),
+		"aria-readonly": readonly || editor.facet(readOnlyFacet) || undefined,
 	};
 
 	return (

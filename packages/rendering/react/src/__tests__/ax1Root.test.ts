@@ -3,9 +3,11 @@
 import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, describe, expect, it } from "vitest";
-import { createEditor } from "@input/pen-core";
+import { a11yLabelFacet, createEditor, readOnlyFacet } from "@input/pen-core";
+import { defineExtension } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
 import { EditorRoot } from "../primitives/editor/root";
+import { defaultSchema } from "@input/pen-schema-default";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -13,7 +15,7 @@ import { EditorRoot } from "../primitives/editor/root";
 
 function createTestEditor() {
 	return createEditor({
-		preset: defaultPreset({
+		schema: defaultSchema, preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
 			undo: false,
@@ -68,13 +70,64 @@ describe("AX1 React editor root", () => {
 		expect(surface?.getAttribute("aria-multiline")).toBe("true");
 	});
 
-	it("AX1 uses the catalog editor label until pen.a11yLabel is wired", async () => {
+	it("AX1 uses pen.a11yLabel and falls back to the catalog when missing", async () => {
 		const fixture = await renderRoot();
 		const surface = fixture.container.querySelector(
 			"[data-pen-editor-root]",
 		);
 
 		expect(surface?.getAttribute("aria-label")).toBe("Editor");
+	});
+
+	it("AX1 applies createEditor a11yLabel to the content root", async () => {
+		const editor = createEditor({
+			schema: defaultSchema, preset: defaultPreset({
+				documentOps: false,
+				deltaStream: false,
+				undo: false,
+			}),
+			a11yLabel: "Compose email",
+		});
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+		fixtures.push({ container, editor, root });
+
+		await act(async () => {
+			root.render(createElement(EditorRoot, { editor }));
+		});
+
+		const surface = container.querySelector("[data-pen-editor-root]");
+		expect(surface?.getAttribute("aria-label")).toBe("Compose email");
+		expect(surface?.hasAttribute("aria-labelledby")).toBe(false);
+	});
+
+	it("AX1 reflects pen.readOnly as aria-readonly", async () => {
+		const editor = createEditor({
+			schema: defaultSchema, preset: defaultPreset({
+				documentOps: false,
+				deltaStream: false,
+				undo: false,
+			}),
+			extensions: [
+				defineExtension({
+					name: "readonly-ext",
+					facets: [readOnlyFacet.of(true)],
+				}),
+			],
+		});
+		expect(editor.facet(a11yLabelFacet)).toBeUndefined();
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+		fixtures.push({ container, editor, root });
+
+		await act(async () => {
+			root.render(createElement(EditorRoot, { editor }));
+		});
+
+		const surface = container.querySelector("[data-pen-editor-root]");
+		expect(surface?.getAttribute("aria-readonly")).toBe("true");
 	});
 
 	it("AX1 reflects the existing readonly prop as aria-readonly", async () => {

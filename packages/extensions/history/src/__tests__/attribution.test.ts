@@ -2,6 +2,7 @@ import { createEditor } from "@input/pen-core";
 import { MULTIPLAYER_CONTROLLER_SLOT } from "@input/pen-types";
 import type { PenPersistence, VersionEntry } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	buildBlameRanges,
 	getCharacterAttribution,
@@ -12,7 +13,7 @@ import {
 describe("history attribution", () => {
 	it("returns attribution ranges with opaque client handles when no resolver is set", () => {
 		const editor = createEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				historyExtension({
 					persistence: new MemoryPersistence(),
 					docId: "doc-1",
@@ -49,7 +50,7 @@ describe("history attribution", () => {
 
 	it("keeps peer-asserted presence on displayHint, never as author", () => {
 		const editor = createEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				historyExtension({
 					persistence: new MemoryPersistence(),
 					docId: "doc-1",
@@ -116,7 +117,7 @@ describe("history attribution", () => {
 
 	it("treats a retained author ledger as an unverified display hint", () => {
 		const editor = createEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				historyExtension({
 					persistence: new MemoryPersistence(),
 					docId: "doc-1",
@@ -184,7 +185,7 @@ describe("history attribution", () => {
 
 	it("uses the host resolver as verified identity", () => {
 		const editor = createEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				historyExtension({
 					persistence: new MemoryPersistence(),
 					docId: "doc-1",
@@ -258,7 +259,7 @@ describe("COL3 identity is host-authoritative", () => {
 
 	it("COL3: without a resolver, blame shows B's opaque handle, never A's presence name", () => {
 		const editor = createEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				historyExtension({
 					persistence: new MemoryPersistence(),
 					docId: "doc-1",
@@ -288,7 +289,7 @@ describe("COL3 identity is host-authoritative", () => {
 
 	it("COL3: with a host resolver, blame shows the resolved identity, never A's presence name", () => {
 		const editor = createEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				historyExtension({
 					persistence: new MemoryPersistence(),
 					docId: "doc-1",

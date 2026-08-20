@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
 import { buildPlaygroundRequestPlan } from "../runtime/playgroundPlanner";
 import { buildStructuredIntentRequestPrompt } from "../runtime/structuredIntent";
+import { defaultSchema } from "@input/pen-schema-default";
 
 const TEST_PLANNER_CONFIG = {
 	documentModel: "test-document-model",
@@ -22,7 +23,7 @@ const TEST_PLANNER_CONFIG = {
 
 describe("playground planner", () => {
 	it("builds document-agent prompts that avoid assistant-style lead-ins", () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 		const plan = buildPlaygroundRequestPlan(
 			editor,
 			"Write a short story about the sea",
@@ -39,7 +40,7 @@ describe("playground planner", () => {
 	});
 
 	it("preserves structured planner prompts as raw JSON-planning requests", () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 		const prompt = [
 			"Produce a structured Pen document mutation plan.",
 			"Return exactly one JSON object and no markdown fences or prose.",
@@ -61,7 +62,7 @@ describe("playground planner", () => {
 	});
 
 	it("detects structured planner prompts when wrapped in working-set context", () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 		const wrappedPrompt = [
 			"Working set:",
 			'{"activeBlockType":"paragraph"}',
@@ -84,7 +85,7 @@ describe("playground planner", () => {
 	});
 
 	it("treats structured intent envelopes as the shared structured route contract", () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 		const prompt = buildStructuredIntentRequestPrompt({
 			prompt: "Create a table with names",
 			targetKind: "table",
@@ -104,7 +105,7 @@ describe("playground planner", () => {
 	});
 
 	it("routes inline autocomplete prompts through the fast no-tools path", () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 		const prompt = [
 			'prefix="Hey there,"',
 			"cursor_here=true",
@@ -129,7 +130,7 @@ describe("playground planner", () => {
 	});
 
 	it("routes selection prompts through the fast path when live selection is present", () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([{
 			type: "insert-text",
@@ -154,7 +155,7 @@ describe("playground planner", () => {
 	});
 
 	it("honors explicit selection-fast requests for inline edit flows", () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([{
 			type: "insert-text",
@@ -177,7 +178,7 @@ describe("playground planner", () => {
 	});
 
 	it("rejects explicit selection-fast requests when no selection is available", () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 
 		expect(() =>
 			buildPlaygroundRequestPlan(
@@ -192,7 +193,7 @@ describe("playground planner", () => {
 	});
 
 	it("honors explicit selection-fast requests from a rewrite-selection operation without live selection", () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 		const plan = buildPlaygroundRequestPlan(
 			editor,
 			"Make this friendlier",
@@ -224,7 +225,7 @@ describe("playground planner", () => {
 	});
 
 	it("honors explicit selection-fast requests from block-local operations without live selection", () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 		const plan = buildPlaygroundRequestPlan(
 			editor,
 			"Rewrite this",
@@ -255,7 +256,7 @@ describe("playground planner", () => {
 	});
 
 	it("preserves authoritative source text for explicit continue-block operations", () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 		const plan = buildPlaygroundRequestPlan(
 			editor,
 			"Continue this thought",
@@ -286,7 +287,7 @@ describe("playground planner", () => {
 	});
 
 	it("keeps selection prompts on the fast path when the prompt is pinned to a selection", () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 		const prompt = [
 			"You are writing Pen flow content as markdown.",
 			"Return only markdown content. Do not add commentary, JSON, or conversational lead-ins.",
@@ -315,7 +316,7 @@ describe("playground planner", () => {
 	});
 
 	it("does not treat non-selection context summaries as selection fast-path prompts", () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 		const prompt = [
 			"You are writing Pen flow content as markdown.",
 			"",
@@ -338,7 +339,7 @@ describe("playground planner", () => {
 	});
 
 	it("honors explicit document-agent requests even when a live selection exists", () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([{
 			type: "insert-text",
@@ -361,7 +362,7 @@ describe("playground planner", () => {
 	});
 
 	it("includes explicit document operation envelopes in document-agent prompts", () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 		const plan = buildPlaygroundRequestPlan(
 			editor,
 			"Remove all content",
@@ -390,7 +391,7 @@ describe("playground planner", () => {
 	});
 
 	it("honors explicit structured-generation requests for ordinary prompts", () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 		const plan = buildPlaygroundRequestPlan(
 			editor,
 			"Create a table with names",
@@ -405,7 +406,7 @@ describe("playground planner", () => {
 	});
 
 	it("increases autocomplete output tokens for paragraph continuations", () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 		const prompt = [
 			'prefix="Hey there, how are you?"',
 			"cursor_here=true",
@@ -427,7 +428,7 @@ describe("playground planner", () => {
 	});
 
 	it("increases autocomplete output tokens further for cross-paragraph continuations", () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 		const prompt = [
 			'prefix="Hey there, how are you?"',
 			"cursor_here=true",

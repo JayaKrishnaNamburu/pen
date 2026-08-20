@@ -1,9 +1,15 @@
-import { describe, expect, it } from "vitest";
+import {
+	describe,
+	expect,
+	it } from "vitest";
 import {
 	createEditor,
 	getInlineCompletionController,
-} from "@input/pen-core";
-import { FIELD_EDITOR_SLOT_KEY, defineExtension } from "@input/pen-types";
+	} from "@input/pen-core";
+import { FIELD_EDITOR_SLOT_KEY,
+} from "@input/pen-types";
+import { defineExtension } from "@input/pen-core";
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	autocompleteExtension,
 	createAutocompleteProvider,
@@ -34,7 +40,7 @@ describe("@input/pen-ai-autocomplete", () => {
 			isComposing: false,
 		};
 		const editor = createEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				autocompleteExtension({
 					debounceMs: 0,
 					model: {
@@ -102,7 +108,7 @@ describe("@input/pen-ai-autocomplete", () => {
 			isComposing: false,
 		};
 		const editor = createEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				autocompleteExtension({
 					debounceMs: 0,
 					model: {
@@ -163,7 +169,7 @@ describe("@input/pen-ai-autocomplete", () => {
 			isComposing: false,
 		};
 		const editor = createEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				autocompleteExtension({
 					debounceMs: 0,
 					model: {
@@ -212,7 +218,7 @@ describe("@input/pen-ai-autocomplete", () => {
 			isComposing: false,
 		};
 		const editor = createEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				autocompleteExtension({
 					debounceMs: 0,
 					model: {
@@ -259,7 +265,7 @@ describe("@input/pen-ai-autocomplete", () => {
 			isComposing: false,
 		};
 		const editor = createEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				autocompleteExtension({
 					debounceMs: 0,
 					model: {
@@ -307,7 +313,7 @@ describe("@input/pen-ai-autocomplete", () => {
 			isComposing: false,
 		};
 		const editor = createEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				autocompleteExtension({
 					debounceMs: 0,
 					acceptanceStrategy: "full",
@@ -361,7 +367,7 @@ describe("@input/pen-ai-autocomplete", () => {
 			isComposing: false,
 		};
 		const editor = createEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				autocompleteExtension({
 					debounceMs: 10,
 					model: {

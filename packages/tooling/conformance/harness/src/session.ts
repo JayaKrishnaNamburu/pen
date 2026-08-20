@@ -1,3 +1,4 @@
+import { autocompleteExtension } from "@input/pen-ai-autocomplete";
 import {
 	createEditor,
 	createHeadlessEditor,
@@ -11,17 +12,20 @@ import {
 import { applyValidatedOps } from "@input/pen-document-ops";
 import { htmlImporter } from "@input/pen-import-html";
 import { defaultPreset } from "@input/pen-preset-default";
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	createDeterministicYDocFixture,
 	populateYDoc,
 } from "@input/pen-test";
-import type {
-	CRDTAdapter,
-	CRDTDocument,
-	DiagnosticEvent,
-	DocumentOp,
-	Editor,
-	Unsubscribe,
+import {
+	FIELD_EDITOR_SLOT_KEY,
+	type CRDTAdapter,
+	type CRDTDocument,
+	type DiagnosticEvent,
+	type DocumentOp,
+	type Editor,
+	type FieldEditor,
+	type Unsubscribe,
 } from "@input/pen-types";
 import * as Y from "yjs";
 import {
@@ -132,15 +136,36 @@ function connectPeers(localY: Y.Doc, remoteY: Y.Doc): () => void {
 	};
 }
 
-function readPseudoLocaleMessages() {
+function readQueryFlag(name: string): boolean {
 	if (typeof window === "undefined") {
-		return undefined;
+		return false;
 	}
-	const params = new URLSearchParams(window.location.search);
-	if (params.get("pseudoLocale") !== "1") {
+	return new URLSearchParams(window.location.search).get(name) === "1";
+}
+
+function readPseudoLocaleMessages() {
+	if (!readQueryFlag("pseudoLocale")) {
 		return undefined;
 	}
 	return createPseudoLocaleCatalog();
+}
+
+function ax3AutocompleteExtensions() {
+	if (!readQueryFlag("ax3")) {
+		return undefined;
+	}
+	return [
+		autocompleteExtension({
+			debounceMs: 0,
+			prefetchAfterAccept: false,
+			model: {
+				async *stream() {
+					yield { type: "text-delta" as const, delta: " completion" };
+					yield { type: "done" as const };
+				},
+			},
+		}),
+	];
 }
 
 function createSession(fixtureName: string): Session {
@@ -157,9 +182,11 @@ function createSession(fixtureName: string): Session {
 		crdt: local.adapter,
 		document: local.document,
 		messages: readPseudoLocaleMessages(),
+		extensions: ax3AutocompleteExtensions(),
 	});
 	const remoteEditor = createHeadlessEditor({
 		documentProfile: "structured",
+		schema: defaultSchema,
 		crdt: remoteAdapter,
 		document: remoteDoc,
 	});
@@ -454,6 +481,23 @@ function resetXssProbe(): void {
 	window.__xssProbeTripped = false;
 }
 
+function focusText(block = 0): void {
+	const current = getHarnessSession();
+	const blockId = current.editor.documentState.blockAt(block);
+	if (!blockId) {
+		throw new Error(`focusText: no block at index ${block}`);
+	}
+	const fieldEditor = current.editor.internals.getSlot<FieldEditor>(
+		FIELD_EDITOR_SLOT_KEY,
+	);
+	if (!fieldEditor) {
+		throw new Error("focusText: field editor is not attached");
+	}
+	current.editor.selectText(blockId, 0, 0);
+	fieldEditor.activate(blockId);
+	fieldEditor.focus({ reason: "programmatic" });
+}
+
 function applyOps(ops: readonly DocumentOp[]): void {
 	getHarnessSession().editor.apply([...ops], { origin: "user" });
 }
@@ -531,9 +575,16 @@ function installBridge(): void {
 		get generation() {
 			return getHarnessSession().generation;
 		},
+		get hasFieldEditor() {
+			return (
+				getHarnessSession().editor.internals.getSlot(FIELD_EDITOR_SLOT_KEY) !=
+				null
+			);
+		},
 		load(name: string) {
 			loadFixture(name);
 		},
+		focusText,
 		apply: applyOps,
 		remoteApply,
 		applyToolPayloads,

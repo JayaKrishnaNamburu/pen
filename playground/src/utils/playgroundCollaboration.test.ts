@@ -1,6 +1,7 @@
 import { createEditor } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	normalizePlaygroundCollaborationDocument,
 	getPlaygroundCollaborationRoom,
@@ -28,7 +29,7 @@ describe("normalizePlaygroundCollaborationDocument", () => {
 
 	it("collapses empty paragraph-only collaboration docs to one block", () => {
 		const editor = createEditor({
-			preset: defaultPreset(),
+			schema: defaultSchema, preset: defaultPreset(),
 		});
 		const firstBlockId = editor.firstBlock()!.id;
 		const secondBlockId = crypto.randomUUID();
@@ -61,7 +62,7 @@ describe("normalizePlaygroundCollaborationDocument", () => {
 
 	it("recovers a paragraph when the collaboration document has no blocks", () => {
 		const editor = createEditor({
-			preset: defaultPreset(),
+			schema: defaultSchema, preset: defaultPreset(),
 		});
 		const rawDocument = editor.internals.adapter.raw<RawDocument>(
 			editor.internals.crdtDoc,

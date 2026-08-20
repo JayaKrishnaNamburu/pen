@@ -7,6 +7,7 @@ import { createEditor } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
 import { Pen } from "../primitives/index";
 import { getAttachedFieldEditor } from "../utils/fieldEditor";
+import { defaultSchema } from "@input/pen-schema-default";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -38,7 +39,7 @@ function createBlockTypeEditor(
 	options: Parameters<typeof createEditor>[0] = {},
 ) {
 	return createEditor({
-		...options,
+		schema: defaultSchema,...options,
 		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,

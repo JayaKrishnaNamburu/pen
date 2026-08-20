@@ -1,4 +1,8 @@
-import { resolveEditorMessage } from "@input/pen-core";
+import {
+	readOnlyFacet,
+	resolveEditorA11yLabel,
+	resolveEditorMessage,
+} from "@input/pen-core";
 import { htmlImporter } from "@input/pen-import-html";
 import {
 	FieldEditorImpl,
@@ -226,11 +230,11 @@ export const PenEditor = defineComponent({
 					tabIndex: -1,
 					role: "textbox",
 					"aria-multiline": "true",
-					"aria-label": resolveEditorMessage(
-						props.editor,
-						"pen.editor.label",
-					),
-					"aria-readonly": props.readonly || undefined,
+					...resolveEditorA11yLabel(props.editor),
+					"aria-readonly":
+						props.readonly ||
+						props.editor.facet(readOnlyFacet) ||
+						undefined,
 				}),
 				children,
 			);

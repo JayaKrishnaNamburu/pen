@@ -10,6 +10,7 @@ import {
 } from "../field-editor/clipboard";
 import type { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
 import type { PasteImporters } from "../context/editorContext";
+import { defaultSchema } from "@input/pen-schema-default";
 
 function createEditor(
 	options: Parameters<typeof createCoreEditor>[0] = {},
@@ -18,7 +19,7 @@ function createEditor(
 	} = {},
 ) {
 	return createCoreEditor({
-		...options,
+		schema: defaultSchema,...options,
 		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
@@ -305,10 +306,10 @@ describe("@input/pen-react clipboard", () => {
 		const blockOrder = targetEditor.documentState.blockOrder;
 		expect(blockOrder).toHaveLength(1);
 		expect(targetEditor.getBlock(blockOrder[0])?.type).toBe("table");
-		expect(targetEditor.getBlock(blockOrder[0])?.tableCell(0, 0)?.textContent()).toBe(
+		expect(targetEditor.getBlock(blockOrder[0])!.as("table")?.tableCell(0, 0)?.textContent()).toBe(
 			"Alpha",
 		);
-		expect(targetEditor.getBlock(blockOrder[0])?.tableCell(0, 1)?.textContent()).toBe(
+		expect(targetEditor.getBlock(blockOrder[0])!.as("table")?.tableCell(0, 1)?.textContent()).toBe(
 			"Bravo",
 		);
 
@@ -371,7 +372,7 @@ describe("@input/pen-react clipboard", () => {
 		expect(blockOrder).toHaveLength(3);
 		expect(targetEditor.getBlock(blockOrder[0])?.textContent()).toBe("Intro");
 		expect(targetEditor.getBlock(blockOrder[1])?.type).toBe("table");
-		expect(targetEditor.getBlock(blockOrder[1])?.tableCell(0, 0)?.textContent()).toBe(
+		expect(targetEditor.getBlock(blockOrder[1])!.as("table")?.tableCell(0, 0)?.textContent()).toBe(
 			"Alpha",
 		);
 		expect(targetEditor.getBlock(blockOrder[2])?.textContent()).toBe("After");

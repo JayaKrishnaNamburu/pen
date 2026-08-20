@@ -191,13 +191,14 @@ function readTableRows(
   serializeCell: (cell: TableCellHandle | null) => string,
 ): string[][] {
   const rows: string[][] = [];
-  const rowCount = handle.tableRowCount();
-  const colCount = handle.tableColumnCount();
+  const table = handle.as("table");
+  const rowCount = table?.tableRowCount() ?? 0;
+  const colCount = table?.tableColumnCount() ?? 0;
 
   for (let rowIndex = 0; rowIndex < rowCount; rowIndex++) {
     const row: string[] = [];
     for (let columnIndex = 0; columnIndex < colCount; columnIndex++) {
-      row.push(serializeCell(handle.tableCell(rowIndex, columnIndex)));
+      row.push(serializeCell(table?.tableCell(rowIndex, columnIndex) ?? null));
     }
     rows.push(row);
   }

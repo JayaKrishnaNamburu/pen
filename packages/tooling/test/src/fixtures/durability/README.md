@@ -30,4 +30,4 @@ Run from `packages/tooling/test` after workspace packages are built. A PR that r
 
 ## `assertDocEquals` coverage
 
-This step does **not** extend `assertDocEquals`. The corpus tests what that helper already compares (top-level `blockOrder` type, expected props, plain text) and uses JSON export equality for children, table cells, and unknown types. Gaps are listed in the V.7 as-built notes and in `durabilityCorpus.test.ts`.
+`assertDocEquals` compares block id (when both sides name one), type, props (unknown keys included on document↔document), content, marks, layout `children`, table cells, `apps`, and `metadata` except `penFormat.writer`. `ASSERT_DOC_EQUALS_FIELDS` is the closed list. JSON export equality still covers interchange shape.

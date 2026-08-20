@@ -49,7 +49,7 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@input/pen-types": "workspace:*"
+    "@input/pen-types": "workspace:^"
   },
   "peerDependencies": {
     "y-protocols": "^1.0.7",

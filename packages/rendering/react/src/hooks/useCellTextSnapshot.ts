@@ -68,7 +68,7 @@ function getCellTextSnapshot(
 	const block = editor.getBlock(tableBlockId);
 	if (!block) return createMissingSnapshot();
 
-	const cell: TableCellHandle | null = block.tableCell(row, col);
+	const cell: TableCellHandle | null = block.as("table")?.tableCell(row, col) ?? null;
 	if (!cell) return createMissingSnapshot();
 
 	return {

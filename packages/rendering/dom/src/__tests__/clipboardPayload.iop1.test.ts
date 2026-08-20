@@ -1,14 +1,19 @@
 // @vitest-environment jsdom
 
-import { describe, expect, it, vi } from "vitest";
+import {
+	describe,
+	expect,
+	it,
+	vi } from "vitest";
 import { createEditor } from "@input/pen-core";
 import {
 	PEN_CLIPBOARD_PAYLOAD_VERSION,
-	SchemaRegistryImpl,
 } from "@input/pen-types";
+import { SchemaRegistryImpl } from "@input/pen-core";
 import { handleCopy } from "../field-editor/clipboard";
 import { executePasteTransfer } from "../field-editor/transferPaste";
 import type { FieldEditorTransferController } from "../field-editor/controller";
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	createPenClipboardPayload,
 	decodePenBlocksFromHtml,
@@ -80,8 +85,8 @@ describe("IOP1 versioned clipboard payload", () => {
 	});
 
 	it("IOP1: same-registry copy/paste keeps paragraph fidelity", async () => {
-		const source = createEditor();
-		const target = createEditor();
+		const source = createEditor({ schema: defaultSchema });
+		const target = createEditor({ schema: defaultSchema });
 		const sourceBlockId = source.firstBlock()!.id;
 		const targetBlockId = target.firstBlock()!.id;
 		const clipboardData = createClipboardData();
@@ -179,7 +184,7 @@ describe("IOP1 versioned clipboard payload", () => {
 	});
 
 	it("IOP1: paste of version 99 uses the HTML/plain-text flavor and emits one diagnostic", async () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 		const diagnostics: unknown[] = [];
 		editor.on("diagnostic", (event) => {

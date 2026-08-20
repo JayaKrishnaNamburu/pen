@@ -19,6 +19,7 @@ export function EditorDragOverlay(props: DragOverlayProps) {
 
   const node = renderAsChild(props, "div", {
     "data-pen-drag-overlay": "",
+    // AX7 overlay — block-drag ghost is presentation
     "aria-hidden": "true",
     style: {
       position: "fixed",
@@ -32,6 +33,7 @@ export function EditorDragOverlay(props: DragOverlayProps) {
   return React.cloneElement(
     node as React.ReactElement<Record<string, unknown>>,
     {
+      // AX7 overlay — asChild clone re-asserts presentation
       "aria-hidden": "true",
       style: {
         ...existingStyle,

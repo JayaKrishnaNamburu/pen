@@ -13,6 +13,7 @@ import {
 	readBlockSuggestionMeta,
 	readSuggestionsFromBlock,
 } from "../suggestions/persistent";
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	createDeferred,
 	testStreamingToolExtension,
@@ -23,7 +24,7 @@ describe("aiExtension", () => {
 	it("streams markdown table suggestions before completion for bottom-chat document prompts", async () => {
 			const releaseFinalDelta = createDeferred();
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						contentFormat: {
 							blockGeneration: "markdown",
@@ -65,7 +66,7 @@ describe("aiExtension", () => {
 
 			await waitForPreview(() => {
 				const tables = Array.from(editor.blocks("table"));
-				return tables[0]?.tableCell(1, 0)?.textContent() === "Alice";
+				return tables[0].as("table")?.tableCell(1, 0)?.textContent() === "Alice";
 			});
 
 			expect(controller.getState().activeGeneration?.adapterId).toBe("flow-markdown");
@@ -76,8 +77,8 @@ describe("aiExtension", () => {
 			);
 			const previewTables = Array.from(editor.blocks("table"));
 			expect(previewTables).toHaveLength(1);
-			expect(previewTables[0]?.tableCell(1, 0)?.textContent()).toBe("Alice");
-			expect(previewTables[0]?.tableCell(1, 1)?.textContent()).toBe("Johnson");
+			expect(previewTables[0].as("table")?.tableCell(1, 0)?.textContent()).toBe("Alice");
+			expect(previewTables[0].as("table")?.tableCell(1, 1)?.textContent()).toBe("Johnson");
 
 			releaseFinalDelta.resolve();
 			const generation = await generationPromise;
@@ -90,15 +91,15 @@ describe("aiExtension", () => {
 			expect(generation.mutationReceipt?.status).toBe("staged_suggestions");
 			const tables = Array.from(editor.blocks("table"));
 			expect(tables).toHaveLength(1);
-			expect(tables[0]?.tableCell(1, 0)?.textContent()).toBe("Alice");
-			expect(tables[0]?.tableCell(1, 1)?.textContent()).toBe("Johnson");
-			expect(tables[0]?.tableCell(2, 0)?.textContent()).toBe("Bob");
-			expect(tables[0]?.tableCell(2, 1)?.textContent()).toBe("Smith");
+			expect(tables[0].as("table")?.tableCell(1, 0)?.textContent()).toBe("Alice");
+			expect(tables[0].as("table")?.tableCell(1, 1)?.textContent()).toBe("Johnson");
+			expect(tables[0].as("table")?.tableCell(2, 0)?.textContent()).toBe("Bob");
+			expect(tables[0].as("table")?.tableCell(2, 1)?.textContent()).toBe("Smith");
 		});
 
 	it("replaces existing tables through markdown suggestions", async () => {
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream() {
@@ -131,7 +132,7 @@ describe("aiExtension", () => {
 				],
 				{ origin: "system" },
 			);
-			const initialRowCount = editor.getBlock("table-1")!.tableRowCount();
+			const initialRowCount = editor.getBlock("table-1")!.as("table")!.tableRowCount();
 
 			const controller = getAIController(editor)!;
 			const generation = await controller.runPrompt("Add a row to this table", {
@@ -152,12 +153,12 @@ describe("aiExtension", () => {
 				validationIssueCount: 0,
 			});
 			expect(generation.suggestionIds?.length ?? 0).toBeGreaterThan(0);
-			expect(editor.getBlock("table-1")?.tableRowCount()).toBe(initialRowCount);
+			expect(editor.getBlock("table-1")!.as("table")?.tableRowCount()).toBe(initialRowCount);
 		});
 
 	it("accepts markdown table suggestions through the controller", async () => {
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream() {
@@ -190,7 +191,7 @@ describe("aiExtension", () => {
 				],
 				{ origin: "system" },
 			);
-			const initialRowCount = editor.getBlock("table-1")!.tableRowCount();
+			const initialRowCount = editor.getBlock("table-1")!.as("table")!.tableRowCount();
 
 			const controller = getAIController(editor)!;
 			await controller.runPrompt("Add a row to this table", {
@@ -200,9 +201,9 @@ describe("aiExtension", () => {
 			expect(controller.acceptActiveGeneration()).toBe(true);
 			const tables = Array.from(editor.blocks("table"));
 			expect(tables).toHaveLength(1);
-			expect(tables[0]?.tableRowCount()).toBe(initialRowCount + 1);
-			expect(tables[0]?.tableCell(1, 0)?.textContent()).toBe("Alice");
-			expect(tables[0]?.tableCell(2, 0)?.textContent()).toBe("Bob");
+			expect(tables[0].as("table")?.tableRowCount()).toBe(initialRowCount + 1);
+			expect(tables[0].as("table")?.tableCell(1, 0)?.textContent()).toBe("Alice");
+			expect(tables[0].as("table")?.tableCell(2, 0)?.textContent()).toBe("Bob");
 			expect(controller.getState().activeGeneration?.plan).toBeNull();
 			expect(controller.getState().activeGeneration?.reviewItems).toEqual([]);
 			expect(controller.getState().activeGeneration?.planState).toBe("none");
@@ -210,7 +211,7 @@ describe("aiExtension", () => {
 
 	it("rejects markdown table suggestions without mutating the table", async () => {
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream() {
@@ -243,7 +244,7 @@ describe("aiExtension", () => {
 				],
 				{ origin: "system" },
 			);
-			const initialRowCount = editor.getBlock("table-1")!.tableRowCount();
+			const initialRowCount = editor.getBlock("table-1")!.as("table")!.tableRowCount();
 
 			const controller = getAIController(editor)!;
 			await controller.runPrompt("Add a row to this table", {
@@ -251,7 +252,7 @@ describe("aiExtension", () => {
 			});
 
 			expect(controller.rejectActiveGeneration()).toBe(true);
-			expect(editor.getBlock("table-1")!.tableRowCount()).toBe(initialRowCount);
+			expect(editor.getBlock("table-1")!.as("table")!.tableRowCount()).toBe(initialRowCount);
 			expect(Array.from(editor.blocks("table"))).toHaveLength(1);
 			expect(controller.getState().activeGeneration?.plan).toBeNull();
 			expect(controller.getState().activeGeneration?.reviewItems).toEqual([]);

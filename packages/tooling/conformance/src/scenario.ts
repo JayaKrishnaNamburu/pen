@@ -1,5 +1,6 @@
 import type { DocumentOp } from "@input/pen-types";
 import { expect, test, type Page } from "@playwright/test";
+import { analyzeEditorWcag22Aa, formatAxeViolations } from "./axeSurface";
 import { getInlineOffsetPoint, resolveBlockId } from "./domGeometry";
 import {
 	assertDomAuthorityResult,
@@ -16,13 +17,22 @@ import type {
 export function scenario(
 	name: string,
 	fn: (s: ScenarioApi, page: Page) => Promise<void>,
+	options?: { url?: string; axe?: boolean },
 ): void {
 	test(name, async ({ page }) => {
-		await page.goto("/");
+		await page.goto(options?.url ?? "/");
 		await expect(
 			page.locator("[data-pen-inline-content]").first(),
 		).toBeVisible();
 		await fn(createScenario(page), page);
+		if (options?.axe === false) {
+			return;
+		}
+		const results = await analyzeEditorWcag22Aa(page);
+		expect(
+			results.violations,
+			formatAxeViolations(results.violations),
+		).toEqual([]);
 	});
 }
 
@@ -46,7 +56,7 @@ function createScenario(page: Page): ScenarioApi {
 	}
 
 	return {
-		async load(name: string) {
+		async load(name: string, options?: { pointer?: boolean }) {
 			await step(async () => {
 				await page.evaluate((fixtureName) => {
 					window.__penConformance.load(fixtureName);
@@ -57,6 +67,18 @@ function createScenario(page: Page): ScenarioApi {
 				await expect(
 					page.locator("[data-pen-inline-content]").first(),
 				).toBeVisible();
+				if (options?.pointer === false) {
+					await page.waitForFunction(
+						() => window.__penConformance.hasFieldEditor,
+					);
+					await page.evaluate(() => {
+						window.__penConformance.focusText(0);
+					});
+					await expect(
+						page.locator("[data-pen-field-editor-active-surface]"),
+					).toBeVisible();
+					return;
+				}
 				await page.locator("[data-pen-inline-content]").first().click();
 			});
 		},
@@ -94,6 +116,11 @@ function createScenario(page: Page): ScenarioApi {
 			async type(text: string) {
 				await step(async () => {
 					await page.keyboard.type(text);
+				});
+			},
+			async press(key: string) {
+				await step(async () => {
+					await page.keyboard.press(key);
 				});
 			},
 		},
@@ -198,6 +225,18 @@ function createScenario(page: Page): ScenarioApi {
 					window.__penConformance.scanHostileDom(),
 				);
 				expect(scan.probeTripped, "window.__xssProbe was called").toBe(false);
+			},
+			async focusInsideEditor() {
+				const inside = await page.evaluate(() => {
+					const root = document.querySelector("[data-pen-editor-root]");
+					const active = document.activeElement;
+					return (
+						root instanceof HTMLElement &&
+						active instanceof Node &&
+						root.contains(active)
+					);
+				});
+				expect(inside, "focus left the editor surface").toBe(true);
 			},
 		},
 	};

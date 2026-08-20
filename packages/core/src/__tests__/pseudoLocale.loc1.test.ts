@@ -1,3 +1,4 @@
+import { defaultSchema } from "@input/pen-schema-default";
 import { DEFAULT_MESSAGE_CATALOG } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 
@@ -28,7 +29,7 @@ describe("pseudo-locale catalog (LOC1)", () => {
 
 	it("LOC1: resolved chrome is transformed and longer than English", () => {
 		const editor = createHeadlessEditor({
-			messages: createPseudoLocaleCatalog(),
+			schema: defaultSchema,messages: createPseudoLocaleCatalog(),
 		});
 		const label = resolveEditorMessage(editor, "pen.editor.label");
 		expect(isPseudoLocaleText(label)).toBe(true);

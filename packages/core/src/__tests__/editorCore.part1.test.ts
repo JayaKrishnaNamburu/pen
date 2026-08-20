@@ -4,15 +4,17 @@ import { inputRulesExtension } from "@input/pen-input-rules";
 import { undoExtension } from "@input/pen-undo";
 import { createDefaultSchema } from "@input/pen-schema-default";
 import {
-	defineBlock,
-	defineExtension,
-	mergeSchemas,
-	SchemaRegistryImpl,
 	type BlockSchema,
 	type DocumentSession,
 	type PenStreamPart,
 	getOpOriginType,
 } from "@input/pen-types";
+import {
+	defineBlock,
+	defineExtension,
+	mergeSchemas,
+	SchemaRegistryImpl,
+} from "@input/pen-core";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -37,6 +39,7 @@ const undoOnlyPreset = {
 
 function createEditor(options: Parameters<typeof createCoreEditor>[0] = {}) {
 	return createCoreEditor({
+		schema: createDefaultSchema(),
 		...options,
 		preset: options.preset ?? noDefaultExtensionsPreset,
 	});
@@ -45,7 +48,10 @@ function createEditor(options: Parameters<typeof createCoreEditor>[0] = {}) {
 function createDefaultEditor(
 	options: Parameters<typeof createCoreEditor>[0] = {},
 ) {
-	return createCoreEditor(options);
+	return createCoreEditor({
+		schema: createDefaultSchema(),
+		...options,
+	});
 }
 
 const flowDisallowedWidget = defineBlock("widget", {
@@ -59,7 +65,7 @@ const flowDisallowedWidget = defineBlock("widget", {
 const flowPolicySchema = mergeSchemas(
 	createDefaultSchema(),
 	new SchemaRegistryImpl({
-		blocks: [flowDisallowedWidget as BlockSchema],
+		blocks: [flowDisallowedWidget as unknown as BlockSchema],
 		inlines: [],
 	}),
 );
@@ -68,6 +74,7 @@ function createEditorWithUndo(
 	options: Parameters<typeof createCoreEditor>[0] = {},
 ) {
 	return createCoreEditor({
+		schema: createDefaultSchema(),
 		...options,
 		preset: options.preset ?? undoOnlyPreset,
 	});
@@ -186,7 +193,7 @@ describe("@input/pen-core createEditor", () => {
 	it("creates headless editors around caller-owned documents without default undo behavior", () => {
 		const adapter = yjsAdapter();
 		const document = adapter.createDocument();
-		const editor = createHeadlessEditor({ crdt: adapter, document });
+		const editor = createHeadlessEditor({ schema: createDefaultSchema(),  crdt: adapter, document });
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([

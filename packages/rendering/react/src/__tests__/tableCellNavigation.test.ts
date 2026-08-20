@@ -5,6 +5,7 @@ import { createEditor } from "@input/pen-core";
 import { handleTableCellSelectionKeyDown } from "@input/pen-dom";
 import { defaultPreset } from "@input/pen-preset-default";
 import type { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
+import { defaultSchema } from "@input/pen-schema-default";
 
 class MockClipboardItem {
 	readonly types: string[];
@@ -57,7 +58,7 @@ async function flushAsyncWork(count = 4): Promise<void> {
 
 function createTableEditor() {
 	const editor = createEditor({
-		preset: defaultPreset({
+		schema: defaultSchema, preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
 			undo: false,
@@ -124,7 +125,7 @@ describe("@input/pen-react table cell navigation clipboard", () => {
 		).toBe(true);
 		await flushAsyncWork();
 
-		expect(editor.getBlock("t1")?.tableCell(0, 0)?.textContent()).toBe("Bob's");
+		expect(editor.getBlock("t1")!.as("table")?.tableCell(0, 0)?.textContent()).toBe("Bob's");
 
 		editor.destroy();
 	});
@@ -174,7 +175,7 @@ describe("@input/pen-react table cell navigation clipboard", () => {
 		});
 		await flushAsyncWork();
 
-		expect(editor.getBlock("t1")?.tableCell(0, 1)?.textContent()).toBe("Bob's");
+		expect(editor.getBlock("t1")!.as("table")?.tableCell(0, 1)?.textContent()).toBe("Bob's");
 
 		editor.destroy();
 	});

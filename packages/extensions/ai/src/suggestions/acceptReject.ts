@@ -1,3 +1,4 @@
+import { announceEditorA11y } from "@input/pen-core";
 import type { DocumentOp, Editor, OpOrigin } from "@input/pen-types";
 import type { PersistentTextSuggestion } from "../types";
 import {
@@ -58,6 +59,10 @@ function resolveSuggestions(
 			? { undoGroupId: options.undoGroupId }
 			: { undoGroup: true }),
 	});
+	announceEditorA11y(
+		editor,
+		resolution === "accept" ? "suggestionAccepted" : "suggestionRejected",
+	);
 	return true;
 }
 

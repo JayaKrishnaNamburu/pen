@@ -8,6 +8,7 @@ import {
 import { blocksToOps } from "../importerUtils";
 import type { DocumentOp } from "@input/pen-types";
 import type { PendingBlock } from "../importerUtils";
+import { defaultSchema } from "@input/pen-schema-default";
 
 const noDefaultExtensionsPreset = {
 	resolve() {
@@ -241,16 +242,16 @@ describe("blocksToOps table materialization", () => {
 		];
 
 		const editor = createEditor({
-			preset: noDefaultExtensionsPreset,
+			schema: defaultSchema, preset: noDefaultExtensionsPreset,
 		});
 
 		editor.apply(blocksToOps(blocks));
 
 		const imported = editor.lastBlock()!;
 		expect(imported.type).toBe("table");
-		expect(imported.tableRowCount()).toBe(1);
-		expect(imported.tableColumnCount()).toBe(1);
-		expect(imported.tableCell(0, 0)?.textContent()).toBe("Only");
+		expect(imported.as("table")!.tableRowCount()).toBe(1);
+		expect(imported.as("table")!.tableColumnCount()).toBe(1);
+		expect(imported.as("table")!.tableCell(0, 0)?.textContent()).toBe("Only");
 
 		editor.destroy();
 	});
@@ -281,15 +282,15 @@ describe("blocksToOps table materialization", () => {
 		];
 
 		const editor = createEditor({
-			preset: noDefaultExtensionsPreset,
+			schema: defaultSchema, preset: noDefaultExtensionsPreset,
 		});
 
 		editor.apply(blocksToOps(blocks));
 
 		const imported = editor.lastBlock()!;
-		expect(imported.tableRowCount()).toBe(3);
-		expect(imported.tableColumnCount()).toBe(1);
-		expect(imported.tableCell(2, 0)?.textContent()).toBe("C");
+		expect(imported.as("table")!.tableRowCount()).toBe(3);
+		expect(imported.as("table")!.tableColumnCount()).toBe(1);
+		expect(imported.as("table")!.tableCell(2, 0)?.textContent()).toBe("C");
 
 		editor.destroy();
 	});
@@ -319,22 +320,22 @@ describe("blocksToOps table materialization", () => {
 		];
 
 		const editor = createEditor({
-			preset: noDefaultExtensionsPreset,
+			schema: defaultSchema, preset: noDefaultExtensionsPreset,
 		});
 
 		editor.apply(blocksToOps(blocks));
 
 		const imported = editor.lastBlock()!;
-		expect(imported.tableRowCount()).toBe(2);
-		expect(imported.tableColumnCount()).toBe(3);
-		expect(imported.tableCell(1, 2)?.textContent()).toBe("B3");
+		expect(imported.as("table")!.tableRowCount()).toBe(2);
+		expect(imported.as("table")!.tableColumnCount()).toBe(3);
+		expect(imported.as("table")!.tableCell(1, 2)?.textContent()).toBe("B3");
 
 		editor.destroy();
 	});
 
 	it("DUR3: passthrough resolve keeps schema-unknown pending blocks at the import filter", () => {
 		const editor = createEditor({
-			preset: noDefaultExtensionsPreset,
+			schema: defaultSchema, preset: noDefaultExtensionsPreset,
 		});
 		const normalized = normalizePendingBlocksForImport(
 			[
@@ -357,7 +358,7 @@ describe("blocksToOps table materialization", () => {
 
 	it("emits a diagnostic when import normalization drops unknown block types", () => {
 		const editor = createEditor({
-			preset: noDefaultExtensionsPreset,
+			schema: defaultSchema, preset: noDefaultExtensionsPreset,
 		});
 		const diagnostics: unknown[] = [];
 

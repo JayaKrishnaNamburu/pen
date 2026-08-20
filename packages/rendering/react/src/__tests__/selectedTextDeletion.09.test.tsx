@@ -4,10 +4,11 @@ import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
 import { createDecorationSet } from "@input/pen-core";
-import { defineExtension } from "@input/pen-types";
+import { defineExtension } from "@input/pen-core";
 import { domSelectionToEditor } from "../field-editor/selectionBridge";
 import { Pen } from "../primitives/index";
 import { FakeEditContext } from "./utils/fakeEditContext";
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	createEditor,
 	createKeyEvent,
@@ -20,7 +21,7 @@ import {
 } from "./utils/selectionDeletionTestHelpers";
 describe("@input/pen-react selected text deletion", () => {
 	it("deletes the full selected paragraph on backspace keydown in the active surface", async () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
@@ -75,7 +76,7 @@ describe("@input/pen-react selected text deletion", () => {
 	});
 
 	it("deletes the full selected heading on backspace keydown in the active surface", async () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
@@ -132,7 +133,7 @@ describe("@input/pen-react selected text deletion", () => {
 	});
 
 	it("deletes a selected single-block range from editor chrome even with a stale DOM selection", async () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
@@ -197,7 +198,7 @@ describe("@input/pen-react selected text deletion", () => {
 	});
 
 	it("deletes a selected single-block range when focus moves to editor chrome", async () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
@@ -265,7 +266,7 @@ describe("@input/pen-react selected text deletion", () => {
 	});
 
 	it("preserves the active text selection when refocusing from editor chrome", async () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([

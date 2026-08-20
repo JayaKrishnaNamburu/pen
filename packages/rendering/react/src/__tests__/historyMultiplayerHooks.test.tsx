@@ -15,6 +15,7 @@ import {
 	type VersionMetadata,
 	type VersionEntry,
 } from "@input/pen-types";
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	Pen,
 	useAttribution,
@@ -31,7 +32,7 @@ import {
 describe("@input/pen-react history and multiplayer hooks", () => {
 	it("renders multiplayer primitives while hooks expose the same controller state", async () => {
 		const editor = createEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				multiplayerExtension({
 					user: {
 						id: "u1",
@@ -155,7 +156,7 @@ describe("@input/pen-react history and multiplayer hooks", () => {
 	});
 
 	it("keeps history and attribution as hooks", async () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 		const historyController = createMockHistoryController(blockId, 1);
 		editor.internals.setSlot(HISTORY_CONTROLLER_SLOT, historyController);
@@ -217,13 +218,13 @@ describe("@input/pen-react history and multiplayer hooks", () => {
 	});
 
 	it("shares history hook state across editors on the same document session", async () => {
-		const seedEditor = createEditor();
+		const seedEditor = createEditor({ schema: defaultSchema });
 		const documentSession = createDocumentSession({
 			adapter: seedEditor.internals.adapter,
 		});
 		const persistence = createMemoryPersistence();
 		const editorA = createEditor({
-			documentSession,
+			schema: defaultSchema,documentSession,
 			extensions: [
 				historyExtension({
 					persistence,
@@ -233,7 +234,7 @@ describe("@input/pen-react history and multiplayer hooks", () => {
 			],
 		});
 		const editorB = createEditor({
-			documentSession,
+			schema: defaultSchema,documentSession,
 			extensions: [
 				historyExtension({
 					persistence,

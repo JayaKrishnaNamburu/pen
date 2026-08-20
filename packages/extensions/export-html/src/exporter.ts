@@ -138,8 +138,9 @@ function renderTableHTML(
   editor: Editor,
   viewMode: HtmlExportViewMode,
 ): string {
-  const rowCount = handle.tableRowCount();
-  const colCount = handle.tableColumnCount();
+  const table = handle.as("table");
+  const rowCount = table?.tableRowCount() ?? 0;
+  const colCount = table?.tableColumnCount() ?? 0;
   const hasHeaderRow = handle.props.hasHeaderRow !== false;
   const parts = [serializeMarkupOpenTag("table")];
 
@@ -152,7 +153,7 @@ function renderTableHTML(
         serializeMarkupElement(
           "th",
           undefined,
-          serializeTableCellHTML(handle.tableCell(0, columnIndex), editor, viewMode),
+          serializeTableCellHTML(table?.tableCell(0, columnIndex) ?? null, editor, viewMode),
         ),
       );
     }
@@ -172,7 +173,7 @@ function renderTableHTML(
             "td",
             undefined,
             serializeTableCellHTML(
-              handle.tableCell(rowIndex, columnIndex),
+              table?.tableCell(rowIndex, columnIndex) ?? null,
               editor,
               viewMode,
             ),

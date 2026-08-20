@@ -10,7 +10,7 @@ export default defineConfig({
     "src/search.ts",
   ],
   format: ["esm", "cjs"],
-  dts: true,
+  dts: { compilerOptions: { stripInternal: true } },
   outDir: "dist",
   clean: true,
   external: [

@@ -12,7 +12,7 @@ This is the contract package for the monorepo. It is the place where packages ag
 
 - Export map: `.`
 - Root export of package-wide contracts via `./types/index`
-- Lightweight runtime helpers such as `defineBlock()`, `defineExtension()`, `prop()`, `resolveSchema()`, `generateId()`, and block-capability helpers
+- Lightweight runtime helpers such as `generateId()` and block-capability helpers. Schema creation APIs (`defineBlock()`, `defineExtension()`, `prop()`) live on `@input/pen-core`.
 - Shared slot keys such as `FIELD_EDITOR_SLOT_KEY`, `SEARCH_CONTROLLER_SLOT`, `MULTIPLAYER_CONTROLLER_SLOT`, `HISTORY_CONTROLLER_SLOT`, and AI/undo-related slots
 - Operation origin contracts such as `OpOriginType`, `StructuredOpOrigin`, `MutationGroupMetadata`, and helpers for resolving origin/group metadata
 - Shared AI operation contracts such as selection targets, scoped-range targets, requested-operation provenance, and low-level range helpers
@@ -75,7 +75,7 @@ Important rules:
 - Path in workspace: `packages/types`
 - Spec path mirrors workspace path: `packages/types.md`
 - Reach for this package when defining extension interfaces, tool contracts, slots, editor-facing types, or lightweight schema helpers
-- `defineExtension()` and the slot constants are especially important because they coordinate extension lifecycle and cross-package discovery
+- Slot constants coordinate extension lifecycle and cross-package discovery. `defineExtension()` lives on `@input/pen-core`.
 - Keep additions here broadly reusable; if something only matters once runtime state exists, it probably belongs in another package
 - When AI, playground, and transport layers need to share mutation target behavior, prefer adding the shared shape and helper here once instead of letting each layer infer it differently
 

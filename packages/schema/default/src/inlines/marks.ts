@@ -1,5 +1,8 @@
 import type { InlineSchema, PropSchema } from "@input/pen-types";
-import { prop, resolveSchema } from "@input/pen-types";
+import {
+	prop,
+	resolveSchema,
+} from "@input/pen-core";
 import { escapeHtml } from "../escapeHtml";
 
 function resolveProps(

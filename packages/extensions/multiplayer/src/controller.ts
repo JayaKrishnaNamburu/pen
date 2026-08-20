@@ -1,3 +1,4 @@
+import { announceEditorA11y } from "@input/pen-core";
 import type { ConnectionState, Editor, Unsubscribe } from "@input/pen-types";
 import type {
 	AuthorLedgerLike,
@@ -160,6 +161,7 @@ export class MultiplayerControllerImpl implements MultiplayerController {
 
 	handleAwarenessChange(states: Map<number, MultiplayerAwarenessState>): void {
 		try {
+			const previousPeers = this.peers;
 			const accepted = this.ingest.ingest(states);
 			this.identityMap.updateFromAwareness(accepted);
 			for (const [clientId, user] of this.identityMap.entries()) {
@@ -175,6 +177,7 @@ export class MultiplayerControllerImpl implements MultiplayerController {
 			);
 			this.invalidateMapped();
 			this.ensureMapped();
+			this.announcePeerChanges(previousPeers, this.mappedPeers);
 			this.peers = this.mappedPeers;
 			this.setState({
 				...this.state,
@@ -189,6 +192,34 @@ export class MultiplayerControllerImpl implements MultiplayerController {
 				message: "Presence ingest failed.",
 				error,
 			});
+		}
+	}
+
+	private announcePeerChanges(
+		previous: readonly PeerState[],
+		next: readonly PeerState[],
+	): void {
+		const previousIds = new Set(previous.map((peer) => peer.clientId));
+		const previousEditing = new Set(
+			previous
+				.filter((peer) => peer.cursor !== null || peer.selection !== null)
+				.map((peer) => peer.clientId),
+		);
+		for (const peer of next) {
+			if (!previousIds.has(peer.clientId)) {
+				announceEditorA11y(this.editor, "collaboratorJoined", {
+					name: peer.user.name,
+				});
+				continue;
+			}
+			if (
+				(peer.cursor !== null || peer.selection !== null) &&
+				!previousEditing.has(peer.clientId)
+			) {
+				announceEditorA11y(this.editor, "collaboratorEditing", {
+					name: peer.user.name,
+				});
+			}
 		}
 	}
 

@@ -13,6 +13,7 @@ import {
 	readBlockSuggestionMeta,
 	readSuggestionsFromBlock,
 } from "../suggestions/persistent";
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	createDeferred,
 	testStreamingToolExtension,
@@ -22,7 +23,7 @@ import {
 describe("aiExtension", () => {
 	it("keeps selection rewrites text-only when markdown block generation is enabled", async () => {
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						contentFormat: { blockGeneration: "markdown" },
 						model: {
@@ -58,7 +59,7 @@ describe("aiExtension", () => {
 
 	it("routes context-first block edits into persistent suggestions", async () => {
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream() {
@@ -88,7 +89,7 @@ describe("aiExtension", () => {
 	it("uses markdown block generation for bottom-chat document writing", async () => {
 			const releaseFinalDelta = createDeferred();
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						contentFormat: {
 							blockGeneration: "markdown",
@@ -165,7 +166,7 @@ describe("aiExtension", () => {
 	it("streams bottom-chat markdown as block suggestions before completion", async () => {
 			const releaseFinalDelta = createDeferred();
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						contentFormat: {
 							blockGeneration: "markdown",
@@ -243,7 +244,7 @@ describe("aiExtension", () => {
 	it("allows inline selection edits after keeping bottom-chat changes", async () => {
 			let pass = 0;
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						contentFormat: {
 							blockGeneration: "markdown",

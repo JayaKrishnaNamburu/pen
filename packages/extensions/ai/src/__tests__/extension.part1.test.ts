@@ -13,6 +13,7 @@ import {
 	readBlockSuggestionMeta,
 	readSuggestionsFromBlock,
 } from "../suggestions/persistent";
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	createDeferred,
 	testStreamingToolExtension,
@@ -22,7 +23,7 @@ import {
 describe("aiExtension", () => {
 	it("marks inserted and deleted text in suggest mode", () => {
 			const editor = createEditor({
-				extensions: [aiExtension({ suggestMode: true, author: "tester" })],
+				schema: defaultSchema,extensions: [aiExtension({ suggestMode: true, author: "tester" })],
 			});
 			const blockId = editor.firstBlock()!.id;
 
@@ -52,7 +53,7 @@ describe("aiExtension", () => {
 
 	it("rejects persistent suggestions through the controller", () => {
 			const editor = createEditor({
-				extensions: [aiExtension({ suggestMode: true, author: "tester" })],
+				schema: defaultSchema,extensions: [aiExtension({ suggestMode: true, author: "tester" })],
 			});
 			const blockId = editor.firstBlock()!.id;
 
@@ -76,7 +77,7 @@ describe("aiExtension", () => {
 
 	it("accepts persistent suggestions without re-intercepting them", () => {
 			const editor = createEditor({
-				extensions: [aiExtension({ suggestMode: true, author: "tester" })],
+				schema: defaultSchema,extensions: [aiExtension({ suggestMode: true, author: "tester" })],
 			});
 			const blockId = editor.firstBlock()!.id;
 			editor.apply(
@@ -100,7 +101,7 @@ describe("aiExtension", () => {
 
 	it("keeps accepted delete suggestions in document undo history", () => {
 			const editor = createEditor({
-				extensions: [aiExtension({ suggestMode: true, author: "tester" })],
+				schema: defaultSchema,extensions: [aiExtension({ suggestMode: true, author: "tester" })],
 			});
 			const blockId = editor.firstBlock()!.id;
 
@@ -138,7 +139,7 @@ describe("aiExtension", () => {
 
 	it("keeps rejected insert suggestions in document undo history", () => {
 			const editor = createEditor({
-				extensions: [aiExtension({ suggestMode: true, author: "tester" })],
+				schema: defaultSchema,extensions: [aiExtension({ suggestMode: true, author: "tester" })],
 			});
 			const blockId = editor.firstBlock()!.id;
 
@@ -172,7 +173,7 @@ describe("aiExtension", () => {
 
 	it("accepts multiple suggestions in one undo group", () => {
 			const editor = createEditor({
-				extensions: [aiExtension({ suggestMode: true, author: "tester" })],
+				schema: defaultSchema,extensions: [aiExtension({ suggestMode: true, author: "tester" })],
 			});
 			const firstBlockId = editor.firstBlock()!.id;
 
@@ -207,7 +208,7 @@ describe("aiExtension", () => {
 
 	it("runs a block generation with a model adapter", async () => {
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream() {
@@ -234,7 +235,7 @@ describe("aiExtension", () => {
 
 	it("parses markdown block generations into structured blocks", async () => {
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						contentFormat: { blockGeneration: "markdown" },
 						model: {
@@ -278,7 +279,7 @@ describe("aiExtension", () => {
 				],
 				{ origin: "system" },
 			);
-			const initialRowCount = editor.getBlock("table-1")?.tableRowCount();
+			const initialRowCount = editor.getBlock("table-1")!.as("table")?.tableRowCount();
 
 			const controller = getAIController(editor)!;
 			const generation = await controller.runPrompt("Continue this paragraph", {
@@ -300,7 +301,7 @@ describe("aiExtension", () => {
 
 	it("runs a selection generation when text is selected", async () => {
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream() {
@@ -335,7 +336,7 @@ describe("aiExtension", () => {
 	it("uses selection-fast request mode for bottom-chat selection rewrites", async () => {
 			let requestMode: string | undefined;
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream(options) {

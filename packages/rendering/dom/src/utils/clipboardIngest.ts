@@ -2,18 +2,24 @@ import type { BlockSchema, Editor } from "@input/pen-types";
 import type { PenBlock } from "./clipboardPayload";
 
 /**
- * SEC4 clipboard caps. Same numbers as JSON/HTML/Markdown ingest
- * (`INGEST_MAX_NESTING_DEPTH` / `INGEST_MAX_NODE_COUNT`).
+ * SEC4 / IOP5 clipboard caps. Same numbers as JSON/HTML/Markdown ingest.
  */
 export const CLIPBOARD_INGEST_MAX_NESTING_DEPTH = 32;
 export const CLIPBOARD_INGEST_MAX_NODE_COUNT = 10_000;
+export const CLIPBOARD_INGEST_MAX_TEXT_SIZE = 1_048_576;
+export const CLIPBOARD_INGEST_MAX_IMAGE_COUNT = 256;
+
+/** Test gate for IOP5: a paste at the node cap must finish, not hang the tab. */
+export const CLIPBOARD_INGEST_TIME_BUDGET_MS = 1_000;
 
 export type ClipboardIngestDropReason =
 	| "unknown-block-type"
 	| "invalid-props"
 	| "forbidden-key"
 	| "depth-exceeded"
-	| "count-exceeded";
+	| "count-exceeded"
+	| "text-size-exceeded"
+	| "image-count-exceeded";
 
 const FORBIDDEN_OWN_KEYS = new Set(["__proto__", "constructor", "prototype"]);
 
@@ -31,6 +37,8 @@ export interface ClipboardIngestResult {
 const BOUND_BY_REASON: Partial<Record<ClipboardIngestDropReason, string>> = {
 	"depth-exceeded": "CLIPBOARD_INGEST_MAX_NESTING_DEPTH",
 	"count-exceeded": "CLIPBOARD_INGEST_MAX_NODE_COUNT",
+	"text-size-exceeded": "CLIPBOARD_INGEST_MAX_TEXT_SIZE",
+	"image-count-exceeded": "CLIPBOARD_INGEST_MAX_IMAGE_COUNT",
 };
 
 export function admitClipboardBlocks(
@@ -38,7 +46,7 @@ export function admitClipboardBlocks(
 	editor: Editor,
 ): ClipboardIngestResult {
 	const counts = new Map<ClipboardIngestDropReason, number>();
-	const state = { nodes: 0 };
+	const state = { nodes: 0, text: 0, images: 0 };
 	const admitted: PenBlock[] = [];
 
 	for (const block of blocks) {
@@ -100,7 +108,7 @@ function admitBlock(
 	block: PenBlock,
 	depth: number,
 	editor: Editor,
-	state: { nodes: number },
+	state: { nodes: number; text: number; images: number },
 	counts: Map<ClipboardIngestDropReason, number>,
 ): PenBlock | null {
 	if (depth > CLIPBOARD_INGEST_MAX_NESTING_DEPTH) {
@@ -127,6 +135,17 @@ function admitBlock(
 		return null;
 	}
 
+	if (type === "image" && state.images >= CLIPBOARD_INGEST_MAX_IMAGE_COUNT) {
+		addDrop(counts, "image-count-exceeded");
+		return null;
+	}
+
+	const textLength = clipboardTextLength(block);
+	if (state.text + textLength > CLIPBOARD_INGEST_MAX_TEXT_SIZE) {
+		addDrop(counts, "text-size-exceeded");
+		return null;
+	}
+
 	const schema = isInternal ? null : (editor.schema.resolve(type) ?? null);
 	const { props, unknownCount } = admitProps(schema, block.props);
 	if (unknownCount > 0) {
@@ -134,6 +153,10 @@ function admitBlock(
 	}
 
 	state.nodes += 1;
+	state.text += textLength;
+	if (type === "image") {
+		state.images += 1;
+	}
 
 	const children: PenBlock[] = [];
 	if (Array.isArray(block.children)) {
@@ -201,6 +224,19 @@ function admitDeltas(
 		}
 		return next;
 	});
+}
+
+function clipboardTextLength(block: PenBlock): number {
+	if (Array.isArray(block.deltas) && block.deltas.length > 0) {
+		let length = 0;
+		for (const delta of block.deltas) {
+			if (typeof delta.insert === "string") {
+				length += delta.insert.length;
+			}
+		}
+		return length;
+	}
+	return typeof block.content === "string" ? block.content.length : 0;
 }
 
 function addDrop(

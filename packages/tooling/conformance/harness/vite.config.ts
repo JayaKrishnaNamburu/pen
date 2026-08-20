@@ -5,6 +5,12 @@ import react from "@vitejs/plugin-react";
 const repoRoot = fileURLToPath(new URL("../../../../", import.meta.url));
 
 const PEN_SOURCE_ALIASES = {
+	"@input/pen-ai-autocomplete": fileURLToPath(
+		new URL(
+			"../../../../packages/extensions/ai-autocomplete/src/index.ts",
+			import.meta.url,
+		),
+	),
 	"@input/pen-core": fileURLToPath(
 		new URL("../../../../packages/core/src/index.ts", import.meta.url),
 	),
@@ -64,6 +70,8 @@ export default defineConfig({
 		dedupe: ["react", "react-dom"],
 	},
 	server: {
+		host: "127.0.0.1",
+		allowedHosts: ["pen.test"],
 		fs: {
 			allow: [repoRoot],
 		},

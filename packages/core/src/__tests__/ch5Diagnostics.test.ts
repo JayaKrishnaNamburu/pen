@@ -1,12 +1,13 @@
-import {
-	defineExtension,
-	type CRDTDocument,
-	type Editor,
-	type PenDocument,
-	type SchemaRegistry,
+import type {
+	CRDTDocument,
+	Editor,
+	PenDocument,
+	SchemaRegistry,
 } from "@input/pen-types";
+import { defineExtension } from "@input/pen-core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	createHeadlessEditor,
 	EventEmitter,
@@ -196,7 +197,7 @@ describe("CH5 diagnostic routing", () => {
 		const consoleWarn = vi
 			.spyOn(console, "warn")
 			.mockImplementation(() => {});
-		const editor = createHeadlessEditor();
+		const editor = createHeadlessEditor({ schema: defaultSchema });
 		const diagnostics: unknown[] = [];
 		editor.on("diagnostic", (event) => {
 			diagnostics.push(event);

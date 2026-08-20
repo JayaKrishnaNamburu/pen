@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { createEditor } from "../index";
+import { defaultSchema } from "@input/pen-schema-default";
 
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
@@ -35,7 +36,7 @@ describe("non-secure context (HOST4)", () => {
 	it("HOST4: constructs an editor and applies ops without crypto.randomUUID", () => {
 		enterNonSecureContext();
 
-		const editor = createEditor({ preset: noDefaultExtensionsPreset });
+		const editor = createEditor({ schema: defaultSchema,  preset: noDefaultExtensionsPreset });
 		editor.apply([
 			{
 				type: "insert-block",
@@ -56,7 +57,7 @@ describe("non-secure context (HOST4)", () => {
 		enterNonSecureContext();
 
 		const editors = Array.from({ length: 50 }, () =>
-			createEditor({ preset: noDefaultExtensionsPreset }),
+			createEditor({ schema: defaultSchema,  preset: noDefaultExtensionsPreset }),
 		);
 		// the initial paragraph's id comes from the editor, not the caller
 		const generatedIds = editors.flatMap((editor) => editor.documentState.blockOrder);
@@ -75,7 +76,7 @@ describe("non-secure context (HOST4)", () => {
 	it("HOST4: also works where Web Crypto is missing entirely", () => {
 		setCrypto(undefined);
 
-		const editor = createEditor({ preset: noDefaultExtensionsPreset });
+		const editor = createEditor({ schema: defaultSchema,  preset: noDefaultExtensionsPreset });
 		expect(editor.documentState.blockOrder).toHaveLength(1);
 
 		editor.destroy();

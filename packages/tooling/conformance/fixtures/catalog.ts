@@ -2,6 +2,12 @@ import type { TestBlock } from "@input/pen-test";
 
 export type FixtureName = "hello-world" | "two-paragraph" | "deterministic";
 
+export const FIXTURE_NAMES: readonly FixtureName[] = [
+	"hello-world",
+	"two-paragraph",
+	"deterministic",
+];
+
 export const LOCAL_FIXTURES: Record<
 	Exclude<FixtureName, "deterministic">,
 	readonly TestBlock[]

@@ -3,7 +3,6 @@ import { runBothInterleavings } from "./twoPeerHarness";
 import {
 	concatenatedInlineText,
 	countEmptyInlineBlocks,
-	findParentCycle,
 	getParentId,
 	hasParentCycle,
 	listBlockIds,
@@ -275,17 +274,18 @@ export const col4TableRowColumn: Col4Scenario = {
 	invariant(harness) {
 		for (const peer of [harness.peerA, harness.peerB]) {
 			const table = peer.editor.getBlock("t1");
-			if (table.tableRowCount() !== 3) {
+			const tableHandle = table.as("table");
+			if (tableHandle?.tableRowCount() !== 3) {
 				throw new Error(
-					`COL4 table invariant: expected the inserted row to survive, got ${table.tableRowCount()} rows`,
+					`COL4 table invariant: expected the inserted row to survive, got ${tableHandle?.tableRowCount()} rows`,
 				);
 			}
-			if (table.tableColumnCount() < 3) {
+			if ((tableHandle?.tableColumnCount() ?? 0) < 3) {
 				throw new Error(
-					`COL4 table invariant: expected the inserted column to survive, got ${table.tableColumnCount()} columns`,
+					`COL4 table invariant: expected the inserted column to survive, got ${tableHandle?.tableColumnCount()} columns`,
 				);
 			}
-			if (!table.tableCell(2, 0) || !table.tableCell(0, 2)) {
+			if (!tableHandle?.tableCell(2, 0) || !tableHandle.tableCell(0, 2)) {
 				throw new Error(
 					"COL4 table invariant: missing the new row or the new column",
 				);
@@ -328,16 +328,6 @@ export function applyCycleMoves(harness: TwoPeerHarness): void {
 export const col4CycleOptions: TwoPeerHarnessOptions = {
 	blocks: CYCLE_BLOCKS,
 };
-
-export function assertCycleCurrentlySurvives(harness: TwoPeerHarness): void {
-	const cycleA = findParentCycle(harness.peerA.editor);
-	const cycleB = findParentCycle(harness.peerB.editor);
-	if (!cycleA || !cycleB) {
-		throw new Error(
-			"COL4 cycle current behavior: expected a surviving parent cycle on both peers",
-		);
-	}
-}
 
 export function assertCycleBrokenWithDiagnostic(
 	harness: TwoPeerHarness,

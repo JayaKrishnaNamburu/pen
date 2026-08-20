@@ -1,13 +1,21 @@
 import { Pen } from "@input/pen-react";
 import type { Editor } from "@input/pen-types";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactElement } from "react";
 import { getHarnessSession, subscribeHarness } from "./session";
 
-function readPseudoLocaleFlag(): boolean {
+function readQueryFlag(name: string): boolean {
 	if (typeof window === "undefined") {
 		return false;
 	}
-	return new URLSearchParams(window.location.search).get("pseudoLocale") === "1";
+	return new URLSearchParams(window.location.search).get(name) === "1";
+}
+
+function Ax3BlockHandle({
+	blockId,
+}: {
+	blockId: string;
+}): ReactElement {
+	return <Pen.Editor.BlockHandle blockId={blockId} />;
 }
 
 function PseudoLocaleChrome({ editor }: { editor: Editor }) {
@@ -54,16 +62,26 @@ export function App() {
 	}, []);
 
 	const session = getHarnessSession();
-	const showPseudoLocaleChrome = readPseudoLocaleFlag();
+	const showPseudoLocaleChrome = readQueryFlag("pseudoLocale");
+	const showAx3Chrome = readQueryFlag("ax3");
 
 	return (
-		<Pen.Editor.Root key={generation} editor={session.editor}>
+		<Pen.Editor.Root
+			key={generation}
+			editor={session.editor}
+			blockControls={showAx3Chrome ? Ax3BlockHandle : undefined}
+		>
 			<div
 				data-pen-conformance-harness=""
 				data-fixture={session.fixtureName}
 				data-generation={String(generation)}
 			>
 				<Pen.Editor.Content emptyPlaceholder="" />
+				{showAx3Chrome ? (
+					<Pen.SlashMenu.Root>
+						<Pen.SlashMenu.List />
+					</Pen.SlashMenu.Root>
+				) : null}
 				{showPseudoLocaleChrome ? (
 					<PseudoLocaleChrome editor={session.editor} />
 				) : null}

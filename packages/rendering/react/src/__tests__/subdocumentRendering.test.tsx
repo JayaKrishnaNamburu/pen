@@ -7,6 +7,7 @@ import { createEditor } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
 import { PenEditor } from "../penEditor";
 import { resolveRenderer, SubdocumentRenderer } from "../index";
+import { defaultSchema } from "@input/pen-schema-default";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -28,7 +29,7 @@ describe("@input/pen-react subdocument rendering", () => {
 
 	it("mounts nested editors without leaking parent selection handlers", async () => {
 		const editor = createEditor({
-			preset: defaultPreset({
+			schema: defaultSchema, preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,

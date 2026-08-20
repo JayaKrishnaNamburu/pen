@@ -82,7 +82,9 @@ export interface BlockHandle {
   ): BlockCapabilityMap[K] | null;
 
   meta(namespace: string): Readonly<Record<string, unknown>> | null;
+}
 
+export interface TableBlockHandle extends BlockHandle {
   tableRowCount(): number;
   tableColumnCount(): number;
   tableRow(row: number): TableRowHandle | null;

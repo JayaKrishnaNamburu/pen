@@ -105,7 +105,11 @@ function ToggleTrigger({
       onMouseDown={handleMouseDown}
       onClick={handleClick}
     >
-      <span data-pen-toggle-trigger-icon="" aria-hidden="true">
+      <span
+        data-pen-toggle-trigger-icon=""
+        // Justified decorative chevron; name lives on the button
+        aria-hidden="true"
+      >
         {open ? "▾" : "▸"}
       </span>
     </button>

@@ -20,6 +20,7 @@ import type { BlockHandle, AppHandle } from "./handles";
 import type { Unsubscribe } from "./utility";
 import type { SchemaRegistry } from "./schema";
 import type { AssetProvider } from "./persistence";
+import type { A11yLabel } from "./a11y";
 import type { MessageCatalog } from "./messages";
 
 export type EditorViewMode = DocumentProfile;
@@ -207,6 +208,7 @@ export interface EditorPresetContext {
 
 export interface EditorPresetResult {
 	extensions?: Extension[];
+	schema?: SchemaRegistry;
 }
 
 export interface EditorPreset {
@@ -226,6 +228,7 @@ export interface CreateEditorOptions {
 	editorViewMode?: EditorViewMode;
 	locale?: string;
 	messages?: Partial<MessageCatalog>;
+	a11yLabel?: A11yLabel;
 }
 
 // ── Command Context ─────────────────────────────────────────
@@ -383,6 +386,7 @@ export interface EditorInternals {
 		event: K,
 		...args: Parameters<PenEventMap[K]>
 	): void;
+	hasListeners<K extends keyof PenEventMap>(event: K): boolean;
 	onApplyBoundary(
 		hook: (event: {
 			phase: "before" | "after";

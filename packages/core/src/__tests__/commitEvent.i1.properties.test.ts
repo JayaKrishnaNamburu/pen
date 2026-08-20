@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import * as Y from "yjs";
 
 import { createEditor as createCoreEditor } from "../index";
+import { defaultSchema } from "@input/pen-schema-default";
 
 const undoOnlyPreset = {
 	resolve() {
@@ -84,7 +85,7 @@ function expectedSource(action: Action): CommitEvent["source"] {
 
 describe("commit event one-event property (Wave 2)", () => {
 	it("I1: random apply/remote/undo/redo/stream-flush sequences emit one commit per state change", async () => {
-		const editor = createCoreEditor({ preset: undoOnlyPreset });
+		const editor = createCoreEditor({ schema: defaultSchema,  preset: undoOnlyPreset });
 		await editor.whenReady();
 		const blockId = editor.firstBlock()!.id;
 		const adapter = editor.internals.adapter;

@@ -1,6 +1,6 @@
 import { createDecorationSet, emptyDecorationSet } from "@input/pen-core";
 import { createTestEditor } from "@input/pen-test";
-import { defineExtension } from "@input/pen-types";
+import { defineExtension } from "@input/pen-core";
 import type { Decoration, Extension } from "@input/pen-types";
 import * as Y from "yjs";
 import {

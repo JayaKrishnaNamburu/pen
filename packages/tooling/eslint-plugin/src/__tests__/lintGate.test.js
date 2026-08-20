@@ -59,6 +59,54 @@ describe("CH2 lint gate", () => {
 		).toHaveLength(1);
 	});
 
+	it("reports seeded aria-hidden on visible content as an error through the root config", async () => {
+		const messages = await lintSeededViolation(
+			"export function Chip() { return <span aria-hidden=\"true\" />;\n}\n",
+			"src/seeded-aria-hidden.tsx",
+			"packages/rendering/react",
+		);
+
+		expect(
+			messages.filter(
+				(message) =>
+					message.ruleId === "pen/no-aria-hidden-visible" &&
+					message.severity === 2,
+			),
+		).toHaveLength(1);
+	});
+
+	it("reports seeded outline none as an error through the root config", async () => {
+		const messages = await lintSeededViolation(
+			"export const style = { outline: \"none\" };\n",
+			"src/seeded-unstyled-focus.ts",
+			"packages/rendering/react",
+		);
+
+		expect(
+			messages.filter(
+				(message) =>
+					message.ruleId === "pen/no-unstyled-focus" &&
+					message.severity === 2,
+			),
+		).toHaveLength(1);
+	});
+
+	it("reports seeded unescaped markup concat as an error through the root config", async () => {
+		const messages = await lintSeededViolation(
+			'const html = `<img src="${src}" />`;\n',
+			"src/seeded-markup-concat.ts",
+			"packages/extensions/export-html",
+		);
+
+		expect(
+			messages.filter(
+				(message) =>
+					message.ruleId === "pen/no-unescaped-markup-concat" &&
+					message.severity === 2,
+			),
+		).toHaveLength(1);
+	});
+
 	it("reports seeded dynamic code as an error through the root config", async () => {
 		const messages = await lintSeededViolation(
 			'const run = new Function("return 1");\n',

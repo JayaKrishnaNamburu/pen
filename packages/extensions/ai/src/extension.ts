@@ -3,6 +3,7 @@ import {
 	aiControllerFacet,
 	aiInlineHistoryFacet,
 	aiReviewControllerFacet,
+	announceEditorA11y,
 	beforeApplyFacet,
 	undoMetadataControllerFacet,
 	createDecorationSet,
@@ -24,9 +25,9 @@ import {
 	AI_INLINE_HISTORY_SLOT as CORE_AI_INLINE_HISTORY_SLOT,
 	AI_REVIEW_CONTROLLER_SLOT as CORE_AI_REVIEW_CONTROLLER_SLOT,
 	INLINE_COMPLETION_SLOT as CORE_INLINE_COMPLETION_SLOT,
-	defineExtension,
 	getOpOriginType,
 } from "@input/pen-types";
+import { defineExtension } from "@input/pen-core";
 import { defaultAICommands } from "./commands/defaultCommands";
 import { resolveCatalogCopy } from "./i18n/resolveCatalogCopy";
 import { AICommandRegistry } from "./commands/registry";
@@ -313,6 +314,11 @@ class AIControllerImpl extends AIControllerSessionState {
 				? [...this._streamEvents.slice(-(MAX_STREAM_EVENTS - 1)), event]
 				: [...this._streamEvents, event];
 		this._setStreamEvents(nextEvents);
+		if (event.type === "generation-start") {
+			announceEditorA11y(this._editor, "streamingStarted");
+		} else if (event.type === "generation-finish") {
+			announceEditorA11y(this._editor, "streamingFinished");
+		}
 	}
 
 	_emitStreamEvents(): void {

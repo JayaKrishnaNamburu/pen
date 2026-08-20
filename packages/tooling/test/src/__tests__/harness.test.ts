@@ -163,6 +163,18 @@ describe("@input/pen-test harness", () => {
 
       expect(() => assertDocEquals(editorA, editorB)).not.toThrow();
     });
+
+    it("DUR7: compares empty table structure between two editors", () => {
+      const editorA = createTestEditor({
+        blocks: [{ id: "t1", type: "table" }],
+      });
+      resetTestIdCounter();
+      const editorB = createTestEditor({
+        blocks: [{ id: "t1", type: "table" }],
+      });
+
+      expect(() => assertDocEquals(editorA, editorB)).not.toThrow();
+    });
   });
 
   // ── AC 21: round-trip ───────────────────────────────────

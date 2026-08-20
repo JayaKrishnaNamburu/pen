@@ -12,5 +12,7 @@ Private Playwright harness for spec-v2 conformance. Never published.
 ```bash
 pnpm --filter @input/pen-conformance run test:chromium
 pnpm --filter @input/pen-conformance run test:matrix
+pnpm --filter @input/pen-conformance run test:axe
+pnpm --filter @input/pen-conformance run test:ax3
 pnpm --filter @input/pen-conformance run coverage:rules
 ```

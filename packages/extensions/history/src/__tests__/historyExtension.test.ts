@@ -3,6 +3,7 @@ import { yjsAdapter } from "@input/pen-crdt-yjs";
 import type { PenPersistence, VersionEntry, VersionMetadata } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 import * as Y from "yjs";
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	getHistoryController,
 	HISTORY_CONTROLLER_SLOT,
@@ -12,7 +13,7 @@ import {
 describe("historyExtension", () => {
 	it("registers the history controller on the editor", () => {
 		const editor = createEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				historyExtension({
 					persistence: new MemoryPersistence(),
 					docId: "doc-1",
@@ -28,7 +29,7 @@ describe("historyExtension", () => {
 	it("creates and lists snapshots", async () => {
 		const persistence = new MemoryPersistence();
 		const editor = createEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				historyExtension({
 					persistence,
 					docId: "doc-1",
@@ -49,7 +50,7 @@ describe("historyExtension", () => {
 	it("restores a previous snapshot for a standalone editor", async () => {
 		const persistence = new MemoryPersistence();
 		const editor = createEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				historyExtension({
 					persistence,
 					docId: "doc-1",
@@ -86,7 +87,7 @@ describe("historyExtension", () => {
 			adapter: yjsAdapter(),
 		});
 		const editorA = createEditor({
-			documentSession,
+			schema: defaultSchema,documentSession,
 			extensions: [
 				historyExtension({
 					persistence,
@@ -96,7 +97,7 @@ describe("historyExtension", () => {
 			],
 		});
 		const editorB = createEditor({
-			documentSession,
+			schema: defaultSchema,documentSession,
 			extensions: [
 				historyExtension({
 					persistence,
@@ -136,7 +137,7 @@ describe("historyExtension", () => {
 			adapter: yjsAdapter(),
 		});
 		const editorA = createEditor({
-			documentSession,
+			schema: defaultSchema,documentSession,
 			extensions: [
 				historyExtension({
 					persistence,
@@ -146,7 +147,7 @@ describe("historyExtension", () => {
 			],
 		});
 		const editorB = createEditor({
-			documentSession,
+			schema: defaultSchema,documentSession,
 			extensions: [
 				historyExtension({
 					persistence,
@@ -172,7 +173,7 @@ describe("historyExtension", () => {
 			adapter: yjsAdapter(),
 		});
 		const rootEditor = createEditor({
-			documentSession,
+			schema: defaultSchema,documentSession,
 			extensions: [
 				historyExtension({
 					persistence,
@@ -194,7 +195,7 @@ describe("historyExtension", () => {
 			scopeId: rootEditor.documentScope.id,
 		});
 		const childEditor = createEditor({
-			documentSession,
+			schema: defaultSchema,documentSession,
 			documentScopeId: childScope!.id,
 		});
 		const childBlockId = childEditor.firstBlock()!.id;
@@ -209,7 +210,7 @@ describe("historyExtension", () => {
 			scopeId: rootEditor.documentScope.id,
 		});
 		const restoredChildEditor = createEditor({
-			documentSession,
+			schema: defaultSchema,documentSession,
 			documentScopeId: restoredChildScope!.id,
 		});
 

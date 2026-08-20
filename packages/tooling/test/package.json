@@ -49,11 +49,11 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@input/pen-core": "workspace:*",
-    "@input/pen-crdt-yjs": "workspace:*",
-    "@input/pen-export-json": "workspace:*",
-    "@input/pen-schema-default": "workspace:*",
-    "@input/pen-types": "workspace:*",
+    "@input/pen-core": "workspace:^",
+    "@input/pen-crdt-yjs": "workspace:^",
+    "@input/pen-export-json": "workspace:^",
+    "@input/pen-schema-default": "workspace:^",
+    "@input/pen-types": "workspace:^",
     "yjs": "^13.6.29"
   },
   "devDependencies": {

@@ -124,8 +124,8 @@ describe("SCALE1 envelope ladder", () => {
 	it("SCALE1 50x20 table loads in a headless editor", () => {
 		const editor = createTableEditor();
 		const table = editor.getBlock(TABLE_BLOCK_ID);
-		expect(table.tableRowCount()).toBe(ENVELOPE_TABLE_ROWS);
-		expect(table.tableColumnCount()).toBe(ENVELOPE_TABLE_COLS);
+		expect(table.as("table")!.tableRowCount()).toBe(ENVELOPE_TABLE_ROWS);
+		expect(table.as("table")!.tableColumnCount()).toBe(ENVELOPE_TABLE_COLS);
 		editor.destroy();
 	});
 

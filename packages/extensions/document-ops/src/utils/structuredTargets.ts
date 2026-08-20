@@ -122,15 +122,16 @@ function buildStructuredTargetDescriptor(
 	const flowCapability = getFlowCapabilityFromSchema(schema);
 
 	if (block.type === TABLE_BLOCK_TYPE) {
+		const table = block.as("table");
 		return {
 			kind: "table",
 			blockId: block.id,
 			blockType: block.type,
 			documentProfile: editor.documentProfile,
 			editability,
-			rowCount: block.tableRowCount(),
-			columnCount: block.tableColumnCount(),
-			columns: [...block.tableColumns()],
+			rowCount: table?.tableRowCount() ?? 0,
+			columnCount: table?.tableColumnCount() ?? 0,
+			columns: [...(table?.tableColumns() ?? [])],
 		};
 	}
 

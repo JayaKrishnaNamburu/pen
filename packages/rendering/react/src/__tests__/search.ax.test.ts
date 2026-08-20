@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
 import { searchExtension } from "@input/pen-search";
 import { Pen } from "../primitives/index";
+import { defaultSchema } from "@input/pen-schema-default";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -14,7 +15,7 @@ import { Pen } from "../primitives/index";
 describe("@input/pen-react search AX3", () => {
 	it("AX3 names search input, results, and navigation", async () => {
 		const editor = createEditor({
-			extensions: [searchExtension()],
+			schema: defaultSchema,extensions: [searchExtension()],
 		});
 		const container = document.createElement("div");
 		document.body.appendChild(container);
@@ -56,7 +57,7 @@ describe("@input/pen-react search AX3", () => {
 
 	it("LOC1: host messages override search chrome labels", async () => {
 		const editor = createEditor({
-			extensions: [searchExtension()],
+			schema: defaultSchema,extensions: [searchExtension()],
 			messages: {
 				"pen.search.input.label": "Im Dokument suchen",
 				"pen.search.next": "Nächster Treffer",

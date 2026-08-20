@@ -1,4 +1,4 @@
-import { resolveEditorMessage } from "@input/pen-core";
+import { resolveEditorMessage, resolveSchemaA11y } from "@input/pen-core";
 import { resolveEditorUrl } from "@input/pen-dom";
 import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 import type { BlockHandle, CellSelection } from "@input/pen-types";
@@ -146,7 +146,15 @@ function renderBlockBody(args: {
           style: { marginLeft: `${indent * 24}px` },
         },
         [
-          h("span", { "data-pen-list-marker": "", "aria-hidden": "true" }, "-"),
+          h(
+            "span",
+            {
+              "data-pen-list-marker": "",
+              // Justified decorative list marker
+              "aria-hidden": "true",
+            },
+            "-",
+          ),
           renderInlineContent(),
         ],
       );
@@ -164,7 +172,11 @@ function renderBlockBody(args: {
         [
           h(
             "span",
-            { "data-pen-list-marker": "", "aria-hidden": "true" },
+            {
+              "data-pen-list-marker": "",
+              // Justified decorative list marker
+              "aria-hidden": "true",
+            },
             `${value}.`,
           ),
           renderInlineContent(),
@@ -187,6 +199,7 @@ function renderBlockBody(args: {
             type: "checkbox",
             checked,
             disabled: readonly,
+            "aria-label": resolveEditorMessage(editor, "pen.checklist.toggle"),
             onChange: () => {
               if (readonly) {
                 return;
@@ -228,7 +241,15 @@ function renderBlockBody(args: {
           role: "note",
         },
         [
-          h("span", { "data-pen-callout-icon": "", "aria-hidden": "true" }, icon),
+          h(
+            "span",
+            {
+              "data-pen-callout-icon": "",
+              // Justified decorative callout icon
+              "aria-hidden": "true",
+            },
+            icon,
+          ),
           h("div", { "data-pen-callout-body": "" }, [
             renderInlineContent(),
             childContainer,
@@ -321,10 +342,16 @@ function renderBlockBody(args: {
       const width =
         typeof block.props.width === "number" ? block.props.width : undefined;
 
+      const imageA11y = resolveSchemaA11y(editor, {
+        kind: "block",
+        type: block.type,
+        props: { ...block.props },
+      });
       return h("figure", { "data-block-type": "image" }, [
         h("img", {
           src: src ?? undefined,
-          alt: String(block.props.alt ?? ""),
+          alt: imageA11y.label,
+          "aria-roledescription": imageA11y.roleDescription,
           "data-pen-blocked-url": src == null ? "" : undefined,
           style: width ? { width: `${width}px` } : undefined,
         }),
@@ -354,8 +381,9 @@ function renderTable(
   fieldEditor: ReturnType<typeof useFieldEditorContext>,
   selection: ReturnType<typeof useSelection>["value"],
 ) {
-  const rowCount = block.tableRowCount();
-  const columnCount = block.tableColumnCount();
+  const table = block.as("table");
+  const rowCount = table?.tableRowCount() ?? 0;
+  const columnCount = table?.tableColumnCount() ?? 0;
   const hasHeaderRow = Boolean(block.props.hasHeaderRow);
   const cellSelection =
     selection?.type === "cell" && selection.blockId === block.id ? selection : null;
@@ -381,6 +409,7 @@ function renderTable(
           cellTag,
           {
             key: `${rowIndex}:${columnIndex}`,
+            ...(isHeaderRow ? { scope: "col" } : {}),
             [DATA_ATTRS.tableCell]: "",
             [DATA_ATTRS.tableCellRow]: rowIndex,
             [DATA_ATTRS.tableCellCol]: columnIndex,

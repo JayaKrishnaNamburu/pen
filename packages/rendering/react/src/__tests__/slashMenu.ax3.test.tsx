@@ -6,6 +6,7 @@ import { createRoot } from "react-dom/client";
 import { createEditor } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
 import { Pen } from "../primitives/index";
+import { defaultSchema } from "@input/pen-schema-default";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -15,7 +16,7 @@ function createSlashMenuEditor(
 	options: Parameters<typeof createEditor>[0] = {},
 ) {
 	return createEditor({
-		...options,
+		schema: defaultSchema,...options,
 		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
@@ -100,6 +101,8 @@ describe("@input/pen-react slash menu AX3", () => {
 		);
 
 		expect(listbox?.getAttribute("role")).toBe("listbox");
+		expect(listbox?.getAttribute("aria-label")).toBe("Slash menu");
+		expect(listbox?.hasAttribute("hidden")).toBe(false);
 		expect(listbox?.id).toBeTruthy();
 		expect(options).toHaveLength(3);
 		expect(options[0]?.getAttribute("role")).toBe("option");
@@ -274,6 +277,11 @@ describe("@input/pen-react slash menu AX3", () => {
 		expect(field?.getAttribute("aria-expanded")).toBeNull();
 		expect(field?.getAttribute("aria-controls")).toBeNull();
 		expect(field?.getAttribute("aria-activedescendant")).toBeNull();
+		const list = container.querySelector<HTMLElement>(
+			"[data-pen-slash-menu-list]",
+		);
+		expect(list?.hasAttribute("hidden")).toBe(true);
+		expect(list?.getAttribute("role")).toBeNull();
 
 		await act(async () => {
 			root.unmount();

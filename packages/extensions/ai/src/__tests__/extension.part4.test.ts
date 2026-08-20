@@ -13,6 +13,7 @@ import {
 	readBlockSuggestionMeta,
 	readSuggestionsFromBlock,
 } from "../suggestions/persistent";
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	createDeferred,
 	testStreamingToolExtension,
@@ -23,7 +24,7 @@ describe("aiExtension", () => {
 	it("refreshes the inline follow-up target after keeping a rewritten selection", async () => {
 			let streamCount = 0;
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream() {
@@ -78,7 +79,7 @@ describe("aiExtension", () => {
 	it("refreshes the inline follow-up target while the prior turn is still in review", async () => {
 			let streamCount = 0;
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream() {
@@ -134,7 +135,7 @@ describe("aiExtension", () => {
 
 	it("keeps inline prompt targets stable after the live selection changes", async () => {
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream() {
@@ -193,7 +194,7 @@ describe("aiExtension", () => {
 
 	it("restores inline edit review state through document undo and redo", async () => {
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream() {
@@ -260,7 +261,7 @@ describe("aiExtension", () => {
 	it("lets inline edit continue from an undone review state", async () => {
 			let pass = 0;
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream() {
@@ -311,7 +312,7 @@ describe("aiExtension", () => {
 
 	it("undoes a streamed inline turn as one step even when deltas span capture timeouts", async () => {
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream() {

@@ -268,7 +268,7 @@ function getCellTextSnapshot(
     return EMPTY_BLOCK_TEXT_SNAPSHOT;
   }
 
-  const cell: TableCellHandle | null = block.tableCell(row, col);
+  const cell: TableCellHandle | null = block.as("table")?.tableCell(row, col) ?? null;
   if (!cell) {
     return EMPTY_BLOCK_TEXT_SNAPSHOT;
   }

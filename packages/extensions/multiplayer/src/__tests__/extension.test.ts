@@ -6,6 +6,7 @@ import {
 	type MultiplayerSession,
 } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	getMultiplayerController,
 	multiplayerExtension,
@@ -15,7 +16,7 @@ import {
 describe("multiplayerExtension", () => {
 	it("registers the controller on the editor", () => {
 		const editor = createEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				multiplayerExtension({
 					user: { id: "u1", name: "Ada" },
 				}),
@@ -28,14 +29,14 @@ describe("multiplayerExtension", () => {
 
 	it("assigns a deterministic color when the user does not provide one", () => {
 		const firstEditor = createEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				multiplayerExtension({
 					user: { id: "u1", name: "Ada" },
 				}),
 			],
 		});
 		const secondEditor = createEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				multiplayerExtension({
 					user: { id: "u1", name: "Ada" },
 				}),
@@ -54,7 +55,7 @@ describe("multiplayerExtension", () => {
 
 	it("preserves an explicit user color", () => {
 		const editor = createEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				multiplayerExtension({
 					user: { id: "u1", name: "Ada", color: "#123456" },
 				}),
@@ -68,7 +69,7 @@ describe("multiplayerExtension", () => {
 
 	it("clears the controller slot on destroy", async () => {
 		const editor = createEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				multiplayerExtension({
 					user: { id: "u1", name: "Ada" },
 				}),
@@ -87,7 +88,7 @@ describe("multiplayerExtension", () => {
 
 	it("publishes local text selection into awareness state", () => {
 		const editor = createEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				multiplayerExtension({
 					user: { id: "u1", name: "Ada" },
 				}),
@@ -112,7 +113,7 @@ describe("multiplayerExtension", () => {
 			adapter: yjsAdapter(),
 		});
 		const editorA = createEditor({
-			documentSession: session,
+			schema: defaultSchema,documentSession: session,
 			extensions: [
 				multiplayerExtension({
 					user: { id: "u1", name: "Ada" },
@@ -120,7 +121,7 @@ describe("multiplayerExtension", () => {
 			],
 		});
 		const editorB = createEditor({
-			documentSession: session,
+			schema: defaultSchema,documentSession: session,
 			extensions: [
 				multiplayerExtension({
 					user: { id: "u1", name: "Ada" },
@@ -147,7 +148,7 @@ describe("multiplayerExtension", () => {
 			adapter: yjsAdapter(),
 		});
 		const editor = createEditor({
-			documentSession: session,
+			schema: defaultSchema,documentSession: session,
 			extensions: [
 				multiplayerExtension({
 					user: { id: "u1", name: "Ada" },
@@ -175,7 +176,7 @@ describe("multiplayerExtension", () => {
 	it("wires provider connection state through the controller", () => {
 		const session = new FakeSession();
 		const editor = createEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				multiplayerExtension({
 					user: { id: "u1", name: "Ada" },
 					session,

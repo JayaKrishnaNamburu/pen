@@ -9,6 +9,7 @@ import type { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
 import { handleCopy } from "../field-editor/clipboard";
 import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
 import { Pen } from "../primitives/index";
+import { defaultSchema } from "@input/pen-schema-default";
 
 type TableRowLike = {
 	get(field: "cells"): { delete(index: number, length: number): void };
@@ -30,7 +31,7 @@ function createEditor(
 	options: Parameters<typeof createCoreEditor>[0] = {},
 ) {
 	return createCoreEditor({
-		...options,
+		schema: defaultSchema,...options,
 		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,

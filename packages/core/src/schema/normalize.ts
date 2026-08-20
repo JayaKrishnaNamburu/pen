@@ -185,6 +185,7 @@ export class SchemaEngineImpl implements SchemaEngine {
     // Phase 1: Structural rules
     this.deduplicateBlockIds(blockId);
     this.enforceCrossArrayMembership(blockId);
+    this.breakParentCycle(blockId);
 
     // Phase 2: Block-level rules
     this.stripDefaultProps(blockId, schema);
@@ -405,6 +406,99 @@ export class SchemaEngineImpl implements SchemaEngine {
       if (parentId === blockId) {
         props.delete?.("parentId");
         this.dirtyBlockIds.add(id);
+      }
+    }
+  }
+
+  // ── COL4: Parent-cycle break ─────────────────────────────
+  // When a parent chain reaches itself, clear the edge whose owning
+  // block id sorts lowest so every peer computes the same repair.
+
+  private breakParentCycle(blockId: string): void {
+    const cycle = this.walkParentCycle(blockId);
+    if (!cycle) return;
+
+    let ownerToClear = cycle[0];
+    let childToClear = cycle[0];
+    for (const childId of cycle) {
+      const parentId = this.parentOf(childId);
+      if (!parentId) continue;
+      const ownerId = this.parentEdgeOwner(childId, parentId);
+      if (ownerId < ownerToClear) {
+        ownerToClear = ownerId;
+        childToClear = childId;
+      }
+    }
+
+    const parentId = this.parentOf(childToClear);
+    if (!parentId) return;
+    this.clearParentEdge(childToClear, parentId);
+    this.dirtyBlockIds.add(childToClear);
+    this.dirtyBlockIds.add(parentId);
+    this.onDiagnostic?.({
+      code: "parent-cycle",
+      level: "warn",
+      source: "schema",
+      message: `Parent cycle broken by clearing the edge owned by "${ownerToClear}".`,
+      remediation:
+        "Concurrent structural edits produced a parent cycle. The lexicographically lowest owning block id loses that parent edge so every peer repairs the same way.",
+    });
+  }
+
+  private walkParentCycle(startId: string): string[] | null {
+    const seen: string[] = [];
+    const seenSet = new Set<string>();
+    let current: string | null = startId;
+
+    while (current) {
+      if (seenSet.has(current)) {
+        return seen.slice(seen.indexOf(current));
+      }
+      if (!this.getBlockMap(current)) {
+        return null;
+      }
+      seen.push(current);
+      seenSet.add(current);
+      current = this.parentOf(current);
+    }
+
+    return null;
+  }
+
+  private parentOf(blockId: string): string | null {
+    const fromProp = this.readParentIdProp(blockId);
+    if (fromProp) return fromProp;
+    return this.findParentWithChild(blockId);
+  }
+
+  private readParentIdProp(blockId: string): string | null {
+    const blockMap = this.getBlockMap(blockId);
+    if (!blockMap) return null;
+    const props = getMapProp(blockMap, "props");
+    const parentId = props?.get("parentId");
+    return typeof parentId === "string" && parentId.length > 0 ? parentId : null;
+  }
+
+  private parentEdgeOwner(childId: string, parentId: string): string {
+    return this.readParentIdProp(childId) === parentId ? childId : parentId;
+  }
+
+  private clearParentEdge(childId: string, parentId: string): void {
+    if (this.readParentIdProp(childId) === parentId) {
+      const blockMap = this.getBlockMap(childId);
+      const props = blockMap ? getMapProp(blockMap, "props") : null;
+      props?.delete?.("parentId");
+      return;
+    }
+
+    const parentMap = this.getBlockMap(parentId);
+    const children = parentMap
+      ? getArrayProp<string>(parentMap, "children")
+      : null;
+    if (!children) return;
+    for (let i = children.length - 1; i >= 0; i--) {
+      if (children.get(i) === childId) {
+        children.delete(i, 1);
       }
     }
   }

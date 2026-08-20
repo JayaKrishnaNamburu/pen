@@ -12,6 +12,7 @@ import { defaultPreset } from "@input/pen-preset-default";
 import { InlineContent } from "../primitives/editor/inlineContent";
 import { Pen } from "../primitives/index";
 import { ParagraphRenderer, registerRenderer } from "../renderers/index";
+import { defaultSchema } from "@input/pen-schema-default";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -44,7 +45,7 @@ describe("@input/pen-react placeholder behavior", () => {
 		registerRenderer("paragraph", PlaceholderParagraphRenderer);
 
 		const editor = createEditor({
-			preset: defaultPreset({
+			schema: defaultSchema, preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,
@@ -106,7 +107,7 @@ describe("@input/pen-react placeholder behavior", () => {
 		registerRenderer("paragraph", PlaceholderParagraphRenderer);
 
 		const editor = createEditor({
-			preset: defaultPreset({
+			schema: defaultSchema, preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,
@@ -171,7 +172,7 @@ describe("@input/pen-react placeholder behavior", () => {
 		registerRenderer("paragraph", PlaceholderParagraphRenderer);
 
 		const editor = createEditor({
-			preset: defaultPreset({
+			schema: defaultSchema, preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,

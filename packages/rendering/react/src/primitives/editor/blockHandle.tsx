@@ -55,6 +55,15 @@ export function EditorBlockHandle(props: BlockHandleProps) {
 		setMenuOpen(true);
 	}
 
+	function restoreHandleFocus(): void {
+		const scope = handleRef.current?.ownerDocument ?? document;
+		scope
+			.querySelector<HTMLElement>(
+				`[data-pen-block-handle][data-block-id="${blockId}"]`,
+			)
+			?.focus();
+	}
+
 	function dispatchMove(command: BlockHandleMoveCommand): void {
 		if (onMoveBlock) {
 			onMoveBlock(command, blockId);
@@ -62,8 +71,16 @@ export function EditorBlockHandle(props: BlockHandleProps) {
 			applyAdjacentMove(editor, blockId, command);
 		}
 		closeMenu();
-		handleRef.current?.focus();
+		queueMicrotask(restoreHandleFocus);
 	}
+
+	const menuWasOpen = useRef(false);
+	useIsomorphicLayoutEffect(() => {
+		if (menuWasOpen.current && !menuOpen) {
+			restoreHandleFocus();
+		}
+		menuWasOpen.current = menuOpen;
+	}, [menuOpen]);
 
 	function handleTriggerKeyDown(
 		event: React.KeyboardEvent<HTMLElement>,
@@ -81,7 +98,6 @@ export function EditorBlockHandle(props: BlockHandleProps) {
 			event.preventDefault();
 			event.stopPropagation();
 			closeMenu();
-			handleRef.current?.focus();
 			return;
 		}
 
@@ -119,7 +135,6 @@ export function EditorBlockHandle(props: BlockHandleProps) {
 				event.preventDefault();
 				event.stopImmediatePropagation();
 				closeMenu();
-				handle?.focus();
 			}
 		};
 

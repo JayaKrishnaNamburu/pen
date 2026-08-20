@@ -8,4 +8,5 @@ scenario(
 		await s.installBrokenProjector();
 		await expect(s.assert.domMatchesAuthority()).rejects.toThrow();
 	},
+	{ axe: false },
 );

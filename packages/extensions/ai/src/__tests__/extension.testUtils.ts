@@ -1,4 +1,5 @@
-import { defineExtension, type ToolRuntime } from "@input/pen-types";
+import type { ToolRuntime } from "@input/pen-types";
+import { defineExtension } from "@input/pen-core";
 
 export function testStreamingToolExtension() {
 	let toolRuntime: ToolRuntime | null = null;

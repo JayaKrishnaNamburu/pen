@@ -10,6 +10,7 @@ import { defaultPreset } from "@input/pen-preset-default";
 import { Pen } from "../primitives/index";
 import type { BlockControlsProps } from "../context/editorContext";
 import { useBlockDragHandle } from "../hooks/useBlockDragHandle";
+import { defaultSchema } from "@input/pen-schema-default";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -131,7 +132,7 @@ function createBlockDragEditor(
 	options: Parameters<typeof createEditor>[0] = {},
 ) {
 	return createEditor({
-		...options,
+		schema: defaultSchema,...options,
 		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,

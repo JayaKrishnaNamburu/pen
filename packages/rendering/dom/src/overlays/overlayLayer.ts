@@ -15,6 +15,7 @@ import {
 export function createOverlayLayer(options: OverlayLayerOptions): OverlayLayer {
 	const element = options.root.ownerDocument.createElement("div");
 	element.setAttribute(OVERLAY_LAYER_ATTR, "");
+	// AX7 overlay — presentation layer; pointer-events none
 	element.setAttribute("aria-hidden", "true");
 	element.style.pointerEvents = "none";
 	element.style.position = "absolute";

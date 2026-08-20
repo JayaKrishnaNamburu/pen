@@ -6,6 +6,7 @@ import {
 } from "@input/pen-core";
 import type { DocumentOp } from "@input/pen-types";
 import { markdownExporter } from "../exporter";
+import { defaultSchema } from "@input/pen-schema-default";
 
 type InsertTableCellTextOp = Extract<DocumentOp, { type: "insert-table-cell-text" }>;
 type FormatTableCellTextOp = Extract<DocumentOp, { type: "format-table-cell-text" }>;
@@ -19,7 +20,7 @@ const noDefaultExtensionsPreset = {
 
 function editorWithBlocks(ops: Parameters<ReturnType<typeof createEditor>["apply"]>[0]) {
   const editor = createEditor({
-    preset: noDefaultExtensionsPreset,
+    schema: defaultSchema, preset: noDefaultExtensionsPreset,
   });
   editor.apply(ops);
   return editor;
@@ -30,7 +31,7 @@ function editorWithTable(
   cellOps: Parameters<ReturnType<typeof createEditor>["apply"]>[0],
 ) {
   const editor = createEditor({
-    preset: noDefaultExtensionsPreset,
+    schema: defaultSchema, preset: noDefaultExtensionsPreset,
   });
   editor.apply([insertOp]);
   if (cellOps.length > 0) {
@@ -43,7 +44,7 @@ function createFlowEditorFromSeededDocument(
   seed: (editor: ReturnType<typeof createEditor>) => void,
 ) {
   const seedEditor = createEditor({
-    preset: noDefaultExtensionsPreset,
+    schema: defaultSchema, preset: noDefaultExtensionsPreset,
   });
   seed(seedEditor);
 
@@ -51,7 +52,7 @@ function createFlowEditorFromSeededDocument(
   seedEditor.internals.adapter.setDocumentProfile?.(document, "flow");
 
   const editor = createEditor({
-    document,
+    schema: defaultSchema,document,
     preset: noDefaultExtensionsPreset,
   });
   seedEditor.destroy();
@@ -87,15 +88,15 @@ describe("table markdown round-trip", () => {
 
     const ops = blocksToOps(inputBlocks);
     const editor = createEditor({
-      preset: noDefaultExtensionsPreset,
+      schema: defaultSchema, preset: noDefaultExtensionsPreset,
     });
     editor.apply(ops);
 
     const tableBlockId = (ops[0] as InsertBlockOp).blockId;
-    const cell00 = editor.getBlock(tableBlockId)?.tableCell(0, 0);
-    const cell01 = editor.getBlock(tableBlockId)?.tableCell(0, 1);
-    const cell10 = editor.getBlock(tableBlockId)?.tableCell(1, 0);
-    const cell11 = editor.getBlock(tableBlockId)?.tableCell(1, 1);
+    const cell00 = editor.getBlock(tableBlockId)!.as("table")?.tableCell(0, 0);
+    const cell01 = editor.getBlock(tableBlockId)!.as("table")?.tableCell(0, 1);
+    const cell10 = editor.getBlock(tableBlockId)!.as("table")?.tableCell(1, 0);
+    const cell11 = editor.getBlock(tableBlockId)!.as("table")?.tableCell(1, 1);
     expect(cell00?.textContent()).toBe("Name");
     expect(cell01?.textContent()).toBe("Value");
     expect(cell10?.textContent()).toBe("foo");
@@ -137,13 +138,13 @@ describe("table markdown round-trip", () => {
 
     const ops = blocksToOps(inputBlocks);
     const editor = createEditor({
-      preset: noDefaultExtensionsPreset,
+      schema: defaultSchema, preset: noDefaultExtensionsPreset,
     });
     editor.apply(ops);
 
     const block = editor.getBlock((ops[0] as InsertBlockOp).blockId);
-    expect(block?.tableRowCount()).toBe(2);
-    expect(block?.tableColumnCount()).toBe(2);
+    expect(block!.as("table")?.tableRowCount()).toBe(2);
+    expect(block!.as("table")?.tableColumnCount()).toBe(2);
 
     const md = markdownExporter.export(editor);
     expect(md).toContain("| X | Y |");

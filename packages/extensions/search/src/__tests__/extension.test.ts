@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
 import { getSearchController, searchExtension } from "../index";
+import { defaultSchema } from "@input/pen-schema-default";
 
 describe("@input/pen-search extension", () => {
 	it("registers a controller and finds matches across blocks", () => {
 		const editor = createEditor({
-			extensions: [searchExtension()],
+			schema: defaultSchema,extensions: [searchExtension()],
 		});
 		const firstBlockId = editor.firstBlock()!.id;
 		const secondBlockId = "b2";
@@ -54,7 +55,7 @@ describe("@input/pen-search extension", () => {
 
 	it("navigates matches and replaces the active match", () => {
 		const editor = createEditor({
-			extensions: [searchExtension()],
+			schema: defaultSchema,extensions: [searchExtension()],
 		});
 		const blockId = editor.firstBlock()!.id;
 
@@ -90,7 +91,7 @@ describe("@input/pen-search extension", () => {
 
 	it("replaces all matches in descending offset order", () => {
 		const editor = createEditor({
-			extensions: [searchExtension()],
+			schema: defaultSchema,extensions: [searchExtension()],
 		});
 		const blockId = editor.firstBlock()!.id;
 
@@ -119,7 +120,7 @@ describe("@input/pen-search extension", () => {
 
 	it("finds and replaces matches inside table cells", () => {
 		const editor = createEditor({
-			extensions: [searchExtension()],
+			schema: defaultSchema,extensions: [searchExtension()],
 		});
 		const tableBlockId = "table-1";
 
@@ -159,14 +160,14 @@ describe("@input/pen-search extension", () => {
 		controller?.setReplaceText("hi");
 		controller?.replace();
 
-		expect(editor.getBlock(tableBlockId)?.tableCell(0, 0)?.textContent()).toBe("hi table");
+		expect(editor.getBlock(tableBlockId)!.as("table")?.tableCell(0, 0)?.textContent()).toBe("hi table");
 
 		editor.destroy();
 	});
 
 	it("navigates table-cell matches by selecting the active cell without inline decorations", () => {
 		const editor = createEditor({
-			extensions: [searchExtension()],
+			schema: defaultSchema,extensions: [searchExtension()],
 		});
 		const tableBlockId = "table-1";
 
@@ -217,7 +218,7 @@ describe("@input/pen-search extension", () => {
 
 	it("tracks open and close state", () => {
 		const editor = createEditor({
-			extensions: [searchExtension()],
+			schema: defaultSchema,extensions: [searchExtension()],
 		});
 
 		const controller = getSearchController(editor);
@@ -234,7 +235,7 @@ describe("@input/pen-search extension", () => {
 
 	it("clears search decorations when closed", () => {
 		const editor = createEditor({
-			extensions: [searchExtension()],
+			schema: defaultSchema,extensions: [searchExtension()],
 		});
 		const blockId = editor.firstBlock()!.id;
 

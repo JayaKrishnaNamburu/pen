@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	aiExtension,
 	buildStructuralReviewItems,
@@ -16,7 +17,7 @@ describe("AI command catalog (LOC1)", () => {
 
 	it("LOC1: getCommands resolves default labels from the English catalog", () => {
 		const editor = createEditor({
-			extensions: [aiExtension()],
+			schema: defaultSchema,extensions: [aiExtension()],
 		});
 		const controller = getAIController(editor);
 		expect(controller).toBeTruthy();
@@ -47,7 +48,7 @@ describe("AI command catalog (LOC1)", () => {
 
 	it("LOC1: host messages override default command labels", () => {
 		const editor = createEditor({
-			extensions: [aiExtension()],
+			schema: defaultSchema,extensions: [aiExtension()],
 			messages: {
 				"pen.ai.command.rewrite": "Umschreiben",
 				"pen.ai.command.continue": "Weiter schreiben",
@@ -79,7 +80,7 @@ describe("AI command catalog (LOC1)", () => {
 
 	it("LOC1: review artifacts resolve through the catalog", () => {
 		const editor = createEditor({
-			messages: {
+			schema: defaultSchema,messages: {
 				"pen.ai.review.replaceText": "Text ersetzen",
 			},
 		});

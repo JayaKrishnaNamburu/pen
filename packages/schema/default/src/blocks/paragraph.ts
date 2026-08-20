@@ -1,4 +1,4 @@
-import { defineBlock } from "@input/pen-types";
+import { defineBlock } from "@input/pen-core";
 import { directionProp } from "../directionProp";
 
 export const paragraph = defineBlock("paragraph", {

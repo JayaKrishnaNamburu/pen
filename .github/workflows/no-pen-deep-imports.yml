@@ -26,3 +26,6 @@ jobs:
 
       - name: Check deep-import inventory
         run: node scripts/no-pen-deep-imports.mjs
+
+      - name: Check published exports maps
+        run: node scripts/published-exports.mjs

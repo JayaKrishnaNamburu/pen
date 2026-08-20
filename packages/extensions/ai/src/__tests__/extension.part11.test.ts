@@ -13,6 +13,7 @@ import {
 	readBlockSuggestionMeta,
 	readSuggestionsFromBlock,
 } from "../suggestions/persistent";
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	createDeferred,
 	testStreamingToolExtension,
@@ -23,7 +24,7 @@ describe("aiExtension", () => {
 	it("restores the previous accepted story when undoing a kept follow-up rewrite", async () => {
 			let streamCount = 0;
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						contentFormat: {
 							blockGeneration: "markdown",
@@ -87,7 +88,7 @@ describe("aiExtension", () => {
 
 	it("trims leading blank lines when bottom-chat writes into an empty block", async () => {
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						contentFormat: {
 							blockGeneration: "markdown",
@@ -128,7 +129,7 @@ describe("aiExtension", () => {
 
 	it("materializes bottom-chat paragraphs as separate blocks for empty targets", async () => {
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						contentFormat: {
 							blockGeneration: "markdown",
@@ -172,7 +173,7 @@ describe("aiExtension", () => {
 
 	it("reuses a leading empty placeholder for document-target bottom-chat writes", async () => {
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						contentFormat: {
 							blockGeneration: "markdown",
@@ -236,7 +237,7 @@ describe("aiExtension", () => {
 
 	it("prefers the caret block over unrelated empty placeholders for document-target writes", async () => {
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						contentFormat: {
 							blockGeneration: "markdown",
@@ -301,7 +302,7 @@ describe("aiExtension", () => {
 
 	it("creates tables through markdown for bottom-chat document prompts", async () => {
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						contentFormat: {
 							blockGeneration: "markdown",
@@ -347,10 +348,10 @@ describe("aiExtension", () => {
 			expect(generation.suggestionIds?.length ?? 0).toBeGreaterThan(0);
 			const tables = Array.from(editor.blocks("table"));
 			expect(tables).toHaveLength(1);
-			expect(tables[0]?.tableCell(0, 0)?.textContent()).toBe("Tier");
-			expect(tables[0]?.tableCell(0, 1)?.textContent()).toBe("Price");
-			expect(tables[0]?.tableCell(1, 0)?.textContent()).toBe("Pro");
-			expect(tables[0]?.tableCell(1, 1)?.textContent()).toBe("$20");
+			expect(tables[0].as("table")?.tableCell(0, 0)?.textContent()).toBe("Tier");
+			expect(tables[0].as("table")?.tableCell(0, 1)?.textContent()).toBe("Price");
+			expect(tables[0].as("table")?.tableCell(1, 0)?.textContent()).toBe("Pro");
+			expect(tables[0].as("table")?.tableCell(1, 1)?.textContent()).toBe("$20");
 			expect(controller.acceptActiveGeneration()).toBe(true);
 		});
 });

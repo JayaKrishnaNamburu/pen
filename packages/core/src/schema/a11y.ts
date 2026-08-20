@@ -17,6 +17,7 @@ function freezeA11ySpec<Props>(
 	return Object.freeze(copy);
 }
 
+/** @internal Schema authors use `defineBlock(...).a11y(spec)`. */
 export function attachA11y<S extends object, Props>(
 	schema: S,
 	spec: BlockA11ySpec<Props>,
@@ -27,4 +28,5 @@ export function attachA11y<S extends object, Props>(
 	};
 }
 
+/** @internal Schema authors use `defineBlock(...).a11y(spec)`. */
 export const withA11y = attachA11y;

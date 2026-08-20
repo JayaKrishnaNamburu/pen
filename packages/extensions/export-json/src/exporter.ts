@@ -78,15 +78,16 @@ function serializeBlock(handle: BlockHandle): PenBlockJSON {
 }
 
 function serializeTableChildren(handle: BlockHandle): PenBlockJSON[] {
-  const rowCount = handle.tableRowCount();
-  const colCount = handle.tableColumnCount();
+  const table = handle.as("table");
+  const rowCount = table?.tableRowCount() ?? 0;
+  const colCount = table?.tableColumnCount() ?? 0;
   const rows: PenBlockJSON[] = [];
 
   for (let rowIndex = 0; rowIndex < rowCount; rowIndex += 1) {
     const cells: PenBlockJSON[] = [];
 
     for (let colIndex = 0; colIndex < colCount; colIndex += 1) {
-      const cell = handle.tableCell(rowIndex, colIndex);
+      const cell = table?.tableCell(rowIndex, colIndex);
       const inline = cell ? serializeInlineContent(cell.inlineDeltas()) : undefined;
       const cellJson: PenBlockJSON = {
         id: `cell-${rowIndex}-${colIndex}`,

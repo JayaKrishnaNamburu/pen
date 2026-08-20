@@ -100,6 +100,7 @@ return {
 	emit: (event, ...args) => {
 		self._emitter.emit(event, ...args);
 	},
+	hasListeners: (event) => self._emitter.has(event),
 	onApplyBoundary: (hook) =>
 		self._pipeline.addApplyBoundaryHook(hook),
 	onPipelinePhase: (listener) => self._onPipelinePhase(listener),

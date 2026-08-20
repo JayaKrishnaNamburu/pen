@@ -7,6 +7,7 @@ import { createEditor } from "@input/pen-core";
 import { multiplayerExtension } from "@input/pen-multiplayer";
 import { defaultPreset } from "@input/pen-preset-default";
 import { Pen } from "../primitives/index";
+import { defaultSchema } from "@input/pen-schema-default";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -15,7 +16,7 @@ import { Pen } from "../primitives/index";
 describe("@input/pen-react caret overlay a11y", () => {
 	it("AX7: editor caret overlay is aria-hidden and pointer-events none", async () => {
 		const editor = createEditor({
-			preset: defaultPreset({
+			schema: defaultSchema, preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,
@@ -51,7 +52,7 @@ describe("@input/pen-react caret overlay a11y", () => {
 
 	it("AX7: multiplayer caret overlay is aria-hidden and pointer-events none", async () => {
 		const editor = createEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				multiplayerExtension({
 					user: {
 						id: "u1",

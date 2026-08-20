@@ -54,8 +54,8 @@ function getBlockModelSnapshot(
 		type: block.type,
 		props: block.props,
 		revision: editor.getBlockRevision(blockId),
-		tableRowCount: block.tableRowCount(),
-		tableColumnCount: block.tableColumnCount(),
+		tableRowCount: block.as("table")?.tableRowCount() ?? 0,
+		tableColumnCount: block.as("table")?.tableColumnCount() ?? 0,
 	};
 }
 

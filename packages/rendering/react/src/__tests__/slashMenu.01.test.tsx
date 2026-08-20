@@ -8,6 +8,7 @@ import { defaultPreset } from "@input/pen-preset-default";
 import { Pen } from "../primitives/index";
 import { useSlashMenu } from "../hooks/useSlashMenu";
 import { getAttachedFieldEditor } from "../utils/fieldEditor";
+import { defaultSchema } from "@input/pen-schema-default";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -25,7 +26,7 @@ function createSlashMenuEditor(
 	options: Parameters<typeof createEditor>[0] = {},
 ) {
 	return createEditor({
-		...options,
+		schema: defaultSchema,...options,
 		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
@@ -264,8 +265,8 @@ describe("@input/pen-react slash menu", () => {
 		expect(slashMenuRef.current?.open).toBe(false);
 		expect(slashMenuRef.current?.target).toBeNull();
 		expect(editor.getBlock(blockId)?.props.hasHeaderRow).toBe(true);
-		expect(editor.getBlock(blockId)?.tableRowCount()).toBe(2);
-		expect(editor.getBlock(blockId)?.tableColumnCount()).toBe(2);
+		expect(editor.getBlock(blockId)!.as("table")?.tableRowCount()).toBe(2);
+		expect(editor.getBlock(blockId)!.as("table")?.tableColumnCount()).toBe(2);
 
 		const activeCell = container.querySelector(
 			"[data-pen-table-cell][data-cell-row='0'][data-cell-col='0'] [data-pen-field-editor-active-surface]",
@@ -352,7 +353,7 @@ describe("@input/pen-react slash menu", () => {
 			await flushAnimationFrames();
 		});
 
-		expect(editor.getBlock(blockId)?.tableCell(0, 0)?.textContent()).toBe(
+		expect(editor.getBlock(blockId)!.as("table")?.tableCell(0, 0)?.textContent()).toBe(
 			"AB",
 		);
 

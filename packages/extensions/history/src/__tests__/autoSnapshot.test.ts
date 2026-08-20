@@ -5,6 +5,7 @@ import type { PenPersistence, VersionEntry, VersionMetadata } from "@input/pen-t
 import { afterEach, describe, expect, it, vi } from "vitest";
 import * as Y from "yjs";
 import { getHistoryController, historyExtension } from "../index";
+import { defaultSchema } from "@input/pen-schema-default";
 
 describe("AutoSnapshotScheduler", () => {
 	afterEach(() => {
@@ -14,7 +15,7 @@ describe("AutoSnapshotScheduler", () => {
 	it("creates a session-start snapshot when enabled", async () => {
 		const persistence = new MemoryPersistence();
 		const editor = createEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				historyExtension({
 					persistence,
 					docId: "doc-1",
@@ -36,7 +37,7 @@ describe("AutoSnapshotScheduler", () => {
 	it("creates an operation-threshold snapshot after document commits", async () => {
 		const persistence = new MemoryPersistence();
 		const editor = createEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				historyExtension({
 					persistence,
 					docId: "doc-1",
@@ -65,7 +66,7 @@ describe("AutoSnapshotScheduler", () => {
 	it("creates an AI-generation snapshot from diagnostics", async () => {
 		const persistence = new MemoryPersistence();
 		const editor = createEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				historyExtension({
 					persistence,
 					docId: "doc-1",
@@ -94,7 +95,7 @@ describe("AutoSnapshotScheduler", () => {
 		vi.useFakeTimers();
 		const persistence = new MemoryPersistence();
 		const editor = createEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				historyExtension({
 					persistence,
 					docId: "doc-1",
@@ -119,7 +120,7 @@ describe("AutoSnapshotScheduler", () => {
 			adapter: yjsAdapter(),
 		});
 		const editorA = createEditor({
-			documentSession,
+			schema: defaultSchema,documentSession,
 			extensions: [
 				historyExtension({
 					persistence,
@@ -132,7 +133,7 @@ describe("AutoSnapshotScheduler", () => {
 			],
 		});
 		const editorB = createEditor({
-			documentSession,
+			schema: defaultSchema,documentSession,
 			extensions: [
 				historyExtension({
 					persistence,

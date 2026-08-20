@@ -13,6 +13,7 @@ import type { FieldEditorTransferController } from "../field-editor/controller";
 import {
 	CLIPBOARD_INGEST_MAX_NESTING_DEPTH,
 } from "../utils/clipboardIngest";
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	PEN_CLIPBOARD_PAYLOAD_VERSION,
 	parsePenClipboardPayload,
@@ -28,7 +29,7 @@ const noDefaultExtensionsPreset = {
 
 function createBareEditor(): Editor {
 	return createEditor({
-		preset: noDefaultExtensionsPreset,
+		schema: defaultSchema, preset: noDefaultExtensionsPreset,
 	});
 }
 

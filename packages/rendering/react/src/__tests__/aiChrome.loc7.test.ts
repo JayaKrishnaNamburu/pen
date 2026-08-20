@@ -10,6 +10,7 @@ import {
 } from "@input/pen-core";
 import { aiExtension, getAIController } from "@input/pen-ai";
 import { Pen } from "../primitives/index";
+import { defaultSchema } from "@input/pen-schema-default";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -18,7 +19,7 @@ import { Pen } from "../primitives/index";
 describe("AI chrome pseudo-locale (LOC1, LOC7)", () => {
 	it("LOC7: command menu and change-list chrome wrap through the pseudo catalog", async () => {
 		const editor = createEditor({
-			extensions: [aiExtension()],
+			schema: defaultSchema,extensions: [aiExtension()],
 			messages: createPseudoLocaleCatalog(),
 		});
 		const controller = getAIController(editor);

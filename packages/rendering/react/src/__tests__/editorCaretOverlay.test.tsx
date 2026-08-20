@@ -8,6 +8,7 @@ import { defaultPreset } from "@input/pen-preset-default";
 import { Pen } from "../primitives/index";
 import { PenEditor } from "../penEditor";
 import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
+import { defaultSchema } from "@input/pen-schema-default";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -16,7 +17,7 @@ import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
 describe("@input/pen-react editor caret overlay", () => {
 	it("HOST6 renders a custom local caret for collapsed selections only", async () => {
 		const editor = createEditor({
-			preset: defaultPreset({
+			schema: defaultSchema, preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,
@@ -146,7 +147,7 @@ describe("@input/pen-react editor caret overlay", () => {
 
 	it("uses macOS caret defaults when requested", async () => {
 		const editor = createEditor({
-			preset: defaultPreset({
+			schema: defaultSchema, preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,
@@ -230,7 +231,7 @@ describe("@input/pen-react editor caret overlay", () => {
 
 	it("keeps the convenience PenEditor API opt-in", async () => {
 		const editor = createEditor({
-			preset: defaultPreset({
+			schema: defaultSchema, preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,

@@ -47,6 +47,7 @@ export function createFocusSink(doc: Document = document): FocusSink {
 }
 
 function hideSink(element: HTMLElement): void {
+	// focus sink — hidden until it holds block/cell selection
 	element.setAttribute("aria-hidden", "true");
 	element.tabIndex = -1;
 	element.removeAttribute("role");

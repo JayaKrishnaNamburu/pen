@@ -1,4 +1,6 @@
 import React from "react";
+import { resolveEditorMessage } from "@input/pen-core";
+import { DEFAULT_MESSAGE_CATALOG } from "@input/pen-types";
 import { getSlashMenuOptionId, useSlashMenuContext } from "./root";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import {
@@ -20,11 +22,15 @@ export interface SlashMenuListProps extends AsChildProps {
  */
 export function SlashMenuList(props: SlashMenuListProps) {
 	const { children, ...rest } = props;
-	const { items, listboxId, selectedIndex, editor } = useSlashMenuContext();
+	const { items, listboxId, open, selectedIndex, editor } =
+		useSlashMenuContext();
 	const activeOptionId =
-		items.length > 0
+		open && items.length > 0
 			? getSlashMenuOptionId(listboxId, selectedIndex)
 			: undefined;
+	const listLabel = editor
+		? resolveEditorMessage(editor, "pen.slash.list.label")
+		: DEFAULT_MESSAGE_CATALOG["pen.slash.list.label"];
 
 	const hasManualChildren = React.Children.count(children) > 0;
 
@@ -75,7 +81,9 @@ export function SlashMenuList(props: SlashMenuListProps) {
 	const primitiveProps: Record<string, unknown> = {
 		id: listboxId,
 		"data-pen-slash-menu-list": "",
-		role: "listbox",
+		hidden: open ? undefined : true,
+		role: open ? "listbox" : undefined,
+		"aria-label": open ? listLabel : undefined,
 		"aria-activedescendant": activeOptionId,
 	};
 

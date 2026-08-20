@@ -170,6 +170,7 @@ export function EditorContent(props: EditorContentProps) {
 	const inlineDropCaret =
 		(isDropActive || isInlineAtomDropActive) && activeInlineDropCaretStyle ? (
 			<div
+				// AX7 overlay — inline drop caret is presentation
 				aria-hidden="true"
 				{...{ [DATA_ATTRS.dropCaret]: "" }}
 				style={createInlineDropCaretStyle(activeInlineDropCaretStyle)}
@@ -271,7 +272,7 @@ export function EditorContent(props: EditorContentProps) {
 				{...(fieldEditorState.mode === "expanded"
 					? {
 						[DATA_ATTRS.fieldEditorSurface]: "",
-						...fieldEditorTextEntryAttrs(true),
+						...fieldEditorTextEntryAttrs(true, editor),
 					}
 					: {})}
 				ref={blocksHostRef}

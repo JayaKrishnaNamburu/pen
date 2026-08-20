@@ -13,6 +13,7 @@ import {
 	readBlockSuggestionMeta,
 	readSuggestionsFromBlock,
 } from "../suggestions/persistent";
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	createDeferred,
 	testStreamingToolExtension,
@@ -22,7 +23,7 @@ import {
 describe("aiExtension", () => {
 	it("treats whole-document rewrite prompts as explicit multi-block replace plans", async () => {
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						contentFormat: {
 							blockGeneration: "markdown",
@@ -100,7 +101,7 @@ describe("aiExtension", () => {
 
 	it("treats rewrite-the-story prompts as explicit multi-block replace plans", async () => {
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						contentFormat: {
 							blockGeneration: "markdown",
@@ -185,7 +186,7 @@ describe("aiExtension", () => {
 			const capturedPrompts: string[] = [];
 			let streamCount = 0;
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						contentFormat: {
 							blockGeneration: "markdown",
@@ -263,7 +264,7 @@ describe("aiExtension", () => {
 	it("replaces the previous story after accepting a follow-up make-it-about rewrite", async () => {
 			let streamCount = 0;
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						contentFormat: {
 							blockGeneration: "markdown",

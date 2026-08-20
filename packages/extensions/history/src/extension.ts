@@ -1,8 +1,6 @@
 import type { Editor, Extension } from "@input/pen-types";
-import {
-	defineExtension,
-	HISTORY_CONTROLLER_SLOT,
-} from "@input/pen-types";
+import { HISTORY_CONTROLLER_SLOT } from "@input/pen-types";
+import { defineExtension } from "@input/pen-core";
 import { attachHistoryScopeRuntime } from "./scopeRuntime";
 import type { HistoryConfig, HistoryController } from "./types";
 

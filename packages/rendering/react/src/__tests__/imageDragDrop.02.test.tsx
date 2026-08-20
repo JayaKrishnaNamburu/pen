@@ -7,6 +7,7 @@ import { createEditor } from "@input/pen-core";
 import type { AssetProvider } from "@input/pen-types";
 import { defaultPreset } from "@input/pen-preset-default";
 import { Pen } from "../primitives/index";
+import { defaultSchema } from "@input/pen-schema-default";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -61,7 +62,7 @@ function createDragEvent(
 describe("@input/pen-react image drag and drop", () => {
 	it("shows the insertion side on structural block drop targets", async () => {
 		const editor = createEditor({
-			preset: defaultPreset({
+			schema: defaultSchema, preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,
@@ -183,7 +184,7 @@ describe("@input/pen-react image drag and drop", () => {
 
 	it("prevents native root-level drop navigation for image files", async () => {
 		const editor = createEditor({
-			preset: defaultPreset({
+			schema: defaultSchema, preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,

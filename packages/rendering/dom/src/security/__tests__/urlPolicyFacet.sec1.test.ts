@@ -6,6 +6,7 @@ import { createMarkedNode } from "../../field-editor/reconcilerMarks";
 import { resolveEditorUrl, urlPolicyFromEditor } from "../resolveEditorUrl";
 import { urlPolicy } from "../urlPolicy";
 import { urlPolicyExtension } from "../urlPolicyExtension";
+import { defaultSchema } from "@input/pen-schema-default";
 
 const noDefaultExtensionsPreset = {
 	resolve() {
@@ -20,7 +21,7 @@ const registry = {
 describe("SEC1 / S.1-facet host binding", () => {
 	it("SEC1 / S.1-facet: empty editor uses the default urlPolicy", () => {
 		const editor = createEditor({
-			preset: noDefaultExtensionsPreset,
+			schema: defaultSchema, preset: noDefaultExtensionsPreset,
 		});
 
 		expect(editor.facet(urlPolicyFacet)).toBeUndefined();
@@ -37,7 +38,7 @@ describe("SEC1 / S.1-facet host binding", () => {
 
 	it("SEC1 / S.1-facet: wrap receives the default policy to delegate to", () => {
 		const editor = createEditor({
-			preset: noDefaultExtensionsPreset,
+			schema: defaultSchema, preset: noDefaultExtensionsPreset,
 			extensions: [
 				urlPolicyExtension((defaults) => ({
 					resolve(raw, context) {
@@ -71,7 +72,7 @@ describe("SEC1 / S.1-facet host binding", () => {
 			},
 		}));
 		const editor = createEditor({
-			preset: noDefaultExtensionsPreset,
+			schema: defaultSchema, preset: noDefaultExtensionsPreset,
 			extensions: [policy],
 		});
 		const hostPolicy = urlPolicyFromEditor(editor);

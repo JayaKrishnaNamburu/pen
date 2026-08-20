@@ -1,5 +1,5 @@
 import type { DocumentOp, Extension, OpOrigin } from "@input/pen-types";
-import { defineExtension, INPUT_RULES_ENGINE_SLOT_KEY } from "@input/pen-types";
+import { INPUT_RULES_ENGINE_SLOT_KEY } from "@input/pen-types";
 import { InputRuleEngine } from "./engine";
 import { defaultBlockRules } from "./defaultRules";
 import { defaultInlineRules } from "./inlineRules";
@@ -46,8 +46,9 @@ export function inputRulesExtension(config: InputRulesConfig = {}): Extension {
 
 	// Wave 1.3: Extension.inputRules → pen.inputRules via inputRulesToProviders.
 	// This extension keeps engine registration; Wave 7 deletes the v1 field.
-	return defineExtension({
+	return {
 		name: INPUT_RULES_EXTENSION_NAME,
+		version: "0.0.0",
 
 		activateClient: async (ctx) => {
 			const { editor } = ctx;
@@ -68,7 +69,7 @@ export function inputRulesExtension(config: InputRulesConfig = {}): Extension {
 			unsub?.();
 			unsub = null;
 		},
-	});
+	};
 }
 
 function appendInputRuleTransforms(

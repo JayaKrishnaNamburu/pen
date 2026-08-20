@@ -4,9 +4,11 @@ import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
 import { createEditor } from "@input/pen-core";
-import { defineExtension, type ToolRuntime } from "@input/pen-types";
+import type { ToolRuntime } from "@input/pen-types";
+import { defineExtension } from "@input/pen-core";
 import { aiExtension, getAIController } from "@input/pen-ai";
 import { defaultPreset } from "@input/pen-preset-default";
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	Pen,
 	useAIActions,
@@ -245,7 +247,7 @@ describe("@input/pen-react AI primitives", () => {
 			height: 24,
 		});
 		const editor = createEditor({
-			extensions: [aiExtension({ author: "tester" })],
+			schema: defaultSchema,extensions: [aiExtension({ author: "tester" })],
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
@@ -307,7 +309,7 @@ describe("@input/pen-react AI primitives", () => {
 
 	it("mounts Pen.AI.Root AI views without entering an update loop", async () => {
 		const editor = createEditor({
-			extensions: [aiExtension({ suggestMode: true, author: "tester" })],
+			schema: defaultSchema,extensions: [aiExtension({ suggestMode: true, author: "tester" })],
 		});
 		const controller = getAIController(editor);
 		expect(controller).toBeTruthy();

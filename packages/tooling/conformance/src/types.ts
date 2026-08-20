@@ -99,7 +99,9 @@ export type PenConformanceBridge = {
 	readonly hasFocus: boolean;
 	readonly fixtureName: string;
 	readonly generation: number;
+	readonly hasFieldEditor: boolean;
 	load(name: string): void;
+	focusText(block?: number): void;
 	apply(ops: readonly DocumentOp[]): void;
 	remoteApply(ops: readonly DocumentOp[]): void;
 	applyToolPayloads(payloads: readonly unknown[]): { ok: boolean; message?: string };
@@ -113,14 +115,19 @@ export type PenConformanceBridge = {
 	domMatchesAuthority(): DomAuthorityCheck;
 };
 
+export type LoadOptions = {
+	pointer?: boolean;
+};
+
 export type ScenarioApi = {
-	load(name: string): Promise<void>;
+	load(name: string, options?: LoadOptions): Promise<void>;
 	apply(ops: readonly DocumentOp[]): Promise<void>;
 	applyToolPayloads(payloadsJson: string): Promise<{ ok: boolean; message?: string }>;
 	importHtml(html: string): Promise<void>;
 	pasteHtml(html: string): Promise<void>;
 	keyboard: {
 		type(text: string): Promise<void>;
+		press(key: string): Promise<void>;
 	};
 	mouse: {
 		dragText(args: DragTextArgs): Promise<void>;
@@ -138,6 +145,7 @@ export type ScenarioApi = {
 		textContains(text: string): Promise<void>;
 		corpusSafe(options?: { requireBlockedUrl?: boolean }): Promise<void>;
 		xssProbeNotTripped(): Promise<void>;
+		focusInsideEditor(): Promise<void>;
 	};
 };
 

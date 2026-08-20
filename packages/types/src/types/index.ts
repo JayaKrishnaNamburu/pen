@@ -172,6 +172,7 @@ export type {
 	AppHandle,
 	InlineDelta,
 	InlineNodeDeltaInsert,
+	TableBlockHandle,
 	TableCellHandle,
 	TableColumnSchema,
 	TableRowHandle,
@@ -179,7 +180,6 @@ export type {
 export type {
 	BlockCapabilityKey,
 	BlockCapabilityMap,
-	TableBlockHandle,
 } from "./capabilities";
 
 // ── Columns ─────────────────────────────────────────────────
@@ -318,7 +318,8 @@ export type {
 export type { AIRequestContext, AIRequestFilter } from "./aiRequest";
 
 // ── Accessibility ───────────────────────────────────────────
-export type { BlockA11ySpec } from "./a11y";
+export type { A11yLabel, BlockA11ySpec, EditorAnnouncer } from "./a11y";
+export { isA11yLabelledBy } from "./a11y";
 export type { A11yMessageKey, A11yMessageCatalog } from "./a11yMessages";
 
 // ── Localization ────────────────────────────────────────────

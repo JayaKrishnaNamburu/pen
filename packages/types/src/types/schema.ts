@@ -7,6 +7,7 @@ import type {
 import type { LayoutSchema, LayoutProps, LayoutChildProps } from "./layout";
 import type { KeyBinding } from "./input";
 import type { SelectionState } from "./selection";
+import type { BlockA11ySpec } from "./a11y";
 
 // ── Prop Schema (JSON Schema subset) ────────────────────────
 
@@ -128,6 +129,7 @@ export interface BlockSchema<
   authoring?: BlockAuthoring;
   isContainer?: boolean;
   aiDescription?: string;
+  a11y?: BlockA11ySpec<InferProps<Props>>;
 }
 
 // ── Inline Schema ───────────────────────────────────────────
@@ -155,6 +157,7 @@ export interface InlineSchema<
   expand?: "after" | "before" | "both" | "none";
   system?: boolean;
   aiDescription?: string;
+  a11y?: BlockA11ySpec<InferProps<Props>>;
 }
 
 // ── App Schema ──────────────────────────────────────────────

@@ -54,9 +54,11 @@ write a short user-facing summary. Commit the new file under `.changeset/`
 with the rest of the work. Private packages such as `@input/pen-docs` are
 ignored by versioning and do not need a changeset.
 
-When committed API reports land (Wave P step P.4), a report diff also
-requires the `api-change` label on the PR. That label is not a live gate
-yet.
+A pull request that changes a published package's public surface must
+update that package's `api-report.md` (`node scripts/api-reports.mjs
+--write` after `pnpm build`). CI diffs the committed reports against the
+built `.d.ts`. Those PRs also take the `api-change` label; the report
+diff is the mechanical gate, the label is the review signal.
 
 Release trains share one version across every published package. The release
 workflow runs `scripts/release-check.mjs` (version-sync, publint,

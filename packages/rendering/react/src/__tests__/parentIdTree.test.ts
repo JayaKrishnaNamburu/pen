@@ -2,11 +2,12 @@ import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
 import { getInsertSiblingBlockOp } from "../utils/parentIdTree";
+import { defaultSchema } from "@input/pen-schema-default";
 
 describe("@input/pen-react parentIdTree", () => {
 	it("inserts sibling blocks after the full nested subtree and inherits parentId", () => {
 		const editor = createEditor({
-			preset: defaultPreset({
+			schema: defaultSchema, preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,

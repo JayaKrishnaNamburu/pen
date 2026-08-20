@@ -16,6 +16,7 @@ export const AI_SUGGESTIONS_CONTROLLER_SLOT = "ai-suggestions:controller";
 export const SEARCH_CONTROLLER_SLOT = "search:controller";
 export const MULTIPLAYER_CONTROLLER_SLOT = "multiplayer:controller";
 export const HISTORY_CONTROLLER_SLOT = "history:controller";
+export const ANNOUNCER_SLOT_KEY = "pen.announcer";
 
 /**
  * Tag placed on Yjs transaction origins by the undo manager. The rendering

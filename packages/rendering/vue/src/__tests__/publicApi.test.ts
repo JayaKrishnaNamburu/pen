@@ -3,7 +3,7 @@
 import { createDecorationSet } from "@input/pen-core";
 import { createTestEditor } from "@input/pen-test";
 import type { Editor } from "@input/pen-types";
-import { defineExtension } from "@input/pen-types";
+import { defineExtension } from "@input/pen-core";
 import { mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it } from "vitest";
 import {

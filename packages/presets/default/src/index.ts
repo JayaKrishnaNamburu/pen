@@ -1,6 +1,7 @@
 import { deltaStreamExtension } from "@input/pen-delta-stream";
 import type { DeltaStreamOptions } from "@input/pen-delta-stream";
 import { documentOpsExtension } from "@input/pen-document-ops";
+import { createDefaultSchema } from "@input/pen-schema-default";
 import {
 	richTextShortcutsExtension,
 	type RichTextShortcutsOptions,
@@ -41,7 +42,10 @@ export function defaultPreset(
 				extensions.push(richTextShortcutsExtension(shortcutsOptions));
 			}
 
-			return { extensions };
+			return {
+				schema: createDefaultSchema(),
+				extensions,
+			};
 		},
 	};
 }

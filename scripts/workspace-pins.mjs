@@ -5,12 +5,13 @@
  * Reports, on published packages:
  *   - workspace:* vs workspace:^ in dependencies and peerDependencies
  *   - ESM artifact extension: dist/index.js vs dist/index.mjs
- *   - sideEffects !== false (report only; H.2 owns the flip)
+ *   - sideEffects !== false (report only; already false after H.2)
  *
  * workspace:* and dist/index.js hits fail unless listed in
- * scripts/workspace-pins-allowlist.json with a reason. Today's tree is
- * allowlisted so CI stays green. Conversion is a later slice — this script
- * does not rewrite package.json (races E.4 / P.8).
+ * scripts/workspace-pins-allowlist.json with a reason. Published packages
+ * use workspace:^ and dist/index.mjs; the allowlist is empty so a new
+ * unmarked pin or .js artifact fails. This script does not rewrite
+ * package.json — sync-package-metadata.mjs owns the rewrite.
  *
  * Checks the published package.json set (private packages skipped).
  * Tooling husks marked private, docs, playground, and examples are out of scope.
@@ -275,7 +276,7 @@ export function formatReport(result) {
 	);
 	lines.push(`dist/index.mjs  ${result.mjsPackages.length}`);
 	lines.push(
-		`sideEffects !== false  ${result.sideEffectsHits.length}  (report only; H.2 owns the flip)`,
+		`sideEffects !== false  ${result.sideEffectsHits.length}  (report only; already false after H.2)`,
 	);
 
 	if (result.caretPins.length > 0) {
@@ -554,6 +555,44 @@ export function runSelfTests() {
 	assert(
 		!hasFailures(sideEffectsOnly),
 		"self-test: sideEffects must not fail the check (H.2-blocked)",
+	);
+
+	const converted = evaluatePins({
+		packages: [
+			fixturePkg({
+				name: "@input/pen-core",
+				pins: [
+					{
+						field: "dependencies",
+						dependency: "@input/pen-types",
+						spec: DESIRED_PIN,
+					},
+				],
+				esmArtifact: "./dist/index.mjs",
+				sideEffects: false,
+			}),
+			fixturePkg({
+				name: "@input/pen-history",
+				pins: [
+					{
+						field: "dependencies",
+						dependency: "@input/pen-types",
+						spec: DESIRED_PIN,
+					},
+				],
+				esmArtifact: "./dist/index.mjs",
+				sideEffects: false,
+			}),
+		],
+		allowlist: { workspaceStar: [], jsArtifacts: [] },
+	});
+	assert(
+		converted.starHits.length === 0 &&
+			converted.jsHits.length === 0 &&
+			converted.stalePins.length === 0 &&
+			converted.staleJs.length === 0 &&
+			!hasFailures(converted),
+		"self-test: converted workspace:^ / .mjs tree must pass with an empty allowlist",
 	);
 
 	assert(

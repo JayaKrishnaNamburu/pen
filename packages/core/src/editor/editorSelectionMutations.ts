@@ -199,10 +199,12 @@ if (sel.type === "block") {
 if (sel.type === "cell") {
 	const block = self.getBlock(sel.blockId);
 	if (!block) return;
+	const table = block.as("table");
+	if (!table) return;
 	const ops: DocumentOp[] = [];
 	for (const rowCells of resolveCellSelectionMatrix(block, sel)) {
 		for (const cellCoord of rowCells) {
-			const cell = block.tableCell(cellCoord.row, cellCoord.col);
+			const cell = table.tableCell(cellCoord.row, cellCoord.col);
 			if (!cell) continue;
 			const len = cell.length();
 			if (len > 0) {

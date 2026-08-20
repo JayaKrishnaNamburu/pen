@@ -1,5 +1,4 @@
 import type { Editor, Extension } from "@input/pen-types";
-import { defineExtension } from "@input/pen-types";
 import { StreamingTargetImpl } from "./streamingTarget";
 import type { DocumentOp, GenerationZone } from "@input/pen-types";
 
@@ -15,8 +14,9 @@ export function deltaStreamExtension(
   let unsubscribeApplyBoundary: (() => void) | null = null;
   let isolatingApply = false;
 
-  return defineExtension({
+  return {
     name: "delta-stream",
+    version: "0.0.0",
 
     activateClient: async (ctx) => {
       editor = ctx.editor;
@@ -63,7 +63,7 @@ export function deltaStreamExtension(
       editor = null;
       streamingTarget = null;
     },
-  });
+  };
 }
 
 function getActiveGenerationBlockId(

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
 import type { DocumentOp } from "@input/pen-types";
 import { xmlExporter } from "../exporter";
+import { defaultSchema } from "@input/pen-schema-default";
 
 type InsertTableCellTextOp = Extract<DocumentOp, { type: "insert-table-cell-text" }>;
 
@@ -13,7 +14,7 @@ const noDefaultExtensionsPreset = {
 
 function editorWithOps(ops: Parameters<ReturnType<typeof createEditor>["apply"]>[0]) {
   const editor = createEditor({
-    preset: noDefaultExtensionsPreset,
+    schema: defaultSchema, preset: noDefaultExtensionsPreset,
   });
   const existingBlockIds = [...editor.documentState.allBlocks()]
     .filter((handle) => handle.parent === null)

@@ -1,4 +1,6 @@
-import { defineExtension, type MessageKey } from "@input/pen-types";
+import { defaultSchema } from "@input/pen-schema-default";
+import type { MessageKey } from "@input/pen-types";
+import { defineExtension } from "@input/pen-core";
 import { describe, expect, it } from "vitest";
 
 import { createHeadlessEditor } from "../editor/editor";
@@ -28,7 +30,7 @@ describe("locale and messages facets (LOC1, LOC3, LOC6)", () => {
 	});
 
 	it("LOC3: createEditor locale option becomes the facet value", () => {
-		const editor = createHeadlessEditor({ locale: "ar" });
+		const editor = createHeadlessEditor({ schema: defaultSchema,  locale: "ar" });
 		expect(editor.facet(localeFacet)).toBe("ar");
 		expect(editor.internals.getSlot("pen.locale")).toBe("ar");
 		editor.destroy();
@@ -36,7 +38,7 @@ describe("locale and messages facets (LOC1, LOC3, LOC6)", () => {
 
 	it("LOC3: host locale beats an extension at the same precedence", () => {
 		const editor = createHeadlessEditor({
-			locale: "de",
+			schema: defaultSchema,locale: "de",
 			extensions: [
 				defineExtension({
 					name: "locale-ext",
@@ -50,7 +52,7 @@ describe("locale and messages facets (LOC1, LOC3, LOC6)", () => {
 
 	it("LOC3: an extension locale beats the environment default", () => {
 		const editor = createHeadlessEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				defineExtension({
 					name: "locale-ext",
 					facets: [localeFacet.of("ja", "highest")],
@@ -63,7 +65,7 @@ describe("locale and messages facets (LOC1, LOC3, LOC6)", () => {
 
 	it("LOC1: extension catalogs merge and the host override wins overlapping keys", () => {
 		const editor = createHeadlessEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				defineExtension({
 					name: "copy-a",
 					facets: [
@@ -103,7 +105,7 @@ describe("locale and messages facets (LOC1, LOC3, LOC6)", () => {
 	});
 
 	it("LOC1: a missing key emits message-missing once and never returns the raw key", () => {
-		const editor = createHeadlessEditor();
+		const editor = createHeadlessEditor({ schema: defaultSchema });
 		const codes: string[] = [];
 		editor.on("diagnostic", (event) => {
 			if (event.code === "message-missing") {
@@ -120,7 +122,7 @@ describe("locale and messages facets (LOC1, LOC3, LOC6)", () => {
 
 	it("LOC1: omitting a host key falls back to the default catalog without a diagnostic", () => {
 		const editor = createHeadlessEditor({
-			messages: {
+			schema: defaultSchema,messages: {
 				"pen.ai.review.accept": "OK",
 			},
 		});
@@ -141,7 +143,7 @@ describe("locale and messages facets (LOC1, LOC3, LOC6)", () => {
 
 	it("LOC6: counted messages select Arabic plural categories", () => {
 		const editor = createHeadlessEditor({
-			locale: "ar",
+			schema: defaultSchema,locale: "ar",
 			messages: {
 				"pen.selection.blocksSelected": ARABIC_BLOCKS_SELECTED,
 			},
@@ -182,7 +184,7 @@ describe("locale and messages facets (LOC1, LOC3, LOC6)", () => {
 
 	it("LOC6: suggestion and search counters select plural categories", () => {
 		const editor = createHeadlessEditor({
-			locale: "ar",
+			schema: defaultSchema,locale: "ar",
 			messages: {
 				"pen.ai.suggestion.count": {
 					one: "واحد من {count}",
@@ -222,7 +224,7 @@ describe("locale and messages facets (LOC1, LOC3, LOC6)", () => {
 	});
 
 	it("LOC6: English counted messages use one and other", () => {
-		const editor = createHeadlessEditor({ locale: "en" });
+		const editor = createHeadlessEditor({ schema: defaultSchema,  locale: "en" });
 		expect(
 			resolveEditorMessage(editor, "pen.selection.blocksSelected", {
 				count: 1,

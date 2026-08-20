@@ -12,7 +12,7 @@ Every higher-level package depends on the contracts and runtime behavior establi
 
 - Export map: `.`
 - Runtime entrypoints such as `createEditor()`, `createHeadlessEditor()`, and `createDocumentSession()`
-- Schema runtime exports such as `SchemaRegistryImpl`, `mergeSchemas`, and `SchemaEngineImpl`
+- Schema runtime exports such as `defineBlock()`, `defineExtension()`, `prop()`, `SchemaRegistryImpl`, `mergeSchemas`, and `SchemaEngineImpl`
 - Read-model and editor helpers such as `DocumentStateImpl`, `SelectionManagerImpl`, `DocumentRangeImpl`, and `ExtensionManagerImpl`
 - Decoration and inline-completion helpers such as `createDecorationSet()`, `mergeDecorationSets()`, `ensureInlineCompletionController()`, and `getInlineCompletionController()`
 - Import and profile-policy helpers such as `blocksToOps()`, `normalizePendingBlocksForImport()`, `filterOpsForDocumentProfile()`, and related policy-reporting APIs
@@ -20,7 +20,7 @@ Every higher-level package depends on the contracts and runtime behavior establi
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@input/pen-content-ops`, `@input/pen-crdt-yjs`, `@input/pen-delta-stream`, `@input/pen-document-ops`, `@input/pen-markdown-serialization`, `@input/pen-schema-default`, `@input/pen-shortcuts`, `@input/pen-types`, `@input/pen-undo`
+- Runtime dependencies: `@input/pen-content-ops`, `@input/pen-crdt-yjs`, `@input/pen-delta-stream`, `@input/pen-document-ops`, `@input/pen-markdown-serialization`, `@input/pen-shortcuts`, `@input/pen-types`, `@input/pen-undo`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: `@input/pen-core` is the runtime center of gravity for Pen and should remain headless.
 

@@ -6,6 +6,7 @@ import { createRoot } from "react-dom/client";
 import { createEditor } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
 import { Pen } from "../primitives/index";
+import { defaultSchema } from "@input/pen-schema-default";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -49,7 +50,7 @@ function setRect(
 
 function createThreeBlockEditor() {
 	const editor = createEditor({
-		preset: defaultPreset({
+		schema: defaultSchema, preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
 			undo: false,
@@ -100,7 +101,7 @@ function createThreeBlockEditor() {
 describe("@input/pen-react region selection", () => {
 	it("focuses the existing empty placeholder block on background click", async () => {
 		const editor = createEditor({
-			preset: defaultPreset({
+			schema: defaultSchema, preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,
@@ -157,7 +158,7 @@ describe("@input/pen-react region selection", () => {
 
 	it("inserts a new paragraph when the editor has no blocks", async () => {
 		const editor = createEditor({
-			preset: defaultPreset({
+			schema: defaultSchema, preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,

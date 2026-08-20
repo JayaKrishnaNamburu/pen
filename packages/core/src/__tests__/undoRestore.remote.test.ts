@@ -2,6 +2,7 @@ import { undoExtension } from "@input/pen-undo";
 import { describe, expect, it } from "vitest";
 import * as Y from "yjs";
 
+import { createDefaultSchema } from "@input/pen-schema-default";
 import { createEditor as createCoreEditor } from "../index";
 
 const undoOnlyPreset = {
@@ -12,6 +13,7 @@ const undoOnlyPreset = {
 
 function createEditor() {
 	return createCoreEditor({
+		schema: createDefaultSchema(),
 		preset: undoOnlyPreset,
 	});
 }

@@ -1,4 +1,7 @@
-import { defineBlock, prop } from "@input/pen-types";
+import {
+	defineBlock,
+	prop,
+} from "@input/pen-core";
 import { directionProp } from "../directionProp";
 
 export const bulletListItem = defineBlock("bulletListItem", {

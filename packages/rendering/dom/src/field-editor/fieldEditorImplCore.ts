@@ -57,6 +57,7 @@ import {
 } from "../utils/flowCapabilities";
 import type { FieldEditorStoreSnapshot } from "./store";
 import type { EditorSelectAllBehavior } from "../constants/selectAll";
+import type { FocusSink } from "../a11y/focusSink";
 
 export type FieldEditorOptions = {
 	selectAllBehavior?: EditorSelectAllBehavior;
@@ -80,6 +81,9 @@ export abstract class FieldEditorImplCore {
 	protected _storeListeners = new Set<() => void>();
 	protected _unsubscribeSelection: Unsubscribe | null = null;
 	protected _unsubscribeHistoryApplied: Unsubscribe | null = null;
+	protected _focusSink: FocusSink | null = null;
+	protected _unsubscribeFocusSink: Unsubscribe | null = null;
+	protected _unsubscribeAnnouncer: Unsubscribe | null = null;
 	protected _domSyncVersion = 0;
 	protected readonly _sessionReconciler: SessionReconciler;
 	protected readonly _backendLifecycle: BackendLifecycleController;

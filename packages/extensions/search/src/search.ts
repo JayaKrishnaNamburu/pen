@@ -342,16 +342,17 @@ function findMatchesInGridCells(
 	execution: SearchExecution,
 	startIndex: number,
 ): { matches: SearchMatch[]; exceeded: boolean } {
-	if (handle.type !== "table") {
+	const table = handle.as("table");
+	if (!table) {
 		return { matches: [], exceeded: false };
 	}
 
 	const matches: SearchMatch[] = [];
-	const rowCount = handle.tableRowCount();
-	const columnCount = handle.tableColumnCount();
+	const rowCount = table.tableRowCount();
+	const columnCount = table.tableColumnCount();
 	for (let row = 0; row < rowCount; row += 1) {
 		for (let col = 0; col < columnCount; col += 1) {
-			const cell = handle.tableCell(row, col);
+			const cell = table.tableCell(row, col);
 			const cellText = cell?.textContent() ?? "";
 			if (!cellText) {
 				continue;

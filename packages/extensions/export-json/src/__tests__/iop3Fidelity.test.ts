@@ -13,6 +13,7 @@ import {
 } from "../fidelityTable";
 import { jsonImporter } from "../importer";
 import type { PenDocumentJSON } from "../types";
+import { defaultSchema } from "@input/pen-schema-default";
 
 type InsertTableCellTextOp = Extract<DocumentOp, { type: "insert-table-cell-text" }>;
 
@@ -29,7 +30,7 @@ const committedTable = readFileSync(
 
 function createBareEditor() {
   const editor = createEditor({
-    preset: noDefaultExtensionsPreset,
+    schema: defaultSchema, preset: noDefaultExtensionsPreset,
   });
   const existingBlockIds = [...editor.documentState.allBlocks()]
     .filter((handle) => handle.parent === null)

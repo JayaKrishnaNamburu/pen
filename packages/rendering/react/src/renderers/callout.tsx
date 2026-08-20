@@ -23,7 +23,11 @@ export function CalloutRenderer(
       data-selected={ctx.selected || undefined}
       role="note"
     >
-      <span data-pen-callout-icon="" aria-hidden="true">
+      <span
+        data-pen-callout-icon=""
+        // Justified decorative callout icon
+        aria-hidden="true"
+      >
         {iconMap[calloutType] ?? iconMap.info}
       </span>
       <div data-pen-callout-body="">

@@ -1,11 +1,16 @@
-import { describe, expect, it } from "vitest";
-import { createEditor, getInlineCompletionController } from "@input/pen-core";
-import { getSearchController, searchExtension } from "@input/pen-search";
+import {
+	describe,
+	expect,
+	it } from "vitest";
+import { createEditor,
+	getInlineCompletionController } from "@input/pen-core";
+import { getSearchController,
+	searchExtension } from "@input/pen-search";
 import {
 	AI_AUTOCOMPLETE_CONTROLLER_SLOT,
-	defineExtension,
 	FIELD_EDITOR_SLOT_KEY,
 } from "@input/pen-types";
+import { defineExtension } from "@input/pen-core";
 import { aiExtension } from "@input/pen-ai";
 import { defaultPreset } from "@input/pen-preset-default";
 import {
@@ -14,6 +19,7 @@ import {
 } from "../field-editor/keyHandling";
 import { resolveShiftClickInlineAtomSelection } from "../primitives/editor/inlineAtomInteraction";
 import type { FieldEditorTextLike } from "../field-editor/crdt";
+import { defaultSchema } from "@input/pen-schema-default";
 
 type BlocksMapLike = {
 	get(key: string): { get(field: string): unknown } | undefined;
@@ -135,7 +141,7 @@ function createPresetEditor(
 	} = {},
 ) {
 	return createEditor({
-		preset: defaultPreset(options.preset),
+		schema: defaultSchema, preset: defaultPreset(options.preset),
 		extensions: options.extensions,
 	});
 }

@@ -1,4 +1,4 @@
-import { defineBlock } from "@input/pen-types";
+import { defineBlock } from "@input/pen-core";
 import * as penTypes from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 
@@ -34,7 +34,7 @@ describe("block a11y (AX4 / X.1)", () => {
 			(withSpec.a11y as { roleDescription?: string }).roleDescription =
 				"graphic";
 		}).toThrow(TypeError);
-		expect(schema).not.toHaveProperty("a11y");
+		expect(typeof schema.a11y).toBe("function");
 	});
 
 	it("AX4 / X.1: withA11y is the same helper and leaves roleDescription optional", () => {

@@ -5,6 +5,7 @@ import {
 	getAISuggestionsController,
 } from "../index";
 import type { AISuggestion } from "../types";
+import { defaultSchema } from "@input/pen-schema-default";
 
 async function flushTimers(): Promise<void> {
 	await Promise.resolve();
@@ -29,7 +30,7 @@ function liveSuggestions(
 describe("suggestion survival under concurrent edits", () => {
 	it("maps suggestions through 1k random edits and drops them only on range death", async () => {
 		const editor = createEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				aiSuggestionsExtension({
 					debounceMs: 0,
 					minStableMs: 0,

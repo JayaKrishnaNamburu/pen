@@ -13,6 +13,7 @@ import {
 	readBlockSuggestionMeta,
 	readSuggestionsFromBlock,
 } from "../suggestions/persistent";
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	createDeferred,
 	testStreamingToolExtension,
@@ -23,7 +24,7 @@ describe("aiExtension", () => {
 	it("falls back to document review mode for bottom-chat rewrites on non-text blocks", async () => {
 			let requestMode: string | undefined;
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						contentFormat: {
 							blockGeneration: "markdown",
@@ -61,7 +62,7 @@ describe("aiExtension", () => {
 	it("marks local bottom-chat rewrites invalid when target provenance changes", async () => {
 			const releaseFinalFrame = createDeferred();
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						contentFormat: {
 							blockGeneration: "text",
@@ -118,7 +119,7 @@ describe("aiExtension", () => {
 
 	it("accepts typed local bottom-chat document rewrites", async () => {
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						contentFormat: {
 							blockGeneration: "text",
@@ -158,7 +159,7 @@ describe("aiExtension", () => {
 	it("streams selection rewrites into persistent suggestions before completion", async () => {
 			const releaseSecondDelta = createDeferred();
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream() {
@@ -200,7 +201,7 @@ describe("aiExtension", () => {
 
 	it("tracks session prompts and accepts session suggestions together", async () => {
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream() {
@@ -249,7 +250,7 @@ describe("aiExtension", () => {
 			const capturedPrompts: string[] = [];
 			let streamCount = 0;
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream(options) {
@@ -311,7 +312,7 @@ describe("aiExtension", () => {
 	it("refreshes the inline follow-up target after accepting a rewritten selection", async () => {
 			let streamCount = 0;
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream(options) {

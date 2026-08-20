@@ -1,6 +1,7 @@
 import { createHeadlessEditor } from "@input/pen-core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SessionReconciler } from "../field-editor/sessionReconciler";
+import { defaultSchema } from "@input/pen-schema-default";
 
 describe("SessionReconciler", () => {
 	beforeEach(() => {
@@ -16,7 +17,7 @@ describe("SessionReconciler", () => {
 	});
 
 	it("does not reconcile the focus block after a user commit", () => {
-		const editor = createHeadlessEditor();
+		const editor = createHeadlessEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 		const getYText = vi.fn(() => null);
 		const reconciler = createReconciler(editor, blockId, getYText);
@@ -36,7 +37,7 @@ describe("SessionReconciler", () => {
 	});
 
 	it("reconciles the focus block after a structured history commit", () => {
-		const editor = createHeadlessEditor();
+		const editor = createHeadlessEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 		const getYText = vi.fn(() => null);
 		const reconciler = createReconciler(editor, blockId, getYText);

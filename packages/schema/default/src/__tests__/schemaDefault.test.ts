@@ -248,3 +248,26 @@ describe("DIR1 — optional direction prop", () => {
     expect(divider.propSchema.direction).toBeUndefined();
   });
 });
+
+describe("AX4 — default atom and widget a11y specs", () => {
+  it("AX4: mention, inlineApp, and image each have an a11y label", () => {
+    expect(typeof mention.a11y?.label).toBe("function");
+    expect(typeof inlineApp.a11y?.label).toBe("function");
+    expect(typeof image.a11y?.label).toBe("function");
+    expect(
+      typeof mention.a11y?.label === "function"
+        ? mention.a11y.label({ label: "Ada" })
+        : "",
+    ).toBe("@Ada");
+    expect(
+      typeof inlineApp.a11y?.label === "function"
+        ? inlineApp.a11y.label({ appType: "calendar" })
+        : "",
+    ).toBe("calendar");
+    expect(
+      typeof image.a11y?.label === "function"
+        ? image.a11y.label({ alt: "Harbor" })
+        : "",
+    ).toBe("Harbor");
+  });
+});

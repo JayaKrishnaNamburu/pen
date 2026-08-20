@@ -1,4 +1,7 @@
-import { defineBlock, prop } from "@input/pen-types";
+import {
+	defineBlock,
+	prop,
+} from "@input/pen-core";
 import { escapeHtml } from "../escapeHtml";
 
 export const subdocument = defineBlock("subdocument", {
@@ -24,7 +27,7 @@ export const subdocument = defineBlock("subdocument", {
   },
   serialize: {
     toMarkdown: (block) =>
-      `<!-- pen-subdocument:${String(block.props.subdocumentGuid ?? "")} -->`,
+      `<!-- pen-subdocument:${escapeHtml(String(block.props.subdocumentGuid ?? ""))} -->`,
     toHTML: (block) =>
       `<div data-pen-subdocument="${escapeHtml(String(block.props.subdocumentGuid ?? ""))}"></div>`,
   },

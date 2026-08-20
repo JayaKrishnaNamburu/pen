@@ -58,6 +58,9 @@ import {
 } from "../utils/flowCapabilities";
 import type { FieldEditorStoreSnapshot } from "./store";
 import type { EditorSelectAllBehavior } from "../constants/selectAll";
+import { bindEditorAnnouncer } from "../a11y/bindEditorAnnouncer";
+import { createFocusSink } from "../a11y/focusSink";
+import { syncFocusSink } from "../a11y/syncFocusSink";
 import { FieldEditorImplCore } from "./fieldEditorImplCore";
 import {
 	getFullDocumentTextRange,
@@ -349,13 +352,45 @@ export abstract class FieldEditorImplLifecycle extends FieldEditorImplCore {
 	}
 
 	setRootElement(element: HTMLElement | null): void {
+		this._unbindFocusSink();
+		this._unbindAnnouncer();
 		this._rootElement = element;
 		if (element) {
+			this._bindFocusSink(element);
+			this._bindAnnouncer(element);
 			this._focusController.notifyRootAttached(element);
 		}
 		if (element && this._isEditing) {
 			this._syncActiveElement(false);
 		}
+	}
+
+	protected _bindFocusSink(root: HTMLElement): void {
+		const sink = createFocusSink(root.ownerDocument);
+		root.appendChild(sink.element);
+		this._focusSink = sink;
+		this._unsubscribeFocusSink = this._editor.onSelectionChange(
+			(selection) => {
+				syncFocusSink(sink, this._editor, selection);
+			},
+		);
+		syncFocusSink(sink, this._editor);
+	}
+
+	protected _unbindFocusSink(): void {
+		this._unsubscribeFocusSink?.();
+		this._unsubscribeFocusSink = null;
+		this._focusSink?.dispose();
+		this._focusSink = null;
+	}
+
+	protected _bindAnnouncer(root: HTMLElement): void {
+		this._unsubscribeAnnouncer = bindEditorAnnouncer(this._editor, root);
+	}
+
+	protected _unbindAnnouncer(): void {
+		this._unsubscribeAnnouncer?.();
+		this._unsubscribeAnnouncer = null;
 	}
 
 	setFocused(focused: boolean): void {

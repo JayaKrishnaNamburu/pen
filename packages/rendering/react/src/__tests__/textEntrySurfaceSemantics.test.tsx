@@ -8,6 +8,7 @@ import { defaultPreset } from "@input/pen-preset-default";
 import type { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
 import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
 import { Pen } from "../primitives/index";
+import { defaultSchema } from "@input/pen-schema-default";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -15,7 +16,7 @@ import { Pen } from "../primitives/index";
 
 function createEditor(options: Parameters<typeof createCoreEditor>[0] = {}) {
 	return createCoreEditor({
-		...options,
+		schema: defaultSchema,...options,
 		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
@@ -113,7 +114,9 @@ describe("@input/pen-react text entry surface semantics", () => {
 
 		expect(firstSurface?.getAttribute("role")).toBe("textbox");
 		expect(firstSurface?.getAttribute("aria-multiline")).toBe("true");
+		expect(firstSurface?.getAttribute("aria-label")).toBe("Editor");
 		expect(secondSurface?.hasAttribute("role")).toBe(false);
+		expect(secondSurface?.hasAttribute("aria-label")).toBe(false);
 
 		await cleanupEditor(editor, root, container);
 	});
@@ -177,7 +180,9 @@ describe("@input/pen-react text entry surface semantics", () => {
 
 		expect(firstCellSurface?.getAttribute("role")).toBe("textbox");
 		expect(firstCellSurface?.getAttribute("aria-multiline")).toBe("true");
+		expect(firstCellSurface?.getAttribute("aria-label")).toBe("Editor");
 		expect(secondCellSurface?.hasAttribute("role")).toBe(false);
+		expect(secondCellSurface?.hasAttribute("aria-label")).toBe(false);
 
 		await cleanupEditor(editor, root, container);
 	});
@@ -220,6 +225,7 @@ describe("@input/pen-react text entry surface semantics", () => {
 		expect(fieldEditor.getSnapshot().mode).toBe("expanded");
 		expect(blocksHost?.getAttribute("role")).toBe("textbox");
 		expect(blocksHost?.getAttribute("aria-multiline")).toBe("true");
+		expect(blocksHost?.getAttribute("aria-label")).toBe("Editor");
 
 		await cleanupEditor(editor, root, container);
 	});

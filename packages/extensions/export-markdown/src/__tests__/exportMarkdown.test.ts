@@ -6,6 +6,7 @@ import {
 } from "@input/pen-core";
 import type { DocumentOp } from "@input/pen-types";
 import { markdownExporter } from "../exporter";
+import { defaultSchema } from "@input/pen-schema-default";
 
 type InsertTableCellTextOp = Extract<DocumentOp, { type: "insert-table-cell-text" }>;
 type FormatTableCellTextOp = Extract<DocumentOp, { type: "format-table-cell-text" }>;
@@ -19,7 +20,7 @@ const noDefaultExtensionsPreset = {
 
 function editorWithBlocks(ops: Parameters<ReturnType<typeof createEditor>["apply"]>[0]) {
   const editor = createEditor({
-    preset: noDefaultExtensionsPreset,
+    schema: defaultSchema, preset: noDefaultExtensionsPreset,
   });
   editor.apply(ops);
   return editor;
@@ -30,7 +31,7 @@ function editorWithTable(
   cellOps: Parameters<ReturnType<typeof createEditor>["apply"]>[0],
 ) {
   const editor = createEditor({
-    preset: noDefaultExtensionsPreset,
+    schema: defaultSchema, preset: noDefaultExtensionsPreset,
   });
   editor.apply([insertOp]);
   if (cellOps.length > 0) {
@@ -43,7 +44,7 @@ function createFlowEditorFromSeededDocument(
   seed: (editor: ReturnType<typeof createEditor>) => void,
 ) {
   const seedEditor = createEditor({
-    preset: noDefaultExtensionsPreset,
+    schema: defaultSchema, preset: noDefaultExtensionsPreset,
   });
   seed(seedEditor);
 
@@ -51,7 +52,7 @@ function createFlowEditorFromSeededDocument(
   seedEditor.internals.adapter.setDocumentProfile?.(document, "flow");
 
   const editor = createEditor({
-    document,
+    schema: defaultSchema,document,
     preset: noDefaultExtensionsPreset,
   });
   seedEditor.destroy();

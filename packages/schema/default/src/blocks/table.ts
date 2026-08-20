@@ -1,5 +1,9 @@
-import { defineBlock, prop } from "@input/pen-types";
+import { } from "@input/pen-core";
 import type { Block } from "@input/pen-types";
+import {
+	defineBlock,
+	prop,
+} from "@input/pen-core";
 import { escapeHtml } from "../escapeHtml";
 
 function escapeMarkdownPipe(text: string): string {

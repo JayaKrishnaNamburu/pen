@@ -3,7 +3,7 @@ import { defineConfig } from "tsup";
 export default defineConfig({
   entry: ["src/index.ts"],
   format: ["esm", "cjs"],
-  dts: true,
+  dts: { compilerOptions: { stripInternal: true } },
   outDir: "dist",
   clean: true,
   external: ["@input/pen-types"],

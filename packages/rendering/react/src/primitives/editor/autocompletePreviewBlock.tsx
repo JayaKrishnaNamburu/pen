@@ -143,7 +143,11 @@ function buildListPreview(options: {
 			blockType: "bulletListItem",
 			indent,
 			marker: (
-				<span data-pen-list-marker="" aria-hidden="true">
+				<span
+					data-pen-list-marker=""
+					// Justified decorative bullet; preview text stays visible
+					aria-hidden="true"
+				>
 					•
 				</span>
 			),
@@ -160,6 +164,7 @@ function buildListPreview(options: {
 					checked={false}
 					readOnly
 					disabled
+					// Justified decorative checkbox in a non-interactive preview
 					aria-hidden="true"
 					tabIndex={-1}
 				/>
@@ -179,7 +184,11 @@ function buildListPreview(options: {
 			indent,
 			counter,
 			marker: (
-				<span data-pen-list-marker="" aria-hidden="true">
+				<span
+					data-pen-list-marker=""
+					// Justified decorative counter; preview text stays visible
+					aria-hidden="true"
+				>
 					{counter}.
 				</span>
 			),

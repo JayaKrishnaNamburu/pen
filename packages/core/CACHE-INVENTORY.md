@@ -18,7 +18,7 @@ No numbers in this file are invented. Named constants are cited only where the c
 | Change-summary `BlockIndex` (`blocks`, `children`) | `src/changes/blockIndex.ts:84–86`. Seeded/applied from `src/changes/install.ts:20–35`. Held at `src/editor/editor.ts:57`. | **Document-scoped.** One `blocks` entry per document block; `children` holds parents that have child ids. Incremental `apply` on each summary. No entry cap. | **No.** `teardownChangeSummaries` (`install.ts:39–42`) unsubscribes only. |
 | Summary log ring (`SummaryLog.items`) | `src/changes/summaryLog.ts:5` (`SUMMARY_LOG_CAPACITY = 256`), `:8`, `:27–33` (evict oldest). Held at `src/editor/editor.ts:56`. | **Count-capped** at 256. | **No.** |
 | Summary compose memo (`SummaryLog.memo`) | `src/changes/summaryLog.ts:9`, `:52–71` (compose cache), `:78–85` (drop keys overlapping an evicted commit). | **Unbounded** inside the live 256-commit window. No independent cap. | **No.** |
-| `_blockRevisions` | `src/editor/editor.ts:60`. Written at `src/editor/editorLifecycle.ts:273–274` (one increment per affected block per commit). Read at `src/editor/editorApiHelpers.ts:200`. | **Unbounded.** One number per ever-touched block id. No `.delete` or `.clear` in the repository. | **No.** `destroyEditor` (`editorApiHelpers.ts:203–215`) does not clear it. |
+| `_blockRevisions` | `src/editor/editor.ts:75`. Written at `src/editor/editorLifecycle.ts:287–288` (one increment per affected block per commit). Read at `src/editor/editorApiHelpers.ts:258`. | **Unbounded.** One number per ever-touched block id. | **Yes.** `destroyEditor` (`editorApiHelpers.ts:268`) calls `_blockRevisions.clear()`. |
 | `Intl.Segmenter` module cache (`segmenters`) | `src/editor/textSegmentation.ts:23`, `:43–51` (`resolveSegmenter`). Key is `` `${locale}:${granularity}` ``. | **Unbounded.** Process-lifetime module `Map`. No entry cap, TTL, or weak key. Grows with distinct locale/granularity pairs. | **No.** Survives every editor. |
 | Direction cache factory (`createDirectionCache`) | `src/direction/cache.ts:36–62`. One `Map` entry per `blockId`, fingerprinted against text/props (`:24–29`). Has `invalidate` / `clear`. **Not wired** to `EditorImpl` (no caller under `src/editor/`; not re-exported from `src/index.ts`). | **Document-scoped if used** (one entry per block; `clear()` exists). Unused today. | **N/A.** No editor hook. |
 | Formatter cache factory (`createFormatterCache`) | `src/i18n/formatters.ts:27–64`. Three `Map`s (`pluralRules`, `numberFormats`, `dateTimeFormats`) keyed by `locale` + `JSON.stringify(options)`. **Not wired** to `EditorImpl` (not re-exported from `src/index.ts`). | **Unbounded** if used (no cap, no `clear`). Unused today. | **N/A.** No editor hook. |
@@ -64,7 +64,7 @@ SCALE4 names the AI suggestion caches and undo stacks. These live outside `@inpu
 
 ## Still unbounded (no cap, no TTL, no weak/document-scoped drop)
 
-1. **`_blockRevisions`** — one entry per ever-touched block; not cleared on destroy. H.6 owns destroy-time clear.
+1. **`_blockRevisions`** — one entry per ever-touched block while the editor is live. Cleared on `destroyEditor`.
 2. **`SummaryLog.memo`** — no independent cap inside the 256-commit ring.
 3. **`segmenters`** — process-lifetime `Intl.Segmenter` map; not editor-scoped.
 4. **`createFormatterCache` maps** — unbounded if a caller ever holds one (unused today).
@@ -79,4 +79,4 @@ Document-scoped indexes (decoration block index, `DocumentState` position/parent
 
 ## Destroy (deferred)
 
-`destroyEditor` (`src/editor/editorApiHelpers.ts:203–215`) deactivates extensions, tears down observation, and releases the session. It does not clear `_blockRevisions`, `_decorations`, `_summaryLog`, `_blockIndex`, `_documentState`, `_slots`, or the module-level `segmenters` map. AI suggestion maps *are* cleared from `AISuggestionsControllerImpl.destroy` when that extension deactivates. The standing “destroyed editor retains nothing” assertion is H.6 / Wave 0.4, not this inventory.
+`destroyEditor` (`src/editor/editorApiHelpers.ts:262–275`) deactivates extensions, tears down observation, releases the session, and clears `_blockRevisions`. It does not clear `_decorations`, `_summaryLog`, `_blockIndex`, `_documentState`, `_slots`, or the module-level `segmenters` map. AI suggestion maps *are* cleared from `AISuggestionsControllerImpl.destroy` when that extension deactivates. The standing “destroyed editor retains nothing” assertion is H.6 / Wave 0.4, not this inventory.

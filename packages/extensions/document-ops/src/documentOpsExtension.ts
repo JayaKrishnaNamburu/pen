@@ -1,5 +1,4 @@
 import type { Editor, Extension } from "@input/pen-types";
-import { defineExtension } from "@input/pen-types";
 import { ToolRuntimeImpl } from "./toolServer";
 import { readDocumentTool } from "./tools/readDocument";
 import { writeDocumentTool } from "./tools/writeDocument";
@@ -26,8 +25,9 @@ export function documentOpsExtension(
   let toolRuntime: ToolRuntimeImpl | null = null;
   let activeEditor: Editor | null = null;
 
-  return defineExtension({
+  return {
     name: "document-ops",
+    version: "0.0.0",
 
     activateClient: async (ctx) => {
       activeEditor = ctx.editor;
@@ -61,5 +61,5 @@ export function documentOpsExtension(
       activeEditor = null;
       toolRuntime = null;
     },
-  });
+  };
 }

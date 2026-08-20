@@ -253,7 +253,7 @@ export function InlineContent(props: InlineContentProps) {
 	const primitiveProps: Record<string, unknown> = {
 		[DATA_ATTRS.inlineContent]: "",
 		[DATA_ATTRS.fieldEditorSurface]: "",
-		...fieldEditorTextEntryAttrs(isActiveSurface),
+		...fieldEditorTextEntryAttrs(isActiveSurface, editor),
 		className: getInlineContentClassName(
 			className,
 			emptyInlineCompletionText,

@@ -1,6 +1,6 @@
 # `@input/pen-preset-default`
 
-`defaultPreset()` is an `EditorPreset` that assembles four headless extensions. It does not create an editor, render a surface, or ship CSS.
+`defaultPreset()` is an `EditorPreset` that assembles the default schema and four headless extensions. It does not create an editor, render a surface, or ship CSS.
 
 ## What it assembles
 
@@ -13,7 +13,9 @@
 | `undo` | `@input/pen-undo` |
 | `rich-text-shortcuts` | `@input/pen-shortcuts` |
 
-Those are the only extensions this package installs. It does not assemble a schema, a renderer, AI, search, history, input-rules, multiplayer, or import/export.
+`resolve()` also returns `schema: createDefaultSchema()` from `@input/pen-schema-default`. `createEditor({ preset: defaultPreset() })` therefore installs the default blocks. `createEditor()` with no schema and no preset does not.
+
+This package does not assemble a renderer, AI, search, history, input-rules, multiplayer, or import/export.
 
 ## Install
 

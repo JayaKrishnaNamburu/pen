@@ -9,6 +9,7 @@ import type { Editor } from "@input/pen-types";
 import type { PenFocusPolicy } from "@input/pen-dom";
 import { DATA_ATTRS } from "../utils/dataAttributes";
 import { Pen } from "../primitives/index";
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	useFocusController,
 	type PenFocusController,
@@ -20,7 +21,7 @@ import {
 
 function createPresetEditor() {
 	return createEditor({
-		preset: defaultPreset({
+		schema: defaultSchema, preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
 			undo: false,

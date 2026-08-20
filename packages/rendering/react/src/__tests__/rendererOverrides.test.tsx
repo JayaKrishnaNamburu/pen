@@ -14,6 +14,7 @@ import { defaultPreset } from "@input/pen-preset-default";
 import { Pen } from "../primitives/index";
 import { useEditorContext } from "../context/editorContext";
 import { DATA_ATTRS } from "../utils/dataAttributes";
+import { defaultSchema } from "@input/pen-schema-default";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -138,7 +139,7 @@ function UploadCard(props: {
 
 function createImageEditor() {
 	const editor = createEditor({
-		preset: defaultPreset({
+		schema: defaultSchema, preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
 			undo: false,

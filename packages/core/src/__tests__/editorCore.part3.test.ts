@@ -3,13 +3,14 @@ import { processStream } from "@input/pen-delta-stream";
 import { inputRulesExtension } from "@input/pen-input-rules";
 import { undoExtension } from "@input/pen-undo";
 import {
-	defineExtension,
 	type DocumentSession,
 	type PenStreamPart,
 	getOpOriginType,
 } from "@input/pen-types";
+import { defineExtension } from "@input/pen-core";
 import { describe, expect, it, vi } from "vitest";
 
+import { createDefaultSchema } from "@input/pen-schema-default";
 import {
 	createDecorationSet,
 	createDocumentSession,
@@ -32,6 +33,7 @@ const undoOnlyPreset = {
 
 function createEditor(options: Parameters<typeof createCoreEditor>[0] = {}) {
 	return createCoreEditor({
+		schema: createDefaultSchema(),
 		...options,
 		preset: options.preset ?? noDefaultExtensionsPreset,
 	});
@@ -40,13 +42,17 @@ function createEditor(options: Parameters<typeof createCoreEditor>[0] = {}) {
 function createDefaultEditor(
 	options: Parameters<typeof createCoreEditor>[0] = {},
 ) {
-	return createCoreEditor(options);
+	return createCoreEditor({
+		schema: createDefaultSchema(),
+		...options,
+	});
 }
 
 function createEditorWithUndo(
 	options: Parameters<typeof createCoreEditor>[0] = {},
 ) {
 	return createCoreEditor({
+		schema: createDefaultSchema(),
 		...options,
 		preset: options.preset ?? undoOnlyPreset,
 	});
@@ -167,8 +173,7 @@ describe("@input/pen-core createEditor", () => {
 
 		const tableBlock = editor.getBlock("table-block")!;
 		expect(tableBlock.type).toBe("paragraph");
-		expect(tableBlock.tableRowCount()).toBe(0);
-		expect(tableBlock.tableColumns()).toEqual([]);
+		expect(tableBlock.as("table")).toBeNull();
 
 		const tableBlockMap = editor.internals.doc.blocks.get(
 			"table-block",

@@ -17,7 +17,11 @@ export function BulletListItemRenderer(
 			selected={ctx.selected}
 			decorations={ctx.decorations}
 			marker={
-				<span data-pen-list-marker="" aria-hidden="true">
+				<span
+					data-pen-list-marker=""
+					// Justified decorative list marker
+					aria-hidden="true"
+				>
 					•
 				</span>
 			}

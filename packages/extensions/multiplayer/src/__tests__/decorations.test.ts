@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { getMultiplayerController, multiplayerExtension } from "../index";
 import type { MultiplayerAwarenessState } from "../types";
 import { MultiplayerControllerImpl } from "../controller";
+import { defaultSchema } from "@input/pen-schema-default";
 
 describe("multiplayer decorations", () => {
 	it("renders remote cursor decorations", () => {
@@ -11,7 +12,7 @@ describe("multiplayer decorations", () => {
 			{ id: "b1", type: "paragraph", content: "Hello" },
 		]);
 		const editor = createEditor({
-			document: crdtDoc,
+			schema: defaultSchema,document: crdtDoc,
 			extensions: [
 				multiplayerExtension({
 					user: { id: "u1", name: "Ada" },
@@ -64,7 +65,7 @@ describe("multiplayer decorations", () => {
 				{ id: "b3", type: "paragraph", content: "world" },
 			]);
 		const editor = createEditor({
-			document: crdtDoc,
+			schema: defaultSchema,document: crdtDoc,
 			extensions: [
 				multiplayerExtension({
 					user: { id: "u1", name: "Ada" },
@@ -128,7 +129,7 @@ describe("multiplayer decorations", () => {
 				{ id: "b3", type: "paragraph", content: "world" },
 			]);
 		const editor = createEditor({
-			document: crdtDoc,
+			schema: defaultSchema,document: crdtDoc,
 			extensions: [
 				multiplayerExtension({
 					user: { id: "u1", name: "Ada" },
@@ -188,7 +189,7 @@ describe("multiplayer decorations", () => {
 			{ id: "b2", type: "paragraph", content: "world" },
 		]);
 		const editor = createEditor({
-			document: crdtDoc,
+			schema: defaultSchema,document: crdtDoc,
 			extensions: [
 				multiplayerExtension({
 					user: { id: "u1", name: "Ada" },

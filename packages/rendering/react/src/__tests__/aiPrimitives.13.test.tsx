@@ -4,9 +4,11 @@ import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
 import { createEditor } from "@input/pen-core";
-import { defineExtension, type ToolRuntime } from "@input/pen-types";
+import type { ToolRuntime } from "@input/pen-types";
+import { defineExtension } from "@input/pen-core";
 import { aiExtension, getAIController } from "@input/pen-ai";
 import { defaultPreset } from "@input/pen-preset-default";
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	Pen,
 	useAIActions,
@@ -245,7 +247,7 @@ describe("@input/pen-react AI primitives", () => {
 			height: 20,
 		});
 		const editor = createEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				aiExtension({
 					model: {
 						async *stream() {
@@ -326,7 +328,7 @@ describe("@input/pen-react AI primitives", () => {
 			height: 20,
 		});
 		const editor = createEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				aiExtension({
 					model: {
 						async *stream() {

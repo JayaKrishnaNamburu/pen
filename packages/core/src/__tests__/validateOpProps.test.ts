@@ -1,12 +1,14 @@
+import type {
+	BlockSchema,
+	DiagnosticEvent,
+} from "@input/pen-types";
 import {
 	defineBlock,
 	prop,
-	type BlockSchema,
-	type DiagnosticEvent,
-} from "@input/pen-types";
+} from "@input/pen-core";
 import { describe, expect, it } from "vitest";
 
-import { createBuiltInDefaultSchema } from "../defaultSchema";
+import { createDefaultSchema } from "@input/pen-schema-default";
 import { createEditor as createCoreEditor } from "../index";
 import { validateOpProps } from "../editor/validateOpProps";
 
@@ -28,7 +30,9 @@ const widget = defineBlock("widget", {
 function createEditor() {
 	return createCoreEditor({
 		preset: noDefaultExtensionsPreset,
-		schema: createBuiltInDefaultSchema().extend([widget as BlockSchema]),
+		schema: createDefaultSchema().extend([
+			widget as unknown as BlockSchema,
+		]),
 	});
 }
 

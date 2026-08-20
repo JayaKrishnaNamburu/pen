@@ -40,6 +40,15 @@ jobs:
       - name: Build packages
         run: pnpm build
 
+      - name: Check API reports
+        run: node scripts/api-reports.mjs
+
+      - name: Check types-package purity
+        run: node scripts/types-purity.mjs
+
+      - name: Check @internal stripping
+        run: node scripts/strip-internal.mjs
+
       - name: Typecheck packages
         run: pnpm typecheck
 

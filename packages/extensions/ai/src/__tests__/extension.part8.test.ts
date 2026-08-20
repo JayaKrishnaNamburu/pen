@@ -13,6 +13,7 @@ import {
 	readBlockSuggestionMeta,
 	readSuggestionsFromBlock,
 } from "../suggestions/persistent";
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	createDeferred,
 	testStreamingToolExtension,
@@ -22,7 +23,7 @@ import {
 describe("aiExtension", () => {
 	it("routes inline local-edit prompts to block streaming suggestions", async () => {
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream() {
@@ -61,7 +62,7 @@ describe("aiExtension", () => {
 
 	it("uses the live collapsed caret offset for block generations", async () => {
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream() {
@@ -99,7 +100,7 @@ describe("aiExtension", () => {
 
 	it("uses the selection end as the insertion offset for inline block turns", async () => {
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream() {
@@ -139,7 +140,7 @@ describe("aiExtension", () => {
 
 	it("creates reviewable cross-block inline edit suggestions", async () => {
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream() {
@@ -199,7 +200,7 @@ describe("aiExtension", () => {
 	it("records progressive tool stream events for the active generation", async () => {
 			let pass = 0;
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream() {
@@ -270,7 +271,7 @@ describe("aiExtension", () => {
 			const releaseSecondDelta = createDeferred();
 			let streamedBlockId = "";
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream() {

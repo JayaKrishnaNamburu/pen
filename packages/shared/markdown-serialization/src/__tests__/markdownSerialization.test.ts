@@ -50,12 +50,16 @@ function createNumberedListBlock(
   prev: BlockHandle | null,
   props: Record<string, unknown> = {},
 ) : BlockHandle {
-  return {
+  const handle = {
     id,
     type: "numberedListItem",
     props,
     prev,
-  } as unknown as BlockHandle;
+    as(capability: string) {
+      return capability === "table" && handle.type === "table" ? handle : null;
+    },
+  };
+  return handle as unknown as BlockHandle;
 }
 
 function createTextBlock(
@@ -63,18 +67,21 @@ function createTextBlock(
   type: string,
   storedText: string,
 ): BlockHandle {
-  return {
+  const handle = {
     id,
     type,
     props: {},
     textDeltas: () => [{ insert: storedText }],
     textContent: () => storedText,
-    tableRowCount: () => 0,
-  } as unknown as BlockHandle;
+    as(capability: string) {
+      return capability === "table" && handle.type === "table" ? handle : null;
+    },
+  };
+  return handle as unknown as BlockHandle;
 }
 
 function createEmptyTableHandle(): BlockHandle {
-  return {
+  const handle = {
     id: "t1",
     type: "table",
     props: { hasHeaderRow: true },
@@ -85,7 +92,11 @@ function createEmptyTableHandle(): BlockHandle {
       textDeltas: () => [{ insert: STORAGE_SENTINEL }],
       textContent: () => STORAGE_SENTINEL,
     }),
-  } as unknown as BlockHandle;
+    as(capability: string) {
+      return capability === "table" ? handle : null;
+    },
+  };
+  return handle as unknown as BlockHandle;
 }
 
 function createExportEditor(

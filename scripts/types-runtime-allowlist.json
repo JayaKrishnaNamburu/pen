@@ -1,0 +1,160 @@
+{
+	"_comment": "API3 (spec-v2/14-api-and-packaging.md): runtime function/class exports still in @input/pen-types. Remove an entry in the same PR that relocates it.",
+	"entries": [
+		{
+			"name": "PenDocumentUnreadableError",
+			"kind": "class",
+			"reason": "P.3: format error class stays until the types-only split (API3)"
+		},
+		{
+			"name": "collectToolExecutionOutput",
+			"kind": "function",
+			"reason": "P.3: tool execution helpers relocate next to consumers (API3)"
+		},
+		{
+			"name": "createMutationGroupMetadata",
+			"kind": "function",
+			"reason": "P.3: relocate origin helpers next to their consumers (API3)"
+		},
+		{
+			"name": "delegatesToGridEditing",
+			"kind": "function",
+			"reason": "P.3: relocate field-editor capability helpers to the core schema module (API3)"
+		},
+		{
+			"name": "generateId",
+			"kind": "function",
+			"reason": "P.3: generateId moves with API3; crdt-yjs still imports from types"
+		},
+		{
+			"name": "getApplyOptionsGroupId",
+			"kind": "function",
+			"reason": "P.3: relocate origin helpers next to their consumers (API3)"
+		},
+		{
+			"name": "getBlockSelectionRoleFromSchema",
+			"kind": "function",
+			"reason": "P.3: relocate block-capability helpers to the core schema module (API3)"
+		},
+		{
+			"name": "getBlockSelectionRoleFromType",
+			"kind": "function",
+			"reason": "P.3: relocate block-capability helpers to the core schema module (API3)"
+		},
+		{
+			"name": "getFlowCapabilityFromSchema",
+			"kind": "function",
+			"reason": "P.3: relocate block-capability helpers to the core schema module (API3)"
+		},
+		{
+			"name": "getFlowCapabilityFromType",
+			"kind": "function",
+			"reason": "P.3: relocate block-capability helpers to the core schema module (API3)"
+		},
+		{
+			"name": "getOpOriginGroupId",
+			"kind": "function",
+			"reason": "P.3: relocate origin helpers next to their consumers (API3)"
+		},
+		{
+			"name": "getOpOriginType",
+			"kind": "function",
+			"reason": "P.3: relocate origin helpers next to their consumers (API3)"
+		},
+		{
+			"name": "hasFieldEditorSurface",
+			"kind": "function",
+			"reason": "P.3: relocate field-editor capability helpers to the core schema module (API3)"
+		},
+		{
+			"name": "interpolateMessage",
+			"kind": "function",
+			"reason": "P.3: message interpolation is catalog runtime; relocate with API3"
+		},
+		{
+			"name": "isContinuousTextFlowCapability",
+			"kind": "function",
+			"reason": "P.3: relocate block-capability helpers to the core schema module (API3)"
+		},
+		{
+			"name": "renderSelectionTargetBlockText",
+			"kind": "function",
+			"reason": "P.3: relocate selection helpers next to their consumers (API3)"
+		},
+		{
+			"name": "renderSelectionTargetText",
+			"kind": "function",
+			"reason": "P.3: relocate selection helpers next to their consumers (API3)"
+		},
+		{
+			"name": "resolveFieldEditorBehavior",
+			"kind": "function",
+			"reason": "P.3: relocate field-editor capability helpers to the core schema module (API3)"
+		},
+		{
+			"name": "resolveFieldEditorInputMode",
+			"kind": "function",
+			"reason": "P.3: relocate field-editor capability helpers to the core schema module (API3)"
+		},
+		{
+			"name": "resolveMessage",
+			"kind": "function",
+			"reason": "P.3: message interpolation is catalog runtime; relocate with API3"
+		},
+		{
+			"name": "resolveSelectionTargetBlockIds",
+			"kind": "function",
+			"reason": "P.3: relocate selection helpers next to their consumers (API3)"
+		},
+		{
+			"name": "resolveToolExecution",
+			"kind": "function",
+			"reason": "P.3: tool execution helpers relocate next to consumers (API3)"
+		},
+		{
+			"name": "shouldAllowDirectBlockPaste",
+			"kind": "function",
+			"reason": "P.3: relocate block-capability helpers to the core schema module (API3)"
+		},
+		{
+			"name": "shouldAllowFlowInsertionInSlashMenu",
+			"kind": "function",
+			"reason": "P.3: relocate block-capability helpers to the core schema module (API3)"
+		},
+		{
+			"name": "shouldExposeBlockInTooling",
+			"kind": "function",
+			"reason": "P.3: relocate block-capability helpers to the core schema module (API3)"
+		},
+		{
+			"name": "shouldFallbackMixedSelectionToBlock",
+			"kind": "function",
+			"reason": "P.3: relocate block-capability helpers to the core schema module (API3)"
+		},
+		{
+			"name": "shouldForceBlockScopedSelectAll",
+			"kind": "function",
+			"reason": "P.3: relocate block-capability helpers to the core schema module (API3)"
+		},
+		{
+			"name": "shouldShowBlockInDefaultMenus",
+			"kind": "function",
+			"reason": "P.3: relocate block-capability helpers to the core schema module (API3)"
+		},
+		{
+			"name": "supportsInlineInputRules",
+			"kind": "function",
+			"reason": "P.3: relocate field-editor capability helpers to the core schema module (API3)"
+		},
+		{
+			"name": "supportsInlineMarks",
+			"kind": "function",
+			"reason": "P.3: relocate field-editor capability helpers to the core schema module (API3)"
+		},
+		{
+			"name": "usesInlineTextSelection",
+			"kind": "function",
+			"reason": "P.3: relocate field-editor capability helpers to the core schema module (API3)"
+		}
+	]
+}

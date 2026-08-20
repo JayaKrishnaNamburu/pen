@@ -3,13 +3,14 @@ import { processStream } from "@input/pen-delta-stream";
 import { inputRulesExtension } from "@input/pen-input-rules";
 import { undoExtension } from "@input/pen-undo";
 import {
-	defineExtension,
 	type DocumentSession,
 	type PenStreamPart,
 	getOpOriginType,
 } from "@input/pen-types";
+import { defineExtension } from "@input/pen-core";
 import { describe, expect, it, vi } from "vitest";
 
+import { createDefaultSchema } from "@input/pen-schema-default";
 import {
 	createDecorationSet,
 	createDocumentSession,
@@ -32,6 +33,7 @@ const undoOnlyPreset = {
 
 function createEditor(options: Parameters<typeof createCoreEditor>[0] = {}) {
 	return createCoreEditor({
+		schema: createDefaultSchema(),
 		...options,
 		preset: options.preset ?? noDefaultExtensionsPreset,
 	});
@@ -40,13 +42,17 @@ function createEditor(options: Parameters<typeof createCoreEditor>[0] = {}) {
 function createDefaultEditor(
 	options: Parameters<typeof createCoreEditor>[0] = {},
 ) {
-	return createCoreEditor(options);
+	return createCoreEditor({
+		schema: createDefaultSchema(),
+		...options,
+	});
 }
 
 function createEditorWithUndo(
 	options: Parameters<typeof createCoreEditor>[0] = {},
 ) {
 	return createCoreEditor({
+		schema: createDefaultSchema(),
 		...options,
 		preset: options.preset ?? undoOnlyPreset,
 	});
@@ -109,10 +115,10 @@ describe("@input/pen-core table operations", () => {
 
 		const block = editor.getBlock("t1")!;
 		expect(block.type).toBe("table");
-		expect(block.tableRowCount()).toBe(2);
-		expect(block.tableColumnCount()).toBe(2);
+		expect(block.as("table")!.tableRowCount()).toBe(2);
+		expect(block.as("table")!.tableColumnCount()).toBe(2);
 
-		const cell = block.tableCell(0, 0)!;
+		const cell = block.as("table")!.tableCell(0, 0)!;
 		expect(cell).not.toBeNull();
 		expect(cell.id).toEqual(expect.any(String));
 		expect(cell.textContent()).toBe("");
@@ -142,10 +148,10 @@ describe("@input/pen-core table operations", () => {
 		]);
 
 		const block = editor.getBlock("t1")!;
-		expect(block.tableRowCount()).toBe(3);
-		expect(block.tableColumnCount()).toBe(2);
-		expect(block.tableCell(2, 0)).not.toBeNull();
-		expect(block.tableCell(2, 1)).not.toBeNull();
+		expect(block.as("table")!.tableRowCount()).toBe(3);
+		expect(block.as("table")!.tableColumnCount()).toBe(2);
+		expect(block.as("table")!.tableCell(2, 0)).not.toBeNull();
+		expect(block.as("table")!.tableCell(2, 1)).not.toBeNull();
 
 		editor.destroy();
 	});
@@ -181,13 +187,13 @@ describe("@input/pen-core table operations", () => {
 		firstRow.get("cells").delete(2, 1);
 
 		let block = editor.getBlock("t1")!;
-		expect(block.tableColumnCount()).toBe(3);
+		expect(block.as("table")!.tableColumnCount()).toBe(3);
 
 		editor.apply([
 			{
 				type: "insert-table-row",
 				blockId: "t1",
-				index: block.tableRowCount(),
+				index: block.as("table")!.tableRowCount(),
 			},
 			{
 				type: "insert-table-cell-text",
@@ -200,11 +206,11 @@ describe("@input/pen-core table operations", () => {
 		]);
 
 		block = editor.getBlock("t1")!;
-		expect(block.tableRowCount()).toBe(3);
-		expect(block.tableCell(0, 2)?.textContent()).toBe("Recovered");
-		expect(block.tableCell(2, 0)).not.toBeNull();
-		expect(block.tableCell(2, 1)).not.toBeNull();
-		expect(block.tableCell(2, 2)).not.toBeNull();
+		expect(block.as("table")!.tableRowCount()).toBe(3);
+		expect(block.as("table")!.tableCell(0, 2)?.textContent()).toBe("Recovered");
+		expect(block.as("table")!.tableCell(2, 0)).not.toBeNull();
+		expect(block.as("table")!.tableCell(2, 1)).not.toBeNull();
+		expect(block.as("table")!.tableCell(2, 2)).not.toBeNull();
 
 		editor.destroy();
 	});
@@ -231,10 +237,10 @@ describe("@input/pen-core table operations", () => {
 		]);
 
 		const block = editor.getBlock("t1")!;
-		expect(block.tableRowCount()).toBe(2);
-		expect(block.tableColumnCount()).toBe(3);
-		expect(block.tableCell(0, 2)).not.toBeNull();
-		expect(block.tableCell(1, 2)).not.toBeNull();
+		expect(block.as("table")!.tableRowCount()).toBe(2);
+		expect(block.as("table")!.tableColumnCount()).toBe(3);
+		expect(block.as("table")!.tableCell(0, 2)).not.toBeNull();
+		expect(block.as("table")!.tableCell(1, 2)).not.toBeNull();
 
 		editor.destroy();
 	});
@@ -260,7 +266,7 @@ describe("@input/pen-core table operations", () => {
 			},
 		]);
 
-		expect(editor.getBlock("t1")!.tableRowCount()).toBe(1);
+		expect(editor.getBlock("t1")!.as("table")!.tableRowCount()).toBe(1);
 
 		editor.destroy();
 	});
@@ -286,7 +292,7 @@ describe("@input/pen-core table operations", () => {
 			},
 		]);
 
-		expect(editor.getBlock("t1")!.tableColumnCount()).toBe(1);
+		expect(editor.getBlock("t1")!.as("table")!.tableColumnCount()).toBe(1);
 
 		editor.destroy();
 	});
@@ -315,7 +321,7 @@ describe("@input/pen-core table operations", () => {
 			},
 		]);
 
-		const cell = editor.getBlock("t1")!.tableCell(0, 1)!;
+		const cell = editor.getBlock("t1")!.as("table")!.tableCell(0, 1)!;
 		expect(cell.textContent()).toBe("Hello");
 
 		editor.destroy();
@@ -350,7 +356,7 @@ describe("@input/pen-core table operations", () => {
 			},
 		]);
 
-		const cell = editor.getBlock("t1")!.tableCell(0, 0)!;
+		const cell = editor.getBlock("t1")!.as("table")!.tableCell(0, 0)!;
 		expect(cell.textContent()).toBe("Ho");
 
 		editor.destroy();
@@ -386,7 +392,7 @@ describe("@input/pen-core table operations", () => {
 			},
 		]);
 
-		const cell = editor.getBlock("t1")!.tableCell(0, 0)!;
+		const cell = editor.getBlock("t1")!.as("table")!.tableCell(0, 0)!;
 		const deltas = cell.textDeltas();
 		expect(deltas[0].insert).toBe("bold");
 		expect(deltas[0].attributes).toEqual({ bold: true });
@@ -419,8 +425,8 @@ describe("@input/pen-core table operations", () => {
 
 		const block = editor.getBlock("b1")!;
 		expect(block.type).toBe("table");
-		expect(block.tableRowCount()).toBe(2);
-		expect(block.tableColumnCount()).toBe(2);
+		expect(block.as("table")!.tableRowCount()).toBe(2);
+		expect(block.as("table")!.tableColumnCount()).toBe(2);
 
 		editor.destroy();
 	});

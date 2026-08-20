@@ -1,4 +1,7 @@
-import { prop, resolveSchema } from "@input/pen-types";
+import {
+	prop,
+	resolveSchema,
+} from "@input/pen-core";
 
 /** optional writing direction; no default so unset stays unset (first-strong can run) */
 export const directionProp = resolveSchema(

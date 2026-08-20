@@ -4,10 +4,11 @@ import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
 import { createDecorationSet } from "@input/pen-core";
-import { defineExtension } from "@input/pen-types";
+import { defineExtension } from "@input/pen-core";
 import { domSelectionToEditor } from "../field-editor/selectionBridge";
 import { Pen } from "../primitives/index";
 import { FakeEditContext } from "./utils/fakeEditContext";
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	createEditor,
 	createKeyEvent,
@@ -20,7 +21,7 @@ import {
 } from "./utils/selectionDeletionTestHelpers";
 describe("@input/pen-react selected text deletion", () => {
 	it("inserts a paragraph on Enter from a selected content-first flow paragraph", async () => {
-		const editor = createEditor({ documentProfile: "flow" });
+		const editor = createEditor({ schema: defaultSchema,  documentProfile: "flow" });
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
@@ -89,7 +90,7 @@ describe("@input/pen-react selected text deletion", () => {
 			}
 		).EditContext = FakeEditContext;
 
-		const editor = createEditor({ documentProfile: "flow" });
+		const editor = createEditor({ schema: defaultSchema,  documentProfile: "flow" });
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
@@ -170,7 +171,7 @@ describe("@input/pen-react selected text deletion", () => {
 	});
 
 	it("shows the next ordered-list marker after Enter continues a numbered list", async () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
@@ -234,7 +235,7 @@ describe("@input/pen-react selected text deletion", () => {
 	});
 
 	it("deletes a promoted cross-block selection from document keydown", async () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 		const firstBlockId = editor.firstBlock()!.id;
 		const secondBlockId = crypto.randomUUID();
 

@@ -3,13 +3,14 @@ import { processStream } from "@input/pen-delta-stream";
 import { inputRulesExtension } from "@input/pen-input-rules";
 import { undoExtension } from "@input/pen-undo";
 import {
-	defineExtension,
 	type DocumentSession,
 	type PenStreamPart,
 	getOpOriginType,
 } from "@input/pen-types";
+import { defineExtension } from "@input/pen-core";
 import { describe, expect, it, vi } from "vitest";
 
+import { createDefaultSchema } from "@input/pen-schema-default";
 import {
 	createDecorationSet,
 	createDocumentSession,
@@ -32,6 +33,7 @@ const undoOnlyPreset = {
 
 function createEditor(options: Parameters<typeof createCoreEditor>[0] = {}) {
 	return createCoreEditor({
+		schema: createDefaultSchema(),
 		...options,
 		preset: options.preset ?? noDefaultExtensionsPreset,
 	});
@@ -40,13 +42,17 @@ function createEditor(options: Parameters<typeof createCoreEditor>[0] = {}) {
 function createDefaultEditor(
 	options: Parameters<typeof createCoreEditor>[0] = {},
 ) {
-	return createCoreEditor(options);
+	return createCoreEditor({
+		schema: createDefaultSchema(),
+		...options,
+	});
 }
 
 function createEditorWithUndo(
 	options: Parameters<typeof createCoreEditor>[0] = {},
 ) {
 	return createCoreEditor({
+		schema: createDefaultSchema(),
 		...options,
 		preset: options.preset ?? undoOnlyPreset,
 	});
@@ -124,10 +130,10 @@ describe("@input/pen-core table operations", () => {
 
 		const block = editor.getBlock("b1")!;
 		expect(block.type).toBe("table");
-		expect(block.tableCell(0, 0)?.textContent()).toBe("Hello table");
-		expect(block.tableCell(0, 1)?.textContent()).toBe("");
-		expect(block.tableCell(1, 0)?.textContent()).toBe("");
-		expect(block.tableCell(1, 1)?.textContent()).toBe("");
+		expect(block.as("table")!.tableCell(0, 0)?.textContent()).toBe("Hello table");
+		expect(block.as("table")!.tableCell(0, 1)?.textContent()).toBe("");
+		expect(block.as("table")!.tableCell(1, 0)?.textContent()).toBe("");
+		expect(block.as("table")!.tableCell(1, 1)?.textContent()).toBe("");
 
 		editor.destroy();
 	});
@@ -146,21 +152,19 @@ describe("@input/pen-core table operations", () => {
 		]);
 
 		const block = editor.getBlock("t1")!;
-		expect(block.tableCell(-1, 0)).toBeNull();
-		expect(block.tableCell(0, -1)).toBeNull();
-		expect(block.tableCell(99, 0)).toBeNull();
-		expect(block.tableCell(0, 99)).toBeNull();
+		expect(block.as("table")!.tableCell(-1, 0)).toBeNull();
+		expect(block.as("table")!.tableCell(0, -1)).toBeNull();
+		expect(block.as("table")!.tableCell(99, 0)).toBeNull();
+		expect(block.as("table")!.tableCell(0, 99)).toBeNull();
 
 		editor.destroy();
 	});
 
-	it("tableRowCount/tableColumnCount return 0 for non-table blocks", () => {
+	it("API5: as(\"table\") is null for non-table blocks", () => {
 		const editor = createEditor();
 
 		const block = editor.firstBlock()!;
-		expect(block.tableRowCount()).toBe(0);
-		expect(block.tableColumnCount()).toBe(0);
-		expect(block.tableCell(0, 0)).toBeNull();
+		expect(block.as("table")).toBeNull();
 
 		editor.destroy();
 	});

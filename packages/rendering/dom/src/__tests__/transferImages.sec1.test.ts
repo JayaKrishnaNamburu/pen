@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { createHeadlessEditor } from "@input/pen-core";
 import type { DiagnosticEvent } from "@input/pen-types";
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	insertUploadedImages,
 	insertUploadedImagesAtDropTarget,
 } from "../field-editor/transferImages";
 
 function createEditor() {
-	return createHeadlessEditor();
+	return createHeadlessEditor({ schema: defaultSchema });
 }
 
 function imageBlocks(editor: ReturnType<typeof createEditor>) {

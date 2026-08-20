@@ -1,0 +1,46 @@
+import { expect, test } from "@playwright/test";
+import { scenario } from "../src/scenario";
+
+const INSECURE_ORIGIN = "http://pen.test:4174";
+
+test.use({
+	baseURL: INSECURE_ORIGIN,
+	launchOptions: {
+		args: ["--host-resolver-rules=MAP pen.test 127.0.0.1"],
+	},
+});
+
+test.skip(
+	({ browserName }) => browserName !== "chromium",
+	"Chromium --host-resolver-rules maps pen.test off the localhost secure-context special case",
+);
+
+scenario(
+	"HOST4: plain HTTP on a non-localhost host constructs and types without randomUUID",
+	async (s, page) => {
+		const errors: string[] = [];
+		page.on("pageerror", (error) => {
+			errors.push(error.message);
+		});
+
+		const context = await page.evaluate(() => ({
+			origin: window.location.origin,
+			isSecureContext: window.isSecureContext,
+			hasRandomUUID: typeof crypto.randomUUID === "function",
+		}));
+		expect(context.origin).toBe(INSECURE_ORIGIN);
+		expect(context.isSecureContext).toBe(false);
+		expect(context.hasRandomUUID).toBe(false);
+
+		await s.load("hello-world");
+		await s.keyboard.type("!");
+		await s.assert.textContains("Hello");
+		await s.assert.textContains("!");
+
+		const diagnostics = await page.evaluate(
+			() => window.__penConformance.diagnostics,
+		);
+		expect(errors, errors.join("\n")).toEqual([]);
+		expect(diagnostics.filter((item) => item.level === "error")).toEqual([]);
+	},
+);

@@ -9,6 +9,7 @@ import { searchExtension } from "@input/pen-search";
 import { Pen } from "../primitives/index";
 import type { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
 import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
+import { defaultSchema } from "@input/pen-schema-default";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -33,7 +34,7 @@ function getFieldEditor(editor: ReturnType<typeof createEditor>): FieldEditorImp
 describe("@input/pen-react search primitives", () => {
 	it("updates search state from the input and renders results", async () => {
 		const editor = createEditor({
-			extensions: [searchExtension()],
+			schema: defaultSchema,extensions: [searchExtension()],
 		});
 		const blockId = editor.firstBlock()!.id;
 
@@ -105,7 +106,7 @@ describe("@input/pen-react search primitives", () => {
 
 	it("keeps focus on the search input while query updates refresh decorations", async () => {
 		const editor = createEditor({
-			preset: defaultPreset({
+			schema: defaultSchema, preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,

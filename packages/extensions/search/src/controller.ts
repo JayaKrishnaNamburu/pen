@@ -1,3 +1,4 @@
+import { announceEditorA11y } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
 import type {
 	SearchController,
@@ -158,6 +159,7 @@ export class SearchControllerImpl implements SearchController {
 	}
 
 	recompute(): void {
+		const previousCount = this.state.matches.length;
 		const matches = findDocumentMatches(
 			this.editor,
 			this.state.query,
@@ -168,6 +170,14 @@ export class SearchControllerImpl implements SearchController {
 			matches,
 			activeIndex: normalizeActiveIndex(this.state.activeIndex, matches.length),
 		});
+		if (
+			this.state.query.length > 0 &&
+			matches.length !== previousCount
+		) {
+			announceEditorA11y(this.editor, "findMatches", {
+				count: matches.length,
+			});
+		}
 	}
 
 	private getActiveMatch(): SearchMatch | null {

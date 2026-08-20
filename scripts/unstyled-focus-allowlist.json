@@ -1,4 +1,0 @@
-{
-  "_comment": "AX5 (spec-v2/13-accessibility.md): outline: none sites in packages/rendering that have no :focus-visible replacement in the same file. Each entry needs file, a positive integer line, and a non-empty reason. A hit whose file already contains :focus-visible is not a violation and must not be listed. Remove an entry in the same PR that deletes the outline: none or adds the replacement.",
-  "entries": []
-}

@@ -34,7 +34,7 @@ export async function copyCellSelection(
 	for (const rowCells of resolveCellSelectionMatrix(block, selection)) {
 		const row: string[] = [];
 		for (const cellCoord of rowCells) {
-			const cell = block.tableCell(cellCoord.row, cellCoord.col);
+			const cell = block.as("table")?.tableCell(cellCoord.row, cellCoord.col);
 			row.push(cell?.textContent() ?? "");
 		}
 		cellData.push(row);
@@ -54,6 +54,7 @@ export async function copyCellSelection(
 				`<tr>${row.map((c) => `<td>${escapeHtml(c)}</td>`).join("")}</tr>`,
 		)
 		.join("");
+	// SEC5: already-serialized rows
 	const html = `<table>${htmlRows}</table>`;
 	const clipboard = globalThis.navigator?.clipboard;
 	if (!clipboard) {
@@ -175,8 +176,9 @@ function applyPastedCells(
 	const block = editor.getBlock(selection.blockId);
 	if (!block) return;
 
-	const rowCount = selection.rowIds?.length ?? block.tableRowCount();
-	const colCount = selection.columnIds?.length ?? block.tableColumnCount();
+	const table = block.as("table");
+	const rowCount = selection.rowIds?.length ?? table?.tableRowCount() ?? 0;
+	const colCount = selection.columnIds?.length ?? table?.tableColumnCount() ?? 0;
 	const startRow = Math.min(selection.anchor.row, selection.head.row);
 	const startCol = Math.min(selection.anchor.col, selection.head.col);
 
@@ -192,7 +194,7 @@ function applyPastedCells(
 				col: targetCol,
 			});
 			if (!resolvedCoord) continue;
-			const cell = block.tableCell(resolvedCoord.row, resolvedCoord.col);
+			const cell = table?.tableCell(resolvedCoord.row, resolvedCoord.col);
 			if (!cell) continue;
 			const existingLen = cell.textContent().length;
 			if (existingLen > 0) {

@@ -4,7 +4,7 @@ import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
 import { createDecorationSet } from "@input/pen-core";
-import { defineExtension } from "@input/pen-types";
+import { defineExtension } from "@input/pen-core";
 import { domSelectionToEditor } from "../field-editor/selectionBridge";
 import { Pen } from "../primitives/index";
 import { FakeEditContext } from "./utils/fakeEditContext";

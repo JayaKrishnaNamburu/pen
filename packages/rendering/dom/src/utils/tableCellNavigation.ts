@@ -46,8 +46,9 @@ export function handleTableCellSelectionKeyDown(options: {
 		return false;
 	}
 
-	const rowCount = selection.rowIds?.length ?? block.tableRowCount();
-	const colCount = selection.columnIds?.length ?? block.tableColumnCount();
+	const table = block.as("table");
+	const rowCount = selection.rowIds?.length ?? table?.tableRowCount() ?? 0;
+	const colCount = selection.columnIds?.length ?? table?.tableColumnCount() ?? 0;
 
 	if (isArrowKey(event.key) && !event.metaKey && !event.ctrlKey && !event.altKey) {
 		event.preventDefault();
@@ -168,11 +169,12 @@ function moveSelectionToAdjacentBlock(
 
 	const schema = editor.schema.resolve(adjacentBlock.type);
 	if (delegatesToGridEditing(schema)) {
+		const adjacentTable = adjacentBlock.as("table");
 		const targetRow =
-			direction === "previous" ? Math.max(adjacentBlock.tableRowCount() - 1, 0) : 0;
+			direction === "previous" ? Math.max((adjacentTable?.tableRowCount() ?? 0) - 1, 0) : 0;
 		const targetCol =
 			direction === "previous"
-				? Math.max(adjacentBlock.tableColumnCount() - 1, 0)
+				? Math.max((adjacentTable?.tableColumnCount() ?? 0) - 1, 0)
 				: 0;
 		editor.selectCell(adjacentId, targetRow, targetCol);
 		fieldEditor.deactivate();
@@ -295,7 +297,7 @@ function clearCellContent(
 	if (!block) return;
 	const resolvedCoord = resolveCellSelectionCoord(block, selection, { row, col });
 	if (!resolvedCoord) return;
-	const cell = block.tableCell(resolvedCoord.row, resolvedCoord.col);
+	const cell = block.as("table")?.tableCell(resolvedCoord.row, resolvedCoord.col);
 	if (!cell) return;
 	const length = cell.length();
 	if (length > 0) {

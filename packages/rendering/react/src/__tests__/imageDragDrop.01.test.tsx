@@ -7,6 +7,7 @@ import { createEditor } from "@input/pen-core";
 import type { AssetProvider } from "@input/pen-types";
 import { defaultPreset } from "@input/pen-preset-default";
 import { Pen } from "../primitives/index";
+import { defaultSchema } from "@input/pen-schema-default";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -61,7 +62,7 @@ function createDragEvent(
 describe("@input/pen-react image drag and drop", () => {
 	it("splits inline text when dropping an image at a caret position", async () => {
 		const editor = createEditor({
-			preset: defaultPreset({
+			schema: defaultSchema, preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,
@@ -205,7 +206,7 @@ describe("@input/pen-react image drag and drop", () => {
 
 	it("moves the drop target out of the focused block", async () => {
 		const editor = createEditor({
-			preset: defaultPreset({
+			schema: defaultSchema, preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,

@@ -13,6 +13,7 @@ import {
 	readBlockSuggestionMeta,
 	readSuggestionsFromBlock,
 } from "../suggestions/persistent";
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	createDeferred,
 	testStreamingToolExtension,
@@ -22,7 +23,7 @@ import {
 describe("aiExtension", () => {
 	it("does not reopen accepted inline review for unrelated undo operations", async () => {
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream() {
@@ -87,7 +88,7 @@ describe("aiExtension", () => {
 
 	it("restores the latest inline review turn even when no inline session is active", async () => {
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream() {
@@ -132,7 +133,7 @@ describe("aiExtension", () => {
 
 	it("restores the inline prompt in the same undo step after accepting a suspended review turn", async () => {
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream() {
@@ -185,7 +186,7 @@ describe("aiExtension", () => {
 
 	it("restores prompt and review state on the first inline history undo shortcut", async () => {
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream() {
@@ -235,7 +236,7 @@ describe("aiExtension", () => {
 	it("rewrites text that was previously accepted from AI", async () => {
 			let pass = 0;
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream() {
@@ -297,7 +298,7 @@ describe("aiExtension", () => {
 
 	it("records selection rewrites in session fast-apply metrics", async () => {
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream() {
@@ -336,7 +337,7 @@ describe("aiExtension", () => {
 
 	it("accumulates fast-apply outcome counters across session turns", () => {
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({ contentFormat: { blockGeneration: "markdown" } }),
 				],
 			});

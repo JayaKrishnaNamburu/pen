@@ -187,6 +187,8 @@ export abstract class FieldEditorImplRuntime extends FieldEditorImplSelection {
 	}
 
 	destroy(): void {
+		this._unbindFocusSink();
+		this._unbindAnnouncer();
 		this._unsubscribeSelection?.();
 		this._unsubscribeSelection = null;
 		this._unsubscribeHistoryApplied?.();

@@ -283,11 +283,12 @@ export class SelectionManagerImpl {
 			this._registry,
 		);
 		const matrix = resolveCellSelectionMatrix(block, sel);
+		const table = block.as("table");
 		const rowParts: string[] = [];
 		for (const rowCells of matrix) {
 			const cellParts: string[] = [];
 			for (const cellCoord of rowCells) {
-				const cell = block.tableCell(cellCoord.row, cellCoord.col);
+				const cell = table?.tableCell(cellCoord.row, cellCoord.col);
 				cellParts.push(cell?.textContent() ?? "");
 			}
 			rowParts.push(cellParts.join("\t"));

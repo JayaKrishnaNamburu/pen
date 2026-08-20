@@ -6,12 +6,19 @@
 # Wave H: CH1–CH9 (CH5/CH7 were already greppable).
 # Already greppable in this checkout: HOST4, CH7, DUR1–DUR5, SEC1–SEC9,
 # IOP3, IOP5, CH5, R1–R5, R7, I8, BR1, BR2, G1, G2, G5, AIB5, AIB6, COL1.
+# Wave P leftovers: API1, API2, API3, API5, API9.
+# Wave C leftovers: COL2–COL4, COL6.
+# Wave T leftovers: IOP1, IOP2, IOP4, IOP6.
+# Wave V leftovers: DUR6, DUR7.
+# Wave F leftovers: SCALE1.
+# Wave E leftovers: HOST1, HOST2, HOST5.
 
 I2
 I3
 I10
 I11
 HOST4
+HOST6
 CH7
 DUR1
 DUR2
@@ -69,3 +76,30 @@ LOC3
 LOC4
 LOC5
 LOC6
+AX1
+AX2
+AX3
+AX4
+AX5
+AX6
+AX7
+AX8
+API1
+API2
+API3
+API5
+API9
+COL2
+COL3
+COL4
+COL6
+IOP1
+IOP2
+IOP4
+IOP6
+DUR6
+DUR7
+SCALE1
+HOST1
+HOST2
+HOST5

@@ -47,8 +47,12 @@ export function SSRPage() {
 			<pre>
 				<code>{`import { createHeadlessEditor } from "@input/pen-core";
 import { htmlExporter } from "@input/pen-export-html";
+import { createDefaultSchema } from "@input/pen-schema-default";
 
-const editor = createHeadlessEditor({ document: hostDocument });
+const editor = createHeadlessEditor({
+  document: hostDocument,
+  schema: createDefaultSchema(),
+});
 const html = htmlExporter.export(editor);
 editor.destroy();`}</code>
 			</pre>

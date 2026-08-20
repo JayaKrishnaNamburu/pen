@@ -1,6 +1,7 @@
-import { defineExtension } from "@input/pen-types";
+import { defineExtension } from "@input/pen-core";
 import { describe, expect, it } from "vitest";
 
+import { createDefaultSchema } from "@input/pen-schema-default";
 import {
 	APPLY_STORM_CODE,
 	APPLY_STORM_QUEUE_LIMIT,
@@ -16,6 +17,7 @@ const noDefaultExtensionsPreset = {
 
 function createEditor(options: Parameters<typeof createCoreEditor>[0] = {}) {
 	return createCoreEditor({
+		schema: createDefaultSchema(),
 		...options,
 		preset: options.preset ?? noDefaultExtensionsPreset,
 	});

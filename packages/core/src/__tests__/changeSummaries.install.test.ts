@@ -2,6 +2,7 @@ import { yjsAdapter } from "@input/pen-crdt-yjs";
 import { describe, expect, it } from "vitest";
 
 import { createHeadlessEditor } from "../index";
+import { defaultSchema } from "@input/pen-schema-default";
 
 async function flushMicrotasks(count = 4): Promise<void> {
 	for (let index = 0; index < count; index++) {
@@ -11,7 +12,7 @@ async function flushMicrotasks(count = 4): Promise<void> {
 
 describe("change summaries — editor install", () => {
 	it("emits a summary for apply with mapped insert offsets", () => {
-		const editor = createHeadlessEditor();
+		const editor = createHeadlessEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
@@ -37,7 +38,7 @@ describe("change summaries — editor install", () => {
 	});
 
 	it("I10: normalize stays inside the same apply summary", () => {
-		const editor = createHeadlessEditor();
+		const editor = createHeadlessEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 		const before = editor.lastChangeSummary?.commitId ?? 0;
 
@@ -62,7 +63,7 @@ describe("change summaries — editor install", () => {
 	it("seeds the shadow index from an existing document", () => {
 		const adapter = yjsAdapter();
 		const document = adapter.createDocument();
-		const writer = createHeadlessEditor({ crdt: adapter, document });
+		const writer = createHeadlessEditor({ schema: defaultSchema,  crdt: adapter, document });
 		const blockId = writer.firstBlock()!.id;
 		writer.apply([
 			{
@@ -73,7 +74,7 @@ describe("change summaries — editor install", () => {
 			},
 		]);
 
-		const reader = createHeadlessEditor({ crdt: adapter, document });
+		const reader = createHeadlessEditor({ schema: defaultSchema,  crdt: adapter, document });
 		expect(reader.getBlock(blockId)?.textContent()).toBe("hello");
 
 		reader.apply([
@@ -98,7 +99,7 @@ describe("change summaries — editor install", () => {
 
 	it("reseeds the shadow index after loadDocument", async () => {
 		const adapter = yjsAdapter();
-		const writer = createHeadlessEditor({ crdt: adapter });
+		const writer = createHeadlessEditor({ schema: defaultSchema,  crdt: adapter });
 		const blockId = writer.firstBlock()!.id;
 		writer.apply([
 			{
@@ -112,7 +113,7 @@ describe("change summaries — editor install", () => {
 			adapter.encodeState(writer.internals.crdtDoc),
 		);
 
-		const reader = createHeadlessEditor({ crdt: adapter });
+		const reader = createHeadlessEditor({ schema: defaultSchema,  crdt: adapter });
 		reader.loadDocument(loaded);
 		await flushMicrotasks();
 

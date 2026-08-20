@@ -1,3 +1,4 @@
+import { announceEditorA11y } from "@input/pen-core";
 import type { CommitEvent } from "@input/pen-types";
 import type { AIInlineCompletionController } from "../types";
 import type { AIControllerMethodHost } from "./aiControllerMethodHost";
@@ -20,6 +21,7 @@ export const suggestionControllerMethods = {
 		>[0],
 	): void {
 		this._inlineCompletion.showSuggestion(suggestion);
+		announceEditorA11y(this._editor, "suggestionAppeared");
 	},
 
 	dismissEphemeralSuggestion(this: AIControllerMethodHost): void {
@@ -106,11 +108,15 @@ export const suggestionControllerMethods = {
 	},
 
 	_syncSuggestionsFromDocument(this: AIControllerMethodHost): boolean {
+		const previousCount = this._suggestions.length;
 		const nextSuggestions = readAllSuggestions(this._editor);
 		if (areSuggestionsEqual(this._suggestions, nextSuggestions)) {
 			return false;
 		}
 		this._suggestions = nextSuggestions;
+		if (nextSuggestions.length > previousCount) {
+			announceEditorA11y(this._editor, "suggestionAppeared");
+		}
 		return true;
 	},
 };

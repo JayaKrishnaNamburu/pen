@@ -1,7 +1,12 @@
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
 import { getHarnessSession } from "./session";
-import "./styles.css";
+
+const unstyled =
+	new URLSearchParams(window.location.search).get("unstyled") === "1";
+if (!unstyled) {
+	await import("./styles.css");
+}
 
 getHarnessSession();
 

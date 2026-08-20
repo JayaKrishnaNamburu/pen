@@ -1,12 +1,11 @@
 import { createDefaultSchema } from "@input/pen-schema-default";
+import type { BlockSchema, CommitEvent } from "@input/pen-types";
 import {
 	defineBlock,
 	mergeSchemas,
 	prop,
 	SchemaRegistryImpl,
-	type BlockSchema,
-	type CommitEvent,
-} from "@input/pen-types";
+} from "@input/pen-core";
 import { describe, expect, it } from "vitest";
 
 import { createEditor as createCoreEditor } from "../index";
@@ -23,7 +22,7 @@ const counted = defineBlock("counted", {
 		charCount: prop.number().default(0),
 	},
 	normalize(block) {
-		const nextCount = [...block.content].length;
+		const nextCount = [...(block.content ?? "")].length;
 		if (block.props.charCount === nextCount) {
 			return block;
 		}
@@ -40,7 +39,7 @@ const counted = defineBlock("counted", {
 const countedSchema = mergeSchemas(
 	createDefaultSchema(),
 	new SchemaRegistryImpl({
-		blocks: [counted as BlockSchema],
+		blocks: [counted as unknown as BlockSchema],
 		inlines: [],
 	}),
 );

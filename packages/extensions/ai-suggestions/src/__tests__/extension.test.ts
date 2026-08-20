@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	aiSuggestionsExtension,
 	getAISuggestionsController,
@@ -24,7 +25,7 @@ function createDeferred<T>() {
 describe("@input/pen-ai-suggestions extension", () => {
 	it("registers a controller and materializes proactive suggestions", async () => {
 		const editor = createEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				aiSuggestionsExtension({
 					debounceMs: 0,
 					minStableMs: 0,
@@ -78,7 +79,7 @@ describe("@input/pen-ai-suggestions extension", () => {
 
 	it("applies a suggestion through editor ops", async () => {
 		const editor = createEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				aiSuggestionsExtension({
 					debounceMs: 0,
 					minStableMs: 0,
@@ -128,7 +129,7 @@ describe("@input/pen-ai-suggestions extension", () => {
 
 	it("caps displayed suggestions to the configured maximum after ranking", async () => {
 		const editor = createEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				aiSuggestionsExtension({
 					debounceMs: 0,
 					minStableMs: 0,
@@ -205,7 +206,7 @@ describe("@input/pen-ai-suggestions extension", () => {
 			}>;
 		}>();
 		const editor = createEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				aiSuggestionsExtension({
 					debounceMs: 0,
 					minStableMs: 0,
@@ -269,7 +270,7 @@ describe("@input/pen-ai-suggestions extension", () => {
 	it("requires a fresh edit after re-enabling proactive suggestions", async () => {
 		let analyzeCallCount = 0;
 		const editor = createEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				aiSuggestionsExtension({
 					debounceMs: 0,
 					minStableMs: 0,

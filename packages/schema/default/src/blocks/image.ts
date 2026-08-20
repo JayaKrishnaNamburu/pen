@@ -1,4 +1,7 @@
-import { defineBlock, prop } from "@input/pen-types";
+import {
+	defineBlock,
+	prop,
+} from "@input/pen-core";
 import { escapeHtml } from "../escapeHtml";
 
 export const image = defineBlock("image", {
@@ -35,4 +38,18 @@ export const image = defineBlock("image", {
       return `<img src="${escapeHtml(String(block.props.src ?? ""))}"${alt}${width} />`;
     },
   },
+}).a11y({
+  label: (props) => {
+    const alt = typeof props.alt === "string" ? props.alt.trim() : "";
+    if (alt.length > 0) {
+      return alt;
+    }
+    const caption =
+      typeof props.caption === "string" ? props.caption.trim() : "";
+    if (caption.length > 0) {
+      return caption;
+    }
+    return "Image";
+  },
+  roleDescription: "image",
 });

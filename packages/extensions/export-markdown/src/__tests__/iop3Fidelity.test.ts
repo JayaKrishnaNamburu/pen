@@ -6,6 +6,7 @@ import { createEditor } from "@input/pen-core";
 import { defaultBlocks, defaultInlines } from "@input/pen-schema-default";
 import type { DocumentOp } from "@input/pen-types";
 import { markdownExporter } from "../exporter";
+import { defaultSchema } from "@input/pen-schema-default";
 import {
   MARKDOWN_EXPORT_FIDELITY,
   renderMarkdownFidelityTable,
@@ -27,7 +28,7 @@ const committedTable = readFileSync(
 
 function createBareEditor() {
   const editor = createEditor({
-    preset: noDefaultExtensionsPreset,
+    schema: defaultSchema, preset: noDefaultExtensionsPreset,
   });
   const existingBlockIds = [...editor.documentState.allBlocks()]
     .filter((handle) => handle.parent === null)

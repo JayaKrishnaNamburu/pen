@@ -45,6 +45,22 @@ export default tseslint.config(
     },
   },
   {
+    // SEC5: exporters and schema toHTML must not concatenate unescaped
+    // document content into markup. Disable a site with a comment naming
+    // SEC5, "already-serialized", "clamped", or "justified".
+    files: [
+      "packages/extensions/export-html/src/**/*.{ts,tsx}",
+      "packages/extensions/export-xml/src/**/*.{ts,tsx}",
+      "packages/schema/default/src/**/*.{ts,tsx}",
+      "packages/rendering/dom/src/utils/clipboardSerialization.ts",
+      "packages/rendering/dom/src/utils/tableCellClipboard.ts",
+    ],
+    ignores: ["**/__tests__/**", "**/*.test.ts"],
+    rules: {
+      "pen/no-unescaped-markup-concat": "error",
+    },
+  },
+  {
     // LOC1: library chrome copy comes from the catalog. Tests and playground
     // hosts may keep literals. Disable a site with an eslint-disable comment
     // that names why the string is not user copy (allowlist).
@@ -55,6 +71,17 @@ export default tseslint.config(
     ignores: ["**/__tests__/**", "**/*.test.ts", "**/*.test.tsx"],
     rules: {
       "pen/no-user-facing-literals": "error",
+    },
+  },
+  {
+    // AX4 / AX5: rendering packages own surface semantics. Tests may assert
+    // aria-hidden and outline. Overlay / focus-sink / decorative exceptions
+    // need an adjacent comment naming AX7, "focus sink", or "Justified".
+    files: ["packages/rendering/**/*.{ts,tsx,js,jsx}"],
+    ignores: ["**/__tests__/**", "**/*.test.ts", "**/*.test.tsx"],
+    rules: {
+      "pen/no-aria-hidden-visible": "error",
+      "pen/no-unstyled-focus": "error",
     },
   },
   {

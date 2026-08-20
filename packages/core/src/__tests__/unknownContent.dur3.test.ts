@@ -4,7 +4,6 @@ import type { CRDTDocument, DiagnosticEvent, Editor } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 import * as Y from "yjs";
 
-import { createBuiltInDefaultSchema } from "../defaultSchema";
 import { createHeadlessEditor } from "../index";
 
 const noDefaultExtensionsPreset = {
@@ -19,6 +18,7 @@ function createEditor(document: CRDTDocument, adapter = yjsAdapter()) {
 	return createHeadlessEditor({
 		crdt: adapter,
 		document,
+		schema: createDefaultSchema(),
 		preset: noDefaultExtensionsPreset,
 	});
 }
@@ -144,12 +144,10 @@ function schemaUnknownDiagnostics(events: DiagnosticEvent[]) {
 
 describe("DUR3 unknown-content preservation", () => {
 	it("DUR3: both registry factories resolve unknown types via passthrough", () => {
-		const builtIn = createBuiltInDefaultSchema();
 		const published = createDefaultSchema();
 
-		expect(builtIn.resolve("futureWidget")?.type).toBe("futureWidget");
 		expect(published.resolve("futureWidget")?.type).toBe("futureWidget");
-		expect(builtIn.allBlocks().some((schema) => schema.type === "futureWidget")).toBe(
+		expect(published.allBlocks().some((schema) => schema.type === "futureWidget")).toBe(
 			false,
 		);
 	});

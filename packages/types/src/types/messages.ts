@@ -61,6 +61,8 @@ export type MessageParamsByKey = {
 	"pen.search.toggle.regex": NoMessageParams;
 	"pen.search.toggle.wholeWord": NoMessageParams;
 	"pen.slash.input.placeholder": NoMessageParams;
+	"pen.slash.list.label": NoMessageParams;
+	"pen.suggestion.list.label": NoMessageParams;
 	"pen.table.addColumn": NoMessageParams;
 	"pen.table.addRow": NoMessageParams;
 	"pen.table.columnPlaceholder": { index: number };
@@ -220,15 +222,24 @@ export const DEFAULT_MESSAGE_CATALOG: MessageCatalog = {
 	"pen.a11y.blockConverted": "Converted to {blockType}",
 	"pen.a11y.undoApplied": "Undid {hint}",
 	"pen.a11y.redoApplied": "Redid {hint}",
-	"pen.a11y.blockSelectionEntered": "{count} blocks selected",
-	"pen.a11y.blockSelectionChanged": "{count} blocks selected",
+	"pen.a11y.blockSelectionEntered": {
+		one: "{count} block selected",
+		other: "{count} blocks selected",
+	},
+	"pen.a11y.blockSelectionChanged": {
+		one: "{count} block selected",
+		other: "{count} blocks selected",
+	},
 	"pen.a11y.cellSelectionChanged": "{rows} by {columns} cells selected",
 	"pen.a11y.suggestionAppeared": "Suggestion appeared",
 	"pen.a11y.suggestionAccepted": "Suggestion accepted",
 	"pen.a11y.suggestionRejected": "Suggestion rejected",
 	"pen.a11y.streamingStarted": "Streaming started",
 	"pen.a11y.streamingFinished": "Streaming finished",
-	"pen.a11y.findMatches": "{count} matches",
+	"pen.a11y.findMatches": {
+		one: "{count} match",
+		other: "{count} matches",
+	},
 	"pen.a11y.atomSelected": "{atomType} selected",
 	"pen.a11y.collaboratorJoined": "{name} joined",
 	"pen.a11y.collaboratorEditing": "{name} is editing",
@@ -270,6 +281,8 @@ export const DEFAULT_MESSAGE_CATALOG: MessageCatalog = {
 	"pen.search.toggle.regex": "Toggle regular expression search",
 	"pen.search.toggle.wholeWord": "Toggle whole-word search",
 	"pen.slash.input.placeholder": "Search blocks...",
+	"pen.slash.list.label": "Slash menu",
+	"pen.suggestion.list.label": "Suggestions",
 	"pen.table.addColumn": "Add column",
 	"pen.table.addRow": "Add row",
 	"pen.table.columnPlaceholder": "Column {index}",

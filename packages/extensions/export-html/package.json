@@ -50,9 +50,9 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@input/pen-dom": "workspace:*",
-    "@input/pen-markdown-serialization": "workspace:*",
-    "@input/pen-types": "workspace:*"
+    "@input/pen-dom": "workspace:^",
+    "@input/pen-markdown-serialization": "workspace:^",
+    "@input/pen-types": "workspace:^"
   },
   "devDependencies": {
     "@input/pen-core": "workspace:*",

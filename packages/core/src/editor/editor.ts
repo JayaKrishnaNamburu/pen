@@ -5,7 +5,7 @@ import { undoExtension } from "@input/pen-undo";
 import { documentOpsExtension } from "@input/pen-document-ops";
 import { deltaStreamExtension } from "@input/pen-delta-stream";
 import { richTextShortcutsExtension } from "@input/pen-shortcuts";
-import { builtInDefaultSchema } from "../defaultSchema";
+import { resolveEditorSchema } from "../schema/emptySchema";
 import { SchemaEngineImpl } from "../schema/normalize";
 import { createBlockHandle } from "../schema/handles";
 import { EventEmitter } from "./events";
@@ -22,6 +22,7 @@ import { DocumentRangeImpl } from "./range";
 import { createDocumentSession } from "./documentSession";
 
 import { beforeApplyFacet } from "../facets/coreFacets";
+import { a11yLabelFacet } from "../facets/a11yFacets";
 import {
 	localeFacet,
 	messagesFacet,
@@ -87,7 +88,7 @@ class EditorImpl implements Editor {
 	readonly undoManager: UndoManager;
 
 	constructor(options: CreateEditorOptions = {}) {
-		this._registry = options.schema ?? builtInDefaultSchema;
+		this._registry = resolveEditorSchema(options);
 		this._explicitEditorViewMode = options.editorViewMode ?? null;
 		this._adapter =
 			options.documentSession?.adapter ?? options.crdt ?? yjsAdapter();
@@ -149,6 +150,9 @@ class EditorImpl implements Editor {
 		];
 		if (options.messages) {
 			i18nProviders.push(messagesFacet.of(options.messages, "highest"));
+		}
+		if (options.a11yLabel != null) {
+			i18nProviders.push(a11yLabelFacet.of(options.a11yLabel, "highest"));
 		}
 		this._facetRegistry = createFacetRegistry({
 			editor: this,

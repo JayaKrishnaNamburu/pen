@@ -50,8 +50,8 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@input/pen-export-json": "workspace:*",
-    "@input/pen-types": "workspace:*",
+    "@input/pen-export-json": "workspace:^",
+    "@input/pen-types": "workspace:^",
     "domhandler": "^5.0.0",
     "htmlparser2": "^9.0.0"
   },

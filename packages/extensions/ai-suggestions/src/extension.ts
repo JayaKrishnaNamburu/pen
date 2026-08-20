@@ -3,7 +3,7 @@ import {
 	createDecorationSet,
 } from "@input/pen-core";
 import { AI_SUGGESTIONS_CONTROLLER_SLOT } from "@input/pen-types";
-import { defineExtension } from "@input/pen-types";
+import { defineExtension } from "@input/pen-core";
 import type { Editor, Extension } from "@input/pen-types";
 import { AISuggestionsControllerImpl } from "./controller";
 import { resolveAISuggestionsConfig } from "./config";

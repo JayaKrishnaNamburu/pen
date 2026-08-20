@@ -13,6 +13,7 @@ import {
 	readBlockSuggestionMeta,
 	readSuggestionsFromBlock,
 } from "../suggestions/persistent";
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	createDeferred,
 	testStreamingToolExtension,
@@ -22,7 +23,7 @@ import {
 describe("aiExtension", () => {
 	it("applies XML flow patch plans through the markdown fast-apply path", async () => {
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream() {
@@ -76,14 +77,14 @@ describe("aiExtension", () => {
 			expect(controller.acceptActiveGeneration()).toBe(true);
 			const tables = Array.from(editor.blocks("table"));
 			expect(tables).toHaveLength(1);
-			expect(tables[0]?.tableColumnCount()).toBe(2);
-			expect(tables[0]?.tableRowCount()).toBe(3);
-			expect(tables[0]?.tableCell(1, 1)?.textContent()).toBe("Design");
+			expect(tables[0].as("table")?.tableColumnCount()).toBe(2);
+			expect(tables[0].as("table")?.tableRowCount()).toBe(3);
+			expect(tables[0].as("table")?.tableCell(1, 1)?.textContent()).toBe("Design");
 		});
 
 	it("records flow patch alignment metrics in fast-apply debug state", () => {
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream() {
@@ -193,7 +194,7 @@ describe("aiExtension", () => {
 
 	it("records scoped replacement fallback metrics in fast-apply debug state", () => {
 			const editor = createEditor({
-				extensions: [aiExtension({})],
+				schema: defaultSchema,extensions: [aiExtension({})],
 			});
 			const firstBlockId = editor.firstBlock()!.id;
 			editor.apply(
@@ -273,7 +274,7 @@ describe("aiExtension", () => {
 
 	it("records plain markdown fallback metrics when fast-apply falls back to block generation", () => {
 			const editor = createEditor({
-				extensions: [aiExtension({ contentFormat: { blockGeneration: "markdown" } })],
+				schema: defaultSchema,extensions: [aiExtension({ contentFormat: { blockGeneration: "markdown" } })],
 			});
 			const firstBlockId = editor.firstBlock()!.id;
 			editor.apply(
@@ -332,7 +333,7 @@ describe("aiExtension", () => {
 	it("executes review-safe block convert plans through the existing suggestion path", async () => {
 			let blockId = "";
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream() {

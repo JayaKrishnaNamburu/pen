@@ -306,6 +306,7 @@ function ContextualPromptSelectionOverlay(
 			key={`${index}-${segment.top}-${segment.left}-${segment.width}-${segment.height}`}
 			data-pen-ai-contextual-prompt-selection-segment=""
 			data-pen-ai-inline-session-selection-segment=""
+			// AX7 overlay — selection segment is presentation
 			aria-hidden="true"
 			style={{
 				position: "fixed",
@@ -331,6 +332,7 @@ function ContextualPromptSelectionOverlay(
 		<div
 			data-pen-ai-contextual-prompt-selection-overlay=""
 			data-pen-ai-inline-session-selection-overlay=""
+			// AX7 overlay — selection layer is presentation
 			aria-hidden="true"
 			style={{ pointerEvents: "none" }}
 		>

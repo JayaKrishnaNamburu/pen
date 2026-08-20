@@ -49,7 +49,7 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@input/pen-types": "workspace:*",
+    "@input/pen-types": "workspace:^",
     "htmlparser2": "^9.0.0",
     "mdast-util-from-markdown": "^2.0.0",
     "mdast-util-gfm": "^3.0.0",

@@ -11,7 +11,6 @@ import type {
 	UndoHistoryMetadataRestoreContext,
 } from "@input/pen-types";
 import {
-	defineExtension,
 	FIELD_EDITOR_SLOT_KEY,
 	getOpOriginType,
 	UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY,
@@ -107,8 +106,9 @@ export function undoExtension(options?: UndoExtensionOptions): Extension {
 		options?.trackedOrigins ?? DEFAULT_TRACKED_ORIGINS,
 	);
 
-	return defineExtension({
+	return {
 		name: "undo",
+		version: "0.0.0",
 
 		activateClient: async (ctx) => {
 			activeEditor = ctx.editor;
@@ -340,7 +340,7 @@ export function undoExtension(options?: UndoExtensionOptions): Extension {
 
 			manager._notifyListeners();
 		},
-	});
+	};
 }
 
 // ── Constants ────────────────────────────────────────────────

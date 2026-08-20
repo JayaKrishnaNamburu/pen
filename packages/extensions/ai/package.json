@@ -49,10 +49,10 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@input/pen-content-ops": "workspace:*",
-    "@input/pen-core": "workspace:*",
-    "@input/pen-document-ops": "workspace:*",
-    "@input/pen-types": "workspace:*"
+    "@input/pen-content-ops": "workspace:^",
+    "@input/pen-core": "workspace:^",
+    "@input/pen-document-ops": "workspace:^",
+    "@input/pen-types": "workspace:^"
   },
   "devDependencies": {
     "@input/pen-schema-default": "workspace:^",

@@ -1,15 +1,32 @@
 import React from "react";
+import { resolveSchemaA11y } from "@input/pen-core";
 import { urlPolicy } from "@input/pen-dom";
 import type { BlockHandle, BlockRenderContext } from "@input/pen-types";
+import { useEditorContext } from "../context/editorContext";
 
 export function ImageRenderer(
   block: BlockHandle,
   ctx: BlockRenderContext,
 ): React.ReactElement {
+  return <ImageFigure block={block} ctx={ctx} />;
+}
+
+function ImageFigure({
+  block,
+  ctx,
+}: {
+  block: BlockHandle;
+  ctx: BlockRenderContext;
+}) {
+  const { editor } = useEditorContext();
   const src = urlPolicy.resolve(block.props?.src, "image");
-  const alt = (block.props?.alt as string) ?? "";
   const caption = (block.props?.caption as string) ?? "";
   const width = block.props?.width as number | undefined;
+  const a11y = resolveSchemaA11y(editor, {
+    kind: "block",
+    type: block.type,
+    props: { ...block.props },
+  });
 
   return (
     <figure
@@ -19,7 +36,8 @@ export function ImageRenderer(
     >
       <img
         src={src ?? undefined}
-        alt={alt}
+        alt={a11y.label}
+        aria-roledescription={a11y.roleDescription}
         data-pen-blocked-url={src == null ? "" : undefined}
         style={width ? { width: `${width}px` } : undefined}
       />

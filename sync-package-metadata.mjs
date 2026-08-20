@@ -66,7 +66,9 @@ function buildPublicPackageManifest(packageJson, packageDirectory, options) {
     ordered.exports = exports;
   }
   copyIfPresent(ordered, packageJson, "main");
-  copyIfPresent(ordered, packageJson, "module");
+  if (typeof packageJson.module === "string") {
+    ordered.module = rewriteEsmJsToMjs(packageJson.module);
+  }
   if (types != null) {
     ordered.types = types;
   }
@@ -74,8 +76,12 @@ function buildPublicPackageManifest(packageJson, packageDirectory, options) {
   ordered.engines = { node: NODE_ENGINE };
   copyIfPresent(ordered, packageJson, "sideEffects");
   copyIfPresent(ordered, packageJson, "scripts");
-  copyIfPresent(ordered, packageJson, "dependencies");
-  copyIfPresent(ordered, packageJson, "peerDependencies");
+  if (packageJson.dependencies) {
+    ordered.dependencies = rewriteWorkspacePins(packageJson.dependencies);
+  }
+  if (packageJson.peerDependencies) {
+    ordered.peerDependencies = rewriteWorkspacePins(packageJson.peerDependencies);
+  }
   copyIfPresent(ordered, packageJson, "peerDependenciesMeta");
   copyIfPresent(ordered, packageJson, "devDependencies");
 
@@ -175,12 +181,34 @@ function normalizeExportValue(exportValue) {
   return nextValue;
 }
 
+function rewriteWorkspacePins(deps) {
+  return Object.fromEntries(
+    Object.entries(deps).map(([name, spec]) => [
+      name,
+      spec === "workspace:*" ? "workspace:^" : spec,
+    ]),
+  );
+}
+
+function rewriteEsmJsToMjs(value) {
+  if (typeof value !== "string") {
+    return value;
+  }
+  if (value.endsWith("/dist/index.js") && !value.endsWith(".mjs")) {
+    return `${value.slice(0, -3)}.mjs`;
+  }
+  return value;
+}
+
 function normalizeModuleCondition(conditionValue, format) {
   if (!conditionValue || typeof conditionValue !== "object" || Array.isArray(conditionValue)) {
     return conditionValue;
   }
 
   const nextValue = { ...conditionValue };
+  if (format === "esm" && typeof nextValue.default === "string") {
+    nextValue.default = rewriteEsmJsToMjs(nextValue.default);
+  }
   const declarationSource =
     typeof nextValue.default === "string"
       ? nextValue.default

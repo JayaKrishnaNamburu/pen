@@ -51,8 +51,9 @@ function createMockBlockHandle(input: {
 	tableColumns: () => never[];
 	prev?: unknown;
 	next?: unknown;
+	as: (capability: string) => unknown;
 } {
-	return {
+	const handle = {
 		props: {},
 		children: [],
 		prev: null,
@@ -63,7 +64,11 @@ function createMockBlockHandle(input: {
 		tableCell: () => null,
 		tableRow: () => null,
 		tableColumns: () => [],
+		as(capability: string) {
+			return capability === "table" && handle.type === "table" ? handle : null;
+		},
 	};
+	return handle;
 }
 
 function createReadDocumentEditor(): Editor {
@@ -140,6 +145,9 @@ function createStructuredTargetEditor(
 			tableRowCount: () => 0,
 			tableColumnCount: () => 0,
 			tableColumns: () => [],
+			as(capability: string) {
+				return capability === "table" && this.type === "table" ? this : null;
+			},
 		},
 		{
 			id: "table-1",
@@ -154,6 +162,9 @@ function createStructuredTargetEditor(
 				{ id: "col-1", title: "Name", type: "text" as const },
 				{ id: "col-2", title: "Status", type: "text" as const },
 			],
+			as(capability: string) {
+				return capability === "table" && this.type === "table" ? this : null;
+			},
 		},
 		{
 			id: "subdocument-1",
@@ -165,6 +176,9 @@ function createStructuredTargetEditor(
 			tableRowCount: () => 0,
 			tableColumnCount: () => 0,
 			tableColumns: () => [],
+			as(capability: string) {
+				return capability === "table" && this.type === "table" ? this : null;
+			},
 		},
 	];
 

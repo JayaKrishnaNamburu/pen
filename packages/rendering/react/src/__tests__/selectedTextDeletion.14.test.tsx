@@ -4,10 +4,11 @@ import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
 import { createDecorationSet } from "@input/pen-core";
-import { defineExtension } from "@input/pen-types";
+import { defineExtension } from "@input/pen-core";
 import { domSelectionToEditor } from "../field-editor/selectionBridge";
 import { Pen } from "../primitives/index";
 import { FakeEditContext } from "./utils/fakeEditContext";
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	createEditor,
 	createKeyEvent,
@@ -31,7 +32,7 @@ describe("@input/pen-react selected text deletion", () => {
 			}
 		).EditContext = FakeEditContext;
 
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 		const container = document.createElement("div");
 		document.body.appendChild(container);
@@ -162,7 +163,7 @@ describe("@input/pen-react selected text deletion", () => {
 			}
 		).EditContext = FakeEditContext;
 
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
 			[{ type: "insert-text", blockId, offset: 0, text: "\u200B" }],

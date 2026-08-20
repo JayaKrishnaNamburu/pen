@@ -8,6 +8,9 @@
     "harness:dev": "vite --config harness/vite.config.ts --host 127.0.0.1 --port 4174 --strictPort",
     "test:chromium": "playwright test --project=chromium",
     "test:matrix": "playwright test",
+    "test:axe": "playwright test scenarios/ax1-surface-semantics.spec.ts scenarios/ax8-wcag.spec.ts --project=chromium",
+    "test:host-e7": "playwright test scenarios/host4-insecure.spec.ts scenarios/host6-unstyled.spec.ts --project=chromium",
+    "test:ax3": "playwright test scenarios/ax3-keyboard.spec.ts --project=chromium",
     "test:pseudo-locale": "playwright test scenarios/loc1-pseudo-locale.spec.ts --project=chromium",
     "test:hosts": "node --test src/hosts/*.test.js",
     "test": "node --test src/hosts/*.test.js",
@@ -18,6 +21,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@input/pen-ai-autocomplete": "workspace:*",
     "@input/pen-core": "workspace:*",
     "@input/pen-crdt-yjs": "workspace:*",
     "@input/pen-document-ops": "workspace:*",
@@ -25,6 +29,7 @@
     "@input/pen-import-html": "workspace:*",
     "@input/pen-preset-default": "workspace:*",
     "@input/pen-react": "workspace:*",
+    "@input/pen-schema-default": "workspace:*",
     "@input/pen-test": "workspace:*",
     "@input/pen-types": "workspace:*",
     "react": "^19.0.0",
@@ -32,10 +37,12 @@
     "yjs": "^13.6.29"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.58.2",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.4",
+    "axe-core": "^4.13.0",
     "typescript": "^5.7.3",
     "vite": "^6.2.0"
   }

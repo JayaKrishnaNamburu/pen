@@ -2,15 +2,6 @@
 export * from "./types/index";
 
 // Runtime
-export { prop, resolveSchema } from "./prop";
-export { defineBlock } from "./defineBlock";
-export { defineExtension } from "./defineExtension";
-export {
-  SchemaRegistryImpl,
-  mergeSchemas,
-} from "./schemaRegistry";
-export type { SchemaRegistryConfig } from "./schemaRegistry";
-export { suggestion } from "./suggestion";
 export { generateId } from "./utils/generateId";
 export {
 	isScopedSelectionTarget,
@@ -48,6 +39,7 @@ export {
   SEARCH_CONTROLLER_SLOT,
   MULTIPLAYER_CONTROLLER_SLOT,
   HISTORY_CONTROLLER_SLOT,
+	ANNOUNCER_SLOT_KEY,
 	HISTORY_ORIGIN_TAG,
 } from "./constants/slots";
 export {

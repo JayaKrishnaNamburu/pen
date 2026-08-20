@@ -9,6 +9,7 @@ import {
 	getAISuggestionsController,
 } from "@input/pen-ai-suggestions";
 import { Pen } from "../primitives/index";
+import { defaultSchema } from "@input/pen-schema-default";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -44,7 +45,7 @@ function dispatchKey(key: string, target: EventTarget = document): void {
 
 async function openSuggestionsPopover() {
 	const editor = createEditor({
-		extensions: [
+		schema: defaultSchema,extensions: [
 			aiSuggestionsExtension({
 				debounceMs: 0,
 				minStableMs: 0,

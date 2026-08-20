@@ -49,8 +49,8 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@input/pen-ai-autocomplete": "workspace:*",
-    "@input/pen-ai-tools": "workspace:*"
+    "@input/pen-ai-autocomplete": "workspace:^",
+    "@input/pen-ai-tools": "workspace:^"
   },
   "devDependencies": {
     "tsup": "^8.4.0",

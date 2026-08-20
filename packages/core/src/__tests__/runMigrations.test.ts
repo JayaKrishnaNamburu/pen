@@ -8,6 +8,7 @@ import {
 import { undoExtension } from "@input/pen-undo";
 import { describe, expect, it } from "vitest";
 
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	createEditor,
 	createHeadlessEditor,
@@ -59,7 +60,7 @@ describe("runMigrations (DUR4)", () => {
 	});
 
 	it("DUR4: applies each migration once and records ids in the ledger", () => {
-		const editor = createHeadlessEditor();
+		const editor = createHeadlessEditor({ schema: defaultSchema });
 		const migrations = [
 			insertTextMigration("add-hello", "Hello"),
 			insertTextMigration("add-world", " world"),
@@ -79,7 +80,7 @@ describe("runMigrations (DUR4)", () => {
 	});
 
 	it("DUR4: a second run is idempotent and skips ledgered ids", () => {
-		const editor = createHeadlessEditor();
+		const editor = createHeadlessEditor({ schema: defaultSchema });
 		const migrations = [
 			insertTextMigration("add-hello", "Hello"),
 			insertTextMigration("add-world", " world"),
@@ -101,7 +102,7 @@ describe("runMigrations (DUR4)", () => {
 	});
 
 	it("DUR4: a throwing migration isolates its ops and does not stop the list", () => {
-		const editor = createHeadlessEditor();
+		const editor = createHeadlessEditor({ schema: defaultSchema });
 		const migrations: DocumentMigration[] = [
 			insertTextMigration("keep-this", "kept"),
 			{
@@ -136,7 +137,7 @@ describe("runMigrations (DUR4)", () => {
 	});
 
 	it("DUR4: migration origin is not undoable with the default undo extension", () => {
-		const editor = createEditor({ preset: undoOnlyPreset });
+		const editor = createEditor({ schema: defaultSchema,  preset: undoOnlyPreset });
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
 			[{ type: "insert-text", blockId, offset: 0, text: "user" }],
@@ -159,12 +160,12 @@ describe("runMigrations (DUR4)", () => {
 
 	it("DUR4: headless and browser editors share one runner and stay byte-comparable", () => {
 		const adapter = yjsAdapter();
-		const seed = createHeadlessEditor({ crdt: adapter });
+		const seed = createHeadlessEditor({ schema: defaultSchema,  crdt: adapter });
 		const initial = adapter.encodeState(seed.internals.crdtDoc);
 		seed.destroy();
 
 		const headless = createHeadlessEditor({
-			crdt: adapter,
+			schema: defaultSchema,crdt: adapter,
 			document: adapter.loadDocument(initial),
 		});
 		const migrations = [insertTextMigration("title", "Title")];
@@ -172,7 +173,7 @@ describe("runMigrations (DUR4)", () => {
 		const afterHeadless = adapter.encodeState(headless.internals.crdtDoc);
 
 		const browser = createEditor({
-			preset: noDefaultExtensionsPreset,
+			schema: defaultSchema, preset: noDefaultExtensionsPreset,
 			crdt: adapter,
 			document: adapter.loadDocument(afterHeadless),
 		});
@@ -192,7 +193,7 @@ describe("runMigrations (DUR4)", () => {
 		expect(afterBrowser).toEqual(afterHeadless);
 
 		const independent = createEditor({
-			preset: noDefaultExtensionsPreset,
+			schema: defaultSchema, preset: noDefaultExtensionsPreset,
 			crdt: adapter,
 			document: adapter.loadDocument(initial),
 		});
@@ -206,7 +207,7 @@ describe("runMigrations (DUR4)", () => {
 	});
 
 	it("DUR4: forces origin migration even when the host apply omits it", () => {
-		const editor = createHeadlessEditor();
+		const editor = createHeadlessEditor({ schema: defaultSchema });
 		const appliedOrigins: unknown[] = [];
 		const restore = editor.internals.onApplyBoundary((event) => {
 			if (event.phase === "after" && event.applied) {

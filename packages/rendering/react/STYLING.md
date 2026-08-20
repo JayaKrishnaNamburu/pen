@@ -93,8 +93,8 @@ These `class` values are written by this package (or by the AI-suggestions sheet
 | `pen-autocomplete-preview-block` | Autocomplete preview block (with the class above). |
 | `pen-table-shell` | Table outer shell. |
 | `pen-table-main` | Table + add-row column. |
-| `pen-table-add-column-control` | Add-column control. |
-| `pen-table-add-row-control` | Add-row control. |
+| `pen-table-add-column-control` | Add-column control. Library sets a 24×24px min size (WCAG 2.2 target-size). |
+| `pen-table-add-row-control` | Add-row control. Library sets a 24×24px min size (WCAG 2.2 target-size). |
 | `pen-col-menu` | Table column menu root. |
 | `pen-col-menu-title-row` | Column menu title row. |
 | `pen-col-menu-title-input` | Column menu title input. |
@@ -276,7 +276,7 @@ Replaceable primitives (toolbar, slash/suggestion menus, search, AI composer, co
 
 ## Conformance follow-ups
 
-These HOST6 / HOST4 scenarios are owned by `@input/pen-conformance` and are not in this package:
+These HOST6 / HOST4 scenarios live in `@input/pen-conformance` (`pnpm --filter @input/pen-conformance run test:host-e7`):
 
-- **unstyled-render** — load the harness with no stylesheet; assert the editor is editable, the caret is visible, and focus is indicated (UA ring and/or caret overlay).
-- **non-secure-context HTTP** — serve the harness over plain HTTP from a non-localhost host; construct an editor, type, assert no throw and no diagnostics (F24). The unit stand-in is `packages/core/src/__tests__/nonSecureContext.test.ts`; it cannot see what a browser withholds on a real `http://` origin.
+- **unstyled-render** — `/?unstyled=1` skips harness `styles.css`; assert editable, caret not transparent, and a UA ring or `[data-pen-editor-caret]`.
+- **non-secure-context HTTP** — Chromium maps `pen.test` to `127.0.0.1` so the origin is plain HTTP and not localhost (localhost HTTP is still a secure context). Construct, type, no throw, no error diagnostics (F24). Unit stand-in: `packages/core/src/__tests__/nonSecureContext.test.ts`.

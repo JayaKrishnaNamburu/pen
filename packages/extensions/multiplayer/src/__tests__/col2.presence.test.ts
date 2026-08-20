@@ -14,6 +14,7 @@ import { AuthorLedger } from "../presence/authorLedger";
 import { ClientIdentityMap } from "../presence/identityMap";
 import { getMultiplayerController, multiplayerExtension } from "../index";
 import type { MultiplayerAwarenessState } from "../types";
+import { defaultSchema } from "@input/pen-schema-default";
 
 const GOOD_PEER_ID = 77;
 const BAD_PEER_ID = 88;
@@ -25,7 +26,7 @@ function createPresenceEditor(now?: () => number) {
 		{ id: "b2", type: "paragraph", content: "world" },
 	]);
 	const editor = createEditor({
-		document: crdtDoc,
+		schema: defaultSchema,document: crdtDoc,
 		extensions: [
 			multiplayerExtension({
 				user: { id: "u1", name: "Ada" },

@@ -7,6 +7,7 @@ import { createEditor } from "@input/pen-core";
 import { generateId } from "@input/pen-types";
 import { defaultPreset } from "@input/pen-preset-default";
 import { Pen } from "../primitives/index";
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	PEN_MOVE_BLOCK_DOWN,
 	PEN_MOVE_BLOCK_UP,
@@ -19,7 +20,7 @@ import {
 
 function createHandleEditor() {
 	return createEditor({
-		preset: defaultPreset({
+		schema: defaultSchema, preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
 			undo: false,
@@ -221,7 +222,7 @@ describe("@input/pen-react block handle AX3", () => {
 
 	it("LOC1: move item labels come from the catalog and host overrides win", async () => {
 		const editor = createEditor({
-			preset: defaultPreset({
+			schema: defaultSchema, preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,

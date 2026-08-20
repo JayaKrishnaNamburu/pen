@@ -44,7 +44,7 @@ The proof plan is the scenario list in `spec-v2/waves/wave-c-collaboration-contr
 **In-tree today** (not a substitute for that plan):
 
 - `src/__tests__/conflictResolution.test.ts` — concurrent text insertion, prop last-writer-wins, delete-versus-edit, reorder-with-repair, unknown block type preserved across a fork
-- DUR3 passthrough on both built-in registries (`@input/pen-core` `createBuiltInDefaultSchema`, `@input/pen-schema-default` `createDefaultSchema`)
+- DUR3 passthrough on `@input/pen-schema-default` `createDefaultSchema` and on core's empty registry (`createEmptySchema`)
 - Transport grade statements in `@input/pen-transport-sse` and `@input/pen-transport-direct` READMEs (COL6)
 
 **Not in-tree:** the two-peer harness in `@input/pen-test`, the COL4 matrix, hostile-presence conformance, and the COL1 two-client origin suite. `@input/pen-conformance` is not a green scenario pack for these rows.

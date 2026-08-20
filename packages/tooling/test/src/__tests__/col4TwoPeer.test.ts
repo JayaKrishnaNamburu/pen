@@ -1,7 +1,8 @@
+import type { DiagnosticEvent } from "@input/pen-types";
 import { beforeEach, describe, expect, it } from "vitest";
 import {
 	applyCycleMoves,
-	assertCycleCurrentlySurvives,
+	assertCycleBrokenWithDiagnostic,
 	col4CycleOptions,
 	COL4_CONVERGENCE_SCENARIOS,
 	runCol4Scenario,
@@ -9,10 +10,12 @@ import {
 } from "../col4Scenarios";
 import {
 	countMemberships,
+	createTwoPeerHarness,
 	listBlockIds,
 	parentsOf,
 	resetTestIdCounter,
 	runBothInterleavings,
+	TWO_PEER_INTERLEAVINGS,
 	visibleText,
 } from "../index";
 import type { TwoPeerHarness } from "../types";
@@ -156,14 +159,26 @@ describe("COL4 two-peer structural concurrency", () => {
 		);
 	});
 
-	it("COL4: A-into-B / B-into-A converges with a surviving parent cycle (known gap)", () => {
-		runBothInterleavings(
-			col4CycleOptions,
-			applyCycleMoves,
-			(harness) => {
-				assertCycleCurrentlySurvives(harness);
-			},
-		);
+	it("COL4: A-into-B / B-into-A converges after a deterministic cycle break", () => {
+		for (const interleaving of TWO_PEER_INTERLEAVINGS) {
+			const harness = createTwoPeerHarness(col4CycleOptions);
+			const diagnostics: DiagnosticEvent[] = [];
+			harness.peerA.editor.on("diagnostic", (event) => {
+				diagnostics.push(event);
+			});
+			harness.peerB.editor.on("diagnostic", (event) => {
+				diagnostics.push(event);
+			});
+			try {
+				applyCycleMoves(harness);
+				harness.exchange(interleaving);
+				harness.normalizeAll();
+				harness.assertConverged();
+				assertCycleBrokenWithDiagnostic(harness, diagnostics);
+			} finally {
+				harness.destroy();
+			}
+		}
 	});
 
 	it("COL4: seeded random op pairs converge in both interleavings", () => {

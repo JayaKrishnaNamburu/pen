@@ -66,8 +66,9 @@ export function handleFieldEditorKeyDown(options: {
 			if (!coord) return true;
 			const block = editor.getBlock(coord.blockId);
 			if (block) {
-				const rowCount = block.tableRowCount();
-				const colCount = block.tableColumnCount();
+				const table = block.as("table");
+				const rowCount = table?.tableRowCount() ?? 0;
+				const colCount = table?.tableColumnCount() ?? 0;
 				let nextRow = coord.row;
 				let nextCol = coord.col;
 
@@ -110,7 +111,7 @@ export function handleFieldEditorKeyDown(options: {
 			if (!coord) return true;
 			const block = editor.getBlock(coord.blockId);
 			if (block) {
-				const rowCount = block.tableRowCount();
+				const rowCount = block.as("table")?.tableRowCount() ?? 0;
 				const nextRow = Math.min(coord.row + 1, rowCount - 1);
 				fieldEditor.activateCell(coord.blockId, nextRow, coord.col);
 			}

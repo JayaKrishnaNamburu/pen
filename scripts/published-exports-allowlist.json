@@ -1,0 +1,80 @@
+{
+  "_comment": "API4 (spec-v2/14-api-and-packaging.md): extra public exports keys besides `.`. Each entry needs package, key, and a reason. Remove an entry in the same PR that deletes the export.",
+  "entries": [
+    {
+      "package": "@input/pen-dom",
+      "key": "./constants/selectAll",
+      "reason": "P.6 / E.3 first-class field-editor surface, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./field-editor",
+      "reason": "P.6 / E.3 first-class field-editor surface, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./field-editor/*",
+      "reason": "P.6 / E.3 first-class field-editor surface, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./types/paste",
+      "reason": "P.6 first-class paste types, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/clipboardPayload",
+      "reason": "P.6 / T.1 first-class clipboard payload, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/dataAttributes",
+      "reason": "P.6 relocated dataAttributes, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/inlineDecorations",
+      "reason": "P.6 first-class decoration helpers, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/parentIdTree",
+      "reason": "P.6 relocated parentIdTree, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-react",
+      "key": "./ai",
+      "reason": "E.3 App Router entry; first-class feature surface, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-react",
+      "key": "./ai-suggestions",
+      "reason": "E.3 App Router entry; first-class feature surface, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-react",
+      "key": "./history",
+      "reason": "E.3 App Router entry; first-class feature surface, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-react",
+      "key": "./multiplayer",
+      "reason": "E.3 App Router entry; first-class feature surface, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-react",
+      "key": "./search",
+      "reason": "E.3 App Router entry; first-class feature surface, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-schema-default",
+      "key": "./defs",
+      "reason": "Schema definition subpath; first-class public surface, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-vue",
+      "key": "./plugin",
+      "reason": "Vue plugin entry; first-class public surface, not a src/dist escape hatch."
+    }
+  ]
+}

@@ -4,10 +4,11 @@ import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
 import { createDecorationSet } from "@input/pen-core";
-import { defineExtension } from "@input/pen-types";
+import { defineExtension } from "@input/pen-core";
 import { domSelectionToEditor } from "../field-editor/selectionBridge";
 import { Pen } from "../primitives/index";
 import { FakeEditContext } from "./utils/fakeEditContext";
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	createEditor,
 	createKeyEvent,
@@ -20,7 +21,7 @@ import {
 } from "./utils/selectionDeletionTestHelpers";
 describe("@input/pen-react selected text deletion", () => {
 	it("keeps the active inline DOM synchronized after direct text input", async () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 		const container = document.createElement("div");
 		document.body.appendChild(container);
@@ -73,7 +74,7 @@ describe("@input/pen-react selected text deletion", () => {
 	});
 
 	it("keeps active inline text visible after a parent rerender", async () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 		const container = document.createElement("div");
 		document.body.appendChild(container);
@@ -143,7 +144,7 @@ describe("@input/pen-react selected text deletion", () => {
 	it("reconciles active inline decorations when text is unchanged", async () => {
 		let decorationState = "initial";
 		const editor = createEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				defineExtension({
 					name: "active-inline-decoration-test",
 					decorations(_state, currentEditor) {
@@ -242,7 +243,7 @@ describe("@input/pen-react selected text deletion", () => {
 			}
 		).EditContext = undefined;
 
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 		const container = document.createElement("div");
 		document.body.appendChild(container);

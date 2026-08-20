@@ -1,6 +1,7 @@
 import type { CommitEvent } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 
+import { createDefaultSchema } from "@input/pen-schema-default";
 import { createEditor as createCoreEditor } from "../index";
 
 const noDefaultExtensionsPreset = {
@@ -11,6 +12,7 @@ const noDefaultExtensionsPreset = {
 
 function createEditor(options: Parameters<typeof createCoreEditor>[0] = {}) {
 	return createCoreEditor({
+		schema: createDefaultSchema(),
 		...options,
 		preset: options.preset ?? noDefaultExtensionsPreset,
 	});

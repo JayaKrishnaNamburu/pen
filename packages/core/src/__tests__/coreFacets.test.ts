@@ -1,3 +1,4 @@
+import { defaultSchema } from "@input/pen-schema-default";
 import { describe, expect, it } from "vitest";
 
 import { createHeadlessEditor } from "../editor/editor";
@@ -122,7 +123,7 @@ describe("core facets 1.3", () => {
 	});
 
 	it("1.3: editor.facet and whenReady are wired on createHeadlessEditor", async () => {
-		const editor = createHeadlessEditor();
+		const editor = createHeadlessEditor({ schema: defaultSchema });
 		await editor.whenReady();
 		expect(editor.facet(readOnlyFacet)).toBe(false);
 		expect(editor.facet(keymapFacet)).toEqual([]);

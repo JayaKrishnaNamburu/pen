@@ -13,6 +13,7 @@ import {
 	readBlockSuggestionMeta,
 	readSuggestionsFromBlock,
 } from "../suggestions/persistent";
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	createDeferred,
 	testStreamingToolExtension,
@@ -22,7 +23,7 @@ import {
 describe("aiExtension", () => {
 	it("only restores a suspended inline session through history", () => {
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream() {
@@ -97,7 +98,7 @@ describe("aiExtension", () => {
 
 	it("records inline history at settled turn checkpoints instead of stream chunks", async () => {
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream() {
@@ -150,7 +151,7 @@ describe("aiExtension", () => {
 			let turnIndex = 0;
 			const turnOutputs = ["planet", "galaxy"];
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream() {
@@ -205,7 +206,7 @@ describe("aiExtension", () => {
 
 	it("undoes and redoes a server-authored inline turn result without a local undo stack item", async () => {
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream() {
@@ -289,7 +290,7 @@ describe("aiExtension", () => {
 
 	it("undoes a server-authored result when the prompt has a newer UI-only snapshot", async () => {
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream() {
@@ -358,7 +359,7 @@ describe("aiExtension", () => {
 
 	it("walks server-authored inline turn results one turn at a time", async () => {
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream() {
@@ -461,7 +462,7 @@ describe("aiExtension", () => {
 
 	it("builds per-turn external history when multiple server turns hydrate together", async () => {
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream() {
@@ -552,7 +553,7 @@ describe("aiExtension", () => {
 			let turnIndex = 0;
 			const turnOutputs = ["planet", "galaxy"];
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream() {
@@ -600,7 +601,7 @@ describe("aiExtension", () => {
 			let turnIndex = 0;
 			const turnOutputs = ["planet", "galaxy"];
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						suggestMode: true,
 						model: {
@@ -646,7 +647,7 @@ describe("aiExtension", () => {
 
 	it("prefers document undo over local inline history shortcuts when both exist", () => {
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						model: {
 							async *stream() {

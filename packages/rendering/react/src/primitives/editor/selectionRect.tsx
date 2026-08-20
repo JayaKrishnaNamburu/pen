@@ -1,5 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { resolveEditorMessage } from "@input/pen-core";
+import React, { useEffect, useRef, useState } from "react";
 import { useEditorContext } from "../../context/editorContext";
 import { useSelection } from "../../hooks/useSelection";
 import { useSyncExternalStoreWithSelector } from "../../utils/useSyncExternalStoreWithSelector";
@@ -38,15 +37,6 @@ export function EditorSelectionRect(props: SelectionRectProps) {
   );
 
   const isBlockSelection = selection?.type === "block" && selection.blockIds.length > 0;
-  const blockCount = isBlockSelection ? selection.blockIds.length : 0;
-
-  const announcement = useMemo(() => {
-    if (!blockSelection.enabled) return "";
-    if (!isBlockSelection || blockCount === 0) return "";
-    return resolveEditorMessage(editor, "pen.selection.blocksSelected", {
-      count: blockCount,
-    });
-  }, [blockSelection.enabled, isBlockSelection, blockCount, editor]);
 
   useEffect(() => {
     if (!blockSelection.enabled) {
@@ -117,52 +107,26 @@ export function EditorSelectionRect(props: SelectionRectProps) {
   }, [blockSelection.enabled, selection, isBlockSelection, liveRect, regionConfig, rootElement]);
 
   if (!rect) {
-    return announcement ? (
-      // wave-x: delete when createAnnouncer is wired
-      <div aria-live="polite" aria-atomic="true" style={SR_ONLY}>
-        {announcement}
-      </div>
-    ) : null;
+    return null;
   }
 
-  return (
-    <>
-      {renderAsChild(props, "div", {
-        "data-pen-selection-rect": "",
-        "data-selecting": liveRect ? "" : undefined,
-        "aria-hidden": "true",
-        role: "presentation",
-        style: {
-          position: "fixed",
-          top: `${rect.top}px`,
-          left: `${rect.left}px`,
-          width: `${rect.width}px`,
-          height: `${rect.height}px`,
-          pointerEvents: "none",
-          zIndex: 10,
-        },
-      })}
-      {(
-        // wave-x: delete when createAnnouncer is wired
-        <div aria-live="polite" aria-atomic="true" style={SR_ONLY}>
-          {announcement}
-        </div>
-      )}
-    </>
-  );
+  return renderAsChild(props, "div", {
+    "data-pen-selection-rect": "",
+    "data-selecting": liveRect ? "" : undefined,
+    // AX7 overlay — block-selection rectangle is presentation
+    "aria-hidden": "true",
+    role: "presentation",
+    style: {
+      position: "fixed",
+      top: `${rect.top}px`,
+      left: `${rect.left}px`,
+      width: `${rect.width}px`,
+      height: `${rect.height}px`,
+      pointerEvents: "none",
+      zIndex: 10,
+    },
+  });
 }
-
-const SR_ONLY: React.CSSProperties = {
-  position: "absolute",
-  width: "1px",
-  height: "1px",
-  padding: 0,
-  margin: "-1px",
-  overflow: "hidden",
-  clip: "rect(0 0 0 0)",
-  whiteSpace: "nowrap",
-  border: 0,
-};
 
 function rectsEqual(
   a: RegionSelectionRect | null,

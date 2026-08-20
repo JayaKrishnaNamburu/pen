@@ -22,6 +22,7 @@ export function createInlineAtomDragPreview(args: {
 	const grabOffsetY = Math.max(0, args.clientY - rect.top);
 	const preview = ownerDocument.createElement("div");
 	preview.setAttribute(DRAG_PREVIEW_ATTR, "");
+	// AX7 overlay — drag ghost is presentation
 	preview.setAttribute("aria-hidden", "true");
 	preview.style.position = "fixed";
 	preview.style.top = "0";

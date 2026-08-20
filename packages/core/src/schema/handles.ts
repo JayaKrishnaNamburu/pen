@@ -7,6 +7,7 @@ import type {
 	BlockSchema,
 	ContentType,
 	InlineDelta,
+	TableBlockHandle,
 	TableCellHandle,
 	TableColumnSchema,
 	TableRowHandle,
@@ -71,7 +72,7 @@ class TableRowHandleImpl implements TableRowHandle {
 	) {}
 }
 
-class BlockHandleImpl implements BlockHandle {
+class BlockHandleImpl implements TableBlockHandle {
 	constructor(
 		private readonly _id: string,
 		private readonly _doc: PenDocument,

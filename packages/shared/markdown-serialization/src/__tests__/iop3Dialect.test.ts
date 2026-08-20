@@ -152,14 +152,17 @@ function createTextHandle(
   const storedText = deltas
     .map((delta) => (typeof delta.insert === "string" ? delta.insert : ""))
     .join("");
-  return {
+  const handle = {
     id,
     type,
     props: {},
     textDeltas: () => deltas,
     textContent: () => storedText,
-    tableRowCount: () => 0,
-  } as unknown as BlockHandle;
+    as(capability: string) {
+      return capability === "table" && handle.type === "table" ? handle : null;
+    },
+  };
+  return handle as unknown as BlockHandle;
 }
 
 function createNumberedListHandle(
@@ -168,15 +171,18 @@ function createNumberedListHandle(
   props: Record<string, unknown>,
   text: string,
 ): BlockHandle {
-  return {
+  const handle = {
     id,
     type: "numberedListItem",
     props,
     prev,
     textDeltas: () => [{ insert: text }],
     textContent: () => text,
-    tableRowCount: () => 0,
-  } as unknown as BlockHandle;
+    as(capability: string) {
+      return capability === "table" && handle.type === "table" ? handle : null;
+    },
+  };
+  return handle as unknown as BlockHandle;
 }
 
 function createTableHandle(options: {
@@ -185,7 +191,7 @@ function createTableHandle(options: {
 }): BlockHandle {
   const { hasHeaderRow, rows } = options;
   const colCount = Math.max(...rows.map((row) => row.length), 0);
-  return {
+  const handle = {
     id: "t1",
     type: "table",
     props: { hasHeaderRow },
@@ -196,7 +202,11 @@ function createTableHandle(options: {
       textDeltas: () => [{ insert: rows[row]?.[col] ?? "" }],
       textContent: () => rows[row]?.[col] ?? "",
     }),
-  } as unknown as BlockHandle;
+    as(capability: string) {
+      return capability === "table" ? handle : null;
+    },
+  };
+  return handle as unknown as BlockHandle;
 }
 
 function createExportEditor(

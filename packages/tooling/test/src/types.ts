@@ -8,12 +8,28 @@ import type {
 } from "@input/pen-types";
 import type * as Y from "yjs";
 
+export type TestMarkDelta = {
+	insert: string;
+	attributes?: Record<string, unknown>;
+};
+
+export type TestTableCell = {
+	content?: string;
+	marks?: TestMarkDelta[];
+};
+
+export type TestTableRow = {
+	cells: TestTableCell[];
+};
+
 export interface TestBlock {
 	id?: string;
 	type: string;
 	props?: Record<string, unknown>;
 	content?: string;
+	marks?: TestMarkDelta[];
 	children?: TestBlock[];
+	table?: TestTableRow[];
 }
 
 export interface TestEditorOptions extends Partial<CreateEditorOptions> {

@@ -14,6 +14,7 @@ import {
 	SEARCH_CONTROLLER_SLOT,
 	MULTIPLAYER_CONTROLLER_SLOT,
 	HISTORY_CONTROLLER_SLOT,
+	ANNOUNCER_SLOT_KEY,
 	type Facet,
 } from "@input/pen-types";
 
@@ -36,6 +37,7 @@ import {
 	undoMetadataControllerFacet,
 	undoRestoreControllerFacet,
 } from "./controllerFacets";
+import { a11yLabelFacet } from "./a11yFacets";
 import { localeFacet, messagesFacet } from "./i18nFacets";
 
 export type SlotDisposition =
@@ -88,9 +90,11 @@ export const SLOT_DISPOSITION_BY_KEY: Record<string, SlotDisposition> = {
 	},
 	"pen.locale": { kind: "facet", facet: localeFacet },
 	"pen.messages": { kind: "facet", facet: messagesFacet },
+	"pen.a11yLabel": { kind: "facet", facet: a11yLabelFacet },
 	"react:field-editor": { kind: "facet", facet: fieldEditorHostFacet },
 	"core:engine": { kind: "engine" },
 	"delta-stream:target": { kind: "parked" },
+	[ANNOUNCER_SLOT_KEY]: { kind: "parked" },
 };
 
 export function dispositionForSlot(key: string): SlotDisposition | undefined {

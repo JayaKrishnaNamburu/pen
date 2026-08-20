@@ -1,27 +1,27 @@
-import { describe, expect, it, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import * as Y from "yjs";
 import {
-  SchemaEngineImpl,
-  SchemaRegistryImpl,
-  mergeSchemas,
-  sortDeltaAttributes,
-  deepEqual,
+	deepEqual,
+	defineBlock,
+	mergeSchemas,
+	SchemaEngineImpl,
+	SchemaRegistryImpl,
+	sortDeltaAttributes,
 } from "@input/pen-core";
 import {
-  defaultSchema,
-  bold,
-  italic,
-  code,
-  link,
+	bold,
+	code,
+	defaultSchema,
+	italic,
+	link,
 } from "@input/pen-schema-default";
-import {
-  createTestDocument,
-  createTestEditor,
-  resetTestIdCounter,
-} from "../index";
-import { yjsAdapter, initBlockMap, wrapYjsDocument } from "@input/pen-crdt-yjs";
+import { initBlockMap, wrapYjsDocument, yjsAdapter } from "@input/pen-crdt-yjs";
 import type { BlockSchema, LayoutSchema } from "@input/pen-types";
-import { defineBlock } from "@input/pen-types";
+import {
+	createTestDocument,
+	createTestEditor,
+	resetTestIdCounter,
+} from "../index";
 
 type YBlockMap = Y.Map<unknown>;
 type YBlocksMap = Y.Map<YBlockMap>;
@@ -66,7 +66,9 @@ describe("SchemaEngineImpl — Normalization Rules", () => {
 
       const reg = mergeSchemas(
         defaultSchema,
-        new SchemaRegistryImpl({ blocks: [layoutBlock as BlockSchema] }),
+        new SchemaRegistryImpl({
+          blocks: [layoutBlock as unknown as BlockSchema],
+        }),
       );
 
       const crdtDoc = wrapYjsDocument(adapter, ydoc);
@@ -236,7 +238,9 @@ describe("SchemaEngineImpl — Normalization Rules", () => {
 
       const reg = mergeSchemas(
         defaultSchema,
-        new SchemaRegistryImpl({ blocks: [layoutBlock as BlockSchema] }),
+        new SchemaRegistryImpl({
+          blocks: [layoutBlock as unknown as BlockSchema],
+        }),
       );
 
       const crdtDoc = wrapYjsDocument(adapter, ydoc);
@@ -275,7 +279,9 @@ describe("SchemaEngineImpl — Normalization Rules", () => {
 
       const reg = mergeSchemas(
         defaultSchema,
-        new SchemaRegistryImpl({ blocks: [layoutBlock as BlockSchema] }),
+        new SchemaRegistryImpl({
+          blocks: [layoutBlock as unknown as BlockSchema],
+        }),
       );
 
       const crdtDoc = wrapYjsDocument(adapter, ydoc);

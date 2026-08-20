@@ -13,6 +13,7 @@ import {
 	readBlockSuggestionMeta,
 	readSuggestionsFromBlock,
 } from "../suggestions/persistent";
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	createDeferred,
 	testStreamingToolExtension,
@@ -24,7 +25,7 @@ describe("aiExtension", () => {
 			let requestMode: string | undefined;
 			let operationKind: string | undefined;
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						contentFormat: {
 							blockGeneration: "text",
@@ -69,7 +70,7 @@ describe("aiExtension", () => {
 			let requestMode: string | undefined;
 			let operationKind: string | undefined;
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						contentFormat: {
 							blockGeneration: "text",
@@ -133,7 +134,7 @@ describe("aiExtension", () => {
 				}
 				| undefined;
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						contentFormat: {
 							blockGeneration: "markdown",
@@ -218,7 +219,7 @@ describe("aiExtension", () => {
 				}
 				| undefined;
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						contentFormat: {
 							blockGeneration: "markdown",
@@ -279,7 +280,7 @@ describe("aiExtension", () => {
 
 	it("keeps heading rewrites block-bounded instead of inserting a new markdown block", async () => {
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						contentFormat: {
 							blockGeneration: "markdown",
@@ -334,7 +335,7 @@ describe("aiExtension", () => {
 	it("routes bottom-chat continue prompts to typed insert operations", async () => {
 			let operationKind: string | undefined;
 			const editor = createEditor({
-				extensions: [
+				schema: defaultSchema,extensions: [
 					aiExtension({
 						contentFormat: {
 							blockGeneration: "text",

@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
 import { aiExtension, getAIController } from "../index";
+import { defaultSchema } from "@input/pen-schema-default";
 
 describe("aiExtension", () => {
 	it("keeps the controller state snapshot stable for no-op updates", () => {
 		const editor = createEditor({
-			extensions: [aiExtension()],
+			schema: defaultSchema,extensions: [aiExtension()],
 		});
 
 		const controller = getAIController(editor)!;

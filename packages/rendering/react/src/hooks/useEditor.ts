@@ -1,5 +1,6 @@
 import { useRef, useEffect } from "react";
 import { createEditor } from "@input/pen-core";
+import { defaultSchema } from "@input/pen-schema-default";
 import type { CreateEditorOptions, Editor } from "@input/pen-types";
 
 export function useEditor(optionsOrEditor?: CreateEditorOptions | Editor): Editor {
@@ -11,7 +12,10 @@ export function useEditor(optionsOrEditor?: CreateEditorOptions | Editor): Edito
       editorRef.current = optionsOrEditor as Editor;
       isOwnedRef.current = false;
     } else {
-      editorRef.current = createEditor(optionsOrEditor);
+      editorRef.current = createEditor({
+        schema: defaultSchema,
+        ...optionsOrEditor,
+      });
       isOwnedRef.current = true;
     }
   }

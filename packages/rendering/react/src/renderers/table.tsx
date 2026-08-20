@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import { resolveEditorMessage } from "@input/pen-core";
 import type { BlockHandle, BlockRenderContext, CellSelection } from "@input/pen-types";
 import { useEditorContext } from "../context/editorContext";
@@ -8,6 +8,8 @@ import { useSelection } from "../hooks/useSelection";
 import { DATA_ATTRS } from "../utils/dataAttributes";
 import { isCellInSelection } from "../utils/cellSelection";
 import { TableCellContent } from "../primitives/editor/tableCellContent";
+
+const TABLE_CONTROL_MIN_SIZE_PX = 24;
 
 function TableRendererInner(props: {
 	block: BlockHandle;
@@ -19,9 +21,12 @@ function TableRendererInner(props: {
 	const fieldEditorState = useFieldEditorState(fieldEditor);
 	const editorSelection = useSelection(editor);
 
-	const rowCount = block.tableRowCount();
-	const colCount = block.tableColumnCount();
+	const table = block.as("table");
+	const rowCount = table?.tableRowCount() ?? 0;
+	const colCount = table?.tableColumnCount() ?? 0;
 	const hasHeaderRow = !!block.props.hasHeaderRow;
+	const addRowRef = useRef<HTMLButtonElement>(null);
+	const addColumnRef = useRef<HTMLButtonElement>(null);
 
 	const cellSelection =
 		editorSelection?.type === "cell" && editorSelection.blockId === block.id
@@ -75,10 +80,12 @@ function TableRendererInner(props: {
 
 	function handleAddRow() {
 		editor.apply([{ type: "insert-table-row", blockId: block.id, index: rowCount }]);
+		queueMicrotask(() => addRowRef.current?.focus());
 	}
 
 	function handleAddColumn() {
 		editor.apply([{ type: "insert-table-column", blockId: block.id, index: colCount }]);
+		queueMicrotask(() => addColumnRef.current?.focus());
 	}
 
 	function handleControlMouseDown(event: React.MouseEvent<HTMLButtonElement>) {
@@ -97,6 +104,7 @@ function TableRendererInner(props: {
 		? Array.from({ length: colCount }, (_, colIdx) => (
 			<th
 				key={`hdr-${colIdx}`}
+				scope="col"
 				{...cellAttrs(0, colIdx)}
 				onMouseDown={(e) => handleCellMouseDown(e, 0, colIdx)}
 				onDoubleClick={(e) => handleCellDoubleClick(e, 0, colIdx)}
@@ -145,8 +153,13 @@ function TableRendererInner(props: {
 
 	const addColumnControl = readonly ? null : (
 		<button
+			ref={addColumnRef}
 			type="button"
 			className="pen-table-add-column-control"
+			style={{
+				minWidth: TABLE_CONTROL_MIN_SIZE_PX,
+				minHeight: TABLE_CONTROL_MIN_SIZE_PX,
+			}}
 			aria-label={resolveEditorMessage(editor, "pen.table.addColumn")}
 			{...{ [DATA_ATTRS.ignorePointerGesture]: "" }}
 			onMouseDown={handleControlMouseDown}
@@ -158,8 +171,13 @@ function TableRendererInner(props: {
 
 	const addRowControl = readonly ? null : (
 		<button
+			ref={addRowRef}
 			type="button"
 			className="pen-table-add-row-control"
+			style={{
+				minWidth: TABLE_CONTROL_MIN_SIZE_PX,
+				minHeight: TABLE_CONTROL_MIN_SIZE_PX,
+			}}
 			aria-label={resolveEditorMessage(editor, "pen.table.addRow")}
 			{...{ [DATA_ATTRS.ignorePointerGesture]: "" }}
 			onMouseDown={handleControlMouseDown}

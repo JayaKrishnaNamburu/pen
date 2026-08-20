@@ -1,4 +1,5 @@
 import React, { useRef } from "react";
+import type { Editor } from "@input/pen-types";
 import { useEditorContext } from "../../context/editorContext";
 import { useIsomorphicLayoutEffect } from "../../hooks/useIsomorphicLayoutEffect";
 import { useFieldEditorContext } from "../../context/fieldEditorContext";
@@ -59,7 +60,14 @@ function TextCell(props: TableCellContentProps) {
 	return (
 		<span
 			ref={elementRef}
-			{...cellSurfaceAttrs(isActiveCell, row, col, showPlaceholder, placeholder)}
+			{...cellSurfaceAttrs(
+				editor,
+				isActiveCell,
+				row,
+				col,
+				showPlaceholder,
+				placeholder,
+			)}
 		/>
 	);
 }
@@ -78,6 +86,7 @@ function isCellActive(
 }
 
 function cellSurfaceAttrs(
+	editor: Editor,
 	isActiveCell: boolean,
 	row: number,
 	col: number,
@@ -87,7 +96,7 @@ function cellSurfaceAttrs(
 	return {
 		[DATA_ATTRS.inlineContent]: "",
 		[DATA_ATTRS.fieldEditorSurface]: "",
-		...fieldEditorTextEntryAttrs(isActiveCell),
+		...fieldEditorTextEntryAttrs(isActiveCell, editor),
 		[DATA_ATTRS.ignorePointerGesture]: isActiveCell ? "" : undefined,
 		[DATA_ATTRS.placeholderVisible]: showPlaceholder ? "" : undefined,
 		[DATA_ATTRS.tableCellRow]: row,

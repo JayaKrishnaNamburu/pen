@@ -1,5 +1,9 @@
-import { defineBlock, prop } from "@input/pen-types";
+import { } from "@input/pen-core";
 import type { HTMLImportElement } from "@input/pen-types";
+import {
+	defineBlock,
+	prop,
+} from "@input/pen-core";
 import { directionProp } from "../directionProp";
 
 const CALLOUT_TYPE_PATTERN =
@@ -64,6 +68,7 @@ export const callout = defineBlock("callout", {
       const raw = block.props.type;
       const type =
         raw === "warning" || raw === "error" || raw === "info" ? raw : "info";
+      // SEC5: clamped callout type
       return `<div class="callout callout-${type}">${block.content ?? ""}</div>`;
     },
     fromHTML: (el: HTMLImportElement) => {

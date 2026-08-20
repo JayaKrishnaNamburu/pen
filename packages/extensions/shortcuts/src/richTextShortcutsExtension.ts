@@ -1,4 +1,7 @@
-import { defineExtension, type Extension, type KeyBinding } from "@input/pen-types";
+import type {
+	Extension,
+	KeyBinding,
+} from "@input/pen-types";
 import { toggleInlineMark, setInlineMark } from "./toggleInlineMark";
 
 export const RICH_TEXT_SHORTCUTS_EXTENSION_NAME = "rich-text-shortcuts";
@@ -26,10 +29,11 @@ const BINDING_DESCRIPTIONS: Record<ShortcutMark, string> = {
 export function richTextShortcutsExtension(
 	options: RichTextShortcutsOptions = {},
 ): Extension {
-	return defineExtension({
+	return {
 		name: RICH_TEXT_SHORTCUTS_EXTENSION_NAME,
+		version: "0.0.0",
 		keyBindings: buildKeyBindings(options),
-	});
+	};
 }
 
 function buildKeyBindings(

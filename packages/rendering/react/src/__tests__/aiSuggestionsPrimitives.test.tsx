@@ -9,6 +9,7 @@ import {
 	getAISuggestionsController,
 } from "@input/pen-ai-suggestions";
 import { Pen } from "../index";
+import { defaultSchema } from "@input/pen-schema-default";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -35,7 +36,7 @@ async function waitForCondition(
 describe("Pen.AISuggestions primitives", () => {
 	it("opens the popover from a marked suggestion and applies it", async () => {
 		const editor = createEditor({
-			extensions: [
+			schema: defaultSchema,extensions: [
 				aiSuggestionsExtension({
 					debounceMs: 0,
 					minStableMs: 0,

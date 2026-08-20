@@ -6,6 +6,7 @@ import { renderToString } from "react-dom/server";
 import { createEditor } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
 import { PenEditor } from "../penEditor";
+import { defaultSchema } from "@input/pen-schema-default";
 
 const { JSDOM } = createRequire(import.meta.url)("jsdom") as {
 	JSDOM: new (
@@ -20,7 +21,7 @@ const MARKER_TEXT = "HOST5-ssr-marker";
 
 function createTestEditor() {
 	return createEditor({
-		preset: defaultPreset({
+		schema: defaultSchema, preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
 			undo: false,

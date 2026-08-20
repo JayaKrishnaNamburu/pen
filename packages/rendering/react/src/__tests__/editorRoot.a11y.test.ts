@@ -6,6 +6,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { createEditor as createCoreEditor } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
 import { EditorRoot } from "../primitives/editor/root";
+import { defaultSchema } from "@input/pen-schema-default";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -13,7 +14,7 @@ import { EditorRoot } from "../primitives/editor/root";
 
 function createEditor() {
 	return createCoreEditor({
-		preset: defaultPreset({
+		schema: defaultSchema, preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
 			undo: false,

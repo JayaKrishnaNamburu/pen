@@ -10,6 +10,7 @@ import {
 	type SuggestionMenuController,
 } from "../hooks/useSuggestionMenu";
 import { Pen } from "../primitives/index";
+import { defaultSchema } from "@input/pen-schema-default";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -30,7 +31,7 @@ async function waitForCondition(
 
 function createSuggestionMenuEditor() {
 	return createEditor({
-		preset: defaultPreset({
+		schema: defaultSchema, preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
 			undo: false,

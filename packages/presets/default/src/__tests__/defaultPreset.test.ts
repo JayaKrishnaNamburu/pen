@@ -15,6 +15,9 @@ describe("@input/pen-preset-default", () => {
 			"undo",
 			"rich-text-shortcuts",
 		]);
+		expect(result.schema?.allBlocks().some((schema) => schema.type === "paragraph")).toBe(
+			true,
+		);
 	});
 
 	it("supports disabling individual default features", () => {

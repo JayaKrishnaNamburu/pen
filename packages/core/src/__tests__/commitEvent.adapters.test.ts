@@ -1,6 +1,7 @@
 import type { CommitEvent, DiagnosticEvent, DocumentCommitEvent } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 
+import { createDefaultSchema } from "@input/pen-schema-default";
 import {
 	EVENT_DEPRECATED_CODE,
 	createEditor as createCoreEditor,
@@ -14,6 +15,7 @@ const noDefaultExtensionsPreset = {
 
 function createEditor(options: Parameters<typeof createCoreEditor>[0] = {}) {
 	return createCoreEditor({
+		schema: createDefaultSchema(),
 		...options,
 		preset: options.preset ?? noDefaultExtensionsPreset,
 	});

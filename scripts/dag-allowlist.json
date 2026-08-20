@@ -23,11 +23,6 @@
     },
     {
       "from": "@input/pen-core",
-      "to": "@input/pen-schema-default",
-      "reason": "P.1: schema-default moves behind @input/pen-preset-default (API1, F12)"
-    },
-    {
-      "from": "@input/pen-core",
       "to": "@input/pen-content-ops",
       "reason": "Wave H.5: content-ops is deleted; drop the core dependency (API1, F12)"
     },

@@ -19,6 +19,14 @@ import {
 // Schema engine runtime
 export { SchemaRegistryImpl, mergeSchemas } from "./schema/registry";
 export type { SchemaRegistryConfig } from "./schema/registry";
+export { defineBlock } from "./schema/defineBlock";
+export type { DefinedBlockSchema } from "./schema/defineBlock";
+export { defineExtension } from "./schema/defineExtension";
+export { prop, resolveSchema } from "./schema/prop";
+export {
+	createEmptySchema,
+	resolveEditorSchema,
+} from "./schema/emptySchema";
 
 export {
 	SchemaEngineImpl,
@@ -32,8 +40,6 @@ export { suggestion } from "./schema/system-marks/suggestion";
 
 // Editor runtime
 export { createEditor, createHeadlessEditor } from "./editor/editor";
-export { createTextStreamWriter } from "./editor/textStream";
-export type { CreateTextStreamWriterOptions } from "./editor/textStream";
 export type { CreateHeadlessEditorOptions } from "./editor/editor";
 export {
 	createDocumentSession,
@@ -131,7 +137,25 @@ export {
 	type UrlPolicy,
 } from "./facets/urlPolicyFacet";
 export { localeFacet, messagesFacet } from "./facets/i18nFacets";
+export { a11yLabelFacet } from "./facets/a11yFacets";
 export { resolveEditorMessage } from "./i18n/resolveEditorMessage";
+export {
+	A11Y_MISSING_LABEL_CODE,
+	resolveEditorA11yLabel,
+} from "./a11y/resolveEditorA11yLabel";
+export {
+	announceEditorA11y,
+	resolveA11yBlockTypeLabel,
+} from "./a11y/announceEditorA11y";
+export {
+	resolveA11ySpec,
+	resolveSchemaA11y,
+} from "./a11y/resolveSchemaA11y";
+export type {
+	SchemaA11yAttrs,
+	SchemaA11yKind,
+} from "./a11y/resolveSchemaA11y";
+export type { EditorA11yLabelAttrs } from "./a11y/resolveEditorA11yLabel";
 export {
 	createPseudoLocaleCatalog,
 	isPseudoLocaleText,

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
 import { markdownExporter } from "../exporter";
+import { defaultSchema } from "@input/pen-schema-default";
 
 const noDefaultExtensionsPreset = {
   resolve() {
@@ -12,7 +13,7 @@ const MARKDOWN_SAFE_HOSTILE_TEXT = `foo & bar < baz > 'qux' "quux"`;
 
 function createBareEditor() {
   const editor = createEditor({
-    preset: noDefaultExtensionsPreset,
+    schema: defaultSchema, preset: noDefaultExtensionsPreset,
   });
   const existingBlockIds = [...editor.documentState.allBlocks()]
     .filter((handle) => handle.parent === null)

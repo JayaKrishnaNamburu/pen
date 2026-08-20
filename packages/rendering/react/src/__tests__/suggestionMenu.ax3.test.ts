@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 import { createEditor } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
 import { Pen } from "../primitives/index";
+import { defaultSchema } from "@input/pen-schema-default";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -15,7 +16,7 @@ function createSuggestionMenuEditor(
 	options: Parameters<typeof createEditor>[0] = {},
 ) {
 	return createEditor({
-		...options,
+		schema: defaultSchema,...options,
 		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
@@ -106,6 +107,8 @@ describe("@input/pen-react suggestion menu AX3", () => {
 		);
 
 		expect(listbox?.getAttribute("role")).toBe("listbox");
+		expect(listbox?.getAttribute("aria-label")).toBe("Suggestions");
+		expect(listbox?.hasAttribute("hidden")).toBe(false);
 		expect(listbox?.id).toBeTruthy();
 		expect(options).toHaveLength(3);
 		expect(options[0]?.getAttribute("role")).toBe("option");

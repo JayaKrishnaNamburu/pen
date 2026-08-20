@@ -5,6 +5,7 @@ import { createEditor as createCoreEditor } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
 import { handleClipboardPaste } from "../field-editor/clipboard";
 import type { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
+import { defaultSchema } from "@input/pen-schema-default";
 
 function createEditor(
 	options: Parameters<typeof createCoreEditor>[0] = {},
@@ -13,7 +14,7 @@ function createEditor(
 	} = {},
 ) {
 	return createCoreEditor({
-		...options,
+		schema: defaultSchema,...options,
 		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,

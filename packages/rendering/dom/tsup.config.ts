@@ -12,7 +12,7 @@ export default defineConfig({
     "src/types/paste.ts",
   ],
   format: ["esm", "cjs"],
-  dts: true,
+  dts: { compilerOptions: { stripInternal: true } },
   outDir: "dist",
   clean: true,
   external: ["@input/pen-core", "@input/pen-shortcuts", "@input/pen-types"],

@@ -21,7 +21,7 @@
     ".": {
       "import": {
         "types": "./dist/index.d.ts",
-        "default": "./dist/index.js"
+        "default": "./dist/index.mjs"
       },
       "require": {
         "types": "./dist/index.d.cts",
@@ -30,7 +30,7 @@
     }
   },
   "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
+  "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "files": [
     "dist",
@@ -42,18 +42,19 @@
   },
   "sideEffects": false,
   "scripts": {
-    "build": "tsup src/index.ts --format esm,cjs --dts",
+    "build": "tsup",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@input/pen-core": "workspace:*",
-    "@input/pen-types": "workspace:*"
+    "@input/pen-core": "workspace:^",
+    "@input/pen-types": "workspace:^"
   },
   "devDependencies": {
     "@input/pen-core": "workspace:*",
+    "@input/pen-schema-default": "workspace:*",
     "@input/pen-crdt-yjs": "workspace:*",
     "@input/pen-test": "workspace:*",
     "tsup": "^8.4.0",

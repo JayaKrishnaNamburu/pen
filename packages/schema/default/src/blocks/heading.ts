@@ -1,4 +1,7 @@
-import { defineBlock, prop } from "@input/pen-types";
+import {
+	defineBlock,
+	prop,
+} from "@input/pen-core";
 import { directionProp } from "../directionProp";
 
 export const heading = defineBlock("heading", {
@@ -21,6 +24,7 @@ export const heading = defineBlock("heading", {
     toHTML: (block) => {
       const raw = Number(block.props.level);
       const level = raw >= 1 && raw <= 6 && Number.isInteger(raw) ? raw : 1;
+      // SEC5: clamped heading level
       return `<h${level}>${block.content ?? ""}</h${level}>`;
     },
   },

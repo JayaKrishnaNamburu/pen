@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { createEditor } from "../index";
+import { defaultSchema } from "@input/pen-schema-default";
 
 const noDefaultExtensionsPreset = {
 	resolve() {
@@ -41,7 +42,7 @@ function hasInlineNode(
 
 describe("SEC6 op payload validation", () => {
 	it("SEC6: valid insert-inline-node writes a fresh embed from validated fields", () => {
-		const editor = createEditor({ preset: noDefaultExtensionsPreset });
+		const editor = createEditor({ schema: defaultSchema,  preset: noDefaultExtensionsPreset });
 
 		editor.apply([
 			{
@@ -75,7 +76,7 @@ describe("SEC6 op payload validation", () => {
 	});
 
 	it("SEC6: proto keys in insert-inline-node props are dropped with a diagnostic", () => {
-		const editor = createEditor({ preset: noDefaultExtensionsPreset });
+		const editor = createEditor({ schema: defaultSchema,  preset: noDefaultExtensionsPreset });
 		const diagnostics: unknown[] = [];
 		editor.on("diagnostic", (event) => {
 			diagnostics.push(event);
@@ -130,7 +131,7 @@ describe("SEC6 op payload validation", () => {
 	});
 
 	it("SEC6: proto keys in insert-block props are dropped with a diagnostic", () => {
-		const editor = createEditor({ preset: noDefaultExtensionsPreset });
+		const editor = createEditor({ schema: defaultSchema,  preset: noDefaultExtensionsPreset });
 		const diagnostics: unknown[] = [];
 		editor.on("diagnostic", (event) => {
 			diagnostics.push(event);
@@ -165,7 +166,7 @@ describe("SEC6 op payload validation", () => {
 	});
 
 	it("SEC6: proto keys in update-block props are dropped with a diagnostic", () => {
-		const editor = createEditor({ preset: noDefaultExtensionsPreset });
+		const editor = createEditor({ schema: defaultSchema,  preset: noDefaultExtensionsPreset });
 		const diagnostics: unknown[] = [];
 		editor.on("diagnostic", (event) => {
 			diagnostics.push(event);
@@ -205,7 +206,7 @@ describe("SEC6 op payload validation", () => {
 	});
 
 	it("SEC6: proto keys in format-text marks are dropped with a diagnostic", () => {
-		const editor = createEditor({ preset: noDefaultExtensionsPreset });
+		const editor = createEditor({ schema: defaultSchema,  preset: noDefaultExtensionsPreset });
 		const diagnostics: unknown[] = [];
 		editor.on("diagnostic", (event) => {
 			diagnostics.push(event);
@@ -248,7 +249,7 @@ describe("SEC6 op payload validation", () => {
 	});
 
 	it("SEC6: hand-crafted invalid op via editor.apply is dropped with a diagnostic", () => {
-		const editor = createEditor({ preset: noDefaultExtensionsPreset });
+		const editor = createEditor({ schema: defaultSchema,  preset: noDefaultExtensionsPreset });
 		const diagnostics: unknown[] = [];
 		editor.on("diagnostic", (event) => {
 			diagnostics.push(event);

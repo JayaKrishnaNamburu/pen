@@ -4,11 +4,12 @@ import {
 	getInlineCompletionController,
 } from "@input/pen-core";
 import { autocompleteExtension } from "../index";
+import { defaultSchema } from "@input/pen-schema-default";
 
 describe("autocomplete anchor mapping", () => {
 	it("maps a visible completion anchor through a concurrent edit", () => {
 		const editor = createEditor({
-			extensions: [autocompleteExtension({ enabled: true, debounceMs: 0 })],
+			schema: defaultSchema,extensions: [autocompleteExtension({ enabled: true, debounceMs: 0 })],
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([{ type: "insert-text", blockId, offset: 0, text: "Hello" }]);

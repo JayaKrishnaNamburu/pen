@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { createEditor } from "@input/pen-core";
 import type { AssetProvider, AssetRef, DiagnosticEvent } from "@input/pen-types";
 import { uploadImageFiles } from "../transferImages";
+import { defaultSchema } from "@input/pen-schema-default";
 
 const noDefaultExtensionsPreset = {
 	resolve() {
@@ -43,7 +44,7 @@ function stubProvider(overrides: Partial<AssetProvider> = {}) {
 
 describe("IOP4 asset upload lifecycle", () => {
 	it("IOP4 rejects oversize uploads with a diagnostic naming the limit and actual size", async () => {
-		const editor = createEditor({ preset: noDefaultExtensionsPreset });
+		const editor = createEditor({ schema: defaultSchema,  preset: noDefaultExtensionsPreset });
 		const diagnostics: DiagnosticEvent[] = [];
 		editor.on("diagnostic", (event) => {
 			diagnostics.push(event);
@@ -70,7 +71,7 @@ describe("IOP4 asset upload lifecycle", () => {
 	});
 
 	it("IOP4 reports provider failure with a diagnostic and inserts no block", async () => {
-		const editor = createEditor({ preset: noDefaultExtensionsPreset });
+		const editor = createEditor({ schema: defaultSchema,  preset: noDefaultExtensionsPreset });
 		const diagnostics: DiagnosticEvent[] = [];
 		editor.on("diagnostic", (event) => {
 			diagnostics.push(event);
@@ -121,7 +122,7 @@ describe("IOP4 asset upload lifecycle", () => {
 	});
 
 	it("IOP4 inserts successful files in a mixed batch and never calls delete", async () => {
-		const editor = createEditor({ preset: noDefaultExtensionsPreset });
+		const editor = createEditor({ schema: defaultSchema,  preset: noDefaultExtensionsPreset });
 		const diagnostics: DiagnosticEvent[] = [];
 		editor.on("diagnostic", (event) => {
 			diagnostics.push(event);

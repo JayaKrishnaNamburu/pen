@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
 import { createAutocompleteStructuredCandidate } from "../structuredCandidate";
+import { defaultSchema } from "@input/pen-schema-default";
 
 describe("createAutocompleteStructuredCandidate", () => {
 	it("uses single newlines for adjacent paragraph blocks", () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 
 		const candidate = createAutocompleteStructuredCandidate(
 			editor,
@@ -24,7 +25,7 @@ describe("createAutocompleteStructuredCandidate", () => {
 	});
 
 	it("treats blank lines between paragraphs as separators, not empty blocks", () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 
 		const candidate = createAutocompleteStructuredCandidate(
 			editor,
@@ -44,7 +45,7 @@ describe("createAutocompleteStructuredCandidate", () => {
 	});
 
 	it("uses trailing single newlines to leave the caret in a new empty block", () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 
 		const candidate = createAutocompleteStructuredCandidate(
 			editor,
@@ -61,7 +62,7 @@ describe("createAutocompleteStructuredCandidate", () => {
 	});
 
 	it("uses trailing double newlines to preserve a spacer before the next insertion target", () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 
 		const candidate = createAutocompleteStructuredCandidate(
 			editor,
@@ -78,7 +79,7 @@ describe("createAutocompleteStructuredCandidate", () => {
 	});
 
 	it("uses leading single newlines to start appended blocks", () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 
 		const candidate = createAutocompleteStructuredCandidate(
 			editor,
@@ -98,7 +99,7 @@ describe("createAutocompleteStructuredCandidate", () => {
 	});
 
 	it("uses leading double newlines to insert a spacer before appended blocks", () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 
 		const candidate = createAutocompleteStructuredCandidate(
 			editor,
@@ -119,7 +120,7 @@ describe("createAutocompleteStructuredCandidate", () => {
 	});
 
 	it("keeps markdown list continuations structured", () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 
 		const candidate = createAutocompleteStructuredCandidate(
 			editor,

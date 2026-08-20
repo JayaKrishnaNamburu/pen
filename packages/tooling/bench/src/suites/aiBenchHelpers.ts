@@ -1,8 +1,10 @@
 import {
 	createEditor,
 	getInlineCompletionController,
-} from "@input/pen-core";
-import { FIELD_EDITOR_SLOT_KEY, defineExtension } from "@input/pen-types";
+	} from "@input/pen-core";
+import { FIELD_EDITOR_SLOT_KEY,
+} from "@input/pen-types";
+import { defineExtension } from "@input/pen-core";
 import { aiExtension } from "@input/pen-ai";
 import {
 	autocompleteExtension,

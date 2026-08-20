@@ -5,6 +5,7 @@ import {
 } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	DEFAULT_SEARCH_OPTIONS,
 	buildSearchRegex,
@@ -86,7 +87,7 @@ describe("@input/pen-search LOC4 leftovers", () => {
 });
 
 function createDocumentWithText(text: string): Editor {
-	const editor = createHeadlessEditor();
+	const editor = createHeadlessEditor({ schema: defaultSchema });
 	const blockId = editor.firstBlock()!.id;
 	editor.apply(
 		[

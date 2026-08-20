@@ -135,6 +135,7 @@ export function EditorCaretOverlay(props: EditorCaretOverlayProps) {
 		{
 			"data-pen-editor-caret-overlay": "",
 			"data-caret-visible": isCaretVisible ? "" : undefined,
+			// AX7 overlay — library caret is presentation
 			"aria-hidden": "true",
 			style: {
 				pointerEvents: "none",

@@ -3,6 +3,9 @@ export type {
 	TestEditorOptions,
 	TestEditor,
 	TestCollaboration,
+	TestMarkDelta,
+	TestTableCell,
+	TestTableRow,
 	DeterministicYDocFixture,
 	DeterministicYDocFixtureOptions,
 	NormalizedYDocSnapshot,
@@ -17,7 +20,7 @@ export type {
 } from "./types";
 export { createTestDocument, populateYDoc } from "./createTestDocument";
 export { createTestEditor } from "./createTestEditor";
-export { assertDocEquals } from "./assertDocEquals";
+export { ASSERT_DOC_EQUALS_FIELDS, assertDocEquals } from "./assertDocEquals";
 export { createTestCollaboration } from "./createTestCollaboration";
 export {
 	createTwoPeerHarness,

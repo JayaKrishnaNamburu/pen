@@ -10,6 +10,7 @@ import {
 	type AICommandBinding,
 } from "@input/pen-ai";
 import { Pen } from "../primitives/index";
+import { defaultSchema } from "@input/pen-schema-default";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -33,7 +34,7 @@ function dispatchKey(key: string, target: EventTarget) {
 
 function createCommandMenuEditor() {
 	return createEditor({
-		extensions: [aiExtension({ author: "tester" })],
+		schema: defaultSchema,extensions: [aiExtension({ author: "tester" })],
 	});
 }
 

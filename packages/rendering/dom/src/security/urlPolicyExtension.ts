@@ -1,5 +1,5 @@
 import { urlPolicyFacet } from "@input/pen-core";
-import { defineExtension } from "@input/pen-types";
+import { defineExtension } from "@input/pen-core";
 import { urlPolicy, type UrlPolicy } from "./urlPolicy";
 
 /**

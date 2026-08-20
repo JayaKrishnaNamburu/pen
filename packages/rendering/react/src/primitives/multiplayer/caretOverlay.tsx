@@ -114,6 +114,7 @@ export function MultiplayerCaretOverlay(
 		{
 			"data-pen-multiplayer-caret-overlay": "",
 			"data-cursor-count": String(remoteCursors.length),
+			// AX7 overlay — collaborator caret is presentation
 			"aria-hidden": "true",
 			style: {
 				pointerEvents: "none",

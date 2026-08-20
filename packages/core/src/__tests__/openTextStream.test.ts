@@ -3,6 +3,7 @@ import type { CommitEvent, Point } from "@input/pen-types";
 import { HOOK_PRIORITY_AUTH } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 
+import { createDefaultSchema } from "@input/pen-schema-default";
 import { createEditor as createCoreEditor } from "../index";
 
 const noDefaultExtensionsPreset = {
@@ -19,6 +20,7 @@ const undoOnlyPreset = {
 
 function createEditor(options: Parameters<typeof createCoreEditor>[0] = {}) {
 	return createCoreEditor({
+		schema: createDefaultSchema(),
 		...options,
 		preset: options.preset ?? noDefaultExtensionsPreset,
 	});

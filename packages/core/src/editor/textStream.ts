@@ -26,6 +26,7 @@ export interface TextStreamWriter {
 	abort(): void;
 }
 
+/** @internal Hosts use `editor.openTextStream`. */
 export interface CreateTextStreamWriterOptions {
 	apply: (ops: DocumentOp[], options?: ApplyOptions) => void;
 	getPoint: () => Point;
@@ -109,6 +110,7 @@ function spliceOp(
 	return { type: "replace-text", blockId, offset: from, length, text };
 }
 
+/** @internal Hosts use `editor.openTextStream`. */
 export function createTextStreamWriter(
 	options: CreateTextStreamWriterOptions,
 ): TextStreamWriter {

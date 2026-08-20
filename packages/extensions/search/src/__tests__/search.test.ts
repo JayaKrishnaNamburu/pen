@@ -1,6 +1,7 @@
 import { createHeadlessEditor } from "@input/pen-core";
 import type { DiagnosticEvent, Editor } from "@input/pen-types";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	DEFAULT_SEARCH_OPTIONS,
 	SEARCH_BUDGET_EXCEEDED_CODE,
@@ -45,7 +46,7 @@ describe("@input/pen-search helpers", () => {
 	});
 
 	it("SEC9: emits a diagnostic for an invalid regex pattern instead of throwing", () => {
-		const editor = createHeadlessEditor();
+		const editor = createHeadlessEditor({ schema: defaultSchema });
 		const diagnostics = collectDiagnostics(editor);
 
 		expect(() =>
@@ -71,7 +72,7 @@ describe("@input/pen-search helpers", () => {
 	it("SEC9: caps query length at SEARCH_QUERY_MAX_LENGTH", () => {
 		expect(SEARCH_QUERY_MAX_LENGTH).toBe(1_024);
 
-		const editor = createHeadlessEditor();
+		const editor = createHeadlessEditor({ schema: defaultSchema });
 		const diagnostics = collectDiagnostics(editor);
 		const query = "a".repeat(SEARCH_QUERY_MAX_LENGTH + 1);
 
@@ -247,7 +248,7 @@ function createHomogeneousDocument(): Editor {
 }
 
 function createDocumentWithText(text: string): Editor {
-	const editor = createHeadlessEditor();
+	const editor = createHeadlessEditor({ schema: defaultSchema });
 	const blockId = editor.firstBlock()!.id;
 	editor.apply(
 		[

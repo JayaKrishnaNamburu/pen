@@ -12,6 +12,7 @@ import { ContentEditableBackend } from "../field-editor/contenteditableBackend";
 import { EditContextBackend } from "../field-editor/editContextBackend";
 import { ExpandedContentEditableBackend } from "../field-editor/expandedContentEditableBackend";
 import { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	EditorRegionSelector,
 	Pen,
@@ -20,7 +21,7 @@ import {
 
 function createFieldEditorExportsEditor() {
 	return createEditor({
-		preset: defaultPreset({
+		schema: defaultSchema, preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
 			undo: false,

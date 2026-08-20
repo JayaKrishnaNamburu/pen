@@ -5,18 +5,19 @@ import { MultiplayerControllerImpl } from "../controller";
 import { AuthorLedger } from "../presence/authorLedger";
 import { ClientIdentityMap } from "../presence/identityMap";
 import type { MultiplayerAwarenessState } from "../types";
+import { defaultSchema } from "@input/pen-schema-default";
 
 function createDocumentEditor() {
 	const { crdtDoc } = createTestDocument([
 		{ id: "b1", type: "paragraph", content: "Hello" },
 	]);
-	return createEditor({ document: crdtDoc });
+	return createEditor({ schema: defaultSchema,  document: crdtDoc });
 }
 
 describe("MultiplayerControllerImpl", () => {
 	it("starts disconnected with empty peer state", () => {
 		const controller = new MultiplayerControllerImpl({
-			editor: createEditor(),
+			editor: createEditor({ schema: defaultSchema }),
 			config: {
 				user: { id: "u1", name: "Ada" },
 			},
@@ -37,7 +38,7 @@ describe("MultiplayerControllerImpl", () => {
 
 	it("notifies subscribers when connection state changes", () => {
 		const controller = new MultiplayerControllerImpl({
-			editor: createEditor(),
+			editor: createEditor({ schema: defaultSchema }),
 			config: {
 				user: { id: "u1", name: "Ada" },
 			},
@@ -57,7 +58,7 @@ describe("MultiplayerControllerImpl", () => {
 
 	it("returns a snapshot of current state", () => {
 		const controller = new MultiplayerControllerImpl({
-			editor: createEditor(),
+			editor: createEditor({ schema: defaultSchema }),
 			config: {
 				user: { id: "u1", name: "Ada" },
 			},
@@ -150,7 +151,7 @@ describe("MultiplayerControllerImpl", () => {
 	});
 
 	it("retains author identities after peers leave awareness", () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 		const controller = new MultiplayerControllerImpl({
 			editor,
 			config: {

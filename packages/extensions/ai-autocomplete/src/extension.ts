@@ -3,8 +3,10 @@ import {
 	aiAutocompleteControllerFacet,
 	createDecorationSet,
 	ensureInlineCompletionController,
-} from "@input/pen-core";
-import { AI_AUTOCOMPLETE_CONTROLLER_SLOT, defineExtension } from "@input/pen-types";
+	} from "@input/pen-core";
+import { AI_AUTOCOMPLETE_CONTROLLER_SLOT,
+} from "@input/pen-types";
+import { defineExtension } from "@input/pen-core";
 import type { AutocompleteController, AutocompleteExtensionConfig } from "./types";
 import { AutocompleteControllerImpl } from "./autocompleteController";
 

@@ -1,5 +1,6 @@
 import { createEditor } from "@input/pen-core";
 import { describe, expect, it } from "vitest";
+import { defaultSchema } from "@input/pen-schema-default";
 import {
 	acceptAllSuggestions,
 	acceptSuggestion,
@@ -12,7 +13,7 @@ import {
 
 describe("applySuggestedAIOperations", () => {
 	it("creates accept-compatible text insert suggestions with provenance", () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 
 		const result = applySuggestedAIOperations(editor, {
@@ -50,7 +51,7 @@ describe("applySuggestedAIOperations", () => {
 	});
 
 	it("creates accept-compatible text replace suggestions", () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
 			[{ type: "insert-text", blockId, offset: 0, text: "Hello" }],
@@ -89,7 +90,7 @@ describe("applySuggestedAIOperations", () => {
 	});
 
 	it("creates reject-compatible text delete suggestions", () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
 			[{ type: "insert-text", blockId, offset: 0, text: "Hello" }],
@@ -118,7 +119,7 @@ describe("applySuggestedAIOperations", () => {
 	});
 
 	it("creates reject-compatible block suggestions", () => {
-		const editor = createEditor();
+		const editor = createEditor({ schema: defaultSchema });
 
 		const result = applySuggestedAIOperations(editor, {
 			operations: [

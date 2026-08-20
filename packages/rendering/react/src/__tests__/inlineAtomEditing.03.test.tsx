@@ -50,7 +50,7 @@ async function flushAnimationFrames(count = 1): Promise<void> {
 
 function createPresetEditor() {
 	return createEditor({
-		preset: defaultPreset({
+		schema: createDefaultSchema(),preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
 			undo: false,

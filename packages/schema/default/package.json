@@ -59,7 +59,8 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@input/pen-types": "workspace:*"
+    "@input/pen-core": "workspace:^",
+    "@input/pen-types": "workspace:^"
   },
   "devDependencies": {
     "tsup": "^8.4.0",
