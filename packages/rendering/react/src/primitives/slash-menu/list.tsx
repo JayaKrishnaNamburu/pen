@@ -1,6 +1,11 @@
 import React from "react";
 import { getSlashMenuOptionId, useSlashMenuContext } from "./root";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
+import {
+	displayCatalogForEditor,
+	resolveSlashMenuGroup,
+	resolveSlashMenuTitle,
+} from "../../utils/displayCopy";
 import { SlashMenuGroup } from "./group";
 import { SlashMenuItem } from "./item";
 
@@ -15,7 +20,7 @@ export interface SlashMenuListProps extends AsChildProps {
  */
 export function SlashMenuList(props: SlashMenuListProps) {
 	const { children, ...rest } = props;
-	const { items, listboxId, selectedIndex } = useSlashMenuContext();
+	const { items, listboxId, selectedIndex, editor } = useSlashMenuContext();
 	const activeOptionId =
 		items.length > 0
 			? getSlashMenuOptionId(listboxId, selectedIndex)
@@ -27,9 +32,10 @@ export function SlashMenuList(props: SlashMenuListProps) {
 	if (hasManualChildren) {
 		content = children;
 	} else {
+		const catalog = displayCatalogForEditor(editor);
 		const groups = new Map<string, typeof items>();
 		for (const item of items) {
-			const group = item.display.group ?? "Other";
+			const group = item.display.group ?? "other";
 			const existing = groups.get(group) ?? [];
 			existing.push(item);
 			groups.set(group, existing);
@@ -38,6 +44,7 @@ export function SlashMenuList(props: SlashMenuListProps) {
 		let globalIndex = 0;
 		const groupElements = Array.from(groups.entries()).map(
 			([group, groupItems]) => {
+				const heading = resolveSlashMenuGroup(group, catalog);
 				const itemElements = groupItems.map((item) => {
 					const idx = globalIndex++;
 					return (
@@ -46,12 +53,16 @@ export function SlashMenuList(props: SlashMenuListProps) {
 							blockType={item.type}
 							index={idx}
 						>
-							{item.display.title}
+							{resolveSlashMenuTitle(
+								item.type,
+								item.display.title,
+								catalog,
+							)}
 						</SlashMenuItem>
 					);
 				});
 				return (
-					<SlashMenuGroup key={group} heading={group}>
+					<SlashMenuGroup key={group} heading={heading}>
 						{itemElements}
 					</SlashMenuGroup>
 				);

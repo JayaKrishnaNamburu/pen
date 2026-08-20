@@ -29,3 +29,15 @@ export {
   backgroundColor,
 } from "./inlines/marks";
 export { mention, inlineApp } from "./inlines/nodes";
+
+export {
+	SCHEMA_DISPLAY_CATALOG,
+	resolveDisplayCopy,
+	resolveDisplayGroup,
+	schemaDisplayKey,
+	schemaGroupKey,
+} from "./messages";
+export type {
+	SchemaDisplayField,
+	SchemaDisplayMessageKey,
+} from "./messages";

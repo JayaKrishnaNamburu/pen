@@ -410,5 +410,70 @@ describe("@input/pen-react slash menu", () => {
 		editor.destroy();
 	});
 
+	it("LOC2: auto list renders catalog headings instead of group slugs", async () => {
+		const editor = createSlashMenuEditor({
+			messages: {
+				"pen.display.group.basic": "Grundlagen",
+				"pen.schema.paragraph.title": "Absatz",
+			},
+		});
+		const controller = {
+			confirm: vi.fn(),
+			dismiss: vi.fn(),
+			items: [
+				{
+					type: "paragraph",
+					display: { title: "Paragraph", group: "basic" },
+				},
+				{
+					type: "myBlock",
+					display: { title: "My Block", group: "custom" },
+				},
+			],
+			open: true,
+			query: "",
+			select: vi.fn(),
+			selectedIndex: 0,
+			setQuery: vi.fn(),
+		};
 
+		function Harness() {
+			return (
+				<Pen.Editor.Root editor={editor}>
+					<Pen.SlashMenu.Root controller={controller} editor={editor}>
+						<Pen.SlashMenu.List />
+					</Pen.SlashMenu.Root>
+				</Pen.Editor.Root>
+			);
+		}
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(<Harness />);
+		});
+
+		const headings = [
+			...container.querySelectorAll("[data-pen-slash-menu-group-heading]"),
+		].map((node) => node.textContent);
+		const labels = [
+			...container.querySelectorAll("[data-pen-slash-menu-group]"),
+		].map((node) => node.getAttribute("aria-label"));
+		const itemText = [
+			...container.querySelectorAll("[data-pen-slash-menu-item]"),
+		].map((node) => node.textContent);
+
+		expect(headings).toEqual(["Grundlagen", "custom"]);
+		expect(labels).toEqual(["Grundlagen", "custom"]);
+		expect(itemText).toEqual(["Absatz", "My Block"]);
+		expect(container.textContent).not.toContain("basic");
+
+		await act(async () => {
+			root.unmount();
+		});
+		container.remove();
+		editor.destroy();
+	});
 });
