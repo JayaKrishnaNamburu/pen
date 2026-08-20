@@ -130,6 +130,8 @@ export {
 	type UrlContext,
 	type UrlPolicy,
 } from "./facets/urlPolicyFacet";
+export { localeFacet, messagesFacet } from "./facets/i18nFacets";
+export { resolveEditorMessage } from "./i18n/resolveEditorMessage";
 export type {
 	Keymap,
 	BeforeApplyHook,

@@ -321,6 +321,23 @@ export type { AIRequestContext, AIRequestFilter } from "./aiRequest";
 export type { BlockA11ySpec } from "./a11y";
 export type { A11yMessageKey, A11yMessageCatalog } from "./a11yMessages";
 
+// ── Localization ────────────────────────────────────────────
+export {
+	DEFAULT_MESSAGE_CATALOG,
+	interpolateMessage,
+	isPluralMessage,
+	resolveMessage,
+} from "./messages";
+export type {
+	MessageArgs,
+	MessageCatalog,
+	MessageKey,
+	MessageParams,
+	MessageParamsByKey,
+	MessageValue,
+	PluralMessage,
+} from "./messages";
+
 // ── Persistence ─────────────────────────────────────────────
 export type {
 	PenPersistence,

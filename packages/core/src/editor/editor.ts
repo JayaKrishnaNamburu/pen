@@ -23,6 +23,11 @@ import { createDocumentSession } from "./documentSession";
 
 import { beforeApplyFacet } from "../facets/coreFacets";
 import {
+	localeFacet,
+	messagesFacet,
+	resolveEnvironmentLocale,
+} from "../facets/i18nFacets";
+import {
 	createFacetRegistry,
 	type FacetRegistry,
 } from "../facets/registry";
@@ -135,10 +140,20 @@ class EditorImpl implements Editor {
 		for (const ext of allExtensions) {
 			this._extensions.register(ext);
 		}
+		const resolvedLocale = options.locale ?? resolveEnvironmentLocale();
+		const i18nProviders = [
+			localeFacet.of(
+				resolvedLocale,
+				options.locale != null ? "highest" : "lowest",
+			),
+		];
+		if (options.messages) {
+			i18nProviders.push(messagesFacet.of(options.messages, "highest"));
+		}
 		this._facetRegistry = createFacetRegistry({
 			editor: this,
 			extensions: allExtensions,
-			providers: v1ExtensionProviders(allExtensions),
+			providers: [...i18nProviders, ...v1ExtensionProviders(allExtensions)],
 		});
 		this._facetRegistry.markReady();
 

@@ -20,7 +20,12 @@ type A11yMessageParams = {
 	collaboratorEditing: { name: string };
 };
 
-// pen.messages / pen.locale facets stay unwired (LOC1 types only)
+export type PluralMessage = {
+	readonly other: string;
+} & Partial<Record<Exclude<Intl.LDMLPluralRule, "other">, string>>;
+
+export type MessageValue = string | PluralMessage;
+
 export type MessageParamsByKey = {
 	[K in A11yMessageKey as `pen.a11y.${K}`]: A11yMessageParams[K];
 } & {
@@ -40,12 +45,12 @@ export type MessageKey = keyof MessageParamsByKey;
 export type MessageParams<K extends MessageKey> = MessageParamsByKey[K];
 
 export type MessageCatalog = {
-	[K in MessageKey]: string;
+	[K in MessageKey]: MessageValue;
 };
 
-type MessageArgs<K extends MessageKey> = [keyof MessageParamsByKey[K]] extends [
-	never,
-]
+export type MessageArgs<K extends MessageKey> = [
+	keyof MessageParamsByKey[K],
+] extends [never]
 	? [params?: MessageParamsByKey[K]]
 	: [params: MessageParamsByKey[K]];
 
@@ -76,18 +81,17 @@ export const DEFAULT_MESSAGE_CATALOG: MessageCatalog = {
 	"pen.display.group.lists": "Lists",
 };
 
-export function resolveMessage<K extends MessageKey>(
-	catalog: Partial<MessageCatalog>,
-	key: K,
-	...args: MessageArgs<K>
-): string {
-	const template = catalog[key] ?? DEFAULT_MESSAGE_CATALOG[key] ?? "";
-	return interpolate(template, args[0]);
+export function isPluralMessage(value: unknown): value is PluralMessage {
+	return (
+		typeof value === "object" &&
+		value !== null &&
+		typeof (value as { other?: unknown }).other === "string"
+	);
 }
 
-function interpolate(
+export function interpolateMessage(
 	template: string,
-	params: Record<string, unknown> | undefined,
+	params?: Record<string, unknown>,
 ): string {
 	if (!params) {
 		return template;
@@ -102,4 +106,19 @@ function interpolate(
 			return value == null ? "" : String(value);
 		},
 	);
+}
+
+export function resolveMessage<K extends MessageKey>(
+	catalog: Partial<MessageCatalog>,
+	key: K,
+	...args: MessageArgs<K>
+): string {
+	const raw = catalog[key] ?? DEFAULT_MESSAGE_CATALOG[key];
+	if (raw == null) {
+		return "";
+	}
+	if (isPluralMessage(raw)) {
+		return interpolateMessage(raw.other, args[0]);
+	}
+	return interpolateMessage(raw, args[0]);
 }

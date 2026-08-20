@@ -45,8 +45,10 @@ describe("message catalog (LOC1)", () => {
 
 		expect(keys).toEqual(Object.keys(DEFAULT_MESSAGE_CATALOG));
 		for (const key of keys) {
-			expect(catalog[key].length).toBeGreaterThan(0);
-			expect(catalog[key]).not.toBe(key);
+			const value = catalog[key];
+			const text = typeof value === "string" ? value : value.other;
+			expect(text.length).toBeGreaterThan(0);
+			expect(text).not.toBe(key);
 		}
 	});
 

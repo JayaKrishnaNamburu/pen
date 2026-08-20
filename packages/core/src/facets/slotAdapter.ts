@@ -36,6 +36,7 @@ import {
 	undoMetadataControllerFacet,
 	undoRestoreControllerFacet,
 } from "./controllerFacets";
+import { localeFacet, messagesFacet } from "./i18nFacets";
 
 export type SlotDisposition =
 	| { kind: "facet"; facet: Facet<unknown, unknown> }
@@ -85,6 +86,8 @@ export const SLOT_DISPOSITION_BY_KEY: Record<string, SlotDisposition> = {
 		kind: "facet",
 		facet: documentOpsToolRuntimeFacet,
 	},
+	"pen.locale": { kind: "facet", facet: localeFacet },
+	"pen.messages": { kind: "facet", facet: messagesFacet },
 	"react:field-editor": { kind: "facet", facet: fieldEditorHostFacet },
 	"core:engine": { kind: "engine" },
 	"delta-stream:target": { kind: "parked" },

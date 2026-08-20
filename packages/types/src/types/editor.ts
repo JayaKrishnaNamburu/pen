@@ -20,6 +20,7 @@ import type { BlockHandle, AppHandle } from "./handles";
 import type { Unsubscribe } from "./utility";
 import type { SchemaRegistry } from "./schema";
 import type { AssetProvider } from "./persistence";
+import type { MessageCatalog } from "./messages";
 
 export type EditorViewMode = DocumentProfile;
 
@@ -223,6 +224,8 @@ export interface CreateEditorOptions {
 	documentScopeId?: string;
 	documentProfile?: DocumentProfile;
 	editorViewMode?: EditorViewMode;
+	locale?: string;
+	messages?: Partial<MessageCatalog>;
 }
 
 // ── Command Context ─────────────────────────────────────────

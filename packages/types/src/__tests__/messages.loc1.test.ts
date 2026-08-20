@@ -22,6 +22,9 @@ describe("message catalog (LOC1)", () => {
 
 			const value = DEFAULT_MESSAGE_CATALOG[key as MessageKey];
 			expect(typeof value).toBe("string");
+			if (typeof value !== "string") {
+				throw new Error(`expected string catalog entry for ${key}`);
+			}
 			expect(value.length).toBeGreaterThan(0);
 			expect(value).not.toBe(key);
 		}
@@ -105,5 +108,20 @@ describe("message catalog (LOC1)", () => {
 				{ blockType: "quote" },
 			),
 		).toBe("Converted to quote ({extra})");
+	});
+
+	it("LOC6: resolveMessage uses the other plural form when it has no locale", () => {
+		expect(
+			resolveMessage(
+				{
+					"pen.selection.blocksSelected": {
+						one: "one block",
+						other: "{count} blocks selected",
+					},
+				},
+				"pen.selection.blocksSelected",
+				{ count: 1 },
+			),
+		).toBe("1 blocks selected");
 	});
 });
