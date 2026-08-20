@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
+import { resolveEditorMessage } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
 import { useSelectionToolbarContext } from "./root";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
@@ -118,7 +119,7 @@ export function SelectionToolbarContent(props: SelectionToolbarContentProps) {
 		"data-pen-selection-toolbar-content": "",
 		"data-side": position?.side ?? preferredSide,
 		role: "toolbar",
-		"aria-label": "Formatting",
+		"aria-label": resolveEditorMessage(editor, "pen.toolbar.formatting"),
 		onPointerDown: handlePointerDown,
 		onKeyDown: handleKeyDown,
 		style: {

@@ -1,33 +1,82 @@
 import React from "react";
+import { resolveEditorMessage } from "@input/pen-core";
 import type { StructuralReviewComparisonRow, StructuralReviewItem } from "@input/pen-ai";
+import type { Editor, MessageKey } from "@input/pen-types";
 
-const REVIEW_COMPARISON_SECTION_LABELS = {
-	schema: "Schema changes",
-	view: "View changes",
-} as const;
+const REVIEW_COMPARISON_SECTION_KEYS = {
+	schema: "pen.ai.review.section.schema",
+	view: "pen.ai.review.section.view",
+} as const satisfies Record<
+	StructuralReviewComparisonRow["section"],
+	MessageKey
+>;
 
-const REVIEW_ITEM_SECTION_LABELS = {
-	content: "Content changes",
-	block: "Block changes",
-	row: "Row changes",
-	cell: "Cell changes",
-	schema: "Schema changes",
-	view: "View changes",
-} as const;
+const REVIEW_ITEM_SECTION_KEYS = {
+	content: "pen.ai.review.section.content",
+	block: "pen.ai.review.section.block",
+	row: "pen.ai.review.section.row",
+	cell: "pen.ai.review.section.cell",
+	schema: "pen.ai.review.section.schema",
+	view: "pen.ai.review.section.view",
+} as const satisfies Record<StructuralReviewItem["section"], MessageKey>;
 
-const REVIEW_ITEM_KIND_LABELS = {
-	added: "Added",
-	removed: "Removed",
-	updated: "Updated",
-	moved: "Moved",
-} as const;
+const REVIEW_ITEM_KIND_KEYS = {
+	added: "pen.ai.review.kind.added",
+	removed: "pen.ai.review.kind.removed",
+	updated: "pen.ai.review.kind.updated",
+	moved: "pen.ai.review.kind.moved",
+} as const satisfies Record<StructuralReviewItem["changeKind"], MessageKey>;
 
-const REVIEW_ITEM_KIND_NOUNS = {
-	added: "additions",
-	removed: "removals",
-	updated: "updates",
-	moved: "moves",
-} as const;
+const REVIEW_SUBGROUP_KEYS = {
+	content: {
+		added: "pen.ai.review.subgroup.content.added",
+		removed: "pen.ai.review.subgroup.content.removed",
+		updated: "pen.ai.review.subgroup.content.updated",
+		moved: "pen.ai.review.subgroup.content.moved",
+	},
+	block: {
+		added: "pen.ai.review.subgroup.block.added",
+		removed: "pen.ai.review.subgroup.block.removed",
+		updated: "pen.ai.review.subgroup.block.updated",
+		moved: "pen.ai.review.subgroup.block.moved",
+	},
+	row: {
+		added: "pen.ai.review.subgroup.row.added",
+		removed: "pen.ai.review.subgroup.row.removed",
+		updated: "pen.ai.review.subgroup.row.updated",
+		moved: "pen.ai.review.subgroup.row.moved",
+	},
+	cell: {
+		added: "pen.ai.review.subgroup.cell.added",
+		removed: "pen.ai.review.subgroup.cell.removed",
+		updated: "pen.ai.review.subgroup.cell.updated",
+		moved: "pen.ai.review.subgroup.cell.moved",
+	},
+	schema: {
+		added: "pen.ai.review.subgroup.schema.added",
+		removed: "pen.ai.review.subgroup.schema.removed",
+		updated: "pen.ai.review.subgroup.schema.updated",
+		moved: "pen.ai.review.subgroup.schema.moved",
+	},
+	view: {
+		added: "pen.ai.review.subgroup.view.added",
+		removed: "pen.ai.review.subgroup.view.removed",
+		updated: "pen.ai.review.subgroup.view.updated",
+		moved: "pen.ai.review.subgroup.view.moved",
+	},
+} as const satisfies Record<
+	StructuralReviewItem["section"],
+	Record<StructuralReviewItem["changeKind"], MessageKey>
+>;
+
+const REVIEW_COMPARISON_KIND_KEYS = {
+	added: "pen.ai.review.kind.added",
+	removed: "pen.ai.review.kind.removed",
+	updated: "pen.ai.review.kind.updated",
+} as const satisfies Record<
+	StructuralReviewComparisonRow["changeKind"],
+	MessageKey
+>;
 
 const REVIEW_ITEM_SECTION_ORDER: StructuralReviewItem["section"][] = [
 	"content",
@@ -44,12 +93,6 @@ const REVIEW_ITEM_KIND_ORDER: StructuralReviewItem["changeKind"][] = [
 	"updated",
 	"moved",
 ];
-
-const REVIEW_COMPARISON_KIND_LABELS = {
-	added: "Added",
-	removed: "Removed",
-	updated: "Updated",
-} as const;
 
 export interface ReviewFocusTarget {
 	id: string;
@@ -99,6 +142,7 @@ export function groupStructuralReviewItems(
 }
 
 export function groupReviewComparisonRows(
+	editor: Editor,
 	rows: readonly StructuralReviewComparisonRow[],
 ): Array<{
 	id: StructuralReviewComparisonRow["section"];
@@ -122,7 +166,7 @@ export function groupReviewComparisonRows(
 		}
 		sections.set(row.section, {
 			id: row.section,
-			label: REVIEW_COMPARISON_SECTION_LABELS[row.section],
+			label: formatReviewComparisonSectionLabel(editor, row.section),
 			rows: [row],
 		});
 	}
@@ -130,7 +174,10 @@ export function groupReviewComparisonRows(
 	return [...sections.values()];
 }
 
-export function summarizeStructuralReviewGroup(items: readonly StructuralReviewItem[]): {
+export function summarizeStructuralReviewGroup(
+	editor: Editor,
+	items: readonly StructuralReviewItem[],
+): {
 	kindRollups: Array<{
 		id: StructuralReviewItem["changeKind"];
 		label: string;
@@ -154,19 +201,20 @@ export function summarizeStructuralReviewGroup(items: readonly StructuralReviewI
 		const count = kindCounts.get(kind);
 		return count == null
 			? []
-			: [{ id: kind, label: formatReviewItemKindLabel(kind), count }];
+			: [{ id: kind, label: formatReviewItemKindLabel(editor, kind), count }];
 	});
 	const sectionRollups = REVIEW_ITEM_SECTION_ORDER.flatMap((section) => {
 		const count = sectionCounts.get(section);
 		return count == null
 			? []
-			: [{ id: section, label: formatReviewItemSectionLabel(section), count }];
+			: [{ id: section, label: formatReviewItemSectionLabel(editor, section), count }];
 	});
 
 	return { kindRollups, sectionRollups };
 }
 
 export function groupStructuralReviewSubgroups(
+	editor: Editor,
 	items: readonly StructuralReviewItem[],
 ): Array<{
 	id: string;
@@ -191,7 +239,7 @@ export function groupStructuralReviewSubgroups(
 		}
 		subgroups.set(id, {
 			id,
-			label: formatReviewSubgroupLabel(item.section, item.changeKind),
+			label: formatReviewSubgroupLabel(editor, item.section, item.changeKind),
 			items: [item],
 		});
 	}
@@ -279,64 +327,91 @@ export function shouldDefaultSubgroupExpanded(
 	return !(groupItemCount > 2 && subgroupItemCount > 1);
 }
 
+export function formatReviewComparisonSectionLabel(
+	editor: Editor,
+	section: StructuralReviewComparisonRow["section"],
+): string {
+	return resolveEditorMessage(editor, REVIEW_COMPARISON_SECTION_KEYS[section]);
+}
+
 export function formatReviewComparisonKindLabel(
+	editor: Editor,
 	kind: StructuralReviewComparisonRow["changeKind"],
 ): string {
-	return REVIEW_COMPARISON_KIND_LABELS[kind];
+	return resolveEditorMessage(editor, REVIEW_COMPARISON_KIND_KEYS[kind]);
 }
 
 export function formatReviewItemKindLabel(
+	editor: Editor,
 	kind: StructuralReviewItem["changeKind"],
 ): string {
-	return REVIEW_ITEM_KIND_LABELS[kind];
+	return resolveEditorMessage(editor, REVIEW_ITEM_KIND_KEYS[kind]);
 }
 
 export function formatReviewItemSectionLabel(
+	editor: Editor,
 	section: StructuralReviewItem["section"],
 ): string {
-	return REVIEW_ITEM_SECTION_LABELS[section];
+	return resolveEditorMessage(editor, REVIEW_ITEM_SECTION_KEYS[section]);
 }
 
-export function formatSuggestionAction(action: string): string {
+export function formatSuggestionAction(editor: Editor, action: string): string {
 	switch (action) {
 		case "insert":
 		case "insert-block":
-			return "Insert";
+			return resolveEditorMessage(editor, "pen.ai.review.action.insert");
 		case "delete":
 		case "delete-block":
-			return "Delete";
+			return resolveEditorMessage(editor, "pen.ai.review.action.delete");
 		case "move-block":
-			return "Move";
+			return resolveEditorMessage(editor, "pen.ai.review.action.move");
 		case "convert-block":
-			return "Convert";
+			return resolveEditorMessage(editor, "pen.ai.review.action.convert");
 		default:
-			return "Change";
+			return resolveEditorMessage(editor, "pen.ai.review.action.change");
 	}
 }
 
 export function describeBlockSuggestion(
+	editor: Editor,
 	action: string,
 	blockType: string | null,
 ): string {
-	const typeLabel = blockType ?? "block";
+	const typeLabel =
+		blockType ??
+		resolveEditorMessage(editor, "pen.ai.review.blockType.fallback");
 	switch (action) {
 		case "insert-block":
-			return `Insert ${typeLabel}`;
+			return resolveEditorMessage(
+				editor,
+				"pen.ai.review.blockSuggestion.insert",
+				{ blockType: typeLabel },
+			);
 		case "delete-block":
-			return `Delete ${typeLabel}`;
+			return resolveEditorMessage(
+				editor,
+				"pen.ai.review.blockSuggestion.delete",
+				{ blockType: typeLabel },
+			);
 		case "move-block":
-			return `Move ${typeLabel}`;
+			return resolveEditorMessage(editor, "pen.ai.review.blockSuggestion.move", {
+				blockType: typeLabel,
+			});
 		case "convert-block":
-			return `Convert ${typeLabel}`;
+			return resolveEditorMessage(
+				editor,
+				"pen.ai.review.blockSuggestion.convert",
+				{ blockType: typeLabel },
+			);
 		default:
 			return typeLabel;
 	}
 }
 
 export function formatReviewSubgroupLabel(
+	editor: Editor,
 	section: StructuralReviewItem["section"],
 	kind: StructuralReviewItem["changeKind"],
 ): string {
-	const sectionLabel = formatReviewItemSectionLabel(section).replace(/ changes$/, "");
-	return `${sectionLabel} ${REVIEW_ITEM_KIND_NOUNS[kind]}`;
+	return resolveEditorMessage(editor, REVIEW_SUBGROUP_KEYS[section][kind]);
 }

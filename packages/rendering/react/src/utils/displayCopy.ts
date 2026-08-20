@@ -38,5 +38,26 @@ export function resolveSlashMenuGroup(
 	group: string | undefined,
 	catalog: Record<string, string>,
 ): string {
-	return resolveDisplayGroup(group, catalog) ?? "Other";
+	return (
+		resolveDisplayGroup(group, catalog) ??
+		catalog["pen.display.group.other"] ??
+		group ??
+		""
+	);
+}
+
+export function resolveEditorSchemaPlaceholder(
+	editor: Editor,
+	blockId: string,
+): string | undefined {
+	const block = editor.getBlock(blockId);
+	if (!block) {
+		return undefined;
+	}
+	const raw = editor.schema.resolve(block.type)?.placeholder;
+	const catalog = displayCatalogForEditor(editor);
+	return (
+		catalog[schemaDisplayKey(block.type, "placeholder")] ??
+		resolveDisplayCopy(raw, catalog)
+	);
 }

@@ -1,3 +1,4 @@
+import { resolveEditorMessage } from "@input/pen-core";
 import { resolveEditorUrl } from "@input/pen-dom";
 import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 import type { BlockHandle, CellSelection } from "@input/pen-types";
@@ -370,7 +371,9 @@ function renderTable(
         cellSelection != null &&
         isCellInSelection(cellSelection, rowIndex, columnIndex);
       const placeholder = isHeaderRow
-        ? `Column ${columnIndex + 1}`
+        ? resolveEditorMessage(editor, "pen.table.columnPlaceholder", {
+            index: columnIndex + 1,
+          })
         : undefined;
 
       cellNodes.push(

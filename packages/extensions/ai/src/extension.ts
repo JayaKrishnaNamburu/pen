@@ -28,6 +28,7 @@ import {
 	getOpOriginType,
 } from "@input/pen-types";
 import { defaultAICommands } from "./commands/defaultCommands";
+import { resolveCatalogCopy } from "./i18n/resolveCatalogCopy";
 import { AICommandRegistry } from "./commands/registry";
 import { AIInlineHistoryService, AIReviewService } from "./controllers";
 import type { AIContentFormat } from "./runtime/contracts";
@@ -96,7 +97,7 @@ const AI_SHORTCUT_KEY_BINDINGS: readonly KeyBinding[] = [
 	{
 		key: "Mod-z",
 		priority: 1000,
-		description: "Undo AI inline turn",
+		description: "pen.ai.shortcut.undoInline",
 		handler: (editor) => {
 			const inlineHistory = getAIInlineHistoryController(editor);
 			if (!inlineHistory?.canHandleShortcut("undo")) {
@@ -108,7 +109,7 @@ const AI_SHORTCUT_KEY_BINDINGS: readonly KeyBinding[] = [
 	{
 		key: "Mod-Shift-z",
 		priority: 1000,
-		description: "Redo AI inline turn",
+		description: "pen.ai.shortcut.redoInline",
 		handler: (editor) => {
 			const inlineHistory = getAIInlineHistoryController(editor);
 			if (!inlineHistory?.canHandleShortcut("redo")) {
@@ -120,7 +121,7 @@ const AI_SHORTCUT_KEY_BINDINGS: readonly KeyBinding[] = [
 	{
 		key: "Ctrl-y",
 		priority: 1000,
-		description: "Redo AI inline turn",
+		description: "pen.ai.shortcut.redoInline",
 		handler: (editor) => {
 			const inlineHistory = getAIInlineHistoryController(editor);
 			if (!inlineHistory?.canHandleShortcut("redo")) {
@@ -266,7 +267,13 @@ class AIControllerImpl extends AIControllerSessionState {
 	}
 
 	getCommands(): readonly AICommandBinding[] {
-		return this._registry.list(this.getCommandContext());
+		return this._registry.list(this.getCommandContext()).map((command) => ({
+			...command,
+			label: resolveCatalogCopy(this._editor, command.label),
+			description: command.description
+				? resolveCatalogCopy(this._editor, command.description)
+				: command.description,
+		}));
 	}
 
 	getCommandContext(): AICommandContext {
@@ -365,7 +372,7 @@ class AIControllerImpl extends AIControllerSessionState {
 		}
 		if (command.guard && !command.guard(ctx)) {
 			throw new Error(
-				`AI command "${command.label}" is not available in this context`,
+				`AI command "${resolveCatalogCopy(this._editor, command.label)}" is not available in this context`,
 			);
 		}
 

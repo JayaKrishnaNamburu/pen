@@ -1,5 +1,7 @@
 import React from "react";
 import { createPortal } from "react-dom";
+import { resolveEditorMessage } from "@input/pen-core";
+import type { Editor } from "@input/pen-types";
 import { useInlineSuggestionControls } from "../../hooks/useInlineSuggestionControls";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { useAIContext } from "./root";
@@ -13,6 +15,7 @@ export interface AIInlineSuggestionFloatingSurfaceProps extends AsChildProps {
 }
 
 interface InlineSuggestionControlsContextValue {
+	editor: Editor;
 	controls: ReturnType<typeof useInlineSuggestionControls>;
 }
 
@@ -55,7 +58,7 @@ export function AIInlineSuggestionControls(
 		: [];
 
 	return (
-		<InlineSuggestionControlsContext.Provider value={{ controls }}>
+		<InlineSuggestionControlsContext.Provider value={{ editor, controls }}>
 			{renderAsChild(
 				{
 					...props,
@@ -107,13 +110,16 @@ export interface AIInlineSuggestionCountProps extends AsChildProps {
 }
 
 export function AIInlineSuggestionCount(props: AIInlineSuggestionCountProps) {
-	const { controls } = useInlineSuggestionControlsContext();
+	const { controls, editor } = useInlineSuggestionControlsContext();
 	return renderAsChild(
 		{
 			...props,
 			children:
 				props.children ??
-				`${controls.activeSuggestionNumber} of ${controls.visibleCount}`,
+				resolveEditorMessage(editor, "pen.ai.suggestion.count", {
+					current: controls.activeSuggestionNumber,
+					count: controls.visibleCount,
+				}),
 		},
 		"span",
 		{
@@ -129,7 +135,7 @@ export interface AIInlineSuggestionPreviousButtonProps extends AsChildProps {
 export function AIInlineSuggestionPreviousButton(
 	props: AIInlineSuggestionPreviousButtonProps,
 ) {
-	const { controls } = useInlineSuggestionControlsContext();
+	const { controls, editor } = useInlineSuggestionControlsContext();
 	const buttonProps: AsChildProps & {
 		ref?: React.Ref<HTMLElement>;
 	} & Record<string, unknown> = {
@@ -145,7 +151,7 @@ export function AIInlineSuggestionPreviousButton(
 			type: "button",
 			"data-pen-ai-inline-suggestion-prev": "",
 			disabled: !controls.canGoToPrevious,
-			"aria-label": "Previous suggestion",
+			"aria-label": resolveEditorMessage(editor, "pen.ai.suggestion.previous"),
 		},
 	);
 }
@@ -157,7 +163,7 @@ export interface AIInlineSuggestionNextButtonProps extends AsChildProps {
 export function AIInlineSuggestionNextButton(
 	props: AIInlineSuggestionNextButtonProps,
 ) {
-	const { controls } = useInlineSuggestionControlsContext();
+	const { controls, editor } = useInlineSuggestionControlsContext();
 	const buttonProps: AsChildProps & {
 		ref?: React.Ref<HTMLElement>;
 	} & Record<string, unknown> = {
@@ -173,7 +179,7 @@ export function AIInlineSuggestionNextButton(
 			type: "button",
 			"data-pen-ai-inline-suggestion-next": "",
 			disabled: !controls.canGoToNext,
-			"aria-label": "Next suggestion",
+			"aria-label": resolveEditorMessage(editor, "pen.ai.suggestion.next"),
 		},
 	);
 }
@@ -185,14 +191,16 @@ export interface AIInlineSuggestionAcceptButtonProps extends AsChildProps {
 export function AIInlineSuggestionAcceptButton(
 	props: AIInlineSuggestionAcceptButtonProps,
 ) {
-	const { controls } = useInlineSuggestionControlsContext();
+	const { controls, editor } = useInlineSuggestionControlsContext();
 	const buttonProps: AsChildProps & {
 		ref?: React.Ref<HTMLElement>;
 	} & Record<string, unknown> = {
 		...props,
 		onMouseDown: preventEditorBlur,
 		onClick: controls.acceptActiveSuggestionGroup,
-		children: props.children ?? "Keep",
+		children:
+			props.children ??
+			resolveEditorMessage(editor, "pen.ai.suggestion.keep"),
 	};
 	return renderAsChild(
 		buttonProps,
@@ -212,14 +220,16 @@ export interface AIInlineSuggestionRejectButtonProps extends AsChildProps {
 export function AIInlineSuggestionRejectButton(
 	props: AIInlineSuggestionRejectButtonProps,
 ) {
-	const { controls } = useInlineSuggestionControlsContext();
+	const { controls, editor } = useInlineSuggestionControlsContext();
 	const buttonProps: AsChildProps & {
 		ref?: React.Ref<HTMLElement>;
 	} & Record<string, unknown> = {
 		...props,
 		onMouseDown: preventEditorBlur,
 		onClick: controls.rejectActiveSuggestionGroup,
-		children: props.children ?? "Undo",
+		children:
+			props.children ??
+			resolveEditorMessage(editor, "pen.ai.suggestion.undo"),
 	};
 	return renderAsChild(
 		buttonProps,

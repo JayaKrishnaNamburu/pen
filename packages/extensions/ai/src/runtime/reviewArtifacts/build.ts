@@ -1,3 +1,4 @@
+import { resolveEditorMessage } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
 import type { DocumentMutationPlan } from "../planTypes";
 import { removePlanAtPath, selectPlanAtPath } from "./paths";
@@ -76,9 +77,14 @@ export function buildReviewItemsForPlan(
 					changeKind: describeTextEditChangeKind(plan.operation),
 					section: "content",
 					groupId: `block:${plan.target.blockId}`,
-					groupLabel: `Block "${plan.target.blockId}"`,
-					label: describeTextEditLabel(plan.operation),
-					summary: "Updates the selected text range.",
+					groupLabel: resolveEditorMessage(editor, "pen.ai.review.block", {
+						blockId: plan.target.blockId,
+					}),
+					label: describeTextEditLabel(editor, plan.operation),
+					summary: resolveEditorMessage(
+						editor,
+						"pen.ai.review.updateSelection",
+					),
 					preview: plan.text,
 					before: readTextEditBefore(editor, plan),
 					after: plan.text,
@@ -100,9 +106,15 @@ export function buildReviewItemsForPlan(
 							: `span:${plan.targetSpanId ?? "flow-patch"}`,
 					groupLabel:
 						edit.locator.blockId != null
-							? `Block "${edit.locator.blockId}"`
-							: `Span "${plan.targetSpanId ?? "flow-patch"}"`,
-					label: `Flow patch: ${edit.operation}`,
+							? resolveEditorMessage(editor, "pen.ai.review.block", {
+									blockId: edit.locator.blockId,
+								})
+							: resolveEditorMessage(editor, "pen.ai.review.span", {
+									spanId: plan.targetSpanId ?? "flow-patch",
+								}),
+					label: resolveEditorMessage(editor, "pen.ai.review.flowPatch", {
+						operation: edit.operation,
+					}),
 					summary: plan.instructions,
 					detail: edit.locator.expectedBlockType,
 					preview: edit.text ?? edit.markdown,
@@ -120,12 +132,16 @@ export function buildReviewItemsForPlan(
 					changeKind: "added",
 					section: "block",
 					groupId: "blocks",
-					groupLabel: "Blocks",
-					label: "Insert block",
-					summary: `Adds a new ${plan.blockType} block.`,
+					groupLabel: resolveEditorMessage(editor, "pen.ai.review.blocks"),
+					label: resolveEditorMessage(editor, "pen.ai.review.insertBlock"),
+					summary: resolveEditorMessage(
+						editor,
+						"pen.ai.review.insertBlock.summary",
+						{ blockType: plan.blockType },
+					),
 					detail: plan.blockType,
 					preview: plan.initialText,
-					before: "(new block)",
+					before: resolveEditorMessage(editor, "pen.ai.review.newBlock"),
 					after: describeInsertedBlockAfter(plan),
 				}),
 			];
@@ -135,10 +151,17 @@ export function buildReviewItemsForPlan(
 					changeKind: "updated",
 					section: "block",
 					groupId: `block:${plan.blockId}`,
-					groupLabel: `Block "${plan.blockId}"`,
-					label: "Update block",
-					summary: "Updates block properties.",
-					detail: `${Object.keys(plan.props).length} prop changes`,
+					groupLabel: resolveEditorMessage(editor, "pen.ai.review.block", {
+						blockId: plan.blockId,
+					}),
+					label: resolveEditorMessage(editor, "pen.ai.review.updateBlock"),
+					summary: resolveEditorMessage(
+						editor,
+						"pen.ai.review.updateBlock.summary",
+					),
+					detail: resolveEditorMessage(editor, "pen.ai.review.propChanges", {
+						count: Object.keys(plan.props).length,
+					}),
 					before: readBlockPropsPreview(editor, plan.blockId),
 					after: stringifyReviewValue(plan.props),
 				}),
@@ -149,9 +172,14 @@ export function buildReviewItemsForPlan(
 					changeKind: "moved",
 					section: "block",
 					groupId: `block:${plan.blockId}`,
-					groupLabel: `Block "${plan.blockId}"`,
-					label: "Move block",
-					summary: "Moves this block to a new position.",
+					groupLabel: resolveEditorMessage(editor, "pen.ai.review.block", {
+						blockId: plan.blockId,
+					}),
+					label: resolveEditorMessage(editor, "pen.ai.review.moveBlock"),
+					summary: resolveEditorMessage(
+						editor,
+						"pen.ai.review.moveBlock.summary",
+					),
 				}),
 			];
 		case "block_convert":
@@ -160,9 +188,15 @@ export function buildReviewItemsForPlan(
 					changeKind: "updated",
 					section: "block",
 					groupId: `block:${plan.blockId}`,
-					groupLabel: `Block "${plan.blockId}"`,
-					label: "Convert block",
-					summary: `Converts this block to ${plan.newType}.`,
+					groupLabel: resolveEditorMessage(editor, "pen.ai.review.block", {
+						blockId: plan.blockId,
+					}),
+					label: resolveEditorMessage(editor, "pen.ai.review.convertBlock"),
+					summary: resolveEditorMessage(
+						editor,
+						"pen.ai.review.convertBlock.summary",
+						{ newType: plan.newType },
+					),
 					detail: plan.newType,
 					before: readBlockTypePreview(editor, plan.blockId),
 					after: plan.newType,

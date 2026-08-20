@@ -21,6 +21,7 @@ import {
   useDocumentPlaceholderState,
   useFieldEditorState,
 } from "../internal/editorState";
+import { resolveEditorSchemaPlaceholder } from "../internal/displayCopy";
 import { useEditorContext } from "../internal/editorContext";
 import { useFieldEditorContext } from "../internal/fieldEditorContext";
 import { replaceElementChildren } from "../internal/replaceElementChildren";
@@ -64,13 +65,9 @@ export const PenInlineContent = defineComponent({
         fieldEditorState.value.mode === "expanded" &&
         fieldEditorState.value.activeBlockIds.includes(props.blockId),
     );
-    const schemaPlaceholder = computed(() => {
-      const block = editor.getBlock(props.blockId);
-      if (!block) {
-        return undefined;
-      }
-      return editor.schema.resolve(block.type)?.placeholder;
-    });
+    const schemaPlaceholder = computed(() =>
+      resolveEditorSchemaPlaceholder(editor, props.blockId),
+    );
     const isFirstBlock = computed(
       () => editor.documentState.blockOrder[0] === props.blockId,
     );

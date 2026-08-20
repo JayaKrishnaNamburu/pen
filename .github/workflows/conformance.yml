@@ -35,6 +35,9 @@ jobs:
       - name: Check claimed-scope rule coverage
         run: node scripts/coverage-rules.mjs
 
+      - name: Check message catalog completeness
+        run: node scripts/catalog-check.mjs
+
   conformance-chromium:
     timeout-minutes: 30
     runs-on: ubuntu-latest

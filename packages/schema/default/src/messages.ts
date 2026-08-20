@@ -68,6 +68,7 @@ export const SCHEMA_DISPLAY_CATALOG = {
 	"pen.display.group.lists": "Lists",
 	"pen.display.group.media": "Media",
 	"pen.display.group.advanced": "Advanced",
+	"pen.display.group.other": "Other",
 
 	"pen.schema.document.emptyPlaceholder": "Start writing...",
 } as const;

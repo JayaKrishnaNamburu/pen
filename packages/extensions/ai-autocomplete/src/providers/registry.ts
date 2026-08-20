@@ -25,7 +25,7 @@ export class AutocompleteProviderRegistry {
 		return Array.from(this._providers.values()).sort((left, right) => {
 			const leftPriority = left.priority ?? 0;
 			const rightPriority = right.priority ?? 0;
-			return rightPriority - leftPriority || left.id.localeCompare(right.id);
+			return rightPriority - leftPriority || left.id.localeCompare(right.id, "en");
 		});
 	}
 

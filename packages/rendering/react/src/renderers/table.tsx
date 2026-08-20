@@ -1,4 +1,5 @@
 import React from "react";
+import { resolveEditorMessage } from "@input/pen-core";
 import type { BlockHandle, BlockRenderContext, CellSelection } from "@input/pen-types";
 import { useEditorContext } from "../context/editorContext";
 import { useFieldEditorContext } from "../context/fieldEditorContext";
@@ -7,9 +8,6 @@ import { useSelection } from "../hooks/useSelection";
 import { DATA_ATTRS } from "../utils/dataAttributes";
 import { isCellInSelection } from "../utils/cellSelection";
 import { TableCellContent } from "../primitives/editor/tableCellContent";
-
-const TABLE_ADD_COLUMN_LABEL = "Add column";
-const TABLE_ADD_ROW_LABEL = "Add row";
 
 function TableRendererInner(props: {
 	block: BlockHandle;
@@ -107,7 +105,11 @@ function TableRendererInner(props: {
 					tableBlockId={block.id}
 					row={0}
 					col={colIdx}
-					placeholder={`Column ${colIdx + 1}`}
+					placeholder={resolveEditorMessage(
+						editor,
+						"pen.table.columnPlaceholder",
+						{ index: colIdx + 1 },
+					)}
 				/>
 			</th>
 		))
@@ -145,7 +147,7 @@ function TableRendererInner(props: {
 		<button
 			type="button"
 			className="pen-table-add-column-control"
-			aria-label={TABLE_ADD_COLUMN_LABEL}
+			aria-label={resolveEditorMessage(editor, "pen.table.addColumn")}
 			{...{ [DATA_ATTRS.ignorePointerGesture]: "" }}
 			onMouseDown={handleControlMouseDown}
 			onClick={handleAddColumn}
@@ -158,7 +160,7 @@ function TableRendererInner(props: {
 		<button
 			type="button"
 			className="pen-table-add-row-control"
-			aria-label={TABLE_ADD_ROW_LABEL}
+			aria-label={resolveEditorMessage(editor, "pen.table.addRow")}
 			{...{ [DATA_ATTRS.ignorePointerGesture]: "" }}
 			onMouseDown={handleControlMouseDown}
 			onClick={handleAddRow}

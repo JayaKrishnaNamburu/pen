@@ -1,4 +1,5 @@
 import React from "react";
+import { resolveEditorMessage } from "@input/pen-core";
 import type { SearchOptions } from "@input/pen-search";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { useSearchContext } from "./root";
@@ -10,34 +11,37 @@ export interface SearchToggleProps
 }
 
 export function SearchCaseSensitive(props: SearchToggleProps) {
+	const { editor } = useSearchContext();
 	return (
 		<SearchToggle
 			{...props}
 			option="caseSensitive"
 			dataOption="case-sensitive"
-			label="Toggle case-sensitive search"
+			label={resolveEditorMessage(editor, "pen.search.toggle.caseSensitive")}
 		/>
 	);
 }
 
 export function SearchRegExpToggle(props: SearchToggleProps) {
+	const { editor } = useSearchContext();
 	return (
 		<SearchToggle
 			{...props}
 			option="regex"
 			dataOption="regex"
-			label="Toggle regular expression search"
+			label={resolveEditorMessage(editor, "pen.search.toggle.regex")}
 		/>
 	);
 }
 
 export function SearchWholeWord(props: SearchToggleProps) {
+	const { editor } = useSearchContext();
 	return (
 		<SearchToggle
 			{...props}
 			option="wholeWord"
 			dataOption="whole-word"
-			label="Toggle whole-word search"
+			label={resolveEditorMessage(editor, "pen.search.toggle.wholeWord")}
 		/>
 	);
 }

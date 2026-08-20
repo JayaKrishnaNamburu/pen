@@ -105,6 +105,7 @@ describe("LOC2 schema display catalog", () => {
 			...expectedInlineKeys(),
 			...expectedGroupKeys(),
 			"pen.schema.document.emptyPlaceholder",
+			"pen.display.group.other",
 		]);
 		expect(new Set(Object.keys(SCHEMA_DISPLAY_CATALOG))).toEqual(expected);
 	});

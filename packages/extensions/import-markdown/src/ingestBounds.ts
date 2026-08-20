@@ -70,7 +70,7 @@ export class IngestDropCounts {
 
 	toDroppedByReason(): IngestDroppedByReason[] {
 		const reasons = [...this.counts.entries()].sort(([a], [b]) =>
-			a.localeCompare(b),
+			a.localeCompare(b, "en"),
 		);
 		return reasons.map(([reason, count]) => {
 			const bound = BOUND_BY_REASON[reason];

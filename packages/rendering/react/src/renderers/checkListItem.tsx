@@ -1,4 +1,5 @@
 import React from "react";
+import { resolveEditorMessage } from "@input/pen-core";
 import type { BlockHandle, BlockRenderContext } from "@input/pen-types";
 import { useEditorContext } from "../context/editorContext";
 import { ListItemLayout } from "../utils/listItemLayout";
@@ -49,7 +50,7 @@ function CheckboxToggle({
       type="checkbox"
       checked={checked}
       onChange={handleChange}
-      aria-label="Toggle checkbox"
+      aria-label={resolveEditorMessage(editor, "pen.checklist.toggle")}
     />
   );
 }

@@ -1,4 +1,5 @@
 import type React from "react";
+import { resolveEditorMessage } from "@input/pen-core";
 import { useEditorContext } from "../context/editorContext";
 import { useFieldEditorContext } from "../context/fieldEditorContext";
 import { useSelection } from "./useSelection";
@@ -72,7 +73,7 @@ export function useBlockDragHandle(
 		props: {
 			draggable: !disabled,
 			role: "button",
-			"aria-label": "Drag to reorder block",
+			"aria-label": resolveEditorMessage(editor, "pen.drag.reorderBlock"),
 			[DATA_ATTRS.blockHandle]: "",
 			[DATA_ATTRS.blockId]: blockId,
 			[DATA_ATTRS.dragging]: isDragging ? "" : undefined,

@@ -30,6 +30,7 @@ describe("@input/pen-vue AX1 surface", () => {
     const root = wrapper.get("[data-pen-editor-root]");
     expect(root.attributes("role")).toBe("textbox");
     expect(root.attributes("aria-multiline")).toBe("true");
+    expect(root.attributes("aria-label")).toBe("Editor");
 
     wrapper.unmount();
     editor.destroy();

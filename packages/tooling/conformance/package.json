@@ -8,6 +8,7 @@
     "harness:dev": "vite --config harness/vite.config.ts --host 127.0.0.1 --port 4174 --strictPort",
     "test:chromium": "playwright test --project=chromium",
     "test:matrix": "playwright test",
+    "test:pseudo-locale": "playwright test scenarios/loc1-pseudo-locale.spec.ts --project=chromium",
     "test:hosts": "node --test src/hosts/*.test.js",
     "test": "node --test src/hosts/*.test.js",
     "coverage:rules": "node ../../../scripts/coverage-rules.mjs",

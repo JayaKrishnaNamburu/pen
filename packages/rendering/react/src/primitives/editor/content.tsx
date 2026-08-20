@@ -2,7 +2,7 @@ import React, {
 	useRef,
 	useSyncExternalStore,
 } from "react";
-import type { Editor } from "@input/pen-types";
+import { resolveEditorMessage } from "@input/pen-core";
 import { EditorContentContext } from "../../context/editorContentContext";
 import { useEditorContext } from "../../context/editorContext";
 import { useFieldEditorContext } from "../../context/fieldEditorContext";
@@ -52,8 +52,11 @@ export interface EditorContentProps extends AsChildProps {
 }
 
 export function EditorContent(props: EditorContentProps) {
-	const { emptyPlaceholder, ...rest } = props;
+	const { emptyPlaceholder: emptyPlaceholderProp, ...rest } = props;
 	const { editor, readonly, blockDragAndDrop, blockSelection, interactionModel } = useEditorContext();
+	const emptyPlaceholder =
+		emptyPlaceholderProp ??
+		resolveEditorMessage(editor, "pen.schema.document.emptyPlaceholder");
 	const fieldEditor = useFieldEditorContext();
 	const { store: regionSelectionStore } = useEditorRegionSelectionContext();
 	const fieldEditorState = useFieldEditorState(fieldEditor);

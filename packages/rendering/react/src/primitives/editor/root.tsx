@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from "react";
 import { htmlImporter } from "@input/pen-import-html";
+import { resolveEditorMessage } from "@input/pen-core";
 import { FIELD_EDITOR_SLOT_KEY as CORE_FIELD_EDITOR_SLOT_KEY } from "@input/pen-types";
 import type {
 	AssetProvider,
@@ -271,8 +272,7 @@ export function EditorRoot(props: EditorRootProps) {
 		tabIndex: -1,
 		role: "textbox",
 		"aria-multiline": true,
-		// leftover: pen.a11yLabel facet not closed
-		"aria-label": "Editor",
+		"aria-label": resolveEditorMessage(editor, "pen.editor.label"),
 		"aria-readonly": readonly || undefined,
 	};
 

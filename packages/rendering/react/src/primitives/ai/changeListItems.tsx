@@ -1,4 +1,5 @@
 import React from "react";
+import { resolveEditorMessage } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
 import type { PersistentSuggestion, StructuralReviewItem } from "@input/pen-ai";
 import {
@@ -71,7 +72,11 @@ export function renderAIChangeListItems(
 						suggestion.offset,
 						suggestion.offset + suggestion.length,
 					) ?? "")
-				: describeBlockSuggestion(suggestion.action, block?.type ?? null);
+				: describeBlockSuggestion(
+						editor,
+						suggestion.action,
+						block?.type ?? null,
+					);
 
 		return (
 			<div
@@ -83,10 +88,14 @@ export function renderAIChangeListItems(
 			>
 				<div data-suggestion-summary>
 					<span data-suggestion-action>
-						{formatSuggestionAction(suggestion.action)}
+						{formatSuggestionAction(editor, suggestion.action)}
 					</span>
 					<span data-suggestion-text>
-						{text || "(structural suggestion)"}
+						{text ||
+							resolveEditorMessage(
+								editor,
+								"pen.ai.review.structuralSuggestion",
+							)}
 					</span>
 				</div>
 				<div data-suggestion-actions>
@@ -96,7 +105,7 @@ export function renderAIChangeListItems(
 						onMouseDown={preventEditorBlur}
 						onClick={() => acceptSuggestionAndStop(suggestion.id)}
 					>
-						Accept
+						{resolveEditorMessage(editor, "pen.ai.review.accept")}
 					</button>
 					<button
 						type="button"
@@ -104,7 +113,7 @@ export function renderAIChangeListItems(
 						onMouseDown={preventEditorBlur}
 						onClick={() => rejectSuggestionAndStop(suggestion.id)}
 					>
-						Reject
+						{resolveEditorMessage(editor, "pen.ai.review.reject")}
 					</button>
 				</div>
 			</div>
@@ -112,8 +121,8 @@ export function renderAIChangeListItems(
 	});
 
 	const structuralReviewGroupNodes = structuralReviewGroups.map((group) => {
-		const groupRollups = summarizeStructuralReviewGroup(group.items);
-		const subgroups = groupStructuralReviewSubgroups(group.items);
+		const groupRollups = summarizeStructuralReviewGroup(editor, group.items);
+		const subgroups = groupStructuralReviewSubgroups(editor, group.items);
 		const groupItemIds = group.items.map((item) => item.id);
 		const groupFocusTargetId = createReviewGroupFocusTargetId(group.id);
 		reviewFocusTargets.push({
@@ -159,7 +168,7 @@ export function renderAIChangeListItems(
 					onMouseDown={preventEditorBlur}
 					onClick={() => acceptReviewItemsAndStop(groupItemIds)}
 				>
-					Accept group
+					{resolveEditorMessage(editor, "pen.ai.review.acceptGroup")}
 				</button>
 				<button
 					type="button"
@@ -168,7 +177,7 @@ export function renderAIChangeListItems(
 					onMouseDown={preventEditorBlur}
 					onClick={() => rejectReviewItemsAndStop(groupItemIds)}
 				>
-					Reject group
+					{resolveEditorMessage(editor, "pen.ai.review.rejectGroup")}
 				</button>
 			</div>
 		);
@@ -181,7 +190,9 @@ export function renderAIChangeListItems(
 			const isExpanded =
 				subgroupExpandedState[subgroupKey] ?? defaultExpanded;
 			const subgroupItemIds = subgroup.items.map((item) => item.id);
-			const subgroupToggleLabel = isExpanded ? "Collapse" : "Expand";
+			const subgroupToggleLabel = isExpanded
+				? resolveEditorMessage(editor, "pen.ai.review.collapse")
+				: resolveEditorMessage(editor, "pen.ai.review.expand");
 			const subgroupFocusTargetId = createReviewSubgroupFocusTargetId(
 				group.id,
 				subgroup.id,
@@ -230,7 +241,7 @@ export function renderAIChangeListItems(
 						onMouseDown={preventEditorBlur}
 						onClick={() => acceptReviewItemsAndStop(subgroupItemIds)}
 					>
-						Accept subgroup
+						{resolveEditorMessage(editor, "pen.ai.review.acceptSubgroup")}
 					</button>
 					<button
 						type="button"
@@ -239,7 +250,7 @@ export function renderAIChangeListItems(
 						onMouseDown={preventEditorBlur}
 						onClick={() => rejectReviewItemsAndStop(subgroupItemIds)}
 					>
-						Reject subgroup
+						{resolveEditorMessage(editor, "pen.ai.review.rejectSubgroup")}
 					</button>
 				</div>
 			);
@@ -270,7 +281,10 @@ export function renderAIChangeListItems(
 						<span data-review-item-preview>{item.preview}</span>
 					) : null;
 				const comparisonRows = item.comparisonRows ?? [];
-				const comparisonSections = groupReviewComparisonRows(comparisonRows);
+				const comparisonSections = groupReviewComparisonRows(
+					editor,
+					comparisonRows,
+				);
 				const reviewItemComparisonSectionNodes = comparisonSections.map((section) => {
 					const reviewItemComparisonRowNodes = section.rows.map((row, index) => (
 						<div
@@ -280,7 +294,7 @@ export function renderAIChangeListItems(
 							data-review-comparison-section={row.section}
 						>
 							<span data-review-comparison-kind-label>
-								{formatReviewComparisonKindLabel(row.changeKind)}
+								{formatReviewComparisonKindLabel(editor, row.changeKind)}
 							</span>
 							<span data-review-comparison-label>{row.label}</span>
 							{row.before != null ? (
@@ -346,10 +360,10 @@ export function renderAIChangeListItems(
 						</div>
 						<div data-review-item-meta>
 							<span data-review-item-section-label>
-								{formatReviewItemSectionLabel(item.section)}
+								{formatReviewItemSectionLabel(editor, item.section)}
 							</span>
 							<span data-review-item-kind-label>
-								{formatReviewItemKindLabel(item.changeKind)}
+								{formatReviewItemKindLabel(editor, item.changeKind)}
 							</span>
 							{item.detail ? (
 								<span data-review-item-detail>{item.detail}</span>
@@ -370,7 +384,7 @@ export function renderAIChangeListItems(
 								onMouseDown={preventEditorBlur}
 								onClick={() => acceptReviewItemAndStop(item.id)}
 							>
-								Accept
+								{resolveEditorMessage(editor, "pen.ai.review.accept")}
 							</button>
 							<button
 								type="button"
@@ -379,7 +393,7 @@ export function renderAIChangeListItems(
 								onMouseDown={preventEditorBlur}
 								onClick={() => rejectReviewItemAndStop(item.id)}
 							>
-								Reject
+								{resolveEditorMessage(editor, "pen.ai.review.reject")}
 							</button>
 						</div>
 					</div>

@@ -21,12 +21,9 @@ describe("message catalog (LOC1)", () => {
 			expect(key.slice("pen.".length)).toContain(".");
 
 			const value = DEFAULT_MESSAGE_CATALOG[key as MessageKey];
-			expect(typeof value).toBe("string");
-			if (typeof value !== "string") {
-				throw new Error(`expected string catalog entry for ${key}`);
-			}
-			expect(value.length).toBeGreaterThan(0);
-			expect(value).not.toBe(key);
+			const text = typeof value === "string" ? value : value.other;
+			expect(text.length).toBeGreaterThan(0);
+			expect(text).not.toBe(key);
 		}
 
 		for (const key of SPEC_KEYS) {
@@ -108,6 +105,17 @@ describe("message catalog (LOC1)", () => {
 				{ blockType: "quote" },
 			),
 		).toBe("Converted to quote ({extra})");
+	});
+
+	it("LOC6: composed review labels interpolate named parameters in one entry", () => {
+		expect(resolveMessage({}, "pen.ai.review.subgroup.content.added")).toBe(
+			"Content additions",
+		);
+		expect(
+			resolveMessage({}, "pen.ai.review.blockSuggestion.insert", {
+				blockType: "heading",
+			}),
+		).toBe("Insert heading");
 	});
 
 	it("LOC6: resolveMessage uses the other plural form when it has no locale", () => {

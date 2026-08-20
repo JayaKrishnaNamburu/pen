@@ -476,4 +476,48 @@ describe("@input/pen-react slash menu", () => {
 		container.remove();
 		editor.destroy();
 	});
+
+	it("LOC1: slash-menu input placeholder comes from the catalog", async () => {
+		const editor = createSlashMenuEditor({
+			messages: {
+				"pen.slash.input.placeholder": "Blöcke suchen…",
+			},
+		});
+		const controller = {
+			confirm: vi.fn(),
+			dismiss: vi.fn(),
+			items: [],
+			open: true,
+			query: "",
+			select: vi.fn(),
+			selectedIndex: 0,
+			setQuery: vi.fn(),
+		};
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(
+				<Pen.Editor.Root editor={editor}>
+					<Pen.SlashMenu.Root controller={controller} editor={editor}>
+						<Pen.SlashMenu.Input />
+					</Pen.SlashMenu.Root>
+				</Pen.Editor.Root>,
+			);
+		});
+
+		expect(
+			container
+				.querySelector("[data-pen-slash-menu-input]")
+				?.getAttribute("placeholder"),
+		).toBe("Blöcke suchen…");
+
+		await act(async () => {
+			root.unmount();
+		});
+		container.remove();
+		editor.destroy();
+	});
 });

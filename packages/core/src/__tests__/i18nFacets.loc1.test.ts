@@ -179,4 +179,60 @@ describe("locale and messages facets (LOC1, LOC3, LOC6)", () => {
 		).toBe("100 عنصر");
 		editor.destroy();
 	});
+
+	it("LOC6: suggestion and search counters select plural categories", () => {
+		const editor = createHeadlessEditor({
+			locale: "ar",
+			messages: {
+				"pen.ai.suggestion.count": {
+					one: "واحد من {count}",
+					other: "{current} من {count}",
+				},
+				"pen.search.results.count": {
+					one: "نتيجة {current} من {count}",
+					other: "{current} من {count} نتائج",
+				},
+			},
+		});
+		expect(
+			resolveEditorMessage(editor, "pen.ai.suggestion.count", {
+				current: 1,
+				count: 1,
+			}),
+		).toBe("واحد من 1");
+		expect(
+			resolveEditorMessage(editor, "pen.ai.suggestion.count", {
+				current: 2,
+				count: 5,
+			}),
+		).toBe("2 من 5");
+		expect(
+			resolveEditorMessage(editor, "pen.search.results.count", {
+				current: 1,
+				count: 1,
+			}),
+		).toBe("نتيجة 1 من 1");
+		expect(
+			resolveEditorMessage(editor, "pen.search.results.count", {
+				current: 2,
+				count: 5,
+			}),
+		).toBe("2 من 5 نتائج");
+		editor.destroy();
+	});
+
+	it("LOC6: English counted messages use one and other", () => {
+		const editor = createHeadlessEditor({ locale: "en" });
+		expect(
+			resolveEditorMessage(editor, "pen.selection.blocksSelected", {
+				count: 1,
+			}),
+		).toBe("1 block selected");
+		expect(
+			resolveEditorMessage(editor, "pen.selection.blocksSelected", {
+				count: 2,
+			}),
+		).toBe("2 blocks selected");
+		editor.destroy();
+	});
 });

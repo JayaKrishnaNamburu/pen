@@ -1,4 +1,5 @@
 import React from "react";
+import { foldAndNormalize } from "@input/pen-core";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { useAIContext } from "./root";
 
@@ -70,8 +71,7 @@ export function AIContextualPromptTrigger(
 }
 
 function matchesShortcut(event: KeyboardEvent, shortcut: string): boolean {
-	const parts = shortcut
-		.toLowerCase()
+	const parts = foldAndNormalize(shortcut, "en")
 		.split("+")
 		.map((part) => part.trim())
 		.filter(Boolean);

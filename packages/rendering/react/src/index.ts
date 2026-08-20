@@ -239,6 +239,7 @@ export {
 	useAISessionActions,
 	useAttribution,
 	useEditor,
+	useEditorMessage,
 	useFieldEditor,
 	useEditorFocusController,
 	useFocusController,

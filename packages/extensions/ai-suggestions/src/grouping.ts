@@ -14,7 +14,7 @@ export function buildSuggestionGroups(
 		.filter((suggestion) => !suggestion.invalidated)
 		.sort((left, right) => {
 			if (left.blockId !== right.blockId) {
-				return left.blockId.localeCompare(right.blockId);
+				return left.blockId.localeCompare(right.blockId, "en");
 			}
 			if (left.from !== right.from) {
 				return left.from - right.from;

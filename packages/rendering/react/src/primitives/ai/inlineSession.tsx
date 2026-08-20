@@ -1,5 +1,7 @@
 import React from "react";
+import { resolveEditorMessage } from "@input/pen-core";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
+import { useEditorContext } from "../../context/editorContext";
 import {
 	AIContextualPromptComposer,
 	AIContextualPromptSurface,
@@ -19,7 +21,7 @@ export interface AIInlineSessionProps extends AsChildProps {
 
 export function AIInlineSession(props: AIInlineSessionProps) {
 	const {
-		placeholder = "Edit selection",
+		placeholder,
 		autoFocus = true,
 		mode = "floating",
 		side = "bottom",
@@ -71,6 +73,7 @@ export interface AIInlineSessionActionsProps extends AsChildProps {
 }
 
 export function AIInlineSessionActions(props: AIInlineSessionActionsProps) {
+	const { editor } = useEditorContext();
 	const {
 		sessionId,
 		isRunning = false,
@@ -95,7 +98,7 @@ export function AIInlineSessionActions(props: AIInlineSessionActionsProps) {
 				onClick={onAccept}
 				disabled={!hasPendingChanges || isRunning}
 			>
-				Keep
+				{resolveEditorMessage(editor, "pen.ai.suggestion.keep")}
 			</button>
 			<button
 				type="button"
@@ -104,7 +107,7 @@ export function AIInlineSessionActions(props: AIInlineSessionActionsProps) {
 				onClick={onReject}
 				disabled={!hasPendingChanges && isRunning}
 			>
-				Undo
+				{resolveEditorMessage(editor, "pen.ai.suggestion.undo")}
 			</button>
 			<button
 				type="button"
@@ -112,7 +115,7 @@ export function AIInlineSessionActions(props: AIInlineSessionActionsProps) {
 				onPointerDown={handlePointerDown}
 				onClick={onClose}
 			>
-				Close
+				{resolveEditorMessage(editor, "pen.ai.session.close")}
 			</button>
 		</>
 	);

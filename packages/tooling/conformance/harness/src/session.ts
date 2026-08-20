@@ -1,4 +1,8 @@
-import { createEditor, createHeadlessEditor } from "@input/pen-core";
+import {
+	createEditor,
+	createHeadlessEditor,
+	createPseudoLocaleCatalog,
+} from "@input/pen-core";
 import { wrapYjsDocument, yjsAdapter } from "@input/pen-crdt-yjs";
 import {
 	domSelectionToEditor,
@@ -128,6 +132,17 @@ function connectPeers(localY: Y.Doc, remoteY: Y.Doc): () => void {
 	};
 }
 
+function readPseudoLocaleMessages() {
+	if (typeof window === "undefined") {
+		return undefined;
+	}
+	const params = new URLSearchParams(window.location.search);
+	if (params.get("pseudoLocale") !== "1") {
+		return undefined;
+	}
+	return createPseudoLocaleCatalog();
+}
+
 function createSession(fixtureName: string): Session {
 	const local = createLocalDocument(fixtureName);
 	const remoteAdapter = yjsAdapter();
@@ -141,6 +156,7 @@ function createSession(fixtureName: string): Session {
 		preset: defaultPreset(),
 		crdt: local.adapter,
 		document: local.document,
+		messages: readPseudoLocaleMessages(),
 	});
 	const remoteEditor = createHeadlessEditor({
 		documentProfile: "structured",

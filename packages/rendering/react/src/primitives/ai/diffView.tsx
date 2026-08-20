@@ -1,6 +1,7 @@
 import React from "react";
 import { useSuggestions } from "../../hooks/useSuggestions";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
+import { describeBlockSuggestion } from "./changeListUtils";
 import { useAIContext } from "./root";
 
 export interface AIDiffViewProps extends AsChildProps {
@@ -20,7 +21,11 @@ export function AIDiffView(props: AIDiffViewProps) {
 				? (block
 						?.textContent()
 						.slice(suggestion.offset, suggestion.offset + suggestion.length) ?? "")
-				: describeBlockSuggestion(suggestion.action, block?.type ?? null);
+				: describeBlockSuggestion(
+						editor,
+						suggestion.action,
+						block?.type ?? null,
+					);
 		const beforeText =
 			suggestion.action === "delete" || suggestion.action === "delete-block"
 				? text
@@ -66,21 +71,3 @@ export function AIDiffView(props: AIDiffViewProps) {
 	);
 }
 
-function describeBlockSuggestion(
-	action: string,
-	blockType: string | null,
-): string {
-	const typeLabel = blockType ?? "block";
-	switch (action) {
-		case "insert-block":
-			return `Insert ${typeLabel}`;
-		case "delete-block":
-			return `Delete ${typeLabel}`;
-		case "move-block":
-			return `Move ${typeLabel}`;
-		case "convert-block":
-			return `Convert ${typeLabel}`;
-		default:
-			return typeLabel;
-	}
-}

@@ -1,4 +1,5 @@
 import React from "react";
+import { resolveEditorMessage } from "@input/pen-core";
 import { useAIStructuredPreview } from "../../hooks/useAIStructuredPreview";
 import { useSuggestions } from "../../hooks/useSuggestions";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
@@ -283,7 +284,11 @@ export function AIChangeList(props: AIChangeListProps) {
 		props.children ??
 		(changeListItems.length > 0
 			? changeListItems
-			: emptyState ?? <div>No pending changes.</div>);
+			: emptyState ?? (
+					<div>
+						{resolveEditorMessage(editor, "pen.ai.review.noPendingChanges")}
+					</div>
+				));
 
 	return renderAsChild(
 		{

@@ -1,4 +1,9 @@
 import React, { createContext, useContext, useId, useState } from "react";
+import {
+	foldAndNormalize,
+	localeFacet,
+	resolveEditorMessage,
+} from "@input/pen-core";
 import type { AICommandBinding } from "@input/pen-ai";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { useAIContext } from "./root";
@@ -39,25 +44,24 @@ export interface AICommandMenuProps extends AsChildProps {
  * Focus stays in the filter input.
  */
 export function AICommandMenu(props: AICommandMenuProps) {
-	const { controller, state } = useAIContext();
+	const { controller, editor, state } = useAIContext();
 	const [filter, setFilter] = useState("");
 	const [selectedIndex, setSelectedIndex] = useState(0);
 	const listId = useId();
 	const commandContext = controller?.getCommandContext();
 	const allCommands = controller?.getCommands() ?? [];
-	const normalizedFilter = filter.trim().toLowerCase();
-	const commands = normalizedFilter.length === 0
+	const locale = editor.facet(localeFacet);
+	const foldedFilter = foldAndNormalize(filter.trim(), locale);
+	const commands = foldedFilter.length === 0
 		? allCommands
 		: allCommands.filter((command) => {
-				const haystack = [
-					command.label,
-					command.description,
-					command.group,
-				]
-					.filter(Boolean)
-					.join(" ")
-					.toLowerCase();
-				return haystack.includes(normalizedFilter);
+				const haystack = foldAndNormalize(
+					[command.label, command.description, command.group]
+						.filter(Boolean)
+						.join(" "),
+					locale,
+				);
+				return haystack.includes(foldedFilter);
 			});
 	const activeIndex = commands.length === 0
 		? 0
@@ -183,6 +187,7 @@ export interface AICommandInputProps extends AsChildProps {
 }
 
 export function AICommandInput(props: AICommandInputProps) {
+	const { editor } = useAIContext();
 	const { filter, setFilter, listId, activeOptionId, open } =
 		useCommandMenuContext();
 	const inputId = useId();
@@ -205,7 +210,10 @@ export function AICommandInput(props: AICommandInputProps) {
 			"aria-controls": listId,
 			"aria-expanded": open,
 			"aria-activedescendant": activeOptionId,
-			placeholder: "Search AI commands",
+			placeholder: resolveEditorMessage(
+				editor,
+				"pen.ai.commandMenu.placeholder",
+			),
 			"data-pen-ai-command-input": "",
 		},
 	);
@@ -216,6 +224,7 @@ export interface AICommandListProps extends AsChildProps {
 }
 
 export function AICommandList(props: AICommandListProps) {
+	const { editor } = useAIContext();
 	const { commands, listId, activeOptionId } = useCommandMenuContext();
 	const commandItems = commands.map((command) => (
 		<AICommandItem key={command.id} command={command} />
@@ -230,7 +239,7 @@ export function AICommandList(props: AICommandListProps) {
 		{
 			id: listId,
 			role: "listbox",
-			"aria-label": "AI command menu",
+			"aria-label": resolveEditorMessage(editor, "pen.ai.commandMenu.label"),
 			"aria-activedescendant": activeOptionId,
 			"data-pen-ai-command-list": "",
 		},

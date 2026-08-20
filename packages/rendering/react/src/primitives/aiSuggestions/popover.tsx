@@ -1,5 +1,7 @@
 import React from "react";
 import { createPortal } from "react-dom";
+import { resolveEditorMessage } from "@input/pen-core";
+import type { Editor } from "@input/pen-types";
 import { useIsomorphicLayoutEffect } from "../../hooks/useIsomorphicLayoutEffect";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { DATA_ATTRS } from "../../utils/dataAttributes";
@@ -22,7 +24,7 @@ export interface AISuggestionsPopoverProps extends AsChildProps {
 }
 
 export function AISuggestionsPopover(props: AISuggestionsPopoverProps) {
-	const { popover } = useAISuggestionsContext();
+	const { popover, editor } = useAISuggestionsContext();
 	const suggestion = popover.activeSuggestion;
 	const position = popover.position;
 	const isOpen = Boolean(suggestion && position);
@@ -124,9 +126,12 @@ export function AISuggestionsPopover(props: AISuggestionsPopoverProps) {
 	const groupTitle = popover.activeGroup?.title ?? suggestion.title;
 	const groupCountLabel =
 		popover.groupCount > 1
-			? `${popover.activeGroupIndex + 1} of ${popover.groupCount}`
+			? resolveEditorMessage(editor, "pen.ai.suggestion.count", {
+					current: popover.activeGroupIndex + 1,
+					count: popover.groupCount,
+				})
 			: null;
-	const kindLabel = formatSuggestionKindLabel(suggestion.kind);
+	const kindLabel = formatSuggestionKindLabel(editor, suggestion.kind);
 
 	const content = renderAsChild(
 		{
@@ -219,7 +224,10 @@ export function AISuggestionsPopover(props: AISuggestionsPopoverProps) {
 										onMouseDown={preventEditorBlur}
 										onClick={popover.goToPreviousGroup}
 										disabled={popover.activeGroupIndex <= 0}
-										aria-label="Previous suggestion group"
+										aria-label={resolveEditorMessage(
+											editor,
+											"pen.ai.suggestion.groupPrevious",
+										)}
 										style={buildIconButtonStyle(
 											popover.activeGroupIndex <= 0,
 										)}
@@ -231,7 +239,10 @@ export function AISuggestionsPopover(props: AISuggestionsPopoverProps) {
 										onMouseDown={preventEditorBlur}
 										onClick={popover.goToNextGroup}
 										disabled={popover.activeGroupIndex >= popover.groupCount - 1}
-										aria-label="Next suggestion group"
+										aria-label={resolveEditorMessage(
+											editor,
+											"pen.ai.suggestion.groupNext",
+										)}
 										style={buildIconButtonStyle(
 											popover.activeGroupIndex >= popover.groupCount - 1,
 										)}
@@ -262,7 +273,10 @@ export function AISuggestionsPopover(props: AISuggestionsPopoverProps) {
 										color: "#2563eb",
 									}}
 								>
-									Suggestion
+									{resolveEditorMessage(
+										editor,
+										"pen.ai.suggestion.heading",
+									)}
 								</div>
 								<div
 									style={{
@@ -303,7 +317,10 @@ export function AISuggestionsPopover(props: AISuggestionsPopoverProps) {
 									color: "#94a3b8",
 								}}
 							>
-								Apply to accept this edit.
+								{resolveEditorMessage(
+									editor,
+									"pen.ai.suggestion.applyHint",
+								)}
 							</div>
 							<div style={{ display: "flex", gap: 8 }}>
 								<button
@@ -332,7 +349,10 @@ export function AISuggestionsPopover(props: AISuggestionsPopoverProps) {
 									}}
 									style={SECONDARY_BUTTON_STYLE}
 								>
-									Dismiss
+									{resolveEditorMessage(
+										editor,
+										"pen.ai.suggestion.dismiss",
+									)}
 								</button>
 								<button
 									type="button"
@@ -360,7 +380,7 @@ export function AISuggestionsPopover(props: AISuggestionsPopoverProps) {
 									}}
 									style={PRIMARY_BUTTON_STYLE}
 								>
-									Apply
+									{resolveEditorMessage(editor, "pen.ai.suggestion.apply")}
 								</button>
 							</div>
 						</div>
@@ -421,18 +441,18 @@ function preventEditorBlur(event: React.MouseEvent<HTMLElement>) {
 	event.preventDefault();
 }
 
-function formatSuggestionKindLabel(kind: string): string {
+function formatSuggestionKindLabel(editor: Editor, kind: string): string {
 	switch (kind) {
 		case "spelling":
-			return "Spelling";
+			return resolveEditorMessage(editor, "pen.ai.suggestion.kind.spelling");
 		case "grammar":
-			return "Grammar";
+			return resolveEditorMessage(editor, "pen.ai.suggestion.kind.grammar");
 		case "clarity":
-			return "Clarity";
+			return resolveEditorMessage(editor, "pen.ai.suggestion.kind.clarity");
 		case "rephrase":
-			return "Rephrase";
+			return resolveEditorMessage(editor, "pen.ai.suggestion.kind.rephrase");
 		default:
-			return "Suggestion";
+			return resolveEditorMessage(editor, "pen.ai.suggestion.kind.other");
 	}
 }
 

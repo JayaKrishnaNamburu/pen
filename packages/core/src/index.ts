@@ -132,6 +132,13 @@ export {
 } from "./facets/urlPolicyFacet";
 export { localeFacet, messagesFacet } from "./facets/i18nFacets";
 export { resolveEditorMessage } from "./i18n/resolveEditorMessage";
+export {
+	createPseudoLocaleCatalog,
+	isPseudoLocaleText,
+	PSEUDO_LOCALE_CLOSE,
+	PSEUDO_LOCALE_OPEN,
+	toPseudoLocaleText,
+} from "./i18n/pseudoLocale";
 export type {
 	Keymap,
 	BeforeApplyHook,

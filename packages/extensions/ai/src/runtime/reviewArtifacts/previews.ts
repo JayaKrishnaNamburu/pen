@@ -1,17 +1,19 @@
+import { resolveEditorMessage } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
 import type { DocumentMutationPlan } from "../planTypes";
 import type { StructuralReviewItem } from "./types";
 
 export function describeTextEditLabel(
+	editor: Editor,
 	operation: "replace" | "insert" | "append",
 ): string {
 	if (operation === "replace") {
-		return "Replace text";
+		return resolveEditorMessage(editor, "pen.ai.review.replaceText");
 	}
 	if (operation === "insert") {
-		return "Insert text";
+		return resolveEditorMessage(editor, "pen.ai.review.insertText");
 	}
-	return "Append text";
+	return resolveEditorMessage(editor, "pen.ai.review.appendText");
 }
 
 export function describeTextEditChangeKind(

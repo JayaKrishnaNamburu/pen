@@ -1,4 +1,5 @@
 export { useEditor } from "./useEditor";
+export { useEditorMessage } from "./useEditorMessage";
 export { useAI } from "./useAI";
 export { useAISuggestions } from "./useAISuggestions";
 export {

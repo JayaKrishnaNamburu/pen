@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { resolveEditorMessage } from "@input/pen-core";
 import { useEditorContext } from "../../context/editorContext";
 import { useSelection } from "../../hooks/useSelection";
 import { useSyncExternalStoreWithSelector } from "../../utils/useSyncExternalStoreWithSelector";
@@ -42,8 +43,10 @@ export function EditorSelectionRect(props: SelectionRectProps) {
   const announcement = useMemo(() => {
     if (!blockSelection.enabled) return "";
     if (!isBlockSelection || blockCount === 0) return "";
-    return `${blockCount} block${blockCount === 1 ? "" : "s"} selected`;
-  }, [blockSelection.enabled, isBlockSelection, blockCount]);
+    return resolveEditorMessage(editor, "pen.selection.blocksSelected", {
+      count: blockCount,
+    });
+  }, [blockSelection.enabled, isBlockSelection, blockCount, editor]);
 
   useEffect(() => {
     if (!blockSelection.enabled) {

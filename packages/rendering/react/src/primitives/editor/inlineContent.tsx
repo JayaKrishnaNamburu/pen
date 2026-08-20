@@ -2,7 +2,6 @@ import React, { useRef, useState } from "react";
 import {
 	getOpOriginType,
 	type Decoration,
-	type Editor,
 	type InlineDecoration,
 } from "@input/pen-types";
 import { getLogicalTextContent } from "@input/pen-dom/field-editor/inlineAtomDom";
@@ -27,6 +26,7 @@ import {
 	filterVisibleInlineDecorationDeltas,
 } from "../../utils/inlineDecorations";
 import { isInlineContentEmpty } from "../../utils/editorEmptyState";
+import { resolveEditorSchemaPlaceholder } from "../../utils/displayCopy";
 import { resolveInlinePlaceholderVisibility } from "../../utils/placeholderVisibility";
 import { InlineAtomPortalLayer } from "./InlineAtomPortalLayer";
 import {
@@ -75,7 +75,7 @@ export function InlineContent(props: InlineContentProps) {
 		fieldEditorState.activeBlockIds.includes(blockId);
 
 	const isFirstBlock = editor.documentState.blockOrder[0] === blockId;
-	const schemaPlaceholder = resolveSchemaPlaceholder(editor, blockId);
+	const schemaPlaceholder = resolveEditorSchemaPlaceholder(editor, blockId);
 	const isFocusedBlock =
 		isActive ||
 		(selection?.type === "text" &&
@@ -304,15 +304,6 @@ function getInlineContentClassName(
 		return className;
 	}
 	return [className, "pen-ephemeral-suggestion"].filter(Boolean).join(" ");
-}
-
-function resolveSchemaPlaceholder(
-	editor: Pick<Editor, "getBlock" | "schema">,
-	blockId: string,
-): string | undefined {
-	const block = editor.getBlock(blockId);
-	if (!block) return undefined;
-	return editor.schema.resolve(block.type)?.placeholder;
 }
 
 function getDeltaText(

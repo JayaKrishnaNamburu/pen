@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+import { resolveEditorMessage } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
 import { useEditorContext } from "../../context/editorContext";
 import { useIsomorphicLayoutEffect } from "../../hooks/useIsomorphicLayoutEffect";
@@ -19,10 +20,10 @@ export type BlockHandleMoveCommand =
 
 const MOVE_ITEMS: ReadonlyArray<{
 	command: BlockHandleMoveCommand;
-	label: string;
+	messageKey: "pen.blockHandle.moveUp" | "pen.blockHandle.moveDown";
 }> = [
-	{ command: PEN_MOVE_BLOCK_UP, label: "Move up" },
-	{ command: PEN_MOVE_BLOCK_DOWN, label: "Move down" },
+	{ command: PEN_MOVE_BLOCK_UP, messageKey: "pen.blockHandle.moveUp" },
+	{ command: PEN_MOVE_BLOCK_DOWN, messageKey: "pen.blockHandle.moveDown" },
 ];
 
 export interface BlockHandleProps extends AsChildProps {
@@ -156,7 +157,7 @@ export function EditorBlockHandle(props: BlockHandleProps) {
 			data-pen-command={item.command}
 			onClick={() => dispatchMove(item.command)}
 		>
-			{item.label}
+			{resolveEditorMessage(editor, item.messageKey)}
 		</button>
 	));
 
@@ -172,7 +173,7 @@ export function EditorBlockHandle(props: BlockHandleProps) {
 					ref={menuRef}
 					id={menuId}
 					role="menu"
-					aria-label="Reorder block"
+					aria-label={resolveEditorMessage(editor, "pen.blockHandle.reorder")}
 					aria-orientation="vertical"
 					data-pen-block-handle-menu=""
 					onKeyDown={handleMenuKeyDown}

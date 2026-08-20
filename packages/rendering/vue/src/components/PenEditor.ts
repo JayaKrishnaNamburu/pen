@@ -1,3 +1,4 @@
+import { resolveEditorMessage } from "@input/pen-core";
 import { htmlImporter } from "@input/pen-import-html";
 import {
 	FieldEditorImpl,
@@ -14,6 +15,7 @@ import type {
 } from "@input/pen-types";
 import { FIELD_EDITOR_SLOT_KEY as CORE_FIELD_EDITOR_SLOT_KEY } from "@input/pen-types";
 import {
+	computed,
 	defineComponent,
 	h,
 	mergeProps,
@@ -70,7 +72,14 @@ export const PenEditor = defineComponent({
 		const focused = ref(false);
 		const rootElement = ref<HTMLElement | null>(null);
 		const readonlyRef = toRef(props, "readonly");
-		const emptyPlaceholderRef = toRef(props, "emptyPlaceholder");
+		const emptyPlaceholderRef = computed(
+			() =>
+				props.emptyPlaceholder ??
+				resolveEditorMessage(
+					props.editor,
+					"pen.schema.document.emptyPlaceholder",
+				),
+		);
 		const renderersRef = toRef(props, "renderers");
 		const fieldEditor = new FieldEditorImpl(props.editor, {
 			selectAllBehavior: resolveSelectAllBehavior(
@@ -217,6 +226,11 @@ export const PenEditor = defineComponent({
 					tabIndex: -1,
 					role: "textbox",
 					"aria-multiline": "true",
+					"aria-label": resolveEditorMessage(
+						props.editor,
+						"pen.editor.label",
+					),
+					"aria-readonly": props.readonly || undefined,
 				}),
 				children,
 			);

@@ -11,6 +11,10 @@ This package is plain ESM JavaScript with no build step so ESLint can load it di
 | `no-html-injection-sinks`         | SEC2      | shipped | Wave H (Wave S still owns the named test and export-package concatenation) |
 | `no-bare-random-uuid`             | HOST4     | shipped | Wave E.1                                                                    |
 | `no-module-scope-browser-globals` | HOST2     | shipped | Wave E.2                                                                    |
+| `no-user-facing-literals`         | LOC1      | shipped | Wave L.8. Allowlist: `eslint-disable-next-line` with a reason.              |
+| `no-ascii-word-boundaries`        | LOC4      | shipped | Wave L.8. `textSegmentation.ts` is the HOST4 fallback allowlist.            |
+| `no-bare-case-folding`            | LOC5      | shipped | Wave L.8. `event.key` / `navigator.platform` are allowlisted in-rule.       |
+| `no-implicit-locale`              | LOC3      | shipped | Wave L.8. Tests, playground, docs, and root `scripts/` are allowlisted.     |
 
 Rules that need no custom code are configured directly in the root config: the dynamic-code ban (SEC8) uses core `no-eval` / `no-new-func` / `no-implied-eval`. Wave S owns the SEC8-named test and the CSP scenario.
 

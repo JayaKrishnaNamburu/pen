@@ -1,5 +1,7 @@
 import React from "react";
+import { resolveEditorMessage } from "@input/pen-core";
 import type { AIContextualPromptAnchor, AISession } from "@input/pen-ai";
+import type { Editor } from "@input/pen-types";
 import { useIsomorphicLayoutEffect } from "../../hooks/useIsomorphicLayoutEffect";
 import { domSelectionToEditor } from "../../field-editor/selectionBridge";
 import { useAISessionActions } from "../../hooks/useAISessionActions";
@@ -17,8 +19,11 @@ export interface AIContextualPromptComposerProps extends AsChildProps {
 export function AIContextualPromptComposer(
 	props: AIContextualPromptComposerProps,
 ) {
-	const { placeholder = "Edit selection", autoFocus = true, ref, ...rest } = props;
+	const { autoFocus = true, ref, ...rest } = props;
 	const { editor, state } = useAIContext();
+	const placeholder =
+		props.placeholder ??
+		resolveEditorMessage(editor, "pen.ai.prompt.placeholder");
 	const session = useContextualPromptSession(editor);
 	const actions = useAISessionActions(editor);
 	const inputRef = React.useRef<HTMLTextAreaElement | null>(null);
@@ -86,11 +91,11 @@ export function AIContextualPromptComposer(
 	}
 	const sessionId = session.id;
 	const selectionSnapshot = session.contextualPrompt?.anchor.selectionSnapshot ?? null;
-	const sessionLabel = resolveInlineSessionLabel(session);
+	const sessionLabel = resolveInlineSessionLabel(editor, session);
 	const [targetState, setTargetState] = React.useState<"active" | "pinned">(
 		"active",
 	);
-	const targetHint = resolveInlineSessionTargetHint(targetState);
+	const targetHint = resolveInlineSessionTargetHint(editor, targetState);
 
 	function handleActionPointerDown(event: React.PointerEvent) {
 		event.preventDefault();
@@ -289,6 +294,7 @@ export function AIContextualPromptComposer(
 						data-pen-ai-inline-session-turn-status=""
 					>
 						{resolveInlineSessionTurnStatusLabel(
+							editor,
 							turn.status,
 							pendingChangeCount,
 							isTurnRunning,
@@ -306,7 +312,7 @@ export function AIContextualPromptComposer(
 								onClick={() => handleAcceptTurn(turn.id)}
 								disabled={!canResolveTurn || isTurnRunning}
 							>
-								Accept
+								{resolveEditorMessage(editor, "pen.ai.review.accept")}
 							</button>
 							<button
 								type="button"
@@ -315,7 +321,7 @@ export function AIContextualPromptComposer(
 								onClick={() => handleRejectTurn(turn.id)}
 								disabled={!canResolveTurn}
 							>
-								Reject
+								{resolveEditorMessage(editor, "pen.ai.review.reject")}
 							</button>
 						</div>
 					) : null}
@@ -383,7 +389,9 @@ export function AIContextualPromptComposer(
 					onPointerDown={handleActionPointerDown}
 					disabled={draftPrompt.trim().length === 0 || isRunningCurrentSession}
 				>
-					{turnItems.length > 0 ? "Add follow-up" : "Run edit"}
+					{turnItems.length > 0
+						? resolveEditorMessage(editor, "pen.ai.session.followUp")
+						: resolveEditorMessage(editor, "pen.ai.session.runEdit")}
 				</button>
 			</div>
 		</form>
@@ -407,33 +415,38 @@ export function AIContextualPromptComposer(
 }
 
 function resolveInlineSessionTurnStatusLabel(
+	editor: Editor,
 	status: string,
 	pendingChangeCount: number,
 	isTurnRunning: boolean,
 ): string {
 	if (isTurnRunning || status === "streaming") {
-		return "Working";
+		return resolveEditorMessage(editor, "pen.ai.turn.working");
 	}
 	if (status === "accepted") {
-		return "Accepted";
+		return resolveEditorMessage(editor, "pen.ai.turn.accepted");
 	}
 	if (status === "rejected") {
-		return "Rejected";
+		return resolveEditorMessage(editor, "pen.ai.turn.rejected");
 	}
 	if (status === "error") {
-		return "Error";
+		return resolveEditorMessage(editor, "pen.ai.turn.error");
 	}
 	if (pendingChangeCount > 0) {
-		return `${pendingChangeCount} pending`;
+		return resolveEditorMessage(editor, "pen.ai.turn.pending", {
+			count: pendingChangeCount,
+		});
 	}
-	return "Done";
+	return resolveEditorMessage(editor, "pen.ai.turn.done");
 }
 
-function resolveInlineSessionLabel(session: AISession): string {
+function resolveInlineSessionLabel(editor: Editor, session: AISession): string {
 	if (session.target.kind !== "selection") {
-		return "Inline edit";
+		return resolveEditorMessage(editor, "pen.ai.session.inlineEdit");
 	}
-	return session.target.selection.isMultiBlock ? "Selected range" : "Selected text";
+	return session.target.selection.isMultiBlock
+		? resolveEditorMessage(editor, "pen.ai.session.selectedRange")
+		: resolveEditorMessage(editor, "pen.ai.session.selectedText");
 }
 
 function resolveInlineSessionTargetState(
@@ -460,9 +473,10 @@ function resolveInlineSessionTargetState(
 }
 
 function resolveInlineSessionTargetHint(
+	editor: Editor,
 	targetState: "active" | "pinned",
 ): string {
 	return targetState === "active"
-		? "AI target is active"
-		: "Pinned to the original selection";
+		? resolveEditorMessage(editor, "pen.ai.session.targetActive")
+		: resolveEditorMessage(editor, "pen.ai.session.targetPinned");
 }

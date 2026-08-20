@@ -1,4 +1,5 @@
 import React from "react";
+import { resolveEditorMessage } from "@input/pen-core";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { useSearchContext } from "./root";
 
@@ -16,7 +17,7 @@ export interface SearchResultsProps
 
 export function SearchResults(props: SearchResultsProps) {
 	const { children, ...rest } = props;
-	const { state } = useSearchContext();
+	const { state, editor } = useSearchContext();
 
 	const count = state.matches.length;
 	const active = count === 0 ? 0 : state.activeIndex + 1;
@@ -27,17 +28,19 @@ export function SearchResults(props: SearchResultsProps) {
 	} else if (children != null) {
 		content = children;
 	} else if (count === 0) {
-		content = "No matches";
+		content = resolveEditorMessage(editor, "pen.search.results.none");
 	} else {
-		content = `${active} of ${count} matches`;
+		content = resolveEditorMessage(editor, "pen.search.results.count", {
+			current: active,
+			count,
+		});
 	}
 
 	const primitiveProps: Record<string, unknown> = {
 		"data-pen-search-results": "",
 		"data-count": count,
 		"data-active-index": state.activeIndex,
-		// wave-l: catalog
-		"aria-label": "Search results",
+		"aria-label": resolveEditorMessage(editor, "pen.search.results.label"),
 	};
 
 	return renderAsChild({ ...rest, children: content }, "div", primitiveProps);

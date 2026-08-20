@@ -219,6 +219,42 @@ describe("@input/pen-react block handle AX3", () => {
 		editor.destroy();
 	});
 
+	it("LOC1: move item labels come from the catalog and host overrides win", async () => {
+		const editor = createEditor({
+			preset: defaultPreset({
+				documentOps: false,
+				deltaStream: false,
+				undo: false,
+			}),
+			messages: {
+				"pen.blockHandle.moveUp": "Nach oben",
+				"pen.blockHandle.moveDown": "Nach unten",
+			},
+		});
+		const blockId = editor.firstBlock()!.id;
+		const view = await renderHandle({ editor, blockId });
+
+		const handle = getHandle(view.container);
+		await act(async () => {
+			handle.focus();
+			dispatchKey(handle, "Enter");
+		});
+
+		expect(
+			view.container.querySelector(
+				`[data-pen-command="${PEN_MOVE_BLOCK_UP}"]`,
+			)?.textContent,
+		).toBe("Nach oben");
+		expect(
+			view.container.querySelector(
+				`[data-pen-command="${PEN_MOVE_BLOCK_DOWN}"]`,
+			)?.textContent,
+		).toBe("Nach unten");
+
+		await view.unmount();
+		editor.destroy();
+	});
+
 	it("AX3: move items apply adjacent move-block ops when no callback is wired", async () => {
 		const editor = createHandleEditor();
 		const [firstId, secondId] = seedBlocks(editor, 2);

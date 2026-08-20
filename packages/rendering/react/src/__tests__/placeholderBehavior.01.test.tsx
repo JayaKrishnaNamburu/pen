@@ -209,7 +209,7 @@ describe("@input/pen-react placeholder behavior", () => {
 		await act(async () => {
 			root.render(
 				<Pen.Editor.Root editor={editor}>
-					<Pen.Editor.Content />
+					<Pen.Editor.Content emptyPlaceholder="" />
 				</Pen.Editor.Root>,
 			);
 		});

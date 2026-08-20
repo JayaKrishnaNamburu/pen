@@ -1,4 +1,5 @@
 import React from "react";
+import { resolveEditorMessage } from "@input/pen-core";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { useSearchContext } from "./root";
 
@@ -9,22 +10,24 @@ export interface SearchReplaceButtonProps
 }
 
 export function SearchReplace(props: SearchReplaceButtonProps) {
+	const { editor } = useSearchContext();
 	return (
 		<SearchReplaceButton
 			{...props}
 			action="replace"
-			label="Replace match"
+			label={resolveEditorMessage(editor, "pen.search.replaceMatch")}
 			onAction={(controller) => controller?.replace()}
 		/>
 	);
 }
 
 export function SearchReplaceAll(props: SearchReplaceButtonProps) {
+	const { editor } = useSearchContext();
 	return (
 		<SearchReplaceButton
 			{...props}
 			action="replace-all"
-			label="Replace all matches"
+			label={resolveEditorMessage(editor, "pen.search.replaceAll")}
 			onAction={(controller) => controller?.replaceAll()}
 		/>
 	);

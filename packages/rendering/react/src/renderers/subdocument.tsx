@@ -3,6 +3,10 @@ import type { BlockHandle, BlockRenderContext, Editor } from "@input/pen-types";
 import { createEditor } from "@input/pen-core";
 import { PenEditor } from "../penEditor";
 import { useEditorContext } from "../context/editorContext";
+import {
+	displayCatalogForEditor,
+	resolveSlashMenuTitle,
+} from "../utils/displayCopy";
 
 function SubdocumentRendererInner(props: {
 	block: BlockHandle;
@@ -68,7 +72,11 @@ function SubdocumentRendererInner(props: {
 					<div data-pen-subdocument-placeholder="">
 						{typeof block.props.title === "string"
 							? block.props.title
-							: "Subdocument"}
+							: resolveSlashMenuTitle(
+									"subdocument",
+									undefined,
+									displayCatalogForEditor(parentEditor),
+								)}
 					</div>
 				)}
 			</div>

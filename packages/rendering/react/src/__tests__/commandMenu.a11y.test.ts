@@ -216,6 +216,119 @@ describe("@input/pen-react AI command menu AX3", () => {
 		await cleanup(root, container, editor);
 	});
 
+	it("LOC1: default command menu shows catalog labels and chrome", async () => {
+		const editor = createEditor({
+			extensions: [aiExtension()],
+		});
+		const controller = getAIController(editor);
+		if (!controller) {
+			throw new Error("AI controller was not registered");
+		}
+		const blockId = editor.firstBlock()!.id;
+		editor.apply(
+			[{ type: "insert-text", blockId, offset: 0, text: "Hello" }],
+			{ origin: "user" },
+		);
+		editor.selectText(blockId, 0, 5);
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(
+				createElement(
+					Pen.Editor.Root,
+					{ editor },
+					createElement(
+						Pen.AI.Root,
+						null,
+						createElement(
+							Pen.AI.CommandMenu,
+							null,
+							createElement(Pen.AI.CommandInput),
+							createElement(Pen.AI.CommandList),
+						),
+					),
+				),
+			);
+		});
+		await act(async () => {
+			controller.openCommandMenu();
+		});
+
+		const input = container.querySelector("[data-pen-ai-command-input]");
+		const list = container.querySelector("[data-pen-ai-command-list]");
+		const labels = [
+			...container.querySelectorAll("[data-pen-ai-command-item]"),
+		].map((item) => item.textContent);
+
+		expect(input?.getAttribute("placeholder")).toBe("Search AI commands");
+		expect(list?.getAttribute("aria-label")).toBe("AI command menu");
+		expect(labels).toContain("Rewrite");
+
+		await cleanup(root, container, editor);
+	});
+
+	it("LOC1: host messages override command-menu chrome and command labels", async () => {
+		const editor = createEditor({
+			extensions: [aiExtension()],
+			messages: {
+				"pen.ai.commandMenu.placeholder": "KI-Befehle suchen",
+				"pen.ai.commandMenu.label": "KI-Befehlmenü",
+				"pen.ai.command.rewrite": "Umschreiben",
+			},
+		});
+		const controller = getAIController(editor);
+		if (!controller) {
+			throw new Error("AI controller was not registered");
+		}
+		const blockId = editor.firstBlock()!.id;
+		editor.apply(
+			[{ type: "insert-text", blockId, offset: 0, text: "Hello" }],
+			{ origin: "user" },
+		);
+		editor.selectText(blockId, 0, 5);
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(
+				createElement(
+					Pen.Editor.Root,
+					{ editor },
+					createElement(
+						Pen.AI.Root,
+						null,
+						createElement(
+							Pen.AI.CommandMenu,
+							null,
+							createElement(Pen.AI.CommandInput),
+							createElement(Pen.AI.CommandList),
+						),
+					),
+				),
+			);
+		});
+		await act(async () => {
+			controller.openCommandMenu();
+		});
+
+		const input = container.querySelector("[data-pen-ai-command-input]");
+		const list = container.querySelector("[data-pen-ai-command-list]");
+		const labels = [
+			...container.querySelectorAll("[data-pen-ai-command-item]"),
+		].map((item) => item.textContent);
+
+		expect(input?.getAttribute("placeholder")).toBe("KI-Befehle suchen");
+		expect(list?.getAttribute("aria-label")).toBe("KI-Befehlmenü");
+		expect(labels).toContain("Umschreiben");
+
+		await cleanup(root, container, editor);
+	});
+
 	it("AX3: Escape closes the command menu", async () => {
 		const { container, root, editor, controller } = await renderCommandMenu();
 		const input = container.querySelector<HTMLInputElement>(

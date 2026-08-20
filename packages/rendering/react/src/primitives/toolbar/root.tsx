@@ -1,4 +1,5 @@
 import React, { useContext, useRef } from "react";
+import { resolveEditorMessage } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
 import {
 	EditorContext,
@@ -116,7 +117,7 @@ export function ToolbarRoot(props: ToolbarRootProps) {
 
 	const primitiveProps: Record<string, unknown> = {
 		role: "toolbar",
-		"aria-label": "Formatting",
+		"aria-label": resolveEditorMessage(editor, "pen.toolbar.formatting"),
 		"aria-orientation": "horizontal",
 		"data-pen-toolbar": "",
 		onKeyDown: handleKeyDown,

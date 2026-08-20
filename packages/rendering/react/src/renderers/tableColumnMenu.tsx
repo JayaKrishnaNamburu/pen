@@ -1,17 +1,27 @@
 import React, { useState, useRef, useEffect } from "react";
+import { resolveEditorMessage } from "@input/pen-core";
 import type { Editor, TableColumnSchema } from "@input/pen-types";
 import { generateId } from "@input/pen-types";
 import { useIsomorphicLayoutEffect } from "../hooks/useIsomorphicLayoutEffect";
 import { DATA_ATTRS } from "../utils/dataAttributes";
 
-const COLUMN_TYPES: { value: TableColumnSchema["type"]; label: string; icon: string }[] = [
-	{ value: "text", label: "Text", icon: "Aa" },
-	{ value: "number", label: "Number", icon: "#" },
-	{ value: "select", label: "Select", icon: "▾" },
-	{ value: "checkbox", label: "Checkbox", icon: "☑" },
-	{ value: "date", label: "Date", icon: "📅" },
-	{ value: "url", label: "URL", icon: "🔗" },
-	{ value: "email", label: "Email", icon: "@" },
+type MenuColumnType =
+	| "text"
+	| "number"
+	| "select"
+	| "checkbox"
+	| "date"
+	| "url"
+	| "email";
+
+const COLUMN_TYPES: { value: MenuColumnType; icon: string }[] = [
+	{ value: "text", icon: "Aa" },
+	{ value: "number", icon: "#" },
+	{ value: "select", icon: "▾" },
+	{ value: "checkbox", icon: "☑" },
+	{ value: "date", icon: "📅" },
+	{ value: "url", icon: "🔗" },
+	{ value: "email", icon: "@" },
 ];
 
 const ROVING_ITEM_SELECTOR = "[data-pen-column-menu-item]";
@@ -238,7 +248,7 @@ export function ColumnHeaderMenu(props: ColumnHeaderMenuProps) {
 			onClick={() => handleTypeChange(ct.value)}
 		>
 			<span className="pen-col-menu-icon">{ct.icon}</span>
-			{ct.label}
+			{columnTypeLabel(editor, ct.value)}
 		</button>
 	));
 
@@ -246,7 +256,9 @@ export function ColumnHeaderMenu(props: ColumnHeaderMenuProps) {
 		<div
 			ref={menuRef}
 			role="menu"
-			aria-label={`${column.title} column`}
+			aria-label={resolveEditorMessage(editor, "pen.table.columnMenu.label", {
+				title: column.title,
+			})}
 			aria-orientation="vertical"
 			className="pen-col-menu"
 			data-pen-column-menu=""
@@ -267,7 +279,9 @@ export function ColumnHeaderMenu(props: ColumnHeaderMenuProps) {
 				/>
 			</div>
 			<div className="pen-col-menu-divider" />
-			<div className="pen-col-menu-section">Type</div>
+			<div className="pen-col-menu-section">
+				{resolveEditorMessage(editor, "pen.table.columnMenu.type")}
+			</div>
 			{typeItems}
 			<div className="pen-col-menu-divider" />
 			<button
@@ -279,7 +293,7 @@ export function ColumnHeaderMenu(props: ColumnHeaderMenuProps) {
 				onFocus={handleRovingFocus}
 				onClick={handleInsertLeft}
 			>
-				← Insert left
+				{resolveEditorMessage(editor, "pen.table.columnMenu.insertLeft")}
 			</button>
 			<button
 				type="button"
@@ -290,7 +304,7 @@ export function ColumnHeaderMenu(props: ColumnHeaderMenuProps) {
 				onFocus={handleRovingFocus}
 				onClick={handleInsertRight}
 			>
-				Insert right →
+				{resolveEditorMessage(editor, "pen.table.columnMenu.insertRight")}
 			</button>
 			{colCount > 1 && (
 				<>
@@ -304,10 +318,33 @@ export function ColumnHeaderMenu(props: ColumnHeaderMenuProps) {
 						onFocus={handleRovingFocus}
 						onClick={handleDelete}
 					>
-						Delete column
+						{resolveEditorMessage(editor, "pen.table.columnMenu.delete")}
 					</button>
 				</>
 			)}
 		</div>
 	);
+}
+
+function columnTypeLabel(editor: Editor, type: MenuColumnType): string {
+	switch (type) {
+		case "text":
+			return resolveEditorMessage(editor, "pen.table.columnType.text");
+		case "number":
+			return resolveEditorMessage(editor, "pen.table.columnType.number");
+		case "select":
+			return resolveEditorMessage(editor, "pen.table.columnType.select");
+		case "checkbox":
+			return resolveEditorMessage(editor, "pen.table.columnType.checkbox");
+		case "date":
+			return resolveEditorMessage(editor, "pen.table.columnType.date");
+		case "url":
+			return resolveEditorMessage(editor, "pen.table.columnType.url");
+		case "email":
+			return resolveEditorMessage(editor, "pen.table.columnType.email");
+		default: {
+			const exhaustive: never = type;
+			return exhaustive;
+		}
+	}
 }

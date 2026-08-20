@@ -68,7 +68,7 @@ describe("AX1 React editor root", () => {
 		expect(surface?.getAttribute("aria-multiline")).toBe("true");
 	});
 
-	it("AX1 leaves a leftover label when pen.a11yLabel is not closed", async () => {
+	it("AX1 uses the catalog editor label until pen.a11yLabel is wired", async () => {
 		const fixture = await renderRoot();
 		const surface = fixture.container.querySelector(
 			"[data-pen-editor-root]",

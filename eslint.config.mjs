@@ -39,6 +39,58 @@ export default tseslint.config(
       "no-eval": "error",
       "no-new-func": "error",
       "no-implied-eval": "error",
+
+      // LOC3: every Intl constructor and localeCompare takes an explicit locale.
+      "pen/no-implicit-locale": "error",
+    },
+  },
+  {
+    // LOC1: library chrome copy comes from the catalog. Tests and playground
+    // hosts may keep literals. Disable a site with an eslint-disable comment
+    // that names why the string is not user copy (allowlist).
+    files: [
+      "packages/rendering/react/src/**/*.{ts,tsx}",
+      "packages/rendering/vue/src/**/*.{ts,tsx}",
+    ],
+    ignores: ["**/__tests__/**", "**/*.test.ts", "**/*.test.tsx"],
+    rules: {
+      "pen/no-user-facing-literals": "error",
+    },
+  },
+  {
+    // LOC4: word logic in editing/search/selection uses the shared segmenter.
+    // `textSegmentation.ts` is the HOST4 whitespace-fallback home and is
+    // excluded below. Regex-mode search may pass user `\b` through a variable;
+    // literals stay banned. Disable a site with a comment naming the exception.
+    files: [
+      "packages/rendering/dom/src/field-editor/**/*.{ts,tsx}",
+      "packages/extensions/search/src/**/*.{ts,tsx}",
+      "packages/core/src/selection/**/*.{ts,tsx}",
+      "packages/core/src/editor/textSegmentation.ts",
+    ],
+    ignores: ["**/__tests__/**", "**/*.test.ts"],
+    rules: {
+      "pen/no-ascii-word-boundaries": "error",
+    },
+  },
+  {
+    files: ["packages/core/src/editor/textSegmentation.ts"],
+    rules: {
+      // HOST4 sub-floor fallback: word ops degrade to whitespace runs here only.
+      "pen/no-ascii-word-boundaries": "off",
+    },
+  },
+  {
+    // LOC5: matching paths fold through foldAndNormalize. Keyboard `event.key`
+    // and `navigator.platform` are allowlisted in the rule. Disable a site with
+    // a comment naming why it is not user-copy matching.
+    files: [
+      "packages/rendering/react/src/**/*.{ts,tsx}",
+      "packages/extensions/search/src/**/*.{ts,tsx}",
+    ],
+    ignores: ["**/__tests__/**", "**/*.test.ts", "**/*.test.tsx"],
+    rules: {
+      "pen/no-bare-case-folding": "error",
     },
   },
   {
@@ -94,6 +146,19 @@ export default tseslint.config(
       // HOST2 protects published module graphs. Tests are allowed to read document/window
       // at file scope when they build a jsdom fixture.
       "pen/no-module-scope-browser-globals": "off",
+      // LOC3 is a library-runtime rule. Fixtures may sort with the environment locale.
+      "pen/no-implicit-locale": "off",
+    },
+  },
+  {
+    files: [
+      "packages/tooling/test/**",
+      "playground/**",
+      "packages/docs/**",
+      "scripts/**",
+    ],
+    rules: {
+      "pen/no-implicit-locale": "off",
     },
   },
   {

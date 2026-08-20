@@ -51,7 +51,7 @@ export function admitClipboardBlocks(
 	return {
 		blocks: admitted,
 		droppedByReason: [...counts.entries()]
-			.sort(([left], [right]) => left.localeCompare(right))
+			.sort(([left], [right]) => left.localeCompare(right, "en"))
 			.map(([reason, count]) => {
 				const bound = BOUND_BY_REASON[reason];
 				const drop: ClipboardIngestDrop = { reason, count };
@@ -71,7 +71,7 @@ export function withForbiddenKeyDrops(
 	const droppedByReason = [
 		...report.droppedByReason.filter((entry) => entry.reason !== "forbidden-key"),
 		{ reason: "forbidden-key" as const, count: forbiddenKeyCount },
-	].sort((left, right) => left.reason.localeCompare(right.reason));
+	].sort((left, right) => left.reason.localeCompare(right.reason, "en"));
 
 	return { blocks: report.blocks, droppedByReason };
 }

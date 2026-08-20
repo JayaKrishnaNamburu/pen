@@ -53,4 +53,43 @@ describe("@input/pen-react search AX3", () => {
 		container.remove();
 		editor.destroy();
 	});
+
+	it("LOC1: host messages override search chrome labels", async () => {
+		const editor = createEditor({
+			extensions: [searchExtension()],
+			messages: {
+				"pen.search.input.label": "Im Dokument suchen",
+				"pen.search.next": "Nächster Treffer",
+			},
+		});
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(
+				createElement(
+					Pen.Search.Root,
+					{ editor },
+					createElement(Pen.Search.Input),
+					createElement(Pen.Search.Next),
+				),
+			);
+		});
+
+		expect(
+			container.querySelector("[data-pen-search-input]")?.getAttribute("aria-label"),
+		).toBe("Im Dokument suchen");
+		expect(
+			container
+				.querySelector("[data-pen-search-navigation][data-option='next']")
+				?.getAttribute("aria-label"),
+		).toBe("Nächster Treffer");
+
+		await act(async () => {
+			root.unmount();
+		});
+		container.remove();
+		editor.destroy();
+	});
 });

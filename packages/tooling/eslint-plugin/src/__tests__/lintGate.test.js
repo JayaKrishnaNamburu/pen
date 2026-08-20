@@ -4,14 +4,10 @@ import { describe, expect, it } from "vitest";
 
 const repoRoot = path.resolve(import.meta.dirname, "../../../../..");
 
-async function lintSeededViolation(code, fileName) {
+async function lintSeededViolation(code, fileName, packageDir = "packages/tooling/eslint-plugin") {
 	const eslint = new ESLint({ cwd: repoRoot });
 	const [result] = await eslint.lintText(code, {
-		filePath: path.join(
-			repoRoot,
-			"packages/tooling/eslint-plugin",
-			fileName,
-		),
+		filePath: path.join(repoRoot, packageDir, fileName),
 	});
 	return result?.messages ?? [];
 }
@@ -42,6 +38,22 @@ describe("CH2 lint gate", () => {
 			messages.filter(
 				(message) =>
 					message.ruleId === "pen/no-module-scope-browser-globals" &&
+					message.severity === 2,
+			),
+		).toHaveLength(1);
+	});
+
+	it("reports a seeded user-facing literal as an error through the root config", async () => {
+		const messages = await lintSeededViolation(
+			"export function Label() { return <button>Accept</button>; }\n",
+			"src/seeded-literal.tsx",
+			"packages/rendering/react",
+		);
+
+		expect(
+			messages.filter(
+				(message) =>
+					message.ruleId === "pen/no-user-facing-literals" &&
 					message.severity === 2,
 			),
 		).toHaveLength(1);

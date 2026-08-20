@@ -1,4 +1,5 @@
 import React from "react";
+import { resolveEditorMessage } from "@input/pen-core";
 import type { BlockHandle, BlockRenderContext } from "@input/pen-types";
 import { generateId } from "@input/pen-types";
 import { InlineContent } from "../primitives/editor/inlineContent";
@@ -96,7 +97,11 @@ function ToggleTrigger({
       data-pen-toggle-trigger=""
       data-pen-ignore-pointer-gesture=""
       aria-expanded={open}
-      aria-label={open ? "Collapse toggle" : "Expand toggle"}
+      aria-label={
+        open
+          ? resolveEditorMessage(editor, "pen.toggle.collapse")
+          : resolveEditorMessage(editor, "pen.toggle.expand")
+      }
       onMouseDown={handleMouseDown}
       onClick={handleClick}
     >
@@ -148,7 +153,7 @@ function ToggleEmptyState({ parentBlockId }: { parentBlockId: string }) {
         onMouseDown={handleMouseDown}
         onClick={handleClick}
       >
-        Empty toggle. Click to add a block.
+        {resolveEditorMessage(editor, "pen.toggle.empty")}
       </button>
     </div>
   );

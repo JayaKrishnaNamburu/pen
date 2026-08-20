@@ -325,6 +325,7 @@ export type { A11yMessageKey, A11yMessageCatalog } from "./a11yMessages";
 export {
 	DEFAULT_MESSAGE_CATALOG,
 	interpolateMessage,
+	isMessageKey,
 	isPluralMessage,
 	resolveMessage,
 } from "./messages";

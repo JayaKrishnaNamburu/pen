@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import {
 	displayCatalogForEditor,
+	resolveEditorSchemaPlaceholder,
 	resolveSlashMenuGroup,
 	resolveSlashMenuTitle,
 } from "../utils/displayCopy";
@@ -26,6 +27,33 @@ describe("slash menu display copy (LOC2)", () => {
 		);
 		expect(resolveSlashMenuGroup("custom", catalog)).toBe("custom");
 		editor.destroy();
+	});
+
+	it("LOC2: schema placeholders resolve through the catalog and host overrides win", () => {
+		const editor = createHeadlessEditor({
+			messages: {
+				"pen.schema.paragraph.placeholder": "Absatz…",
+			},
+		});
+		const blockId = editor.firstBlock()!.id;
+		expect(resolveEditorSchemaPlaceholder(editor, blockId)).toBe("Absatz…");
+		editor.destroy();
+
+		const english = createHeadlessEditor();
+		expect(
+			resolveEditorSchemaPlaceholder(english, english.firstBlock()!.id),
+		).toBe("Text");
+		english.destroy();
+	});
+
+	it("LOC2: subdocument title resolves through the catalog", () => {
+		expect(
+			resolveSlashMenuTitle(
+				"subdocument",
+				undefined,
+				displayCatalogForEditor(),
+			),
+		).toBe("Subdocument");
 	});
 
 	it("LOC2: default English catalog is used when the host omits keys", () => {
