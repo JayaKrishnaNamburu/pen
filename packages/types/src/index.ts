@@ -11,16 +11,6 @@ export {
 } from "./schemaRegistry";
 export type { SchemaRegistryConfig } from "./schemaRegistry";
 export { suggestion } from "./suggestion";
-export {
-  coerceDatabaseValue,
-  formatStoredMultiSelectValue,
-  formatStoredSelectValue,
-  normalizeDatabaseValueForType,
-  normalizeStoredMultiSelectValue,
-  normalizeStoredSelectValue,
-  parseDatabaseMultiSelectValue,
-  resolveStoredSelectOption,
-} from "./utils/databaseValues";
 export { generateId } from "./utils/generateId";
 export {
 	isScopedSelectionTarget,

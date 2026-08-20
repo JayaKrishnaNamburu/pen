@@ -6,7 +6,11 @@ export default defineConfig({
   dts: true,
   outDir: "dist",
   clean: true,
-  external: ["@input/pen-markdown-serialization", "@input/pen-types"],
+  external: [
+    "@input/pen-dom",
+    "@input/pen-markdown-serialization",
+    "@input/pen-types",
+  ],
   outExtension({ format }) {
     return { js: format === "esm" ? ".mjs" : ".cjs" };
   },

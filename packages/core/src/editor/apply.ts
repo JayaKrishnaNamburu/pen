@@ -3,15 +3,15 @@ import { generateId, getOpOriginType } from "@input/pen-types";
 import { resolveRuntimeContentType } from "../schema/contentType";
 import type { SchemaEngineImpl } from "../schema/normalize";
 import { type CRDTUnknownArray, type CRDTUnknownMap, getArrayProp, getMapProp, getStringProp, getTableColumns, getTableContent, isCRDTMap } from "./crdtShapes";
-import { DatabaseOpExecutor } from "./databaseOpExecutor";
 import type { EventEmitter } from "./events";
 import type { SelectionManagerImpl } from "./selection";
 import { TableGridExecutor } from "./tableGridExecutor";
 
 import { blockExists, createMutableMap, getMutableBlockMap, getMutableAppMap, getOrCreateMapProp, getOrCreateStringArrayProp, removeBlockIdFromArray, removeBlockIdFromAllChildren, getTextContent, getInlineTextContent, opBlockId } from "./applySharedHelpers";
-import { applyInternal, executeOps, emitApplyBoundary, validateOp, resolvePosition, executeSingleOp } from "./applyPipelineRunner";
-import { insertBlock, updateBlock, deleteBlock, moveBlock, convertBlock, migrateTableToDatabase, splitBlock, mergeBlocks } from "./applyBlockOps";
-import { insertText, deleteText, formatText, replaceText, resolveMarks, insertInlineNode, removeInlineNode, setSelectionOp, updateLayout, createApp, updateApp, deleteApp, tableOp, databaseOp, clearTableState, clearDatabaseState, isDatabaseStructuralTableOp, getPreservedInlineDeltas, setMeta } from "./applyInlineAndMetaOps";
+import { applyInternal, executeOps, emitApplyBoundary, validateOp, resolvePosition, executeSingleOp, transformOpsThroughHooks } from "./applyPipelineRunner";
+import type { PipelinePhase } from "./pipelinePhases";
+import { insertBlock, updateBlock, deleteBlock, moveBlock, convertBlock, splitBlock, mergeBlocks } from "./applyBlockOps";
+import { insertText, deleteText, formatText, replaceText, resolveMarks, insertInlineNode, removeInlineNode, setSelectionOp, updateLayout, createApp, updateApp, deleteApp, tableOp, clearTableState, getPreservedInlineDeltas, setMeta } from "./applyInlineAndMetaOps";
 // Typed CRDT structure interfaces used by the op executor.
 type CRDTBlockMap = CRDTMap<CRDTMap<unknown>>;
 type MutableMap = CRDTUnknownMap & { delete(key: string): void };
@@ -55,7 +55,6 @@ export class ApplyPipeline {
 	private readonly _adapter: CRDTAdapter;
 	private readonly _registry: SchemaRegistry;
 	private readonly _tableGrid: TableGridExecutor;
-	private readonly _databaseOps: DatabaseOpExecutor;
 	private _engine: SchemaEngineImpl;
 	private readonly _emitter: EventEmitter;
 	private readonly _selection: SelectionManagerImpl;
@@ -81,6 +80,13 @@ export class ApplyPipeline {
 	private _finalBeforeApplyHook:
 		| ((ops: DocumentOp[], options: { origin?: OpOrigin }) => DocumentOp[])
 		| null = null;
+	private _resolveBeforeApplyHooks:
+		| (() => ReadonlyArray<
+				(ops: DocumentOp[], options: { origin?: OpOrigin }) => DocumentOp[]
+		  >)
+		| null = null;
+	private _recordPhase: ((phase: PipelinePhase) => void) | null = null;
+	private _captureSelectionBefore: (() => void) | null = null;
 
 	get suppressObserver(): boolean {
 		return this._suppressObserver;
@@ -124,18 +130,37 @@ export class ApplyPipeline {
 		this._adapter = adapter;
 		this._registry = registry;
 		this._tableGrid = new TableGridExecutor(adapter);
-		this._databaseOps = new DatabaseOpExecutor(adapter, this._tableGrid);
 		this._engine = engine;
 		this._emitter = emitter;
 		this._selection = selection;
 	}
 
 	/** Called after EditorImpl construction to wire circular refs. */
-	_init(onDidApply?: (event: CRDTEvent) => void): void {
+	_init(
+		onDidApply?: (event: CRDTEvent) => void,
+		resolveBeforeApplyHooks?: () => ReadonlyArray<
+			(ops: DocumentOp[], options: { origin?: OpOrigin }) => DocumentOp[]
+		>,
+		recordPhase?: (phase: PipelinePhase) => void,
+		captureSelectionBefore?: () => void,
+	): void {
 		this._onDidApply = onDidApply ?? null;
+		this._resolveBeforeApplyHooks = resolveBeforeApplyHooks ?? null;
+		this._recordPhase = recordPhase ?? null;
+		this._captureSelectionBefore = captureSelectionBefore ?? null;
 	}
 
 	// ── Before-Apply Hooks ───────────────────────────────────
+
+	getBeforeApplyHooks(): ReadonlyArray<{
+		hook: (
+			ops: DocumentOp[],
+			options: { origin?: OpOrigin },
+		) => DocumentOp[];
+		priority: number;
+	}> {
+		return this._beforeApplyHooks;
+	}
 
 	addBeforeApplyHook(
 		hook: (
@@ -183,6 +208,10 @@ export class ApplyPipeline {
 
 	apply(ops: DocumentOp[], origin: OpOrigin): void {
 		this._applyInternal(ops, origin);
+	}
+
+	runBeforeApplyHooks(ops: DocumentOp[], origin: OpOrigin): DocumentOp[] {
+		return transformOpsThroughHooks(this, ops, origin);
 	}
 
 	private _applyInternal(ops: DocumentOp[], origin: OpOrigin): void {
@@ -242,13 +271,6 @@ export class ApplyPipeline {
 
 	private _convertBlock(op: ConvertBlockOp): string[] {
 		return convertBlock(this, op);
-	}
-
-	private _migrateTableToDatabase(
-		blockMap: MutableMap,
-		propsMap: CRDTUnknownMap | null,
-	): void {
-		migrateTableToDatabase(this, blockMap, propsMap);
 	}
 
 	private _splitBlock(op: SplitBlockOp): string[] {
@@ -325,20 +347,8 @@ export class ApplyPipeline {
 		return tableOp(this, op);
 	}
 
-	private _databaseOp(op: DocumentOp): string[] {
-		return databaseOp(this, op);
-	}
-
 	private _clearTableState(blockMap: MutableMap): void {
 		clearTableState(this, blockMap);
-	}
-
-	private _clearDatabaseState(blockMap: MutableMap): void {
-		clearDatabaseState(this, blockMap);
-	}
-
-	private _isDatabaseStructuralTableOp(type: string): boolean {
-		return isDatabaseStructuralTableOp(this, type);
 	}
 
 	private _getPreservedInlineDeltas(content: CRDTText | undefined): Array<{

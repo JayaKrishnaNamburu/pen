@@ -1,5 +1,6 @@
 import React from "react";
 import type { Editor } from "@input/pen-types";
+import { useIsomorphicLayoutEffect } from "./useIsomorphicLayoutEffect";
 import type { AISuggestionGroup } from "@input/pen-ai-suggestions";
 import { queryAISuggestionAnchorElement } from "../utils/aiDomScope";
 import { useAISuggestions } from "./useAISuggestions";
@@ -117,7 +118,7 @@ export function useAISuggestionPopover(editor: Editor) {
 		return count;
 	}, [activeGroup, dismissSuggestionGroup]);
 
-	React.useLayoutEffect(() => {
+	useIsomorphicLayoutEffect(() => {
 		if (!activeGroup) {
 			return;
 		}

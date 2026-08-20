@@ -1,11 +1,13 @@
-import type {
-  Editor,
-  ToolContext,
-  PenStreamPart,
-  Position,
+import {
+  generateId,
+  type Editor,
+  type PenStreamPart,
+  type Position,
+  type ToolContext,
 } from "@input/pen-types";
 import { assertToolCanUseBlockType } from "./utils/blockTypePolicy";
 import { assertToolCanMutateBlock } from "./utils/mutationPolicy";
+import { assertValidToolPayloads } from "./utils/payloadValidation";
 
 export class ToolContextImpl implements ToolContext {
   readonly editor: Editor;
@@ -38,7 +40,16 @@ export class ToolContextImpl implements ToolContext {
     position: Position,
   ): string {
     assertToolCanUseBlockType(this.editor, blockType);
-    const blockId = crypto.randomUUID();
+    const blockId = generateId();
+    const ops = assertValidToolPayloads(this.editor, [
+      {
+        type: "insert-block",
+        blockId,
+        blockType,
+        props,
+        position,
+      },
+    ]);
 
     this.emit({
       type: "block-insert",
@@ -48,18 +59,7 @@ export class ToolContextImpl implements ToolContext {
       position,
     });
 
-    this.editor.apply(
-      [
-        {
-          type: "insert-block",
-          blockId,
-          blockType,
-          props,
-          position,
-        },
-      ],
-      { origin: "ai" },
-    );
+    this.editor.apply(ops, { origin: "ai" });
 
     return blockId;
   }
@@ -69,29 +69,29 @@ export class ToolContextImpl implements ToolContext {
     props: Record<string, unknown>,
   ): void {
     assertToolCanMutateBlock(this.editor, blockId);
+    const ops = assertValidToolPayloads(this.editor, [
+      { type: "update-block", blockId, props },
+    ]);
     this.emit({
       type: "block-update",
       blockId,
       props,
     });
 
-    this.editor.apply(
-      [{ type: "update-block", blockId, props }],
-      { origin: "ai" },
-    );
+    this.editor.apply(ops, { origin: "ai" });
   }
 
   deleteBlock(blockId: string): void {
     assertToolCanMutateBlock(this.editor, blockId);
+    const ops = assertValidToolPayloads(this.editor, [
+      { type: "delete-block", blockId },
+    ]);
     this.emit({
       type: "block-delete",
       blockId,
     });
 
-    this.editor.apply(
-      [{ type: "delete-block", blockId }],
-      { origin: "ai" },
-    );
+    this.editor.apply(ops, { origin: "ai" });
   }
 
   beginStreaming(zoneId: string, blockId: string): void {

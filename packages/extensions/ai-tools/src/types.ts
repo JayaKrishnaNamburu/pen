@@ -6,4 +6,6 @@ export interface AIToolDescriptor {
   name: string;
   description: string;
   inputSchema: ToolDefinition["inputSchema"];
+  mutating?: boolean;
+  destructive?: boolean;
 }

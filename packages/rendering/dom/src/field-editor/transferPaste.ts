@@ -4,10 +4,20 @@ import {
 	reportPendingBlockImportViolations,
 	resolveBlockFlowCapability,
 } from "@input/pen-core";
-import type { DocumentOp, Editor, Position } from "@input/pen-types";
+import type {
+	DiagnosticEvent,
+	DocumentOp,
+	Editor,
+	Position,
+} from "@input/pen-types";
 import type { PendingBlock } from "@input/pen-core";
 import type { FieldEditorTransferController } from "./controller";
-import { decodePenBlocksFromHtml, type PenBlock } from "../utils/clipboardPayload";
+import {
+	decodePenBlocksFromHtml,
+	parsePenClipboardPayload,
+	PenClipboardFallbackError,
+	type PenBlock,
+} from "../utils/clipboardPayload";
 import { pasteBlocks, pasteInlineText } from "./transferBlocks";
 import {
 	deleteSelectionForTransfer,
@@ -42,20 +52,14 @@ export async function executePasteTransfer(
 	const selectionBefore =
 		options.selectionBefore ?? snapshotTransferSelection(editor);
 
+	const clipboardFallback = { emitted: false };
+
 	const penPayload = dataTransfer.getData("application/x-pen-blocks");
 	if (penPayload) {
-		try {
-			const blocks = JSON.parse(penPayload) as PenBlock[];
-			if (
-				Array.isArray(blocks) &&
-				blocks.length > 0 &&
-				blocks.every((block) =>
-					shouldAllowDirectBlockPaste(
-						editor.documentProfile,
-						resolveBlockFlowCapability(editor.schema, block.type),
-					),
-				)
-			) {
+		const parsed = parsePenClipboardPayload(penPayload);
+		if (parsed.status === "ok") {
+			const blocks = [...parsed.payload.blocks];
+			if (canDirectPastePenBlocks(editor, blocks)) {
 				const { cursorAfter } = deleteSelectionForTransfer(
 					editor,
 					cursorBefore,
@@ -65,8 +69,8 @@ export async function executePasteTransfer(
 				});
 				return true;
 			}
-		} catch {
-			/* fall through */
+		} else {
+			emitClipboardFallback(editor, parsed.diagnostic, clipboardFallback);
 		}
 	}
 
@@ -77,16 +81,7 @@ export async function executePasteTransfer(
 		if (penMatch) {
 			try {
 				const blocks = decodePenBlocksFromHtml(penMatch[1]);
-				if (
-					Array.isArray(blocks) &&
-					blocks.length > 0 &&
-					blocks.every((block) =>
-						shouldAllowDirectBlockPaste(
-							editor.documentProfile,
-							resolveBlockFlowCapability(editor.schema, block.type),
-						),
-					)
-				) {
+				if (canDirectPastePenBlocks(editor, blocks)) {
 					const { cursorAfter } = deleteSelectionForTransfer(
 						editor,
 						cursorBefore,
@@ -96,8 +91,14 @@ export async function executePasteTransfer(
 					});
 					return true;
 				}
-			} catch {
-				/* fall through to HTML import */
+			} catch (error) {
+				if (error instanceof PenClipboardFallbackError) {
+					emitClipboardFallback(
+						editor,
+						error.diagnostic,
+						clipboardFallback,
+					);
+				}
 			}
 		}
 
@@ -162,6 +163,7 @@ export async function executePasteTransfer(
 		const uploaded = await uploadImageFiles(
 			getImageFiles(dataTransfer),
 			assetProvider,
+			{ editor },
 		);
 		if (uploaded.length === 0) {
 			return true;
@@ -371,7 +373,6 @@ function shouldPreferMarkdownParagraphPaste(
 		block.type === "paragraph" &&
 		(block.marks?.length ?? 0) === 0 &&
 		(block.children?.length ?? 0) === 0 &&
-		block.database == null &&
 		normalizePastedText(block.content) === normalizePastedText(plainText)
 	);
 }
@@ -451,4 +452,37 @@ function restoreCursorAtBlockEnd(
 		return;
 	}
 	editor.selectBlock(blockId);
+}
+
+function canDirectPastePenBlocks(
+	editor: Editor,
+	blocks: readonly PenBlock[],
+): boolean {
+	return (
+		blocks.length > 0 &&
+		blocks.every((block) => {
+			const registered = editor.schema
+				.allBlocks()
+				.some((schema) => schema.type === block.type);
+			if (!registered) {
+				return false;
+			}
+			return shouldAllowDirectBlockPaste(
+				editor.documentProfile,
+				resolveBlockFlowCapability(editor.schema, block.type),
+			);
+		})
+	);
+}
+
+function emitClipboardFallback(
+	editor: Editor,
+	diagnostic: DiagnosticEvent,
+	state: { emitted: boolean },
+): void {
+	if (state.emitted) {
+		return;
+	}
+	state.emitted = true;
+	editor.internals.emit("diagnostic", diagnostic);
 }

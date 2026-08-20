@@ -10,16 +10,8 @@ import type {
 	AITransportKind,
 } from "./contracts";
 import { buildFlowMarkdownRequestPrompt } from "./flowMarkdown";
-import {
-	buildStructuredIntentRequestPrompt,
-	type StructuredIntentParseResult,
-	parseStructuredIntentPreview,
-	parseStructuredIntentResult,
-} from "./structuredIntent";
-import {
-	compileStructuredIntentToPlan,
-	type StructuredIntentCompilationResult,
-} from "./structuredIntentCompiler";
+import type { StructuredIntentParseResult } from "./structuredIntent";
+import type { StructuredIntentCompilationResult } from "./structuredIntentCompiler";
 
 export interface BlockAdapterBuildPromptInput {
 	prompt: string;
@@ -68,33 +60,8 @@ const FLOW_BLOCK_ADAPTER: BlockAdapter = {
 	},
 };
 
-const DATABASE_BLOCK_ADAPTER: BlockAdapter = {
-	id: "database-app",
-	blockClass: "app",
-	targetKind: "database",
-	plannerMode: "structured",
-	contentFormat: "text",
-	transportKind: "app-structured",
-	buildPrompt(input) {
-		return buildStructuredIntentRequestPrompt(input);
-	},
-	parsePreview(input) {
-		return parseStructuredIntentPreview(input.value, input.targetKind);
-	},
-	resolveResult(input) {
-		const parseResult = parseStructuredIntentResult(input.value, input.targetKind);
-		const compilation = parseResult.intent
-			? compileStructuredIntentToPlan(parseResult.intent, {
-				activeBlockId: input.activeBlockId,
-			})
-			: null;
-		return { parseResult, compilation };
-	},
-};
-
 const BLOCK_ADAPTERS = [
 	FLOW_BLOCK_ADAPTER,
-	DATABASE_BLOCK_ADAPTER,
 ] as const;
 
 export interface ResolveBlockAdapterInput {
@@ -122,9 +89,6 @@ export function resolveBlockAdapter(
 	}
 	if (input.targetKind === "table") {
 		return FLOW_BLOCK_ADAPTER;
-	}
-	if (input.targetKind === "database") {
-		return DATABASE_BLOCK_ADAPTER;
 	}
 	return FLOW_BLOCK_ADAPTER;
 }

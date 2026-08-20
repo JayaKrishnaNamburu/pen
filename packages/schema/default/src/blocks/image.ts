@@ -1,4 +1,5 @@
 import { defineBlock, prop } from "@input/pen-types";
+import { escapeHtml } from "../escapeHtml";
 
 export const image = defineBlock("image", {
   props: {
@@ -25,9 +26,13 @@ export const image = defineBlock("image", {
       return `![${alt}](${block.props.src})`;
     },
     toHTML: (block) => {
-      const alt = block.props.alt ? ` alt="${block.props.alt}"` : "";
-      const width = block.props.width ? ` width="${block.props.width}"` : "";
-      return `<img src="${block.props.src}"${alt}${width} />`;
+      const alt = block.props.alt
+        ? ` alt="${escapeHtml(String(block.props.alt))}"`
+        : "";
+      const width = block.props.width
+        ? ` width="${escapeHtml(String(block.props.width))}"`
+        : "";
+      return `<img src="${escapeHtml(String(block.props.src ?? ""))}"${alt}${width} />`;
     },
   },
 });

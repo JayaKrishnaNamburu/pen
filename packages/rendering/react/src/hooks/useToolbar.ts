@@ -17,7 +17,7 @@ export function useToolbar(editor: Editor): ToolbarState {
 		(callback) => {
 			const unsubs = [
 				editor.on("selectionChange", callback),
-				editor.onDocumentCommit(callback),
+				editor.on("commit", () => callback()),
 			];
 			const fieldEditorStore = getAttachedFieldEditorStore(editor);
 			if (fieldEditorStore) {

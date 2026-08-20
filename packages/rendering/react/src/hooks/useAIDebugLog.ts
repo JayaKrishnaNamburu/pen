@@ -187,6 +187,7 @@ function safeStringify(value: unknown): string | null {
 	try {
 		return truncateString(JSON.stringify(value));
 	} catch {
+		// debug log falls back to String() when json fails.
 		return truncateString(String(value));
 	}
 }

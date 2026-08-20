@@ -4,7 +4,6 @@ type RuntimeContentType =
 	| "inline"
 	| "none"
 	| "table"
-	| "database"
 	| "subdocument"
 	| "nested";
 

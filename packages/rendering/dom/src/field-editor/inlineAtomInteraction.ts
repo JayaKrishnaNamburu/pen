@@ -1,3 +1,4 @@
+import { fieldEditorHostFacet } from "@input/pen-core";
 import type {
 	ApplyOptions,
 	DocumentOp,
@@ -6,7 +7,6 @@ import type {
 	InlineDelta,
 	InlineNodeDeltaInsert,
 } from "@input/pen-types";
-import { FIELD_EDITOR_SLOT_KEY } from "@input/pen-types";
 import {
 	pointToEditorSelectionPoint,
 	type SelectionPoint,
@@ -194,9 +194,9 @@ export function replaceInlineAtomWithText({
 		source.editor.selectText(source.blockId, endOffset, endOffset);
 	}
 
-	const fieldEditor = source.editor.internals.getSlot<FieldEditor>(
-		FIELD_EDITOR_SLOT_KEY,
-	);
+	const fieldEditor = source.editor.facet(
+		fieldEditorHostFacet,
+	) as FieldEditor | null;
 	if (fieldEditor && selection !== "none") {
 		if (selection === "all") {
 			if (typeof fieldEditor.activateTextSelection === "function") {

@@ -15,6 +15,7 @@ import {
 } from "../internal/editorState";
 import { useEditorContext } from "../internal/editorContext";
 import { useFieldEditorContext } from "../internal/fieldEditorContext";
+import { replaceElementChildren } from "../internal/replaceElementChildren";
 
 const TABLE_CELL_MIN_WIDTH = "6rem";
 
@@ -82,7 +83,10 @@ export const PenTableCellContent = defineComponent({
           return;
         }
         if (!nextTextSnapshot.exists) {
-          nextElement.replaceChildren();
+          // HOST4: replaceChildren is above some hosts; fallback clears then
+          // appends. The inactive cell still empties — no user-visible
+          // degradation.
+          replaceElementChildren(nextElement);
           return;
         }
 
@@ -96,6 +100,11 @@ export const PenTableCellContent = defineComponent({
       { immediate: true },
     );
 
+    // DIR3/AX4: this cell host does not set `dir` or `aria-hidden`.
+    // DIR2/DIR3 put `dir` on the table block wrapper (PenBlock); nested
+    // blocks resolve independently there. AX4 keeps visible atom chips in
+    // the tree (`aria-label` from the reconciler). Hiding this host would
+    // hide them. HOST4 replaceChildren fallback above is unchanged.
     return () =>
       h("span", {
         ref: (element: Element | ComponentPublicInstance | null) => {

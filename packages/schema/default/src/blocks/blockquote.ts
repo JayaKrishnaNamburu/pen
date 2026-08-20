@@ -1,8 +1,10 @@
 import { defineBlock, prop } from "@input/pen-types";
+import { directionProp } from "../directionProp";
 
 export const blockquote = defineBlock("blockquote", {
   props: {
     parentId: prop.string().optional().describe("Container parent block"),
+    direction: directionProp,
   },
   content: "inline",
   fieldEditor: "richtext",

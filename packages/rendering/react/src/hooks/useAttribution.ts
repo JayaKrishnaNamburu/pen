@@ -29,7 +29,7 @@ export function useAttribution(
 	const canReadHistoryAttribution =
 		isHistoryAttributionController(historyController);
 	const blockRevision = useSyncExternalStore(
-		(callback) => editor.onDocumentCommit(callback),
+		(callback) => editor.on("commit", () => callback()),
 		() => editor.getBlockRevision(blockId),
 		() => 0,
 	);

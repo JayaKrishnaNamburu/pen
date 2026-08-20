@@ -1,3 +1,4 @@
+import { undoRestoreControllerFacet } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
 import { UNDO_HISTORY_RESTORE_SLOT_KEY } from "@input/pen-types";
 
@@ -11,9 +12,9 @@ export const HISTORY_RESTORING_SELECTION_SLOT_KEY =
  */
 export class HistorySelectionCoordinator {
 	private pendingProjectionRequestId: number | null = null;
-	private readonly editor: Pick<Editor, "internals">;
+	private readonly editor: Pick<Editor, "facet">;
 
-	constructor(editor: Pick<Editor, "internals">) {
+	constructor(editor: Pick<Editor, "facet">) {
 		this.editor = editor;
 	}
 
@@ -47,10 +48,6 @@ export class HistorySelectionCoordinator {
 	}
 
 	private isLogicalSelectionRestoreInProgress(): boolean {
-		return (
-			this.editor.internals.getSlot<boolean>(
-				HISTORY_RESTORING_SELECTION_SLOT_KEY,
-			) === true
-		);
+		return this.editor.facet(undoRestoreControllerFacet) === true;
 	}
 }

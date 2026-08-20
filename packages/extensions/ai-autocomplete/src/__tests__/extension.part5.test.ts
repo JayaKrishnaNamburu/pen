@@ -38,7 +38,7 @@ describe("@input/pen-ai-autocomplete", () => {
 				autocompleteExtension({
 					blockPolicy: {
 						allowedBlockTypes: ["paragraph"],
-						deniedBlockTypes: ["database"],
+						deniedBlockTypes: ["codeBlock"],
 					},
 				}),
 				defineExtension({
@@ -62,7 +62,7 @@ describe("@input/pen-ai-autocomplete", () => {
 			allowInCodeBlocks: true,
 			allowInTables: false,
 			allowedBlockTypes: ["paragraph"],
-			deniedBlockTypes: ["database"],
+			deniedBlockTypes: ["codeBlock"],
 		});
 
 		expect(() => {

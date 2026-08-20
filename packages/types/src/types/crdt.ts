@@ -23,9 +23,18 @@ export interface CRDTMap<T> {
 
 // ── CRDT Adapter ────────────────────────────────────────────
 
+export interface LoadDocumentOptions {
+	/**
+	 * Apply structural repairs (duplicate `blockOrder` entries, dangling
+	 * references, orphans). Defaults to `true`. The diagnostic list from
+	 * `onDiagnostic` / `getDocumentLoadReport` is the API for what changed.
+	 */
+	repair?: boolean;
+}
+
 export interface CRDTAdapter {
 	createDocument(): CRDTDocument;
-	loadDocument(binary: Uint8Array): CRDTDocument;
+	loadDocument(binary: Uint8Array, options?: LoadDocumentOptions): CRDTDocument;
 
 	encodeState(doc: CRDTDocument): Uint8Array;
 	encodeUpdate(doc: CRDTDocument, since?: Uint8Array): Uint8Array;
@@ -72,7 +81,6 @@ export interface CRDTAdapter {
 			| "inline"
 			| "nested"
 			| "table"
-			| "database"
 			| "subdocument"
 			| "none",
 	): unknown;
@@ -178,6 +186,12 @@ export interface PenDocument {
 export interface UndoManagerOptions {
 	trackedOriginTypes?: string[];
 	captureTimeout?: number;
+	/**
+	 * Maximum undo/redo stack items to retain.
+	 * Defaults to 500 (CH7). Y.UndoManager has no native cap; the Yjs
+	 * adapter trims oldest items on `stack-item-added`.
+	 */
+	maxDepth?: number;
 }
 
 export interface CRDTUndoManager {
@@ -189,6 +203,7 @@ export interface CRDTUndoManager {
 	setCaptureTimeout?(ms: number): void;
 	addTrackedOrigin(originType: string): void;
 	removeTrackedOrigin(originType: string): void;
+	destroy(): void;
 	onStackItemAdded?(
 		callback: (stackItem: CRDTUndoStackItem, kind: "undo" | "redo") => void,
 	): Unsubscribe;
@@ -245,4 +260,6 @@ export interface CRDTEvent {
 	ops: readonly DocumentOp[];
 	timestamp: number;
 	scope?: DocumentScopeInfo;
+	/** Pipeline-stamped commit source; observer-originated events omit this. */
+	readonly source?: "apply" | "remote" | "undo" | "redo" | "stream";
 }

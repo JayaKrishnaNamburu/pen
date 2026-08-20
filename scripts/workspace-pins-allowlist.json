@@ -1,0 +1,541 @@
+{
+  "_comment": "API7 / P.8 (spec-v2/14-api-and-packaging.md, Wave P step P.8): today's workspace:* pins and dist/index.js exporters on published packages. Conversion is a later slice — do not flip package.json here. Remove an entry in the same PR that converts the pin or artifact.",
+  "workspaceStar": [
+    {
+      "package": "@input/pen-ai",
+      "field": "dependencies",
+      "dependency": "@input/pen-content-ops",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-ai",
+      "field": "dependencies",
+      "dependency": "@input/pen-core",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-ai",
+      "field": "dependencies",
+      "dependency": "@input/pen-document-ops",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-ai",
+      "field": "dependencies",
+      "dependency": "@input/pen-types",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-ai-autocomplete",
+      "field": "dependencies",
+      "dependency": "@input/pen-content-ops",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-ai-autocomplete",
+      "field": "dependencies",
+      "dependency": "@input/pen-core",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-ai-autocomplete",
+      "field": "dependencies",
+      "dependency": "@input/pen-types",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-ai-skills",
+      "field": "dependencies",
+      "dependency": "@input/pen-ai-autocomplete",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-ai-skills",
+      "field": "dependencies",
+      "dependency": "@input/pen-ai-tools",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-ai-suggestions",
+      "field": "dependencies",
+      "dependency": "@input/pen-core",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-ai-suggestions",
+      "field": "dependencies",
+      "dependency": "@input/pen-types",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-ai-tools",
+      "field": "dependencies",
+      "dependency": "@input/pen-document-ops",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-ai-tools",
+      "field": "dependencies",
+      "dependency": "@input/pen-types",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-assets-memory",
+      "field": "dependencies",
+      "dependency": "@input/pen-types",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-content-ops",
+      "field": "dependencies",
+      "dependency": "@input/pen-types",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-core",
+      "field": "dependencies",
+      "dependency": "@input/pen-content-ops",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-core",
+      "field": "dependencies",
+      "dependency": "@input/pen-crdt-yjs",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-core",
+      "field": "dependencies",
+      "dependency": "@input/pen-delta-stream",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-core",
+      "field": "dependencies",
+      "dependency": "@input/pen-document-ops",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-core",
+      "field": "dependencies",
+      "dependency": "@input/pen-markdown-serialization",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-core",
+      "field": "dependencies",
+      "dependency": "@input/pen-shortcuts",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-core",
+      "field": "dependencies",
+      "dependency": "@input/pen-types",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-core",
+      "field": "dependencies",
+      "dependency": "@input/pen-undo",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-crdt-yjs",
+      "field": "dependencies",
+      "dependency": "@input/pen-types",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-delta-stream",
+      "field": "dependencies",
+      "dependency": "@input/pen-document-ops",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-delta-stream",
+      "field": "dependencies",
+      "dependency": "@input/pen-types",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-document-ops",
+      "field": "dependencies",
+      "dependency": "@input/pen-content-ops",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-document-ops",
+      "field": "dependencies",
+      "dependency": "@input/pen-markdown-serialization",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-document-ops",
+      "field": "dependencies",
+      "dependency": "@input/pen-types",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-dom",
+      "field": "dependencies",
+      "dependency": "@input/pen-core",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-dom",
+      "field": "dependencies",
+      "dependency": "@input/pen-shortcuts",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-dom",
+      "field": "dependencies",
+      "dependency": "@input/pen-types",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-export-html",
+      "field": "dependencies",
+      "dependency": "@input/pen-dom",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-export-html",
+      "field": "dependencies",
+      "dependency": "@input/pen-markdown-serialization",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-export-html",
+      "field": "dependencies",
+      "dependency": "@input/pen-types",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-export-json",
+      "field": "dependencies",
+      "dependency": "@input/pen-content-ops",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-export-json",
+      "field": "dependencies",
+      "dependency": "@input/pen-markdown-serialization",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-export-json",
+      "field": "dependencies",
+      "dependency": "@input/pen-types",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-export-markdown",
+      "field": "dependencies",
+      "dependency": "@input/pen-dom",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-export-markdown",
+      "field": "dependencies",
+      "dependency": "@input/pen-markdown-serialization",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-export-markdown",
+      "field": "dependencies",
+      "dependency": "@input/pen-types",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-export-xml",
+      "field": "dependencies",
+      "dependency": "@input/pen-export-json",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-export-xml",
+      "field": "dependencies",
+      "dependency": "@input/pen-types",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-history",
+      "field": "dependencies",
+      "dependency": "@input/pen-types",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-import-html",
+      "field": "dependencies",
+      "dependency": "@input/pen-core",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-import-html",
+      "field": "dependencies",
+      "dependency": "@input/pen-types",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-import-json",
+      "field": "dependencies",
+      "dependency": "@input/pen-content-ops",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-import-json",
+      "field": "dependencies",
+      "dependency": "@input/pen-types",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-import-markdown",
+      "field": "dependencies",
+      "dependency": "@input/pen-content-ops",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-import-markdown",
+      "field": "dependencies",
+      "dependency": "@input/pen-types",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-input-rules",
+      "field": "dependencies",
+      "dependency": "@input/pen-types",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-markdown-serialization",
+      "field": "dependencies",
+      "dependency": "@input/pen-types",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-multiplayer",
+      "field": "dependencies",
+      "dependency": "@input/pen-core",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-multiplayer",
+      "field": "dependencies",
+      "dependency": "@input/pen-types",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-preset-default",
+      "field": "dependencies",
+      "dependency": "@input/pen-delta-stream",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-preset-default",
+      "field": "dependencies",
+      "dependency": "@input/pen-document-ops",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-preset-default",
+      "field": "dependencies",
+      "dependency": "@input/pen-shortcuts",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-preset-default",
+      "field": "dependencies",
+      "dependency": "@input/pen-types",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-preset-default",
+      "field": "dependencies",
+      "dependency": "@input/pen-undo",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-react",
+      "field": "dependencies",
+      "dependency": "@input/pen-ai",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-react",
+      "field": "dependencies",
+      "dependency": "@input/pen-ai-suggestions",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-react",
+      "field": "dependencies",
+      "dependency": "@input/pen-core",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-react",
+      "field": "dependencies",
+      "dependency": "@input/pen-dom",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-react",
+      "field": "dependencies",
+      "dependency": "@input/pen-history",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-react",
+      "field": "dependencies",
+      "dependency": "@input/pen-multiplayer",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-react",
+      "field": "dependencies",
+      "dependency": "@input/pen-schema-default",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-react",
+      "field": "dependencies",
+      "dependency": "@input/pen-search",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-react",
+      "field": "dependencies",
+      "dependency": "@input/pen-shortcuts",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-react",
+      "field": "peerDependencies",
+      "dependency": "@input/pen-import-html",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-react",
+      "field": "peerDependencies",
+      "dependency": "@input/pen-import-markdown",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-schema-default",
+      "field": "dependencies",
+      "dependency": "@input/pen-types",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-search",
+      "field": "dependencies",
+      "dependency": "@input/pen-core",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-search",
+      "field": "dependencies",
+      "dependency": "@input/pen-types",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-shortcuts",
+      "field": "dependencies",
+      "dependency": "@input/pen-types",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-test",
+      "field": "dependencies",
+      "dependency": "@input/pen-core",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-test",
+      "field": "dependencies",
+      "dependency": "@input/pen-crdt-yjs",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-test",
+      "field": "dependencies",
+      "dependency": "@input/pen-export-json",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-test",
+      "field": "dependencies",
+      "dependency": "@input/pen-schema-default",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-test",
+      "field": "dependencies",
+      "dependency": "@input/pen-types",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-transport-direct",
+      "field": "dependencies",
+      "dependency": "@input/pen-core",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-transport-direct",
+      "field": "dependencies",
+      "dependency": "@input/pen-types",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-transport-sse",
+      "field": "dependencies",
+      "dependency": "@input/pen-core",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-transport-sse",
+      "field": "dependencies",
+      "dependency": "@input/pen-types",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-undo",
+      "field": "dependencies",
+      "dependency": "@input/pen-types",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-vue",
+      "field": "dependencies",
+      "dependency": "@input/pen-core",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-vue",
+      "field": "dependencies",
+      "dependency": "@input/pen-dom",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    },
+    {
+      "package": "@input/pen-vue",
+      "field": "dependencies",
+      "dependency": "@input/pen-types",
+      "reason": "P.8 conversion deferred — workspace:* packs to an exact version (F34)."
+    }
+  ],
+  "jsArtifacts": [
+    {
+      "package": "@input/pen-history",
+      "reason": "P.8 conversion deferred — ESM export is ./dist/index.js (F34)."
+    },
+    {
+      "package": "@input/pen-multiplayer",
+      "reason": "P.8 conversion deferred — ESM export is ./dist/index.js (F34)."
+    },
+    {
+      "package": "@input/pen-preset-default",
+      "reason": "P.8 conversion deferred — ESM export is ./dist/index.js (F34)."
+    }
+  ]
+}

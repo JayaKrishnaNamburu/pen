@@ -1,0 +1,40 @@
+{
+  "_comment": "API1 (spec-v2/14-api-and-packaging.md): known inverted workspace edges. The DAG check reports these and stays green until the P.1 inversions land. Each entry needs from, to, and a reason naming the owning wave or finding. Remove an entry in the same PR that drops the edge.",
+  "inversions": [
+    {
+      "from": "@input/pen-core",
+      "to": "@input/pen-delta-stream",
+      "reason": "Wave 2: delta-stream consumes TextStreamWriter; drop the core dependency (API1, F12)"
+    },
+    {
+      "from": "@input/pen-core",
+      "to": "@input/pen-undo",
+      "reason": "Waves 1–2: undo.restoreController / origin-tag seams; drop the core dependency (API1, F12)"
+    },
+    {
+      "from": "@input/pen-core",
+      "to": "@input/pen-shortcuts",
+      "reason": "Wave 4: pen.keymap facet providers; drop the core dependency (API1, F12)"
+    },
+    {
+      "from": "@input/pen-core",
+      "to": "@input/pen-markdown-serialization",
+      "reason": "P.1: move markdown-serialization out of core into the AI/import packages that use it (API1, F12)"
+    },
+    {
+      "from": "@input/pen-core",
+      "to": "@input/pen-schema-default",
+      "reason": "P.1: schema-default moves behind @input/pen-preset-default (API1, F12)"
+    },
+    {
+      "from": "@input/pen-core",
+      "to": "@input/pen-content-ops",
+      "reason": "Wave H.5: content-ops is deleted; drop the core dependency (API1, F12)"
+    },
+    {
+      "from": "@input/pen-core",
+      "to": "@input/pen-document-ops",
+      "reason": "P.1: document-ops depends on core, not the reverse; move any core-needed piece in (API1, F12)"
+    }
+  ]
+}

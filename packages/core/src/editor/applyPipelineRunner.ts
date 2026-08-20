@@ -37,6 +37,13 @@ import {
 	isCRDTMap,
 } from "./crdtShapes";
 import type { ApplyPipeline } from "./apply";
+import { validateOpProps } from "./validateOpProps";
+import {
+	APPLY_STORM_CODE,
+	APPLY_STORM_QUEUE_LIMIT,
+	type PipelinePhase,
+} from "./pipelinePhases";
+import { resolveCommitSource } from "./commitEvent";
 
 type ApplyPipelineRuntime = any;
 type MutableMap = CRDTUnknownMap & { delete(key: string): void };
@@ -57,62 +64,211 @@ const ZERO_WIDTH_SPACE = "\u200B";
 
 export function applyInternal(pipeline: ApplyPipeline, ops: DocumentOp[], origin: OpOrigin): void {
 	const self = pipeline as ApplyPipelineRuntime;
-if (self._applying) {
-	self._queue.push({ ops, origin });
-	return;
+	if (self._applying) {
+		if (self._applyTurnCount >= APPLY_STORM_QUEUE_LIMIT) {
+			emitApplyStorm(pipeline);
+			return;
+		}
+		self._applyTurnCount += 1;
+		self._queue.push({ ops, origin });
+		return;
+	}
+
+	self._applying = true;
+	self._applyTurnCount = 1;
+	self._applyStormEmitted = false;
+	try {
+		self._executeOps(ops, origin);
+		while (self._queue.length > 0) {
+			const { ops: queued, origin: queuedOrigin } = self._queue.shift()!;
+			self._executeOps(queued, queuedOrigin);
+		}
+	} finally {
+		self._applying = false;
+		self._applyTurnCount = 0;
+		self._applyStormEmitted = false;
+	}
 }
 
-self._applying = true;
-try {
-	self._executeOps(ops, origin);
-	while (self._queue.length > 0) {
-		const { ops: queued, origin: queuedOrigin } =
-			self._queue.shift()!;
-		self._executeOps(queued, queuedOrigin);
+function emitApplyStorm(pipeline: ApplyPipeline): void {
+	const self = pipeline as ApplyPipelineRuntime;
+	if (self._applyStormEmitted) {
+		return;
 	}
-} finally {
-	self._applying = false;
+	self._applyStormEmitted = true;
+	self._emitter.emit("diagnostic", {
+		code: APPLY_STORM_CODE,
+		level: "warn",
+		source: "apply",
+		message:
+			"apply-storm: more than 16 nested applies queued in one task turn",
+		remediation:
+			"Observers, decoration sources, and facet compute must not apply synchronously (I7).",
+	});
 }
+
+function recordPhase(pipeline: ApplyPipeline, phase: PipelinePhase): void {
+	const self = pipeline as ApplyPipelineRuntime;
+	self._recordPhase?.(phase);
+}
+
+function isRegisteredBlockType(
+	registry: { allBlocks(): readonly { type: string }[] },
+	type: string,
+): boolean {
+	for (const schema of registry.allBlocks()) {
+		if (schema.type === type) {
+			return true;
+		}
+	}
+	return false;
+}
+
+function unknownBlockTypesReported(pipeline: ApplyPipeline): Set<string> {
+	const self = pipeline as ApplyPipelineRuntime;
+	if (!self._unknownBlockTypesReported) {
+		self._unknownBlockTypesReported = new Set();
+	}
+	return self._unknownBlockTypesReported as Set<string>;
+}
+
+function emitSchemaUnknownBlock(pipeline: ApplyPipeline, type: string): void {
+	const self = pipeline as ApplyPipelineRuntime;
+	const reported = unknownBlockTypesReported(pipeline);
+	if (reported.has(type)) {
+		return;
+	}
+	reported.add(type);
+	self._emitter.emit("diagnostic", {
+		code: "schema-unknown-block",
+		level: "info",
+		source: "schema",
+		message: `Unknown block type "${type}"`,
+		blockType: type,
+	});
+}
+
+function reportUnknownBlocksInDocument(pipeline: ApplyPipeline): void {
+	const self = pipeline as ApplyPipelineRuntime;
+	for (const [, rawBlockMap] of self._doc.blocks.entries()) {
+		if (!isCRDTMap(rawBlockMap)) {
+			continue;
+		}
+		const type = rawBlockMap.get("type");
+		if (typeof type !== "string") {
+			continue;
+		}
+		if (isRegisteredBlockType(self._registry, type)) {
+			continue;
+		}
+		emitSchemaUnknownBlock(pipeline, type);
+	}
+}
+
+function readStoredBlockType(
+	pipeline: ApplyPipeline,
+	blockId: string,
+): string | null {
+	const self = pipeline as ApplyPipelineRuntime;
+	const rawBlockMap = self.blocks.get(blockId);
+	if (!isCRDTMap(rawBlockMap)) {
+		return null;
+	}
+	const type = rawBlockMap.get("type");
+	return typeof type === "string" ? type : null;
+}
+
+function rewriteBlockOpProps(
+	pipeline: ApplyPipeline,
+	op: InsertBlockOp | UpdateBlockOp,
+	pendingBlockTypes: Map<string, string>,
+): InsertBlockOp | UpdateBlockOp {
+	const self = pipeline as ApplyPipelineRuntime;
+	const blockType =
+		op.type === "insert-block"
+			? op.blockType
+			: (pendingBlockTypes.get(op.blockId) ??
+				readStoredBlockType(pipeline, op.blockId));
+	if (!blockType) {
+		return op;
+	}
+	const schema = self._registry.resolve(blockType);
+	if (!schema) {
+		return op;
+	}
+	const result = validateOpProps(schema, op.props);
+	for (const diagnostic of result.diagnostics) {
+		self._emitter.emit("diagnostic", {
+			...diagnostic,
+			op,
+		});
+	}
+	if (result.props === op.props) {
+		return op;
+	}
+	return { ...op, props: result.props };
+}
+
+export function transformOpsThroughHooks(
+	pipeline: ApplyPipeline,
+	ops: DocumentOp[],
+	origin: OpOrigin,
+): DocumentOp[] {
+	const self = pipeline as ApplyPipelineRuntime;
+	let transformedOps = ops;
+	const beforeApplyHooks =
+		self._resolveBeforeApplyHooks?.() ??
+		self._beforeApplyHooks.map(
+			(entry: {
+				hook: (
+					ops: DocumentOp[],
+					options: { origin?: OpOrigin },
+				) => DocumentOp[];
+			}) => entry.hook,
+		);
+	for (const hook of beforeApplyHooks) {
+		try {
+			transformedOps = hook(transformedOps, { origin });
+		} catch (err) {
+			self._emitter.emit("diagnostic", {
+				code: "PEN_APPLY_005",
+				level: "error",
+				source: "apply",
+				message: "onBeforeApply hook threw",
+				remediation:
+					"Update the onBeforeApply hook to handle incoming ops defensively and " +
+					"always return a valid DocumentOp array.",
+				error: err,
+			});
+		}
+	}
+	if (self._finalBeforeApplyHook) {
+		try {
+			transformedOps = self._finalBeforeApplyHook(transformedOps, {
+				origin,
+			});
+		} catch (err) {
+			self._emitter.emit("diagnostic", {
+				code: "PEN_APPLY_007",
+				level: "error",
+				source: "apply",
+				message: "final apply boundary hook threw",
+				remediation:
+					"Update the final apply boundary hook to handle incoming ops defensively and " +
+					"always return a valid DocumentOp array.",
+				error: err,
+			});
+		}
+	}
+	return transformedOps;
 }
 
 export function executeOps(pipeline: ApplyPipeline, ops: DocumentOp[], origin: OpOrigin): void {
 	const self = pipeline as ApplyPipelineRuntime;
-// Let extensions transform ops before validation and execution.
-let transformedOps = ops;
-for (const { hook } of self._beforeApplyHooks) {
-	try {
-		transformedOps = hook(transformedOps, { origin });
-	} catch (err) {
-		self._emitter.emit("diagnostic", {
-			code: "PEN_APPLY_005",
-			level: "error",
-			source: "apply",
-			message: "onBeforeApply hook threw",
-			remediation:
-				"Update the onBeforeApply hook to handle incoming ops defensively and " +
-				"always return a valid DocumentOp array.",
-			error: err,
-		});
-	}
-}
-if (self._finalBeforeApplyHook) {
-	try {
-		transformedOps = self._finalBeforeApplyHook(transformedOps, {
-			origin,
-		});
-	} catch (err) {
-		self._emitter.emit("diagnostic", {
-			code: "PEN_APPLY_007",
-			level: "error",
-			source: "apply",
-			message: "final apply boundary hook threw",
-			remediation:
-				"Update the final apply boundary hook to handle incoming ops defensively and " +
-				"always return a valid DocumentOp array.",
-			error: err,
-		});
-	}
-}
+	reportUnknownBlocksInDocument(pipeline);
+	self._captureSelectionBefore?.();
+	recordPhase(pipeline, "hooks");
+	const transformedOps = transformOpsThroughHooks(pipeline, ops, origin);
 
 self._emitApplyBoundary({
 	phase: "before",
@@ -121,9 +277,11 @@ self._emitApplyBoundary({
 	applied: false,
 });
 
+recordPhase(pipeline, "validate");
 const affectedBlocks: string[] = [];
 const validatedOps: DocumentOp[] = [];
 const pendingBlockIds = new Set<string>();
+const pendingBlockTypes = new Map<string, string>();
 
 for (const op of transformedOps) {
 	const blockId = self._opBlockId(op);
@@ -132,13 +290,19 @@ for (const op of transformedOps) {
 
 	if (op.type === "insert-block") {
 		pendingBlockIds.add(op.blockId);
+		pendingBlockTypes.set(op.blockId, op.blockType);
 	}
+
+	const nextOp =
+		op.type === "insert-block" || op.type === "update-block"
+			? rewriteBlockOpProps(pipeline, op, pendingBlockTypes)
+			: op;
 
 	if (
 		blockId &&
 		!self._blockExists(blockId) &&
 		!pendingBlockIds.has(blockId) &&
-		op.type !== "insert-block"
+		nextOp.type !== "insert-block"
 	) {
 		self._emitter.emit("diagnostic", {
 			code: "PEN_APPLY_003",
@@ -149,7 +313,7 @@ for (const op of transformedOps) {
 		continue;
 	}
 
-	validatedOps.push(op);
+	validatedOps.push(nextOp);
 }
 
 if (validatedOps.length === 0) {
@@ -162,6 +326,7 @@ if (validatedOps.length === 0) {
 	return;
 }
 
+recordPhase(pipeline, "execute");
 self._suppressObserver = true;
 
 try {
@@ -177,6 +342,7 @@ try {
 				self._engine.markDirty(blockId);
 			}
 
+			recordPhase(pipeline, "normalize");
 			self._engine.normalizeDirty();
 		},
 		getOpOriginType(origin),
@@ -190,6 +356,7 @@ const event: CRDTEvent = {
 	affectedBlocks: [...new Set(affectedBlocks)],
 	ops: validatedOps,
 	timestamp: Date.now(),
+	source: resolveCommitSource(origin, "apply"),
 };
 
 self._onDidApply?.(event);
@@ -229,8 +396,7 @@ export function validateOp(pipeline: ApplyPipeline, op: DocumentOp): boolean {
 	const self = pipeline as ApplyPipelineRuntime;
 switch (op.type) {
 	case "insert-block": {
-		const schema = self._registry.resolve(op.blockType);
-		if (!schema) {
+		if (!isRegisteredBlockType(self._registry, op.blockType)) {
 			self._emitter.emit("diagnostic", {
 				code: "PEN_APPLY_002",
 				level: "warn",
@@ -243,8 +409,7 @@ switch (op.type) {
 		return true;
 	}
 	case "convert-block": {
-		const schema = self._registry.resolve(op.newType);
-		if (!schema) {
+		if (!isRegisteredBlockType(self._registry, op.newType)) {
 			self._emitter.emit("diagnostic", {
 				code: "PEN_APPLY_002",
 				level: "warn",
@@ -360,25 +525,13 @@ switch (op.type) {
 	case "format-table-cell-text":
 	case "update-table-columns":
 		return self._tableOp(op);
-	case "database-add-column":
-	case "database-update-column":
-	case "database-convert-column":
-	case "database-remove-column":
-	case "database-insert-row":
-	case "database-update-cell":
-	case "database-delete-row":
-	case "database-delete-rows":
-	case "database-duplicate-row":
-	case "database-move-row":
-	case "database-add-view":
-	case "database-update-view":
-	case "database-remove-view":
-	case "database-set-active-view":
-	case "database-update-select-options":
-		return self._databaseOp(op);
 	case "set-meta":
 		return self._setMeta(op);
-	default:
+	case "stream-open":
 		return [];
+	default: {
+		const _exhaustive: never = op;
+		return _exhaustive;
+	}
 }
 }

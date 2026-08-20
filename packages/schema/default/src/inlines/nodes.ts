@@ -1,5 +1,6 @@
 import type { InlineSchema, PropSchema } from "@input/pen-types";
 import { prop, resolveSchema } from "@input/pen-types";
+import { escapeHtml } from "../escapeHtml";
 
 function resolveProps(
   props: Record<string, unknown>,
@@ -21,7 +22,7 @@ export const mention: InlineSchema = {
   serialize: {
     toMarkdown: (_, props) => `@${props?.label ?? ""}`,
     toHTML: (_, props) =>
-      `<span class="mention" data-id="${props?.id ?? ""}">${props?.label ?? ""}</span>`,
+      `<span class="mention" data-id="${escapeHtml(String(props?.id ?? ""))}">${escapeHtml(String(props?.label ?? ""))}</span>`,
   },
   aiDescription: "Mention of a user, page, or entity",
 };
@@ -36,7 +37,7 @@ export const inlineApp: InlineSchema = {
   serialize: {
     toMarkdown: (_, props) => `[app:${props?.appType ?? ""}]`,
     toHTML: (_, props) =>
-      `<span class="inline-app" data-type="${props?.appType ?? ""}"></span>`,
+      `<span class="inline-app" data-type="${escapeHtml(String(props?.appType ?? ""))}"></span>`,
   },
   aiDescription: "Inline embedded application",
 };

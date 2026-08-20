@@ -75,7 +75,6 @@ describe("@input/pen-react block type rendering", () => {
 		);
 		expect(optionValues).toContain("paragraph");
 		expect(optionValues).toContain("table");
-		expect(optionValues).not.toContain("database");
 		expect(optionValues).not.toContain("subdocument");
 		expect(optionValues.indexOf("paragraph")).toBeLessThan(
 			optionValues.indexOf("table"),
@@ -111,7 +110,7 @@ describe("@input/pen-react block type rendering", () => {
 		const optionValues = Array.from(container.querySelectorAll("option")).map(
 			(option) => (option as HTMLOptionElement).value,
 		);
-		expect(optionValues).toContain("database");
+		expect(optionValues).toContain("table");
 		expect(optionValues).not.toContain("subdocument");
 
 		await act(async () => {

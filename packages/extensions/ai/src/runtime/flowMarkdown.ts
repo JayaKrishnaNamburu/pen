@@ -34,7 +34,7 @@ export function buildFlowMarkdownRequestPrompt(
 		"Return only markdown content. Do not add commentary, JSON, or conversational lead-ins.",
 		`Allowed markdown subset: ${FLOW_MARKDOWN_ALLOWED_FEATURES.join(", ")}.`,
 		"Use a GFM table when the user asks for a table.",
-		"Do not emit raw HTML or database schemas in this lane.",
+		"Do not emit raw HTML in this lane.",
 		"",
 		"Context summary:",
 		contextSummary,

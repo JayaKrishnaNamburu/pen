@@ -37,7 +37,10 @@
     "README.md",
     "LICENSE.md"
   ],
-  "sideEffects": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "sideEffects": false,
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",

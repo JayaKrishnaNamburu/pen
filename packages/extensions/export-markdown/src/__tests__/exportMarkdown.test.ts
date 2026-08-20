@@ -9,8 +9,6 @@ import { markdownExporter } from "../exporter";
 
 type InsertTableCellTextOp = Extract<DocumentOp, { type: "insert-table-cell-text" }>;
 type FormatTableCellTextOp = Extract<DocumentOp, { type: "format-table-cell-text" }>;
-type UpdateTableColumnsOp = Extract<DocumentOp, { type: "update-table-columns" }>;
-type DatabaseInsertRowOp = Extract<DocumentOp, { type: "database-insert-row" }>;
 type InsertBlockOp = Extract<DocumentOp, { type: "insert-block" }>;
 
 const noDefaultExtensionsPreset = {
@@ -382,22 +380,19 @@ describe("@input/pen-export-markdown", () => {
       seedEditor.apply([
         {
           type: "insert-block",
-          blockId: "db1",
-          blockType: "database",
-          props: {},
+          blockId: "t1",
+          blockType: "table",
+          props: { hasHeaderRow: true },
           position: "last",
         },
         {
-          type: "update-table-columns",
-          blockId: "db1",
-          columns: [{ id: "name", title: "Name", type: "text" }],
-        } as UpdateTableColumnsOp,
-        {
-          type: "database-insert-row",
-          blockId: "db1",
-          rowId: "row-1",
-          values: { name: "Alice" },
-        } as DatabaseInsertRowOp,
+          type: "insert-table-cell-text",
+          blockId: "t1",
+          row: 0,
+          col: 0,
+          offset: 0,
+          text: "Alice",
+        } as InsertTableCellTextOp,
         {
           type: "insert-block",
           blockId: "sub-1",
@@ -411,7 +406,6 @@ describe("@input/pen-export-markdown", () => {
     const md = markdownExporter.export(editor);
 
     expect(editor.documentProfile).toBe("flow");
-    expect(md).toContain("<!-- pen-database:");
     expect(md).toContain("| Alice |");
     expect(md).toContain("<!-- pen-subdocument:");
 

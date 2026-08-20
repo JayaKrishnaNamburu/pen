@@ -8,7 +8,13 @@ export {
 export { SearchControllerImpl } from "./controller";
 
 export {
+	DEFAULT_SEARCH_LOCALE,
 	DEFAULT_SEARCH_OPTIONS,
+	SEARCH_BUDGET_EXCEEDED_CODE,
+	SEARCH_EXECUTION_BUDGET_MS,
+	SEARCH_INVALID_PATTERN_CODE,
+	SEARCH_QUERY_MAX_LENGTH,
+	SEARCH_REGEX_SEGMENT_MAX_CODE_UNITS,
 	buildReplaceAllOps,
 	buildReplaceOps,
 	buildSearchRegex,

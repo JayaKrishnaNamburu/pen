@@ -5,22 +5,51 @@ import {
 import type { Editor } from "@input/pen-types";
 import {
 	encodePenBlocksForHtml,
+	serializePenClipboardPayload,
 	type Delta,
 	type PenBlock,
 } from "./clipboardPayload";
+
+// sentinel-storage: apply executors still persist the empty-block sentinel in
+// Y.Text. Clipboard serialization emits the logical text domain and strips that
+// storage sentinel at the export boundary — it does not treat the sentinel as
+// empty-block meaning.
+function logicalExportText(text: string): string {
+	return text.replaceAll("\u200B", "");
+}
+
+function emitClipboardWriteFailed(
+	editor: Editor | undefined,
+	error: unknown,
+): void {
+	if (!editor) {
+		return;
+	}
+	editor.internals.emit("diagnostic", {
+		code: "PEN_CLIPBOARD_002",
+		level: "warn",
+		source: "clipboard",
+		message: "Clipboard write failed",
+		remediation:
+			"Grant clipboard permission or copy while the editor is focused.",
+		error,
+	});
+}
 
 export function writePenClipboard(
 	penBlocks: PenBlock[],
 	htmlContent: string,
 	plainText: string,
 	event?: ClipboardEvent,
+	editor?: Editor,
 ): void {
-	const penBlocksJson = JSON.stringify(penBlocks);
+	const penBlocksJson = serializePenClipboardPayload(penBlocks);
 	const encodedPenBlocks = encodePenBlocksForHtml(penBlocksJson);
 	const htmlWithPenData = `<meta data-pen-blocks="${encodedPenBlocks}" />${htmlContent}`;
+	const clipboardPlainText = logicalExportText(plainText);
 
 	if (event?.clipboardData) {
-		event.clipboardData.setData("text/plain", plainText);
+		event.clipboardData.setData("text/plain", clipboardPlainText);
 		event.clipboardData.setData("text/html", htmlWithPenData);
 		event.clipboardData.setData(
 			"application/x-pen-blocks",
@@ -38,13 +67,18 @@ export function writePenClipboard(
 				"text/html": new Blob([htmlWithPenData], {
 					type: "text/html",
 				}),
-				"text/plain": new Blob([plainText], {
+				"text/plain": new Blob([clipboardPlainText], {
 					type: "text/plain",
 				}),
 			}),
 		])
-		.catch(() => {
-			navigator.clipboard.writeText(plainText).catch(() => { });
+		.catch((error: unknown) => {
+			navigator.clipboard
+				.writeText(clipboardPlainText)
+				.catch((fallbackError: unknown) => {
+					// CH5: terminal clipboard write — no remaining copy fallback.
+					emitClipboardWriteFailed(editor, fallbackError ?? error);
+				});
 		});
 }
 
@@ -53,12 +87,12 @@ export function sliceDeltas(deltas: Delta[], from: number, to: number): Delta[] 
 	let offset = 0;
 
 	for (const delta of deltas) {
-		const text = delta.insert;
-		const len = text.length;
+		const text = typeof delta.insert === "string" ? delta.insert : null;
+		const len = text?.length ?? 1;
 		const segStart = offset;
 		const segEnd = offset + len;
 
-		if (segEnd <= from || segStart >= to) {
+		if (text == null || segEnd <= from || segStart >= to) {
 			offset += len;
 			continue;
 		}
@@ -88,8 +122,9 @@ export function serializeDeltasToFormat(
 
 	let result = "";
 	for (const delta of deltas) {
-		let text = delta.insert;
-		if (text === "\u200B") continue;
+		if (typeof delta.insert !== "string") continue;
+		let text = logicalExportText(delta.insert);
+		if (!text) continue;
 
 		if (delta.attributes) {
 			const ordered = sortDeltaAttributes(delta.attributes, editor.schema);

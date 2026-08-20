@@ -75,45 +75,51 @@ describe("playground editor state serialization", () => {
 		editor.destroy();
 	});
 
-	it("serializes database tables", () => {
+	it("serializes tables", () => {
 		const editor = createPlaygroundEditor();
 
 		editor.apply([
 			{
 				type: "insert-block",
-				blockId: "db-1",
-				blockType: "database",
+				blockId: "table-1",
+				blockType: "table",
 				props: {},
 				position: "last",
 			},
 			{
 				type: "update-table-columns",
-				blockId: "db-1",
+				blockId: "table-1",
 				columns: [
 					{ id: "name", title: "Name", type: "text" },
 					{ id: "status", title: "Status", type: "text" },
 				],
 			},
 			{
-				type: "database-insert-row",
-				blockId: "db-1",
-				rowId: "row-1",
-				values: {
-					name: "Alice",
-					status: "Active",
-				},
+				type: "insert-table-cell-text",
+				blockId: "table-1",
+				row: 0,
+				col: 0,
+				offset: 0,
+				text: "Alice",
+			},
+			{
+				type: "insert-table-cell-text",
+				blockId: "table-1",
+				row: 0,
+				col: 1,
+				offset: 0,
+				text: "Active",
 			},
 		]);
 
 		const state = serializeEditorState(editor);
-		const databaseBlock = state.blocks.find((block) => block.id === "db-1");
+		const tableBlock = state.blocks.find((block) => block.id === "table-1");
 
 		expect(state.generation).toBe(editor.documentState.generation);
-		expect(databaseBlock).toMatchObject({
-			type: "database",
+		expect(tableBlock).toMatchObject({
+			type: "table",
 			table: {
 				columnCount: 2,
-				rowCount: 1,
 				columns: [
 					{ id: "name", title: "Name", type: "text" },
 					{ id: "status", title: "Status", type: "text" },

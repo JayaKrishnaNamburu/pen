@@ -3,9 +3,8 @@ import type {
 	AutocompleteAcceptanceStrategy,
 	AutocompleteBlockPolicy,
 } from "@input/pen-ai-autocomplete";
-import { databaseRenderers } from "@input/pen-database";
 import type { Editor, InteractionModel } from "@input/pen-types";
-import { useRef, useState } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
 import "./App.css";
 import { PlaygroundBlockDragHandle } from "./components/BlockDragHandle";
 import { CollaborationNameModal } from "./components/CollaborationNameModal";
@@ -18,6 +17,7 @@ import {
 	PLAYGROUND_ASSETS,
 	PLAYGROUND_IMPORTERS,
 } from "./constants/playground";
+import { isRtlEmailDraftLocation } from "./fixtures/rtlEmailDraft";
 import { usePlaygroundAISession } from "./hooks/usePlaygroundAISession";
 import {
 	DEFAULT_PLAYGROUND_AI_SUGGESTIONS_SETTINGS,
@@ -28,6 +28,7 @@ import {
 	type PlaygroundAutocompleteSettings,
 	usePlaygroundEditor,
 } from "./hooks/usePlaygroundEditor";
+import { RtlEmailDraftPage } from "./pages/RtlEmailDraftPage";
 import {
 	getPlaygroundCollaborationConfig,
 	getPlaygroundCollaborationRoom,
@@ -37,12 +38,37 @@ import {
 } from "./utils/playgroundCollaboration";
 
 const PLAYGROUND_RENDERERS = {
-	...databaseRenderers,
 	image: PlaygroundImageRenderer,
 } satisfies RendererOverrides;
 const PLAYGROUND_BLOCK_DRAG_AND_DROP = { enabled: true } as const;
 
+function getPlaygroundPage(): "rtl-email" | "app" {
+	return isRtlEmailDraftLocation() ? "rtl-email" : "app";
+}
+
+function subscribePlaygroundPage(onStoreChange: () => void) {
+	window.addEventListener("hashchange", onStoreChange);
+	window.addEventListener("popstate", onStoreChange);
+	return () => {
+		window.removeEventListener("hashchange", onStoreChange);
+		window.removeEventListener("popstate", onStoreChange);
+	};
+}
+
 export function App() {
+	const page = useSyncExternalStore(
+		subscribePlaygroundPage,
+		getPlaygroundPage,
+		() => "app",
+	);
+	if (page === "rtl-email") {
+		return <RtlEmailDraftPage />;
+	}
+
+	return <PlaygroundApp />;
+}
+
+function PlaygroundApp() {
 	const editorRef = useRef<Editor | null>(null);
 	const linkToggleRef = useRef<(() => void) | null>(null);
 	const [collaborationName, setCollaborationName] = useState(() =>

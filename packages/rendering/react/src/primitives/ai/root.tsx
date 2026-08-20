@@ -10,8 +10,6 @@ import { DATA_ATTRS } from "../../utils/dataAttributes";
 import { getAutocompleteController } from "../../utils/autocompleteController";
 import { shouldIgnoreAIKeyboardEvent } from "../../utils/aiKeyboardScope";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
-import { isDevelopmentEnvironment } from "../../utils/environment";
-
 interface AIContextValue {
 	editor: Editor;
 	controller: AIController | null;
@@ -23,11 +21,6 @@ const AIContext = createContext<AIContextValue | null>(null);
 export function useAIContext(): AIContextValue {
 	const ctx = useContext(AIContext);
 	if (!ctx) {
-		if (isDevelopmentEnvironment()) {
-			console.error(
-				"Pen: AI primitives must be used within <Pen.AI.Root>.",
-			);
-		}
 		throw new Error("Missing Pen.AI.Root context");
 	}
 	return ctx;
@@ -43,11 +36,6 @@ export function AIRoot(props: AIRootProps) {
 	const editorContext = useContext(EditorContext);
 	const editor = editorProp ?? editorContext?.editor;
 	if (!editor) {
-		if (isDevelopmentEnvironment()) {
-			console.error(
-				"Pen: <Pen.AI.Root> must be used within <Pen.Editor.Root> or receive an editor prop.",
-			);
-		}
 		throw new Error("Missing editor for Pen.AI.Root");
 	}
 

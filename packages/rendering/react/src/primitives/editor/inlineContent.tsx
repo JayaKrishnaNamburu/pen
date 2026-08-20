@@ -1,4 +1,4 @@
-import React, { useRef, useLayoutEffect, useState } from "react";
+import React, { useRef, useState } from "react";
 import {
 	getOpOriginType,
 	type Decoration,
@@ -17,6 +17,7 @@ import { useBlockDecorations } from "../../hooks/useBlockDecorations";
 import { useSelection } from "../../hooks/useSelection";
 import { useBlockTextSnapshot } from "../../hooks/useBlockTextSnapshot";
 import { useFieldEditorState } from "../../hooks/useFieldEditorState";
+import { useIsomorphicLayoutEffect } from "../../hooks/useIsomorphicLayoutEffect";
 import { useInlineCompletionState } from "../../hooks/useInlineCompletionState";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { DATA_ATTRS } from "../../utils/dataAttributes";
@@ -126,7 +127,7 @@ export function InlineContent(props: InlineContentProps) {
 	const renderedDeltasText = getDeltaText(renderedDeltas);
 	const renderedDeltasSignature = getDeltaSignature(renderedDeltas);
 
-	useLayoutEffect(() => {
+	useIsomorphicLayoutEffect(() => {
 		if (fieldEditorState.mode === "expanded") {
 			return;
 		}
@@ -135,7 +136,7 @@ export function InlineContent(props: InlineContentProps) {
 		}
 	}, [isActive, fieldEditor, fieldEditorState.mode, blockId]);
 
-	useLayoutEffect(() => {
+	useIsomorphicLayoutEffect(() => {
 		const syncInlineAtomTargets = () => {
 			const nextTargets = resolveNextInlineAtomTargets(
 				elementRef.current,
@@ -239,7 +240,7 @@ export function InlineContent(props: InlineContentProps) {
 		inlineAtomRenderers,
 	]);
 
-	useLayoutEffect(() => {
+	useIsomorphicLayoutEffect(() => {
 		inlineAtomTargetsRef.current = inlineAtomTargets;
 	}, [inlineAtomTargets]);
 

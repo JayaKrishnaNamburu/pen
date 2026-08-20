@@ -1,5 +1,6 @@
-import React, { useRef, useLayoutEffect } from "react";
+import React, { useRef } from "react";
 import { useEditorContext } from "../../context/editorContext";
+import { useIsomorphicLayoutEffect } from "../../hooks/useIsomorphicLayoutEffect";
 import { useFieldEditorContext } from "../../context/fieldEditorContext";
 import { useFieldEditorState } from "../../hooks/useFieldEditorState";
 import { fullReconcileDeltasToDOM } from "../../field-editor/reconciler";
@@ -34,13 +35,13 @@ function TextCell(props: TableCellContentProps) {
 		!!placeholder &&
 		(!textSnapshot.text || textSnapshot.text === "\u200B");
 
-	useLayoutEffect(() => {
+	useIsomorphicLayoutEffect(() => {
 		if (isActiveCell && elementRef.current && fieldEditor) {
 			fieldEditor.attachElement(elementRef.current);
 		}
 	}, [isActiveCell, fieldEditor]);
 
-	useLayoutEffect(() => {
+	useIsomorphicLayoutEffect(() => {
 		if (isActiveCell) return;
 		if (!elementRef.current) return;
 		if (!textSnapshot.exists) {

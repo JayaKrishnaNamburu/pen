@@ -1,6 +1,7 @@
 import type { BlockSchema } from "./schema";
 import type { SelectionState } from "./selection";
 import type { GenerationZone } from "./crdt";
+import type { OpOrigin } from "./ops";
 import type { Unsubscribe } from "./utility";
 import type { FieldEditorInputMode } from "./fieldEditorCapabilities";
 
@@ -85,7 +86,7 @@ export interface FieldEditor {
 
 export interface StreamingTarget {
 	readonly generationZone: GenerationZone | null;
-	beginStreaming(zoneId: string, blockId: string): void;
+	beginStreaming(zoneId: string, blockId: string, origin?: OpOrigin): void;
 	appendDelta(delta: string): void;
 	endStreaming(status: "complete" | "cancelled" | "error"): void;
 }

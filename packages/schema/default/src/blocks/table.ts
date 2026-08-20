@@ -1,16 +1,9 @@
 import { defineBlock, prop } from "@input/pen-types";
 import type { Block } from "@input/pen-types";
+import { escapeHtml } from "../escapeHtml";
 
 function escapeMarkdownPipe(text: string): string {
   return text.replace(/\|/g, "\\|");
-}
-
-function escapeHTML(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
 }
 
 function getTableRows(block: Block): string[][] {
@@ -88,7 +81,7 @@ export const table = defineBlock("table", {
         parts.push("<thead><tr>");
         const headerRow = rows[0] ?? [];
         for (let c = 0; c < colCount; c++) {
-          parts.push(`<th>${escapeHTML(headerRow[c] ?? "")}</th>`);
+          parts.push(`<th>${escapeHtml(headerRow[c] ?? "")}</th>`);
         }
         parts.push("</tr></thead>");
       }
@@ -99,7 +92,7 @@ export const table = defineBlock("table", {
         for (let r = bodyStart; r < rows.length; r++) {
           parts.push("<tr>");
           for (let c = 0; c < colCount; c++) {
-            parts.push(`<td>${escapeHTML(rows[r][c] ?? "")}</td>`);
+            parts.push(`<td>${escapeHtml(rows[r][c] ?? "")}</td>`);
           }
           parts.push("</tr>");
         }

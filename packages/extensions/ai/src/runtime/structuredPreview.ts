@@ -365,6 +365,7 @@ function areStructuredPreviewValuesEqual(previous: unknown, next: unknown): bool
 	try {
 		return JSON.stringify(previous) === JSON.stringify(next);
 	} catch {
+		// cyclic or unstringifiable values are not equal.
 		return false;
 	}
 }

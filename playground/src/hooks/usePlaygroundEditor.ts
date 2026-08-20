@@ -11,7 +11,6 @@ import {
 	type AutocompleteBlockPolicy,
 } from "@input/pen-ai-autocomplete";
 import { createEditor } from "@input/pen-core";
-import { databaseExtension } from "@input/pen-database";
 import { inputRulesExtension } from "@input/pen-input-rules";
 import { getMultiplayerController } from "@input/pen-multiplayer";
 import { defaultPreset } from "@input/pen-preset-default";
@@ -45,7 +44,7 @@ export const DEFAULT_PLAYGROUND_AUTOCOMPLETE_BLOCK_POLICY: AutocompleteBlockPoli
 	{
 		allowInCodeBlocks: true,
 		allowInTables: false,
-		deniedBlockTypes: ["database"],
+		deniedBlockTypes: [],
 	};
 
 export type PlaygroundAutocompleteSettings = {
@@ -88,10 +87,6 @@ export function PlaygroundCollaborationBootstrap({
 	const multiplayerState = useMultiplayer(editor);
 
 	useEffect(() => {
-		if (multiplayerState.connectionState !== "connected") {
-			return;
-		}
-
 		normalizePlaygroundCollaborationDocument(editor);
 	}, [editor, multiplayerState.connectionState]);
 
@@ -224,7 +219,6 @@ function createPlaygroundEditor(
 		}),
 		searchExtension(),
 		inputRulesExtension(),
-		databaseExtension(),
 		collaborationExtension,
 	];
 

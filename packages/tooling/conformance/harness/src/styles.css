@@ -1,0 +1,44 @@
+html,
+body,
+#root {
+	height: 100%;
+	margin: 0;
+}
+
+body {
+	font-family: ui-sans-serif, system-ui, sans-serif;
+	color: #111;
+	background: #fff;
+}
+
+[data-pen-conformance-harness] {
+	box-sizing: border-box;
+	min-height: 100%;
+	padding: 24px;
+	max-width: 760px;
+}
+
+[data-pen-inline-content] {
+	display: block;
+	min-height: 1.5em;
+	min-width: 0;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+	word-break: break-word;
+}
+
+[data-pen-inline-content]:focus,
+[data-pen-inline-content]:focus-visible {
+	outline: none;
+}
+
+[data-pen-editor-block] {
+	min-width: 0;
+	max-width: 100%;
+	outline: none;
+	position: relative;
+}
+
+[data-pen-editor-block] + [data-pen-editor-block] {
+	margin-top: 0.72rem;
+}

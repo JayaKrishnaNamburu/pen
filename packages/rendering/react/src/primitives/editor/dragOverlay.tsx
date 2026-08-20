@@ -17,7 +17,7 @@ export function EditorDragOverlay(props: DragOverlayProps) {
   if (typeof window === "undefined" || !state.active) return null;
   if (!props.children) return null;
 
-  return renderAsChild(props, "div", {
+  const node = renderAsChild(props, "div", {
     "data-pen-drag-overlay": "",
     "aria-hidden": "true",
     style: {
@@ -26,4 +26,17 @@ export function EditorDragOverlay(props: DragOverlayProps) {
       zIndex: 9999,
     },
   });
+
+  // ax7: overlay chrome stays presentation-only; asChild must not drop these.
+  const existingStyle = (node.props as { style?: React.CSSProperties }).style;
+  return React.cloneElement(
+    node as React.ReactElement<Record<string, unknown>>,
+    {
+      "aria-hidden": "true",
+      style: {
+        ...existingStyle,
+        pointerEvents: "none",
+      },
+    },
+  );
 }

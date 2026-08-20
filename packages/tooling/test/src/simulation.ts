@@ -1,4 +1,5 @@
 import type { TestEditor } from "./types";
+import { generateId } from "@input/pen-types";
 
 const INLINE_MARK_KEYS: Record<string, string> = {
   "mod-b": "bold",
@@ -30,7 +31,7 @@ export function simulateKeypress(
 
   if (key === "enter") {
     const offset = textTarget.to;
-    const newBlockId = crypto.randomUUID();
+    const newBlockId = generateId();
     editor.apply(
       [
         {

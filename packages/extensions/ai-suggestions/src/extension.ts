@@ -1,4 +1,7 @@
-import { createDecorationSet } from "@input/pen-core";
+import {
+	aiSuggestionsControllerFacet,
+	createDecorationSet,
+} from "@input/pen-core";
 import { AI_SUGGESTIONS_CONTROLLER_SLOT } from "@input/pen-types";
 import { defineExtension } from "@input/pen-types";
 import type { Editor, Extension } from "@input/pen-types";
@@ -27,17 +30,17 @@ export function aiSuggestionsExtension(
 		activateClient: async ({ editor }) => {
 			activeEditor = editor;
 			controller = new AISuggestionsControllerImpl(editor, resolvedConfig);
-			editor.internals.setSlot(AI_SUGGESTIONS_CONTROLLER_SLOT, controller);
+			editor.internals.assignSlot(AI_SUGGESTIONS_CONTROLLER_SLOT, controller);
 
-			unsubscribeCommit = editor.onDocumentCommit((event) => {
-				controller?.handleDocumentCommit(event);
+			unsubscribeCommit = editor.on("commit", (event) => {
+				controller?.handleCommit(event);
 			});
 		},
 
 		deactivateClient: async () => {
 			unsubscribeCommit?.();
 			unsubscribeCommit = null;
-			activeEditor?.internals.setSlot(AI_SUGGESTIONS_CONTROLLER_SLOT, null);
+			activeEditor?.internals.assignSlot(AI_SUGGESTIONS_CONTROLLER_SLOT, null);
 			controller?.destroy();
 			controller = null;
 			activeEditor = null;
@@ -63,8 +66,8 @@ export function getAISuggestionsController(
 	editor: Editor,
 ): AISuggestionsController | null {
 	return (
-		editor.internals.getSlot<AISuggestionsController>(
-			AI_SUGGESTIONS_CONTROLLER_SLOT,
-		) ?? null
+		(editor.facet(
+			aiSuggestionsControllerFacet,
+		) as AISuggestionsController | null) ?? null
 	);
 }

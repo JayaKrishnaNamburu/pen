@@ -9,15 +9,13 @@ function ContextConsumer() {
 }
 
 describe("@input/pen-react editor context", () => {
-  it("throws with an actionable error outside Pen.Editor.Root", () => {
+  it("CH5: throws with an actionable error outside Pen.Editor.Root without console.*", () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     expect(() => renderToStaticMarkup(React.createElement(ContextConsumer))).toThrow(
-      "Missing Pen.Editor.Root context",
+      "Missing Pen.Editor.Root context. Wrap your editor components in <Pen.Editor.Root editor={editor}>.",
     );
-    expect(errorSpy).toHaveBeenCalledWith(
-      'Pen: useEditorContext must be used within <Pen.Editor.Root>. Wrap your editor components in <Pen.Editor.Root editor={editor}>.',
-    );
+    expect(errorSpy).not.toHaveBeenCalled();
 
     errorSpy.mockRestore();
   });

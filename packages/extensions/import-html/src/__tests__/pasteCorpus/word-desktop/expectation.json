@@ -1,0 +1,50 @@
+{
+  "id": "word-desktop",
+  "source": "Microsoft Word (desktop)",
+  "provenance": "synthetic-until-capture",
+  "approximates": "Word for Microsoft 365 desktop clipboard HTML (Word.Document, MsoNormal, mso-list paragraphs). Not a hand-captured dump.",
+  "markers": ["xmlns:w", "Word.Document", "MsoNormal", "MsoListParagraph", "mso-list"],
+  "imageCount": 0,
+  "outcomes": {
+    "headings": "h1",
+    "lists": "flattened to paragraphs",
+    "tables": "2×2, no header row",
+    "code": "none",
+    "links": "kept",
+    "images": "dropped (img inside MsoNormal paragraph is not lifted)",
+    "marks": "bold, italic, link",
+    "colors": "none"
+  },
+  "intentionalLosses": [
+    "Word numbering metadata (mso-list on paragraphs) becomes plain paragraphs with the visible bullet glyph; the generic path does not sniff MsoListParagraph",
+    "Office <style> blocks and html/head/meta wrappers are stripped by the sanitizer",
+    "An <img> nested in <p class=MsoNormal> does not become an image block; an empty paragraph remains"
+  ],
+  "blocks": [
+    { "type": "heading", "level": 1, "text": "Quarterly notes" },
+    {
+      "type": "paragraph",
+      "text": "Hello world and more.",
+      "marks": [
+        { "type": "bold", "text": "world" },
+        { "type": "italic", "text": "more" }
+      ]
+    },
+    { "type": "paragraph", "text": "• First item" },
+    { "type": "paragraph", "text": "o Nested item" },
+    { "type": "paragraph", "text": "• Second item" },
+    {
+      "type": "table",
+      "rows": 2,
+      "cols": 2,
+      "hasHeaderRow": false,
+      "cells": [["A", "B"], ["1", "2"]]
+    },
+    {
+      "type": "paragraph",
+      "text": "Word link",
+      "marks": [{ "type": "link", "text": "Word link" }]
+    },
+    { "type": "paragraph", "text": "" }
+  ]
+}

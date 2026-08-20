@@ -1,0 +1,59 @@
+# coverage:rules claimed scope
+# IDs in force: a test name must contain each ID. Each wave appends here.
+# Unlisted spec IDs are reported, not failed, until their wave closes.
+#
+# Wave 0: I2, I3, I10, I11 (I11 seam 1 half).
+# Wave H: CH1–CH9 (CH5/CH7 were already greppable).
+# Already greppable in this checkout: HOST4, CH7, DUR1–DUR5, SEC1, SEC5, SEC6,
+# IOP3, IOP5, CH5, R1–R5, R7, I8, BR1, BR2, G1, G2, G5, AIB5, AIB6, COL1.
+
+I2
+I3
+I10
+I11
+HOST4
+CH7
+DUR1
+DUR2
+DUR3
+DUR4
+DUR5
+SEC1
+SEC5
+SEC6
+IOP3
+IOP5
+CH5
+R1
+R2
+R3
+R4
+R5
+R7
+I8
+BR1
+BR2
+G1
+G2
+G5
+AIB5
+AIB6
+COL1
+I1
+SM1
+SM2
+SM3
+I7
+ST1
+ST2
+ST3
+ST4
+ST5
+ST6
+CH1
+CH2
+CH3
+CH4
+CH6
+CH8
+CH9

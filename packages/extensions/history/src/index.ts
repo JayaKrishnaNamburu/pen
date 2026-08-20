@@ -9,14 +9,23 @@ export { SnapshotManager } from "./snapshots/snapshotManager";
 export { AutoSnapshotScheduler } from "./snapshots/autoSnapshot";
 export { getCharacterAttribution } from "./attribution/characterAttribution";
 export { buildBlameRanges } from "./attribution/blameView";
-export { resolveHistoryAuthor } from "./attribution/identityResolver";
+export {
+	opaqueClientHandle,
+	resolveHistoryAuthor,
+	resolvePresenceDisplayHint,
+} from "./attribution/identityResolver";
 
 export type {
 	AutoSnapshotConfig,
 	BlameRange,
 	CharacterAttribution,
 	HistoryAuthor,
+	HistoryAuthorIdentity,
 	HistoryConfig,
 	HistoryController,
 	HistoryState,
+	OpaqueClientHandle,
+	PresenceDisplayHint,
+	ResolveHistoryAuthor,
+	VerifiedHistoryAuthor,
 } from "./types";

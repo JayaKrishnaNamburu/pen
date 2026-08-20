@@ -60,9 +60,13 @@ function createFieldEditorStub(): FieldEditorImpl {
 function getClipboardPenBlocks(
 	clipboardData: DataTransfer,
 ): Array<{ type?: string; content?: string }> {
-	return JSON.parse(
+	const parsed = JSON.parse(
 		clipboardData.getData("application/x-pen-blocks"),
-	) as Array<{ type?: string; content?: string }>;
+	) as { blocks?: Array<{ type?: string; content?: string }> } | Array<{
+		type?: string;
+		content?: string;
+	}>;
+	return Array.isArray(parsed) ? parsed : (parsed.blocks ?? []);
 }
 
 function seedTable(
@@ -92,21 +96,6 @@ function seedTable(
 			col: 1,
 			offset: 0,
 			text: "Bravo",
-		},
-	]);
-}
-
-function seedDatabase(
-	editor: ReturnType<typeof createEditor>,
-	blockId: string,
-): void {
-	editor.apply([
-		{
-			type: "insert-block",
-			blockId,
-			blockType: "database",
-			props: {},
-			position: "last",
 		},
 	]);
 }

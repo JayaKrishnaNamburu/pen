@@ -16,7 +16,7 @@ The monorepo is layered; dependencies point strictly downward:
 - `packages/schema/default` — the default block/inline schema set.
 - `packages/rendering/dom` (`@input/pen-dom`) — the framework-free DOM engine: field editors (EditContext + contenteditable backends), selection bridge, key handling, clipboard/transfer, reconciliation, overlays. The hardest code in the repo lives here.
 - `packages/rendering/react` / `packages/rendering/vue` — thin framework bindings over pen-dom. Behavior belongs in pen-dom or core, never here.
-- `packages/extensions/*` — undo, history, search, input-rules, shortcuts, multiplayer, import/export (html, markdown, json, xml), database, document-ops, and the AI family (ai, ai-suggestions, ai-autocomplete, ai-skills, ai-tools, delta-stream).
+- `packages/extensions/*` — undo, history, search, input-rules, shortcuts, multiplayer, import/export (html, markdown, json, xml), document-ops, and the AI family (ai, ai-suggestions, ai-autocomplete, ai-skills, ai-tools, delta-stream).
 - `packages/presets/default` — batteries-included assembly of core + default schema + recommended extensions.
 - `packages/shared/*`, `packages/transports/*` (direct, sse), `packages/tooling/*` (test, bench, assets-memory), `packages/docs`, `playground/`.
 

@@ -1,15 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { blocksToOps, createEditor } from "@input/pen-core";
+import { blocksToOps } from "@input/pen-core";
 import type { SchemaRegistry } from "@input/pen-types";
-import { markdownExporter } from "@input/pen-export-markdown";
 import { createDefaultSchema } from "@input/pen-schema-default";
-import { markdownImporter, parseMarkdownToBlocks } from "../importer";
-
-const noDefaultExtensionsPreset = {
-	resolve() {
-		return { extensions: [] };
-	},
-};
+import { parseMarkdownToBlocks } from "../importer";
 
 const stubRegistry: SchemaRegistry = {
 	resolve: () => null,
@@ -28,59 +21,6 @@ function convert(md: string, registry: SchemaRegistry = stubRegistry) {
 	return parseMarkdownToBlocks(md, {
 		schema: registry,
 	} as never);
-}
-
-function databaseEditor() {
-	const editor = createEditor({
-		schema: defaultRegistry,
-		preset: noDefaultExtensionsPreset,
-	});
-	editor.apply([{
-		type: "insert-block",
-		blockId: "d1",
-		blockType: "database",
-		props: { title: "Roadmap", dataSource: "local" },
-		position: "last",
-	}]);
-	editor.apply([{
-		type: "update-table-columns",
-		blockId: "d1",
-		columns: [
-			{ id: "name", title: "Name", type: "text" },
-			{
-				id: "tags",
-				title: "Tags",
-				type: "multiSelect",
-				options: [
-					{ id: "bug", value: "Bug", color: "red" },
-					{ id: "feature", value: "Feature", color: "blue" },
-				],
-			},
-			{ id: "done", title: "Done", type: "checkbox" },
-		],
-	}]);
-	editor.apply([{
-		type: "database-insert-row",
-		blockId: "d1",
-		rowId: "roadmap-1",
-		values: {
-			name: "Ship importer",
-			tags: JSON.stringify(["Feature"]),
-			done: "false",
-		},
-	}]);
-	editor.apply([{
-		type: "database-update-view",
-		blockId: "d1",
-		patch: {
-			title: "Main",
-			type: "table",
-			visibleColumnIds: ["name", "tags"],
-			columnOrder: ["name", "tags", "done"],
-			sort: [{ columnId: "name", direction: "asc" }],
-		},
-	}]);
-	return editor;
 }
 
 describe("@input/pen-import-markdown", () => {
@@ -226,105 +166,6 @@ describe("@input/pen-import-markdown", () => {
 		expect(blocks[0].children).toHaveLength(2);
 		expect(blocks[0].children![0].type).toBe("__table_row");
 		expect(blocks[0].children![0].children).toHaveLength(2);
-	});
-
-	it("round-trips exported database markdown back into a database block", async () => {
-		const source = databaseEditor();
-		const markdown = await markdownExporter.export(source);
-
-		const blocks = convert(markdown, defaultRegistry);
-		const databaseBlock = blocks.find((block) => block.type === "database");
-		expect(databaseBlock).toMatchObject({
-			type: "database",
-			props: { title: "Roadmap", dataSource: "local" },
-		});
-		expect(databaseBlock?.database).toEqual(
-			expect.objectContaining({
-				primaryViewId: expect.any(String),
-				rows: [
-					expect.objectContaining({
-						id: expect.any(String),
-						values: {
-							name: "Ship importer",
-							tags: JSON.stringify(["feature"]),
-							done: "false",
-						},
-					}),
-				],
-			}),
-		);
-
-		const target = createEditor({
-			schema: defaultRegistry,
-			preset: noDefaultExtensionsPreset,
-		});
-		const ops = blocksToOps(blocks);
-		target.apply(ops, { origin: "import", undoGroup: true });
-		const imported = Array.from(target.documentState.allBlocks()).find(
-			(block) => block.type === "database",
-		);
-		expect(imported?.props.title).toBe("Roadmap");
-		expect(imported?.tableColumns().map((column) => column.id)).toEqual(["name", "tags", "done"]);
-		expect(imported?.tableRow(0)?.id).toEqual(expect.any(String));
-		expect(imported?.tableCell(0, 1)?.textContent()).toBe(JSON.stringify(["feature"]));
-		expect(imported?.databaseActiveView()).toEqual(
-			expect.objectContaining({
-				title: "Main",
-				visibleColumnIds: ["name", "tags"],
-				columnOrder: ["name", "tags", "done"],
-			}),
-		);
-
-		source.destroy();
-		target.destroy();
-	});
-
-	it("preserves intentionally empty database rows when round-tripping markdown", async () => {
-		const source = databaseEditor();
-		source.apply([{
-			type: "database-insert-row",
-			blockId: "d1",
-			rowId: "empty-row",
-		}]);
-		const markdown = await markdownExporter.export(source);
-
-		const blocks = convert(markdown, defaultRegistry);
-		const databaseBlock = blocks.find((block) => block.type === "database");
-		expect(databaseBlock?.database?.rows).toEqual([
-			expect.objectContaining({
-				values: {
-					name: "Ship importer",
-					tags: JSON.stringify(["feature"]),
-					done: "false",
-				},
-			}),
-			{
-				id: "empty-row",
-				values: {
-					name: "",
-					tags: "",
-					done: "",
-				},
-			},
-		]);
-
-		const target = createEditor({
-			schema: defaultRegistry,
-			preset: noDefaultExtensionsPreset,
-		});
-		target.apply(blocksToOps(blocks), { origin: "import", undoGroup: true });
-
-		const imported = Array.from(target.documentState.allBlocks()).find(
-			(block) => block.type === "database",
-		);
-		expect(imported?.tableRowCount()).toBe(2);
-		expect(imported?.tableRow(1)?.id).toBe("empty-row");
-		expect(imported?.tableCell(1, 0)?.textContent()).toBe("");
-		expect(imported?.tableCell(1, 1)?.textContent()).toBe("");
-		expect(imported?.tableCell(1, 2)?.textContent()).toBe("");
-
-		source.destroy();
-		target.destroy();
 	});
 
 	it("numbered list items", () => {

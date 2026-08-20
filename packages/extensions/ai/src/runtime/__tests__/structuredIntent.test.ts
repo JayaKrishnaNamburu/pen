@@ -55,23 +55,10 @@ describe("structured intent pipeline", () => {
 		]);
 	});
 
-	it("builds previewable intent objects from partial structured output", () => {
-		const preview = parseStructuredIntentPreview(
-			{
-				kind: "database",
-				blockId: "database-1",
-				columns: [{ title: "Name" }],
-			},
-			"database",
-		);
-
-		expect(preview?.intentState).toBe("validated");
-	});
-
 	it("wraps structured requests in a shared transport envelope", () => {
 		const prompt = buildStructuredIntentRequestPrompt({
-			prompt: "Create a database with names",
-			targetKind: "database",
+			prompt: "Create a table with names",
+			targetKind: "table",
 			activeBlockId: "anchor-block",
 			workingSet: {
 				documentVersion: 1,
@@ -85,6 +72,6 @@ describe("structured intent pipeline", () => {
 		});
 
 		expect(prompt).toContain("pen:structured-intent-request/v1");
-		expect(prompt).toContain("Create a database with names");
+		expect(prompt).toContain("Create a table with names");
 	});
 });

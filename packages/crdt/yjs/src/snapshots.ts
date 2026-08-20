@@ -147,6 +147,7 @@ function decodeRecursiveSnapshotEnvelope(
       subdocs: parsed.subdocs.filter(isRecursiveSubdocumentSnapshot),
     };
   } catch {
+    // snapshot envelope json was unreadable.
     return null;
   }
 }

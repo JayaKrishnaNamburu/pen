@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { validateDocumentMutationPlanShape } from "../planValidation";
 
 describe("document mutation plan validation", () => {
-	it("accepts valid text, flow patch, database, and review bundle plans", () => {
+	it("accepts valid text, flow patch, and review bundle plans", () => {
 		const textEditPlan = validateDocumentMutationPlanShape({
 			kind: "text_edit",
 			target: {
@@ -31,11 +31,6 @@ describe("document mutation plan validation", () => {
 				},
 			],
 		});
-		const databaseEditPlan = validateDocumentMutationPlanShape({
-			kind: "database_edit",
-			blockId: "database-1",
-			steps: [{ op: "set_active_view", viewId: "view-1" }],
-		});
 		const reviewBundlePlan = validateDocumentMutationPlanShape({
 			kind: "review_bundle",
 			label: "Revise layout",
@@ -57,7 +52,6 @@ describe("document mutation plan validation", () => {
 
 		expect(textEditPlan.valid).toBe(true);
 		expect(flowPatchPlan.valid).toBe(true);
-		expect(databaseEditPlan.valid).toBe(true);
 		expect(reviewBundlePlan.valid).toBe(true);
 		expect(blockInsertPlan.valid).toBe(true);
 	});
@@ -67,8 +61,8 @@ describe("document mutation plan validation", () => {
 			kind: "mystery_edit",
 		});
 		const missingBlockId = validateDocumentMutationPlanShape({
-			kind: "database_edit",
-			steps: [],
+			kind: "block_update",
+			props: { level: 2 },
 		});
 
 		expect(invalidKind.valid).toBe(false);
@@ -81,12 +75,7 @@ describe("document mutation plan validation", () => {
 		).toBe(true);
 	});
 
-	it("rejects malformed step arrays and invalid nested review bundle plans", () => {
-		const malformedSteps = validateDocumentMutationPlanShape({
-			kind: "database_edit",
-			blockId: "database-1",
-			steps: "not-an-array",
-		});
+	it("rejects malformed nested review bundle plans", () => {
 		const invalidNestedPlan = validateDocumentMutationPlanShape({
 			kind: "review_bundle",
 			label: "Review table",
@@ -98,10 +87,6 @@ describe("document mutation plan validation", () => {
 			],
 		});
 
-		expect(malformedSteps.valid).toBe(false);
-		expect(
-			malformedSteps.issues.some((issue) => issue.path === "plan.steps"),
-		).toBe(true);
 		expect(invalidNestedPlan.valid).toBe(false);
 		expect(
 			invalidNestedPlan.issues.some(
@@ -131,20 +116,20 @@ describe("document mutation plan validation", () => {
 	});
 
 	it("rejects plans that are incompatible with the validated target kind", () => {
-		const invalidForDatabaseTarget = validateDocumentMutationPlanShape(
+		const invalidForTextTarget = validateDocumentMutationPlanShape(
 			{
-				kind: "database_edit",
-				blockId: "database-1",
-				steps: [],
+				kind: "block_insert",
+				blockType: "paragraph",
+				position: "last",
 			},
 			{
 				targetKind: "text",
 			},
 		);
 
-		expect(invalidForDatabaseTarget.valid).toBe(false);
+		expect(invalidForTextTarget.valid).toBe(false);
 		expect(
-			invalidForDatabaseTarget.issues.some(
+			invalidForTextTarget.issues.some(
 				(issue) => issue.code === "unsupported-target-kind",
 			),
 		).toBe(true);

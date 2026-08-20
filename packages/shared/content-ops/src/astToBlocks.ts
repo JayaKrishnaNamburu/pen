@@ -1,10 +1,7 @@
 import type { BlockImportMatch, MarkdownNode, SchemaRegistry } from "@input/pen-types";
 import { collectInlineHtmlContent } from "./htmlInline";
 import { collectInlineContent, processInlineNodes } from "./inlineMarks";
-import {
-  parseDatabaseMarkdownMarker,
-  parseTable,
-} from "./tableParser";
+import { parseTable } from "./tableParser";
 import type {
   InlineMark,
   MdastList,
@@ -79,18 +76,7 @@ function walkNodes(
   registry: SchemaRegistry,
   listIndent: number,
 ): void {
-  let pendingDatabasePayload: ReturnType<typeof parseDatabaseMarkdownMarker> =
-    null;
-
   for (const node of nodes) {
-    if (node.type === "html") {
-      const payload = parseDatabaseMarkdownMarker(node.value);
-      if (payload) {
-        pendingDatabasePayload = payload;
-        continue;
-      }
-    }
-
     if (
       node.type === "paragraph" &&
       node.children?.length === 1 &&
@@ -131,14 +117,10 @@ function walkNodes(
 
     const mapping = blockMappings[node.type];
     if (mapping) {
-      const block =
-        node.type === "table"
-          ? parseTable(node as MdastTable, pendingDatabasePayload)
-          : mapping(node);
+      const block = mapping(node);
       if (!block) {
         continue;
       }
-      pendingDatabasePayload = null;
 
       if (
         node.children &&
@@ -156,13 +138,11 @@ function walkNodes(
     }
 
     if (node.type === "list") {
-      pendingDatabasePayload = null;
       walkListItems(node as MdastList, blocks, registry, listIndent);
       continue;
     }
 
     if (node.type === "listItem") {
-      pendingDatabasePayload = null;
       const block = listItemToBlock(node as MdastListItem, listIndent);
       blocks.push(block);
 
@@ -182,7 +162,6 @@ function walkNodes(
     }
 
     if (node.children && Array.isArray(node.children)) {
-      pendingDatabasePayload = null;
       walkNodes(node.children, blocks, registry, listIndent);
     }
   }

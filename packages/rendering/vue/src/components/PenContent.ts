@@ -50,23 +50,29 @@ export const PenContent = defineComponent({
         }),
       );
 
-      return h(props.as, { [DATA_ATTRS.editorContent]: "" }, [
-        h(
-          "div",
-          {
-            ref: (element: Element | ComponentPublicInstance | null) => {
-              blocksHostElement.value =
-                element instanceof HTMLElement ? element : null;
+      return h(
+        props.as,
+        {
+          [DATA_ATTRS.editorContent]: "",
+        },
+        [
+          h(
+            "div",
+            {
+              ref: (element: Element | ComponentPublicInstance | null) => {
+                blocksHostElement.value =
+                  element instanceof HTMLElement ? element : null;
+              },
+              "data-pen-editor-blocks-host": "",
+              [DATA_ATTRS.fieldEditorSurface]:
+                fieldEditorState.value.mode === "expanded" ? "" : undefined,
+              [DATA_ATTRS.fieldEditorActiveSurface]:
+                fieldEditorState.value.mode === "expanded" ? "" : undefined,
             },
-            "data-pen-editor-blocks-host": "",
-            [DATA_ATTRS.fieldEditorSurface]:
-              fieldEditorState.value.mode === "expanded" ? "" : undefined,
-            [DATA_ATTRS.fieldEditorActiveSurface]:
-              fieldEditorState.value.mode === "expanded" ? "" : undefined,
-          },
-          blockNodes,
-        ),
-      ]);
+            blockNodes,
+          ),
+        ],
+      );
     };
   },
 });

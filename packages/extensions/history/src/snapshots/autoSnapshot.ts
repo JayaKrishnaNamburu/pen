@@ -52,7 +52,7 @@ export class AutoSnapshotScheduler {
 
 	private bindEditor(editor: Editor): void {
 		this.cleanup.push(
-			editor.onDocumentCommit(() => {
+			editor.on("commit", () => {
 				this.opsSinceSnapshot += 1;
 				if (this.opsSinceSnapshot < this.config.opThreshold) {
 					return;

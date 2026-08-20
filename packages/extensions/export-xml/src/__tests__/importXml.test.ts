@@ -1,11 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
-import type { DocumentOp } from "@input/pen-types";
 import { xmlExporter } from "../exporter";
 import { xmlImporter } from "../importer";
-
-type UpdateTableColumnsOp = Extract<DocumentOp, { type: "update-table-columns" }>;
-type DatabaseInsertRowOp = Extract<DocumentOp, { type: "database-insert-row" }>;
 
 const noDefaultExtensionsPreset = {
   resolve() {
@@ -130,7 +126,7 @@ describe("@input/pen-export-xml import", () => {
     editor.destroy();
   });
 
-  it("round-trips table and database content deterministically", async () => {
+  it("round-trips table content deterministically", async () => {
     const source = createBareEditor();
     source.apply([
       {
@@ -148,24 +144,6 @@ describe("@input/pen-export-xml import", () => {
         offset: 0,
         text: "A1",
       },
-      {
-        type: "insert-block",
-        blockId: "db-1",
-        blockType: "database",
-        props: { title: "Roadmap", dataSource: "local" },
-        position: "last",
-      },
-      {
-        type: "update-table-columns",
-        blockId: "db-1",
-        columns: [{ id: "name", title: "Name", type: "text" }],
-      } as UpdateTableColumnsOp,
-      {
-        type: "database-insert-row",
-        blockId: "db-1",
-        rowId: "row-1",
-        values: { name: "Ship XML" },
-      } as DatabaseInsertRowOp,
     ]);
 
     const exported = await xmlExporter.export(source);

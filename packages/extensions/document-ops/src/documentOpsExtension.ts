@@ -47,14 +47,14 @@ export function documentOpsExtension(
       toolRuntime.registerTool(deleteBlockTool(ctx.editor));
       toolRuntime.registerTool(moveBlockTool(ctx.editor));
 
-      ctx.editor.internals.setSlot(
+      ctx.editor.internals.assignSlot(
         DOCUMENT_OPS_TOOL_RUNTIME_SLOT,
         toolRuntime,
       );
     },
 
     deactivateClient: async () => {
-      activeEditor?.internals.setSlot(
+      activeEditor?.internals.assignSlot(
         DOCUMENT_OPS_TOOL_RUNTIME_SLOT,
         undefined,
       );

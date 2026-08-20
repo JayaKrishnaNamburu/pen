@@ -1,0 +1,54 @@
+# HOST3 / API7: Node versions at the endpoints of engines.node (>=22)
+# plus one non-Linux runner. Kept out of ci.yml so this wave does not
+# race other CI editors. Floor 22 is the setup-node pin in ci/release/docs;
+# 26 is Node Current as of 2026-08 (the open upper end of >=22).
+name: Node matrix
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+jobs:
+  host3-node-matrix:
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            node-version: 22
+          - os: ubuntu-latest
+            node-version: 26
+          - os: macos-latest
+            node-version: 22
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Typecheck packages
+        run: pnpm typecheck
+
+      - name: Run unit and integration tests
+        run: pnpm test

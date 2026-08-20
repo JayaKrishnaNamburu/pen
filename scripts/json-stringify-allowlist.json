@@ -1,0 +1,55 @@
+{
+  "_comment": "SCALE2 (spec-v2/22-scale-envelope.md, Wave F step F.2): JSON.stringify sites in packages/rendering and packages/core runtime src that produce a wire format, debug display, HOST4 clone, or Intl cache key — not a per-commit / per-render change signature. Each entry needs file, line, and a reason. Remove an entry in the same PR that deletes the call.",
+  "entries": [
+    {
+      "file": "packages/core/src/i18n/formatters.ts",
+      "line": 24,
+      "reason": "Intl cache key — formatterKey stringifies options so PluralRules / NumberFormat / DateTimeFormat can be reused (LOC3/LOC6)."
+    },
+    {
+      "file": "packages/rendering/dom/src/utils/clipboardPayload.ts",
+      "line": 57,
+      "reason": "Clipboard wire format — serializePenClipboardPayload writes the versioned Pen clipboard JSON."
+    },
+    {
+      "file": "packages/rendering/dom/src/utils/clipboardPayload.ts",
+      "line": 145,
+      "reason": "Clipboard wire format — re-serialize a parsed payload after migration so HTML meta stays versioned JSON."
+    },
+    {
+      "file": "packages/rendering/dom/src/utils/tableCellClipboard.ts",
+      "line": 44,
+      "reason": "Clipboard wire format — table-cell copy writes application/x-pen-cells JSON."
+    },
+    {
+      "file": "packages/rendering/react/src/hooks/useAIDebugLog.ts",
+      "line": 188,
+      "reason": "Debug display — safeStringify truncates a value for the AI debug log, not a render signature."
+    },
+    {
+      "file": "packages/rendering/react/src/primitives/ai/toolStream.tsx",
+      "line": 138,
+      "reason": "Debug display — formatToolStreamValue pretty-prints a tool payload for the stream UI."
+    },
+    {
+      "file": "packages/rendering/react/src/primitives/editor/blockDragSession.tsx",
+      "line": 148,
+      "reason": "Drag wire format — serializeBlockDragPayload writes the HTML5 drag JSON payload."
+    },
+    {
+      "file": "packages/rendering/react/src/renderers/defaultRenderer.tsx",
+      "line": 30,
+      "reason": "Debug display — unknown-block fallback pretty-prints props in development only."
+    },
+    {
+      "file": "packages/rendering/react/src/utils/clipboardSerialization.ts",
+      "line": 18,
+      "reason": "Clipboard wire format — writePenClipboard serializes pen-blocks onto the clipboard."
+    },
+    {
+      "file": "packages/rendering/react/src/utils/structuredPreview.ts",
+      "line": 283,
+      "reason": "HOST4 clone fallback — structuredClone is preferred; JSON clone is only used when that API is missing."
+    }
+  ]
+}

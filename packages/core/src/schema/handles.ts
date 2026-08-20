@@ -1,8 +1,11 @@
 import type {
 	AppHandle,
 	AppPlacement,
+	BlockCapabilityKey,
+	BlockCapabilityMap,
 	BlockHandle,
-	DatabaseViewState,
+	BlockSchema,
+	ContentType,
 	InlineDelta,
 	TableCellHandle,
 	TableColumnSchema,
@@ -14,7 +17,6 @@ import type {
 } from "@input/pen-types";
 import {
 	crdtMapToPlainRecord,
-	getDatabaseViews,
 	getCellMap,
 	getMapProp,
 	getRowCells,
@@ -33,7 +35,6 @@ import {
 	getMapEntries,
 	getPropsMap,
 	resolveText,
-	toDatabaseViewState,
 	toInlineDeltas,
 	toTableColumnSchema,
 } from "./handleValueHelpers";
@@ -62,7 +63,6 @@ export function createAppHandle(
 // ── BlockHandleImpl ─────────────────────────────────────────
 
 const EMPTY_TABLE_COLUMNS: readonly TableColumnSchema[] = [];
-const EMPTY_DATABASE_VIEWS: readonly DatabaseViewState[] = [];
 
 class TableRowHandleImpl implements TableRowHandle {
 	constructor(
@@ -93,7 +93,10 @@ class BlockHandleImpl implements BlockHandle {
 
 		if (schema?.propSchema) {
 			for (const [key, propDef] of Object.entries(schema.propSchema)) {
-				props[key] = (propDef as Record<string, unknown>).default;
+				const defaultValue = (propDef as Record<string, unknown>).default;
+				if (defaultValue !== undefined) {
+					props[key] = defaultValue;
+				}
 			}
 		}
 		for (const [key, value] of getMapEntries(getPropsMap(this.blockMap))) {
@@ -349,6 +352,20 @@ class BlockHandleImpl implements BlockHandle {
 		return content.length;
 	}
 
+	as<K extends BlockCapabilityKey>(
+		capability: K,
+	): BlockCapabilityMap[K] | null {
+		if (
+			!schemaDeclaresBlockCapability(
+				this._registry.resolve(this.type),
+				capability,
+			)
+		) {
+			return null;
+		}
+		return this as BlockCapabilityMap[K];
+	}
+
 	// ── Metadata ──────────────────────────────────────────
 
 	meta(namespace: string): Readonly<Record<string, unknown>> | null {
@@ -414,13 +431,14 @@ class BlockHandleImpl implements BlockHandle {
 	}
 
 	tableColumns(): readonly TableColumnSchema[] {
-		if (this.type !== "database") return EMPTY_TABLE_COLUMNS;
+		if (this.type !== "table") return EMPTY_TABLE_COLUMNS;
 		const raw = this.blockMap.get("tableColumns");
 		if (!raw) return EMPTY_TABLE_COLUMNS;
 		if (typeof raw === "string") {
 			try {
 				return JSON.parse(raw) as TableColumnSchema[];
 			} catch {
+				// stored column json was unreadable; treat as no columns.
 				return EMPTY_TABLE_COLUMNS;
 			}
 		}
@@ -431,36 +449,10 @@ class BlockHandleImpl implements BlockHandle {
 			.filter((column): column is TableColumnSchema => column !== null);
 	}
 
-	databaseViews(): readonly DatabaseViewState[] {
-		if (this.type !== "database") return EMPTY_DATABASE_VIEWS;
-		const views = getDatabaseViews(this.blockMap);
-		if (!views) return EMPTY_DATABASE_VIEWS;
-		return arrayValues(views)
-			.map((view) => toDatabaseViewState(view))
-			.filter((view): view is DatabaseViewState => view !== null);
-	}
-
-	databasePrimaryViewId(): string | null {
-		if (this.type !== "database") return null;
-		const value = getStringProp(this.blockMap, "databasePrimaryViewId");
-		return typeof value === "string" && value.length > 0 ? value : null;
-	}
-
-	databaseActiveView(): DatabaseViewState | null {
-		const primaryViewId = this.databasePrimaryViewId();
-		const views = this.databaseViews();
-		if (!primaryViewId) {
-			return views[0] ?? null;
-		}
-		return (
-			views.find((view) => view.id === primaryViewId) ?? views[0] ?? null
-		);
-	}
-
 	// ── Internal ──────────────────────────────────────────
 
 	private isGridBlock(): boolean {
-		return this.type === "table" || this.type === "database";
+		return this.type === "table";
 	}
 
 	private get blockMap(): CRDTUnknownMap {
@@ -470,3 +462,21 @@ class BlockHandleImpl implements BlockHandle {
 	}
 }
 
+function schemaDeclaresBlockCapability(
+	schema: BlockSchema | null,
+	capability: BlockCapabilityKey,
+): boolean {
+	if (!schema) {
+		return false;
+	}
+	const content = schema.content as ContentType;
+	switch (capability) {
+		case "table":
+			return content === "table" || schema.fieldEditor === "table";
+		default: {
+			const _exhaustive: never = capability;
+			void _exhaustive;
+			return false;
+		}
+	}
+}

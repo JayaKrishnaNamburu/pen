@@ -11,8 +11,6 @@ import {
 	type SelectionToolbarState,
 } from "../../hooks/useSelectionToolbar";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
-import { isDevelopmentEnvironment } from "../../utils/environment";
-
 export interface SelectionToolbarContextValue {
 	editor: Editor;
 	toolbar: ToolbarContextValue;
@@ -25,16 +23,12 @@ export const SelectionToolbarContext =
 export function useSelectionToolbarContext(): SelectionToolbarContextValue {
 	const ctx = useContext(SelectionToolbarContext);
 	if (!ctx) {
-		if (isDevelopmentEnvironment()) {
-			console.error(
-				"Pen: useSelectionToolbarContext must be used within <Pen.SelectionToolbar.Root>.",
-			);
-		}
 		throw new Error("Missing Pen.SelectionToolbar.Root context");
 	}
 	return ctx;
 }
 
+/** AX3 detached-surface host. Keyboard contract lives on Content. */
 export interface SelectionToolbarRootProps extends AsChildProps {
 	ref?: React.Ref<HTMLElement>;
 }

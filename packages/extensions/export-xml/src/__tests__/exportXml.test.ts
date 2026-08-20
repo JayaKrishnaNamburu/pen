@@ -4,8 +4,6 @@ import type { DocumentOp } from "@input/pen-types";
 import { xmlExporter } from "../exporter";
 
 type InsertTableCellTextOp = Extract<DocumentOp, { type: "insert-table-cell-text" }>;
-type UpdateTableColumnsOp = Extract<DocumentOp, { type: "update-table-columns" }>;
-type DatabaseInsertRowOp = Extract<DocumentOp, { type: "database-insert-row" }>;
 
 const noDefaultExtensionsPreset = {
   resolve() {
@@ -145,38 +143,6 @@ describe("@input/pen-export-xml", () => {
     expect(xml).toContain('<block id="row-0" type="__table_row">');
     expect(xml).toContain('<block id="cell-0-0" type="__table_cell">');
     expect(xml).toContain("<content>A1</content>");
-
-    editor.destroy();
-  });
-
-  it("exports database payload as deterministic JSON within XML", async () => {
-    const editor = editorWithOps([
-      {
-        type: "insert-block",
-        blockId: "db-1",
-        blockType: "database",
-        props: { title: "Roadmap", dataSource: "local" },
-        position: "last",
-      },
-      {
-        type: "update-table-columns",
-        blockId: "db-1",
-        columns: [{ id: "name", title: "Name", type: "text" }],
-      } as UpdateTableColumnsOp,
-      {
-        type: "database-insert-row",
-        blockId: "db-1",
-        rowId: "row-1",
-        values: { name: "Ship XML" },
-      } as DatabaseInsertRowOp,
-    ]);
-
-    const xml = await xmlExporter.export(editor);
-
-    expect(xml).toContain('<block id="db-1" type="database">');
-    expect(xml).toContain("<database>");
-    expect(xml).toContain("&quot;title&quot;:&quot;Roadmap&quot;");
-    expect(xml).toContain("&quot;id&quot;:&quot;row-1&quot;");
 
     editor.destroy();
   });

@@ -44,6 +44,12 @@ export function App() {
 
 `PenEditor` is the fastest path. If you want to own the shell, layout, and controls, use the compound primitives directly.
 
+## Examples
+
+Minimal Vite apps for each host live at [`examples/react`](examples/react), [`examples/vue`](examples/vue), and [`examples/vanilla`](examples/vanilla). Each starts with `@input/pen-preset-default`; `@input/pen-core` is the assembly point if you skip the preset.
+
+These packages are not on the pnpm workspace yet. `pnpm-workspace.yaml` does not include `examples/*`, so `pnpm --filter @input/pen-example-*` will not resolve until that membership lands.
+
 ## Headless UI Examples
 
 Pen keeps runtime state and document mutation in the editor. Your app can subscribe to that state and render any UI system around it.
@@ -277,7 +283,6 @@ If you want less custom UI code, `@input/pen-react` also ships `Pen.Toolbar.*` a
 - `@input/pen-undo`: undo and redo with origin tagging
 - `@input/pen-shortcuts`: headless keyboard shortcut extension
 - `@input/pen-history`: snapshot history and attribution primitives
-- `@input/pen-database`: database block behaviors
 - `@input/pen-document-ops`: document tool and generation-zone helpers
 
 ### AI
@@ -310,6 +315,23 @@ Pen keeps one block-native document model and one canonical mutation path.
 - JSON is the canonical machine-readable format. XML exists for interoperability.
 
 For the full current-state package and architecture specs, see [spec/README.md](spec/README.md).
+
+## Browser and Node Support
+
+This table is the canonical HOST3 runtime floor. Wave D's docs content set should link here rather than restating the numbers.
+
+| Runtime         | Minimum | Input backend                                                                           |
+| --------------- | ------- | --------------------------------------------------------------------------------------- |
+| Node            | `>=22`  | n/a (headless)                                                                          |
+| Chromium        | 93      | contenteditable on 93–120; EditContext when `EditContext` is a function (Chromium 121+) |
+| Firefox         | 92      | contenteditable                                                                         |
+| Safari / WebKit | 15.4    | contenteditable                                                                         |
+
+Expanded field-editor mode and table-cell editing always use contenteditable, even when EditContext is present (`fieldEditorImplRuntime.ts` backend selection).
+
+**How the floor was chosen (HOST3 / HOST4).** Node is `>=22` because every current workflow (`ci.yml`, `release.yml`, `docs.yml`) pins `setup-node` to 22. HOST4's Node-reachable bare APIs are older (`Object.hasOwn` 16.9.0, `Array.prototype.at` 16.6.0) and E.5 marks both as trivially replaceable; declaring 16.9.0 would be an unverified range (API7). The browser floor is the newest bare HOST4 API, not a round "last two versions" cut: `Object.hasOwn` (Chrome 93, Firefox 92, Safari 15.4) sits above `Array.prototype.at` (92 / 90 / 15.4) and `replaceChildren` (86 / 78 / 14). APIs newer than that floor — EditContext, `structuredClone`, `ResizeObserver`, `color-mix()`, `crypto.randomUUID` — are feature-detected with a documented fallback (HOST4) and do not raise the minimum. Raising the floor is a minor-version change; lowering it is never silent.
+
+Published packages declare the Node floor as `engines.node: ">=22"`. CI verifies the declared endpoints (22 and current Node 26) plus one non-Linux runner in [`.github/workflows/node-matrix.yml`](.github/workflows/node-matrix.yml).
 
 ## Repository Resources
 

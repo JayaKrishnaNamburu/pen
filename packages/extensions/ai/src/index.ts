@@ -96,7 +96,6 @@ export {
 } from "./suggestions/persistent";
 export {
 	AI_SESSION_SUGGESTION_ORIGIN,
-	interceptApplyForSuggestMode,
 	SUGGESTION_RESOLUTION_ORIGIN,
 	shouldBypassSuggestMode,
 } from "./suggestions/suggestMode";
@@ -198,8 +197,6 @@ export type {
 	BlockUpdatePlan,
 	BlockMovePlan,
 	BlockConvertPlan,
-	DatabaseEditPlan,
-	DatabaseEditStep,
 	ReviewBundlePlan,
 	PlanConfidence,
 	PlanTextRange,

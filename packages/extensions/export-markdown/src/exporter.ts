@@ -1,18 +1,35 @@
-import type { Editor, Exporter, ExportOptions } from "@input/pen-types";
+import type { BlockHandle, Editor, Exporter, ExportOptions } from "@input/pen-types";
 import {
-  exportMarkdownForBlocks,
-  exportMarkdownRange,
+  exportMarkdownForBlocks as serializeMarkdownForBlocks,
+  exportMarkdownRange as serializeMarkdownRange,
 } from "@input/pen-markdown-serialization";
 import type {
   MarkdownExportConfig,
   MarkdownExportRange,
   MarkdownExportViewMode,
 } from "@input/pen-markdown-serialization";
+import { admitMarkdownUrls } from "./admitMarkdownUrls";
 
 type MarkdownExporterExtraOptions = Record<string, unknown> & {
   range?: MarkdownExportRange;
   viewMode?: MarkdownExportViewMode;
 };
+
+export function exportMarkdownForBlocks(
+  editor: Editor,
+  handles: Iterable<BlockHandle>,
+  config?: MarkdownExportConfig,
+): string {
+  return admitMarkdownUrls(serializeMarkdownForBlocks(editor, handles, config));
+}
+
+export function exportMarkdownRange(
+  editor: Editor,
+  range?: MarkdownExportRange | null,
+  config?: MarkdownExportConfig,
+): string {
+  return admitMarkdownUrls(serializeMarkdownRange(editor, range, config));
+}
 
 export const markdownExporter: Exporter<string, MarkdownExporterExtraOptions> = {
   name: "markdown",
@@ -37,7 +54,6 @@ export const markdownExporter: Exporter<string, MarkdownExporterExtraOptions> = 
     );
   },
 };
-export { exportMarkdownForBlocks, exportMarkdownRange };
 export type {
   MarkdownExportConfig,
   MarkdownExportRange,

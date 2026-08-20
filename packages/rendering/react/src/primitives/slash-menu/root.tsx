@@ -1,36 +1,50 @@
-import React, { createContext, useContext, useEffect, useRef } from "react";
+import React, {
+	createContext,
+	useContext,
+	useEffect,
+	useId,
+	useRef,
+} from "react";
 import type { Editor } from "@input/pen-types";
 import { EditorContext } from "../../context/editorContext";
+import { useFieldEditorContext } from "../../context/fieldEditorContext";
 import {
 	useSlashMenu,
 	type SlashMenuState,
 	type SlashMenuActions,
 } from "../../hooks/useSlashMenu";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
-import { isDevelopmentEnvironment } from "../../utils/environment";
+import { composeRefs } from "../../utils/composeRefs";
+import {
+	applySlashMenuFieldAria,
+	clearSlashMenuFieldAria,
+	getSlashMenuOptionId,
+	resolveSlashMenuField,
+} from "./popupAria";
 
-export type SlashMenuContextValue = SlashMenuState &
+export type SlashMenuController = SlashMenuState &
 	SlashMenuActions & {
 		editor?: Editor;
 	};
+
+export type SlashMenuContextValue = SlashMenuController & {
+	listboxId: string;
+};
+
+export { getSlashMenuOptionId };
 
 const SlashMenuContext = createContext<SlashMenuContextValue | null>(null);
 
 export function useSlashMenuContext(): SlashMenuContextValue {
 	const ctx = useContext(SlashMenuContext);
 	if (!ctx) {
-		if (isDevelopmentEnvironment()) {
-			console.error(
-				"Pen: useSlashMenuContext must be used within <Pen.SlashMenu.Root>.",
-			);
-		}
 		throw new Error("Missing Pen.SlashMenu.Root context");
 	}
 	return ctx;
 }
 
 export interface SlashMenuRootProps extends AsChildProps {
-	controller?: SlashMenuContextValue;
+	controller?: SlashMenuController;
 	editor?: Editor;
 	open?: boolean;
 	onOpenChange?: (open: boolean) => void;
@@ -60,11 +74,6 @@ function UncontrolledSlashMenuRoot(props: UncontrolledSlashMenuRootProps) {
 	const editor = editorProp ?? editorContext?.editor;
 
 	if (!editor) {
-		if (isDevelopmentEnvironment()) {
-			console.error(
-				"Pen: <Pen.SlashMenu.Root> must be used within <Pen.Editor.Root> or receive an editor prop.",
-			);
-		}
 		throw new Error("Missing editor for Pen.SlashMenu.Root");
 	}
 
@@ -83,7 +92,7 @@ type SlashMenuRootContentProps = Omit<
 	SlashMenuRootProps,
 	"controller" | "editor"
 > & {
-	controller: SlashMenuContextValue;
+	controller: SlashMenuController;
 	editor?: Editor;
 };
 
@@ -96,13 +105,18 @@ function SlashMenuRootContent(props: SlashMenuRootContentProps) {
 		...rest
 	} = props;
 	const editorContext = useContext(EditorContext);
+	const fieldEditor = useFieldEditorContext();
 	const editor = editorProp ?? controller.editor ?? editorContext?.editor;
+	const listboxId = useId();
+	const rootRef = useRef<HTMLElement | null>(null);
+	const annotatedFieldRef = useRef<HTMLElement | null>(null);
 
 	const isOpen = controlledOpen ?? controller.open;
 
 	const wrappedState: SlashMenuContextValue = {
 		...controller,
 		editor,
+		listboxId,
 		open: isOpen,
 		dismiss: () => {
 			controller.dismiss();
@@ -161,6 +175,30 @@ function SlashMenuRootContent(props: SlashMenuRootContentProps) {
 					currentState.select(nextIndex);
 					break;
 				}
+				case "Home": {
+					event.preventDefault();
+					event.stopPropagation();
+					wrappedStateRef.current = {
+						...currentState,
+						selectedIndex: 0,
+					};
+					currentState.select(0);
+					break;
+				}
+				case "End": {
+					event.preventDefault();
+					event.stopPropagation();
+					const lastIndex =
+						currentState.items.length === 0
+							? 0
+							: currentState.items.length - 1;
+					wrappedStateRef.current = {
+						...currentState,
+						selectedIndex: lastIndex,
+					};
+					currentState.select(lastIndex);
+					break;
+				}
 				case "Enter":
 				case "Tab":
 					event.preventDefault();
@@ -180,15 +218,55 @@ function SlashMenuRootContent(props: SlashMenuRootContentProps) {
 			document.removeEventListener("keydown", handleKeyDown, true);
 	}, [isOpen]);
 
+	useEffect(() => {
+		const syncFieldAria = () => {
+			const field = isOpen
+				? resolveSlashMenuField(rootRef.current)
+				: null;
+			const previous = annotatedFieldRef.current;
+			if (previous && previous !== field) {
+				clearSlashMenuFieldAria(previous);
+			}
+			if (!isOpen || !field) {
+				clearSlashMenuFieldAria(field ?? previous);
+				annotatedFieldRef.current = null;
+				return;
+			}
+			const activeOptionId =
+				controller.items.length > 0
+					? getSlashMenuOptionId(listboxId, controller.selectedIndex)
+					: undefined;
+			applySlashMenuFieldAria(field, listboxId, activeOptionId);
+			annotatedFieldRef.current = field;
+		};
+
+		syncFieldAria();
+		const unsubscribe = fieldEditor?.subscribe(syncFieldAria);
+		return () => {
+			unsubscribe?.();
+			clearSlashMenuFieldAria(annotatedFieldRef.current);
+			annotatedFieldRef.current = null;
+		};
+	}, [
+		controller.items.length,
+		controller.selectedIndex,
+		fieldEditor,
+		isOpen,
+		listboxId,
+	]);
+
 	const primitiveProps: Record<string, unknown> = {
-		role: "dialog",
 		"data-pen-slash-menu": "",
 		"data-open": isOpen || undefined,
 	};
 
 	return (
 		<SlashMenuContext.Provider value={wrappedState}>
-			{renderAsChild(rest, "div", primitiveProps)}
+			{renderAsChild(
+				{ ...rest, ref: composeRefs(rest.ref, rootRef) },
+				"div",
+				primitiveProps,
+			)}
 		</SlashMenuContext.Provider>
 	);
 }

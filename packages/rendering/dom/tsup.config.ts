@@ -5,6 +5,7 @@ export default defineConfig({
     "src/index.ts",
     "src/constants/selectAll.ts",
     "src/field-editor/*.ts",
+    "src/utils/clipboardPayload.ts",
     "src/utils/dataAttributes.ts",
     "src/utils/inlineDecorations.ts",
     "src/utils/parentIdTree.ts",

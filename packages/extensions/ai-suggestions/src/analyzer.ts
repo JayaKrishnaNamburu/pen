@@ -122,6 +122,7 @@ export function parseSuggestionResponse(
 	try {
 		parsed = JSON.parse(normalized);
 	} catch {
+		// model json was unreadable; no suggestions.
 		return [];
 	}
 

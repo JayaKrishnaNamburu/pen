@@ -1,3 +1,4 @@
+import { urlPolicy } from "@input/pen-dom";
 import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 import type { BlockHandle, CellSelection } from "@input/pen-types";
 import { defineComponent, h, type VNode, type VNodeChild } from "vue";
@@ -92,6 +93,7 @@ export const PenBlock = defineComponent({
           [DATA_ATTRS.selected]: isSelected || undefined,
           [DATA_ATTRS.focused]: isFocused || undefined,
           [DATA_ATTRS.surfaceRole]: surfaceRole ?? undefined,
+          dir: resolveBlockContentDir(block.props.direction),
           tabIndex: -1,
           contentEditable:
             surfaceRole != null && surfaceRole !== "editable-inline"
@@ -312,6 +314,7 @@ function renderBlockBody(args: {
       );
     }
     case "image": {
+      const src = urlPolicy.resolve(block.props.src, "image");
       const caption =
         typeof block.props.caption === "string" ? block.props.caption : "";
       const width =
@@ -319,8 +322,9 @@ function renderBlockBody(args: {
 
       return h("figure", { "data-block-type": "image" }, [
         h("img", {
-          src: String(block.props.src ?? ""),
+          src: src ?? undefined,
           alt: String(block.props.alt ?? ""),
+          "data-pen-blocked-url": src == null ? "" : undefined,
           style: width ? { width: `${width}px` } : undefined,
         }),
         caption ? h("figcaption", {}, caption) : null,
@@ -329,9 +333,16 @@ function renderBlockBody(args: {
     case "table":
       return renderTable(block, editor, readonly, toggleFieldEditor, selection);
     default:
-      return h("div", { "data-block-type": block.type, "data-unknown-block": "" }, [
-        h("span", { "data-pen-unknown-type": "" }, block.type),
-      ]);
+      return h(
+        "div",
+        {
+          "data-block-type": block.type,
+          "data-unknown-block": "",
+          "data-selected": isBlockSelected(selection, block.id) || undefined,
+          contentEditable: false,
+        },
+        [h("span", { "data-pen-unknown-type": "" }, block.type)],
+      );
   }
 }
 
@@ -448,6 +459,15 @@ function renderTable(
       h("table", { [DATA_ATTRS.table]: "" }, tableChildren),
     ]),
   ]);
+}
+
+function resolveBlockContentDir(
+  direction: unknown,
+): "ltr" | "rtl" | undefined {
+  if (direction === "ltr" || direction === "rtl") {
+    return direction;
+  }
+  return undefined;
 }
 
 function resolveIndent(block: BlockHandle): number {

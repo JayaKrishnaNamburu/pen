@@ -1,7 +1,6 @@
 import {
   jsonImporter,
   type PenBlockJSON,
-  type PenDatabaseJSON,
   type PenDocumentJSON,
   type PenInlineSegmentJSON,
   type PenMarkJSON,
@@ -90,7 +89,6 @@ function parseXmlBlock(element: XMLElement): PenBlockJSON {
   const children = childrenParent
     ? childElements(childrenParent, "block").map(parseXmlBlock)
     : undefined;
-  const database = parseChildJson<PenDatabaseJSON>(element, "database");
 
   return {
     id,
@@ -106,7 +104,6 @@ function parseXmlBlock(element: XMLElement): PenBlockJSON {
         }
       : {}),
     ...(children && children.length > 0 ? { children } : {}),
-    ...(database ? { database } : {}),
   };
 }
 
@@ -190,6 +187,7 @@ function parseJsonValue<T>(raw: string, label: string): T {
   try {
     return JSON.parse(raw) as T;
   } catch {
+    // invalid json becomes a labeled importer error.
     throw new Error(`Invalid Pen XML ${label} payload.`);
   }
 }

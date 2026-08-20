@@ -2,7 +2,6 @@ import React from "react";
 import { createPortal } from "react-dom";
 import { useInlineSuggestionControls } from "../../hooks/useInlineSuggestionControls";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
-import { isDevelopmentEnvironment } from "../../utils/environment";
 import { useAIContext } from "./root";
 
 export interface AIInlineSuggestionControlsProps extends AsChildProps {
@@ -23,11 +22,6 @@ const InlineSuggestionControlsContext =
 function useInlineSuggestionControlsContext(): InlineSuggestionControlsContextValue {
 	const ctx = React.useContext(InlineSuggestionControlsContext);
 	if (!ctx) {
-		if (isDevelopmentEnvironment()) {
-			console.error(
-				"Pen: inline suggestion primitives must be used within <Pen.AI.InlineSuggestionControls>.",
-			);
-		}
 		throw new Error("Missing Pen.AI.InlineSuggestionControls context");
 	}
 	return ctx;

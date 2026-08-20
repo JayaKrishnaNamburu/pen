@@ -29,9 +29,6 @@ const PEN_SOURCE_ALIASES = {
 	"@input/pen-document-ops": fileURLToPath(
 		new URL("../packages/extensions/document-ops/src/index.ts", import.meta.url),
 	),
-	"@input/pen-database": fileURLToPath(
-		new URL("../packages/extensions/database/src/index.ts", import.meta.url),
-	),
 	"@input/pen-export-html": fileURLToPath(
 		new URL("../packages/extensions/export-html/src/index.ts", import.meta.url),
 	),
@@ -76,7 +73,7 @@ export default defineConfig({
 	resolve: {
 		alias: PEN_SOURCE_ALIASES,
 		conditions: ["import", "module", "browser", "default"],
-		dedupe: ["react", "react-dom"],
+		dedupe: ["react", "react-dom", "yjs"],
 	},
 	server: {
 		fs: {

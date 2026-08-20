@@ -1,4 +1,5 @@
 import type { AISuggestion, AISuggestionCandidate } from "./types";
+import { generateId } from "@input/pen-types";
 
 export function materializeSuggestionsFromCandidates(input: {
 	blockId: string;
@@ -20,7 +21,7 @@ export function materializeSuggestionsFromCandidates(input: {
 		}
 
 		materializedSuggestions.push({
-			id: crypto.randomUUID(),
+			id: generateId(),
 			kind: candidate.kind,
 			title: candidate.title,
 			blockId: input.blockId,

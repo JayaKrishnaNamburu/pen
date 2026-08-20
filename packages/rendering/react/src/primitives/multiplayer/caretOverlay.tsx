@@ -10,8 +10,6 @@ import { useMultiplayer } from "../../hooks/useMultiplayer";
 import { useOverlayLayout } from "../../hooks/useOverlayLayout";
 import { useRemoteCursors } from "../../hooks/useRemoteCursors";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
-import { isDevelopmentEnvironment } from "../../utils/environment";
-
 type MultiplayerStyle = React.CSSProperties & Record<string, string | number>;
 
 export interface MultiplayerCaretRenderProps {
@@ -42,11 +40,6 @@ export function MultiplayerCaretOverlay(
 	const editor = editorProp ?? editorContext?.editor;
 
 	if (!editor) {
-		if (isDevelopmentEnvironment()) {
-			console.error(
-				"Pen: <Pen.Multiplayer.CaretOverlay> must be used within <Pen.Editor.Root> or receive an editor prop.",
-			);
-		}
 		throw new Error("Missing editor for Pen.Multiplayer.CaretOverlay");
 	}
 
@@ -156,7 +149,7 @@ function createCaretRenderProps(
 		padding: "2px 6px",
 		borderRadius: "6px",
 		background: "var(--pen-peer-color)",
-		color: "#fff",
+		color: "var(--pen-peer-label-color, #fff)",
 		fontSize: "12px",
 		lineHeight: 1.2,
 		whiteSpace: "nowrap",

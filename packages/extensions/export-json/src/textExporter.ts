@@ -69,14 +69,11 @@ function renderBlockText(
 	}
 
 	const ownText = renderInlineContentText(block, options);
-	const databaseTexts = renderDatabaseText(block);
 	const childTexts =
 		block.children?.flatMap((child) => renderBlockText(child, options)) ??
 		[];
 
-	return [ownText, ...databaseTexts, ...childTexts].filter(
-		(text) => text.length > 0,
-	);
+	return [ownText, ...childTexts].filter((text) => text.length > 0);
 }
 
 function renderInlineContentText(
@@ -102,23 +99,4 @@ function renderInlineSegmentText(
 	}
 
 	return options.renderInlineNode?.(segment) ?? "";
-}
-
-function renderDatabaseText(block: PenBlockJSON): string[] {
-	if (!block.database) {
-		return [];
-	}
-
-	const columnIds = block.database.columns.map((column) => column.id);
-	const title = block.database.title?.trim();
-	const rows = block.database.rows
-		.map((row) =>
-			columnIds
-				.map((columnId) => row.values[columnId])
-				.filter((value): value is string => Boolean(value?.trim()))
-				.join("\t"),
-		)
-		.filter((rowText) => rowText.length > 0);
-
-	return [title, ...rows].filter((text): text is string => Boolean(text));
 }

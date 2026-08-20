@@ -1,11 +1,12 @@
 import { createYjsProviderSession, getYjsAwareness, getYjsDoc } from "@input/pen-crdt-yjs";
 import { multiplayerExtension } from "@input/pen-multiplayer";
-import type {
-	DocumentOp,
-	Editor,
-	Extension,
-	MultiplayerSession,
-	MultiplayerSessionContext,
+import {
+	generateId,
+	type DocumentOp,
+	type Editor,
+	type Extension,
+	type MultiplayerSession,
+	type MultiplayerSessionContext,
 } from "@input/pen-types";
 import { WebsocketProvider } from "y-websocket";
 
@@ -104,7 +105,7 @@ export function normalizePlaygroundCollaborationDocument(editor: Editor): boolea
 			[
 				{
 					type: "insert-block",
-					blockId: crypto.randomUUID(),
+					blockId: generateId(),
 					blockType: "paragraph",
 					props: {},
 					position: "last",
@@ -216,11 +217,7 @@ function getPlaygroundCollaborationRoomFromUrl(): string | null {
 }
 
 function createFreshPlaygroundCollaborationRoomId(): string {
-	const suffix =
-		typeof crypto !== "undefined" && "randomUUID" in crypto
-			? crypto.randomUUID().slice(0, 8)
-			: Math.random().toString(36).slice(2, 10);
-	return `${DEFAULT_PLAYGROUND_COLLAB_ROOM}-${suffix}`;
+	return `${DEFAULT_PLAYGROUND_COLLAB_ROOM}-${generateId().slice(0, 8)}`;
 }
 
 function buildPlaygroundCollaborationRoomUrl(
@@ -301,7 +298,7 @@ function parseStoredPlaygroundUser(
 }
 
 function createPlaygroundUser(): PlaygroundCollaborationUser {
-	const id = createPlaygroundUserId();
+	const id = generateId();
 	return {
 		id,
 		name: "",
@@ -318,14 +315,6 @@ function storePlaygroundUser(user: PlaygroundCollaborationUser): void {
 		PLAYGROUND_COLLAB_USER_STORAGE_KEY,
 		JSON.stringify(user),
 	);
-}
-
-function createPlaygroundUserId(): string {
-	if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-		return crypto.randomUUID();
-	}
-
-	return `playground-${Math.random().toString(36).slice(2, 10)}`;
 }
 
 function hashString(value: string): number {

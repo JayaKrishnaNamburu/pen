@@ -1,3 +1,4 @@
+import { affectedBlockIdsFromSummary } from "@input/pen-core";
 import { useRef, useSyncExternalStore } from "react";
 import type { Editor, OpOrigin } from "@input/pen-types";
 
@@ -19,12 +20,12 @@ export function useBlockCommitState(
 
 	return useSyncExternalStore(
 		(callback) =>
-			editor.onDocumentCommit((event) => {
-				if (!event.affectedBlocks.includes(blockId)) {
+			editor.on("commit", (event) => {
+				if (!affectedBlockIdsFromSummary(event.summary).includes(blockId)) {
 					return;
 				}
 				snapshotRef.current = {
-					revision: event.blockRevisions[blockId] ?? editor.getBlockRevision(blockId),
+					revision: editor.getBlockRevision(blockId),
 					origin: event.origin,
 					commitId: event.commitId,
 				};

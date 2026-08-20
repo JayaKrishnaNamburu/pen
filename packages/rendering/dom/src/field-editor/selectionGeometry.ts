@@ -39,6 +39,7 @@ function getCharacterRectAtOffset(
 		range.setStart(domPoint.node, domPoint.offset);
 		range.setEnd(domPoint.node, domPoint.offset);
 	} catch {
+		// detached or out-of-range DOM point.
 		return null;
 	}
 	const rangeRectGetter = (

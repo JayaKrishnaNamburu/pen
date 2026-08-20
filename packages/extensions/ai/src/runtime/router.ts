@@ -79,7 +79,6 @@ const SEARCH_PATTERNS = /\b(find|search|where|which|list|scan|inspect|look for)\
 const STRUCTURAL_PATTERNS = /\b(restructure|reorganize|outline|move|delete section|insert section|change blocks|convert block|table|heading hierarchy)\b/i;
 const REVIEW_PATTERNS = /\b(review|critique|audit|compare|analyze entire|check whole)\b/i;
 const TABLE_TARGET_PATTERNS = /\b(table|grid|rows?|columns?)\b/i;
-const DATABASE_TARGET_PATTERNS = /\b(database|view|views|records?)\b/i;
 
 export function routeAIRequest(
 	input: RequestRouterInput,
@@ -126,7 +125,7 @@ export function routeAIRequest(
 	if (
 		input.target === "block" &&
 		targetKind === "block" &&
-		(promptTargetKind === "table" || promptTargetKind === "database")
+		promptTargetKind === "table"
 	) {
 		targetKind = promptTargetKind;
 	}
@@ -202,8 +201,8 @@ export function refineRouteWithNavigator(
 	let targetKind = decision.targetKind;
 
 	if (input.activeBlockType && isStructuralBlockType(input.activeBlockType)) {
-		if (input.activeBlockType === "table" || input.activeBlockType === "database") {
-			targetKind = input.activeBlockType;
+		if (input.activeBlockType === "table") {
+			targetKind = "table";
 		}
 		confidence = Math.min(confidence, 0.45);
 		if (lane === "cursor-context" || lane === "context-first") {
@@ -220,10 +219,7 @@ export function refineRouteWithNavigator(
 		confidence = Math.min(confidence, 0.55);
 	}
 
-	if (
-		input.structuredTargetKind === "table" ||
-		input.structuredTargetKind === "database"
-	) {
+	if (input.structuredTargetKind === "table") {
 		targetKind = input.structuredTargetKind;
 		confidence = Math.min(confidence, 0.5);
 		if (lane === "cursor-context" || lane === "context-first") {
@@ -354,13 +350,10 @@ export function classifyPromptIntent(prompt: string): PromptIntent {
 }
 
 function isStructuralBlockType(blockType: string | null): boolean {
-	return blockType === "table" || blockType === "database" || blockType === "kanban";
+	return blockType === "table" || blockType === "kanban";
 }
 
 function inferPromptTargetKind(prompt: string): AITargetKind | null {
-	if (DATABASE_TARGET_PATTERNS.test(prompt)) {
-		return "database";
-	}
 	if (TABLE_TARGET_PATTERNS.test(prompt)) {
 		return "table";
 	}
@@ -393,14 +386,6 @@ function resolveStructuredMutationMode(input: {
 	if (
 		input.surface === "bottom-chat" &&
 		input.target === "block" &&
-		input.targetKind === "database" &&
-		input.activeBlockType !== input.targetKind
-	) {
-		return "direct-stream";
-	}
-	if (
-		input.surface === "bottom-chat" &&
-		input.target === "block" &&
 		input.targetKind === "table" &&
 		input.activeBlockType !== "table"
 	) {
@@ -418,9 +403,6 @@ function resolveApplyStrategy(input: {
 	intent: PromptIntent;
 	surface?: AISurface;
 }): AIApplyStrategy {
-	if (input.plannerMode === "structured" || input.targetKind === "database") {
-		return "structured-database";
-	}
 	if (input.target === "selection" || input.contentFormat === "text") {
 		return "text-fast-apply";
 	}

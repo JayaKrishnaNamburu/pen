@@ -1,4 +1,5 @@
-import { INPUT_RULES_ENGINE_SLOT_KEY, generateId } from "@input/pen-types";
+import { inputRulesEngineFacet } from "@input/pen-core";
+import { generateId } from "@input/pen-types";
 import type { DocumentOp, Editor } from "@input/pen-types";
 import {
 	toggleInlineMark as toggleInlineMarkCommand,
@@ -170,9 +171,8 @@ export function applyListInputRule(
 	}
 
 	const inputRuleEngine =
-		editor.internals.getSlot<BlockInputRuleEngine>(
-			INPUT_RULES_ENGINE_SLOT_KEY,
-		) ?? null;
+		(editor.facet(inputRulesEngineFacet) as BlockInputRuleEngine | null) ??
+		null;
 	if (inputRuleEngine) {
 		const ops = inputRuleEngine.tryMatch(editor, blockId, text, {
 			offset: range.start,

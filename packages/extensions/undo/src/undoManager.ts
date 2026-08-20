@@ -8,10 +8,15 @@ import { getOpOriginType } from "@input/pen-types";
 
 const EXPLICIT_GROUP_CAPTURE_TIMEOUT_MS = 2_147_483_647;
 
+export interface UndoManagerImplOptions {
+  onListenerError?: (error: unknown) => void;
+}
+
 export class UndoManagerImpl implements UndoManager {
   private readonly _crdtUndo: CRDTUndoManager;
   private readonly _trackedOriginTypes = new Map<string, number>();
   private readonly _listeners = new Set<() => void>();
+  private readonly _onListenerError?: (error: unknown) => void;
   private _idleTimer: ReturnType<typeof setTimeout> | null = null;
   private _groupTimeout = 1000;
   private _baseCaptureTimeout = 1000;
@@ -19,8 +24,13 @@ export class UndoManagerImpl implements UndoManager {
   _onCaptureBoundary: (() => void) | null = null;
   _isHistoryOperation = false;
 
-  constructor(crdtUndo: CRDTUndoManager, trackedOrigins?: Iterable<OpOrigin>) {
+  constructor(
+    crdtUndo: CRDTUndoManager,
+    trackedOrigins?: Iterable<OpOrigin>,
+    options?: UndoManagerImplOptions,
+  ) {
     this._crdtUndo = crdtUndo;
+    this._onListenerError = options?.onListenerError;
     for (const origin of trackedOrigins ?? []) {
       this._trackedOriginTypes.set(getOpOriginType(origin), 1);
     }
@@ -145,8 +155,8 @@ export class UndoManagerImpl implements UndoManager {
     for (const cb of this._listeners) {
       try {
         cb();
-      } catch {
-        /* ignore */
+      } catch (error) {
+        this._onListenerError?.(error);
       }
     }
   }
@@ -156,6 +166,7 @@ export class UndoManagerImpl implements UndoManager {
     this._explicitUndoGroupId = null;
     this._clearIdleTimer();
     this._listeners.clear();
+    this._crdtUndo.destroy();
   }
 
   private _incrementTrackedOrigin(origin: OpOrigin): void {

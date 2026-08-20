@@ -86,8 +86,8 @@ describe("playground planner", () => {
 	it("treats structured intent envelopes as the shared structured route contract", () => {
 		const editor = createEditor();
 		const prompt = buildStructuredIntentRequestPrompt({
-			prompt: "Create a database with names",
-			targetKind: "database",
+			prompt: "Create a table with names",
+			targetKind: "table",
 			activeBlockId: "anchor-block",
 			workingSet: null,
 		});

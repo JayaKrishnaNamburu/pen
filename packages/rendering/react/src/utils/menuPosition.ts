@@ -125,9 +125,12 @@ function getAnchorRect(
 	if (domSelection?.rangeCount) {
 		const range = domSelection.getRangeAt(0).cloneRange();
 		range.collapse(false);
-		const rect =
-			Array.from(range.getClientRects()).at(-1) ??
-			range.getBoundingClientRect();
+		const clientRects = Array.from(range.getClientRects());
+		// HOST4: Array.at is newer than some hosts below the floor. Index
+		// arithmetic is equivalent — the last caret rect still anchors the
+		// menu; no user-visible degradation.
+		const lastClientRect = clientRects[clientRects.length - 1];
+		const rect = lastClientRect ?? range.getBoundingClientRect();
 		if (rect.width > 0 || rect.height > 0) {
 			return rect;
 		}

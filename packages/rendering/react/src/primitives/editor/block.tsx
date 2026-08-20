@@ -60,6 +60,7 @@ export function EditorBlock(props: EditorBlockProps) {
 		blockType === "heading" && typeof block.props?.level === "number"
 			? block.props.level
 			: undefined;
+	const dir = blockContentDir(block.props?.direction);
 	const blockControl = blockControls?.({
 		blockId,
 		blockType,
@@ -79,6 +80,7 @@ export function EditorBlock(props: EditorBlockProps) {
 		[DATA_ATTRS.editorBlock]: "",
 		[DATA_ATTRS.blockId]: blockId,
 		[DATA_ATTRS.blockType]: blockType,
+		dir,
 		"data-level": headingLevel,
 		[DATA_ATTRS.selected]: isSelected || undefined,
 		[DATA_ATTRS.focused]: fieldEditor?.focusBlockId === blockId || undefined,
@@ -182,4 +184,11 @@ function mergeBlockDecorationAttributes(
 	}
 
 	return attributes;
+}
+
+function blockContentDir(direction: unknown): "ltr" | "rtl" | undefined {
+	if (direction === "ltr" || direction === "rtl") {
+		return direction;
+	}
+	return undefined;
 }

@@ -52,6 +52,7 @@ export const streamingBenchmarks: BenchDefinition[] = [
 
       streaming.endStreaming("complete");
       b.end();
+      await editor.destroy();
     },
   },
   {
@@ -75,6 +76,7 @@ export const streamingBenchmarks: BenchDefinition[] = [
       b.end();
 
       streaming.endStreaming("complete");
+      await editor.destroy();
     },
   },
 ];

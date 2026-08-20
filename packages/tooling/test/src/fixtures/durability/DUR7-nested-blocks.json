@@ -1,0 +1,46 @@
+{
+	"id": "DUR7-nested-blocks",
+	"rule": "DUR7",
+	"shape": "nested blocks",
+	"kind": "json-export-snapshot",
+	"document": {
+		"version": 1,
+		"blocks": [
+			{
+				"id": "DUR7-toggle",
+				"type": "toggle",
+				"props": {
+					"open": true,
+					"parentId": ""
+				},
+				"content": {
+					"text": "Nested parent",
+					"segments": [
+						{
+							"type": "text",
+							"text": "Nested parent"
+						}
+					]
+				},
+				"children": [
+					{
+						"id": "DUR7-nested-child",
+						"type": "paragraph",
+						"props": {
+							"parentId": "DUR7-toggle"
+						},
+						"content": {
+							"text": "Nested child",
+							"segments": [
+								{
+									"type": "text",
+									"text": "Nested child"
+								}
+							]
+						}
+					}
+				]
+			}
+		]
+	}
+}

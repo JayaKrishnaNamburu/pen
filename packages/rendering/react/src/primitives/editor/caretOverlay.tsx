@@ -8,8 +8,6 @@ import { useOverlayLayout } from "../../hooks/useOverlayLayout";
 import { useSelection } from "../../hooks/useSelection";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { DATA_ATTRS } from "../../utils/dataAttributes";
-import { isDevelopmentEnvironment } from "../../utils/environment";
-
 type CaretStyle = React.CSSProperties & Record<string, string | number>;
 const CARET_BLINK_RESUME_DELAY_MS = 500;
 
@@ -49,11 +47,6 @@ export function EditorCaretOverlay(props: EditorCaretOverlayProps) {
 	const fieldEditor = useFieldEditorContext();
 
 	if (!editor) {
-		if (isDevelopmentEnvironment()) {
-			console.error(
-				"Pen: <Pen.Editor.CaretOverlay> must be used within <Pen.Editor.Root> or receive an editor prop.",
-			);
-		}
 		throw new Error("Missing editor for Pen.Editor.CaretOverlay");
 	}
 

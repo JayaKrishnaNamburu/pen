@@ -1,5 +1,5 @@
 import type { BlockHandle, Editor, TableCellHandle } from "@input/pen-types";
-import { buildDatabaseData, buildTableChildren } from "./exporterUtils";
+import { buildTableChildren } from "./exporterUtils";
 import { groupListItems } from "./listGrouper";
 import { getNumberedListItemValue } from "./orderedList";
 import { sortDeltaAttributes } from "./sortDeltaAttributes";
@@ -15,8 +15,15 @@ export interface MarkdownExportConfig {
   viewMode?: MarkdownExportViewMode;
 }
 
-const ZERO_WIDTH_SPACE = "\u200B";
 const DELETE_SUGGESTION_ACTION = "delete";
+
+// sentinel-storage: apply executors still persist the empty-block sentinel in
+// Y.Text. This serializer emits the logical text domain and strips that
+// storage sentinel at the export boundary — it does not treat the sentinel
+// as empty-block meaning.
+function logicalExportText(text: string): string {
+  return text.replaceAll("\u200B", "");
+}
 
 export function exportMarkdownRange(
   editor: Editor,
@@ -96,11 +103,6 @@ function serializeBlockHandleToMarkdown(
     props,
     content: serializeInlineContent(handle, editor, viewMode),
     children: buildTableChildren(handle),
-    ...(handle.type === "database"
-      ? {
-          databaseData: buildDatabaseData(handle),
-        }
-      : {}),
   };
 
   return schema.serialize.toMarkdown(block);
@@ -119,8 +121,10 @@ function serializeInlineContent(
   let result = "";
 
   for (const delta of deltas) {
-    let text = typeof delta.insert === "string" ? delta.insert : "";
-    if (text === ZERO_WIDTH_SPACE) continue;
+    let text = logicalExportText(
+      typeof delta.insert === "string" ? delta.insert : "",
+    );
+    if (!text) continue;
     const suggestion = delta.attributes?.suggestion as
       | { action?: string }
       | undefined;
@@ -212,8 +216,8 @@ function serializeTableCellMarkdown(
 
   let result = "";
   for (const delta of cell.textDeltas()) {
-    let text = delta.insert;
-    if (text === ZERO_WIDTH_SPACE) {
+    let text = logicalExportText(delta.insert);
+    if (!text) {
       continue;
     }
     const suggestion = delta.attributes?.suggestion as
@@ -280,7 +284,9 @@ function readResolvedText(
   handle: BlockHandle,
   viewMode: MarkdownExportViewMode,
 ): string {
-  return viewMode === "resolved"
-    ? handle.textContent({ resolved: true })
-    : handle.textContent();
+  return logicalExportText(
+    viewMode === "resolved"
+      ? handle.textContent({ resolved: true })
+      : handle.textContent(),
+  );
 }

@@ -60,6 +60,7 @@ describe("adapter", () => {
 		it("produces only the delta since the state vector", () => {
 			const doc = adapter.createDocument() as YjsCRDTDocument;
 			const stateVector = Y.encodeStateVector(doc.ydoc);
+			const base = adapter.encodeState(doc);
 
 			doc.ydoc.transact(() => {
 				doc.penDocument.blockOrder.push(["b1"]);
@@ -69,8 +70,10 @@ describe("adapter", () => {
 			});
 
 			const delta = adapter.encodeUpdate(doc, stateVector);
+			expect(delta.byteLength).toBeLessThan(adapter.encodeState(doc).byteLength);
 
 			const fresh = new Y.Doc();
+			Y.applyUpdate(fresh, base);
 			Y.applyUpdate(fresh, delta);
 			expect(fresh.getArray("blockOrder").toArray()).toEqual(["b1"]);
 		});

@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { describe, expect, it } from "vitest";
 import {
+	BENCH_GATE_SAMPLE_SIZE,
 	bench,
 	evaluateBenchResult,
 	getCriticalBenchFailures,
@@ -11,6 +12,7 @@ import {
 } from "../bench";
 import type { BenchResult, BenchWaiver } from "../bench";
 import { createLargeDocument } from "../fixtures/largeDoc";
+import { reportJSON } from "../reporters/json";
 import {
 	DEFAULT_BENCH_WAIVER_FILE,
 	assertCriticalBenchmarkTargets,
@@ -87,8 +89,20 @@ describe("@input/pen-bench runner", () => {
 		const results = await runSuite(
 			"test-suite",
 			[
-				{ name: "fast", fn: (b) => { b.start(); b.end(); } },
-				{ name: "also-fast", fn: (b) => { b.start(); b.end(); } },
+				{
+					name: "fast",
+					fn: (b) => {
+						b.start();
+						b.end();
+					},
+				},
+				{
+					name: "also-fast",
+					fn: (b) => {
+						b.start();
+						b.end();
+					},
+				},
 			],
 			{ iterations: 5, warmup: 1 },
 		);
@@ -96,6 +110,37 @@ describe("@input/pen-bench runner", () => {
 		expect(results).toHaveLength(2);
 		expect(results[0].name).toBe("fast");
 		expect(results[1].name).toBe("also-fast");
+	});
+
+	it("CH8: runSuite awaits teardown after each benchmark", async () => {
+		const teardowns: string[] = [];
+		await runSuite(
+			"teardown-suite",
+			[
+				{
+					name: "first",
+					fn: (b) => {
+						b.start();
+						b.end();
+					},
+					teardown: () => {
+						teardowns.push("first");
+					},
+				},
+				{
+					name: "second",
+					fn: (b) => {
+						b.start();
+						b.end();
+					},
+					teardown: async () => {
+						teardowns.push("second");
+					},
+				},
+			],
+			{ iterations: 2, warmup: 0 },
+		);
+		expect(teardowns).toEqual(["first", "second"]);
 	});
 
 	it("runSuite preserves benchmark metrics in results", async () => {
@@ -128,6 +173,7 @@ describe("@input/pen-bench runner", () => {
 			"Streaming",
 			"Extensions",
 			"AI",
+			"SCALE3",
 		]);
 		expect(suites.every((suite) => suite.benchmarks.length > 0)).toBe(true);
 	});
@@ -138,7 +184,7 @@ describe("@input/pen-bench runner", () => {
 			warmup: 0,
 		});
 
-		expect(allSuiteResults).toHaveLength(6);
+		expect(allSuiteResults).toHaveLength(7);
 
 		for (const suite of allSuiteResults) {
 			expect(suite.results.length).toBeGreaterThan(0);
@@ -152,13 +198,43 @@ describe("@input/pen-bench runner", () => {
 				expect(Number.isFinite(result.opsPerSecond)).toBe(true);
 			}
 		}
-	}, 10000);
+	}, 30000);
 
-	it("marks critical regressions from p95 latency", () => {
+	it("CH8: states the median sample size used by the gate", () => {
+		expect(BENCH_GATE_SAMPLE_SIZE).toBe(50);
+	});
+
+	it("CH8: judges critical budgets on the median, not p95", () => {
 		const result: BenchResult = {
 			id: "streaming.batch-flush-latency",
 			name: "streaming batch flush latency",
-			iterations: 5,
+			iterations: BENCH_GATE_SAMPLE_SIZE,
+			totalMs: 90,
+			averageMs: 18,
+			minMs: 8,
+			maxMs: 40,
+			p50Ms: 9,
+			p95Ms: 25,
+			opsPerSecond: 55,
+			targetMs: 10,
+			isCritical: true,
+		};
+
+		expect(evaluateBenchResult(result)).toEqual({
+			targetMs: 10,
+			meetsTarget: true,
+			isCritical: true,
+			waiver: undefined,
+			waiverExpired: false,
+		});
+		expect(getCriticalBenchFailures([result])).toEqual([]);
+	});
+
+	it("CH8: marks a critical regression when the median exceeds the target", () => {
+		const result: BenchResult = {
+			id: "streaming.batch-flush-latency",
+			name: "streaming batch flush latency",
+			iterations: BENCH_GATE_SAMPLE_SIZE,
 			totalMs: 90,
 			averageMs: 18,
 			minMs: 15,
@@ -180,6 +256,37 @@ describe("@input/pen-bench runner", () => {
 		expect(getCriticalBenchFailures([result])).toEqual([result]);
 	});
 
+	it("CH8: records P95 and Max as trend fields, not gate inputs", () => {
+		const result: BenchResult = {
+			id: "streaming.batch-flush-latency",
+			name: "streaming batch flush latency",
+			iterations: BENCH_GATE_SAMPLE_SIZE,
+			totalMs: 90,
+			averageMs: 9,
+			minMs: 8,
+			maxMs: 40,
+			p50Ms: 9,
+			p95Ms: 25,
+			opsPerSecond: 111,
+			targetMs: 10,
+			isCritical: true,
+		};
+
+		expect(JSON.parse(reportJSON("Streaming", [result]))).toMatchObject({
+			suite: "Streaming",
+			gateStatistic: "median",
+			results: [
+				{
+					p50Ms: 9,
+					p95Ms: 25,
+					maxMs: 40,
+					meetsTarget: true,
+					isCritical: true,
+				},
+			],
+		});
+	});
+
 	it("throws when a critical target regresses", () => {
 		const result: BenchResult = {
 			id: "extension.dispatch-observe-x5",
@@ -197,7 +304,7 @@ describe("@input/pen-bench runner", () => {
 		};
 
 		expect(() => assertCriticalBenchmarkTargets([result])).toThrow(
-			"Critical benchmark targets failed",
+			/Critical benchmark targets failed: extension dispatch \(median 3\.00ms over 5; p95 2\.00ms, max 5\.00ms trend\)/,
 		);
 	});
 
@@ -232,7 +339,9 @@ describe("@input/pen-bench runner", () => {
 			waiverExpired: false,
 		});
 		expect(getCriticalBenchFailures([result], [waiver])).toEqual([]);
-		expect(() => assertCriticalBenchmarkTargets([result], [waiver])).not.toThrow();
+		expect(() =>
+			assertCriticalBenchmarkTargets([result], [waiver]),
+		).not.toThrow();
 	});
 
 	it("does not honor expired waivers", () => {
@@ -342,11 +451,7 @@ describe("@input/pen-bench runner", () => {
 
 		await mkdir(join(repoRoot, "spec"), { recursive: true });
 		await mkdir(nestedDir, { recursive: true });
-		await writeFile(
-			waiverFile,
-			JSON.stringify({ waivers: [] }),
-			"utf8",
-		);
+		await writeFile(waiverFile, JSON.stringify({ waivers: [] }), "utf8");
 
 		await expect(resolveDefaultWaiverFilePath(nestedDir)).resolves.toBe(
 			waiverFile,

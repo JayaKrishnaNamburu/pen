@@ -20,7 +20,7 @@ This package is renderer-agnostic. Renderer packages can bind the controller sta
 
 The packaged extension keeps the runtime contract broad:
 
-- search, navigation, and replace work across blocks, tables, and databases
+- search, navigation, and replace work across blocks and tables
 - active grid matches reveal by selecting the containing cell
 - the built-in search decoration helper only highlights block-text matches today
 

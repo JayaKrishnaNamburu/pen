@@ -1,5 +1,10 @@
 import type { EditorInternals, CreateEditorOptions, PenEventMap, DocumentCommitEvent, CRDTAdapter, CRDTDocument, CRDTEvent, PenDocument, SchemaRegistry, Awareness, DocumentSession, DocumentScope, DocumentScopeReplacementEvent, DocumentProfile, Extension, DocumentOp, ApplyOptions, OpOrigin, MutationGroupMetadata, SelectionState, TextSelection, DocumentRange, BlockHandle, Block, DocumentState, UndoManager, Unsubscribe, CRDTMap, CRDTArray, Position, DecorationSet, EditorViewMode } from "@input/pen-types";
 import { AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY, COLLECT_KEY_BINDINGS_SLOT_KEY, usesInlineTextSelection, createMutationGroupMetadata, getApplyOptionsGroupId, MUTATION_GROUP_METADATA_KEY, UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY } from "@input/pen-types";
+import {
+	SLOT_DEPRECATED_CODE,
+	dispositionForSlot,
+} from "../facets/slotAdapter";
+import { getDocumentLoadReport } from "@input/pen-crdt-yjs";
 import { undoExtension } from "@input/pen-undo";
 import { documentOpsExtension } from "@input/pen-document-ops";
 import { deltaStreamExtension } from "@input/pen-delta-stream";
@@ -16,11 +21,64 @@ import { createDocumentSession } from "./documentSession";
 type EditorImplRuntime = any;
 type CRDTBlockMap = CRDTMap<CRDTMap<unknown>>;
 type RawPenDocumentLike = { getArray?(name: "blockOrder"): CRDTArray<string>; getMap?(name: "blocks" | "apps" | "metadata"): CRDTMap<unknown>; blockOrder?: CRDTArray<string>; blocks?: CRDTMap<unknown>; apps?: CRDTMap<unknown>; metadata?: CRDTMap<unknown>; };
-function createGeneratedBlockId(): string { return crypto.randomUUID(); }
 function missingPenDocumentRoot(name: string): never { throw new Error(`CRDT document is missing required Pen root "${name}".`); }
-let hasWarnedAboutWithoutOption = false;
 const NOOP_UNDO: UndoManager = { undo: () => false, redo: () => false, canUndo: () => false, canRedo: () => false, stopCapturing: () => {}, syncExplicitUndoGroup: () => {}, setGroupTimeout: () => {}, registerTrackedOrigins: () => () => {}, onStackChange: () => () => {} };
 
+function readAdaptedSlot<T>(self: EditorImplRuntime, key: string): T | undefined {
+	const disposition = dispositionForSlot(key);
+	if (disposition?.kind === "whenReady") {
+		return (() => self.whenReady()) as T;
+	}
+	if (disposition?.kind === "engine") {
+		return self._engine as T;
+	}
+	if (self._slots.has(key)) {
+		return self._slots.get(key) as T;
+	}
+	if (disposition?.kind === "facet") {
+		return self._facetRegistry.read(disposition.facet) as T;
+	}
+	return undefined;
+}
+
+function writeAdaptedSlot(
+	self: EditorImplRuntime,
+	key: string,
+	value: unknown,
+	deprecated: boolean,
+): void {
+	self._slots.set(key, value);
+	if (key === "undo:manager") {
+		self._refreshUndoManager();
+	}
+	const disposition = dispositionForSlot(key);
+	if (disposition?.kind === "facet") {
+		self._facetRegistry.override(disposition.facet, value);
+	}
+	if (
+		deprecated &&
+		disposition &&
+		(disposition.kind === "facet" || disposition.kind === "keymapCollector")
+	) {
+		warnSlotDeprecated(self, key);
+	}
+}
+
+function warnSlotDeprecated(self: EditorImplRuntime, key: string): void {
+	const warned: Set<string> = (self._slotDeprecationWarned ??= new Set());
+	if (warned.has(key)) {
+		return;
+	}
+	warned.add(key);
+	self._emitter.emit("diagnostic", {
+		code: SLOT_DEPRECATED_CODE,
+		level: "warn",
+		source: "facets",
+		message: `getSlot/setSlot("${key}") is deprecated; use editor.facet()`,
+		remediation: "Read the mapped facet from editor.facet() and stop calling setSlot for this key.",
+		key,
+	});
+}
 
 export function getRawBlockMap(editor: EditorImplRuntime, blockId: string): CRDTUnknownMap | null {
 	const self = editor as EditorImplRuntime;
@@ -44,13 +102,13 @@ return {
 	},
 	onApplyBoundary: (hook) =>
 		self._pipeline.addApplyBoundaryHook(hook),
-	getSlot: <T>(key: string): T | undefined =>
-		self._slots.get(key) as T | undefined,
+	onPipelinePhase: (listener) => self._onPipelinePhase(listener),
+	getSlot: <T>(key: string): T | undefined => readAdaptedSlot(self, key),
 	setSlot: (key: string, value: unknown): void => {
-		self._slots.set(key, value);
-		if (key === "undo:manager") {
-			self._refreshUndoManager();
-		}
+		writeAdaptedSlot(self, key, value, true);
+	},
+	assignSlot: (key: string, value: unknown): void => {
+		writeAdaptedSlot(self, key, value, false);
 	},
 	getBlockText: (blockId: string): unknown => {
 		const blockMap = self._getRawBlockMap(blockId);
@@ -136,6 +194,10 @@ self._queueExtensionLifecycle(async () => {
 		}),
 	);
 	await self._rebindActiveScope();
+	const report = getDocumentLoadReport(doc);
+	if (report?.state === "repaired") {
+		self._emitter.emit("crdt:recovered", "repair");
+	}
 });
 }
 
@@ -196,13 +258,14 @@ export function getEditorBlockRevision(editor: EditorImplRuntime, blockId: strin
 return self._blockRevisions.get(blockId) ?? 0;
 }
 
-export function destroyEditor(editor: EditorImplRuntime, ): void {
+export function destroyEditor(editor: EditorImplRuntime): Promise<void> {
 	const self = editor as EditorImplRuntime;
 if (self._isDestroyed) {
-	return;
+	return self._extensionLifecycle;
 }
 self._isDestroyed = true;
-self._queueExtensionLifecycle(async () => {
+self._blockRevisions.clear();
+return self._queueExtensionLifecycle(async () => {
 	await self._extensions.deactivateAll(self);
 	self._teardownObservation();
 	self._releaseSession?.();

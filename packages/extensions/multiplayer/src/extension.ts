@@ -7,7 +7,7 @@ import {
 	defineExtension,
 	MULTIPLAYER_CONTROLLER_SLOT,
 } from "@input/pen-types";
-import { createDecorationSet } from "@input/pen-core";
+import { createDecorationSet, multiplayerControllerFacet } from "@input/pen-core";
 import type { MultiplayerControllerImpl } from "./controller";
 import { buildRemoteCursorDecorations } from "./decorations/remoteCursors";
 import { buildRemoteSelectionDecorations } from "./decorations/remoteSelections";
@@ -48,13 +48,13 @@ export function multiplayerExtension(config: MultiplayerConfig): Extension {
 				buildLocalAwarenessState,
 			);
 			controller = runtimeHandle.controller;
-			editor.internals.setSlot(MULTIPLAYER_CONTROLLER_SLOT, controller);
+			editor.internals.assignSlot(MULTIPLAYER_CONTROLLER_SLOT, controller);
 		},
 
 		deactivateClient: async () => {
 			runtimeHandle?.dispose();
 			runtimeHandle = null;
-			activeEditor?.internals.setSlot(MULTIPLAYER_CONTROLLER_SLOT, null);
+			activeEditor?.internals.assignSlot(MULTIPLAYER_CONTROLLER_SLOT, null);
 			controller = null;
 			activeEditor = null;
 		},
@@ -79,15 +79,15 @@ export function getMultiplayerController(
 	editor: Editor,
 ): MultiplayerController | null {
 	return (
-		editor.internals.getSlot<MultiplayerController>(
-			MULTIPLAYER_CONTROLLER_SLOT,
-		) ?? null
+		(editor.facet(multiplayerControllerFacet) as MultiplayerController | null) ??
+		null
 	);
 }
 
 function buildLocalAwarenessState(
 	user: MultiplayerAwarenessState["user"],
 	selection: SelectionState,
+	commitId: number,
 ): MultiplayerAwarenessState {
 	if (selection?.type === "text") {
 		return {
@@ -96,6 +96,7 @@ function buildLocalAwarenessState(
 				blockId: selection.focus.blockId,
 				offset: selection.focus.offset,
 				clock: Date.now(),
+				commitId,
 			},
 			selection: {
 				anchor: selection.anchor,
@@ -104,6 +105,7 @@ function buildLocalAwarenessState(
 					offset: selection.focus.offset,
 				},
 				clock: Date.now(),
+				commitId,
 			},
 		};
 	}
@@ -116,6 +118,7 @@ function buildLocalAwarenessState(
 				kind: "block",
 				blockIds: [...selection.blockIds],
 				clock: Date.now(),
+				commitId,
 			},
 		};
 	}

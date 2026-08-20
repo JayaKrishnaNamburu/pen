@@ -1,4 +1,10 @@
-import type { Editor, InlineDecoration, OpOrigin } from "@input/pen-types";
+import { affectedBlockIdsFromSummary } from "@input/pen-core";
+import {
+	getOpOriginType,
+	type Editor,
+	type InlineDecoration,
+	type OpOrigin,
+} from "@input/pen-types";
 import { fullReconcileToDOM } from "./reconciler";
 import type { FieldEditorTextLike } from "./crdt";
 
@@ -32,8 +38,11 @@ export class SessionReconciler {
 	constructor(editor: Editor, options: SessionReconcilerOptions) {
 		this.editor = editor;
 		this.options = options;
-		this.unsubscribeCommit = this.editor.onDocumentCommit((event) => {
-			this.handleCommit(event.origin, event.affectedBlocks);
+		this.unsubscribeCommit = this.editor.on("commit", (event) => {
+			this.handleCommit(
+				event.origin,
+				affectedBlockIdsFromSummary(event.summary),
+			);
 		});
 		this.unsubscribeDecorationsChange = this.editor.on(
 			"decorationsChange",
@@ -89,7 +98,7 @@ export class SessionReconciler {
 			(blockId) => blockId !== focusBlockId,
 		);
 		const shouldReconcileFocusBlock =
-			focusBlockChanged && origin === "history";
+			focusBlockChanged && getOpOriginType(origin) === "history";
 
 		if (!shouldReconcileFocusBlock && passiveBlockIds.length === 0) {
 			return;

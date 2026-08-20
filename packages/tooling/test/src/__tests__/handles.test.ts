@@ -139,6 +139,7 @@ describe("BlockHandle", () => {
       });
       const handle = editor.getBlock("h1");
       expect(handle.props.level).toBe(1);
+      expect(handle.props).not.toHaveProperty("direction");
     });
 
     it("returns explicit props over defaults", () => {

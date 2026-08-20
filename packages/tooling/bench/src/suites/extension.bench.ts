@@ -34,7 +34,7 @@ function createTestEditorWithExtensions(count: number) {
 export const extensionBenchmarks: BenchDefinition[] = [
 	{
 		...EXTENSION_DISPATCH_OBSERVE_X5_BENCH,
-		fn(b) {
+		async fn(b) {
 			const editor = createTestEditorWithExtensions(5);
 			const blockId = editor.document.blockOrder.get(0);
 
@@ -48,11 +48,12 @@ export const extensionBenchmarks: BenchDefinition[] = [
 				},
 			]);
 			b.end();
+			await editor.destroy();
 		},
 	},
 	{
 		...EXTENSION_COLLECT_DECORATIONS_X5_BENCH,
-		fn(b) {
+		async fn(b) {
 			const editor = createTestEditorWithExtensions(5);
 
 			b.start();
@@ -61,6 +62,7 @@ export const extensionBenchmarks: BenchDefinition[] = [
 			}
 			b.end();
 			b.setMetrics({ refreshCount: DECORATION_REFRESH_ITERATIONS });
+			await editor.destroy();
 		},
 	},
 ];

@@ -30,3 +30,8 @@ export {
 	type EditorSelectAllBehavior,
 } from "./constants/selectAll";
 export type { PasteImporters } from "./types/paste";
+export {
+	urlPolicy,
+	type UrlContext,
+	type UrlPolicy,
+} from "./security/urlPolicy";

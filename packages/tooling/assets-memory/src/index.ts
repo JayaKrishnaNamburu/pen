@@ -1,14 +1,45 @@
 import type { AssetProvider, AssetRef, AssetUploadOptions } from "@input/pen-types";
+import { generateId } from "@input/pen-types";
 
-export function memoryAssets(): AssetProvider {
+export interface MemoryAssetsOptions {
+  /**
+   * Maximum accepted upload size in bytes. Exposed as
+   * {@link AssetProvider.maxSize} and used as the default when `upload` omits
+   * {@link AssetUploadOptions.maxSize}.
+   */
+  maxSize?: number;
+}
+
+/**
+ * In-memory `AssetProvider` test double. Not a production store.
+ *
+ * `upload` implements both {@link AssetUploadOptions} members: it enforces
+ * `options.maxSize ?? config.maxSize` (throws `File size <n> exceeds maxSize
+ * <limit>` and does not store) and invokes `onProgress` at `0` then `1`.
+ * There are no intermediate ticks — the write is in-memory.
+ *
+ * `delete` is implemented for host/test use. Pen never calls
+ * {@link AssetProvider.delete}; hosts own reference counting.
+ */
+export function memoryAssets(config: MemoryAssetsOptions = {}): AssetProvider {
   const store = new Map<string, { blob: Blob; ref: AssetRef }>();
 
   return {
+    maxSize: config.maxSize,
+
     async upload(
       file: File | Blob,
       options?: AssetUploadOptions,
     ): Promise<AssetRef> {
-      const id = crypto.randomUUID();
+      const maxSize = options?.maxSize ?? config.maxSize;
+      if (maxSize != null && file.size > maxSize) {
+        throw new Error(
+          `File size ${file.size} exceeds maxSize ${maxSize}`,
+        );
+      }
+
+      options?.onProgress?.(0);
+      const id = generateId();
       const url =
         typeof URL.createObjectURL === "function"
           ? URL.createObjectURL(file)

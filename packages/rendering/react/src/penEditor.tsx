@@ -20,7 +20,6 @@ export function PenEditor(props: PenEditorProps) {
 		renderers,
 		editorViewMode,
 		interactionModel,
-		virtualize,
 		emptyPlaceholder,
 		children,
 		customCaret = false,
@@ -38,7 +37,6 @@ export function PenEditor(props: PenEditorProps) {
 			interactionModel={interactionModel}
 		>
 			<EditorContent
-				virtualize={virtualize}
 				emptyPlaceholder={emptyPlaceholder}
 				{...rest}
 			>

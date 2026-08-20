@@ -5,7 +5,7 @@ import type {
 	Position,
 	ToolContext,
 } from "@input/pen-types";
-import { isAsyncIterable, resolveToolExecution } from "@input/pen-types";
+import { isAsyncIterable, resolveToolExecution, generateId } from "@input/pen-types";
 import type { SSEServerOptions } from "./types";
 
 export function createSSEHandler(
@@ -19,24 +19,19 @@ export function createSSEHandler(
 		pingInterval = 15_000,
 	} = options;
 
-	const streamHistories = new Map<
-		string,
-		Array<{ id: string; data: string }>
-	>();
-
 	return async (request: Request): Promise<Response> => {
 		if (request.method === "GET") {
-			return handleReconnect(request, streamHistories);
+			return new Response("Method Not Allowed", {
+				status: 405,
+				headers: { Allow: "POST" },
+			});
 		}
 
 		const body = (await request.json()) as PenStreamRequest;
 		onRequest?.(body);
 
-		const streamId = crypto.randomUUID();
+		const streamId = generateId();
 		let eventIndex = 0;
-
-		const history: Array<{ id: string; data: string }> = [];
-		streamHistories.set(streamId, history);
 
 		const stream = new ReadableStream({
 			async start(controller) {
@@ -46,10 +41,6 @@ export function createSSEHandler(
 				const send = (part: PenStreamPart): void => {
 					const id = `${streamId}:${eventIndex++}`;
 					const data = JSON.stringify(part);
-
-					history.push({ id, data });
-					if (history.length > 1000) history.shift();
-
 					const event = `id: ${id}\ndata: ${data}\n\n`;
 					controller.enqueue(encoder.encode(event));
 				};
@@ -111,21 +102,6 @@ export function createSSEHandler(
 	};
 }
 
-function handleReconnect(
-	request: Request,
-	_streamHistories: Map<string, Array<{ id: string; data: string }>>,
-): Response {
-	const lastEventId = request.headers.get("Last-Event-ID");
-	if (!lastEventId) {
-		return new Response("Missing Last-Event-ID", { status: 400 });
-	}
-
-	return new Response("Replay not supported for this transport", {
-		status: 501,
-		headers: { "X-Replay-Supported": "false" },
-	});
-}
-
 function createTransportToolContext(
 	context: PenStreamRequest["context"],
 	emit: (part: PenStreamPart) => void,
@@ -144,7 +120,7 @@ function createTransportToolContext(
 			position: Position,
 		): string {
 			const editor = resolveTransportEditor(context?.editor);
-			const blockId = crypto.randomUUID();
+			const blockId = generateId();
 
 			emit({
 				type: "block-insert",

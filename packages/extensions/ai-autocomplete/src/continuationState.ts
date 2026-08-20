@@ -1,4 +1,4 @@
-import type { OpOrigin, SelectionState } from "@input/pen-types";
+import type { ChangeSummary, OpOrigin, SelectionState } from "@input/pen-types";
 import { getOpOriginType } from "@input/pen-types";
 import type { AutocompleteStructuredCandidate } from "./structuredCandidate";
 
@@ -88,6 +88,61 @@ export class AutocompleteContinuationState {
 		this._prefetchedContinuation = prefetched;
 	}
 
+	mapThroughSummary(summary: ChangeSummary): boolean {
+		if (this._sequence) {
+			const mapped = mapAnchor(
+				summary,
+				this._sequence.blockId,
+				this._sequence.startOffset,
+			);
+			if (!mapped) {
+				this.clearSequence();
+				return false;
+			}
+			this._sequence = {
+				...this._sequence,
+				blockId: mapped.blockId,
+				startOffset: mapped.startOffset,
+			};
+		}
+
+		if (this._pendingAcceptedContinuation) {
+			const mapped = mapAnchor(
+				summary,
+				this._pendingAcceptedContinuation.blockId,
+				this._pendingAcceptedContinuation.startOffset,
+			);
+			if (!mapped) {
+				this.clearContinuations();
+				return this._sequence !== null;
+			}
+			this._pendingAcceptedContinuation = {
+				...this._pendingAcceptedContinuation,
+				blockId: mapped.blockId,
+				startOffset: mapped.startOffset,
+			};
+		}
+
+		if (this._prefetchedContinuation) {
+			const mapped = mapAnchor(
+				summary,
+				this._prefetchedContinuation.blockId,
+				this._prefetchedContinuation.startOffset,
+			);
+			if (!mapped) {
+				this._prefetchedContinuation = null;
+				return this._sequence !== null;
+			}
+			this._prefetchedContinuation = {
+				...this._prefetchedContinuation,
+				blockId: mapped.blockId,
+				startOffset: mapped.startOffset,
+			};
+		}
+
+		return true;
+	}
+
 	activatePendingAcceptedContinuation(
 		selection: SelectionState,
 	): AutocompleteSequence | null {
@@ -124,4 +179,20 @@ export class AutocompleteContinuationState {
 		};
 		return this._sequence;
 	}
+}
+
+function mapAnchor(
+	summary: ChangeSummary,
+	blockId: string,
+	startOffset: number,
+): { blockId: string; startOffset: number } | null {
+	const mapped = summary.mapPoint(
+		{ blockId, offset: startOffset },
+		1,
+		"delete",
+	);
+	if (!mapped) {
+		return null;
+	}
+	return { blockId: mapped.blockId, startOffset: mapped.offset };
 }

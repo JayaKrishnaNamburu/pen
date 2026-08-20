@@ -1,4 +1,5 @@
 import type { BenchDefinition } from "../bench";
+import { getScale3Baseline } from "./scale3";
 
 type BenchMetadata = Pick<
 	BenchDefinition,
@@ -170,6 +171,57 @@ export const AI_AUTOCOMPLETE_PREFETCH_AFTER_ACCEPT_BENCH: BenchMetadata = {
 	critical: true,
 };
 
+const scale3DocumentSize100 = getScale3Baseline(
+	"scale3.keystroke.realistic-stack.document-size.100",
+);
+const scale3DocumentSize1000 = getScale3Baseline(
+	"scale3.keystroke.realistic-stack.document-size.1000",
+);
+const scale3ExtensionCountPlus8 = getScale3Baseline(
+	"scale3.keystroke.realistic-stack.extension-count.plus8",
+);
+const scale3DecorationCount256 = getScale3Baseline(
+	"scale3.keystroke.realistic-stack.decoration-count.256",
+);
+const scale3PeerCount8 = getScale3Baseline(
+	"scale3.keystroke.realistic-stack.peer-count.8",
+);
+
+export const SCALE3_KEYSTROKE_DOCUMENT_SIZE_100_BENCH: BenchMetadata = {
+	id: scale3DocumentSize100.id,
+	name: "SCALE3 keystroke realistic-stack document-size 100",
+	targetMs: scale3DocumentSize100.gateP50Ms,
+	critical: true,
+};
+
+export const SCALE3_KEYSTROKE_DOCUMENT_SIZE_1000_BENCH: BenchMetadata = {
+	id: scale3DocumentSize1000.id,
+	name: "SCALE3 keystroke realistic-stack document-size 1000",
+	targetMs: scale3DocumentSize1000.gateP50Ms,
+	critical: true,
+};
+
+export const SCALE3_KEYSTROKE_EXTENSION_COUNT_PLUS8_BENCH: BenchMetadata = {
+	id: scale3ExtensionCountPlus8.id,
+	name: "SCALE3 keystroke realistic-stack extension-count plus8",
+	targetMs: scale3ExtensionCountPlus8.gateP50Ms,
+	critical: true,
+};
+
+export const SCALE3_KEYSTROKE_DECORATION_COUNT_256_BENCH: BenchMetadata = {
+	id: scale3DecorationCount256.id,
+	name: "SCALE3 keystroke realistic-stack decoration-count 256",
+	targetMs: scale3DecorationCount256.gateP50Ms,
+	critical: true,
+};
+
+export const SCALE3_KEYSTROKE_PEER_COUNT_8_BENCH: BenchMetadata = {
+	id: scale3PeerCount8.id,
+	name: "SCALE3 keystroke realistic-stack peer-count 8",
+	targetMs: scale3PeerCount8.gateP50Ms,
+	critical: true,
+};
+
 export const BENCHMARK_METADATA: BenchMetadata[] = [
 	CRDT_INSERT_1000_BLOCKS_BENCH,
 	CRDT_ENCODE_STATE_500_BENCH,
@@ -200,6 +252,11 @@ export const BENCHMARK_METADATA: BenchMetadata[] = [
 	AI_AUTOCOMPLETE_PROVIDER_BUDGET_BENCH,
 	AI_AUTOCOMPLETE_PARTIAL_ACCEPT_BENCH,
 	AI_AUTOCOMPLETE_PREFETCH_AFTER_ACCEPT_BENCH,
+	SCALE3_KEYSTROKE_DOCUMENT_SIZE_100_BENCH,
+	SCALE3_KEYSTROKE_DOCUMENT_SIZE_1000_BENCH,
+	SCALE3_KEYSTROKE_EXTENSION_COUNT_PLUS8_BENCH,
+	SCALE3_KEYSTROKE_DECORATION_COUNT_256_BENCH,
+	SCALE3_KEYSTROKE_PEER_COUNT_8_BENCH,
 ];
 
 export function findBenchMetadataById(id: string): BenchMetadata | undefined {

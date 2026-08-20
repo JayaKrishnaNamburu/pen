@@ -1,5 +1,5 @@
-import type { EditorInternals, CreateEditorOptions, PenEventMap, DocumentCommitEvent, CRDTAdapter, CRDTDocument, CRDTEvent, PenDocument, SchemaRegistry, Awareness, DocumentSession, DocumentScope, DocumentScopeReplacementEvent, DocumentProfile, Extension, DocumentOp, ApplyOptions, OpOrigin, MutationGroupMetadata, SelectionState, TextSelection, DocumentRange, BlockHandle, Block, DocumentState, UndoManager, Unsubscribe, CRDTMap, CRDTArray, Position, DecorationSet, EditorViewMode } from "@input/pen-types";
-import { AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY, COLLECT_KEY_BINDINGS_SLOT_KEY, usesInlineTextSelection, createMutationGroupMetadata, getApplyOptionsGroupId, MUTATION_GROUP_METADATA_KEY, UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY } from "@input/pen-types";
+import type { EditorInternals, CreateEditorOptions, PenEventMap, DocumentCommitEvent, CRDTAdapter, CRDTDocument, CRDTEvent, DiagnosticEvent, PenDocument, PipelinePhase, SchemaRegistry, Awareness, DocumentSession, DocumentScope, DocumentScopeReplacementEvent, DocumentProfile, Extension, DocumentOp, ApplyOptions, OpOrigin, MutationGroupMetadata, SelectionState, TextSelection, DocumentRange, BlockHandle, Block, DocumentState, UndoManager, Unsubscribe, CRDTMap, CRDTArray, Position, DecorationSet, EditorViewMode } from "@input/pen-types";
+import { AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY, COLLECT_KEY_BINDINGS_SLOT_KEY, usesInlineTextSelection, createMutationGroupMetadata, getApplyOptionsGroupId, MUTATION_GROUP_METADATA_KEY, UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY, generateId } from "@input/pen-types";
 import { undoExtension } from "@input/pen-undo";
 import { documentOpsExtension } from "@input/pen-document-ops";
 import { deltaStreamExtension } from "@input/pen-delta-stream";
@@ -11,12 +11,20 @@ import { filterOpsForDocumentProfile } from "./profilePolicy";
 import type { CRDTUnknownMap } from "./crdtShapes";
 import { getTextProp, getTableContent, getCellText as getCellTextFromRow, isCRDTMap } from "./crdtShapes";
 import { DocumentStateImpl } from "./documentState";
+import { installChangeSummaries, teardownChangeSummaries } from "../changes/install";
+import { createEmptySummary } from "../changes/mapping";
+import {
+	adapterChangeEvent,
+	buildCommitEvent,
+	createEventDeprecatedDiagnostic,
+	resolveCommitSource,
+	snapshotSelectionRecord,
+} from "./commitEvent";
 import { createDocumentSession } from "./documentSession";
 
 type EditorImplRuntime = any;
 type CRDTBlockMap = CRDTMap<CRDTMap<unknown>>;
 type RawPenDocumentLike = { getArray?(name: "blockOrder"): CRDTArray<string>; getMap?(name: "blocks" | "apps" | "metadata"): CRDTMap<unknown>; blockOrder?: CRDTArray<string>; blocks?: CRDTMap<unknown>; apps?: CRDTMap<unknown>; metadata?: CRDTMap<unknown>; };
-function createGeneratedBlockId(): string { return crypto.randomUUID(); }
 function missingPenDocumentRoot(name: string): never { throw new Error(`CRDT document is missing required Pen root "${name}".`); }
 const NOOP_UNDO: UndoManager = { undo: () => false, redo: () => false, canUndo: () => false, canRedo: () => false, stopCapturing: () => {}, syncExplicitUndoGroup: () => {}, setGroupTimeout: () => {}, registerTrackedOrigins: () => () => {}, onStackChange: () => () => {} };
 
@@ -103,6 +111,9 @@ return result.ops;
 
 export function refreshCoreSlots(editor: EditorImplRuntime, ): void {
 	const self = editor as EditorImplRuntime;
+self._engine.setOnDiagnostic((event: DiagnosticEvent) =>
+	self._emitter.emit("diagnostic", event),
+);
 self._slots.set("core:engine", self._engine);
 self._slots.set(
 	AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY,
@@ -188,9 +199,14 @@ self._documentState.updateDocument(
 	self._crdtDoc,
 	self._documentProfile,
 );
-self._pipeline._init((event: CRDTEvent) => {
-	self._dispatchCRDTEvent(event);
-});
+self._pipeline._init(
+	(event: CRDTEvent) => {
+		self._dispatchCRDTEvent(event);
+	},
+	() => self._resolveBeforeApplyHooks(),
+	(phase: PipelinePhase) => self._recordPipelinePhase(phase),
+	() => self._captureSelectionBeforeForCommit(),
+);
 self._refreshCoreSlots();
 
 self._wireObservation();
@@ -216,7 +232,7 @@ await activation;
 self._refreshUndoManager();
 }
 
-export function queueExtensionLifecycle(editor: EditorImplRuntime, task: () => Promise<void>): void {
+export function queueExtensionLifecycle(editor: EditorImplRuntime, task: () => Promise<void>): Promise<void> {
 	const self = editor as EditorImplRuntime;
 const runTask = async (): Promise<void> => {
 	try {
@@ -241,6 +257,7 @@ self._extensionLifecycle = self._extensionLifecycle.then(
 	runTask,
 	runTask,
 );
+return self._extensionLifecycle;
 }
 
 export function ensureInitialParagraph(editor: EditorImplRuntime, ): void {
@@ -253,7 +270,7 @@ self.apply(
 	[
 		{
 			type: "insert-block",
-			blockId: createGeneratedBlockId(),
+			blockId: generateId(),
 			blockType: "paragraph",
 			props: {},
 			position: "last",
@@ -284,17 +301,72 @@ return {
 
 export function dispatchCRDTEvent(editor: EditorImplRuntime, event: CRDTEvent): void {
 	const self = editor as EditorImplRuntime;
-self._syncDocumentProfileFromStorage();
-const commitEvent = self._createCommitEvent(event);
-self._documentState.incrementalUpdate(event.affectedBlocks);
-self._extensions.dispatchObserve([event], self);
-const previousDecorationGeneration = self._decorations.generation;
-const nextDecorations = self._refreshDecorations();
-if (nextDecorations.generation !== previousDecorationGeneration) {
-	self._emitter.emit("decorationsChange", nextDecorations.generation);
+	self._syncDocumentProfileFromStorage();
+	self._recordPipelinePhase("summarize");
+	const documentCommit = self._createCommitEvent(event);
+	self._documentState.incrementalUpdate(event.affectedBlocks);
+	const selectionBefore =
+		self._selectionBeforeRecord ??
+		snapshotSelectionRecord(
+			self.selection,
+			self._selectionVersion,
+			documentCommit.commitId - 1,
+		);
+	self._selectionBeforeRecord = null;
+	self._recordPipelinePhase("map-selection");
+	self._selection.mapOnCommit();
+	self._recordPipelinePhase("settle-facets");
+	const summary =
+		self._summaryLog.latest() ?? createEmptySummary(documentCommit.commitId);
+	self._facetRegistry?.settle({
+		commitId: documentCommit.commitId,
+		emptyCommit: summary.isEmpty,
+		selectionVersion: self._selectionVersion,
+	});
+	const previousDecorationGeneration = self._decorations.generation;
+	const nextDecorations = self._refreshDecorations();
+	if (nextDecorations.generation !== previousDecorationGeneration) {
+		self._emitter.emit("decorationsChange", nextDecorations.generation);
+	}
+	self._recordPipelinePhase("emit");
+	const commit = buildCommitEvent({
+		commitId: documentCommit.commitId,
+		origin: event.origin,
+		summary,
+		selectionBefore,
+		selectionAfter: snapshotSelectionRecord(
+			self.selection,
+			self._selectionVersion,
+			documentCommit.commitId,
+		),
+		source: event.source ?? resolveCommitSource(event.origin, "remote"),
+		diagnostics: [],
+	});
+	self._emitter.emit("commit", commit);
+	self._extensions.dispatchObserve([commit], self);
+	emitDeprecatedAdapter(
+		self,
+		"change",
+		() => self._emitter.emit("change", [adapterChangeEvent(event)]),
+	);
+	emitDeprecatedAdapter(self, "documentCommit", () =>
+		self._emitter.emit("documentCommit", documentCommit),
+	);
 }
-self._emitter.emit("change", [event]);
-self._emitter.emit("documentCommit", commitEvent);
+
+function emitDeprecatedAdapter(
+	editor: EditorImplRuntime,
+	key: "change" | "documentCommit",
+	emit: () => void,
+): void {
+	if (
+		editor._emitter.has(key) &&
+		!editor._eventDeprecationWarned.has(key)
+	) {
+		editor._eventDeprecationWarned.add(key);
+		editor._emitter.emit("diagnostic", createEventDeprecatedDiagnostic(key));
+	}
+	emit();
 }
 
 export function syncDocumentProfileFromStorage(editor: EditorImplRuntime, ): void {
@@ -314,6 +386,7 @@ self._documentState.setDocumentProfile(persistedProfile);
 
 export function wireEditorObservation(editor: EditorImplRuntime, ): void {
 	const self = editor as EditorImplRuntime;
+installChangeSummaries(self);
 if (self._documentSession) {
 	self._unsubObserve = self._documentSession.observe(
 		self._documentScope.id,
@@ -336,6 +409,7 @@ self._unsubObserve = self._adapter.observe(
 
 export function teardownEditorObservation(editor: EditorImplRuntime, ): void {
 	const self = editor as EditorImplRuntime;
+teardownChangeSummaries(self);
 if (self._unsubObserve) {
 	self._unsubObserve();
 	self._unsubObserve = null;

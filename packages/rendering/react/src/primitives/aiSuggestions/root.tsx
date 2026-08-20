@@ -2,6 +2,8 @@ import React from "react";
 import type { Editor } from "@input/pen-types";
 import { EditorContext } from "../../context/editorContext";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
+import { DATA_ATTRS } from "../../utils/dataAttributes";
+import { getAttachedFieldEditor } from "../../utils/fieldEditor";
 import { useAISuggestionPopover } from "../../hooks/useAISuggestionPopover";
 
 interface AISuggestionsContextValue {
@@ -15,19 +17,37 @@ const AISuggestionsContext =
 const AI_SUGGESTIONS_STYLESHEET_ID = "pen-ai-suggestions-styles";
 const AI_SUGGESTIONS_STYLES = `
 .pen-ai-suggestion-underline {
+	cursor: pointer;
+	background-image: linear-gradient(
+		90deg,
+		var(--pen-ai-suggestion-line, #3b82f6),
+		var(--pen-ai-suggestion-line, #3b82f6)
+	);
+	background-repeat: no-repeat;
+	background-size: 100% 2px;
+	background-position: 0 100%;
 	transition: filter 180ms ease;
 }
 
 .pen-ai-suggestion-underline:hover {
-	--pen-ai-suggestion-line: var(--pen-ai-suggestion-line-hover);
+	--pen-ai-suggestion-line: var(--pen-ai-suggestion-line-hover, #1d4ed8);
 	filter: saturate(1.08);
 }
 
 .pen-ai-suggestion-active {
+	--pen-ai-suggestion-line: var(--pen-ai-suggestion-line-active, #1d4ed8);
 	filter: saturate(1.08);
+}
+
+.pen-ai-suggestion-active:hover {
+	--pen-ai-suggestion-line: var(--pen-ai-suggestion-line-active-hover, #1e40af);
 }
 `;
 
+/**
+ * AX3 detached-surface host. Escape on the open suggestion popover
+ * (`role="dialog"`) closes it and restores focus to the editing position.
+ */
 export interface AISuggestionsRootProps extends AsChildProps {
 	editor?: Editor;
 	ref?: React.Ref<HTMLElement>;
@@ -72,11 +92,20 @@ export function AISuggestionsRoot(props: AISuggestionsRootProps) {
 		};
 	}, [closeSuggestion, openSuggestion]);
 
+	const isPopoverOpen = Boolean(popover.activeSuggestion && popover.position);
+
 	React.useEffect(() => {
+		if (!isPopoverOpen) {
+			return;
+		}
+
 		const handleKeyDown = (event: KeyboardEvent) => {
 			if (event.key !== "Escape") {
 				return;
 			}
+			event.preventDefault();
+			event.stopPropagation();
+			restoreEditorFocus(editor);
 			closeSuggestion();
 		};
 
@@ -84,7 +113,7 @@ export function AISuggestionsRoot(props: AISuggestionsRootProps) {
 		return () => {
 			document.removeEventListener("keydown", handleKeyDown, true);
 		};
-	}, [closeSuggestion]);
+	}, [closeSuggestion, editor, isPopoverOpen]);
 
 	React.useEffect(() => {
 		let styleElement = document.getElementById(
@@ -131,4 +160,15 @@ export function useAISuggestionsContext(): AISuggestionsContextValue {
 		);
 	}
 	return context;
+}
+
+function restoreEditorFocus(editor: Editor): void {
+	const fieldEditor = getAttachedFieldEditor(editor);
+	if (fieldEditor?.focus({ reason: "keyboard", domFocus: true })) {
+		return;
+	}
+
+	document
+		.querySelector<HTMLElement>(`[${DATA_ATTRS.editorRoot}]`)
+		?.focus({ preventScroll: true });
 }

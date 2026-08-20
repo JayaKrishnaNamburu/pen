@@ -1,5 +1,6 @@
 import { defineBlock, prop } from "@input/pen-types";
 import type { HTMLImportElement } from "@input/pen-types";
+import { directionProp } from "../directionProp";
 
 export const toggle = defineBlock("toggle", {
   props: {
@@ -8,6 +9,7 @@ export const toggle = defineBlock("toggle", {
       .default(false)
       .describe("Whether the toggle content is expanded"),
     parentId: prop.string().optional().describe("Container parent block"),
+    direction: directionProp,
   },
   content: "inline",
   fieldEditor: "richtext",

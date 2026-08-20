@@ -1,0 +1,900 @@
+import {
+	generateId,
+	type Editor,
+	type UndoHistoryMetadataController,
+} from "@input/pen-types";
+import {
+	acceptSuggestions,
+	rejectSuggestions,
+} from "../suggestions/acceptReject";
+import { AI_SESSION_SUGGESTION_ORIGIN } from "../suggestions/suggestMode";
+import type {
+	AICommandExecutionOptions,
+	AIControllerState,
+	AIContextualPromptRect,
+	AIInlineHistorySnapshot,
+	AISession,
+	AISessionResolution,
+	AISurface,
+	FastApplyDebugState,
+	GenerationState,
+	PersistentSuggestion,
+} from "../types";
+import type { AIControllerMethodHost } from "./aiControllerMethodHost";
+import type { AIInlineHistoryRestoreRequest } from "../helpers";
+import {
+	AI_UNDO_HISTORY_METADATA_KEY,
+	accumulateSessionFastApplyMetrics,
+	areAIControllerStatesEqual,
+	areSessionsEqual,
+	areStructuredValuesEqual,
+	canReuseBottomChatSessionOperation,
+	closeInlineSessionPrompt,
+	createDefaultSessionFastApplyMetrics,
+	createInlineHistorySnapshot,
+	resolveAcceptedInlineSelectionTarget,
+	resolveBlockIdForRequestedOperation,
+	resolveContextualPromptAnchor,
+	resolveContextualPromptState,
+	resolveLiveInlineSelectionTarget,
+	resolvePreviousGeneratedBlockIds,
+	resolveRequestedOperationForSession,
+	resolveSelectionForRequestedOperation,
+	resolveSessionAnchor,
+	resolveSessionSelectionSnapshot,
+	resolveSessionTarget,
+	sessionTargetMatches,
+	shouldReplacePreviousGeneratedBlocks,
+} from "../helpers";
+
+export class AIControllerSessionState {
+	protected readonly _editor: Editor;
+
+	protected readonly _listeners = new Set<() => void>();
+
+	protected readonly _sessionListeners = new Set<() => void>();
+
+	protected _state: AIControllerState;
+
+	protected _suggestions: PersistentSuggestion[] = [];
+
+	protected _documentVersion = 0;
+
+	protected _undoHistoryMetadata: UndoHistoryMetadataController | null = null;
+
+	protected _pendingInlineHistoryRestore: AIInlineHistoryRestoreRequest | null =
+		null;
+
+	protected _isRestoringInlineHistory = false;
+
+	protected _unsubscribeInlineCompletion: (() => void) | null = null;
+
+	protected _unsubscribeHistoryApplied: (() => void) | null = null;
+
+	protected _unsubscribeUndoHistoryMetadata: (() => void) | null = null;
+
+	constructor(editor: Editor, initialState: AIControllerState) {
+		this._editor = editor;
+		this._state = initialState;
+	}
+
+	destroy(): void {
+		this._unsubscribeInlineCompletion?.();
+		this._unsubscribeInlineCompletion = null;
+		this._unsubscribeHistoryApplied?.();
+		this._unsubscribeHistoryApplied = null;
+		this._unsubscribeUndoHistoryMetadata?.();
+		this._unsubscribeUndoHistoryMetadata = null;
+	}
+
+	getState(): AIControllerState {
+		return this._state;
+	}
+
+	subscribe(listener: () => void): () => void {
+		this._listeners.add(listener);
+		return () => this._listeners.delete(listener);
+	}
+
+	getSessions(): readonly AISession[] {
+		return this._state.sessions;
+	}
+
+	getActiveSession(): AISession | null {
+		const activeSessionId = this._state.activeSessionId;
+		if (!activeSessionId) {
+			return null;
+		}
+		return (
+			this._state.sessions.find(
+				(session) => session.id === activeSessionId,
+			) ?? null
+		);
+	}
+
+	subscribeSessions(listener: () => void): () => void {
+		this._sessionListeners.add(listener);
+		return () => this._sessionListeners.delete(listener);
+	}
+
+	startSession(input: {
+		surface: AISurface;
+		target?: "auto" | "selection" | "block" | "document";
+	}): AISession {
+		const now = Date.now();
+		const target = resolveSessionTarget(this._editor, input.target);
+		const session: AISession = {
+			id: generateId(),
+			surface: input.surface,
+			status: "idle",
+			target,
+			contextualPrompt:
+				input.surface === "inline-edit"
+					? resolveContextualPromptState(target)
+					: undefined,
+			turns: [],
+			activeTurnId: undefined,
+			promptHistory: [],
+			generationIds: [],
+			pendingSuggestionIds: [],
+			pendingReviewItemIds: [],
+			createdAt: now,
+			updatedAt: now,
+			metrics: {
+				streamEventCount: 0,
+				patchCount: 0,
+				fastApply: createDefaultSessionFastApplyMetrics(),
+			},
+			anchor: resolveSessionAnchor(this._editor.selection),
+		};
+		this._setState({
+			sessions: [...this._state.sessions, session],
+			activeSessionId: session.id,
+		});
+		return session;
+	}
+
+	openContextualPrompt(input?: {
+		surface?: Extract<AISurface, "inline-edit">;
+		target?: "auto" | "selection" | "block" | "document";
+	}): AISession | null {
+		const surface = input?.surface ?? "inline-edit";
+		const target = resolveSessionTarget(
+			this._editor,
+			input?.target ?? "selection",
+		);
+		if (surface === "inline-edit" && target.kind === "document") {
+			return null;
+		}
+		const activeSession = this._state.sessions.find(
+			(session) =>
+				session.id === this._state.activeSessionId &&
+				session.surface === surface &&
+				session.status !== "cancelled",
+		);
+		if (
+			activeSession &&
+			activeSession.status !== "complete" &&
+			sessionTargetMatches(activeSession, target)
+		) {
+			this._updateSession(activeSession.id, {
+				target,
+				anchor: resolveSessionAnchor(this._editor.selection),
+				contextualPrompt: {
+					...(activeSession.contextualPrompt ??
+						resolveContextualPromptState(target)),
+					anchor: resolveContextualPromptAnchor(target),
+					composer: {
+						...(activeSession.contextualPrompt?.composer ?? {
+							draftPrompt: "",
+							isSubmitting: false,
+							canSubmitFollowUp: true,
+							openReason: "user",
+						}),
+						isOpen: true,
+						openReason: "user",
+					},
+				},
+			});
+			return this.getActiveSession();
+		}
+		if (activeSession?.surface === "inline-edit") {
+			this._setInlineSessionComposerOpen(activeSession.id, false);
+		}
+		const nextSession = this.startSession({
+			surface,
+			target: input?.target ?? "selection",
+		});
+		const anchorKind = nextSession.contextualPrompt?.anchor.kind;
+		return anchorKind === "text-range" || anchorKind === "block"
+			? nextSession
+			: null;
+	}
+
+	updateContextualPromptDraft(sessionId: string, draftPrompt: string): void {
+		const session = this._state.sessions.find(
+			(item) => item.id === sessionId,
+		);
+		if (!session?.contextualPrompt) {
+			return;
+		}
+		this._updateSession(sessionId, {
+			contextualPrompt: {
+				...session.contextualPrompt,
+				composer: {
+					...session.contextualPrompt.composer,
+					draftPrompt,
+				},
+			},
+		});
+	}
+
+	setContextualPromptAnchorRect(
+		sessionId: string,
+		rect: AIContextualPromptRect | null,
+	): void {
+		const session = this._state.sessions.find(
+			(item) => item.id === sessionId,
+		);
+		if (!session?.contextualPrompt) {
+			return;
+		}
+		this._updateSession(sessionId, {
+			contextualPrompt: {
+				...session.contextualPrompt,
+				anchor: {
+					...session.contextualPrompt.anchor,
+					lastResolvedRect: rect,
+				},
+			},
+		});
+	}
+
+	resolveSessionTurn(
+		sessionId: string,
+		turnId: string,
+		resolution: AISessionResolution,
+	): boolean {
+		return this._resolveSessionTurn(sessionId, turnId, resolution);
+	}
+
+	acceptSessionTurn(sessionId: string, turnId: string): boolean {
+		return this.resolveSessionTurn(sessionId, turnId, "accept");
+	}
+
+	rejectSessionTurn(sessionId: string, turnId: string): boolean {
+		return this.resolveSessionTurn(sessionId, turnId, "reject");
+	}
+
+	runSessionPrompt(
+		sessionId: string,
+		prompt: string,
+		options?: AICommandExecutionOptions,
+	): Promise<GenerationState> {
+		const host = this.asHost();
+		const session = this._state.sessions.find(
+			(item) => item.id === sessionId,
+		);
+		if (!session) {
+			return Promise.reject(
+				new Error(`Unknown AI session "${sessionId}"`),
+			);
+		}
+		host._recordInlinePromptSubmissionCheckpoint(sessionId, prompt);
+
+		const operation =
+			options?.operation ??
+			resolveRequestedOperationForSession(
+				this._editor,
+				session,
+				prompt,
+				options,
+				this._documentVersion,
+			);
+		if (operation.kind === "rewrite-selection") {
+			const selection = resolveSelectionForRequestedOperation(
+				this._editor,
+				operation,
+			);
+			if (!selection) {
+				return Promise.reject(
+					new Error(
+						"Cannot run a session prompt without a valid text selection",
+					),
+				);
+			}
+			return host._runSelectionGeneration(
+				prompt,
+				selection,
+				undefined,
+				options?.maxSteps,
+				{
+					sessionId,
+					surface: session.surface,
+					operation,
+				},
+			);
+		}
+		if (operation.kind === "document-transform") {
+			const targetBlockIds =
+				operation.target.kind === "document" &&
+				(operation.target.blockIds?.length ?? 0) > 0
+					? [...(operation.target.blockIds ?? [])]
+					: undefined;
+			const replacePreviousGeneratedBlocks =
+				shouldReplacePreviousGeneratedBlocks(session, prompt);
+			return host._runDocumentGeneration(
+				prompt,
+				options?.blockId ??
+					(operation.target.kind === "document"
+						? operation.target.activeBlockId
+						: null),
+				undefined,
+				options?.maxSteps,
+				{
+					sessionId,
+					surface: session.surface,
+					operation,
+					replaceBlockIds:
+						targetBlockIds ??
+						(replacePreviousGeneratedBlocks
+							? resolvePreviousGeneratedBlockIds(session)
+							: undefined),
+				},
+			);
+		}
+		const blockId =
+			options?.blockId ??
+			resolveBlockIdForRequestedOperation(operation) ??
+			this._editor.lastBlock()?.id ??
+			this._editor.firstBlock()?.id;
+		if (!blockId) {
+			return Promise.reject(
+				new Error(
+					"Cannot run an AI session prompt without a target block",
+				),
+			);
+		}
+		return host._runBlockGeneration(
+			prompt,
+			blockId,
+			undefined,
+			options?.maxSteps,
+			{
+				sessionId,
+				surface: session.surface,
+				operation,
+			},
+		);
+	}
+
+	canReuseSessionPrompt(
+		sessionId: string,
+		prompt: string,
+		options?: AICommandExecutionOptions,
+	): boolean {
+		const session = this._state.sessions.find(
+			(item) => item.id === sessionId,
+		);
+		if (!session) {
+			return false;
+		}
+		if (session.surface !== "bottom-chat" || !session.operation) {
+			return true;
+		}
+		const nextOperation =
+			options?.operation ??
+			resolveRequestedOperationForSession(
+				this._editor,
+				session,
+				prompt,
+				options,
+				this._documentVersion,
+			);
+		return canReuseBottomChatSessionOperation(
+			session.operation,
+			nextOperation,
+		);
+	}
+
+	resolveSession(
+		sessionId: string,
+		resolution: AISessionResolution,
+	): boolean {
+		const session = this._state.sessions.find(
+			(item) => item.id === sessionId,
+		);
+		if (!session) {
+			return false;
+		}
+		let resolved = false;
+		for (const turn of session.turns) {
+			resolved =
+				this._resolveSessionTurn(sessionId, turn.id, resolution, {
+					finalizeSession: false,
+				}) || resolved;
+		}
+		if (resolved) {
+			const nextSession =
+				this._state.sessions.find((item) => item.id === sessionId) ??
+				session;
+			this._updateSession(sessionId, {
+				status: "complete",
+				pendingSuggestionIds: [],
+				pendingReviewItemIds: [],
+				contextualPrompt: closeInlineSessionPrompt(nextSession),
+			});
+		}
+		return resolved;
+	}
+
+	acceptSession(sessionId: string): boolean {
+		return this.resolveSession(sessionId, "accept");
+	}
+
+	rejectSession(sessionId: string): boolean {
+		return this.resolveSession(sessionId, "reject");
+	}
+
+	cancelSession(sessionId: string): void {
+		if (this._state.activeGeneration?.sessionId === sessionId) {
+			this.asHost().cancelActiveGeneration();
+		}
+		const session = this._state.sessions.find(
+			(item) => item.id === sessionId,
+		);
+		this._updateSession(sessionId, {
+			status: "cancelled",
+			contextualPrompt: session?.contextualPrompt
+				? {
+						...session.contextualPrompt,
+						composer: {
+							...session.contextualPrompt.composer,
+							isOpen: false,
+							isSubmitting: false,
+						},
+					}
+				: undefined,
+		});
+	}
+
+	suspendInlineSession(sessionId: string): void {
+		this._setInlineSessionComposerOpen(sessionId, false);
+	}
+
+	resumeInlineSession(sessionId: string): void {
+		this._setInlineSessionComposerOpen(sessionId, true, {
+			openReason: "user",
+		});
+	}
+
+	_setState(partial: Partial<AIControllerState>): void {
+		const previousState = this._state;
+		const nextState = { ...this._state, ...partial };
+		if (areAIControllerStatesEqual(previousState, nextState)) {
+			return;
+		}
+		this._state = nextState;
+		if (
+			!this._isRestoringInlineHistory &&
+			!this._pendingInlineHistoryRestore
+		) {
+			this.asHost()._recordInlineHistorySnapshot(
+				previousState,
+				nextState,
+			);
+		}
+		this._editor.requestDecorationUpdate();
+		this._emit();
+	}
+
+	_emit(): void {
+		for (const listener of this._listeners) {
+			listener();
+		}
+		for (const listener of this._sessionListeners) {
+			listener();
+		}
+	}
+
+	_updateSessionTurn(
+		sessionId: string,
+		turnId: string,
+		overrides: Partial<AISession["turns"][number]>,
+	): void {
+		const session = this._state.sessions.find(
+			(item) => item.id === sessionId,
+		);
+		if (!session) {
+			return;
+		}
+		const nextTurns = session.turns.map((turn) =>
+			turn.id !== turnId
+				? turn
+				: {
+						...turn,
+						...overrides,
+					},
+		);
+		if (areStructuredValuesEqual(session.turns, nextTurns)) {
+			return;
+		}
+		const pendingSuggestionIds = [
+			...new Set(nextTurns.flatMap((turn) => turn.suggestionIds)),
+		];
+		const pendingReviewItemIds = [
+			...new Set(nextTurns.flatMap((turn) => turn.reviewItemIds)),
+		];
+		this._updateSession(sessionId, {
+			turns: nextTurns,
+			pendingSuggestionIds,
+			pendingReviewItemIds,
+		});
+	}
+
+	_syncSessionsFromDocument(): boolean {
+		if (this._state.sessions.length === 0) {
+			return false;
+		}
+		const nextSessions = this._state.sessions.map((session) => {
+			const nextTurns = session.turns.map((turn) => {
+				const suggestionIds = turn.suggestionIds.filter(
+					(sessionSuggestionId) =>
+						this._suggestions.some(
+							(suggestion) =>
+								suggestion.id === sessionSuggestionId,
+						),
+				);
+				const activeGenerationMatchesTurn =
+					this._state.activeGeneration?.sessionId === session.id &&
+					this._state.activeGeneration.turnId === turn.id;
+				const activeGenerationForTurn = activeGenerationMatchesTurn
+					? this._state.activeGeneration
+					: null;
+				const reviewItemIds = activeGenerationForTurn
+					? (activeGenerationForTurn.reviewItems ?? [])
+							.map((item) => item.id)
+							.filter((id) => turn.reviewItemIds.includes(id))
+					: [];
+				const structuredPreview = activeGenerationForTurn
+					? (activeGenerationForTurn.structuredPreview ??
+						turn.structuredPreview ??
+						null)
+					: turn.reviewItemIds.length > 0
+						? (turn.structuredPreview ?? null)
+						: null;
+				return {
+					...turn,
+					suggestionIds,
+					reviewItemIds,
+					structuredPreview,
+				};
+			});
+			const pendingSuggestionIds = [
+				...new Set(nextTurns.flatMap((turn) => turn.suggestionIds)),
+			];
+			const pendingReviewItemIds = [
+				...new Set(nextTurns.flatMap((turn) => turn.reviewItemIds)),
+			];
+			const nextStatus =
+				pendingSuggestionIds.length === 0 &&
+				pendingReviewItemIds.length === 0 &&
+				session.status === "streaming"
+					? "complete"
+					: session.status;
+			return {
+				...session,
+				status: nextStatus,
+				turns: nextTurns,
+				pendingSuggestionIds,
+				pendingReviewItemIds,
+			};
+		});
+		if (areSessionsEqual(this._state.sessions, nextSessions)) {
+			return false;
+		}
+		this._setState({
+			sessions: nextSessions,
+		});
+		return true;
+	}
+
+	_resolveSessionTurn(
+		sessionId: string,
+		turnId: string,
+		resolution: AISessionResolution,
+		options?: { finalizeSession?: boolean },
+	): boolean {
+		const host = this.asHost();
+		const session = this._state.sessions.find(
+			(item) => item.id === sessionId,
+		);
+		const turn = session?.turns.find((item) => item.id === turnId);
+		if (!session || !turn) {
+			return false;
+		}
+		const isBottomChatDocumentTurn =
+			session.surface === "bottom-chat" &&
+			(turn.target === "document" ||
+				turn.operation?.kind === "document-transform" ||
+				(turn.operation?.kind === "rewrite-selection" &&
+					turn.operation.target.kind === "scoped-range" &&
+					(turn.operation.target.scope === "document" ||
+						turn.operation.target.contentFormat === "markdown")));
+		const turnUndoGroupId = isBottomChatDocumentTurn
+			? turn.undoGroupId
+			: undefined;
+		const turnSuggestionResolutionOrigin =
+			turnUndoGroupId != null ? AI_SESSION_SUGGESTION_ORIGIN : undefined;
+		const undoHistoryBeforeSnapshot = this._undoHistoryMetadata
+			? host._createInlineTurnUndoBeforeSnapshot(sessionId, turnId)
+			: null;
+		const refreshedInlineSelectionTarget =
+			session.surface === "inline-edit" && resolution === "accept"
+				? (resolveAcceptedInlineSelectionTarget(
+						this._editor,
+						turn.operation,
+						turn.suggestionIds,
+					) ?? resolveLiveInlineSelectionTarget(this._editor))
+				: null;
+		const resolveSuggestionsForTurn =
+			resolution === "accept"
+				? (suggestionIds: readonly string[]) =>
+						acceptSuggestions(this._editor, suggestionIds, {
+							origin: turnSuggestionResolutionOrigin,
+							undoGroupId: turnUndoGroupId,
+						})
+				: (suggestionIds: readonly string[]) =>
+						rejectSuggestions(this._editor, suggestionIds, {
+							origin: turnSuggestionResolutionOrigin,
+							undoGroupId: turnUndoGroupId,
+						});
+		const resolveReviewItems =
+			resolution === "accept"
+				? (reviewItemIds: readonly string[]) =>
+						host.acceptReviewItems(reviewItemIds)
+				: (reviewItemIds: readonly string[]) =>
+						host.rejectReviewItems(reviewItemIds);
+		let resolved = false;
+		resolved = resolveSuggestionsForTurn(turn.suggestionIds) || resolved;
+		if (
+			this._state.activeGeneration?.sessionId === sessionId &&
+			this._state.activeGeneration.turnId === turnId &&
+			this._state.activeGeneration.planState === "validated" &&
+			turn.reviewItemIds.length > 0
+		) {
+			resolved = resolveReviewItems(turn.reviewItemIds) || resolved;
+		}
+		if (!resolved) {
+			return false;
+		}
+		host.clearStreamingReviewPreview(sessionId);
+		this._updateSessionTurn(sessionId, turnId, {
+			status: resolution === "accept" ? "accepted" : "rejected",
+			suggestionIds: [],
+			reviewItemIds: [],
+			structuredPreview: null,
+			anchor: refreshedInlineSelectionTarget
+				? resolveSessionAnchor(refreshedInlineSelectionTarget.selection)
+				: undefined,
+			selection: refreshedInlineSelectionTarget
+				? resolveSessionSelectionSnapshot(
+						refreshedInlineSelectionTarget.selection,
+					)
+				: undefined,
+		});
+		if (refreshedInlineSelectionTarget) {
+			this._updateSession(sessionId, {
+				target: refreshedInlineSelectionTarget,
+				anchor: resolveSessionAnchor(
+					refreshedInlineSelectionTarget.selection,
+				),
+				contextualPrompt: session.contextualPrompt
+					? {
+							...session.contextualPrompt,
+							anchor: resolveContextualPromptAnchor(
+								refreshedInlineSelectionTarget,
+							),
+						}
+					: undefined,
+			});
+		}
+		if (options?.finalizeSession === false) {
+			if (undoHistoryBeforeSnapshot) {
+				this._undoHistoryMetadata?.setCurrentEntryMetadata(
+					AI_UNDO_HISTORY_METADATA_KEY,
+					{
+						before: undoHistoryBeforeSnapshot,
+						after: createInlineHistorySnapshot(
+							this._editor,
+							this._state.sessions,
+							this._state.activeSessionId ?? null,
+							this._documentVersion,
+							{ kind: "document-coupled" },
+						),
+					},
+				);
+			}
+			return true;
+		}
+		const nextSession =
+			this._state.sessions.find((item) => item.id === sessionId) ??
+			session;
+		this._updateSession(sessionId, {
+			status: "complete",
+			contextualPrompt: closeInlineSessionPrompt(nextSession),
+		});
+		if (undoHistoryBeforeSnapshot) {
+			this._undoHistoryMetadata?.setCurrentEntryMetadata(
+				AI_UNDO_HISTORY_METADATA_KEY,
+				{
+					before: undoHistoryBeforeSnapshot,
+					after: createInlineHistorySnapshot(
+						this._editor,
+						this._state.sessions,
+						this._state.activeSessionId ?? null,
+						this._documentVersion,
+						{ kind: "document-coupled" },
+					),
+				},
+			);
+		}
+		return true;
+	}
+
+	_updateSession(
+		sessionId: string,
+		overrides: Partial<AISession>,
+	): void {
+		const nextSessions = this._state.sessions.map((session) =>
+			session.id !== sessionId
+				? session
+				: {
+						...session,
+						...overrides,
+						contextualPrompt:
+							(overrides.contextualPrompt ??
+							session.contextualPrompt)
+								? {
+										...(session.contextualPrompt ??
+											resolveContextualPromptState(
+												overrides.target ??
+													session.target,
+											)),
+										...(overrides.contextualPrompt ?? {}),
+										anchor: {
+											...(
+												session.contextualPrompt ??
+												resolveContextualPromptState(
+													overrides.target ??
+														session.target,
+												)
+											).anchor,
+											...(overrides.contextualPrompt
+												?.anchor ?? {}),
+										},
+										composer: {
+											...(
+												session.contextualPrompt ??
+												resolveContextualPromptState(
+													overrides.target ??
+														session.target,
+												)
+											).composer,
+											...(overrides.contextualPrompt
+												?.composer ?? {}),
+											isSubmitting:
+												overrides.contextualPrompt
+													?.composer?.isSubmitting ??
+												(overrides.status ===
+												"streaming"
+													? true
+													: overrides.status
+														? false
+														: (
+																session.contextualPrompt ??
+																resolveContextualPromptState(
+																	overrides.target ??
+																		session.target,
+																)
+															).composer
+																.isSubmitting),
+										},
+									}
+								: undefined,
+						updatedAt: Date.now(),
+						metrics: {
+							...session.metrics,
+							...(overrides.metrics ?? {}),
+						},
+					},
+		);
+		if (nextSessions === this._state.sessions) {
+			return;
+		}
+		this._setState({
+			sessions: nextSessions,
+			activeSessionId:
+				this._state.activeSessionId === sessionId ||
+				this._state.activeSessionId == null
+					? sessionId
+					: this._state.activeSessionId,
+		});
+	}
+
+	_recordSessionFastApplyMetrics(
+		sessionId: string,
+		fastApply: FastApplyDebugState | undefined,
+	): void {
+		const session = this._state.sessions.find(
+			(item) => item.id === sessionId,
+		);
+		if (!session) {
+			return;
+		}
+		this._updateSession(sessionId, {
+			metrics: {
+				...session.metrics,
+				fastApply: accumulateSessionFastApplyMetrics(
+					session.metrics.fastApply,
+					fastApply,
+				),
+			},
+		});
+	}
+
+	_setInlineSessionComposerOpen(
+		sessionId: string,
+		isOpen: boolean,
+		options?: { openReason?: "user" | "history" },
+	): void {
+		const session = this._state.sessions.find(
+			(item) => item.id === sessionId,
+		);
+		if (
+			!session ||
+			session.surface !== "inline-edit" ||
+			!session.contextualPrompt
+		) {
+			return;
+		}
+		const nextActiveSessionId = isOpen
+			? sessionId
+			: this._state.activeSessionId === sessionId
+				? null
+				: this._state.activeSessionId;
+		if (
+			session.contextualPrompt.composer.isOpen === isOpen &&
+			nextActiveSessionId === this._state.activeSessionId
+		) {
+			return;
+		}
+		const nextSessions = this._state.sessions.map((item) =>
+			item.id !== sessionId
+				? item
+				: {
+						...item,
+						contextualPrompt: {
+							...item.contextualPrompt!,
+							composer: {
+								...item.contextualPrompt!.composer,
+								isOpen,
+								openReason: isOpen
+									? (options?.openReason ?? "user")
+									: item.contextualPrompt!.composer
+											.openReason,
+							},
+						},
+						updatedAt: Date.now(),
+					},
+		);
+		this._setState({
+			sessions: nextSessions,
+			activeSessionId: nextActiveSessionId,
+		});
+	}
+
+	protected asHost(): AIControllerMethodHost {
+		return this as unknown as AIControllerMethodHost;
+	}
+}

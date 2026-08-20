@@ -231,6 +231,12 @@ export class SelectionManagerImpl {
 		this._selection = null;
 	}
 
+	/**
+	 * Phase 6 wrap. Wave 5 replaces this with SelectionAuthority.onCommit(summary).
+	 * v1 has no on-commit remapping; setSelection already validated the record.
+	 */
+	mapOnCommit(): void {}
+
 	private _validateSelection(sel: SelectionState): boolean {
 		if (!sel) return true;
 		if (sel.type === "text") return this._blockExists(sel.anchor.blockId);

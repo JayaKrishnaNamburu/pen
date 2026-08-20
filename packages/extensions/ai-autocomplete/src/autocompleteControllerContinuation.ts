@@ -1,77 +1,31 @@
-import type { Editor, FieldEditor, ModelAdapter } from "@input/pen-types";
-import { FIELD_EDITOR_SLOT_KEY } from "@input/pen-types";
+import { generateId } from "@input/pen-types";
+import {
+	handleModelEvent,
+	normalizeCompletionText,
+} from "./autocompleteCompletionText";
+import type { AutocompleteControllerHost } from "./autocompleteControllerHost";
+import { setState } from "./autocompleteControllerState";
+import { acceptFullVisibleSuggestion } from "./autocompleteControllerLifecycle";
+import { buildContextForPosition } from "./autocompleteControllerRequest";
+import {
+	logAutocompleteEvent,
+	previewAutocompleteTextForLog,
+} from "./autocompleteDebug";
+import { AUTOCOMPLETE_REQUEST_MODE } from "./constants";
 import { buildAutocompleteMessages } from "./promptBuilder";
-import type { AutocompleteProviderRegistry } from "./providers/registry";
-import type { AutocompleteContextProvider, AutocompleteProviderDescriptor } from "./providers/types";
-import type {
-	AutocompleteAcceptanceStrategy,
-	AutocompleteBlockedReason,
-	AutocompleteBlockPolicy,
-	AutocompleteControllerSnapshot,
-	AutocompleteControllerState,
-	AutocompleteDismissReason,
-	AutocompleteExtensionConfig,
-	AutocompletePolicyInvalidationStage,
-	AutocompleteRequestContext,
-} from "./types";
-import {
-	createAutocompleteStructuredCandidate,
-	materializeStructuredCandidateAcceptance,
-} from "./structuredCandidate";
-import type { AutocompleteContinuationState } from "./continuationState";
-import { AutocompleteControllerImpl } from "./autocompleteControllerCore";
-import { handleModelEvent, head, normalizeCompletionText, tail } from "./autocompleteCompletionText";
-import { logAutocompleteEvent, previewAutocompleteTextForLog } from "./autocompleteDebug";
-import {
-	areBlockPoliciesEqual,
-	cloneAutocompleteControllerState,
-	freezeAutocompleteControllerSnapshot,
-	freezeAutocompleteControllerState,
-	freezeProviderDescriptors,
-	incrementPolicyInvalidationMetrics,
-} from "./autocompleteControllerSnapshots";
+import { createAutocompleteStructuredCandidate } from "./structuredCandidate";
+import type { AutocompleteRequestContext } from "./types";
 
-const AUTOCOMPLETE_REQUEST_MODE = "inline-autocomplete";
-
-type AutocompleteControllerRuntime = {
-	[key: string]: any;
-	_editor: Editor;
-	_model: ModelAdapter | undefined;
-	_debounceMs: number;
-	_acceptanceStrategy: AutocompleteAcceptanceStrategy;
-	_staleAfterMs: number;
-	_maxPrefixChars: number;
-	_maxSuffixChars: number;
-	_maxNeighborChars: number;
-	_maxProviderChars: number;
-	_maxProviderTimeMs: number;
-	_prefetchAfterAccept: boolean;
-	_providerRegistry: AutocompleteProviderRegistry;
-	_inlineCompletion: import("@input/pen-types").InlineCompletionController;
-	_listeners: Set<() => void>;
-	_snapshot: AutocompleteControllerSnapshot | null;
-	_providerDescriptorsSnapshot: readonly AutocompleteProviderDescriptor[] | null;
-	_state: AutocompleteControllerState;
-	_debounceTimer: ReturnType<typeof setTimeout> | null;
-	_abortController: AbortController | null;
-	_unsubscribeSelection: (() => void) | null;
-	_unsubscribeCommit: (() => void) | null;
-	_continuation: AutocompleteContinuationState;
-	_prefetchAbortController: AbortController | null;
-};
-
-type RuntimePrototype = Record<string, unknown>;
-
-const ControllerPrototype = AutocompleteControllerImpl.prototype as unknown as RuntimePrototype;
-
-ControllerPrototype._showSequenceSuggestion = function _showSequenceSuggestion(this: AutocompleteControllerRuntime): void {
-	const sequence = this._continuation.sequence;
+export function showSequenceSuggestion(
+	controller: AutocompleteControllerHost,
+): void {
+	const sequence = controller._continuation.sequence;
 	if (!sequence) {
 		return;
 	}
 	const suggestionId = sequence.requestId;
 	const preview = sequence.candidate;
-	this._inlineCompletion.showSuggestion({
+	controller._inlineCompletion.showSuggestion({
 		id: suggestionId,
 		blockId: sequence.blockId,
 		offset: sequence.startOffset,
@@ -79,61 +33,68 @@ ControllerPrototype._showSequenceSuggestion = function _showSequenceSuggestion(t
 		type: "inline",
 		previewBlocks: preview.previewBlocks,
 		accept: () =>
-			this._acceptFullVisibleSuggestion({
+			acceptFullVisibleSuggestion(controller, {
 				activateContinuation: true,
 			}),
 	});
-	this._setState({
+	setState(controller, {
 		status: "showing",
 		activeRequestId: sequence.requestId,
 		visibleSuggestionId: suggestionId,
 	});
 }
-;
-ControllerPrototype._startPrefetchForAcceptedContinuation = function _startPrefetchForAcceptedContinuation(this: AutocompleteControllerRuntime, options: {
-	sourceRequestId: string;
-	blockId: string;
-	startOffset: number;
-	continuationDepth: number;
-}): void {
-	if (!this._prefetchAfterAccept) {
+
+export function startPrefetchForAcceptedContinuation(
+	controller: AutocompleteControllerHost,
+	options: {
+		sourceRequestId: string;
+		blockId: string;
+		startOffset: number;
+		continuationDepth: number;
+	},
+): void {
+	if (!controller._prefetchAfterAccept) {
 		return;
 	}
-	const context = this._buildContextForPosition(
+	const context = buildContextForPosition(
+		controller,
 		options.blockId,
 		options.startOffset,
 	);
 	if (!context) {
 		return;
 	}
-	this._prefetchAbortController?.abort();
+	controller._prefetchAbortController?.abort();
 	const abortController = new AbortController();
-	this._prefetchAbortController = abortController;
-	void this._runPrefetchRequest({
+	controller._prefetchAbortController = abortController;
+	void runPrefetchRequest(controller, {
 		abortController,
 		context,
 		continuationDepth: options.continuationDepth,
 		sourceRequestId: options.sourceRequestId,
 	});
 }
-;
-ControllerPrototype._runPrefetchRequest = async function _runPrefetchRequest(this: AutocompleteControllerRuntime, options: {
-	abortController: AbortController;
-	context: AutocompleteRequestContext;
-	continuationDepth: number;
-	sourceRequestId: string;
-}): Promise<void> {
-	if (!this._model) {
+
+export async function runPrefetchRequest(
+	controller: AutocompleteControllerHost,
+	options: {
+		abortController: AbortController;
+		context: AutocompleteRequestContext;
+		continuationDepth: number;
+		sourceRequestId: string;
+	},
+): Promise<void> {
+	if (!controller._model) {
 		return;
 	}
 	const { abortController, context, continuationDepth, sourceRequestId } =
 		options;
-	const requestId = crypto.randomUUID();
+	const requestId = generateId();
 	const { messages } = await buildAutocompleteMessages({
 		context,
-		registry: this._providerRegistry,
-		maxProviderChars: this._maxProviderChars,
-		maxProviderTimeMs: this._maxProviderTimeMs,
+		registry: controller._providerRegistry,
+		maxProviderChars: controller._maxProviderChars,
+		maxProviderTimeMs: controller._maxProviderTimeMs,
 		mode: "continuation",
 		continuationDepth,
 	});
@@ -143,7 +104,7 @@ ControllerPrototype._runPrefetchRequest = async function _runPrefetchRequest(thi
 
 	let text = "";
 	try {
-		for await (const event of this._model.stream({
+		for await (const event of controller._model.stream({
 			messages,
 			tools: [],
 			signal: abortController.signal,
@@ -161,6 +122,7 @@ ControllerPrototype._runPrefetchRequest = async function _runPrefetchRequest(thi
 			}
 		}
 	} catch {
+		// stream aborted or provider threw; drop this continuation.
 		return;
 	}
 
@@ -179,7 +141,7 @@ ControllerPrototype._runPrefetchRequest = async function _runPrefetchRequest(thi
 		return;
 	}
 	const candidate = createAutocompleteStructuredCandidate(
-		this._editor,
+		controller._editor,
 		normalizedText,
 		{
 			activeBlockType: context.blockType,
@@ -197,12 +159,10 @@ ControllerPrototype._runPrefetchRequest = async function _runPrefetchRequest(thi
 		inlineLength: candidate.inlineText.length,
 		inlinePreview: previewAutocompleteTextForLog(candidate.inlineText),
 		appendedBlockCount: candidate.appendedBlocks.length,
-		appendedBlockTypes: candidate.appendedBlocks.map(
-			(block) => block.type,
-		),
+		appendedBlockTypes: candidate.appendedBlocks.map((block) => block.type),
 		previewBlockCount: candidate.previewBlocks.length,
 	});
-	this._continuation.setPrefetchedContinuation({
+	controller._continuation.setPrefetchedContinuation({
 		sourceRequestId,
 		requestId,
 		blockId: context.blockId,
@@ -210,36 +170,39 @@ ControllerPrototype._runPrefetchRequest = async function _runPrefetchRequest(thi
 		candidate,
 		continuationDepth,
 	});
-	this._activatePendingAcceptedContinuation();
+	activatePendingAcceptedContinuation(controller);
 }
-;
-ControllerPrototype._activatePendingAcceptedContinuation = function _activatePendingAcceptedContinuation(this: AutocompleteControllerRuntime): boolean {
+
+export function activatePendingAcceptedContinuation(
+	controller: AutocompleteControllerHost,
+): boolean {
 	if (
-		!this._continuation.activatePendingAcceptedContinuation(
-			this._editor.selection,
+		!controller._continuation.activatePendingAcceptedContinuation(
+			controller._editor.selection,
 		)
 	) {
 		return false;
 	}
-	this._showSequenceSuggestion();
+	showSequenceSuggestion(controller);
 	return true;
 }
-;
-ControllerPrototype._clearSequence = function _clearSequence(this: AutocompleteControllerRuntime): void {
-	this._continuation.clearSequence();
+
+export function clearSequence(controller: AutocompleteControllerHost): void {
+	controller._continuation.clearSequence();
 }
-;
-ControllerPrototype._clearVisibleSuggestionAfterAccept = function _clearVisibleSuggestionAfterAccept(this: AutocompleteControllerRuntime): void {
-	this._clearSequence();
-	this._setState({
+
+export function clearVisibleSuggestionAfterAccept(
+	controller: AutocompleteControllerHost,
+): void {
+	clearSequence(controller);
+	setState(controller, {
 		status: "idle",
 		activeRequestId: null,
 		visibleSuggestionId: null,
 		diagnostics: {
-			...this._state.diagnostics,
+			...controller._state.diagnostics,
 			lastDismissReason: "accept",
 		},
 	});
-	this._inlineCompletion.dismissSuggestion();
+	controller._inlineCompletion.dismissSuggestion();
 }
-;

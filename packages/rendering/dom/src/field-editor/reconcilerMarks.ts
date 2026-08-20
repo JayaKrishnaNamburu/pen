@@ -1,4 +1,5 @@
 import type { SchemaRegistry } from "@input/pen-types";
+import { urlPolicy } from "../security/urlPolicy";
 import { INLINE_DECORATION_ATTRIBUTE_KEY } from "../utils/inlineDecorations";
 
 export function wrapWithMarks(
@@ -70,7 +71,14 @@ function createMarkElement(markType: string, props: unknown): HTMLElement {
 			const anchor = document.createElement("a");
 			if (typeof props === "object" && props !== null) {
 				const record = props as Record<string, unknown>;
-				if (record.href) anchor.href = record.href as string;
+				if (record.href) {
+					const href = urlPolicy.resolve(record.href, "link");
+					if (href === null) {
+						anchor.setAttribute("data-pen-blocked-url", "");
+					} else {
+						anchor.href = href;
+					}
+				}
 				if (record.title) anchor.title = record.title as string;
 			}
 			return anchor;
@@ -118,7 +126,10 @@ function createMarkElement(markType: string, props: unknown): HTMLElement {
 	}
 }
 
-function applyElementAttributes(element: HTMLElement, props: unknown): void {
+export function applyElementAttributes(
+	element: HTMLElement,
+	props: unknown,
+): void {
 	if (!isDecorationAttributesValue(props)) {
 		return;
 	}
@@ -127,12 +138,24 @@ function applyElementAttributes(element: HTMLElement, props: unknown): void {
 		if (value === null || value === false || value === undefined) {
 			continue;
 		}
-		if (key === "class" && typeof value === "string") {
-			element.className = value;
+		// SEC2: event handlers and stylesheets are not data
+		if (/^on/i.test(key) || key.toLowerCase() === "style") {
 			continue;
 		}
-		if (key === "style" && typeof value === "string") {
-			element.style.cssText = value;
+		if (key === "href" || key === "src") {
+			const resolved = urlPolicy.resolve(
+				value,
+				key === "href" ? "link" : "image",
+			);
+			if (resolved === null) {
+				element.setAttribute("data-pen-blocked-url", "");
+			} else {
+				element.setAttribute(key, resolved);
+			}
+			continue;
+		}
+		if (key === "class" && typeof value === "string") {
+			element.className = value;
 			continue;
 		}
 		if (value === true) {

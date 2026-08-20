@@ -9,3 +9,4 @@ export const FOLLOW_UP_SEGMENT_TARGET_CHARS = 20;
 export const DEFAULT_PREFETCH_AFTER_ACCEPT = true;
 export const DEFAULT_ACCEPTANCE_STRATEGY = "sequence";
 export const DEFAULT_STALE_AFTER_MS = 1500;
+export const AUTOCOMPLETE_REQUEST_MODE = "inline-autocomplete";

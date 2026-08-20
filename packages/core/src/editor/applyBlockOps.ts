@@ -20,20 +20,14 @@ import type {
 	UpdateAppOp,
 	DeleteAppOp,
 	SetSelectionOp,
-	UpdateTableColumnsOp,
 	CRDTArray,
 } from "@input/pen-types";
-import { generateId, getOpOriginType } from "@input/pen-types";
 import { resolveRuntimeContentType } from "../schema/contentType";
 import {
 	type CRDTUnknownArray,
 	type CRDTUnknownMap,
-	getArrayProp,
 	getMapProp,
-	getStringProp,
-	getTableColumns,
 	getTableContent,
-	isCRDTMap,
 } from "./crdtShapes";
 import type { ApplyPipeline } from "./apply";
 
@@ -101,10 +95,6 @@ if (typeof op.position === "object" && "parent" in op.position) {
 } else {
 	const idx = self._resolvePosition(op.position);
 	self.mutableBlockOrder.insert(idx, [op.blockId]);
-}
-
-if ((schema as { content: unknown }).content === "database") {
-	self._databaseOps.seedDatabaseBlock(blockMap);
 }
 
 return [op.blockId];
@@ -214,12 +204,9 @@ if (oldContent === "inline" && newContent !== "inline") {
 }
 
 const targetContent = resolveRuntimeContentType(newSchema);
-if (targetContent !== "database") {
-	self._clearDatabaseState(blockMap);
-}
 if (targetContent === "table") {
 	blockMap.delete("tableColumns");
-} else if (targetContent !== "database") {
+} else {
 	self._clearTableState(blockMap);
 }
 
@@ -231,65 +218,39 @@ if (targetContent === "table" && !getTableContent(blockMap)) {
 	});
 }
 
-if (targetContent === "database") {
-	if (oldType === "table") {
-		self._migrateTableToDatabase(blockMap, propsMap);
-	}
-	self._databaseOps.seedDatabaseBlock(blockMap);
-}
-
 return [op.blockId];
 }
 
-export function migrateTableToDatabase(pipeline: ApplyPipeline, 
-	blockMap: MutableMap,
-	propsMap: CRDTUnknownMap | null,
+type StructuralOriginTag =
+	| {
+			kind: "split";
+			blockId: string;
+			newBlockId: string;
+			offset: number;
+	  }
+	| {
+			kind: "merge";
+			targetBlockId: string;
+			sourceBlockId: string;
+	  };
+
+function tagStructuralOrigin(
+	pipeline: ApplyPipelineRuntime,
+	structural: StructuralOriginTag,
 ): void {
-	const self = pipeline as ApplyPipelineRuntime;
-const tableContent = getTableContent(blockMap);
-if (!tableContent) {
-	return;
-}
+	const raw = pipeline._adapter.raw?.(pipeline._crdtDoc) as
+		| { _transaction?: { origin: unknown; meta?: Map<unknown, unknown> } }
+		| undefined;
+	const txn = raw?._transaction;
+	if (!txn) return;
 
-const hasHeaderRow = propsMap?.get("hasHeaderRow") !== false;
-const existingColumns = getTableColumns(blockMap);
-if (!existingColumns || existingColumns.length === 0) {
-	const columnCount =
-		self._tableGrid.resolveGridColumnCount(blockMap);
-	const columns = Array.from({ length: columnCount }, (_, index) => {
-		const title =
-			hasHeaderRow && tableContent.length > 0
-				? self._tableGrid
-						.readTableCellText(
-							tableContent.get(0) as CRDTUnknownMap,
-							index,
-						)
-						.trim() || `Column ${index + 1}`
-				: `Column ${index + 1}`;
-		return {
-			id: `column-${index + 1}`,
-			title,
-			type: "text" as const,
-		};
-	});
-	if (columns.length > 0) {
-		self._tableGrid.setStructuredTableColumns(blockMap, columns);
+	const current = txn.origin;
+	if (current != null && typeof current === "object") {
+		(current as { structural?: StructuralOriginTag }).structural = structural;
+		return;
 	}
-}
 
-if (hasHeaderRow && tableContent.length > 0) {
-	tableContent.delete(0, 1);
-}
-
-for (let rowIndex = 0; rowIndex < tableContent.length; rowIndex++) {
-	const row = tableContent.get(rowIndex);
-	if (!row || !isCRDTMap(row)) {
-		continue;
-	}
-	if (!getStringProp(row, "id")) {
-		row.set("id", generateId());
-	}
-}
+	txn.meta?.set("structural", structural);
 }
 
 export function splitBlock(pipeline: ApplyPipeline, op: SplitBlockOp): string[] {
@@ -299,6 +260,12 @@ if (!blockMap) return [];
 
 const content = self._getTextContent(blockMap);
 if (!content) return [];
+	tagStructuralOrigin(self, {
+		kind: "split",
+		blockId: op.blockId,
+		newBlockId: op.newBlockId,
+		offset: op.offset,
+	});
 
 const oldType = blockMap.get("type") as string;
 const newType = op.newBlockType ?? oldType;
@@ -384,6 +351,11 @@ export function mergeBlocks(pipeline: ApplyPipeline, op: MergeBlocksOp): string[
 const targetMap = self._getMutableBlockMap(op.targetBlockId);
 const sourceMap = self._getMutableBlockMap(op.sourceBlockId);
 if (!targetMap || !sourceMap) return [];
+	tagStructuralOrigin(self, {
+		kind: "merge",
+		targetBlockId: op.targetBlockId,
+		sourceBlockId: op.sourceBlockId,
+	});
 
 const targetContent = self._getTextContent(targetMap);
 const sourceContent = self._getTextContent(sourceMap);

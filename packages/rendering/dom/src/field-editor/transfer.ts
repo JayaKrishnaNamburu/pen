@@ -58,7 +58,7 @@ export async function executeTransfer(
 		return false;
 	}
 
-	const uploaded = await uploadImageFiles(files, assetProvider);
+	const uploaded = await uploadImageFiles(files, assetProvider, { editor });
 	if (uploaded.length === 0) {
 		return true;
 	}

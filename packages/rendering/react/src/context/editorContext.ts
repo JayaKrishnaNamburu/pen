@@ -17,8 +17,6 @@ import {
 	resolveSelectAllBehavior,
 	type EditorSelectAllBehavior,
 } from "../constants/selectAll";
-import { isDevelopmentEnvironment } from "../utils/environment";
-
 export interface PasteImporters {
 	html?: Importer<string, PendingBlock[]>;
 	markdown?: Importer<string, PendingBlock[]>;
@@ -229,13 +227,9 @@ export const EditorContext = createContext<EditorContextValue | null>(null);
 export function useEditorContext(): EditorContextValue {
 	const ctx = useContext(EditorContext);
 	if (!ctx) {
-		if (isDevelopmentEnvironment()) {
-			console.error(
-				"Pen: useEditorContext must be used within <Pen.Editor.Root>. " +
-					"Wrap your editor components in <Pen.Editor.Root editor={editor}>.",
-			);
-		}
-		throw new Error("Missing Pen.Editor.Root context");
+		throw new Error(
+			"Missing Pen.Editor.Root context. Wrap your editor components in <Pen.Editor.Root editor={editor}>.",
+		);
 	}
 	return ctx;
 }

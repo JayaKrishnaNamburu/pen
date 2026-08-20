@@ -44,15 +44,24 @@ describe("AC 20 — memoryAssets", () => {
     expect(provider.resolve(ref)).toBe(ref.url);
   });
 
-  it("calls onProgress with 1", async () => {
+  it("IOP4 observes onProgress during upload", async () => {
     const provider = memoryAssets();
     const blob = new Blob(["hello"], { type: "text/plain" });
-    let progress: number | undefined;
+    const progress: number[] = [];
     await provider.upload(blob, {
       onProgress: (p) => {
-        progress = p;
+        progress.push(p);
       },
     });
-    expect(progress).toBe(1);
+    expect(progress).toEqual([0, 1]);
+  });
+
+  it("IOP4 rejects oversize uploads naming the limit and actual size", async () => {
+    const provider = memoryAssets({ maxSize: 4 });
+    const blob = new Blob(["hello-world"], { type: "text/plain" });
+
+    await expect(provider.upload(blob, { maxSize: 4 })).rejects.toThrow(
+      /11.*maxSize 4/,
+    );
   });
 });

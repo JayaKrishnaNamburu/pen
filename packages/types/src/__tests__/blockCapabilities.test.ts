@@ -39,7 +39,7 @@ describe("block capability helpers", () => {
   });
 
   it("keeps only explicit legacy type fallbacks for schema-less payloads", () => {
-    expect(getFlowCapabilityFromType("database")).toBe("flow-disallowed");
+    expect(getFlowCapabilityFromType("table")).toBe("flow-delegated");
     expect(getFlowCapabilityFromType("subdocument")).toBe("flow-delegated");
     expect(getFlowCapabilityFromType("customWidget")).toBe(null);
     expect(getBlockSelectionRoleFromType("image")).toBe("structural");
@@ -76,17 +76,20 @@ describe("block capability helpers", () => {
         hidden: true,
       },
     });
-    const databaseBlock = defineBlock("database", {
-      content: "database",
-      fieldEditor: "database",
+    const disallowedBlock = defineBlock("widget", {
+      content: "none",
+      fieldEditor: "none",
+      authoring: {
+        flowCapability: "flow-disallowed",
+      },
       display: {
-        title: "Database",
+        title: "Widget",
       },
     });
 
     expect(shouldExposeBlockInTooling("structured", hiddenBlock)).toBe(false);
-    expect(shouldExposeBlockInTooling("structured", databaseBlock)).toBe(true);
-    expect(shouldExposeBlockInTooling("flow", databaseBlock)).toBe(false);
+    expect(shouldExposeBlockInTooling("structured", disallowedBlock)).toBe(true);
+    expect(shouldExposeBlockInTooling("flow", disallowedBlock)).toBe(false);
   });
 
   it("treats unknown block capabilities as ineligible for direct flow paste", () => {

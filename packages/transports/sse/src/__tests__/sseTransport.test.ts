@@ -1,5 +1,7 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { parseSSELine, parseSSEStream } from "../parser";
+import { parseSSELine } from "../parser";
 import { createSSEHandler } from "../server";
 import { sseTransport } from "../client";
 import type { PenStreamPart, PenStreamRequest } from "@input/pen-types";
@@ -200,27 +202,34 @@ describe("SSE server handler", () => {
 		expect(done).toMatchObject({ type: "done" });
 	});
 
-	it("GET reconnect without Last-Event-ID returns 400", async () => {
+	it("COL6 GET is not a resume surface and README states single-process non-resumable development-oriented", async () => {
 		const handler = createSSEHandler({ pingInterval: 60_000 });
 
-		const request = new Request("http://localhost/sse", { method: "GET" });
-		const response = await handler(request);
+		const missingId = await handler(
+			new Request("http://localhost/sse", { method: "GET" }),
+		);
+		const withId = await handler(
+			new Request("http://localhost/sse", {
+				method: "GET",
+				headers: { "Last-Event-ID": "some-stream:5" },
+			}),
+		);
 
-		expect(response.status).toBe(400);
-	});
+		expect(missingId.status).toBe(405);
+		expect(withId.status).toBe(405);
+		expect(withId.status).not.toBe(501);
+		expect(withId.headers.get("X-Replay-Supported")).toBeNull();
 
-	it("GET reconnect returns 501 for M0 (AC 15)", async () => {
-		const handler = createSSEHandler({ pingInterval: 60_000 });
+		const transport = sseTransport({ url: "http://test/sse" });
+		expect(transport.reconnect).toBeUndefined();
 
-		const request = new Request("http://localhost/sse", {
-			method: "GET",
-			headers: { "Last-Event-ID": "some-stream:5" },
-		});
-
-		const response = await handler(request);
-
-		expect(response.status).toBe(501);
-		expect(response.headers.get("X-Replay-Supported")).toBe("false");
+		const readme = readFileSync(
+			join(import.meta.dirname, "../../README.md"),
+			"utf8",
+		);
+		expect(readme).toMatch(/single-process/);
+		expect(readme).toMatch(/non-resumable/);
+		expect(readme).toMatch(/development-oriented/);
 	});
 });
 
@@ -393,38 +402,24 @@ describe("SSE client transport", () => {
 		expect(headCall).toBeDefined();
 	});
 
-	it("reconnect() sends GET with Last-Event-ID header (AC 14)", async () => {
-		const fetchSpy = vi.fn(async (_url: string | URL | globalThis.Request, init?: RequestInit) => {
-			const reqHeaders = init?.headers as Record<string, string> | undefined;
-			if (init?.method === "GET" && reqHeaders?.["Last-Event-ID"]) {
-				return new Response(null, {
-					status: 501,
-					headers: { "X-Replay-Supported": "false" },
-				});
-			}
-			return new Response(null, { status: 404 });
-		});
+	it("COL6 stream() does not send Last-Event-ID", async () => {
+		const fetchSpy = vi.fn(async () =>
+			new Response(
+				sseBody([{ id: "s:0", data: '{"type":"done"}' }]),
+				{ status: 200, headers: { "Content-Type": "text/event-stream" } },
+			),
+		);
 		globalThis.fetch = fetchSpy;
 
-		const transport = sseTransport({
-			url: "http://test/sse",
-			maxReconnectAttempts: 1,
-		});
+		const transport = sseTransport({ url: "http://test/sse" });
+		await collectParts(transport.stream(makeRequest()));
 
-		const parts = await collectParts(transport.reconnect!("stream-123:5"));
-
-		expect(parts).toHaveLength(1);
-		expect(parts[0]).toMatchObject({
-			type: "error",
-			code: "REPLAY_UNSUPPORTED",
-		});
-
-		const getCall = (fetchSpy.mock.calls as FetchCall[]).find(
-			(c) => c[1]?.method === "GET",
-		);
-		expect(getCall).toBeDefined();
-		const sentHeaders = getCall![1]?.headers as Record<string, string>;
-		expect(sentHeaders["Last-Event-ID"]).toBe("stream-123:5");
-		expect(sentHeaders["Accept"]).toBe("text/event-stream");
+		expect(transport.reconnect).toBeUndefined();
+		const fetchCalls = (globalThis.fetch as ReturnType<typeof vi.fn>).mock
+			.calls as FetchCall[];
+		const postCall = fetchCalls[0];
+		const sentHeaders = postCall[1]?.headers as Record<string, string>;
+		expect(sentHeaders["Last-Event-ID"]).toBeUndefined();
+		expect(postCall[1]?.method).toBe("POST");
 	});
 });

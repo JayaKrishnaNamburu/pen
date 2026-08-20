@@ -13,7 +13,7 @@ pnpm add @input/pen-core @input/pen-schema-default
 - `defaultSchema` for the standard shipped schema
 - `createDefaultSchema()` when you want a fresh schema instance
 - `defaultBlocks` and `defaultInlines` for lower-level composition
-- direct exports for common blocks such as `paragraph`, `heading`, `table`, and `database`
+- direct exports for common blocks such as `paragraph`, `heading`, and `table`
 
 ## Minimal Setup
 
@@ -33,7 +33,7 @@ The default schema includes common rich-text building blocks such as:
 - paragraphs and headings
 - bullet, numbered, and checklist items
 - code blocks and images
-- tables and databases
+- tables
 - dividers, callouts, toggles, and blockquotes
 - marks and inline nodes such as bold, italic, links, mentions, and inline apps
 

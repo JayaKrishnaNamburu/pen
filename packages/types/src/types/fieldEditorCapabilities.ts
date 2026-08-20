@@ -22,7 +22,7 @@ export function resolveFieldEditorBehavior(
 	if (declaredType === "none") {
 		return "none";
 	}
-	if (declaredType === "table" || declaredType === "database") {
+	if (declaredType === "table") {
 		return "grid";
 	}
 	if (declaredType === "code") {
@@ -97,7 +97,7 @@ function normalizeFieldEditorType(
 	if (schema.content === "inline") {
 		return "richtext";
 	}
-	if (schema.content === "table" || schema.content === "database") {
+	if (schema.content === "table") {
 		return "table";
 	}
 	return "none";

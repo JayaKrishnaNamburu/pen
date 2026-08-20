@@ -29,6 +29,15 @@ describe("@input/pen-dom public helpers", () => {
 	it("builds DOM data attributes predictably", () => {
 		expect(penDataAttr("editor-root")).toBe("data-pen-editor-root");
 		expect(DATA_ATTRS.editorRoot).toBe("data-pen-editor-root");
+		expect(DATA_ATTRS.inlineAtomCaretBoundary).toBe(
+			"data-pen-inline-atom-caret-boundary",
+		);
+		expect(DATA_ATTRS.inlineAtomCaretSide).toBe(
+			"data-pen-inline-atom-caret-side",
+		);
+		expect(DATA_ATTRS.inlineAtomDragging).toBe(
+			"data-pen-inline-atom-dragging",
+		);
 		expect(
 			buildDataAttributes({
 				role: "editor",
@@ -61,6 +70,13 @@ describe("@input/pen-dom public helpers", () => {
 		expect(isNativeTextEntryTarget(input)).toBe(true);
 		expect(isNativeTextEntryTarget(checkbox)).toBe(false);
 		expect(isNativeTextEntryTarget(textbox)).toBe(true);
+		const editorRoot = document.createElement("div");
+		editorRoot.setAttribute("role", "textbox");
+		editorRoot.setAttribute(DATA_ATTRS.editorRoot, "");
+		const insideEditor = document.createElement("div");
+		editorRoot.append(insideEditor);
+		expect(isNativeTextEntryTarget(editorRoot)).toBe(false);
+		expect(isNativeTextEntryTarget(insideEditor)).toBe(false);
 		expect(isFieldEditorTextEntryTarget(fieldSurface)).toBe(true);
 		expect(isActiveFieldEditorTextEntryTarget(activeFieldSurface)).toBe(
 			true,
@@ -233,6 +249,42 @@ describe("@input/pen-dom public helpers", () => {
 
 		root.remove();
 		otherRoot.remove();
+	});
+
+	it("does not route document keys while a detached surface holds focus", () => {
+		const root = document.createElement("div");
+		root.setAttribute(DATA_ATTRS.editorRoot, "");
+		root.setAttribute("role", "textbox");
+		const toolbar = document.createElement("div");
+		toolbar.setAttribute("role", "toolbar");
+		const button = document.createElement("button");
+		toolbar.append(button);
+		root.append(toolbar);
+		document.body.append(root);
+		button.focus();
+
+		let shouldHandle = true;
+		button.addEventListener(
+			"keydown",
+			(event) => {
+				shouldHandle = shouldHandleEditorKeyboardEvent({
+					root,
+					event,
+					selection: {
+						type: "text",
+						isCollapsed: false,
+						isMultiBlock: false,
+					},
+				});
+			},
+			{ once: true },
+		);
+		button.dispatchEvent(
+			new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+		);
+		expect(shouldHandle).toBe(false);
+
+		root.remove();
 	});
 
 	it("deletes document selections through the shared keydown handler with user origin", () => {

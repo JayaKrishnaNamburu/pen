@@ -1,0 +1,75 @@
+# Wave 0.6 CI wiring. New file so this does not race H.7 / H.8 / E.4 edits to ci.yml.
+# coverage:rules lives at scripts/coverage-rules.mjs (Wave 0.6). The conformance
+# package script delegates there. Do not rebuild the harness in this workflow.
+
+name: Conformance
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+concurrency:
+  group: conformance-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  coverage-rules:
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Self-test coverage:rules fixture
+        run: node scripts/coverage-rules.mjs --self-test
+
+      - name: Check claimed-scope rule coverage
+        run: node scripts/coverage-rules.mjs
+
+  conformance-chromium:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright Chromium
+        run: pnpm --filter @input/pen-conformance exec playwright install --with-deps chromium
+
+      - name: Run conformance Chromium suite
+        run: pnpm --filter @input/pen-conformance run test:chromium
+
+      - name: Upload Playwright artifacts
+        if: ${{ failure() || cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: conformance-chromium-artifacts
+          path: |
+            packages/tooling/conformance/playwright-report/
+            packages/tooling/conformance/test-results/
+          if-no-files-found: ignore
+          retention-days: 14

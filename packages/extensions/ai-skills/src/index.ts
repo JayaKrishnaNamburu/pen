@@ -1,4 +1,3 @@
-export { AISkillRegistry } from "./registry/skillRegistry";
 export {
   createDocumentAgentSkill,
   createAutocompleteProviderSkill,

@@ -1,5 +1,6 @@
 import type { BlockHandle, Editor, Position } from "@input/pen-types";
 import type { BlockSuggestionMeta, PersistentSuggestion } from "../types";
+import { generateId } from "@input/pen-types";
 
 export type BlockSuggestionMetaPayload = BlockSuggestionMeta &
 	Record<string, unknown>;
@@ -168,7 +169,7 @@ export function createSuggestionMark(
 	const resolvedSessionId = options.sessionId ?? sessionId;
 	return {
 		suggestion: {
-			id: options.suggestionId ?? crypto.randomUUID(),
+			id: options.suggestionId ?? generateId(),
 			action,
 			author,
 			authorType,
@@ -260,6 +261,7 @@ function getYText(editor: Editor, blockId: string): YTextLike | null {
 			(editor.internals.getBlockText(blockId) as YTextLike | null) ?? null
 		);
 	} catch {
+		// block text is missing or not a Y.Text.
 		return null;
 	}
 }

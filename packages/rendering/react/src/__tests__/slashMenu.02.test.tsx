@@ -191,7 +191,6 @@ describe("@input/pen-react slash menu", () => {
 
 		expect(slashMenu).not.toBeNull();
 		const itemTypes = slashMenu!.items.map((item) => item.type);
-		expect(itemTypes).not.toContain("database");
 		expect(itemTypes).not.toContain("subdocument");
 		expect(itemTypes).toContain("table");
 

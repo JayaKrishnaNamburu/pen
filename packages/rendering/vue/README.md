@@ -68,6 +68,8 @@ export const PenExample = defineComponent({
 
 ## Notes
 
+- Client-only mount: Vue has no `"use client"` directive, so this package does not emit one — mount `PenEditor` in the browser.
+- Pen ships no required stylesheet — the editor is functional unstyled. The HOST6 styling contract is [STYLING.md](./STYLING.md).
 - `PenEditor` installs the shared DOM field-editor engine from `@input/pen-dom`.
 - Renderer overrides let host apps customize block rendering without forking the editor runtime.
 - Paste importers can be passed through the `importers` prop on `PenEditor`.

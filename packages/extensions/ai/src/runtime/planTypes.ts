@@ -1,4 +1,4 @@
-import type { DatabaseViewState, Position, TableColumnSchema } from "@input/pen-types";
+import type { Position } from "@input/pen-types";
 
 export const DOCUMENT_MUTATION_PLAN_KINDS = [
 	"text_edit",
@@ -7,7 +7,6 @@ export const DOCUMENT_MUTATION_PLAN_KINDS = [
 	"block_update",
 	"block_move",
 	"block_convert",
-	"database_edit",
 	"review_bundle",
 ] as const;
 
@@ -101,21 +100,6 @@ export interface BlockConvertPlan {
 	confidence?: PlanConfidence;
 }
 
-export type DatabaseEditStep =
-	| { op: "add_column"; column: TableColumnSchema }
-	| { op: "update_column"; columnId: string; patch: Record<string, unknown> }
-	| { op: "insert_row"; rowId?: string; values: Record<string, unknown> }
-	| { op: "update_cell"; rowId: string; columnId: string; value: unknown }
-	| { op: "add_view"; view: DatabaseViewState }
-	| { op: "set_active_view"; viewId: string };
-
-export interface DatabaseEditPlan {
-	kind: "database_edit";
-	blockId: string;
-	steps: DatabaseEditStep[];
-	confidence?: PlanConfidence;
-}
-
 export interface ReviewBundlePlan {
 	kind: "review_bundle";
 	label: string;
@@ -131,5 +115,4 @@ export type DocumentMutationPlan =
 	| BlockUpdatePlan
 	| BlockMovePlan
 	| BlockConvertPlan
-	| DatabaseEditPlan
 	| ReviewBundlePlan;

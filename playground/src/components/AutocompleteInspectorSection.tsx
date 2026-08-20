@@ -302,7 +302,7 @@ export function AutocompleteInspectorSection({
 						className="inspector-text-input"
 						type="text"
 						value={deniedBlockTypesValue}
-						placeholder="database"
+						placeholder="codeBlock"
 						onChange={(event) =>
 							onAutocompleteBlockPolicyChange({
 								deniedBlockTypes: parseBlockTypeList(

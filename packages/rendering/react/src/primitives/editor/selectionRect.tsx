@@ -115,6 +115,7 @@ export function EditorSelectionRect(props: SelectionRectProps) {
 
   if (!rect) {
     return announcement ? (
+      // wave-x: delete when createAnnouncer is wired
       <div aria-live="polite" aria-atomic="true" style={SR_ONLY}>
         {announcement}
       </div>
@@ -138,9 +139,12 @@ export function EditorSelectionRect(props: SelectionRectProps) {
           zIndex: 10,
         },
       })}
-      <div aria-live="polite" aria-atomic="true" style={SR_ONLY}>
-        {announcement}
-      </div>
+      {(
+        // wave-x: delete when createAnnouncer is wired
+        <div aria-live="polite" aria-atomic="true" style={SR_ONLY}>
+          {announcement}
+        </div>
+      )}
     </>
   );
 }

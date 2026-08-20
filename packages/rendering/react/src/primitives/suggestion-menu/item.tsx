@@ -11,8 +11,10 @@ export interface SuggestionMenuItemProps extends AsChildProps {
 
 export function SuggestionMenuItem(props: SuggestionMenuItemProps) {
 	const { index, onSelect, ...rest } = props;
-	const { confirm, select, selectedIndex } = useSuggestionMenuContext();
+	const { confirm, getOptionId, select, selectedIndex } =
+		useSuggestionMenuContext();
 	const isSelected = index != null && index === selectedIndex;
+	const optionId = index != null ? getOptionId(index) : undefined;
 
 	const handleClick = () => {
 		if (onSelect) {
@@ -34,6 +36,7 @@ export function SuggestionMenuItem(props: SuggestionMenuItemProps) {
 	};
 
 	const primitiveProps: Record<string, unknown> = {
+		id: optionId,
 		"data-pen-suggestion-menu-item": "",
 		"data-selected": isSelected || undefined,
 		role: "option",

@@ -19,14 +19,14 @@ export function historyExtension(config: HistoryConfig): Extension {
 		activateClient: async ({ editor }) => {
 			activeEditor = editor;
 			runtimeHandle = attachHistoryScopeRuntime(editor, config);
-			editor.internals.setSlot(HISTORY_CONTROLLER_SLOT, runtimeHandle.controller);
+			editor.internals.assignSlot(HISTORY_CONTROLLER_SLOT, runtimeHandle.controller);
 			await runtimeHandle.ready;
 		},
 
 		deactivateClient: async () => {
 			runtimeHandle?.dispose();
 			runtimeHandle = null;
-			activeEditor?.internals.setSlot(HISTORY_CONTROLLER_SLOT, null);
+			activeEditor?.internals.assignSlot(HISTORY_CONTROLLER_SLOT, null);
 			activeEditor = null;
 		},
 	});

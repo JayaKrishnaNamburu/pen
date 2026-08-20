@@ -5,5 +5,10 @@ export {
 export { InputRuleEngine } from "./engine";
 export { defaultBlockRules } from "./defaultRules";
 export { defaultInlineRules } from "./inlineRules";
+export {
+	inputRulesToProviders,
+	PEN_INPUT_RULES_FACET_NAME,
+} from "./providers";
+export type { InputRuleFacetProvider } from "./providers";
 export type { InputRulesConfig, InlineInputRule } from "./types";
 export type { InputRule, InputRuleHandler, InputRuleContext } from "./types";

@@ -93,6 +93,7 @@ export function getTextSelectionClientRects(
 		range.setStart(anchorPoint.node, anchorPoint.offset);
 		range.setEnd(focusPoint.node, focusPoint.offset);
 	} catch {
+		// reversed endpoints; try the swapped range.
 		range.setStart(focusPoint.node, focusPoint.offset);
 		range.setEnd(anchorPoint.node, anchorPoint.offset);
 	}

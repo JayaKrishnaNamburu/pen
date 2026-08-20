@@ -268,7 +268,7 @@ export const aiBenchmarks: BenchDefinition[] = [
 	},
 	{
 		...AI_AUTOCOMPLETE_CANCEL_CHURN_BENCH,
-		fn(b) {
+		async fn(b) {
 			const cycleCount = 25;
 			const {
 				controller,
@@ -293,7 +293,7 @@ export const aiBenchmarks: BenchDefinition[] = [
 					metrics.policyInvalidationScheduledCount,
 				modelCallCount: getModelCallCount(),
 			});
-			editor.destroy();
+			await editor.destroy();
 		},
 	},
 	{
@@ -327,7 +327,7 @@ export const aiBenchmarks: BenchDefinition[] = [
 					metrics.policyInvalidationRequestingCount,
 				modelCallCount: getModelCallCount(),
 			});
-			editor.destroy();
+			await editor.destroy();
 		},
 	},
 	{
@@ -363,7 +363,7 @@ export const aiBenchmarks: BenchDefinition[] = [
 						?.chars ?? 0,
 				modelCallCount: getModelCallCount(),
 			});
-			editor.destroy();
+			await editor.destroy();
 		},
 	},
 	{
@@ -396,7 +396,7 @@ export const aiBenchmarks: BenchDefinition[] = [
 				acceptCount: metrics.acceptCount,
 				modelCallCount: getModelCallCount(),
 			});
-			editor.destroy();
+			await editor.destroy();
 		},
 	},
 	{
@@ -423,7 +423,7 @@ export const aiBenchmarks: BenchDefinition[] = [
 				modelCallCount: getModelCallCount(),
 				finalVisibleSuggestionLength: getVisibleSuggestionText().length,
 			});
-			editor.destroy();
+			await editor.destroy();
 		},
 	},
 ];

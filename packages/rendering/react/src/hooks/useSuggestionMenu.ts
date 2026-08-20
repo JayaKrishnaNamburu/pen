@@ -1,10 +1,10 @@
 import {
 	useCallback,
 	useEffect,
-	useLayoutEffect,
 	useRef,
 	useState,
 } from "react";
+import { useIsomorphicLayoutEffect } from "./useIsomorphicLayoutEffect";
 import type { Editor } from "@input/pen-types";
 
 export type SuggestionMenuStatus = "idle" | "loading" | "ready" | "error";
@@ -222,13 +222,13 @@ export function useSuggestionMenu<TItem>(
 			});
 	}, [dismiss]);
 
-	useLayoutEffect(() => {
+	useIsomorphicLayoutEffect(() => {
 		optionsRef.current = options;
 	});
 
 	useEffect(() => {
 		refresh();
-		const unsubscribeDocument = editor.onDocumentCommit(refresh);
+		const unsubscribeDocument = editor.on("commit", () => refresh());
 		const unsubscribeSelection = editor.onSelectionChange(refresh);
 		return () => {
 			unsubscribeDocument();

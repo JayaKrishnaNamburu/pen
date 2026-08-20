@@ -8,7 +8,6 @@
 "@input/pen-content-ops": patch
 "@input/pen-core": patch
 "@input/pen-crdt-yjs": patch
-"@input/pen-database": patch
 "@input/pen-delta-stream": patch
 "@input/pen-document-ops": patch
 "@input/pen-dom": patch

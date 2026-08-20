@@ -22,10 +22,6 @@ export function getFlowCapabilityFromSchema(
     return schema.authoring.flowCapability;
   }
 
-  if (schema.content === "database" || schema.fieldEditor === "database") {
-    return "flow-disallowed";
-  }
-
   if (
     schema.content === "table" ||
     schema.content === "subdocument" ||
@@ -70,7 +66,6 @@ export function getBlockSelectionRoleFromSchema(
 
 type LegacyBlockType =
   | "codeBlock"
-  | "database"
   | "divider"
   | "image"
   | "subdocument"
@@ -79,7 +74,6 @@ type LegacyBlockType =
 function isLegacyBlockType(value: string): value is LegacyBlockType {
   return (
     value === "codeBlock" ||
-    value === "database" ||
     value === "divider" ||
     value === "image" ||
     value === "subdocument" ||
@@ -104,8 +98,6 @@ export function getFlowCapabilityFromType(
     case "subdocument":
     case "table":
       return "flow-delegated";
-    case "database":
-      return "flow-disallowed";
     case "divider":
     case "image":
       return "flow-structural";
@@ -235,7 +227,6 @@ export function getBlockSelectionRoleFromType(
     case "image":
       return "structural";
     case "codeBlock":
-    case "database":
     case "subdocument":
     case "table":
       return "delegated";

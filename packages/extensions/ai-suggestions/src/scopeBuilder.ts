@@ -2,6 +2,7 @@ import type { Editor } from "@input/pen-types";
 import { DEFAULT_MAX_SCOPE_CHARS } from "./constants";
 import type { AISuggestionScope, AISuggestionsExtensionConfig } from "./types";
 import type { DirtyBlockState } from "./scheduler";
+import { generateId } from "@input/pen-types";
 
 export interface BuiltSuggestionScope {
 	scope: AISuggestionScope;
@@ -42,7 +43,7 @@ export function buildSuggestionScope(
 
 	return {
 		scope: {
-			id: crypto.randomUUID(),
+			id: generateId(),
 			blockId: block.id,
 			blockType: block.type ?? null,
 			text: targetText,

@@ -1,84 +1,110 @@
-import type { Editor } from "@input/pen-types";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import type { CommitEvent, Editor, TextStreamWriter } from "@input/pen-types";
+import { describe, expect, it, vi } from "vitest";
+
 import { StreamingTargetImpl } from "../streamingTarget";
 
-interface MockText {
-	readonly length: number;
-	insert(offset: number, text: string): void;
-	toString(): string;
-}
-
-function createMockText(): MockText {
-	let value = "";
-
-	return {
-		get length() {
-			return value.length;
-		},
-		insert(offset: number, text: string) {
-			value = value.slice(0, offset) + text + value.slice(offset);
-		},
-		toString() {
-			return value;
-		},
+function createStreamingHarness() {
+	const writer: TextStreamWriter = {
+		position: { blockId: "block-1", offset: 0 },
+		append: vi.fn(),
+		splice: vi.fn(),
+		flush: vi.fn(),
+		close: vi.fn(),
+		abort: vi.fn(),
 	};
-}
-
-function createStreamingHarness(batchInterval: number) {
-	const content = createMockText();
-	const blockMap = new Map<string, unknown>([["content", content]]);
-	const transact = vi.fn(
-		(_doc: unknown, callback: () => void, _origin: string) => {
-			callback();
-		},
-	);
+	const awarenessState: Record<string, unknown> = {};
+	const awareness = {
+		getLocalState: () => awarenessState,
+		setLocalState: vi.fn((next: Record<string, unknown>) => {
+			for (const key of Object.keys(awarenessState)) {
+				delete awarenessState[key];
+			}
+			Object.assign(awarenessState, next);
+		}),
+	};
+	const commitListeners: Array<(event: CommitEvent) => void> = [];
+	const transact = vi.fn();
 	const editor = {
-		undoManager: {
-			stopCapturing: vi.fn(),
-		},
+		openTextStream: vi.fn(() => writer),
+		on: vi.fn((event: string, listener: (commit: CommitEvent) => void) => {
+			if (event === "commit") {
+				commitListeners.push(listener);
+			}
+			return () => {
+				const index = commitListeners.indexOf(listener);
+				if (index >= 0) {
+					commitListeners.splice(index, 1);
+				}
+			};
+		}),
 		internals: {
-			doc: {
-				blocks: new Map([["block-1", blockMap]]),
-			},
-			adapter: {
-				transact,
-			},
-			crdtDoc: {},
-			awareness: null,
+			awareness,
+			adapter: { transact },
 		},
 	} as unknown as Editor;
-	const engine = {
-		markDirty: vi.fn(),
-		deferBlock: vi.fn(),
-		undeferBlock: vi.fn(),
-	};
 
 	return {
-		content,
+		writer,
 		transact,
-		engine,
-		target: new StreamingTargetImpl(editor, engine, batchInterval),
+		awareness,
+		awarenessState,
+		commitListeners,
+		editor,
+		target: new StreamingTargetImpl(editor, 50),
 	};
 }
 
 describe("@input/pen-delta-stream StreamingTargetImpl", () => {
-	afterEach(() => {
-		vi.useRealTimers();
+	it("ST5: begin/append/end go through TextStreamWriter and never transact", () => {
+		const { writer, transact, editor, target } = createStreamingHarness();
+
+		target.beginStreaming("zone-1", "block-1", {
+			type: "ai",
+			groupId: "gen-1",
+		});
+		expect(editor.openTextStream).toHaveBeenCalledWith(
+			{ blockId: "block-1" },
+			{
+				origin: { type: "ai", groupId: "gen-1" },
+				flushIntervalMs: 50,
+			},
+		);
+
+		target.appendDelta("hello");
+		expect(writer.append).toHaveBeenCalledWith("hello");
+		expect(transact).not.toHaveBeenCalled();
+
+		target.endStreaming("complete");
+		expect(writer.close).toHaveBeenCalledTimes(1);
+		expect(target.generationZone).toBeNull();
+		expect(transact).not.toHaveBeenCalled();
 	});
 
-	it("uses the configured batch interval before flushing", () => {
-		vi.useFakeTimers();
-		const { content, transact, target } = createStreamingHarness(120);
+	it("ST6: awareness streaming flags hang off source:stream commits", () => {
+		const {
+			awareness,
+			awarenessState,
+			commitListeners,
+			target,
+		} = createStreamingHarness();
 
 		target.beginStreaming("zone-1", "block-1");
-		target.appendDelta("hello");
+		expect(awareness.setLocalState).not.toHaveBeenCalled();
 
-		vi.advanceTimersByTime(119);
-		expect(transact).not.toHaveBeenCalled();
-		expect(content.toString()).toBe("");
+		commitListeners[0]!({
+			source: "apply",
+		} as CommitEvent);
+		expect(awarenessState.streaming).toBeUndefined();
 
-		vi.advanceTimersByTime(1);
-		expect(transact).toHaveBeenCalledTimes(1);
-		expect(content.toString()).toBe("hello");
+		commitListeners[0]!({
+			source: "stream",
+		} as CommitEvent);
+		expect(awarenessState.streaming).toEqual({
+			blockId: "block-1",
+			zoneId: "zone-1",
+		});
+
+		target.endStreaming("complete");
+		expect(awarenessState.streaming).toBeUndefined();
 	});
 });

@@ -21,25 +21,6 @@ export function buildAISuggestionDecorations(
 				class: isActive
 					? "pen-ai-suggestion-underline pen-ai-suggestion-active"
 					: "pen-ai-suggestion-underline pen-ai-suggestion-animated",
-				style: isActive
-					? [
-						"cursor: pointer",
-						"--pen-ai-suggestion-line: #1d4ed8",
-						"--pen-ai-suggestion-line-hover: #1e40af",
-						"background-image: linear-gradient(90deg, var(--pen-ai-suggestion-line), var(--pen-ai-suggestion-line))",
-						"background-repeat: no-repeat",
-						"background-size: 100% 2px",
-						"background-position: 0 100%",
-					].join("; ")
-					: [
-						"cursor: pointer",
-						"--pen-ai-suggestion-line: #3b82f6",
-						"--pen-ai-suggestion-line-hover: #1d4ed8",
-						"background-image: linear-gradient(90deg, var(--pen-ai-suggestion-line), var(--pen-ai-suggestion-line))",
-						"background-repeat: no-repeat",
-						"background-size: 100% 2px",
-						"background-position: 0 100%",
-					].join("; "),
 				"data-ai-suggestion-id": suggestion.id,
 				"data-ai-suggestion-kind": suggestion.kind,
 				"data-ai-suggestion-title": suggestion.title,

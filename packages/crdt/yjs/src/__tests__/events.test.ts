@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import * as Y from "yjs";
 
 import { yjsAdapter } from "../adapter";
@@ -27,7 +27,7 @@ describe("events", () => {
       expect(event.affectedBlocks).toContain("block-1");
     });
 
-    it("produces insert-text op with correct offset for text insertion into existing content", () => {
+    it("2.2: reports affectedBlocks for text insertion and leaves ops empty", () => {
       const doc = createTestDoc();
       doc.ydoc.transact(() => {
         initBlockMap(doc.penDocument.blocks, "block-1", "paragraph", "inline");
@@ -48,14 +48,12 @@ describe("events", () => {
       });
 
       expect(events).toHaveLength(1);
-      const event = events[0] as { ops: Array<{ type: string; offset?: number; text?: string }> };
-      const textOps = event.ops.filter((o) => o.type === "insert-text");
-      expect(textOps).toHaveLength(1);
-      expect(textOps[0].offset).toBe(6);
-      expect(textOps[0].text).toBe("World");
+      const event = events[0] as { affectedBlocks: string[]; ops: unknown[] };
+      expect(event.affectedBlocks).toContain("block-1");
+      expect(event.ops).toEqual([]);
     });
 
-    it("produces update-block op when props change", () => {
+    it("2.2: reports affectedBlocks when props change and leaves ops empty", () => {
       const doc = createTestDoc();
       doc.ydoc.transact(() => {
         initBlockMap(doc.penDocument.blocks, "block-1", "heading", "inline");
@@ -72,14 +70,12 @@ describe("events", () => {
       });
 
       expect(events).toHaveLength(1);
-      const event = events[0] as { ops: Array<{ type: string; blockId?: string; props?: Record<string, unknown> }> };
-      const updateOps = event.ops.filter((o) => o.type === "update-block");
-      expect(updateOps).toHaveLength(1);
-      expect(updateOps[0].blockId).toBe("block-1");
-      expect(updateOps[0].props).toEqual({ level: 2 });
+      const event = events[0] as { affectedBlocks: string[]; ops: unknown[] };
+      expect(event.affectedBlocks).toContain("block-1");
+      expect(event.ops).toEqual([]);
     });
 
-    it("produces delete-block op when block is deleted", () => {
+    it("2.2: reports affectedBlocks when a block is deleted and leaves ops empty", () => {
       const doc = createTestDoc();
       doc.ydoc.transact(() => {
         initBlockMap(doc.penDocument.blocks, "block-1", "paragraph", "inline");
@@ -94,10 +90,9 @@ describe("events", () => {
       });
 
       expect(events).toHaveLength(1);
-      const event = events[0] as { ops: Array<{ type: string; blockId?: string }> };
-      const deleteOps = event.ops.filter((o) => o.type === "delete-block");
-      expect(deleteOps).toHaveLength(1);
-      expect(deleteOps[0].blockId).toBe("block-1");
+      const event = events[0] as { affectedBlocks: string[]; ops: unknown[] };
+      expect(event.affectedBlocks).toContain("block-1");
+      expect(event.ops).toEqual([]);
     });
 
     it("maps origin 'ai' correctly", () => {
@@ -116,10 +111,12 @@ describe("events", () => {
       }, "ai");
 
       expect(events).toHaveLength(1);
-      expect((events[0] as { origin: string }).origin).toBe("ai");
+      expect((events[0] as { origin: { type: string } }).origin).toEqual({
+        type: "ai",
+      });
     });
 
-    it("maps null/undefined origin to 'user'", () => {
+    it("maps null/undefined local origin to structured system", () => {
       const doc = createTestDoc();
       doc.ydoc.transact(() => {
         initBlockMap(doc.penDocument.blocks, "block-1", "paragraph", "inline");
@@ -135,10 +132,13 @@ describe("events", () => {
       });
 
       expect(events).toHaveLength(1);
-      expect((events[0] as { origin: string }).origin).toBe("user");
+      expect((events[0] as { origin: { type: string } }).origin).toEqual({
+        type: "system",
+        source: "absent",
+      });
     });
 
-    it("maps unknown string origin to 'extension'", () => {
+    it("maps unknown string origin to structured system", () => {
       const doc = createTestDoc();
       doc.ydoc.transact(() => {
         initBlockMap(doc.penDocument.blocks, "block-1", "paragraph", "inline");
@@ -154,7 +154,10 @@ describe("events", () => {
       }, "some-unknown-origin");
 
       expect(events).toHaveLength(1);
-      expect((events[0] as { origin: string }).origin).toBe("extension");
+      expect((events[0] as { origin: { type: string } }).origin).toEqual({
+        type: "system",
+        source: "some-unknown-origin",
+      });
     });
 
     it("does not fire for empty transactions", () => {
@@ -207,7 +210,7 @@ describe("events", () => {
       expect(event.affectedBlocks).toContain("table-1");
     });
 
-    it("produces delete-text op", () => {
+    it("2.2: reports affectedBlocks for text deletion and leaves ops empty", () => {
       const doc = createTestDoc();
       doc.ydoc.transact(() => {
         initBlockMap(doc.penDocument.blocks, "block-1", "paragraph", "inline");
@@ -228,14 +231,12 @@ describe("events", () => {
       });
 
       expect(events).toHaveLength(1);
-      const event = events[0] as { ops: Array<{ type: string; offset?: number; length?: number }> };
-      const deleteOps = event.ops.filter((o) => o.type === "delete-text");
-      expect(deleteOps).toHaveLength(1);
-      expect(deleteOps[0].offset).toBe(5);
-      expect(deleteOps[0].length).toBe(6);
+      const event = events[0] as { affectedBlocks: string[]; ops: unknown[] };
+      expect(event.affectedBlocks).toContain("block-1");
+      expect(event.ops).toEqual([]);
     });
 
-    it("produces app ops for create-app and delete-app", () => {
+    it("2.2: fires for app map changes with empty ops", () => {
       const doc = createTestDoc();
       const events: unknown[] = [];
       createObserver(doc, (e) => events.push(e));
@@ -247,10 +248,8 @@ describe("events", () => {
       });
 
       expect(events).toHaveLength(1);
-      const createEvent = events[0] as { ops: Array<{ type: string; appId?: string }>; affectedBlocks: string[] };
-      const createOps = createEvent.ops.filter((o) => o.type === "create-app");
-      expect(createOps).toHaveLength(1);
-      expect(createOps[0].appId).toBe("app-1");
+      const createEvent = events[0] as { ops: unknown[]; affectedBlocks: string[] };
+      expect(createEvent.ops).toEqual([]);
       expect(createEvent.affectedBlocks).not.toContain("app-1");
 
       events.length = 0;
@@ -259,10 +258,7 @@ describe("events", () => {
       });
 
       expect(events).toHaveLength(1);
-      const deleteEvent = events[0] as { ops: Array<{ type: string; appId?: string }> };
-      const deleteOps = deleteEvent.ops.filter((o) => o.type === "delete-app");
-      expect(deleteOps).toHaveLength(1);
-      expect(deleteOps[0].appId).toBe("app-1");
+      expect((events[0] as { ops: unknown[] }).ops).toEqual([]);
     });
 
     it("returns an unsubscribe function that stops events", () => {

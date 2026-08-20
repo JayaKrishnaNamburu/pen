@@ -2,7 +2,7 @@ import type {
 	ModelAdapter,
 	StreamingTarget
 } from "@input/pen-types";
-import { collectToolExecutionOutput } from "@input/pen-types";
+import { collectToolExecutionOutput, generateId } from "@input/pen-types";
 import {
 	buildAgentMessages,
 	buildAssistantToolCallParts,
@@ -21,8 +21,8 @@ export async function runAgenticLoop(
 		toolRuntime,
 		prompt,
 		blockId,
-		generationId = crypto.randomUUID(),
-		zoneId = crypto.randomUUID(),
+		generationId = generateId(),
+		zoneId = generateId(),
 		maxSteps = 10,
 		signal,
 		workingSet,

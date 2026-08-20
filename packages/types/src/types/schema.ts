@@ -28,7 +28,6 @@ export type ContentType =
   | "inline"
   | "none"
   | "table"
-  | "database"
   | "subdocument"
   | BlockSchema[];
 
@@ -83,7 +82,6 @@ export type FieldEditorType =
   | "plaintext"
   | "code"
   | "table"
-  | "database"
   | "subdocument"
   | "none";
 

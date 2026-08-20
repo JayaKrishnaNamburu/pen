@@ -7,6 +7,14 @@ const repoHomepage = "https://github.com/niceperson/pen#readme";
 const repoBugsUrl = "https://github.com/niceperson/pen/issues";
 const repoUrl = "https://github.com/niceperson/pen.git";
 const licenseValue = "SEE LICENSE IN LICENSE.md";
+// HOST3: one engines.node value on every published package.
+// CI (.github/workflows/ci.yml, release.yml, docs.yml) pins setup-node to 22.
+// HOST4's Node-reachable bare APIs are older — Object.hasOwn 16.9.0,
+// Array.prototype.at 16.6.0 — and E.5 marks both as trivially replaceable.
+// Claiming 16.9.0 as the floor would be an unverified range (API7). The
+// declared floor is therefore the CI-verified major, not the theoretical
+// API minimum. Matrix endpoints live in .github/workflows/node-matrix.yml.
+const NODE_ENGINE = ">=22";
 
 const rootLicense = await fs.readFile(path.join(repoRoot, "LICENSE.md"), "utf8");
 
@@ -63,6 +71,7 @@ function buildPublicPackageManifest(packageJson, packageDirectory, options) {
     ordered.types = types;
   }
   ordered.files = files;
+  ordered.engines = { node: NODE_ENGINE };
   copyIfPresent(ordered, packageJson, "sideEffects");
   copyIfPresent(ordered, packageJson, "scripts");
   copyIfPresent(ordered, packageJson, "dependencies");

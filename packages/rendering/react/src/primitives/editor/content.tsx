@@ -1,6 +1,5 @@
 import React, {
 	useRef,
-	useLayoutEffect,
 	useSyncExternalStore,
 } from "react";
 import type { Editor } from "@input/pen-types";
@@ -9,6 +8,7 @@ import { useEditorContext } from "../../context/editorContext";
 import { useFieldEditorContext } from "../../context/fieldEditorContext";
 
 import { useFieldEditorState } from "../../hooks/useFieldEditorState";
+import { useIsomorphicLayoutEffect } from "../../hooks/useIsomorphicLayoutEffect";
 import { useAIStructuredPreviewContent } from "../../hooks/useAIStructuredPreview";
 import { useBlockList } from "../../hooks/useBlockList";
 import {
@@ -47,19 +47,12 @@ import {
 } from "./inlineAtomInteraction";
 
 export interface EditorContentProps extends AsChildProps {
-	virtualize?:
-	| boolean
-	| {
-		overscan?: number;
-		estimatedHeight?: number;
-		mobileOverscan?: number;
-	};
 	emptyPlaceholder?: string;
 	ref?: React.Ref<HTMLElement>;
 }
 
 export function EditorContent(props: EditorContentProps) {
-	const { virtualize: _virtualize, emptyPlaceholder, ...rest } = props;
+	const { emptyPlaceholder, ...rest } = props;
 	const { editor, readonly, blockDragAndDrop, blockSelection, interactionModel } = useEditorContext();
 	const fieldEditor = useFieldEditorContext();
 	const { store: regionSelectionStore } = useEditorRegionSelectionContext();
@@ -104,7 +97,7 @@ export function EditorContent(props: EditorContentProps) {
 		transferInlineDropCaretStyle ?? inlineAtomDropCaretStyle;
 	const isInlineAtomDropActive = inlineAtomDropCaretStyle !== null;
 
-	useLayoutEffect(() => {
+	useIsomorphicLayoutEffect(() => {
 		if (!fieldEditor || fieldEditorState.mode !== "expanded") return;
 		if (!blocksHostRef.current) return;
 		fieldEditor.attachElement(blocksHostRef.current);

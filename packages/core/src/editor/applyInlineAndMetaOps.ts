@@ -20,7 +20,6 @@ import type {
 	UpdateAppOp,
 	DeleteAppOp,
 	SetSelectionOp,
-	UpdateTableColumnsOp,
 	CRDTArray,
 } from "@input/pen-types";
 import { generateId, getOpOriginType } from "@input/pen-types";
@@ -52,6 +51,25 @@ interface CRDTText {
 	readonly length: number;
 }
 const ZERO_WIDTH_SPACE = "\u200B";
+const REJECTED_OWN_PROP_KEYS = new Set(["__proto__", "constructor", "prototype"]);
+
+function rejectedOwnPropKeys(
+	props: Record<string, unknown> | undefined,
+): string[] {
+	if (!props) return [];
+	return Object.keys(props).filter((key) => REJECTED_OWN_PROP_KEYS.has(key));
+}
+
+function embedRecordFromInlineOp(op: InsertInlineNodeOp): Record<string, unknown> {
+	const embed = Object.create(null) as Record<string, unknown>;
+	if (op.props) {
+		for (const key of Object.keys(op.props)) {
+			embed[key] = op.props[key];
+		}
+	}
+	embed.type = op.nodeType;
+	return embed;
+}
 
 
 export function insertText(pipeline: ApplyPipeline, op: InsertTextOp): string[] {
@@ -124,15 +142,26 @@ return resolved;
 
 export function insertInlineNode(pipeline: ApplyPipeline, op: InsertInlineNodeOp): string[] {
 	const self = pipeline as ApplyPipelineRuntime;
+const rejectedKeys = rejectedOwnPropKeys(op.props);
+if (rejectedKeys.length > 0) {
+	self._emitter.emit("diagnostic", {
+		code: "PEN_APPLY_009",
+		level: "warn",
+		source: "apply",
+		message: `apply: rejected prototype keys in insert-inline-node props (${rejectedKeys.join(", ")})`,
+		remediation:
+			"Remove __proto__, constructor, and prototype own keys from op props.",
+		op,
+	});
+	return [];
+}
+
 const blockMap = self._getMutableBlockMap(op.blockId);
 if (!blockMap) return [];
 const content = self._getInlineTextContent(blockMap);
 if (!content) return [];
 
-content.insertEmbed(op.offset, {
-	type: op.nodeType,
-	...op.props,
-});
+content.insertEmbed(op.offset, embedRecordFromInlineOp(op));
 return [op.blockId];
 }
 
@@ -218,65 +247,13 @@ const tableOp = op as { blockId: string; type: string };
 const blockMap = self._getMutableBlockMap(tableOp.blockId);
 if (!blockMap) return [];
 
-const blockType = blockMap.get("type");
-if (blockType === "database") {
-	if (op.type === "update-table-columns") {
-		return self._databaseOps.replaceColumns(
-			blockMap,
-			(op as UpdateTableColumnsOp).columns,
-		)
-			? [tableOp.blockId]
-			: [];
-	}
-
-	if (self._isDatabaseStructuralTableOp(op.type)) {
-		self._emitter.emit("diagnostic", {
-			code: "PEN_APPLY_006",
-			level: "warn",
-			source: "apply",
-			message: `apply: skipping ${op.type} for database block "${tableOp.blockId}"`,
-			remediation:
-				"Use database operations for structural database changes so row ids, column schema, and views stay in sync.",
-			op,
-		});
-		return [];
-	}
-}
-
 return self._tableGrid.execute(blockMap, op);
-}
-
-export function databaseOp(pipeline: ApplyPipeline, op: DocumentOp): string[] {
-	const self = pipeline as ApplyPipelineRuntime;
-const databaseOp = op as { type: string; blockId: string };
-const blockMap = self._getMutableBlockMap(databaseOp.blockId);
-if (!blockMap) return [];
-
-return self._databaseOps.execute(blockMap, op);
 }
 
 export function clearTableState(pipeline: ApplyPipeline, blockMap: MutableMap): void {
 	const self = pipeline as ApplyPipelineRuntime;
 blockMap.delete("tableContent");
 blockMap.delete("tableColumns");
-}
-
-export function clearDatabaseState(pipeline: ApplyPipeline, blockMap: MutableMap): void {
-	const self = pipeline as ApplyPipelineRuntime;
-blockMap.delete("databaseViews");
-blockMap.delete("databasePrimaryViewId");
-}
-
-export function isDatabaseStructuralTableOp(pipeline: ApplyPipeline, type: string): boolean {
-	const self = pipeline as ApplyPipelineRuntime;
-return (
-	type === "insert-table-row" ||
-	type === "delete-table-row" ||
-	type === "insert-table-column" ||
-	type === "delete-table-column" ||
-	type === "merge-table-cells" ||
-	type === "split-table-cell"
-);
 }
 
 export function getPreservedInlineDeltas(

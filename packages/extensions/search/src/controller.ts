@@ -200,6 +200,7 @@ function searchStatesEqual(left: SearchState, right: SearchState): boolean {
 		left.options.caseSensitive === right.options.caseSensitive &&
 		left.options.regex === right.options.regex &&
 		left.options.wholeWord === right.options.wholeWord &&
+		left.options.locale === right.options.locale &&
 		searchMatchesEqual(left.matches, right.matches)
 	);
 }
@@ -220,8 +221,6 @@ function searchMatchesEqual(
 			leftMatch?.blockId !== rightMatch?.blockId ||
 			leftMatch?.row !== rightMatch?.row ||
 			leftMatch?.col !== rightMatch?.col ||
-			leftMatch?.rowId !== rightMatch?.rowId ||
-			leftMatch?.columnId !== rightMatch?.columnId ||
 			leftMatch?.cellText !== rightMatch?.cellText ||
 			leftMatch?.from !== rightMatch?.from ||
 			leftMatch?.to !== rightMatch?.to ||

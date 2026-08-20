@@ -1,5 +1,6 @@
 import React from "react";
 import type { AIContextualPromptAnchor, AISession } from "@input/pen-ai";
+import { useIsomorphicLayoutEffect } from "../../hooks/useIsomorphicLayoutEffect";
 import { domSelectionToEditor } from "../../field-editor/selectionBridge";
 import { useAISessionActions } from "../../hooks/useAISessionActions";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
@@ -45,7 +46,7 @@ export function AIContextualPromptComposer(
 		return input.ownerDocument.activeElement === input;
 	}, []);
 
-	React.useLayoutEffect(() => {
+	useIsomorphicLayoutEffect(() => {
 		if (
 			!autoFocus ||
 			!session?.contextualPrompt?.composer.isOpen ||

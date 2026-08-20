@@ -1,0 +1,28 @@
+name: aria-hidden visible
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+jobs:
+  aria-hidden-inventory:
+    name: AX5/AX7 aria-hidden inventory
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Check aria-hidden inventory
+        run: node scripts/no-aria-hidden-visible.mjs

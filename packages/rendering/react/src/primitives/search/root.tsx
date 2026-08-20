@@ -8,8 +8,6 @@ import {
 import { useSearch } from "../../hooks/useSearch";
 import { EditorContext } from "../../context/editorContext";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
-import { isDevelopmentEnvironment } from "../../utils/environment";
-
 export interface SearchContextValue {
 	editor: Editor;
 	state: SearchState;
@@ -21,11 +19,6 @@ const SearchContext = createContext<SearchContextValue | null>(null);
 export function useSearchContext(): SearchContextValue {
 	const ctx = useContext(SearchContext);
 	if (!ctx) {
-		if (isDevelopmentEnvironment()) {
-			console.error(
-				"Pen: useSearchContext must be used within <Pen.Search.Root>.",
-			);
-		}
 		throw new Error("Missing Pen.Search.Root context");
 	}
 	return ctx;
@@ -42,11 +35,6 @@ export function SearchRoot(props: SearchRootProps) {
 	const editor = editorProp ?? editorContext?.editor;
 
 	if (!editor) {
-		if (isDevelopmentEnvironment()) {
-			console.error(
-				"Pen: <Pen.Search.Root> must be used within <Pen.Editor.Root> or receive an editor prop.",
-			);
-		}
 		throw new Error("Missing editor for Pen.Search.Root");
 	}
 
@@ -60,6 +48,7 @@ export function SearchRoot(props: SearchRootProps) {
 
 	const primitiveProps: Record<string, unknown> = {
 		"data-pen-search-root": "",
+		role: "search",
 		"data-open": state.open || undefined,
 		"data-has-controller": controller ? "" : undefined,
 		"data-has-matches": state.matches.length > 0 || undefined,

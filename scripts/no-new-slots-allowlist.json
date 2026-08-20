@@ -1,0 +1,114 @@
+{
+  "_comment": "SM3 (spec-v2/04-facets.md, Wave 1 step 1.5): existing exported *_SLOT / *_SLOT_KEY constants and setSlot( call sites outside the adapter. New exports or setSlot files fail; remove an entry in the same PR that deletes it.",
+  "exportedSlots": [
+    {
+      "file": "packages/extensions/ai-autocomplete/src/extension.ts",
+      "name": "AUTOCOMPLETE_CONTROLLER_SLOT"
+    },
+    {
+      "file": "packages/extensions/ai-tools/src/toolServer.ts",
+      "name": "AI_TOOL_RUNTIME_SLOT"
+    },
+    {
+      "file": "packages/extensions/ai/src/extension.ts",
+      "name": "AI_CONTROLLER_SLOT"
+    },
+    {
+      "file": "packages/extensions/ai/src/extension.ts",
+      "name": "INLINE_COMPLETION_SLOT"
+    },
+    {
+      "file": "packages/extensions/ai/src/extension.ts",
+      "name": "AI_INLINE_COMPLETION_SLOT"
+    },
+    {
+      "file": "packages/extensions/ai/src/extension.ts",
+      "name": "AI_INLINE_HISTORY_SLOT"
+    },
+    {
+      "file": "packages/extensions/ai/src/extension.ts",
+      "name": "AI_REVIEW_CONTROLLER_SLOT"
+    },
+    {
+      "file": "packages/extensions/document-ops/src/constants/toolServer.ts",
+      "name": "DOCUMENT_OPS_TOOL_RUNTIME_SLOT"
+    },
+    {
+      "file": "packages/rendering/dom/src/field-editor/historySelectionCoordinator.ts",
+      "name": "HISTORY_RESTORING_SELECTION_SLOT_KEY"
+    },
+    {
+      "file": "packages/rendering/react/src/constants/fieldEditor.ts",
+      "name": "FIELD_EDITOR_SLOT_KEY"
+    },
+    {
+      "file": "packages/rendering/vue/src/constants/fieldEditor.ts",
+      "name": "FIELD_EDITOR_SLOT_KEY"
+    },
+    {
+      "file": "packages/types/src/constants/slots.ts",
+      "name": "FIELD_EDITOR_SLOT_KEY"
+    },
+    {
+      "file": "packages/types/src/constants/slots.ts",
+      "name": "COLLECT_KEY_BINDINGS_SLOT_KEY"
+    },
+    {
+      "file": "packages/types/src/constants/slots.ts",
+      "name": "AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY"
+    },
+    {
+      "file": "packages/types/src/constants/slots.ts",
+      "name": "INPUT_RULES_ENGINE_SLOT_KEY"
+    },
+    {
+      "file": "packages/types/src/constants/slots.ts",
+      "name": "UNDO_HISTORY_RESTORE_SLOT_KEY"
+    },
+    {
+      "file": "packages/types/src/constants/slots.ts",
+      "name": "UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY"
+    },
+    {
+      "file": "packages/types/src/constants/slots.ts",
+      "name": "INLINE_COMPLETION_SLOT"
+    },
+    {
+      "file": "packages/types/src/constants/slots.ts",
+      "name": "AI_CONTROLLER_SLOT"
+    },
+    {
+      "file": "packages/types/src/constants/slots.ts",
+      "name": "AI_INLINE_COMPLETION_SLOT"
+    },
+    {
+      "file": "packages/types/src/constants/slots.ts",
+      "name": "AI_INLINE_HISTORY_SLOT"
+    },
+    {
+      "file": "packages/types/src/constants/slots.ts",
+      "name": "AI_REVIEW_CONTROLLER_SLOT"
+    },
+    {
+      "file": "packages/types/src/constants/slots.ts",
+      "name": "AI_AUTOCOMPLETE_CONTROLLER_SLOT"
+    },
+    {
+      "file": "packages/types/src/constants/slots.ts",
+      "name": "AI_SUGGESTIONS_CONTROLLER_SLOT"
+    },
+    {
+      "file": "packages/types/src/constants/slots.ts",
+      "name": "SEARCH_CONTROLLER_SLOT"
+    },
+    {
+      "file": "packages/types/src/constants/slots.ts",
+      "name": "MULTIPLAYER_CONTROLLER_SLOT"
+    },
+    {
+      "file": "packages/types/src/constants/slots.ts",
+      "name": "HISTORY_CONTROLLER_SLOT"
+    }
+  ],
+  "setSlotFiles": []
+}

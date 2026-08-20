@@ -8,6 +8,7 @@ export function createBuiltInDefaultSchema(): SchemaRegistryImpl {
   return new SchemaRegistryImpl({
     blocks: defaultBlocks,
     inlines: defaultInlines,
+    onUnknownBlock: () => "passthrough",
   });
 }
 

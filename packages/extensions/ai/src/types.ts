@@ -40,7 +40,7 @@ export type {
 	AIInlineCompletionState,
 	AIInlineCompletionController,
 	PersistentTextSuggestion,
-} from "./typeParts/typesPart1";
+} from "./types/session";
 export type {
 	PersistentBlockSuggestion,
 	PersistentSuggestion,
@@ -68,4 +68,4 @@ export type {
 	AIMutationReceiptStatus,
 	AIMutationReceiptEvidence,
 	AIMutationReceipt,
-} from "./typeParts/typesPart2";
+} from "./types/controller";

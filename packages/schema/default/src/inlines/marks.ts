@@ -1,5 +1,6 @@
 import type { InlineSchema, PropSchema } from "@input/pen-types";
 import { prop, resolveSchema } from "@input/pen-types";
+import { escapeHtml } from "../escapeHtml";
 
 function resolveProps(
   props: Record<string, unknown>,
@@ -74,7 +75,7 @@ export const highlight: InlineSchema = {
   serialize: {
     toMarkdown: (text) => `==${text}==`,
     toHTML: (text, props) =>
-      `<mark style="background-color: ${props?.color ?? "yellow"}">${text}</mark>`,
+      `<mark style="background-color: ${escapeHtml(String(props?.color ?? "yellow"))}">${text}</mark>`,
   },
   aiDescription: "Highlighted text with configurable color",
 };
@@ -90,7 +91,7 @@ export const textColor: InlineSchema = {
   serialize: {
     toMarkdown: (text) => text,
     toHTML: (text, props) =>
-      `<span style="color: ${props?.color ?? "inherit"}">${text}</span>`,
+      `<span style="color: ${escapeHtml(String(props?.color ?? "inherit"))}">${text}</span>`,
   },
   aiDescription: "Colored text",
 };
@@ -106,7 +107,7 @@ export const backgroundColor: InlineSchema = {
   serialize: {
     toMarkdown: (text) => text,
     toHTML: (text, props) =>
-      `<span style="background-color: ${props?.color ?? "transparent"}">${text}</span>`,
+      `<span style="background-color: ${escapeHtml(String(props?.color ?? "transparent"))}">${text}</span>`,
   },
   aiDescription: "Text with background color",
 };
@@ -126,8 +127,10 @@ export const link: InlineSchema = {
       return `[${text}](${props?.href ?? ""}${title})`;
     },
     toHTML: (text, props) => {
-      const title = props?.title ? ` title="${props.title}"` : "";
-      return `<a href="${props?.href ?? ""}"${title}>${text}</a>`;
+      const title = props?.title
+        ? ` title="${escapeHtml(String(props.title))}"`
+        : "";
+      return `<a href="${escapeHtml(String(props?.href ?? ""))}"${title}>${text}</a>`;
     },
   },
   aiDescription: "Hyperlink with URL and optional title",

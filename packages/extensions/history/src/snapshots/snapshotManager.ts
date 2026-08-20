@@ -1,4 +1,5 @@
 import type { Editor, PenPersistence, VersionEntry, VersionMetadata } from "@input/pen-types";
+import { generateId } from "@input/pen-types";
 
 export class SnapshotManager {
 	private editor: Editor;
@@ -36,7 +37,7 @@ export class SnapshotManager {
 
 		return (
 			latestEntry ?? {
-				id: crypto.randomUUID(),
+				id: generateId(),
 				metadata,
 				createdAt: metadata.timestamp,
 			}
@@ -66,10 +67,12 @@ export class SnapshotManager {
 				this.editor.internals.documentScope.id,
 				restoredDoc,
 			);
+			this.editor.internals.emit("crdt:recovered", "snapshot");
 			return;
 		}
 
 		this.editor.loadDocument(restoredDoc);
+		this.editor.internals.emit("crdt:recovered", "snapshot");
 	}
 
 	async listSnapshots(): Promise<readonly VersionEntry[]> {

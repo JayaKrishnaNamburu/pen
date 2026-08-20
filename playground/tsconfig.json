@@ -15,7 +15,6 @@
       "@input/pen-ai-tools": ["../packages/extensions/ai-tools/src/index.ts"],
       "@input/pen-core": ["../packages/core/src/index.ts"],
       "@input/pen-crdt-yjs": ["../packages/crdt/yjs/src/index.ts"],
-      "@input/pen-database": ["../packages/extensions/database/src/index.ts"],
       "@input/pen-export-html": ["../packages/extensions/export-html/src/index.ts"],
       "@input/pen-export-markdown": ["../packages/extensions/export-markdown/src/index.ts"],
       "@input/pen-import-html": ["../packages/extensions/import-html/src/index.ts"],

@@ -68,6 +68,16 @@
         "default": "./dist/types/paste.cjs"
       }
     },
+    "./utils/clipboardPayload": {
+      "import": {
+        "types": "./dist/utils/clipboardPayload.d.ts",
+        "default": "./dist/utils/clipboardPayload.mjs"
+      },
+      "require": {
+        "types": "./dist/utils/clipboardPayload.d.cts",
+        "default": "./dist/utils/clipboardPayload.cjs"
+      }
+    },
     "./utils/dataAttributes": {
       "import": {
         "types": "./dist/utils/dataAttributes.d.ts",
@@ -107,6 +117,9 @@
     "README.md",
     "LICENSE.md"
   ],
+  "engines": {
+    "node": ">=22"
+  },
   "sideEffects": false,
   "scripts": {
     "build": "tsup",

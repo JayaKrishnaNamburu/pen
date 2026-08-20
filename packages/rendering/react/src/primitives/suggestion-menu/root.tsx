@@ -1,6 +1,13 @@
-import React, { createContext, useContext, useEffect, useRef } from "react";
+import React, {
+	createContext,
+	useContext,
+	useEffect,
+	useId,
+	useRef,
+} from "react";
 import type { Editor } from "@input/pen-types";
 import { EditorContext } from "../../context/editorContext";
+import { useFieldEditorContext } from "../../context/fieldEditorContext";
 import {
 	useSuggestionMenu,
 	type SuggestionMenuActions,
@@ -9,12 +16,20 @@ import {
 	type UseSuggestionMenuOptions,
 } from "../../hooks/useSuggestionMenu";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
-import { isDevelopmentEnvironment } from "../../utils/environment";
+import { composeRefs } from "../../utils/composeRefs";
+import {
+	applySuggestionMenuFieldAria,
+	clearSuggestionMenuFieldAria,
+	resolveSuggestionMenuField,
+	suggestionMenuOptionId,
+} from "./popupAria";
 
 export type SuggestionMenuContextValue<TItem = unknown> =
 	SuggestionMenuState<TItem> &
 		SuggestionMenuActions & {
 			editor?: Editor;
+			popupId: string;
+			getOptionId: (index: number) => string;
 		};
 
 const SuggestionMenuContext =
@@ -25,11 +40,6 @@ export function useSuggestionMenuContext<
 >(): SuggestionMenuContextValue<TItem> {
 	const context = useContext(SuggestionMenuContext);
 	if (!context) {
-		if (isDevelopmentEnvironment()) {
-			console.error(
-				"Pen: useSuggestionMenuContext must be used within <Pen.SuggestionMenu.Root>.",
-			);
-		}
 		throw new Error("Missing Pen.SuggestionMenu.Root context");
 	}
 	return context as SuggestionMenuContextValue<TItem>;
@@ -67,11 +77,6 @@ export function SuggestionMenuRoot<TItem = unknown>(
 		);
 	}
 
-	if (isDevelopmentEnvironment()) {
-		console.error(
-			"Pen: <Pen.SuggestionMenu.Root> requires either controller or options.",
-		);
-	}
 	throw new Error("Missing Pen.SuggestionMenu.Root controller");
 }
 
@@ -90,11 +95,6 @@ function UncontrolledSuggestionMenuRoot<TItem>(
 	const editor = editorProp ?? options.editor ?? editorContext?.editor;
 
 	if (!editor) {
-		if (isDevelopmentEnvironment()) {
-			console.error(
-				"Pen: <Pen.SuggestionMenu.Root> must be used within <Pen.Editor.Root>, receive editor, or receive options.editor.",
-			);
-		}
 		throw new Error("Missing editor for Pen.SuggestionMenu.Root");
 	}
 
@@ -128,16 +128,25 @@ function SuggestionMenuRootContent<TItem>(
 		editor: editorProp,
 		open: controlledOpen,
 		onOpenChange,
+		ref,
 		...rest
 	} = props;
 	const editorContext = useContext(EditorContext);
+	const fieldEditor = useFieldEditorContext();
 	const editor = editorProp ?? editorContext?.editor;
 	const isOpen = controlledOpen ?? controller.open;
+	const popupId = useId();
+	const rootRef = useRef<HTMLElement | null>(null);
+	const annotatedFieldRef = useRef<HTMLElement | null>(null);
+	const getOptionId = (index: number) =>
+		suggestionMenuOptionId(popupId, index);
 
 	const wrappedState: SuggestionMenuContextValue<TItem> = {
 		...controller,
 		editor,
 		open: isOpen,
+		popupId,
+		getOptionId,
 		dismiss: () => {
 			controller.dismiss();
 			onOpenChange?.(false);
@@ -197,6 +206,31 @@ function SuggestionMenuRootContent<TItem>(
 					currentState.select(nextIndex);
 					break;
 				}
+				case "Home": {
+					event.preventDefault();
+					event.stopPropagation();
+					const nextIndex = 0;
+					wrappedStateRef.current = {
+						...currentState,
+						selectedIndex: nextIndex,
+					};
+					currentState.select(nextIndex);
+					break;
+				}
+				case "End": {
+					event.preventDefault();
+					event.stopPropagation();
+					const nextIndex = Math.max(
+						0,
+						currentState.items.length - 1,
+					);
+					wrappedStateRef.current = {
+						...currentState,
+						selectedIndex: nextIndex,
+					};
+					currentState.select(nextIndex);
+					break;
+				}
 				case "Enter":
 				case "Tab":
 					event.preventDefault();
@@ -217,8 +251,48 @@ function SuggestionMenuRootContent<TItem>(
 		};
 	}, [isOpen]);
 
+	// ax3: caret-anchored popup; dom focus stays in the editing field
+	useEffect(() => {
+		const syncFieldAria = () => {
+			const field = isOpen
+				? resolveSuggestionMenuField(rootRef.current)
+				: null;
+			const previous = annotatedFieldRef.current;
+			if (previous && previous !== field) {
+				clearSuggestionMenuFieldAria(previous);
+			}
+			if (!isOpen || !field) {
+				clearSuggestionMenuFieldAria(field ?? previous);
+				annotatedFieldRef.current = null;
+				return;
+			}
+			const activeOptionId =
+				controller.items.length > 0
+					? suggestionMenuOptionId(
+							popupId,
+							controller.selectedIndex,
+						)
+					: undefined;
+			applySuggestionMenuFieldAria(field, popupId, activeOptionId);
+			annotatedFieldRef.current = field;
+		};
+
+		syncFieldAria();
+		const unsubscribe = fieldEditor?.subscribe(syncFieldAria);
+		return () => {
+			unsubscribe?.();
+			clearSuggestionMenuFieldAria(annotatedFieldRef.current);
+			annotatedFieldRef.current = null;
+		};
+	}, [
+		controller.items.length,
+		controller.selectedIndex,
+		fieldEditor,
+		isOpen,
+		popupId,
+	]);
+
 	const primitiveProps: Record<string, unknown> = {
-		role: "dialog",
 		"data-pen-suggestion-menu": "",
 		"data-open": isOpen || undefined,
 		"data-trigger": controller.target?.trigger,
@@ -228,7 +302,11 @@ function SuggestionMenuRootContent<TItem>(
 		<SuggestionMenuContext.Provider
 			value={wrappedState as SuggestionMenuContextValue<unknown>}
 		>
-			{renderAsChild(rest, "div", primitiveProps)}
+			{renderAsChild(
+				{ ...rest, ref: composeRefs(ref, rootRef) },
+				"div",
+				primitiveProps,
+			)}
 		</SuggestionMenuContext.Provider>
 	);
 }

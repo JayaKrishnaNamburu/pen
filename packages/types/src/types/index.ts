@@ -47,6 +47,27 @@ export type {
 	InputRuleContext,
 } from "./input";
 
+// ── Facets ──────────────────────────────────────────────────
+export type {
+	Precedence,
+	FacetSpec,
+	Facet,
+	FacetDependency,
+	FacetProvider,
+	FacetOutput,
+	DefineFacet,
+} from "./facets";
+
+// ── Commands ────────────────────────────────────────────────
+export type {
+	Command,
+	CommandResult,
+	CommandHandler,
+	CommandHandlerRegistration,
+	DefineCommand,
+	CommandHandlerProvider,
+} from "./commands";
+
 // ── Operations ──────────────────────────────────────────────
 export type {
 	DocumentOp,
@@ -80,26 +101,12 @@ export type {
 	DeleteTableCellTextOp,
 	FormatTableCellTextOp,
 	UpdateTableColumnsOp,
-	DatabaseAddColumnOp,
-	DatabaseUpdateColumnOp,
-	DatabaseConvertColumnOp,
-	DatabaseRemoveColumnOp,
-	DatabaseInsertRowOp,
-	DatabaseUpdateCellOp,
-	DatabaseDeleteRowOp,
-	DatabaseDeleteRowsOp,
-	DatabaseDuplicateRowOp,
-	DatabaseMoveRowOp,
-	DatabaseAddViewOp,
-	DatabaseUpdateViewOp,
-	DatabaseRemoveViewOp,
-	DatabaseSetActiveViewOp,
-	DatabaseUpdateSelectOptionsOp,
 	SetMetaOp,
 	CreateAppOp,
 	UpdateAppOp,
 	DeleteAppOp,
 	SetSelectionOp,
+	StreamOpenOp,
 } from "./ops";
 export {
 	MUTATION_GROUP_METADATA_KEY,
@@ -137,6 +144,7 @@ export type {
 	PingPart,
 	DonePart,
 } from "./stream";
+export { PEN_STREAM_PROTOCOL_VERSION } from "./stream";
 
 // ── Schema ──────────────────────────────────────────────────
 export {
@@ -168,22 +176,19 @@ export type {
 	TableColumnSchema,
 	TableRowHandle,
 } from "./handles";
+export type {
+	BlockCapabilityKey,
+	BlockCapabilityMap,
+	TableBlockHandle,
+} from "./capabilities";
 
-// ── Database ────────────────────────────────────────────────
+// ── Columns ─────────────────────────────────────────────────
 export type {
 	ColumnType,
 	SelectOption,
 	NumberFormat,
 	DateFormat,
-	DatabaseSort,
-	FilterOperator,
-	FilterCondition,
-	FilterGroup,
-	DatabaseRowPinning,
-	DatabaseViewState,
-	DatabaseQuery,
-} from "./database";
-export { DEFAULT_DATABASE_COLUMN_WIDTH } from "./database";
+} from "./columns";
 
 // ── Field Editor ────────────────────────────────────────────
 export type {
@@ -209,6 +214,7 @@ export {
 // ── CRDT ────────────────────────────────────────────────────
 export type {
 	CRDTAdapter,
+	LoadDocumentOptions,
 	CRDTDocument,
 	PenDocument,
 	CRDTUndoManager,
@@ -245,6 +251,9 @@ export type {
 export {
 	type Editor,
 	type EditorInternals,
+	type TextStreamWriter,
+	type OpenTextStreamOptions,
+	type PipelinePhase,
 	type CreateEditorOptions,
 	type EditorPreset,
 	type EditorPresetContext,
@@ -258,6 +267,10 @@ export {
 	type UndoHistoryRestore,
 	type HistoryAppliedEvent,
 	type DocumentCommitEvent,
+	type CommitEvent,
+	type CommitEventSource,
+	type Diagnostic,
+	type SelectionRecord,
 	type SchemaEngine,
 	type DiagnosticEvent,
 	type DocumentValidationError,
@@ -301,6 +314,13 @@ export type {
 	ModelMessagePart,
 } from "./tools";
 
+// ── AI request ──────────────────────────────────────────────
+export type { AIRequestContext, AIRequestFilter } from "./aiRequest";
+
+// ── Accessibility ───────────────────────────────────────────
+export type { BlockA11ySpec } from "./a11y";
+export type { A11yMessageKey, A11yMessageCatalog } from "./a11yMessages";
+
 // ── Persistence ─────────────────────────────────────────────
 export type {
 	PenPersistence,
@@ -311,10 +331,20 @@ export type {
 	AssetProvider,
 } from "./persistence";
 
-// ── Decorations ─────────────────────────────────────────────
+// ── Document format ─────────────────────────────────────────
 export {
-	INLINE_COMPLETION_VISIBLE_BLOCK_ATTRIBUTE,
-} from "../constants/decorations";
+	PEN_DOCUMENT_FORMAT,
+	PEN_FORMAT_METADATA_KEY,
+	DOCUMENT_PROFILE_METADATA_KEY,
+	MIGRATION_LEDGER_METADATA_KEY,
+	RESERVED_METADATA_KEYS,
+	IMPLICIT_V1_FORMAT_STAMP,
+	PenDocumentUnreadableError,
+} from "./format";
+export type { PenFormatStamp, ReservedMetadataKey } from "./format";
+
+// ── Decorations ─────────────────────────────────────────────
+export { INLINE_COMPLETION_VISIBLE_BLOCK_ATTRIBUTE } from "../constants/decorations";
 export type {
 	Decoration,
 	InlineDecoration,
@@ -327,6 +357,14 @@ export { DECORATION_OMIT_FROM_RENDER_ATTRIBUTE } from "./decorations";
 
 // ── Transport ───────────────────────────────────────────────
 export type { PenTransport, ServerConfig } from "./transport";
+
+// ── Clipboard ───────────────────────────────────────────────
+export { PEN_CLIPBOARD_PAYLOAD_VERSION } from "./clipboard";
+export type {
+	PenClipboardBlock,
+	PenClipboardDelta,
+	PenClipboardPayload,
+} from "./clipboard";
 
 // ── Serialization ───────────────────────────────────────────
 export type {
@@ -347,3 +385,17 @@ export type { BlockRenderContext, BlockRenderer } from "./rendering";
 
 // ── Suggestions ─────────────────────────────────────────────
 export type { BlockSuggestion } from "./suggestions";
+
+// ── Change summaries ────────────────────────────────────────
+export type {
+	Assoc,
+	PointMapMode,
+	DefaultAssoc,
+	DefaultPointMapMode,
+	Point,
+	TextSplice,
+	BlockTextChange,
+	StructuralChange,
+	ChangeSummary,
+	SummaryLog,
+} from "./changes";

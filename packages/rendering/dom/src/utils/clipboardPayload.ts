@@ -1,25 +1,237 @@
-import type { Block } from "@input/pen-types";
+import {
+	PEN_CLIPBOARD_PAYLOAD_VERSION,
+	type DiagnosticEvent,
+	type PenClipboardBlock,
+	type PenClipboardDelta,
+	type PenClipboardPayload,
+} from "@input/pen-types";
 
-export type Delta = {
-	insert: string;
-	attributes?: Record<string, unknown>;
-};
+export { PEN_CLIPBOARD_PAYLOAD_VERSION };
+export type { PenClipboardPayload };
 
-export interface PenBlock {
-	type?: string;
-	props?: Record<string, unknown>;
-	content?: string;
-	deltas?: Delta[];
-	isPartial?: boolean;
-	children?: Block[];
+export type Delta = PenClipboardDelta;
+export type PenBlock = PenClipboardBlock;
+
+export type PenClipboardFallbackFlavor = "html" | "plain-text";
+
+export type PenClipboardReadResult =
+	| {
+			status: "ok";
+			payload: PenClipboardPayload;
+			migratedFrom?: number;
+	  }
+	| {
+			status: "fallback";
+			flavor: PenClipboardFallbackFlavor;
+			diagnostic: DiagnosticEvent;
+	  };
+
+export class PenClipboardFallbackError extends Error {
+	readonly diagnostic: DiagnosticEvent;
+	readonly flavor: PenClipboardFallbackFlavor;
+
+	constructor(
+		diagnostic: DiagnosticEvent,
+		flavor: PenClipboardFallbackFlavor,
+	) {
+		super(diagnostic.message);
+		this.name = "PenClipboardFallbackError";
+		this.diagnostic = diagnostic;
+		this.flavor = flavor;
+	}
+}
+
+export function createPenClipboardPayload(
+	blocks: readonly PenBlock[],
+): PenClipboardPayload {
+	return {
+		version: PEN_CLIPBOARD_PAYLOAD_VERSION,
+		blockTypes: collectBlockTypes(blocks),
+		blocks,
+	};
+}
+
+export function serializePenClipboardPayload(
+	blocks: readonly PenBlock[],
+): string {
+	return JSON.stringify(createPenClipboardPayload(blocks));
+}
+
+export function parsePenClipboardPayload(raw: unknown): PenClipboardReadResult {
+	const value = typeof raw === "string" ? parseJsonValue(raw) : raw;
+	if (value === undefined) {
+		return clipboardFallback(
+			"clipboard-invalid-payload",
+			"Pen clipboard payload is not valid JSON; falling back to HTML.",
+		);
+	}
+
+	if (Array.isArray(value)) {
+		return migrateUnversionedBlocks(value);
+	}
+
+	if (!isPlainObject(value)) {
+		return clipboardFallback(
+			"clipboard-invalid-payload",
+			"Pen clipboard payload is not a versioned envelope; falling back to HTML.",
+		);
+	}
+
+	if (!Object.hasOwn(value, "version")) {
+		if (!Array.isArray(value.blocks)) {
+			return clipboardFallback(
+				"clipboard-invalid-payload",
+				"Pen clipboard payload is missing version and blocks; falling back to HTML.",
+			);
+		}
+		return migrateUnversionedBlocks(value.blocks);
+	}
+
+	if (
+		typeof value.version !== "number" ||
+		!Number.isInteger(value.version)
+	) {
+		return clipboardFallback(
+			"clipboard-unknown-version",
+			"Pen clipboard payload version is not an integer; falling back to HTML.",
+			{ payloadVersion: value.version },
+		);
+	}
+
+	if (value.version > PEN_CLIPBOARD_PAYLOAD_VERSION) {
+		return clipboardFallback(
+			"clipboard-unknown-version",
+			`Pen clipboard payload version ${value.version} is newer than this reader (${PEN_CLIPBOARD_PAYLOAD_VERSION}); falling back to HTML.`,
+			{ payloadVersion: value.version },
+		);
+	}
+
+	if (!Array.isArray(value.blocks)) {
+		return clipboardFallback(
+			"clipboard-invalid-payload",
+			"Pen clipboard payload is missing a blocks array; falling back to HTML.",
+			{ payloadVersion: value.version },
+		);
+	}
+
+	const payload = createPenClipboardPayload(sanitizeClipboardBlocks(value.blocks));
+	if (value.version === PEN_CLIPBOARD_PAYLOAD_VERSION) {
+		return { status: "ok", payload };
+	}
+
+	return {
+		status: "ok",
+		payload,
+		migratedFrom: value.version,
+	};
 }
 
 export function encodePenBlocksForHtml(penBlocksJson: string): string {
-	return bytesToBase64(new TextEncoder().encode(penBlocksJson));
+	return bytesToBase64(new TextEncoder().encode(ensureClipboardJson(penBlocksJson)));
 }
 
 export function decodePenBlocksFromHtml(encoded: string): PenBlock[] {
-	return JSON.parse(new TextDecoder().decode(base64ToBytes(encoded))) as PenBlock[];
+	const json = new TextDecoder().decode(base64ToBytes(encoded));
+	const result = parsePenClipboardPayload(json);
+	if (result.status === "fallback") {
+		throw new PenClipboardFallbackError(result.diagnostic, result.flavor);
+	}
+	return [...result.payload.blocks];
+}
+
+function ensureClipboardJson(penBlocksJson: string): string {
+	const result = parsePenClipboardPayload(penBlocksJson);
+	if (result.status === "ok") {
+		return JSON.stringify(result.payload);
+	}
+	return penBlocksJson;
+}
+
+function migrateUnversionedBlocks(blocks: unknown[]): PenClipboardReadResult {
+	return {
+		status: "ok",
+		payload: createPenClipboardPayload(sanitizeClipboardBlocks(blocks)),
+		migratedFrom: 0,
+	};
+}
+
+const REJECTED_OWN_KEYS = new Set(["__proto__", "constructor", "prototype"]);
+
+function sanitizeClipboardBlocks(blocks: unknown[]): PenBlock[] {
+	return sanitizeIngestedJson(blocks) as PenBlock[];
+}
+
+function sanitizeIngestedJson(value: unknown): unknown {
+	if (Array.isArray(value)) {
+		return value.map(sanitizeIngestedJson);
+	}
+	if (!isPlainObject(value)) {
+		return value;
+	}
+	const clean = Object.create(null) as Record<string, unknown>;
+	for (const key of Object.keys(value)) {
+		if (REJECTED_OWN_KEYS.has(key)) {
+			continue;
+		}
+		clean[key] = sanitizeIngestedJson(value[key]);
+	}
+	return clean;
+}
+
+function collectBlockTypes(blocks: readonly PenBlock[]): string[] {
+	const types = new Set<string>();
+	const visit = (block: PenBlock | { type?: string; children?: unknown }) => {
+		if (typeof block.type === "string" && block.type.length > 0) {
+			types.add(block.type);
+		}
+		if (!Array.isArray(block.children)) {
+			return;
+		}
+		for (const child of block.children) {
+			if (child && typeof child === "object") {
+				visit(child as PenBlock);
+			}
+		}
+	};
+	for (const block of blocks) {
+		visit(block);
+	}
+	return [...types].sort();
+}
+
+function clipboardFallback(
+	code: string,
+	message: string,
+	extra?: Record<string, unknown>,
+): PenClipboardReadResult {
+	return {
+		status: "fallback",
+		flavor: "html",
+		diagnostic: {
+			code,
+			level: "warn",
+			source: "clipboard",
+			message,
+			remediation:
+				"Use the HTML or plain-text clipboard flavor; do not read the JSON blocks.",
+			...extra,
+		},
+	};
+}
+
+function parseJsonValue(raw: string): unknown {
+	try {
+		return JSON.parse(raw) as unknown;
+	} catch {
+		// clipboard json flavor was unreadable.
+		return undefined;
+	}
+}
+
+function isPlainObject(
+	value: unknown,
+): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function bytesToBase64(bytes: Uint8Array): string {

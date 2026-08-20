@@ -13,7 +13,6 @@ export const PLAYGROUND_BLOCK_TYPE_ORDER = [
 	"blockquote",
 	"callout",
 	"table",
-	"database",
 	"toggle",
 ] as const;
 

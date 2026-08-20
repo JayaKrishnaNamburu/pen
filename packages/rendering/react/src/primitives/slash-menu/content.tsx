@@ -1,8 +1,8 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { useIsomorphicLayoutEffect } from "../../hooks/useIsomorphicLayoutEffect";
 import { EditorContext } from "../../context/editorContext";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { composeRefs } from "../../utils/composeRefs";
-import { isDevelopmentEnvironment } from "../../utils/environment";
 import {
 	resolveAnchoredMenuPosition,
 	type AnchoredMenuPosition,
@@ -54,7 +54,7 @@ export function SlashMenuContent(props: SlashMenuContentProps) {
 	const contentRef = useRef<HTMLElement | null>(null);
 	const [position, setPosition] = useState<SlashMenuPosition | null>(null);
 
-	useLayoutEffect(() => {
+	useIsomorphicLayoutEffect(() => {
 		if (!open || !editor) {
 			setPosition(null);
 			return;
@@ -132,11 +132,6 @@ export function SlashMenuContent(props: SlashMenuContentProps) {
 	}, [open, items.length, selectedIndex]);
 
 	if (!editor) {
-		if (isDevelopmentEnvironment()) {
-			console.error(
-				"Pen: <Pen.SlashMenu.Content> must be used within <Pen.Editor.Root> or <Pen.SlashMenu.Root editor={editor}>.",
-			);
-		}
 		throw new Error("Missing editor for Pen.SlashMenu.Content");
 	}
 

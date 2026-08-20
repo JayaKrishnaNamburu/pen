@@ -1,11 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
-import type { DocumentOp } from "@input/pen-types";
 import { jsonExporter } from "../exporter";
 import { jsonImporter } from "../importer";
-
-type UpdateTableColumnsOp = Extract<DocumentOp, { type: "update-table-columns" }>;
-type DatabaseInsertRowOp = Extract<DocumentOp, { type: "database-insert-row" }>;
 
 const noDefaultExtensionsPreset = {
   resolve() {
@@ -161,7 +157,7 @@ describe("@input/pen-export-json import", () => {
     target.destroy();
   });
 
-  it("imports table and database structured content", async () => {
+  it("imports table structured content", async () => {
     const source = createBareEditor();
     source.apply([
       {
@@ -179,24 +175,6 @@ describe("@input/pen-export-json import", () => {
         offset: 0,
         text: "A1",
       },
-      {
-        type: "insert-block",
-        blockId: "db-1",
-        blockType: "database",
-        props: { title: "Roadmap", dataSource: "local" },
-        position: "last",
-      },
-      {
-        type: "update-table-columns",
-        blockId: "db-1",
-        columns: [{ id: "name", title: "Name", type: "text" }],
-      } as UpdateTableColumnsOp,
-      {
-        type: "database-insert-row",
-        blockId: "db-1",
-        rowId: "row-1",
-        values: { name: "Ship JSON" },
-      } as DatabaseInsertRowOp,
     ]);
 
     const exported = await jsonExporter.export(source);

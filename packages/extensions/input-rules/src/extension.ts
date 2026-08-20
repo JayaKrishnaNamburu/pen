@@ -44,6 +44,8 @@ export function inputRulesExtension(config: InputRulesConfig = {}): Extension {
 
 	let unsub: (() => void) | null = null;
 
+	// Wave 1.3: Extension.inputRules → pen.inputRules via inputRulesToProviders.
+	// This extension keeps engine registration; Wave 7 deletes the v1 field.
 	return defineExtension({
 		name: INPUT_RULES_EXTENSION_NAME,
 
@@ -59,7 +61,7 @@ export function inputRulesExtension(config: InputRulesConfig = {}): Extension {
 				{ priority: 300 },
 			);
 
-			ctx.editor.internals.setSlot(INPUT_RULES_ENGINE_SLOT_KEY, engine);
+			ctx.editor.internals.assignSlot(INPUT_RULES_ENGINE_SLOT_KEY, engine);
 		},
 
 		deactivateClient: async () => {

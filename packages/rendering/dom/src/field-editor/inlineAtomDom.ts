@@ -110,6 +110,7 @@ function serializeInlineAtomProps(props: Record<string, unknown>): string {
 	try {
 		return JSON.stringify(props);
 	} catch {
+		// unstringifiable atom props serialize as empty.
 		return "{}";
 	}
 }
@@ -138,6 +139,7 @@ function parseInlineAtomProps(value: string | null): Record<string, unknown> {
 			? (props as Record<string, unknown>)
 			: {};
 	} catch {
+		// stored atom props json was unreadable.
 		return {};
 	}
 }

@@ -1,0 +1,39 @@
+{
+  "name": "@input/pen-conformance",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Browser-real conformance harness and scenario suites for Pen",
+  "type": "module",
+  "scripts": {
+    "harness:dev": "vite --config harness/vite.config.ts --host 127.0.0.1 --port 4174 --strictPort",
+    "test:chromium": "playwright test --project=chromium",
+    "test:matrix": "playwright test",
+    "test:hosts": "node --test src/hosts/importSmoke.test.js",
+    "test": "node --test src/hosts/importSmoke.test.js",
+    "coverage:rules": "node ../../../scripts/coverage-rules.mjs",
+    "fuzz:node": "node src/fuzz/node.mjs",
+    "fuzz:nightly": "node src/fuzz/nightly.mjs",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@input/pen-core": "workspace:*",
+    "@input/pen-crdt-yjs": "workspace:*",
+    "@input/pen-dom": "workspace:*",
+    "@input/pen-preset-default": "workspace:*",
+    "@input/pen-react": "workspace:*",
+    "@input/pen-test": "workspace:*",
+    "@input/pen-types": "workspace:*",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "yjs": "^13.6.29"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.7.3",
+    "vite": "^6.2.0"
+  }
+}

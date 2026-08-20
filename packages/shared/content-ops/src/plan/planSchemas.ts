@@ -18,12 +18,6 @@ export function normalizePlanSteps<T extends { op: string }>(
   return value.filter(isPlanStep<T>);
 }
 
-export function normalizePlanProps(
-  value: unknown,
-): Record<string, unknown> {
-  return normalizePlanRecord(value);
-}
-
 function isPlanRecord(value: unknown): value is PlanRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { blocksToOps, createEditor } from "@input/pen-core";
+import { createEditor } from "@input/pen-core";
 import type { SchemaRegistry } from "@input/pen-types";
 import { markdownExporter } from "@input/pen-export-markdown";
 import { createDefaultSchema } from "@input/pen-schema-default";
@@ -30,55 +30,36 @@ function convert(md: string, registry: SchemaRegistry = stubRegistry) {
 	} as never);
 }
 
-function databaseEditor() {
+function tableEditor() {
 	const editor = createEditor({
 		schema: defaultRegistry,
 		preset: noDefaultExtensionsPreset,
 	});
+	const existingBlockIds = [...editor.documentState.allBlocks()]
+		.filter((handle) => handle.parent === null)
+		.map((handle) => handle.id);
+	if (existingBlockIds.length > 0) {
+		editor.apply(
+			existingBlockIds.reverse().map((blockId) => ({
+				type: "delete-block" as const,
+				blockId,
+			})),
+		);
+	}
 	editor.apply([{
 		type: "insert-block",
-		blockId: "d1",
-		blockType: "database",
-		props: { title: "Roadmap", dataSource: "local" },
+		blockId: "t1",
+		blockType: "table",
+		props: { hasHeaderRow: true },
 		position: "last",
 	}]);
 	editor.apply([{
-		type: "update-table-columns",
-		blockId: "d1",
-		columns: [
-			{ id: "name", title: "Name", type: "text" },
-			{
-				id: "tags",
-				title: "Tags",
-				type: "multiSelect",
-				options: [
-					{ id: "bug", value: "Bug", color: "red" },
-					{ id: "feature", value: "Feature", color: "blue" },
-				],
-			},
-			{ id: "done", title: "Done", type: "checkbox" },
-		],
-	}]);
-	editor.apply([{
-		type: "database-insert-row",
-		blockId: "d1",
-		rowId: "roadmap-1",
-		values: {
-			name: "Ship importer",
-			tags: JSON.stringify(["Feature"]),
-			done: "false",
-		},
-	}]);
-	editor.apply([{
-		type: "database-update-view",
-		blockId: "d1",
-		patch: {
-			title: "Main",
-			type: "table",
-			visibleColumnIds: ["name", "tags"],
-			columnOrder: ["name", "tags", "done"],
-			sort: [{ columnId: "name", direction: "asc" }],
-		},
+		type: "insert-table-cell-text",
+		blockId: "t1",
+		row: 0,
+		col: 0,
+		offset: 0,
+		text: "Name",
 	}]);
 	return editor;
 }
@@ -140,7 +121,7 @@ describe("@input/pen-import-markdown", () => {
 	});
 
 	it("keeps parseMarkdownToBlocks parse-only in flow documents", () => {
-		const source = databaseEditor();
+		const source = tableEditor();
 		const markdown = markdownExporter.export(source);
 		const editor = createEditor({
 			schema: defaultRegistry,
@@ -150,14 +131,14 @@ describe("@input/pen-import-markdown", () => {
 
 		const blocks = parseMarkdownToBlocks(`${markdown}\n\n## Allowed`, editor);
 
-		expect(blocks.map((block) => block.type)).toEqual(["database", "heading"]);
+		expect(blocks.map((block) => block.type)).toEqual(["table", "heading"]);
 
 		source.destroy();
 		editor.destroy();
 	});
 
   it("does not emit normalization diagnostics during parseMarkdownToBlocks", () => {
-    const source = databaseEditor();
+    const source = tableEditor();
     const markdown = markdownExporter.export(source);
     const editor = createEditor({
       schema: defaultRegistry,
@@ -178,8 +159,8 @@ describe("@input/pen-import-markdown", () => {
     editor.destroy();
   });
 
-	it("filters flow-disallowed blocks during direct markdown import into flow documents", () => {
-		const source = databaseEditor();
+	it("imports table blocks into flow documents", () => {
+		const source = tableEditor();
 		const markdown = markdownExporter.export(source);
 		const editor = createEditor({
 			schema: defaultRegistry,
@@ -194,15 +175,15 @@ describe("@input/pen-import-markdown", () => {
 			blockOrder.some((blockId) => editor.getBlock(blockId)?.type === "heading"),
 		).toBe(true);
 		expect(
-			blockOrder.some((blockId) => editor.getBlock(blockId)?.type === "database"),
-		).toBe(false);
+			blockOrder.some((blockId) => editor.getBlock(blockId)?.type === "table"),
+		).toBe(true);
 
 		source.destroy();
 		editor.destroy();
 	});
 
-  it("returns a structured import result for markdown imports with normalization", () => {
-    const source = databaseEditor();
+  it("IOP6 returns a structured import result for markdown imports", () => {
+    const source = tableEditor();
     const markdown = markdownExporter.export(source);
     const editor = createEditor({
       schema: defaultRegistry,
@@ -214,10 +195,11 @@ describe("@input/pen-import-markdown", () => {
 
     expect(result).toEqual({
       parsedTopLevelBlockCount: 2,
-      importedTopLevelBlockCount: 1,
-      droppedBlockCount: 1,
-      droppedBlockTypes: ["database"],
-      normalized: true,
+      importedTopLevelBlockCount: 2,
+      droppedBlockCount: 0,
+      droppedBlockTypes: [],
+      normalized: false,
+      droppedByReason: [],
     });
 
     source.destroy();

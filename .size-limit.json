@@ -1,0 +1,178 @@
+[
+  {
+    "name": "@input/pen-types",
+    "path": "packages/types/dist/index.mjs",
+    "limit": "34 kB"
+  },
+  {
+    "name": "@input/pen-transport-direct",
+    "path": "packages/transports/direct/dist/index.mjs",
+    "limit": "5 kB"
+  },
+  {
+    "name": "@input/pen-shortcuts",
+    "path": "packages/extensions/shortcuts/dist/index.mjs",
+    "limit": "6 kB"
+  },
+  {
+    "name": "@input/pen-export-xml",
+    "path": "packages/extensions/export-xml/dist/index.mjs",
+    "limit": "10 kB"
+  },
+  {
+    "name": "@input/pen-undo",
+    "path": "packages/extensions/undo/dist/index.mjs",
+    "limit": "15 kB"
+  },
+  {
+    "name": "@input/pen-ai",
+    "path": "packages/extensions/ai/dist/index.mjs",
+    "limit": "578 kB"
+  },
+  {
+    "name": "@input/pen-ai-autocomplete",
+    "path": "packages/extensions/ai-autocomplete/dist/index.mjs",
+    "limit": "76 kB"
+  },
+  {
+    "name": "@input/pen-ai-skills",
+    "path": "packages/extensions/ai-skills/dist/index.mjs",
+    "limit": "6 kB"
+  },
+  {
+    "name": "@input/pen-ai-suggestions",
+    "path": "packages/extensions/ai-suggestions/dist/index.mjs",
+    "limit": "49 kB"
+  },
+  {
+    "name": "@input/pen-ai-tools",
+    "path": "packages/extensions/ai-tools/dist/index.mjs",
+    "limit": "2 kB"
+  },
+  {
+    "name": "@input/pen-assets-memory",
+    "path": "packages/tooling/assets-memory/dist/index.mjs",
+    "limit": "2 kB"
+  },
+  {
+    "name": "@input/pen-bench",
+    "path": "packages/tooling/bench/dist/index.mjs",
+    "limit": "2 kB"
+  },
+  {
+    "name": "@input/pen-content-ops",
+    "path": "packages/shared/content-ops/dist/index.mjs",
+    "limit": "33 kB"
+  },
+  {
+    "name": "@input/pen-core",
+    "path": "packages/core/dist/index.mjs",
+    "limit": "306 kB"
+  },
+  {
+    "name": "@input/pen-crdt-yjs",
+    "path": "packages/crdt/yjs/dist/index.mjs",
+    "limit": "61 kB"
+  },
+  {
+    "name": "@input/pen-delta-stream",
+    "path": "packages/extensions/delta-stream/dist/index.mjs",
+    "limit": "12 kB"
+  },
+  {
+    "name": "@input/pen-document-ops",
+    "path": "packages/extensions/document-ops/dist/index.mjs",
+    "limit": "51 kB"
+  },
+  {
+    "name": "@input/pen-dom",
+    "path": "packages/rendering/dom/dist/index.mjs",
+    "limit": "32 kB"
+  },
+  {
+    "name": "@input/pen-export-html",
+    "path": "packages/extensions/export-html/dist/index.mjs",
+    "limit": "8 kB"
+  },
+  {
+    "name": "@input/pen-export-json",
+    "path": "packages/extensions/export-json/dist/index.mjs",
+    "limit": "19 kB"
+  },
+  {
+    "name": "@input/pen-export-markdown",
+    "path": "packages/extensions/export-markdown/dist/index.mjs",
+    "limit": "1 kB"
+  },
+  {
+    "name": "@input/pen-history",
+    "path": "packages/extensions/history/dist/index.js",
+    "limit": "14 kB"
+  },
+  {
+    "name": "@input/pen-import-html",
+    "path": "packages/extensions/import-html/dist/index.mjs",
+    "limit": "24 kB"
+  },
+  {
+    "name": "@input/pen-import-json",
+    "path": "packages/extensions/import-json/dist/index.mjs",
+    "limit": "19 kB",
+    "note": "Placeholder matching sibling @input/pen-export-json; dist/index.mjs is not built locally so this is not a measured limit."
+  },
+  {
+    "name": "@input/pen-import-markdown",
+    "path": "packages/extensions/import-markdown/dist/index.mjs",
+    "limit": "2 kB"
+  },
+  {
+    "name": "@input/pen-input-rules",
+    "path": "packages/extensions/input-rules/dist/index.mjs",
+    "limit": "11 kB"
+  },
+  {
+    "name": "@input/pen-markdown-serialization",
+    "path": "packages/shared/markdown-serialization/dist/index.mjs",
+    "limit": "12 kB"
+  },
+  {
+    "name": "@input/pen-multiplayer",
+    "path": "packages/extensions/multiplayer/dist/index.js",
+    "limit": "24 kB"
+  },
+  {
+    "name": "@input/pen-preset-default",
+    "path": "packages/presets/default/dist/index.js",
+    "limit": "2 kB"
+  },
+  {
+    "name": "@input/pen-react",
+    "path": "packages/rendering/react/dist/index.mjs",
+    "limit": "294 kB"
+  },
+  {
+    "name": "@input/pen-schema-default",
+    "path": "packages/schema/default/dist/index.mjs",
+    "limit": "2 kB"
+  },
+  {
+    "name": "@input/pen-search",
+    "path": "packages/extensions/search/dist/index.mjs",
+    "limit": "21 kB"
+  },
+  {
+    "name": "@input/pen-test",
+    "path": "packages/tooling/test/dist/index.mjs",
+    "limit": "21 kB"
+  },
+  {
+    "name": "@input/pen-transport-sse",
+    "path": "packages/transports/sse/dist/index.mjs",
+    "limit": "14 kB"
+  },
+  {
+    "name": "@input/pen-vue",
+    "path": "packages/rendering/vue/dist/index.mjs",
+    "limit": "2 kB"
+  }
+]

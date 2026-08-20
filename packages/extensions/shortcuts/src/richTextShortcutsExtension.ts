@@ -10,10 +10,11 @@ export interface RichTextShortcutsOptions {
 	onToggleLink?: (editor: Parameters<typeof setInlineMark>[0]) => boolean;
 }
 
+// wave-4 named-command map: ../KEYMAP-INVENTORY.md
 const DEFAULT_BINDINGS: Record<ShortcutMark, readonly string[]> = {
-	bold: ["Mod-b"],
-	italic: ["Mod-i"],
-	underline: ["Mod-u"],
+	bold: ["Mod-b"], // pen.toggleMark { mark: "bold" }
+	italic: ["Mod-i"], // pen.toggleMark { mark: "italic" }
+	underline: ["Mod-u"], // pen.toggleMark { mark: "underline" }
 };
 
 const BINDING_DESCRIPTIONS: Record<ShortcutMark, string> = {
@@ -57,7 +58,7 @@ function buildKeyBindings(
 	if (options.onToggleLink) {
 		const onToggleLink = options.onToggleLink;
 		keyBindings.push({
-			key: "Mod-k",
+			key: "Mod-k", // unmapped: host onToggleLink; no catalog command
 			priority: 100,
 			description: "Toggle link",
 			handler: (editor) => onToggleLink(editor),

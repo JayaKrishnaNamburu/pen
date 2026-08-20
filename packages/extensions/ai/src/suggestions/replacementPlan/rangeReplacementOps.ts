@@ -1,4 +1,4 @@
-import type { DocumentOp } from "@input/pen-types";
+import { generateId, type DocumentOp } from "@input/pen-types";
 import {
 	resolveSelectedRangeTextFragments,
 	splitReplacementParagraphs,
@@ -22,10 +22,7 @@ export type ReplacementReviewOperation = Extract<
 export const DEFAULT_INSERTED_BLOCK_TYPE = "paragraph";
 
 export function createDefaultReplacementBlockId(): string {
-	const randomId =
-		globalThis.crypto?.randomUUID?.() ??
-		`${Date.now()}-${Math.random().toString(36).slice(2)}`;
-	return `ai-paragraph-${randomId}`;
+	return `ai-paragraph-${generateId()}`;
 }
 
 export function buildSingleBlockReplacementOperations({

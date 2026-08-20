@@ -9,11 +9,30 @@ import {
 	type PenBlock,
 } from "./clipboardPayload";
 
+function emitClipboardWriteFailed(
+	editor: Editor | undefined,
+	error: unknown,
+): void {
+	if (!editor) {
+		return;
+	}
+	editor.internals.emit("diagnostic", {
+		code: "PEN_CLIPBOARD_002",
+		level: "warn",
+		source: "clipboard",
+		message: "Clipboard write failed",
+		remediation:
+			"Grant clipboard permission or copy while the editor is focused.",
+		error,
+	});
+}
+
 export function writePenClipboard(
 	penBlocks: PenBlock[],
 	htmlContent: string,
 	plainText: string,
 	event?: ClipboardEvent,
+	editor?: Editor,
 ): void {
 	const penBlocksJson = JSON.stringify(penBlocks);
 	const encodedPenBlocks = encodePenBlocksForHtml(penBlocksJson);
@@ -43,8 +62,13 @@ export function writePenClipboard(
 				}),
 			}),
 		])
-		.catch(() => {
-			navigator.clipboard.writeText(plainText).catch(() => { });
+		.catch((error: unknown) => {
+			navigator.clipboard
+				.writeText(plainText)
+				.catch((fallbackError: unknown) => {
+					// CH5: terminal clipboard write — no remaining copy fallback.
+					emitClipboardWriteFailed(editor, fallbackError ?? error);
+				});
 		});
 }
 
@@ -53,12 +77,12 @@ export function sliceDeltas(deltas: Delta[], from: number, to: number): Delta[] 
 	let offset = 0;
 
 	for (const delta of deltas) {
-		const text = delta.insert;
-		const len = text.length;
+		const text = typeof delta.insert === "string" ? delta.insert : null;
+		const len = text?.length ?? 1;
 		const segStart = offset;
 		const segEnd = offset + len;
 
-		if (segEnd <= from || segStart >= to) {
+		if (text == null || segEnd <= from || segStart >= to) {
 			offset += len;
 			continue;
 		}
@@ -88,6 +112,7 @@ export function serializeDeltasToFormat(
 
 	let result = "";
 	for (const delta of deltas) {
+		if (typeof delta.insert !== "string") continue;
 		let text = delta.insert;
 		if (text === "\u200B") continue;
 

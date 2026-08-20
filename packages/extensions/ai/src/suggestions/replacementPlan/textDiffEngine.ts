@@ -1,3 +1,8 @@
+import {
+	nextWordBoundary,
+	wordRangeAt,
+	type WordRange,
+} from "@input/pen-core";
 import type { DocumentOp } from "@input/pen-types";
 
 export type ReplacementTextDiffOperation = Extract<
@@ -19,6 +24,8 @@ export type DiffHunk = {
 
 export const DEFAULT_MAX_DIFF_CELLS = 20_000;
 
+const DEFAULT_DIFF_LOCALE = "en";
+
 const NOISY_REPLACEMENT_MIN_TEXT_LENGTH = 80;
 const NOISY_REPLACEMENT_MIN_HUNKS = 4;
 const NOISY_REPLACEMENT_MIN_CHANGED_RATIO = 0.45;
@@ -29,6 +36,7 @@ export interface CompileReplacementSuggestionOpsInput {
 	originalText: string;
 	replacementText: string;
 	maxDiffCells?: number;
+	locale?: string;
 }
 
 export function compileReplacementSuggestionOps({
@@ -37,6 +45,7 @@ export function compileReplacementSuggestionOps({
 	originalText,
 	replacementText,
 	maxDiffCells = DEFAULT_MAX_DIFF_CELLS,
+	locale = DEFAULT_DIFF_LOCALE,
 }: CompileReplacementSuggestionOpsInput): ReplacementTextDiffOperation[] {
 	if (originalText === replacementText) {
 		return [];
@@ -59,8 +68,8 @@ export function compileReplacementSuggestionOps({
 		];
 	}
 
-	const originalTokens = tokenizeText(originalText);
-	const replacementTokens = tokenizeText(replacementText);
+	const originalTokens = tokenizeText(originalText, locale);
+	const replacementTokens = tokenizeText(replacementText, locale);
 	if (
 		originalTokens.length === 0 ||
 		replacementTokens.length === 0 ||
@@ -92,7 +101,10 @@ export function compileReplacementSuggestionOps({
 	return hunksToOperations({ blockId, hunks: [...hunks].reverse(), offset });
 }
 
-export function tokenizeText(text: string): TextToken[] {
+export function tokenizeText(
+	text: string,
+	locale: string = DEFAULT_DIFF_LOCALE,
+): TextToken[] {
 	const tokens: TextToken[] = [];
 	let index = 0;
 
@@ -110,37 +122,18 @@ export function tokenizeText(text: string): TextToken[] {
 			continue;
 		}
 
-		if (isWhitespace(char)) {
-			index += 1;
-			while (
-				index < text.length &&
-				isWhitespace(text[index] ?? "") &&
-				text[index] !== "\r" &&
-				text[index] !== "\n"
-			) {
-				index += 1;
-			}
-			tokens.push({ text: text.slice(start, index), start, end: index });
+		const word = wordStartingAt(text, index, locale);
+		if (word) {
+			tokens.push({
+				text: text.slice(word.start, word.end),
+				start: word.start,
+				end: word.end,
+			});
+			index = word.end;
 			continue;
 		}
 
-		if (isWordChar(char)) {
-			index += 1;
-			while (index < text.length && isWordChar(text[index] ?? "")) {
-				index += 1;
-			}
-			tokens.push({ text: text.slice(start, index), start, end: index });
-			continue;
-		}
-
-		index += 1;
-		while (
-			index < text.length &&
-			!isWhitespace(text[index] ?? "") &&
-			!isWordChar(text[index] ?? "")
-		) {
-			index += 1;
-		}
+		index = nextGapEnd(text, index, locale);
 		tokens.push({ text: text.slice(start, index), start, end: index });
 	}
 
@@ -365,10 +358,39 @@ function countSharedSuffix(
 	return count;
 }
 
-function isWhitespace(char: string): boolean {
-	return /\s/u.test(char);
+function wordStartingAt(
+	text: string,
+	offset: number,
+	locale: string,
+): WordRange | null {
+	const word = wordRangeAt(text, offset, locale);
+	if (word && word.start === offset) {
+		return word;
+	}
+	return null;
 }
 
-function isWordChar(char: string): boolean {
-	return /[\p{L}\p{N}'’]/u.test(char);
+function nextGapEnd(text: string, offset: number, locale: string): number {
+	const nextWordEnd = nextWordBoundary(text, offset, locale);
+	const coveringWord =
+		nextWordEnd > 0 ? wordRangeAt(text, nextWordEnd - 1, locale) : null;
+	const nextWordStart =
+		coveringWord && coveringWord.start > offset
+			? coveringWord.start
+			: text.length;
+
+	const newline = indexOfNewline(text, offset);
+	if (newline >= 0 && newline < nextWordStart) {
+		return newline;
+	}
+	return nextWordStart;
+}
+
+function indexOfNewline(text: string, offset: number): number {
+	const cr = text.indexOf("\r", offset);
+	const lf = text.indexOf("\n", offset);
+	if (cr >= 0 && lf >= 0) {
+		return Math.min(cr, lf);
+	}
+	return cr >= 0 ? cr : lf;
 }

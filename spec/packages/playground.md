@@ -17,7 +17,7 @@ In practice, the playground is also the integration harness for Pen's AI transpo
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@ai-sdk/anthropic`, `@input/pen-ai`, `@input/pen-ai-autocomplete`, `@input/pen-ai-suggestions`, `@input/pen-ai-skills`, `@input/pen-ai-tools`, `@input/pen-assets-memory`, `@input/pen-core`, `@input/pen-crdt-yjs`, `@input/pen-database`, `@input/pen-export-html`, `@input/pen-export-markdown`, `@input/pen-import-html`, `@input/pen-import-markdown`, `@input/pen-input-rules`, `@input/pen-multiplayer`, `@input/pen-preset-default`, `@input/pen-react`, `@input/pen-schema-default`, `@input/pen-search`, `@input/pen-shortcuts`, `@input/pen-types`, `@y/websocket-server`, `ai`, `dotenv`, `react`, `react-dom`, `ws`, `y-websocket`, `yjs`
+- Runtime dependencies: `@ai-sdk/anthropic`, `@input/pen-ai`, `@input/pen-ai-autocomplete`, `@input/pen-ai-suggestions`, `@input/pen-ai-skills`, `@input/pen-ai-tools`, `@input/pen-assets-memory`, `@input/pen-core`, `@input/pen-crdt-yjs`, `@input/pen-export-html`, `@input/pen-export-markdown`, `@input/pen-import-html`, `@input/pen-import-markdown`, `@input/pen-input-rules`, `@input/pen-multiplayer`, `@input/pen-preset-default`, `@input/pen-react`, `@input/pen-schema-default`, `@input/pen-search`, `@input/pen-shortcuts`, `@input/pen-types`, `@y/websocket-server`, `ai`, `dotenv`, `react`, `react-dom`, `ws`, `y-websocket`, `yjs`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: This is a private app for development, experimentation, and demos.
 

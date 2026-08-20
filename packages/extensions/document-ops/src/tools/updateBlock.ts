@@ -1,5 +1,6 @@
 import type { Editor, ToolDefinition } from "@input/pen-types";
 import { assertToolCanMutateBlock } from "../utils/mutationPolicy";
+import { applyValidatedOps } from "../utils/payloadValidation";
 
 export function updateBlockTool(editor: Editor): ToolDefinition {
   return {
@@ -19,7 +20,8 @@ export function updateBlockTool(editor: Editor): ToolDefinition {
         props: Record<string, unknown>;
       };
       assertToolCanMutateBlock(editor, opts.blockId);
-      editor.apply(
+      applyValidatedOps(
+        editor,
         [
           {
             type: "update-block",

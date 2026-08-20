@@ -1,0 +1,32 @@
+{
+  "id": "excel-sheets",
+  "source": "Excel / Google Sheets",
+  "provenance": "synthetic-until-capture",
+  "approximates": "A 2×2 spreadsheet range as Google Sheets clipboard HTML (google-sheets-html-origin + table). Excel desktop emits a similar <table> with xmlns:x / Excel.Sheet and mso-number-format styles; the stated structural outcome is the same.",
+  "markers": ["google-sheets-html-origin", "table", "tbody"],
+  "imageCount": 0,
+  "outcomes": {
+    "headings": "none",
+    "lists": "none",
+    "tables": "2×2, no header row",
+    "code": "none",
+    "links": "none",
+    "images": "none",
+    "marks": "none",
+    "colors": "none"
+  },
+  "intentionalLosses": [
+    "google-sheets-html-origin is stripped; the table remains",
+    "Excel mso-number-format / <style> (when present on a real Excel capture) are stripped",
+    "The first row is not promoted to a header row without <thead>"
+  ],
+  "blocks": [
+    {
+      "type": "table",
+      "rows": 2,
+      "cols": 2,
+      "hasHeaderRow": false,
+      "cells": [["Name", "Qty"], ["Apples", "12"]]
+    }
+  ]
+}

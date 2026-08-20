@@ -4,8 +4,6 @@ import type { PeerState } from "@input/pen-multiplayer";
 import { EditorContext } from "../../context/editorContext";
 import { useMultiplayer } from "../../hooks/useMultiplayer";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
-import { isDevelopmentEnvironment } from "../../utils/environment";
-
 export interface MultiplayerPresenceListProps extends AsChildProps {
 	editor?: Editor;
 	maxVisible?: number;
@@ -21,11 +19,6 @@ export function MultiplayerPresenceList(
 	const editor = editorProp ?? editorContext?.editor;
 
 	if (!editor) {
-		if (isDevelopmentEnvironment()) {
-			console.error(
-				"Pen: <Pen.Multiplayer.PresenceList> must be used within <Pen.Editor.Root> or receive an editor prop.",
-			);
-		}
 		throw new Error("Missing editor for Pen.Multiplayer.PresenceList");
 	}
 

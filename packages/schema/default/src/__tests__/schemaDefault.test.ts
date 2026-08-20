@@ -219,3 +219,32 @@ describe("block display metadata", () => {
     });
   }
 });
+
+// ── DIR1: optional direction on text-capable blocks ────────
+describe("DIR1 — optional direction prop", () => {
+  const textCapable = [
+    paragraph,
+    heading,
+    bulletListItem,
+    numberedListItem,
+    checkListItem,
+    codeBlock,
+    callout,
+    toggle,
+    blockquote,
+  ];
+
+  for (const schema of textCapable) {
+    it(`DIR1: ${schema.type} has optional direction ltr|rtl|auto`, () => {
+      expect(schema.propSchema.direction?.enum).toEqual(["ltr", "rtl", "auto"]);
+      expect(schema.propSchema.direction?.type).toEqual(["string", "null"]);
+      expect(schema.propSchema.direction?.default).toBeUndefined();
+    });
+  }
+
+  it("DIR1: non-text blocks do not declare direction", () => {
+    expect(image.propSchema.direction).toBeUndefined();
+    expect(table.propSchema.direction).toBeUndefined();
+    expect(divider.propSchema.direction).toBeUndefined();
+  });
+});

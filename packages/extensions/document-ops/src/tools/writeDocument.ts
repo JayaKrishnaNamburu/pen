@@ -6,6 +6,7 @@ import type {
 import { buildDocumentWriteOps } from "@input/pen-content-ops";
 import { POSITION_SCHEMA } from "../constants/toolSchemas";
 import { assertToolCanUseBlockType } from "../utils/blockTypePolicy";
+import { applyValidatedOps } from "../utils/payloadValidation";
 
 export function writeDocumentTool(editor: Editor): ToolDefinition {
   return {
@@ -65,9 +66,7 @@ export function writeDocumentTool(editor: Editor): ToolDefinition {
         .filter((op) => op.type === "insert-block")
         .map((op) => op.blockId);
 
-      if (ops.length > 0) {
-        editor.apply(ops, { origin: "ai" });
-      }
+      applyValidatedOps(editor, ops, { origin: "ai" });
 
       return { blockIds: insertedIds };
     },

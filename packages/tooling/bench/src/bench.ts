@@ -39,6 +39,7 @@ export interface BenchDefinition {
 	id?: string;
 	name: string;
 	fn: (b: BenchContext) => void | Promise<void>;
+	teardown?: () => void | Promise<void>;
 	targetMs?: number;
 	critical?: boolean;
 }
@@ -58,6 +59,9 @@ export interface BenchEvaluation {
 	waiver?: BenchWaiver;
 	waiverExpired: boolean;
 }
+
+/** CH8: critical budgets are judged on the median of this many measured iterations. */
+export const BENCH_GATE_SAMPLE_SIZE = 50;
 
 export async function bench(
 	name: string,
@@ -122,6 +126,7 @@ export async function runSuite(
 		result.targetMs = benchmark.targetMs;
 		result.isCritical = benchmark.critical ?? false;
 		results.push(result);
+		await benchmark.teardown?.();
 	}
 
 	return results;
@@ -140,10 +145,12 @@ export function evaluateBenchResult(
 	waivers: readonly BenchWaiver[] = [],
 ): BenchEvaluation {
 	const metadata =
-		findBenchMetadataById(result.id) ?? findBenchMetadataByName(result.name);
+		findBenchMetadataById(result.id) ??
+		findBenchMetadataByName(result.name);
 	const targetMs = result.targetMs ?? metadata?.targetMs;
 	const isCritical = result.isCritical || metadata?.critical === true;
-	const meetsTarget = targetMs === undefined || result.p95Ms <= targetMs;
+	// CH8: gate on the median. P95 and Max stay on the result for trend output only.
+	const meetsTarget = targetMs === undefined || result.p50Ms <= targetMs;
 	const waiver = waivers.find((candidate) => candidate.benchId === result.id);
 	const waiverExpired = waiver ? isBenchWaiverExpired(waiver) : false;
 

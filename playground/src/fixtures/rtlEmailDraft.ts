@@ -1,0 +1,107 @@
+import { generateId, type Editor } from "@input/pen-types";
+
+const RTL_EMAIL_DRAFT_SLUG = "rtl-email";
+
+export function isRtlEmailDraftLocation(): boolean {
+	const hash = window.location.hash.replace(/^#\/?/, "");
+	if (hash === RTL_EMAIL_DRAFT_SLUG) {
+		return true;
+	}
+	return window.location.pathname === `/${RTL_EMAIL_DRAFT_SLUG}`;
+}
+
+export function applyRtlEmailDraft(editor: Editor): void {
+	const headingId = editor.firstBlock()?.id;
+	if (!headingId) {
+		return;
+	}
+
+	const greetingId = generateId();
+	const bodyId = generateId();
+	const numbersId = generateId();
+	const quoteId = generateId();
+	const closeId = generateId();
+
+	editor.apply(
+		[
+			{
+				type: "convert-block",
+				blockId: headingId,
+				newType: "heading",
+				newProps: { level: 1, direction: "rtl" },
+			},
+			{
+				type: "insert-text",
+				blockId: headingId,
+				offset: 0,
+				text: "مسودة: Re: Q3 planning — Input",
+			},
+			{
+				type: "insert-block",
+				blockId: greetingId,
+				blockType: "paragraph",
+				props: { direction: "rtl" },
+				position: { after: headingId },
+			},
+			{
+				type: "insert-text",
+				blockId: greetingId,
+				offset: 0,
+				text: "مرحباً Nora،",
+			},
+			{
+				type: "insert-block",
+				blockId: bodyId,
+				blockType: "paragraph",
+				props: { direction: "rtl" },
+				position: { after: greetingId },
+			},
+			{
+				type: "insert-text",
+				blockId: bodyId,
+				offset: 0,
+				text: "راجعنا ملف Q3 roadmap في Notion وأرسلنا الملخص إلى ops@input.dev. الموعد المقترح 24 Aug 2026.",
+			},
+			{
+				type: "insert-block",
+				blockId: numbersId,
+				blockType: "paragraph",
+				props: { direction: "rtl" },
+				position: { after: bodyId },
+			},
+			{
+				type: "insert-text",
+				blockId: numbersId,
+				offset: 0,
+				text: "الرابط: https://input.dev/q3 — الرقم المرجعي INV-4821.",
+			},
+			{
+				type: "insert-block",
+				blockId: quoteId,
+				blockType: "blockquote",
+				props: { direction: "ltr" },
+				position: { after: numbersId },
+			},
+			{
+				type: "insert-text",
+				blockId: quoteId,
+				offset: 0,
+				text: "Sounds good — I'll send the calendar hold after legal reviews the MSA.",
+			},
+			{
+				type: "insert-block",
+				blockId: closeId,
+				blockType: "paragraph",
+				props: { direction: "rtl" },
+				position: { after: quoteId },
+			},
+			{
+				type: "insert-text",
+				blockId: closeId,
+				offset: 0,
+				text: "شكراً، نورة",
+			},
+		],
+		{ origin: "system" },
+	);
+}

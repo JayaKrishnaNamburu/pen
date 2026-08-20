@@ -3,6 +3,13 @@ import { DATA_ATTRS } from "./dataAttributes";
 const TEXTBOX_ROLE_SELECTOR = '[role~="textbox"]';
 const FIELD_EDITOR_SURFACE_SELECTOR = `[${DATA_ATTRS.fieldEditorSurface}]`;
 const ACTIVE_FIELD_EDITOR_SURFACE_SELECTOR = `[${DATA_ATTRS.fieldEditorActiveSurface}]`;
+const DETACHED_SURFACE_SELECTOR = [
+	'[role="toolbar"]',
+	'[role="menu"]',
+	'[role="dialog"]',
+	"[data-pen-selection-toolbar-content]",
+	"[data-pen-toolbar]",
+].join(",");
 
 type KeyboardRoutingSelection =
 	| null
@@ -33,12 +40,22 @@ export function isNativeTextEntryTarget(
 		return isTextEntryInput(target);
 	}
 
-	return (
+	if (
 		target.isContentEditable ||
 		target instanceof HTMLTextAreaElement ||
-		target instanceof HTMLSelectElement ||
-		target.closest(TEXTBOX_ROLE_SELECTOR) !== null
-	);
+		target instanceof HTMLSelectElement
+	) {
+		return true;
+	}
+
+	const textbox = target.closest(TEXTBOX_ROLE_SELECTOR);
+	if (!(textbox instanceof HTMLElement)) {
+		return false;
+	}
+
+	// AX1 marks the editor root as a textbox. That is surface semantics,
+	// not a nested native control, so descendants stay document-routable.
+	return !textbox.hasAttribute(DATA_ATTRS.editorRoot);
 }
 
 export function isFieldEditorTextEntryTarget(
@@ -132,6 +149,10 @@ export function shouldHandleEditorKeyboardEvent({
 			return false;
 		}
 
+		if (isDetachedLibrarySurface(activeElement)) {
+			return false;
+		}
+
 		return true;
 	}
 
@@ -159,6 +180,11 @@ export function getClosestEditorRoot(
 ): HTMLElement | null {
 	const element = getClosestElement(target);
 	return element?.closest(`[${DATA_ATTRS.editorRoot}]`) as HTMLElement | null;
+}
+
+function isDetachedLibrarySurface(target: EventTarget | null): boolean {
+	const element = getClosestElement(target);
+	return element?.closest(DETACHED_SURFACE_SELECTOR) !== null;
 }
 
 function getClosestElement(target: EventTarget | null): HTMLElement | null {

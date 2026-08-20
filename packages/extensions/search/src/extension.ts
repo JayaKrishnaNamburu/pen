@@ -1,6 +1,6 @@
 import type { Editor, Extension, KeyBinding } from "@input/pen-types";
 import { defineExtension, SEARCH_CONTROLLER_SLOT } from "@input/pen-types";
-import { createDecorationSet } from "@input/pen-core";
+import { createDecorationSet, searchControllerFacet } from "@input/pen-core";
 import { SearchControllerImpl } from "./controller";
 import { buildSearchDecorations } from "./decorations";
 import type { SearchController } from "./types";
@@ -107,9 +107,9 @@ export function searchExtension(): Extension {
 		activateClient: async ({ editor }) => {
 			activeEditor = editor;
 			controller = new SearchControllerImpl(editor);
-			editor.internals.setSlot(SEARCH_CONTROLLER_SLOT, controller);
+			editor.internals.assignSlot(SEARCH_CONTROLLER_SLOT, controller);
 
-			unsubscribeCommit = editor.onDocumentCommit(() => {
+			unsubscribeCommit = editor.on("commit", () => {
 				controller?.recompute();
 			});
 
@@ -123,7 +123,7 @@ export function searchExtension(): Extension {
 			unsubscribeCommit = null;
 			unsubscribeController?.();
 			unsubscribeController = null;
-			activeEditor?.internals.setSlot(SEARCH_CONTROLLER_SLOT, null);
+			activeEditor?.internals.assignSlot(SEARCH_CONTROLLER_SLOT, null);
 			controller = null;
 			activeEditor = null;
 		},
@@ -139,7 +139,5 @@ export function searchExtension(): Extension {
 }
 
 export function getSearchController(editor: Editor): SearchController | null {
-	return (
-		editor.internals.getSlot<SearchController>(SEARCH_CONTROLLER_SLOT) ?? null
-	);
+	return (editor.facet(searchControllerFacet) as SearchController | null) ?? null;
 }

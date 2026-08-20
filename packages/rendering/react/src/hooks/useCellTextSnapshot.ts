@@ -1,3 +1,4 @@
+import { affectedBlockIdsFromSummary } from "@input/pen-core";
 import { useRef, useSyncExternalStore } from "react";
 import type { Editor, TableCellHandle } from "@input/pen-types";
 
@@ -14,6 +15,8 @@ interface CellTextSnapshot {
 
 const EMPTY_DELTAS: readonly CellTextDelta[] = [];
 
+// HOST5: empty snapshot is correct for shell-only SSR. Do not populate
+// this from the live document — hosts export content with @input/pen-export-html.
 const SSR_SNAPSHOT: CellTextSnapshot = {
 	exists: false,
 	text: "",
@@ -30,8 +33,12 @@ export function useCellTextSnapshot(
 
 	return useSyncExternalStore(
 		(callback) =>
-			editor.onDocumentCommit((event) => {
-				if (event.affectedBlocks.includes(tableBlockId)) {
+			editor.on("commit", (event) => {
+				if (
+					affectedBlockIdsFromSummary(event.summary).includes(
+						tableBlockId,
+					)
+				) {
 					callback();
 				}
 			}),

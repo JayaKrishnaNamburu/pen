@@ -28,16 +28,6 @@ function createFakeEditor(documentProfile: Editor["documentProfile"]): Editor {
 	} as unknown as Editor;
 }
 
-function createDatabaseMarkdown(): string {
-	return [
-		"<!-- pen-database:%7B%22title%22%3A%22Roadmap%22%2C%22dataSource%22%3A%22local%22%2C%22columns%22%3A%5B%7B%22id%22%3A%22name%22%2C%22title%22%3A%22Name%22%2C%22type%22%3A%22text%22%7D%5D%2C%22rows%22%3A%5B%7B%22id%22%3A%22roadmap-1%22%2C%22values%22%3A%7B%22name%22%3A%22Ship%20importer%22%7D%7D%5D%2C%22primaryViewId%22%3Anull%7D -->",
-		"",
-		"| Name |",
-		"| --- |",
-		"| Ship importer |",
-	].join("\n");
-}
-
 function createMockBlockHandle(input: {
 	id: string;
 	type: string;
@@ -59,9 +49,6 @@ function createMockBlockHandle(input: {
 	tableCell: () => null;
 	tableRow: () => null;
 	tableColumns: () => never[];
-	databaseViews: () => never[];
-	databasePrimaryViewId: () => null;
-	databaseActiveView: () => null;
 	prev?: unknown;
 	next?: unknown;
 } {
@@ -76,9 +63,6 @@ function createMockBlockHandle(input: {
 		tableCell: () => null,
 		tableRow: () => null,
 		tableColumns: () => [],
-		databaseViews: () => [],
-		databasePrimaryViewId: () => null,
-		databaseActiveView: () => null,
 	};
 }
 
@@ -145,13 +129,6 @@ function createStructuredTargetEditor(
 	activeBlockId: string,
 	documentProfile: Editor["documentProfile"] = "structured",
 ): Editor {
-	const views = [
-		{
-			id: "view-1",
-			type: "table" as const,
-			title: "Default view",
-		},
-	];
 	const blocks = [
 		{
 			id: "paragraph-1",
@@ -163,9 +140,6 @@ function createStructuredTargetEditor(
 			tableRowCount: () => 0,
 			tableColumnCount: () => 0,
 			tableColumns: () => [],
-			databaseViews: () => [],
-			databasePrimaryViewId: () => null,
-			databaseActiveView: () => null,
 		},
 		{
 			id: "table-1",
@@ -180,26 +154,6 @@ function createStructuredTargetEditor(
 				{ id: "col-1", title: "Name", type: "text" as const },
 				{ id: "col-2", title: "Status", type: "text" as const },
 			],
-			databaseViews: () => [],
-			databasePrimaryViewId: () => null,
-			databaseActiveView: () => null,
-		},
-		{
-			id: "database-1",
-			type: "database",
-			props: { title: "Roadmap" },
-			children: [],
-			textContent: () => "",
-			textDeltas: () => [],
-			tableRowCount: () => 2,
-			tableColumnCount: () => 2,
-			tableColumns: () => [
-				{ id: "name", title: "Name", type: "text" as const },
-				{ id: "owner", title: "Owner", type: "text" as const },
-			],
-			databaseViews: () => views,
-			databasePrimaryViewId: () => "view-1",
-			databaseActiveView: () => views[0],
 		},
 		{
 			id: "subdocument-1",
@@ -211,9 +165,6 @@ function createStructuredTargetEditor(
 			tableRowCount: () => 0,
 			tableColumnCount: () => 0,
 			tableColumns: () => [],
-			databaseViews: () => [],
-			databasePrimaryViewId: () => null,
-			databaseActiveView: () => null,
 		},
 	];
 
@@ -301,9 +252,9 @@ describe("@input/pen-document-ops tools", () => {
 			{} as never,
 		)) as Array<{ type: string }>;
 
-		expect(structuredTypes.map((entry) => entry.type)).toContain("database");
+		expect(structuredTypes.map((entry) => entry.type)).toContain("table");
 		expect(structuredTypes.map((entry) => entry.type)).not.toContain("subdocument");
-		expect(flowTypes.map((entry) => entry.type)).not.toContain("database");
+		expect(flowTypes.map((entry) => entry.type)).toContain("table");
 		expect(flowTypes.map((entry) => entry.type)).not.toContain("subdocument");
 		expect(structuredTypes.find((entry) => entry.type === "table")).toMatchObject({
 			type: "table",
@@ -312,22 +263,6 @@ describe("@input/pen-document-ops tools", () => {
 			flowCapability: "flow-delegated",
 			selectionRole: "delegated",
 		});
-	});
-
-	it("rejects inserting flow-disallowed block types in flow documents", async () => {
-		const editor = createFakeEditor("flow");
-
-		await expect(
-			insertBlockTool(editor).handler(
-				{
-					position: "last",
-					blockType: "database",
-				},
-				{} as never,
-			),
-		).rejects.toThrow('Block type "database" is not available in flow documents.');
-
-		expect(editor.apply).not.toHaveBeenCalled();
 	});
 
 	it("rejects hidden block types in structured documents before applying", async () => {
@@ -348,37 +283,37 @@ describe("@input/pen-document-ops tools", () => {
 		expect(editor.apply).not.toHaveBeenCalled();
 	});
 
-	it("rejects hidden and flow-disallowed block types in write_document", async () => {
-		const flowEditor = createFakeEditor("flow");
+	it("rejects hidden block types in write_document", async () => {
+		const editor = createFakeEditor("structured");
 
 		await expect(
-			writeDocumentTool(flowEditor).handler(
+			writeDocumentTool(editor).handler(
 				{
-					blocks: [{ blockType: "database", content: "Rows" }],
+					blocks: [{ blockType: "subdocument", content: "Rows" }],
 				},
 				{} as never,
 			),
-		).rejects.toThrow('Block type "database" is not available in flow documents.');
+		).rejects.toThrow('Block type "subdocument" is not available in structured documents.');
 
-		expect(flowEditor.apply).not.toHaveBeenCalled();
+		expect(editor.apply).not.toHaveBeenCalled();
 	});
 
 	it("validates all blocks before write_document mutates the document", async () => {
-		const flowEditor = createFakeEditor("flow");
+		const editor = createFakeEditor("structured");
 
 		await expect(
-			writeDocumentTool(flowEditor).handler(
+			writeDocumentTool(editor).handler(
 				{
 					blocks: [
 						{ blockType: "paragraph", content: "Allowed" },
-						{ blockType: "database", content: "Blocked" },
+						{ blockType: "subdocument", content: "Blocked" },
 					],
 				},
 				{} as never,
 			),
-		).rejects.toThrow('Block type "database" is not available in flow documents.');
+		).rejects.toThrow('Block type "subdocument" is not available in structured documents.');
 
-		expect(flowEditor.apply).not.toHaveBeenCalled();
+		expect(editor.apply).not.toHaveBeenCalled();
 	});
 
 	it("writes markdown content as structured blocks", async () => {
@@ -415,31 +350,6 @@ describe("@input/pen-document-ops tools", () => {
 			type: "insert-text",
 			text: "Item",
 		});
-	});
-
-	it("filters flow-disallowed markdown blocks before write_document mutates", async () => {
-		const flowEditor = createFakeEditor("flow");
-		const markdown = createDatabaseMarkdown();
-
-		const result = await writeDocumentTool(flowEditor).handler(
-			{
-				format: "markdown",
-				content: `${markdown}\n\n## Allowed`,
-				position: "last",
-			},
-			{} as never,
-		) as {
-			blockIds: string[];
-		};
-		const appliedOps = vi.mocked(flowEditor.apply).mock.calls[0]?.[0] ?? [];
-
-		expect(result.blockIds).toHaveLength(1);
-		expect(appliedOps.filter((op) => op.type === "insert-block")).toHaveLength(1);
-		expect(appliedOps[0]).toMatchObject({
-			type: "insert-block",
-			blockType: "heading",
-		});
-		expect(flowEditor.internals.emit).toHaveBeenCalled();
 	});
 
 });

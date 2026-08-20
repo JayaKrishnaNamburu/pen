@@ -8,7 +8,6 @@ import { checkListItem } from "./blocks/checkListItem";
 import { codeBlock } from "./blocks/codeBlock";
 import { image } from "./blocks/image";
 import { table } from "./blocks/table";
-import { database } from "./blocks/database";
 import { divider } from "./blocks/divider";
 import { callout } from "./blocks/callout";
 import { toggle } from "./blocks/toggle";
@@ -36,7 +35,6 @@ export const defaultBlocks = [
   codeBlock,
   image,
   table,
-  database,
   divider,
   callout,
   toggle,

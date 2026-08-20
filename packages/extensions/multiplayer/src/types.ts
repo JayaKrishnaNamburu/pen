@@ -8,6 +8,11 @@ import type {
 } from "@input/pen-types";
 
 export interface MultiplayerConfig {
+	/**
+	 * Host-provided presence. This payload is published on awareness and is
+	 * visible to every peer in the room. Do not put emails, internal ids, or
+	 * other secrets here unless they are meant to be broadcast.
+	 */
 	user: MultiplayerUser;
 	autoConnect?: boolean;
 	session?: MultiplayerSession;
@@ -17,6 +22,10 @@ export interface MultiplayerConfig {
 	resolvePeerIdentity?: ResolvePeerIdentity;
 }
 
+/**
+ * Host-provided presence fields. Peers see whatever the host puts here;
+ * Pen treats the values as untrusted input on read (COL2).
+ */
 export interface MultiplayerUser {
 	id: string;
 	name: string;
@@ -78,6 +87,7 @@ export interface MultiplayerCursorPayload {
 	blockId: string;
 	offset: number;
 	clock: number;
+	commitId?: number;
 }
 
 export interface MultiplayerTextSelectionPayload {
@@ -85,12 +95,14 @@ export interface MultiplayerTextSelectionPayload {
 	anchor: { blockId: string; offset: number };
 	head: { blockId: string; offset: number };
 	clock: number;
+	commitId?: number;
 }
 
 export interface MultiplayerBlockSelectionPayload {
 	kind: "block";
 	blockIds: readonly string[];
 	clock: number;
+	commitId?: number;
 }
 
 export type MultiplayerSelectionPayload =
@@ -160,4 +172,5 @@ export interface MultiplayerControllerOptions {
 	config: MultiplayerConfig;
 	authorLedger: AuthorLedgerLike;
 	identityMap: ClientIdentityMapLike;
+	now?: () => number;
 }

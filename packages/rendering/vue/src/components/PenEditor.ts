@@ -86,8 +86,8 @@ export const PenEditor = defineComponent({
 		});
 		provideFieldEditorContext(fieldEditor);
 
-		props.editor.internals.setSlot(FIELD_EDITOR_SLOT_KEY, fieldEditor);
-		props.editor.internals.setSlot(CORE_FIELD_EDITOR_SLOT_KEY, fieldEditor);
+		props.editor.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, fieldEditor);
+		props.editor.internals.assignSlot(CORE_FIELD_EDITOR_SLOT_KEY, fieldEditor);
 
 		watch(
 			() => props.interactionModel,
@@ -172,8 +172,8 @@ export const PenEditor = defineComponent({
 		watch(
 			() => [props.importers, props.assets] as const,
 			([importers, assets]) => {
-				props.editor.internals.setSlot("paste:importers", importers);
-				props.editor.internals.setSlot(
+				props.editor.internals.assignSlot("paste:importers", importers);
+				props.editor.internals.assignSlot(
 					"paste:assetProvider",
 					assets ?? importers?.assets,
 				);
@@ -182,13 +182,13 @@ export const PenEditor = defineComponent({
 		);
 
 		onBeforeUnmount(() => {
-			props.editor.internals.setSlot(FIELD_EDITOR_SLOT_KEY, undefined);
-			props.editor.internals.setSlot(
+			props.editor.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, undefined);
+			props.editor.internals.assignSlot(
 				CORE_FIELD_EDITOR_SLOT_KEY,
 				undefined,
 			);
-			props.editor.internals.setSlot("paste:importers", undefined);
-			props.editor.internals.setSlot("paste:assetProvider", undefined);
+			props.editor.internals.assignSlot("paste:importers", undefined);
+			props.editor.internals.assignSlot("paste:assetProvider", undefined);
 			fieldEditor.setRootElement(null);
 			fieldEditor.destroy();
 		});
@@ -211,6 +211,8 @@ export const PenEditor = defineComponent({
 					[DATA_ATTRS.readonly]: props.readonly || undefined,
 					[DATA_ATTRS.empty]: isDocumentEmpty.value || undefined,
 					tabIndex: -1,
+					role: "textbox",
+					"aria-multiline": "true",
 				}),
 				children,
 			);

@@ -1,94 +1,55 @@
-import type { Editor, FieldEditor, ModelAdapter } from "@input/pen-types";
-import { FIELD_EDITOR_SLOT_KEY } from "@input/pen-types";
+import { fieldEditorHostFacet } from "@input/pen-core";
+import type { ChangeSummary, FieldEditor } from "@input/pen-types";
+import {
+	handleModelEvent,
+	head,
+	normalizeCompletionText,
+	tail,
+} from "./autocompleteCompletionText";
+import type { AutocompleteControllerHost } from "./autocompleteControllerHost";
+import {
+	resolveContextEligibilityFailure,
+	setBlockedReason,
+	setState,
+} from "./autocompleteControllerState";
+import {
+	logAutocompleteEvent,
+	previewAutocompleteTextForLog,
+} from "./autocompleteDebug";
+import { AUTOCOMPLETE_REQUEST_MODE } from "./constants";
+import { showSequenceSuggestion } from "./autocompleteControllerContinuation";
 import { buildAutocompleteMessages } from "./promptBuilder";
-import type { AutocompleteProviderRegistry } from "./providers/registry";
-import type { AutocompleteContextProvider, AutocompleteProviderDescriptor } from "./providers/types";
-import type {
-	AutocompleteAcceptanceStrategy,
-	AutocompleteBlockedReason,
-	AutocompleteBlockPolicy,
-	AutocompleteControllerSnapshot,
-	AutocompleteControllerState,
-	AutocompleteDismissReason,
-	AutocompleteExtensionConfig,
-	AutocompletePolicyInvalidationStage,
-	AutocompleteRequestContext,
-} from "./types";
-import {
-	createAutocompleteStructuredCandidate,
-	materializeStructuredCandidateAcceptance,
-} from "./structuredCandidate";
-import type { AutocompleteContinuationState } from "./continuationState";
-import { AutocompleteControllerImpl } from "./autocompleteControllerCore";
-import { handleModelEvent, head, normalizeCompletionText, tail } from "./autocompleteCompletionText";
-import { logAutocompleteEvent, previewAutocompleteTextForLog } from "./autocompleteDebug";
-import {
-	areBlockPoliciesEqual,
-	cloneAutocompleteControllerState,
-	freezeAutocompleteControllerSnapshot,
-	freezeAutocompleteControllerState,
-	freezeProviderDescriptors,
-	incrementPolicyInvalidationMetrics,
-} from "./autocompleteControllerSnapshots";
+import { createAutocompleteStructuredCandidate } from "./structuredCandidate";
+import type { AutocompleteRequestContext } from "./types";
 
-const AUTOCOMPLETE_REQUEST_MODE = "inline-autocomplete";
-
-type AutocompleteControllerRuntime = {
-	[key: string]: any;
-	_editor: Editor;
-	_model: ModelAdapter | undefined;
-	_debounceMs: number;
-	_acceptanceStrategy: AutocompleteAcceptanceStrategy;
-	_staleAfterMs: number;
-	_maxPrefixChars: number;
-	_maxSuffixChars: number;
-	_maxNeighborChars: number;
-	_maxProviderChars: number;
-	_maxProviderTimeMs: number;
-	_prefetchAfterAccept: boolean;
-	_providerRegistry: AutocompleteProviderRegistry;
-	_inlineCompletion: import("@input/pen-types").InlineCompletionController;
-	_listeners: Set<() => void>;
-	_snapshot: AutocompleteControllerSnapshot | null;
-	_providerDescriptorsSnapshot: readonly AutocompleteProviderDescriptor[] | null;
-	_state: AutocompleteControllerState;
-	_debounceTimer: ReturnType<typeof setTimeout> | null;
-	_abortController: AbortController | null;
-	_unsubscribeSelection: (() => void) | null;
-	_unsubscribeCommit: (() => void) | null;
-	_continuation: AutocompleteContinuationState;
-	_prefetchAbortController: AbortController | null;
-};
-
-type RuntimePrototype = Record<string, unknown>;
-
-const ControllerPrototype = AutocompleteControllerImpl.prototype as unknown as RuntimePrototype;
-
-ControllerPrototype._runRequest = async function _runRequest(this: AutocompleteControllerRuntime, requestId: string): Promise<void> {
-	if (this._state.activeRequestId !== requestId || !this._model) {
+export async function runRequest(
+	controller: AutocompleteControllerHost,
+	requestId: string,
+): Promise<void> {
+	if (controller._state.activeRequestId !== requestId || !controller._model) {
 		logAutocompleteEvent("request skipped before start", {
 			requestId,
-			hasModel: !!this._model,
-			activeRequestId: this._state.activeRequestId,
+			hasModel: !!controller._model,
+			activeRequestId: controller._state.activeRequestId,
 		});
 		return;
 	}
-	this._abortController?.abort();
+	controller._abortController?.abort();
 	const abortController = new AbortController();
-	this._abortController = abortController;
-	const context = this._buildContext();
+	controller._abortController = abortController;
+	const context = buildContext(controller);
 	if (!context) {
 		logAutocompleteEvent("request blocked before prompt build", {
 			requestId,
-			lastBlockedReason: this._state.diagnostics.lastBlockedReason,
+			lastBlockedReason: controller._state.diagnostics.lastBlockedReason,
 		});
-		this._setState({
+		setState(controller, {
 			status: "idle",
 			activeRequestId: null,
 		});
 		return;
 	}
-	this._setState({
+	setState(controller, {
 		status: "requesting",
 		activeRequestId: requestId,
 	});
@@ -100,20 +61,20 @@ ControllerPrototype._runRequest = async function _runRequest(this: AutocompleteC
 
 	const { messages, providerTimings } = await buildAutocompleteMessages({
 		context,
-		registry: this._providerRegistry,
-		maxProviderChars: this._maxProviderChars,
-		maxProviderTimeMs: this._maxProviderTimeMs,
+		registry: controller._providerRegistry,
+		maxProviderChars: controller._maxProviderChars,
+		maxProviderTimeMs: controller._maxProviderTimeMs,
 		continuationDepth: 0,
 	});
-	if (!this._shouldContinueRequest(requestId, context)) {
+	if (!shouldContinueRequest(controller, requestId, context)) {
 		logAutocompleteEvent("request cancelled after prompt build", {
 			requestId,
-			activeRequestId: this._state.activeRequestId,
-			lastBlockedReason: this._state.diagnostics.lastBlockedReason,
+			activeRequestId: controller._state.activeRequestId,
+			lastBlockedReason: controller._state.diagnostics.lastBlockedReason,
 		});
 		return;
 	}
-	this._setState({ providerTimings });
+	setState(controller, { providerTimings });
 	logAutocompleteEvent("request prompt ready", {
 		requestId,
 		providerTimings,
@@ -124,18 +85,18 @@ ControllerPrototype._runRequest = async function _runRequest(this: AutocompleteC
 	let text = "";
 	try {
 		logAutocompleteEvent("request model stream opening", { requestId });
-		for await (const event of this._model.stream({
+		for await (const event of controller._model.stream({
 			messages,
 			tools: [],
 			signal: abortController.signal,
 			requestMode: AUTOCOMPLETE_REQUEST_MODE,
 		})) {
-			if (!this._shouldContinueRequest(requestId, context)) {
+			if (!shouldContinueRequest(controller, requestId, context)) {
 				logAutocompleteEvent("request cancelled during stream", {
 					requestId,
-					activeRequestId: this._state.activeRequestId,
+					activeRequestId: controller._state.activeRequestId,
 					lastBlockedReason:
-						this._state.diagnostics.lastBlockedReason,
+						controller._state.diagnostics.lastBlockedReason,
 				});
 				abortController.abort();
 				return;
@@ -153,12 +114,13 @@ ControllerPrototype._runRequest = async function _runRequest(this: AutocompleteC
 			}
 		}
 	} catch {
+		// request stream threw; debug log + idle reset below.
 		logAutocompleteEvent("request stream threw", {
 			requestId,
 			aborted: abortController.signal.aborted,
 		});
 		if (!abortController.signal.aborted) {
-			this._setState({
+			setState(controller, {
 				status: "idle",
 				activeRequestId: null,
 			});
@@ -166,29 +128,29 @@ ControllerPrototype._runRequest = async function _runRequest(this: AutocompleteC
 		return;
 	}
 
-	if (!this._shouldContinueRequest(requestId, context)) {
+	if (!shouldContinueRequest(controller, requestId, context)) {
 		logAutocompleteEvent("request cancelled after stream", {
 			requestId,
-			activeRequestId: this._state.activeRequestId,
-			lastBlockedReason: this._state.diagnostics.lastBlockedReason,
+			activeRequestId: controller._state.activeRequestId,
+			lastBlockedReason: controller._state.diagnostics.lastBlockedReason,
 		});
 		return;
 	}
-	if (Date.now() - startedAt > this._staleAfterMs) {
+	if (Date.now() - startedAt > controller._staleAfterMs) {
 		logAutocompleteEvent("request dropped as stale", {
 			requestId,
 			elapsedMs: Date.now() - startedAt,
-			staleAfterMs: this._staleAfterMs,
+			staleAfterMs: controller._staleAfterMs,
 		});
-		this._setState({
+		setState(controller, {
 			status: "idle",
 			activeRequestId: null,
 			metrics: {
-				...this._state.metrics,
-				staleDropCount: this._state.metrics.staleDropCount + 1,
+				...controller._state.metrics,
+				staleDropCount: controller._state.metrics.staleDropCount + 1,
 			},
 			diagnostics: {
-				...this._state.diagnostics,
+				...controller._state.diagnostics,
 				lastDismissReason: "stale",
 			},
 		});
@@ -208,7 +170,7 @@ ControllerPrototype._runRequest = async function _runRequest(this: AutocompleteC
 			requestId,
 			rawLength: text.length,
 		});
-		this._setState({
+		setState(controller, {
 			status: "idle",
 			activeRequestId: null,
 		});
@@ -216,24 +178,24 @@ ControllerPrototype._runRequest = async function _runRequest(this: AutocompleteC
 	}
 
 	const candidate = createAutocompleteStructuredCandidate(
-		this._editor,
+		controller._editor,
 		normalizedText,
 		{
 			activeBlockType: context.blockType,
 			continuationDepth: 0,
 		},
 	);
-	this._continuation.setSequence({
+	controller._continuation.setSequence({
 		requestId,
 		blockId: context.blockId,
 		startOffset: context.offset,
 		candidate,
 		continuationDepth: 0,
 	});
-	this._setState({
+	setState(controller, {
 		metrics: {
-			...this._state.metrics,
-			successCount: this._state.metrics.successCount + 1,
+			...controller._state.metrics,
+			successCount: controller._state.metrics.successCount + 1,
 		},
 	});
 	logAutocompleteEvent("request produced suggestion", {
@@ -243,103 +205,110 @@ ControllerPrototype._runRequest = async function _runRequest(this: AutocompleteC
 		inlineLength: candidate.inlineText.length,
 		inlinePreview: previewAutocompleteTextForLog(candidate.inlineText),
 		appendedBlockCount: candidate.appendedBlocks.length,
-		appendedBlockTypes: candidate.appendedBlocks.map(
-			(block) => block.type,
-		),
+		appendedBlockTypes: candidate.appendedBlocks.map((block) => block.type),
 		previewBlockCount: candidate.previewBlocks.length,
 	});
-	this._showSequenceSuggestion();
+	showSequenceSuggestion(controller);
 }
-;
-ControllerPrototype._buildContext = function _buildContext(this: AutocompleteControllerRuntime): AutocompleteRequestContext | null {
-	const selection = this._editor.selection;
+
+export function buildContext(
+	controller: AutocompleteControllerHost,
+): AutocompleteRequestContext | null {
+	const selection = controller._editor.selection;
 	if (selection == null) {
-		this._setBlockedReason("missing-context");
+		setBlockedReason(controller, "missing-context");
 		return null;
 	}
 	if (selection.type !== "text") {
-		this._setBlockedReason("selection-not-text");
+		setBlockedReason(controller, "selection-not-text");
 		return null;
 	}
 	if (!selection.isCollapsed) {
-		this._setBlockedReason("selection-not-collapsed");
+		setBlockedReason(controller, "selection-not-collapsed");
 		return null;
 	}
 	if (selection.isMultiBlock) {
-		this._setBlockedReason("selection-multi-block");
+		setBlockedReason(controller, "selection-multi-block");
 		return null;
 	}
-	const fieldEditor = this._getFieldEditor();
+	const fieldEditor = getFieldEditor(controller);
 	if (!fieldEditor) {
-		this._setBlockedReason("field-editor-unavailable");
+		setBlockedReason(controller, "field-editor-unavailable");
 		return null;
 	}
 	if (!fieldEditor.isEditing) {
-		this._setBlockedReason("field-editor-not-editing");
+		setBlockedReason(controller, "field-editor-not-editing");
 		return null;
 	}
 	if (!fieldEditor.isFocused) {
-		this._setBlockedReason("field-editor-not-focused");
+		setBlockedReason(controller, "field-editor-not-focused");
 		return null;
 	}
 	if (fieldEditor.isComposing) {
-		this._setBlockedReason("field-editor-composing");
+		setBlockedReason(controller, "field-editor-composing");
 		return null;
 	}
-	return this._buildContextForPosition(
+	return buildContextForPosition(
+		controller,
 		selection.focus.blockId,
 		selection.focus.offset,
 	);
 }
-;
-ControllerPrototype._buildContextForPosition = function _buildContextForPosition(this: AutocompleteControllerRuntime, 
+
+export function buildContextForPosition(
+	controller: AutocompleteControllerHost,
 	blockId: string,
 	offset: number,
 ): AutocompleteRequestContext | null {
-	const block = this._editor.getBlock(blockId);
+	const block = controller._editor.getBlock(blockId);
 	if (!block) {
-		this._setBlockedReason("block-missing");
+		setBlockedReason(controller, "block-missing");
 		return null;
 	}
-	const blockPolicyFailure = this._resolveContextEligibilityFailure(
+	const blockPolicyFailure = resolveContextEligibilityFailure(
+		controller,
 		block.id,
 		block.type,
 	);
 	if (blockPolicyFailure) {
-		this._setBlockedReason(blockPolicyFailure);
+		setBlockedReason(controller, blockPolicyFailure);
 		return null;
 	}
 	const blockText = block.textContent();
 	return {
-		editor: this._editor,
+		editor: controller._editor,
 		blockId: block.id,
 		blockType: block.type,
 		offset,
-		prefixText: tail(blockText.slice(0, offset), this._maxPrefixChars),
-		suffixText: head(blockText.slice(offset), this._maxSuffixChars),
+		prefixText: tail(
+			blockText.slice(0, offset),
+			controller._maxPrefixChars,
+		),
+		suffixText: head(blockText.slice(offset), controller._maxSuffixChars),
 		previousBlockText: tail(
 			block.prev?.textContent() ?? "",
-			this._maxNeighborChars,
+			controller._maxNeighborChars,
 		),
 		nextBlockText: head(
 			block.next?.textContent() ?? "",
-			this._maxNeighborChars,
+			controller._maxNeighborChars,
 		),
 	};
 }
-;
-ControllerPrototype._shouldContinueRequest = function _shouldContinueRequest(this: AutocompleteControllerRuntime, 
+
+export function shouldContinueRequest(
+	controller: AutocompleteControllerHost,
 	requestId: string,
 	context: AutocompleteRequestContext,
 ): boolean {
-	if (this._state.activeRequestId !== requestId) {
+	if (controller._state.activeRequestId !== requestId) {
 		logAutocompleteEvent("request continuation blocked: replaced", {
 			requestId,
-			activeRequestId: this._state.activeRequestId,
+			activeRequestId: controller._state.activeRequestId,
 		});
 		return false;
 	}
-	const selection = this._editor.selection;
+	const selection = controller._editor.selection;
 	if (
 		selection?.type !== "text" ||
 		!selection.isCollapsed ||
@@ -369,7 +338,7 @@ ControllerPrototype._shouldContinueRequest = function _shouldContinueRequest(thi
 		);
 		return false;
 	}
-	const fieldEditor = this._getFieldEditor();
+	const fieldEditor = getFieldEditor(controller);
 	if (
 		!fieldEditor?.isEditing ||
 		!fieldEditor.isFocused ||
@@ -391,35 +360,59 @@ ControllerPrototype._shouldContinueRequest = function _shouldContinueRequest(thi
 		);
 		return false;
 	}
-	const block = this._editor.getBlock(context.blockId);
+	const block = controller._editor.getBlock(context.blockId);
 	const policyFailure = block
-		? this._resolveContextEligibilityFailure(block.id, block.type)
+		? resolveContextEligibilityFailure(controller, block.id, block.type)
 		: "block-missing";
 	if (policyFailure) {
-		this._setBlockedReason(policyFailure);
+		setBlockedReason(controller, policyFailure);
 		return false;
 	}
 	return true;
 }
-;
-ControllerPrototype._shouldDismissForExternalCommit = function _shouldDismissForExternalCommit(this: AutocompleteControllerRuntime, 
-	affectedBlocks: readonly string[],
+
+export function remapVisibleSuggestion(
+	controller: AutocompleteControllerHost,
+	summary: ChangeSummary,
 ): boolean {
 	const visibleSuggestion =
-		this._inlineCompletion.getState().visibleSuggestion;
-	return (
-		!!visibleSuggestion &&
-		affectedBlocks.includes(visibleSuggestion.blockId)
+		controller._inlineCompletion.getState().visibleSuggestion;
+	if (!visibleSuggestion) {
+		return true;
+	}
+	const mapped = summary.mapPoint(
+		{
+			blockId: visibleSuggestion.blockId,
+			offset: visibleSuggestion.offset,
+		},
+		1,
+		"delete",
 	);
+	if (!mapped) {
+		return false;
+	}
+	if (
+		mapped.blockId !== visibleSuggestion.blockId ||
+		mapped.offset !== visibleSuggestion.offset
+	) {
+		controller._inlineCompletion.showSuggestion({
+			...visibleSuggestion,
+			blockId: mapped.blockId,
+			offset: mapped.offset,
+		});
+	}
+	return true;
 }
-;
-ControllerPrototype._shouldDismissForSelectionChange = function _shouldDismissForSelectionChange(this: AutocompleteControllerRuntime): boolean {
+
+export function shouldDismissForSelectionChange(
+	controller: AutocompleteControllerHost,
+): boolean {
 	const visibleSuggestion =
-		this._inlineCompletion.getState().visibleSuggestion;
+		controller._inlineCompletion.getState().visibleSuggestion;
 	if (!visibleSuggestion || visibleSuggestion.type !== "inline") {
 		return false;
 	}
-	const selection = this._editor.selection;
+	const selection = controller._editor.selection;
 	if (
 		selection?.type !== "text" ||
 		!selection.isCollapsed ||
@@ -432,12 +425,12 @@ ControllerPrototype._shouldDismissForSelectionChange = function _shouldDismissFo
 		selection.focus.offset !== visibleSuggestion.offset
 	);
 }
-;
-ControllerPrototype._getFieldEditor = function _getFieldEditor(this: AutocompleteControllerRuntime): FieldEditor | null {
+
+export function getFieldEditor(
+	controller: AutocompleteControllerHost,
+): FieldEditor | null {
 	return (
-		this._editor.internals.getSlot<FieldEditor>(
-			FIELD_EDITOR_SLOT_KEY,
-		) ?? null
+		(controller._editor.facet(fieldEditorHostFacet) as FieldEditor | null) ??
+		null
 	);
 }
-;

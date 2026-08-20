@@ -3,12 +3,6 @@ import { defineExtension } from "@input/pen-types";
 import { StreamingTargetImpl } from "./streamingTarget";
 import type { DocumentOp, GenerationZone } from "@input/pen-types";
 
-interface DeferredSchemaEngine {
-  markDirty(blockId: string): void;
-  deferBlock(blockId: string): void;
-  undeferBlock(blockId: string): void;
-}
-
 export interface DeltaStreamOptions {
   batchInterval?: number;
 }
@@ -26,15 +20,12 @@ export function deltaStreamExtension(
 
     activateClient: async (ctx) => {
       editor = ctx.editor;
-      const engine =
-        ctx.editor.internals.engine as unknown as DeferredSchemaEngine;
       streamingTarget = new StreamingTargetImpl(
         ctx.editor,
-        engine,
         options?.batchInterval,
       );
 
-      ctx.editor.internals.setSlot(
+      ctx.editor.internals.assignSlot(
         "delta-stream:target",
         streamingTarget,
       );
@@ -68,7 +59,7 @@ export function deltaStreamExtension(
       if (streamingTarget?.generationZone) {
         streamingTarget.endStreaming("error");
       }
-      editor?.internals.setSlot("delta-stream:target", undefined);
+      editor?.internals.assignSlot("delta-stream:target", undefined);
       editor = null;
       streamingTarget = null;
     },

@@ -54,6 +54,7 @@ class HistoryScopeRuntime {
 			persistence: config.persistence,
 			docId: config.docId,
 			autoSnapshot: config.autoSnapshot,
+			resolveAuthor: config.resolveAuthor,
 		});
 		this.ready = this.controller.listSnapshots().then(() => {});
 	}

@@ -1,5 +1,5 @@
 import type { EditorInternals, CreateEditorOptions, PenEventMap, DocumentCommitEvent, CRDTAdapter, CRDTDocument, CRDTEvent, PenDocument, SchemaRegistry, Awareness, DocumentSession, DocumentScope, DocumentScopeReplacementEvent, DocumentProfile, Extension, DocumentOp, ApplyOptions, OpOrigin, MutationGroupMetadata, SelectionState, TextSelection, DocumentRange, BlockHandle, Block, DocumentState, UndoManager, Unsubscribe, CRDTMap, CRDTArray, Position, DecorationSet, EditorViewMode } from "@input/pen-types";
-import { AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY, COLLECT_KEY_BINDINGS_SLOT_KEY, usesInlineTextSelection, createMutationGroupMetadata, getApplyOptionsGroupId, MUTATION_GROUP_METADATA_KEY, UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY } from "@input/pen-types";
+import { AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY, COLLECT_KEY_BINDINGS_SLOT_KEY, usesInlineTextSelection, createMutationGroupMetadata, getApplyOptionsGroupId, MUTATION_GROUP_METADATA_KEY, UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY, generateId } from "@input/pen-types";
 import { undoExtension } from "@input/pen-undo";
 import { documentOpsExtension } from "@input/pen-document-ops";
 import { deltaStreamExtension } from "@input/pen-delta-stream";
@@ -16,9 +16,7 @@ import { createDocumentSession } from "./documentSession";
 type EditorImplRuntime = any;
 type CRDTBlockMap = CRDTMap<CRDTMap<unknown>>;
 type RawPenDocumentLike = { getArray?(name: "blockOrder"): CRDTArray<string>; getMap?(name: "blocks" | "apps" | "metadata"): CRDTMap<unknown>; blockOrder?: CRDTArray<string>; blocks?: CRDTMap<unknown>; apps?: CRDTMap<unknown>; metadata?: CRDTMap<unknown>; };
-function createGeneratedBlockId(): string { return crypto.randomUUID(); }
 function missingPenDocumentRoot(name: string): never { throw new Error(`CRDT document is missing required Pen root "${name}".`); }
-let hasWarnedAboutWithoutOption = false;
 const NOOP_UNDO: UndoManager = { undo: () => false, redo: () => false, canUndo: () => false, canRedo: () => false, stopCapturing: () => {}, syncExplicitUndoGroup: () => {}, setGroupTimeout: () => {}, registerTrackedOrigins: () => () => {}, onStackChange: () => () => {} };
 
 
@@ -88,7 +86,7 @@ if (sel.type === "block" && sel.blockIds.length > 0) {
 				};
 
 	if (typeof content === "string") {
-		const newId = createGeneratedBlockId();
+		const newId = generateId();
 		ops.push({
 			type: "insert-block",
 			blockId: newId,
@@ -107,7 +105,7 @@ if (sel.type === "block" && sel.blockIds.length > 0) {
 	} else if (Array.isArray(content)) {
 		let prevPosition = insertPosition;
 		for (const block of content) {
-			const newId = createGeneratedBlockId();
+			const newId = generateId();
 			ops.push({
 				type: "insert-block",
 				blockId: newId,

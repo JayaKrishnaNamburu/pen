@@ -1,20 +1,11 @@
 import type {
-  DatabaseViewState,
   DocumentOp,
   ImportOptions,
   Position,
-  TableColumnSchema,
 } from "@input/pen-types";
 import { generateId } from "@input/pen-types";
 
 export type { ImportOptions } from "@input/pen-types";
-
-export interface ImportedDatabaseData {
-  columns: TableColumnSchema[];
-  rows: Array<{ id: string; values: Record<string, string> }>;
-  views?: DatabaseViewState[];
-  primaryViewId?: string | null;
-}
 
 export type PendingInlineSegment =
   | {
@@ -40,7 +31,6 @@ export interface PendingBlock {
   }>;
   segments?: PendingInlineSegment[];
   children?: PendingBlock[];
-  database?: ImportedDatabaseData;
 }
 
 export function blocksToOps(
@@ -63,9 +53,7 @@ export function blocksToOps(
       position,
     });
 
-    if (block.type === "database" && block.database) {
-      materializeDatabaseBlock(ops, blockId, block.database);
-    } else if (block.type === "table" && block.children) {
+    if (block.type === "table" && block.children) {
       materializeTableChildren(ops, blockId, block.children);
     } else {
       materializeInlineContent(ops, blockId, block);
@@ -85,56 +73,6 @@ export function blocksToOps(
   }
 
   return ops;
-}
-
-function materializeDatabaseBlock(
-  ops: DocumentOp[],
-  blockId: string,
-  database: ImportedDatabaseData,
-): void {
-  if (database.columns.length > 0) {
-    ops.push({
-      type: "update-table-columns",
-      blockId,
-      columns: database.columns,
-    } as DocumentOp);
-  }
-
-  for (let rowIndex = 0; rowIndex < database.rows.length; rowIndex += 1) {
-    const row = database.rows[rowIndex]!;
-    ops.push({
-      type: "database-insert-row",
-      blockId,
-      index: rowIndex,
-      rowId: row.id,
-      values: row.values,
-    } as DocumentOp);
-  }
-
-  if (database.views && database.views.length > 0) {
-    const [firstView, ...remainingViews] = database.views;
-    ops.push({
-      type: "database-update-view",
-      blockId,
-      patch: firstView,
-    } as DocumentOp);
-
-    for (const view of remainingViews) {
-      ops.push({
-        type: "database-add-view",
-        blockId,
-        view,
-      } as DocumentOp);
-    }
-  }
-
-  if (database.primaryViewId) {
-    ops.push({
-      type: "database-set-active-view",
-      blockId,
-      viewId: database.primaryViewId,
-    } as DocumentOp);
-  }
 }
 
 function materializeTableChildren(

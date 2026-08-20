@@ -1,3 +1,4 @@
+import { urlPolicy, type UrlContext } from "@input/pen-dom";
 import type {
   BlockHandle,
   Editor,
@@ -5,10 +6,14 @@ import type {
   ExportOptions,
   TableCellHandle,
 } from "@input/pen-types";
+import { sortDeltaAttributes } from "@input/pen-markdown-serialization";
+import type { MarkupAttributeValue } from "./serializeMarkup";
 import {
-  buildDatabaseData,
-  sortDeltaAttributes,
-} from "@input/pen-markdown-serialization";
+  serializeMarkupCloseTag,
+  serializeMarkupElement,
+  serializeMarkupOpenTag,
+  serializeMarkupText,
+} from "./serializeMarkup";
 
 export type HtmlExportViewMode = "resolved" | "raw";
 
@@ -52,9 +57,20 @@ export const htmlExporter: Exporter<string, HtmlExporterExtraOptions> = {
         continue;
       }
 
+      if (handle.type === "image") {
+        parts.push(serializeImageHTML(handle));
+        continue;
+      }
+
       const schema = editor.schema.resolve(handle.type);
       if (!schema?.serialize?.toHTML) {
-        parts.push(`<p>${escapeHTML(handle.textContent())}</p>`);
+        parts.push(
+          serializeMarkupElement(
+            "p",
+            undefined,
+            serializeMarkupText(handle.textContent()),
+          ),
+        );
         continue;
       }
 
@@ -63,9 +79,6 @@ export const htmlExporter: Exporter<string, HtmlExporterExtraOptions> = {
         type: handle.type,
         props: handle.props,
         content: serializeInlineContentHTML(handle, editor, viewMode),
-        ...(handle.type === "database"
-          ? { databaseData: buildDatabaseData(handle) }
-          : {}),
       };
 
       parts.push(schema.serialize.toHTML(block));
@@ -82,7 +95,7 @@ function serializeInlineContentHTML(
 ): string {
   const deltas = handle.textDeltas();
   if (!deltas || deltas.length === 0) {
-    return escapeHTML(
+    return serializeMarkupText(
       viewMode === "resolved"
         ? handle.textContent({ resolved: true })
         : handle.textContent(),
@@ -93,7 +106,7 @@ function serializeInlineContentHTML(
 
   for (const delta of deltas) {
     let text =
-      typeof delta.insert === "string" ? escapeHTML(delta.insert) : "";
+      typeof delta.insert === "string" ? serializeMarkupText(delta.insert) : "";
     if (delta.insert === ZERO_WIDTH_SPACE) continue;
 
     const suggestion = delta.attributes?.suggestion as
@@ -110,12 +123,7 @@ function serializeInlineContentHTML(
         if (viewMode === "resolved" && mark === "suggestion") {
           continue;
         }
-        const inlineSchema = editor.schema.resolveInline(mark);
-        if (!inlineSchema?.serialize?.toHTML) continue;
-        text = inlineSchema.serialize.toHTML(
-          text,
-          typeof props === "object" ? (props as Record<string, unknown>) : {},
-        );
+        text = wrapInlineMarkHTML(text, mark, props, editor);
       }
     }
 
@@ -123,14 +131,6 @@ function serializeInlineContentHTML(
   }
 
   return result;
-}
-
-function escapeHTML(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
 }
 
 function renderTableHTML(
@@ -141,34 +141,50 @@ function renderTableHTML(
   const rowCount = handle.tableRowCount();
   const colCount = handle.tableColumnCount();
   const hasHeaderRow = handle.props.hasHeaderRow !== false;
-  const parts = ["<table>"];
+  const parts = [serializeMarkupOpenTag("table")];
 
   if (hasHeaderRow && rowCount > 0) {
-    parts.push("<thead><tr>");
+    parts.push(
+      `${serializeMarkupOpenTag("thead")}${serializeMarkupOpenTag("tr")}`,
+    );
     for (let columnIndex = 0; columnIndex < colCount; columnIndex++) {
       parts.push(
-        `<th>${serializeTableCellHTML(handle.tableCell(0, columnIndex), editor, viewMode)}</th>`,
+        serializeMarkupElement(
+          "th",
+          undefined,
+          serializeTableCellHTML(handle.tableCell(0, columnIndex), editor, viewMode),
+        ),
       );
     }
-    parts.push("</tr></thead>");
+    parts.push(
+      `${serializeMarkupCloseTag("tr")}${serializeMarkupCloseTag("thead")}`,
+    );
   }
 
   const bodyStart = hasHeaderRow ? 1 : 0;
   if (bodyStart < rowCount) {
-    parts.push("<tbody>");
+    parts.push(serializeMarkupOpenTag("tbody"));
     for (let rowIndex = bodyStart; rowIndex < rowCount; rowIndex++) {
-      parts.push("<tr>");
+      parts.push(serializeMarkupOpenTag("tr"));
       for (let columnIndex = 0; columnIndex < colCount; columnIndex++) {
         parts.push(
-          `<td>${serializeTableCellHTML(handle.tableCell(rowIndex, columnIndex), editor, viewMode)}</td>`,
+          serializeMarkupElement(
+            "td",
+            undefined,
+            serializeTableCellHTML(
+              handle.tableCell(rowIndex, columnIndex),
+              editor,
+              viewMode,
+            ),
+          ),
         );
       }
-      parts.push("</tr>");
+      parts.push(serializeMarkupCloseTag("tr"));
     }
-    parts.push("</tbody>");
+    parts.push(serializeMarkupCloseTag("tbody"));
   }
 
-  parts.push("</table>");
+  parts.push(serializeMarkupCloseTag("table"));
   return parts.join("");
 }
 
@@ -183,7 +199,8 @@ function serializeTableCellHTML(
 
   let result = "";
   for (const delta of cell.textDeltas()) {
-    let text = typeof delta.insert === "string" ? escapeHTML(delta.insert) : "";
+    let text =
+      typeof delta.insert === "string" ? serializeMarkupText(delta.insert) : "";
     if (delta.insert === ZERO_WIDTH_SPACE) {
       continue;
     }
@@ -201,14 +218,7 @@ function serializeTableCellHTML(
         if (viewMode === "resolved" && mark === "suggestion") {
           continue;
         }
-        const inlineSchema = editor.schema.resolveInline(mark);
-        if (!inlineSchema?.serialize?.toHTML) {
-          continue;
-        }
-        text = inlineSchema.serialize.toHTML(
-          text,
-          typeof props === "object" ? (props as Record<string, unknown>) : {},
-        );
+        text = wrapInlineMarkHTML(text, mark, props, editor);
       }
     }
 
@@ -248,34 +258,34 @@ function renderListRunHTML(
     const tag = handle.type === "numberedListItem" ? "ol" : "ul";
 
     if (stack.length === 0) {
-      html += `<${tag}>`;
+      html += serializeMarkupOpenTag(tag);
       stack.push({ tag, indent });
     } else {
       let top = stack[stack.length - 1]!;
       if (indent > top.indent) {
-        html += `<${tag}>`;
+        html += serializeMarkupOpenTag(tag);
         stack.push({ tag, indent });
         top = stack[stack.length - 1]!;
       } else {
-        html += "</li>";
+        html += serializeMarkupCloseTag("li");
         while (stack.length > 0 && indent < stack[stack.length - 1]!.indent) {
-          html += `</${stack.pop()!.tag}></li>`;
+          html += `${serializeMarkupCloseTag(stack.pop()!.tag)}${serializeMarkupCloseTag("li")}`;
         }
         if (stack.length === 0 || stack[stack.length - 1]!.tag !== tag) {
           if (stack.length > 0) {
-            html += `</${stack.pop()!.tag}>`;
+            html += serializeMarkupCloseTag(stack.pop()!.tag);
           }
-          html += `<${tag}>`;
+          html += serializeMarkupOpenTag(tag);
           stack.push({ tag, indent });
         }
       }
     }
 
-    html += `<li>${renderListItemInnerHTML(handle, editor, viewMode)}`;
+    html += `${serializeMarkupOpenTag("li")}${renderListItemInnerHTML(handle, editor, viewMode)}`;
   }
 
   while (stack.length > 0) {
-    html += `</li></${stack.pop()!.tag}>`;
+    html += `${serializeMarkupCloseTag("li")}${serializeMarkupCloseTag(stack.pop()!.tag)}`;
   }
 
   return { html, nextIndex: index };
@@ -288,7 +298,7 @@ function renderListItemInnerHTML(
 ): string {
   const schema = editor.schema.resolve(handle.type);
   if (!schema?.serialize?.toHTML) {
-    return escapeHTML(handle.textContent());
+    return serializeMarkupText(handle.textContent());
   }
 
   const block = {
@@ -299,4 +309,65 @@ function renderListItemInnerHTML(
   };
   const html = schema.serialize.toHTML(block);
   return html.replace(/^<li>/, "").replace(/<\/li>$/, "");
+}
+
+function urlAttributes(
+  name: "href" | "src",
+  raw: unknown,
+  context: UrlContext,
+): Record<string, MarkupAttributeValue> {
+  const resolved = urlPolicy.resolve(raw, context);
+  if (resolved == null) {
+    return { "data-pen-blocked-url": "" };
+  }
+  return { [name]: resolved };
+}
+
+function serializeImageHTML(handle: BlockHandle): string {
+  const attributes: Record<string, MarkupAttributeValue> = {
+    ...urlAttributes("src", handle.props.src, "image"),
+  };
+  if (handle.props.alt) {
+    attributes.alt = String(handle.props.alt);
+  }
+  if (handle.props.width) {
+    attributes.width = String(handle.props.width);
+  }
+  const open = serializeMarkupOpenTag("img", attributes);
+  return `${open.slice(0, -1)} />`;
+}
+
+function serializeLinkHTML(text: string, props: unknown): string {
+  const record =
+    typeof props === "object" && props !== null
+      ? (props as Record<string, unknown>)
+      : {};
+  const attributes: Record<string, MarkupAttributeValue> = {
+    ...urlAttributes("href", record.href, "link"),
+  };
+  if (record.title != null && String(record.title) !== "") {
+    attributes.title = String(record.title);
+  }
+  return serializeMarkupElement("a", attributes, text);
+}
+
+function wrapInlineMarkHTML(
+  text: string,
+  mark: string,
+  props: unknown,
+  editor: Editor,
+): string {
+  if (mark === "link") {
+    return serializeLinkHTML(text, props);
+  }
+  const inlineSchema = editor.schema.resolveInline(mark);
+  if (!inlineSchema?.serialize?.toHTML) {
+    return text;
+  }
+  return inlineSchema.serialize.toHTML(
+    text,
+    typeof props === "object" && props !== null
+      ? (props as Record<string, unknown>)
+      : {},
+  );
 }

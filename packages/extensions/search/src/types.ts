@@ -4,10 +4,11 @@ export interface SearchOptions {
 	caseSensitive: boolean;
 	regex: boolean;
 	wholeWord: boolean;
+	locale?: string;
 }
 
 export interface SearchMatch {
-	kind: "block" | "table-cell" | "database-cell";
+	kind: "block" | "table-cell";
 	blockId: string;
 	from: number;
 	to: number;
@@ -15,8 +16,6 @@ export interface SearchMatch {
 	index: number;
 	row?: number;
 	col?: number;
-	rowId?: string;
-	columnId?: string;
 	cellText?: string;
 }
 

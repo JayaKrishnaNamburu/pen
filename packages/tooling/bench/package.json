@@ -42,8 +42,9 @@
     "build": "tsup",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "vitest run",
-    "bench": "tsx src/run.ts",
+    "test:unit": "vitest run",
+    "bench": "tsx src/cli.ts",
+    "bench:ci": "vitest run && tsx src/cli.ts",
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "devDependencies": {

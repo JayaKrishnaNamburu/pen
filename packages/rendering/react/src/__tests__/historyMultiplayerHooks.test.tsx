@@ -45,6 +45,9 @@ describe("@input/pen-react history and multiplayer hooks", () => {
 			handleAwarenessChange(states: Map<number, Record<string, unknown>>): void;
 		} | null;
 		const blockId = editor.firstBlock()!.id;
+		editor.apply([
+			{ type: "insert-text", blockId, offset: 0, text: "Hi" },
+		]);
 
 		controller?.handleAwarenessChange(
 			new Map<number, Record<string, unknown>>([

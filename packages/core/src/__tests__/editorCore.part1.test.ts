@@ -2,8 +2,13 @@ import { yjsAdapter } from "@input/pen-crdt-yjs";
 import { processStream } from "@input/pen-delta-stream";
 import { inputRulesExtension } from "@input/pen-input-rules";
 import { undoExtension } from "@input/pen-undo";
+import { createDefaultSchema } from "@input/pen-schema-default";
 import {
+	defineBlock,
 	defineExtension,
+	mergeSchemas,
+	SchemaRegistryImpl,
+	type BlockSchema,
 	type DocumentSession,
 	type PenStreamPart,
 	getOpOriginType,
@@ -42,6 +47,22 @@ function createDefaultEditor(
 ) {
 	return createCoreEditor(options);
 }
+
+const flowDisallowedWidget = defineBlock("widget", {
+	content: "none",
+	fieldEditor: "none",
+	authoring: {
+		flowCapability: "flow-disallowed",
+	},
+});
+
+const flowPolicySchema = mergeSchemas(
+	createDefaultSchema(),
+	new SchemaRegistryImpl({
+		blocks: [flowDisallowedWidget as BlockSchema],
+		inlines: [],
+	}),
+);
 
 function createEditorWithUndo(
 	options: Parameters<typeof createCoreEditor>[0] = {},
@@ -266,6 +287,7 @@ describe("@input/pen-core createEditor", () => {
 	it("drops flow-disallowed block insertions at the mutation boundary", () => {
 		const editor = createEditor({
 			documentProfile: "flow",
+			schema: flowPolicySchema,
 		});
 		const diagnostics: unknown[] = [];
 
@@ -277,7 +299,7 @@ describe("@input/pen-core createEditor", () => {
 			{
 				type: "insert-block",
 				blockId: "db1",
-				blockType: "database",
+				blockType: "widget",
 				props: {},
 				position: "last",
 			},
@@ -289,7 +311,7 @@ describe("@input/pen-core createEditor", () => {
 				code: "PEN_PROFILE_001",
 				level: "warn",
 				source: "profile-policy",
-				blockType: "database",
+				blockType: "widget",
 				documentProfile: "flow",
 			}),
 		);
@@ -300,6 +322,7 @@ describe("@input/pen-core createEditor", () => {
 	it("re-applies the flow mutation boundary after extension hooks run", () => {
 		const editor = createEditor({
 			documentProfile: "flow",
+			schema: flowPolicySchema,
 		});
 		const diagnostics: unknown[] = [];
 
@@ -313,7 +336,7 @@ describe("@input/pen-core createEditor", () => {
 				{
 					type: "insert-block",
 					blockId: "db-after-hook",
-					blockType: "database",
+					blockType: "widget",
 					props: {},
 					position: "last",
 				},
@@ -336,7 +359,7 @@ describe("@input/pen-core createEditor", () => {
 		expect(diagnostics).toContainEqual(
 			expect.objectContaining({
 				code: "PEN_PROFILE_001",
-				blockType: "database",
+				blockType: "widget",
 				documentProfile: "flow",
 			}),
 		);
@@ -347,6 +370,7 @@ describe("@input/pen-core createEditor", () => {
 	it("drops flow-disallowed block conversions at the mutation boundary", () => {
 		const editor = createEditor({
 			documentProfile: "flow",
+			schema: flowPolicySchema,
 		});
 		const firstBlockId = editor.firstBlock()!.id;
 
@@ -363,7 +387,7 @@ describe("@input/pen-core createEditor", () => {
 			{
 				type: "convert-block",
 				blockId: firstBlockId,
-				newType: "database",
+				newType: "widget",
 				newProps: {},
 			},
 		]);

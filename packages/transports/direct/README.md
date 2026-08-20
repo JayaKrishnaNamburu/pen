@@ -1,6 +1,6 @@
 # `@input/pen-transport-direct`
 
-In-process transport for Pen.
+**Grade: development-only.** This is a single-process, in-process only, no-network transport for tests and demos. It never opens a socket and cannot reach a runtime in another process. It is non-resumable: there is no stream history and nothing to reconnect. Do not ship it.
 
 ## Install
 
@@ -28,6 +28,6 @@ const transport = directTransport({
 
 ## Integration Notes
 
-- This transport requires a Pen `toolRuntime`.
-- It is useful for local agent loops, embedded runtime execution, and tests where the host app and tool runtime live in the same process.
-- Use `@input/pen-transport-sse` or another external transport when the tool runtime lives outside the current process.
+- This transport requires a Pen `toolRuntime` in the same process.
+- It is not a collaboration or sync backend.
+- When the tool runtime lives outside the current process, use another transport. `@input/pen-transport-sse` is also reference-grade — single-process, non-resumable, and development-oriented — not a production backend.

@@ -1,5 +1,4 @@
 import type {
-  DatabaseViewState,
   DocumentProfile,
   FlowBlockCapability,
   TableColumnSchema,
@@ -8,7 +7,6 @@ import type {
 export const STRUCTURED_TARGET_KINDS = [
   "block",
   "table",
-  "database",
 ] as const;
 
 export type StructuredTargetKind =
@@ -45,15 +43,6 @@ export interface TableTargetDescriptor extends BaseTargetDescriptor {
   columns: TableColumnSchema[];
 }
 
-export interface DatabaseTargetDescriptor extends BaseTargetDescriptor {
-  kind: "database";
-  rowCount: number;
-  columns: TableColumnSchema[];
-  views: DatabaseViewState[];
-  activeViewId: string | null;
-}
-
 export type StructuredTargetDescriptor =
   | BlockTargetDescriptor
-  | TableTargetDescriptor
-  | DatabaseTargetDescriptor;
+  | TableTargetDescriptor;

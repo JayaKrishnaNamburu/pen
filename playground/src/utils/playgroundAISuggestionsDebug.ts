@@ -27,6 +27,7 @@ interface PlaygroundAISuggestionsDebugApi {
 declare global {
 	interface Window {
 		penPlayground?: {
+			editor?: Editor;
 			aiSuggestions?: PlaygroundAISuggestionsDebugApi;
 		};
 	}
@@ -34,10 +35,14 @@ declare global {
 
 export function installPlaygroundAISuggestionsDebug(editor: Editor): () => void {
 	const root = (window.penPlayground ??= {});
+	root.editor = editor;
 	root.aiSuggestions = createDebugApi(editor);
 
 	return () => {
 		const playground = window.penPlayground;
+		if (playground && playground.editor === editor) {
+			delete playground.editor;
+		}
 		if (playground && playground.aiSuggestions === root.aiSuggestions) {
 			delete playground.aiSuggestions;
 		}

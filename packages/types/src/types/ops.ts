@@ -1,7 +1,6 @@
 import type { AppPlacement } from "./block";
 import type { SelectionState } from "./selection";
 import type { LayoutProps } from "./layout";
-import type { ColumnType, DatabaseViewState, SelectOption } from "./database";
 import type { TableColumnSchema } from "./handles";
 
 export type OpOriginType =
@@ -15,7 +14,8 @@ export type OpOriginType =
 	| "input-rule"
 	| "app"
 	| "import"
-	| "system";
+	| "system"
+	| "migration";
 
 export interface StructuredOpOrigin {
 	type: OpOriginType | (string & {});
@@ -112,26 +112,12 @@ export type DocumentOp =
 	| DeleteTableCellTextOp
 	| FormatTableCellTextOp
 	| UpdateTableColumnsOp
-	| DatabaseAddColumnOp
-	| DatabaseUpdateColumnOp
-	| DatabaseConvertColumnOp
-	| DatabaseRemoveColumnOp
-	| DatabaseInsertRowOp
-	| DatabaseUpdateCellOp
-	| DatabaseDeleteRowOp
-	| DatabaseDeleteRowsOp
-	| DatabaseDuplicateRowOp
-	| DatabaseMoveRowOp
-	| DatabaseAddViewOp
-	| DatabaseUpdateViewOp
-	| DatabaseRemoveViewOp
-	| DatabaseSetActiveViewOp
-	| DatabaseUpdateSelectOptionsOp
 	| SetMetaOp
 	| CreateAppOp
 	| UpdateAppOp
 	| DeleteAppOp
-	| SetSelectionOp;
+	| SetSelectionOp
+	| StreamOpenOp;
 
 // ── Block ops ───────────────────────────────────────────────
 
@@ -295,114 +281,6 @@ export interface UpdateTableColumnsOp {
 	columns: TableColumnSchema[];
 }
 
-export interface DatabaseAddColumnOp {
-	type: "database-add-column";
-	blockId: string;
-	column: TableColumnSchema;
-	index?: number;
-	viewId?: string;
-}
-
-export interface DatabaseUpdateColumnOp {
-	type: "database-update-column";
-	blockId: string;
-	columnId: string;
-	patch: Partial<Omit<TableColumnSchema, "id" | "type">>;
-}
-
-export interface DatabaseConvertColumnOp {
-	type: "database-convert-column";
-	blockId: string;
-	columnId: string;
-	toType: ColumnType;
-}
-
-export interface DatabaseRemoveColumnOp {
-	type: "database-remove-column";
-	blockId: string;
-	columnId: string;
-}
-
-export interface DatabaseInsertRowOp {
-	type: "database-insert-row";
-	blockId: string;
-	index?: number;
-	rowId?: string;
-	values?: Record<string, string>;
-}
-
-export interface DatabaseUpdateCellOp {
-	type: "database-update-cell";
-	blockId: string;
-	rowId: string;
-	columnId: string;
-	value: string;
-}
-
-export interface DatabaseDeleteRowOp {
-	type: "database-delete-row";
-	blockId: string;
-	rowId: string;
-}
-
-export interface DatabaseDeleteRowsOp {
-	type: "database-delete-rows";
-	blockId: string;
-	rowIds: string[];
-}
-
-export interface DatabaseDuplicateRowOp {
-	type: "database-duplicate-row";
-	blockId: string;
-	rowId: string;
-	newRowId?: string;
-}
-
-export interface DatabaseMoveRowOp {
-	type: "database-move-row";
-	blockId: string;
-	rowId: string;
-	index: number;
-}
-
-export interface DatabaseAddViewOp {
-	type: "database-add-view";
-	blockId: string;
-	view: DatabaseViewState;
-	index?: number;
-}
-
-export interface DatabaseUpdateViewOp {
-	type: "database-update-view";
-	blockId: string;
-	viewId?: string;
-	patch: Partial<DatabaseViewState>;
-}
-
-export interface DatabaseRemoveViewOp {
-	type: "database-remove-view";
-	blockId: string;
-	viewId: string;
-}
-
-export interface DatabaseSetActiveViewOp {
-	type: "database-set-active-view";
-	blockId: string;
-	viewId: string;
-}
-
-export interface DatabaseUpdateSelectOptionsOp {
-	type: "database-update-select-options";
-	blockId: string;
-	columnId: string;
-	action: "add" | "remove" | "rename" | "recolor" | "reorder";
-	optionId?: string;
-	option?: SelectOption;
-	value?: string;
-	color?: string;
-	order?: string[];
-}
-
 // ── Meta ops ────────────────────────────────────────────────
 
 export interface SetMetaOp {
@@ -436,4 +314,10 @@ export interface DeleteAppOp {
 export interface SetSelectionOp {
 	type: "set-selection";
 	selection: SelectionState;
+}
+
+/** Synthetic open-time op for stream veto (`06-commit-pipeline.md` ST1). */
+export interface StreamOpenOp {
+	type: "stream-open";
+	blockId: string;
 }

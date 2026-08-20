@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { blocksToOps, createEditor } from "@input/pen-core";
+import { createEditor } from "@input/pen-core";
 import type { HTMLImportElement, SchemaRegistry } from "@input/pen-types";
 import { createDefaultSchema } from "@input/pen-schema-default";
 import { htmlExporter } from "@input/pen-export-html";
@@ -7,8 +7,6 @@ import { htmlImporter, parseHtmlToBlocks } from "../importer";
 import { sanitizeHTML } from "../sanitize";
 import { parseHTML } from "../domAdapter";
 import { domToBlocks } from "../domToBlocks";
-import { parseInlineContent } from "../inlineParser";
-import type { DOMNode } from "../domAdapter";
 
 const noDefaultExtensionsPreset = {
 	resolve() {
@@ -35,55 +33,36 @@ function convert(html: string, registry: SchemaRegistry = stubRegistry) {
 	return domToBlocks(dom, registry);
 }
 
-function databaseEditor() {
+function tableEditor() {
 	const editor = createEditor({
 		schema: defaultRegistry,
 		preset: noDefaultExtensionsPreset,
 	});
+	const existingBlockIds = [...editor.documentState.allBlocks()]
+		.filter((handle) => handle.parent === null)
+		.map((handle) => handle.id);
+	if (existingBlockIds.length > 0) {
+		editor.apply(
+			existingBlockIds.reverse().map((blockId) => ({
+				type: "delete-block" as const,
+				blockId,
+			})),
+		);
+	}
 	editor.apply([{
 		type: "insert-block",
-		blockId: "d1",
-		blockType: "database",
-		props: { title: "Roadmap", dataSource: "local" },
+		blockId: "t1",
+		blockType: "table",
+		props: { hasHeaderRow: true },
 		position: "last",
 	}]);
 	editor.apply([{
-		type: "update-table-columns",
-		blockId: "d1",
-		columns: [
-			{ id: "name", title: "Name", type: "text" },
-			{
-				id: "tags",
-				title: "Tags",
-				type: "multiSelect",
-				options: [
-					{ id: "bug", value: "Bug", color: "red" },
-					{ id: "feature", value: "Feature", color: "blue" },
-				],
-			},
-			{ id: "done", title: "Done", type: "checkbox" },
-		],
-	}]);
-	editor.apply([{
-		type: "database-insert-row",
-		blockId: "d1",
-		rowId: "roadmap-1",
-		values: {
-			name: "Ship importer",
-			tags: JSON.stringify(["Feature"]),
-			done: "false",
-		},
-	}]);
-	editor.apply([{
-		type: "database-update-view",
-		blockId: "d1",
-		patch: {
-			title: "Main",
-			type: "table",
-			visibleColumnIds: ["name", "tags"],
-			columnOrder: ["name", "tags", "done"],
-			sort: [{ columnId: "name", direction: "asc" }],
-		},
+		type: "insert-table-cell-text",
+		blockId: "t1",
+		row: 0,
+		col: 0,
+		offset: 0,
+		text: "Name",
 	}]);
 	return editor;
 }
@@ -267,7 +246,7 @@ describe("@input/pen-import-html dom-to-blocks", () => {
 	});
 
 	it("keeps parseHtmlToBlocks parse-only in flow documents", () => {
-		const source = databaseEditor();
+		const source = tableEditor();
 		const html = htmlExporter.export(source);
 		const editor = createEditor({
 			schema: defaultRegistry,
@@ -277,7 +256,7 @@ describe("@input/pen-import-html dom-to-blocks", () => {
 
 		const blocks = parseHtmlToBlocks(`${html}<h2>Allowed</h2>`, editor);
 
-		expect(blocks.some((block) => block.type === "database")).toBe(true);
+		expect(blocks.some((block) => block.type === "table")).toBe(true);
 		expect(blocks.some((block) => block.type === "heading")).toBe(true);
 
 		source.destroy();
@@ -285,7 +264,7 @@ describe("@input/pen-import-html dom-to-blocks", () => {
 	});
 
   it("does not emit normalization diagnostics during parseHtmlToBlocks", () => {
-    const source = databaseEditor();
+    const source = tableEditor();
     const html = htmlExporter.export(source);
     const editor = createEditor({
       schema: defaultRegistry,
@@ -306,8 +285,8 @@ describe("@input/pen-import-html dom-to-blocks", () => {
     editor.destroy();
   });
 
-	it("filters flow-disallowed blocks during direct HTML import into flow documents", async () => {
-		const source = databaseEditor();
+	it("imports table blocks into flow documents", async () => {
+		const source = tableEditor();
 		const html = htmlExporter.export(source);
 		const editor = createEditor({
 			schema: defaultRegistry,
@@ -322,15 +301,15 @@ describe("@input/pen-import-html dom-to-blocks", () => {
 			blockOrder.some((blockId) => editor.getBlock(blockId)?.type === "heading"),
 		).toBe(true);
 		expect(
-			blockOrder.some((blockId) => editor.getBlock(blockId)?.type === "database"),
-		).toBe(false);
+			blockOrder.some((blockId) => editor.getBlock(blockId)?.type === "table"),
+		).toBe(true);
 
 		source.destroy();
 		editor.destroy();
 	});
 
-  it("returns a structured import result for HTML imports with normalization", async () => {
-    const source = databaseEditor();
+  it("returns a structured import result for HTML imports", async () => {
+    const source = tableEditor();
     const html = htmlExporter.export(source);
     const editor = createEditor({
       schema: defaultRegistry,
@@ -341,11 +320,12 @@ describe("@input/pen-import-html dom-to-blocks", () => {
     const result = await htmlImporter.import(`${html}<h2>Allowed</h2>`, editor);
 
     expect(result).toEqual({
-      parsedTopLevelBlockCount: 3,
+      parsedTopLevelBlockCount: 2,
       importedTopLevelBlockCount: 2,
-      droppedBlockCount: 1,
-      droppedBlockTypes: ["database"],
-      normalized: true,
+      droppedBlockCount: 0,
+      droppedBlockTypes: [],
+      normalized: false,
+      droppedByReason: [],
     });
 
     source.destroy();

@@ -6,13 +6,19 @@ declare const process: {
 
 import { access, readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
-import { getCriticalBenchFailures, runSuite } from "./bench";
+import { fileURLToPath } from "node:url";
+import {
+	BENCH_GATE_SAMPLE_SIZE,
+	getCriticalBenchFailures,
+	runSuite,
+} from "./bench";
 import { crdtBenchmarks } from "./suites/crdt.bench";
 import { schemaBenchmarks } from "./suites/schema.bench";
 import { streamingBenchmarks } from "./suites/streaming.bench";
 import { editorBenchmarks } from "./suites/editor.bench";
 import { extensionBenchmarks } from "./suites/extension.bench";
 import { aiBenchmarks } from "./suites/ai.bench";
+import { scale3Benchmarks } from "./suites/scale3.bench";
 import { reportConsole } from "./reporters/console";
 import { reportJSON } from "./reporters/json";
 import type { BenchDefinition, BenchResult, BenchWaiver } from "./bench";
@@ -42,6 +48,7 @@ export function createBenchSuites(): BenchSuite[] {
 		{ name: "Streaming", benchmarks: streamingBenchmarks },
 		{ name: "Extensions", benchmarks: extensionBenchmarks },
 		{ name: "AI", benchmarks: aiBenchmarks },
+		{ name: "SCALE3", benchmarks: scale3Benchmarks },
 	];
 }
 
@@ -56,7 +63,10 @@ export function assertCriticalBenchmarkTargets(
 	}
 
 	const summary = failures
-		.map((result) => `${result.name} (p95 ${result.p95Ms.toFixed(2)}ms)`)
+		.map(
+			(result) =>
+				`${result.name} (median ${result.p50Ms.toFixed(2)}ms over ${result.iterations}; p95 ${result.p95Ms.toFixed(2)}ms, max ${result.maxMs.toFixed(2)}ms trend)`,
+		)
 		.join(", ");
 	throw new Error(`Critical benchmark targets failed: ${summary}`);
 }
@@ -97,7 +107,9 @@ export async function loadBenchWaivers(
 	waiverFile?: string,
 ): Promise<BenchWaiver[]> {
 	const resolvedWaiverFile =
-		waiverFile ?? (await resolveDefaultWaiverFilePath(process.cwd()));
+		waiverFile ??
+		(await resolveDefaultWaiverFilePath(process.cwd())) ??
+		(await resolvePackageWaiverFilePath());
 	if (!resolvedWaiverFile) {
 		return [];
 	}
@@ -142,6 +154,24 @@ export async function resolveDefaultWaiverFilePath(
 			return undefined;
 		}
 		current = parent;
+	}
+}
+
+/** SCALE3 / API10: committed file lives in this package when cwd has no `spec/`. */
+export async function resolvePackageWaiverFilePath(): Promise<
+	string | undefined
+> {
+	const candidate = resolve(
+		dirname(fileURLToPath(import.meta.url)),
+		"..",
+		DEFAULT_BENCH_WAIVER_FILE,
+	);
+	try {
+		await access(candidate);
+		return candidate;
+	} catch {
+		// no waiver file at this path.
+		return undefined;
 	}
 }
 
@@ -197,7 +227,7 @@ export async function runAllSuites(
 
 	for (const suite of suites) {
 		const results = await runSuite(suite.name, suite.benchmarks, {
-			iterations: options.iterations ?? 50,
+			iterations: options.iterations ?? BENCH_GATE_SAMPLE_SIZE,
 			warmup: options.warmup ?? 3,
 			reporter,
 		});
@@ -224,21 +254,3 @@ export async function runAllSuites(
 
 	return allResults;
 }
-
-async function main() {
-	const { reporter, waiverFile } = parseBenchCLIArgs(process.argv.slice(2));
-
-	await runAllSuites({
-		iterations: 50,
-		warmup: 3,
-		reporter,
-		reportResults: true,
-		enforceTargets: true,
-		waiverFile,
-	});
-}
-
-main().catch((err) => {
-	console.error("Benchmark failed:", err);
-	process.exit(1);
-});

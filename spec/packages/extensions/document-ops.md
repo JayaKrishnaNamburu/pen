@@ -58,7 +58,7 @@ Important rules:
 - Path in workspace: `packages/extensions/document-ops`
 - Spec path mirrors workspace path: `packages/extensions/document-ops.md`
 - Install `documentOpsExtension()` when a host needs a registered tool runtime for read/write/context operations against a live editor
-- Use the inspection and policy helpers before mutating structured targets like tables or databases
+- Use the inspection and policy helpers before mutating structured targets like tables
 - This package is especially important for AI and automation flows because it centralizes the safe document-tool contract
 
 ## Current Maturity / Intended Usage

@@ -1,33 +1,63 @@
 import type {
-  AppPlacement,
   CRDTEvent,
-  DocumentOp,
-  OpOrigin,
+  OpOriginType,
+  StructuredOpOrigin,
   Unsubscribe,
 } from "@input/pen-types";
 import { HISTORY_ORIGIN_TAG } from "@input/pen-types";
 import * as Y from "yjs";
 
-import { APPS, BLOCKS, BLOCK_ORDER } from "./document";
+import { BLOCKS, BLOCK_ORDER } from "./document";
 import type { YjsCRDTDocument } from "./document";
+import type { CRDTDiagnostic } from "./loadDocument";
 
 // Yjs internal types inferred from Yjs APIs to avoid leaking `any`.
 type AnyAbstractType = Parameters<Y.Transaction["changed"]["get"]>[0];
-type DeepObserveEvents = Parameters<
-  Parameters<Y.Map<unknown>["observeDeep"]>[0]
->[0];
 
-const KNOWN_ORIGINS: ReadonlySet<string> = new Set([
-  "user",
-  "ai",
-  "collaborator",
-  "extension",
-  "history",
-  "input-rule",
-  "app",
-  "import",
-  "system",
-]);
+export const ORIGIN_UNKNOWN_CODE = "ORIGIN_UNKNOWN";
+export const HISTORY_OPERATION_KIND = "__pen_history_kind";
+
+const CANONICAL_ORIGINS: {
+  [Type in OpOriginType]: StructuredOpOrigin;
+} = {
+  user: { type: "user" },
+  ai: { type: "ai" },
+  "ai-session": { type: "ai-session" },
+  "suggestion-resolution": { type: "suggestion-resolution" },
+  collaborator: { type: "collaborator" },
+  extension: { type: "extension" },
+  history: { type: "history" },
+  "input-rule": { type: "input-rule" },
+  app: { type: "app" },
+  import: { type: "import" },
+  system: { type: "system" },
+  migration: { type: "migration" },
+};
+
+/** Stable token so Y.UndoManager can track structured origins by identity. */
+export function canonicalOrigin(type: OpOriginType): StructuredOpOrigin {
+	return CANONICAL_ORIGINS[type];
+}
+
+function isOpOriginType(value: string): value is OpOriginType {
+  switch (value) {
+    case "user":
+    case "ai":
+    case "ai-session":
+    case "suggestion-resolution":
+    case "collaborator":
+    case "extension":
+    case "history":
+    case "input-rule":
+    case "app":
+    case "import":
+    case "system":
+    case "migration":
+      return true;
+    default:
+      return false;
+  }
+}
 
 function isHistoryOrigin(origin: unknown): boolean {
   if (origin instanceof Y.UndoManager) return true;
@@ -41,12 +71,130 @@ function isHistoryOrigin(origin: unknown): boolean {
   return false;
 }
 
-function originToOpOrigin(origin: unknown): OpOrigin {
-  if (origin === null || origin === undefined) return "user";
-  if (isHistoryOrigin(origin)) return "history";
-  if (typeof origin === "string" && KNOWN_ORIGINS.has(origin))
-    return origin as OpOrigin;
-  return "extension";
+function isStructuredOpOrigin(origin: unknown): origin is StructuredOpOrigin {
+  return (
+    typeof origin === "object" &&
+    origin !== null &&
+    typeof (origin as { type?: unknown }).type === "string"
+  );
+}
+
+function rawOriginSource(origin: unknown): string {
+  if (typeof origin === "string") return origin;
+  if (origin == null) return "absent";
+  if (isStructuredOpOrigin(origin)) return origin.type;
+  return "unrecognized";
+}
+
+function unknownOriginDiagnostic(source: string): CRDTDiagnostic {
+  return {
+    code: ORIGIN_UNKNOWN_CODE,
+    message: `Unknown transaction origin "${source}" normalized to { type: "system" }`,
+    severity: "warning",
+    timestamp: Date.now(),
+  };
+}
+
+export function createRemoteUpdateOrigin(
+  handle?: Pick<
+    StructuredOpOrigin,
+    "actorId" | "source" | "groupId" | "requestId"
+  >,
+): StructuredOpOrigin {
+  if (
+    handle == null ||
+    (handle.actorId == null &&
+      handle.source == null &&
+      handle.groupId == null &&
+      handle.requestId == null)
+  ) {
+    return canonicalOrigin("collaborator");
+  }
+  return {
+    type: "collaborator",
+    ...handle,
+  };
+}
+
+export interface NormalizedTransactionOrigin {
+  readonly origin: StructuredOpOrigin;
+  readonly diagnostic: CRDTDiagnostic | null;
+}
+
+export function normalizeTransactionOrigin(
+  origin: unknown,
+  local = true,
+): NormalizedTransactionOrigin {
+  if (!local) {
+    if (isStructuredOpOrigin(origin) && origin.type === "collaborator") {
+      return { origin, diagnostic: null };
+    }
+    const handle = isStructuredOpOrigin(origin)
+      ? {
+          actorId: origin.actorId,
+          groupId: origin.groupId,
+          requestId: origin.requestId,
+          source: origin.source,
+        }
+      : typeof origin === "string"
+        ? { source: origin }
+        : undefined;
+    return { origin: createRemoteUpdateOrigin(handle), diagnostic: null };
+  }
+
+  if (origin === null || origin === undefined) {
+    return {
+      origin: { type: "system", source: "absent" },
+      diagnostic: unknownOriginDiagnostic("absent"),
+    };
+  }
+
+  if (isHistoryOrigin(origin)) {
+    const kind =
+      origin != null && typeof origin === "object"
+        ? (origin as Record<string, unknown>)[HISTORY_OPERATION_KIND]
+        : undefined;
+    return {
+      origin:
+        kind === "redo"
+          ? { type: "history", source: "redo" }
+          : { type: "history", source: "undo" },
+      diagnostic: null,
+    };
+  }
+
+  if (typeof origin === "string") {
+    if (isOpOriginType(origin)) {
+      return { origin: canonicalOrigin(origin), diagnostic: null };
+    }
+    return {
+      origin: { type: "system", source: origin },
+      diagnostic: unknownOriginDiagnostic(origin),
+    };
+  }
+
+  if (isStructuredOpOrigin(origin)) {
+    if (isOpOriginType(origin.type)) {
+      return { origin, diagnostic: null };
+    }
+    return {
+      origin: { type: "system", source: origin.type },
+      diagnostic: unknownOriginDiagnostic(origin.type),
+    };
+  }
+
+  return {
+    origin: { type: "system", source: "unrecognized" },
+    diagnostic: unknownOriginDiagnostic("unrecognized"),
+  };
+}
+
+/** Always structured. String origins are not stored downstream. */
+export function originToOpOrigin(
+  origin: unknown,
+  local = true,
+): StructuredOpOrigin {
+  return normalizeTransactionOrigin(origin, local).origin;
 }
 
 function resolveBlockId(
@@ -89,198 +237,33 @@ function extractAffectedBlocks(txn: Y.Transaction): string[] {
   return Array.from(blockIds);
 }
 
-// ── Op Reconstruction (best-effort) ─────────────────────────
-
-function reconstructOpsFromBlocksMap(
-  txn: Y.Transaction,
-  blocksMap: Y.Map<Y.Map<unknown>>,
-): DocumentOp[] {
-  const ops: DocumentOp[] = [];
-  const blocksChanges = txn.changed.get(blocksMap as unknown as AnyAbstractType);
-  if (!blocksChanges) return ops;
-
-  for (const key of blocksChanges) {
-    if (key === null) continue;
-    const blockMap = blocksMap.get(key);
-    if (blockMap) {
-      const blockType = blockMap.get("type") as string;
-      const propsMap = blockMap.get("props") as Y.Map<unknown> | undefined;
-      ops.push({
-        type: "insert-block",
-        blockId: key,
-        blockType: blockType ?? "paragraph",
-        props: propsMap ? Object.fromEntries(propsMap.entries()) : {},
-        position: "last",
-      });
-    } else {
-      ops.push({ type: "delete-block", blockId: key });
-    }
-  }
-  return ops;
-}
-
-function reconstructOpsFromProps(
-  txn: Y.Transaction,
-  blocksMap: Y.Map<Y.Map<unknown>>,
-): DocumentOp[] {
-  const ops: DocumentOp[] = [];
-
-  for (const [ytype, keys] of txn.changed) {
-    if (!(ytype instanceof Y.Map)) continue;
-    const item = (ytype as { _item?: { parentSub: string | null; parent: unknown } })._item;
-    if (!item || item.parentSub !== "props") continue;
-    const parentBlock = item.parent;
-    if (!parentBlock) continue;
-    const parentItem = (parentBlock as { _item?: { parent: unknown; parentSub: string | null } })._item;
-    if (!parentItem || (parentItem.parent as unknown) !== (blocksMap as unknown))
-      continue;
-    const blockId = parentItem.parentSub;
-    if (!blockId) continue;
-
-    const changedProps: Record<string, unknown> = {};
-    for (const key of keys) {
-      if (key !== null) changedProps[key] = ytype.get(key);
-    }
-    if (Object.keys(changedProps).length > 0) {
-      ops.push({ type: "update-block", blockId, props: changedProps });
-    }
-  }
-  return ops;
-}
-
-function reconstructOpsFromTextDeltas(
-  textDeltas: Map<string, { delta: unknown[] }>,
-): DocumentOp[] {
-  const ops: DocumentOp[] = [];
-  for (const [blockId, { delta }] of textDeltas) {
-    let offset = 0;
-    for (const d of delta as Array<{
-      insert?: string;
-      delete?: number;
-      retain?: number;
-      attributes?: Record<string, unknown>;
-    }>) {
-      if (typeof d.insert === "string") {
-        ops.push({
-          type: "insert-text",
-          blockId,
-          offset,
-          text: d.insert,
-          marks: d.attributes,
-        });
-        offset += d.insert.length;
-      } else if (d.delete != null) {
-        ops.push({ type: "delete-text", blockId, offset, length: d.delete });
-      } else if (d.retain != null) {
-        if (d.attributes) {
-          ops.push({
-            type: "format-text",
-            blockId,
-            offset,
-            length: d.retain,
-            marks: d.attributes,
-          });
-        }
-        offset += d.retain;
-      }
-    }
-  }
-  return ops;
-}
-
-function reconstructOpsFromAppsMap(
-  txn: Y.Transaction,
-  appsMap: Y.Map<Y.Map<unknown>>,
-): DocumentOp[] {
-  const ops: DocumentOp[] = [];
-  const appsChanges = txn.changed.get(appsMap as unknown as AnyAbstractType);
-  if (!appsChanges) return ops;
-
-  for (const key of appsChanges) {
-    if (key === null) continue;
-    const appMap = appsMap.get(key);
-    if (appMap) {
-      const appType = (appMap.get("type") as string) ?? "unknown";
-      const placementMap = appMap.get("placement") as Record<string, unknown> | undefined;
-      const configMap = appMap.get("config") as Y.Map<unknown> | undefined;
-      ops.push({
-        type: "create-app",
-        appId: key,
-        appType,
-        placement: (placementMap as AppPlacement) ?? {
-          mode: "anchored",
-          blockId: "",
-          anchor: "after",
-        },
-        config: configMap ? Object.fromEntries(configMap.entries()) : {},
-      });
-    } else {
-      ops.push({ type: "delete-app", appId: key });
-    }
-  }
-  return ops;
-}
-
-function reconstructOps(
-  txn: Y.Transaction,
-  textDeltas: Map<string, { delta: unknown[] }>,
-): DocumentOp[] {
-  const blocksMap = txn.doc.getMap(BLOCKS) as Y.Map<Y.Map<unknown>>;
-  const appsMap = txn.doc.getMap(APPS) as Y.Map<Y.Map<unknown>>;
-  return [
-    ...reconstructOpsFromBlocksMap(txn, blocksMap),
-    ...reconstructOpsFromProps(txn, blocksMap),
-    ...reconstructOpsFromTextDeltas(textDeltas),
-    ...reconstructOpsFromAppsMap(txn, appsMap),
-  ];
-}
-
-// ── Observer ────────────────────────────────────────────────
-
 export function createObserver(
   doc: YjsCRDTDocument,
   callback: (event: CRDTEvent) => void,
+  onDiagnostic?: (diagnostic: CRDTDiagnostic) => void,
 ): Unsubscribe {
-  const blocksMap = doc.penDocument.blocks;
-
-  let pendingTextDeltas = new Map<string, { delta: unknown[] }>();
-
-  const deepHandler = (events: DeepObserveEvents) => {
-    for (const event of events) {
-      if (!(event instanceof Y.YTextEvent)) continue;
-      const blockId = resolveBlockId(
-        event.target as unknown as AnyAbstractType,
-        blocksMap,
-      );
-      if (blockId) {
-        pendingTextDeltas.set(blockId, { delta: event.delta });
-      }
-    }
-  };
-
   const txnHandler = (txn: Y.Transaction) => {
-    const derivedOrigin = originToOpOrigin(txn.origin);
-    if (txn.changed.size === 0 && pendingTextDeltas.size === 0) {
+    if (txn.changed.size === 0) {
       return;
     }
 
-    const textDeltas = pendingTextDeltas;
-    pendingTextDeltas = new Map();
+    const normalized = normalizeTransactionOrigin(txn.origin, txn.local);
+    if (normalized.diagnostic) {
+      onDiagnostic?.(normalized.diagnostic);
+    }
 
     const event: CRDTEvent = {
-      origin: derivedOrigin,
+      origin: normalized.origin,
       affectedBlocks: extractAffectedBlocks(txn),
-      ops: reconstructOps(txn, textDeltas),
+      ops: [],
       timestamp: Date.now(),
     };
     callback(event);
   };
 
-  blocksMap.observeDeep(deepHandler);
   doc.ydoc.on("afterTransaction", txnHandler);
 
   return () => {
-    blocksMap.unobserveDeep(deepHandler);
     doc.ydoc.off("afterTransaction", txnHandler);
   };
 }

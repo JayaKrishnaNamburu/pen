@@ -1,6 +1,5 @@
 import type {
 	Editor,
-	PenStreamPart,
 	PenStreamRequest,
 	ToolRuntime,
 } from "@input/pen-types";
@@ -15,10 +14,6 @@ export interface SSEEvent {
 export interface SSEClientOptions {
 	url: string;
 	headers?: Record<string, string>;
-	reconnect?: boolean;
-	reconnectDelay?: number;
-	maxReconnectAttempts?: number;
-	supportsReplay?: boolean;
 	pingTimeout?: number;
 	signal?: AbortSignal;
 }
@@ -30,10 +25,4 @@ export interface SSEServerOptions {
 	onError?: (error: unknown) => void;
 	pingInterval?: number;
 	keepAliveComment?: boolean;
-}
-
-export interface SSEStreamState {
-	streamId: string;
-	eventIndex: number;
-	parts: PenStreamPart[];
 }

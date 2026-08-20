@@ -1,175 +1,140 @@
-import type { Editor, FieldEditor, ModelAdapter } from "@input/pen-types";
-import { FIELD_EDITOR_SLOT_KEY } from "@input/pen-types";
-import { buildAutocompleteMessages } from "./promptBuilder";
-import type { AutocompleteProviderRegistry } from "./providers/registry";
-import type { AutocompleteContextProvider, AutocompleteProviderDescriptor } from "./providers/types";
-import type {
-	AutocompleteAcceptanceStrategy,
-	AutocompleteBlockedReason,
-	AutocompleteBlockPolicy,
-	AutocompleteControllerSnapshot,
-	AutocompleteControllerState,
-	AutocompleteDismissReason,
-	AutocompleteExtensionConfig,
-	AutocompletePolicyInvalidationStage,
-	AutocompleteRequestContext,
-} from "./types";
+import type { FieldEditor } from "@input/pen-types";
+import type { AutocompleteControllerHost } from "./autocompleteControllerHost";
 import {
-	createAutocompleteStructuredCandidate,
-	materializeStructuredCandidateAcceptance,
-} from "./structuredCandidate";
-import type { AutocompleteContinuationState } from "./continuationState";
-import { AutocompleteControllerImpl } from "./autocompleteControllerCore";
-import { handleModelEvent, head, normalizeCompletionText, tail } from "./autocompleteCompletionText";
-import { logAutocompleteEvent, previewAutocompleteTextForLog } from "./autocompleteDebug";
-import {
-	areBlockPoliciesEqual,
-	cloneAutocompleteControllerState,
-	freezeAutocompleteControllerSnapshot,
-	freezeAutocompleteControllerState,
 	freezeProviderDescriptors,
 	incrementPolicyInvalidationMetrics,
 } from "./autocompleteControllerSnapshots";
+import type { AutocompleteProviderDescriptor } from "./providers/types";
+import type {
+	AutocompleteBlockedReason,
+	AutocompleteControllerState,
+	AutocompletePolicyInvalidationStage,
+} from "./types";
+import { dismiss } from "./autocompleteControllerLifecycle";
+import { getFieldEditor } from "./autocompleteControllerRequest";
 
-const AUTOCOMPLETE_REQUEST_MODE = "inline-autocomplete";
-
-type AutocompleteControllerRuntime = {
-	[key: string]: any;
-	_editor: Editor;
-	_model: ModelAdapter | undefined;
-	_debounceMs: number;
-	_acceptanceStrategy: AutocompleteAcceptanceStrategy;
-	_staleAfterMs: number;
-	_maxPrefixChars: number;
-	_maxSuffixChars: number;
-	_maxNeighborChars: number;
-	_maxProviderChars: number;
-	_maxProviderTimeMs: number;
-	_prefetchAfterAccept: boolean;
-	_providerRegistry: AutocompleteProviderRegistry;
-	_inlineCompletion: import("@input/pen-types").InlineCompletionController;
-	_listeners: Set<() => void>;
-	_snapshot: AutocompleteControllerSnapshot | null;
-	_providerDescriptorsSnapshot: readonly AutocompleteProviderDescriptor[] | null;
-	_state: AutocompleteControllerState;
-	_debounceTimer: ReturnType<typeof setTimeout> | null;
-	_abortController: AbortController | null;
-	_unsubscribeSelection: (() => void) | null;
-	_unsubscribeCommit: (() => void) | null;
-	_continuation: AutocompleteContinuationState;
-	_prefetchAbortController: AbortController | null;
-};
-
-type RuntimePrototype = Record<string, unknown>;
-
-const ControllerPrototype = AutocompleteControllerImpl.prototype as unknown as RuntimePrototype;
-
-ControllerPrototype._setBlockedReason = function _setBlockedReason(this: AutocompleteControllerRuntime, reason: AutocompleteBlockedReason): void {
-	this._setState({
+export function setBlockedReason(
+	controller: AutocompleteControllerHost,
+	reason: AutocompleteBlockedReason,
+): void {
+	setState(controller, {
 		diagnostics: {
-			...this._state.diagnostics,
+			...controller._state.diagnostics,
 			lastBlockedReason: reason,
 		},
 	});
 }
-;
-ControllerPrototype._recordPolicyInvalidation = function _recordPolicyInvalidation(this: AutocompleteControllerRuntime, 
+
+export function recordPolicyInvalidation(
+	controller: AutocompleteControllerHost,
 	policyFailure: AutocompleteBlockedReason,
 	invalidationStage: AutocompletePolicyInvalidationStage | null,
 ): void {
-	this._setBlockedReason(policyFailure);
+	setBlockedReason(controller, policyFailure);
 	if (invalidationStage) {
-		this._setState({
+		setState(controller, {
 			metrics: incrementPolicyInvalidationMetrics(
-				this._state.metrics,
+				controller._state.metrics,
 				invalidationStage,
 			),
 			diagnostics: {
-				...this._state.diagnostics,
+				...controller._state.diagnostics,
 				lastPolicyInvalidationStage: invalidationStage,
 			},
 		});
 	}
-	if (invalidationStage || this._continuation.hasPrefetchedContinuation) {
-		this.dismiss("policy-change");
+	if (
+		invalidationStage ||
+		controller._continuation.hasPrefetchedContinuation
+	) {
+		dismiss(controller, "policy-change");
 	}
 }
-;
-ControllerPrototype._invalidateForPolicyChange = function _invalidateForPolicyChange(this: AutocompleteControllerRuntime): void {
+
+export function invalidateForPolicyChange(
+	controller: AutocompleteControllerHost,
+): void {
 	const activeBlockId =
-		this._continuation.sequence?.blockId ??
-		this._getActiveSelectionBlockId();
+		controller._continuation.sequence?.blockId ??
+		getActiveSelectionBlockId(controller);
 	if (!activeBlockId) {
 		return;
 	}
-	const policyFailure = this._resolveCurrentBlockFailure(activeBlockId);
+	const policyFailure = resolveCurrentBlockFailure(controller, activeBlockId);
 	if (!policyFailure) {
 		return;
 	}
-	const invalidationStage = this._getPolicyInvalidationStage();
-	this._recordPolicyInvalidation(policyFailure, invalidationStage);
+	const invalidationStage = getPolicyInvalidationStage(controller);
+	recordPolicyInvalidation(controller, policyFailure, invalidationStage);
 }
-;
-ControllerPrototype._getActiveSelectionBlockId = function _getActiveSelectionBlockId(this: AutocompleteControllerRuntime): string | null {
-	const selection = this._editor.selection;
+
+export function getActiveSelectionBlockId(
+	controller: AutocompleteControllerHost,
+): string | null {
+	const selection = controller._editor.selection;
 	return selection?.type === "text" ? selection.focus.blockId : null;
 }
-;
-ControllerPrototype._getPolicyInvalidationStage = function _getPolicyInvalidationStage(this: AutocompleteControllerRuntime): AutocompletePolicyInvalidationStage | null {
+
+export function getPolicyInvalidationStage(
+	controller: AutocompleteControllerHost,
+): AutocompletePolicyInvalidationStage | null {
 	if (
-		this._state.status === "scheduled" ||
-		this._state.status === "requesting"
+		controller._state.status === "scheduled" ||
+		controller._state.status === "requesting"
 	) {
-		return this._state.status;
+		return controller._state.status;
 	}
 	if (
-		this._state.status === "showing" ||
-		this._continuation.sequence ||
-		this._continuation.hasPrefetchedContinuation
+		controller._state.status === "showing" ||
+		controller._continuation.sequence ||
+		controller._continuation.hasPrefetchedContinuation
 	) {
 		return "showing";
 	}
 	return null;
 }
-;
-ControllerPrototype._resolveCurrentBlockFailure = function _resolveCurrentBlockFailure(this: AutocompleteControllerRuntime, 
+
+export function resolveCurrentBlockFailure(
+	controller: AutocompleteControllerHost,
 	blockId: string,
 ): AutocompleteBlockedReason | null {
-	const block = this._editor.getBlock(blockId);
+	const block = controller._editor.getBlock(blockId);
 	if (!block) {
 		return "block-missing";
 	}
-	return this._resolveContextEligibilityFailure(block.id, block.type);
+	return resolveContextEligibilityFailure(controller, block.id, block.type);
 }
-;
-ControllerPrototype._resolveContextEligibilityFailure = function _resolveContextEligibilityFailure(this: AutocompleteControllerRuntime, 
+
+export function resolveContextEligibilityFailure(
+	controller: AutocompleteControllerHost,
 	blockId: string,
 	blockType: string | null,
 ): AutocompleteBlockedReason | null {
-	const blockPolicyFailure = this._resolveBlockPolicyFailure(blockType);
+	const blockPolicyFailure = resolveBlockPolicyFailure(controller, blockType);
 	if (blockPolicyFailure) {
 		return blockPolicyFailure;
 	}
-	const fieldEditor = this._getFieldEditor() as
+	const fieldEditor = getFieldEditor(controller) as
 		| (FieldEditor & { activeCellCoord?: { blockId: string } | null })
 		| null;
 	if (
 		fieldEditor?.activeCellCoord &&
 		fieldEditor.activeCellCoord.blockId === blockId &&
-		this._state.blockPolicy.allowInTables !== true
+		controller._state.blockPolicy.allowInTables !== true
 	) {
 		return "table-cell-active";
 	}
 	return null;
 }
-;
-ControllerPrototype._resolveBlockPolicyFailure = function _resolveBlockPolicyFailure(this: AutocompleteControllerRuntime, 
+
+export function resolveBlockPolicyFailure(
+	controller: AutocompleteControllerHost,
 	blockType: string | null,
 ): AutocompleteBlockedReason | null {
 	if (!blockType) {
 		return null;
 	}
-	const allowedBlockTypes = this._state.blockPolicy.allowedBlockTypes;
+	const allowedBlockTypes = controller._state.blockPolicy.allowedBlockTypes;
 	if (
 		allowedBlockTypes &&
 		allowedBlockTypes.length > 0 &&
@@ -177,62 +142,72 @@ ControllerPrototype._resolveBlockPolicyFailure = function _resolveBlockPolicyFai
 	) {
 		return "block-type-not-allowed";
 	}
-	const deniedBlockTypes = this._state.blockPolicy.deniedBlockTypes;
+	const deniedBlockTypes = controller._state.blockPolicy.deniedBlockTypes;
 	if (deniedBlockTypes?.includes(blockType)) {
 		return "block-type-denied";
 	}
 	if (
 		blockType === "codeBlock" &&
-		this._state.blockPolicy.allowInCodeBlocks === false
+		controller._state.blockPolicy.allowInCodeBlocks === false
 	) {
 		return "code-block-disabled";
 	}
 	if (
 		blockType === "table" &&
-		this._state.blockPolicy.allowInTables !== true
+		controller._state.blockPolicy.allowInTables !== true
 	) {
 		return "table-disabled";
 	}
 	return null;
 }
-;
-ControllerPrototype._clearDebounceTimer = function _clearDebounceTimer(this: AutocompleteControllerRuntime): void {
-	if (this._debounceTimer !== null) {
-		clearTimeout(this._debounceTimer);
-		this._debounceTimer = null;
+
+export function clearDebounceTimer(
+	controller: AutocompleteControllerHost,
+): void {
+	if (controller._debounceTimer !== null) {
+		clearTimeout(controller._debounceTimer);
+		controller._debounceTimer = null;
 	}
 }
-;
-ControllerPrototype._setState = function _setState(this: AutocompleteControllerRuntime, next: Partial<AutocompleteControllerState>): void {
-	this._state = {
-		...this._state,
+
+export function setState(
+	controller: AutocompleteControllerHost,
+	next: Partial<AutocompleteControllerState>,
+): void {
+	controller._state = {
+		...controller._state,
 		...next,
 	};
-	this._invalidateSnapshot();
-	this._emit();
+	invalidateSnapshot(controller);
+	emit(controller);
 }
-;
-ControllerPrototype._getProviderDescriptorsSnapshot = function _getProviderDescriptorsSnapshot(this: AutocompleteControllerRuntime): readonly AutocompleteProviderDescriptor[] {
-	if (this._providerDescriptorsSnapshot === null) {
-		this._providerDescriptorsSnapshot = freezeProviderDescriptors(
-			this._providerRegistry.listProviderDescriptors(),
+
+export function getProviderDescriptorsSnapshot(
+	controller: AutocompleteControllerHost,
+): readonly AutocompleteProviderDescriptor[] {
+	if (controller._providerDescriptorsSnapshot === null) {
+		controller._providerDescriptorsSnapshot = freezeProviderDescriptors(
+			controller._providerRegistry.listProviderDescriptors(),
 		);
 	}
-	return this._providerDescriptorsSnapshot;
+	return controller._providerDescriptorsSnapshot;
 }
-;
-ControllerPrototype._invalidateSnapshot = function _invalidateSnapshot(this: AutocompleteControllerRuntime): void {
-	this._snapshot = null;
+
+export function invalidateSnapshot(
+	controller: AutocompleteControllerHost,
+): void {
+	controller._snapshot = null;
 }
-;
-ControllerPrototype._invalidateProviderDescriptorsSnapshot = function _invalidateProviderDescriptorsSnapshot(this: AutocompleteControllerRuntime): void {
-	this._providerDescriptorsSnapshot = null;
-	this._invalidateSnapshot();
+
+export function invalidateProviderDescriptorsSnapshot(
+	controller: AutocompleteControllerHost,
+): void {
+	controller._providerDescriptorsSnapshot = null;
+	invalidateSnapshot(controller);
 }
-;
-ControllerPrototype._emit = function _emit(this: AutocompleteControllerRuntime): void {
-	for (const listener of this._listeners) {
+
+export function emit(controller: AutocompleteControllerHost): void {
+	for (const listener of controller._listeners) {
 		listener();
 	}
 }
-;

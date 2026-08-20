@@ -1,0 +1,45 @@
+{
+  "id": "notion",
+  "source": "Notion",
+  "provenance": "synthetic-until-capture",
+  "approximates": "Notion clipboard fragment: StartFragment, semantic headings/lists, checkbox inputs, fenced code, remote image. Notion copies are relatively clean HTML.",
+  "markers": ["StartFragment", "input type=checkbox", "language-ts"],
+  "imageCount": 1,
+  "outcomes": {
+    "headings": "h1",
+    "lists": "nested bullets (indent 0/1) plus checklist",
+    "tables": "none",
+    "code": "codeBlock language ts",
+    "links": "kept",
+    "images": "1 remote src kept",
+    "marks": "bold, italic, strike, link",
+    "colors": "none"
+  },
+  "intentionalLosses": [
+    "Notion-specific block identity (if a real capture adds data-block-id) is ignored; conversion uses tags only"
+  ],
+  "blocks": [
+    { "type": "heading", "level": 1, "text": "Project spec" },
+    {
+      "type": "paragraph",
+      "text": "Hello world and more and old.",
+      "marks": [
+        { "type": "bold", "text": "world" },
+        { "type": "italic", "text": "more" },
+        { "type": "strikethrough", "text": "old" }
+      ]
+    },
+    { "type": "bulletListItem", "indent": 0, "text": "First item" },
+    { "type": "bulletListItem", "indent": 1, "text": "Nested item" },
+    { "type": "bulletListItem", "indent": 0, "text": "Second item" },
+    { "type": "checkListItem", "indent": 0, "checked": true, "text": "Done task" },
+    { "type": "checkListItem", "indent": 0, "checked": false, "text": "Open task" },
+    { "type": "codeBlock", "language": "ts", "text": "const x = 1;" },
+    {
+      "type": "paragraph",
+      "text": "Notion link",
+      "marks": [{ "type": "link", "text": "Notion link" }]
+    },
+    { "type": "image" }
+  ]
+}

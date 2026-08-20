@@ -77,6 +77,8 @@ Extension roots give host apps a predictable place for CRDT-backed data that tra
 
 ## Collaboration boundary
 
+What Pen guarantees versus what the host owns is stated in [COLLABORATION.md](./COLLABORATION.md).
+
 When using multiplayer with Yjs, Pen expects the application to choose the provider and hand Pen a `MultiplayerSession`.
 
 `@input/pen-crdt-yjs` exposes the minimal helpers needed for that:
@@ -182,3 +184,15 @@ Use:
 - `getStatus()` and `getIsSynced()` when the provider may already be active before Pen wraps it
 
 If `onSync()` is omitted, a connected provider is treated as fully connected rather than `syncing`.
+
+## Compaction
+
+Pen reports document growth and does not compact documents. On load, a document whose encoded size meets a stated byte threshold emits a `document-size` diagnostic carrying encoded byte size, block count, and whether GC is enabled. That measurement is not taken per commit.
+
+`PenPersistence.compact()` is host-implemented: Pen never calls it. Three mechanisms exist, and they do different things:
+
+- **`mergeUpdates` / `mergeYjsUpdates`.** `Y.mergeUpdates` folds a sequence of Yjs updates into one update that encodes the same document state. That shrinks an _update log_ a host has been appending. It does not remove tombstones — deleted blocks and characters stay in the CRDT until GC collects them.
+- **Snapshot retention.** `@input/pen-history` writes version snapshots through `PenPersistence.saveVersionSnapshot` and restores them with `loadVersion`. Pen does not delete snapshots. A host that drops older snapshot rows reclaims that snapshot storage and cannot restore those versions.
+- **`gc: true`.** `createYjsDocument` defaults to `gc: false` so deleted Yjs content stays restorable for undo and history. Constructing a document with `gc: true` lets Yjs collect deleted items and gives up restore of those old deletions.
+
+Which combination a host uses depends on whether it ships version history. Pen does not pick one.

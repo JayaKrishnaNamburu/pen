@@ -1,5 +1,9 @@
 import type { Editor, Extension, InlineCompletionController } from "@input/pen-types";
-import { createDecorationSet, ensureInlineCompletionController } from "@input/pen-core";
+import {
+	aiAutocompleteControllerFacet,
+	createDecorationSet,
+	ensureInlineCompletionController,
+} from "@input/pen-core";
 import { AI_AUTOCOMPLETE_CONTROLLER_SLOT, defineExtension } from "@input/pen-types";
 import type { AutocompleteController, AutocompleteExtensionConfig } from "./types";
 import { AutocompleteControllerImpl } from "./autocompleteController";
@@ -26,11 +30,11 @@ export function autocompleteExtension(
 			controller = new AutocompleteControllerImpl(editor, config, {
 				inlineCompletion,
 			});
-			editor.internals.setSlot(AUTOCOMPLETE_CONTROLLER_SLOT, controller);
+			editor.internals.assignSlot(AUTOCOMPLETE_CONTROLLER_SLOT, controller);
 		},
 		deactivateClient: async () => {
 			controller?.destroy();
-			activeEditor?.internals.setSlot(AUTOCOMPLETE_CONTROLLER_SLOT, null);
+			activeEditor?.internals.assignSlot(AUTOCOMPLETE_CONTROLLER_SLOT, null);
 			releaseInlineCompletion?.();
 			controller = null;
 			inlineCompletion = null;
@@ -48,8 +52,8 @@ export function getAutocompleteController(
 	editor: Editor,
 ): AutocompleteController | null {
 	return (
-		editor.internals.getSlot<AutocompleteController>(
-			AUTOCOMPLETE_CONTROLLER_SLOT,
-		) ?? null
+		(editor.facet(
+			aiAutocompleteControllerFacet,
+		) as AutocompleteController | null) ?? null
 	);
 }

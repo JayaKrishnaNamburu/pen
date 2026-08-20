@@ -7,7 +7,7 @@ export function useBlockList(editor?: Editor) {
   const resolvedEditor = editor ?? useEditorContext().editor;
 
   return useExternalStore(
-    (callback) => resolvedEditor.onDocumentCommit(() => callback()),
+    (callback) => resolvedEditor.on("commit", () => callback()),
     () => [...getRootBlockIds(resolvedEditor)],
     stringArrayEqual,
   );

@@ -332,7 +332,7 @@ describe("blocksToOps table materialization", () => {
 		editor.destroy();
 	});
 
-	it("drops schema-unknown imported blocks before converting them to ops", () => {
+	it("DUR3: passthrough resolve keeps schema-unknown pending blocks at the import filter", () => {
 		const editor = createEditor({
 			preset: noDefaultExtensionsPreset,
 		});
@@ -345,13 +345,12 @@ describe("blocksToOps table materialization", () => {
 			editor.schema,
 		);
 
-		expect(normalized.blocks.map((block) => block.type)).toEqual(["heading"]);
-		expect(normalized.violations).toContainEqual(
-			expect.objectContaining({
-				blockType: "customWidget",
-				reason: "unknown-block-type",
-			}),
-		);
+		expect(normalized.blocks.map((block) => block.type)).toEqual([
+			"customWidget",
+			"heading",
+		]);
+		expect(normalized.violations).toEqual([]);
+		expect(editor.schema.resolve("customWidget")?.type).toBe("customWidget");
 
 		editor.destroy();
 	});

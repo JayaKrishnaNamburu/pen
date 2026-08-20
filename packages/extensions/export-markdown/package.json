@@ -34,9 +34,13 @@
   "types": "./dist/index.d.ts",
   "files": [
     "dist",
+    "FIDELITY.md",
     "README.md",
     "LICENSE.md"
   ],
+  "engines": {
+    "node": ">=22"
+  },
   "sideEffects": false,
   "scripts": {
     "build": "tsup",
@@ -46,6 +50,7 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
+    "@input/pen-dom": "workspace:*",
     "@input/pen-markdown-serialization": "workspace:*",
     "@input/pen-types": "workspace:*"
   },

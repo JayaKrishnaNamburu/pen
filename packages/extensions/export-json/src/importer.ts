@@ -3,7 +3,6 @@ import {
   normalizePendingBlocksForImport,
   reportPendingBlockImportViolations,
   type PendingBlock,
-  type ImportedDatabaseData,
 } from "@input/pen-content-ops";
 import {
   generateId,
@@ -91,7 +90,7 @@ export function parseJsonDocument(input: string | PenDocumentJSON): PenDocumentJ
     throw new Error("Invalid Pen JSON document: expected blocks array.");
   }
 
-  return value as unknown as PenDocumentJSON;
+  return sanitizeIngestedJson(value) as PenDocumentJSON;
 }
 
 function jsonBlockToPendingBlock(block: PenBlockJSON): PendingBlock {
@@ -115,7 +114,6 @@ function jsonBlockToPendingBlock(block: PenBlockJSON): PendingBlock {
     ...(block.children
       ? { children: block.children.map(jsonBlockToPendingBlock) }
       : {}),
-    ...(block.database ? { database: block.database as ImportedDatabaseData } : {}),
   };
 }
 
@@ -160,9 +158,7 @@ function buildOpsWithIds(
       position,
     });
 
-    if (block.type === "database" && block.database) {
-      materializeDatabaseBlock(ops, blockId, block.database);
-    } else if (block.type === "table" && block.children) {
+    if (block.type === "table" && block.children) {
       materializeTableChildren(ops, blockId, block.children);
     } else {
       materializeInlineContent(ops, blockId, block);
@@ -193,56 +189,6 @@ function buildDeleteExistingBlockOps(editor: Editor): DocumentOp[] {
       type: "delete-block",
       blockId: handle.id,
     }));
-}
-
-function materializeDatabaseBlock(
-  ops: DocumentOp[],
-  blockId: string,
-  database: ImportedDatabaseData,
-): void {
-  if (database.columns.length > 0) {
-    ops.push({
-      type: "update-table-columns",
-      blockId,
-      columns: database.columns,
-    } as DocumentOp);
-  }
-
-  for (let rowIndex = 0; rowIndex < database.rows.length; rowIndex += 1) {
-    const row = database.rows[rowIndex]!;
-    ops.push({
-      type: "database-insert-row",
-      blockId,
-      index: rowIndex,
-      rowId: row.id,
-      values: row.values,
-    } as DocumentOp);
-  }
-
-  if (database.views && database.views.length > 0) {
-    const [firstView, ...remainingViews] = database.views;
-    ops.push({
-      type: "database-update-view",
-      blockId,
-      patch: firstView,
-    } as DocumentOp);
-
-    for (const view of remainingViews) {
-      ops.push({
-        type: "database-add-view",
-        blockId,
-        view,
-      } as DocumentOp);
-    }
-  }
-
-  if (database.primaryViewId) {
-    ops.push({
-      type: "database-set-active-view",
-      blockId,
-      viewId: database.primaryViewId,
-    } as DocumentOp);
-  }
 }
 
 function materializeTableChildren(
@@ -448,13 +394,33 @@ function canReuseJsonBlockIds(
   return true;
 }
 
+const REJECTED_OWN_KEYS = new Set(["__proto__", "constructor", "prototype"]);
+
+function sanitizeIngestedJson(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(sanitizeIngestedJson);
+  }
+  if (!isRecord(value)) {
+    return value;
+  }
+  const clean = Object.create(null) as Record<string, unknown>;
+  for (const key of Object.keys(value)) {
+    if (REJECTED_OWN_KEYS.has(key)) {
+      continue;
+    }
+    clean[key] = sanitizeIngestedJson(value[key]);
+  }
+  return clean;
+}
+
 function cleanProps(props: Record<string, unknown>): Record<string, unknown> {
   const cleaned: Record<string, unknown> = {};
 
   for (const [key, value] of Object.entries(props)) {
-    if (value !== undefined) {
-      cleaned[key] = value;
+    if (REJECTED_OWN_KEYS.has(key) || value === undefined) {
+      continue;
     }
+    cleaned[key] = value;
   }
 
   return cleaned;

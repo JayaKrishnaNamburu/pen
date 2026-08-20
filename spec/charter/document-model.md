@@ -7,7 +7,7 @@ Describe the document shape and read model that package specs build on.
 ## Core Concepts
 
 - Pen uses one block-native document model.
-- Blocks may contain inline content, structured child blocks, or specialized surfaces such as tables and databases.
+- Blocks may contain inline content, structured child blocks, or specialized surfaces such as tables.
 - `DocumentState` and `BlockHandle` provide the read model used by renderers, exporters, tools, and extensions.
 - Selection may target text, blocks, or grid cells depending on the active surface.
 

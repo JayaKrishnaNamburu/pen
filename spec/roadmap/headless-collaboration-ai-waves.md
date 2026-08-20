@@ -8,7 +8,7 @@ This document is intentionally roadmap-oriented. The rest of `spec/` remains cur
 
 ## Product Boundary
 
-Pen must remain a headless, open source editor library.
+Pen must remain a headless, source-available editor library.
 
 Pen should provide generic primitives for:
 
@@ -394,7 +394,7 @@ exportPlainText(editor, options): string
 - host block override works without modifying schema,
 - suggestion export modes behave consistently,
 - plain text traversal includes nested children,
-- database/table export still works,
+- table export still works,
 - unknown target falls back safely.
 
 ### Wave 4 Input Impact

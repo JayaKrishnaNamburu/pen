@@ -29,7 +29,6 @@ Provide a stable overview of the workspace layout and the spec paths that mirror
 - `@input/pen-ai-suggestions` -> `packages/extensions/ai-suggestions.md`
 - `@input/pen-ai-tools` -> `packages/extensions/ai-tools.md`
 - `@input/pen-ai` -> `packages/extensions/ai.md`
-- `@input/pen-database` -> `packages/extensions/database.md`
 - `@input/pen-delta-stream` -> `packages/extensions/delta-stream.md`
 - `@input/pen-document-ops` -> `packages/extensions/document-ops.md`
 - `@input/pen-export-html` -> `packages/extensions/export-html.md`

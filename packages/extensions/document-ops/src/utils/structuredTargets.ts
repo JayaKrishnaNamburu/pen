@@ -19,7 +19,6 @@ import { getAvailableToolBlockSchemas } from "./blockTypePolicy";
 
 const INLINE_CONTENT_TYPE = "inline";
 const TABLE_BLOCK_TYPE = "table";
-const DATABASE_BLOCK_TYPE = "database";
 
 export const STRUCTURED_TARGET_OPERATION_IDS = [
 	"replace_text",
@@ -38,11 +37,6 @@ export const STRUCTURED_TARGET_OPERATION_IDS = [
 	"delete_column",
 	"set_cell_text",
 	"update_columns",
-	"add_column",
-	"update_column",
-	"update_cell",
-	"add_view",
-	"set_active_view",
 ] as const;
 
 export type StructuredTargetOperationId =
@@ -140,21 +134,6 @@ function buildStructuredTargetDescriptor(
 		};
 	}
 
-	if (block.type === DATABASE_BLOCK_TYPE) {
-		return {
-			kind: "database",
-			blockId: block.id,
-			blockType: block.type,
-			documentProfile: editor.documentProfile,
-			editability,
-			rowCount: block.tableRowCount(),
-			columns: [...block.tableColumns()],
-			views: [...block.databaseViews()],
-			activeViewId:
-				block.databaseActiveView()?.id ?? block.databasePrimaryViewId(),
-		};
-	}
-
 	return {
 		kind: "block",
 		blockId: block.id,
@@ -190,23 +169,6 @@ function listValidTargetOperations(
 			"delete_column",
 			"set_cell_text",
 			"update_columns",
-		];
-	}
-
-	if (target.kind === "database") {
-		return [
-			"update_props",
-			"insert_before",
-			"insert_after",
-			"move_block",
-			"delete_block",
-			"convert_block",
-			"add_column",
-			"update_column",
-			"insert_row",
-			"update_cell",
-			"add_view",
-			"set_active_view",
 		];
 	}
 

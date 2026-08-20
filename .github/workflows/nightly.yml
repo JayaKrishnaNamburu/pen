@@ -1,0 +1,66 @@
+# Wave 0.6 nightly. New file so this does not race H.7 / H.8 / E.4 edits to
+# ci.yml.
+#
+# Logs a seed every run and passes PEN_FUZZ_SEED into fuzz:nightly, which runs
+# the I2/I3 property suite at 1M ops. Browser fuzz is Wave 5 onward.
+
+name: Nightly
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: nightly-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fuzz-nightly:
+    timeout-minutes: 40
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Log fuzz seed
+        id: seed
+        run: |
+          SEED="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-$(date -u +%s)"
+          echo "seed=$SEED" >> "$GITHUB_OUTPUT"
+          echo "Nightly fuzz seed: $SEED"
+
+      - name: Detect conformance package
+        id: conformance
+        run: |
+          if [ -f packages/tooling/conformance/package.json ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "Handover: @input/pen-conformance is not in this checkout."
+            echo "Handover: @input/pen-conformance is not in this checkout; fuzz:nightly would consume PEN_FUZZ_SEED=${{ steps.seed.outputs.seed }}."
+          fi
+
+      - name: Set up pnpm
+        if: ${{ steps.conformance.outputs.present == 'true' }}
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+
+      - name: Set up Node.js
+        if: ${{ steps.conformance.outputs.present == 'true' }}
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        if: ${{ steps.conformance.outputs.present == 'true' }}
+        run: pnpm install --frozen-lockfile
+
+      - name: Run nightly property fuzz
+        if: ${{ steps.conformance.outputs.present == 'true' }}
+        env:
+          PEN_FUZZ_SEED: ${{ steps.seed.outputs.seed }}
+        run: pnpm --filter @input/pen-conformance run fuzz:nightly

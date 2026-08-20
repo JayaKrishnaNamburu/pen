@@ -1,12 +1,12 @@
 import type { AppPlacement } from "./block";
+import type { BlockCapabilityKey, BlockCapabilityMap } from "./capabilities";
 import type { LayoutProps } from "./layout";
 import type {
   ColumnType,
   SelectOption,
   NumberFormat,
   DateFormat,
-  DatabaseViewState,
-} from "./database";
+} from "./columns";
 
 export interface TableRowHandle {
   readonly id: string;
@@ -77,6 +77,10 @@ export interface BlockHandle {
   }>;
   length(): number;
 
+  as<K extends BlockCapabilityKey>(
+    capability: K,
+  ): BlockCapabilityMap[K] | null;
+
   meta(namespace: string): Readonly<Record<string, unknown>> | null;
 
   tableRowCount(): number;
@@ -84,9 +88,6 @@ export interface BlockHandle {
   tableRow(row: number): TableRowHandle | null;
   tableCell(row: number, col: number): TableCellHandle | null;
   tableColumns(): readonly TableColumnSchema[];
-  databaseViews(): readonly DatabaseViewState[];
-  databasePrimaryViewId(): string | null;
-  databaseActiveView(): DatabaseViewState | null;
 }
 
 export interface AppHandle {

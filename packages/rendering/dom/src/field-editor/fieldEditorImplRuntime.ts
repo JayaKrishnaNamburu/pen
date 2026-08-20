@@ -64,6 +64,28 @@ import {
 	resolveInputMode,
 } from "./fieldEditorImplHelpers";
 
+/**
+ * HOST4 backend split (`spec-v2/15-host-integration.md`). See
+ * `FIELD-EDITOR-BACKENDS.md`.
+ *
+ * `_resolveBackendClass` feature-detects `globalThis.EditContext` as a
+ * constructor and falls back to contenteditable. Expanded (multi-block)
+ * surfaces and table-cell editing always use contenteditable, even when
+ * EditContext exists.
+ *
+ * Degradation when EditContext is absent: IME uses the composition-event
+ * path (Safari late mutation, GBoard 50ms heuristic) instead of EditContext
+ * `textupdate`; composition underline and IME window bounds follow the native
+ * contenteditable caret rather than `textformatupdate` /
+ * `characterboundsupdate`. The field stays editable — typing, paste, and
+ * undo still apply.
+ */
+export const FIELD_EDITOR_BACKEND_SPLIT = {
+	preferred: "edit-context",
+	fallback: "contenteditable",
+	alwaysContentEditable: ["expanded", "table-cell"],
+} as const;
+
 export abstract class FieldEditorImplRuntime extends FieldEditorImplSelection {
 	togglePendingMark(markType: string): boolean {
 		return this._pendingMarkController.toggle(
@@ -179,6 +201,10 @@ export abstract class FieldEditorImplRuntime extends FieldEditorImplSelection {
 
 	// ── Internal ─────────────────────────────────────────────
 
+	// HOST4: EditContext is above the HOST3 floor. Detect the constructor;
+	// contenteditable is the real fallback. Expanded and table-cell surfaces
+	// always use contenteditable even when EditContext exists. See
+	// FIELD_EDITOR_BACKEND_SPLIT and FIELD-EDITOR-BACKENDS.md.
 	protected _resolveBackendClass(): InputBackendConstructor {
 		if (this._mode === "expanded") {
 			return ExpandedContentEditableBackend;

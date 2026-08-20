@@ -245,9 +245,10 @@ describe("@input/pen-react table rendering", () => {
 
 		handleCopy(editor, { clipboardData } as ClipboardEvent);
 
-		const penBlocks = JSON.parse(
+		const copied = JSON.parse(
 			clipboardData.getData("application/x-pen-blocks"),
-		) as Array<{ type: string }>;
+		) as { blocks: Array<{ type: string }> };
+		const penBlocks = copied.blocks;
 
 		expect(penBlocks.map((block) => block.type)).toEqual(["table"]);
 		expect(clipboardData.getData("text/plain")).not.toContain("After");
@@ -323,9 +324,10 @@ describe("@input/pen-react table rendering", () => {
 
 		handleCopy(editor, { clipboardData } as ClipboardEvent);
 
-		const penBlocks = JSON.parse(
+		const copied = JSON.parse(
 			clipboardData.getData("application/x-pen-blocks"),
-		) as Array<{ type: string }>;
+		) as { blocks: Array<{ type: string }> };
+		const penBlocks = copied.blocks;
 
 		expect(penBlocks.map((block) => block.type)).toEqual([
 			"paragraph",

@@ -264,25 +264,19 @@ body {
 }
 
 [data-pen-editor-block][data-block-type="table"],
-[data-pen-editor-block][data-block-type="database"],
-[data-pen-ai-structured-virtual-target][data-block-type="table"],
-[data-pen-ai-structured-virtual-target][data-block-type="database"] {
+[data-pen-ai-structured-virtual-target][data-block-type="table"] {
   overflow: visible;
 }
 
 [data-pen-editor-block][data-block-type="table"],
-[data-pen-editor-block][data-block-type="database"],
-[data-pen-ai-structured-virtual-target][data-block-type="table"],
-[data-pen-ai-structured-virtual-target][data-block-type="database"] {
+[data-pen-ai-structured-virtual-target][data-block-type="table"] {
   width: max-content;
   min-width: 100%;
   max-width: none;
 }
 
 [data-pen-editor-block][data-block-type="table"] .pen-table-shell,
-[data-pen-editor-block][data-block-type="database"] .pen-table-shell,
-[data-pen-ai-structured-virtual-target][data-block-type="table"] [data-structured-target-preview-item],
-[data-pen-ai-structured-virtual-target][data-block-type="database"] [data-structured-target-preview-item] {
+[data-pen-ai-structured-virtual-target][data-block-type="table"] [data-structured-target-preview-item] {
   display: inline-flex;
   align-items: flex-start;
   gap: 10px;
@@ -290,8 +284,7 @@ body {
   min-width: 100%;
 }
 
-[data-pen-editor-block][data-block-type="table"] .pen-table-main,
-[data-pen-editor-block][data-block-type="database"] .pen-table-main {
+[data-pen-editor-block][data-block-type="table"] .pen-table-main {
   display: inline-flex;
   flex-direction: column;
   width: max-content;
@@ -463,297 +456,6 @@ body {
   width: 16px;
   height: 16px;
   accent-color: var(--accent);
-  cursor: pointer;
-}
-
-/* ── Database alternate views ─────────────────── */
-
-.pen-database {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.pen-db-title-bar,
-.pen-db-toolbar,
-.pen-db-pagination {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.pen-db-title {
-  font-weight: 700;
-}
-
-.pen-db-view-tabs {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.pen-db-view-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--surface) 92%, var(--bg) 8%);
-}
-
-.pen-db-view-tab-active {
-  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
-}
-
-.pen-db-view-tab-button,
-.pen-db-view-tab-remove,
-.pen-db-add-view-btn,
-.pen-db-toolbar-btn,
-.pen-db-pagination button,
-.pen-db-calendar-header button {
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--surface) 92%, var(--bg) 8%);
-  color: var(--text);
-  cursor: pointer;
-}
-
-.pen-db-view-tab-button,
-.pen-db-add-view-btn,
-.pen-db-toolbar-btn,
-.pen-db-pagination button,
-.pen-db-calendar-header button {
-  padding: 6px 10px;
-}
-
-.pen-db-view-tab-remove {
-  width: 24px;
-  height: 24px;
-  padding: 0;
-}
-
-.pen-db-global-search,
-.pen-db-title-input,
-.pen-db-filter-row input,
-.pen-db-filter-row select,
-.pen-db-filter-group-header select,
-.pen-db-sort-row select,
-.pen-db-col-vis-panel select {
-  min-height: 32px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
-  color: var(--text);
-}
-
-.pen-db-global-search,
-.pen-db-title-input,
-.pen-db-filter-row input {
-  padding: 6px 10px;
-}
-
-.pen-db-add-view-menu,
-.pen-db-filter-panel,
-.pen-db-col-vis-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 12px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--surface) 96%, var(--bg) 4%);
-}
-
-.pen-db-filter-header,
-.pen-db-col-vis-header,
-.pen-db-calendar-header,
-.pen-db-calendar-unscheduled-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.pen-db-sort-row,
-.pen-db-filter-row,
-.pen-db-filter-group-header,
-.pen-db-filter-group-actions,
-.pen-db-col-vis-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.pen-db-filter-group {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 10px;
-  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--surface) 94%, var(--bg) 6%);
-}
-
-.pen-db-list-view,
-.pen-db-gallery-view,
-.pen-db-calendar-view {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  width: 100%;
-  min-width: 100%;
-  padding: 12px;
-}
-
-.pen-db-board-view {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(260px, 1fr);
-  gap: 12px;
-  width: 100%;
-  min-width: 100%;
-  padding: 12px;
-  overflow-x: auto;
-}
-
-.pen-db-list-row,
-.pen-db-board-card,
-.pen-db-gallery-card,
-.pen-db-calendar-card {
-  display: flex;
-  gap: 10px;
-  padding: 12px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--surface) 96%, var(--bg) 4%);
-}
-
-.pen-db-board-lane,
-.pen-db-calendar-unscheduled {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  min-width: 0;
-}
-
-.pen-db-board-lane {
-  min-height: 240px;
-  padding: 10px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--surface) 94%, var(--bg) 6%);
-}
-
-.pen-db-board-lane-header,
-.pen-db-group-cell,
-.pen-db-calendar-day-label,
-.pen-db-calendar-unscheduled-header {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-muted);
-}
-
-.pen-db-board-lane-cards,
-.pen-db-list-fields,
-.pen-db-board-card-fields,
-.pen-db-gallery-card-fields,
-.pen-db-calendar-card-fields,
-.pen-db-calendar-day-cards,
-.pen-db-calendar-unscheduled-cards {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-}
-
-.pen-db-list-field,
-.pen-db-board-field,
-.pen-db-gallery-field,
-.pen-db-calendar-field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-.pen-db-list-field-label,
-.pen-db-board-field-label,
-.pen-db-gallery-field-label,
-.pen-db-calendar-field-label {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.pen-db-list-field-value,
-.pen-db-board-field-value,
-.pen-db-gallery-field-value,
-.pen-db-calendar-field-value {
-  min-width: 0;
-}
-
-.pen-db-gallery-view {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-}
-
-.pen-db-calendar-view {
-  overflow: hidden;
-}
-
-.pen-db-calendar-weekdays,
-.pen-db-calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.pen-db-calendar-weekday {
-  padding: 6px 8px;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.pen-db-calendar-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-height: 132px;
-  padding: 10px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--surface) 96%, var(--bg) 4%);
-}
-
-.pen-db-calendar-cell-muted {
-  opacity: 0.55;
-}
-
-.pen-db-calendar-empty {
-  padding: 24px;
-  border: 1px dashed var(--border);
-  border-radius: 12px;
-  color: var(--text-muted);
-}
-
-.pen-db-list-add-row {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 40px;
-  padding: 0 12px;
-  border: 1px dashed var(--border);
-  border-radius: 12px;
-  color: var(--text-muted);
   cursor: pointer;
 }
 
@@ -1148,11 +850,6 @@ body {
 }
 
 [data-pen-editor-block][data-block-type="table"][data-selected="true"] [data-pen-table-frame] {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-[data-pen-editor-block][data-block-type="database"][data-selected="true"] [data-pen-table-frame] {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }

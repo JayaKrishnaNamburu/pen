@@ -22,7 +22,7 @@ describe("structured planner normalization", () => {
 		]);
 	});
 
-	it("normalizes database planner responses with inferred block types and confidence objects", () => {
+	it("normalizes block insert planner responses with inferred block types and confidence objects", () => {
 		const result = parseStructuredPlanResult(
 			[
 				"```json",
@@ -32,32 +32,14 @@ describe("structured planner normalization", () => {
 						plans: [
 							{
 								kind: "block_insert",
-								blockId: "database-1",
+								blockId: "heading-1",
 								block: {
-									content: {
-										columns: [{ id: "name", title: "Name", type: "text" }],
-									},
+									type: "heading",
 								},
 								position: {
 									relativeTo: "active",
 									placement: "after",
 								},
-								confidence: 0.95,
-							},
-							{
-								kind: "database_edit",
-								target: {
-									blockId: "database-1",
-								},
-								steps: [
-									{
-										op: "insert_row",
-										rowId: "row-1",
-										values: {
-											name: "Alice",
-										},
-									},
-								],
 								confidence: 0.95,
 							},
 						],
@@ -67,7 +49,7 @@ describe("structured planner normalization", () => {
 				),
 				"```",
 			].join("\n"),
-			"database",
+			"block",
 		);
 
 		expect(result.planState).toBe("validated");
@@ -78,22 +60,10 @@ describe("structured planner normalization", () => {
 			plans: [
 				{
 					kind: "block_insert",
-					blockId: "database-1",
-					blockType: "database",
+					blockId: "heading-1",
+					blockType: "heading",
 					position: "last",
 					confidence: { score: 0.95 },
-				},
-				{
-					kind: "database_edit",
-					blockId: "database-1",
-					confidence: { score: 0.95 },
-					steps: [
-						{
-							op: "insert_row",
-							rowId: "row-1",
-							values: { name: "Alice" },
-						},
-					],
 				},
 			],
 		});

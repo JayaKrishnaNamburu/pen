@@ -1,5 +1,6 @@
 import { defineBlock, prop } from "@input/pen-types";
 import type { HTMLImportElement } from "@input/pen-types";
+import { directionProp } from "../directionProp";
 
 const CALLOUT_TYPE_PATTERN =
   /\bcallout[- ]?(info|warning|error)\b/i;
@@ -17,6 +18,7 @@ export const callout = defineBlock("callout", {
       .default("info")
       .describe("Callout severity"),
     parentId: prop.string().optional().describe("Container parent block"),
+    direction: directionProp,
   },
   content: "inline",
   fieldEditor: "richtext",
@@ -59,7 +61,9 @@ export const callout = defineBlock("callout", {
       };
     },
     toHTML: (block) => {
-      const type = block.props.type ?? "info";
+      const raw = block.props.type;
+      const type =
+        raw === "warning" || raw === "error" || raw === "info" ? raw : "info";
       return `<div class="callout callout-${type}">${block.content ?? ""}</div>`;
     },
     fromHTML: (el: HTMLImportElement) => {

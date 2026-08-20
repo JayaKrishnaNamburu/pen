@@ -149,7 +149,7 @@ function copyInlineSelection(
 	}
 
 	const plainText = mdContent || selectedText;
-	writePenClipboard([penBlock], htmlContent, plainText, event);
+	writePenClipboard([penBlock], htmlContent, plainText, event, editor);
 }
 
 function copyBlockSelection(editor: Editor, event?: ClipboardEvent): void {
@@ -231,7 +231,7 @@ function copyBlockSelection(editor: Editor, event?: ClipboardEvent): void {
 	const plainText =
 		mdParts.join("\n") || blocks.map((b) => b.textContent()).join("\n");
 
-	writePenClipboard(penBlocks, htmlContent, plainText, event);
+	writePenClipboard(penBlocks, htmlContent, plainText, event, editor);
 }
 
 // ── Cut ─────────────────────────────────────────────────────

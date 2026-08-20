@@ -8,7 +8,7 @@ import {
 export const editorBenchmarks: BenchDefinition[] = [
   {
     ...EDITOR_APPLY_INSERT_TEXT_X1000_BENCH,
-    fn(b) {
+    async fn(b) {
       const editor = createTestEditor({
         blocks: [{ type: "paragraph" }],
       });
@@ -26,11 +26,12 @@ export const editorBenchmarks: BenchDefinition[] = [
         ]);
       }
       b.end();
+      await editor.destroy();
     },
   },
   {
     ...EDITOR_APPLY_INSERT_DELETE_BLOCK_X500_BENCH,
-    fn(b) {
+    async fn(b) {
       const editor = createTestEditor();
 
       b.start();
@@ -48,6 +49,7 @@ export const editorBenchmarks: BenchDefinition[] = [
         editor.apply([{ type: "delete-block", blockId: id }]);
       }
       b.end();
+      await editor.destroy();
     },
   },
 ];

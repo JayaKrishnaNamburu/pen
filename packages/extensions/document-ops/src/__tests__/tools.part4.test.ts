@@ -28,16 +28,6 @@ function createFakeEditor(documentProfile: Editor["documentProfile"]): Editor {
 	} as unknown as Editor;
 }
 
-function createDatabaseMarkdown(): string {
-	return [
-		"<!-- pen-database:%7B%22title%22%3A%22Roadmap%22%2C%22dataSource%22%3A%22local%22%2C%22columns%22%3A%5B%7B%22id%22%3A%22name%22%2C%22title%22%3A%22Name%22%2C%22type%22%3A%22text%22%7D%5D%2C%22rows%22%3A%5B%7B%22id%22%3A%22roadmap-1%22%2C%22values%22%3A%7B%22name%22%3A%22Ship%20importer%22%7D%7D%5D%2C%22primaryViewId%22%3Anull%7D -->",
-		"",
-		"| Name |",
-		"| --- |",
-		"| Ship importer |",
-	].join("\n");
-}
-
 function createMockBlockHandle(input: {
 	id: string;
 	type: string;
@@ -59,9 +49,6 @@ function createMockBlockHandle(input: {
 	tableCell: () => null;
 	tableRow: () => null;
 	tableColumns: () => never[];
-	databaseViews: () => never[];
-	databasePrimaryViewId: () => null;
-	databaseActiveView: () => null;
 	prev?: unknown;
 	next?: unknown;
 } {
@@ -76,9 +63,6 @@ function createMockBlockHandle(input: {
 		tableCell: () => null,
 		tableRow: () => null,
 		tableColumns: () => [],
-		databaseViews: () => [],
-		databasePrimaryViewId: () => null,
-		databaseActiveView: () => null,
 	};
 }
 
@@ -145,13 +129,6 @@ function createStructuredTargetEditor(
 	activeBlockId: string,
 	documentProfile: Editor["documentProfile"] = "structured",
 ): Editor {
-	const views = [
-		{
-			id: "view-1",
-			type: "table" as const,
-			title: "Default view",
-		},
-	];
 	const blocks = [
 		{
 			id: "paragraph-1",
@@ -163,9 +140,6 @@ function createStructuredTargetEditor(
 			tableRowCount: () => 0,
 			tableColumnCount: () => 0,
 			tableColumns: () => [],
-			databaseViews: () => [],
-			databasePrimaryViewId: () => null,
-			databaseActiveView: () => null,
 		},
 		{
 			id: "table-1",
@@ -180,26 +154,6 @@ function createStructuredTargetEditor(
 				{ id: "col-1", title: "Name", type: "text" as const },
 				{ id: "col-2", title: "Status", type: "text" as const },
 			],
-			databaseViews: () => [],
-			databasePrimaryViewId: () => null,
-			databaseActiveView: () => null,
-		},
-		{
-			id: "database-1",
-			type: "database",
-			props: { title: "Roadmap" },
-			children: [],
-			textContent: () => "",
-			textDeltas: () => [],
-			tableRowCount: () => 2,
-			tableColumnCount: () => 2,
-			tableColumns: () => [
-				{ id: "name", title: "Name", type: "text" as const },
-				{ id: "owner", title: "Owner", type: "text" as const },
-			],
-			databaseViews: () => views,
-			databasePrimaryViewId: () => "view-1",
-			databaseActiveView: () => views[0],
 		},
 		{
 			id: "subdocument-1",
@@ -211,9 +165,6 @@ function createStructuredTargetEditor(
 			tableRowCount: () => 0,
 			tableColumnCount: () => 0,
 			tableColumns: () => [],
-			databaseViews: () => [],
-			databasePrimaryViewId: () => null,
-			databaseActiveView: () => null,
 		},
 	];
 

@@ -1,0 +1,40 @@
+{
+  "id": "article",
+  "source": "Browser article",
+  "provenance": "synthetic-until-capture",
+  "approximates": "A typical news/article selection: <article>, heading, paragraphs, link, pre/code, figure/img/figcaption.",
+  "markers": ["article", "figure", "figcaption"],
+  "imageCount": 1,
+  "outcomes": {
+    "headings": "h1",
+    "lists": "none",
+    "tables": "none",
+    "code": "codeBlock",
+    "links": "kept",
+    "images": "1 remote src kept; title becomes caption; figcaption becomes a paragraph",
+    "marks": "italic, bold, link",
+    "colors": "none"
+  },
+  "intentionalLosses": [
+    "figure/figcaption wrappers unwrap; caption text is a sibling paragraph, not image.caption (title attribute is)"
+  ],
+  "blocks": [
+    { "type": "heading", "level": 1, "text": "Why paste fidelity matters" },
+    {
+      "type": "paragraph",
+      "text": "Lead with a citation.",
+      "marks": [{ "type": "link", "text": "citation" }]
+    },
+    {
+      "type": "paragraph",
+      "text": "Second paragraph with emphasis and weight.",
+      "marks": [
+        { "type": "italic", "text": "emphasis" },
+        { "type": "bold", "text": "weight" }
+      ]
+    },
+    { "type": "codeBlock", "text": "code sample" },
+    { "type": "image" },
+    { "type": "paragraph", "text": "Caption text" }
+  ]
+}

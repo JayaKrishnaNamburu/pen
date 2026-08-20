@@ -317,7 +317,7 @@ export function useEditorContentGestures(options: UseEditorContentGesturesOption
 	const focusRole = focusBlockEl?.getAttribute(DATA_ATTRS.surfaceRole) ?? null; const focusType = focusBlockEl?.getAttribute("data-block-type");
 	const needsBoundarySnap = focusRole === "structural" || focusRole === "delegated" ||
 	focusType === "divider" || focusType === "image" || focusType === "codeBlock" ||
-	focusType === "table" || focusType === "database"; if (needsBoundarySnap) {
+	focusType === "table"; if (needsBoundarySnap) {
 	const selectingForward = isSelectionForward( mappedSelection.anchor, mappedSelection.focus,
 	); const snappedPoint = pointToEditorSelectionPoint( root,
 	clientX, clientY, {

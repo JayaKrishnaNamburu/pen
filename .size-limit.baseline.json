@@ -1,0 +1,244 @@
+{
+  "regressionPercent": 10,
+  "overrideLabel": "size-limit-override",
+  "entries": [
+    {
+      "name": "@input/pen-types",
+      "path": "packages/types/dist/index.mjs",
+      "baselineBytes": 30625,
+      "limitBytes": 30625,
+      "note": "Measured from packages/types/dist/index.mjs after a local build."
+    },
+    {
+      "name": "@input/pen-transport-direct",
+      "path": "packages/transports/direct/dist/index.mjs",
+      "baselineBytes": 3880,
+      "limitBytes": 3880,
+      "note": "Measured from packages/transports/direct/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+    },
+    {
+      "name": "@input/pen-shortcuts",
+      "path": "packages/extensions/shortcuts/dist/index.mjs",
+      "baselineBytes": 4876,
+      "limitBytes": 4876,
+      "note": "Measured from packages/extensions/shortcuts/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+    },
+    {
+      "name": "@input/pen-export-xml",
+      "path": "packages/extensions/export-xml/dist/index.mjs",
+      "baselineBytes": 8866,
+      "limitBytes": 8866,
+      "note": "Measured from packages/extensions/export-xml/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+    },
+    {
+      "name": "@input/pen-undo",
+      "path": "packages/extensions/undo/dist/index.mjs",
+      "baselineBytes": 13458,
+      "limitBytes": 13458,
+      "note": "Measured from packages/extensions/undo/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+    },
+    {
+      "name": "@input/pen-ai",
+      "path": "packages/extensions/ai/dist/index.mjs",
+      "baselineBytes": 520171,
+      "limitBytes": 520171,
+      "note": "Measured from packages/extensions/ai/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+    },
+    {
+      "name": "@input/pen-ai-autocomplete",
+      "path": "packages/extensions/ai-autocomplete/dist/index.mjs",
+      "baselineBytes": 68096,
+      "limitBytes": 68096,
+      "note": "Measured from packages/extensions/ai-autocomplete/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+    },
+    {
+      "name": "@input/pen-ai-skills",
+      "path": "packages/extensions/ai-skills/dist/index.mjs",
+      "baselineBytes": 4531,
+      "limitBytes": 4531,
+      "note": "Measured from packages/extensions/ai-skills/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+    },
+    {
+      "name": "@input/pen-ai-suggestions",
+      "path": "packages/extensions/ai-suggestions/dist/index.mjs",
+      "baselineBytes": 43353,
+      "limitBytes": 43353,
+      "note": "Measured from packages/extensions/ai-suggestions/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+    },
+    {
+      "name": "@input/pen-ai-tools",
+      "path": "packages/extensions/ai-tools/dist/index.mjs",
+      "baselineBytes": 1186,
+      "limitBytes": 1186,
+      "note": "Measured from packages/extensions/ai-tools/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+    },
+    {
+      "name": "@input/pen-assets-memory",
+      "path": "packages/tooling/assets-memory/dist/index.mjs",
+      "baselineBytes": 927,
+      "limitBytes": 927,
+      "note": "Measured from packages/tooling/assets-memory/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+    },
+    {
+      "name": "@input/pen-bench",
+      "path": "packages/tooling/bench/dist/index.mjs",
+      "baselineBytes": 1421,
+      "limitBytes": 1421,
+      "note": "Measured from packages/tooling/bench/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+    },
+    {
+      "name": "@input/pen-content-ops",
+      "path": "packages/shared/content-ops/dist/index.mjs",
+      "baselineBytes": 29428,
+      "limitBytes": 29428,
+      "note": "Measured from packages/shared/content-ops/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+    },
+    {
+      "name": "@input/pen-core",
+      "path": "packages/core/dist/index.mjs",
+      "baselineBytes": 275169,
+      "limitBytes": 275169,
+      "note": "Measured from packages/core/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+    },
+    {
+      "name": "@input/pen-crdt-yjs",
+      "path": "packages/crdt/yjs/dist/index.mjs",
+      "baselineBytes": 54245,
+      "limitBytes": 54245,
+      "note": "Measured from packages/crdt/yjs/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+    },
+    {
+      "name": "@input/pen-delta-stream",
+      "path": "packages/extensions/delta-stream/dist/index.mjs",
+      "baselineBytes": 10269,
+      "limitBytes": 10269,
+      "note": "Measured from packages/extensions/delta-stream/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+    },
+    {
+      "name": "@input/pen-document-ops",
+      "path": "packages/extensions/document-ops/dist/index.mjs",
+      "baselineBytes": 45579,
+      "limitBytes": 45579,
+      "note": "Measured from packages/extensions/document-ops/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+    },
+    {
+      "name": "@input/pen-dom",
+      "path": "packages/rendering/dom/dist/index.mjs",
+      "baselineBytes": 28589,
+      "limitBytes": 28589,
+      "note": "Measured from packages/rendering/dom/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+    },
+    {
+      "name": "@input/pen-export-html",
+      "path": "packages/extensions/export-html/dist/index.mjs",
+      "baselineBytes": 7003,
+      "limitBytes": 7003,
+      "note": "Measured from packages/extensions/export-html/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+    },
+    {
+      "name": "@input/pen-export-json",
+      "path": "packages/extensions/export-json/dist/index.mjs",
+      "baselineBytes": 16573,
+      "limitBytes": 16573,
+      "note": "Measured from packages/extensions/export-json/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+    },
+    {
+      "name": "@input/pen-export-markdown",
+      "path": "packages/extensions/export-markdown/dist/index.mjs",
+      "baselineBytes": 720,
+      "limitBytes": 720,
+      "note": "Measured from packages/extensions/export-markdown/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+    },
+    {
+      "name": "@input/pen-history",
+      "path": "packages/extensions/history/dist/index.js",
+      "baselineBytes": 11886,
+      "limitBytes": 11886,
+      "note": "Measured from packages/extensions/history/dist/index.js via node fs.stat (same method as scripts/size-limit.mjs)."
+    },
+    {
+      "name": "@input/pen-import-html",
+      "path": "packages/extensions/import-html/dist/index.mjs",
+      "baselineBytes": 21015,
+      "limitBytes": 21015,
+      "note": "Measured from packages/extensions/import-html/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+    },
+    {
+      "name": "@input/pen-import-markdown",
+      "path": "packages/extensions/import-markdown/dist/index.mjs",
+      "baselineBytes": 1412,
+      "limitBytes": 1412,
+      "note": "Measured from packages/extensions/import-markdown/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+    },
+    {
+      "name": "@input/pen-input-rules",
+      "path": "packages/extensions/input-rules/dist/index.mjs",
+      "baselineBytes": 9553,
+      "limitBytes": 9553,
+      "note": "Measured from packages/extensions/input-rules/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+    },
+    {
+      "name": "@input/pen-markdown-serialization",
+      "path": "packages/shared/markdown-serialization/dist/index.mjs",
+      "baselineBytes": 10359,
+      "limitBytes": 10359,
+      "note": "Measured from packages/shared/markdown-serialization/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+    },
+    {
+      "name": "@input/pen-multiplayer",
+      "path": "packages/extensions/multiplayer/dist/index.js",
+      "baselineBytes": 20968,
+      "limitBytes": 20968,
+      "note": "Measured from packages/extensions/multiplayer/dist/index.js via node fs.stat (same method as scripts/size-limit.mjs)."
+    },
+    {
+      "name": "@input/pen-preset-default",
+      "path": "packages/presets/default/dist/index.js",
+      "baselineBytes": 1324,
+      "limitBytes": 1324,
+      "note": "Measured from packages/presets/default/dist/index.js via node fs.stat (same method as scripts/size-limit.mjs)."
+    },
+    {
+      "name": "@input/pen-react",
+      "path": "packages/rendering/react/dist/index.mjs",
+      "baselineBytes": 264324,
+      "limitBytes": 264324,
+      "note": "Measured from packages/rendering/react/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+    },
+    {
+      "name": "@input/pen-schema-default",
+      "path": "packages/schema/default/dist/index.mjs",
+      "baselineBytes": 1068,
+      "limitBytes": 1068,
+      "note": "Measured from packages/schema/default/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+    },
+    {
+      "name": "@input/pen-search",
+      "path": "packages/extensions/search/dist/index.mjs",
+      "baselineBytes": 18130,
+      "limitBytes": 18130,
+      "note": "Measured from packages/extensions/search/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+    },
+    {
+      "name": "@input/pen-test",
+      "path": "packages/tooling/test/dist/index.mjs",
+      "baselineBytes": 18429,
+      "limitBytes": 18429,
+      "note": "Measured from packages/tooling/test/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+    },
+    {
+      "name": "@input/pen-transport-sse",
+      "path": "packages/transports/sse/dist/index.mjs",
+      "baselineBytes": 11867,
+      "limitBytes": 11867,
+      "note": "Measured from packages/transports/sse/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+    },
+    {
+      "name": "@input/pen-vue",
+      "path": "packages/rendering/vue/dist/index.mjs",
+      "baselineBytes": 1054,
+      "limitBytes": 1054,
+      "note": "Measured from packages/rendering/vue/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+    }
+  ]
+}

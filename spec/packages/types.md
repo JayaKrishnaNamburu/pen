@@ -12,7 +12,7 @@ This is the contract package for the monorepo. It is the place where packages ag
 
 - Export map: `.`
 - Root export of package-wide contracts via `./types/index`
-- Lightweight runtime helpers such as `defineBlock()`, `defineExtension()`, `prop()`, `resolveSchema()`, `generateId()`, and database/block-capability helpers
+- Lightweight runtime helpers such as `defineBlock()`, `defineExtension()`, `prop()`, `resolveSchema()`, `generateId()`, and block-capability helpers
 - Shared slot keys such as `FIELD_EDITOR_SLOT_KEY`, `SEARCH_CONTROLLER_SLOT`, `MULTIPLAYER_CONTROLLER_SLOT`, `HISTORY_CONTROLLER_SLOT`, and AI/undo-related slots
 - Operation origin contracts such as `OpOriginType`, `StructuredOpOrigin`, `MutationGroupMetadata`, and helpers for resolving origin/group metadata
 - Shared AI operation contracts such as selection targets, scoped-range targets, requested-operation provenance, and low-level range helpers

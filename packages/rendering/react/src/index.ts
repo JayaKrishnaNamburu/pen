@@ -1,3 +1,5 @@
+"use client";
+
 // ── @input/pen-react — React rendering layer for Pen ─────────────
 //
 // Package entry. Re-exports all public API:

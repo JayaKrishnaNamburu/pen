@@ -12,7 +12,6 @@ export {
 } from "./schema";
 export type {
 	PenBlockJSON,
-	PenDatabaseJSON,
 	PenDocumentJSON,
 	PenInlineContentJSON,
 	PenInlineNodeSegmentJSON,

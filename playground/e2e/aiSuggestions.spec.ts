@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { openPlayground } from "./helpers";
 
 test.describe.configure({ mode: "serial" });
 
@@ -67,13 +68,7 @@ test.beforeEach(async ({ page }) => {
 		});
 	});
 
-	await page.goto(`/?room=${createRoomId()}`);
-	const collaborationNameInput = page.getByLabel("Display name");
-	if (await collaborationNameInput.isVisible()) {
-		await collaborationNameInput.fill("Playwright");
-		await page.getByRole("button", { name: "Join playground" }).click();
-	}
-	await expect(page.locator("[data-pen-inline-content]").first()).toBeVisible();
+	await openPlayground(page, `/?room=${createRoomId()}`);
 });
 
 test("renders AI suggestions with the custom line styling", async ({ page }) => {
@@ -95,7 +90,7 @@ test("renders AI suggestions with the custom line styling", async ({ page }) => 
 		textDecorationStyle: window.getComputedStyle(element).textDecorationStyle,
 	}));
 
-	expect(suggestionStyle.style).toContain("background-size: 100% 2px");
+	await expect(suggestionAnchor).toHaveClass(/pen-ai-suggestion-underline/);
 	expect(suggestionStyle.style).not.toContain("text-decoration");
 	expect(suggestionStyle.backgroundImage).not.toBe("none");
 	expect(suggestionStyle.textDecorationLine).toBe("none");
@@ -120,7 +115,7 @@ test("opens the popover and applies the active suggestion", async ({ page }) => 
 	await expect(popover).toContainText("Simplify wording");
 	await expect(popover).toContainText("explored");
 
-	await page.getByRole("button", { name: "Apply" }).click();
+	await page.getByRole("option", { name: "Apply" }).click();
 
 	await expect(firstInline).toContainText(
 		"Once upon a time, Lily explored the enchanted forest.",
@@ -145,7 +140,7 @@ test("dismisses the active suggestion without changing the text", async ({ page 
 	const popover = page.locator("[data-pen-ai-suggestions-popover]");
 	await expect(popover).toBeVisible();
 
-	await page.getByRole("button", { name: "Dismiss" }).click();
+	await page.getByRole("option", { name: "Dismiss" }).click();
 
 	await expect(popover).toHaveCount(0);
 	await expect(page.locator("[data-ai-suggestion-id]")).toHaveCount(0);

@@ -2,6 +2,7 @@ import type { Editor } from "@input/pen-types";
 import type { AIContextualPromptAnchor, AISession } from "@input/pen-ai";
 import { getAIController } from "@input/pen-ai";
 import React from "react";
+import { useIsomorphicLayoutEffect } from "../../hooks/useIsomorphicLayoutEffect";
 import { useSyncExternalStoreWithSelector } from "../../utils/useSyncExternalStoreWithSelector";
 import { areContextualPromptLayoutsEqual, areRectsEqual, resolveAnchorRect, resolveFallbackRect, resolveInsertedAnchorRect, resolveLiveSelectionRect } from "./contextualPromptGeometry";
 import type { ContextualPromptPlacement, UseContextualPromptPlacementOptions } from "./contextualPromptTypes";
@@ -78,7 +79,7 @@ export function useContextualPromptPlacement(
 	} = options;
 	const [layout, setLayout] = React.useState<ContextualPromptPlacement | null>(null);
 
-	React.useLayoutEffect(() => {
+	useIsomorphicLayoutEffect(() => {
 		const sessionId = options.sessionId ?? session?.id;
 		if (!sessionId || !anchor || !surfaceRef?.current) {
 			setLayout(null);

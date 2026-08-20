@@ -8,7 +8,7 @@ import type {
 	ToolRuntime,
 	Unsubscribe,
 } from "@input/pen-types";
-import { isAsyncIterable, resolveToolExecution } from "@input/pen-types";
+import { isAsyncIterable, resolveToolExecution, generateId } from "@input/pen-types";
 
 export interface DirectTransportOptions {
 	toolRuntime?: ToolRuntime;
@@ -113,7 +113,7 @@ function createTransportToolContext(
 			position: Position,
 		): string {
 			const editor = resolveTransportEditor(context?.editor);
-			const blockId = crypto.randomUUID();
+			const blockId = generateId();
 
 			emit({
 				type: "block-insert",

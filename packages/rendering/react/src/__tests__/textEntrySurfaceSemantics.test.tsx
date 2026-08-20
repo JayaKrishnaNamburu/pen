@@ -100,7 +100,11 @@ describe("@input/pen-react text entry surface semantics", () => {
 
 		expect(firstSurface).not.toBeNull();
 		expect(secondSurface).not.toBeNull();
-		expect(container.querySelectorAll('[role="textbox"]')).toHaveLength(0);
+		expect(
+			container.querySelectorAll(
+				'[role="textbox"]:not([data-pen-editor-root])',
+			),
+		).toHaveLength(0);
 
 		await act(async () => {
 			fieldEditor.activate(firstBlockId);
@@ -154,7 +158,11 @@ describe("@input/pen-react text entry surface semantics", () => {
 
 		expect(firstCellSurface).not.toBeNull();
 		expect(secondCellSurface).not.toBeNull();
-		expect(container.querySelectorAll('[role="textbox"]')).toHaveLength(0);
+		expect(
+			container.querySelectorAll(
+				'[role="textbox"]:not([data-pen-editor-root])',
+			),
+		).toHaveLength(0);
 
 		await act(async () => {
 			editor.selectCell("semantic-table", 0, 0);

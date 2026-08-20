@@ -1,5 +1,6 @@
 import type { Editor, InlineDecoration } from "@input/pen-types";
 import type { EphemeralSuggestion } from "../types";
+import { generateId } from "@input/pen-types";
 
 export class EphemeralSuggestionManager {
 	private _current: EphemeralSuggestion | null = null;
@@ -39,7 +40,7 @@ export class EphemeralSuggestionManager {
 			return;
 		}
 
-		const blockId = crypto.randomUUID();
+		const blockId = generateId();
 		editor.apply(
 			[
 				{

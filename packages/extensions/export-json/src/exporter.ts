@@ -5,7 +5,6 @@ import type {
   Editor,
   InlineDelta,
 } from "@input/pen-types";
-import { buildDatabaseData } from "@input/pen-markdown-serialization";
 import type {
   PenBlockJSON,
   PenDocumentJSON,
@@ -67,14 +66,6 @@ function serializeBlock(handle: BlockHandle): PenBlockJSON {
     const children = serializeTableChildren(handle);
     if (children.length > 0) {
       block.children = children;
-    }
-    return block;
-  }
-
-  if (handle.type === "database") {
-    const database = buildDatabaseData(handle);
-    if (database) {
-      block.database = database;
     }
     return block;
   }

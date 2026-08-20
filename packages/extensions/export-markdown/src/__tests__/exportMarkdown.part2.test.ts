@@ -9,8 +9,6 @@ import { markdownExporter } from "../exporter";
 
 type InsertTableCellTextOp = Extract<DocumentOp, { type: "insert-table-cell-text" }>;
 type FormatTableCellTextOp = Extract<DocumentOp, { type: "format-table-cell-text" }>;
-type UpdateTableColumnsOp = Extract<DocumentOp, { type: "update-table-columns" }>;
-type DatabaseInsertRowOp = Extract<DocumentOp, { type: "database-insert-row" }>;
 type InsertBlockOp = Extract<DocumentOp, { type: "insert-block" }>;
 
 const noDefaultExtensionsPreset = {

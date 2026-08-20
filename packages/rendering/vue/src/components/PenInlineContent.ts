@@ -16,12 +16,14 @@ import { useSelection } from "../composables/useSelection";
 import {
   isBlockSelected,
   useBlockDecorations,
+  useBlockModel,
   useBlockTextSnapshot,
   useDocumentPlaceholderState,
   useFieldEditorState,
 } from "../internal/editorState";
 import { useEditorContext } from "../internal/editorContext";
 import { useFieldEditorContext } from "../internal/fieldEditorContext";
+import { replaceElementChildren } from "../internal/replaceElementChildren";
 
 export const PenInlineContent = defineComponent({
   name: "PenInlineContent",
@@ -38,12 +40,17 @@ export const PenInlineContent = defineComponent({
       type: String as PropType<string>,
       default: "span",
     },
+    direction: {
+      type: String as PropType<string | undefined>,
+      default: undefined,
+    },
   },
   setup(props) {
     const { editor, readonly, emptyPlaceholder } = useEditorContext();
     const fieldEditor = useFieldEditorContext();
     const selection = useSelection(editor);
     const fieldEditorState = useFieldEditorState(fieldEditor);
+    const blockModel = useBlockModel(editor, props.blockId);
     const blockDecorations = useBlockDecorations(editor, props.blockId);
     const textSnapshot = useBlockTextSnapshot(editor, props.blockId);
     const documentPlaceholderVisible = useDocumentPlaceholderState(editor);
@@ -148,7 +155,10 @@ export const PenInlineContent = defineComponent({
           return;
         }
         if (!nextTextSnapshot.exists) {
-          nextElement.replaceChildren();
+          // HOST4: replaceChildren is above some hosts; fallback clears then
+          // appends. The inactive block still empties — no user-visible
+          // degradation.
+          replaceElementChildren(nextElement);
           return;
         }
 
@@ -212,6 +222,9 @@ export const PenInlineContent = defineComponent({
       }
     };
 
+    // DIR2: set `dir` from the direction prop when it is ltr or rtl.
+    // Never `dir="auto"`. AX4: do not set `aria-hidden` (visible atom chips
+    // stay in the tree; `aria-label` comes from the reconciler).
     return () =>
       h(
         props.as,
@@ -228,6 +241,9 @@ export const PenInlineContent = defineComponent({
               : undefined,
           [DATA_ATTRS.placeholderVisible]: placeholder.value ? "" : undefined,
           "data-placeholder": placeholder.value,
+          dir: resolveInlineContentDir(
+            props.direction ?? blockModel.value.props?.direction,
+          ),
           style: placeholder.value ? { position: "relative" } : undefined,
           onMousedown: handleMouseDown,
           onClick: handleClick,
@@ -238,5 +254,14 @@ export const PenInlineContent = defineComponent({
       );
   },
 });
+
+function resolveInlineContentDir(
+  direction: unknown,
+): "ltr" | "rtl" | undefined {
+  if (direction === "ltr" || direction === "rtl") {
+    return direction;
+  }
+  return undefined;
+}
 
 export type PenInlineContentProps = InstanceType<typeof PenInlineContent>["$props"];

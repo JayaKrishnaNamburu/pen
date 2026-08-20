@@ -1,10 +1,14 @@
 import type { Editor } from "@input/pen-types";
-import { resolveHistoryAuthor } from "./identityResolver";
-import type { CharacterAttribution } from "../types";
+import {
+	resolveHistoryAuthor,
+	resolvePresenceDisplayHint,
+} from "./identityResolver";
+import type { CharacterAttribution, ResolveHistoryAuthor } from "../types";
 
 export function getCharacterAttribution(
 	editor: Editor,
 	blockId: string,
+	resolveAuthor?: ResolveHistoryAuthor,
 ): readonly CharacterAttribution[] {
 	const adapter = editor.internals.adapter;
 	const doc = editor.internals.crdtDoc;
@@ -14,15 +18,18 @@ export function getCharacterAttribution(
 	}
 
 	return adapter.getAttributionRanges(doc, blockId).map((range) => {
-		const author = resolveHistoryAuthor(editor, range.clientId);
+		const author = resolveHistoryAuthor(editor, range.clientId, resolveAuthor);
+		const displayHint = resolvePresenceDisplayHint(editor, range.clientId);
 		return {
 			blockId,
 			offset: range.offset,
 			length: range.length,
 			clientId: range.clientId,
+			author,
+			...(displayHint ? { displayHint } : {}),
 			userId: author.id,
 			userName: author.name,
-			color: author.color,
+			...(author.verified && author.color ? { color: author.color } : {}),
 			timestamp: 0,
 		};
 	});

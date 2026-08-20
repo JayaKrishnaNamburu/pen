@@ -94,7 +94,7 @@ export function useSelectionToolbar(editor: Editor): SelectionToolbarState {
 
 		const unsubs = [
 			editor.on("selectionChange", update),
-			editor.onDocumentCommit(update),
+			editor.on("commit", () => update()),
 		];
 		window.addEventListener("resize", update);
 		window.addEventListener("scroll", update, true);

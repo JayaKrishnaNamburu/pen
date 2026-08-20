@@ -1,14 +1,17 @@
 import { describe, expect, it } from "vitest";
-import {
-	normalizePlanRecord,
-	normalizePlanSteps,
-} from "../plan/planSchemas";
+import { normalizePlanRecord, normalizePlanSteps } from "../index";
 
 describe("@input/pen-content-ops plan schemas", () => {
 	it("normalizes non-record plan payloads to empty objects", () => {
 		expect(normalizePlanRecord(null)).toEqual({});
 		expect(normalizePlanRecord("plan")).toEqual({});
 		expect(normalizePlanRecord(["step"])).toEqual({});
+	});
+
+	it("copies record plan payloads", () => {
+		const record = { title: "Ship", count: 2 };
+		expect(normalizePlanRecord(record)).toEqual(record);
+		expect(normalizePlanRecord(record)).not.toBe(record);
 	});
 
 	it("filters malformed plan steps while preserving op-shaped entries", () => {

@@ -9,7 +9,7 @@ export function useParentIdChildBlockIds(
 	parentBlockId: string,
 ): readonly string[] {
 	return useSyncExternalStoreWithSelector(
-		(callback) => editor.onDocumentCommit(callback),
+		(callback) => editor.on("commit", () => callback()),
 		() => editor.documentState.blockOrder,
 		() => SSR_BLOCK_ORDER,
 		() => getParentIdChildBlockIds(editor, parentBlockId),

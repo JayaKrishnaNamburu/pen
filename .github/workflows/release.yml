@@ -14,7 +14,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-      id-token: write
+      id-token: write # npm provenance (changeset publish --provenance / NPM_CONFIG_PROVENANCE)
 
     steps:
       - name: Check out repository
@@ -46,6 +46,18 @@ jobs:
       - name: Run unit and integration tests
         run: pnpm test
 
+      - name: Check published packages share one train version
+        run: node scripts/release-check.mjs --version-sync
+
+      - name: Lint published package exports
+        run: node scripts/release-check.mjs --publint
+
+      - name: Check published package types
+        run: node scripts/release-check.mjs --attw
+
+      - name: Check bundle size against baseline
+        run: node scripts/size-limit.mjs
+
       - name: Create release pull request or publish
         id: changesets
         uses: changesets/action@v1
@@ -55,3 +67,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true
+
+      - name: Tag the release train
+        if: steps.changesets.outputs.published == 'true'
+        run: |
+          version="$(node -p "require('./packages/core/package.json').version")"
+          if git rev-parse "v${version}" >/dev/null 2>&1; then
+            echo "Train tag v${version} already exists"
+            exit 0
+          fi
+          git tag "v${version}"
+          git push origin "v${version}"

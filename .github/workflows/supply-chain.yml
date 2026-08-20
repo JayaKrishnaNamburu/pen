@@ -1,0 +1,131 @@
+name: Supply chain
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  prod-audit:
+    name: Production audit report
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Report production advisories
+        continue-on-error: true
+        run: pnpm audit --prod
+
+  no-install-scripts:
+    name: No published install scripts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Fail if published manifests grow install scripts
+        run: |
+          node --input-type=module <<'EOF'
+          import { readdirSync, readFileSync, statSync } from "node:fs";
+          import { join } from "node:path";
+
+          const banned = ["preinstall", "postinstall"];
+          const hits = [];
+
+          function walk(dir) {
+            for (const name of readdirSync(dir)) {
+              if (name === "node_modules" || name === "dist") continue;
+              const full = join(dir, name);
+              if (statSync(full).isDirectory()) {
+                walk(full);
+                continue;
+              }
+              if (name === "package.json") visit(full);
+            }
+          }
+
+          function visit(file) {
+            const pkg = JSON.parse(readFileSync(file, "utf8"));
+            if (pkg.private === true) return;
+            const scripts = pkg.scripts ?? {};
+            for (const key of banned) {
+              if (Object.hasOwn(scripts, key)) {
+                hits.push(`${file}: scripts.${key}`);
+              }
+            }
+          }
+
+          walk("packages");
+
+          if (hits.length > 0) {
+            console.error(
+              "SEC7: published manifests must not declare preinstall/postinstall:",
+            );
+            for (const hit of hits) console.error(`  ${hit}`);
+            process.exit(1);
+          }
+
+          console.log(
+            "SEC7: no published manifest declares preinstall/postinstall",
+          );
+          EOF
+
+  sec8-dynamic-code-lint:
+    name: SEC8 dynamic-code lint configured
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Assert Wave H.1 SEC8 rules stay error
+        run: |
+          node --input-type=module <<'EOF'
+          import { readFileSync } from "node:fs";
+
+          const config = readFileSync("eslint.config.mjs", "utf8");
+          const required = [
+            '"no-eval": "error"',
+            '"no-new-func": "error"',
+            '"no-implied-eval": "error"',
+          ];
+          const missing = required.filter((rule) => !config.includes(rule));
+
+          if (missing.length > 0) {
+            console.error(
+              "SEC8: Wave H.1 configured core dynamic-code bans so Pen stays functional under script-src 'self'. They must remain \"error\":",
+            );
+            for (const rule of missing) console.error(`  missing ${rule}`);
+            process.exit(1);
+          }
+
+          console.log(
+            "SEC8: no-eval, no-new-func, and no-implied-eval remain error in eslint.config.mjs",
+          );
+          EOF

@@ -196,7 +196,7 @@ function usePreviewNumberedListItemValue(block: BlockHandle | null | undefined):
 			if (!block) {
 				return () => { };
 			}
-			return editor.onDocumentCommit(() => callback());
+			return editor.on("commit", () => callback());
 		},
 		() => {
 			if (!block) {

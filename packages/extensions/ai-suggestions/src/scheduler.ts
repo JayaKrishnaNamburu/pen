@@ -1,4 +1,5 @@
-import type { DocumentCommitEvent, DocumentOp, Editor } from "@input/pen-types";
+import { affectedBlockIdsFromSummary } from "@input/pen-core";
+import type { ChangeSummary, CommitEvent, Editor } from "@input/pen-types";
 import {
 	DEFAULT_ALLOWED_BLOCK_TYPES,
 	DEFAULT_COOLDOWN_MS,
@@ -52,18 +53,24 @@ export class AISuggestionScheduler {
 		this.onScheduledChange?.(false);
 	}
 
-	markDirty(event: DocumentCommitEvent, onDebouncedReady: () => void): void {
+	markDirty(event: CommitEvent, onDebouncedReady: () => void): void {
 		const now = Date.now();
 
-		for (const blockId of event.affectedBlocks) {
+		for (const blockId of affectedBlockIdsFromSummary(event.summary)) {
 			const block = this.editor.getBlock(blockId);
 			if (!block || !this.isEligibleBlockType(block.type)) {
 				continue;
 			}
 
 			const previous = this.dirtyBlocks.get(blockId);
-			const changedCharsEstimate = estimateChangedCharsForBlock(event.ops, blockId);
-			const lastChangedOffset = resolveLastChangedOffset(event.ops, blockId);
+			const changedCharsEstimate = estimateChangedCharsForBlock(
+				event.summary,
+				blockId,
+			);
+			const lastChangedOffset = resolveLastChangedOffset(
+				event.summary,
+				blockId,
+			);
 
 			this.dirtyBlocks.set(blockId, {
 				blockId,
@@ -160,48 +167,30 @@ export class AISuggestionScheduler {
 }
 
 function estimateChangedCharsForBlock(
-	ops: readonly DocumentOp[],
+	summary: ChangeSummary,
 	blockId: string,
 ): number {
-	let changedChars = 0;
-
-	for (const op of ops) {
-		if (!targetsBlock(op, blockId)) {
-			continue;
-		}
-
-		if ("text" in op && typeof op.text === "string") {
-			changedChars += op.text.length;
-			continue;
-		}
-
-		if ("length" in op && typeof op.length === "number") {
-			changedChars += op.length;
-			continue;
-		}
-
-		changedChars += 1;
+	const change = summary.text.find((item) => item.blockId === blockId);
+	if (!change) {
+		return summary.structural.some((item) =>
+			"blockId" in item && item.blockId === blockId,
+		)
+			? 1
+			: 0;
 	}
 
+	let changedChars = 0;
+	for (const splice of change.splices) {
+		changedChars += Math.max(splice.to - splice.from, splice.insertLength);
+	}
 	return changedChars;
 }
 
 function resolveLastChangedOffset(
-	ops: readonly DocumentOp[],
+	summary: ChangeSummary,
 	blockId: string,
 ): number | null {
-	for (let index = ops.length - 1; index >= 0; index -= 1) {
-		const op = ops[index];
-		if (!targetsBlock(op, blockId)) {
-			continue;
-		}
-		if ("offset" in op && typeof op.offset === "number") {
-			return op.offset;
-		}
-	}
-	return null;
-}
-
-function targetsBlock(op: DocumentOp, blockId: string): boolean {
-	return "blockId" in op && op.blockId === blockId;
+	const change = summary.text.find((item) => item.blockId === blockId);
+	const last = change?.splices[change.splices.length - 1];
+	return last?.from ?? null;
 }

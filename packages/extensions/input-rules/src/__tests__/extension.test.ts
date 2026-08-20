@@ -15,7 +15,7 @@ type InputRulesExtensionTestEditor = {
 	};
 	onBeforeApply: ReturnType<typeof vi.fn>;
 	internals: {
-		setSlot: ReturnType<typeof vi.fn>;
+		assignSlot: ReturnType<typeof vi.fn>;
 	};
 	selection: {
 		type: "text";
@@ -49,7 +49,7 @@ function createMockEditor(textContent: string) {
 			};
 		}),
 		internals: {
-			setSlot: vi.fn(),
+			assignSlot: vi.fn(),
 		},
 		selection: {
 			type: "text" as const,

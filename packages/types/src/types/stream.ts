@@ -167,6 +167,9 @@ export interface DonePart {
 
 // ── Stream Request ──────────────────────────────────────────
 
+/** Frozen protocol version for stream handshake (AIB5). Runtime enforcement is Wave M. */
+export const PEN_STREAM_PROTOCOL_VERSION = 1;
+
 export interface PenStreamRequest {
   prompt: string;
   context?: {
@@ -184,4 +187,5 @@ export interface PenStreamRequest {
   messages?: ModelMessage[];
   signal?: AbortSignal;
   streamId?: string;
+  protocolVersion?: number;
 }

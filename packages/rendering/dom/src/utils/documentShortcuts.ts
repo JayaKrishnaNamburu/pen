@@ -14,12 +14,7 @@ import { handleEscapeSelectionTransition } from "./escapeSelection";
 import { getAdjacentVisibleBlockId } from "./parentIdTree";
 import { handleTableCellSelectionKeyDown } from "./tableCellNavigation";
 
-const DATABASE_ROW_SELECTION_SLOT = "database:row-selection";
 const ZERO_WIDTH_SPACE = "\u200B";
-
-type DatabaseRowSelectionController = {
-	deleteSelectedRows: (blockId: string) => boolean;
-};
 
 export function handleEditorDocumentKeyDown(options: {
 	event: KeyboardEvent;
@@ -171,10 +166,6 @@ function handleDeleteSelectionShortcut(
 	}
 
 	const selection = editor.selection;
-	if (tryDeleteSelectedDatabaseRows(root, editor)) {
-		fieldEditor.deactivate();
-		return true;
-	}
 	if (!selection) {
 		return false;
 	}
@@ -268,39 +259,6 @@ function textSelectionContainsInlineAtom(
 	}
 
 	return false;
-}
-
-function tryDeleteSelectedDatabaseRows(
-	root: HTMLElement,
-	editor: Editor,
-): boolean {
-	const controller = editor.internals.getSlot(DATABASE_ROW_SELECTION_SLOT) as
-		| DatabaseRowSelectionController
-		| undefined;
-	if (!controller) {
-		return false;
-	}
-
-	const activeElement = root.ownerDocument?.activeElement;
-	if (
-		!(activeElement instanceof HTMLElement) ||
-		!root.contains(activeElement)
-	) {
-		return false;
-	}
-
-	const blockElement = activeElement.closest("[data-block-id]");
-	const blockId = blockElement?.getAttribute("data-block-id");
-	if (!blockId) {
-		return false;
-	}
-
-	const block = editor.getBlock(blockId);
-	if (!block || block.type !== "database") {
-		return false;
-	}
-
-	return controller.deleteSelectedRows(blockId);
 }
 
 function shouldUseDocumentTextDeletionFallback(

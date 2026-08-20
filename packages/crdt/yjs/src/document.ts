@@ -4,15 +4,16 @@ import type {
   DocumentProfile,
   PenDocument,
 } from "@input/pen-types";
-import { generateId } from "@input/pen-types";
+import { DOCUMENT_PROFILE_METADATA_KEY, generateId } from "@input/pen-types";
 import * as Y from "yjs";
+
+import { assertAdapterYjsDoc } from "./yjsSingleton";
 
 // ── Internal Types ──────────────────────────────────────────
 
 export type BlockContentType =
   | "inline"
   | "table"
-  | "database"
   | "subdocument"
   | "nested"
   | "none";
@@ -67,7 +68,7 @@ export const BLOCKS = "blocks";
 export const APPS = "apps";
 export const METADATA = "metadata";
 export const SUBDOCUMENT = "subdocument";
-export const DOCUMENT_PROFILE = "documentProfile";
+export const DOCUMENT_PROFILE = DOCUMENT_PROFILE_METADATA_KEY;
 
 // ── Document Validation ─────────────────────────────────────
 
@@ -340,6 +341,7 @@ export function createYjsDocument(
   // Reliable block undo/redo requires deleted Yjs content to remain restorable.
   // Yjs recommends disabling GC when version/history restoration matters.
   const ydoc = new Y.Doc({ gc: options?.gc ?? false });
+  assertAdapterYjsDoc(ydoc);
   const blockOrder = ydoc.getArray<string>(BLOCK_ORDER);
   const blocks = ydoc.getMap<Y.Map<unknown>>(BLOCKS);
   const apps = ydoc.getMap<Y.Map<unknown>>(APPS);
@@ -360,6 +362,7 @@ export function wrapYjsDocument(
   adapter: CRDTAdapter,
   ydoc: Y.Doc,
 ): YjsCRDTDocument {
+  assertAdapterYjsDoc(ydoc);
   const blockOrder = ydoc.getArray<string>(BLOCK_ORDER);
   const blocks = ydoc.getMap<Y.Map<unknown>>(BLOCKS);
   const apps = ydoc.getMap<Y.Map<unknown>>(APPS);
@@ -431,12 +434,6 @@ export function initBlockMap(
       const tableContent = new Y.Array<Y.Map<unknown>>();
       seedTableContent(tableContent);
       blockMap.set("tableContent", tableContent);
-      break;
-    }
-    case "database": {
-      blockMap.set("tableContent", new Y.Array<Y.Map<unknown>>());
-      blockMap.set("tableColumns", new Y.Array<Y.Map<unknown>>());
-      blockMap.set("databaseViews", new Y.Array<Y.Map<unknown>>());
       break;
     }
     case "subdocument":

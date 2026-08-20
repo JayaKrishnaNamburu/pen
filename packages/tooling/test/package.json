@@ -37,12 +37,15 @@
     "README.md",
     "LICENSE.md"
   ],
+  "engines": {
+    "node": ">=22"
+  },
   "sideEffects": false,
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "vitest run",
+    "test": "vitest run --config vitest.config.ts",
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {

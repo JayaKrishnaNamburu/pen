@@ -10,7 +10,7 @@ export function buildSearchDecorations(
 
 	return state.matches.flatMap((match, index) => {
 		// The core decoration model only targets block text ranges today.
-		// Table and database matches stay visible through controller state and
+		// Table matches stay visible through controller state and
 		// active-cell selection until cell-scoped decorations exist.
 		if (match.kind !== "block") {
 			return [];

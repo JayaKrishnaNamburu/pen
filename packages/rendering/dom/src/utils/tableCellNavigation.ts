@@ -46,29 +46,6 @@ export function handleTableCellSelectionKeyDown(options: {
 		return false;
 	}
 
-	const cellKeyDownSlot = editor.internals.getSlot("database:cell-keydown") as
-		| ((
-				event: KeyboardEvent,
-				context: { blockId: string; row: number; col: number; root: HTMLElement },
-		  ) => boolean)
-		| undefined;
-	const slotCoord = resolveCellSelectionCoord(block, selection, {
-		row: head.row,
-		col: head.col,
-	});
-	if (
-		cellKeyDownSlot &&
-		slotCoord &&
-		cellKeyDownSlot(event, {
-			blockId,
-			row: slotCoord.row,
-			col: slotCoord.col,
-			root,
-		})
-	) {
-		return true;
-	}
-
 	const rowCount = selection.rowIds?.length ?? block.tableRowCount();
 	const colCount = selection.columnIds?.length ?? block.tableColumnCount();
 
@@ -247,9 +224,7 @@ function isActiveCellInputHandlingKeys(
 		return true;
 	}
 
-	return !!target.closest(
-		"[data-pen-db-widget-trigger], input, button, select, textarea",
-	);
+	return !!target.closest("input, button, select, textarea");
 }
 
 function setCellSelection(

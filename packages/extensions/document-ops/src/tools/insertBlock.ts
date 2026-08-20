@@ -1,6 +1,13 @@
-import type { Editor, ToolDefinition, Position } from "@input/pen-types";
+import {
+  generateId,
+  type DocumentOp,
+  type Editor,
+  type Position,
+  type ToolDefinition,
+} from "@input/pen-types";
 import { POSITION_SCHEMA } from "../constants/toolSchemas";
 import { assertToolCanUseBlockType } from "../utils/blockTypePolicy";
+import { applyValidatedOps } from "../utils/payloadValidation";
 
 export function insertBlockTool(editor: Editor): ToolDefinition {
   return {
@@ -24,34 +31,27 @@ export function insertBlockTool(editor: Editor): ToolDefinition {
         content?: string;
       };
       assertToolCanUseBlockType(editor, opts.blockType);
-      const blockId = crypto.randomUUID();
-
-      editor.apply(
-        [
-          {
-            type: "insert-block",
-            blockId,
-            blockType: opts.blockType,
-            props: opts.props ?? {},
-            position: opts.position,
-          },
-        ],
-        { origin: "ai" },
-      );
+      const blockId = generateId();
+      const ops: DocumentOp[] = [
+        {
+          type: "insert-block",
+          blockId,
+          blockType: opts.blockType,
+          props: opts.props ?? {},
+          position: opts.position,
+        },
+      ];
 
       if (opts.content) {
-        editor.apply(
-          [
-            {
-              type: "insert-text",
-              blockId,
-              offset: 0,
-              text: opts.content,
-            },
-          ],
-          { origin: "ai" },
-        );
+        ops.push({
+          type: "insert-text",
+          blockId,
+          offset: 0,
+          text: opts.content,
+        });
       }
+
+      applyValidatedOps(editor, ops, { origin: "ai" });
 
       return { blockId };
     },

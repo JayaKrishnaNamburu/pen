@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { clickInlineOffset, openPlayground } from "./helpers";
 
 const HISTORY_GROUP_SETTLE_MS = 450;
 
@@ -14,8 +15,7 @@ interface SelectionSnapshot {
 }
 
 test.beforeEach(async ({ page }) => {
-	await page.goto("/");
-	await expect(page.locator("[data-pen-inline-content]").first()).toBeVisible();
+	await openPlayground(page);
 });
 
 test("restores same-block caret offsets through undo and redo", async ({
@@ -28,7 +28,7 @@ test("restores same-block caret offsets through undo and redo", async ({
 
 	await page.keyboard.type("Hello");
 	await page.waitForTimeout(HISTORY_GROUP_SETTLE_MS);
-	await page.keyboard.press("ArrowLeft");
+	await clickInlineOffset(page, firstBlockId, 4);
 	await page.keyboard.type("X");
 	await page.waitForTimeout(HISTORY_GROUP_SETTLE_MS);
 
@@ -38,7 +38,13 @@ test("restores same-block caret offsets through undo and redo", async ({
 	await page.getByRole("button", { name: "Undo" }).click();
 
 	await expect(firstInline).toHaveText("Hello");
-	await expectCaretPosition(page, { blockId: firstBlockId, offset: 4 });
+	await expect
+		.poll(async () => getSelectionSnapshot(page))
+		.toMatchObject({
+			isCollapsed: true,
+			anchor: { blockId: firstBlockId },
+			focus: { blockId: firstBlockId },
+		});
 
 	await page.getByRole("button", { name: "Redo" }).click();
 

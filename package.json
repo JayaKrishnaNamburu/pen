@@ -11,11 +11,13 @@
     "test": "turbo run test",
     "test:e2e": "playwright test",
     "typecheck": "turbo run typecheck",
-    "lint:format": "prettier --check \"README.md\" \"AGENTS.md\" \"CLA.md\" \"CODE_OF_CONDUCT.md\" \"CONTRIBUTING.md\" \"LICENSE.md\" \"SECURITY.md\" \"SUPPORT.md\" \"package.json\" \"pnpm-workspace.yaml\" \"turbo.json\" \"tsconfig.base.json\" \"playwright.config.ts\" \"vitest.workspace.ts\" \".github/**/*.yml\" \"packages/**/README.md\" \"packages/**/package.json\" \"playground/package.json\" \"spec/**/*.md\" \"spec-v2/**/*.md\"",
+    "lint:format": "prettier --check \"README.md\" \"AGENTS.md\" \"CLA.md\" \"CODE_OF_CONDUCT.md\" \"CONTRIBUTING.md\" \"LICENSE.md\" \"SECURITY.md\" \"SUPPORT.md\" \"package.json\" \"pnpm-workspace.yaml\" \"turbo.json\" \"tsconfig.base.json\" \"playwright.config.ts\" \"vitest.config.ts\" \".github/**/*.yml\" \"packages/**/README.md\" \"packages/**/package.json\" \"playground/package.json\" \"spec/**/*.md\" \"spec-v2/**/*.md\"",
     "lint:eslint": "eslint .",
     "lint": "pnpm lint:format && pnpm lint:eslint",
     "version-packages": "changeset version",
-    "release": "changeset publish",
+    "release": "changeset publish --provenance",
+    "release-check": "node scripts/release-check.mjs",
+    "size-limit": "node scripts/size-limit.mjs",
     "clean": "turbo run clean && rm -rf node_modules"
   },
   "devDependencies": {

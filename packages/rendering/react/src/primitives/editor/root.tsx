@@ -131,7 +131,7 @@ export function EditorRoot(props: EditorRootProps) {
 	}, [onFocusLifecycle]);
 
 	useEffect(() => {
-		const root = rootRef.current;
+		const root = rootElement;
 		const fieldEditor = fieldEditorRef.current;
 		if (!root || !fieldEditor) {
 			return;
@@ -158,27 +158,27 @@ export function EditorRoot(props: EditorRootProps) {
 			root.removeEventListener("focusin", handleFocusIn);
 			root.removeEventListener("focusout", handleFocusOut);
 		};
-	}, [editor]);
+	}, [editor, rootElement]);
 
 	useEffect(() => {
-		editor.internals.setSlot("paste:importers", importers);
-		editor.internals.setSlot("paste:assetProvider", resolvedAssets);
+		editor.internals.assignSlot("paste:importers", importers);
+		editor.internals.assignSlot("paste:assetProvider", resolvedAssets);
 
 		return () => {
-			editor.internals.setSlot("paste:importers", undefined);
-			editor.internals.setSlot("paste:assetProvider", undefined);
+			editor.internals.assignSlot("paste:importers", undefined);
+			editor.internals.assignSlot("paste:assetProvider", undefined);
 		};
 	}, [editor, importers, resolvedAssets]);
 
 	useEffect(() => {
-		editor.internals.setSlot(FIELD_EDITOR_SLOT_KEY, fieldEditorRef.current);
-		editor.internals.setSlot(
+		editor.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, fieldEditorRef.current);
+		editor.internals.assignSlot(
 			CORE_FIELD_EDITOR_SLOT_KEY,
 			fieldEditorRef.current,
 		);
 		return () => {
-			editor.internals.setSlot(FIELD_EDITOR_SLOT_KEY, undefined);
-			editor.internals.setSlot(CORE_FIELD_EDITOR_SLOT_KEY, undefined);
+			editor.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, undefined);
+			editor.internals.assignSlot(CORE_FIELD_EDITOR_SLOT_KEY, undefined);
 			fieldEditorRef.current?.destroy();
 		};
 	}, [editor]);
@@ -206,7 +206,7 @@ export function EditorRoot(props: EditorRootProps) {
 	}, [editor, readonly, resolvedInlineAtomInteractions, rootElement]);
 
 	useEffect(() => {
-		const root = rootRef.current;
+		const root = rootElement;
 		const fieldEditor = fieldEditorRef.current;
 		if (!root || !fieldEditor) {
 			return;
@@ -252,7 +252,7 @@ export function EditorRoot(props: EditorRootProps) {
 				true,
 			);
 		};
-	}, [editor, resolvedInteractionModel.model]);
+	}, [editor, resolvedInteractionModel.model, rootElement]);
 
 	const primitiveProps: Record<string, unknown> = {
 		[DATA_ATTRS.editorRoot]: "",
@@ -261,6 +261,11 @@ export function EditorRoot(props: EditorRootProps) {
 		[DATA_ATTRS.readonly]: readonly || undefined,
 		[DATA_ATTRS.empty]: isEmpty || undefined,
 		tabIndex: -1,
+		role: "textbox",
+		"aria-multiline": true,
+		// leftover: pen.a11yLabel facet not closed
+		"aria-label": "Editor",
+		"aria-readonly": readonly || undefined,
 	};
 
 	return (

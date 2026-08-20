@@ -7,11 +7,6 @@ import type {
   SchemaRegistry,
 } from "@input/pen-types";
 import type { PendingBlock } from "@input/pen-core";
-import {
-	collectTableRows,
-	parseDatabasePayload,
-	parseTypedDatabaseTable,
-} from "./domToDatabaseBlocks";
 
 const BLOCK_ELEMENT_MAP: Record<string, (node: DOMNode) => PendingBlock> = {
   h1: (node) => blockWithInline("heading", { level: 1 }, node),
@@ -197,37 +192,6 @@ function parseOlStart(node: DOMNode): number | undefined {
 }
 
 function parseHTMLTable(node: DOMNode): PendingBlock {
-  const databasePayload = parseDatabasePayload(
-    node.attributes?.["data-pen-database"],
-  );
-  if (databasePayload) {
-    return {
-      type: "database",
-      props: {
-        title:
-          typeof databasePayload.title === "string"
-            ? databasePayload.title
-            : "Untitled",
-        dataSource:
-          databasePayload.dataSource === "remote" ||
-          databasePayload.dataSource === "hybrid"
-            ? databasePayload.dataSource
-            : "local",
-      },
-      database: {
-        columns: databasePayload.columns,
-        rows: databasePayload.rows,
-        views: databasePayload.views,
-        primaryViewId: databasePayload.primaryViewId ?? null,
-      },
-    };
-  }
-
-  const typedDatabase = parseTypedDatabaseTable(node);
-  if (typedDatabase) {
-    return typedDatabase;
-  }
-
   const hasHeaderRow = (node.children ?? []).some(
     (c) => c.tagName === "thead",
   );
@@ -261,6 +225,24 @@ function parseHTMLTable(node: DOMNode): PendingBlock {
     props: { hasHeaderRow, hasHeaderColumn: false },
     children: rows,
   };
+}
+
+function collectTableRows(tableNode: DOMNode): DOMNode[] {
+  const rows: DOMNode[] = [];
+  for (const child of tableNode.children ?? []) {
+    if (child.tagName === "tr") {
+      rows.push(child);
+    } else if (
+      child.tagName === "thead" ||
+      child.tagName === "tbody" ||
+      child.tagName === "tfoot"
+    ) {
+      for (const row of child.children ?? []) {
+        if (row.tagName === "tr") rows.push(row);
+      }
+    }
+  }
+  return rows;
 }
 
 function blockWithInline(

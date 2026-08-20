@@ -1,3 +1,9 @@
+import {
+	nextGraphemeBoundary,
+	nextWordBoundary,
+	previousGraphemeBoundary,
+	previousWordBoundary,
+} from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
 import type { FieldEditorInputController } from "./controller";
 import type { FieldEditorTextLike } from "./crdt";
@@ -123,10 +129,15 @@ export const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 			return;
 		}
 
-		if (range.start > 0) {
+		const start = previousGraphemeBoundary(
+			ytext.toString(),
+			range.start,
+			resolveEditorLocale(editor),
+		);
+		if (start < range.start) {
 			backend.applyInlineTextEdit({
 				blockId,
-				range: { start: range.start - 1, end: range.start },
+				range: { start, end: range.start },
 				text: "",
 			});
 		}
@@ -162,10 +173,16 @@ export const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 			return;
 		}
 
-		if (range.start < ytext.length) {
+		const start = range.start;
+		const end = nextGraphemeBoundary(
+			ytext.toString(),
+			start,
+			resolveEditorLocale(editor),
+		);
+		if (end > start) {
 			backend.applyInlineTextEdit({
 				blockId,
-				range: { start: range.start, end: range.start + 1 },
+				range: { start, end },
 				text: "",
 			});
 		}
@@ -203,14 +220,15 @@ export const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 			return;
 		}
 
-		const text = ytext.toString();
-		let pos = range.start;
-		while (pos > 0 && /\s/.test(text[pos - 1])) pos--;
-		while (pos > 0 && !/\s/.test(text[pos - 1])) pos--;
-		if (pos < range.start) {
+		const start = previousWordBoundary(
+			ytext.toString(),
+			range.start,
+			resolveEditorLocale(editor),
+		);
+		if (start < range.start) {
 			backend.applyInlineTextEdit({
 				blockId,
-				range: { start: pos, end: range.start },
+				range: { start, end: range.start },
 				text: "",
 			});
 		}
@@ -231,14 +249,15 @@ export const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 			return;
 		}
 
-		const text = ytext.toString();
-		let pos = range.end;
-		while (pos < text.length && /\s/.test(text[pos])) pos++;
-		while (pos < text.length && !/\s/.test(text[pos])) pos++;
-		if (pos > range.end) {
+		const end = nextWordBoundary(
+			ytext.toString(),
+			range.end,
+			resolveEditorLocale(editor),
+		);
+		if (end > range.end) {
 			backend.applyInlineTextEdit({
 				blockId,
-				range: { start: range.end, end: pos },
+				range: { start: range.end, end },
 				text: "",
 			});
 		}
@@ -309,4 +328,12 @@ export const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 function hasMultiBlockTextSelection(editor: Editor): boolean {
 	const selection = editor.selection;
 	return selection?.type === "text" && selection.isMultiBlock;
+}
+
+function resolveEditorLocale(editor: Editor): string {
+	const locale = editor.internals.getSlot<string>("pen.locale");
+	if (typeof locale === "string" && locale.length > 0) {
+		return locale;
+	}
+	return "en";
 }

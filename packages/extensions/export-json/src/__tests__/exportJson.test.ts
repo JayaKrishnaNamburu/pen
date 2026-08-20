@@ -5,8 +5,6 @@ import { jsonExporter } from "../exporter";
 
 type InsertTableCellTextOp = Extract<DocumentOp, { type: "insert-table-cell-text" }>;
 type FormatTableCellTextOp = Extract<DocumentOp, { type: "format-table-cell-text" }>;
-type UpdateTableColumnsOp = Extract<DocumentOp, { type: "update-table-columns" }>;
-type DatabaseInsertRowOp = Extract<DocumentOp, { type: "database-insert-row" }>;
 
 const noDefaultExtensionsPreset = {
   resolve() {
@@ -191,43 +189,6 @@ describe("@input/pen-export-json", () => {
         end: 4,
       },
     ]);
-
-    editor.destroy();
-  });
-
-  it("exports database structured data", async () => {
-    const editor = editorWithOps([
-      {
-        type: "insert-block",
-        blockId: "db-1",
-        blockType: "database",
-        props: { title: "Roadmap", dataSource: "local" },
-        position: "last",
-      },
-      {
-        type: "update-table-columns",
-        blockId: "db-1",
-        columns: [{ id: "name", title: "Name", type: "text" }],
-      } as UpdateTableColumnsOp,
-      {
-        type: "database-insert-row",
-        blockId: "db-1",
-        rowId: "row-1",
-        values: { name: "Ship JSON" },
-      } as DatabaseInsertRowOp,
-    ]);
-
-    const json = await jsonExporter.export(editor);
-
-    expect(json.blocks[0]).toMatchObject({
-      id: "db-1",
-      type: "database",
-      database: {
-        title: "Roadmap",
-        columns: [{ id: "name", title: "Name", type: "text" }],
-        rows: [{ id: "row-1", values: { name: "Ship JSON" } }],
-      },
-    });
 
     editor.destroy();
   });

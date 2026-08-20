@@ -4,5 +4,4 @@ export type {
   SSEClientOptions,
   SSEServerOptions,
   SSEEvent,
-  SSEStreamState,
 } from "./types";

@@ -1,12 +1,15 @@
 import {
 	INLINE_COMPLETION_VISIBLE_BLOCK_ATTRIBUTE,
 	INLINE_COMPLETION_SLOT,
+	generateId,
 	type Decoration,
 	type Editor,
 	type InlineCompletionController,
 	type InlineCompletionState,
 	type InlineCompletionSuggestion,
 } from "@input/pen-types";
+
+import { aiInlineCompletionFacet } from "../facets/controllerFacets";
 
 const inlineCompletionLeases = new WeakMap<
 	Editor,
@@ -81,7 +84,7 @@ class InlineCompletionControllerImpl implements InlineCompletionController {
 			return true;
 		}
 
-		const blockId = crypto.randomUUID();
+		const blockId = generateId();
 		this._editor.apply(
 			[
 				{
@@ -168,9 +171,10 @@ class InlineCompletionControllerImpl implements InlineCompletionController {
 export function getInlineCompletionController(
 	editor: Editor,
 ): InlineCompletionController | null {
-	return editor.internals.getSlot<InlineCompletionController>(
-		INLINE_COMPLETION_SLOT,
-	) ?? null;
+	return (
+		(editor.facet(aiInlineCompletionFacet) as InlineCompletionController | null) ??
+		null
+	);
 }
 
 export function ensureInlineCompletionController(
@@ -204,7 +208,7 @@ export function ensureInlineCompletionController(
 	}
 
 	const controller = new InlineCompletionControllerImpl(editor);
-	editor.internals.setSlot(INLINE_COMPLETION_SLOT, controller);
+	editor.internals.assignSlot(INLINE_COMPLETION_SLOT, controller);
 	inlineCompletionLeases.set(editor, {
 		controller,
 		refCount: 1,
@@ -236,7 +240,7 @@ function createInlineCompletionRelease(
 		}
 		inlineCompletionLeases.delete(editor);
 		if (editor.internals.getSlot(INLINE_COMPLETION_SLOT) === controller) {
-			editor.internals.setSlot(INLINE_COMPLETION_SLOT, null);
+			editor.internals.assignSlot(INLINE_COMPLETION_SLOT, null);
 		}
 		controller.destroy();
 	};

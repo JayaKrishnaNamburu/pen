@@ -1,0 +1,51 @@
+# React example
+
+Minimal Vite + React app that mounts Pen with `@input/pen-preset-default`. `@input/pen-core` is the headless assembly point if you skip the preset.
+
+This package is **not on the pnpm workspace yet**. `pnpm-workspace.yaml` does not include `examples/*`, so `pnpm --filter @input/pen-example-react` will not resolve until that membership lands.
+
+## Install
+
+Consumer install, including peers:
+
+```bash
+pnpm add @input/pen-preset-default @input/pen-core @input/pen-react react react-dom
+```
+
+`react` and `react-dom` are peers of `@input/pen-react`.
+
+## Mount
+
+```tsx
+"use client";
+
+import { createEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
+import { PenEditor } from "@input/pen-react";
+
+const editor = createEditor({
+  preset: defaultPreset(),
+});
+
+export function App() {
+  return <PenEditor editor={editor} />;
+}
+```
+
+That file is `src/App.tsx`.
+
+Pen ships no required stylesheet — the editor is functional unstyled. Tokens live in the `@input/pen-react` [STYLING.md](../../packages/rendering/react/STYLING.md) property reference.
+
+`@input/pen-react` is a client module (`"use client"`). In Next.js App Router, import `PenEditor` from a Client Component; do not import it from a Server Component.
+
+## Run from this repository
+
+Requires Node 22+ and pnpm 9. After `examples/*` is added to the workspace, from the repository root:
+
+```bash
+pnpm install
+pnpm build
+pnpm --filter @input/pen-example-react dev
+```
+
+Vite serves the app at `http://localhost:5173`.

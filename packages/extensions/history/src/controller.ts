@@ -1,5 +1,4 @@
 import {
-	AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY,
 	type Unsubscribe,
 	type VersionEntry,
 	type VersionMetadata,
@@ -12,6 +11,7 @@ import type {
 	HistoryController,
 	HistoryControllerOptions,
 	HistoryState,
+	ResolveHistoryAuthor,
 } from "./types";
 
 export class HistoryControllerImpl implements HistoryController {
@@ -20,6 +20,7 @@ export class HistoryControllerImpl implements HistoryController {
 	private readonly snapshotManager: SnapshotManager;
 	private readonly autoSnapshotScheduler: AutoSnapshotScheduler | null;
 	private readonly editors = new Set<HistoryControllerOptions["editor"]>();
+	readonly resolveAuthor: ResolveHistoryAuthor | undefined;
 	private state: HistoryState = {
 		snapshots: [],
 		isRestoring: false,
@@ -27,6 +28,7 @@ export class HistoryControllerImpl implements HistoryController {
 
 	constructor(options: HistoryControllerOptions) {
 		this.editor = options.editor;
+		this.resolveAuthor = options.resolveAuthor;
 		this.editors.add(options.editor);
 		this.snapshotManager = new SnapshotManager(
 			options.editor,
@@ -109,7 +111,7 @@ export class HistoryControllerImpl implements HistoryController {
 	}
 
 	getCharacterAttribution(blockId: string) {
-		return getCharacterAttribution(this.editor, blockId);
+		return getCharacterAttribution(this.editor, blockId, this.resolveAuthor);
 	}
 
 	getBlameRanges(blockId: string) {
@@ -149,13 +151,9 @@ export class HistoryControllerImpl implements HistoryController {
 	}
 
 	private async awaitEditorsSettled(): Promise<void> {
-		const lifecyclePromises = Array.from(this.editors, (editor) => {
-			const awaitLifecycle =
-				editor.internals.getSlot<() => Promise<void>>(
-					AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY,
-				);
-			return awaitLifecycle?.() ?? Promise.resolve();
-		});
+		const lifecyclePromises = Array.from(this.editors, (editor) =>
+			editor.whenReady(),
+		);
 		await Promise.all(lifecyclePromises);
 	}
 }

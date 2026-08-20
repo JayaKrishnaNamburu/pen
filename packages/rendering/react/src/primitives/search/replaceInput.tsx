@@ -17,6 +17,8 @@ export function SearchReplaceInput(props: SearchReplaceInputProps) {
 		"data-pen-search-replace-input": "",
 		type: "text",
 		placeholder,
+		// wave-l: catalog
+		"aria-label": "Replace with",
 		value: state.replaceText,
 		onChange: (event: React.ChangeEvent<HTMLInputElement>) => {
 			controller?.setReplaceText(event.target.value);

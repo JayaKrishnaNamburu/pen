@@ -1,5 +1,6 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { DATA_ATTRS } from "../utils/dataAttributes";
+import { useIsomorphicLayoutEffect } from "./useIsomorphicLayoutEffect";
 
 export function useOverlayLayout<T extends HTMLElement>(
 	dependencies: readonly unknown[],
@@ -12,14 +13,14 @@ export function useOverlayLayout<T extends HTMLElement>(
 	const [rootElement, setRootElement] = useState<HTMLElement | null>(null);
 	const [layoutVersion, forceLayoutVersion] = useState(0);
 
-	useLayoutEffect(() => {
+	useIsomorphicLayoutEffect(() => {
 		const nextRootElement = elementRef.current?.closest(
 			`[${DATA_ATTRS.editorRoot}]`,
 		) as HTMLElement | null;
 		setRootElement(nextRootElement);
 	}, []);
 
-	useLayoutEffect(() => {
+	useIsomorphicLayoutEffect(() => {
 		forceLayoutVersion((version) => version + 1);
 	}, dependencies);
 

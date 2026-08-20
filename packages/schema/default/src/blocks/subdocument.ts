@@ -1,4 +1,5 @@
 import { defineBlock, prop } from "@input/pen-types";
+import { escapeHtml } from "../escapeHtml";
 
 export const subdocument = defineBlock("subdocument", {
   props: {
@@ -25,6 +26,6 @@ export const subdocument = defineBlock("subdocument", {
     toMarkdown: (block) =>
       `<!-- pen-subdocument:${String(block.props.subdocumentGuid ?? "")} -->`,
     toHTML: (block) =>
-      `<div data-pen-subdocument="${String(block.props.subdocumentGuid ?? "")}"></div>`,
+      `<div data-pen-subdocument="${escapeHtml(String(block.props.subdocumentGuid ?? ""))}"></div>`,
   },
 });

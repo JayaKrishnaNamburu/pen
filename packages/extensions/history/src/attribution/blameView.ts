@@ -6,11 +6,10 @@ export function buildBlameRanges(
 	return attributions.map((attribution) => ({
 		from: attribution.offset,
 		to: attribution.offset + attribution.length,
-		author: {
-			id: attribution.userId,
-			name: attribution.userName,
-			color: attribution.color,
-		},
+		author: attribution.author,
+		...(attribution.displayHint
+			? { displayHint: attribution.displayHint }
+			: {}),
 		timestamp: attribution.timestamp,
 	}));
 }

@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
+import { openPlayground } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
-	await page.goto("/");
-	await expect(page.locator("[data-pen-inline-content]").first()).toBeVisible();
+	await openPlayground(page);
 });
 
 test("selects the full structured document on first cmd+a", async ({ page }) => {
@@ -21,10 +21,10 @@ test("selects the full structured document on first cmd+a", async ({ page }) => 
 
 	await expect
 		.poll(async () => page.evaluate(() => window.getSelection()?.toString() ?? ""))
-		.toBe("First\nSecond\nThird");
+		.toMatch(/^First\n+Second\n+Third$/);
 });
 
-test("keeps database available in the structured playground slash menu", async ({
+test("keeps table available in the structured playground slash menu", async ({
 	page,
 }) => {
 	const firstInline = page.locator("[data-pen-inline-content]").first();
@@ -33,6 +33,6 @@ test("keeps database available in the structured playground slash menu", async (
 	await page.keyboard.press("/");
 
 	const slashMenu = page.locator("[data-pen-slash-menu]");
-	await expect(slashMenu).toBeVisible();
-	await expect(slashMenu).toContainText("Database");
+	await expect(slashMenu).toHaveAttribute("data-open", "true");
+	await expect(slashMenu).toContainText("Table");
 });

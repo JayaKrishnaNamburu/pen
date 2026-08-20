@@ -29,6 +29,21 @@ export {
 } from "./utils/retrieveDocumentSpans";
 export { assertToolCanMutateBlock } from "./utils/mutationPolicy";
 export {
+	DOCUMENT_OP_TYPES,
+	INVALID_TOOL_PAYLOAD_CODE,
+	MAX_OP_TEXT_FIELD_LENGTH,
+	isDocumentOpType,
+} from "./constants/payloadValidation";
+export {
+	applyValidatedOps,
+	assertValidToolPayloads,
+	validateToolPayloads,
+} from "./utils/payloadValidation";
+export type {
+	ToolPayloadFailure,
+	ToolPayloadValidationResult,
+} from "./utils/payloadValidation";
+export {
 	STRUCTURED_TARGET_OPERATION_IDS,
 	inspectStructuredTarget,
 	listAvailableToolBlockTypes,

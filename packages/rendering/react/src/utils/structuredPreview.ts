@@ -57,6 +57,7 @@ export function buildAIStructuredPreviewSelection(
 			);
 			hasPatchedPreview = true;
 		} catch {
+			// patch apply failed; keep the last good preview.
 			return {
 				preview: latestPreviewSnapshot,
 				patchCount,
@@ -271,8 +272,14 @@ function cloneStructuredValue(value: unknown): unknown {
 	if (value == null) {
 		return value;
 	}
-	if (typeof structuredClone === "function") {
-		return structuredClone(value);
+
+	// HOST4: structuredClone is newer than the HOST3 floor. A missing API
+	// must not throw. JSON clone drops non-JSON values (undefined fields,
+	// Dates, Maps); if stringify fails the caller keeps the last full
+	// preview snapshot instead of a live patch replay.
+	const clone = globalThis.structuredClone;
+	if (typeof clone === "function") {
+		return clone(value);
 	}
 	return JSON.parse(JSON.stringify(value)) as unknown;
 }
@@ -357,6 +364,7 @@ function areStructuredPreviewValuesEqual(previous: unknown, next: unknown): bool
 	try {
 		return JSON.stringify(previous) === JSON.stringify(next);
 	} catch {
+		// cyclic or unstringifiable values are not equal.
 		return false;
 	}
 }

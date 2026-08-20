@@ -1,0 +1,28 @@
+name: Unscheduled measure
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+jobs:
+  unscheduled-measure:
+    name: SCH1 no-unscheduled-measure
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Check unscheduled-measure inventory
+        run: node scripts/no-unscheduled-measure.mjs

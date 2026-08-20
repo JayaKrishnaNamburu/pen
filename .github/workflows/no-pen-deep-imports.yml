@@ -1,0 +1,28 @@
+name: no-pen-deep-imports
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+jobs:
+  no-pen-deep-imports:
+    name: API4 no-pen-deep-imports
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Check deep-import inventory
+        run: node scripts/no-pen-deep-imports.mjs

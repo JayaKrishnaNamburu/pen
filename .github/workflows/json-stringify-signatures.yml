@@ -1,0 +1,28 @@
+name: JSON.stringify signatures
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+jobs:
+  stringify-inventory:
+    name: SCALE2 stringify inventory
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Check JSON.stringify inventory
+        run: node scripts/no-json-stringify-signatures.mjs

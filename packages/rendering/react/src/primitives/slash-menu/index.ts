@@ -2,6 +2,7 @@ export {
 	SlashMenuRoot,
 	useSlashMenuContext,
 	type SlashMenuContextValue,
+	type SlashMenuController,
 	type SlashMenuRootProps,
 } from "./root";
 export { SlashMenuContent, type SlashMenuContentProps } from "./content";

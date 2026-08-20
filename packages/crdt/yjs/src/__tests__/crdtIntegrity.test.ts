@@ -290,7 +290,7 @@ describe("CRDT integrity", () => {
       expect(loaded.penDocument.blocks.has("b1")).toBe(true);
     });
 
-    it("emits diagnostic for invalid document on load", () => {
+    it("emits a named diagnostic for invalid document on load", () => {
       const diagnostics: CRDTDiagnostic[] = [];
       const adapter = yjsAdapter({
         onDiagnostic: (d) => diagnostics.push(d),
@@ -312,7 +312,7 @@ describe("CRDT integrity", () => {
       adapter.loadDocument(binary);
 
       expect(diagnostics.length).toBeGreaterThan(0);
-      expect(diagnostics[0].code).toBe("LOAD_VALIDATION_FAILED");
+      expect(diagnostics[0].code).toBe("MISSING_BLOCK_MAP_KEY");
     });
 
     it("empty document loads without validation errors", () => {
@@ -325,10 +325,7 @@ describe("CRDT integrity", () => {
       const binary = Y.encodeStateAsUpdate(ydoc);
       adapter.loadDocument(binary);
 
-      const validationDiags = diagnostics.filter(
-        (d) => d.code === "LOAD_VALIDATION_FAILED",
-      );
-      expect(validationDiags).toHaveLength(0);
+      expect(diagnostics).toEqual([]);
     });
   });
 

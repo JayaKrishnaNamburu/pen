@@ -1,25 +1,21 @@
 import { generateId } from "@input/pen-types";
-import type { Position, TableColumnSchema } from "@input/pen-types";
+import type { Position } from "@input/pen-types";
 import type {
 	BlockConvertPlan,
 	BlockInsertPlan,
 	BlockMovePlan,
 	BlockUpdatePlan,
-	DatabaseEditPlan,
 	DocumentMutationPlan,
 	ReviewBundlePlan,
 	TextEditPlan,
 } from "./planTypes";
 import type {
 	ConvertBlockIntent,
-	DatabaseIntent,
 	InsertBlockIntent,
 	MoveBlockIntent,
 	ReviewBundleIntent,
-	StructuredDatabaseRow,
 	StructuredInsertPosition,
 	StructuredIntent,
-	StructuredTableColumn,
 	TextEditIntent,
 	UpdateBlockIntent,
 } from "./structuredIntent";
@@ -64,10 +60,12 @@ function lowerStructuredIntent(
 			return lowerConvertBlockIntent(intent);
 		case "text_edit":
 			return lowerTextEditIntent(intent);
-		case "database":
-			return lowerDatabaseIntent(intent);
 		case "review_bundle":
 			return lowerReviewBundleIntent(intent, options, path, issues);
+		default: {
+			const _exhaustive: never = intent;
+			return _exhaustive;
+		}
 	}
 }
 
@@ -100,37 +98,7 @@ function lowerInsertBlockIntent(
 		initialText: intent.initialText,
 		confidence: intent.confidence,
 	};
-	const nestedPlans: DocumentMutationPlan[] = [insertPlan];
-	if (
-		intent.blockType === "database" &&
-		(intent.database?.columns ||
-			intent.database?.rows ||
-			intent.database?.views ||
-			intent.database?.activeViewId)
-	) {
-		const databasePlan = lowerDatabaseIntent({
-			kind: "database",
-			blockId,
-			columns: intent.database?.columns,
-			rows: intent.database?.rows,
-			views: intent.database?.views,
-			activeViewId: intent.database?.activeViewId,
-			confidence: intent.confidence,
-		});
-		if (databasePlan) {
-			nestedPlans.push(databasePlan);
-		}
-	}
-	if (nestedPlans.length === 1) {
-		return insertPlan;
-	}
-	return {
-		kind: "review_bundle",
-		label: `Insert ${intent.blockType}`,
-		reason: `Insert a ${intent.blockType} block and seed its structured data.`,
-		plans: nestedPlans,
-		confidence: intent.confidence,
-	};
+	return insertPlan;
 }
 
 function lowerUpdateBlockIntent(intent: UpdateBlockIntent): BlockUpdatePlan {
@@ -176,42 +144,6 @@ function lowerTextEditIntent(intent: TextEditIntent): TextEditPlan {
 		target: intent.target,
 		operation: intent.operation,
 		text: intent.text,
-		confidence: intent.confidence,
-	};
-}
-
-function lowerDatabaseIntent(intent: DatabaseIntent): DatabaseEditPlan | null {
-	const columns = deriveDatabaseColumns(intent.columns, intent.rows);
-	const steps: DatabaseEditPlan["steps"] = [];
-	for (const column of columns) {
-		steps.push({
-			op: "add_column",
-			column,
-		});
-	}
-	for (const row of intent.rows ?? []) {
-		steps.push({
-			op: "insert_row",
-			rowId: row.rowId,
-			values: row.values,
-		});
-	}
-	for (const view of intent.views ?? []) {
-		steps.push({
-			op: "add_view",
-			view,
-		});
-	}
-	if (intent.activeViewId) {
-		steps.push({
-			op: "set_active_view",
-			viewId: intent.activeViewId,
-		});
-	}
-	return {
-		kind: "database_edit",
-		blockId: intent.blockId,
-		steps,
 		confidence: intent.confidence,
 	};
 }
@@ -288,47 +220,4 @@ function lowerInsertPosition(
 		parent: position.parentId,
 		index: position.index,
 	};
-}
-
-function deriveDatabaseColumns(
-	columns: readonly StructuredTableColumn[] | undefined,
-	rows: readonly StructuredDatabaseRow[] | undefined,
-): TableColumnSchema[] {
-	const explicitColumns = (columns ?? []).map((column, index) =>
-		toTableColumnSchema(column, index),
-	);
-	if (explicitColumns.length > 0) {
-		return explicitColumns;
-	}
-	const inferredKeys = new Set<string>();
-	for (const row of rows ?? []) {
-		for (const key of Object.keys(row.values)) {
-			inferredKeys.add(key);
-		}
-	}
-	return [...inferredKeys].map((key, index) => ({
-		id: toColumnId(key, index),
-		title: key,
-		type: "text",
-	}));
-}
-
-function toTableColumnSchema(
-	column: StructuredTableColumn,
-	index: number,
-): TableColumnSchema {
-	return {
-		id: column.id ?? toColumnId(column.title, index),
-		title: column.title,
-		type: column.type ?? "text",
-	};
-}
-
-function toColumnId(value: string, index: number): string {
-	const normalized = value
-		.trim()
-		.toLowerCase()
-		.replace(/[^a-z0-9]+/g, "_")
-		.replace(/^_+|_+$/g, "");
-	return normalized.length > 0 ? normalized : `column_${index + 1}`;
 }

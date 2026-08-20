@@ -1,6 +1,7 @@
 import type { Editor, ToolDefinition, Position } from "@input/pen-types";
 import { POSITION_SCHEMA } from "../constants/toolSchemas";
 import { assertToolCanMutateBlock } from "../utils/mutationPolicy";
+import { applyValidatedOps } from "../utils/payloadValidation";
 
 export function moveBlockTool(editor: Editor): ToolDefinition {
   return {
@@ -20,7 +21,8 @@ export function moveBlockTool(editor: Editor): ToolDefinition {
         position: Position;
       };
       assertToolCanMutateBlock(editor, opts.blockId);
-      editor.apply(
+      applyValidatedOps(
+        editor,
         [
           {
             type: "move-block",

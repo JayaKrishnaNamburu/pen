@@ -86,7 +86,7 @@ export function useSlashMenu(
 		};
 
 		syncSlashMenu();
-		const unsubDocument = editor.onDocumentCommit(syncSlashMenu);
+		const unsubDocument = editor.on("commit", () => syncSlashMenu());
 		const unsubSelection = editor.onSelectionChange(syncSlashMenu);
 		return () => {
 			unsubDocument();

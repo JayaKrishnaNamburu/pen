@@ -18,6 +18,8 @@ export function SearchInput(props: SearchInputProps) {
 		type: "text",
 		role: "searchbox",
 		placeholder,
+		// wave-l: catalog
+		"aria-label": "Find in document",
 		value: state.query,
 		onChange: (event: React.ChangeEvent<HTMLInputElement>) => {
 			controller?.setQuery(event.target.value);

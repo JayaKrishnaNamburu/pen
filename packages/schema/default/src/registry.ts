@@ -12,5 +12,6 @@ export function createDefaultSchema(): ComposableSchema {
   return new SchemaRegistryImpl({
     blocks: defaultBlocks as BlockSchema[],
     inlines: defaultInlines as InlineSchema[],
+    onUnknownBlock: () => "passthrough",
   });
 }

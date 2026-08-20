@@ -1,4 +1,5 @@
-import { INPUT_RULES_ENGINE_SLOT_KEY, supportsInlineInputRules } from "@input/pen-types";
+import { inputRulesEngineFacet } from "@input/pen-core";
+import { supportsInlineInputRules } from "@input/pen-types";
 import type { DocumentOp, Editor } from "@input/pen-types";
 import { matchInlineInputRule } from "../utils/inlineInputRule";
 import type { InlineInputRuleEngine } from "./crdt";
@@ -33,9 +34,8 @@ export function applyInlineInputRule(
 	}
 
 	const inputRuleEngine =
-		editor.internals.getSlot<InlineInputRuleEngine>(
-			INPUT_RULES_ENGINE_SLOT_KEY,
-		) ?? null;
+		(editor.facet(inputRulesEngineFacet) as InlineInputRuleEngine | null) ??
+		null;
 	const ops =
 		inputRuleEngine?.tryMatchInline(editor, blockId, text, { offset }) ??
 		resolveFallbackInlineInputRule(editor, blockId, block.textContent(), offset, text);

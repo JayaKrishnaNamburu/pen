@@ -15,17 +15,37 @@ export default defineConfig({
 		baseURL: PLAYGROUND_BASE_URL,
 		trace: "on-first-retry",
 	},
-	webServer: {
-		command: "pnpm --filter @input/pen-playground dev:e2e",
-		url: PLAYGROUND_BASE_URL,
-		reuseExistingServer: !process.env.CI,
-		timeout: 120_000,
-	},
+	webServer: [
+		{
+			command: "pnpm --filter @input/pen-playground run dev:backend",
+			url: "http://127.0.0.1:8787/health",
+			reuseExistingServer: !process.env.CI,
+			timeout: 120_000,
+		},
+		{
+			command: "pnpm --filter @input/pen-playground run dev:e2e",
+			url: PLAYGROUND_BASE_URL,
+			reuseExistingServer: !process.env.CI,
+			timeout: 120_000,
+		},
+	],
 	projects: [
 		{
 			name: "chromium",
 			use: {
 				...devices["Desktop Chrome"],
+			},
+		},
+		{
+			name: "webkit",
+			use: {
+				...devices["Desktop Safari"],
+			},
+		},
+		{
+			name: "firefox",
+			use: {
+				...devices["Desktop Firefox"],
 			},
 		},
 	],

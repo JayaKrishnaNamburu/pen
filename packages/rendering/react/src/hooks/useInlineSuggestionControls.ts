@@ -1,5 +1,6 @@
 import React from "react";
 import type { Editor } from "@input/pen-types";
+import { useIsomorphicLayoutEffect } from "./useIsomorphicLayoutEffect";
 import { getAIController, type PersistentTextSuggestion } from "@input/pen-ai";
 import { useActiveAISession } from "./useActiveAISession";
 import { useAIActions } from "./useAIActions";
@@ -108,7 +109,7 @@ export function useInlineSuggestionControls(
 		);
 	}, [resolvingSuggestionIds.length, suggestions]);
 
-	React.useLayoutEffect(() => {
+	useIsomorphicLayoutEffect(() => {
 		function updatePositions() {
 			const nextPositions = resolveSuggestionControlPositions(editor, scopedSuggestions, {
 				placement: shouldUseRightEdgeRail ? "right-rail" : "anchor",

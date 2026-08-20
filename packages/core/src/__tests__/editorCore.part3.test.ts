@@ -144,7 +144,7 @@ describe("@input/pen-core createEditor", () => {
 		editor.destroy();
 	});
 
-	it("clears stale grid state when converting table or database blocks", () => {
+	it("clears stale grid state when converting table blocks", () => {
 		const editor = createEditor();
 
 		editor.apply([
@@ -155,65 +155,26 @@ describe("@input/pen-core createEditor", () => {
 				props: {},
 				position: "last",
 			},
-			{
-				type: "insert-block",
-				blockId: "database-block",
-				blockType: "database",
-				props: {},
-				position: "last",
-			},
 		]);
 
 		editor.apply([
-			{
-				type: "database-insert-row",
-				blockId: "database-block",
-				rowId: "row-1",
-				values: {
-					name: "Alpha",
-					tags: "todo",
-					status: "true",
-				},
-			},
 			{
 				type: "convert-block",
 				blockId: "table-block",
 				newType: "paragraph",
 			},
-			{
-				type: "convert-block",
-				blockId: "database-block",
-				newType: "paragraph",
-			},
 		]);
 
 		const tableBlock = editor.getBlock("table-block")!;
-		const databaseBlock = editor.getBlock("database-block")!;
 		expect(tableBlock.type).toBe("paragraph");
 		expect(tableBlock.tableRowCount()).toBe(0);
 		expect(tableBlock.tableColumns()).toEqual([]);
-		expect(tableBlock.databaseViews()).toEqual([]);
-
-		expect(databaseBlock.type).toBe("paragraph");
-		expect(databaseBlock.tableRowCount()).toBe(0);
-		expect(databaseBlock.tableColumns()).toEqual([]);
-		expect(databaseBlock.databaseViews()).toEqual([]);
-		expect(databaseBlock.databasePrimaryViewId()).toBeNull();
 
 		const tableBlockMap = editor.internals.doc.blocks.get(
 			"table-block",
 		) as TestBlockMapLike;
-		const databaseBlockMap = editor.internals.doc.blocks.get(
-			"database-block",
-		) as TestBlockMapLike;
 		expect(tableBlockMap.get("tableContent")).toBeUndefined();
 		expect(tableBlockMap.get("tableColumns")).toBeUndefined();
-		expect(tableBlockMap.get("databaseViews")).toBeUndefined();
-		expect(tableBlockMap.get("databasePrimaryViewId")).toBeUndefined();
-		expect(databaseBlockMap.get("tableContent")).toBeUndefined();
-		expect(databaseBlockMap.get("tableColumns")).toBeUndefined();
-		expect(databaseBlockMap.get("databaseViews")).toBeUndefined();
-		expect(databaseBlockMap.get("databasePrimaryViewId")).toBeUndefined();
 
 		editor.destroy();
 	});
@@ -224,10 +185,11 @@ describe("@input/pen-core createEditor", () => {
 			name: "append-exclamation",
 			observe(events, editor) {
 				if (appended) return;
-				const hasInsertText = events.some((event) =>
-					event.ops.some((op) => op.type === "insert-text"),
+				const hasUserEdit = events.some(
+					(event) =>
+						event.origin.type === "user" && !event.summary.isEmpty,
 				);
-				if (!hasInsertText) return;
+				if (!hasUserEdit) return;
 
 				appended = true;
 				editor.apply(
@@ -357,7 +319,7 @@ describe("@input/pen-core createEditor", () => {
 		const ext = defineExtension({
 			name: "capture-local-dispatch",
 			observe(events) {
-				observed.push(events);
+				observed.push([...events]);
 			},
 		});
 		const editor = createEditor({

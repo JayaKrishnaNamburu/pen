@@ -203,7 +203,7 @@ describe("@input/pen-document-ops ToolRuntimeImpl", () => {
 				getSlot<T>(key: string): T | undefined {
 					return slots.get(key) as T | undefined;
 				},
-				setSlot(key: string, value: unknown): void {
+				assignSlot(key: string, value: unknown): void {
 					slots.set(key, value);
 				},
 			},

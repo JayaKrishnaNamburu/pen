@@ -29,7 +29,11 @@ export default tseslint.config(
     },
     plugins: { pen },
     rules: {
-      "pen/no-html-injection-sinks": "error",
+			"pen/no-html-injection-sinks": "error",
+
+      // HOST4: crypto.randomUUID is secure-context-only, so it throws on plain-HTTP origins
+      // and on Safari < 15.4. generateId owns the feature test and fallback (F24).
+      "pen/no-bare-random-uuid": "error",
 
       // SEC8: no dynamic code, so Pen stays functional under `script-src 'self'`.
       "no-eval": "error",
@@ -38,12 +42,22 @@ export default tseslint.config(
     },
   },
   {
+    // HOST2: published modules must import in Node without DOM globals. Function
+    // bodies may touch the browser; module scope may not. Docs, the playground,
+    // and the conformance harness are hosts — their entrypoints mount on `document`.
+    files: ["packages/**"],
+    ignores: ["packages/docs/**", "packages/tooling/conformance/**"],
+    rules: {
+      "pen/no-module-scope-browser-globals": "error",
+    },
+  },
+  {
     // Deliberately permissive baseline. Each entry names the wave that owns the cleanup and
     // earns its promotion to "error"; promoting one before that only creates noise.
     rules: {
-      // Wave H step H.2 (CH1): 50 files still carry `@ts-nocheck`. Promoted to "error" when
-      // the AI extension is de-mixined, which is also what removes most of the two rules below.
-      "@typescript-eslint/ban-ts-comment": "warn",
+      // Wave H step H.2 (CH1): `@ts-nocheck` is gone. Remaining `@ts-expect-error`
+      // sites must keep an adjacent tracked-issue description.
+      "@typescript-eslint/ban-ts-comment": "error",
       "@typescript-eslint/no-explicit-any": "warn",
       // Concentrated in the mechanically split `PartN` files and their test counterparts
       // (Wave H steps H.2/H.3); the count is the burn-down metric for that work.
@@ -55,10 +69,9 @@ export default tseslint.config(
       // an expression evaluated for no effect — bug-shaped, but each needs intent to resolve.
       "no-useless-assignment": "warn",
       "@typescript-eslint/no-unused-expressions": "warn",
-      // Not a style nit here: the current findings are `let` bindings initialized and then never
-      // written (dead warn-once flags in core, dead streaming accumulators inside the
-      // `@ts-nocheck` region). Autofixing them to `const` would make broken code look
-      // deliberate, so they stay visible until H.2/H.6 resolve the underlying logic.
+      // Not a style nit here: leftover `let` bindings that are never written. Autofixing
+      // them to `const` would make dead logic look deliberate. Stay warn until the
+      // remaining unused-binding debt is gone — do not promote with ban-ts-comment.
       "prefer-const": "warn",
       // Wave P (API5) decomposes the handle/interface merging these flag.
       "@typescript-eslint/no-unsafe-declaration-merging": "warn",
@@ -75,6 +88,12 @@ export default tseslint.config(
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-non-null-assertion": "off",
+      // HOST4 protects shipped runtime code. Tests run in Node, where `crypto.randomUUID`
+      // is unconditional, and their fixture ids are not a portability surface.
+      "pen/no-bare-random-uuid": "off",
+      // HOST2 protects published module graphs. Tests are allowed to read document/window
+      // at file scope when they build a jsdom fixture.
+      "pen/no-module-scope-browser-globals": "off",
     },
   },
   {

@@ -2,7 +2,7 @@
 
 Headless editor runtime for Pen.
 
-This package is published publicly, but the Pen SDK is source-available rather than OSI open source. Production use requires a license from Input.
+This package is published publicly. The Pen SDK is source-available under a commercial license (`LICENSE.md`). Production use requires a license from Input.
 
 ## Install
 
@@ -31,6 +31,8 @@ const editor = createHeadlessEditor({
 ```
 
 Use this shape for migrations, AI workers, export workers, and tests that should run through Pen's mutation pipeline without mounting a UI.
+
+`editor.destroy()` deactivates extensions and observation. It does not tear down an attached field editor — hosts own that call (React `EditorRoot` and Vue `PenEditor` already do). The method returns the queued teardown promise; callers that ignore it stay correct.
 
 ## Typical Pairing
 

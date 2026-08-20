@@ -10,7 +10,7 @@ export function useNumberedListItemValue(block: BlockHandle): number {
   const fallbackValue = getOrderedListValue(block) ?? 1;
 
   return useSyncExternalStore(
-    (callback) => editor.onDocumentCommit(() => callback()),
+    (callback) => editor.on("commit", () => callback()),
     () => getOrderedListValue(editor.getBlock(block.id)) ?? fallbackValue,
     () => fallbackValue,
   );

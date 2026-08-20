@@ -1,4 +1,8 @@
-import { emptyDecorationSet, getNumberedListItemValue } from "@input/pen-core";
+import {
+  affectedBlockIdsFromSummary,
+  emptyDecorationSet,
+  getNumberedListItemValue,
+} from "@input/pen-core";
 import { getExpandedBlockRole } from "@input/pen-dom/field-editor";
 import type {
   FieldEditorStore,
@@ -59,14 +63,14 @@ const EMPTY_FIELD_EDITOR_STATE: FieldEditorStoreSnapshot = {
 
 export function useDocumentEmptyState(editor: Editor) {
   return useExternalStore(
-    (callback) => editor.onDocumentCommit(() => callback()),
+    (callback) => editor.on("commit", () => callback()),
     () => editor.documentState.isEmpty,
   );
 }
 
 export function useDocumentPlaceholderState(editor: Editor) {
   return useExternalStore(
-    (callback) => editor.onDocumentCommit(() => callback()),
+    (callback) => editor.on("commit", () => callback()),
     () => computeDocumentPlaceholderVisible(editor),
   );
 }
@@ -74,8 +78,8 @@ export function useDocumentPlaceholderState(editor: Editor) {
 export function useBlockTextSnapshot(editor: Editor, blockId: string) {
   return useExternalStore(
     (callback) =>
-      editor.onDocumentCommit((event) => {
-        if (event.affectedBlocks.includes(blockId)) {
+      editor.on("commit", (event) => {
+        if (affectedBlockIdsFromSummary(event.summary).includes(blockId)) {
           callback();
         }
       }),
@@ -92,8 +96,8 @@ export function useCellTextSnapshot(
 ) {
   return useExternalStore(
     (callback) =>
-      editor.onDocumentCommit((event) => {
-        if (event.affectedBlocks.includes(tableBlockId)) {
+      editor.on("commit", (event) => {
+        if (affectedBlockIdsFromSummary(event.summary).includes(tableBlockId)) {
           callback();
         }
       }),
@@ -105,8 +109,8 @@ export function useCellTextSnapshot(
 export function useBlockModel(editor: Editor, blockId: string) {
   return useExternalStore(
     (callback) =>
-      editor.onDocumentCommit((event) => {
-        if (event.affectedBlocks.includes(blockId)) {
+      editor.on("commit", (event) => {
+        if (affectedBlockIdsFromSummary(event.summary).includes(blockId)) {
           callback();
         }
       }),
@@ -136,7 +140,7 @@ export function useBlockModel(editor: Editor, blockId: string) {
 
 export function useParentIdChildBlockIds(editor: Editor, parentBlockId: string) {
   return useExternalStore(
-    (callback) => editor.onDocumentCommit(() => callback()),
+    (callback) => editor.on("commit", () => callback()),
     () => [...getParentIdChildBlockIds(editor, parentBlockId)],
     stringArrayEqual,
   );

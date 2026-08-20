@@ -9,6 +9,7 @@ import type {
 	AIBlockClass,
 	AITransportKind,
 } from "./contracts";
+import { generateId } from "@input/pen-types";
 
 export interface BuildMutationReceiptInput {
 	status: AIMutationReceiptStatus;
@@ -23,7 +24,7 @@ export function buildMutationReceipt(
 	input: BuildMutationReceiptInput,
 ): AIMutationReceipt {
 	return {
-		id: crypto.randomUUID(),
+		id: generateId(),
 		status: input.status,
 		evidence: buildMutationEvidence(
 			input.ops ?? [],
@@ -55,7 +56,7 @@ function buildMutationEvidence(
 	}
 
 	return {
-		commitId: crypto.randomUUID(),
+		commitId: generateId(),
 		opsCount: ops.length,
 		affectedBlockIds: [...affectedBlockIds],
 		createdBlockIds: [...createdBlockIds],

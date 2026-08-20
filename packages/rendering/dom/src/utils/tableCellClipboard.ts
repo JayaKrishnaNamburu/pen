@@ -48,9 +48,12 @@ export async function copyCellSelection(
 	});
 	const encodedPenCells = encodeURIComponent(penCells);
 
-	const htmlRows = cellData.map((row) =>
-		`<tr>${row.map((c) => `<td>${escapeHtml(c)}</td>`).join("")}</tr>`,
-	).join("");
+	const htmlRows = cellData
+		.map(
+			(row) =>
+				`<tr>${row.map((c) => `<td>${escapeHtml(c)}</td>`).join("")}</tr>`,
+		)
+		.join("");
 	const html = `<table>${htmlRows}</table>`;
 	const clipboard = globalThis.navigator?.clipboard;
 	if (!clipboard) {
@@ -64,7 +67,9 @@ export async function copyCellSelection(
 		try {
 			await clipboard.write([
 				new ClipboardItem({
-					"text/plain": new Blob([tabSeparated], { type: "text/plain" }),
+					"text/plain": new Blob([tabSeparated], {
+						type: "text/plain",
+					}),
 					"text/html": new Blob(
 						[`<meta data-pen-cells="${encodedPenCells}" />${html}`],
 						{ type: "text/html" },
@@ -81,7 +86,16 @@ export async function copyCellSelection(
 		try {
 			await clipboard.writeText(tabSeparated);
 			return true;
-		} catch {
+		} catch (error) {
+			editor.internals.emit("diagnostic", {
+				code: "PEN_CLIPBOARD_002",
+				level: "warn",
+				source: "clipboard",
+				message: "Table cell copy could not write the clipboard",
+				remediation:
+					"Grant clipboard permission or copy while the editor is focused.",
+				error,
+			});
 			return false;
 		}
 	}
@@ -89,42 +103,75 @@ export async function copyCellSelection(
 	return false;
 }
 
-export function pasteCellSelection(editor: Editor, selection: CellSelection): void {
-	navigator.clipboard.read().then((items) => {
-		for (const item of items) {
-			if (item.types.includes("text/html")) {
-				item.getType("text/html").then((blob) => {
-					blob.text().then((html) => {
-						const penCellsMatch = html.match(/data-pen-cells=(['"])(.*?)\1/);
-						if (penCellsMatch) {
-							try {
-								const parsed = parseEncodedCellPayload(penCellsMatch[2]);
-								applyPastedCells(editor, selection, parsed.cells);
-								return;
-							} catch {
-								// Fall through to plain-text clipboard reads below.
+export function pasteCellSelection(
+	editor: Editor,
+	selection: CellSelection,
+): void {
+	navigator.clipboard
+		.read()
+		.then((items) => {
+			for (const item of items) {
+				if (item.types.includes("text/html")) {
+					item.getType("text/html").then((blob) => {
+						blob.text().then((html) => {
+							const penCellsMatch = html.match(
+								/data-pen-cells=(['"])(.*?)\1/,
+							);
+							if (penCellsMatch) {
+								try {
+									const parsed = parseEncodedCellPayload(
+										penCellsMatch[2],
+									);
+									applyPastedCells(
+										editor,
+										selection,
+										parsed.cells,
+									);
+									return;
+								} catch {
+									// Fall through to plain-text clipboard reads below.
+								}
 							}
-						}
-						pasteFromPlainText(editor, selection);
+							pasteFromPlainText(editor, selection);
+						});
 					});
-				});
-				return;
+					return;
+				}
 			}
-		}
-		pasteFromPlainText(editor, selection);
-	}).catch(() => {
-		pasteFromPlainText(editor, selection);
-	});
+			pasteFromPlainText(editor, selection);
+		})
+		.catch(() => {
+			// rich clipboard.read failed; plain-text paste is the remaining path.
+			pasteFromPlainText(editor, selection);
+		});
 }
 
 function pasteFromPlainText(editor: Editor, selection: CellSelection): void {
-	navigator.clipboard.readText().then((text) => {
-		const cells = text.split("\n").map((row) => row.split("\t"));
-		applyPastedCells(editor, selection, cells);
-	}).catch(() => { });
+	navigator.clipboard
+		.readText()
+		.then((text) => {
+			const cells = text.split("\n").map((row) => row.split("\t"));
+			applyPastedCells(editor, selection, cells);
+		})
+		.catch((error: unknown) => {
+			// CH5: terminal clipboard failure — no remaining paste fallback.
+			editor.internals.emit("diagnostic", {
+				code: "PEN_CLIPBOARD_001",
+				level: "warn",
+				source: "clipboard",
+				message: "Table cell paste could not read the clipboard",
+				remediation:
+					"Grant clipboard permission or paste while the editor is focused.",
+				error,
+			});
+		});
 }
 
-function applyPastedCells(editor: Editor, selection: CellSelection, cellData: string[][]): void {
+function applyPastedCells(
+	editor: Editor,
+	selection: CellSelection,
+	cellData: string[][],
+): void {
 	const block = editor.getBlock(selection.blockId);
 	if (!block) return;
 
@@ -181,6 +228,7 @@ function parseEncodedCellPayload(raw: string): { cells: string[][] } {
 	try {
 		return JSON.parse(decodeURIComponent(raw)) as { cells: string[][] };
 	} catch {
+		// encoded payload was not URI-encoded; try the raw JSON.
 		return JSON.parse(raw) as { cells: string[][] };
 	}
 }

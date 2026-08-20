@@ -1,0 +1,28 @@
+# SCALE4 nightly soak (F.4). Heap is reported, not gated — do not fail this job on heap.
+# spec-v2/22-scale-envelope.md SCALE4; spec-v2/09-reliability-testing.md nightly heap soak.
+name: Soak
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 5 * * *"
+
+jobs:
+  soak:
+    name: SCALE4 soak
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Run soak placeholder
+        run: node packages/tooling/bench/src/soak/run.mjs

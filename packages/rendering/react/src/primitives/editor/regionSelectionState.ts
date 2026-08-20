@@ -1,5 +1,4 @@
 import { createContext, useContext } from "react";
-import { isDevelopmentEnvironment } from "../../utils/environment";
 
 export type RegionSelectorSelectionMode = "block";
 export type RegionSelectorActivation = "whenInactive";
@@ -84,11 +83,6 @@ export const EditorRegionSelectionContext =
 export function useEditorRegionSelectionContext(): EditorRegionSelectionContextValue {
 	const ctx = useContext(EditorRegionSelectionContext);
 	if (!ctx) {
-		if (isDevelopmentEnvironment()) {
-			console.error(
-				"Pen: region selection primitives must be used within <Pen.Editor.Root>.",
-			);
-		}
 		throw new Error("Missing Pen.Editor.Root region selection context");
 	}
 	return ctx;

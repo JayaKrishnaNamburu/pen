@@ -27,6 +27,7 @@ function createReadOnlyTargetEditor(): Editor {
 		getBlock: (blockId: string) => (blockId === block.id ? block : null),
 		apply: vi.fn<(ops: DocumentOp[], options?: ApplyOptions) => void>(),
 		internals: {
+			emit: vi.fn(),
 			getSlot(key: string) {
 				if (key === "delta-stream:target") {
 					return {
@@ -68,6 +69,7 @@ function createToolRuntimeEditor(): {
 			},
 			apply: vi.fn<(ops: DocumentOp[], options?: ApplyOptions) => void>(),
 			internals: {
+				emit: vi.fn(),
 				getSlot(key: string) {
 					if (key === "delta-stream:target") {
 						return streamingTarget;
@@ -104,11 +106,16 @@ describe("@input/pen-delta-stream processStream", () => {
 				]),
 				editor,
 			),
-		).rejects.toThrow(
-			'Block "subdocument-1" of type "subdocument" is not editable in structured documents.',
-		);
+		).resolves.toBeUndefined();
 
 		expect(editor.apply).not.toHaveBeenCalled();
+		expect(editor.internals.emit).toHaveBeenCalledWith(
+			"diagnostic",
+			expect.objectContaining({
+				code: "stream-part-malformed",
+				source: "delta-stream",
+			}),
+		);
 	});
 
 	it("emits progressive tool-output updates for async tool results", async () => {

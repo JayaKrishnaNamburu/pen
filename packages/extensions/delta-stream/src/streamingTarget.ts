@@ -1,31 +1,23 @@
 import type {
+	CommitEvent,
 	Editor,
 	GenerationZone,
-	CRDTMap,
-	DocumentRange,
+	OpOrigin,
+	Point,
+	TextStreamWriter,
+	Unsubscribe,
 } from "@input/pen-types";
-import { BatchingBuffer } from "./batch";
 
 export interface StreamingTarget {
 	readonly generationZone: GenerationZone | null;
-	beginStreaming(zoneId: string, blockId: string): void;
+	beginStreaming(zoneId: string, blockId: string, origin?: OpOrigin): void;
 	appendDelta(delta: string): void;
-	endStreaming(
-		status: "complete" | "cancelled" | "error",
-	): void;
+	endStreaming(status: "complete" | "cancelled" | "error"): void;
 }
 
-type CRDTBlockMap = CRDTMap<CRDTMap<unknown>>;
+const DEFAULT_STREAM_FLUSH_INTERVAL_MS = 50;
 
-interface DeferredSchemaEngine {
-	markDirty(blockId: string): void;
-	deferBlock(blockId: string): void;
-	undeferBlock(blockId: string): void;
-}
-
-const DEFAULT_STREAM_BATCH_INTERVAL_MS = 50;
-
-function createPlaceholderRange(blockId: string): DocumentRange {
+function createPlaceholderRange(blockId: string) {
 	return {
 		start: { blockId, offset: 0 },
 		end: { blockId, offset: 0 },
@@ -35,13 +27,13 @@ function createPlaceholderRange(blockId: string): DocumentRange {
 		get blockRange() {
 			return [blockId];
 		},
-		contains(point) {
+		contains(point: Point) {
 			return point.blockId === blockId && point.offset === 0;
 		},
-		overlaps(other) {
+		overlaps(other: { start: Point; end: Point }) {
 			return other.start.blockId === blockId || other.end.blockId === blockId;
 		},
-		equals(other) {
+		equals(other: { start: Point; end: Point }) {
 			return (
 				other.start.blockId === blockId &&
 				other.start.offset === 0 &&
@@ -52,7 +44,7 @@ function createPlaceholderRange(blockId: string): DocumentRange {
 		toTextSelection() {
 			const range = this;
 			return {
-				type: "text",
+				type: "text" as const,
 				anchor: { blockId, offset: 0 },
 				focus: { blockId, offset: 0 },
 				get isCollapsed() {
@@ -74,30 +66,30 @@ function createPlaceholderRange(blockId: string): DocumentRange {
 
 export class StreamingTargetImpl implements StreamingTarget {
 	private readonly _editor: Editor;
-	private readonly _engine: DeferredSchemaEngine;
-	private readonly _batchInterval: number;
-	private _buffer: BatchingBuffer | null = null;
+	private readonly _flushIntervalMs: number;
+	private _writer: TextStreamWriter | null = null;
 	private _zone: GenerationZone | null = null;
-	private _blockId: string | null = null;
+	private _unsubscribeCommit: Unsubscribe | null = null;
 
 	constructor(
 		editor: Editor,
-		engine: DeferredSchemaEngine,
-		batchInterval = DEFAULT_STREAM_BATCH_INTERVAL_MS,
+		flushIntervalMs = DEFAULT_STREAM_FLUSH_INTERVAL_MS,
 	) {
 		this._editor = editor;
-		this._engine = engine;
-		this._batchInterval = batchInterval;
+		this._flushIntervalMs = flushIntervalMs;
 	}
 
 	get generationZone(): GenerationZone | null {
 		return this._zone;
 	}
 
-	beginStreaming(zoneId: string, blockId: string): void {
-		this._editor.undoManager.stopCapturing();
+	beginStreaming(
+		zoneId: string,
+		blockId: string,
+		origin?: OpOrigin,
+	): void {
+		this._closeWriter();
 
-		this._blockId = blockId;
 		this._zone = {
 			id: zoneId,
 			blockId,
@@ -105,87 +97,65 @@ export class StreamingTargetImpl implements StreamingTarget {
 			status: "streaming",
 		};
 
-		this._engine.deferBlock(blockId);
-
-		this._buffer = new BatchingBuffer(
-			(text) => this._flushToYText(text),
-			this._batchInterval,
+		this._writer = this._editor.openTextStream(
+			{ blockId },
+			{
+				origin: origin ?? { type: "ai" },
+				flushIntervalMs: this._flushIntervalMs,
+			},
 		);
 
-		// Set awareness streaming state
-		const awareness = this._editor.internals.awareness;
-		if (awareness) {
-			const local = awareness.getLocalState() ?? {};
-			awareness.setLocalState({
-				...local,
-				streaming: { blockId, zoneId },
-			});
-		}
+		this._unsubscribeCommit = this._editor.on(
+			"commit",
+			(event: CommitEvent) => {
+				if (event.source !== "stream" || !this._zone) {
+					return;
+				}
+				this._publishAwareness(this._zone.blockId, this._zone.id);
+			},
+		);
 	}
 
 	appendDelta(delta: string): void {
-		if (!this._buffer || !this._blockId) return;
-		this._buffer.append(delta);
+		this._writer?.append(delta);
 	}
 
-	endStreaming(
-		status: "complete" | "cancelled" | "error",
-	): void {
-		this._buffer?.flush();
-		this._buffer?.destroy();
-		this._buffer = null;
-
-		if (this._blockId) {
-			this._engine.markDirty(this._blockId);
-			this._engine.undeferBlock(this._blockId);
-		}
-
-		this._editor.undoManager.stopCapturing();
-
+	endStreaming(status: "complete" | "cancelled" | "error"): void {
+		this._closeWriter();
 		if (this._zone) {
-			const zoneStatus =
-				status === "cancelled" ? "error" : status;
+			const zoneStatus = status === "cancelled" ? "error" : status;
 			this._zone = { ...this._zone, status: zoneStatus };
 		}
-
-		// Clear awareness streaming state
-		const awareness = this._editor.internals.awareness;
-		if (awareness) {
-			const local = awareness.getLocalState() ?? {};
-			const { streaming: _omit, ...rest } = local as Record<
-				string,
-				unknown
-			>;
-			awareness.setLocalState(rest);
-		}
-
-		this._blockId = null;
+		this._clearAwareness();
 		this._zone = null;
 	}
 
-	private _flushToYText(text: string): void {
-		if (!this._blockId) return;
+	private _closeWriter(): void {
+		this._writer?.close();
+		this._writer = null;
+		this._unsubscribeCommit?.();
+		this._unsubscribeCommit = null;
+	}
 
-		const blockMap = (
-			this._editor.internals.doc.blocks as CRDTBlockMap
-		).get(this._blockId);
-		if (!blockMap) return;
+	private _publishAwareness(blockId: string, zoneId: string): void {
+		const awareness = this._editor.internals.awareness;
+		if (!awareness) {
+			return;
+		}
+		const local = awareness.getLocalState() ?? {};
+		awareness.setLocalState({
+			...local,
+			streaming: { blockId, zoneId },
+		});
+	}
 
-		const content = blockMap.get("content") as
-			| { length: number; insert(offset: number, text: string): void }
-			| undefined;
-		if (!content) return;
-
-		const { adapter, crdtDoc } = this._editor.internals;
-
-		adapter.transact(
-			crdtDoc,
-			() => {
-				const len = content.length;
-				content.insert(len, text);
-				this._engine.markDirty(this._blockId!);
-			},
-			"ai",
-		);
+	private _clearAwareness(): void {
+		const awareness = this._editor.internals.awareness;
+		if (!awareness) {
+			return;
+		}
+		const local = awareness.getLocalState() ?? {};
+		const { streaming: _omit, ...rest } = local as Record<string, unknown>;
+		awareness.setLocalState(rest);
 	}
 }

@@ -19,9 +19,21 @@ import {
 } from "@input/pen-types";
 import { UndoManagerImpl } from "./undoManager";
 
+/**
+ * Default undo/redo stack depth (CH7).
+ * Y.UndoManager has no native cap; the Yjs adapter trims oldest stack
+ * items past this limit so streaming writes cannot grow history without bound.
+ */
+export const DEFAULT_UNDO_MAX_DEPTH = 500;
+
 export interface UndoExtensionOptions {
 	groupTimeout?: number;
 	trackedOrigins?: OpOrigin[];
+	/**
+	 * Maximum undo/redo stack items to retain.
+	 * @default DEFAULT_UNDO_MAX_DEPTH
+	 */
+	maxDepth?: number;
 }
 
 /**
@@ -105,6 +117,7 @@ export function undoExtension(options?: UndoExtensionOptions): Extension {
 			const crdtUndo = adapter.createUndoManager(crdtDoc, {
 				trackedOriginTypes: [...trackedOrigins].map(getOpOriginType),
 				captureTimeout: options?.groupTimeout ?? 400,
+				maxDepth: options?.maxDepth ?? DEFAULT_UNDO_MAX_DEPTH,
 			});
 
 			let pendingReverseItem: CRDTUndoStackItem | null = null;
@@ -223,13 +236,16 @@ export function undoExtension(options?: UndoExtensionOptions): Extension {
 					const cursor =
 						kind === "undo" ? poppedMeta.before : poppedMeta.after;
 					activeUndoStackItem = null;
-					ctx.editor.internals.setSlot(
+					ctx.editor.internals.assignSlot(
 						UNDO_HISTORY_RESTORE_SLOT_KEY,
 						true,
 					);
 					try {
+						const restoredSelection = cursor
+							? mapStoredSelection(ctx.editor, cursor)
+							: undefined;
 						if (cursor) {
-							restoreSelection(ctx.editor, cursor.selection);
+							restoreSelection(ctx.editor, restoredSelection);
 						}
 						const requestId = ++historyRestoreRequestId;
 						for (const [key, restore] of metadataRestorers) {
@@ -249,37 +265,53 @@ export function undoExtension(options?: UndoExtensionOptions): Extension {
 							});
 						}
 
+						const mappedFocusBlockId =
+							restoredSelection?.type === "text"
+								? restoredSelection.focus.blockId
+								: cursor?.focusBlockId;
 						const historyApplied: HistoryAppliedEvent = {
 							kind,
 							selection: ctx.editor.selection,
 							focusBlockId:
-								cursor?.focusBlockId ?? captureFocusBlockId(ctx.editor),
+								mappedFocusBlockId ?? captureFocusBlockId(ctx.editor),
 							requestId,
 						};
 						ctx.editor.internals.emit("historyApplied", historyApplied);
 					} finally {
-						ctx.editor.internals.setSlot(
+						ctx.editor.internals.assignSlot(
 							UNDO_HISTORY_RESTORE_SLOT_KEY,
 							false,
 						);
 					}
 				}) ?? null;
 
-			manager = new UndoManagerImpl(crdtUndo, trackedOrigins);
+			manager = new UndoManagerImpl(crdtUndo, trackedOrigins, {
+				onListenerError(error) {
+					ctx.editor.internals.emit("diagnostic", {
+						code: "PEN_UNDO_001",
+						level: "error",
+						source: "undo",
+						message: "Undo stack listener threw",
+						remediation:
+							"Inspect onStackChange subscribers and guard unsafe access.",
+						error,
+					});
+				},
+			});
 			manager._onCaptureBoundary = () => {
 				activeUndoStackItem = null;
 			};
 			manager.setGroupTimeout(options?.groupTimeout ?? 400);
 
-			ctx.editor.internals.setSlot(
+			ctx.editor.internals.assignSlot(
 				UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY,
 				historyMetadataController,
 			);
-			ctx.editor.internals.setSlot("undo:manager", manager);
+			ctx.editor.internals.assignSlot("undo:manager", manager);
 		},
 
 		deactivateClient: async () => {
-			activeEditor?.internals.setSlot(
+			activeEditor?.internals.assignSlot(
 				UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY,
 				null,
 			);
@@ -327,6 +359,7 @@ const HISTORY_METADATA_PREFIX = "pen:history-metadata:";
 interface CursorSnapshot {
 	selection: StoredSelection;
 	focusBlockId: string | null;
+	commitId: number;
 }
 
 interface CursorMeta {
@@ -358,13 +391,43 @@ type StoredSelection =
 
 // ── Capture / Restore ────────────────────────────────────────
 
-function captureCursor(editor: {
-	selection: SelectionState;
-	internals: { getSlot<T>(key: string): T | undefined };
-}): CursorSnapshot {
+function captureCursor(editor: Editor): CursorSnapshot {
 	return {
 		selection: captureSelection(editor.selection),
 		focusBlockId: captureFocusBlockId(editor),
+		commitId: editor.summaryLog.latest()?.commitId ?? 0,
+	};
+}
+
+function mapStoredSelection(
+	editor: Editor,
+	snapshot: CursorSnapshot,
+): StoredSelection {
+	const selection = snapshot.selection;
+	const recordedCommitId = snapshot.commitId ?? 0;
+	const currentCommitId =
+		editor.summaryLog.latest()?.commitId ?? recordedCommitId;
+	const composed = editor.summaryLog.between(
+		recordedCommitId,
+		currentCommitId,
+	);
+	if (!composed || !selection) {
+		return selection;
+	}
+	if (selection.type !== "text") {
+		return selection;
+	}
+	const mapped = composed.mapRange(
+		{ anchor: selection.anchor, focus: selection.focus },
+		{ mode: "clamp" },
+	);
+	if (!mapped) {
+		return selection;
+	}
+	return {
+		type: "text",
+		anchor: mapped.anchor,
+		focus: mapped.focus,
 	};
 }
 

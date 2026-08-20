@@ -1,0 +1,670 @@
+/**
+ * T1–T6 selection type transitions (`spec-v2/03-selection.md` §7).
+ *
+ * Pure functions over a fake doc + selection snapshot. Not wired to the
+ * manager, commands, or reader.
+ */
+
+export type Affinity = "upstream" | "downstream";
+
+export interface Point {
+	readonly blockId: string;
+	readonly offset: number;
+}
+
+export interface TextSelection {
+	readonly type: "text";
+	readonly anchor: Point;
+	readonly focus: Point;
+	readonly affinity: Affinity;
+	readonly goalX: number | null;
+}
+
+export interface BlockSelection {
+	readonly type: "block";
+	readonly blockIds: readonly string[];
+	readonly head: string;
+}
+
+export interface AppSelection {
+	readonly type: "app";
+	readonly appId: string;
+}
+
+export interface CellSelection {
+	readonly type: "cell";
+	readonly blockId: string;
+	readonly anchor: { readonly row: number; readonly col: number };
+	readonly head: { readonly row: number; readonly col: number };
+}
+
+export type SelectionState =
+	| TextSelection
+	| BlockSelection
+	| AppSelection
+	| CellSelection
+	| null;
+
+export type TransitionBlockKind = "text" | "structural";
+
+export type TransitionContainerKind = "list" | "layout-cell" | "table";
+
+export type ArrowDirection = "up" | "down" | "left" | "right";
+
+export type CellTransitionInput =
+	| {
+			readonly source: "pointer";
+			readonly cell: { readonly row: number; readonly col: number };
+	  }
+	| {
+			readonly source: "keyboard";
+			readonly direction: ArrowDirection;
+			readonly extend: boolean;
+	  };
+
+export interface TransitionBlock {
+	readonly id: string;
+	readonly kind: TransitionBlockKind;
+	readonly length: number;
+	readonly parentId: string | null;
+	readonly containerId: string | null;
+	readonly containerKind: TransitionContainerKind | null;
+	readonly grid?: { readonly rows: number; readonly cols: number };
+}
+
+export interface TransitionSnapshot {
+	readonly blockOrder: readonly string[];
+	readonly topLevelIds: readonly string[];
+	readonly blocks: Readonly<Record<string, TransitionBlock>>;
+}
+
+const DEFAULT_AFFINITY: Affinity = "downstream";
+
+export function escalateSelectAll(
+	doc: TransitionSnapshot,
+	selection: SelectionState,
+): SelectionState {
+	if (selection === null) {
+		return topLevelBlockSelection(doc);
+	}
+
+	switch (selection.type) {
+		case "text":
+			return escalateSelectAllFromText(doc, selection);
+		case "block":
+			return escalateFromBlockSet(doc, selection.blockIds);
+		case "cell":
+			return escalateFromBlockSet(doc, [selection.blockId]);
+		case "app":
+			return selection;
+		default: {
+			const _exhaustive: never = selection;
+			return _exhaustive;
+		}
+	}
+}
+
+/**
+ * T2: pointer crossing a text-block boundary stays a text selection.
+ * Does not call escalateCoveredTextToBlocks (T3) — no implicit flip.
+ */
+export function convertPointerDrag(
+	doc: TransitionSnapshot,
+	selection: SelectionState,
+	focus: Point,
+): SelectionState {
+	if (selection === null || selection.type !== "text") {
+		return selection;
+	}
+	const nextFocus = clampPoint(doc, focus);
+	if (!nextFocus) {
+		return selection;
+	}
+	return textSelection(selection.anchor, nextFocus, selection.affinity);
+}
+
+/**
+ * T3: full-coverage multi-block text becomes BlockSelection.
+ * Used by escalateSelectAll on rung 2+; never by convertPointerDrag.
+ */
+export function escalateCoveredTextToBlocks(
+	doc: TransitionSnapshot,
+	selection: SelectionState,
+): SelectionState {
+	if (selection === null || selection.type !== "text") {
+		return selection;
+	}
+	const covered = coveredBlockIds(doc, selection);
+	if (!coversEveryOffsetOfMultipleBlocks(doc, selection, covered)) {
+		return selection;
+	}
+	return makeBlockSelection(covered);
+}
+
+export function arrowFromBlockSelection(
+	doc: TransitionSnapshot,
+	selection: SelectionState,
+	direction: ArrowDirection,
+	extend: boolean,
+): SelectionState {
+	if (selection === null || selection.type !== "block") {
+		return selection;
+	}
+	if (selection.blockIds.length === 0) {
+		return selection;
+	}
+
+	const headIndex = doc.blockOrder.indexOf(selection.head);
+	if (headIndex === -1) {
+		return selection;
+	}
+
+	if (extend) {
+		return extendBlockSelection(doc, selection, direction, headIndex);
+	}
+	return collapseBlockSelection(doc, selection, direction, headIndex);
+}
+
+export function clickSelectableBlock(
+	doc: TransitionSnapshot,
+	blockId: string,
+	offset = 0,
+): SelectionState {
+	const block = doc.blocks[blockId];
+	if (!block) {
+		return null;
+	}
+	if (block.kind === "structural") {
+		return makeBlockSelection([blockId], blockId);
+	}
+	return collapsedText(blockId, clampOffset(block.length, offset));
+}
+
+export function transitionCellSelection(
+	doc: TransitionSnapshot,
+	selection: SelectionState,
+	input: CellTransitionInput,
+): SelectionState {
+	switch (input.source) {
+		case "pointer":
+			return pointerCellSelection(doc, selection, input.cell);
+		case "keyboard":
+			return keyboardCellSelection(
+				doc,
+				selection,
+				input.direction,
+				input.extend,
+			);
+		default: {
+			const _exhaustive: never = input;
+			return _exhaustive;
+		}
+	}
+}
+
+function escalateSelectAllFromText(
+	doc: TransitionSnapshot,
+	selection: TextSelection,
+): SelectionState {
+	const covered = coveredBlockIds(doc, selection);
+	if (covered.length === 0) {
+		return selection;
+	}
+
+	if (coversEveryOffsetOfMultipleBlocks(doc, selection, covered)) {
+		return escalateCoveredTextToBlocks(doc, selection);
+	}
+
+	if (isWholeSingleBlockText(doc, selection, covered)) {
+		return escalateFromBlockSet(doc, covered);
+	}
+
+	const range = orderedTextRange(doc, selection);
+	if (!range) {
+		return selection;
+	}
+	const startBlock = doc.blocks[range.start.blockId];
+	const endBlock = doc.blocks[range.end.blockId];
+	if (!startBlock || !endBlock) {
+		return selection;
+	}
+	return textSelection(
+		{ blockId: startBlock.id, offset: 0 },
+		{ blockId: endBlock.id, offset: endBlock.length },
+		selection.affinity,
+	);
+}
+
+function escalateFromBlockSet(
+	doc: TransitionSnapshot,
+	blockIds: readonly string[],
+): SelectionState {
+	if (blockIds.length === 0) {
+		return topLevelBlockSelection(doc);
+	}
+
+	const containerSet = sharedContainerSet(doc, blockIds);
+	if (containerSet && !sameIdList(blockIds, containerSet)) {
+		return makeBlockSelection(containerSet);
+	}
+
+	if (!sameIdList(blockIds, doc.topLevelIds)) {
+		return topLevelBlockSelection(doc);
+	}
+
+	return topLevelBlockSelection(doc);
+}
+
+function collapseBlockSelection(
+	doc: TransitionSnapshot,
+	selection: BlockSelection,
+	direction: ArrowDirection,
+	headIndex: number,
+): SelectionState {
+	const forward = isForward(direction);
+	if (forward) {
+		const nextId = doc.blockOrder[headIndex + 1];
+		if (nextId) {
+			return caretAtBlockEdge(doc, nextId, "start");
+		}
+		return caretAtBlockEdge(doc, selection.head, "end");
+	}
+
+	const prevId = doc.blockOrder[headIndex - 1];
+	if (prevId) {
+		return caretAtBlockEdge(doc, prevId, "end");
+	}
+	return caretAtBlockEdge(doc, selection.head, "start");
+}
+
+function extendBlockSelection(
+	doc: TransitionSnapshot,
+	selection: BlockSelection,
+	direction: ArrowDirection,
+	headIndex: number,
+): SelectionState {
+	const selected = new Set(selection.blockIds);
+	const firstId = selection.blockIds[0];
+	const lastId = selection.blockIds[selection.blockIds.length - 1];
+	if (!firstId || !lastId) {
+		return selection;
+	}
+
+	const forward = isForward(direction);
+	const headIsFirst = selection.head === firstId;
+	const headIsLast = selection.head === lastId;
+
+	if (forward) {
+		if (headIsLast) {
+			const nextId = doc.blockOrder[headIndex + 1];
+			if (!nextId || selected.has(nextId)) {
+				return selection;
+			}
+			return makeBlockSelection([...selection.blockIds, nextId], nextId);
+		}
+		if (headIsFirst && selection.blockIds.length > 1) {
+			const nextIds = selection.blockIds.slice(1);
+			return makeBlockSelection(nextIds, nextIds[0]);
+		}
+		return selection;
+	}
+
+	if (headIsFirst) {
+		const prevId = doc.blockOrder[headIndex - 1];
+		if (!prevId || selected.has(prevId)) {
+			return selection;
+		}
+		return makeBlockSelection([prevId, ...selection.blockIds], prevId);
+	}
+	if (headIsLast && selection.blockIds.length > 1) {
+		const nextIds = selection.blockIds.slice(0, -1);
+		return makeBlockSelection(nextIds, nextIds[nextIds.length - 1]);
+	}
+	return selection;
+}
+
+function pointerCellSelection(
+	doc: TransitionSnapshot,
+	selection: SelectionState,
+	cell: { readonly row: number; readonly col: number },
+): SelectionState {
+	const tableId =
+		selection?.type === "cell"
+			? selection.blockId
+			: nearestTableBlockId(doc, selection);
+	if (!tableId) {
+		return selection;
+	}
+	const grid = doc.blocks[tableId]?.grid;
+	if (!grid) {
+		return selection;
+	}
+	const nextHead = clampCell(grid, cell);
+	if (selection?.type === "cell" && selection.blockId === tableId) {
+		return {
+			type: "cell",
+			blockId: tableId,
+			anchor: selection.anchor,
+			head: nextHead,
+		};
+	}
+	return {
+		type: "cell",
+		blockId: tableId,
+		anchor: nextHead,
+		head: nextHead,
+	};
+}
+
+function keyboardCellSelection(
+	doc: TransitionSnapshot,
+	selection: SelectionState,
+	direction: ArrowDirection,
+	extend: boolean,
+): SelectionState {
+	if (selection === null || selection.type !== "cell") {
+		return selection;
+	}
+	const grid = doc.blocks[selection.blockId]?.grid;
+	if (!grid) {
+		return selection;
+	}
+
+	const stepped = stepCell(selection.head, direction);
+	if (!inGrid(grid, stepped)) {
+		return arrowFromBlockSelection(
+			doc,
+			makeBlockSelection([selection.blockId], selection.blockId),
+			direction,
+			false,
+		);
+	}
+
+	if (extend) {
+		return {
+			type: "cell",
+			blockId: selection.blockId,
+			anchor: selection.anchor,
+			head: stepped,
+		};
+	}
+	return {
+		type: "cell",
+		blockId: selection.blockId,
+		anchor: stepped,
+		head: stepped,
+	};
+}
+
+function caretAtBlockEdge(
+	doc: TransitionSnapshot,
+	blockId: string,
+	edge: "start" | "end",
+): SelectionState {
+	const block = doc.blocks[blockId];
+	if (!block) {
+		return null;
+	}
+	if (block.kind === "structural") {
+		return makeBlockSelection([blockId], blockId);
+	}
+	const offset = edge === "start" ? 0 : block.length;
+	return collapsedText(blockId, offset);
+}
+
+function isWholeSingleBlockText(
+	doc: TransitionSnapshot,
+	selection: TextSelection,
+	covered: readonly string[],
+): boolean {
+	if (covered.length !== 1) {
+		return false;
+	}
+	const block = doc.blocks[covered[0]!];
+	if (!block) {
+		return false;
+	}
+	const range = orderedTextRange(doc, selection);
+	if (!range) {
+		return false;
+	}
+	return range.start.offset === 0 && range.end.offset === block.length;
+}
+
+function coversEveryOffsetOfMultipleBlocks(
+	doc: TransitionSnapshot,
+	selection: TextSelection,
+	covered: readonly string[],
+): boolean {
+	if (covered.length < 2) {
+		return false;
+	}
+	const range = orderedTextRange(doc, selection);
+	if (!range) {
+		return false;
+	}
+	const endBlock = doc.blocks[range.end.blockId];
+	if (!endBlock) {
+		return false;
+	}
+	return range.start.offset === 0 && range.end.offset === endBlock.length;
+}
+
+function coveredBlockIds(
+	doc: TransitionSnapshot,
+	selection: TextSelection,
+): readonly string[] {
+	const startIdx = doc.blockOrder.indexOf(selection.anchor.blockId);
+	const endIdx = doc.blockOrder.indexOf(selection.focus.blockId);
+	if (startIdx === -1 || endIdx === -1) {
+		return [];
+	}
+	const from = Math.min(startIdx, endIdx);
+	const to = Math.max(startIdx, endIdx);
+	return doc.blockOrder.slice(from, to + 1);
+}
+
+function orderedTextRange(
+	doc: TransitionSnapshot,
+	selection: TextSelection,
+): { start: Point; end: Point } | null {
+	const aIdx = doc.blockOrder.indexOf(selection.anchor.blockId);
+	const bIdx = doc.blockOrder.indexOf(selection.focus.blockId);
+	if (aIdx === -1 || bIdx === -1) {
+		return null;
+	}
+	if (aIdx < bIdx) {
+		return { start: selection.anchor, end: selection.focus };
+	}
+	if (aIdx > bIdx) {
+		return { start: selection.focus, end: selection.anchor };
+	}
+	if (selection.anchor.offset <= selection.focus.offset) {
+		return { start: selection.anchor, end: selection.focus };
+	}
+	return { start: selection.focus, end: selection.anchor };
+}
+
+function sharedContainerSet(
+	doc: TransitionSnapshot,
+	blockIds: readonly string[],
+): readonly string[] | null {
+	const first = doc.blocks[blockIds[0]!];
+	if (!first?.containerId) {
+		return null;
+	}
+	for (const id of blockIds) {
+		if (doc.blocks[id]?.containerId !== first.containerId) {
+			return null;
+		}
+	}
+	return doc.blockOrder.filter(
+		(id) => doc.blocks[id]?.containerId === first.containerId,
+	);
+}
+
+function nearestTableBlockId(
+	doc: TransitionSnapshot,
+	selection: SelectionState,
+): string | null {
+	if (selection === null) {
+		return firstTableBlockId(doc);
+	}
+	switch (selection.type) {
+		case "cell":
+			return selection.blockId;
+		case "text":
+			return tableIdForBlock(doc, selection.focus.blockId);
+		case "block":
+			return tableIdForBlock(doc, selection.head);
+		case "app":
+			return firstTableBlockId(doc);
+		default: {
+			const _exhaustive: never = selection;
+			return _exhaustive;
+		}
+	}
+}
+
+function tableIdForBlock(
+	doc: TransitionSnapshot,
+	blockId: string,
+): string | null {
+	const block = doc.blocks[blockId];
+	if (!block) {
+		return null;
+	}
+	if (block.grid) {
+		return blockId;
+	}
+	if (block.containerKind === "table" && block.containerId) {
+		return block.containerId;
+	}
+	if (block.parentId && doc.blocks[block.parentId]?.grid) {
+		return block.parentId;
+	}
+	return firstTableBlockId(doc);
+}
+
+function firstTableBlockId(doc: TransitionSnapshot): string | null {
+	for (const id of doc.blockOrder) {
+		if (doc.blocks[id]?.grid) {
+			return id;
+		}
+	}
+	return null;
+}
+
+function stepCell(
+	cell: { readonly row: number; readonly col: number },
+	direction: ArrowDirection,
+): { row: number; col: number } {
+	switch (direction) {
+		case "up":
+			return { row: cell.row - 1, col: cell.col };
+		case "down":
+			return { row: cell.row + 1, col: cell.col };
+		case "left":
+			return { row: cell.row, col: cell.col - 1 };
+		case "right":
+			return { row: cell.row, col: cell.col + 1 };
+		default: {
+			const _exhaustive: never = direction;
+			return _exhaustive;
+		}
+	}
+}
+
+function clampCell(
+	grid: { readonly rows: number; readonly cols: number },
+	cell: { readonly row: number; readonly col: number },
+): { row: number; col: number } {
+	return {
+		row: clampOffset(grid.rows - 1, cell.row),
+		col: clampOffset(grid.cols - 1, cell.col),
+	};
+}
+
+function inGrid(
+	grid: { readonly rows: number; readonly cols: number },
+	cell: { readonly row: number; readonly col: number },
+): boolean {
+	return (
+		cell.row >= 0 &&
+		cell.col >= 0 &&
+		cell.row < grid.rows &&
+		cell.col < grid.cols
+	);
+}
+
+function clampPoint(doc: TransitionSnapshot, point: Point): Point | null {
+	const block = doc.blocks[point.blockId];
+	if (!block) {
+		return null;
+	}
+	return {
+		blockId: point.blockId,
+		offset: clampOffset(block.length, point.offset),
+	};
+}
+
+function clampOffset(max: number, offset: number): number {
+	if (offset <= 0) {
+		return 0;
+	}
+	if (offset >= max) {
+		return max;
+	}
+	return offset;
+}
+
+function isForward(direction: ArrowDirection): boolean {
+	return direction === "down" || direction === "right";
+}
+
+function topLevelBlockSelection(doc: TransitionSnapshot): SelectionState {
+	if (doc.topLevelIds.length === 0) {
+		return null;
+	}
+	return makeBlockSelection(doc.topLevelIds);
+}
+
+function makeBlockSelection(
+	blockIds: readonly string[],
+	head = blockIds[blockIds.length - 1],
+): BlockSelection {
+	return {
+		type: "block",
+		blockIds,
+		head: head ?? blockIds[0] ?? "",
+	};
+}
+
+function collapsedText(blockId: string, offset: number): TextSelection {
+	const point = { blockId, offset };
+	return textSelection(point, point, DEFAULT_AFFINITY);
+}
+
+function textSelection(
+	anchor: Point,
+	focus: Point,
+	affinity: Affinity,
+): TextSelection {
+	return {
+		type: "text",
+		anchor,
+		focus,
+		affinity,
+		goalX: null,
+	};
+}
+
+function sameIdList(
+	left: readonly string[],
+	right: readonly string[],
+): boolean {
+	if (left.length !== right.length) {
+		return false;
+	}
+	return left.every((id, index) => id === right[index]);
+}

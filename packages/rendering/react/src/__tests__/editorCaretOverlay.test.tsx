@@ -14,7 +14,7 @@ import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
 ).IS_REACT_ACT_ENVIRONMENT = true;
 
 describe("@input/pen-react editor caret overlay", () => {
-	it("renders a custom local caret for collapsed selections only", async () => {
+	it("HOST6 renders a custom local caret for collapsed selections only", async () => {
 		const editor = createEditor({
 			preset: defaultPreset({
 				documentOps: false,

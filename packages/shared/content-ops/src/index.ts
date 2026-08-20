@@ -1,7 +1,6 @@
 export { blocksToOps } from "./blocks";
 export type {
   ImportOptions,
-  ImportedDatabaseData,
   PendingBlock,
 } from "./blocks";
 
@@ -29,22 +28,13 @@ export type {
   DocumentWriteFormat,
 } from "./writeContent";
 
-export {
-  TARGET_EDITABILITIES,
-  STRUCTURED_TARGET_KINDS,
-} from "./plan/targets";
 export type {
   StructuredTargetDescriptor,
   StructuredTargetKind,
   TargetEditability,
   BlockTargetDescriptor,
   TableTargetDescriptor,
-  DatabaseTargetDescriptor,
 } from "./plan/targets";
 
-export {
-  normalizePlanProps,
-  normalizePlanRecord,
-  normalizePlanSteps,
-} from "./plan/planSchemas";
+export { normalizePlanRecord, normalizePlanSteps } from "./plan/planSchemas";
 export type { PlanRecord } from "./plan/planSchemas";

@@ -1,5 +1,5 @@
-import type { Editor, EditorInternals, CreateEditorOptions, PenEventMap, DocumentCommitEvent, CRDTAdapter, CRDTDocument, CRDTEvent, PenDocument, SchemaRegistry, Awareness, DocumentSession, DocumentScope, DocumentScopeReplacementEvent, DocumentProfile, Extension, DocumentOp, ApplyOptions, OpOrigin, MutationGroupMetadata, SelectionState, TextSelection, DocumentRange, BlockHandle, Block, DocumentState, UndoManager, Unsubscribe, CRDTMap, CRDTArray, Position, DecorationSet, EditorViewMode } from "@input/pen-types";
-import { AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY, COLLECT_KEY_BINDINGS_SLOT_KEY, usesInlineTextSelection, createMutationGroupMetadata, getApplyOptionsGroupId, MUTATION_GROUP_METADATA_KEY, UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY } from "@input/pen-types";
+import type { Editor, EditorInternals, CreateEditorOptions, PenEventMap, DocumentCommitEvent, CRDTAdapter, CRDTDocument, CRDTEvent, PenDocument, SchemaRegistry, Awareness, DocumentSession, DocumentScope, DocumentScopeReplacementEvent, DocumentProfile, Extension, DocumentOp, ApplyOptions, OpOrigin, MutationGroupMetadata, SelectionState, TextSelection, DocumentRange, BlockHandle, Block, DocumentState, UndoManager, Unsubscribe, CRDTMap, CRDTArray, Position, DecorationSet, EditorViewMode, ChangeSummary, SummaryLog, Facet, FacetOutput, PipelinePhase, SelectionRecord, OpenTextStreamOptions, TextStreamWriter } from "@input/pen-types";
+import { AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY, COLLECT_KEY_BINDINGS_SLOT_KEY, usesInlineTextSelection, createMutationGroupMetadata, getApplyOptionsGroupId, MUTATION_GROUP_METADATA_KEY, UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY, generateId } from "@input/pen-types";
 import { yjsAdapter } from "@input/pen-crdt-yjs";
 import { undoExtension } from "@input/pen-undo";
 import { documentOpsExtension } from "@input/pen-document-ops";
@@ -21,7 +21,18 @@ import { emptyDecorationSet } from "./decorations";
 import { DocumentRangeImpl } from "./range";
 import { createDocumentSession } from "./documentSession";
 
+import { beforeApplyFacet } from "../facets/coreFacets";
+import {
+	createFacetRegistry,
+	type FacetRegistry,
+} from "../facets/registry";
+import { v1ExtensionProviders } from "../facets/v1Providers";
 import { getRawBlockMap, getEditorInternals, applyEditorOps, recordMutationGroupMetadata, loadEditorDocument, iterateBlocks, getEditorBlock, getFirstBlock, getLastBlock, getBlockCount, getEditorBlockRevision, destroyEditor } from "./editorApiHelpers";
+import { createEmptyBlockIndex } from "../changes/blockIndex";
+import { createSummaryLog } from "../changes/summaryLog";
+import type { SummaryLog as CoreSummaryLog } from "../changes/summaryLog";
+import { snapshotSelectionRecord } from "./commitEvent";
+import { openEditorTextStream } from "./openTextStream";
 import { createPenDocumentForEditor, resolveEditorExtensions, installProfilePolicyHook, enforceDocumentProfileBoundary, refreshCoreSlots, bindEditorSession, bindEditorScope, handleEditorScopeReplacement, resolveEditorDocumentProfile, rebindActiveScope, refreshUndoManager, activateEditorExtensions, queueExtensionLifecycle, ensureInitialParagraph, createCommitEvent, dispatchCRDTEvent, syncDocumentProfileFromStorage, wireEditorObservation, teardownEditorObservation } from "./editorLifecycle";
 import { replaceEditorSelection, deleteEditorSelection, getTextForBlock, getSelectionRange, usesInlineTextSelectionForBlock, getBlockSelectionSpan, isWholeBlockSelection, collapseToPoint, sliceInlineDeltas, buildMultiBlockTextReplacement, deleteMultiBlockTextRange, replaceMultiBlockTextRange } from "./editorSelectionMutations";
 type CRDTBlockMap = CRDTMap<CRDTMap<unknown>>;
@@ -51,11 +62,22 @@ class EditorImpl implements Editor {
 	private readonly _explicitEditorViewMode: EditorViewMode | null;
 	private _editorViewMode: EditorViewMode;
 	private _commitId = 0;
+	private _summaryLog: CoreSummaryLog = createSummaryLog();
+	private _blockIndex = createEmptyBlockIndex();
+	private _unsubSummary: Unsubscribe | null = null;
+	private _summaryCommitId = 0;
 	private readonly _blockRevisions = new Map<string, number>();
 	private _decorations: DecorationSet;
-	private readonly _viewId = crypto.randomUUID();
+	private readonly _viewId = generateId();
 	private _extensionLifecycle: Promise<void> = Promise.resolve();
+	private _facetRegistry!: FacetRegistry;
+	private _slotDeprecationWarned = new Set<string>();
+	private _selectionVersion = 0;
 	private _isDestroyed = false;
+	private readonly _pipelinePhaseListeners: Array<(phase: PipelinePhase) => void> =
+		[];
+	private readonly _eventDeprecationWarned = new Set<string>();
+	private _selectionBeforeRecord: SelectionRecord | null = null;
 
 	readonly undoManager: UndoManager;
 
@@ -113,10 +135,21 @@ class EditorImpl implements Editor {
 		for (const ext of allExtensions) {
 			this._extensions.register(ext);
 		}
-
-		this._pipeline._init((event) => {
-			this._dispatchCRDTEvent(event);
+		this._facetRegistry = createFacetRegistry({
+			editor: this,
+			extensions: allExtensions,
+			providers: v1ExtensionProviders(allExtensions),
 		});
+		this._facetRegistry.markReady();
+
+		this._pipeline._init(
+			(event) => {
+				this._dispatchCRDTEvent(event);
+			},
+			() => this._resolveBeforeApplyHooks(),
+			(phase) => this._recordPipelinePhase(phase),
+			() => this._captureSelectionBeforeForCommit(),
+		);
 		this._installProfilePolicyHook();
 
 		this.undoManager = NOOP_UNDO;
@@ -165,9 +198,33 @@ class EditorImpl implements Editor {
 
 	get internals(): EditorInternals { return getEditorInternals(this); }
 
+	get summaryLog(): SummaryLog {
+		return this._summaryLog;
+	}
+
+	get lastChangeSummary(): ChangeSummary | null {
+		return this._summaryLog.latest();
+	}
+
 	// ── Mutations ────────────────────────────────────────────
 
 	apply(ops: DocumentOp[], options?: ApplyOptions): void { applyEditorOps(this, ops, options); }
+
+	openTextStream(
+		target: { blockId: string },
+		options: OpenTextStreamOptions,
+	): TextStreamWriter {
+		return openEditorTextStream(this, target, options, {
+			runBeforeApplyHooks: (ops, origin) =>
+				this._pipeline.runBeforeApplyHooks(ops, origin),
+			deferBlock: (blockId) => {
+				this._engine.deferBlock(blockId);
+			},
+			undeferBlock: (blockId) => {
+				this._engine.undeferBlock(blockId);
+			},
+		});
+	}
 
 	private _recordMutationGroupMetadata(origin: OpOrigin, groupId: string | undefined): void { recordMutationGroupMetadata(this, origin, groupId); }
 
@@ -181,6 +238,14 @@ class EditorImpl implements Editor {
 			hook,
 			options?.priority ?? 500,
 		);
+	}
+
+	facet<F extends Facet<unknown, unknown>>(facet: F): FacetOutput<F> {
+		return this._facetRegistry.read(facet);
+	}
+
+	whenReady(): Promise<void> {
+		return this._extensionLifecycle;
 	}
 
 	// ── Block Traversal ──────────────────────────────────────
@@ -201,6 +266,10 @@ class EditorImpl implements Editor {
 
 	setSelection(selection: SelectionState): void {
 		this._selection.setSelection(selection);
+		this._selectionVersion += 1;
+		this._facetRegistry.settle({
+			selectionVersion: this._selectionVersion,
+		});
 	}
 
 	getSelection(): SelectionState {
@@ -310,7 +379,7 @@ class EditorImpl implements Editor {
 
 	// ── Destroy ──────────────────────────────────────────────
 
-	destroy(): void { destroyEditor(this); }
+	destroy(): Promise<void> { return destroyEditor(this); }
 
 	// ── Private ──────────────────────────────────────────────
 
@@ -338,13 +407,39 @@ class EditorImpl implements Editor {
 
 	private async _activateExtensions(): Promise<void> { await activateEditorExtensions(this); }
 
-	private _queueExtensionLifecycle(task: () => Promise<void>): void { queueExtensionLifecycle(this, task); }
+	private _queueExtensionLifecycle(task: () => Promise<void>): Promise<void> { return queueExtensionLifecycle(this, task); }
 
 	private _ensureInitialParagraph(): void { ensureInitialParagraph(this); }
 
 	private _createCommitEvent(event: CRDTEvent): DocumentCommitEvent { return createCommitEvent(this, event); }
 
 	private _dispatchCRDTEvent(event: CRDTEvent): void { dispatchCRDTEvent(this, event); }
+
+	private _recordPipelinePhase(phase: PipelinePhase): void {
+		for (const listener of this._pipelinePhaseListeners) {
+			listener(phase);
+		}
+	}
+
+	private _onPipelinePhase(
+		listener: (phase: PipelinePhase) => void,
+	): Unsubscribe {
+		this._pipelinePhaseListeners.push(listener);
+		return () => {
+			const index = this._pipelinePhaseListeners.indexOf(listener);
+			if (index >= 0) {
+				this._pipelinePhaseListeners.splice(index, 1);
+			}
+		};
+	}
+
+	private _captureSelectionBeforeForCommit(): void {
+		this._selectionBeforeRecord = snapshotSelectionRecord(
+			this.selection,
+			this._selectionVersion,
+			this._commitId,
+		);
+	}
 
 	private _syncDocumentProfileFromStorage(): void { syncDocumentProfileFromStorage(this); }
 
@@ -371,6 +466,19 @@ class EditorImpl implements Editor {
 	private _deleteMultiBlockTextRange(range: DocumentRange, options?: ApplyOptions): { blockId: string; offset: number } | null { return deleteMultiBlockTextRange(this, range, options); }
 
 	private _replaceMultiBlockTextRange(range: DocumentRange, text: string): { blockId: string; offset: number } { return replaceMultiBlockTextRange(this, range, text); }
+
+	private _resolveBeforeApplyHooks(): ReadonlyArray<
+		(ops: DocumentOp[], options: { origin?: OpOrigin }) => DocumentOp[]
+	> {
+		const registered = this._pipeline
+			.getBeforeApplyHooks()
+			.map((entry) => entry.hook);
+		const registeredSet = new Set(registered);
+		const extras = this._facetRegistry
+			.read(beforeApplyFacet)
+			.filter((hook) => !registeredSet.has(hook));
+		return [...extras, ...registered];
+	}
 
 }
 

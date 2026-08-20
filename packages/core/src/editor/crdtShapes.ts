@@ -42,8 +42,6 @@ export type TableRowMap = CRDTUnknownMap;
 export type TableContentArray = CRDTUnknownArray<TableRowMap>;
 export type TableColumnMap = CRDTUnknownMap;
 export type TableColumnArray = CRDTUnknownArray<TableColumnMap>;
-export type DatabaseViewMap = CRDTUnknownMap;
-export type DatabaseViewArray = CRDTUnknownArray<DatabaseViewMap>;
 
 export function isCRDTArray(value: unknown): value is CRDTUnknownArray {
 	return (
@@ -108,10 +106,6 @@ export function getTableContent(blockMap: CRDTUnknownMap): TableContentArray | n
 
 export function getTableColumns(blockMap: CRDTUnknownMap): TableColumnArray | null {
 	return getArrayProp<TableColumnMap>(blockMap, "tableColumns");
-}
-
-export function getDatabaseViews(blockMap: CRDTUnknownMap): DatabaseViewArray | null {
-	return getArrayProp<DatabaseViewMap>(blockMap, "databaseViews");
 }
 
 export function getRowCells(rowMap: CRDTUnknownMap): CRDTUnknownArray<TableCellMap> | null {

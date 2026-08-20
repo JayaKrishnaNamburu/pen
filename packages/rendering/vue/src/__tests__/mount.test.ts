@@ -425,4 +425,176 @@ describe("@input/pen-vue", () => {
     editor.destroy();
   });
 
+  it("SEC1: javascript: / data:text/html image src is inert", () => {
+    const editor = createTestEditor({
+      blocks: [
+        {
+          id: "image-js",
+          type: "image",
+          props: {
+            src: "javascript:alert(1)",
+            alt: "hostile js",
+          },
+        },
+        {
+          id: "image-html",
+          type: "image",
+          props: {
+            src: "data:text/html,<script>alert(1)</script>",
+            alt: "hostile html",
+          },
+        },
+      ],
+    });
+
+    const wrapper = mount(PenEditor, {
+      attachTo: document.body,
+      props: { editor },
+    });
+
+    const images = wrapper.findAll("img");
+    expect(images).toHaveLength(2);
+
+    for (const image of images) {
+      expect(image.attributes("src")).toBeUndefined();
+      expect(image.attributes("data-pen-blocked-url")).toBe("");
+    }
+
+    expect(wrapper.html()).not.toContain("javascript:");
+    expect(wrapper.html()).not.toContain("data:text/html");
+
+    wrapper.unmount();
+    editor.destroy();
+  });
+
+  it("DIR2: sets dir on the block content host from props.direction ltr or rtl", () => {
+    const editor = createTestEditor({
+      blocks: [
+        {
+          id: "paragraph-ltr",
+          type: "paragraph",
+          props: { direction: "ltr" },
+          content: "Hello",
+        },
+        {
+          id: "paragraph-rtl",
+          type: "paragraph",
+          props: { direction: "rtl" },
+          content: "مرحبا",
+        },
+      ],
+    });
+
+    const wrapper = mount(PenEditor, {
+      attachTo: document.body,
+      props: { editor },
+    });
+
+    expect(
+      wrapper.get('[data-block-id="paragraph-ltr"]').attributes("dir"),
+    ).toBe("ltr");
+    expect(
+      wrapper.get('[data-block-id="paragraph-rtl"]').attributes("dir"),
+    ).toBe("rtl");
+
+    wrapper.unmount();
+    editor.destroy();
+  });
+
+  it("DIR2: omits dir when props.direction is missing or auto", () => {
+    const editor = createTestEditor({
+      blocks: [
+        {
+          id: "paragraph-none",
+          type: "paragraph",
+          props: {},
+          content: "Plain",
+        },
+        {
+          id: "paragraph-auto",
+          type: "paragraph",
+          props: { direction: "auto" },
+          content: "Auto",
+        },
+      ],
+    });
+
+    const wrapper = mount(PenEditor, {
+      attachTo: document.body,
+      props: { editor },
+    });
+
+    expect(
+      wrapper.get('[data-block-id="paragraph-none"]').attributes("dir"),
+    ).toBeUndefined();
+    expect(
+      wrapper.get('[data-block-id="paragraph-auto"]').attributes("dir"),
+    ).toBeUndefined();
+    expect(wrapper.html()).not.toContain('dir="auto"');
+
+    wrapper.unmount();
+    editor.destroy();
+  });
+
+  it("DIR2: nested blocks set dir independently", () => {
+    const editor = createTestEditor({
+      blocks: [
+        {
+          id: "quote-ltr",
+          type: "blockquote",
+          props: { direction: "ltr" },
+          content: "Outer",
+        },
+        {
+          id: "paragraph-rtl",
+          type: "paragraph",
+          props: { direction: "rtl", parentId: "quote-ltr" },
+          content: "Inner",
+        },
+      ],
+    });
+
+    const wrapper = mount(PenEditor, {
+      attachTo: document.body,
+      props: { editor },
+    });
+
+    expect(wrapper.get('[data-block-id="quote-ltr"]').attributes("dir")).toBe(
+      "ltr",
+    );
+    expect(
+      wrapper.get('[data-block-id="paragraph-rtl"]').attributes("dir"),
+    ).toBe("rtl");
+
+    wrapper.unmount();
+    editor.destroy();
+  });
+
+  it("AX1: content host is a multiline textbox", () => {
+    const editor = createTestEditor({
+      blocks: [
+        {
+          id: "paragraph-1",
+          type: "paragraph",
+          props: {},
+          content: "Hello Vue",
+        },
+      ],
+    });
+
+    const wrapper = mount(PenEditor, {
+      attachTo: document.body,
+      props: { editor },
+    });
+
+    const root = wrapper.get("[data-pen-editor-root]");
+    expect(root.attributes("role")).toBe("textbox");
+    expect(root.attributes("aria-multiline")).toBe("true");
+    expect(wrapper.get("[data-pen-editor-content]").attributes("role")).toBeUndefined();
+    expect(wrapper.get("[data-block-id]").attributes("role")).toBeUndefined();
+
+    wrapper.unmount();
+    editor.destroy();
+  });
+
 });

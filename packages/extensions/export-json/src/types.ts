@@ -1,5 +1,3 @@
-import type { DatabaseViewState, TableColumnSchema } from "@input/pen-types";
-
 export interface PenMarkJSON {
   type: string;
   start: number;
@@ -29,22 +27,12 @@ export interface PenInlineContentJSON {
   segments?: PenInlineSegmentJSON[];
 }
 
-export interface PenDatabaseJSON {
-  title?: string;
-  dataSource?: "local" | "remote" | "hybrid";
-  columns: TableColumnSchema[];
-  rows: Array<{ id: string; values: Record<string, string> }>;
-  views?: DatabaseViewState[];
-  primaryViewId?: string | null;
-}
-
 export interface PenBlockJSON {
   id: string;
   type: string;
   props: Record<string, unknown>;
   content?: PenInlineContentJSON;
   children?: PenBlockJSON[];
-  database?: PenDatabaseJSON;
 }
 
 export interface PenDocumentJSON {

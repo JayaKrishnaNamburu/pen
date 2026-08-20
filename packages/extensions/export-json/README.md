@@ -34,4 +34,4 @@ const textFromJson = exportPenDocumentToText(documentJson, {
 });
 ```
 
-Hosts can filter block types, render app-specific inline nodes, and extract database block text while keeping product delivery policy outside Pen.
+Hosts can filter block types and render app-specific inline nodes while keeping product delivery policy outside Pen.

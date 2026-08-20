@@ -10,7 +10,10 @@ import type {
 	DocumentScope,
 	DocumentProfile,
 } from "./crdt";
-import type { DocumentOp, OpOrigin, ApplyOptions } from "./ops";
+import type { ChangeSummary, Point, SummaryLog } from "./changes";
+import type { Facet, FacetOutput } from "./facets";
+import type { DocumentOp, OpOrigin, ApplyOptions, StructuredOpOrigin } from "./ops";
+import type { SelectionRecordV2 } from "./selectionV2";
 import type { Decoration, DecorationSet } from "./decorations";
 import type { Extension } from "./extension";
 import type { BlockHandle, AppHandle } from "./handles";
@@ -19,6 +22,17 @@ import type { SchemaRegistry } from "./schema";
 import type { AssetProvider } from "./persistence";
 
 export type EditorViewMode = DocumentProfile;
+
+/** Named commit-pipeline phases (`06-commit-pipeline.md`). */
+export type PipelinePhase =
+	| "hooks"
+	| "validate"
+	| "execute"
+	| "normalize"
+	| "summarize"
+	| "map-selection"
+	| "settle-facets"
+	| "emit";
 
 export type InteractionModel = "content-first" | "block-first";
 
@@ -101,12 +115,37 @@ export interface DocumentCommitEvent {
 	scope?: DocumentScope;
 }
 
+export type CommitEventSource =
+	| "apply"
+	| "remote"
+	| "undo"
+	| "redo"
+	| "stream";
+
+/** Dropped ops and validation failures for one commit (`06-commit-pipeline.md`). */
+export type Diagnostic = DiagnosticEvent;
+
+/** Selection record as of a commit (`03-selection.md` §1.1; Wave 5.1 additive type). */
+export type SelectionRecord = SelectionRecordV2;
+
+export interface CommitEvent {
+	readonly commitId: number;
+	readonly origin: StructuredOpOrigin;
+	readonly summary: ChangeSummary;
+	readonly selectionBefore: SelectionRecord;
+	readonly selectionAfter: SelectionRecord;
+	readonly source: CommitEventSource;
+	readonly diagnostics: readonly Diagnostic[];
+}
+
 // ── Schema Engine ───────────────────────────────────────────
 
 export interface SchemaEngine {
 	markDirty(blockId: string): void;
 	normalizeDirty(): void;
 	normalizeAll(): void;
+	deferBlock(blockId: string): void;
+	undeferBlock(blockId: string): void;
 }
 
 // ── Diagnostic Events ───────────────────────────────────────
@@ -140,6 +179,7 @@ export interface DocumentValidationError {
 // ── Editor Events ───────────────────────────────────────────
 
 export interface PenEventMap {
+	commit: (event: CommitEvent) => void;
 	change: (events: CRDTEvent[]) => void;
 	documentCommit: (event: DocumentCommitEvent) => void;
 	historyApplied: (event: HistoryAppliedEvent) => void;
@@ -147,7 +187,7 @@ export interface PenEventMap {
 	selectionChange: (selection: SelectionState) => void;
 	diagnostic: (event: DiagnosticEvent) => void;
 	"crdt:corruption": (errors: DocumentValidationError[]) => void;
-	"crdt:recovered": (method: "snapshot" | "repair" | "reimport") => void;
+	"crdt:recovered": (method: "snapshot" | "repair") => void;
 }
 
 // ── Hook Priority Constants ─────────────────────────────────
@@ -229,19 +269,42 @@ export interface InlineCompletionController {
 
 // ── Editor Interface ────────────────────────────────────────
 
+export interface TextStreamWriter {
+	append(text: string, marks?: Record<string, unknown>): void;
+	splice(from: number, to: number, text: string): void;
+	readonly position: Point;
+	flush(): void;
+	close(): void;
+	abort(): void;
+}
+
+export interface OpenTextStreamOptions {
+	origin: OpOrigin;
+	flushIntervalMs?: number;
+	deferNormalization?: boolean;
+}
+
 export interface Editor {
 	apply(ops: DocumentOp[], options?: ApplyOptions): void;
+	openTextStream(
+		target: { blockId: string },
+		options: OpenTextStreamOptions,
+	): TextStreamWriter;
 	loadDocument(doc: CRDTDocument): void;
 
 	onBeforeApply(
 		hook: (ops: DocumentOp[], options: ApplyOptions) => DocumentOp[],
 		options?: { priority?: number },
 	): Unsubscribe;
+	facet<F extends Facet<unknown, unknown>>(facet: F): FacetOutput<F>;
+	whenReady(): Promise<void>;
 
 	readonly schema: SchemaRegistry;
 	readonly selection: SelectionState;
 	readonly documentState: DocumentState;
 	readonly internals: EditorInternals;
+	readonly lastChangeSummary: ChangeSummary | null;
+	readonly summaryLog: SummaryLog;
 	readonly clientId: number;
 	readonly documentScope: DocumentScope;
 	readonly documentProfile: DocumentProfile;
@@ -295,7 +358,13 @@ export interface Editor {
 	getExtensionState<T>(name: string): T | undefined;
 
 	normalizeAll(): void;
-	destroy(): void;
+	/**
+	 * Deactivates extensions and tears down observation. Does not destroy an
+	 * attached field editor — hosts own that call. The returned promise
+	 * settles when queued teardown finishes; callers that ignore it stay
+	 * correct.
+	 */
+	destroy(): Promise<void>;
 }
 
 export interface EditorInternals {
@@ -319,8 +388,10 @@ export interface EditorInternals {
 			applied: boolean;
 		}) => void,
 	): Unsubscribe;
+	onPipelinePhase(listener: (phase: PipelinePhase) => void): Unsubscribe;
 	getSlot<T>(key: string): T | undefined;
-	setSlot(key: string, value: unknown): void;
+	setSlot: (key: string, value: unknown) => void;
+	assignSlot: (key: string, value: unknown) => void;
 	getBlockText(blockId: string): unknown;
 	getCellText(blockId: string, row: number, col: number): unknown;
 }

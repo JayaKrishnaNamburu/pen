@@ -1,4 +1,10 @@
+export { PenDocumentUnreadableError } from "@input/pen-types";
 export { yjsAdapter } from "./adapter";
+export {
+  ORIGIN_UNKNOWN_CODE,
+  createRemoteUpdateOrigin,
+  originToOpOrigin,
+} from "./events";
 export type { YjsAdapterOptions, CRDTDiagnostic } from "./adapter";
 export {
   applyYjsAwarenessUpdate,
@@ -28,6 +34,9 @@ export {
   DOCUMENT_PROFILE,
   SUBDOCUMENT,
 } from "./document";
+export { readFormatStamp, refreshFormatStamp } from "./formatStamp";
+export { getDocumentLoadReport } from "./loadDocument";
+export type { DocumentLoadReport, DocumentLoadState } from "./loadDocument";
 export type {
   BlockContentType,
   YjsCRDTDocument,
@@ -74,3 +83,12 @@ export type {
   YjsExtensionRootReadOptions,
   YjsExtensionRootShape,
 } from "./extensionRoots";
+export { createSummarySource, STRUCTURAL_ORIGIN_META_KEY } from "./summarySource";
+export type {
+  RawCommitDelta,
+  StructuralOriginTag,
+  YArrayDelta,
+  YArrayDeltaOp,
+  YTextDelta,
+  YTextDeltaOp,
+} from "./summarySource";

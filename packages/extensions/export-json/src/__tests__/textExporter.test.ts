@@ -76,37 +76,4 @@ describe("exportPenDocumentToText", () => {
 		).toBe("Hello @Ada");
 	});
 
-	it("exports database block text in stable column order", () => {
-		const document: PenDocumentJSON = {
-			version: 1,
-			blocks: [
-				{
-					id: "db",
-					type: "database",
-					props: {},
-					database: {
-						title: "Tasks",
-						columns: [
-							{ id: "name", type: "text", title: "Name" },
-							{ id: "owner", type: "text", title: "Owner" },
-						],
-						rows: [
-							{
-								id: "one",
-								values: { name: "Plan", owner: "Ada" },
-							},
-							{
-								id: "two",
-								values: { name: "Ship", owner: "Grace" },
-							},
-						],
-					},
-				},
-			],
-		};
-
-		expect(exportPenDocumentToText(document)).toBe(
-			"Tasks\nPlan\tAda\nShip\tGrace",
-		);
-	});
 });

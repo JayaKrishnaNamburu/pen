@@ -28,6 +28,7 @@ export function attachMultiplayerScopeRuntime(
 	buildLocalAwarenessState: (
 		user: MultiplayerAwarenessState["user"],
 		selection: SelectionState,
+		commitId: number,
 	) => MultiplayerAwarenessState,
 ): MultiplayerScopeRuntimeHandle {
 	const scopeOwner = resolveScopeOwner(editor);
@@ -64,24 +65,24 @@ export function attachMultiplayerScopeRuntime(
 	};
 }
 
+type BuildLocalAwarenessState = (
+	user: MultiplayerAwarenessState["user"],
+	selection: SelectionState,
+	commitId: number,
+) => MultiplayerAwarenessState;
+
 interface MultiplayerScopeRuntimeOptions {
 	editor: Editor;
 	config: MultiplayerConfig;
 	user: MultiplayerUser;
-	buildLocalAwarenessState: (
-		user: MultiplayerAwarenessState["user"],
-		selection: SelectionState,
-	) => MultiplayerAwarenessState;
+	buildLocalAwarenessState: BuildLocalAwarenessState;
 }
 
 class MultiplayerScopeRuntime {
 	readonly controller: MultiplayerControllerImpl;
 
 	private readonly awareness: Awareness;
-	private readonly buildLocalAwarenessState: (
-		user: MultiplayerAwarenessState["user"],
-		selection: SelectionState,
-	) => MultiplayerAwarenessState;
+	private readonly buildLocalAwarenessState: BuildLocalAwarenessState;
 	private readonly editors = new Set<Editor>();
 	private readonly selectionUnsubscribers = new Map<Editor, Unsubscribe>();
 	private readonly session: MultiplayerSession | null;
@@ -110,7 +111,11 @@ class MultiplayerScopeRuntime {
 			}),
 		});
 		this.awareness.setLocalState(
-			this.buildLocalAwarenessState(user, editor.selection),
+			this.buildLocalAwarenessState(
+				user,
+				editor.selection,
+				latestCommitId(editor),
+			),
 		);
 		this.controller.handleAwarenessChange(
 			this.awareness.getStates() as Map<number, MultiplayerAwarenessState>,
@@ -153,7 +158,11 @@ class MultiplayerScopeRuntime {
 			editor,
 			editor.onSelectionChange((selection) => {
 				this.awareness.setLocalState(
-					this.buildLocalAwarenessState(this.user, selection),
+					this.buildLocalAwarenessState(
+						this.user,
+						selection,
+						latestCommitId(editor),
+					),
 				);
 			}),
 		);
@@ -173,7 +182,11 @@ class MultiplayerScopeRuntime {
 			return;
 		}
 		this.awareness.setLocalState(
-			this.buildLocalAwarenessState(this.user, remainingEditor.selection),
+			this.buildLocalAwarenessState(
+				this.user,
+				remainingEditor.selection,
+				latestCommitId(remainingEditor),
+			),
 		);
 	}
 
@@ -206,4 +219,8 @@ class MultiplayerScopeRuntime {
 
 function resolveScopeOwner(editor: Editor): object {
 	return editor.internals.documentSession ?? editor;
+}
+
+function latestCommitId(editor: Editor): number {
+	return editor.summaryLog.latest()?.commitId ?? 0;
 }

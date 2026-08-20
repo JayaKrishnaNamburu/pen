@@ -31,8 +31,13 @@ function passthroughBlockSchema(
 		type,
 		propSchema: {},
 		content: "none" as const,
+		fieldEditor: "none",
 		serialize: {},
-		display: { title: type },
+		display: { title: type, hidden: true },
+		authoring: {
+			selectionRole: "structural",
+			flowCapability: "flow-structural",
+		},
 	} as unknown as BlockSchema;
 }
 

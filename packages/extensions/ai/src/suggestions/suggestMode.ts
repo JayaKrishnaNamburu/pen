@@ -1,5 +1,5 @@
 import type { DocumentOp, Editor, OpOrigin } from "@input/pen-types";
-import { getOpOriginType } from "@input/pen-types";
+import { getOpOriginType, generateId } from "@input/pen-types";
 import {
 	createSuggestionMark,
 	serializeBlockSuggestionMeta,
@@ -25,7 +25,7 @@ export function shouldBypassSuggestMode(origin?: OpOrigin): boolean {
 	return origin != null && BYPASS_ORIGINS.has(getOpOriginType(origin));
 }
 
-export function interceptApplyForSuggestMode(
+export function transformOpsForSuggestMode(
 	ops: DocumentOp[],
 	editor: Editor,
 	author: string,
@@ -34,7 +34,7 @@ export function interceptApplyForSuggestMode(
 	sessionId?: string,
 	options: SuggestModeSuggestionOptions = {},
 ): DocumentOp[] {
-	return interceptApplyForSuggestModeWithMetadata(
+	return transformOpsForSuggestModeWithMetadata(
 		ops,
 		editor,
 		author,
@@ -45,13 +45,13 @@ export function interceptApplyForSuggestMode(
 	).operations;
 }
 
-export type InterceptApplyForSuggestModeResult = {
+export type SuggestModeTransformResult = {
 	operations: DocumentOp[];
 	suggestionIds: string[];
 	suggestions: PersistentSuggestion[];
 };
 
-export function interceptApplyForSuggestModeWithMetadata(
+export function transformOpsForSuggestModeWithMetadata(
 	ops: DocumentOp[],
 	editor: Editor,
 	author: string,
@@ -59,13 +59,13 @@ export function interceptApplyForSuggestModeWithMetadata(
 	model?: string,
 	sessionId?: string,
 	options: SuggestModeSuggestionOptions = {},
-): InterceptApplyForSuggestModeResult {
+): SuggestModeTransformResult {
 	const intercepted: DocumentOp[] = [];
 	const suggestions: PersistentSuggestion[] = [];
 	let suggestionIdIndex = 0;
 	const nextSuggestionOptions = (): RequiredSuggestionCreationOptions => {
 		const suggestionId =
-			options.suggestionIds?.[suggestionIdIndex] ?? crypto.randomUUID();
+			options.suggestionIds?.[suggestionIdIndex] ?? generateId();
 		suggestionIdIndex += 1;
 		return {
 			requestId: options.requestId,
@@ -388,7 +388,7 @@ function createBlockSuggestionMeta(
 ): BlockSuggestionMetaPayload {
 	const resolvedSessionId = options.sessionId ?? sessionId;
 	const meta: BlockSuggestionMeta = {
-		id: options.suggestionId ?? crypto.randomUUID(),
+		id: options.suggestionId ?? generateId(),
 		action,
 		author,
 		authorType,

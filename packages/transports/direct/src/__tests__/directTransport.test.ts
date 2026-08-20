@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, it, expect, vi } from "vitest";
 import { directTransport } from "../directTransport";
 import type { PenStreamPart, PenStreamRequest, ToolRuntime } from "@input/pen-types";
@@ -152,5 +154,15 @@ describe("@input/pen-transport-direct", () => {
 
     expect(callback).not.toHaveBeenCalled();
     unsub();
+  });
+
+  it("COL6 README states in-process tests and demos do not ship", () => {
+    const readme = readFileSync(
+      join(import.meta.dirname, "../../README.md"),
+      "utf8",
+    );
+    expect(readme).toMatch(/in-process/);
+    expect(readme).toMatch(/tests and demos/);
+    expect(readme).toMatch(/Do not ship it/);
   });
 });

@@ -2,6 +2,7 @@ import type {
   Block,
   BlockSchema,
   CRDTDocument,
+  DiagnosticEvent,
   InlineSchema,
   LayoutSchema,
   PenDocument,
@@ -81,21 +82,30 @@ function getLayoutDefaultValue(
 
 const MAX_ITERATIONS = 1000;
 
+type DiagnosticSink = (event: DiagnosticEvent) => void;
+
 export class SchemaEngineImpl implements SchemaEngine {
   private readonly registry: SchemaRegistry;
   private readonly doc: PenDocument;
   private readonly crdtDoc: CRDTDocument;
   private readonly dirtyBlockIds = new Set<string>();
   private readonly deferredBlockIds = new Set<string>();
+  private onDiagnostic: DiagnosticSink | undefined;
 
   constructor(
     registry: SchemaRegistry,
     doc: PenDocument,
     crdtDoc: CRDTDocument,
+    onDiagnostic?: DiagnosticSink,
   ) {
     this.registry = registry;
     this.doc = doc;
     this.crdtDoc = crdtDoc;
+    this.onDiagnostic = onDiagnostic;
+  }
+
+  setOnDiagnostic(onDiagnostic: DiagnosticSink | undefined): void {
+    this.onDiagnostic = onDiagnostic;
   }
 
   markDirty(blockId: string): void {
@@ -118,8 +128,12 @@ export class SchemaEngineImpl implements SchemaEngine {
     let iterations = 0;
 
     while (this.dirtyBlockIds.size > 0 && iterations < MAX_ITERATIONS) {
-      iterations++;
       const snapshot = [...this.dirtyBlockIds];
+      if (snapshot.every((blockId) => this.deferredBlockIds.has(blockId))) {
+        break;
+      }
+
+      iterations++;
       this.dirtyBlockIds.clear();
 
       this.doc.adapter.transact(this.crdtDoc, () => {
@@ -134,10 +148,17 @@ export class SchemaEngineImpl implements SchemaEngine {
     }
 
     if (iterations >= MAX_ITERATIONS) {
-      console.warn(
-        "SchemaEngine: normalizeDirty exceeded max iterations. " +
+      // CH5: dirty-loop cap is a diagnostic, not a console site.
+      this.onDiagnostic?.({
+        code: "normalize-cap",
+        level: "error",
+        source: "schema",
+        message:
+          "SchemaEngine: normalizeDirty exceeded max iterations. " +
           "Possible infinite normalization loop.",
-      );
+        remediation:
+          "Check block schema normalize() implementations for a cycle that keeps marking blocks dirty.",
+      });
     }
   }
 

@@ -52,7 +52,6 @@ export const AI_APPLY_STRATEGIES = [
 	"text-fast-apply",
 	"markdown-fast-apply",
 	"markdown-full-replace",
-	"structured-database",
 ] as const;
 
 export type AIApplyStrategy = (typeof AI_APPLY_STRATEGIES)[number];
@@ -62,7 +61,6 @@ export type AIWorkingSetViewMode = "raw" | "resolved";
 export const AI_STRUCTURED_LANES = [
 	"block-structure",
 	"table",
-	"database",
 	"review",
 ] as const;
 
@@ -80,7 +78,7 @@ export const AI_EXECUTION_MODES = [
 
 export type AIExecutionMode = (typeof AI_EXECUTION_MODES)[number];
 
-export const AI_TARGET_KINDS = ["text", "block", "table", "database"] as const;
+export const AI_TARGET_KINDS = ["text", "block", "table"] as const;
 
 export type AITargetKind = (typeof AI_TARGET_KINDS)[number];
 
@@ -90,7 +88,6 @@ export type AIBlockClass = (typeof AI_BLOCK_CLASSES)[number];
 
 export const AI_BLOCK_ADAPTER_IDS = [
 	"flow-markdown",
-	"database-app",
 ] as const;
 
 export type AIBlockAdapterId = (typeof AI_BLOCK_ADAPTER_IDS)[number];

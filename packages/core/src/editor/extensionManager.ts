@@ -1,6 +1,6 @@
 import type {
 	Extension,
-	CRDTEvent,
+	CommitEvent,
 	Editor,
 	DocumentState,
 	DecorationSet,
@@ -34,8 +34,8 @@ export class ExtensionManagerImpl {
 			message: `Extension "${ext.name}" ${phase} failed`,
 			remediation:
 				phase === "activation"
-					? `Fix the "${ext.name}" activateClient() implementation so rejected async startup does not leave the editor in a partial state.`
-					: `Fix the "${ext.name}" deactivateClient() implementation so rejected async teardown does not leave stale extension resources behind.`,
+					? `Fix the "${ext.name}" activateClient() implementation so a throw or rejected startup does not leave the editor in a partial state.`
+					: `Fix the "${ext.name}" deactivateClient() implementation so a throw or rejected teardown does not leave stale extension resources behind.`,
 			error,
 			extension: ext.name,
 		});
@@ -107,8 +107,10 @@ export class ExtensionManagerImpl {
 					this._stateMap.set(ext.name, ext.state.init(editor));
 				}
 			} catch (err) {
-				console.error(
-					`Extension "${ext.name}" activation failed:`,
+				this._emitLifecycleDiagnostic(
+					"PEN_EXT_004",
+					ext,
+					"activation",
 					err,
 				);
 			}
@@ -143,8 +145,10 @@ export class ExtensionManagerImpl {
 					}
 				}
 			} catch (err) {
-				console.error(
-					`Extension "${ext.name}" deactivation failed:`,
+				this._emitLifecycleDiagnostic(
+					"PEN_EXT_005",
+					ext,
+					"deactivation",
 					err,
 				);
 			}
@@ -158,7 +162,7 @@ export class ExtensionManagerImpl {
 
 	// ── Dispatch ─────────────────────────────────────────────
 
-	dispatchObserve(events: CRDTEvent[], editor: Editor): void {
+	dispatchObserve(events: readonly CommitEvent[], editor: Editor): void {
 		for (const ext of this._sorted) {
 			if (!ext.observe) continue;
 			try {

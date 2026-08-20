@@ -2,7 +2,6 @@ import React from "react";
 import type { GenerationStructuredPreviewState } from "@input/pen-ai";
 import { useActiveAIStructuredPreview } from "../../hooks/useAIStructuredPreview";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
-import { DATA_ATTRS } from "../../utils/dataAttributes";
 import { useAIContext } from "./root";
 
 export type StructuredPreviewTargetState =
@@ -42,71 +41,8 @@ export function AIStructuredTargetPreview(props: AIStructuredTargetPreviewProps)
 	);
 }
 
-export function AIStructuredTargetPreviewItem(props: {
+export function AIStructuredTargetPreviewItem(_props: {
 	target: StructuredPreviewTargetState;
 }) {
-	return <StructuredDatabaseTargetPreview target={props.target} />;
-}
-
-function StructuredDatabaseTargetPreview(props: {
-	target: Extract<StructuredPreviewTargetState, { targetKind: "database" }>;
-}) {
-	const { target } = props;
-	const activeViewId = target.database.primaryViewId;
-	const viewItems = target.database.views.map((view) => (
-		<span
-			key={view.id}
-			data-structured-preview-view=""
-			data-active={view.id === activeViewId ? "" : undefined}
-		>
-			{view.title}
-		</span>
-	));
-	const headerLabels = target.database.columns.map((column) => column.title || column.id);
-	const headerCells = headerLabels.map((label: string, index: number) => (
-		<th key={`${target.blockId}-db-header-${index}`} data-structured-preview-header-cell="">
-			{label}
-		</th>
-	));
-	const bodyRows = target.database.rows.map((row) => {
-		const cells = target.database.columns.map((column) => (
-			<td
-				key={`${row.id}-${column.id}`}
-				data-structured-preview-cell=""
-			>
-				{row.values[column.id] ?? ""}
-			</td>
-		));
-		return (
-			<tr key={row.id} data-structured-preview-row="" data-row-id={row.id}>
-				{cells}
-			</tr>
-		);
-	});
-
-	return (
-		<section
-			data-structured-target-preview-item=""
-			data-structured-target-kind="database"
-			{...{ [DATA_ATTRS.ignorePointerGesture]: "" }}
-		>
-			<div data-structured-target-preview-title="">
-				Database preview
-			</div>
-			<div data-structured-target-preview-summary="">
-				{target.database.rows.length} rows, {target.database.columns.length} columns, {target.database.views.length} views
-			</div>
-			<div data-structured-target-preview-views="">
-				{viewItems}
-			</div>
-			<div data-structured-target-preview-frame="">
-				<table data-structured-target-preview-table="">
-					<thead>
-						<tr data-structured-preview-row="header">{headerCells}</tr>
-					</thead>
-					<tbody>{bodyRows}</tbody>
-				</table>
-			</div>
-		</section>
-	);
+	return null;
 }

@@ -66,8 +66,14 @@ describe("historyExtension", () => {
 		setBlockText(editor, blockId, "hello world");
 		await controller.createSnapshot("Updated", "manual");
 
+		const recovered: string[] = [];
+		editor.on("crdt:recovered", (method) => {
+			recovered.push(method);
+		});
+
 		await controller.restoreSnapshot(original.id);
 
+		expect(recovered).toEqual(["snapshot"]);
 		expect(readBlockText(editor, blockId)).toBe("hello");
 		expect(persistence.entries).toHaveLength(3);
 		expect(persistence.entries[2]?.metadata.label).toBe("Pre-restore auto-save");

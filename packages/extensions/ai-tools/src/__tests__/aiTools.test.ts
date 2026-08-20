@@ -38,6 +38,8 @@ describe("@input/pen-ai-tools", () => {
 				name: "echo",
 				description: "Echo input",
 				inputSchema: { type: "object", properties: {} },
+				mutating: true,
+				destructive: false,
 			},
 		]);
 	});

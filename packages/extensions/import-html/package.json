@@ -37,6 +37,9 @@
     "README.md",
     "LICENSE.md"
   ],
+  "engines": {
+    "node": ">=22"
+  },
   "sideEffects": false,
   "scripts": {
     "build": "tsup",
@@ -50,7 +53,7 @@
     "@input/pen-types": "workspace:*",
     "htmlparser2": "^9.0.0",
     "domhandler": "^5.0.0",
-    "isomorphic-dompurify": "^2.0.0"
+    "isomorphic-dompurify": "~2.36.0"
   },
   "devDependencies": {
     "@input/pen-export-html": "workspace:*",

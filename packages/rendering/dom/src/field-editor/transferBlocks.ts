@@ -1,8 +1,9 @@
-import type { Block, DocumentOp, Editor, Position } from "@input/pen-types";
+import type { DocumentOp, Editor, Position } from "@input/pen-types";
 import type { FieldEditorTransferController } from "./controller";
 import type { Delta, PenBlock } from "../utils/clipboardPayload";
 import type { TransferCursorContext } from "./transferSelection";
 import { getInsertSiblingBlockOp } from "../utils/parentIdTree";
+import { generateId } from "@input/pen-types";
 
 export function pasteBlocks(
 	blocks: PenBlock[],
@@ -51,7 +52,7 @@ export function pasteBlocks(
 
 	for (const block of valid) {
 		const schema = editor.schema.resolve(block.type!)!;
-		const blockId = crypto.randomUUID();
+		const blockId = generateId();
 		const insertBlockOp =
 			previousBlockId
 				? ({
@@ -172,7 +173,7 @@ export function pasteInlineText(
 	let lastInsertedTextLength = offset + (firstLine?.length ?? 0);
 
 	for (let i = 1; i < lines.length; i++) {
-		const newId = crypto.randomUUID();
+		const newId = generateId();
 		const isLast = i === lines.length - 1;
 		const lineText = isLast ? lines[i] + tailText : lines[i];
 
@@ -239,7 +240,7 @@ function pasteInlineFragment(
 	const ops: DocumentOp[] = [];
 	let offset = cursor.offset;
 	for (const delta of deltas) {
-		if (!delta.insert) continue;
+		if (typeof delta.insert !== "string" || !delta.insert) continue;
 		ops.push({
 			type: "insert-text",
 			blockId: cursor.blockId,
@@ -285,7 +286,7 @@ function appendInlineContentOps(
 	let offset = 0;
 
 	for (const delta of deltas) {
-		if (!delta.insert) continue;
+		if (typeof delta.insert !== "string" || !delta.insert) continue;
 		ops.push({
 			type: "insert-text",
 			blockId,
@@ -300,7 +301,9 @@ function appendInlineContentOps(
 }
 
 function deltasToPlainText(deltas: Delta[]): string {
-	return deltas.map((delta) => delta.insert).join("");
+	return deltas
+		.map((delta) => (typeof delta.insert === "string" ? delta.insert : ""))
+		.join("");
 }
 
 function hasAttributedDeltas(deltas: Delta[]): boolean {
@@ -312,13 +315,13 @@ function hasAttributedDeltas(deltas: Delta[]): boolean {
 function appendTableChildrenOps(
 	ops: DocumentOp[],
 	blockId: string,
-	children: Block[],
+	children: readonly PenBlock[],
 ): void {
 	const tableRows = children.filter((child) => child.type === "__table_row");
 	for (let rowIdx = 0; rowIdx < tableRows.length; rowIdx++) {
 		const row = tableRows[rowIdx];
 		const cells = (row.children ?? []).filter(
-			(cell: Block) => cell.type === "__table_cell",
+			(cell) => cell.type === "__table_cell",
 		);
 
 		if (rowIdx > 0) {

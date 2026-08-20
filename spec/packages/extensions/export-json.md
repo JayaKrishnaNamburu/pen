@@ -53,7 +53,7 @@ Important rules:
 
 ## Plain Text Export
 
-`exportEditorToText()`, `exportPlainText()`, and `exportPenDocumentToText()` provide deterministic plain-text extraction for headless workflows, search indexes, previews, tests, and host-owned delivery/export pipelines. Hosts can filter block types, customize separators, render app-specific inline nodes, and extract database block text without making Pen aware of product concepts.
+`exportEditorToText()`, `exportPlainText()`, and `exportPenDocumentToText()` provide deterministic plain-text extraction for headless workflows, search indexes, previews, tests, and host-owned delivery/export pipelines. Hosts can filter block types, customize separators, and render app-specific inline nodes without making Pen aware of product concepts.
 
 ## Integration Notes
 

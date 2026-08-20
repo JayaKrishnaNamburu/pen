@@ -1,5 +1,6 @@
 import type { Editor, ToolDefinition } from "@input/pen-types";
 import { assertToolCanMutateBlock } from "../utils/mutationPolicy";
+import { applyValidatedOps } from "../utils/payloadValidation";
 
 export function deleteBlockTool(editor: Editor): ToolDefinition {
   return {
@@ -15,7 +16,8 @@ export function deleteBlockTool(editor: Editor): ToolDefinition {
     handler: async (input: unknown) => {
       const opts = input as { blockId: string };
       assertToolCanMutateBlock(editor, opts.blockId);
-      editor.apply(
+      applyValidatedOps(
+        editor,
         [{ type: "delete-block", blockId: opts.blockId }],
         { origin: "ai" },
       );

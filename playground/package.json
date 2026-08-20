@@ -21,7 +21,6 @@
     "@input/pen-assets-memory": "workspace:^",
     "@input/pen-core": "workspace:*",
     "@input/pen-crdt-yjs": "workspace:^",
-    "@input/pen-database": "workspace:*",
     "@input/pen-export-html": "workspace:*",
     "@input/pen-export-json": "workspace:^",
     "@input/pen-export-markdown": "workspace:*",

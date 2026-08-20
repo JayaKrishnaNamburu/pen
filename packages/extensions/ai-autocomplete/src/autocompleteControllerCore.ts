@@ -1,13 +1,33 @@
 import type {
 	Editor,
-	FieldEditor,
 	InlineCompletionController,
 	ModelAdapter,
 } from "@input/pen-types";
 import { getOpOriginType } from "@input/pen-types";
+import type { AutocompleteControllerHost } from "./autocompleteControllerHost";
+import {
+	acceptVisibleSuggestion,
+	destroy,
+	dismiss,
+	getBlockPolicy,
+	getSnapshot,
+	getState,
+	hasVisibleSuggestion,
+	listProviderDescriptors,
+	registerProvider,
+	request,
+	setEnabled,
+	subscribe,
+	updateBlockPolicy,
+	updateRuntimeSettings,
+} from "./autocompleteControllerLifecycle";
+import {
+	remapVisibleSuggestion,
+	shouldDismissForSelectionChange,
+} from "./autocompleteControllerRequest";
+import { setState } from "./autocompleteControllerState";
 import {
 	DEFAULT_DEBOUNCE_MS,
-	DEFAULT_ACCEPTANCE_STRATEGY,
 	DEFAULT_MAX_NEIGHBOR_CHARS,
 	DEFAULT_MAX_PREFIX_CHARS,
 	DEFAULT_MAX_PROVIDER_CHARS,
@@ -16,6 +36,7 @@ import {
 	DEFAULT_PREFETCH_AFTER_ACCEPT,
 	DEFAULT_STALE_AFTER_MS,
 } from "./constants";
+import { AutocompleteContinuationState } from "./continuationState";
 import { builtinAutocompleteProviders } from "./providers/builtins";
 import { AutocompleteProviderRegistry } from "./providers/registry";
 import type {
@@ -24,115 +45,36 @@ import type {
 } from "./providers/types";
 import type {
 	AutocompleteAcceptanceStrategy,
-	AutocompleteBlockedReason,
 	AutocompleteBlockPolicy,
 	AutocompleteController,
 	AutocompleteControllerSnapshot,
 	AutocompleteControllerState,
 	AutocompleteDismissReason,
 	AutocompleteExtensionConfig,
-	AutocompletePolicyInvalidationStage,
-	AutocompleteRequestContext,
 } from "./types";
-import { AutocompleteContinuationState } from "./continuationState";
 
-export interface AutocompleteControllerImpl {
-	destroy(): void;
-	getSnapshot(): AutocompleteControllerSnapshot;
-	getState(): AutocompleteControllerState;
-	getBlockPolicy(): Readonly<AutocompleteBlockPolicy>;
-	subscribe(listener: () => void): () => void;
-	setEnabled(enabled: boolean): void;
-	request(options?: { explicit?: boolean }): boolean;
-	acceptVisibleSuggestion(): boolean;
-	_acceptFullVisibleSuggestion(options?: {
-		activateContinuation?: boolean;
-	}): boolean;
-	hasVisibleSuggestion(): boolean;
-	registerProvider(provider: AutocompleteContextProvider): () => void;
-	listProviderDescriptors(): readonly AutocompleteProviderDescriptor[];
-	updateRuntimeSettings(
-	settings: Partial<AutocompleteControllerState["settings"]>,
-): void;
-	updateBlockPolicy(policy: Partial<AutocompleteBlockPolicy>): void;
-	dismiss(reason?: AutocompleteDismissReason): void;
-	_runRequest(requestId: string): Promise<void>;
-	_buildContext(): AutocompleteRequestContext | null;
-	_buildContextForPosition(
-	blockId: string,
-	offset: number,
-): AutocompleteRequestContext | null;
-	_shouldContinueRequest(
-	requestId: string,
-	context: AutocompleteRequestContext,
-): boolean;
-	_shouldDismissForExternalCommit(
-	affectedBlocks: readonly string[],
-): boolean;
-	_shouldDismissForSelectionChange(): boolean;
-	_getFieldEditor(): FieldEditor | null;
-	_showSequenceSuggestion(): void;
-	_startPrefetchForAcceptedContinuation(options: {
-		sourceRequestId: string;
-		blockId: string;
-		startOffset: number;
-		continuationDepth: number;
-	}): void;
-	_runPrefetchRequest(options: {
-		abortController: AbortController;
-		context: AutocompleteRequestContext;
-		continuationDepth: number;
-		sourceRequestId: string;
-	}): Promise<void>;
-	_activatePendingAcceptedContinuation(): boolean;
-	_clearSequence(): void;
-	_clearVisibleSuggestionAfterAccept(): void;
-	_setBlockedReason(reason: AutocompleteBlockedReason): void;
-	_recordPolicyInvalidation(
-	policyFailure: AutocompleteBlockedReason,
-	invalidationStage: AutocompletePolicyInvalidationStage | null,
-): void;
-	_invalidateForPolicyChange(): void;
-	_getActiveSelectionBlockId(): string | null;
-	_getPolicyInvalidationStage(): AutocompletePolicyInvalidationStage | null;
-	_resolveCurrentBlockFailure(
-	blockId: string,
-): AutocompleteBlockedReason | null;
-	_resolveContextEligibilityFailure(
-	blockId: string,
-	blockType: string | null,
-): AutocompleteBlockedReason | null;
-	_resolveBlockPolicyFailure(
-	blockType: string | null,
-): AutocompleteBlockedReason | null;
-	_clearDebounceTimer(): void;
-	_setState(next: Partial<AutocompleteControllerState>): void;
-	_getProviderDescriptorsSnapshot(): readonly AutocompleteProviderDescriptor[];
-	_invalidateSnapshot(): void;
-	_invalidateProviderDescriptorsSnapshot(): void;
-	_emit(): void;
-}
-
-export class AutocompleteControllerImpl implements AutocompleteController {
-	private readonly _editor: Editor;
-	private readonly _model: ModelAdapter | undefined;
-	private _debounceMs: number;
-	private _acceptanceStrategy: AutocompleteAcceptanceStrategy;
-	private _staleAfterMs: number;
-	private readonly _maxPrefixChars: number;
-	private readonly _maxSuffixChars: number;
-	private readonly _maxNeighborChars: number;
-	private readonly _maxProviderChars: number;
-	private readonly _maxProviderTimeMs: number;
-	private _prefetchAfterAccept: boolean;
-	private readonly _providerRegistry: AutocompleteProviderRegistry;
-	private readonly _inlineCompletion: InlineCompletionController;
-	private readonly _listeners = new Set<() => void>();
-	private _snapshot: AutocompleteControllerSnapshot | null = null;
-	private _providerDescriptorsSnapshot:
+export class AutocompleteControllerImpl
+	implements AutocompleteController, AutocompleteControllerHost
+{
+	readonly _editor: Editor;
+	readonly _model: ModelAdapter | undefined;
+	_debounceMs: number;
+	_acceptanceStrategy: AutocompleteAcceptanceStrategy;
+	_staleAfterMs: number;
+	readonly _maxPrefixChars: number;
+	readonly _maxSuffixChars: number;
+	readonly _maxNeighborChars: number;
+	readonly _maxProviderChars: number;
+	readonly _maxProviderTimeMs: number;
+	_prefetchAfterAccept: boolean;
+	readonly _providerRegistry: AutocompleteProviderRegistry;
+	readonly _inlineCompletion: InlineCompletionController;
+	readonly _listeners = new Set<() => void>();
+	_snapshot: AutocompleteControllerSnapshot | null = null;
+	_providerDescriptorsSnapshot:
 		| readonly AutocompleteProviderDescriptor[]
 		| null = null;
-	private _state: AutocompleteControllerState = {
+	_state: AutocompleteControllerState = {
 		enabled: true,
 		status: "idle",
 		activeRequestId: null,
@@ -146,7 +88,7 @@ export class AutocompleteControllerImpl implements AutocompleteController {
 		blockPolicy: {
 			allowInCodeBlocks: true,
 			allowInTables: false,
-			deniedBlockTypes: ["database"],
+			deniedBlockTypes: [],
 		},
 		metrics: {
 			requestCount: 0,
@@ -166,12 +108,12 @@ export class AutocompleteControllerImpl implements AutocompleteController {
 			lastPolicyInvalidationStage: null,
 		},
 	};
-	private _debounceTimer: ReturnType<typeof setTimeout> | null = null;
-	private _abortController: AbortController | null = null;
-	private _unsubscribeSelection: (() => void) | null = null;
-	private _unsubscribeCommit: (() => void) | null = null;
-	private readonly _continuation = new AutocompleteContinuationState();
-	private _prefetchAbortController: AbortController | null = null;
+	_debounceTimer: ReturnType<typeof setTimeout> | null = null;
+	_abortController: AbortController | null = null;
+	_unsubscribeSelection: (() => void) | null = null;
+	_unsubscribeCommit: (() => void) | null = null;
+	readonly _continuation = new AutocompleteContinuationState();
+	_prefetchAbortController: AbortController | null = null;
 
 	constructor(
 		editor: Editor,
@@ -187,7 +129,7 @@ export class AutocompleteControllerImpl implements AutocompleteController {
 		this._state.blockPolicy = {
 			allowInCodeBlocks: true,
 			allowInTables: false,
-			deniedBlockTypes: ["database"],
+			deniedBlockTypes: [],
 			...config.blockPolicy,
 		};
 		this._maxPrefixChars =
@@ -215,27 +157,88 @@ export class AutocompleteControllerImpl implements AutocompleteController {
 		};
 
 		this._unsubscribeSelection = this._editor.onSelectionChange(() => {
-			if (this._shouldDismissForSelectionChange()) {
-				this.dismiss("selection-change");
+			if (shouldDismissForSelectionChange(this)) {
+				dismiss(this, "selection-change");
 			}
 		});
-		this._unsubscribeCommit = this._editor.onDocumentCommit((event) => {
+		this._unsubscribeCommit = this._editor.on("commit", (event) => {
 			if (!this._state.enabled) {
 				return;
 			}
 			if (this._continuation.consumeAcceptedAiCommit(event.origin)) {
 				return;
 			}
+			this._continuation.mapThroughSummary(event.summary);
+			if (!remapVisibleSuggestion(this, event.summary)) {
+				dismiss(this, "external-edit");
+			}
 			const originType = getOpOriginType(event.origin);
 			if (originType !== "user" && originType !== "input-rule") {
-				if (
-					this._shouldDismissForExternalCommit(event.affectedBlocks)
-				) {
-					this.dismiss("external-edit");
-				}
 				return;
 			}
 			this.request();
 		});
+	}
+
+	destroy(): void {
+		destroy(this);
+	}
+
+	getSnapshot(): AutocompleteControllerSnapshot {
+		return getSnapshot(this);
+	}
+
+	getState(): AutocompleteControllerState {
+		return getState(this);
+	}
+
+	getBlockPolicy(): Readonly<AutocompleteBlockPolicy> {
+		return getBlockPolicy(this);
+	}
+
+	subscribe(listener: () => void): () => void {
+		return subscribe(this, listener);
+	}
+
+	setEnabled(enabled: boolean): void {
+		setEnabled(this, enabled);
+	}
+
+	request(options?: { explicit?: boolean }): boolean {
+		return request(this, options);
+	}
+
+	acceptVisibleSuggestion(): boolean {
+		return acceptVisibleSuggestion(this);
+	}
+
+	hasVisibleSuggestion(): boolean {
+		return hasVisibleSuggestion(this);
+	}
+
+	registerProvider(provider: AutocompleteContextProvider): () => void {
+		return registerProvider(this, provider);
+	}
+
+	listProviderDescriptors(): readonly AutocompleteProviderDescriptor[] {
+		return listProviderDescriptors(this);
+	}
+
+	updateRuntimeSettings(
+		settings: Partial<AutocompleteControllerState["settings"]>,
+	): void {
+		updateRuntimeSettings(this, settings);
+	}
+
+	updateBlockPolicy(policy: Partial<AutocompleteBlockPolicy>): void {
+		updateBlockPolicy(this, policy);
+	}
+
+	dismiss(reason?: AutocompleteDismissReason): void {
+		dismiss(this, reason);
+	}
+
+	_setState(next: Partial<AutocompleteControllerState>): void {
+		setState(this, next);
 	}
 }

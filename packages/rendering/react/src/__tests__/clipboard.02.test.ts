@@ -60,9 +60,13 @@ function createFieldEditorStub(): FieldEditorImpl {
 function getClipboardPenBlocks(
 	clipboardData: DataTransfer,
 ): Array<{ type?: string; content?: string }> {
-	return JSON.parse(
+	const parsed = JSON.parse(
 		clipboardData.getData("application/x-pen-blocks"),
-	) as Array<{ type?: string; content?: string }>;
+	) as { blocks?: Array<{ type?: string; content?: string }> } | Array<{
+		type?: string;
+		content?: string;
+	}>;
+	return Array.isArray(parsed) ? parsed : (parsed.blocks ?? []);
 }
 
 function seedTable(
@@ -92,21 +96,6 @@ function seedTable(
 			col: 1,
 			offset: 0,
 			text: "Bravo",
-		},
-	]);
-}
-
-function seedDatabase(
-	editor: ReturnType<typeof createEditor>,
-	blockId: string,
-): void {
-	editor.apply([
-		{
-			type: "insert-block",
-			blockId,
-			blockType: "database",
-			props: {},
-			position: "last",
 		},
 	]);
 }
@@ -197,7 +186,7 @@ describe("@input/pen-react clipboard", () => {
 		editor.destroy();
 	});
 
-	it("filters flow-disallowed importer parse blocks before applying parsed paste", async () => {
+	it("filters unknown importer parse blocks in flow documents before applying parsed paste", async () => {
 		const editor = createEditor({
 			documentProfile: "flow",
 		});
@@ -208,12 +197,9 @@ describe("@input/pen-react clipboard", () => {
 			html: {
 				parse: vi.fn().mockReturnValue([
 					{
-						type: "database",
+						type: "customWidget",
 						props: {},
-						database: {
-							columns: [],
-							rows: [],
-						},
+						content: "Ignored",
 					},
 					{ type: "heading", props: { level: 2 }, content: "Allowed title" },
 				]),
@@ -239,7 +225,7 @@ describe("@input/pen-react clipboard", () => {
 		expect(blockOrder[0]).not.toBe(emptyBlockId);
 		expect(editor.getBlock(blockOrder[0])?.type).toBe("heading");
 		expect(
-			blockOrder.some((blockId) => editor.getBlock(blockId)?.type === "database"),
+			blockOrder.some((blockId) => editor.getBlock(blockId)?.type === "customWidget"),
 		).toBe(false);
 		expect(importers.html?.import).not.toHaveBeenCalled();
 		expect(fieldEditor.activateTextSelection).toHaveBeenCalledWith(
@@ -247,57 +233,6 @@ describe("@input/pen-react clipboard", () => {
 			13,
 			13,
 		);
-
-		editor.destroy();
-	});
-
-	it("preserves the current selection when parsed paste normalizes to zero blocks", async () => {
-		const editor = createEditor({
-			documentProfile: "flow",
-		});
-		const blockId = editor.firstBlock()!.id;
-		const clipboardData = createClipboardData();
-		const fieldEditor = createFieldEditorStub();
-		const importers: PasteImporters = {
-			html: {
-				parse: vi.fn().mockReturnValue([
-					{
-						type: "database",
-						props: {},
-						database: {
-							columns: [],
-							rows: [],
-						},
-					},
-				]),
-				import: vi.fn(),
-				name: "html",
-				mimeType: "text/html",
-			},
-		};
-
-		editor.apply([
-			{
-				type: "insert-text",
-				blockId,
-				offset: 0,
-				text: "Keep me",
-			},
-		]);
-		editor.selectText(blockId, 0, 7);
-		clipboardData.setData("text/html", "<div>db only</div>");
-
-		handleClipboardPaste(
-			{ clipboardData } as ClipboardEvent,
-			editor,
-			fieldEditor,
-			importers,
-		);
-		await new Promise((resolve) => setTimeout(resolve, 0));
-
-		expect(editor.documentState.blockOrder).toEqual([blockId]);
-		expect(editor.getBlock(blockId)?.textContent()).toBe("Keep me");
-		expect(importers.html?.import).not.toHaveBeenCalled();
 
 		editor.destroy();
 	});

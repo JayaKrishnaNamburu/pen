@@ -1,3 +1,4 @@
+import { affectedBlockIdsFromSummary } from "@input/pen-core";
 import { useRef, useSyncExternalStore } from "react";
 import type { Editor } from "@input/pen-types";
 
@@ -21,8 +22,8 @@ export function useBlockModel(
 
 	return useSyncExternalStore(
 		(callback) =>
-			editor.onDocumentCommit((event) => {
-				if (event.affectedBlocks.includes(blockId)) {
+			editor.on("commit", (event) => {
+				if (affectedBlockIdsFromSummary(event.summary).includes(blockId)) {
 					callback();
 				}
 			}),

@@ -99,7 +99,7 @@ describe("@input/pen-core createEditor", () => {
 		const ext = defineExtension({
 			name: "capture-observed-dispatch",
 			observe(events) {
-				observed.push(events);
+				observed.push([...events]);
 			},
 		});
 		const editor = createEditor({

@@ -7,7 +7,11 @@ const repoRoot = path.resolve(import.meta.dirname, "../../../../..");
 async function lintSeededViolation(code, fileName) {
 	const eslint = new ESLint({ cwd: repoRoot });
 	const [result] = await eslint.lintText(code, {
-		filePath: path.join(repoRoot, "packages/tooling/eslint-plugin", fileName),
+		filePath: path.join(
+			repoRoot,
+			"packages/tooling/eslint-plugin",
+			fileName,
+		),
 	});
 	return result?.messages ?? [];
 }
@@ -21,7 +25,24 @@ describe("CH2 lint gate", () => {
 
 		expect(
 			messages.filter(
-				(message) => message.ruleId === "pen/no-html-injection-sinks" && message.severity === 2,
+				(message) =>
+					message.ruleId === "pen/no-html-injection-sinks" &&
+					message.severity === 2,
+			),
+		).toHaveLength(1);
+	});
+
+	it("reports a seeded module-scope browser global as an error through the root config", async () => {
+		const messages = await lintSeededViolation(
+			"const title = document.title;\n",
+			"seeded-module-scope-document.ts",
+		);
+
+		expect(
+			messages.filter(
+				(message) =>
+					message.ruleId === "pen/no-module-scope-browser-globals" &&
+					message.severity === 2,
 			),
 		).toHaveLength(1);
 	});

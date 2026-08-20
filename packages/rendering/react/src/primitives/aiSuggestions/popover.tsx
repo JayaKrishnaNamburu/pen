@@ -1,8 +1,22 @@
 import React from "react";
 import { createPortal } from "react-dom";
+import { useIsomorphicLayoutEffect } from "../../hooks/useIsomorphicLayoutEffect";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
+import { DATA_ATTRS } from "../../utils/dataAttributes";
 import { useAISuggestionsContext } from "./root";
 
+const POPOVER_ACTION_COUNT = 2;
+const DISMISS_OPTION_INDEX = 0;
+const APPLY_OPTION_INDEX = 1;
+
+/**
+ * Review card for the active AI suggestion group.
+ *
+ * AX3 caret-anchored popup: `role="listbox"` with owned option IDs.
+ * DOM focus stays in the editing field. The field gets `aria-controls`,
+ * `aria-expanded`, and `aria-activedescendant`. Arrow/Home/End move the
+ * active option, Enter/Tab accept, Escape closes.
+ */
 export interface AISuggestionsPopoverProps extends AsChildProps {
 	ref?: React.Ref<HTMLElement>;
 }
@@ -11,6 +25,97 @@ export function AISuggestionsPopover(props: AISuggestionsPopoverProps) {
 	const { popover } = useAISuggestionsContext();
 	const suggestion = popover.activeSuggestion;
 	const position = popover.position;
+	const isOpen = Boolean(suggestion && position);
+	const listboxId = React.useId();
+	const [selectedIndex, setSelectedIndex] = React.useState(APPLY_OPTION_INDEX);
+	const selectedIndexRef = React.useRef(selectedIndex);
+	const popoverRef = React.useRef(popover);
+	selectedIndexRef.current = selectedIndex;
+	popoverRef.current = popover;
+
+	React.useEffect(() => {
+		if (isOpen) {
+			setSelectedIndex(APPLY_OPTION_INDEX);
+		}
+	}, [isOpen]);
+
+	React.useEffect(() => {
+		if (!isOpen) {
+			return;
+		}
+
+		const handleKeyDown = (event: KeyboardEvent) => {
+			if (event.metaKey || event.ctrlKey || event.altKey) {
+				return;
+			}
+
+			const currentIndex = selectedIndexRef.current;
+			switch (event.key) {
+				case "ArrowDown":
+				case "ArrowUp": {
+					event.preventDefault();
+					event.stopPropagation();
+					const delta = event.key === "ArrowDown" ? 1 : -1;
+					setSelectedIndex(
+						(currentIndex + delta + POPOVER_ACTION_COUNT) %
+							POPOVER_ACTION_COUNT,
+					);
+					break;
+				}
+				case "Home": {
+					event.preventDefault();
+					event.stopPropagation();
+					setSelectedIndex(DISMISS_OPTION_INDEX);
+					break;
+				}
+				case "End": {
+					event.preventDefault();
+					event.stopPropagation();
+					setSelectedIndex(APPLY_OPTION_INDEX);
+					break;
+				}
+				case "Enter":
+				case "Tab": {
+					event.preventDefault();
+					event.stopPropagation();
+					if (currentIndex === DISMISS_OPTION_INDEX) {
+						popoverRef.current.dismissActiveGroup();
+					} else {
+						popoverRef.current.applyActiveGroup();
+					}
+					break;
+				}
+				case "Escape": {
+					event.preventDefault();
+					event.stopPropagation();
+					popoverRef.current.closeSuggestion();
+					break;
+				}
+			}
+		};
+
+		document.addEventListener("keydown", handleKeyDown, true);
+		return () => {
+			document.removeEventListener("keydown", handleKeyDown, true);
+		};
+	}, [isOpen]);
+
+	useIsomorphicLayoutEffect(() => {
+		if (!isOpen) {
+			return;
+		}
+		const field = findActiveField();
+		if (!field) {
+			return;
+		}
+		const activeOptionId = getAISuggestionsOptionId(listboxId, selectedIndex);
+		field.setAttribute("aria-controls", listboxId);
+		field.setAttribute("aria-expanded", "true");
+		field.setAttribute("aria-activedescendant", activeOptionId);
+		return () => {
+			clearFieldPopupAria(field);
+		};
+	}, [isOpen, listboxId, selectedIndex]);
 
 	if (!suggestion || !position) {
 		return null;
@@ -203,7 +308,25 @@ export function AISuggestionsPopover(props: AISuggestionsPopoverProps) {
 							<div style={{ display: "flex", gap: 8 }}>
 								<button
 									type="button"
+									tabIndex={-1}
+									id={getAISuggestionsOptionId(
+										listboxId,
+										DISMISS_OPTION_INDEX,
+									)}
+									role="option"
+									aria-selected={
+										selectedIndex === DISMISS_OPTION_INDEX
+									}
+									data-pen-ai-suggestions-option=""
+									data-selected={
+										selectedIndex === DISMISS_OPTION_INDEX
+											? ""
+											: undefined
+									}
 									onMouseDown={preventEditorBlur}
+									onMouseEnter={() => {
+										setSelectedIndex(DISMISS_OPTION_INDEX);
+									}}
 									onClick={() => {
 										popover.dismissActiveGroup();
 									}}
@@ -213,7 +336,25 @@ export function AISuggestionsPopover(props: AISuggestionsPopoverProps) {
 								</button>
 								<button
 									type="button"
+									tabIndex={-1}
+									id={getAISuggestionsOptionId(
+										listboxId,
+										APPLY_OPTION_INDEX,
+									)}
+									role="option"
+									aria-selected={
+										selectedIndex === APPLY_OPTION_INDEX
+									}
+									data-pen-ai-suggestions-option=""
+									data-selected={
+										selectedIndex === APPLY_OPTION_INDEX
+											? ""
+											: undefined
+									}
 									onMouseDown={preventEditorBlur}
+									onMouseEnter={() => {
+										setSelectedIndex(APPLY_OPTION_INDEX);
+									}}
 									onClick={() => {
 										popover.applyActiveGroup();
 									}}
@@ -228,8 +369,11 @@ export function AISuggestionsPopover(props: AISuggestionsPopoverProps) {
 		},
 		"div",
 		{
+			id: listboxId,
 			"data-pen-ai-suggestions-popover": "",
 			"data-kind": suggestion.kind,
+			role: "listbox",
+			"aria-label": groupTitle,
 			style: {
 				position: "absolute",
 				top: `${Math.round(position.top)}px`,
@@ -249,6 +393,28 @@ export function AISuggestionsPopover(props: AISuggestionsPopoverProps) {
 	);
 
 	return createPortal(content, document.body);
+}
+
+function getAISuggestionsOptionId(listboxId: string, index: number): string {
+	return `${listboxId}-option-${index}`;
+}
+
+function findActiveField(): HTMLElement | null {
+	const editorRoot = document.querySelector(`[${DATA_ATTRS.editorRoot}]`);
+	if (!(editorRoot instanceof HTMLElement)) {
+		return null;
+	}
+	return (
+		editorRoot.querySelector<HTMLElement>(
+			`[${DATA_ATTRS.fieldEditorActiveSurface}]`,
+		) ?? editorRoot.querySelector<HTMLElement>('[role="textbox"]')
+	);
+}
+
+function clearFieldPopupAria(field: HTMLElement): void {
+	field.removeAttribute("aria-controls");
+	field.removeAttribute("aria-expanded");
+	field.removeAttribute("aria-activedescendant");
 }
 
 function preventEditorBlur(event: React.MouseEvent<HTMLElement>) {

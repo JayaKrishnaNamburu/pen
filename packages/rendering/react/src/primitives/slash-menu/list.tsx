@@ -1,5 +1,5 @@
 import React from "react";
-import { useSlashMenuContext } from "./root";
+import { getSlashMenuOptionId, useSlashMenuContext } from "./root";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { SlashMenuGroup } from "./group";
 import { SlashMenuItem } from "./item";
@@ -15,7 +15,11 @@ export interface SlashMenuListProps extends AsChildProps {
  */
 export function SlashMenuList(props: SlashMenuListProps) {
 	const { children, ...rest } = props;
-	const { items } = useSlashMenuContext();
+	const { items, listboxId, selectedIndex } = useSlashMenuContext();
+	const activeOptionId =
+		items.length > 0
+			? getSlashMenuOptionId(listboxId, selectedIndex)
+			: undefined;
 
 	const hasManualChildren = React.Children.count(children) > 0;
 
@@ -58,8 +62,10 @@ export function SlashMenuList(props: SlashMenuListProps) {
 	}
 
 	const primitiveProps: Record<string, unknown> = {
+		id: listboxId,
 		"data-pen-slash-menu-list": "",
 		role: "listbox",
+		"aria-activedescendant": activeOptionId,
 	};
 
 	return renderAsChild({ ...rest, children: content }, "div", primitiveProps);

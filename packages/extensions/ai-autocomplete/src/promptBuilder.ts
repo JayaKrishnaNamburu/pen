@@ -214,6 +214,7 @@ async function readProviderText(options: {
 			? { text: trimmed, durationMs: Date.now() - startedAt }
 			: null;
 	} catch {
+		// provider throw or timeout; skip this prompt source.
 		return null;
 	}
 }

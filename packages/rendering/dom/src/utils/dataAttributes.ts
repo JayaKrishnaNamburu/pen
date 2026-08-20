@@ -27,6 +27,7 @@ export const DATA_ATTRS = {
 	inlineAtomProps: "data-pen-inline-atom-props",
 	inlineAtomCaretBoundary: "data-pen-inline-atom-caret-boundary",
 	inlineAtomCaretSide: "data-pen-inline-atom-caret-side",
+	inlineAtomDragging: "data-pen-inline-atom-dragging",
 	fieldEditorSurface: "data-pen-field-editor-surface",
 	fieldEditorActiveSurface: "data-pen-field-editor-active-surface",
 	fieldEditor: "data-pen-field-editor",

@@ -1,44 +1,115 @@
 :root {
-  color-scheme: dark;
-  font-family: "Inter", system-ui, sans-serif;
-  background: #000000;
-  color: #ffffff;
+	color-scheme: dark;
+	font-family: "Inter", system-ui, sans-serif;
+	background: #000000;
+	color: #e8e8e8;
+	line-height: 1.55;
 }
 
 * {
-  box-sizing: border-box;
+	box-sizing: border-box;
 }
 
 html,
 body,
 #root {
-  min-height: 100%;
-  margin: 0;
+	min-height: 100%;
+	margin: 0;
 }
 
 body {
-  background: #000000;
-  color: #ffffff;
+	background: #000000;
+	color: #e8e8e8;
 }
 
-.coming-soon-shell {
-  min-height: 100vh;
-  display: grid;
-  place-items: center;
-  background: #000000;
+a {
+	color: #ffffff;
 }
 
-.coming-soon-content {
-  display: grid;
-  place-items: center;
-  padding: 2rem;
+a[aria-current="page"] {
+	text-decoration: none;
+	font-weight: 600;
 }
 
-.coming-soon-content h1 {
-  margin: 0;
-  color: #ffffff;
-  font-size: clamp(2.5rem, 8vw, 5rem);
-  font-weight: 700;
-  letter-spacing: -0.04em;
-  line-height: 1;
+code {
+	font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+	font-size: 0.92em;
+}
+
+.docs-shell {
+	min-height: 100vh;
+	max-width: 46rem;
+	margin: 0 auto;
+	padding: 1.5rem 1.25rem 4rem;
+}
+
+.docs-header {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 1rem;
+	margin-bottom: 2.5rem;
+	border-bottom: 1px solid #2a2a2a;
+	padding-bottom: 1rem;
+}
+
+.docs-brand {
+	font-weight: 700;
+	letter-spacing: -0.03em;
+	text-decoration: none;
+	font-size: 1.15rem;
+}
+
+.docs-nav {
+	display: flex;
+	gap: 1.25rem;
+}
+
+.docs-main h1 {
+	margin: 0 0 1rem;
+	font-size: 2rem;
+	letter-spacing: -0.03em;
+	color: #ffffff;
+}
+
+.docs-main h2 {
+	margin: 2rem 0 0.75rem;
+	font-size: 1.15rem;
+	color: #ffffff;
+}
+
+.docs-main p,
+.docs-main li {
+	margin: 0 0 0.85rem;
+}
+
+.docs-main ul {
+	padding-left: 1.2rem;
+}
+
+.docs-main table {
+	width: 100%;
+	border-collapse: collapse;
+	margin: 1rem 0 1.25rem;
+	font-size: 0.92rem;
+}
+
+.docs-main caption {
+	caption-side: bottom;
+	text-align: left;
+	padding-top: 0.5rem;
+	color: #a0a0a0;
+}
+
+.docs-main th,
+.docs-main td {
+	border: 1px solid #2a2a2a;
+	padding: 0.5rem 0.6rem;
+	vertical-align: top;
+	text-align: left;
+}
+
+.docs-main th {
+	color: #ffffff;
+	font-weight: 600;
 }

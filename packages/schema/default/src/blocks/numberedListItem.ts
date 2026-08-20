@@ -1,4 +1,5 @@
 import { defineBlock, prop } from "@input/pen-types";
+import { directionProp } from "../directionProp";
 
 export const numberedListItem = defineBlock("numberedListItem", {
   props: {
@@ -8,6 +9,7 @@ export const numberedListItem = defineBlock("numberedListItem", {
       .number()
       .optional()
       .describe("Restart numbering from this value"),
+    direction: directionProp,
   },
   content: "inline",
   fieldEditor: "richtext",

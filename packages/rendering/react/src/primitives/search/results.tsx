@@ -36,6 +36,8 @@ export function SearchResults(props: SearchResultsProps) {
 		"data-pen-search-results": "",
 		"data-count": count,
 		"data-active-index": state.activeIndex,
+		// wave-l: catalog
+		"aria-label": "Search results",
 	};
 
 	return renderAsChild({ ...rest, children: content }, "div", primitiveProps);

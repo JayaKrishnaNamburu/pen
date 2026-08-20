@@ -1,189 +1,187 @@
-import type { Editor, FieldEditor, ModelAdapter } from "@input/pen-types";
-import { FIELD_EDITOR_SLOT_KEY } from "@input/pen-types";
-import { buildAutocompleteMessages } from "./promptBuilder";
-import type { AutocompleteProviderRegistry } from "./providers/registry";
-import type { AutocompleteContextProvider, AutocompleteProviderDescriptor } from "./providers/types";
-import type {
-	AutocompleteAcceptanceStrategy,
-	AutocompleteBlockedReason,
-	AutocompleteBlockPolicy,
-	AutocompleteControllerSnapshot,
-	AutocompleteControllerState,
-	AutocompleteDismissReason,
-	AutocompleteExtensionConfig,
-	AutocompletePolicyInvalidationStage,
-	AutocompleteRequestContext,
-} from "./types";
+import { generateId } from "@input/pen-types";
+import type { AutocompleteControllerHost } from "./autocompleteControllerHost";
 import {
-	createAutocompleteStructuredCandidate,
-	materializeStructuredCandidateAcceptance,
-} from "./structuredCandidate";
-import type { AutocompleteContinuationState } from "./continuationState";
-import { AutocompleteControllerImpl } from "./autocompleteControllerCore";
-import { handleModelEvent, head, normalizeCompletionText, tail } from "./autocompleteCompletionText";
-import { logAutocompleteEvent, previewAutocompleteTextForLog } from "./autocompleteDebug";
+	clearVisibleSuggestionAfterAccept,
+	startPrefetchForAcceptedContinuation,
+	clearSequence,
+} from "./autocompleteControllerContinuation";
+import {
+	buildContext,
+	getFieldEditor,
+	runRequest,
+} from "./autocompleteControllerRequest";
 import {
 	areBlockPoliciesEqual,
 	cloneAutocompleteControllerState,
 	freezeAutocompleteControllerSnapshot,
 	freezeAutocompleteControllerState,
-	freezeProviderDescriptors,
-	incrementPolicyInvalidationMetrics,
 } from "./autocompleteControllerSnapshots";
+import {
+	clearDebounceTimer,
+	emit,
+	getProviderDescriptorsSnapshot,
+	invalidateForPolicyChange,
+	invalidateProviderDescriptorsSnapshot,
+	invalidateSnapshot,
+	recordPolicyInvalidation,
+	resolveCurrentBlockFailure,
+	setBlockedReason,
+	setState,
+} from "./autocompleteControllerState";
+import {
+	logAutocompleteEvent,
+	previewAutocompleteTextForLog,
+} from "./autocompleteDebug";
+import type { AutocompleteContextProvider } from "./providers/types";
+import { materializeStructuredCandidateAcceptance } from "./structuredCandidate";
+import type {
+	AutocompleteBlockPolicy,
+	AutocompleteControllerSnapshot,
+	AutocompleteControllerState,
+	AutocompleteDismissReason,
+} from "./types";
 
-const AUTOCOMPLETE_REQUEST_MODE = "inline-autocomplete";
-
-type AutocompleteControllerRuntime = {
-	[key: string]: any;
-	_editor: Editor;
-	_model: ModelAdapter | undefined;
-	_debounceMs: number;
-	_acceptanceStrategy: AutocompleteAcceptanceStrategy;
-	_staleAfterMs: number;
-	_maxPrefixChars: number;
-	_maxSuffixChars: number;
-	_maxNeighborChars: number;
-	_maxProviderChars: number;
-	_maxProviderTimeMs: number;
-	_prefetchAfterAccept: boolean;
-	_providerRegistry: AutocompleteProviderRegistry;
-	_inlineCompletion: import("@input/pen-types").InlineCompletionController;
-	_listeners: Set<() => void>;
-	_snapshot: AutocompleteControllerSnapshot | null;
-	_providerDescriptorsSnapshot: readonly AutocompleteProviderDescriptor[] | null;
-	_state: AutocompleteControllerState;
-	_debounceTimer: ReturnType<typeof setTimeout> | null;
-	_abortController: AbortController | null;
-	_unsubscribeSelection: (() => void) | null;
-	_unsubscribeCommit: (() => void) | null;
-	_continuation: AutocompleteContinuationState;
-	_prefetchAbortController: AbortController | null;
-};
-
-type RuntimePrototype = Record<string, unknown>;
-
-const ControllerPrototype = AutocompleteControllerImpl.prototype as unknown as RuntimePrototype;
-
-ControllerPrototype.destroy = function destroy(this: AutocompleteControllerRuntime): void {
-	this._unsubscribeSelection?.();
-	this._unsubscribeSelection = null;
-	this._unsubscribeCommit?.();
-	this._unsubscribeCommit = null;
-	this._clearDebounceTimer();
-	this._abortController?.abort();
-	this._abortController = null;
-	this._prefetchAbortController?.abort();
-	this._prefetchAbortController = null;
-	this._continuation.clearContinuations();
+export function destroy(controller: AutocompleteControllerHost): void {
+	controller._unsubscribeSelection?.();
+	controller._unsubscribeSelection = null;
+	controller._unsubscribeCommit?.();
+	controller._unsubscribeCommit = null;
+	clearDebounceTimer(controller);
+	controller._abortController?.abort();
+	controller._abortController = null;
+	controller._prefetchAbortController?.abort();
+	controller._prefetchAbortController = null;
+	controller._continuation.clearContinuations();
 }
-;
-ControllerPrototype.getSnapshot = function getSnapshot(this: AutocompleteControllerRuntime): AutocompleteControllerSnapshot {
-	if (this._snapshot === null) {
-		const state = cloneAutocompleteControllerState(this._state);
-		this._snapshot = freezeAutocompleteControllerSnapshot({
+
+export function getSnapshot(
+	controller: AutocompleteControllerHost,
+): AutocompleteControllerSnapshot {
+	if (controller._snapshot === null) {
+		const state = cloneAutocompleteControllerState(controller._state);
+		controller._snapshot = freezeAutocompleteControllerSnapshot({
 			state: freezeAutocompleteControllerState(state),
-			providerDescriptors: this._getProviderDescriptorsSnapshot(),
+			providerDescriptors: getProviderDescriptorsSnapshot(controller),
 		});
 	}
-	return this._snapshot;
+	return controller._snapshot;
 }
-;
-ControllerPrototype.getState = function getState(this: AutocompleteControllerRuntime): AutocompleteControllerState {
-	return this.getSnapshot().state;
+
+export function getState(
+	controller: AutocompleteControllerHost,
+): AutocompleteControllerState {
+	return getSnapshot(controller).state;
 }
-;
-ControllerPrototype.getBlockPolicy = function getBlockPolicy(this: AutocompleteControllerRuntime): Readonly<AutocompleteBlockPolicy> {
-	return this.getSnapshot().state.blockPolicy;
+
+export function getBlockPolicy(
+	controller: AutocompleteControllerHost,
+): Readonly<AutocompleteBlockPolicy> {
+	return getSnapshot(controller).state.blockPolicy;
 }
-;
-ControllerPrototype.subscribe = function subscribe(this: AutocompleteControllerRuntime, listener: () => void): () => void {
-	this._listeners.add(listener);
-	return () => this._listeners.delete(listener);
+
+export function subscribe(
+	controller: AutocompleteControllerHost,
+	listener: () => void,
+): () => void {
+	controller._listeners.add(listener);
+	return () => controller._listeners.delete(listener);
 }
-;
-ControllerPrototype.setEnabled = function setEnabled(this: AutocompleteControllerRuntime, enabled: boolean): void {
-	if (this._state.enabled === enabled) {
+
+export function setEnabled(
+	controller: AutocompleteControllerHost,
+	enabled: boolean,
+): void {
+	if (controller._state.enabled === enabled) {
 		return;
 	}
-	this._state = {
-		...this._state,
+	controller._state = {
+		...controller._state,
 		enabled,
 		status: enabled ? "idle" : "idle",
 		activeRequestId: null,
 	};
-	this._invalidateSnapshot();
+	invalidateSnapshot(controller);
 	if (!enabled) {
-		this.dismiss("disabled");
+		dismiss(controller, "disabled");
 	}
-	this._emit();
+	emit(controller);
 }
-;
-ControllerPrototype.request = function request(this: AutocompleteControllerRuntime, options?: { explicit?: boolean }): boolean {
-	if (!this._state.enabled) {
-		this._setBlockedReason("disabled");
+
+export function request(
+	controller: AutocompleteControllerHost,
+	options?: { explicit?: boolean },
+): boolean {
+	if (!controller._state.enabled) {
+		setBlockedReason(controller, "disabled");
 		return false;
 	}
-	if (!this._model) {
-		this._setBlockedReason("missing-model");
+	if (!controller._model) {
+		setBlockedReason(controller, "missing-model");
 		return false;
 	}
 	// Validate that autocomplete is currently eligible, but defer reading the
 	// exact caret context until the debounced request actually runs.
-	if (!this._buildContext()) {
+	if (!buildContext(controller)) {
 		return false;
 	}
-	this.dismiss("request-replaced");
-	const requestId = crypto.randomUUID();
-	this._setState({
+	dismiss(controller, "request-replaced");
+	const requestId = generateId();
+	setState(controller, {
 		status: "scheduled",
 		activeRequestId: requestId,
 		metrics: {
-			...this._state.metrics,
-			requestCount: this._state.metrics.requestCount + 1,
+			...controller._state.metrics,
+			requestCount: controller._state.metrics.requestCount + 1,
 			explicitTabTriggerCount:
-				this._state.metrics.explicitTabTriggerCount +
+				controller._state.metrics.explicitTabTriggerCount +
 				(options?.explicit ? 1 : 0),
 		},
 		diagnostics: {
-			...this._state.diagnostics,
+			...controller._state.diagnostics,
 			lastBlockedReason: null,
 			lastPolicyInvalidationStage: null,
 		},
 	});
-	this._clearDebounceTimer();
-	const delay = options?.explicit ? 0 : this._debounceMs;
+	clearDebounceTimer(controller);
+	const delay = options?.explicit ? 0 : controller._debounceMs;
 	logAutocompleteEvent("request scheduled", {
 		requestId,
 		explicit: options?.explicit ?? false,
 		debounceMs: delay,
 	});
-	this._debounceTimer = setTimeout(() => {
-		void this._runRequest(requestId);
+	controller._debounceTimer = setTimeout(() => {
+		void runRequest(controller, requestId);
 	}, delay);
 	return true;
 }
-;
-ControllerPrototype.acceptVisibleSuggestion = function acceptVisibleSuggestion(this: AutocompleteControllerRuntime): boolean {
-	const sequence = this._continuation.sequence;
-	if (!sequence || !this.hasVisibleSuggestion()) {
+
+export function acceptVisibleSuggestion(
+	controller: AutocompleteControllerHost,
+): boolean {
+	const sequence = controller._continuation.sequence;
+	if (!sequence || !hasVisibleSuggestion(controller)) {
 		return false;
 	}
-	const policyFailure = this._resolveCurrentBlockFailure(
+	const policyFailure = resolveCurrentBlockFailure(
+		controller,
 		sequence.blockId,
 	);
 	if (policyFailure) {
-		this._recordPolicyInvalidation(policyFailure, "showing");
+		recordPolicyInvalidation(controller, policyFailure, "showing");
 		return false;
 	}
-	return this._acceptFullVisibleSuggestion({
+	return acceptFullVisibleSuggestion(controller, {
 		activateContinuation: true,
 	});
 }
-;
-ControllerPrototype._acceptFullVisibleSuggestion = function _acceptFullVisibleSuggestion(this: AutocompleteControllerRuntime, options?: {
-	activateContinuation?: boolean;
-}): boolean {
-	const sequence = this._continuation.sequence;
+
+export function acceptFullVisibleSuggestion(
+	controller: AutocompleteControllerHost,
+	options?: {
+		activateContinuation?: boolean;
+	},
+): boolean {
+	const sequence = controller._continuation.sequence;
 	if (!sequence) {
 		return false;
 	}
@@ -192,7 +190,7 @@ ControllerPrototype._acceptFullVisibleSuggestion = function _acceptFullVisibleSu
 		candidate.inlineText.length === 0 &&
 		candidate.previewBlocks.length === 0
 	) {
-		this.dismiss();
+		dismiss(controller);
 		return false;
 	}
 	const blockId = sequence.blockId;
@@ -210,19 +208,17 @@ ControllerPrototype._acceptFullVisibleSuggestion = function _acceptFullVisibleSu
 		inlineLength: candidate.inlineText.length,
 		inlinePreview: previewAutocompleteTextForLog(candidate.inlineText),
 		appendedBlockCount: candidate.appendedBlocks.length,
-		appendedBlockTypes: candidate.appendedBlocks.map(
-			(block) => block.type,
-		),
+		appendedBlockTypes: candidate.appendedBlocks.map((block) => block.type),
 		opTypes: acceptanceResult.ops.map((op) => op.type),
 		nextCaretBlockId: acceptanceResult.selection.blockId,
 		nextCaretOffset: acceptanceResult.selection.offset,
 	});
-	this._continuation.beginAcceptingSequenceSegment();
-	this._editor.apply(acceptanceResult.ops, {
+	controller._continuation.beginAcceptingSequenceSegment();
+	controller._editor.apply(acceptanceResult.ops, {
 		origin: "ai",
 		undoGroup: true,
 	});
-	const acceptedBlock = this._editor.getBlock(blockId);
+	const acceptedBlock = controller._editor.getBlock(blockId);
 	const firstNextBlock = acceptedBlock?.next ?? null;
 	const secondNextBlock = firstNextBlock?.next ?? null;
 	logAutocompleteEvent(
@@ -230,27 +226,26 @@ ControllerPrototype._acceptFullVisibleSuggestion = function _acceptFullVisibleSu
 	);
 	const nextCaretBlockId = acceptanceResult.selection.blockId;
 	const nextCaretOffset = acceptanceResult.selection.offset;
-	this._setState({
+	setState(controller, {
 		metrics: {
-			...this._state.metrics,
-			acceptCount: this._state.metrics.acceptCount + 1,
+			...controller._state.metrics,
+			acceptCount: controller._state.metrics.acceptCount + 1,
 		},
 	});
-	const fieldEditor = this._getFieldEditor();
-	this._editor.selectText(
+	const fieldEditor = getFieldEditor(controller);
+	controller._editor.selectText(
 		nextCaretBlockId,
 		nextCaretOffset,
 		nextCaretOffset,
 	);
 	if (fieldEditor) {
-		const programmaticFieldEditor =
-			fieldEditor as typeof fieldEditor & {
-				commitProgrammaticTextSelection?: (
-					blockId: string,
-					anchorOffset: number,
-					focusOffset: number,
-				) => void;
-			};
+		const programmaticFieldEditor = fieldEditor as typeof fieldEditor & {
+			commitProgrammaticTextSelection?: (
+				blockId: string,
+				anchorOffset: number,
+				focusOffset: number,
+			) => void;
+		};
 		if (
 			typeof programmaticFieldEditor.commitProgrammaticTextSelection ===
 			"function"
@@ -260,9 +255,7 @@ ControllerPrototype._acceptFullVisibleSuggestion = function _acceptFullVisibleSu
 				nextCaretOffset,
 				nextCaretOffset,
 			);
-		} else if (
-			typeof fieldEditor.activateTextSelection === "function"
-		) {
+		} else if (typeof fieldEditor.activateTextSelection === "function") {
 			fieldEditor.activateTextSelection(
 				nextCaretBlockId,
 				nextCaretOffset,
@@ -276,49 +269,57 @@ ControllerPrototype._acceptFullVisibleSuggestion = function _acceptFullVisibleSu
 		}
 	}
 
-	if (options?.activateContinuation && this._prefetchAfterAccept) {
-		this._continuation.setPendingAcceptedContinuation({
+	if (options?.activateContinuation && controller._prefetchAfterAccept) {
+		controller._continuation.setPendingAcceptedContinuation({
 			sourceRequestId: requestId,
 			blockId: nextCaretBlockId,
 			startOffset: nextCaretOffset,
 			continuationDepth,
 		});
-		this._clearVisibleSuggestionAfterAccept();
-		this._startPrefetchForAcceptedContinuation({
+		clearVisibleSuggestionAfterAccept(controller);
+		startPrefetchForAcceptedContinuation(controller, {
 			sourceRequestId: requestId,
 			blockId: nextCaretBlockId,
 			startOffset: nextCaretOffset,
 			continuationDepth,
 		});
 	} else {
-		this.dismiss("accept");
+		dismiss(controller, "accept");
 	}
 	return true;
 }
-;
-ControllerPrototype.hasVisibleSuggestion = function hasVisibleSuggestion(this: AutocompleteControllerRuntime): boolean {
+
+export function hasVisibleSuggestion(
+	controller: AutocompleteControllerHost,
+): boolean {
 	return (
-		this._continuation.sequence !== null &&
-		this._state.visibleSuggestionId !== null
+		controller._continuation.sequence !== null &&
+		controller._state.visibleSuggestionId !== null
 	);
 }
-;
-ControllerPrototype.registerProvider = function registerProvider(this: AutocompleteControllerRuntime, provider: AutocompleteContextProvider): () => void {
-	const unregister = this._providerRegistry.registerProvider(provider);
-	this._invalidateProviderDescriptorsSnapshot();
-	this._emit();
+
+export function registerProvider(
+	controller: AutocompleteControllerHost,
+	provider: AutocompleteContextProvider,
+): () => void {
+	const unregister = controller._providerRegistry.registerProvider(provider);
+	invalidateProviderDescriptorsSnapshot(controller);
+	emit(controller);
 	return () => {
 		unregister();
-		this._invalidateProviderDescriptorsSnapshot();
-		this._emit();
+		invalidateProviderDescriptorsSnapshot(controller);
+		emit(controller);
 	};
 }
-;
-ControllerPrototype.listProviderDescriptors = function listProviderDescriptors(this: AutocompleteControllerRuntime) {
-	return this.getSnapshot().providerDescriptors;
+
+export function listProviderDescriptors(
+	controller: AutocompleteControllerHost,
+) {
+	return getSnapshot(controller).providerDescriptors;
 }
-;
-ControllerPrototype.updateRuntimeSettings = function updateRuntimeSettings(this: AutocompleteControllerRuntime, 
+
+export function updateRuntimeSettings(
+	controller: AutocompleteControllerHost,
 	settings: Partial<AutocompleteControllerState["settings"]>,
 ): void {
 	const nextDebounceMs = settings.debounceMs;
@@ -330,30 +331,30 @@ ControllerPrototype.updateRuntimeSettings = function updateRuntimeSettings(this:
 		typeof nextDebounceMs === "number" &&
 		Number.isFinite(nextDebounceMs) &&
 		nextDebounceMs >= 0 &&
-		nextDebounceMs !== this._debounceMs
+		nextDebounceMs !== controller._debounceMs
 	) {
-		this._debounceMs = nextDebounceMs;
+		controller._debounceMs = nextDebounceMs;
 		changed = true;
 	}
 
 	if (
 		typeof nextPrefetchAfterAccept === "boolean" &&
-		nextPrefetchAfterAccept !== this._prefetchAfterAccept
+		nextPrefetchAfterAccept !== controller._prefetchAfterAccept
 	) {
-		this._prefetchAfterAccept = nextPrefetchAfterAccept;
+		controller._prefetchAfterAccept = nextPrefetchAfterAccept;
 		if (!nextPrefetchAfterAccept) {
-			this._prefetchAbortController?.abort();
-			this._prefetchAbortController = null;
-			this._continuation.clearContinuations();
+			controller._prefetchAbortController?.abort();
+			controller._prefetchAbortController = null;
+			controller._continuation.clearContinuations();
 		}
 		changed = true;
 	}
 
 	if (
 		nextAcceptanceStrategy === "full" &&
-		nextAcceptanceStrategy !== this._acceptanceStrategy
+		nextAcceptanceStrategy !== controller._acceptanceStrategy
 	) {
-		this._acceptanceStrategy = nextAcceptanceStrategy;
+		controller._acceptanceStrategy = nextAcceptanceStrategy;
 		changed = true;
 	}
 
@@ -362,9 +363,9 @@ ControllerPrototype.updateRuntimeSettings = function updateRuntimeSettings(this:
 		typeof nextStaleAfterMs === "number" &&
 		Number.isFinite(nextStaleAfterMs) &&
 		nextStaleAfterMs >= 0 &&
-		nextStaleAfterMs !== this._staleAfterMs
+		nextStaleAfterMs !== controller._staleAfterMs
 	) {
-		this._staleAfterMs = nextStaleAfterMs;
+		controller._staleAfterMs = nextStaleAfterMs;
 		changed = true;
 	}
 
@@ -372,56 +373,61 @@ ControllerPrototype.updateRuntimeSettings = function updateRuntimeSettings(this:
 		return;
 	}
 
-	this._setState({
+	setState(controller, {
 		settings: {
-			debounceMs: this._debounceMs,
-			prefetchAfterAccept: this._prefetchAfterAccept,
-			acceptanceStrategy: this._acceptanceStrategy,
-			staleAfterMs: this._staleAfterMs,
+			debounceMs: controller._debounceMs,
+			prefetchAfterAccept: controller._prefetchAfterAccept,
+			acceptanceStrategy: controller._acceptanceStrategy,
+			staleAfterMs: controller._staleAfterMs,
 		},
 	});
 }
-;
-ControllerPrototype.updateBlockPolicy = function updateBlockPolicy(this: AutocompleteControllerRuntime, policy: Partial<AutocompleteBlockPolicy>): void {
+
+export function updateBlockPolicy(
+	controller: AutocompleteControllerHost,
+	policy: Partial<AutocompleteBlockPolicy>,
+): void {
 	const nextPolicy: AutocompleteBlockPolicy = {
-		...this._state.blockPolicy,
+		...controller._state.blockPolicy,
 		...policy,
 	};
-	if (areBlockPoliciesEqual(this._state.blockPolicy, nextPolicy)) {
+	if (areBlockPoliciesEqual(controller._state.blockPolicy, nextPolicy)) {
 		return;
 	}
-	this._setState({
+	setState(controller, {
 		blockPolicy: nextPolicy,
 	});
-	this._invalidateForPolicyChange();
+	invalidateForPolicyChange(controller);
 }
-;
-ControllerPrototype.dismiss = function dismiss(this: AutocompleteControllerRuntime, reason: AutocompleteDismissReason = "external-edit"): void {
-	this._clearDebounceTimer();
+
+export function dismiss(
+	controller: AutocompleteControllerHost,
+	reason: AutocompleteDismissReason = "external-edit",
+): void {
+	clearDebounceTimer(controller);
 	const cancelledRequest =
-		this._state.status === "scheduled" ||
-		this._state.status === "requesting";
-	this._abortController?.abort();
-	this._abortController = null;
-	this._prefetchAbortController?.abort();
-	this._prefetchAbortController = null;
-	this._clearSequence();
-	this._continuation.clearContinuations();
-	this._setState({
+		controller._state.status === "scheduled" ||
+		controller._state.status === "requesting";
+	controller._abortController?.abort();
+	controller._abortController = null;
+	controller._prefetchAbortController?.abort();
+	controller._prefetchAbortController = null;
+	clearSequence(controller);
+	controller._continuation.clearContinuations();
+	setState(controller, {
 		status: "idle",
 		activeRequestId: null,
 		visibleSuggestionId: null,
 		metrics: {
-			...this._state.metrics,
+			...controller._state.metrics,
 			cancelCount:
-				this._state.metrics.cancelCount +
+				controller._state.metrics.cancelCount +
 				(cancelledRequest ? 1 : 0),
 		},
 		diagnostics: {
-			...this._state.diagnostics,
+			...controller._state.diagnostics,
 			lastDismissReason: reason,
 		},
 	});
-	this._inlineCompletion.dismissSuggestion();
+	controller._inlineCompletion.dismissSuggestion();
 }
-;
