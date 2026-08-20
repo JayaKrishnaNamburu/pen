@@ -1,5 +1,6 @@
 import type { InlineDecoration, SchemaRegistry } from "@input/pen-types";
 import { sortDeltaAttributes } from "@input/pen-core";
+import type { UrlPolicy } from "../security/urlPolicy";
 import type { FieldEditorDelta, FieldEditorTextLike } from "./crdt";
 import { restoreSelection, saveSelection } from "./reconcilerSelection";
 import {
@@ -17,6 +18,7 @@ export function fullReconcileToDOM(
 	options?: {
 		preserveSelection?: boolean;
 		inlineDecorations?: readonly InlineDecoration[];
+		urlPolicy?: UrlPolicy;
 	},
 ): void {
 	const textDeltas = ytext.toDelta().filter(
@@ -42,7 +44,7 @@ export function fullReconcileDeltasToDOM(
 	deltas: FieldEditorDelta[],
 	element: HTMLElement,
 	registry: SchemaRegistry,
-	options?: { preserveSelection?: boolean },
+	options?: { preserveSelection?: boolean; urlPolicy?: UrlPolicy },
 ): void {
 	const orderedDeltas = deltas.map((delta) => {
 		if (!delta.attributes || Object.keys(delta.attributes).length < 2) {
@@ -65,7 +67,12 @@ export function fullReconcileDeltasToDOM(
 				? document.createTextNode(delta.insert)
 				: createInlineAtomElement(delta.insert, registry);
 		if (delta.attributes) {
-			node = wrapWithMarks(node, delta.attributes, registry);
+			node = wrapWithMarks(
+				node,
+				delta.attributes,
+				registry,
+				options?.urlPolicy,
+			);
 		}
 		fragment.appendChild(node);
 	}

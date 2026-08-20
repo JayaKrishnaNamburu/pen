@@ -98,7 +98,8 @@ describe("IOP1 versioned clipboard payload", () => {
 		handleCopy(source, { clipboardData } as ClipboardEvent);
 
 		const copied = parsePenClipboardPayload(
-			clipboardData.getData("application/x-pen-blocks"),
+			clipboardData.getData("application/x-pen-blocks+json") ||
+				clipboardData.getData("application/x-pen-blocks"),
 		);
 		expect(copied.status).toBe("ok");
 		if (copied.status === "ok") {

@@ -11,8 +11,9 @@ const noDefaultExtensionsPreset = {
 function propsWithOwnKey(
 	key: string,
 	value: unknown,
+	base: Record<string, unknown> = { id: "user-1", label: "Ada" },
 ): Record<string, unknown> {
-	const props: Record<string, unknown> = { id: "user-1", label: "Ada" };
+	const props: Record<string, unknown> = { ...base };
 	Object.defineProperty(props, key, {
 		value,
 		enumerable: true,
@@ -121,6 +122,124 @@ describe("SEC6 op payload validation", () => {
 			}),
 		]);
 		expect(hasInlineNode(editor, "b1", "mention")).toBe(false);
+		expect(
+			Object.prototype.hasOwnProperty.call(Object.prototype, "polluted"),
+		).toBe(false);
+
+		editor.destroy();
+	});
+
+	it("SEC6: proto keys in insert-block props are dropped with a diagnostic", () => {
+		const editor = createEditor({ preset: noDefaultExtensionsPreset });
+		const diagnostics: unknown[] = [];
+		editor.on("diagnostic", (event) => {
+			diagnostics.push(event);
+		});
+
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "hostile",
+				blockType: "paragraph",
+				props: {
+					title: "kept",
+					extra: propsWithOwnKey("constructor", { polluted: true }, {}),
+				},
+				position: "last",
+			},
+		]);
+
+		expect(editor.getBlock("hostile")).toBeNull();
+		expect(diagnostics).toContainEqual(
+			expect.objectContaining({
+				code: "PEN_APPLY_009",
+				level: "warn",
+				source: "apply",
+			}),
+		);
+		expect(
+			Object.prototype.hasOwnProperty.call(Object.prototype, "polluted"),
+		).toBe(false);
+
+		editor.destroy();
+	});
+
+	it("SEC6: proto keys in update-block props are dropped with a diagnostic", () => {
+		const editor = createEditor({ preset: noDefaultExtensionsPreset });
+		const diagnostics: unknown[] = [];
+		editor.on("diagnostic", (event) => {
+			diagnostics.push(event);
+		});
+
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "h1",
+				blockType: "heading",
+				props: { level: 1 },
+				position: "last",
+			},
+		]);
+
+		editor.apply([
+			{
+				type: "update-block",
+				blockId: "h1",
+				props: propsWithOwnKey("__proto__", { polluted: true }, { level: 2 }),
+			},
+		]);
+
+		expect(editor.getBlock("h1")?.props.level).toBe(1);
+		expect(diagnostics).toContainEqual(
+			expect.objectContaining({
+				code: "PEN_APPLY_009",
+				level: "warn",
+				source: "apply",
+			}),
+		);
+		expect(
+			Object.prototype.hasOwnProperty.call(Object.prototype, "polluted"),
+		).toBe(false);
+
+		editor.destroy();
+	});
+
+	it("SEC6: proto keys in format-text marks are dropped with a diagnostic", () => {
+		const editor = createEditor({ preset: noDefaultExtensionsPreset });
+		const diagnostics: unknown[] = [];
+		editor.on("diagnostic", (event) => {
+			diagnostics.push(event);
+		});
+
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "b1",
+				blockType: "paragraph",
+				props: {},
+				position: "last",
+			},
+			{ type: "insert-text", blockId: "b1", offset: 0, text: "Hi" },
+		]);
+
+		editor.apply([
+			{
+				type: "format-text",
+				blockId: "b1",
+				offset: 0,
+				length: 2,
+				marks: propsWithOwnKey("__proto__", { polluted: true }, { bold: true }),
+			},
+		]);
+
+		expect(editor.getBlock("b1")?.textDeltas()).toEqual([{ insert: "Hi" }]);
+		expect(diagnostics).toContainEqual(
+			expect.objectContaining({
+				code: "PEN_APPLY_009",
+				level: "warn",
+				source: "apply",
+			}),
+		);
 		expect(
 			Object.prototype.hasOwnProperty.call(Object.prototype, "polluted"),
 		).toBe(false);

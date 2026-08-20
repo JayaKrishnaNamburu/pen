@@ -1,5 +1,6 @@
 import type { InlineDecoration } from "@input/pen-types";
 import { buildInlineDecorationsRenderSignature } from "../utils/inlineDecorations";
+import { urlPolicyFromEditor } from "../security/resolveEditorUrl";
 import { fullReconcileToDOM } from "./reconciler";
 import {
 	domSelectionToEditor,
@@ -65,6 +66,7 @@ export class ContentEditableBackendSelection extends ContentEditableBackendEvent
 		}
 
 		fullReconcileToDOM(this.ytext, this.element, this.editor.schema, {
+			urlPolicy: urlPolicyFromEditor(this.editor),
 			preserveSelection: true,
 			inlineDecorations: this.getInlineDecorationsForBlock(),
 		});

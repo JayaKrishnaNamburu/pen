@@ -40,6 +40,7 @@ A payload is accepted only when all of these hold:
 - `type` is a known `DocumentOp` union member (`DOCUMENT_OP_TYPES` / `isDocumentOpType`)
 - targets resolve against the live document, or against `insert-block` ids earlier in the same batch
 - the op `text` field, when present, is at most `MAX_OP_TEXT_FIELD_LENGTH` (1,048,576 UTF-16 code units — 1MB)
+- `__proto__`, `constructor`, and `prototype` are not own keys anywhere in the payload
 
 These constants are not configurable:
 
@@ -49,7 +50,7 @@ These constants are not configurable:
 
 Invalid payloads emit `diagnostic` events (`code: "invalid-tool-payload"`, `source: "document-ops"`) and **do not apply**. One failure rejects the whole batch — no partial apply.
 
-This package does not drop `__proto__`, `constructor`, or `prototype` keys, validate prop schemas, or cap string fields other than `text`. Apply-time `insert-inline-node` in `@input/pen-core` rejects those own keys with `PEN_APPLY_009` and does not write the op. That filter is `insert-inline-node` only.
+This package also rejects `__proto__`, `constructor`, and `prototype` as own keys anywhere in a payload (same filter as apply-time phase 2). It does not validate prop schemas or cap string fields other than `text`. Apply-time `@input/pen-core` phase 2 is the enforcement backstop: those own keys emit `PEN_APPLY_009` and the op is not written.
 
 Custom execution flows should use the same helpers:
 

@@ -5,7 +5,7 @@ import type {
 	Editor,
 	Position,
 } from "@input/pen-types";
-import { urlPolicy } from "../security/urlPolicy";
+import { urlPolicyFromEditor } from "../security/resolveEditorUrl";
 import type { ResolvedDropTarget } from "./dropResolver";
 import { IMAGE_BLOCK_TYPE, type UploadedImage } from "./transferTypes";
 import { generateId } from "@input/pen-types";
@@ -172,8 +172,8 @@ function isLiveExecutableImageSrc(raw: string): boolean {
 }
 
 // resolve first; executable / rejected data: dropped; other schemes stored raw (SEC1 render-time)
-function admitTransferImageSrc(raw: unknown): string | null {
-	const admitted = urlPolicy.resolve(raw, "image");
+function admitTransferImageSrc(editor: Editor, raw: unknown): string | null {
+	const admitted = urlPolicyFromEditor(editor).resolve(raw, "image");
 	if (admitted !== null) {
 		return admitted;
 	}
@@ -203,7 +203,7 @@ function admitUploadedImages(
 ): UploadedImage[] {
 	const admitted: UploadedImage[] = [];
 	for (const image of uploaded) {
-		const src = admitTransferImageSrc(image.src);
+		const src = admitTransferImageSrc(editor, image.src);
 		if (src === null) {
 			emitAssetBlockedUrl(editor, image.src);
 			continue;

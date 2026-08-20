@@ -7,6 +7,7 @@ Private Playwright harness for spec-v2 conformance. Never published.
 - `scenarios/` — scripted journeys (hello-world, harness self-test)
 - `suites/` — selection, input, IME, geometry, bidi, overlays (filled by later waves)
 - `fixtures/` — documents plus the diagnostics allowlist
+- `fixtures/hostile/` — Wave S.0 attacker corpus (`window.__xssProbe` canary)
 
 ```bash
 pnpm --filter @input/pen-conformance run test:chromium

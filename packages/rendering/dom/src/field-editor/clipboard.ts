@@ -14,6 +14,7 @@ import {
 	sliceDeltas,
 	writePenClipboard,
 } from "../utils/clipboardSerialization";
+import { resolveEditorUrl } from "../security/resolveEditorUrl";
 
 type PasteInputEvent = InputEvent & {
 	dataTransfer?: DataTransfer | null;
@@ -128,7 +129,11 @@ function copyInlineSelection(
 		htmlContent = schema.serialize.toHTML({
 			id: block.id,
 			type: block.type,
-			props: isFullBlock ? block.props : {},
+			props: admitHtmlBlockProps(
+				editor,
+				block.type,
+				isFullBlock ? block.props : {},
+			),
 			content: inlineHtml || selectedText,
 		});
 	}
@@ -203,7 +208,7 @@ function copyBlockSelection(editor: Editor, event?: ClipboardEvent): void {
 				schema.serialize.toHTML({
 					id: block.id,
 					type: block.type,
-					props: block.props,
+					props: admitHtmlBlockProps(editor, block.type, block.props),
 					content: inlineHtml || content,
 					children: tableChildren,
 				}),
@@ -232,6 +237,23 @@ function copyBlockSelection(editor: Editor, event?: ClipboardEvent): void {
 		mdParts.join("\n") || blocks.map((b) => b.textContent()).join("\n");
 
 	writePenClipboard(penBlocks, htmlContent, plainText, event, editor);
+}
+
+function admitHtmlBlockProps(
+	editor: Editor,
+	blockType: string,
+	props: Record<string, unknown>,
+): Record<string, unknown> {
+	if (blockType !== "image") {
+		return props;
+	}
+	const src = resolveEditorUrl(editor, props.src, "image");
+	if (src === null) {
+		const admitted = { ...props };
+		delete admitted.src;
+		return admitted;
+	}
+	return { ...props, src };
 }
 
 // ── Cut ─────────────────────────────────────────────────────

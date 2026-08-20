@@ -4,7 +4,7 @@ export {
   parseHtmlWithReport,
 } from "./importer";
 export type { HtmlImporter } from "./importer";
-export { sanitizeHTML } from "./sanitize";
+export { ALLOWED_DATA_PEN_ATTRS, sanitizeHTML } from "./sanitize";
 export {
   applyHtmlImageSrcPolicy,
   DEFAULT_HTML_IMAGE_SRC_POLICY,

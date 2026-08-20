@@ -1,3 +1,4 @@
+import { htmlImporter } from "@input/pen-import-html";
 import {
 	FieldEditorImpl,
 	handleEditorDocumentKeyDown,
@@ -172,7 +173,10 @@ export const PenEditor = defineComponent({
 		watch(
 			() => [props.importers, props.assets] as const,
 			([importers, assets]) => {
-				props.editor.internals.assignSlot("paste:importers", importers);
+				props.editor.internals.assignSlot("paste:importers", {
+					...importers,
+					html: importers?.html ?? htmlImporter,
+				});
 				props.editor.internals.assignSlot(
 					"paste:assetProvider",
 					assets ?? importers?.assets,

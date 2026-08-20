@@ -115,6 +115,38 @@ describe("SEC6 tool payload validation", () => {
 		);
 	});
 
+	it("SEC6: proto keys in tool payload do not apply", () => {
+		const editor = createEditor();
+		const props: Record<string, unknown> = { title: "kept" };
+		Object.defineProperty(props, "__proto__", {
+			value: { polluted: true },
+			enumerable: true,
+			configurable: true,
+			writable: true,
+		});
+
+		expect(() =>
+			applyValidatedOps(editor, [
+				{
+					type: "insert-block",
+					blockId: "new-1",
+					blockType: "paragraph",
+					props,
+					position: "last",
+				},
+			]),
+		).toThrow("Invalid tool payload");
+
+		expect(editor.apply).not.toHaveBeenCalled();
+		expect(editor.internals.emit).toHaveBeenCalledWith(
+			"diagnostic",
+			expect.objectContaining({
+				code: INVALID_TOOL_PAYLOAD_CODE,
+				message: "Prototype keys are not allowed: __proto__",
+			}),
+		);
+	});
+
 	it("SEC6: valid payload still applies", async () => {
 		const editor = createEditor();
 

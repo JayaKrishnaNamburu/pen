@@ -1,4 +1,5 @@
 import type { Editor } from "@input/pen-types";
+import { readPenClipboardJson } from "../utils/clipboardPayload";
 import { executePasteTransfer } from "./transferPaste";
 import {
 	getAssetProvider,
@@ -25,7 +26,7 @@ export function resolveTransferKind(
 	dataTransfer: DataTransfer | null,
 ): TransferKind {
 	if (!dataTransfer) return "unknown";
-	if (dataTransfer.getData("application/x-pen-blocks")) return "pen-blocks";
+	if (readPenClipboardJson(dataTransfer)) return "pen-blocks";
 	if (dataTransfer.getData("text/html")) return "html";
 	if (getImageFiles(dataTransfer).length > 0) return "image-files";
 	if (dataTransfer.getData("text/plain")) return "plain-text";

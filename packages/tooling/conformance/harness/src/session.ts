@@ -4,6 +4,8 @@ import {
 	domSelectionToEditor,
 	editorSelectionToDOM,
 } from "@input/pen-dom/field-editor";
+import { applyValidatedOps } from "@input/pen-document-ops";
+import { htmlImporter } from "@input/pen-import-html";
 import { defaultPreset } from "@input/pen-preset-default";
 import {
 	createDeterministicYDocFixture,
@@ -13,6 +15,7 @@ import type {
 	CRDTAdapter,
 	CRDTDocument,
 	DiagnosticEvent,
+	DocumentOp,
 	Editor,
 	Unsubscribe,
 } from "@input/pen-types";
@@ -25,9 +28,11 @@ import {
 import type {
 	ConformanceEventRecord,
 	DomAuthorityCheck,
+	HostileDomScan,
 	LogicalPoint,
 	PenConformanceBridge,
 	RemoteSpliceArgs,
+	RemoteYInjectArgs,
 	SerializedDiagnostic,
 } from "../../src/types";
 import { serializeDiagnostic, serializeSelection } from "./serialize";
@@ -367,6 +372,38 @@ function remoteSplice(args: RemoteSpliceArgs): void {
 	current.remoteEditor.apply(ops, { origin: "collaborator" });
 }
 
+function remoteInjectY(args: RemoteYInjectArgs): void {
+	const current = getHarnessSession();
+	current.remoteY.transact(() => {
+		const blocks = current.remoteY.getMap("blocks") as Y.Map<Y.Map<unknown>>;
+		if (args.link) {
+			const block = blocks.get(args.link.blockId);
+			const content = block?.get("content");
+			if (!(content instanceof Y.Text)) {
+				throw new Error(
+					`remote.injectY: block "${args.link.blockId}" has no Y.Text content`,
+				);
+			}
+			content.format(0, content.length, {
+				link: { href: args.link.href },
+			});
+		}
+		if (args.image) {
+			const block = new Y.Map<unknown>();
+			block.set("type", "image");
+			const props = new Y.Map<unknown>();
+			props.set("src", args.image.src);
+			props.set("alt", "x");
+			block.set("props", props);
+			block.set("meta", new Y.Map<unknown>());
+			blocks.set(args.image.blockId, block);
+			current.remoteY
+				.getArray<string>("blockOrder")
+				.push([args.image.blockId]);
+		}
+	});
+}
+
 function documentText(): string {
 	const current = getHarnessSession();
 	const parts: string[] = [];
@@ -380,7 +417,78 @@ function blockIds(): string[] {
 	return [...getHarnessSession().editor.documentState.blockOrder];
 }
 
+const URL_ATTRIBUTE_NAMES = [
+	"href",
+	"src",
+	"xlink:href",
+	"action",
+	"formaction",
+	"cite",
+	"style",
+] as const;
+
+function installXssProbe(): void {
+	window.__xssProbeTripped = false;
+	window.__xssProbe = () => {
+		window.__xssProbeTripped = true;
+	};
+}
+
+function resetXssProbe(): void {
+	window.__xssProbeTripped = false;
+}
+
+function applyOps(ops: readonly DocumentOp[]): void {
+	getHarnessSession().editor.apply([...ops], { origin: "user" });
+}
+
+function remoteApply(ops: readonly DocumentOp[]): void {
+	getHarnessSession().remoteEditor.apply([...ops], { origin: "collaborator" });
+}
+
+function applyToolPayloads(
+	payloads: readonly unknown[],
+): { ok: boolean; message?: string } {
+	try {
+		applyValidatedOps(getHarnessSession().editor, payloads);
+		return { ok: true };
+	} catch (error) {
+		return {
+			ok: false,
+			message: error instanceof Error ? error.message : String(error),
+		};
+	}
+}
+
+async function importHtml(html: string): Promise<void> {
+	await htmlImporter.import(html, getHarnessSession().editor);
+}
+
+function scanHostileDom(): HostileDomScan {
+	const root = editorRoot();
+	const urlAttributes: string[] = [];
+	if (root) {
+		for (const element of root.querySelectorAll("*")) {
+			for (const name of URL_ATTRIBUTE_NAMES) {
+				const value = element.getAttribute(name);
+				if (value) {
+					urlAttributes.push(value);
+				}
+			}
+		}
+	}
+	return {
+		urlAttributes,
+		javascriptUrls: urlAttributes.filter((value) => /javascript:/i.test(value)),
+		blockedUrlCount: root
+			? root.querySelectorAll("[data-pen-blocked-url]").length
+			: 0,
+		probeTripped: Boolean(window.__xssProbeTripped),
+	};
+}
+
 function installBridge(): void {
+	installXssProbe();
 	const bridge: PenConformanceBridge = {
 		get selection() {
 			return serializeSelection(getHarnessSession().editor.selection);
@@ -410,7 +518,15 @@ function installBridge(): void {
 		load(name: string) {
 			loadFixture(name);
 		},
+		apply: applyOps,
+		remoteApply,
+		applyToolPayloads,
+		importHtml,
+		pasteHtml: importHtml,
+		scanHostileDom,
+		resetXssProbe,
 		remoteSplice,
+		remoteInjectY,
 		installBrokenProjector,
 		domMatchesAuthority: checkDomMatchesAuthority,
 	};

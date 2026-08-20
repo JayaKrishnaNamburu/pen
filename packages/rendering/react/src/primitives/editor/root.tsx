@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState } from "react";
+import { htmlImporter } from "@input/pen-import-html";
 import { FIELD_EDITOR_SLOT_KEY as CORE_FIELD_EDITOR_SLOT_KEY } from "@input/pen-types";
 import type {
 	AssetProvider,
@@ -98,6 +99,10 @@ export function EditorRoot(props: EditorRootProps) {
 	const regionSelectionStoreRef = useRef<RegionSelectionStore | null>(null);
 	const rootRef = useRef<HTMLElement | null>(null);
 	const resolvedAssets = assets ?? importers?.assets;
+	const resolvedImporters: PasteImporters = {
+		...importers,
+		html: importers?.html ?? htmlImporter,
+	};
 
 	if (!fieldEditorRef.current) {
 		const fieldEditorOptions = {
@@ -161,7 +166,10 @@ export function EditorRoot(props: EditorRootProps) {
 	}, [editor, rootElement]);
 
 	useEffect(() => {
-		editor.internals.assignSlot("paste:importers", importers);
+		editor.internals.assignSlot("paste:importers", {
+			...importers,
+			html: importers?.html ?? htmlImporter,
+		});
 		editor.internals.assignSlot("paste:assetProvider", resolvedAssets);
 
 		return () => {
@@ -279,7 +287,7 @@ export function EditorRoot(props: EditorRootProps) {
 				blockDragAndDrop: resolvedBlockDragAndDrop,
 				blockSelection: resolvedBlockSelection,
 				blockControls,
-				importers,
+				importers: resolvedImporters,
 				assets: resolvedAssets,
 				renderers,
 				inlineAtomRenderers,

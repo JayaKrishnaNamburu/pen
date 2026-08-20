@@ -35,3 +35,8 @@ export {
 	type UrlContext,
 	type UrlPolicy,
 } from "./security/urlPolicy";
+export {
+	resolveEditorUrl,
+	urlPolicyFromEditor,
+} from "./security/resolveEditorUrl";
+export { urlPolicyExtension } from "./security/urlPolicyExtension";

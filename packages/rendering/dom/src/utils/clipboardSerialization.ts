@@ -3,7 +3,10 @@ import {
 	sortDeltaAttributes,
 } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
+import { resolveEditorUrl } from "../security/resolveEditorUrl";
 import {
+	PEN_CLIPBOARD_JSON_MIME,
+	PEN_CLIPBOARD_JSON_MIME_LEGACY,
 	encodePenBlocksForHtml,
 	serializePenClipboardPayload,
 	type Delta,
@@ -51,8 +54,9 @@ export function writePenClipboard(
 	if (event?.clipboardData) {
 		event.clipboardData.setData("text/plain", clipboardPlainText);
 		event.clipboardData.setData("text/html", htmlWithPenData);
+		event.clipboardData.setData(PEN_CLIPBOARD_JSON_MIME, penBlocksJson);
 		event.clipboardData.setData(
-			"application/x-pen-blocks",
+			PEN_CLIPBOARD_JSON_MIME_LEGACY,
 			penBlocksJson,
 		);
 		return;
@@ -61,8 +65,11 @@ export function writePenClipboard(
 	navigator.clipboard
 		.write([
 			new ClipboardItem({
-				"application/x-pen-blocks": new Blob([penBlocksJson], {
-					type: "application/x-pen-blocks",
+				[PEN_CLIPBOARD_JSON_MIME]: new Blob([penBlocksJson], {
+					type: PEN_CLIPBOARD_JSON_MIME,
+				}),
+				[PEN_CLIPBOARD_JSON_MIME_LEGACY]: new Blob([penBlocksJson], {
+					type: PEN_CLIPBOARD_JSON_MIME_LEGACY,
 				}),
 				"text/html": new Blob([htmlWithPenData], {
 					type: "text/html",
@@ -132,11 +139,15 @@ export function serializeDeltasToFormat(
 				const inlineSchema = editor.schema.resolveInline(mark);
 				if (format === "html") {
 					if (!inlineSchema?.serialize?.toHTML) continue;
-					text = inlineSchema.serialize.toHTML(
-						text,
+					const rawProps =
 						typeof props === "object"
 							? (props as Record<string, unknown>)
-							: {},
+							: {};
+					text = inlineSchema.serialize.toHTML(
+						text,
+						mark === "link"
+							? admitClipboardLinkProps(editor, rawProps)
+							: rawProps,
 					);
 				} else {
 					if (!inlineSchema?.serialize?.toMarkdown) continue;
@@ -154,6 +165,19 @@ export function serializeDeltasToFormat(
 	}
 
 	return result;
+}
+
+function admitClipboardLinkProps(
+	editor: Editor,
+	props: Record<string, unknown>,
+): Record<string, unknown> {
+	const href = resolveEditorUrl(editor, props.href, "link");
+	if (href === null) {
+		const admitted = { ...props };
+		delete admitted.href;
+		return admitted;
+	}
+	return { ...props, href };
 }
 
 export { buildTableChildren };

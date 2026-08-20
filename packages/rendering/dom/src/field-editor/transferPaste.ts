@@ -13,9 +13,15 @@ import type {
 import type { PendingBlock } from "@input/pen-core";
 import type { FieldEditorTransferController } from "./controller";
 import {
+	admitClipboardBlocks,
+	emitClipboardIngestReport,
+	withForbiddenKeyDrops,
+} from "../utils/clipboardIngest";
+import {
 	decodePenBlocksFromHtml,
 	parsePenClipboardPayload,
 	PenClipboardFallbackError,
+	readPenClipboardJson,
 	type PenBlock,
 } from "../utils/clipboardPayload";
 import { pasteBlocks, pasteInlineText } from "./transferBlocks";
@@ -54,17 +60,21 @@ export async function executePasteTransfer(
 
 	const clipboardFallback = { emitted: false };
 
-	const penPayload = dataTransfer.getData("application/x-pen-blocks");
+	const penPayload = readPenClipboardJson(dataTransfer);
 	if (penPayload) {
 		const parsed = parsePenClipboardPayload(penPayload);
 		if (parsed.status === "ok") {
-			const blocks = [...parsed.payload.blocks];
-			if (canDirectPastePenBlocks(editor, blocks)) {
+			const admitted = withForbiddenKeyDrops(
+				admitClipboardBlocks(parsed.payload.blocks, editor),
+				parsed.forbiddenKeyCount,
+			);
+			emitClipboardIngestReport(editor, admitted);
+			if (canDirectPastePenBlocks(editor, admitted.blocks)) {
 				const { cursorAfter } = deleteSelectionForTransfer(
 					editor,
 					cursorBefore,
 				);
-				pasteBlocks(blocks, editor, fieldEditor, cursorAfter, {
+				pasteBlocks(admitted.blocks, editor, fieldEditor, cursorAfter, {
 					undoGroup: false,
 				});
 				return true;
@@ -80,13 +90,17 @@ export async function executePasteTransfer(
 		const penMatch = html.match(/data-pen-blocks="([^"]*)"/);
 		if (penMatch) {
 			try {
-				const blocks = decodePenBlocksFromHtml(penMatch[1]);
-				if (canDirectPastePenBlocks(editor, blocks)) {
+				const admitted = admitClipboardBlocks(
+					decodePenBlocksFromHtml(penMatch[1]),
+					editor,
+				);
+				emitClipboardIngestReport(editor, admitted);
+				if (canDirectPastePenBlocks(editor, admitted.blocks)) {
 					const { cursorAfter } = deleteSelectionForTransfer(
 						editor,
 						cursorBefore,
 					);
-					pasteBlocks(blocks, editor, fieldEditor, cursorAfter, {
+					pasteBlocks(admitted.blocks, editor, fieldEditor, cursorAfter, {
 						undoGroup: false,
 					});
 					return true;

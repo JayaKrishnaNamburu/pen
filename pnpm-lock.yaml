@@ -736,6 +736,9 @@ importers:
       '@input/pen-dom':
         specifier: workspace:*
         version: link:../dom
+      '@input/pen-import-html':
+        specifier: workspace:*
+        version: link:../../extensions/import-html
       '@input/pen-types':
         specifier: workspace:*
         version: link:../../types
@@ -897,9 +900,15 @@ importers:
       '@input/pen-crdt-yjs':
         specifier: workspace:*
         version: link:../../crdt/yjs
+      '@input/pen-document-ops':
+        specifier: workspace:*
+        version: link:../../extensions/document-ops
       '@input/pen-dom':
         specifier: workspace:*
         version: link:../../rendering/dom
+      '@input/pen-import-html':
+        specifier: workspace:*
+        version: link:../../extensions/import-html
       '@input/pen-preset-default':
         specifier: workspace:*
         version: link:../../presets/default

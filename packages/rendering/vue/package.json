@@ -61,6 +61,7 @@
   "dependencies": {
     "@input/pen-core": "workspace:*",
     "@input/pen-dom": "workspace:*",
+    "@input/pen-import-html": "workspace:*",
     "@input/pen-types": "workspace:*"
   },
   "peerDependencies": {

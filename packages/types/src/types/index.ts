@@ -359,7 +359,11 @@ export { DECORATION_OMIT_FROM_RENDER_ATTRIBUTE } from "./decorations";
 export type { PenTransport, ServerConfig } from "./transport";
 
 // ── Clipboard ───────────────────────────────────────────────
-export { PEN_CLIPBOARD_PAYLOAD_VERSION } from "./clipboard";
+export {
+	PEN_CLIPBOARD_JSON_MIME,
+	PEN_CLIPBOARD_JSON_MIME_LEGACY,
+	PEN_CLIPBOARD_PAYLOAD_VERSION,
+} from "./clipboard";
 export type {
 	PenClipboardBlock,
 	PenClipboardDelta,

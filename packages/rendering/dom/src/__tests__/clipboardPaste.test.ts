@@ -1,11 +1,23 @@
+// @vitest-environment jsdom
+
 import { describe, expect, it, vi } from "vitest";
 import { createEditor } from "@input/pen-core";
-import type { Editor } from "@input/pen-types";
+import {
+	PEN_CLIPBOARD_JSON_MIME,
+	PEN_CLIPBOARD_JSON_MIME_LEGACY,
+	type Editor,
+} from "@input/pen-types";
+import { handleCopy } from "../field-editor/clipboard";
 import { executePasteTransfer } from "../field-editor/transferPaste";
 import type { FieldEditorTransferController } from "../field-editor/controller";
 import {
+	CLIPBOARD_INGEST_MAX_NESTING_DEPTH,
+} from "../utils/clipboardIngest";
+import {
 	PEN_CLIPBOARD_PAYLOAD_VERSION,
 	parsePenClipboardPayload,
+	serializePenClipboardPayload,
+	type PenBlock,
 } from "../utils/clipboardPayload";
 
 const noDefaultExtensionsPreset = {
@@ -40,18 +52,32 @@ function createFieldEditorStub(): FieldEditorTransferController {
 	};
 }
 
-function hostileHeadingPayload(content: string): string {
+function hostileHeadingPayload(
+	content: string,
+	knownProps = '"level":1,"safe":"kept"',
+): string {
 	return [
 		"{",
 		`"version":${PEN_CLIPBOARD_PAYLOAD_VERSION},`,
 		'"blockTypes":["heading"],',
 		'"blocks":[{',
 		'"type":"heading",',
-		'"props":{"level":1,"safe":"kept","__proto__":{"polluted":true},"constructor":{"polluted":true},"prototype":{"polluted":true}},',
+		`"props":{${knownProps},"__proto__":{"polluted":true},"constructor":{"polluted":true},"prototype":{"polluted":true}},`,
 		`"content":${JSON.stringify(content)},`,
 		`"deltas":[{"insert":${JSON.stringify(content)},"attributes":{"bold":true,"__proto__":{"polluted":true}}}]`,
 		"}]}",
 	].join("");
+}
+
+function nestToggles(depth: number): PenBlock {
+	if (depth <= 1) {
+		return { type: "paragraph", content: "leaf" };
+	}
+	return {
+		type: "toggle",
+		content: `d${depth}`,
+		children: [nestToggles(depth - 1)],
+	};
 }
 
 describe("clipboard JSON-flavor paste", () => {
@@ -62,6 +88,7 @@ describe("clipboard JSON-flavor paste", () => {
 		if (result.status !== "ok") {
 			return;
 		}
+		expect(result.forbiddenKeyCount).toBe(4);
 
 		const [block] = result.payload.blocks;
 		expect(block).toBeDefined();
@@ -83,13 +110,20 @@ describe("clipboard JSON-flavor paste", () => {
 		const editor = createBareEditor();
 		const emptyBlockId = editor.firstBlock()!.id;
 		editor.selectText(emptyBlockId, 0, 0);
+		const diagnostics: unknown[] = [];
+		editor.on("diagnostic", (event) => {
+			diagnostics.push(event);
+		});
 
 		const handled = await executePasteTransfer({
 			source: "paste",
 			editor,
 			fieldEditor: createFieldEditorStub(),
 			dataTransfer: createClipboardData({
-				"application/x-pen-blocks": hostileHeadingPayload("Kept"),
+				"application/x-pen-blocks": hostileHeadingPayload(
+					"Kept",
+					'"level":1',
+				),
 			}),
 		});
 
@@ -104,6 +138,194 @@ describe("clipboard JSON-flavor paste", () => {
 		expect(
 			(Object.prototype as { polluted?: boolean }).polluted,
 		).toBeUndefined();
+		expect(diagnostics).toEqual([
+			expect.objectContaining({
+				code: "import-dropped",
+				droppedByReason: [
+					expect.objectContaining({ reason: "forbidden-key", count: 4 }),
+				],
+			}),
+		]);
+
+		editor.destroy();
+	});
+
+	it("SEC4: spec JSON flavor paste drops unknown props and types with import-dropped", async () => {
+		const editor = createBareEditor();
+		const emptyBlockId = editor.firstBlock()!.id;
+		editor.selectText(emptyBlockId, 0, 0);
+		const diagnostics: unknown[] = [];
+		editor.on("diagnostic", (event) => {
+			diagnostics.push(event);
+		});
+
+		const handled = await executePasteTransfer({
+			source: "paste",
+			editor,
+			fieldEditor: createFieldEditorStub(),
+			dataTransfer: createClipboardData({
+				[PEN_CLIPBOARD_JSON_MIME]: serializePenClipboardPayload([
+					{
+						type: "heading",
+						props: { level: 2, extraEvil: "nope" },
+						content: "Title",
+						deltas: [{ insert: "Title" }],
+					},
+					{
+						type: "not-a-real-block",
+						content: "gone",
+					},
+				]),
+			}),
+		});
+
+		expect(handled).toBe(true);
+		const heading = [...editor.documentState.allBlocks()].find(
+			(block) => block.type === "heading",
+		);
+		expect(heading?.textContent()).toBe("Title");
+		expect(heading?.props.level).toBe(2);
+		expect(heading?.props).not.toHaveProperty("extraEvil");
+		expect(
+			[...editor.documentState.allBlocks()].some(
+				(block) => block.type === "not-a-real-block",
+			),
+		).toBe(false);
+		expect(diagnostics).toEqual([
+			expect.objectContaining({
+				code: "import-dropped",
+				droppedByReason: expect.arrayContaining([
+					expect.objectContaining({ reason: "invalid-props" }),
+					expect.objectContaining({ reason: "unknown-block-type" }),
+				]),
+			}),
+		]);
+
+		editor.destroy();
+	});
+
+	it("SEC4: copy writes application/x-pen-blocks+json and paste round-trips content", async () => {
+		const source = createBareEditor();
+		const target = createBareEditor();
+		const sourceBlockId = source.firstBlock()!.id;
+		const targetBlockId = target.firstBlock()!.id;
+		const clipboardData = createClipboardData({});
+
+		source.apply([
+			{
+				type: "insert-text",
+				blockId: sourceBlockId,
+				offset: 0,
+				text: "Hello world",
+			},
+		]);
+		source.selectText(sourceBlockId, 0, 11);
+		handleCopy(source, { clipboardData } as ClipboardEvent);
+
+		const specFlavor = clipboardData.getData(PEN_CLIPBOARD_JSON_MIME);
+		const legacyFlavor = clipboardData.getData(PEN_CLIPBOARD_JSON_MIME_LEGACY);
+		expect(specFlavor).toBe(legacyFlavor);
+		expect(specFlavor.length).toBeGreaterThan(0);
+		const copied = parsePenClipboardPayload(specFlavor);
+		expect(copied.status).toBe("ok");
+		if (copied.status === "ok") {
+			expect(copied.payload.blocks[0]?.content).toBe("Hello world");
+		}
+
+		const specOnly = createClipboardData({
+			[PEN_CLIPBOARD_JSON_MIME]: specFlavor,
+		});
+		target.selectText(targetBlockId, 0, 0);
+		await executePasteTransfer({
+			source: "paste",
+			editor: target,
+			dataTransfer: specOnly,
+			fieldEditor: createFieldEditorStub(),
+		});
+
+		expect(target.getBlock(target.firstBlock()!.id)?.textContent()).toBe(
+			"Hello world",
+		);
+
+		source.destroy();
+		target.destroy();
+	});
+
+	it("SEC4: oversized clipboard JSON emits import-truncated", async () => {
+		const editor = createBareEditor();
+		editor.selectText(editor.firstBlock()!.id, 0, 0);
+		const diagnostics: unknown[] = [];
+		editor.on("diagnostic", (event) => {
+			diagnostics.push(event);
+		});
+
+		await executePasteTransfer({
+			source: "paste",
+			editor,
+			fieldEditor: createFieldEditorStub(),
+			dataTransfer: createClipboardData({
+				[PEN_CLIPBOARD_JSON_MIME]: serializePenClipboardPayload([
+					nestToggles(CLIPBOARD_INGEST_MAX_NESTING_DEPTH + 1),
+				]),
+			}),
+		});
+
+		expect(diagnostics).toEqual([
+			expect.objectContaining({
+				code: "import-truncated",
+				droppedByReason: [
+					expect.objectContaining({
+						reason: "depth-exceeded",
+						bound: "CLIPBOARD_INGEST_MAX_NESTING_DEPTH",
+					}),
+				],
+			}),
+		]);
+
+		editor.destroy();
+	});
+
+	it("SEC4: JSON-flavor paste does not pre-launder javascript: URLs", async () => {
+		const editor = createBareEditor();
+		editor.selectText(editor.firstBlock()!.id, 0, 0);
+		const href = "javascript:alert(1)";
+
+		await executePasteTransfer({
+			source: "paste",
+			editor,
+			fieldEditor: createFieldEditorStub(),
+			dataTransfer: createClipboardData({
+				[PEN_CLIPBOARD_JSON_MIME]: serializePenClipboardPayload([
+					{
+						type: "heading",
+						props: { level: 1 },
+						content: "go",
+						deltas: [
+							{
+								insert: "go",
+								attributes: { link: { href } },
+							},
+						],
+					},
+					{
+						type: "image",
+						props: { src: href, alt: "x" },
+					},
+				]),
+			}),
+		});
+
+		const heading = [...editor.documentState.allBlocks()].find(
+			(block) => block.type === "heading",
+		);
+		const image = [...editor.documentState.allBlocks()].find(
+			(block) => block.type === "image",
+		);
+		const link = heading?.textDeltas().find((delta) => delta.attributes?.link);
+		expect(
+			(link?.attributes?.link as { href?: string } | undefined)?.href,
+		).toBe(href);
+		expect(image?.props.src).toBe(href);
 
 		editor.destroy();
 	});

@@ -125,6 +125,11 @@ export {
 	readOnlyFacet,
 	clipboardFacet,
 } from "./facets/coreFacets";
+export {
+	urlPolicyFacet,
+	type UrlContext,
+	type UrlPolicy,
+} from "./facets/urlPolicyFacet";
 export type {
 	Keymap,
 	BeforeApplyHook,

@@ -1,4 +1,4 @@
-import { urlPolicy } from "@input/pen-dom";
+import { resolveEditorUrl } from "@input/pen-dom";
 import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 import type { BlockHandle, CellSelection } from "@input/pen-types";
 import { defineComponent, h, type VNode, type VNodeChild } from "vue";
@@ -314,7 +314,7 @@ function renderBlockBody(args: {
       );
     }
     case "image": {
-      const src = urlPolicy.resolve(block.props.src, "image");
+      const src = resolveEditorUrl(editor, block.props.src, "image");
       const caption =
         typeof block.props.caption === "string" ? block.props.caption : "";
       const width =

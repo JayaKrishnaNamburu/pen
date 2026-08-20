@@ -1,11 +1,12 @@
 import type { SchemaRegistry } from "@input/pen-types";
-import { urlPolicy } from "../security/urlPolicy";
+import { urlPolicy, type UrlPolicy } from "../security/urlPolicy";
 import { INLINE_DECORATION_ATTRIBUTE_KEY } from "../utils/inlineDecorations";
 
 export function wrapWithMarks(
 	node: Node,
 	attributes: Record<string, unknown>,
 	registry: SchemaRegistry,
+	policy: UrlPolicy = urlPolicy,
 ): Node {
 	let wrapped = node;
 	const decorationAttributes = isDecorationAttributesValue(
@@ -24,7 +25,7 @@ export function wrapWithMarks(
 		});
 
 	for (const [markType, markProps] of entries) {
-		const element = createMarkElement(markType, markProps);
+		const element = createMarkElement(markType, markProps, policy);
 		element.appendChild(wrapped);
 		wrapped = element;
 	}
@@ -33,6 +34,7 @@ export function wrapWithMarks(
 		const element = createMarkElement(
 			INLINE_DECORATION_ATTRIBUTE_KEY,
 			decorationAttributes,
+			policy,
 		);
 		element.appendChild(wrapped);
 		wrapped = element;
@@ -45,16 +47,21 @@ export function createMarkedNode(
 	text: string,
 	attributes: Record<string, unknown>,
 	registry: SchemaRegistry,
+	policy: UrlPolicy = urlPolicy,
 ): Node {
 	const node: Node = document.createTextNode(text);
-	return wrapWithMarks(node, attributes, registry);
+	return wrapWithMarks(node, attributes, registry, policy);
 }
 
-function createMarkElement(markType: string, props: unknown): HTMLElement {
+function createMarkElement(
+	markType: string,
+	props: unknown,
+	policy: UrlPolicy,
+): HTMLElement {
 	switch (markType) {
 		case INLINE_DECORATION_ATTRIBUTE_KEY: {
 			const span = document.createElement("span");
-			applyElementAttributes(span, props);
+			applyElementAttributes(span, props, policy);
 			return span;
 		}
 		case "bold":
@@ -72,7 +79,7 @@ function createMarkElement(markType: string, props: unknown): HTMLElement {
 			if (typeof props === "object" && props !== null) {
 				const record = props as Record<string, unknown>;
 				if (record.href) {
-					const href = urlPolicy.resolve(record.href, "link");
+					const href = policy.resolve(record.href, "link");
 					if (href === null) {
 						anchor.setAttribute("data-pen-blocked-url", "");
 					} else {
@@ -129,6 +136,7 @@ function createMarkElement(markType: string, props: unknown): HTMLElement {
 export function applyElementAttributes(
 	element: HTMLElement,
 	props: unknown,
+	policy: UrlPolicy = urlPolicy,
 ): void {
 	if (!isDecorationAttributesValue(props)) {
 		return;
@@ -143,7 +151,7 @@ export function applyElementAttributes(
 			continue;
 		}
 		if (key === "href" || key === "src") {
-			const resolved = urlPolicy.resolve(
+			const resolved = policy.resolve(
 				value,
 				key === "href" ? "link" : "image",
 			);

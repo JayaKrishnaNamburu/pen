@@ -1,4 +1,5 @@
 import type { InlineDecoration } from "@input/pen-types";
+import { urlPolicyFromEditor } from "../security/resolveEditorUrl";
 import { fullReconcileToDOM, applyDeltaToDOM } from "./reconciler";
 import { computeTextDiff, extractTextFromDOM } from "./selectionBridge";
 import { isHistoryTransactionOrigin } from "./historyOrigin";
@@ -114,6 +115,7 @@ export abstract class ContentEditableBackendEvents extends ContentEditableBacken
 		if (this.deferredRemoteDeltas.length > 0) {
 			this.deferredRemoteDeltas = [];
 			fullReconcileToDOM(this.ytext, this.element!, this.editor.schema, {
+				urlPolicy: urlPolicyFromEditor(this.editor),
 				inlineDecorations: this.getInlineDecorationsForBlock(),
 			});
 			this.fieldEditor.notifyDomReconciled(
@@ -159,6 +161,7 @@ export abstract class ContentEditableBackendEvents extends ContentEditableBacken
 		const isHistory = isHistoryTransactionOrigin(event.transaction?.origin);
 		if (isHistory) {
 			fullReconcileToDOM(this.ytext, this.element, this.editor.schema, {
+				urlPolicy: urlPolicyFromEditor(this.editor),
 				preserveSelection: true,
 				inlineDecorations: this.getInlineDecorationsForBlock(),
 			});
@@ -175,6 +178,7 @@ export abstract class ContentEditableBackendEvents extends ContentEditableBacken
 			: false;
 		if (isActiveCell) {
 			fullReconcileToDOM(this.ytext, this.element, this.editor.schema, {
+				urlPolicy: urlPolicyFromEditor(this.editor),
 				preserveSelection: true,
 				inlineDecorations: this.getInlineDecorationsForBlock(),
 			});
@@ -192,6 +196,7 @@ export abstract class ContentEditableBackendEvents extends ContentEditableBacken
 		const inlineDecorations = this.getInlineDecorationsForBlock();
 		if (inlineDecorationsRequireFullReconcile(inlineDecorations)) {
 			fullReconcileToDOM(this.ytext, this.element, this.editor.schema, {
+				urlPolicy: urlPolicyFromEditor(this.editor),
 				preserveSelection: true,
 				inlineDecorations,
 			});
@@ -210,9 +215,11 @@ export abstract class ContentEditableBackendEvents extends ContentEditableBacken
 			event.delta,
 			this.element,
 			this.editor.schema,
+			urlPolicyFromEditor(this.editor),
 		);
 		if (!applied) {
 			fullReconcileToDOM(this.ytext, this.element, this.editor.schema, {
+				urlPolicy: urlPolicyFromEditor(this.editor),
 				preserveSelection: true,
 				inlineDecorations: this.getInlineDecorationsForBlock(),
 			});

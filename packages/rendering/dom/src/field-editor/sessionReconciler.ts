@@ -5,6 +5,7 @@ import {
 	type InlineDecoration,
 	type OpOrigin,
 } from "@input/pen-types";
+import { urlPolicyFromEditor } from "../security/resolveEditorUrl";
 import { fullReconcileToDOM } from "./reconciler";
 import type { FieldEditorTextLike } from "./crdt";
 
@@ -195,6 +196,7 @@ export class SessionReconciler {
 				fullReconcileToDOM(ytext, element, this.editor.schema, {
 					preserveSelection,
 					inlineDecorations: this.getInlineDecorations(blockId),
+					urlPolicy: urlPolicyFromEditor(this.editor),
 				});
 				this.options.notifyDomReconciled?.(blockId);
 				continue;
@@ -215,6 +217,7 @@ export class SessionReconciler {
 		fullReconcileToDOM(ytext, inlineElement, this.editor.schema, {
 			preserveSelection,
 			inlineDecorations: this.getInlineDecorations(blockId),
+			urlPolicy: urlPolicyFromEditor(this.editor),
 		});
 		this.options.notifyDomReconciled?.(blockId);
 	}

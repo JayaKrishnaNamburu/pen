@@ -35,6 +35,7 @@ import {
 	isCRDTMap,
 } from "./crdtShapes";
 import type { ApplyPipeline } from "./apply";
+import { rejectedOwnPropKeys } from "./rejectedOwnKeys";
 
 type ApplyPipelineRuntime = any;
 type MutableMap = CRDTUnknownMap & { delete(key: string): void };
@@ -51,14 +52,6 @@ interface CRDTText {
 	readonly length: number;
 }
 const ZERO_WIDTH_SPACE = "\u200B";
-const REJECTED_OWN_PROP_KEYS = new Set(["__proto__", "constructor", "prototype"]);
-
-function rejectedOwnPropKeys(
-	props: Record<string, unknown> | undefined,
-): string[] {
-	if (!props) return [];
-	return Object.keys(props).filter((key) => REJECTED_OWN_PROP_KEYS.has(key));
-}
 
 function embedRecordFromInlineOp(op: InsertInlineNodeOp): Record<string, unknown> {
 	const embed = Object.create(null) as Record<string, unknown>;

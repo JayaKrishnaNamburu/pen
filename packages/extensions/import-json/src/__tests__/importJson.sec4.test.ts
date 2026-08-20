@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
 import { createDefaultSchema } from "@input/pen-schema-default";
@@ -8,6 +11,11 @@ import {
 	INGEST_MAX_TEXT_SIZE,
 } from "../ingestBounds";
 import { jsonImporter, parseJsonWithReport } from "../importer";
+
+const hostileDir = join(
+	dirname(fileURLToPath(import.meta.url)),
+	"../../../../tooling/conformance/fixtures/hostile",
+);
 
 const noDefaultExtensionsPreset = {
 	resolve() {
@@ -373,6 +381,77 @@ describe("SEC4 JSON ingestion", () => {
 		expect(blocks[0]!.props).not.toBe(rawProps);
 		rawProps.level = 99;
 		expect(blocks[0]!.props.level).toBe(1);
+
+		editor.destroy();
+	});
+
+	it("SEC4 corpus proto-keys.json does not pollute and emits import-dropped", () => {
+		const editor = createBareEditor();
+		const diagnostics: Array<{ code: string }> = [];
+		editor.on("diagnostic", (event) => {
+			diagnostics.push(event);
+		});
+
+		const document = JSON.parse(
+			readFileSync(join(hostileDir, "proto-keys.json"), "utf8"),
+		) as unknown;
+		const before = Object.hasOwn(Object.prototype, "polluted");
+		const result = jsonImporter.import(document, editor);
+
+		expect(Object.hasOwn(Object.prototype, "polluted")).toBe(before);
+		expect(diagnostics).toEqual([
+			expect.objectContaining({ code: "import-dropped" }),
+		]);
+		expect(result.droppedByReason).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ reason: "forbidden-key" }),
+			]),
+		);
+		const imported = [...editor.documentState.allBlocks()].find(
+			(block) => block.type === "paragraph",
+		);
+		expect(imported?.textContent()).toBe("proto");
+		expect(imported?.props).not.toHaveProperty("__proto__");
+		expect(imported?.props).not.toHaveProperty("constructor");
+		expect(imported?.props).not.toHaveProperty("prototype");
+
+		editor.destroy();
+	});
+
+	it("SEC4 corpus oversized depth/count builders truncate", () => {
+		const editor = createBareEditor();
+		const depth = parseJsonWithReport(
+			{ version: 1, blocks: [nestToggles(INGEST_MAX_NESTING_DEPTH + 1)] },
+			editor,
+		);
+		expect(depth.report.droppedByReason).toEqual([
+			{
+				reason: "depth-exceeded",
+				count: 1,
+				bound: "INGEST_MAX_NESTING_DEPTH",
+				dropped: "1 block",
+			},
+		]);
+
+		const count = parseJsonWithReport(
+			{
+				version: 1,
+				blocks: Array.from(
+					{ length: INGEST_MAX_NODE_COUNT + 3 },
+					(_, index) => paragraph(`p-${index}`),
+				),
+			},
+			editor,
+		);
+		expect(count.blocks).toHaveLength(INGEST_MAX_NODE_COUNT);
+		expect(count.report.droppedByReason).toEqual([
+			{
+				reason: "count-exceeded",
+				count: 3,
+				bound: "INGEST_MAX_NODE_COUNT",
+				dropped: "3 blocks",
+			},
+		]);
 
 		editor.destroy();
 	});

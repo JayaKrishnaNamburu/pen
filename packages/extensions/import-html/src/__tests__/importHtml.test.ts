@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { sanitizeHTML } from "../sanitize";
+import { ALLOWED_DATA_PEN_ATTRS, sanitizeHTML } from "../sanitize";
 import { parseInlineContent } from "../inlineParser";
 import type { DOMNode } from "../domAdapter";
 
@@ -45,13 +45,41 @@ describe("sanitizeHTML", () => {
 		expect(result).toContain("alt");
 	});
 
-	it("only preserves the inline styles the importer understands", () => {
+	it("SEC3: hook-based style filter keeps only color and background-color", () => {
 		const result = sanitizeHTML(
 			'<p style="color: red; position: fixed; background-color: blue; z-index: 1">styled</p>',
 		);
 		expect(result).toContain('style="color: red; background-color: blue"');
 		expect(result).not.toContain("position:");
 		expect(result).not.toContain("z-index:");
+	});
+
+	it("SEC3: drops id and data-* that conversion does not read", () => {
+		const result = sanitizeHTML(
+			'<p id="docs-internal-guid" data-pen-blocks="abc" data-title="x" class="language-js">ok</p>',
+		);
+		expect(result).not.toContain("id=");
+		expect(result).not.toContain("data-pen-blocks");
+		expect(result).not.toContain("data-title");
+		expect(result).toContain("language-js");
+		expect(result).toContain("ok");
+	});
+
+	it("SEC3: ALLOWED_DATA_PEN_ATTRS is the conversion-read list (empty)", () => {
+		expect(ALLOWED_DATA_PEN_ATTRS).toEqual([]);
+		expect(Object.isFrozen(ALLOWED_DATA_PEN_ATTRS)).toBe(true);
+	});
+
+	it("SEC3: mXSS svg/math payloads that defeat regex post-processing are inert", () => {
+		const result = sanitizeHTML(
+			`<svg><desc><![CDATA[</desc><script>window.__xssProbe()</script>]]></svg>
+<math><mtext></mtext><script>window.__xssProbe()</script></math>
+<p>safe</p>`,
+		);
+		expect(result).not.toMatch(/<script/i);
+		expect(result).not.toMatch(/<svg/i);
+		expect(result).not.toMatch(/<math/i);
+		expect(result).toContain("safe");
 	});
 });
 describe("parseInlineContent", () => {

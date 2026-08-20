@@ -44,6 +44,7 @@ import {
 	type PipelinePhase,
 } from "./pipelinePhases";
 import { resolveCommitSource } from "./commitEvent";
+import { rejectedOwnPropKeys } from "./rejectedOwnKeys";
 
 type ApplyPipelineRuntime = any;
 type MutableMap = CRDTUnknownMap & { delete(key: string): void };
@@ -394,6 +395,19 @@ export function emitApplyBoundary(pipeline: ApplyPipeline, event: {
 
 export function validateOp(pipeline: ApplyPipeline, op: DocumentOp): boolean {
 	const self = pipeline as ApplyPipelineRuntime;
+	const rejectedKeys = [...new Set(rejectedOwnPropKeys(op))];
+	if (rejectedKeys.length > 0) {
+		self._emitter.emit("diagnostic", {
+			code: "PEN_APPLY_009",
+			level: "warn",
+			source: "apply",
+			message: `apply: rejected prototype keys in ${op.type} (${rejectedKeys.join(", ")})`,
+			remediation:
+				"Remove __proto__, constructor, and prototype own keys from op props.",
+			op,
+		});
+		return false;
+	}
 switch (op.type) {
 	case "insert-block": {
 		if (!isRegisteredBlockType(self._registry, op.blockType)) {

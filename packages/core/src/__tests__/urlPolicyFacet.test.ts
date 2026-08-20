@@ -30,7 +30,7 @@ describe("SEC1 / S.1-facet pen.urlPolicy", () => {
 	});
 
 	it("SEC1 / S.1-facet: empty combine is undefined (core cannot import pen-dom)", () => {
-		// wrapping urlPolicy.resolve here would add a core→dom dependency; host/dom binding lands later
+		// wrapping urlPolicy.resolve here would add a core→dom dependency; host/dom binding is urlPolicyExtension
 		const spec = getFacetSpec(urlPolicyFacet);
 		expect(spec.combine([])).toBeUndefined();
 

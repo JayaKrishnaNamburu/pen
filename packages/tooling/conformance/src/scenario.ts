@@ -1,3 +1,4 @@
+import type { DocumentOp } from "@input/pen-types";
 import { expect, test, type Page } from "@playwright/test";
 import { getInlineOffsetPoint, resolveBlockId } from "./domGeometry";
 import {
@@ -14,14 +15,14 @@ import type {
 
 export function scenario(
 	name: string,
-	fn: (s: ScenarioApi) => Promise<void>,
+	fn: (s: ScenarioApi, page: Page) => Promise<void>,
 ): void {
 	test(name, async ({ page }) => {
 		await page.goto("/");
 		await expect(
 			page.locator("[data-pen-inline-content]").first(),
 		).toBeVisible();
-		await fn(createScenario(page));
+		await fn(createScenario(page), page);
 	});
 }
 
@@ -59,6 +60,36 @@ function createScenario(page: Page): ScenarioApi {
 				await page.locator("[data-pen-inline-content]").first().click();
 			});
 		},
+		async apply(ops: readonly DocumentOp[]) {
+			await step(async () => {
+				await page.evaluate((documentOps) => {
+					window.__penConformance.apply(documentOps);
+				}, ops);
+			});
+		},
+		async applyToolPayloads(payloadsJson: string) {
+			return step(async () => {
+				return page.evaluate((raw) => {
+					return window.__penConformance.applyToolPayloads(
+						JSON.parse(raw) as unknown[],
+					);
+				}, payloadsJson);
+			});
+		},
+		async importHtml(html: string) {
+			await step(async () => {
+				await page.evaluate((source) => {
+					return window.__penConformance.importHtml(source);
+				}, html);
+			});
+		},
+		async pasteHtml(html: string) {
+			await step(async () => {
+				await page.evaluate((source) => {
+					return window.__penConformance.pasteHtml(source);
+				}, html);
+			});
+		},
 		keyboard: {
 			async type(text: string) {
 				await step(async () => {
@@ -83,6 +114,20 @@ function createScenario(page: Page): ScenarioApi {
 				await step(async () => {
 					await page.evaluate((splice) => {
 						window.__penConformance.remoteSplice(splice);
+					}, args);
+				});
+			},
+			async apply(ops: readonly DocumentOp[]) {
+				await step(async () => {
+					await page.evaluate((documentOps) => {
+						window.__penConformance.remoteApply(documentOps);
+					}, ops);
+				});
+			},
+			async injectY(args) {
+				await step(async () => {
+					await page.evaluate((inject) => {
+						window.__penConformance.remoteInjectY(inject);
 					}, args);
 				});
 			},
@@ -135,6 +180,24 @@ function createScenario(page: Page): ScenarioApi {
 					);
 					expect(documentText).toContain(text);
 				});
+			},
+			async corpusSafe(options?: { requireBlockedUrl?: boolean }) {
+				const scan = await page.evaluate(() =>
+					window.__penConformance.scanHostileDom(),
+				);
+				expect(scan.probeTripped, "window.__xssProbe was called").toBe(false);
+				expect(scan.javascriptUrls, "javascript: reached a URL attribute").toEqual(
+					[],
+				);
+				if (options?.requireBlockedUrl) {
+					expect(scan.blockedUrlCount).toBeGreaterThan(0);
+				}
+			},
+			async xssProbeNotTripped() {
+				const scan = await page.evaluate(() =>
+					window.__penConformance.scanHostileDom(),
+				);
+				expect(scan.probeTripped, "window.__xssProbe was called").toBe(false);
 			},
 		},
 	};

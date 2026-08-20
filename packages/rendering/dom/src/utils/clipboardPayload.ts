@@ -1,4 +1,6 @@
 import {
+	PEN_CLIPBOARD_JSON_MIME,
+	PEN_CLIPBOARD_JSON_MIME_LEGACY,
 	PEN_CLIPBOARD_PAYLOAD_VERSION,
 	type DiagnosticEvent,
 	type PenClipboardBlock,
@@ -6,7 +8,11 @@ import {
 	type PenClipboardPayload,
 } from "@input/pen-types";
 
-export { PEN_CLIPBOARD_PAYLOAD_VERSION };
+export {
+	PEN_CLIPBOARD_JSON_MIME,
+	PEN_CLIPBOARD_JSON_MIME_LEGACY,
+	PEN_CLIPBOARD_PAYLOAD_VERSION,
+};
 export type { PenClipboardPayload };
 
 export type Delta = PenClipboardDelta;
@@ -18,6 +24,7 @@ export type PenClipboardReadResult =
 	| {
 			status: "ok";
 			payload: PenClipboardPayload;
+			forbiddenKeyCount: number;
 			migratedFrom?: number;
 	  }
 	| {
@@ -55,6 +62,13 @@ export function serializePenClipboardPayload(
 	blocks: readonly PenBlock[],
 ): string {
 	return JSON.stringify(createPenClipboardPayload(blocks));
+}
+
+export function readPenClipboardJson(dataTransfer: DataTransfer): string {
+	return (
+		dataTransfer.getData(PEN_CLIPBOARD_JSON_MIME) ||
+		dataTransfer.getData(PEN_CLIPBOARD_JSON_MIME_LEGACY)
+	);
 }
 
 export function parsePenClipboardPayload(raw: unknown): PenClipboardReadResult {
@@ -114,14 +128,20 @@ export function parsePenClipboardPayload(raw: unknown): PenClipboardReadResult {
 		);
 	}
 
-	const payload = createPenClipboardPayload(sanitizeClipboardBlocks(value.blocks));
+	const sanitized = sanitizeClipboardBlocks(value.blocks);
+	const payload = createPenClipboardPayload(sanitized.blocks);
 	if (value.version === PEN_CLIPBOARD_PAYLOAD_VERSION) {
-		return { status: "ok", payload };
+		return {
+			status: "ok",
+			payload,
+			forbiddenKeyCount: sanitized.forbiddenKeyCount,
+		};
 	}
 
 	return {
 		status: "ok",
 		payload,
+		forbiddenKeyCount: sanitized.forbiddenKeyCount,
 		migratedFrom: value.version,
 	};
 }
@@ -148,22 +168,34 @@ function ensureClipboardJson(penBlocksJson: string): string {
 }
 
 function migrateUnversionedBlocks(blocks: unknown[]): PenClipboardReadResult {
+	const sanitized = sanitizeClipboardBlocks(blocks);
 	return {
 		status: "ok",
-		payload: createPenClipboardPayload(sanitizeClipboardBlocks(blocks)),
+		payload: createPenClipboardPayload(sanitized.blocks),
+		forbiddenKeyCount: sanitized.forbiddenKeyCount,
 		migratedFrom: 0,
 	};
 }
 
 const REJECTED_OWN_KEYS = new Set(["__proto__", "constructor", "prototype"]);
 
-function sanitizeClipboardBlocks(blocks: unknown[]): PenBlock[] {
-	return sanitizeIngestedJson(blocks) as PenBlock[];
+function sanitizeClipboardBlocks(blocks: unknown[]): {
+	blocks: PenBlock[];
+	forbiddenKeyCount: number;
+} {
+	const forbiddenKeyCount = { n: 0 };
+	return {
+		blocks: sanitizeIngestedJson(blocks, forbiddenKeyCount) as PenBlock[],
+		forbiddenKeyCount: forbiddenKeyCount.n,
+	};
 }
 
-function sanitizeIngestedJson(value: unknown): unknown {
+function sanitizeIngestedJson(
+	value: unknown,
+	forbiddenKeyCount: { n: number },
+): unknown {
 	if (Array.isArray(value)) {
-		return value.map(sanitizeIngestedJson);
+		return value.map((item) => sanitizeIngestedJson(item, forbiddenKeyCount));
 	}
 	if (!isPlainObject(value)) {
 		return value;
@@ -171,9 +203,10 @@ function sanitizeIngestedJson(value: unknown): unknown {
 	const clean = Object.create(null) as Record<string, unknown>;
 	for (const key of Object.keys(value)) {
 		if (REJECTED_OWN_KEYS.has(key)) {
+			forbiddenKeyCount.n += 1;
 			continue;
 		}
-		clean[key] = sanitizeIngestedJson(value[key]);
+		clean[key] = sanitizeIngestedJson(value[key], forbiddenKeyCount);
 	}
 	return clean;
 }

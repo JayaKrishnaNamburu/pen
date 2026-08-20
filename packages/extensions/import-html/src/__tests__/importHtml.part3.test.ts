@@ -122,7 +122,7 @@ describe("@input/pen-import-html dom-to-blocks", () => {
 						return {
 							type: "paragraph",
 							props: {},
-							content: element.getAttribute("data-title") ?? "",
+							content: element.getAttribute("title") ?? "",
 						};
 					},
 				},
@@ -130,19 +130,19 @@ describe("@input/pen-import-html dom-to-blocks", () => {
 			resolve: (type) => (type === "custom" ? registry.allBlocks()[0] : null),
 		};
 
-		const blocks = convert('<div data-title="From hook"></div>', registry);
+		const blocks = convert('<div title="From hook"></div>', registry);
 
 		expect(receivedElement).toMatchObject({
 			type: "element",
 			tagName: "div",
-			attributes: { "data-title": "From hook" },
+			attributes: { title: "From hook" },
 		});
 		if (!receivedElement) {
 			throw new Error("Expected schema fromHTML hook to receive an element");
 		}
 		const hookElement = receivedElement as unknown as HTMLImportElement;
-		expect(hookElement.getAttribute("data-title")).toBe("From hook");
-		expect(hookElement.hasAttribute("data-title")).toBe(true);
+		expect(hookElement.getAttribute("title")).toBe("From hook");
+		expect(hookElement.hasAttribute("title")).toBe(true);
 		expect(blocks).toMatchObject([
 			{
 				type: "paragraph",

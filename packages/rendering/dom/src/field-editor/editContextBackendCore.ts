@@ -1,5 +1,6 @@
 import type { Editor, InlineDecoration } from "@input/pen-types";
 import type { FieldEditorInputController } from "./controller";
+import { urlPolicyFromEditor } from "../security/resolveEditorUrl";
 import { fullReconcileToDOM, applyDeltaToDOM } from "./reconciler";
 import {
 	domSelectionToEditor,
@@ -123,6 +124,7 @@ export abstract class EditContextBackendCore {
 		this.inlineDecorationsSignature = this.getInlineDecorationsSignature();
 
 		fullReconcileToDOM(this.ytext, element, this.editor.schema, {
+			urlPolicy: urlPolicyFromEditor(this.editor),
 			inlineDecorations: this.getInlineDecorationsForBlock(),
 		});
 		this.fieldEditor.notifyDomReconciled(

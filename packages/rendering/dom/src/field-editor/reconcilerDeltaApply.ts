@@ -1,4 +1,5 @@
 import type { SchemaRegistry } from "@input/pen-types";
+import type { UrlPolicy } from "../security/urlPolicy";
 import type { FieldEditorDelta } from "./crdt";
 import {
 	createInlineAtomElement,
@@ -11,6 +12,7 @@ export function applyDeltaToDOM(
 	delta: readonly FieldEditorDelta[],
 	element: HTMLElement,
 	registry: SchemaRegistry,
+	policy?: UrlPolicy,
 ): boolean {
 	let childIndex = 0;
 	let textOffset = 0;
@@ -78,6 +80,7 @@ export function applyDeltaToDOM(
 						text,
 						entry.attributes,
 						registry,
+						policy,
 					);
 					const ref = element.childNodes[childIndex] ?? null;
 					element.insertBefore(node, ref);
