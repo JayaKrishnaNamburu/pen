@@ -7,6 +7,7 @@ import {
 	isInlineAtomHostNode,
 	isInlineAtomNode,
 } from "../field-editor/inlineAtomDom";
+import { toLogicalOffset } from "../field-editor/offsetDomain";
 import { pointToEditorSelectionPoint } from "../field-editor/selectionBridge";
 import { getTextSelectionClientRects } from "../field-editor/selectionBridgeOffsets";
 import {
@@ -15,7 +16,6 @@ import {
 	queryBlockElement,
 	queryInlineElement,
 } from "../field-editor/selectionDomQueries";
-import { getDistanceToRect } from "../field-editor/selectionGeometry";
 import { DATA_ATTRS } from "../utils/dataAttributes";
 import {
 	attachBidiRunsToLines,
@@ -32,6 +32,7 @@ import type {
 } from "./types";
 import {
 	collapsedRect,
+	getDistanceToRect,
 	isUsefulRect,
 	rectFromDOMRect,
 	unionRects,
@@ -75,7 +76,7 @@ export type GeometryReaderOptions = {
 export type GeometryReaderHost = GeometryReader & {
 	setCommitId(commitId: number): void;
 	setBlockCommitId(blockId: string, commitId: number): void;
-	/** Read-phase invalidation scan: drop entries whose blocks appear in the flush summaries. */
+	/** Read-phase invalidation: drop named blocks, plus any cached neighbor whose live box moved. */
 	invalidateBlocks(blockIds: readonly string[], commitId?: number): void;
 	invalidateAll(): void;
 	bumpResizeGeneration(): void;
@@ -259,11 +260,19 @@ class GeometryReaderImpl implements GeometryReaderHost {
 	}
 
 	invalidateBlocks(blockIds: readonly string[], commitId?: number): void {
-		for (const blockId of blockIds) {
+		// Drop named blocks always, and any other cached block whose live
+		// top/height no longer matches the box recorded at last measure.
+		const named = new Set(blockIds);
+		for (const blockId of named) {
 			if (commitId !== undefined) {
 				this.blockCommitIds.set(blockId, commitId);
 			}
 			this.cache.delete(blockId);
+		}
+		for (const [blockId, entry] of this.cache) {
+			if (!boxStillValid(entry.blockRect, this.liveBlockRect(blockId))) {
+				this.cache.delete(blockId);
+			}
 		}
 		this._generation += 1;
 	}
@@ -301,9 +310,14 @@ class GeometryReaderImpl implements GeometryReaderHost {
 			key,
 			caretRects: new Map(),
 			rangeRects: new Map(),
+			blockRect: this.liveBlockRect(blockId),
 		};
 		this.cache.set(blockId, next);
 		return next;
+	}
+
+	private liveBlockRect(blockId: string): Rect | null {
+		return this.measure?.blockRect?.(blockId) ?? measureBlockRect(this.root, blockId);
 	}
 
 	private keyFor(blockId: string): BlockCacheKey {
@@ -329,6 +343,28 @@ function cacheKeysEqual(left: BlockCacheKey, right: BlockCacheKey): boolean {
 		left.resizeGeneration === right.resizeGeneration &&
 		left.fontGeneration === right.fontGeneration
 	);
+}
+
+function boxStillValid(cached: Rect | null | undefined, live: Rect | null): boolean {
+	if (cached === undefined) {
+		return false;
+	}
+	if (cached == null || live == null) {
+		return cached == null && live == null;
+	}
+	return cached.top === live.top && cached.height === live.height;
+}
+
+function snapToLogicalOffset(root: HTMLElement, point: Point): Point {
+	const blockEl = queryBlockElement(root, point.blockId);
+	const inlineEl = blockEl ? findInlineContentElement(blockEl) : null;
+	if (!inlineEl) {
+		return { blockId: point.blockId, offset: 0 };
+	}
+	return {
+		blockId: point.blockId,
+		offset: toLogicalOffset(point.offset, getLogicalTextContent(inlineEl)),
+	};
 }
 
 function measureCaretRect(
@@ -497,17 +533,16 @@ function measurePointAt(root: HTMLElement, x: number, y: number): Point | null {
 
 	const fromCaret = hitTestCaretFromPoint(root, x, y);
 	if (fromCaret) {
-		// wave-5: snap through nextNormalPosition
-		return fromCaret;
+		return snapToLogicalOffset(root, fromCaret);
 	}
 
 	const fallback = pointToEditorSelectionPoint(root, x, y);
 	if (fallback) {
-		// wave-5: snap through nextNormalPosition
-		return { blockId: fallback.blockId, offset: fallback.offset };
+		return snapToLogicalOffset(root, fallback);
 	}
 
-	return nearestBlockEdge(root, x, y);
+	const edge = nearestBlockEdge(root, x, y);
+	return edge ? snapToLogicalOffset(root, edge) : null;
 }
 
 function measureBlockRect(root: HTMLElement, blockId: string): Rect | null {
@@ -885,8 +920,13 @@ function domToPoint(root: HTMLElement, node: Node, offset: number): Point | null
 	if (!inlineEl) {
 		return { blockId, offset: 0 };
 	}
-	// wave-5: swap to offsetDomain.ts
-	return { blockId, offset: domPointToLogicalOffset(inlineEl, node, offset) };
+	return {
+		blockId,
+		offset: toLogicalOffset(
+			domPointToLogicalOffset(inlineEl, node, offset),
+			getLogicalTextContent(inlineEl),
+		),
+	};
 }
 
 function isInsideAnyBlock(root: HTMLElement, x: number, y: number): boolean {

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import * as Y from "yjs";
 
 import { yjsAdapter } from "../adapter";
@@ -19,6 +19,10 @@ function fillOverThreshold(doc: YjsCRDTDocument, blockId: string): void {
 }
 
 describe("document-size diagnostic (DUR6 / V.6)", () => {
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
 	it("DUR6 / V.6: fires on load of a large-enough fixture with encoded size, block count, and gc", () => {
 		const diagnostics: CRDTDiagnostic[] = [];
 		const adapter = yjsAdapter({
@@ -139,5 +143,67 @@ describe("document-size diagnostic (DUR6 / V.6)", () => {
 			).toBe(false);
 		}
 		expect(commits).toBe(50);
+	});
+
+	it("DUR6 / V.6: after load, a later write emits again only when the cadence elapses", () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(10_000);
+
+		const diagnostics: CRDTDiagnostic[] = [];
+		const adapter = yjsAdapter({
+			onDiagnostic: (diagnostic) => diagnostics.push(diagnostic),
+		});
+		const source = adapter.createDocument() as YjsCRDTDocument;
+		adapter.transact(source, () => {
+			initBlockMap(
+				source.penDocument.blocks,
+				"b1",
+				"paragraph",
+				"inline",
+			);
+			source.penDocument.blockOrder.push(["b1"]);
+			fillOverThreshold(source, "b1");
+		});
+
+		const loaded = adapter.loadDocument(
+			adapter.encodeState(source),
+		) as YjsCRDTDocument;
+		expect(
+			diagnostics.filter(
+				(diagnostic) =>
+					diagnostic.code === DOCUMENT_SIZE_DIAGNOSTIC_CODE,
+			),
+		).toHaveLength(1);
+
+		adapter.transact(loaded, () => {
+			(loaded.penDocument.blocks.get("b1")!.get("content") as Y.Text).insert(
+				0,
+				"!",
+			);
+		});
+		expect(
+			diagnostics.filter(
+				(diagnostic) =>
+					diagnostic.code === DOCUMENT_SIZE_DIAGNOSTIC_CODE,
+			),
+		).toHaveLength(1);
+
+		vi.setSystemTime(10_000 + DOCUMENT_SIZE_REPORT_INTERVAL_MS);
+		adapter.transact(loaded, () => {
+			(loaded.penDocument.blocks.get("b1")!.get("content") as Y.Text).insert(
+				0,
+				"?",
+			);
+		});
+
+		const sizeDiagnostics = diagnostics.filter(
+			(diagnostic) => diagnostic.code === DOCUMENT_SIZE_DIAGNOSTIC_CODE,
+		);
+		expect(sizeDiagnostics).toHaveLength(2);
+		expect(sizeDiagnostics[1]?.encodedByteSize).toBeGreaterThanOrEqual(
+			DOCUMENT_SIZE_REPORT_THRESHOLD_BYTES,
+		);
+		expect(sizeDiagnostics[1]?.blockCount).toBe(1);
+		expect(sizeDiagnostics[1]?.gcEnabled).toBe(false);
 	});
 });

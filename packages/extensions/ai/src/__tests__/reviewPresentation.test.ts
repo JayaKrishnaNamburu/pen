@@ -97,7 +97,7 @@ describe("AI review presentation", () => {
 			(decoration) =>
 				decoration.type === "inline" &&
 				decoration.attributes?.["data-pen-ai-review-role"] ===
-				"context",
+					"context",
 		);
 
 		expect(contextDecorations).toEqual([]);

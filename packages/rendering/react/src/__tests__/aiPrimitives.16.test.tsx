@@ -7,6 +7,9 @@ import { createEditor } from "@input/pen-core";
 import type { ToolRuntime } from "@input/pen-types";
 import { defineExtension } from "@input/pen-core";
 import { aiExtension, getAIController } from "@input/pen-ai";
+import { undoExtension } from "@input/pen-undo";
+import { deltaStreamExtension } from "@input/pen-delta-stream";
+import { documentOpsExtension } from "@input/pen-document-ops";
 import { defaultPreset } from "@input/pen-preset-default";
 import { defaultSchema } from "@input/pen-schema-default";
 import {
@@ -63,8 +66,10 @@ function mockSelectionToolbarRect(rect: {
 	height: number;
 }) {
 	const originalGetSelection = window.getSelection.bind(window);
-	const originalRequestAnimationFrame = window.requestAnimationFrame.bind(window);
-	const originalCancelAnimationFrame = window.cancelAnimationFrame.bind(window);
+	const originalRequestAnimationFrame =
+		window.requestAnimationFrame.bind(window);
+	const originalCancelAnimationFrame =
+		window.cancelAnimationFrame.bind(window);
 	const rangeRect = {
 		top: rect.top,
 		left: rect.left,
@@ -97,7 +102,7 @@ function mockSelectionToolbarRect(rect: {
 	});
 	Object.defineProperty(window, "cancelAnimationFrame", {
 		configurable: true,
-		value: () => { },
+		value: () => {},
 	});
 
 	return () => {
@@ -124,8 +129,10 @@ function mockMutableSelectionToolbarRect(initialRect: {
 }) {
 	const rect = { ...initialRect };
 	const originalGetSelection = window.getSelection.bind(window);
-	const originalRequestAnimationFrame = window.requestAnimationFrame.bind(window);
-	const originalCancelAnimationFrame = window.cancelAnimationFrame.bind(window);
+	const originalRequestAnimationFrame =
+		window.requestAnimationFrame.bind(window);
+	const originalCancelAnimationFrame =
+		window.cancelAnimationFrame.bind(window);
 
 	Object.defineProperty(window, "getSelection", {
 		configurable: true,
@@ -158,7 +165,7 @@ function mockMutableSelectionToolbarRect(initialRect: {
 	});
 	Object.defineProperty(window, "cancelAnimationFrame", {
 		configurable: true,
-		value: () => { },
+		value: () => {},
 	});
 
 	return {
@@ -213,7 +220,10 @@ function testStreamingToolExtension() {
 		name: "test-streaming-tool",
 		dependencies: ["document-ops"],
 		activateClient: async ({ editor }) => {
-			toolRuntime = editor.internals.getSlot<ToolRuntime>("document-ops:toolRuntime") ?? null;
+			toolRuntime =
+				editor.internals.getSlot<ToolRuntime>(
+					"document-ops:toolRuntime",
+				) ?? null;
 			toolRuntime?.registerTool({
 				name: "test_search",
 				description: "Test streaming search tool",
@@ -241,7 +251,13 @@ function testStreamingToolExtension() {
 describe("@input/pen-react AI primitives", () => {
 	it("keeps inline suggestion controls visible when only part of a group resolves", async () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [aiExtension()],
+			schema: defaultSchema,
+			extensions: [
+				undoExtension(),
+				deltaStreamExtension(),
+				documentOpsExtension(),
+				aiExtension(),
+			],
 		});
 		const controller = getAIController(editor);
 		expect(controller).toBeTruthy();
@@ -252,8 +268,8 @@ describe("@input/pen-react AI primitives", () => {
 		);
 
 		const suggestionIds = ["partial-success-a", "partial-success-b"];
-		(controller as unknown as { _suggestions: unknown })._suggestions = suggestionIds.map(
-			(suggestionId) => ({
+		(controller as unknown as { _suggestions: unknown })._suggestions =
+			suggestionIds.map((suggestionId) => ({
 				id: suggestionId,
 				kind: "text" as const,
 				action: "insert" as const,
@@ -263,11 +279,12 @@ describe("@input/pen-react AI primitives", () => {
 				blockId,
 				offset: 0,
 				length: 5,
-			}),
-		);
+			}));
 
-		const originalAcceptSuggestion = controller!.acceptSuggestion.bind(controller);
-		controller!.acceptSuggestion = (suggestionId: string) => suggestionId === suggestionIds[0];
+		const originalAcceptSuggestion =
+			controller!.acceptSuggestion.bind(controller);
+		controller!.acceptSuggestion = (suggestionId: string) =>
+			suggestionId === suggestionIds[0];
 
 		const container = document.createElement("div");
 		document.body.appendChild(container);
@@ -354,6 +371,4 @@ describe("@input/pen-react AI primitives", () => {
 		blockElement.remove();
 		container.remove();
 	});
-
-
 });

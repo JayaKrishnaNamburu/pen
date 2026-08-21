@@ -7,10 +7,10 @@
  * (same inventory as
  * `rg -n 'getBoundingClientRect|getClientRects|elementFromPoint|caretPositionFromPoint|caretRangeFromPoint' packages/rendering --glob '!*.test.*'`).
  * Comment-only lines are skipped so documentation of the ban is not an
- * allowlist entry. Hits must be on the allowlist with a reason: the
- * geometry module (SCH1 / G1 / G4) or a justified pre-scheduler site.
- * Unmarked hits and stale list entries fail. This slice does not
- * migrate call sites.
+ * allowlist entry. Hits must be on the allowlist keyed by file and
+ * enclosing symbol, with a reason: the geometry module (SCH1 / G1 / G4)
+ * or a justified pre-scheduler site. Unmarked hits and stale list
+ * entries fail. This slice does not migrate call sites.
  */
 
 import fs from "node:fs/promises";
@@ -49,8 +49,101 @@ const IGNORE_DIR_NAMES = new Set([
 	"__tests__",
 ]);
 
+export const MODULE_SYMBOL = "<module>";
+
 export function hitKey(entry) {
-	return `${entry.file}:${entry.line}`;
+	return `${entry.file}:${entry.symbol}`;
+}
+
+export function hitLocation(entry) {
+	if (typeof entry.line === "number") {
+		return `${hitKey(entry)} (line ${entry.line})`;
+	}
+	return hitKey(entry);
+}
+
+function isTopLevel(line) {
+	return line.length > 0 && line[0] !== " " && line[0] !== "\t";
+}
+
+function stripNoise(line) {
+	return line
+		.replace(/\/\/.*$/, "")
+		.replace(/\/\*.*?\*\//g, "")
+		.replace(/'(?:\\.|[^'\\])*'/g, "''")
+		.replace(/"(?:\\.|[^"\\])*"/g, '""')
+		.replace(/`(?:\\.|[^`\\])*`/g, "``");
+}
+
+function countBraces(line) {
+	let close = 0;
+	let open = 0;
+	for (const ch of stripNoise(line)) {
+		if (ch === "}") {
+			close += 1;
+		} else if (ch === "{") {
+			open += 1;
+		}
+	}
+	return { close, open };
+}
+
+export function matchDeclaration(line) {
+	const trimmed = line.trim();
+	if (!trimmed || isCommentLine(line)) {
+		return null;
+	}
+
+	let match = /^(?:export\s+)?(?:default\s+)?(?:async\s+)?function\s*\*?\s*([A-Za-z_$][\w$]*)/.exec(
+		trimmed,
+	);
+	if (match) {
+		return match[1];
+	}
+
+	match = /^(?:export\s+)?(?:default\s+)?(?:abstract\s+)?class\s+([A-Za-z_$][\w$]*)/.exec(
+		trimmed,
+	);
+	if (match) {
+		return match[1];
+	}
+
+	if (!isTopLevel(line)) {
+		return null;
+	}
+
+	match =
+		/^(?:export\s+)?(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*(?::[^=]+)?=\s*(?:async\s+)?(?:function\b|\(|(?:React\.)?(?:memo|forwardRef|observer)\s*\()/.exec(
+			trimmed,
+		);
+	return match ? match[1] : null;
+}
+
+export function resolveEnclosingSymbol(source, lineNumber) {
+	const lines = source.split(/\r?\n/);
+	const hitIndex = lineNumber - 1;
+	if (hitIndex < 0 || hitIndex >= lines.length) {
+		return MODULE_SYMBOL;
+	}
+
+	const onHit = matchDeclaration(lines[hitIndex]);
+	if (onHit) {
+		return onHit;
+	}
+
+	let depth = 0;
+	for (let index = hitIndex - 1; index >= 0; index -= 1) {
+		const name = matchDeclaration(lines[index]);
+		if (name && depth === 0) {
+			return name;
+		}
+		const { close, open } = countBraces(lines[index]);
+		depth += close;
+		if (depth > 0) {
+			depth = Math.max(0, depth - open);
+		}
+	}
+	return MODULE_SYMBOL;
 }
 
 export function parseReasonedList(raw, fieldName, fileLabel) {
@@ -61,23 +154,36 @@ export function parseReasonedList(raw, fieldName, fileLabel) {
 	return list.map((entry, index) => {
 		if (
 			typeof entry?.file !== "string" ||
-			typeof entry?.line !== "number" ||
-			!Number.isInteger(entry.line) ||
-			entry.line < 1 ||
+			typeof entry?.symbol !== "string" ||
 			typeof entry?.reason !== "string" ||
 			entry.file.length === 0 ||
+			entry.symbol.trim().length === 0 ||
 			entry.reason.trim().length === 0
 		) {
 			throw new Error(
-				`${fileLabel} ${fieldName}[${index}] needs file, a positive integer line, and a non-empty reason`,
+				`${fileLabel} ${fieldName}[${index}] needs file, enclosing symbol, and a non-empty reason`,
 			);
 		}
 		return {
 			file: entry.file.split(path.sep).join(path.posix.sep),
-			line: entry.line,
+			symbol: entry.symbol.trim(),
 			reason: entry.reason.trim(),
 		};
 	});
+}
+
+function findDuplicateKeys(entries) {
+	const seen = new Set();
+	const duplicates = [];
+	for (const entry of entries) {
+		const key = hitKey(entry);
+		if (seen.has(key)) {
+			duplicates.push(entry);
+			continue;
+		}
+		seen.add(key);
+	}
+	return duplicates;
 }
 
 export function evaluateMeasureHits({ hits, allowlist }) {
@@ -85,6 +191,7 @@ export function evaluateMeasureHits({ hits, allowlist }) {
 		allowlist.map((entry) => [hitKey(entry), entry]),
 	);
 	const hitKeys = new Set(hits.map(hitKey));
+	const duplicateAllowlist = findDuplicateKeys(allowlist);
 
 	const allowed = [];
 	const unexpected = [];
@@ -107,6 +214,7 @@ export function evaluateMeasureHits({ hits, allowlist }) {
 		allowed,
 		unexpected,
 		staleAllowlist,
+		duplicateAllowlist,
 	};
 }
 
@@ -125,7 +233,7 @@ export function formatReport(result) {
 			`Allowlisted (${result.allowed.length}) — geometry module or justified pre-scheduler site:`,
 		);
 		for (const entry of result.allowed) {
-			lines.push(`  ${hitKey(entry)}`);
+			lines.push(`  ${hitLocation(entry)}`);
 			lines.push(`    ${entry.reason}`);
 		}
 	}
@@ -136,18 +244,26 @@ export function formatReport(result) {
 			"FAIL unmarked measure (add an allowlist reason or move the call into a read phase / measureNow / geometry/):",
 		);
 		for (const entry of result.unexpected) {
-			lines.push(`  ${hitKey(entry)}`);
+			lines.push(`  ${hitLocation(entry)}`);
 		}
 	}
 
 	if (result.staleAllowlist.length > 0) {
 		lines.push("");
 		lines.push(
-			"FAIL stale allowlist entries (no matching hit; remove them):",
+			"FAIL stale allowlist entries (symbol not found in file; remove them):",
 		);
 		for (const entry of result.staleAllowlist) {
 			lines.push(`  ${hitKey(entry)}`);
 			lines.push(`    ${entry.reason}`);
+		}
+	}
+
+	if (result.duplicateAllowlist.length > 0) {
+		lines.push("");
+		lines.push("FAIL duplicate allowlist entries:");
+		for (const entry of result.duplicateAllowlist) {
+			lines.push(`  ${hitKey(entry)}`);
 		}
 	}
 
@@ -177,7 +293,7 @@ export function formatStepSummary(result) {
 		lines.push("_None._");
 	} else {
 		for (const entry of result.allowed) {
-			lines.push(`- \`${hitKey(entry)}\` — ${entry.reason}`);
+			lines.push(`- \`${hitLocation(entry)}\` — ${entry.reason}`);
 		}
 	}
 
@@ -197,7 +313,11 @@ export function formatStepSummary(result) {
 }
 
 export function hasFailures(result) {
-	return result.unexpected.length > 0 || result.staleAllowlist.length > 0;
+	return (
+		result.unexpected.length > 0 ||
+		result.staleAllowlist.length > 0 ||
+		result.duplicateAllowlist.length > 0
+	);
 }
 
 export function isCommentLine(line) {
@@ -219,7 +339,11 @@ export function extractMeasureHits(file, source) {
 			continue;
 		}
 		if (MEASURE_RE.test(line)) {
-			hits.push({ file, line: index + 1 });
+			hits.push({
+				file,
+				line: index + 1,
+				symbol: resolveEnclosingSymbol(source, index + 1),
+			});
 		}
 	}
 	return hits;
@@ -238,13 +362,81 @@ export function runSCH1Fixture() {
 			`SCH1: expected ${api} in a temp string to fail the checker`,
 		);
 	}
+
+	const namedSource = `function measureSite() {\n\tel.${api}();\n}\n`;
+	const namedHits = extractMeasureHits("tmp/sch1-fixture.ts", namedSource);
+	if (
+		namedHits.length !== 1 ||
+		namedHits[0].symbol !== "measureSite" ||
+		namedHits[0].line !== 2
+	) {
+		throw new Error("SCH1: expected measureSite to enclose the fixture hit");
+	}
+	const allowed = evaluateMeasureHits({
+		hits: namedHits,
+		allowlist: [
+			{
+				file: "tmp/sch1-fixture.ts",
+				symbol: "measureSite",
+				reason: "fixture",
+			},
+		],
+	});
+	if (hasFailures(allowed)) {
+		throw new Error("SCH1: expected a matching symbol to pass the checker");
+	}
+
+	const shiftedHits = extractMeasureHits(
+		"tmp/sch1-fixture.ts",
+		`\n${namedSource}`,
+	);
+	if (
+		shiftedHits.length !== 1 ||
+		shiftedHits[0].symbol !== "measureSite" ||
+		shiftedHits[0].line !== 3
+	) {
+		throw new Error(
+			"SCH1: expected a leading blank line to keep the enclosing symbol",
+		);
+	}
+	const shifted = evaluateMeasureHits({
+		hits: shiftedHits,
+		allowlist: [
+			{
+				file: "tmp/sch1-fixture.ts",
+				symbol: "measureSite",
+				reason: "fixture",
+			},
+		],
+	});
+	if (hasFailures(shifted)) {
+		throw new Error(
+			"SCH1: expected a line shift above an allowlisted symbol to pass",
+		);
+	}
+
 	const stale = evaluateMeasureHits({
-		hits: [],
-		allowlist: [{ file: "tmp/sch1-fixture.ts", line: 1, reason: "gone" }],
+		hits: namedHits,
+		allowlist: [
+			{
+				file: "tmp/sch1-fixture.ts",
+				symbol: "renamedSite",
+				reason: "gone",
+			},
+		],
 	});
 	if (stale.staleAllowlist.length !== 1) {
 		throw new Error(
-			"SCH1: expected a stale allowlist entry to fail the checker",
+			"SCH1: expected a stale allowlist symbol to fail the checker",
+		);
+	}
+	const staleReport = formatReport(stale);
+	if (
+		!staleReport.includes("tmp/sch1-fixture.ts:renamedSite") ||
+		!staleReport.includes("symbol not found in file")
+	) {
+		throw new Error(
+			"SCH1: expected the stale report to name the missing symbol and file",
 		);
 	}
 }

@@ -15,8 +15,11 @@ import type {
 } from "../changes/types";
 import type { RawCommitDelta } from "@input/pen-crdt-yjs";
 
-const SEED = Number(process.env.PEN_FUZZ_SEED ?? 20260819);
-const OP_COUNT = process.env.PEN_FUZZ_NIGHTLY ? 1_000_000 : 10_000;
+const NIGHTLY = Boolean(process.env.PEN_FUZZ_NIGHTLY);
+const SEED_INFO = parseFuzzSeed(process.env.PEN_FUZZ_SEED);
+const SEED = SEED_INFO.numeric;
+const OP_COUNT = resolveOpCount();
+const FORCE_FAIL_AT = Number(process.env.PEN_FUZZ_FORCE_FAIL_AT);
 
 const MODES: PointMapMode[] = [
 	"clamp",
@@ -25,6 +28,7 @@ const MODES: PointMapMode[] = [
 	"delete-after",
 ];
 const ASSOCS: Assoc[] = [-1, 1];
+const I2_ASSOCS: readonly Assoc[] = NIGHTLY ? ASSOCS : [1];
 
 class Rng {
 	private state: number;
@@ -65,6 +69,98 @@ const KINDS = [
 	"metadata",
 ] as const;
 
+// Document-text alphabet. Change summaries store insertLength, not glyphs, so
+// the only way RTL/graphemes affect this suite is by producing UTF-16 lengths
+// and a parallel string model those lengths must match.
+//
+// no-bidi-override (scripts/no-bidi-override.mjs) forbids CSS
+// `unicode-bidi: bidi-override` in packages/rendering — not these characters.
+// LRM/RLM and the isolates are valid paste; LRE/RLE/LRO/RLO/PDF (U+202A–U+202E)
+// are omitted because they are the Unicode override model isolates replaced.
+const HEBREW = ["א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ש", "ל", "ם", "ת"];
+const ARABIC = ["ا", "ب", "ت", "ث", "ع", "ر", "ي", "ة", "م", "ح"];
+const LATIN = ["a", "b", "c", "e", "i", "m", "o", "w"];
+const NEUTRALS = [" ", ".", ",", ":", "-", "(", ")"];
+const DIGITS = ["0", "1", "2", "3", "4", "7", "9"];
+const BIDI_MARKS = ["\u200E", "\u200F"];
+const BIDI_ISOLATES = ["\u2066", "\u2067", "\u2068", "\u2069"];
+const MIXED = ["שלום 42", "42 مرحبا", "Re: עברית", "Hi م", "ש4", "2م"];
+const GRAPHEMES = ["é", "e\u0301", "🙂"];
+const NIGHTLY_ATOMS = [
+	"\u061C",
+	"٠",
+	"١",
+	"٢",
+	"نَ",
+	"👨‍👩‍👧‍👦",
+	"🇺🇸",
+	"a\u0301\u0302",
+];
+
+const ATOMS = NIGHTLY
+	? [
+			...HEBREW,
+			...ARABIC,
+			...LATIN,
+			...NEUTRALS,
+			...DIGITS,
+			...BIDI_MARKS,
+			...BIDI_ISOLATES,
+			...MIXED,
+			...GRAPHEMES,
+			...NIGHTLY_ATOMS,
+		]
+	: [
+			...HEBREW,
+			...ARABIC,
+			...LATIN,
+			...NEUTRALS,
+			...DIGITS,
+			...BIDI_MARKS,
+			...BIDI_ISOLATES,
+			...MIXED,
+			...GRAPHEMES,
+		];
+
+interface GeneratedChange {
+	readonly summary: ChangeSummary;
+	readonly spliced: readonly {
+		readonly blockId: string;
+		readonly from: number;
+		readonly to: number;
+		readonly insert: string;
+	}[];
+}
+
+function parseFuzzSeed(raw: string | undefined): { raw: string; numeric: number } {
+	const source = raw && raw.length > 0 ? raw : "20260819";
+	const asNumber = Number(source);
+	if (Number.isFinite(asNumber)) {
+		return { raw: source, numeric: asNumber >>> 0 };
+	}
+	let hash = 2166136261;
+	for (let i = 0; i < source.length; i++) {
+		hash ^= source.charCodeAt(i);
+		hash = Math.imul(hash, 16777619);
+	}
+	return { raw: source, numeric: hash >>> 0 };
+}
+
+function resolveOpCount(): number {
+	const override = Number(process.env.PEN_FUZZ_OP_COUNT);
+	if (Number.isFinite(override) && override > 0) return Math.floor(override);
+	return NIGHTLY ? 1_000_000 : 10_000;
+}
+
+function randomInsert(rng: Rng): string {
+	const atomCount = rng.int(NIGHTLY ? 4 : 3) + 1;
+	let text = "";
+	for (let i = 0; i < atomCount; i++) {
+		text += rng.pick(ATOMS);
+	}
+	return text;
+}
+
 function initialSnapshot(): BlockIndexSnapshot {
 	return createBlockIndexSnapshot({
 		roots: ["a", "b", "c"],
@@ -81,6 +177,16 @@ function initialSnapshot(): BlockIndexSnapshot {
 			["nest", ["child"]],
 		]),
 	});
+}
+
+function initialTexts(): Map<string, string> {
+	return new Map([
+		["a", "مرحبا Hi"],
+		["b", "שלום!"],
+		["c", "42א"],
+		["nest", ""],
+		["child", "a🙂."],
+	]);
 }
 
 function emptyDelta(overrides: Partial<RawCommitDelta> = {}): RawCommitDelta {
@@ -100,11 +206,18 @@ function livingIds(snapshot: BlockIndexSnapshot): string[] {
 	return snapshot.order.filter((id) => snapshot.lengthById.has(id));
 }
 
+function generated(
+	summary: ChangeSummary,
+	spliced: GeneratedChange["spliced"] = [],
+): GeneratedChange {
+	return { summary, spliced };
+}
+
 function randomSummary(
 	rng: Rng,
 	snapshot: BlockIndexSnapshot,
 	commitId: number,
-): ChangeSummary {
+): GeneratedChange {
 	const kind = rng.pick(KINDS);
 	const ids = livingIds(snapshot);
 	const blockId = rng.pick(ids);
@@ -112,55 +225,66 @@ function randomSummary(
 
 	if (kind === "insert-text") {
 		const from = rng.int(length + 1);
-		return createChangeSummary({
-			commitId,
-			originType: "user",
-			text: [
-				{
-					blockId,
-					splices: [{ from, to: from, insertLength: rng.int(4) + 1 }],
-					formatRanges: [],
-				},
-			],
-			structural: [],
-			index: snapshot,
-		});
+		const insert = randomInsert(rng);
+		return generated(
+			createChangeSummary({
+				commitId,
+				originType: "user",
+				text: [
+					{
+						blockId,
+						splices: [{ from, to: from, insertLength: insert.length }],
+						formatRanges: [],
+					},
+				],
+				structural: [],
+				index: snapshot,
+			}),
+			[{ blockId, from, to: from, insert }],
+		);
 	}
 
 	if (kind === "delete-text" && length > 0) {
 		const from = rng.int(length);
 		const to = from + rng.int(length - from) + 1;
-		return createChangeSummary({
-			commitId,
-			originType: "user",
-			text: [
-				{
-					blockId,
-					splices: [{ from, to, insertLength: 0 }],
-					formatRanges: [],
-				},
-			],
-			structural: [],
-			index: snapshot,
-		});
+		return generated(
+			createChangeSummary({
+				commitId,
+				originType: "user",
+				text: [
+					{
+						blockId,
+						splices: [{ from, to, insertLength: 0 }],
+						formatRanges: [],
+					},
+				],
+				structural: [],
+				index: snapshot,
+			}),
+			[{ blockId, from, to, insert: "" }],
+		);
 	}
 
 	if (kind === "replace-text" && length > 0) {
 		const from = rng.int(length);
 		const to = from + rng.int(length - from) + 1;
-		return createChangeSummary({
-			commitId,
-			originType: "user",
-			text: [
-				{
-					blockId,
-					splices: [{ from, to, insertLength: rng.int(3) + 1 }],
-					formatRanges: [],
-				},
-			],
-			structural: [],
-			index: snapshot,
-		});
+		const insert = randomInsert(rng);
+		return generated(
+			createChangeSummary({
+				commitId,
+				originType: "user",
+				text: [
+					{
+						blockId,
+						splices: [{ from, to, insertLength: insert.length }],
+						formatRanges: [],
+					},
+				],
+				structural: [],
+				index: snapshot,
+			}),
+			[{ blockId, from, to, insert }],
+		);
 	}
 
 	if (kind === "insert-block" && ids.length < 10) {
@@ -168,46 +292,50 @@ function randomSummary(
 		const siblings =
 			snapshot.childrenByParentId.get(parentId) ?? snapshot.roots;
 		const newId = `n${commitId}`;
-		return createChangeSummary({
-			commitId,
-			originType: "user",
-			text: [],
-			structural: [
-				{
-					type: "block-inserted",
-					blockId: newId,
-					parentId,
-					index: rng.int(siblings.length + 1),
-				},
-			],
-			index: snapshot,
-		});
+		return generated(
+			createChangeSummary({
+				commitId,
+				originType: "user",
+				text: [],
+				structural: [
+					{
+						type: "block-inserted",
+						blockId: newId,
+						parentId,
+						index: rng.int(siblings.length + 1),
+					},
+				],
+				index: snapshot,
+			}),
+		);
 	}
 
 	if (kind === "remove-block" && ids.length > 2) {
 		const removable = ids.filter((id) => id !== "nest");
 		const target = rng.pick(removable);
-		return createChangeSummary({
-			commitId,
-			originType: "user",
-			text: [],
-			structural: [
-				{
-					type: "block-removed",
-					blockId: target,
-					parentId: snapshot.parentById.get(target) ?? null,
-					index: Math.max(
-						0,
-						(
-							snapshot.childrenByParentId.get(
-								snapshot.parentById.get(target) ?? null,
-							) ?? []
-						).indexOf(target),
-					),
-				},
-			],
-			index: snapshot,
-		});
+		return generated(
+			createChangeSummary({
+				commitId,
+				originType: "user",
+				text: [],
+				structural: [
+					{
+						type: "block-removed",
+						blockId: target,
+						parentId: snapshot.parentById.get(target) ?? null,
+						index: Math.max(
+							0,
+							(
+								snapshot.childrenByParentId.get(
+									snapshot.parentById.get(target) ?? null,
+								) ?? []
+							).indexOf(target),
+						),
+					},
+				],
+				index: snapshot,
+			}),
+		);
 	}
 
 	if (kind === "move-block" && ids.length > 2) {
@@ -217,62 +345,68 @@ function randomSummary(
 			fromParentId === null && rng.next() < 0.3 ? "nest" : null;
 		const toSiblings =
 			snapshot.childrenByParentId.get(toParentId) ?? snapshot.roots;
-		return createChangeSummary({
-			commitId,
-			originType: "user",
-			text: [],
-			structural: [
-				{
-					type: "block-moved",
-					blockId: moving,
-					fromParentId,
-					fromIndex: Math.max(
-						0,
-						(
-							snapshot.childrenByParentId.get(fromParentId) ?? []
-						).indexOf(moving),
-					),
-					toParentId,
-					toIndex: rng.int(toSiblings.length + 1),
-				},
-			],
-			index: snapshot,
-		});
+		return generated(
+			createChangeSummary({
+				commitId,
+				originType: "user",
+				text: [],
+				structural: [
+					{
+						type: "block-moved",
+						blockId: moving,
+						fromParentId,
+						fromIndex: Math.max(
+							0,
+							(
+								snapshot.childrenByParentId.get(fromParentId) ?? []
+							).indexOf(moving),
+						),
+						toParentId,
+						toIndex: rng.int(toSiblings.length + 1),
+					},
+				],
+				index: snapshot,
+			}),
+		);
 	}
 
 	if (kind === "convert-block") {
-		return createChangeSummary({
-			commitId,
-			originType: "user",
-			text: [],
-			structural: [
-				{
-					type: "block-converted",
-					blockId,
-					fromType: snapshot.typeById.get(blockId) ?? "paragraph",
-					toType: rng.pick(["paragraph", "heading", "quote"]),
-				},
-			],
-			index: snapshot,
-		});
+		return generated(
+			createChangeSummary({
+				commitId,
+				originType: "user",
+				text: [],
+				structural: [
+					{
+						type: "block-converted",
+						blockId,
+						fromType: snapshot.typeById.get(blockId) ?? "paragraph",
+						toType: rng.pick(["paragraph", "heading", "quote"]),
+					},
+				],
+				index: snapshot,
+			}),
+		);
 	}
 
 	if (kind === "split-block" && length > 0 && ids.length < 10) {
 		const offset = rng.int(length + 1);
-		return createChangeSummary({
-			commitId,
-			originType: "user",
-			text: [],
-			structural: [
-				{
-					type: "block-split",
-					blockId,
-					newBlockId: `s${commitId}`,
-					offset,
-				},
-			],
-			index: snapshot,
-		});
+		return generated(
+			createChangeSummary({
+				commitId,
+				originType: "user",
+				text: [],
+				structural: [
+					{
+						type: "block-split",
+						blockId,
+						newBlockId: `s${commitId}`,
+						offset,
+					},
+				],
+				index: snapshot,
+			}),
+		);
 	}
 
 	if (kind === "merge-blocks") {
@@ -283,76 +417,139 @@ function randomSummary(
 			const targetBlockId = roots[0]!;
 			const sourceBlockId = roots[1]!;
 			if (targetBlockId !== sourceBlockId) {
-				return createChangeSummary({
-					commitId,
-					originType: "user",
-					text: [],
-					structural: [
-						{
-							type: "blocks-merged",
-							targetBlockId,
-							sourceBlockId,
-							joinOffset:
-								snapshot.lengthById.get(targetBlockId) ?? 0,
-						},
-					],
-					index: snapshot,
-				});
+				return generated(
+					createChangeSummary({
+						commitId,
+						originType: "user",
+						text: [],
+						structural: [
+							{
+								type: "blocks-merged",
+								targetBlockId,
+								sourceBlockId,
+								joinOffset:
+									snapshot.lengthById.get(targetBlockId) ?? 0,
+							},
+						],
+						index: snapshot,
+					}),
+				);
 			}
 		}
 	}
 
 	if (kind === "props") {
-		return createChangeSummary({
-			commitId,
-			originType: "user",
-			text: [],
-			structural: [
-				{ type: "block-props-changed", blockId, keys: ["align"] },
-			],
-			index: snapshot,
-		});
+		return generated(
+			createChangeSummary({
+				commitId,
+				originType: "user",
+				text: [],
+				structural: [
+					{ type: "block-props-changed", blockId, keys: ["align"] },
+				],
+				index: snapshot,
+			}),
+		);
 	}
 
 	if (kind === "table") {
-		return createChangeSummary({
-			commitId,
-			originType: "user",
-			text: [],
-			structural: [{ type: "table-changed", blockId }],
-			index: snapshot,
-		});
+		return generated(
+			createChangeSummary({
+				commitId,
+				originType: "user",
+				text: [],
+				structural: [{ type: "table-changed", blockId }],
+				index: snapshot,
+			}),
+		);
 	}
 
 	if (kind === "layout") {
-		return buildChangeSummary(
-			emptyDelta({
-				childArrayDeltas: new Map([
-					["nest", [{ insert: [`l${commitId}`] }]],
-				]),
-			}),
-			snapshot,
-			commitId,
+		return generated(
+			buildChangeSummary(
+				emptyDelta({
+					childArrayDeltas: new Map([
+						["nest", [{ insert: [`l${commitId}`] }]],
+					]),
+				}),
+				snapshot,
+				commitId,
+			),
 		);
 	}
 
 	if (kind === "apps") {
-		return createChangeSummary({
+		return generated(
+			createChangeSummary({
+				commitId,
+				originType: "user",
+				text: [],
+				structural: [{ type: "apps-changed", appIds: [`app-${commitId}`] }],
+				index: snapshot,
+			}),
+		);
+	}
+
+	return generated(
+		createChangeSummary({
 			commitId,
 			originType: "user",
 			text: [],
-			structural: [{ type: "apps-changed", appIds: [`app-${commitId}`] }],
+			structural: [{ type: "metadata-changed", namespaces: ["title"] }],
 			index: snapshot,
-		});
-	}
+		}),
+	);
+}
 
-	return createChangeSummary({
-		commitId,
-		originType: "user",
-		text: [],
-		structural: [{ type: "metadata-changed", namespaces: ["title"] }],
-		index: snapshot,
-	});
+function applyGeneratedToTexts(
+	texts: Map<string, string>,
+	change: GeneratedChange,
+): Map<string, string> {
+	const next = new Map(texts);
+	for (const structural of change.summary.structural) {
+		switch (structural.type) {
+			case "block-inserted":
+				if (!next.has(structural.blockId)) next.set(structural.blockId, "");
+				break;
+			case "block-removed":
+				next.delete(structural.blockId);
+				break;
+			case "block-moved":
+			case "block-converted":
+			case "block-props-changed":
+			case "table-changed":
+			case "apps-changed":
+			case "metadata-changed":
+				break;
+			case "block-split": {
+				const text = next.get(structural.blockId) ?? "";
+				next.set(structural.blockId, text.slice(0, structural.offset));
+				next.set(structural.newBlockId, text.slice(structural.offset));
+				break;
+			}
+			case "blocks-merged": {
+				next.set(
+					structural.targetBlockId,
+					(next.get(structural.targetBlockId) ?? "") +
+						(next.get(structural.sourceBlockId) ?? ""),
+				);
+				next.delete(structural.sourceBlockId);
+				break;
+			}
+			default: {
+				const _exhaustive: never = structural;
+				return _exhaustive;
+			}
+		}
+	}
+	for (const splice of change.spliced) {
+		const text = next.get(splice.blockId) ?? "";
+		next.set(
+			splice.blockId,
+			text.slice(0, splice.from) + splice.insert + text.slice(splice.to),
+		);
+	}
+	return next;
 }
 
 function prePoints(snapshot: BlockIndexSnapshot): Point[] {
@@ -388,40 +585,96 @@ function expectedComposed(
 	return second.mapPoint(mid, assoc, mode);
 }
 
+function label(op: number, point: Point, extra = ""): string {
+	return `seed=${SEED} (${SEED_INFO.raw}) op=${op} ${point.blockId}:${point.offset}${extra}`;
+}
+
 describe("change summary properties", () => {
 	it("I2: every valid pre-commit point maps to a valid post-commit point or null", { timeout: 60_000 }, () => {
 		const rng = new Rng(SEED);
 		let snapshot = initialSnapshot();
+		let texts = initialTexts();
 		let mapped = 0;
+		let carets = 0;
 
 		for (let i = 1; i <= OP_COUNT; i++) {
-			const summary = randomSummary(rng, snapshot, i);
+			if (Number.isFinite(FORCE_FAIL_AT) && i === FORCE_FAIL_AT) {
+				throw new Error(
+					`forced fuzz failure at op ${i} seed=${SEED} raw=${SEED_INFO.raw}`,
+				);
+			}
+			const change = randomSummary(rng, snapshot, i);
+			const summary = change.summary;
 			const post = applySummaryToSnapshot(snapshot, summary);
-			for (const point of prePoints(snapshot)) {
-				const clamp = summary.mapPoint(point, 1, "clamp");
+			texts = applyGeneratedToTexts(texts, change);
+			for (const id of livingIds(post)) {
 				expect(
-					clamp,
-					`I2 clamp ${i} ${point.blockId}:${point.offset}`,
-				).not.toBeNull();
-				if (clamp) {
+					(texts.get(id) ?? "").length,
+					`utf16 seed=${SEED} op=${i} ${id}`,
+				).toBe(post.lengthById.get(id) ?? 0);
+			}
+
+			const points = prePoints(snapshot);
+			for (const point of points) {
+				for (const assoc of I2_ASSOCS) {
+					const clamp = summary.mapPoint(point, assoc, "clamp");
 					expect(
-						isValidPost(clamp, post),
-						`I2 ${i} ${point.blockId}:${point.offset} → ${clamp.blockId}:${clamp.offset}`,
-					).toBe(true);
+						clamp,
+						`I2 clamp ${label(i, point, ` assoc=${assoc}`)}`,
+					).not.toBeNull();
+					if (clamp) {
+						expect(
+							isValidPost(clamp, post),
+							`I2 ${label(i, point, ` assoc=${assoc}`)} → ${clamp.blockId}:${clamp.offset}`,
+						).toBe(true);
+					}
+
+					for (const mode of MODES) {
+						if (mode === "clamp") continue;
+						const tracked = summary.mapPoint(point, assoc, mode);
+						if (tracked) expect(isValidPost(tracked, post)).toBe(true);
+					}
 				}
 
-				for (const mode of MODES) {
-					if (mode === "clamp") continue;
-					const tracked = summary.mapPoint(point, 1, mode);
-					if (tracked) expect(isValidPost(tracked, post)).toBe(true);
+				const caret = { anchor: point, focus: point };
+				const mappedCaret = summary.mapRange(caret);
+				expect(
+					mappedCaret,
+					`A5 clamp caret ${label(i, point)}`,
+				).not.toBeNull();
+				if (mappedCaret) {
+					expect(
+						mappedCaret.anchor,
+						`A5 collapsed ${label(i, point)}`,
+					).toEqual(mappedCaret.focus);
+					expect(
+						isValidPost(mappedCaret.anchor, post),
+						`A5 ${label(i, point)} → ${mappedCaret.anchor.blockId}:${mappedCaret.anchor.offset}`,
+					).toBe(true);
 				}
+				carets += 1;
 				mapped += 1;
 			}
+
+			if (NIGHTLY && points.length >= 2) {
+				const anchor = rng.pick(points);
+				const focus = rng.pick(points);
+				const mappedRange = summary.mapRange({ anchor, focus });
+				if (mappedRange) {
+					expect(isValidPost(mappedRange.anchor, post)).toBe(true);
+					expect(isValidPost(mappedRange.focus, post)).toBe(true);
+				}
+			}
+
 			snapshot = post;
-			if (livingIds(snapshot).length === 0) snapshot = initialSnapshot();
+			if (livingIds(snapshot).length === 0) {
+				snapshot = initialSnapshot();
+				texts = initialTexts();
+			}
 		}
 
 		expect(mapped).toBeGreaterThan(0);
+		expect(carets).toBeGreaterThan(0);
 	});
 
 	it("I3: compose-then-map equals map-then-map", { timeout: 60_000 }, () => {
@@ -430,9 +683,9 @@ describe("change summary properties", () => {
 		let compared = 0;
 
 		for (let i = 1; i <= OP_COUNT; i += 2) {
-			const first = randomSummary(rng, snapshot, i);
+			const first = randomSummary(rng, snapshot, i).summary;
 			const midSnap = applySummaryToSnapshot(snapshot, first);
-			const second = randomSummary(rng, midSnap, i + 1);
+			const second = randomSummary(rng, midSnap, i + 1).summary;
 			const composed = first.compose(second);
 
 			for (const point of prePoints(snapshot)) {
@@ -446,7 +699,10 @@ describe("change summary properties", () => {
 							mode,
 						);
 						const once = composed.mapPoint(point, assoc, mode);
-						expect(once).toEqual(through);
+						expect(
+							once,
+							`I3 ${label(i, point, ` assoc=${assoc} mode=${mode}`)}`,
+						).toEqual(through);
 						compared += 1;
 					}
 				}
@@ -479,5 +735,72 @@ describe("change summary structural coverage", () => {
 				"metadata",
 			]),
 		);
+	});
+
+	it("initial RTL fixtures match declared UTF-16 lengths", () => {
+		const snapshot = initialSnapshot();
+		const texts = initialTexts();
+		for (const [id, text] of texts) {
+			expect(text.length, id).toBe(snapshot.lengthById.get(id));
+		}
+		expect(texts.get("a")).toMatch(/[\u0600-\u06FF]/);
+		expect(texts.get("b")).toMatch(/[\u0590-\u05FF]/);
+		expect(texts.get("c")).toMatch(/[\u0590-\u05FF]/);
+		expect(texts.get("c")).toMatch(/\d/);
+		expect([...texts.get("child")!].some((ch) => (ch.codePointAt(0) ?? 0) > 0xffff)).toBe(
+			true,
+		);
+	});
+
+	it("hyphenated nightly seeds hash instead of collapsing to 0", () => {
+		expect(Number("99-1-1690000000")).toBeNaN();
+		expect(parseFuzzSeed("99-1-1690000000").numeric).not.toBe(0);
+		expect(parseFuzzSeed("99-1-1690000000").numeric).toBe(
+			parseFuzzSeed("99-1-1690000000").numeric,
+		);
+		expect(parseFuzzSeed("99-1-1690000000").numeric).not.toBe(
+			parseFuzzSeed("99-1-1690000001").numeric,
+		);
+		expect(parseFuzzSeed("42").numeric).toBe(42);
+		expect(parseFuzzSeed(undefined).numeric).toBe(20260819);
+	});
+
+	it("generator can emit RTL, mixed direction, bidi marks, and multi-unit graphemes", () => {
+		const rng = new Rng(SEED);
+		let hebrew = false;
+		let arabic = false;
+		let mark = false;
+		let isolate = false;
+		let mixed = false;
+		let multiUnit = false;
+		let digitBesideRtl = false;
+		for (let i = 0; i < 400; i++) {
+			const text = randomInsert(rng);
+			if (/[\u0590-\u05FF]/.test(text)) hebrew = true;
+			if (/[\u0600-\u08FF]/.test(text)) arabic = true;
+			if (/[\u200E\u200F]/.test(text)) mark = true;
+			if (/[\u2066-\u2069]/.test(text)) isolate = true;
+			if (
+				/[\u0590-\u08FF]/.test(text) &&
+				/[A-Za-z]/.test(text)
+			) {
+				mixed = true;
+			}
+			if (
+				/[\u0590-\u08FF]\d|\d[\u0590-\u08FF]/.test(text)
+			) {
+				digitBesideRtl = true;
+			}
+			if (text.length !== [...text].length) multiUnit = true;
+		}
+		expect({ hebrew, arabic, mark, isolate, mixed, multiUnit, digitBesideRtl }).toEqual({
+			hebrew: true,
+			arabic: true,
+			mark: true,
+			isolate: true,
+			mixed: true,
+			multiUnit: true,
+			digitBesideRtl: true,
+		});
 	});
 });

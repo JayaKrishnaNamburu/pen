@@ -137,6 +137,25 @@ describe("@input/pen-delta-stream processStream AIB5", () => {
 		expect(apply).toHaveBeenCalledTimes(1);
 	});
 
+	it("AIB5: omitted protocol version is accepted as the current protocol", async () => {
+		const { editor, apply, emit } = createStreamEditor();
+
+		await processStream(
+			createStream([
+				{
+					type: "block-insert",
+					blockId: "block-2",
+					blockType: "paragraph",
+					position: "last",
+				},
+			]),
+			editor,
+		);
+
+		expect(apply).toHaveBeenCalledTimes(1);
+		expect(diagnosticsOf(emit)).toEqual([]);
+	});
+
 	it("AIB5: missing streaming target is diagnosed and the stream is refused", async () => {
 		const { editor, apply, emit } = createStreamEditor({ hasTarget: false });
 
@@ -466,7 +485,7 @@ describe("@input/pen-delta-stream processStream AIB5", () => {
 		]);
 	});
 
-	it("AIB5: abort mid-stream is undoable as one group when groupId is provided", async () => {
+	it("AIB5: abort mid-stream stops further applies and cancels generation", async () => {
 		const { editor, apply, emit, streamingTarget } = createStreamEditor();
 
 		await processStream(
@@ -572,6 +591,32 @@ describe("@input/pen-delta-stream processStream AIB5", () => {
 			expect.objectContaining({
 				code: "stream-aborted",
 				groupId: "turn-1",
+			}),
+		]);
+	});
+
+	it("AIB5: a part without a string type is malformed, does not throw, and closes the stream", async () => {
+		const { editor, apply, emit } = createStreamEditor();
+
+		await expect(
+			processStream(
+				createStream([
+					{} as PenStreamPart,
+					{
+						type: "block-insert",
+						blockId: "block-2",
+						blockType: "paragraph",
+						position: "last",
+					},
+				]),
+				editor,
+			),
+		).resolves.toBeUndefined();
+
+		expect(apply).not.toHaveBeenCalled();
+		expect(diagnosticsOf(emit)).toEqual([
+			expect.objectContaining({
+				code: "stream-part-malformed",
 			}),
 		]);
 	});

@@ -12,7 +12,7 @@ This is the contract package for the monorepo. It is the place where packages ag
 
 - Export map: `.`
 - Root export of package-wide contracts via `./types/index`
-- Lightweight runtime helpers such as `generateId()` and block-capability helpers. Schema creation APIs (`defineBlock()`, `defineExtension()`, `prop()`) live on `@input/pen-core`.
+- Lightweight runtime helpers such as `generateId()`. Schema creation APIs, block-capability helpers, field-editor helpers, message interpolation, mutation-group helpers, `getOpOriginType()`, and tool-execution helpers live on `@input/pen-core`. `PenDocumentUnreadableError` lives on `@input/pen-crdt-yjs`.
 - Shared slot keys such as `FIELD_EDITOR_SLOT_KEY`, `SEARCH_CONTROLLER_SLOT`, `MULTIPLAYER_CONTROLLER_SLOT`, `HISTORY_CONTROLLER_SLOT`, and AI/undo-related slots
 - Operation origin contracts such as `OpOriginType`, `StructuredOpOrigin`, `MutationGroupMetadata`, and helpers for resolving origin/group metadata
 - Shared AI operation contracts such as selection targets, scoped-range targets, requested-operation provenance, and low-level range helpers
@@ -58,7 +58,7 @@ Important rules:
 - `groupId`: a logical mutation group shared across one or more `editor.apply(...)` calls.
 - `requestId`, `actorId`, and `source`: optional attribution fields for workflow and diagnostics.
 
-`getOpOriginType()`, `getApplyOptionsGroupId()`, and `createMutationGroupMetadata()` keep this behavior consistent across runtime packages. Hosts should use structured origins for AI/workflow changes instead of encoding request metadata in ad hoc strings.
+`getOpOriginType()`, `getApplyOptionsGroupId()`, and `createMutationGroupMetadata()` live on `@input/pen-core`. Packages that still sit on inverted or below-core edges (undo, crdt-yjs tests) keep a local copy until P.1. Hosts should use structured origins for AI/workflow changes instead of encoding request metadata in ad hoc strings.
 
 ## Shared AI Target Contract
 
@@ -67,7 +67,7 @@ Important rules:
 - `ModelOperationSelectionTarget` represents an explicit live selection with `anchor`, `focus`, `blockId`, and `sourceText`.
 - `ModelOperationScopedRangeTarget` represents a selection-like synthetic scope such as `block`, `paragraph`, `heading`, or `document`.
 - `ModelOperationScopedRangeTarget` must carry explicit `blockIds` and `contentFormat` because runtime behavior depends on those fields for streaming previews, text rendering, and final apply.
-- Shared helpers such as `isScopedSelectionTarget()`, `resolveSelectionTargetBlockIds()`, `renderSelectionTargetText()`, and `renderSelectionTargetBlockText()` belong here so client, server, and extension layers all interpret the same target the same way.
+- `isScopedSelectionTarget()` stays here as a type-predicate guard. `resolveSelectionTargetBlockIds()`, `renderSelectionTargetText()`, and `renderSelectionTargetBlockText()` live on `@input/pen-core`.
 - Packages may add package-local planning metadata around these targets, but they should not redefine the target semantics themselves.
 
 ## Integration Notes

@@ -1,9 +1,11 @@
-import type { SchemaRegistry, SelectionState } from "@input/pen-types";
+import type { SchemaRegistry } from "@input/pen-types";
 import {
 	INLINE_ATOM_REPLACEMENT_TEXT,
 	resolveInlineAtomDisplayText,
 	resolveInlineAtomInsert,
 } from "@input/pen-dom/field-editor/inlineAtomModel";
+import { isInlineAtomSelected } from "@input/pen-dom/utils/inlineAtomSelection";
+import { replaceElementChildren } from "@input/pen-dom/utils/replaceElementChildren";
 import type {
 	InlineAtomRenderer,
 	InlineAtomRenderers,
@@ -105,30 +107,7 @@ function getInlineAtomDescriptors(
 	return descriptors;
 }
 
-export function isInlineAtomSelected(
-	selection: SelectionState,
-	blockId: string,
-	offset: number,
-): boolean {
-	if (
-		selection?.type !== "text" ||
-		selection.isCollapsed ||
-		selection.anchor.blockId !== blockId ||
-		selection.focus.blockId !== blockId
-	) {
-		return false;
-	}
-
-	const selectionStart = Math.min(
-		selection.anchor.offset,
-		selection.focus.offset,
-	);
-	const selectionEnd = Math.max(
-		selection.anchor.offset,
-		selection.focus.offset,
-	);
-	return selectionStart <= offset && selectionEnd >= offset + 1;
-}
+export { isInlineAtomSelected };
 
 function areInlineAtomTargetsEqual(
 	currentTargets: InlineAtomRenderTarget[],
@@ -145,16 +124,17 @@ function areInlineAtomTargetsEqual(
 			target.element === nextTarget.element &&
 			target.offset === nextTarget.offset &&
 			target.text === nextTarget.text &&
-			shallowEqualRecords(target.props, nextTarget.props)
+			target.type === nextTarget.type &&
+			areAtomRecordsEqual(target.props, nextTarget.props)
 		);
 	});
 }
 
 function getInlineAtomTargetKey(
-	data: { type: string; props: Record<string, unknown>; text: string },
+	data: { type: string; text: string },
 	index: number,
 ): string {
-	return `${index}:${data.type}:${data.text}:${JSON.stringify(data.props)}`;
+	return `${index}:${data.type}:${data.text}`;
 }
 
 function clearInlineAtomFallbackText(element: HTMLElement, text: string): void {
@@ -163,7 +143,7 @@ function clearInlineAtomFallbackText(element: HTMLElement, text: string): void {
 		element.firstChild?.nodeType === Node.TEXT_NODE &&
 		element.textContent === text
 	) {
-		element.replaceChildren();
+		replaceElementChildren(element);
 		return;
 	}
 
@@ -178,7 +158,7 @@ function clearInlineAtomFallbackText(element: HTMLElement, text: string): void {
 	}
 }
 
-function shallowEqualRecords(
+function areAtomRecordsEqual(
 	left: Record<string, unknown>,
 	right: Record<string, unknown>,
 ): boolean {
@@ -186,11 +166,27 @@ function shallowEqualRecords(
 		return true;
 	}
 
-	const leftKeys = Object.keys(left);
-	const rightKeys = Object.keys(right);
+	const leftKeys = definedAtomRecordKeys(left);
+	const rightKeys = definedAtomRecordKeys(right);
 	if (leftKeys.length !== rightKeys.length) {
 		return false;
 	}
 
-	return leftKeys.every((key) => Object.is(left[key], right[key]));
+	for (const key of leftKeys) {
+		if (!Object.is(left[key], right[key])) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+function definedAtomRecordKeys(record: Record<string, unknown>): string[] {
+	const keys: string[] = [];
+	for (const key of Object.keys(record)) {
+		if (record[key] !== undefined) {
+			keys.push(key);
+		}
+	}
+	return keys;
 }

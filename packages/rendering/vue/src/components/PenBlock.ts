@@ -1,12 +1,16 @@
-import { resolveEditorMessage, resolveSchemaA11y } from "@input/pen-core";
+import {
+  resolveBlockDirection,
+  resolveEditorMessage,
+  resolveSchemaA11y,
+} from "@input/pen-core";
 import { resolveEditorUrl } from "@input/pen-dom";
 import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
+import { isCellInSelection } from "@input/pen-dom/utils/cellSelection";
 import type { BlockHandle, CellSelection } from "@input/pen-types";
 import { defineComponent, h, type VNode, type VNodeChild } from "vue";
 import { useSelection } from "../composables/useSelection";
 import {
   isBlockSelected,
-  isCellInSelection,
   resolveExpandedSurfaceRole,
   resolveNumberedListValue,
   useBlockModel,
@@ -94,7 +98,7 @@ export const PenBlock = defineComponent({
           [DATA_ATTRS.selected]: isSelected || undefined,
           [DATA_ATTRS.focused]: isFocused || undefined,
           [DATA_ATTRS.surfaceRole]: surfaceRole ?? undefined,
-          dir: resolveBlockContentDir(block.props.direction),
+          dir: resolvedContentDir(editor, block),
           tabIndex: -1,
           contentEditable:
             surfaceRole != null && surfaceRole !== "editable-inline"
@@ -493,13 +497,15 @@ function renderTable(
   ]);
 }
 
-function resolveBlockContentDir(
-  direction: unknown,
+function resolvedContentDir(
+  editor: ReturnType<typeof useEditorContext>["editor"],
+  block: BlockHandle,
 ): "ltr" | "rtl" | undefined {
-  if (direction === "ltr" || direction === "rtl") {
-    return direction;
+  const resolved = resolveBlockDirection(editor, block);
+  if (block.props.direction === "ltr" || block.props.direction === "rtl") {
+    return resolved;
   }
-  return undefined;
+  return resolved === "rtl" ? "rtl" : undefined;
 }
 
 function resolveIndent(block: BlockHandle): number {

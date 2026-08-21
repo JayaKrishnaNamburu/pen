@@ -1,20 +1,26 @@
-# SCALE4 soak (F.4 stub)
+# SCALE4 soak
 
-Nightly heap-trend soak for `spec-v2/22-scale-envelope.md` SCALE4. Not enforcing yet.
+Nightly heap-trend soak for `spec-v2/22-scale-envelope.md` SCALE4.
 
-F.1 owns the fixture ladder in `@input/pen-test`. This directory is the bench-side harness: a placeholder runner and the post-teardown assertion sketch. Do not invent a pass/fail memory gate for in-session growth (SCALE4 / CH8).
+Session growth is a printed trend (CH8: do not fail CI on in-session heap). The only hard assertion is post teardown-and-recreate: `heapUsed` must stay within `TEARDOWN_HEAP_MULTIPLE` of the baseline sample. Exit code is non-zero only when that assertion fails.
 
-## What will run
+## Workload
 
-A long session (thousands of edits, undo/redo, remote updates, AI streams, mount/unmount) with heap sampled as a trend. After full teardown-and-recreate, one hard assertion: heap returns within a stated multiple of baseline. Growth that survives `editor.destroy()` is a leak.
+Headless only. Each iteration applies user inserts, undo/redo, and (on a schedule) a two-peer remote update, an `openTextStream` AI write, and an editor destroy/recreate. Y.Docs created by the harness are destroyed after `editor.destroy()` because `createTestEditor` passes an existing document (`ownsDocuments: false`).
 
-`editor.destroy()` is awaitable (H.6). The standing “destroyed editor retains nothing” check covers the maps in `packages/core/CACHE-INVENTORY.md` (caches, indexes, decoration sets, undo stacks, field editors).
+## Heap bound
 
-## Now
+`TEARDOWN_HEAP_MULTIPLE` is 1.13 and stays there. The 1.159 nightly miss was the soak frame still rooting destroyed session + two-peer editors (yjs `Doc.destroy()` leaves `StructStore` intact; Pen creates those docs with `gc: false`). Retainer paths and the facet-registry check live in `CACHE-INVENTORY.md` (Lane 83 leftover). After sampling in child frames, quiet-machine `--expose-gc` runs measured 1.049 / 1.045 / 1.049 at 24 and 1.080 / 1.077 / 1.073 at 400. Session heap still grows monotonically; that trend is not gated.
 
-- `.github/workflows/soak.yml` — `workflow_dispatch` + nightly cron. Runs `run.mjs`, which exits 0 and writes `soak not yet enforcing` to the step summary.
-- `destroyRetainsNothing.test.ts` — skipped (CH3: SCALE4 / F.4, restored after H.6). Documents the post-teardown multiple; does not sample heap.
+`inspectRetainers.mjs` writes heap snapshots and prints retainer paths. It is not a gate.
 
 ```bash
-node packages/tooling/bench/src/soak/run.mjs
+node --expose-gc packages/tooling/bench/src/soak/run.mjs
+SCALE4_SOAK_ITERATIONS=400 node --expose-gc packages/tooling/bench/src/soak/run.mjs
 ```
+
+Without `--expose-gc` the script still runs and prints that GC was unavailable.
+
+`.github/workflows/soak.yml` is `workflow_dispatch` + nightly cron. Isolated job; does not edit `ci.yml`. Nightly passes `SCALE4_SOAK_ITERATIONS=400`.
+
+`destroyRetainsNothing.test.ts` asserts the public maps in `packages/core/CACHE-INVENTORY.md` that are reachable headlessly: destroy clears block revisions, listeners, session scopes, decorations, the summary log, `documentState` indexes, and the `undo:manager` slot. Field editors are not mounted headlessly. Module-lifetime caches (`Intl.Segmenter`, unwired direction/formatter factories) are not asserted from this package.

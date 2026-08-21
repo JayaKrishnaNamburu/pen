@@ -4,10 +4,11 @@ import { useEditorContext } from "../../context/editorContext";
 import { useIsomorphicLayoutEffect } from "../../hooks/useIsomorphicLayoutEffect";
 import { useFieldEditorContext } from "../../context/fieldEditorContext";
 import { useFieldEditorState } from "../../hooks/useFieldEditorState";
-import { fullReconcileDeltasToDOM } from "../../field-editor/reconciler";
+import { fullReconcileDeltasToDOM } from "@input/pen-dom/field-editor/reconciler";
 import { useCellTextSnapshot } from "../../hooks/useCellTextSnapshot";
 import { DATA_ATTRS } from "../../utils/dataAttributes";
 import { fieldEditorTextEntryAttrs } from "../../utils/fieldEditorTextEntryAttrs";
+import { replaceElementChildren } from "@input/pen-dom/utils/replaceElementChildren";
 
 const TABLE_CELL_MIN_WIDTH = "6rem";
 
@@ -46,7 +47,7 @@ function TextCell(props: TableCellContentProps) {
 		if (isActiveCell) return;
 		if (!elementRef.current) return;
 		if (!textSnapshot.exists) {
-			elementRef.current.replaceChildren();
+			replaceElementChildren(elementRef.current);
 			return;
 		}
 		fullReconcileDeltasToDOM(

@@ -7,7 +7,10 @@ export {
 
 export { MultiplayerControllerImpl } from "./controller";
 export { AuthorLedger } from "./presence/authorLedger";
-export { ClientIdentityMap } from "./presence/identityMap";
+export {
+	ClientIdentityMap,
+	asPresenceDisplayHint,
+} from "./presence/identityMap";
 export {
 	assignMultiplayerColor,
 	normalizeMultiplayerColor,
@@ -42,6 +45,7 @@ export type {
 	MultiplayerState,
 	MultiplayerUser,
 	PeerState,
+	PresenceDisplayHint,
 	ResolvePeerIdentity,
 	ResolvePeerIdentityContext,
 	RemoteCursorState,

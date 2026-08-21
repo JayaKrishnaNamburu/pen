@@ -3,7 +3,7 @@ import type {
 	InlineCompletionController,
 	ModelAdapter,
 } from "@input/pen-types";
-import { getOpOriginType } from "@input/pen-types";
+import { getOpOriginType } from "@input/pen-core";
 import type { AutocompleteControllerHost } from "./autocompleteControllerHost";
 import {
 	acceptVisibleSuggestion,

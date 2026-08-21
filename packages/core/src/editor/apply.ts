@@ -1,5 +1,6 @@
 import type { DocumentOp, OpOrigin, PenDocument, CRDTDocument, CRDTAdapter, CRDTEvent, SchemaRegistry, CRDTMap, CRDTArray, InsertBlockOp, UpdateBlockOp, DeleteBlockOp, MoveBlockOp, ConvertBlockOp, SplitBlockOp, MergeBlocksOp, InsertTextOp, DeleteTextOp, FormatTextOp, ReplaceTextOp, InsertInlineNodeOp, RemoveInlineNodeOp, UpdateLayoutOp, SetMetaOp, CreateAppOp, UpdateAppOp, DeleteAppOp, SetSelectionOp, UpdateTableColumnsOp } from "@input/pen-types";
-import { generateId, getOpOriginType } from "@input/pen-types";
+import { generateId } from "@input/pen-types";
+import { getOpOriginType } from "./origin";
 import { resolveRuntimeContentType } from "../schema/contentType";
 import type { SchemaEngineImpl } from "../schema/normalize";
 import { type CRDTUnknownArray, type CRDTUnknownMap, getArrayProp, getMapProp, getStringProp, getTableColumns, getTableContent, isCRDTMap } from "./crdtShapes";

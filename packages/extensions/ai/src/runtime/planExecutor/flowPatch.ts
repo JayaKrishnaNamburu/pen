@@ -1,3 +1,4 @@
+import { localeFacet } from "@input/pen-core";
 import type { DocumentOp, Editor } from "@input/pen-types";
 import { buildDocumentWriteOps } from "@input/pen-document-ops";
 import type { FlowPatchEdit, FlowPatchPlan } from "../planTypes";
@@ -235,7 +236,11 @@ export function buildOptimizedBlockReplacement(
 		return null;
 	}
 
-	const alignment = resolveInlineAlignmentPlan(targetBlocks, parsedBlocks);
+	const alignment = resolveInlineAlignmentPlan(
+		targetBlocks,
+		parsedBlocks,
+		editor.facet(localeFacet),
+	);
 	const ops = buildInlineAlignmentOps(alignment.steps, targetBlocks, parsedBlocks);
 
 	return {

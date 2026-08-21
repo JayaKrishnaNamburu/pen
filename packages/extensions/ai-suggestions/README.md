@@ -76,6 +76,15 @@ The extension will:
 ## Common Tuning Options
 
 ```ts
+import { aiSuggestionsExtension } from "@input/pen-ai-suggestions";
+import type { AISuggestionsAnalyzer } from "@input/pen-ai-suggestions";
+
+const analyzer: AISuggestionsAnalyzer = {
+  async analyze() {
+    return { candidates: [] };
+  },
+};
+
 aiSuggestionsExtension({
   analyzer,
   debounceMs: 1000,
@@ -88,25 +97,46 @@ aiSuggestionsExtension({
 });
 ```
 
-Useful options:
+## Options
 
-- `enabled`: enable or disable the extension
-- `mode`: use the built-in `cheap`, `balanced`, or `aggressive` preset
-- `debounceMs`: wait after edits before considering analysis
-- `minChangedChars`: require a minimum amount of local change before analysis
-- `minStableMs`: require the block to remain stable before analysis
-- `cooldownMs`: prevent repeated analysis of the same block too frequently
-- `maxScopeChars`: bound how much text is sent for analysis
-- `maxSuggestionsPerScope`: cap visible suggestions per scope
-- `minConfidence`: filter weak candidates before rendering
+`mode` defaults to `"balanced"`. `enabled` defaults to `true`. The host must supply `analyzer`. Numeric defaults below are the balanced preset; `cheap` and `aggressive` replace the whole set.
+
+| Option                   | Default (`balanced`) | Effect                              |
+| ------------------------ | -------------------- | ----------------------------------- |
+| `enabled`                | `true`               | Master switch                       |
+| `mode`                   | `"balanced"`         | `cheap` / `balanced` / `aggressive` |
+| `debounceMs`             | `1200`               | Wait after edits before analysis    |
+| `minChangedChars`        | `12`                 | Minimum local change                |
+| `minStableMs`            | `800`                | Stability window                    |
+| `cooldownMs`             | `10000`              | Per-block cooldown                  |
+| `maxScopeChars`          | `320`                | Bound on text sent for analysis     |
+| `maxSuggestionsPerScope` | `3`                  | Cap visible suggestions per scope   |
+| `minConfidence`          | `0.8`                | Drop weaker candidates              |
+| `cacheTtlMs`             | `300000`             | Analyzer cache TTL                  |
+| `dismissMemoryMs`        | `600000`             | Remember dismissed suggestions      |
+| `groupGapChars`          | `3`                  | Grouping gap                        |
 
 ## Controller Access
 
 Use the controller to inspect state or drive host behavior:
 
 ```ts
-import { getAISuggestionsController } from "@input/pen-ai-suggestions";
+import { createEditor } from "@input/pen-core";
+import {
+  aiSuggestionsExtension,
+  getAISuggestionsController,
+} from "@input/pen-ai-suggestions";
+import type { AISuggestionsAnalyzer } from "@input/pen-ai-suggestions";
 
+const analyzer: AISuggestionsAnalyzer = {
+  async analyze() {
+    return { candidates: [] };
+  },
+};
+
+const editor = createEditor({
+  extensions: [aiSuggestionsExtension({ analyzer })],
+});
 const controller = getAISuggestionsController(editor);
 
 controller?.request({ force: true });
@@ -129,12 +159,32 @@ The controller exposes:
 `@input/pen-react` provides the current UI surface for proactive suggestions:
 
 ```tsx
-<Pen.Editor.Root editor={editor}>
-  <Pen.AISuggestions.Root editor={editor}>
-    <Pen.Editor.Content />
-    <Pen.AISuggestions.Popover />
-  </Pen.AISuggestions.Root>
-</Pen.Editor.Root>
+import { createEditor } from "@input/pen-core";
+import { aiSuggestionsExtension } from "@input/pen-ai-suggestions";
+import { Pen } from "@input/pen-react";
+
+const editor = createEditor({
+  extensions: [
+    aiSuggestionsExtension({
+      analyzer: {
+        async analyze() {
+          return { candidates: [] };
+        },
+      },
+    }),
+  ],
+});
+
+export function SuggestionsSurface() {
+  return (
+    <Pen.Editor.Root editor={editor}>
+      <Pen.AISuggestions.Root editor={editor}>
+        <Pen.Editor.Content />
+        <Pen.AISuggestions.Popover />
+      </Pen.AISuggestions.Root>
+    </Pen.Editor.Root>
+  );
+}
 ```
 
 The React package also exposes hooks such as:
@@ -149,3 +199,17 @@ The React package also exposes hooks such as:
 - Hosts should provide the analyzer and transport; this package does not bake in a model provider.
 - Suggestions are advisory until explicitly applied.
 - Runtime changes should still flow through `editor.apply(...)` so undo and diagnostics remain consistent.
+
+## Facets and commands
+
+Contributes the suggestions controller facet (`aiSuggestionsControllerFacet` / `AI_SUGGESTIONS_CONTROLLER_SLOT`). It contributes no commands. Requires no other extensions. The host must provide `analyzer`.
+
+## Documentation
+
+The docs site (the `@input/pen-docs` package) covers this area on the AI features page (`#/ai`).
+
+The public signatures of record are in `api-report.md` next to this package's source in the Pen repository. The docs site does not host a generated browsable reference.
+
+## License
+
+MIT © Input B.V. See [`LICENSE.md`](./LICENSE.md).

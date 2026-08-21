@@ -1,5 +1,9 @@
 import { expect, type Page } from "@playwright/test";
 import {
+	formatDiagnosticsReport,
+	formatDomAuthorityReport,
+} from "./checkReport";
+import {
 	DIAGNOSTICS_ALLOWLIST,
 	STANDING_DIAGNOSTIC_CODES,
 } from "./diagnosticsAllowlist";
@@ -23,12 +27,7 @@ export async function assertStandingDiagnostics(
 		}
 		return true;
 	});
-	expect(
-		unexpected,
-		`standing diagnostics-zero failed: ${unexpected
-			.map((event) => event.code)
-			.join(", ")}`,
-	).toEqual([]);
+	expect(unexpected, formatDiagnosticsReport(unexpected)).toEqual([]);
 }
 
 export async function assertStandingDomMatchesAuthority(
@@ -41,10 +40,8 @@ export async function assertStandingDomMatchesAuthority(
 }
 
 export function assertDomAuthorityResult(result: DomAuthorityCheck): void {
-	expect(
-		result.ok,
-		result.reason ?? "DOM selection does not match editor.selection",
-	).toBe(true);
+	// v1 snapshot (blockId+offset), not affinity/goalX — projectSelection is not live.
+	expect(result.ok, formatDomAuthorityReport(result)).toBe(true);
 }
 
 function isStandingCode(code: string): boolean {

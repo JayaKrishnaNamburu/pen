@@ -240,6 +240,66 @@ describe("GeometryReader G2", () => {
 		expect(caretRect).toHaveBeenCalledTimes(10);
 	});
 
+	it("G2: a height-unchanged edit drops only the named block", () => {
+		const root = mountEditorRoot();
+		const boxes: Record<string, Rect> = {
+			a: rect(0, 0, 100, 16),
+			b: rect(0, 20, 100, 16),
+		};
+		const caretRect = vi.fn((point: Point) =>
+			point.blockId === "a" ? rect(0, 0, 0, 16) : rect(0, 20, 0, 16),
+		);
+		const reader = createReader(root, {
+			measure: {
+				caretRect,
+				blockRect: (blockId) => boxes[blockId] ?? null,
+			},
+		});
+		const a: Point = { blockId: "a", offset: 0 };
+		const b: Point = { blockId: "b", offset: 0 };
+
+		reader.caretRect(a, "downstream");
+		reader.caretRect(b, "downstream");
+		expect(caretRect).toHaveBeenCalledTimes(2);
+
+		reader.invalidateBlocks(["a"], 2);
+		reader.caretRect(a, "downstream");
+		reader.caretRect(b, "downstream");
+		expect(caretRect).toHaveBeenCalledTimes(3);
+	});
+
+	it("G2: a Y-shifting edit drops cached followers whose live box moved", () => {
+		const root = mountEditorRoot();
+		const boxes: Record<string, Rect> = {
+			a: rect(0, 0, 100, 16),
+			b: rect(0, 20, 100, 16),
+		};
+		const caretRect = vi.fn((point: Point) =>
+			point.blockId === "a"
+				? rect(0, boxes.a?.top ?? 0, 0, boxes.a?.height ?? 16)
+				: rect(0, boxes.b?.top ?? 0, 0, boxes.b?.height ?? 16),
+		);
+		const reader = createReader(root, {
+			measure: {
+				caretRect,
+				blockRect: (blockId) => boxes[blockId] ?? null,
+			},
+		});
+		const a: Point = { blockId: "a", offset: 0 };
+		const b: Point = { blockId: "b", offset: 0 };
+
+		reader.caretRect(a, "downstream");
+		reader.caretRect(b, "downstream");
+		expect(caretRect).toHaveBeenCalledTimes(2);
+
+		boxes.a = rect(0, 0, 100, 32);
+		boxes.b = rect(0, 36, 100, 16);
+		reader.invalidateBlocks(["a"], 2);
+		reader.caretRect(a, "downstream");
+		reader.caretRect(b, "downstream");
+		expect(caretRect).toHaveBeenCalledTimes(4);
+	});
+
 	it("G2: getBlockCommitId participates in the cache key when commitId is passed in", () => {
 		const root = mountEditorRoot();
 		const commits = new Map<string, number>([["p1", 10]]);

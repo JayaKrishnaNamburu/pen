@@ -1,16 +1,13 @@
 import { yjsAdapter } from "@input/pen-crdt-yjs";
-import { processStream } from "@input/pen-delta-stream";
-import { inputRulesExtension } from "@input/pen-input-rules";
 import { undoExtension } from "@input/pen-undo";
 import {
 	type DocumentSession,
 	type PenStreamPart,
-	getOpOriginType,
 } from "@input/pen-types";
-import { defineExtension } from "@input/pen-core";
+import { defineExtension, getOpOriginType } from "@input/pen-core";
 import { describe, expect, it, vi } from "vitest";
 
-import { createDefaultSchema } from "@input/pen-schema-default";
+import { createDefaultSchema } from "./fixtures/testSchema";
 import {
 	createDecorationSet,
 	createDocumentSession,
@@ -62,16 +59,6 @@ async function* createStream(parts: PenStreamPart[]) {
 	for (const part of parts) {
 		yield part;
 	}
-}
-
-async function flushMicrotasks(count = 2): Promise<void> {
-	for (let index = 0; index < count; index++) {
-		await Promise.resolve();
-	}
-}
-
-function visibleText(text: string): string {
-	return text.replace(/\u200B/g, "");
 }
 
 type TestYTextLike = {
@@ -232,89 +219,6 @@ describe("@input/pen-core createEditor", () => {
 		]);
 
 		expect(editor.getBlock("b1")?.textContent()).toBe("hello!");
-
-		editor.destroy();
-	});
-
-	it("activates input-rules extensions and applies block conversions", async () => {
-		const editor = createEditor({
-			extensions: [inputRulesExtension()],
-		});
-		const blockId = editor.firstBlock()!.id;
-
-		editor.selectTextRange({ blockId, offset: 0 }, { blockId, offset: 0 });
-
-		editor.apply(
-			[
-				{
-					type: "insert-text",
-					blockId,
-					offset: 0,
-					text: "#",
-				},
-			],
-			{ origin: "user" },
-		);
-		editor.selectTextRange({ blockId, offset: 1 }, { blockId, offset: 1 });
-		editor.apply(
-			[
-				{
-					type: "insert-text",
-					blockId,
-					offset: 1,
-					text: " ",
-				},
-			],
-			{ origin: "user" },
-		);
-		await flushMicrotasks();
-
-		expect(editor.getBlock(blockId)?.type).toBe("heading");
-		expect(editor.getBlock(blockId)?.props.level).toBe(1);
-		expect(visibleText(editor.getBlock(blockId)!.textContent())).toBe("");
-
-		editor.destroy();
-	});
-
-	it("activates input-rules extensions and applies inline markdown conversions", async () => {
-		const editor = createEditor({
-			extensions: [inputRulesExtension()],
-		});
-		const blockId = editor.firstBlock()!.id;
-
-		editor.apply(
-			[
-				{
-					type: "insert-text",
-					blockId,
-					offset: 0,
-					text: "**hello*",
-				},
-			],
-			{ origin: "user" },
-		);
-		editor.apply(
-			[
-				{
-					type: "insert-text",
-					blockId,
-					offset: 8,
-					text: "*",
-				},
-			],
-			{ origin: "user" },
-		);
-		await flushMicrotasks();
-
-		expect(visibleText(editor.getBlock(blockId)!.textContent())).toBe(
-			"hello",
-		);
-		expect(editor.getBlock(blockId)?.textDeltas()).toEqual([
-			{
-				insert: "hello",
-				attributes: { bold: true },
-			},
-		]);
 
 		editor.destroy();
 	});

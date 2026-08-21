@@ -44,7 +44,17 @@ describe("AC 20 — memoryAssets", () => {
     expect(provider.resolve(ref)).toBe(ref.url);
   });
 
-  it("IOP4 observes onProgress during upload", async () => {
+  it("IOP4 API10 successful upload is unchanged", async () => {
+    const provider = memoryAssets();
+    const blob = new Blob(["hello"], { type: "text/plain" });
+    const ref = await provider.upload(blob, { mimeType: "text/plain" });
+
+    expect(ref.mimeType).toBe("text/plain");
+    expect(ref.size).toBe(blob.size);
+    expect(provider.resolve(ref)).toBeTruthy();
+  });
+
+  it("IOP4 API10 observes onProgress during upload", async () => {
     const provider = memoryAssets();
     const blob = new Blob(["hello"], { type: "text/plain" });
     const progress: number[] = [];
@@ -56,12 +66,21 @@ describe("AC 20 — memoryAssets", () => {
     expect(progress).toEqual([0, 1]);
   });
 
-  it("IOP4 rejects oversize uploads naming the limit and actual size", async () => {
+  it("IOP4 API10 rejects oversize uploads naming the limit and actual size", async () => {
     const provider = memoryAssets({ maxSize: 4 });
     const blob = new Blob(["hello-world"], { type: "text/plain" });
 
     await expect(provider.upload(blob, { maxSize: 4 })).rejects.toThrow(
       /11.*maxSize 4/,
     );
+  });
+
+  it("IOP4 API10 rejectUpload is a failure double and does not store", async () => {
+    const provider = memoryAssets({
+      rejectUpload: new Error("storage down"),
+    });
+    const blob = new Blob(["hello"], { type: "text/plain" });
+
+    await expect(provider.upload(blob)).rejects.toThrow("storage down");
   });
 });

@@ -1,12 +1,7 @@
-import { buildExplicitLocalOperationPrompt } from "@input/pen-ai";
 import { streamText } from "ai";
 import type { ServerResponse } from "node:http";
 import type { Editor, ModelRequestedOperation } from "@input/pen-types";
-import {
-	LOCAL_OPERATION_PAYLOAD_END,
-	LOCAL_OPERATION_PAYLOAD_START,
-	createLocalOperationPayloadCollector,
-} from "./utils/localOperationPayload";
+import { createLocalOperationPayloadCollector } from "./utils/localOperationPayload";
 import {
 	PLAYGROUND_LOCAL_CONTINUE_SYSTEM_PROMPT,
 	PLAYGROUND_LOCAL_REWRITE_SYSTEM_PROMPT,
@@ -15,6 +10,7 @@ import {
 	roundMs,
 } from "./config";
 import { writeJsonLine } from "./http";
+import { buildExplicitLocalOperationPrompt } from "./playgroundPlanner";
 import {
 	resolveLocalOperationFrameType,
 	resolveRequestedOperationConflict,

@@ -31,7 +31,8 @@ async function waitForCondition(
 
 function createSuggestionMenuEditor() {
 	return createEditor({
-		schema: defaultSchema, preset: defaultPreset({
+		schema: defaultSchema,
+		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
 			undo: false,
@@ -391,6 +392,4 @@ describe("@input/pen-react suggestion menu", () => {
 			editor.destroy();
 		}
 	});
-
-
 });

@@ -7,7 +7,7 @@ import {
 	resolveSlashMenuTitle,
 } from "../utils/displayCopy";
 import { getAttachedFieldEditor } from "../utils/fieldEditor";
-import { getConvertBlockOps } from "../field-editor/commands";
+import { getConvertBlockOps } from "@input/pen-dom/field-editor/commands";
 import { getInsertSiblingBlockOp } from "../utils/parentIdTree";
 import { shouldShowBlockInDefaultMenus } from "../utils/flowCapabilities";
 import {

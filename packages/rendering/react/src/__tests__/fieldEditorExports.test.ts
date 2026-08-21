@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createEditor } from "@input/pen-core";
+import { createEditor, createHeadlessEditor, keymapFacet } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
 import {
 	expandFieldEditorRange,
@@ -7,11 +7,11 @@ import {
 	shouldUseBlockSelection,
 	getExpandedBlockRole,
 	computeTextDiff,
-} from "../field-editor/index";
-import { ContentEditableBackend } from "../field-editor/contenteditableBackend";
-import { EditContextBackend } from "../field-editor/editContextBackend";
-import { ExpandedContentEditableBackend } from "../field-editor/expandedContentEditableBackend";
-import { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
+} from "@input/pen-dom/field-editor";
+import { ContentEditableBackend } from "@input/pen-dom/field-editor/contenteditableBackend";
+import { EditContextBackend } from "@input/pen-dom/field-editor/editContextBackend";
+import { ExpandedContentEditableBackend } from "@input/pen-dom/field-editor/expandedContentEditableBackend";
+import { FieldEditorImpl } from "@input/pen-dom";
 import { defaultSchema } from "@input/pen-schema-default";
 import {
 	EditorRegionSelector,
@@ -53,11 +53,16 @@ describe("@input/pen-react field-editor exports", () => {
 	it("exports the rich-text shortcuts extension", () => {
 		const extension = richTextShortcutsExtension();
 		expect(extension.name).toBe("rich-text-shortcuts");
-		expect(extension.keyBindings?.map((binding) => binding.key)).toEqual([
+		const editor = createHeadlessEditor({
+			schema: defaultSchema,
+			extensions: [extension],
+		});
+		expect(editor.facet(keymapFacet).map((binding) => binding.key)).toEqual([
 			"Mod-b",
 			"Mod-i",
 			"Mod-u",
 		]);
+		editor.destroy();
 	});
 
 	it("exports the optional region selector primitive", () => {

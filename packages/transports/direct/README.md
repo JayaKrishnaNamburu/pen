@@ -16,7 +16,19 @@ pnpm add @input/pen-core @input/pen-transport-direct
 ## Usage
 
 ```ts
+import { createEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
+import { getAIToolRuntime } from "@input/pen-ai-tools";
 import { directTransport } from "@input/pen-transport-direct";
+
+const editor = createEditor({
+  preset: defaultPreset(),
+});
+const toolRuntime = getAIToolRuntime(editor);
+
+if (!toolRuntime) {
+  throw new Error("AI tools are unavailable.");
+}
 
 const transport = directTransport({
   toolRuntime,
@@ -26,8 +38,19 @@ const transport = directTransport({
 });
 ```
 
-## Integration Notes
+## Options
 
-- This transport requires a Pen `toolRuntime` in the same process.
-- It is not a collaboration or sync backend.
-- When the tool runtime lives outside the current process, use another transport. `@input/pen-transport-sse` is also reference-grade — single-process, non-resumable, and development-oriented — not a production backend.
+| Option        | Default | Effect                                                         |
+| ------------- | ------- | -------------------------------------------------------------- |
+| `toolRuntime` | none    | Required at runtime. `directTransport` throws if it is omitted |
+| `onError`     | unset   | Called with tool-execution errors                              |
+
+## Documentation
+
+The docs site (the `@input/pen-docs` package) covers this area on the AI features page (`#/ai`).
+
+The public signatures of record are in `api-report.md` next to this package's source in the Pen repository. The docs site does not host a generated browsable reference.
+
+## License
+
+MIT © Input B.V. See [`LICENSE.md`](./LICENSE.md).

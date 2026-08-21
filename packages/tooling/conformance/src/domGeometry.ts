@@ -1,4 +1,5 @@
 import { expect, type Page } from "@playwright/test";
+import { formatCheckReport } from "./checkReport";
 import type { PointRef } from "./types";
 
 export async function resolveBlockId(
@@ -10,7 +11,14 @@ export async function resolveBlockId(
 	}
 	const blockIds = await page.evaluate(() => window.__penConformance.blockIds);
 	const blockId = blockIds[point.block];
-	expect(blockId, `no block at index ${point.block}`).toBeTruthy();
+	expect(
+		blockId,
+		formatCheckReport(
+			"resolveBlockId",
+			blockId ? "passed" : "failed",
+			blockId ? undefined : `no block at index ${point.block}`,
+		),
+	).toBeTruthy();
 	return blockId!;
 }
 

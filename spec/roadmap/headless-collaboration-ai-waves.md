@@ -8,7 +8,7 @@ This document is intentionally roadmap-oriented. The rest of `spec/` remains cur
 
 ## Product Boundary
 
-Pen must remain a headless, source-available editor library.
+Pen must remain a headless, MIT-licensed editor library.
 
 Pen should provide generic primitives for:
 

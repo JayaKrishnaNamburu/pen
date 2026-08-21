@@ -1,6 +1,8 @@
 # @input/pen-history
 
-Snapshot history and attribution primitives for Pen
+Snapshot history and attribution primitives for Pen.
+
+This package stores version snapshots through a host `PenPersistence`. It does not treat awareness names as authors and does not delete snapshots.
 
 ## Install
 
@@ -20,6 +22,14 @@ Pass the resolver on `historyExtension`:
 
 ```ts
 import { historyExtension } from "@input/pen-history";
+import type { PenPersistence } from "@input/pen-types";
+
+declare const persistence: PenPersistence;
+
+const usersByClientId = new Map<
+  number,
+  { id: string; name: string; color: string }
+>([[1, { id: "u1", name: "Ada", color: "#4f46e5" }]]);
 
 historyExtension({
   persistence,
@@ -40,6 +50,25 @@ historyExtension({
 
 An unnamed author is honest; a forgeable name is not.
 
-## Notes
+## Options
 
-This package is part of the Pen monorepo. Pair it with the relevant core, schema, rendering, or extension packages for your editor setup.
+| Option          | Default  | Effect                                                                                                                                        |
+| --------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `persistence`   | required | Host `PenPersistence`                                                                                                                         |
+| `docId`         | required | Document id used for snapshot rows                                                                                                            |
+| `resolveAuthor` | unset    | Host-verified `clientId` → author. Omit for an opaque client handle                                                                           |
+| `autoSnapshot`  | on       | `false` disables the scheduler. Object fields default to `intervalMs` 300000, `opThreshold` 100, `onSessionStart` true, `onAIGeneration` true |
+
+## Facets and commands
+
+Contributes the history controller facet (`HISTORY_CONTROLLER_SLOT`). It contributes no commands. Requires no other extensions. Attribution is honest only when the host passes `resolveAuthor`.
+
+## Documentation
+
+The docs site (the `@input/pen-docs` package) covers this area on the Extensions and facets page (`#/extensions`).
+
+The public signatures of record are in `api-report.md` next to this package's source in the Pen repository. The docs site does not host a generated browsable reference.
+
+## License
+
+MIT © Input B.V. See [`LICENSE.md`](./LICENSE.md).

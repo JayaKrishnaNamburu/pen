@@ -258,7 +258,10 @@ describe("compileRangeReplacementSuggestionOps", () => {
 				],
 				range: {
 					start: { blockId: "body-1", offset: 0 },
-					end: { blockId: "body-2", offset: "I can meet tomorrow".length },
+					end: {
+						blockId: "body-2",
+						offset: "I can meet tomorrow".length,
+					},
 				},
 				replacementText: "Thanks for meeting us\nI can meet tomorrow",
 			}),

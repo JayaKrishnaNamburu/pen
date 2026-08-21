@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-	PEN_FORMAT_METADATA_KEY,
-	PenDocumentUnreadableError,
-} from "@input/pen-types";
+import { PEN_FORMAT_METADATA_KEY } from "@input/pen-types";
+import { PenDocumentUnreadableError } from "../unreadableError";
 import * as Y from "yjs";
 
 import { yjsAdapter } from "../adapter";
@@ -38,9 +36,9 @@ describe("loadDocument (DUR2)", () => {
 		expect(report?.diagnostics).toEqual([]);
 		expect(diagnostics).toEqual([]);
 		expect(recovered).toEqual([]);
-		expect((loaded as YjsCRDTDocument).penDocument.blockOrder.toArray()).toEqual([
-			"b1",
-		]);
+		expect(
+			(loaded as YjsCRDTDocument).penDocument.blockOrder.toArray(),
+		).toEqual(["b1"]);
 	});
 
 	it("DUR2: repaired dedupes blockOrder and names each repair", () => {
@@ -52,7 +50,12 @@ describe("loadDocument (DUR2)", () => {
 		});
 		const source = adapter.createDocument() as YjsCRDTDocument;
 		source.ydoc.transact(() => {
-			initBlockMap(source.penDocument.blocks, "b1", "paragraph", "inline");
+			initBlockMap(
+				source.penDocument.blocks,
+				"b1",
+				"paragraph",
+				"inline",
+			);
 			source.penDocument.blockOrder.push(["b1", "b1"]);
 		});
 
@@ -122,7 +125,12 @@ describe("loadDocument (DUR2)", () => {
 		});
 		const source = adapter.createDocument() as YjsCRDTDocument;
 		source.ydoc.transact(() => {
-			initBlockMap(source.penDocument.blocks, "b1", "paragraph", "inline");
+			initBlockMap(
+				source.penDocument.blocks,
+				"b1",
+				"paragraph",
+				"inline",
+			);
 			source.penDocument.blockOrder.push(["b1", "b1"]);
 		});
 

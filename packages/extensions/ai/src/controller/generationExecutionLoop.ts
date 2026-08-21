@@ -27,6 +27,7 @@ export async function runGenerationLoop(
 			const result = await runAgenticLoop({
 				model: controller._model,
 				editor: controller._editor,
+				feature: "generation",
 				toolRuntime: route.allowToolUse
 					? toolRuntime
 					: EMPTY_TOOL_RUNTIME,
@@ -37,6 +38,8 @@ export async function runGenerationLoop(
 				maxSteps: route.allowToolUse
 					? (maxSteps ?? controller._maxAgenticSteps)
 					: 1,
+				allowedMutatingTools: controller._allowedMutatingTools,
+				confirm: controller._confirmAITool,
 				signal: abortController.signal,
 				requestMode: resolveGenerationRequestMode({
 					...context,
@@ -386,7 +389,10 @@ export async function runGenerationLoop(
 						state.blockStreamingStarted
 					)
 						return;
-					streamingTarget?.beginStreaming(zoneId, targetBlockId);
+					streamingTarget?.beginStreaming(zoneId, targetBlockId, {
+						type: "ai",
+						groupId: seedGeneration.undoGroupId,
+					});
 					state.blockStreamingStarted = true;
 				},
 				onStreamingEnd: (status) => {

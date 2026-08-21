@@ -1,4 +1,4 @@
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "./fixtures/testSchema";
 import type { ApplyOptions, DocumentOp, Editor } from "@input/pen-types";
 import { describe, expect, it, vi } from "vitest";
 import {

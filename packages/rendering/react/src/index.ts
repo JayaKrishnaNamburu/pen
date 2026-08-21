@@ -354,35 +354,29 @@ export {
 export type {
 	FieldEditorStore,
 	FieldEditorStoreSnapshot,
-} from "./field-editor/store";
+} from "@input/pen-dom/field-editor";
 export {
 	applyDeltaToDOM,
 	fullReconcileToDOM,
-	fullReconcileDeltasToDOM,
 	saveSelection,
 	restoreSelection,
-} from "./field-editor/reconciler";
-export { resolveMarksAtPosition } from "./field-editor/markBoundary";
-export {
+	resolveMarksAtPosition,
 	computeTextDiff,
 	extractTextFromDOM,
 	getSelectionOffsets,
-	type TextDiffOp,
-	type SelectionPoint,
-} from "./field-editor/selectionBridge";
-export {
 	classifySelectionSurface,
 	getExpandedBlockRole,
-	type ExpandedBlockRole,
-	type FieldEditorSurfaceMode,
-	type FieldEditorSurfaceState,
-} from "./field-editor/crossBlock";
-export {
 	handlePaste,
 	handleClipboardPaste,
 	handleCopy,
 	handleCut,
-} from "./field-editor/clipboard";
+	type TextDiffOp,
+	type SelectionPoint,
+	type ExpandedBlockRole,
+	type FieldEditorSurfaceMode,
+	type FieldEditorSurfaceState,
+} from "@input/pen-dom/field-editor";
+export { fullReconcileDeltasToDOM } from "@input/pen-dom/field-editor/reconciler";
 
 // ── Internal hooks (for extension authors) ──────────────────
 export { useFieldEditorState } from "./hooks/useFieldEditorState";

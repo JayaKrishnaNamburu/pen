@@ -12,10 +12,9 @@
 - Include the package names, version range, framework, and reproduction steps.
 - Mention whether the issue affects the headless runtime, a renderer package, or a workspace app such as the playground.
 
-## Licensing And Commercial Questions
+## Licensing
 
-Pen is source-available. For production licensing and commercial questions, contact
-[Input](https://www.input.so/).
+Pen is licensed under the [MIT License](LICENSE.md), copyright Input B.V. For questions about Input, contact [input.so](https://www.input.so/).
 
 ## Security Issues
 

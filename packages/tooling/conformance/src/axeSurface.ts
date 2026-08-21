@@ -1,6 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import type { AxeResults, Result } from "axe-core";
+import { formatCheckReport } from "./checkReport";
 
 /**
  * AX1 / X.2 (`spec-v2/13-accessibility.md`): surface-semantics categories
@@ -21,11 +22,14 @@ export const AXE_WCAG22_AA_TAGS = [
 	"wcag22aa",
 ] as const;
 
-export function formatAxeViolations(violations: readonly Result[]): string {
+export function formatAxeViolations(
+	violations: readonly Result[],
+	check = "axe",
+): string {
 	if (violations.length === 0) {
-		return "no axe violations";
+		return formatCheckReport(check, "passed", "no violations");
 	}
-	return violations
+	const detail = violations
 		.map((violation) => {
 			const nodes = violation.nodes
 				.map((node) => `    ${node.target.join(" ")} — ${node.failureSummary}`)
@@ -33,6 +37,7 @@ export function formatAxeViolations(violations: readonly Result[]): string {
 			return `${violation.id} (${violation.impact}): ${violation.help}\n${nodes}`;
 		})
 		.join("\n\n");
+	return formatCheckReport(check, "failed", detail);
 }
 
 export async function analyzeEditorSurface(page: Page): Promise<AxeResults> {

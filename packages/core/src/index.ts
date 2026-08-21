@@ -2,6 +2,10 @@ import {
 	filterOpsForDocumentProfile,
 	filterPendingBlocksForDocumentProfile,
 	createImportResult,
+	getBlockSelectionRoleFromSchema,
+	getBlockSelectionRoleFromType,
+	getFlowCapabilityFromSchema,
+	getFlowCapabilityFromType,
 	isContinuousTextFlowCapability,
 	normalizePendingBlocksForImport,
 	reportPendingBlockImportViolations,
@@ -9,6 +13,8 @@ import {
 	resolveBlockFlowCapability,
 	shouldAllowDirectBlockPaste,
 	shouldAllowFlowInsertionInSlashMenu,
+	shouldExposeBlockInTooling,
+	shouldShowBlockInDefaultMenus,
 	shouldFallbackMixedSelectionToBlock,
 	shouldForceBlockScopedSelectAll,
 } from "./editor/profilePolicy";
@@ -23,10 +29,7 @@ export { defineBlock } from "./schema/defineBlock";
 export type { DefinedBlockSchema } from "./schema/defineBlock";
 export { defineExtension } from "./schema/defineExtension";
 export { prop, resolveSchema } from "./schema/prop";
-export {
-	createEmptySchema,
-	resolveEditorSchema,
-} from "./schema/emptySchema";
+export { createEmptySchema, resolveEditorSchema } from "./schema/emptySchema";
 
 export {
 	SchemaEngineImpl,
@@ -76,6 +79,10 @@ export {
 	createImportResult,
 	filterOpsForDocumentProfile,
 	filterPendingBlocksForDocumentProfile,
+	getBlockSelectionRoleFromSchema,
+	getBlockSelectionRoleFromType,
+	getFlowCapabilityFromSchema,
+	getFlowCapabilityFromType,
 	isContinuousTextFlowCapability,
 	normalizePendingBlocksForImport,
 	reportPendingBlockImportViolations,
@@ -83,9 +90,17 @@ export {
 	resolveBlockFlowCapability,
 	shouldAllowDirectBlockPaste,
 	shouldAllowFlowInsertionInSlashMenu,
+	shouldExposeBlockInTooling,
+	shouldShowBlockInDefaultMenus,
 	shouldFallbackMixedSelectionToBlock,
 	shouldForceBlockScopedSelectAll,
 };
+export {
+	renderSelectionTargetBlockText,
+	renderSelectionTargetText,
+	resolveSelectionTargetBlockIds,
+} from "./editor/operationSelectionTargets";
+export type { ModelOperationRangeTarget } from "./editor/operationSelectionTargets";
 export type {
 	PendingBlockImportPolicyViolation,
 	PendingBlockProfilePolicyViolation,
@@ -131,13 +146,127 @@ export {
 	readOnlyFacet,
 	clipboardFacet,
 } from "./facets/coreFacets";
+export { urlPolicyFacet } from "./facets/urlPolicyFacet";
 export {
-	urlPolicyFacet,
+	aiEgressExtension,
+	aiEgressFacet,
+	filterAIRequest,
+	streamThroughEgress,
+} from "./facets/aiEgressFacet";
+export {
+	blockDirectionFacet,
+	defaultDirectionFacet,
+} from "./facets/directionFacets";
+export type { BlockDirectionResolver } from "./facets/directionFacets";
+export type {
+	BlockDirection,
+	BlockDirectionSetting,
+} from "./direction/firstStrong";
+export { resolveBlockDirection } from "./direction/resolve";
+export {
+	urlPolicy,
 	type UrlContext,
 	type UrlPolicy,
-} from "./facets/urlPolicyFacet";
+} from "./security/urlPolicy";
+export {
+	blockLogicalText,
+	logicalTextFromStored,
+} from "./text/blockLogicalText";
+export {
+	applyDirectedBinding,
+	resolveDirectedBinding,
+	resolveDirectedCommand,
+	resolveFocusBlockDirection,
+} from "./commands/resolveDirectedBinding";
+export { defineCommand, commandHandler } from "./commands/define";
+export { createCommandRegistry } from "./commands/registry";
+export { getCommandRegistry } from "./commands/install";
+export { builtinCommandHandlers } from "./commands/builtin";
+export type {
+	CommandDispatchContext,
+	CommandRegistry,
+	CreateCommandRegistryOptions,
+} from "./commands/registry";
+export {
+	caretBlockEnd,
+	caretBlockStart,
+	caretDocEnd,
+	caretDocStart,
+	caretDown,
+	caretLeft,
+	caretLineEnd,
+	caretLineStart,
+	caretRight,
+	caretUp,
+	caretWordLeft,
+	caretWordRight,
+	selectAll,
+	selectBlock,
+} from "./commands/caret";
+export type { CaretMotionParam, SelectBlockParam } from "./commands/caret";
+export {
+	convertBlock,
+	deleteBackward,
+	deleteForward,
+	indent,
+	insertLineBreak,
+	insertText,
+	outdent,
+	splitBlock,
+	toggleMark,
+} from "./commands/text";
+export type {
+	ConvertBlockParam,
+	DeleteGranularity,
+	DeleteParam,
+	InsertTextParam,
+	ToggleMarkParam,
+} from "./commands/text";
+export {
+	deleteBlock,
+	duplicateBlock,
+	moveBlockDown,
+	moveBlockUp,
+} from "./commands/structure";
+export type { StructureBlockParam } from "./commands/structure";
+export {
+	tableCellDown,
+	tableCellNext,
+	tableCellPrev,
+	tableEscapeGrid,
+} from "./commands/table";
+export { historyRedo, historyUndo } from "./commands/history";
+export {
+	defaultKeymapBindings,
+	resolveDefaultKeymap,
+} from "./commands/defaultKeymap";
+export type {
+	DefaultKeymapBinding,
+	DefaultKeymapContext,
+	KeymapPlatform,
+} from "./commands/defaultKeymap";
 export { localeFacet, messagesFacet } from "./facets/i18nFacets";
 export { a11yLabelFacet } from "./facets/a11yFacets";
+export { interpolateMessage, resolveMessage } from "./i18n/messages";
+export {
+	createMutationGroupMetadata,
+	getApplyOptionsGroupId,
+	getOpOriginGroupId,
+	getOpOriginType,
+} from "./editor/origin";
+export {
+	collectToolExecutionOutput,
+	resolveToolExecution,
+} from "./editor/toolExecution";
+export {
+	delegatesToGridEditing,
+	hasFieldEditorSurface,
+	resolveFieldEditorBehavior,
+	resolveFieldEditorInputMode,
+	supportsInlineInputRules,
+	supportsInlineMarks,
+	usesInlineTextSelection,
+} from "./schema/fieldEditorCapabilities";
 export { resolveEditorMessage } from "./i18n/resolveEditorMessage";
 export {
 	A11Y_MISSING_LABEL_CODE,
@@ -147,14 +276,8 @@ export {
 	announceEditorA11y,
 	resolveA11yBlockTypeLabel,
 } from "./a11y/announceEditorA11y";
-export {
-	resolveA11ySpec,
-	resolveSchemaA11y,
-} from "./a11y/resolveSchemaA11y";
-export type {
-	SchemaA11yAttrs,
-	SchemaA11yKind,
-} from "./a11y/resolveSchemaA11y";
+export { resolveA11ySpec, resolveSchemaA11y } from "./a11y/resolveSchemaA11y";
+export type { SchemaA11yAttrs, SchemaA11yKind } from "./a11y/resolveSchemaA11y";
 export type { EditorA11yLabelAttrs } from "./a11y/resolveEditorA11yLabel";
 export {
 	createPseudoLocaleCatalog,

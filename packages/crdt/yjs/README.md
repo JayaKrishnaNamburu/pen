@@ -16,12 +16,15 @@ It does **not** implement WebSocket transport or a custom Yjs sync provider.
 ## State barriers
 
 ```ts
+import * as Y from "yjs";
 import {
   encodeYjsStateVectorBase64,
   isYjsStateVectorBase64Satisfied,
 } from "@input/pen-crdt-yjs";
 
+const ydoc = new Y.Doc();
 const required = encodeYjsStateVectorBase64(ydoc);
+const currentStateVector = encodeYjsStateVectorBase64(ydoc);
 const ready = isYjsStateVectorBase64Satisfied(currentStateVector, required);
 ```
 
@@ -30,10 +33,13 @@ Use state-vector helpers when a host workflow needs to wait until a synced docum
 ## Field adapters
 
 ```ts
+import * as Y from "yjs";
 import {
   createYArrayFieldAdapter,
   createYTextFieldAdapter,
 } from "@input/pen-crdt-yjs";
+
+const ydoc = new Y.Doc();
 
 const title = createYTextFieldAdapter({
   doc: ydoc,
@@ -42,7 +48,7 @@ const title = createYTextFieldAdapter({
   normalize: (value) => value.trim(),
 });
 
-const tags = createYArrayFieldAdapter({
+const tags = createYArrayFieldAdapter<{ id: string }>({
   doc: ydoc,
   root: ydoc.getMap("app"),
   key: "tags",
@@ -55,7 +61,10 @@ Adapters are storage helpers only. Product validation, labels, contacts, auth, a
 ## Extension roots
 
 ```ts
+import * as Y from "yjs";
 import { ensureExtensionRoot, readExtensionRoot } from "@input/pen-crdt-yjs";
+
+const ydoc = new Y.Doc();
 
 const root = ensureExtensionRoot({
   doc: ydoc,
@@ -193,6 +202,10 @@ Pen reports document growth and does not compact documents. On load, a document 
 
 - **`mergeUpdates` / `mergeYjsUpdates`.** `Y.mergeUpdates` folds a sequence of Yjs updates into one update that encodes the same document state. That shrinks an _update log_ a host has been appending. It does not remove tombstones — deleted blocks and characters stay in the CRDT until GC collects them.
 - **Snapshot retention.** `@input/pen-history` writes version snapshots through `PenPersistence.saveVersionSnapshot` and restores them with `loadVersion`. Pen does not delete snapshots. A host that drops older snapshot rows reclaims that snapshot storage and cannot restore those versions.
-- **`gc: true`.** `createYjsDocument` defaults to `gc: false` so deleted Yjs content stays restorable for undo and history. Constructing a document with `gc: true` lets Yjs collect deleted items and gives up restore of those old deletions.
+- **`gc: true`.** `yjsAdapter()` defaults to `gc: false` so deleted Yjs content stays restorable for undo and history. Passing `yjsAdapter({ gc: true })` lets Yjs collect deleted items and gives up restore of those old deletions.
 
 Which combination a host uses depends on whether it ships version history. Pen does not pick one.
+
+## License
+
+MIT © Input B.V. See [`LICENSE.md`](./LICENSE.md).

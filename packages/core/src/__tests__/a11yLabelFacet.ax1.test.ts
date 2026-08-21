@@ -8,7 +8,7 @@ import {
 	resolveEditorA11yLabel,
 } from "../index";
 import { getFacetSpec } from "../facets/defineFacet";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "./fixtures/testSchema";
 
 describe("pen.a11yLabel facet (AX1)", () => {
 	it("AX1: names the facet pen.a11yLabel and first usable provider wins", () => {

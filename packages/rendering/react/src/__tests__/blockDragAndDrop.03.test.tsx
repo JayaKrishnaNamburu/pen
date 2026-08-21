@@ -107,7 +107,9 @@ function seedBlocks(editor: Editor, count: number): string[] {
 	return ids;
 }
 
-async function renderEditor(element: React.ReactElement): Promise<TestRenderResult> {
+async function renderEditor(
+	element: React.ReactElement,
+): Promise<TestRenderResult> {
 	const container = document.createElement("div");
 	document.body.appendChild(container);
 	const root = createRoot(container);
@@ -132,7 +134,8 @@ function createBlockDragEditor(
 	options: Parameters<typeof createEditor>[0] = {},
 ) {
 	return createEditor({
-		schema: defaultSchema,...options,
+		schema: defaultSchema,
+		...options,
 		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
@@ -261,7 +264,9 @@ describe("@input/pen-react block drag and drop", () => {
 		const dataTransfer = createDataTransfer();
 
 		await act(async () => {
-			customHandle!.dispatchEvent(createDragEvent("dragstart", dataTransfer));
+			customHandle!.dispatchEvent(
+				createDragEvent("dragstart", dataTransfer),
+			);
 			targetBlock.dispatchEvent(
 				createDragEvent("dragover", dataTransfer, { clientY: 1 }),
 			);
@@ -274,5 +279,4 @@ describe("@input/pen-react block drag and drop", () => {
 
 		await view.unmount();
 	});
-
 });

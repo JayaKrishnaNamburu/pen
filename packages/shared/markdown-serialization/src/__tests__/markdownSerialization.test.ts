@@ -31,6 +31,34 @@ describe("@input/pen-markdown-serialization", () => {
     expect(markdown).not.toContain(STORAGE_SENTINEL);
   });
 
+  it("I11: user-typed zero-width space is kept in markdown", () => {
+    const handle = createTextBlock("b1", "paragraph", "keep\u200Bme");
+    const markdown = exportMarkdownForBlocks(
+      createExportEditor([handle], {
+        paragraph: (block) => block.content ?? "",
+      }),
+      [handle],
+    );
+
+    expect(markdown).toBe("keep\u200Bme");
+  });
+
+  it("I11: user-typed ZWSP as its own delta is not stripped", () => {
+    const handle = createSegmentedTextBlock("b1", "paragraph", [
+      "keep",
+      STORAGE_SENTINEL,
+      "me",
+    ]);
+    const markdown = exportMarkdownForBlocks(
+      createExportEditor([handle], {
+        paragraph: (block) => block.content ?? "",
+      }),
+      [handle],
+    );
+
+    expect(markdown).toBe("keep\u200Bme");
+  });
+
   it("I11: empty table cell serializes to empty markdown text, not a ZWSP", () => {
     const handle = createEmptyTableHandle();
     const markdown = exportMarkdownForBlocks(
@@ -72,6 +100,25 @@ function createTextBlock(
     type,
     props: {},
     textDeltas: () => [{ insert: storedText }],
+    textContent: () => storedText,
+    as(capability: string) {
+      return capability === "table" && handle.type === "table" ? handle : null;
+    },
+  };
+  return handle as unknown as BlockHandle;
+}
+
+function createSegmentedTextBlock(
+  id: string,
+  type: string,
+  inserts: string[],
+): BlockHandle {
+  const storedText = inserts.join("");
+  const handle = {
+    id,
+    type,
+    props: {},
+    textDeltas: () => inserts.map((insert) => ({ insert })),
     textContent: () => storedText,
     as(capability: string) {
       return capability === "table" && handle.type === "table" ? handle : null;

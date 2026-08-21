@@ -23,6 +23,36 @@
     },
     {
       "package": "@input/pen-dom",
+      "key": "./utils/aiDomScope",
+      "reason": "P.6 relocated aiDomScope, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/aiKeyboardScope",
+      "reason": "P.6 relocated aiKeyboardScope, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/autocompleteController",
+      "reason": "P.6 relocated autocompleteController, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/blockDrag",
+      "reason": "P.6 relocated blockDrag, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/blockSelectionSemantics",
+      "reason": "P.6 relocated blockSelectionSemantics, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/cellSelection",
+      "reason": "P.6 relocated cellSelection, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
       "key": "./utils/clipboardPayload",
       "reason": "P.6 / T.1 first-class clipboard payload, not a src/dist escape hatch."
     },
@@ -33,6 +63,81 @@
     },
     {
       "package": "@input/pen-dom",
+      "key": "./utils/editorEmptyState",
+      "reason": "P.6 relocated editorEmptyState, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/editorInteractionModel",
+      "reason": "P.6 relocated editorInteractionModel, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/environment",
+      "reason": "P.6 relocated environment, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/fieldEditor",
+      "reason": "P.6 relocated fieldEditor, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/fieldEditorTextEntryAttrs",
+      "reason": "P.6 relocated fieldEditorTextEntryAttrs, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/placeholderVisibility",
+      "reason": "P.6 relocated placeholderVisibility, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/pointerSelection",
+      "reason": "P.6 relocated pointerSelection, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/flowCapabilities",
+      "reason": "P.6 relocated flowCapabilities, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/inlineAtomDragPreview",
+      "reason": "P.6 relocated inlineAtomDragPreview, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/inlineAtomSelection",
+      "reason": "P.6 relocated inlineAtomSelection, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/inlineInputRule",
+      "reason": "P.6 relocated inlineInputRule, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/listInputRule",
+      "reason": "P.6 relocated listInputRule, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/menuPosition",
+      "reason": "P.6 relocated menuPosition, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/selectionFormation",
+      "reason": "P.6 relocated selectionFormation, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/selectionPlacement",
+      "reason": "P.6 relocated selectionPlacement, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
       "key": "./utils/inlineDecorations",
       "reason": "P.6 first-class decoration helpers, not a src/dist escape hatch."
     },
@@ -40,6 +145,26 @@
       "package": "@input/pen-dom",
       "key": "./utils/parentIdTree",
       "reason": "P.6 relocated parentIdTree, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/replaceElementChildren",
+      "reason": "P.6 relocated replaceElementChildren, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/slashMenuPopupAria",
+      "reason": "P.6 relocated slashMenuPopupAria, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/suggestionMenuPopupAria",
+      "reason": "P.6 relocated suggestionMenuPopupAria, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./utils/tableDefaults",
+      "reason": "P.6 relocated tableDefaults, not a src/dist escape hatch."
     },
     {
       "package": "@input/pen-react",

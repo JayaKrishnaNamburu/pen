@@ -5,6 +5,9 @@ import { createRoot, type Root } from "react-dom/client";
 import { describe, expect, it, vi } from "vitest";
 import { createEditor } from "@input/pen-core";
 import { aiExtension, getAIController, type AICommandBinding } from "@input/pen-ai";
+import { undoExtension } from "@input/pen-undo";
+import { deltaStreamExtension } from "@input/pen-delta-stream";
+import { documentOpsExtension } from "@input/pen-document-ops";
 import { Pen } from "../primitives/index";
 import { defaultSchema } from "@input/pen-schema-default";
 
@@ -44,7 +47,7 @@ async function renderCommandMenu(): Promise<{
 	controller: NonNullable<ReturnType<typeof getAIController>>;
 }> {
 	const editor = createEditor({
-		schema: defaultSchema,extensions: [aiExtension({ commands: TEST_COMMANDS })],
+		schema: defaultSchema,extensions: [undoExtension(), deltaStreamExtension(), documentOpsExtension(), aiExtension({ commands: TEST_COMMANDS })],
 	});
 	const controller = getAIController(editor);
 	if (!controller) {
@@ -219,7 +222,7 @@ describe("@input/pen-react AI command menu AX3", () => {
 
 	it("LOC1: default command menu shows catalog labels and chrome", async () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [aiExtension()],
+			schema: defaultSchema,extensions: [undoExtension(), deltaStreamExtension(), documentOpsExtension(), aiExtension()],
 		});
 		const controller = getAIController(editor);
 		if (!controller) {
@@ -273,7 +276,7 @@ describe("@input/pen-react AI command menu AX3", () => {
 
 	it("LOC1: host messages override command-menu chrome and command labels", async () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [aiExtension()],
+			schema: defaultSchema,extensions: [undoExtension(), deltaStreamExtension(), documentOpsExtension(), aiExtension()],
 			messages: {
 				"pen.ai.commandMenu.placeholder": "KI-Befehle suchen",
 				"pen.ai.commandMenu.label": "KI-Befehlmenü",

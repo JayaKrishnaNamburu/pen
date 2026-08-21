@@ -1,10 +1,11 @@
 import { useEffect, type RefObject } from "react";
 import { flushSync } from "react-dom";
+import { usesInlineTextSelection } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
-import { generateId, usesInlineTextSelection } from "@input/pen-types";
-import type { FieldEditorSession } from "../../field-editor/controller";
-import { shouldUseBlockSelection } from "../../field-editor/crossBlock";
-import { domSelectionToEditor, getBlockBoundaryPoint, pointToEditorSelectionPoint } from "../../field-editor/selectionBridge";
+import { generateId } from "@input/pen-types";
+import type { FieldEditorSession } from "@input/pen-dom";
+import { shouldUseBlockSelection } from "@input/pen-dom/field-editor";
+import { domSelectionToEditor, getBlockBoundaryPoint, pointToEditorSelectionPoint } from "@input/pen-dom/field-editor/selectionBridge";
 import { getEditorBlockSelectionLength, getEditorBlockSelectionRole } from "../../utils/blockSelectionSemantics";
 import { DATA_ATTRS } from "../../utils/dataAttributes";
 import { isRepeatedCellSelection, resolveBlockPointerIntent } from "../../utils/editorInteractionModel";

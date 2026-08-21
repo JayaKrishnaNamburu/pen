@@ -12,6 +12,7 @@ import type {
 	TextSelection,
 	ToolRuntime,
 } from "@input/pen-types";
+import type { AIToolConfirmFn } from "@input/pen-ai-tools";
 import type {
 	AIApplyStrategy,
 	AIMutationMode,
@@ -68,6 +69,8 @@ export interface AIExtensionConfig {
 	suggestionPresentation?: AISuggestionPresentation;
 	commands?: AICommandBinding[];
 	maxAgenticSteps?: number;
+	allowedMutatingTools?: readonly string[];
+	confirm?: AIToolConfirmFn;
 	author?: string;
 	contentFormat?: AIContentFormatOptions;
 }
@@ -399,6 +402,7 @@ export interface GenerationState {
 	tokenCount: number;
 	steps: AgenticStep[];
 	undoGroupId: string;
+	turnReason?: string | null;
 	text: string;
 	commandId?: string;
 	suggestionIds?: string[];

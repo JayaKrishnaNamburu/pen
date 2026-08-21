@@ -6,7 +6,7 @@ import {
 } from "@input/pen-dom/field-editor/inlineAtomInteraction";
 import type { Editor } from "@input/pen-types";
 import { getAttachedFieldEditor } from "../../utils/fieldEditor";
-import type { FieldEditorSession } from "../../field-editor/controller";
+import type { FieldEditorSession } from "@input/pen-dom";
 import type {
 	InlineAtomMoveRejectedEvent,
 	ResolvedInlineAtomInteractions,

@@ -39,6 +39,15 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Check DOC2 pages
+        run: pnpm --filter @input/pen-docs check:pages
+
+      - name: Check DOC3 generated tables
+        run: pnpm --filter @input/pen-docs check:tables
+
+      - name: Type-check docs page samples
+        run: pnpm --filter @input/pen-docs check:samples
+
       - name: Build docs site
         run: pnpm --filter @input/pen-docs build
         env:

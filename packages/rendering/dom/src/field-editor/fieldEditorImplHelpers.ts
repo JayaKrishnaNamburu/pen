@@ -1,5 +1,8 @@
+import {
+	resolveFieldEditorInputMode,
+	usesInlineTextSelection,
+} from "@input/pen-core";
 import type { BlockSchema, Editor } from "@input/pen-types";
-import { usesInlineTextSelection, resolveFieldEditorInputMode } from "@input/pen-types";
 import { getEditorBlockSelectionLength } from "../utils/blockSelectionSemantics";
 
 export function resolveInputMode(

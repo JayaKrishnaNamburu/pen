@@ -29,6 +29,17 @@ export interface ToolDefinition {
 		input: unknown,
 		ctx: ToolContext,
 	) => Promise<unknown> | AsyncIterable<unknown>;
+	/**
+	 * Tool authority (AIB3). A tool that writes to the document declares
+	 * `mutating: true` and is default-denied unless the grant allowlists it;
+	 * `destructive: true` additionally marks irreversible effects.
+	 *
+	 * Left undefined, authority falls back to name-based classification, which
+	 * is a heuristic — declare these on any tool whose name is not obviously
+	 * read-only.
+	 */
+	mutating?: boolean;
+	destructive?: boolean;
 }
 
 // ── Model Adapter ───────────────────────────────────────────
@@ -78,6 +89,16 @@ export interface ModelOperationScopedRangeTarget {
 	blockIds: readonly string[];
 	contentFormat: "text" | "markdown";
 	scope: "block" | "paragraph" | "document" | "heading";
+}
+
+export type ModelOperationRangeTarget =
+	| ModelOperationSelectionTarget
+	| ModelOperationScopedRangeTarget;
+
+export function isScopedSelectionTarget(
+	target: ModelOperationRangeTarget,
+): target is ModelOperationScopedRangeTarget {
+	return target.kind === "scoped-range";
 }
 
 export interface ModelOperationBlockTarget {
@@ -217,28 +238,4 @@ export function isAsyncIterable(
 		typeof value === "object" &&
 		Symbol.asyncIterator in (value as object)
 	);
-}
-
-export async function resolveToolExecution(
-	result: ToolExecutionResult,
-): Promise<unknown | AsyncIterable<unknown>> {
-	return await result;
-}
-
-export async function collectToolExecutionOutput(
-	result: ToolExecutionResult,
-	onPart?: (part: unknown, output: unknown) => void,
-): Promise<unknown> {
-	const resolved = await resolveToolExecution(result);
-	if (!isAsyncIterable(resolved)) {
-		return resolved;
-	}
-
-	const parts: unknown[] = [];
-	for await (const part of resolved) {
-		parts.push(part);
-		onPart?.(part, parts.length <= 1 ? parts[0] : [...parts]);
-	}
-
-	return parts.length <= 1 ? parts[0] : parts;
 }

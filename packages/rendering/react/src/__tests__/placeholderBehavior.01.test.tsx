@@ -3,11 +3,11 @@
 import React, { act } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
-import { createEditor, ensureInlineCompletionController } from "@input/pen-core";
 import {
-	type BlockHandle,
-	type BlockRenderContext,
-} from "@input/pen-types";
+	createEditor,
+	ensureInlineCompletionController,
+} from "@input/pen-core";
+import { type BlockHandle, type BlockRenderContext } from "@input/pen-types";
 import { defaultPreset } from "@input/pen-preset-default";
 import { InlineContent } from "../primitives/editor/inlineContent";
 import { Pen } from "../primitives/index";
@@ -45,7 +45,8 @@ describe("@input/pen-react placeholder behavior", () => {
 		registerRenderer("paragraph", PlaceholderParagraphRenderer);
 
 		const editor = createEditor({
-			schema: defaultSchema, preset: defaultPreset({
+			schema: defaultSchema,
+			preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,
@@ -85,7 +86,8 @@ describe("@input/pen-react placeholder behavior", () => {
 		registerRenderer("paragraph", PlaceholderParagraphRenderer);
 
 		const editor = createEditor({
-			schema: defaultSchema, preset: defaultPreset({
+			schema: defaultSchema,
+			preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,
@@ -132,7 +134,8 @@ describe("@input/pen-react placeholder behavior", () => {
 		registerRenderer("paragraph", PlaceholderParagraphRenderer);
 
 		const editor = createEditor({
-			schema: defaultSchema, preset: defaultPreset({
+			schema: defaultSchema,
+			preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,
@@ -195,7 +198,8 @@ describe("@input/pen-react placeholder behavior", () => {
 
 	it("hides schema placeholders while an inline completion is visible", async () => {
 		const editor = createEditor({
-			schema: defaultSchema, preset: defaultPreset({
+			schema: defaultSchema,
+			preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,
@@ -256,7 +260,8 @@ describe("@input/pen-react placeholder behavior", () => {
 
 	it("renders inline completion text on an empty block surface", async () => {
 		const editor = createEditor({
-			schema: defaultSchema, preset: defaultPreset({
+			schema: defaultSchema,
+			preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,
@@ -313,7 +318,8 @@ describe("@input/pen-react placeholder behavior", () => {
 
 	it("does not treat a single structural block as an empty document", async () => {
 		const editor = createEditor({
-			schema: defaultSchema, preset: defaultPreset({
+			schema: defaultSchema,
+			preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,
@@ -354,7 +360,8 @@ describe("@input/pen-react placeholder behavior", () => {
 		registerRenderer("paragraph", PlaceholderParagraphRenderer);
 
 		const editor = createEditor({
-			schema: defaultSchema, preset: defaultPreset({
+			schema: defaultSchema,
+			preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,
@@ -400,6 +407,4 @@ describe("@input/pen-react placeholder behavior", () => {
 		container.remove();
 		editor.destroy();
 	});
-
-
 });

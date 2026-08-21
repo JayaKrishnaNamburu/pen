@@ -2,19 +2,19 @@
   "name": "@input/pen-import-markdown",
   "version": "0.0.1",
   "description": "Markdown importer for Pen",
-  "license": "SEE LICENSE IN LICENSE.md",
-  "homepage": "https://github.com/niceperson/pen#readme",
+  "license": "MIT",
+  "homepage": "https://github.com/lemni/pen#readme",
   "bugs": {
-    "url": "https://github.com/niceperson/pen/issues"
+    "url": "https://github.com/lemni/pen/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/niceperson/pen.git",
+    "url": "https://github.com/lemni/pen.git",
     "directory": "packages/extensions/import-markdown"
   },
   "type": "module",
   "publishConfig": {
-    "access": "restricted",
+    "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
   "exports": {

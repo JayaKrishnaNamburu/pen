@@ -1,11 +1,8 @@
 import type { EditorInternals, CreateEditorOptions, PenEventMap, DocumentCommitEvent, CRDTAdapter, CRDTDocument, CRDTEvent, DiagnosticEvent, PenDocument, PipelinePhase, SchemaRegistry, Awareness, DocumentSession, DocumentScope, DocumentScopeReplacementEvent, DocumentProfile, Extension, DocumentOp, ApplyOptions, OpOrigin, MutationGroupMetadata, SelectionState, TextSelection, DocumentRange, BlockHandle, Block, DocumentState, UndoManager, Unsubscribe, CRDTMap, CRDTArray, Position, DecorationSet, EditorViewMode } from "@input/pen-types";
-import { AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY, COLLECT_KEY_BINDINGS_SLOT_KEY, usesInlineTextSelection, createMutationGroupMetadata, getApplyOptionsGroupId, MUTATION_GROUP_METADATA_KEY, UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY, generateId } from "@input/pen-types";
-import { undoExtension } from "@input/pen-undo";
-import { documentOpsExtension } from "@input/pen-document-ops";
-import { deltaStreamExtension } from "@input/pen-delta-stream";
-import { richTextShortcutsExtension } from "@input/pen-shortcuts";
+import { AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY, COLLECT_KEY_BINDINGS_SLOT_KEY, MUTATION_GROUP_METADATA_KEY, UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY, generateId } from "@input/pen-types";
 import { SchemaEngineImpl } from "../schema/normalize";
 import { createBlockHandle } from "../schema/handles";
+import { keymapFacet } from "../facets/coreFacets";
 import { resolveCellSelectionMatrix } from "./cellSelection";
 import { filterOpsForDocumentProfile } from "./profilePolicy";
 import type { CRDTUnknownMap } from "./crdtShapes";
@@ -60,15 +57,11 @@ return {
 
 export function resolveEditorExtensions(editor: EditorImplRuntime, options: CreateEditorOptions): Extension[] {
 	const self = editor as EditorImplRuntime;
-const defaultExtensions = options.preset?.resolve({
-	schema: self._registry,
-	documentProfile: self._documentProfile,
-}).extensions ?? [
-	documentOpsExtension(),
-	deltaStreamExtension(),
-	undoExtension(),
-	richTextShortcutsExtension(),
-];
+const defaultExtensions =
+	options.preset?.resolve({
+		schema: self._registry,
+		documentProfile: self._documentProfile,
+	}).extensions ?? [];
 
 const userExtensions = options.extensions ?? [];
 return [...defaultExtensions, ...userExtensions];
@@ -122,7 +115,10 @@ self._slots.set(
 self._slots.set(
 	COLLECT_KEY_BINDINGS_SLOT_KEY,
 	(registry: SchemaRegistry) =>
-		self._extensions.collectKeyBindings(registry),
+		self._extensions.collectKeyBindings(
+			registry,
+			self.facet(keymapFacet),
+		),
 );
 }
 

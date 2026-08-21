@@ -6,6 +6,7 @@
 
 ### class
 
+- PenDocumentUnreadableError
 - YjsExtensionRootError
 
 ### function
@@ -51,7 +52,6 @@
 
 - DOCUMENT_PROFILE
 - ORIGIN_UNKNOWN_CODE
-- PenDocumentUnreadableError
 - STRUCTURAL_ORIGIN_META_KEY
 - SUBDOCUMENT
 

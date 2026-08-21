@@ -1,5 +1,4 @@
 import {
-	interpolateMessage,
 	isPluralMessage,
 	type Editor,
 	type MessageArgs,
@@ -9,6 +8,7 @@ import {
 
 import { localeFacet, messagesFacet } from "../facets/i18nFacets";
 import { createFormatterCache } from "./formatters";
+import { interpolateMessage } from "./messages";
 
 const formatterCache = createFormatterCache();
 const missingKeysByEditor = new WeakMap<Editor, Set<string>>();

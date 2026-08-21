@@ -1,4 +1,4 @@
-import { urlPolicy, type UrlContext } from "@input/pen-dom";
+import { urlPolicy, type UrlContext } from "@input/pen-core";
 import type {
   BlockHandle,
   Editor,

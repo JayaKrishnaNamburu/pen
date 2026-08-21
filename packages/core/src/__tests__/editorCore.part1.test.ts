@@ -1,17 +1,15 @@
 import { yjsAdapter } from "@input/pen-crdt-yjs";
-import { processStream } from "@input/pen-delta-stream";
-import { inputRulesExtension } from "@input/pen-input-rules";
 import { undoExtension } from "@input/pen-undo";
-import { createDefaultSchema } from "@input/pen-schema-default";
+import { createDefaultSchema } from "./fixtures/testSchema";
 import {
 	type BlockSchema,
 	type DocumentSession,
 	type PenStreamPart,
-	getOpOriginType,
 } from "@input/pen-types";
 import {
 	defineBlock,
 	defineExtension,
+	getOpOriginType,
 	mergeSchemas,
 	SchemaRegistryImpl,
 } from "@input/pen-core";

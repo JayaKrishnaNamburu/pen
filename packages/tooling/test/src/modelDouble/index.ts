@@ -1,7 +1,4 @@
-/**
- * AIB6 model double. Import from this module.
- * Package-barrel export is deferred — `src/index.ts` is being rewritten in parallel.
- */
+/** AIB6 model double. Also exported from the package barrel. */
 export { createModelDouble } from "./createModelDouble";
 export type {
 	ModelDouble,
@@ -16,4 +13,5 @@ export type {
 export {
 	abortHalfwayGenerationParts,
 	failingToolCallParts,
+	hostileMutatingTurnCalls,
 } from "./examples";

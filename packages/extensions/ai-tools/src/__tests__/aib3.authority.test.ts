@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { DocumentOp, Editor, ToolDefinition } from "@input/pen-types";
+import type { ApplyOptions, DocumentOp, Editor, ToolDefinition } from "@input/pen-types";
+import { createModelDouble } from "@input/pen-test";
 import {
 	AI_TOOL_MAX_CALLS_PER_TURN,
 	AI_TOOL_MAX_OPS_PER_CALL,
@@ -93,6 +94,68 @@ describe("AIB3 tool authority", () => {
 		expect(allowed.allowed).toBe(true);
 	});
 
+	it("AIB3: executeAITool without a turn default-denies mutating and destructive tools", async () => {
+		const runtime = new AIToolRuntimeImpl();
+		runtime.registerTool(mutatingTool("insert_block"));
+		runtime.registerTool(mutatingTool("delete_block"));
+		runtime.registerTool({
+			name: "read_document",
+			description: "Read",
+			inputSchema: { type: "object", properties: {} },
+			handler: async () => ({ ok: true, name: "read_document" }),
+		});
+		runtime.registerTool({
+			name: "host_wipe",
+			description: "Declared destructive without mutating",
+			inputSchema: { type: "object", properties: {} },
+			mutating: false,
+			destructive: true,
+			handler: async (_input, context) => {
+				context.editor.apply([insertOp("host_wipe-0")]);
+				return { ok: true, name: "host_wipe" };
+			},
+		});
+		const { editor, applied } = createRecordingEditor();
+		const context = new AIToolContextImpl(editor, "doc-1", () => {});
+
+		const mutating = await executeAITool(runtime, "insert_block", {}, context);
+		const destructive = await executeAITool(runtime, "delete_block", {}, context);
+		const declaredDestructive = await executeAITool(
+			runtime,
+			"host_wipe",
+			{},
+			context,
+		);
+		const readOnly = await executeAITool(runtime, "read_document", {}, context);
+
+		expect(isAIToolCallDenied(mutating)).toBe(true);
+		if (isAIToolCallDenied(mutating)) {
+			expect(mutating).toEqual({
+				ok: false,
+				status: "blocked",
+				reason: "tool-not-allowed",
+			});
+		}
+		expect(isAIToolCallDenied(destructive)).toBe(true);
+		if (isAIToolCallDenied(destructive)) {
+			expect(destructive).toEqual({
+				ok: false,
+				status: "blocked",
+				reason: "tool-not-allowed",
+			});
+		}
+		expect(isAIToolCallDenied(declaredDestructive)).toBe(true);
+		if (isAIToolCallDenied(declaredDestructive)) {
+			expect(declaredDestructive).toEqual({
+				ok: false,
+				status: "blocked",
+				reason: "tool-not-allowed",
+			});
+		}
+		expect(readOnly).toEqual({ ok: true, name: "read_document" });
+		expect(applied).toEqual([]);
+	});
+
 	it("AIB3: budget isolation ends the turn with a stated reason", () => {
 		const turn = createAIToolTurn({
 			budget: {
@@ -148,6 +211,63 @@ describe("AIB3 tool authority", () => {
 		expect(applied.every((op) => op.type === "insert-block")).toBe(true);
 	});
 
+	it("AIB3: a hostile model double's 100 mutating calls share one undo groupId", async () => {
+		const runtime = new AIToolRuntimeImpl();
+		runtime.registerTool(mutatingTool("insert_block"));
+		runtime.registerTool(mutatingTool("delete_block"));
+
+		const applied: Array<{ ops: DocumentOp[]; options?: ApplyOptions }> = [];
+		const editor = {
+			apply(ops: DocumentOp[], options?: ApplyOptions) {
+				applied.push({ ops, options });
+			},
+			internals: {
+				getSlot() {
+					return undefined;
+				},
+				emit() {},
+			},
+		} as unknown as Editor;
+		const context = new AIToolContextImpl(editor, "doc-1", () => {});
+		const turn = createAIToolTurn({
+			allowedMutatingTools: ["insert_block"],
+			groupId: "hostile-turn",
+		});
+		const double = createModelDouble({
+			toolCalls: Array.from({ length: 100 }, (_, index) => ({
+				toolCallId: `hostile-${index}`,
+				toolName: index % 2 === 0 ? "insert_block" : "delete_block",
+				input: {},
+			})),
+		});
+
+		for await (const event of double.stream({ messages: [], tools: [] })) {
+			if (event.type !== "tool-call") {
+				continue;
+			}
+			await executeAITool(
+				runtime,
+				event.toolName,
+				event.input,
+				context,
+				turn,
+			);
+		}
+
+		expect(turn.ended).toBe(true);
+		expect(turn.reason).toBe("budget-calls-exhausted");
+		expect(turn.groupId).toBe("hostile-turn");
+		expect(applied).toHaveLength(AI_TOOL_MAX_CALLS_PER_TURN / 2);
+		expect(
+			applied.every(
+				(entry) =>
+					entry.options?.undoGroupId === "hostile-turn" &&
+					typeof entry.options.origin === "object" &&
+					entry.options.origin.groupId === "hostile-turn",
+			),
+		).toBe(true);
+	});
+
 	it("AIB3: confirmation seam refuses destructive tools without applying", async () => {
 		const runtime = new AIToolRuntimeImpl();
 		runtime.registerTool(mutatingTool("delete_block"));
@@ -175,6 +295,38 @@ describe("AIB3 tool authority", () => {
 			});
 		}
 		expect(applied).toEqual([]);
+		expect(diagnostics).toEqual([]);
+	});
+
+	it("AIB3: deferred confirmation blocks the call without applying or warning", async () => {
+		const runtime = new AIToolRuntimeImpl();
+		runtime.registerTool(mutatingTool("delete_block"));
+		const { editor, applied, diagnostics } = createRecordingEditor();
+		const context = new AIToolContextImpl(editor, "doc-1", () => {});
+		const turn = createAIToolTurn({
+			allowedMutatingTools: ["delete_block"],
+			confirm: () => "defer",
+		});
+
+		const result = await executeAITool(
+			runtime,
+			"delete_block",
+			{},
+			context,
+			turn,
+		);
+
+		expect(isAIToolCallDenied(result)).toBe(true);
+		if (isAIToolCallDenied(result)) {
+			expect(result).toEqual({
+				ok: false,
+				status: "blocked",
+				reason: "tool-confirmation-deferred",
+			});
+		}
+		expect(applied).toEqual([]);
+		// A deferral is not an unconfirmed run: the resolver answered, so the
+		// allow-with-diagnostic path below must not also fire.
 		expect(diagnostics).toEqual([]);
 	});
 

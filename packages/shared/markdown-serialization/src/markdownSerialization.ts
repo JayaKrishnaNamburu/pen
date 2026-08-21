@@ -18,11 +18,11 @@ export interface MarkdownExportConfig {
 const DELETE_SUGGESTION_ACTION = "delete";
 
 // sentinel-storage: apply executors still persist the empty-block sentinel in
-// Y.Text. This serializer emits the logical text domain and strips that
-// storage sentinel at the export boundary — it does not treat the sentinel
-// as empty-block meaning.
+// Y.Text. This serializer emits the logical text domain at the export
+// boundary: a block whose stored text is exactly the sentinel exports as
+// empty. User-typed zero-width spaces in non-empty text are kept (I11).
 function logicalExportText(text: string): string {
-  return text.replaceAll("\u200B", "");
+  return text === "\u200B" ? "" : text;
 }
 
 export function exportMarkdownRange(
@@ -118,12 +118,17 @@ function serializeInlineContent(
     return readResolvedText(handle, viewMode);
   }
 
+  const stored = deltas
+    .map((delta) => (typeof delta.insert === "string" ? delta.insert : ""))
+    .join("");
+  if (logicalExportText(stored) === "") {
+    return "";
+  }
+
   let result = "";
 
   for (const delta of deltas) {
-    let text = logicalExportText(
-      typeof delta.insert === "string" ? delta.insert : "",
-    );
+    let text = typeof delta.insert === "string" ? delta.insert : "";
     if (!text) continue;
     const suggestion = delta.attributes?.suggestion as
       | { action?: string }
@@ -215,9 +220,15 @@ function serializeTableCellMarkdown(
     return "";
   }
 
+  const deltas = [...cell.textDeltas()];
+  const stored = deltas.map((delta) => delta.insert).join("");
+  if (logicalExportText(stored) === "") {
+    return "";
+  }
+
   let result = "";
-  for (const delta of cell.textDeltas()) {
-    let text = logicalExportText(delta.insert);
+  for (const delta of deltas) {
+    let text = delta.insert;
     if (!text) {
       continue;
     }

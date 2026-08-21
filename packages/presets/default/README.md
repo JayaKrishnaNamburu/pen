@@ -6,14 +6,16 @@
 
 `defaultPreset()` with no options (or with every flag left on) resolves to this stack, in order:
 
-| Extension name | Package |
-| --- | --- |
-| `document-ops` | `@input/pen-document-ops` |
-| `delta-stream` | `@input/pen-delta-stream` |
-| `undo` | `@input/pen-undo` |
-| `rich-text-shortcuts` | `@input/pen-shortcuts` |
+| Extension name        | Package                   |
+| --------------------- | ------------------------- |
+| `document-ops`        | `@input/pen-document-ops` |
+| `delta-stream`        | `@input/pen-delta-stream` |
+| `undo`                | `@input/pen-undo`         |
+| `rich-text-shortcuts` | `@input/pen-shortcuts`    |
 
 `resolve()` also returns `schema: createDefaultSchema()` from `@input/pen-schema-default`. `createEditor({ preset: defaultPreset() })` therefore installs the default blocks. `createEditor()` with no schema and no preset does not.
+
+A bare `createEditor({ schema })` (no preset) does not register `rich-text-shortcuts` or `delta-stream`. Those used to come from core's no-preset fallback and were removed to break package-graph cycles. This preset is the batteries-included path: Mod-B / Mod-I and `aiExtension()`'s `delta-stream` dependency both require it (or an explicit `extensions` entry).
 
 This package does not assemble a renderer, AI, search, history, input-rules, multiplayer, or import/export.
 
@@ -60,12 +62,12 @@ const editor = createEditor({
 
 ### Options
 
-| Option | Default | Effect |
-| --- | --- | --- |
-| `documentOps` | on | `false` omits `documentOpsExtension()` |
-| `deltaStream` | on | `false` omits `deltaStreamExtension()`; an object is passed through as `DeltaStreamOptions` |
-| `undo` | on | `false` omits `undoExtension()` |
-| `shortcuts` | on (`{}`) | `false` omits `richTextShortcutsExtension()`; an object is passed through as `RichTextShortcutsOptions` |
+| Option        | Default   | Effect                                                                                                  |
+| ------------- | --------- | ------------------------------------------------------------------------------------------------------- |
+| `documentOps` | on        | `false` omits `documentOpsExtension()`                                                                  |
+| `deltaStream` | on        | `false` omits `deltaStreamExtension()`; an object is passed through as `DeltaStreamOptions`             |
+| `undo`        | on        | `false` omits `undoExtension()`                                                                         |
+| `shortcuts`   | on (`{}`) | `false` omits `richTextShortcutsExtension()`; an object is passed through as `RichTextShortcutsOptions` |
 
 The public exports are `defaultPreset` and `DefaultPresetOptions`.
 
@@ -77,14 +79,20 @@ In Next.js App Router, import `PenEditor` from a Client Component. `defaultPrese
 
 ## HOST3 — Node floor
 
-`engines.node` is `>=22`. The workspace Node and browser floor is the table in the [root README](../../../README.md#browser-and-node-support).
+`engines.node` is `>=22`. The workspace Node and browser floor is the browser-and-Node-support table in the repository root README.
 
 ## HOST6 — no stylesheet
 
-This package ships no stylesheet. Pen has no required CSS; an editor is functional unstyled. The custom-property surface is documented in [`@input/pen-react` STYLING.md](../../rendering/react/STYLING.md).
+This package ships no stylesheet. Pen has no required CSS; an editor is functional unstyled. The custom-property surface is documented in `STYLING.md`, which ships inside the `@input/pen-react` package.
 
-Mounted examples: [`examples/react`](../../../examples/react), [`examples/vue`](../../../examples/vue), [`examples/vanilla`](../../../examples/vanilla).
+Mounted examples live in the repository under `examples/react`, `examples/vue`, and `examples/vanilla`.
+
+## Documentation
+
+The docs site (the `@input/pen-docs` package) covers this area on the Getting started page (`#/getting-started`) and the Core concepts page (`#/core-concepts`).
+
+The public signatures of record are in `api-report.md` next to this package's source in the Pen repository. The docs site does not host a generated browsable reference.
 
 ## License
 
-See `LICENSE.md`.
+MIT © Input B.V. See [`LICENSE.md`](./LICENSE.md).

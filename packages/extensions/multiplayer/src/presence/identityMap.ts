@@ -3,6 +3,7 @@ import type {
 	ClientIdentityMapLike,
 	MultiplayerAwarenessState,
 	MultiplayerUser,
+	PresenceDisplayHint,
 	ResolvePeerIdentity,
 	ResolvePeerIdentityContext,
 } from "../types";
@@ -98,12 +99,36 @@ export class ClientIdentityMap implements ClientIdentityMapLike {
 		const normalizedUser = this.resolvePeerIdentity
 			? this.resolvePeerIdentity(user, context)
 			: user;
-		return {
+		return asUnverifiedPresenceUser({
 			...normalizedUser,
 			color: normalizeMultiplayerColor(
 				normalizedUser.color,
 				context.defaultColor,
 			),
-		};
+		});
 	}
+}
+
+export function asPresenceDisplayHint(
+	user: MultiplayerUser | null | undefined,
+): PresenceDisplayHint | undefined {
+	if (!user || user.name.length === 0) {
+		return undefined;
+	}
+	return {
+		unverified: true,
+		name: user.name,
+		userId: user.id,
+		...(user.color ? { color: user.color } : {}),
+	};
+}
+
+function asUnverifiedPresenceUser(user: MultiplayerUser): MultiplayerUser {
+	return {
+		id: user.id,
+		name: user.name,
+		unverified: true,
+		...(user.color ? { color: user.color } : {}),
+		...(user.avatar ? { avatar: user.avatar } : {}),
+	};
 }

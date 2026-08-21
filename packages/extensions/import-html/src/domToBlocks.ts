@@ -314,7 +314,7 @@ function toHTMLImportElement(node: DOMNode): HTMLImportElement | null {
       return attributes[name] ?? null;
     },
     hasAttribute(name: string) {
-      return Object.hasOwn(attributes, name);
+      return Object.prototype.hasOwnProperty.call(attributes, name);
     },
   };
 }

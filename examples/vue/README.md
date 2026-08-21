@@ -2,7 +2,7 @@
 
 Minimal Vite + Vue app that mounts Pen with `@input/pen-preset-default`. `@input/pen-core` is the headless assembly point if you skip the preset.
 
-This package is **not on the pnpm workspace yet**. `pnpm-workspace.yaml` does not include `examples/*`, so `pnpm --filter @input/pen-example-vue` will not resolve until that membership lands.
+This package is a workspace member (`examples/vue` in `pnpm-workspace.yaml`).
 
 ## Install
 
@@ -34,13 +34,13 @@ const editor = createEditor({
 
 That file is `src/App.vue`. Mount it from a browser entry (`src/main.ts` calls `createApp(App).mount("#app")`).
 
-Pen ships no required stylesheet — the editor is functional unstyled. Tokens live in the `@input/pen-react` [STYLING.md](../../packages/rendering/react/STYLING.md) property reference.
+Pen ships no required stylesheet — the editor is functional unstyled. What Vue applies itself is in `STYLING.md` inside `@input/pen-vue`; the token catalog it defers to is `STYLING.md` inside `@input/pen-react`.
 
 Client-only mount: Vue has no `"use client"` directive, so `@input/pen-vue` does not emit one — mount `PenEditor` in the browser, not during SSR.
 
 ## Run from this repository
 
-Requires Node 22+ and pnpm 9. After `examples/*` is added to the workspace, from the repository root:
+Requires Node 22+ and pnpm 9. From the repository root:
 
 ```bash
 pnpm install

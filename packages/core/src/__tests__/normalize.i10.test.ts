@@ -1,4 +1,4 @@
-import { createDefaultSchema } from "@input/pen-schema-default";
+import { createDefaultSchema } from "./fixtures/testSchema";
 import type { BlockSchema, CommitEvent } from "@input/pen-types";
 import {
 	defineBlock,

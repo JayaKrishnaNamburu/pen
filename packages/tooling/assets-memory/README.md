@@ -64,3 +64,21 @@ counting and should call `delete` only when their count reaches zero.
 - It is not a durable production storage layer.
 - Uploaded refs are kept in memory for the lifetime of the provider instance
   until the host calls `delete`.
+
+## Options
+
+| Option    | Default | Effect                                                                         |
+| --------- | ------- | ------------------------------------------------------------------------------ |
+| `maxSize` | unset   | Provider-level upload cap. `upload` uses `options.maxSize ?? provider.maxSize` |
+
+`onProgress` is an `upload` option, not a factory option. This provider calls it at `0` then `1`.
+
+## Documentation
+
+The docs site (the `@input/pen-docs` package) covers runtime floor notes on the Browser and Node page (`#/support`).
+
+The public signatures of record are in `api-report.md` next to this package's source in the Pen repository. The docs site does not host a generated browsable reference.
+
+## License
+
+MIT © Input B.V. See [`LICENSE.md`](./LICENSE.md).

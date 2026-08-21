@@ -1,7 +1,7 @@
 {
   "name": "pen",
   "private": true,
-  "license": "LICENSE.md",
+  "license": "MIT",
   "packageManager": "pnpm@9.15.9",
   "scripts": {
     "build": "turbo run build",
@@ -17,8 +17,25 @@
     "version-packages": "changeset version",
     "release": "changeset publish --provenance",
     "release-check": "node scripts/release-check.mjs",
+    "coverage:rules": "node scripts/coverage-rules.mjs",
     "size-limit": "node scripts/size-limit.mjs",
+    "ch-gates": "node scripts/ch-gates.mjs",
+    "skip-hygiene": "node scripts/skip-hygiene.mjs",
+    "renderer-inventory": "node scripts/renderer-inventory.mjs",
+    "this-any-inventory": "node scripts/this-any-inventory.mjs",
+    "doc-refs": "node scripts/doc-refs.mjs",
+    "console-inventory": "node scripts/console-inventory.mjs",
+    "engines-inventory": "node scripts/engines-inventory.mjs",
+    "catalog:check": "node scripts/catalog-check.mjs",
+    "workspace-pins": "node scripts/workspace-pins.mjs",
+    "readme-sections": "node scripts/readme-sections.mjs",
     "clean": "turbo run clean && rm -rf node_modules"
+  },
+  "pnpm": {
+    "overrides": {
+      "undici": "7.29.0",
+      "dompurify": "3.4.14"
+    }
   },
   "devDependencies": {
     "@changesets/cli": "^2.30.0",

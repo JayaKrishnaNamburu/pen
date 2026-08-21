@@ -1,30 +1,97 @@
-import type { EditorInternals, CreateEditorOptions, PenEventMap, DocumentCommitEvent, CRDTAdapter, CRDTDocument, CRDTEvent, PenDocument, SchemaRegistry, Awareness, DocumentSession, DocumentScope, DocumentScopeReplacementEvent, DocumentProfile, Extension, DocumentOp, ApplyOptions, OpOrigin, MutationGroupMetadata, SelectionState, TextSelection, DocumentRange, BlockHandle, Block, DocumentState, UndoManager, Unsubscribe, CRDTMap, CRDTArray, Position, DecorationSet, EditorViewMode } from "@input/pen-types";
-import { AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY, COLLECT_KEY_BINDINGS_SLOT_KEY, usesInlineTextSelection, createMutationGroupMetadata, getApplyOptionsGroupId, MUTATION_GROUP_METADATA_KEY, UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY } from "@input/pen-types";
+import type {
+	EditorInternals,
+	CreateEditorOptions,
+	PenEventMap,
+	DocumentCommitEvent,
+	CRDTAdapter,
+	CRDTDocument,
+	CRDTEvent,
+	PenDocument,
+	SchemaRegistry,
+	Awareness,
+	DocumentSession,
+	DocumentScope,
+	DocumentScopeReplacementEvent,
+	DocumentProfile,
+	Extension,
+	DocumentOp,
+	ApplyOptions,
+	OpOrigin,
+	MutationGroupMetadata,
+	SelectionState,
+	TextSelection,
+	DocumentRange,
+	BlockHandle,
+	Block,
+	DocumentState,
+	UndoManager,
+	Unsubscribe,
+	CRDTMap,
+	CRDTArray,
+	Position,
+	DecorationSet,
+	EditorViewMode,
+} from "@input/pen-types";
+import {
+	AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY,
+	COLLECT_KEY_BINDINGS_SLOT_KEY,
+	MUTATION_GROUP_METADATA_KEY,
+	UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY,
+} from "@input/pen-types";
+import { createMutationGroupMetadata, getApplyOptionsGroupId } from "./origin";
+import { usesInlineTextSelection } from "../schema/fieldEditorCapabilities";
 import {
 	SLOT_DEPRECATED_CODE,
 	dispositionForSlot,
 } from "../facets/slotAdapter";
+import { undoManagerFacet } from "../facets/controllerFacets";
 import { getDocumentLoadReport } from "@input/pen-crdt-yjs";
-import { undoExtension } from "@input/pen-undo";
-import { documentOpsExtension } from "@input/pen-document-ops";
-import { deltaStreamExtension } from "@input/pen-delta-stream";
-import { richTextShortcutsExtension } from "@input/pen-shortcuts";
 import { SchemaEngineImpl } from "../schema/normalize";
 import { createBlockHandle } from "../schema/handles";
 import { resolveCellSelectionMatrix } from "./cellSelection";
 import { filterOpsForDocumentProfile } from "./profilePolicy";
 import type { CRDTUnknownMap } from "./crdtShapes";
-import { getTextProp, getTableContent, getCellText as getCellTextFromRow, isCRDTMap } from "./crdtShapes";
+import {
+	getTextProp,
+	getTableContent,
+	getCellText as getCellTextFromRow,
+	isCRDTMap,
+} from "./crdtShapes";
+import { createEmptyBlockIndex } from "../changes/blockIndex";
+import { createSummaryLog } from "../changes/summaryLog";
+import { emptyDecorationSet } from "./decorations";
 import { DocumentStateImpl } from "./documentState";
 import { createDocumentSession } from "./documentSession";
 
 type EditorImplRuntime = any;
 type CRDTBlockMap = CRDTMap<CRDTMap<unknown>>;
-type RawPenDocumentLike = { getArray?(name: "blockOrder"): CRDTArray<string>; getMap?(name: "blocks" | "apps" | "metadata"): CRDTMap<unknown>; blockOrder?: CRDTArray<string>; blocks?: CRDTMap<unknown>; apps?: CRDTMap<unknown>; metadata?: CRDTMap<unknown>; };
-function missingPenDocumentRoot(name: string): never { throw new Error(`CRDT document is missing required Pen root "${name}".`); }
-const NOOP_UNDO: UndoManager = { undo: () => false, redo: () => false, canUndo: () => false, canRedo: () => false, stopCapturing: () => {}, syncExplicitUndoGroup: () => {}, setGroupTimeout: () => {}, registerTrackedOrigins: () => () => {}, onStackChange: () => () => {} };
+type RawPenDocumentLike = {
+	getArray?(name: "blockOrder"): CRDTArray<string>;
+	getMap?(name: "blocks" | "apps" | "metadata"): CRDTMap<unknown>;
+	blockOrder?: CRDTArray<string>;
+	blocks?: CRDTMap<unknown>;
+	apps?: CRDTMap<unknown>;
+	metadata?: CRDTMap<unknown>;
+};
+function missingPenDocumentRoot(name: string): never {
+	throw new Error(`CRDT document is missing required Pen root "${name}".`);
+}
+const NOOP_UNDO: UndoManager = {
+	undo: () => false,
+	redo: () => false,
+	canUndo: () => false,
+	canRedo: () => false,
+	stopCapturing: () => {},
+	syncExplicitUndoGroup: () => {},
+	setGroupTimeout: () => {},
+	registerTrackedOrigins: () => () => {},
+	onStackChange: () => () => {},
+};
 
-function readAdaptedSlot<T>(self: EditorImplRuntime, key: string): T | undefined {
+function readAdaptedSlot<T>(
+	self: EditorImplRuntime,
+	key: string,
+): T | undefined {
 	const disposition = dispositionForSlot(key);
 	if (disposition?.kind === "whenReady") {
 		return (() => self.whenReady()) as T;
@@ -75,202 +142,217 @@ function warnSlotDeprecated(self: EditorImplRuntime, key: string): void {
 		level: "warn",
 		source: "facets",
 		message: `getSlot/setSlot("${key}") is deprecated; use editor.facet()`,
-		remediation: "Read the mapped facet from editor.facet() and stop calling setSlot for this key.",
+		remediation:
+			"Read the mapped facet from editor.facet() and stop calling setSlot for this key.",
 		key,
 	});
 }
 
-export function getRawBlockMap(editor: EditorImplRuntime, blockId: string): CRDTUnknownMap | null {
+export function getRawBlockMap(
+	editor: EditorImplRuntime,
+	blockId: string,
+): CRDTUnknownMap | null {
 	const self = editor as EditorImplRuntime;
-const blockMap = (self._doc.blocks as CRDTBlockMap).get(blockId);
-return (blockMap as unknown as CRDTUnknownMap) ?? null;
+	const blockMap = (self._doc.blocks as CRDTBlockMap).get(blockId);
+	return (blockMap as unknown as CRDTUnknownMap) ?? null;
 }
 
-export function getEditorInternals(editor: EditorImplRuntime, ): EditorInternals {
+export function getEditorInternals(editor: EditorImplRuntime): EditorInternals {
 	const self = editor as EditorImplRuntime;
-return {
-	adapter: self._adapter,
-	crdtDoc: self._crdtDoc,
-	doc: self._doc,
-	engine: self._engine,
-	awareness: self._awareness,
-	documentSession: self._documentSession,
-	documentScope: self._documentScope,
-	viewId: self._viewId,
-	emit: (event, ...args) => {
-		self._emitter.emit(event, ...args);
-	},
-	hasListeners: (event) => self._emitter.has(event),
-	onApplyBoundary: (hook) =>
-		self._pipeline.addApplyBoundaryHook(hook),
-	onPipelinePhase: (listener) => self._onPipelinePhase(listener),
-	getSlot: <T>(key: string): T | undefined => readAdaptedSlot(self, key),
-	setSlot: (key: string, value: unknown): void => {
-		writeAdaptedSlot(self, key, value, true);
-	},
-	assignSlot: (key: string, value: unknown): void => {
-		writeAdaptedSlot(self, key, value, false);
-	},
-	getBlockText: (blockId: string): unknown => {
-		const blockMap = self._getRawBlockMap(blockId);
-		if (!blockMap) return null;
-		return getTextProp(blockMap, "content");
-	},
-	getCellText: (
-		blockId: string,
-		row: number,
-		col: number,
-	): unknown => {
-		const blockMap = self._getRawBlockMap(blockId);
-		if (!blockMap) return null;
-		const tableContent = getTableContent(blockMap);
-		if (!tableContent || row < 0 || row >= tableContent.length)
-			return null;
-		const rowMap = tableContent.get(row);
-		if (!rowMap || !isCRDTMap(rowMap)) return null;
-		return getCellTextFromRow(rowMap, col);
-	},
-};
+	return {
+		adapter: self._adapter,
+		crdtDoc: self._crdtDoc,
+		doc: self._doc,
+		engine: self._engine,
+		awareness: self._awareness,
+		documentSession: self._documentSession,
+		documentScope: self._documentScope,
+		viewId: self._viewId,
+		emit: (event, ...args) => {
+			self._emitter.emit(event, ...args);
+		},
+		hasListeners: (event) => self._emitter.has(event),
+		onApplyBoundary: (hook) => self._pipeline.addApplyBoundaryHook(hook),
+		onPipelinePhase: (listener) => self._onPipelinePhase(listener),
+		getSlot: <T>(key: string): T | undefined => readAdaptedSlot(self, key),
+		setSlot: (key: string, value: unknown): void => {
+			writeAdaptedSlot(self, key, value, true);
+		},
+		assignSlot: (key: string, value: unknown): void => {
+			writeAdaptedSlot(self, key, value, false);
+		},
+		getBlockText: (blockId: string): unknown => {
+			const blockMap = self._getRawBlockMap(blockId);
+			if (!blockMap) return null;
+			return getTextProp(blockMap, "content");
+		},
+		getCellText: (blockId: string, row: number, col: number): unknown => {
+			const blockMap = self._getRawBlockMap(blockId);
+			if (!blockMap) return null;
+			const tableContent = getTableContent(blockMap);
+			if (!tableContent || row < 0 || row >= tableContent.length)
+				return null;
+			const rowMap = tableContent.get(row);
+			if (!rowMap || !isCRDTMap(rowMap)) return null;
+			return getCellTextFromRow(rowMap, col);
+		},
+	};
 }
 
-export function applyEditorOps(editor: EditorImplRuntime, ops: DocumentOp[], options?: ApplyOptions): void {
+export function applyEditorOps(
+	editor: EditorImplRuntime,
+	ops: DocumentOp[],
+	options?: ApplyOptions,
+): void {
 	const self = editor as EditorImplRuntime;
-const origin = options?.origin ?? "user";
-const groupId = getApplyOptionsGroupId(origin, options);
-const undo = self._slots.get("undo:manager") as UndoManager | undefined;
+	const origin = options?.origin ?? "user";
+	const groupId = getApplyOptionsGroupId(origin, options);
+	const undo = self._slots.get("undo:manager") as UndoManager | undefined;
 
-undo?.syncExplicitUndoGroup(groupId ?? null);
+	undo?.syncExplicitUndoGroup(groupId ?? null);
 
-if (options?.undoGroup && !groupId) {
-	undo?.stopCapturing();
+	if (options?.undoGroup && !groupId) {
+		undo?.stopCapturing();
+	}
+
+	self._pipeline.apply(ops, origin);
+	self._recordMutationGroupMetadata(origin, groupId);
 }
 
-self._pipeline.apply(ops, origin);
-self._recordMutationGroupMetadata(origin, groupId);
-}
-
-export function recordMutationGroupMetadata(editor: EditorImplRuntime, 
+export function recordMutationGroupMetadata(
+	editor: EditorImplRuntime,
 	origin: OpOrigin,
 	groupId: string | undefined,
 ): void {
 	const self = editor as EditorImplRuntime;
-if (!groupId) {
-	return;
-}
-const controller = self._slots.get(
-	UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY,
-) as
-	| {
-			setCurrentEntryMetadata<T>(
-				key: string,
-				value: { before: T | null; after: T | null },
-			): boolean;
-	  }
-	| undefined;
-controller?.setCurrentEntryMetadata<MutationGroupMetadata>(
-	MUTATION_GROUP_METADATA_KEY,
-	{
-		before: null,
-		after: createMutationGroupMetadata(origin, groupId),
-	},
-);
-}
-
-export function loadEditorDocument(editor: EditorImplRuntime, doc: CRDTDocument): void {
-	const self = editor as EditorImplRuntime;
-self._queueExtensionLifecycle(async () => {
-	await self._extensions.deactivateAll(self);
-	if (self._isDestroyed) {
+	if (!groupId) {
 		return;
 	}
-	self._teardownObservation();
-	self._releaseSession?.();
-	self._releaseSession = null;
-	self._bindSession(
-		createDocumentSession({
-			adapter: self._adapter,
-			document: doc,
-			destroyWhenIdle: true,
-			ownsDocuments: false,
-		}),
+	const controller = self._slots.get(
+		UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY,
+	) as
+		| {
+				setCurrentEntryMetadata<T>(
+					key: string,
+					value: { before: T | null; after: T | null },
+				): boolean;
+		  }
+		| undefined;
+	controller?.setCurrentEntryMetadata<MutationGroupMetadata>(
+		MUTATION_GROUP_METADATA_KEY,
+		{
+			before: null,
+			after: createMutationGroupMetadata(origin, groupId),
+		},
 	);
-	await self._rebindActiveScope();
-	const report = getDocumentLoadReport(doc);
-	if (report?.state === "repaired") {
-		self._emitter.emit("crdt:recovered", "repair");
-	}
-});
 }
 
-export function* iterateBlocks(editor: EditorImplRuntime, type?: string): Iterable<BlockHandle> {
+export function loadEditorDocument(
+	editor: EditorImplRuntime,
+	doc: CRDTDocument,
+): void {
 	const self = editor as EditorImplRuntime;
-for (let i = 0; i < self._doc.blockOrder.length; i++) {
+	self._queueExtensionLifecycle(async () => {
+		await self._extensions.deactivateAll(self);
+		if (self._isDestroyed) {
+			return;
+		}
+		self._teardownObservation();
+		self._releaseSession?.();
+		self._releaseSession = null;
+		self._bindSession(
+			createDocumentSession({
+				adapter: self._adapter,
+				document: doc,
+				destroyWhenIdle: true,
+				ownsDocuments: false,
+			}),
+		);
+		await self._rebindActiveScope();
+		const report = getDocumentLoadReport(doc);
+		if (report?.state === "repaired") {
+			self._emitter.emit("crdt:recovered", "repair");
+		}
+	});
+}
+
+export function* iterateBlocks(
+	editor: EditorImplRuntime,
+	type?: string,
+): Iterable<BlockHandle> {
+	const self = editor as EditorImplRuntime;
+	for (let i = 0; i < self._doc.blockOrder.length; i++) {
+		const id = (self._doc.blockOrder as CRDTArray<string>).get(i) as string;
+		if (type) {
+			const blockMap = (self._doc.blocks as CRDTBlockMap).get(id);
+			if (!blockMap || blockMap.get("type") !== type) continue;
+		}
+		yield createBlockHandle(id, self._doc, self._crdtDoc, self._registry);
+	}
+}
+
+export function getEditorBlock(
+	editor: EditorImplRuntime,
+	blockId: string,
+): BlockHandle | null {
+	const self = editor as EditorImplRuntime;
+	if (!(self._doc.blocks as CRDTBlockMap).has(blockId)) return null;
+	return createBlockHandle(blockId, self._doc, self._crdtDoc, self._registry);
+}
+
+export function getFirstBlock(editor: EditorImplRuntime): BlockHandle | null {
+	const self = editor as EditorImplRuntime;
+	if (self._doc.blockOrder.length === 0) return null;
+	const id = (self._doc.blockOrder as CRDTArray<string>).get(0) as string;
+	return createBlockHandle(id, self._doc, self._crdtDoc, self._registry);
+}
+
+export function getLastBlock(editor: EditorImplRuntime): BlockHandle | null {
+	const self = editor as EditorImplRuntime;
+	const len = self._doc.blockOrder.length;
+	if (len === 0) return null;
 	const id = (self._doc.blockOrder as CRDTArray<string>).get(
-		i,
+		len - 1,
 	) as string;
-	if (type) {
-		const blockMap = (self._doc.blocks as CRDTBlockMap).get(id);
-		if (!blockMap || blockMap.get("type") !== type) continue;
-	}
-	yield createBlockHandle(
-		id,
-		self._doc,
-		self._crdtDoc,
-		self._registry,
-	);
-}
+	return createBlockHandle(id, self._doc, self._crdtDoc, self._registry);
 }
 
-export function getEditorBlock(editor: EditorImplRuntime, blockId: string): BlockHandle | null {
+export function getBlockCount(editor: EditorImplRuntime): number {
 	const self = editor as EditorImplRuntime;
-if (!(self._doc.blocks as CRDTBlockMap).has(blockId)) return null;
-return createBlockHandle(
-	blockId,
-	self._doc,
-	self._crdtDoc,
-	self._registry,
-);
+	return self._doc.blockOrder.length;
 }
 
-export function getFirstBlock(editor: EditorImplRuntime, ): BlockHandle | null {
+export function getEditorBlockRevision(
+	editor: EditorImplRuntime,
+	blockId: string,
+): number {
 	const self = editor as EditorImplRuntime;
-if (self._doc.blockOrder.length === 0) return null;
-const id = (self._doc.blockOrder as CRDTArray<string>).get(0) as string;
-return createBlockHandle(id, self._doc, self._crdtDoc, self._registry);
-}
-
-export function getLastBlock(editor: EditorImplRuntime, ): BlockHandle | null {
-	const self = editor as EditorImplRuntime;
-const len = self._doc.blockOrder.length;
-if (len === 0) return null;
-const id = (self._doc.blockOrder as CRDTArray<string>).get(
-	len - 1,
-) as string;
-return createBlockHandle(id, self._doc, self._crdtDoc, self._registry);
-}
-
-export function getBlockCount(editor: EditorImplRuntime, ): number {
-	const self = editor as EditorImplRuntime;
-return self._doc.blockOrder.length;
-}
-
-export function getEditorBlockRevision(editor: EditorImplRuntime, blockId: string): number {
-	const self = editor as EditorImplRuntime;
-return self._blockRevisions.get(blockId) ?? 0;
+	return self._blockRevisions.get(blockId) ?? 0;
 }
 
 export function destroyEditor(editor: EditorImplRuntime): Promise<void> {
 	const self = editor as EditorImplRuntime;
-if (self._isDestroyed) {
-	return self._extensionLifecycle;
+	if (self._isDestroyed) {
+		return self._extensionLifecycle;
+	}
+	self._isDestroyed = true;
+	self._blockRevisions.clear();
+	return self._queueExtensionLifecycle(async () => {
+		await self._extensions.deactivateAll(self);
+		self._teardownObservation();
+		self._releaseSession?.();
+		self._releaseSession = null;
+		self._emitter.removeAllListeners();
+		releaseDestroyedEditorCaches(self);
+	});
 }
-self._isDestroyed = true;
-self._blockRevisions.clear();
-return self._queueExtensionLifecycle(async () => {
-	await self._extensions.deactivateAll(self);
-	self._teardownObservation();
-	self._releaseSession?.();
-	self._releaseSession = null;
-	self._emitter.removeAllListeners();
-});
+
+function releaseDestroyedEditorCaches(self: EditorImplRuntime): void {
+	self._decorations = emptyDecorationSet();
+	self._summaryLog = createSummaryLog();
+	self._blockIndex = createEmptyBlockIndex();
+	self._documentState.clear();
+	self._slots.delete("undo:manager");
+	self._facetRegistry.override(undoManagerFacet, null);
+	self._refreshUndoManager();
 }

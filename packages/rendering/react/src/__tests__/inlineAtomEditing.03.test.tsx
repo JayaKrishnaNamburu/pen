@@ -25,15 +25,15 @@ import {
 	fullReconcileDeltasToDOM,
 } from "@input/pen-dom/field-editor/reconciler";
 import { DATA_ATTRS } from "../utils/dataAttributes";
-import { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
+import { FieldEditorImpl } from "@input/pen-dom/field-editor/fieldEditorImpl";
 import {
 	domPointToOffset,
 	domSelectionToEditor,
 	editorSelectionToDOM,
 	getSelectionOffsets,
 	pointToEditorSelectionPoint,
-} from "../field-editor/selectionBridge";
-import { handleFieldEditorKeyDown } from "../field-editor/keyHandling";
+} from "@input/pen-dom/field-editor/selectionBridge";
+import { handleFieldEditorKeyDown } from "@input/pen-dom/field-editor/keyHandling";
 import { Pen } from "../primitives/index";
 
 (
@@ -50,7 +50,8 @@ async function flushAnimationFrames(count = 1): Promise<void> {
 
 function createPresetEditor() {
 	return createEditor({
-		schema: createDefaultSchema(),preset: defaultPreset({
+		schema: createDefaultSchema(),
+		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
 			undo: false,
@@ -339,7 +340,9 @@ describe("Pen inline atom editing", () => {
 			) as HTMLElement | null;
 			expect(dropCaret).not.toBeNull();
 			expect(dropCaret?.style.position).toBe("fixed");
-			expect(dropCaret?.style.width).toBe("var(--pen-drop-caret-width, 1px)");
+			expect(dropCaret?.style.width).toBe(
+				"var(--pen-drop-caret-width, 1px)",
+			);
 			expect(dropCaret?.style.background).toBe(
 				"var(--pen-drop-caret-color, var(--pen-caret-color, currentColor))",
 			);
@@ -363,7 +366,9 @@ describe("Pen inline atom editing", () => {
 			expect(contentElement?.hasAttribute(DATA_ATTRS.dropTarget)).toBe(
 				false,
 			);
-			expect(container.querySelector(`[${DATA_ATTRS.dropCaret}]`)).toBeNull();
+			expect(
+				container.querySelector(`[${DATA_ATTRS.dropCaret}]`),
+			).toBeNull();
 		} finally {
 			documentWithCaret.caretPositionFromPoint =
 				originalCaretPositionFromPoint;
@@ -375,6 +380,4 @@ describe("Pen inline atom editing", () => {
 			editor.destroy();
 		}
 	});
-
-
 });

@@ -1,4 +1,4 @@
-import { computeBidiRuns, type BlockDirection } from "../bidi";
+import { computeBidiRuns } from "../bidi";
 import type {
 	Affinity,
 	BidiRun,
@@ -6,7 +6,7 @@ import type {
 	LineBox,
 	Rect,
 } from "./types";
-import { collapsedRect, isUsefulRect } from "./types";
+import { collapsedRect, isUsefulRect, singleRunLineBox } from "./types";
 
 export type LineBoxSeed = {
 	readonly top: number;
@@ -16,85 +16,22 @@ export type LineBoxSeed = {
 	readonly rect: Rect;
 };
 
-/**
- * Length-proportional left-to-right slices of the line box.
- * jsdom `Range.getClientRects` is empty, so this is the unit-test
- * approximation. Browser 1px agreement with native selection rects is
- * deferred to the conformance harness (wave 6.3 checkpoint).
- */
-export function splitLineRectByRunLength(
-	runs: readonly BidiRun[],
-	lineRect: Rect,
-): BidiRunGeometry[] {
-	const total = runs.reduce((sum, run) => sum + (run.to - run.from), 0);
-	if (total <= 0) {
-		return runs.map((run) => ({ run, rect: lineRect }));
-	}
-
-	let x = lineRect.left;
-	return runs.map((run, index) => {
-		const last = index === runs.length - 1;
-		const width = last
-			? lineRect.right - x
-			: (lineRect.width * (run.to - run.from)) / total;
-		const rect: Rect = {
-			x,
-			y: lineRect.top,
-			width,
-			height: lineRect.height,
-			left: x,
-			top: lineRect.top,
-			right: x + width,
-			bottom: lineRect.bottom,
-		};
-		x += width;
-		return { run, rect };
-	});
-}
-
-export function clipRunsToLine(
-	runs: readonly BidiRun[],
-	startOffset: number,
-	endOffset: number,
-	base: BlockDirection,
-): BidiRun[] {
-	const clipped: BidiRun[] = [];
-	for (const run of runs) {
-		const from = Math.max(run.from, startOffset);
-		const to = Math.min(run.to, endOffset);
-		if (to > from) {
-			clipped.push({ from, to, level: run.level });
-		}
-	}
-	if (clipped.length === 0) {
-		return [
-			{
-				from: startOffset,
-				to: endOffset,
-				level: base === "rtl" ? 1 : 0,
-			},
-		];
-	}
-	return clipped;
-}
-
 export function attachBidiRunsToLines(
 	lines: readonly LineBoxSeed[],
-	text: string,
-	base: BlockDirection,
+	text?: string,
+	base: "ltr" | "rtl" = "ltr",
 	measureRun?: (run: BidiRun) => Rect | null,
 ): LineBox[] {
-	const allRuns = computeBidiRuns(text, base);
-	return lines.map((line) => {
-		const runs = clipRunsToLine(allRuns, line.start, line.end, base);
-		return {
-			top: line.top,
-			bottom: line.bottom,
-			startOffset: line.start,
-			endOffset: line.end,
-			runs: assignRunRects(runs, line.rect, measureRun),
-		};
-	});
+	if (text === undefined) {
+		return lines.map((line) =>
+			singleRunLineBox(line.rect, line.start, line.end),
+		);
+	}
+
+	const paragraphRuns = computeBidiRuns(text, base);
+	return lines.map((line) =>
+		attachRunsToLine(line, paragraphRuns, base, measureRun),
+	);
 }
 
 export function rangeRectsFromLineBoxes(
@@ -109,7 +46,8 @@ export function rangeRectsFromLineBoxes(
 		return [];
 	}
 
-	const slices: { start: number; end: number; approx: Rect }[] = [];
+	const slices: { start: number; end: number; approx: Rect; runRect: Rect }[] =
+		[];
 	for (const line of lines) {
 		for (const geo of line.runs) {
 			const start = Math.max(geo.run.from, lo);
@@ -121,6 +59,7 @@ export function rangeRectsFromLineBoxes(
 				start,
 				end,
 				approx: sliceRunRect(geo, start, end),
+				runRect: geo.rect,
 			});
 		}
 	}
@@ -135,7 +74,10 @@ export function rangeRectsFromLineBoxes(
 		if (!rect || !isUsefulRect(rect)) {
 			return slices.map((entry) => entry.approx);
 		}
-		measured.push(rect);
+		const clipped = intersectRects(rect, slice.runRect);
+		measured.push(
+			clipped && isUsefulRect(clipped) ? clipped : slice.approx,
+		);
 	}
 	return measured;
 }
@@ -183,30 +125,161 @@ export function caretRectAtBidiBoundary(
 	return caretOnRun(geo, caretEdgeForPickedRun(line.runs, offset, affinity));
 }
 
-function assignRunRects(
-	runs: readonly BidiRun[],
-	lineRect: Rect,
+function attachRunsToLine(
+	line: LineBoxSeed,
+	paragraphRuns: readonly BidiRun[],
+	base: "ltr" | "rtl",
 	measureRun?: (run: BidiRun) => Rect | null,
+): LineBox {
+	const clipped = clipRunsToLine(paragraphRuns, line.start, line.end);
+	if (clipped.length === 0) {
+		return emptyLineBox(line, base);
+	}
+
+	const approx = approxVisualRunRects(clipped, line);
+	const runs: BidiRunGeometry[] = clipped.map((run, index) => {
+		const measured = measureRun?.(run);
+		return {
+			run,
+			rect:
+				measured && isUsefulRect(measured)
+					? measured
+					: (approx[index] ?? line.rect),
+		};
+	});
+
+	return {
+		top: line.top,
+		bottom: line.bottom,
+		startOffset: line.start,
+		endOffset: line.end,
+		runs: packVisualRunRects(runs),
+	};
+}
+
+function packVisualRunRects(
+	runs: readonly BidiRunGeometry[],
 ): BidiRunGeometry[] {
-	if (measureRun) {
-		const measured: Rect[] = [];
-		let allUseful = true;
-		for (const run of runs) {
-			const rect = measureRun(run);
-			if (!rect || !isUsefulRect(rect)) {
-				allUseful = false;
-				break;
-			}
-			measured.push(rect);
+	if (runs.length < 2) {
+		return [...runs];
+	}
+
+	const packed: BidiRunGeometry[] = [];
+	for (const geo of runs) {
+		const previous = packed[packed.length - 1];
+		if (!previous || geo.rect.left >= previous.rect.right) {
+			packed.push(geo);
+			continue;
 		}
-		if (allUseful && measured.length === runs.length) {
-			return runs.map((run, index) => ({
-				run,
-				rect: measured[index]!,
-			}));
+		packed.push({
+			run: geo.run,
+			rect: horizontalRect(geo.rect, previous.rect.right, geo.rect.right),
+		});
+	}
+	return packed;
+}
+
+function intersectRects(left: Rect, right: Rect): Rect | null {
+	const nextLeft = Math.max(left.left, right.left);
+	const nextRight = Math.min(left.right, right.right);
+	const nextTop = Math.max(left.top, right.top);
+	const nextBottom = Math.min(left.bottom, right.bottom);
+	if (nextRight <= nextLeft || nextBottom <= nextTop) {
+		return null;
+	}
+	return {
+		x: nextLeft,
+		y: nextTop,
+		width: nextRight - nextLeft,
+		height: nextBottom - nextTop,
+		left: nextLeft,
+		top: nextTop,
+		right: nextRight,
+		bottom: nextBottom,
+	};
+}
+
+function horizontalRect(source: Rect, left: number, right: number): Rect {
+	const nextLeft = left;
+	const nextRight = Math.max(left, right);
+	return {
+		x: nextLeft,
+		y: source.top,
+		width: nextRight - nextLeft,
+		height: source.height,
+		left: nextLeft,
+		top: source.top,
+		right: nextRight,
+		bottom: source.bottom,
+	};
+}
+
+function clipRunsToLine(
+	runs: readonly BidiRun[],
+	start: number,
+	end: number,
+): BidiRun[] {
+	if (end <= start) {
+		return [];
+	}
+	const clipped: BidiRun[] = [];
+	for (const run of runs) {
+		const from = Math.max(run.from, start);
+		const to = Math.min(run.to, end);
+		if (to > from) {
+			clipped.push({ from, to, level: run.level });
 		}
 	}
-	return splitLineRectByRunLength(runs, lineRect);
+	return clipped;
+}
+
+function emptyLineBox(line: LineBoxSeed, base: "ltr" | "rtl"): LineBox {
+	return {
+		top: line.top,
+		bottom: line.bottom,
+		startOffset: line.start,
+		endOffset: line.end,
+		runs: [
+			{
+				run: {
+					from: line.start,
+					to: line.end,
+					level: base === "rtl" ? 1 : 0,
+				},
+				rect: line.rect,
+			},
+		],
+	};
+}
+
+function approxVisualRunRects(
+	runs: readonly BidiRun[],
+	line: LineBoxSeed,
+): Rect[] {
+	const span = line.end - line.start;
+	if (span <= 0 || runs.length === 0) {
+		return runs.map(() => line.rect);
+	}
+
+	let left = line.rect.left;
+	return runs.map((run, index) => {
+		const last = index === runs.length - 1;
+		const width = last
+			? line.rect.right - left
+			: line.rect.width * ((run.to - run.from) / span);
+		const rect = {
+			x: left,
+			y: line.rect.top,
+			width,
+			height: line.rect.height,
+			left,
+			top: line.rect.top,
+			right: left + width,
+			bottom: line.rect.bottom,
+		};
+		left += width;
+		return rect;
+	});
 }
 
 function sliceRunRect(

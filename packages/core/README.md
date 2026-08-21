@@ -2,7 +2,7 @@
 
 Headless editor runtime for Pen.
 
-This package is published publicly. The Pen SDK is source-available under a commercial license (`LICENSE.md`). Production use requires a license from Input.
+`createEditor` and `createHeadlessEditor` own document state, selection, normalization, and `editor.apply`. This package does not render a surface or ship CSS.
 
 ## Install
 
@@ -17,12 +17,25 @@ pnpm add @input/pen-core
 - document state, selection, normalization, and mutation orchestration
 - the canonical `editor.apply(...)` document mutation boundary
 
+## Usage
+
+```ts
+import { createEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
+
+const editor = createEditor({
+  preset: defaultPreset(),
+});
+```
+
 ## Headless Usage
 
 ```ts
+import * as Y from "yjs";
 import { createHeadlessEditor } from "@input/pen-core";
 import { yjsAdapter, wrapYjsDocument } from "@input/pen-crdt-yjs";
 
+const ydoc = new Y.Doc();
 const adapter = yjsAdapter();
 const editor = createHeadlessEditor({
   crdt: adapter,
@@ -41,4 +54,31 @@ Most apps use `@input/pen-core` with:
 - `@input/pen-preset-default`
 - `@input/pen-react` or `@input/pen-vue`
 
-See the repository root README for the broader package map and licensing details.
+See the repository root README for the broader package map.
+
+## Options
+
+Every `CreateEditorOptions` field is optional.
+
+| Option            | Default | Effect                                                                |
+| ----------------- | ------- | --------------------------------------------------------------------- |
+| `schema`          | unset   | Active schema. Omitted with no preset does not install default blocks |
+| `preset`          | unset   | Assembler such as `defaultPreset()`                                   |
+| `extensions`      | unset   | Extra extensions merged with the preset                               |
+| `locale`          | unset   | Editor locale                                                         |
+| `messages`        | unset   | Partial message-catalog override                                      |
+| `a11yLabel`       | unset   | Accessible name for the editor surface                                |
+| `editorViewMode`  | unset   | View mode                                                             |
+| `documentProfile` | unset   | Authoring profile                                                     |
+
+`createHeadlessEditor` adds `useDefaultExtensions`, default `false`. When that flag is false and no `preset` is passed, the editor uses an empty preset.
+
+## Documentation
+
+The docs site (the `@input/pen-docs` package) covers this area on the Core concepts page (`#/core-concepts`).
+
+The public signatures of record are in `api-report.md` next to this package's source in the Pen repository. The docs site does not host a generated browsable reference.
+
+## License
+
+MIT © Input B.V. See [`LICENSE.md`](./LICENSE.md).

@@ -13,7 +13,7 @@ pnpm add @input/pen-ai-skills
 ## What a host implements
 
 - Supply tool descriptors (`AIToolDescriptor` from `@input/pen-ai-tools`) and, if wanted, autocomplete provider descriptors (`AutocompleteProviderDescriptor` from `@input/pen-ai-autocomplete`). A live editor is optional; this package only consumes the descriptor arrays.
-- Call `listDefaultAISkills` for the usual pair (document-agent always; autocomplete-context only when providers are supplied), call a builder, or author an `AISkillDefinition`.
+- Call `listDefaultAISkills` for the usual pair (document-agent always; autocomplete-context only when providers are supplied), or author an `AISkillDefinition`.
 - Write or serve the `{ path, content }` list from `renderSkillFiles` (`SKILL.md`, helper scripts, JSON references).
 - Load those files into the host's agent product. Pen has no skill loader.
 
@@ -30,19 +30,13 @@ pnpm add @input/pen-ai-skills
 | Export                                              | Role                                                                                                                |
 | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | `listDefaultAISkills`                               | Builds the bundled document-agent skill, plus an autocomplete-context skill when provider descriptors are supplied. |
-| `createDocumentAgentSkill`                          | Builds the document-agent skill from tool descriptors.                                                              |
-| `createAutocompleteProviderSkill`                   | Builds the autocomplete-context skill from provider descriptors.                                                    |
-| `renderSkillMarkdown`                               | Renders one skill's `SKILL.md` body.                                                                                |
 | `renderSkillFiles`                                  | Renders `SKILL.md` plus any scripts and references.                                                                 |
 | `AISkillDefinition`, `AISkillFile`, `AISkillScript` | Artifact shapes.                                                                                                    |
 
 ## Usage
 
 ```ts
-import {
-  listDefaultAISkills,
-  renderSkillFiles,
-} from "@input/pen-ai-skills";
+import { listDefaultAISkills, renderSkillFiles } from "@input/pen-ai-skills";
 import type { AIToolDescriptor } from "@input/pen-ai-tools";
 import type { AutocompleteProviderDescriptor } from "@input/pen-ai-autocomplete";
 
@@ -69,6 +63,20 @@ const files = skills.flatMap((skill) => renderSkillFiles(skill));
 
 Hosts that already have an editor can obtain descriptors from `@input/pen-ai-tools` (`listAITools`) and from the autocomplete controller's `listProviderDescriptors()`. That wiring is host-owned; it is not a skills-package API.
 
+## Options
+
+This package has no options. `listDefaultAISkills` always includes the document-agent skill and adds the autocomplete-context skill only when `autocompleteProviders` is supplied.
+
+## Facets and commands
+
+This package contributes no facets and no commands. It requires no other extensions. It reads descriptor arrays from `@input/pen-ai-tools` and `@input/pen-ai-autocomplete` when the host supplies them.
+
+## Documentation
+
+The docs site (the `@input/pen-docs` package) covers this area on the AI features page (`#/ai`).
+
+The public signatures of record are in `api-report.md` next to this package's source in the Pen repository. The docs site does not host a generated browsable reference.
+
 ## License
 
-See `LICENSE.md`.
+MIT © Input B.V. See [`LICENSE.md`](./LICENSE.md).

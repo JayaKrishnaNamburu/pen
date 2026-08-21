@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
+import { undoExtension } from "@input/pen-undo";
+import { deltaStreamExtension } from "@input/pen-delta-stream";
+import { documentOpsExtension } from "@input/pen-document-ops";
 import { defaultSchema } from "@input/pen-schema-default";
 import {
 	aiExtension,
@@ -10,14 +13,22 @@ import {
 
 describe("AI command catalog (LOC1)", () => {
 	it("LOC1: default command bindings store catalog keys, not English literals", () => {
-		const rewrite = defaultAICommands.find((command) => command.id === "ai:rewrite");
+		const rewrite = defaultAICommands.find(
+			(command) => command.id === "ai:rewrite",
+		);
 		expect(rewrite?.label).toBe("pen.ai.command.rewrite");
 		expect(rewrite?.description).toBe("pen.ai.command.rewrite.description");
 	});
 
 	it("LOC1: getCommands resolves default labels from the English catalog", () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [aiExtension()],
+			schema: defaultSchema,
+			extensions: [
+				undoExtension(),
+				deltaStreamExtension(),
+				documentOpsExtension(),
+				aiExtension(),
+			],
 		});
 		const controller = getAIController(editor);
 		expect(controller).toBeTruthy();
@@ -48,7 +59,13 @@ describe("AI command catalog (LOC1)", () => {
 
 	it("LOC1: host messages override default command labels", () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [aiExtension()],
+			schema: defaultSchema,
+			extensions: [
+				undoExtension(),
+				deltaStreamExtension(),
+				documentOpsExtension(),
+				aiExtension(),
+			],
 			messages: {
 				"pen.ai.command.rewrite": "Umschreiben",
 				"pen.ai.command.continue": "Weiter schreiben",
@@ -80,7 +97,8 @@ describe("AI command catalog (LOC1)", () => {
 
 	it("LOC1: review artifacts resolve through the catalog", () => {
 		const editor = createEditor({
-			schema: defaultSchema,messages: {
+			schema: defaultSchema,
+			messages: {
 				"pen.ai.review.replaceText": "Text ersetzen",
 			},
 		});

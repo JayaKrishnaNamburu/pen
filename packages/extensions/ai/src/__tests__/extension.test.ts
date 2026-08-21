@@ -1,4 +1,7 @@
 import { createEditor } from "@input/pen-core";
+import { undoExtension } from "@input/pen-undo";
+import { deltaStreamExtension } from "@input/pen-delta-stream";
+import { documentOpsExtension } from "@input/pen-document-ops";
 import { AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 import { defaultSchema } from "@input/pen-schema-default";
@@ -13,7 +16,9 @@ import {
 	getAIReviewController,
 } from "../index";
 
-async function awaitExtensionLifecycle(editor: ReturnType<typeof createEditor>) {
+async function awaitExtensionLifecycle(
+	editor: ReturnType<typeof createEditor>,
+) {
 	await (editor.internals.getSlot<() => Promise<void>>(
 		AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY,
 	)?.() ?? Promise.resolve());
@@ -29,7 +34,15 @@ describe("aiExtension", () => {
 			"undo",
 		]);
 
-		const editor = createEditor({ schema: defaultSchema,  extensions: [extension] });
+		const editor = createEditor({
+			schema: defaultSchema,
+			extensions: [
+				undoExtension(),
+				deltaStreamExtension(),
+				documentOpsExtension(),
+				extension,
+			],
+		});
 		const controller = getAIController(editor);
 
 		expect(controller).toBeTruthy();
@@ -37,13 +50,21 @@ describe("aiExtension", () => {
 		expect(getAIReviewController(editor)).toBeTruthy();
 		expect(editor.internals.getSlot(AI_CONTROLLER_SLOT)).toBe(controller);
 		expect(editor.internals.getSlot(AI_INLINE_HISTORY_SLOT)).toBeTruthy();
-		expect(editor.internals.getSlot(AI_REVIEW_CONTROLLER_SLOT)).toBeTruthy();
+		expect(
+			editor.internals.getSlot(AI_REVIEW_CONTROLLER_SLOT),
+		).toBeTruthy();
 		expect(controller!.getState().suggestMode).toBe(false);
 	});
 
 	it("CH3 clears controller slots when the extension deactivates", async () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [aiExtension()],
+			schema: defaultSchema,
+			extensions: [
+				undoExtension(),
+				deltaStreamExtension(),
+				documentOpsExtension(),
+				aiExtension(),
+			],
 		});
 		expect(getAIController(editor)).toBeTruthy();
 
@@ -57,7 +78,13 @@ describe("aiExtension", () => {
 
 	it("CH3 intercepts user apply through the suggest-mode hook", () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [aiExtension({ suggestMode: true, author: "tester" })],
+			schema: defaultSchema,
+			extensions: [
+				undoExtension(),
+				deltaStreamExtension(),
+				documentOpsExtension(),
+				aiExtension({ suggestMode: true, author: "tester" }),
+			],
 		});
 		const blockId = editor.firstBlock()!.id;
 
@@ -78,7 +105,13 @@ describe("aiExtension", () => {
 
 	it("ST1: suggest-mode beforeApply keeps stream-open so a writer can flush", () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [aiExtension({ suggestMode: true, author: "tester" })],
+			schema: defaultSchema,
+			extensions: [
+				undoExtension(),
+				deltaStreamExtension(),
+				documentOpsExtension(),
+				aiExtension({ suggestMode: true, author: "tester" }),
+			],
 		});
 		const blockId = editor.firstBlock()!.id;
 
@@ -97,7 +130,13 @@ describe("aiExtension", () => {
 
 	it("CH4 installs controller methods on the instance, not the prototype", () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [aiExtension()],
+			schema: defaultSchema,
+			extensions: [
+				undoExtension(),
+				deltaStreamExtension(),
+				documentOpsExtension(),
+				aiExtension(),
+			],
 		});
 		const controller = getAIController(editor);
 		expect(controller).toBeTruthy();
@@ -112,7 +151,13 @@ describe("aiExtension", () => {
 
 	it("CH3 bypasses the suggest-mode hook for system origin", () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [aiExtension({ suggestMode: true, author: "tester" })],
+			schema: defaultSchema,
+			extensions: [
+				undoExtension(),
+				deltaStreamExtension(),
+				documentOpsExtension(),
+				aiExtension({ suggestMode: true, author: "tester" }),
+			],
 		});
 		const blockId = editor.firstBlock()!.id;
 

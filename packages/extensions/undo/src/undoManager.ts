@@ -4,7 +4,7 @@ import type {
   OpOrigin,
   Unsubscribe,
 } from "@input/pen-types";
-import { getOpOriginType } from "@input/pen-types";
+import { getOpOriginType } from "./origin";
 
 const EXPLICIT_GROUP_CAPTURE_TIMEOUT_MS = 2_147_483_647;
 
@@ -21,6 +21,7 @@ export class UndoManagerImpl implements UndoManager {
   private _groupTimeout = 1000;
   private _baseCaptureTimeout = 1000;
   private _explicitUndoGroupId: string | null = null;
+  private _destroyed = false;
   _onCaptureBoundary: (() => void) | null = null;
   _isHistoryOperation = false;
 
@@ -37,6 +38,9 @@ export class UndoManagerImpl implements UndoManager {
   }
 
   undo(): boolean {
+    if (this._destroyed) {
+      return false;
+    }
     this._explicitUndoGroupId = null;
     this._crdtUndo.setCaptureTimeout?.(this._baseCaptureTimeout);
     this._clearIdleTimer();
@@ -50,6 +54,9 @@ export class UndoManagerImpl implements UndoManager {
   }
 
   redo(): boolean {
+    if (this._destroyed) {
+      return false;
+    }
     this._explicitUndoGroupId = null;
     this._crdtUndo.setCaptureTimeout?.(this._baseCaptureTimeout);
     this._clearIdleTimer();
@@ -63,11 +70,11 @@ export class UndoManagerImpl implements UndoManager {
   }
 
   canUndo(): boolean {
-    return this._crdtUndo.canUndo();
+    return !this._destroyed && this._crdtUndo.canUndo();
   }
 
   canRedo(): boolean {
-    return this._crdtUndo.canRedo();
+    return !this._destroyed && this._crdtUndo.canRedo();
   }
 
   stopCapturing(): void {
@@ -162,6 +169,10 @@ export class UndoManagerImpl implements UndoManager {
   }
 
   destroy(): void {
+    if (this._destroyed) {
+      return;
+    }
+    this._destroyed = true;
     this._crdtUndo.setCaptureTimeout?.(this._baseCaptureTimeout);
     this._explicitUndoGroupId = null;
     this._clearIdleTimer();

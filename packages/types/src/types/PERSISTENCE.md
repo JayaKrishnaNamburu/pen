@@ -16,3 +16,20 @@ Types live in `persistence.ts`. This file does not change them.
 | `saveVersionSnapshot` | implemented | Called by `@input/pen-history` `SnapshotManager.createSnapshot`. |
 | `listVersions` | implemented | Called by `SnapshotManager.createSnapshot` (latest entry after write) and `SnapshotManager.listSnapshots`. There is no `getVersionSnapshots`. |
 | `loadVersion` | implemented | Called by `SnapshotManager.restoreSnapshot`. |
+
+## AssetProvider
+
+| Member | Status | Remark |
+| --- | --- | --- |
+| `maxSize` | implemented | Read by `uploadImageFiles` and `applyHtmlImageSrcPolicy` before `upload`; forwarded as `AssetUploadOptions.maxSize`. |
+| `upload` | implemented | Called by `uploadImageFiles` (paste/drop) and `applyHtmlImageSrcPolicy` when `imageSrc` is `"ingest"`. |
+| `resolve` | implemented | Called after a successful `upload` at the same two sites. |
+| `delete` | host-implemented | Pen never calls it. Hosts own reference counting; a removed block is not a delete. |
+
+## AssetUploadOptions
+
+| Member | Status | Remark |
+| --- | --- | --- |
+| `mimeType` | implemented | Forwarded to `upload` at both call sites. |
+| `maxSize` | implemented | Enforced before `upload`; forwarded to the provider. Oversize emits `asset-upload-failed` naming the limit and actual size; no image block is inserted. |
+| `onProgress` | implemented | Forwarded by `uploadImageFiles` when the host supplies a callback. HTML ingest has no progress hook, so it does not invent one. |

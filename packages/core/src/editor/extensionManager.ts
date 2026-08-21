@@ -244,14 +244,11 @@ export class ExtensionManagerImpl {
 		return rules;
 	}
 
-	collectKeyBindings(registry: SchemaRegistry): readonly KeyBinding[] {
-		const bindings: KeyBinding[] = [];
-
-		for (const ext of this._sorted) {
-			if (ext.keyBindings) {
-				bindings.push(...ext.keyBindings);
-			}
-		}
+	collectKeyBindings(
+		registry: SchemaRegistry,
+		extensionBindings: readonly KeyBinding[] = [],
+	): readonly KeyBinding[] {
+		const bindings: KeyBinding[] = [...extensionBindings];
 
 		for (const schema of registry.allBlocks()) {
 			if (schema.keyBindings) {
@@ -266,12 +263,6 @@ export class ExtensionManagerImpl {
 				}
 			}
 		}
-
-		bindings.sort((a, b) => {
-			const pA = (a as { priority?: number }).priority ?? 0;
-			const pB = (b as { priority?: number }).priority ?? 0;
-			return pB - pA;
-		});
 
 		return bindings;
 	}

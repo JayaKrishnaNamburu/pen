@@ -22,7 +22,8 @@ import type {
 	SetSelectionOp,
 	CRDTArray,
 } from "@input/pen-types";
-import { generateId, getOpOriginType } from "@input/pen-types";
+import { generateId } from "@input/pen-types";
+import { getOpOriginType } from "./origin";
 import { resolveRuntimeContentType } from "../schema/contentType";
 import {
 	type CRDTUnknownArray,

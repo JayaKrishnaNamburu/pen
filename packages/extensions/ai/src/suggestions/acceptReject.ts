@@ -1,5 +1,10 @@
 import { announceEditorA11y } from "@input/pen-core";
-import type { DocumentOp, Editor, OpOrigin } from "@input/pen-types";
+import {
+	generateId,
+	type DocumentOp,
+	type Editor,
+	type OpOrigin,
+} from "@input/pen-types";
 import type { PersistentTextSuggestion } from "../types";
 import {
 	readAllSuggestions,
@@ -12,7 +17,11 @@ const RESOLUTION_ORIGIN = SUGGESTION_RESOLUTION_ORIGIN;
 type SuggestionResolution = "accept" | "reject";
 
 export function acceptSuggestion(editor: Editor, suggestionId: string): boolean {
-	return acceptSuggestions(editor, [suggestionId]);
+	const groupId = generateId();
+	return acceptSuggestions(editor, [suggestionId], {
+		origin: RESOLUTION_ORIGIN,
+		undoGroupId: groupId,
+	});
 }
 
 export function rejectSuggestion(editor: Editor, suggestionId: string): boolean {
@@ -36,7 +45,11 @@ export function rejectSuggestions(
 }
 
 export function acceptAllSuggestions(editor: Editor): void {
-	resolveSuggestions(editor, getAllSuggestionIds(editor), "accept");
+	const groupId = generateId();
+	resolveSuggestions(editor, getAllSuggestionIds(editor), "accept", {
+		origin: RESOLUTION_ORIGIN,
+		undoGroupId: groupId,
+	});
 }
 
 export function rejectAllSuggestions(editor: Editor): void {

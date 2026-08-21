@@ -125,7 +125,9 @@ export const htmlImporter: HtmlImporter = {
   name: "html",
   mimeType: "text/html",
   parse(input: string, editor: Editor): PendingBlock[] {
-    return parseHtmlToBlocks(input, editor);
+    const { blocks, report } = parseHtmlWithReport(input, editor);
+    emitIngestReport(editor, report, "import-html");
+    return blocks;
   },
 
   async import(

@@ -1,0 +1,103 @@
+# Static gates that had no npm alias and no workflow of their own.
+# New file so this does not race editors of ci.yml / conformance.yml /
+# health-gates.yml / the other per-gate workflows.
+#
+# engines-inventory always exits 0 (35 of 35 ok today). It has an npm
+# alias so the documented command exists; it is not a job. HOST3's
+# declared floor is written by sync-package-metadata.mjs and exercised
+# by node-matrix.yml — the leftover report does not enforce either.
+#
+# console-inventory also always exits 0. It is published into the job
+# summary of the blocking job below, not as its own check. Blocking
+# CH5 is `pnpm ch-gates`. The this-any and ts-nocheck inventories
+# were deleted: CH4/CH1 live in ch-gates.
+
+name: Static gates
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+jobs:
+  static-gates:
+    name: ${{ matrix.gate }}
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - gate: ch-gates
+            command: pnpm ch-gates
+          - gate: skip-hygiene
+            command: pnpm skip-hygiene
+          # --strict is the enforcing mode; without it the script cannot fail.
+          - gate: renderer-inventory
+            command: pnpm renderer-inventory -- --strict
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run ${{ matrix.gate }}
+        run: ${{ matrix.command }}
+
+      - name: Publish CH5 console inventory
+        if: ${{ always() && matrix.gate == 'ch-gates' }}
+        run: |
+          {
+            echo "## CH5 console.* inventory"
+            echo ""
+            echo "Report only — this step cannot fail. Blocking CH5 is \`pnpm ch-gates\`."
+            echo ""
+            echo '```'
+            pnpm console-inventory
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  doc-refs:
+    name: doc-refs
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Check documentation refs
+        run: pnpm doc-refs

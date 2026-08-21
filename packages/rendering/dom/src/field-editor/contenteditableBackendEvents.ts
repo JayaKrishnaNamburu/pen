@@ -12,6 +12,7 @@ import {
 	rebaseTextDiffOps,
 	requiresResolvedInputRange,
 } from "./contenteditableDomHelpers";
+import { mapBeforeInput } from "./beforeinputMap";
 import { inlineDecorationsRequireFullReconcile } from "../utils/inlineDecorations";
 
 export abstract class ContentEditableBackendEvents extends ContentEditableBackendCore {
@@ -25,28 +26,53 @@ export abstract class ContentEditableBackendEvents extends ContentEditableBacken
 			return;
 		}
 
-		const handler = DIRECT_HANDLERS[event.inputType];
-		if (handler) {
-			if (
-				requiresResolvedInputRange(event.inputType) &&
-				!this.ensureResolvableInputRange(event)
-			) {
-				return;
+		// map decides preventDefault / allow / block; DIRECT_HANDLERS only implement commands
+		const mapping = mapBeforeInput(event.inputType);
+		if ("policy" in mapping) {
+			switch (mapping.policy) {
+				case "allow":
+					this.ignoreBrowserMutations = false;
+					return;
+				case "block":
+					event.preventDefault();
+					this.ignoreBrowserMutations = true;
+					this.editor.internals.emit("diagnostic", {
+						code: mapping.code,
+						level: "warn",
+						source: "beforeinput",
+						message: `unhandled beforeinput inputType: ${event.inputType}`,
+						inputType: event.inputType,
+					});
+					return;
+				default: {
+					const _exhaustive: never = mapping;
+					return _exhaustive;
+				}
 			}
+		}
 
-			event.preventDefault();
-			handler(
-				event,
-				this.editor,
-				this.ytext,
-				this.fieldEditor,
-				this.element,
-				this,
-			);
+		event.preventDefault();
+		this.ignoreBrowserMutations = false;
+
+		const handler = DIRECT_HANDLERS[event.inputType];
+		if (!handler) {
+			return;
+		}
+		if (
+			requiresResolvedInputRange(event.inputType) &&
+			!this.ensureResolvableInputRange(event)
+		) {
 			return;
 		}
 
-		// Let the mutation observer reconcile input types we do not handle directly.
+		handler(
+			event,
+			this.editor,
+			this.ytext,
+			this.fieldEditor,
+			this.element,
+			this,
+		);
 	};
 
 	protected ensureResolvableInputRange(event: InputEvent): boolean {
@@ -66,6 +92,7 @@ export abstract class ContentEditableBackendEvents extends ContentEditableBacken
 
 	protected handleCompositionStart = (): void => {
 		this.isComposing = true;
+		this.ignoreBrowserMutations = false;
 		this.compositionStartTimestamp = Date.now();
 		this.compositionStartText = this.ytext?.toString() ?? "";
 		this.deferredRemoteDeltas = [];
@@ -137,11 +164,22 @@ export abstract class ContentEditableBackendEvents extends ContentEditableBacken
 
 		const domText = extractTextFromDOM(this.element);
 		const crdtText = this.ytext.toString();
-
-		if (domText !== crdtText) {
-			const diff = computeTextDiff(crdtText, domText);
-			this.applyTextDiffAsOps(blockId, diff);
+		if (domText === crdtText) {
+			return;
 		}
+
+		if (this.ignoreBrowserMutations) {
+			// block policy already cancelled this input; revert leftovers, do not apply as ops
+			fullReconcileToDOM(this.ytext, this.element, this.editor.schema, {
+				urlPolicy: urlPolicyFromEditor(this.editor),
+				inlineDecorations: this.getInlineDecorationsForBlock(),
+			});
+			this.fieldEditor.notifyDomReconciled(blockId);
+			return;
+		}
+
+		const diff = computeTextDiff(crdtText, domText);
+		this.applyTextDiffAsOps(blockId, diff);
 	};
 
 	// ── CRDT→DOM reconciliation ───────────────────────────────

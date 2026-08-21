@@ -2,19 +2,19 @@
   "name": "@input/pen-react",
   "version": "0.0.1",
   "description": "React primitives, hooks, and renderers for Pen",
-  "license": "SEE LICENSE IN LICENSE.md",
-  "homepage": "https://github.com/niceperson/pen#readme",
+  "license": "MIT",
+  "homepage": "https://github.com/lemni/pen#readme",
   "bugs": {
-    "url": "https://github.com/niceperson/pen/issues"
+    "url": "https://github.com/lemni/pen/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/niceperson/pen.git",
+    "url": "https://github.com/lemni/pen.git",
     "directory": "packages/rendering/react"
   },
   "type": "module",
   "publishConfig": {
-    "access": "restricted",
+    "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
   "exports": {
@@ -123,7 +123,10 @@
     }
   },
   "devDependencies": {
+    "@input/pen-delta-stream": "workspace:*",
+    "@input/pen-document-ops": "workspace:*",
     "@input/pen-preset-default": "workspace:*",
+    "@input/pen-undo": "workspace:*",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "jsdom": "^28.1.0",

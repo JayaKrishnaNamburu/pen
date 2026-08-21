@@ -1,5 +1,5 @@
-import { fieldEditorHostFacet } from "@input/pen-core";
-import { generateId, getOpOriginType } from "@input/pen-types";
+import { fieldEditorHostFacet, getOpOriginType } from "@input/pen-core";
+import { generateId } from "@input/pen-types";
 import type {
 	ChangeSummary,
 	CommitEvent,
@@ -264,7 +264,7 @@ export class AISuggestionsControllerImpl implements AISuggestionsController {
 		return true;
 	}
 
-	applySuggestion(id: string): boolean {
+	applySuggestion(id: string, groupId = generateId()): boolean {
 		const suggestion = this.state.suggestions.find(
 			(item) => item.id === id && !item.invalidated,
 		);
@@ -278,8 +278,8 @@ export class AISuggestionsControllerImpl implements AISuggestionsController {
 		}
 
 		this.editor.apply(ops, {
-			origin: "ai",
-			undoGroup: true,
+			origin: { type: "ai", groupId },
+			undoGroupId: groupId,
 		});
 
 		const nextSuggestions = this.state.suggestions.filter(
@@ -312,9 +312,10 @@ export class AISuggestionsControllerImpl implements AISuggestionsController {
 			.filter(Boolean)
 			.sort((left, right) => (right?.from ?? 0) - (left?.from ?? 0));
 
+		const groupId = generateId();
 		let appliedCount = 0;
 		for (const suggestion of suggestions) {
-			if (suggestion && this.applySuggestion(suggestion.id)) {
+			if (suggestion && this.applySuggestion(suggestion.id, groupId)) {
 				appliedCount += 1;
 			}
 		}

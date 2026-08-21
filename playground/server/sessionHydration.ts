@@ -107,10 +107,10 @@ function applyTableSnapshot(
 	if (!block.table) {
 		return;
 	}
-	const currentBlock = editor.getBlock(blockId);
+	const currentTable = editor.getBlock(blockId)?.as("table");
 	const ops = buildTableSnapshotOps(blockId, block.table, {
-		rowCount: currentBlock?.tableRowCount() ?? 0,
-		columnCount: currentBlock?.tableColumnCount() ?? 0,
+		rowCount: currentTable?.tableRowCount() ?? 0,
+		columnCount: currentTable?.tableColumnCount() ?? 0,
 	});
 	if (ops.length > 0) {
 		editor.apply(ops);

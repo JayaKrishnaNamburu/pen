@@ -33,7 +33,7 @@ import {
 	type PenFocusPolicy,
 } from "@input/pen-dom";
 import { useDocumentEmptyState } from "../../hooks/useDocumentEmptyState";
-import { domSelectionToEditor } from "../../field-editor/selectionBridge";
+import { domSelectionToEditor } from "@input/pen-dom/field-editor";
 import {
 	EditorRegionSelectionContext,
 	RegionSelectionStore,

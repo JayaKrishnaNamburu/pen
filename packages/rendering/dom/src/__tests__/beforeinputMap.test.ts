@@ -5,6 +5,7 @@ import {
 	mapBeforeInput,
 	type BeforeInputCommandMapping,
 } from "../field-editor/beforeinputMap";
+import { DIRECT_HANDLERS } from "../field-editor/contenteditableDirectHandlers";
 
 const LISTED_COMMAND_ROWS: Readonly<
 	Record<string, BeforeInputCommandMapping>
@@ -143,6 +144,15 @@ describe("mapBeforeInput", () => {
 			expect(mapping).not.toHaveProperty("preventDefault");
 			expect(mapping).not.toHaveProperty("commandName");
 		}
+	});
+
+	it("B1: every command-policy map row has a DIRECT_HANDLER and no others exist", () => {
+		const commandTypes = Object.keys(BEFOREINPUT_MAP).filter(
+			(inputType) => "commandName" in mapBeforeInput(inputType),
+		);
+		expect(Object.keys(DIRECT_HANDLERS).sort()).toEqual(
+			commandTypes.sort(),
+		);
 	});
 
 	it("B1: unlisted inputType hits block with unhandled-input-type", () => {

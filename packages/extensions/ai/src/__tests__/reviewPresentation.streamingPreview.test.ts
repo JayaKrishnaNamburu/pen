@@ -223,9 +223,11 @@ describe("AI review presentation streaming preview", () => {
 	it("does not hide unchanged blocks while a full block-range replacement streams", () => {
 		const { firstBlockText, secondBlockText, thirdBlockText } =
 			MACBOOK_THREE_BLOCK_PARTS;
-		const originalText = [firstBlockText, secondBlockText, thirdBlockText].join(
-			"\n",
-		);
+		const originalText = [
+			firstBlockText,
+			secondBlockText,
+			thirdBlockText,
+		].join("\n");
 		const previewText = buildMacBookProStreamingPreviewText(originalText);
 		const decorations = buildStreamingReviewPreviewDecorations({
 			editor: createMacBookThreeBlockReviewEditor(),
@@ -295,7 +297,7 @@ describe("AI review presentation streaming preview", () => {
 			(decoration) =>
 				decoration.type === "inline" &&
 				decoration.attributes?.["data-pen-ai-review-role"] ===
-				"context",
+					"context",
 		);
 
 		expect(readVirtualText(decorations)).toBe("Pro ");
@@ -487,4 +489,3 @@ describe("AI review presentation streaming preview", () => {
 		expect(readVirtualText(decorationsWithSuggestion)).toContain("i");
 	});
 });
-

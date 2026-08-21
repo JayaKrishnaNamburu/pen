@@ -1,5 +1,5 @@
 import type { ChangeSummary, OpOrigin, SelectionState } from "@input/pen-types";
-import { getOpOriginType } from "@input/pen-types";
+import { getOpOriginType } from "@input/pen-core";
 import type { AutocompleteStructuredCandidate } from "./structuredCandidate";
 
 export type AutocompleteSequence = {

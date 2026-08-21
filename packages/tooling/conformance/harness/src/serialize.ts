@@ -57,5 +57,6 @@ export function serializeDiagnostic(
 		level: event.level,
 		source: event.source,
 		message: event.message,
+		...(typeof event.reason === "string" ? { reason: event.reason } : {}),
 	};
 }

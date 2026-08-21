@@ -4,45 +4,12 @@
 
 `./dist/index.d.ts`
 
-### class
-
-- PenDocumentUnreadableError
-
 ### function
 
 - appId
 - blockId
-- collectToolExecutionOutput
-- createMutationGroupMetadata
-- delegatesToGridEditing
 - docId
 - generateId
-- getApplyOptionsGroupId
-- getBlockSelectionRoleFromSchema
-- getBlockSelectionRoleFromType
-- getFlowCapabilityFromSchema
-- getFlowCapabilityFromType
-- getOpOriginGroupId
-- getOpOriginType
-- hasFieldEditorSurface
-- interpolateMessage
-- isContinuousTextFlowCapability
-- renderSelectionTargetBlockText
-- renderSelectionTargetText
-- resolveFieldEditorBehavior
-- resolveFieldEditorInputMode
-- resolveMessage
-- resolveSelectionTargetBlockIds
-- resolveToolExecution
-- shouldAllowDirectBlockPaste
-- shouldAllowFlowInsertionInSlashMenu
-- shouldExposeBlockInTooling
-- shouldFallbackMixedSelectionToBlock
-- shouldForceBlockScopedSelectAll
-- shouldShowBlockInDefaultMenus
-- supportsInlineInputRules
-- supportsInlineMarks
-- usesInlineTextSelection
 - zoneId
 
 ### guard
@@ -280,6 +247,7 @@
 - ModelOperationDocumentTarget
 - ModelOperationKind
 - ModelOperationProvenance
+- ModelOperationRangeTarget
 - ModelOperationScopedRangeTarget
 - ModelOperationSelectionTarget
 - ModelRequestedOperation

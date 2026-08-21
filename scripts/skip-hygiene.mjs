@@ -106,15 +106,14 @@ export function extractSkipHits(source, file) {
 }
 
 export function isConditionalSkip(call) {
-	if (/=>|function\s/.test(call)) {
-		return false;
-	}
 	const open = call.indexOf("(");
 	const close = call.lastIndexOf(")");
 	if (open < 0 || close <= open) {
 		return false;
 	}
 	const args = call.slice(open + 1, close).trim();
+	// A skipped test names itself first; a runtime filter leads with the
+	// condition, which Playwright also accepts as a predicate function.
 	return args.length > 0 && !/^[`'"]/.test(args);
 }
 
@@ -300,6 +299,8 @@ export function runCH3Fixture() {
 	const falsePositive = `const name = "test.skip-combine";\n`;
 	const conditional =
 		`test.skip(browserName === "webkit", "Wave 5 owns WebKit triple-click");\n`;
+	const conditionalPredicate =
+		`test.skip(({ browserName }) => browserName !== "chromium", "HOST4 needs Chromium host-resolver rules");\n`;
 
 	const emptyHits = extractSkipHits(emptyUncommented, "tmp/ch3-empty.test.ts");
 	if (emptyHits.length !== 1 || !isFailClass(emptyHits[0])) {
@@ -327,6 +328,14 @@ export function runCH3Fixture() {
 
 	if (extractSkipHits(conditional, "tmp/ch3-conditional.spec.ts").length !== 0) {
 		throw new Error("CH3: Playwright test.skip(condition, reason) must not be a hit");
+	}
+
+	if (
+		extractSkipHits(conditionalPredicate, "tmp/ch3-predicate.spec.ts").length !== 0
+	) {
+		throw new Error(
+			"CH3: Playwright test.skip(predicate, reason) must not be a hit",
+		);
 	}
 
 	const unmarked = evaluateSkipHits({

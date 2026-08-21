@@ -29,7 +29,8 @@ describe("@input/pen-react subdocument rendering", () => {
 
 	it("mounts nested editors without leaking parent selection handlers", async () => {
 		const editor = createEditor({
-			schema: defaultSchema, preset: defaultPreset({
+			schema: defaultSchema,
+			preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,
@@ -55,14 +56,18 @@ describe("@input/pen-react subdocument rendering", () => {
 				await flushAnimationFrames(3);
 			});
 
-			const editorRoots = container.querySelectorAll("[data-pen-editor-root]");
-			const nestedContent = container.querySelectorAll("[data-pen-editor-content]")[1] as
-				| HTMLElement
-				| undefined;
+			const editorRoots = container.querySelectorAll(
+				"[data-pen-editor-root]",
+			);
+			const nestedContent = container.querySelectorAll(
+				"[data-pen-editor-content]",
+			)[1] as HTMLElement | undefined;
 
 			expect(editorRoots).toHaveLength(2);
 			expect(
-				container.querySelector("[data-pen-subdocument-host] [data-pen-editor-root]"),
+				container.querySelector(
+					"[data-pen-subdocument-host] [data-pen-editor-root]",
+				),
 			).not.toBeNull();
 			expect(nestedContent).toBeTruthy();
 

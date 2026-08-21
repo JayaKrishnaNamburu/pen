@@ -4,17 +4,28 @@
 
 `./dist/index.d.ts`
 
+### class
+
+- DomScheduler
+
 ### function
 
+- collapsedRect
+- createGeometryReader
 - getClosestEditorRoot
+- getRootGeometry
 - handleEditorDocumentKeyDown
 - handleEscapeSelectionTransition
 - handleTableCellSelectionKeyDown
 - isFieldEditorTextEditingKey
+- measureWithRoot
+- mountEditor
 - resolveEditorUrl
 - shouldHandleEditorKeyboardEvent
+- singleRunLineBox
 - urlPolicyExtension
 - urlPolicyFromEditor
+- verticalCaretTarget
 
 ### guard
 
@@ -44,6 +55,29 @@
 - UrlContext
 - urlPolicy
 - UrlPolicy
+
+### type
+
+- Affinity
+- BidiRun
+- BidiRunGeometry
+- DomSchedulerOptions
+- DomSchedulerOwner
+- DomSchedulerPhase
+- FlushCollect
+- GeometryInvalidator
+- GeometryMeasureAdapter
+- GeometryReader
+- GeometryReaderHost
+- GeometryReaderOptions
+- LineBox
+- MountedEditor
+- MountEditorOptions
+- Point
+- Rect
+- RootGeometry
+- VerticalCaretTarget
+- VerticalDirection
 
 ## ./field-editor
 
@@ -172,7 +206,6 @@ glob members:
 - selectionBridgeOffsets.d.ts
 - selectionCoordinator.d.ts
 - selectionDomQueries.d.ts
-- selectionGeometry.d.ts
 - selectionProjectionController.d.ts
 - sessionReconciler.d.ts
 - store.d.ts
@@ -207,6 +240,39 @@ glob members:
 
 _no exports_
 
+## ./utils/autocompleteController
+
+`./dist/utils/autocompleteController.d.ts`
+
+### function
+
+- getAutocompleteController
+
+## ./utils/blockSelectionSemantics
+
+`./dist/utils/blockSelectionSemantics.d.ts`
+
+### function
+
+- getBlockSelectionRoleFromSchema
+- getBlockSelectionRoleFromType
+- getEditorBlockSelectionLength
+- getEditorBlockSelectionRole
+- getSelectionLengthForRole
+- isInlineEditableBlock
+
+### value
+
+- BlockSelectionRole
+
+## ./utils/cellSelection
+
+`./dist/utils/cellSelection.d.ts`
+
+### function
+
+- isCellInSelection
+
 ## ./utils/clipboardPayload
 
 `./dist/utils/clipboardPayload.d.ts`
@@ -238,6 +304,58 @@ _no exports_
 - PenClipboardFallbackFlavor
 - PenClipboardReadResult
 
+## ./utils/flowCapabilities
+
+`./dist/utils/flowCapabilities.d.ts`
+
+### function
+
+- getEditorFlowCapability
+- getFlowCapabilityFromSchema
+- getFlowCapabilityFromType
+- isContinuousTextFlowCapability
+- shouldAllowDirectBlockPaste
+- shouldAllowFlowInsertionInSlashMenu
+- shouldFallbackMixedSelectionToBlock
+- shouldForceBlockScopedSelectAll
+- shouldShowBlockInDefaultMenus
+
+### value
+
+- FlowBlockCapability
+
+## ./utils/inlineInputRule
+
+`./dist/utils/inlineInputRule.d.ts`
+
+### function
+
+- matchInlineInputRule
+
+### type
+
+- InlineInputRuleMatch
+
+## ./utils/listInputRule
+
+`./dist/utils/listInputRule.d.ts`
+
+### function
+
+- matchListInputRule
+
+### type
+
+- ListInputRuleMatch
+
+## ./utils/selectionFormation
+
+`./dist/utils/selectionFormation.d.ts`
+
+### function
+
+- normalizeSelectionFormation
+
 ## ./utils/dataAttributes
 
 `./dist/utils/dataAttributes.d.ts`
@@ -251,6 +369,37 @@ _no exports_
 
 - DATA_ATTRS
 
+## ./utils/editorEmptyState
+
+`./dist/utils/editorEmptyState.d.ts`
+
+### function
+
+- computeDocumentEmpty
+- computeDocumentPlaceholderVisible
+- isInlineContentEmpty
+
+## ./utils/environment
+
+`./dist/utils/environment.d.ts`
+
+### function
+
+- isDevelopmentEnvironment
+
+## ./utils/placeholderVisibility
+
+`./dist/utils/placeholderVisibility.d.ts`
+
+### function
+
+- resolveInlinePlaceholderVisibility
+
+### type
+
+- InlinePlaceholderVisibility
+- InlinePlaceholderVisibilityOptions
+
 ## ./utils/inlineDecorations
 
 `./dist/utils/inlineDecorations.d.ts`
@@ -258,15 +407,21 @@ _no exports_
 ### function
 
 - applyInlineDecorationsToDeltas
+- areInlineDecorationsRenderEqual
+- areRenderedTextDeltasEqual
 - buildInlineDecorationsRenderSignature
 - filterVisibleInlineDecorationDeltas
 - inlineDecorationsRequireFullReconcile
-- serializeInlineDecorationForRender
+- retainRenderedTextDeltas
 
 ### value
 
 - INLINE_DECORATION_ATTRIBUTE_KEY
 - VIRTUAL_INLINE_DECORATION_ATTRIBUTE
+
+### type
+
+- TextDelta
 
 ## ./utils/parentIdTree
 
@@ -282,3 +437,168 @@ _no exports_
 - getRootBlockIds
 - getVisibleBlockIds
 - isInsideParentIdContainer
+
+## ./utils/fieldEditorTextEntryAttrs
+
+`./dist/utils/fieldEditorTextEntryAttrs.d.ts`
+
+### function
+
+- fieldEditorTextEntryAttrs
+
+## ./utils/menuPosition
+
+`./dist/utils/menuPosition.d.ts`
+
+### function
+
+- resolveAnchoredMenuPosition
+
+### type
+
+- AnchoredMenuPosition
+- MenuAnchorTarget
+- MenuPlacementSide
+
+## ./utils/selectionPlacement
+
+`./dist/utils/selectionPlacement.d.ts`
+
+### function
+
+- resolveSelectionRect
+
+## ./utils/tableDefaults
+
+`./dist/utils/tableDefaults.d.ts`
+
+### function
+
+- createDefaultTableColumns
+- getStarterTableProps
+- getTableActivationTarget
+- getTableCellPlaceholder
+- hasMeaningfulBlockText
+
+### type
+
+- TableActivationTarget
+
+## ./utils/aiDomScope
+
+`./dist/utils/aiDomScope.d.ts`
+
+### function
+
+- queryAISuggestionAnchorElement
+- queryEditorBlockElement
+- querySuggestionAnchorElements
+- resolveAIRootElement
+- resolveEditorContentElement
+- resolveEditorRootElement
+
+## ./utils/aiKeyboardScope
+
+`./dist/utils/aiKeyboardScope.d.ts`
+
+### function
+
+- shouldIgnoreAIKeyboardEvent
+
+## ./utils/fieldEditor
+
+`./dist/utils/fieldEditor.d.ts`
+
+### function
+
+- getAttachedFieldEditor
+- getAttachedFieldEditorStore
+
+## ./utils/inlineAtomDragPreview
+
+`./dist/utils/inlineAtomDragPreview.d.ts`
+
+### function
+
+- clearInlineAtomDragPreview
+- createInlineAtomDragPreview
+
+### type
+
+- InlineAtomDragPreview
+
+## ./utils/replaceElementChildren
+
+`./dist/utils/replaceElementChildren.d.ts`
+
+### function
+
+- replaceElementChildren
+
+## ./utils/slashMenuPopupAria
+
+`./dist/utils/slashMenuPopupAria.d.ts`
+
+### function
+
+- applySlashMenuFieldAria
+- clearSlashMenuFieldAria
+- getSlashMenuOptionId
+- resolveSlashMenuField
+
+## ./utils/suggestionMenuPopupAria
+
+`./dist/utils/suggestionMenuPopupAria.d.ts`
+
+### function
+
+- applySuggestionMenuFieldAria
+- clearSuggestionMenuFieldAria
+- resolveSuggestionMenuField
+- suggestionMenuOptionId
+
+## ./utils/blockDrag
+
+`./dist/utils/blockDrag.d.ts`
+
+### function
+
+- resolveDragBlockIds
+
+## ./utils/editorInteractionModel
+
+`./dist/utils/editorInteractionModel.d.ts`
+
+### function
+
+- isRepeatedCellSelection
+- resolveBlockPointerIntent
+
+### type
+
+- BlockPointerIntent
+- PointerCellCoord
+- PointerInteractionModel
+
+## ./utils/inlineAtomSelection
+
+`./dist/utils/inlineAtomSelection.d.ts`
+
+### function
+
+- isInlineAtomSelected
+
+## ./utils/pointerSelection
+
+`./dist/utils/pointerSelection.d.ts`
+
+### function
+
+- createPointerSelectionGesture
+- resolvePointerDragSelection
+- resolvePointerGestureAnchorPoint
+
+### type
+
+- PointerSelectionGesture
+- ResolvedPointerDragSelection

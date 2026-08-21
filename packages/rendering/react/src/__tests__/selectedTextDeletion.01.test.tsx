@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
 import { createDecorationSet } from "@input/pen-core";
 import { defineExtension } from "@input/pen-core";
-import { domSelectionToEditor } from "../field-editor/selectionBridge";
+import { domSelectionToEditor } from "@input/pen-dom/field-editor/selectionBridge";
 import { Pen } from "../primitives/index";
 import { FakeEditContext } from "./utils/fakeEditContext";
 import { defaultSchema } from "@input/pen-schema-default";
@@ -144,7 +144,8 @@ describe("@input/pen-react selected text deletion", () => {
 	it("reconciles active inline decorations when text is unchanged", async () => {
 		let decorationState = "initial";
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [
+			schema: defaultSchema,
+			extensions: [
 				defineExtension({
 					name: "active-inline-decoration-test",
 					decorations(_state, currentEditor) {
@@ -315,6 +316,4 @@ describe("@input/pen-react selected text deletion", () => {
 			).EditContext = originalEditContext;
 		}
 	});
-
-
 });

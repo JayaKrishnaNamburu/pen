@@ -2,7 +2,7 @@ import { useRef, useState, useEffect } from "react";
 import type { Editor } from "@input/pen-types";
 import { getAIController } from "@input/pen-ai";
 import { DATA_ATTRS } from "../utils/dataAttributes";
-import { queryBlockElement } from "../field-editor/selectionBridge";
+import { queryBlockElement } from "@input/pen-dom/field-editor/selectionBridge";
 import { resolveSelectionRect } from "../selection/placement";
 import { useSyncExternalStoreWithSelector } from "../utils/useSyncExternalStoreWithSelector";
 

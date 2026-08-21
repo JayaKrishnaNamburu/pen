@@ -1,8 +1,8 @@
 import React, { useContext, useEffect, useRef, useState } from "react";
+import { measureWithRoot, type Rect } from "@input/pen-dom";
 import type { Editor, TextSelection } from "@input/pen-types";
 import { EditorContext } from "../../context/editorContext";
 import { useFieldEditorContext } from "../../context/fieldEditorContext";
-import { getSelectionPointRect } from "../../field-editor/selectionBridge";
 import { useFieldEditorState } from "../../hooks/useFieldEditorState";
 import { useOverlayLayout } from "../../hooks/useOverlayLayout";
 import { useSelection } from "../../hooks/useSelection";
@@ -65,7 +65,7 @@ export function EditorCaretOverlay(props: EditorCaretOverlayProps) {
 	const caretSelection = resolveCaretSelection(selection, fieldEditorState);
 	const rect =
 		rootElement && caretSelection
-			? getSelectionPointRect(rootElement, caretSelection.focus)
+			? readCaretRect(rootElement, caretSelection.focus)
 			: null;
 	const isCaretVisible = caretSelection != null && rect != null;
 	const blinkPaused = useCaretBlinkPauseState({
@@ -164,9 +164,18 @@ function resolveCaretSelection(
 	return selection;
 }
 
+function readCaretRect(
+	root: HTMLElement,
+	point: { blockId: string; offset: number },
+): Rect | null {
+	return measureWithRoot(root, ({ reader }) =>
+		reader.caretRect(point, "downstream"),
+	);
+}
+
 function createCaretRenderProps(
 	selection: TextSelection,
-	rect: DOMRect,
+	rect: Rect,
 	blinkPaused: boolean,
 	variant: EditorCaretVariant,
 ): EditorCaretRenderProps {

@@ -3,4 +3,7 @@ packages:
   - "packages/core"
   - "packages/docs"
   - "packages/*/*"
+  - "examples/react"
+  - "examples/vue"
+  - "examples/vanilla"
   - "playground"

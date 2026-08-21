@@ -9,7 +9,11 @@ import {
 import { describe, expect, it, vi } from "vitest";
 import { createRoot } from "react-dom/client";
 import { createEditor } from "@input/pen-core";
-import type { AssetProvider, BlockHandle, BlockRenderContext } from "@input/pen-types";
+import type {
+	AssetProvider,
+	BlockHandle,
+	BlockRenderContext,
+} from "@input/pen-types";
 import { defaultPreset } from "@input/pen-preset-default";
 import { Pen } from "../primitives/index";
 import { useEditorContext } from "../context/editorContext";
@@ -139,7 +143,8 @@ function UploadCard(props: {
 
 function createImageEditor() {
 	const editor = createEditor({
-		schema: defaultSchema, preset: defaultPreset({
+		schema: defaultSchema,
+		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
 			undo: false,
@@ -255,7 +260,9 @@ describe("@input/pen-react renderer overrides", () => {
 			const button = container.querySelector("button");
 			expect(button).not.toBeNull();
 
-			const file = new File(["image"], "photo.png", { type: "image/png" });
+			const file = new File(["image"], "photo.png", {
+				type: "image/png",
+			});
 			const dataTransfer = createDataTransfer([file]);
 			const dragOverEvent = createDragEvent("dragover", dataTransfer);
 			const dropEvent = createDragEvent("drop", dataTransfer);

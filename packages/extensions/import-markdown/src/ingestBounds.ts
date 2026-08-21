@@ -27,6 +27,19 @@ export const INGEST_MAX_TEXT_SIZE = 1_048_576;
 /** Maximum image blocks accepted in one ingest. */
 export const INGEST_MAX_IMAGE_COUNT = 256;
 
+/**
+ * Stated IOP5 time budget for one markdown ingest, including markdown
+ * paste (`markdownImporter.parse` / `import`). Same number as
+ * `CLIPBOARD_INGEST_TIME_BUDGET_MS` — not re-recorded tonight; this
+ * machine is under parallel load. Re-record on a quiet machine before
+ * treating the wall-clock as a CI gate.
+ *
+ * The enforceable bound is complexity: `capRawMarkdownSource` slices to
+ * `INGEST_MAX_TEXT_SIZE` before parse, so a 40MB paste is O(cap) parse
+ * work, not O(input).
+ */
+export const INGEST_TIME_BUDGET_MS = 1_000;
+
 export const INGEST_FORBIDDEN_KEYS = [
 	"__proto__",
 	"constructor",
@@ -50,10 +63,19 @@ const BOUND_BY_REASON: Partial<Record<IngestDropReason, string>> = {
 	"image-count-exceeded": "INGEST_MAX_IMAGE_COUNT",
 };
 
+const LIMIT_BY_REASON: Partial<Record<IngestDropReason, number>> = {
+	"depth-exceeded": INGEST_MAX_NESTING_DEPTH,
+	"count-exceeded": INGEST_MAX_NODE_COUNT,
+	"text-size-exceeded": INGEST_MAX_TEXT_SIZE,
+	"image-count-exceeded": INGEST_MAX_IMAGE_COUNT,
+};
+
 export interface IngestDroppedByReason {
 	readonly reason: IngestDropReason;
 	readonly count: number;
 	readonly bound?: string;
+	readonly limit?: number;
+	readonly actual?: number;
 	readonly dropped: string;
 }
 
@@ -63,9 +85,13 @@ export interface IngestReport extends ImportResult {
 
 export class IngestDropCounts {
 	private readonly counts = new Map<IngestDropReason, number>();
+	private readonly actuals = new Map<IngestDropReason, number>();
 
-	add(reason: IngestDropReason, count = 1): void {
+	add(reason: IngestDropReason, count = 1, actual?: number): void {
 		this.counts.set(reason, (this.counts.get(reason) ?? 0) + count);
+		if (actual !== undefined) {
+			this.actuals.set(reason, Math.max(this.actuals.get(reason) ?? 0, actual));
+		}
 	}
 
 	toDroppedByReason(): IngestDroppedByReason[] {
@@ -74,11 +100,16 @@ export class IngestDropCounts {
 		);
 		return reasons.map(([reason, count]) => {
 			const bound = BOUND_BY_REASON[reason];
+			const limit = LIMIT_BY_REASON[reason];
+			const actual = resolveActual(reason, count, this.actuals.get(reason));
 			const entry: IngestDroppedByReason = {
 				reason,
 				count,
 				dropped: formatDropped(reason, count),
 			};
+			if (bound && limit !== undefined && actual !== undefined) {
+				return { ...entry, bound, limit, actual };
+			}
 			return bound ? { ...entry, bound } : entry;
 		});
 	}
@@ -119,7 +150,7 @@ export function capRawMarkdownSource(
 	const slice = input.slice(0, INGEST_MAX_TEXT_SIZE);
 	const lastNewline = slice.lastIndexOf("\n");
 	const truncated = lastNewline > 0 ? slice.slice(0, lastNewline) : slice;
-	drops.add("text-size-exceeded", input.length - truncated.length);
+	drops.add("text-size-exceeded", input.length - truncated.length, input.length);
 	return truncated;
 }
 
@@ -139,7 +170,11 @@ export function boundPendingBlocks(
 		const indent =
 			typeof block.props.indent === "number" ? block.props.indent : 0;
 		if (depth > INGEST_MAX_NESTING_DEPTH || indent >= INGEST_MAX_NESTING_DEPTH) {
-			drops.add("depth-exceeded", countNodes(block));
+			drops.add(
+				"depth-exceeded",
+				countNodes(block),
+				Math.max(depth, indent + 1),
+			);
 			continue;
 		}
 
@@ -155,7 +190,7 @@ export function boundPendingBlocks(
 
 		const textLen = textSizeOf(block);
 		if (state.text + textLen > INGEST_MAX_TEXT_SIZE) {
-			drops.add("text-size-exceeded", textLen);
+			drops.add("text-size-exceeded", textLen, state.text + textLen);
 			continue;
 		}
 
@@ -205,10 +240,31 @@ export function emitIngestReport(
 function formatIngestMessage(report: IngestReport, truncated: boolean): string {
 	const parts = report.droppedByReason.map((entry) => {
 		const bound = entry.bound ? ` (${entry.bound})` : "";
-		return `${entry.dropped} ${entry.reason}${bound}`;
+		const measured =
+			entry.actual !== undefined && entry.limit !== undefined
+				? ` actual ${entry.actual} limit ${entry.limit}`
+				: "";
+		return `${entry.dropped} ${entry.reason}${bound}${measured}`;
 	});
 	const verb = truncated ? "truncated" : "dropped";
 	return `import ${verb}: ${parts.join("; ")}`;
+}
+
+function resolveActual(
+	reason: IngestDropReason,
+	count: number,
+	stored: number | undefined,
+): number | undefined {
+	if (stored !== undefined) {
+		return stored;
+	}
+	if (reason === "count-exceeded") {
+		return INGEST_MAX_NODE_COUNT + count;
+	}
+	if (reason === "image-count-exceeded") {
+		return INGEST_MAX_IMAGE_COUNT + count;
+	}
+	return undefined;
 }
 
 function formatDropped(reason: IngestDropReason, count: number): string {

@@ -14,6 +14,45 @@ export function CollaborationPage() {
 				<code>packages/crdt/yjs/COLLABORATION.md</code>.
 			</p>
 
+			<h2>Setup</h2>
+			<p>
+				<code>@input/pen-crdt-yjs</code> is the Yjs adapter (
+				<code>yjsAdapter</code>
+				). <code>yjs</code> and <code>y-protocols</code> are peers, not
+				bundled. <code>@input/pen-multiplayer</code> owns local
+				awareness, peer derivation, remote cursors, and decorations.
+				Neither package ships a transport, provider, server, or rooms.
+				The host constructs a <code>MultiplayerSession</code> (or a{" "}
+				<code>sessionFactory</code>) and hands it to{" "}
+				<code>multiplayerExtension</code>.
+			</p>
+			<pre>
+				<code>{`import { multiplayerExtension } from "@input/pen-multiplayer";
+import type { MultiplayerSession } from "@input/pen-multiplayer";
+
+function install(session: MultiplayerSession) {
+  return multiplayerExtension({
+    user: { id: "u1", name: "Ada" },
+    session,
+  });
+}`}</code>
+			</pre>
+			<p>
+				<code>session</code> is host-owned. For Yjs, wrap the
+				provider with <code>createYjsProviderSession</code> and pass
+				the native document and awareness through{" "}
+				<code>getYjsDoc(editor)</code> and{" "}
+				<code>getYjsAwareness(awareness)</code>. The canonical{" "}
+				<code>y-websocket</code> wiring is in the{" "}
+				<code>@input/pen-crdt-yjs</code> README. The playground file
+				is a demo.
+			</p>
+			<p>
+				<code>config.user</code> is broadcast to every peer. Do not put
+				an email or internal id in presence unless it is meant to be
+				seen. Attribution does not treat awareness names as authors.
+			</p>
+
 			<h2>What Pen guarantees</h2>
 			<p>
 				<strong>Convergence.</strong> The document store is a Yjs{" "}

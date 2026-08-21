@@ -9,6 +9,9 @@ import {
 	isPseudoLocaleText,
 } from "@input/pen-core";
 import { aiExtension, getAIController } from "@input/pen-ai";
+import { undoExtension } from "@input/pen-undo";
+import { deltaStreamExtension } from "@input/pen-delta-stream";
+import { documentOpsExtension } from "@input/pen-document-ops";
 import { Pen } from "../primitives/index";
 import { defaultSchema } from "@input/pen-schema-default";
 
@@ -19,7 +22,7 @@ import { defaultSchema } from "@input/pen-schema-default";
 describe("AI chrome pseudo-locale (LOC1, LOC7)", () => {
 	it("LOC7: command menu and change-list chrome wrap through the pseudo catalog", async () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [aiExtension()],
+			schema: defaultSchema,extensions: [undoExtension(), deltaStreamExtension(), documentOpsExtension(), aiExtension()],
 			messages: createPseudoLocaleCatalog(),
 		});
 		const controller = getAIController(editor);

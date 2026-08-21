@@ -8,6 +8,11 @@ export interface MemoryAssetsOptions {
    * {@link AssetUploadOptions.maxSize}.
    */
   maxSize?: number;
+  /**
+   * Failure double (IOP4). When set, `upload` rejects with this error after
+   * the size check and does not store.
+   */
+  rejectUpload?: Error;
 }
 
 /**
@@ -36,6 +41,9 @@ export function memoryAssets(config: MemoryAssetsOptions = {}): AssetProvider {
         throw new Error(
           `File size ${file.size} exceeds maxSize ${maxSize}`,
         );
+      }
+      if (config.rejectUpload) {
+        throw config.rejectUpload;
       }
 
       options?.onProgress?.(0);

@@ -1,7 +1,8 @@
-import { Pen } from "@input/pen-react";
 import type { Editor } from "@input/pen-types";
 import { useEffect, useState, type ReactElement } from "react";
-import { getHarnessSession, subscribeHarness } from "./session";
+import { Pen } from "../../../../rendering/react/src/primitives";
+import { getHarnessSession, getWindowStart, subscribeHarness } from "./session";
+import { WindowedContent } from "./windowedContent";
 
 function readQueryFlag(name: string): boolean {
 	if (typeof window === "undefined") {
@@ -54,16 +55,21 @@ function PseudoLocaleChrome({ editor }: { editor: Editor }) {
 
 export function App() {
 	const [generation, setGeneration] = useState(() => getHarnessSession().generation);
+	const [windowStart, setWindowStart] = useState(getWindowStart);
 
 	useEffect(() => {
 		return subscribeHarness(() => {
 			setGeneration(getHarnessSession().generation);
+			setWindowStart(getWindowStart());
 		});
 	}, []);
 
 	const session = getHarnessSession();
 	const showPseudoLocaleChrome = readQueryFlag("pseudoLocale");
 	const showAx3Chrome = readQueryFlag("ax3");
+	const showAx6Caret = readQueryFlag("ax6");
+	const showCol2Presence = readQueryFlag("col2");
+	const windowed = session.fixtureName === "windowed-large";
 
 	return (
 		<Pen.Editor.Root
@@ -76,7 +82,19 @@ export function App() {
 				data-fixture={session.fixtureName}
 				data-generation={String(generation)}
 			>
-				<Pen.Editor.Content emptyPlaceholder="" />
+				{windowed ? (
+					<WindowedContent windowStart={windowStart} />
+				) : (
+					<Pen.Editor.Content emptyPlaceholder="" />
+				)}
+				{showAx6Caret ? <Pen.Editor.CaretOverlay /> : null}
+				{showCol2Presence ? (
+					<>
+						<Pen.Multiplayer.PresenceList />
+						<Pen.Multiplayer.RemoteCursors />
+						<Pen.Multiplayer.CaretOverlay />
+					</>
+				) : null}
 				{showAx3Chrome ? (
 					<Pen.SlashMenu.Root>
 						<Pen.SlashMenu.List />

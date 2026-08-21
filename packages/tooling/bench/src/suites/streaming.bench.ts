@@ -1,13 +1,25 @@
 import type { BenchContext, BenchDefinition } from "../bench";
 import type { StreamingTarget } from "@input/pen-types";
+import { deltaStreamExtension } from "@input/pen-delta-stream";
 import { createTestEditor } from "@input/pen-test";
 import {
   STREAMING_BATCH_FLUSH_LATENCY_BENCH,
   STREAMING_GEN_DELTA_1000_PARTS_BENCH,
 } from "../constants/benchmarks";
 
+function createStreamingBenchEditor() {
+  return createTestEditor({
+    blocks: [{ type: "paragraph" }],
+    extensions: [deltaStreamExtension()],
+  });
+}
+
 function getStreamingTarget(editor: ReturnType<typeof createTestEditor>): StreamingTarget {
-  return editor.internals.getSlot<StreamingTarget>("delta-stream:target")!;
+  const streaming = editor.internals.getSlot<StreamingTarget>("delta-stream:target");
+  if (!streaming) {
+    throw new Error("Streaming bench editor is missing the delta-stream target.");
+  }
+  return streaming;
 }
 
 function insertParagraph(editor: ReturnType<typeof createTestEditor>): string {
@@ -32,9 +44,8 @@ export const streamingBenchmarks: BenchDefinition[] = [
   {
     ...STREAMING_GEN_DELTA_1000_PARTS_BENCH,
     async fn(b) {
-      const editor = createTestEditor({
-        blocks: [{ type: "paragraph" }],
-      });
+      const editor = createStreamingBenchEditor();
+      await editor.whenReady();
       const blockId = editor.document.blockOrder.get(0);
       const streaming = getStreamingTarget(editor);
 
@@ -58,9 +69,8 @@ export const streamingBenchmarks: BenchDefinition[] = [
   {
     ...STREAMING_BATCH_FLUSH_LATENCY_BENCH,
     async fn(b) {
-      const editor = createTestEditor({
-        blocks: [{ type: "paragraph" }],
-      });
+      const editor = createStreamingBenchEditor();
+      await editor.whenReady();
       const blockId = editor.document.blockOrder.get(0);
       const streaming = getStreamingTarget(editor);
 

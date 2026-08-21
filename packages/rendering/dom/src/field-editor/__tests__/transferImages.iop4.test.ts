@@ -43,7 +43,20 @@ function stubProvider(overrides: Partial<AssetProvider> = {}) {
 }
 
 describe("IOP4 asset upload lifecycle", () => {
-	it("IOP4 rejects oversize uploads with a diagnostic naming the limit and actual size", async () => {
+	it("IOP4 API10 successful upload is unchanged", async () => {
+		const { provider, upload } = stubProvider();
+		const file = imageFile("ok.png", 4);
+
+		const uploaded = await uploadImageFiles([file], provider);
+
+		expect(uploaded).toEqual([{ src: "memory://uploaded.png", alt: "ok" }]);
+		expect(upload).toHaveBeenCalledWith(
+			file,
+			expect.objectContaining({ mimeType: "image/png" }),
+		);
+	});
+
+	it("IOP4 API10 rejects oversize uploads with a diagnostic naming the limit and actual size", async () => {
 		const editor = createEditor({ schema: defaultSchema,  preset: noDefaultExtensionsPreset });
 		const diagnostics: DiagnosticEvent[] = [];
 		editor.on("diagnostic", (event) => {
@@ -70,7 +83,7 @@ describe("IOP4 asset upload lifecycle", () => {
 		editor.destroy();
 	});
 
-	it("IOP4 reports provider failure with a diagnostic and inserts no block", async () => {
+	it("IOP4 API10 reports provider failure with a diagnostic and inserts no block", async () => {
 		const editor = createEditor({ schema: defaultSchema,  preset: noDefaultExtensionsPreset });
 		const diagnostics: DiagnosticEvent[] = [];
 		editor.on("diagnostic", (event) => {
@@ -97,7 +110,7 @@ describe("IOP4 asset upload lifecycle", () => {
 		editor.destroy();
 	});
 
-	it("IOP4 observes onProgress during upload", async () => {
+	it("IOP4 API10 observes onProgress during upload", async () => {
 		const progress: number[] = [];
 		const { provider, upload } = stubProvider();
 		const file = imageFile("ok.png", 4);

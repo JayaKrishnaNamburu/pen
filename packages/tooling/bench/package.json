@@ -2,19 +2,19 @@
   "name": "@input/pen-bench",
   "version": "0.0.1",
   "description": "Performance benchmarks for Pen",
-  "license": "SEE LICENSE IN LICENSE.md",
-  "homepage": "https://github.com/niceperson/pen#readme",
+  "license": "MIT",
+  "homepage": "https://github.com/lemni/pen#readme",
   "bugs": {
-    "url": "https://github.com/niceperson/pen/issues"
+    "url": "https://github.com/lemni/pen/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/niceperson/pen.git",
+    "url": "https://github.com/lemni/pen.git",
     "directory": "packages/tooling/bench"
   },
   "type": "module",
   "publishConfig": {
-    "access": "restricted",
+    "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
   "exports": {
@@ -37,14 +37,20 @@
     "README.md",
     "LICENSE.md"
   ],
+  "engines": {
+    "node": ">=22"
+  },
   "sideEffects": false,
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
+    "test": "vitest run",
     "test:unit": "vitest run",
     "bench": "tsx src/cli.ts",
     "bench:ci": "vitest run && tsx src/cli.ts",
+    "bench:envelope": "tsx src/cli.ts --envelope",
+    "bench:envelope:write": "tsx src/cli.ts --write-envelope",
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "devDependencies": {
@@ -52,9 +58,11 @@
     "@input/pen-ai-autocomplete": "workspace:*",
     "@input/pen-core": "workspace:*",
     "@input/pen-crdt-yjs": "workspace:*",
+    "@input/pen-delta-stream": "workspace:*",
     "@input/pen-document-ops": "workspace:*",
     "@input/pen-schema-default": "workspace:*",
     "@input/pen-test": "workspace:*",
+    "@input/pen-undo": "workspace:*",
     "@input/pen-types": "workspace:*",
     "@types/node": "^25.4.0",
     "tsup": "^8.4.0",

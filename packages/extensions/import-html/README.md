@@ -2,6 +2,8 @@
 
 HTML importer with sanitization for Pen.
 
+This package sanitizes incoming HTML and applies it through `editor.apply` with `origin: "import"`. It does not export HTML.
+
 ## Install
 
 ```bash
@@ -21,14 +23,15 @@ The same envelope governs every ingest path. These constants are not configurabl
 
 Sibling importers (`@input/pen-import-markdown`, `@input/pen-import-json`) already shipped these numbers as local copies. This package uses the same values rather than a shared module because extracting a shared constants package is outside this step's fence. IOP5 requires one document arriving by two routes to have one limit.
 
-| Constant | Value | What it caps |
-| --- | ---: | --- |
-| `INGEST_MAX_NESTING_DEPTH` | 32 | Block-tree depth (top-level = 1) and list `indent` (0-based, so indent 0–31) |
-| `INGEST_MAX_NODE_COUNT` | 10,000 | Blocks including table rows/cells |
-| `INGEST_MAX_TEXT_SIZE` | 1,048,576 | Imported plain text, UTF-16 code units; also the pre-parse raw-source cap |
-| `INGEST_MAX_IMAGE_COUNT` | 256 | Image blocks |
+| Constant                   |     Value | What it caps                                                                                                                                                                                                                                                                                                  |
+| -------------------------- | --------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `INGEST_MAX_NESTING_DEPTH` |        32 | Block-tree depth (top-level = 1) and list `indent` (0-based, so indent 0–31)                                                                                                                                                                                                                                  |
+| `INGEST_MAX_NODE_COUNT`    |    10,000 | Blocks including table rows/cells                                                                                                                                                                                                                                                                             |
+| `INGEST_MAX_TEXT_SIZE`     | 1,048,576 | Imported plain text, UTF-16 code units; also the pre-parse raw-source cap                                                                                                                                                                                                                                     |
+| `INGEST_MAX_IMAGE_COUNT`   |       256 | Image blocks                                                                                                                                                                                                                                                                                                  |
+| `INGEST_TIME_BUDGET_MS`    |     1,000 | Stated wall-clock budget for one ingest, including HTML paste. Same number as clipboard ingest. Not re-recorded under parallel load — re-record on a quiet machine before treating it as a CI gate. The enforceable bound is the pre-parse source cap: parse work is O(`INGEST_MAX_TEXT_SIZE`), not O(input). |
 
-Exceeding a bound truncates at a block boundary. `import()` returns one `IngestReport` (`droppedByReason`) and emits a single `import-truncated` or `import-dropped` diagnostic naming the bound and what was dropped — not a per-block diagnostic stream.
+Exceeding a bound truncates at a block boundary. `import()` and `htmlImporter.parse` (the paste entry) return or emit one `IngestReport` (`droppedByReason`) naming the bound, the limit, the actual value, and what was dropped — not a per-block diagnostic stream. `parseHtmlToBlocks()` stays silent; use `parseHtmlWithReport()` when the host wants the report without applying ops.
 
 ## Usage
 
@@ -52,6 +55,11 @@ through the editor's `AssetProvider` on the `paste:assetProvider` slot.
 Ingest failure emits `asset-upload-failed` and omits that image block.
 
 ```ts
+import { createEditor } from "@input/pen-core";
+import { htmlImporter } from "@input/pen-import-html";
+
+const editor = createEditor();
+
 await htmlImporter.import('<img src="https://cdn.example/a.png" />', editor, {
   imageSrc: "ingest",
 });
@@ -64,3 +72,32 @@ await htmlImporter.import('<img src="https://cdn.example/a.png" />', editor, {
 - Sanitization is built in so host applications can treat HTML as untrusted input by default.
 - Use `parseHtmlToBlocks()` when you want to inspect or transform the converted blocks before applying them.
 - Use `parseHtmlWithReport()` when the host needs the drop/truncation report without applying ops.
+
+## Options
+
+`htmlImporter.import` accepts `ImportOptions` plus `imageSrc`.
+
+| Option      | Default  | Effect                                                                |
+| ----------- | -------- | --------------------------------------------------------------------- |
+| `imageSrc`  | `"keep"` | `"ingest"` fetches remote and `data:` URLs through the asset provider |
+| `position`  | unset    | Insert position                                                       |
+| `replace`   | unset    | Replace the current document                                          |
+| `validate`  | unset    | Passed through to apply                                               |
+| `normalize` | unset    | Passed through to apply                                               |
+| `undoGroup` | unset    | Passed through to apply                                               |
+
+The ingest bounds above are not configurable.
+
+## Facets and commands
+
+This package contributes no facets and no commands. It requires no other extensions.
+
+## Documentation
+
+The docs site (the `@input/pen-docs` package) covers this area on the Import and export page (`#/import-export`).
+
+The public signatures of record are in `api-report.md` next to this package's source in the Pen repository. The docs site does not host a generated browsable reference.
+
+## License
+
+MIT © Input B.V. See [`LICENSE.md`](./LICENSE.md).

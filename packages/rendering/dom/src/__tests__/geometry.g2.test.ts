@@ -1,0 +1,194 @@
+// @vitest-environment jsdom
+
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	createGeometryReader,
+	type GeometryReaderHost,
+	type LineBox,
+	type Point,
+	type Rect,
+} from "../geometry";
+import { singleRunLineBox } from "../geometry/types";
+import { DomScheduler } from "../scheduler";
+
+let frameQueue: FrameRequestCallback[] = [];
+
+function installMockRaf(): void {
+	frameQueue = [];
+	vi.stubGlobal(
+		"requestAnimationFrame",
+		(callback: FrameRequestCallback): number => {
+			frameQueue.push(callback);
+			return frameQueue.length;
+		},
+	);
+}
+
+function flushFrame(): void {
+	const batch = frameQueue.splice(0);
+	for (const callback of batch) {
+		callback(0);
+	}
+}
+
+function rect(
+	left: number,
+	top: number,
+	width: number,
+	height: number,
+): Rect {
+	return {
+		x: left,
+		y: top,
+		width,
+		height,
+		left,
+		top,
+		right: left + width,
+		bottom: top + height,
+	};
+}
+
+function line(
+	top: number,
+	bottom: number,
+	startOffset: number,
+	endOffset: number,
+): LineBox {
+	return singleRunLineBox(rect(0, top, 100, bottom - top), startOffset, endOffset);
+}
+
+describe("GeometryReader G2 cache (injected measure)", () => {
+	const readers: GeometryReaderHost[] = [];
+
+	beforeEach(() => {
+		installMockRaf();
+	});
+
+	afterEach(() => {
+		for (const reader of readers) {
+			reader.dispose();
+		}
+		readers.length = 0;
+		document.body.replaceChildren();
+		vi.unstubAllGlobals();
+	});
+
+	it("G2: injected measure is cached per block until commit, resize, or font generation changes", () => {
+		const root = document.createElement("div");
+		const caretRect = vi.fn((point: Point) =>
+			point.blockId === "a" ? rect(0, 0, 0, 16) : rect(0, 20, 0, 16),
+		);
+		const reader = createGeometryReader({
+			root,
+			commitId: 1,
+			observeResize: false,
+			observeFonts: false,
+			measure: { caretRect },
+		});
+		readers.push(reader);
+
+		const a: Point = { blockId: "a", offset: 0 };
+		const b: Point = { blockId: "b", offset: 0 };
+
+		expect(reader.caretRect(a, "downstream")).toEqual(rect(0, 0, 0, 16));
+		expect(reader.caretRect(a, "downstream")).toEqual(rect(0, 0, 0, 16));
+		expect(caretRect).toHaveBeenCalledTimes(1);
+
+		expect(reader.caretRect(b, "downstream")).toEqual(rect(0, 20, 0, 16));
+		expect(caretRect).toHaveBeenCalledTimes(2);
+
+		reader.setBlockCommitId("a", 2);
+		expect(reader.caretRect(a, "downstream")).toEqual(rect(0, 0, 0, 16));
+		expect(reader.caretRect(b, "downstream")).toEqual(rect(0, 20, 0, 16));
+		expect(caretRect).toHaveBeenCalledTimes(3);
+
+		reader.bumpResizeGeneration();
+		reader.caretRect(a, "downstream");
+		reader.caretRect(b, "downstream");
+		expect(caretRect).toHaveBeenCalledTimes(5);
+
+		reader.bumpFontGeneration();
+		reader.caretRect(a, "downstream");
+		reader.caretRect(b, "downstream");
+		expect(caretRect).toHaveBeenCalledTimes(7);
+	});
+
+	it("G2: scheduler read-phase invalidation drops only the summary's blocks", () => {
+		const root = document.createElement("div");
+		const lineBoxes = vi.fn((blockId: string) => [
+			line(blockId === "a" ? 0 : 20, blockId === "a" ? 16 : 36, 0, 4),
+		]);
+		const reader = createGeometryReader({
+			root,
+			commitId: 1,
+			observeResize: false,
+			observeFonts: false,
+			measure: { lineBoxes },
+		});
+		readers.push(reader);
+
+		expect(reader.lineBoxes("a")).toHaveLength(1);
+		expect(reader.lineBoxes("b")).toHaveLength(1);
+		expect(lineBoxes).toHaveBeenCalledTimes(2);
+
+		const scheduler = new DomScheduler("root-a", { geometry: reader });
+		scheduler.acceptCommit({
+			commitId: 2,
+			origin: { type: "user" },
+			summary: {
+				commitId: 2,
+				originType: "user",
+				text: [{ blockId: "a", splices: [], formatRanges: [] }],
+				structural: [],
+				isEmpty: false,
+				mapOffset: () => 0,
+				mapPoint: () => null,
+				mapRange: () => null,
+				compose: (next) => next,
+			},
+			selectionBefore: {
+				state: null,
+				version: 1,
+				origin: "programmatic",
+				commitId: 1,
+			},
+			selectionAfter: {
+				state: null,
+				version: 2,
+				origin: "programmatic",
+				commitId: 2,
+			},
+			source: "apply",
+			diagnostics: [],
+		});
+
+		const generation = reader.generation;
+		flushFrame();
+		expect(reader.generation).toBeGreaterThan(generation);
+
+		expect(reader.lineBoxes("a")).toHaveLength(1);
+		expect(reader.lineBoxes("b")).toHaveLength(1);
+		expect(lineBoxes).toHaveBeenCalledTimes(3);
+	});
+
+	it("G3: injected lineBoxes stay single-run until Wave 6", () => {
+		const root = document.createElement("div");
+		const boxes = [line(0, 16, 0, 8)];
+		const reader = createGeometryReader({
+			root,
+			observeResize: false,
+			observeFonts: false,
+			measure: { lineBoxes: () => boxes },
+		});
+		readers.push(reader);
+
+		expect(reader.lineBoxes("p1")).toEqual(boxes);
+		expect(reader.lineBoxes("p1")[0]?.runs).toHaveLength(1);
+		expect(reader.lineBoxes("p1")[0]?.runs[0]?.run).toEqual({
+			from: 0,
+			to: 8,
+			level: 0,
+		});
+	});
+});

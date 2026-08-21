@@ -30,8 +30,8 @@ function specifierFor(entry) {
 	return `${entry.packageName}${entry.exportPath === "." ? "" : entry.exportPath.slice(1)}`;
 }
 
-function runHeadless(createHeadlessEditor, label) {
-	const editor = createHeadlessEditor();
+function runHeadless(createHeadlessEditor, schema, label) {
+	const editor = createHeadlessEditor({ schema });
 	editor.apply(
 		[
 			{
@@ -92,16 +92,23 @@ function requireAllCjs(entries) {
 	}
 }
 
-async function runHeadlessPass(entries) {
-	const core = entries.find(
-		(entry) =>
-			entry.packageName === "@input/pen-core" && entry.exportPath === ".",
+function rootEntry(entries, packageName) {
+	const entry = entries.find(
+		(candidate) =>
+			candidate.packageName === packageName && candidate.exportPath === ".",
 	);
-	if (!core) {
-		throw new Error(
-			"HOST2: @input/pen-core . export missing from discovery",
-		);
+	if (!entry) {
+		throw new Error(`HOST2: ${packageName} . export missing from discovery`);
 	}
+	return entry;
+}
+
+// Core registers no block types on its own — it cannot depend on
+// @input/pen-schema-default (API1). A host assembles the two, so the smoke
+// assembles them too, from the built artifacts rather than from source.
+async function runHeadlessPass(entries) {
+	const core = rootEntry(entries, "@input/pen-core");
+	const schemaPackage = rootEntry(entries, "@input/pen-schema-default");
 
 	const esmCore = await import(pathToFileURL(core.esmAbs).href);
 	if (typeof esmCore.createHeadlessEditor !== "function") {
@@ -109,7 +116,13 @@ async function runHeadlessPass(entries) {
 			"HOST2: createHeadlessEditor is not exported from @input/pen-core ESM",
 		);
 	}
-	runHeadless(esmCore.createHeadlessEditor, "ESM");
+	const esmSchema = await import(pathToFileURL(schemaPackage.esmAbs).href);
+	if (!esmSchema.defaultSchema) {
+		throw new Error(
+			"HOST2: defaultSchema is not exported from @input/pen-schema-default ESM",
+		);
+	}
+	runHeadless(esmCore.createHeadlessEditor, esmSchema.defaultSchema, "ESM");
 
 	const cjsCore = require(core.cjsAbs);
 	if (typeof cjsCore.createHeadlessEditor !== "function") {
@@ -117,7 +130,13 @@ async function runHeadlessPass(entries) {
 			"HOST2: createHeadlessEditor is not exported from @input/pen-core CJS",
 		);
 	}
-	runHeadless(cjsCore.createHeadlessEditor, "CJS");
+	const cjsSchema = require(schemaPackage.cjsAbs);
+	if (!cjsSchema.defaultSchema) {
+		throw new Error(
+			"HOST2: defaultSchema is not exported from @input/pen-schema-default CJS",
+		);
+	}
+	runHeadless(cjsCore.createHeadlessEditor, cjsSchema.defaultSchema, "CJS");
 }
 
 function spawnPass(mode) {

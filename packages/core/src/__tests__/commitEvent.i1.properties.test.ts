@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import * as Y from "yjs";
 
 import { createEditor as createCoreEditor } from "../index";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "./fixtures/testSchema";
 
 const undoOnlyPreset = {
 	resolve() {

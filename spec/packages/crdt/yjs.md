@@ -12,6 +12,7 @@ Bridge Pen contracts to a specific CRDT implementation.
 
 - Export map: `.`
 - CRDT adapter and document helpers such as `yjsAdapter()`, `wrapYjsDocument()`, `initBlockMap()`, and `getYjsDoc()`
+- `PenDocumentUnreadableError`, thrown by `loadDocument` when `minReader` is too new or a shared type has the wrong Yjs constructor
 - Collaboration helpers such as `createYjsProviderSession()`, `createYjsAwareness()`, and `getYjsAwareness()`
 - State-vector helpers such as `encodeYjsStateVectorBase64()`, `compareYjsStateVectors()`, and `isYjsStateVectorBase64Satisfied()`
 - Generic field adapters such as `createYTextFieldAdapter()` and `createYArrayFieldAdapter()`

@@ -19,6 +19,12 @@ import { editorBenchmarks } from "./suites/editor.bench";
 import { extensionBenchmarks } from "./suites/extension.bench";
 import { aiBenchmarks } from "./suites/ai.bench";
 import { scale3Benchmarks } from "./suites/scale3.bench";
+import {
+	SCALE2_PLUS8_BASE_ID,
+	SCALE2_PLUS8_ID,
+	compareScale2Plus8Tolerance,
+	formatScale2Plus8Tolerance,
+} from "./constants/scale3";
 import { reportConsole } from "./reporters/console";
 import { reportJSON } from "./reporters/json";
 import type { BenchDefinition, BenchResult, BenchWaiver } from "./bench";
@@ -71,18 +77,49 @@ export function assertCriticalBenchmarkTargets(
 	throw new Error(`Critical benchmark targets failed: ${summary}`);
 }
 
+export function assertScale2Plus8Tolerance(
+	results: readonly BenchResult[],
+): void {
+	const base = results.find((result) => result.id === SCALE2_PLUS8_BASE_ID);
+	const plus8 = results.find((result) => result.id === SCALE2_PLUS8_ID);
+	if (!base || !plus8) {
+		throw new Error(
+			"SCALE2 plus8 tolerance: missing same-run medians for the 1000-block shipped stack and the plus8 decorating stack",
+		);
+	}
+	const compared = compareScale2Plus8Tolerance(plus8.p50Ms, base.p50Ms);
+	if (!compared.ok) {
+		throw new Error(formatScale2Plus8Tolerance(compared));
+	}
+}
+
 export function parseBenchCLIArgs(args: readonly string[]): {
 	reporter: "console" | "json";
 	waiverFile?: string;
+	envelope?: boolean;
+	writeEnvelope?: boolean;
 } {
 	let reporter: "console" | "json" = "console";
 	let waiverFile: string | undefined;
+	let envelope: boolean | undefined;
+	let writeEnvelope: boolean | undefined;
 
 	for (let i = 0; i < args.length; i++) {
 		const arg = args[i];
 
 		if (arg === "--json") {
 			reporter = "json";
+			continue;
+		}
+
+		if (arg === "--envelope") {
+			envelope = true;
+			continue;
+		}
+
+		if (arg === "--write-envelope") {
+			writeEnvelope = true;
+			envelope = true;
 			continue;
 		}
 
@@ -100,7 +137,12 @@ export function parseBenchCLIArgs(args: readonly string[]): {
 		}
 	}
 
-	return { reporter, waiverFile };
+	return {
+		reporter,
+		...(waiverFile ? { waiverFile } : {}),
+		...(envelope ? { envelope } : {}),
+		...(writeEnvelope ? { writeEnvelope } : {}),
+	};
 }
 
 export async function loadBenchWaivers(
@@ -246,10 +288,9 @@ export async function runAllSuites(
 	}
 
 	if (enforceTargets) {
-		assertCriticalBenchmarkTargets(
-			allResults.flatMap((suite) => suite.results),
-			waivers,
-		);
+		const results = allResults.flatMap((suite) => suite.results);
+		assertCriticalBenchmarkTargets(results, waivers);
+		assertScale2Plus8Tolerance(results);
 	}
 
 	return allResults;

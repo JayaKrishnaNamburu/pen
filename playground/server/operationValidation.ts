@@ -1,8 +1,11 @@
-import type { Editor, ModelRequestedOperation } from "@input/pen-types";
 import {
-	isScopedSelectionTarget,
 	renderSelectionTargetText,
 	resolveSelectionTargetBlockIds,
+} from "@input/pen-core";
+import {
+	isScopedSelectionTarget,
+	type Editor,
+	type ModelRequestedOperation,
 } from "@input/pen-types";
 
 export function parseRequestedOperation(

@@ -180,7 +180,7 @@ async function getSelectionSnapshot(
 
 			return {
 				blockId: blockElement.getAttribute("data-block-id"),
-				offset: range.toString().length,
+				offset: range.toString().replaceAll("\u200B", "").length,
 			};
 		};
 

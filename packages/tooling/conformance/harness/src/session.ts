@@ -4,12 +4,26 @@ import {
 	createHeadlessEditor,
 	createPseudoLocaleCatalog,
 } from "@input/pen-core";
-import { wrapYjsDocument, yjsAdapter } from "@input/pen-crdt-yjs";
+import {
+	applyYjsAwarenessUpdate,
+	encodeYjsAwarenessUpdate,
+	wrapYjsDocument,
+	yjsAdapter,
+} from "@input/pen-crdt-yjs";
+import {
+	BEFOREINPUT_MAP,
+	mapBeforeInput,
+} from "@input/pen-dom/field-editor/beforeinputMap";
 import {
 	domSelectionToEditor,
 	editorSelectionToDOM,
 } from "@input/pen-dom/field-editor";
 import { applyValidatedOps } from "@input/pen-document-ops";
+import { parsePenClipboardPayload } from "@input/pen-dom/utils/clipboardPayload";
+import {
+	clearInlineAtomDragPreview,
+	createInlineAtomDragPreview,
+} from "@input/pen-dom/utils/inlineAtomDragPreview";
 import { htmlImporter } from "@input/pen-import-html";
 import { defaultPreset } from "@input/pen-preset-default";
 import { defaultSchema } from "@input/pen-schema-default";
@@ -28,22 +42,45 @@ import {
 	type Unsubscribe,
 } from "@input/pen-types";
 import * as Y from "yjs";
+import { compileRangeReplacementSuggestionOps } from "../../../../extensions/ai/src/suggestions/textDiffOperations";
+import {
+	getMultiplayerController,
+	multiplayerExtension,
+} from "../../../../extensions/multiplayer/src";
+import { createReducedMotionSignal } from "../../../../rendering/dom/src/a11y/motion";
 import {
 	isFixtureName,
 	isLocalFixtureName,
 	LOCAL_FIXTURES,
+	WINDOWED_WINDOW_SIZE,
 } from "../../fixtures/catalog";
 import type {
+	BeforeInputDispatchResult,
 	ConformanceEventRecord,
+	DocumentContentSnapshot,
 	DomAuthorityCheck,
 	HostileDomScan,
 	LogicalPoint,
 	PenConformanceBridge,
+	PresencePeerInject,
+	PresenceSnapshot,
 	RemoteSpliceArgs,
 	RemoteYInjectArgs,
+	SerializedBeforeInputMapping,
 	SerializedDiagnostic,
 } from "../../src/types";
 import { serializeDiagnostic, serializeSelection } from "./serialize";
+import {
+	compareCaretCache,
+	disposeGeometry,
+	flushEightRemoteCarets,
+	geometryBlocks,
+	geometryGeneration,
+	geometryLineBoxes,
+	invalidateGeometry,
+	runVerticalMotion,
+	warmCaretCache,
+} from "./geometry";
 
 const LAST_EVENTS_CAP = 32;
 const DIAGNOSTICS_CAP = 64;
@@ -64,6 +101,9 @@ type Session = {
 
 let session: Session | null = null;
 const listeners = new Set<() => void>();
+let windowStart = 0;
+let reducedMotionSignal: ReturnType<typeof createReducedMotionSignal> | null =
+	null;
 
 function notify(): void {
 	for (const listener of listeners) {
@@ -168,6 +208,25 @@ function ax3AutocompleteExtensions() {
 	];
 }
 
+function col2MultiplayerExtensions() {
+	if (!readQueryFlag("col2")) {
+		return undefined;
+	}
+	return [
+		multiplayerExtension({
+			user: { id: "conformance-local", name: "Local" },
+		}),
+	];
+}
+
+function sessionExtensions() {
+	const extensions = [
+		...(ax3AutocompleteExtensions() ?? []),
+		...(col2MultiplayerExtensions() ?? []),
+	];
+	return extensions.length > 0 ? extensions : undefined;
+}
+
 function createSession(fixtureName: string): Session {
 	const local = createLocalDocument(fixtureName);
 	const remoteAdapter = yjsAdapter();
@@ -182,7 +241,7 @@ function createSession(fixtureName: string): Session {
 		crdt: local.adapter,
 		document: local.document,
 		messages: readPseudoLocaleMessages(),
-		extensions: ax3AutocompleteExtensions(),
+		extensions: sessionExtensions(),
 	});
 	const remoteEditor = createHeadlessEditor({
 		documentProfile: "structured",
@@ -258,10 +317,34 @@ function destroySession(target: Session): void {
 	target.remoteY.destroy();
 }
 
+export function getWindowStart(): number {
+	return windowStart;
+}
+
+export function setWindowStart(start: number): void {
+	const blockCount = getHarnessSession().editor.documentState.blockOrder.length;
+	const maxStart = Math.max(0, blockCount - WINDOWED_WINDOW_SIZE);
+	const next = Math.min(Math.max(0, Math.floor(start)), maxStart);
+	if (next === windowStart) {
+		return;
+	}
+	windowStart = next;
+	notify();
+}
+
+function reducedMotion(): boolean {
+	if (!reducedMotionSignal) {
+		reducedMotionSignal = createReducedMotionSignal();
+	}
+	return reducedMotionSignal.reduced;
+}
+
 export function loadFixture(name: string): void {
+	disposeGeometry();
 	if (session) {
 		destroySession(session);
 	}
+	windowStart = 0;
 	session = createSession(name);
 	installBridge();
 	notify();
@@ -498,12 +581,90 @@ function focusText(block = 0): void {
 	fieldEditor.focus({ reason: "programmatic" });
 }
 
+function selectText(block: number, offset = 0): void {
+	const current = getHarnessSession();
+	const blockId = current.editor.documentState.blockAt(block);
+	if (!blockId) {
+		throw new Error(`selectText: no block at index ${block}`);
+	}
+	current.editor.selectText(blockId, offset, offset);
+}
+
 function applyOps(ops: readonly DocumentOp[]): void {
 	getHarnessSession().editor.apply([...ops], { origin: "user" });
 }
 
 function remoteApply(ops: readonly DocumentOp[]): void {
 	getHarnessSession().remoteEditor.apply([...ops], { origin: "collaborator" });
+}
+
+function encodePeerPresence(
+	clientId: number,
+	state: Record<string, unknown>,
+): Uint8Array {
+	const adapter = yjsAdapter();
+	const ydoc = new Y.Doc({ gc: false });
+	ydoc.clientID = clientId;
+	const document = wrapYjsDocument(adapter, ydoc);
+	const awareness = adapter.createAwareness?.(document);
+	if (!awareness) {
+		throw new Error("injectPresence: adapter has no awareness");
+	}
+	try {
+		awareness.setLocalState(state);
+		return encodeYjsAwarenessUpdate(awareness, [clientId]);
+	} finally {
+		awareness.destroy();
+		ydoc.destroy();
+	}
+}
+
+function presenceSnapshot(): PresenceSnapshot {
+	const controller = getMultiplayerController(getHarnessSession().editor);
+	if (!controller) {
+		return { cursors: [], peers: [] };
+	}
+	return {
+		cursors: controller.getRemoteCursors().map((cursor) => ({
+			clientId: cursor.clientId,
+			userId: cursor.user.id,
+			userName: cursor.user.name,
+			...(cursor.user.avatar ? { avatar: cursor.user.avatar } : {}),
+			blockId: cursor.blockId,
+			offset: cursor.offset,
+		})),
+		peers: controller.getPeers().map((peer) => ({
+			clientId: peer.clientId,
+			userId: peer.user.id,
+			userName: peer.user.name,
+			...(peer.user.avatar ? { avatar: peer.user.avatar } : {}),
+		})),
+	};
+}
+
+async function injectPresence(
+	peers: readonly PresencePeerInject[],
+): Promise<PresenceSnapshot> {
+	const current = getHarnessSession();
+	await current.editor.whenReady();
+	const awareness = current.editor.internals.awareness;
+	if (!awareness) {
+		throw new Error("injectPresence: editor has no awareness");
+	}
+	const localClientId = current.editor.clientId;
+	for (const peer of peers) {
+		if (peer.clientId === localClientId) {
+			throw new Error(
+				`injectPresence: clientId ${peer.clientId} collides with the local editor`,
+			);
+		}
+		applyYjsAwarenessUpdate(
+			awareness,
+			encodePeerPresence(peer.clientId, peer.state),
+		);
+	}
+	current.editor.requestDecorationUpdate();
+	return presenceSnapshot();
 }
 
 function applyToolPayloads(
@@ -522,6 +683,58 @@ function applyToolPayloads(
 
 async function importHtml(html: string): Promise<void> {
 	await htmlImporter.import(html, getHarnessSession().editor);
+}
+
+function applyAiRangeReplacement(args: {
+	start: { blockId: string; offset: number };
+	end: { blockId: string; offset: number };
+	replacementText: string;
+}): void {
+	const current = getHarnessSession();
+	const blocks = current.editor.documentState.blockOrder.map((id) => ({
+		id,
+		text: current.editor.getBlock(id)?.textContent() ?? "",
+	}));
+	const ops = compileRangeReplacementSuggestionOps({
+		range: { start: args.start, end: args.end },
+		blocks,
+		replacementText: args.replacementText,
+	});
+	current.editor.apply(ops, { origin: "ai" });
+}
+
+function parseClipboardPayload(raw: unknown): { status: string } {
+	return { status: parsePenClipboardPayload(raw).status };
+}
+
+function exerciseInlineAtomDragPreview(): {
+	filled: string;
+	emptied: boolean;
+} {
+	const source = document.createElement("span");
+	source.textContent = "Drag preview source";
+	document.body.append(source);
+	try {
+		const preview = createInlineAtomDragPreview({
+			sourceElement: source,
+			clientX: 12,
+			clientY: 12,
+		});
+		const filled =
+			document.querySelector("[data-pen-inline-atom-drag-preview]")
+				?.textContent ?? "";
+		preview.destroy();
+		clearInlineAtomDragPreview(document);
+		return {
+			filled,
+			emptied:
+				document.querySelector(
+					"[data-pen-inline-atom-drag-preview-root]",
+				) == null,
+		};
+	} finally {
+		source.remove();
+	}
 }
 
 function scanHostileDom(): HostileDomScan {
@@ -545,6 +758,91 @@ function scanHostileDom(): HostileDomScan {
 			: 0,
 		probeTripped: Boolean(window.__xssProbeTripped),
 	};
+}
+
+function beforeinputMap(): Readonly<
+	Record<string, SerializedBeforeInputMapping>
+> {
+	return { ...BEFOREINPUT_MAP };
+}
+
+function documentSnapshot(): DocumentContentSnapshot {
+	const editor = getHarnessSession().editor;
+	return {
+		blockOrder: [...editor.documentState.blockOrder],
+		blocks: editor.documentState.blockOrder.map((id) => {
+			const block = editor.getBlock(id);
+			if (!block) {
+				throw new Error(`documentSnapshot: missing block ${id}`);
+			}
+			return {
+				id: block.id,
+				type: block.type,
+				text: block.textContent(),
+				props: { ...block.props },
+				deltas: block.inlineDeltas(),
+			};
+		}),
+	};
+}
+
+function activeSurface(): HTMLElement {
+	const root = editorRoot();
+	const scoped = root ?? document;
+	const contentEditable =
+		scoped.querySelector(
+			"[data-pen-inline-content][contenteditable='true']",
+		) ??
+		scoped.querySelector(
+			"[data-pen-field-editor-active-surface][contenteditable='true']",
+		) ??
+		scoped.querySelector("[contenteditable='true']");
+	if (contentEditable instanceof HTMLElement) {
+		return contentEditable;
+	}
+	const fallback = scoped.querySelector(
+		"[data-pen-field-editor-active-surface], [data-pen-inline-content]",
+	);
+	if (!(fallback instanceof HTMLElement)) {
+		throw new Error("no active field-editor surface");
+	}
+	return fallback;
+}
+
+function dispatchBeforeInput(args: {
+	inputType: string;
+	data?: string;
+}): BeforeInputDispatchResult {
+	const surface = activeSurface();
+	const event = new InputEvent("beforeinput", {
+		bubbles: true,
+		cancelable: true,
+		inputType: args.inputType,
+		data: args.data ?? null,
+	});
+	try {
+		surface.dispatchEvent(event);
+		return {
+			defaultPrevented: event.defaultPrevented,
+			inputType: event.inputType,
+			threw: null,
+		};
+	} catch (error) {
+		return {
+			defaultPrevented: event.defaultPrevented,
+			inputType: event.inputType,
+			threw: error instanceof Error ? error.message : String(error),
+		};
+	}
+}
+
+function clearDiagnostics(): void {
+	const current = getHarnessSession();
+	current.diagnostics.length = 0;
+}
+
+function mutateActiveSurfaceText(text: string): void {
+	activeSurface().append(text);
 }
 
 function installBridge(): void {
@@ -581,10 +879,24 @@ function installBridge(): void {
 				null
 			);
 		},
+		get reducedMotion() {
+			return reducedMotion();
+		},
+		get windowRange() {
+			return { start: windowStart, size: WINDOWED_WINDOW_SIZE };
+		},
+		get hasMultiplayer() {
+			return getMultiplayerController(getHarnessSession().editor) != null;
+		},
+		get presence() {
+			return presenceSnapshot();
+		},
 		load(name: string) {
 			loadFixture(name);
 		},
 		focusText,
+		selectText,
+		setWindow: setWindowStart,
 		apply: applyOps,
 		remoteApply,
 		applyToolPayloads,
@@ -594,8 +906,55 @@ function installBridge(): void {
 		resetXssProbe,
 		remoteSplice,
 		remoteInjectY,
+		injectPresence,
 		installBrokenProjector,
 		domMatchesAuthority: checkDomMatchesAuthority,
+		applyAiRangeReplacement,
+		parseClipboardPayload,
+		exerciseInlineAtomDragPreview,
+		get geometryGeneration() {
+			return geometryGeneration();
+		},
+		geometryBlocks() {
+			return geometryBlocks(getHarnessSession().editor);
+		},
+		geometryLineBoxes(blockId: string) {
+			return geometryLineBoxes(getHarnessSession().editor, blockId);
+		},
+		invalidateGeometry() {
+			invalidateGeometry(getHarnessSession().editor);
+		},
+		warmCaretCache(points) {
+			warmCaretCache(getHarnessSession().editor, points);
+		},
+		compareCaretCache(points) {
+			return compareCaretCache(getHarnessSession().editor, points);
+		},
+		verticalMotion(args) {
+			return runVerticalMotion(getHarnessSession().editor, args);
+		},
+		flushEightRemoteCarets(points) {
+			return flushEightRemoteCarets(getHarnessSession().editor, points);
+		},
+		get beforeinputMap() {
+			return beforeinputMap();
+		},
+		mapBeforeInput,
+		documentSnapshot,
+		dispatchBeforeInput,
+		clearDiagnostics,
+		mutateActiveSurfaceText,
 	};
 	window.__penConformance = bridge;
+	Object.assign(window.__penConformance, {
+		undo() {
+			getHarnessSession().editor.undoManager.undo();
+		},
+		redo() {
+			getHarnessSession().editor.undoManager.redo();
+		},
+		stopCapturing() {
+			getHarnessSession().editor.undoManager.stopCapturing();
+		},
+	});
 }

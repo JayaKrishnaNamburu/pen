@@ -7,6 +7,9 @@ import { createEditor } from "@input/pen-core";
 import type { ToolRuntime } from "@input/pen-types";
 import { defineExtension } from "@input/pen-core";
 import { aiExtension, getAIController } from "@input/pen-ai";
+import { undoExtension } from "@input/pen-undo";
+import { deltaStreamExtension } from "@input/pen-delta-stream";
+import { documentOpsExtension } from "@input/pen-document-ops";
 import { defaultPreset } from "@input/pen-preset-default";
 import { defaultSchema } from "@input/pen-schema-default";
 import {
@@ -63,8 +66,10 @@ function mockSelectionToolbarRect(rect: {
 	height: number;
 }) {
 	const originalGetSelection = window.getSelection.bind(window);
-	const originalRequestAnimationFrame = window.requestAnimationFrame.bind(window);
-	const originalCancelAnimationFrame = window.cancelAnimationFrame.bind(window);
+	const originalRequestAnimationFrame =
+		window.requestAnimationFrame.bind(window);
+	const originalCancelAnimationFrame =
+		window.cancelAnimationFrame.bind(window);
 	const rangeRect = {
 		top: rect.top,
 		left: rect.left,
@@ -97,7 +102,7 @@ function mockSelectionToolbarRect(rect: {
 	});
 	Object.defineProperty(window, "cancelAnimationFrame", {
 		configurable: true,
-		value: () => { },
+		value: () => {},
 	});
 
 	return () => {
@@ -124,8 +129,10 @@ function mockMutableSelectionToolbarRect(initialRect: {
 }) {
 	const rect = { ...initialRect };
 	const originalGetSelection = window.getSelection.bind(window);
-	const originalRequestAnimationFrame = window.requestAnimationFrame.bind(window);
-	const originalCancelAnimationFrame = window.cancelAnimationFrame.bind(window);
+	const originalRequestAnimationFrame =
+		window.requestAnimationFrame.bind(window);
+	const originalCancelAnimationFrame =
+		window.cancelAnimationFrame.bind(window);
 
 	Object.defineProperty(window, "getSelection", {
 		configurable: true,
@@ -158,7 +165,7 @@ function mockMutableSelectionToolbarRect(initialRect: {
 	});
 	Object.defineProperty(window, "cancelAnimationFrame", {
 		configurable: true,
-		value: () => { },
+		value: () => {},
 	});
 
 	return {
@@ -213,7 +220,10 @@ function testStreamingToolExtension() {
 		name: "test-streaming-tool",
 		dependencies: ["document-ops"],
 		activateClient: async ({ editor }) => {
-			toolRuntime = editor.internals.getSlot<ToolRuntime>("document-ops:toolRuntime") ?? null;
+			toolRuntime =
+				editor.internals.getSlot<ToolRuntime>(
+					"document-ops:toolRuntime",
+				) ?? null;
 			toolRuntime?.registerTool({
 				name: "test_search",
 				description: "Test streaming search tool",
@@ -243,14 +253,17 @@ describe("@input/pen-react AI primitives", () => {
 		const releaseSecondDelta = createDeferred();
 		let streamedBlockId = "";
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [
+			schema: defaultSchema,
+			extensions: [
+				undoExtension(),
+				deltaStreamExtension(),
+				documentOpsExtension(),
 				aiExtension({
 					model: {
 						async *stream() {
 							yield {
 								type: "text-delta" as const,
-								delta:
-									`{"kind":"block_convert","blockId":"${streamedBlockId}","newType":"heading"`,
+								delta: `{"kind":"block_convert","blockId":"${streamedBlockId}","newType":"heading"`,
 							};
 							await releaseSecondDelta.promise;
 							yield {
@@ -289,9 +302,10 @@ describe("@input/pen-react AI primitives", () => {
 
 		let generationPromise: Promise<unknown> | null = null;
 		await act(async () => {
-			generationPromise = controller?.runPrompt("Convert block to heading", {
-				blockId,
-			}) ?? null;
+			generationPromise =
+				controller?.runPrompt("Convert block to heading", {
+					blockId,
+				}) ?? null;
 			for (let tick = 0; tick < 6; tick += 1) {
 				await Promise.resolve();
 			}
@@ -299,16 +313,24 @@ describe("@input/pen-react AI primitives", () => {
 
 		const progress = container.querySelector("[data-pen-ai-progress]");
 		const changeList = container.querySelector("[data-pen-ai-change-list]");
-		const reviewItemsDuringPreview = container.querySelectorAll("[data-review-item]");
+		const reviewItemsDuringPreview =
+			container.querySelectorAll("[data-review-item]");
 
-		expect(progress?.getAttribute("data-structured-preview-count")).toBe("1");
-		expect(progress?.getAttribute("data-structured-preview-state")).toBe("drafted");
+		expect(progress?.getAttribute("data-structured-preview-count")).toBe(
+			"1",
+		);
+		expect(progress?.getAttribute("data-structured-preview-state")).toBe(
+			"drafted",
+		);
 		expect(changeList?.getAttribute("data-review-preview-active")).toBe("");
 		expect(reviewItemsDuringPreview).toHaveLength(1);
-		expect(reviewItemsDuringPreview[0]?.textContent).toContain("Convert block");
+		expect(reviewItemsDuringPreview[0]?.textContent).toContain(
+			"Convert block",
+		);
 		expect(
-			reviewItemsDuringPreview[0]?.querySelector("[data-review-item-kind-label]")
-				?.textContent,
+			reviewItemsDuringPreview[0]?.querySelector(
+				"[data-review-item-kind-label]",
+			)?.textContent,
 		).toBe("Updated");
 
 		await act(async () => {
@@ -317,16 +339,21 @@ describe("@input/pen-react AI primitives", () => {
 		});
 
 		expect(
-			Number(progress?.getAttribute("data-structured-preview-patch-count") ?? "0"),
+			Number(
+				progress?.getAttribute("data-structured-preview-patch-count") ??
+					"0",
+			),
 		).toBeGreaterThanOrEqual(3);
-		expect(progress?.getAttribute("data-structured-preview-state")).toBe("validated");
-		expect(changeList?.getAttribute("data-review-preview-active")).toBeNull();
+		expect(progress?.getAttribute("data-structured-preview-state")).toBe(
+			"validated",
+		);
+		expect(
+			changeList?.getAttribute("data-review-preview-active"),
+		).toBeNull();
 
 		await act(async () => {
 			root.unmount();
 		});
 		container.remove();
 	});
-
-
 });

@@ -107,6 +107,38 @@ describe("CH2 lint gate", () => {
 		).toHaveLength(1);
 	});
 
+	it("reports a seeded framework-free renderer module as an error through the root config", async () => {
+		const messages = await lintSeededViolation(
+			"export function leftover() { return 1; }\n",
+			"src/seeded-framework-free.ts",
+			"packages/rendering/react",
+		);
+
+		expect(
+			messages.filter(
+				(message) =>
+					message.ruleId === "pen/no-framework-free-modules-in-renderers" &&
+					message.severity === 2,
+			),
+		).toHaveLength(1);
+	});
+
+	it("reports a seeded bare above-floor API as an error through the root config", async () => {
+		const messages = await lintSeededViolation(
+			"const copy = structuredClone(value);\n",
+			"src/seeded-above-floor.ts",
+			"packages/core",
+		);
+
+		expect(
+			messages.filter(
+				(message) =>
+					message.ruleId === "pen/no-above-floor-api" &&
+					message.severity === 2,
+			),
+		).toHaveLength(1);
+	});
+
 	it("reports seeded dynamic code as an error through the root config", async () => {
 		const messages = await lintSeededViolation(
 			'const run = new Function("return 1");\n',

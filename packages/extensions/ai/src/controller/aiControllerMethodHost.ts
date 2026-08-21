@@ -10,6 +10,7 @@ import type {
 	ToolRuntime,
 	UndoHistoryMetadataController,
 } from "@input/pen-types";
+import type { AIToolConfirmFn } from "@input/pen-ai-tools";
 import type {
 	AIApplyStrategy,
 	AIContentFormat,
@@ -52,6 +53,8 @@ export interface AIControllerMethodHost {
 	_editor: Editor;
 	_model: ModelAdapter | undefined;
 	_maxAgenticSteps: number;
+	_allowedMutatingTools: readonly string[];
+	_confirmAITool: AIToolConfirmFn | undefined;
 	_inlineCompletion: AIInlineCompletionController;
 	_suggestedOperationRunner: SuggestedAIOperationRunner;
 	_suggestionPresentation: NonNullable<

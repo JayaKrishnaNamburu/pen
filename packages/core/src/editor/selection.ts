@@ -6,7 +6,7 @@ import type {
 	SchemaRegistry,
 	BlockHandle,
 } from "@input/pen-types";
-import { usesInlineTextSelection } from "@input/pen-types";
+import { usesInlineTextSelection } from "../schema/fieldEditorCapabilities";
 import { createBlockHandle } from "../schema/handles";
 import { resolveCellSelectionMatrix } from "./cellSelection";
 import { EventEmitter } from "./events";

@@ -9,13 +9,13 @@ import {
 	ensureInlineCompletionController,
 } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
-import type { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
+import type { FieldEditorImpl } from "@input/pen-dom/field-editor/fieldEditorImpl";
 import { Pen } from "../primitives/index";
 import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
 import {
 	domSelectionToEditor,
 	editorSelectionToDOM,
-} from "../field-editor/selectionBridge";
+} from "@input/pen-dom/field-editor/selectionBridge";
 import { FakeEditContext } from "./utils/fakeEditContext";
 import { defaultSchema } from "@input/pen-schema-default";
 
@@ -25,7 +25,8 @@ import { defaultSchema } from "@input/pen-schema-default";
 
 function createEditor(options: Parameters<typeof createCoreEditor>[0] = {}) {
 	return createCoreEditor({
-		schema: defaultSchema,...options,
+		schema: defaultSchema,
+		...options,
 		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
@@ -358,6 +359,4 @@ describe("@input/pen-react escape key handling", () => {
 		container.remove();
 		editor.destroy();
 	});
-
-
 });

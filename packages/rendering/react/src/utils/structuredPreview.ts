@@ -3,6 +3,7 @@ import type {
 	GenerationStructuredPreviewState,
 	StructuredPreviewPatchOperation,
 } from "@input/pen-ai";
+import { deepEqual } from "@input/pen-core";
 
 export interface AIStructuredPreviewSelection {
 	preview: GenerationStructuredPreviewState | null;
@@ -354,17 +355,5 @@ function isRecordValue(value: unknown): value is Record<string, unknown> {
 }
 
 function areStructuredPreviewValuesEqual(previous: unknown, next: unknown): boolean {
-	if (previous === next) {
-		return true;
-	}
-	if (!previous || !next) {
-		return previous === next;
-	}
-
-	try {
-		return JSON.stringify(previous) === JSON.stringify(next);
-	} catch {
-		// cyclic or unstringifiable values are not equal.
-		return false;
-	}
+	return deepEqual(previous, next);
 }

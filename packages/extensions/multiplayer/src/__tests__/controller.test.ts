@@ -110,7 +110,12 @@ describe("MultiplayerControllerImpl", () => {
 		expect(controller.getRemoteCursors()).toEqual([
 			{
 				clientId: 77,
-				user: { id: "u2", name: "Babbage", color: "#abc123" },
+				user: {
+					id: "u2",
+					name: "Babbage",
+					unverified: true,
+					color: "#abc123",
+				},
 				blockId: "b1",
 				offset: 3,
 				clock: 10,
@@ -120,7 +125,12 @@ describe("MultiplayerControllerImpl", () => {
 			{
 				kind: "text",
 				clientId: 77,
-				user: { id: "u2", name: "Babbage", color: "#abc123" },
+				user: {
+					id: "u2",
+					name: "Babbage",
+					unverified: true,
+					color: "#abc123",
+				},
 				anchor: { blockId: "b1", offset: 1 },
 				head: { blockId: "b1", offset: 3 },
 				clock: 11,
@@ -129,10 +139,20 @@ describe("MultiplayerControllerImpl", () => {
 		expect(controller.getPeers()).toEqual([
 			{
 				clientId: 77,
-				user: { id: "u2", name: "Babbage", color: "#abc123" },
+				user: {
+					id: "u2",
+					name: "Babbage",
+					unverified: true,
+					color: "#abc123",
+				},
 				cursor: {
 					clientId: 77,
-					user: { id: "u2", name: "Babbage", color: "#abc123" },
+					user: {
+						id: "u2",
+						name: "Babbage",
+						unverified: true,
+						color: "#abc123",
+					},
 					blockId: "b1",
 					offset: 3,
 					clock: 10,
@@ -140,7 +160,12 @@ describe("MultiplayerControllerImpl", () => {
 				selection: {
 					kind: "text",
 					clientId: 77,
-					user: { id: "u2", name: "Babbage", color: "#abc123" },
+					user: {
+						id: "u2",
+						name: "Babbage",
+						unverified: true,
+						color: "#abc123",
+					},
 					anchor: { blockId: "b1", offset: 1 },
 					head: { blockId: "b1", offset: 3 },
 					clock: 11,
@@ -192,6 +217,7 @@ describe("MultiplayerControllerImpl", () => {
 		expect(controller.getAuthorLedger().resolve(77)).toEqual({
 			id: "u2",
 			name: "Babbage",
+			unverified: true,
 			color: "#abc123",
 		});
 	});
@@ -245,7 +271,12 @@ describe("MultiplayerControllerImpl", () => {
 		expect(controller.getRemoteCursors()).toEqual([
 			{
 				clientId: 77,
-				user: { id: "u2", name: "Babbage", color: "#abc123" },
+				user: {
+					id: "u2",
+					name: "Babbage",
+					unverified: true,
+					color: "#abc123",
+				},
 				blockId: "b1",
 				offset: 6,
 				clock: 10,
@@ -255,7 +286,12 @@ describe("MultiplayerControllerImpl", () => {
 			{
 				kind: "text",
 				clientId: 77,
-				user: { id: "u2", name: "Babbage", color: "#abc123" },
+				user: {
+					id: "u2",
+					name: "Babbage",
+					unverified: true,
+					color: "#abc123",
+				},
 				anchor: { blockId: "b1", offset: 4 },
 				head: { blockId: "b1", offset: 6 },
 				clock: 11,

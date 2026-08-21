@@ -1,10 +1,12 @@
 import type {
+	ChangeSummary,
 	CRDTUndoStackItem,
+	Editor,
 	Extension,
 	FieldEditor,
-	Editor,
 	HistoryAppliedEvent,
 	OpOrigin,
+	Point,
 	SelectionState,
 	UndoHistoryMetadataController,
 	UndoHistoryMetadataEntry,
@@ -12,10 +14,10 @@ import type {
 } from "@input/pen-types";
 import {
 	FIELD_EDITOR_SLOT_KEY,
-	getOpOriginType,
 	UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY,
 	UNDO_HISTORY_RESTORE_SLOT_KEY,
 } from "@input/pen-types";
+import { getOpOriginType } from "./origin";
 import { UndoManagerImpl } from "./undoManager";
 
 /**
@@ -426,9 +428,21 @@ function mapStoredSelection(
 	}
 	return {
 		type: "text",
-		anchor: mapped.anchor,
-		focus: mapped.focus,
+		anchor: resolveRestoredPoint(editor, selection.anchor, mapped.anchor, composed),
+		focus: resolveRestoredPoint(editor, selection.focus, mapped.focus, composed),
 	};
+}
+
+function resolveRestoredPoint(
+	editor: Editor,
+	stored: Point,
+	mapped: Point,
+	summary: ChangeSummary,
+): Point {
+	if (stored.blockId === mapped.blockId) return mapped;
+	if (summary.mapPoint(stored, 1, "delete")) return mapped;
+	if (editor.getBlock(stored.blockId)) return stored;
+	return mapped;
 }
 
 function captureSelection(selection: SelectionState): StoredSelection {

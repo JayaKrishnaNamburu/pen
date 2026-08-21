@@ -1,5 +1,3 @@
-import type { Editor, ModelRequestedOperation } from "@input/pen-types";
-
 export interface AIRequestBody {
 	prompt?: unknown;
 	sessionId?: unknown;
@@ -97,26 +95,3 @@ export interface PlaygroundRequestPlan {
 	promptContext: PromptContextEnvelope | null;
 	selectedTextLength: number | null;
 }
-
-export type BuildSharedPlaygroundRequestPlan = (
-	editor: Editor,
-	prompt: string,
-	config: {
-		documentModel: string;
-		selectionModel: string;
-		documentSystemPrompt: string;
-		structuredPlannerSystemPrompt: string;
-		selectionFastPathSystemPrompt: string;
-		autocompleteSystemPrompt: string;
-		selectionSourceCharLimit: number;
-		selectionStopSentinel: string;
-		selectionOutputTokenCap: number;
-		autocompleteOutputTokenCap: number;
-		selectionDefaultOutputTokens: number;
-		selectionExpandOutputTokens: number;
-		selectionSummarizeOutputTokens: number;
-		selectionTranslateOutputTokens: number;
-	},
-	requestedMode?: PlaygroundRequestMode | null,
-	requestedOperation?: ModelRequestedOperation | null,
-) => PlaygroundRequestPlan;

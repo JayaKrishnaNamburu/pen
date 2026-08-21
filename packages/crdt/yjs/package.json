@@ -2,19 +2,19 @@
   "name": "@input/pen-crdt-yjs",
   "version": "0.0.1",
   "description": "Yjs CRDT adapter for Pen",
-  "license": "SEE LICENSE IN LICENSE.md",
-  "homepage": "https://github.com/niceperson/pen#readme",
+  "license": "MIT",
+  "homepage": "https://github.com/lemni/pen#readme",
   "bugs": {
-    "url": "https://github.com/niceperson/pen/issues"
+    "url": "https://github.com/lemni/pen/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/niceperson/pen.git",
+    "url": "https://github.com/lemni/pen.git",
     "directory": "packages/crdt/yjs"
   },
   "type": "module",
   "publishConfig": {
-    "access": "restricted",
+    "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
   "exports": {
@@ -60,6 +60,7 @@
     "typescript": "^5.7.3",
     "vitest": "^3.0.7",
     "y-protocols": "^1.0.7",
-    "yjs": "^13.6.29"
+    "yjs": "^13.6.29",
+    "yjs-duplicate": "npm:yjs@13.6.29"
   }
 }

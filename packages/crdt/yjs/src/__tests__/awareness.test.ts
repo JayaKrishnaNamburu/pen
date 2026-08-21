@@ -7,6 +7,7 @@ import {
 import { yjsAdapter } from "../adapter";
 import { createYjsDocument } from "../document";
 import { createYjsAwareness } from "../awareness";
+import { createPeerDoc } from "./createPeerDoc";
 
 describe("awareness", () => {
   const adapter = yjsAdapter();
@@ -75,8 +76,8 @@ describe("awareness", () => {
   });
 
   it("encodes and applies awareness updates across instances", () => {
-    const sourceDoc = createYjsDocument(adapter);
-    const targetDoc = createYjsDocument(adapter);
+    const sourceDoc = createPeerDoc(adapter, 1);
+    const targetDoc = createPeerDoc(adapter, 2);
     const sourceAwareness = createYjsAwareness(sourceDoc);
     const targetAwareness = createYjsAwareness(targetDoc);
 

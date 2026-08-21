@@ -1,21 +1,115 @@
 import { describe, expect, it } from "vitest";
+import { createDecorationSet, defineExtension } from "@input/pen-core";
+import { createTestEditor } from "@input/pen-test";
+import { undoExtension } from "@input/pen-undo";
+import { FIELD_EDITOR_SLOT_KEY } from "@input/pen-types";
 
-// SCALE4 / F.4 deferred soak. Restored after H.6 makes editor.destroy() awaitable
-// and this harness samples heap through teardown-and-recreate. Session growth is a
-// trend (CH8: do not fail CI on heap). The only hard assertion is post-teardown:
-// heap after destroy + recreate stays within a stated multiple of baseline, and
-// the maps in packages/core/CACHE-INVENTORY.md are released.
-describe.skip("SCALE4 destroy retains nothing", () => {
-	it("heap after teardown-and-recreate stays within the stated baseline multiple", () => {
-		const baselineHeap = Number.NaN;
-		const postTeardownHeap = Number.NaN;
-		const teardownHeapMultiple = Number.NaN;
+// SCALE4 / CACHE-INVENTORY.md. Headless only. No casts into editor internals.
+// Destroy releases block revisions, listeners, session scopes, decorations,
+// the summary log, documentState indexes, and the undo:manager slot.
+// Module-lifetime caches are not observable from this package.
 
-		expect(Number.isFinite(baselineHeap)).toBe(true);
-		expect(Number.isFinite(postTeardownHeap)).toBe(true);
-		expect(Number.isFinite(teardownHeapMultiple)).toBe(true);
-		expect(postTeardownHeap).toBeLessThanOrEqual(
-			baselineHeap * teardownHeapMultiple,
+describe("SCALE4 destroy retention inventory", () => {
+	it("SCALE4: destroy clears block revisions, listeners, and session scopes", async () => {
+		const editor = createTestEditor({
+			blocks: [{ type: "paragraph", content: "hi" }],
+		});
+		await editor.whenReady();
+		const blockId = editor.firstBlock()!.id;
+		editor.apply(
+			[{ type: "insert-text", blockId, offset: 2, text: "x" }],
+			{ origin: "user" },
 		);
+		editor.on("documentCommit", () => {});
+
+		expect(editor.getBlockRevision(blockId)).toBeGreaterThan(0);
+		expect(editor.internals.hasListeners("documentCommit")).toBe(true);
+		expect(editor.internals.documentSession?.listScopes().length).toBeGreaterThan(
+			0,
+		);
+
+		await editor.destroy();
+
+		expect(editor.getBlockRevision(blockId)).toBe(0);
+		expect(editor.internals.hasListeners("documentCommit")).toBe(false);
+		const session = editor.internals.documentSession;
+		expect(session).not.toBeNull();
+		expect(session!.listScopes()).toEqual([]);
+		expect(session!.getScope(session!.rootScope.id)).toBeNull();
+	});
+
+	it("SCALE4: destroy releases decoration set and summary log", async () => {
+		const editor = createTestEditor({
+			blocks: [{ type: "paragraph", content: "hi" }],
+			extensions: [
+				defineExtension({
+					name: "scale4-deco",
+					decorations() {
+						return createDecorationSet([
+							{
+								type: "inline",
+								blockId: "x",
+								from: 0,
+								to: 1,
+								attributes: { "data-pen-scale4": true },
+							},
+						]);
+					},
+				}),
+			],
+		});
+		await editor.whenReady();
+		const blockId = editor.firstBlock()!.id;
+		editor.apply(
+			[{ type: "insert-text", blockId, offset: 2, text: "x" }],
+			{ origin: "user" },
+		);
+		editor.requestDecorationUpdate();
+		const decorations = editor.getDecorations();
+		const summary = editor.summaryLog.latest();
+
+		expect(decorations.decorations.length).toBe(1);
+		expect(summary).not.toBeNull();
+
+		await editor.destroy();
+
+		expect(editor.getDecorations()).not.toBe(decorations);
+		expect(editor.getDecorations().decorations.length).toBe(0);
+		expect(editor.summaryLog.latest()).toBeNull();
+		expect(editor.summaryLog.latest()).not.toBe(summary);
+	});
+
+	it("SCALE4: destroy releases documentState indexes and undo:manager slot", async () => {
+		const editor = createTestEditor({
+			blocks: [{ type: "paragraph", content: "hi" }],
+			extensions: [undoExtension()],
+		});
+		await editor.whenReady();
+		const blockId = editor.firstBlock()!.id;
+		editor.apply(
+			[{ type: "insert-text", blockId, offset: 2, text: "x" }],
+			{ origin: "user" },
+		);
+
+		expect(editor.documentState.indexOf(blockId)).toBe(0);
+		expect(editor.documentState.blockCount).toBe(1);
+		expect(editor.undoManager.canUndo()).toBe(true);
+
+		await editor.destroy();
+
+		expect(editor.documentState.indexOf(blockId)).toBe(-1);
+		expect(editor.documentState.blockCount).toBe(0);
+		expect(editor.undoManager.canUndo()).toBe(false);
+		expect(editor.internals.getSlot("undo:manager") == null).toBe(true);
+	});
+
+	it("SCALE4: headless destroy has no field editor to release", async () => {
+		const editor = createTestEditor({
+			blocks: [{ type: "paragraph", content: "hi" }],
+		});
+		await editor.whenReady();
+		expect(editor.internals.getSlot(FIELD_EDITOR_SLOT_KEY) == null).toBe(true);
+		await editor.destroy();
+		expect(editor.internals.getSlot(FIELD_EDITOR_SLOT_KEY) == null).toBe(true);
 	});
 });

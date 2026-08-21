@@ -3,7 +3,6 @@ import { randomUUID } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import {
 	buildStructuredIntentModelPrompt,
-	createPlaygroundRequestMetricsSeed,
 	getStructuredIntentOutputSchema,
 	parseStructuredIntentRequestPrompt,
 } from "@input/pen-ai";
@@ -21,6 +20,7 @@ import { remapRequestedOperationBlockIds } from "./operationValidation";
 import { buildPlaygroundTools } from "./toolHandlers";
 import { PlaygroundSessionStore } from "./sessionStore";
 import { recordPlaygroundRequestMetadata } from "./sessionHandlers";
+import { createPlaygroundRequestMetricsSeed } from "./playgroundPlanner";
 import {
 	buildPlaygroundRequestPlan,
 	parseAISuggestionRequestScope,

@@ -32,7 +32,7 @@ export interface LineBox {
 	readonly bottom: number;
 	readonly startOffset: number;
 	readonly endOffset: number;
-	readonly runs: readonly BidiRunGeometry[]; // visual order, from computeBidiRuns
+	readonly runs: readonly BidiRunGeometry[]; // visual order; single-run boxes until Wave 6
 }
 
 export interface GeometryReader {
@@ -54,6 +54,31 @@ export function rectFromDOMRect(rect: DOMRect): Rect {
 		left: rect.left,
 		right: rect.right,
 		bottom: rect.bottom,
+	};
+}
+
+export function rectToDOMRect(rect: Rect): DOMRect {
+	return new DOMRect(rect.x, rect.y, rect.width, rect.height);
+}
+
+export function getDistanceToRect(
+	rect: Pick<Rect, "left" | "right" | "top" | "bottom">,
+	clientX: number,
+	clientY: number,
+): { dx: number; dy: number } {
+	return {
+		dx:
+			clientX < rect.left
+				? rect.left - clientX
+				: clientX > rect.right
+					? clientX - rect.right
+					: 0,
+		dy:
+			clientY < rect.top
+				? rect.top - clientY
+				: clientY > rect.bottom
+					? clientY - rect.bottom
+					: 0,
 	};
 }
 

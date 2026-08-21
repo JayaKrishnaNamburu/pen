@@ -1,11 +1,11 @@
 import React, { useContext } from "react";
+import { measureWithRoot, type Rect } from "@input/pen-dom";
 import type {
 	PeerState,
 	RemoteCursorState,
 } from "@input/pen-multiplayer";
 import type { Editor } from "@input/pen-types";
 import { EditorContext } from "../../context/editorContext";
-import { getSelectionPointRect } from "../../field-editor/selectionBridge";
 import { useMultiplayer } from "../../hooks/useMultiplayer";
 import { useOverlayLayout } from "../../hooks/useOverlayLayout";
 import { useRemoteCursors } from "../../hooks/useRemoteCursors";
@@ -61,7 +61,7 @@ export function MultiplayerCaretOverlay(
 			continue;
 		}
 
-		const rect = getSelectionPointRect(rootElement, {
+		const rect = readCaretRect(rootElement, {
 			blockId: cursor.blockId,
 			offset: cursor.offset,
 		});
@@ -123,10 +123,19 @@ export function MultiplayerCaretOverlay(
 	);
 }
 
+function readCaretRect(
+	root: HTMLElement,
+	point: { blockId: string; offset: number },
+): Rect | null {
+	return measureWithRoot(root, ({ reader }) =>
+		reader.caretRect(point, "downstream"),
+	);
+}
+
 function createCaretRenderProps(
 	cursor: RemoteCursorState,
 	peer: PeerState | null,
-	rect: DOMRect,
+	rect: Rect,
 ): MultiplayerCaretRenderProps {
 	const color = cursor.user.color ?? "currentColor";
 	const caretStyle: MultiplayerStyle = {

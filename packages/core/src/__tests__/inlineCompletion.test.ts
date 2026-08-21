@@ -5,7 +5,7 @@ import {
 } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 import { createEditor, ensureInlineCompletionController } from "../index";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "./fixtures/testSchema";
 
 const noDefaultExtensionsPreset = {
 	resolve() {

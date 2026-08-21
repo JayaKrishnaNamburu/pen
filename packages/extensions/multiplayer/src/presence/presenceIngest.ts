@@ -72,16 +72,16 @@ export class PresenceIngest {
 			if (clientId === this.localClientId) {
 				continue;
 			}
+			if (!this.trackPeer(clientId)) {
+				overflow += 1;
+				continue;
+			}
 			if (!this.allowUpdate(clientId)) {
 				const previous = this.accepted.get(clientId);
 				if (previous) {
 					next.set(clientId, previous);
 				}
 				this.emitRejection(clientId, "rate-limited");
-				continue;
-			}
-			if (!this.trackPeer(clientId)) {
-				overflow += 1;
 				continue;
 			}
 			next.set(clientId, state);
@@ -100,6 +100,7 @@ export class PresenceIngest {
 		for (const clientId of [...this.trackedPeers]) {
 			if (!next.has(clientId)) {
 				this.trackedPeers.delete(clientId);
+				this.updateStamps.delete(clientId);
 			}
 		}
 
@@ -143,6 +144,11 @@ export class PresenceIngest {
 			if (!rawStates.has(clientId)) {
 				this.trackedPeers.delete(clientId);
 				this.accepted.delete(clientId);
+				this.updateStamps.delete(clientId);
+			}
+		}
+		for (const clientId of [...this.updateStamps.keys()]) {
+			if (!rawStates.has(clientId)) {
 				this.updateStamps.delete(clientId);
 			}
 		}

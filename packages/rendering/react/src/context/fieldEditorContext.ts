@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react";
-import type { FieldEditorSession } from "../field-editor/controller";
+import type { FieldEditorSession } from "@input/pen-dom";
 
 export const FieldEditorContext = createContext<FieldEditorSession | null>(null);
 

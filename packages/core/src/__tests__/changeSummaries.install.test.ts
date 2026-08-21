@@ -2,7 +2,7 @@ import { yjsAdapter } from "@input/pen-crdt-yjs";
 import { describe, expect, it } from "vitest";
 
 import { createHeadlessEditor } from "../index";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "./fixtures/testSchema";
 
 async function flushMicrotasks(count = 4): Promise<void> {
 	for (let index = 0; index < count; index++) {

@@ -1,3 +1,4 @@
+import { logicalTextFromStored } from "@input/pen-types";
 import type { Editor, Exporter, ExportOptions } from "@input/pen-types";
 import { exportEditorToJson } from "./exporter";
 import type {
@@ -7,7 +8,6 @@ import type {
 	PenInlineSegmentJSON,
 } from "./types";
 
-const ZERO_WIDTH_SPACE = "\u200B";
 const DEFAULT_SEPARATOR = "\n";
 
 export type PenTextExportExtraOptions = Record<string, unknown> & {
@@ -81,22 +81,28 @@ function renderInlineContentText(
 	options: PenTextExportExtraOptions,
 ): string {
 	if (block.content?.segments?.length) {
-		return block.content.segments
-			.map((segment) => renderInlineSegmentText(segment, options))
-			.join("")
-			.replaceAll(ZERO_WIDTH_SPACE, "");
+		return logicalTextFromStored(
+			block.content.segments
+				.map((segment) => renderInlineSegmentText(segment, options))
+				.join(""),
+		);
 	}
 
-	return (block.content?.text ?? "").replaceAll(ZERO_WIDTH_SPACE, "");
+	return logicalTextFromStored(block.content?.text ?? "");
 }
 
 function renderInlineSegmentText(
 	segment: PenInlineSegmentJSON,
 	options: PenTextExportExtraOptions,
 ): string {
-	if (segment.type === "text") {
-		return segment.text.replaceAll(ZERO_WIDTH_SPACE, "");
+	switch (segment.type) {
+		case "text":
+			return segment.text;
+		case "node":
+			return options.renderInlineNode?.(segment) ?? "";
+		default: {
+			const _never: never = segment;
+			return _never;
+		}
 	}
-
-	return options.renderInlineNode?.(segment) ?? "";
 }

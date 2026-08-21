@@ -2,19 +2,19 @@
   "name": "@input/pen-vue",
   "version": "0.0.1",
   "description": "Vue rendering primitives for Pen",
-  "license": "SEE LICENSE IN LICENSE.md",
-  "homepage": "https://github.com/niceperson/pen#readme",
+  "license": "MIT",
+  "homepage": "https://github.com/lemni/pen#readme",
   "bugs": {
-    "url": "https://github.com/niceperson/pen/issues"
+    "url": "https://github.com/lemni/pen/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/niceperson/pen.git",
+    "url": "https://github.com/lemni/pen.git",
     "directory": "packages/rendering/vue"
   },
   "type": "module",
   "publishConfig": {
-    "access": "restricted",
+    "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
   "exports": {
@@ -45,7 +45,8 @@
   "files": [
     "dist",
     "README.md",
-    "LICENSE.md"
+    "LICENSE.md",
+    "STYLING.md"
   ],
   "engines": {
     "node": ">=22"
@@ -71,6 +72,7 @@
   "devDependencies": {
     "@input/pen-preset-default": "workspace:*",
     "@input/pen-test": "workspace:*",
+    "@input/pen-undo": "workspace:*",
     "@vue/test-utils": "^2.4.6",
     "jsdom": "^28.1.0",
     "tsup": "^8.4.0",

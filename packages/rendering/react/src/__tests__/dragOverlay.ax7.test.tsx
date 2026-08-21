@@ -86,7 +86,9 @@ describe("AX7 React drag overlay", () => {
 	it("AX7 marks overlay chrome aria-hidden with pointer-events none", async () => {
 		const view = await renderHarness();
 
-		expect(view.container.querySelector("[data-pen-drag-overlay]")).toBeNull();
+		expect(
+			view.container.querySelector("[data-pen-drag-overlay]"),
+		).toBeNull();
 
 		await startDrag(view.container);
 

@@ -2,7 +2,7 @@ import type { DiagnosticEvent } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 
 import { createHeadlessEditor } from "../index";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "./fixtures/testSchema";
 
 describe("COL4 parent-cycle normalize", () => {
 	it("COL4: parentId cycle is broken on the lowest owning block id", () => {

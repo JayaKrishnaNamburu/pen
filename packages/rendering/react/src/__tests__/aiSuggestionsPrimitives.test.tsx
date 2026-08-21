@@ -36,7 +36,8 @@ async function waitForCondition(
 describe("Pen.AISuggestions primitives", () => {
 	it("opens the popover from a marked suggestion and applies it", async () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [
+			schema: defaultSchema,
+			extensions: [
 				aiSuggestionsExtension({
 					debounceMs: 0,
 					minStableMs: 0,
@@ -76,7 +77,8 @@ describe("Pen.AISuggestions primitives", () => {
 
 		await waitForCondition(
 			() =>
-				(getAISuggestionsController(editor)?.getState().suggestions.length ?? 0) > 0,
+				(getAISuggestionsController(editor)?.getState().suggestions
+					.length ?? 0) > 0,
 		);
 
 		const container = document.createElement("div");
@@ -95,7 +97,8 @@ describe("Pen.AISuggestions primitives", () => {
 		});
 
 		const suggestion =
-			getAISuggestionsController(editor)?.getState().suggestions[0] ?? null;
+			getAISuggestionsController(editor)?.getState().suggestions[0] ??
+			null;
 		expect(suggestion).toBeTruthy();
 
 		const anchor = document.createElement("button");

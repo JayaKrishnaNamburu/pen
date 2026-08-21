@@ -1,3 +1,4 @@
+import { foldAndNormalize } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
 import { areRecordValuesEqual } from "./state";
 import type {
@@ -10,6 +11,7 @@ import type {
 export function resolveInlineAlignmentPlan(
 	targetBlocks: Array<NonNullable<ReturnType<Editor["getBlock"]>>>,
 	parsedBlocks: PendingInlineBlock[],
+	locale: string,
 ): InlineAlignmentResolution {
 	const costs = Array.from(
 		{ length: targetBlocks.length + 1 },
@@ -73,6 +75,7 @@ export function resolveInlineAlignmentPlan(
 				substituteCost,
 				deleteCost,
 				insertCost,
+				locale,
 			)
 		) {
 			alignment.push({
@@ -127,6 +130,7 @@ export function shouldPreferInlineSubstitution(
 	substituteCost: number,
 	deleteCost: number,
 	insertCost: number,
+	locale: string,
 ): boolean {
 	if (substituteCost < deleteCost && substituteCost < insertCost) {
 		return true;
@@ -134,7 +138,7 @@ export function shouldPreferInlineSubstitution(
 	if (substituteCost > deleteCost || substituteCost > insertCost) {
 		return false;
 	}
-	return areBlocksReusableMatch(targetBlock, parsedBlock);
+	return areBlocksReusableMatch(targetBlock, parsedBlock, locale);
 }
 
 export function estimateInlineSubstituteCost(
@@ -254,17 +258,26 @@ export function mergeFlowPatchAlignmentMetrics(
 export function areBlocksReusableMatch(
 	targetBlock: NonNullable<ReturnType<Editor["getBlock"]>>,
 	parsedBlock: PendingInlineBlock,
+	locale: string,
 ): boolean {
 	return (
 		targetBlock.type === parsedBlock.type &&
 		areRecordValuesEqual(targetBlock.props, parsedBlock.props) &&
-		areTextsReusableMatch(targetBlock.textContent(), parsedBlock.content ?? "")
+		areTextsReusableMatch(
+			targetBlock.textContent(),
+			parsedBlock.content ?? "",
+			locale,
+		)
 	);
 }
 
-export function areTextsReusableMatch(left: string, right: string): boolean {
-	const normalizedLeft = normalizeReusableText(left);
-	const normalizedRight = normalizeReusableText(right);
+export function areTextsReusableMatch(
+	left: string,
+	right: string,
+	locale: string,
+): boolean {
+	const normalizedLeft = normalizeReusableText(left, locale);
+	const normalizedRight = normalizeReusableText(right, locale);
 	if (normalizedLeft === normalizedRight) {
 		return true;
 	}
@@ -289,8 +302,8 @@ export function areTextsReusableMatch(left: string, right: string): boolean {
 	return resolveLevenshteinDistance(normalizedLeft, normalizedRight, maxDistance) <= maxDistance;
 }
 
-export function normalizeReusableText(text: string): string {
-	return text.trim().replace(/\s+/g, " ").toLowerCase();
+export function normalizeReusableText(text: string, locale: string): string {
+	return foldAndNormalize(text.trim().replace(/\s+/g, " "), locale);
 }
 
 export function resolveSharedPrefixLength(left: string, right: string): number {

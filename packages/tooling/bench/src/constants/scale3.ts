@@ -102,6 +102,32 @@ export interface Scale3Baseline {
 	machineClass: string;
 }
 
+/**
+ * Two measured points per axis. The 1000-block shipped stack is the
+ * shared low point for extension / decoration / peer count.
+ */
+export const SCALE3_AXIS_BENCH_PAIRS: Record<
+	Scale3Axis,
+	readonly [string, string]
+> = {
+	"document-size": [
+		"scale3.keystroke.realistic-stack.document-size.100",
+		"scale3.keystroke.realistic-stack.document-size.1000",
+	],
+	"extension-count": [
+		"scale3.keystroke.realistic-stack.document-size.1000",
+		"scale3.keystroke.realistic-stack.extension-count.plus8",
+	],
+	"decoration-count": [
+		"scale3.keystroke.realistic-stack.document-size.1000",
+		"scale3.keystroke.realistic-stack.decoration-count.256",
+	],
+	"peer-count": [
+		"scale3.keystroke.realistic-stack.document-size.1000",
+		"scale3.keystroke.realistic-stack.peer-count.8",
+	],
+};
+
 export const SCALE3_BASELINES: readonly Scale3Baseline[] = [
 	{
 		id: "scale3.keystroke.realistic-stack.document-size.100",
@@ -151,4 +177,54 @@ export function getScale3Baseline(id: string): Scale3Baseline {
 		throw new Error(`SCALE3 baseline missing for ${id}`);
 	}
 	return baseline;
+}
+
+/**
+ * SCALE2: eight no-op decorating extensions vs the 1000-block shipped
+ * stack, compared on the same run. 2× covers dispatch walking eight
+ * extra hooks on a noisy runner. The 15ms floor covers a cheap base
+ * median, where a pure ratio would treat jitter as a regression.
+ *
+ * This is not a decoration-identity proof. Scoping lives in core.
+ */
+export const SCALE2_PLUS8_TOLERANCE_RATIO = 2;
+export const SCALE2_PLUS8_TOLERANCE_FLOOR_MS = 15;
+export const SCALE2_PLUS8_BASE_ID = SCALE3_AXIS_BENCH_PAIRS["extension-count"][0];
+export const SCALE2_PLUS8_ID = SCALE3_AXIS_BENCH_PAIRS["extension-count"][1];
+
+export function scale2Plus8GateMs(baseP50Ms: number): number {
+	const raw = Math.max(
+		baseP50Ms * SCALE2_PLUS8_TOLERANCE_RATIO,
+		baseP50Ms + SCALE2_PLUS8_TOLERANCE_FLOOR_MS,
+	);
+	return Math.round(raw * 100) / 100;
+}
+
+export interface Scale2Plus8ToleranceResult {
+	ok: boolean;
+	plus8P50Ms: number;
+	baseP50Ms: number;
+	gateP50Ms: number;
+}
+
+export function compareScale2Plus8Tolerance(
+	plus8P50Ms: number,
+	baseP50Ms: number,
+): Scale2Plus8ToleranceResult {
+	const gateP50Ms = scale2Plus8GateMs(baseP50Ms);
+	return {
+		ok: plus8P50Ms <= gateP50Ms,
+		plus8P50Ms,
+		baseP50Ms,
+		gateP50Ms,
+	};
+}
+
+export function formatScale2Plus8Tolerance(
+	result: Scale2Plus8ToleranceResult,
+): string {
+	if (result.ok) {
+		return "SCALE2 plus8 decorating extensions: within tolerance";
+	}
+	return `SCALE2 plus8 decorating extensions exceeded tolerance: plus8 median ${result.plus8P50Ms.toFixed(2)}ms > gate ${result.gateP50Ms.toFixed(2)}ms (base stack ${result.baseP50Ms.toFixed(2)}ms)`;
 }

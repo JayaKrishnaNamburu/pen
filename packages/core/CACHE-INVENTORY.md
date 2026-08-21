@@ -4,36 +4,37 @@ Canonical list of hot-path caches for Wave F step F.4 (`spec-v2/22-scale-envelop
 
 SCALE4 accepts three bounds: a maximum entry count, a TTL, or a lifetime tied to a document / editor / DOM node (`WeakMap` or an index that only holds live document ids). A cache with none of those is **unbounded**.
 
-No numbers in this file are invented. Named constants are cited only where the code already declares them. Runtime caches in `editor.ts`, `editorLifecycle.ts`, undo, and `@input/pen-ai` are inventoried, not edited.
+No numbers in this file are invented. Named constants are cited only where the code already declares them. Runtime caches in `editor.ts`, `editorLifecycle.ts`, undo, and `@input/pen-ai` are inventoried here. Destroy release lives in `destroyEditor` (`editorApiHelpers.ts`).
 
-`editor.destroy()` does not yet assert that these maps are released (H.6 / Wave 0.4 own teardown). The nightly soak is deferred with that assertion.
+`editor.destroy()` releases the editor-held maps below (SCALE4 / CH7). The nightly soak asserts post-teardown heap and the public retention inventory in `@input/pen-bench` `src/soak/destroyRetainsNothing.test.ts`. This file is a snapshot: DIR1 and `@input/pen-dom` geometry rows were added from a later pass without editing those packages.
 
 ## Core (`@input/pen-core`)
 
 | Cache | File | Bound or unbounded | Cleared on `editor.destroy()`? |
 | --- | --- | --- | --- |
-| Decoration block index (`DecorationSetImpl._blockIndex`) | `src/editor/decorations.ts:15` (field), `:20–30` (built in constructor), `:33–34` (`forBlock`). Held as `editor._decorations` (`src/editor/editor.ts:61`); replaced by `_refreshDecorations` (`:293–298`) from `dispatchCRDTEvent` (`src/editor/editorLifecycle.ts:294–296`). | **Document-scoped.** One key per unique `decoration.blockId` in that set. No entry cap. Replaced set is GC-eligible if nothing else retains it. | **No.** Destroy does not drop `_decorations`. |
-| `DocumentState` position index (`_positionIndex`) | `src/editor/documentState.ts:16` (field), `:35` (init), `:65–66` (lookup), `:92–124` (`rebuild` replaces the map). | **Document-scoped.** One entry per top-level `blockOrder` id. No entry cap. | **No.** |
-| `DocumentState` parent index (`_parentIndex`) | `src/editor/documentState.ts:17` (field), `:36` (init), `:73–74` (lookup), `:92–124` (`rebuild`). | **Document-scoped.** One entry per parented block (`props.parentId` or a parent's `children`). No entry cap. Full rebuild on structural change (`incrementalUpdate` `:127–158`). | **No.** |
-| Change-summary `BlockIndex` (`blocks`, `children`) | `src/changes/blockIndex.ts:84–86`. Seeded/applied from `src/changes/install.ts:20–35`. Held at `src/editor/editor.ts:57`. | **Document-scoped.** One `blocks` entry per document block; `children` holds parents that have child ids. Incremental `apply` on each summary. No entry cap. | **No.** `teardownChangeSummaries` (`install.ts:39–42`) unsubscribes only. |
-| Summary log ring (`SummaryLog.items`) | `src/changes/summaryLog.ts:5` (`SUMMARY_LOG_CAPACITY = 256`), `:8`, `:27–33` (evict oldest). Held at `src/editor/editor.ts:56`. | **Count-capped** at 256. | **No.** |
-| Summary compose memo (`SummaryLog.memo`) | `src/changes/summaryLog.ts:9`, `:52–71` (compose cache), `:78–85` (drop keys overlapping an evicted commit). | **Unbounded** inside the live 256-commit window. No independent cap. | **No.** |
-| `_blockRevisions` | `src/editor/editor.ts:75`. Written at `src/editor/editorLifecycle.ts:287–288` (one increment per affected block per commit). Read at `src/editor/editorApiHelpers.ts:258`. | **Unbounded.** One number per ever-touched block id. | **Yes.** `destroyEditor` (`editorApiHelpers.ts:268`) calls `_blockRevisions.clear()`. |
+| Decoration block index (`DecorationSetImpl._blockIndex`) | `src/editor/decorations.ts:15` (field), `:20–30` (built in constructor), `:33–34` (`forBlock`). Held as `editor._decorations` (`src/editor/editor.ts:76`); replaced by `_refreshDecorations` (`:367–372`) from `dispatchCRDTEvent` (`src/editor/editorLifecycle.ts`). | **Document-scoped.** One key per unique `decoration.blockId` in that set. No entry cap. Replaced set is GC-eligible if nothing else retains it. | **Yes.** `destroyEditor` replaces `_decorations` with `emptyDecorationSet()` (`editorApiHelpers.ts`). Computation / scoping unchanged. |
+| `DocumentState` position index (`_positionIndex`) | `src/editor/documentState.ts:16` (field), `:35` (init), `:65–66` (lookup), `:92–124` (`rebuild` replaces the map). | **Document-scoped.** One entry per top-level `blockOrder` id. No entry cap. | **Yes.** `DocumentStateImpl.clear()` (`:128–133`) empties the map. |
+| `DocumentState` parent index (`_parentIndex`) | `src/editor/documentState.ts:17` (field), `:36` (init), `:73–74` (lookup), `:92–124` (`rebuild`). | **Document-scoped.** One entry per parented block (`props.parentId` or a parent's `children`). No entry cap. Full rebuild on structural change (`incrementalUpdate`). | **Yes.** Same `clear()`. |
+| Change-summary `BlockIndex` (`blocks`, `children`) | `src/changes/blockIndex.ts` snapshot maps. Seeded/applied from `src/changes/install.ts:22–41`. Held at `src/editor/editor.ts:72`. | **Document-scoped.** One `blocks` entry per document block; `children` holds parents that have child ids. Incremental `apply` on each summary. No entry cap. | **Yes.** `destroyEditor` replaces `_blockIndex` with `createEmptyBlockIndex()`. `teardownChangeSummaries` (`install.ts:48–52`) still only unsubscribes. |
+| Summary log ring (`SummaryLog.items`) | `src/changes/summaryLog.ts:5` (`SUMMARY_LOG_CAPACITY = 256`), `:16`, `:20–30` (evict oldest). Held at `src/editor/editor.ts:71`. | **Count-capped** at 256. | **Yes.** `destroyEditor` replaces `_summaryLog` with `createSummaryLog()`. |
+| Summary compose memo (`SummaryLog.memo`) | `src/changes/summaryLog.ts:17`, `:33–43` (compose cache), `:25–28` (drop keys overlapping an evicted commit). | **Unbounded** inside the live 256-commit window. No independent cap. | **Yes.** Replaced with the new empty log. |
+| `_blockRevisions` | `src/editor/editor.ts:75`. Written at `src/editor/editorLifecycle.ts:287–288` (one increment per affected block per commit). Read at `src/editor/editorApiHelpers.ts` `getEditorBlockRevision`. | **Unbounded.** One number per ever-touched block id. | **Yes.** `destroyEditor` calls `_blockRevisions.clear()` synchronously, before the queued teardown. |
 | `Intl.Segmenter` module cache (`segmenters`) | `src/editor/textSegmentation.ts:23`, `:43–51` (`resolveSegmenter`). Key is `` `${locale}:${granularity}` ``. | **Unbounded.** Process-lifetime module `Map`. No entry cap, TTL, or weak key. Grows with distinct locale/granularity pairs. | **No.** Survives every editor. |
-| Direction cache factory (`createDirectionCache`) | `src/direction/cache.ts:36–62`. One `Map` entry per `blockId`, fingerprinted against text/props (`:24–29`). Has `invalidate` / `clear`. **Not wired** to `EditorImpl` (no caller under `src/editor/`; not re-exported from `src/index.ts`). | **Document-scoped if used** (one entry per block; `clear()` exists). Unused today. | **N/A.** No editor hook. |
+| Direction cache factory (`createDirectionCache`) | `src/direction/cache.ts:50–78`. One `Map` entry per `blockId`, fingerprinted against text/props (`fingerprintDirectionInput` `:37–43`). Has `invalidate` / `clear`. **Not wired** to `EditorImpl` (no caller under `src/editor/`). Arrived after the first inventory pass (DIR1). | **Document-scoped if used** (one entry per block; `clear()` exists). Unused by destroy today. | **N/A.** No editor hook. Nothing to release. |
 | Formatter cache factory (`createFormatterCache`) | `src/i18n/formatters.ts:27–64`. Three `Map`s (`pluralRules`, `numberFormats`, `dateTimeFormats`) keyed by `locale` + `JSON.stringify(options)`. **Not wired** to `EditorImpl` (not re-exported from `src/index.ts`). | **Unbounded** if used (no cap, no `clear`). Unused today. | **N/A.** No editor hook. |
-| Facet empty-output memo (`emptyOutputs`) | `src/facets/registry.ts:59–62`, `:114–123` (`readUnregistered`). | **Weak-key.** `WeakMap` keyed by `Facet`. | **N/A.** Registry is not installed on `EditorImpl` (no `createFacetRegistry` under `src/editor/`). Registry has no `destroy`. |
-| Facet slot / provider memos | `src/facets/compute.ts:23–24` (`provider.input`), `:30–31` (`slot.output`), `:107–145` (`resolveSlot`). Slots on `FacetComputeState` (`:34–41`, filled at `registry.ts:80–87`). | **Registry-scoped.** Tracks the live provider list. No entry cap. | **N/A.** Same as above. |
-| Inline-completion leases | `src/editor/inlineCompletion.ts:12–15`. | **Weak-key.** `WeakMap` keyed by `Editor`. Last `release()` deletes the lease and calls `controller.destroy()` (`:238–242`). | **Weak.** Not walked by `destroyEditor`. GC when the editor is collected if no lease remains. |
+| Facet empty-output memo (`emptyOutputs`) | `src/facets/registry.ts:63–66`, `:129–138` (`readUnregistered`). | **Weak-key.** `WeakMap` keyed by `Facet`. | **Weak.** Registry *is* installed (`editor.ts:157` `createFacetRegistry`). No `destroy` on the registry; empty outputs die with the registry / editor. |
+| Facet process state (`Symbol.for("@input/pen-core:facetState")`) | `src/facets/defineFacet.ts:12–48`. `globalThis` holder: `providerRecords` WeakMap, `facetSpecs` WeakMap, `specsByName` Map. | **Process-lifetime, not per-editor.** `specsByName` is strong and bounded by module-level facet names (30 keys at soak inspect). WeakMaps cannot keep a provider or facet alive. Walk of every `specsByName` spec found no `Editor` (`inspectRetainers.mjs`). | **N/A.** Nothing editor-scoped to release. Not the 1.159 leftover. |
+| Facet slot / provider memos | `src/facets/compute.ts` (`provider.input`, `slot.output`, `resolveSlot`). Slots on `FacetComputeState`, filled at `registry.ts:78–86`. | **Editor-lifetime.** Tracks the live provider list. No entry cap. | **No.** Not walked by `destroyEditor`. Held by `_facetRegistry` until the editor is collected. |
+| Inline-completion leases | `src/editor/inlineCompletion.ts:14–17`. | **Weak-key.** `WeakMap` keyed by `Editor`. Last `release()` deletes the lease and calls `controller.destroy()` (`:241–245`). | **Weak.** Not walked by `destroyEditor`. GC when the editor is collected if no lease remains. Nothing extra to clear. |
 
 ### Related session maps (not commit-path caches)
 
 | Map | File | Bound or unbounded | Cleared on `editor.destroy()`? |
 | --- | --- | --- | --- |
 | Document session scope indexes (`_scopes`, `_guidToScopeId`, `_scopeIdsByOwnerKey`, `_listenersByScope`) | `src/editor/documentSession.ts:55–58`. | Live scopes / guids / owners, not a result cache. | **Yes, if the session destroys.** `destroyEditor` calls `_releaseSession` (`editorApiHelpers.ts:212`). Session `destroy()` (`documentSession.ts:305–308`) clears the maps when `destroyWhenIdle` fires or the session is destroyed directly. |
-| Apply-pipeline unknown-type dedupe (`_unknownBlockTypesReported`) | `src/editor/applyPipelineRunner.ts:91–96`, written `:101–105`. | **Unbounded.** One entry per distinct unknown block type seen. | **No.** |
+| Apply-pipeline unknown-type dedupe (`_unknownBlockTypesReported`) | `src/editor/applyPipelineRunner.ts:129–134`, written `:139–143`. | **Unbounded.** One entry per distinct unknown block type seen. | **No.** Unbounded and unreleased — the dangerous pair. Not one of the four public retentions. |
 | Schema-engine dirty / deferred sets | `src/schema/normalize.ts:91–92`. Cleared / drained during `normalize` (`:133`). | Work queues, not a result cache. Size tracks in-flight dirty blocks. | **No.** |
-| Editor slots (`_slots`) | `src/editor/editor.ts:50`. | Registry, not a cache. | **No.** |
+| Editor slots (`_slots`) | `src/editor/editor.ts:65`. | Registry, not a cache. | **Partial.** `undo:manager` deleted on destroy; other keys kept. |
 | Extension registry / state (`_extensions`, `_stateMap`) | `src/editor/extensionManager.ts:15–17`. `_stateMap.clear()` after `deactivateAll` (`:160`). | Registry, not a cache. | **Partial.** `_stateMap` cleared; `_extensions` kept. |
 | Event handlers (`_handlers`) | `src/editor/events.ts:6`. | Listener set, not a cache. | **Yes.** `destroyEditor` → `removeAllListeners()` (`events.ts:65`). |
 
@@ -50,10 +51,12 @@ SCALE4 names the AI suggestion caches and undo stacks. These live outside `@inpu
 | AI scheduler `dirtyBlocks` | `packages/extensions/ai-suggestions/src/scheduler.ts:29`. | **Unbounded** until consume / reset. | **Yes.** `scheduler.destroy()` → `reset()` `:48–51`. |
 | AI scheduler `lastRequestedAtByBlock` | `scheduler.ts:30`. Cooldown `DEFAULT_COOLDOWN_MS` (10s) gates *when* a block may be requested; it does not evict. | **Unbounded** until reset / destroy. | **Yes.** Same reset. |
 | Undo / redo stacks | `packages/crdt/yjs/src/undo.ts:15` (`DEFAULT_UNDO_MAX_DEPTH = 500`), trim `:36–39`. Also `packages/extensions/undo/src/undoExtension.ts:27`. | **Count-capped** at 500 (CH7). | **Yes.** `UndoManagerImpl.destroy()` (`undo/src/undoManager.ts:154–159`) tears down the CRDT undo manager. |
-| GeometryReader per-block cache | `packages/rendering/dom/src/geometry/geometryReader.ts:116`, `dispose()` `:285–288`, `clearCache()` `:320–323`. Standalone Wave 3.2; not wired to DomScheduler. | **Reader-scoped.** No entry cap. Cleared on dispose, commit-id change, resize/font generation. | **Yes, on `dispose()`.** Sibling `blockCommitIds` (`:117`) is not cleared. |
+| GeometryReader per-block cache | `packages/rendering/dom/src/geometry/geometryReader.ts:116`, `dispose()` `:285–289`, `clearCache()` `:320–323`. Standalone Wave 3.2; not wired to DomScheduler. Arrived after the first inventory pass. | **Reader-scoped.** No entry cap. Cleared on dispose, commit-id change, resize/font generation. | **Yes, on `dispose()`.** Sibling `blockCommitIds` (`:117`) is still not cleared. Not walked by `editor.destroy()`. |
 | `inlineAtomElementData` | `packages/rendering/dom/src/field-editor/inlineAtomDom.ts:22`. | **Weak-key** (`HTMLElement`). | Weak. |
 | Field-editor selection authority | `packages/rendering/dom/src/field-editor/selectionAuthority.ts:31–34`. | Count-bounded by the six-source enum. | Not walked by `editor.destroy()`. |
 | Yjs awareness wrappers | `packages/crdt/yjs/src/awareness.ts:7`, `:14`. | **Weak-key.** | Weak. |
+| Yjs `Doc.store` (`StructStore`) | `yjs` `Doc.js:71` (`this.store = new StructStore()`), `destroy()` at `:325–346`. Pen creates these with `gc: false` (`packages/crdt/yjs/src/document.ts:343`, `packages/tooling/test/src/createTestDocument.ts:91`, `twoPeerHarness.ts` `forkPeer`). | **Document-lifetime, not emptied on `Doc.destroy()`.** Destroy sets `isDestroyed`, emits, and clears observers (`ObservableV2.destroy`). It does not null `store` / `share`. The item graph dies only when the last JS reference to the `Doc` drops. | **No.** `editor.destroy()` does not destroy the Y.Doc when `ownsDocuments` is false (test editors pass an existing document). The soak calls `ydoc.destroy()` and still holds the `Doc` until the editor handle is dropped. |
+| Two-peer seed document | `packages/tooling/test/src/twoPeerHarness.ts:34–43`. `createTwoPeerHarness` builds a seed editor, forks two peers, then `seed.destroy()` in `finally` without await and without `seed.ydoc.destroy()`. | One extra `EditorImpl` + `gc: false` `Y.Doc` per harness. Not iteration-scaled (warmup + one session harness). | **Partial.** Seed `destroy()` is fire-and-forget; the seed Y.Doc is never destroyed. Sibling — report, do not edit from this inventory pass. |
 | Yjs load reports | `packages/crdt/yjs/src/loadDocument.ts:60`. | **Weak-key** (`Y.Doc`). | Weak. |
 | Yjs summary sources | `packages/crdt/yjs/src/summarySource.ts:69`. | **Weak-key** (`Y.Doc`). | Weak. |
 | History / multiplayer scope runtimes | `packages/extensions/history/src/scopeRuntime.ts:5`, `packages/extensions/multiplayer/src/scopeRuntime.ts:17`. | Outer `WeakMap` by owner; inner `Map` by scope id. | Weak on the owner. |
@@ -77,6 +80,31 @@ SCALE4 names the AI suggestion caches and undo stacks. These live outside `@inpu
 
 Document-scoped indexes (decoration block index, `DocumentState` position/parent maps, `BlockIndex`) are **not** in this list: their lifetime is the live document / decoration set. They have no numeric cap.
 
-## Destroy (deferred)
+## Destroy
 
-`destroyEditor` (`src/editor/editorApiHelpers.ts:262–275`) deactivates extensions, tears down observation, releases the session, and clears `_blockRevisions`. It does not clear `_decorations`, `_summaryLog`, `_blockIndex`, `_documentState`, `_slots`, or the module-level `segmenters` map. AI suggestion maps *are* cleared from `AISuggestionsControllerImpl.destroy` when that extension deactivates. The standing “destroyed editor retains nothing” assertion is H.6 / Wave 0.4, not this inventory.
+`destroyEditor` (`src/editor/editorApiHelpers.ts`) deactivates extensions, tears down observation, releases the session, clears `_blockRevisions`, replaces `_decorations` / `_summaryLog` / `_blockIndex`, calls `DocumentStateImpl.clear()`, deletes the `undo:manager` slot, and overrides `undoManagerFacet` to `null` (then `refreshUndoManager` so the public handle is `NOOP_UNDO`). The undo extension already `destroy()`s its manager on deactivate; it leaves the slot *and* the facet override pointing at that instance — `getSlot("undo:manager")` is a facet adapter, so dropping only the map key unmasks the leftover. Core clears both. It does not clear `_slots` as a whole, other `_facetRegistry` memos, `_unknownBlockTypesReported`, or the module-level `segmenters` map. It also does not detach `_crdtDoc` / `_doc` / `_facetRegistry` / `_pipeline` / `_extensions` / `_documentSession`. A host that keeps the `Editor` handle therefore keeps the Y.Doc `StructStore`. AI suggestion maps *are* cleared from `AISuggestionsControllerImpl.destroy` when that extension deactivates. Public pins: `packages/tooling/bench/src/soak/destroyRetainsNothing.test.ts`.
+
+### Nightly 400-iteration leftover (Lane 83)
+
+The four public maps above are released; `destroyRetainsNothing.test.ts` is green. The nightly soak still failed at **1.159×** (quiet-machine repeats **1.162 / 1.158**) against the 1.13 bound. That overshoot is **one retainer class**, not several caches, and it is **stable, not load noise**.
+
+Heap snapshots (`src/soak/inspectRetainers.mjs`) while the soak frame still held destroyed editors:
+
+- `queryObjects`: 9 `EditorImpl`, 9 `Y.Doc`.
+- Constructor self-size is dominated by `Item` / `YMap` / `YText` inside those docs, not by core cache maps.
+- Retainer paths all go to **stack roots**, then the soak locals:
+
+```text
+(Stack roots)
+  → harness.peerA / harness.peerB / session / baselineEditor / recreated
+    → EditorImpl._crdtDoc.ydoc          (or .crdtDoc.ydoc / .editor)
+      → Doc.store
+        → StructStore.clients
+          → Item / YMap / YText
+```
+
+`Y.Doc.destroy()` had already run. The store was still there because yjs does not empty it, the docs were created with `gc: false`, and `run()` still rooted the handles. The two-peer harness lives the whole session, so 400 iterations of peer history sat in those stores at the post-teardown sample.
+
+`run.mjs` now samples baseline, session, and recreate in child frames so those handles are gone before `sample("post-teardown-recreate")`. After that change, the same quiet machine measured **1.049 / 1.045 / 1.049** (24) and **1.080 / 1.077 / 1.073** (400). The 1.13 bound was not raised.
+
+Residual ~1.07 at 400 vs ~1.05 at 24 is V8 leftover after a larger allocation plus the two-peer seed docs, not a second named cache. A host that keeps the destroyed `Editor` will still see the `StructStore` path; that detach belongs in `releaseDestroyedEditorCaches` (`editorApiHelpers.ts`), which this lane cannot edit.

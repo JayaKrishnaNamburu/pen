@@ -1,9 +1,5 @@
-import {
-	generateId,
-	type Editor,
-	type InteractionModel,
-	usesInlineTextSelection,
-} from "@input/pen-types";
+import { usesInlineTextSelection } from "@input/pen-core";
+import { generateId, type Editor, type InteractionModel } from "@input/pen-types";
 import type { FieldEditorSession } from "../field-editor/controller";
 import {
 	handleHistoryShortcut,

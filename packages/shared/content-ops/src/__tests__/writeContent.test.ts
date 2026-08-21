@@ -1,4 +1,4 @@
-import { createDefaultSchema } from "@input/pen-schema-default";
+import { createDefaultSchema } from "./fixtures/testSchema";
 import { describe, expect, it, vi } from "vitest";
 import { parseMarkdownToBlocks } from "../markdown";
 import { buildDocumentWriteOps } from "../writeContent";

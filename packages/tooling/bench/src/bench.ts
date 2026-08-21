@@ -42,6 +42,9 @@ export interface BenchDefinition {
 	teardown?: () => void | Promise<void>;
 	targetMs?: number;
 	critical?: boolean;
+	/** SCALE3: isolated axis, when the suite can vary one. */
+	axis?: string;
+	axisPoint?: number;
 }
 
 export interface BenchWaiver {
@@ -125,6 +128,15 @@ export async function runSuite(
 		result.id = benchmark.id ?? benchmark.name;
 		result.targetMs = benchmark.targetMs;
 		result.isCritical = benchmark.critical ?? false;
+		if (benchmark.axis != null) {
+			result.metrics = {
+				axis: benchmark.axis,
+				...(benchmark.axisPoint != null
+					? { axisPoint: benchmark.axisPoint }
+					: {}),
+				...result.metrics,
+			};
+		}
 		results.push(result);
 		await benchmark.teardown?.();
 	}

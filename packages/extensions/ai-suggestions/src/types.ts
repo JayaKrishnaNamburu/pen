@@ -134,7 +134,7 @@ export interface AISuggestionsController {
 	setActiveSuggestion(id: string | null): void;
 	setActiveSuggestionGroup(id: string | null): void;
 	request(options?: { force?: boolean; blockId?: string | null }): boolean;
-	applySuggestion(id: string): boolean;
+	applySuggestion(id: string, groupId?: string): boolean;
 	applySuggestionGroup(id: string): number;
 	dismissSuggestion(id: string): boolean;
 	dismissSuggestionGroup(id: string): number;

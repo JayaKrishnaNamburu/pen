@@ -14,5 +14,8 @@ pnpm --filter @input/pen-conformance run test:chromium
 pnpm --filter @input/pen-conformance run test:matrix
 pnpm --filter @input/pen-conformance run test:axe
 pnpm --filter @input/pen-conformance run test:ax3
+pnpm --filter @input/pen-conformance run test:ax6
+pnpm --filter @input/pen-conformance run test:scale5
+pnpm --filter @input/pen-conformance run test:host4
 pnpm --filter @input/pen-conformance run coverage:rules
 ```

@@ -50,7 +50,8 @@ function setRect(
 
 function createThreeBlockEditor() {
 	const editor = createEditor({
-		schema: defaultSchema, preset: defaultPreset({
+		schema: defaultSchema,
+		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
 			undo: false,
@@ -101,7 +102,8 @@ function createThreeBlockEditor() {
 describe("@input/pen-react region selection", () => {
 	it("focuses the existing empty placeholder block on background click", async () => {
 		const editor = createEditor({
-			schema: defaultSchema, preset: defaultPreset({
+			schema: defaultSchema,
+			preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,
@@ -130,7 +132,9 @@ describe("@input/pen-react region selection", () => {
 			expect(contentElement).not.toBeNull();
 
 			await act(async () => {
-				contentElement?.dispatchEvent(createMouseEvent("mousedown", 12, 12));
+				contentElement?.dispatchEvent(
+					createMouseEvent("mousedown", 12, 12),
+				);
 				document.dispatchEvent(createMouseEvent("mouseup", 12, 12));
 				contentElement?.dispatchEvent(
 					new MouseEvent("click", {
@@ -158,7 +162,8 @@ describe("@input/pen-react region selection", () => {
 
 	it("inserts a new paragraph when the editor has no blocks", async () => {
 		const editor = createEditor({
-			schema: defaultSchema, preset: defaultPreset({
+			schema: defaultSchema,
+			preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,
@@ -189,7 +194,9 @@ describe("@input/pen-react region selection", () => {
 			expect(editor.documentState.blockOrder).toHaveLength(0);
 
 			await act(async () => {
-				contentElement?.dispatchEvent(createMouseEvent("mousedown", 12, 12));
+				contentElement?.dispatchEvent(
+					createMouseEvent("mousedown", 12, 12),
+				);
 				document.dispatchEvent(createMouseEvent("mouseup", 12, 12));
 				contentElement?.dispatchEvent(
 					new MouseEvent("click", {
@@ -309,7 +316,9 @@ describe("@input/pen-react region selection", () => {
 			setRect(blockElements[2]!, 0, 100, 200, 40);
 
 			await act(async () => {
-				contentElement?.dispatchEvent(createMouseEvent("mousedown", 0, 0));
+				contentElement?.dispatchEvent(
+					createMouseEvent("mousedown", 0, 0),
+				);
 				document.dispatchEvent(createMouseEvent("mousemove", 180, 85));
 			});
 
@@ -353,7 +362,9 @@ describe("@input/pen-react region selection", () => {
 				"[data-pen-selection-rect]",
 			) as HTMLElement | null;
 			expect(committedOverlay).not.toBeNull();
-			expect(committedOverlay?.hasAttribute("data-selecting")).toBe(false);
+			expect(committedOverlay?.hasAttribute("data-selecting")).toBe(
+				false,
+			);
 		} finally {
 			await act(async () => {
 				root.unmount();
@@ -391,7 +402,9 @@ describe("@input/pen-react region selection", () => {
 			setRect(blockElements[2]!, 0, 100, 200, 40);
 
 			await act(async () => {
-				contentElement?.dispatchEvent(createMouseEvent("mousedown", 0, 0));
+				contentElement?.dispatchEvent(
+					createMouseEvent("mousedown", 0, 0),
+				);
 				document.dispatchEvent(createMouseEvent("mousemove", 180, 85));
 				document.dispatchEvent(createMouseEvent("mouseup", 180, 85));
 			});
@@ -408,6 +421,4 @@ describe("@input/pen-react region selection", () => {
 			editor.destroy();
 		}
 	});
-
-
 });

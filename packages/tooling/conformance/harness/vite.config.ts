@@ -32,6 +32,12 @@ const PEN_SOURCE_ALIASES = {
 	"@input/pen-dom": fileURLToPath(
 		new URL("../../../../packages/rendering/dom/src", import.meta.url),
 	),
+	"@input/pen-multiplayer": fileURLToPath(
+		new URL(
+			"../../../../packages/extensions/multiplayer/src/index.ts",
+			import.meta.url,
+		),
+	),
 	"@input/pen-preset-default": fileURLToPath(
 		new URL("../../../../packages/presets/default/src/index.ts", import.meta.url),
 	),

@@ -15,7 +15,7 @@ Floor: `>=22` (`spec-v2/15-host-integration.md` HOST3). That is the `setup-node`
 | `@input/pen-ai-suggestions` | `packages/extensions/ai-suggestions` | `>=22` | ok |
 | `@input/pen-ai-tools` | `packages/extensions/ai-tools` | `>=22` | ok |
 | `@input/pen-assets-memory` | `packages/tooling/assets-memory` | `>=22` | ok |
-| `@input/pen-bench` | `packages/tooling/bench` | — | missing |
+| `@input/pen-bench` | `packages/tooling/bench` | `>=22` | ok |
 | `@input/pen-content-ops` | `packages/shared/content-ops` | `>=22` | ok |
 | `@input/pen-core` | `packages/core` | `>=22` | ok |
 | `@input/pen-crdt-yjs` | `packages/crdt/yjs` | `>=22` | ok |
@@ -47,6 +47,6 @@ Floor: `>=22` (`spec-v2/15-host-integration.md` HOST3). That is the `setup-node`
 
 ## Missing `engines.node` `>=22`
 
-- `@input/pen-bench` (`packages/tooling/bench`) — no `engines.node`
+None. Every published package declares `engines.node` `>=22`.
 
-35 of 36 published packages match the floor. 1 leftover.
+35 of 35 published packages match the floor. 0 leftovers.

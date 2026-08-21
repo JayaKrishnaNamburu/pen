@@ -1,0 +1,53 @@
+{
+	"_comment": "HOST4 (spec-v2/15-host-integration.md): above-floor APIs. Each entry names the API, its fallback, the user-visible degradation, and the sites allowed to use it bare. Feature-detected uses do not need a site. An entry without fallback or degradation is a lint error. Remove a site in the same PR that adds a feature test.",
+	"apis": [
+		{
+			"api": "EditContext",
+			"fallback": "ContentEditableBackend (composition-event path). Forced for expanded surfaces and table cells even when EditContext exists.",
+			"degradation": "IME uses the composition-event path (Safari late mutation, GBoard 50ms heuristic) instead of EditContext textupdate; composition underline and IME window bounds follow the native contenteditable caret rather than textformatupdate/characterboundsupdate. Typing, paste, and undo still work.",
+			"sites": []
+		},
+		{
+			"api": "structuredClone",
+			"fallback": "JSON.parse(JSON.stringify(value)); a failed clone leaves the last full preview snapshot.",
+			"degradation": "Non-JSON values drop; a failed clone leaves the last full preview snapshot instead of a live patch replay.",
+			"sites": []
+		},
+		{
+			"api": "ResizeObserver",
+			"fallback": "window resize and scroll listeners only; no element-box observer.",
+			"degradation": "Overlays do not remeasure when the host element resizes without a window resize or scroll.",
+			"sites": []
+		},
+		{
+			"api": "replaceChildren",
+			"fallback": "replaceElementChildren: while (firstChild) remove, then append. Clearing then appending is equivalent.",
+			"degradation": "Inactive inline/cell content and drag-preview roots still empty — no user-visible degradation. Product sites go through replaceElementChildren, which feature-detects replaceChildren and otherwise clears then appends.",
+			"sites": []
+		},
+		{
+			"api": "Object.hasOwn",
+			"fallback": "Object.prototype.hasOwnProperty.call(object, key)",
+			"degradation": "None. At the HOST3 floor (Chromium 93 / Firefox 92 / Safari 15.4); listed as trivially replaceable. Product sites use Object.prototype.hasOwnProperty.call.",
+			"sites": []
+		},
+		{
+			"api": "Array.prototype.at",
+			"fallback": "Index arithmetic: array[array.length - 1] for at(-1).",
+			"degradation": "None. At the HOST3 floor; last element still used. Product sites use index arithmetic (array[array.length - 1] for at(-1)).",
+			"sites": []
+		},
+		{
+			"api": "color-mix",
+			"fallback": "Solid first in the same rule (#7c3aed / #2563eb), then color-mix in the same property.",
+			"degradation": "Without color-mix the user sees the solid first color, not a missing highlight.",
+			"sites": []
+		},
+		{
+			"api": "Intl.Segmenter",
+			"fallback": "Code-point walks for graphemes; whitespace runs for words (packages/core/src/editor/textSegmentation.ts). Wave L (LOC4) owns this entry.",
+			"degradation": "Word ops degrade to whitespace runs; character ops degrade to code points, never to UTF-16 code units.",
+			"sites": []
+		}
+	]
+}

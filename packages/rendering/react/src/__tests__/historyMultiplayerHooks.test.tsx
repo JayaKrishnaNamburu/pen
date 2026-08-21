@@ -32,7 +32,8 @@ import {
 describe("@input/pen-react history and multiplayer hooks", () => {
 	it("renders multiplayer primitives while hooks expose the same controller state", async () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [
+			schema: defaultSchema,
+			extensions: [
 				multiplayerExtension({
 					user: {
 						id: "u1",
@@ -43,12 +44,12 @@ describe("@input/pen-react history and multiplayer hooks", () => {
 			],
 		});
 		const controller = getMultiplayerController(editor) as {
-			handleAwarenessChange(states: Map<number, Record<string, unknown>>): void;
+			handleAwarenessChange(
+				states: Map<number, Record<string, unknown>>,
+			): void;
 		} | null;
 		const blockId = editor.firstBlock()!.id;
-		editor.apply([
-			{ type: "insert-text", blockId, offset: 0, text: "Hi" },
-		]);
+		editor.apply([{ type: "insert-text", blockId, offset: 0, text: "Hi" }]);
 
 		controller?.handleAwarenessChange(
 			new Map<number, Record<string, unknown>>([
@@ -122,30 +123,38 @@ describe("@input/pen-react history and multiplayer hooks", () => {
 			);
 		});
 
-		expect(container.querySelector("[data-peer-count]")?.getAttribute("data-peer-count")).toBe(
-			"1",
-		);
 		expect(
-			container.querySelector("[data-cursor-count]")?.getAttribute("data-cursor-count"),
+			container
+				.querySelector("[data-peer-count]")
+				?.getAttribute("data-peer-count"),
 		).toBe("1");
 		expect(
-			container.querySelector("[data-selection-count]")?.getAttribute("data-selection-count"),
+			container
+				.querySelector("[data-cursor-count]")
+				?.getAttribute("data-cursor-count"),
 		).toBe("1");
 		expect(
-			container.querySelector("[data-pen-multiplayer-presence-avatar]")?.textContent,
+			container
+				.querySelector("[data-selection-count]")
+				?.getAttribute("data-selection-count"),
+		).toBe("1");
+		expect(
+			container.querySelector("[data-pen-multiplayer-presence-avatar]")
+				?.textContent,
 		).toBe("Babbage");
 		expect(
-			container.querySelector("[data-pen-multiplayer-remote-cursor]")?.getAttribute(
-				"data-user-name",
-			),
+			container
+				.querySelector("[data-pen-multiplayer-remote-cursor]")
+				?.getAttribute("data-user-name"),
 		).toBe("Babbage");
 		expect(
-			container.querySelector("[data-pen-multiplayer-caret-overlay]")?.getAttribute(
-				"data-cursor-count",
-			),
+			container
+				.querySelector("[data-pen-multiplayer-caret-overlay]")
+				?.getAttribute("data-cursor-count"),
 		).toBe("1");
 		expect(
-			container.querySelector("[data-pen-multiplayer-caret-label]")?.textContent,
+			container.querySelector("[data-pen-multiplayer-caret-label]")
+				?.textContent,
 		).toBe("Babbage");
 
 		await act(async () => {
@@ -204,10 +213,14 @@ describe("@input/pen-react history and multiplayer hooks", () => {
 		});
 
 		expect(
-			container.querySelector("[data-snapshot-count]")?.getAttribute("data-snapshot-count"),
+			container
+				.querySelector("[data-snapshot-count]")
+				?.getAttribute("data-snapshot-count"),
 		).toBe("1");
 		expect(
-			container.querySelector("[data-blame-name]")?.getAttribute("data-blame-name"),
+			container
+				.querySelector("[data-blame-name]")
+				?.getAttribute("data-blame-name"),
 		).toBe("Babbage");
 
 		await act(async () => {
@@ -224,7 +237,8 @@ describe("@input/pen-react history and multiplayer hooks", () => {
 		});
 		const persistence = createMemoryPersistence();
 		const editorA = createEditor({
-			schema: defaultSchema,documentSession,
+			schema: defaultSchema,
+			documentSession,
 			extensions: [
 				historyExtension({
 					persistence,
@@ -234,7 +248,8 @@ describe("@input/pen-react history and multiplayer hooks", () => {
 			],
 		});
 		const editorB = createEditor({
-			schema: defaultSchema,documentSession,
+			schema: defaultSchema,
+			documentSession,
 			extensions: [
 				historyExtension({
 					persistence,
@@ -269,14 +284,14 @@ describe("@input/pen-react history and multiplayer hooks", () => {
 		});
 
 		expect(
-			container.querySelector("[data-snapshot-count-a]")?.getAttribute(
-				"data-snapshot-count-a",
-			),
+			container
+				.querySelector("[data-snapshot-count-a]")
+				?.getAttribute("data-snapshot-count-a"),
 		).toBe("1");
 		expect(
-			container.querySelector("[data-snapshot-count-b]")?.getAttribute(
-				"data-snapshot-count-b",
-			),
+			container
+				.querySelector("[data-snapshot-count-b]")
+				?.getAttribute("data-snapshot-count-b"),
 		).toBe("1");
 
 		await act(async () => {
@@ -410,7 +425,9 @@ function createMemoryPersistence() {
 				}));
 		},
 		async loadVersion(_docId: string, versionId: string) {
-			const entry = entries.find((candidate) => candidate.id === versionId);
+			const entry = entries.find(
+				(candidate) => candidate.id === versionId,
+			);
 			if (!entry) {
 				throw new Error(`Missing version ${versionId}`);
 			}

@@ -40,12 +40,15 @@ export abstract class ContentEditableBackendCore {
 	protected observer: FieldEditorObserver | null = null;
 	protected mutationObserver: MutationObserver | null = null;
 	protected isComposing = false;
+	// block-policy beforeinput: do not absorb later browser leftovers as ops
+	protected ignoreBrowserMutations = false;
 	protected compositionStartTimestamp = 0;
 	protected compositionStartText: string | null = null;
 	protected deferredRemoteDeltas: Array<{ delta: FieldEditorDelta[] }> = [];
 	protected pendingDomSyncFrame: number | null = null;
 	protected unsubscribeDecorationsChange: (() => void) | null = null;
-	protected inlineDecorationsSignature: string | null = null;
+	protected inlineDecorationsSignature: readonly InlineDecoration[] | null =
+		null;
 	protected editor: Editor;
 	protected fieldEditor: FieldEditorInputController;
 
@@ -62,6 +65,7 @@ export abstract class ContentEditableBackendCore {
 		this.fieldEditor.resetBackendSelectionAuthority();
 		this.fieldEditor.applyBackendSelectionUntilNextFrame();
 		this.isComposing = false;
+		this.ignoreBrowserMutations = false;
 		this.compositionStartText = null;
 		this.fieldEditor.setComposing(false);
 
@@ -157,6 +161,7 @@ export abstract class ContentEditableBackendCore {
 		this.deferredRemoteDeltas = [];
 		this.fieldEditor.resetBackendSelectionAuthority();
 		this.isComposing = false;
+		this.ignoreBrowserMutations = false;
 		this.compositionStartText = null;
 		this.fieldEditor.setComposing(false);
 	}
@@ -326,5 +331,5 @@ export abstract class ContentEditableBackendCore {
 	protected abstract ensureActiveDOMMatchesYText(): boolean;
 	protected abstract scheduleActiveDOMMatchCheck(): void;
 	protected abstract getInlineDecorationsForBlock(): readonly InlineDecoration[];
-	protected abstract getInlineDecorationsSignature(): string;
+	protected abstract getInlineDecorationsSignature(): readonly InlineDecoration[];
 }

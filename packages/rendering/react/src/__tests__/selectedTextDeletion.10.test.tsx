@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
 import { createDecorationSet } from "@input/pen-core";
 import { defineExtension } from "@input/pen-core";
-import { domSelectionToEditor } from "../field-editor/selectionBridge";
+import { domSelectionToEditor } from "@input/pen-dom/field-editor/selectionBridge";
 import { Pen } from "../primitives/index";
 import { FakeEditContext } from "./utils/fakeEditContext";
 import { defaultSchema } from "@input/pen-schema-default";
@@ -20,70 +20,77 @@ import {
 	SLOW_BEFOREINPUT_TEST_TIMEOUT_MS,
 } from "./utils/selectionDeletionTestHelpers";
 describe("@input/pen-react selected text deletion", () => {
-	it("resets an empty heading to paragraph on backspace keydown", async () => {
-		const editor = createEditor({ schema: defaultSchema });
-		const blockId = editor.firstBlock()!.id;
+	it(
+		"resets an empty heading to paragraph on backspace keydown",
+		async () => {
+			const editor = createEditor({ schema: defaultSchema });
+			const blockId = editor.firstBlock()!.id;
 
-		editor.apply([{ type: "convert-block", blockId, newType: "heading" }]);
+			editor.apply([
+				{ type: "convert-block", blockId, newType: "heading" },
+			]);
 
-		const container = document.createElement("div");
-		document.body.appendChild(container);
-		const root = createRoot(container);
+			const container = document.createElement("div");
+			document.body.appendChild(container);
+			const root = createRoot(container);
 
-		await act(async () => {
-			root.render(
-				<Pen.Editor.Root editor={editor}>
-					<Pen.Editor.Content />
-				</Pen.Editor.Root>,
-			);
-		});
+			await act(async () => {
+				root.render(
+					<Pen.Editor.Root editor={editor}>
+						<Pen.Editor.Content />
+					</Pen.Editor.Root>,
+				);
+			});
 
-		const fieldEditor = getFieldEditor(editor);
-		const rootElement = container.querySelector(
-			"[data-pen-editor-root]",
-		) as HTMLElement | null;
-		const inlineElement = container.querySelector(
-			"[data-pen-inline-content]",
-		) as HTMLElement | null;
+			const fieldEditor = getFieldEditor(editor);
+			const rootElement = container.querySelector(
+				"[data-pen-editor-root]",
+			) as HTMLElement | null;
+			const inlineElement = container.querySelector(
+				"[data-pen-inline-content]",
+			) as HTMLElement | null;
 
-		expect(rootElement).not.toBeNull();
-		expect(inlineElement).not.toBeNull();
+			expect(rootElement).not.toBeNull();
+			expect(inlineElement).not.toBeNull();
 
-		await act(async () => {
-			fieldEditor.activateTextSelection(blockId, 0, 0);
-			await flushAnimationFrames(3);
-		});
+			await act(async () => {
+				fieldEditor.activateTextSelection(blockId, 0, 0);
+				await flushAnimationFrames(3);
+			});
 
-		await act(async () => {
-			inlineElement!.dispatchEvent(
-				createKeyEvent("Backspace", { cancelable: true }),
-			);
-			await flushAnimationFrames(2);
-		});
+			await act(async () => {
+				inlineElement!.dispatchEvent(
+					createKeyEvent("Backspace", { cancelable: true }),
+				);
+				await flushAnimationFrames(2);
+			});
 
-		expect(editor.getBlock(blockId)?.type).toBe("paragraph");
-		expect(editor.selection).toMatchObject({
-			type: "text",
-			anchor: { blockId, offset: 0 },
-			focus: { blockId, offset: 0 },
-			isCollapsed: true,
-			isMultiBlock: false,
-		});
-		expect(domSelectionToEditor(rootElement!)).toMatchObject({
-			anchor: { blockId, offset: 0 },
-			focus: { blockId, offset: 0 },
-		});
+			expect(editor.getBlock(blockId)?.type).toBe("paragraph");
+			expect(editor.selection).toMatchObject({
+				type: "text",
+				anchor: { blockId, offset: 0 },
+				focus: { blockId, offset: 0 },
+				isCollapsed: true,
+				isMultiBlock: false,
+			});
+			expect(domSelectionToEditor(rootElement!)).toMatchObject({
+				anchor: { blockId, offset: 0 },
+				focus: { blockId, offset: 0 },
+			});
 
-		await act(async () => {
-			root.unmount();
-		});
-		container.remove();
-		editor.destroy();
-	}, SLOW_BEFOREINPUT_TEST_TIMEOUT_MS);
+			await act(async () => {
+				root.unmount();
+			});
+			container.remove();
+			editor.destroy();
+		},
+		SLOW_BEFOREINPUT_TEST_TIMEOUT_MS,
+	);
 
 	it("deletes the full-document selection after first cmd+a in flow documents", async () => {
 		const editor = createEditor({
-			schema: defaultSchema,documentProfile: "flow",
+			schema: defaultSchema,
+			documentProfile: "flow",
 		});
 		const firstBlockId = editor.firstBlock()!.id;
 		const secondBlockId = crypto.randomUUID();
@@ -269,6 +276,4 @@ describe("@input/pen-react selected text deletion", () => {
 		container.remove();
 		editor.destroy();
 	});
-
-
 });

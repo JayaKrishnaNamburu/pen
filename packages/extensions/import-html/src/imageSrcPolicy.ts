@@ -1,4 +1,4 @@
-import type { PendingBlock } from "@input/pen-core";
+import { assetProviderFacet, type PendingBlock } from "@input/pen-core";
 import type {
   AssetProvider,
   DiagnosticEvent,
@@ -12,7 +12,7 @@ import type {
  * - `"keep"`: leave the URL as-is. The imported document may depend on a
  *   remote server.
  * - `"ingest"`: fetch the image and upload it through the editor's
- *   `AssetProvider` (`paste:assetProvider` slot). Failed ingest emits
+ *   `AssetProvider` (`assetProviderFacet`). Failed ingest emits
  *   `asset-upload-failed` and omits the image block.
  */
 export type HtmlImageSrcPolicy = "keep" | "ingest";
@@ -41,8 +41,8 @@ export function isIngestibleImageSrc(src: string): boolean {
 /**
  * Apply the HTML `<img>` src policy to parsed blocks.
  *
- * `"keep"` is a no-op. `"ingest"` uploads ingestible srcs through the
- * `paste:assetProvider` slot. Failed or oversize ingest emits
+ * `"keep"` is a no-op. `"ingest"` uploads ingestible srcs through
+ * `assetProviderFacet`. Failed or oversize ingest emits
  * `asset-upload-failed` and drops that image block (no block inserted).
  */
 export async function applyHtmlImageSrcPolicy(
@@ -55,7 +55,7 @@ export async function applyHtmlImageSrcPolicy(
   }
 
   const provider =
-    editor.internals.getSlot<AssetProvider>("paste:assetProvider") ?? null;
+    (editor.facet(assetProviderFacet) as AssetProvider | null) ?? null;
   const resolved: PendingBlock[] = [];
   for (const block of blocks) {
     const next = await ingestPendingBlock(block, editor, provider);
@@ -95,13 +95,15 @@ async function ingestPendingBlock(
       reason: "provider",
       message:
         `asset-upload-failed: cannot ingest "${src}" ` +
-        "(no AssetProvider on paste:assetProvider)",
+        "(no AssetProvider on assetProviderFacet)",
     });
     return null;
   }
 
+  let size = 0;
   try {
     const file = await fileFromImageSrc(src);
+    size = file.size;
     const maxSize = provider.maxSize;
     if (maxSize != null && file.size > maxSize) {
       emitAssetUploadFailed(editor, {
@@ -118,7 +120,7 @@ async function ingestPendingBlock(
 
     const ref = await provider.upload(file, {
       mimeType: file.type,
-      maxSize,
+      ...(maxSize != null ? { maxSize } : {}),
     });
     return {
       ...block,
@@ -128,11 +130,11 @@ async function ingestPendingBlock(
   } catch (error) {
     emitAssetUploadFailed(editor, {
       fileName: src,
-      size: 0,
+      size,
       reason: "provider",
       error,
       message:
-        `asset-upload-failed: "${src}": ${errorMessage(error)}`,
+        `asset-upload-failed: "${src}" (${size} bytes): ${errorMessage(error)}`,
     });
     return null;
   }

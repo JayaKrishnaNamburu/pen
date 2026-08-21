@@ -29,7 +29,7 @@ export default tseslint.config(
     },
     plugins: { pen },
     rules: {
-			"pen/no-html-injection-sinks": "error",
+      "pen/no-html-injection-sinks": "error",
 
       // HOST4: crypto.randomUUID is secure-context-only, so it throws on plain-HTTP origins
       // and on Safari < 15.4. generateId owns the feature test and fallback (F24).
@@ -108,12 +108,22 @@ export default tseslint.config(
     },
   },
   {
-    // LOC5: matching paths fold through foldAndNormalize. Keyboard `event.key`
-    // and `navigator.platform` are allowlisted in the rule. Disable a site with
-    // a comment naming why it is not user-copy matching.
+    // LOC5: matching paths fold through foldAndNormalize. Identifier folds
+    // (MIME, attribute names, shortcut patterns, markdown keys, regex-captured
+    // tokens) and single-character display casing are allowlisted in the rule.
+    // Globs follow Wave L's package list (`spec-v2/waves/wave-l-localization.md`).
     files: [
+      "packages/types/src/**/*.{ts,tsx}",
+      "packages/core/src/**/*.{ts,tsx}",
+      "packages/schema/default/src/**/*.{ts,tsx}",
+      "packages/rendering/dom/src/**/*.{ts,tsx}",
       "packages/rendering/react/src/**/*.{ts,tsx}",
+      "packages/rendering/vue/src/**/*.{ts,tsx}",
       "packages/extensions/search/src/**/*.{ts,tsx}",
+      "packages/extensions/ai/src/**/*.{ts,tsx}",
+      "packages/extensions/ai-suggestions/src/**/*.{ts,tsx}",
+      "packages/extensions/ai-autocomplete/src/**/*.{ts,tsx}",
+      "packages/extensions/document-ops/src/**/*.{ts,tsx}",
     ],
     ignores: ["**/__tests__/**", "**/*.test.ts", "**/*.test.tsx"],
     rules: {
@@ -131,6 +141,31 @@ export default tseslint.config(
     },
   },
   {
+    // API6: renderer modules without a framework import belong in pen-dom.
+    // Re-export stubs are the P.6 end state. Disable or allowlist with API6
+    // and a reason (`scripts/renderer-framework-free-allowlist.json`).
+    files: [
+      "packages/rendering/react/src/**/*.{ts,tsx}",
+      "packages/rendering/vue/src/**/*.{ts,tsx}",
+    ],
+    ignores: ["**/__tests__/**", "**/*.test.ts", "**/*.test.tsx"],
+    rules: {
+      "pen/no-framework-free-modules-in-renderers": "error",
+    },
+  },
+  {
+    // HOST4: above-floor APIs need a feature test or an allowlist entry
+    // that names the fallback and user-visible degradation.
+    files: [
+      "packages/*/src/**/*.{ts,tsx,js,jsx}",
+      "packages/*/*/src/**/*.{ts,tsx,js,jsx}",
+    ],
+    ignores: ["**/__tests__/**", "**/*.test.ts", "**/*.test.tsx"],
+    rules: {
+      "pen/no-above-floor-api": "error",
+    },
+  },
+  {
     // Deliberately permissive baseline. Each entry names the wave that owns the cleanup and
     // earns its promotion to "error"; promoting one before that only creates noise.
     rules: {
@@ -142,7 +177,11 @@ export default tseslint.config(
       // (Wave H steps H.2/H.3); the count is the burn-down metric for that work.
       "@typescript-eslint/no-unused-vars": [
         "warn",
-        { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrors: "none" },
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrors: "none",
+        },
       ],
       // Wave H step H.6 (F21) reviews these: each is a value computed and then discarded, or
       // an expression evaluated for no effect — bug-shaped, but each needs intent to resolve.
@@ -163,7 +202,12 @@ export default tseslint.config(
     },
   },
   {
-    files: ["**/*.test.ts", "**/*.test.tsx", "**/__tests__/**", "**/*.bench.ts"],
+    files: [
+      "**/*.test.ts",
+      "**/*.test.tsx",
+      "**/__tests__/**",
+      "**/*.bench.ts",
+    ],
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-non-null-assertion": "off",

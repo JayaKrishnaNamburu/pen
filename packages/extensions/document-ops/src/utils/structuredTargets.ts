@@ -1,20 +1,18 @@
-import type {
-	BlockSchema,
-	BlockSelectionRole,
-	Editor,
-	FieldEditorType,
-	FlowBlockCapability,
-} from "@input/pen-types";
 import {
 	getBlockSelectionRoleFromSchema,
 	getFlowCapabilityFromSchema,
-	isNestedContent,
 	shouldExposeBlockInTooling,
-} from "@input/pen-types";
-import type {
-	StructuredTargetDescriptor,
-	TargetEditability,
+	type StructuredTargetDescriptor,
+	type TargetEditability,
 } from "@input/pen-content-ops";
+import {
+	isNestedContent,
+	type BlockSchema,
+	type BlockSelectionRole,
+	type Editor,
+	type FieldEditorType,
+	type FlowBlockCapability,
+} from "@input/pen-types";
 import { getAvailableToolBlockSchemas } from "./blockTypePolicy";
 
 const INLINE_CONTENT_TYPE = "inline";
@@ -67,7 +65,9 @@ export interface ToolBlockTypeEntry extends StructuredTargetSchemaSnapshot {
 	editability: TargetEditability;
 }
 
-export function listAvailableToolBlockTypes(editor: Editor): ToolBlockTypeEntry[] {
+export function listAvailableToolBlockTypes(
+	editor: Editor,
+): ToolBlockTypeEntry[] {
 	return getAvailableToolBlockSchemas(editor).map((schema) =>
 		buildToolBlockTypeEntry(editor, schema),
 	);
@@ -143,8 +143,9 @@ function buildStructuredTargetDescriptor(
 		editability,
 		flowCapability,
 		supportsTextContent: schema?.content === INLINE_CONTENT_TYPE,
-		supportsChildren:
-			schema ? isNestedContent(schema.content) || schema.isContainer === true : false,
+		supportsChildren: schema
+			? isNestedContent(schema.content) || schema.isContainer === true
+			: false,
 		propSchemaKeys: Object.keys(schema?.propSchema ?? {}),
 	};
 }
@@ -203,7 +204,8 @@ function buildToolBlockTypeEntry(
 	return {
 		type: schema.type,
 		props: Object.keys(schema.propSchema ?? {}),
-		supportsChildren: isNestedContent(schema.content) || schema.isContainer === true,
+		supportsChildren:
+			isNestedContent(schema.content) || schema.isContainer === true,
 		editability: resolveTargetEditability(editor, schema),
 		...schemaSnapshot,
 	};

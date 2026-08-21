@@ -49,7 +49,6 @@ function createInlineAtomChipElement(
 	}
 
 	element.setAttribute(DATA_ATTRS.inlineAtomType, atom.type);
-	element.setAttribute(DATA_ATTRS.inlineAtomProps, serializeInlineAtomProps(atom.props));
 	const text = resolveInlineAtomDisplayText(atom, registry);
 	const a11y = resolveA11ySpec(
 		registry.resolveInline(atom.type)?.a11y,
@@ -111,20 +110,10 @@ export function copyInlineAtomElementData(
 		text: data.text,
 	});
 	targetChip.setAttribute(DATA_ATTRS.inlineAtomType, data.type);
-	targetChip.setAttribute(DATA_ATTRS.inlineAtomProps, serializeInlineAtomProps(data.props));
 	targetChip.setAttribute("aria-label", sourceChip.getAttribute("aria-label") ?? data.text);
 	const roleDescription = sourceChip.getAttribute("aria-roledescription");
 	if (roleDescription) {
 		targetChip.setAttribute("aria-roledescription", roleDescription);
-	}
-}
-
-function serializeInlineAtomProps(props: Record<string, unknown>): string {
-	try {
-		return JSON.stringify(props);
-	} catch {
-		// unstringifiable atom props serialize as empty.
-		return "{}";
 	}
 }
 
@@ -210,13 +199,29 @@ function shallowEqualRecords(
 		return true;
 	}
 
-	const leftKeys = Object.keys(left);
-	const rightKeys = Object.keys(right);
+	const leftKeys = definedRecordKeys(left);
+	const rightKeys = definedRecordKeys(right);
 	if (leftKeys.length !== rightKeys.length) {
 		return false;
 	}
 
-	return leftKeys.every((key) => Object.is(left[key], right[key]));
+	for (const key of leftKeys) {
+		if (!Object.is(left[key], right[key])) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+function definedRecordKeys(record: Record<string, unknown>): string[] {
+	const keys: string[] = [];
+	for (const key of Object.keys(record)) {
+		if (record[key] !== undefined) {
+			keys.push(key);
+		}
+	}
+	return keys;
 }
 
 function getInlineAtomChipElement(element: Element): HTMLElement | null {

@@ -3,7 +3,7 @@ import { useToolbarContext } from "../../context/toolbarContext";
 import { useEditorContext } from "../../context/editorContext";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { getAttachedFieldEditor } from "../../utils/fieldEditor";
-import { getConvertBlockOps } from "../../field-editor/commands";
+import { getConvertBlockOps } from "@input/pen-dom/field-editor/commands";
 import {
 	getStarterTableProps,
 	getTableActivationTarget,

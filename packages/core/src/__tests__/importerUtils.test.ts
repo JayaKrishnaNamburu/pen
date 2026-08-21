@@ -8,7 +8,7 @@ import {
 import { blocksToOps } from "../importerUtils";
 import type { DocumentOp } from "@input/pen-types";
 import type { PendingBlock } from "../importerUtils";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "./fixtures/testSchema";
 
 const noDefaultExtensionsPreset = {
 	resolve() {

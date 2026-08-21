@@ -10,14 +10,14 @@ export type DirectionCache = {
 		blockId: string,
 		text: string,
 		props?: Record<string, unknown> | null,
-		facetEpoch?: number,
+		facetKey?: string | number,
 	): BlockDirection | undefined;
 	set(
 		blockId: string,
 		text: string,
 		props: Record<string, unknown> | null | undefined,
 		direction: BlockDirection,
-		facetEpoch?: number,
+		facetKey?: string | number,
 	): void;
 	invalidate(blockId: string): void;
 	clear(): void;
@@ -37,9 +37,9 @@ function directionSetting(
 export function fingerprintDirectionInput(
 	text: string,
 	props?: Record<string, unknown> | null,
-	facetEpoch = 0,
+	facetKey: string | number = "",
 ): string {
-	return `${facetEpoch}\0${directionSetting(props)}\0${text}`;
+	return `${facetKey}\0${directionSetting(props)}\0${text}`;
 }
 
 /**
@@ -51,21 +51,21 @@ export function createDirectionCache(): DirectionCache {
 	const entries = new Map<string, DirectionCacheEntry>();
 
 	return {
-		get(blockId, text, props, facetEpoch = 0) {
+		get(blockId, text, props, facetKey = "") {
 			const entry = entries.get(blockId);
 			if (!entry) {
 				return undefined;
 			}
-			const fingerprint = fingerprintDirectionInput(text, props, facetEpoch);
+			const fingerprint = fingerprintDirectionInput(text, props, facetKey);
 			if (entry.fingerprint !== fingerprint) {
 				entries.delete(blockId);
 				return undefined;
 			}
 			return entry.direction;
 		},
-		set(blockId, text, props, direction, facetEpoch = 0) {
+		set(blockId, text, props, direction, facetKey = "") {
 			entries.set(blockId, {
-				fingerprint: fingerprintDirectionInput(text, props, facetEpoch),
+				fingerprint: fingerprintDirectionInput(text, props, facetKey),
 				direction,
 			});
 		},

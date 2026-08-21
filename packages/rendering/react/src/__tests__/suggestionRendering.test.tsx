@@ -3,7 +3,10 @@
 import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
-import { createEditor, ensureInlineCompletionController } from "@input/pen-core";
+import {
+	createEditor,
+	ensureInlineCompletionController,
+} from "@input/pen-core";
 import {
 	aiExtension,
 	applySuggestedAIOperations,
@@ -20,7 +23,8 @@ import { defaultSchema } from "@input/pen-schema-default";
 describe("@input/pen-react suggestion rendering", () => {
 	it("renders suggestion marks with DOM attributes for diff styling and controls", async () => {
 		const editor = createEditor({
-			schema: defaultSchema,documentProfile: "flow",
+			schema: defaultSchema,
+			documentProfile: "flow",
 			preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
@@ -112,7 +116,8 @@ describe("@input/pen-react suggestion rendering", () => {
 
 	it("renders final-text review suggestions without visible deleted text", async () => {
 		const editor = createEditor({
-			schema: defaultSchema,documentProfile: "flow",
+			schema: defaultSchema,
+			documentProfile: "flow",
 			extensions: [
 				aiExtension({
 					suggestionPresentation: "final-text",
@@ -174,7 +179,8 @@ describe("@input/pen-react suggestion rendering", () => {
 
 	it("renders streaming review preview text without mutating document text", async () => {
 		const editor = createEditor({
-			schema: defaultSchema,documentProfile: "flow",
+			schema: defaultSchema,
+			documentProfile: "flow",
 			extensions: [
 				aiExtension({
 					suggestionPresentation: "final-text",
@@ -241,7 +247,8 @@ describe("@input/pen-react suggestion rendering", () => {
 
 	it("suppresses affected-range styling once final-text suggestions exist", async () => {
 		const editor = createEditor({
-			schema: defaultSchema,documentProfile: "flow",
+			schema: defaultSchema,
+			documentProfile: "flow",
 			extensions: [
 				aiExtension({
 					suggestionPresentation: "final-text",
@@ -300,9 +307,9 @@ describe("@input/pen-react suggestion rendering", () => {
 		);
 		// `shouldShowSelectionContext`: in final-text presentation the selection context highlight is
 		// suppressed entirely once suggestions exist, so nothing renders it — not just the insert.
-		expect(container.querySelectorAll("[data-ai-affected-range]")).toHaveLength(
-			0,
-		);
+		expect(
+			container.querySelectorAll("[data-ai-affected-range]"),
+		).toHaveLength(0);
 
 		await act(async () => {
 			root.unmount();
@@ -313,7 +320,8 @@ describe("@input/pen-react suggestion rendering", () => {
 
 	it("renders block suggestion decorations on the block DOM node", async () => {
 		const editor = createEditor({
-			schema: defaultSchema,documentProfile: "flow",
+			schema: defaultSchema,
+			documentProfile: "flow",
 			extensions: [aiExtension({ author: "tester" })],
 			preset: defaultPreset({}),
 		});
@@ -374,7 +382,8 @@ describe("@input/pen-react suggestion rendering", () => {
 
 	it("renders autocomplete preview blocks after the anchor block", async () => {
 		const editor = createEditor({
-			schema: defaultSchema,documentProfile: "flow",
+			schema: defaultSchema,
+			documentProfile: "flow",
 			preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
@@ -448,7 +457,8 @@ describe("@input/pen-react suggestion rendering", () => {
 
 	it("renders markdown-shaped autocomplete preview blocks from preview metadata", async () => {
 		const editor = createEditor({
-			schema: defaultSchema,documentProfile: "flow",
+			schema: defaultSchema,
+			documentProfile: "flow",
 			preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
@@ -528,7 +538,8 @@ describe("@input/pen-react suggestion rendering", () => {
 
 	it("renders list-shaped autocomplete preview blocks for numbered lists", async () => {
 		const editor = createEditor({
-			schema: defaultSchema,documentProfile: "flow",
+			schema: defaultSchema,
+			documentProfile: "flow",
 			preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
@@ -615,7 +626,8 @@ describe("@input/pen-react suggestion rendering", () => {
 
 	it("renders container-shaped autocomplete preview blocks for toggles and subdocuments", async () => {
 		const editor = createEditor({
-			schema: defaultSchema,documentProfile: "flow",
+			schema: defaultSchema,
+			documentProfile: "flow",
 			preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,

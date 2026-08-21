@@ -1,0 +1,93 @@
+{
+	"ruleId": "SCALE1",
+	"spec": "spec-v2/22-scale-envelope.md",
+	"gateStatistic": "median",
+	"sampleSize": 21,
+	"machineClass": "macos-arm64 (darwin 25, Apple Silicon). Not the CI runner (github-actions-ubuntu-latest).",
+	"producedOn": "2026-08-20",
+	"tolerance": {
+		"ratio": 4,
+		"floorMs": 15,
+		"formula": "gateP50Ms = max(measuredP50Ms * 4, measuredP50Ms + 15)",
+		"justification": "Local medians are macos-arm64. CI is github-actions-ubuntu-latest and is slower and noisier. 4× the measured median covers that class gap. The 15ms floor covers sub-millisecond rungs, where a pure ratio would treat runner jitter as a regression. The gate is the median of ENVELOPE_SAMPLE_SIZE; P95 and Max are trend-only (CH8)."
+	},
+	"points": [
+		{
+			"id": "blocks-100",
+			"axis": "blockCount",
+			"metadataRungId": "blocks-100",
+			"size": "100 blocks",
+			"operation": "insert-text",
+			"measuredP50Ms": 0.21,
+			"p95Ms": 0.5,
+			"maxMs": 0.84,
+			"gateP50Ms": 15.21
+		},
+		{
+			"id": "blocks-1000",
+			"axis": "blockCount",
+			"metadataRungId": "blocks-1000",
+			"size": "1,000 blocks",
+			"operation": "insert-text",
+			"measuredP50Ms": 0.86,
+			"p95Ms": 1.42,
+			"maxMs": 1.42,
+			"gateP50Ms": 15.86
+		},
+		{
+			"id": "blocks-5000",
+			"axis": "blockCount",
+			"metadataRungId": "blocks-5000",
+			"size": "5,000 blocks",
+			"operation": "insert-text",
+			"measuredP50Ms": 6.13,
+			"p95Ms": 8.26,
+			"maxMs": 8.3,
+			"gateP50Ms": 24.52
+		},
+		{
+			"id": "long-block",
+			"axis": "longestBlock",
+			"metadataRungId": "long-block",
+			"size": "100,000 characters",
+			"operation": "insert-text",
+			"measuredP50Ms": 0.03,
+			"p95Ms": 0.05,
+			"maxMs": 0.06,
+			"gateP50Ms": 15.03
+		},
+		{
+			"id": "nesting-10",
+			"axis": "nestingDepth",
+			"metadataRungId": "nesting-10",
+			"size": "depth 10",
+			"operation": "insert-text",
+			"measuredP50Ms": 0.05,
+			"p95Ms": 0.06,
+			"maxMs": 0.06,
+			"gateP50Ms": 15.05
+		},
+		{
+			"id": "table-50x20",
+			"axis": "table",
+			"metadataRungId": "table-50x20",
+			"size": "50 × 20",
+			"operation": "insert-table-cell-text",
+			"measuredP50Ms": 0.03,
+			"p95Ms": 0.04,
+			"maxMs": 0.05,
+			"gateP50Ms": 15.03
+		},
+		{
+			"id": "concurrentPeers-2",
+			"axis": "concurrentPeers",
+			"metadataRungId": null,
+			"size": "2 peers",
+			"operation": "insert-text + sync",
+			"measuredP50Ms": 1.49,
+			"p95Ms": 1.72,
+			"maxMs": 5.14,
+			"gateP50Ms": 16.49
+		}
+	]
+}

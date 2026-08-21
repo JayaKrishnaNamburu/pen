@@ -1,12 +1,11 @@
 import { readFileSync } from "node:fs";
 
-import type { CRDTEvent } from "@input/pen-types";
-import { getOpOriginType } from "@input/pen-types";
+import type { CRDTEvent, OpOrigin } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 import * as Y from "yjs";
 
 import { yjsAdapter } from "../adapter";
-import { createYjsDocument, initBlockMap } from "../document";
+import { initBlockMap } from "../document";
 import type { YjsCRDTDocument } from "../document";
 import {
 	ORIGIN_UNKNOWN_CODE,
@@ -16,12 +15,13 @@ import {
 	originToOpOrigin,
 } from "../events";
 import { createYjsUndoManager } from "../undo";
+import { createPeerDoc } from "./createPeerDoc";
+
+function getOpOriginType(origin: OpOrigin): string {
+	return typeof origin === "string" ? origin : origin.type;
+}
 
 const adapter = yjsAdapter();
-
-function createPeerDoc(): YjsCRDTDocument {
-	return createYjsDocument(adapter);
-}
 
 function seedParagraph(doc: YjsCRDTDocument, blockId = "block-1"): Y.Text {
 	doc.ydoc.transact(() => {
@@ -88,8 +88,8 @@ describe("COL1 origin mapping", () => {
 	});
 
 	it("2.3: applyUpdate tags collaborator even when the sender used a provider-custom origin", () => {
-		const peerA = createPeerDoc();
-		const peerB = createPeerDoc();
+		const peerA = createPeerDoc(adapter, 1);
+		const peerB = createPeerDoc(adapter, 2);
 		seedParagraph(peerA);
 		adapter.applyUpdate(peerB, adapter.encodeState(peerA));
 
@@ -113,8 +113,8 @@ describe("COL1 origin mapping", () => {
 	});
 
 	it("COL1: remote applyUpdate surfaces collaborator origin", () => {
-		const peerA = createPeerDoc();
-		const peerB = createPeerDoc();
+		const peerA = createPeerDoc(adapter, 1);
+		const peerB = createPeerDoc(adapter, 2);
 		seedParagraph(peerA);
 		adapter.applyUpdate(peerB, adapter.encodeState(peerA));
 
@@ -139,8 +139,8 @@ describe("COL1 origin mapping", () => {
 	});
 
 	it("COL1: applyUpdate tagged with createRemoteUpdateOrigin keeps collaborator identity", () => {
-		const peerA = createPeerDoc();
-		const peerB = createPeerDoc();
+		const peerA = createPeerDoc(adapter, 1);
+		const peerB = createPeerDoc(adapter, 2);
 		seedParagraph(peerA);
 		adapter.applyUpdate(peerB, adapter.encodeState(peerA));
 
@@ -167,7 +167,7 @@ describe("COL1 origin mapping", () => {
 	});
 
 	it("COL1: absent origin is unknown not user", () => {
-		const doc = createPeerDoc();
+		const doc = createPeerDoc(adapter);
 		const ytext = seedParagraph(doc);
 		const events: CRDTEvent[] = [];
 		createObserver(doc, (event) => events.push(event));
@@ -182,7 +182,7 @@ describe("COL1 origin mapping", () => {
 	});
 
 	it("COL1: adapter.transact still labels Pen-set missing origin as user", () => {
-		const doc = createPeerDoc();
+		const doc = createPeerDoc(adapter);
 		seedParagraph(doc);
 		const events: CRDTEvent[] = [];
 		createObserver(doc, (event) => events.push(event));
@@ -233,8 +233,8 @@ describe("COL1 origin mapping", () => {
 	});
 
 	it("COL1: remote applyUpdate does not enter the local undo stack", () => {
-		const peerA = createPeerDoc();
-		const peerB = createPeerDoc();
+		const peerA = createPeerDoc(adapter, 1);
+		const peerB = createPeerDoc(adapter, 2);
 		const localText = seedParagraph(peerA);
 		adapter.applyUpdate(peerB, adapter.encodeState(peerA));
 

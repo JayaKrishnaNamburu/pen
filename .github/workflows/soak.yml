@@ -1,5 +1,5 @@
-# SCALE4 nightly soak (F.4). Heap is reported, not gated — do not fail this job on heap.
-# spec-v2/22-scale-envelope.md SCALE4; spec-v2/09-reliability-testing.md nightly heap soak.
+# SCALE4 nightly soak (F.4). Heap during the session is a trend, not a gate.
+# spec-v2/22-scale-envelope.md SCALE4; spec-v2/09-reliability-testing.md CH8.
 name: Soak
 
 on:
@@ -10,7 +10,7 @@ on:
 jobs:
   soak:
     name: SCALE4 soak
-    timeout-minutes: 10
+    timeout-minutes: 30
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -19,10 +19,24 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v5
 
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+
       - name: Set up Node.js
         uses: actions/setup-node@v5
         with:
           node-version: 22
+          cache: pnpm
 
-      - name: Run soak placeholder
-        run: node packages/tooling/bench/src/soak/run.mjs
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build bench and its dependencies
+        run: pnpm --filter @input/pen-bench... build
+
+      - name: Run SCALE4 soak
+        env:
+          SCALE4_SOAK_ITERATIONS: "400"
+        run: node --expose-gc packages/tooling/bench/src/soak/run.mjs

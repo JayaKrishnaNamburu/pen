@@ -80,6 +80,8 @@ function createKeystrokeRunner(options: {
 export const scale3Benchmarks: BenchDefinition[] = [
 	{
 		...SCALE3_KEYSTROKE_DOCUMENT_SIZE_100_BENCH,
+		axis: "document-size",
+		axisPoint: SCALE3_DOCUMENT_SIZE_POINTS[0],
 		...createKeystrokeRunner({
 			blockCount: SCALE3_DOCUMENT_SIZE_POINTS[0],
 			axis: "document-size",
@@ -88,6 +90,8 @@ export const scale3Benchmarks: BenchDefinition[] = [
 	},
 	{
 		...SCALE3_KEYSTROKE_DOCUMENT_SIZE_1000_BENCH,
+		axis: "document-size",
+		axisPoint: SCALE3_DOCUMENT_SIZE_POINTS[1],
 		...createKeystrokeRunner({
 			blockCount: SCALE3_SHARED_POINT.blockCount,
 			axis: "document-size",
@@ -96,6 +100,8 @@ export const scale3Benchmarks: BenchDefinition[] = [
 	},
 	{
 		...SCALE3_KEYSTROKE_EXTENSION_COUNT_PLUS8_BENCH,
+		axis: "extension-count",
+		axisPoint: SCALE3_EXTENSION_COUNT_POINTS[1],
 		...createKeystrokeRunner({
 			blockCount: SCALE3_SHARED_POINT.blockCount,
 			extraDecoratingExtensions: 8,
@@ -105,6 +111,8 @@ export const scale3Benchmarks: BenchDefinition[] = [
 	},
 	{
 		...SCALE3_KEYSTROKE_DECORATION_COUNT_256_BENCH,
+		axis: "decoration-count",
+		axisPoint: SCALE3_DECORATION_COUNT_POINTS[1],
 		...createKeystrokeRunner({
 			blockCount: SCALE3_SHARED_POINT.blockCount,
 			decorationCount: SCALE3_DECORATION_COUNT_POINTS[1],
@@ -114,6 +122,8 @@ export const scale3Benchmarks: BenchDefinition[] = [
 	},
 	{
 		...SCALE3_KEYSTROKE_PEER_COUNT_8_BENCH,
+		axis: "peer-count",
+		axisPoint: SCALE3_PEER_COUNT_POINTS[1],
 		...createKeystrokeRunner({
 			blockCount: SCALE3_SHARED_POINT.blockCount,
 			peerCount: SCALE3_PEER_COUNT_POINTS[1],

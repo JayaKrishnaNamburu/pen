@@ -1,7 +1,7 @@
 import React from "react";
 import type { AISession } from "@input/pen-ai";
 import { useIsomorphicLayoutEffect } from "../../hooks/useIsomorphicLayoutEffect";
-import { queryBlockElement } from "../../field-editor/selectionBridge";
+import { queryBlockElement } from "@input/pen-dom/field-editor/selectionBridge";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import {
 	areRectListsEqual,

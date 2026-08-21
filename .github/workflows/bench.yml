@@ -39,3 +39,6 @@ jobs:
 
       - name: Run CH8 serial performance budgets
         run: pnpm --filter @input/pen-bench run bench:ci
+
+      - name: Run SCALE1 envelope measurement gate
+        run: pnpm --filter @input/pen-bench run bench:envelope

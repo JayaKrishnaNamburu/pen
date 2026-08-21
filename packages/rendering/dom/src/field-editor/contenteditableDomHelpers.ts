@@ -5,12 +5,14 @@ import { domPointToOffset, getSelectionOffsets } from "./selectionBridge";
 export function requiresResolvedInputRange(inputType: string): boolean {
 	return (
 		inputType === "insertText" ||
+		inputType === "insertFromDrop" ||
 		inputType === "insertReplacementText" ||
 		inputType === "deleteContentBackward" ||
 		inputType === "deleteContentForward" ||
-		inputType === "deleteByCut" ||
 		inputType === "deleteWordBackward" ||
 		inputType === "deleteWordForward" ||
+		inputType === "deleteSoftLineBackward" ||
+		inputType === "deleteHardLineBackward" ||
 		inputType === "insertLineBreak"
 	);
 }

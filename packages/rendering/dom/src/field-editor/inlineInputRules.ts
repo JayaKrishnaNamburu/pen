@@ -1,5 +1,4 @@
-import { inputRulesEngineFacet } from "@input/pen-core";
-import { supportsInlineInputRules } from "@input/pen-types";
+import { inputRulesEngineFacet, supportsInlineInputRules } from "@input/pen-core";
 import type { DocumentOp, Editor } from "@input/pen-types";
 import { matchInlineInputRule } from "../utils/inlineInputRule";
 import type { InlineInputRuleEngine } from "./crdt";

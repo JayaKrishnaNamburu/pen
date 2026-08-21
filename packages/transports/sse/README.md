@@ -19,7 +19,19 @@ pnpm add @input/pen-core @input/pen-transport-sse
 ## Server Example
 
 ```ts
+import { createEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
+import { getAIToolRuntime } from "@input/pen-ai-tools";
 import { createSSEHandler } from "@input/pen-transport-sse";
+
+const editor = createEditor({
+  preset: defaultPreset(),
+});
+const toolRuntime = getAIToolRuntime(editor);
+
+if (!toolRuntime) {
+  throw new Error("AI tools are unavailable.");
+}
 
 const handler = createSSEHandler({
   toolRuntime,
@@ -46,3 +58,34 @@ const transport = sseTransport({
 - The host application still owns endpoint routing, auth, headers, and server deployment. Auth is a host seam; this package does not verify requests.
 - A dropped stream is not retried or resumed by this package. If the host retries, that is a new `POST`, not a continuation.
 - `createSSEHandler()` can execute Pen tool-runtime requests and stream `PenStreamPart` events back to the client.
+
+## Options
+
+### `sseTransport`
+
+| Option        | Default  | Effect                       |
+| ------------- | -------- | ---------------------------- |
+| `url`         | required | POST endpoint                |
+| `headers`     | unset    | Extra request headers        |
+| `pingTimeout` | `30_000` | Idle timeout in milliseconds |
+| `signal`      | unset    | Abort the client stream      |
+
+### `createSSEHandler`
+
+| Option         | Default  | Effect                               |
+| -------------- | -------- | ------------------------------------ |
+| `toolRuntime`  | unset    | In-process tool execution            |
+| `editor`       | unset    | Editor passed through to the handler |
+| `onRequest`    | unset    | Called with each `PenStreamRequest`  |
+| `onError`      | unset    | Called with handler errors           |
+| `pingInterval` | `15_000` | Server ping interval in milliseconds |
+
+## Documentation
+
+The docs site (the `@input/pen-docs` package) covers this area on the AI features page (`#/ai`).
+
+The public signatures of record are in `api-report.md` next to this package's source in the Pen repository. The docs site does not host a generated browsable reference.
+
+## License
+
+MIT © Input B.V. See [`LICENSE.md`](./LICENSE.md).

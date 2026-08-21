@@ -1,5 +1,6 @@
 import { fullReconcileDeltasToDOM } from "@input/pen-dom/field-editor/reconciler";
 import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
+import { replaceElementChildren } from "@input/pen-dom/utils/replaceElementChildren";
 import {
   computed,
   defineComponent,
@@ -15,7 +16,6 @@ import {
 } from "../internal/editorState";
 import { useEditorContext } from "../internal/editorContext";
 import { useFieldEditorContext } from "../internal/fieldEditorContext";
-import { replaceElementChildren } from "../internal/replaceElementChildren";
 
 const TABLE_CELL_MIN_WIDTH = "6rem";
 

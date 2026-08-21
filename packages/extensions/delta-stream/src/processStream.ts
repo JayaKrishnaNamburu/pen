@@ -1,5 +1,4 @@
 import {
-  collectToolExecutionOutput,
   PEN_STREAM_PROTOCOL_VERSION,
   generateId,
   type AppPlacement,
@@ -11,6 +10,7 @@ import {
   type PenStreamPart,
   type Position,
 } from "@input/pen-types";
+import { collectToolExecutionOutput } from "./toolExecution";
 import type { StreamingTarget } from "./streamingTarget";
 import {
   assertToolCanMutateBlock,
@@ -27,7 +27,8 @@ export interface ProcessStreamOptions {
   protocolVersion?: number;
   /**
    * Undo group for every apply in this stream. processStream does not mint
-   * one; if omitted, applies use `{ origin: "ai" }` only (AIB4/AIB5 gap).
+   * one; AI write paths must pass the turn `groupId` (AIB4). If omitted,
+   * applies use `{ origin: "ai" }` only.
    */
   groupId?: string;
 }
@@ -76,6 +77,17 @@ export async function processStream(
     }
 
     options?.onPart?.(part);
+
+    if (!hasStringType(part)) {
+      closeMalformed(
+        editor,
+        streaming,
+        "stream part requires a string type",
+        groupId,
+      );
+      closed = true;
+      continue;
+    }
 
     if (isDataPart(part)) {
       // Data parts are stored by consumers via onPart; they are not document ops.
@@ -647,6 +659,14 @@ function endGeneration(
 
 function emitStreamDiagnostic(editor: Editor, event: DiagnosticEvent): void {
   editor.internals.emit("diagnostic", event);
+}
+
+function hasStringType(part: PenStreamPart): boolean {
+  return (
+    typeof part === "object" &&
+    part !== null &&
+    typeof (part as { type?: unknown }).type === "string"
+  );
 }
 
 function isDataPart(part: PenStreamPart): part is DataPart {

@@ -14,7 +14,8 @@ import { defaultSchema } from "@input/pen-schema-default";
 
 function createEditor(options: Parameters<typeof createCoreEditor>[0] = {}) {
 	return createCoreEditor({
-		schema: defaultSchema,...options,
+		schema: defaultSchema,
+		...options,
 		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
@@ -78,7 +79,9 @@ describe("@input/pen-react DIR2 block content host dir", () => {
 
 		const { container, root } = await renderEditor(editor);
 
-		expect(getBlockHost(container, blockId).getAttribute("dir")).toBe("ltr");
+		expect(getBlockHost(container, blockId).getAttribute("dir")).toBe(
+			"ltr",
+		);
 
 		await cleanupEditor(editor, root, container);
 	});
@@ -96,7 +99,9 @@ describe("@input/pen-react DIR2 block content host dir", () => {
 
 		const { container, root } = await renderEditor(editor);
 
-		expect(getBlockHost(container, blockId).getAttribute("dir")).toBe("rtl");
+		expect(getBlockHost(container, blockId).getAttribute("dir")).toBe(
+			"rtl",
+		);
 
 		await cleanupEditor(editor, root, container);
 	});
@@ -107,7 +112,9 @@ describe("@input/pen-react DIR2 block content host dir", () => {
 
 		const { container, root } = await renderEditor(editor);
 
-		expect(getBlockHost(container, blockId).hasAttribute("dir")).toBe(false);
+		expect(getBlockHost(container, blockId).hasAttribute("dir")).toBe(
+			false,
+		);
 
 		await cleanupEditor(editor, root, container);
 	});
@@ -144,7 +151,9 @@ describe("@input/pen-react DIR2 block content host dir", () => {
 		]);
 
 		const { container, root } = await renderEditor(editor);
-		expect(getBlockHost(container, blockId).getAttribute("dir")).toBe("rtl");
+		expect(getBlockHost(container, blockId).getAttribute("dir")).toBe(
+			"rtl",
+		);
 
 		await act(async () => {
 			editor.apply([
@@ -193,9 +202,15 @@ describe("@input/pen-react DIR2 block content host dir", () => {
 
 		const { container, root } = await renderEditor(editor);
 
-		expect(getBlockHost(container, ltrBlockId).getAttribute("dir")).toBe("ltr");
-		expect(getBlockHost(container, rtlBlockId).getAttribute("dir")).toBe("rtl");
-		expect(getBlockHost(container, autoBlockId).hasAttribute("dir")).toBe(false);
+		expect(getBlockHost(container, ltrBlockId).getAttribute("dir")).toBe(
+			"ltr",
+		);
+		expect(getBlockHost(container, rtlBlockId).getAttribute("dir")).toBe(
+			"rtl",
+		);
+		expect(getBlockHost(container, autoBlockId).hasAttribute("dir")).toBe(
+			false,
+		);
 
 		await cleanupEditor(editor, root, container);
 	});

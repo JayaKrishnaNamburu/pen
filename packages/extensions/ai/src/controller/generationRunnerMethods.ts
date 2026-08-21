@@ -1,6 +1,6 @@
 import { affectedBlockIdsFromSummary } from "@input/pen-core";
 import type { CommitEvent, TextSelection } from "@input/pen-types";
-import { getOpOriginType } from "@input/pen-types";
+import { getOpOriginType } from "@input/pen-core";
 import type { AIControllerMethodHost } from "./aiControllerMethodHost";
 import { executeGeneration } from "./generationExecution";
 import { executeLocalOperation } from "./localOperationExecution";

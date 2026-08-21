@@ -1,10 +1,10 @@
 import { initBlockMap, yjsAdapter } from "@input/pen-crdt-yjs";
-import { createDefaultSchema } from "@input/pen-schema-default";
+import { createDefaultSchema } from "./fixtures/testSchema";
 import type { CRDTDocument, DiagnosticEvent, Editor } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 import * as Y from "yjs";
 
-import { createHeadlessEditor } from "../index";
+import { createHeadlessEditor, mergeSchemas, SchemaRegistryImpl } from "../index";
 
 const noDefaultExtensionsPreset = {
 	resolve() {
@@ -148,6 +148,21 @@ describe("DUR3 unknown-content preservation", () => {
 
 		expect(published.resolve("futureWidget")?.type).toBe("futureWidget");
 		expect(published.allBlocks().some((schema) => schema.type === "futureWidget")).toBe(
+			false,
+		);
+	});
+
+	it("DUR3: mergeSchemas keeps unknown-type passthrough", () => {
+		const merged = mergeSchemas(
+			createDefaultSchema(),
+			new SchemaRegistryImpl({
+				blocks: [],
+				inlines: [],
+			}),
+		);
+
+		expect(merged.resolve("futureWidget")?.type).toBe("futureWidget");
+		expect(merged.allBlocks().some((schema) => schema.type === "futureWidget")).toBe(
 			false,
 		);
 	});

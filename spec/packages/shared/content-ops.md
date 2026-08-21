@@ -13,6 +13,7 @@ This package is a lower-level transformation layer used by higher-level import, 
 - Export map: `.`
 - Block operation helpers such as `blocksToOps()`
 - Import normalization helpers such as `normalizePendingBlocksForImport()`, `filterPendingBlocksForDocumentProfile()`, `createImportResult()`, and diagnostic reporting helpers
+- Block-capability helpers (`getFlowCapabilityFromSchema()`, `shouldExposeBlockInTooling()`, and siblings). Hosts should import these from `@input/pen-core`; content-ops owns the implementation until P.1 drops `core → content-ops`.
 - Markdown parsing entrypoint: `parseMarkdownToBlocks()`
 - Generic write helper: `buildDocumentWriteOps()`
 - Structured target and plan normalization helpers for tooling and AI-oriented write flows

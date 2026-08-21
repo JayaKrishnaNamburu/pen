@@ -9,6 +9,9 @@ import {
 	getAIController,
 	type AICommandBinding,
 } from "@input/pen-ai";
+import { undoExtension } from "@input/pen-undo";
+import { deltaStreamExtension } from "@input/pen-delta-stream";
+import { documentOpsExtension } from "@input/pen-document-ops";
 import { Pen } from "../primitives/index";
 import { defaultSchema } from "@input/pen-schema-default";
 
@@ -34,7 +37,7 @@ function dispatchKey(key: string, target: EventTarget) {
 
 function createCommandMenuEditor() {
 	return createEditor({
-		schema: defaultSchema,extensions: [aiExtension({ author: "tester" })],
+		schema: defaultSchema,extensions: [undoExtension(), deltaStreamExtension(), documentOpsExtension(), aiExtension({ author: "tester" })],
 	});
 }
 

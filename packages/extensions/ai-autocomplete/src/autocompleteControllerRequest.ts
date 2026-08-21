@@ -16,6 +16,10 @@ import {
 	logAutocompleteEvent,
 	previewAutocompleteTextForLog,
 } from "./autocompleteDebug";
+import {
+	buildAutocompleteAIRequest,
+	streamThroughEgress,
+} from "./aiEgress";
 import { AUTOCOMPLETE_REQUEST_MODE } from "./constants";
 import { showSequenceSuggestion } from "./autocompleteControllerContinuation";
 import { buildAutocompleteMessages } from "./promptBuilder";
@@ -85,12 +89,15 @@ export async function runRequest(
 	let text = "";
 	try {
 		logAutocompleteEvent("request model stream opening", { requestId });
-		for await (const event of controller._model.stream({
-			messages,
-			tools: [],
-			signal: abortController.signal,
-			requestMode: AUTOCOMPLETE_REQUEST_MODE,
-		})) {
+		for await (const event of streamThroughEgress(
+			controller._editor,
+			controller._model,
+			buildAutocompleteAIRequest(context, messages),
+			{
+				signal: abortController.signal,
+				requestMode: AUTOCOMPLETE_REQUEST_MODE,
+			},
+		)) {
 			if (!shouldContinueRequest(controller, requestId, context)) {
 				logAutocompleteEvent("request cancelled during stream", {
 					requestId,

@@ -91,7 +91,7 @@ export function parsePenClipboardPayload(raw: unknown): PenClipboardReadResult {
 		);
 	}
 
-	if (!Object.hasOwn(value, "version")) {
+	if (!Object.prototype.hasOwnProperty.call(value, "version")) {
 		if (!Array.isArray(value.blocks)) {
 			return clipboardFallback(
 				"clipboard-invalid-payload",

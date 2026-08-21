@@ -1,83 +1,106 @@
 import { describe, expect, it } from "vitest";
+import {
+	createFacetRegistry,
+	keyBindingPriorityToPrecedence,
+	keymapFacet,
+} from "@input/pen-core";
 import type { KeyBinding } from "@input/pen-types";
 import {
-	richTextShortcutsExtension,
-	shortcutsToKeymapProviders,
 	PEN_KEYMAP_FACET_NAME,
+	shortcutsToKeymapProviders,
 } from "../index";
 
-function binding(key: string): Pick<KeyBinding, "key"> {
-	return { key };
+function binding(
+	key: string,
+	priority?: number,
+	handler: KeyBinding["handler"] = () => false,
+): KeyBinding {
+	return priority === undefined
+		? { key, handler }
+		: { key, priority, handler };
 }
 
 describe("K2 / 4.3 shortcutsToKeymapProviders", () => {
-	it("K2 / 4.3: maps Mod-b/i/u to pen.toggleMark keymap providers", () => {
-		const extension = richTextShortcutsExtension();
-		const providers = shortcutsToKeymapProviders(extension.keyBindings ?? []);
-
-		expect(providers).toEqual([
-			{
-				facetName: PEN_KEYMAP_FACET_NAME,
-				commandName: "pen.toggleMark",
-				mark: "bold",
-				precedence: "default",
-			},
-			{
-				facetName: "pen.keymap",
-				commandName: "pen.toggleMark",
-				mark: "italic",
-				precedence: "default",
-			},
-			{
-				facetName: "pen.keymap",
-				commandName: "pen.toggleMark",
-				mark: "underline",
-				precedence: "default",
-			},
+	it("K2 / 4.3: emits one pen.keymap provider per binding", () => {
+		const providers = shortcutsToKeymapProviders([
+			binding("Mod-b", 100),
+			binding("Mod-i", 100),
+			binding("Mod-u", 100),
 		]);
-	});
-
-	it("K2 / 4.3: leaves Mod-k unmapped", () => {
-		const extension = richTextShortcutsExtension({
-			onToggleLink: () => true,
-		});
-
-		expect(extension.keyBindings?.map((item) => item.key)).toEqual([
-			"Mod-b",
-			"Mod-i",
-			"Mod-u",
-			"Mod-k",
-		]);
-
-		const providers = shortcutsToKeymapProviders(extension.keyBindings ?? []);
 
 		expect(providers).toHaveLength(3);
-		expect(providers.map((provider) => provider.mark)).toEqual([
-			"bold",
-			"italic",
-			"underline",
-		]);
 		expect(
 			providers.every(
 				(provider) =>
-					provider.facetName === "pen.keymap" &&
-					provider.commandName === "pen.toggleMark" &&
-					provider.precedence === "default",
+					provider.facetName === PEN_KEYMAP_FACET_NAME &&
+					provider.precedence === "highest",
 			),
 		).toBe(true);
+	});
+
+	it("K2 / 4.3: maps undeclared priority through the shim default of 300", () => {
+		const providers = shortcutsToKeymapProviders([binding("Mod-k")]);
+
+		expect(providers).toHaveLength(1);
+		expect(providers[0]?.precedence).toBe(
+			keyBindingPriorityToPrecedence(300),
+		);
+		expect(providers[0]?.precedence).toBe("default");
 	});
 
 	it("4.3: maps an empty list to no providers", () => {
 		expect(shortcutsToKeymapProviders([])).toEqual([]);
 	});
+});
 
-	it("4.3: skips unknown keys and a Mod-k-only list", () => {
-		expect(
-			shortcutsToKeymapProviders([
-				binding("Mod-k"),
-				binding("Mod-a"),
-				binding("Shift-Enter"),
-			]),
-		).toEqual([]);
+describe("K1 shortcuts keymap precedence", () => {
+	it("K1: a priority-100 provider wins against an undeclared-priority competitor", () => {
+		let winner: string | null = null;
+		const high = binding("Mod-b", 100, () => {
+			winner = "highest";
+			return true;
+		});
+		const fallback = binding("Mod-b", undefined, () => {
+			winner = "default";
+			return true;
+		});
+
+		const registry = createFacetRegistry({
+			providers: shortcutsToKeymapProviders([fallback, high]),
+		});
+		registry.markReady();
+
+		for (const next of registry.read(keymapFacet)) {
+			if (next.key !== "Mod-b") continue;
+			if (next.handler({} as never, {} as KeyboardEvent)) break;
+		}
+
+		expect(winner).toBe("highest");
+		expect(keyBindingPriorityToPrecedence(100)).toBe("highest");
+		expect(keyBindingPriorityToPrecedence(300)).toBe("default");
+	});
+
+	it("K1: an undeclared-priority provider loses to a priority-100 competitor", () => {
+		let winner: string | null = null;
+		const fallback = binding("Mod-b", undefined, () => {
+			winner = "default";
+			return true;
+		});
+		const high = binding("Mod-b", 100, () => {
+			winner = "highest";
+			return true;
+		});
+
+		const registry = createFacetRegistry({
+			providers: shortcutsToKeymapProviders([fallback, high]),
+		});
+		registry.markReady();
+
+		for (const next of registry.read(keymapFacet)) {
+			if (next.key !== "Mod-b") continue;
+			if (next.handler({} as never, {} as KeyboardEvent)) break;
+		}
+
+		expect(winner).toBe("highest");
 	});
 });

@@ -82,10 +82,20 @@ jobs:
         run: pnpm test
 
   e2e:
+    name: e2e-${{ matrix.engine }}
     needs: changes
     if: ${{ needs.changes.outputs.e2e == 'true' }}
     timeout-minutes: 30
     runs-on: ubuntu-latest
+
+    # chromium blocks the merge. webkit and firefox report only, until their
+    # first fully green run — same staging as the conformance matrix.
+    continue-on-error: ${{ matrix.engine != 'chromium' }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, webkit, firefox]
 
     steps:
       - name: Check out repository
@@ -105,17 +115,17 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install Playwright Chromium
-        run: pnpm exec playwright install --with-deps chromium
+      - name: Install Playwright ${{ matrix.engine }}
+        run: pnpm exec playwright install --with-deps ${{ matrix.engine }}
 
       - name: Run browser end-to-end tests
-        run: pnpm test:e2e
+        run: pnpm exec playwright test --project=${{ matrix.engine }}
 
       - name: Upload Playwright artifacts
         if: ${{ failure() || cancelled() }}
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-artifacts
+          name: playwright-artifacts-${{ matrix.engine }}
           path: |
             playwright-report/
             test-results/

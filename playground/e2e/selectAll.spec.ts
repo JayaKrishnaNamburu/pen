@@ -1,27 +1,33 @@
 import { expect, test } from "@playwright/test";
-import { openPlayground } from "./helpers";
+import {
+	getEditorDocumentSnapshot,
+	openPlayground,
+	seedParagraphs,
+} from "./helpers";
 
 test.beforeEach(async ({ page }) => {
 	await openPlayground(page);
 });
 
 test("selects the full structured document on first cmd+a", async ({ page }) => {
-	const firstInline = page.locator("[data-pen-inline-content]").first();
+	await seedParagraphs(page, ["First", "Second", "Third"]);
 
-	await firstInline.click();
-	await page.keyboard.type("First");
-	await page.keyboard.press("Enter");
-	await page.keyboard.type("Second");
-	await page.keyboard.press("Enter");
-	await page.keyboard.type("Third");
+	const inlines = page.locator("[data-pen-inline-content]");
+	await expect(inlines).toHaveCount(3);
+	await expect(inlines.nth(0)).toHaveText("First");
+	await expect(inlines.nth(1)).toHaveText("Second");
+	await expect(inlines.nth(2)).toHaveText("Third");
 
-	await firstInline.click({ position: { x: 10, y: 10 } });
+	await inlines.first().click({ position: { x: 10, y: 10 } });
+	await expect
+		.poll(async () => (await getEditorDocumentSnapshot(page)).editorSelection?.type)
+		.toBe("text");
 
 	await page.keyboard.press("ControlOrMeta+A");
 
 	await expect
-		.poll(async () => page.evaluate(() => window.getSelection()?.toString() ?? ""))
-		.toMatch(/^First\n+Second\n+Third$/);
+		.poll(async () => (await getEditorDocumentSnapshot(page)).selectedText)
+		.toBe("First\nSecond\nThird");
 });
 
 test("keeps table available in the structured playground slash menu", async ({

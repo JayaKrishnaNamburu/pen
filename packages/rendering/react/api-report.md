@@ -70,6 +70,7 @@
 - useEditor
 - useEditorContext
 - useEditorFocusController
+- useEditorMessage
 - useExtensionState
 - useFieldEditor
 - useFieldEditorContext

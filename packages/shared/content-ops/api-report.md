@@ -10,12 +10,23 @@
 - buildDocumentWriteOps
 - createImportResult
 - filterPendingBlocksForDocumentProfile
+- getBlockSelectionRoleFromSchema
+- getBlockSelectionRoleFromType
+- getFlowCapabilityFromSchema
+- getFlowCapabilityFromType
+- isContinuousTextFlowCapability
 - normalizePendingBlocksForImport
 - normalizePlanRecord
 - normalizePlanSteps
 - parseMarkdownToBlocks
 - reportPendingBlockImportViolations
 - reportPendingBlockProfileViolations
+- shouldAllowDirectBlockPaste
+- shouldAllowFlowInsertionInSlashMenu
+- shouldExposeBlockInTooling
+- shouldFallbackMixedSelectionToBlock
+- shouldForceBlockScopedSelectAll
+- shouldShowBlockInDefaultMenus
 - splitPlainTextLineBlocks
 
 ### value

@@ -158,7 +158,7 @@ export function buildMultiBlockReplacementOperations({
 		normalizedRange.end.offset,
 	);
 	if (endSuffix.length > 0) {
-		const suffixBlock = insertedParagraphBlocks.at(-1);
+		const suffixBlock = insertedParagraphBlocks[insertedParagraphBlocks.length - 1];
 		operations.push({
 			type: "insert-text",
 			blockId: suffixBlock?.blockId ?? normalizedRange.start.blockId,

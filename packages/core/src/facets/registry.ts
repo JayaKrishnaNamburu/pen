@@ -17,6 +17,7 @@ import {
 	settleFacets,
 } from "./compute";
 import {
+	assertCompatibleFacetSpec,
 	defineFacet,
 	getFacetSpec,
 	getProviderRecord,
@@ -170,7 +171,10 @@ function ensureSlot(
 	spec: FacetSlot["spec"],
 ): FacetSlot {
 	const existing = slots.get(name);
-	if (existing) return existing;
+	if (existing) {
+		assertCompatibleFacetSpec(name, existing.spec, spec);
+		return existing;
+	}
 	const slot: FacetSlot = {
 		spec,
 		providers: [],

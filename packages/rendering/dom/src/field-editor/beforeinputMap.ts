@@ -37,6 +37,7 @@ const INSERT_TEXT: BeforeInputCommandMapping = {
 	preventDefault: true,
 };
 
+// policy table: command / allow IME / else block. command rows are implemented by DIRECT_HANDLERS
 export const BEFOREINPUT_MAP: Readonly<
 	Record<string, BeforeInputCommandMapping | BeforeInputAllowPolicy>
 > = {

@@ -6,14 +6,12 @@ import {
 } from "./tableCellClipboard";
 import type { CellSelection, DocumentOp, Editor } from "@input/pen-types";
 import {
+	delegatesToGridEditing,
 	hasIndexedCellSelectionMetadata,
 	resolveCellSelectionCoord,
 	resolveCellSelectionMatrix,
-} from "@input/pen-core";
-import {
-	delegatesToGridEditing,
 	usesInlineTextSelection,
-} from "@input/pen-types";
+} from "@input/pen-core";
 import type { FieldEditorTableNavigationController } from "../field-editor/controller";
 import { getAdjacentVisibleBlockId } from "./parentIdTree";
 

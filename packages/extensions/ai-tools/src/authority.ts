@@ -45,6 +45,7 @@ export interface AIToolTurnOptions {
   readonly allowedMutatingTools?: readonly string[];
   readonly confirm?: AIToolConfirmFn;
   readonly budget?: Partial<AIToolBudgetLimits>;
+  readonly groupId?: string;
 }
 
 export interface AIToolAuthorization {
@@ -67,6 +68,7 @@ export interface AIToolCallDenied {
 export interface AIToolTurn {
   readonly grant: AIToolGrant;
   readonly limits: AIToolBudgetLimits;
+  readonly groupId: string | null;
   readonly calls: number;
   readonly ops: number;
   readonly ended: boolean;
@@ -191,6 +193,7 @@ export function denyAIToolCall(
 class AIToolTurnState implements AIToolTurn {
   readonly grant: AIToolGrant;
   readonly limits: AIToolBudgetLimits;
+  readonly groupId: string | null;
   private _calls = 0;
   private _ops = 0;
   private _opsThisCall = 0;
@@ -210,6 +213,7 @@ class AIToolTurnState implements AIToolTurn {
       maxTotalOpsPerTurn:
         options.budget?.maxTotalOpsPerTurn ?? AI_TOOL_MAX_TOTAL_OPS_PER_TURN,
     };
+    this.groupId = options.groupId ?? null;
   }
 
   get calls(): number {

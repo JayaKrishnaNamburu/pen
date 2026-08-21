@@ -10,7 +10,7 @@ This package sits between `@input/pen-core` and renderer packages. It owns DOM-s
 
 ## Key Exports / Entrypoints
 
-- Export map: `.`, `./field-editor`, `./field-editor/*`, `./constants/selectAll`, `./types/paste`, `./utils/dataAttributes`, `./utils/inlineDecorations`, `./utils/parentIdTree`
+- Export map: `.`, `./field-editor`, `./field-editor/*`, `./constants/selectAll`, `./types/paste`, `./utils/aiDomScope`, `./utils/aiKeyboardScope`, `./utils/autocompleteController`, `./utils/blockDrag`, `./utils/blockSelectionSemantics`, `./utils/cellSelection`, `./utils/clipboardPayload`, `./utils/dataAttributes`, `./utils/editorEmptyState`, `./utils/editorInteractionModel`, `./utils/environment`, `./utils/fieldEditor`, `./utils/fieldEditorTextEntryAttrs`, `./utils/flowCapabilities`, `./utils/inlineAtomDragPreview`, `./utils/inlineAtomSelection`, `./utils/inlineDecorations`, `./utils/inlineInputRule`, `./utils/listInputRule`, `./utils/menuPosition`, `./utils/parentIdTree`, `./utils/placeholderVisibility`, `./utils/pointerSelection`, `./utils/replaceElementChildren`, `./utils/selectionFormation`, `./utils/selectionPlacement`, `./utils/slashMenuPopupAria`, `./utils/suggestionMenuPopupAria`, `./utils/tableDefaults`
 - Root exports such as `FieldEditorImpl`, `FieldEditorSession`, `handleEditorDocumentKeyDown()`, `handleEscapeSelectionTransition()`, `handleTableCellSelectionKeyDown()`, `resolveSelectAllBehavior()`, text-entry routing helpers, and `PasteImporters`
 - Field-editor exports such as `fullReconcileToDOM()`, `applyDeltaToDOM()`, selection bridge helpers, cross-block selection helpers, clipboard handlers, and field-editor store types
 - DOM utility subpaths for renderer packages that need shared data-attribute or decoration helpers

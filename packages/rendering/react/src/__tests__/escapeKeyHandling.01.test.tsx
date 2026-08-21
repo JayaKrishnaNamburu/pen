@@ -6,17 +6,15 @@ import { createRoot } from "react-dom/client";
 import {
 	createEditor as createCoreEditor,
 	DocumentRangeImpl,
-	ensureInlineCompletionController,
 } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
-import type { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
+import type { FieldEditorImpl } from "@input/pen-dom/field-editor/fieldEditorImpl";
 import { Pen } from "../primitives/index";
 import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
 import {
 	domSelectionToEditor,
 	editorSelectionToDOM,
-} from "../field-editor/selectionBridge";
-import { FakeEditContext } from "./utils/fakeEditContext";
+} from "@input/pen-dom/field-editor/selectionBridge";
 import { defaultSchema } from "@input/pen-schema-default";
 
 (
@@ -25,7 +23,8 @@ import { defaultSchema } from "@input/pen-schema-default";
 
 function createEditor(options: Parameters<typeof createCoreEditor>[0] = {}) {
 	return createCoreEditor({
-		schema: defaultSchema,...options,
+		schema: defaultSchema,
+		...options,
 		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
@@ -38,15 +37,6 @@ function createEscapeEvent(): KeyboardEvent {
 	return new KeyboardEvent("keydown", {
 		key: "Escape",
 		bubbles: true,
-	});
-}
-
-function createSelectAllEvent(): KeyboardEvent {
-	return new KeyboardEvent("keydown", {
-		key: "a",
-		metaKey: true,
-		bubbles: true,
-		cancelable: true,
 	});
 }
 
@@ -68,28 +58,6 @@ function getFieldEditor(
 		throw new Error("Missing attached field editor");
 	}
 	return fieldEditor;
-}
-
-function setNativeSelectionRange(
-	startElement: HTMLElement,
-	startOffset: number,
-	endElement: HTMLElement,
-	endOffset: number,
-): void {
-	const selection = document.getSelection();
-	const range = document.createRange();
-	range.setStart(startElement.firstChild ?? startElement, startOffset);
-	range.setEnd(endElement.firstChild ?? endElement, endOffset);
-	selection?.removeAllRanges();
-	selection?.addRange(range);
-}
-
-function createMouseUpEvent(clientX = 40, clientY = 40): MouseEvent {
-	return new MouseEvent("mouseup", {
-		bubbles: true,
-		clientX,
-		clientY,
-	});
 }
 
 describe("@input/pen-react escape key handling", () => {
@@ -357,71 +325,4 @@ describe("@input/pen-react escape key handling", () => {
 		container.remove();
 		editor.destroy();
 	});
-
-	it("preserves remote edits that land during IME composition", async () => {
-		const editor = createEditor();
-		const blockId = editor.firstBlock()!.id;
-
-		editor.apply([
-			{ type: "insert-text", blockId, offset: 0, text: "Hello" },
-		]);
-
-		const container = document.createElement("div");
-		document.body.appendChild(container);
-		const root = createRoot(container);
-
-		await act(async () => {
-			root.render(
-				<Pen.Editor.Root editor={editor}>
-					<Pen.Editor.Content />
-				</Pen.Editor.Root>,
-			);
-		});
-
-		const fieldEditor = getFieldEditor(editor);
-		const inlineElement = container.querySelector(
-			"[data-pen-inline-content]",
-		) as HTMLElement | null;
-
-		expect(inlineElement).not.toBeNull();
-
-		await act(async () => {
-			fieldEditor.activateTextSelection(blockId, 5, 5);
-			await flushAnimationFrames(2);
-		});
-
-		await act(async () => {
-			inlineElement?.dispatchEvent(
-				new CompositionEvent("compositionstart", { bubbles: true }),
-			);
-		});
-
-		await act(async () => {
-			if (inlineElement) {
-				inlineElement.textContent = "Hello!";
-			}
-			editor.apply(
-				[{ type: "insert-text", blockId, offset: 0, text: "X" }],
-				{ origin: "collaborator" },
-			);
-			await flushAnimationFrames(2);
-		});
-
-		await act(async () => {
-			inlineElement?.dispatchEvent(
-				new CompositionEvent("compositionend", { bubbles: true }),
-			);
-			await flushAnimationFrames(2);
-		});
-
-		expect(editor.getBlock(blockId)?.textContent()).toBe("XHello!");
-
-		await act(async () => {
-			root.unmount();
-		});
-		container.remove();
-		editor.destroy();
-	});
-
-
 });

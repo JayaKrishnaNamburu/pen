@@ -5,6 +5,7 @@ import {
 	normalizeToolResultLimit,
 } from "../constants/toolSchemas";
 import { listDocumentBlockHandles } from "../utils/documentContext";
+import { foldAndNormalize, resolveEditorLocale } from "../utils/editorLocale";
 
 export function searchDocumentTool(editor: Editor): ToolDefinition {
 	return {
@@ -46,15 +47,16 @@ export function searchDocumentTool(editor: Editor): ToolDefinition {
 				snippet: string;
 			}> = [];
 
+			const locale = resolveEditorLocale(editor);
 			const searchStr = caseSensitive
 				? query
-				: query.toLowerCase();
+				: foldAndNormalize(query, locale);
 
 			for (const handle of listDocumentBlockHandles(editor)) {
 				const text = handle.textContent({ resolved: true });
 				const compareText = caseSensitive
 					? text
-					: text.toLowerCase();
+					: foldAndNormalize(text, locale);
 				let offset = 0;
 
 				while (results.length < maxResults) {

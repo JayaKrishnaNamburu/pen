@@ -16,9 +16,9 @@ import { defaultPreset } from "@input/pen-preset-default";
 import {
 	handleEditorKeyBindings,
 	handleFieldEditorKeyDown,
-} from "../field-editor/keyHandling";
+} from "@input/pen-dom/field-editor/keyHandling";
 import { resolveShiftClickInlineAtomSelection } from "../primitives/editor/inlineAtomInteraction";
-import type { FieldEditorTextLike } from "../field-editor/crdt";
+import type { FieldEditorTextLike } from "@input/pen-dom/field-editor/crdt";
 import { defaultSchema } from "@input/pen-schema-default";
 
 type BlocksMapLike = {

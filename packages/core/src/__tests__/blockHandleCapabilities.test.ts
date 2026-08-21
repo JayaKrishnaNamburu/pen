@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { TableBlockHandle } from "@input/pen-types";
 import { createEditor } from "../index";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "./fixtures/testSchema";
 
 const noDefaultExtensionsPreset = {
 	resolve() {

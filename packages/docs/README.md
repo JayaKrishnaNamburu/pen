@@ -7,9 +7,23 @@ excluded from changeset versioning.
 The site documents shipped surfaces only. Architecture truth lives in `spec/`
 and `spec-v2/`.
 
-The live set is a stub: home, the collaboration boundary page (COL5), and the
-SSR page (HOST5). That replaces the empty placeholder deploy. It is not the
-full DOC2 content set in `spec-v2/17-documentation.md`.
+The live set is the DOC2 page table in `spec-v2/17-documentation.md`, plus the
+HOST5 SSR page. Hash routes: `#/`, `#/getting-started`, `#/core-concepts`,
+`#/selection`, `#/extensions`, `#/commands`, `#/collaboration`, `#/ai`,
+`#/import-export`, `#/security`, `#/accessibility`, `#/support`,
+`#/localization`, `#/upgrade`, `#/ssr`.
+
+Gates run before the Vite build and again as named steps in
+`.github/workflows/docs.yml`, so a missing page or drifted table fails before
+the Pages artifact is uploaded:
+
+- `scripts/check-doc2-pages.mjs` — required DOC2 pages exist, are registered
+  in `src/App.tsx`, and the old placeholder string is gone
+- `scripts/generate-doc-tables.mjs` — diagnostic, message, export-fidelity,
+  and paste-corpus tables match their sources (check by default; `--write`
+  refreshes)
+- `scripts/check-doc2-samples.mjs` — every `<pre><code>` sample on a docs
+  page type-checks
 
 ## Run
 
@@ -19,13 +33,12 @@ From the repository root, after `pnpm install`:
 pnpm --filter @input/pen-docs dev
 ```
 
-Vite serves the site at `http://localhost:5173`. Hash routes: `#/`,
-`#/collaboration`, `#/ssr`.
+Vite serves the site at `http://localhost:5173`.
 
 ```bash
 pnpm --filter @input/pen-docs build
 pnpm --filter @input/pen-docs preview
 ```
 
-CI builds with `PEN_DOCS_BASE` set to the GitHub Pages path and uploads
-`packages/docs/dist`.
+The docs workflow builds with `PEN_DOCS_BASE` set to the GitHub Pages path
+and uploads `packages/docs/dist` only after the three gates above pass.

@@ -96,7 +96,9 @@ export const markdownImporter = {
 	name: "markdown",
 	mimeType: "text/markdown",
 	parse(input: string, editor: Editor): PendingBlock[] {
-		return parseMarkdownToBlocks(input, editor);
+		const { blocks, report } = parseMarkdownWithReport(input, editor);
+		emitIngestReport(editor, report, "import-markdown");
+		return blocks;
 	},
 
 	import(input: string, editor: Editor, options?: ImportOptions): IngestReport {

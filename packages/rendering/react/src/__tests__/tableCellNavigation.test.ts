@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { createEditor } from "@input/pen-core";
 import { handleTableCellSelectionKeyDown } from "@input/pen-dom";
 import { defaultPreset } from "@input/pen-preset-default";
-import type { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
+import type { FieldEditorImpl } from "@input/pen-dom/field-editor/fieldEditorImpl";
 import { defaultSchema } from "@input/pen-schema-default";
 
 class MockClipboardItem {

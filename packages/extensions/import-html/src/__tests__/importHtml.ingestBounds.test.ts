@@ -6,13 +6,12 @@ import {
 	INGEST_MAX_NESTING_DEPTH,
 	INGEST_MAX_NODE_COUNT,
 	INGEST_MAX_TEXT_SIZE,
+	INGEST_TIME_BUDGET_MS,
 	boundPendingBlocks,
+	capRawHtmlSource,
 	IngestDropCounts,
 } from "../ingestBounds";
-import {
-	htmlImporter,
-	parseHtmlWithReport,
-} from "../importer";
+import { htmlImporter, parseHtmlWithReport } from "../importer";
 
 const noDefaultExtensionsPreset = {
 	resolve() {
@@ -43,11 +42,14 @@ function nestedListHtml(depth: number): string {
 describe("IOP5 HTML ingest bounds", () => {
 	it("IOP5 truncates oversize node count at a block boundary", () => {
 		const drops = new IngestDropCounts();
-		const blocks = Array.from({ length: INGEST_MAX_NODE_COUNT + 3 }, () => ({
-			type: "paragraph",
-			props: {},
-			content: "x",
-		}));
+		const blocks = Array.from(
+			{ length: INGEST_MAX_NODE_COUNT + 3 },
+			() => ({
+				type: "paragraph",
+				props: {},
+				content: "x",
+			}),
+		);
 
 		const kept = boundPendingBlocks(blocks, drops);
 
@@ -57,9 +59,36 @@ describe("IOP5 HTML ingest bounds", () => {
 				reason: "count-exceeded",
 				count: 3,
 				bound: "INGEST_MAX_NODE_COUNT",
+				limit: INGEST_MAX_NODE_COUNT,
+				actual: INGEST_MAX_NODE_COUNT + 3,
 				dropped: "3 blocks",
 			},
 		]);
+	});
+
+	it("IOP5 truncates oversize parsed HTML node count at a block boundary", () => {
+		const editor = createBareEditor();
+		const overflow = 3;
+		const html = Array.from(
+			{ length: INGEST_MAX_NODE_COUNT + overflow },
+			(_, index) => `<p>${index}</p>`,
+		).join("");
+
+		const { blocks, report } = parseHtmlWithReport(html, editor);
+
+		expect(blocks).toHaveLength(INGEST_MAX_NODE_COUNT);
+		expect(report.droppedByReason).toEqual([
+			{
+				reason: "count-exceeded",
+				count: overflow,
+				bound: "INGEST_MAX_NODE_COUNT",
+				limit: INGEST_MAX_NODE_COUNT,
+				actual: INGEST_MAX_NODE_COUNT + overflow,
+				dropped: "3 blocks",
+			},
+		]);
+
+		editor.destroy();
 	});
 
 	it("IOP5 truncates oversize imported text at a block boundary", () => {
@@ -69,17 +98,19 @@ describe("IOP5 HTML ingest bounds", () => {
 
 		const { blocks, report } = parseHtmlWithReport(html, editor);
 
-		expect(blocks.every((block) => (block.content ?? "").includes("y"))).toBe(
-			false,
-		);
-		const textDrop = report.droppedByReason.find(
-			(entry) => entry.reason === "text-size-exceeded",
-		);
-		expect(textDrop).toMatchObject({
-			reason: "text-size-exceeded",
-			bound: "INGEST_MAX_TEXT_SIZE",
-		});
-		expect(textDrop?.count).toBeGreaterThan(0);
+		expect(
+			blocks.every((block) => (block.content ?? "").includes("y")),
+		).toBe(false);
+		expect(report.droppedByReason).toEqual([
+			{
+				reason: "text-size-exceeded",
+				count: `\n<p>${overflow}</p>`.length,
+				bound: "INGEST_MAX_TEXT_SIZE",
+				limit: INGEST_MAX_TEXT_SIZE,
+				actual: html.length,
+				dropped: `${`\n<p>${overflow}</p>`.length} code units`,
+			},
+		]);
 
 		editor.destroy();
 	});
@@ -98,14 +129,16 @@ describe("IOP5 HTML ingest bounds", () => {
 			),
 		);
 		expect(maxIndent).toBe(INGEST_MAX_NESTING_DEPTH - 1);
-		expect(report.droppedByReason).toEqual(
-			expect.arrayContaining([
-				expect.objectContaining({
-					reason: "depth-exceeded",
-					bound: "INGEST_MAX_NESTING_DEPTH",
-				}),
-			]),
-		);
+		expect(report.droppedByReason).toEqual([
+			{
+				reason: "depth-exceeded",
+				count: 2,
+				bound: "INGEST_MAX_NESTING_DEPTH",
+				limit: INGEST_MAX_NESTING_DEPTH,
+				actual: INGEST_MAX_NESTING_DEPTH + 2,
+				dropped: "2 blocks",
+			},
+		]);
 
 		editor.destroy();
 	});
@@ -118,7 +151,8 @@ describe("IOP5 HTML ingest bounds", () => {
 				`<img src="https://example.com/${index}.png" alt="alt ${index}" />`,
 		).join("\n");
 
-		const diagnostics: Array<{ code: string; droppedByReason?: unknown }> = [];
+		const diagnostics: Array<{ code: string; droppedByReason?: unknown }> =
+			[];
 		editor.on("diagnostic", (event) => {
 			diagnostics.push(event);
 		});
@@ -134,6 +168,8 @@ describe("IOP5 HTML ingest bounds", () => {
 				reason: "image-count-exceeded",
 				count: 4,
 				bound: "INGEST_MAX_IMAGE_COUNT",
+				limit: INGEST_MAX_IMAGE_COUNT,
+				actual: INGEST_MAX_IMAGE_COUNT + 4,
 				dropped: "4 images",
 			},
 		]);
@@ -170,6 +206,89 @@ describe("IOP6 HTML ingest report", () => {
 		expect(result.droppedByReason).toHaveLength(1);
 		expect(result.droppedByReason[0]?.reason).toBe("image-count-exceeded");
 		expect(result.droppedByReason[0]?.count).toBe(8);
+		expect(result.droppedByReason[0]?.limit).toBe(INGEST_MAX_IMAGE_COUNT);
+		expect(result.droppedByReason[0]?.actual).toBe(
+			INGEST_MAX_IMAGE_COUNT + 8,
+		);
+
+		editor.destroy();
+	});
+});
+
+describe("IOP5 HTML ingest time budget", () => {
+	it("IOP5 states the clipboard-sibling time budget (not re-recorded tonight)", () => {
+		expect(INGEST_TIME_BUDGET_MS).toBe(1_000);
+	});
+
+	it("IOP5 a 2×-cap source is sliced before parse and reports the actual overflow", () => {
+		const editor = createBareEditor();
+		const keep = "<p>keep</p>\n";
+		const input = `${keep}${"x".repeat(INGEST_MAX_TEXT_SIZE * 2)}`;
+		const preview = new IngestDropCounts();
+		const capped = capRawHtmlSource(input, preview);
+
+		expect(capped.length).toBeLessThanOrEqual(INGEST_MAX_TEXT_SIZE);
+		expect(preview.toDroppedByReason()).toEqual([
+			{
+				reason: "text-size-exceeded",
+				count: input.length - capped.length,
+				bound: "INGEST_MAX_TEXT_SIZE",
+				limit: INGEST_MAX_TEXT_SIZE,
+				actual: input.length,
+				dropped: `${input.length - capped.length} code units`,
+			},
+		]);
+
+		const { blocks, report } = parseHtmlWithReport(input, editor);
+		expect(report.droppedByReason).toEqual(preview.toDroppedByReason());
+		expect(blocks).toEqual([
+			expect.objectContaining({ type: "paragraph", content: "keep" }),
+		]);
+
+		editor.destroy();
+	});
+
+	it("IOP5/IOP6 htmlImporter.parse (paste entry) emits one report naming the bound, limit, and actual", async () => {
+		const editor = createBareEditor();
+		const diagnostics: Array<{
+			code: string;
+			droppedByReason?: unknown;
+			message?: string;
+		}> = [];
+		editor.on("diagnostic", (event) => {
+			diagnostics.push(event);
+		});
+
+		const html = Array.from(
+			{ length: INGEST_MAX_IMAGE_COUNT + 4 },
+			(_, index) =>
+				`<img src="https://example.com/${index}.png" alt="alt ${index}" />`,
+		).join("\n");
+		const parse = htmlImporter.parse;
+		if (!parse) {
+			throw new Error(
+				"htmlImporter.parse is the paste entry point under test",
+			);
+		}
+		const blocks = await parse(html, editor);
+
+		expect(blocks.filter((block) => block.type === "image")).toHaveLength(
+			INGEST_MAX_IMAGE_COUNT,
+		);
+		expect(diagnostics).toHaveLength(1);
+		expect(diagnostics[0]?.code).toBe("import-truncated");
+		expect(diagnostics[0]?.message).toContain("actual 260");
+		expect(diagnostics[0]?.message).toContain("limit 256");
+		expect(diagnostics[0]?.droppedByReason).toEqual([
+			{
+				reason: "image-count-exceeded",
+				count: 4,
+				bound: "INGEST_MAX_IMAGE_COUNT",
+				limit: INGEST_MAX_IMAGE_COUNT,
+				actual: INGEST_MAX_IMAGE_COUNT + 4,
+				dropped: "4 images",
+			},
+		]);
 
 		editor.destroy();
 	});

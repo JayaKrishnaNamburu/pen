@@ -20,6 +20,7 @@ export {
   INGEST_MAX_NESTING_DEPTH,
   INGEST_MAX_NODE_COUNT,
   INGEST_MAX_TEXT_SIZE,
+  INGEST_TIME_BUDGET_MS,
   boundPendingBlocks,
   createIngestReport,
   type IngestDropReason,

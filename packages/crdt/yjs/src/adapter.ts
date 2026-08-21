@@ -24,6 +24,10 @@ import { refreshFormatStamp } from "./formatStamp";
 import type { CRDTDiagnostic, RecoveredMethod } from "./loadDocument";
 import { loadYjsDocument } from "./loadDocument";
 import {
+	documentSizeDiagnosticFields,
+	sampleDocumentSizeIfDue,
+} from "./documentSize";
+import {
 	createYjsSnapshot,
 	forkDocument,
 	mergeDocuments,
@@ -45,6 +49,17 @@ interface YTextItem {
 	content: { getLength(): number };
 	right: YTextItem | null;
 	deleted: boolean;
+}
+
+function maybeEmitDocumentSizeOnCadence(
+	ydoc: Y.Doc,
+	emitDiagnostic: (diagnostic: CRDTDiagnostic) => void,
+): void {
+	const size = sampleDocumentSizeIfDue(ydoc);
+	if (!size) {
+		return;
+	}
+	emitDiagnostic(documentSizeDiagnosticFields(size));
 }
 
 export function yjsAdapter(options?: YjsAdapterOptions): CRDTAdapter {
@@ -78,9 +93,10 @@ export function yjsAdapter(options?: YjsAdapterOptions): CRDTAdapter {
 		},
 
 		applyUpdate(doc, update) {
+			const ydoc = asYjsDoc(doc).ydoc;
 			try {
 				Y.applyUpdate(
-					asYjsDoc(doc).ydoc,
+					ydoc,
 					update,
 					createRemoteUpdateOrigin(),
 				);
@@ -93,6 +109,7 @@ export function yjsAdapter(options?: YjsAdapterOptions): CRDTAdapter {
 					timestamp: Date.now(),
 				});
 			}
+			maybeEmitDocumentSizeOnCadence(ydoc, emitDiagnostic);
 		},
 
 		transact(doc, fn, origin?) {
@@ -101,7 +118,9 @@ export function yjsAdapter(options?: YjsAdapterOptions): CRDTAdapter {
 			if (normalized.diagnostic) {
 				emitDiagnostic(normalized.diagnostic);
 			}
-			asYjsDoc(doc).ydoc.transact(fn, normalized.origin);
+			const ydoc = asYjsDoc(doc).ydoc;
+			ydoc.transact(fn, normalized.origin);
+			maybeEmitDocumentSizeOnCadence(ydoc, emitDiagnostic);
 		},
 
 		observe(doc, callback) {

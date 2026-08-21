@@ -16,7 +16,8 @@ import { defaultSchema } from "@input/pen-schema-default";
 describe("@input/pen-react caret overlay a11y", () => {
 	it("AX7: editor caret overlay is aria-hidden and pointer-events none", async () => {
 		const editor = createEditor({
-			schema: defaultSchema, preset: defaultPreset({
+			schema: defaultSchema,
+			preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,
@@ -52,7 +53,8 @@ describe("@input/pen-react caret overlay a11y", () => {
 
 	it("AX7: multiplayer caret overlay is aria-hidden and pointer-events none", async () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [
+			schema: defaultSchema,
+			extensions: [
 				multiplayerExtension({
 					user: {
 						id: "u1",

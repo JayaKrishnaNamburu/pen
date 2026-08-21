@@ -7,18 +7,22 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@input/pen-core"><img src="https://img.shields.io/npm/v/@input/pen-core?color=0368FF&label=version" alt="npm version" /></a>
-  <img src="https://img.shields.io/github/stars/niceperson/pen?style=flat&color=8D30FF" alt="GitHub stars" />
-  <img src="https://img.shields.io/badge/license-Pen-FF2B6E" alt="license" />
+  <a href="https://github.com/lemni/pen/stargazers"><img src="https://img.shields.io/github/stars/lemni/pen?style=flat&color=8D30FF" alt="GitHub stars" /></a>
+  <a href="LICENSE.md"><img src="https://img.shields.io/badge/license-MIT-FF2B6E" alt="license" /></a>
 </p>
 <!-- markdownlint-enable MD033 MD041 -->
 
 # Pen
 
-Pen is a source-available SDK published as public npm packages. You can evaluate and develop with it freely, but production use requires a commercial license from Input.
+Pen is an MIT-licensed SDK published as public npm packages.
+
+The first release train has not been published (every package is `0.0.1`). Until it is, `pnpm add @input/pen-*` 404s on the public registry. Clone this repository, run `pnpm install` and `pnpm build`, and consume the built workspace artifacts. The commands below are the post-publish install path.
 
 ```bash
-pnpm add @input/pen-core @input/pen-preset-default @input/pen-react
+pnpm add @input/pen-core @input/pen-preset-default @input/pen-react react react-dom
 ```
+
+`react` and `react-dom` are peers of `@input/pen-react`.
 
 ## What Pen Is
 
@@ -359,10 +363,10 @@ pnpm typecheck
 
 ## Authors
 
-Pen is created by [Input](https://www.input.so/).
+Pen is created by [Input B.V.](https://www.input.so/).
 
 ## License
 
-The Pen SDK is provided under the [Pen license](LICENSE.md). You can use the SDK freely in development. Production use requires a license. Contact [input.so](https://www.input.so/) to learn more.
+The Pen SDK is provided under the [MIT License](LICENSE.md).
 
 Copyright (c) 2026-present Input B.V.

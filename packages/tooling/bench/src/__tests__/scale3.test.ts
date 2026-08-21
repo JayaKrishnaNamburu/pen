@@ -15,15 +15,28 @@ import {
 	SCALE3_KEYSTROKE_PEER_COUNT_8_BENCH,
 } from "../constants/benchmarks";
 import {
+	SCALE2_PLUS8_BASE_ID,
+	SCALE2_PLUS8_ID,
+	SCALE2_PLUS8_TOLERANCE_FLOOR_MS,
+	SCALE2_PLUS8_TOLERANCE_RATIO,
 	SCALE3_AXES,
+	SCALE3_AXIS_BENCH_PAIRS,
 	SCALE3_BASELINES,
 	SCALE3_MACHINE_CLASS,
 	SCALE3_PLUS_EXTENSIONS,
 	SCALE3_SHIPPED_STACK,
+	compareScale2Plus8Tolerance,
+	formatScale2Plus8Tolerance,
 	getScale3Baseline,
+	scale2Plus8GateMs,
 } from "../constants/scale3";
 import { createScale3Editor, scale3KeystrokeTarget } from "../fixtures/scale3Stack";
-import { loadBenchWaivers, resolvePackageWaiverFilePath } from "../run";
+import {
+	assertScale2Plus8Tolerance,
+	createBenchSuites,
+	loadBenchWaivers,
+	resolvePackageWaiverFilePath,
+} from "../run";
 import { scale3Benchmarks } from "../suites/scale3.bench";
 
 function slowedScale3Result(id: string, p50Ms: number): BenchResult {
@@ -62,6 +75,33 @@ describe("SCALE3 realistic-stack keystroke", () => {
 		expect(ids).toContain(SCALE3_KEYSTROKE_EXTENSION_COUNT_PLUS8_BENCH.id);
 		expect(ids).toContain(SCALE3_KEYSTROKE_DECORATION_COUNT_256_BENCH.id);
 		expect(ids).toContain(SCALE3_KEYSTROKE_PEER_COUNT_8_BENCH.id);
+
+		expect(scale3Benchmarks.every((bench) => bench.axis != null)).toBe(true);
+		expect(SCALE3_AXIS_BENCH_PAIRS["document-size"]).toEqual([
+			SCALE3_KEYSTROKE_DOCUMENT_SIZE_100_BENCH.id,
+			SCALE3_KEYSTROKE_DOCUMENT_SIZE_1000_BENCH.id,
+		]);
+		expect(SCALE3_AXIS_BENCH_PAIRS["extension-count"][1]).toBe(
+			SCALE3_KEYSTROKE_EXTENSION_COUNT_PLUS8_BENCH.id,
+		);
+		expect(SCALE3_AXIS_BENCH_PAIRS["decoration-count"][1]).toBe(
+			SCALE3_KEYSTROKE_DECORATION_COUNT_256_BENCH.id,
+		);
+		expect(SCALE3_AXIS_BENCH_PAIRS["peer-count"][1]).toBe(
+			SCALE3_KEYSTROKE_PEER_COUNT_8_BENCH.id,
+		);
+	});
+
+	it("SCALE3: older suites do not declare an axis they cannot vary", () => {
+		const suites = createBenchSuites();
+		for (const suite of suites) {
+			if (suite.name === "SCALE3") {
+				continue;
+			}
+			for (const bench of suite.benchmarks) {
+				expect(bench.axis, suite.name).toBeUndefined();
+			}
+		}
 	});
 
 	it("SCALE3: documents the shipped stack as default preset plus no-op extras", () => {
@@ -150,6 +190,45 @@ describe("SCALE3 realistic-stack keystroke", () => {
 
 		expect(evaluateBenchResult(atGate).meetsTarget).toBe(true);
 		expect(getCriticalBenchFailures([atGate])).toEqual([]);
+	});
+
+	it("SCALE2: eight no-op decorating extensions stay within the same-run tolerance", () => {
+		expect(SCALE2_PLUS8_BASE_ID).toBe(
+			"scale3.keystroke.realistic-stack.document-size.1000",
+		);
+		expect(SCALE2_PLUS8_ID).toBe(
+			"scale3.keystroke.realistic-stack.extension-count.plus8",
+		);
+		expect(SCALE2_PLUS8_TOLERANCE_RATIO).toBe(2);
+		expect(SCALE2_PLUS8_TOLERANCE_FLOOR_MS).toBe(15);
+		expect(scale2Plus8GateMs(3.76)).toBe(18.76);
+
+		const base = getScale3Baseline(SCALE2_PLUS8_BASE_ID);
+		const plus8 = getScale3Baseline(SCALE2_PLUS8_ID);
+		const committed = compareScale2Plus8Tolerance(
+			plus8.measuredP50Ms,
+			base.measuredP50Ms,
+		);
+		expect(committed.ok).toBe(true);
+		expect(formatScale2Plus8Tolerance(committed)).toMatch(/within tolerance/);
+
+		assertScale2Plus8Tolerance([
+			slowedScale3Result(SCALE2_PLUS8_BASE_ID, base.measuredP50Ms),
+			slowedScale3Result(SCALE2_PLUS8_ID, committed.gateP50Ms),
+		]);
+
+		const over = compareScale2Plus8Tolerance(
+			committed.gateP50Ms + 0.01,
+			base.measuredP50Ms,
+		);
+		expect(over.ok).toBe(false);
+		expect(formatScale2Plus8Tolerance(over)).toMatch(/plus8/);
+		expect(() =>
+			assertScale2Plus8Tolerance([
+				slowedScale3Result(SCALE2_PLUS8_BASE_ID, base.measuredP50Ms),
+				slowedScale3Result(SCALE2_PLUS8_ID, committed.gateP50Ms + 0.01),
+			]),
+		).toThrow(/SCALE2 plus8 decorating extensions exceeded tolerance/);
 	});
 
 	it("SCALE3: waiver file is committed in the bench package", async () => {

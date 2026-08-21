@@ -1,8 +1,6 @@
+import { usesInlineTextSelection } from "@input/pen-core";
 import type { Editor, KeyBindingContext } from "@input/pen-types";
-import {
-	COLLECT_KEY_BINDINGS_SLOT_KEY,
-	usesInlineTextSelection,
-} from "@input/pen-types";
+import { COLLECT_KEY_BINDINGS_SLOT_KEY } from "@input/pen-types";
 import { getEditorBlockSelectionLength } from "../utils/blockSelectionSemantics";
 
 export function tryHandleHistoryOverrideBinding(

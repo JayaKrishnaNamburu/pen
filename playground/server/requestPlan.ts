@@ -1,8 +1,4 @@
 import { AUTOCOMPLETE_SYSTEM_PROMPT } from "@input/pen-ai-autocomplete";
-import {
-	buildPlaygroundRequestPlan as buildSharedPlaygroundRequestPlan,
-	buildPromptContext as buildSharedPromptContext,
-} from "@input/pen-ai";
 import type { Editor, ModelRequestedOperation } from "@input/pen-types";
 import {
 	PLAYGROUND_AUTOCOMPLETE_OUTPUT_TOKEN_CAP,
@@ -19,17 +15,17 @@ import {
 	PLAYGROUND_SELECTION_TRANSLATE_OUTPUT_TOKENS,
 	PLAYGROUND_STRUCTURED_PLANNER_SYSTEM_PROMPT,
 } from "./config";
+import {
+	buildPlaygroundRequestPlan as buildConfiguredPlaygroundRequestPlan,
+	buildPromptContext as buildPlannerPromptContext,
+} from "./playgroundPlanner";
 import type {
 	AISuggestionRequestScope,
-	BuildSharedPlaygroundRequestPlan,
 	PlaygroundRequestMode,
 	PlaygroundRequestPlan,
 	PlaygroundRequestedMode,
 	PromptContextEnvelope,
 } from "./types";
-
-const buildTypedSharedPlaygroundRequestPlan =
-	buildSharedPlaygroundRequestPlan as BuildSharedPlaygroundRequestPlan;
 
 export function buildPlaygroundRequestPlan(
 	editor: Editor,
@@ -37,7 +33,7 @@ export function buildPlaygroundRequestPlan(
 	requestedMode: PlaygroundRequestMode | null,
 	requestedOperation: ModelRequestedOperation | null,
 ): PlaygroundRequestPlan {
-	return buildTypedSharedPlaygroundRequestPlan(
+	return buildConfiguredPlaygroundRequestPlan(
 		editor,
 		prompt,
 		{
@@ -132,5 +128,5 @@ export function resolveUsageTokenValue(
 }
 
 export function buildPromptContext(editor: Editor): PromptContextEnvelope {
-	return buildSharedPromptContext(editor);
+	return buildPlannerPromptContext(editor);
 }

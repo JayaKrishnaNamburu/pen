@@ -9,6 +9,7 @@ import type {
 	AIWorkingSetEnvelope,
 	GenerationState,
 } from "../types";
+import { aiGroupedApplyOptions } from "../helpers";
 import type { AIControllerMethodHost } from "./aiControllerMethodHost";
 
 export const bufferedBlockGenerationMethods = {
@@ -118,7 +119,10 @@ export const bufferedBlockGenerationMethods = {
 					transportKind: "flow-text",
 				});
 			}
-			this._editor.apply(ops, { origin: "ai", undoGroup: true });
+			this._editor.apply(
+				ops,
+				aiGroupedApplyOptions(this._state.activeGeneration?.undoGroupId),
+			);
 			this._recordFastApplyDebug({
 				executionPath: "scoped-replacement",
 				fallback: scopedReplacementFallback,
@@ -215,7 +219,10 @@ export const bufferedBlockGenerationMethods = {
 				transportKind: "flow-text",
 			});
 		}
-		this._editor.apply(ops, { origin: "ai", undoGroup: true });
+		this._editor.apply(
+			ops,
+			aiGroupedApplyOptions(this._state.activeGeneration?.undoGroupId),
+		);
 		if (fastApplyFallbackMode) {
 			this._recordFastApplyDebug({
 				executionPath: "plain-markdown",

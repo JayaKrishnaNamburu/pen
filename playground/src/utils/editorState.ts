@@ -1,4 +1,4 @@
-import type { BlockHandle, Editor } from "@input/pen-types";
+import type { BlockHandle, Editor, TableColumnSchema } from "@input/pen-types";
 import { getAttachedFieldEditorStore } from "@input/pen-react";
 
 interface SerializedTableCell {
@@ -17,7 +17,7 @@ interface SerializedTableRow {
 interface SerializedTableContent {
 	columnCount: number;
 	rowCount: number;
-	columns: ReturnType<BlockHandle["tableColumns"]>;
+	columns: readonly TableColumnSchema[];
 	rows: SerializedTableRow[];
 }
 
@@ -88,17 +88,23 @@ function serializeBlock(block: BlockHandle): SerializedBlock {
 }
 
 function serializeTableContent(block: BlockHandle): SerializedTableContent | null {
-	const columns = block.tableColumns();
-	const rowCount = block.tableRowCount();
+	const table = block.as("table");
+
+	if (!table) {
+		return null;
+	}
+
+	const columns = table.tableColumns();
+	const rowCount = table.tableRowCount();
 
 	if (columns.length === 0 && rowCount === 0) {
 		return null;
 	}
 
 	const rows = Array.from({ length: rowCount }, (_, rowIndex) => {
-		const row = block.tableRow(rowIndex);
-		const cells = Array.from({ length: Math.max(columns.length, block.tableColumnCount()) }, (_, colIndex) => {
-			const cell = block.tableCell(rowIndex, colIndex);
+		const row = table.tableRow(rowIndex);
+		const cells = Array.from({ length: Math.max(columns.length, table.tableColumnCount()) }, (_, colIndex) => {
+			const cell = table.tableCell(rowIndex, colIndex);
 
 			return {
 				id: cell?.id ?? `${block.id}:${rowIndex}:${colIndex}`,
@@ -116,7 +122,7 @@ function serializeTableContent(block: BlockHandle): SerializedTableContent | nul
 	});
 
 	return {
-		columnCount: Math.max(columns.length, block.tableColumnCount()),
+		columnCount: Math.max(columns.length, table.tableColumnCount()),
 		rowCount,
 		columns,
 		rows,

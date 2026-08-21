@@ -1,6 +1,7 @@
 import type { DocumentOp } from "@input/pen-types";
 import { expect, test, type Page } from "@playwright/test";
 import { analyzeEditorWcag22Aa, formatAxeViolations } from "./axeSurface";
+import { formatCheckReport } from "./checkReport";
 import { getInlineOffsetPoint, resolveBlockId } from "./domGeometry";
 import {
 	assertDomAuthorityResult,
@@ -9,6 +10,8 @@ import {
 } from "./standingAssertions";
 import type {
 	DragTextArgs,
+	GeometryPoint,
+	GeometryPointRef,
 	RemoteSpliceArgs,
 	ScenarioApi,
 	SelectionEqualsArgs,
@@ -17,9 +20,22 @@ import type {
 export function scenario(
 	name: string,
 	fn: (s: ScenarioApi, page: Page) => Promise<void>,
-	options?: { url?: string; axe?: boolean },
+	options?: {
+		url?: string;
+		axe?: boolean;
+		emulateMedia?: {
+			reducedMotion?: "reduce" | "no-preference";
+		};
+		initScript?: () => void;
+	},
 ): void {
 	test(name, async ({ page }) => {
+		if (options?.initScript) {
+			await page.addInitScript(options.initScript);
+		}
+		if (options?.emulateMedia) {
+			await page.emulateMedia(options.emulateMedia);
+		}
 		await page.goto(options?.url ?? "/");
 		await expect(
 			page.locator("[data-pen-inline-content]").first(),
@@ -31,7 +47,7 @@ export function scenario(
 		const results = await analyzeEditorWcag22Aa(page);
 		expect(
 			results.violations,
-			formatAxeViolations(results.violations),
+			formatAxeViolations(results.violations, "standing: axe WCAG 2.2 AA"),
 		).toEqual([]);
 	});
 }
@@ -87,6 +103,13 @@ function createScenario(page: Page): ScenarioApi {
 				await page.evaluate((documentOps) => {
 					window.__penConformance.apply(documentOps);
 				}, ops);
+			});
+		},
+		async applyAiRangeReplacement(args) {
+			await step(async () => {
+				await page.evaluate((replacement) => {
+					window.__penConformance.applyAiRangeReplacement(replacement);
+				}, args);
 			});
 		},
 		async applyToolPayloads(payloadsJson: string) {
@@ -158,6 +181,13 @@ function createScenario(page: Page): ScenarioApi {
 					}, args);
 				});
 			},
+			async injectPresence(peers) {
+				return step(async () => {
+					return page.evaluate((presence) => {
+						return window.__penConformance.injectPresence(presence);
+					}, peers);
+				});
+			},
 		},
 		expectDiagnostic(code) {
 			expectedDiagnostics.add(code);
@@ -171,6 +201,47 @@ function createScenario(page: Page): ScenarioApi {
 				},
 				{ skipStanding: true },
 			);
+		},
+		geometry: {
+			async blocks() {
+				return page.evaluate(() => window.__penConformance.geometryBlocks());
+			},
+			async lineBoxes(blockId: string) {
+				return page.evaluate(
+					(id) => window.__penConformance.geometryLineBoxes(id),
+					blockId,
+				);
+			},
+			async invalidate() {
+				await page.evaluate(() => {
+					window.__penConformance.invalidateGeometry();
+				});
+			},
+			async warm(points: readonly GeometryPointRef[]) {
+				await page.evaluate((caretPoints) => {
+					window.__penConformance.warmCaretCache(caretPoints);
+				}, points);
+			},
+			async compare(points: readonly GeometryPointRef[]) {
+				return page.evaluate((caretPoints) => {
+					return window.__penConformance.compareCaretCache(caretPoints);
+				}, points);
+			},
+			async verticalMotion(args: {
+				situation: string;
+				from: GeometryPoint;
+				direction: "up" | "down";
+				goalX?: number | null;
+			}) {
+				return page.evaluate((motion) => {
+					return window.__penConformance.verticalMotion(motion);
+				}, args);
+			},
+			async flushEightRemoteCarets(points: readonly GeometryPoint[]) {
+				return page.evaluate((carets) => {
+					return window.__penConformance.flushEightRemoteCarets(carets);
+				}, points);
+			},
 		},
 		assert: {
 			async selectionEquals(expected: SelectionEqualsArgs) {
@@ -212,19 +283,49 @@ function createScenario(page: Page): ScenarioApi {
 				const scan = await page.evaluate(() =>
 					window.__penConformance.scanHostileDom(),
 				);
-				expect(scan.probeTripped, "window.__xssProbe was called").toBe(false);
-				expect(scan.javascriptUrls, "javascript: reached a URL attribute").toEqual(
-					[],
-				);
+				expect(
+					scan.probeTripped,
+					formatCheckReport(
+						"corpusSafe: xss probe",
+						scan.probeTripped ? "failed" : "passed",
+						scan.probeTripped ? "window.__xssProbe was called" : undefined,
+					),
+				).toBe(false);
+				expect(
+					scan.javascriptUrls,
+					formatCheckReport(
+						"corpusSafe: javascript URLs",
+						scan.javascriptUrls.length > 0 ? "failed" : "passed",
+						scan.javascriptUrls.length > 0
+							? "javascript: reached a URL attribute"
+							: undefined,
+					),
+				).toEqual([]);
 				if (options?.requireBlockedUrl) {
-					expect(scan.blockedUrlCount).toBeGreaterThan(0);
+					expect(
+						scan.blockedUrlCount,
+						formatCheckReport(
+							"corpusSafe: blocked URL",
+							scan.blockedUrlCount > 0 ? "passed" : "failed",
+							scan.blockedUrlCount > 0
+								? undefined
+								: "expected at least one blocked URL",
+						),
+					).toBeGreaterThan(0);
 				}
 			},
 			async xssProbeNotTripped() {
 				const scan = await page.evaluate(() =>
 					window.__penConformance.scanHostileDom(),
 				);
-				expect(scan.probeTripped, "window.__xssProbe was called").toBe(false);
+				expect(
+					scan.probeTripped,
+					formatCheckReport(
+						"xss probe",
+						scan.probeTripped ? "failed" : "passed",
+						scan.probeTripped ? "window.__xssProbe was called" : undefined,
+					),
+				).toBe(false);
 			},
 			async focusInsideEditor() {
 				const inside = await page.evaluate(() => {
@@ -236,7 +337,14 @@ function createScenario(page: Page): ScenarioApi {
 						root.contains(active)
 					);
 				});
-				expect(inside, "focus left the editor surface").toBe(true);
+				expect(
+					inside,
+					formatCheckReport(
+						"focus inside editor",
+						inside ? "passed" : "failed",
+						inside ? undefined : "focus left the editor surface",
+					),
+				).toBe(true);
 			},
 		},
 	};

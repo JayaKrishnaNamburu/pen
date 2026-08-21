@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
 import { createEditor as createCoreEditor } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
-import type { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
+import type { FieldEditorImpl } from "@input/pen-dom/field-editor/fieldEditorImpl";
 import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
 import { Pen } from "../primitives/index";
 import { defaultSchema } from "@input/pen-schema-default";
@@ -16,7 +16,8 @@ import { defaultSchema } from "@input/pen-schema-default";
 
 function createEditor(options: Parameters<typeof createCoreEditor>[0] = {}) {
 	return createCoreEditor({
-		schema: defaultSchema,...options,
+		schema: defaultSchema,
+		...options,
 		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
@@ -64,7 +65,9 @@ async function cleanupEditor(
 	editor.destroy();
 }
 
-function getFieldEditor(editor: ReturnType<typeof createEditor>): FieldEditorImpl {
+function getFieldEditor(
+	editor: ReturnType<typeof createEditor>,
+): FieldEditorImpl {
 	const fieldEditor = editor.internals.getSlot<FieldEditorImpl>(
 		FIELD_EDITOR_SLOT_KEY,
 	);
@@ -193,7 +196,12 @@ describe("@input/pen-react text entry surface semantics", () => {
 		const secondBlockId = "semantic-expanded-second";
 
 		editor.apply([
-			{ type: "insert-text", blockId: firstBlockId, offset: 0, text: "Hello" },
+			{
+				type: "insert-text",
+				blockId: firstBlockId,
+				offset: 0,
+				text: "Hello",
+			},
 			{
 				type: "insert-block",
 				blockId: secondBlockId,
@@ -201,7 +209,12 @@ describe("@input/pen-react text entry surface semantics", () => {
 				props: {},
 				position: { after: firstBlockId },
 			},
-			{ type: "insert-text", blockId: secondBlockId, offset: 0, text: "World" },
+			{
+				type: "insert-text",
+				blockId: secondBlockId,
+				offset: 0,
+				text: "World",
+			},
 		]);
 
 		const { container, root } = await renderEditor(editor);

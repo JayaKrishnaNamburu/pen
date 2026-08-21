@@ -4,24 +4,9 @@ export * from "./types/index";
 // Runtime
 export { generateId } from "./utils/generateId";
 export {
-	isScopedSelectionTarget,
-	renderSelectionTargetBlockText,
-	renderSelectionTargetText,
-	resolveSelectionTargetBlockIds,
-} from "./utils/operationSelectionTargets";
-export {
-  getBlockSelectionRoleFromSchema,
-  getBlockSelectionRoleFromType,
-  getFlowCapabilityFromSchema,
-  getFlowCapabilityFromType,
-  isContinuousTextFlowCapability,
-  shouldAllowDirectBlockPaste,
-  shouldAllowFlowInsertionInSlashMenu,
-  shouldExposeBlockInTooling,
-  shouldShowBlockInDefaultMenus,
-  shouldFallbackMixedSelectionToBlock,
-  shouldForceBlockScopedSelectAll,
-} from "./utils/blockCapabilities";
+	EMPTY_BLOCK_SENTINEL,
+	logicalTextFromStored,
+} from "./utils/logicalText";
 export {
 	FIELD_EDITOR_SLOT_KEY,
 	COLLECT_KEY_BINDINGS_SLOT_KEY,
@@ -29,19 +14,17 @@ export {
 	INPUT_RULES_ENGINE_SLOT_KEY,
 	UNDO_HISTORY_RESTORE_SLOT_KEY,
 	UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY,
-  INLINE_COMPLETION_SLOT,
-  AI_CONTROLLER_SLOT,
-  AI_INLINE_COMPLETION_SLOT,
-  AI_INLINE_HISTORY_SLOT,
-  AI_REVIEW_CONTROLLER_SLOT,
-  AI_AUTOCOMPLETE_CONTROLLER_SLOT,
-  AI_SUGGESTIONS_CONTROLLER_SLOT,
-  SEARCH_CONTROLLER_SLOT,
-  MULTIPLAYER_CONTROLLER_SLOT,
-  HISTORY_CONTROLLER_SLOT,
+	INLINE_COMPLETION_SLOT,
+	AI_CONTROLLER_SLOT,
+	AI_INLINE_COMPLETION_SLOT,
+	AI_INLINE_HISTORY_SLOT,
+	AI_REVIEW_CONTROLLER_SLOT,
+	AI_AUTOCOMPLETE_CONTROLLER_SLOT,
+	AI_SUGGESTIONS_CONTROLLER_SLOT,
+	SEARCH_CONTROLLER_SLOT,
+	MULTIPLAYER_CONTROLLER_SLOT,
+	HISTORY_CONTROLLER_SLOT,
 	ANNOUNCER_SLOT_KEY,
 	HISTORY_ORIGIN_TAG,
 } from "./constants/slots";
-export {
-	INLINE_COMPLETION_VISIBLE_BLOCK_ATTRIBUTE,
-} from "./constants/decorations";
+export { INLINE_COMPLETION_VISIBLE_BLOCK_ATTRIBUTE } from "./constants/decorations";

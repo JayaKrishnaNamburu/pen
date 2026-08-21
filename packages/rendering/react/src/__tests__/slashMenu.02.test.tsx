@@ -26,7 +26,8 @@ function createSlashMenuEditor(
 	options: Parameters<typeof createEditor>[0] = {},
 ) {
 	return createEditor({
-		schema: defaultSchema,...options,
+		schema: defaultSchema,
+		...options,
 		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
@@ -201,5 +202,4 @@ describe("@input/pen-react slash menu", () => {
 		container.remove();
 		editor.destroy();
 	});
-
 });

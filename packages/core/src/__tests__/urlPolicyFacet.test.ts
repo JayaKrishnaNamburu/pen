@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import { getFacetSpec } from "../facets/defineFacet";
-import { urlPolicyFacet, type UrlPolicy } from "../facets/urlPolicyFacet";
+import { urlPolicyFacet } from "../facets/urlPolicyFacet";
 import { createFacetRegistry } from "../index";
+import type { UrlPolicy } from "../security/urlPolicy";
 
 function policy(id: string): UrlPolicy {
 	return {

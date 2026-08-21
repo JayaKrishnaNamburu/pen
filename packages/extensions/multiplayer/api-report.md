@@ -12,6 +12,7 @@
 
 ### function
 
+- asPresenceDisplayHint
 - assignMultiplayerColor
 - getMultiplayerController
 - multiplayerExtension
@@ -46,6 +47,7 @@
 - MultiplayerState
 - MultiplayerUser
 - PeerState
+- PresenceDisplayHint
 - PresenceRejectionReason
 - RemoteCursorState
 - RemoteSelectionState

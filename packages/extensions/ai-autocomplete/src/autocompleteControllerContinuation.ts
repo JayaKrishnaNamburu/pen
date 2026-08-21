@@ -11,6 +11,10 @@ import {
 	logAutocompleteEvent,
 	previewAutocompleteTextForLog,
 } from "./autocompleteDebug";
+import {
+	buildAutocompleteAIRequest,
+	streamThroughEgress,
+} from "./aiEgress";
 import { AUTOCOMPLETE_REQUEST_MODE } from "./constants";
 import { buildAutocompleteMessages } from "./promptBuilder";
 import { createAutocompleteStructuredCandidate } from "./structuredCandidate";
@@ -104,12 +108,15 @@ export async function runPrefetchRequest(
 
 	let text = "";
 	try {
-		for await (const event of controller._model.stream({
-			messages,
-			tools: [],
-			signal: abortController.signal,
-			requestMode: AUTOCOMPLETE_REQUEST_MODE,
-		})) {
+		for await (const event of streamThroughEgress(
+			controller._editor,
+			controller._model,
+			buildAutocompleteAIRequest(context, messages),
+			{
+				signal: abortController.signal,
+				requestMode: AUTOCOMPLETE_REQUEST_MODE,
+			},
+		)) {
 			if (abortController.signal.aborted) {
 				return;
 			}

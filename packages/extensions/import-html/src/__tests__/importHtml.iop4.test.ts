@@ -1,5 +1,9 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
-import { createEditor } from "@input/pen-core";
+import {
+	assetProviderFacet,
+	createEditor,
+	defineExtension,
+} from "@input/pen-core";
 import type { AssetProvider, DiagnosticEvent } from "@input/pen-types";
 import { createDefaultSchema } from "@input/pen-schema-default";
 import { htmlImporter } from "../importer";
@@ -17,14 +21,18 @@ const noDefaultExtensionsPreset = {
 const defaultRegistry = createDefaultSchema();
 
 function editorWithProvider(provider?: AssetProvider) {
-	const editor = createEditor({
+	return createEditor({
 		schema: defaultRegistry,
 		preset: noDefaultExtensionsPreset,
+		extensions: provider
+			? [
+					defineExtension({
+						name: "test-assets",
+						facets: [assetProviderFacet.of(provider)],
+					}),
+				]
+			: [],
 	});
-	if (provider) {
-		editor.internals.setSlot("paste:assetProvider", provider);
-	}
-	return editor;
 }
 
 function stubProvider(overrides: Partial<AssetProvider> = {}) {
@@ -90,7 +98,7 @@ describe("IOP4 HTML img src policy", () => {
 		editor.destroy();
 	});
 
-	it("IOP4 ingest setting routes remote img src through the asset provider", async () => {
+	it("IOP4 API10 ingest setting routes remote img src through the asset provider", async () => {
 		const { provider, upload } = stubProvider();
 		const editor = editorWithProvider(provider);
 		const remote = "https://cdn.example/ingest.png";
@@ -117,7 +125,43 @@ describe("IOP4 HTML img src policy", () => {
 		editor.destroy();
 	});
 
-	it("IOP4 ingest failure emits asset-upload-failed and inserts no image block", async () => {
+	it("IOP4 API10 ingest oversize emits asset-upload-failed naming the limit and actual size", async () => {
+		const { provider, upload } = stubProvider({ maxSize: 2 });
+		const editor = editorWithProvider(provider);
+		const diagnostics: DiagnosticEvent[] = [];
+		editor.on("diagnostic", (event) => {
+			diagnostics.push(event);
+		});
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async () =>
+				new Response(new Uint8Array([1, 2, 3, 4]), {
+					headers: { "content-type": "image/png" },
+				}),
+			),
+		);
+
+		await htmlImporter.import(
+			'<img src="https://cdn.example/big.png" alt="remote" />',
+			editor,
+			{ imageSrc: "ingest" },
+		);
+
+		expect(upload).not.toHaveBeenCalled();
+		expect([...editor.blocks("image")]).toHaveLength(0);
+		expect(diagnostics).toHaveLength(1);
+		expect(diagnostics[0]).toMatchObject({
+			code: "asset-upload-failed",
+			reason: "oversize",
+			size: 4,
+			maxSize: 2,
+		});
+		expect(diagnostics[0]?.message).toContain("4");
+		expect(diagnostics[0]?.message).toContain("2");
+		editor.destroy();
+	});
+
+	it("IOP4 API10 ingest failure emits asset-upload-failed and inserts no image block", async () => {
 		const { provider } = stubProvider({
 			upload: vi.fn().mockRejectedValue(new Error("cdn denied")),
 		});
@@ -147,8 +191,11 @@ describe("IOP4 HTML img src policy", () => {
 			code: "asset-upload-failed",
 			level: "error",
 			source: "import-html",
+			reason: "provider",
+			size: 4,
 		});
 		expect(diagnostics[0]?.message).toContain("cdn denied");
+		expect(diagnostics[0]?.message).toContain("4");
 		editor.destroy();
 	});
 });

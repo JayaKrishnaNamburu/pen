@@ -19,7 +19,7 @@ export {
   isDestructiveAITool,
   isMutatingAITool,
 } from "./authority";
-export { collectToolExecutionOutput as collectAIToolOutput } from "@input/pen-types";
+export { collectToolExecutionOutput as collectAIToolOutput } from "@input/pen-core";
 export type { AIToolDescriptor, AIToolRuntime } from "./types";
 export type {
   AIToolAuthorityReason,

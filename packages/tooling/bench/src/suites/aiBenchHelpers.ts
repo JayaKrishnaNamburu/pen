@@ -6,6 +6,8 @@ import { FIELD_EDITOR_SLOT_KEY,
 } from "@input/pen-types";
 import { defineExtension } from "@input/pen-core";
 import { aiExtension } from "@input/pen-ai";
+import { deltaStreamExtension } from "@input/pen-delta-stream";
+import { undoExtension } from "@input/pen-undo";
 import {
 	autocompleteExtension,
 	createAutocompleteProvider,
@@ -14,7 +16,10 @@ import {
 import type { AutocompleteContextProvider } from "@input/pen-ai-autocomplete";
 import { createTestEditor } from "@input/pen-test";
 import type { ToolRuntime } from "@input/pen-types";
-import { buildDocumentWriteOps } from "@input/pen-document-ops";
+import {
+	buildDocumentWriteOps,
+	documentOpsExtension,
+} from "@input/pen-document-ops";
 
 export const AI_BENCH_BLOCK_COUNT = 200;
 export const AI_RANGE_START_BLOCK_ID = "block-90";
@@ -28,6 +33,7 @@ export function createAIBenchEditor() {
 				`Benchmark block ${index}. ` +
 				"This is representative playground context for AI read latency measurement.",
 		})),
+		extensions: [documentOpsExtension()],
 	});
 	const targetBlockId = AI_RANGE_START_BLOCK_ID;
 	editor.selectTextRange(
@@ -55,8 +61,12 @@ export function createAutocompleteCancelChurnBenchEditor() {
 		isComposing: false,
 		activeCellCoord: null,
 	};
-	const editor = createEditor({
+	const editor = createTestEditor({
+		blocks: [{ id: "bench-first-block", type: "paragraph", content: "" }],
 		extensions: [
+			undoExtension(),
+			deltaStreamExtension(),
+			documentOpsExtension(),
 			aiExtension(),
 			autocompleteExtension({
 				debounceMs: 10,
@@ -258,8 +268,12 @@ export function createAutocompleteBenchEditor(input: {
 		isComposing: false,
 		activeCellCoord: null,
 	};
-	const editor = createEditor({
+	const editor = createTestEditor({
+		blocks: [{ id: "bench-first-block", type: "paragraph", content: "" }],
 		extensions: [
+			undoExtension(),
+			deltaStreamExtension(),
+			documentOpsExtension(),
 			aiExtension(),
 			autocompleteExtension({
 				debounceMs: input.debounceMs,

@@ -93,6 +93,11 @@ async function lintPublishedPackages(packages) {
   return failed;
 }
 
+// Pen resolves under node16 and bundler, not node10. Every package declares
+// `engines.node: ">=22"` and ships an exports map with first-class subpaths
+// (API6); a node10 resolver cannot read exports maps at all, so each subpath
+// would need a duplicated `typesVersions` entry that no gate keeps in sync.
+// The root entry still resolves under node10 — only subpaths do not.
 async function checkPublishedPackageTypes(packages) {
   let failed = false;
 
@@ -101,7 +106,7 @@ async function checkPublishedPackageTypes(packages) {
     const ok = runPackageTool({
       localBin: "attw",
       dlxSpec: "@arethetypeswrong/cli",
-      args: ["--pack", pkg.dir],
+      args: ["--pack", pkg.dir, "--profile", "node16"],
       cwd: repoRoot,
     });
     if (!ok) {

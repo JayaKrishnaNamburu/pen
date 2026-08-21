@@ -4,7 +4,7 @@ import { DECORATION_OMIT_FROM_RENDER_ATTRIBUTE } from "@input/pen-types";
 const INLINE_DECORATION_ATTRIBUTE_KEY = "__penInlineDecoration";
 const VIRTUAL_INLINE_DECORATION_ATTRIBUTE = "data-pen-virtual-inline";
 
-interface TextDelta {
+export interface TextDelta {
 	insert: string | Record<string, unknown>;
 	attributes?: Readonly<Record<string, unknown>>;
 }
@@ -204,27 +204,64 @@ export function inlineDecorationsRequireFullReconcile(
 	});
 }
 
-export function serializeInlineDecorationForRender(
-	decoration: InlineDecoration,
-): unknown[] {
-	return [
-		decoration.blockId,
-		decoration.from,
-		decoration.to,
-		decoration.key ?? null,
-		decoration.omitFromRender ?? null,
-		"virtualText" in decoration ? decoration.virtualText : null,
-		"virtualPlacement" in decoration ? decoration.virtualPlacement : null,
-		decoration.attributes,
-	];
+export function areInlineDecorationsRenderEqual(
+	left: readonly InlineDecoration[],
+	right: readonly InlineDecoration[],
+): boolean {
+	if (left === right) {
+		return true;
+	}
+	if (left.length !== right.length) {
+		return false;
+	}
+
+	for (let index = 0; index < left.length; index += 1) {
+		if (!areInlineDecorationRenderEqual(left[index]!, right[index]!)) {
+			return false;
+		}
+	}
+
+	return true;
 }
 
 export function buildInlineDecorationsRenderSignature(
 	decorations: readonly InlineDecoration[],
-): string {
-	return JSON.stringify(
-		decorations.map(serializeInlineDecorationForRender),
-	);
+	previous: readonly InlineDecoration[] | null = null,
+): readonly InlineDecoration[] {
+	if (previous && areInlineDecorationsRenderEqual(previous, decorations)) {
+		return previous;
+	}
+	return decorations;
+}
+
+export function areRenderedTextDeltasEqual(
+	left: readonly TextDelta[],
+	right: readonly TextDelta[],
+): boolean {
+	if (left === right) {
+		return true;
+	}
+	if (left.length !== right.length) {
+		return false;
+	}
+
+	for (let index = 0; index < left.length; index += 1) {
+		if (!areRenderedTextDeltaEqual(left[index]!, right[index]!)) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+export function retainRenderedTextDeltas(
+	previous: readonly TextDelta[] | null,
+	next: readonly TextDelta[],
+): readonly TextDelta[] {
+	if (previous && areRenderedTextDeltasEqual(previous, next)) {
+		return previous;
+	}
+	return next;
 }
 
 export { INLINE_DECORATION_ATTRIBUTE_KEY, VIRTUAL_INLINE_DECORATION_ATTRIBUTE };
@@ -283,7 +320,73 @@ function appendDelta(target: TextDelta[], nextDelta: TextDelta): void {
 	target.push(nextDelta);
 }
 
+function areInlineDecorationRenderEqual(
+	left: InlineDecoration,
+	right: InlineDecoration,
+): boolean {
+	if (left === right) {
+		return true;
+	}
+
+	return (
+		left.blockId === right.blockId &&
+		left.from === right.from &&
+		left.to === right.to &&
+		(left.key ?? null) === (right.key ?? null) &&
+		(left.omitFromRender ?? null) === (right.omitFromRender ?? null) &&
+		virtualDecorationText(left) === virtualDecorationText(right) &&
+		virtualDecorationPlacement(left) === virtualDecorationPlacement(right) &&
+		areRenderRecordsEqual(left.attributes, right.attributes)
+	);
+}
+
+function virtualDecorationText(decoration: InlineDecoration): string | null {
+	return "virtualText" in decoration
+		? ((decoration as VirtualInlineDecoration).virtualText ?? null)
+		: null;
+}
+
+function virtualDecorationPlacement(
+	decoration: InlineDecoration,
+): VirtualInlineDecoration["virtualPlacement"] | null {
+	return "virtualPlacement" in decoration
+		? ((decoration as VirtualInlineDecoration).virtualPlacement ?? null)
+		: null;
+}
+
+function areRenderedTextDeltaEqual(left: TextDelta, right: TextDelta): boolean {
+	if (left === right) {
+		return true;
+	}
+
+	return (
+		areDeltaInsertsEqual(left.insert, right.insert) &&
+		areRenderRecordsEqual(left.attributes, right.attributes)
+	);
+}
+
+function areDeltaInsertsEqual(
+	left: TextDelta["insert"],
+	right: TextDelta["insert"],
+): boolean {
+	if (left === right) {
+		return true;
+	}
+	if (typeof left === "string" || typeof right === "string") {
+		return left === right;
+	}
+
+	return areRenderRecordsEqual(left, right);
+}
+
 function attributesEqual(
+	left: Readonly<Record<string, unknown>> | undefined,
+	right: Readonly<Record<string, unknown>> | undefined,
+): boolean {
+	return areRenderRecordsEqual(left, right);
+}
+
+function areRenderRecordsEqual(
 	left: Readonly<Record<string, unknown>> | undefined,
 	right: Readonly<Record<string, unknown>> | undefined,
 ): boolean {
@@ -291,20 +394,52 @@ function attributesEqual(
 		return true;
 	}
 	if (!left || !right) {
-		return left === right;
+		return isAbsentRenderRecord(left) && isAbsentRenderRecord(right);
 	}
 
-	const leftKeys = Object.keys(left);
-	const rightKeys = Object.keys(right);
+	const leftKeys = definedRenderRecordKeys(left);
+	const rightKeys = definedRenderRecordKeys(right);
 	if (leftKeys.length !== rightKeys.length) {
 		return false;
 	}
 
 	for (const key of leftKeys) {
-		if (left[key] !== right[key]) {
+		if (!areRenderValuesEqual(left[key], right[key])) {
 			return false;
 		}
 	}
 
 	return true;
+}
+
+function areRenderValuesEqual(left: unknown, right: unknown): boolean {
+	if (Object.is(left, right)) {
+		return true;
+	}
+	if (isPlainRenderRecord(left) && isPlainRenderRecord(right)) {
+		return areRenderRecordsEqual(left, right);
+	}
+	return false;
+}
+
+function definedRenderRecordKeys(
+	record: Readonly<Record<string, unknown>>,
+): string[] {
+	const keys: string[] = [];
+	for (const key of Object.keys(record)) {
+		if (record[key] !== undefined) {
+			keys.push(key);
+		}
+	}
+	return keys;
+}
+
+function isAbsentRenderRecord(
+	record: Readonly<Record<string, unknown>> | undefined,
+): boolean {
+	return !record || definedRenderRecordKeys(record).length === 0;
+}
+
+function isPlainRenderRecord(value: unknown): value is Record<string, unknown> {
+	return value !== null && typeof value === "object" && !Array.isArray(value);
 }

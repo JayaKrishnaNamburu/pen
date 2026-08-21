@@ -2,7 +2,7 @@ import { useRef, useSyncExternalStore } from "react";
 import type {
 	FieldEditorStore,
 	FieldEditorStoreSnapshot,
-} from "../field-editor/store";
+} from "@input/pen-dom/field-editor";
 
 const EMPTY_FIELD_EDITOR_STATE: FieldEditorStoreSnapshot = {
 	focusBlockId: null,

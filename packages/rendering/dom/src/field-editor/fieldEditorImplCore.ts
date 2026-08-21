@@ -10,7 +10,7 @@ import {
 	hasFieldEditorSurface,
 	resolveFieldEditorInputMode,
 	usesInlineTextSelection,
-} from "@input/pen-types";
+} from "@input/pen-core";
 import { EditContextBackend } from "./editContextBackend";
 import { ContentEditableBackend } from "./contenteditableBackend";
 import {

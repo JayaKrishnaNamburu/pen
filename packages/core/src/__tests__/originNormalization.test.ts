@@ -1,7 +1,7 @@
 import type { CommitEvent } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 
-import { createDefaultSchema } from "@input/pen-schema-default";
+import { createDefaultSchema } from "./fixtures/testSchema";
 import { createEditor as createCoreEditor } from "../index";
 
 const noDefaultExtensionsPreset = {

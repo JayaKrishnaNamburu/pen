@@ -1,13 +1,13 @@
-import type {
-	Editor,
-	ModelOperationScopedRangeTarget,
-	TextSelection,
-} from "@input/pen-types";
 import {
-	isScopedSelectionTarget,
 	renderSelectionTargetBlockText,
 	resolveSelectionTargetBlockIds,
 	usesInlineTextSelection,
+} from "@input/pen-core";
+import {
+	isScopedSelectionTarget,
+	type Editor,
+	type ModelOperationScopedRangeTarget,
+	type TextSelection,
 } from "@input/pen-types";
 import type { AIContentFormat } from "../runtime/contracts";
 import {
@@ -30,10 +30,7 @@ import type {
 	ResolvedEditTarget,
 } from "../types";
 import { areStructuredValuesEqual } from "./equality";
-import {
-	resolveBlockInsertionOffset,
-	resolveSelectionText,
-} from "./selection";
+import { resolveBlockInsertionOffset, resolveSelectionText } from "./selection";
 import {
 	recreateTextSelection,
 	resolveSessionTarget,

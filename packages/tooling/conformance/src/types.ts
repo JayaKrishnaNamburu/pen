@@ -46,6 +46,7 @@ export type SerializedDiagnostic = {
 	level: string;
 	source: string;
 	message: string;
+	reason?: string;
 };
 
 export type ConformanceEventRecord = {
@@ -80,6 +81,153 @@ export type RemoteSpliceArgs = {
 	insert: string;
 };
 
+export type PresencePeerInject = {
+	clientId: number;
+	state: Record<string, unknown>;
+};
+
+export type PresenceCursorSnapshot = {
+	clientId: number;
+	userId: string;
+	userName: string;
+	avatar?: string;
+	blockId: string;
+	offset: number;
+};
+
+export type PresencePeerSnapshot = {
+	clientId: number;
+	userId: string;
+	userName: string;
+	avatar?: string;
+};
+
+export type PresenceSnapshot = {
+	cursors: PresenceCursorSnapshot[];
+	peers: PresencePeerSnapshot[];
+};
+
+export type GeometryAffinity = "upstream" | "downstream";
+
+export type GeometryPoint = {
+	blockId: string;
+	offset: number;
+};
+
+export type GeometryPointRef = GeometryPoint & {
+	affinity?: GeometryAffinity;
+};
+
+export type GeometryRect = {
+	x: number;
+	y: number;
+	width: number;
+	height: number;
+	top: number;
+	left: number;
+	right: number;
+	bottom: number;
+};
+
+export type GeometryCaretCompare = {
+	point: GeometryPoint;
+	affinity: GeometryAffinity;
+	cached: GeometryRect | null;
+	fromScratch: GeometryRect | null;
+	stale: boolean;
+};
+
+export type GeometryCaretCompareResult = {
+	generation: number;
+	rootHeight: number;
+	compares: GeometryCaretCompare[];
+	staleCount: number;
+};
+
+export type GeometryLineBox = {
+	top: number;
+	bottom: number;
+	startOffset: number;
+	endOffset: number;
+};
+
+export type GeometryBlockInfo = {
+	id: string;
+	length: number;
+};
+
+export type GeometryVerticalTarget = {
+	point: GeometryPoint;
+	goalX: number;
+};
+
+export type GeometryVerticalMotion = {
+	situation: string;
+	direction: "up" | "down";
+	from: GeometryPoint;
+	goalX: number | null;
+	first: GeometryVerticalTarget | null;
+	second: GeometryVerticalTarget | null;
+	fresh: GeometryVerticalTarget | null;
+	lineBoxes: GeometryLineBox[];
+};
+
+export type GeometryEightCaretBudget = {
+	caretCount: number;
+	paintedCount: number;
+	overlayConnected: boolean;
+	overlayAttr: string | null;
+	readPhase: string;
+	writePhase: string;
+	supportedEntryTypes: string[];
+	layoutShiftSupported: boolean;
+	longTaskSupported: boolean;
+	layoutShiftCount: number;
+	longTaskCount: number;
+	layoutShiftValues: number[];
+	missingObserverTypes: string[];
+};
+
+export type SerializedBeforeInputCommandMapping = {
+	readonly commandName: string;
+	readonly preventDefault: true;
+	readonly param?: Readonly<Record<string, unknown>>;
+};
+
+export type SerializedBeforeInputAllowPolicy = {
+	readonly policy: "allow";
+};
+
+export type SerializedBeforeInputBlockPolicy = {
+	readonly policy: "block";
+	readonly code: "unhandled-input-type";
+};
+
+export type SerializedBeforeInputMapping =
+	| SerializedBeforeInputCommandMapping
+	| SerializedBeforeInputAllowPolicy
+	| SerializedBeforeInputBlockPolicy;
+
+export type DocumentContentSnapshot = {
+	readonly blockOrder: readonly string[];
+	readonly blocks: readonly {
+		readonly id: string;
+		readonly type: string;
+		readonly text: string;
+		readonly props: Readonly<Record<string, unknown>>;
+		readonly deltas: readonly {
+			readonly insert: string | { type: string; props: Record<string, unknown> };
+			readonly attributes?: Record<string, unknown>;
+		}[];
+	}[];
+};
+
+export type BeforeInputDispatchResult = {
+	readonly defaultPrevented: boolean;
+	readonly inputType: string;
+	readonly threw: string | null;
+};
+
 export type DragTextArgs = {
 	from: PointRef;
 	to: PointRef;
@@ -100,8 +248,14 @@ export type PenConformanceBridge = {
 	readonly fixtureName: string;
 	readonly generation: number;
 	readonly hasFieldEditor: boolean;
+	readonly reducedMotion: boolean;
+	readonly windowRange: { start: number; size: number };
+	readonly hasMultiplayer: boolean;
+	readonly presence: PresenceSnapshot;
 	load(name: string): void;
 	focusText(block?: number): void;
+	selectText(block: number, offset?: number): void;
+	setWindow(start: number): void;
 	apply(ops: readonly DocumentOp[]): void;
 	remoteApply(ops: readonly DocumentOp[]): void;
 	applyToolPayloads(payloads: readonly unknown[]): { ok: boolean; message?: string };
@@ -111,8 +265,45 @@ export type PenConformanceBridge = {
 	resetXssProbe(): void;
 	remoteSplice(args: RemoteSpliceArgs): void;
 	remoteInjectY(args: RemoteYInjectArgs): void;
+	injectPresence(peers: readonly PresencePeerInject[]): Promise<PresenceSnapshot>;
 	installBrokenProjector(): void;
 	domMatchesAuthority(): DomAuthorityCheck;
+	applyAiRangeReplacement(args: {
+		start: { blockId: string; offset: number };
+		end: { blockId: string; offset: number };
+		replacementText: string;
+	}): void;
+	parseClipboardPayload(raw: unknown): { status: string };
+	exerciseInlineAtomDragPreview(): {
+		filled: string;
+		emptied: boolean;
+	};
+	readonly geometryGeneration: number;
+	geometryBlocks(): GeometryBlockInfo[];
+	geometryLineBoxes(blockId: string): GeometryLineBox[];
+	invalidateGeometry(): void;
+	warmCaretCache(points: readonly GeometryPointRef[]): void;
+	compareCaretCache(
+		points: readonly GeometryPointRef[],
+	): Promise<GeometryCaretCompareResult>;
+	verticalMotion(args: {
+		situation: string;
+		from: GeometryPoint;
+		direction: "up" | "down";
+		goalX?: number | null;
+	}): GeometryVerticalMotion;
+	flushEightRemoteCarets(
+		points: readonly GeometryPoint[],
+	): Promise<GeometryEightCaretBudget>;
+	readonly beforeinputMap: Readonly<Record<string, SerializedBeforeInputMapping>>;
+	mapBeforeInput(inputType: string): SerializedBeforeInputMapping;
+	documentSnapshot(): DocumentContentSnapshot;
+	dispatchBeforeInput(args: {
+		inputType: string;
+		data?: string;
+	}): BeforeInputDispatchResult;
+	clearDiagnostics(): void;
+	mutateActiveSurfaceText(text: string): void;
 };
 
 export type LoadOptions = {
@@ -122,6 +313,11 @@ export type LoadOptions = {
 export type ScenarioApi = {
 	load(name: string, options?: LoadOptions): Promise<void>;
 	apply(ops: readonly DocumentOp[]): Promise<void>;
+	applyAiRangeReplacement(args: {
+		start: { blockId: string; offset: number };
+		end: { blockId: string; offset: number };
+		replacementText: string;
+	}): Promise<void>;
 	applyToolPayloads(payloadsJson: string): Promise<{ ok: boolean; message?: string }>;
 	importHtml(html: string): Promise<void>;
 	pasteHtml(html: string): Promise<void>;
@@ -136,9 +332,28 @@ export type ScenarioApi = {
 		splice(args: RemoteSpliceArgs): Promise<void>;
 		apply(ops: readonly DocumentOp[]): Promise<void>;
 		injectY(args: RemoteYInjectArgs): Promise<void>;
+		injectPresence(peers: readonly PresencePeerInject[]): Promise<PresenceSnapshot>;
 	};
 	expectDiagnostic(code: StandingDiagnosticCode | string): void;
 	installBrokenProjector(): Promise<void>;
+	geometry: {
+		blocks(): Promise<GeometryBlockInfo[]>;
+		lineBoxes(blockId: string): Promise<GeometryLineBox[]>;
+		invalidate(): Promise<void>;
+		warm(points: readonly GeometryPointRef[]): Promise<void>;
+		compare(
+			points: readonly GeometryPointRef[],
+		): Promise<GeometryCaretCompareResult>;
+		verticalMotion(args: {
+			situation: string;
+			from: GeometryPoint;
+			direction: "up" | "down";
+			goalX?: number | null;
+		}): Promise<GeometryVerticalMotion>;
+		flushEightRemoteCarets(
+			points: readonly GeometryPoint[],
+		): Promise<GeometryEightCaretBudget>;
+	};
 	assert: {
 		selectionEquals(expected: SelectionEqualsArgs): Promise<void>;
 		domMatchesAuthority(): Promise<void>;

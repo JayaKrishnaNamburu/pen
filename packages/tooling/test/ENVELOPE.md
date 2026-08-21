@@ -29,7 +29,7 @@ Verification for the ladder is headless (`createTestEditor`). No renderer suite 
 | `nesting-10` | depth 10 | generated at runtime |
 | `table-50x20` | 50 × 20 | generated at runtime |
 
-5,000-block fixtures are generated at runtime rather than committed: a Yjs dump of those sizes is large and adds nothing beyond the generator plus this table. The committed 100-block JSON is the checked-in rung; every other size is produced by the same scripts.
+5,000-block and 1,000-row fixtures are generated at runtime rather than committed: a Yjs dump of those sizes is large and adds nothing beyond the generator plus this table. The committed 100-block JSON is the checked-in rung; every other size is produced by the same scripts.
 
 ## Past the ceiling
 

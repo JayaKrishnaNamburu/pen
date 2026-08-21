@@ -1,20 +1,11 @@
 import { describe, expect, it } from "vitest";
-import {
-	PEN_DOCUMENT_FORMAT,
-	PEN_FORMAT_METADATA_KEY,
-	PenDocumentUnreadableError,
-} from "@input/pen-types";
+import { PEN_DOCUMENT_FORMAT, PEN_FORMAT_METADATA_KEY } from "@input/pen-types";
+import { PenDocumentUnreadableError } from "../unreadableError";
 import * as Y from "yjs";
 
 import { yjsAdapter } from "../adapter";
 import type { CRDTDiagnostic } from "../adapter";
-import {
-	APPS,
-	BLOCK_ORDER,
-	BLOCKS,
-	METADATA,
-	initBlockMap,
-} from "../document";
+import { APPS, BLOCK_ORDER, BLOCKS, METADATA, initBlockMap } from "../document";
 import type { YjsCRDTDocument } from "../document";
 import { getDocumentLoadReport } from "../loadDocument";
 import type { RecoveredMethod } from "../loadDocument";
@@ -52,7 +43,9 @@ describe("load leftovers (DUR2)", () => {
 			onDiagnostic: (diagnostic) => diagnostics.push(diagnostic),
 			onRecovered: (method) => recovered.push(method),
 		});
-		const loaded = loader.loadDocument(source.encodeState(doc)) as YjsCRDTDocument;
+		const loaded = loader.loadDocument(
+			source.encodeState(doc),
+		) as YjsCRDTDocument;
 
 		expect(getDocumentLoadReport(loaded)?.state).toBe("repaired");
 		expect(recovered).toEqual(["repair"]);

@@ -2,6 +2,7 @@
 
 import { FIELD_EDITOR_SLOT_KEY } from "@input/pen-types";
 import { createTestEditor } from "@input/pen-test";
+import { undoExtension } from "@input/pen-undo";
 import { mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { h, nextTick } from "vue";
@@ -52,6 +53,7 @@ function createParagraphEditor() {
         content: "Second",
       },
     ],
+    extensions: [undoExtension()],
   });
 }
 

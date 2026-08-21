@@ -156,6 +156,23 @@ describe("@input/pen-transport-direct", () => {
     unsub();
   });
 
+  it("COL6 has no reconnect surface and a later stream() is a new in-process run", async () => {
+    const toolRuntime = createMockToolRuntime(async () => ({ result: "ok" }));
+    const transport = directTransport({ toolRuntime });
+
+    expect(transport.reconnect).toBeUndefined();
+    expect(transport.connected).toBe(true);
+
+    const first = await collectParts(transport.stream(makeRequest()));
+    await transport.disconnect();
+    expect(transport.connected).toBe(true);
+
+    const second = await collectParts(transport.stream(makeRequest()));
+    expect(first.at(-1)).toMatchObject({ type: "done" });
+    expect(second.at(-1)).toMatchObject({ type: "done" });
+    expect(second).toHaveLength(2);
+  });
+
   it("COL6 README states in-process tests and demos do not ship", () => {
     const readme = readFileSync(
       join(import.meta.dirname, "../../README.md"),

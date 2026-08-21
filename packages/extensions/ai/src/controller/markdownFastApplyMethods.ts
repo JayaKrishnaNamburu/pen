@@ -1,4 +1,4 @@
-import { shouldExposeBlockInTooling } from "@input/pen-types";
+import { shouldExposeBlockInTooling } from "@input/pen-core";
 import { buildDocumentMutationPlanExecution } from "../runtime/planExecutor";
 import {
 	validateDocumentMutationPlanShape,

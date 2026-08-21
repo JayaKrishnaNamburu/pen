@@ -7,8 +7,7 @@ not a consumer example. Vite aliases `@input/pen-*` to workspace source so
 maintainers can iterate without a publish cycle. Do not copy this app's
 aliases or Anthropic server into a host.
 
-Pen is source-available under [`LICENSE.md`](../LICENSE.md): free in
-development, commercial license for production.
+Pen is licensed under the [MIT License](../LICENSE.md).
 
 ## Peers
 
@@ -42,6 +41,12 @@ backend on `/collaboration`.
 
 The editor UI runs without a model key. AI features need `ANTHROPIC_API_KEY` in
 `playground/.env.local` before starting `dev:backend`.
+
+Server unit tests (planner routing and local payload helpers):
+
+```bash
+pnpm --filter @input/pen-playground test
+```
 
 End-to-end tests from the repository root:
 

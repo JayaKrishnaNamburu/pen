@@ -26,7 +26,8 @@ function createSlashMenuEditor(
 	options: Parameters<typeof createEditor>[0] = {},
 ) {
 	return createEditor({
-		schema: defaultSchema,...options,
+		schema: defaultSchema,
+		...options,
 		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
@@ -266,7 +267,9 @@ describe("@input/pen-react slash menu", () => {
 		expect(slashMenuRef.current?.target).toBeNull();
 		expect(editor.getBlock(blockId)?.props.hasHeaderRow).toBe(true);
 		expect(editor.getBlock(blockId)!.as("table")?.tableRowCount()).toBe(2);
-		expect(editor.getBlock(blockId)!.as("table")?.tableColumnCount()).toBe(2);
+		expect(editor.getBlock(blockId)!.as("table")?.tableColumnCount()).toBe(
+			2,
+		);
 
 		const activeCell = container.querySelector(
 			"[data-pen-table-cell][data-cell-row='0'][data-cell-col='0'] [data-pen-field-editor-active-surface]",
@@ -353,9 +356,13 @@ describe("@input/pen-react slash menu", () => {
 			await flushAnimationFrames();
 		});
 
-		expect(editor.getBlock(blockId)!.as("table")?.tableCell(0, 0)?.textContent()).toBe(
-			"AB",
-		);
+		expect(
+			editor
+				.getBlock(blockId)!
+				.as("table")
+				?.tableCell(0, 0)
+				?.textContent(),
+		).toBe("AB");
 
 		await act(async () => {
 			root.unmount();
@@ -457,7 +464,9 @@ describe("@input/pen-react slash menu", () => {
 		});
 
 		const headings = [
-			...container.querySelectorAll("[data-pen-slash-menu-group-heading]"),
+			...container.querySelectorAll(
+				"[data-pen-slash-menu-group-heading]",
+			),
 		].map((node) => node.textContent);
 		const labels = [
 			...container.querySelectorAll("[data-pen-slash-menu-group]"),

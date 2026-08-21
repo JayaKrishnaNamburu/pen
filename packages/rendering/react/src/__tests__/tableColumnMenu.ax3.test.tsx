@@ -3,7 +3,9 @@
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { describe, expect, it, vi } from "vitest";
+import { createHeadlessEditor } from "@input/pen-core";
 import type { Editor, TableColumnSchema } from "@input/pen-types";
+import { defaultSchema } from "@input/pen-schema-default";
 import { ColumnHeaderMenu } from "../renderers/tableColumnMenu";
 
 (
@@ -52,11 +54,11 @@ async function renderMenu(options: {
 	anchorEl: HTMLElement;
 	onClose: () => void;
 	colCount?: number;
-}): Promise<{ container: HTMLDivElement; root: Root }> {
+}): Promise<{ container: HTMLDivElement; root: Root; editor: Editor }> {
 	const container = document.createElement("div");
 	document.body.appendChild(container);
 	const root = createRoot(container);
-	const editor = { apply: vi.fn() } as unknown as Editor;
+	const editor = createHeadlessEditor({ schema: defaultSchema });
 
 	await act(async () => {
 		root.render(
@@ -74,19 +76,21 @@ async function renderMenu(options: {
 		);
 	});
 
-	return { container, root };
+	return { container, root, editor };
 }
 
 async function cleanup(
 	root: Root,
 	container: HTMLElement,
 	anchorEl: HTMLElement,
+	editor: Editor,
 ): Promise<void> {
 	await act(async () => {
 		root.unmount();
 	});
 	container.remove();
 	anchorEl.remove();
+	editor.destroy();
 }
 
 describe("@input/pen-react table column menu AX3", () => {
@@ -98,10 +102,15 @@ describe("@input/pen-react table column menu AX3", () => {
 
 		const anchorEl = createAnchor();
 		const onClose = vi.fn();
-		const { container, root } = await renderMenu({ anchorEl, onClose });
+		const { container, root, editor } = await renderMenu({
+			anchorEl,
+			onClose,
+		});
 
 		const menu = container.querySelector("[data-pen-column-menu]");
-		const items = container.querySelectorAll<HTMLElement>("[data-pen-column-menu-item]");
+		const items = container.querySelectorAll<HTMLElement>(
+			"[data-pen-column-menu-item]",
+		);
 		const menuitems = container.querySelectorAll('[role="menuitem"]');
 
 		expect(menu?.getAttribute("role")).toBe("menu");
@@ -109,20 +118,27 @@ describe("@input/pen-react table column menu AX3", () => {
 		expect(menuitems.length).toBeGreaterThan(1);
 		expect(items[0]?.tabIndex).toBe(0);
 		expect(
-			Array.from(items).every((item, index) => item.tabIndex === (index === 0 ? 0 : -1)),
+			Array.from(items).every(
+				(item, index) => item.tabIndex === (index === 0 ? 0 : -1),
+			),
 		).toBe(true);
 		expect(document.activeElement).toBe(editorSurface);
 
-		await cleanup(root, container, anchorEl);
+		await cleanup(root, container, anchorEl, editor);
 		editorSurface.remove();
 	});
 
 	it("AX3: arrow keys move roving tabindex within the column menu", async () => {
 		const anchorEl = createAnchor();
 		const onClose = vi.fn();
-		const { container, root } = await renderMenu({ anchorEl, onClose });
+		const { container, root, editor } = await renderMenu({
+			anchorEl,
+			onClose,
+		});
 
-		const items = container.querySelectorAll<HTMLElement>("[data-pen-column-menu-item]");
+		const items = container.querySelectorAll<HTMLElement>(
+			"[data-pen-column-menu-item]",
+		);
 		expect(items.length).toBeGreaterThan(2);
 
 		await act(async () => {
@@ -156,15 +172,20 @@ describe("@input/pen-react table column menu AX3", () => {
 		expect(document.activeElement).toBe(items[0]);
 		expect(items[0]?.tabIndex).toBe(0);
 
-		await cleanup(root, container, anchorEl);
+		await cleanup(root, container, anchorEl, editor);
 	});
 
 	it("AX3: Escape closes the column menu and restores focus to the invoking control", async () => {
 		const anchorEl = createAnchor();
 		const onClose = vi.fn();
-		const { container, root } = await renderMenu({ anchorEl, onClose });
+		const { container, root, editor } = await renderMenu({
+			anchorEl,
+			onClose,
+		});
 
-		const items = container.querySelectorAll<HTMLElement>("[data-pen-column-menu-item]");
+		const items = container.querySelectorAll<HTMLElement>(
+			"[data-pen-column-menu-item]",
+		);
 		await act(async () => {
 			items[1]?.focus();
 		});
@@ -177,6 +198,6 @@ describe("@input/pen-react table column menu AX3", () => {
 		expect(onClose).toHaveBeenCalledTimes(1);
 		expect(document.activeElement).toBe(anchorEl);
 
-		await cleanup(root, container, anchorEl);
+		await cleanup(root, container, anchorEl, editor);
 	});
 });

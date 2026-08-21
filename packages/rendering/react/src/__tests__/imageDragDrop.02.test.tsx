@@ -40,9 +40,9 @@ function createDataTransfer(files: File[]): DataTransfer {
 function createDragEvent(
 	type: "dragenter" | "dragleave" | "dragover" | "drop",
 	options: {
-	dataTransfer: DataTransfer;
-	clientX: number;
-	clientY: number;
+		dataTransfer: DataTransfer;
+		clientX: number;
+		clientY: number;
 	},
 ): MouseEvent & { dataTransfer: DataTransfer } {
 	const event = new MouseEvent(type, {
@@ -62,7 +62,8 @@ function createDragEvent(
 describe("@input/pen-react image drag and drop", () => {
 	it("shows the insertion side on structural block drop targets", async () => {
 		const editor = createEditor({
-			schema: defaultSchema, preset: defaultPreset({
+			schema: defaultSchema,
+			preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,
@@ -82,7 +83,12 @@ describe("@input/pen-react image drag and drop", () => {
 		};
 
 		editor.apply([
-			{ type: "insert-text", blockId: paragraphId, offset: 0, text: "Hello" },
+			{
+				type: "insert-text",
+				blockId: paragraphId,
+				offset: 0,
+				text: "Hello",
+			},
 			{
 				type: "insert-block",
 				blockId: dividerId,
@@ -133,7 +139,9 @@ describe("@input/pen-react image drag and drop", () => {
 
 			document.elementFromPoint = () => dividerElement;
 
-			const file = new File(["image"], "photo.png", { type: "image/png" });
+			const file = new File(["image"], "photo.png", {
+				type: "image/png",
+			});
 			const dataTransfer = createDataTransfer([file]);
 			const dragEnterEvent = createDragEvent("dragenter", {
 				dataTransfer,
@@ -158,7 +166,9 @@ describe("@input/pen-react image drag and drop", () => {
 
 			expect(contentElement?.hasAttribute("data-drop-target")).toBe(true);
 			expect(dividerElement?.hasAttribute("data-drop-target")).toBe(true);
-			expect(dividerElement?.getAttribute("data-drop-position")).toBe("before");
+			expect(dividerElement?.getAttribute("data-drop-position")).toBe(
+				"before",
+			);
 
 			await act(async () => {
 				dividerElement!.dispatchEvent(dropEvent);
@@ -166,11 +176,21 @@ describe("@input/pen-react image drag and drop", () => {
 			});
 
 			const blockOrder = editor.documentState.blockOrder;
-			const insertedImageIndex = blockOrder.findIndex((id) => id !== paragraphId && id !== dividerId);
+			const insertedImageIndex = blockOrder.findIndex(
+				(id) => id !== paragraphId && id !== dividerId,
+			);
 			expect(insertedImageIndex).toBe(1);
-			expect(blockOrder).toEqual([paragraphId, blockOrder[1]!, dividerId]);
-			expect(contentElement?.hasAttribute("data-drop-target")).toBe(false);
-			expect(dividerElement?.hasAttribute("data-drop-target")).toBe(false);
+			expect(blockOrder).toEqual([
+				paragraphId,
+				blockOrder[1]!,
+				dividerId,
+			]);
+			expect(contentElement?.hasAttribute("data-drop-target")).toBe(
+				false,
+			);
+			expect(dividerElement?.hasAttribute("data-drop-target")).toBe(
+				false,
+			);
 
 			await act(async () => {
 				root.unmount();
@@ -184,7 +204,8 @@ describe("@input/pen-react image drag and drop", () => {
 
 	it("prevents native root-level drop navigation for image files", async () => {
 		const editor = createEditor({
-			schema: defaultSchema, preset: defaultPreset({
+			schema: defaultSchema,
+			preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,
@@ -203,7 +224,12 @@ describe("@input/pen-react image drag and drop", () => {
 		};
 
 		editor.apply([
-			{ type: "insert-text", blockId: paragraphId, offset: 0, text: "Hello" },
+			{
+				type: "insert-text",
+				blockId: paragraphId,
+				offset: 0,
+				text: "Hello",
+			},
 		]);
 
 		const container = document.createElement("div");
@@ -266,7 +292,9 @@ describe("@input/pen-react image drag and drop", () => {
 
 			document.elementFromPoint = () => inlineElement;
 
-			const file = new File(["image"], "photo.png", { type: "image/png" });
+			const file = new File(["image"], "photo.png", {
+				type: "image/png",
+			});
 			const dataTransfer = createDataTransfer([file]);
 			const dragOverEvent = createDragEvent("dragover", {
 				dataTransfer,
@@ -297,5 +325,4 @@ describe("@input/pen-react image drag and drop", () => {
 			editor.destroy();
 		}
 	});
-
 });

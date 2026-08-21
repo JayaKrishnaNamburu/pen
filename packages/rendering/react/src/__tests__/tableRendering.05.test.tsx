@@ -5,8 +5,8 @@ import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
 import { createEditor as createCoreEditor } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
-import type { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
-import { handleCopy } from "../field-editor/clipboard";
+import type { FieldEditorImpl } from "@input/pen-dom/field-editor/fieldEditorImpl";
+import { handleCopy } from "@input/pen-dom/field-editor/clipboard";
 import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
 import { Pen } from "../primitives/index";
 import { defaultSchema } from "@input/pen-schema-default";
@@ -27,11 +27,10 @@ type TableBlockMapLike = {
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
 ).IS_REACT_ACT_ENVIRONMENT = true;
 
-function createEditor(
-	options: Parameters<typeof createCoreEditor>[0] = {},
-) {
+function createEditor(options: Parameters<typeof createCoreEditor>[0] = {}) {
 	return createCoreEditor({
-		schema: defaultSchema,...options,
+		schema: defaultSchema,
+		...options,
 		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
@@ -254,5 +253,4 @@ describe("@input/pen-react table rendering", () => {
 		container.remove();
 		editor.destroy();
 	});
-
 });

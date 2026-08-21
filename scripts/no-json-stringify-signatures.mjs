@@ -4,9 +4,10 @@
  *
  * Greps JSON.stringify in packages/rendering and packages/core runtime src
  * (tests excluded). Wire-format / display / clone / diagnostic sites must be
- * on scripts/json-stringify-allowlist.json with a reason. Change-detection
- * suspects live on scripts/json-stringify-deferred.json and are reported
- * without failing. Unmarked hits and stale list entries fail.
+ * on scripts/json-stringify-allowlist.json keyed by file and enclosing
+ * symbol, with a reason. Change-detection suspects live on
+ * scripts/json-stringify-deferred.json and are reported without failing.
+ * Unmarked hits and stale list entries fail.
  *
  * This slice does not rewrite call sites.
  */
@@ -45,8 +46,111 @@ const IGNORE_DIR_NAMES = new Set([
 	"__tests__",
 ]);
 
+export const MODULE_SYMBOL = "<module>";
+
 export function hitKey(entry) {
-	return `${entry.file}:${entry.line}`;
+	return `${entry.file}:${entry.symbol}`;
+}
+
+export function hitLocation(entry) {
+	if (typeof entry.line === "number") {
+		return `${hitKey(entry)} (line ${entry.line})`;
+	}
+	return hitKey(entry);
+}
+
+function isCommentLine(line) {
+	const trimmed = line.trim();
+	return (
+		trimmed.startsWith("//") ||
+		trimmed.startsWith("*") ||
+		trimmed.startsWith("/*") ||
+		trimmed.startsWith("{/*")
+	);
+}
+
+function isTopLevel(line) {
+	return line.length > 0 && line[0] !== " " && line[0] !== "\t";
+}
+
+function stripNoise(line) {
+	return line
+		.replace(/\/\/.*$/, "")
+		.replace(/\/\*.*?\*\//g, "")
+		.replace(/'(?:\\.|[^'\\])*'/g, "''")
+		.replace(/"(?:\\.|[^"\\])*"/g, '""')
+		.replace(/`(?:\\.|[^`\\])*`/g, "``");
+}
+
+function countBraces(line) {
+	let close = 0;
+	let open = 0;
+	for (const ch of stripNoise(line)) {
+		if (ch === "}") {
+			close += 1;
+		} else if (ch === "{") {
+			open += 1;
+		}
+	}
+	return { close, open };
+}
+
+export function matchDeclaration(line) {
+	const trimmed = line.trim();
+	if (!trimmed || isCommentLine(line)) {
+		return null;
+	}
+
+	let match = /^(?:export\s+)?(?:default\s+)?(?:async\s+)?function\s*\*?\s*([A-Za-z_$][\w$]*)/.exec(
+		trimmed,
+	);
+	if (match) {
+		return match[1];
+	}
+
+	match = /^(?:export\s+)?(?:default\s+)?(?:abstract\s+)?class\s+([A-Za-z_$][\w$]*)/.exec(
+		trimmed,
+	);
+	if (match) {
+		return match[1];
+	}
+
+	if (!isTopLevel(line)) {
+		return null;
+	}
+
+	match =
+		/^(?:export\s+)?(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*(?::[^=]+)?=\s*(?:async\s+)?(?:function\b|\(|(?:React\.)?(?:memo|forwardRef|observer)\s*\()/.exec(
+			trimmed,
+		);
+	return match ? match[1] : null;
+}
+
+export function resolveEnclosingSymbol(source, lineNumber) {
+	const lines = source.split(/\r?\n/);
+	const hitIndex = lineNumber - 1;
+	if (hitIndex < 0 || hitIndex >= lines.length) {
+		return MODULE_SYMBOL;
+	}
+
+	const onHit = matchDeclaration(lines[hitIndex]);
+	if (onHit) {
+		return onHit;
+	}
+
+	let depth = 0;
+	for (let index = hitIndex - 1; index >= 0; index -= 1) {
+		const name = matchDeclaration(lines[index]);
+		if (name && depth === 0) {
+			return name;
+		}
+		const { close, open } = countBraces(lines[index]);
+		depth += close;
+		if (depth > 0) {
+			depth = Math.max(0, depth - open);
+		}
+	}
+	return MODULE_SYMBOL;
 }
 
 export function parseReasonedList(raw, fieldName, fileLabel) {
@@ -57,20 +161,19 @@ export function parseReasonedList(raw, fieldName, fileLabel) {
 	return list.map((entry, index) => {
 		if (
 			typeof entry?.file !== "string" ||
-			typeof entry?.line !== "number" ||
-			!Number.isInteger(entry.line) ||
-			entry.line < 1 ||
+			typeof entry?.symbol !== "string" ||
 			typeof entry?.reason !== "string" ||
 			entry.file.length === 0 ||
+			entry.symbol.trim().length === 0 ||
 			entry.reason.trim().length === 0
 		) {
 			throw new Error(
-				`${fileLabel} ${fieldName}[${index}] needs file, a positive integer line, and a non-empty reason`,
+				`${fileLabel} ${fieldName}[${index}] needs file, enclosing symbol, and a non-empty reason`,
 			);
 		}
 		return {
 			file: entry.file.split(path.sep).join(path.posix.sep),
-			line: entry.line,
+			symbol: entry.symbol.trim(),
 			reason: entry.reason.trim(),
 		};
 	});
@@ -150,7 +253,7 @@ export function formatReport(result) {
 	} else {
 		lines.push(`Allowlisted (${result.allowed.length}):`);
 		for (const entry of result.allowed) {
-			lines.push(`  ${hitKey(entry)}`);
+			lines.push(`  ${hitLocation(entry)}`);
 			lines.push(`    ${entry.reason}`);
 		}
 	}
@@ -163,7 +266,7 @@ export function formatReport(result) {
 			`Deferred change-detection suspects (${result.deferredHits.length}; report only):`,
 		);
 		for (const entry of result.deferredHits) {
-			lines.push(`  ${hitKey(entry)}`);
+			lines.push(`  ${hitLocation(entry)}`);
 			lines.push(`    ${entry.reason}`);
 		}
 	}
@@ -174,13 +277,13 @@ export function formatReport(result) {
 			"FAIL unmarked JSON.stringify (add an allowlist reason or defer a change-detection suspect):",
 		);
 		for (const entry of result.unexpected) {
-			lines.push(`  ${hitKey(entry)}`);
+			lines.push(`  ${hitLocation(entry)}`);
 		}
 	}
 
 	if (result.staleAllowlist.length > 0) {
 		lines.push("");
-		lines.push("FAIL stale allowlist entries (no matching hit; remove them):");
+		lines.push("FAIL stale allowlist entries (symbol not found in file; remove them):");
 		for (const entry of result.staleAllowlist) {
 			lines.push(`  ${hitKey(entry)}`);
 			lines.push(`    ${entry.reason}`);
@@ -189,7 +292,7 @@ export function formatReport(result) {
 
 	if (result.staleDeferred.length > 0) {
 		lines.push("");
-		lines.push("FAIL stale deferred entries (no matching hit; remove them):");
+		lines.push("FAIL stale deferred entries (symbol not found in file; remove them):");
 		for (const entry of result.staleDeferred) {
 			lines.push(`  ${hitKey(entry)}`);
 			lines.push(`    ${entry.reason}`);
@@ -247,7 +350,7 @@ export function formatStepSummary(result) {
 		lines.push("_None._");
 	} else {
 		for (const entry of result.allowed) {
-			lines.push(`- \`${hitKey(entry)}\` — ${entry.reason}`);
+			lines.push(`- \`${hitLocation(entry)}\` — ${entry.reason}`);
 		}
 	}
 
@@ -260,7 +363,7 @@ export function formatStepSummary(result) {
 		lines.push("");
 		lines.push("These do not fail the job. Wave 2 owns replacing per-render / decoration signatures.");
 		for (const entry of result.deferredHits) {
-			lines.push(`- \`${hitKey(entry)}\` — ${entry.reason}`);
+			lines.push(`- \`${hitLocation(entry)}\` — ${entry.reason}`);
 		}
 	}
 
@@ -288,14 +391,18 @@ export function hasFailures(result) {
 	);
 }
 
-export function extractStringifyHits(source) {
+export function extractStringifyHits(file, source) {
 	const hits = [];
 	const lines = source.split(/\r?\n/);
 	for (let index = 0; index < lines.length; index += 1) {
 		if (!lines[index].includes(STRINGIFY_NEEDLE)) {
 			continue;
 		}
-		hits.push({ line: index + 1 });
+		hits.push({
+			file,
+			line: index + 1,
+			symbol: resolveEnclosingSymbol(source, index + 1),
+		});
 	}
 	return hits;
 }
@@ -303,21 +410,95 @@ export function extractStringifyHits(source) {
 export function runSCALE2Fixture() {
 	const call = ["JSON", "stringify"].join(".");
 	const source = `export const signature = ${call}(value);\n`;
-	const extracted = extractStringifyHits(source);
-	if (extracted.length !== 1 || extracted[0].line !== 1) {
+	const hits = extractStringifyHits("tmp/scale2-fixture.ts", source);
+	if (hits.length !== 1 || hits[0].line !== 1) {
 		throw new Error("SCALE2: expected the fixture stringify call to be extracted");
 	}
-	const hit = {
-		file: "tmp/scale2-fixture.ts",
-		line: extracted[0].line,
-	};
-	const result = evaluateStringifyHits({
-		hits: [hit],
+	const unmarked = evaluateStringifyHits({
+		hits,
 		allowlist: [],
 		deferred: [],
 	});
-	if (!hasFailures(result) || result.unexpected.length !== 1) {
+	if (!hasFailures(unmarked) || unmarked.unexpected.length !== 1) {
 		throw new Error(`SCALE2: expected ${call} in a temp string to fail the checker`);
+	}
+
+	const namedSource = `function serializeSite() {\n\treturn ${call}(value);\n}\n`;
+	const namedHits = extractStringifyHits("tmp/scale2-fixture.ts", namedSource);
+	if (
+		namedHits.length !== 1 ||
+		namedHits[0].symbol !== "serializeSite" ||
+		namedHits[0].line !== 2
+	) {
+		throw new Error("SCALE2: expected serializeSite to enclose the fixture hit");
+	}
+	const allowed = evaluateStringifyHits({
+		hits: namedHits,
+		allowlist: [
+			{
+				file: "tmp/scale2-fixture.ts",
+				symbol: "serializeSite",
+				reason: "fixture",
+			},
+		],
+		deferred: [],
+	});
+	if (hasFailures(allowed)) {
+		throw new Error("SCALE2: expected a matching symbol to pass the checker");
+	}
+
+	const shiftedHits = extractStringifyHits(
+		"tmp/scale2-fixture.ts",
+		`\n${namedSource}`,
+	);
+	if (
+		shiftedHits.length !== 1 ||
+		shiftedHits[0].symbol !== "serializeSite" ||
+		shiftedHits[0].line !== 3
+	) {
+		throw new Error(
+			"SCALE2: expected a leading blank line to keep the enclosing symbol",
+		);
+	}
+	const shifted = evaluateStringifyHits({
+		hits: shiftedHits,
+		allowlist: [
+			{
+				file: "tmp/scale2-fixture.ts",
+				symbol: "serializeSite",
+				reason: "fixture",
+			},
+		],
+		deferred: [],
+	});
+	if (hasFailures(shifted)) {
+		throw new Error(
+			"SCALE2: expected a line shift above an allowlisted symbol to pass",
+		);
+	}
+
+	const stale = evaluateStringifyHits({
+		hits: namedHits,
+		allowlist: [
+			{
+				file: "tmp/scale2-fixture.ts",
+				symbol: "renamedSite",
+				reason: "gone",
+			},
+		],
+		deferred: [],
+	});
+	if (stale.staleAllowlist.length !== 1) {
+		throw new Error("SCALE2: expected a stale allowlist symbol to fail the checker");
+	}
+	const staleReport = formatReport(stale);
+	if (
+		!staleReport.includes("tmp/scale2-fixture.ts:renamedSite") ||
+		!staleReport.includes("symbol not found in file")
+	) {
+		throw new Error(
+			"SCALE2: expected the stale report to name the missing symbol and file",
+		);
 	}
 }
 
@@ -382,12 +563,7 @@ export async function collectStringifyHits(repoRoot) {
 			.relative(repoRoot, filePath)
 			.split(path.sep)
 			.join(path.posix.sep);
-		for (const extracted of extractStringifyHits(text)) {
-			hits.push({
-				file: relPosix,
-				line: extracted.line,
-			});
-		}
+		hits.push(...extractStringifyHits(relPosix, text));
 	}
 	return hits;
 }

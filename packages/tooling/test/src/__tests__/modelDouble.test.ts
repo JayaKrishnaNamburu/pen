@@ -4,7 +4,7 @@ import {
 	abortHalfwayGenerationParts,
 	createModelDouble,
 	failingToolCallParts,
-} from "../modelDouble";
+} from "../index";
 
 afterEach(() => {
 	vi.useRealTimers();
@@ -37,6 +37,21 @@ function sampleContext(
 }
 
 describe("AIB6 model double", () => {
+	it("AIB6: records a context supplied on stream()", async () => {
+		const double = createModelDouble({
+			responses: [{ text: "ok" }],
+		});
+		const context = sampleContext({ feature: "suggestions" });
+		await collect(
+			double.stream({
+				messages: context.messages,
+				tools: context.tools,
+				...({ context } as object),
+			} as Parameters<(typeof double)["stream"]>[0]),
+		);
+		expect(double.requests[0]).toEqual(context);
+	});
+
 	it("AIB6: records AIRequestContext from request() and stream()", async () => {
 		const double = createModelDouble({
 			responses: [{ text: "ok" }],

@@ -26,7 +26,7 @@ export function App() {
 }
 ```
 
-Pen ships no required stylesheet — the editor is functional unstyled. The custom-property surface and the few correctness styles are listed in [STYLING.md](./STYLING.md).
+`PenEditor` requires `editor`. This package does not ship a stylesheet — the editor is functional unstyled. The custom-property surface and the few correctness styles are listed in `STYLING.md`, which ships inside this package.
 
 ## Server rendering (HOST5)
 
@@ -41,6 +41,9 @@ Hosts that need crawler-visible or statically indexed HTML render it from their 
 ```ts
 import { createHeadlessEditor } from "@input/pen-core";
 import { htmlExporter } from "@input/pen-export-html";
+import type { CRDTDocument } from "@input/pen-types";
+
+declare const hostDocument: CRDTDocument;
 
 const editor = createHeadlessEditor({ document: hostDocument });
 const html = htmlExporter.export(editor);
@@ -50,3 +53,19 @@ editor.destroy();
 Render that string as ordinary HTML next to the editor shell. The editor stays a client island; the exported markup is the host's content surface.
 
 See the root README for the full package overview and licensing details.
+
+## Options
+
+`PenEditor` takes a required `editor` prop. This package has no create-function options. The optional peer `@input/pen-import-markdown` is not required to mount the editor.
+
+`engines.node` is `>=22`. Required peers are `react` and `react-dom` (`^18` or `^19`).
+
+## Documentation
+
+The docs site (the `@input/pen-docs` package) covers this area on the Getting started page (`#/getting-started`) and the Server rendering page (`#/ssr`).
+
+The public signatures of record are in `api-report.md` next to this package's source in the Pen repository. The docs site does not host a generated browsable reference.
+
+## License
+
+MIT © Input B.V. See [`LICENSE.md`](./LICENSE.md).

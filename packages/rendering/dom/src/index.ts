@@ -1,4 +1,9 @@
 export { FieldEditorImpl } from "./field-editor/fieldEditorImpl";
+export {
+	mountEditor,
+	type MountEditorOptions,
+	type MountedEditor,
+} from "./host/mountEditor";
 export type {
 	FieldEditorFocusReason,
 	FieldEditorFocusRequest,
@@ -40,3 +45,34 @@ export {
 	urlPolicyFromEditor,
 } from "./security/resolveEditorUrl";
 export { urlPolicyExtension } from "./security/urlPolicyExtension";
+export { DomScheduler } from "./scheduler";
+export type {
+	DomSchedulerOptions,
+	DomSchedulerOwner,
+	DomSchedulerPhase,
+	FlushCollect,
+	GeometryInvalidator,
+} from "./scheduler";
+export {
+	collapsedRect,
+	createGeometryReader,
+	getRootGeometry,
+	measureWithRoot,
+	singleRunLineBox,
+	verticalCaretTarget,
+} from "./geometry";
+export type {
+	Affinity,
+	BidiRun,
+	BidiRunGeometry,
+	GeometryMeasureAdapter,
+	GeometryReader,
+	GeometryReaderHost,
+	GeometryReaderOptions,
+	LineBox,
+	Point,
+	Rect,
+	RootGeometry,
+	VerticalCaretTarget,
+	VerticalDirection,
+} from "./geometry";

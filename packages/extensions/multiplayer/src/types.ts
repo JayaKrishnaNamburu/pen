@@ -31,6 +31,16 @@ export interface MultiplayerUser {
 	name: string;
 	color?: string;
 	avatar?: string;
+	/** COL3: awareness/ledger identities are display hints, never verified. */
+	readonly unverified?: true;
+}
+
+/** COL3: peer-asserted presence. Never render as verified authorship. */
+export interface PresenceDisplayHint {
+	readonly unverified: true;
+	name: string;
+	userId?: string;
+	color?: string;
 }
 
 export interface RemoteCursorState {

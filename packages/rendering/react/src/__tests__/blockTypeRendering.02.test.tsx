@@ -39,7 +39,8 @@ function createBlockTypeEditor(
 	options: Parameters<typeof createEditor>[0] = {},
 ) {
 	return createEditor({
-		schema: defaultSchema,...options,
+		schema: defaultSchema,
+		...options,
 		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
@@ -108,7 +109,9 @@ describe("@input/pen-react block type rendering", () => {
 		const allNestedHeadings = container.querySelectorAll(
 			"h2[data-block-type='heading']",
 		);
-		const rootBlocks = container.querySelectorAll("[data-pen-editor-block]");
+		const rootBlocks = container.querySelectorAll(
+			"[data-pen-editor-block]",
+		);
 
 		expect(toggleBody).not.toBeNull();
 		expect(nestedHeading?.textContent).toBe("Nested heading");
@@ -172,12 +175,18 @@ describe("@input/pen-react block type rendering", () => {
 			"[data-pen-toggle-empty-button]",
 		) as HTMLButtonElement | null;
 
-		expect(emptyButton?.textContent).toBe("Empty toggle. Click to add a block.");
+		expect(emptyButton?.textContent).toBe(
+			"Empty toggle. Click to add a block.",
+		);
 		expect(container.querySelector("[data-pen-toggle-body]")).toBeNull();
 
 		await act(async () => {
-			emptyButton?.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
-			emptyButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+			emptyButton?.dispatchEvent(
+				new MouseEvent("mousedown", { bubbles: true }),
+			);
+			emptyButton?.dispatchEvent(
+				new MouseEvent("click", { bubbles: true }),
+			);
 			await new Promise<void>((resolve) => {
 				window.requestAnimationFrame(() => resolve());
 			});
@@ -191,9 +200,13 @@ describe("@input/pen-react block type rendering", () => {
 		) as HTMLElement | null;
 
 		expect(childBlockIds).toHaveLength(1);
-		expect(editor.documentState.parentOf(childBlockIds[0]!)).toBe(toggleBlockId);
+		expect(editor.documentState.parentOf(childBlockIds[0]!)).toBe(
+			toggleBlockId,
+		);
 		expect(editor.getBlock(childBlockIds[0]!)?.type).toBe("paragraph");
-		expect(container.querySelector("[data-pen-toggle-empty-button]")).toBeNull();
+		expect(
+			container.querySelector("[data-pen-toggle-empty-button]"),
+		).toBeNull();
 		expect(nestedParagraph).not.toBeNull();
 		expect(
 			nestedParagraph?.querySelector("[data-placeholder-visible]"),
@@ -236,7 +249,9 @@ describe("@input/pen-react block type rendering", () => {
 		expect(layout).not.toBeNull();
 		expect(layout?.style.display).toBe("grid");
 		expect(marker?.textContent).toBe("1.");
-		expect(content?.querySelector("[data-pen-inline-content]")).not.toBeNull();
+		expect(
+			content?.querySelector("[data-pen-inline-content]"),
+		).not.toBeNull();
 
 		await act(async () => {
 			root.unmount();
@@ -252,8 +267,17 @@ describe("@input/pen-react block type rendering", () => {
 		const insertedBlockId = crypto.randomUUID();
 
 		editor.apply([
-			{ type: "convert-block", blockId: firstBlockId, newType: "numberedListItem" },
-			{ type: "insert-text", blockId: firstBlockId, offset: 0, text: "First item" },
+			{
+				type: "convert-block",
+				blockId: firstBlockId,
+				newType: "numberedListItem",
+			},
+			{
+				type: "insert-text",
+				blockId: firstBlockId,
+				offset: 0,
+				text: "First item",
+			},
 			{
 				type: "insert-block",
 				blockId: secondBlockId,
@@ -261,7 +285,12 @@ describe("@input/pen-react block type rendering", () => {
 				props: {},
 				position: "last",
 			},
-			{ type: "insert-text", blockId: secondBlockId, offset: 0, text: "Third item" },
+			{
+				type: "insert-text",
+				blockId: secondBlockId,
+				offset: 0,
+				text: "Third item",
+			},
 		]);
 
 		const container = document.createElement("div");
@@ -335,7 +364,9 @@ describe("@input/pen-react block type rendering", () => {
 		expect(layout).not.toBeNull();
 		expect(layout?.style.display).toBe("grid");
 		expect(marker?.textContent).toBe("•");
-		expect(content?.querySelector("[data-pen-inline-content]")).not.toBeNull();
+		expect(
+			content?.querySelector("[data-pen-inline-content]"),
+		).not.toBeNull();
 
 		await act(async () => {
 			root.unmount();
@@ -374,7 +405,9 @@ describe("@input/pen-react block type rendering", () => {
 		expect(layout).not.toBeNull();
 		expect(layout?.style.display).toBe("grid");
 		expect(checkbox).not.toBeNull();
-		expect(content?.querySelector("[data-pen-inline-content]")).not.toBeNull();
+		expect(
+			content?.querySelector("[data-pen-inline-content]"),
+		).not.toBeNull();
 
 		await act(async () => {
 			root.unmount();
@@ -424,5 +457,4 @@ describe("@input/pen-react block type rendering", () => {
 		container.remove();
 		editor.destroy();
 	});
-
 });

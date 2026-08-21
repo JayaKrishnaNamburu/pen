@@ -1,4 +1,3 @@
-import { } from "@input/pen-core";
 import type { HTMLImportElement } from "@input/pen-types";
 import {
 	defineBlock,

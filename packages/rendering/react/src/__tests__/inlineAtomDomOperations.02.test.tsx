@@ -25,7 +25,7 @@ import {
 	domSelectionToEditor,
 	editorSelectionToDOM,
 	pointToEditorSelectionPoint,
-} from "../field-editor/selectionBridge";
+} from "@input/pen-dom/field-editor/selectionBridge";
 import { Pen } from "../primitives/index";
 
 (
@@ -42,7 +42,8 @@ async function flushAnimationFrames(count = 1): Promise<void> {
 
 function createPresetEditor() {
 	return createEditor({
-		schema: createDefaultSchema(),preset: defaultPreset({
+		schema: createDefaultSchema(),
+		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
 			undo: false,
@@ -163,5 +164,4 @@ describe("Pen inline atom DOM operations", () => {
 			editor.destroy();
 		}
 	});
-
 });

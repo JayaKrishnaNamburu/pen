@@ -1,5 +1,5 @@
 {
-  "_comment": "SM3 (spec-v2/04-facets.md, Wave 1 step 1.5): existing exported *_SLOT / *_SLOT_KEY constants and setSlot( call sites outside the adapter. New exports or setSlot files fail; remove an entry in the same PR that deletes it.",
+  "_comment": "SM3 (spec-v2/04-facets.md, Wave 1 step 1.5): existing exported *_SLOT / *_SLOT_KEY constants and setSlot( call sites outside the adapter. New exports or setSlot files fail; remove an entry in the same PR that deletes it. ANNOUNCER_SLOT_KEY arrived later with AX2 and is listed because core's slot adapter parks it (kind: \"parked\", alongside delta-stream:target) rather than mapping it to a facet.",
   "exportedSlots": [
     {
       "file": "packages/extensions/ai-autocomplete/src/extension.ts",
@@ -108,6 +108,10 @@
     {
       "file": "packages/types/src/constants/slots.ts",
       "name": "HISTORY_CONTROLLER_SLOT"
+    },
+    {
+      "file": "packages/types/src/constants/slots.ts",
+      "name": "ANNOUNCER_SLOT_KEY"
     }
   ],
   "setSlotFiles": []

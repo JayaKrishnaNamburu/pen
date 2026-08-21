@@ -7,7 +7,7 @@ import type {
 import { defineExtension } from "@input/pen-core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "./fixtures/testSchema";
 import {
 	createHeadlessEditor,
 	EventEmitter,

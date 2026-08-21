@@ -1,138 +1,87 @@
 import { describe, expect, it } from "vitest";
-import { richTextShortcutsExtension } from "../richTextShortcutsExtension";
 import {
-	PEN_KEYMAP_FACET_NAME,
-	shortcutsToKeymapProviders,
-} from "../providers";
+	createHeadlessEditor,
+	keyBindingPriorityToPrecedence,
+	keymapFacet,
+} from "@input/pen-core";
+import type { Extension, KeyBinding } from "@input/pen-types";
+import { defaultSchema } from "@input/pen-schema-default";
+import { richTextShortcutsExtension } from "../richTextShortcutsExtension";
+import { PEN_KEYMAP_FACET_NAME } from "../providers";
 
-describe("R-keymap / 1.3", () => {
-	it("R-keymap / 1.3: maps Mod-b / Mod-i / Mod-u to pen.keymap providers", () => {
-		const providers = shortcutsToKeymapProviders([
-			{ key: "Mod-b" },
-			{ key: "Mod-i" },
-			{ key: "Mod-u" },
-		]);
+function competitor(binding: KeyBinding): Extension {
+	return {
+		name: "keymap-competitor",
+		version: "0.0.0",
+		keyBindings: [binding],
+	};
+}
 
-		expect(providers).toEqual([
-			{
-				facetName: PEN_KEYMAP_FACET_NAME,
-				commandName: "pen.toggleMark",
-				mark: "bold",
-				precedence: "default",
-			},
-			{
-				facetName: "pen.keymap",
-				commandName: "pen.toggleMark",
-				mark: "italic",
-				precedence: "default",
-			},
-			{
-				facetName: "pen.keymap",
-				commandName: "pen.toggleMark",
-				mark: "underline",
-				precedence: "default",
-			},
-		]);
-	});
-
-	it("R-keymap / 1.3: preserves Extension.keyBindings order", () => {
-		const providers = shortcutsToKeymapProviders([
-			{ key: "Mod-u" },
-			{ key: "Mod-b" },
-			{ key: "Mod-i" },
-		]);
-
-		expect(providers.map((provider) => provider.mark)).toEqual([
-			"underline",
-			"bold",
-			"italic",
-		]);
-		expect(
-			providers.every(
-				(provider) =>
-					provider.facetName === "pen.keymap" &&
-					provider.commandName === "pen.toggleMark" &&
-					provider.precedence === "default",
-			),
-		).toBe(true);
-	});
-
-	it("R-keymap / 1.3: maps an empty list to no providers", () => {
-		expect(shortcutsToKeymapProviders([])).toEqual([]);
-	});
-
-	it("R-keymap / 1.3: leaves Mod-k unmapped", () => {
-		expect(shortcutsToKeymapProviders([{ key: "Mod-k" }])).toEqual([]);
-	});
-
-	it("R-keymap / 1.3: skips unknown keys", () => {
-		expect(
-			shortcutsToKeymapProviders([
-				{ key: "Ctrl-b" },
-				{ key: "Mod-Shift-k" },
-				{ key: "Enter" },
-			]),
-		).toEqual([]);
-	});
-
-	it("R-keymap / 1.3: keeps only catalog keys in encounter order", () => {
-		const providers = shortcutsToKeymapProviders([
-			{ key: "Mod-k" },
-			{ key: "Mod-u" },
-			{ key: "Ctrl-b" },
-			{ key: "Mod-b" },
-			{ key: "Enter" },
-			{ key: "Mod-i" },
-		]);
-
-		expect(providers.map((provider) => provider.mark)).toEqual([
-			"underline",
-			"bold",
-			"italic",
-		]);
-	});
-
-	it("R-keymap / 1.3: maps default rich-text shortcut keyBindings", () => {
+describe("R-keymap / K1", () => {
+	it("R-keymap / K1: ships one highest provider per default mark binding", () => {
 		const extension = richTextShortcutsExtension();
-		const providers = shortcutsToKeymapProviders(extension.keyBindings ?? []);
 
-		expect(providers).toEqual([
-			{
-				facetName: "pen.keymap",
-				commandName: "pen.toggleMark",
-				mark: "bold",
-				precedence: "default",
-			},
-			{
-				facetName: "pen.keymap",
-				commandName: "pen.toggleMark",
-				mark: "italic",
-				precedence: "default",
-			},
-			{
-				facetName: "pen.keymap",
-				commandName: "pen.toggleMark",
-				mark: "underline",
-				precedence: "default",
-			},
+		expect(extension.keyBindings).toBeUndefined();
+		expect(extension.facets?.map((provider) => provider.facetName)).toEqual([
+			PEN_KEYMAP_FACET_NAME,
+			PEN_KEYMAP_FACET_NAME,
+			PEN_KEYMAP_FACET_NAME,
+		]);
+		expect(extension.facets?.map((provider) => provider.precedence)).toEqual([
+			"highest",
+			"highest",
+			"highest",
 		]);
 	});
 
-	it("R-keymap / 1.3: drops Mod-k from extension keyBindings when onToggleLink is set", () => {
-		const extension = richTextShortcutsExtension({
-			onToggleLink: () => true,
+	it("K1: priority 100 still precedes a shim-lifted undeclared-priority binding", () => {
+		const editor = createHeadlessEditor({
+			schema: defaultSchema,
+			extensions: [
+				richTextShortcutsExtension(),
+				competitor({
+					key: "Mod-b",
+					handler: () => true,
+				}),
+			],
 		});
 
-		expect(extension.keyBindings?.map((binding) => binding.key)).toEqual([
-			"Mod-b",
-			"Mod-i",
-			"Mod-u",
-			"Mod-k",
+		const modB = editor
+			.facet(keymapFacet)
+			.filter((binding) => binding.key === "Mod-b");
+		expect(modB).toHaveLength(2);
+		expect(modB[0]?.priority).toBe(100);
+		expect(modB[0]?.description).toBe("Toggle bold formatting");
+		expect(modB[1]?.priority).toBeUndefined();
+		expect(keyBindingPriorityToPrecedence(modB[0]?.priority ?? 300)).toBe(
+			"highest",
+		);
+		expect(keyBindingPriorityToPrecedence(modB[1]?.priority ?? 300)).toBe(
+			"default",
+		);
+		editor.destroy();
+	});
+
+	it("K1: a priority-100 competitor still precedes a default-300 binding", () => {
+		const editor = createHeadlessEditor({
+			schema: defaultSchema,
+			extensions: [
+				richTextShortcutsExtension({
+					bindings: { bold: ["Mod-f"], italic: null, underline: null },
+				}),
+				competitor({
+					key: "Mod-f",
+					handler: () => true,
+				}),
+			],
+		});
+
+		const modF = editor
+			.facet(keymapFacet)
+			.filter((binding) => binding.key === "Mod-f");
+		expect(modF.map((binding) => binding.priority ?? 300)).toEqual([
+			100, 300,
 		]);
-		expect(
-			shortcutsToKeymapProviders(extension.keyBindings ?? []).map(
-				(provider) => provider.mark,
-			),
-		).toEqual(["bold", "italic", "underline"]);
+		editor.destroy();
 	});
 });

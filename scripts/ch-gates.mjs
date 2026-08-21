@@ -517,15 +517,14 @@ function findSkipViolations(source, rel) {
 }
 
 function isConditionalSkip(call) {
-	if (/=>|function\s/.test(call)) {
-		return false;
-	}
 	const open = call.indexOf("(");
 	const close = call.lastIndexOf(")");
 	if (open < 0 || close <= open) {
 		return false;
 	}
 	const args = call.slice(open + 1, close).trim();
+	// A skipped test names itself first; a runtime filter leads with the
+	// condition, which Playwright also accepts as a predicate function.
 	return args.length > 0 && !/^[`'"]/.test(args);
 }
 

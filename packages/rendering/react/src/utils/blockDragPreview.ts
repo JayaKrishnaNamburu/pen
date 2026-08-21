@@ -1,4 +1,5 @@
 import type React from "react";
+import { replaceElementChildren } from "@input/pen-dom/utils/replaceElementChildren";
 import { DATA_ATTRS } from "./dataAttributes";
 
 const DRAG_PREVIEW_ROOT_ATTR = "data-pen-block-drag-preview-root";
@@ -131,7 +132,7 @@ export function setBlockDragPreviewImage(args: {
 		preview.append(createCountBadge(ownerDocument, args.blockCount));
 	}
 
-	previewRoot.replaceChildren(preview);
+	replaceElementChildren(previewRoot, preview);
 	args.event.dataTransfer.setDragImage(
 		preview,
 		Math.max(0, args.event.clientX - rect.left),
@@ -149,6 +150,6 @@ export function clearBlockDragPreviewImage(ownerDocument: Document | null | unde
 	if (!previewRoot) {
 		return;
 	}
-	previewRoot.replaceChildren();
+	replaceElementChildren(previewRoot);
 	previewRoot.remove();
 }

@@ -23,6 +23,8 @@ export interface DocumentSizeSnapshot {
 	readonly gcEnabled: boolean;
 }
 
+const lastDocumentSizeCheckAt = new WeakMap<Y.Doc, number>();
+
 export function measureDocumentSize(ydoc: Y.Doc): DocumentSizeSnapshot {
 	return {
 		encodedByteSize: Y.encodeStateAsUpdate(ydoc).byteLength,
@@ -48,4 +50,55 @@ export function isDocumentSizeCadenceDue(
 		return true;
 	}
 	return now - lastReportedAt >= intervalMs;
+}
+
+export function documentSizeDiagnosticFields(size: DocumentSizeSnapshot): {
+	code: typeof DOCUMENT_SIZE_DIAGNOSTIC_CODE;
+	message: string;
+	severity: "info";
+	encodedByteSize: number;
+	blockCount: number;
+	gcEnabled: boolean;
+	timestamp: number;
+} {
+	return {
+		code: DOCUMENT_SIZE_DIAGNOSTIC_CODE,
+		message: `Document is ${size.encodedByteSize} bytes across ${size.blockCount} blocks (gc: ${size.gcEnabled})`,
+		severity: "info",
+		encodedByteSize: size.encodedByteSize,
+		blockCount: size.blockCount,
+		gcEnabled: size.gcEnabled,
+		timestamp: Date.now(),
+	};
+}
+
+/** Starts the post-load cadence clock. Create-path documents stay untracked. */
+export function rememberDocumentSizeCheck(
+	ydoc: Y.Doc,
+	at: number = Date.now(),
+): void {
+	lastDocumentSizeCheckAt.set(ydoc, at);
+}
+
+/**
+ * After load, sample size at most once per cadence interval.
+ * Returns a snapshot only when the sample is due and over the threshold.
+ */
+export function sampleDocumentSizeIfDue(
+	ydoc: Y.Doc,
+	now: number = Date.now(),
+): DocumentSizeSnapshot | null {
+	const last = lastDocumentSizeCheckAt.get(ydoc);
+	if (last === undefined) {
+		return null;
+	}
+	if (!isDocumentSizeCadenceDue(last, now)) {
+		return null;
+	}
+	rememberDocumentSizeCheck(ydoc, now);
+	const size = measureDocumentSize(ydoc);
+	if (!isDocumentSizeOverThreshold(size.encodedByteSize)) {
+		return null;
+	}
+	return size;
 }

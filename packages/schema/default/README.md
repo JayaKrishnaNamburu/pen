@@ -2,6 +2,8 @@
 
 Default block and inline schemas for Pen.
 
+This package describes document structure. It does not render blocks, install extensions, or ship CSS.
+
 ## Install
 
 ```bash
@@ -42,3 +44,17 @@ The default schema includes common rich-text building blocks such as:
 - Use `defaultSchema` when you want the repository's standard document model as-is.
 - Use `createDefaultSchema()` when you want to merge in custom blocks or inline definitions.
 - Schema definitions describe document structure and behavior, not product-specific UI.
+
+## Options
+
+`createDefaultSchema()` takes no arguments. Unknown blocks passthrough (`onUnknownBlock: () => "passthrough"`). `defaultSchema` is one shared instance of that factory.
+
+## Documentation
+
+The docs site (the `@input/pen-docs` package) covers this area on the Core concepts page (`#/core-concepts`).
+
+The public signatures of record are in `api-report.md` next to this package's source in the Pen repository. The docs site does not host a generated browsable reference.
+
+## License
+
+MIT © Input B.V. See [`LICENSE.md`](./LICENSE.md).

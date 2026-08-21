@@ -397,9 +397,10 @@ export abstract class EditContextBackendSelection extends EditContextBackendInpu
 			);
 	}
 
-	protected getInlineDecorationsSignature(): string {
+	protected getInlineDecorationsSignature(): readonly InlineDecoration[] {
 		return buildInlineDecorationsRenderSignature(
 			this.getInlineDecorationsForBlock(),
+			this.inlineDecorationsSignature,
 		);
 	}
 

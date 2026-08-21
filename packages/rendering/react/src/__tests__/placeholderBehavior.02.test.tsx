@@ -3,11 +3,11 @@
 import React, { act } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
-import { createEditor, ensureInlineCompletionController } from "@input/pen-core";
 import {
-	type BlockHandle,
-	type BlockRenderContext,
-} from "@input/pen-types";
+	createEditor,
+	ensureInlineCompletionController,
+} from "@input/pen-core";
+import { type BlockHandle, type BlockRenderContext } from "@input/pen-types";
 import { defaultPreset } from "@input/pen-preset-default";
 import { InlineContent } from "../primitives/editor/inlineContent";
 import { Pen } from "../primitives/index";
@@ -45,7 +45,8 @@ describe("@input/pen-react placeholder behavior", () => {
 		registerRenderer("paragraph", PlaceholderParagraphRenderer);
 
 		const editor = createEditor({
-			schema: defaultSchema, preset: defaultPreset({
+			schema: defaultSchema,
+			preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,
@@ -107,7 +108,8 @@ describe("@input/pen-react placeholder behavior", () => {
 		registerRenderer("paragraph", PlaceholderParagraphRenderer);
 
 		const editor = createEditor({
-			schema: defaultSchema, preset: defaultPreset({
+			schema: defaultSchema,
+			preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,
@@ -172,7 +174,8 @@ describe("@input/pen-react placeholder behavior", () => {
 		registerRenderer("paragraph", PlaceholderParagraphRenderer);
 
 		const editor = createEditor({
-			schema: defaultSchema, preset: defaultPreset({
+			schema: defaultSchema,
+			preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,
@@ -238,5 +241,4 @@ describe("@input/pen-react placeholder behavior", () => {
 		inlineCompletion.release();
 		editor.destroy();
 	});
-
 });

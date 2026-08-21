@@ -2,6 +2,7 @@ import type {
 	Extension,
 	KeyBinding,
 } from "@input/pen-types";
+import { shortcutsToKeymapProviders } from "./providers";
 import { toggleInlineMark, setInlineMark } from "./toggleInlineMark";
 
 export const RICH_TEXT_SHORTCUTS_EXTENSION_NAME = "rich-text-shortcuts";
@@ -32,7 +33,7 @@ export function richTextShortcutsExtension(
 	return {
 		name: RICH_TEXT_SHORTCUTS_EXTENSION_NAME,
 		version: "0.0.0",
-		keyBindings: buildKeyBindings(options),
+		facets: shortcutsToKeymapProviders(buildKeyBindings(options)),
 	};
 }
 

@@ -6,7 +6,13 @@ export default defineConfig({
   dts: { compilerOptions: { stripInternal: true } },
   outDir: "dist",
   clean: true,
-  external: ["@input/pen-export-json", "@input/pen-types", "domhandler", "htmlparser2"],
+  external: [
+    "@input/pen-core",
+    "@input/pen-export-json",
+    "@input/pen-types",
+    "domhandler",
+    "htmlparser2",
+  ],
   outExtension({ format }) {
     return { js: format === "esm" ? ".mjs" : ".cjs" };
   },

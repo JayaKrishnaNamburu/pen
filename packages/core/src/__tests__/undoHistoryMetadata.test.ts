@@ -5,8 +5,9 @@ import {
 	MUTATION_GROUP_METADATA_KEY,
 	UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY,
 } from "@input/pen-types";
+import { undoExtension } from "@input/pen-undo";
 import { createEditor } from "../index";
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "./fixtures/testSchema";
 
 function getHistoryMetadataController(editor: ReturnType<typeof createEditor>) {
 	return editor.internals.getSlot<UndoHistoryMetadataController>(
@@ -16,7 +17,10 @@ function getHistoryMetadataController(editor: ReturnType<typeof createEditor>) {
 
 describe("@input/pen-core undo history metadata", () => {
 	it("buffers metadata for the next history entry after capture stops", () => {
-		const editor = createEditor({ schema: defaultSchema });
+		const editor = createEditor({
+			schema: defaultSchema,
+			extensions: [undoExtension()],
+		});
 		const controller = getHistoryMetadataController(editor);
 		const blockId = editor.firstBlock()!.id;
 		const restoredValues: Array<string | null> = [];
@@ -57,7 +61,10 @@ describe("@input/pen-core undo history metadata", () => {
 	});
 
 	it("restores null metadata for history entries without registered state", () => {
-		const editor = createEditor({ schema: defaultSchema });
+		const editor = createEditor({
+			schema: defaultSchema,
+			extensions: [undoExtension()],
+		});
 		const controller = getHistoryMetadataController(editor);
 		const blockId = editor.firstBlock()!.id;
 		const restoredValues: Array<string | null> = [];
@@ -92,7 +99,10 @@ describe("@input/pen-core undo history metadata", () => {
 
 	it("keeps explicit undo groups merged across capture timeouts", async () => {
 		vi.useFakeTimers();
-		const editor = createEditor({ schema: defaultSchema });
+		const editor = createEditor({
+			schema: defaultSchema,
+			extensions: [undoExtension()],
+		});
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([{ type: "insert-text", blockId, offset: 0, text: "A" }], {
@@ -116,7 +126,10 @@ describe("@input/pen-core undo history metadata", () => {
 
 	it("records structured origin group metadata and uses it as the undo group", async () => {
 		vi.useFakeTimers();
-		const editor = createEditor({ schema: defaultSchema });
+		const editor = createEditor({
+			schema: defaultSchema,
+			extensions: [undoExtension()],
+		});
 		const controller = getHistoryMetadataController(editor);
 		const blockId = editor.firstBlock()!.id;
 

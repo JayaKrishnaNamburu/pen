@@ -124,6 +124,13 @@ export class DocumentStateImpl implements DocumentState {
     this._generation++;
   }
 
+  clear(): void {
+    this._positionIndex.clear();
+    this._parentIndex.clear();
+    this._blockOrder = [];
+    this._generation++;
+  }
+
   incrementalUpdate(affectedBlocks: readonly string[]): void {
     const orderLength = this._doc.blockOrder.length;
     if (orderLength !== this._blockOrder.length) {

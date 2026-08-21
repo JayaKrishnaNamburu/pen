@@ -3,8 +3,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { createEditor as createCoreEditor } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
-import { handleClipboardPaste } from "../field-editor/clipboard";
-import type { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
+import { handleClipboardPaste } from "@input/pen-dom/field-editor/clipboard";
+import type { FieldEditorImpl } from "@input/pen-dom/field-editor/fieldEditorImpl";
 import { defaultSchema } from "@input/pen-schema-default";
 
 function createEditor(

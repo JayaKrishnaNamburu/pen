@@ -4,6 +4,7 @@ import type { Editor, ToolRuntime } from "@input/pen-types";
 import { getAutocompleteController } from "@input/pen-ai-autocomplete";
 import {
 	AIToolContextImpl,
+	createAIToolTurn,
 	executeAITool,
 	getAIToolRuntime,
 	listAITools,
@@ -97,6 +98,7 @@ export function createToolRouteHandlers(sessionStore: PlaygroundSessionStore) {
 					toolName,
 					body.input ?? {},
 					context,
+					createPlaygroundToolTurn(),
 				);
 				sendJson(res, 200, { toolName, output });
 			} catch (error) {
@@ -104,6 +106,12 @@ export function createToolRouteHandlers(sessionStore: PlaygroundSessionStore) {
 			}
 		},
 	};
+}
+
+function createPlaygroundToolTurn() {
+	return createAIToolTurn({
+		allowedMutatingTools: [],
+	});
 }
 
 function resolvePlaygroundToolRuntime(
@@ -131,6 +139,7 @@ export function buildPlaygroundTools(
 	const context = new AIToolContextImpl(editor, "playground", () => {
 		/* Server-side tool execution streams metrics, not editor deltas */
 	});
+	const turn = createPlaygroundToolTurn();
 
 	return toolRuntime
 		.listTools()
@@ -153,6 +162,7 @@ export function buildPlaygroundTools(
 						definition.name,
 						input,
 						context,
+						turn,
 					);
 					metrics.toolExecutionMs += performance.now() - startedAt;
 					if (metrics.firstToolResultMs == null) {

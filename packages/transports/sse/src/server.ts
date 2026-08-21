@@ -5,7 +5,8 @@ import type {
 	Position,
 	ToolContext,
 } from "@input/pen-types";
-import { isAsyncIterable, resolveToolExecution, generateId } from "@input/pen-types";
+import { resolveToolExecution } from "@input/pen-core";
+import { generateId, isAsyncIterable } from "@input/pen-types";
 import type { SSEServerOptions } from "./types";
 
 export function createSSEHandler(
@@ -27,7 +28,12 @@ export function createSSEHandler(
 			});
 		}
 
-		const body = (await request.json()) as PenStreamRequest;
+		let body: PenStreamRequest;
+		try {
+			body = (await request.json()) as PenStreamRequest;
+		} catch {
+			return new Response("Bad Request", { status: 400 });
+		}
 		onRequest?.(body);
 
 		const streamId = generateId();

@@ -520,6 +520,103 @@ describe("change summaries — mapRange", () => {
 			focus: { blockId: "b1", offset: 9 },
 		});
 	});
+
+	it("A5 I2: collapsed caret at an insertion boundary stays collapsed", () => {
+		const summary = textSummary("b1", [
+			{ from: 4, to: 4, insertLength: 1 },
+		]);
+		const mapped = summary.mapRange({
+			anchor: { blockId: "b1", offset: 4 },
+			focus: { blockId: "b1", offset: 4 },
+		});
+		expect(mapped).toEqual({
+			anchor: { blockId: "b1", offset: 5 },
+			focus: { blockId: "b1", offset: 5 },
+		});
+	});
+
+	it("A5 I2: collapsed caret at a deletion boundary stays collapsed", () => {
+		const summary = textSummary("b1", [
+			{ from: 3, to: 9, insertLength: 0 },
+		]);
+		const inside = summary.mapRange({
+			anchor: { blockId: "b1", offset: 5 },
+			focus: { blockId: "b1", offset: 5 },
+		});
+		expect(inside).toEqual({
+			anchor: { blockId: "b1", offset: 3 },
+			focus: { blockId: "b1", offset: 3 },
+		});
+
+		const atStart = summary.mapRange({
+			anchor: { blockId: "b1", offset: 3 },
+			focus: { blockId: "b1", offset: 3 },
+		});
+		expect(atStart).toEqual({
+			anchor: { blockId: "b1", offset: 3 },
+			focus: { blockId: "b1", offset: 3 },
+		});
+
+		const atEnd = summary.mapRange({
+			anchor: { blockId: "b1", offset: 9 },
+			focus: { blockId: "b1", offset: 9 },
+		});
+		expect(atEnd).toEqual({
+			anchor: { blockId: "b1", offset: 3 },
+			focus: { blockId: "b1", offset: 3 },
+		});
+	});
+
+	it("A5: non-collapsed range keeps sticky edge assocs", () => {
+		const atStart = textSummary("b1", [
+			{ from: 0, to: 0, insertLength: 5 },
+		]);
+		expect(
+			atStart.mapRange({
+				anchor: { blockId: "b1", offset: 0 },
+				focus: { blockId: "b1", offset: 2 },
+			}),
+		).toEqual({
+			anchor: { blockId: "b1", offset: 0 },
+			focus: { blockId: "b1", offset: 7 },
+		});
+
+		const atEnd = textSummary("b1", [
+			{ from: 2, to: 2, insertLength: 3 },
+		]);
+		expect(
+			atEnd.mapRange({
+				anchor: { blockId: "b1", offset: 0 },
+				focus: { blockId: "b1", offset: 2 },
+			}),
+		).toEqual({
+			anchor: { blockId: "b1", offset: 0 },
+			focus: { blockId: "b1", offset: 5 },
+		});
+	});
+
+	it("A5: explicit assoc pair wins over the collapsed default", () => {
+		const summary = textSummary("b1", [
+			{ from: 4, to: 4, insertLength: 1 },
+		]);
+		const caret = {
+			anchor: { blockId: "b1", offset: 4 },
+			focus: { blockId: "b1", offset: 4 },
+		};
+
+		expect(
+			summary.mapRange(caret, { anchorAssoc: -1, focusAssoc: 1 }),
+		).toEqual({
+			anchor: { blockId: "b1", offset: 4 },
+			focus: { blockId: "b1", offset: 5 },
+		});
+		expect(
+			summary.mapRange(caret, { anchorAssoc: -1, focusAssoc: -1 }),
+		).toEqual({
+			anchor: { blockId: "b1", offset: 4 },
+			focus: { blockId: "b1", offset: 4 },
+		});
+	});
 });
 
 describe("change summaries — remote split clamp fallback", () => {

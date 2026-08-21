@@ -1,10 +1,5 @@
-import { affectedBlockIdsFromSummary } from "@input/pen-core";
-import {
-	getOpOriginType,
-	type Editor,
-	type InlineDecoration,
-	type OpOrigin,
-} from "@input/pen-types";
+import { affectedBlockIdsFromSummary, getOpOriginType } from "@input/pen-core";
+import type { Editor, InlineDecoration, OpOrigin } from "@input/pen-types";
 import { urlPolicyFromEditor } from "../security/resolveEditorUrl";
 import { fullReconcileToDOM } from "./reconciler";
 import type { FieldEditorTextLike } from "./crdt";

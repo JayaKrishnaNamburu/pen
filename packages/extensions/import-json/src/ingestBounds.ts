@@ -156,7 +156,7 @@ export function copyRecord(
 ): Record<string, unknown> {
 	const record = emptyRecord();
 	for (const key of INGEST_FORBIDDEN_KEYS) {
-		if (Object.hasOwn(source, key)) {
+		if (Object.prototype.hasOwnProperty.call(source, key)) {
 			drops.add("forbidden-key");
 		}
 	}

@@ -3,7 +3,7 @@ import { resolveEditorMessage } from "@input/pen-core";
 import type { AIContextualPromptAnchor, AISession } from "@input/pen-ai";
 import type { Editor } from "@input/pen-types";
 import { useIsomorphicLayoutEffect } from "../../hooks/useIsomorphicLayoutEffect";
-import { domSelectionToEditor } from "../../field-editor/selectionBridge";
+import { domSelectionToEditor } from "@input/pen-dom/field-editor";
 import { useAISessionActions } from "../../hooks/useAISessionActions";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { resolvePromptHostElement, selectionMatchesSnapshot } from "./contextualPromptGeometry";

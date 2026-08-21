@@ -114,9 +114,10 @@ export class ContentEditableBackendSelection extends ContentEditableBackendEvent
 			);
 	}
 
-	protected getInlineDecorationsSignature(): string {
+	protected getInlineDecorationsSignature(): readonly InlineDecoration[] {
 		return buildInlineDecorationsRenderSignature(
 			this.getInlineDecorationsForBlock(),
+			this.inlineDecorationsSignature,
 		);
 	}
 

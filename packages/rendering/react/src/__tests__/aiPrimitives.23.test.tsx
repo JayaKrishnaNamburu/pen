@@ -7,6 +7,9 @@ import { createEditor } from "@input/pen-core";
 import type { ToolRuntime } from "@input/pen-types";
 import { defineExtension } from "@input/pen-core";
 import { aiExtension, getAIController } from "@input/pen-ai";
+import { undoExtension } from "@input/pen-undo";
+import { deltaStreamExtension } from "@input/pen-delta-stream";
+import { documentOpsExtension } from "@input/pen-document-ops";
 import { defaultPreset } from "@input/pen-preset-default";
 import { defaultSchema } from "@input/pen-schema-default";
 import {
@@ -63,8 +66,10 @@ function mockSelectionToolbarRect(rect: {
 	height: number;
 }) {
 	const originalGetSelection = window.getSelection.bind(window);
-	const originalRequestAnimationFrame = window.requestAnimationFrame.bind(window);
-	const originalCancelAnimationFrame = window.cancelAnimationFrame.bind(window);
+	const originalRequestAnimationFrame =
+		window.requestAnimationFrame.bind(window);
+	const originalCancelAnimationFrame =
+		window.cancelAnimationFrame.bind(window);
 	const rangeRect = {
 		top: rect.top,
 		left: rect.left,
@@ -97,7 +102,7 @@ function mockSelectionToolbarRect(rect: {
 	});
 	Object.defineProperty(window, "cancelAnimationFrame", {
 		configurable: true,
-		value: () => { },
+		value: () => {},
 	});
 
 	return () => {
@@ -124,8 +129,10 @@ function mockMutableSelectionToolbarRect(initialRect: {
 }) {
 	const rect = { ...initialRect };
 	const originalGetSelection = window.getSelection.bind(window);
-	const originalRequestAnimationFrame = window.requestAnimationFrame.bind(window);
-	const originalCancelAnimationFrame = window.cancelAnimationFrame.bind(window);
+	const originalRequestAnimationFrame =
+		window.requestAnimationFrame.bind(window);
+	const originalCancelAnimationFrame =
+		window.cancelAnimationFrame.bind(window);
 
 	Object.defineProperty(window, "getSelection", {
 		configurable: true,
@@ -158,7 +165,7 @@ function mockMutableSelectionToolbarRect(initialRect: {
 	});
 	Object.defineProperty(window, "cancelAnimationFrame", {
 		configurable: true,
-		value: () => { },
+		value: () => {},
 	});
 
 	return {
@@ -213,7 +220,10 @@ function testStreamingToolExtension() {
 		name: "test-streaming-tool",
 		dependencies: ["document-ops"],
 		activateClient: async ({ editor }) => {
-			toolRuntime = editor.internals.getSlot<ToolRuntime>("document-ops:toolRuntime") ?? null;
+			toolRuntime =
+				editor.internals.getSlot<ToolRuntime>(
+					"document-ops:toolRuntime",
+				) ?? null;
 			toolRuntime?.registerTool({
 				name: "test_search",
 				description: "Test streaming search tool",
@@ -247,17 +257,20 @@ describe("@input/pen-react AI primitives", () => {
 			height: 24,
 		});
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [aiExtension({ author: "tester" })],
+			schema: defaultSchema,
+			extensions: [
+				undoExtension(),
+				deltaStreamExtension(),
+				documentOpsExtension(),
+				aiExtension({ author: "tester" }),
+			],
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
 			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
 			{ origin: "system" },
 		);
-		editor.selectTextRange(
-			{ blockId, offset: 0 },
-			{ blockId, offset: 5 },
-		);
+		editor.selectTextRange({ blockId, offset: 0 }, { blockId, offset: 5 });
 
 		const container = document.createElement("div");
 		document.body.appendChild(container);
@@ -309,7 +322,13 @@ describe("@input/pen-react AI primitives", () => {
 
 	it("mounts Pen.AI.Root AI views without entering an update loop", async () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [aiExtension({ suggestMode: true, author: "tester" })],
+			schema: defaultSchema,
+			extensions: [
+				undoExtension(),
+				deltaStreamExtension(),
+				documentOpsExtension(),
+				aiExtension({ suggestMode: true, author: "tester" }),
+			],
 		});
 		const controller = getAIController(editor);
 		expect(controller).toBeTruthy();
@@ -329,21 +348,36 @@ describe("@input/pen-react AI primitives", () => {
 			);
 		});
 
-		const initialDiffView = container.querySelector("[data-pen-ai-diff-view]");
-		const initialChangeList = container.querySelector("[data-pen-ai-change-list]");
+		const initialDiffView = container.querySelector(
+			"[data-pen-ai-diff-view]",
+		);
+		const initialChangeList = container.querySelector(
+			"[data-pen-ai-change-list]",
+		);
 		expect(initialDiffView).not.toBeNull();
 		expect(initialChangeList).not.toBeNull();
 
 		const blockId = editor.firstBlock()!.id;
 		await act(async () => {
 			editor.apply(
-				[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+				[
+					{
+						type: "insert-text",
+						blockId,
+						offset: 0,
+						text: "Hello world",
+					},
+				],
 				{ origin: "user" },
 			);
 		});
 
-		expect(container.querySelector("[data-pen-ai-diff-view]")).toBe(initialDiffView);
-		expect(container.querySelector("[data-pen-ai-change-list]")).toBe(initialChangeList);
+		expect(container.querySelector("[data-pen-ai-diff-view]")).toBe(
+			initialDiffView,
+		);
+		expect(container.querySelector("[data-pen-ai-change-list]")).toBe(
+			initialChangeList,
+		);
 
 		await act(async () => {
 			controller?.setSuggestMode(true);
@@ -352,14 +386,16 @@ describe("@input/pen-react AI primitives", () => {
 			controller?.dismissEphemeralSuggestion();
 		});
 
-		expect(container.querySelector("[data-pen-ai-diff-view]")).toBe(initialDiffView);
-		expect(container.querySelector("[data-pen-ai-change-list]")).toBe(initialChangeList);
+		expect(container.querySelector("[data-pen-ai-diff-view]")).toBe(
+			initialDiffView,
+		);
+		expect(container.querySelector("[data-pen-ai-change-list]")).toBe(
+			initialChangeList,
+		);
 
 		await act(async () => {
 			root.unmount();
 		});
 		container.remove();
 	});
-
-
 });

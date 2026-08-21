@@ -40,9 +40,9 @@ function createDataTransfer(files: File[]): DataTransfer {
 function createDragEvent(
 	type: "dragenter" | "dragleave" | "dragover" | "drop",
 	options: {
-	dataTransfer: DataTransfer;
-	clientX: number;
-	clientY: number;
+		dataTransfer: DataTransfer;
+		clientX: number;
+		clientY: number;
 	},
 ): MouseEvent & { dataTransfer: DataTransfer } {
 	const event = new MouseEvent(type, {
@@ -62,7 +62,8 @@ function createDragEvent(
 describe("@input/pen-react image drag and drop", () => {
 	it("splits inline text when dropping an image at a caret position", async () => {
 		const editor = createEditor({
-			schema: defaultSchema, preset: defaultPreset({
+			schema: defaultSchema,
+			preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,
@@ -81,7 +82,12 @@ describe("@input/pen-react image drag and drop", () => {
 		};
 
 		editor.apply([
-			{ type: "insert-text", blockId: paragraphId, offset: 0, text: "Hello" },
+			{
+				type: "insert-text",
+				blockId: paragraphId,
+				offset: 0,
+				text: "Hello",
+			},
 		]);
 
 		const container = document.createElement("div");
@@ -92,7 +98,8 @@ describe("@input/pen-react image drag and drop", () => {
 		const docWithCaretRange = document as Document & {
 			caretRangeFromPoint?: (x: number, y: number) => Range | null;
 		};
-		const originalCaretRangeFromPoint = docWithCaretRange.caretRangeFromPoint;
+		const originalCaretRangeFromPoint =
+			docWithCaretRange.caretRangeFromPoint;
 
 		try {
 			await act(async () => {
@@ -139,7 +146,9 @@ describe("@input/pen-react image drag and drop", () => {
 				return range;
 			};
 
-			const file = new File(["image"], "photo.png", { type: "image/png" });
+			const file = new File(["image"], "photo.png", {
+				type: "image/png",
+			});
 			const dataTransfer = createDataTransfer([file]);
 			const dragEnterEvent = createDragEvent("dragenter", {
 				dataTransfer,
@@ -186,12 +195,16 @@ describe("@input/pen-react image drag and drop", () => {
 			expect(blockOrder[1]).toBe(insertedImageId);
 			const trailingParagraphId = blockOrder[2]!;
 			expect(editor.getBlock(paragraphId)?.textContent()).toBe("He");
-			expect(editor.getBlock(trailingParagraphId)?.textContent()).toBe("llo");
+			expect(editor.getBlock(trailingParagraphId)?.textContent()).toBe(
+				"llo",
+			);
 			expect(editor.selection).toMatchObject({
 				type: "block",
 				blockIds: [insertedImage!.id],
 			});
-			expect(contentElement?.hasAttribute("data-drop-target")).toBe(false);
+			expect(contentElement?.hasAttribute("data-drop-target")).toBe(
+				false,
+			);
 
 			await act(async () => {
 				root.unmount();
@@ -206,7 +219,8 @@ describe("@input/pen-react image drag and drop", () => {
 
 	it("moves the drop target out of the focused block", async () => {
 		const editor = createEditor({
-			schema: defaultSchema, preset: defaultPreset({
+			schema: defaultSchema,
+			preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,
@@ -226,7 +240,12 @@ describe("@input/pen-react image drag and drop", () => {
 		};
 
 		editor.apply([
-			{ type: "insert-text", blockId: firstParagraphId, offset: 0, text: "Hello" },
+			{
+				type: "insert-text",
+				blockId: firstParagraphId,
+				offset: 0,
+				text: "Hello",
+			},
 			{
 				type: "insert-block",
 				blockId: secondParagraphId,
@@ -250,7 +269,8 @@ describe("@input/pen-react image drag and drop", () => {
 		const docWithCaretRange = document as Document & {
 			caretRangeFromPoint?: (x: number, y: number) => Range | null;
 		};
-		const originalCaretRangeFromPoint = docWithCaretRange.caretRangeFromPoint;
+		const originalCaretRangeFromPoint =
+			docWithCaretRange.caretRangeFromPoint;
 
 		try {
 			await act(async () => {
@@ -315,7 +335,9 @@ describe("@input/pen-react image drag and drop", () => {
 				return range;
 			};
 
-			const file = new File(["image"], "photo.png", { type: "image/png" });
+			const file = new File(["image"], "photo.png", {
+				type: "image/png",
+			});
 			const dataTransfer = createDataTransfer([file]);
 			const dragEnterEvent = createDragEvent("dragenter", {
 				dataTransfer,
@@ -357,8 +379,12 @@ describe("@input/pen-react image drag and drop", () => {
 				insertedImageId,
 				secondParagraphId,
 			]);
-			expect(editor.getBlock(firstParagraphId)?.textContent()).toBe("Hello");
-			expect(editor.getBlock(secondParagraphId)?.textContent()).toBe("World");
+			expect(editor.getBlock(firstParagraphId)?.textContent()).toBe(
+				"Hello",
+			);
+			expect(editor.getBlock(secondParagraphId)?.textContent()).toBe(
+				"World",
+			);
 
 			await act(async () => {
 				root.unmount();
@@ -370,6 +396,4 @@ describe("@input/pen-react image drag and drop", () => {
 			editor.destroy();
 		}
 	});
-
-
 });

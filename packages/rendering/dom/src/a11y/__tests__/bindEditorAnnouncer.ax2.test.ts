@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { bindEditorAnnouncer } from "../bindEditorAnnouncer";
 import { FieldEditorImpl } from "../../field-editor/fieldEditorImpl";
 import { defaultSchema } from "@input/pen-schema-default";
+import { undoExtension } from "@input/pen-undo";
 
 const fixtures: Array<{
 	stop?: () => void;
@@ -77,7 +78,10 @@ describe("bindEditorAnnouncer (AX2)", () => {
 	});
 
 	it("AX2: undo and redo announce a content hint", () => {
-		const editor = createEditor({ schema: defaultSchema });
+		const editor = createEditor({
+			schema: defaultSchema,
+			extensions: [undoExtension()],
+		});
 		const root = document.createElement("div");
 		document.body.appendChild(root);
 		const stop = bindEditorAnnouncer(editor, root);

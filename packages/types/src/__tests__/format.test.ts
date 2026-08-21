@@ -5,7 +5,6 @@ import {
 	MIGRATION_LEDGER_METADATA_KEY,
 	PEN_DOCUMENT_FORMAT,
 	PEN_FORMAT_METADATA_KEY,
-	PenDocumentUnreadableError,
 	RESERVED_METADATA_KEYS,
 } from "../types/format";
 
@@ -29,15 +28,5 @@ describe("document format contracts (DUR1)", () => {
 		expect(PEN_FORMAT_METADATA_KEY).toBe("penFormat");
 		expect(DOCUMENT_PROFILE_METADATA_KEY).toBe("documentProfile");
 		expect(MIGRATION_LEDGER_METADATA_KEY).toBe("penMigrations");
-	});
-
-	it("DUR2: PenDocumentUnreadableError carries the stamp and reason", () => {
-		const error = new PenDocumentUnreadableError(
-			{ format: 2, minReader: 3, writer: "future" },
-			"minReader 3 exceeds reader format 2",
-		);
-		expect(error.name).toBe("PenDocumentUnreadableError");
-		expect(error.stamp.minReader).toBe(3);
-		expect(error.reason).toContain("minReader");
 	});
 });

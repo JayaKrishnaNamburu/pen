@@ -215,8 +215,8 @@ export function acceptFullVisibleSuggestion(
 	});
 	controller._continuation.beginAcceptingSequenceSegment();
 	controller._editor.apply(acceptanceResult.ops, {
-		origin: "ai",
-		undoGroup: true,
+		origin: { type: "ai", groupId: requestId },
+		undoGroupId: requestId,
 	});
 	const acceptedBlock = controller._editor.getBlock(blockId);
 	const firstNextBlock = acceptedBlock?.next ?? null;

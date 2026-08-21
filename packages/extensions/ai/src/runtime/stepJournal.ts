@@ -14,9 +14,13 @@ export interface BuildAgentMessagesInput {
 	toolResults: ToolJournalEntry[];
 }
 
-const MAX_OBJECT_KEYS = 8;
-const MAX_ARRAY_ITEMS = 8;
-const MAX_STRING_LENGTH = 1_200;
+export const AI_TOOL_RESULT_MAX_OBJECT_KEYS = 8;
+export const AI_TOOL_RESULT_MAX_ARRAY_ITEMS = 8;
+export const AI_TOOL_RESULT_MAX_CHARS = 1_200;
+
+const MAX_OBJECT_KEYS = AI_TOOL_RESULT_MAX_OBJECT_KEYS;
+const MAX_ARRAY_ITEMS = AI_TOOL_RESULT_MAX_ARRAY_ITEMS;
+const MAX_STRING_LENGTH = AI_TOOL_RESULT_MAX_CHARS;
 
 export function buildAgentMessages(
 	input: BuildAgentMessagesInput,

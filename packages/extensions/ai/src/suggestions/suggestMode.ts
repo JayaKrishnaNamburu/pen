@@ -1,5 +1,6 @@
 import type { DocumentOp, Editor, OpOrigin } from "@input/pen-types";
-import { getOpOriginType, generateId } from "@input/pen-types";
+import { getOpOriginType } from "@input/pen-core";
+import { generateId } from "@input/pen-types";
 import {
 	createSuggestionMark,
 	serializeBlockSuggestionMeta,

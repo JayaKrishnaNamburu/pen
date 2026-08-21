@@ -391,6 +391,13 @@ describe("@input/pen-bench runner", () => {
 		});
 	});
 
+	it("parses SCALE1 envelope flags from CLI args", () => {
+		expect(parseBenchCLIArgs(["--envelope"])).toEqual({
+			reporter: "console",
+			envelope: true,
+		});
+	});
+
 	it("rejects waiver files that do not match the schema document shape", async () => {
 		const dir = await mkdtemp(join(tmpdir(), "pen-bench-"));
 		const waiverFile = join(dir, "waivers.json");

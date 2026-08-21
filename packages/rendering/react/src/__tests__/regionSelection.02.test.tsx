@@ -50,7 +50,8 @@ function setRect(
 
 function createThreeBlockEditor() {
 	const editor = createEditor({
-		schema: defaultSchema, preset: defaultPreset({
+		schema: defaultSchema,
+		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
 			undo: false,
@@ -132,7 +133,9 @@ describe("@input/pen-react region selection", () => {
 			setRect(blockElements[2]!, 0, 150, 200, 40);
 
 			await act(async () => {
-				contentElement?.dispatchEvent(createMouseEvent("mousedown", 10, 60));
+				contentElement?.dispatchEvent(
+					createMouseEvent("mousedown", 10, 60),
+				);
 				document.dispatchEvent(createMouseEvent("mousemove", 180, 20));
 			});
 
@@ -157,7 +160,8 @@ describe("@input/pen-react region selection", () => {
 	});
 
 	it("starts marquee selection from the editor root outside content", async () => {
-		const { editor, firstBlockId, secondBlockId } = createThreeBlockEditor();
+		const { editor, firstBlockId, secondBlockId } =
+			createThreeBlockEditor();
 		const container = document.createElement("div");
 		document.body.appendChild(container);
 		const root = createRoot(container);
@@ -167,7 +171,10 @@ describe("@input/pen-react region selection", () => {
 			await act(async () => {
 				root.render(
 					<Pen.Editor.Root editor={editor}>
-						<div data-testid="toolbar-shell" data-pen-ignore-pointer-gesture="">
+						<div
+							data-testid="toolbar-shell"
+							data-pen-ignore-pointer-gesture=""
+						>
 							Toolbar
 						</div>
 						<Pen.Editor.Content />
@@ -192,7 +199,9 @@ describe("@input/pen-react region selection", () => {
 			setRect(blockElements[2]!, 0, 120, 200, 40);
 
 			await act(async () => {
-				rootElement?.dispatchEvent(createMouseEvent("mousedown", 260, 10));
+				rootElement?.dispatchEvent(
+					createMouseEvent("mousedown", 260, 10),
+				);
 				document.dispatchEvent(createMouseEvent("mousemove", 120, 90));
 			});
 
@@ -208,5 +217,4 @@ describe("@input/pen-react region selection", () => {
 			editor.destroy();
 		}
 	});
-
 });

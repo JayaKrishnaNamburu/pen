@@ -93,7 +93,78 @@ export function selectionSnapshotMatches(
 	editor: Editor,
 	snapshot: TransferSelectionSnapshot,
 ): boolean {
-	return JSON.stringify(snapshotTransferSelection(editor)) === JSON.stringify(snapshot);
+	return areTransferSelectionSnapshotsEqual(
+		snapshotTransferSelection(editor),
+		snapshot,
+	);
+}
+
+function areTransferSelectionSnapshotsEqual(
+	left: TransferSelectionSnapshot,
+	right: TransferSelectionSnapshot,
+): boolean {
+	if (left === right) {
+		return true;
+	}
+	if (!left || !right) {
+		return left === right;
+	}
+	if (left.type !== right.type) {
+		return false;
+	}
+
+	switch (left.type) {
+		case "text":
+			return (
+				right.type === "text" &&
+				textPointsEqual(left.anchor, right.anchor) &&
+				textPointsEqual(left.focus, right.focus)
+			);
+		case "block":
+			return (
+				right.type === "block" &&
+				stringArraysEqual(left.blockIds, right.blockIds)
+			);
+		case "app":
+			return right.type === "app" && left.appId === right.appId;
+		case "cell":
+			return (
+				right.type === "cell" &&
+				left.blockId === right.blockId &&
+				cellPointsEqual(left.anchor, right.anchor) &&
+				cellPointsEqual(left.head, right.head)
+			);
+		default: {
+			const _exhaustive: never = left;
+			return _exhaustive;
+		}
+	}
+}
+
+function textPointsEqual(
+	left: { blockId: string; offset: number },
+	right: { blockId: string; offset: number },
+): boolean {
+	return left.blockId === right.blockId && left.offset === right.offset;
+}
+
+function cellPointsEqual(
+	left: { row: number; col: number },
+	right: { row: number; col: number },
+): boolean {
+	return left.row === right.row && left.col === right.col;
+}
+
+function stringArraysEqual(left: readonly string[], right: readonly string[]): boolean {
+	if (left.length !== right.length) {
+		return false;
+	}
+	for (let index = 0; index < left.length; index += 1) {
+		if (left[index] !== right[index]) {
+			return false;
+		}
+	}
+	return true;
 }
 
 export function deleteSelectionForTransfer(

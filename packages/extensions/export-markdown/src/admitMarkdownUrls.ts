@@ -1,4 +1,4 @@
-import { urlPolicy, type UrlContext } from "@input/pen-dom";
+import { urlPolicy, type UrlContext } from "@input/pen-core";
 
 const FENCED_CODE = /```[\s\S]*?```/g;
 const INLINE_CODE = /`[^`]*`/g;

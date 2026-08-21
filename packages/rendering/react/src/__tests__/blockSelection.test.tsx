@@ -14,7 +14,8 @@ import { defaultSchema } from "@input/pen-schema-default";
 
 function createEditor(options: Parameters<typeof createCoreEditor>[0] = {}) {
 	return createCoreEditor({
-		schema: defaultSchema,...options,
+		schema: defaultSchema,
+		...options,
 		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
@@ -63,7 +64,10 @@ function createCaretRangeResolver(
 	};
 }
 
-function getInlineSurface(container: HTMLElement, blockId: string): HTMLElement {
+function getInlineSurface(
+	container: HTMLElement,
+	blockId: string,
+): HTMLElement {
 	const inlineSurface = container.querySelector(
 		`[data-block-id="${blockId}"] [data-pen-inline-content]`,
 	) as HTMLElement | null;
@@ -80,7 +84,12 @@ describe("@input/pen-react block selection", () => {
 		const secondBlockId = crypto.randomUUID();
 
 		editor.apply([
-			{ type: "insert-text", blockId: firstBlockId, offset: 0, text: "Alpha" },
+			{
+				type: "insert-text",
+				blockId: firstBlockId,
+				offset: 0,
+				text: "Alpha",
+			},
 			{
 				type: "insert-block",
 				blockId: secondBlockId,
@@ -88,7 +97,12 @@ describe("@input/pen-react block selection", () => {
 				props: {},
 				position: { after: firstBlockId },
 			},
-			{ type: "insert-text", blockId: secondBlockId, offset: 0, text: "Beta" },
+			{
+				type: "insert-text",
+				blockId: secondBlockId,
+				offset: 0,
+				text: "Beta",
+			},
 		]);
 
 		const container = document.createElement("div");
@@ -161,7 +175,12 @@ describe("@input/pen-react block selection", () => {
 		const secondBlockId = crypto.randomUUID();
 
 		editor.apply([
-			{ type: "insert-text", blockId: firstBlockId, offset: 0, text: "Alpha" },
+			{
+				type: "insert-text",
+				blockId: firstBlockId,
+				offset: 0,
+				text: "Alpha",
+			},
 			{
 				type: "insert-block",
 				blockId: secondBlockId,
@@ -169,7 +188,12 @@ describe("@input/pen-react block selection", () => {
 				props: {},
 				position: { after: firstBlockId },
 			},
-			{ type: "insert-text", blockId: secondBlockId, offset: 0, text: "Beta" },
+			{
+				type: "insert-text",
+				blockId: secondBlockId,
+				offset: 0,
+				text: "Beta",
+			},
 		]);
 
 		const container = document.createElement("div");
@@ -257,7 +281,9 @@ describe("@input/pen-react block selection", () => {
 	it("hides the selection rectangle when root block selection is disabled", async () => {
 		const editor = createEditor();
 		const blockId = editor.firstBlock()!.id;
-		editor.apply([{ type: "insert-text", blockId, offset: 0, text: "Alpha" }]);
+		editor.apply([
+			{ type: "insert-text", blockId, offset: 0, text: "Alpha" },
+		]);
 		editor.selectBlock(blockId);
 
 		const container = document.createElement("div");
@@ -266,10 +292,7 @@ describe("@input/pen-react block selection", () => {
 
 		await act(async () => {
 			root.render(
-				<Pen.Editor.Root
-					editor={editor}
-					blockSelection={false}
-				>
+				<Pen.Editor.Root editor={editor} blockSelection={false}>
 					<Pen.Editor.Content />
 					<Pen.Editor.SelectionRect />
 				</Pen.Editor.Root>,

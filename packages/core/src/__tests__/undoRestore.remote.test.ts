@@ -2,7 +2,7 @@ import { undoExtension } from "@input/pen-undo";
 import { describe, expect, it } from "vitest";
 import * as Y from "yjs";
 
-import { createDefaultSchema } from "@input/pen-schema-default";
+import { createDefaultSchema } from "./fixtures/testSchema";
 import { createEditor as createCoreEditor } from "../index";
 
 const undoOnlyPreset = {
@@ -110,6 +110,60 @@ describe("undo restore under remote edits", () => {
 			type: "text",
 			anchor: { blockId, offset: 5 + remoteInsertCount },
 			focus: { blockId, offset: 5 + remoteInsertCount },
+		});
+
+		editor.destroy();
+	});
+
+	it("A5: redo of a split restores the caret on the live new block", async () => {
+		const editor = createEditor();
+		await editor.whenReady();
+		const firstBlockId = editor.firstBlock()!.id;
+
+		editor.apply(
+			[
+				{
+					type: "insert-text",
+					blockId: firstBlockId,
+					offset: 0,
+					text: "Hello",
+				},
+			],
+			{ origin: "user" },
+		);
+		editor.undoManager.stopCapturing();
+		editor.selectText(firstBlockId, 5, 5);
+
+		const newBlockId = "redo-split-caret";
+		editor.apply(
+			[
+				{
+					type: "split-block",
+					blockId: firstBlockId,
+					offset: 5,
+					newBlockId,
+				},
+			],
+			{ origin: "user" },
+		);
+		editor.selectText(newBlockId, 0, 0);
+		await Promise.resolve();
+		editor.undoManager.stopCapturing();
+
+		expect(editor.undoManager.undo()).toBe(true);
+		expect(editor.getBlock(newBlockId)).toBeNull();
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId: firstBlockId, offset: 5 },
+			focus: { blockId: firstBlockId, offset: 5 },
+		});
+
+		expect(editor.undoManager.redo()).toBe(true);
+		expect(editor.getBlock(newBlockId)).not.toBeNull();
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId: newBlockId, offset: 0 },
+			focus: { blockId: newBlockId, offset: 0 },
 		});
 
 		editor.destroy();

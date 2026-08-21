@@ -5,6 +5,7 @@ import {
 	type DocumentBlockSnapshot,
 	type DocumentContextViewMode,
 } from "./documentContext";
+import { foldAndNormalize, resolveEditorLocale } from "./editorLocale";
 
 export interface RetrievedDocumentSpan {
 	id: string;
@@ -49,7 +50,9 @@ export function retrieveDocumentSpans(
 	editor: Editor,
 	input: RetrieveDocumentSpansInput,
 ): RetrievedDocumentSpan[] {
-	const normalizedQuery = input.query.trim().toLowerCase();
+	const locale = resolveEditorLocale(editor);
+	const trimmedQuery = input.query.trim();
+	const normalizedQuery = foldAndNormalize(trimmedQuery, locale);
 	if (normalizedQuery.length === 0) {
 		return [];
 	}
@@ -58,12 +61,15 @@ export function retrieveDocumentSpans(
 		editor,
 		input.viewMode ?? "resolved",
 	);
-	const tokens = tokenizeQuery(normalizedQuery);
+	const tokens = tokenizeQuery(trimmedQuery).map((token) =>
+		foldAndNormalize(token, locale),
+	);
 	const ranked = snapshots
 		.map((snapshot, index) =>
 			scoreSnapshot(snapshot, snapshots, index, {
 				normalizedQuery,
 				tokens,
+				locale,
 				activeBlockId: input.activeBlockId ?? null,
 				targetBlockId: input.targetBlockId ?? null,
 			}),
@@ -95,6 +101,7 @@ function scoreSnapshot(
 	input: {
 		normalizedQuery: string;
 		tokens: string[];
+		locale: string;
 		activeBlockId: string | null;
 		targetBlockId: string | null;
 	},
@@ -104,14 +111,15 @@ function scoreSnapshot(
 		score: number;
 		rationale: string;
 	} {
-	const searchableText = [
-		snapshot.content,
-		snapshot.markdown,
-		snapshot.type,
-		snapshot.headingPath.join(" "),
-	]
-		.join("\n")
-		.toLowerCase();
+	const searchableText = foldAndNormalize(
+		[
+			snapshot.content,
+			snapshot.markdown,
+			snapshot.type,
+			snapshot.headingPath.join(" "),
+		].join("\n"),
+		input.locale,
+	);
 	let score = 0;
 	const rationale: string[] = [];
 
@@ -126,11 +134,15 @@ function scoreSnapshot(
 			score += TOKEN_MATCH_SCORE;
 			tokenMatches += 1;
 		}
-		if (snapshot.type.toLowerCase().includes(token)) {
+		if (foldAndNormalize(snapshot.type, input.locale).includes(token)) {
 			score += BLOCK_TYPE_MATCH_SCORE;
 			rationale.push(`type:${token}`);
 		}
-		if (snapshot.headingPath.some((heading) => heading.toLowerCase().includes(token))) {
+		if (
+			snapshot.headingPath.some((heading) =>
+				foldAndNormalize(heading, input.locale).includes(token),
+			)
+		) {
 			score += HEADING_PATH_MATCH_SCORE;
 			rationale.push(`heading:${token}`);
 		}

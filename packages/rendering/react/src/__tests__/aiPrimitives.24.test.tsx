@@ -4,9 +4,15 @@ import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
 import { createEditor } from "@input/pen-core";
-import type { ToolRuntime } from "@input/pen-types";
+import {
+	AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY,
+	type ToolRuntime,
+} from "@input/pen-types";
 import { defineExtension } from "@input/pen-core";
 import { aiExtension, getAIController } from "@input/pen-ai";
+import { undoExtension } from "@input/pen-undo";
+import { deltaStreamExtension } from "@input/pen-delta-stream";
+import { documentOpsExtension } from "@input/pen-document-ops";
 import { defaultPreset } from "@input/pen-preset-default";
 import { defaultSchema } from "@input/pen-schema-default";
 import {
@@ -63,8 +69,10 @@ function mockSelectionToolbarRect(rect: {
 	height: number;
 }) {
 	const originalGetSelection = window.getSelection.bind(window);
-	const originalRequestAnimationFrame = window.requestAnimationFrame.bind(window);
-	const originalCancelAnimationFrame = window.cancelAnimationFrame.bind(window);
+	const originalRequestAnimationFrame =
+		window.requestAnimationFrame.bind(window);
+	const originalCancelAnimationFrame =
+		window.cancelAnimationFrame.bind(window);
 	const rangeRect = {
 		top: rect.top,
 		left: rect.left,
@@ -97,7 +105,7 @@ function mockSelectionToolbarRect(rect: {
 	});
 	Object.defineProperty(window, "cancelAnimationFrame", {
 		configurable: true,
-		value: () => { },
+		value: () => {},
 	});
 
 	return () => {
@@ -124,8 +132,10 @@ function mockMutableSelectionToolbarRect(initialRect: {
 }) {
 	const rect = { ...initialRect };
 	const originalGetSelection = window.getSelection.bind(window);
-	const originalRequestAnimationFrame = window.requestAnimationFrame.bind(window);
-	const originalCancelAnimationFrame = window.cancelAnimationFrame.bind(window);
+	const originalRequestAnimationFrame =
+		window.requestAnimationFrame.bind(window);
+	const originalCancelAnimationFrame =
+		window.cancelAnimationFrame.bind(window);
 
 	Object.defineProperty(window, "getSelection", {
 		configurable: true,
@@ -158,7 +168,7 @@ function mockMutableSelectionToolbarRect(initialRect: {
 	});
 	Object.defineProperty(window, "cancelAnimationFrame", {
 		configurable: true,
-		value: () => { },
+		value: () => {},
 	});
 
 	return {
@@ -213,10 +223,14 @@ function testStreamingToolExtension() {
 		name: "test-streaming-tool",
 		dependencies: ["document-ops"],
 		activateClient: async ({ editor }) => {
-			toolRuntime = editor.internals.getSlot<ToolRuntime>("document-ops:toolRuntime") ?? null;
+			toolRuntime =
+				editor.internals.getSlot<ToolRuntime>(
+					"document-ops:toolRuntime",
+				) ?? null;
 			toolRuntime?.registerTool({
 				name: "test_search",
 				description: "Test streaming search tool",
+				mutating: false,
 				inputSchema: {
 					type: "object",
 					required: ["query"],
@@ -241,11 +255,18 @@ function testStreamingToolExtension() {
 describe("@input/pen-react AI primitives", () => {
 	it("renders active inline session controls as a right-edge rail", async () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [
+			schema: defaultSchema,
+			extensions: [
+				undoExtension(),
+				deltaStreamExtension(),
+				documentOpsExtension(),
 				aiExtension({
 					model: {
 						async *stream() {
-							yield { type: "text-delta" as const, delta: "planet" };
+							yield {
+								type: "text-delta" as const,
+								delta: "planet",
+							};
 							yield { type: "done" as const };
 						},
 					},
@@ -259,17 +280,17 @@ describe("@input/pen-react AI primitives", () => {
 			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
 			{ origin: "system" },
 		);
-		editor.selectTextRange(
-			{ blockId, offset: 6 },
-			{ blockId, offset: 11 },
-		);
+		editor.selectTextRange({ blockId, offset: 6 }, { blockId, offset: 11 });
 
 		const session = controller?.startSession({
 			surface: "inline-edit",
 			target: "selection",
 		});
 		if (session) {
-			await controller?.runSessionPrompt(session.id, "Rewrite the selection");
+			await controller?.runSessionPrompt(
+				session.id,
+				"Rewrite the selection",
+			);
 		}
 
 		const container = document.createElement("div");
@@ -292,7 +313,11 @@ describe("@input/pen-react AI primitives", () => {
 		});
 
 		const suggestionIds = [
-			...new Set((controller?.getSuggestions() ?? []).map((suggestion) => suggestion.id)),
+			...new Set(
+				(controller?.getSuggestions() ?? []).map(
+					(suggestion) => suggestion.id,
+				),
+			),
 		];
 		expect(suggestionIds.length).toBeGreaterThan(0);
 
@@ -337,7 +362,7 @@ describe("@input/pen-react AI primitives", () => {
 		});
 
 		const rail = container.querySelector(
-			"[data-pen-ai-inline-suggestion-control][data-placement=\"right-rail\"]",
+			'[data-pen-ai-inline-suggestion-control][data-placement="right-rail"]',
 		) as HTMLDivElement | null;
 		expect(rail).not.toBeNull();
 		expect(rail?.style.left).toBe("524px");
@@ -358,8 +383,13 @@ describe("@input/pen-react AI primitives", () => {
 	it("renders streamed tool activity and progress metadata", async () => {
 		let pass = 0;
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [
+			schema: defaultSchema,
+			extensions: [
+				undoExtension(),
+				deltaStreamExtension(),
+				documentOpsExtension(),
 				aiExtension({
+					allowedMutatingTools: ["test_search"],
 					model: {
 						async *stream() {
 							pass += 1;
@@ -378,6 +408,9 @@ describe("@input/pen-react AI primitives", () => {
 				testStreamingToolExtension(),
 			],
 		});
+		await (editor.internals.getSlot<() => Promise<void>>(
+			AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY,
+		)?.() ?? Promise.resolve());
 		const controller = getAIController(editor);
 		expect(controller).toBeTruthy();
 
@@ -413,21 +446,25 @@ describe("@input/pen-react AI primitives", () => {
 
 		const progress = container.querySelector("[data-pen-ai-progress]");
 		const toolStream = container.querySelector("[data-pen-ai-tool-stream]");
-		const toolCallOutput = toolStream?.querySelector("[data-tool-call-output]");
+		const toolCallOutput = toolStream?.querySelector(
+			"[data-tool-call-output]",
+		);
 
 		expect(progress?.getAttribute("data-tool-output-count")).toBe("2");
-		expect(progress?.getAttribute("data-last-stream-event")).toBe("generation-finish");
+		expect(progress?.getAttribute("data-last-stream-event")).toBe(
+			"generation-finish",
+		);
 		expect(toolStream?.getAttribute("data-tool-call-count")).toBe("1");
 		expect(toolStream?.getAttribute("data-running-tool-count")).toBe("0");
-		expect(toolStream?.querySelector("[data-tool-call-name]")?.textContent).toBe(
-			"test_search",
-		);
-		expect(toolStream?.querySelector("[data-tool-call-status]")?.textContent).toBe(
-			"complete",
-		);
-		expect(toolStream?.querySelector("[data-tool-call-input]")?.textContent).toContain(
-			'"query": "plan"',
-		);
+		expect(
+			toolStream?.querySelector("[data-tool-call-name]")?.textContent,
+		).toBe("test_search");
+		expect(
+			toolStream?.querySelector("[data-tool-call-status]")?.textContent,
+		).toBe("complete");
+		expect(
+			toolStream?.querySelector("[data-tool-call-input]")?.textContent,
+		).toContain('"query": "plan"');
 		expect(toolCallOutput?.textContent).toContain("searching:plan");
 		expect(toolCallOutput?.textContent).toContain('"matches": 2');
 
@@ -436,7 +473,4 @@ describe("@input/pen-react AI primitives", () => {
 		});
 		container.remove();
 	});
-
-
-
 });

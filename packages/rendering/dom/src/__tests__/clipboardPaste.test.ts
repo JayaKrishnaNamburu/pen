@@ -11,7 +11,9 @@ import { handleCopy } from "../field-editor/clipboard";
 import { executePasteTransfer } from "../field-editor/transferPaste";
 import type { FieldEditorTransferController } from "../field-editor/controller";
 import {
+	CLIPBOARD_INGEST_MAX_IMAGE_COUNT,
 	CLIPBOARD_INGEST_MAX_NESTING_DEPTH,
+	CLIPBOARD_INGEST_MAX_TEXT_SIZE,
 } from "../utils/clipboardIngest";
 import { defaultSchema } from "@input/pen-schema-default";
 import {
@@ -282,6 +284,99 @@ describe("clipboard JSON-flavor paste", () => {
 				],
 			}),
 		]);
+
+		editor.destroy();
+	});
+
+	it("IOP5: paste drops image blocks past the 256 image cap and emits import-truncated", async () => {
+		const editor = createBareEditor();
+		editor.selectText(editor.firstBlock()!.id, 0, 0);
+		const diagnostics: unknown[] = [];
+		editor.on("diagnostic", (event) => {
+			diagnostics.push(event);
+		});
+		const overflow = 2;
+
+		await executePasteTransfer({
+			source: "paste",
+			editor,
+			fieldEditor: createFieldEditorStub(),
+			dataTransfer: createClipboardData({
+				[PEN_CLIPBOARD_JSON_MIME]: serializePenClipboardPayload(
+					Array.from(
+						{ length: CLIPBOARD_INGEST_MAX_IMAGE_COUNT + overflow },
+						(_, index) => ({
+							type: "image",
+							props: { src: `https://example.com/${index}.png` },
+						}),
+					),
+				),
+			}),
+		});
+
+		const imageCount = [...editor.documentState.allBlocks()].filter(
+			(block) => block.type === "image",
+		).length;
+		expect(imageCount).toBe(CLIPBOARD_INGEST_MAX_IMAGE_COUNT);
+		expect(diagnostics).toEqual([
+			expect.objectContaining({
+				code: "import-truncated",
+				droppedByReason: [
+					expect.objectContaining({
+						reason: "image-count-exceeded",
+						count: overflow,
+						bound: "CLIPBOARD_INGEST_MAX_IMAGE_COUNT",
+					}),
+				],
+			}),
+		]);
+
+		editor.destroy();
+	});
+
+	it("IOP5: paste drops blocks past the 1 MiB text cap and emits import-truncated", async () => {
+		const editor = createBareEditor();
+		editor.selectText(editor.firstBlock()!.id, 0, 0);
+		const diagnostics: unknown[] = [];
+		editor.on("diagnostic", (event) => {
+			diagnostics.push(event);
+		});
+
+		await executePasteTransfer({
+			source: "paste",
+			editor,
+			fieldEditor: createFieldEditorStub(),
+			dataTransfer: createClipboardData({
+				[PEN_CLIPBOARD_JSON_MIME]: serializePenClipboardPayload([
+					{
+						type: "paragraph",
+						content: "x".repeat(CLIPBOARD_INGEST_MAX_TEXT_SIZE),
+					},
+					{ type: "paragraph", content: "overflow" },
+				]),
+			}),
+		});
+
+		expect(diagnostics).toEqual([
+			expect.objectContaining({
+				code: "import-truncated",
+				droppedByReason: [
+					expect.objectContaining({
+						reason: "text-size-exceeded",
+						bound: "CLIPBOARD_INGEST_MAX_TEXT_SIZE",
+					}),
+				],
+			}),
+		]);
+		const pasted = [...editor.documentState.allBlocks()].find(
+			(block) => block.textContent().length === CLIPBOARD_INGEST_MAX_TEXT_SIZE,
+		);
+		expect(pasted).toBeDefined();
+		expect(
+			[...editor.documentState.allBlocks()].some(
+				(block) => block.textContent() === "overflow",
+			),
+		).toBe(false);
 
 		editor.destroy();
 	});

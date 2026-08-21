@@ -1,5 +1,5 @@
 import { fileURLToPath, URL } from "node:url";
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 
 const PLAYGROUND_BACKEND_PORT = "8787";
@@ -86,5 +86,9 @@ export default defineConfig({
 	},
 	optimizeDeps: {
 		exclude: Object.keys(PEN_SOURCE_ALIASES),
+	},
+	test: {
+		include: ["server/**/*.test.ts"],
+		testTimeout: 10_000,
 	},
 });

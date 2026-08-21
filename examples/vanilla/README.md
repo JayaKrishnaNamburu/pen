@@ -2,7 +2,7 @@
 
 Minimal Vite app that mounts Pen with `@input/pen-preset-default` and `@input/pen-dom`. `@input/pen-core` is the headless assembly point if you skip the preset.
 
-This package is **not on the pnpm workspace yet**. `pnpm-workspace.yaml` does not include `examples/*`, so `pnpm --filter @input/pen-example-vanilla` will not resolve until that membership lands.
+This package is a workspace member (`examples/vanilla` in `pnpm-workspace.yaml`).
 
 ## Install
 
@@ -19,7 +19,7 @@ pnpm add @input/pen-preset-default @input/pen-core @input/pen-dom
 ```ts
 import { createEditor } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
-import { FieldEditorImpl } from "@input/pen-dom";
+import { mountEditor } from "@input/pen-dom";
 
 const editor = createEditor({
   preset: defaultPreset(),
@@ -30,19 +30,18 @@ if (!(root instanceof HTMLElement)) {
   throw new Error("Missing #app");
 }
 
-const fieldEditor = new FieldEditorImpl(editor);
-fieldEditor.setRootElement(root);
+mountEditor(editor, root);
 ```
 
-That file is `src/main.ts`. `@input/pen-dom` is the field-editor engine; the host renders document blocks — `@input/pen-react` and `@input/pen-vue` do that for those hosts.
+That file is `src/main.ts`. `mountEditor` is the same composition `@input/pen-react` and `@input/pen-vue` already assemble: `FieldEditorImpl`, the editor-root shell, and inline-content surfaces. Construct it in the browser, not during SSR.
 
-Pen ships no required stylesheet — the editor is functional unstyled. Tokens live in the `@input/pen-react` [STYLING.md](../../packages/rendering/react/STYLING.md) property reference.
+Pen ships no required stylesheet — the editor is functional unstyled. Tokens the `@input/pen-dom` overlays read are catalogued in `STYLING.md`, which ships inside the `@input/pen-react` package.
 
 Client-only mount: `@input/pen-dom` is a browser module — construct `FieldEditorImpl` in the browser, not during SSR.
 
 ## Run from this repository
 
-Requires Node 22+ and pnpm 9. After `examples/*` is added to the workspace, from the repository root:
+Requires Node 22+ and pnpm 9. From the repository root:
 
 ```bash
 pnpm install

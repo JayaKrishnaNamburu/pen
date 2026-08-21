@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
 import { createDefaultSchema } from "@input/pen-schema-default";
 import {
+	INGEST_MAX_IMAGE_COUNT,
 	INGEST_MAX_NESTING_DEPTH,
 	INGEST_MAX_NODE_COUNT,
 	INGEST_MAX_TEXT_SIZE,
@@ -24,10 +25,11 @@ function createBareEditor() {
 }
 
 describe("IOP5 markdown ingest bounds", () => {
-	it("IOP5 uses depth 32, 10k nodes, and 1MB text", () => {
+	it("IOP5 uses depth 32, 10k nodes, 1MB text, and 256 images", () => {
 		expect(INGEST_MAX_NESTING_DEPTH).toBe(32);
 		expect(INGEST_MAX_NODE_COUNT).toBe(10_000);
 		expect(INGEST_MAX_TEXT_SIZE).toBe(1_048_576);
+		expect(INGEST_MAX_IMAGE_COUNT).toBe(256);
 	});
 
 	it("IOP5 truncates oversize node count at a block boundary", () => {
@@ -46,6 +48,8 @@ describe("IOP5 markdown ingest bounds", () => {
 				reason: "count-exceeded",
 				count: 3,
 				bound: "INGEST_MAX_NODE_COUNT",
+				limit: INGEST_MAX_NODE_COUNT,
+				actual: INGEST_MAX_NODE_COUNT + 3,
 				dropped: "3 blocks",
 			},
 		]);
@@ -73,6 +77,8 @@ describe("IOP5 markdown ingest bounds", () => {
 				reason: "text-size-exceeded",
 				count: 4,
 				bound: "INGEST_MAX_TEXT_SIZE",
+				limit: INGEST_MAX_TEXT_SIZE,
+				actual: INGEST_MAX_TEXT_SIZE + 4,
 				dropped: "4 code units",
 			},
 		]);
@@ -103,6 +109,8 @@ describe("IOP5 markdown ingest bounds", () => {
 				reason: "depth-exceeded",
 				count: 1,
 				bound: "INGEST_MAX_NESTING_DEPTH",
+				limit: INGEST_MAX_NESTING_DEPTH,
+				actual: INGEST_MAX_NESTING_DEPTH + 1,
 				dropped: "1 block",
 			},
 		]);
@@ -124,12 +132,16 @@ describe("IOP6 markdown ingest report", () => {
 		const result = markdownImporter.import(markdown, editor);
 
 		expect(diagnostics).toHaveLength(1);
-		expect(result.droppedByReason).toHaveLength(1);
-		expect(result.droppedByReason[0]).toMatchObject({
-			reason: "depth-exceeded",
-			bound: "INGEST_MAX_NESTING_DEPTH",
-		});
-		expect(result.droppedByReason[0]?.count).toBeGreaterThan(0);
+		expect(result.droppedByReason).toEqual([
+			{
+				reason: "depth-exceeded",
+				count: 2,
+				bound: "INGEST_MAX_NESTING_DEPTH",
+				limit: INGEST_MAX_NESTING_DEPTH,
+				actual: INGEST_MAX_NESTING_DEPTH + 2,
+				dropped: "2 blocks",
+			},
+		]);
 
 		editor.destroy();
 	});

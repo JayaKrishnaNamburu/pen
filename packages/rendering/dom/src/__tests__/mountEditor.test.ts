@@ -1,0 +1,107 @@
+// @vitest-environment jsdom
+
+import { afterEach, describe, expect, it } from "vitest";
+import { createEditor } from "@input/pen-core";
+import { defaultSchema } from "@input/pen-schema-default";
+import { FIELD_EDITOR_SLOT_KEY, type Editor } from "@input/pen-types";
+import { mountEditor } from "../host/mountEditor";
+import { DATA_ATTRS } from "../utils/dataAttributes";
+
+const noDefaultExtensionsPreset = {
+	resolve() {
+		return { extensions: [] };
+	},
+};
+
+function createBareEditor(): Editor {
+	return createEditor({
+		schema: defaultSchema,
+		preset: noDefaultExtensionsPreset,
+	});
+}
+
+describe("mountEditor", () => {
+	const cleanups: Array<() => void> = [];
+
+	afterEach(() => {
+		for (const cleanup of cleanups.splice(0)) {
+			cleanup();
+		}
+		document.body.replaceChildren();
+	});
+
+	it("composes the same editor-root and inline-content shell the bindings mount", () => {
+		const editor = createBareEditor();
+		const root = document.createElement("div");
+		document.body.append(root);
+		const mounted = mountEditor(editor, root);
+		cleanups.push(() => {
+			mounted.destroy();
+			editor.destroy();
+		});
+
+		expect(root.getAttribute("role")).toBe("textbox");
+		expect(root.getAttribute("aria-label")).toBe("Editor");
+		expect(root.hasAttribute(DATA_ATTRS.editorRoot)).toBe(true);
+		expect(root.querySelector("[data-pen-editor-content]")).toBeTruthy();
+		expect(root.querySelector("[data-pen-editor-blocks-host]")).toBeTruthy();
+
+		const inline = root.querySelector(`[${DATA_ATTRS.inlineContent}]`);
+		expect(inline).toBeInstanceOf(HTMLElement);
+		expect(editor.internals.getSlot(FIELD_EDITOR_SLOT_KEY)).toBe(
+			mounted.fieldEditor,
+		);
+	});
+
+	it("activates FieldEditorImpl on inline pointer down", () => {
+		const editor = createBareEditor();
+		const firstBlock = editor.firstBlock();
+		expect(firstBlock).toBeTruthy();
+		const root = document.createElement("div");
+		document.body.append(root);
+		const mounted = mountEditor(editor, root);
+		cleanups.push(() => {
+			mounted.destroy();
+			editor.destroy();
+		});
+
+		const inline = root.querySelector(`[${DATA_ATTRS.inlineContent}]`);
+		expect(inline).toBeInstanceOf(HTMLElement);
+		inline?.dispatchEvent(
+			new MouseEvent("mousedown", { bubbles: true, button: 0 }),
+		);
+
+		expect(mounted.fieldEditor.focusBlockId).toBe(firstBlock?.id);
+		expect(mounted.fieldEditor.isEditing).toBe(true);
+	});
+
+	it("reconciles existing block text into the inline surface", () => {
+		const editor = createBareEditor();
+		const firstBlock = editor.firstBlock();
+		expect(firstBlock).toBeTruthy();
+		if (firstBlock) {
+			editor.apply(
+				[
+					{
+						type: "insert-text",
+						blockId: firstBlock.id,
+						offset: 0,
+						text: "Hello",
+					},
+				],
+				{ origin: "user" },
+			);
+		}
+
+		const root = document.createElement("div");
+		document.body.append(root);
+		const mounted = mountEditor(editor, root);
+		cleanups.push(() => {
+			mounted.destroy();
+			editor.destroy();
+		});
+
+		const inline = root.querySelector(`[${DATA_ATTRS.inlineContent}]`);
+		expect(inline?.textContent).toContain("Hello");
+	});
+});

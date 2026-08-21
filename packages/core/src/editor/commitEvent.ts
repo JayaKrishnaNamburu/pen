@@ -8,7 +8,7 @@ import type {
 	SelectionState,
 	StructuredOpOrigin,
 } from "@input/pen-types";
-import { getOpOriginType } from "@input/pen-types";
+import { getOpOriginType } from "./origin";
 
 import type { ChangeSummary } from "../changes/types";
 

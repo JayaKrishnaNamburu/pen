@@ -7,7 +7,7 @@ export default defineConfig({
   outDir: "dist",
   clean: true,
   external: [
-    "@input/pen-dom",
+    "@input/pen-core",
     "@input/pen-markdown-serialization",
     "@input/pen-types",
   ],

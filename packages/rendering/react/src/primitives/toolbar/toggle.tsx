@@ -2,7 +2,7 @@ import React from "react";
 import { useToolbarContext } from "../../context/toolbarContext";
 import { useEditorContext } from "../../context/editorContext";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
-import { toggleInlineMark } from "../../field-editor/commands";
+import { toggleInlineMark } from "@input/pen-dom/field-editor/commands";
 
 export interface ToolbarToggleProps extends AsChildProps {
 	format: string;

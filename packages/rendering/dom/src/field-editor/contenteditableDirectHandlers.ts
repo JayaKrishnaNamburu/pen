@@ -40,29 +40,71 @@ export type DirectHandler = (
 	backend: ContentEditableDirectInputBackend,
 ) => void;
 
-export const DIRECT_HANDLERS: Record<string, DirectHandler> = {
-	insertText: (event, editor, ytext, fe, element, backend) => {
-		const text = event.data ?? "";
-		if (!text) return;
-		if (hasMultiBlockTextSelection(editor)) {
-			editor.replaceSelection(text);
-			return;
-		}
-		const blockId = fe.focusBlockId;
-		if (!blockId) return;
-		const range = backend.resolveCurrentInputRange();
-		if (!range) return;
-		if (backend.applyListInputRule({ blockId, range, text })) {
-			return;
-		}
-		const marks = fe.resolveInsertMarks(ytext, range.start);
+const insertText: DirectHandler = (
+	event,
+	editor,
+	ytext,
+	fe,
+	_element,
+	backend,
+) => {
+	const text = event.data ?? "";
+	if (!text) return;
+	if (hasMultiBlockTextSelection(editor)) {
+		editor.replaceSelection(text);
+		return;
+	}
+	const blockId = fe.focusBlockId;
+	if (!blockId) return;
+	const range = backend.resolveCurrentInputRange();
+	if (!range) return;
+	if (backend.applyListInputRule({ blockId, range, text })) {
+		return;
+	}
+	const marks = fe.resolveInsertMarks(ytext, range.start);
+	backend.applyInlineTextEdit({
+		blockId,
+		range,
+		text,
+		marks,
+	});
+};
+
+const deleteLineBackward: DirectHandler = (
+	_event,
+	_editor,
+	_ytext,
+	fe,
+	_element,
+	backend,
+) => {
+	const blockId = fe.focusBlockId;
+	if (!blockId) return;
+	const range = backend.resolveCurrentInputRange();
+	if (!range) return;
+
+	if (range.start !== range.end) {
 		backend.applyInlineTextEdit({
 			blockId,
 			range,
-			text,
-			marks,
+			text: "",
 		});
-	},
+		return;
+	}
+
+	if (range.start > 0) {
+		backend.applyInlineTextEdit({
+			blockId,
+			range: { start: 0, end: range.start },
+			text: "",
+		});
+	}
+};
+
+// command-policy implementations; preventDefault / allow / block live in BEFOREINPUT_MAP
+export const DIRECT_HANDLERS: Record<string, DirectHandler> = {
+	insertText,
+	insertFromDrop: insertText,
 
 	insertReplacementText: (event, editor, ytext, fe, element, backend) => {
 		const text = event.data ?? "";
@@ -188,23 +230,6 @@ export const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 		}
 	},
 
-	deleteByCut: (_event, editor, _ytext, fe, element, backend) => {
-		if (hasMultiBlockTextSelection(editor)) {
-			editor.deleteSelection();
-			return;
-		}
-		const blockId = fe.focusBlockId;
-		if (!blockId) return;
-		const range = backend.resolveCurrentInputRange();
-		if (!range || range.start === range.end) return;
-
-		backend.applyInlineTextEdit({
-			blockId,
-			range,
-			text: "",
-		});
-	},
-
 	deleteWordBackward: (_event, editor, ytext, fe, element, backend) => {
 		const blockId = fe.focusBlockId;
 		if (!blockId) return;
@@ -233,6 +258,9 @@ export const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 			});
 		}
 	},
+
+	deleteSoftLineBackward: deleteLineBackward,
+	deleteHardLineBackward: deleteLineBackward,
 
 	deleteWordForward: (_event, editor, ytext, fe, element, backend) => {
 		const blockId = fe.focusBlockId;
@@ -318,10 +346,6 @@ export const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 
 	formatUnderline: (_event, editor) => {
 		toggleInlineMark(editor, "underline");
-	},
-
-	formatStrikeThrough: (_event, editor) => {
-		toggleInlineMark(editor, "strikethrough");
 	},
 };
 

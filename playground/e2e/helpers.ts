@@ -211,6 +211,139 @@ function createPlaygroundRoomId(): string {
 	return `pen-e2e-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+export interface EditorDocumentSnapshot {
+	editorBlockCount: number;
+	editorBlocks: Array<{
+		id: string;
+		type: string;
+		text: string;
+		length: number;
+	}>;
+	editorSelection: { type: string } | null;
+	selectedText: string;
+	domTexts: string[];
+	nativeText: string;
+	nativeCollapsed: boolean | null;
+}
+
+export async function getEditorDocumentSnapshot(
+	page: Page,
+): Promise<EditorDocumentSnapshot> {
+	return page.evaluate(() => {
+		const editor = window.penPlayground?.editor;
+		if (!editor) {
+			throw new Error("Missing playground editor debug handle.");
+		}
+
+		const selection = editor.selection;
+		let editorSelection: unknown = null;
+		if (selection?.type === "text") {
+			editorSelection = {
+				type: selection.type,
+				isCollapsed: selection.isCollapsed,
+				isMultiBlock: selection.isMultiBlock,
+				anchor: selection.anchor,
+				focus: selection.focus,
+			};
+		} else if (selection?.type === "block") {
+			editorSelection = {
+				type: selection.type,
+				blockIds: [...selection.blockIds],
+			};
+		} else if (selection) {
+			editorSelection = { type: selection.type };
+		}
+
+		const native = window.getSelection();
+		return {
+			editorBlockCount: editor.blockCount(),
+			editorBlocks: [...editor.blocks()].map((block) => ({
+				id: block.id,
+				type: block.type,
+				text: block.textContent(),
+				length: block.length(),
+			})),
+			editorSelection,
+			selectedText: editor.getSelectedText(),
+			domTexts: [...document.querySelectorAll("[data-pen-inline-content]")].map(
+				(element) => element.textContent ?? "",
+			),
+			nativeText: native?.toString() ?? "",
+			nativeCollapsed: native?.isCollapsed ?? null,
+		};
+	});
+}
+
+export async function seedParagraphs(
+	page: Page,
+	paragraphs: readonly string[],
+): Promise<string[]> {
+	return page.evaluate((texts) => {
+		const editor = window.penPlayground?.editor;
+		if (!editor) {
+			throw new Error("Missing playground editor debug handle.");
+		}
+
+		const first = editor.firstBlock();
+		if (!first) {
+			throw new Error("Missing first playground block.");
+		}
+
+		const blockIds = [first.id];
+		if (texts[0]) {
+			editor.apply(
+				[
+					{
+						type: "insert-text",
+						blockId: first.id,
+						offset: 0,
+						text: texts[0],
+					},
+				],
+				{ origin: "user" },
+			);
+		}
+
+		let currentId = first.id;
+		for (let index = 1; index < texts.length; index += 1) {
+			const current = editor.getBlock(currentId);
+			if (!current) {
+				throw new Error(`Missing block ${currentId}`);
+			}
+
+			const newBlockId = crypto.randomUUID();
+			editor.apply(
+				[
+					{
+						type: "split-block",
+						blockId: currentId,
+						offset: current.length(),
+						newBlockId,
+					},
+				],
+				{ origin: "user" },
+			);
+			if (texts[index]) {
+				editor.apply(
+					[
+						{
+							type: "insert-text",
+							blockId: newBlockId,
+							offset: 0,
+							text: texts[index],
+						},
+					],
+					{ origin: "user" },
+				);
+			}
+			blockIds.push(newBlockId);
+			currentId = newBlockId;
+		}
+
+		return blockIds;
+	}, paragraphs);
+}
+
 export async function joinPlaygroundIfNeeded(page: Page): Promise<void> {
 	const nameInput = page.getByLabel("Display name");
 	const editorRoot = page.locator(EDITOR_ROOT);

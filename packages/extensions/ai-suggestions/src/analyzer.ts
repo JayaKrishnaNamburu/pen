@@ -1,4 +1,8 @@
-import type { ModelMessage } from "@input/pen-types";
+import type { Editor } from "@input/pen-types";
+import {
+	buildSuggestionsAIRequest,
+	streamThroughEgress,
+} from "./aiEgress";
 import { AI_SUGGESTIONS_REQUEST_MODE } from "./constants";
 import { buildAISuggestionMessages } from "./promptBuilder";
 import type { BuiltSuggestionScope } from "./scopeBuilder";
@@ -18,7 +22,7 @@ export interface AnalyzeSuggestionScopeResult {
 }
 
 export async function analyzeSuggestionScope(input: {
-	editor: import("@input/pen-types").Editor;
+	editor: Editor;
 	scope: BuiltSuggestionScope;
 	config: AISuggestionsExtensionConfig;
 	signal?: AbortSignal;
@@ -44,12 +48,15 @@ export async function analyzeSuggestionScope(input: {
 	let promptTokens = 0;
 	let completionTokens = 0;
 
-	for await (const event of config.model.stream({
-		messages,
-		tools: [],
-		signal,
-		requestMode: AI_SUGGESTIONS_REQUEST_MODE,
-	})) {
+	for await (const event of streamThroughEgress(
+		editor,
+		config.model,
+		buildSuggestionsAIRequest(scope, messages),
+		{
+			signal,
+			requestMode: AI_SUGGESTIONS_REQUEST_MODE,
+		},
+	)) {
 		if (event.type === "text-delta") {
 			text += event.delta;
 			continue;

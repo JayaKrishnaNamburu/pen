@@ -8,6 +8,8 @@ export {
 	type VerticalCaretTarget,
 	type VerticalDirection,
 } from "./geometryReader";
+export { getRootGeometry, measureWithRoot } from "./rootGeometry";
+export type { RootGeometry } from "./rootGeometry";
 export type {
 	Affinity,
 	BidiRun,
@@ -19,8 +21,10 @@ export type {
 } from "./types";
 export {
 	collapsedRect,
+	getDistanceToRect,
 	rectCenterX,
 	rectCenterY,
 	rectFromDOMRect,
+	rectToDOMRect,
 	singleRunLineBox,
 } from "./types";

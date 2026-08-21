@@ -285,24 +285,35 @@ function removedBlockIds(structural: readonly StructuralChange[]): Set<string> {
 	return removed;
 }
 
+function isCollapsedRange(range: { anchor: Point; focus: Point }): boolean {
+	return (
+		range.anchor.blockId === range.focus.blockId &&
+		range.anchor.offset === range.focus.offset
+	);
+}
+
 function mapRangeThrough(
 	summary: ChangeSummary,
 	range: { anchor: Point; focus: Point },
 	options?: { anchorAssoc?: Assoc; focusAssoc?: Assoc; mode?: PointMapMode },
 ): { anchor: Point; focus: Point } | null {
 	const mode = options?.mode ?? DEFAULT_POINT_MAP_MODE;
-	const anchor = mapPointThrough(
-		summary,
-		range.anchor,
-		options?.anchorAssoc ?? DEFAULT_RANGE_ANCHOR_ASSOC,
-		mode,
-	);
-	const focus = mapPointThrough(
-		summary,
-		range.focus,
-		options?.focusAssoc ?? DEFAULT_RANGE_FOCUS_ASSOC,
-		mode,
-	);
+	const collapsed = isCollapsedRange(range);
+	const anchorAssoc =
+		options?.anchorAssoc ??
+		(collapsed ? DEFAULT_ASSOC : DEFAULT_RANGE_ANCHOR_ASSOC);
+	const focusAssoc =
+		options?.focusAssoc ??
+		(collapsed ? DEFAULT_ASSOC : DEFAULT_RANGE_FOCUS_ASSOC);
+
+	if (collapsed && anchorAssoc === focusAssoc) {
+		const point = mapPointThrough(summary, range.anchor, anchorAssoc, mode);
+		if (!point) return null;
+		return { anchor: point, focus: point };
+	}
+
+	const anchor = mapPointThrough(summary, range.anchor, anchorAssoc, mode);
+	const focus = mapPointThrough(summary, range.focus, focusAssoc, mode);
 	if (!anchor || !focus) return null;
 
 	const order = getSummaryState(summary).postOrder ?? getSummaryState(summary).index.order;

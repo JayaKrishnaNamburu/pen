@@ -7,8 +7,8 @@ import { defaultPreset } from "@input/pen-preset-default";
 import {
 	handleClipboardPaste,
 	handleCopy,
-} from "../field-editor/clipboard";
-import type { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
+} from "@input/pen-dom/field-editor/clipboard";
+import type { FieldEditorImpl } from "@input/pen-dom/field-editor/fieldEditorImpl";
 import type { PasteImporters } from "../context/editorContext";
 import { defaultSchema } from "@input/pen-schema-default";
 

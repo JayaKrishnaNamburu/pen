@@ -11,6 +11,7 @@ import {
 	resolveSessionAnchor,
 	resolveSessionSelectionSnapshot,
 } from "../helpers";
+import { excerptsFromOperation, streamThroughEgress } from "../egress";
 import { finalizeLocalOperationExecution } from "./localOperationExecutionFinalize";
 import type { ExecuteLocalOperationInput } from "./generationExecutionState";
 
@@ -250,20 +251,28 @@ export async function executeLocalOperation(
 		};
 
 		try {
-			const stream = controller._model!.stream({
-				messages: [{ role: "user", content: executionPrompt }],
-				tools: [],
-				signal: abortController.signal,
-				requestMode: resolveGenerationRequestMode({
-					...context,
-					targetType: target.type,
+			const stream = streamThroughEgress(
+				controller._editor,
+				controller._model!,
+				{
+					feature: "generation",
+					messages: [{ role: "user", content: executionPrompt }],
+					documentExcerpts: excerptsFromOperation(operation, blockId),
+					tools: [],
+				},
+				{
+					signal: abortController.signal,
+					requestMode: resolveGenerationRequestMode({
+						...context,
+						targetType: target.type,
+						operation,
+					}),
 					operation,
-				}),
-				operation,
-				sessionId: context?.sessionId,
-				turnId: sessionTurnId,
-				generationId: seedGeneration.id,
-			});
+					sessionId: context?.sessionId,
+					turnId: sessionTurnId,
+					generationId: seedGeneration.id,
+				},
+			);
 
 			for await (const event of stream) {
 				if (abortController.signal.aborted) {

@@ -1,7 +1,12 @@
-import type { Editor, Extension, KeyBinding } from "@input/pen-types";
+import type { Editor, Extension, FacetProvider, KeyBinding } from "@input/pen-types";
 import { SEARCH_CONTROLLER_SLOT } from "@input/pen-types";
-import { defineExtension } from "@input/pen-core";
-import { createDecorationSet, searchControllerFacet } from "@input/pen-core";
+import {
+	createDecorationSet,
+	defineExtension,
+	keyBindingPriorityToPrecedence,
+	keymapFacet,
+	searchControllerFacet,
+} from "@input/pen-core";
 import { SearchControllerImpl } from "./controller";
 import { buildSearchDecorations } from "./decorations";
 import type { SearchController } from "./types";
@@ -103,7 +108,7 @@ export function searchExtension(): Extension {
 
 	return defineExtension({
 		name: SEARCH_EXTENSION_NAME,
-		keyBindings: SEARCH_KEY_BINDINGS,
+		facets: searchKeymapProviders(SEARCH_KEY_BINDINGS),
 
 		activateClient: async ({ editor }) => {
 			activeEditor = editor;
@@ -141,4 +146,15 @@ export function searchExtension(): Extension {
 
 export function getSearchController(editor: Editor): SearchController | null {
 	return (editor.facet(searchControllerFacet) as SearchController | null) ?? null;
+}
+
+function searchKeymapProviders(
+	bindings: readonly KeyBinding[],
+): readonly FacetProvider[] {
+	return bindings.map((binding) =>
+		keymapFacet.of(
+			[binding],
+			keyBindingPriorityToPrecedence(binding.priority ?? 300),
+		),
+	);
 }

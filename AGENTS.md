@@ -4,7 +4,7 @@
 
 These instructions apply to the whole Pen monorepo and are written for AI coding agents (Cursor agents and Agent mode in the Cursor IDE). Human contributors follow the same conventions where noted.
 
-Pen is a headless, extension-first, block-native rich text editor SDK built on a Yjs CRDT document, with first-class AI co-authoring. It is source-available under a commercial license (`LICENSE.md`) — do not describe it as open source.
+Pen is a headless, extension-first, block-native rich text editor SDK built on a Yjs CRDT document, with first-class AI co-authoring. It is licensed under the MIT License (`LICENSE.md`).
 
 ## Architecture
 

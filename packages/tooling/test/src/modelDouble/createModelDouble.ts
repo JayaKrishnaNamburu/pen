@@ -112,7 +112,12 @@ export function createModelDouble(
 			return requests;
 		},
 		async *stream(streamOptions) {
-			const context: AIRequestContext = {
+			const provided = (
+				streamOptions as typeof streamOptions & {
+					context?: AIRequestContext;
+				}
+			).context;
+			const context: AIRequestContext = provided ?? {
 				feature,
 				messages: streamOptions.messages,
 				documentExcerpts: [],

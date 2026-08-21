@@ -1,40 +1,4 @@
 {
-  "_comment": "SCALE2 (spec-v2/22-scale-envelope.md, Wave F step F.2): JSON.stringify change-detection / signature suspects in packages/rendering and packages/core runtime src. Reported in the job summary; they do not fail this slice. Wave 2 owns replacing decoration-collection and per-render signatures. Remove an entry in the same PR that deletes the call.",
-  "entries": [
-    {
-      "file": "packages/core/src/direction/cache.ts",
-      "line": 29,
-      "reason": "DIR1 fingerprint — stringify of [text, props] invalidates the per-block direction cache."
-    },
-    {
-      "file": "packages/rendering/dom/src/field-editor/inlineAtomDom.ts",
-      "line": 111,
-      "reason": "Inline-atom prop signature — serializeInlineAtomProps stringifies props onto a DOM data attribute."
-    },
-    {
-      "file": "packages/rendering/dom/src/field-editor/transferSelection.ts",
-      "line": 96,
-      "reason": "Selection-snapshot equality — both sides are stringified to decide whether transfer selection still matches."
-    },
-    {
-      "file": "packages/rendering/dom/src/utils/inlineDecorations.ts",
-      "line": 225,
-      "reason": "Decoration-collection signature — buildInlineDecorationsRenderSignature stringifies the decoration list per render."
-    },
-    {
-      "file": "packages/rendering/react/src/primitives/editor/inlineAtomTargets.ts",
-      "line": 157,
-      "reason": "Per-render signature — getInlineAtomTargetKey stringifies atom props into the reconcile key."
-    },
-    {
-      "file": "packages/rendering/react/src/primitives/editor/inlineContent.tsx",
-      "line": 336,
-      "reason": "Per-render signature — getDeltaSignature stringifies insert/attributes pairs to decide whether inline content changed."
-    },
-    {
-      "file": "packages/rendering/react/src/utils/structuredPreview.ts",
-      "line": 364,
-      "reason": "Structured-preview equality — areStructuredPreviewValuesEqual stringifies both sides to compare snapshots."
-    }
-  ]
+  "_comment": "SCALE2 (spec-v2/22-scale-envelope.md, Wave F step F.2): JSON.stringify change-detection / signature suspects in packages/rendering and packages/core runtime src. Reported in the job summary; they do not fail this slice. The four decoration-collection and per-render signature sites have been replaced. Each entry needs file, enclosing symbol, and a reason. Remove an entry in the same PR that deletes the last call in that symbol.",
+  "entries": []
 }

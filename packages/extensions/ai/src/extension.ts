@@ -9,6 +9,7 @@ import {
 	createDecorationSet,
 	ensureInlineCompletionController,
 	getInlineCompletionController as getInlineCompletionControllerFromCore,
+	getOpOriginType,
 } from "@input/pen-core";
 import type {
 	CommitEvent,
@@ -25,9 +26,9 @@ import {
 	AI_INLINE_HISTORY_SLOT as CORE_AI_INLINE_HISTORY_SLOT,
 	AI_REVIEW_CONTROLLER_SLOT as CORE_AI_REVIEW_CONTROLLER_SLOT,
 	INLINE_COMPLETION_SLOT as CORE_INLINE_COMPLETION_SLOT,
-	getOpOriginType,
 } from "@input/pen-types";
 import { defineExtension } from "@input/pen-core";
+import { AI_AGENTIC_MAX_STEPS_DEFAULT } from "@input/pen-ai-tools";
 import { defaultAICommands } from "./commands/defaultCommands";
 import { resolveCatalogCopy } from "./i18n/resolveCatalogCopy";
 import { AICommandRegistry } from "./commands/registry";
@@ -148,6 +149,10 @@ class AIControllerImpl extends AIControllerSessionState {
 
 	private readonly _maxAgenticSteps: number;
 
+	private readonly _allowedMutatingTools: readonly string[];
+
+	private readonly _confirmAITool: AIExtensionConfig["confirm"];
+
 	private readonly _suggestionPresentation: NonNullable<
 		AIExtensionConfig["suggestionPresentation"]
 	>;
@@ -208,7 +213,9 @@ class AIControllerImpl extends AIControllerSessionState {
 				) ?? null,
 			getActiveGeneration: () => this._state.activeGeneration,
 		});
-		this._maxAgenticSteps = config.maxAgenticSteps ?? 10;
+		this._maxAgenticSteps = config.maxAgenticSteps ?? AI_AGENTIC_MAX_STEPS_DEFAULT;
+		this._allowedMutatingTools = config.allowedMutatingTools ?? [];
+		this._confirmAITool = config.confirm;
 		this._suggestionPresentation =
 			config.suggestionPresentation ?? "track-changes";
 		this._contentFormat = {

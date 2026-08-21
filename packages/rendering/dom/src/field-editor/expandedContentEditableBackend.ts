@@ -10,6 +10,7 @@ import {
 	handleEditorKeyBindings,
 	handleSelectAllShortcut,
 } from "./keyHandling";
+import { mapBeforeInput } from "./beforeinputMap";
 
 /**
  * Expanded mode owns the shared cross-block selected state on the real block
@@ -134,10 +135,35 @@ export class ExpandedContentEditableBackend {
 		const selection = this.editor.selection;
 		if (selection?.type !== "text") return;
 
+		// map decides preventDefault / allow / block; the switch is expanded-mode implementation
+		const mapping = mapBeforeInput(event.inputType);
+		if ("policy" in mapping) {
+			switch (mapping.policy) {
+				case "allow":
+					return;
+				case "block":
+					event.preventDefault();
+					this.editor.internals.emit("diagnostic", {
+						code: mapping.code,
+						level: "warn",
+						source: "beforeinput",
+						message: `unhandled beforeinput inputType: ${event.inputType}`,
+						inputType: event.inputType,
+					});
+					return;
+				default: {
+					const _exhaustive: never = mapping;
+					return _exhaustive;
+				}
+			}
+		}
+
+		event.preventDefault();
+
 		switch (event.inputType) {
 			case "insertText":
+			case "insertFromDrop":
 			case "insertReplacementText": {
-				event.preventDefault();
 				const text = event.data ?? "";
 				if (!text) return;
 				this.editor.replaceSelection(text);
@@ -145,7 +171,6 @@ export class ExpandedContentEditableBackend {
 			}
 			case "insertParagraph":
 			case "insertLineBreak": {
-				event.preventDefault();
 				this.fieldEditor.deactivate();
 
 				if (selection.isMultiBlock) {
@@ -198,20 +223,14 @@ export class ExpandedContentEditableBackend {
 			}
 			case "deleteContentBackward":
 			case "deleteContentForward":
-			case "deleteByCut": {
-				event.preventDefault();
+			case "deleteWordBackward":
+			case "deleteWordForward":
+			case "deleteSoftLineBackward":
+			case "deleteHardLineBackward": {
 				this.editor.deleteSelection();
 				return;
 			}
-			case "deleteByDrag": {
-				// Dragging an active browser selection inside the expanded host can emit
-				// deleteByDrag even when the user only intended to extend the range.
-				// Ignore it until we support true drag-move semantics for expanded mode.
-				event.preventDefault();
-				return;
-			}
 			case "insertFromPaste": {
-				event.preventDefault();
 				const importers =
 					this.editor.internals.getSlot<PasteImporters>(
 						"paste:importers",
@@ -225,33 +244,23 @@ export class ExpandedContentEditableBackend {
 				return;
 			}
 			case "historyUndo": {
-				event.preventDefault();
 				this.editor.undoManager.undo();
 				return;
 			}
 			case "historyRedo": {
-				event.preventDefault();
 				this.editor.undoManager.redo();
 				return;
 			}
 			case "formatBold": {
-				event.preventDefault();
 				toggleInlineMark(this.editor, "bold");
 				return;
 			}
 			case "formatItalic": {
-				event.preventDefault();
 				toggleInlineMark(this.editor, "italic");
 				return;
 			}
 			case "formatUnderline": {
-				event.preventDefault();
 				toggleInlineMark(this.editor, "underline");
-				return;
-			}
-			case "formatStrikeThrough": {
-				event.preventDefault();
-				toggleInlineMark(this.editor, "strikethrough");
 				return;
 			}
 			default:

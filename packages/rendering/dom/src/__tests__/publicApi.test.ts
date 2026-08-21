@@ -8,6 +8,7 @@ import {
 	isFieldEditorTextEditingKey,
 	isFieldEditorTextEntryTarget,
 	isNativeTextEntryTarget,
+	mountEditor,
 	resolveSelectAllBehavior,
 	shouldHandleEditorKeyboardEvent,
 } from "../index";
@@ -18,6 +19,10 @@ import {
 } from "../utils/dataAttributes";
 
 describe("@input/pen-dom public helpers", () => {
+	it("exports mountEditor as the document-shell composition", () => {
+		expect(typeof mountEditor).toBe("function");
+	});
+
 	it("resolves select-all behavior from the interaction model", () => {
 		expect(DEFAULT_SELECT_ALL_BEHAVIOR).toBe("document-first");
 		expect(resolveSelectAllBehavior("block-first")).toBe("block-first");

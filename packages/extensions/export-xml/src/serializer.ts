@@ -5,8 +5,8 @@ import type {
   PenInlineSegmentJSON,
   PenMarkJSON,
 } from "@input/pen-export-json";
+import { urlPolicy } from "@input/pen-core";
 import { escapeMarkupAttribute, escapeMarkupText } from "./escapeMarkup";
-import { urlPolicy } from "./urlPolicy";
 
 const INDENT = "  ";
 

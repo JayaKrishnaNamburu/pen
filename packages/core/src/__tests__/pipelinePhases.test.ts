@@ -1,7 +1,7 @@
 import { defineExtension } from "@input/pen-core";
 import { describe, expect, it } from "vitest";
 
-import { createDefaultSchema } from "@input/pen-schema-default";
+import { createDefaultSchema } from "./fixtures/testSchema";
 import {
 	APPLY_STORM_CODE,
 	APPLY_STORM_QUEUE_LIMIT,

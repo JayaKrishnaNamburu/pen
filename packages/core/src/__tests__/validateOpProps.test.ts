@@ -8,7 +8,7 @@ import {
 } from "@input/pen-core";
 import { describe, expect, it } from "vitest";
 
-import { createDefaultSchema } from "@input/pen-schema-default";
+import { createDefaultSchema } from "./fixtures/testSchema";
 import { createEditor as createCoreEditor } from "../index";
 import { validateOpProps } from "../editor/validateOpProps";
 

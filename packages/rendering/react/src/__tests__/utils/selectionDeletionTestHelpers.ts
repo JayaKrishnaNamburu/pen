@@ -1,6 +1,6 @@
 import { createEditor as createCoreEditor } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
-import type { FieldEditorImpl } from "../../field-editor/fieldEditorImpl";
+import type { FieldEditorImpl } from "@input/pen-dom/field-editor/fieldEditorImpl";
 import { FIELD_EDITOR_SLOT_KEY } from "../../constants/fieldEditor";
 import { defaultSchema } from "@input/pen-schema-default";
 

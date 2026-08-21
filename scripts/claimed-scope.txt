@@ -10,8 +10,21 @@
 # Wave C leftovers: COL2–COL4, COL6.
 # Wave T leftovers: IOP1, IOP2, IOP4, IOP6.
 # Wave V leftovers: DUR6, DUR7.
-# Wave F leftovers: SCALE1.
+# Wave F leftovers: SCALE1, SCALE3 (bench axes/baselines), SCALE4 (heap soak),
+#   SCALE5 (windowed-host conformance scenario).
 # Wave E leftovers: HOST1, HOST2, HOST5.
+# Wave P leftovers, second pass: API6 (renderer framework-free lint).
+# Lane 102 (2026-08-21): moved informational claims into force where the
+# named test can fail the rule. Held back (do not treat as covered):
+#   A1  — isCollapsed helper shape, not authority validation
+#   API10 — IOP4 ingest names, not the inert-surface inventory
+#   BR3 — proves computeBidiRuns is stateless, not G2-cached
+#   DIR2 — asserts props.direction / omit-on-auto, not resolved dir
+#   M3  — asserts logical line edges; spec is visual
+#   OV3 — DOM onPaintPlan only; React/Vue primitives not rebound
+#   P2  — UAX#9 first-strong, not projector-on-divergence
+#   R6  — compute receives editor; purity is untested
+#   SCH1 — scheduler FIFO names, not no-unscheduled-measure
 
 I2
 I3
@@ -100,6 +113,49 @@ IOP6
 DUR6
 DUR7
 SCALE1
+SCALE3
+SCALE4
+SCALE5
 HOST1
 HOST2
 HOST5
+API6
+A5
+AIB1
+AIB3
+AIB4
+B1
+BR4
+D1
+D2
+D3
+D4
+D5
+DIR1
+DIR3
+G3
+G4
+I9
+K1
+K2
+K4
+M1
+M2
+M4
+M5
+M6
+N1
+N2
+N3
+OV1
+OV2
+S2
+SCALE2
+SCH2
+SCH3
+T1
+T2
+T3
+T4
+T5
+T6

@@ -6,11 +6,8 @@
 
 ### function
 
-- createAutocompleteProviderSkill
-- createDocumentAgentSkill
 - listDefaultAISkills
 - renderSkillFiles
-- renderSkillMarkdown
 
 ### type
 

@@ -8,7 +8,7 @@ import {
 import { undoExtension } from "@input/pen-undo";
 import { describe, expect, it } from "vitest";
 
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "./fixtures/testSchema";
 import {
 	createEditor,
 	createHeadlessEditor,

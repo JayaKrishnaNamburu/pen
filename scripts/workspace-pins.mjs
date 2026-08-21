@@ -5,7 +5,7 @@
  * Reports, on published packages:
  *   - workspace:* vs workspace:^ in dependencies and peerDependencies
  *   - ESM artifact extension: dist/index.js vs dist/index.mjs
- *   - sideEffects !== false (report only; already false after H.2)
+ *   - sideEffects !== false
  *
  * workspace:* and dist/index.js hits fail unless listed in
  * scripts/workspace-pins-allowlist.json with a reason. Published packages
@@ -276,7 +276,7 @@ export function formatReport(result) {
 	);
 	lines.push(`dist/index.mjs  ${result.mjsPackages.length}`);
 	lines.push(
-		`sideEffects !== false  ${result.sideEffectsHits.length}  (report only; already false after H.2)`,
+		`sideEffects !== false  ${result.sideEffectsHits.length}`,
 	);
 
 	if (result.caretPins.length > 0) {
@@ -301,13 +301,9 @@ export function formatReport(result) {
 
 	lines.push("");
 	if (result.sideEffectsHits.length === 0) {
-		lines.push(
-			"sideEffects: all published packages declare false (H.2 flip already landed; report-only).",
-		);
+		lines.push("sideEffects: all published packages declare false.");
 	} else {
-		lines.push(
-			"sideEffects !== false (report only — H.2-blocked; do not flip here):",
-		);
+		lines.push("sideEffects !== false:");
 		for (const hit of result.sideEffectsHits) {
 			lines.push(
 				`  ${hit.package}  ${JSON.stringify(hit.sideEffects)}`,
@@ -374,7 +370,8 @@ export function hasFailures(result) {
 		result.unexpectedPins.length > 0 ||
 		result.stalePins.length > 0 ||
 		result.unexpectedJs.length > 0 ||
-		result.staleJs.length > 0
+		result.staleJs.length > 0 ||
+		result.sideEffectsHits.length > 0
 	);
 }
 
@@ -553,8 +550,8 @@ export function runSelfTests() {
 		"self-test: sideEffects: true is reported",
 	);
 	assert(
-		!hasFailures(sideEffectsOnly),
-		"self-test: sideEffects must not fail the check (H.2-blocked)",
+		hasFailures(sideEffectsOnly),
+		"self-test: sideEffects !== false fails closed",
 	);
 
 	const converted = evaluatePins({
@@ -756,7 +753,7 @@ async function main() {
 	const args = parseArgs(process.argv.slice(2));
 	runSelfTests();
 	console.log(
-		"API7 P.8 self-test ok (fixture object; unmarked workspace:* and dist/index.js fail closed; sideEffects does not)",
+		"API7 P.8 self-test ok (fixture object; unmarked workspace:*, dist/index.js, and sideEffects !== false all fail closed)",
 	);
 	if (args.selfTestOnly) {
 		return;

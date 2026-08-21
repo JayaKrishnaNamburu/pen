@@ -1,4 +1,4 @@
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "./fixtures/testSchema";
 import { describe, expect, it } from "vitest";
 
 import { createHeadlessEditor } from "../editor/editor";

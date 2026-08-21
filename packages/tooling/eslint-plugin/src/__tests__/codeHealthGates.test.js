@@ -81,7 +81,17 @@ describe("CH health-gate claims", () => {
 		);
 		expect(allowlist.testTimeoutMs).toBe(10_000);
 		expect(Array.isArray(allowlist.tests)).toBe(true);
-		expect(allowlist.tests.length).toBeGreaterThan(0);
+
+		const describesEntry = (entry) =>
+			Boolean(entry.name) &&
+			Boolean(entry.issue) &&
+			String(entry.wave ?? "").length > 0;
+
+		// An empty quarantine is the goal state, so the loop below proves nothing
+		// once it is reached. The fixtures keep the check honest at zero entries.
+		expect(describesEntry({ name: "t", issue: "F39", wave: "0" })).toBe(true);
+		expect(describesEntry({ name: "t", issue: "F39" })).toBe(false);
+
 		for (const entry of allowlist.tests) {
 			expect(entry.name?.length).toBeGreaterThan(0);
 			expect(entry.issue?.length).toBeGreaterThan(0);

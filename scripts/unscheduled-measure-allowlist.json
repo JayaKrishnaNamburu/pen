@@ -1,335 +1,185 @@
 {
-  "_comment": "SCH1 (spec-v2/07-dom-scheduling.md, Wave 3 step 3.4): measurement sites in packages/rendering runtime src. Allowed kinds: geometry module (GeometryReader G1/G4) or a justified pre-scheduler site pending Wave 3.4 / Wave 5 migration. Each entry needs file, line, and a reason. Remove an entry in the same PR that deletes or reschedules the call.",
+  "_comment": "SCH1 (spec-v2/07-dom-scheduling.md, Wave 3 step 3.4): measurement sites in packages/rendering runtime src. Allowed kinds: geometry module (GeometryReader G1/G4) or a justified pre-scheduler site pending Wave 3.4 / Wave 5 migration. Each entry needs file, enclosing symbol, and a reason. Remove an entry in the same PR that deletes or reschedules the last call in that symbol.",
   "entries": [
     {
       "file": "packages/rendering/dom/src/field-editor/dropResolver.ts",
-      "line": 57,
+      "symbol": "resolveDropTarget",
       "reason": "Pre-scheduler — drop target uses the hovered block rect to decide inline vs block-edge."
     },
     {
-      "file": "packages/rendering/dom/src/field-editor/dropResolver.ts",
-      "line": 61,
-      "reason": "Pre-scheduler — drop target falls back to the inline-content rect when the block box is empty."
-    },
-    {
-      "file": "packages/rendering/dom/src/field-editor/dropResolver.ts",
-      "line": 118,
-      "reason": "Pre-scheduler — block-edge side (before/after) is chosen from the block rect's vertical midpoint."
-    },
-    {
       "file": "packages/rendering/dom/src/field-editor/editContextDom.ts",
-      "line": 145,
+      "symbol": "getCharacterRect",
       "reason": "Pre-scheduler — EditContext character bounds come from Range.getBoundingClientRect."
     },
     {
-      "file": "packages/rendering/dom/src/field-editor/editContextDom.ts",
-      "line": 150,
-      "reason": "Pre-scheduler — EditContext falls back to the host element's bounding rect."
-    },
-    {
       "file": "packages/rendering/dom/src/field-editor/inlineAtomLogicalDom.ts",
-      "line": 130,
+      "symbol": "getInlineAtomPointerOffset",
       "reason": "Pre-scheduler — inline-atom hit testing uses the atom host rect."
     },
     {
       "file": "packages/rendering/dom/src/field-editor/selectionBridge.ts",
-      "line": 142,
+      "symbol": "resolveBoundarySideFromPointer",
       "reason": "Pre-scheduler — pointer-to-boundary side uses the block rect; Wave 5 deletes this module."
     },
     {
       "file": "packages/rendering/dom/src/field-editor/selectionBridge.ts",
-      "line": 169,
+      "symbol": "getClosestBlockElementFromPoint",
       "reason": "Pre-scheduler — elementFromPoint typeof guard for closest-block hit testing."
     },
     {
       "file": "packages/rendering/dom/src/field-editor/selectionBridge.ts",
-      "line": 170,
-      "reason": "Pre-scheduler — elementFromPoint for closest-block hit testing; Wave 5 deletes this module."
-    },
-    {
-      "file": "packages/rendering/dom/src/field-editor/selectionBridge.ts",
-      "line": 185,
-      "reason": "Pre-scheduler — closest-block fallback scores every block rect to the pointer."
-    },
-    {
-      "file": "packages/rendering/dom/src/field-editor/selectionBridge.ts",
-      "line": 292,
+      "symbol": "pointToEditorSelectionPoint",
       "reason": "Pre-scheduler — caretPositionFromPoint type on Document for pointer-to-point."
     },
     {
       "file": "packages/rendering/dom/src/field-editor/selectionBridge.ts",
-      "line": 296,
-      "reason": "Pre-scheduler — caretRangeFromPoint type on Document for pointer-to-point."
-    },
-    {
-      "file": "packages/rendering/dom/src/field-editor/selectionBridge.ts",
-      "line": 299,
-      "reason": "Pre-scheduler — caretPositionFromPoint for pointer-to-selection; Wave 5 deletes this module."
-    },
-    {
-      "file": "packages/rendering/dom/src/field-editor/selectionBridge.ts",
-      "line": 320,
-      "reason": "Pre-scheduler — caretRangeFromPoint fallback for pointer-to-selection."
-    },
-    {
-      "file": "packages/rendering/dom/src/field-editor/selectionBridge.ts",
-      "line": 362,
+      "symbol": "resolveInlineAtomPoint",
       "reason": "Pre-scheduler — elementFromPoint typeof guard for inline-atom hit testing."
     },
     {
-      "file": "packages/rendering/dom/src/field-editor/selectionBridge.ts",
-      "line": 363,
-      "reason": "Pre-scheduler — elementFromPoint for inline-atom hit testing."
-    },
-    {
       "file": "packages/rendering/dom/src/field-editor/selectionBridgeOffsets.ts",
-      "line": 53,
+      "symbol": "getSelectionPointRect",
       "reason": "Pre-scheduler — Range.getBoundingClientRect type; Wave 5 deletes this module."
     },
     {
       "file": "packages/rendering/dom/src/field-editor/selectionBridgeOffsets.ts",
-      "line": 54,
-      "reason": "Pre-scheduler — Range.getBoundingClientRect getter for offset-to-rect."
-    },
-    {
-      "file": "packages/rendering/dom/src/field-editor/selectionBridgeOffsets.ts",
-      "line": 101,
+      "symbol": "getTextSelectionClientRects",
       "reason": "Pre-scheduler — Range.getClientRects type for multi-rect offset mapping."
     },
     {
       "file": "packages/rendering/dom/src/field-editor/selectionBridgeOffsets.ts",
-      "line": 102,
-      "reason": "Pre-scheduler — Range.getClientRects getter for multi-rect offset mapping."
+      "symbol": "getCharacterRectAtOffset",
+      "reason": "Pre-scheduler — Range.getBoundingClientRect type for offset-from-point; Wave 5 deletes this module."
     },
     {
       "file": "packages/rendering/dom/src/field-editor/selectionBridgeOffsets.ts",
-      "line": 112,
-      "reason": "Pre-scheduler — Range.getBoundingClientRect type for collapsed-offset fallback."
-    },
-    {
-      "file": "packages/rendering/dom/src/field-editor/selectionBridgeOffsets.ts",
-      "line": 113,
-      "reason": "Pre-scheduler — Range.getBoundingClientRect getter for collapsed-offset fallback."
-    },
-    {
-      "file": "packages/rendering/dom/src/field-editor/selectionGeometry.ts",
-      "line": 45,
-      "reason": "Pre-scheduler — Range.getBoundingClientRect type; Wave 3.4 deletes this module."
-    },
-    {
-      "file": "packages/rendering/dom/src/field-editor/selectionGeometry.ts",
-      "line": 46,
-      "reason": "Pre-scheduler — Range.getBoundingClientRect getter; Wave 3.4 deletes this module."
-    },
-    {
-      "file": "packages/rendering/dom/src/field-editor/selectionGeometry.ts",
-      "line": 62,
-      "reason": "Pre-scheduler — empty-inline caret rect uses the inline host box; Wave 3.4 deletes this module."
+      "symbol": "getInlineCaretRectFromOffset",
+      "reason": "Pre-scheduler — empty-inline caret rect uses the inline host box; Wave 5 deletes this module."
     },
     {
       "file": "packages/rendering/dom/src/geometry/geometryReader.ts",
-      "line": 567,
+      "symbol": "readClientRects",
       "reason": "SCH1 geometry — GeometryReader G1 Range.getClientRects type."
     },
     {
       "file": "packages/rendering/dom/src/geometry/geometryReader.ts",
-      "line": 568,
-      "reason": "SCH1 geometry — GeometryReader G1 Range.getClientRects."
-    },
-    {
-      "file": "packages/rendering/dom/src/geometry/geometryReader.ts",
-      "line": 654,
+      "symbol": "caretFromElementRect",
       "reason": "SCH1 geometry — GeometryReader caretFromElementRect uses the host box."
     },
     {
       "file": "packages/rendering/dom/src/geometry/geometryReader.ts",
-      "line": 660,
+      "symbol": "elementRect",
       "reason": "SCH1 geometry — GeometryReader elementRect uses the host box."
     },
     {
       "file": "packages/rendering/dom/src/geometry/geometryReader.ts",
-      "line": 851,
+      "symbol": "hitTestCaretFromPoint",
       "reason": "SCH1 geometry — GeometryReader G4 caretPositionFromPoint type."
     },
     {
       "file": "packages/rendering/dom/src/geometry/geometryReader.ts",
-      "line": 855,
-      "reason": "SCH1 geometry — GeometryReader G4 caretRangeFromPoint type."
-    },
-    {
-      "file": "packages/rendering/dom/src/geometry/geometryReader.ts",
-      "line": 858,
-      "reason": "SCH1 geometry — GeometryReader G4 caretPositionFromPoint."
-    },
-    {
-      "file": "packages/rendering/dom/src/geometry/geometryReader.ts",
-      "line": 863,
-      "reason": "SCH1 geometry — GeometryReader G4 caretRangeFromPoint."
-    },
-    {
-      "file": "packages/rendering/dom/src/geometry/geometryReader.ts",
-      "line": 890,
+      "symbol": "isInsideAnyBlock",
       "reason": "SCH1 geometry — GeometryReader pointAt inside-block test uses block boxes."
     },
     {
       "file": "packages/rendering/dom/src/geometry/geometryReader.ts",
-      "line": 906,
+      "symbol": "nearestBlockEdge",
       "reason": "SCH1 geometry — GeometryReader G4 nearest-block-edge uses block boxes."
     },
     {
+      "file": "packages/rendering/dom/src/utils/inlineAtomDragPreview.ts",
+      "symbol": "createInlineAtomDragPreview",
+      "reason": "Pre-scheduler — HTML5 inline-atom drag ghost sizes from the source atom box."
+    },
+    {
+      "file": "packages/rendering/dom/src/utils/menuPosition.ts",
+      "symbol": "resolveAnchoredMenuPosition",
+      "reason": "Menu chrome box measured inside measureNow; GeometryReader has no element-rect API."
+    },
+    {
       "file": "packages/rendering/react/src/hooks/inlineSuggestionControlUtils.ts",
-      "line": 92,
+      "symbol": "scrollSuggestionIntoView",
       "reason": "Pre-scheduler — suggestion scroll-into-view skips zero-size suggestion boxes."
     },
     {
       "file": "packages/rendering/react/src/hooks/inlineSuggestionControlUtils.ts",
-      "line": 110,
-      "reason": "Pre-scheduler — suggestion scroll-into-view compares the scroll container box."
-    },
-    {
-      "file": "packages/rendering/react/src/hooks/inlineSuggestionControlUtils.ts",
-      "line": 111,
-      "reason": "Pre-scheduler — suggestion scroll-into-view compares the first visible suggestion box."
-    },
-    {
-      "file": "packages/rendering/react/src/hooks/inlineSuggestionControlUtils.ts",
-      "line": 198,
+      "symbol": "resolveVisibleSuggestionAnchors",
       "reason": "Pre-scheduler — suggestion visibility uses the suggestion element box."
     },
     {
       "file": "packages/rendering/react/src/hooks/inlineSuggestionControlUtils.ts",
-      "line": 265,
+      "symbol": "toSuggestionControlPosition",
       "reason": "Pre-scheduler — suggestion popover placement uses the host box."
     },
     {
       "file": "packages/rendering/react/src/hooks/useAISuggestionPopover.ts",
-      "line": 52,
+      "symbol": "useAISuggestionPopover",
       "reason": "Pre-scheduler — AI suggestion popover anchors to the suggestion element box."
     },
     {
       "file": "packages/rendering/react/src/hooks/useSelectionToolbar.ts",
-      "line": 121,
+      "symbol": "resolveNativeSelectionRect",
       "reason": "Pre-scheduler — selection toolbar anchors to Range.getBoundingClientRect."
     },
     {
       "file": "packages/rendering/react/src/primitives/ai/contextualPromptGeometry.ts",
-      "line": 15,
+      "symbol": "resolveAnchorRect",
       "reason": "Pre-scheduler — contextual-prompt block-range anchor unions block boxes."
     },
     {
       "file": "packages/rendering/react/src/primitives/ai/contextualPromptGeometry.ts",
-      "line": 23,
-      "reason": "Pre-scheduler — contextual-prompt single-block anchor uses the block box."
-    },
-    {
-      "file": "packages/rendering/react/src/primitives/ai/contextualPromptGeometry.ts",
-      "line": 42,
+      "symbol": "resolveInsertedAnchorRect",
       "reason": "Pre-scheduler — contextual-prompt fallback anchor uses the block box."
     },
     {
       "file": "packages/rendering/react/src/primitives/ai/contextualPromptGeometry.ts",
-      "line": 71,
+      "symbol": "resolvePromptSelectionRects",
       "reason": "Pre-scheduler — contextual-prompt selection union maps block boxes."
     },
     {
       "file": "packages/rendering/react/src/primitives/ai/contextualPromptGeometry.ts",
-      "line": 105,
+      "symbol": "resolveLiveSelectionRect",
       "reason": "Pre-scheduler — contextual-prompt text-selection anchor uses Range.getBoundingClientRect."
     },
     {
       "file": "packages/rendering/react/src/primitives/ai/contextualPromptPlacement.ts",
-      "line": 116,
+      "symbol": "measureLayout",
       "reason": "Pre-scheduler — contextual-prompt flip/shift measures the surface box."
     },
     {
-      "file": "packages/rendering/react/src/primitives/ai/contextualPromptPlacement.ts",
-      "line": 117,
-      "reason": "Pre-scheduler — contextual-prompt flip/shift measures the host box."
-    },
-    {
-      "file": "packages/rendering/react/src/primitives/ai/contextualPromptPlacement.ts",
-      "line": 118,
-      "reason": "Pre-scheduler — contextual-prompt flip/shift measures the container box."
-    },
-    {
       "file": "packages/rendering/react/src/primitives/ai/contextualPromptSurface.tsx",
-      "line": 101,
+      "symbol": "AIContextualPromptSurface",
       "reason": "Pre-scheduler — contextual-prompt surface height comes from the mounted surface box."
     },
     {
-      "file": "packages/rendering/react/src/primitives/editor/editorContentDropUtils.ts",
-      "line": 101,
-      "reason": "Pre-scheduler — drop indicator collects child boxes; Wave 3.4 migrates to GeometryReader."
-    },
-    {
       "file": "packages/rendering/react/src/primitives/editor/inlineAtomInteraction.ts",
-      "line": 424,
+      "symbol": "resolveTargetFromPoint",
       "reason": "Pre-scheduler — inline-atom pointer target uses document.elementFromPoint."
     },
     {
       "file": "packages/rendering/react/src/primitives/editor/selectionRect.tsx",
-      "line": 76,
+      "symbol": "EditorSelectionRect",
       "reason": "Pre-scheduler — block-selection rectangle paints from the block box."
     },
     {
       "file": "packages/rendering/react/src/primitives/editor/useEditorContentGestures.ts",
-      "line": 64,
+      "symbol": "useEditorContentGestures",
       "reason": "Pre-scheduler — click-above-document uses the first block box."
     },
     {
-      "file": "packages/rendering/react/src/primitives/editor/useEditorContentGestures.ts",
-      "line": 65,
-      "reason": "Pre-scheduler — click-below-document uses the last block box."
-    },
-    {
-      "file": "packages/rendering/react/src/primitives/editor/useEditorContentGestures.ts",
-      "line": 115,
-      "reason": "Pre-scheduler — region-select hit testing intersects the gesture rect with child boxes."
-    },
-    {
       "file": "packages/rendering/react/src/primitives/editor/useTransferSession.ts",
-      "line": 76,
-      "reason": "Pre-scheduler — transfer session hit-tests the pointer against element boxes; Wave 3.4 migrates to GeometryReader."
+      "symbol": "useTransferSession",
+      "reason": "Root/content hit test measured inside measureNow; GeometryReader has no element-rect API."
     },
     {
       "file": "packages/rendering/react/src/primitives/selection-toolbar/content.tsx",
-      "line": 66,
+      "symbol": "SelectionToolbarContent",
       "reason": "Pre-scheduler — selection-toolbar content measures its own box for flip/shift."
     },
     {
-      "file": "packages/rendering/react/src/selection/placement.ts",
-      "line": 43,
-      "reason": "Pre-scheduler — selection placement uses Range.getBoundingClientRect; Wave 3.4 migrates to GeometryReader."
-    },
-    {
       "file": "packages/rendering/react/src/utils/blockDragPreview.ts",
-      "line": 110,
+      "symbol": "setBlockDragPreviewImage",
       "reason": "Pre-scheduler — HTML5 block-drag ghost sizes from the source block box."
-    },
-    {
-      "file": "packages/rendering/react/src/utils/inlineAtomDragPreview.ts",
-      "line": 20,
-      "reason": "Pre-scheduler — HTML5 inline-atom drag ghost sizes from the source atom box."
-    },
-    {
-      "file": "packages/rendering/react/src/utils/menuPosition.ts",
-      "line": 52,
-      "reason": "Pre-scheduler — menu flip/shift measures the menu box; Wave 3.4 migrates to GeometryReader."
-    },
-    {
-      "file": "packages/rendering/react/src/utils/menuPosition.ts",
-      "line": 128,
-      "reason": "Pre-scheduler — menu anchor uses Range.getClientRects; Wave 3.4 migrates to GeometryReader."
-    },
-    {
-      "file": "packages/rendering/react/src/utils/menuPosition.ts",
-      "line": 133,
-      "reason": "Pre-scheduler — menu anchor falls back to Range.getBoundingClientRect."
-    },
-    {
-      "file": "packages/rendering/react/src/utils/menuPosition.ts",
-      "line": 147,
-      "reason": "Pre-scheduler — menu block-target fallback uses the block box."
     }
   ]
 }

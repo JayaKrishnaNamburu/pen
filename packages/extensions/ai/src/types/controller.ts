@@ -1,4 +1,5 @@
 import type {
+	AIRequestContext,
 	Editor,
 	InlineCompletionController as CoreInlineCompletionController,
 	InlineCompletionState as CoreInlineCompletionState,
@@ -11,6 +12,11 @@ import type {
 	TextSelection,
 	ToolRuntime,
 } from "@input/pen-types";
+import type {
+	AIToolBudgetLimits,
+	AIToolConfirmFn,
+	AIToolTurn,
+} from "@input/pen-ai-tools";
 import type {
 	AIApplyStrategy,
 	AIMutationMode,
@@ -225,6 +231,10 @@ export interface AgenticLoopOptions {
 	generationId?: string;
 	zoneId?: string;
 	maxSteps?: number;
+	allowedMutatingTools?: readonly string[];
+	confirm?: AIToolConfirmFn;
+	toolBudget?: Partial<AIToolBudgetLimits>;
+	toolTurn?: AIToolTurn;
 	signal?: AbortSignal;
 	requestMode?: string;
 	operation?: AIRequestedOperation | null;
@@ -264,6 +274,7 @@ export interface AgenticLoopOptions {
 	) => { valid: boolean; canRefresh: boolean; reason?: string };
 	refreshWorkingSet?: () => Promise<AIWorkingSetEnvelope | null>;
 	onDebug?: (debug: GenerationDebugState) => void;
+	feature?: AIRequestContext["feature"];
 }
 
 export interface AIWorkingSetEnvelope {

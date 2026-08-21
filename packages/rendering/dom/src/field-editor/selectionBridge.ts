@@ -14,11 +14,8 @@ import {
 	getLogicalNodeLength,
 	isInlineAtomNode,
 } from "./inlineAtomDom";
-import {
-	approximateInlineOffsetFromPoint,
-	getDistanceToRect,
-	getInlineCaretRectFromOffset,
-} from "./selectionGeometry";
+import { getDistanceToRect } from "../geometry/types";
+import { approximateInlineOffsetFromPoint } from "./selectionBridgeOffsets";
 import {
 	findBlockElement,
 	findInlineContentElement,

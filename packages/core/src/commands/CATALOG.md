@@ -1,15 +1,16 @@
-# Built-in command catalog (Wave 4.2 inventory)
+# Built-in command catalog (Wave 4.2)
 
-Frozen names from `spec-v2/05-commands.md`. Inventory only: no handlers, no `caret.ts` / `text.ts` / `structure.ts` / `table.ts` / `history.ts` / `defaultKeymap.ts`. The 4.1 registry (`define.ts`, `registry.ts`) is unwired to this list.
+Frozen names from `spec-v2/05-commands.md`. Step 4.2 moved caret (except verticals), text, structure, table, and history handlers into this directory. `createCommandRegistry` from 4.1 is still unwired to `createEditor`.
 
 Owner:
 
-- **field-editor** — v1 behavior lives in `packages/rendering/dom/src/field-editor/` (`commands*.ts`, `keyHandling.ts`, `keyHandlingInlineAtoms.ts`, `keyBindingShortcuts.ts`).
-- **not-yet-moved** — no field-editor command to move; handler still to be written (or lives outside that source list).
+- **core** — headless handler registered at `default` precedence in `caret.ts`, `text.ts`, `structure.ts`, `table.ts`, or `history.ts`.
+- **field-editor** — v1 behavior still lives in `packages/rendering/dom/src/field-editor/` (not moved this slice).
+- **not-yet-moved** — no handler yet, or lives outside the 4.2 source list.
 
-Intended core modules (not created this step): `caret.ts`, `text.ts`, `structure.ts`, `table.ts`, `history.ts`, `defaultKeymap.ts`.
+Keymap: `defaultKeymap.ts` is the K2 platform table, including bindings for the two unmoved vertical caret commands. `resolveDirectedBinding` is the K1 / M2 rtl swap (arrow + word only; table stays logical). Unbound by default: `pen.caretBlockStart`, `pen.caretBlockEnd` (callers dispatch them; no key). `pen.convertBlock`, the four structure commands, and `table.escapeGrid` are also unbound.
 
-Related inventories (not this file): `@input/pen-shortcuts` `KEYMAP-INVENTORY.md` (4.3 / 4.4 key → name). `textSegmentation.ts` already landed (LOC4/HOST4); Wave 5 reuses it.
+Related inventories (not this file): `@input/pen-shortcuts` `KEYMAP-INVENTORY.md` (4.3 / 4.4 key → name). `textSegmentation.ts` is the shared Segmenter module.
 
 ## Caret (`caret.ts`)
 
@@ -17,71 +18,72 @@ Param `{ extend: boolean }` unless noted.
 
 | Command | Param | Owner | Current name |
 | --- | --- | --- | --- |
-| `pen.caretLeft` | `{ extend }` | field-editor | `moveCaretAcrossBlocks` (`previous`) + `selectInlineAtomWithArrowKey` (`ArrowLeft`). Within-block grapheme step is still native. |
-| `pen.caretRight` | `{ extend }` | field-editor | `moveCaretAcrossBlocks` (`next`) + `selectInlineAtomWithArrowKey` (`ArrowRight`). Within-block grapheme step is still native. |
-| `pen.caretUp` | `{ extend }` | field-editor | `keyHandling.ts` `ArrowUp` → `moveCaretAcrossBlocks` (`previous`). Block-boundary only. G5 `verticalCaretTarget` is not wired. |
-| `pen.caretDown` | `{ extend }` | field-editor | `keyHandling.ts` `ArrowDown` → `moveCaretAcrossBlocks` (`next`). Same note as `pen.caretUp`. |
-| `pen.caretLineStart` | `{ extend }` | not-yet-moved | — |
-| `pen.caretLineEnd` | `{ extend }` | not-yet-moved | — |
-| `pen.caretBlockStart` | `{ extend }` | not-yet-moved | — |
-| `pen.caretBlockEnd` | `{ extend }` | not-yet-moved | — |
-| `pen.caretDocStart` | `{ extend }` | not-yet-moved | — |
-| `pen.caretDocEnd` | `{ extend }` | not-yet-moved | — |
-| `pen.caretWordLeft` | `{ extend }` | not-yet-moved | — |
-| `pen.caretWordRight` | `{ extend }` | not-yet-moved | — |
-| `pen.selectAll` | `void` | field-editor | `handleSelectAllShortcut` → `fieldEditor.selectAll` / `SelectAllController`. Fallback: `getDocumentTextRange`. |
-| `pen.selectBlock` | `{ blockId }` | field-editor | No named export. Outcome of `moveCaretAcrossBlocks` / `applyBackspaceBehavior` (`selectBlock: true`) then `editor.selectBlock`. |
+| `pen.caretLeft` | `{ extend }` | core | `handleGraphemeCaret` (`-1`) + atom-adjacent select. T4 at block boundary. |
+| `pen.caretRight` | `{ extend }` | core | `handleGraphemeCaret` (`1`) + atom-adjacent select. T4 at block boundary. |
+| `pen.caretUp` | `{ extend }` | field-editor | Skipped this slice: needs a geometry seam on command dispatch (`measureNow` / `GeometryReader`). Binding stays in `defaultKeymap.ts`. |
+| `pen.caretDown` | `{ extend }` | field-editor | Same as `pen.caretUp`. |
+| `pen.caretLineStart` | `{ extend }` | core | Block offset 0. M3 visual line-box edges need `GeometryReader` (pen-dom); not inverted for rtl. |
+| `pen.caretLineEnd` | `{ extend }` | core | Block logical length. Same M3 deferral. |
+| `pen.caretBlockStart` | `{ extend }` | core | Offset 0 of the focus block. |
+| `pen.caretBlockEnd` | `{ extend }` | core | Logical length of the focus block. |
+| `pen.caretDocStart` | `{ extend }` | core | First normal position in document order. |
+| `pen.caretDocEnd` | `{ extend }` | core | Last normal position in document order. |
+| `pen.caretWordLeft` | `{ extend }` | core | `previousWordBoundary` via `textSegmentation.ts`. |
+| `pen.caretWordRight` | `{ extend }` | core | `nextWordBoundary` via `textSegmentation.ts`. |
+| `pen.selectAll` | `void` | core | T1 via `escalateSelectAll`. |
+| `pen.selectBlock` | `{ blockId }` | core | BlockSelection of the named block. |
 
 ## Text (`text.ts`)
 
 | Command | Param | Owner | Current name |
 | --- | --- | --- | --- |
-| `pen.insertText` | `{ text }` | field-editor | `insertTextAtRange`. Typing path: `DIRECT_HANDLERS.insertText` → `applyInlineTextEdit` / `replaceSelection`. |
-| `pen.deleteBackward` | `{ granularity }` | field-editor | `applyDeleteBehavior` (`backward`) → `applyBackspaceBehavior` / `resolveBackspaceAction`. Alias: `mergeBackwardAtBlockStart`. |
-| `pen.deleteForward` | `{ granularity }` | field-editor | `applyDeleteBehavior` (`forward`). After the inline-atom case this often returns `null` (within-block forward still native). |
-| `pen.insertLineBreak` | `void` | field-editor | `DIRECT_HANDLERS.insertLineBreak` (`applyInlineTextEdit` `"\n"`). Code-mode Enter: `applyEnterBehavior` → `insertTextAtRange`. |
-| `pen.splitBlock` | `void` | field-editor | `applyEnterBehavior` / `resolveEnterAction` → `splitBlockAtOffset` (also convert / lift). |
-| `pen.indent` | `void` | field-editor | `applyListTabBehavior` (`shiftKey: false`). |
-| `pen.outdent` | `void` | field-editor | `applyListTabBehavior` (`shiftKey: true`). |
-| `pen.toggleMark` | `{ mark; value? }` | field-editor | `toggleInlineMark` (re-exports `@input/pen-shortcuts`). `DIRECT_HANDLERS` `formatBold` / `formatItalic` / `formatUnderline`. |
-| `pen.convertBlock` | `{ blockId; newType; newProps? }` | field-editor | `convertBlock` / `getConvertBlockOps`. Also used by Enter / Backspace convert actions. |
+| `pen.insertText` | `{ text }` | core | Replace the current text selection / insert at caret. |
+| `pen.deleteBackward` | `{ granularity }` | core | Grapheme/word/line within the block (F2); merge/select/convert at block start. |
+| `pen.deleteForward` | `{ granularity }` | core | Symmetric to backward, including merge at block end. |
+| `pen.insertLineBreak` | `void` | core | Insert `"\n"`. |
+| `pen.splitBlock` | `void` | core | Port of `applyEnterBehavior`: split, list continuation, empty-list convert, heading → paragraph. |
+| `pen.indent` | `void` | core | Port of `applyListTabBehavior` (`shiftKey: false`). |
+| `pen.outdent` | `void` | core | Port of `applyListTabBehavior` (`shiftKey: true`). |
+| `pen.toggleMark` | `{ mark; value? }` | core | `format-text` over a range. Collapsed caret is a miss (no pending-mark host). |
+| `pen.convertBlock` | `{ blockId; newType; newProps? }` | core | `convert-block` plus parentId restore; unknown types emit `invalid-block-type`. |
 
 ## Structure (`structure.ts`)
 
-| Command | Owner | Current name |
-| --- | --- | --- |
-| `pen.moveBlockUp` | not-yet-moved | — |
-| `pen.moveBlockDown` | not-yet-moved | — |
-| `pen.duplicateBlock` | not-yet-moved | — |
-| `pen.deleteBlock` | not-yet-moved | — |
+| Command | Param | Owner | Current name |
+| --- | --- | --- | --- |
+| `pen.moveBlockUp` | `{ blockId? }` | core | `move-block` before the previous same-parent sibling. First sibling is a miss, not an error. |
+| `pen.moveBlockDown` | `{ blockId? }` | core | `move-block` after the next same-parent sibling. Last sibling is a miss. |
+| `pen.duplicateBlock` | `{ blockId? }` | core | Insert a copy after the original with a new id; selection lands on the copy. |
+| `pen.deleteBlock` | `{ blockId? }` | core | `delete-block` on the target. The last remaining block is replaced by an empty paragraph. |
 
-Block-selection delete today is `handleDeleteSelectionShortcut` in `utils/documentShortcuts.ts` (outside the 4.2 source list), not a named `pen.deleteBlock`. `applyBackspaceBehavior` can emit a `delete-block` op as part of `pen.deleteBackward`.
+Block-selection delete is also handled by `pen.deleteBackward` / `pen.deleteForward` when the selection is a BlockSelection.
 
 ## Table (`table.ts`)
 
 | Command | Owner | Current name |
 | --- | --- | --- |
-| `table.cellNext` | field-editor | `keyHandling.ts` Tab on `activeCellCoord` → `activateCell` (next col / wrap). |
-| `table.cellPrev` | field-editor | `keyHandling.ts` Shift-Tab on `activeCellCoord` → `activateCell` (prev col / wrap). |
-| `table.cellDown` | field-editor | `keyHandling.ts` Enter on `activeCellCoord` → `activateCell` (next row). |
-| `table.escapeGrid` | not-yet-moved | — |
-
-Cell-selection arrows and Escape cell→block live in `utils/tableCellNavigation.ts` and `utils/escapeSelection.ts` (not in the 4.2 source list).
+| `table.cellNext` | core | Port of field-editor Tab: linear cell step, clamp at last cell. Named in `defaultKeymap.ts` (`context: "cell"`). |
+| `table.cellPrev` | core | Port of field-editor Shift-Tab: reverse linear step, clamp at first cell. |
+| `table.cellDown` | core | Port of field-editor Enter: next row, same column, clamp at last row. |
+| `table.escapeGrid` | core | Leave cell selection for the next visible block (else previous; else BlockSelection of the table). Unbound. |
 
 ## History (`history.ts`)
 
 | Command | Owner | Current name |
 | --- | --- | --- |
-| `history.undo` | field-editor | `handleHistoryShortcut` / `isUndoShortcut` / `tryHandleHistoryOverrideBinding` → `editor.undoManager.undo()`. Also `DIRECT_HANDLERS.historyUndo`. |
-| `history.redo` | field-editor | `handleHistoryShortcut` / `isRedoShortcut` → `editor.undoManager.redo()`. Also `DIRECT_HANDLERS.historyRedo`. |
+| `history.undo` | core | Dispatches to the `undo.manager` facet / `editor.undoManager`. Named in `defaultKeymap.ts`. |
+| `history.redo` | core | Same, `redo`. |
 
 ## Counts
 
 | Owner | Names |
 | --- | --- |
-| field-editor | 20 |
-| not-yet-moved | 13 |
+| core | 31 |
+| field-editor | 2 |
+| not-yet-moved | 0 |
 | **total (frozen)** | **33** |
+
+Moved this slice: 4 structure + 4 table + 2 history = 10. Left in field-editor: `pen.caretUp` / `pen.caretDown` (geometry seam still missing on `CommandDispatchContext`).
 
 ## Field-editor names that are not catalog commands
 

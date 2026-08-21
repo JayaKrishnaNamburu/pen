@@ -39,7 +39,8 @@ function createBlockTypeEditor(
 	options: Parameters<typeof createEditor>[0] = {},
 ) {
 	return createEditor({
-		schema: defaultSchema,...options,
+		schema: defaultSchema,
+		...options,
 		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
@@ -71,9 +72,9 @@ describe("@input/pen-react block type rendering", () => {
 			);
 		});
 
-		const optionValues = Array.from(container.querySelectorAll("option")).map(
-			(option) => (option as HTMLOptionElement).value,
-		);
+		const optionValues = Array.from(
+			container.querySelectorAll("option"),
+		).map((option) => (option as HTMLOptionElement).value);
 		expect(optionValues).toContain("paragraph");
 		expect(optionValues).toContain("table");
 		expect(optionValues).not.toContain("subdocument");
@@ -108,9 +109,9 @@ describe("@input/pen-react block type rendering", () => {
 			);
 		});
 
-		const optionValues = Array.from(container.querySelectorAll("option")).map(
-			(option) => (option as HTMLOptionElement).value,
-		);
+		const optionValues = Array.from(
+			container.querySelectorAll("option"),
+		).map((option) => (option as HTMLOptionElement).value);
 		expect(optionValues).toContain("table");
 		expect(optionValues).not.toContain("subdocument");
 
@@ -197,15 +198,24 @@ describe("@input/pen-react block type rendering", () => {
 			);
 		});
 
-		expect(visibleText(container.textContent)).not.toContain("Hello streamed world");
+		expect(visibleText(container.textContent)).not.toContain(
+			"Hello streamed world",
+		);
 
 		await act(async () => {
 			editor.apply([
-				{ type: "insert-text", blockId, offset: 0, text: "Hello streamed world" },
+				{
+					type: "insert-text",
+					blockId,
+					offset: 0,
+					text: "Hello streamed world",
+				},
 			]);
 		});
 
-		expect(visibleText(container.textContent)).toContain("Hello streamed world");
+		expect(visibleText(container.textContent)).toContain(
+			"Hello streamed world",
+		);
 
 		await act(async () => {
 			root.unmount();
@@ -303,7 +313,13 @@ describe("@input/pen-react block type rendering", () => {
 
 		expect(editor.getBlock(blockId)?.type).toBe("table");
 		expect(editor.getBlock(blockId)?.props.hasHeaderRow).toBe(true);
-		expect(editor.getBlock(blockId)!.as("table")?.tableCell(0, 0)?.textContent()).toBe("Name");
+		expect(
+			editor
+				.getBlock(blockId)!
+				.as("table")
+				?.tableCell(0, 0)
+				?.textContent(),
+		).toBe("Name");
 
 		const activeCell = container.querySelector(
 			"[data-pen-table-cell][data-cell-row='0'][data-cell-col='1'] [data-pen-field-editor-active-surface]",
@@ -364,14 +380,20 @@ describe("@input/pen-react block type rendering", () => {
 		).toBe(true);
 
 		await act(async () => {
-			titleSurface?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+			titleSurface?.dispatchEvent(
+				new MouseEvent("click", { bubbles: true }),
+			);
 		});
 
 		expect(editor.getBlock(blockId)?.props.open).toBe(false);
 
 		await act(async () => {
-			trigger?.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
-			document.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+			trigger?.dispatchEvent(
+				new MouseEvent("mousedown", { bubbles: true }),
+			);
+			document.dispatchEvent(
+				new MouseEvent("mouseup", { bubbles: true }),
+			);
 			trigger?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
 			await new Promise<void>((resolve) => {
 				window.requestAnimationFrame(() => resolve());
@@ -391,6 +413,4 @@ describe("@input/pen-react block type rendering", () => {
 		container.remove();
 		editor.destroy();
 	});
-
-
 });

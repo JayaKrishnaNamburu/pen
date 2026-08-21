@@ -2,6 +2,8 @@
 
 Headless testing utilities for Pen.
 
+These helpers are for package and app tests. They do not bootstrap a production editor.
+
 ## Install
 
 ```bash
@@ -49,6 +51,7 @@ assertDocEquals(collab.editorA, collab.editorB);
 ## Deterministic Fixtures
 
 ```ts
+import { expect } from "vitest";
 import {
   createDeterministicYDocFixture,
   runCRDTStateVectorContract,
@@ -69,3 +72,17 @@ runCRDTStateVectorContract({ createFixture: () => fixture });
 - Fixture helpers use generic Pen document roots and avoid product-specific fixture data.
 - Contract helpers throw ordinary errors and do not require a specific test runner.
 - These utilities are intended for package and app tests, not production editor bootstrapping.
+
+## Options
+
+`createTestEditor` defaults to the shipped schema and a Yjs-backed document. Override `schema`, `doc`, or other editor options when a test needs a custom runtime. This package has no separate options object beyond those editor fields.
+
+## Documentation
+
+The docs site (the `@input/pen-docs` package) covers runtime floor notes on the Browser and Node page (`#/support`).
+
+The public signatures of record are in `api-report.md` next to this package's source in the Pen repository. The docs site does not host a generated browsable reference.
+
+## License
+
+MIT © Input B.V. See [`LICENSE.md`](./LICENSE.md).

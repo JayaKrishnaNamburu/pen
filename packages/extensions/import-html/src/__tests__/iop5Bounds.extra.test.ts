@@ -106,6 +106,8 @@ describe("HTML ingest bounds leftovers (IOP5/IOP6)", () => {
         reason: "count-exceeded",
         count: 1,
         bound: "INGEST_MAX_NODE_COUNT",
+        limit: INGEST_MAX_NODE_COUNT,
+        actual: INGEST_MAX_NODE_COUNT + 1,
         dropped: "1 block",
       },
     ]);
@@ -134,6 +136,8 @@ describe("HTML ingest bounds leftovers (IOP5/IOP6)", () => {
         reason: "count-exceeded",
         count: 2,
         bound: "INGEST_MAX_NODE_COUNT",
+        limit: INGEST_MAX_NODE_COUNT,
+        actual: INGEST_MAX_NODE_COUNT + 2,
         dropped: "2 blocks",
       },
     ]);
@@ -166,6 +170,8 @@ describe("HTML ingest bounds leftovers (IOP5/IOP6)", () => {
         reason: "depth-exceeded",
         count: 2,
         bound: "INGEST_MAX_NESTING_DEPTH",
+        limit: INGEST_MAX_NESTING_DEPTH,
+        actual: INGEST_MAX_NESTING_DEPTH + 1,
         dropped: "2 blocks",
       },
     ]);
@@ -188,6 +194,8 @@ describe("HTML ingest bounds leftovers (IOP5/IOP6)", () => {
         reason: "depth-exceeded",
         count: 1,
         bound: "INGEST_MAX_NESTING_DEPTH",
+        limit: INGEST_MAX_NESTING_DEPTH,
+        actual: INGEST_MAX_NESTING_DEPTH + 1,
         dropped: "1 block",
       },
     ]);
@@ -207,6 +215,8 @@ describe("HTML ingest bounds leftovers (IOP5/IOP6)", () => {
         reason: "image-count-exceeded",
         count: 1,
         bound: "INGEST_MAX_IMAGE_COUNT",
+        limit: INGEST_MAX_IMAGE_COUNT,
+        actual: INGEST_MAX_IMAGE_COUNT + 1,
         dropped: "1 image",
       },
     ]);
@@ -225,6 +235,8 @@ describe("HTML ingest bounds leftovers (IOP5/IOP6)", () => {
         reason: "text-size-exceeded",
         count: 1,
         bound: "INGEST_MAX_TEXT_SIZE",
+        limit: INGEST_MAX_TEXT_SIZE,
+        actual: INGEST_MAX_TEXT_SIZE + 1,
         dropped: "1 code unit",
       },
     ]);
@@ -259,6 +271,8 @@ describe("HTML ingest bounds leftovers (IOP5/IOP6)", () => {
         reason: "depth-exceeded",
         count: 1,
         bound: "INGEST_MAX_NESTING_DEPTH",
+        limit: INGEST_MAX_NESTING_DEPTH,
+        actual: INGEST_MAX_NESTING_DEPTH + 1,
         dropped: "1 block",
       },
     ]);
@@ -276,6 +290,8 @@ describe("HTML ingest bounds leftovers (IOP5/IOP6)", () => {
         reason: "text-size-exceeded",
         count: input.length - truncated.length,
         bound: "INGEST_MAX_TEXT_SIZE",
+        limit: INGEST_MAX_TEXT_SIZE,
+        actual: input.length,
         dropped: `${input.length - truncated.length} code units`,
       },
     ]);
@@ -316,6 +332,8 @@ describe("HTML ingest bounds leftovers (IOP5/IOP6)", () => {
           reason: "count-exceeded",
           count: 1,
           bound: "INGEST_MAX_NODE_COUNT",
+          limit: INGEST_MAX_NODE_COUNT,
+          actual: INGEST_MAX_NODE_COUNT + 1,
           dropped: "1 block",
         },
       ]),
@@ -338,6 +356,8 @@ describe("HTML ingest bounds leftovers (IOP5/IOP6)", () => {
         reason: "depth-exceeded",
         count: 1,
         bound: "INGEST_MAX_NESTING_DEPTH",
+        limit: INGEST_MAX_NESTING_DEPTH,
+        actual: INGEST_MAX_NESTING_DEPTH + 1,
         dropped: "1 block",
       },
     ]);
@@ -358,12 +378,14 @@ describe("HTML ingest bounds leftovers (IOP5/IOP6)", () => {
       level: "warn",
       source: "import-html",
       message:
-        "import truncated: 400 blocks count-exceeded (INGEST_MAX_NODE_COUNT)",
+        "import truncated: 400 blocks count-exceeded (INGEST_MAX_NODE_COUNT) actual 10400 limit 10000",
       droppedByReason: [
         {
           reason: "count-exceeded",
           count: 400,
           bound: "INGEST_MAX_NODE_COUNT",
+          limit: INGEST_MAX_NODE_COUNT,
+          actual: INGEST_MAX_NODE_COUNT + 400,
           dropped: "400 blocks",
         },
       ],
@@ -406,6 +428,8 @@ describe("HTML ingest bounds leftovers (IOP5/IOP6)", () => {
         reason: "depth-exceeded",
         count: 1,
         bound: "INGEST_MAX_NESTING_DEPTH",
+        limit: INGEST_MAX_NESTING_DEPTH,
+        actual: INGEST_MAX_NESTING_DEPTH + 1,
         dropped: "1 block",
       },
     ]);
@@ -415,19 +439,23 @@ describe("HTML ingest bounds leftovers (IOP5/IOP6)", () => {
   it("IOP5/IOP6 parseHtmlWithReport reports the raw-source text cap without parsing the tail", () => {
     const editor = createBareEditor();
     const keep = "<p>keep</p>\n";
-    const { blocks, report } = parseHtmlWithReport(
-      `${keep}${"x".repeat(INGEST_MAX_TEXT_SIZE)}\n<p>lost</p>`,
-      editor,
-    );
+    const input = `${keep}${"x".repeat(INGEST_MAX_TEXT_SIZE)}\n<p>lost</p>`;
+    const { blocks, report } = parseHtmlWithReport(input, editor);
+    const truncated = keep.slice(0, keep.lastIndexOf("\n"));
+    const droppedUnits = input.length - truncated.length;
 
     expect(blocks).toEqual([
       expect.objectContaining({ type: "paragraph", content: "keep" }),
     ]);
     expect(report.droppedByReason).toEqual([
-      expect.objectContaining({
+      {
         reason: "text-size-exceeded",
+        count: droppedUnits,
         bound: "INGEST_MAX_TEXT_SIZE",
-      }),
+        limit: INGEST_MAX_TEXT_SIZE,
+        actual: input.length,
+        dropped: `${droppedUnits} code units`,
+      },
     ]);
     editor.destroy();
   });
@@ -451,6 +479,8 @@ describe("HTML ingest bounds leftovers (IOP5/IOP6)", () => {
         reason: "image-count-exceeded",
         count: 1,
         bound: "INGEST_MAX_IMAGE_COUNT",
+        limit: INGEST_MAX_IMAGE_COUNT,
+        actual: INGEST_MAX_IMAGE_COUNT + 1,
         dropped: "1 image",
       },
     ]);
@@ -470,6 +500,8 @@ describe("HTML ingest bounds leftovers (IOP5/IOP6)", () => {
         reason: "depth-exceeded",
         count: 1,
         bound: "INGEST_MAX_NESTING_DEPTH",
+        limit: INGEST_MAX_NESTING_DEPTH,
+        actual: INGEST_MAX_NESTING_DEPTH + 1,
         dropped: "1 block",
       },
     ]);

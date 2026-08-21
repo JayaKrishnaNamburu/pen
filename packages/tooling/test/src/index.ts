@@ -63,3 +63,19 @@ export type {
 	HeadlessEditorContractOptions,
 	HeadlessEditorContractResult,
 } from "./contracts";
+export {
+	createModelDouble,
+	abortHalfwayGenerationParts,
+	failingToolCallParts,
+	hostileMutatingTurnCalls,
+} from "./modelDouble";
+export type {
+	ModelDouble,
+	ModelDoubleEvent,
+	ModelDoubleFeature,
+	ModelDoubleMalformedPart,
+	ModelDoubleOptions,
+	ModelDoublePart,
+	ModelDoubleResponse,
+	ModelDoubleToolCall,
+} from "./modelDouble";

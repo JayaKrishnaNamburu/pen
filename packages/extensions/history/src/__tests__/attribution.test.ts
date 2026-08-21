@@ -1,6 +1,7 @@
 import { createEditor } from "@input/pen-core";
+import { createTwoPeerHarness } from "@input/pen-test";
 import { MULTIPLAYER_CONTROLLER_SLOT } from "@input/pen-types";
-import type { PenPersistence, VersionEntry } from "@input/pen-types";
+import type { CommitEvent, PenPersistence, VersionEntry } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 import { defaultSchema } from "@input/pen-schema-default";
 import {
@@ -322,6 +323,93 @@ describe("COL3 identity is host-authoritative", () => {
 		expect(range?.author.name).not.toBe(peerAName);
 		expect(range?.displayHint?.unverified).toBe(true);
 		expect(range?.displayHint?.name).toBe(peerAName);
+	});
+
+	it("COL1: remote peer B edit is collaborator-origin and attributed to B's opaque handle", () => {
+		const harness = createTwoPeerHarness({
+			blocks: [{ id: "b1", type: "paragraph", content: "Hello" }],
+		});
+		const peerBClientId = harness.peerB.editor.clientId;
+		const commits: CommitEvent[] = [];
+		harness.peerA.editor.on("commit", (event) => {
+			commits.push(event);
+		});
+
+		harness.peerB.editor.apply(
+			[{ type: "insert-text", blockId: "b1", offset: 5, text: " world" }],
+			{ origin: { type: "user" } },
+		);
+		harness.exchange("b-then-a");
+
+		expect(commits.length).toBeGreaterThan(0);
+		expect(
+			commits.every((event) => event.origin.type === "collaborator"),
+		).toBe(true);
+		expect(commits.every((event) => event.source === "remote")).toBe(true);
+		expect(commits.some((event) => event.origin.type === "user")).toBe(false);
+
+		const remoteRanges = getCharacterAttribution(
+			harness.peerA.editor,
+			"b1",
+		).filter((range) => range.clientId === peerBClientId);
+
+		expect(remoteRanges.length).toBeGreaterThan(0);
+		expect(
+			remoteRanges.every((range) => range.author.verified === false),
+		).toBe(true);
+		expect(
+			remoteRanges.every(
+				(range) => range.author.name === `User ${peerBClientId}`,
+			),
+		).toBe(true);
+		expect(remoteRanges.every((range) => range.author.name !== "Ada")).toBe(
+			true,
+		);
+		expect(harness.peerA.editor.getBlock("b1").textContent()).toBe(
+			"Hello world",
+		);
+
+		harness.destroy();
+	});
+
+	it("COL3: snapshots store clientId, never a peer-asserted name", async () => {
+		const persistence = new MemoryPersistence();
+		const editor = createEditor({
+			schema: defaultSchema,
+			extensions: [
+				historyExtension({
+					persistence,
+					docId: "doc-1",
+					autoSnapshot: false,
+				}),
+			],
+		});
+		editor.internals.setSlot(MULTIPLAYER_CONTROLLER_SLOT, {
+			getIdentityMap() {
+				return {
+					get() {
+						return {
+							id: "forged",
+							name: "Ada",
+							color: "#ff0000",
+						};
+					},
+				};
+			},
+		});
+
+		const created = await getHistoryController(editor)!.createSnapshot(
+			"Manual checkpoint",
+			"manual",
+		);
+
+		expect(created.metadata.clientId).toBe(editor.clientId);
+		expect(created.metadata).not.toHaveProperty("name");
+		expect(created.metadata).not.toHaveProperty("author");
+		expect(JSON.stringify(created.metadata)).not.toContain("Ada");
+		expect(JSON.stringify(created.metadata)).not.toContain("forged");
+
+		editor.destroy();
 	});
 });
 

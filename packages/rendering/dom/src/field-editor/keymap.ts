@@ -1,3 +1,4 @@
+import { resolveDirectedCommand } from "@input/pen-core";
 import type { Command } from "@input/pen-types";
 
 export type KeymapDirection = "ltr" | "rtl";
@@ -21,9 +22,10 @@ export interface ResolveKeymapOptions {
 }
 
 /**
- * Standalone Wave 4.3 keymap resolver (K1, K4). Matches bindings in the
- * given order and returns the first command name, or null. Does not attach
- * listeners or dispatch.
+ * Standalone keymap resolver (K1, K4, M2). Matches bindings in the given
+ * order and returns the first command name, or null. Direction remaps the
+ * matched command after the key match (M2) so other bindings on that key
+ * stay intact. Does not attach listeners or dispatch.
  */
 export function resolveKeymap(
 	bindings: readonly KeymapBinding[],
@@ -34,30 +36,20 @@ export function resolveKeymap(
 		return null;
 	}
 
-	const resolvedKey = resolveDirectedKey(event.key, options.direction);
-
 	for (const binding of bindings) {
-		if (matchesKey(binding.key, event, resolvedKey)) {
-			return binding.command.name;
+		if (matchesKey(binding.key, event)) {
+			const command = resolveDirectedCommand(
+				binding.command,
+				options.direction ?? "ltr",
+			);
+			return command.name;
 		}
 	}
 
 	return null;
 }
 
-function resolveDirectedKey(
-	key: string,
-	_direction?: KeymapDirection,
-): string {
-	// wave-6
-	return key;
-}
-
-function matchesKey(
-	pattern: string,
-	event: KeymapEvent,
-	resolvedKey: string,
-): boolean {
+function matchesKey(pattern: string, event: KeymapEvent): boolean {
 	const parts = pattern.split("-").map((part) => part.toLowerCase());
 	const key = parts.pop()?.toLowerCase() ?? "";
 
@@ -90,6 +82,6 @@ function matchesKey(
 		metaMatch &&
 		shiftMatch &&
 		altMatch &&
-		resolvedKey.toLowerCase() === key
+		event.key.toLowerCase() === key
 	);
 }

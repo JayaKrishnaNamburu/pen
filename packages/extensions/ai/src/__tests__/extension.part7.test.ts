@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
+import { undoExtension } from "@input/pen-undo";
+import { deltaStreamExtension } from "@input/pen-delta-stream";
+import { documentOpsExtension } from "@input/pen-document-ops";
 import {
 	acceptAllSuggestions,
 	acceptSuggestion,
@@ -23,7 +26,11 @@ import {
 describe("aiExtension", () => {
 	it("creates a fresh inline session when the selection target changes", async () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [
+			schema: defaultSchema,
+			extensions: [
+				undoExtension(),
+				deltaStreamExtension(),
+				documentOpsExtension(),
 				aiExtension({
 					model: {
 						async *stream() {
@@ -89,7 +96,11 @@ describe("aiExtension", () => {
 
 	it("opens an inline contextual prompt from a collapsed caret through auto target resolution", async () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [
+			schema: defaultSchema,
+			extensions: [
+				undoExtension(),
+				deltaStreamExtension(),
+				documentOpsExtension(),
 				aiExtension({
 					model: {
 						async *stream() {
@@ -123,7 +134,11 @@ describe("aiExtension", () => {
 
 	it("does not open inline contextual prompts for document targets", async () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [
+			schema: defaultSchema,
+			extensions: [
+				undoExtension(),
+				deltaStreamExtension(),
+				documentOpsExtension(),
 				aiExtension({
 					model: {
 						async *stream() {
@@ -146,7 +161,11 @@ describe("aiExtension", () => {
 
 	it("keeps inline session prompts selection-scoped for follow-up edits", async () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [
+			schema: defaultSchema,
+			extensions: [
+				undoExtension(),
+				deltaStreamExtension(),
+				documentOpsExtension(),
 				aiExtension({
 					model: {
 						async *stream() {
@@ -187,7 +206,11 @@ describe("aiExtension", () => {
 	it("closes the inline composer when resolving a session", async () => {
 		const createInlineSessionEditor = () =>
 			createEditor({
-				schema: defaultSchema,extensions: [
+				schema: defaultSchema,
+				extensions: [
+					undoExtension(),
+					deltaStreamExtension(),
+					documentOpsExtension(),
 					aiExtension({
 						model: {
 							async *stream() {
@@ -276,7 +299,11 @@ describe("aiExtension", () => {
 	it("closes the inline composer when resolving a session turn", async () => {
 		const createInlineSessionEditor = () =>
 			createEditor({
-				schema: defaultSchema,extensions: [
+				schema: defaultSchema,
+				extensions: [
+					undoExtension(),
+					deltaStreamExtension(),
+					documentOpsExtension(),
 					aiExtension({
 						model: {
 							async *stream() {
@@ -376,7 +403,11 @@ describe("aiExtension", () => {
 
 	it("uses the captured inline session selection even if the editor selection changes", async () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [
+			schema: defaultSchema,
+			extensions: [
+				undoExtension(),
+				deltaStreamExtension(),
+				documentOpsExtension(),
 				aiExtension({
 					model: {
 						async *stream() {
@@ -418,7 +449,11 @@ describe("aiExtension", () => {
 
 	it("routes inline session continue prompts to block streaming suggestions", async () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [
+			schema: defaultSchema,
+			extensions: [
+				undoExtension(),
+				deltaStreamExtension(),
+				documentOpsExtension(),
 				aiExtension({
 					model: {
 						async *stream() {

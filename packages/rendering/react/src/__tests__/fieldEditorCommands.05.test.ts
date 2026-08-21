@@ -18,10 +18,10 @@ import {
 	resolveEnterAction,
 	splitBlockAtOffset,
 	toggleInlineMark,
-} from "../field-editor/commands";
-import { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
+} from "@input/pen-dom/field-editor/commands";
+import { FieldEditorImpl } from "@input/pen-dom/field-editor/fieldEditorImpl";
 import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
-import type { FieldEditorTextLike } from "../field-editor/crdt";
+import type { FieldEditorTextLike } from "@input/pen-dom/field-editor/crdt";
 
 type BlocksMapLike = {
 	get(key: string): { get(field: string): unknown } | undefined;

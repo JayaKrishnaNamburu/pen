@@ -11,6 +11,7 @@ describe("ClientIdentityMap", () => {
 		expect(map.get(1)).toEqual({
 			id: "u1",
 			name: "Ada",
+			unverified: true,
 			color: assignMultiplayerColor("u1"),
 		});
 	});
@@ -21,6 +22,7 @@ describe("ClientIdentityMap", () => {
 		expect(map.resolve(7)).toEqual({
 			id: "7",
 			name: "User 7",
+			unverified: true,
 			color: assignMultiplayerColor("7"),
 		});
 	});
@@ -39,6 +41,7 @@ describe("ClientIdentityMap", () => {
 		expect(map.get(1)).toEqual({
 			id: "u1",
 			name: "Ada",
+			unverified: true,
 			color: assignMultiplayerColor("u1"),
 		});
 		expect(map.get(2)).toBeNull();
@@ -66,6 +69,7 @@ describe("ClientIdentityMap", () => {
 		expect(map.get(1)).toEqual({
 			id: "u1",
 			name: "Ada",
+			unverified: true,
 			color: assignMultiplayerColor("u1"),
 		});
 	});
@@ -97,6 +101,7 @@ describe("ClientIdentityMap", () => {
 		expect(map.get(1)).toEqual({
 			id: "u1",
 			name: "Ada",
+			unverified: true,
 			color: "#123456",
 		});
 	});

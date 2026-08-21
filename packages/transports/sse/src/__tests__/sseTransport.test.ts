@@ -231,6 +231,20 @@ describe("SSE server handler", () => {
 		expect(readme).toMatch(/non-resumable/);
 		expect(readme).toMatch(/development-oriented/);
 	});
+
+	it("COL6 malformed POST body returns 400 and does not throw", async () => {
+		const handler = createSSEHandler({ pingInterval: 60_000 });
+
+		const response = await handler(
+			new Request("http://localhost/sse", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: "{not-json",
+			}),
+		);
+
+		expect(response.status).toBe(400);
+	});
 });
 
 describe("SSE client transport", () => {
@@ -421,5 +435,135 @@ describe("SSE client transport", () => {
 		const sentHeaders = postCall[1]?.headers as Record<string, string>;
 		expect(sentHeaders["Last-Event-ID"]).toBeUndefined();
 		expect(postCall[1]?.method).toBe("POST");
+	});
+
+	it("COL6 reconnect past retention is a full restart, not a resume", async () => {
+		const fetchSpy = vi.fn(async () =>
+			new Response(
+				sseBody([{ id: "expired-stream:999", data: '{"type":"done"}' }]),
+				{ status: 200, headers: { "Content-Type": "text/event-stream" } },
+			),
+		);
+		globalThis.fetch = fetchSpy;
+
+		const handler = createSSEHandler({ pingInterval: 60_000 });
+		const pastRetention = await handler(
+			new Request("http://localhost/sse", {
+				method: "GET",
+				headers: { "Last-Event-ID": "expired-stream:999" },
+			}),
+		);
+		expect(pastRetention.status).toBe(405);
+		expect(pastRetention.status).not.toBe(200);
+		expect(pastRetention.status).not.toBe(501);
+		expect(pastRetention.headers.get("X-Replay-Supported")).toBeNull();
+
+		const transport = sseTransport({ url: "http://test/sse" });
+		expect(transport.reconnect).toBeUndefined();
+		await collectParts(transport.stream(makeRequest()));
+		await transport.disconnect();
+		const parts = await collectParts(transport.stream(makeRequest()));
+		expect(parts).toEqual([{ type: "done" }]);
+
+		const fetchCalls = (fetchSpy as ReturnType<typeof vi.fn>).mock
+			.calls as FetchCall[];
+		expect(fetchCalls).toHaveLength(2);
+		for (const call of fetchCalls) {
+			expect(call[1]?.method).toBe("POST");
+			const sentHeaders = call[1]?.headers as Record<string, string>;
+			expect(sentHeaders["Last-Event-ID"]).toBeUndefined();
+		}
+
+		const readme = readFileSync(
+			join(import.meta.dirname, "../../README.md"),
+			"utf8",
+		);
+		expect(readme).toMatch(/no replayable log/);
+		expect(readme).toMatch(/no retention bound/);
+		expect(readme).toMatch(/full restart/);
+	});
+
+	it("COL6 disconnect then stream() is a full restart, not a resume", async () => {
+		const fetchSpy = vi.fn(async () =>
+			new Response(
+				sseBody([{ id: "s:0", data: '{"type":"done"}' }]),
+				{ status: 200, headers: { "Content-Type": "text/event-stream" } },
+			),
+		);
+		globalThis.fetch = fetchSpy;
+
+		const transport = sseTransport({ url: "http://test/sse" });
+		await collectParts(transport.stream(makeRequest()));
+		await transport.disconnect();
+		expect(transport.connected).toBe(false);
+		expect(transport.reconnect).toBeUndefined();
+
+		const parts = await collectParts(transport.stream(makeRequest()));
+		expect(parts).toEqual([{ type: "done" }]);
+
+		const fetchCalls = (fetchSpy as ReturnType<typeof vi.fn>).mock
+			.calls as FetchCall[];
+		expect(fetchCalls).toHaveLength(2);
+		for (const call of fetchCalls) {
+			expect(call[1]?.method).toBe("POST");
+			const sentHeaders = call[1]?.headers as Record<string, string>;
+			expect(sentHeaders["Last-Event-ID"]).toBeUndefined();
+		}
+	});
+
+	it("COL6 yields parts in arrival order and does not dedupe event ids", async () => {
+		globalThis.fetch = vi.fn(async () =>
+			new Response(
+				sseBody([
+					{ id: "s:2", data: '{"type":"tool-output","toolCallId":"tc-1","output":"second"}' },
+					{ id: "s:2", data: '{"type":"tool-output","toolCallId":"tc-1","output":"duplicate"}' },
+					{ id: "s:1", data: '{"type":"tool-output","toolCallId":"tc-1","output":"first"}' },
+					{ id: "s:3", data: '{"type":"done"}' },
+				]),
+				{ status: 200, headers: { "Content-Type": "text/event-stream" } },
+			),
+		);
+
+		const transport = sseTransport({ url: "http://test/sse" });
+		const parts = await collectParts(transport.stream(makeRequest()));
+
+		expect(parts).toEqual([
+			{ type: "tool-output", toolCallId: "tc-1", output: "second" },
+			{ type: "tool-output", toolCallId: "tc-1", output: "duplicate" },
+			{ type: "tool-output", toolCallId: "tc-1", output: "first" },
+			{ type: "done" },
+		]);
+	});
+
+	it("COL6 malformed and oversized frames are dropped with an error part and do not throw", async () => {
+		globalThis.fetch = vi.fn(async () =>
+			new Response(
+				sseBody([
+					{ id: "s:0", data: '{"type":"tool-output","toolCallId":"tc-1","output":"ok"}' },
+					{ id: "s:1", data: "not-json{" },
+					{ id: "s:2", data: "x".repeat(1_048_576 + 64) },
+					{ id: "s:3", data: '{"type":"done"}' },
+				]),
+				{ status: 200, headers: { "Content-Type": "text/event-stream" } },
+			),
+		);
+
+		const transport = sseTransport({ url: "http://test/sse" });
+		const parts = await collectParts(transport.stream(makeRequest()));
+
+		expect(parts[0]).toMatchObject({
+			type: "tool-output",
+			toolCallId: "tc-1",
+			output: "ok",
+		});
+		expect(parts[1]).toMatchObject({
+			type: "error",
+			code: "MALFORMED_EVENT",
+		});
+		expect(parts[2]).toMatchObject({
+			type: "error",
+			code: "OVERSIZED_EVENT",
+		});
+		expect(parts[3]).toMatchObject({ type: "done" });
 	});
 });

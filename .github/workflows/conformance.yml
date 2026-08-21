@@ -38,9 +38,20 @@ jobs:
       - name: Check message catalog completeness
         run: node scripts/catalog-check.mjs
 
-  conformance-chromium:
+  conformance-engine:
+    name: conformance-${{ matrix.engine }}
     timeout-minutes: 30
     runs-on: ubuntu-latest
+
+    # chromium blocks the merge. webkit and firefox report only, until their
+    # first fully green run — see spec-v2/09-reliability-testing.md. Flipping
+    # them to blocking is a one-line change here and is what closes F27.
+    continue-on-error: ${{ matrix.engine != 'chromium' }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, webkit, firefox]
 
     steps:
       - name: Check out repository
@@ -60,17 +71,17 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install Playwright Chromium
-        run: pnpm --filter @input/pen-conformance exec playwright install --with-deps chromium
+      - name: Install Playwright ${{ matrix.engine }}
+        run: pnpm --filter @input/pen-conformance exec playwright install --with-deps ${{ matrix.engine }}
 
-      - name: Run conformance Chromium suite
-        run: pnpm --filter @input/pen-conformance run test:chromium
+      - name: Run conformance ${{ matrix.engine }} suite
+        run: pnpm --filter @input/pen-conformance run test:${{ matrix.engine }}
 
       - name: Upload Playwright artifacts
         if: ${{ failure() || cancelled() }}
         uses: actions/upload-artifact@v4
         with:
-          name: conformance-chromium-artifacts
+          name: conformance-${{ matrix.engine }}-artifacts
           path: |
             packages/tooling/conformance/playwright-report/
             packages/tooling/conformance/test-results/

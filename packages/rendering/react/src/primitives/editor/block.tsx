@@ -1,5 +1,6 @@
 import React, { Children, cloneElement, isValidElement, useRef } from "react";
-import type { BlockRenderContext, Decoration } from "@input/pen-types";
+import { resolveBlockDirection } from "@input/pen-core";
+import type { BlockHandle, BlockRenderContext, Decoration, Editor } from "@input/pen-types";
 import { useEditorContext } from "../../context/editorContext";
 import { useFieldEditorContext } from "../../context/fieldEditorContext";
 import { useBlockDecorations } from "../../hooks/useBlockDecorations";
@@ -60,7 +61,7 @@ export function EditorBlock(props: EditorBlockProps) {
 		blockType === "heading" && typeof block.props?.level === "number"
 			? block.props.level
 			: undefined;
-	const dir = blockContentDir(block.props?.direction);
+	const dir = resolvedContentDir(editor, block);
 	const blockControl = blockControls?.({
 		blockId,
 		blockType,
@@ -186,9 +187,13 @@ function mergeBlockDecorationAttributes(
 	return attributes;
 }
 
-function blockContentDir(direction: unknown): "ltr" | "rtl" | undefined {
-	if (direction === "ltr" || direction === "rtl") {
-		return direction;
+function resolvedContentDir(
+	editor: Editor,
+	block: BlockHandle,
+): "ltr" | "rtl" | undefined {
+	const resolved = resolveBlockDirection(editor, block);
+	if (block.props.direction === "ltr" || block.props.direction === "rtl") {
+		return resolved;
 	}
-	return undefined;
+	return resolved === "rtl" ? "rtl" : undefined;
 }

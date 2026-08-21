@@ -1,7 +1,7 @@
 import type { CommitEvent, DiagnosticEvent, DocumentCommitEvent } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 
-import { createDefaultSchema } from "@input/pen-schema-default";
+import { createDefaultSchema } from "./fixtures/testSchema";
 import {
 	EVENT_DEPRECATED_CODE,
 	createEditor as createCoreEditor,

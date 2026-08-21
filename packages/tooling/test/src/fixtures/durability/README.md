@@ -8,13 +8,13 @@ These are **JSON export snapshots**, not Yjs binaries. Wave V.7 starts here so t
 
 ## Fixtures
 
-| File | Shape |
-| --- | --- |
-| `DUR7-nested-blocks.json` | Toggle with a `parentId` child |
-| `DUR7-table.json` | Default 2×2 table |
-| `DUR7-unknown-block-type.json` | Passthrough `hostWidget` type |
-| `DUR7-unknown-props.json` | Paragraph with undeclared `hostAnnotation` |
-| `DUR7-emoji-rtl.json` | Hebrew + emoji + Arabic |
+| File                           | Shape                                      |
+| ------------------------------ | ------------------------------------------ |
+| `DUR7-nested-blocks.json`      | Toggle with a `parentId` child             |
+| `DUR7-table.json`              | Default 2×2 table                          |
+| `DUR7-unknown-block-type.json` | Passthrough `hostWidget` type              |
+| `DUR7-unknown-props.json`      | Paragraph with undeclared `hostAnnotation` |
+| `DUR7-emoji-rtl.json`          | Hebrew + emoji + Arabic                    |
 
 Skipped as too large or not representable in this interchange format: subdocument, and per-store-generation Yjs binaries (`penFormat` lives in Yjs `metadata`, which JSON export does not write unless the caller passes `includeMetadata`).
 

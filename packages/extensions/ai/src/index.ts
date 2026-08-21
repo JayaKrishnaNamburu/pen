@@ -14,7 +14,21 @@ export {
 } from "./extension";
 
 export { runAgenticLoop } from "./agentic/loop";
-export { buildAgentMessages, compactToolResult } from "./runtime/stepJournal";
+export {
+	buildAgentMessages,
+	compactToolResult,
+	AI_TOOL_RESULT_MAX_CHARS,
+} from "./runtime/stepJournal";
+export {
+	aiEgressFacet,
+	aiEgressExtension,
+	filterAIRequest,
+	streamThroughEgress,
+	AI_FEATURE_CONTENT,
+	AI_EGRESS_INVENTORY_CODE,
+	AI_REQUEST_REFUSED_CODE,
+	excerptKindsOf,
+} from "./egress";
 export { AICommandRegistry } from "./commands/registry";
 export { defaultAICommands } from "./commands/defaultCommands";
 export {
@@ -58,24 +72,10 @@ export {
 export { buildStructuralReviewItems } from "./runtime/reviewArtifacts";
 export { buildDocumentMutationPlanExecution } from "./runtime/planExecutor";
 export {
-	buildPlannerPrompt,
 	parseStructuredPlanResult,
 	resolveExecutionMode,
 	resolveGenerationTargetKind,
-	resolvePlannerMode,
 } from "./runtime/structuredPlanner";
-export {
-	buildPlaygroundRequestPlan,
-	buildExplicitLocalOperationPrompt,
-	buildPromptContext,
-	createPlaygroundRequestMetricsSeed,
-} from "./runtime/playgroundPlanner";
-export type {
-	PlaygroundPromptContextEnvelope,
-	PlaygroundRequestMode,
-	PlaygroundRequestPlan,
-	PlaygroundResolvedContextFormat,
-} from "./runtime/playgroundPlanner";
 export {
 	buildStructuredIntentModelPrompt,
 	getStructuredIntentOutputSchema,

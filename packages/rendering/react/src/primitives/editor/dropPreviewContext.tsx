@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { createContext, useContext } from "react";
-import type { DropPreview } from "../../field-editor/dropResolver";
-export type { DropPreview } from "../../field-editor/dropResolver";
+import type { DropPreview } from "@input/pen-dom/field-editor/dropResolver";
+export type { DropPreview } from "@input/pen-dom/field-editor/dropResolver";
 
 const DropPreviewContext = createContext<DropPreview>(null);
 

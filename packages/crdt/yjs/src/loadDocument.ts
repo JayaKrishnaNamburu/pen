@@ -1,9 +1,10 @@
-import type { CRDTAdapter, CRDTDocument } from "@input/pen-types";
 import {
 	PEN_DOCUMENT_FORMAT,
-	PenDocumentUnreadableError,
+	type CRDTAdapter,
+	type CRDTDocument,
 } from "@input/pen-types";
 import * as Y from "yjs";
+import { PenDocumentUnreadableError } from "./unreadableError";
 
 import {
 	APPS,
@@ -15,9 +16,10 @@ import {
 } from "./document";
 import type { DocumentValidationError, YjsCRDTDocument } from "./document";
 import {
-	DOCUMENT_SIZE_DIAGNOSTIC_CODE,
+	documentSizeDiagnosticFields,
 	isDocumentSizeOverThreshold,
 	measureDocumentSize,
+	rememberDocumentSizeCheck,
 } from "./documentSize";
 import { readFormatStampFromYDoc } from "./formatStamp";
 
@@ -114,15 +116,7 @@ function maybeEmitDocumentSize(
 	if (!isDocumentSizeOverThreshold(size.encodedByteSize)) {
 		return;
 	}
-	const diagnostic: CRDTDiagnostic = {
-		code: DOCUMENT_SIZE_DIAGNOSTIC_CODE,
-		message: `Document is ${size.encodedByteSize} bytes across ${size.blockCount} blocks (gc: ${size.gcEnabled})`,
-		severity: "info",
-		encodedByteSize: size.encodedByteSize,
-		blockCount: size.blockCount,
-		gcEnabled: size.gcEnabled,
-		timestamp: Date.now(),
-	};
+	const diagnostic: CRDTDiagnostic = documentSizeDiagnosticFields(size);
 	diagnostics.push(diagnostic);
 	emitDiagnostic(diagnostic);
 }
@@ -165,6 +159,7 @@ export function loadYjsDocument(
 	}
 
 	maybeEmitDocumentSize(ydoc, diagnostics, emitDiagnostic);
+	rememberDocumentSizeCheck(ydoc);
 
 	if (validation.repaired) {
 		loadReports.set(ydoc, { state: "repaired", diagnostics });

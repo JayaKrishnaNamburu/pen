@@ -137,7 +137,7 @@ describe("GeometryReader G3", () => {
 		);
 	});
 
-	it("G3: single-run RTL start and end map to the visual right and left edges", () => {
+	it("G3: LineBox.runs on dir=rtl hosts uses odd embedding level", () => {
 		const root = mountEditorRoot();
 		mountBlock(root, "p1", ARABIC, mockDOMRect(0, 0, 80, 16), "rtl");
 		const reader = createReader(root);
@@ -303,5 +303,23 @@ describe("GeometryReader G4", () => {
 		const reader = createReader(root);
 
 		expect(reader.pointAt(0, 0)).toBeNull();
+	});
+
+	it("G5 I11: pointAt converts a caret-from-point hit through offsetDomain", () => {
+		const root = mountEditorRoot();
+		const { inline } = mountBlock(
+			root,
+			"empty",
+			"\u200B",
+			mockDOMRect(0, 40, 100, 16),
+		);
+		const text = inline.firstChild as Text;
+		caretDoc().caretPositionFromPoint = () => ({
+			offsetNode: text,
+			offset: 1,
+		});
+		const reader = createReader(root);
+
+		expect(reader.pointAt(10, 48)).toEqual({ blockId: "empty", offset: 0 });
 	});
 });

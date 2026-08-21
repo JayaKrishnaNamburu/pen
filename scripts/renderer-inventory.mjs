@@ -6,9 +6,10 @@
  * neither their framework nor a framework type. Those belong in
  * @input/pen-dom (or core), not the renderer bindings.
  *
- * Report-only by default. `--strict` exits 1 when any finding remains.
- * Tests, declaration files, and the eslint rule are out of scope here
- * (E.2 owns no-framework-free-modules-in-renderers).
+ * Pure re-export stubs are the P.6 end state and are not leftovers.
+ * Allowlisted modules live in scripts/renderer-framework-free-allowlist.json
+ * (each entry needs a reason). Report-only by default. `--strict` exits 1
+ * when any non-allowlisted leftover remains.
  */
 
 import fs from "node:fs/promises";
@@ -17,6 +18,10 @@ import path from "node:path";
 const repoRoot = path.resolve(
 	path.dirname(new URL(import.meta.url).pathname),
 	"..",
+);
+const ALLOWLIST_PATH = path.join(
+	repoRoot,
+	"scripts/renderer-framework-free-allowlist.json",
 );
 
 const RENDERERS = [
@@ -40,8 +45,10 @@ const IMPORT_SPECIFIER =
 const DYNAMIC_IMPORT = /import\s*\(\s*["']([^"']+)["']\s*\)/g;
 
 const strict = process.argv.includes("--strict");
+const allowlist = await loadAllowlist();
 
 const findings = [];
+const allowlisted = [];
 
 for (const renderer of RENDERERS) {
 	const files = await collectSourceFiles(renderer.root);
@@ -50,20 +57,74 @@ for (const renderer of RENDERERS) {
 		if (usesFramework(source, renderer.specifiers)) {
 			continue;
 		}
+		if (isPureReexport(source)) {
+			continue;
+		}
+		const file = path
+			.relative(renderer.root, filePath)
+			.split(path.sep)
+			.join("/");
+		const repoPath = `packages/rendering/${renderer.id}/src/${file}`;
+		const allowed = allowlist.get(repoPath);
+		if (allowed) {
+			allowlisted.push({
+				renderer: renderer.id,
+				file,
+				reason: allowed.reason,
+			});
+			continue;
+		}
 		findings.push({
 			renderer: renderer.id,
-			file: path
-				.relative(renderer.root, filePath)
-				.split(path.sep)
-				.join("/"),
+			file,
 		});
 	}
 }
 
-printReport(findings);
+printReport(findings, allowlisted);
 
 if (strict && findings.length > 0) {
 	process.exitCode = 1;
+}
+
+async function loadAllowlist() {
+	const entries = new Map();
+	let parsed;
+	try {
+		parsed = JSON.parse(await fs.readFile(ALLOWLIST_PATH, "utf8"));
+	} catch (error) {
+		if (error && error.code === "ENOENT") {
+			return entries;
+		}
+		throw error;
+	}
+	for (const entry of parsed.modules ?? []) {
+		if (
+			typeof entry?.file === "string" &&
+			typeof entry.reason === "string" &&
+			entry.reason.trim().length > 0
+		) {
+			entries.set(entry.file, entry);
+		}
+	}
+	return entries;
+}
+
+function isPureReexport(source) {
+	const code = stripComments(source)
+		.replace(/^["']use client["'];?\s*/gm, "")
+		.replace(/^\s*$/gm, "")
+		.trim();
+	if (!code) {
+		return false;
+	}
+	const leftover = code
+		.replace(/export\s+type\s+\*\s+from\s+["'][^"']+["'];?/g, "")
+		.replace(/export\s+\*\s+from\s+["'][^"']+["'];?/g, "")
+		.replace(/export\s+type\s+\{[\s\S]*?\}\s+from\s+["'][^"']+["'];?/g, "")
+		.replace(/export\s+\{[\s\S]*?\}\s+from\s+["'][^"']+["'];?/g, "")
+		.trim();
+	return leftover.length === 0;
 }
 
 function usesFramework(source, specifierPatterns) {
@@ -134,7 +195,7 @@ async function walk(directory, files) {
 	}
 }
 
-function printReport(rows) {
+function printReport(rows, allowedRows) {
 	const grouped = new Map();
 	for (const row of rows) {
 		const list = grouped.get(row.renderer) ?? [];
@@ -146,6 +207,7 @@ function printReport(rows) {
 	console.log(
 		"Modules under packages/rendering/{react,vue}/src that import neither their framework nor a framework type.",
 	);
+	console.log("Re-export stubs are omitted. Allowlisted leftovers are listed last.");
 	console.log("");
 
 	let total = 0;
@@ -164,6 +226,14 @@ function printReport(rows) {
 	}
 
 	console.log(
-		`${total} framework-free module${total === 1 ? "" : "s"} (tests excluded)`,
+		`${total} leftover framework-free module${total === 1 ? "" : "s"} (tests and stubs excluded)`,
 	);
+
+	if (allowedRows.length > 0) {
+		console.log("");
+		console.log(`Allowlisted (${allowedRows.length})`);
+		for (const row of allowedRows) {
+			console.log(`  ${row.renderer}/${row.file} — ${row.reason}`);
+		}
+	}
 }

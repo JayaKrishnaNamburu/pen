@@ -1,6 +1,8 @@
 # @input/pen-undo
 
-Undo/redo extension with origin tagging for Pen
+Undo/redo extension with origin tagging for Pen.
+
+`defaultPreset()` installs this extension. This package does not reimplement Yjs stack trimming; the Yjs adapter trims oldest items past `maxDepth`.
 
 ## Install
 
@@ -24,6 +26,24 @@ undoExtension({ maxDepth: 100 });
 
 By default, undo tracks `user`, `ai`, and `import`. `collaborator`, `unknown`, and `migration` stay untracked, so remote edits, unclassified ops, and document upgrades cannot be undone locally.
 
-## Notes
+## Options
 
-This package is part of the Pen monorepo. Pair it with the relevant core, schema, rendering, or extension packages for your editor setup.
+| Option           | Default                        | Effect                                   |
+| ---------------- | ------------------------------ | ---------------------------------------- |
+| `maxDepth`       | `DEFAULT_UNDO_MAX_DEPTH` (500) | Cap on undo/redo stack items             |
+| `groupTimeout`   | `400`                          | Yjs `captureTimeout` in milliseconds     |
+| `trackedOrigins` | `user`, `ai`, `import`         | Origins captured on the local undo stack |
+
+## Facets and commands
+
+This package contributes no facets and no commands. It requires no other extensions. `defaultPreset()` installs it next to document-ops, delta-stream, and shortcuts.
+
+## Documentation
+
+The docs site (the `@input/pen-docs` package) covers this area on the Extensions and facets page (`#/extensions`).
+
+The public signatures of record are in `api-report.md` next to this package's source in the Pen repository. The docs site does not host a generated browsable reference.
+
+## License
+
+MIT © Input B.V. See [`LICENSE.md`](./LICENSE.md).

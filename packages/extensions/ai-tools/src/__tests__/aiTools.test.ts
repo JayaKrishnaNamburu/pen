@@ -78,6 +78,7 @@ describe("@input/pen-ai-tools", () => {
 				},
 				required: ["content"],
 			},
+			mutating: false,
 			handler: async (input, context) => {
 				context.beginStreaming("zone-1", "block-1");
 				context.appendDelta((input as { content: string }).content);

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import type { AIStreamEvent, GenerationStructuredPreviewState } from "@input/pen-ai";
 import {
+	areAIStructuredPreviewSelectionsEqual,
 	buildAIStructuredPreviewContentItems,
 	buildAIStructuredPreviewSelection,
 } from "../utils/structuredPreview";
@@ -246,5 +247,63 @@ describe("structured preview stream replay", () => {
 				planState: "drafted",
 			},
 		]);
+	});
+});
+
+describe("structured preview equality", () => {
+	it("SCALE2: treats equal preview graphs as equal even when key order differs", () => {
+		const preview = createStructuredPreview({
+			plan: {
+				kind: "block_convert",
+				blockId: "block-1",
+				newType: "heading",
+			},
+		});
+		const reorderedPreview = {
+			targets: preview.targets,
+			reviewItems: preview.reviewItems,
+			plan: preview.plan,
+			planState: preview.planState,
+		};
+
+		expect(JSON.stringify(preview) === JSON.stringify(reorderedPreview)).toBe(
+			false,
+		);
+		expect(
+			areAIStructuredPreviewSelectionsEqual(
+				{ preview, patchCount: 1 },
+				{ preview: reorderedPreview, patchCount: 1 },
+			),
+		).toBe(true);
+	});
+
+	it("SCALE2: treats an undefined member as a real difference", () => {
+		const preview = createStructuredPreview({});
+		const withUndefinedMember = {
+			...preview,
+			skipped: undefined,
+		};
+
+		expect(JSON.stringify(preview) === JSON.stringify(withUndefinedMember)).toBe(
+			true,
+		);
+		expect(
+			areAIStructuredPreviewSelectionsEqual(
+				{ preview, patchCount: 0 },
+				{ preview: withUndefinedMember, patchCount: 0 },
+			),
+		).toBe(false);
+	});
+
+	it("SCALE2: still distinguishes previews that actually differ", () => {
+		expect(
+			areAIStructuredPreviewSelectionsEqual(
+				{ preview: createStructuredPreview({}), patchCount: 0 },
+				{
+					preview: createStructuredPreview({ planState: "validated" }),
+					patchCount: 0,
+				},
+			),
+		).toBe(false);
 	});
 });

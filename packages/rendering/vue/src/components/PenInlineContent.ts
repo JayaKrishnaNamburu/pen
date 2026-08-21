@@ -2,6 +2,7 @@ import { fullReconcileDeltasToDOM } from "@input/pen-dom/field-editor/reconciler
 import { pointToEditorSelectionPoint } from "@input/pen-dom/field-editor/selectionBridge";
 import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 import { applyInlineDecorationsToDeltas } from "@input/pen-dom/utils/inlineDecorations";
+import { replaceElementChildren } from "@input/pen-dom/utils/replaceElementChildren";
 import type { InlineDecoration } from "@input/pen-types";
 import {
   computed,
@@ -24,7 +25,6 @@ import {
 import { resolveEditorSchemaPlaceholder } from "../internal/displayCopy";
 import { useEditorContext } from "../internal/editorContext";
 import { useFieldEditorContext } from "../internal/fieldEditorContext";
-import { replaceElementChildren } from "../internal/replaceElementChildren";
 
 export const PenInlineContent = defineComponent({
   name: "PenInlineContent",
@@ -219,9 +219,13 @@ export const PenInlineContent = defineComponent({
       }
     };
 
-    // DIR2: set `dir` from the direction prop when it is ltr or rtl.
-    // Never `dir="auto"`. AX4: do not set `aria-hidden` (visible atom chips
-    // stay in the tree; `aria-label` comes from the reconciler).
+    // DIR2: the block host (PenBlock) is the resolved-dir sink. This
+    // surface only applies an explicit override — the direction prop or
+    // the block's declared props.direction — so standalone mounts keep
+    // working and the inline span inherits the block's resolved dir when
+    // neither is set. Never `dir="auto"`. AX4: do not set `aria-hidden`
+    // (visible atom chips stay in the tree; `aria-label` comes from the
+    // reconciler).
     return () =>
       h(
         props.as,

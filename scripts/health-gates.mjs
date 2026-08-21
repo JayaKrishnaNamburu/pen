@@ -2,10 +2,11 @@
 /**
  * H.9 CH1–CH9 blocking wrapper (spec-v2/09-reliability-testing.md).
  *
- * Runs `ch-gates.mjs` (CH1–CH6, plus CH8/CH9 host links). CH3 lives there —
- * `skip-hygiene.mjs` is the inventory/fixture reporter, not a second fail path.
- * CH8/CH9 jobs stay in bench.yml / flake.yml. Exits 1 when a required script
- * is missing or fails.
+ * Runs `ch-gates.mjs` (CH1–CH6, plus CH8/CH9 host links) and the F22
+ * dead-binding pin. CH3 lives in ch-gates — `skip-hygiene.mjs` is the
+ * inventory/fixture reporter, not a second fail path. CH8/CH9 jobs stay
+ * in bench.yml / flake.yml. Exits 1 when a required script is missing or
+ * fails.
  */
 
 import { spawnSync } from "node:child_process";
@@ -16,7 +17,10 @@ import { fileURLToPath } from "node:url";
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(SCRIPT_DIR, "..");
 
-const REQUIRED_SCRIPTS = ["scripts/ch-gates.mjs"];
+const REQUIRED_SCRIPTS = [
+	"scripts/ch-gates.mjs",
+	"scripts/f22-dead-bindings.mjs",
+];
 
 function exists(relPath) {
 	return fs.existsSync(path.join(REPO_ROOT, relPath));

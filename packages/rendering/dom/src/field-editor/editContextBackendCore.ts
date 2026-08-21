@@ -58,7 +58,8 @@ export abstract class EditContextBackendCore {
 	protected ytext: FieldEditorTextLike | null = null;
 	protected observer: FieldEditorObserver | null = null;
 	protected unsubscribeDecorationsChange: (() => void) | null = null;
-	protected inlineDecorationsSignature: string | null = null;
+	protected inlineDecorationsSignature: readonly InlineDecoration[] | null =
+		null;
 	protected editor: Editor;
 	protected fieldEditor: FieldEditorInputController;
 
@@ -262,7 +263,7 @@ export abstract class EditContextBackendCore {
 	protected abstract handlePointerDown: () => void;
 	protected abstract restoreDOMCaret(): void;
 	protected abstract getInlineDecorationsForBlock(): readonly InlineDecoration[];
-	protected abstract getInlineDecorationsSignature(): string;
+	protected abstract getInlineDecorationsSignature(): readonly InlineDecoration[];
 	protected abstract setEditContextSelection(
 		selection: EditContextSelection,
 		options?: EditContextSelectionOptions,

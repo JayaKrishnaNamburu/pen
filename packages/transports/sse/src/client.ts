@@ -7,6 +7,9 @@ import type {
 import type { SSEClientOptions } from "./types";
 import { parseSSEStream } from "./parser";
 
+const MAX_SSE_EVENT_BYTES = 1_048_576;
+const textEncoder = new TextEncoder();
+
 export function sseTransport(options: SSEClientOptions): PenTransport {
   const {
     url,
@@ -79,8 +82,13 @@ export function sseTransport(options: SSEClientOptions): PenTransport {
           for await (const sseEvent of parseSSEStream(reader)) {
             resetPingTimer();
 
-            const part = JSON.parse(sseEvent.data) as PenStreamPart;
+            const decoded = decodeStreamPart(sseEvent.data);
+            if (decoded.kind === "drop") {
+              yield decoded.error;
+              continue;
+            }
 
+            const part = decoded.part;
             if (part.type === "ping") continue;
 
             yield part;
@@ -137,6 +145,49 @@ export function sseTransport(options: SSEClientOptions): PenTransport {
   };
 
   return transport;
+}
+
+function decodeStreamPart(
+  data: string,
+): { kind: "part"; part: PenStreamPart } | { kind: "drop"; error: PenStreamPart } {
+  if (textEncoder.encode(data).byteLength > MAX_SSE_EVENT_BYTES) {
+    return {
+      kind: "drop",
+      error: {
+        type: "error",
+        errorText: "SSE event exceeded the size bound.",
+        code: "OVERSIZED_EVENT",
+      },
+    };
+  }
+
+  try {
+    const part = JSON.parse(data) as PenStreamPart;
+    if (
+      typeof part !== "object" ||
+      part === null ||
+      typeof part.type !== "string"
+    ) {
+      return {
+        kind: "drop",
+        error: {
+          type: "error",
+          errorText: "SSE event was not a stream part.",
+          code: "MALFORMED_EVENT",
+        },
+      };
+    }
+    return { kind: "part", part };
+  } catch {
+    return {
+      kind: "drop",
+      error: {
+        type: "error",
+        errorText: "SSE event was not valid JSON.",
+        code: "MALFORMED_EVENT",
+      },
+    };
+  }
 }
 
 function composeAbortSignals(...signals: AbortSignal[]): AbortSignal {

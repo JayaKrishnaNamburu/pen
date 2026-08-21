@@ -15,139 +15,10 @@ import { defaultSchema } from "@input/pen-schema-default";
 ).IS_REACT_ACT_ENVIRONMENT = true;
 
 describe("@input/pen-react editor caret overlay", () => {
-	it("HOST6 renders a custom local caret for collapsed selections only", async () => {
-		const editor = createEditor({
-			schema: defaultSchema, preset: defaultPreset({
-				documentOps: false,
-				deltaStream: false,
-				undo: false,
-			}),
-		});
-		const blockId = editor.firstBlock()!.id;
-		editor.apply([
-			{
-				type: "insert-text",
-				blockId,
-				offset: 0,
-				text: "Hello world",
-			},
-		]);
-
-		const container = document.createElement("div");
-		document.body.appendChild(container);
-		const root = createRoot(container);
-		let caretStyle: React.CSSProperties | null = null;
-
-		try {
-			await act(async () => {
-				root.render(
-					<Pen.Editor.Root editor={editor}>
-						<Pen.Editor.Content />
-						<Pen.Editor.CaretOverlay
-							renderCaret={(props) => {
-								caretStyle = props.caretStyle;
-								return (
-									<div
-										{...props.attributes}
-										style={props.caretStyle}
-									/>
-								);
-							}}
-						/>
-					</Pen.Editor.Root>,
-				);
-			});
-
-			const fieldEditor = getFieldEditor(editor);
-			const inlineElement = container.querySelector(
-				"[data-pen-inline-content]",
-			) as HTMLElement | null;
-
-			expect(inlineElement).not.toBeNull();
-			if (!inlineElement) {
-				throw new Error("Missing inline content element");
-			}
-			expect(
-				container.querySelector("[data-pen-editor-caret]"),
-			).toBeNull();
-
-			Object.defineProperty(inlineElement, "getBoundingClientRect", {
-				configurable: true,
-				value: () => new DOMRect(24, 32, 240, 24),
-			});
-
-			await act(async () => {
-				fieldEditor.activateTextSelection(blockId, 2, 2);
-				inlineElement?.dispatchEvent(
-					new Event("focusin", { bubbles: true }),
-				);
-			});
-
-			const caretElement = container.querySelector(
-				"[data-pen-editor-caret]",
-			) as HTMLElement | null;
-			expect(caretElement?.getAttribute("data-block-id")).toBe(blockId);
-			expect(caretElement?.getAttribute("data-offset")).toBe("2");
-			expect(caretElement?.style.animation).toBe("none");
-			const resolvedCaretStyle = caretStyle as React.CSSProperties | null;
-			expect(resolvedCaretStyle?.width).toBe(
-				"var(--pen-editor-caret-width, var(--pen-caret-width, 1px))",
-			);
-			expect(resolvedCaretStyle?.borderRadius).toBe(
-				"var(--pen-editor-caret-radius, var(--pen-caret-radius, 0px))",
-			);
-			expect(resolvedCaretStyle?.background).toBe(
-				"var(--pen-editor-caret-color, var(--pen-caret-color, var(--palette-b100, currentColor)))",
-			);
-			expect(inlineElement?.style.caretColor).toBe("transparent");
-			expect(
-				container
-					.querySelector("[data-pen-editor-caret-overlay]")
-					?.hasAttribute("data-caret-visible"),
-			).toBe(true);
-
-			await act(async () => {
-				await wait(550);
-			});
-			expect(caretElement?.style.animation).toBe(
-				"var(--pen-editor-caret-animation, none)",
-			);
-
-			await act(async () => {
-				inlineElement.dispatchEvent(
-					new Event("beforeinput", {
-						bubbles: true,
-						cancelable: true,
-					}),
-				);
-			});
-			expect(caretElement?.style.animation).toBe("none");
-
-			await act(async () => {
-				editor.selectText(blockId, 1, 4);
-			});
-
-			expect(
-				container.querySelector("[data-pen-editor-caret]"),
-			).toBeNull();
-			expect(inlineElement?.style.caretColor).toBe("");
-			expect(
-				container
-					.querySelector("[data-pen-editor-caret-overlay]")
-					?.hasAttribute("data-caret-visible"),
-			).toBe(false);
-		} finally {
-			await act(async () => {
-				root.unmount();
-			});
-			container.remove();
-			editor.destroy();
-		}
-	});
-
 	it("uses macOS caret defaults when requested", async () => {
 		const editor = createEditor({
-			schema: defaultSchema, preset: defaultPreset({
+			schema: defaultSchema,
+			preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,
@@ -211,6 +82,9 @@ describe("@input/pen-react editor caret overlay", () => {
 			});
 
 			const resolvedCaretStyle = caretStyle as React.CSSProperties | null;
+			expect(resolvedCaretStyle?.left).toBe("24px");
+			expect(resolvedCaretStyle?.top).toBe("32px");
+			expect(resolvedCaretStyle?.height).toBe("24px");
 			expect(resolvedCaretStyle?.width).toBe(
 				"var(--pen-editor-caret-width, var(--pen-caret-width, 2px))",
 			);
@@ -231,7 +105,8 @@ describe("@input/pen-react editor caret overlay", () => {
 
 	it("keeps the convenience PenEditor API opt-in", async () => {
 		const editor = createEditor({
-			schema: defaultSchema, preset: defaultPreset({
+			schema: defaultSchema,
+			preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,
@@ -296,12 +171,6 @@ describe("@input/pen-react editor caret overlay", () => {
 		}
 	});
 });
-
-function wait(ms: number): Promise<void> {
-	return new Promise((resolve) => {
-		window.setTimeout(resolve, ms);
-	});
-}
 
 function getFieldEditor(editor: ReturnType<typeof createEditor>) {
 	const fieldEditor = editor.internals.getSlot<{

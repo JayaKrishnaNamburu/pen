@@ -1,5 +1,5 @@
+import { shouldExposeBlockInTooling } from "@input/pen-content-ops";
 import type { BlockSchema, Editor } from "@input/pen-types";
-import { shouldExposeBlockInTooling } from "@input/pen-types";
 
 export function assertToolCanMutateBlock(
 	editor: Editor,

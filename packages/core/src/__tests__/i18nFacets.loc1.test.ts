@@ -1,4 +1,4 @@
-import { defaultSchema } from "@input/pen-schema-default";
+import { defaultSchema } from "./fixtures/testSchema";
 import type { MessageKey } from "@input/pen-types";
 import { defineExtension } from "@input/pen-core";
 import { describe, expect, it } from "vitest";

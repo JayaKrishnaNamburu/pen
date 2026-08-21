@@ -1,6 +1,6 @@
 import type { Editor, MoveBlockOp } from "@input/pen-types";
 import type React from "react";
-import { getSelectionPointRect } from "../../field-editor/selectionBridge";
+import { measureWithRoot } from "@input/pen-dom";
 import { DATA_ATTRS } from "../../utils/dataAttributes";
 import { BLOCK_DRAG_MIME, parseBlockDragPayload, type BlockDropPosition } from "./blockDragSession";
 import type { InlineAtomDragSnapshot } from "./inlineAtomInteraction";
@@ -51,17 +51,26 @@ export function getInlineAtomDropCaretStyle(args: {
 		return null;
 	}
 
-	const caretRect = getSelectionPointRect(rootElement, snapshot.target!);
-	if (!caretRect) {
-		return null;
-	}
-
-	return {
-		left: caretRect.left,
-		top: caretRect.top,
-		height: Math.max(caretRect.height, 18),
-	};
+	return readInlineDropCaretStyle(rootElement, snapshot.target!);
 }
+
+export function readInlineDropCaretStyle(
+	rootElement: HTMLElement,
+	point: { blockId: string; offset: number },
+): InlineDropCaretStyle | null {
+	return measureWithRoot(rootElement, ({ reader }) => {
+		const caretRect = reader.caretRect(point, "downstream");
+		if (!caretRect) {
+			return null;
+		}
+		return {
+			left: caretRect.left,
+			top: caretRect.top,
+			height: Math.max(caretRect.height, 18),
+		};
+	});
+}
+
 export function resolveDraggedBlockIdsFromEvent(
 	dataTransfer: DataTransfer | null,
 	viewId: string,
@@ -86,65 +95,60 @@ export function resolveBlockDropTarget(args: {
 	draggedBlockIds: readonly string[];
 	clientY: number;
 }): { blockId: string; position: BlockDropPosition } | null {
+	const rootElement =
+		(args.blocksHost.closest(
+			`[${DATA_ATTRS.editorRoot}]`,
+		) as HTMLElement | null) ?? args.blocksHost;
 	const draggedBlockIdSet = new Set(args.draggedBlockIds);
-	const candidateRects = args.blockIds
-		.filter((blockId) => !draggedBlockIdSet.has(blockId))
-		.map((blockId) => {
-			const element = args.blocksHost.querySelector(
-				`[${DATA_ATTRS.editorBlock}][${DATA_ATTRS.blockId}="${blockId}"]`,
-			) as HTMLElement | null;
-			if (!element) {
-				return null;
-			}
-			return {
-				blockId,
-				rect: element.getBoundingClientRect(),
-			};
-		})
-		.filter(
-			(
-				candidate,
-			): candidate is { blockId: string; rect: DOMRect } => candidate !== null,
-		);
 
-	if (candidateRects.length === 0) {
-		return null;
-	}
+	return measureWithRoot(rootElement, ({ reader }) => {
+		const candidateRects = args.blockIds
+			.filter((blockId) => !draggedBlockIdSet.has(blockId))
+			.flatMap((blockId) => {
+				const rect = reader.blockRect(blockId);
+				return rect ? [{ blockId, rect }] : [];
+			});
 
-	let bestTarget: {
-		blockId: string;
-		position: BlockDropPosition;
-		distance: number;
-	} | null = null;
-
-	for (const candidate of candidateRects) {
-		const { rect } = candidate;
-		const isWithinBlock = args.clientY >= rect.top && args.clientY <= rect.bottom;
-		const beforeDistance = Math.abs(args.clientY - rect.top);
-		const afterDistance = Math.abs(args.clientY - rect.bottom);
-		const position =
-			isWithinBlock && args.clientY <= rect.top + rect.height / 2
-				? "before"
-				: isWithinBlock && args.clientY > rect.top + rect.height / 2
-					? "after"
-					: beforeDistance <= afterDistance
-						? "before"
-						: "after";
-		const distance =
-			position === "before" ? beforeDistance : afterDistance;
-
-		if (!bestTarget || distance < bestTarget.distance) {
-			bestTarget = {
-				blockId: candidate.blockId,
-				position,
-				distance,
-			};
+		if (candidateRects.length === 0) {
+			return null;
 		}
-	}
 
-	return bestTarget
-		? { blockId: bestTarget.blockId, position: bestTarget.position }
-		: null;
+		let bestTarget: {
+			blockId: string;
+			position: BlockDropPosition;
+			distance: number;
+		} | null = null;
+
+		for (const candidate of candidateRects) {
+			const { rect } = candidate;
+			const isWithinBlock =
+				args.clientY >= rect.top && args.clientY <= rect.bottom;
+			const beforeDistance = Math.abs(args.clientY - rect.top);
+			const afterDistance = Math.abs(args.clientY - rect.bottom);
+			const position =
+				isWithinBlock && args.clientY <= rect.top + rect.height / 2
+					? "before"
+					: isWithinBlock && args.clientY > rect.top + rect.height / 2
+						? "after"
+						: beforeDistance <= afterDistance
+							? "before"
+							: "after";
+			const distance =
+				position === "before" ? beforeDistance : afterDistance;
+
+			if (!bestTarget || distance < bestTarget.distance) {
+				bestTarget = {
+					blockId: candidate.blockId,
+					position,
+					distance,
+				};
+			}
+		}
+
+		return bestTarget
+			? { blockId: bestTarget.blockId, position: bestTarget.position }
+			: null;
+	});
 }
 
 export function isNoOpBlockMove(

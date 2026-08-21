@@ -48,13 +48,17 @@ export function SSRPage() {
 				<code>{`import { createHeadlessEditor } from "@input/pen-core";
 import { htmlExporter } from "@input/pen-export-html";
 import { createDefaultSchema } from "@input/pen-schema-default";
+import type { CRDTDocument } from "@input/pen-types";
 
-const editor = createHeadlessEditor({
-  document: hostDocument,
-  schema: createDefaultSchema(),
-});
-const html = htmlExporter.export(editor);
-editor.destroy();`}</code>
+function renderHtml(hostDocument: CRDTDocument) {
+  const editor = createHeadlessEditor({
+    document: hostDocument,
+    schema: createDefaultSchema(),
+  });
+  const html = htmlExporter.export(editor);
+  void editor.destroy();
+  return html;
+}`}</code>
 			</pre>
 			<p>
 				Render that string as ordinary HTML next to the editor shell. The

@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
 import { createDecorationSet } from "@input/pen-core";
 import { defineExtension } from "@input/pen-core";
-import { domSelectionToEditor } from "../field-editor/selectionBridge";
+import { domSelectionToEditor } from "@input/pen-dom/field-editor/selectionBridge";
 import { Pen } from "../primitives/index";
 import { FakeEditContext } from "./utils/fakeEditContext";
 import { defaultSchema } from "@input/pen-schema-default";
@@ -21,7 +21,10 @@ import {
 } from "./utils/selectionDeletionTestHelpers";
 describe("@input/pen-react selected text deletion", () => {
 	it("inserts a paragraph on Enter from a selected content-first flow paragraph", async () => {
-		const editor = createEditor({ schema: defaultSchema,  documentProfile: "flow" });
+		const editor = createEditor({
+			schema: defaultSchema,
+			documentProfile: "flow",
+		});
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
@@ -90,7 +93,10 @@ describe("@input/pen-react selected text deletion", () => {
 			}
 		).EditContext = FakeEditContext;
 
-		const editor = createEditor({ schema: defaultSchema,  documentProfile: "flow" });
+		const editor = createEditor({
+			schema: defaultSchema,
+			documentProfile: "flow",
+		});
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
@@ -319,6 +325,4 @@ describe("@input/pen-react selected text deletion", () => {
 		container.remove();
 		editor.destroy();
 	});
-
-
 });

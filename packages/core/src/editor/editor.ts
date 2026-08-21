@@ -1,10 +1,6 @@
 import type { Editor, EditorInternals, CreateEditorOptions, PenEventMap, DocumentCommitEvent, CRDTAdapter, CRDTDocument, CRDTEvent, PenDocument, SchemaRegistry, Awareness, DocumentSession, DocumentScope, DocumentScopeReplacementEvent, DocumentProfile, Extension, DocumentOp, ApplyOptions, OpOrigin, MutationGroupMetadata, SelectionState, TextSelection, DocumentRange, BlockHandle, Block, DocumentState, UndoManager, Unsubscribe, CRDTMap, CRDTArray, Position, DecorationSet, EditorViewMode, ChangeSummary, SummaryLog, Facet, FacetOutput, PipelinePhase, SelectionRecord, OpenTextStreamOptions, TextStreamWriter } from "@input/pen-types";
-import { AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY, COLLECT_KEY_BINDINGS_SLOT_KEY, usesInlineTextSelection, createMutationGroupMetadata, getApplyOptionsGroupId, MUTATION_GROUP_METADATA_KEY, UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY, generateId } from "@input/pen-types";
+import { AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY, COLLECT_KEY_BINDINGS_SLOT_KEY, MUTATION_GROUP_METADATA_KEY, UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY, generateId } from "@input/pen-types";
 import { yjsAdapter } from "@input/pen-crdt-yjs";
-import { undoExtension } from "@input/pen-undo";
-import { documentOpsExtension } from "@input/pen-document-ops";
-import { deltaStreamExtension } from "@input/pen-delta-stream";
-import { richTextShortcutsExtension } from "@input/pen-shortcuts";
 import { resolveEditorSchema } from "../schema/emptySchema";
 import { SchemaEngineImpl } from "../schema/normalize";
 import { createBlockHandle } from "../schema/handles";
@@ -21,6 +17,7 @@ import { emptyDecorationSet } from "./decorations";
 import { DocumentRangeImpl } from "./range";
 import { createDocumentSession } from "./documentSession";
 
+import { installEditorCommandRegistry } from "../commands/install";
 import { beforeApplyFacet } from "../facets/coreFacets";
 import { a11yLabelFacet } from "../facets/a11yFacets";
 import {
@@ -160,6 +157,7 @@ class EditorImpl implements Editor {
 			providers: [...i18nProviders, ...v1ExtensionProviders(allExtensions)],
 		});
 		this._facetRegistry.markReady();
+		installEditorCommandRegistry(this);
 
 		this._pipeline._init(
 			(event) => {

@@ -4,6 +4,8 @@ Vue rendering primitives for Pen.
 
 `@input/pen-vue` is the first non-React renderer in the Pen monorepo. It is intentionally lean: it proves that editor lifecycle, rendering, selection, decorations, and field-editor integration are not tied to React.
 
+This package does not ship a stylesheet or a preset. `PenEditor` mounts the shared DOM field-editor engine from `@input/pen-dom`.
+
 ## Install
 
 ```bash
@@ -73,3 +75,19 @@ export const PenExample = defineComponent({
 - `PenEditor` installs the shared DOM field-editor engine from `@input/pen-dom`.
 - Renderer overrides let host apps customize block rendering without forking the editor runtime.
 - Paste importers can be passed through the `importers` prop on `PenEditor`.
+
+## Options
+
+`PenEditor` takes a required `editor` prop. `emptyPlaceholder` is optional and has no package default — omit it when you do not want placeholder copy. `importers` is optional.
+
+`engines.node` is `>=22`. The required peer is `vue` (`^3.4.0`).
+
+## Documentation
+
+The docs site (the `@input/pen-docs` package) covers this area on the Getting started page (`#/getting-started`).
+
+The public signatures of record are in `api-report.md` next to this package's source in the Pen repository. The docs site does not host a generated browsable reference.
+
+## License
+
+MIT © Input B.V. See [`LICENSE.md`](./LICENSE.md).

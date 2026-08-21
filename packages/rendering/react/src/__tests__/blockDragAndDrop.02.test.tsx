@@ -107,7 +107,9 @@ function seedBlocks(editor: Editor, count: number): string[] {
 	return ids;
 }
 
-async function renderEditor(element: React.ReactElement): Promise<TestRenderResult> {
+async function renderEditor(
+	element: React.ReactElement,
+): Promise<TestRenderResult> {
 	const container = document.createElement("div");
 	document.body.appendChild(container);
 	const root = createRoot(container);
@@ -132,7 +134,8 @@ function createBlockDragEditor(
 	options: Parameters<typeof createEditor>[0] = {},
 ) {
 	return createEditor({
-		schema: defaultSchema,...options,
+		schema: defaultSchema,
+		...options,
 		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
@@ -234,14 +237,20 @@ describe("@input/pen-react block drag and drop", () => {
 
 		await act(async () => {
 			handle!.dispatchEvent(
-				createDragEvent("dragstart", dataTransfer, { clientX: 20, clientY: 20 }),
+				createDragEvent("dragstart", dataTransfer, {
+					clientX: 20,
+					clientY: 20,
+				}),
 			);
 		});
 
 		expect(dataTransfer.setDragImageMock).toHaveBeenCalledTimes(1);
-		const [previewElement] = dataTransfer.setDragImageMock.mock.calls[0] ?? [];
+		const [previewElement] =
+			dataTransfer.setDragImageMock.mock.calls[0] ?? [];
 		expect(previewElement).toBeInstanceOf(HTMLElement);
-		expect((previewElement as HTMLElement)?.textContent).toContain("Paragraph");
+		expect((previewElement as HTMLElement)?.textContent).toContain(
+			"Paragraph",
+		);
 		expect(
 			document.querySelector("[data-pen-block-drag-preview-root]"),
 		).not.toBeNull();
@@ -345,7 +354,9 @@ describe("@input/pen-react block drag and drop", () => {
 			</Pen.Editor.Root>,
 		);
 
-		const allHandles = view.container.querySelectorAll("[data-pen-block-handle]");
+		const allHandles = view.container.querySelectorAll(
+			"[data-pen-block-handle]",
+		);
 		expect(allHandles.length).toBe(3);
 		expect(
 			view.container.querySelector(
@@ -362,14 +373,18 @@ describe("@input/pen-react block drag and drop", () => {
 		const dataTransfer = createDataTransfer();
 
 		await act(async () => {
-			customHandle!.dispatchEvent(createDragEvent("dragstart", dataTransfer));
+			customHandle!.dispatchEvent(
+				createDragEvent("dragstart", dataTransfer),
+			);
 			targetBlock.dispatchEvent(
 				createDragEvent("dragover", dataTransfer, { clientY: 1 }),
 			);
 			targetBlock.dispatchEvent(
 				createDragEvent("drop", dataTransfer, { clientY: 1 }),
 			);
-			customHandle!.dispatchEvent(createDragEvent("dragend", dataTransfer));
+			customHandle!.dispatchEvent(
+				createDragEvent("dragend", dataTransfer),
+			);
 		});
 
 		expect(getBlockOrder(editor)).toEqual([blockC, blockA, blockB]);
@@ -406,11 +421,15 @@ describe("@input/pen-react block drag and drop", () => {
 		) as HTMLElement | null;
 		expect(leftHandle).not.toBeNull();
 
-		const rightTargetBlock = setBlockRect(view.container, rightA, { top: 0 });
+		const rightTargetBlock = setBlockRect(view.container, rightA, {
+			top: 0,
+		});
 		const dataTransfer = createDataTransfer();
 
 		await act(async () => {
-			leftHandle!.dispatchEvent(createDragEvent("dragstart", dataTransfer));
+			leftHandle!.dispatchEvent(
+				createDragEvent("dragstart", dataTransfer),
+			);
 			rightTargetBlock.dispatchEvent(
 				createDragEvent("dragover", dataTransfer, { clientY: 1 }),
 			);
@@ -443,6 +462,4 @@ describe("@input/pen-react block drag and drop", () => {
 
 		await view.unmount();
 	});
-
-
 });

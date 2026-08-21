@@ -108,13 +108,7 @@ export type {
 	SetSelectionOp,
 	StreamOpenOp,
 } from "./ops";
-export {
-	MUTATION_GROUP_METADATA_KEY,
-	createMutationGroupMetadata,
-	getApplyOptionsGroupId,
-	getOpOriginGroupId,
-	getOpOriginType,
-} from "./ops";
+export { MUTATION_GROUP_METADATA_KEY } from "./ops";
 
 // ── Stream ──────────────────────────────────────────────────
 export type {
@@ -177,10 +171,7 @@ export type {
 	TableColumnSchema,
 	TableRowHandle,
 } from "./handles";
-export type {
-	BlockCapabilityKey,
-	BlockCapabilityMap,
-} from "./capabilities";
+export type { BlockCapabilityKey, BlockCapabilityMap } from "./capabilities";
 
 // ── Columns ─────────────────────────────────────────────────
 export type {
@@ -200,15 +191,6 @@ export type {
 export type {
 	FieldEditorBehavior,
 	FieldEditorInputMode,
-} from "./fieldEditorCapabilities";
-export {
-	delegatesToGridEditing,
-	hasFieldEditorSurface,
-	resolveFieldEditorBehavior,
-	resolveFieldEditorInputMode,
-	supportsInlineInputRules,
-	supportsInlineMarks,
-	usesInlineTextSelection,
 } from "./fieldEditorCapabilities";
 
 // ── CRDT ────────────────────────────────────────────────────
@@ -288,11 +270,7 @@ export {
 } from "./editor";
 
 // ── Tools ───────────────────────────────────────────────────
-export {
-	isAsyncIterable,
-	resolveToolExecution,
-	collectToolExecutionOutput,
-} from "./tools";
+export { isAsyncIterable, isScopedSelectionTarget } from "./tools";
 export type {
 	ToolRegistry,
 	ToolRuntime,
@@ -304,6 +282,7 @@ export type {
 	ModelOperationApplyPolicy,
 	ModelOperationBlockTarget,
 	ModelOperationDocumentTarget,
+	ModelOperationRangeTarget,
 	ModelOperationScopedRangeTarget,
 	ModelOperationKind,
 	ModelOperationProvenance,
@@ -315,7 +294,17 @@ export type {
 } from "./tools";
 
 // ── AI request ──────────────────────────────────────────────
-export type { AIRequestContext, AIRequestFilter } from "./aiRequest";
+export type {
+	AIDocumentExcerpt,
+	AIDocumentExcerptKind,
+	AIRequestContext,
+	AIRequestFeature,
+	AIRequestFilter,
+} from "./aiRequest";
+export {
+	AI_EGRESS_INVENTORY_CODE,
+	AI_REQUEST_REFUSED_CODE,
+} from "./aiRequest";
 
 // ── Accessibility ───────────────────────────────────────────
 export type { A11yLabel, BlockA11ySpec, EditorAnnouncer } from "./a11y";
@@ -325,10 +314,8 @@ export type { A11yMessageKey, A11yMessageCatalog } from "./a11yMessages";
 // ── Localization ────────────────────────────────────────────
 export {
 	DEFAULT_MESSAGE_CATALOG,
-	interpolateMessage,
 	isMessageKey,
 	isPluralMessage,
-	resolveMessage,
 } from "./messages";
 export type {
 	MessageArgs,
@@ -358,7 +345,6 @@ export {
 	MIGRATION_LEDGER_METADATA_KEY,
 	RESERVED_METADATA_KEYS,
 	IMPLICIT_V1_FORMAT_STAMP,
-	PenDocumentUnreadableError,
 } from "./format";
 export type { PenFormatStamp, ReservedMetadataKey } from "./format";
 

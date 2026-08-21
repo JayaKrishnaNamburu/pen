@@ -2,7 +2,19 @@ import type {
 	ModelAdapter,
 	StreamingTarget
 } from "@input/pen-types";
-import { collectToolExecutionOutput, generateId } from "@input/pen-types";
+import { generateId } from "@input/pen-types";
+import {
+	AI_AGENTIC_MAX_STEPS_DEFAULT,
+	createAIToolTurn,
+	executeAITool,
+	isAIToolCallDenied,
+	listAITools,
+} from "@input/pen-ai-tools";
+import {
+	excerptsFromAgenticStep,
+	requestFeatureForAgenticStep,
+	streamThroughEgress,
+} from "../egress";
 import {
 	buildAgentMessages,
 	buildAssistantToolCallParts,
@@ -23,7 +35,7 @@ export async function runAgenticLoop(
 		blockId,
 		generationId = generateId(),
 		zoneId = generateId(),
-		maxSteps = 10,
+		maxSteps = AI_AGENTIC_MAX_STEPS_DEFAULT,
 		signal,
 		workingSet,
 		validateWorkingSet,
@@ -59,11 +71,17 @@ export async function runAgenticLoop(
 	let routeConfidence = workingSet?.routeConfidence;
 	let currentWorkingSet = workingSet ?? null;
 
-	const toolSchemas = toolRuntime.listTools().map((tool) => ({
-		name: tool.name,
-		description: tool.description,
-		inputSchema: tool.inputSchema,
-	}));
+	const turn =
+		options.toolTurn ??
+		createAIToolTurn({
+			allowedMutatingTools: options.allowedMutatingTools,
+			confirm: options.confirm,
+			budget: options.toolBudget,
+			groupId: generationId,
+		});
+	if (turn.groupId) {
+		editor.undoManager.syncExplicitUndoGroup(turn.groupId);
+	}
 	const streamingTarget =
 		editor.internals.getSlot<StreamingTarget>("delta-stream:target") ?? null;
 	const toolContext = buildToolContext(
@@ -73,7 +91,6 @@ export async function runAgenticLoop(
 		streamingTarget,
 	);
 
-	editor.undoManager.stopCapturing();
 	onStatusChange?.("thinking");
 	publishAwareness(editor, {
 		status: "thinking",
@@ -83,7 +100,7 @@ export async function runAgenticLoop(
 	});
 
 	while (stepIndex < maxSteps) {
-		if (signal?.aborted) break;
+		if (signal?.aborted || turn.ended) break;
 
 		const validation = validateWorkingSet?.(currentWorkingSet) ?? {
 			valid: true,
@@ -108,20 +125,40 @@ export async function runAgenticLoop(
 		});
 		messageAssemblyLatencyMs += performance.now() - assemblyStart;
 
-		const availableTools = toolSchemas.filter((tool) => {
-			const failures = consecutiveErrors.get(tool.name) ?? 0;
-			return failures < 3;
-		});
-		const stream = model.stream({
-			messages,
-			tools: availableTools,
-			signal,
-			requestMode: options.requestMode,
-			operation: options.operation ?? undefined,
-			sessionId: options.sessionId,
-			turnId: options.turnId,
-			generationId,
-		});
+		const availableTools = listAITools(toolRuntime, turn.grant)
+			.filter((tool) => (consecutiveErrors.get(tool.name) ?? 0) < 3)
+			.map((tool) => ({
+				name: tool.name,
+				description: tool.description,
+				inputSchema: tool.inputSchema,
+			}));
+		const feature = requestFeatureForAgenticStep(
+			toolJournal.length,
+			options.feature ?? "generation",
+		);
+		const stream = streamThroughEgress(
+			editor,
+			model,
+			{
+				feature,
+				messages,
+				documentExcerpts: excerptsFromAgenticStep({
+					editor,
+					blockId,
+					workingSet: currentWorkingSet,
+					toolJournal,
+				}),
+				tools: availableTools,
+			},
+			{
+				signal,
+				requestMode: options.requestMode,
+				operation: options.operation ?? undefined,
+				sessionId: options.sessionId,
+				turnId: options.turnId,
+				generationId,
+			},
+		);
 		const pendingToolCalls: Array<{
 			toolCallId: string;
 			toolName: string;
@@ -225,6 +262,9 @@ export async function runAgenticLoop(
 		]);
 
 		for (const toolCall of pendingToolCalls) {
+			if (turn.ended) {
+				break;
+			}
 			const step: AgenticStep = {
 				index: stepIndex++,
 				type: "tool-call",
@@ -253,22 +293,44 @@ export async function runAgenticLoop(
 					firstToolStartMs = performance.now() - loopStartedAt;
 				}
 				const toolStartedAt = performance.now();
-				const result = toolRuntime.executeTool(
+				const output = await executeAITool(
+					toolRuntime,
 					toolCall.toolName,
 					toolCall.input,
 					toolContext,
+					turn,
+					(part, progressiveOutput) => {
+						step.output = progressiveOutput;
+						onStep?.({ ...step });
+						onToolOutput?.({
+							toolCallId: toolCall.toolCallId,
+							toolName: toolCall.toolName,
+							part,
+							output: progressiveOutput,
+						});
+					},
 				);
-				const output = await collectToolExecutionOutput(result, (part, progressiveOutput) => {
-					step.output = progressiveOutput;
-					onStep?.({ ...step });
-					onToolOutput?.({
+				toolExecutionMs += performance.now() - toolStartedAt;
+				if (isAIToolCallDenied(output)) {
+					step.output = output;
+					step.status = "complete";
+					onToolResult?.({
 						toolCallId: toolCall.toolCallId,
 						toolName: toolCall.toolName,
-						part,
-						output: progressiveOutput,
+						output,
+						state: "complete",
 					});
-				});
-				toolExecutionMs += performance.now() - toolStartedAt;
+					toolJournal.push({
+						toolCallId: toolCall.toolCallId,
+						toolName: toolCall.toolName,
+						input: toolCall.input,
+						output,
+					});
+					if (turn.ended) {
+						break;
+					}
+					continue;
+				}
 				step.output = output;
 				step.status = "complete";
 				consecutiveErrors.set(toolCall.toolName, 0);
@@ -366,6 +428,7 @@ export async function runAgenticLoop(
 		tokenCount: 0,
 		steps,
 		undoGroupId: generationId,
+		turnReason: turn.reason,
 		text: textBuffer,
 		debug: {
 			messageAssemblyLatencyMs,

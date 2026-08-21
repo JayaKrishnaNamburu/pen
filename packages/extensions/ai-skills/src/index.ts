@@ -1,11 +1,7 @@
-export {
-  createDocumentAgentSkill,
-  createAutocompleteProviderSkill,
-  listDefaultAISkills,
-} from "./registry/defaultSkills";
-export { renderSkillFiles, renderSkillMarkdown } from "./render";
+export { listDefaultAISkills } from "./registry/defaultSkills";
+export { renderSkillFiles } from "./render";
 export type {
-  AISkillDefinition,
-  AISkillFile,
-  AISkillScript,
+	AISkillDefinition,
+	AISkillFile,
+	AISkillScript,
 } from "./types";

@@ -1,6 +1,6 @@
 import { createEditor } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
-import { FieldEditorImpl } from "@input/pen-dom";
+import { mountEditor } from "@input/pen-dom";
 
 const editor = createEditor({
   preset: defaultPreset(),
@@ -11,5 +11,4 @@ if (!(root instanceof HTMLElement)) {
   throw new Error("Missing #app");
 }
 
-const fieldEditor = new FieldEditorImpl(editor);
-fieldEditor.setRootElement(root);
+mountEditor(editor, root);

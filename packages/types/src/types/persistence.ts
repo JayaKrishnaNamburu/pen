@@ -3,7 +3,8 @@
  *
  * `@input/pen-history` calls the version-snapshot members. The update-log
  * members and {@link PenPersistence.compact} are host-implemented: Pen never
- * calls them (API10).
+ * calls them (API10). See `PERSISTENCE.md` for the per-member disposition,
+ * including {@link AssetProvider} / {@link AssetUploadOptions}.
  */
 export interface PenPersistence {
 	/**
@@ -48,6 +49,7 @@ export interface PenPersistence {
 	/**
 	 * Persist a version snapshot.
 	 *
+	 * @remarks
 	 * Called by `@input/pen-history` `SnapshotManager.createSnapshot`.
 	 */
 	saveVersionSnapshot(
@@ -58,7 +60,9 @@ export interface PenPersistence {
 	/**
 	 * List version snapshots.
 	 *
-	 * Called by `@input/pen-history` `SnapshotManager`.
+	 * @remarks
+	 * Called by `@input/pen-history` `SnapshotManager.createSnapshot` (latest
+	 * entry after write) and `SnapshotManager.listSnapshots`.
 	 */
 	listVersions(
 		docId: string,
@@ -67,6 +71,7 @@ export interface PenPersistence {
 	/**
 	 * Load a version snapshot for restore.
 	 *
+	 * @remarks
 	 * Called by `@input/pen-history` `SnapshotManager.restoreSnapshot`.
 	 * There is no `getVersionSnapshots`; listing is {@link PenPersistence.listVersions}.
 	 */
@@ -114,11 +119,29 @@ export interface AssetUploadOptions {
 
 export interface AssetProvider {
 	/**
-	 * Host-declared maximum upload size in bytes. Pen reads this before calling
-	 * {@link AssetProvider.upload} and passes it through {@link AssetUploadOptions.maxSize}.
+	 * Host-declared maximum upload size in bytes.
+	 *
+	 * @remarks
+	 * Read by `@input/pen-dom` `uploadImageFiles` and
+	 * `@input/pen-import-html` `applyHtmlImageSrcPolicy` before `upload`.
+	 * The same limit is forwarded as {@link AssetUploadOptions.maxSize}.
 	 */
 	readonly maxSize?: number;
+	/**
+	 * Store `file` and return a durable ref.
+	 *
+	 * @remarks
+	 * Called by `@input/pen-dom` `uploadImageFiles` (paste/drop) and
+	 * `@input/pen-import-html` `applyHtmlImageSrcPolicy` when `imageSrc` is
+	 * `"ingest"`.
+	 */
 	upload(file: File | Blob, options?: AssetUploadOptions): Promise<AssetRef>;
+	/**
+	 * Return a URL the renderer can use for `ref`.
+	 *
+	 * @remarks
+	 * Called after a successful `upload` at the same two sites.
+	 */
 	resolve(ref: AssetRef): string;
 	/**
 	 * Remove an asset from host storage.

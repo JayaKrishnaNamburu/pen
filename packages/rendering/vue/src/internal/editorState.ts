@@ -8,9 +8,9 @@ import type {
   FieldEditorStore,
   FieldEditorStoreSnapshot,
 } from "@input/pen-dom/field-editor/store";
+import { computeDocumentPlaceholderVisible } from "@input/pen-dom/utils/editorEmptyState";
 import { getParentIdChildBlockIds } from "@input/pen-dom/utils/parentIdTree";
 import type {
-  CellSelection,
   Decoration,
   DecorationSet,
   Editor,
@@ -182,19 +182,6 @@ export function isBlockSelected(
   );
 }
 
-export function isCellInSelection(
-  selection: Pick<CellSelection, "anchor" | "head">,
-  row: number,
-  col: number,
-): boolean {
-  const minRow = Math.min(selection.anchor.row, selection.head.row);
-  const maxRow = Math.max(selection.anchor.row, selection.head.row);
-  const minCol = Math.min(selection.anchor.col, selection.head.col);
-  const maxCol = Math.max(selection.anchor.col, selection.head.col);
-
-  return row >= minRow && row <= maxRow && col >= minCol && col <= maxCol;
-}
-
 export function resolveExpandedSurfaceRole(
   editor: Editor,
   fieldEditorState: FieldEditorStoreSnapshot,
@@ -219,29 +206,6 @@ export function getBlockInlineDecorations(
   return decorations.filter(
     (decoration) => decoration.type === "inline",
   );
-}
-
-function computeDocumentPlaceholderVisible(editor: Editor): boolean {
-  const { blockOrder } = editor.documentState;
-  if (blockOrder.length === 0) {
-    return true;
-  }
-  if (blockOrder.length > 1) {
-    return false;
-  }
-
-  const block = editor.getBlock(blockOrder[0] ?? "");
-  if (!block) {
-    return true;
-  }
-
-  const schema = editor.schema.resolve(block.type);
-  if (!schema || schema.content !== "inline" || schema.fieldEditor === "none") {
-    return false;
-  }
-
-  const text = block.textContent();
-  return !text || text === "\u200B";
 }
 
 function getBlockTextSnapshot(editor: Editor, blockId: string): BlockTextSnapshot {

@@ -263,5 +263,6 @@ export function mergeSchemas(...registries: SchemaRegistry[]): ComposableSchema 
 		inlines: [...inlines.values()],
 		apps: [...apps.values()],
 		systemMarks: [...systemMarks.values()],
+		onUnknownBlock: () => "passthrough",
 	});
 }

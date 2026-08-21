@@ -1,10 +1,9 @@
-import type { PendingBlock } from "@input/pen-content-ops";
 import {
 	getFlowCapabilityFromSchema,
 	getFlowCapabilityFromType,
-	type Editor,
-	type InlineSchema,
-} from "@input/pen-types";
+	type PendingBlock,
+} from "@input/pen-content-ops";
+import type { Editor, InlineSchema } from "@input/pen-types";
 import {
 	INGEST_MAX_IMAGE_COUNT,
 	INGEST_MAX_NESTING_DEPTH,
@@ -53,7 +52,14 @@ export function ingestJsonDocument(
 	const blocks: PendingBlock[] = [];
 
 	for (const raw of document.blocks) {
-		const block = ingestBlock(raw, 1, editor, state, drops, droppedBlockTypes);
+		const block = ingestBlock(
+			raw,
+			1,
+			editor,
+			state,
+			drops,
+			droppedBlockTypes,
+		);
 		if (block) {
 			blocks.push(block);
 		}
@@ -113,7 +119,8 @@ function ingestBlock(
 
 	if (!isInternal && editor.documentProfile === "flow") {
 		const capability =
-			getFlowCapabilityFromSchema(schema) ?? getFlowCapabilityFromType(type);
+			getFlowCapabilityFromSchema(schema) ??
+			getFlowCapabilityFromType(type);
 		if (capability === "flow-disallowed") {
 			drops.add("profile-disallowed");
 			droppedBlockTypes.add(type);
@@ -223,7 +230,8 @@ function ingestContent(
 		segments && segments.length > 0
 			? segments.reduce(
 					(size, segment) =>
-						size + (segment.type === "text" ? segment.text.length : 0),
+						size +
+						(segment.type === "text" ? segment.text.length : 0),
 					0,
 				)
 			: text.length;
@@ -333,7 +341,7 @@ function copyKnownProps(
 		return record;
 	}
 	for (const key of Object.keys(propSchema)) {
-		if (Object.hasOwn(raw, key)) {
+		if (Object.prototype.hasOwnProperty.call(raw, key)) {
 			record[key] = raw[key];
 		}
 	}
