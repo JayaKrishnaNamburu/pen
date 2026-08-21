@@ -162,11 +162,58 @@ function classifySample(code) {
 }
 
 function vueScript(code) {
-	const match = code.match(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/i);
-	if (!match) {
+	const openEnd = findScriptOpenEnd(code);
+	if (openEnd === -1) {
 		return null;
 	}
-	return match[2] ?? "";
+	const closeStart = findScriptCloseStart(code, openEnd);
+	if (closeStart === -1) {
+		return null;
+	}
+	return code.slice(openEnd, closeStart);
+}
+
+function findScriptOpenEnd(code) {
+	const lower = code.toLowerCase();
+	let from = 0;
+	while (from < lower.length) {
+		const at = lower.indexOf("<script", from);
+		if (at === -1) {
+			return -1;
+		}
+		const afterName = at + "<script".length;
+		const next = code[afterName];
+		if (next !== undefined && next !== ">" && !isHtmlNameBoundary(next)) {
+			from = afterName;
+			continue;
+		}
+		const gt = code.indexOf(">", afterName);
+		return gt === -1 ? -1 : gt + 1;
+	}
+	return -1;
+}
+
+function findScriptCloseStart(code, from) {
+	const lower = code.toLowerCase();
+	const needle = "</script";
+	let i = from;
+	while (i < lower.length) {
+		const at = lower.indexOf(needle, i);
+		if (at === -1) {
+			return -1;
+		}
+		const afterName = at + needle.length;
+		const gt = code.indexOf(">", afterName);
+		if (gt !== -1) {
+			return at;
+		}
+		i = afterName;
+	}
+	return -1;
+}
+
+function isHtmlNameBoundary(ch) {
+	return ch === "/" || ch === "\t" || ch === "\n" || ch === "\r" || ch === " " || ch === ">";
 }
 
 function prepareSample(code, lang) {

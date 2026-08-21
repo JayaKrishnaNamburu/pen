@@ -18,7 +18,7 @@ import {
 	SESSION_HEADER,
 	logPlaygroundEvent,
 } from "./config";
-import { formatError, readHeader, readJsonBody, sendJson } from "./http";
+import { formatClientError, readHeader, readJsonBody, sendJson } from "./http";
 import { hydrateEditor } from "./sessionHydration";
 import { PlaygroundSessionStore, type PlaygroundSession } from "./sessionStore";
 import { parseSerializedEditorState } from "./utils/sessionSyncValidation";
@@ -80,7 +80,7 @@ export function createSessionRouteHandlers(
 			try {
 				await handleSessionSyncRequest(sessionStore, req, res);
 			} catch (error) {
-				sendJson(res, 500, { error: formatError(error) });
+				sendJson(res, 500, { error: formatClientError() });
 			}
 		},
 	};

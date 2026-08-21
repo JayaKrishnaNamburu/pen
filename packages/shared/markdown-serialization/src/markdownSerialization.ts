@@ -270,7 +270,7 @@ function renderHtmlTableFallback(rows: string[][]): string {
 }
 
 function escapeMarkdownPipe(text: string): string {
-  return text.replace(/\|/g, "\\|");
+  return text.replaceAll("\\", "\\\\").replaceAll("|", "\\|");
 }
 
 function escapeHTML(text: string): string {

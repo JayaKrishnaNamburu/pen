@@ -51,3 +51,7 @@ export function formatError(error: unknown): string {
 
 	return typeof error === "string" ? error : "Unknown error";
 }
+
+export function formatClientError(): string {
+	return "Request failed";
+}

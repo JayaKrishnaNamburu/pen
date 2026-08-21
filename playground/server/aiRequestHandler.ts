@@ -13,7 +13,7 @@ import {
 	logPlaygroundEvent,
 	roundMs,
 } from "./config";
-import { formatError, readJsonBody, sendJson, writeJsonLine } from "./http";
+import { formatClientError, formatError, readJsonBody, sendJson, writeJsonLine } from "./http";
 import { handleAISuggestionsRequest } from "./aiSuggestionsRequest";
 import { streamLocalOperationResponse } from "./localOperationStream";
 import { remapRequestedOperationBlockIds } from "./operationValidation";
@@ -452,13 +452,13 @@ export function createAIRequestHandler(sessionStore: PlaygroundSessionStore) {
 				error: formatError(error),
 			});
 			if (!res.headersSent) {
-				sendJson(res, 500, { error: formatError(error) });
+				sendJson(res, 500, { error: formatClientError() });
 				return;
 			}
 
 			writeJsonLine(res, {
 				type: "error",
-				error: formatError(error),
+				error: formatClientError(),
 			});
 			res.end();
 		} finally {

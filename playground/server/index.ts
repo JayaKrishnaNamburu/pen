@@ -17,7 +17,7 @@ import {
 	createPlaygroundCollaborationServer,
 	handleCollaborationUpgrade,
 } from "./collaborationServer";
-import { formatError, sendJson } from "./http";
+import { formatClientError, sendJson } from "./http";
 import { dispatchPlaygroundRoute } from "./routes";
 import { createAIRequestHandler } from "./aiRequestHandler";
 import {
@@ -81,7 +81,7 @@ const server = createServer(async (req, res) => {
 			},
 		);
 	} catch (error) {
-		sendJson(res, 500, { error: formatError(error) });
+		sendJson(res, 500, { error: formatClientError() });
 	}
 });
 

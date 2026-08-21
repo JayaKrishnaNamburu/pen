@@ -6,7 +6,7 @@ import {
 import { escapeHtml } from "../escapeHtml";
 
 function escapeMarkdownPipe(text: string): string {
-  return text.replace(/\|/g, "\\|");
+  return text.replaceAll("\\", "\\\\").replaceAll("|", "\\|");
 }
 
 function getTableRows(block: Block): string[][] {

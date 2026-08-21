@@ -211,10 +211,16 @@ function sanitizeCandidates(
 }
 
 function unwrapJsonFence(value: string): string {
-	return value
-		.replace(/^```json\s*/i, "")
-		.replace(/^```\s*/i, "")
-		.replace(/\s*```$/, "");
+	let text = value;
+	if (text.slice(0, 7).toLowerCase() === "```json") {
+		text = text.slice(7).trimStart();
+	} else if (text.startsWith("```")) {
+		text = text.slice(3).trimStart();
+	}
+	if (text.endsWith("```")) {
+		text = text.slice(0, -3).trimEnd();
+	}
+	return text;
 }
 
 function normalizeComparableText(value: string, locale: string): string {

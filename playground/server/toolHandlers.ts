@@ -14,7 +14,7 @@ import {
 	PLAYGROUND_DIRECT_TOOL_NAMES,
 	PLAYGROUND_TOOL_ROUTE_PREFIX,
 } from "./config";
-import { formatError, readHeader, readJsonBody, sendJson } from "./http";
+import { formatClientError, readHeader, readJsonBody, sendJson } from "./http";
 import { PlaygroundSessionStore } from "./sessionStore";
 import { SESSION_HEADER } from "./config";
 import type { PlaygroundRequestMetrics, ToolExecuteBody } from "./types";
@@ -102,7 +102,7 @@ export function createToolRouteHandlers(sessionStore: PlaygroundSessionStore) {
 				);
 				sendJson(res, 200, { toolName, output });
 			} catch (error) {
-				sendJson(res, 400, { error: formatError(error), toolName });
+				sendJson(res, 400, { error: formatClientError(), toolName });
 			}
 		},
 	};
