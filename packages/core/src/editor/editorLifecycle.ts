@@ -336,7 +336,7 @@ export function dispatchCRDTEvent(editor: EditorImplRuntime, event: CRDTEvent): 
 			documentCommit.commitId,
 		),
 		source: event.source ?? resolveCommitSource(event.origin, "remote"),
-		diagnostics: [],
+		diagnostics: self._pipeline.takeCommitDiagnostics(),
 	});
 	self._emitter.emit("commit", commit);
 	self._extensions.dispatchObserve([commit], self);

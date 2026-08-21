@@ -16,6 +16,7 @@
 - getRootGeometry
 - handleEditorDocumentKeyDown
 - handleEscapeSelectionTransition
+- handleFieldEditorPointerActivate
 - handleTableCellSelectionKeyDown
 - isFieldEditorTextEditingKey
 - measureWithRoot
@@ -64,6 +65,8 @@
 - DomSchedulerOptions
 - DomSchedulerOwner
 - DomSchedulerPhase
+- FieldEditorPointerActivateOptions
+- FieldEditorPointerTarget
 - FlushCollect
 - GeometryInvalidator
 - GeometryMeasureAdapter

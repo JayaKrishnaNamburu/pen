@@ -1,4 +1,7 @@
-import { assignMultiplayerColor } from "./colorAssignment";
+import {
+	assignMultiplayerColor,
+	normalizeMultiplayerColor,
+} from "./colorAssignment";
 import { MAX_PRESENCE_DISPLAY_NAME_LENGTH } from "./constants";
 import type { MultiplayerUser } from "../types";
 
@@ -28,7 +31,10 @@ export function createRemotePresenceAttributes(input: {
 		"data-user-name",
 		capPresenceDisplayName(input.user.name),
 	);
-	const color = input.user.color ?? assignMultiplayerColor(input.user.id);
+	const color = normalizeMultiplayerColor(
+		input.user.color,
+		assignMultiplayerColor(input.user.id),
+	);
 	setPresenceAttribute(attributes, "style", `--pen-multiplayer-color: ${color}`);
 	return attributes;
 }

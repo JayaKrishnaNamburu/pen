@@ -140,5 +140,27 @@ describe("@input/pen-undo UndoManagerImpl", () => {
     manager.destroy();
 
     expect(crdtUndo.destroy).toHaveBeenCalledTimes(1);
+    crdtUndo.undo.mockClear();
+    crdtUndo.redo.mockClear();
+    crdtUndo.stopCapturing.mockClear();
+    crdtUndo.setCaptureTimeout.mockClear();
+    crdtUndo.addTrackedOrigin.mockClear();
+
+    expect(manager.undo()).toBe(false);
+    expect(manager.redo()).toBe(false);
+    manager.stopCapturing();
+    manager.syncExplicitUndoGroup("after-destroy");
+    manager.setGroupTimeout(50);
+    manager.resetIdleTimer();
+    expect(manager.registerTrackedOrigins(["ai"])).toEqual(expect.any(Function));
+    manager.onStackChange(() => {
+      throw new Error("destroyed managers must not notify");
+    });
+
+    expect(crdtUndo.undo).not.toHaveBeenCalled();
+    expect(crdtUndo.redo).not.toHaveBeenCalled();
+    expect(crdtUndo.stopCapturing).not.toHaveBeenCalled();
+    expect(crdtUndo.setCaptureTimeout).not.toHaveBeenCalled();
+    expect(crdtUndo.addTrackedOrigin).not.toHaveBeenCalled();
   });
 });

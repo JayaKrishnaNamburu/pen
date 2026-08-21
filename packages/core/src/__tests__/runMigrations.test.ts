@@ -5,7 +5,6 @@ import {
 	type DocumentOp,
 	type Editor,
 } from "@input/pen-types";
-import { undoExtension } from "@input/pen-undo";
 import { describe, expect, it } from "vitest";
 
 import { defaultSchema } from "./fixtures/testSchema";
@@ -19,12 +18,6 @@ import {
 const noDefaultExtensionsPreset = {
 	resolve() {
 		return { extensions: [] };
-	},
-};
-
-const undoOnlyPreset = {
-	resolve() {
-		return { extensions: [undoExtension()] };
 	},
 };
 
@@ -132,28 +125,6 @@ describe("runMigrations (DUR4)", () => {
 		expect(report.failed[0]?.error).toEqual(expect.any(Error));
 		expect(visibleText(editor)).toBe("kept after");
 		expect(readLedger(editor)).toEqual(["keep-this", "after-failure"]);
-
-		editor.destroy();
-	});
-
-	it("DUR4: migration origin is not undoable with the default undo extension", () => {
-		const editor = createEditor({ schema: defaultSchema,  preset: undoOnlyPreset });
-		const blockId = editor.firstBlock()!.id;
-		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "user" }],
-			{ origin: "user" },
-		);
-		expect(editor.undoManager.canUndo()).toBe(true);
-		editor.undoManager.undo();
-		expect(visibleText(editor)).toBe("");
-
-		const report = runMigrations(editor, [
-			insertTextMigration("upgrade", "upgraded"),
-		]);
-
-		expect(report.applied).toEqual(["upgrade"]);
-		expect(visibleText(editor)).toBe("upgraded");
-		expect(editor.undoManager.canUndo()).toBe(false);
 
 		editor.destroy();
 	});

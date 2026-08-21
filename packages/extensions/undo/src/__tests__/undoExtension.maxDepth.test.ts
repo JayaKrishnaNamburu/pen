@@ -1,22 +1,44 @@
+import { createEditor } from "@input/pen-core";
+import { defaultSchema } from "@input/pen-schema-default";
 import { describe, expect, it } from "vitest";
 
-import {
-	DEFAULT_UNDO_MAX_DEPTH,
-	undoExtension,
-} from "../undoExtension";
+import { undoExtension } from "../undoExtension";
+
+function visibleText(text: string): string {
+	return text.replace(/\u200B/g, "");
+}
 
 describe("@input/pen-undo maxDepth", () => {
-	it("CH7 accepts undoExtension({ maxDepth }) and defaults to 500", () => {
-		expect(DEFAULT_UNDO_MAX_DEPTH).toBe(500);
-
-		const withDefault = undoExtension();
-		const withExplicitDefault = undoExtension({
-			maxDepth: DEFAULT_UNDO_MAX_DEPTH,
+	it("CH7: undoExtension({ maxDepth: 2 }) drops the oldest user edit", () => {
+		const editor = createEditor({
+			schema: defaultSchema,
+			extensions: [undoExtension({ groupTimeout: 0, maxDepth: 2 })],
 		});
-		const withCustom = undoExtension({ maxDepth: 100 });
+		const blockId = editor.firstBlock()!.id;
 
-		expect(withDefault.name).toBe("undo");
-		expect(withExplicitDefault.name).toBe("undo");
-		expect(withCustom.name).toBe("undo");
+		for (const letter of ["a", "b", "c"]) {
+			editor.apply(
+				[
+					{
+						type: "insert-text",
+						blockId,
+						offset: editor.getBlock(blockId)!.length(),
+						text: letter,
+					},
+				],
+				{ origin: "user" },
+			);
+		}
+		expect(visibleText(editor.getBlock(blockId)!.textContent())).toBe("abc");
+
+		expect(editor.undoManager.undo()).toBe(true);
+		expect(visibleText(editor.getBlock(blockId)!.textContent())).toBe("ab");
+		expect(editor.undoManager.undo()).toBe(true);
+		expect(visibleText(editor.getBlock(blockId)!.textContent())).toBe("a");
+		expect(editor.undoManager.canUndo()).toBe(false);
+		expect(editor.undoManager.undo()).toBe(false);
+		expect(visibleText(editor.getBlock(blockId)!.textContent())).toBe("a");
+
+		editor.destroy();
 	});
 });

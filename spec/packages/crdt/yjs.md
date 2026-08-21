@@ -21,8 +21,8 @@ Bridge Pen contracts to a specific CRDT implementation.
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@input/pen-types`, `y-protocols`, `yjs`
-- Peer dependencies: No peer dependencies declared.
+- Runtime dependencies: `@input/pen-types`
+- Peer dependencies: `y-protocols`, `yjs`
 - Boundary: Adapters must respect the editor authority boundary while exposing persistence and sync integration points.
 
 ## Data Flow / Runtime Model

@@ -78,6 +78,9 @@ export class UndoManagerImpl implements UndoManager {
   }
 
   stopCapturing(): void {
+    if (this._destroyed) {
+      return;
+    }
     this._explicitUndoGroupId = null;
     this._crdtUndo.setCaptureTimeout?.(this._baseCaptureTimeout);
     this._stopCapturingWithBoundary();
@@ -86,6 +89,9 @@ export class UndoManagerImpl implements UndoManager {
   }
 
   syncExplicitUndoGroup(groupId: string | null): void {
+    if (this._destroyed) {
+      return;
+    }
     if (this._explicitUndoGroupId === groupId) {
       if (groupId !== null) {
         this._clearIdleTimer();
@@ -108,6 +114,9 @@ export class UndoManagerImpl implements UndoManager {
   }
 
   setGroupTimeout(ms: number): void {
+    if (this._destroyed) {
+      return;
+    }
     this._groupTimeout = ms;
     this._baseCaptureTimeout = ms;
     if (this._explicitUndoGroupId === null) {
@@ -116,6 +125,9 @@ export class UndoManagerImpl implements UndoManager {
   }
 
   registerTrackedOrigins(origins: OpOrigin[]): Unsubscribe {
+    if (this._destroyed) {
+      return () => {};
+    }
     const registeredOrigins = new Set<OpOrigin>();
     let didDispose = false;
     for (const origin of origins) {
@@ -141,6 +153,9 @@ export class UndoManagerImpl implements UndoManager {
   }
 
   onStackChange(callback: () => void): Unsubscribe {
+    if (this._destroyed) {
+      return () => {};
+    }
     this._listeners.add(callback);
     return () => {
       this._listeners.delete(callback);
@@ -148,7 +163,7 @@ export class UndoManagerImpl implements UndoManager {
   }
 
   resetIdleTimer(): void {
-    if (this._explicitUndoGroupId !== null) {
+    if (this._destroyed || this._explicitUndoGroupId !== null) {
       return;
     }
     this._clearIdleTimer();

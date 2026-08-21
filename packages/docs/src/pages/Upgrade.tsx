@@ -30,9 +30,14 @@ export function UpgradePage() {
 				<li>
 					<code>createEditor()</code> /{" "}
 					<code>createHeadlessEditor()</code> no longer install the
-					default schema. Pass <code>preset: defaultPreset()</code>{" "}
-					or <code>schema: createDefaultSchema()</code>. React and
-					Vue <code>useEditor</code> still default the schema.
+					default schema, nor document-ops, delta-stream, undo, or
+					rich-text shortcuts. A bare editor has no Mod-B / Mod-I /
+					Mod-Z. <code>aiExtension()</code> throws for the missing
+					dependencies. Pass <code>preset: defaultPreset()</code>{" "}
+					or compose <code>schema: createDefaultSchema()</code>{" "}
+					and an <code>extensions</code> list. React and Vue{" "}
+					<code>useEditor</code> still default the schema and still
+					do not install a preset.
 				</li>
 				<li>
 					Subscribe to document effect with{" "}
@@ -55,11 +60,16 @@ export function UpgradePage() {
 				</li>
 			</ul>
 			<p>
-				Command dispatch, the v2 selection-authority rewrite, and
-				keymap-as-only-channel are specified and not host-exported
-				yet. Do not migrate to those names until they appear on the
-				package index. Per-package changelogs and git tags are not
-				in this repository today.
+				<code>getCommandRegistry</code> is exported from{" "}
+				<code>@input/pen-core</code>. <code>Editor</code> has no{" "}
+				<code>dispatch</code> or <code>canDispatch</code> method.
+				Host <code>keyBindings</code> remain the v1 handler path;
+				they are not command tokens. The v2 selection-authority
+				rewrite (<code>SelectionAuthority</code>, affinity on the
+				live selection) is specified and not on the package index.
+				Do not migrate to those names until they appear there.
+				Per-package changelogs and git tags are not in this
+				repository today.
 			</p>
 		</>
 	);

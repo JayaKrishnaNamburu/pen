@@ -7,7 +7,7 @@ This package turns markdown into document ops. It does not export markdown or ow
 ## Install
 
 ```bash
-pnpm add @input/pen-core @input/pen-import-markdown
+pnpm add @input/pen-core @input/pen-preset-default @input/pen-import-markdown
 ```
 
 ## What It Provides
@@ -34,14 +34,19 @@ Exceeding a bound truncates at a block boundary. `import()` and `markdownImporte
 
 ```ts
 import { createEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
 import { markdownImporter } from "@input/pen-import-markdown";
 
-const editor = createEditor();
+const editor = createEditor({
+  preset: defaultPreset(),
+});
 
 markdownImporter.import("# Hello\n\nThis came from Markdown.", editor, {
   replace: true,
 });
 ```
+
+A bare `createEditor()` has an empty schema. Unknown block types are dropped, so that markdown would import nothing. `defaultPreset()` (or `createDefaultSchema()`) is required for heading and paragraph types to resolve.
 
 ## Integration Notes
 

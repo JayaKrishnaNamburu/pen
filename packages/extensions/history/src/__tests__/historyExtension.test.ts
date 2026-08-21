@@ -228,6 +228,44 @@ describe("historyExtension", () => {
 		documentSession.destroy();
 	});
 
+	it("restores a previous snapshot after editor.apply writes", async () => {
+		const persistence = new MemoryPersistence();
+		const editor = createEditor({
+			schema: defaultSchema,
+			extensions: [
+				historyExtension({
+					persistence,
+					docId: "doc-apply",
+					autoSnapshot: false,
+				}),
+			],
+		});
+		const blockId = editor.firstBlock()!.id;
+		const controller = getHistoryController(editor)!;
+
+		editor.apply(
+			[{ type: "insert-text", blockId, offset: 0, text: "hello" }],
+			{ origin: "user" },
+		);
+		const original = await controller.createSnapshot("Original", "manual");
+
+		editor.apply(
+			[{ type: "insert-text", blockId, offset: 5, text: " world" }],
+			{ origin: "user" },
+		);
+		expect(editor.getBlock(blockId)?.textContent()?.replace(/\u200B/g, "")).toBe(
+			"hello world",
+		);
+
+		await controller.restoreSnapshot(original.id);
+
+		expect(editor.getBlock(blockId)?.textContent()?.replace(/\u200B/g, "")).toBe(
+			"hello",
+		);
+
+		editor.destroy();
+	});
+
 });
 
 class MemoryPersistence implements PenPersistence {

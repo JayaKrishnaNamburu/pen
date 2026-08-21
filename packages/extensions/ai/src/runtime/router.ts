@@ -232,7 +232,6 @@ export function refineRouteWithNavigator(
 		targetKind,
 		intent: decision.intent,
 	});
-	const resolvedPlannerMode = plannerMode;
 	const mutationMode = resolveStructuredMutationMode({
 		mutationMode:
 			lane === decision.lane

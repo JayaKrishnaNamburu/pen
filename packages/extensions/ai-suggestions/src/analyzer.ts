@@ -1,3 +1,4 @@
+import { foldAndNormalize, localeFacet } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
 import {
 	buildSuggestionsAIRequest,
@@ -76,7 +77,7 @@ export async function analyzeSuggestionScope(input: {
 	}
 
 	return {
-		candidates: parseSuggestionResponse(text),
+		candidates: parseSuggestionResponse(text, editor.facet(localeFacet)),
 		usage: {
 			promptTokens,
 			completionTokens,
@@ -100,7 +101,10 @@ async function analyzeWithCustomAnalyzer(
 	const normalized = normalizeAnalyzerResult(result);
 
 	return {
-		candidates: sanitizeCandidates(normalized.candidates),
+		candidates: sanitizeCandidates(
+			normalized.candidates,
+			editor.facet(localeFacet),
+		),
 		usage: {
 			promptTokens: normalized.usage?.promptTokens ?? 0,
 			completionTokens: normalized.usage?.completionTokens ?? 0,
@@ -119,6 +123,7 @@ function normalizeAnalyzerResult(
 
 export function parseSuggestionResponse(
 	responseText: string,
+	locale = "en",
 ): readonly AISuggestionCandidate[] {
 	const normalized = unwrapJsonFence(responseText).trim();
 	if (!normalized) {
@@ -142,11 +147,12 @@ export function parseSuggestionResponse(
 		return [];
 	}
 
-	return sanitizeCandidates(suggestions);
+	return sanitizeCandidates(suggestions, locale);
 }
 
 function sanitizeCandidates(
 	input: readonly unknown[],
+	locale: string,
 ): readonly AISuggestionCandidate[] {
 	const candidates: AISuggestionCandidate[] = [];
 
@@ -182,8 +188,8 @@ function sanitizeCandidates(
 		}
 
 		if (
-			normalizeComparableText(normalizedOriginalText) ===
-			normalizeComparableText(normalizedReplacementText)
+			normalizeComparableText(normalizedOriginalText, locale) ===
+			normalizeComparableText(normalizedReplacementText, locale)
 		) {
 			continue;
 		}
@@ -211,6 +217,6 @@ function unwrapJsonFence(value: string): string {
 		.replace(/\s*```$/, "");
 }
 
-function normalizeComparableText(value: string): string {
-	return value.replace(/\s+/g, " ").trim().toLowerCase();
+function normalizeComparableText(value: string, locale: string): string {
+	return foldAndNormalize(value.replace(/\s+/g, " ").trim(), locale);
 }

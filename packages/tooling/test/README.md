@@ -14,6 +14,7 @@ pnpm add -D @input/pen-test
 
 - `createTestEditor()` for a Yjs-backed editor harness with the default schema
 - `assertDocEquals()` for document-shape assertions
+- `assertPeerEditsSurvive()` so two-peer tests cannot pass on mutual loss
 - `createTestCollaboration()` for two-editor sync tests
 - `createDeterministicYDocFixture()` for stable Yjs updates and snapshots
 - `runCRDTStateVectorContract()`, `runHeadlessEditorContract()`, and `runExportContract()` for opt-in package/app contracts
@@ -36,16 +37,31 @@ assertDocEquals(editor, [{ type: "paragraph", content: "Hello world" }]);
 ## Collaboration Harness
 
 ```ts
-import { assertDocEquals, createTestCollaboration } from "@input/pen-test";
+import {
+  assertDocEquals,
+  assertPeerEditsSurvive,
+  createTestCollaboration,
+} from "@input/pen-test";
 
 const collab = createTestCollaboration({
-  blocks: [{ type: "paragraph", content: "Shared" }],
+  blocks: [{ id: "p1", type: "paragraph", content: "Hello" }],
 });
 
-collab.editorA.simulateTyping(" doc");
+collab.editorA.apply(
+  [{ type: "insert-text", blockId: "p1", offset: 5, text: " A" }],
+  { origin: "user" },
+);
+collab.editorB.apply(
+  [{ type: "insert-text", blockId: "p1", offset: 5, text: " B" }],
+  { origin: "user" },
+);
 collab.sync();
 
 assertDocEquals(collab.editorA, collab.editorB);
+assertPeerEditsSurvive([collab.editorA, collab.editorB], {
+  blockId: "p1",
+  tokens: [" A", " B"],
+});
 ```
 
 ## Deterministic Fixtures

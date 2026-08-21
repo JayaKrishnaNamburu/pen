@@ -105,4 +105,44 @@ describe("normalization in the commit transaction (Wave 2 I10)", () => {
 
 		editor.destroy();
 	});
+
+	it("I10: a second normalizeAll pass writes nothing, including nested children", () => {
+		const editor = createEditor();
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "parent",
+				blockType: "toggle",
+				props: {},
+				position: "last",
+			},
+			{
+				type: "insert-block",
+				blockId: "counted-nested",
+				blockType: "counted",
+				props: {},
+				position: { parent: "parent", index: 0 },
+			},
+			{
+				type: "insert-text",
+				blockId: "counted-nested",
+				offset: 0,
+				text: "ab",
+			},
+		]);
+
+		const nested = editor.getBlock("counted-nested")!;
+		expect(nested.props.charCount).toBe([...nested.textContent()].length);
+
+		const adapter = editor.internals.adapter;
+		const before = adapter.encodeState(editor.internals.crdtDoc);
+		editor.normalizeAll();
+		editor.normalizeAll();
+		expect(adapter.encodeState(editor.internals.crdtDoc)).toEqual(before);
+		expect(editor.getBlock("counted-nested")!.props.charCount).toBe(
+			[...nested.textContent()].length,
+		);
+
+		editor.destroy();
+	});
 });

@@ -12,7 +12,7 @@ export function DefaultRenderer(
 		<div
 			ref={ctx.ref as React.Ref<HTMLDivElement>}
 			data-block-type={block.type}
-			data-selected={ctx.selected || undefined}
+			data-selected={ctx.selected ? "" : undefined}
 			data-unknown-block=""
 			contentEditable={false}
 			suppressContentEditableWarning

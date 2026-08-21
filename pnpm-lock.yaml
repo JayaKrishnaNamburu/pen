@@ -136,9 +136,6 @@ importers:
         specifier: workspace:^
         version: link:../types
     devDependencies:
-      '@input/pen-undo':
-        specifier: workspace:^
-        version: link:../extensions/undo
       tsup:
         specifier: ^8.4.0
         version: 8.5.1(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)
@@ -347,6 +344,9 @@ importers:
 
   packages/extensions/delta-stream:
     dependencies:
+      '@input/pen-ai-tools':
+        specifier: workspace:^
+        version: link:../ai-tools
       '@input/pen-document-ops':
         specifier: workspace:^
         version: link:../document-ops
@@ -725,9 +725,18 @@ importers:
         specifier: workspace:^
         version: link:../../types
     devDependencies:
+      '@input/pen-core':
+        specifier: workspace:*
+        version: link:../../core
       '@input/pen-crdt-yjs':
         specifier: workspace:*
         version: link:../../crdt/yjs
+      '@input/pen-schema-default':
+        specifier: workspace:*
+        version: link:../../schema/default
+      '@input/pen-test':
+        specifier: workspace:*
+        version: link:../../tooling/test
       tsup:
         specifier: ^8.4.0
         version: 8.5.1(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)

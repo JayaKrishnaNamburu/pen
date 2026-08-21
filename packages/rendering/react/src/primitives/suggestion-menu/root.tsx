@@ -294,7 +294,7 @@ function SuggestionMenuRootContent<TItem>(
 
 	const primitiveProps: Record<string, unknown> = {
 		"data-pen-suggestion-menu": "",
-		"data-open": isOpen || undefined,
+		"data-open": isOpen ? "" : undefined,
 		"data-trigger": controller.target?.trigger,
 	};
 

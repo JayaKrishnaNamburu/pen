@@ -20,7 +20,7 @@ export function CalloutRenderer(
       ref={ctx.ref as React.Ref<HTMLDivElement>}
       data-block-type="callout"
       data-callout-type={calloutType}
-      data-selected={ctx.selected || undefined}
+      data-selected={ctx.selected ? "" : undefined}
       role="note"
     >
       <span

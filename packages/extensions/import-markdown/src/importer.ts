@@ -10,9 +10,27 @@ import {
 	capRawMarkdownSource,
 	createIngestReport,
 	emitIngestReport,
+	INGEST_MAX_TEXT_SIZE,
 	IngestDropCounts,
 	type IngestReport,
 } from "./ingestBounds";
+
+function parseMarkdownSource(source: string, editor: Editor): PendingBlock[] {
+	if (source.length > INGEST_MAX_TEXT_SIZE) {
+		throw new Error(
+			`markdown parse received ${source.length} code units; INGEST_MAX_TEXT_SIZE is ${INGEST_MAX_TEXT_SIZE}`,
+		);
+	}
+	return parseMarkdownContentToBlocks(source, editor);
+}
+
+function parseCappedMarkdownToBlocks(
+	input: string,
+	editor: Editor,
+	drops: IngestDropCounts,
+): PendingBlock[] {
+	return parseMarkdownSource(capRawMarkdownSource(input, drops), editor);
+}
 
 export function parseMarkdownWithReport(
 	input: string,
@@ -22,8 +40,7 @@ export function parseMarkdownWithReport(
 	report: IngestReport;
 } {
 	const drops = new IngestDropCounts();
-	const source = capRawMarkdownSource(input, drops);
-	const parsedBlocks = parseMarkdownContentToBlocks(source, editor);
+	const parsedBlocks = parseCappedMarkdownToBlocks(input, editor, drops);
 	const bounded = boundPendingBlocks(parsedBlocks, drops);
 	return {
 		blocks: bounded,
@@ -44,8 +61,7 @@ function normalizeMarkdownToBlocks(
 	result: IngestReport;
 } {
 	const drops = new IngestDropCounts();
-	const source = capRawMarkdownSource(input, drops);
-	const parsedBlocks = parseMarkdownContentToBlocks(source, editor);
+	const parsedBlocks = parseCappedMarkdownToBlocks(input, editor, drops);
 	const bounded = boundPendingBlocks(parsedBlocks, drops);
 	const normalized = normalizePendingBlocksForImport(
 		bounded,

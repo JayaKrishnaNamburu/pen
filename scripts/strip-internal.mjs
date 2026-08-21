@@ -7,12 +7,26 @@
  * configs repeat it so a package-local tsconfig cannot drop the flag.
  *
  * Needs built `dist` artifacts (`pnpm build`).
+ *
+ * Dist freshness is a local guard. CI runs `pnpm build` first
+ * (`ci.yml` / `release.yml`), so the `.d.ts` is current by construction
+ * and this path does not fire there. Do not add a CI flag for it.
+ *
+ * When type-input source is newer than a package's published `.d.ts`,
+ * a clean leak scan is INCONCLUSIVE, not OK — matching internals
+ * against a `.d.ts` that predates its source is not a pass. Missing
+ * dist stays the existing failure. "stale" is not used here.
  */
 
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { collectExportNames } from "./api-reports.mjs";
+import {
+	appendOutdatedDistLines,
+	collectOutdatedDist,
+	runFreshnessSelfTests,
+} from "./lib/distFreshness.mjs";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_REPO_ROOT = path.resolve(SCRIPT_DIR, "..");
@@ -59,12 +73,14 @@ export function evaluateStripInternal({
 	stripInternalEnabled,
 	tsupConfigs,
 	leaks,
+	outdatedDist = [],
 }) {
 	const disabledTsup = tsupConfigs.filter((entry) => !entry.wired);
 	return {
 		stripInternalEnabled: stripInternalEnabled === true,
 		disabledTsup,
 		leaks,
+		outdatedDist,
 	};
 }
 
@@ -76,6 +92,10 @@ export function hasFailures(result) {
 	);
 }
 
+export function hasInconclusive(result) {
+	return (result.outdatedDist?.length ?? 0) > 0;
+}
+
 export function formatReport(result) {
 	const lines = ["API4 @internal stripping"];
 	lines.push("");
@@ -84,6 +104,7 @@ export function formatReport(result) {
 	);
 	lines.push(`tsup configs missing flag   ${result.disabledTsup.length}`);
 	lines.push(`leaked internals            ${result.leaks.length}`);
+	lines.push(`outdated dist               ${result.outdatedDist?.length ?? 0}`);
 	if (result.stripInternalEnabled !== true) {
 		lines.push("");
 		lines.push("tsconfig.base.json compilerOptions.stripInternal must be true.");
@@ -102,10 +123,21 @@ export function formatReport(result) {
 			lines.push(`  ${leak.package} ${leak.name}  (${leak.file})`);
 		}
 	}
-	if (!hasFailures(result)) {
+	appendOutdatedDistLines(lines, result.outdatedDist ?? []);
+	if (!hasFailures(result) && !hasInconclusive(result)) {
 		lines.push("");
 		lines.push(
 			"OK: stripInternal is on; marked internals are absent from published .d.ts.",
+		);
+	} else if (!hasFailures(result) && hasInconclusive(result)) {
+		lines.push("");
+		lines.push(
+			`INCONCLUSIVE: no leaked internals found in the .d.ts, but ${result.outdatedDist.length} package(s) have type-input source newer than dist. That is not a pass.`,
+		);
+	} else if (hasFailures(result) && hasInconclusive(result)) {
+		lines.push("");
+		lines.push(
+			`INCONCLUSIVE: ${result.outdatedDist.length} package(s) have type-input source newer than dist; leak results may be incomplete until those rebuild.`,
 		);
 	}
 	return lines.join("\n");
@@ -138,6 +170,55 @@ export function runSelfTests() {
 	if (leaks.join(",") !== "createTextStreamWriter") {
 		throw new Error("self-test: leaked export");
 	}
+
+	const outdatedOnly = evaluateStripInternal({
+		stripInternalEnabled: true,
+		tsupConfigs: [{ path: "pkg/tsup.config.ts", wired: true }],
+		leaks: [],
+		outdatedDist: [{ package: "@input/pen-freshness-fixture", newerCount: 1 }],
+	});
+	if (hasFailures(outdatedOnly)) {
+		throw new Error("self-test: outdated dist is not a leak failure");
+	}
+	if (!hasInconclusive(outdatedOnly)) {
+		throw new Error("self-test: outdated dist is inconclusive");
+	}
+	const outdatedReport = formatReport(outdatedOnly);
+	if (outdatedReport.includes("OK:")) {
+		throw new Error("self-test: outdated dist must not print OK");
+	}
+	if (!outdatedReport.includes("INCONCLUSIVE:")) {
+		throw new Error("self-test: outdated dist prints INCONCLUSIVE");
+	}
+	if (!outdatedReport.includes("@input/pen-freshness-fixture")) {
+		throw new Error("self-test: INCONCLUSIVE names the package");
+	}
+	if (!outdatedReport.includes("rebuild: pnpm --filter @input/pen-freshness-fixture build")) {
+		throw new Error("self-test: INCONCLUSIVE names the rebuild");
+	}
+
+	const leakAndOutdated = evaluateStripInternal({
+		stripInternalEnabled: true,
+		tsupConfigs: [{ path: "pkg/tsup.config.ts", wired: true }],
+		leaks: [
+			{
+				package: "@input/pen-freshness-fixture",
+				name: "createTextStreamWriter",
+				file: "packages/fixture/dist/index.d.ts",
+			},
+		],
+		outdatedDist: [{ package: "@input/pen-freshness-fixture", newerCount: 1 }],
+	});
+	if (!hasFailures(leakAndOutdated)) {
+		throw new Error("self-test: a leak still fails when dist is outdated");
+	}
+	const leakReport = formatReport(leakAndOutdated);
+	if (!leakReport.includes("published .d.ts still exports @internal symbols:")) {
+		throw new Error("self-test: outdated dist does not hide a leak");
+	}
+	if (!leakReport.includes("createTextStreamWriter")) {
+		throw new Error("self-test: leak name still printed when dist is outdated");
+	}
 }
 
 async function collectFiles(directory, files, nameTest) {
@@ -168,6 +249,7 @@ async function loadPublishedPackages(repoRoot) {
 		packages.push({
 			name: packageJson.name,
 			dir: path.dirname(filePath),
+			packageJson,
 		});
 	}
 	packages.sort((left, right) => left.name.localeCompare(right.name));
@@ -196,7 +278,9 @@ async function collectPublishedDts(packageDir) {
 		await collectFiles(distDir, files, (name) => name.endsWith(".d.ts"));
 	} catch (error) {
 		if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
-			throw new Error(`missing dist at ${distDir}; run pnpm build first`);
+			throw new Error(`missing dist at ${distDir}; run pnpm build first`, {
+				cause: error,
+			});
 		}
 		throw error;
 	}
@@ -233,6 +317,7 @@ function parseArgs(argv) {
 
 async function main() {
 	runSelfTests();
+	await runFreshnessSelfTests();
 	console.log("API4 strip-internal self-test ok");
 
 	const args = parseArgs(process.argv.slice(2));
@@ -241,6 +326,7 @@ async function main() {
 	);
 	const tsupConfigs = await loadTsupConfigs(args.repoRoot);
 	const packages = await loadPublishedPackages(args.repoRoot);
+	const outdatedDist = await collectOutdatedDist(packages);
 	const leaks = [];
 	for (const pkg of packages) {
 		const internals = await collectPackageInternals(pkg.dir);
@@ -268,10 +354,11 @@ async function main() {
 		stripInternalEnabled: tsconfigEnablesStripInternal(tsconfig),
 		tsupConfigs,
 		leaks,
+		outdatedDist,
 	});
 	console.log("");
 	console.log(formatReport(result));
-	if (hasFailures(result)) {
+	if (hasFailures(result) || hasInconclusive(result)) {
 		process.exitCode = 1;
 	}
 }

@@ -21,7 +21,7 @@ Provide transport-specific wiring around Pen protocols and sessions.
 
 ## Data Flow / Runtime Model
 
-Transport package packages in Pen should stay package-first and explicit about ownership. Adopt when a host needs the specific transport surface.
+In-process transport. The live `Editor` is a `directTransport({ editor })` constructor option. `PenStreamRequest` has no `editor` field; direct never reads one off the request.
 
 ## Integration Notes
 

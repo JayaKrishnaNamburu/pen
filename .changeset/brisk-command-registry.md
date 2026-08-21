@@ -4,4 +4,4 @@
 
 Add the Wave 4.1 command registry as a standalone `@input/pen-core` module (`defineCommand`, `commandHandler`, `createCommandRegistry`).
 
-The module is not re-exported from the package index yet; `editor.dispatch` stays deferred.
+`createCommandRegistry` and `getCommandRegistry` are exported from the package index. There is still no `editor.dispatch`; hosts dispatch through the registry.

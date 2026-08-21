@@ -21,6 +21,23 @@ function logicalExportText(text: string): string {
 	return text.replaceAll("\u200B", "");
 }
 
+const HTML_ESCAPE_PATTERN = /[&<>"']/g;
+
+const HTML_ESCAPE_REPLACEMENTS: Record<string, string> = {
+	"&": "&amp;",
+	"<": "&lt;",
+	">": "&gt;",
+	'"': "&quot;",
+	"'": "&apos;",
+};
+
+function escapeHtmlText(value: string): string {
+	return value.replace(
+		HTML_ESCAPE_PATTERN,
+		(character) => HTML_ESCAPE_REPLACEMENTS[character] ?? character,
+	);
+}
+
 function emitClipboardWriteFailed(
 	editor: Editor | undefined,
 	error: unknown,
@@ -132,6 +149,9 @@ export function serializeDeltasToFormat(
 		if (typeof delta.insert !== "string") continue;
 		let text = logicalExportText(delta.insert);
 		if (!text) continue;
+		if (format === "html") {
+			text = escapeHtmlText(text);
+		}
 
 		if (delta.attributes) {
 			const ordered = sortDeltaAttributes(delta.attributes, editor.schema);

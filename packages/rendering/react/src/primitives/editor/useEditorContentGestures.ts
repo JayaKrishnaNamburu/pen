@@ -3,7 +3,7 @@ import { flushSync } from "react-dom";
 import { usesInlineTextSelection } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
 import { generateId } from "@input/pen-types";
-import type { FieldEditorSession } from "@input/pen-dom";
+import { measureWithRoot, type FieldEditorSession } from "@input/pen-dom";
 import { shouldUseBlockSelection } from "@input/pen-dom/field-editor";
 import { domSelectionToEditor, getBlockBoundaryPoint, pointToEditorSelectionPoint } from "@input/pen-dom/field-editor/selectionBridge";
 import { getEditorBlockSelectionLength, getEditorBlockSelectionRole } from "../../utils/blockSelectionSemantics";
@@ -62,8 +62,10 @@ export function useEditorContentGestures(options: UseEditorContentGesturesOption
 	const firstBlock = editor.firstBlock(); if (firstBlock) {
 	const schema = editor.schema.resolve(firstBlock.type); if (usesInlineTextSelection(schema)) {
 	fe.activateTextSelection?.(firstBlock.id, 0, 0); return true; }
-	} } const firstRect = firstBlockEl.getBoundingClientRect();
-	const lastRect = lastBlockEl.getBoundingClientRect(); const clickedAbove = event.clientY < firstRect.top; const clickedBelow = event.clientY > lastRect.bottom;
+	} } const firstBlockId = firstBlockEl.getAttribute("data-block-id"); const lastBlockId = lastBlockEl.getAttribute("data-block-id");
+	const measured = measureWithRoot(currentEditorRoot ?? gestureEl, ({ reader }) => ({
+	firstRect: firstBlockId ? reader.blockRect(firstBlockId) : null, lastRect: lastBlockId ? reader.blockRect(lastBlockId) : null,
+	})); if (!measured.firstRect || !measured.lastRect) return false; const firstRect = measured.firstRect; const lastRect = measured.lastRect; const clickedAbove = event.clientY < firstRect.top; const clickedBelow = event.clientY > lastRect.bottom;
 	if (!clickedAbove && !clickedBelow) return false; const adjacentBlock = clickedAbove ? editor.firstBlock() : editor.lastBlock(); if (!adjacentBlock) return false;
 	const schema = editor.schema.resolve(adjacentBlock.type); if ( usesInlineTextSelection(schema) &&
 	adjacentBlock.textContent().length === 0 ) {
@@ -108,14 +110,16 @@ export function useEditorContentGestures(options: UseEditorContentGesturesOption
 	return null; } if (shouldIgnorePointerGesture(event)) return null;
 	if (resolveClickedBlockId(event)) return null; return config; };
 	const getIntersectedBlockIds = ( rect: RegionSelectionRect, ): string[] => {
-	const blocksHost = blocksHostRef.current; if (!blocksHost) return []; const selectedIds: string[] = [];
+	const blocksHost = blocksHostRef.current; if (!blocksHost) return [];
+	return measureWithRoot(currentEditorRoot ?? gestureEl, ({ reader }) => {
+	const selectedIds: string[] = [];
 	const blockElements = Array.from(blocksHost.children); for (const child of blockElements) {
 	if ( !(child instanceof HTMLElement) || !child.hasAttribute(DATA_ATTRS.editorBlock)
 	) {
 	continue; } const blockId = child.getAttribute(DATA_ATTRS.blockId);
-	if (!blockId) continue; if (rectsIntersect(rect, child.getBoundingClientRect())) {
+	if (!blockId) continue; const blockRect = reader.blockRect(blockId); if (blockRect && rectsIntersect(rect, blockRect)) {
 	selectedIds.push(blockId); } }
-	return selectedIds; };
+	return selectedIds; }); };
 	const clearRegionSelectionState = () => {
 	regionGestureRef.current = null; regionSelectionStore.clearLiveRect(); };
 	const ensureEditorFocus = (root: HTMLElement) => {
@@ -449,7 +453,7 @@ export function useEditorContentGestures(options: UseEditorContentGesturesOption
 	left, top, width: Math.abs(endX - startX),
 	height: Math.abs(endY - startY), };
 	} function rectsIntersect( selectionRect: RegionSelectionRect,
-	blockRect: DOMRect, ): boolean {
+	blockRect: { left: number; right: number; top: number; bottom: number }, ): boolean {
 	const selectionRight = selectionRect.left + selectionRect.width; const selectionBottom = selectionRect.top + selectionRect.height; return !(
 	selectionRight < blockRect.left || selectionRect.left > blockRect.right || selectionBottom < blockRect.top ||
 	selectionRect.top > blockRect.bottom ); }

@@ -38,7 +38,7 @@ export function SuggestionMenuItem(props: SuggestionMenuItemProps) {
 	const primitiveProps: Record<string, unknown> = {
 		id: optionId,
 		"data-pen-suggestion-menu-item": "",
-		"data-selected": isSelected || undefined,
+		"data-selected": isSelected ? "" : undefined,
 		role: "option",
 		"aria-selected": isSelected,
 		onClick: handleClick,

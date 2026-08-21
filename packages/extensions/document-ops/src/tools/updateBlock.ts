@@ -6,6 +6,7 @@ export function updateBlockTool(editor: Editor): ToolDefinition {
   return {
     name: "update_block",
     description: "Update a block's properties.",
+    mutating: true,
     inputSchema: {
       type: "object",
       required: ["blockId", "props"],

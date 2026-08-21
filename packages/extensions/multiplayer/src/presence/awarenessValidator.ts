@@ -1,3 +1,5 @@
+import { urlPolicy } from "@input/pen-core";
+import { normalizeMultiplayerColor } from "./colorAssignment";
 import {
 	MAX_PRESENCE_AVATAR_URL_LENGTH,
 	MAX_PRESENCE_BLOCK_SELECTION_IDS,
@@ -30,6 +32,10 @@ export interface AwarenessValidationResult {
 	rejections: PresenceRejection[];
 }
 
+export interface AwarenessValidationOptions {
+	resolveAvatarUrl?: (raw: string) => string | null;
+}
+
 const FORBIDDEN_KEYS = new Set(["__proto__", "constructor", "prototype"]);
 const HOSTILE_MARKUP = /<\s*script|javascript:|vbscript:|data:\s*text\/html|on\w+\s*=/i;
 const IMAGE_DATA_URL = /^data:image\/(?:png|jpeg|gif|webp|avif)/i;
@@ -38,6 +44,7 @@ export function validateAwarenessStates(
 	states: Map<number, unknown>,
 	document: AwarenessDocumentView,
 	localClientId: number,
+	options?: AwarenessValidationOptions,
 ): AwarenessValidationResult {
 	const accepted = new Map<number, MultiplayerAwarenessState>();
 	const rejections: PresenceRejection[] = [];
@@ -50,7 +57,7 @@ export function validateAwarenessStates(
 			continue;
 		}
 
-		const validated = validatePeerState(rawState, document);
+		const validated = validatePeerState(rawState, document, options);
 		if (validated.rejection) {
 			rejections.push({ clientId, reason: validated.rejection });
 		}
@@ -68,6 +75,7 @@ export function validateAwarenessStates(
 function validatePeerState(
 	rawState: unknown,
 	document: AwarenessDocumentView,
+	options?: AwarenessValidationOptions,
 ): {
 	state: MultiplayerAwarenessState | null;
 	rejection: PresenceRejectionReason | null;
@@ -84,7 +92,7 @@ function validatePeerState(
 
 	let user: MultiplayerUser | undefined;
 	if (rawState.user !== undefined) {
-		const userResult = validateUser(rawState.user);
+		const userResult = validateUser(rawState.user, options);
 		if (userResult.reason) {
 			return { state: null, rejection: userResult.reason, fieldRejections: [] };
 		}
@@ -115,6 +123,7 @@ function validatePeerState(
 
 function validateUser(
 	value: unknown,
+	options?: AwarenessValidationOptions,
 ): { user: MultiplayerUser; reason?: undefined } | { user?: undefined; reason: PresenceRejectionReason } {
 	if (!isRecord(value) || hasForbiddenKeys(value)) {
 		return { reason: "wrong-typed" };
@@ -150,7 +159,10 @@ function validateUser(
 			return { reason: "script-bearing" };
 		}
 		if (value.color.length <= MAX_PRESENCE_COLOR_LENGTH) {
-			user.color = value.color;
+			const color = normalizeMultiplayerColor(value.color, "");
+			if (color) {
+				user.color = color;
+			}
 		}
 	}
 
@@ -158,7 +170,10 @@ function validateUser(
 		if (isScriptBearing(value.avatar) || isHostileAvatarUrl(value.avatar)) {
 			return { reason: "script-bearing" };
 		}
-		const avatar = resolvePresenceAvatarUrl(value.avatar);
+		const avatar = resolvePresenceAvatarUrl(
+			value.avatar,
+			options?.resolveAvatarUrl,
+		);
 		if (avatar) {
 			user.avatar = avatar;
 		}
@@ -369,21 +384,31 @@ function resolveDocumentPoint(
 	return { reason: null };
 }
 
-function resolvePresenceAvatarUrl(raw: string): string | null {
+function resolvePresenceAvatarUrl(
+	raw: string,
+	resolveUrl: ((value: string) => string | null) | undefined,
+): string | null {
+	const admitted = (resolveUrl ?? defaultResolveAvatarUrl)(raw);
+	if (!admitted) {
+		return null;
+	}
 	try {
-		const parsed = new URL(raw, "https://pen.invalid/");
-		const protocol = parsed.protocol.toLowerCase();
+		const protocol = new URL(admitted, "https://pen.invalid/").protocol.toLowerCase();
 		if (protocol === "http:" || protocol === "https:") {
-			return raw;
+			return admitted;
 		}
-		if (protocol === "data:" && IMAGE_DATA_URL.test(raw.trim())) {
-			return raw;
+		if (protocol === "data:" && IMAGE_DATA_URL.test(admitted.trim())) {
+			return admitted;
 		}
 		return null;
 	} catch {
 		// invalid avatar url is not admitted.
 		return null;
 	}
+}
+
+function defaultResolveAvatarUrl(raw: string): string | null {
+	return urlPolicy.resolve(raw, "image");
 }
 
 function isHostileAvatarUrl(raw: string): boolean {

@@ -15,13 +15,13 @@ Add optional runtime behavior on top of the editor core without changing the can
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@input/pen-markdown-serialization`, `@input/pen-types`
+- Runtime dependencies: `@input/pen-core`, `@input/pen-markdown-serialization`, `@input/pen-types`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: Extensions compose through the core editor and slots/events rather than side channels.
 
 ## Data Flow / Runtime Model
 
-Extension package packages in Pen should stay package-first and explicit about ownership. Adopt this package only when the host app needs the capability it provides.
+Serialization lives in `@input/pen-markdown-serialization` and walks the full block tree, including nested children. This package is the exporter wrapper (URL admission, `markdownExporter`).
 
 ## Integration Notes
 

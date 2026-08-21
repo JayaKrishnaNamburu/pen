@@ -206,6 +206,65 @@ describe("@input/pen-search helpers", () => {
 		editor.destroy();
 	});
 
+	it("LOC5: omitted options.locale folds with the editor locale facet", () => {
+		const turkish = createDocumentWithText("Istanbul", { locale: "tr" });
+		const english = createDocumentWithText("Istanbul", { locale: "en" });
+
+		expect(
+			findDocumentMatches(turkish, "ıstanbul", DEFAULT_SEARCH_OPTIONS),
+		).toHaveLength(1);
+		expect(
+			findDocumentMatches(english, "ıstanbul", DEFAULT_SEARCH_OPTIONS),
+		).toHaveLength(0);
+
+		turkish.destroy();
+		english.destroy();
+	});
+
+	it("finds matches in parentId-nested children, not only root blocks", () => {
+		const editor = createHeadlessEditor({ schema: defaultSchema });
+		const parentId = editor.firstBlock()!.id;
+
+		editor.apply(
+			[
+				{
+					type: "convert-block",
+					blockId: parentId,
+					newType: "toggle",
+					newProps: { open: true },
+				},
+				{
+					type: "insert-block",
+					blockId: "nested-child",
+					blockType: "paragraph",
+					props: { parentId },
+					position: { after: parentId },
+				},
+				{
+					type: "insert-text",
+					blockId: "nested-child",
+					offset: 0,
+					text: "hidden nested match",
+				},
+			],
+			{ origin: "user" },
+		);
+
+		const matches = findDocumentMatches(
+			editor,
+			"nested",
+			DEFAULT_SEARCH_OPTIONS,
+		);
+		expect(matches).toHaveLength(1);
+		expect(matches[0]).toMatchObject({
+			kind: "block",
+			blockId: "nested-child",
+			text: "nested",
+		});
+
+		editor.destroy();
+	});
+
 	it("wraps navigation indices", () => {
 		expect(getNextActiveIndex(-1, 3)).toBe(0);
 		expect(getNextActiveIndex(2, 3)).toBe(0);
@@ -247,8 +306,14 @@ function createHomogeneousDocument(): Editor {
 	return createDocumentWithText("a".repeat(HOMOGENEOUS_DOCUMENT_CHARS));
 }
 
-function createDocumentWithText(text: string): Editor {
-	const editor = createHeadlessEditor({ schema: defaultSchema });
+function createDocumentWithText(
+	text: string,
+	options: { locale?: string } = {},
+): Editor {
+	const editor = createHeadlessEditor({
+		schema: defaultSchema,
+		locale: options.locale,
+	});
 	const blockId = editor.firstBlock()!.id;
 	editor.apply(
 		[

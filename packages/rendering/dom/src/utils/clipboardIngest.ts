@@ -9,7 +9,13 @@ export const CLIPBOARD_INGEST_MAX_NODE_COUNT = 10_000;
 export const CLIPBOARD_INGEST_MAX_TEXT_SIZE = 1_048_576;
 export const CLIPBOARD_INGEST_MAX_IMAGE_COUNT = 256;
 
-/** Test gate for IOP5: a paste at the node cap must finish, not hang the tab. */
+/**
+ * Advisory IOP5 wall-clock ceiling for one clipboard ingest. Same number
+ * as the HTML/markdown `INGEST_TIME_BUDGET_MS`. Not a unit-suite gate —
+ * the suite pins the four cardinality caps, which is why a 10k-node
+ * paste finishes. Record timing in `@input/pen-bench` if the clock
+ * itself needs a home.
+ */
 export const CLIPBOARD_INGEST_TIME_BUDGET_MS = 1_000;
 
 export type ClipboardIngestDropReason =

@@ -1,0 +1,90 @@
+import type { DocumentOp, StreamingTarget } from "@input/pen-types";
+import { deltaStreamExtension } from "@input/pen-delta-stream";
+import { createTestEditor } from "@input/pen-test";
+import { afterEach, describe, expect, it } from "vitest";
+
+const editors: Array<{ destroy: () => Promise<void> | void }> = [];
+
+afterEach(async () => {
+	while (editors.length > 0) {
+		await editors.pop()!.destroy();
+	}
+});
+
+async function createCountingEditor() {
+	const editor = createTestEditor({
+		blocks: [{ type: "paragraph" }],
+		extensions: [deltaStreamExtension()],
+	});
+	editors.push(editor);
+	await editor.whenReady();
+
+	let applyCount = 0;
+	const originalApply = editor.apply.bind(editor);
+	editor.apply = ((ops: DocumentOp[], applyOptions) => {
+		applyCount += 1;
+		originalApply(ops, applyOptions);
+	}) as typeof editor.apply;
+
+	const streaming = editor.internals.getSlot<StreamingTarget>(
+		"delta-stream:target",
+	);
+	if (!streaming) {
+		throw new Error(
+			"Streaming bench editor is missing the delta-stream target.",
+		);
+	}
+
+	return {
+		streaming,
+		blockId: editor.document.blockOrder.get(0),
+		applyCount: () => applyCount,
+	};
+}
+
+describe("streaming bench apply cardinality", () => {
+	it("coalesces 1000 appendDeltas into one apply when the flush window does not elapse", async () => {
+		const { streaming, blockId, applyCount } = await createCountingEditor();
+
+		streaming.beginStreaming("bench-zone", blockId);
+		for (let i = 0; i < 1000; i++) {
+			streaming.appendDelta(`token-${i} `);
+		}
+		expect(applyCount()).toBe(0);
+
+		streaming.endStreaming("complete");
+		expect(applyCount()).toBe(1);
+	});
+
+	it("does not apply 1000 times when the 1000-part harness yields macrotasks", async () => {
+		const { streaming, blockId, applyCount } = await createCountingEditor();
+
+		streaming.beginStreaming("bench-zone", blockId);
+		for (let i = 0; i < 1000; i++) {
+			streaming.appendDelta(`token-${i} `);
+			if (i % 10 === 0) {
+				await new Promise((resolve) => setTimeout(resolve, 0));
+			}
+		}
+		streaming.endStreaming("complete");
+
+		expect(applyCount()).toBeGreaterThanOrEqual(1);
+		expect(applyCount()).toBeLessThan(1000);
+	});
+
+	it("does not apply inside the batch-flush timed window", async () => {
+		const { streaming, blockId, applyCount } = await createCountingEditor();
+
+		streaming.beginStreaming("bench-flush", blockId);
+		for (let i = 0; i < 49; i++) {
+			streaming.appendDelta(`t${i} `);
+		}
+
+		streaming.appendDelta("final ");
+		await new Promise((resolve) => setTimeout(resolve, 0));
+		expect(applyCount()).toBe(0);
+
+		streaming.endStreaming("complete");
+		expect(applyCount()).toBe(1);
+	});
+});

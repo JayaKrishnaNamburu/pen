@@ -193,7 +193,7 @@ function CustomHandleParagraph(props: {
 		<div
 			ref={ctx.ref as Ref<HTMLDivElement>}
 			data-block-type="paragraph"
-			data-selected={ctx.selected || undefined}
+			data-selected={ctx.selected ? "" : undefined}
 		>
 			<button {...dragProps} data-testid={`custom-handle-${blockId}`}>
 				Drag
@@ -388,7 +388,7 @@ describe("@input/pen-react block drag and drop", () => {
 			);
 		});
 
-		expect(targetBlock?.getAttribute("data-drop-target")).toBe("true");
+		expect(targetBlock?.getAttribute("data-drop-target")).toBe("");
 		expect(targetBlock?.getAttribute("data-drop-position")).toBe("before");
 
 		await act(async () => {

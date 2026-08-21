@@ -15,13 +15,13 @@ Add optional runtime behavior on top of the editor core without changing the can
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@input/pen-types`
+- Runtime dependencies: `@input/pen-core`, `@input/pen-types`
 - Peer dependencies: No peer dependencies declared.
-- Boundary: Extensions compose through the core editor and slots/events rather than side channels.
+- Boundary: Extensions compose through the core editor and slots/events rather than side channels. Core does not install this package.
 
 ## Data Flow / Runtime Model
 
-Extension package packages in Pen should stay package-first and explicit about ownership. Adopt this package only when the host app needs the capability it provides.
+`richTextShortcutsExtension()` publishes bindings on `keymapFacet` (`pen.keymap`). `extension.keyBindings` is undefined. Bare `createEditor()` does not include these shortcuts; `defaultPreset()` does.
 
 ## Integration Notes
 

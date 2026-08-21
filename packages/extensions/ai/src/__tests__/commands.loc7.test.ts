@@ -6,10 +6,10 @@ import { documentOpsExtension } from "@input/pen-document-ops";
 import { defaultSchema } from "@input/pen-schema-default";
 import {
 	aiExtension,
-	buildStructuralReviewItems,
 	defaultAICommands,
 	getAIController,
 } from "../index";
+import { buildStructuralReviewItems } from "../runtime/reviewArtifacts";
 
 describe("AI command catalog (LOC1)", () => {
 	it("LOC1: default command bindings store catalog keys, not English literals", () => {

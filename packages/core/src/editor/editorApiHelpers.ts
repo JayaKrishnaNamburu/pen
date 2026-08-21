@@ -76,17 +76,6 @@ type RawPenDocumentLike = {
 function missingPenDocumentRoot(name: string): never {
 	throw new Error(`CRDT document is missing required Pen root "${name}".`);
 }
-const NOOP_UNDO: UndoManager = {
-	undo: () => false,
-	redo: () => false,
-	canUndo: () => false,
-	canRedo: () => false,
-	stopCapturing: () => {},
-	syncExplicitUndoGroup: () => {},
-	setGroupTimeout: () => {},
-	registerTrackedOrigins: () => () => {},
-	onStackChange: () => () => {},
-};
 
 function readAdaptedSlot<T>(
 	self: EditorImplRuntime,
@@ -281,13 +270,26 @@ export function* iterateBlocks(
 	type?: string,
 ): Iterable<BlockHandle> {
 	const self = editor as EditorImplRuntime;
-	for (let i = 0; i < self._doc.blockOrder.length; i++) {
-		const id = (self._doc.blockOrder as CRDTArray<string>).get(i) as string;
-		if (type) {
-			const blockMap = (self._doc.blocks as CRDTBlockMap).get(id);
-			if (!blockMap || blockMap.get("type") !== type) continue;
+	const seen = new Set<string>();
+
+	function* walk(id: string): Iterable<BlockHandle> {
+		if (seen.has(id)) return;
+		seen.add(id);
+		const blockMap = (self._doc.blocks as CRDTBlockMap).get(id);
+		if (!type || blockMap?.get("type") === type) {
+			yield createBlockHandle(id, self._doc, self._crdtDoc, self._registry);
 		}
-		yield createBlockHandle(id, self._doc, self._crdtDoc, self._registry);
+		const children = blockMap?.get("children") as
+			| CRDTArray<string>
+			| undefined;
+		if (!children) return;
+		for (let i = 0; i < children.length; i++) {
+			yield* walk(children.get(i));
+		}
+	}
+
+	for (let i = 0; i < self._doc.blockOrder.length; i++) {
+		yield* walk((self._doc.blockOrder as CRDTArray<string>).get(i) as string);
 	}
 }
 
@@ -318,8 +320,11 @@ export function getLastBlock(editor: EditorImplRuntime): BlockHandle | null {
 }
 
 export function getBlockCount(editor: EditorImplRuntime): number {
-	const self = editor as EditorImplRuntime;
-	return self._doc.blockOrder.length;
+	let count = 0;
+	for (const _block of iterateBlocks(editor)) {
+		count += 1;
+	}
+	return count;
 }
 
 export function getEditorBlockRevision(

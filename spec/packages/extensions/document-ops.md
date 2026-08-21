@@ -52,6 +52,7 @@ Important rules:
 - Tool-facing operations still resolve back into editor mutations.
 - Context retrieval and structured target inspection should stay explicit and bounded so tools do not mutate blindly.
 - Shared write-op construction comes from `@input/pen-content-ops`; this package owns the editor-aware tooling boundary built around it.
+- Document search and span retrieval fold text with a local `foldAndNormalize` copy. A package import of core's helper would cycle (`core` does not depend on this package; this package already sits on content-ops). The bodies must stay identical.
 
 ## Integration Notes
 

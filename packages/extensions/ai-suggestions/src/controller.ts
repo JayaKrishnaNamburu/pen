@@ -1,4 +1,8 @@
-import { fieldEditorHostFacet, getOpOriginType } from "@input/pen-core";
+import {
+	fieldEditorHostFacet,
+	getOpOriginType,
+	localeFacet,
+} from "@input/pen-core";
 import { generateId } from "@input/pen-types";
 import type {
 	ChangeSummary,
@@ -329,11 +333,15 @@ export class AISuggestionsControllerImpl implements AISuggestionsController {
 		}
 
 		this.dismissedFingerprints.set(
-			buildSuggestionFingerprint(suggestion.scopeHash, {
-				kind: suggestion.kind,
-				originalText: suggestion.originalText,
-				replacementText: suggestion.replacementText,
-			}),
+			buildSuggestionFingerprint(
+				suggestion.scopeHash,
+				{
+					kind: suggestion.kind,
+					originalText: suggestion.originalText,
+					replacementText: suggestion.replacementText,
+				},
+				this.editor.facet(localeFacet),
+			),
 			Date.now(),
 		);
 
@@ -528,7 +536,11 @@ export class AISuggestionsControllerImpl implements AISuggestionsController {
 				continue;
 			}
 
-			const fingerprint = buildSuggestionFingerprint(scopeHash, candidate);
+			const fingerprint = buildSuggestionFingerprint(
+				scopeHash,
+				candidate,
+				this.editor.facet(localeFacet),
+			);
 			const dismissedAt = this.dismissedFingerprints.get(fingerprint);
 			if (
 				typeof dismissedAt === "number" &&

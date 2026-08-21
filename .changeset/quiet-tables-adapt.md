@@ -5,4 +5,4 @@
 
 Add BlockHandle.as() capability accessors for table surfaces.
 
-`block.as("table")` returns a typed capability handle or null when the block schema does not declare that capability. Existing table methods stay on the universal handle until call sites migrate.
+`block.as("table")` returns a typed capability handle or null when the block schema does not declare that capability. Table methods live on `TableBlockHandle`, not the universal `BlockHandle`.

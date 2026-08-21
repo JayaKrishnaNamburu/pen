@@ -49,9 +49,9 @@ export function SearchRoot(props: SearchRootProps) {
 	const primitiveProps: Record<string, unknown> = {
 		"data-pen-search-root": "",
 		role: "search",
-		"data-open": state.open || undefined,
+		"data-open": state.open ? "" : undefined,
 		"data-has-controller": controller ? "" : undefined,
-		"data-has-matches": state.matches.length > 0 || undefined,
+		"data-has-matches": state.matches.length > 0 ? "" : undefined,
 		"data-match-count": state.matches.length,
 	};
 

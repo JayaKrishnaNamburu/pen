@@ -77,13 +77,12 @@ container.set(key, array);
 return array;
 }
 
-export function removeBlockIdFromArray(pipeline: ApplyPipeline, 
+export function removeBlockIdFromArray(_pipeline: ApplyPipeline, 
 	array: MutableStringArray,
 	blockId: string,
 	stopAfterFirst = false,
 ): void {
-	const self = pipeline as ApplyPipelineRuntime;
-for (let index = array.length - 1; index >= 0; index--) {
+	for (let index = array.length - 1; index >= 0; index--) {
 	if (array.get(index) !== blockId) {
 		continue;
 	}
@@ -111,9 +110,8 @@ for (const [, parentMap] of self.blocks.entries()) {
 }
 }
 
-export function getTextContent(pipeline: ApplyPipeline, blockMap: CRDTUnknownMap): CRDTText | undefined {
-	const self = pipeline as ApplyPipelineRuntime;
-const content = blockMap.get("content");
+export function getTextContent(_pipeline: ApplyPipeline, blockMap: CRDTUnknownMap): CRDTText | undefined {
+	const content = blockMap.get("content");
 return content &&
 	typeof content === "object" &&
 	typeof (content as { insert?: unknown }).insert === "function" &&
@@ -139,9 +137,8 @@ return content &&
 	: undefined;
 }
 
-export function opBlockId(pipeline: ApplyPipeline, op: DocumentOp): string | null {
-	const self = pipeline as ApplyPipelineRuntime;
-if ("blockId" in op) return (op as { blockId: string }).blockId;
+export function opBlockId(_pipeline: ApplyPipeline, op: DocumentOp): string | null {
+	if ("blockId" in op) return (op as { blockId: string }).blockId;
 if ("targetBlockId" in op)
 	return (op as { targetBlockId: string }).targetBlockId;
 if ("appId" in op) return null;

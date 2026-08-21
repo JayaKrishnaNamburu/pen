@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  defaultBlocks,
   paragraph,
   heading,
   bulletListItem,
@@ -24,31 +25,17 @@ import {
   mention,
   inlineApp,
 } from "../index";
+import { subdocument } from "../blocks/subdocument";
 
 // ── AC 11: All blocks have serialize.toMarkdown ───────────
 describe("AC 11 — serialize.toMarkdown", () => {
-  const allBlocks = [
-    { schema: paragraph, name: "paragraph" },
-    { schema: heading, name: "heading" },
-    { schema: bulletListItem, name: "bulletListItem" },
-    { schema: numberedListItem, name: "numberedListItem" },
-    { schema: checkListItem, name: "checkListItem" },
-    { schema: codeBlock, name: "codeBlock" },
-    { schema: image, name: "image" },
-    { schema: table, name: "table" },
-    { schema: divider, name: "divider" },
-    { schema: callout, name: "callout" },
-    { schema: toggle, name: "toggle" },
-    { schema: blockquote, name: "blockquote" },
-  ];
-
-  for (const { schema, name } of allBlocks) {
-    it(`${name} has serialize.toMarkdown defined`, () => {
+  for (const schema of defaultBlocks) {
+    it(`${schema.type} has serialize.toMarkdown defined`, () => {
       expect(schema.serialize?.toMarkdown).toBeDefined();
       expect(typeof schema.serialize?.toMarkdown).toBe("function");
     });
 
-    it(`${name} has serialize.toHTML defined`, () => {
+    it(`${schema.type} has serialize.toHTML defined`, () => {
       expect(schema.serialize?.toHTML).toBeDefined();
       expect(typeof schema.serialize?.toHTML).toBe("function");
     });
@@ -145,6 +132,86 @@ describe("AC 24 — paragraph and heading serialization", () => {
       "> **Warning:** Be careful",
     );
   });
+
+  it("numberedListItem.serialize.toMarkdown", () => {
+    const block = {
+      id: "1",
+      type: "numberedListItem" as const,
+      props: { indent: 0 },
+      content: "Item",
+    };
+    expect(numberedListItem.serialize!.toMarkdown!(block)).toBe("1. Item");
+  });
+
+  it("numberedListItem.serialize.toMarkdown with indent and start", () => {
+    const block = {
+      id: "1",
+      type: "numberedListItem" as const,
+      props: { indent: 2, start: 3 },
+      content: "Nested",
+    };
+    expect(numberedListItem.serialize!.toMarkdown!(block)).toBe(
+      "    3. Nested",
+    );
+  });
+
+  it("toggle.serialize.toMarkdown", () => {
+    const block = {
+      id: "1",
+      type: "toggle" as const,
+      props: { open: true },
+      content: "Summary",
+    };
+    expect(toggle.serialize!.toMarkdown!(block)).toBe(
+      "<details>\n<summary>Summary</summary>\n</details>",
+    );
+  });
+
+  it("table.serialize.toMarkdown includes nested cell children", () => {
+    const block = {
+      id: "1",
+      type: "table" as const,
+      props: { hasHeaderRow: true },
+      content: "",
+      children: [
+        {
+          id: "r1",
+          type: "tableRow",
+          props: {},
+          content: "",
+          children: [
+            { id: "c1", type: "tableCell", props: {}, content: "A" },
+            { id: "c2", type: "tableCell", props: {}, content: "B" },
+          ],
+        },
+        {
+          id: "r2",
+          type: "tableRow",
+          props: {},
+          content: "",
+          children: [
+            { id: "c3", type: "tableCell", props: {}, content: "C" },
+            { id: "c4", type: "tableCell", props: {}, content: "D" },
+          ],
+        },
+      ],
+    };
+    expect(table.serialize!.toMarkdown!(block)).toBe(
+      "| A | B |\n| --- | --- |\n| C | D |",
+    );
+  });
+
+  it("subdocument.serialize.toMarkdown", () => {
+    const block = {
+      id: "1",
+      type: "subdocument" as const,
+      props: { subdocumentGuid: "guid-1" },
+      content: "",
+    };
+    expect(subdocument.serialize!.toMarkdown!(block)).toBe(
+      "<!-- pen-subdocument:guid-1 -->",
+    );
+  });
 });
 
 // ── AC 23: Mark priority ordering ─────────────────────────
@@ -197,22 +264,7 @@ describe("inline mark properties", () => {
 
 // ── Block display metadata ────────────────────────────────
 describe("block display metadata", () => {
-  const allBlocks = [
-    paragraph,
-    heading,
-    bulletListItem,
-    numberedListItem,
-    checkListItem,
-    codeBlock,
-    image,
-    table,
-    divider,
-    callout,
-    toggle,
-    blockquote,
-  ];
-
-  for (const schema of allBlocks) {
+  for (const schema of defaultBlocks) {
     it(`${schema.type} has display metadata`, () => {
       expect(schema.display).toBeDefined();
       expect(schema.display?.title).toBeTruthy();
@@ -222,17 +274,12 @@ describe("block display metadata", () => {
 
 // ── DIR1: optional direction on text-capable blocks ────────
 describe("DIR1 — optional direction prop", () => {
-  const textCapable = [
-    paragraph,
-    heading,
-    bulletListItem,
-    numberedListItem,
-    checkListItem,
-    codeBlock,
-    callout,
-    toggle,
-    blockquote,
-  ];
+  const textCapable = defaultBlocks.filter(
+    (schema) => schema.propSchema.direction,
+  );
+  const nonText = defaultBlocks.filter(
+    (schema) => !schema.propSchema.direction,
+  );
 
   for (const schema of textCapable) {
     it(`DIR1: ${schema.type} has optional direction ltr|rtl|auto`, () => {
@@ -243,9 +290,48 @@ describe("DIR1 — optional direction prop", () => {
   }
 
   it("DIR1: non-text blocks do not declare direction", () => {
-    expect(image.propSchema.direction).toBeUndefined();
-    expect(table.propSchema.direction).toBeUndefined();
-    expect(divider.propSchema.direction).toBeUndefined();
+    expect(nonText.length).toBeGreaterThan(0);
+    for (const schema of nonText) {
+      expect(schema.propSchema.direction).toBeUndefined();
+    }
+  });
+});
+
+describe("heading.normalize", () => {
+  it("clamps out-of-range levels and a second pass is a no-op", () => {
+    for (const level of [0, 7, -3, 99]) {
+      const block = {
+        id: "h",
+        type: "heading" as const,
+        props: { level },
+        content: "Title",
+      };
+      const once = heading.normalize!(block);
+      const twice = heading.normalize!(once);
+      expect(once.props.level).toBeGreaterThanOrEqual(1);
+      expect(once.props.level).toBeLessThanOrEqual(6);
+      expect(twice).toBe(once);
+    }
+  });
+
+  it("leaves an already-valid heading as the same object", () => {
+    for (const level of [1, 2, 3, 4, 5, 6]) {
+      const block = {
+        id: "h",
+        type: "heading" as const,
+        props: { level },
+        content: "Title",
+      };
+      expect(heading.normalize!(block)).toBe(block);
+    }
+
+    const missingLevel = {
+      id: "h",
+      type: "heading" as const,
+      props: {},
+      content: "Title",
+    };
+    expect(heading.normalize!(missingLevel)).toBe(missingLevel);
   });
 });
 

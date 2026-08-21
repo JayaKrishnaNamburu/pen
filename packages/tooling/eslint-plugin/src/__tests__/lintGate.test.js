@@ -4,7 +4,11 @@ import { describe, expect, it } from "vitest";
 
 const repoRoot = path.resolve(import.meta.dirname, "../../../../..");
 
-async function lintSeededViolation(code, fileName, packageDir = "packages/tooling/eslint-plugin") {
+async function lintSeededViolation(
+	code,
+	fileName,
+	packageDir = "packages/tooling/eslint-plugin",
+) {
 	const eslint = new ESLint({ cwd: repoRoot });
 	const [result] = await eslint.lintText(code, {
 		filePath: path.join(repoRoot, packageDir, fileName),
@@ -61,7 +65,7 @@ describe("CH2 lint gate", () => {
 
 	it("reports seeded aria-hidden on visible content as an error through the root config", async () => {
 		const messages = await lintSeededViolation(
-			"export function Chip() { return <span aria-hidden=\"true\" />;\n}\n",
+			'export function Chip() { return <span aria-hidden="true" />;\n}\n',
 			"src/seeded-aria-hidden.tsx",
 			"packages/rendering/react",
 		);
@@ -77,7 +81,7 @@ describe("CH2 lint gate", () => {
 
 	it("reports seeded outline none as an error through the root config", async () => {
 		const messages = await lintSeededViolation(
-			"export const style = { outline: \"none\" };\n",
+			'export const style = { outline: "none" };\n',
 			"src/seeded-unstyled-focus.ts",
 			"packages/rendering/react",
 		);
@@ -117,7 +121,86 @@ describe("CH2 lint gate", () => {
 		expect(
 			messages.filter(
 				(message) =>
-					message.ruleId === "pen/no-framework-free-modules-in-renderers" &&
+					message.ruleId ===
+						"pen/no-framework-free-modules-in-renderers" &&
+					message.severity === 2,
+			),
+		).toHaveLength(1);
+	});
+
+	it("reports a seeded v1 extension field as an error on a migrated package", async () => {
+		const messages = await lintSeededViolation(
+			'import { defineExtension } from "@input/pen-core";\nexport const ext = defineExtension({ name: "x", keyBindings: [] });\n',
+			"src/seeded-v1-field.ts",
+			"packages/extensions/history",
+		);
+
+		expect(
+			messages.filter(
+				(message) =>
+					message.ruleId === "pen/no-v1-extension-fields" &&
+					message.severity === 2,
+			),
+		).toHaveLength(1);
+	});
+
+	it("still warns, not errors, on a decorations rider collectDecorations still reads", async () => {
+		const messages = await lintSeededViolation(
+			'import { defineExtension } from "@input/pen-core";\nexport const ext = defineExtension({ name: "x", decorations: () => empty });\n',
+			"src/seeded-v1-decorations.ts",
+			"packages/extensions/ai",
+		);
+
+		const hits = messages.filter(
+			(message) => message.ruleId === "pen/no-v1-extension-fields",
+		);
+		expect(hits).toHaveLength(1);
+		expect(hits[0]?.severity).toBe(1);
+	});
+
+	it("reports a seeded bare randomUUID as an error through the root config", async () => {
+		const messages = await lintSeededViolation(
+			"const id = crypto.randomUUID();\n",
+			"src/seeded-random-uuid.ts",
+			"packages/core",
+		);
+
+		expect(
+			messages.filter(
+				(message) =>
+					message.ruleId === "pen/no-bare-random-uuid" &&
+					message.severity === 2,
+			),
+		).toHaveLength(1);
+	});
+
+	it("reports a seeded implicit localeCompare as an error through the root config", async () => {
+		const messages = await lintSeededViolation(
+			"const order = left.localeCompare(right);\n",
+			"src/seeded-implicit-locale.ts",
+			"packages/core",
+		);
+
+		expect(
+			messages.filter(
+				(message) =>
+					message.ruleId === "pen/no-implicit-locale" &&
+					message.severity === 2,
+			),
+		).toHaveLength(1);
+	});
+
+	it("reports a seeded matching-path case fold as an error through the root config", async () => {
+		const messages = await lintSeededViolation(
+			"const lower = query.toLowerCase();\n",
+			"src/seeded-case-fold.ts",
+			"packages/core",
+		);
+
+		expect(
+			messages.filter(
+				(message) =>
+					message.ruleId === "pen/no-bare-case-folding" &&
 					message.severity === 2,
 			),
 		).toHaveLength(1);

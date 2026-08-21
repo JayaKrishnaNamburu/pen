@@ -55,6 +55,8 @@ flowchart TD
 Important rules:
 
 - Suggestions remain advisory until explicitly applied.
+- Analyzer requests stream through core `streamThroughEgress()` / `pen.aiEgress`, same facet as generation and autocomplete.
+- Matching, cache fingerprints, and analyzer no-op checks fold text with core `foldAndNormalize()` and `localeFacet`.
 - Matching and apply must validate against live editor content before mutating.
 - Scope building should stay bounded and cheap; hosts should not treat this package as a document-wide unrestricted rewrite surface.
 - Renderer packages may read controller state and render UI, but renderer packages do not own the suggestion runtime contract.

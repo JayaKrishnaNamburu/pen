@@ -23,7 +23,6 @@ import type {
 	CRDTArray,
 } from "@input/pen-types";
 import { generateId } from "@input/pen-types";
-import { getOpOriginType } from "./origin";
 import { resolveRuntimeContentType } from "../schema/contentType";
 import {
 	type CRDTUnknownArray,
@@ -244,10 +243,9 @@ if (!blockMap) return [];
 return self._tableGrid.execute(blockMap, op);
 }
 
-export function clearTableState(pipeline: ApplyPipeline, blockMap: MutableMap): void {
-	const self = pipeline as ApplyPipelineRuntime;
-blockMap.delete("tableContent");
-blockMap.delete("tableColumns");
+export function clearTableState(_pipeline: ApplyPipeline, blockMap: MutableMap): void {
+	blockMap.delete("tableContent");
+	blockMap.delete("tableColumns");
 }
 
 export function getPreservedInlineDeltas(

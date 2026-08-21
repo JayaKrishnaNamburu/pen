@@ -12,8 +12,10 @@ const noDefaultExtensionsPreset = {
 	},
 };
 
-const CASE_COUNT = process.env.PEN_FUZZ_NIGHTLY ? 80 : 20;
-const SEED = Number(process.env.PEN_FUZZ_SEED ?? 20260820);
+const NIGHTLY = Boolean(process.env.PEN_FUZZ_NIGHTLY);
+const SEED_INFO = parseFuzzSeed(process.env.PEN_FUZZ_SEED);
+const SEED = SEED_INFO.numeric;
+const CASE_COUNT = resolveOpCount();
 
 class Rng {
 	private state: number;
@@ -35,6 +37,30 @@ class Rng {
 	intIn(min: number, max: number): number {
 		return min + this.int(max - min + 1);
 	}
+}
+
+function parseFuzzSeed(raw: string | undefined): { raw: string; numeric: number } {
+	const source = raw && raw.length > 0 ? raw : "20260820";
+	const asNumber = Number(source);
+	if (Number.isFinite(asNumber)) {
+		return { raw: source, numeric: asNumber >>> 0 };
+	}
+	let hash = 2166136261;
+	for (let i = 0; i < source.length; i++) {
+		hash ^= source.charCodeAt(i);
+		hash = Math.imul(hash, 16777619);
+	}
+	return { raw: source, numeric: hash >>> 0 };
+}
+
+function resolveOpCount(): number {
+	const override = Number(process.env.PEN_FUZZ_OP_COUNT);
+	if (Number.isFinite(override) && override > 0) return Math.floor(override);
+	return NIGHTLY ? 80 : 20;
+}
+
+function label(caseIndex: number, extra = ""): string {
+	return `seed=${SEED} (${SEED_INFO.raw}) case=${caseIndex}${extra}`;
 }
 
 type RawBlocksMap = Y.Map<Y.Map<unknown>>;
@@ -118,19 +144,31 @@ describe("DUR3 unknown-content property", () => {
 			const unknown = diagnostics.filter(
 				(event) => event.code === "schema-unknown-block",
 			);
-			expect(unknown.map((event) => event.blockType).sort()).toEqual(
-				[...types].sort(),
+			expect(
+				unknown.map((event) => event.blockType).sort(),
+				label(caseIndex, " types"),
+			).toEqual([...types].sort());
+			expect(unknown, label(caseIndex, " unknown count")).toHaveLength(
+				types.length,
 			);
-			expect(unknown).toHaveLength(types.length);
 
 			for (const type of types) {
 				const occurrenceCount = counts.get(type)!;
-				expect(occurrenceCount).toBeGreaterThan(1);
+				expect(
+					occurrenceCount,
+					label(caseIndex, ` ${type} occurrences`),
+				).toBeGreaterThan(1);
 				const stored = [...editor.documentState.allBlocks()].filter(
 					(block) => block.type === type,
 				);
-				expect(stored).toHaveLength(occurrenceCount);
-				expect(stored.every((block) => block.props.payload)).toBe(true);
+				expect(
+					stored,
+					label(caseIndex, ` ${type} stored`),
+				).toHaveLength(occurrenceCount);
+				expect(
+					stored.every((block) => block.props.payload),
+					label(caseIndex, ` ${type} payload`),
+				).toBe(true);
 
 				editor.apply([
 					{
@@ -141,15 +179,51 @@ describe("DUR3 unknown-content property", () => {
 						position: "last",
 					},
 				]);
-				expect(editor.getBlock(`new-${type}`)).toBeNull();
+				expect(
+					editor.getBlock(`new-${type}`),
+					label(caseIndex, ` ${type} insert refused`),
+				).toBeNull();
 			}
 
 			expect(
 				diagnostics.filter((event) => event.code === "PEN_APPLY_002"),
+				label(caseIndex, " apply refused"),
 			).toHaveLength(types.length);
-			expect(editor.getBlock("p1")?.props.hostNote).toBe("keep");
+			expect(
+				editor.getBlock("p1")?.props.hostNote,
+				label(caseIndex, " hostNote"),
+			).toBe("keep");
 
 			editor.destroy();
 		}
+	});
+
+	it("hyphenated nightly seeds hash instead of collapsing to 0", () => {
+		expect(Number("99-1-1690000000")).toBeNaN();
+		expect(parseFuzzSeed("99-1-1690000000").numeric).not.toBe(0);
+		expect(parseFuzzSeed("99-1-1690000000").numeric).toBe(
+			parseFuzzSeed("99-1-1690000000").numeric,
+		);
+		expect(parseFuzzSeed("99-1-1690000000").numeric).not.toBe(
+			parseFuzzSeed("99-1-1690000001").numeric,
+		);
+		expect(parseFuzzSeed("42").numeric).toBe(42);
+		expect(parseFuzzSeed(undefined).numeric).toBe(20260820);
+	});
+
+	it("seed reproduces the generated-case prefix", () => {
+		const rng = new Rng(SEED);
+		const first = populateGeneratedUnknowns(yjsAdapter(), rng);
+		const fingerprint = first.types.join(",");
+		console.log(
+			`dur3 fingerprint seed=${SEED} raw=${SEED_INFO.raw} nightly=${NIGHTLY} cases=${CASE_COUNT} firstTypes=${fingerprint}`,
+		);
+		const again = populateGeneratedUnknowns(yjsAdapter(), new Rng(SEED));
+		expect(again.types).toEqual(first.types);
+		const other = populateGeneratedUnknowns(
+			yjsAdapter(),
+			new Rng((SEED + 1) >>> 0),
+		);
+		expect(other.types).not.toEqual(first.types);
 	});
 });

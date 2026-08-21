@@ -16,22 +16,22 @@ Package the standard runtime stack for most adopters so they can start from a co
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@input/pen-delta-stream`, `@input/pen-document-ops`, `@input/pen-shortcuts`, `@input/pen-types`, `@input/pen-undo`
+- Runtime dependencies: `@input/pen-delta-stream`, `@input/pen-document-ops`, `@input/pen-schema-default`, `@input/pen-shortcuts`, `@input/pen-types`, `@input/pen-undo`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: Presets compose existing runtime packages rather than becoming new architecture layers.
 
 ## Data Flow / Runtime Model
 
-Preset composition packages in Pen should stay package-first and explicit about ownership. Use `defaultPreset()` when the standard Pen runtime is the right baseline.
+`defaultPreset()` is the only batteries-included composition path. Bare `createEditor()` does not install this stack.
 
-The default preset composes document tools, delta stream, undo, and rich-text shortcuts. Hosts can turn individual defaults off or pass typed options to the composed extension packages; hosts that need full control should skip the preset and register extensions explicitly through `createEditor({ extensions: [...] })`.
+The preset's `resolve()` returns `createDefaultSchema()` plus, unless turned off, `documentOpsExtension()`, `deltaStreamExtension()`, `undoExtension()`, and `richTextShortcutsExtension()`. Hosts can turn individual defaults off or pass typed options to the composed packages. Hosts that need full control should skip the preset and register extensions explicitly through `createEditor({ extensions: [...] })`.
 
 ## Integration Notes
 
 - Path in workspace: `packages/presets/default`
 - Spec path mirrors workspace path: `packages/presets/default.md`
 - This package is part of the current package surface and should stay aligned with the headless runtime architecture.
-- Use `createEditor({ preset: defaultPreset(...) })` when customizing default feature composition.
+- Use `createEditor({ preset: defaultPreset(...) })` when a host wants the standard rich-text stack. Do not assume `createEditor()` already includes shortcuts or delta-stream.
 
 ## Current Maturity / Intended Usage
 

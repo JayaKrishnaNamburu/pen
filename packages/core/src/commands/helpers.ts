@@ -478,7 +478,7 @@ export function replaceRangeOps(
 	editor: Editor,
 	selection: TextSelection,
 	text: string,
-	marks?: Record<string, unknown>,
+	marks?: Record<string, unknown | null>,
 ): { ops: DocumentOp[]; caret: Point } | null {
 	const range = documentOrderedTextPoints(editor, selection);
 	if (!range) {
@@ -501,7 +501,7 @@ function replaceSingleBlockRange(
 	start: number,
 	end: number,
 	text: string,
-	marks?: Record<string, unknown>,
+	marks?: Record<string, unknown | null>,
 ): { ops: DocumentOp[]; caret: Point } {
 	const ops: DocumentOp[] = [];
 	if (end > start) {
@@ -532,7 +532,7 @@ function replaceMultiBlockRange(
 	start: Point,
 	end: Point,
 	text: string,
-	marks?: Record<string, unknown>,
+	marks?: Record<string, unknown | null>,
 ): { ops: DocumentOp[]; caret: Point } | null {
 	const order = editor.documentState.blockOrder;
 	const startIndex = order.indexOf(start.blockId);

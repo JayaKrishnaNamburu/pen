@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
 import { createDefaultSchema } from "@input/pen-schema-default";
 import {
-	INGEST_MAX_IMAGE_COUNT,
 	INGEST_MAX_NESTING_DEPTH,
 	INGEST_MAX_NODE_COUNT,
 	INGEST_MAX_TEXT_SIZE,
@@ -25,13 +24,6 @@ function createBareEditor() {
 }
 
 describe("IOP5 markdown ingest bounds", () => {
-	it("IOP5 uses depth 32, 10k nodes, 1MB text, and 256 images", () => {
-		expect(INGEST_MAX_NESTING_DEPTH).toBe(32);
-		expect(INGEST_MAX_NODE_COUNT).toBe(10_000);
-		expect(INGEST_MAX_TEXT_SIZE).toBe(1_048_576);
-		expect(INGEST_MAX_IMAGE_COUNT).toBe(256);
-	});
-
 	it("IOP5 truncates oversize node count at a block boundary", () => {
 		const drops = new IngestDropCounts();
 		const blocks = Array.from({ length: INGEST_MAX_NODE_COUNT + 3 }, () => ({

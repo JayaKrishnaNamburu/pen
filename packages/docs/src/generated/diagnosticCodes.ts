@@ -18,12 +18,17 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 	{
 		code: "ai-egress-inventory",
 		levels: ["info"],
-		sources: ["extensions/ai-autocomplete/src/aiEgress.ts", "extensions/ai-suggestions/src/aiEgress.ts", "extensions/ai/src/egress.ts"],
+		sources: ["core/src/facets/aiEgressFacet.ts"],
 	},
 	{
 		code: "ai-request-refused",
 		levels: ["info"],
-		sources: ["extensions/ai-autocomplete/src/aiEgress.ts", "extensions/ai-suggestions/src/aiEgress.ts", "extensions/ai/src/egress.ts"],
+		sources: ["core/src/facets/aiEgressFacet.ts"],
+	},
+	{
+		code: "ai-tool-read-only-mutation",
+		levels: [],
+		sources: ["extensions/ai-tools/src/execution.ts"],
 	},
 	{
 		code: "ai-tool-unconfirmed",
@@ -103,7 +108,7 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 	{
 		code: "invalid-tool-payload",
 		levels: ["error"],
-		sources: ["extensions/document-ops/src/utils/payloadValidation.ts"],
+		sources: ["extensions/document-ops/src/utils/payloadValidation.ts", "extensions/document-ops/src/utils/toolRejection.ts"],
 	},
 	{
 		code: "message-missing",
@@ -198,7 +203,7 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 	{
 		code: "PEN_IMPORT_001",
 		levels: ["warn"],
-		sources: ["shared/content-ops/src/profilePolicy.ts"],
+		sources: ["core/src/editor/profilePolicy.ts"],
 	},
 	{
 		code: "PEN_PROFILE_001",
@@ -208,7 +213,7 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 	{
 		code: "PEN_PROFILE_002",
 		levels: ["warn"],
-		sources: ["shared/content-ops/src/profilePolicy.ts"],
+		sources: ["core/src/editor/profilePolicy.ts"],
 	},
 	{
 		code: "PEN_UNDO_001",
@@ -282,7 +287,7 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 	},
 	{
 		code: "stream-tool-error",
-		levels: ["error"],
+		levels: ["error", "warn"],
 		sources: ["extensions/delta-stream/src/processStream.ts"],
 	},
 ];

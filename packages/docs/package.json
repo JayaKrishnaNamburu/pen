@@ -7,9 +7,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node ./scripts/check-doc2-pages.mjs && node ./scripts/generate-doc-tables.mjs && node ./scripts/check-doc2-samples.mjs && vite build",
+    "build": "node ./scripts/check-doc2-pages.mjs && node ./scripts/check-collaboration-contract.mjs && node ./scripts/generate-doc-tables.mjs && node ./scripts/check-doc2-samples.mjs && vite build",
     "preview": "vite preview",
     "check:pages": "node ./scripts/check-doc2-pages.mjs",
+    "check:collaboration": "node ./scripts/check-collaboration-contract.mjs",
     "check:tables": "node ./scripts/generate-doc-tables.mjs",
     "check:samples": "node ./scripts/check-doc2-samples.mjs",
     "generate:tables": "node ./scripts/generate-doc-tables.mjs --write",

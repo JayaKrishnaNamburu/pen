@@ -33,7 +33,9 @@ export function CoreConceptsPage() {
 				<code>@input/pen-core</code> owns document state, selection,
 				normalization, and mutation. Renderer packages bind that
 				runtime to React, Vue, or the DOM. Core works without a
-				browser through <code>createHeadlessEditor</code>.
+				browser through <code>createHeadlessEditor</code>. The
+				architecture record is{" "}
+				<code>spec-v2/01-architecture.md</code>.
 			</p>
 
 			<h2>Document store</h2>
@@ -89,10 +91,13 @@ editor.apply(
 				<code>input-rule</code>, <code>history</code>,{" "}
 				<code>import</code>, and others. A string origin or a
 				structured object (<code>{"{ type, groupId, requestId }"}</code>
-				) are both accepted. Undo, suggestions, and diagnostics depend
-				on the label. <code>"user"</code> means this client&apos;s
-				user. A remote update is not labeled <code>user</code> by
-				default.
+				) are both accepted on <code>apply</code>. The{" "}
+				<code>commit</code> event always emits a structured origin
+				(<code>{"{ type }"}</code>); a string passed in is wrapped.{" "}
+				<code>{`origin === "user"`}</code> never matches the event.
+				Undo, suggestions, and diagnostics depend on the label.{" "}
+				<code>"user"</code> means this client&apos;s user. A remote
+				update is not labeled <code>user</code> by default.
 			</p>
 
 			<h2>Commits</h2>

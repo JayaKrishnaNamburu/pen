@@ -1,3 +1,4 @@
+import { urlPolicy, urlPolicyFacet } from "@input/pen-core";
 import type { DiagnosticEvent, Editor } from "@input/pen-types";
 import {
 	validateAwarenessStates,
@@ -48,6 +49,7 @@ export class PresenceIngest {
 			rawStates,
 			createDocumentView(this.editor),
 			this.localClientId,
+			{ resolveAvatarUrl: (raw) => resolveEditorAvatarUrl(this.editor, raw) },
 		);
 		const seen = new Set<string>();
 		for (const rejection of validated.rejections) {
@@ -187,4 +189,9 @@ function createDocumentView(editor: Editor): AwarenessDocumentView {
 			return block.textContent({ resolved: true }).length;
 		},
 	};
+}
+
+function resolveEditorAvatarUrl(editor: Editor, raw: string): string | null {
+	const policy = editor.facet(urlPolicyFacet) ?? urlPolicy;
+	return policy.resolve(raw, "image");
 }

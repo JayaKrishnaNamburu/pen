@@ -7,11 +7,15 @@ import { htmlImporter } from "@input/pen-import-html";
 import {
 	FieldEditorImpl,
 	handleEditorDocumentKeyDown,
+	handleFieldEditorPointerActivate,
 	resolveSelectAllBehavior,
 	shouldHandleEditorKeyboardEvent as shouldHandlePenEditorKeyboardEvent,
 } from "@input/pen-dom";
 import { domSelectionToEditor } from "@input/pen-dom/field-editor/selectionBridge";
-import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
+import {
+	buildDataAttributes,
+	DATA_ATTRS,
+} from "@input/pen-dom/utils/dataAttributes";
 import type {
 	AssetProvider,
 	Editor,
@@ -167,12 +171,34 @@ export const PenEditor = defineComponent({
 					}
 				};
 
+				const handlePointerActivate = (event: MouseEvent) => {
+					const blocksHost = nextElement.querySelector(
+						"[data-pen-editor-blocks-host]",
+					);
+					if (!(blocksHost instanceof HTMLElement)) {
+						return;
+					}
+					handleFieldEditorPointerActivate({
+						event,
+						editor: props.editor,
+						fieldEditor,
+						root: nextElement,
+						blocksHost,
+						readonly: props.readonly,
+					});
+				};
+
 				nextElement.addEventListener("focusin", handleFocusIn);
 				nextElement.addEventListener("focusout", handleFocusOut);
+				nextElement.addEventListener("mousedown", handlePointerActivate);
 				ownerDocument?.addEventListener("keydown", handleKeyDown, true);
 				onCleanup(() => {
 					nextElement.removeEventListener("focusin", handleFocusIn);
 					nextElement.removeEventListener("focusout", handleFocusOut);
+					nextElement.removeEventListener(
+						"mousedown",
+						handlePointerActivate,
+					);
 					ownerDocument?.removeEventListener(
 						"keydown",
 						handleKeyDown,
@@ -224,9 +250,11 @@ export const PenEditor = defineComponent({
 					},
 					[DATA_ATTRS.editorRoot]: "",
 					[DATA_ATTRS.viewId]: props.editor.internals.viewId,
-					[DATA_ATTRS.focused]: focused.value || undefined,
-					[DATA_ATTRS.readonly]: props.readonly || undefined,
-					[DATA_ATTRS.empty]: isDocumentEmpty.value || undefined,
+					...buildDataAttributes({
+						[DATA_ATTRS.focused]: focused.value,
+						[DATA_ATTRS.readonly]: props.readonly,
+						[DATA_ATTRS.empty]: isDocumentEmpty.value,
+					}),
 					tabIndex: -1,
 					role: "textbox",
 					"aria-multiline": "true",

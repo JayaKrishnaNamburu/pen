@@ -1,13 +1,16 @@
 #!/usr/bin/env node
 /**
- * SEC7: published packages must not declare preinstall/postinstall.
+ * SEC7: published packages must not declare install-time lifecycle
+ * scripts (preinstall, install, postinstall, prepare). Those run on
+ * consumer install. Publish-only hooks (prepublish, prepack) are
+ * outside this check.
  */
 
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const banned = ["preinstall", "postinstall"];
+const banned = ["preinstall", "install", "postinstall", "prepare"];
 const hits = [];
 const packagesRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "packages");
 
@@ -38,10 +41,12 @@ walk(packagesRoot);
 
 if (hits.length > 0) {
 	console.error(
-		"SEC7: published manifests must not declare preinstall/postinstall:",
+		"SEC7: published manifests must not declare install-time scripts:",
 	);
 	for (const hit of hits) console.error(`  ${hit}`);
 	process.exit(1);
 }
 
-console.log("SEC7: no published manifest declares preinstall/postinstall");
+console.log(
+	"SEC7: no published manifest declares preinstall/install/postinstall/prepare",
+);

@@ -31,7 +31,11 @@ Hosts that run a highlighter (Prism, highlight.js, Shiki) can target that class.
 
 ## Data-attribute hooks
 
-Presence attributes are `""` when on and omitted when off. Do not invent attributes that are not in this list.
+Boolean `data-*` attributes are the valueless HTML form (`data-readonly=""`), omitted when off. The `present` column below means that form. Write the bare selector `[data-readonly]`, not `[data-readonly=""]` or `[data-readonly="true"]`. Both the bare form and `[data-readonly=""]` match today; the bare form stays correct if one of these attributes ever carries a real value.
+
+ARIA booleans are not valueless. They are the strings `"true"` and `"false"` (`aria-expanded="true"`, `aria-hidden="true"`, `aria-readonly="true"`). `aria-hidden=""` is invalid, and `[aria-hidden=""]` matches nothing.
+
+Do not invent attributes that are not in this list.
 
 ### Editor shell (`PenEditor`)
 

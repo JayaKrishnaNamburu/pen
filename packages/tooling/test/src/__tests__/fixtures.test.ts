@@ -1,14 +1,17 @@
 import { describe, expect, it } from "vitest";
 import * as Y from "yjs";
+import { PEN_DOCUMENT_ASSERT_COVERAGE } from "../assertDocEquals";
 import {
 	assertDocumentRoots,
 	createDeterministicYDocFixture,
+	DEFAULT_PEN_ROOTS,
 	encodeFixtureUpdate,
 	normalizeDocumentForSnapshot,
 	runCRDTStateVectorContract,
 	runExportContract,
 	runHeadlessEditorContract,
 } from "../index";
+import { readPenDocumentKeys } from "../penDocumentSourceKeys";
 
 describe("deterministic fixture helpers", () => {
 	it("generates stable updates and normalized snapshots", () => {
@@ -43,6 +46,24 @@ describe("deterministic fixture helpers", () => {
 		expect(() =>
 			assertDocumentRoots(ydoc, [{ name: "metadata", type: "array" }]),
 		).toThrow('root "metadata" must be array');
+	});
+
+	it("DEFAULT_PEN_ROOTS covers every stored PenDocument key", () => {
+		const sourceKeys = readPenDocumentKeys();
+		expect(sourceKeys, "could not parse PenDocument from source").not.toBeNull();
+
+		const storedKeys = Object.entries(PEN_DOCUMENT_ASSERT_COVERAGE)
+			.filter(([, kind]) => kind !== "excluded")
+			.map(([key]) => key)
+			.sort();
+		const rootNames = DEFAULT_PEN_ROOTS.map((root) => root.name);
+
+		expect(sourceKeys!.filter((key) => key !== "adapter").sort()).toEqual(
+			storedKeys,
+		);
+		for (const key of storedKeys) {
+			expect(rootNames).toContain(key);
+		}
 	});
 });
 

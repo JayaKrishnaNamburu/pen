@@ -17,6 +17,9 @@ export const AI_TOOL_MAX_TOTAL_OPS_PER_TURN = 128;
 
 export const AI_TOOL_UNCONFIRMED_CODE = "ai-tool-unconfirmed";
 
+/** A tool classified read-only called `editor.apply` or `openTextStream`; the write was dropped. */
+export const AI_TOOL_READ_ONLY_MUTATION_CODE = "ai-tool-read-only-mutation";
+
 export const AI_READ_ONLY_TOOL_NAMES = [
   "read_document",
   "get_context",

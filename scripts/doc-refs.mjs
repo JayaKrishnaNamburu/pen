@@ -12,6 +12,16 @@
  *
  * Hits fail the process. A missing `dist/*.d.ts` is also a failure —
  * run `pnpm build` first; this gate reads published artifacts, not source.
+ *
+ * Availability and currency are different questions about the same
+ * file. Missing dist is the existing failure. Type-input source newer
+ * than the published `.d.ts` is INCONCLUSIVE — samples that type-check
+ * against a `.d.ts` that predates source are not a pass.
+ *
+ * Dist freshness is a local guard. CI runs `pnpm build` first
+ * (`static-gates.yml` doc-refs job), so the `.d.ts` is current by
+ * construction and this path does not fire there. Do not add a CI
+ * flag for it.
  */
 
 import { existsSync, readFileSync } from "node:fs";
@@ -20,6 +30,11 @@ import { createRequire } from "node:module";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import {
+	appendOutdatedDistLines,
+	collectOutdatedDist,
+	runFreshnessSelfTests,
+} from "./lib/distFreshness.mjs";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_REPO_ROOT = path.resolve(SCRIPT_DIR, "..");
@@ -435,6 +450,42 @@ export function runSelfTests() {
 		{ file: "CONTRIBUTING.md", text: "published as public npm packages" },
 	]);
 	assert(leaked.unexpected.includes("CONTRIBUTING.md"), "self-test: leaked phrase fails");
+
+	const cleanPhrase = {
+		hits: ["README.md"],
+		unexpected: [],
+		missingRoot: false,
+	};
+	const cleanTypecheck = { errors: [], skipped: [], checked: 1 };
+	const outdatedOnly = {
+		missingRefs: [],
+		phrase: cleanPhrase,
+		typecheck: cleanTypecheck,
+		artifacts: [],
+		outdatedDist: [{ package: "@input/pen-core", newerCount: 1 }],
+	};
+	assert(!hasFailures(outdatedOnly), "self-test: outdated dist is not a ref failure");
+	assert(hasInconclusive(outdatedOnly), "self-test: outdated dist is inconclusive");
+	const outdatedReport = formatReport(outdatedOnly);
+	assert(outdatedReport.includes("INCONCLUSIVE:"), "self-test: outdated dist prints INCONCLUSIVE");
+	assert(
+		!outdatedReport.includes("FAIL missing built type artifacts"),
+		"self-test: outdated dist is not a missing artifact",
+	);
+	assert(outdatedReport.includes("@input/pen-core"), "self-test: INCONCLUSIVE names the package");
+
+	const missingAndOutdated = {
+		missingRefs: [],
+		phrase: cleanPhrase,
+		typecheck: cleanTypecheck,
+		artifacts: [{ package: "@input/pen-core", path: "packages/core/dist/index.d.ts" }],
+		outdatedDist: [{ package: "@input/pen-ai", newerCount: 1 }],
+	};
+	assert(hasFailures(missingAndOutdated), "self-test: missing dist still fails when another package is outdated");
+	const missingReport = formatReport(missingAndOutdated);
+	if (!missingReport.includes("FAIL missing built type artifacts")) {
+		throw new Error("self-test: outdated dist does not hide a missing artifact");
+	}
 }
 
 function assert(condition, message) {
@@ -723,8 +774,16 @@ export async function typecheckSamples({ samples, packages, repoRoot }) {
 	}
 }
 
-export function formatReport({ missingRefs, phrase, typecheck, artifacts }) {
+export function formatReport({
+	missingRefs,
+	phrase,
+	typecheck,
+	artifacts,
+	outdatedDist = [],
+}) {
 	const lines = ["DOC1/DOC2 documentation truth"];
+	lines.push("");
+	lines.push(`outdated dist ${outdatedDist.length}`);
 	lines.push("");
 
 	if (artifacts.length > 0) {
@@ -783,6 +842,20 @@ export function formatReport({ missingRefs, phrase, typecheck, artifacts }) {
 		lines.push("OK: every extracted sample type-checks.");
 	}
 
+	appendOutdatedDistLines(lines, outdatedDist);
+	const result = { missingRefs, phrase, typecheck, artifacts, outdatedDist };
+	if (!hasFailures(result) && hasInconclusive(result)) {
+		lines.push("");
+		lines.push(
+			`INCONCLUSIVE: samples type-check against the .d.ts, but ${outdatedDist.length} package(s) have type-input source newer than dist. That is not a pass.`,
+		);
+	} else if (hasFailures(result) && hasInconclusive(result)) {
+		lines.push("");
+		lines.push(
+			`INCONCLUSIVE: ${outdatedDist.length} package(s) have type-input source newer than dist; sample results may be incomplete until those rebuild.`,
+		);
+	}
+
 	return lines.join("\n");
 }
 
@@ -794,6 +867,10 @@ export function hasFailures({ missingRefs, phrase, typecheck, artifacts }) {
 		phrase.unexpected.length > 0 ||
 		typecheck.errors.length > 0
 	);
+}
+
+export function hasInconclusive({ outdatedDist = [] }) {
+	return outdatedDist.length > 0;
 }
 
 function parseArgs(argv) {
@@ -823,6 +900,7 @@ function parseArgs(argv) {
 async function main() {
 	const args = parseArgs(process.argv.slice(2));
 	runSelfTests();
+	await runFreshnessSelfTests();
 	console.log(
 		"DOC refs self-test ok (missing package, wrong version, missing subpath, and leaked public-npm phrase fail closed)",
 	);
@@ -842,6 +920,18 @@ async function main() {
 	const missingRefs = evaluateRefs({ refs, packages });
 	const phrase = evaluatePublicNpm(docs);
 	const artifacts = await missingTypeArtifacts(packages, args.repoRoot);
+	const outdatedDist = await collectOutdatedDist(
+		packages
+			.filter(
+				(pkg) =>
+					!pkg.dir.startsWith("examples/") && pkg.manifest.private !== true,
+			)
+			.map((pkg) => ({
+				name: pkg.name,
+				dir: path.join(args.repoRoot, pkg.dir),
+				packageJson: pkg.manifest,
+			})),
+	);
 
 	const samples = [
 		...docs.flatMap((doc) => extractFencedSamples(doc.text, doc.file)),
@@ -856,10 +946,10 @@ async function main() {
 				repoRoot: args.repoRoot,
 			});
 
-	const result = { missingRefs, phrase, typecheck, artifacts };
+	const result = { missingRefs, phrase, typecheck, artifacts, outdatedDist };
 	console.log("");
 	console.log(formatReport(result));
-	if (hasFailures(result)) {
+	if (hasFailures(result) || hasInconclusive(result)) {
 		process.exitCode = 1;
 	}
 }

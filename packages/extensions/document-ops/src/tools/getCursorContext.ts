@@ -6,6 +6,7 @@ export function getCursorContextTool(editor: Editor): ToolDefinition {
 		name: "get_cursor_context",
 		description:
 			"Get the current selection, active block, and nearby block previews without reading the full document.",
+		mutating: false,
 		inputSchema: {
 			type: "object",
 			properties: {

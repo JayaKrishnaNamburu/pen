@@ -7,10 +7,6 @@ import {
 import type { AssetProvider, DiagnosticEvent } from "@input/pen-types";
 import { createDefaultSchema } from "@input/pen-schema-default";
 import { htmlImporter } from "../importer";
-import {
-	DEFAULT_HTML_IMAGE_SRC_POLICY,
-	isIngestibleImageSrc,
-} from "../imageSrcPolicy";
 
 const noDefaultExtensionsPreset = {
 	resolve() {
@@ -61,11 +57,6 @@ afterEach(() => {
 });
 
 describe("IOP4 HTML img src policy", () => {
-	it("IOP4 defaults to keeping remote img URLs as-is", () => {
-		expect(DEFAULT_HTML_IMAGE_SRC_POLICY).toBe("keep");
-		expect(isIngestibleImageSrc("https://cdn.example/a.png")).toBe(true);
-	});
-
 	it("IOP4 keep setting leaves remote img src unchanged and does not call the provider", async () => {
 		const { provider, upload } = stubProvider();
 		const editor = editorWithProvider(provider);

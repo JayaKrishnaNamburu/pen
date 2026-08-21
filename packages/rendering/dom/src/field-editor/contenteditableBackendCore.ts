@@ -13,13 +13,7 @@ import {
 import { normalizeSelectionFormation } from "../utils/selectionFormation";
 import type { PasteImporters } from "../types/paste";
 import { handlePaste, handleCopy, handleCut } from "./clipboard";
-import {
-	applyListInputRule,
-	applyDeleteBehavior,
-	applyEnterBehavior,
-	toggleInlineMark,
-} from "./commands";
-import { handleFieldEditorKeyDown } from "./keyHandling";
+import { applyListInputRule } from "./commands";
 import { isHistoryTransactionOrigin } from "./historyOrigin";
 import type { InlineTextDiffOp } from "./inlineTextTransaction";
 import {
@@ -199,6 +193,32 @@ export abstract class ContentEditableBackendCore {
 			marks,
 			cellCoord,
 		});
+		this.ensureActiveDOMMatchesYText();
+		this.restoreDOMSelectionFromEditor();
+		this.scheduleActiveDOMMatchCheck();
+		this.fieldEditor.clearBackendSelectionAuthority("programmatic");
+	}
+
+	commitDispatchedEdit(): void {
+		const blockId = this.fieldEditor.focusBlockId;
+		const selection = this.editor.selection;
+		if (
+			blockId &&
+			selection?.type === "text" &&
+			selection.anchor.blockId === blockId &&
+			selection.focus.blockId === blockId
+		) {
+			this.fieldEditor.setBackendSelectionAuthority("programmatic", {
+				blockId,
+				anchorOffset: selection.anchor.offset,
+				focusOffset: selection.focus.offset,
+			});
+			this.fieldEditor.syncTextSelection(
+				blockId,
+				selection.anchor.offset,
+				selection.focus.offset,
+			);
+		}
 		this.ensureActiveDOMMatchesYText();
 		this.restoreDOMSelectionFromEditor();
 		this.scheduleActiveDOMMatchCheck();

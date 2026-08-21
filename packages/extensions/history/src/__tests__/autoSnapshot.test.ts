@@ -155,6 +155,31 @@ describe("AutoSnapshotScheduler", () => {
 		editorB.destroy();
 		documentSession.destroy();
 	});
+
+	it("destroy stops interval snapshots", async () => {
+		vi.useFakeTimers();
+		const persistence = new MemoryPersistence();
+		const editor = createEditor({
+			schema: defaultSchema,
+			extensions: [
+				historyExtension({
+					persistence,
+					docId: "doc-1",
+					autoSnapshot: {
+						onSessionStart: false,
+						onAIGeneration: false,
+						intervalMs: 1_000,
+					},
+				}),
+			],
+		});
+
+		await editor.destroy();
+		vi.advanceTimersByTime(5_000);
+		await flushMicrotasks();
+
+		expect(persistence.entries).toHaveLength(0);
+	});
 });
 
 class MemoryPersistence implements PenPersistence {

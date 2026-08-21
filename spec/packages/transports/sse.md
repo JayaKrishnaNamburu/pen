@@ -2,15 +2,17 @@
 
 ## Purpose
 
-Server-Sent Events transport for Pen
+Server-Sent Events transport for Pen.
 
 ## Public Role
 
-Provide transport-specific wiring around Pen protocols and sessions.
+Provide transport-specific wiring around Pen protocols and sessions. The live `Editor` is a constructor argument on `createSSEHandler()`, not a field on the wire request.
 
 ## Key Exports / Entrypoints
 
 - Export map: `.`
+- Server: `createSSEHandler()`, `parsePenStreamRequest()`
+- Client stream helper on the same root export
 - Workspace scripts: `build`, `clean`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
@@ -21,7 +23,7 @@ Provide transport-specific wiring around Pen protocols and sessions.
 
 ## Data Flow / Runtime Model
 
-Transport package packages in Pen should stay package-first and explicit about ownership. Adopt when a host needs the specific transport surface.
+`createSSEHandler` reads the POST body, rejects oversized or malformed JSON with HTTP 400, then runs `parsePenStreamRequest()`. That parser admits only the serializable `PenStreamRequest` keys. `context.editor` is not a valid field and fails the parse, so tool execution never sees a live editor handle from the network. The editor used for tool context is the one passed at handler construction.
 
 ## Integration Notes
 

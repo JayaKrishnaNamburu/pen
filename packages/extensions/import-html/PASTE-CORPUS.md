@@ -2,7 +2,7 @@
 
 Clipboard `text/html` + `text/plain` pairs measured through the generic HTML import path (`parseHtmlToBlocks`). Pen does not sniff `mso` classes or `docs-internal-guid`. A documented flattening is the paste contract; an undocumented one is a regression.
 
-These fixtures are **synthetic-until-capture**: documented approximations of what each application emits, not hand-captured clipboard dumps. Replace a fixture with a real capture by overwriting `clipboard.html` / `plain.txt` and updating `expectation.json` with a reason in the PR.
+These fixtures are **synthetic-until-capture**: documented approximations of what each application emits, not hand-captured clipboard dumps. A real Word clipboard payload is hundreds of kilobytes of `<style>` and `mso-` attributes; these fixtures are a few hundred bytes. Do not invent markup and label it captured. The replacement procedure is `src/__tests__/pasteCorpus/CAPTURE.md`.
 
 Generated from `src/__tests__/pasteCorpus/` by `src/__tests__/pasteCorpus.test.ts`. Do not edit by hand.
 

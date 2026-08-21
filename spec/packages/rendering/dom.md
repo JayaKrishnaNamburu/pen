@@ -11,7 +11,7 @@ This package sits between `@input/pen-core` and renderer packages. It owns DOM-s
 ## Key Exports / Entrypoints
 
 - Export map: `.`, `./field-editor`, `./field-editor/*`, `./constants/selectAll`, `./types/paste`, `./utils/aiDomScope`, `./utils/aiKeyboardScope`, `./utils/autocompleteController`, `./utils/blockDrag`, `./utils/blockSelectionSemantics`, `./utils/cellSelection`, `./utils/clipboardPayload`, `./utils/dataAttributes`, `./utils/editorEmptyState`, `./utils/editorInteractionModel`, `./utils/environment`, `./utils/fieldEditor`, `./utils/fieldEditorTextEntryAttrs`, `./utils/flowCapabilities`, `./utils/inlineAtomDragPreview`, `./utils/inlineAtomSelection`, `./utils/inlineDecorations`, `./utils/inlineInputRule`, `./utils/listInputRule`, `./utils/menuPosition`, `./utils/parentIdTree`, `./utils/placeholderVisibility`, `./utils/pointerSelection`, `./utils/replaceElementChildren`, `./utils/selectionFormation`, `./utils/selectionPlacement`, `./utils/slashMenuPopupAria`, `./utils/suggestionMenuPopupAria`, `./utils/tableDefaults`
-- Root exports such as `FieldEditorImpl`, `FieldEditorSession`, `handleEditorDocumentKeyDown()`, `handleEscapeSelectionTransition()`, `handleTableCellSelectionKeyDown()`, `resolveSelectAllBehavior()`, text-entry routing helpers, and `PasteImporters`
+- Root exports such as `mountEditor()`, `handleFieldEditorPointerActivate()`, `FieldEditorImpl`, `FieldEditorSession`, `handleEditorDocumentKeyDown()`, `handleEscapeSelectionTransition()`, `handleTableCellSelectionKeyDown()`, `resolveSelectAllBehavior()`, text-entry routing helpers, and `PasteImporters`
 - Field-editor exports such as `fullReconcileToDOM()`, `applyDeltaToDOM()`, selection bridge helpers, cross-block selection helpers, clipboard handlers, and field-editor store types
 - DOM utility subpaths for renderer packages that need shared data-attribute or decoration helpers
 - Workspace scripts: `build`, `clean`, `test`, `typecheck`
@@ -56,14 +56,17 @@ Important rules:
 - Clipboard and typing flows resolve back into editor mutations instead of mutating the document model directly.
 - Shared Escape, select-all, block-selection, history shortcut, deletion, and table-cell navigation behavior belongs here when it is DOM-engine behavior, not framework-specific UI behavior.
 - Table cell copy, cut, paste, printable-key entry, and navigation must preserve structured cell selection metadata and apply document changes through `editor.apply(...)`.
+- Pointer activation is resolved on the **block** element (`data-pen-editor-block`), not the inline-content span. An empty document's inline span is zero-width; listening only there never receives the first click. `handleFieldEditorPointerActivate()` walks from the event target to the block, then attaches the field editor to the inline surface if one exists.
+- `mountEditor(editor, root)` is the public vanilla document-shell composition: it constructs `FieldEditorImpl`, calls `createDocumentTree`, sets the root, and wires focus, pointer activation, and document keydown. Installing `FieldEditorImpl` and calling `setRootElement` alone does not build the document tree and renders a blank page.
 
 ## Integration Notes
 
 - Path in workspace: `packages/rendering/dom`
 - Spec path mirrors workspace path: `packages/rendering/dom.md`
+- Vanilla hosts should call `mountEditor()`. Framework renderers assemble the same pieces themselves.
 - Renderer packages should depend on this package instead of each reimplementing selection bridging or reconciliation
 - The `./field-editor` subpath is the main surface for renderer authors who need lower-level control
-- React and Vue roots both install `FieldEditorImpl`, register the shared field-editor slots, wire paste importers/assets, and delegate document-level keyboard handling back to this package.
+- React and Vue roots both install `FieldEditorImpl`, register the shared field-editor slots, wire paste importers/assets, and delegate document-level keyboard handling back to this package. Vue also uses `handleFieldEditorPointerActivate()` on the editor root.
 - This package should stay small in conceptual scope even if its internals are complex, because it is a boundary package rather than a product surface
 
 ## Current Maturity / Intended Usage

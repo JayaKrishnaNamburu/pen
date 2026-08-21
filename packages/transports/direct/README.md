@@ -32,17 +32,21 @@ if (!toolRuntime) {
 
 const transport = directTransport({
   toolRuntime,
+  editor,
   onError(error) {
     console.error(error);
   },
 });
 ```
 
+A live `Editor` is passed at construction. It is not a field on `PenStreamRequest` — that type is the wire shape, and direct does not smuggle a handle through it.
+
 ## Options
 
 | Option        | Default | Effect                                                         |
 | ------------- | ------- | -------------------------------------------------------------- |
 | `toolRuntime` | none    | Required at runtime. `directTransport` throws if it is omitted |
+| `editor`      | unset   | In-process editor handed to `ToolContext.editor`               |
 | `onError`     | unset   | Called with tool-execution errors                              |
 
 ## Documentation

@@ -9,7 +9,7 @@ const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const repoRoot = join(packageRoot, "../..");
 const pagesRoot = join(packageRoot, "src", "pages");
 
-const SAMPLE_RE = /<pre>\s*<code>\{\`([\s\S]*?)\`\}<\/code>\s*<\/pre>/g;
+const SAMPLE_RE = /<pre>\s*<code>\{`([\s\S]*?)`\}<\/code>\s*<\/pre>/g;
 
 const SKIP_DIR_NAMES = new Set([
 	"node_modules",

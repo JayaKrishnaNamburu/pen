@@ -8,9 +8,48 @@ import type {
 	TestTableRow,
 } from "./types";
 
+type Assert<T extends true> = T;
+type Equal<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
+
+type PenDocumentAssertKind = "compared" | "implicit" | "excluded";
+
 /**
- * DUR7 fields `assertDocEquals` compares. Adding a stored field to
- * `PenDocument` / a block map requires an entry here and a comparer.
+ * How each `keyof PenDocument` is treated by `assertDocEquals`.
+ * Adding a key to `PenDocument` without classifying it here fails typecheck.
+ *
+ * - compared: named in `ASSERT_DOC_EQUALS_FIELDS` (`blocks` via `block.*`)
+ * - implicit: compared without a named entry (`blockOrder` is positional)
+ * - excluded: not stored document data (`adapter` is session machinery)
+ */
+export const PEN_DOCUMENT_ASSERT_COVERAGE = {
+	blockOrder: "implicit",
+	blocks: "compared",
+	apps: "compared",
+	metadata: "compared",
+	adapter: "excluded",
+} as const satisfies { [K in keyof PenDocument]-?: PenDocumentAssertKind };
+
+type _PenDocumentCoverageLocked = Assert<
+	Equal<keyof PenDocument, keyof typeof PEN_DOCUMENT_ASSERT_COVERAGE>
+>;
+
+/**
+ * DUR7 fields `assertDocEquals` compares.
+ *
+ * `keyof PenDocument` is locked by `PEN_DOCUMENT_ASSERT_COVERAGE`.
+ * The source-parse test reads `packages/types/src/types/crdt.ts`
+ * (turbo typecheck does not rebuild `@input/pen-types`, so a
+ * `keyof` lock against `dist` stays green until the next build).
+ * After a types rebuild, missing classification also fails typecheck.
+ *
+ * `block.*` tracks `keyof TestBlock`, the extracted view the comparer
+ * walks. Stored Y.Map keys are not a declared type — they are written
+ * by `initBlockMap`, the apply pipeline, and `tableGridExecutor`.
+ * Known stored keys this list does not name: `meta`, `subdocument`,
+ * `layout`, `tableColumns`.
+ *
+ * The `toEqual` pins review this list's contents and catch a careless
+ * edit. They do not couple it to `PenDocument`.
  */
 export const ASSERT_DOC_EQUALS_FIELDS = Object.freeze([
 	"block.id",
@@ -23,6 +62,52 @@ export const ASSERT_DOC_EQUALS_FIELDS = Object.freeze([
 	"apps",
 	"metadata",
 ] as const);
+
+type AssertDocEqualsField = (typeof ASSERT_DOC_EQUALS_FIELDS)[number];
+
+type ComparedPenDocumentListEntry = {
+	[K in keyof typeof PEN_DOCUMENT_ASSERT_COVERAGE]: (typeof PEN_DOCUMENT_ASSERT_COVERAGE)[K] extends "compared"
+		? K extends "blocks"
+			? never
+			: K
+		: never;
+}[keyof typeof PEN_DOCUMENT_ASSERT_COVERAGE];
+
+type _ComparedPenDocumentKeysListed = Assert<
+	Equal<
+		ComparedPenDocumentListEntry,
+		Extract<AssertDocEqualsField, ComparedPenDocumentListEntry>
+	>
+>;
+
+type BlockListField = Extract<AssertDocEqualsField, `block.${string}`>;
+type ExpectedBlockListField = `block.${keyof TestBlock & string}`;
+type _TestBlockFieldsLocked = Assert<
+	Equal<BlockListField, ExpectedBlockListField>
+>;
+
+/**
+ * Keys `initBlockMap` writes on a block Y.Map, classified against the
+ * list. There is no TypeScript type for stored block-map keys; this is
+ * the classification a live-map probe pins. It does not observe keys
+ * written only by apply / `tableGridExecutor` (`layout`, `tableColumns`).
+ */
+export const INIT_BLOCK_MAP_ASSERT_COVERAGE = {
+	type: "block.type",
+	props: "block.props",
+	content: "block.content",
+	tableContent: "block.table",
+	children: "block.children",
+	meta: "excluded",
+	subdocument: "excluded",
+} as const;
+
+type InitBlockMapCoverageValue =
+	(typeof INIT_BLOCK_MAP_ASSERT_COVERAGE)[keyof typeof INIT_BLOCK_MAP_ASSERT_COVERAGE];
+type ComparedInitBlockMapField = Exclude<InitBlockMapCoverageValue, "excluded">;
+type _InitBlockMapComparedFieldsListed = Assert<
+	ComparedInitBlockMapField extends AssertDocEqualsField ? true : false
+>;
 
 type TestBlockMapLike = {
 	get(key: string): unknown;

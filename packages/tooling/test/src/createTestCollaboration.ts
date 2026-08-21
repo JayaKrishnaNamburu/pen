@@ -1,30 +1,16 @@
-import * as Y from "yjs";
-import { createTestEditor } from "./createTestEditor";
-import { populateYDoc } from "./createTestDocument";
+import { createTwoPeerHarness } from "./twoPeerHarness";
 import type { TestEditorOptions, TestCollaboration } from "./types";
 
 export function createTestCollaboration(
   options?: TestEditorOptions,
 ): TestCollaboration {
-  const docA = new Y.Doc({ gc: false });
-  const docB = new Y.Doc({ gc: false });
-
-  if (options?.blocks) {
-    populateYDoc(docA, options.blocks);
-    populateYDoc(docB, options.blocks);
-  }
-
-  const editorA = createTestEditor({ ...options, blocks: undefined, doc: docA });
-  const editorB = createTestEditor({ ...options, blocks: undefined, doc: docB });
-
+  // peers must share a seed; independent populateYDoc histories lose one side on sync
+  const harness = createTwoPeerHarness(options);
   return {
-    editorA,
-    editorB,
+    editorA: harness.peerA.editor,
+    editorB: harness.peerB.editor,
     sync() {
-      const stateA = Y.encodeStateAsUpdate(docA);
-      const stateB = Y.encodeStateAsUpdate(docB);
-      Y.applyUpdate(docA, stateB);
-      Y.applyUpdate(docB, stateA);
+      harness.sync();
     },
   };
 }

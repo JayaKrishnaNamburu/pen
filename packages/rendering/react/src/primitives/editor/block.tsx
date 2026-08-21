@@ -10,7 +10,7 @@ import { useBlockSelectionState } from "../../hooks/useBlockSelectionState";
 import { useBlockSurfaceRole } from "../../hooks/useBlockSurfaceRole";
 import { resolveRenderer } from "../../renderers/index";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
-import { DATA_ATTRS } from "../../utils/dataAttributes";
+import { buildDataAttributes, DATA_ATTRS } from "../../utils/dataAttributes";
 import { useBlockDropPreview } from "./dropPreviewContext";
 
 export interface EditorBlockProps extends AsChildProps {
@@ -83,12 +83,14 @@ export function EditorBlock(props: EditorBlockProps) {
 		[DATA_ATTRS.blockType]: blockType,
 		dir,
 		"data-level": headingLevel,
-		[DATA_ATTRS.selected]: isSelected || undefined,
-		[DATA_ATTRS.focused]: fieldEditor?.focusBlockId === blockId || undefined,
 		[DATA_ATTRS.surfaceRole]: surfaceRole ?? undefined,
-		[DATA_ATTRS.dropTarget]: externalDropPosition ? true : undefined,
 		[DATA_ATTRS.dropPosition]: externalDropPosition,
-		[DATA_ATTRS.aiGenerating]: isAiGenerating || undefined,
+		...buildDataAttributes({
+			selected: isSelected,
+			focused: fieldEditor?.focusBlockId === blockId,
+			"drop-target": Boolean(externalDropPosition),
+			"ai-generating": isAiGenerating,
+		}),
 		tabIndex: -1,
 		contentEditable:
 			surfaceRole != null && surfaceRole !== "editable-inline"

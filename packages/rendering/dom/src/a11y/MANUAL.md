@@ -2,9 +2,25 @@
 
 Screen-reader behavior cannot be fully automated. This checklist is the release matrix in `spec-v2/13-accessibility.md` AX8 (extends the IME matrix in `spec-v2/09-reliability-testing.md`).
 
-**Status: stub.** Every matrix row is incomplete. No VoiceOver, NVDA, TalkBack, or JAWS session has been recorded. A release-train cut requires the VoiceOver and NVDA rows completed; TalkBack is in the matrix; JAWS is informational only.
+**Status: stub. Unexecuted.** Every matrix row is incomplete. No VoiceOver, NVDA, TalkBack, or JAWS session has been recorded. A release-train cut requires the VoiceOver and NVDA rows completed; TalkBack is in the matrix; JAWS is informational only.
 
-Do not mark a row complete without a dated pass of all five scripted scenarios below.
+Do not mark a row complete without a dated pass of all five scripted scenarios below. An agent cannot complete this checklist.
+
+## One sitting (human)
+
+Do **VO-mac first** (VoiceOver + Safari on macOS). That is the cheapest required row and takes one sitting if the host is already running.
+
+1. From the repo root, start the playground UI: `pnpm --filter @input/pen-playground dev` — open `http://localhost:5173`.
+2. Build a fixture that matches **Host and fixture** below (or load a document that already has those blocks). Confirm the surface has an `aria-label` from `pen.a11yLabel`.
+3. Enable VoiceOver (`Cmd-F5`). Keyboard only after the page is loaded.
+4. Run scenarios 1–5 in order. Tick the VO-mac boxes only after that session. Record tester, date, OS, VO version, Safari version, and host in the matrix row.
+5. Leave every other row incomplete. NVDA needs a Windows machine; VO-ios needs a device; TalkBack and JAWS are later.
+
+Known product bugs, so a fail here is not a setup error:
+
+- Slash confirm on `/query` (for example `/head`) can leave the query in the field and reopen the listbox. Confirm on a lone `/` is the path that closes.
+- Autocomplete accept on the contenteditable backend (WebKit / Firefox; Chromium EditContext hides it) can leave the DOM caret behind `editor.selection`.
+- After an empty-document click, the focus sink must stay `aria-hidden` (text caret is on the field). The sink is not supposed to take focus until Wave 5 §5.4.
 
 ## Host and fixture
 

@@ -6,19 +6,27 @@
 
 ### function
 
-- blocksToOps
 - buildDocumentWriteOps
+- normalizePlanRecord
+- normalizePlanSteps
+- parseMarkdownToBlocks
+- splitPlainTextLineBlocks
+
+### value
+
+- blocksToOps
 - createImportResult
 - filterPendingBlocksForDocumentProfile
 - getBlockSelectionRoleFromSchema
 - getBlockSelectionRoleFromType
 - getFlowCapabilityFromSchema
 - getFlowCapabilityFromType
+- ImportOptions
 - isContinuousTextFlowCapability
 - normalizePendingBlocksForImport
-- normalizePlanRecord
-- normalizePlanSteps
-- parseMarkdownToBlocks
+- PendingBlock
+- PendingBlockImportPolicyViolation
+- PendingBlockProfilePolicyViolation
 - reportPendingBlockImportViolations
 - reportPendingBlockProfileViolations
 - shouldAllowDirectBlockPaste
@@ -27,11 +35,6 @@
 - shouldFallbackMixedSelectionToBlock
 - shouldForceBlockScopedSelectAll
 - shouldShowBlockInDefaultMenus
-- splitPlainTextLineBlocks
-
-### value
-
-- ImportOptions
 
 ### type
 
@@ -40,9 +43,6 @@
 - BuildDocumentWriteOpsResult
 - DocumentWriteBlockInput
 - DocumentWriteFormat
-- PendingBlock
-- PendingBlockImportPolicyViolation
-- PendingBlockProfilePolicyViolation
 - PlanRecord
 - StructuredTargetDescriptor
 - StructuredTargetKind

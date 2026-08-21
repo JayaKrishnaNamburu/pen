@@ -1,5 +1,6 @@
 import {
 	foldAndNormalize,
+	localeFacet,
 	nextGraphemeBoundary,
 	wordRangeAt,
 } from "@input/pen-core";
@@ -48,7 +49,7 @@ export function findDocumentMatches(
 		return [];
 	}
 
-	const locale = resolveSearchLocale(options);
+	const locale = resolveSearchLocale(editor, options);
 	const regex = options.regex ? buildSearchRegex(query, options) : null;
 	if (options.regex && !regex) {
 		emitSearchDiagnostic(
@@ -541,8 +542,8 @@ function getMatchTargetKey(match: SearchMatch): string {
 	return `table:${match.blockId}:${match.row ?? -1}:${match.col ?? -1}`;
 }
 
-function resolveSearchLocale(options: SearchOptions): string {
-	return options.locale ?? DEFAULT_SEARCH_LOCALE;
+function resolveSearchLocale(editor: Editor, options: SearchOptions): string {
+	return options.locale ?? editor.facet(localeFacet);
 }
 
 function isWordSegmentBoundary(

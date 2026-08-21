@@ -257,7 +257,7 @@ function SlashMenuRootContent(props: SlashMenuRootContentProps) {
 
 	const primitiveProps: Record<string, unknown> = {
 		"data-pen-slash-menu": "",
-		"data-open": isOpen || undefined,
+		"data-open": isOpen ? "" : undefined,
 	};
 
 	return (

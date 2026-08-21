@@ -14,7 +14,7 @@ export function HeadingRenderer(
       ref: ctx.ref,
       "data-block-type": "heading",
       "data-level": level,
-      "data-selected": ctx.selected || undefined,
+      "data-selected": ctx.selected ? "" : undefined,
     },
     <InlineContent blockId={block.id} decorations={ctx.decorations} />,
   );

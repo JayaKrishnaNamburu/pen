@@ -191,13 +191,13 @@ function TableRendererInner(props: {
 		<div
 			ref={ctx.ref as React.Ref<HTMLDivElement>}
 			data-block-type="table"
-			data-selected={ctx.selected || undefined}
+			data-selected={ctx.selected ? "" : undefined}
 		>
 			<div className="pen-table-shell">
 				<div className="pen-table-main">
 					<div
 						{...{ [DATA_ATTRS.tableFrame]: "" }}
-						data-selected={ctx.selected || undefined}
+						data-selected={ctx.selected ? "" : undefined}
 					>
 						<table {...{ [DATA_ATTRS.table]: "" }}>
 							{hasHeaderRow && headerCells && (

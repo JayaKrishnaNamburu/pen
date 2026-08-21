@@ -6,7 +6,7 @@
 
 ## Public Role
 
-This package is the canonical structured serialization boundary for Pen. It does not replace `@input/pen-core`, but it is the main package that turns editor state into portable structured data and turns structured data back into importable editor operations.
+This package is the canonical structured *export* boundary for Pen. It still also ships `jsonImporter` / `parseJsonDocument()` for round-trip tests and XML import handoff. The dedicated ingest package is `@input/pen-import-json` (schema validation, ingest envelope, `parseJsonWithReport()`). Both `jsonImporter` exports exist today.
 
 ## Key Exports / Entrypoints
 

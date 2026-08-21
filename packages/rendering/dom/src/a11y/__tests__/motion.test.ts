@@ -134,6 +134,7 @@ describe("createReducedMotionSignal (AX6)", () => {
 	});
 
 	it("AX6: maps caret blink to solid, shimmer to a static badge, transitions to instant", () => {
+		// contract constant only — overlay/paint adoption is Wave 3/5
 		expect(AX6_MOTION_MAPPING).toEqual({
 			caretBlink: "solid",
 			shimmer: "static-badge",

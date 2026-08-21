@@ -16,6 +16,8 @@ Critical budgets are judged on the **median of 50 measured iterations** (`BENCH_
 
 The published envelope table lives in `@input/pen-test` (`ENVELOPE.md`, generated from fixture metadata). This package measures the same axes (`blockCount`, `longestBlock`, `nestingDepth`, `table`, `concurrentPeers`) and writes medians to `baselines/envelope.json`. It does not render a second table.
 
+The concurrent-peers row is a count (2), not a clock. It is verified by `assertPeerEditsSurvive` on a shared-seed two-peer harness. An earlier verified grade cited `createTestCollaboration` while that helper independently populated two Y.Docs, so `sync()` dropped one side and equality still passed. See the correction note in `packages/tooling/test/ENVELOPE.md`.
+
 - `pnpm --filter @input/pen-bench bench:envelope` runs the ladder (median of 21) and fails if a rung exceeds the committed gate.
 - `pnpm --filter @input/pen-bench bench:envelope:write` regenerates `baselines/envelope.json` from a fresh run.
 - Gates are `max(measured × 4, measured + 15ms)` on the median. P95 is recorded, not gated (CH8). Numbers are macos-arm64; they are not CI measurements.

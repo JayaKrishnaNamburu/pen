@@ -13,6 +13,14 @@ This package provides:
 
 It does **not** implement WebSocket transport or a custom Yjs sync provider.
 
+## Install
+
+```bash
+pnpm add @input/pen-crdt-yjs yjs y-protocols
+```
+
+Required peers are `yjs` (`^13.6`) and `y-protocols` (`^1.0.7`). `engines.node` is `>=22`.
+
 ## State barriers
 
 ```ts
@@ -205,6 +213,24 @@ Pen reports document growth and does not compact documents. On load, a document 
 - **`gc: true`.** `yjsAdapter()` defaults to `gc: false` so deleted Yjs content stays restorable for undo and history. Passing `yjsAdapter({ gc: true })` lets Yjs collect deleted items and gives up restore of those old deletions.
 
 Which combination a host uses depends on whether it ships version history. Pen does not pick one.
+
+## Options
+
+`yjsAdapter(options?)` accepts:
+
+| Option         | Default | Effect                                                                          |
+| -------------- | ------- | ------------------------------------------------------------------------------- |
+| `gc`           | `false` | Y.Doc GC. `false` keeps deleted content restorable for undo and history         |
+| `onDiagnostic` | no-op   | Receives CRDT diagnostics (malformed updates, document-size, unlabeled origins) |
+| `onRecovered`  | unset   | Called with `"repair"` when `loadDocument` recovers a document                  |
+
+`createYjsProviderSession()` takes a `YjsProviderAdapter` (`connect`, `disconnect`, `destroy`, `onStatusChange`; optional `getStatus`, `getIsSynced`, `onSync`). That is a required adapter object, not a defaults table.
+
+## Documentation
+
+The docs site (the `@input/pen-docs` package) covers this area on the Collaboration page (`#/collaboration`).
+
+The public signatures of record are in `api-report.md` next to this package's source in the Pen repository. The docs site does not host a generated browsable reference.
 
 ## License
 

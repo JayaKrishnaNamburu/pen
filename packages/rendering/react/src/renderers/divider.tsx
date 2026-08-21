@@ -9,7 +9,7 @@ export function DividerRenderer(
     <hr
       ref={ctx.ref as React.Ref<HTMLHRElement>}
       data-block-type="divider"
-      data-selected={ctx.selected || undefined}
+      data-selected={ctx.selected ? "" : undefined}
     />
   );
 }

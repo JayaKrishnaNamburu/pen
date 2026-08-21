@@ -50,6 +50,8 @@ flowchart TD
 Important rules:
 
 - Search state is derived from the current editor document and options.
+- Case-insensitive match uses core `foldAndNormalize()` and `localeFacet`. Case-sensitive search skips folding.
+- The extension declares `Mod-f` / `Mod-g` (and siblings) on `keymapFacet`, not `Extension.keyBindings`.
 - Active-match navigation is controller state, not renderer-local state.
 - Replace and replace-all actions resolve to editor operations instead of direct DOM mutations.
 
@@ -59,7 +61,7 @@ Important rules:
 - Spec path mirrors workspace path: `packages/extensions/search.md`
 - Typical integration installs `searchExtension()` on the editor and renders controls from `@input/pen-react` or another renderer package
 - Decorations and active-match reveal behavior should remain extension-driven so closing or resetting search can fully clear search-derived state
-- Keyboard shortcuts belong at the renderer or host-app layer, but they should call back into the search controller here
+- Keyboard shortcuts for open/next/previous live on `keymapFacet` in this package. Renderer or host bindings should call the same controller methods rather than inventing a second map.
 
 ## Current Maturity / Intended Usage
 

@@ -3,7 +3,7 @@
 import { FIELD_EDITOR_SLOT_KEY } from "@input/pen-types";
 import { createTestEditor } from "@input/pen-test";
 import { mount } from "@vue/test-utils";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { h, nextTick } from "vue";
 import { PenEditor } from "../components/PenEditor";
 
@@ -146,9 +146,8 @@ describe("@input/pen-vue", () => {
     editor.destroy();
   });
 
-  it("routes document delete shortcuts through the shared DOM handler", async () => {
+  it("deletes a block selection with Backspace", async () => {
     const editor = createParagraphEditor();
-    const deleteSelection = vi.spyOn(editor, "deleteSelection").mockImplementation(() => undefined);
 
     const wrapper = mount(PenEditor, {
       attachTo: document.body,
@@ -164,10 +163,11 @@ describe("@input/pen-vue", () => {
         key: "Backspace",
       }),
     );
+    await nextTick();
 
-    expect(deleteSelection).toHaveBeenCalledWith({ origin: "user" });
+    expect(editor.documentState.blockOrder).toEqual(["paragraph-2"]);
+    expect(editor.getBlock("paragraph-2").textContent()).toBe("Second");
 
-    deleteSelection.mockRestore();
     wrapper.unmount();
     editor.destroy();
   });
@@ -202,14 +202,14 @@ describe("@input/pen-vue", () => {
     editor.destroy();
   });
 
-  it("maps an inline click to the resolved caret offset", async () => {
+  it("activates the field editor when the empty block host is clicked", async () => {
     const editor = createTestEditor({
       blocks: [
         {
           id: "paragraph-1",
           type: "paragraph",
           props: {},
-          content: "Hello",
+          content: "",
         },
       ],
     });
@@ -219,48 +219,18 @@ describe("@input/pen-vue", () => {
       props: { editor },
     });
 
-    const inlineSurface = wrapper.get("[data-pen-inline-content]");
-    const textNode = inlineSurface.element.firstChild;
-    expect(textNode?.nodeType).toBe(Node.TEXT_NODE);
-
-    const originalCaretRangeFromPoint = (
-      document as Document & {
-        caretRangeFromPoint?: (x: number, y: number) => Range | null;
-      }
-    ).caretRangeFromPoint;
-
-    (
-      document as Document & {
-        caretRangeFromPoint?: (x: number, y: number) => Range | null;
-      }
-    ).caretRangeFromPoint = () => {
-      const range = document.createRange();
-      range.setStart(textNode!, 2);
-      range.collapse(true);
-      return range;
-    };
-
-    await inlineSurface.trigger("mousedown", { clientX: 12, clientY: 8 });
+    const blockHost = wrapper.get('[data-block-id="paragraph-1"]');
+    await blockHost.trigger("mousedown");
     await nextTick();
 
     expect(editor.selection).toMatchObject({
       type: "text",
-      anchor: { blockId: "paragraph-1", offset: 2 },
-      focus: { blockId: "paragraph-1", offset: 2 },
+      anchor: { blockId: "paragraph-1" },
+      focus: { blockId: "paragraph-1" },
     });
-
-    if (originalCaretRangeFromPoint) {
-      (
-        document as Document & {
-          caretRangeFromPoint?: (x: number, y: number) => Range | null;
-        }
-      ).caretRangeFromPoint = originalCaretRangeFromPoint;
-    } else {
-      Reflect.deleteProperty(
-        document as Document & Record<string, unknown>,
-        "caretRangeFromPoint",
-      );
-    }
+    expect(
+      wrapper.find("[data-pen-field-editor-active-surface]").exists(),
+    ).toBe(true);
 
     wrapper.unmount();
     editor.destroy();

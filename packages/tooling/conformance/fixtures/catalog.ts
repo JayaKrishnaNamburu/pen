@@ -1,17 +1,34 @@
 import type { TestBlock } from "@input/pen-test";
+import { BIDI_MIXED_BLOCKS } from "./bidi";
 
 export type FixtureName =
 	| "hello-world"
 	| "two-paragraph"
+	| "empty"
 	| "deterministic"
 	| "windowed-large"
-	| "wave3-geometry";
+	| "wave3-geometry"
+	| "bidi-mixed"
+	| "nested-toggle";
 
-export const FIXTURE_NAMES: readonly FixtureName[] = [
-	"hello-world",
-	"two-paragraph",
-	"deterministic",
-];
+export const NESTED_TOGGLE_PARENT_ID = "nest-parent";
+export const NESTED_TOGGLE_CHILD_ID = "nest-child";
+export const NESTED_TOGGLE_CHILD_TEXT = "Nested child";
+
+const FIXTURE_PRESENT = {
+	"hello-world": true,
+	"two-paragraph": true,
+	empty: true,
+	deterministic: true,
+	"windowed-large": true,
+	"wave3-geometry": true,
+	"bidi-mixed": true,
+	"nested-toggle": true,
+} as const satisfies Record<FixtureName, true>;
+
+export const FIXTURE_NAMES: readonly FixtureName[] = Object.keys(
+	FIXTURE_PRESENT,
+) as FixtureName[];
 
 export const WINDOWED_LARGE_BLOCK_COUNT = 40;
 export const WINDOWED_WINDOW_SIZE = 8;
@@ -41,6 +58,13 @@ export const LOCAL_FIXTURES: Record<
 			id: "hello-p1",
 			type: "paragraph",
 			content: "Hello world",
+		},
+	],
+	empty: [
+		{
+			id: "empty-p1",
+			type: "paragraph",
+			content: "",
 		},
 	],
 	"two-paragraph": [
@@ -78,17 +102,29 @@ export const LOCAL_FIXTURES: Record<
 			content: "Tail block for boundaries",
 		},
 	],
+	"bidi-mixed": BIDI_MIXED_BLOCKS,
+	"nested-toggle": [
+		{
+			id: NESTED_TOGGLE_PARENT_ID,
+			type: "toggle",
+			props: { open: true },
+			content: "Toggle parent",
+			children: [
+				{
+					id: NESTED_TOGGLE_CHILD_ID,
+					type: "paragraph",
+					props: { parentId: NESTED_TOGGLE_PARENT_ID },
+					content: NESTED_TOGGLE_CHILD_TEXT,
+				},
+			],
+		},
+	],
 };
 
 export function isLocalFixtureName(
 	name: string,
 ): name is Exclude<FixtureName, "deterministic"> {
-	return (
-		name === "hello-world" ||
-		name === "two-paragraph" ||
-		name === "windowed-large" ||
-		name === "wave3-geometry"
-	);
+	return Object.prototype.hasOwnProperty.call(LOCAL_FIXTURES, name);
 }
 
 export function isFixtureName(name: string): name is FixtureName {

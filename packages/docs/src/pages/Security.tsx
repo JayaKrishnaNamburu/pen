@@ -6,7 +6,8 @@ export function SecurityPage() {
 				Pen renders and mutates a collaborative document. Remote Yjs
 				updates write shared state without passing through import
 				sanitization. The load-bearing boundary is render and
-				interaction time. The host owns who may write.
+				interaction time. The host owns who may write. The posture is{" "}
+				<code>spec-v2/12-security.md</code>.
 			</p>
 			<p>
 				Disclosure, supported versions, and the 90-day coordinated
@@ -38,9 +39,12 @@ export function SecurityPage() {
 			</p>
 			<p>
 				Hosts that need extra schemes wrap the default policy with{" "}
-				<code>urlPolicyExtension</code>. Clipboard HTML and the HTML
-				and XML exporters admit href/src through the same{" "}
-				<code>resolve()</code> before emitting markup.
+				<code>urlPolicyExtension</code>. That wrap is{" "}
+				<code>pen.urlPolicy</code>: render-time sinks and clipboard
+				HTML read the editor facet. HTML and XML exporters call the
+				default <code>urlPolicy.resolve</code> and do not read the
+				facet — a wrap that admits <code>blob:</code> at render
+				time still drops it on those exports.
 			</p>
 
 			<h2>Other library boundaries</h2>

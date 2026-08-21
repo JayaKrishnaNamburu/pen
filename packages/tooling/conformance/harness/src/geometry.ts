@@ -379,6 +379,39 @@ function paintPlanForCarets(
 	};
 }
 
+function countLayoutReads(
+	scheduler: DomScheduler,
+	onRead: (phase: DomScheduler["phase"]) => void,
+): () => void {
+	const restorers: Array<() => void> = [];
+	const wrap = (target: object, key: string): void => {
+		const original = (target as Record<string, unknown>)[key];
+		if (typeof original !== "function") {
+			return;
+		}
+		const method = original as (this: unknown, ...args: unknown[]) => unknown;
+		(target as Record<string, unknown>)[key] = function (
+			this: unknown,
+			...args: unknown[]
+		) {
+			onRead(scheduler.phase);
+			return method.apply(this, args);
+		};
+		restorers.push(() => {
+			(target as Record<string, unknown>)[key] = original;
+		});
+	};
+	wrap(Element.prototype, "getBoundingClientRect");
+	wrap(Element.prototype, "getClientRects");
+	wrap(Range.prototype, "getBoundingClientRect");
+	wrap(Range.prototype, "getClientRects");
+	return () => {
+		for (const restore of restorers) {
+			restore();
+		}
+	};
+}
+
 export async function flushEightRemoteCarets(
 	editor: Editor,
 	points: readonly GeometryPoint[],
@@ -397,16 +430,29 @@ export async function flushEightRemoteCarets(
 	let readPhase = current.scheduler.phase;
 	let writePhase = current.scheduler.phase;
 	let plan: PaintPlan = { generation: current.reader.generation, items: [] };
+	let readPhaseMeasureCount = 0;
+	let writePhaseMeasureCount = 0;
+	const restoreReads = countLayoutReads(current.scheduler, (phase) => {
+		if (phase === "read") {
+			readPhaseMeasureCount += 1;
+		} else if (phase === "write") {
+			writePhaseMeasureCount += 1;
+		}
+	});
 
-	const readDone = current.scheduler.read(() => {
-		readPhase = current.scheduler.phase;
-		plan = paintPlanForCarets(current.reader, points);
-	});
-	const writeDone = current.scheduler.write(() => {
-		writePhase = current.scheduler.phase;
-		current.overlay.applyPaintPlan(plan);
-	});
-	await Promise.all([readDone, writeDone]);
+	try {
+		const readDone = current.scheduler.read(() => {
+			readPhase = current.scheduler.phase;
+			plan = paintPlanForCarets(current.reader, points);
+		});
+		const writeDone = current.scheduler.write(() => {
+			writePhase = current.scheduler.phase;
+			current.overlay.applyPaintPlan(plan);
+		});
+		await Promise.all([readDone, writeDone]);
+	} finally {
+		restoreReads();
+	}
 
 	const layoutShiftEntries = layoutShift?.take() ?? [];
 	const longTaskEntries = longTask?.take() ?? [];
@@ -422,6 +468,16 @@ export async function flushEightRemoteCarets(
 		overlayAttr: current.overlay.element.getAttribute(OVERLAY_LAYER_ATTR),
 		readPhase,
 		writePhase,
+		items: plan.items.map((item) => ({
+			id: item.id,
+			kind: item.kind,
+			x: item.x,
+			y: item.y,
+			width: item.width,
+			height: item.height,
+		})),
+		readPhaseMeasureCount,
+		writePhaseMeasureCount,
 		supportedEntryTypes: types,
 		layoutShiftSupported: layoutShift != null,
 		longTaskSupported: longTask != null,

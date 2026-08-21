@@ -26,3 +26,5 @@ Pen is a headless, extension-first editor engine. The document model, mutation p
 - Shared browser editing behavior belongs in `@input/pen-dom`; React and Vue should delegate to it instead of carrying framework-local keyboard, selection, or table-editing forks.
 - Host applications own auth, transport policy, and product-specific UI decisions.
 - Shared helpers should stay below package boundaries rather than leaking renderer or app assumptions into the core.
+- `@input/pen-content-ops` and `@input/pen-markdown-serialization` depend on `@input/pen-core` and re-export helpers that moved there. Core no longer depends on those packages.
+- `defaultPreset()` is the batteries-included composition. Bare `createEditor()` is the apply pipeline only.

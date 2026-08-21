@@ -21,6 +21,8 @@ export type {
 export { createTestDocument, populateYDoc } from "./createTestDocument";
 export { createTestEditor } from "./createTestEditor";
 export { ASSERT_DOC_EQUALS_FIELDS, assertDocEquals } from "./assertDocEquals";
+export { assertPeerEditsSurvive } from "./assertPeerEditsSurvive";
+export type { AssertPeerEditsSurviveOptions } from "./assertPeerEditsSurvive";
 export { createTestCollaboration } from "./createTestCollaboration";
 export {
 	createTwoPeerHarness,

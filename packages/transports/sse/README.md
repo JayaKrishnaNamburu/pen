@@ -35,11 +35,14 @@ if (!toolRuntime) {
 
 const handler = createSSEHandler({
   toolRuntime,
+  editor,
   onError(error) {
     console.error(error);
   },
 });
 ```
+
+A live `Editor` is passed at construction. `PenStreamRequest` is the wire body and has no `editor` field. The handler rejects a body that is not a `PenStreamRequest` — including a top-level or nested `editor`, a wrong-shaped field, a prototype key, or an oversized payload — with `400` before any tool runs.
 
 ## Client Example
 
@@ -75,7 +78,7 @@ const transport = sseTransport({
 | Option         | Default  | Effect                               |
 | -------------- | -------- | ------------------------------------ |
 | `toolRuntime`  | unset    | In-process tool execution            |
-| `editor`       | unset    | Editor passed through to the handler |
+| `editor`       | unset    | In-process editor for `ToolContext`  |
 | `onRequest`    | unset    | Called with each `PenStreamRequest`  |
 | `onError`      | unset    | Called with handler errors           |
 | `pingInterval` | `15_000` | Server ping interval in milliseconds |

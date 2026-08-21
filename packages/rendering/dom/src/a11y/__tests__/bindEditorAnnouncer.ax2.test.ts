@@ -53,6 +53,31 @@ describe("bindEditorAnnouncer (AX2)", () => {
 		expect(liveRegion(root)?.textContent).toBe("Converted to Heading");
 	});
 
+	it("AX2: announcement text comes from pen.messages, not a hardcoded string", () => {
+		const editor = createHeadlessEditor({
+			schema: defaultSchema,
+			messages: {
+				"pen.a11y.blockConverted": "TEST-converted {blockType}",
+			},
+		});
+		const root = document.createElement("div");
+		document.body.appendChild(root);
+		const stop = bindEditorAnnouncer(editor, root);
+		fixtures.push({ editor, root, stop });
+
+		const blockId = editor.firstBlock()!.id;
+		editor.apply([
+			{
+				type: "convert-block",
+				blockId,
+				newType: "heading",
+				newProps: { level: 1 },
+			},
+		]);
+
+		expect(liveRegion(root)?.textContent).toBe("TEST-converted Heading");
+	});
+
 	it("AX2: block selection enter and change announce counts", () => {
 		const editor = createHeadlessEditor({ schema: defaultSchema });
 		const root = document.createElement("div");

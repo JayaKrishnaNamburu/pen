@@ -26,7 +26,7 @@ function PlaceholderParagraphRenderer(
 		<div
 			ref={ctx.ref as React.Ref<HTMLDivElement>}
 			data-block-type="paragraph"
-			data-selected={ctx.selected || undefined}
+			data-selected={ctx.selected ? "" : undefined}
 		>
 			<InlineContent
 				blockId={block.id}
@@ -70,6 +70,9 @@ describe("@input/pen-react placeholder behavior", () => {
 		expect(placeholders).toHaveLength(1);
 		expect(placeholders[0]?.getAttribute("data-placeholder")).toBe(
 			"Start writing...",
+		);
+		expect(placeholders[0]?.getAttribute("data-placeholder-visible")).toBe(
+			"",
 		);
 		expect(
 			placeholders[0]?.hasAttribute("data-pen-field-editor-surface"),

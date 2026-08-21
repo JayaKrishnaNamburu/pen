@@ -1,6 +1,7 @@
 import type {
 	BlockSchema,
 	Editor,
+	FacetProvider,
 	InlineSchema,
 	SelectionState,
 } from "@input/pen-types";
@@ -17,7 +18,10 @@ import {
 
 const paragraph = defineBlock("paragraph", {
 	props: {
-		direction: prop.enum(["ltr", "rtl", "auto"]).optional().default(undefined),
+		direction: prop
+			.enum(["ltr", "rtl", "auto"])
+			.optional()
+			.default(undefined),
 	},
 	content: "inline",
 	fieldEditor: "richtext",
@@ -155,7 +159,12 @@ export function createCommandTestSchema() {
 			table,
 			codeBlock,
 		] as unknown as BlockSchema[],
-		inlines: [bold, italic, underline, mention] as unknown as InlineSchema[],
+		inlines: [
+			bold,
+			italic,
+			underline,
+			mention,
+		] as unknown as InlineSchema[],
 		onUnknownBlock: () => "passthrough",
 	});
 }
@@ -231,10 +240,13 @@ export function applyCommandSelection(
 	}
 }
 
-export function createCommandHarness(editor: Editor): CommandRegistry {
+export function createCommandHarness(
+	editor: Editor,
+	extraProviders: readonly FacetProvider[] = [],
+): CommandRegistry {
 	return createCommandRegistry({
 		editor,
-		providers: builtinCommandHandlers(),
+		providers: [...extraProviders, ...builtinCommandHandlers()],
 		apply: (ops, options) => {
 			editor.apply(ops, options);
 		},
@@ -247,7 +259,9 @@ export function createCommandHarness(editor: Editor): CommandRegistry {
 export function caretOf(editor: Editor): { blockId: string; offset: number } {
 	const selection = editor.selection;
 	if (!selection || selection.type !== "text") {
-		throw new Error(`expected text selection, got ${selection?.type ?? "null"}`);
+		throw new Error(
+			`expected text selection, got ${selection?.type ?? "null"}`,
+		);
 	}
 	return selection.focus;
 }

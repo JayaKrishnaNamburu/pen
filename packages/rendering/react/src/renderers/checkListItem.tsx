@@ -19,7 +19,7 @@ export function CheckListItemRenderer(
       indent={indent}
       selected={ctx.selected}
       decorations={ctx.decorations}
-      extraAttributes={{ "data-checked": checked || undefined }}
+      extraAttributes={{ "data-checked": checked ? "" : undefined }}
       marker={<CheckboxToggle blockId={block.id} checked={checked} />}
     />
   );

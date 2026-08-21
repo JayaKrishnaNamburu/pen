@@ -10,7 +10,6 @@ import {
   type PenStreamPart,
   type Position,
 } from "@input/pen-types";
-import { collectToolExecutionOutput } from "./toolExecution";
 import type { StreamingTarget } from "./streamingTarget";
 import {
   assertToolCanMutateBlock,
@@ -19,6 +18,12 @@ import {
   ToolContextImpl,
 } from "@input/pen-document-ops";
 import type { ToolRuntimeImpl } from "@input/pen-document-ops";
+import {
+  createAIToolTurn,
+  executeAITool,
+  isAIToolCallDenied,
+  type AIToolRuntime,
+} from "@input/pen-ai-tools";
 
 export interface ProcessStreamOptions {
   onPart?: (part: PenStreamPart) => void;
@@ -63,6 +68,10 @@ export async function processStream(
       "document-ops:toolRuntime",
     ) ?? getDocumentToolRuntime(editor);
   const groupId = options?.groupId;
+  const toolTurn = createAIToolTurn({
+    allowedMutatingTools: [],
+    groupId: groupId ?? undefined,
+  });
   const seenUnknownTypes = new Set<string>();
   let closed = false;
   let abortRequested = false;
@@ -422,14 +431,14 @@ export async function processStream(
         }
         try {
           let emittedProgressiveOutput = false;
-          const result = await collectToolExecutionOutput(
-            toolRuntime.executeTool(
-              part.toolName,
-              part.input,
-              new ToolContextImpl(editor, "", (emitted) =>
-                options?.onPart?.(emitted),
-              ),
+          const result = await executeAITool(
+            asAIToolRuntime(toolRuntime),
+            part.toolName,
+            part.input,
+            new ToolContextImpl(editor, "", (emitted) =>
+              options?.onPart?.(emitted),
             ),
+            toolTurn,
             (_toolPart, progressiveOutput) => {
               emittedProgressiveOutput = true;
               options?.onPart?.({
@@ -439,6 +448,23 @@ export async function processStream(
               });
             },
           );
+
+          if (isAIToolCallDenied(result)) {
+            options?.onPart?.({
+              type: "tool-error",
+              toolCallId: part.toolCallId,
+              error: result.reason,
+            });
+            emitStreamDiagnostic(editor, {
+              code: "stream-tool-error",
+              level: "warn",
+              source: "delta-stream",
+              message: `Tool "${part.toolName}" was not granted for this stream (${result.reason}).`,
+              toolCallId: part.toolCallId,
+              groupId: groupId ?? null,
+            });
+            break;
+          }
 
           if (!emittedProgressiveOutput) {
             options?.onPart?.({
@@ -671,6 +697,22 @@ function hasStringType(part: PenStreamPart): boolean {
 
 function isDataPart(part: PenStreamPart): part is DataPart {
   return part.type.startsWith("data-");
+}
+
+function asAIToolRuntime(runtime: {
+  executeTool: AIToolRuntime["executeTool"];
+  getTool?: AIToolRuntime["getTool"];
+  listTools?: AIToolRuntime["listTools"];
+  registerTool?: AIToolRuntime["registerTool"];
+  unregisterTool?: AIToolRuntime["unregisterTool"];
+}): AIToolRuntime {
+  return {
+    executeTool: runtime.executeTool.bind(runtime),
+    getTool: runtime.getTool?.bind(runtime) ?? (() => null),
+    listTools: runtime.listTools?.bind(runtime) ?? (() => []),
+    registerTool: runtime.registerTool?.bind(runtime) ?? (() => {}),
+    unregisterTool: runtime.unregisterTool?.bind(runtime) ?? (() => {}),
+  };
 }
 
 function isNonEmptyString(value: unknown): value is string {

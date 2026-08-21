@@ -5,11 +5,16 @@
 	"sampleSize": 21,
 	"machineClass": "macos-arm64 (darwin 25, Apple Silicon). Not the CI runner (github-actions-ubuntu-latest).",
 	"producedOn": "2026-08-20",
+	"floorProducedOn": "2026-08-21",
+	"status": "provisional",
+	"caveat": "Wall-clock medians are the 2026-08-20 macos-arm64 sample (n=21). Floors were recorded 2026-08-21 on the same class at load 7.87 on 14 CPUs while other lanes were running. Empty-timer floors are 0.00ms; the peer empty-sync floor is 0.02ms. A later isolated note recorded concurrentPeers-2 wall p50 at 0.198ms against this file's 1.49ms — that row is especially untrustworthy until a quiet-machine remeasure. This is not a quiet-machine envelope.",
 	"tolerance": {
-		"ratio": 4,
-		"floorMs": 15,
-		"formula": "gateP50Ms = max(measuredP50Ms * 4, measuredP50Ms + 15)",
-		"justification": "Local medians are macos-arm64. CI is github-actions-ubuntu-latest and is slower and noisier. 4× the measured median covers that class gap. The 15ms floor covers sub-millisecond rungs, where a pure ratio would treat runner jitter as a regression. The gate is the median of ENVELOPE_SAMPLE_SIZE; P95 and Max are trend-only (CH8)."
+		"ratio": 3,
+		"floorMs": 1,
+		"minSignalMs": 0.5,
+		"formula": "gated when attributedP50Ms >= 0.5; gateP50Ms = max(attributedP50Ms * 3, attributedP50Ms + 1)",
+		"justification": "Same-run p95/p50 on the committed macos-arm64 sample (n=21) peaked at 2.38× (100-block). The same-class gate is 3× attributed median for rungs whose attributed p50 is at least 0.5ms. Below that the clock is inside timer noise and a ratio cannot be attributed to Pen. The +1ms term applies only above that signal. P95 and Max are trend-only (CH8).",
+		"crossClass": "Timing is not compared across machine classes. macos-arm64 medians are not a ubuntu-latest budget; a ratio picked to absorb that gap cannot catch a regression."
 	},
 	"points": [
 		{
@@ -19,9 +24,14 @@
 			"size": "100 blocks",
 			"operation": "insert-text",
 			"measuredP50Ms": 0.21,
+			"floorP50Ms": 0,
+			"floorKind": "empty-timer",
+			"attributedP50Ms": 0.21,
 			"p95Ms": 0.5,
 			"maxMs": 0.84,
-			"gateP50Ms": 15.21
+			"p95Ratio": 2.38,
+			"gated": false,
+			"gateP50Ms": null
 		},
 		{
 			"id": "blocks-1000",
@@ -30,9 +40,14 @@
 			"size": "1,000 blocks",
 			"operation": "insert-text",
 			"measuredP50Ms": 0.86,
+			"floorP50Ms": 0,
+			"floorKind": "empty-timer",
+			"attributedP50Ms": 0.86,
 			"p95Ms": 1.42,
 			"maxMs": 1.42,
-			"gateP50Ms": 15.86
+			"p95Ratio": 1.65,
+			"gated": true,
+			"gateP50Ms": 2.58
 		},
 		{
 			"id": "blocks-5000",
@@ -41,9 +56,14 @@
 			"size": "5,000 blocks",
 			"operation": "insert-text",
 			"measuredP50Ms": 6.13,
+			"floorP50Ms": 0,
+			"floorKind": "empty-timer",
+			"attributedP50Ms": 6.13,
 			"p95Ms": 8.26,
 			"maxMs": 8.3,
-			"gateP50Ms": 24.52
+			"p95Ratio": 1.35,
+			"gated": true,
+			"gateP50Ms": 18.39
 		},
 		{
 			"id": "long-block",
@@ -52,9 +72,14 @@
 			"size": "100,000 characters",
 			"operation": "insert-text",
 			"measuredP50Ms": 0.03,
+			"floorP50Ms": 0,
+			"floorKind": "empty-timer",
+			"attributedP50Ms": 0.03,
 			"p95Ms": 0.05,
 			"maxMs": 0.06,
-			"gateP50Ms": 15.03
+			"p95Ratio": 1.67,
+			"gated": false,
+			"gateP50Ms": null
 		},
 		{
 			"id": "nesting-10",
@@ -63,9 +88,14 @@
 			"size": "depth 10",
 			"operation": "insert-text",
 			"measuredP50Ms": 0.05,
+			"floorP50Ms": 0,
+			"floorKind": "empty-timer",
+			"attributedP50Ms": 0.05,
 			"p95Ms": 0.06,
 			"maxMs": 0.06,
-			"gateP50Ms": 15.05
+			"p95Ratio": 1.2,
+			"gated": false,
+			"gateP50Ms": null
 		},
 		{
 			"id": "table-50x20",
@@ -74,9 +104,14 @@
 			"size": "50 × 20",
 			"operation": "insert-table-cell-text",
 			"measuredP50Ms": 0.03,
+			"floorP50Ms": 0,
+			"floorKind": "empty-timer",
+			"attributedP50Ms": 0.03,
 			"p95Ms": 0.04,
 			"maxMs": 0.05,
-			"gateP50Ms": 15.03
+			"p95Ratio": 1.33,
+			"gated": false,
+			"gateP50Ms": null
 		},
 		{
 			"id": "concurrentPeers-2",
@@ -85,9 +120,14 @@
 			"size": "2 peers",
 			"operation": "insert-text + sync",
 			"measuredP50Ms": 1.49,
+			"floorP50Ms": 0.02,
+			"floorKind": "empty-sync",
+			"attributedP50Ms": 1.47,
 			"p95Ms": 1.72,
 			"maxMs": 5.14,
-			"gateP50Ms": 16.49
+			"p95Ratio": 1.15,
+			"gated": true,
+			"gateP50Ms": 4.41
 		}
 	]
 }

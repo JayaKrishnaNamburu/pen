@@ -85,7 +85,7 @@ import {
 const LAST_EVENTS_CAP = 32;
 const DIAGNOSTICS_CAP = 64;
 
-type Session = {
+export type Session = {
 	editor: Editor;
 	remoteEditor: Editor;
 	localY: Y.Doc;
@@ -533,7 +533,7 @@ function remoteInjectY(args: RemoteYInjectArgs): void {
 function documentText(): string {
 	const current = getHarnessSession();
 	const parts: string[] = [];
-	for (const block of current.editor.documentState.blocks) {
+	for (const block of current.editor.documentState.allBlocks()) {
 		parts.push(block.textContent());
 	}
 	return parts.join("\n");
@@ -944,9 +944,6 @@ function installBridge(): void {
 		dispatchBeforeInput,
 		clearDiagnostics,
 		mutateActiveSurfaceText,
-	};
-	window.__penConformance = bridge;
-	Object.assign(window.__penConformance, {
 		undo() {
 			getHarnessSession().editor.undoManager.undo();
 		},
@@ -956,5 +953,6 @@ function installBridge(): void {
 		stopCapturing() {
 			getHarnessSession().editor.undoManager.stopCapturing();
 		},
-	});
+	};
+	window.__penConformance = bridge;
 }

@@ -53,6 +53,18 @@ ${rungRows.join("\n")}
 ## Past the ceiling
 
 Past these sizes, per-commit decoration collection and full-document render degrade first — Pen does not virtualize (\`spec-v2/07-dom-scheduling.md\`). Hosts that need larger documents window blocks themselves (\`${metadata.virtualization}\`, SCALE5).
+${renderNotes(metadata.notes)}`;
+}
+
+function renderNotes(notes) {
+	if (!Array.isArray(notes) || notes.length === 0) {
+		return "";
+	}
+	const items = notes.map((note) => `- ${note}`).join("\n");
+	return `
+## Correction notes
+
+${items}
 `;
 }
 

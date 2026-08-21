@@ -40,7 +40,7 @@ import {
 } from "./regionSelectionState";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { composeRefs } from "../../utils/composeRefs";
-import { DATA_ATTRS } from "../../utils/dataAttributes";
+import { buildDataAttributes, DATA_ATTRS } from "../../utils/dataAttributes";
 import { BlockDragSessionProvider } from "./blockDragSession";
 import { registerInlineAtomInteractionRoot } from "./inlineAtomInteraction";
 
@@ -266,9 +266,11 @@ export function EditorRoot(props: EditorRootProps) {
 	const primitiveProps: Record<string, unknown> = {
 		[DATA_ATTRS.editorRoot]: "",
 		[DATA_ATTRS.viewId]: editor.internals.viewId,
-		[DATA_ATTRS.focused]: focused || undefined,
-		[DATA_ATTRS.readonly]: readonly || undefined,
-		[DATA_ATTRS.empty]: isEmpty || undefined,
+		...buildDataAttributes({
+			[DATA_ATTRS.focused]: focused,
+			[DATA_ATTRS.readonly]: readonly,
+			[DATA_ATTRS.empty]: isEmpty,
+		}),
 		tabIndex: -1,
 		role: "textbox",
 		"aria-multiline": true,

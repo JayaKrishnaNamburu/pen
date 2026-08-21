@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { createHeadlessEditor } from "@input/pen-core";
 import { parseSSELine } from "../parser";
 import { createSSEHandler } from "../server";
 import { sseTransport } from "../client";
@@ -116,8 +117,8 @@ describe("SSE server handler", () => {
 	it("returns text/event-stream content type (AC 16)", async () => {
 		const handler = createSSEHandler({
 			toolRuntime: {
-				registerTool() { },
-				unregisterTool() { },
+				registerTool() {},
+				unregisterTool() {},
 				listTools: () => [],
 				getTool: () => null,
 				executeTool: async () => "result",
@@ -144,8 +145,8 @@ describe("SSE server handler", () => {
 	it("event IDs use monotonic streamId:eventIndex format (AC 8)", async () => {
 		const handler = createSSEHandler({
 			toolRuntime: {
-				registerTool() { },
-				unregisterTool() { },
+				registerTool() {},
+				unregisterTool() {},
 				listTools: () => [],
 				getTool: () => null,
 				executeTool: async () => "result",
@@ -171,8 +172,8 @@ describe("SSE server handler", () => {
 	it("yields tool-output and done parts for Promise-based tools (AC 7)", async () => {
 		const handler = createSSEHandler({
 			toolRuntime: {
-				registerTool() { },
-				unregisterTool() { },
+				registerTool() {},
+				unregisterTool() {},
 				listTools: () => [],
 				getTool: () => null,
 				executeTool: async () => ({ msg: "ok" }),
@@ -245,6 +246,173 @@ describe("SSE server handler", () => {
 
 		expect(response.status).toBe(400);
 	});
+
+	it("AIB2 hostile context.editor body is 400 and executeTool never runs", async () => {
+		const executeTool = vi.fn(async () => "should-not-run");
+		const handler = createSSEHandler({
+			toolRuntime: {
+				registerTool() {},
+				unregisterTool() {},
+				listTools: () => [],
+				getTool: () => null,
+				executeTool,
+			},
+			pingInterval: 60_000,
+		});
+
+		const response = await handler(
+			new Request("http://localhost/sse", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					prompt: "x",
+					context: { editor: { apply: 1, internals: 1 } },
+					toolCalls: [
+						{ toolCallId: "tc-1", name: "echo", input: {} },
+					],
+				}),
+			}),
+		);
+
+		expect(response.status).toBe(400);
+		expect(executeTool).not.toHaveBeenCalled();
+		expect(response.headers.get("Content-Type")).not.toBe(
+			"text/event-stream",
+		);
+	});
+
+	it("AIB2 well-formed request without editor still executes tools", async () => {
+		const executeTool = vi.fn(async () => ({ msg: "ok" }));
+		const handler = createSSEHandler({
+			toolRuntime: {
+				registerTool() {},
+				unregisterTool() {},
+				listTools: () => [],
+				getTool: () => null,
+				executeTool,
+			},
+			pingInterval: 60_000,
+		});
+
+		const response = await handler(
+			new Request("http://localhost/sse", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(
+					makeRequest({
+						context: { docId: "doc-1", blockId: "b1" },
+					}),
+				),
+			}),
+		);
+
+		expect(response.status).toBe(200);
+		const events = await readAllSSEEvents(response);
+		const parts = events.map((e) => JSON.parse(e.data) as PenStreamPart);
+		expect(executeTool).toHaveBeenCalledTimes(1);
+		expect(parts.filter((p) => p.type === "error")).toHaveLength(0);
+		expect(parts.filter((p) => p.type === "tool-output")).toHaveLength(1);
+		expect(parts.filter((p) => p.type === "done")).toHaveLength(1);
+	});
+
+	it("rejects a non-string context.docId with 400 before executeTool", async () => {
+		const executeTool = vi.fn(async () => "should-not-run");
+		const handler = createSSEHandler({
+			toolRuntime: {
+				registerTool() {},
+				unregisterTool() {},
+				listTools: () => [],
+				getTool: () => null,
+				executeTool,
+			},
+			pingInterval: 60_000,
+		});
+
+		const response = await handler(
+			new Request("http://localhost/sse", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					prompt: "x",
+					context: { docId: { nested: true } },
+					toolCalls: [
+						{ toolCallId: "tc-1", name: "echo", input: {} },
+					],
+				}),
+			}),
+		);
+
+		expect(response.status).toBe(400);
+		expect(executeTool).not.toHaveBeenCalled();
+	});
+
+	it("rejects a non-array toolCalls with 400 before executeTool", async () => {
+		const executeTool = vi.fn(async () => "should-not-run");
+		const handler = createSSEHandler({
+			toolRuntime: {
+				registerTool() {},
+				unregisterTool() {},
+				listTools: () => [],
+				getTool: () => null,
+				executeTool,
+			},
+			pingInterval: 60_000,
+		});
+
+		const response = await handler(
+			new Request("http://localhost/sse", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					prompt: "x",
+					toolCalls: { name: "echo" },
+				}),
+			}),
+		);
+
+		expect(response.status).toBe(400);
+		expect(executeTool).not.toHaveBeenCalled();
+	});
+
+	it("AIB2 tools receive the construction-time editor, not a wire value", async () => {
+		const editor = createHeadlessEditor();
+		const apply = vi.spyOn(editor, "apply");
+
+		const handler = createSSEHandler({
+			editor,
+			toolRuntime: {
+				registerTool() {},
+				unregisterTool() {},
+				listTools: () => [],
+				getTool: () => null,
+				executeTool: async (_name, _input, ctx) => {
+					expect(ctx.editor).toBe(editor);
+					ctx.editor.apply([], { origin: "ai" });
+					return { applied: true };
+				},
+			},
+			pingInterval: 60_000,
+		});
+
+		const response = await handler(
+			new Request("http://localhost/sse", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(
+					makeRequest({
+						context: { docId: "doc-1", blockId: "b1" },
+					}),
+				),
+			}),
+		);
+
+		expect(response.status).toBe(200);
+		const events = await readAllSSEEvents(response);
+		const parts = events.map((e) => JSON.parse(e.data) as PenStreamPart);
+		expect(parts.filter((p) => p.type === "error")).toHaveLength(0);
+		expect(apply).toHaveBeenCalledTimes(1);
+		expect(apply.mock.calls[0]?.[1]).toEqual({ origin: "ai" });
+	});
 });
 
 describe("SSE client transport", () => {
@@ -259,7 +427,9 @@ describe("SSE client transport", () => {
 		vi.restoreAllMocks();
 	});
 
-	function sseBody(events: Array<{ id?: string; data: string }>): ReadableStream<Uint8Array> {
+	function sseBody(
+		events: Array<{ id?: string; data: string }>,
+	): ReadableStream<Uint8Array> {
 		const encoder = new TextEncoder();
 		return new ReadableStream({
 			start(controller) {
@@ -275,19 +445,29 @@ describe("SSE client transport", () => {
 	}
 
 	it("ping parts from server are consumed but NOT yielded to consumer (AC 9)", async () => {
-		globalThis.fetch = vi.fn(async () =>
-			new Response(
-				sseBody([
-					{ id: "s:0", data: '{"type":"ping"}' },
-					{ id: "s:1", data: '{"type":"tool-output","toolCallId":"tc-1","output":"ok"}' },
-					{ id: "s:2", data: '{"type":"ping"}' },
-					{ id: "s:3", data: '{"type":"done"}' },
-				]),
-				{ status: 200, headers: { "Content-Type": "text/event-stream" } },
-			),
+		globalThis.fetch = vi.fn(
+			async () =>
+				new Response(
+					sseBody([
+						{ id: "s:0", data: '{"type":"ping"}' },
+						{
+							id: "s:1",
+							data: '{"type":"tool-output","toolCallId":"tc-1","output":"ok"}',
+						},
+						{ id: "s:2", data: '{"type":"ping"}' },
+						{ id: "s:3", data: '{"type":"done"}' },
+					]),
+					{
+						status: 200,
+						headers: { "Content-Type": "text/event-stream" },
+					},
+				),
 		);
 
-		const transport = sseTransport({ url: "http://test/sse", pingTimeout: 30_000 });
+		const transport = sseTransport({
+			url: "http://test/sse",
+			pingTimeout: 30_000,
+		});
 		const parts = await collectParts(transport.stream(makeRequest()));
 
 		expect(parts.every((p) => p.type !== "ping")).toBe(true);
@@ -304,7 +484,11 @@ describe("SSE client transport", () => {
 			const body = new ReadableStream<Uint8Array>({
 				start(controller) {
 					ctrl = controller;
-					controller.enqueue(encoder.encode('data: {"type":"tool-output","toolCallId":"tc-1","output":"x"}\n\n'));
+					controller.enqueue(
+						encoder.encode(
+							'data: {"type":"tool-output","toolCallId":"tc-1","output":"x"}\n\n',
+						),
+					);
 				},
 			});
 			return new Response(body, {
@@ -313,12 +497,16 @@ describe("SSE client transport", () => {
 			});
 		});
 
-		const transport = sseTransport({ url: "http://test/sse", pingTimeout: 50 });
+		const transport = sseTransport({
+			url: "http://test/sse",
+			pingTimeout: 50,
+		});
 		const connectionChanges: boolean[] = [];
 		transport.onConnectionChange((v) => connectionChanges.push(v));
 
 		const parts: PenStreamPart[] = [];
-		const streamIter = transport.stream(makeRequest())[Symbol.asyncIterator]();
+		const stream = transport.stream(makeRequest());
+		const streamIter = stream[Symbol.asyncIterator]();
 
 		const first = await streamIter.next();
 		parts.push(first.value!);
@@ -342,7 +530,11 @@ describe("SSE client transport", () => {
 		globalThis.fetch = vi.fn(async () => {
 			const body = new ReadableStream<Uint8Array>({
 				start(controller) {
-					controller.enqueue(encoder.encode('data: {"type":"tool-output","toolCallId":"tc-1","output":"hi"}\n\n'));
+					controller.enqueue(
+						encoder.encode(
+							'data: {"type":"tool-output","toolCallId":"tc-1","output":"hi"}\n\n',
+						),
+					);
 				},
 			});
 			return new Response(body, {
@@ -375,13 +567,15 @@ describe("SSE client transport", () => {
 	});
 
 	it("onConnectionChange() fires on state transitions (AC 12)", async () => {
-		globalThis.fetch = vi.fn(async () =>
-			new Response(
-				sseBody([
-					{ id: "s:0", data: '{"type":"done"}' },
-				]),
-				{ status: 200, headers: { "Content-Type": "text/event-stream" } },
-			),
+		globalThis.fetch = vi.fn(
+			async () =>
+				new Response(
+					sseBody([{ id: "s:0", data: '{"type":"done"}' }]),
+					{
+						status: 200,
+						headers: { "Content-Type": "text/event-stream" },
+					},
+				),
 		);
 
 		const transport = sseTransport({ url: "http://test/sse" });
@@ -396,13 +590,18 @@ describe("SSE client transport", () => {
 	});
 
 	it("connect() makes HEAD request and sets connected based on response (AC 13)", async () => {
-		globalThis.fetch = vi.fn(async (url: string | URL | globalThis.Request, init?: RequestInit) => {
-			const req = init ?? {};
-			if (req.method === "HEAD") {
-				return new Response(null, { status: 200 });
-			}
-			return new Response(null, { status: 404 });
-		});
+		globalThis.fetch = vi.fn(
+			async (
+				url: string | URL | globalThis.Request,
+				init?: RequestInit,
+			) => {
+				const req = init ?? {};
+				if (req.method === "HEAD") {
+					return new Response(null, { status: 200 });
+				}
+				return new Response(null, { status: 404 });
+			},
+		);
 
 		const transport = sseTransport({ url: "http://test/sse" });
 		expect(transport.connected).toBe(false);
@@ -417,11 +616,15 @@ describe("SSE client transport", () => {
 	});
 
 	it("COL6 stream() does not send Last-Event-ID", async () => {
-		const fetchSpy = vi.fn(async () =>
-			new Response(
-				sseBody([{ id: "s:0", data: '{"type":"done"}' }]),
-				{ status: 200, headers: { "Content-Type": "text/event-stream" } },
-			),
+		const fetchSpy = vi.fn(
+			async () =>
+				new Response(
+					sseBody([{ id: "s:0", data: '{"type":"done"}' }]),
+					{
+						status: 200,
+						headers: { "Content-Type": "text/event-stream" },
+					},
+				),
 		);
 		globalThis.fetch = fetchSpy;
 
@@ -438,11 +641,17 @@ describe("SSE client transport", () => {
 	});
 
 	it("COL6 reconnect past retention is a full restart, not a resume", async () => {
-		const fetchSpy = vi.fn(async () =>
-			new Response(
-				sseBody([{ id: "expired-stream:999", data: '{"type":"done"}' }]),
-				{ status: 200, headers: { "Content-Type": "text/event-stream" } },
-			),
+		const fetchSpy = vi.fn(
+			async () =>
+				new Response(
+					sseBody([
+						{ id: "expired-stream:999", data: '{"type":"done"}' },
+					]),
+					{
+						status: 200,
+						headers: { "Content-Type": "text/event-stream" },
+					},
+				),
 		);
 		globalThis.fetch = fetchSpy;
 
@@ -484,11 +693,15 @@ describe("SSE client transport", () => {
 	});
 
 	it("COL6 disconnect then stream() is a full restart, not a resume", async () => {
-		const fetchSpy = vi.fn(async () =>
-			new Response(
-				sseBody([{ id: "s:0", data: '{"type":"done"}' }]),
-				{ status: 200, headers: { "Content-Type": "text/event-stream" } },
-			),
+		const fetchSpy = vi.fn(
+			async () =>
+				new Response(
+					sseBody([{ id: "s:0", data: '{"type":"done"}' }]),
+					{
+						status: 200,
+						headers: { "Content-Type": "text/event-stream" },
+					},
+				),
 		);
 		globalThis.fetch = fetchSpy;
 
@@ -512,16 +725,29 @@ describe("SSE client transport", () => {
 	});
 
 	it("COL6 yields parts in arrival order and does not dedupe event ids", async () => {
-		globalThis.fetch = vi.fn(async () =>
-			new Response(
-				sseBody([
-					{ id: "s:2", data: '{"type":"tool-output","toolCallId":"tc-1","output":"second"}' },
-					{ id: "s:2", data: '{"type":"tool-output","toolCallId":"tc-1","output":"duplicate"}' },
-					{ id: "s:1", data: '{"type":"tool-output","toolCallId":"tc-1","output":"first"}' },
-					{ id: "s:3", data: '{"type":"done"}' },
-				]),
-				{ status: 200, headers: { "Content-Type": "text/event-stream" } },
-			),
+		globalThis.fetch = vi.fn(
+			async () =>
+				new Response(
+					sseBody([
+						{
+							id: "s:2",
+							data: '{"type":"tool-output","toolCallId":"tc-1","output":"second"}',
+						},
+						{
+							id: "s:2",
+							data: '{"type":"tool-output","toolCallId":"tc-1","output":"duplicate"}',
+						},
+						{
+							id: "s:1",
+							data: '{"type":"tool-output","toolCallId":"tc-1","output":"first"}',
+						},
+						{ id: "s:3", data: '{"type":"done"}' },
+					]),
+					{
+						status: 200,
+						headers: { "Content-Type": "text/event-stream" },
+					},
+				),
 		);
 
 		const transport = sseTransport({ url: "http://test/sse" });
@@ -536,16 +762,23 @@ describe("SSE client transport", () => {
 	});
 
 	it("COL6 malformed and oversized frames are dropped with an error part and do not throw", async () => {
-		globalThis.fetch = vi.fn(async () =>
-			new Response(
-				sseBody([
-					{ id: "s:0", data: '{"type":"tool-output","toolCallId":"tc-1","output":"ok"}' },
-					{ id: "s:1", data: "not-json{" },
-					{ id: "s:2", data: "x".repeat(1_048_576 + 64) },
-					{ id: "s:3", data: '{"type":"done"}' },
-				]),
-				{ status: 200, headers: { "Content-Type": "text/event-stream" } },
-			),
+		globalThis.fetch = vi.fn(
+			async () =>
+				new Response(
+					sseBody([
+						{
+							id: "s:0",
+							data: '{"type":"tool-output","toolCallId":"tc-1","output":"ok"}',
+						},
+						{ id: "s:1", data: "not-json{" },
+						{ id: "s:2", data: "x".repeat(1_048_576 + 64) },
+						{ id: "s:3", data: '{"type":"done"}' },
+					]),
+					{
+						status: 200,
+						headers: { "Content-Type": "text/event-stream" },
+					},
+				),
 		);
 
 		const transport = sseTransport({ url: "http://test/sse" });

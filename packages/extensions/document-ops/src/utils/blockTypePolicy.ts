@@ -1,5 +1,6 @@
 import { shouldExposeBlockInTooling } from "@input/pen-content-ops";
 import type { BlockSchema, Editor } from "@input/pen-types";
+import { rejectToolCall } from "./toolRejection";
 
 export function getAvailableToolBlockSchemas(editor: Editor): BlockSchema[] {
 	return editor.schema
@@ -15,12 +16,14 @@ export function assertToolCanUseBlockType(
 ): BlockSchema {
 	const schema = editor.schema.resolve(blockType);
 	if (!schema) {
-		throw new Error(`Unknown block type: "${blockType}"`);
+		rejectToolCall(editor, `Unknown block type: "${blockType}"`, { blockType });
 	}
 
 	if (!shouldExposeBlockInTooling(editor.documentProfile, schema)) {
-		throw new Error(
+		rejectToolCall(
+			editor,
 			`Block type "${blockType}" is not available in ${editor.documentProfile} documents.`,
+			{ blockType },
 		);
 	}
 

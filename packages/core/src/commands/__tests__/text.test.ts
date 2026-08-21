@@ -114,6 +114,26 @@ describe("text commands", () => {
 		editor.destroy();
 	});
 
+	it("insertText uses explicit marks instead of inherited caret marks", () => {
+		const editor = createCommandEditor([
+			{ id: "a", type: "paragraph", text: "Hi" },
+		]);
+		const registry = createCommandHarness(editor);
+		editor.selectText("a", 2, 2);
+
+		expect(
+			registry.dispatch(insertText, {
+				text: "X",
+				marks: { italic: true },
+			}),
+		).toBe(true);
+		expect(editor.getBlock("a")?.textDeltas()).toEqual([
+			{ insert: "Hi" },
+			{ insert: "X", attributes: { italic: true } },
+		]);
+		editor.destroy();
+	});
+
 	it("insertText replaces the current text selection", () => {
 		const editor = createCommandEditor([
 			{ id: "a", type: "paragraph", text: "hello" },

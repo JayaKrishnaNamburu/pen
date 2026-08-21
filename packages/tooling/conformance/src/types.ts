@@ -172,6 +172,15 @@ export type GeometryVerticalMotion = {
 	lineBoxes: GeometryLineBox[];
 };
 
+export type GeometryEightCaretItem = {
+	id: string;
+	kind: string;
+	x: number;
+	y: number;
+	width: number;
+	height: number;
+};
+
 export type GeometryEightCaretBudget = {
 	caretCount: number;
 	paintedCount: number;
@@ -179,6 +188,9 @@ export type GeometryEightCaretBudget = {
 	overlayAttr: string | null;
 	readPhase: string;
 	writePhase: string;
+	items: GeometryEightCaretItem[];
+	readPhaseMeasureCount: number;
+	writePhaseMeasureCount: number;
 	supportedEntryTypes: string[];
 	layoutShiftSupported: boolean;
 	longTaskSupported: boolean;
@@ -304,6 +316,9 @@ export type PenConformanceBridge = {
 	}): BeforeInputDispatchResult;
 	clearDiagnostics(): void;
 	mutateActiveSurfaceText(text: string): void;
+	undo(): void;
+	redo(): void;
+	stopCapturing(): void;
 };
 
 export type LoadOptions = {

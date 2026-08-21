@@ -17,7 +17,7 @@ Then read package specs by layer:
 - Rendering: `packages/rendering/dom.md`, `packages/rendering/react.md`, `packages/rendering/vue.md`
 - Editing and extensions: `packages/extensions/search.md`, `packages/extensions/undo.md`, `packages/extensions/history.md`, `packages/extensions/multiplayer.md`
 - AI and tooling: `packages/extensions/ai.md`, `packages/extensions/document-ops.md`, `packages/shared/content-ops.md`
-- Import/export: `packages/extensions/import-markdown.md`, `packages/extensions/import-html.md`, `packages/extensions/export-json.md`, `packages/extensions/export-xml.md`
+- Import/export: `packages/extensions/import-markdown.md`, `packages/extensions/import-html.md`, `packages/extensions/import-json.md`, `packages/extensions/export-json.md`, `packages/extensions/export-xml.md`
 
 ## Structure
 

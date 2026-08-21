@@ -18,7 +18,10 @@ Gates run before the Vite build and again as named steps in
 the Pages artifact is uploaded:
 
 - `scripts/check-doc2-pages.mjs` — required DOC2 pages exist, are registered
-  in `src/App.tsx`, and the old placeholder string is gone
+  in `src/App.tsx`, cite their owning spec (or the D.3 owner token), still
+  contain the headings that teaching needs, and API pages keep a
+  `<pre><code>` sample. The old placeholder string is gone. The script
+  always prints how many pages it checked.
 - `scripts/generate-doc-tables.mjs` — diagnostic, message, export-fidelity,
   and paste-corpus tables match their sources (check by default; `--write`
   refreshes)

@@ -19,10 +19,10 @@ Pen is an MIT-licensed SDK published as public npm packages.
 The first release train has not been published (every package is `0.0.1`). Until it is, `pnpm add @input/pen-*` 404s on the public registry. Clone this repository, run `pnpm install` and `pnpm build`, and consume the built workspace artifacts. The commands below are the post-publish install path.
 
 ```bash
-pnpm add @input/pen-core @input/pen-preset-default @input/pen-react react react-dom
+pnpm add @input/pen-core @input/pen-preset-default @input/pen-react react react-dom yjs
 ```
 
-`react` and `react-dom` are peers of `@input/pen-react`.
+`react` and `react-dom` are peers of `@input/pen-react`. `yjs` is a peer of `@input/pen-crdt-yjs`, which `@input/pen-core` depends on, so every Pen install needs it — including non-collaborative ones, since the document model is a Yjs document either way. It is a peer rather than a dependency so that exactly one copy is resolved; the adapter asserts that at document creation and fails loudly if a second copy is present. Package managers that auto-install peers will add it for you, but naming it explicitly is what pins the version you get.
 
 ## What Pen Is
 
@@ -52,7 +52,7 @@ export function App() {
 
 Minimal Vite apps for each host live at [`examples/react`](examples/react), [`examples/vue`](examples/vue), and [`examples/vanilla`](examples/vanilla). Each starts with `@input/pen-preset-default`; `@input/pen-core` is the assembly point if you skip the preset.
 
-These packages are not on the pnpm workspace yet. `pnpm-workspace.yaml` does not include `examples/*`, so `pnpm --filter @input/pen-example-*` will not resolve until that membership lands.
+Each example is a pnpm workspace member, so `pnpm --filter @input/pen-example-react dev` resolves from a fresh clone, and all three are covered by a CI job that mounts the editor and types into it.
 
 ## Headless UI Examples
 

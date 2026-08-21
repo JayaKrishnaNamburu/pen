@@ -2,7 +2,8 @@ import { resolveBlockDirection, usesInlineTextSelection } from "@input/pen-core"
 import type { BlockHandle, Editor } from "@input/pen-types";
 import type { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
 import { fullReconcileDeltasToDOM } from "../field-editor/reconciler";
-import { DATA_ATTRS } from "../utils/dataAttributes";
+import { urlPolicyFromEditor } from "../security/resolveEditorUrl";
+import { buildDataAttributes, DATA_ATTRS } from "../utils/dataAttributes";
 import {
 	getParentIdChildBlockIds,
 	getRootBlockIds,
@@ -180,6 +181,7 @@ function updateBlockNodes(
 
 	fullReconcileDeltasToDOM([...deltas], nodes.inline, editor.schema, {
 		preserveSelection: false,
+		urlPolicy: urlPolicyFromEditor(editor),
 	});
 }
 
@@ -222,10 +224,11 @@ function reorderChildren(
 }
 
 function setBooleanAttr(element: HTMLElement, name: string, value: boolean): void {
-	if (value) {
-		element.setAttribute(name, "");
-	} else {
+	const next = buildDataAttributes({ [name]: value })[name];
+	if (next === undefined) {
 		element.removeAttribute(name);
+	} else {
+		element.setAttribute(name, next);
 	}
 }
 

@@ -17,7 +17,7 @@ import {
 } from "../../hooks/useDocumentEmptyState";
 import { useInlineCompletionState } from "../../hooks/useInlineCompletionState";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
-import { DATA_ATTRS } from "../../utils/dataAttributes";
+import { buildDataAttributes, DATA_ATTRS } from "../../utils/dataAttributes";
 import { fieldEditorTextEntryAttrs } from "../../utils/fieldEditorTextEntryAttrs";
 import { AIStructuredTargetPreviewItem } from "../ai/structuredTargetPreview";
 import { AutocompletePreviewBlock } from "./autocompletePreviewBlock";
@@ -286,8 +286,10 @@ export function EditorContent(props: EditorContentProps) {
 
 	const primitiveProps: Record<string, unknown> = {
 		[DATA_ATTRS.editorContent]: "",
-		[DATA_ATTRS.dropTarget]: isDropActive || isInlineAtomDropActive || undefined,
-		[DATA_ATTRS.empty]: isEmpty || undefined,
+		...buildDataAttributes({
+			"drop-target": isDropActive || isInlineAtomDropActive,
+			empty: isEmpty,
+		}),
 		onDragOver: handleBlockDragOver,
 		onDrop: handleBlockDrop,
 		onDragLeave: handleBlockDragLeave,

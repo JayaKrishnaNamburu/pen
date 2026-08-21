@@ -26,6 +26,14 @@ scenario(
 		const context = await page.evaluate(() => ({
 			origin: window.location.origin,
 			isSecureContext: window.isSecureContext,
+			// The rule bans this probe outside `generateId` because a feature test there
+			// means someone is re-implementing the fallback `generateId` owns. This is the
+			// third case it did not anticipate: not a fallback but the assertion that the
+			// API is genuinely absent, which is the precondition the rest of this scenario
+			// depends on. Asserting it rather than assuming it is what makes the scenario
+			// prove something about plain HTTP instead of about a browser that happened to
+			// expose the API anyway.
+			// eslint-disable-next-line pen/no-bare-random-uuid -- probing for absence, not calling; see above
 			hasRandomUUID: typeof crypto.randomUUID === "function",
 		}));
 		expect(context.origin).toBe(INSECURE_ORIGIN);

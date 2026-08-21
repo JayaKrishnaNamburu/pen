@@ -7,6 +7,10 @@ import type {
 } from "@input/pen-types";
 import { resolveToolExecution } from "@input/pen-core";
 import { generateId, isAsyncIterable } from "@input/pen-types";
+import {
+	MAX_PEN_STREAM_REQUEST_BYTES,
+	parsePenStreamRequest,
+} from "./parsePenStreamRequest";
 import type { SSEServerOptions } from "./types";
 
 export function createSSEHandler(
@@ -14,7 +18,7 @@ export function createSSEHandler(
 ): (request: Request) => Response | Promise<Response> {
 	const {
 		toolRuntime,
-		editor: _editor,
+		editor,
 		onRequest,
 		onError,
 		pingInterval = 15_000,
@@ -28,10 +32,23 @@ export function createSSEHandler(
 			});
 		}
 
-		let body: PenStreamRequest;
+		let text: string;
 		try {
-			body = (await request.json()) as PenStreamRequest;
+			text = await request.text();
 		} catch {
+			return new Response("Bad Request", { status: 400 });
+		}
+		if (text.length > MAX_PEN_STREAM_REQUEST_BYTES) {
+			return new Response("Bad Request", { status: 400 });
+		}
+		let raw: unknown;
+		try {
+			raw = JSON.parse(text);
+		} catch {
+			return new Response("Bad Request", { status: 400 });
+		}
+		const body = parsePenStreamRequest(raw);
+		if (!body) {
 			return new Response("Bad Request", { status: 400 });
 		}
 		onRequest?.(body);
@@ -63,7 +80,11 @@ export function createSSEHandler(
 							const result = toolRuntime.executeTool(
 								toolCall.name,
 								toolCall.input,
-								createTransportToolContext(body.context, send),
+								createTransportToolContext(
+									body.context,
+									send,
+									editor,
+								),
 							);
 
 							const resolved = await resolveToolExecution(result);
@@ -87,7 +108,9 @@ export function createSSEHandler(
 					send({
 						type: "error",
 						errorText:
-							error instanceof Error ? error.message : String(error),
+							error instanceof Error
+								? error.message
+								: String(error),
 					} as PenStreamPart);
 				} finally {
 					if (pingTimer) clearInterval(pingTimer);
@@ -111,12 +134,13 @@ export function createSSEHandler(
 function createTransportToolContext(
 	context: PenStreamRequest["context"],
 	emit: (part: PenStreamPart) => void,
+	editor: Editor | undefined,
 ): ToolContext {
 	let activeZoneId: string | null = null;
 
 	return {
 		get editor(): Editor {
-			return resolveTransportEditor(context?.editor);
+			return requireTransportEditor(editor);
 		},
 		docId: context?.docId ?? "",
 		emit,
@@ -125,7 +149,7 @@ function createTransportToolContext(
 			props: Record<string, unknown>,
 			position: Position,
 		): string {
-			const editor = resolveTransportEditor(context?.editor);
+			const liveEditor = requireTransportEditor(editor);
 			const blockId = generateId();
 
 			emit({
@@ -136,7 +160,7 @@ function createTransportToolContext(
 				position,
 			});
 
-			editor.apply(
+			liveEditor.apply(
 				[{ type: "insert-block", blockId, blockType, props, position }],
 				{ origin: "ai" },
 			);
@@ -144,18 +168,20 @@ function createTransportToolContext(
 			return blockId;
 		},
 		updateBlock(blockId: string, props: Record<string, unknown>): void {
-			const editor = resolveTransportEditor(context?.editor);
+			const liveEditor = requireTransportEditor(editor);
 
 			emit({ type: "block-update", blockId, props });
-			editor.apply([{ type: "update-block", blockId, props }], {
+			liveEditor.apply([{ type: "update-block", blockId, props }], {
 				origin: "ai",
 			});
 		},
 		deleteBlock(blockId: string): void {
-			const editor = resolveTransportEditor(context?.editor);
+			const liveEditor = requireTransportEditor(editor);
 
 			emit({ type: "block-delete", blockId });
-			editor.apply([{ type: "delete-block", blockId }], { origin: "ai" });
+			liveEditor.apply([{ type: "delete-block", blockId }], {
+				origin: "ai",
+			});
 		},
 		beginStreaming(zoneId: string, blockId: string): void {
 			activeZoneId = zoneId;
@@ -169,7 +195,9 @@ function createTransportToolContext(
 		},
 		endStreaming(status: "complete" | "cancelled" | "error"): void {
 			if (!activeZoneId) {
-				throw new Error("endStreaming() called before beginStreaming()");
+				throw new Error(
+					"endStreaming() called before beginStreaming()",
+				);
 			}
 			emit({ type: "gen-end", zoneId: activeZoneId, status });
 			activeZoneId = null;
@@ -177,18 +205,9 @@ function createTransportToolContext(
 	};
 }
 
-function resolveTransportEditor(editor: unknown): Editor {
-	if (isEditor(editor)) {
+function requireTransportEditor(editor: Editor | undefined): Editor {
+	if (editor) {
 		return editor;
 	}
 	throw new Error("Transport tool context requires a valid editor");
-}
-
-function isEditor(value: unknown): value is Editor {
-	return (
-		typeof value === "object" &&
-		value !== null &&
-		"apply" in value &&
-		"internals" in value
-	);
 }

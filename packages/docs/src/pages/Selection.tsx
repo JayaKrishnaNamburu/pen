@@ -76,9 +76,11 @@ if (selection?.type === "text") {
 			<p>
 				A v2 rewrite of the authority, reader, and projector is
 				specified in <code>spec-v2/03-selection.md</code>. The types
-				and helpers above are what hosts call today. Additive v2
-				selection types in the types package are not on that
-				package&apos;s public index.
+				and helpers above are what hosts call today. Affinity is
+				specified for v2 and is not a field on today&apos;s{" "}
+				<code>TextSelection</code>. Additive v2 selection types in
+				the types package are not on that package&apos;s public
+				index.
 			</p>
 		</>
 	);

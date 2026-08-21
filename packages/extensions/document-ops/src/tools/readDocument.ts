@@ -10,6 +10,7 @@ export function readDocumentTool(editor: Editor): ToolDefinition {
 	return {
 		name: "read_document",
 		description: "Read document content in the specified format.",
+		mutating: false,
 		inputSchema: {
 			type: "object",
 			properties: {

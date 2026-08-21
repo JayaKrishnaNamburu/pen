@@ -25,8 +25,9 @@ import type {
 	CRDTArray,
 } from "@input/pen-types";
 import { generateId } from "@input/pen-types";
-import { getOpOriginType } from "./origin";
+import type { DiagnosticEvent } from "@input/pen-types";
 import { resolveRuntimeContentType } from "../schema/contentType";
+import { toStructuredOrigin } from "./commitEvent";
 import {
 	type CRDTUnknownArray,
 	type CRDTUnknownMap,
@@ -61,9 +62,6 @@ interface CRDTText {
 	toString(): string;
 	readonly length: number;
 }
-const ZERO_WIDTH_SPACE = "\u200B";
-
-
 export function applyInternal(pipeline: ApplyPipeline, ops: DocumentOp[], origin: OpOrigin): void {
 	const self = pipeline as ApplyPipelineRuntime;
 	if (self._applying) {
@@ -90,6 +88,18 @@ export function applyInternal(pipeline: ApplyPipeline, ops: DocumentOp[], origin
 		self._applyTurnCount = 0;
 		self._applyStormEmitted = false;
 	}
+}
+
+function emitPipelineDiagnostic(
+	pipeline: ApplyPipeline,
+	diagnostic: DiagnosticEvent,
+): void {
+	const self = pipeline as ApplyPipelineRuntime;
+	if (!self._commitDiagnostics) {
+		self._commitDiagnostics = [];
+	}
+	self._commitDiagnostics.push(diagnostic);
+	self._emitter.emit("diagnostic", diagnostic);
 }
 
 function emitApplyStorm(pipeline: ApplyPipeline): void {
@@ -141,7 +151,7 @@ function emitSchemaUnknownBlock(pipeline: ApplyPipeline, type: string): void {
 		return;
 	}
 	reported.add(type);
-	self._emitter.emit("diagnostic", {
+	emitPipelineDiagnostic(pipeline, {
 		code: "schema-unknown-block",
 		level: "info",
 		source: "schema",
@@ -200,7 +210,7 @@ function rewriteBlockOpProps(
 	}
 	const result = validateOpProps(schema, op.props);
 	for (const diagnostic of result.diagnostics) {
-		self._emitter.emit("diagnostic", {
+		emitPipelineDiagnostic(pipeline, {
 			...diagnostic,
 			op,
 		});
@@ -229,44 +239,84 @@ export function transformOpsThroughHooks(
 			}) => entry.hook,
 		);
 	for (const hook of beforeApplyHooks) {
-		try {
-			transformedOps = hook(transformedOps, { origin });
-		} catch (err) {
-			self._emitter.emit("diagnostic", {
-				code: "PEN_APPLY_005",
-				level: "error",
-				source: "apply",
-				message: "onBeforeApply hook threw",
-				remediation:
-					"Update the onBeforeApply hook to handle incoming ops defensively and " +
-					"always return a valid DocumentOp array.",
-				error: err,
-			});
+		const next = runBeforeApplyHook(pipeline, hook, transformedOps, origin, {
+			code: "PEN_APPLY_005",
+			message: "onBeforeApply hook threw",
+			nonArrayMessage: "onBeforeApply hook returned a non-array",
+			remediation:
+				"Update the onBeforeApply hook to handle incoming ops defensively and " +
+				"always return a valid DocumentOp array.",
+		});
+		if (next) {
+			transformedOps = next;
 		}
 	}
 	if (self._finalBeforeApplyHook) {
-		try {
-			transformedOps = self._finalBeforeApplyHook(transformedOps, {
-				origin,
-			});
-		} catch (err) {
-			self._emitter.emit("diagnostic", {
+		const next = runBeforeApplyHook(
+			pipeline,
+			self._finalBeforeApplyHook,
+			transformedOps,
+			origin,
+			{
 				code: "PEN_APPLY_007",
-				level: "error",
-				source: "apply",
 				message: "final apply boundary hook threw",
+				nonArrayMessage: "final apply boundary hook returned a non-array",
 				remediation:
 					"Update the final apply boundary hook to handle incoming ops defensively and " +
 					"always return a valid DocumentOp array.",
-				error: err,
-			});
+			},
+		);
+		if (next) {
+			transformedOps = next;
 		}
 	}
 	return transformedOps;
 }
 
+function runBeforeApplyHook(
+	pipeline: ApplyPipeline,
+	hook: (
+		ops: DocumentOp[],
+		options: { origin?: OpOrigin },
+	) => DocumentOp[],
+	ops: DocumentOp[],
+	origin: OpOrigin,
+	labels: {
+		code: string;
+		message: string;
+		nonArrayMessage: string;
+		remediation: string;
+	},
+): DocumentOp[] | null {
+	try {
+		const next = hook(ops, { origin });
+		if (!Array.isArray(next)) {
+			emitPipelineDiagnostic(pipeline, {
+				code: labels.code,
+				level: "error",
+				source: "apply",
+				message: labels.nonArrayMessage,
+				remediation: labels.remediation,
+			});
+			return null;
+		}
+		return next;
+	} catch (err) {
+		emitPipelineDiagnostic(pipeline, {
+			code: labels.code,
+			level: "error",
+			source: "apply",
+			message: labels.message,
+			remediation: labels.remediation,
+			error: err,
+		});
+		return null;
+	}
+}
+
 export function executeOps(pipeline: ApplyPipeline, ops: DocumentOp[], origin: OpOrigin): void {
 	const self = pipeline as ApplyPipelineRuntime;
+	self._commitDiagnostics = [];
 	reportUnknownBlocksInDocument(pipeline);
 	self._captureSelectionBefore?.();
 	recordPhase(pipeline, "hooks");
@@ -306,7 +356,7 @@ for (const op of transformedOps) {
 		!pendingBlockIds.has(blockId) &&
 		nextOp.type !== "insert-block"
 	) {
-		self._emitter.emit("diagnostic", {
+		emitPipelineDiagnostic(pipeline, {
 			code: "PEN_APPLY_003",
 			level: "warn",
 			source: "apply",
@@ -319,6 +369,7 @@ for (const op of transformedOps) {
 }
 
 if (validatedOps.length === 0) {
+	self._commitDiagnostics = [];
 	self._emitApplyBoundary({
 		phase: "after",
 		ops: transformedOps,
@@ -347,7 +398,7 @@ try {
 			recordPhase(pipeline, "normalize");
 			self._engine.normalizeDirty();
 		},
-		getOpOriginType(origin),
+		{ ...toStructuredOrigin(origin) },
 	);
 } finally {
 	self._suppressObserver = false;
@@ -381,7 +432,7 @@ export function emitApplyBoundary(pipeline: ApplyPipeline, event: {
 		try {
 			hook(event);
 		} catch (err) {
-			self._emitter.emit("diagnostic", {
+			emitPipelineDiagnostic(pipeline, {
 				code: "PEN_APPLY_008",
 				level: "error",
 				source: "apply",
@@ -398,7 +449,7 @@ export function validateOp(pipeline: ApplyPipeline, op: DocumentOp): boolean {
 	const self = pipeline as ApplyPipelineRuntime;
 	const rejectedKeys = [...new Set(rejectedOwnPropKeys(op))];
 	if (rejectedKeys.length > 0) {
-		self._emitter.emit("diagnostic", {
+		emitPipelineDiagnostic(pipeline, {
 			code: "PEN_APPLY_009",
 			level: "warn",
 			source: "apply",
@@ -412,7 +463,7 @@ export function validateOp(pipeline: ApplyPipeline, op: DocumentOp): boolean {
 switch (op.type) {
 	case "insert-block": {
 		if (!isRegisteredBlockType(self._registry, op.blockType)) {
-			self._emitter.emit("diagnostic", {
+			emitPipelineDiagnostic(pipeline, {
 				code: "PEN_APPLY_002",
 				level: "warn",
 				source: "apply",
@@ -425,7 +476,7 @@ switch (op.type) {
 	}
 	case "convert-block": {
 		if (!isRegisteredBlockType(self._registry, op.newType)) {
-			self._emitter.emit("diagnostic", {
+			emitPipelineDiagnostic(pipeline, {
 				code: "PEN_APPLY_002",
 				level: "warn",
 				source: "apply",
@@ -439,7 +490,7 @@ switch (op.type) {
 	case "insert-inline-node": {
 		const schema = self._registry.resolveInline(op.nodeType);
 		if (!schema || schema.kind !== "node") {
-			self._emitter.emit("diagnostic", {
+			emitPipelineDiagnostic(pipeline, {
 				code: "PEN_APPLY_002",
 				level: "warn",
 				source: "apply",

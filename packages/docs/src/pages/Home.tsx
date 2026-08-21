@@ -70,8 +70,8 @@ export function HomePage() {
 					extensions contribute, and which facets core exports
 				</li>
 				<li>
-					<a href="#/commands">Commands and keymaps</a> — what is
-					specified versus what hosts can call
+					<a href="#/commands">Commands and keymaps</a> — registry,
+					dispatch, catalog, and keymaps
 				</li>
 				<li>
 					<a href="#/collaboration">Collaboration</a> — CRDT

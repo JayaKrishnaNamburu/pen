@@ -2,14 +2,16 @@ import { createEditor } from "@input/pen-core";
 import { undoExtension } from "@input/pen-undo";
 import { deltaStreamExtension } from "@input/pen-delta-stream";
 import { documentOpsExtension } from "@input/pen-document-ops";
-import { AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY } from "@input/pen-types";
+import {
+	AI_CONTROLLER_SLOT,
+	AI_INLINE_HISTORY_SLOT,
+	AI_REVIEW_CONTROLLER_SLOT,
+	AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY,
+} from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 import { defaultSchema } from "@input/pen-schema-default";
 import {
-	AI_CONTROLLER_SLOT,
 	AI_EXTENSION_NAME,
-	AI_INLINE_HISTORY_SLOT,
-	AI_REVIEW_CONTROLLER_SLOT,
 	aiExtension,
 	getAIController,
 	getAIInlineHistoryController,

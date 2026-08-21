@@ -177,6 +177,15 @@ describe("@input/pen-undo document state", () => {
 		expect(() => manager.redo()).not.toThrow();
 		expect(manager.redo()).toBe(false);
 		expect(blockText(doc, "user-block")).toBe("keep");
+		expect(() => manager.stopCapturing()).not.toThrow();
+		expect(() => manager.syncExplicitUndoGroup("after-destroy")).not.toThrow();
+		expect(() => manager.resetIdleTimer()).not.toThrow();
+		expect(() => manager.registerTrackedOrigins(["user"])()).not.toThrow();
+
+		insertText(adapter, doc, "user-block", " more");
+		expect(blockText(doc, "user-block")).toBe("keep more");
+		expect(manager.undo()).toBe(false);
+		expect(blockText(doc, "user-block")).toBe("keep more");
 		expect(() => manager.destroy()).not.toThrow();
 	});
 });

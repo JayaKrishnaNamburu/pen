@@ -2,9 +2,15 @@
 /**
  * LOC1 catalog completeness (spec-v2/16-localization.md).
  *
- * Both directions:
- * - every referenced `pen.*` key exists in a default catalog
+ * Both directions, inside already-known catalog areas only:
+ * - every referenced `pen.<area>.*` key whose `<area>` already appears
+ *   in a default catalog exists in that catalog
  * - every default-catalog key is referenced (or reserved)
+ *
+ * A referenced key in a *new* family (`pen.novel.foo`) is ignored.
+ * That is deliberate (avoids random `pen.*` strings) and is not
+ * "every referenced pen.* key". New families must be added to a
+ * catalog file before this gate will notice their members.
  *
  * Reserved prefixes are documented allowlist, not silent holes:
  * - `pen.a11y.*` — Wave X announcements

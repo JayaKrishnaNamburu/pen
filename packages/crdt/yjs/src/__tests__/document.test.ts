@@ -216,6 +216,20 @@ describe("document", () => {
         ]),
       );
     });
+
+    it("does not inspect apps or metadata value shapes after the four roots exist", () => {
+      const doc = createYjsDocument(adapter);
+      doc.ydoc.transact(() => {
+        initBlockMap(doc.penDocument.blocks, "b1", "paragraph", "inline");
+        doc.penDocument.blockOrder.push(["b1"]);
+        doc.ydoc.getMap(APPS).set("hostApp", "not-a-map");
+        doc.ydoc.getMap(METADATA).set("hostNote", { nested: true });
+      });
+
+      const validation = validateDocument(doc.ydoc);
+      expect(validation.valid).toBe(true);
+      expect(validation.errors).toHaveLength(0);
+    });
   });
 
   describe("table helpers", () => {

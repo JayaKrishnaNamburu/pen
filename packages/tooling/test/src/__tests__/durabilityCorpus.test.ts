@@ -3,15 +3,85 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import * as Y from "yjs";
+import {
+	initBlockMap,
+	type BlockContentType,
+} from "@input/pen-crdt-yjs";
 import { exportEditorToJson, jsonImporter } from "@input/pen-export-json";
 import type { PenBlockJSON, PenDocumentJSON } from "@input/pen-export-json";
+import {
+	INIT_BLOCK_MAP_ASSERT_COVERAGE,
+	PEN_DOCUMENT_ASSERT_COVERAGE,
+} from "../assertDocEquals";
 import {
 	ASSERT_DOC_EQUALS_FIELDS,
 	assertDocEquals,
 	createTestEditor,
 	resetTestIdCounter,
 } from "../index";
+import {
+	parsePenDocumentKeys,
+	readPenDocumentKeys,
+} from "../penDocumentSourceKeys";
 import type { TestBlock } from "../types";
+
+type Assert<T extends true> = T;
+type Equal<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
+
+const TEST_BLOCK_LIST_KEYS = [
+	"id",
+	"type",
+	"props",
+	"content",
+	"marks",
+	"children",
+	"table",
+] as const satisfies readonly (keyof TestBlock)[];
+
+type _TestBlockListKeysLocked = Assert<
+	Equal<(typeof TEST_BLOCK_LIST_KEYS)[number], keyof TestBlock>
+>;
+
+const INIT_BLOCK_MAP_CONTENT_TYPES = [
+	"inline",
+	"table",
+	"nested",
+	"subdocument",
+	"none",
+] as const satisfies readonly BlockContentType[];
+
+type _InitBlockMapContentTypesLocked = Assert<
+	Equal<BlockContentType, (typeof INIT_BLOCK_MAP_CONTENT_TYPES)[number]>
+>;
+
+function collectInitBlockMapKeys(): string[] {
+	const keys = new Set<string>();
+	const ydoc = new Y.Doc();
+	const blocks = ydoc.getMap("blocks") as Y.Map<Y.Map<unknown>>;
+	ydoc.transact(() => {
+		for (const contentType of INIT_BLOCK_MAP_CONTENT_TYPES) {
+			initBlockMap(
+				blocks,
+				`probe-${contentType}`,
+				"paragraph",
+				contentType,
+			);
+		}
+	});
+	for (const contentType of INIT_BLOCK_MAP_CONTENT_TYPES) {
+		const map = blocks.get(`probe-${contentType}`);
+		if (!map) {
+			throw new Error(
+				`initBlockMap did not write probe-${contentType}`,
+			);
+		}
+		for (const key of map.keys()) {
+			keys.add(key);
+		}
+	}
+	ydoc.destroy();
+	return [...keys].sort();
+}
 
 const FIXTURE_DIR = join(
 	dirname(fileURLToPath(import.meta.url)),
@@ -172,17 +242,50 @@ describe("DUR7 durability corpus", () => {
 	});
 
 	it("DUR7: assertDocEquals field coverage list is closed", () => {
+		const comparedRoots = Object.entries(PEN_DOCUMENT_ASSERT_COVERAGE)
+			.filter(([key, kind]) => kind === "compared" && key !== "blocks")
+			.map(([key]) => key);
 		expect(ASSERT_DOC_EQUALS_FIELDS).toEqual([
-			"block.id",
-			"block.type",
-			"block.props",
-			"block.content",
-			"block.marks",
-			"block.children",
-			"block.table",
-			"apps",
-			"metadata",
+			...TEST_BLOCK_LIST_KEYS.map((key) => `block.${key}`),
+			...comparedRoots,
 		]);
+	});
+
+	it("DUR7: PEN_DOCUMENT_ASSERT_COVERAGE matches PenDocument as declared in source", () => {
+		const keys = readPenDocumentKeys();
+		expect(keys, "could not parse PenDocument from @input/pen-types source").not.toBeNull();
+		expect(keys!.length).toBeGreaterThan(0);
+		expect([...keys!].sort()).toEqual(
+			Object.keys(PEN_DOCUMENT_ASSERT_COVERAGE).sort(),
+		);
+		expect(
+			parsePenDocumentKeys("export interface Other { readonly x: 1 }"),
+		).toBeNull();
+	});
+
+	it("DUR7: compared PenDocument keys are named in ASSERT_DOC_EQUALS_FIELDS", () => {
+		const compared = Object.entries(PEN_DOCUMENT_ASSERT_COVERAGE)
+			.filter(([, kind]) => kind === "compared")
+			.map(([key]) => key);
+		expect(compared.length).toBeGreaterThan(0);
+		for (const key of compared) {
+			if (key === "blocks") {
+				expect(
+					ASSERT_DOC_EQUALS_FIELDS.some((field) =>
+						field.startsWith("block."),
+					),
+				).toBe(true);
+				continue;
+			}
+			expect(ASSERT_DOC_EQUALS_FIELDS).toContain(key);
+		}
+	});
+
+	it("DUR7: initBlockMap stored keys are classified", () => {
+		const live = collectInitBlockMapKeys();
+		const classified = Object.keys(INIT_BLOCK_MAP_ASSERT_COVERAGE).sort();
+		expect(live.length).toBeGreaterThan(0);
+		expect(live).toEqual(classified);
 	});
 
 	it("DUR7: assertDocEquals compares children and marks", () => {

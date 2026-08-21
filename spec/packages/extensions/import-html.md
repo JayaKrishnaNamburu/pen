@@ -23,18 +23,20 @@ This package is Pen's main external-rich-content ingest boundary for HTML. Its j
 
 ## Runtime Model
 
-HTML import is intentionally staged so untrusted input is sanitized before it ever becomes importable content:
+HTML import is intentionally staged so untrusted input is capped and sanitized before it ever becomes importable content:
 
 ```mermaid
 flowchart TD
   HTML[RawHTML]
+  Cap[CapRawSource]
   Sanitize[SanitizeHTML]
   Parse[ParseDOM]
   Map[DOMToPendingBlocks]
   Normalize[NormalizeToSchemaAndProfile]
   Core["@input/pen-core"]
 
-  HTML --> Sanitize
+  HTML --> Cap
+  Cap --> Sanitize
   Sanitize --> Parse
   Parse --> Map
   Map --> Normalize
@@ -44,7 +46,9 @@ flowchart TD
 Important rules:
 
 - Treat HTML input as untrusted.
-- Sanitize first, then parse, then normalize against the active editor schema and document profile.
+- `capRawHtmlSource()` slices the raw string to `INGEST_MAX_TEXT_SIZE` before parse, so work is O(cap) rather than O(input). A source over the cap is refused by the parse step after the slice.
+- The same local ingest-envelope numbers (depth, node count, text size, image count) live in this package, import-markdown, and import-json. They are copies, not a shared module.
+- Sanitize after the cap, then parse, then normalize against the active editor schema and document profile.
 - Imported content only becomes document state after conversion into operations and `editor.apply(...)`.
 
 ## Integration Notes

@@ -6,6 +6,7 @@ export function listBlockTypesTool(editor: Editor): ToolDefinition {
     name: "list_block_types",
     description:
       "List all available block types in the editor schema.",
+    mutating: false,
     inputSchema: {
       type: "object",
       properties: {},

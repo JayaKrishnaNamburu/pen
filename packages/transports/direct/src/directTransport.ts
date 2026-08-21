@@ -13,14 +13,16 @@ import { generateId, isAsyncIterable } from "@input/pen-types";
 
 export interface DirectTransportOptions {
 	toolRuntime?: ToolRuntime;
+	/**
+	 * In-process editor for tool context. Direct never reads an editor
+	 * off `PenStreamRequest` — that field is not on the wire type (AIB2).
+	 */
+	editor?: Editor;
 	onError?: (error: unknown) => void;
 }
 
-export function directTransport(
-	options: DirectTransportOptions,
-): PenTransport {
-	const { toolRuntime } = options;
-	const { onError } = options;
+export function directTransport(options: DirectTransportOptions): PenTransport {
+	const { toolRuntime, editor, onError } = options;
 	if (!toolRuntime) {
 		throw new Error("directTransport requires a tool runtime");
 	}
@@ -41,16 +43,17 @@ export function directTransport(
 					const result = toolRuntime.executeTool(
 						toolCall.name,
 						toolCall.input,
-						createTransportToolContext(request.context, () => { }),
+						createTransportToolContext(
+							request.context,
+							() => {},
+							editor,
+						),
 					);
 
 					const resolved = await resolveToolExecution(result);
 					if (isAsyncIterable(resolved)) {
-						for await (const part of resolved) {
-							if (signal.aborted) break;
-							yield part as PenStreamPart;
-						}
-					} else {
+						yield* iterateUntilAborted(resolved, signal);
+					} else if (!signal.aborted) {
 						yield {
 							type: "tool-output",
 							toolCallId: toolCall.toolCallId,
@@ -59,12 +62,17 @@ export function directTransport(
 					}
 				}
 
+				if (signal.aborted) {
+					yield { type: "abort", reason: "disconnected" } as PenStreamPart;
+					return;
+				}
 				yield { type: "done" } as PenStreamPart;
 			} catch (error) {
 				onError?.(error);
 				yield {
 					type: "error",
-					errorText: error instanceof Error ? error.message : String(error),
+					errorText:
+						error instanceof Error ? error.message : String(error),
 				} as PenStreamPart;
 			} finally {
 				activeControllers.delete(controller);
@@ -89,7 +97,7 @@ export function directTransport(
 		onConnectionChange(
 			_callback: (connected: boolean) => void,
 		): Unsubscribe {
-			return () => { };
+			return () => {};
 		},
 	};
 
@@ -99,12 +107,13 @@ export function directTransport(
 function createTransportToolContext(
 	context: PenStreamRequest["context"],
 	emit: (part: PenStreamPart) => void,
+	editor: Editor | undefined,
 ): ToolContext {
 	let activeZoneId: string | null = null;
 
 	return {
 		get editor(): Editor {
-			return resolveTransportEditor(context?.editor);
+			return requireTransportEditor(editor);
 		},
 		docId: context?.docId ?? "",
 		emit,
@@ -113,7 +122,7 @@ function createTransportToolContext(
 			props: Record<string, unknown>,
 			position: Position,
 		): string {
-			const editor = resolveTransportEditor(context?.editor);
+			const liveEditor = requireTransportEditor(editor);
 			const blockId = generateId();
 
 			emit({
@@ -124,7 +133,7 @@ function createTransportToolContext(
 				position,
 			});
 
-			editor.apply(
+			liveEditor.apply(
 				[{ type: "insert-block", blockId, blockType, props, position }],
 				{ origin: "ai" },
 			);
@@ -132,18 +141,20 @@ function createTransportToolContext(
 			return blockId;
 		},
 		updateBlock(blockId: string, props: Record<string, unknown>): void {
-			const editor = resolveTransportEditor(context?.editor);
+			const liveEditor = requireTransportEditor(editor);
 
 			emit({ type: "block-update", blockId, props });
-			editor.apply([{ type: "update-block", blockId, props }], {
+			liveEditor.apply([{ type: "update-block", blockId, props }], {
 				origin: "ai",
 			});
 		},
 		deleteBlock(blockId: string): void {
-			const editor = resolveTransportEditor(context?.editor);
+			const liveEditor = requireTransportEditor(editor);
 
 			emit({ type: "block-delete", blockId });
-			editor.apply([{ type: "delete-block", blockId }], { origin: "ai" });
+			liveEditor.apply([{ type: "delete-block", blockId }], {
+				origin: "ai",
+			});
 		},
 		beginStreaming(zoneId: string, blockId: string): void {
 			activeZoneId = zoneId;
@@ -157,7 +168,9 @@ function createTransportToolContext(
 		},
 		endStreaming(status: "complete" | "cancelled" | "error"): void {
 			if (!activeZoneId) {
-				throw new Error("endStreaming() called before beginStreaming()");
+				throw new Error(
+					"endStreaming() called before beginStreaming()",
+				);
 			}
 			emit({ type: "gen-end", zoneId: activeZoneId, status });
 			activeZoneId = null;
@@ -165,18 +178,44 @@ function createTransportToolContext(
 	};
 }
 
-function resolveTransportEditor(editor: unknown): Editor {
-	if (isEditor(editor)) {
+function requireTransportEditor(editor: Editor | undefined): Editor {
+	if (editor) {
 		return editor;
 	}
 	throw new Error("Transport tool context requires a valid editor");
 }
 
-function isEditor(value: unknown): value is Editor {
-	return (
-		typeof value === "object" &&
-		value !== null &&
-		"apply" in value &&
-		"internals" in value
-	);
+async function* iterateUntilAborted(
+	iterable: AsyncIterable<unknown>,
+	signal: AbortSignal,
+): AsyncGenerator<PenStreamPart> {
+	const iterator = iterable[Symbol.asyncIterator]();
+	const aborted = waitForAbort(signal);
+	try {
+		while (!signal.aborted) {
+			const next = await Promise.race([
+				iterator.next(),
+				aborted.then(() => ({ done: true as const, value: undefined })),
+			]);
+			if (signal.aborted || next.done) {
+				break;
+			}
+			yield next.value as PenStreamPart;
+		}
+	} finally {
+		try {
+			await iterator.return?.();
+		} catch {
+			// generator cleanup must not become a stream error
+		}
+	}
+}
+
+function waitForAbort(signal: AbortSignal): Promise<void> {
+	if (signal.aborted) {
+		return Promise.resolve();
+	}
+	return new Promise((resolve) => {
+		signal.addEventListener("abort", () => resolve(), { once: true });
+	});
 }

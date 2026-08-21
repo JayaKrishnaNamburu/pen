@@ -1,5 +1,6 @@
 import { shouldExposeBlockInTooling } from "@input/pen-content-ops";
 import type { BlockSchema, Editor } from "@input/pen-types";
+import { rejectToolCall } from "./toolRejection";
 
 export function assertToolCanMutateBlock(
 	editor: Editor,
@@ -7,17 +8,22 @@ export function assertToolCanMutateBlock(
 ): BlockSchema {
 	const block = editor.getBlock(blockId);
 	if (!block) {
-		throw new Error(`Unknown block: "${blockId}"`);
+		rejectToolCall(editor, `Unknown block: "${blockId}"`, { blockId });
 	}
 
 	const schema = editor.schema.resolve(block.type);
 	if (!schema) {
-		throw new Error(`Unknown block type: "${block.type}"`);
+		rejectToolCall(editor, `Unknown block type: "${block.type}"`, {
+			blockId,
+			blockType: block.type,
+		});
 	}
 
 	if (!shouldExposeBlockInTooling(editor.documentProfile, schema)) {
-		throw new Error(
+		rejectToolCall(
+			editor,
 			`Block "${blockId}" of type "${block.type}" is not editable in ${editor.documentProfile} documents.`,
+			{ blockId, blockType: block.type },
 		);
 	}
 

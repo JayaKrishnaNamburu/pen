@@ -39,6 +39,6 @@ test("keeps table available in the structured playground slash menu", async ({
 	await page.keyboard.press("/");
 
 	const slashMenu = page.locator("[data-pen-slash-menu]");
-	await expect(slashMenu).toHaveAttribute("data-open", "true");
+	await expect(slashMenu).toHaveAttribute("data-open", "");
 	await expect(slashMenu).toContainText("Table");
 });

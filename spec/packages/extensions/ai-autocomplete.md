@@ -2,15 +2,16 @@
 
 ## Purpose
 
-Low-latency inline autocomplete extension for Pen
+Low-latency inline autocomplete extension for Pen.
 
 ## Public Role
 
-Add optional runtime behavior on top of the editor core without changing the canonical mutation authority.
+Add optional ghost-text completion on top of the editor core without changing the canonical mutation authority. The package owns request scheduling and controller state; it does not own the model filter chain.
 
 ## Key Exports / Entrypoints
 
 - Export map: `.`
+- Primary extension entrypoint: `aiAutocompleteExtension()`
 - Workspace scripts: `build`, `clean`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
@@ -21,7 +22,7 @@ Add optional runtime behavior on top of the editor core without changing the can
 
 ## Data Flow / Runtime Model
 
-Extension package packages in Pen should stay package-first and explicit about ownership. Adopt this package only when the host app needs the capability it provides.
+Completion requests stream through core `streamThroughEgress()` / `pen.aiEgress`. This package re-exports that helper; it does not keep a local filter copy. Generation and suggestions use the same facet.
 
 ## Integration Notes
 

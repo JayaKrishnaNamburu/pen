@@ -51,6 +51,7 @@
     "bench:ci": "vitest run && tsx src/cli.ts",
     "bench:envelope": "tsx src/cli.ts --envelope",
     "bench:envelope:write": "tsx src/cli.ts --write-envelope",
+    "bench:envelope:table": "tsx src/envelope/writeTable.ts",
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "devDependencies": {

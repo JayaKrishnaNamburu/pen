@@ -28,15 +28,16 @@ export const INGEST_MAX_TEXT_SIZE = 1_048_576;
 export const INGEST_MAX_IMAGE_COUNT = 256;
 
 /**
- * Stated IOP5 time budget for one markdown ingest, including markdown
- * paste (`markdownImporter.parse` / `import`). Same number as
- * `CLIPBOARD_INGEST_TIME_BUDGET_MS` — not re-recorded tonight; this
- * machine is under parallel load. Re-record on a quiet machine before
- * treating the wall-clock as a CI gate.
+ * Advisory IOP5 wall-clock ceiling for one markdown ingest, including
+ * markdown paste (`markdownImporter.parse` / `import`). Same number as
+ * `CLIPBOARD_INGEST_TIME_BUDGET_MS`.
  *
- * The enforceable bound is complexity: `capRawMarkdownSource` slices to
- * `INGEST_MAX_TEXT_SIZE` before parse, so a 40MB paste is O(cap) parse
- * work, not O(input).
+ * Not a unit-suite gate — the suite pins the cardinality caps and the
+ * cap-before-parse ordering, which is why a pathological paste finishes.
+ * `capRawMarkdownSource` slices to `INGEST_MAX_TEXT_SIZE` before parse,
+ * so a 40MB paste is O(cap) work, not O(input). The parse step refuses a
+ * longer source. Record timing in `@input/pen-bench` if the clock
+ * itself needs a home.
  */
 export const INGEST_TIME_BUDGET_MS = 1_000;
 

@@ -10,26 +10,6 @@
       "name": "AI_TOOL_RUNTIME_SLOT"
     },
     {
-      "file": "packages/extensions/ai/src/extension.ts",
-      "name": "AI_CONTROLLER_SLOT"
-    },
-    {
-      "file": "packages/extensions/ai/src/extension.ts",
-      "name": "INLINE_COMPLETION_SLOT"
-    },
-    {
-      "file": "packages/extensions/ai/src/extension.ts",
-      "name": "AI_INLINE_COMPLETION_SLOT"
-    },
-    {
-      "file": "packages/extensions/ai/src/extension.ts",
-      "name": "AI_INLINE_HISTORY_SLOT"
-    },
-    {
-      "file": "packages/extensions/ai/src/extension.ts",
-      "name": "AI_REVIEW_CONTROLLER_SLOT"
-    },
-    {
       "file": "packages/extensions/document-ops/src/constants/toolServer.ts",
       "name": "DOCUMENT_OPS_TOOL_RUNTIME_SLOT"
     },

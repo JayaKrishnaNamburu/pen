@@ -3,11 +3,11 @@ export function CollaborationPage() {
 		<>
 			<h1>Collaboration</h1>
 			<p>
-				Pen guarantees two things when more than one client is on a document:{" "}
-				<strong>CRDT convergence</strong> and <strong>origin labeling</strong>.
-				The host owns everything else that looks like a product: auth,
-				persistence, permissions, presence-payload policy, and schema
-				agreement across peers.
+				Pen guarantees two things when more than one client is on a
+				document: <strong>CRDT convergence</strong> and{" "}
+				<strong>origin labeling</strong>. The host owns everything else
+				that looks like a product: auth, persistence, permissions,
+				presence-payload policy, and schema agreement across peers.
 			</p>
 			<p>
 				This is COL5. The same statement lives in{" "}
@@ -38,14 +38,13 @@ function install(session: MultiplayerSession) {
 }`}</code>
 			</pre>
 			<p>
-				<code>session</code> is host-owned. For Yjs, wrap the
-				provider with <code>createYjsProviderSession</code> and pass
-				the native document and awareness through{" "}
-				<code>getYjsDoc(editor)</code> and{" "}
-				<code>getYjsAwareness(awareness)</code>. The canonical{" "}
+				<code>session</code> is host-owned. For Yjs, wrap the provider
+				with <code>createYjsProviderSession</code> and pass the native
+				document and awareness through <code>getYjsDoc(editor)</code>{" "}
+				and <code>getYjsAwareness(awareness)</code>. The canonical{" "}
 				<code>y-websocket</code> wiring is in the{" "}
-				<code>@input/pen-crdt-yjs</code> README. The playground file
-				is a demo.
+				<code>@input/pen-crdt-yjs</code> README. The playground file is
+				a demo.
 			</p>
 			<p>
 				<code>config.user</code> is broadcast to every peer. Do not put
@@ -56,56 +55,61 @@ function install(session: MultiplayerSession) {
 			<h2>What Pen guarantees</h2>
 			<p>
 				<strong>Convergence.</strong> The document store is a Yjs{" "}
-				<code>Y.Doc</code>. Concurrent edits merge. After exchange, peers hold
-				the same shared types (<code>blockOrder</code>, <code>blocks</code>,{" "}
-				<code>apps</code>, <code>metadata</code>). Pen does not add
-				operational transform, rebasing, a conflict UI, or a second merge
-				algorithm. Where a result is Yjs's rather than Pen's
-				(delete-beats-edit), that is a law, not a Pen choice.
+				<code>Y.Doc</code>. Concurrent edits merge. After exchange,
+				peers hold the same shared types (<code>blockOrder</code>,{" "}
+				<code>blocks</code>, <code>apps</code>, <code>metadata</code>).
+				Pen does not add operational transform, rebasing, a conflict UI,
+				or a second merge algorithm. Where a result is Yjs's rather than
+				Pen's (delete-beats-edit), that is a law, not a Pen choice.
 			</p>
 			<p>
-				<strong>Origin labeling.</strong> A remote update is labeled so this
-				client's undo, suggestions, input rules, and history can tell it
-				apart from local typing. <code>"user"</code> means this client's
-				user. It is never a default for an unlabeled remote transaction. The
-				label is for local reasoning; it is not a capability a peer can grant
-				itself.
+				<strong>Origin labeling.</strong> A remote update is labeled so
+				this client's undo, suggestions, input rules, and history can
+				tell it apart from local typing. <code>"user"</code> means this
+				client's user. It is never a default for an unlabeled remote
+				transaction. The label is for local reasoning; it is not a
+				capability a peer can grant itself.
 			</p>
-			<p>
-				Pen does not provide a transport, a provider, a server, rooms, or
-				presence infrastructure. The Yjs adapter and the multiplayer
+			<p data-col5="no-infrastructure">
+				Pen does not provide a transport, a provider, a server, rooms,
+				or presence infrastructure. The Yjs adapter and the multiplayer
 				extension consume a host-provided provider. The playground{" "}
 				<code>y-websocket</code> wiring is a demo.
 			</p>
 
 			<h2>What the host owns</h2>
 			<ul>
-				<li>
-					<strong>Auth.</strong> There is no session, token, or trusted peer
-					in the library. A peer that can write to the Yjs room can write to
-					the whole document. Access control lives in the host's transport.
+				<li data-col5="no-auth">
+					<strong>Auth.</strong> There is no session, token, or
+					trusted peer in the library. A peer that can write to the
+					Yjs room can write to the whole document. Access control
+					lives in the host's transport.
+				</li>
+				<li data-col5="offline-is-yjs">
+					<strong>Persistence.</strong> Pen does not store documents,
+					manage rooms, or replay history. Offline editing is Yjs's
+					guarantee: an offline client's edits converge when its
+					provider reconnects. Pen adds no queue, backoff, or conflict
+					UI.
+				</li>
+				<li data-col5="readonly-is-ui">
+					<strong>Permissions.</strong> Pen does not enforce per-user
+					or per-block permissions. <code>pen.readOnly</code> makes a
+					local editor decline local edits. It is a UI mode, not a
+					security boundary, and it stops nothing arriving over the
+					wire.
 				</li>
 				<li>
-					<strong>Persistence.</strong> Pen does not store documents, manage
-					rooms, or replay history. Offline editing is Yjs's guarantee: an
-					offline client's edits converge when its provider reconnects. Pen
-					adds no queue, backoff, or conflict UI.
+					<strong>Presence-payload policy.</strong> Awareness contents
+					are host-provided and visible to every peer. An email or
+					internal id put in presence is broadcast. Pen does not
+					authenticate those strings.
 				</li>
-				<li>
-					<strong>Permissions.</strong> <code>pen.readOnly</code> makes a
-					local editor decline local edits. It is a UI mode, not a security
-					boundary, and it stops nothing arriving over the wire.
-				</li>
-				<li>
-					<strong>Presence-payload policy.</strong> Awareness contents are
-					host-provided and visible to every peer. An email or internal id
-					put in presence is broadcast. Pen does not authenticate those
-					strings.
-				</li>
-				<li>
-					<strong>Schema agreement.</strong> Pen does not merge document
-					schemas between peers. Two clients on different registries against
-					one document is a host deployment concern.
+				<li data-col5="no-schema-merge">
+					<strong>Schema agreement.</strong> Pen does not merge
+					document schemas between peers. Two clients on different
+					registries against one document is a host deployment
+					concern.
 				</li>
 			</ul>
 
@@ -119,17 +123,17 @@ function install(session: MultiplayerSession) {
 				render it as the authoring client did.
 			</p>
 			<p>
-				DUR3 is what keeps that mismatch non-destructive. Unknown blocks keep
-				their type, props, content, and children through load, normalization,
-				re-encode, copy, and JSON export. Both built-in registry factories
-				set <code>onUnknownBlock</code> to <code>"passthrough"</code>. Apply
-				still refuses to <em>create</em> an unknown type —
-				preservation is about existing content, not about inventing writes
-				the schema cannot describe.
+				DUR3 is what keeps that mismatch non-destructive. Unknown blocks
+				keep their type, props, content, and children through load,
+				normalization, re-encode, copy, and JSON export. Both built-in
+				registry factories set <code>onUnknownBlock</code> to{" "}
+				<code>"passthrough"</code>. Apply still refuses to{" "}
+				<em>create</em> an unknown type — preservation is about existing
+				content, not about inventing writes the schema cannot describe.
 			</p>
 			<p>
-				A staged rollout that ships a new block type to some clients first
-				survives because the others keep the bytes.
+				A staged rollout that ships a new block type to some clients
+				first survives because the others keep the bytes.
 			</p>
 
 			<h2>Evidence plan</h2>
@@ -140,8 +144,8 @@ function install(session: MultiplayerSession) {
 			</p>
 			<table>
 				<caption>
-					Wave C scenarios are the evidence plan, not a report of in-tree
-					passes.
+					Wave C scenarios are the evidence plan, not a report of
+					in-tree passes.
 				</caption>
 				<thead>
 					<tr>
@@ -157,31 +161,35 @@ function install(session: MultiplayerSession) {
 						<td>
 							Two-peer: remote edit arrives as{" "}
 							<code>origin: "collaborator"</code>, stays out of
-							the local undo stack, and does not fire local-edit paths
+							the local undo stack, and does not fire local-edit
+							paths
 						</td>
 					</tr>
 					<tr>
 						<td>C.2</td>
 						<td>COL2</td>
 						<td>
-							Hostile presence (oversize, wrong type, script-bearing,
-							nonexistent block) does not break rendering
+							Hostile presence (oversize, wrong type,
+							script-bearing, nonexistent block) does not break
+							rendering
 						</td>
 					</tr>
 					<tr>
 						<td>C.3</td>
 						<td>COL3</td>
 						<td>
-							Attribution uses the host resolver (or an opaque client
-							handle), never a peer-asserted name as verified identity
+							Attribution uses the host resolver (or an opaque
+							client handle), never a peer-asserted name as
+							verified identity
 						</td>
 					</tr>
 					<tr>
 						<td>C.4</td>
 						<td>COL4</td>
 						<td>
-							Two-peer harness; concurrent split, move, cycle, list, and
-							table rows converge; cycles break deterministically
+							Two-peer harness; concurrent split, move, cycle,
+							list, and table rows converge; cycles break
+							deterministically
 						</td>
 					</tr>
 				</tbody>

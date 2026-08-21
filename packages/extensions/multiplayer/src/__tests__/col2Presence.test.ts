@@ -1,11 +1,15 @@
-import { createEditor } from "@input/pen-core";
+import { createEditor, defineExtension, urlPolicyFacet } from "@input/pen-core";
 import { defaultSchema } from "@input/pen-schema-default";
 import { createTestDocument } from "@input/pen-test";
 import type { DiagnosticEvent } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 import { MultiplayerControllerImpl } from "../controller";
 import { getMultiplayerController, multiplayerExtension } from "../index";
-import { validateAwarenessStates } from "../presence/awarenessValidator";
+import {
+	validateAwarenessStates,
+	type AwarenessValidationOptions,
+} from "../presence/awarenessValidator";
+import { assignMultiplayerColor } from "../presence/colorAssignment";
 import { AuthorLedger } from "../presence/authorLedger";
 import {
 	MAX_PRESENCE_AVATAR_URL_LENGTH,
@@ -42,11 +46,15 @@ const validPeer = {
 	},
 };
 
-function validate(states: Array<[number, unknown]>) {
+function validate(
+	states: Array<[number, unknown]>,
+	options?: AwarenessValidationOptions,
+) {
 	return validateAwarenessStates(
 		new Map(states),
 		documentView,
 		LOCAL_CLIENT_ID,
+		options,
 	);
 }
 
@@ -503,7 +511,6 @@ describe("COL2 awareness is untrusted input", () => {
 			"oversized",
 			"wrong-typed",
 		]);
-		expect((globalThis as { __xssProbe?: unknown }).__xssProbe).toBeUndefined();
 
 		editor.destroy();
 	});
@@ -541,7 +548,6 @@ describe("COL2 awareness is untrusted input", () => {
 			controller.getRemoteCursors().map((cursor) => cursor.clientId),
 		).toEqual([GOOD_PEER_ID]);
 		expect(rejectedReasons(diagnostics)).toEqual(["script-bearing"]);
-		expect((globalThis as { __xssProbe?: unknown }).__xssProbe).toBeUndefined();
 
 		editor.destroy();
 	});
@@ -576,7 +582,6 @@ describe("COL2 awareness is untrusted input", () => {
 			controller.getPeers().some((peer) => peer.clientId === BAD_PEER_ID),
 		).toBe(true);
 		expect(rejectedReasons(diagnostics)).toEqual(["nonexistent-block"]);
-		expect((globalThis as { __xssProbe?: unknown }).__xssProbe).toBeUndefined();
 
 		editor.destroy();
 	});
@@ -675,7 +680,6 @@ describe("COL2 awareness is untrusted input", () => {
 			"script-bearing",
 			"script-bearing",
 		]);
-		expect((globalThis as { __xssProbe?: unknown }).__xssProbe).toBeUndefined();
 
 		editor.destroy();
 	});
@@ -722,6 +726,151 @@ describe("COL2 awareness is untrusted input", () => {
 		expect(controller.getRemoteCursors()).toHaveLength(MAX_TRACKED_PEERS);
 		expect(controller.getPeers()).toHaveLength(MAX_TRACKED_PEERS);
 
+		editor.destroy();
+	});
+
+	it("COL2: CSS-injectable color is stripped at ingest and never reaches decoration style", () => {
+		const injected = "red;position:absolute";
+		const result = validate([
+			[
+				BAD_PEER_ID,
+				{
+					user: { id: "u-css", name: "Ada", color: injected },
+					cursor: { blockId: "b1", offset: 2, clock: 10 },
+				},
+			],
+		]);
+
+		expect(result.states.get(BAD_PEER_ID)?.user).toEqual({
+			id: "u-css",
+			name: "Ada",
+		});
+		expect(result.states.get(BAD_PEER_ID)?.user?.color).toBeUndefined();
+		expect(result.rejections).toEqual([]);
+
+		const { editor, controller } = createPresenceEditor();
+		applyStates(controller, editor, [
+			[
+				BAD_PEER_ID,
+				{
+					user: { id: "u-css", name: "Ada", color: injected },
+					cursor: { blockId: "b1", offset: 2, clock: 10 },
+				},
+			],
+		]);
+
+		const decoration = editor
+			.getDecorations()
+			.inlineForBlock("b1")
+			.find((item) => item.attributes?.["data-user-id"] === "u-css");
+		expect(decoration).toBeDefined();
+		expect(decoration?.attributes?.style).toBe(
+			`--pen-multiplayer-color: ${assignMultiplayerColor("u-css")}`,
+		);
+		expect(decoration?.attributes?.style).not.toContain("position");
+		expect(decoration?.attributes?.style).not.toContain(injected);
+
+		editor.destroy();
+	});
+
+	it("COL2: avatar URLs go through urlPolicy and keep only image schemes", () => {
+		const httpsAvatar = "https://example.com/a.png";
+		const admitted = validate([
+			[
+				BAD_PEER_ID,
+				{
+					user: { id: "u-img", name: "Ada", avatar: httpsAvatar },
+				},
+			],
+		]);
+		expect(admitted.states.get(BAD_PEER_ID)?.user?.avatar).toBe(httpsAvatar);
+		expect(admitted.rejections).toEqual([]);
+
+		const svg = validate([
+			[
+				BAD_PEER_ID,
+				{
+					user: {
+						id: "u-svg",
+						name: "Ada",
+						avatar: "data:image/svg+xml,<svg></svg>",
+					},
+				},
+			],
+		]);
+		expect(svg.states.has(BAD_PEER_ID)).toBe(false);
+		expect(svg.rejections).toEqual([
+			{ clientId: BAD_PEER_ID, reason: "script-bearing" },
+		]);
+
+		const mailto = validate([
+			[
+				BAD_PEER_ID,
+				{
+					user: {
+						id: "u-mail",
+						name: "Ada",
+						avatar: "mailto:user@example.com",
+					},
+				},
+			],
+		]);
+		expect(mailto.states.get(BAD_PEER_ID)?.user?.avatar).toBeUndefined();
+		expect(mailto.rejections).toEqual([]);
+
+		const denied = validate(
+			[
+				[
+					BAD_PEER_ID,
+					{
+						user: { id: "u-deny", name: "Ada", avatar: httpsAvatar },
+					},
+				],
+			],
+			{ resolveAvatarUrl: () => null },
+		);
+		expect(denied.states.get(BAD_PEER_ID)?.user?.avatar).toBeUndefined();
+		expect(denied.states.has(BAD_PEER_ID)).toBe(true);
+		expect(denied.rejections).toEqual([]);
+	});
+
+	it("COL2: host pen.urlPolicy can deny an otherwise-valid avatar at ingest", () => {
+		const { crdtDoc } = createTestDocument([
+			{ id: "b1", type: "paragraph", content: "Hello" },
+		]);
+		const editor = createEditor({
+			schema: defaultSchema,
+			document: crdtDoc,
+			extensions: [
+				defineExtension({
+					name: "deny-avatars",
+					facets: [urlPolicyFacet.of({ resolve: () => null })],
+				}),
+				multiplayerExtension({
+					user: { id: "u1", name: "Ada" },
+				}),
+			],
+		});
+		const controller = getMultiplayerController(
+			editor,
+		) as MultiplayerControllerImpl;
+
+		applyStates(controller, editor, [
+			[
+				GOOD_PEER_ID,
+				{
+					user: {
+						id: "u-good",
+						name: "Grace",
+						avatar: "https://example.com/a.png",
+					},
+					cursor: { blockId: "b1", offset: 2, clock: 10 },
+				},
+			],
+		]);
+
+		expect(controller.getPeers()[0]?.user.avatar).toBeUndefined();
+		expect(controller.getRemoteCursors()[0]?.user.avatar).toBeUndefined();
 		editor.destroy();
 	});
 

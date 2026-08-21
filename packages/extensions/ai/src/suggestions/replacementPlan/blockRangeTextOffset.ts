@@ -16,8 +16,6 @@ export function mapStreamingBlockRangeTextOffset(
 		normalizedRange.start.blockId === normalizedRange.end.blockId &&
 		normalizedRange.middleBlockIds.length === 0
 	) {
-		const blockText =
-			editor.getBlock(normalizedRange.start.blockId)?.textContent() ?? "";
 		const from = Math.min(
 			normalizedRange.start.offset,
 			normalizedRange.end.offset,

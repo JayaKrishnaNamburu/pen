@@ -28,7 +28,7 @@ async function* emptyStream() {}
 await processStream(emptyStream(), editor);
 ```
 
-`processStream` refuses the stream and emits `stream-target-missing` when the extension is not active. It does not mint an undo `groupId`; if you omit `groupId`, each apply uses `{ origin: "ai" }` only.
+`processStream` refuses the stream and emits `stream-target-missing` when the extension is not active. It does not mint an undo `groupId`; if you omit `groupId`, each apply uses `{ origin: "ai" }` only. A `tool-input-available` part runs through `executeAITool` with an empty mutating allowlist — mutating and destructive tools are denied and the stream continues.
 
 ## Options
 

@@ -55,6 +55,9 @@ jobs:
       - name: Run unit and integration tests
         run: pnpm test
 
+      - name: Check published package metadata
+        run: node scripts/sync-package-metadata.mjs --check
+
       - name: Check published packages share one train version
         run: node scripts/release-check.mjs --version-sync
 

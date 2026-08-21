@@ -377,12 +377,12 @@ describe("@input/pen-react table rendering", () => {
 			type: "block",
 			blockIds: ["t7-beforeinput"],
 		});
-		expect(tableBlock?.getAttribute("data-selected")).toBe("true");
+		expect(tableBlock?.getAttribute("data-selected")).toBe("");
 		expect(
 			tableBlock
 				?.querySelector("[data-pen-table-frame]")
 				?.getAttribute("data-selected"),
-		).toBe("true");
+		).toBe("");
 
 		await act(async () => {
 			document.dispatchEvent(createKeyEvent("Backspace"));

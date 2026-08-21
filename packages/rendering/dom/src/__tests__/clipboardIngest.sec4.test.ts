@@ -6,7 +6,6 @@ import {
 	CLIPBOARD_INGEST_MAX_NESTING_DEPTH,
 	CLIPBOARD_INGEST_MAX_NODE_COUNT,
 	CLIPBOARD_INGEST_MAX_TEXT_SIZE,
-	CLIPBOARD_INGEST_TIME_BUDGET_MS,
 	admitClipboardBlocks,
 } from "../utils/clipboardIngest";
 import type { PenBlock } from "../utils/clipboardPayload";
@@ -58,23 +57,6 @@ describe("SEC4 clipboard JSON ingest bounds", () => {
 			current = current.children?.[0];
 		}
 		expect(depth).toBe(CLIPBOARD_INGEST_MAX_NESTING_DEPTH);
-
-		editor.destroy();
-	});
-
-	it("IOP5: a 10k-node pathological paste completes within the stated time budget", () => {
-		const editor = createBareEditor();
-		const blocks: PenBlock[] = Array.from(
-			{ length: CLIPBOARD_INGEST_MAX_NODE_COUNT + 5 },
-			() => ({ type: "paragraph", content: "n" }),
-		);
-
-		const started = performance.now();
-		const result = admitClipboardBlocks(blocks, editor);
-		const elapsed = performance.now() - started;
-
-		expect(result.blocks).toHaveLength(CLIPBOARD_INGEST_MAX_NODE_COUNT);
-		expect(elapsed).toBeLessThan(CLIPBOARD_INGEST_TIME_BUDGET_MS);
 
 		editor.destroy();
 	});

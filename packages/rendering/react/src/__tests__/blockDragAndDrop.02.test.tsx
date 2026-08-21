@@ -193,7 +193,7 @@ function CustomHandleParagraph(props: {
 		<div
 			ref={ctx.ref as Ref<HTMLDivElement>}
 			data-block-type="paragraph"
-			data-selected={ctx.selected || undefined}
+			data-selected={ctx.selected ? "" : undefined}
 		>
 			<button {...dragProps} data-testid={`custom-handle-${blockId}`}>
 				Drag

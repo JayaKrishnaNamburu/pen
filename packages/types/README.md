@@ -28,7 +28,7 @@ void id;
 void ops;
 ```
 
-Prefer importing `createEditor` and `DocumentOp` from `@input/pen-core` in application code. Reach for this package when you are writing an extension or a typed helper that must not depend on the runtime.
+Prefer importing `createEditor` from `@input/pen-core` in application code. Import `DocumentOp` from this package — `@input/pen-core` does not re-export it. Reach for this package when you are writing an extension or a typed helper that must not depend on the runtime.
 
 ## Options
 

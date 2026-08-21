@@ -1,5 +1,4 @@
 import { yjsAdapter } from "@input/pen-crdt-yjs";
-import { undoExtension } from "@input/pen-undo";
 import { createDefaultSchema } from "./fixtures/testSchema";
 import {
 	type BlockSchema,
@@ -26,12 +25,6 @@ import {
 const noDefaultExtensionsPreset = {
 	resolve() {
 		return { extensions: [] };
-	},
-};
-
-const undoOnlyPreset = {
-	resolve() {
-		return { extensions: [undoExtension()] };
 	},
 };
 
@@ -67,16 +60,6 @@ const flowPolicySchema = mergeSchemas(
 		inlines: [],
 	}),
 );
-
-function createEditorWithUndo(
-	options: Parameters<typeof createCoreEditor>[0] = {},
-) {
-	return createCoreEditor({
-		schema: createDefaultSchema(),
-		...options,
-		preset: options.preset ?? undoOnlyPreset,
-	});
-}
 
 async function* createStream(parts: PenStreamPart[]) {
 	for (const part of parts) {

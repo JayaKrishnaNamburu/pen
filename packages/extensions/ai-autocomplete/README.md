@@ -2,7 +2,7 @@
 
 Low-latency inline autocomplete extension for Pen.
 
-This package focuses on inline completion. It does not plan, review, or talk to a model — the host owns adapters, auth, and UI.
+This package focuses on inline completion. It does not plan or review, and it does not ship a model adapter — the host owns adapters, auth, and UI. When a model is attached, outbound calls go through the shared `pen.aiEgress` facet from `@input/pen-core`.
 
 ## Install
 
@@ -43,6 +43,7 @@ const autocomplete = getAutocompleteController(editor);
 - This package focuses on inline completion, not broader AI planning or review flows.
 - The controller exposes runtime settings, block policy, provider registration, and accept/dismiss actions.
 - Host applications still own model adapters, auth, request routing, and UI affordances for surfaced suggestions.
+- Generation, suggestions, and autocomplete share one `pen.aiEgress` facet. Install the filter from `@input/pen-core` (or the re-export on `@input/pen-ai`).
 
 ## Options
 

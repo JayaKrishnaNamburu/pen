@@ -59,7 +59,7 @@ function applyDropTargetDOM(
 		`[${DATA_ATTRS.editorBlock}][${DATA_ATTRS.blockId}="${blockId}"]`,
 	) as HTMLElement | null;
 	if (el) {
-		el.setAttribute(DATA_ATTRS.dropTarget, "true");
+		el.setAttribute(DATA_ATTRS.dropTarget, "");
 		el.setAttribute(DATA_ATTRS.dropPosition, position);
 	}
 }

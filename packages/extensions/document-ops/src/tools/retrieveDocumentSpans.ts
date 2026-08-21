@@ -11,6 +11,7 @@ export function retrieveDocumentSpansTool(editor: Editor): ToolDefinition {
 		name: "retrieve_document_spans",
 		description:
 			"Retrieve ranked document spans relevant to a natural-language query.",
+		mutating: false,
 		inputSchema: {
 			type: "object",
 			required: ["query"],

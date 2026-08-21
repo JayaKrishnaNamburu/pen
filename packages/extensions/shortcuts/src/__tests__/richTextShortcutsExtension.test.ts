@@ -27,6 +27,50 @@ describe("@input/pen-shortcuts", () => {
 		expect(extension.facets).toHaveLength(2);
 	});
 
+	it("toggles bold and italic on a live selection when installed", () => {
+		const editor = createHeadlessEditor({
+			schema: defaultSchema,
+			extensions: [richTextShortcutsExtension()],
+		});
+		const blockId = editor.firstBlock()!.id;
+
+		editor.apply(
+			[
+				{
+					type: "insert-text",
+					blockId,
+					offset: 0,
+					text: "hello",
+				},
+			],
+			{ origin: "user" },
+		);
+		editor.selectText(blockId, 0, 5);
+
+		const bindings = editor.facet(keymapFacet);
+		const bold = bindings.find((binding) => binding.key === "Mod-b");
+		const italic = bindings.find((binding) => binding.key === "Mod-i");
+		expect(bold).toBeDefined();
+		expect(italic).toBeDefined();
+
+		expect(bold!.handler(editor, {} as KeyboardEvent)).toBe(true);
+		expect(editor.getBlock(blockId)?.textDeltas()).toEqual([
+			{ insert: "hello", attributes: { bold: true } },
+		]);
+
+		expect(italic!.handler(editor, {} as KeyboardEvent)).toBe(true);
+		expect(editor.getBlock(blockId)?.textDeltas()).toEqual([
+			{ insert: "hello", attributes: { bold: true, italic: true } },
+		]);
+
+		expect(bold!.handler(editor, {} as KeyboardEvent)).toBe(true);
+		expect(editor.getBlock(blockId)?.textDeltas()).toEqual([
+			{ insert: "hello", attributes: { italic: true } },
+		]);
+
+		editor.destroy();
+	});
+
 	it("adds a Mod-k provider when onToggleLink is set", () => {
 		const editor = createHeadlessEditor({
 			schema: defaultSchema,

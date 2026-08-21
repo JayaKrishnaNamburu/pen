@@ -7,6 +7,8 @@ import {
 	beforeApplyFacet,
 	undoMetadataControllerFacet,
 	createDecorationSet,
+	keyBindingPriorityToPrecedence,
+	keymapFacet,
 	ensureInlineCompletionController,
 	getInlineCompletionController as getInlineCompletionControllerFromCore,
 	getOpOriginType,
@@ -16,16 +18,16 @@ import type {
 	Decoration,
 	Editor,
 	Extension,
+	FacetProvider,
 	HistoryAppliedEvent,
 	KeyBinding,
 	ModelAdapter,
 	UndoHistoryMetadataController,
 } from "@input/pen-types";
 import {
-	AI_CONTROLLER_SLOT as CORE_AI_CONTROLLER_SLOT,
-	AI_INLINE_HISTORY_SLOT as CORE_AI_INLINE_HISTORY_SLOT,
-	AI_REVIEW_CONTROLLER_SLOT as CORE_AI_REVIEW_CONTROLLER_SLOT,
-	INLINE_COMPLETION_SLOT as CORE_INLINE_COMPLETION_SLOT,
+	AI_CONTROLLER_SLOT,
+	AI_INLINE_HISTORY_SLOT,
+	AI_REVIEW_CONTROLLER_SLOT,
 } from "@input/pen-types";
 import { defineExtension } from "@input/pen-core";
 import { AI_AGENTIC_MAX_STEPS_DEFAULT } from "@input/pen-ai-tools";
@@ -84,16 +86,6 @@ import {
 } from "./helpers";
 
 export const AI_EXTENSION_NAME = "ai";
-
-export const AI_CONTROLLER_SLOT = CORE_AI_CONTROLLER_SLOT;
-
-export const INLINE_COMPLETION_SLOT = CORE_INLINE_COMPLETION_SLOT;
-
-export const AI_INLINE_COMPLETION_SLOT = INLINE_COMPLETION_SLOT;
-
-export const AI_INLINE_HISTORY_SLOT = CORE_AI_INLINE_HISTORY_SLOT;
-
-export const AI_REVIEW_CONTROLLER_SLOT = CORE_AI_REVIEW_CONTROLLER_SLOT;
 
 const AI_SHORTCUT_KEY_BINDINGS: readonly KeyBinding[] = [
 	{
@@ -555,8 +547,8 @@ export function aiExtension(config: AIExtensionConfig = {}): Extension {
 	return defineExtension({
 		name: AI_EXTENSION_NAME,
 		dependencies: ["document-ops", "delta-stream", "undo"],
-		keyBindings: AI_SHORTCUT_KEY_BINDINGS,
 		facets: [
+			...aiKeymapProviders(AI_SHORTCUT_KEY_BINDINGS),
 			beforeApplyFacet.of((ops, options) => {
 				if (!controller?.getState().suggestMode) {
 					return ops;
@@ -700,5 +692,16 @@ export function getAIReviewController(
 	return (
 		(editor.facet(aiReviewControllerFacet) as AIReviewController | null) ??
 		null
+	);
+}
+
+function aiKeymapProviders(
+	bindings: readonly KeyBinding[],
+): readonly FacetProvider[] {
+	return bindings.map((binding) =>
+		keymapFacet.of(
+			[binding],
+			keyBindingPriorityToPrecedence(binding.priority ?? 300),
+		),
 	);
 }

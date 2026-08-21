@@ -7,7 +7,7 @@ This package sanitizes incoming HTML and applies it through `editor.apply` with 
 ## Install
 
 ```bash
-pnpm add @input/pen-core @input/pen-import-html
+pnpm add @input/pen-core @input/pen-preset-default @input/pen-import-html
 ```
 
 ## What It Provides
@@ -37,14 +37,19 @@ Exceeding a bound truncates at a block boundary. `import()` and `htmlImporter.pa
 
 ```ts
 import { createEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
 import { htmlImporter } from "@input/pen-import-html";
 
-const editor = createEditor();
+const editor = createEditor({
+  preset: defaultPreset(),
+});
 
 await htmlImporter.import("<p>Hello <strong>Pen</strong></p>", editor, {
   replace: true,
 });
 ```
+
+A bare `createEditor()` has an empty schema. Unknown block types are dropped, so that HTML would import nothing. `defaultPreset()` (or `createDefaultSchema()`) is required for paragraph and mark types to resolve.
 
 ## Image src policy
 
@@ -56,9 +61,12 @@ Ingest failure emits `asset-upload-failed` and omits that image block.
 
 ```ts
 import { createEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
 import { htmlImporter } from "@input/pen-import-html";
 
-const editor = createEditor();
+const editor = createEditor({
+  preset: defaultPreset(),
+});
 
 await htmlImporter.import('<img src="https://cdn.example/a.png" />', editor, {
   imageSrc: "ingest",

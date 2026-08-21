@@ -317,6 +317,7 @@ export function undoExtension(options?: UndoExtensionOptions): Extension {
 				UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY,
 				null,
 			);
+			activeEditor?.internals.assignSlot("undo:manager", null);
 			activeEditor = null;
 			unsubscribeStackItemAdded?.();
 			unsubscribeStackItemAdded = null;

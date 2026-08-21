@@ -44,6 +44,7 @@ export type DeleteGranularity = "grapheme" | "word" | "line";
 
 export interface InsertTextParam {
 	readonly text: string;
+	readonly marks?: Record<string, unknown | null>;
 }
 
 export interface DeleteParam {
@@ -98,9 +99,12 @@ function handleInsertText(
 		return false;
 	}
 	const block = editor.getBlock(selection.focus.blockId);
-	const marks = block
-		? marksAtOffset(block, selection.focus.offset)
-		: undefined;
+	const marks =
+		param.marks !== undefined
+			? param.marks
+			: block
+				? marksAtOffset(block, selection.focus.offset)
+				: undefined;
 	const replacement = replaceRangeOps(editor, selection, param.text, marks);
 	if (!replacement) {
 		return false;

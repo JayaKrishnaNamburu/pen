@@ -22,17 +22,19 @@ This package is the main plain-text authoring ingest layer for Pen. It handles M
 
 ## Runtime Model
 
-Markdown import is a parse, normalize, and apply flow:
+Markdown import is a cap, parse, normalize, and apply flow:
 
 ```mermaid
 flowchart TD
   Markdown[MarkdownText]
+  Cap[CapRawSource]
   Parse[ParseMarkdownToPendingBlocks]
   Normalize[NormalizeToSchemaAndProfile]
   Ops[BuildImportOps]
   Core["@input/pen-core"]
 
-  Markdown --> Parse
+  Markdown --> Cap
+  Cap --> Parse
   Parse --> Normalize
   Normalize --> Ops
   Ops --> Core
@@ -40,6 +42,7 @@ flowchart TD
 
 Important rules:
 
+- `capRawMarkdownSource()` slices the raw string to `INGEST_MAX_TEXT_SIZE` before parse, so work is O(cap) rather than O(input).
 - Markdown parsing produces pending blocks, not final document truth.
 - The current editor schema and document profile still decide what survives normalization.
 - Imported Markdown lands through editor operations and `editor.apply(...)`, preserving the core authority boundary.

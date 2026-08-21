@@ -4,8 +4,9 @@
 #
 # engines-inventory always exits 0 (35 of 35 ok today). It has an npm
 # alias so the documented command exists; it is not a job. HOST3's
-# declared floor is written by sync-package-metadata.mjs and exercised
-# by node-matrix.yml — the leftover report does not enforce either.
+# declared floor is written by sync-package-metadata.mjs, held by the
+# package-metadata matrix gate (`--check`), and exercised by
+# node-matrix.yml — the leftover report does not enforce either.
 #
 # console-inventory also always exits 0. It is published into the job
 # summary of the blocking job below, not as its own check. Blocking
@@ -38,6 +39,45 @@ jobs:
           # --strict is the enforcing mode; without it the script cannot fail.
           - gate: renderer-inventory
             command: pnpm renderer-inventory -- --strict
+          - gate: ai-egress-one-door
+            command: node scripts/ai-egress-one-door.mjs
+          # AIB2: PenStreamRequest must not grow an editor field
+          # (top-level or nested). Self-tests nested + top-level
+          # editor on every run. Was a script with no workflow.
+          - gate: pen-stream-request-no-editor
+            command: node scripts/pen-stream-request-no-editor.mjs
+          # D.5 TSDoc coverage. Ratchet: undocumented count may only
+          # decrease (MAX_UNDOCUMENTED in the script). Becomes the hard
+          # zero-undocumented DOC3 gate when that constant hits 0.
+          # --strict fails on any undocumented symbol; do not use it
+          # here until the TSDoc / un-export pass lands.
+          - gate: api-docs-coverage
+            command: pnpm api-docs-coverage
+          # API8: retired source-available / commercial wording stays
+          # in the license decision record.
+          - gate: positioning-check
+            command: node scripts/positioning-check.mjs
+          # In-page conformance mirrors must stay assignable both ways
+          # to the production type they name. Compared count is printed
+          # so a silent empty glob cannot go green.
+          - gate: conformance-mirror-drift
+            command: node scripts/conformance-mirror-drift.mjs
+          # Wave 4 catalog vs core command registry. Fails when
+          # CATALOG.md and defineCommand / commandHandler disagree.
+          - gate: command-catalog-check
+            command: node scripts/command-catalog-check.mjs
+          # API7 / HOST3 / API8: published manifests match what
+          # sync-package-metadata.mjs would write (repository.url,
+          # engines.node, files, publishConfig, LICENSE.md). Write
+          # mode is manual; --check is the PR-blocking hold.
+          - gate: package-metadata
+            command: node scripts/sync-package-metadata.mjs --check
+          # SCALE1: generated envelope table must match
+          # baselines/envelope.json. Table-diff only — does not
+          # re-run benches. Timing stays in bench.yml and is
+          # same-class only.
+          - gate: bench-envelope-drift
+            command: node scripts/bench-envelope-drift.mjs
 
     steps:
       - name: Check out repository

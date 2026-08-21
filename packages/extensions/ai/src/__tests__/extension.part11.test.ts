@@ -124,7 +124,6 @@ describe("aiExtension", () => {
 				}),
 			],
 		});
-		const blockId = editor.firstBlock()!.id;
 		const controller = getAIController(editor)!;
 		const session = controller.startSession({
 			surface: "bottom-chat",
@@ -172,7 +171,6 @@ describe("aiExtension", () => {
 				}),
 			],
 		});
-		const blockId = editor.firstBlock()!.id;
 		const controller = getAIController(editor)!;
 		const session = controller.startSession({
 			surface: "bottom-chat",

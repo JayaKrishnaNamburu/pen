@@ -166,6 +166,37 @@ export default tseslint.config(
     },
   },
   {
+    // Wave 7.1: v1 Extension.keyBindings / inputRules / decorations move to
+    // facet providers. Error on packages that never declared them (or already
+    // migrated) so they cannot regress. The remaining decorations riders stay
+    // warn: collectDecorations still iterates Extension.decorations, so moving
+    // them to decorationsFacet.of() would drop them from getDecorations()
+    // until that collector reads the facet. Promoting those to error is what
+    // Wave 7.1 waits on.
+    files: [
+      "packages/*/src/**/*.{ts,tsx}",
+      "packages/*/*/src/**/*.{ts,tsx}",
+    ],
+    ignores: ["**/__tests__/**", "**/*.test.ts", "**/*.test.tsx"],
+    rules: {
+      "pen/no-v1-extension-fields": "error",
+    },
+  },
+  {
+    files: [
+      "packages/extensions/ai/src/**/*.{ts,tsx}",
+      "packages/extensions/ai-suggestions/src/**/*.{ts,tsx}",
+      "packages/extensions/ai-autocomplete/src/**/*.{ts,tsx}",
+      "packages/extensions/multiplayer/src/**/*.{ts,tsx}",
+      "packages/extensions/search/src/**/*.{ts,tsx}",
+      "packages/tooling/bench/src/**/*.{ts,tsx}",
+    ],
+    ignores: ["**/__tests__/**", "**/*.test.ts", "**/*.test.tsx"],
+    rules: {
+      "pen/no-v1-extension-fields": "warn",
+    },
+  },
+  {
     // Deliberately permissive baseline. Each entry names the wave that owns the cleanup and
     // earns its promotion to "error"; promoting one before that only creates noise.
     rules: {

@@ -1,5 +1,10 @@
 import { expect, type Page } from "@playwright/test";
+import type { GeometryReader } from "../src/mirrors/geometryReader";
 import { scenario } from "../src/scenario";
+
+type PageGeometryReader = GeometryReader & {
+	dispose(): void;
+};
 
 /**
  * Wave 6.3 browser checkpoint (08-bidi.md §3 / Tests):
@@ -224,40 +229,12 @@ async function measureCase(
 				"/@id/@input/pen-dom",
 			];
 
-			type Reader = {
-				rangeRects(range: {
-					anchor: { blockId: string; offset: number };
-					focus: { blockId: string; offset: number };
-				}): readonly {
-					left: number;
-					top: number;
-					right: number;
-					bottom: number;
-					width: number;
-					height: number;
-				}[];
-				lineBoxes(blockId: string): readonly {
-					runs: readonly {
-						run: { from: number; to: number; level: number };
-						rect: {
-							left: number;
-							top: number;
-							right: number;
-							bottom: number;
-							width: number;
-							height: number;
-						};
-					}[];
-				}[];
-				dispose(): void;
-			};
-
 			async function loadCreateGeometryReader(): Promise<
 				(options: {
 					root: HTMLElement;
 					observeResize: boolean;
 					observeFonts: boolean;
-				}) => Reader
+				}) => PageGeometryReader
 			> {
 				const errors: string[] = [];
 				for (const url of GEOMETRY_IMPORTS) {
@@ -267,7 +244,7 @@ async function measureCase(
 								root: HTMLElement;
 								observeResize: boolean;
 								observeFonts: boolean;
-							}) => Reader;
+							}) => PageGeometryReader;
 						};
 						if (typeof mod.createGeometryReader === "function") {
 							return mod.createGeometryReader;

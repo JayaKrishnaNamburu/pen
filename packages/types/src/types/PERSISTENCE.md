@@ -8,14 +8,14 @@ Types live in `persistence.ts`. This file does not change them.
 
 | Member | Status | Remark |
 | --- | --- | --- |
-| `loadDocument` | host-implemented | Pen never calls it. Hosts persist and reload Yjs bytes. Pen's load path is `CRDTAdapter.loadDocument` / `Editor.loadDocument`, not this member. |
-| `saveSnapshot` | host-implemented | Pen never calls it. Hosts persist a full encoded document state. |
-| `appendUpdate` | host-implemented | Pen never calls it. Hosts append a Yjs update to an update log. |
-| `getUpdates` | host-implemented | Pen never calls it. Hosts read the update log. |
-| `compact` | host-implemented | Pen never calls it. Compaction is host storage: `Y.mergeUpdates` folds an update log, not tombstones. Snapshot retention and `gc: true` are separate tradeoffs — see `@input/pen-crdt-yjs` compaction notes. |
-| `saveVersionSnapshot` | implemented | Called by `@input/pen-history` `SnapshotManager.createSnapshot`. |
-| `listVersions` | implemented | Called by `SnapshotManager.createSnapshot` (latest entry after write) and `SnapshotManager.listSnapshots`. There is no `getVersionSnapshots`. |
-| `loadVersion` | implemented | Called by `SnapshotManager.restoreSnapshot`. |
+| `loadDocument` | host-implemented | Pen never calls it. Host opens a stored document, then feeds bytes to `CRDTAdapter.loadDocument`. `null` means create a new document. Rejection aborts open. |
+| `saveSnapshot` | host-implemented | Pen never calls it. Host persists a full encoded state on its own schedule. Rejection means that full state is not durable. |
+| `appendUpdate` | host-implemented | Pen never calls it. Host appends one Yjs update to its log. A dropped append leaves a gap. Full-snapshot hosts may no-op. |
+| `getUpdates` | host-implemented | Pen never calls it. Host reads its update log; `since` is a host cursor. Full-snapshot hosts may return `[]`. |
+| `compact` | host-implemented | Pen never calls it. Compaction is host storage: `Y.mergeUpdates` folds an update log, not tombstones. Snapshot retention and `gc: true` are separate tradeoffs — see `@input/pen-crdt-yjs` compaction notes. A rejected compact leaves the log as stored. |
+| `saveVersionSnapshot` | implemented | Called by `@input/pen-history` `SnapshotManager.createSnapshot`. Rejection fails the create. |
+| `listVersions` | implemented | Called by `SnapshotManager.createSnapshot` (latest entry after write) and `SnapshotManager.listSnapshots`. Empty list after write synthesizes an entry. There is no `getVersionSnapshots`. |
+| `loadVersion` | implemented | Called by `SnapshotManager.restoreSnapshot`. Missing version throws from the manager; rejection fails restore. |
 
 ## AssetProvider
 

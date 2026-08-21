@@ -49,8 +49,9 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@input/pen-types": "workspace:^",
-    "@input/pen-document-ops": "workspace:^"
+    "@input/pen-ai-tools": "workspace:^",
+    "@input/pen-document-ops": "workspace:^",
+    "@input/pen-types": "workspace:^"
   },
   "devDependencies": {
     "@input/pen-core": "workspace:^",

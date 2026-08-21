@@ -29,7 +29,7 @@ pnpm test:e2e
 - `packages/rendering/*` bind the headless runtime to framework-specific surfaces.
 - `packages/extensions/*` add optional runtime behavior such as AI, search, import/export, and collaboration.
 - `packages/docs` and `playground` are workspace apps used to document and exercise shipped surfaces.
-- `examples/` has consumer-style React and Vue apps that are not on the pnpm workspace yet.
+- `examples/` has consumer-style React, Vue, and vanilla apps. They are pnpm workspace members and each has a CI smoke job, so they build against the same workspace sources as everything else.
 
 ## Engineering Expectations
 
@@ -43,7 +43,8 @@ pnpm test:e2e
 
 Outbound license is the [MIT License](LICENSE.md), copyright Input B.V.
 By contributing you agree that your work may be distributed under those
-terms.
+terms. The previous license-enforcement clause is retired: MIT has no
+such clause, and the repository has no license-enforcement code.
 
 Inbound, the [Contributor License Agreement](CLA.md) grants Input B.V.
 copyright and patent licenses over your contribution. The asymmetry with the
@@ -69,6 +70,15 @@ update that package's `api-report.md` (`node scripts/api-reports.mjs
 --write` after `pnpm build`). CI diffs the committed reports against the
 built `.d.ts`. Those PRs also take the `api-change` label; the report
 diff is the mechanical gate, the label is the review signal.
+
+Know what that gate does and does not catch. `api-report.md` is an
+inventory of exported **names**, not of their shapes. Adding, removing or
+renaming an export produces a diff and CI stops you. Changing the shape
+behind a name does not: adding a required field to an exported interface,
+widening a parameter, or changing a return type is a breaking change for
+every consumer and produces no diff at all. The label is the only signal
+that covers those, so on a shape change do not read a green
+`api-reports` run as review having happened.
 
 Release trains share one version across every published package. The release
 workflow runs `scripts/release-check.mjs` (version-sync, publint,

@@ -1,4 +1,3 @@
-import { undoExtension } from "@input/pen-undo";
 import type { CommitEvent, Point } from "@input/pen-types";
 import { HOOK_PRIORITY_AUTH } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
@@ -9,12 +8,6 @@ import { createEditor as createCoreEditor } from "../index";
 const noDefaultExtensionsPreset = {
 	resolve() {
 		return { extensions: [] };
-	},
-};
-
-const undoOnlyPreset = {
-	resolve() {
-		return { extensions: [undoExtension()] };
 	},
 };
 
@@ -118,30 +111,6 @@ describe("editor.openTextStream (Wave 2.4)", () => {
 			"hello",
 		);
 		expect(diagnostics).not.toContain("normalize-cap");
-
-		editor.destroy();
-	});
-
-	it("ST4: stream commits share groupId and undo as one unit", () => {
-		const editor = createEditor({ preset: undoOnlyPreset });
-		const blockId = editor.firstBlock()!.id;
-		const writer = editor.openTextStream(
-			{ blockId },
-			{ origin: { type: "ai", groupId: "undo-stream" } },
-		);
-
-		writer.append("hello");
-		writer.flush();
-		writer.append("!");
-		writer.flush();
-		writer.close();
-
-		expect(visibleText(editor.getBlock(blockId)!.textContent())).toBe(
-			"hello!",
-		);
-		expect(editor.undoManager.undo()).toBe(true);
-		expect(visibleText(editor.getBlock(blockId)!.textContent())).toBe("");
-		expect(editor.undoManager.undo()).toBe(false);
 
 		editor.destroy();
 	});

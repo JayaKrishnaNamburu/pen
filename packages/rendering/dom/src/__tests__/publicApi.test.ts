@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
 	DEFAULT_SELECT_ALL_BEHAVIOR,
 	handleEditorDocumentKeyDown,
+	handleFieldEditorPointerActivate,
 	isActiveFieldEditorTextEntryTarget,
 	isFieldEditorTextEditingKey,
 	isFieldEditorTextEntryTarget,
@@ -21,6 +22,10 @@ import {
 describe("@input/pen-dom public helpers", () => {
 	it("exports mountEditor as the document-shell composition", () => {
 		expect(typeof mountEditor).toBe("function");
+	});
+
+	it("exports handleFieldEditorPointerActivate for host click-to-edit", () => {
+		expect(typeof handleFieldEditorPointerActivate).toBe("function");
 	});
 
 	it("resolves select-all behavior from the interaction model", () => {
@@ -50,11 +55,13 @@ describe("@input/pen-dom public helpers", () => {
 				hidden: false,
 				index: 2,
 				empty: undefined,
+				[DATA_ATTRS.focused]: true,
 			}),
 		).toEqual({
 			"data-role": "editor",
 			"data-active": "",
 			"data-index": "2",
+			"data-focused": "",
 		});
 	});
 

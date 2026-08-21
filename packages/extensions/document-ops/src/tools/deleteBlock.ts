@@ -6,6 +6,8 @@ export function deleteBlockTool(editor: Editor): ToolDefinition {
   return {
     name: "delete_block",
     description: "Delete a block from the document.",
+    mutating: true,
+    destructive: true,
     inputSchema: {
       type: "object",
       required: ["blockId"],

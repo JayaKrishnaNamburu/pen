@@ -8,6 +8,7 @@ import {
   mention,
   textColor,
 } from "../index";
+import { subdocument } from "../blocks/subdocument";
 
 const ATTR_BREAKOUT = `" onmouseover="alert(1)`;
 const TAG_BREAKOUT = `"><script>alert(1)</script>`;
@@ -87,6 +88,19 @@ describe("SEC5 schema toHTML escaping", () => {
     expectNoAttributeBreakout(tagHtml);
     expect(tagHtml).toBe(
       `<pre><code class="language-&quot;&gt;&lt;script&gt;alert(1)&lt;/script&gt;">x</code></pre>`,
+    );
+  });
+
+  it("SEC5: hostile subdocument guid does not break out of attributes", () => {
+    const html = subdocument.serialize!.toHTML!({
+      id: "1",
+      type: "subdocument",
+      props: { subdocumentGuid: ATTR_BREAKOUT },
+      content: "",
+    });
+    expectNoAttributeBreakout(html);
+    expect(html).toBe(
+      `<div data-pen-subdocument="&quot; onmouseover=&quot;alert(1)"></div>`,
     );
   });
 });

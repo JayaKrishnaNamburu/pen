@@ -46,12 +46,7 @@ describe("@input/pen-export-xml", () => {
         blockId: "child",
         blockType: "paragraph",
         props: {},
-        position: "last",
-      },
-      {
-        type: "update-block",
-        blockId: "child",
-        props: { parentId: "parent" },
+        position: { parent: "parent", index: 0 },
       },
       {
         type: "insert-text",
@@ -69,10 +64,14 @@ describe("@input/pen-export-xml", () => {
     ]);
 
     const xml = await xmlExporter.export(editor);
+    const parentStart = xml.indexOf('<block id="parent"');
+    const childrenStart = xml.indexOf("<children>", parentStart);
+    const childStart = xml.indexOf('<block id="child"', childrenStart);
 
     expect(xml).toContain('<pen-document version="1">');
     expect(xml).toContain('<block id="parent" type="toggle">');
-    expect(xml).toContain('<block id="child" type="paragraph">');
+    expect(childrenStart).toBeGreaterThan(parentStart);
+    expect(childStart).toBeGreaterThan(childrenStart);
     expect(xml).toContain("<content>hello world</content>");
     expect(xml).toContain('<mark type="bold" start="0" end="5" />');
 

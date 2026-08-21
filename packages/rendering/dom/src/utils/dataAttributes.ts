@@ -4,13 +4,19 @@ export function penDataAttr(name: string): string {
 	return `${PEN_PREFIX}${name}`;
 }
 
+/**
+ * Boolean values are presence-only: `true` becomes `""`, `false`/`undefined` are omitted.
+ * Keys that already start with `data-` pass through unchanged — pass `DATA_ATTRS`
+ * values at production sites so the emitted name stays coupled to the catalog.
+ */
 export function buildDataAttributes(
 	attrs: Record<string, string | number | boolean | undefined>,
 ): Record<string, string | undefined> {
 	const result: Record<string, string | undefined> = {};
 	for (const [key, value] of Object.entries(attrs)) {
 		if (value === undefined || value === false) continue;
-		result[`data-${key}`] = value === true ? "" : String(value);
+		const name = key.startsWith("data-") ? key : `data-${key}`;
+		result[name] = value === true ? "" : String(value);
 	}
 	return result;
 }

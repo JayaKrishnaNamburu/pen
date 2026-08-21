@@ -32,7 +32,7 @@ function ImageFigure({
     <figure
       ref={ctx.ref as React.Ref<HTMLElement>}
       data-block-type="image"
-      data-selected={ctx.selected || undefined}
+      data-selected={ctx.selected ? "" : undefined}
     >
       <img
         src={src ?? undefined}

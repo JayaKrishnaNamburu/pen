@@ -1,3 +1,4 @@
+import { foldAndNormalize } from "@input/pen-core";
 import type { AISuggestionCandidate } from "./types";
 
 export interface CachedAnalysisResult {
@@ -12,12 +13,13 @@ export function buildSuggestionFingerprint(
 		AISuggestionCandidate,
 		"kind" | "originalText" | "replacementText"
 	>,
+	locale: string,
 ): string {
 	return [
 		scopeHash,
 		candidate.kind,
-		normalizeFingerprintText(candidate.originalText),
-		normalizeFingerprintText(candidate.replacementText),
+		normalizeFingerprintText(candidate.originalText, locale),
+		normalizeFingerprintText(candidate.replacementText, locale),
 	].join("::");
 }
 
@@ -37,6 +39,6 @@ export function isDismissFingerprintActive(
 	return now - dismissedAt <= dismissMemoryMs;
 }
 
-function normalizeFingerprintText(value: string): string {
-	return value.trim().replace(/\s+/g, " ").toLowerCase();
+function normalizeFingerprintText(value: string, locale: string): string {
+	return foldAndNormalize(value.trim().replace(/\s+/g, " "), locale);
 }

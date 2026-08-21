@@ -4,6 +4,7 @@ import {
   createTestDocument,
   createTestEditor,
   assertDocEquals,
+  assertPeerEditsSurvive,
   createTestCollaboration,
   resetTestIdCounter,
 } from "../index";
@@ -264,6 +265,16 @@ describe("@input/pen-test harness", () => {
       collab.sync();
 
       assertDocEquals(collab.editorA, collab.editorB);
+      assertPeerEditsSurvive([collab.editorA, collab.editorB], {
+        blockId: "p1",
+        tokens: [" A", " B"],
+      });
+
+      const mergedA = collab.editorA.getBlock("p1").textContent();
+      const mergedB = collab.editorB.getBlock("p1").textContent();
+      for (const text of [mergedA, mergedB]) {
+        expect(text.split("Hello").length - 1).toBe(1);
+      }
     });
   });
 });

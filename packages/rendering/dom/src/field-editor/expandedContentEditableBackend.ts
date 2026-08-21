@@ -4,7 +4,18 @@ import { handlePaste, handleCopy, handleCut } from "./clipboard";
 import type { PasteImporters } from "../types/paste";
 import type { FieldEditorInputController } from "./controller";
 import type { FieldEditorTextLike } from "./crdt";
+import {
+	deleteBackward,
+	deleteForward,
+	historyRedo,
+	historyUndo,
+	insertLineBreak,
+	insertText,
+	splitBlock,
+	toggleMark,
+} from "@input/pen-core";
 import { applyEnterBehavior, toggleInlineMark } from "./commands";
+import { dispatchEditorCommand } from "./commandDispatch";
 import { normalizeSelectionFormation } from "../utils/selectionFormation";
 import {
 	handleEditorKeyBindings,
@@ -166,6 +177,13 @@ export class ExpandedContentEditableBackend {
 			case "insertReplacementText": {
 				const text = event.data ?? "";
 				if (!text) return;
+				if (
+					dispatchEditorCommand(this.editor, insertText, { text }, {
+						origin: "user",
+					})
+				) {
+					return;
+				}
 				this.editor.replaceSelection(text);
 				return;
 			}
@@ -187,6 +205,29 @@ export class ExpandedContentEditableBackend {
 								nextSelection.focus.offset,
 							);
 						});
+					}
+					return;
+				}
+
+				const command =
+					event.inputType === "insertLineBreak"
+						? insertLineBreak
+						: splitBlock;
+				if (
+					dispatchEditorCommand(this.editor, command, undefined, {
+						origin: "user",
+					})
+				) {
+					const nextSelection = this.editor.selection;
+					if (
+						nextSelection?.type === "text" &&
+						!nextSelection.isMultiBlock
+					) {
+						this.fieldEditor.activateTextSelection(
+							nextSelection.anchor.blockId,
+							nextSelection.anchor.offset,
+							nextSelection.focus.offset,
+						);
 					}
 					return;
 				}
@@ -227,6 +268,22 @@ export class ExpandedContentEditableBackend {
 			case "deleteWordForward":
 			case "deleteSoftLineBackward":
 			case "deleteHardLineBackward": {
+				if ("commandName" in mapping) {
+					const command =
+						mapping.commandName === "pen.deleteForward"
+							? deleteForward
+							: deleteBackward;
+					const param = (mapping.param ?? {
+						granularity: "grapheme",
+					}) as { granularity: "grapheme" | "word" | "line" };
+					if (
+						dispatchEditorCommand(this.editor, command, param, {
+							origin: "user",
+						})
+					) {
+						return;
+					}
+				}
 				this.editor.deleteSelection();
 				return;
 			}
@@ -244,22 +301,66 @@ export class ExpandedContentEditableBackend {
 				return;
 			}
 			case "historyUndo": {
+				if (
+					dispatchEditorCommand(this.editor, historyUndo, undefined, {
+						origin: "user",
+					})
+				) {
+					return;
+				}
 				this.editor.undoManager.undo();
 				return;
 			}
 			case "historyRedo": {
+				if (
+					dispatchEditorCommand(this.editor, historyRedo, undefined, {
+						origin: "user",
+					})
+				) {
+					return;
+				}
 				this.editor.undoManager.redo();
 				return;
 			}
 			case "formatBold": {
+				if (
+					dispatchEditorCommand(
+						this.editor,
+						toggleMark,
+						{ mark: "bold" },
+						{ origin: "user" },
+					)
+				) {
+					return;
+				}
 				toggleInlineMark(this.editor, "bold");
 				return;
 			}
 			case "formatItalic": {
+				if (
+					dispatchEditorCommand(
+						this.editor,
+						toggleMark,
+						{ mark: "italic" },
+						{ origin: "user" },
+					)
+				) {
+					return;
+				}
 				toggleInlineMark(this.editor, "italic");
 				return;
 			}
 			case "formatUnderline": {
+				if (
+					dispatchEditorCommand(
+						this.editor,
+						toggleMark,
+						{ mark: "underline" },
+						{ origin: "user" },
+					)
+				) {
+					return;
+				}
 				toggleInlineMark(this.editor, "underline");
 				return;
 			}

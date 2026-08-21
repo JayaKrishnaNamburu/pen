@@ -6,20 +6,21 @@ This package is plain ESM JavaScript with no build step so ESLint can load it di
 
 ## Rules
 
-| Rule                                     | Spec rule | Status  | Owning wave                                                                                                                            |
-| ---------------------------------------- | --------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `no-html-injection-sinks`                | SEC2      | shipped | Wave H (Wave S owns the named test)                                                                                                    |
-| `no-unescaped-markup-concat`             | SEC5      | shipped | Wave S. Export packages, schema `toHTML`, and clipboard HTML. Adjacent comment naming SEC5 / already-serialized / clamped / justified. |
-| `no-above-floor-api`                     | HOST4     | shipped | Wave E.5. Allowlist: `scripts/above-floor-api-allowlist.json` (fallback + degradation required).                                       |
-| `no-bare-random-uuid`                    | HOST4     | shipped | Wave E.1                                                                                                                               |
-| `no-framework-free-modules-in-renderers` | API6      | shipped | Wave P.6 / E.2. Re-export stubs stay. Allowlist: `scripts/renderer-framework-free-allowlist.json`.                                     |
-| `no-module-scope-browser-globals`        | HOST2     | shipped | Wave E.2                                                                                                                               |
-| `no-user-facing-literals`                | LOC1      | shipped | Wave L.8. Allowlist: `eslint-disable-next-line` with a reason.                                                                         |
-| `no-ascii-word-boundaries`               | LOC4      | shipped | Wave L.8. `textSegmentation.ts` is the HOST4 fallback allowlist.                                                                       |
-| `no-bare-case-folding`                   | LOC5      | shipped | Wave L.8. Identifier folds and display casing are allowlisted in-rule.                                                                 |
-| `no-implicit-locale`                     | LOC3      | shipped | Wave L.8. Tests, playground, docs, and root `scripts/` are allowlisted.                                                                |
-| `no-aria-hidden-visible`                 | AX4, AX7  | shipped | Wave X. Overlay / focus-sink / decorative sites need an adjacent comment naming AX7, "focus sink", or "Justified".                     |
-| `no-unstyled-focus`                      | AX5       | shipped | Wave X. `outline: none` is allowed only with a nearby `:focus-visible` ring.                                                           |
+| Rule                                     | Spec rule | Status  | Owning wave                                                                                                                                   |
+| ---------------------------------------- | --------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `no-html-injection-sinks`                | SEC2      | shipped | Wave H (Wave S owns the named test)                                                                                                           |
+| `no-unescaped-markup-concat`             | SEC5      | shipped | Wave S. Export packages, schema `toHTML`, and clipboard HTML. Adjacent comment naming SEC5 / already-serialized / clamped / justified.        |
+| `no-above-floor-api`                     | HOST4     | shipped | Wave E.5. Allowlist: `scripts/above-floor-api-allowlist.json` (fallback + degradation required).                                              |
+| `no-bare-random-uuid`                    | HOST4     | shipped | Wave E.1                                                                                                                                      |
+| `no-framework-free-modules-in-renderers` | API6      | shipped | Wave P.6 / E.2. Re-export stubs stay. Allowlist: `scripts/renderer-framework-free-allowlist.json`.                                            |
+| `no-module-scope-browser-globals`        | HOST2     | shipped | Wave E.2                                                                                                                                      |
+| `no-user-facing-literals`                | LOC1      | shipped | Wave L.8. Allowlist: `eslint-disable-next-line` with a reason.                                                                                |
+| `no-ascii-word-boundaries`               | LOC4      | shipped | Wave L.8. `textSegmentation.ts` is the HOST4 fallback allowlist.                                                                              |
+| `no-bare-case-folding`                   | LOC5      | shipped | Wave L.8. Identifier folds and display casing are allowlisted in-rule.                                                                        |
+| `no-implicit-locale`                     | LOC3      | shipped | Wave L.8. Tests, playground, docs, and root `scripts/` are allowlisted.                                                                       |
+| `no-aria-hidden-visible`                 | AX4, AX7  | shipped | Wave X. Overlay / focus-sink / decorative sites need an adjacent comment naming AX7, "focus sink", or "Justified".                            |
+| `no-unstyled-focus`                      | AX5       | shipped | Wave X. `outline: none` is allowed only with a nearby `:focus-visible` ring.                                                                  |
+| `no-v1-extension-fields`                 | Wave 7.1  | shipped | Wave 7.1. Flags `Extension.keyBindings` / `inputRules` / `decorations` declarations. Schema `keyBindings` and local `const` names stay quiet. |
 
 Rules that need no custom code are configured directly in the root config: the dynamic-code ban (SEC8) uses core `no-eval` / `no-new-func` / `no-implied-eval`. Wave S owns the SEC8-named test and the CSP scenario.
 

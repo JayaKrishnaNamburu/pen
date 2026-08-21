@@ -143,14 +143,19 @@ export class ContentEditableBackendSelection extends ContentEditableBackendEvent
 		}
 	};
 
+	resolveLiveInputRange(): {
+		start: number;
+		end: number;
+	} | null {
+		return this.element ? getSelectionOffsets(this.element) : null;
+	}
+
 	resolveCurrentInputRange(): {
 		start: number;
 		end: number;
 	} | null {
 		const blockId = this.fieldEditor.focusBlockId;
-		const liveRange = this.element
-			? getSelectionOffsets(this.element)
-			: null;
+		const liveRange = this.resolveLiveInputRange();
 		return (
 			this.fieldEditor.resolveProgrammaticInputRange(
 				blockId,

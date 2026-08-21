@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { measureWithRoot } from "@input/pen-dom";
 import { useEditorContext } from "../../context/editorContext";
 import { useSelection } from "../../hooks/useSelection";
 import { useSyncExternalStoreWithSelector } from "../../utils/useSyncExternalStoreWithSelector";
@@ -63,15 +64,16 @@ export function EditorSelectionRect(props: SelectionRectProps) {
       let minLeft = Infinity;
       let maxRight = -Infinity;
 
-      for (const blockId of selection.blockIds) {
-        const el = rootElement.querySelector(`[data-block-id="${blockId}"]`);
-        if (!el) continue;
-        const r = el.getBoundingClientRect();
-        minTop = Math.min(minTop, r.top);
-        maxBottom = Math.max(maxBottom, r.bottom);
-        minLeft = Math.min(minLeft, r.left);
-        maxRight = Math.max(maxRight, r.right);
-      }
+      measureWithRoot(rootElement, ({ reader }) => {
+        for (const blockId of selection.blockIds) {
+          const r = reader.blockRect(blockId);
+          if (!r) continue;
+          minTop = Math.min(minTop, r.top);
+          maxBottom = Math.max(maxBottom, r.bottom);
+          minLeft = Math.min(minLeft, r.left);
+          maxRight = Math.max(maxRight, r.right);
+        }
+      });
 
       if (minTop < Infinity) {
         const boundedRect = intersectRegionSelectionRect(

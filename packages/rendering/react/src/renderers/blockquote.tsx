@@ -11,7 +11,7 @@ export function BlockquoteRenderer(
     <blockquote
       ref={ctx.ref as React.Ref<HTMLQuoteElement>}
       data-block-type="blockquote"
-      data-selected={ctx.selected || undefined}
+      data-selected={ctx.selected ? "" : undefined}
     >
       <InlineContent blockId={block.id} decorations={ctx.decorations} />
       <ParentIdChildren

@@ -1,11 +1,6 @@
 export {
 	aiExtension,
 	AI_EXTENSION_NAME,
-	AI_CONTROLLER_SLOT,
-	INLINE_COMPLETION_SLOT,
-	AI_INLINE_COMPLETION_SLOT,
-	AI_INLINE_HISTORY_SLOT,
-	AI_REVIEW_CONTROLLER_SLOT,
 	getInlineCompletionController,
 	getAIController,
 	getAIInlineCompletionController,
@@ -14,11 +9,7 @@ export {
 } from "./extension";
 
 export { runAgenticLoop } from "./agentic/loop";
-export {
-	buildAgentMessages,
-	compactToolResult,
-	AI_TOOL_RESULT_MAX_CHARS,
-} from "./runtime/stepJournal";
+export { AI_TOOL_RESULT_MAX_CHARS } from "./runtime/stepJournal";
 export {
 	aiEgressFacet,
 	aiEgressExtension,
@@ -57,25 +48,12 @@ export {
 	resolveBlockAdapter,
 	resolveBlockAdapterContentFormat,
 } from "./runtime/blockAdapters";
-export { buildMutationReceipt } from "./runtime/mutationReceipt";
-export {
-	applyMarkdownFastApply,
-	parseMarkdownFastApplyContract,
-} from "./runtime/markdownFastApply";
-export { parseMarkdownPatchPlanContract } from "./runtime/markdownPatchPlan";
 export { DOCUMENT_MUTATION_PLAN_KINDS } from "./runtime/planTypes";
 export {
 	PLAN_VALIDATION_SEVERITIES,
 	isDocumentMutationPlan,
 	validateDocumentMutationPlanShape,
 } from "./runtime/planValidation";
-export { buildStructuralReviewItems } from "./runtime/reviewArtifacts";
-export { buildDocumentMutationPlanExecution } from "./runtime/planExecutor";
-export {
-	parseStructuredPlanResult,
-	resolveExecutionMode,
-	resolveGenerationTargetKind,
-} from "./runtime/structuredPlanner";
 export {
 	buildStructuredIntentModelPrompt,
 	getStructuredIntentOutputSchema,
@@ -101,17 +79,11 @@ export {
 } from "./suggestions/suggestMode";
 export { applySuggestedAIOperations } from "./suggestions/applySuggestedAIOperations";
 export {
-	compileRangeReplacementSuggestionOps,
-	compileReplacementSuggestionOps,
-} from "./suggestions/textDiffOperations";
-export {
 	AI_REVIEW_ROLE_ATTRIBUTE,
 	AI_REVIEW_STATE_ATTRIBUTE,
 	AI_REVIEW_PREVIEW_NEW_ATTRIBUTE,
 	AI_REVIEW_PREVIEW_VIRTUAL_ATTRIBUTE,
 	FINAL_TEXT_REVIEW_HIDDEN_ATTRIBUTE,
-	buildAIReviewPresentationDecorations,
-	buildStreamingReviewPreviewDecorations,
 	resolveAIReviewPresentationState,
 } from "./review/reviewPresentation";
 export type {
@@ -182,24 +154,8 @@ export type {
 	ApplySuggestedAIOperationsResult,
 } from "./suggestions/applySuggestedAIOperations";
 export type {
-	CompileReplacementSuggestionOpsInput,
-	ReplacementTextDiffOperation,
-} from "./suggestions/textDiffOperations";
-export type {
 	DocumentMutationPlan,
 	DocumentMutationPlanKind,
-	FlowPatchPlan,
-	FlowPatchEdit,
-	FlowPatchEditOperation,
-	FlowPatchLocator,
-	TextEditPlan,
-	BlockInsertPlan,
-	BlockUpdatePlan,
-	BlockMovePlan,
-	BlockConvertPlan,
-	ReviewBundlePlan,
-	PlanConfidence,
-	PlanTextRange,
 } from "./runtime/planTypes";
 export type {
 	PlanValidationContext,
@@ -207,12 +163,6 @@ export type {
 	PlanValidationResult,
 	PlanValidationSeverity,
 } from "./runtime/planValidation";
-export type {
-	PlanExecutionIssue,
-	PlanExecutionResult,
-	PlanExecutionMetrics,
-	FlowPatchAlignmentMetrics,
-} from "./runtime/planExecutor";
 export type {
 	StructuralReviewItem,
 	StructuralReviewComparisonRow,

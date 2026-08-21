@@ -468,6 +468,13 @@ function isConsoleAllowed(rel) {
 		return true;
 	}
 	const base = path.posix.basename(rel);
+	// Vitest config and setup modules run in the runner process, not in an editor
+	// session. CH5's rationale is that runtime console calls should go through the
+	// diagnostic channel (H.4); a test-runner config has no editor to emit one.
+	// Wave 0 also requires the fuzz seed to reach the nightly job log.
+	if (/^vitest\..*\.tsx?$/i.test(base)) {
+		return true;
+	}
 	return /debug\.tsx?$/i.test(base) || /sink\.tsx?$/i.test(base);
 }
 

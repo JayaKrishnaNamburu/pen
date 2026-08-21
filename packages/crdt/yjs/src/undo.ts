@@ -16,13 +16,35 @@ import { canonicalOrigin, HISTORY_OPERATION_KIND } from "./events";
  */
 export const DEFAULT_UNDO_MAX_DEPTH = 500;
 
+/**
+ * Y.UndoManager decides whether to capture a transaction with
+ * `trackedOrigins.has(transaction.origin)`, which is identity-based. The apply
+ * pipeline tags transactions with a freshly built structured origin so that
+ * `groupId` / `requestId` survive into the transaction, so neither the bare
+ * type string nor the interned canonical object is ever the same reference.
+ * Matching on the discriminant keeps both properties: structured origins reach
+ * Yjs intact, and only the tracked types are captured.
+ */
+class TrackedOriginSet extends Set<unknown> {
+	override has(origin: unknown): boolean {
+		if (super.has(origin)) {
+			return true;
+		}
+		if (typeof origin !== "object" || origin === null) {
+			return false;
+		}
+		const { type } = origin as { type?: unknown };
+		return typeof type === "string" && super.has(type);
+	}
+}
+
 export function createYjsUndoManager(
 	doc: YjsCRDTDocument,
 	options?: UndoManagerOptions,
 ): CRDTUndoManager {
 	const { blockOrder, blocks } = doc.penDocument;
 	const trackedOriginTypes = options?.trackedOriginTypes ?? ["user", "ai"];
-	const trackedOrigins = new Set<unknown>(trackedOriginTypes);
+	const trackedOrigins = new TrackedOriginSet(trackedOriginTypes);
 	for (const type of trackedOriginTypes) {
 		if (typeof type === "string") {
 			trackedOrigins.add(canonicalOrigin(type as OpOriginType));

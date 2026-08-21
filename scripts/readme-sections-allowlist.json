@@ -1,13 +1,4 @@
 {
   "_comment": "DOC4 (spec-v2/17-documentation.md, Wave D step D.6): published package READMEs that another parallel agent owns this turn. The section check reports these and stays green until those READMEs meet the contract. Each entry needs package and a reason naming DOC4 / D.6. Remove an entry in the same PR that closes the gap.",
-  "packages": [
-    {
-      "package": "@input/pen-crdt-yjs",
-      "reason": "DOC4 / D.6 README owned by a parallel Wave C agent; section check deferred"
-    },
-    {
-      "package": "@input/pen-multiplayer",
-      "reason": "DOC4 / D.6 README owned by a parallel Wave C / Wave D agent; section check deferred"
-    }
-  ]
+  "packages": []
 }

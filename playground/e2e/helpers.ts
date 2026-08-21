@@ -1,5 +1,5 @@
 import { expect, type Page } from "@playwright/test";
-import type { Editor } from "@input/pen-types";
+import { generateId, type Editor } from "@input/pen-types";
 
 declare global {
 	interface Window {
@@ -278,70 +278,77 @@ export async function seedParagraphs(
 	page: Page,
 	paragraphs: readonly string[],
 ): Promise<string[]> {
-	return page.evaluate((texts) => {
-		const editor = window.penPlayground?.editor;
-		if (!editor) {
-			throw new Error("Missing playground editor debug handle.");
-		}
-
-		const first = editor.firstBlock();
-		if (!first) {
-			throw new Error("Missing first playground block.");
-		}
-
-		const blockIds = [first.id];
-		if (texts[0]) {
-			editor.apply(
-				[
-					{
-						type: "insert-text",
-						blockId: first.id,
-						offset: 0,
-						text: texts[0],
-					},
-				],
-				{ origin: "user" },
-			);
-		}
-
-		let currentId = first.id;
-		for (let index = 1; index < texts.length; index += 1) {
-			const current = editor.getBlock(currentId);
-			if (!current) {
-				throw new Error(`Missing block ${currentId}`);
+	const splitIds = paragraphs.slice(1).map(() => generateId());
+	return page.evaluate(
+		({ texts, nextIds }) => {
+			const editor = window.penPlayground?.editor;
+			if (!editor) {
+				throw new Error("Missing playground editor debug handle.");
 			}
 
-			const newBlockId = crypto.randomUUID();
-			editor.apply(
-				[
-					{
-						type: "split-block",
-						blockId: currentId,
-						offset: current.length(),
-						newBlockId,
-					},
-				],
-				{ origin: "user" },
-			);
-			if (texts[index]) {
+			const first = editor.firstBlock();
+			if (!first) {
+				throw new Error("Missing first playground block.");
+			}
+
+			const blockIds = [first.id];
+			if (texts[0]) {
 				editor.apply(
 					[
 						{
 							type: "insert-text",
-							blockId: newBlockId,
+							blockId: first.id,
 							offset: 0,
-							text: texts[index],
+							text: texts[0],
 						},
 					],
 					{ origin: "user" },
 				);
 			}
-			blockIds.push(newBlockId);
-			currentId = newBlockId;
-		}
 
-		return blockIds;
-	}, paragraphs);
+			let currentId = first.id;
+			for (let index = 1; index < texts.length; index += 1) {
+				const current = editor.getBlock(currentId);
+				if (!current) {
+					throw new Error(`Missing block ${currentId}`);
+				}
+
+				const newBlockId = nextIds[index - 1];
+				if (!newBlockId) {
+					throw new Error(`Missing split id for paragraph ${index}`);
+				}
+				editor.apply(
+					[
+						{
+							type: "split-block",
+							blockId: currentId,
+							offset: current.length(),
+							newBlockId,
+						},
+					],
+					{ origin: "user" },
+				);
+				if (texts[index]) {
+					editor.apply(
+						[
+							{
+								type: "insert-text",
+								blockId: newBlockId,
+								offset: 0,
+								text: texts[index],
+							},
+						],
+						{ origin: "user" },
+					);
+				}
+				blockIds.push(newBlockId);
+				currentId = newBlockId;
+			}
+
+			return blockIds;
+		},
+		{ texts: paragraphs, nextIds: splitIds },
+	);
 }
 
 export async function joinPlaygroundIfNeeded(page: Page): Promise<void> {

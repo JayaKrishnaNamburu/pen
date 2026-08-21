@@ -9,10 +9,10 @@ This package is a workspace member (`examples/react` in `pnpm-workspace.yaml`).
 Consumer install, including peers:
 
 ```bash
-pnpm add @input/pen-preset-default @input/pen-core @input/pen-react react react-dom
+pnpm add @input/pen-preset-default @input/pen-core @input/pen-react react react-dom yjs
 ```
 
-`react` and `react-dom` are peers of `@input/pen-react`.
+`react` and `react-dom` are peers of `@input/pen-react`. `yjs` is a peer of `@input/pen-crdt-yjs`, which `@input/pen-core` depends on, so every Pen install needs it.
 
 ## Mount
 

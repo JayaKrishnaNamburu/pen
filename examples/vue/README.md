@@ -9,10 +9,10 @@ This package is a workspace member (`examples/vue` in `pnpm-workspace.yaml`).
 Consumer install, including peers:
 
 ```bash
-pnpm add @input/pen-preset-default @input/pen-core @input/pen-vue vue
+pnpm add @input/pen-preset-default @input/pen-core @input/pen-vue vue yjs
 ```
 
-`vue` is a peer of `@input/pen-vue`.
+`vue` is a peer of `@input/pen-vue`. `yjs` is a peer of `@input/pen-crdt-yjs`, which `@input/pen-core` depends on, so every Pen install needs it.
 
 ## Mount
 
@@ -34,7 +34,7 @@ const editor = createEditor({
 
 That file is `src/App.vue`. Mount it from a browser entry (`src/main.ts` calls `createApp(App).mount("#app")`).
 
-Pen ships no required stylesheet — the editor is functional unstyled. What Vue applies itself is in `STYLING.md` inside `@input/pen-vue`; the token catalog it defers to is `STYLING.md` inside `@input/pen-react`.
+Pen ships no required stylesheet — the editor is functional unstyled, including on an empty document. An empty paragraph's inline surface lays out at zero width, so activation resolves the clicked _block_ rather than the inline span; you do not need a `min-width` rule to land the first keystroke. The rule in this example's `index.html` is cosmetic. What Vue applies itself is in `STYLING.md` inside `@input/pen-vue`; the token catalog it defers to is `STYLING.md` inside `@input/pen-react`.
 
 Client-only mount: Vue has no `"use client"` directive, so `@input/pen-vue` does not emit one — mount `PenEditor` in the browser, not during SSR.
 

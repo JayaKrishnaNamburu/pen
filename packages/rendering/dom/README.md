@@ -9,8 +9,10 @@ This package does not assemble a schema, install a preset, or ship CSS. It is th
 This package has no peer dependencies. Hosts that want a mounted editor still need `@input/pen-core` and a preset or schema.
 
 ```bash
-pnpm add @input/pen-core @input/pen-preset-default @input/pen-dom
+pnpm add @input/pen-core @input/pen-preset-default @input/pen-dom yjs
 ```
+
+`yjs` is a peer of `@input/pen-crdt-yjs`, which `@input/pen-core` depends on.
 
 `engines.node` is `>=22`.
 

@@ -4,6 +4,7 @@ import {
 	abortHalfwayGenerationParts,
 	createModelDouble,
 	failingToolCallParts,
+	hostileMutatingTurnCalls,
 } from "../index";
 
 afterEach(() => {
@@ -126,22 +127,42 @@ describe("AIB6 model double", () => {
 	});
 
 	it("AIB6: injects a hundred mutating tool calls for budget tests", async () => {
-		const toolCalls = Array.from({ length: 100 }, (_, index) => ({
-			toolCallId: `call-${index}`,
+		const toolCalls = hostileMutatingTurnCalls();
+		expect(toolCalls).toHaveLength(100);
+		expect(toolCalls[0]).toMatchObject({
+			toolCallId: "hostile-0",
+			toolName: "insert_block",
+		});
+		expect(toolCalls[1]).toMatchObject({
+			toolCallId: "hostile-1",
 			toolName: "delete_block",
-			input: { blockId: "block-1" },
-		}));
+		});
+
 		const double = createModelDouble({ toolCalls });
 		const events = await collect(double.stream({ messages: [], tools: [] }));
 		const calls = events.filter((event) => event.type === "tool-call");
 
 		expect(calls).toHaveLength(100);
 		expect(calls[0]).toMatchObject({
-			toolCallId: "call-0",
-			toolName: "delete_block",
+			toolCallId: "hostile-0",
+			toolName: "insert_block",
 		});
-		expect(calls[99]).toMatchObject({ toolCallId: "call-99" });
+		expect(calls[99]).toMatchObject({ toolCallId: "hostile-99" });
 		expect(events.at(-1)).toEqual({ type: "done" });
+	});
+
+	it("AIB6: refuses a response that would drop a scripted error", async () => {
+		const double = createModelDouble({
+			responses: [
+				{
+					events: [{ type: "text-delta", delta: "ok" }],
+					error: "model failed",
+				},
+			],
+		});
+		await expect(
+			collect(double.stream({ messages: [], tools: [] })),
+		).rejects.toThrow(/both events and error/);
 	});
 
 	it("AIB6: yields injectable stream parts including malformed ones", async () => {

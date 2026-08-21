@@ -6,13 +6,19 @@ import { createEditor, type PendingBlock } from "@input/pen-core";
 import { createDefaultSchema } from "@input/pen-schema-default";
 import { parseHtmlToBlocks } from "../importer";
 import { sanitizeHTML } from "../sanitize";
-import { loadPasteCorpus } from "./pasteCorpus/loadCorpus";
+import { loadPasteCorpus, loadPasteCorpusFixture } from "./pasteCorpus/loadCorpus";
 import { renderPasteCorpusMarkdown } from "./pasteCorpus/renderTable";
 import {
-  PASTE_CORPUS_PROVENANCE,
+  PASTE_CORPUS_SOURCE_IDS,
+  PASTE_CORPUS_SYNTHETIC_SIZE_CEILING,
   type PasteCorpusBlockExpectation,
   type PasteCorpusFixture,
 } from "./pasteCorpus/types";
+import {
+  formatPasteCorpusProvenance,
+  isSyntheticProvenance,
+  validatePasteCorpusFixture,
+} from "./pasteCorpus/validate";
 
 const noDefaultExtensionsPreset = {
   resolve() {
@@ -145,9 +151,13 @@ describe("IOP2 paste fidelity corpus", () => {
     "IOP2 $id converts to the stated structure",
     (fixture: PasteCorpusFixture) => {
       expect(fixture.expectation.id).toBe(fixture.id);
-      expect(fixture.expectation.provenance).toBe(PASTE_CORPUS_PROVENANCE);
       expect(fixture.html.trim().length).toBeGreaterThan(0);
       expect(fixture.plain.trim().length).toBeGreaterThan(0);
+      if (isSyntheticProvenance(fixture.expectation.provenance)) {
+        expect(fixture.html.length).toBeLessThanOrEqual(
+          PASTE_CORPUS_SYNTHETIC_SIZE_CEILING,
+        );
+      }
 
       const blocks = convertFixture(fixture.html);
       expect(blocks.map((block) => block.type)).toEqual(
@@ -170,5 +180,44 @@ describe("IOP2 paste fidelity corpus", () => {
 
   it("IOP2 committed outcome table matches the generated table", () => {
     expect(committedTable).toBe(renderPasteCorpusMarkdown(corpus));
+  });
+
+  it("IOP2 harness accepts a captured provenance record so dropping in a real dump is the remaining work", () => {
+    const baseline = loadPasteCorpusFixture("word-desktop");
+    const fixture: PasteCorpusFixture = {
+      ...baseline,
+      html: "<p>from Word</p>",
+      plain: "from Word",
+      expectation: {
+        ...baseline.expectation,
+        provenance: {
+          kind: "captured",
+          application: "Microsoft Word",
+          version: "Microsoft 365 16.89 (macOS)",
+          capturedAt: "2026-08-21",
+          host: "Safari 18.6",
+        },
+      },
+    };
+    expect(() => validatePasteCorpusFixture(fixture)).not.toThrow();
+    expect(formatPasteCorpusProvenance(fixture.expectation.provenance)).toBe(
+      "captured: Microsoft Word Microsoft 365 16.89 (macOS) (2026-08-21)",
+    );
+  });
+
+  it("IOP2 harness rejects a large payload still labelled synthetic-until-capture", () => {
+    const baseline = loadPasteCorpusFixture("word-desktop");
+    expect(() =>
+      validatePasteCorpusFixture({
+        ...baseline,
+        html: "x".repeat(PASTE_CORPUS_SYNTHETIC_SIZE_CEILING + 1),
+      }),
+    ).toThrow(/captured/);
+  });
+
+  it("IOP2 every named source has a fixture", () => {
+    expect(corpus.map((fixture) => fixture.id)).toEqual([
+      ...PASTE_CORPUS_SOURCE_IDS,
+    ]);
   });
 });

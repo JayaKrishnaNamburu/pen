@@ -1,5 +1,13 @@
-import { resolveDirectedCommand } from "@input/pen-core";
-import type { Command } from "@input/pen-types";
+import {
+	resolveDefaultKeymap,
+	resolveDirectedBinding,
+	resolveDirectedCommand,
+	type DefaultKeymapContext,
+	type KeymapPlatform,
+} from "@input/pen-core";
+import type { Command, Editor } from "@input/pen-types";
+
+import { dispatchEditorCommand } from "./commandDispatch";
 
 export type KeymapDirection = "ltr" | "rtl";
 
@@ -47,6 +55,73 @@ export function resolveKeymap(
 	}
 
 	return null;
+}
+
+export interface DispatchKeymapEventOptions {
+	readonly composing: boolean;
+	readonly context?: DefaultKeymapContext;
+}
+
+/**
+ * K1 live dispatch: resolve the default keymap, try each matching binding
+ * until one handler succeeds, and remap the command for rtl after the key
+ * match (M2). Does not attach listeners.
+ */
+export function dispatchKeymapEvent(
+	editor: Editor,
+	event: KeymapEvent,
+	options: DispatchKeymapEventOptions,
+): boolean {
+	if (options.composing && event.key !== "Escape") {
+		return false;
+	}
+
+	const context = options.context ?? "text";
+	for (const binding of resolveDefaultKeymap(detectKeymapPlatform())) {
+		if (!matchesKey(binding.key, event)) {
+			continue;
+		}
+		if (!matchesKeymapBindingContext(binding.context, context)) {
+			continue;
+		}
+		const directed = resolveDirectedBinding(editor, binding);
+		if (
+			dispatchEditorCommand(
+				editor,
+				directed.command,
+				directed.param as never,
+				{ origin: "user", fromKeymap: true },
+			)
+		) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+function matchesKeymapBindingContext(
+	bindingContext: DefaultKeymapContext | undefined,
+	current: DefaultKeymapContext,
+): boolean {
+	if (!bindingContext || bindingContext === "any") {
+		return true;
+	}
+	return bindingContext === current;
+}
+
+function detectKeymapPlatform(): KeymapPlatform {
+	if (typeof navigator === "undefined") {
+		return "linux";
+	}
+	const platform = navigator.platform ?? "";
+	if (/Mac|iPhone|iPad/.test(platform)) {
+		return "macos";
+	}
+	if (/Win/.test(platform)) {
+		return "windows";
+	}
+	return "linux";
 }
 
 function matchesKey(pattern: string, event: KeymapEvent): boolean {

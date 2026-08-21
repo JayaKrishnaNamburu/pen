@@ -9,6 +9,7 @@ export function listValidOperationsTool(editor: Editor): ToolDefinition {
 		name: "list_valid_operations",
 		description:
 			"List the valid schema-aware mutation operations for the active block or a specific block id.",
+		mutating: false,
 		inputSchema: {
 			type: "object",
 			properties: {

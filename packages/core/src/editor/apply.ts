@@ -1,6 +1,5 @@
-import type { DocumentOp, OpOrigin, PenDocument, CRDTDocument, CRDTAdapter, CRDTEvent, SchemaRegistry, CRDTMap, CRDTArray, InsertBlockOp, UpdateBlockOp, DeleteBlockOp, MoveBlockOp, ConvertBlockOp, SplitBlockOp, MergeBlocksOp, InsertTextOp, DeleteTextOp, FormatTextOp, ReplaceTextOp, InsertInlineNodeOp, RemoveInlineNodeOp, UpdateLayoutOp, SetMetaOp, CreateAppOp, UpdateAppOp, DeleteAppOp, SetSelectionOp, UpdateTableColumnsOp } from "@input/pen-types";
+import type { DiagnosticEvent, DocumentOp, OpOrigin, PenDocument, CRDTDocument, CRDTAdapter, CRDTEvent, SchemaRegistry, CRDTMap, CRDTArray, InsertBlockOp, UpdateBlockOp, DeleteBlockOp, MoveBlockOp, ConvertBlockOp, SplitBlockOp, MergeBlocksOp, InsertTextOp, DeleteTextOp, FormatTextOp, ReplaceTextOp, InsertInlineNodeOp, RemoveInlineNodeOp, UpdateLayoutOp, SetMetaOp, CreateAppOp, UpdateAppOp, DeleteAppOp, SetSelectionOp, UpdateTableColumnsOp } from "@input/pen-types";
 import { generateId } from "@input/pen-types";
-import { getOpOriginType } from "./origin";
 import { resolveRuntimeContentType } from "../schema/contentType";
 import type { SchemaEngineImpl } from "../schema/normalize";
 import { type CRDTUnknownArray, type CRDTUnknownMap, getArrayProp, getMapProp, getStringProp, getTableColumns, getTableContent, isCRDTMap } from "./crdtShapes";
@@ -48,8 +47,6 @@ interface CRDTText {
 	readonly length: number;
 }
 
-const ZERO_WIDTH_SPACE = "\u200B";
-
 export class ApplyPipeline {
 	private _doc: PenDocument;
 	private _crdtDoc: CRDTDocument;
@@ -88,6 +85,7 @@ export class ApplyPipeline {
 		| null = null;
 	private _recordPhase: ((phase: PipelinePhase) => void) | null = null;
 	private _captureSelectionBefore: (() => void) | null = null;
+	private _commitDiagnostics: DiagnosticEvent[] = [];
 
 	get suppressObserver(): boolean {
 		return this._suppressObserver;
@@ -206,6 +204,12 @@ export class ApplyPipeline {
 	}
 
 	// ── Apply ────────────────────────────────────────────────
+
+	takeCommitDiagnostics(): readonly DiagnosticEvent[] {
+		const diagnostics = this._commitDiagnostics;
+		this._commitDiagnostics = [];
+		return diagnostics;
+	}
 
 	apply(ops: DocumentOp[], origin: OpOrigin): void {
 		this._applyInternal(ops, origin);

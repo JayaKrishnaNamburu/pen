@@ -36,7 +36,7 @@ export function ListItemLayout(props: ListItemLayoutProps): React.ReactElement {
 			ref={ref}
 			data-block-type={blockType}
 			data-indent={indent}
-			data-selected={selected || undefined}
+			data-selected={selected ? "" : undefined}
 			data-pen-list-item-layout=""
 			style={{
 				paddingLeft: `${indent * LIST_ITEM_INDENT_PX}px`,

@@ -26,7 +26,8 @@
     "fuzz:node": "node src/fuzz/node.mjs",
     "fuzz:nightly": "node src/fuzz/nightly.mjs",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "check:mirrors": "node ../../../scripts/conformance-mirror-drift.mjs"
   },
   "dependencies": {
     "@input/pen-ai-autocomplete": "workspace:*",

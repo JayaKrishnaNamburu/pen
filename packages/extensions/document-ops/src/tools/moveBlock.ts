@@ -7,6 +7,7 @@ export function moveBlockTool(editor: Editor): ToolDefinition {
   return {
     name: "move_block",
     description: "Move a block to a new position.",
+    mutating: true,
     inputSchema: {
       type: "object",
       required: ["blockId", "position"],

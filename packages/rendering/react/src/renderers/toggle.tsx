@@ -35,7 +35,7 @@ function ToggleView({
     <div
       ref={ctx.ref as React.Ref<HTMLDivElement>}
       data-block-type="toggle"
-      data-selected={ctx.selected || undefined}
+      data-selected={ctx.selected ? "" : undefined}
     >
       <div data-pen-toggle-header="">
         <ToggleTrigger blockId={block.id} open={open} />

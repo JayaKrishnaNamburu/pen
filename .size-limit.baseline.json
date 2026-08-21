@@ -19,16 +19,16 @@
     {
       "name": "@input/pen-shortcuts",
       "path": "packages/extensions/shortcuts/dist/index.mjs",
-      "baselineBytes": 4876,
-      "limitBytes": 4876,
-      "note": "Measured from packages/extensions/shortcuts/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+      "baselineBytes": 5471,
+      "limitBytes": 5471,
+      "note": "Lane 173 re-record 2026-08-21. Wave 4: keymap facet conversion (shortcutsToKeymapProviders / pen.keymap). 4876 → 5471."
     },
     {
       "name": "@input/pen-export-xml",
       "path": "packages/extensions/export-xml/dist/index.mjs",
-      "baselineBytes": 8866,
-      "limitBytes": 8866,
-      "note": "Measured from packages/extensions/export-xml/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+      "baselineBytes": 11064,
+      "limitBytes": 11064,
+      "note": "Lane 173 re-record 2026-08-21. Wave S SEC1 url admission + Wave T IOP3 fidelity/escape. 8866 → 11064."
     },
     {
       "name": "@input/pen-undo",
@@ -75,9 +75,9 @@
     {
       "name": "@input/pen-assets-memory",
       "path": "packages/tooling/assets-memory/dist/index.mjs",
-      "baselineBytes": 927,
-      "limitBytes": 927,
-      "note": "Measured from packages/tooling/assets-memory/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+      "baselineBytes": 1291,
+      "limitBytes": 1291,
+      "note": "Lane 173 re-record 2026-08-21. Wave T T.3 IOP4: maxSize, onProgress, delete, rejectUpload. 927 → 1291."
     },
     {
       "name": "@input/pen-bench",
@@ -131,9 +131,9 @@
     {
       "name": "@input/pen-export-html",
       "path": "packages/extensions/export-html/dist/index.mjs",
-      "baselineBytes": 7003,
-      "limitBytes": 7003,
-      "note": "Measured from packages/extensions/export-html/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+      "baselineBytes": 10107,
+      "limitBytes": 10107,
+      "note": "Lane 173 re-record 2026-08-21. Wave S SEC1 url admission + Wave T IOP3 fidelity. 7003 → 10107."
     },
     {
       "name": "@input/pen-export-json",
@@ -145,16 +145,16 @@
     {
       "name": "@input/pen-export-markdown",
       "path": "packages/extensions/export-markdown/dist/index.mjs",
-      "baselineBytes": 720,
-      "limitBytes": 720,
-      "note": "Measured from packages/extensions/export-markdown/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+      "baselineBytes": 4607,
+      "limitBytes": 4607,
+      "note": "Lane 173 re-record 2026-08-21. Wave S admitMarkdownUrls (SEC1) + Wave T IOP3 fidelity table. 720 → 4607."
     },
     {
       "name": "@input/pen-history",
-      "path": "packages/extensions/history/dist/index.js",
-      "baselineBytes": 11886,
-      "limitBytes": 11886,
-      "note": "Measured from packages/extensions/history/dist/index.js via node fs.stat (same method as scripts/size-limit.mjs)."
+      "path": "packages/extensions/history/dist/index.mjs",
+      "baselineBytes": 38744,
+      "limitBytes": 38744,
+      "note": "Lane 173 re-record 2026-08-21. Path .js → .mjs (Wave P.8). Bytes: Wave C identity resolution + Wave V snapshot restore. 11886 → 38744."
     },
     {
       "name": "@input/pen-import-html",
@@ -162,6 +162,13 @@
       "baselineBytes": 21015,
       "limitBytes": 21015,
       "note": "Measured from packages/extensions/import-html/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+    },
+    {
+      "name": "@input/pen-import-json",
+      "path": "packages/extensions/import-json/dist/index.mjs",
+      "baselineBytes": 12473,
+      "limitBytes": 12473,
+      "note": "Lane 173 first baseline 2026-08-21. Was missing from the 34-entry set. Wave T JSON import + Wave S SEC4 ingest bounds. 12473 B."
     },
     {
       "name": "@input/pen-import-markdown",
@@ -186,17 +193,17 @@
     },
     {
       "name": "@input/pen-multiplayer",
-      "path": "packages/extensions/multiplayer/dist/index.js",
-      "baselineBytes": 20968,
-      "limitBytes": 20968,
-      "note": "Measured from packages/extensions/multiplayer/dist/index.js via node fs.stat (same method as scripts/size-limit.mjs)."
+      "path": "packages/extensions/multiplayer/dist/index.mjs",
+      "baselineBytes": 43166,
+      "limitBytes": 43166,
+      "note": "Lane 173 re-record 2026-08-21. Path .js → .mjs (Wave P.8). Bytes: Wave C awareness validation / presence bounds. 20968 → 43166. Source was README + a test only."
     },
     {
       "name": "@input/pen-preset-default",
-      "path": "packages/presets/default/dist/index.js",
-      "baselineBytes": 1324,
-      "limitBytes": 1324,
-      "note": "Measured from packages/presets/default/dist/index.js via node fs.stat (same method as scripts/size-limit.mjs)."
+      "path": "packages/presets/default/dist/index.mjs",
+      "baselineBytes": 1442,
+      "limitBytes": 1442,
+      "note": "Lane 173 re-record 2026-08-21. Path .js → .mjs (Wave P.8). Bytes: Wave P preset-first assembly. 1324 → 1442."
     },
     {
       "name": "@input/pen-react",
@@ -208,16 +215,16 @@
     {
       "name": "@input/pen-schema-default",
       "path": "packages/schema/default/dist/index.mjs",
-      "baselineBytes": 1068,
-      "limitBytes": 1068,
-      "note": "Measured from packages/schema/default/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+      "baselineBytes": 4899,
+      "limitBytes": 4899,
+      "note": "Lane 173 re-record 2026-08-21. Wave L LOC2 display catalog (primary); Wave S SEC5 escapeHtml; Wave X a11y specs. 1068 → 4899."
     },
     {
       "name": "@input/pen-search",
       "path": "packages/extensions/search/dist/index.mjs",
-      "baselineBytes": 18130,
-      "limitBytes": 18130,
-      "note": "Measured from packages/extensions/search/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+      "baselineBytes": 22866,
+      "limitBytes": 22866,
+      "note": "Lane 173 re-record 2026-08-21. Wave L LOC4/LOC5 fold-and-normalize + Wave S SEC9 query/budget caps. 18130 → 22866."
     },
     {
       "name": "@input/pen-test",
@@ -240,5 +247,71 @@
       "limitBytes": 1054,
       "note": "Measured from packages/rendering/vue/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
     }
-  ]
+  ],
+  "_deferred": {
+    "recorded": "2026-08-21",
+    "note": "Partial re-baseline. Do not treat a missing re-record as a waiver — these packages were mid-edit.",
+    "packages": [
+      {
+        "name": "@input/pen-dom",
+        "reason": "Large in-flight refactor. 28589 → 40210 would be stale within the hour."
+      },
+      {
+        "name": "@input/pen-types",
+        "reason": "Public-surface shrink in flight. Already under budget (30625 → 15696); re-recording now would hide the shrink."
+      },
+      {
+        "name": "@input/pen-ai",
+        "reason": "Public-surface shrink in flight. Already under budget (520171 → 451342)."
+      },
+      {
+        "name": "@input/pen-react",
+        "reason": "Public-surface shrink in flight (41 dirty source files)."
+      },
+      {
+        "name": "@input/pen-core",
+        "reason": "25 dirty source files; 275169 → 389724 is real P.1/apply-pipeline growth but the package is mid-edit."
+      },
+      {
+        "name": "@input/pen-undo",
+        "reason": "10 dirty source files; 13458 → 15804."
+      },
+      {
+        "name": "@input/pen-ai-tools",
+        "reason": "Wave M AIB3 tool-authority growth (1186 → 11426) but 5 dirty source files."
+      },
+      {
+        "name": "@input/pen-bench",
+        "reason": "Lane 170 owns the envelope; 1421 → 14429."
+      },
+      {
+        "name": "@input/pen-delta-stream",
+        "reason": "3 dirty source files; Wave 2/M toolExecution growth 10269 → 23491."
+      },
+      {
+        "name": "@input/pen-document-ops",
+        "reason": "8 dirty source files; 45579 → 56039."
+      },
+      {
+        "name": "@input/pen-import-html",
+        "reason": "12 dirty source files; Wave T/S ingest work 21015 → 27605."
+      },
+      {
+        "name": "@input/pen-import-markdown",
+        "reason": "4 dirty source files; 1412 → 9197."
+      },
+      {
+        "name": "@input/pen-test",
+        "reason": "12 dirty source files; 18429 → 40314."
+      },
+      {
+        "name": "@input/pen-transport-sse",
+        "reason": "6 dirty source files; Wave C COL6 / AIB2 11867 → 16941."
+      },
+      {
+        "name": "@input/pen-vue",
+        "reason": "Renderer work in flight; currently within the +10% ceiling."
+      }
+    ]
+  }
 }

@@ -26,7 +26,7 @@ function PlaceholderParagraphRenderer(
 		<div
 			ref={ctx.ref as React.Ref<HTMLDivElement>}
 			data-block-type="paragraph"
-			data-selected={ctx.selected || undefined}
+			data-selected={ctx.selected ? "" : undefined}
 		>
 			<InlineContent
 				blockId={block.id}

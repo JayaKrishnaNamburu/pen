@@ -2,6 +2,10 @@
 # IDs in force: a test name must contain each ID. Each wave appends here.
 # Unlisted spec IDs are reported, not failed, until their wave closes.
 #
+# Gate-enforced IDs live in scripts/gated-scope.txt, not here. A
+# claimed-scope ID without a test name fails. Listing a docs/CI rule
+# here would hide the gap without verifying the gate still runs.
+#
 # Wave 0: I2, I3, I10, I11 (I11 seam 1 half).
 # Wave H: CH1–CH9 (CH5/CH7 were already greppable).
 # Already greppable in this checkout: HOST4, CH7, DUR1–DUR5, SEC1–SEC9,
@@ -25,6 +29,12 @@
 #   P2  — UAX#9 first-strong, not projector-on-divergence
 #   R6  — compute receives editor; purity is untested
 #   SCH1 — scheduler FIFO names, not no-unscheduled-measure
+#           (gate-enforced in gated-scope.txt; keep out of this file)
+# Lane 156 (2026-08-21): re-examined the nine claims-outside-scope IDs.
+#   AIB2 appended — bounds tests fail if compaction/caps regress; type
+#   gate (pen-stream-request-no-editor.mjs) is green and self-tests
+#   nested + top-level editor. The other eight stay held back: each
+#   claiming test names the ID but asserts a different property.
 
 I2
 I3
@@ -122,6 +132,7 @@ HOST5
 API6
 A5
 AIB1
+AIB2
 AIB3
 AIB4
 B1

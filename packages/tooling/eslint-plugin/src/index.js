@@ -10,6 +10,7 @@ import { noModuleScopeBrowserGlobals } from "./rules/noModuleScopeBrowserGlobals
 import { noUnescapedMarkupConcat } from "./rules/noUnescapedMarkupConcat.js";
 import { noUnstyledFocus } from "./rules/noUnstyledFocus.js";
 import { noUserFacingLiterals } from "./rules/noUserFacingLiterals.js";
+import { noV1ExtensionFields } from "./rules/noV1ExtensionFields.js";
 
 export const rules = {
 	"no-above-floor-api": noAboveFloorApi,
@@ -24,6 +25,7 @@ export const rules = {
 	"no-unescaped-markup-concat": noUnescapedMarkupConcat,
 	"no-unstyled-focus": noUnstyledFocus,
 	"no-user-facing-literals": noUserFacingLiterals,
+	"no-v1-extension-fields": noV1ExtensionFields,
 };
 
 export default { rules };

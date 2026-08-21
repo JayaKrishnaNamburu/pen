@@ -7,6 +7,7 @@
  * prefixes DUR/COL/AIB/IOP/SCALE) and greps tests for claims.
  *
  * Claimed-scope IDs without a claiming test name fail.
+ * Gated-scope IDs without a verified, wired gate fail.
  * Unlisted spec IDs are reported, not failed.
  *
  * Handover: @input/pen-conformance does not exist in this checkout.
@@ -24,22 +25,36 @@ const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_REPO_ROOT = path.resolve(SCRIPT_DIR, "..");
 const INVENTORY_DOC = path.join("spec-v2", "09-reliability-testing.md");
 const DEFAULT_CLAIMED_SCOPE = path.join("scripts", "claimed-scope.txt");
+const DEFAULT_GATED_SCOPE = path.join("scripts", "gated-scope.txt");
+const WORKFLOW_DIR = ".github/workflows/";
+const GATED_ROW_RE =
+	/^([A-Z]+\d+)\s*\|\s*(\S+)\s*\|\s*(\S+)\s*\|\s*(\S+)\s*\|\s*(.+)$/;
 
 const EXTRA_PREFIXES = ["DUR", "COL", "AIB", "IOP", "SCALE"];
 
 const TEST_FILE_RE = /\.(?:test|spec)\.(?:[cm]?[jt]sx?)$/;
-const SKIP_DIR_NAMES = new Set(["node_modules", "dist", "coverage", ".git", ".turbo"]);
+const SKIP_DIR_NAMES = new Set([
+	"node_modules",
+	"dist",
+	"coverage",
+	".git",
+	".turbo",
+]);
 const TEST_NAME_RE =
 	/\b(?:describe|it|test|scenario)(?:\.(?:skip|only|todo))*\s*\(\s*(['"`])((?:\\.|[^\\])*?)\1/g;
 
 export function parseInventoryRanges(markdown) {
-	const ruleLine = markdown.split(/\r?\n/).find((line) => line.startsWith("Rule:"));
+	const ruleLine = markdown
+		.split(/\r?\n/)
+		.find((line) => line.startsWith("Rule:"));
 	if (ruleLine == null) {
 		throw new Error(`No "Rule:" inventory line in ${INVENTORY_DOC}`);
 	}
 	const paren = ruleLine.match(/\(([^)]+)\)/);
 	if (paren == null) {
-		throw new Error(`"Rule:" line has no parenthesized inventory in ${INVENTORY_DOC}`);
+		throw new Error(
+			`"Rule:" line has no parenthesized inventory in ${INVENTORY_DOC}`,
+		);
 	}
 	return paren[1].split(",").map((part) => parseRangeToken(part.trim()));
 }
@@ -67,7 +82,9 @@ export function prefixesFromRanges(ranges, extraPrefixes = EXTRA_PREFIXES) {
 	for (const range of ranges) {
 		prefixes.add(range.prefix);
 	}
-	return [...prefixes].sort((a, b) => b.length - a.length || a.localeCompare(b));
+	return [...prefixes].sort(
+		(a, b) => b.length - a.length || a.localeCompare(b),
+	);
 }
 
 export function ruleIdRegex(prefixes) {
@@ -124,6 +141,112 @@ export function parseClaimedScope(text) {
 	return ids;
 }
 
+export function parseGatedScope(text) {
+	const rows = [];
+	const seen = new Set();
+	for (const rawLine of text.split(/\r?\n/)) {
+		const hash = rawLine.indexOf("#");
+		const line = (hash === -1 ? rawLine : rawLine.slice(0, hash)).trim();
+		if (line.length === 0) {
+			continue;
+		}
+		const match = line.match(GATED_ROW_RE);
+		if (match == null) {
+			throw new Error(
+				`gated-scope: expected "ID | gate | workflow | invoke | fingerprint", got: ${rawLine.trim()}`,
+			);
+		}
+		const id = match[1];
+		if (seen.has(id)) {
+			throw new Error(`gated-scope: duplicate id ${id}`);
+		}
+		seen.add(id);
+		rows.push({
+			id,
+			gate: match[2],
+			workflow: match[3],
+			invoke: match[4],
+			fingerprint: match[5].trim(),
+		});
+	}
+	return rows;
+}
+
+function hasPathTraversal(posixPath) {
+	return posixPath.split("/").includes("..") || path.isAbsolute(posixPath);
+}
+
+export function isWorkflowPath(posixPath) {
+	if (!posixPath.startsWith(WORKFLOW_DIR) || !posixPath.endsWith(".yml")) {
+		return false;
+	}
+	const name = posixPath.slice(WORKFLOW_DIR.length);
+	return name.length > 0 && !name.includes("/");
+}
+
+export function commandLines(yaml) {
+	const lines = [];
+	for (const rawLine of yaml.split(/\r?\n/)) {
+		const trimmed = rawLine.trim();
+		if (trimmed.length === 0 || trimmed.startsWith("#")) {
+			continue;
+		}
+		const match = trimmed.match(/^(?:-\s+)?(?:run|command):\s*(.+)$/);
+		if (match == null) {
+			continue;
+		}
+		const command = match[1].replace(/\s+#.*$/, "").trim();
+		if (command.length > 0) {
+			lines.push(command);
+		}
+	}
+	return lines;
+}
+
+export function workflowInvokes(yaml, invoke) {
+	return commandLines(yaml).some((command) => command.includes(invoke));
+}
+
+export async function verifyGatedRow(repoRoot, row) {
+	const errors = [];
+	if (hasPathTraversal(row.gate) || hasPathTraversal(row.workflow)) {
+		errors.push("gated-scope path may not contain '..' or be absolute");
+		return errors;
+	}
+	if (!isWorkflowPath(row.workflow)) {
+		errors.push(`workflow must be a ${WORKFLOW_DIR}*.yml file`);
+		return errors;
+	}
+
+	const gatePath = path.join(repoRoot, ...row.gate.split("/"));
+	const workflowPath = path.join(repoRoot, ...row.workflow.split("/"));
+
+	let gateText;
+	try {
+		gateText = await fs.readFile(gatePath, "utf8");
+	} catch {
+		errors.push(`gated-but-missing (${row.gate} does not exist)`);
+	}
+	if (gateText != null && !gateText.includes(row.fingerprint)) {
+		errors.push(
+			`gated-but-unverified (gate is missing fingerprint "${row.fingerprint}")`,
+		);
+	}
+
+	let workflowText;
+	try {
+		workflowText = await fs.readFile(workflowPath, "utf8");
+	} catch {
+		errors.push(`gated-but-unwired (${row.workflow} does not exist)`);
+	}
+	if (workflowText != null && !workflowInvokes(workflowText, row.invoke)) {
+		errors.push(
+			`gated-but-unwired (${row.workflow} has no uncommented run:/command: containing "${row.invoke}")`,
+		);
+	}
+	return errors;
+}
+
 export function extractTestNames(source) {
 	const names = [];
 	TEST_NAME_RE.lastIndex = 0;
@@ -171,7 +294,9 @@ function toPosix(repoRoot, filePath) {
 
 export async function collectSpecIds(repoRoot, idRegex, isRuleId) {
 	const specRoot = path.join(repoRoot, "spec-v2");
-	const files = await walkFiles(specRoot, (filePath) => filePath.endsWith(".md"));
+	const files = await walkFiles(specRoot, (filePath) =>
+		filePath.endsWith(".md"),
+	);
 	const ids = new Set();
 	const locations = new Map();
 	for (const filePath of files) {
@@ -186,11 +311,22 @@ export async function collectSpecIds(repoRoot, idRegex, isRuleId) {
 	return { ids, locations };
 }
 
-export async function collectTestClaims(repoRoot, claimedIds, idRegex, isRuleId) {
-	const searchRoots = ["packages", "playground", "scripts"].map((dir) => path.join(repoRoot, dir));
+export async function collectTestClaims(
+	repoRoot,
+	claimedIds,
+	idRegex,
+	isRuleId,
+) {
+	const searchRoots = ["packages", "playground", "scripts"].map((dir) =>
+		path.join(repoRoot, dir),
+	);
 	const files = [];
 	for (const root of searchRoots) {
-		files.push(...(await walkFiles(root, (filePath) => TEST_FILE_RE.test(filePath))));
+		files.push(
+			...(await walkFiles(root, (filePath) =>
+				TEST_FILE_RE.test(filePath),
+			)),
+		);
 	}
 
 	const claims = new Map();
@@ -221,7 +357,13 @@ export async function collectTestClaims(repoRoot, claimedIds, idRegex, isRuleId)
 	return claims;
 }
 
-export function evaluateCoverage({ specIds, claimedIds, claims }) {
+export function evaluateCoverage({
+	specIds,
+	claimedIds,
+	claims,
+	gatedRows = [],
+	gateChecks = [],
+}) {
 	const claimedUnclaimed = [];
 	const claimedOk = [];
 	for (const id of claimedIds) {
@@ -233,9 +375,23 @@ export function evaluateCoverage({ specIds, claimedIds, claims }) {
 		}
 	}
 
-	const claimedSet = new Set(claimedIds);
-	const unlisted = [...specIds].filter((id) => !claimedSet.has(id)).sort(compareIds);
-	return { claimedOk, claimedUnclaimed, unlisted };
+	const gatedOk = [];
+	const gatedFailed = [];
+	for (let i = 0; i < gatedRows.length; i += 1) {
+		const row = gatedRows[i];
+		const errors = gateChecks[i] ?? [];
+		if (errors.length === 0) {
+			gatedOk.push(row);
+		} else {
+			gatedFailed.push({ ...row, errors });
+		}
+	}
+
+	const covered = new Set([...claimedIds, ...gatedRows.map((row) => row.id)]);
+	const unlisted = [...specIds]
+		.filter((id) => !covered.has(id))
+		.sort(compareIds);
+	return { claimedOk, claimedUnclaimed, gatedOk, gatedFailed, unlisted };
 }
 
 function compareIds(a, b) {
@@ -248,19 +404,37 @@ function compareIds(a, b) {
 	return ap.localeCompare(bp) || an - bn;
 }
 
-function formatReport({ claimedIds, claimedOk, claimedUnclaimed, unlisted, claims }) {
+function formatReport({
+	claimedIds,
+	claimedOk,
+	claimedUnclaimed,
+	gatedRows = [],
+	gatedOk = [],
+	gatedFailed = [],
+	unlisted,
+	claims,
+}) {
 	const lines = [
 		"coverage:rules",
 		"",
 		`Claimed scope (${claimedIds.length}): ${claimedIds.join(", ")}`,
+		`Gated scope (${gatedRows.length}): ${gatedRows.map((row) => row.id).join(", ") || "(none)"}`,
 		"",
 	];
 
 	for (const { id, files } of claimedOk) {
 		lines.push(`OK    ${id}  ${files[0]}`);
 	}
+	for (const row of gatedOk) {
+		lines.push(`GATE  ${row.id}  ${row.gate}  via ${row.workflow}`);
+	}
 	for (const id of claimedUnclaimed) {
-		lines.push(`FAIL  ${id}  implemented-but-unclaimed (no test name contains this ID)`);
+		lines.push(
+			`FAIL  ${id}  implemented-but-unclaimed (no test name contains this ID)`,
+		);
+	}
+	for (const row of gatedFailed) {
+		lines.push(`FAIL  ${row.id}  ${row.errors.join("; ")}`);
 	}
 
 	lines.push("");
@@ -281,11 +455,20 @@ function formatReport({ claimedIds, claimedOk, claimedUnclaimed, unlisted, claim
 		lines.push("");
 		lines.push(`${claimedUnclaimed.length} claimed-scope ID(s) unclaimed.`);
 	}
+	if (gatedFailed.length > 0) {
+		lines.push("");
+		lines.push(`${gatedFailed.length} gated-scope ID(s) unverified.`);
+	}
 
-	const extraClaims = [...claims.keys()].filter((id) => !claimedIds.includes(id)).sort(compareIds);
+	const gatedIds = new Set(gatedRows.map((row) => row.id));
+	const extraClaims = [...claims.keys()]
+		.filter((id) => !claimedIds.includes(id) && !gatedIds.has(id))
+		.sort(compareIds);
 	if (extraClaims.length > 0) {
 		lines.push("");
-		lines.push(`Claims outside claimed-scope (informational): ${extraClaims.join(", ")}`);
+		lines.push(
+			`Claims outside claimed-scope (informational): ${extraClaims.join(", ")}`,
+		);
 	}
 
 	return lines.join("\n");
@@ -295,6 +478,7 @@ function parseArgs(argv) {
 	const args = {
 		selfTest: false,
 		claimedScope: DEFAULT_CLAIMED_SCOPE,
+		gatedScope: DEFAULT_GATED_SCOPE,
 		repoRoot: DEFAULT_REPO_ROOT,
 	};
 	for (let i = 0; i < argv.length; i += 1) {
@@ -304,6 +488,9 @@ function parseArgs(argv) {
 		} else if (arg === "--claimed-scope") {
 			i += 1;
 			args.claimedScope = argv[i];
+		} else if (arg === "--gated-scope") {
+			i += 1;
+			args.gatedScope = argv[i];
 		} else if (arg === "--repo-root") {
 			i += 1;
 			args.repoRoot = path.resolve(argv[i]);
@@ -314,21 +501,49 @@ function parseArgs(argv) {
 	return args;
 }
 
-async function runCoverage(repoRoot, claimedScopeRel) {
-	const inventoryText = await fs.readFile(path.join(repoRoot, INVENTORY_DOC), "utf8");
+function resolveRepoPath(repoRoot, rel) {
+	return path.isAbsolute(rel) ? rel : path.join(repoRoot, rel);
+}
+
+async function runCoverage(
+	repoRoot,
+	claimedScopeRel,
+	gatedScopeRel = DEFAULT_GATED_SCOPE,
+) {
+	const inventoryText = await fs.readFile(
+		path.join(repoRoot, INVENTORY_DOC),
+		"utf8",
+	);
 	const ranges = parseInventoryRanges(inventoryText);
 	const prefixes = prefixesFromRanges(ranges);
 	const idRegex = ruleIdRegex(prefixes);
 	const isRuleId = ruleIdPredicate(ranges);
 
-	const claimedPath = path.isAbsolute(claimedScopeRel)
-		? claimedScopeRel
-		: path.join(repoRoot, claimedScopeRel);
-	const claimedIds = parseClaimedScope(await fs.readFile(claimedPath, "utf8"));
+	const claimedIds = parseClaimedScope(
+		await fs.readFile(resolveRepoPath(repoRoot, claimedScopeRel), "utf8"),
+	);
+	const gatedRows = parseGatedScope(
+		await fs.readFile(resolveRepoPath(repoRoot, gatedScopeRel), "utf8"),
+	);
+	const gateChecks = [];
+	for (const row of gatedRows) {
+		gateChecks.push(await verifyGatedRow(repoRoot, row));
+	}
 	const { ids: specIds } = await collectSpecIds(repoRoot, idRegex, isRuleId);
-	const claims = await collectTestClaims(repoRoot, claimedIds, idRegex, isRuleId);
-	const result = evaluateCoverage({ specIds, claimedIds, claims });
-	return { ...result, claimedIds, claims };
+	const claims = await collectTestClaims(
+		repoRoot,
+		claimedIds,
+		idRegex,
+		isRuleId,
+	);
+	const result = evaluateCoverage({
+		specIds,
+		claimedIds,
+		claims,
+		gatedRows,
+		gateChecks,
+	});
+	return { ...result, claimedIds, claims, gatedRows };
 }
 
 async function runSelfTest() {
@@ -339,39 +554,156 @@ async function runSelfTest() {
 	await fs.mkdir(testDir, { recursive: true });
 
 	const inventory = `Rule: every normative rule ID in spec-v2 documents (I1–I12, HOST1–HOST6) must be claimed.\n`;
-	await fs.writeFile(path.join(specDir, "09-reliability-testing.md"), inventory);
+	await fs.writeFile(
+		path.join(specDir, "09-reliability-testing.md"),
+		inventory,
+	);
 	await fs.writeFile(
 		path.join(specDir, "fixture-unclaimed.md"),
 		"- I2. Mapping stays in range.\n- HOST5. Fixture-only unlisted ID.\n",
 	);
 	await fs.writeFile(path.join(tmp, "claimed-scope.txt"), "I2\n");
+	await fs.writeFile(path.join(tmp, "gated-scope.txt"), "");
 	await fs.writeFile(
 		path.join(testDir, "empty.test.ts"),
 		`import { describe, it } from "vitest";\ndescribe("no claims", () => {\n  it("does not mention a rule", () => {});\n});\n`,
 	);
 
-	const failing = await runCoverage(tmp, "claimed-scope.txt");
+	const failing = await runCoverage(
+		tmp,
+		"claimed-scope.txt",
+		"gated-scope.txt",
+	);
 	if (failing.claimedUnclaimed.join() !== "I2") {
-		throw new Error(`self-test: expected I2 unclaimed, got ${failing.claimedUnclaimed.join(",")}`);
+		throw new Error(
+			`self-test: expected I2 unclaimed, got ${failing.claimedUnclaimed.join(",")}`,
+		);
 	}
 	if (!failing.unlisted.includes("HOST5")) {
-		throw new Error(`self-test: expected HOST5 reported, got ${failing.unlisted.join(",")}`);
+		throw new Error(
+			`self-test: expected HOST5 reported, got ${failing.unlisted.join(",")}`,
+		);
 	}
 
 	await fs.writeFile(
 		path.join(testDir, "mapping.test.ts"),
 		`import { describe, it } from "vitest";\ndescribe("summaries", () => {\n  it("I2 maps every pre-commit point into range or null", () => {});\n});\n`,
 	);
-	const passing = await runCoverage(tmp, "claimed-scope.txt");
+	const passing = await runCoverage(
+		tmp,
+		"claimed-scope.txt",
+		"gated-scope.txt",
+	);
 	if (passing.claimedUnclaimed.length !== 0) {
-		throw new Error(`self-test: expected I2 claimed after fixture test, still unclaimed`);
+		throw new Error(
+			`self-test: expected I2 claimed after fixture test, still unclaimed`,
+		);
 	}
 	if (!passing.unlisted.includes("HOST5")) {
 		throw new Error(`self-test: HOST5 must stay reported-not-failed`);
 	}
 
+	let bareThrew = false;
+	try {
+		parseGatedScope("I4\n");
+	} catch (error) {
+		bareThrew = String(error.message).includes("gated-scope");
+	}
+	if (!bareThrew) {
+		throw new Error(
+			"self-test: a bare gated-scope ID must be a parse error",
+		);
+	}
+
+	await fs.appendFile(
+		path.join(specDir, "fixture-unclaimed.md"),
+		"- I4. Gate-covered fixture.\n",
+	);
+	const scriptsDir = path.join(tmp, "scripts");
+	const workflowDir = path.join(tmp, ".github", "workflows");
+	await fs.mkdir(scriptsDir, { recursive: true });
+	await fs.mkdir(workflowDir, { recursive: true });
+	const gatePath = path.join(scriptsDir, "col-gate.mjs");
+	const workflowPath = path.join(workflowDir, "docs.yml");
+	await fs.writeFile(gatePath, "// data-col5\nexport {}\n");
+	await fs.writeFile(
+		workflowPath,
+		"jobs:\n  build:\n    steps:\n      - run: node scripts/col-gate.mjs\n",
+	);
+	await fs.writeFile(
+		path.join(tmp, "gated-scope.txt"),
+		"I4 | scripts/col-gate.mjs | .github/workflows/docs.yml | col-gate.mjs | data-col5\n",
+	);
+
+	const gated = await runCoverage(
+		tmp,
+		"claimed-scope.txt",
+		"gated-scope.txt",
+	);
+	if (gated.gatedOk.map((row) => row.id).join() !== "I4") {
+		throw new Error(
+			`self-test: expected I4 gated, got ok=${gated.gatedOk.map((row) => row.id)} fail=${JSON.stringify(gated.gatedFailed)}`,
+		);
+	}
+	if (gated.unlisted.includes("I4")) {
+		throw new Error(
+			"self-test: I4 must leave the unlisted report once gated",
+		);
+	}
+	if (!gated.unlisted.includes("HOST5")) {
+		throw new Error(
+			"self-test: HOST5 must stay reported-not-failed next to a GATE row",
+		);
+	}
+
+	await fs.rm(gatePath);
+	const missing = await runCoverage(
+		tmp,
+		"claimed-scope.txt",
+		"gated-scope.txt",
+	);
+	if (missing.gatedFailed.map((row) => row.id).join() !== "I4") {
+		throw new Error("self-test: deleting the gate file must FAIL I4");
+	}
+	if (
+		!missing.gatedFailed[0].errors.some((error) =>
+			error.includes("gated-but-missing"),
+		)
+	) {
+		throw new Error(
+			`self-test: missing gate must say gated-but-missing, got ${missing.gatedFailed[0].errors}`,
+		);
+	}
+
+	await fs.writeFile(gatePath, "// data-col5\nexport {}\n");
+	await fs.writeFile(workflowPath, "# run: node scripts/col-gate.mjs\n");
+	const unwired = await runCoverage(
+		tmp,
+		"claimed-scope.txt",
+		"gated-scope.txt",
+	);
+	if (unwired.gatedFailed.map((row) => row.id).join() !== "I4") {
+		throw new Error(
+			"self-test: commenting out the workflow run must FAIL I4",
+		);
+	}
+	if (
+		!unwired.gatedFailed[0].errors.some((error) =>
+			error.includes("gated-but-unwired"),
+		)
+	) {
+		throw new Error(
+			`self-test: unwired gate must say gated-but-unwired, got ${unwired.gatedFailed[0].errors}`,
+		);
+	}
+
 	await fs.rm(tmp, { recursive: true, force: true });
-	console.log("coverage:rules self-test ok (fixture spec fails closed, then claims I2)");
+	console.log(
+		"coverage:rules self-test ok (fixture spec fails closed, then claims I2)",
+	);
+	console.log(
+		"coverage:rules self-test ok (gated I4 fails closed when the gate is deleted or unwired)",
+	);
 }
 
 async function main() {
@@ -381,9 +713,13 @@ async function main() {
 		return;
 	}
 
-	const result = await runCoverage(args.repoRoot, args.claimedScope);
+	const result = await runCoverage(
+		args.repoRoot,
+		args.claimedScope,
+		args.gatedScope,
+	);
 	console.log(formatReport(result));
-	if (result.claimedUnclaimed.length > 0) {
+	if (result.claimedUnclaimed.length > 0 || result.gatedFailed.length > 0) {
 		process.exitCode = 1;
 	}
 }

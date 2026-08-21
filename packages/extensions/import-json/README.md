@@ -7,7 +7,7 @@ This package does not export JSON. Export is `@input/pen-export-json`. URLs are 
 ## Install
 
 ```bash
-pnpm add @input/pen-core @input/pen-import-json
+pnpm add @input/pen-core @input/pen-preset-default @input/pen-import-json
 ```
 
 ## What It Provides
@@ -40,9 +40,12 @@ Exceeding a bound truncates at a block boundary and names the bound in `droppedB
 
 ```ts
 import { createEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
 import { jsonImporter } from "@input/pen-import-json";
 
-const editor = createEditor();
+const editor = createEditor({
+  preset: defaultPreset(),
+});
 
 jsonImporter.import(
   {
@@ -60,6 +63,8 @@ jsonImporter.import(
   { replace: true },
 );
 ```
+
+A bare `createEditor()` has an empty schema. Block `type` must resolve in the active registry, so that `paragraph` would be dropped. `defaultPreset()` (or `createDefaultSchema()`) is required.
 
 ## Options
 

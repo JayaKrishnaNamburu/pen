@@ -11,6 +11,7 @@ export function searchDocumentTool(editor: Editor): ToolDefinition {
 	return {
 		name: "search_document",
 		description: "Search for text in the document.",
+		mutating: false,
 		inputSchema: {
 			type: "object",
 			required: ["query"],

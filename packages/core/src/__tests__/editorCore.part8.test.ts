@@ -1,5 +1,4 @@
 import { yjsAdapter } from "@input/pen-crdt-yjs";
-import { undoExtension } from "@input/pen-undo";
 import {
 	type DocumentSession,
 	type PenStreamPart,
@@ -22,12 +21,6 @@ const noDefaultExtensionsPreset = {
 	},
 };
 
-const undoOnlyPreset = {
-	resolve() {
-		return { extensions: [undoExtension()] };
-	},
-};
-
 function createEditor(options: Parameters<typeof createCoreEditor>[0] = {}) {
 	return createCoreEditor({
 		schema: createDefaultSchema(),
@@ -42,16 +35,6 @@ function createDefaultEditor(
 	return createCoreEditor({
 		schema: createDefaultSchema(),
 		...options,
-	});
-}
-
-function createEditorWithUndo(
-	options: Parameters<typeof createCoreEditor>[0] = {},
-) {
-	return createCoreEditor({
-		schema: createDefaultSchema(),
-		...options,
-		preset: options.preset ?? undoOnlyPreset,
 	});
 }
 

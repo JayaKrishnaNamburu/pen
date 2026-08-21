@@ -1,12 +1,14 @@
 # Built-in command catalog (Wave 4.2)
 
-Frozen names from `spec-v2/05-commands.md`. Step 4.2 moved caret (except verticals), text, structure, table, and history handlers into this directory. `createCommandRegistry` from 4.1 is still unwired to `createEditor`.
+Frozen names from `spec-v2/05-commands.md`. Step 4.2 moved caret (except verticals), text, structure, table, and history handlers into this directory. `installEditorCommandRegistry` wires `createCommandRegistry` + `builtinCommandHandlers` onto `createEditor`.
+
+Field-editor keydown (`handleFieldEditorKeyDown`) and beforeinput (`DIRECT_HANDLERS`, expanded backend) now dispatch those handlers through `getCommandRegistry(editor).dispatch`. Local `apply*` / `moveCaretAcrossBlocks` functions remain as compatibility exports and no-registry fallbacks; they are not the live path for cataloged commands except `pen.caretUp` / `pen.caretDown` (still a miss; ArrowUp/Down fall back to `moveCaretAcrossBlocks` at block edges).
 
 Owner:
 
 - **core** — headless handler registered at `default` precedence in `caret.ts`, `text.ts`, `structure.ts`, `table.ts`, or `history.ts`.
-- **field-editor** — v1 behavior still lives in `packages/rendering/dom/src/field-editor/` (not moved this slice).
-- **not-yet-moved** — no handler yet, or lives outside the 4.2 source list.
+- **field-editor** — a named handler for this command still lives in `packages/rendering/dom/src/field-editor/` (not moved this slice).
+- **not-yet-moved** — token exists; no registered handler in core or field-editor.
 
 Keymap: `defaultKeymap.ts` is the K2 platform table, including bindings for the two unmoved vertical caret commands. `resolveDirectedBinding` is the K1 / M2 rtl swap (arrow + word only; table stays logical). Unbound by default: `pen.caretBlockStart`, `pen.caretBlockEnd` (callers dispatch them; no key). `pen.convertBlock`, the four structure commands, and `table.escapeGrid` are also unbound.
 
@@ -20,8 +22,8 @@ Param `{ extend: boolean }` unless noted.
 | --- | --- | --- | --- |
 | `pen.caretLeft` | `{ extend }` | core | `handleGraphemeCaret` (`-1`) + atom-adjacent select. T4 at block boundary. |
 | `pen.caretRight` | `{ extend }` | core | `handleGraphemeCaret` (`1`) + atom-adjacent select. T4 at block boundary. |
-| `pen.caretUp` | `{ extend }` | field-editor | Skipped this slice: needs a geometry seam on command dispatch (`measureNow` / `GeometryReader`). Binding stays in `defaultKeymap.ts`. |
-| `pen.caretDown` | `{ extend }` | field-editor | Same as `pen.caretUp`. |
+| `pen.caretUp` | `{ extend }` | not-yet-moved | Token + keymap only. No registered handler. `dispatch` returns `false` (silent miss, no diagnostic). Field-editor ArrowUp still calls `moveCaretAcrossBlocks` on a parallel path, not this command. Geometry seam (`measureNow` / `GeometryReader`) is still missing. |
+| `pen.caretDown` | `{ extend }` | not-yet-moved | Same as `pen.caretUp`. |
 | `pen.caretLineStart` | `{ extend }` | core | Block offset 0. M3 visual line-box edges need `GeometryReader` (pen-dom); not inverted for rtl. |
 | `pen.caretLineEnd` | `{ extend }` | core | Block logical length. Same M3 deferral. |
 | `pen.caretBlockStart` | `{ extend }` | core | Offset 0 of the focus block. |
@@ -79,11 +81,11 @@ Block-selection delete is also handled by `pen.deleteBackward` / `pen.deleteForw
 | Owner | Names |
 | --- | --- |
 | core | 31 |
-| field-editor | 2 |
-| not-yet-moved | 0 |
+| field-editor | 0 |
+| not-yet-moved | 2 |
 | **total (frozen)** | **33** |
 
-Moved this slice: 4 structure + 4 table + 2 history = 10. Left in field-editor: `pen.caretUp` / `pen.caretDown` (geometry seam still missing on `CommandDispatchContext`).
+Moved this slice: 4 structure + 4 table + 2 history = 10. Deferred: `pen.caretUp` / `pen.caretDown` — tokens and keymap rows only; registry `dispatch` is a silent miss. Field-editor ArrowUp/Down still call `moveCaretAcrossBlocks` (mapped to left/right boundary crossing, not these names).
 
 ## Field-editor names that are not catalog commands
 

@@ -49,7 +49,7 @@ export function SelectionToolbarRoot(props: SelectionToolbarRootProps) {
 
 	const primitiveProps: Record<string, unknown> = {
 		"data-pen-selection-toolbar": "",
-		"data-open": selectionToolbar.isOpen || undefined,
+		"data-open": selectionToolbar.isOpen ? "" : undefined,
 	};
 
 	return (

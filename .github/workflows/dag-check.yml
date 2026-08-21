@@ -22,3 +22,6 @@ jobs:
 
       - name: Check API1 dependency DAG
         run: node scripts/dag-check.mjs
+
+      - name: Check @input/pen-core clean-install closure
+        run: node scripts/core-clean-install.mjs

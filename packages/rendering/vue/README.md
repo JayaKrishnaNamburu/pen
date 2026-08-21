@@ -9,24 +9,21 @@ This package does not ship a stylesheet or a preset. `PenEditor` mounts the shar
 ## Install
 
 ```bash
-pnpm add @input/pen-vue vue
+pnpm add @input/pen-core @input/pen-preset-default @input/pen-vue vue yjs
 ```
+
+`vue` is a peer of this package. `yjs` is a peer of `@input/pen-crdt-yjs`, which `@input/pen-core` depends on.
 
 ## Quick Start
 
 ```ts
-import { createApp } from "vue";
-import { PenVuePlugin, useEditor } from "@input/pen-vue";
+import { createEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
+import { PenEditor } from "@input/pen-vue";
 
-const app = createApp({
-  setup() {
-    const editor = useEditor();
-    return { editor };
-  },
+const editor = createEditor({
+  preset: defaultPreset(),
 });
-
-app.use(PenVuePlugin);
-app.mount("#app");
 ```
 
 ```vue
@@ -35,11 +32,7 @@ app.mount("#app");
 </template>
 ```
 
-You can also import the components directly instead of registering the plugin:
-
-```ts
-import { PenEditor, useEditor } from "@input/pen-vue";
-```
+`useEditor()` still exists. With no argument it calls `createEditor({ schema: defaultSchema })` and does not install `defaultPreset()` — no Mod-B / Mod-I, undo, or delta-stream. Pass `{ preset: defaultPreset() }` when you want that stack. `PenVuePlugin` only registers the components.
 
 ## Public Surface
 
@@ -52,13 +45,17 @@ import { PenEditor, useEditor } from "@input/pen-vue";
 
 ```ts
 import { defineComponent, h } from "vue";
-import { PenEditor, useEditor } from "@input/pen-vue";
+import { createEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
+import { PenEditor } from "@input/pen-vue";
+
+const editor = createEditor({
+  preset: defaultPreset(),
+});
 
 export const PenExample = defineComponent({
   name: "PenExample",
   setup() {
-    const editor = useEditor();
-
     return () =>
       h(PenEditor, {
         editor,

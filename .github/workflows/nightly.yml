@@ -2,7 +2,8 @@
 # ci.yml.
 #
 # Logs a seed every run and passes PEN_FUZZ_SEED into fuzz:nightly, which runs
-# the I2/I3 property suite at 1M ops. Browser fuzz is Wave 5 onward.
+# every workspace *.properties.test.ts suite (I2/I3, DUR3, I1) at nightly
+# scale. Browser fuzz is Wave 5 onward.
 
 name: Nightly
 

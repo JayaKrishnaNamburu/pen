@@ -68,7 +68,7 @@ function CustomImageRenderer(
 		<div
 			ref={ctx.ref as Ref<HTMLDivElement>}
 			data-block-type="image"
-			data-selected={ctx.selected || undefined}
+			data-selected={ctx.selected ? "" : undefined}
 			data-testid={`custom-renderer-${block.id}`}
 		>
 			Custom renderer
@@ -125,7 +125,7 @@ function UploadCard(props: {
 		<div
 			ref={ctx.ref as Ref<HTMLDivElement>}
 			data-block-type="image"
-			data-selected={ctx.selected || undefined}
+			data-selected={ctx.selected ? "" : undefined}
 		>
 			<button
 				type="button"

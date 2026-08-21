@@ -13,6 +13,7 @@ export function insertBlockTool(editor: Editor): ToolDefinition {
   return {
     name: "insert_block",
     description: "Insert a new block at the specified position.",
+    mutating: true,
     inputSchema: {
       type: "object",
       required: ["position", "blockType"],

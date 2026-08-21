@@ -13,7 +13,7 @@ export function CodeBlockRenderer(
       ref={ctx.ref as React.Ref<HTMLPreElement>}
       data-block-type="codeBlock"
       data-language={language || undefined}
-      data-selected={ctx.selected || undefined}
+      data-selected={ctx.selected ? "" : undefined}
     >
       <code className={language ? `language-${language}` : undefined}>
         <InlineContent blockId={block.id} decorations={ctx.decorations} />

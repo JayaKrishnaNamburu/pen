@@ -64,7 +64,7 @@ describe("createFocusSink (AX1)", () => {
 		expect(sink.element.hasAttribute("aria-label")).toBe(false);
 	});
 
-	it("AX7: overlay stays presentation; the sink is the selection surface", () => {
+	it("AX1: block reveal is the accessible selection surface, not overlay chrome", () => {
 		const sink = makeSink();
 
 		expect(sink.element.getAttribute("aria-hidden")).toBe("true");
@@ -78,7 +78,7 @@ describe("createFocusSink (AX1)", () => {
 		);
 	});
 
-	it("AX7: cell selection is exposed on the sink, not as overlay semantics", () => {
+	it("AX1: cell reveal is the accessible selection surface, not overlay chrome", () => {
 		const sink = makeSink();
 		sink.reveal({ kind: "cell", label: "1 by 2 cells selected" });
 

@@ -1,5 +1,6 @@
 import { fullReconcileDeltasToDOM } from "@input/pen-dom/field-editor/reconciler";
 import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
+import { isInlineContentEmpty } from "@input/pen-dom/utils/editorEmptyState";
 import { replaceElementChildren } from "@input/pen-dom/utils/replaceElementChildren";
 import {
   computed,
@@ -62,7 +63,7 @@ export const PenTableCellContent = defineComponent({
     const showPlaceholder = computed(() => {
       return (
         !!props.placeholder &&
-        (!textSnapshot.value.text || textSnapshot.value.text === "\u200B")
+        isInlineContentEmpty(textSnapshot.value.deltas)
       );
     });
 

@@ -19,7 +19,7 @@ This package gives Vue applications a lean but real renderer surface: core edito
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@input/pen-core`, `@input/pen-dom`, `@input/pen-types`
+- Runtime dependencies: `@input/pen-core`, `@input/pen-dom`, `@input/pen-import-html`, `@input/pen-schema-default`, `@input/pen-types`
 - Peer dependencies: `vue`
 - Boundary: `@input/pen-vue` depends on `@input/pen-dom` and `@input/pen-core` and should stay lean.
 
@@ -47,6 +47,7 @@ Important responsibilities:
 - Mount the editor and shared field-editor engine in a Vue host
 - Expose key editor-derived state through composables instead of duplicating state inside components
 - Register the shared field-editor slots, paste importer/assets slots, focused/read-only/empty root attributes, and captured document-keyboard handling from `@input/pen-dom`
+- Pointer activation listens on the editor root and resolves through `handleFieldEditorPointerActivate()` against the blocks host. It does not listen only on the inline-content span (that surface is zero-width on an empty document).
 - Support renderer overrides so host apps can customize block rendering without forking the runtime
 - Validate that keyboard routing, Escape selection transitions, select-all behavior, clipboard, and table-editing behavior stay portable across frameworks
 

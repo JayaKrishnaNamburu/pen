@@ -55,7 +55,7 @@ function SubdocumentRendererInner(props: {
 		<div
 			ref={ctx.ref as React.Ref<HTMLDivElement>}
 			data-block-type="subdocument"
-			data-selected={ctx.selected || undefined}
+			data-selected={ctx.selected ? "" : undefined}
 			data-pen-subdocument-host=""
 			data-subdocument-guid={childScope?.guid}
 		>

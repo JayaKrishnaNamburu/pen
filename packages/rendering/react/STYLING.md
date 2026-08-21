@@ -112,7 +112,11 @@ Code blocks may also get `language-${language}` from the fence language (Prism c
 
 ## Data-attribute hooks
 
-Presence attributes are written as `""`. State attributes below are written when the state is true. Do not invent selectors that are not in this list.
+Boolean `data-*` attributes are the valueless HTML form (`data-readonly=""`), omitted when off. Write the bare selector `[data-readonly]`, not `[data-readonly=""]` or `[data-readonly="true"]`. Both the bare form and `[data-readonly=""]` match today; the bare form stays correct if one of these attributes ever carries a real value.
+
+ARIA booleans are not valueless. They are the strings `"true"` and `"false"` (`aria-expanded="true"`, `aria-hidden="true"`, `aria-readonly="true"`). `aria-hidden=""` is invalid, and `[aria-hidden=""]` matches nothing.
+
+State attributes below are written when the state is true. Do not invent selectors that are not in this list.
 
 ### Editor chrome
 

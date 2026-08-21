@@ -4,7 +4,10 @@ import {
   resolveSchemaA11y,
 } from "@input/pen-core";
 import { resolveEditorUrl } from "@input/pen-dom";
-import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
+import {
+  buildDataAttributes,
+  DATA_ATTRS,
+} from "@input/pen-dom/utils/dataAttributes";
 import { isCellInSelection } from "@input/pen-dom/utils/cellSelection";
 import type { BlockHandle, CellSelection } from "@input/pen-types";
 import { defineComponent, h, type VNode, type VNodeChild } from "vue";
@@ -95,8 +98,10 @@ export const PenBlock = defineComponent({
           [DATA_ATTRS.editorBlock]: "",
           [DATA_ATTRS.blockId]: props.blockId,
           [DATA_ATTRS.blockType]: block.type,
-          [DATA_ATTRS.selected]: isSelected || undefined,
-          [DATA_ATTRS.focused]: isFocused || undefined,
+          ...buildDataAttributes({
+            selected: isSelected,
+            focused: isFocused,
+          }),
           [DATA_ATTRS.surfaceRole]: surfaceRole ?? undefined,
           dir: resolvedContentDir(editor, block),
           tabIndex: -1,
@@ -195,7 +200,7 @@ function renderBlockBody(args: {
         "div",
         {
           "data-block-type": "checkListItem",
-          "data-checked": checked || undefined,
+          "data-checked": checked ? "" : undefined,
           style: { marginLeft: `${indent * 24}px` },
         },
         [
@@ -370,7 +375,9 @@ function renderBlockBody(args: {
         {
           "data-block-type": block.type,
           "data-unknown-block": "",
-          "data-selected": isBlockSelected(selection, block.id) || undefined,
+          "data-selected": isBlockSelected(selection, block.id)
+            ? ""
+            : undefined,
           contentEditable: false,
         },
         [h("span", { "data-pen-unknown-type": "" }, block.type)],

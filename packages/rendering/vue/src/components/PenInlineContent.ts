@@ -1,7 +1,8 @@
 import { fullReconcileDeltasToDOM } from "@input/pen-dom/field-editor/reconciler";
-import { pointToEditorSelectionPoint } from "@input/pen-dom/field-editor/selectionBridge";
 import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
+import { isInlineContentEmpty } from "@input/pen-dom/utils/editorEmptyState";
 import { applyInlineDecorationsToDeltas } from "@input/pen-dom/utils/inlineDecorations";
+import { resolveInlinePlaceholderVisibility } from "@input/pen-dom/utils/placeholderVisibility";
 import { replaceElementChildren } from "@input/pen-dom/utils/replaceElementChildren";
 import type { InlineDecoration } from "@input/pen-types";
 import {
@@ -47,7 +48,7 @@ export const PenInlineContent = defineComponent({
     },
   },
   setup(props) {
-    const { editor, readonly, emptyPlaceholder } = useEditorContext();
+    const { editor, emptyPlaceholder } = useEditorContext();
     const fieldEditor = useFieldEditorContext();
     const selection = useSelection(editor);
     const fieldEditorState = useFieldEditorState(fieldEditor);
@@ -79,38 +80,32 @@ export const PenInlineContent = defineComponent({
           selection.value.focus.blockId === props.blockId)
       );
     });
-    const blockTextEmpty = computed(
-      () => !textSnapshot.value.text || textSnapshot.value.text === "\u200B",
+    const blockTextEmpty = computed(() =>
+      isInlineContentEmpty(textSnapshot.value.deltas),
+    );
+    const placeholderVisibility = computed(() =>
+      resolveInlinePlaceholderVisibility({
+        blockTextEmpty: blockTextEmpty.value,
+        isDocumentEmpty: documentPlaceholderVisible.value,
+        isFirstBlock: isFirstBlock.value,
+        isFocusedBlock: isFocusedBlock.value,
+        hasEmptyPlaceholder: !!emptyPlaceholder.value,
+        hasExplicitPlaceholder: !!props.placeholder,
+        hasSchemaPlaceholder: !!schemaPlaceholder.value,
+        suppressPlaceholders: false,
+      }),
     );
     const placeholder = computed(() => {
-      if (
-        blockTextEmpty.value &&
-        isFirstBlock.value &&
-        documentPlaceholderVisible.value &&
-        emptyPlaceholder.value
-      ) {
+      const visibility = placeholderVisibility.value;
+      if (visibility.showDocumentPlaceholder) {
         return emptyPlaceholder.value;
       }
-
-      if (
-        blockTextEmpty.value &&
-        isFocusedBlock.value &&
-        props.placeholder &&
-        !documentPlaceholderVisible.value
-      ) {
+      if (visibility.showExplicitPlaceholder) {
         return props.placeholder;
       }
-
-      if (
-        blockTextEmpty.value &&
-        isFocusedBlock.value &&
-        !props.placeholder &&
-        schemaPlaceholder.value &&
-        !documentPlaceholderVisible.value
-      ) {
+      if (visibility.showBlockPlaceholder) {
         return schemaPlaceholder.value;
       }
-
       return undefined;
     });
     const renderedDeltas = computed(() => {
@@ -169,56 +164,6 @@ export const PenInlineContent = defineComponent({
       { immediate: true },
     );
 
-    const activateBlockAtEnd = () => {
-      if (readonly.value || !fieldEditor) {
-        return;
-      }
-
-      const block = editor.getBlock(props.blockId);
-      if (!block) {
-        return;
-      }
-
-      const caretOffset = block.length();
-      fieldEditor.activateTextSelection(props.blockId, caretOffset, caretOffset);
-    };
-
-    const activateBlockFromPointer = (event: MouseEvent) => {
-      if (readonly.value || !fieldEditor) {
-        return;
-      }
-
-      const inlineElement = elementRef.value;
-      const rootElement = inlineElement?.closest(
-        `[${DATA_ATTRS.editorRoot}]`,
-      ) as HTMLElement | null;
-      const point =
-        rootElement != null
-          ? pointToEditorSelectionPoint(rootElement, event.clientX, event.clientY)
-          : null;
-
-      if (point && point.blockId === props.blockId) {
-        fieldEditor.activateTextSelection(point.blockId, point.offset, point.offset);
-        return;
-      }
-
-      activateBlockAtEnd();
-    };
-
-    const handleMouseDown = (event: MouseEvent) => {
-      if (readonly.value || isActive.value) {
-        return;
-      }
-      event.preventDefault();
-      activateBlockFromPointer(event);
-    };
-
-    const handleClick = (event: MouseEvent) => {
-      if (!readonly.value && !isActive.value) {
-        activateBlockFromPointer(event);
-      }
-    };
-
     // DIR2: the block host (PenBlock) is the resolved-dir sink. This
     // surface only applies an explicit override — the direction prop or
     // the block's declared props.direction — so standalone mounts keep
@@ -246,10 +191,9 @@ export const PenInlineContent = defineComponent({
             props.direction ?? blockModel.value.props?.direction,
           ),
           style: placeholder.value ? { position: "relative" } : undefined,
-          onMousedown: handleMouseDown,
-          onClick: handleClick,
-          "data-selected":
-            isBlockSelected(selection.value, props.blockId) || undefined,
+          "data-selected": isBlockSelected(selection.value, props.blockId)
+            ? ""
+            : undefined,
         },
         [],
       );

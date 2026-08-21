@@ -7,7 +7,7 @@ AI extension, suggest mode, review state, and planning/runtime helpers for Pen.
 ## Install
 
 ```bash
-pnpm add @input/pen-core @input/pen-ai
+pnpm add @input/pen-core @input/pen-preset-default @input/pen-ai
 ```
 
 Most app integrations also pair it with a renderer such as `@input/pen-react`.
@@ -23,9 +23,11 @@ Most app integrations also pair it with a renderer such as `@input/pen-react`.
 
 ```ts
 import { createEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
 import { aiExtension, getAIController } from "@input/pen-ai";
 
 const editor = createEditor({
+  preset: defaultPreset(),
   extensions: [
     aiExtension({
       suggestMode: true,
@@ -42,6 +44,7 @@ const ai = getAIController(editor);
 - `@input/pen-ai` is headless. It installs runtime behavior and controller state, not a fixed UI.
 - Suggest mode lets AI-authored edits flow through Pen's suggestion and review pipeline instead of immediately replacing document content.
 - The host application still owns model adapters, auth, transport, and any product-specific orchestration.
+- Outbound model calls go through the single `pen.aiEgress` facet in `@input/pen-core` (re-exported here). Suggestions and autocomplete share that same facet.
 - Playground request planning (`buildPlaygroundRequestPlan` and related helpers) lives in the playground app, not this package.
 
 ## Typical Pairing

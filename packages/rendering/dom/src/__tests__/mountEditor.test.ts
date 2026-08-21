@@ -73,6 +73,35 @@ describe("mountEditor", () => {
 
 		expect(mounted.fieldEditor.focusBlockId).toBe(firstBlock?.id);
 		expect(mounted.fieldEditor.isEditing).toBe(true);
+		expect(
+			root
+				.querySelector(`[${DATA_ATTRS.editorBlock}]`)
+				?.getAttribute(DATA_ATTRS.focused),
+		).toBe("");
+	});
+
+	it("activates FieldEditorImpl when the pointer hits the block, not the inline", () => {
+		const editor = createBareEditor();
+		const firstBlock = editor.firstBlock();
+		expect(firstBlock).toBeTruthy();
+		const root = document.createElement("div");
+		document.body.append(root);
+		const mounted = mountEditor(editor, root);
+		cleanups.push(() => {
+			mounted.destroy();
+			editor.destroy();
+		});
+
+		const paragraph = root.querySelector("[data-block-type='paragraph']");
+		const inline = root.querySelector(`[${DATA_ATTRS.inlineContent}]`);
+		expect(paragraph).toBeInstanceOf(HTMLElement);
+		expect(paragraph).not.toBe(inline);
+		paragraph?.dispatchEvent(
+			new MouseEvent("mousedown", { bubbles: true, button: 0 }),
+		);
+
+		expect(mounted.fieldEditor.focusBlockId).toBe(firstBlock?.id);
+		expect(mounted.fieldEditor.isEditing).toBe(true);
 	});
 
 	it("reconciles existing block text into the inline surface", () => {
@@ -103,5 +132,19 @@ describe("mountEditor", () => {
 
 		const inline = root.querySelector(`[${DATA_ATTRS.inlineContent}]`);
 		expect(inline?.textContent).toContain("Hello");
+	});
+
+	it("HOST6: boolean data attributes are valueless", () => {
+		const editor = createBareEditor();
+		const root = document.createElement("div");
+		document.body.append(root);
+		const mounted = mountEditor(editor, root, { readonly: true });
+		cleanups.push(() => {
+			mounted.destroy();
+			editor.destroy();
+		});
+
+		expect(root.getAttribute(DATA_ATTRS.readonly)).toBe("");
+		expect(root.hasAttribute(DATA_ATTRS.empty)).toBe(false);
 	});
 });

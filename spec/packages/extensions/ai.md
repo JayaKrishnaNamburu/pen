@@ -25,9 +25,9 @@ In current usage, `@input/pen-ai` is the headless orchestration layer for both i
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@input/pen-core`, `@input/pen-document-ops`, `@input/pen-types`
+- Runtime dependencies: `@input/pen-ai-tools`, `@input/pen-content-ops`, `@input/pen-core`, `@input/pen-document-ops`, `@input/pen-types`
 - Peer dependencies: No peer dependencies declared.
-- Boundary: The extension composes through the core editor and slots/events rather than side channels.
+- Boundary: The extension composes through the core editor and slots/events rather than side channels. Network egress is not owned here.
 
 ## Runtime Model
 
@@ -55,6 +55,7 @@ flowchart TD
 Important rules:
 
 - Model output still has to land through the editor runtime.
+- All model streams go through core `streamThroughEgress()` / `pen.aiEgress`. This package re-exports `aiEgressFacet`, `aiEgressExtension()`, and `streamThroughEgress()` from `@input/pen-core`; it does not keep a second filter chain.
 - Suggest mode and review flows are mutation-management features, not alternate document stores.
 - Renderer packages consume AI controller state, but renderer packages do not own the AI runtime contract.
 - Follow-up AI edits should reuse session context instead of treating each prompt as isolated.
@@ -68,7 +69,7 @@ The current AI runtime resolves most rewrite behavior into explicit editor targe
 - Chat rewrites that target a title, paragraph, or whole document are resolved into synthetic but explicit range targets rather than open-ended document narration.
 - The preferred rewrite path is `rewrite-selection` with a target kind of either `selection` or `scoped-range`.
 - `scoped-range` is used for synthetic scopes such as `heading`, `paragraph`, `block`, or `document` where the runtime still wants selection-like provenance and diff behavior.
-- Conflict detection uses target provenance such as selection signatures, block revisions, synced generation, and source-text checks before final apply.
+- Conflict detection uses target provenance such as selection signatures, block revisions, synced generation, and source-text checks before final apply. Alignment compares folded text via core `foldAndNormalize()`, not `toLowerCase()`.
 - Multi-block markdown rewrites stream as staged suggestions so users can review, accept, reject, and undo them like inline fast-apply flows.
 
 ## Session Behavior

@@ -7,8 +7,10 @@ Headless editor runtime for Pen.
 ## Install
 
 ```bash
-pnpm add @input/pen-core
+pnpm add @input/pen-core @input/pen-preset-default
 ```
+
+`defaultPreset()` is the batteries-included path. A bare `createEditor()` does not install rich-text shortcuts or delta-stream.
 
 ## What It Provides
 
@@ -16,6 +18,7 @@ pnpm add @input/pen-core
 - `createHeadlessEditor(...)` for server-side, worker, and test workflows that need editor semantics without a renderer
 - document state, selection, normalization, and mutation orchestration
 - the canonical `editor.apply(...)` document mutation boundary
+- `aiEgressFacet` / `aiEgressExtension` / `streamThroughEgress` — the single `pen.aiEgress` filter shared by generation, suggestions, and autocomplete
 
 ## Usage
 
@@ -43,7 +46,7 @@ const editor = createHeadlessEditor({
 });
 ```
 
-Use this shape for migrations, AI workers, export workers, and tests that should run through Pen's mutation pipeline without mounting a UI.
+This snippet also needs `yjs` and `@input/pen-crdt-yjs`. Use this shape for migrations, AI workers, export workers, and tests that should run through Pen's mutation pipeline without mounting a UI.
 
 `editor.destroy()` deactivates extensions and observation. It does not tear down an attached field editor — hosts own that call (React `EditorRoot` and Vue `PenEditor` already do). The method returns the queued teardown promise; callers that ignore it stay correct.
 
@@ -71,7 +74,7 @@ Every `CreateEditorOptions` field is optional.
 | `editorViewMode`  | unset   | View mode                                                             |
 | `documentProfile` | unset   | Authoring profile                                                     |
 
-`createHeadlessEditor` adds `useDefaultExtensions`, default `false`. When that flag is false and no `preset` is passed, the editor uses an empty preset.
+`createHeadlessEditor` adds `useDefaultExtensions`, default `false`. When that flag is false and no `preset` is passed, the editor uses an empty preset. `true` only skips that empty preset; it does not install undo, shortcuts, or delta-stream. Pass `preset: defaultPreset()` for those.
 
 ## Documentation
 

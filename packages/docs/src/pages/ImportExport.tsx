@@ -3,6 +3,11 @@ import {
 	type ExportFidelityTable,
 } from "../generated/exportFidelity";
 import {
+	INGEST_BOUND_ROWS,
+	INGEST_BOUND_SOURCES,
+	type IngestBoundRow,
+} from "../generated/ingestBounds";
+import {
 	PASTE_CORPUS_ROWS,
 	PASTE_CORPUS_SOURCE,
 	type PasteCorpusRow,
@@ -45,17 +50,48 @@ function exportFidelitySections() {
 	});
 }
 
+function missingCaptureItems() {
+	return PASTE_CORPUS_ROWS.filter((row) => !row.captured).map((row) => (
+		<li key={row.id}>
+			<code>{row.id}</code> — {row.source}
+			{row.id === "article" ? " (capture from Safari)" : ""}
+		</li>
+	));
+}
+
+function ingestBoundRows() {
+	return INGEST_BOUND_ROWS.map((row: IngestBoundRow) => (
+		<tr key={row.name}>
+			<td>
+				<code>{row.name}</code>
+			</td>
+			<td>{row.formattedValue}</td>
+			<td>
+				{row.enforcement === "advisory" ? (
+					<>
+						<strong>Advisory.</strong>{" "}
+					</>
+				) : null}
+				{row.caps}
+			</td>
+		</tr>
+	));
+}
+
 function pasteCorpusSections() {
 	return PASTE_CORPUS_ROWS.map((row: PasteCorpusRow) => {
 		const losses = row.intentionalLosses.map((loss) => (
 			<li key={loss}>{loss}</li>
 		));
+		const captureNote = row.captured
+			? `Captured from ${row.application} ${row.version} on ${row.capturedAt}${row.host ? ` (${row.host})` : ""}.`
+			: row.approximates;
 		return (
 			<section key={row.id}>
 				<h3>{row.source}</h3>
 				<p>
 					<code>{row.id}</code>. Provenance:{" "}
-					<code>{row.provenance}</code>. {row.approximates}
+					<code>{row.provenance}</code>. {captureNote}
 				</p>
 				<table>
 					<thead>
@@ -93,6 +129,9 @@ function pasteCorpusSections() {
 export function ImportExportPage() {
 	const fidelitySections = exportFidelitySections();
 	const corpusSections = pasteCorpusSections();
+	const missingCaptures = missingCaptureItems();
+	const boundRows = ingestBoundRows();
+	const boundSources = INGEST_BOUND_SOURCES.join(", ");
 	return (
 		<>
 			<h1>Import and export</h1>
@@ -202,16 +241,21 @@ export function ImportExportPage() {
 				hundred bytes. This page does not claim verified
 				real-world paste fidelity.
 			</p>
+			<p>Sources still awaiting a real clipboard capture:</p>
+			<ul>{missingCaptures}</ul>
 			<p>
 				The outcomes below are generated from each fixture&apos;s{" "}
 				<code>expectation.json</code>. The same table is committed
 				as <code>packages/extensions/import-html/PASTE-CORPUS.md</code>
-				. Replacing a fixture with a real capture means
-				overwriting <code>clipboard.html</code> /{" "}
-				<code>plain.txt</code> and updating the expectation with a
-				reason in the PR. The movement between synthetic
-				expectation and real capture is the finding the corpus
-				exists to surface.
+				. The harness already consumes a capture: overwrite{" "}
+				<code>clipboard.html</code> / <code>plain.txt</code>, set{" "}
+				<code>provenance.kind</code> to <code>captured</code>{" "}
+				with application, version, and date, then update the
+				stated structure. The procedure is{" "}
+				<code>{PASTE_CORPUS_SOURCE}/CAPTURE.md</code>. The
+				movement between synthetic expectation and real capture is
+				the finding the corpus exists to surface. Do not invent
+				markup and label it captured.
 			</p>
 			{corpusSections}
 
@@ -266,18 +310,23 @@ function renderHtml(hostDocument: CRDTDocument) {
 			<h2>Ingest bounds</h2>
 			<p>
 				HTML, Markdown, JSON, and clipboard-JSON ingest share one
-				envelope. 				Each importer keeps a local copy of the
+				envelope. Each importer keeps a local copy of the
 				constants (they are not a shared package). Clipboard JSON
-				paste uses the same four numbers.
+				paste uses the same numbers under{" "}
+				<code>CLIPBOARD_INGEST_*</code> aliases. The table is
+				generated from <code>{boundSources}</code>; the docs
+				build fails if those files disagree.
 			</p>
 			<table>
 				<caption>
-					Exceeding a bound truncates at a block boundary. The
-					content that fit is inserted.{" "}
+					Exceeding a hard bound truncates at a block boundary.
+					The content that fit is inserted.{" "}
 					<code>import-truncated</code> names the bound when a
 					cap was hit; <code>import-dropped</code> covers other
 					drops. One report per operation, not one diagnostic
-					per block.
+					per block.{" "}
+					<code>INGEST_TIME_BUDGET_MS</code> is advisory: the
+					unit suite does not measure wall-clock time.
 				</caption>
 				<thead>
 					<tr>
@@ -286,43 +335,7 @@ function renderHtml(hostDocument: CRDTDocument) {
 						<th>What it caps</th>
 					</tr>
 				</thead>
-				<tbody>
-					<tr>
-						<td>
-							<code>INGEST_MAX_NESTING_DEPTH</code>
-						</td>
-						<td>32</td>
-						<td>
-							Block-tree depth (top-level = 1) and list{" "}
-							<code>indent</code> (0-based, so indent 0–31)
-						</td>
-					</tr>
-					<tr>
-						<td>
-							<code>INGEST_MAX_NODE_COUNT</code>
-						</td>
-						<td>10,000</td>
-						<td>Blocks including table rows and cells</td>
-					</tr>
-					<tr>
-						<td>
-							<code>INGEST_MAX_TEXT_SIZE</code>
-						</td>
-						<td>1,048,576</td>
-						<td>
-							Imported plain text, UTF-16 code units. HTML
-							also caps the raw source at this size before
-							parse.
-						</td>
-					</tr>
-					<tr>
-						<td>
-							<code>INGEST_MAX_IMAGE_COUNT</code>
-						</td>
-						<td>256</td>
-						<td>Image blocks</td>
-					</tr>
-				</tbody>
+				<tbody>{boundRows}</tbody>
 			</table>
 			<p>
 				<code>__proto__</code>, <code>constructor</code>, and{" "}

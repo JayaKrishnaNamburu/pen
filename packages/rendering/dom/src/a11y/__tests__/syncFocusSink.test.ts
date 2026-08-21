@@ -78,4 +78,40 @@ describe("syncFocusSink (AX1)", () => {
 		expect(sink.element.tabIndex).toBe(-1);
 		editor.destroy();
 	});
+
+	it("AX1: empty-document text caret keeps the sink hidden", () => {
+		const editor = createHeadlessEditor({ schema: defaultSchema });
+		const sink = makeSink();
+		const first = editor.firstBlock();
+		expect(first).not.toBeNull();
+		editor.selectText(first!.id, 0, 0);
+		syncFocusSink(sink, editor);
+
+		expect(sink.element.getAttribute("aria-hidden")).toBe("true");
+		expect(sink.element.tabIndex).toBe(-1);
+		expect(sink.element.hasAttribute("role")).toBe(false);
+		editor.destroy();
+	});
+
+	it("AX1: sink label comes from pen.messages, not a hardcoded string", () => {
+		const editor = createHeadlessEditor({
+			schema: defaultSchema,
+			messages: {
+				"pen.a11y.blockSelectionEntered": {
+					one: "TEST-sink-one {count}",
+					other: "TEST-sink-other {count}",
+				},
+			},
+		});
+		const sink = makeSink();
+		syncFocusSink(sink, editor, {
+			type: "block",
+			blockIds: ["a", "b", "c"],
+		});
+
+		expect(sink.element.getAttribute("aria-label")).toBe(
+			"TEST-sink-other 3",
+		);
+		editor.destroy();
+	});
 });

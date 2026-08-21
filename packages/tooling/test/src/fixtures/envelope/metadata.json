@@ -86,12 +86,15 @@
 			"label": "Concurrent peers",
 			"verified": {
 				"display": "2",
-				"suite": "`@input/pen-test` `createTestCollaboration`"
+				"suite": "`@input/pen-test` `createTestCollaboration` + `assertPeerEditsSurvive`"
 			},
 			"measured": null,
 			"untestedAbove": {
 				"display": "2"
 			}
 		}
+	],
+	"notes": [
+		"2026-08-21: Concurrent peers stayed at **2**, but the earlier verified grade did not measure collaboration. `createTestCollaboration` independently populated two Y.Docs; `sync()` then merged unrelated histories and dropped peer B's concurrent insert. `assertDocEquals` still passed because both sides converged on A's text. The helper now forks both peers from one encoded seed (`createTwoPeerHarness`). The grade is re-verified by `assertPeerEditsSurvive`, which fails on that independently-seeded fixture and passes on the shared-seed harness. Re-measured the bench row on that harness: published path (A insert + sync) p50 0.198 ms versus the committed 1.49 ms; concurrent A+B insert + sync p50 0.434 ms; empty-timer floor p50 0.000 ms (n=21). The table number is the peer count, not the clock."
 	]
 }

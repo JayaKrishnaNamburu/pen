@@ -2,36 +2,21 @@ import { expect, type Page } from "@playwright/test";
 import { getInlineOffsetPoint } from "../src/domGeometry";
 import { scenario } from "../src/scenario";
 
-type HistoryBridge = {
-	undo(): void;
-	redo(): void;
-	stopCapturing(): void;
-};
-
 function historyBridge(page: Page) {
 	return {
 		async undo() {
 			await page.evaluate(() => {
-				(
-					window.__penConformance as typeof window.__penConformance &
-						HistoryBridge
-				).undo();
+				window.__penConformance.undo();
 			});
 		},
 		async redo() {
 			await page.evaluate(() => {
-				(
-					window.__penConformance as typeof window.__penConformance &
-						HistoryBridge
-				).redo();
+				window.__penConformance.redo();
 			});
 		},
 		async stopCapturing() {
 			await page.evaluate(() => {
-				(
-					window.__penConformance as typeof window.__penConformance &
-						HistoryBridge
-				).stopCapturing();
+				window.__penConformance.stopCapturing();
 			});
 		},
 	};

@@ -60,7 +60,7 @@ function SearchToggle(props: SearchToggleInternalProps) {
 	const primitiveProps: Record<string, unknown> = {
 		"data-pen-search-toggle": "",
 		"data-option": dataOption,
-		"data-active": active || undefined,
+		"data-active": active ? "" : undefined,
 		type: "button",
 		"aria-pressed": active,
 		"aria-label": label,

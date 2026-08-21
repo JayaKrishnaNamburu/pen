@@ -547,7 +547,15 @@ function measurePointAt(root: HTMLElement, x: number, y: number): Point | null {
 
 function measureBlockRect(root: HTMLElement, blockId: string): Rect | null {
 	const blockEl = queryBlockElement(root, blockId);
-	return blockEl ? elementRect(blockEl) : null;
+	if (!blockEl) {
+		return null;
+	}
+	const rect = elementRect(blockEl);
+	if (isUsefulRect(rect)) {
+		return rect;
+	}
+	const inlineEl = findInlineContentElement(blockEl);
+	return inlineEl ? elementRect(inlineEl) : rect;
 }
 
 function characterRect(

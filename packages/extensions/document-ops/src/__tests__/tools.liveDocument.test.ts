@@ -7,13 +7,25 @@ import {
 	type TestEditor,
 } from "@input/pen-test";
 import { afterEach, describe, expect, it } from "vitest";
-import { INVALID_TOOL_PAYLOAD_CODE } from "../constants/payloadValidation";
+import {
+	INVALID_TOOL_PAYLOAD_CODE,
+	MAX_OP_TEXT_FIELD_LENGTH,
+} from "../constants/payloadValidation";
 import { ToolContextImpl } from "../toolContext";
 import { deleteBlockTool } from "../tools/deleteBlock";
+import { getContextTool } from "../tools/getContext";
+import { getCursorContextTool } from "../tools/getCursorContext";
+import { inspectTargetTool } from "../tools/inspectTarget";
 import { insertBlockTool } from "../tools/insertBlock";
+import { listBlockTypesTool } from "../tools/listBlockTypes";
+import { listValidOperationsTool } from "../tools/listValidOperations";
 import { moveBlockTool } from "../tools/moveBlock";
+import { readDocumentTool } from "../tools/readDocument";
+import { retrieveDocumentSpansTool } from "../tools/retrieveDocumentSpans";
+import { searchDocumentTool } from "../tools/searchDocument";
 import { updateBlockTool } from "../tools/updateBlock";
 import { writeDocumentTool } from "../tools/writeDocument";
+import { applyValidatedOps } from "../utils/payloadValidation";
 
 const FIXTURE_BLOCKS: TestBlock[] = [
 	{
@@ -83,11 +95,37 @@ function selectionPoint(editor: Editor) {
 	};
 }
 
+function encodeDocument(editor: TestEditor): string {
+	return JSON.stringify({
+		order: editor.ydoc.getArray("blockOrder").toJSON(),
+		blocks: editor.ydoc.getMap("blocks").toJSON(),
+		apps: editor.ydoc.getMap("apps").toJSON(),
+		metadata: editor.ydoc.getMap("metadata").toJSON(),
+	});
+}
+
+function expectInvalidPayloadDiagnostic(
+	diagnostics: readonly DiagnosticEvent[],
+	message: string,
+): void {
+	expect(diagnostics).toEqual(
+		expect.arrayContaining([
+			expect.objectContaining({
+				code: INVALID_TOOL_PAYLOAD_CODE,
+				level: "error",
+				source: "document-ops",
+				message,
+			}),
+		]),
+	);
+}
+
 async function expectRejectedAndUnchanged(
 	editor: TestEditor,
 	expected: TestBlock[],
 	work: () => unknown,
 ): Promise<unknown> {
+	const before = encodeDocument(editor);
 	let error: unknown;
 	try {
 		await work();
@@ -96,6 +134,7 @@ async function expectRejectedAndUnchanged(
 	}
 	expect(error).toBeInstanceOf(Error);
 	assertDocEquals(editor, expected);
+	expect(encodeDocument(editor)).toEqual(before);
 	return error;
 }
 
@@ -219,7 +258,64 @@ describe("@input/pen-document-ops live document tools", () => {
 						'Block type "not-a-block" is not available in structured documents.',
 				}),
 			);
-			expect(diagnostics).toEqual([]);
+			expectInvalidPayloadDiagnostic(
+				diagnostics,
+				'Block type "not-a-block" is not available in structured documents.',
+			);
+		});
+
+		it("leaves the document unchanged for a hidden block type", async () => {
+			const editor = createLiveEditor();
+			const diagnostics = listenDiagnostics(editor);
+
+			const error = await expectRejectedAndUnchanged(editor, FIXTURE_BLOCKS, () =>
+				insertBlockTool(editor).handler(
+					{
+						position: "last",
+						blockType: "subdocument",
+						content: "Should not land",
+					},
+					{} as never,
+				),
+			);
+
+			expect(error).toEqual(
+				expect.objectContaining({
+					message:
+						'Block type "subdocument" is not available in structured documents.',
+				}),
+			);
+			expectInvalidPayloadDiagnostic(
+				diagnostics,
+				'Block type "subdocument" is not available in structured documents.',
+			);
+		});
+
+		it("leaves the document byte-identical when insert_block text exceeds MAX_OP_TEXT_FIELD_LENGTH", async () => {
+			const editor = createLiveEditor();
+			const diagnostics = listenDiagnostics(editor);
+			const content = "x".repeat(MAX_OP_TEXT_FIELD_LENGTH + 1);
+
+			const error = await expectRejectedAndUnchanged(editor, FIXTURE_BLOCKS, () =>
+				insertBlockTool(editor).handler(
+					{
+						position: "last",
+						blockType: "paragraph",
+						content,
+					},
+					{} as never,
+				),
+			);
+
+			expect(error).toEqual(
+				expect.objectContaining({
+					message: expect.stringContaining("Invalid tool payload"),
+				}),
+			);
+			expectInvalidPayloadDiagnostic(
+				diagnostics,
+				`Op text field exceeds MAX_OP_TEXT_FIELD_LENGTH (${MAX_OP_TEXT_FIELD_LENGTH})`,
+			);
 		});
 
 		it("persists non-default heading props on the inserted block", async () => {
@@ -333,7 +429,10 @@ describe("@input/pen-document-ops live document tools", () => {
 					message: 'Unknown block: "missing-block"',
 				}),
 			);
-			expect(diagnostics).toEqual([]);
+			expectInvalidPayloadDiagnostic(
+				diagnostics,
+				'Unknown block: "missing-block"',
+			);
 		});
 	});
 
@@ -393,7 +492,10 @@ describe("@input/pen-document-ops live document tools", () => {
 					message: 'Unknown block: "missing-block"',
 				}),
 			);
-			expect(diagnostics).toEqual([]);
+			expectInvalidPayloadDiagnostic(
+				diagnostics,
+				'Unknown block: "missing-block"',
+			);
 		});
 	});
 
@@ -468,6 +570,31 @@ describe("@input/pen-document-ops live document tools", () => {
 				}),
 			]);
 		});
+
+		it("leaves the document unchanged when the moved block does not exist", async () => {
+			const editor = createLiveEditor();
+			const diagnostics = listenDiagnostics(editor);
+
+			const error = await expectRejectedAndUnchanged(editor, FIXTURE_BLOCKS, () =>
+				moveBlockTool(editor).handler(
+					{
+						blockId: "missing-block",
+						position: "first",
+					},
+					{} as never,
+				),
+			);
+
+			expect(error).toEqual(
+				expect.objectContaining({
+					message: 'Unknown block: "missing-block"',
+				}),
+			);
+			expectInvalidPayloadDiagnostic(
+				diagnostics,
+				'Unknown block: "missing-block"',
+			);
+		});
 	});
 
 	describe("write_document", () => {
@@ -496,6 +623,59 @@ describe("@input/pen-document-ops live document tools", () => {
 					id: result.blockIds[1],
 					type: "bulletListItem",
 					content: "Item",
+				},
+			]);
+		});
+
+		it("appends a text payload as a real paragraph", async () => {
+			const editor = createLiveEditor();
+
+			const result = (await writeDocumentTool(editor).handler(
+				{
+					format: "text",
+					content: "Appended by AI",
+					position: "last",
+				},
+				{} as never,
+			)) as { blockIds: string[] };
+
+			expect(result.blockIds).toHaveLength(1);
+			assertDocEquals(editor, [
+				...FIXTURE_BLOCKS,
+				{
+					id: result.blockIds[0],
+					type: "paragraph",
+					content: "Appended by AI",
+				},
+			]);
+		});
+
+		it("inserts explicit blocks with their content", async () => {
+			const editor = createLiveEditor();
+
+			const result = (await writeDocumentTool(editor).handler(
+				{
+					format: "blocks",
+					blocks: [
+						{
+							blockType: "heading",
+							props: { level: 3 },
+							content: "From blocks",
+						},
+					],
+					position: "last",
+				},
+				{} as never,
+			)) as { blockIds: string[] };
+
+			expect(result.blockIds).toHaveLength(1);
+			assertDocEquals(editor, [
+				...FIXTURE_BLOCKS,
+				{
+					id: result.blockIds[0],
+					type: "heading",
+					props: { level: 3 },
+					content: "From blocks",
 				},
 			]);
 		});
@@ -545,6 +725,69 @@ describe("@input/pen-document-ops live document tools", () => {
 				]),
 			);
 		});
+
+		it("leaves the document unchanged when content and blocks are both empty", async () => {
+			const editor = createLiveEditor();
+			const diagnostics = listenDiagnostics(editor);
+
+			const error = await expectRejectedAndUnchanged(editor, FIXTURE_BLOCKS, () =>
+				writeDocumentTool(editor).handler(
+					{
+						format: "text",
+						content: "",
+					},
+					{} as never,
+				),
+			);
+
+			expect(error).toEqual(
+				expect.objectContaining({
+					message:
+						'write_document expects either a non-empty "content" string or a non-empty "blocks" array.',
+				}),
+			);
+			expectInvalidPayloadDiagnostic(
+				diagnostics,
+				'write_document expects either a non-empty "content" string or a non-empty "blocks" array.',
+			);
+		});
+	});
+
+	describe("applyValidatedOps", () => {
+		it("rejects insert-text past the end without applying a sibling insert-block", () => {
+			const editor = createLiveEditor();
+			const diagnostics = listenDiagnostics(editor);
+			const before = encodeDocument(editor);
+
+			expect(() =>
+				applyValidatedOps(
+					editor,
+					[
+						{
+							type: "insert-block",
+							blockId: "partial-1",
+							blockType: "paragraph",
+							props: {},
+							position: "last",
+						},
+						{
+							type: "insert-text",
+							blockId: "fixture-body",
+							offset: 999,
+							text: "should not land",
+						},
+					],
+					{ origin: "ai" },
+				),
+			).toThrow("Invalid tool payload");
+
+			assertDocEquals(editor, FIXTURE_BLOCKS);
+			expect(encodeDocument(editor)).toEqual(before);
+			expectInvalidPayloadDiagnostic(
+				diagnostics,
+				'Offset out of range: 999 is past the end of "fixture-body"',
+			);
+		});
 	});
 
 	describe("ToolContext mutations", () => {
@@ -573,6 +816,120 @@ describe("@input/pen-document-ops live document tools", () => {
 				{ type: "ai" },
 				{ type: "ai" },
 				{ type: "ai" },
+			]);
+		});
+
+		it("leaves the document unchanged when the target block does not exist", () => {
+			const editor = createLiveEditor();
+			const diagnostics = listenDiagnostics(editor);
+			const parts: unknown[] = [];
+			const context = new ToolContextImpl(editor, "doc-1", (part) => {
+				parts.push(part);
+			});
+			const before = encodeDocument(editor);
+
+			expect(() => context.updateBlock("missing-block", { level: 1 })).toThrow(
+				'Unknown block: "missing-block"',
+			);
+			expect(() => context.deleteBlock("missing-block")).toThrow(
+				'Unknown block: "missing-block"',
+			);
+			expect(() =>
+				context.insertBlock("paragraph", {}, { after: "missing-block" }),
+			).toThrow("Invalid tool payload");
+
+			expect(parts).toEqual([]);
+			assertDocEquals(editor, FIXTURE_BLOCKS);
+			expect(encodeDocument(editor)).toEqual(before);
+			expectInvalidPayloadDiagnostic(
+				diagnostics,
+				'Unknown block: "missing-block"',
+			);
+			expect(diagnostics).toEqual(
+				expect.arrayContaining([
+					expect.objectContaining({
+						code: INVALID_TOOL_PAYLOAD_CODE,
+						message: 'Unresolved target: "missing-block"',
+					}),
+				]),
+			);
+		});
+	});
+
+	describe("read-only tools", () => {
+		const nestedBlocks: TestBlock[] = [
+			{
+				id: "toggle-1",
+				type: "toggle",
+				content: "Toggle title",
+				children: [
+					{
+						id: "nested-1",
+						type: "paragraph",
+						content: "NESTED-SEARCH-HIT",
+					},
+				],
+			},
+			...FIXTURE_BLOCKS,
+		];
+
+		function readOnlyTools(editor: TestEditor) {
+			return [
+				readDocumentTool(editor),
+				getContextTool(editor),
+				getCursorContextTool(editor),
+				inspectTargetTool(editor),
+				listValidOperationsTool(editor),
+				searchDocumentTool(editor),
+				retrieveDocumentSpansTool(editor),
+				listBlockTypesTool(editor),
+			];
+		}
+
+		function inputFor(name: string): unknown {
+			if (name === "search_document" || name === "retrieve_document_spans") {
+				return { query: "NESTED-SEARCH-HIT" };
+			}
+			return {};
+		}
+
+		it("does not write when each declared read-only tool is invoked", async () => {
+			const editor = createLiveEditor(nestedBlocks);
+			const tools = readOnlyTools(editor);
+			expect(tools.every((tool) => tool.mutating === false)).toBe(true);
+			expect(tools.map((tool) => tool.name).sort()).toEqual(
+				[
+					"get_context",
+					"get_cursor_context",
+					"inspect_target",
+					"list_block_types",
+					"list_valid_operations",
+					"read_document",
+					"retrieve_document_spans",
+					"search_document",
+				].sort(),
+			);
+
+			const commits = listenCommits(editor);
+			const before = encodeDocument(editor);
+
+			for (const tool of tools) {
+				await tool.handler(inputFor(tool.name), {} as never);
+			}
+
+			expect(encodeDocument(editor)).toEqual(before);
+			expect(commits).toEqual([]);
+		});
+
+		it("search_document finds text inside nested layout children", async () => {
+			const editor = createLiveEditor(nestedBlocks);
+			const matches = (await searchDocumentTool(editor).handler(
+				{ query: "NESTED-SEARCH-HIT" },
+				{} as never,
+			)) as Array<{ blockId: string }>;
+
+			expect(matches).toEqual([
+				expect.objectContaining({ blockId: "nested-1" }),
 			]);
 		});
 	});

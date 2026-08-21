@@ -139,5 +139,7 @@ describe("SCALE1 envelope ladder", () => {
 				expect(markdown).toContain(axis.measured.display);
 			}
 		}
+		expect(markdown).toContain("Correction notes");
+		expect(markdown).toContain("assertPeerEditsSurvive");
 	});
 });

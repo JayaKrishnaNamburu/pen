@@ -7,8 +7,10 @@ React renderer, primitives, and hooks for Pen.
 ## Install
 
 ```bash
-pnpm add @input/pen-core @input/pen-preset-default @input/pen-react react react-dom
+pnpm add @input/pen-core @input/pen-preset-default @input/pen-react react react-dom yjs
 ```
+
+`react` and `react-dom` are peers of this package. `yjs` is a peer of `@input/pen-crdt-yjs`, which `@input/pen-core` depends on.
 
 ## Quick Start
 

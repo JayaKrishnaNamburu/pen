@@ -41,7 +41,18 @@ describe("commit pipeline phases (Wave 2.1)", () => {
 			},
 		]);
 
-		expect(phases).toEqual([...PIPELINE_PHASES]);
+		const specPhases = [
+			"hooks",
+			"validate",
+			"execute",
+			"normalize",
+			"summarize",
+			"map-selection",
+			"settle-facets",
+			"emit",
+		];
+		expect(PIPELINE_PHASES).toEqual(specPhases);
+		expect(phases).toEqual(specPhases);
 		stop();
 		editor.destroy();
 	});

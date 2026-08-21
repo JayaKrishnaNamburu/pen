@@ -73,9 +73,8 @@ export function createEnvelopeEditor(rungId: EnvelopeRungId): TestEditor {
 }
 
 export function createEnvelopeCollaboration(blockCount = 100) {
-	// createTestCollaboration independently populates two Y.Docs, so sync()
-	// merges unrelated histories and B never sees A's insert. Fork both
-	// peers from one seed and exchange incremental updates instead.
+	// Shared-seed fork. Independent populateYDoc histories lose one side
+	// on sync; createTwoPeerHarness is the path that actually collaborates.
 	const harness = createTwoPeerHarness({
 		blocks: generateBlockSpecs(blockCount),
 	});

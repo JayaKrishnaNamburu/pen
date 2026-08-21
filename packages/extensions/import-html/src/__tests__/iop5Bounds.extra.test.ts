@@ -8,7 +8,6 @@ import {
   parseHtmlWithReport,
 } from "../importer";
 import {
-  INGEST_FORBIDDEN_KEYS,
   INGEST_MAX_IMAGE_COUNT,
   INGEST_MAX_NESTING_DEPTH,
   INGEST_MAX_NODE_COUNT,
@@ -81,18 +80,6 @@ function collectDiagnostics(editor: ReturnType<typeof createBareEditor>) {
 }
 
 describe("HTML ingest bounds leftovers (IOP5/IOP6)", () => {
-  it("IOP5 publishes the shared envelope numbers", () => {
-    expect(INGEST_MAX_NESTING_DEPTH).toBe(32);
-    expect(INGEST_MAX_NODE_COUNT).toBe(10_000);
-    expect(INGEST_MAX_TEXT_SIZE).toBe(1_048_576);
-    expect(INGEST_MAX_IMAGE_COUNT).toBe(256);
-    expect(INGEST_FORBIDDEN_KEYS).toEqual([
-      "__proto__",
-      "constructor",
-      "prototype",
-    ]);
-  });
-
   it("IOP5 keeps the node at the count cap and drops the next at a block boundary", () => {
     const blocks = Array.from({ length: INGEST_MAX_NODE_COUNT + 1 }, (_, i) =>
       paragraph(String(i)),

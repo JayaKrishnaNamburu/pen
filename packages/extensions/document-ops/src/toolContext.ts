@@ -51,6 +51,8 @@ export class ToolContextImpl implements ToolContext {
       },
     ]);
 
+    this.editor.apply(ops, { origin: "ai" });
+
     this.emit({
       type: "block-insert",
       blockId,
@@ -58,8 +60,6 @@ export class ToolContextImpl implements ToolContext {
       props,
       position,
     });
-
-    this.editor.apply(ops, { origin: "ai" });
 
     return blockId;
   }
@@ -72,13 +72,12 @@ export class ToolContextImpl implements ToolContext {
     const ops = assertValidToolPayloads(this.editor, [
       { type: "update-block", blockId, props },
     ]);
+    this.editor.apply(ops, { origin: "ai" });
     this.emit({
       type: "block-update",
       blockId,
       props,
     });
-
-    this.editor.apply(ops, { origin: "ai" });
   }
 
   deleteBlock(blockId: string): void {
@@ -86,12 +85,11 @@ export class ToolContextImpl implements ToolContext {
     const ops = assertValidToolPayloads(this.editor, [
       { type: "delete-block", blockId },
     ]);
+    this.editor.apply(ops, { origin: "ai" });
     this.emit({
       type: "block-delete",
       blockId,
     });
-
-    this.editor.apply(ops, { origin: "ai" });
   }
 
   beginStreaming(zoneId: string, blockId: string): void {

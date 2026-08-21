@@ -4,6 +4,11 @@ export {
 	type MountEditorOptions,
 	type MountedEditor,
 } from "./host/mountEditor";
+export {
+	handleFieldEditorPointerActivate,
+	type FieldEditorPointerActivateOptions,
+	type FieldEditorPointerTarget,
+} from "./host/pointerActivation";
 export type {
 	FieldEditorFocusReason,
 	FieldEditorFocusRequest,

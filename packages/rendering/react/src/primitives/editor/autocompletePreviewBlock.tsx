@@ -65,7 +65,7 @@ export function AutocompletePreviewBlock(props: AutocompletePreviewBlockProps) {
 					data-block-type={listPreview.blockType}
 					data-indent={listPreview.indent}
 					data-counter={listPreview.counter}
-					data-checked={listPreview.checked || undefined}
+					data-checked={listPreview.checked ? "" : undefined}
 					style={{
 						paddingLeft: `${listPreview.indent * LIST_ITEM_INDENT_PX}px`,
 						display: "grid",

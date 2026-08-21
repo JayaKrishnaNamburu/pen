@@ -1,0 +1,71 @@
+{
+  "ruleId": "WAVE02-STREAMING",
+  "spec": "spec-v2/waves/wave-02-commit-pipeline.md",
+  "kind": "drift-report",
+  "isV1Baseline": false,
+  "comparisonTo": "2.5 TextStreamWriter path on this checkout. No recorded v1 baseline exists in git history or tags; this file is not one.",
+  "gateStatistic": "median",
+  "sampleSize": 50,
+  "warmup": 3,
+  "producedOn": "2026-08-21",
+  "producedAt": "2026-08-21T01:22:56.651Z",
+  "machineClass": "macos-arm64 (darwin 25.3.0, Apple M4 Pro, Node v25.6.1). Not the CI runner (github-actions-ubuntu-latest).",
+  "priorAsBuilt": {
+    "producedOn": "2026-08-20",
+    "sampleSize": 50,
+    "machineClass": "darwin",
+    "note": "Attributed the 12.8x miss on gen-delta-1000-parts to 1000 appends going through editor.apply. That cardinality claim does not hold on this checkout: the yielding harness does 3 applies, the no-yield stream does 1.",
+    "points": [
+      {
+        "id": "streaming.gen-delta-1000-parts",
+        "measuredP50Ms": 128.18,
+        "p95Ms": 135.32
+      },
+      {
+        "id": "streaming.batch-flush-latency",
+        "measuredP50Ms": 1.29,
+        "p95Ms": 1.32
+      }
+    ]
+  },
+  "points": [
+    {
+      "id": "streaming.gen-delta-1000-parts",
+      "name": "streaming 1000 gen-delta parts at 100/sec",
+      "measuredP50Ms": 115.26,
+      "p95Ms": 117.97,
+      "minMs": 112.33,
+      "maxMs": 118.59,
+      "targetMs": 10,
+      "critical": false,
+      "meetsTarget": false,
+      "diagnosis": "The clock is 100 setTimeout(0) macrotasks (yield every 10 tokens). Same-run yield-floor p50 is 114.99ms. Coalesced no-yield work is 0.13ms and one apply. The 50ms flush window elapses during the yields, so this harness does 3 applies, not 1000."
+    },
+    {
+      "id": "streaming.batch-flush-latency",
+      "name": "streaming batch flush latency",
+      "measuredP50Ms": 1.17,
+      "p95Ms": 1.2,
+      "minMs": 1.12,
+      "maxMs": 1.24,
+      "targetMs": 10,
+      "critical": true,
+      "meetsTarget": true,
+      "diagnosis": "The timed window is one appendDelta plus one setTimeout(0). timedApplyCount is 0; the apply happens in endStreaming after b.end()."
+    }
+  ],
+  "coalescedNoYield": {
+    "id": "streaming.gen-delta-1000-parts-no-yield",
+    "sampleSize": 21,
+    "measuredP50Ms": 0.13,
+    "p95Ms": 0.28,
+    "applyCount": 1,
+    "note": "Same 1000 appendDeltas + endStreaming without the 100 macrotask yields. This is the work a 10ms CPU target can describe. Recorded, not gated."
+  },
+  "yieldFloor": {
+    "id": "setTimeout-0-x100",
+    "sampleSize": 21,
+    "measuredP50Ms": 114.99,
+    "p95Ms": 116.03
+  }
+}

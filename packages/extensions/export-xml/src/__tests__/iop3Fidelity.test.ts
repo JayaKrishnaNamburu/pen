@@ -124,6 +124,27 @@ function sampleOps(row: ExportFidelityRow): DocumentOp[] {
     ];
   }
 
+  if (row.type === "toggle") {
+    return [
+      {
+        type: "insert-block",
+        blockId: "b1",
+        blockType: "toggle",
+        props: {},
+        position: "last",
+      },
+      { type: "insert-text", blockId: "b1", offset: 0, text: "Hello" },
+      {
+        type: "insert-block",
+        blockId: "child",
+        blockType: "paragraph",
+        props: {},
+        position: { parent: "b1", index: 0 },
+      },
+      { type: "insert-text", blockId: "child", offset: 0, text: "Nested" },
+    ];
+  }
+
   return [
     {
       type: "insert-block",
@@ -157,6 +178,17 @@ function exportSample(row: ExportFidelityRow): string {
 }
 
 function assertXmlFidelity(row: ExportFidelityRow, xml: string): void {
+  if (row.type === "toggle") {
+    const parentStart = xml.indexOf('<block id="b1"');
+    const childrenStart = xml.indexOf("<children>", parentStart);
+    const childStart = xml.indexOf('<block id="child"', childrenStart);
+    expect(xml).toContain('type="toggle"');
+    expect(childrenStart).toBeGreaterThan(parentStart);
+    expect(childStart).toBeGreaterThan(childrenStart);
+    expect(xml).toContain("<content>Nested</content>");
+    return;
+  }
+
   if (row.kind === "block") {
     expect(xml).toContain(`type="${row.type}"`);
     return;

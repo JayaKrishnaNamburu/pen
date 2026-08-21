@@ -15,13 +15,13 @@ Provide shared lower-level helpers used by higher-level packages.
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@input/pen-types`
+- Runtime dependencies: `@input/pen-core`, `@input/pen-types`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: Shared packages support package boundaries without becoming end-user entrypoints.
 
 ## Data Flow / Runtime Model
 
-Shared support library packages in Pen should stay package-first and explicit about ownership. Use them when authoring other Pen packages, not as first-stop adoption surfaces.
+This package still owns markdown serialization (`exportMarkdownForBlocks()`, `exportMarkdownRange()`). `buildTableChildren()`, `getNumberedListItemValue()`, and `sortDeltaAttributes()` are re-exports from `@input/pen-core`. The old `core → markdown-serialization` inversion is gone.
 
 ## Integration Notes
 

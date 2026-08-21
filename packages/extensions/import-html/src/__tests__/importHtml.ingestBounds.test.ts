@@ -6,7 +6,6 @@ import {
 	INGEST_MAX_NESTING_DEPTH,
 	INGEST_MAX_NODE_COUNT,
 	INGEST_MAX_TEXT_SIZE,
-	INGEST_TIME_BUDGET_MS,
 	boundPendingBlocks,
 	capRawHtmlSource,
 	IngestDropCounts,
@@ -215,35 +214,74 @@ describe("IOP6 HTML ingest report", () => {
 	});
 });
 
-describe("IOP5 HTML ingest time budget", () => {
-	it("IOP5 states the clipboard-sibling time budget (not re-recorded tonight)", () => {
-		expect(INGEST_TIME_BUDGET_MS).toBe(1_000);
-	});
-
-	it("IOP5 a 2×-cap source is sliced before parse and reports the actual overflow", () => {
+describe("IOP5 HTML ingest pre-parse cap", () => {
+	it("IOP5 parser never receives more than INGEST_MAX_TEXT_SIZE characters", () => {
 		const editor = createBareEditor();
 		const keep = "<p>keep</p>\n";
-		const input = `${keep}${"x".repeat(INGEST_MAX_TEXT_SIZE * 2)}`;
-		const preview = new IngestDropCounts();
-		const capped = capRawHtmlSource(input, preview);
-
-		expect(capped.length).toBeLessThanOrEqual(INGEST_MAX_TEXT_SIZE);
-		expect(preview.toDroppedByReason()).toEqual([
-			{
-				reason: "text-size-exceeded",
-				count: input.length - capped.length,
-				bound: "INGEST_MAX_TEXT_SIZE",
-				limit: INGEST_MAX_TEXT_SIZE,
-				actual: input.length,
-				dropped: `${input.length - capped.length} code units`,
-			},
-		]);
+		const later = "<p>later</p>";
+		const input = `${keep}${"x".repeat(INGEST_MAX_TEXT_SIZE * 2)}\n${later}`;
 
 		const { blocks, report } = parseHtmlWithReport(input, editor);
-		expect(report.droppedByReason).toEqual(preview.toDroppedByReason());
+
+		expect(input.length).toBeGreaterThan(INGEST_MAX_TEXT_SIZE);
+		expect(report.droppedByReason[0]).toMatchObject({
+			reason: "text-size-exceeded",
+			bound: "INGEST_MAX_TEXT_SIZE",
+			limit: INGEST_MAX_TEXT_SIZE,
+			actual: input.length,
+		});
 		expect(blocks).toEqual([
 			expect.objectContaining({ type: "paragraph", content: "keep" }),
 		]);
+		expect(
+			blocks.some((block) => (block.content ?? "").includes("later")),
+		).toBe(false);
+
+		editor.destroy();
+	});
+
+	it("IOP5 a 2×-cap source is sliced before parse, so work matches the capped source, not the input", () => {
+		const editor = createBareEditor();
+		const keep = "<p>keep</p>\n";
+		const later = "<p>later</p>";
+		const input2x = `${keep}${"x".repeat(INGEST_MAX_TEXT_SIZE * 2)}\n${later}`;
+		const input4x = `${keep}${"x".repeat(INGEST_MAX_TEXT_SIZE * 4)}\n${later}`;
+		const preview = new IngestDropCounts();
+		const capped = capRawHtmlSource(input2x, preview);
+
+		expect(capped.length).toBeLessThanOrEqual(INGEST_MAX_TEXT_SIZE);
+		expect(capped.includes("later")).toBe(false);
+		expect(preview.toDroppedByReason()).toEqual([
+			{
+				reason: "text-size-exceeded",
+				count: input2x.length - capped.length,
+				bound: "INGEST_MAX_TEXT_SIZE",
+				limit: INGEST_MAX_TEXT_SIZE,
+				actual: input2x.length,
+				dropped: `${input2x.length - capped.length} code units`,
+			},
+		]);
+
+		const full2x = parseHtmlWithReport(input2x, editor);
+		const fromCapped = parseHtmlWithReport(capped, editor);
+		const full4x = parseHtmlWithReport(input4x, editor);
+
+		expect(full2x.report.droppedByReason).toEqual(
+			preview.toDroppedByReason(),
+		);
+		expect(full2x.blocks).toEqual(fromCapped.blocks);
+		expect(full2x.blocks).toEqual(full4x.blocks);
+		expect(full2x.blocks).toEqual([
+			expect.objectContaining({ type: "paragraph", content: "keep" }),
+		]);
+		expect(
+			full2x.blocks.some((block) =>
+				(block.content ?? "").includes("later"),
+			),
+		).toBe(false);
+		expect(full4x.report.droppedByReason[0]?.actual).toBeGreaterThan(
+			full2x.report.droppedByReason[0]?.actual ?? 0,
+		);
 
 		editor.destroy();
 	});

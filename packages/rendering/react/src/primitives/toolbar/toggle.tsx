@@ -23,7 +23,7 @@ export function ToolbarToggle(props: ToolbarToggleProps) {
 
 	const primitiveProps: Record<string, unknown> = {
 		"data-pen-toolbar-toggle": "",
-		"data-active": isActive || undefined,
+		"data-active": isActive ? "" : undefined,
 		"data-format": format,
 		role: "button",
 		"aria-pressed": isActive,

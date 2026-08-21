@@ -21,8 +21,8 @@ This package is where most adopters start when embedding Pen in a React applicat
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@input/pen-ai`, `@input/pen-ai-suggestions`, `@input/pen-core`, `@input/pen-dom`, `@input/pen-history`, `@input/pen-multiplayer`, `@input/pen-schema-default`, `@input/pen-search`, `@input/pen-shortcuts`, `@input/pen-types`
-- Peer dependencies: `@input/pen-import-html`, `@input/pen-import-markdown`, `react`, `react-dom`
+- Runtime dependencies: `@input/pen-ai`, `@input/pen-ai-suggestions`, `@input/pen-core`, `@input/pen-dom`, `@input/pen-history`, `@input/pen-import-html`, `@input/pen-multiplayer`, `@input/pen-schema-default`, `@input/pen-search`, `@input/pen-shortcuts`, `@input/pen-types`
+- Peer dependencies: `@input/pen-import-markdown`, `react`, `react-dom`
 - Boundary: `@input/pen-react` binds the headless runtime to React without taking ownership of document truth.
 
 ## Runtime Model
@@ -51,6 +51,7 @@ Important responsibilities:
 - Mount editor roots and block rendering surfaces
 - Subscribe React state to editor state through hooks and contexts
 - Install the shared field-editor session, paste importer slots, and captured document-keyboard handlers for the active editor root
+- Pointer activation walks to the block element (`data-pen-editor-block`), not the inline span. React keeps its own gesture path in `useEditorContentGestures` rather than calling `handleFieldEditorPointerActivate()`; the hit target is still the block.
 - Delegate shared DOM editing, selection transition, table-cell navigation, and shortcut routing behavior to `@input/pen-dom`
 - Surface extension state through React-friendly primitives rather than reimplementing extension logic locally
 
@@ -62,7 +63,7 @@ Important responsibilities:
 - The `Pen` namespace exists for lower-level composition when hosts need toolbar, slash-menu, AI, search, or multiplayer surfaces
 - Optional subpath entrypoints let hosts import AI, AI suggestions, history, multiplayer, and search surfaces without pulling from the root barrel directly.
 - `Pen.Editor.CaretOverlay` renders an optional local caret for collapsed active text selections, exposes `CARET` variants, and hides the native caret while the overlay is visible.
-- Optional importer peer dependencies stay peer-level because not every React integration needs HTML or Markdown paste/import support
+- HTML import is a runtime dependency. Markdown import stays an optional peer because not every React integration needs it.
 
 ## Current Maturity / Intended Usage
 

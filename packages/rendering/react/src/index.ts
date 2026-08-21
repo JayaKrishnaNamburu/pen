@@ -350,32 +350,8 @@ export {
 	type RichTextShortcutsOptions,
 } from "@input/pen-shortcuts";
 
-// ── Field editor extension helpers ───────────────────────────
-export type {
-	FieldEditorStore,
-	FieldEditorStoreSnapshot,
-} from "@input/pen-dom/field-editor";
-export {
-	applyDeltaToDOM,
-	fullReconcileToDOM,
-	saveSelection,
-	restoreSelection,
-	resolveMarksAtPosition,
-	computeTextDiff,
-	extractTextFromDOM,
-	getSelectionOffsets,
-	classifySelectionSurface,
-	getExpandedBlockRole,
-	handlePaste,
-	handleClipboardPaste,
-	handleCopy,
-	handleCut,
-	type TextDiffOp,
-	type SelectionPoint,
-	type ExpandedBlockRole,
-	type FieldEditorSurfaceMode,
-	type FieldEditorSurfaceState,
-} from "@input/pen-dom/field-editor";
+// Engine helpers live on `@input/pen-dom/field-editor`.
+// `fullReconcileDeltasToDOM` is not on that first-class subpath.
 export { fullReconcileDeltasToDOM } from "@input/pen-dom/field-editor/reconciler";
 
 // ── Internal hooks (for extension authors) ──────────────────

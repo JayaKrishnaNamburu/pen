@@ -80,7 +80,15 @@ describe("AC 20 — memoryAssets", () => {
       rejectUpload: new Error("storage down"),
     });
     const blob = new Blob(["hello"], { type: "text/plain" });
+    const progress: number[] = [];
 
-    await expect(provider.upload(blob)).rejects.toThrow("storage down");
+    await expect(
+      provider.upload(blob, {
+        onProgress: (value) => {
+          progress.push(value);
+        },
+      }),
+    ).rejects.toThrow("storage down");
+    expect(progress).toEqual([]);
   });
 });

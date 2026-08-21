@@ -19,6 +19,7 @@ import {
   capRawHtmlSource,
   createIngestReport,
   emitIngestReport,
+  INGEST_MAX_TEXT_SIZE,
   IngestDropCounts,
   type IngestReport,
 } from "./ingestBounds";
@@ -26,13 +27,23 @@ import { sanitizeHTML } from "./sanitize";
 import { parseHTML } from "./domAdapter";
 import { domToBlocks } from "./domToBlocks";
 
-function parseRawHtmlToBlocks(
-  input: string,
-  editor: Editor,
-): PendingBlock[] {
-  const sanitized = sanitizeHTML(input);
+function parseHtmlSource(source: string, editor: Editor): PendingBlock[] {
+  if (source.length > INGEST_MAX_TEXT_SIZE) {
+    throw new Error(
+      `HTML parse received ${source.length} code units; INGEST_MAX_TEXT_SIZE is ${INGEST_MAX_TEXT_SIZE}`,
+    );
+  }
+  const sanitized = sanitizeHTML(source);
   const dom = parseHTML(sanitized);
   return domToBlocks(dom, editor.schema);
+}
+
+function parseCappedHtmlToBlocks(
+  input: string,
+  editor: Editor,
+  drops: IngestDropCounts,
+): PendingBlock[] {
+  return parseHtmlSource(capRawHtmlSource(input, drops), editor);
 }
 
 export function parseHtmlWithReport(
@@ -43,8 +54,7 @@ export function parseHtmlWithReport(
   report: IngestReport;
 } {
   const drops = new IngestDropCounts();
-  const source = capRawHtmlSource(input, drops);
-  const parsedBlocks = parseRawHtmlToBlocks(source, editor);
+  const parsedBlocks = parseCappedHtmlToBlocks(input, editor, drops);
   const bounded = boundPendingBlocks(parsedBlocks, drops);
   return {
     blocks: bounded,
@@ -65,8 +75,7 @@ function normalizeHtmlToBlocks(
   result: IngestReport;
 } {
   const drops = new IngestDropCounts();
-  const source = capRawHtmlSource(input, drops);
-  const parsedBlocks = parseRawHtmlToBlocks(source, editor);
+  const parsedBlocks = parseCappedHtmlToBlocks(input, editor, drops);
   const bounded = boundPendingBlocks(parsedBlocks, drops);
   const normalized = normalizePendingBlocksForImport(
     bounded,

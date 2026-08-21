@@ -58,4 +58,22 @@ describe("FieldEditorImpl focus sink mount (AX1)", () => {
 		expect(sink?.getAttribute("role")).toBe("group");
 		expect(sink?.getAttribute("aria-label")).toBe("1 block selected");
 	});
+
+	it("AX1: empty-document text caret leaves the mounted sink hidden", () => {
+		const editor = createHeadlessEditor({ schema: defaultSchema });
+		const fieldEditor = new FieldEditorImpl(editor);
+		const root = document.createElement("div");
+		document.body.appendChild(root);
+		fixtures.push({ editor, fieldEditor, root });
+		fieldEditor.setRootElement(root);
+
+		const first = editor.firstBlock();
+		expect(first).not.toBeNull();
+		editor.selectText(first!.id, 0, 0);
+
+		const sink = root.querySelector(`[${FOCUS_SINK_ATTR}]`);
+		expect(sink?.getAttribute("aria-hidden")).toBe("true");
+		expect((sink as HTMLElement).tabIndex).toBe(-1);
+		expect(sink?.hasAttribute("role")).toBe(false);
+	});
 });

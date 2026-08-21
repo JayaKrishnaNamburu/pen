@@ -1,5 +1,5 @@
 /**
- * DOC3 diagnostic-code, message-key, export-fidelity, and paste-corpus tables.
+ * DOC3 diagnostic-code, message-key, export-fidelity, paste-corpus, and ingest-bound tables.
  * Check by default (committed files must match). `--write` refreshes them.
  */
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
@@ -700,6 +700,37 @@ function collectExportFidelityTables() {
 	});
 }
 
+function formatCapturedProvenance(id, provenance) {
+	if (provenance === "synthetic-until-capture") {
+		return {
+			provenance: "synthetic-until-capture",
+			captured: false,
+			application: "",
+			version: "",
+			capturedAt: "",
+			host: "",
+		};
+	}
+	if (provenance && provenance.kind === "captured") {
+		if (!provenance.application || !provenance.version || !provenance.capturedAt) {
+			throw new Error(
+				`paste corpus ${id} captured provenance is missing application, version, or capturedAt`,
+			);
+		}
+		return {
+			provenance: `captured: ${provenance.application} ${provenance.version} (${provenance.capturedAt})`,
+			captured: true,
+			application: provenance.application,
+			version: provenance.version,
+			capturedAt: provenance.capturedAt,
+			host: provenance.host ?? "",
+		};
+	}
+	throw new Error(
+		`paste corpus ${id} provenance must be "synthetic-until-capture" or { kind: "captured", application, version, capturedAt }`,
+	);
+}
+
 function collectPasteCorpusRows() {
 	const corpusDir = join(
 		repoRoot,
@@ -722,15 +753,11 @@ function collectPasteCorpusRows() {
 			readFileSync(join(corpusDir, id, "expectation.json"), "utf8"),
 		);
 		const outcomes = expectation.outcomes ?? {};
-		if (expectation.provenance !== "synthetic-until-capture") {
-			throw new Error(
-				`paste corpus ${id} provenance is ${JSON.stringify(expectation.provenance)}, not synthetic-until-capture`,
-			);
-		}
+		const capture = formatCapturedProvenance(id, expectation.provenance);
 		return {
 			id,
 			source: expectation.source,
-			provenance: expectation.provenance,
+			...capture,
 			approximates: expectation.approximates,
 			headings: outcomes.headings ?? "",
 			lists: outcomes.lists ?? "",
@@ -743,6 +770,120 @@ function collectPasteCorpusRows() {
 			intentionalLosses: expectation.intentionalLosses ?? [],
 		};
 	});
+}
+
+const INGEST_BOUND_FILES = [
+	{
+		id: "html",
+		path: "packages/extensions/import-html/src/ingestBounds.ts",
+		names: {
+			INGEST_MAX_NESTING_DEPTH: "maxNestingDepth",
+			INGEST_MAX_NODE_COUNT: "maxNodeCount",
+			INGEST_MAX_TEXT_SIZE: "maxTextSize",
+			INGEST_MAX_IMAGE_COUNT: "maxImageCount",
+			INGEST_TIME_BUDGET_MS: "timeBudgetMs",
+		},
+	},
+	{
+		id: "markdown",
+		path: "packages/extensions/import-markdown/src/ingestBounds.ts",
+		names: {
+			INGEST_MAX_NESTING_DEPTH: "maxNestingDepth",
+			INGEST_MAX_NODE_COUNT: "maxNodeCount",
+			INGEST_MAX_TEXT_SIZE: "maxTextSize",
+			INGEST_MAX_IMAGE_COUNT: "maxImageCount",
+			INGEST_TIME_BUDGET_MS: "timeBudgetMs",
+		},
+	},
+	{
+		id: "clipboard",
+		path: "packages/rendering/dom/src/utils/clipboardIngest.ts",
+		names: {
+			CLIPBOARD_INGEST_MAX_NESTING_DEPTH: "maxNestingDepth",
+			CLIPBOARD_INGEST_MAX_NODE_COUNT: "maxNodeCount",
+			CLIPBOARD_INGEST_MAX_TEXT_SIZE: "maxTextSize",
+			CLIPBOARD_INGEST_MAX_IMAGE_COUNT: "maxImageCount",
+			CLIPBOARD_INGEST_TIME_BUDGET_MS: "timeBudgetMs",
+		},
+	},
+];
+
+const INGEST_BOUND_META = [
+	{
+		key: "maxNestingDepth",
+		name: "INGEST_MAX_NESTING_DEPTH",
+		enforcement: "hard",
+		caps: "Block-tree depth (top-level = 1) and list indent (0-based, so indent 0–31)",
+	},
+	{
+		key: "maxNodeCount",
+		name: "INGEST_MAX_NODE_COUNT",
+		enforcement: "hard",
+		caps: "Blocks including table rows and cells",
+	},
+	{
+		key: "maxTextSize",
+		name: "INGEST_MAX_TEXT_SIZE",
+		enforcement: "hard",
+		caps: "Imported plain text, UTF-16 code units. HTML and Markdown also slice the raw source to this size before parse, so a 40MB paste is O(cap), not O(input).",
+	},
+	{
+		key: "maxImageCount",
+		name: "INGEST_MAX_IMAGE_COUNT",
+		enforcement: "hard",
+		caps: "Image blocks",
+	},
+	{
+		key: "timeBudgetMs",
+		name: "INGEST_TIME_BUDGET_MS",
+		enforcement: "advisory",
+		caps: "Stated wall-clock ceiling for one ingest. Not a unit-suite gate: the suite is a hostile place to measure time, and a prior wall-clock assertion flaked under parallel load. Enforcement is the pre-parse source cap above.",
+	},
+];
+
+function parseExportedNumbers(source, names) {
+	const values = {};
+	for (const [name, key] of Object.entries(names)) {
+		const match = source.match(new RegExp(`export const ${name} = ([\\d_]+)`));
+		if (!match) {
+			throw new Error(`${name} not found`);
+		}
+		values[key] = Number(match[1].replaceAll("_", ""));
+	}
+	return values;
+}
+
+function collectIngestBounds() {
+	const readings = INGEST_BOUND_FILES.map((entry) => {
+		const source = readFileSync(join(repoRoot, entry.path), "utf8");
+		return { id: entry.id, path: entry.path, values: parseExportedNumbers(source, entry.names) };
+	});
+	const canonical = readings[0];
+	for (const reading of readings.slice(1)) {
+		for (const key of Object.keys(canonical.values)) {
+			if (reading.values[key] !== canonical.values[key]) {
+				throw new Error(
+					`ingest bound ${key} diverges: ${canonical.id}=${canonical.values[key]} ${reading.id}=${reading.values[key]}`,
+				);
+			}
+		}
+	}
+	return {
+		sources: readings.map((reading) => reading.path),
+		rows: INGEST_BOUND_META.map((meta) => {
+			const value = canonical.values[meta.key];
+			if (typeof value !== "number" || Number.isNaN(value)) {
+				throw new Error(`ingest bound ${meta.name} is missing`);
+			}
+			return {
+				name: meta.name,
+				value,
+				formattedValue: value.toLocaleString("en-US"),
+				enforcement: meta.enforcement,
+				caps: meta.caps,
+			};
+		}),
+	};
 }
 
 function renderExportFidelityModule(tables) {
@@ -807,6 +948,11 @@ function renderPasteCorpusModule(rows) {
 			`\t\tid: ${stringify(row.id)},`,
 			`\t\tsource: ${stringify(row.source)},`,
 			`\t\tprovenance: ${stringify(row.provenance)},`,
+			`\t\tcaptured: ${row.captured},`,
+			`\t\tapplication: ${stringify(row.application)},`,
+			`\t\tversion: ${stringify(row.version)},`,
+			`\t\tcapturedAt: ${stringify(row.capturedAt)},`,
+			`\t\thost: ${stringify(row.host)},`,
 			`\t\tapproximates: ${stringify(row.approximates)},`,
 			`\t\theadings: ${stringify(row.headings)},`,
 			`\t\tlists: ${stringify(row.lists)},`,
@@ -830,6 +976,11 @@ function renderPasteCorpusModule(rows) {
 		"\treadonly id: string;",
 		"\treadonly source: string;",
 		"\treadonly provenance: string;",
+		"\treadonly captured: boolean;",
+		"\treadonly application: string;",
+		"\treadonly version: string;",
+		"\treadonly capturedAt: string;",
+		"\treadonly host: string;",
 		"\treadonly approximates: string;",
 		"\treadonly headings: string;",
 		"\treadonly lists: string;",
@@ -846,6 +997,44 @@ function renderPasteCorpusModule(rows) {
 		'\t"packages/extensions/import-html/src/__tests__/pasteCorpus";',
 		"",
 		"export const PASTE_CORPUS_ROWS: readonly PasteCorpusRow[] = [",
+		...rowLines,
+		"];",
+		"",
+	].join("\n");
+}
+
+function renderIngestBoundsModule(bounds) {
+	const sources = bounds.sources
+		.map((source) => `\t${stringify(source)},`)
+		.join("\n");
+	const rowLines = bounds.rows.map((row) =>
+		[
+			"\t{",
+			`\t\tname: ${stringify(row.name)},`,
+			`\t\tvalue: ${row.value},`,
+			`\t\tformattedValue: ${stringify(row.formattedValue)},`,
+			`\t\tenforcement: ${stringify(row.enforcement)},`,
+			`\t\tcaps: ${stringify(row.caps)},`,
+			"\t},",
+		].join("\n"),
+	);
+
+	return [
+		`// ${GENERATED_HEADER}`,
+		"",
+		"export type IngestBoundRow = {",
+		"\treadonly name: string;",
+		"\treadonly value: number;",
+		"\treadonly formattedValue: string;",
+		'\treadonly enforcement: "hard" | "advisory";',
+		"\treadonly caps: string;",
+		"};",
+		"",
+		"export const INGEST_BOUND_SOURCES: readonly string[] = [",
+		sources,
+		"];",
+		"",
+		"export const INGEST_BOUND_ROWS: readonly IngestBoundRow[] = [",
 		...rowLines,
 		"];",
 		"",
@@ -878,16 +1067,19 @@ const messageRows = collectMessageRows();
 const diagnosticRows = collectDiagnosticRows();
 const exportFidelityTables = collectExportFidelityTables();
 const pasteCorpusRows = collectPasteCorpusRows();
+const ingestBounds = collectIngestBounds();
 
 const messagePath = join(generatedDir, "messageCatalog.ts");
 const diagnosticPath = join(generatedDir, "diagnosticCodes.ts");
 const exportFidelityPath = join(generatedDir, "exportFidelity.ts");
 const pasteCorpusPath = join(generatedDir, "pasteCorpus.ts");
+const ingestBoundsPath = join(generatedDir, "ingestBounds.ts");
 
 writeOrCheck(messagePath, renderMessageCatalogModule(messageRows));
 writeOrCheck(diagnosticPath, renderDiagnosticModule(diagnosticRows));
 writeOrCheck(exportFidelityPath, renderExportFidelityModule(exportFidelityTables));
 writeOrCheck(pasteCorpusPath, renderPasteCorpusModule(pasteCorpusRows));
+writeOrCheck(ingestBoundsPath, renderIngestBoundsModule(ingestBounds));
 
 if (process.exitCode) {
 	process.exit(process.exitCode);
@@ -899,5 +1091,5 @@ const fidelityRowCount = exportFidelityTables.reduce(
 	0,
 );
 console.log(
-	`DOC3 tables ${mode}: ${messageRows.length} message keys, ${diagnosticRows.length} diagnostic codes, ${exportFidelityTables.length} export-fidelity tables (${fidelityRowCount} rows), ${pasteCorpusRows.length} paste-corpus sources`,
+	`DOC3 tables ${mode}: ${messageRows.length} message keys, ${diagnosticRows.length} diagnostic codes, ${exportFidelityTables.length} export-fidelity tables (${fidelityRowCount} rows), ${pasteCorpusRows.length} paste-corpus sources, ${ingestBounds.rows.length} ingest bounds`,
 );

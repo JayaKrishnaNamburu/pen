@@ -1,17 +1,17 @@
 /**
  * SCALE1 (`spec-v2/22-scale-envelope.md`): measurement points for the
- * published envelope axes in `packages/tooling/test/src/fixtures/envelope/metadata.json`.
+ * published envelope axes. The generated table is
+ * `packages/tooling/bench/ENVELOPE.md`, rendered from
+ * `baselines/envelope.json` plus the fixture audit.
  *
- * Axis ids and rung sizes are copied from that metadata so these numbers
- * can feed the existing table. This package does not render ENVELOPE.md.
- *
- * Machine class that produced the committed medians:
+ * Machine class that produced the committed wall-clock medians:
  *   macos-arm64 (darwin 25, Apple Silicon, local isolated `tsx` run)
  * CI machine class:
  *   github-actions-ubuntu-latest (`.github/workflows/bench.yml`)
  *
- * Numbers in `baselines/envelope.json` are from the local class. They are
- * not CI measurements.
+ * Wall-clock numbers in `baselines/envelope.json` are from the local
+ * class. They are not CI measurements. A row without a harness floor
+ * is not attributed to Pen.
  */
 
 export const SCALE1_MACHINE_CLASS =
@@ -21,15 +21,20 @@ export const SCALE1_MACHINE_CLASS =
 export const ENVELOPE_SAMPLE_SIZE = 21;
 
 /**
- * Drift gate: `max(measured × ratio, measured + floorMs)`.
+ * Same-class timing gate, derived from the committed macos-arm64
+ * sample (n=21): same-run p95/p50 peaked at 2.38× (100-block). 3×
+ * attributed median covers that spread. Rungs whose attributed p50 is
+ * below ENVELOPE_GATE_MIN_SIGNAL_MS are recorded, not gated — a ratio
+ * on 0.03ms is timer noise. The +1ms term applies only above that
+ * signal so it cannot manufacture a 30× allowance on a sub-ms rung.
  *
- * 4× covers a macos-arm64 → ubuntu-latest shared-runner gap without
- * pretending the local median is portable. The 15ms floor stops
- * sub-millisecond rungs (100 blocks) from failing on runner jitter that
- * a pure ratio would treat as a 3× regression. P95 is recorded, not gated.
+ * Cross-class (macos-arm64 vs ubuntu-latest) is not gated. The previous
+ * 4× + 15ms formula existed to absorb that gap and could not catch a
+ * regression on the 100-block rung (gate 15.21ms on a 0.21ms median).
  */
-export const ENVELOPE_DRIFT_RATIO = 4;
-export const ENVELOPE_DRIFT_FLOOR_MS = 15;
+export const ENVELOPE_DRIFT_RATIO = 3;
+export const ENVELOPE_DRIFT_FLOOR_MS = 1;
+export const ENVELOPE_GATE_MIN_SIGNAL_MS = 0.5;
 
 export type EnvelopeAxis =
 	| "blockCount"
@@ -124,10 +129,14 @@ export const SCALE1_MEASUREMENTS: readonly EnvelopeMeasurementSpec[] = [
 	},
 ];
 
-export function envelopeGateP50Ms(measuredP50Ms: number): number {
+export function envelopePointIsGated(attributedP50Ms: number): boolean {
+	return attributedP50Ms >= ENVELOPE_GATE_MIN_SIGNAL_MS;
+}
+
+export function envelopeGateP50Ms(attributedP50Ms: number): number {
 	return Math.max(
-		measuredP50Ms * ENVELOPE_DRIFT_RATIO,
-		measuredP50Ms + ENVELOPE_DRIFT_FLOOR_MS,
+		attributedP50Ms * ENVELOPE_DRIFT_RATIO,
+		attributedP50Ms + ENVELOPE_DRIFT_FLOOR_MS,
 	);
 }
 

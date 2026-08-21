@@ -37,6 +37,7 @@ Provide a stable overview of the workspace layout and the spec paths that mirror
 - `@input/pen-export-xml` -> `packages/extensions/export-xml.md`
 - `@input/pen-history` -> `packages/extensions/history.md`
 - `@input/pen-import-html` -> `packages/extensions/import-html.md`
+- `@input/pen-import-json` -> `packages/extensions/import-json.md`
 - `@input/pen-import-markdown` -> `packages/extensions/import-markdown.md`
 - `@input/pen-input-rules` -> `packages/extensions/input-rules.md`
 - `@input/pen-multiplayer` -> `packages/extensions/multiplayer.md`
@@ -57,3 +58,12 @@ Provide a stable overview of the workspace layout and the spec paths that mirror
 - `@input/pen-transport-sse` -> `packages/transports/sse.md`
 - `@input/pen-types` -> `packages/types.md`
 - `@input/pen-playground` -> `packages/playground.md`
+
+## Packages Without A Current-State Spec
+
+These workspace packages exist and have no `spec/packages/` file. That is intentional:
+
+- `@input/pen-conformance` (`packages/tooling/conformance`) — private Playwright / browser-real harness. Scenario names and host pins change with the wave work; a current-state spec would rot faster than it would help.
+- `@input/pen-eslint-plugin` (`packages/tooling/eslint-plugin`) — private lint rules that enforce `spec-v2` invariants mechanically. The rules *are* the documentation.
+
+`@input/pen-import-json` is a published package and does have a spec.

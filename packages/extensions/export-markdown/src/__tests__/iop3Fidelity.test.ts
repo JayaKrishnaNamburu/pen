@@ -188,6 +188,14 @@ function blockSampleOps(type: string): DocumentOp[] {
           position: "last",
         },
         { type: "insert-text", blockId: "b1", offset: 0, text: "Hello" },
+        {
+          type: "insert-block",
+          blockId: "child",
+          blockType: "paragraph",
+          props: {},
+          position: { parent: "b1", index: 0 },
+        },
+        { type: "insert-text", blockId: "child", offset: 0, text: "Nested" },
       ];
     case "table":
       return [
@@ -260,6 +268,7 @@ function assertMarkdownFidelity(row: ExportFidelityRow, markdown: string): void 
     case "toggle":
       expect(markdown).toContain("<details>");
       expect(markdown).toContain("Hello");
+      expect(markdown).toContain("Nested");
       return;
     case "blockquote":
       expect(markdown).toContain("> Hello");

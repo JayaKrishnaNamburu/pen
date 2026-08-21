@@ -134,12 +134,12 @@ export function validateDocument(
     return { valid: false, errors, repaired: false };
   }
 
-  // Safe to call getArray/getMap now — types are either absent (lazy-created)
-  // or confirmed to be the correct constructor.
+  // Safe to call getArray/getMap now — Check 1 confirmed every root exists
+  // as the right constructor, so this is retrieval, not lazy-create. Later
+  // checks only read blockOrder and blocks; apps and metadata are host-owned
+  // and have no further structural contract here.
   const blockOrder = ydoc.getArray<string>(BLOCK_ORDER);
   const blocks = ydoc.getMap<Y.Map<unknown>>(BLOCKS);
-  const apps = ydoc.getMap(APPS);
-  const metadata = ydoc.getMap(METADATA);
 
   // Check 2: Block structure integrity
   for (const [blockId, blockMap] of blocks.entries()) {

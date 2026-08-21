@@ -12,6 +12,7 @@ export function getContextTool(editor: Editor): ToolDefinition {
 		name: "get_context",
 		description:
 			"Get document context in summary, json, or markdown form with optional selection details.",
+		mutating: false,
 		inputSchema: {
 			type: "object",
 			properties: {

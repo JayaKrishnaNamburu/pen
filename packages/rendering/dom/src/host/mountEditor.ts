@@ -11,15 +11,13 @@ import {
 import { resolveSelectAllBehavior } from "../constants/selectAll";
 import type { PenFocusPolicy } from "../field-editor/controller";
 import { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
-import {
-	domSelectionToEditor,
-	pointToEditorSelectionPoint,
-} from "../field-editor/selectionBridge";
+import { domSelectionToEditor } from "../field-editor/selectionBridge";
 import { handleEditorDocumentKeyDown } from "../utils/documentShortcuts";
-import { DATA_ATTRS } from "../utils/dataAttributes";
+import { buildDataAttributes, DATA_ATTRS } from "../utils/dataAttributes";
 import { computeDocumentEmpty } from "../utils/editorEmptyState";
 import { shouldHandleEditorKeyboardEvent } from "../utils/textEntryTarget";
 import { createDocumentTree } from "./documentTree";
+import { handleFieldEditorPointerActivate } from "./pointerActivation";
 
 export interface MountEditorOptions {
 	readonly?: boolean;
@@ -100,40 +98,14 @@ export function mountEditor(
 	};
 
 	const handlePointerActivate = (event: MouseEvent): void => {
-		if (readonly || event.button !== 0) {
-			return;
-		}
-		const target = resolveEventElement(event.target);
-		if (!target) {
-			return;
-		}
-
-		const inline = target.closest(`[${DATA_ATTRS.inlineContent}]`);
-		if (!(inline instanceof HTMLElement) || !tree.blocksHost.contains(inline)) {
-			return;
-		}
-
-		const blockElement = inline.closest(`[${DATA_ATTRS.editorBlock}]`);
-		const blockId = blockElement?.getAttribute(DATA_ATTRS.blockId);
-		if (!blockId) {
-			return;
-		}
-
-		const snapshot = fieldEditor.getSnapshot();
-		if (snapshot.isEditing && snapshot.focusBlockId === blockId) {
-			return;
-		}
-
-		event.preventDefault();
-		const point = pointToEditorSelectionPoint(root, event.clientX, event.clientY);
-		if (point && point.blockId === blockId) {
-			fieldEditor.activateTextSelection(point.blockId, point.offset, point.offset);
-		} else {
-			const block = editor.getBlock(blockId);
-			const offset = block?.length() ?? 0;
-			fieldEditor.activateTextSelection(blockId, offset, offset);
-		}
-		fieldEditor.attachElement(inline);
+		handleFieldEditorPointerActivate({
+			event,
+			editor,
+			fieldEditor,
+			root,
+			blocksHost: tree.blocksHost,
+			readonly,
+		});
 	};
 
 	root.addEventListener("focusin", handleFocusIn);
@@ -213,19 +185,11 @@ function clearEditorRootAttrs(root: HTMLElement): void {
 }
 
 function setBooleanAttr(element: HTMLElement, name: string, value: boolean): void {
-	if (value) {
-		element.setAttribute(name, "");
-	} else {
+	const next = buildDataAttributes({ [name]: value })[name];
+	if (next === undefined) {
 		element.removeAttribute(name);
+	} else {
+		element.setAttribute(name, next);
 	}
 }
 
-function resolveEventElement(target: EventTarget | null): Element | null {
-	if (target instanceof Element) {
-		return target;
-	}
-	if (target instanceof Node) {
-		return target.parentElement;
-	}
-	return null;
-}

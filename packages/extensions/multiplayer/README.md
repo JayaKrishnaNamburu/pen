@@ -12,6 +12,14 @@ This package owns editor-facing multiplayer behavior:
 
 It does **not** own transport, reconnect, auth, or Yjs wire protocol behavior.
 
+## Install
+
+```bash
+pnpm add @input/pen-multiplayer
+```
+
+This package has no peer dependencies. `engines.node` is `>=22`.
+
 ## Presence is host-provided and untrusted
 
 `config.user` (and any other awareness fields the host publishes) is **host-provided and visible to every peer**. Do not put an email, internal id, or other secret in presence unless it is meant to be broadcast.
@@ -50,7 +58,9 @@ A bad `user` drops the whole peer. A bad cursor or selection is dropped for that
 | Updates per second per peer   | `MAX_PRESENCE_UPDATES_PER_SECOND`  | 10      |
 | Tracked peers per document    | `MAX_TRACKED_PEERS`                | 32      |
 
-Avatar URLs use the same admission rules as image URLs: `http:`, `https:`, relative, and `data:image` for png/jpeg/gif/webp/avif. Hostile schemes are rejected as `script-bearing`.
+Avatar URLs go through `pen.urlPolicy` (image context) and then a second image-scheme check: `http:`, `https:`, relative, and `data:image` for png/jpeg/gif/webp/avif. Hostile schemes are rejected as `script-bearing`. A host policy that denies a URL strips the avatar and keeps the peer.
+
+`user.color` is admitted only when `normalizeMultiplayerColor` accepts it. A CSS-injectable string such as `red;position:absolute` is stripped at ingest. Remote cursor `style` interpolates the normalized color into `--pen-multiplayer-color` only.
 
 Remote cursor `data-user-id` / `data-user-name` are set as attribute values; the display name is capped and rendered as text, never interpolated into markup.
 
@@ -142,6 +152,30 @@ See `@input/pen-crdt-yjs` for the canonical `y-websocket` integration example us
 
 For a concrete repository reference, see the playground collaboration wiring in
 `playground/src/utils/playgroundCollaboration.ts`.
+
+## Options
+
+`multiplayerExtension(config)` accepts:
+
+| Option                | Default  | Effect                                                                                       |
+| --------------------- | -------- | -------------------------------------------------------------------------------------------- |
+| `user`                | required | Host-provided presence published on awareness. Visible to every peer                         |
+| `autoConnect`         | `true`   | When a session is present, connect unless `false`                                            |
+| `session`             | unset    | Ready-made `MultiplayerSession`                                                              |
+| `sessionFactory`      | unset    | `(context) => MultiplayerSession` receiving `{ editor, awareness }`                          |
+| `resolvePeerIdentity` | unset    | Customizes live caret labels only. Identities from awareness or the ledger stay `unverified` |
+
+Presence ingest bounds (display name, peer cap, rate limit) are the package constants in the table above. They are not `multiplayerExtension` options.
+
+## Facets and commands
+
+Contributes the multiplayer controller facet (`multiplayer.controller` / `MULTIPLAYER_CONTROLLER_SLOT`). It contributes no commands. Requires no other extensions. The extension requires a CRDT adapter that provides awareness (`editor.internals.awareness`); the Yjs adapter does. `defineExtension` on this package declares no `dependencies`.
+
+## Documentation
+
+The docs site (the `@input/pen-docs` package) covers this area on the Collaboration page (`#/collaboration`).
+
+The public signatures of record are in `api-report.md` next to this package's source in the Pen repository. The docs site does not host a generated browsable reference.
 
 ## License
 

@@ -42,6 +42,9 @@ jobs:
       - name: Check DOC2 pages
         run: pnpm --filter @input/pen-docs check:pages
 
+      - name: Check COL5/COL6 collaboration contract
+        run: pnpm --filter @input/pen-docs check:collaboration
+
       - name: Check DOC3 generated tables
         run: pnpm --filter @input/pen-docs check:tables
 

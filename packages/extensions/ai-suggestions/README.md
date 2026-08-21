@@ -5,7 +5,7 @@ Proactive AI writing suggestions for Pen.
 ## Install
 
 ```bash
-pnpm add @input/pen-ai-suggestions
+pnpm add @input/pen-core @input/pen-ai-suggestions
 ```
 
 ## What It Does
@@ -197,6 +197,7 @@ The React package also exposes hooks such as:
 
 - This package is part of the Pen monorepo.
 - Hosts should provide the analyzer and transport; this package does not bake in a model provider.
+- When analysis goes through a model adapter, those calls use the same `pen.aiEgress` facet as generation and autocomplete (`@input/pen-core`).
 - Suggestions are advisory until explicitly applied.
 - Runtime changes should still flow through `editor.apply(...)` so undo and diagnostics remain consistent.
 

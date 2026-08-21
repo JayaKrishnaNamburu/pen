@@ -6,9 +6,12 @@
 
 ### function
 
-- buildTableChildren
 - exportMarkdownForBlocks
 - exportMarkdownRange
+
+### value
+
+- buildTableChildren
 - getNumberedListItemValue
 - sortDeltaAttributes
 

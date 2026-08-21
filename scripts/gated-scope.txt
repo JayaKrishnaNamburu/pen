@@ -1,0 +1,69 @@
+# coverage:rules gated scope
+# IDs covered by a named CI gate, not a test name. A bare ID is a
+# parse error. Each row is five fields separated by " | ":
+#   ID | gate | workflow | invoke | fingerprint
+#
+# coverage:rules accepts a row only after all of these hold:
+#   - gate file exists (posix path, no "..")
+#   - workflow is a .github/workflows/*.yml file that exists
+#   - an uncommented `run:` or `command:` line contains invoke
+#   - the gate file contains fingerprint
+# Deleting the gate, unwiring it, or dropping the fingerprint fails
+# the run. Do not list an ID here to shorten the unlisted report.
+#
+# Residual trust (what this does not check):
+#   - the gate is not executed; a script that exits 0 on its own
+#     failure path would still verify
+#   - workflow triggers are not read (push-to-main-only is accepted)
+#   - `continue-on-error` and matrix expressions are not parsed
+# Register only gates you have watched fail, or that fail-close
+# themselves on every green run (self-test / scratch mutation).
+#
+# Registered (what the gate actually checks):
+#   COL5 — collaboration page keeps five data-col5 claims (including
+#           both halves of "readOnly is a UI mode, not a security
+#           boundary"); watchReadonlyFailure guts that claim every run
+#   DOC4 — every published package README meets the section contract;
+#           runSelfTests fail-closes stub/peer/companion/extension/
+#           Coming-soon/relative-link/stale-allowlist every run
+#   SCH1 — rendering sources do not call getBoundingClientRect /
+#           getClientRects / elementFromPoint / caretPositionFromPoint
+#           / caretRangeFromPoint outside the allowlist; runSCH1Fixture
+#           fail-closes an unmarked measure and a stale entry every run
+#   AIB2 — PenStreamRequest has no editor field (top-level or nested);
+#           runNestedEditorFixture / runTopLevelEditorFixture fail-close
+#           both shapes every run. Bounds tests remain in claimed-scope.
+#
+# Declined (do not register):
+#   AIB7  — api-report.md currently has no "playground" token; that is
+#           a snapshot. scripts/api-reports.mjs diffs committed reports
+#           against generated ones and does not forbid playground
+#           symbols. Adding one and refreshing the report stays green.
+#   API4  — api-reports.mjs owns the report-diff half. The rule also
+#           requires published-exports, no-pen-deep-imports, and
+#           strip-internal. One sibling is not the boundary.
+#   DOC1  — doc-refs.mjs checks package/version refs and "public npm"
+#           once; examples.yml executes three host apps. Neither is
+#           "quickstarts are correct and executed" by itself.
+#   DOC2  — check-doc2-pages.mjs exists and is wired in docs.yml, but
+#           it has no self-test and wave D's "prove a removed page
+#           fails the deploy gate" is still unchecked. Filename plus
+#           wiring is the class of gate this repo deleted today.
+#   DOC3  — generate-doc-tables.mjs covers diagnostic/message/fidelity
+#           tables (watched fail on real drift). The rule is a
+#           generated API reference that fails on an undocumented
+#           public symbol. scripts/api-docs-coverage.mjs is a ratchet
+#           at MAX_UNDOCUMENTED=1858, not that hard gate.
+#   DOC5  — examples.yml smokes react/vue/vanilla. The rule also asks
+#           for collaboration/AI/import-export examples, a playground
+#           kitchen-sink label, no relative source imports, and a
+#           hosted try-it link. Three host smokes are not the set.
+#   DOC6  — release workflow does not yet assert changelogs and tags;
+#           wave D's first D.7 checkpoint is still open.
+#   A1, API10, BR3, DIR2, M3, OV3, P2, R6 — mismatched test claims,
+#           no gate. Stay held back in claimed-scope.txt.
+
+COL5 | packages/docs/scripts/check-collaboration-contract.mjs | .github/workflows/docs.yml | check:collaboration | data-col5
+DOC4 | scripts/readme-sections.mjs | .github/workflows/readme-sections.yml | readme-sections.mjs | DOC4
+SCH1 | scripts/no-unscheduled-measure.mjs | .github/workflows/unscheduled-measure.yml | no-unscheduled-measure.mjs | getBoundingClientRect
+AIB2 | scripts/pen-stream-request-no-editor.mjs | .github/workflows/static-gates.yml | pen-stream-request-no-editor.mjs | PenStreamRequest

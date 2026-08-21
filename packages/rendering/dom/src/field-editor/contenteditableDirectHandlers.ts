@@ -1,10 +1,18 @@
 import {
+	deleteBackward,
+	deleteForward,
+	historyRedo,
+	historyUndo,
+	insertLineBreak,
+	insertText as insertTextCommand,
 	nextGraphemeBoundary,
 	nextWordBoundary,
 	previousGraphemeBoundary,
 	previousWordBoundary,
+	splitBlock,
+	toggleMark,
 } from "@input/pen-core";
-import type { Editor } from "@input/pen-types";
+import type { Command, Editor } from "@input/pen-types";
 import type { FieldEditorInputController } from "./controller";
 import type { FieldEditorTextLike } from "./crdt";
 import type { PasteImporters } from "../types/paste";
@@ -13,11 +21,17 @@ import {
 	applyEnterBehavior,
 	toggleInlineMark,
 } from "./commands";
+import {
+	dispatchAndActivate,
+	dispatchEditorCommand,
+	syncEditorTextSelection,
+} from "./commandDispatch";
 import { handlePaste } from "./clipboard";
 import { staticRangeToOffsets } from "./contenteditableDomHelpers";
 
 export interface ContentEditableDirectInputBackend {
 	resolveCurrentInputRange(): { start: number; end: number } | null;
+	resolveLiveInputRange?(): { start: number; end: number } | null;
 	applyListInputRule(options: {
 		blockId: string;
 		range: { start: number; end: number };
@@ -29,6 +43,7 @@ export interface ContentEditableDirectInputBackend {
 		text: string;
 		marks?: Record<string, unknown>;
 	}): void;
+	commitDispatchedEdit?(): void;
 }
 
 export type DirectHandler = (
@@ -56,12 +71,21 @@ const insertText: DirectHandler = (
 	}
 	const blockId = fe.focusBlockId;
 	if (!blockId) return;
-	const range = backend.resolveCurrentInputRange();
+	const range = resolveFieldInsertRange(
+		editor,
+		fe,
+		backend.resolveCurrentInputRange(),
+	);
 	if (!range) return;
 	if (backend.applyListInputRule({ blockId, range, text })) {
 		return;
 	}
 	const marks = fe.resolveInsertMarks(ytext, range.start);
+	if (
+		tryDispatchInsert(editor, fe, backend, blockId, range, text, marks)
+	) {
+		return;
+	}
 	backend.applyInlineTextEdit({
 		blockId,
 		range,
@@ -72,7 +96,7 @@ const insertText: DirectHandler = (
 
 const deleteLineBackward: DirectHandler = (
 	_event,
-	_editor,
+	editor,
 	_ytext,
 	fe,
 	_element,
@@ -82,6 +106,14 @@ const deleteLineBackward: DirectHandler = (
 	if (!blockId) return;
 	const range = backend.resolveCurrentInputRange();
 	if (!range) return;
+
+	if (
+		tryDispatchMapped(editor, fe, backend, deleteBackward, {
+			granularity: "line",
+		}, range)
+	) {
+		return;
+	}
 
 	if (range.start !== range.end) {
 		backend.applyInlineTextEdit({
@@ -116,14 +148,23 @@ export const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 		const blockId = fe.focusBlockId;
 		if (!blockId) return;
 		const targetRanges = event.getTargetRanges?.();
-		const range = targetRanges?.length
-			? staticRangeToOffsets(targetRanges[0], element)
-			: backend.resolveCurrentInputRange();
+		const range = resolveFieldInsertRange(
+			editor,
+			fe,
+			targetRanges?.length
+				? staticRangeToOffsets(targetRanges[0], element)
+				: backend.resolveCurrentInputRange(),
+		);
 		if (!range) return;
 		if (backend.applyListInputRule({ blockId, range, text })) {
 			return;
 		}
 		const marks = fe.resolveInsertMarks(ytext, range.start);
+		if (
+			tryDispatchInsert(editor, fe, backend, blockId, range, text, marks)
+		) {
+			return;
+		}
 		backend.applyInlineTextEdit({
 			blockId,
 			range,
@@ -141,6 +182,14 @@ export const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 		if (!blockId) return;
 		const range = backend.resolveCurrentInputRange();
 		if (!range) return;
+
+		if (
+			tryDispatchMapped(editor, fe, backend, deleteBackward, {
+				granularity: "grapheme",
+			}, range)
+		) {
+			return;
+		}
 
 		const target = applyDeleteBehavior(editor, {
 			blockId,
@@ -195,6 +244,14 @@ export const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 		const range = backend.resolveCurrentInputRange();
 		if (!range) return;
 
+		if (
+			tryDispatchMapped(editor, fe, backend, deleteForward, {
+				granularity: "grapheme",
+			}, range)
+		) {
+			return;
+		}
+
 		const target = applyDeleteBehavior(editor, {
 			blockId,
 			ytext,
@@ -236,6 +293,14 @@ export const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 		const range = backend.resolveCurrentInputRange();
 		if (!range) return;
 
+		if (
+			tryDispatchMapped(editor, fe, backend, deleteBackward, {
+				granularity: "word",
+			}, range)
+		) {
+			return;
+		}
+
 		if (range.start !== range.end) {
 			backend.applyInlineTextEdit({
 				blockId,
@@ -268,6 +333,14 @@ export const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 		const range = backend.resolveCurrentInputRange();
 		if (!range) return;
 
+		if (
+			tryDispatchMapped(editor, fe, backend, deleteForward, {
+				granularity: "word",
+			}, range)
+		) {
+			return;
+		}
+
 		if (range.start !== range.end) {
 			backend.applyInlineTextEdit({
 				blockId,
@@ -294,11 +367,17 @@ export const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 	insertParagraph: (_event, editor, ytext, fe, element, backend) => {
 		const blockId = fe.focusBlockId;
 		if (!blockId) return;
+		const range = backend.resolveCurrentInputRange();
+		if (
+			tryDispatchMapped(editor, fe, backend, splitBlock, undefined, range)
+		) {
+			return;
+		}
 		const target = applyEnterBehavior(editor, {
 			blockId,
 			inputMode: fe.inputMode,
 			ytext,
-			range: backend.resolveCurrentInputRange(),
+			range,
 		});
 		if (!target) return;
 
@@ -309,11 +388,23 @@ export const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 		);
 	},
 
-	insertLineBreak: (_event, _editor, ytext, fe, element, backend) => {
+	insertLineBreak: (_event, editor, ytext, fe, element, backend) => {
 		const range = backend.resolveCurrentInputRange();
 		if (!range) return;
 		const blockId = fe.focusBlockId;
 		if (!blockId) return;
+		if (
+			tryDispatchMapped(
+				editor,
+				fe,
+				backend,
+				insertLineBreak,
+				undefined,
+				range,
+			)
+		) {
+			return;
+		}
 		backend.applyInlineTextEdit({
 			blockId,
 			range,
@@ -322,11 +413,21 @@ export const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 		});
 	},
 
-	historyUndo: (_event, editor) => {
+	historyUndo: (_event, editor, _ytext, fe, _element, backend) => {
+		if (
+			tryDispatchMapped(editor, fe, backend, historyUndo, undefined)
+		) {
+			return;
+		}
 		editor.undoManager.undo();
 	},
 
-	historyRedo: (_event, editor) => {
+	historyRedo: (_event, editor, _ytext, fe, _element, backend) => {
+		if (
+			tryDispatchMapped(editor, fe, backend, historyRedo, undefined)
+		) {
+			return;
+		}
 		editor.undoManager.redo();
 	},
 
@@ -336,18 +437,121 @@ export const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 		handlePaste(event, editor, fe, importers ?? undefined);
 	},
 
-	formatBold: (_event, editor) => {
+	formatBold: (_event, editor, _ytext, fe) => {
+		if (tryDispatchMarkToggle(editor, fe, "bold")) {
+			return;
+		}
 		toggleInlineMark(editor, "bold");
 	},
 
-	formatItalic: (_event, editor) => {
+	formatItalic: (_event, editor, _ytext, fe) => {
+		if (tryDispatchMarkToggle(editor, fe, "italic")) {
+			return;
+		}
 		toggleInlineMark(editor, "italic");
 	},
 
-	formatUnderline: (_event, editor) => {
+	formatUnderline: (_event, editor, _ytext, fe) => {
+		if (tryDispatchMarkToggle(editor, fe, "underline")) {
+			return;
+		}
 		toggleInlineMark(editor, "underline");
 	},
 };
+
+function isCellEditing(
+	editor: Editor,
+	fe: FieldEditorInputController,
+): boolean {
+	if (fe.activeCellCoord != null || editor.selection?.type === "cell") {
+		return true;
+	}
+	const blockId = fe.focusBlockId;
+	if (!blockId) {
+		return false;
+	}
+	return editor.getBlock(blockId)?.type === "table";
+}
+
+function resolveFieldInsertRange(
+	editor: Editor,
+	fe: FieldEditorInputController,
+	resolvedRange: { start: number; end: number } | null,
+): { start: number; end: number } | null {
+	if (resolvedRange) {
+		return resolvedRange;
+	}
+	if (isCellEditing(editor, fe)) {
+		return null;
+	}
+	const selection = editor.selection;
+	if (
+		selection?.type === "text" &&
+		selection.focus.blockId === fe.focusBlockId
+	) {
+		return {
+			start: selection.anchor.offset,
+			end: selection.focus.offset,
+		};
+	}
+	return null;
+}
+
+function tryDispatchMarkToggle(
+	editor: Editor,
+	fe: FieldEditorInputController,
+	mark: string,
+): boolean {
+	const selection = editor.selection;
+	if (!selection || selection.type !== "text" || selection.isCollapsed) {
+		return false;
+	}
+	return dispatchAndActivate(editor, fe, toggleMark, { mark });
+}
+
+function tryDispatchInsert(
+	editor: Editor,
+	fe: FieldEditorInputController,
+	backend: ContentEditableDirectInputBackend,
+	blockId: string,
+	range: { start: number; end: number },
+	text: string,
+	marks: Record<string, unknown | null> | undefined,
+): boolean {
+	if (isCellEditing(editor, fe)) {
+		return false;
+	}
+	syncEditorTextSelection(editor, blockId, range);
+	if (
+		!dispatchEditorCommand(editor, insertTextCommand, { text, marks })
+	) {
+		return false;
+	}
+	backend.commitDispatchedEdit?.();
+	return true;
+}
+
+function tryDispatchMapped<P>(
+	editor: Editor,
+	fe: FieldEditorInputController,
+	backend: ContentEditableDirectInputBackend,
+	command: Command<P>,
+	param: P,
+	range?: { start: number; end: number } | null,
+): boolean {
+	if (isCellEditing(editor, fe)) {
+		return false;
+	}
+	const blockId = fe.focusBlockId;
+	if (blockId && range) {
+		syncEditorTextSelection(editor, blockId, range);
+	}
+	if (!dispatchAndActivate(editor, fe, command, param)) {
+		return false;
+	}
+	backend.commitDispatchedEdit?.();
+	return true;
+}
 
 function hasMultiBlockTextSelection(editor: Editor): boolean {
 	const selection = editor.selection;

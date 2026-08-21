@@ -1,10 +1,10 @@
 import type { Editor, Position } from "@input/pen-types";
-import { DATA_ATTRS } from "../utils/dataAttributes";
+import { measureWithRoot } from "../geometry/rootGeometry";
+import type { GeometryReader, Rect } from "../geometry/types";
 import {
 	getClosestBlockElementFromPoint,
 	getSelectionPointForBlockAtPointer,
 	pointToEditorSelectionPoint,
-	queryBlockElement,
 	type SelectionPoint,
 } from "./selectionBridge";
 
@@ -47,28 +47,36 @@ export function resolveDropTarget(
 	clientY: number,
 	options: ResolveDropTargetOptions = {},
 ): ResolvedDropTarget | null {
+	return measureWithRoot(root, ({ reader }) =>
+		resolveDropTargetFromReader(
+			editor,
+			root,
+			reader,
+			clientX,
+			clientY,
+			options,
+		),
+	);
+}
+
+function resolveDropTargetFromReader(
+	editor: Editor,
+	root: HTMLElement,
+	reader: GeometryReader,
+	clientX: number,
+	clientY: number,
+	options: ResolveDropTargetOptions,
+): ResolvedDropTarget | null {
 	const hoveredBlockEl = getClosestBlockElementFromPoint(
 		root,
 		clientX,
 		clientY,
 	);
-	const hoveredBlockId = hoveredBlockEl?.getAttribute("data-block-id") ?? null;
-	if (hoveredBlockEl) {
-		const blockRect = hoveredBlockEl.getBoundingClientRect();
-		const inlineRectCandidate = hoveredBlockEl.querySelector(
-			`[${DATA_ATTRS.inlineContent}]`,
-		) as HTMLElement | null;
-		const inlineRect = inlineRectCandidate?.getBoundingClientRect() ?? null;
-		const hoveredRect =
-			blockRect.width > 0 || blockRect.height > 0
-				? blockRect
-				: (inlineRect ?? blockRect);
-		const isPointerWithinHoveredBlock =
-			clientX >= hoveredRect.left &&
-			clientX <= hoveredRect.right &&
-			clientY >= hoveredRect.top &&
-			clientY <= hoveredRect.bottom;
-		if (hoveredBlockId && !isPointerWithinHoveredBlock) {
+	const hoveredBlockId =
+		hoveredBlockEl?.getAttribute("data-block-id") ?? null;
+	if (hoveredBlockEl && hoveredBlockId) {
+		const hoveredRect = reader.blockRect(hoveredBlockId);
+		if (hoveredRect && !pointWithinRect(clientX, clientY, hoveredRect)) {
 			const side =
 				clientY <= hoveredRect.top + hoveredRect.height / 2
 					? "before"
@@ -113,15 +121,18 @@ export function resolveDropTarget(
 			};
 		}
 
-		const blockElement = queryBlockElement(root, point.blockId);
-		if (blockElement) {
-			const rect = blockElement.getBoundingClientRect();
-			const side = clientY <= rect.top + rect.height / 2 ? "before" : "after";
+		const rect = reader.blockRect(point.blockId);
+		if (rect) {
+			const side =
+				clientY <= rect.top + rect.height / 2 ? "before" : "after";
 			return {
 				kind: "block-edge",
 				blockId: point.blockId,
 				side,
-				position: side === "before" ? { before: point.blockId } : { after: point.blockId },
+				position:
+					side === "before"
+						? { before: point.blockId }
+						: { after: point.blockId },
 			};
 		}
 
@@ -147,9 +158,20 @@ export function resolveDropTarget(
 	};
 }
 
-export function getDropPreview(
-	target: ResolvedDropTarget | null,
-): DropPreview {
+function pointWithinRect(
+	clientX: number,
+	clientY: number,
+	rect: Rect,
+): boolean {
+	return (
+		clientX >= rect.left &&
+		clientX <= rect.right &&
+		clientY >= rect.top &&
+		clientY <= rect.bottom
+	);
+}
+
+export function getDropPreview(target: ResolvedDropTarget | null): DropPreview {
 	if (!target) return null;
 
 	if (target.kind === "inline") {

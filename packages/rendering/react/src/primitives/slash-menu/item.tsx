@@ -38,7 +38,7 @@ export function SlashMenuItem(props: SlashMenuItemProps) {
 		id: index != null ? getSlashMenuOptionId(listboxId, index) : undefined,
 		"data-pen-slash-menu-item": "",
 		"data-block-type": blockType,
-		"data-selected": isSelected || undefined,
+		"data-selected": isSelected ? "" : undefined,
 		role: "option",
 		"aria-selected": isSelected,
 		onClick: handleClick,

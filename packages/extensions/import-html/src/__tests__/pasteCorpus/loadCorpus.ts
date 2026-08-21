@@ -7,6 +7,7 @@ import {
   type PasteCorpusFixture,
   type PasteCorpusSourceId,
 } from "./types";
+import { validatePasteCorpusFixture } from "./validate";
 
 const corpusDir = dirname(fileURLToPath(import.meta.url));
 
@@ -14,7 +15,7 @@ export function loadPasteCorpusFixture(
   id: PasteCorpusSourceId,
 ): PasteCorpusFixture {
   const dir = join(corpusDir, id);
-  return {
+  const fixture: PasteCorpusFixture = {
     id,
     html: readFileSync(join(dir, "clipboard.html"), "utf8"),
     plain: readFileSync(join(dir, "plain.txt"), "utf8"),
@@ -22,6 +23,8 @@ export function loadPasteCorpusFixture(
       readFileSync(join(dir, "expectation.json"), "utf8"),
     ) as PasteCorpusExpectation,
   };
+  validatePasteCorpusFixture(fixture);
+  return fixture;
 }
 
 export function loadPasteCorpus(): PasteCorpusFixture[] {

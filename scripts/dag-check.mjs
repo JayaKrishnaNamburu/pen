@@ -13,6 +13,17 @@
  *
  * Checks the published package.json install graph (dependencies + required
  * @input/pen-* peers). Tooling, docs, and playground are outside the product DAG.
+ *
+ * Two graphs, two properties. The inversion check above runs on the *install*
+ * graph, which excludes devDependencies because they do not ship. Turbo orders
+ * tasks on a wider graph that does include them, and it refuses to run at all
+ * if that graph has a cycle. So this script also walks the *task* graph for
+ * cycles, over every workspace package including private and tooling ones.
+ *
+ * Keeping them separate matters: an extension taking a devDependency on a
+ * tooling package is not a layering inversion and must not be reported as one,
+ * but it can still close a loop back through core and stop the whole build.
+ * That is exactly what happened on 2026-08-21 while this check did not exist.
  */
 
 import fs from "node:fs/promises";
@@ -120,6 +131,62 @@ function collectScopedDeps(names, deps) {
 			names.add(name);
 		}
 	}
+}
+
+export function taskGraphDependencyNames(packageJson) {
+	const names = new Set();
+	collectScopedDeps(names, packageJson.dependencies);
+	collectScopedDeps(names, packageJson.devDependencies);
+	collectScopedDeps(names, packageJson.optionalDependencies);
+	collectScopedDeps(names, packageJson.peerDependencies);
+	return [...names].sort();
+}
+
+/**
+ * Returns the first cycle as the package path around the loop, ending with the
+ * package it re-enters, or null when the graph is acyclic. The path is the only
+ * form of this failure a human can act on — "there is a cycle" is not enough to
+ * find the edge that introduced it.
+ */
+export function findCycle({ packages }) {
+	const edges = new Map(
+		packages.map((pkg) => [pkg.name, pkg.dependencies ?? []]),
+	);
+	const state = new Map();
+	const stack = [];
+
+	function visit(name) {
+		const status = state.get(name);
+		if (status === "done") {
+			return null;
+		}
+		if (status === "active") {
+			return [...stack.slice(stack.indexOf(name)), name];
+		}
+
+		state.set(name, "active");
+		stack.push(name);
+		for (const dep of edges.get(name) ?? []) {
+			if (!edges.has(dep)) {
+				continue;
+			}
+			const cycle = visit(dep);
+			if (cycle != null) {
+				return cycle;
+			}
+		}
+		stack.pop();
+		state.set(name, "done");
+		return null;
+	}
+
+	for (const name of [...edges.keys()].sort()) {
+		const cycle = visit(name);
+		if (cycle != null) {
+			return cycle;
+		}
+	}
+	return null;
 }
 
 export function parseAllowlist(raw) {
@@ -403,6 +470,57 @@ export function runSelfTests() {
 	);
 
 	assert(
+		findCycle({
+			packages: [types, crdt, core, deltaStream, react, dom],
+		}) === null,
+		"self-test: acyclic graph must report no cycle",
+	);
+
+	// The real 2026-08-21 break, reduced: undo devDepends on pen-test, pen-test
+	// reaches core, and core devDepends on undo. No edge here is a layering
+	// inversion, which is why the inversion check cannot see it.
+	const cycle = findCycle({
+		packages: [
+			fixturePkg("packages/core", "@input/pen-core", ["@input/pen-undo"]),
+			fixturePkg("packages/extensions/undo", "@input/pen-undo", [
+				"@input/pen-test",
+			]),
+			fixturePkg("packages/tooling/test", "@input/pen-test", [
+				"@input/pen-core",
+			]),
+		],
+	});
+	assert(cycle != null, "self-test: devDependency cycle must be detected");
+	assert(
+		cycle[0] === cycle[cycle.length - 1],
+		"self-test: cycle path must close on the package it re-enters",
+	);
+	assert(
+		cycle.includes("@input/pen-undo") && cycle.includes("@input/pen-test"),
+		"self-test: cycle path must name the packages in the loop",
+	);
+	assert(
+		evaluateInversions({
+			packages: [
+				fixturePkg("packages/extensions/undo", "@input/pen-undo", [
+					"@input/pen-test",
+				]),
+				fixturePkg("packages/tooling/test", "@input/pen-test", []),
+			],
+			allowlist: [],
+		}).unexpected.length === 0,
+		"self-test: extension → tooling is not an inversion, so only the cycle check can catch it",
+	);
+
+	assert(
+		taskGraphDependencyNames({
+			dependencies: { "@input/pen-types": "workspace:^" },
+			devDependencies: { "@input/pen-test": "workspace:*", vitest: "^3" },
+		}).join(",") === "@input/pen-test,@input/pen-types",
+		"self-test: task graph counts devDependencies, install graph does not",
+	);
+
+	assert(
 		layerForPackageDir("packages/extensions/undo") === "feature",
 		"self-test: extension layer",
 	);
@@ -491,6 +609,32 @@ export async function loadWorkspacePackages(repoRoot) {
 	return packages;
 }
 
+/**
+ * Every workspace package, private and tooling included, with devDependencies
+ * counted. This is the graph turbo orders tasks on, not the graph that ships.
+ */
+export async function loadTaskGraphPackages(repoRoot) {
+	const packagesRoot = path.join(repoRoot, "packages");
+	const packageJsonPaths = await collectPackageJsonPaths(packagesRoot);
+	const packages = [];
+
+	for (const packageJsonPath of packageJsonPaths) {
+		const packageJson = JSON.parse(
+			await fs.readFile(packageJsonPath, "utf8"),
+		);
+		if (typeof packageJson.name !== "string") {
+			continue;
+		}
+		packages.push({
+			name: packageJson.name,
+			dependencies: taskGraphDependencyNames(packageJson),
+		});
+	}
+
+	packages.sort((left, right) => left.name.localeCompare(right.name));
+	return packages;
+}
+
 export async function loadAllowlist(
 	repoRoot,
 	allowlistRel = DEFAULT_ALLOWLIST,
@@ -522,10 +666,24 @@ async function main() {
 	const args = parseArgs(process.argv.slice(2));
 	runSelfTests();
 	console.log(
-		"API1 DAG self-test ok (fixture object; fake inverted edge fails closed)",
+		"API1 DAG self-test ok (fixture object; fake inverted edge fails closed; devDependency cycle detected)",
 	);
 	if (args.selfTestOnly) {
 		return;
+	}
+
+	const taskGraph = await loadTaskGraphPackages(args.repoRoot);
+	const cycle = findCycle({ packages: taskGraph });
+	console.log("");
+	console.log(
+		`Task graph: ${taskGraph.length} workspace packages (devDependencies counted)`,
+	);
+	if (cycle == null) {
+		console.log("No dependency cycles.");
+	} else {
+		console.log("");
+		console.log("FAIL dependency cycle (turbo cannot build this graph):");
+		console.log(`  ${cycle.join("\n    → ")}`);
 	}
 
 	const packages = await loadWorkspacePackages(args.repoRoot);
@@ -534,6 +692,7 @@ async function main() {
 	console.log("");
 	console.log(formatReport(result));
 	if (
+		cycle != null ||
 		result.unexpected.length > 0 ||
 		result.stale.length > 0 ||
 		result.unclassified.length > 0

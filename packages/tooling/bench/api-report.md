@@ -6,13 +6,19 @@
 
 ### function
 
+- buildEnvelopeRecord
+- compareEnvelopeDrift
+- compareScale2Plus8Tolerance
 - createEnvelopeEditor
 - createLargeDocument
 - createScale3Editor
+- envelopeGateP50Ms
+- envelopePointIsGated
 - generateGenDeltaParts
 - getScale3Baseline
 - reportConsole
 - reportJSON
+- scale2Plus8GateMs
 
 ### value
 
@@ -20,13 +26,6 @@
 - assertScale2Plus8Tolerance
 - bench
 - BENCH_GATE_SAMPLE_SIZE
-- buildEnvelopeRecord
-- compareEnvelopeDrift
-- compareScale2Plus8Tolerance
-- ENVELOPE_DRIFT_FLOOR_MS
-- ENVELOPE_DRIFT_RATIO
-- ENVELOPE_SAMPLE_SIZE
-- envelopeGateP50Ms
 - BenchContext
 - BenchDefinition
 - BenchEvaluation
@@ -38,6 +37,10 @@
 - createBenchSuites
 - DEFAULT_BENCH_WAIVER_FILE
 - editorBenchmarks
+- ENVELOPE_DRIFT_FLOOR_MS
+- ENVELOPE_DRIFT_RATIO
+- ENVELOPE_GATE_MIN_SIGNAL_MS
+- ENVELOPE_SAMPLE_SIZE
 - evaluateBenchResult
 - extensionBenchmarks
 - getBenchTarget
@@ -51,14 +54,13 @@
 - runAllSuites
 - RunAllSuitesOptions
 - runSuite
+- SCALE1_MACHINE_CLASS
+- SCALE1_MEASUREMENTS
+- scale1Benchmarks
 - SCALE2_PLUS8_BASE_ID
 - SCALE2_PLUS8_ID
 - SCALE2_PLUS8_TOLERANCE_FLOOR_MS
 - SCALE2_PLUS8_TOLERANCE_RATIO
-- scale2Plus8GateMs
-- SCALE1_MACHINE_CLASS
-- SCALE1_MEASUREMENTS
-- scale1Benchmarks
 - SCALE3_AXES
 - SCALE3_BASELINES
 - SCALE3_MACHINE_CLASS

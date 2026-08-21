@@ -30,16 +30,15 @@ export { createEnvelopeEditor } from "./fixtures/envelope";
 export {
 	ENVELOPE_DRIFT_FLOOR_MS,
 	ENVELOPE_DRIFT_RATIO,
+	ENVELOPE_GATE_MIN_SIGNAL_MS,
 	ENVELOPE_SAMPLE_SIZE,
 	SCALE1_MACHINE_CLASS,
 	SCALE1_MEASUREMENTS,
 	envelopeGateP50Ms,
+	envelopePointIsGated,
 } from "./constants/scale1";
 export type { EnvelopeAxis, EnvelopeRungId } from "./constants/scale1";
-export {
-	buildEnvelopeRecord,
-	compareEnvelopeDrift,
-} from "./envelope/compare";
+export { buildEnvelopeRecord, compareEnvelopeDrift } from "./envelope/compare";
 export type { EnvelopeRecord } from "./envelope/compare";
 export {
 	SCALE2_PLUS8_BASE_ID,

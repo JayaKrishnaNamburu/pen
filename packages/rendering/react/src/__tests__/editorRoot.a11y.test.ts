@@ -67,6 +67,18 @@ describe("@input/pen-react editor root a11y", () => {
 		expect(host.getAttribute("aria-multiline")).toBe("true");
 		expect(host.getAttribute("aria-label")).toBe("Editor");
 		expect(host.hasAttribute("aria-readonly")).toBe(false);
+		expect(host.hasAttribute("data-readonly")).toBe(false);
+
+		await cleanupEditor(editor, root, container);
+	});
+
+	it("HOST6: boolean data attributes are valueless", async () => {
+		const editor = createEditor();
+		const { container, root } = await renderRoot(editor, true);
+		const host = getEditorRoot(container);
+
+		expect(host.getAttribute("data-readonly")).toBe("");
+		expect(host.hasAttribute("data-empty")).toBe(false);
 
 		await cleanupEditor(editor, root, container);
 	});
@@ -80,6 +92,7 @@ describe("@input/pen-react editor root a11y", () => {
 		expect(host.getAttribute("aria-multiline")).toBe("true");
 		expect(host.getAttribute("aria-label")).toBe("Editor");
 		expect(host.getAttribute("aria-readonly")).toBe("true");
+		expect(host.getAttribute("data-readonly")).toBe("");
 
 		await cleanupEditor(editor, root, container);
 	});

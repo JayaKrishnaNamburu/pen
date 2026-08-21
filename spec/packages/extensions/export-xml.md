@@ -18,7 +18,7 @@ This package is a secondary interchange layer built on top of `@input/pen-export
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@input/pen-export-json`, `@input/pen-types`, `domhandler`, `htmlparser2`
+- Runtime dependencies: `@input/pen-core`, `@input/pen-export-json`, `@input/pen-types`, `domhandler`, `htmlparser2`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: This package owns XML syntax, not a second document model or import pipeline.
 
@@ -44,7 +44,7 @@ flowchart TD
 Important rules:
 
 - XML export first derives the canonical Pen JSON document shape, then serializes that shape into XML.
-- XML import parses the XML document into the Pen JSON envelope, then delegates actual import application to `jsonImporter`.
+- XML import parses the XML document into the Pen JSON envelope, then delegates actual import application to `@input/pen-export-json`'s `jsonImporter`, not `@input/pen-import-json`.
 - XML is a transport syntax choice, not a divergent runtime contract.
 
 ## Integration Notes

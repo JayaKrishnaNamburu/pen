@@ -7,12 +7,15 @@ import { buildDocumentWriteOps } from "@input/pen-content-ops";
 import { POSITION_SCHEMA } from "../constants/toolSchemas";
 import { assertToolCanUseBlockType } from "../utils/blockTypePolicy";
 import { applyValidatedOps } from "../utils/payloadValidation";
+import { rejectToolCall } from "../utils/toolRejection";
 
 export function writeDocumentTool(editor: Editor): ToolDefinition {
   return {
     name: "write_document",
     description:
       "Write or replace content in the document using text, markdown, or blocks.",
+    mutating: true,
+    destructive: true,
     inputSchema: {
       type: "object",
       properties: {
@@ -44,8 +47,10 @@ export function writeDocumentTool(editor: Editor): ToolDefinition {
       };
 
       if (!opts.content && (!opts.blocks || opts.blocks.length === 0)) {
-        throw new Error(
+        rejectToolCall(
+          editor,
           'write_document expects either a non-empty "content" string or a non-empty "blocks" array.',
+          opts,
         );
       }
 

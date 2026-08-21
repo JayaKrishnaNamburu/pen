@@ -68,20 +68,27 @@ describe("@input/pen-export-xml import", () => {
     source.apply([
       {
         type: "insert-block",
-        blockId: "b1",
-        blockType: "paragraph",
+        blockId: "parent",
+        blockType: "toggle",
         props: {},
         position: "last",
       },
       {
+        type: "insert-block",
+        blockId: "child",
+        blockType: "paragraph",
+        props: {},
+        position: { parent: "parent", index: 0 },
+      },
+      {
         type: "insert-text",
-        blockId: "b1",
+        blockId: "child",
         offset: 0,
         text: "Hello world",
       },
       {
         type: "format-text",
-        blockId: "b1",
+        blockId: "child",
         offset: 6,
         length: 5,
         marks: { italic: true },
@@ -89,6 +96,12 @@ describe("@input/pen-export-xml import", () => {
     ]);
 
     const exported = await xmlExporter.export(source);
+    const parentStart = exported.indexOf('<block id="parent"');
+    const childrenStart = exported.indexOf("<children>", parentStart);
+    const childStart = exported.indexOf('<block id="child"', childrenStart);
+    expect(childrenStart).toBeGreaterThan(parentStart);
+    expect(childStart).toBeGreaterThan(childrenStart);
+
     const target = createBareEditor();
     await xmlImporter.import(exported, target, { replace: true });
     const reexported = await xmlExporter.export(target);

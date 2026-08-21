@@ -2,26 +2,23 @@
 
 ## Purpose
 
-`@input/pen-content-ops` provides shared parsing, normalization, and operation-building helpers for Pen. It is where Markdown-to-block parsing, pending-block normalization, profile-policy filtering, and generic write-op construction live.
+`@input/pen-content-ops` is a compatibility package over helpers that now live in `@input/pen-core`, plus the Markdown parse and write-op construction that still live here.
 
 ## Public Role
 
-This package is a lower-level transformation layer used by higher-level import, AI, and document-tooling packages. It sits between raw content formats and editor-ready operations, but it does not own the editor runtime or end-user renderer surfaces.
+This package used to sit *under* core (core imported it). That inversion is gone: content-ops now depends on `@input/pen-core` and re-exports the moved helpers. Hosts should import those helpers from core. This package remains because importers and document-ops still call `parseMarkdownToBlocks()` and `buildDocumentWriteOps()` here.
 
 ## Key Exports / Entrypoints
 
 - Export map: `.`
-- Block operation helpers such as `blocksToOps()`
-- Import normalization helpers such as `normalizePendingBlocksForImport()`, `filterPendingBlocksForDocumentProfile()`, `createImportResult()`, and diagnostic reporting helpers
-- Block-capability helpers (`getFlowCapabilityFromSchema()`, `shouldExposeBlockInTooling()`, and siblings). Hosts should import these from `@input/pen-core`; content-ops owns the implementation until P.1 drops `core → content-ops`.
-- Markdown parsing entrypoint: `parseMarkdownToBlocks()`
-- Generic write helper: `buildDocumentWriteOps()`
+- Re-exports from `@input/pen-core`: `blocksToOps()`, `normalizePendingBlocksForImport()`, `filterPendingBlocksForDocumentProfile()`, `createImportResult()`, diagnostic reporting helpers, and the block-capability helpers (`getFlowCapabilityFromSchema()`, `shouldExposeBlockInTooling()`, and siblings)
+- Still implemented here: `parseMarkdownToBlocks()`, `splitPlainTextLineBlocks()`, `buildDocumentWriteOps()`, and the structured-target / plan helpers
 - Structured target and plan normalization helpers for tooling and AI-oriented write flows
 - Workspace scripts: `build`, `clean`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@input/pen-types`, `htmlparser2`, `mdast-util-from-markdown`, `mdast-util-gfm`, `micromark-extension-gfm`
+- Runtime dependencies: `@input/pen-core`, `@input/pen-types`, `htmlparser2`, `mdast-util-from-markdown`, `mdast-util-gfm`, `micromark-extension-gfm`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: `@input/pen-content-ops` is a shared transformation library and should not become an end-user entrypoint or runtime authority package.
 

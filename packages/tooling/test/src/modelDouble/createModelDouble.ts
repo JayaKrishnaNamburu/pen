@@ -162,6 +162,12 @@ function compileEvents(
 		});
 	}
 
+	if (response.events && response.error !== undefined) {
+		throw new Error(
+			"createModelDouble: a response cannot set both events and error — the error would be dropped",
+		);
+	}
+
 	if (response.events) {
 		events.push(...response.events);
 		return events;
