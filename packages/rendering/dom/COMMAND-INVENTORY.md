@@ -2,7 +2,9 @@
 
 Inventory for spec-v2 Wave 4 step 4.2 (built-in catalog). Not a code move. Wave 3/4 gates are not closed. Do not relocate handlers into `core/src/commands/` here (4.2 implementers consume this table).
 
-Current functions: `src/field-editor/commands.ts` (barrel), `commandsBlock.ts`, `commandsDelete.ts`, `commandsEnter.ts`, `commandsNavigation.ts`, `commandsShared.ts`, `keyHandling.ts`, `keyHandlingInlineAtoms.ts`, `keyBindingShortcuts.ts`.
+Current functions: `src/field-editor/commands.ts` (barrel), `commandsBlock.ts`, `commandsDelete.ts`, `commandsEnter.ts`, `commandsListTab.ts`, `commandsShared.ts`, `keyHandling.ts`, `keyHandlingInlineAtoms.ts`, `keyBindingShortcuts.ts`.
+
+`commandsNavigation.ts` was deleted on 2026-08-21. `commandsListTab.ts` holds what survived it.
 Future names: `spec-v2/05-commands.md` catalog (`caret.ts`, `text.ts`, `structure.ts`, `table.ts`, `history.ts`).
 
 ## Current function → future command
@@ -22,8 +24,8 @@ Future names: `spec-v2/05-commands.md` catalog (`caret.ts`, `text.ts`, `structur
 | `resolveBackspaceAction` | `commandsDelete.ts` | `pen.deleteBackward` | Decision helper; folds into the same handler. |
 | `applyEnterBehavior` | `commandsEnter.ts` | `pen.splitBlock` | Wave names this move. Branches: split, convert, lift (`liftBlockOutOfParent`), code-mode `insertTextAtRange("\n")`. |
 | `resolveEnterAction` | `commandsEnter.ts` | `pen.splitBlock` | Decision helper; folds into the same handler. |
-| `applyListTabBehavior` | `commandsNavigation.ts` | `pen.indent` / `pen.outdent` | `shiftKey` chooses outdent. List items only. |
-| `moveCaretAcrossBlocks` | `commandsNavigation.ts` | `pen.caretLeft` / `pen.caretRight` | T4 / boundary entry. ArrowUp/Down also call this today; those become `pen.caretUp` / `pen.caretDown` via `measureNow`. |
+| `applyListTabBehavior` | `commandsListTab.ts` | `pen.indent` / `pen.outdent` | `shiftKey` chooses outdent. List items only. |
+| `moveCaretAcrossBlocks` | `commandsListTab.ts` | `pen.caretLeft` / `pen.caretRight` | T4 / boundary entry. ArrowUp/Down no longer call it — keymap dispatches `pen.caretUp` / `pen.caretDown`, and `mountEditor` registers the G5 measure. Kept exported only because eight React `fieldEditorCommands.*.test.ts` files still import it. |
 | `selectInlineAtomWithArrowKey` | `keyHandlingInlineAtoms.ts` | `pen.caretLeft` / `pen.caretRight` | N1 atom cases. `extend` is the private `extendInlineAtomSelectionWithArrowKey`. |
 | `handleSelectAllShortcut` | `keyHandling.ts` | `pen.selectAll` | Delegates to `fieldEditor.selectAll` (T1 ladder) or `getDocumentTextRange`. |
 | `handleHistoryShortcut` | `keyHandling.ts` | `history.undo` / `history.redo` | After `tryHandleHistoryOverrideBinding`. |

@@ -383,6 +383,15 @@ export const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 		});
 		if (!target) return;
 
+		if (typeof fe.commitProgrammaticTextSelection === "function") {
+			fe.commitProgrammaticTextSelection(
+				target.blockId,
+				target.anchorOffset,
+				target.focusOffset,
+			);
+			return;
+		}
+
 		fe.activateTextSelection(
 			target.blockId,
 			target.anchorOffset,

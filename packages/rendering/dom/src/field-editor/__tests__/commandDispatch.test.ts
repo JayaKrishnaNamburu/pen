@@ -276,6 +276,53 @@ describe("field-editor command registry dispatch", () => {
 		editor.destroy();
 	});
 
+	it("ArrowDown at a block edge dispatches pen.caretDown through the keymap", () => {
+		const editor = createEditor({ schema: defaultSchema });
+		const registry = getCommandRegistry(editor);
+		if (!registry) {
+			throw new Error("expected command registry");
+		}
+		const firstBlockId = editor.firstBlock()!.id;
+		const secondBlockId = crypto.randomUUID();
+		editor.apply([
+			{ type: "insert-text", blockId: firstBlockId, offset: 0, text: "Hi" },
+			{
+				type: "insert-block",
+				blockId: secondBlockId,
+				blockType: "paragraph",
+				props: {},
+				position: { after: firstBlockId },
+			},
+		]);
+		editor.selectText(firstBlockId, 2, 2);
+
+		const dispatched = spyRegistryDispatch(registry);
+		const fieldEditor = createFieldEditor(firstBlockId);
+		const handled = handleFieldEditorKeyDown({
+			event: createKeyEvent("ArrowDown"),
+			editor,
+			fieldEditor: fieldEditor.controller,
+			ytext: getYText(editor, firstBlockId),
+			range: { start: 2, end: 2 },
+		});
+
+		expect(handled).toBe(true);
+		expect(dispatched).toContain("pen.caretDown");
+		expect(editor.selection?.type).toBe("text");
+		if (editor.selection?.type !== "text") {
+			throw new Error("expected text selection");
+		}
+		expect(editor.selection.anchor).toEqual({
+			blockId: secondBlockId,
+			offset: 0,
+		});
+		expect(editor.selection.focus).toEqual({
+			blockId: secondBlockId,
+			offset: 0,
+		});
+		editor.destroy();
+	});
+
 	it("inserts at the live range when activateTextSelection cleared the programmatic caret", () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;

@@ -8,7 +8,11 @@ import type {
 	SelectionState,
 	TextSelection,
 } from "@input/pen-types";
-import { isCollapsed, isMultiBlock } from "../selection/helpers";
+import {
+	getSelectionBlockRange,
+	isCollapsed,
+	isMultiBlock,
+} from "../selection/helpers";
 
 import {
 	getFlowCapabilityFromSchema,
@@ -310,12 +314,17 @@ export function documentOrderedTextPoints(
 	return { start: selection.focus, end: selection.anchor };
 }
 
+/** Command write payload. `blockRange` is the document span when `blockOrder` is passed. */
 export function textSelectionResult(
 	anchor: Point,
 	focus: Point = anchor,
-	extras?: { affinity?: Affinity; goalX?: number | null },
-): SelectionState {
-	const selection: SelectionState = {
+	extras?: {
+		affinity?: Affinity;
+		goalX?: number | null;
+		blockOrder?: readonly string[];
+	},
+): TextSelection {
+	const selection: TextSelection = {
 		type: "text",
 		anchor,
 		focus,
@@ -332,6 +341,9 @@ export function textSelectionResult(
 		...selection,
 		isCollapsed: isCollapsed(selection),
 		isMultiBlock: isMultiBlock(selection),
+		blockRange: extras?.blockOrder
+			? getSelectionBlockRange(extras.blockOrder, selection)
+			: [anchor.blockId],
 	};
 }
 
@@ -460,6 +472,7 @@ export function toTransitionSelection(
 
 export function fromTransitionSelection(
 	selection: TransitionSelection,
+	blockOrder?: readonly string[],
 ): SelectionState | null {
 	if (!selection) {
 		return null;
@@ -469,6 +482,7 @@ export function fromTransitionSelection(
 			return textSelectionResult(selection.anchor, selection.focus, {
 				affinity: selection.affinity,
 				goalX: selection.goalX,
+				blockOrder,
 			});
 		case "block":
 			return blockSelectionResult(selection.blockIds, selection.head);

@@ -1,0 +1,151 @@
+{
+  "capturedAt": "2026-08-21T13:05:47.091Z",
+  "browserName": "chromium",
+  "firstBlockId": "ca399d0a-3892-49de-8354-87e57206f3c3",
+  "insertedBlockId": "7f980b6d-3a8e-4c3a-af53-bba2564e6ffb",
+  "afterType": {
+    "editorSelection": {
+      "type": "text",
+      "anchor": {
+        "blockId": "ca399d0a-3892-49de-8354-87e57206f3c3",
+        "offset": 5
+      },
+      "focus": {
+        "blockId": "ca399d0a-3892-49de-8354-87e57206f3c3",
+        "offset": 5
+      },
+      "affinity": "downstream",
+      "goalX": null,
+      "isCollapsed": true,
+      "isMultiBlock": false,
+      "blockRange": [
+        "ca399d0a-3892-49de-8354-87e57206f3c3"
+      ]
+    },
+    "activeElement": {
+      "tag": "SPAN",
+      "blockId": "ca399d0a-3892-49de-8354-87e57206f3c3"
+    },
+    "attachedInlineBlockId": "ca399d0a-3892-49de-8354-87e57206f3c3",
+    "native": {
+      "isCollapsed": true,
+      "text": "",
+      "anchor": {
+        "blockId": "ca399d0a-3892-49de-8354-87e57206f3c3",
+        "offset": 5
+      },
+      "focus": {
+        "blockId": "ca399d0a-3892-49de-8354-87e57206f3c3",
+        "offset": 5
+      }
+    },
+    "blocks": [
+      {
+        "id": "ca399d0a-3892-49de-8354-87e57206f3c3",
+        "text": "Hello",
+        "active": true
+      }
+    ]
+  },
+  "afterEnterT0": {
+    "editorSelection": {
+      "type": "text",
+      "anchor": {
+        "blockId": "7f980b6d-3a8e-4c3a-af53-bba2564e6ffb",
+        "offset": 0
+      },
+      "focus": {
+        "blockId": "7f980b6d-3a8e-4c3a-af53-bba2564e6ffb",
+        "offset": 0
+      },
+      "affinity": "downstream",
+      "goalX": null,
+      "isCollapsed": true,
+      "isMultiBlock": false,
+      "blockRange": [
+        "7f980b6d-3a8e-4c3a-af53-bba2564e6ffb"
+      ]
+    },
+    "activeElement": {
+      "tag": "SPAN",
+      "blockId": "7f980b6d-3a8e-4c3a-af53-bba2564e6ffb"
+    },
+    "attachedInlineBlockId": "7f980b6d-3a8e-4c3a-af53-bba2564e6ffb",
+    "native": {
+      "isCollapsed": true,
+      "text": "",
+      "anchor": {
+        "blockId": "7f980b6d-3a8e-4c3a-af53-bba2564e6ffb",
+        "offset": 0
+      },
+      "focus": {
+        "blockId": "7f980b6d-3a8e-4c3a-af53-bba2564e6ffb",
+        "offset": 0
+      }
+    },
+    "blocks": [
+      {
+        "id": "ca399d0a-3892-49de-8354-87e57206f3c3",
+        "text": "Hello",
+        "active": false
+      },
+      {
+        "id": "7f980b6d-3a8e-4c3a-af53-bba2564e6ffb",
+        "text": "​",
+        "active": true
+      }
+    ]
+  },
+  "afterEnterT2raf": {
+    "editorSelection": {
+      "type": "text",
+      "anchor": {
+        "blockId": "ca399d0a-3892-49de-8354-87e57206f3c3",
+        "offset": 5
+      },
+      "focus": {
+        "blockId": "ca399d0a-3892-49de-8354-87e57206f3c3",
+        "offset": 5
+      },
+      "affinity": "downstream",
+      "goalX": null,
+      "isCollapsed": true,
+      "isMultiBlock": false,
+      "blockRange": [
+        "ca399d0a-3892-49de-8354-87e57206f3c3"
+      ]
+    },
+    "activeElement": {
+      "tag": "SPAN",
+      "blockId": "ca399d0a-3892-49de-8354-87e57206f3c3"
+    },
+    "attachedInlineBlockId": "ca399d0a-3892-49de-8354-87e57206f3c3",
+    "native": {
+      "isCollapsed": true,
+      "text": "",
+      "anchor": {
+        "blockId": "ca399d0a-3892-49de-8354-87e57206f3c3",
+        "offset": 5
+      },
+      "focus": {
+        "blockId": "ca399d0a-3892-49de-8354-87e57206f3c3",
+        "offset": 5
+      }
+    },
+    "blocks": [
+      {
+        "id": "ca399d0a-3892-49de-8354-87e57206f3c3",
+        "text": "Hello",
+        "active": true
+      },
+      {
+        "id": "7f980b6d-3a8e-4c3a-af53-bba2564e6ffb",
+        "text": "​",
+        "active": false
+      }
+    ]
+  },
+  "authorityOnInsertedAtT0": true,
+  "nativeOnInsertedAtT0": true,
+  "nativeOnFirstAtT0": false
+}

@@ -10,6 +10,7 @@ export {
 } from "./geometryReader";
 export { getRootGeometry, measureWithRoot } from "./rootGeometry";
 export type { RootGeometry } from "./rootGeometry";
+export { registerVerticalCaretMeasure } from "./verticalCaretMeasure";
 export type {
 	Affinity,
 	BidiRun,

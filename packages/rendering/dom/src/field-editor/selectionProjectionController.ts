@@ -148,6 +148,9 @@ export class SelectionProjectionController {
 		const programmaticSelection = this._getActiveProgrammaticTextSelection(
 			anchor.blockId,
 		);
+		if (this._getProgrammaticTextSelectionOnOtherBlock(anchor.blockId)) {
+			return true;
+		}
 		if (!programmaticSelection || anchor.blockId !== focus.blockId) {
 			return false;
 		}
@@ -426,14 +429,29 @@ export class SelectionProjectionController {
 	private _getActiveProgrammaticTextSelection(
 		blockId: string | null,
 	): ProgrammaticTextSelection | null {
-		const programmaticSelection =
-			this._programmaticTextSelection ??
-			this._pendingProgrammaticTextSelection ??
-			this._committedProgrammaticTextSelection;
+		const programmaticSelection = this._readProgrammaticTextSelection();
 		if (!blockId || programmaticSelection?.blockId !== blockId) {
 			return null;
 		}
 		return programmaticSelection;
+	}
+
+	private _getProgrammaticTextSelectionOnOtherBlock(
+		blockId: string | null,
+	): ProgrammaticTextSelection | null {
+		const programmaticSelection = this._readProgrammaticTextSelection();
+		if (!programmaticSelection || programmaticSelection.blockId === blockId) {
+			return null;
+		}
+		return programmaticSelection;
+	}
+
+	private _readProgrammaticTextSelection(): ProgrammaticTextSelection | null {
+		return (
+			this._programmaticTextSelection ??
+			this._pendingProgrammaticTextSelection ??
+			this._committedProgrammaticTextSelection
+		);
 	}
 
 	private _clearProgrammaticTextSelections(): void {

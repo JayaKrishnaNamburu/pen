@@ -10,7 +10,7 @@ export {
 export {
 	applyListTabBehavior,
 	moveCaretAcrossBlocks,
-} from "./commandsNavigation";
+} from "./commandsListTab";
 export {
 	applyBackspaceBehavior,
 	applyDeleteBehavior,

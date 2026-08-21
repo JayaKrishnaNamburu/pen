@@ -152,7 +152,7 @@ glob members:
 - commandsBlock.d.ts
 - commandsDelete.d.ts
 - commandsEnter.d.ts
-- commandsNavigation.d.ts
+- commandsListTab.d.ts
 - commandsShared.d.ts
 - contenteditableBackend.d.ts
 - contenteditableBackendCore.d.ts

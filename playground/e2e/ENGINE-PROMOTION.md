@@ -1,5 +1,138 @@
 # Playground e2e engine promotion
 
+## 2026-08-21 12:56–13:06 UTC — Firefox hold (quiet confirm)
+
+Attempted on clean HEAD `9116782`. **Do not promote Firefox. Do not flip the gate.** `continue-on-error` stays `${{ matrix.engine == 'firefox' }}`.
+
+This is a measurable run. 14-core Darwin. 1-minute loadavg stayed between **2.65 and 6.24** for every engine (well under 14). No `turbo` / `vitest` / other Playwright on this tree. The only leftover process was an unrelated Input-repo Vite. Backend `/health` stayed `200`. Fresh `dev:e2e` (`PEN_E2E=1`, `watch: null`, HMR off) + backend frozen at 12:56:55 UTC against the clean tree.
+
+```text
+12:56 start   up 4:49   load 5.06 22.36 31.01   (5/15 are decay from the prior batch)
+12:56:53      up 4:50   load 4.43 20.83 30.21   servers starting
+12:57:03      up 4:50   load 4.52 20.31 29.92   chromium selectAll start
+13:06 end     up 4:59   load 4.58  6.19 16.58
+pgrep vitest|turbo|playwright|vite on this tree: none (one Input-repo vite only)
+```
+
+### Verdict: hold
+
+The previous hold (same-block `selectTextRange(0, 30)` never reaching `window.getSelection()`) is **gone** on this tree. That is not enough to promote.
+
+Firefox is still not 12/12. Both cross-block history tests fail **before undo/redo**, immediately after `Enter`. The same two tests fail on **WebKit**, which is already a blocking engine. Chromium is 12/12, including `selectAll`.
+
+Do not treat the projector-fix reasoning (synchronous projection, deleted rAFs, `SelectionAuthority`) as a promote. The evidence spec is green; the original 12 is not.
+
+### Chromium `selectAll` — settled first
+
+Blocking-engine question from the last attempt, isolated on this quiet machine **before** any Firefox suite:
+
+```bash
+pnpm exec playwright test playground/e2e/selectAll.spec.ts \
+  --project=chromium --reporter=list --workers=1
+```
+
+**2 passed (2.2s)**, `real 3.18`. `selectAll.spec.ts:12` 555ms, slash-menu 395ms. Load 4.52 → 4.32. `/health` 200.
+
+Then again inside Chromium original 12 (also `--workers=1`): `selectAll.spec.ts:12` 438ms, pass.
+
+The last attempt's empty `selectedText` through a 10s poll does **not** reproduce here. Classify that earlier miss as a load artifact. Chromium `selectAll` is not a regression on `9116782`.
+
+### Evidence spec — `authorityRangeProjected`
+
+```bash
+pnpm exec playwright test playground/e2e/enginePromotionEvidence.spec.ts --project=<engine> --workers=1
+```
+
+| Engine   | Result      | Wall (`time -p`) | loadavg start        | `authorityRangeProjected` |
+| -------- | ----------- | ---------------- | -------------------- | ------------------------- |
+| Chromium | 1 passed, 658ms | real 2.49     | 4.45 / 19.78 / 29.61 | **true** (t0)             |
+| WebKit   | 1 passed, 1.8s  | real 4.00     | 4.34 / 19.50 / 29.46 | **true** (t0)             |
+| Firefox  | 1 passed, 1.6s  | real 4.11     | 4.75 / 18.62 / 28.91 | **true** (t0)             |
+
+`artifacts/firefox-projection.json` after `editor.selectTextRange(0, 30)` at t0: authority range 0–30 **and** native text `Alpha bravo charlie delta echo`. Same table on WebKit. The hardcoded `concurrentPackagesLoad: true` in that spec is stale; this run was not under package-write load.
+
+Firefox `nativeSelection.spec.ts` **passed**. `artifacts/firefox-nativeSelection.json` (14:58:20) shows `usedAuthorityFallback: true` (triple-click still a caret) and after the authority write native text `Alpha bravo charlie delta echo`. That pass criterion is met.
+
+Untrusted `addRange` still does not stick on Firefox (`untrustedAddRangeStuck: false`). That is §4.1, not a hold.
+
+### Original 12 — sequential, 1 worker, frozen server
+
+```bash
+pnpm exec playwright test \
+  playground/e2e/aiSuggestions.spec.ts \
+  playground/e2e/debug-boot.spec.ts \
+  playground/e2e/history.spec.ts \
+  playground/e2e/inlineSession.spec.ts \
+  playground/e2e/nativeSelection.spec.ts \
+  playground/e2e/selectAll.spec.ts \
+  playground/e2e/streaming.spec.ts \
+  --project=<engine> --reporter=list --workers=1
+```
+
+| Engine   | Result                         | Playwright | `real` | loadavg start        | loadavg end          |
+| -------- | ------------------------------ | ---------- | ------ | -------------------- | -------------------- |
+| Chromium | **12/12**                      | 19.5s      | 20.50  | 3.83 / 14.88 / 26.49 | 6.13 / 14.70 / 26.16 |
+| WebKit   | **9 passed / 1 skip / 2 fail** | 42.2s      | 43.12  | 6.13 / 14.70 / 26.16 | 4.86 / 13.15 / 25.00 |
+| Firefox  | **9 passed / 3 fail**          | 1.0m       | 61.66  | 4.87 / 12.75 / 24.65 | 5.95 / 11.72 / 23.46 |
+
+Logs: `/tmp/e2e-chromium-original12.log`, `/tmp/e2e-webkit-original12.log`, `/tmp/e2e-firefox-original12.log`.
+
+Firefox residual first (`nativeSelection` + `history`, `--workers=1`, load 4.39 → 4.37): 2 passed / 2 failed, `real 30.17`. Same two history fails as the original 12.
+
+### What fails — and what the first snapshot actually is
+
+Both failing history tests die at `history.spec.ts:75` and `history.spec.ts:121` (`expectCaretPosition` at line 158), **after `Enter`, before undo**. They never reach redo. `artifacts/firefox-history-*-redo.json` / `artifacts/webkit-history-*-redo.json` were **not rewritten** this run (still 11:57 timestamps). Do not cite them.
+
+Failure shape, 10s poll, 1 worker, quiet machine, reproduced on Firefox residual + Firefox original 12 + WebKit original 12:
+
+- expected native: inserted block, offset 0
+- received native: first block, offset 5 (`"Hello"`)
+
+Same-block history (`history.spec.ts:26`) passed on all three.
+
+Official-path dump (same click / type / 450ms settle / Enter as the spec; not a product test):
+
+| Engine   | After Enter t0 authority | After Enter t0 native | Attach                         |
+| -------- | ------------------------ | --------------------- | ------------------------------ |
+| Chromium | inserted @ 0             | inserted @ 0          | inserted                       |
+| WebKit   | **first @ 5**            | **first @ 5**         | **lost** (`activeElement` BODY) |
+| Firefox  | **first @ 5**            | **first @ 5**         | stays on first                 |
+
+Artifacts: `artifacts/chromium-history-enter.json`, `artifacts/webkit-history-enter.json`, `artifacts/firefox-history-enter.json`.
+
+This is **not** the previous S1/S2 projector miss. The projector had a new range to write and wrote it (`authorityRangeProjected: true`). After Enter the authority **never moves** onto the new block on Firefox/WebKit, so there is nothing new to project. Chromium moves authority, attach, and native together.
+
+`pen.splitBlock` (`packages/core/src/commands/text.ts:542`) returns `{ selection: collapsedAt(newBlockId, 0) }` and the registry commits that (`packages/core/src/commands/registry.ts:177`). The fallback `splitBlockAtOffset` (`packages/rendering/dom/src/field-editor/commandsBlock.ts:49`) applies the op and does **not** write `editor.selection`. This report does not claim which path ran — only that on Firefox/WebKit the split exists and authority stayed on the first block through t0 and two rAFs. Do not add a rAF to "heal" it.
+
+### Firefox `selectAll` in the original 12
+
+`selectAll.spec.ts:12` failed once in the Firefox original 12 (`selectedText` stayed `""` for 10s), then **passed isolated** on the same quiet machine, same frozen server, `--workers=1`, 1.4s (`real 3.51`, load 5.53). Chromium `selectAll` passed both isolated and in-suite. Do not use the one Firefox suite miss as the hold. History is the hold.
+
+### Gate and branch protection
+
+Left alone:
+
+```yaml
+continue-on-error: ${{ matrix.engine == 'firefox' }}
+```
+
+Do **not** add `e2e-firefox` as a required check.
+
+WebKit is already blocking. This quiet confirm is **not** green for WebKit (`history.spec.ts:60` and `:108`). A required `e2e-webkit` check will fail merges on this tree until that Enter-split selection write is fixed. Do not paper it with `test.skip` / `test.fixme` / a retry / a wider poll.
+
+### Next attempt
+
+Quiet machine, fresh `dev:e2e`, then in order:
+
+1. Chromium original 12 (confirm `selectAll` still green).
+2. WebKit original 12 (blocking engine; Enter-split must pass before anyone talks about Firefox).
+3. Evidence spec Firefox + `nativeSelection` (should stay green).
+4. Firefox `history.spec.ts` — if it still dies at line 75, dump authority vs native after Enter again; do not bother with redo snapshots until that assertion passes.
+
+Promote Firefox only if the original 12 is fully green **and** reproducible **and** `authorityRangeProjected: true` **and** history redo native `blockId === redoneBlockId` at the first snapshot. This run meets the evidence-spec and nativeSelection criteria and misses the original 12.
+
+---
+
 ## 2026-08-21 12:42–12:46 UTC — Firefox re-confirm: not measurable
 
 Attempted on HEAD `3f2ecae` after `SelectionAuthority` and synchronous `syncDomSelectionOnce`. **Do not promote Firefox from this attempt. Do not treat the Chromium miss below as a regression.** Gate left as `continue-on-error: ${{ matrix.engine == 'firefox' }}`.

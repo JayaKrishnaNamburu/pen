@@ -61,10 +61,14 @@
 #           tables (watched fail on real drift). The rule is a
 #           generated API reference that fails on an undocumented
 #           public symbol. scripts/api-docs-coverage.mjs is a ratchet
-#           at MAX_UNDOCUMENTED=1949, not that hard gate. It moved three
+#           at MAX_UNDOCUMENTED=1948, not that hard gate. It moved four
 #           times on 2026-08-21: up to 2008, down to 1968 when 49 accidental
-#           extension-barrel exports were unexported, then down again to
-#           1949 when the react/test/bench barrels shed 22 more. The first
+#           extension-barrel exports were unexported, down to 1949 when the
+#           react/test/bench barrels shed 22 more, then to 1948 when core
+#           shed 8. Core moved the number by only 1 because regenerating its
+#           api-report from a fresh .d.ts also admitted 10 already-exported
+#           names the committed report had omitted — a shrink and a
+#           correction landing in the same figure. The first
 #           move rose from 1858 on 2026-08-21 when the gate stopped skipping
 #           @input/pen-dom's ./field-editor/* glob subpath (212 further
 #           undocumented names). That is a widened denominator, not a

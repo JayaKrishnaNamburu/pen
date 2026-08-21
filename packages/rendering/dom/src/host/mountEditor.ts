@@ -12,6 +12,7 @@ import { resolveSelectAllBehavior } from "../constants/selectAll";
 import type { PenFocusPolicy } from "../field-editor/controller";
 import { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
 import { domSelectionToEditor } from "../field-editor/selectionBridge";
+import { registerVerticalCaretMeasure } from "../geometry/verticalCaretMeasure";
 import { handleEditorDocumentKeyDown } from "../utils/documentShortcuts";
 import { buildDataAttributes, DATA_ATTRS } from "../utils/dataAttributes";
 import { computeDocumentEmpty } from "../utils/editorEmptyState";
@@ -51,6 +52,7 @@ export function mountEditor(
 
 	const tree = createDocumentTree(editor, fieldEditor, root);
 	fieldEditor.setRootElement(root);
+	const unregisterVerticalCaret = registerVerticalCaretMeasure(editor, root);
 
 	const unsubscribers: Unsubscribe[] = [];
 
@@ -128,6 +130,7 @@ export function mountEditor(
 			handleDocumentKeyDown,
 			true,
 		);
+		unregisterVerticalCaret();
 		editor.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, undefined);
 		fieldEditor.setRootElement(null);
 		fieldEditor.destroy();

@@ -46,15 +46,19 @@ export function splitBlockAtOffset(
 	const { blockId, offset, newBlockType } = options;
 	const newBlockId = generateId();
 
-	editor.apply([
-		{
-			type: "split-block",
-			blockId,
-			offset,
-			newBlockId,
-			newBlockType,
-		} as DocumentOp,
-	]);
+	editor.apply(
+		[
+			{
+				type: "split-block",
+				blockId,
+				offset,
+				newBlockId,
+				newBlockType,
+			} as DocumentOp,
+		],
+		{ origin: "user" },
+	);
+	editor.selectText(newBlockId, 0, 0);
 
 	return {
 		blockId: newBlockId,

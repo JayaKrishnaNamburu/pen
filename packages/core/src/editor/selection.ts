@@ -34,10 +34,17 @@ const INVALID_BLOCK_CODE = "selection-invalid-block";
 const RESERVED_ORIGIN_CODE = "selection-reserved-origin";
 
 /**
- * A1 hole (N2 deferred): non-text blocks still admit a 0..1 pseudo-text
- * span so v1 `deleteSelection` paths that fully-select a divider/table
- * keep working. `nextNormalPosition` already forbids these positions (N2).
- * Remove this when N2 is enforced at the authority.
+ * Mixed-boundary N2 hole: a text endpoint on a non-text block is still
+ * admitted (clamped to 0..1) when the other endpoint sits on a different
+ * block. `selectTextRange(p1@2, d1@1)` + `deleteSelection` keeps the
+ * paragraph suffix and deletes the divider (`deleteMultiBlockTextRange`).
+ * Retargeting that write onto `selectBlock` would delete the entire
+ * paragraph — an owner decision, not this clamp.
+ *
+ * Same-block fully-selected (0..1) divider/table writes are converted
+ * to `BlockSelection` in `_validateText`. A collapsed caret on a table
+ * stays a text point — autocomplete and similar callers still probe it.
+ * `nextNormalPosition` already forbids these positions (N2).
  */
 export function clampNonTextPseudoOffset(offset: number): number {
 	if (!Number.isFinite(offset)) {
@@ -239,7 +246,7 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 		}
 	}
 
-	private _validateText(sel: TextSelection): TextSelection | undefined {
+	private _validateText(sel: TextSelection): SelectionState | undefined {
 		if (
 			!this._blockExists(sel.anchor.blockId) ||
 			!this._blockExists(sel.focus.blockId)
@@ -250,6 +257,17 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 					: sel.anchor.blockId,
 			);
 			return undefined;
+		}
+		if (
+			sel.anchor.blockId === sel.focus.blockId &&
+			this._isNonTextBlock(sel.anchor.blockId) &&
+			this._isFullySelectedNonText(sel)
+		) {
+			return this._validateBlock({
+				type: "block",
+				blockIds: [sel.anchor.blockId],
+				head: sel.anchor.blockId,
+			});
 		}
 		return stampTextSelection(this._doc, {
 			anchor: {
@@ -513,17 +531,29 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 		};
 	}
 
+	private _isNonTextBlock(blockId: string): boolean {
+		const blockMap = (this._doc.blocks as CRDTBlockMap).get(blockId);
+		const blockType = blockMap?.get("type");
+		if (typeof blockType !== "string") {
+			return false;
+		}
+		const schema = this._registry.resolve(blockType);
+		return Boolean(schema && !usesInlineTextSelection(schema));
+	}
+
+	/** v1 non-text span is 0..1; only that full cover is safe to escalate. */
+	private _isFullySelectedNonText(sel: TextSelection): boolean {
+		const from = Math.min(sel.anchor.offset, sel.focus.offset);
+		const to = Math.max(sel.anchor.offset, sel.focus.offset);
+		return from <= 0 && to >= 1;
+	}
+
 	private _clampOffset(blockId: string, offset: number): number {
 		if (!Number.isFinite(offset) || offset < 0) {
 			return 0;
 		}
-		const blockMap = (this._doc.blocks as CRDTBlockMap).get(blockId);
-		const blockType = blockMap?.get("type");
-		if (typeof blockType === "string") {
-			const schema = this._registry.resolve(blockType);
-			if (schema && !usesInlineTextSelection(schema)) {
-				return clampNonTextPseudoOffset(offset);
-			}
+		if (this._isNonTextBlock(blockId)) {
+			return clampNonTextPseudoOffset(offset);
 		}
 		return clampOffsetToLength(offset, this._logicalLength(blockId));
 	}

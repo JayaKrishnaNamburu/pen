@@ -357,12 +357,13 @@ class EditorImpl implements Editor {
 	}
 
 	selectAll(): void {
+		const snapshot = buildTransitionSnapshot(this);
 		const next = escalateSelectAll(
-			buildTransitionSnapshot(this),
+			snapshot,
 			toTransitionSelection(this),
 		);
 		this._writeSelection(
-			fromTransitionSelection(next),
+			fromTransitionSelection(next, snapshot.blockOrder),
 			"programmatic",
 		);
 	}

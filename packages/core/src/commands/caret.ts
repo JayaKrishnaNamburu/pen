@@ -381,11 +381,9 @@ function handleDocEdge(
 }
 
 function handleSelectAll(editor: Editor): CommandResult | false {
-	const next = escalateSelectAll(
-		buildTransitionSnapshot(editor),
-		toTransitionSelection(editor),
-	);
-	const selection = fromTransitionSelection(next);
+	const snapshot = buildTransitionSnapshot(editor);
+	const next = escalateSelectAll(snapshot, toTransitionSelection(editor));
+	const selection = fromTransitionSelection(next, snapshot.blockOrder);
 	if (!selection) {
 		return false;
 	}
@@ -426,13 +424,14 @@ function handleBlockSelectionArrow(
 	if (editor.selection?.type !== "block") {
 		return undefined;
 	}
+	const snapshot = buildTransitionSnapshot(editor);
 	const next = arrowFromBlockSelection(
-		buildTransitionSnapshot(editor),
+		snapshot,
 		toTransitionSelection(editor),
 		direction,
 		param.extend,
 	);
-	const selection = fromTransitionSelection(next);
+	const selection = fromTransitionSelection(next, snapshot.blockOrder);
 	if (!selection) {
 		return false;
 	}
@@ -587,7 +586,9 @@ function extendSelection(
 	if (!anchor) {
 		return collapsedAt(next.blockId, next.offset);
 	}
-	return textSelectionResult(anchor, next);
+	return textSelectionResult(anchor, next, {
+		blockOrder: editor.documentState.blockOrder,
+	});
 }
 
 function isPoint(value: Point | SelectionState): value is Point {

@@ -6,7 +6,13 @@ import {
 import type { Command, Editor, SelectionState } from "@input/pen-types";
 
 export interface FieldEditorCommandTarget {
+	readonly focusBlockId?: string | null;
 	activateTextSelection(
+		blockId: string,
+		anchorOffset: number,
+		focusOffset: number,
+	): void;
+	commitProgrammaticTextSelection?(
 		blockId: string,
 		anchorOffset: number,
 		focusOffset: number,
@@ -67,6 +73,19 @@ export function activateFieldEditorFromSelection(
 		case "text":
 			if (isMultiBlock(selection)) {
 				fieldEditor.deactivate();
+				return;
+			}
+			if (
+				fieldEditor.focusBlockId != null &&
+				fieldEditor.focusBlockId !== selection.focus.blockId &&
+				typeof fieldEditor.commitProgrammaticTextSelection ===
+					"function"
+			) {
+				fieldEditor.commitProgrammaticTextSelection(
+					selection.focus.blockId,
+					selection.anchor.offset,
+					selection.focus.offset,
+				);
 				return;
 			}
 			fieldEditor.activateTextSelection(

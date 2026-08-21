@@ -307,6 +307,11 @@ describe("@input/pen-core createEditor", () => {
 			{ blockId: "d1", offset: 0 },
 			{ blockId: "d1", offset: 1 },
 		);
+		expect(editor.getSelection()).toMatchObject({
+			type: "block",
+			blockIds: ["d1"],
+			head: "d1",
+		});
 		editor.deleteSelection();
 
 		expect(editor.getBlock("d1")).toBeNull();
@@ -332,6 +337,11 @@ describe("@input/pen-core createEditor", () => {
 			{ blockId: "t1", offset: 0 },
 			{ blockId: "t1", offset: 1 },
 		);
+		expect(editor.getSelection()).toMatchObject({
+			type: "block",
+			blockIds: ["t1"],
+			head: "t1",
+		});
 		editor.deleteSelection();
 
 		expect(editor.getBlock("t1")).toBeNull();

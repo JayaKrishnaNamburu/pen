@@ -44,10 +44,8 @@ export { suggestion } from "./schema/system-marks/suggestion";
 // Editor runtime
 export { createEditor, createHeadlessEditor } from "./editor/editor";
 export type { CreateHeadlessEditorOptions } from "./editor/editor";
-export {
-	createDocumentSession,
-	DocumentSessionImpl,
-} from "./editor/documentSession";
+export { createDocumentSession } from "./editor/documentSession";
+// DocumentSessionImpl stays off the barrel; the factory returns DocumentSession from @input/pen-types.
 export { EventEmitter } from "./editor/events";
 export {
 	createDecorationSet,
@@ -58,7 +56,7 @@ export {
 	ensureInlineCompletionController,
 	getInlineCompletionController,
 } from "./editor/inlineCompletion";
-export { DocumentStateImpl } from "./editor/documentState";
+// DocumentStateImpl stays off the barrel; hosts read editor.documentState (DocumentState from @input/pen-types).
 export { DocumentRangeImpl } from "./editor/range";
 export { SelectionAuthorityImpl as SelectionAuthority } from "./editor/selection";
 export {
@@ -68,13 +66,13 @@ export {
 	selectionToRange,
 } from "./selection/helpers";
 export { ExtensionManagerImpl } from "./editor/extensionManager";
-export { ApplyPipeline } from "./editor/apply";
+// ApplyPipeline stays off the barrel; hosts call editor.apply.
 export {
 	APPLY_STORM_CODE,
 	APPLY_STORM_QUEUE_LIMIT,
 	PIPELINE_PHASES,
 } from "./editor/pipelinePhases";
-export type { PipelinePhase } from "./editor/pipelinePhases";
+// @input/pen-types already publishes PipelinePhase; PIPELINE_PHASES is the runtime tuple.
 export {
 	hasIndexedCellSelectionMetadata,
 	resolveCellSelectionCoord,
@@ -106,7 +104,7 @@ export {
 	renderSelectionTargetText,
 	resolveSelectionTargetBlockIds,
 } from "./editor/operationSelectionTargets";
-export type { ModelOperationRangeTarget } from "./editor/operationSelectionTargets";
+// @input/pen-types already publishes ModelOperationRangeTarget.
 export type {
 	PendingBlockImportPolicyViolation,
 	PendingBlockProfilePolicyViolation,
@@ -174,10 +172,8 @@ export {
 	type UrlContext,
 	type UrlPolicy,
 } from "./security/urlPolicy";
-export {
-	blockLogicalText,
-	logicalTextFromStored,
-} from "./text/blockLogicalText";
+export { blockLogicalText } from "./text/blockLogicalText";
+// @input/pen-types already publishes logicalTextFromStored.
 export {
 	applyDirectedBinding,
 	resolveDirectedBinding,
@@ -338,10 +334,8 @@ export {
 	assetProviderFacet,
 	documentOpsToolRuntimeFacet,
 } from "./facets/controllerFacets";
-export {
-	SLOT_DEPRECATED_CODE,
-	SLOT_DISPOSITION_BY_KEY,
-	dispositionForSlot,
-} from "./facets/slotAdapter";
+export { SLOT_DEPRECATED_CODE } from "./facets/slotAdapter";
+// SLOT_DISPOSITION_BY_KEY / dispositionForSlot stay off the barrel; they are the
+// engine's slot→facet migration table. Hosts switch on SLOT_DEPRECATED_CODE.
 export { affectedBlockIdsFromSummary } from "./changes/affectedBlocks";
 export { EVENT_DEPRECATED_CODE } from "./editor/commitEvent";

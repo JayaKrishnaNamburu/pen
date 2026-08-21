@@ -6,10 +6,7 @@
 
 ### class
 
-- ApplyPipeline
 - DocumentRangeImpl
-- DocumentSessionImpl
-- DocumentStateImpl
 - EventEmitter
 - ExtensionManagerImpl
 - SchemaEngineImpl
@@ -45,7 +42,7 @@
 - defineExtension
 - defineFacet
 - delegatesToGridEditing
-- dispositionForSlot
+- deleteAdjacentInlineAtom
 - emptyDecorationSet
 - ensureInlineCompletionController
 - filterAIRequest
@@ -63,6 +60,8 @@
 - getOpOriginGroupId
 - getOpOriginType
 - getSelectionBlockRange
+- getVerticalCaretGoalX
+- getVerticalCaretMeasure
 - hasFieldEditorSurface
 - hasIndexedCellSelectionMetadata
 - hookPriorityToPrecedence
@@ -105,7 +104,10 @@
 - resolveSelectionTargetBlockIds
 - resolveToolExecution
 - runMigrations
+- selectAdjacentInlineAtom
 - selectionToRange
+- setVerticalCaretGoalX
+- setVerticalCaretMeasure
 - shouldAllowDirectBlockPaste
 - shouldAllowFlowInsertionInSlashMenu
 - shouldExposeBlockInTooling
@@ -174,9 +176,7 @@
 - insertText
 - keymapFacet
 - localeFacet
-- logicalTextFromStored
 - messagesFacet
-- ModelOperationRangeTarget
 - moveBlockDown
 - moveBlockUp
 - multiplayerControllerFacet
@@ -191,7 +191,6 @@
 - selectBlock
 - SelectionAuthority
 - SLOT_DEPRECATED_CODE
-- SLOT_DISPOSITION_BY_KEY
 - splitBlock
 - suggestion
 - tableCellDown
@@ -237,7 +236,6 @@
 - PendingBlock
 - PendingBlockImportPolicyViolation
 - PendingBlockProfilePolicyViolation
-- PipelinePhase
 - ProfilePolicyViolation
 - SchemaA11yAttrs
 - SchemaA11yKind
@@ -247,4 +245,8 @@
 - ToggleMarkParam
 - UrlContext
 - UrlPolicy
+- VerticalCaretDirection
+- VerticalCaretMeasure
+- VerticalCaretMeasureResult
+- VerticalCaretPoint
 - WordRange

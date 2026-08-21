@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { afterEach, describe, expect, it } from "vitest";
-import { createEditor } from "@input/pen-core";
+import { createEditor, getVerticalCaretMeasure } from "@input/pen-core";
 import { defaultSchema } from "@input/pen-schema-default";
 import { FIELD_EDITOR_SLOT_KEY, type Editor } from "@input/pen-types";
 import { mountEditor } from "../host/mountEditor";
@@ -146,5 +146,31 @@ describe("mountEditor", () => {
 
 		expect(root.getAttribute(DATA_ATTRS.readonly)).toBe("");
 		expect(root.hasAttribute(DATA_ATTRS.empty)).toBe(false);
+	});
+
+	it("registers setVerticalCaretMeasure after the field editor attaches", () => {
+		const editor = createBareEditor();
+		const root = document.createElement("div");
+		document.body.append(root);
+		const mounted = mountEditor(editor, root);
+		cleanups.push(() => {
+			mounted.destroy();
+			editor.destroy();
+		});
+
+		expect(getVerticalCaretMeasure(editor)).toEqual(expect.any(Function));
+	});
+
+	it("clears the vertical caret measure on destroy", () => {
+		const editor = createBareEditor();
+		const root = document.createElement("div");
+		document.body.append(root);
+		const mounted = mountEditor(editor, root);
+		mounted.destroy();
+		cleanups.push(() => {
+			editor.destroy();
+		});
+
+		expect(getVerticalCaretMeasure(editor)).toBeUndefined();
 	});
 });

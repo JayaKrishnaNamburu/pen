@@ -340,6 +340,49 @@ describe("SelectionAuthority A1–A6", () => {
 		editor.destroy();
 	});
 
+	it("N2: a fully-selected divider text range becomes BlockSelection", () => {
+		const editor = createEditor();
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "d1",
+				blockType: "divider",
+				props: {},
+				position: "last",
+			},
+		]);
+		editor.selectTextRange(
+			{ blockId: "d1", offset: 0 },
+			{ blockId: "d1", offset: 1 },
+		);
+		expect(editor.selection).toMatchObject({
+			type: "block",
+			blockIds: ["d1"],
+			head: "d1",
+		});
+		editor.destroy();
+	});
+
+	it("N2: a collapsed caret on a table stays a text selection", () => {
+		const editor = createEditor();
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "t1",
+				blockType: "table",
+				props: {},
+				position: "last",
+			},
+		]);
+		editor.selectText("t1", 0, 0);
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId: "t1", offset: 0 },
+			focus: { blockId: "t1", offset: 0 },
+		});
+		editor.destroy();
+	});
+
 	it("helpers recompute blockRange from the document and ignore a stamped lie", () => {
 		const editor = createEditor();
 		const first = editor.firstBlock()!.id;

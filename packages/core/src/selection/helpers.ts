@@ -13,10 +13,9 @@ import { DocumentRangeImpl } from "../editor/range";
  * Stamp factory for live `TextSelection` values.
  *
  * Recomputes `isCollapsed` / `isMultiBlock` / `blockRange` / `toRange`
- * from `(doc, sel)`. Never reads those fields off the incoming value
- * and never trusts a caller-supplied `blockRange` — command payloads
- * historically stamp `blockRange: [anchor.blockId]` even for multi-block
- * ranges.
+ * from `(doc, sel)`. Never reads those fields off the incoming value.
+ * Command payloads stamp `blockRange` the same way when they pass a
+ * `blockOrder`; collapsed same-block payloads do not need one.
  */
 export function isCollapsed(sel: SelectionState): boolean {
 	if (sel === null || sel.type !== "text") {
@@ -36,7 +35,7 @@ export function isMultiBlock(sel: SelectionState): boolean {
 }
 
 export function getSelectionBlockRange(
-	doc: PenDocument,
+	doc: PenDocument | readonly string[],
 	sel: SelectionState,
 ): string[] {
 	if (sel === null) {
@@ -44,7 +43,9 @@ export function getSelectionBlockRange(
 	}
 	switch (sel.type) {
 		case "text":
-			return blockIdsBetween(doc, sel.anchor.blockId, sel.focus.blockId);
+			return isBlockOrderList(doc)
+				? blockIdsFromOrder(doc, sel.anchor.blockId, sel.focus.blockId)
+				: blockIdsBetween(doc, sel.anchor.blockId, sel.focus.blockId);
 		case "block":
 			return [...sel.blockIds];
 		case "cell":
@@ -93,14 +94,48 @@ export function stampTextSelection(
 	});
 }
 
+function isBlockOrderList(
+	value: PenDocument | readonly string[],
+): value is readonly string[] {
+	return Array.isArray(value);
+}
+
+function blockIdsFromOrder(
+	order: readonly string[],
+	anchorId: string,
+	focusId: string,
+): string[] {
+	return sliceBlockIds(
+		order.indexOf(anchorId),
+		order.indexOf(focusId),
+		anchorId,
+		focusId,
+		(index) => order[index] as string,
+	);
+}
+
 function blockIdsBetween(
 	doc: PenDocument,
 	anchorId: string,
 	focusId: string,
 ): string[] {
 	const order = doc.blockOrder as CRDTArray<string>;
-	const anchorIndex = indexOfBlock(order, anchorId);
-	const focusIndex = indexOfBlock(order, focusId);
+	return sliceBlockIds(
+		indexOfBlock(order, anchorId),
+		indexOfBlock(order, focusId),
+		anchorId,
+		focusId,
+		(index) => order.get(index) as string,
+	);
+}
+
+function sliceBlockIds(
+	anchorIndex: number,
+	focusIndex: number,
+	anchorId: string,
+	focusId: string,
+	idAt: (index: number) => string,
+): string[] {
 	if (anchorIndex < 0 && focusIndex < 0) {
 		return [];
 	}
@@ -114,7 +149,7 @@ function blockIdsBetween(
 	const to = Math.max(anchorIndex, focusIndex);
 	const ids: string[] = [];
 	for (let i = from; i <= to; i++) {
-		ids.push(order.get(i) as string);
+		ids.push(idAt(i));
 	}
 	return ids;
 }

@@ -13,7 +13,7 @@ import {
 	keymapContextFromSelection,
 	syncEditorTextSelection,
 } from "./commandDispatch";
-import { moveCaretAcrossBlocks, type SelectionRange } from "./commands";
+import type { SelectionRange } from "./commands";
 import { getAutocompleteController } from "../utils/autocompleteController";
 import { selectInlineAtomWithArrowKey } from "./keyHandlingInlineAtoms";
 import {
@@ -126,34 +126,6 @@ export function handleFieldEditorKeyDown(options: {
 				event.preventDefault();
 				return true;
 			}
-		}
-	}
-
-	if (
-		(event.key === "ArrowUp" || event.key === "ArrowDown") &&
-		!event.metaKey &&
-		!event.ctrlKey &&
-		!event.altKey &&
-		!event.shiftKey
-	) {
-		const target = moveCaretAcrossBlocks(editor, {
-			blockId,
-			ytext,
-			range,
-			direction: event.key === "ArrowUp" ? "previous" : "next",
-		});
-		if (target) {
-			if (target.selectBlock) {
-				fieldEditor.deactivate();
-				editor.selectBlock(target.blockId);
-			} else {
-				fieldEditor.activateTextSelection(
-					target.blockId,
-					target.anchorOffset,
-					target.focusOffset,
-				);
-			}
-			return true;
 		}
 	}
 
