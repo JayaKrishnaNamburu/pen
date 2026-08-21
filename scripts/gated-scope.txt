@@ -61,7 +61,12 @@
 #           tables (watched fail on real drift). The rule is a
 #           generated API reference that fails on an undocumented
 #           public symbol. scripts/api-docs-coverage.mjs is a ratchet
-#           at MAX_UNDOCUMENTED=1858, not that hard gate.
+#           at MAX_UNDOCUMENTED=2008, not that hard gate. The number rose
+#           from 1858 on 2026-08-21 when the gate stopped skipping
+#           @input/pen-dom's ./field-editor/* glob subpath (212 further
+#           undocumented names). That is a widened denominator, not a
+#           documentation regression, and the subpath matters because it
+#           is where the API triage sends extension authors.
 #   DOC5  — examples.yml smokes react/vue/vanilla. The rule also asks
 #           for collaboration/AI/import-export examples, a playground
 #           kitchen-sink label, no relative source imports, and a

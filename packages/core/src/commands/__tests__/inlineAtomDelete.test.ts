@@ -11,6 +11,7 @@ import {
 	createCommandEditor,
 	createCommandHarness,
 	insertMention,
+	liveRegistry,
 } from "./fixture";
 
 /**
@@ -22,22 +23,32 @@ import {
  * product. `registry.dispatch(deleteBackward)` currently keeps the registry
  * one-shot so this file does not silently pick a winner.
  *
- * Recommendation (not applied): SELECT is the correct default.
+ * Live keystroke at bb354ea: DELETE. Vanilla `mountEditor`, React
+ * `PenEditor`, and Vue `PenEditor` all construct `FieldEditorImpl`. Field
+ * backends call `handleFieldEditorKeyDown` → `dispatchKeymapEvent` →
+ * `registry.dispatch(pen.deleteBackward)`. `createEditor` always installs
+ * that registry. `applyDeleteBehavior` SELECT is the no-dispatch fallback,
+ * not the live path. See field-editor
+ * `__tests__/commandsDelete.inlineAtomDivergence.test.ts`.
+ *
+ * Recommendation (not applied): SELECT is the intended product; DELETE is
+ * the shipped product. Do not converge here.
  *
  * 1. Spec 4.2 says `pen.deleteBackward/Forward` is v1 `applyDeleteBehavior`
  *    moved. That function selects. Immediate delete is a rewrite, not a move.
- * 2. Live editor today selects — field-editor is still the keydown path.
- *    Shipping registry.delete as the replacement would change what users do.
- * 3. Caret already selects a `selectable` atom (N1 / `pen.caretLeft/Right`).
- *    Select-then-delete is one two-step object: first stroke names it, second
- *    removes it. Immediate delete makes atoms feel like invisible characters
- *    on Backspace and like chips on Arrow — two products in one editor.
- * 4. Word / Notion / Google Docs use the two-step for mentions and similar
- *    embeds. Immediate delete is closer to a code editor.
+ * 2. Caret already selects an adjacent atom (`stepInlineAtom` / N1).
+ *    Select-then-delete is one two-step object. Immediate delete makes
+ *    atoms feel like characters on Backspace and chips on Arrow.
+ * 3. Word / Notion / Google Docs use the two-step for mentions. Immediate
+ *    delete is closer to a code editor.
+ * 4. Implementing SELECT would change what every binding does today. That
+ *    is an owner UX call, not a bugfix. The previous "live path selects"
+ *    claim is false at this commit.
  *
  * Flipping the handler is one call: `selectAdjacentInlineAtom` instead of
  * `deleteAdjacentInlineAtom`. Do not retarget field-editor delete tests onto
- * `registry.dispatch` until an owner confirms this recommendation.
+ * `registry.dispatch` until an owner confirms — the paths differ, and a
+ * naive retarget would stay green while changing what the editor does.
  */
 
 function mentionDoc() {
@@ -141,6 +152,21 @@ describe("inline atom delete divergence", () => {
 		it("dispatch deleteBackward adjacent to an atom deletes it in one step", () => {
 			const editor = mentionDoc();
 			const registry = createCommandHarness(editor);
+			editor.selectText("a", 3, 3);
+			expect(hasMention(editor)).toBe(true);
+
+			expect(
+				registry.dispatch(deleteBackward, { granularity: "grapheme" }),
+			).toBe(true);
+			expect(hasMention(editor)).toBe(false);
+			expect(editor.getBlock("a")?.textContent()).toBe("hiz");
+			expect(caretOf(editor)).toEqual({ blockId: "a", offset: 2 });
+			editor.destroy();
+		});
+
+		it("liveRegistry deleteBackward adjacent to an atom deletes it in one step", () => {
+			const editor = mentionDoc();
+			const registry = liveRegistry(editor);
 			editor.selectText("a", 3, 3);
 			expect(hasMention(editor)).toBe(true);
 

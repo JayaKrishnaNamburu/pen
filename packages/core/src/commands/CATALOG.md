@@ -89,7 +89,7 @@ Block-selection delete is also handled by `pen.deleteBackward` / `pen.deleteForw
 
 I6 headless half: `__tests__/keymapParity.headless.test.ts` iterates the default keymap table and dispatches every binding on the live registry. The browser-harness half is outstanding — do not compare `createEditor` to `createHeadlessEditor` in Node; they are the same factory.
 
-Inline-atom delete recommendation (owner decision, not applied): SELECT, matching v1 `applyDeleteBehavior` and N1 caret. Registry still one-shots delete so the fork stays visible in `__tests__/inlineAtomDelete.test.ts`.
+Inline-atom delete (owner decision, not applied). Pinned fork in `__tests__/inlineAtomDelete.test.ts` and field-editor `__tests__/commandsDelete.inlineAtomDivergence.test.ts`: `applyDeleteBehavior` / `selectAdjacentInlineAtom` SELECTs; registry `handleDelete` / `deleteAdjacentInlineAtom` DELETES. Live keystroke at this commit is DELETE — vanilla / React / Vue all go `FieldEditorImpl` → `handleFieldEditorKeyDown` → `dispatchKeymapEvent` → `registry.dispatch`. `applyDeleteBehavior` is the no-dispatch fallback. SELECT is the intended product (spec 4.2 "applyDeleteBehavior moved", caret already selects atoms, Word/Docs two-step). DELETE is the shipped product. Do not converge without an owner: flipping the handler changes UX on every binding. Do not retarget field-editor delete tests onto `registry.dispatch` until then — the paths differ semantically, and a naive retarget would stay green while changing what the editor does.
 
 ## Field-editor names that are not catalog commands
 

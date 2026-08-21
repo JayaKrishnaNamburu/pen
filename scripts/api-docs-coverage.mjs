@@ -17,14 +17,16 @@
  * (`export { foo as bar }` is followed one hop); JSDoc in another
  * package that this barrel re-exports; comments forged inside strings.
  *
- * Glob surfaces are a declared skip (API4 lists files, not symbols)
- * and a measured hole: `@input/pen-dom` `./field-editor/*` is the
- * subpath extension authors should be pointed at. The report prints
- * file count, `^export ` statement count, and names that appear only
- * on the glob (host-reachable, absent from every non-glob surface).
- * Those counts are not added to MAX_UNDOCUMENTED — widening the
- * ratchet to signatures/files recreates the api-extractor problem.
- * A declared glob that lists zero files fails closed (skip of nothing).
+ * Glob surfaces are expanded, not skipped. API4 reports list files
+ * for a glob (`./field-editor/*`) because there is no single `.d.ts`
+ * to classify — that is a report-format limit, not a DOC3 exemption.
+ * Each listed file is run through the same `classifyExports` name
+ * inventory barrels already use. File count, `^export ` statement
+ * count, and glob-only names stay in the report as a population
+ * claim; they are not the ratchet. Widening the ratchet to
+ * signatures or members would recreate api-extractor.
+ * A declared glob that lists zero files fails closed (skip of
+ * nothing). An unread glob member fails closed (cannot undercount).
  *
  * The live tree is expected to have a large undocumented count until
  * the TSDoc pass (or API4 un-exports) lands. `MAX_UNDOCUMENTED` is a
@@ -49,7 +51,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { collectExportNames, loadPublishedPackages } from "./api-reports.mjs";
+import {
+	classifyExports,
+	collectExportNames,
+	loadPublishedPackages,
+} from "./api-reports.mjs";
 import {
 	appendOutdatedDistLines,
 	collectOutdatedDist,
@@ -79,11 +85,27 @@ const SKIP_DIR_NAMES = new Set([
 ]);
 
 /**
- * Ratchet. May only decrease. The gate is a hard zero-undocumented
- * check when this hits 0. Measured 2026-08-21: 1926 public symbols,
- * 130 with TSDoc, 1796 without.
+ * Ratchet. May only decrease. Hard DOC3 gate at 0.
+ *
+ * Re-recorded 2026-08-21. The barrel-only inventory on this tree was
+ * 1934 public / 138 documented / 1796 undocumented, matching the
+ * previous pin. This write is not that pin moving. It includes
+ * `@input/pen-dom` `./field-editor/*`: 76 `.d.ts` files matched by
+ * `./dist/field-editor/*.d.ts`, 97 `^export` statements, 282 unique
+ * classifyExports names, 232 of them absent from every non-glob
+ * surface, 212 of those 232 without TSDoc. 1796 + 212 = 2008.
+ *
+ * The rise is the advertised host surface becoming visible, not a
+ * documentation regression. `getSelectionPointRect` is the type case:
+ * host-reachable only through this glob, previously uncounted.
+ * A later drop from 2008 toward 1796 after un-expanding the glob
+ * would be a scope hole, not progress.
+ *
+ * Earlier the same day the barrel-only ratchet moved 1858 → 1852 →
+ * 1796 as lanes added TSDoc. Those drops were progress and were
+ * re-recorded; this write is the expansion on top of that 1796.
  */
-export const MAX_UNDOCUMENTED = 1796;
+export const MAX_UNDOCUMENTED = 2008;
 
 const JSDOC_RE = /\/\*\*[\s\S]*?\*\//g;
 const DECL_RE =
@@ -237,6 +259,24 @@ export function parseApiReport(text) {
 	return { packageName: title[1], surfaces };
 }
 
+export function addPublicSymbol(byName, entry, surfaceKey) {
+	const existing = byName.get(entry.name);
+	if (existing == null) {
+		byName.set(entry.name, {
+			name: entry.name,
+			kind: entry.kind,
+			surfaces: [surfaceKey],
+		});
+		return;
+	}
+	if (!existing.surfaces.includes(surfaceKey)) {
+		existing.surfaces.push(surfaceKey);
+	}
+	if (!existing.kind.split("|").includes(entry.kind)) {
+		existing.kind = `${existing.kind}|${entry.kind}`;
+	}
+}
+
 export function uniquePublicSymbols(report) {
 	const byName = new Map();
 	for (const surface of report.surfaces) {
@@ -244,26 +284,35 @@ export function uniquePublicSymbols(report) {
 			continue;
 		}
 		for (const entry of surface.entries) {
-			const existing = byName.get(entry.name);
-			if (existing == null) {
-				byName.set(entry.name, {
-					name: entry.name,
-					kind: entry.kind,
-					surfaces: [surface.key],
-				});
-				continue;
-			}
-			if (!existing.surfaces.includes(surface.key)) {
-				existing.surfaces.push(surface.key);
-			}
-			if (!existing.kind.split("|").includes(entry.kind)) {
-				existing.kind = `${existing.kind}|${entry.kind}`;
-			}
+			addPublicSymbol(byName, entry, surface.key);
 		}
 	}
 	return [...byName.values()].sort((left, right) =>
 		left.name.localeCompare(right.name),
 	);
+}
+
+export function collectGlobSymbols(surface, texts) {
+	const entries = [];
+	const unread = [];
+	for (const file of surface.globFiles ?? []) {
+		const text = texts?.[file];
+		if (typeof text !== "string") {
+			unread.push({
+				key: surface.key,
+				file,
+			});
+			continue;
+		}
+		for (const entry of classifyExports(text)) {
+			entries.push({
+				name: entry.name,
+				kind: entry.kind,
+				file,
+			});
+		}
+	}
+	return { entries, unread };
 }
 
 export function countExportStatements(text) {
@@ -332,6 +381,7 @@ export function evaluateCoverage({
 	const missingReports = [];
 	const reportNameMismatches = [];
 	const globSurfaces = [];
+	const unreadGlobFiles = [];
 	let publicSymbols = 0;
 
 	for (const pkg of packages) {
@@ -355,25 +405,33 @@ export function evaluateCoverage({
 			});
 		}
 		const documentedNames = documentedNamesFromSources(pkg.sources ?? []);
-		const symbols = uniquePublicSymbols(report);
-		const inventoriedNames = new Set(symbols.map((symbol) => symbol.name));
-		publicSymbols += symbols.length;
-		for (const symbol of symbols) {
-			const hit = {
-				package: pkg.name,
+		const barrelSymbols = uniquePublicSymbols(report);
+		const byName = new Map();
+		for (const symbol of barrelSymbols) {
+			byName.set(symbol.name, {
 				name: symbol.name,
 				kind: symbol.kind,
-				surfaces: symbol.surfaces,
-			};
-			if (documentedNames.has(symbol.name)) {
-				documented.push(hit);
-			} else {
-				undocumented.push(hit);
-			}
+				surfaces: [...symbol.surfaces],
+			});
 		}
+		const inventoriedNames = new Set(barrelSymbols.map((symbol) => symbol.name));
 		for (const surface of report.surfaces) {
 			if (!surface.glob) {
 				continue;
+			}
+			const { entries, unread } = collectGlobSymbols(
+				surface,
+				pkg.globFileTexts ?? null,
+			);
+			for (const miss of unread) {
+				unreadGlobFiles.push({
+					package: pkg.name,
+					key: miss.key,
+					file: miss.file,
+				});
+			}
+			for (const entry of entries) {
+				addPublicSymbol(byName, entry, surface.key);
 			}
 			const measured = measureGlobSurface({
 				files: surface.globFiles ?? [],
@@ -387,7 +445,25 @@ export function evaluateCoverage({
 				files: measured.files,
 				exports: measured.exports,
 				globOnly: measured.globOnly,
+				names: new Set(entries.map((entry) => entry.name)).size,
 			});
+		}
+		const symbols = [...byName.values()].sort((left, right) =>
+			left.name.localeCompare(right.name),
+		);
+		publicSymbols += symbols.length;
+		for (const symbol of symbols) {
+			const hit = {
+				package: pkg.name,
+				name: symbol.name,
+				kind: symbol.kind,
+				surfaces: symbol.surfaces,
+			};
+			if (documentedNames.has(symbol.name)) {
+				documented.push(hit);
+			} else {
+				undocumented.push(hit);
+			}
 		}
 	}
 
@@ -407,6 +483,7 @@ export function evaluateCoverage({
 		missingReports,
 		reportNameMismatches,
 		globSurfaces,
+		unreadGlobFiles,
 		maxUndocumented,
 		count,
 		regression: count > maxUndocumented,
@@ -452,7 +529,8 @@ export function hasFailures(result) {
 		result.reportNameMismatches.length > 0 ||
 		result.regression ||
 		result.staleBaseline ||
-		emptyGlobSurfaces(result.globSurfaces).length > 0
+		emptyGlobSurfaces(result.globSurfaces).length > 0 ||
+		(result.unreadGlobFiles?.length ?? 0) > 0
 	);
 }
 
@@ -467,7 +545,7 @@ export function formatReport(result) {
 	lines.push(`documented               ${result.documented}`);
 	lines.push(`undocumented             ${result.count}`);
 	lines.push(`baseline (max)           ${result.maxUndocumented}`);
-	lines.push(`glob surfaces skipped    ${result.globSurfaces.length}`);
+	lines.push(`glob surfaces expanded   ${result.globSurfaces.length}`);
 	lines.push(`outdated dist            ${result.outdatedDist?.length ?? 0}`);
 	if (result.missingReports.length > 0) {
 		lines.push("");
@@ -486,7 +564,7 @@ export function formatReport(result) {
 	if (result.globSurfaces.length > 0) {
 		lines.push("");
 		lines.push(
-			"glob surfaces skipped (API4 lists files, not symbols; exports are host-reachable and uncounted):",
+			"glob surfaces expanded (API4 lists files; classifyExports names enter the ratchet):",
 		);
 		for (const hit of result.globSurfaces) {
 			const fileLabel = `${hit.files} file${hit.files === 1 ? "" : "s"}`;
@@ -494,13 +572,17 @@ export function formatReport(result) {
 				hit.exports == null
 					? "exports unknown (dist unread)"
 					: `${hit.exports} export statement${hit.exports === 1 ? "" : "s"}`;
+			const nameLabel =
+				typeof hit.names === "number"
+					? `  ${hit.names} classified name${hit.names === 1 ? "" : "s"}`
+					: "";
 			const only = hit.globOnly ?? [];
 			const onlyLabel =
 				only.length > 0
 					? `  ${only.length} glob-only name${only.length === 1 ? "" : "s"}`
 					: "";
 			lines.push(
-				`  ${hit.package} ${hit.key}  ${fileLabel}  ${exportLabel}${onlyLabel}`,
+				`  ${hit.package} ${hit.key}  ${fileLabel}  ${exportLabel}${nameLabel}${onlyLabel}`,
 			);
 			const sample = sampleGlobOnlyNames(only);
 			for (const name of sample.names) {
@@ -509,6 +591,13 @@ export function formatReport(result) {
 			if (sample.more > 0) {
 				lines.push(`    … ${sample.more} more`);
 			}
+		}
+	}
+	if ((result.unreadGlobFiles?.length ?? 0) > 0) {
+		lines.push("");
+		lines.push("FAIL glob member unread (cannot undercount):");
+		for (const hit of result.unreadGlobFiles) {
+			lines.push(`  ${hit.package} ${hit.key}  ${hit.file}`);
 		}
 	}
 	const emptyGlobs = emptyGlobSurfaces(result.globSurfaces);
@@ -755,12 +844,21 @@ glob members:
 		maxUndocumented: 0,
 	});
 	assert(
-		quantified.count === 0,
-		"self-test: glob exports stay out of the ratchet",
+		quantified.count === 1,
+		"self-test: glob-only export enters the ratchet",
 	);
 	assert(
-		!quantified.regression,
-		"self-test: glob skip does not raise undocumented",
+		quantified.undocumented.some((hit) => hit.name === "getSelectionPointRect"),
+		"self-test: undocumented glob-only getSelectionPointRect fails by name",
+	);
+	assert(
+		quantified.regression,
+		"self-test: undocumented glob-only is a regression at max 0",
+	);
+	assert(hasFailures(quantified), "self-test: undocumented glob-only fails closed");
+	assert(
+		formatReport(quantified).includes("getSelectionPointRect"),
+		"self-test: report names getSelectionPointRect",
 	);
 	assert(
 		quantified.globSurfaces[0]?.files === 1,
@@ -776,8 +874,93 @@ glob members:
 		"self-test: getSelectionPointRect is glob-only",
 	);
 	assert(
-		!hasFailures(quantified),
-		"self-test: quantified skip is not a coverage failure",
+		quantified.publicSymbols === 2,
+		"self-test: barrel+glob overlap is not double-counted",
+	);
+
+	const documentedGlob = evaluateCoverage({
+		packages: [
+			{
+				name: "@input/pen-dom",
+				reportText: `# @input/pen-dom
+
+## .
+
+\`./dist/index.d.ts\`
+
+### function
+
+- createEditor
+
+## ./field-editor/*
+
+\`./dist/field-editor/*.d.ts\`
+
+glob members:
+
+- selectionBridgeOffsets.d.ts
+`,
+				sources: [
+					{
+						file: "index.ts",
+						text: "/** Create the editor. */\nexport function createEditor() {}\n",
+					},
+					{
+						file: "field-editor/selectionBridgeOffsets.ts",
+						text: "/** Caret rectangle in viewport coordinates. */\nexport function getSelectionPointRect() {}\n",
+					},
+				],
+				globFileTexts: {
+					"selectionBridgeOffsets.d.ts":
+						"export function getSelectionPointRect(): void;\nexport function createEditor(): void;\n",
+				},
+			},
+		],
+		maxUndocumented: 0,
+	});
+	assert(
+		documentedGlob.count === 0,
+		"self-test: documented glob-only export is green",
+	);
+	assert(
+		!hasFailures(documentedGlob),
+		"self-test: documented glob-only export must pass",
+	);
+	assert(
+		documentedGlob.publicSymbols === 2,
+		"self-test: documented glob still counts two public symbols",
+	);
+
+	const unreadGlob = evaluateCoverage({
+		packages: [
+			{
+				name: "@input/pen-dom",
+				reportText: `# @input/pen-dom
+
+## ./field-editor/*
+
+\`./dist/field-editor/*.d.ts\`
+
+glob members:
+
+- selectionBridgeOffsets.d.ts
+`,
+				sources: [],
+				globFileTexts: {},
+			},
+		],
+		maxUndocumented: 0,
+	});
+	assert(
+		unreadGlob.unreadGlobFiles.some(
+			(hit) => hit.file === "selectionBridgeOffsets.d.ts",
+		),
+		"self-test: unread glob member is named",
+	);
+	assert(hasFailures(unreadGlob), "self-test: unread glob member fails closed");
+	assert(
+		formatReport(unreadGlob).includes("selectionBridgeOffsets.d.ts"),
+		"self-test: unread glob failure names the file",
 	);
 	const sample = sampleGlobOnlyNames(
 		["applyBackspaceBehavior", "getSelectionPointRect", "helperA"],
@@ -1170,7 +1353,10 @@ async function main() {
 		"  red-proof: declared glob with zero files failed closed (skip of nothing)",
 	);
 	console.log(
-		"  measured: glob exports stay out of MAX_UNDOCUMENTED; getSelectionPointRect is glob-only",
+		"  red-proof: undocumented glob-only getSelectionPointRect failed closed, then documented pass",
+	);
+	console.log(
+		"  red-proof: unread glob member selectionBridgeOffsets.d.ts failed closed",
 	);
 
 	const args = parseArgs(process.argv.slice(2));
@@ -1191,6 +1377,7 @@ async function main() {
 					undocumented: result.count,
 					maxUndocumented: result.maxUndocumented,
 					globSurfaces: result.globSurfaces,
+					unreadGlobFiles: result.unreadGlobFiles,
 					hits: result.undocumented,
 				},
 				null,
@@ -1199,6 +1386,12 @@ async function main() {
 		);
 	} else {
 		console.log(formatReport(result));
+	}
+	for (const hit of result.globSurfaces) {
+		const pathLabel = hit.typesPath ?? hit.key;
+		console.log(
+			`  measured: ${hit.package} ${hit.key} ${pathLabel} matched ${hit.files} file${hit.files === 1 ? "" : "s"}`,
+		);
 	}
 	if (hasFailures(result) || hasInconclusive(result)) {
 		process.exitCode = 1;

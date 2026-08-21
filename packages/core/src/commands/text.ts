@@ -79,6 +79,7 @@ export const convertBlock = defineCommand<ConvertBlockParam>("pen.convertBlock")
 /**
  * Field-editor / v1 `applyDeleteBehavior`: adjacent inline atom → SELECT it.
  * Does not mutate the document. The next delete (non-collapsed range) removes it.
+ * This is the intended product, not the live keystroke (see handleDelete).
  */
 export function selectAdjacentInlineAtom(
 	editor: Editor,
@@ -97,6 +98,7 @@ export function selectAdjacentInlineAtom(
 /**
  * Current registry one-shot: adjacent inline atom → DELETE it.
  * Same detection as `selectAdjacentInlineAtom`; different product.
+ * This is the live keystroke (`createEditor` registry + keymap).
  */
 export function deleteAdjacentInlineAtom(
 	editor: Editor,

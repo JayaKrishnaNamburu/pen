@@ -1,5 +1,5 @@
 {
-	"_comment": "HOST4 (spec-v2/15-host-integration.md): above-floor APIs. Each entry names the API, its fallback, the user-visible degradation, and the sites allowed to use it bare. A site is { path, reason } — a bare path string is the parking-lot shape and fails scripts/above-floor-api-allowlist.mjs. Feature-detected uses do not need a site. An entry without fallback or degradation is a lint error. Remove a site in the same PR that adds a feature test. The eslint rule still matches string sites only; a linted product file that must silence the rule needs a string site until that rule is updated.",
+	"_comment": "HOST4 (spec-v2/15-host-integration.md): above-floor APIs. Each entry names the API, its fallback, the user-visible degradation, and the sites allowed to use it bare. A site is a path string (legacy, still valid) or { path, reason }. New sites must be { path, reason } — a path-only object is the parking-lot shape. Feature-detected uses do not need a site. An entry without fallback or degradation is a lint error. Remove a site in the same PR that adds a feature test. scripts/above-floor-api-allowlist.mjs fails if a site path is missing or the named API no longer appears in that file.",
 	"apis": [
 		{
 			"api": "EditContext",
@@ -50,7 +50,7 @@
 			"sites": [
 				{
 					"path": "packages/tooling/conformance/src/hosts/fixtureShape.test.js",
-					"reason": "Wave L LOC4: conformance host fixture asserts Intl.Segmenter so the documented code-point / whitespace fallback is the path under test, not a silent bare constructor"
+					"reason": "Node-only test (node:test / node:assert / node:fs); never shipped to a browser, so the HOST3/HOST4 browser API floor does not apply"
 				}
 			]
 		}

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
 	classifyDrift,
+	collectBlownSpec,
 	formatDriftReport,
 	nearestRankPercentile,
 	summarizeTypingBudget,
@@ -88,6 +89,29 @@ test("identical summaries print no loud drift", () => {
 	const report = formatDriftReport(same, same);
 	assert.equal(report.unchanged, true);
 	assert.equal(report.loud, false);
+	assert.equal(report.specBlown, false);
 	assert.match(report.text, /no loud drift/);
 	assert.match(report.text, /record-only/);
+	assert.doesNotMatch(report.text, /SPEC BUDGET BLOWN/);
+});
+
+test("a blown spec budget is loud in the record without flipping loud drift", () => {
+	const same = budget({
+		readPhaseP95Ms: 3.4,
+		writePhaseP95Ms: 0.1,
+		flushCount: 28,
+		keystrokeCount: 28,
+	});
+	same.versusSpec = {
+		readPhaseP95Ms: { budget: 2, measured: 3.4, blown: true },
+		writePhaseP95Ms: { budget: 2, measured: 0.1, blown: false },
+	};
+	const report = formatDriftReport(same, same);
+	assert.equal(collectBlownSpec(same.versusSpec).length, 1);
+	assert.equal(report.loud, false);
+	assert.equal(report.specBlown, true);
+	assert.match(report.text, /no loud drift/);
+	assert.match(report.text, /SPEC BUDGET BLOWN/);
+	assert.match(report.text, /readPhaseP95Ms: measured 3\.4 > budget 2/);
+	assert.doesNotMatch(report.text, /writePhaseP95Ms: measured/);
 });

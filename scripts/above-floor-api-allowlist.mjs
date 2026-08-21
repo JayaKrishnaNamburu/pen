@@ -2,18 +2,16 @@
 /**
  * HOST4 allowlist schema (spec-v2/15-host-integration.md).
  *
- * `scripts/above-floor-api-allowlist.json` entries already name `api`,
- * `fallback`, and `degradation`. Sites used to be a bare path-string
- * array with no per-site reason — the parking-lot shape. A site is now
- * either a legacy string (grandfathered only while the eslint plugin
- * still matches strings) or `{ path, reason }`. New sites must be
- * objects with a reason. An object missing `path` or `reason` fails.
+ * A site is a legacy path string (still valid) or `{ path, reason }`.
+ * New sites must be objects with a reason. A path-only object fails.
+ * Bare strings stay valid so existing entries are not a forced rewrite;
+ * they do not inherit a per-site reason — that is why new sites are
+ * objects.
  *
- * The eslint rule `no-above-floor-api` still matches string sites
- * only (`typeof site === "string"`). A linted product file that needs
- * to silence the rule must keep a string site until that rule is
- * updated (out of this script's fence). Object sites are the schema;
- * strings are the plugin seam.
+ * Liveness: a site whose path is missing fails by name. If the file
+ * exists, the named `api` string must still appear in it (cheap
+ * substring — not an AST). Path existence alone is the weak form;
+ * API-in-file is the stronger one this file can afford.
  */
 
 import fs from "node:fs/promises";
@@ -58,7 +56,7 @@ export function parseSite(site, index, api) {
 	);
 }
 
-export function evaluateAllowlist(raw) {
+export function evaluateAllowlist(raw, { files } = {}) {
 	if (!raw || !Array.isArray(raw.apis)) {
 		throw new Error("above-floor-api-allowlist.json must have an apis array");
 	}
@@ -94,10 +92,29 @@ export function evaluateAllowlist(raw) {
 			}
 		}
 	}
+
+	const missingPaths = [];
+	const missingApi = [];
+	if (files !== undefined) {
+		for (const site of sites) {
+			const contents =
+				site.path in files ? files[site.path] : null;
+			if (contents == null) {
+				missingPaths.push(site);
+				continue;
+			}
+			if (!contents.includes(site.api)) {
+				missingApi.push(site);
+			}
+		}
+	}
+
 	return {
-		ok: legacyWithoutReason.length === 0,
+		ok: missingPaths.length === 0 && missingApi.length === 0,
 		sites,
 		legacyWithoutReason,
+		missingPaths,
+		missingApi,
 	};
 }
 
@@ -109,37 +126,83 @@ export function formatReport(result) {
 	if (result.legacyWithoutReason.length > 0) {
 		lines.push("");
 		lines.push(
-			"FAIL new/legacy string sites need `{ path, reason }`. A bare path is the parking-lot shape:",
+			"legacy string sites (valid; new sites must be `{ path, reason }`):",
 		);
 		for (const hit of result.legacyWithoutReason) {
+			lines.push(`  ${hit.api}  ${hit.path}`);
+		}
+	}
+	if (result.missingPaths.length > 0) {
+		lines.push("");
+		lines.push(
+			"FAIL stale allowlist site (path does not exist; remove it):",
+		);
+		for (const hit of result.missingPaths) {
+			lines.push(`  ${hit.api}  ${hit.path}`);
+		}
+	}
+	if (result.missingApi.length > 0) {
+		lines.push("");
+		lines.push(
+			"FAIL stale allowlist site (named API no longer appears in file):",
+		);
+		for (const hit of result.missingApi) {
 			lines.push(`  ${hit.api}  ${hit.path}`);
 		}
 	}
 	if (result.ok) {
 		lines.push("");
 		lines.push(
-			"OK: every site is `{ path, reason }` (or the list is empty).",
+			"OK: sites are path strings or `{ path, reason }`; every path exists and still names its API.",
 		);
 	}
 	return lines.join("\n");
 }
 
+export async function collectSiteFiles(repoRoot, sites) {
+	const files = {};
+	for (const site of sites) {
+		if (site.path in files) {
+			continue;
+		}
+		try {
+			files[site.path] = await fs.readFile(
+				path.join(repoRoot, site.path),
+				"utf8",
+			);
+		} catch (error) {
+			if (error && error.code === "ENOENT") {
+				files[site.path] = null;
+				continue;
+			}
+			throw error;
+		}
+	}
+	return files;
+}
+
+const HEALTHY_ENTRY = {
+	api: "Intl.Segmenter",
+	fallback: "code-point walk",
+	degradation: "word ops become whitespace runs",
+	sites: [
+		{
+			path: "packages/tooling/conformance/src/hosts/fixtureShape.test.js",
+			reason: "Node test; browser API floor does not apply",
+		},
+	],
+};
+
 export function runSelfTests() {
-	const healthy = evaluateAllowlist({
-		apis: [
-			{
-				api: "Intl.Segmenter",
-				fallback: "code-point walk",
-				degradation: "word ops become whitespace runs",
-				sites: [
-					{
-						path: "packages/tooling/conformance/src/hosts/fixtureShape.test.js",
-						reason: "Wave L LOC4: fixture asserts Segmenter so the fallback is exercised",
-					},
-				],
+	const healthy = evaluateAllowlist(
+		{ apis: [HEALTHY_ENTRY] },
+		{
+			files: {
+				"packages/tooling/conformance/src/hosts/fixtureShape.test.js":
+					"new Intl.Segmenter()",
 			},
-		],
-	});
+		},
+	);
 	if (!healthy.ok || healthy.sites.length !== 1) {
 		throw new Error("self-test: object site with reason must pass");
 	}
@@ -179,20 +242,96 @@ export function runSelfTests() {
 		throw new Error("self-test: object site without reason must fail closed");
 	}
 
-	const legacy = evaluateAllowlist({
-		apis: [
-			{
-				api: "Intl.Segmenter",
-				fallback: "code-point walk",
-				degradation: "word ops become whitespace runs",
-				sites: ["packages/tooling/conformance/src/hosts/fixtureShape.test.js"],
+	const legacy = evaluateAllowlist(
+		{
+			apis: [
+				{
+					api: "Intl.Segmenter",
+					fallback: "code-point walk",
+					degradation: "word ops become whitespace runs",
+					sites: [
+						"packages/tooling/conformance/src/hosts/fixtureShape.test.js",
+					],
+				},
+			],
+		},
+		{
+			files: {
+				"packages/tooling/conformance/src/hosts/fixtureShape.test.js":
+					"Intl.Segmenter",
 			},
-		],
-	});
-	if (legacy.ok || legacy.legacyWithoutReason.length !== 1) {
+		},
+	);
+	if (
+		!legacy.ok ||
+		legacy.legacyWithoutReason.length !== 1 ||
+		legacy.legacyWithoutReason[0].path !==
+			"packages/tooling/conformance/src/hosts/fixtureShape.test.js"
+	) {
 		throw new Error(
-			"self-test: a bare string site must fail (require { path, reason })",
+			"self-test: a bare string site must stay valid (legacy)",
 		);
+	}
+
+	const missingPath = evaluateAllowlist(
+		{
+			apis: [
+				{
+					api: "Intl.Segmenter",
+					fallback: "code-point walk",
+					degradation: "word ops become whitespace runs",
+					sites: [
+						{
+							path: "does-not-exist-mutation.ts",
+							reason: "self-test stale path",
+						},
+					],
+				},
+			],
+		},
+		{ files: { "does-not-exist-mutation.ts": null } },
+	);
+	if (
+		missingPath.ok ||
+		missingPath.missingPaths[0]?.path !== "does-not-exist-mutation.ts"
+	) {
+		throw new Error("self-test: missing path must fail by name");
+	}
+	const missingPathReport = formatReport(missingPath);
+	if (!missingPathReport.includes("does-not-exist-mutation.ts")) {
+		throw new Error("self-test: missing-path report must name the path");
+	}
+
+	const missingApi = evaluateAllowlist(
+		{
+			apis: [
+				{
+					api: "Intl.Segmenter",
+					fallback: "code-point walk",
+					degradation: "word ops become whitespace runs",
+					sites: [
+						{
+							path: "packages/tooling/conformance/src/hosts/fixtureShape.test.js",
+							reason: "self-test missing API",
+						},
+					],
+				},
+			],
+		},
+		{
+			files: {
+				"packages/tooling/conformance/src/hosts/fixtureShape.test.js":
+					"no constructor here",
+			},
+		},
+	);
+	if (
+		missingApi.ok ||
+		missingApi.missingApi[0]?.path !==
+			"packages/tooling/conformance/src/hosts/fixtureShape.test.js" ||
+		missingApi.missingApi[0]?.api !== "Intl.Segmenter"
+	) {
+		throw new Error("self-test: missing API must fail by name");
 	}
 
 	let missingFile = false;
@@ -226,7 +365,7 @@ async function main() {
 	runSelfTests();
 	console.log("HOST4 above-floor-api-allowlist self-test ok");
 	console.log(
-		"  red-proof: object site without reason, bare string site, and missing apis fail closed",
+		"  red-proof: object site without reason, missing path, missing API, and missing apis fail closed; bare string sites stay valid",
 	);
 
 	const args = parseArgs(process.argv.slice(2));
@@ -242,7 +381,9 @@ async function main() {
 		}
 		throw error;
 	}
-	const result = evaluateAllowlist(raw);
+	const schema = evaluateAllowlist(raw);
+	const files = await collectSiteFiles(args.repoRoot, schema.sites);
+	const result = evaluateAllowlist(raw, { files });
 	console.log("");
 	console.log(formatReport(result));
 	if (!result.ok) {
@@ -253,7 +394,7 @@ async function main() {
 const isDirectRun = process.argv[1] === fileURLToPath(import.meta.url);
 if (isDirectRun) {
 	main().catch((error) => {
-		console.error(error instanceof Error ? error.message : error);
+		console.error(error instanceof Error ? error.message : String(error));
 		process.exitCode = 1;
 	});
 }

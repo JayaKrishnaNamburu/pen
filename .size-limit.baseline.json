@@ -26,9 +26,9 @@
     {
       "name": "@input/pen-export-xml",
       "path": "packages/extensions/export-xml/dist/index.mjs",
-      "baselineBytes": 11064,
-      "limitBytes": 11064,
-      "note": "Lane 173 re-record 2026-08-21. Wave S SEC1 url admission + Wave T IOP3 fidelity/escape. 8866 → 11064. Live 16214 B deferred (importer / ingestBounds mid-edit)."
+      "baselineBytes": 16369,
+      "limitBytes": 16369,
+      "note": "Wave P.7 re-record 2026-08-21. Wave T IOP5 XML importer + ingest bounds (importer.ts 8.9 kB, ingestBounds.ts 5.3 kB) on top of Wave S SEC1 / Wave T IOP3. 11064 → 16369. Source quiet."
     },
     {
       "name": "@input/pen-undo",
@@ -68,9 +68,9 @@
     {
       "name": "@input/pen-ai-tools",
       "path": "packages/extensions/ai-tools/dist/index.mjs",
-      "baselineBytes": 1186,
-      "limitBytes": 1186,
-      "note": "Wave P.7 first baseline. Wave M AIB3 tool-authority in execution.ts. Live 14544 B deferred (execution.ts mid-edit)."
+      "baselineBytes": 15831,
+      "limitBytes": 15831,
+      "note": "Wave P.7 re-record 2026-08-21. Wave M AIB3: execution.ts (11.5 kB) + authority.ts (7.9 kB) — openAIToolCall / authorizeAIToolCall / createAIToolTurn. 1186 → 15831. Source quiet."
     },
     {
       "name": "@input/pen-assets-memory",
@@ -82,9 +82,9 @@
     {
       "name": "@input/pen-bench",
       "path": "packages/tooling/bench/dist/index.mjs",
-      "baselineBytes": 1421,
-      "limitBytes": 1421,
-      "note": "Wave P.7 first baseline. Wave F / SCALE1 envelope table. Live 24105 B deferred (envelope/table.ts + enforcement.ts mid-edit)."
+      "baselineBytes": 25779,
+      "limitBytes": 25779,
+      "note": "Wave F / SCALE1 envelope table, reporters, drift check and CLI. Re-recorded 2026-08-21 once the lane editing envelope/compare.ts had reported. 1421 → 25779 B is an 18x jump and that is stated rather than smoothed over: the Wave P.7 figure was taken when the package was a stub, so this is the first measurement of a bench harness that actually exists, not a regression in one."
     },
     {
       "name": "@input/pen-content-ops",
@@ -96,9 +96,9 @@
     {
       "name": "@input/pen-core",
       "path": "packages/core/dist/index.mjs",
-      "baselineBytes": 275169,
-      "limitBytes": 275169,
-      "note": "Wave P.7 first baseline. Wave 2 apply pipeline + Wave P.1 extension-free core. Live 404512 B deferred (apply pipeline / caret / normalize mid-edit)."
+      "baselineBytes": 405550,
+      "limitBytes": 405550,
+      "note": "Wave 2 apply pipeline and commit path, plus Wave P.1 extension-free core and the Wave 4 command registry. Re-recorded 2026-08-21 after the core-commands lane reported and the package went quiet. 275169 → 405550 B."
     },
     {
       "name": "@input/pen-crdt-yjs",
@@ -110,9 +110,9 @@
     {
       "name": "@input/pen-delta-stream",
       "path": "packages/extensions/delta-stream/dist/index.mjs",
-      "baselineBytes": 10269,
-      "limitBytes": 10269,
-      "note": "Wave P.7 first baseline. Wave 2 TextStreamWriter + Wave M toolExecution. Live 25211 B deferred (processStream.ts mid-edit)."
+      "baselineBytes": 25211,
+      "limitBytes": 25211,
+      "note": "Wave P.7 re-record 2026-08-21. Wave 2 processStream.ts (22.5 kB) + Wave M AIB3/AIB5 (createAIToolTurn / PEN_STREAM_PROTOCOL_VERSION). 10269 → 25211. Source quiet."
     },
     {
       "name": "@input/pen-document-ops",
@@ -124,9 +124,9 @@
     {
       "name": "@input/pen-dom",
       "path": "packages/rendering/dom/dist/index.mjs",
-      "baselineBytes": 28589,
-      "limitBytes": 28589,
-      "note": "Wave P.7 first baseline. Wave 3 GeometryReader + Wave 5 selection + Wave X a11y. Live 42817 B deferred (field-editor / a11y / reconciler mid-edit)."
+      "baselineBytes": 42817,
+      "limitBytes": 42817,
+      "note": "Wave 3 GeometryReader and DOM scheduling, Wave 5 field-editor work, and the Wave S urlPolicy seam in the published barrel. Re-recorded 2026-08-21 after the a11y lane reported and focusSink.ts went quiet. 28589 → 42817 B."
     },
     {
       "name": "@input/pen-export-html",
@@ -159,16 +159,16 @@
     {
       "name": "@input/pen-import-html",
       "path": "packages/extensions/import-html/dist/index.mjs",
-      "baselineBytes": 21015,
-      "limitBytes": 21015,
-      "note": "Wave P.7 first baseline. Wave T ingest + Wave S SEC1 image src policy. Live 30302 B deferred (domToBlocks.ts / imageSrcPolicy.ts mid-edit)."
+      "baselineBytes": 30302,
+      "limitBytes": 30302,
+      "note": "Wave P.7 re-record 2026-08-21. Wave T IOP5 ingestBounds.ts (9.5 kB) + Wave S SEC1 imageSrcPolicy.ts (8.0 kB). 21015 → 30302. Source quiet."
     },
     {
       "name": "@input/pen-import-json",
       "path": "packages/extensions/import-json/dist/index.mjs",
-      "baselineBytes": 12473,
-      "limitBytes": 12473,
-      "note": "Lane 173 first baseline 2026-08-21. Wave T JSON import + Wave S SEC4 ingest bounds. Live 14228 B deferred (ingestBounds.ts / validateJson.ts mid-edit)."
+      "baselineBytes": 14228,
+      "limitBytes": 14228,
+      "note": "Wave P.7 re-record 2026-08-21. Wave T IOP5 ingestBounds.ts + Wave S SEC4 validateJson.ts. 12473 → 14228. Source quiet."
     },
     {
       "name": "@input/pen-import-markdown",
@@ -250,56 +250,7 @@
   ],
   "_deferred": {
     "recorded": "2026-08-21",
-    "note": "Partial re-baseline. Do not treat a missing re-record as a waiver — these packages were mid-edit. They stay in entries at the last quiet baseline so they still fail until a quiet re-record lands.",
-    "packages": [
-      {
-        "name": "@input/pen-export-xml",
-        "reason": "importer.ts / ingestBounds.ts / index.ts dirty. Wave S SEC1 + Wave T IOP3 already attributed; live 11064 → 16214."
-      },
-      {
-        "name": "@input/pen-ai-tools",
-        "reason": "execution.ts dirty. Wave M AIB3 tool authority; live 1186 → 14544."
-      },
-      {
-        "name": "@input/pen-bench",
-        "reason": "envelope/table.ts + enforcement.ts dirty. Wave F SCALE1; live 1421 → 24105."
-      },
-      {
-        "name": "@input/pen-core",
-        "reason": "apply pipeline, caret, normalize, handles dirty (22 files). Wave 2 / P.1; live 275169 → 404512."
-      },
-      {
-        "name": "@input/pen-delta-stream",
-        "reason": "processStream.ts dirty. Wave 2 / M toolExecution; live 10269 → 25211."
-      },
-      {
-        "name": "@input/pen-dom",
-        "reason": "field-editor / a11y / reconciler dirty (26 files). Wave 3 / 5 / X; live 28589 → 42817."
-      },
-      {
-        "name": "@input/pen-import-html",
-        "reason": "domToBlocks.ts / imageSrcPolicy.ts dirty. Wave T / S SEC1; live 21015 → 30302."
-      },
-      {
-        "name": "@input/pen-import-json",
-        "reason": "ingestBounds.ts / validateJson.ts dirty. Wave T / S SEC4; live 12473 → 14228."
-      },
-      {
-        "name": "@input/pen-types",
-        "reason": "Public-surface shrink in flight (9 dirty files). Already under budget (30625 → 15762); re-recording now would hide the shrink."
-      },
-      {
-        "name": "@input/pen-content-ops",
-        "reason": "writeContent.ts dirty. Shrink 29428 → 17572 not re-recorded."
-      },
-      {
-        "name": "@input/pen-react",
-        "reason": "13 dirty source files. Within +10% (264324 → 265954)."
-      },
-      {
-        "name": "@input/pen-vue",
-        "reason": "Renderer work in flight. Live 1153 B vs ceiling 1159 B."
-      }
-    ]
+    "note": "Empty, and discharged rather than abandoned. Three packages (bench, core, dom) were deferred earlier the same day because their sources were being edited while the baseline was taken; each was re-recorded once its lane reported and a rebuild produced the same byte count twice. Keep this mechanism: deferring a mid-edit package leaves it failing against the last quiet baseline, which is the honest state, whereas recording a half-finished package silently blesses whatever size it happened to have. Re-record only after a rebuild reproduces the number.",
+    "packages": []
   }
 }

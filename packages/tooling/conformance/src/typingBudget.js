@@ -3,6 +3,13 @@
  * baseline and formats drift. Never decides pass/fail on the numbers —
  * Wave 7 flips the counts to assertions. A 5% p95 move is quiet on
  * purpose; a count change is loud because counts are machine-independent.
+ *
+ * Spec budgets stay at the wave-doc targets (read-phase p95 = 2ms). The
+ * committed Chromium recording is already 3.4ms, so versusSpec.blown is
+ * true on purpose. Raising the budget to hide that would launder the
+ * overrun; failing the tree on it would lock a known pre-Wave-7 gap.
+ * The report must print a blown spec as a loud banner. Missing last-run
+ * is a hard fail in reportTypingBudget.js — silent pass is the worst case.
  */
 
 /**
@@ -210,8 +217,34 @@ export function compareTypingBudgets(baseline, current) {
 }
 
 /**
- * @param {{ summary: TypingBudgetSummary; fixture?: { contentSha256?: string } }} baseline
- * @param {{ summary: TypingBudgetSummary; fixture?: { contentSha256?: string } }} current
+ * @param {Record<string, { budget?: unknown; measured?: unknown; blown?: unknown }> | undefined} versusSpec
+ */
+export function collectBlownSpec(versusSpec) {
+	if (versusSpec == null || typeof versusSpec !== "object") {
+		return [];
+	}
+	const rows = [];
+	for (const [name, entry] of Object.entries(versusSpec)) {
+		if (
+			entry == null ||
+			typeof entry !== "object" ||
+			entry.blown !== true
+		) {
+			continue;
+		}
+		rows.push({
+			name,
+			measured: entry.measured,
+			budget: entry.budget,
+			line: `  ${name}: measured ${entry.measured} > budget ${entry.budget}  [blown]`,
+		});
+	}
+	return rows;
+}
+
+/**
+ * @param {{ summary: TypingBudgetSummary; fixture?: { contentSha256?: string }; versusSpec?: object }} baseline
+ * @param {{ summary: TypingBudgetSummary; fixture?: { contentSha256?: string }; versusSpec?: object }} current
  */
 export function formatDriftReport(baseline, current) {
 	const compared = compareTypingBudgets(baseline, current);
@@ -238,12 +271,28 @@ export function formatDriftReport(baseline, current) {
 					...compared.loud.map((entry) => `  ${entry.line}`),
 				]
 			: ["", "no loud drift"];
-	const text = [...header, "", fixtureLine, "", ...body, ...banner].join(
-		"\n",
-	);
+	const blown = collectBlownSpec(current.versusSpec ?? baseline.versusSpec);
+	const specBanner =
+		blown.length > 0
+			? [
+					"",
+					"!!!! SPEC BUDGET BLOWN (record-only — this run does not fail on these numbers) !!!!",
+					...blown.map((row) => row.line),
+				]
+			: [];
+	const text = [
+		...header,
+		"",
+		fixtureLine,
+		"",
+		...body,
+		...banner,
+		...specBanner,
+	].join("\n");
 	return {
 		text,
 		loud: compared.loud.length > 0,
+		specBlown: blown.length > 0,
 		quietOnly: compared.loud.length === 0 && compared.quiet.length > 0,
 		unchanged: compared.loud.length === 0 && compared.quiet.length === 0,
 		lines: compared.lines,

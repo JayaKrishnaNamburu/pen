@@ -56,18 +56,41 @@ export function compareTypingBudgets(
 	quiet: ReturnType<typeof formatMetricLine>[];
 };
 
+export function collectBlownSpec(
+	versusSpec:
+		| Record<
+				string,
+				{ budget?: unknown; measured?: unknown; blown?: unknown }
+		  >
+		| undefined,
+): {
+	name: string;
+	measured: unknown;
+	budget: unknown;
+	line: string;
+}[];
+
 export function formatDriftReport(
 	baseline: {
 		summary: TypingBudgetSummary;
 		fixture?: { contentSha256?: string };
+		versusSpec?: Record<
+			string,
+			{ budget?: unknown; measured?: unknown; blown?: unknown }
+		>;
 	},
 	current: {
 		summary: TypingBudgetSummary;
 		fixture?: { contentSha256?: string };
+		versusSpec?: Record<
+			string,
+			{ budget?: unknown; measured?: unknown; blown?: unknown }
+		>;
 	},
 ): {
 	text: string;
 	loud: boolean;
+	specBlown: boolean;
 	quietOnly: boolean;
 	unchanged: boolean;
 	lines: ReturnType<typeof formatMetricLine>[];

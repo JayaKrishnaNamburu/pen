@@ -19,9 +19,15 @@ const REPO_ROOT = path.resolve(SCRIPT_DIR, "..");
 
 const cases = [];
 
-function record(name, ok, detail) {
+// Most cases prove a gate CAN FAIL. A few prove the mirror — that it can still
+// PASS on valid input — because a gate stuck at red is as useless as one stuck
+// at green, and reads as strict rather than broken. Pass `direction: "pass"`
+// for those so the output does not label a green run "FAILS".
+function record(name, ok, detail, direction = "fail") {
 	cases.push({ name, ok, detail });
-	const mark = ok ? "FAILS" : "CANNOT FAIL";
+	const expected = direction === "pass" ? "PASSES" : "FAILS";
+	const unexpected = direction === "pass" ? "CANNOT PASS" : "CANNOT FAIL";
+	const mark = ok ? expected : unexpected;
 	console.log(`${ok ? "ok" : "FAIL"}  ${name}  ${mark}  ${detail}`);
 }
 
@@ -203,34 +209,77 @@ function proveAboveFloor() {
 		`exit ${missing.status}`,
 	);
 
-	const bare = withTemp(
-		"pen-host4-bare-",
-		(dir) => {
-			fs.mkdirSync(path.join(dir, "scripts"));
-			fs.writeFileSync(
-				path.join(dir, "scripts/above-floor-api-allowlist.json"),
-				JSON.stringify({
-					apis: [
-						{
-							api: "Intl.Segmenter",
-							fallback: "code-point",
-							degradation: "whitespace words",
-							sites: ["packages/core/src/bare.ts"],
-						},
-					],
-				}),
-			);
-		},
-		(dir) =>
-			runNode(path.join(REPO_ROOT, "scripts/above-floor-api-allowlist.mjs"), [
-				"--repo-root",
-				dir,
-			]),
+	// A bare string site used to be the failure case here. It is now VALID:
+	// `sites` accepts a path or `{ path, reason }`. The old proof kept passing
+	// on a technicality — the gate still exited non-zero, but for the stale-path
+	// reason, not the one being proved — so it asserted a message that no longer
+	// exists. What is enforced now is the per-site reason and path liveness.
+	const writeAllowlist = (sites) => (dir) => {
+		fs.mkdirSync(path.join(dir, "scripts"), { recursive: true });
+		fs.writeFileSync(
+			path.join(dir, "scripts/above-floor-api-allowlist.json"),
+			JSON.stringify({
+				apis: [
+					{
+						api: "Intl.Segmenter",
+						fallback: "code-point",
+						degradation: "whitespace words",
+						sites,
+					},
+				],
+			}),
+		);
+	};
+	const withLiveSite = (sites) => (dir) => {
+		writeAllowlist(sites)(dir);
+		// the site must EXIST and contain the API, or the stale-path check fires
+		// first and the proof measures the wrong thing.
+		fs.mkdirSync(path.join(dir, "packages/core/src"), { recursive: true });
+		fs.writeFileSync(
+			path.join(dir, "packages/core/src/bare.ts"),
+			"const s = new Intl.Segmenter();\n",
+		);
+	};
+	const runAllowlist = (dir) =>
+		runNode(path.join(REPO_ROOT, "scripts/above-floor-api-allowlist.mjs"), [
+			"--repo-root",
+			dir,
+		]);
+
+	const noReason = withTemp(
+		"pen-host4-noreason-",
+		withLiveSite([{ path: "packages/core/src/bare.ts" }]),
+		runAllowlist,
 	);
 	record(
-		"above-floor-api-allowlist bare string site",
-		bare.status !== 0 && /bare path/.test(bare.out),
-		`exit ${bare.status}`,
+		"above-floor-api-allowlist object site without reason",
+		noReason.status !== 0 && /reason/i.test(noReason.out),
+		`exit ${noReason.status}`,
+	);
+
+	const stale = withTemp(
+		"pen-host4-stale-",
+		writeAllowlist(["packages/core/src/deleted.ts"]),
+		runAllowlist,
+	);
+	record(
+		"above-floor-api-allowlist stale site path",
+		stale.status !== 0 && /stale/i.test(stale.out),
+		`exit ${stale.status}`,
+	);
+
+	// CAN IT PASS? A gate that only ever reports failure is as broken as one
+	// that only ever reports success, and is harder to notice.
+	const valid = withTemp(
+		"pen-host4-valid-",
+		withLiveSite(["packages/core/src/bare.ts"]),
+		runAllowlist,
+	);
+	record(
+		"above-floor-api-allowlist bare string site stays valid",
+		valid.status === 0,
+		`exit ${valid.status}`,
+		"pass",
 	);
 }
 

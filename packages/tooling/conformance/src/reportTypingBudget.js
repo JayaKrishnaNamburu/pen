@@ -31,12 +31,14 @@ if ("error" in baseline || "error" in current) {
 	]
 		.filter(Boolean)
 		.join("\n");
-	console.log("TYPING_BUDGET_DRIFT  could not compare");
-	console.log(missing);
-	console.log(
+	// Missing last-run used to exit 0, which is indistinguishable from
+	// "compared and nothing drifted". That is the worst case.
+	console.error("TYPING_BUDGET_MISSING  could not compare");
+	console.error(missing);
+	console.error(
 		"Run `pnpm --filter @input/pen-conformance run test:typing-budget` to produce the last-run file.",
 	);
-	process.exit(0);
+	process.exit(1);
 }
 
 const report = formatDriftReport(baseline, current);
