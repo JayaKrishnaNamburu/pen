@@ -67,7 +67,7 @@ describe("AX3 previously-reclassified bugs (rechecked, not trusted)", () => {
 		);
 	});
 
-	it("autocomplete caret: updateSelection is no longer a no-op; projector slot is still empty", () => {
+	it("autocomplete caret: updateSelection is no longer a no-op; projector slot runs P1", () => {
 		const backend = readFileSync(CONTENT_EDITABLE, "utf8");
 		expect(backend).toMatch(
 			/updateSelection\([^)]*\)\s*:\s*void\s*\{\s*this\.restoreDOMSelectionFromEditor\(\);/,
@@ -78,6 +78,9 @@ describe("AX3 previously-reclassified bugs (rechecked, not trusted)", () => {
 		expect(accept).toContain("commitProgrammaticTextSelection");
 
 		const scheduler = readFileSync(SCHEDULER, "utf8");
-		expect(scheduler).toMatch(/private projectSelection\(\): void \{\s*\}/);
+		expect(scheduler).toMatch(/this\.onProjectSelection\?\.\(record\)/);
+		expect(scheduler).not.toMatch(
+			/private projectSelection\(\): void \{\s*\}/,
+		);
 	});
 });

@@ -32,6 +32,7 @@
     "readme-sections": "node scripts/readme-sections.mjs",
     "api-docs-coverage": "node scripts/api-docs-coverage.mjs",
     "above-floor-api-allowlist": "node scripts/above-floor-api-allowlist.mjs",
+    "no-selection-state-properties": "node scripts/no-selection-state-properties.mjs",
     "clean": "turbo run clean && rm -rf node_modules"
   },
   "prettier": {

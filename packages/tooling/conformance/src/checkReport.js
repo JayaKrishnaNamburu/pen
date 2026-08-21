@@ -33,18 +33,18 @@ export function formatCheckReport(check, outcome, detail) {
  * @param {{ ok: boolean; skipped?: boolean; reason?: string }} result
  */
 export function formatDomAuthorityReport(result) {
+	if (result.skipped) {
+		return formatCheckReport(
+			STANDING_DOM_AUTHORITY_CHECK,
+			"skipped",
+			result.reason ?? "could not check",
+		);
+	}
 	if (!result.ok) {
 		return formatCheckReport(
 			STANDING_DOM_AUTHORITY_CHECK,
 			"failed",
 			result.reason ?? "DOM and editor.selection disagree",
-		);
-	}
-	if (result.skipped) {
-		return formatCheckReport(
-			STANDING_DOM_AUTHORITY_CHECK,
-			"skipped",
-			"unfocused or non-text selection",
 		);
 	}
 	return formatCheckReport(STANDING_DOM_AUTHORITY_CHECK, "passed");

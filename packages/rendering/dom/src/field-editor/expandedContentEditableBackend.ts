@@ -11,6 +11,7 @@ import {
 	historyUndo,
 	insertLineBreak,
 	insertText,
+	isMultiBlock,
 	splitBlock,
 	toggleMark,
 } from "@input/pen-core";
@@ -206,12 +207,12 @@ export class ExpandedContentEditableBackend {
 			case "insertLineBreak": {
 				this.fieldEditor.deactivate();
 
-				if (selection.isMultiBlock) {
+				if (isMultiBlock(selection)) {
 					this.editor.replaceSelection("\n");
 					const nextSelection = this.editor.selection;
 					if (
 						nextSelection?.type === "text" &&
-						!nextSelection.isMultiBlock
+						!isMultiBlock(nextSelection)
 					) {
 						this.fieldEditor.activateTextSelection(
 							nextSelection.anchor.blockId,
@@ -234,7 +235,7 @@ export class ExpandedContentEditableBackend {
 					const nextSelection = this.editor.selection;
 					if (
 						nextSelection?.type === "text" &&
-						!nextSelection.isMultiBlock
+						!isMultiBlock(nextSelection)
 					) {
 						this.fieldEditor.activateTextSelection(
 							nextSelection.anchor.blockId,

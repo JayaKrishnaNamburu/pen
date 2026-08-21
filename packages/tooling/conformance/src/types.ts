@@ -59,7 +59,9 @@ export type ConformanceEventRecord = {
 };
 
 export type DomAuthorityCheck = {
+	/** Checked and equal. Never true when `skipped` is set. */
 	ok: boolean;
+	/** Could not check (unfocused or non-text). Distinct from a match. */
 	skipped?: boolean;
 	reason?: string;
 	authority?: SerializedSelection;

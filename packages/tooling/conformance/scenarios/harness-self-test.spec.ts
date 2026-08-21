@@ -20,6 +20,10 @@ scenario(
 		const points = sampleCaretPoints(blocks);
 		await s.geometry.warm(points);
 		const compare = await s.geometry.compare(points);
+		expect(
+			compare.missingCount,
+			"caretRect returned null; staleCount stays 0 when both sides are null",
+		).toBe(0);
 		expect(compare.staleCount).toBe(0);
 		expect(compare.compares.length).toBeGreaterThan(0);
 

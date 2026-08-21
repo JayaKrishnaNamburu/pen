@@ -3,7 +3,11 @@
 import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
-import { createEditor as createCoreEditor } from "@input/pen-core";
+import {
+	createEditor as createCoreEditor,
+	getTrustedSelectionBlockRange,
+	isMultiBlock,
+} from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
 import type { FieldEditorImpl } from "@input/pen-dom/field-editor/fieldEditorImpl";
 import { handleCopy } from "@input/pen-dom/field-editor/clipboard";
@@ -201,11 +205,11 @@ describe("@input/pen-react table rendering", () => {
 		expect(editor.selection).toMatchObject({
 			type: "text",
 			focus: { blockId: paragraphId, offset: 5 },
-			isMultiBlock: true,
 		});
+		expect(isMultiBlock(editor.selection)).toBe(true);
 		expect(
 			editor.selection?.type === "text"
-				? editor.selection.blockRange
+				? getTrustedSelectionBlockRange(editor.selection)
 				: [],
 		).toEqual(expect.arrayContaining(["t8-cell", paragraphId]));
 

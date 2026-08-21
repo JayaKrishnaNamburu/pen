@@ -1,5 +1,6 @@
 import type { DocumentOp } from "@input/pen-types";
 import { expect } from "@playwright/test";
+import { caretCacheHolds } from "../harness/src/geometryCompare";
 import { scenario } from "../src/scenario";
 import type { GeometryBlockInfo, GeometryCaretCompareResult } from "../src/types";
 import { sampleCaretPoints } from "../src/wave3Geometry";
@@ -163,15 +164,21 @@ const COMMIT_STEPS: readonly CommitStep[] = [
 	},
 ];
 
-function formatStale(result: GeometryCaretCompareResult, step: string): string {
-	const stale = result.compares
-		.filter((entry) => entry.stale)
+function formatCacheFailure(
+	result: GeometryCaretCompareResult,
+	step: string,
+): string {
+	const lines = result.compares
+		.filter(
+			(entry) =>
+				entry.stale || entry.cached == null || entry.fromScratch == null,
+		)
 		.map((entry) => {
 			const cached = JSON.stringify(entry.cached);
 			const fresh = JSON.stringify(entry.fromScratch);
 			return `${entry.point.blockId}:${entry.point.offset}:${entry.affinity} cached=${cached} fresh=${fresh}`;
 		});
-	return `G2 ${step}: ${result.staleCount} stale caretRect(s)\n${stale.join("\n")}`;
+	return `G2 ${step}: ${result.staleCount} stale, ${result.missingCount} missing caretRect(s)\n${lines.join("\n")}`;
 }
 
 scenario(
@@ -187,8 +194,8 @@ scenario(
 			expect(points.length).toBeGreaterThan(0);
 			await s.geometry.warm(points);
 			const result = await s.geometry.compare(points);
-			if (result.staleCount > 0) {
-				failures.push(formatStale(result, step));
+			if (!caretCacheHolds(result)) {
+				failures.push(formatCacheFailure(result, step));
 			}
 		}
 
@@ -240,8 +247,8 @@ scenario(
 
 			const after = await s.geometry.blocks();
 			const result = await s.geometry.compare(sampleCaretPoints(after));
-			if (result.staleCount > 0) {
-				failures.push(formatStale(result, step.name));
+			if (!caretCacheHolds(result)) {
+				failures.push(formatCacheFailure(result, step.name));
 			}
 		}
 
@@ -257,14 +264,14 @@ scenario(
 		const afterRemote = await s.geometry.compare(
 			sampleCaretPoints(await s.geometry.blocks()),
 		);
-		if (afterRemote.staleCount > 0) {
-			failures.push(formatStale(afterRemote, "remote splice"));
+		if (!caretCacheHolds(afterRemote)) {
+			failures.push(formatCacheFailure(afterRemote, "remote splice"));
 		}
 
 		expect(
 			failures,
 			[
-				"G2: cached caretRect went stale after a commit that moved unedited blocks (invalidation is summary-block-only; neighbors keep the old Y).",
+				"G2: cached caretRect went stale or missing after a commit that moved unedited blocks (invalidation is summary-block-only; neighbors keep the old Y; both-null is missing, not equal).",
 				...failures,
 			].join("\n\n"),
 		).toEqual([]);

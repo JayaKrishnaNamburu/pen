@@ -6,6 +6,7 @@ import {
 	deleteForward,
 	selectAdjacentInlineAtom,
 } from "..";
+import { isCollapsed } from "../../selection/helpers";
 import {
 	caretOf,
 	createCommandEditor,
@@ -64,7 +65,7 @@ function expectAtomSelected(editor: ReturnType<typeof mentionDoc>): void {
 	if (editor.selection?.type !== "text") {
 		throw new Error("expected text selection");
 	}
-	expect(editor.selection.isCollapsed).toBe(false);
+	expect(isCollapsed(editor.selection)).toBe(false);
 	expect(editor.selection.anchor).toEqual({ blockId: "a", offset: 2 });
 	expect(editor.selection.focus).toEqual({ blockId: "a", offset: 3 });
 }

@@ -1,17 +1,17 @@
 {
   "browserName": "webkit",
-  "firstBlockId": "2cd5735b-d202-41c4-a66d-b7546a592858",
-  "insertedBlockId": "bfa5215d-3cc4-40ec-8418-b022b1c8f597",
-  "redoneBlockId": "bfa5215d-3cc4-40ec-8418-b022b1c8f597",
+  "firstBlockId": "58c19e05-17d2-409f-8d14-a2cf4444169f",
+  "insertedBlockId": "a19d4028-6b5f-4931-aba5-bd1e4fc0c917",
+  "redoneBlockId": "a19d4028-6b5f-4931-aba5-bd1e4fc0c917",
   "afterRedo": {
     "editorSelection": {
       "type": "text",
       "anchor": {
-        "blockId": "bfa5215d-3cc4-40ec-8418-b022b1c8f597",
+        "blockId": "a19d4028-6b5f-4931-aba5-bd1e4fc0c917",
         "offset": 0
       },
       "focus": {
-        "blockId": "bfa5215d-3cc4-40ec-8418-b022b1c8f597",
+        "blockId": "a19d4028-6b5f-4931-aba5-bd1e4fc0c917",
         "offset": 0
       },
       "affinity": "downstream",
@@ -19,28 +19,28 @@
       "isCollapsed": true,
       "isMultiBlock": false,
       "blockRange": [
-        "bfa5215d-3cc4-40ec-8418-b022b1c8f597"
+        "a19d4028-6b5f-4931-aba5-bd1e4fc0c917"
       ]
     },
-    "editorFocusBlockId": "bfa5215d-3cc4-40ec-8418-b022b1c8f597",
+    "editorFocusBlockId": "a19d4028-6b5f-4931-aba5-bd1e4fc0c917",
     "activeElement": {
       "tag": "SPAN",
-      "blockId": "bfa5215d-3cc4-40ec-8418-b022b1c8f597",
+      "blockId": "a19d4028-6b5f-4931-aba5-bd1e4fc0c917",
       "className": ""
     },
-    "attachedInlineBlockId": "bfa5215d-3cc4-40ec-8418-b022b1c8f597",
+    "attachedInlineBlockId": "a19d4028-6b5f-4931-aba5-bd1e4fc0c917",
     "native": {
       "isCollapsed": true,
       "text": "",
       "rangeCount": 1,
       "anchor": {
-        "blockId": "bfa5215d-3cc4-40ec-8418-b022b1c8f597",
+        "blockId": "a19d4028-6b5f-4931-aba5-bd1e4fc0c917",
         "offset": 0,
         "nodePath": "text:\"​\"@SPAN.",
         "domOffset": 0
       },
       "focus": {
-        "blockId": "bfa5215d-3cc4-40ec-8418-b022b1c8f597",
+        "blockId": "a19d4028-6b5f-4931-aba5-bd1e4fc0c917",
         "offset": 0,
         "nodePath": "text:\"​\"@SPAN.",
         "domOffset": 0
@@ -48,12 +48,12 @@
     },
     "blocks": [
       {
-        "id": "2cd5735b-d202-41c4-a66d-b7546a592858",
+        "id": "58c19e05-17d2-409f-8d14-a2cf4444169f",
         "text": "Hello",
         "active": false
       },
       {
-        "id": "bfa5215d-3cc4-40ec-8418-b022b1c8f597",
+        "id": "a19d4028-6b5f-4931-aba5-bd1e4fc0c917",
         "text": "​",
         "active": true
       }

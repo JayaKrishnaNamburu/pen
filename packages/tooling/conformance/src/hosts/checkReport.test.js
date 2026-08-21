@@ -42,12 +42,26 @@ test("failing DOM authority title names the check and the reason", () => {
 });
 
 test("skipped DOM authority title is skipped, not a match or a mismatch", () => {
-	const title = formatDomAuthorityReport({ ok: true, skipped: true });
+	const title = formatDomAuthorityReport({
+		ok: false,
+		skipped: true,
+		reason: "editor is unfocused",
+	});
 	assert.equal(
 		title,
-		"skipped: standing: DOM vs editor.selection (v1 authority) — unfocused or non-text selection",
+		"skipped: standing: DOM vs editor.selection (v1 authority) — editor is unfocused",
 	);
+	assert.doesNotMatch(title, /^failed:/);
+	assert.doesNotMatch(title, /^passed:/);
 	assert.doesNotMatch(title, /does not match/);
+	assert.equal(
+		formatDomAuthorityReport({
+			ok: false,
+			skipped: true,
+			reason: "authority is not a text selection",
+		}),
+		"skipped: standing: DOM vs editor.selection (v1 authority) — authority is not a text selection",
+	);
 });
 
 test("diagnostics-zero title says passed when the list is empty", () => {

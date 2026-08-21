@@ -191,6 +191,7 @@ export abstract class FieldEditorImplRuntime extends FieldEditorImplSelection {
 	}
 
 	destroy(): void {
+		this._unbindSchedulerProjector();
 		this._unbindFocusSink();
 		this._unbindAnnouncer();
 		this._unsubscribeSelection?.();
@@ -255,6 +256,7 @@ export abstract class FieldEditorImplRuntime extends FieldEditorImplSelection {
 
 	protected _recomputeSurfaceFromSelection(options?: {
 		syncSelectionToBackend?: boolean;
+		skipBackendWrite?: boolean;
 	}): void {
 		const surface = classifySelectionSurface(
 			this._editor,
@@ -263,6 +265,9 @@ export abstract class FieldEditorImplRuntime extends FieldEditorImplSelection {
 			this._isEditing,
 		);
 		this._updateSurfaceState(surface.mode, surface.blockIds);
+		if (options?.skipBackendWrite) {
+			return;
+		}
 		const selection = this._editor.selection;
 		const isAuthorityText = selection?.type === "text";
 		// a pending projection must not swallow an authority text write.

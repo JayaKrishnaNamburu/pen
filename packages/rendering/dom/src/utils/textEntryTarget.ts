@@ -1,3 +1,5 @@
+import { isCollapsed, isMultiBlock } from "@input/pen-core";
+import type { ReadonlySelectionState } from "@input/pen-types";
 import { DATA_ATTRS } from "./dataAttributes";
 
 const TEXTBOX_ROLE_SELECTOR = '[role~="textbox"]';
@@ -11,15 +13,7 @@ const DETACHED_SURFACE_SELECTOR = [
 	"[data-pen-toolbar]",
 ].join(",");
 
-type KeyboardRoutingSelection =
-	| null
-	| undefined
-	| {
-			type: string;
-			isCollapsed?: boolean;
-			isMultiBlock?: boolean;
-			blockIds?: readonly string[];
-	  };
+type KeyboardRoutingSelection = ReadonlySelectionState | undefined;
 
 type EditorKeyboardRoutingOptions = {
 	root: HTMLElement;
@@ -210,8 +204,8 @@ function isDocumentSelection(
 	if (selection?.type === "text") {
 		return (
 			handleCollapsedTextSelection ||
-			selection.isMultiBlock === true ||
-			selection.isCollapsed !== true
+			isMultiBlock(selection) ||
+			!isCollapsed(selection)
 		);
 	}
 
@@ -221,10 +215,7 @@ function isDocumentSelection(
 function isSelectionThatOverridesActiveTextEditingKey(
 	selection: KeyboardRoutingSelection,
 ): boolean {
-	return (
-		selection?.type === "cell" ||
-		(selection?.type === "text" && selection.isMultiBlock === true)
-	);
+	return selection?.type === "cell" || isMultiBlock(selection ?? null);
 }
 
 function isCollapsedSelectAll(event: KeyboardEvent): boolean {

@@ -63,7 +63,35 @@ test("pnpm test is src/hosts/*.test.js; Playwright specs are a separate populati
 	assert.match(manifest.scripts.test, /src\/hosts\/\*\.test\.js/);
 	assert.doesNotMatch(manifest.scripts.test, /playwright/);
 	assert.doesNotMatch(manifest.scripts.test, /scenarios/);
+	assert.equal(manifest.scripts.test, manifest.scripts["test:node"]);
+	assert.equal(manifest.scripts.test, manifest.scripts["test:hosts"]);
 	assert.match(manifest.scripts["test:chromium"], /playwright test/);
+
+	const readme = readFileSync(join(packageRoot, "README.md"), "utf8");
+	assert.match(readme, /A green `pnpm test` is not conformance/);
+
+	const workflow = readFileSync(
+		join(packageRoot, "../../../.github/workflows/conformance.yml"),
+		"utf8",
+	);
+	assert.match(
+		workflow,
+		/run test:\$\{\{ matrix\.engine \}\}/,
+		"CI conformance-engine must invoke test:${{ matrix.engine }}, not only pnpm test",
+	);
+	assert.match(workflow, /engine: \[chromium/);
+	assert.doesNotMatch(
+		workflow,
+		/filter @input\/pen-conformance test(?:\s|$)/,
+		"CI must not treat the Node host script as the Playwright gate",
+	);
+
+	console.log(
+		`host glob src/hosts/*.test.js → ${hostTests.length} files:\n  ${hostTests.join("\n  ")}`,
+	);
+	console.log(
+		`Playwright glob scenarios/**/*.spec.ts + suites/**/*.spec.ts → ${playwrightSpecs.length} files:\n  ${playwrightSpecs.join("\n  ")}`,
+	);
 
 	const hostSources = hostTests.map((rel) =>
 		readFileSync(join(packageRoot, rel), "utf8"),

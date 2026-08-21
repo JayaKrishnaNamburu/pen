@@ -3,10 +3,12 @@ import type {
 	Editor,
 	BlockSchema,
 	HistoryAppliedEvent,
+	SelectionRecord,
 	SelectionState,
 	Unsubscribe,
 } from "@input/pen-types";
 import {
+	getEditorSelectionRecord,
 	hasFieldEditorSurface,
 	isCollapsed,
 	isMultiBlock,
@@ -60,6 +62,8 @@ import {
 import type { FieldEditorStoreSnapshot } from "./store";
 import type { EditorSelectAllBehavior } from "../constants/selectAll";
 import type { FocusSink } from "../a11y/focusSink";
+import { getRootGeometry } from "../geometry/rootGeometry";
+import type { DomScheduler } from "../scheduler";
 
 export type FieldEditorOptions = {
 	selectAllBehavior?: EditorSelectAllBehavior;
@@ -95,6 +99,7 @@ export abstract class FieldEditorImplCore {
 	protected readonly _pendingMarkController: PendingMarkController;
 	protected readonly _selectAllController: SelectAllController;
 	protected readonly _selectionCoordinator: FieldEditorSelectionCoordinator;
+	protected _scheduler: DomScheduler | null = null;
 
 	constructor(editor: Editor, options?: FieldEditorOptions) {
 		this._editor = editor;
@@ -166,6 +171,8 @@ export abstract class FieldEditorImplCore {
 					blockId: this._focusBlockId,
 				});
 			},
+			getRecordVersion: () =>
+				getEditorSelectionRecord(this._editor)?.version ?? 0,
 		});
 		this._unsubscribeSelection = this._editor.onSelectionChange(
 			(selection) => {
@@ -184,11 +191,25 @@ export abstract class FieldEditorImplCore {
 				) {
 					this._pendingMarkController.clear(true);
 				}
+				const record = getEditorSelectionRecord(this._editor);
+				const scheduler = this._ensureScheduler();
+				const queuedP1 =
+					record != null &&
+					scheduler != null &&
+					record.version >
+						this._selectionCoordinator.lastProjectedVersion;
+				if (queuedP1 && scheduler && record) {
+					scheduler.setSelection(record);
+				}
 				const suppressSelectionSync =
 					this._selectionCoordinator.consumeDomSelectionProjectionSuppression() ||
 					this._selectionCoordinator.shouldSuppressSelectionSync();
 				this._recomputeSurfaceFromSelection({
 					syncSelectionToBackend: !suppressSelectionSync,
+					skipBackendWrite:
+						scheduler != null &&
+						scheduler.phase === "write" &&
+						scheduler.projectedThisFlush,
 				});
 			},
 		);
@@ -314,6 +335,35 @@ export abstract class FieldEditorImplCore {
 	): boolean;
 	protected abstract _recomputeSurfaceFromSelection(options?: {
 		syncSelectionToBackend?: boolean;
+		skipBackendWrite?: boolean;
 	}): void;
 	protected abstract _handleHistoryApplied(event: HistoryAppliedEvent): void;
+
+	protected _ensureScheduler(): DomScheduler | null {
+		const root = this._findEditorRoot();
+		if (!root) {
+			return null;
+		}
+		const { scheduler } = getRootGeometry(root);
+		if (this._scheduler !== scheduler) {
+			this._scheduler?.setProjector(null);
+			scheduler.setProjector((record) => {
+				this._projectFromScheduler(record);
+			});
+			this._scheduler = scheduler;
+		}
+		return scheduler;
+	}
+
+	protected _projectFromScheduler(record: SelectionRecord): void {
+		if (record.version <= this._selectionCoordinator.lastProjectedVersion) {
+			return;
+		}
+		this._selectionCoordinator.syncDomSelectionOnce();
+	}
+
+	protected _unbindSchedulerProjector(): void {
+		this._scheduler?.setProjector(null);
+		this._scheduler = null;
+	}
 }

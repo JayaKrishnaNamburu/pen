@@ -18,6 +18,16 @@ export function unexpectedStandingDiagnostics(diagnostics, expectedCodes) {
 	});
 }
 
+export function authorityCheckKind(result) {
+	if (result.skipped === true) {
+		return "unchecked";
+	}
+	if (result.ok === true) {
+		return "matched";
+	}
+	return "mismatch";
+}
+
 export function standingAuthorityHolds(result) {
-	return result.ok === true;
+	return authorityCheckKind(result) === "matched";
 }

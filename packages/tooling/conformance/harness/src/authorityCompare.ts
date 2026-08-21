@@ -4,6 +4,27 @@ export function pointsEqual(left: LogicalPoint, right: LogicalPoint): boolean {
 	return left.blockId === right.blockId && left.offset === right.offset;
 }
 
+export function resolveDomAuthorityCheck(input: {
+	hasRoot: boolean;
+	hasFocus: boolean;
+	authority: SerializedSelection;
+	mapped: { anchor: LogicalPoint; focus: LogicalPoint } | null;
+}): DomAuthorityCheck {
+	if (!input.hasRoot) {
+		return { ok: false, reason: "editor root is not mounted" };
+	}
+	if (!input.hasFocus) {
+		return {
+			ok: false,
+			skipped: true,
+			reason: "editor is unfocused",
+			authority: input.authority,
+			dom: input.mapped,
+		};
+	}
+	return compareMappedToAuthority(input.authority, input.mapped);
+}
+
 export function compareMappedToAuthority(
 	authority: SerializedSelection,
 	mapped: { anchor: LogicalPoint; focus: LogicalPoint } | null,
@@ -20,7 +41,13 @@ export function compareMappedToAuthority(
 		};
 	}
 	if (authority.type !== "text") {
-		return { ok: true, skipped: true, authority, dom: mapped };
+		return {
+			ok: false,
+			skipped: true,
+			reason: "authority is not a text selection",
+			authority,
+			dom: mapped,
+		};
 	}
 	if (!mapped) {
 		return {

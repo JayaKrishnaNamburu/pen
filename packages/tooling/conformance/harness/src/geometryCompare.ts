@@ -1,5 +1,6 @@
 import type {
 	GeometryAffinity,
+	GeometryCaretCompare,
 	GeometryPoint,
 	GeometryPointRef,
 	GeometryRect,
@@ -57,6 +58,25 @@ export function normalizePoint(point: GeometryPointRef): {
 		point: { blockId: point.blockId, offset: point.offset },
 		affinity: point.affinity ?? "downstream",
 	};
+}
+
+export function tallyCaretCompares(compares: readonly GeometryCaretCompare[]): {
+	staleCount: number;
+	missingCount: number;
+} {
+	return {
+		staleCount: compares.filter((entry) => entry.stale).length,
+		missingCount: compares.filter(
+			(entry) => entry.cached == null || entry.fromScratch == null,
+		).length,
+	};
+}
+
+export function caretCacheHolds(result: {
+	staleCount: number;
+	missingCount: number;
+}): boolean {
+	return result.staleCount === 0 && result.missingCount === 0;
 }
 
 export function geometryBlocksFromEditor(editor: {

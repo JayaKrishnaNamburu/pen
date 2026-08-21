@@ -19,6 +19,33 @@ import {
 	penDataAttr,
 } from "../utils/dataAttributes";
 
+function collapsedTextSelection() {
+	return {
+		type: "text" as const,
+		anchor: { blockId: "a", offset: 0 },
+		focus: { blockId: "a", offset: 0 },
+		blockRange: ["a"],
+	};
+}
+
+function multiBlockTextSelection() {
+	return {
+		type: "text" as const,
+		anchor: { blockId: "a", offset: 0 },
+		focus: { blockId: "b", offset: 1 },
+		blockRange: ["a", "b"],
+	};
+}
+
+function expandedTextSelection() {
+	return {
+		type: "text" as const,
+		anchor: { blockId: "a", offset: 0 },
+		focus: { blockId: "a", offset: 3 },
+		blockRange: ["a"],
+	};
+}
+
 describe("@input/pen-dom public helpers", () => {
 	it("exports mountEditor as the document-shell composition", () => {
 		expect(typeof mountEditor).toBe("function");
@@ -135,11 +162,7 @@ describe("@input/pen-dom public helpers", () => {
 				shouldHandleCollapsedText = shouldHandleEditorKeyboardEvent({
 					root,
 					event,
-					selection: {
-						type: "text",
-						isCollapsed: true,
-						isMultiBlock: false,
-					},
+					selection: collapsedTextSelection(),
 				});
 			},
 			{ once: true },
@@ -156,11 +179,7 @@ describe("@input/pen-dom public helpers", () => {
 				shouldHandleMultiBlockText = shouldHandleEditorKeyboardEvent({
 					root,
 					event,
-					selection: {
-						type: "text",
-						isCollapsed: false,
-						isMultiBlock: true,
-					},
+					selection: multiBlockTextSelection(),
 				});
 			},
 			{ once: true },
@@ -188,11 +207,7 @@ describe("@input/pen-dom public helpers", () => {
 					key: "z",
 					metaKey: true,
 				}),
-				selection: {
-					type: "text",
-					isCollapsed: true,
-					isMultiBlock: false,
-				},
+				selection: collapsedTextSelection(),
 			}),
 		).toBe(true);
 
@@ -206,11 +221,7 @@ describe("@input/pen-dom public helpers", () => {
 					key: "z",
 					metaKey: true,
 				}),
-				selection: {
-					type: "text",
-					isCollapsed: true,
-					isMultiBlock: false,
-				},
+				selection: collapsedTextSelection(),
 			}),
 		).toBe(false);
 		externalInput.remove();
@@ -282,11 +293,7 @@ describe("@input/pen-dom public helpers", () => {
 				shouldHandle = shouldHandleEditorKeyboardEvent({
 					root,
 					event,
-					selection: {
-						type: "text",
-						isCollapsed: false,
-						isMultiBlock: false,
-					},
+					selection: expandedTextSelection(),
 				});
 			},
 			{ once: true },

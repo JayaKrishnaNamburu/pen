@@ -10,6 +10,7 @@ import {
 } from "./standingFilter";
 
 export {
+	authorityCheckKind,
 	isStandingCode,
 	standingAuthorityHolds,
 	unexpectedStandingDiagnostics,
@@ -35,6 +36,7 @@ export async function assertStandingDomMatchesAuthority(
 
 export function assertDomAuthorityResult(result: DomAuthorityCheck): void {
 	// v1 snapshot (blockId+offset), not affinity/goalX — projectSelection is not live.
+	// Unchecked (unfocused / non-text) is not a hold — that collapse was the skip-as-success hole.
 	expect(
 		standingAuthorityHolds(result),
 		formatDomAuthorityReport(result),

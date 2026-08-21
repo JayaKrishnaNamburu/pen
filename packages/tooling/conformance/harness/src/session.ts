@@ -72,9 +72,9 @@ import type {
 } from "../../src/types";
 import { connectPeers } from "../../src/connectPeers";
 import {
-	compareMappedToAuthority,
 	misplacedOffset,
 	pointsEqual,
+	resolveDomAuthorityCheck,
 } from "./authorityCompare";
 import { serializeDiagnostic, serializeSelection } from "./serialize";
 import {
@@ -354,13 +354,12 @@ function checkDomMatchesAuthority(): DomAuthorityCheck {
 	if (current.brokenProjection) {
 		return current.brokenProjection;
 	}
-	if (!editorHasFocus(root)) {
-		return { ok: true, skipped: true };
-	}
-
-	const authority = serializeSelection(current.editor.selection);
-	const mapped = domSelectionToEditor(root);
-	return compareMappedToAuthority(authority, mapped);
+	return resolveDomAuthorityCheck({
+		hasRoot: true,
+		hasFocus: editorHasFocus(root),
+		authority: serializeSelection(current.editor.selection),
+		mapped: domSelectionToEditor(root),
+	});
 }
 
 function installBrokenProjector(): void {

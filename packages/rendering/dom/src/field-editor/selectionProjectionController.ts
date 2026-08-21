@@ -41,6 +41,7 @@ type SelectionProjectionControllerOptions = {
 	) => void;
 	activate: (blockId: string) => void;
 	emitSelectionProjected: () => void;
+	getRecordVersion?: () => number;
 };
 
 export class SelectionProjectionController {
@@ -56,6 +57,7 @@ export class SelectionProjectionController {
 		null;
 	private _committedProgrammaticTextSelection: ProgrammaticTextSelection | null =
 		null;
+	private _lastProjectedVersion = 0;
 
 	constructor(options: SelectionProjectionControllerOptions) {
 		this._historySelectionCoordinator = options.historySelectionCoordinator;
@@ -69,6 +71,14 @@ export class SelectionProjectionController {
 		this._committedProgrammaticTextSelection = null;
 		this._pointerSelectionDepth = 0;
 		this._pendingSelectionProjectionVersion = null;
+	}
+
+	get lastProjectedVersion(): number {
+		return this._lastProjectedVersion;
+	}
+
+	recordProjectedVersion(version: number): void {
+		this._lastProjectedVersion = version;
 	}
 
 	peekProgrammaticTextSelection(): ProgrammaticTextSelection | null {
@@ -354,6 +364,10 @@ export class SelectionProjectionController {
 		}
 
 		if (projected) {
+			const recordVersion = this._options.getRecordVersion?.();
+			if (recordVersion != null) {
+				this._lastProjectedVersion = recordVersion;
+			}
 			this._options.emitSelectionProjected();
 			if (this._pendingSelectionProjectionVersion === version) {
 				this._pendingSelectionProjectionVersion = null;

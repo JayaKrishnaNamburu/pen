@@ -30,6 +30,14 @@ export class FieldEditorSelectionCoordinator {
 		this._projection.reset();
 	}
 
+	get lastProjectedVersion(): number {
+		return this._projection.lastProjectedVersion;
+	}
+
+	recordProjectedVersion(version: number): void {
+		this._projection.recordProjectedVersion(version);
+	}
+
 	peekProgrammaticTextSelection(): {
 		blockId: string;
 		anchorOffset: number;

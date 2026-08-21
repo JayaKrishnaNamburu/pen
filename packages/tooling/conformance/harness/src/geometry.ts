@@ -27,6 +27,7 @@ import {
 	normalizePoint,
 	rectsEqual,
 	serializeRect,
+	tallyCaretCompares,
 } from "./geometryCompare";
 
 const CONTENT_SELECTOR = "[data-pen-editor-content]";
@@ -258,11 +259,7 @@ export async function compareCaretCache(
 				generation: current.reader.generation,
 				rootHeight: root.getBoundingClientRect().height,
 				compares,
-				staleCount: compares.filter((entry) => entry.stale).length,
-				missingCount: compares.filter(
-					(entry) =>
-						entry.cached == null || entry.fromScratch == null,
-				).length,
+				...tallyCaretCompares(compares),
 			};
 		} finally {
 			fresh.dispose();

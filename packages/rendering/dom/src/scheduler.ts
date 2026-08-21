@@ -19,10 +19,13 @@ export type FlushCollect = {
 	readonly selection: SelectionRecord | null;
 };
 
+export type SelectionProjector = (record: SelectionRecord) => void;
+
 export type DomSchedulerOptions = {
 	onDiagnostic?: (event: DiagnosticEvent) => void;
 	onInvalidate?: (blockIds: readonly string[], commitId: number) => void;
 	geometry?: GeometryInvalidator;
+	onProjectSelection?: SelectionProjector;
 };
 
 type ScheduledJob = () => void;
@@ -53,12 +56,15 @@ export class DomScheduler {
 	private activeWrites: ScheduledJob[] | null = null;
 	private rafHandle: number | null = null;
 	private readAfterWriteForced = false;
+	private onProjectSelection: SelectionProjector | null;
+	private _projectedThisFlush = false;
 
 	constructor(owner: DomSchedulerOwner, options?: DomSchedulerOptions) {
 		this.rootId = typeof owner === "string" ? owner : owner.rootId;
 		this.onDiagnostic = options?.onDiagnostic;
 		this.onInvalidate = options?.onInvalidate;
 		this.geometry = options?.geometry ?? null;
+		this.onProjectSelection = options?.onProjectSelection ?? null;
 	}
 
 	get phase(): DomSchedulerPhase {
@@ -73,8 +79,16 @@ export class DomScheduler {
 		return this._collect;
 	}
 
+	get projectedThisFlush(): boolean {
+		return this._projectedThisFlush;
+	}
+
 	setGeometry(geometry: GeometryInvalidator | null): void {
 		this.geometry = geometry;
+	}
+
+	setProjector(projector: SelectionProjector | null): void {
+		this.onProjectSelection = projector;
 	}
 
 	acceptCommit(event: CommitEvent): void {
@@ -168,6 +182,7 @@ export class DomScheduler {
 	}
 
 	private flush(): void {
+		this._projectedThisFlush = false;
 		// Collect: commits since the last flush, the current selection
 		// record, and pending read/write queues. Wave 2 will drive
 		// acceptCommit from CommitEvent batches; this module only stores
@@ -218,14 +233,24 @@ export class DomScheduler {
 	}
 
 	/**
-	 * Wave 5 reserved write-phase slot: SelectionProjector runs here,
-	 * after queued writes and before overlay paints, so it sees final
-	 * layout (`spec-v2/07-dom-scheduling.md` flush step 3). Do not
-	 * schedule projection from timers or rAF retries (S4). This method
-	 * is empty until Wave 5 — the reservation is a flush-order
-	 * constraint the current code cannot otherwise show.
+	 * Write-phase P1 slot (`spec-v2/07-dom-scheduling.md` flush step 3):
+	 * after queued writes, before overlay paints. Queued by
+	 * `setSelection` when `record.version` is newer than
+	 * `lastProjectedVersion`. Do not schedule projection from timers
+	 * or rAF retries (S4).
 	 */
-	private projectSelection(): void {}
+	private projectSelection(): void {
+		const record = this._collect?.selection ?? null;
+		if (record == null) {
+			return;
+		}
+		const queued = this.selection;
+		this._projectedThisFlush = true;
+		this.onProjectSelection?.(record);
+		if (this.selection === queued) {
+			this.selection = null;
+		}
+	}
 
 	/**
 	 * Wave 3.3: overlay paints run after the projector (OV1). Empty

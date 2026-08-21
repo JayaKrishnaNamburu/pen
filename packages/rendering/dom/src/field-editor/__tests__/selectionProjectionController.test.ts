@@ -44,6 +44,14 @@ describe("SelectionProjectionController shouldIgnoreDomTextSelection", () => {
 		).toBe(true);
 	});
 
+	it("does not clear lastProjectedVersion on reset", () => {
+		const { controller } = createController();
+		controller.recordProjectedVersion(9);
+		controller.reset();
+		expect(controller.lastProjectedVersion).toBe(9);
+		expect(controller.peekProgrammaticTextSelection()).toBeNull();
+	});
+
 	it("keeps the leftover-ignore stamp across a session-switch reset", () => {
 		const { controller } = createController();
 		controller.commitProgrammaticTextSelection("inserted", 0, 0);

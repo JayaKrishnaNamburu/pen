@@ -34,6 +34,7 @@ import {
 	formatAxeViolations,
 } from "../axeFormat.js";
 import {
+	authorityCheckKind,
 	isStandingCode,
 	standingAuthorityHolds,
 	unexpectedStandingDiagnostics,
@@ -48,12 +49,15 @@ import {
 	compareMappedToAuthority,
 	misplacedOffset,
 	pointsEqual,
+	resolveDomAuthorityCheck,
 } from "../../harness/src/authorityCompare.ts";
 import {
+	caretCacheHolds,
 	geometryBlocksFromEditor,
 	normalizePoint,
 	rectsEqual,
 	serializeRect,
+	tallyCaretCompares,
 } from "../../harness/src/geometryCompare.ts";
 
 function readRel(rel) {
@@ -83,9 +87,26 @@ test("unexpectedStandingDiagnostics drops noise and keeps a standing code", () =
 	assert.equal(isStandingCode("import-dropped"), false);
 });
 
-test("standingAuthorityHolds is false when ok is false", () => {
+test("standingAuthorityHolds is false when the compare was skipped", () => {
+	assert.equal(authorityCheckKind({ ok: true }), "matched");
 	assert.equal(standingAuthorityHolds({ ok: true }), true);
-	assert.equal(standingAuthorityHolds({ ok: true, skipped: true }), true);
+	assert.equal(
+		authorityCheckKind({ ok: false, skipped: true, reason: "editor is unfocused" }),
+		"unchecked",
+	);
+	assert.equal(
+		standingAuthorityHolds({
+			ok: false,
+			skipped: true,
+			reason: "editor is unfocused",
+		}),
+		false,
+	);
+	assert.equal(
+		standingAuthorityHolds({ ok: true, skipped: true }),
+		false,
+	);
+	assert.equal(authorityCheckKind({ ok: false, reason: "x" }), "mismatch");
 	assert.equal(standingAuthorityHolds({ ok: false, reason: "x" }), false);
 });
 
@@ -128,6 +149,7 @@ test("compareMappedToAuthority fails a misplaced caret", () => {
 	assert.equal(miss.ok, false);
 	assert.match(miss.reason, /does not match editor\.selection/);
 	assert.equal(compareMappedToAuthority(null, null).ok, true);
+	assert.equal(compareMappedToAuthority(null, null).skipped, undefined);
 	assert.equal(
 		compareMappedToAuthority(null, {
 			anchor: { blockId: "p1", offset: 0 },
@@ -135,6 +157,67 @@ test("compareMappedToAuthority fails a misplaced caret", () => {
 		}).ok,
 		false,
 	);
+});
+
+test("compareMappedToAuthority does not pass a non-text authority", () => {
+	const mapped = {
+		anchor: { blockId: "p1", offset: 0 },
+		focus: { blockId: "p1", offset: 0 },
+	};
+	const block = compareMappedToAuthority(
+		{ type: "block", blockIds: ["p1"] },
+		mapped,
+	);
+	assert.equal(block.skipped, true);
+	assert.equal(block.ok, false);
+	assert.equal(authorityCheckKind(block), "unchecked");
+	assert.equal(standingAuthorityHolds(block), false);
+	assert.match(block.reason ?? "", /not a text selection/);
+});
+
+test("resolveDomAuthorityCheck does not pass an unfocused editor", () => {
+	const authority = {
+		type: "text",
+		anchor: { blockId: "p1", offset: 2 },
+		focus: { blockId: "p1", offset: 2 },
+		isCollapsed: true,
+	};
+	const mapped = {
+		anchor: { blockId: "p1", offset: 2 },
+		focus: { blockId: "p1", offset: 2 },
+	};
+	const skipped = resolveDomAuthorityCheck({
+		hasRoot: true,
+		hasFocus: false,
+		authority,
+		mapped,
+	});
+	assert.equal(skipped.skipped, true);
+	assert.equal(skipped.ok, false);
+	assert.equal(authorityCheckKind(skipped), "unchecked");
+	assert.equal(standingAuthorityHolds(skipped), false);
+	assert.match(skipped.reason ?? "", /unfocused/);
+
+	const matched = resolveDomAuthorityCheck({
+		hasRoot: true,
+		hasFocus: true,
+		authority,
+		mapped,
+	});
+	assert.equal(matched.skipped, undefined);
+	assert.equal(matched.ok, true);
+	assert.equal(authorityCheckKind(matched), "matched");
+	assert.equal(standingAuthorityHolds(matched), true);
+
+	const missingRoot = resolveDomAuthorityCheck({
+		hasRoot: false,
+		hasFocus: false,
+		authority,
+		mapped: null,
+	});
+	assert.equal(missingRoot.skipped, undefined);
+	assert.equal(missingRoot.ok, false);
+	assert.equal(authorityCheckKind(missingRoot), "mismatch");
 });
 
 test("misplacedOffset never returns the live offset when it can move", () => {
@@ -178,6 +261,56 @@ test("geometry serialize/rectsEqual/normalizePoint move when inputs move", () =>
 	);
 });
 
+test("caretCacheHolds fails a both-null caretRect even when staleCount is 0", () => {
+	const bothNull = tallyCaretCompares([
+		{
+			point: { blockId: "p1", offset: 0 },
+			affinity: "downstream",
+			cached: null,
+			fromScratch: null,
+			stale: !rectsEqual(null, null),
+		},
+	]);
+	assert.equal(bothNull.staleCount, 0);
+	assert.equal(bothNull.missingCount, 1);
+	assert.equal(caretCacheHolds(bothNull), false);
+
+	const rect = {
+		x: 1,
+		y: 2,
+		width: 3,
+		height: 4,
+		top: 2,
+		left: 1,
+		right: 4,
+		bottom: 6,
+	};
+	const live = tallyCaretCompares([
+		{
+			point: { blockId: "p1", offset: 0 },
+			affinity: "downstream",
+			cached: rect,
+			fromScratch: rect,
+			stale: !rectsEqual(rect, rect),
+		},
+	]);
+	assert.equal(live.staleCount, 0);
+	assert.equal(live.missingCount, 0);
+	assert.equal(caretCacheHolds(live), true);
+
+	const stale = tallyCaretCompares([
+		{
+			point: { blockId: "p1", offset: 0 },
+			affinity: "downstream",
+			cached: rect,
+			fromScratch: { ...rect, x: 9 },
+			stale: !rectsEqual(rect, { ...rect, x: 9 }),
+		},
+	]);
+	assert.equal(stale.staleCount, 1);
+	assert.equal(caretCacheHolds(stale), false);
+});
+
 test("windowed range is a real slice, not identity or empty", () => {
 	const ids = Array.from({ length: 40 }, (_, index) => `win-${index}`);
 	assert.equal(isWindowedFixture(WINDOWED_FIXTURE_NAME), true);
@@ -212,11 +345,12 @@ test("Playwright-only helpers stay imported by a named scenario", () => {
 	const windowed = readRel("../../harness/src/windowedContent.tsx");
 	assert.match(windowed, /visibleWindowedBlockIds/);
 	const session = readRel("../../harness/src/session.ts");
-	assert.match(session, /compareMappedToAuthority/);
+	assert.match(session, /resolveDomAuthorityCheck/);
 	assert.match(session, /clampWindowStart/);
 	assert.match(session, /from "\.\/authorityCompare"/);
 	assert.match(session, /selectionIsCollapsed/);
 	const geometry = readRel("../../harness/src/geometry.ts");
 	assert.match(geometry, /from "\.\/geometryCompare"/);
 	assert.match(geometry, /geometryBlocksFromEditor/);
+	assert.match(geometry, /tallyCaretCompares/);
 });

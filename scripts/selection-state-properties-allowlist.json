@@ -1,0 +1,30 @@
+{
+	"_comment": "Wave 5.1: waived SelectionState-shaped property accesses. Each entry needs file, the exact waived construct, and a reason. A missing file or a vanished construct fails. Remove the entry in the same PR that deletes the access.",
+	"entries": [
+		{
+			"file": "packages/rendering/dom/src/field-editor/contenteditableDomHelpers.ts",
+			"construct": "selection.isCollapsed",
+			"reason": "browser Selection.isCollapsed after addRange/extend"
+		},
+		{
+			"file": "packages/rendering/dom/src/field-editor/selectionBridgeOffsets.ts",
+			"construct": "selection.isCollapsed",
+			"reason": "browser Selection.isCollapsed after addRange/extend"
+		},
+		{
+			"file": "packages/rendering/react/src/primitives/ai/contextualPromptGeometry.ts",
+			"construct": "selection.isCollapsed",
+			"reason": "window.getSelection().isCollapsed"
+		},
+		{
+			"file": "packages/core/src/selection/helpers.ts",
+			"construct": "sel.blockRange",
+			"reason": "getTrustedSelectionBlockRange reads the authority stamp"
+		},
+		{
+			"file": "packages/extensions/ai/src/helpers/session.ts",
+			"construct": "turn.selection.blockRange",
+			"reason": "wave 5.1 conversion owned by the extensions lane"
+		}
+	]
+}
