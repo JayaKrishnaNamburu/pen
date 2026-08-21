@@ -60,6 +60,7 @@
 - getOpOriginGroupId
 - getOpOriginType
 - getSelectionBlockRange
+- getTrustedSelectionBlockRange
 - getVerticalCaretGoalX
 - getVerticalCaretMeasure
 - hasFieldEditorSurface

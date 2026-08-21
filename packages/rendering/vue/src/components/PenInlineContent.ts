@@ -1,3 +1,4 @@
+import { isCollapsed } from "@input/pen-core";
 import { fullReconcileDeltasToDOM } from "@input/pen-dom/field-editor/reconciler";
 import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 import { isInlineContentEmpty } from "@input/pen-dom/utils/editorEmptyState";
@@ -80,7 +81,7 @@ export const PenInlineContent = defineComponent({
       return (
         isActive.value ||
         (selection.value?.type === "text" &&
-          selection.value.isCollapsed &&
+          isCollapsed(selection.value) &&
           selection.value.focus.blockId === props.blockId)
       );
     });

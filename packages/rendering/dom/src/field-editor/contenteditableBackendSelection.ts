@@ -14,6 +14,7 @@ import { handleFieldEditorKeyDown } from "./keyHandling";
 import type { InlineTextDiffOp } from "./inlineTextTransaction";
 import { applyInlineTextDiffInput } from "./textInputPipeline";
 import { ContentEditableBackendEvents } from "./contenteditableBackendEvents";
+import { shouldIgnoreLeftoverFieldAfterDocumentSelectAll } from "./documentSelectAllLeftover";
 import {
 	isNavigationSelectionKey,
 	setSelectionOffsets,
@@ -221,6 +222,15 @@ export class ContentEditableBackendSelection extends ContentEditableBackendEvent
 
 		if (this.shouldRestoreStaleProjectedSelection(normalizedSelection)) {
 			this.restoreDOMSelectionFromEditor();
+			return;
+		}
+
+		if (
+			shouldIgnoreLeftoverFieldAfterDocumentSelectAll(
+				this.editor.selection,
+				normalizedSelection,
+			)
+		) {
 			return;
 		}
 

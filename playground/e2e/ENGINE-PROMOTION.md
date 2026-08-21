@@ -1,5 +1,73 @@
 # Playground e2e engine promotion
 
+## 2026-08-21 16:00– UTC — Firefox selectAll leftover overwrite
+
+Quiet machine, HEAD `eb315d1` plus this leftover-native fix. 14-core Darwin. 1-minute loadavg stayed between **4.3 and 6.1**. Servers frozen after a `pen-dom` rebuild (`@input/pen-dom` is **not** in the Vite source alias map). `.github/workflows/ci.yml` is **not** edited.
+
+### Bisect (Firefox, `--workers=1`)
+
+The 7-file in-suite fail at `selectAll.spec.ts:12` (`selectedText` stayed `""` for 10s) vs isolated pass is **order-dependent**, not load.
+
+| Step | Command | `selectAll:12` |
+| ---- | ------- | -------------- |
+| 0 | full 7-file suite | **fail** 10.7s |
+| 0b | isolated `selectAll.spec.ts` | **pass** 1.2s |
+| 1 | `aiSuggestions` + `debug-boot` + `history` + `selectAll` | **fail** |
+| 2 | `history` + `selectAll` | pass |
+| 3 | `debug-boot` + `selectAll` | pass |
+| 4 | `aiSuggestions` + `selectAll` | **fail** |
+| 5 | `aiSuggestions:127` (dismiss) + `selectAll` | pass |
+| 6 | `aiSuggestions:100` (apply) + `selectAll` | pass |
+| 7 | `aiSuggestions:74` (styling) + `selectAll` | **fail** |
+
+Culprit **trigger**: `aiSuggestions.spec.ts:74` ("renders AI suggestions with the custom line styling"). It is the only of the three AI tests that leaves live suggestion decorations mounted at page close. That does **not** leak an editor session into the next page.
+
+### Fault
+
+**Product defect**, same leftover-native family as Enter-split. The styling spec is a timing aggravator, not the owner of the broken state.
+
+Live dump on the failing `selectAll` page, immediately after `ControlOrMeta+A`:
+
+- authority and `selectedText` are already `"First\nSecond\nThird"` (multi-block text First@0 → Third@5)
+- a few milliseconds later, `selectionchange` has overwritten authority to First@0–5
+- the 10s poll then settles at `""`
+
+Isolated "passes" because `expect.poll` succeeds on the first good sample. Adding any extra `page.evaluate` after Cmd+A made isolated fail too — same overwrite, just delayed past the first poll read.
+
+`_selectEntireDocument` writes authority via `selectTextRange` and does not stamp a programmatic range the same-block leftover ignore can use. Per-field contenteditable cannot hold a multi-block native range; Firefox collapses native onto the active field. That `selectionchange` is not a gesture window (`spec-v2/03-selection.md` §4.2 step 4) and must not write authority.
+
+### Chromium / WebKit
+
+They were **lucky**, not immune. Same mechanism: document select-all, then leftover field native. Chromium EditContext usually samples before the overwrite; WebKit's collapse is slower or less eager. The earlier Chromium `selectAll` miss filed as a "test artifact under concurrent load" is this race under delay — load was an aggravator, not the cause.
+
+### Fix
+
+`shouldIgnoreLeftoverFieldAfterDocumentSelectAll`: while authority is multi-block text, refuse a single-block native leftover. No rAF, no poll widening, no spec reorder. Pointer gestures write authority themselves before `endPointerSelection`, so a later click is not this leftover.
+
+### Gate (after `pen-dom` rebuild + Vite restart)
+
+```bash
+pnpm exec playwright test \
+  playground/e2e/aiSuggestions.spec.ts \
+  playground/e2e/debug-boot.spec.ts \
+  playground/e2e/history.spec.ts \
+  playground/e2e/inlineSession.spec.ts \
+  playground/e2e/nativeSelection.spec.ts \
+  playground/e2e/selectAll.spec.ts \
+  playground/e2e/streaming.spec.ts \
+  --project=<engine> --reporter=list --workers=1
+```
+
+| Engine   | Result                 | Playwright | loadavg start       | Notes |
+| -------- | ---------------------- | ---------- | ------------------- | ----- |
+| Chromium | **12/12** (2nd run)    | 19.9s      | 6.05 / 5.32 / 6.71  | first run 11/12: `history:108` Enter caret once at first@5; rerun green. `selectAll:12` 365ms / 398ms both runs. |
+| WebKit   | **11 passed / 1 skip** | 19.5s      | 4.94 / 5.05 / 6.87  | skip is the pre-existing `nativeSelection` filter. `selectAll:12` 522ms. |
+| Firefox  | **12/12 × 3**          | 25.4–25.5s | 4.45–5.64           | `selectAll:12` 830ms / 827ms / 881ms. Also green on `styling` + `selectAll` (736ms). |
+
+Firefox `selectAll:12` is 3/3 in-suite after the fix, matching the previous 3/3 in-suite fail / 3/3 isolated pass. CI gate is still not flipped here.
+
+---
+
 ## 2026-08-21 13:34– UTC — Enter-split stamp survives session switch
 
 Quiet confirm on HEAD `09c1fc5` plus this fix. 14-core Darwin. 1-minute loadavg stayed between **2.5 and 6.8**. No `turbo` / `vitest` during the browser runs. Vite e2e (`PEN_E2E=1`, `watch: null`) serves `@input/pen-dom` from **dist**, not `packages/**/src` — core is aliased to source; DOM is not. Rebuild `pen-dom` after source edits or the playground will keep the old bundle.

@@ -27,6 +27,7 @@ export type { Block, App, Range, AppPlacement, AnchorPosition } from "./block";
 export type {
 	Affinity,
 	SelectionState,
+	ReadonlySelectionState,
 	TextSelection,
 	BlockSelection,
 	AppSelection,

@@ -80,6 +80,45 @@ export type SelectionState =
 	| null;
 
 /**
+ * Read view of `SelectionState`. Helpers only read, so they take this
+ * rather than the live writable value. Nested fields are readonly
+ * (`blockRange` is `readonly string[]`; cell coords are readonly;
+ * `toRange` is omitted because helpers do not call it). A live
+ * `SelectionState` assigns here, and so does any deep-readonly unwrap
+ * of the same value. `Readonly<SelectionState>` is not this type — it
+ * is shallow and still exposes a mutable `blockRange`.
+ */
+export type ReadonlySelectionState =
+	| {
+			readonly type: "text";
+			readonly anchor: Point;
+			readonly focus: Point;
+			readonly affinity?: Affinity;
+			readonly goalX?: number | null;
+			readonly isCollapsed?: boolean;
+			readonly isMultiBlock?: boolean;
+			readonly blockRange: readonly string[];
+	  }
+	| {
+			readonly type: "block";
+			readonly blockIds: readonly string[];
+			readonly head?: string;
+	  }
+	| {
+			readonly type: "app";
+			readonly appId: string;
+	  }
+	| {
+			readonly type: "cell";
+			readonly blockId: string;
+			readonly anchor: { readonly row: number; readonly col: number };
+			readonly head: { readonly row: number; readonly col: number };
+			readonly rowIds?: readonly string[];
+			readonly columnIds?: readonly string[];
+	  }
+	| null;
+
+/**
  * Serializable selection as of a commit. Same variants as `SelectionState`
  * without computed properties. `affinity` / `goalX` / `head` are required
  * here because `snapshotSelectionRecord` already writes them.

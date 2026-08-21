@@ -4,23 +4,12 @@
  */
 
 import { DATA_ATTRS } from "../utils/dataAttributes";
-import {
-	getBlockSelectionRoleFromType,
-	getSelectionLengthForRole,
-} from "../utils/blockSelectionSemantics";
-import {
-	domPointToLogicalOffset,
-	findLogicalDOMPoint,
-	getLogicalNodeLength,
-	isInlineAtomNode,
-} from "./inlineAtomDom";
+import { isInlineAtomNode } from "./inlineAtomDom";
 import { getDistanceToRect } from "../geometry/types";
 import { approximateInlineOffsetFromPoint } from "./selectionBridgeOffsets";
 import {
 	findBlockElement,
 	findInlineContentElement,
-	queryBlockElement,
-	queryInlineElement,
 } from "./selectionDomQueries";
 export {
 	findBlockElement,
@@ -33,20 +22,22 @@ export {
 	extractTextFromDOM,
 	type TextDiffOp,
 } from "./textDiff";
-
-export interface SelectionPoint {
-	blockId: string;
-	offset: number;
-}
-
-export type SelectionBoundary = "start" | "end";
-
-export interface DirectionalSelectionOffsets {
-	anchor: number;
-	focus: number;
-	start: number;
-	end: number;
-}
+export {
+	domPointToOffset,
+	domSelectionToEditor,
+	getBlockBoundaryPoint,
+	type DirectionalSelectionOffsets,
+	type SelectionBoundary,
+	type SelectionPoint,
+} from "./selectionMapping";
+import {
+	getBlockSurfaceRole,
+	getBoundaryPointForBlockElement,
+	resolveSelectionPoint,
+	type ResolveSelectionPointOptions,
+	type SelectionBoundary,
+	type SelectionPoint,
+} from "./selectionMapping";
 
 function isNodeWithinOrEqual(container: HTMLElement, node: Node): boolean {
 	return node === container || container.contains(node);
@@ -55,80 +46,6 @@ function isNodeWithinOrEqual(container: HTMLElement, node: Node): boolean {
 interface CaretPositionLike {
 	offsetNode: Node;
 	offset: number;
-}
-
-interface ResolveSelectionPointOptions {
-	preferredBoundary?: SelectionBoundary;
-	previousPoint?: SelectionPoint | null;
-}
-
-function fallbackCharacterOffset(
-	container: HTMLElement,
-	targetNode: Node,
-	targetOffset: number,
-): number {
-	return domPointToLogicalOffset(container, targetNode, targetOffset);
-}
-
-/**
- * Compute the character offset of a DOM point within an inline content container.
- * Uses DOM Range first so browser-native endpoints on mark wrapper elements map
- * to the same logical offsets as equivalent text-node endpoints.
- */
-export function domPointToOffset(
-	container: HTMLElement,
-	targetNode: Node,
-	targetOffset: number,
-): number {
-	if (targetNode !== container && !container.contains(targetNode)) {
-		return fallbackCharacterOffset(container, targetNode, targetOffset);
-	}
-
-	return domPointToLogicalOffset(container, targetNode, targetOffset);
-}
-
-function getBlockSurfaceRole(
-	blockEl: HTMLElement,
-): "editable-inline" | "structural" | "delegated" {
-	const role = blockEl.getAttribute(DATA_ATTRS.surfaceRole);
-	if (role === "structural" || role === "delegated") {
-		return role;
-	}
-
-	return getBlockSelectionRoleFromType(
-		blockEl.getAttribute(DATA_ATTRS.blockType),
-	);
-}
-
-function getBlockTextLength(blockEl: HTMLElement): number {
-	const inlineEl = findInlineContentElement(blockEl);
-	if (inlineEl) {
-		return getLogicalNodeLength(inlineEl);
-	}
-	return blockEl.textContent?.length ?? 0;
-}
-
-function getBlockSelectionLength(blockEl: HTMLElement): number {
-	return getSelectionLengthForRole(
-		getBlockSurfaceRole(blockEl),
-		getBlockTextLength(blockEl),
-	);
-}
-
-function getBoundaryOffset(
-	blockEl: HTMLElement,
-	side: SelectionBoundary,
-): number {
-	return side === "start" ? 0 : getBlockSelectionLength(blockEl);
-}
-
-function resolveBoundarySideFromOffset(
-	currentOffset: number,
-	maxOffset: number,
-): SelectionBoundary {
-	if (currentOffset <= 0) return "start";
-	if (currentOffset >= maxOffset) return "end";
-	return currentOffset <= maxOffset / 2 ? "start" : "end";
 }
 
 function resolveBoundarySideFromPointer(
@@ -142,18 +59,6 @@ function resolveBoundarySideFromPointer(
 		return verticalDelta < 0 ? "start" : "end";
 	}
 	return clientX <= rect.left + rect.width / 2 ? "start" : "end";
-}
-
-function getBoundaryPointForBlockElement(
-	blockEl: HTMLElement,
-	side: SelectionBoundary,
-): SelectionPoint | null {
-	const blockId = blockEl.getAttribute("data-block-id");
-	if (!blockId) return null;
-	return {
-		blockId,
-		offset: getBoundaryOffset(blockEl, side),
-	};
 }
 
 export function getClosestBlockElementFromPoint(
@@ -191,16 +96,6 @@ export function getClosestBlockElementFromPoint(
 	return closestBlockEl;
 }
 
-export function getBlockBoundaryPoint(
-	root: HTMLElement,
-	blockId: string,
-	side: SelectionBoundary,
-): SelectionPoint | null {
-	const blockEl = queryBlockElement(root, blockId);
-	if (!blockEl) return null;
-	return getBoundaryPointForBlockElement(blockEl, side);
-}
-
 export function getSelectionPointForBlockAtPointer(
 	blockEl: HTMLElement,
 	clientX: number,
@@ -235,44 +130,6 @@ export function getSelectionPointForBlockAtPointer(
 				: null,
 		),
 	};
-}
-
-/**
- * Resolve a DOM selection point (node + offset within that node) into
- * a (blockId, characterOffset) pair relative to the editor root.
- */
-function resolveSelectionPoint(
-	root: HTMLElement,
-	node: Node,
-	offset: number,
-	options: ResolveSelectionPointOptions = {},
-): SelectionPoint | null {
-	const blockEl = findBlockElement(node, root);
-	if (!blockEl) return null;
-	const blockId = blockEl.getAttribute("data-block-id");
-	if (!blockId) return null;
-
-	const surfaceRole = getBlockSurfaceRole(blockEl);
-	if (surfaceRole !== "editable-inline") {
-		const inlineEl = findInlineContentElement(blockEl);
-		const snappedSide =
-			options.preferredBoundary ??
-			(inlineEl && inlineEl.contains(node)
-				? resolveBoundarySideFromOffset(
-						domPointToOffset(inlineEl, node, offset),
-						getBlockSelectionLength(blockEl),
-					)
-				: "start");
-		return getBoundaryPointForBlockElement(blockEl, snappedSide);
-	}
-
-	const inlineEl = findInlineContentElement(blockEl);
-	if (!inlineEl) return { blockId, offset: 0 };
-
-	if (!inlineEl.contains(node)) return { blockId, offset: 0 };
-
-	const charOffset = domPointToOffset(inlineEl, node, offset);
-	return { blockId, offset: charOffset };
 }
 
 export function pointToEditorSelectionPoint(
@@ -432,27 +289,6 @@ function isInlineBoundaryFallbackPoint(
 	}
 
 	return node instanceof HTMLElement && node.contains(inlineEl);
-}
-
-/**
- * Convert DOM selection range to editor (blockId, offset) pairs.
- */
-export function domSelectionToEditor(
-	root: HTMLElement,
-): { anchor: SelectionPoint; focus: SelectionPoint } | null {
-	const sel = window.getSelection();
-	if (!sel || sel.rangeCount === 0) return null;
-
-	const anchorNode = sel.anchorNode;
-	const focusNode = sel.focusNode;
-	if (!anchorNode || !focusNode) return null;
-	if (!root.contains(anchorNode) || !root.contains(focusNode)) return null;
-
-	const anchor = resolveSelectionPoint(root, anchorNode, sel.anchorOffset);
-	const focus = resolveSelectionPoint(root, focusNode, sel.focusOffset);
-	if (!anchor || !focus) return null;
-
-	return { anchor, focus };
 }
 
 export {

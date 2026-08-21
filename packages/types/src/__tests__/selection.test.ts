@@ -3,9 +3,11 @@ import type {
 	Affinity,
 	BlockSelection,
 	CellSelection,
+	ReadonlySelectionState,
 	SelectionOrigin,
 	SelectionRecord,
 	SelectionRecordState,
+	SelectionState,
 	TextSelection,
 } from "../types/index";
 
@@ -131,5 +133,46 @@ describe("S-types", () => {
 			affinity: "downstream",
 			goalX: null,
 		});
+	});
+
+	it("S-types: ReadonlySelectionState is a deep-readonly read shape, not shallow Readonly", () => {
+		const live: TextSelection = {
+			type: "text",
+			anchor: { blockId: "a", offset: 0 },
+			focus: { blockId: "b", offset: 2 },
+			isCollapsed: false,
+			isMultiBlock: true,
+			blockRange: ["a", "b"],
+			toRange: () => {
+				throw new Error("unused");
+			},
+		};
+		const fromLive: ReadonlySelectionState = live;
+		const deepReadonlyText: ReadonlySelectionState = {
+			type: "text",
+			anchor: { blockId: "a", offset: 0 },
+			focus: { blockId: "b", offset: 2 },
+			blockRange: ["a", "b"] as readonly string[],
+		};
+		const deepReadonlyCell: ReadonlySelectionState = {
+			type: "cell",
+			blockId: "table",
+			anchor: { row: 0, col: 1 },
+			head: { row: 1, col: 2 },
+			rowIds: ["r0", "r1"] as readonly string[],
+		};
+		const accepted: readonly ReadonlySelectionState[] = [
+			fromLive,
+			deepReadonlyText,
+			deepReadonlyCell,
+			null,
+		];
+
+		expect(accepted).toHaveLength(4);
+		if (deepReadonlyText?.type === "text") {
+			expect(deepReadonlyText.blockRange).toEqual(["a", "b"]);
+		}
+		const _liveAssigns: ReadonlySelectionState = null as unknown as SelectionState;
+		expect(_liveAssigns).toBeNull();
 	});
 });

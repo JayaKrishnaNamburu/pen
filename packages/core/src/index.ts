@@ -61,6 +61,7 @@ export { DocumentRangeImpl } from "./editor/range";
 export { SelectionAuthorityImpl as SelectionAuthority } from "./editor/selection";
 export {
 	getSelectionBlockRange,
+	getTrustedSelectionBlockRange,
 	isCollapsed,
 	isMultiBlock,
 	selectionToRange,

@@ -280,6 +280,7 @@
 - Precedence
 - PropSchema
 - Range
+- ReadonlySelectionState
 - RemoveInlineNodeOp
 - ReplaceScopeDocumentOptions
 - ReplaceTextOp

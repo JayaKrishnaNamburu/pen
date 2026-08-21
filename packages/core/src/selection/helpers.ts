@@ -3,11 +3,16 @@ import type {
 	DocumentRange,
 	PenDocument,
 	Point,
-	SelectionState,
+	ReadonlySelectionState,
 	TextSelection,
 	CRDTArray,
 } from "@input/pen-types";
 import { DocumentRangeImpl } from "../editor/range";
+
+type ReadonlyTextSelection = Extract<
+	ReadonlySelectionState,
+	{ type: "text" }
+>;
 
 /**
  * Stamp factory for live `TextSelection` values.
@@ -16,8 +21,13 @@ import { DocumentRangeImpl } from "../editor/range";
  * from `(doc, sel)`. Never reads those fields off the incoming value.
  * Command payloads stamp `blockRange` the same way when they pass a
  * `blockOrder`; collapsed same-block payloads do not need one.
+ *
+ * Helpers take `ReadonlySelectionState` because they only read. A live
+ * `SelectionState` assigns; a shallow `Readonly<SelectionState>` is not
+ * enough — `blockRange` must be `readonly string[]`, and `toRange` is
+ * omitted so a deep-readonly unwrap cannot remap it.
  */
-export function isCollapsed(sel: SelectionState): boolean {
+export function isCollapsed(sel: ReadonlySelectionState): boolean {
 	if (sel === null || sel.type !== "text") {
 		return false;
 	}
@@ -27,7 +37,7 @@ export function isCollapsed(sel: SelectionState): boolean {
 	);
 }
 
-export function isMultiBlock(sel: SelectionState): boolean {
+export function isMultiBlock(sel: ReadonlySelectionState): boolean {
 	if (sel === null || sel.type !== "text") {
 		return false;
 	}
@@ -36,7 +46,7 @@ export function isMultiBlock(sel: SelectionState): boolean {
 
 export function getSelectionBlockRange(
 	doc: PenDocument | readonly string[],
-	sel: SelectionState,
+	sel: ReadonlySelectionState,
 ): string[] {
 	if (sel === null) {
 		return [];
@@ -59,9 +69,38 @@ export function getSelectionBlockRange(
 	}
 }
 
+/**
+ * Document-free block ids from a selection the authority already stamped.
+ * Renderers must use this instead of walking `doc.blockOrder`. A live
+ * `Y.Array` `.length` / `.get(i)` loop through a deep-proxied document
+ * writes back into the calling effect. Command payloads keep
+ * `getSelectionBlockRange`, which is current-truth.
+ */
+export function getTrustedSelectionBlockRange(
+	sel: ReadonlySelectionState,
+): string[] {
+	if (sel === null) {
+		return [];
+	}
+	switch (sel.type) {
+		case "text":
+			return [...sel.blockRange];
+		case "block":
+			return [...sel.blockIds];
+		case "cell":
+			return [sel.blockId];
+		case "app":
+			return [];
+		default: {
+			const _exhaustive: never = sel;
+			return _exhaustive;
+		}
+	}
+}
+
 export function selectionToRange(
 	doc: PenDocument,
-	sel: TextSelection,
+	sel: ReadonlyTextSelection,
 ): DocumentRange {
 	return new DocumentRangeImpl(sel.anchor, sel.focus, doc);
 }

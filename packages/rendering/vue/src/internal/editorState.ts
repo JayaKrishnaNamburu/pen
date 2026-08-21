@@ -2,6 +2,7 @@ import {
   affectedBlockIdsFromSummary,
   emptyDecorationSet,
   getNumberedListItemValue,
+  getTrustedSelectionBlockRange,
 } from "@input/pen-core";
 import { getExpandedBlockRole } from "@input/pen-dom/field-editor";
 import type {
@@ -14,6 +15,7 @@ import type {
   Decoration,
   DecorationSet,
   Editor,
+  ReadonlySelectionState,
   TableCellHandle,
 } from "@input/pen-types";
 import { useExternalStore } from "./useExternalStore";
@@ -163,23 +165,25 @@ export function useFieldEditorState(fieldEditor: FieldEditorStore | null) {
 }
 
 export function isBlockSelected(
-  selection:
-    | {
-        type: string;
-        blockIds?: readonly string[];
-        blockRange?: readonly string[];
-      }
-    | null,
+  selection: ReadonlySelectionState,
   blockId: string,
 ): boolean {
-  return (
-    (selection?.type === "block" &&
-      Array.isArray(selection.blockIds) &&
-      selection.blockIds.includes(blockId)) ||
-    (selection?.type === "text" &&
-      Array.isArray(selection.blockRange) &&
-      selection.blockRange.includes(blockId))
-  );
+  if (selection === null) {
+    return false;
+  }
+  switch (selection.type) {
+    case "block":
+      return selection.blockIds.includes(blockId);
+    case "text":
+      return getTrustedSelectionBlockRange(selection).includes(blockId);
+    case "cell":
+    case "app":
+      return false;
+    default: {
+      const _exhaustive: never = selection;
+      return _exhaustive;
+    }
+  }
 }
 
 export function resolveExpandedSurfaceRole(
