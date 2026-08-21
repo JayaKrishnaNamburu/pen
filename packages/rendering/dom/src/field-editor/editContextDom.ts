@@ -1,4 +1,6 @@
+import { logicalTextFromStored } from "@input/pen-types";
 import type { FieldEditorTextChangeEvent } from "./crdt";
+import { logicalLength } from "./offsetDomain";
 
 export type EditContextTextFormat = {
 	rangeStart: number;
@@ -6,8 +8,6 @@ export type EditContextTextFormat = {
 	underlineStyle?: string;
 	underlineThickness?: string;
 };
-
-const ZERO_WIDTH_SPACE = "\u200B";
 
 export function applyEditContextTextFormats(
 	element: HTMLElement,
@@ -87,11 +87,11 @@ export function findTextPosition(
 }
 
 export function isLogicallyEmptyText(text: string): boolean {
-	return text.length === 0 || text === ZERO_WIDTH_SPACE;
+	return logicalLength(text) === 0;
 }
 
 export function toEditContextText(text: string): string {
-	return text === ZERO_WIDTH_SPACE ? "" : text;
+	return logicalTextFromStored(text);
 }
 
 export function shouldReplaceEditContextText(
@@ -104,7 +104,9 @@ export function shouldReplaceEditContextText(
 			offset += entry.retain;
 			if (offset > editContextTextLength) return true;
 		} else if (typeof entry.insert === "string") {
-			if (entry.insert === ZERO_WIDTH_SPACE) return true;
+			if (logicalLength(entry.insert) === 0 && entry.insert.length > 0) {
+				return true;
+			}
 			if (offset > editContextTextLength) return true;
 			offset += entry.insert.length;
 		} else if (entry.delete != null) {

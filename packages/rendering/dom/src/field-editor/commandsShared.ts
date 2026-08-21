@@ -1,5 +1,10 @@
-import { INPUT_RULES_ENGINE_SLOT_KEY, generateId } from "@input/pen-types";
-import type { DocumentOp, Editor } from "@input/pen-types";
+import {
+	INPUT_RULES_ENGINE_SLOT_KEY,
+	generateId,
+	logicalTextFromStored,
+	type DocumentOp,
+	type Editor,
+} from "@input/pen-types";
 import {
 	toggleInlineMark as toggleInlineMarkCommand,
 	setInlineMark as setInlineMarkCommand,
@@ -13,8 +18,6 @@ import {
 	getEditorFlowCapability,
 	isContinuousTextFlowCapability,
 } from "../utils/flowCapabilities";
-
-export const ZERO_WIDTH_SPACE = "\u200B";
 
 export interface SelectionRange {
 	start: number;
@@ -108,19 +111,14 @@ export function getLogicalInlineLength(ytext: InlineTextLike): number {
 	if (delta) {
 		return delta.reduce((length, entry) => {
 			if (typeof entry.insert === "string") {
-				return (
-					length +
-					(entry.insert === ZERO_WIDTH_SPACE
-						? 0
-						: entry.insert.length)
-				);
+				return length + logicalTextFromStored(entry.insert).length;
 			}
 			return entry.insert ? length + 1 : length;
 		}, 0);
 	}
 
 	const text = ytext.toString();
-	if (!text || text === ZERO_WIDTH_SPACE) {
+	if (logicalTextFromStored(text) === "") {
 		return 0;
 	}
 	return ytext.length;

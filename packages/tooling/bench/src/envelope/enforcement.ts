@@ -133,6 +133,22 @@ export const ENFORCEMENT_INVENTORY: readonly EnforcementRow[] = [
 		clockNote:
 			"sch-typing-budget.record.spec.ts writes drift; RECORD_TYPING_BUDGET=1 to update; no budget assert",
 	},
+	{
+		id: "crdt.fork-merge-100",
+		subject: "CRDT fork + merge of one document into itself",
+		unit: "record-only",
+		unitFailsOn: "none — no observation that merge delivered an update",
+		isolatedClock: "record-only",
+		clockNote: "self-copy: fork merged back into its source; no second peer",
+	},
+	{
+		id: "generateGenDeltaParts",
+		subject: "unused streaming parts fixture",
+		unit: "record-only",
+		unitFailsOn: "none — helper is not called by streaming.bench.ts",
+		isolatedClock: "record-only",
+		clockNote: "if the helper returned [] the streaming bench would not go red",
+	},
 ];
 
 export function assertEnforcementInventoryCoversFixtures(): void {

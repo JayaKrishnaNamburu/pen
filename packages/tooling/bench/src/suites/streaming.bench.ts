@@ -6,6 +6,7 @@ import {
 	STREAMING_BATCH_FLUSH_LATENCY_BENCH,
 	STREAMING_GEN_DELTA_1000_PARTS_BENCH,
 } from "../constants/benchmarks";
+import { macrotaskYieldFloor } from "../harness/floor";
 
 function createStreamingBenchEditor() {
 	return createTestEditor({
@@ -45,9 +46,15 @@ function flushMacrotask(): Promise<void> {
 	return new Promise((resolve) => setTimeout(resolve, 0));
 }
 
+export const STREAMING_GEN_DELTA_PARTS = 1000;
+export const STREAMING_GEN_DELTA_YIELD_EVERY = 10;
+export const STREAMING_GEN_DELTA_YIELDS = 100;
+export const STREAMING_BATCH_FLUSH_YIELDS = 1;
+
 export const streamingBenchmarks: BenchDefinition[] = [
 	{
 		...STREAMING_GEN_DELTA_1000_PARTS_BENCH,
+		floor: macrotaskYieldFloor(STREAMING_GEN_DELTA_YIELDS),
 		async fn(b) {
 			const editor = createStreamingBenchEditor();
 			await editor.whenReady();
@@ -60,21 +67,25 @@ export const streamingBenchmarks: BenchDefinition[] = [
 			const zoneId = "bench-zone";
 			streaming.beginStreaming(zoneId, blockId);
 
-			for (let i = 0; i < 1000; i++) {
+			for (let i = 0; i < STREAMING_GEN_DELTA_PARTS; i++) {
 				streaming.appendDelta(`token-${i} `);
-				if (i % 10 === 0) {
+				if (i % STREAMING_GEN_DELTA_YIELD_EVERY === 0) {
 					await flushMacrotask();
 				}
 			}
 
 			streaming.endStreaming("complete");
 			b.end();
-			b.setMetrics({ applyCount: applyCount() });
+			b.setMetrics({
+				applyCount: applyCount(),
+				yieldCount: STREAMING_GEN_DELTA_YIELDS,
+			});
 			await editor.destroy();
 		},
 	},
 	{
 		...STREAMING_BATCH_FLUSH_LATENCY_BENCH,
+		floor: macrotaskYieldFloor(STREAMING_BATCH_FLUSH_YIELDS),
 		async fn(b) {
 			const editor = createStreamingBenchEditor();
 			await editor.whenReady();

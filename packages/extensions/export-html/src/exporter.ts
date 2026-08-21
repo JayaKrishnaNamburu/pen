@@ -1,10 +1,11 @@
 import { urlPolicy, type UrlContext } from "@input/pen-core";
-import type {
-  BlockHandle,
-  Editor,
-  Exporter,
-  ExportOptions,
-  TableCellHandle,
+import {
+  logicalTextFromStored,
+  type BlockHandle,
+  type Editor,
+  type Exporter,
+  type ExportOptions,
+  type TableCellHandle,
 } from "@input/pen-types";
 import { sortDeltaAttributes } from "@input/pen-markdown-serialization";
 import type { MarkupAttributeValue } from "./serializeMarkup";
@@ -21,8 +22,10 @@ type HtmlExporterExtraOptions = Record<string, unknown> & {
   viewMode?: HtmlExportViewMode;
 };
 
-const ZERO_WIDTH_SPACE = "\u200B";
 const DELETE_SUGGESTION_ACTION = "delete";
+
+// Export emits the logical text domain. Apply executors still persist the
+// empty-block sentinel in storage; this file does not test for it.
 
 export const htmlExporter: Exporter<string, HtmlExporterExtraOptions> = {
   name: "html",
@@ -107,7 +110,12 @@ function serializeInlineContentHTML(
   for (const delta of deltas) {
     let text =
       typeof delta.insert === "string" ? serializeMarkupText(delta.insert) : "";
-    if (delta.insert === ZERO_WIDTH_SPACE) continue;
+    if (
+      typeof delta.insert === "string" &&
+      logicalTextFromStored(delta.insert) === ""
+    ) {
+      continue;
+    }
 
     const suggestion = delta.attributes?.suggestion as
       | { action?: string }
@@ -202,7 +210,10 @@ function serializeTableCellHTML(
   for (const delta of cell.textDeltas()) {
     let text =
       typeof delta.insert === "string" ? serializeMarkupText(delta.insert) : "";
-    if (delta.insert === ZERO_WIDTH_SPACE) {
+    if (
+      typeof delta.insert === "string" &&
+      logicalTextFromStored(delta.insert) === ""
+    ) {
       continue;
     }
 

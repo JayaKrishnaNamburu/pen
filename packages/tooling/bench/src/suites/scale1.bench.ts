@@ -1,7 +1,9 @@
 import type { BenchDefinition } from "../bench";
 import type { EnvelopeRungId } from "../constants/scale1";
 import { SCALE1_MEASUREMENTS } from "../constants/scale1";
+import { emptyTimerFloor } from "../harness/floor";
 import {
+	assertPeerBObservedText,
 	assertPeerBObservesPeerAInsert,
 	createEnvelopeCollaboration,
 	createEnvelopeEditor,
@@ -18,12 +20,13 @@ export function scale1EnvelopeFloorId(rungId: EnvelopeRungId): string {
 
 function createRungRunner(
 	rungId: EnvelopeRungId,
-): Pick<BenchDefinition, "fn" | "teardown"> {
+): Pick<BenchDefinition, "fn" | "teardown" | "floor"> {
 	if (rungId === "concurrentPeers-2") {
 		return createPeerRunner();
 	}
 
 	let editor: ReturnType<typeof createEnvelopeEditor> | null = null;
+	let floorEditor: ReturnType<typeof createEnvelopeEditor> | null = null;
 	const keystroke = envelopeKeystroke(rungId);
 
 	return {
@@ -35,38 +38,67 @@ function createRungRunner(
 			editor.apply(keystroke.ops, { origin: "user" });
 			b.end();
 		},
-		teardown: async () => {
-			if (!editor) {
-				return;
+		floor: (b) => {
+			if (!floorEditor) {
+				floorEditor = createEnvelopeEditor(rungId);
 			}
-			await editor.destroy();
-			editor = null;
+			emptyTimerFloor(b);
+		},
+		teardown: async () => {
+			if (editor) {
+				await editor.destroy();
+				editor = null;
+			}
+			if (floorEditor) {
+				await floorEditor.destroy();
+				floorEditor = null;
+			}
 		},
 	};
 }
 
-function createPeerRunner(): Pick<BenchDefinition, "fn" | "teardown"> {
+const PEER_TIMED_INSERT = "x";
+
+export function createPeerRunner(
+	createCollab: () => ReturnType<typeof createEnvelopeCollaboration> = () =>
+		createEnvelopeCollaboration(100),
+): Pick<BenchDefinition, "fn" | "teardown" | "floor"> {
 	let collab: ReturnType<typeof createEnvelopeCollaboration> | null = null;
+	let floorCollab: ReturnType<typeof createEnvelopeCollaboration> | null =
+		null;
 	const keystroke = envelopeKeystroke("concurrentPeers-2");
 
 	return {
 		fn: (b) => {
 			if (!collab) {
-				collab = createEnvelopeCollaboration(100);
+				collab = createCollab();
 				assertPeerBObservesPeerAInsert(collab);
 			}
 			b.start();
 			collab.editorA.apply(keystroke.ops, { origin: "user" });
 			collab.sync();
 			b.end();
+			assertPeerBObservedText(collab, keystroke.targetId, PEER_TIMED_INSERT);
+		},
+		floor: (b) => {
+			if (!floorCollab) {
+				floorCollab = createCollab();
+			}
+			b.start();
+			floorCollab.sync();
+			b.end();
 		},
 		teardown: async () => {
-			if (!collab) {
-				return;
+			if (collab) {
+				await collab.editorA.destroy();
+				await collab.editorB.destroy();
+				collab = null;
 			}
-			await collab.editorA.destroy();
-			await collab.editorB.destroy();
-			collab = null;
+			if (floorCollab) {
+				await floorCollab.editorA.destroy();
+				await floorCollab.editorB.destroy();
+				floorCollab = null;
+			}
 		},
 	};
 }

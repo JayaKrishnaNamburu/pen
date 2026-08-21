@@ -41,6 +41,19 @@ export function reportConsole(
 		console.error(
 			`  ${`${status} ${r.name}`.padEnd(nameWidth + 2)}  ${r.averageMs.toFixed(2).padStart(10)}  ${r.p50Ms.toFixed(2).padStart(12)}  ${r.p95Ms.toFixed(2).padStart(10)}  ${r.minMs.toFixed(2).padStart(10)}  ${r.maxMs.toFixed(2).padStart(10)}  ${r.opsPerSecond.toFixed(0).padStart(10)}  ${`${targetLabel} ${gateLabel}`.padStart(19)}`,
 		);
+		if (typeof r.floorP50Ms === "number") {
+			const attributed =
+				typeof r.attributedP50Ms === "number"
+					? r.attributedP50Ms.toFixed(2)
+					: "n/a";
+			console.error(
+				`    floor ${r.floorP50Ms.toFixed(2)}ms  attributed ${attributed}ms`,
+			);
+		} else {
+			console.error(
+				"    unattributed (no harness floor; wall-clock is not Pen)",
+			);
+		}
 		if (r.metrics && Object.keys(r.metrics).length > 0) {
 			console.error(`    metrics: ${formatBenchMetrics(r.metrics)}`);
 		}

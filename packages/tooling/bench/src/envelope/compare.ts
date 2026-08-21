@@ -1,7 +1,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { BenchResult } from "../bench";
+import { attributeBenchResult, type BenchResult } from "../bench";
 import {
 	ENVELOPE_DRIFT_FLOOR_MS,
 	ENVELOPE_DRIFT_RATIO,
@@ -105,7 +105,7 @@ export function envelopeTablePath(): string {
 }
 
 export interface BuildEnvelopeRecordOptions {
-	floorResults: readonly BenchResult[];
+	floorResults?: readonly BenchResult[];
 	producedOn?: string;
 	floorProducedOn?: string;
 	machineClass?: string;
@@ -127,16 +127,14 @@ export function buildEnvelopeRecord(
 		if (!result) {
 			throw new Error(`SCALE1 result missing for ${spec.id}`);
 		}
-		const floor = options.floorResults.find(
-			(entry) => entry.id === scale1EnvelopeFloorId(spec.id),
-		);
-		if (!floor) {
-			throw new Error(`SCALE1 harness floor missing for ${spec.id}`);
-		}
 		const measuredP50Ms = roundMs(result.p50Ms);
-		const floorP50Ms = roundMs(floor.p50Ms);
+		const floorP50Ms = roundMs(floorP50For(spec.id, result, options.floorResults));
 		const attributedP50Ms = roundMs(
-			Math.max(0, measuredP50Ms - floorP50Ms),
+			attributeBenchResult({
+				...result,
+				p50Ms: measuredP50Ms,
+				floorP50Ms,
+			}),
 		);
 		const gated = envelopePointIsGated(attributedP50Ms);
 		const audit = getScale1FixtureAudit(spec.id);
@@ -355,6 +353,23 @@ function assertEnvelopeRecord(value: EnvelopeRecord): void {
 			);
 		}
 	}
+}
+
+function floorP50For(
+	id: EnvelopeRungId,
+	result: BenchResult,
+	floorResults: readonly BenchResult[] | undefined,
+): number {
+	if (typeof result.floorP50Ms === "number" && Number.isFinite(result.floorP50Ms)) {
+		return result.floorP50Ms;
+	}
+	const floor = floorResults?.find(
+		(entry) => entry.id === scale1EnvelopeFloorId(id),
+	);
+	if (!floor) {
+		throw new Error(`SCALE1 harness floor missing for ${id}`);
+	}
+	return floor.p50Ms;
 }
 
 function operationFor(id: EnvelopeRungId): string {

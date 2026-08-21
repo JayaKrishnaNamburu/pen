@@ -3,10 +3,7 @@ import { ENVELOPE_SAMPLE_SIZE } from "../constants/scale1";
 import { reportConsole } from "../reporters/console";
 import { reportJSON } from "../reporters/json";
 import { runSuite } from "../bench";
-import {
-	scale1Benchmarks,
-	scale1FloorBenchmarks,
-} from "../suites/scale1.bench";
+import { scale1Benchmarks } from "../suites/scale1.bench";
 import {
 	buildEnvelopeRecord,
 	compareEnvelopeDrift,
@@ -40,19 +37,12 @@ export async function runEnvelopeSuite(
 		warmup,
 		reporter,
 	});
-	const floorResults = await runSuite("SCALE1-floor", scale1FloorBenchmarks, {
-		iterations,
-		warmup,
-		reporter,
-	});
 
 	if (options.reportResults && reporter === "console") {
 		reportConsole("SCALE1", results);
-		reportConsole("SCALE1-floor", floorResults);
 	}
 	if (options.reportResults && reporter === "json") {
 		console.log(reportJSON("SCALE1", results));
-		console.log(reportJSON("SCALE1-floor", floorResults));
 	}
 
 	const status = load.busy ? "provisional" : "envelope";
@@ -61,7 +51,6 @@ export async function runEnvelopeSuite(
 		: `Recorded at load ${load.load1.toFixed(2)} on ${load.ncpu} CPUs.`;
 
 	const fresh = buildEnvelopeRecord(results, {
-		floorResults,
 		machineClass,
 		status,
 		caveat,

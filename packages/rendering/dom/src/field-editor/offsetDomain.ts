@@ -1,3 +1,5 @@
+import { EMPTY_BLOCK_SENTINEL } from "@input/pen-types";
+
 /**
  * Sentinel seam 2 (I11). The empty-block `\u200B` is storage so browsers
  * have a caret target; it is not a logical character.
@@ -6,8 +8,6 @@
  * Reader, projector, geometry, and backends translate through this
  * module. No other new module may test for the sentinel.
  */
-
-const EMPTY_BLOCK_SENTINEL = "\u200B";
 
 function isEmptyBlockStorage(text: string): boolean {
 	return text === EMPTY_BLOCK_SENTINEL;

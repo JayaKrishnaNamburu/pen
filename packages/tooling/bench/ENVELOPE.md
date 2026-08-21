@@ -24,6 +24,8 @@ Claimed subject versus what the fixture actually does. The last two published de
 | `streaming.bench.ts` 1000-part harness | 1000 gen-delta parts through `editor.apply` | 1000 `appendDelta` calls plus 100 `setTimeout(0)` yields. Same-run yield floor is ~115ms; coalesced no-yield work is ~0.13ms and one apply. The clock is the scheduler. | wrong-subject | count-trusted; clock untrustworthy | count: apply-count, not the clock. 1000 appends coalesce to one apply when yields are removed; the wall is 100 macrotasks |
 | `createScale3Editor` peer-count axis | keystroke with 8 remote peers | Eight `data-pen-remote-caret` decorations on the multiplayer stand-in. No second Y.Doc, no sync. | name-overstates | count-trusted; clock untrustworthy | count: 8 remote-caret decorations. Clock is a keystroke median on a single editor, not a synced Y.Doc count |
 | `createLargeDocument(n)` | n-block document (SCALE3 / CRDT / schema) | n blocks written with `adapter.transact` + `initBlockMap`, not `editor.apply`. Different generator than the SCALE1 envelope specs. | agrees | count-trusted | count: blockOrder.length === n. Size is a block count asserted by the fixture, not a timed envelope row |
+| `crdt.bench.ts` fork + merge | fork + merge 100-block document | forks one Y.Doc and merges that fork back into itself. No second peer, no remote insert, no observation that merge changed anything. | name-overstates | count-untrusted; clock untrustworthy | count: none. If merge is a no-op the clock still publishes. No token survival, no update byteLength |
+| `fixtures/streamingParts.ts` | 1000 gen-delta parts for the streaming bench | Exported and unused. streaming.bench.ts inlines appendDelta plus 100 setTimeout(0) yields. | wrong-subject | count-untrusted | count: not consulted. If this helper returned [] the streaming bench would not go red |
 
 ## Envelope
 
@@ -72,6 +74,8 @@ A check that cannot fail is record-only even when a clock column exists. The uni
 | `scale3.keystroke.realistic-stack` | SCALE3 realistic-stack keystroke clocks | record-only | synthetic gate compare only; no live p50 assertion | decorative | critical:true; gates are 25–50ms on 0.5–3.8ms medians (7–50× slack) |
 | `createLargeDocument` | n-block SCALE3/CRDT fixture | enforced | blockOrder.length !== n | record-only | size is a count, not a timed envelope row |
 | `wave3-typing-budget.chromium` | Chromium typing budget (other package) | n/a | none — @input/pen-conformance record-only scenario | record-only | sch-typing-budget.record.spec.ts writes drift; RECORD_TYPING_BUDGET=1 to update; no budget assert |
+| `crdt.fork-merge-100` | CRDT fork + merge of one document into itself | record-only | none — no observation that merge delivered an update | record-only | self-copy: fork merged back into its source; no second peer |
+| `generateGenDeltaParts` | unused streaming parts fixture | record-only | none — helper is not called by streaming.bench.ts | record-only | if the helper returned [] the streaming bench would not go red |
 
 ## Past the ceiling
 

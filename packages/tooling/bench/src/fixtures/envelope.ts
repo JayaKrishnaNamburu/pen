@@ -126,8 +126,20 @@ export function assertPeerBObservesPeerAInsert(
 
 	collab.sync();
 
+	assertPeerBObservedText(collab, blockId, PEER_A_OBSERVE_TOKEN);
+}
+
+/**
+ * Post-sync observation of a named insert. The SCALE1 timed path uses
+ * this after the clock so a no-op sync cannot publish.
+ */
+export function assertPeerBObservedText(
+	collab: ReturnType<typeof createEnvelopeCollaboration>,
+	blockId: string,
+	token: string,
+): void {
 	const afterB = collab.editorB.getBlock(blockId).textContent();
-	if (!afterB.includes(PEER_A_OBSERVE_TOKEN)) {
+	if (!afterB.includes(token)) {
 		throw new Error(
 			`peer B did not observe peer A's insert after sync: ${JSON.stringify(afterB)}`,
 		);

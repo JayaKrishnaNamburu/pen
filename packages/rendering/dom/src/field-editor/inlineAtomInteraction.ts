@@ -1,11 +1,12 @@
 import { fieldEditorHostFacet } from "@input/pen-core";
-import type {
-	ApplyOptions,
-	DocumentOp,
-	Editor,
-	FieldEditor,
-	InlineDelta,
-	InlineNodeDeltaInsert,
+import {
+	logicalTextFromStored,
+	type ApplyOptions,
+	type DocumentOp,
+	type Editor,
+	type FieldEditor,
+	type InlineDelta,
+	type InlineNodeDeltaInsert,
 } from "@input/pen-types";
 import {
 	pointToEditorSelectionPoint,
@@ -14,7 +15,6 @@ import {
 
 export const INLINE_ATOM_LOGICAL_LENGTH = 1;
 
-const ZERO_WIDTH_SPACE = "\u200B";
 const OBJECT_REPLACEMENT_CHARACTER = "\uFFFC";
 const DEFAULT_APPLY_OPTIONS: ApplyOptions = { origin: "user", undoGroup: true };
 
@@ -321,9 +321,10 @@ function getAdjustedTargetOffset(
 
 function getInlineDeltaLength(delta: InlineDelta): number {
 	return typeof delta.insert === "string"
-		? delta.insert
-				.replaceAll(ZERO_WIDTH_SPACE, "")
-				.replaceAll(OBJECT_REPLACEMENT_CHARACTER, "").length
+		? logicalTextFromStored(delta.insert).replaceAll(
+				OBJECT_REPLACEMENT_CHARACTER,
+				"",
+			).length
 		: INLINE_ATOM_LOGICAL_LENGTH;
 }
 

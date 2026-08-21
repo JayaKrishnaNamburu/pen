@@ -1,9 +1,10 @@
-import type {
-  BlockHandle,
-  Exporter,
-  ExportOptions,
-  Editor,
-  InlineDelta,
+import {
+  logicalTextFromStored,
+  type BlockHandle,
+  type Exporter,
+  type ExportOptions,
+  type Editor,
+  type InlineDelta,
 } from "@input/pen-types";
 import type {
   PenBlockJSON,
@@ -14,8 +15,6 @@ import type {
   PenMarkJSON,
 } from "./types";
 import { PEN_DOCUMENT_JSON_VERSION } from "./schema";
-
-const ZERO_WIDTH_SPACE = "\u200B";
 
 export const jsonExporter: Exporter<
   PenDocumentJSON,
@@ -117,7 +116,9 @@ function serializeInlineContent(
   deltas: InlineDelta[],
 ): PenInlineContentJSON | undefined {
   const visibleDeltas = deltas.filter(
-    (delta) => typeof delta.insert !== "string" || delta.insert !== ZERO_WIDTH_SPACE,
+    (delta) =>
+      typeof delta.insert !== "string" ||
+      logicalTextFromStored(delta.insert) !== "",
   );
   const textDeltas: Array<{ insert: string; attributes?: Record<string, unknown> }> =
     visibleDeltas.flatMap((delta) =>

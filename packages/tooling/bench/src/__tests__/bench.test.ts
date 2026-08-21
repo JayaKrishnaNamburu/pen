@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { describe, expect, it } from "vitest";
 import {
 	BENCH_GATE_SAMPLE_SIZE,
+	attributeBenchResult,
 	bench,
 	evaluateBenchResult,
 	getCriticalBenchFailures,
@@ -141,6 +142,58 @@ describe("@input/pen-bench runner", () => {
 			{ iterations: 2, warmup: 0 },
 		);
 		expect(teardowns).toEqual(["first", "second"]);
+	});
+
+	it("records the harness floor alongside the real implementation", async () => {
+		const results = await runSuite(
+			"floor-suite",
+			[
+				{
+					id: "with-floor",
+					name: "with-floor",
+					fn: (b) => {
+						b.start();
+						for (let i = 0; i < 2000; i++) {
+							Math.sqrt(i);
+						}
+						b.end();
+					},
+					floor: (b) => {
+						b.start();
+						b.end();
+						b.setMetrics({ applyCount: 0 });
+					},
+				},
+			],
+			{ iterations: 5, warmup: 0 },
+		);
+
+		expect(typeof results[0]?.floorP50Ms).toBe("number");
+		expect(Number.isFinite(results[0]?.floorP50Ms)).toBe(true);
+		expect(results[0]?.attributedP50Ms).toBe(
+			attributeBenchResult(results[0]!),
+		);
+		expect(results[0]?.metrics?.floorApplyCount).toBe(0);
+	});
+
+	it("refuses to attribute a wall-clock that has no floor", () => {
+		expect(() =>
+			attributeBenchResult({
+				id: "streaming.gen-delta-1000-parts",
+				name: "streaming 1000 gen-delta parts at 100/sec",
+				iterations: 1,
+				totalMs: 115,
+				averageMs: 115,
+				minMs: 115,
+				maxMs: 115,
+				p50Ms: 115,
+				p95Ms: 115,
+				opsPerSecond: 8,
+				isCritical: false,
+			}),
+		).toThrow(
+			/harness floor missing for streaming.gen-delta-1000-parts/,
+		);
 	});
 
 	it("runSuite preserves benchmark metrics in results", async () => {

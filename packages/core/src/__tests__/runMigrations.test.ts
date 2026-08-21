@@ -1,4 +1,3 @@
-import { yjsAdapter } from "@input/pen-crdt-yjs";
 import {
 	MIGRATION_LEDGER_METADATA_KEY,
 	RESERVED_METADATA_KEYS,
@@ -9,17 +8,10 @@ import { describe, expect, it } from "vitest";
 
 import { defaultSchema } from "./fixtures/testSchema";
 import {
-	createEditor,
 	createHeadlessEditor,
 	runMigrations,
 	type DocumentMigration,
 } from "../index";
-
-const noDefaultExtensionsPreset = {
-	resolve() {
-		return { extensions: [] };
-	},
-};
 
 function insertTextMigration(id: string, text: string): DocumentMigration {
 	return {
@@ -43,7 +35,10 @@ function readLedger(editor: Editor): unknown {
 }
 
 function visibleText(editor: Editor): string {
-	return editor.firstBlock()!.textContent().replace(/\u200B/g, "");
+	return editor
+		.firstBlock()!
+		.textContent()
+		.replace(/\u200B/g, "");
 }
 
 describe("runMigrations (DUR4)", () => {
@@ -129,52 +124,27 @@ describe("runMigrations (DUR4)", () => {
 		editor.destroy();
 	});
 
-	it("DUR4: headless and browser editors share one runner and stay byte-comparable", () => {
-		const adapter = yjsAdapter();
-		const seed = createHeadlessEditor({ schema: defaultSchema,  crdt: adapter });
-		const initial = adapter.encodeState(seed.internals.crdtDoc);
-		seed.destroy();
+	it("DUR4: createHeadlessEditor and runMigrations work with no DOM", () => {
+		// not headless/browser parity. createHeadlessEditor calls createEditor
+		// (editor.ts), so a second factory in this process is the same path.
+		// real parity: conformance/scenarios/dur4-migration-parity.spec.ts
+		expect(typeof globalThis.document).toBe("undefined");
+		expect(typeof globalThis.window).toBe("undefined");
 
-		const headless = createHeadlessEditor({
-			schema: defaultSchema,crdt: adapter,
-			document: adapter.loadDocument(initial),
-		});
-		const migrations = [insertTextMigration("title", "Title")];
-		const headlessReport = runMigrations(headless, migrations);
-		const afterHeadless = adapter.encodeState(headless.internals.crdtDoc);
+		const editor = createHeadlessEditor({ schema: defaultSchema });
+		const report = runMigrations(editor, [
+			insertTextMigration("title", "Title"),
+		]);
 
-		const browser = createEditor({
-			schema: defaultSchema, preset: noDefaultExtensionsPreset,
-			crdt: adapter,
-			document: adapter.loadDocument(afterHeadless),
-		});
-		const browserReport = runMigrations(browser, migrations);
-		const afterBrowser = adapter.encodeState(browser.internals.crdtDoc);
-
-		expect(headlessReport.applied).toEqual(["title"]);
-		expect(browserReport).toEqual({
-			applied: [],
-			skipped: ["title"],
+		expect(report).toEqual({
+			applied: ["title"],
+			skipped: [],
 			failed: [],
 		});
-		expect(visibleText(headless)).toBe("Title");
-		expect(visibleText(browser)).toBe("Title");
-		expect(readLedger(headless)).toEqual(["title"]);
-		expect(readLedger(browser)).toEqual(["title"]);
-		expect(afterBrowser).toEqual(afterHeadless);
+		expect(visibleText(editor)).toBe("Title");
+		expect(readLedger(editor)).toEqual(["title"]);
 
-		const independent = createEditor({
-			schema: defaultSchema, preset: noDefaultExtensionsPreset,
-			crdt: adapter,
-			document: adapter.loadDocument(initial),
-		});
-		expect(runMigrations(independent, migrations).applied).toEqual(["title"]);
-		expect(visibleText(independent)).toBe("Title");
-		expect(readLedger(independent)).toEqual(["title"]);
-
-		headless.destroy();
-		browser.destroy();
-		independent.destroy();
+		editor.destroy();
 	});
 
 	it("DUR4: forces origin migration even when the host apply omits it", () => {

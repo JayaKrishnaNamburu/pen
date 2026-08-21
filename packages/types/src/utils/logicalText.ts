@@ -2,9 +2,13 @@
  * Empty-block storage sentinel (I11, `spec-v2/03-selection.md` §2).
  *
  * This is the only definition site. Import `EMPTY_BLOCK_SENTINEL` from
- * `@input/pen-types`. Do not redeclare `"\u200B"`, `ZERO_WIDTH`, or a
- * local copy — a redeclared constant keeps passing after the seam it
- * was meant to shadow has changed.
+ * `@input/pen-types`. Do not redeclare the character — a redeclared
+ * constant keeps passing after the seam it was meant to shadow has changed.
+ *
+ * Other meanings that happen to use the same character (the inline-atom
+ * caret boundary is one) must alias this constant. They must not repeat
+ * the character literal. Four names for one literal is how a grep on any
+ * single name reads clean while the duplication survives.
  *
  * Produced by normalize / op executors (storage-side, marked
  * `sentinel-storage`) so an otherwise-empty block has a caret target.

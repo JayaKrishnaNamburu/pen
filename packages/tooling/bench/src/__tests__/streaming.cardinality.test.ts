@@ -2,6 +2,12 @@ import type { DocumentOp, StreamingTarget } from "@input/pen-types";
 import { deltaStreamExtension } from "@input/pen-delta-stream";
 import { createTestEditor } from "@input/pen-test";
 import { afterEach, describe, expect, it } from "vitest";
+import { runSuite } from "../bench";
+import { STREAMING_GEN_DELTA_1000_PARTS_BENCH } from "../constants/benchmarks";
+import {
+	STREAMING_GEN_DELTA_YIELDS,
+	streamingBenchmarks,
+} from "../suites/streaming.bench";
 
 const editors: Array<{ destroy: () => Promise<void> | void }> = [];
 
@@ -86,5 +92,30 @@ describe("streaming bench apply cardinality", () => {
 
 		streaming.endStreaming("complete");
 		expect(applyCount()).toBe(1);
+	});
+
+	it("every streaming bench declares a Pen-removed floor", () => {
+		expect(
+			streamingBenchmarks.every((entry) => typeof entry.floor === "function"),
+		).toBe(true);
+	});
+
+	it("the 1000-part floor records 100 yields and zero applies", async () => {
+		const definition = streamingBenchmarks.find(
+			(entry) => entry.id === STREAMING_GEN_DELTA_1000_PARTS_BENCH.id,
+		);
+		if (!definition) {
+			throw new Error("streaming.gen-delta-1000-parts missing");
+		}
+		const [result] = await runSuite("streaming-floor", [definition], {
+			iterations: 1,
+			warmup: 0,
+		});
+		expect(result?.metrics).toMatchObject({
+			floorApplyCount: 0,
+			floorYieldCount: STREAMING_GEN_DELTA_YIELDS,
+		});
+		expect(typeof result?.floorP50Ms).toBe("number");
+		expect(typeof result?.attributedP50Ms).toBe("number");
 	});
 });

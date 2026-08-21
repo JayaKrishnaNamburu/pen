@@ -82,9 +82,9 @@
     {
       "name": "@input/pen-bench",
       "path": "packages/tooling/bench/dist/index.mjs",
-      "baselineBytes": 25779,
-      "limitBytes": 25779,
-      "note": "Wave F / SCALE1 envelope table, reporters, drift check and CLI. Re-recorded 2026-08-21 once the lane editing envelope/compare.ts had reported. 1421 → 25779 B is an 18x jump and that is stated rather than smoothed over: the Wave P.7 figure was taken when the package was a stub, so this is the first measurement of a bench harness that actually exists, not a regression in one."
+      "baselineBytes": 27000,
+      "limitBytes": 27000,
+      "note": "Wave F / SCALE1 envelope table, reporters, drift check and CLI, plus the harness-floor feature (a Pen-removed null implementation timed alongside each bench, so a wall-clock cannot be attributed to Pen without one). Re-recorded twice on 2026-08-21: 1421 → 25779 once the lane editing envelope/compare.ts reported, then → 27000 when the floor landed. The first jump is 18x and is stated rather than smoothed over — the Wave P.7 figure was taken when the package was a stub, so it was the first measurement of a bench harness that actually exists, not a regression in one."
     },
     {
       "name": "@input/pen-content-ops",

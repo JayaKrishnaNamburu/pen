@@ -6,6 +6,7 @@ import {
 	STREAMING_BATCH_FLUSH_LATENCY_BENCH,
 	STREAMING_GEN_DELTA_1000_PARTS_BENCH,
 } from "../constants/benchmarks";
+import { streamingBenchmarks } from "../suites/streaming.bench";
 
 const STREAMING_BASELINE_PATH = resolve(
 	dirname(fileURLToPath(import.meta.url)),
@@ -72,5 +73,14 @@ describe("streaming drift-report baseline", () => {
 		expect(genDelta?.diagnosis).toMatch(/setTimeout\(0\)/);
 		expect(batchFlush?.critical).toBe(true);
 		expect(batchFlush?.diagnosis).toMatch(/timedApplyCount is 0/);
+	});
+
+	it("streaming benches cannot publish without a Pen-removed floor", () => {
+		const ids = streamingBenchmarks.map((bench) => bench.id);
+		expect(ids).toEqual([
+			STREAMING_GEN_DELTA_1000_PARTS_BENCH.id,
+			STREAMING_BATCH_FLUSH_LATENCY_BENCH.id,
+		]);
+		expect(streamingBenchmarks.every((bench) => bench.floor)).toBe(true);
 	});
 });

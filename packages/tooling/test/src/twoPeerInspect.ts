@@ -1,7 +1,5 @@
-import type { PenDocument } from "@input/pen-types";
+import { logicalTextFromStored, type PenDocument } from "@input/pen-types";
 import type { TestEditor, TwoPeer } from "./types";
-
-const EMPTY_INLINE_SENTINEL = "\u200B";
 
 export type InspectSource = TestEditor | TwoPeer | PenDocument;
 
@@ -190,10 +188,7 @@ export function visibleText(
 	blockId?: string,
 ): string {
 	if (typeof sourceOrText === "string") {
-		if (!sourceOrText || sourceOrText === EMPTY_INLINE_SENTINEL) {
-			return "";
-		}
-		return sourceOrText.replaceAll(EMPTY_INLINE_SENTINEL, "");
+		return logicalTextFromStored(sourceOrText);
 	}
 	if (blockId) {
 		return readInlineText(sourceOrText, blockId) ?? "";
@@ -290,11 +285,7 @@ function readInlineText(
 	if (!isTextLike(content)) {
 		return null;
 	}
-	const text = content.toString();
-	if (!text || text === EMPTY_INLINE_SENTINEL) {
-		return "";
-	}
-	return text;
+	return logicalTextFromStored(content.toString());
 }
 
 function walkParentCycle(

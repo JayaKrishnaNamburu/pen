@@ -6,16 +6,19 @@
 
 ### function
 
+- attributeBenchResult
 - buildEnvelopeRecord
 - compareEnvelopeDrift
 - compareScale2Plus8Tolerance
 - createEnvelopeEditor
 - createLargeDocument
 - createScale3Editor
+- emptyTimerFloor
 - envelopeGateP50Ms
 - envelopePointIsGated
 - generateGenDeltaParts
 - getScale3Baseline
+- macrotaskYieldFloor
 - reportConsole
 - reportJSON
 - scale2Plus8GateMs

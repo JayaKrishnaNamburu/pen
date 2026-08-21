@@ -166,6 +166,32 @@ export const RELATED_FIXTURE_AUDIT: readonly FixtureAuditRow[] = [
 		howMeasured:
 			"count: blockOrder.length === n. Size is a block count asserted by the fixture, not a timed envelope row",
 	},
+	{
+		id: "crdt.fork-merge-100",
+		fixture: "`crdt.bench.ts` fork + merge",
+		claimedSubject: "fork + merge 100-block document",
+		actualSubject:
+			"forks one Y.Doc and merges that fork back into itself. No second peer, no remote insert, no observation that merge changed anything.",
+		verdict: "name-overstates",
+		countTrust: "untrusted",
+		clockTrust: "untrustworthy",
+		floorKind: "empty-timer",
+		howMeasured:
+			"count: none. If merge is a no-op the clock still publishes. No token survival, no update byteLength",
+	},
+	{
+		id: "generateGenDeltaParts",
+		fixture: "`fixtures/streamingParts.ts`",
+		claimedSubject: "1000 gen-delta parts for the streaming bench",
+		actualSubject:
+			"Exported and unused. streaming.bench.ts inlines appendDelta plus 100 setTimeout(0) yields.",
+		verdict: "wrong-subject",
+		countTrust: "untrusted",
+		clockTrust: "not-a-clock",
+		floorKind: "unmeasurable",
+		howMeasured:
+			"count: not consulted. If this helper returned [] the streaming bench would not go red",
+	},
 ];
 
 export function getScale1FixtureAudit(id: EnvelopeRungId): FixtureAuditRow {

@@ -33,6 +33,7 @@ import {
 import {
 	ENVELOPE_LONG_BLOCK_ID,
 	ENVELOPE_TABLE_BLOCK_ID,
+	assertPeerBObservedText,
 	assertPeerBObservesPeerAInsert,
 	createEnvelopeCollaboration,
 	createEnvelopeEditor,
@@ -51,6 +52,7 @@ import {
 } from "../fixtures/envelope";
 import { parseBenchCLIArgs } from "../run";
 import {
+	createPeerRunner,
 	scale1Benchmarks,
 	scale1FloorBenchmarks,
 } from "../suites/scale1.bench";
@@ -257,6 +259,58 @@ describe("SCALE1 envelope ladder", () => {
 		);
 		void collab.editorA.destroy();
 		void collab.editorB.destroy();
+	});
+
+	it("SCALE1: a no-op sync refuses to publish the concurrent-peers bench", async () => {
+		const runner = createPeerRunner(() => {
+			const collab = createEnvelopeCollaboration(100);
+			collab.sync = () => {};
+			return collab;
+		});
+		await expect(
+			bench(runner.fn.name || "peer-noop-sync", runner.fn, {
+				iterations: 1,
+				warmup: 0,
+			}),
+		).rejects.toThrow(/did not observe peer A's insert after sync/);
+		await runner.teardown?.();
+	});
+
+	it("SCALE1: a sync broken after observe refuses to publish the timed insert", async () => {
+		const runner = createPeerRunner(() => {
+			const collab = createEnvelopeCollaboration(100);
+			const realSync = collab.sync.bind(collab);
+			let calls = 0;
+			collab.sync = () => {
+				calls += 1;
+				if (calls === 1) {
+					realSync();
+				}
+			};
+			return collab;
+		});
+		await expect(
+			bench("peer-broken-after-observe", runner.fn, {
+				iterations: 1,
+				warmup: 0,
+			}),
+		).rejects.toThrow(/did not observe peer A's insert after sync/);
+		await runner.teardown?.();
+	});
+
+	it("SCALE1: assertPeerBObservedText fails when B never received the token", () => {
+		const collab = createEnvelopeCollaboration(4);
+		expect(() =>
+			assertPeerBObservedText(collab, envelopeBlockId(0), "NEVER-SYNCED"),
+		).toThrow(/did not observe peer A's insert after sync/);
+		void collab.editorA.destroy();
+		void collab.editorB.destroy();
+	});
+
+	it("SCALE1: every envelope bench declares a harness floor", () => {
+		expect(scale1Benchmarks.every((entry) => typeof entry.floor === "function")).toBe(
+			true,
+		);
 	});
 
 	it("SCALE1: independently populated peers lose an edit after sync", () => {

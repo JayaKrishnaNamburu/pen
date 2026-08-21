@@ -27,6 +27,10 @@ export interface BenchResult {
 	targetMs?: number;
 	isCritical: boolean;
 	metrics?: BenchMetrics;
+	/** Timed with Pen removed. Absent means the wall-clock is not attributed. */
+	floorP50Ms?: number;
+	/** max(0, p50Ms - floorP50Ms). Absent when there is no floor. */
+	attributedP50Ms?: number;
 }
 
 export interface BenchOptions {
@@ -39,6 +43,12 @@ export interface BenchDefinition {
 	id?: string;
 	name: string;
 	fn: (b: BenchContext) => void | Promise<void>;
+	/**
+	 * Same start/end loop as `fn` with Pen removed. `runSuite` times it
+	 * alongside and records `floorP50Ms` / `attributedP50Ms`. A wall-clock
+	 * without this is not attributed to Pen.
+	 */
+	floor?: (b: BenchContext) => void | Promise<void>;
 	teardown?: () => void | Promise<void>;
 	targetMs?: number;
 	critical?: boolean;
@@ -137,11 +147,42 @@ export async function runSuite(
 				...result.metrics,
 			};
 		}
+		if (benchmark.floor) {
+			const floor = await bench(
+				`${benchmark.name} harness floor`,
+				benchmark.floor,
+				options,
+			);
+			result.floorP50Ms = floor.p50Ms;
+			result.attributedP50Ms = attributeBenchResult(result);
+			if (floor.metrics) {
+				result.metrics = {
+					...result.metrics,
+					...prefixFloorMetrics(floor.metrics),
+				};
+			}
+		}
 		results.push(result);
 		await benchmark.teardown?.();
 	}
 
 	return results;
+}
+
+/**
+ * A wall-clock without a recorded floor is not Pen. The 12.8x streaming
+ * "regression" was 100 `setTimeout(0)` yields attributed to apply.
+ */
+export function attributeBenchResult(result: BenchResult): number {
+	if (
+		typeof result.floorP50Ms !== "number" ||
+		!Number.isFinite(result.floorP50Ms)
+	) {
+		throw new Error(
+			`harness floor missing for ${result.id}; a wall-clock without a floor is not attributed to Pen`,
+		);
+	}
+	return Math.max(0, result.p50Ms - result.floorP50Ms);
 }
 
 export function getBenchTarget(name: string): number {
@@ -220,6 +261,18 @@ function createBenchContext(): BenchContext & {
 		},
 	};
 	return ctx;
+}
+
+function prefixFloorMetrics(metrics: BenchMetrics): BenchMetrics {
+	const prefixed: BenchMetrics = {};
+	for (const [key, value] of Object.entries(metrics)) {
+		if (key.startsWith("floor")) {
+			prefixed[key] = value;
+			continue;
+		}
+		prefixed[`floor${key.charAt(0).toUpperCase()}${key.slice(1)}`] = value;
+	}
+	return prefixed;
 }
 
 function percentile(values: number[], percentileRank: number): number {

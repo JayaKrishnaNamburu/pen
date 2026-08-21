@@ -1,5 +1,6 @@
 export {
 	BENCH_GATE_SAMPLE_SIZE,
+	attributeBenchResult,
 	bench,
 	runSuite,
 	getBenchTarget,
@@ -8,6 +9,7 @@ export {
 	getCriticalBenchFailures,
 	isBenchWaiverExpired,
 } from "./bench";
+export { emptyTimerFloor, macrotaskYieldFloor } from "./harness/floor";
 export type {
 	BenchContext,
 	BenchResult,

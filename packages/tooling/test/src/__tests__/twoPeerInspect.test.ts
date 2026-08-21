@@ -1,3 +1,4 @@
+import { EMPTY_BLOCK_SENTINEL } from "@input/pen-types";
 import { beforeEach, describe, expect, it } from "vitest";
 import * as Y from "yjs";
 import { createTestEditor, resetTestIdCounter } from "../index";
@@ -35,7 +36,7 @@ describe("two-peer inspect helpers", () => {
 		editor.destroy();
 	});
 
-	it("visibleText returns stored text and strips the empty-block sentinel", () => {
+	it("visibleText returns stored text and maps an exact empty-block sentinel to empty", () => {
 		const editor = createTestEditor({
 			blocks: [
 				{ id: "p1", type: "paragraph", content: "Hello" },
@@ -45,7 +46,7 @@ describe("two-peer inspect helpers", () => {
 
 		expect(visibleText(editor, "p1")).toBe("Hello");
 		expect(visibleText(editor, "empty")).toBe("");
-		expect(visibleText("\u200B")).toBe("");
+		expect(visibleText(EMPTY_BLOCK_SENTINEL)).toBe("");
 
 		editor.destroy();
 	});
