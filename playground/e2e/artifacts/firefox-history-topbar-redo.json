@@ -1,0 +1,60 @@
+{
+  "browserName": "firefox",
+  "firstBlockId": "c4241275-c3d4-4e5d-bb4e-0344cbc628d2",
+  "insertedBlockId": "2cd3c3f0-3df5-41c2-b3b1-5c3af65b069f",
+  "redoneBlockId": "2cd3c3f0-3df5-41c2-b3b1-5c3af65b069f",
+  "afterRedo": {
+    "editorSelection": {
+      "type": "text",
+      "anchor": {
+        "blockId": "2cd3c3f0-3df5-41c2-b3b1-5c3af65b069f",
+        "offset": 0
+      },
+      "focus": {
+        "blockId": "2cd3c3f0-3df5-41c2-b3b1-5c3af65b069f",
+        "offset": 0
+      },
+      "isCollapsed": true,
+      "isMultiBlock": false,
+      "blockRange": [
+        "2cd3c3f0-3df5-41c2-b3b1-5c3af65b069f"
+      ]
+    },
+    "editorFocusBlockId": "2cd3c3f0-3df5-41c2-b3b1-5c3af65b069f",
+    "activeElement": {
+      "tag": "SPAN",
+      "blockId": "2cd3c3f0-3df5-41c2-b3b1-5c3af65b069f",
+      "className": ""
+    },
+    "attachedInlineBlockId": "2cd3c3f0-3df5-41c2-b3b1-5c3af65b069f",
+    "native": {
+      "isCollapsed": true,
+      "text": "",
+      "rangeCount": 1,
+      "anchor": {
+        "blockId": "c4241275-c3d4-4e5d-bb4e-0344cbc628d2",
+        "offset": 5,
+        "nodePath": "text:\"Hello\"@SPAN.",
+        "domOffset": 5
+      },
+      "focus": {
+        "blockId": "c4241275-c3d4-4e5d-bb4e-0344cbc628d2",
+        "offset": 5,
+        "nodePath": "text:\"Hello\"@SPAN.",
+        "domOffset": 5
+      }
+    },
+    "blocks": [
+      {
+        "id": "c4241275-c3d4-4e5d-bb4e-0344cbc628d2",
+        "text": "Hello",
+        "active": false
+      },
+      {
+        "id": "2cd3c3f0-3df5-41c2-b3b1-5c3af65b069f",
+        "text": "​",
+        "active": true
+      }
+    ]
+  }
+}

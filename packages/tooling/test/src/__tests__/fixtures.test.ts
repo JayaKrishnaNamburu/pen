@@ -24,6 +24,19 @@ describe("deterministic fixture helpers", () => {
 		expect(encodeFixtureUpdate(first.ydoc)).toBe(first.updateBase64);
 	});
 
+	it("encodeFixtureUpdate differs for an empty Y.Doc and a populated fixture", () => {
+		const fixture = createDeterministicYDocFixture();
+		const empty = new Y.Doc({ gc: false });
+		const populated = encodeFixtureUpdate(fixture.ydoc);
+		const vacant = encodeFixtureUpdate(empty);
+
+		expect(populated.length).toBeGreaterThan(0);
+		expect(populated).not.toBe(vacant);
+
+		empty.destroy();
+		fixture.ydoc.destroy();
+	});
+
 	it("normalizes map keys for snapshots", () => {
 		const ydoc = new Y.Doc();
 		const metadata = ydoc.getMap("metadata");

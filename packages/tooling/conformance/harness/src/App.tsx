@@ -1,6 +1,7 @@
 import type { Editor } from "@input/pen-types";
 import { useEffect, useState, type ReactElement } from "react";
 import { Pen } from "../../../../rendering/react/src/primitives";
+import { isWindowedFixture } from "../../src/windowedRange";
 import { getHarnessSession, getWindowStart, subscribeHarness } from "./session";
 import { WindowedContent } from "./windowedContent";
 
@@ -69,7 +70,7 @@ export function App() {
 	const showAx3Chrome = readQueryFlag("ax3");
 	const showAx6Caret = readQueryFlag("ax6");
 	const showCol2Presence = readQueryFlag("col2");
-	const windowed = session.fixtureName === "windowed-large";
+	const windowed = isWindowedFixture(session.fixtureName);
 
 	return (
 		<Pen.Editor.Root

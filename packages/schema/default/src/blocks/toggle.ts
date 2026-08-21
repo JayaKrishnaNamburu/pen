@@ -29,14 +29,20 @@ export const toggle = defineBlock("toggle", {
       if (node.type !== "html") return null;
       const val = (node.value ?? "").trim();
       const match = val.match(
-        /^<details[^>]*>\s*<summary>([\s\S]*?)<\/summary>/i,
+        /^<details[^>]*>\s*<summary>([\s\S]*?)<\/summary>([\s\S]*)$/i,
       );
       if (!match) return null;
+      const leftover = (match[2] ?? "")
+        .replace(/<\/details>\s*$/i, "")
+        .trim();
       return {
         type: "toggle",
         props: { open: /\bopen\b/.test(val) },
         importContentSource: {
           markdownHtml: match[1].trim(),
+          ...(leftover
+            ? { markdownNodes: [{ type: "html", value: leftover }] }
+            : {}),
         },
       };
     },

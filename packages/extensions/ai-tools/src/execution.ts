@@ -125,9 +125,10 @@ export async function executeAITool(
       onPart,
     );
     return opened.close(output);
-  } catch (error) {
+  } finally {
+    // Must not be `catch`: a rejected collect is only one unwind. `close()`
+    // is idempotent, so the success path that already closed is unaffected.
     opened.close();
-    throw error;
   }
 }
 
@@ -147,6 +148,7 @@ function openGuardedCall(
 ): Extract<OpenAIToolCall, { ok: true }> {
   let readOnlyMutation = false;
   let closed = false;
+  let closeResult: unknown;
   const editor = resolveToolEditor(context);
   const restoreWrites = editor
     ? guardEditorWrites(editor, {
@@ -167,18 +169,21 @@ function openGuardedCall(
   return {
     ok: true,
     close: (output?: unknown) => {
-      if (!closed) {
-        closed = true;
-        restoreWrites();
-        turn?.closeCall();
+      if (closed) {
+        return closeResult;
       }
+      closed = true;
+      restoreWrites();
+      turn?.closeCall();
       if (readOnlyMutation) {
-        return turn
+        closeResult = turn
           ? finishDeniedCall(turn, "tool-not-allowed")
           : denyAIToolCall("blocked", "tool-not-allowed");
+        return closeResult;
       }
       if (isAIToolCallDenied(output)) {
-        return turn ? finishDeniedCall(turn, output.reason) : output;
+        closeResult = turn ? finishDeniedCall(turn, output.reason) : output;
+        return closeResult;
       }
       if (turn) {
         if (turn.ended) {
@@ -187,7 +192,8 @@ function openGuardedCall(
           turn.markStatus("executed");
         }
       }
-      return output;
+      closeResult = output;
+      return closeResult;
     },
   };
 }
@@ -204,6 +210,14 @@ function finishDeniedCall(
   return denyAIToolCall("blocked", reason);
 }
 
+const STREAMING_TARGET_SLOT = "delta-stream:target";
+
+type StreamingTargetSlot = {
+  beginStreaming?: (zoneId: string, blockId: string, origin?: OpOrigin) => void;
+  appendDelta?: (delta: string) => void;
+  endStreaming?: (status: "complete" | "cancelled" | "error") => void;
+};
+
 function guardEditorWrites(
   editor: Editor,
   options: {
@@ -214,7 +228,9 @@ function guardEditorWrites(
 ): () => void {
   const restoreApply = patchEditorApply(editor, options);
   const restoreStream = patchEditorOpenTextStream(editor, options);
+  const restoreTarget = patchStreamingTarget(editor, options);
   return () => {
+    restoreTarget();
     restoreStream();
     restoreApply();
   };
@@ -288,6 +304,105 @@ function patchEditorOpenTextStream(
   };
   return () => {
     editor.openTextStream = originalOpen;
+  };
+}
+
+function patchStreamingTarget(
+  editor: Editor,
+  options: {
+    mutating: boolean;
+    onReadOnlyMutation: () => void;
+  },
+): () => void {
+  if (options.mutating) {
+    return () => {};
+  }
+  const streaming = editor.internals?.getSlot<StreamingTargetSlot>(
+    STREAMING_TARGET_SLOT,
+  );
+  if (!streaming || typeof streaming !== "object") {
+    return () => {};
+  }
+  const restores: Array<() => void> = [];
+  if (typeof streaming.appendDelta === "function") {
+    const originalAppend = streaming.appendDelta.bind(streaming);
+    streaming.appendDelta = () => {
+      options.onReadOnlyMutation();
+    };
+    restores.push(() => {
+      streaming.appendDelta = originalAppend;
+    });
+  }
+  if (typeof streaming.beginStreaming === "function") {
+    const originalBegin = streaming.beginStreaming.bind(streaming);
+    streaming.beginStreaming = () => {
+      options.onReadOnlyMutation();
+    };
+    restores.push(() => {
+      streaming.beginStreaming = originalBegin;
+    });
+  }
+  // Entry-point patches miss the TextStreamWriter gen-start parked on
+  // the slot (`_writer.append` / prototype.appendDelta → _writer).
+  restores.push(
+    disableLiveSlotWriters(streaming, options.onReadOnlyMutation),
+  );
+  return () => {
+    for (const restore of restores.reverse()) {
+      restore();
+    }
+  };
+}
+
+function disableLiveSlotWriters(
+  host: object,
+  onReadOnlyMutation: () => void,
+): () => void {
+  const restores: Array<() => void> = [];
+  for (const key of Object.getOwnPropertyNames(host)) {
+    let value: unknown;
+    try {
+      value = (host as Record<string, unknown>)[key];
+    } catch {
+      continue;
+    }
+    if (!isLiveTextStreamWriter(value)) {
+      continue;
+    }
+    restores.push(disableTextStreamWriter(value, onReadOnlyMutation));
+  }
+  return () => {
+    for (const restore of restores.reverse()) {
+      restore();
+    }
+  };
+}
+
+function isLiveTextStreamWriter(value: unknown): value is TextStreamWriter {
+  if (value == null || typeof value !== "object") {
+    return false;
+  }
+  const writer = value as TextStreamWriter;
+  return (
+    typeof writer.append === "function" && typeof writer.splice === "function"
+  );
+}
+
+function disableTextStreamWriter(
+  writer: TextStreamWriter,
+  onReadOnlyMutation: () => void,
+): () => void {
+  const originalAppend = writer.append.bind(writer);
+  const originalSplice = writer.splice.bind(writer);
+  writer.append = () => {
+    onReadOnlyMutation();
+  };
+  writer.splice = () => {
+    onReadOnlyMutation();
+  };
+  return () => {
+    writer.append = originalAppend;
+    writer.splice = originalSplice;
   };
 }
 

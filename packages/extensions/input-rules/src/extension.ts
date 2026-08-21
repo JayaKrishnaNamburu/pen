@@ -43,6 +43,7 @@ export function inputRulesExtension(config: InputRulesConfig = {}): Extension {
 	}
 
 	let unsub: (() => void) | null = null;
+	const produced = new WeakSet<DocumentOp[]>();
 
 	// Wave 1.3: Extension.inputRules → pen.inputRules via inputRulesToProviders.
 	// This extension keeps engine registration; Wave 7 deletes the v1 field.
@@ -53,11 +54,15 @@ export function inputRulesExtension(config: InputRulesConfig = {}): Extension {
 		activateClient: async (ctx) => {
 			const { editor } = ctx;
 
+			unsub?.();
 			unsub = editor.onBeforeApply(
 				(ops, options) => {
 					const origin = options.origin ?? "user";
 					if (BYPASS_ORIGINS.has(origin)) return ops;
-					return appendInputRuleTransforms(editor, engine, ops);
+					if (produced.has(ops)) return ops;
+					const next = appendInputRuleTransforms(editor, engine, ops);
+					produced.add(next);
+					return next;
 				},
 				{ priority: 300 },
 			);

@@ -1,4 +1,4 @@
-import { createEditor, keymapFacet } from "@input/pen-core";
+import { createEditor, createHeadlessEditor, keymapFacet } from "@input/pen-core";
 import { getDocumentToolRuntime } from "@input/pen-document-ops";
 import { createDefaultSchema } from "@input/pen-schema-default";
 import type { CreateEditorOptions, Editor, Extension } from "@input/pen-types";
@@ -144,22 +144,60 @@ describe("bare createEditor vs defaultPreset — bold/italic shortcuts", () => {
 			expect(editor.getBlock(blockId)?.textDeltas()).toEqual([{ insert: "hello" }]);
 		});
 	});
+
+	it("defaultPreset({ shortcuts: false }) does not apply bold", async () => {
+		await withEditor({ preset: defaultPreset({ shortcuts: false }) }, (editor) => {
+			const blockId = seedSelectedHello(editor);
+			expect(dispatchShortcut(editor, "Mod-b")).toBe(false);
+			expect(editor.getBlock(blockId)?.textDeltas()).toEqual([{ insert: "hello" }]);
+		});
+	});
 });
 
 describe("defaultPreset() batteries actually work", () => {
 	it("undo reverts a user insert that a bare editor cannot undo", async () => {
 		await withEditor({ preset: defaultPreset() }, (editor) => {
 			const blockId = seedSelectedHello(editor);
-			expect(editor.undoManager.canUndo()).toBe(true);
-			expect(editor.undoManager.undo()).toBe(true);
+			expect(editor.getBlock(blockId)?.textContent()).toBe("hello");
+			editor.undoManager.undo();
 			expect(editor.getBlock(blockId)?.textContent()).toBe("");
+			expect(editor.internals.getSlot("undo:manager")).toBeTruthy();
 		});
 
 		await withEditor({ schema: createDefaultSchema() }, (editor) => {
-			seedSelectedHello(editor);
+			const blockId = seedSelectedHello(editor);
+			expect(editor.internals.getSlot("undo:manager")).toBeFalsy();
 			expect(editor.undoManager.canUndo()).toBe(false);
 			expect(editor.undoManager.undo()).toBe(false);
+			expect(editor.getBlock(blockId)?.textContent()).toBe("hello");
 		});
+	});
+
+	it("defaultPreset({ undo: false }) leaves undo inert: the document stays changed", async () => {
+		await withEditor({ preset: defaultPreset({ undo: false }) }, (editor) => {
+			const blockId = seedSelectedHello(editor);
+			expect(editor.internals.getSlot("undo:manager")).toBeFalsy();
+			expect(editor.undoManager.canUndo()).toBe(false);
+			expect(editor.undoManager.undo()).toBe(false);
+			expect(editor.getBlock(blockId)?.textContent()).toBe("hello");
+		});
+	});
+
+	it("createHeadlessEditor({ useDefaultExtensions: true }) is a no-op: undo stays inert", async () => {
+		const editor = createHeadlessEditor({
+			schema: createDefaultSchema(),
+			useDefaultExtensions: true,
+		});
+		try {
+			const blockId = seedSelectedHello(editor);
+			expect(installedExtensionNames(editor)).toEqual([]);
+			expect(editor.internals.getSlot("undo:manager")).toBeFalsy();
+			expect(editor.undoManager.canUndo()).toBe(false);
+			expect(editor.undoManager.undo()).toBe(false);
+			expect(editor.getBlock(blockId)?.textContent()).toBe("hello");
+		} finally {
+			await editor.destroy();
+		}
 	});
 
 	it("document-ops insert_block is registered and writes through the live runtime", async () => {
@@ -180,6 +218,13 @@ describe("defaultPreset() batteries actually work", () => {
 
 			expect(editor.getBlock(result.blockId)?.textContent()).toBe("from preset");
 		});
+
+		await withEditor(
+			{ preset: defaultPreset({ documentOps: false }) },
+			(editor) => {
+				expect(getDocumentToolRuntime(editor)).toBeNull();
+			},
+		);
 	});
 
 	it("delta-stream installs a live streaming target slot", async () => {
@@ -190,5 +235,12 @@ describe("defaultPreset() batteries actually work", () => {
 		await withEditor({ schema: createDefaultSchema() }, (editor) => {
 			expect(editor.internals.getSlot("delta-stream:target")).toBeUndefined();
 		});
+
+		await withEditor(
+			{ preset: defaultPreset({ deltaStream: false }) },
+			(editor) => {
+				expect(editor.internals.getSlot("delta-stream:target")).toBeUndefined();
+			},
+		);
 	});
 });

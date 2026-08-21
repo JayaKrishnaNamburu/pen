@@ -54,13 +54,13 @@ import {
 	LOCAL_FIXTURES,
 	WINDOWED_WINDOW_SIZE,
 } from "../../fixtures/catalog";
+import { clampWindowStart } from "../../src/windowedRange";
 import type {
 	BeforeInputDispatchResult,
 	ConformanceEventRecord,
 	DocumentContentSnapshot,
 	DomAuthorityCheck,
 	HostileDomScan,
-	LogicalPoint,
 	PenConformanceBridge,
 	PresencePeerInject,
 	PresenceSnapshot,
@@ -69,6 +69,12 @@ import type {
 	SerializedBeforeInputMapping,
 	SerializedDiagnostic,
 } from "../../src/types";
+import { connectPeers } from "../../src/connectPeers";
+import {
+	compareMappedToAuthority,
+	misplacedOffset,
+	pointsEqual,
+} from "./authorityCompare";
 import { serializeDiagnostic, serializeSelection } from "./serialize";
 import {
 	compareCaretCache,
@@ -152,27 +158,6 @@ function createLocalDocument(name: string): {
 		adapter,
 		ydoc,
 		document: wrapYjsDocument(adapter, ydoc),
-	};
-}
-
-function connectPeers(localY: Y.Doc, remoteY: Y.Doc): () => void {
-	const onLocal = (update: Uint8Array, origin: unknown) => {
-		if (origin === remoteY) {
-			return;
-		}
-		Y.applyUpdate(remoteY, update, localY);
-	};
-	const onRemote = (update: Uint8Array, origin: unknown) => {
-		if (origin === localY) {
-			return;
-		}
-		Y.applyUpdate(localY, update, remoteY);
-	};
-	localY.on("update", onLocal);
-	remoteY.on("update", onRemote);
-	return () => {
-		localY.off("update", onLocal);
-		remoteY.off("update", onRemote);
 	};
 }
 
@@ -323,8 +308,7 @@ export function getWindowStart(): number {
 
 export function setWindowStart(start: number): void {
 	const blockCount = getHarnessSession().editor.documentState.blockOrder.length;
-	const maxStart = Math.max(0, blockCount - WINDOWED_WINDOW_SIZE);
-	const next = Math.min(Math.max(0, Math.floor(start)), maxStart);
+	const next = clampWindowStart(start, blockCount, WINDOWED_WINDOW_SIZE);
 	if (next === windowStart) {
 		return;
 	}
@@ -360,10 +344,6 @@ function editorHasFocus(root: HTMLElement): boolean {
 	return active instanceof Node && root.contains(active);
 }
 
-function pointsEqual(left: LogicalPoint, right: LogicalPoint): boolean {
-	return left.blockId === right.blockId && left.offset === right.offset;
-}
-
 function checkDomMatchesAuthority(): DomAuthorityCheck {
 	const current = getHarnessSession();
 	const root = editorRoot();
@@ -379,50 +359,7 @@ function checkDomMatchesAuthority(): DomAuthorityCheck {
 
 	const authority = serializeSelection(current.editor.selection);
 	const mapped = domSelectionToEditor(root);
-	if (authority == null) {
-		if (mapped == null) {
-			return { ok: true, authority, dom: mapped };
-		}
-		return {
-			ok: false,
-			reason: "DOM has a selection while editor.selection is null",
-			authority,
-			dom: mapped,
-		};
-	}
-	if (authority.type !== "text") {
-		return { ok: true, skipped: true, authority, dom: mapped };
-	}
-	if (!mapped) {
-		return {
-			ok: false,
-			reason: "DOM selection does not map to a logical text selection",
-			authority,
-			dom: mapped,
-		};
-	}
-	if (
-		pointsEqual(mapped.anchor, authority.anchor) &&
-		pointsEqual(mapped.focus, authority.focus)
-	) {
-		return { ok: true, authority, dom: mapped };
-	}
-	return {
-		ok: false,
-		reason: "DOM selection does not match editor.selection (v1 authority)",
-		authority,
-		dom: mapped,
-	};
-}
-
-function misplacedOffset(offset: number, length: number): number {
-	if (length <= 0) {
-		return offset === 0 ? 1 : 0;
-	}
-	if (offset === 0) {
-		return Math.min(1, length);
-	}
-	return 0;
+	return compareMappedToAuthority(authority, mapped);
 }
 
 function installBrokenProjector(): void {

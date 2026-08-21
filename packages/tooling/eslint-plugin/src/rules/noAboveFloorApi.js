@@ -90,13 +90,43 @@ function matchesPath(filename, site) {
 	return normalized === siteNorm || normalized.endsWith(`/${siteNorm}`);
 }
 
+export function sitePath(site) {
+	if (typeof site === "string") {
+		return site;
+	}
+	if (site && typeof site === "object" && typeof site.path === "string") {
+		return site.path;
+	}
+	return null;
+}
+
+export function missingSiteField(site) {
+	if (typeof site === "string") {
+		return site.trim().length === 0 ? "path" : null;
+	}
+	if (!site || typeof site !== "object") {
+		return "path";
+	}
+	if (typeof site.path !== "string" || site.path.trim().length === 0) {
+		return "path";
+	}
+	if (typeof site.reason !== "string" || site.reason.trim().length === 0) {
+		return "reason";
+	}
+	return null;
+}
+
 function isAllowlistedSite(filename, entry) {
 	if (!Array.isArray(entry.sites)) {
 		return false;
 	}
-	return entry.sites.some(
-		(site) => typeof site === "string" && matchesPath(filename, site),
-	);
+	return entry.sites.some((site) => {
+		if (missingSiteField(site)) {
+			return false;
+		}
+		const path = sitePath(site);
+		return path != null && matchesPath(filename, path);
+	});
 }
 
 function isTypePosition(node) {
@@ -584,6 +614,26 @@ export const noAboveFloorApi = {
 										? entry.api
 										: "(missing)",
 								field,
+							},
+						});
+					}
+					if (!Array.isArray(entry?.sites)) {
+						continue;
+					}
+					for (const site of entry.sites) {
+						const siteField = missingSiteField(site);
+						if (!siteField) {
+							continue;
+						}
+						context.report({
+							loc: { line: 1, column: 0 },
+							messageId: "incompleteAllowlist",
+							data: {
+								api:
+									entry && typeof entry.api === "string"
+										? entry.api
+										: "(missing)",
+								field: `sites.${siteField}`,
 							},
 						});
 					}

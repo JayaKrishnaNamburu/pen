@@ -45,7 +45,10 @@ describe("AIB4 streamed apply undo", () => {
 		await processStream(
 			double.streamParts() as AsyncIterable<PenStreamPart>,
 			editor,
-			{ groupId: "stream-turn" },
+			{
+				groupId: "stream-turn",
+				allowedMutatingTools: ["insert_block"],
+			},
 		);
 
 		expect(editor.getBlock("stream-a")).toBeTruthy();
@@ -96,7 +99,10 @@ describe("AIB4 streamed apply undo", () => {
 		await processStream(
 			double.streamParts() as AsyncIterable<PenStreamPart>,
 			editor,
-			{ groupId: "abort-turn" },
+			{
+				groupId: "abort-turn",
+				allowedMutatingTools: ["insert_block"],
+			},
 		);
 
 		expect(editor.getBlock("landed-prefix")).toBeTruthy();
@@ -150,7 +156,11 @@ describe("AIB4 streamed apply undo", () => {
 				} satisfies PenStreamPart;
 			})(),
 			editor,
-			{ signal: controller.signal, groupId: "signal-turn" },
+			{
+				signal: controller.signal,
+				groupId: "signal-turn",
+				allowedMutatingTools: ["insert_block"],
+			},
 		);
 
 		expect(editor.getBlock("landed-prefix")).toBeTruthy();

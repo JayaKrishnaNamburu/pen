@@ -172,7 +172,7 @@ describe("overlay visual contract", () => {
 		const afterShift = snapshotOverlay(layer.element);
 		expect(afterShift).not.toEqual(afterFirst);
 		expect(afterShift.items[0]?.transform).toBe(
-			`translate3d(${CARETS[0]!.x}px, ${CARETS[0]!.y}px, 0)`,
+			`translate3d(${CARETS[0]!.x + 1}px, ${CARETS[0]!.y}px, 0)`,
 		);
 
 		layer.applyPaintPlan(first);

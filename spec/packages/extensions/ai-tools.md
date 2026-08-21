@@ -21,7 +21,11 @@ Add optional runtime behavior on top of the editor core without changing the can
 
 ## Data Flow / Runtime Model
 
-Extension package packages in Pen should stay package-first and explicit about ownership. Adopt this package only when the host app needs the capability it provides.
+`openAIToolCall()` authorizes a model-driven call and installs the write guard before the transport runs `executeTool`. Transports must not call `executeTool` unless the result is `{ ok: true }`.
+
+`close()` on that opened call restores the patched `editor.apply` and is idempotent: the first result is stored, and later calls return that same result. The write guard is restored in `finally`, not `catch`. A non-throw unwind (abandoning a stream mid-`yield`) runs `finally` and skips `catch`; a `catch`-only restore left the guard patched onto the host editor and silently dropped every later `editor.apply` editor-wide.
+
+The live `Editor` used for the guard is `ToolContext.editor` at construction. That is a local runtime field, not `PenStreamRequest.context.editor` (removed from the wire type).
 
 ## Integration Notes
 

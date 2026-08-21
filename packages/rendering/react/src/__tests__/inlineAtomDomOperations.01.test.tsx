@@ -85,6 +85,7 @@ describe("Pen inline atom DOM operations", () => {
 			],
 			element,
 			editor.schema,
+			{ editor },
 		);
 
 		const atom = element.querySelector(

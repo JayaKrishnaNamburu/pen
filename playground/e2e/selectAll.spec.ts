@@ -25,6 +25,12 @@ test("selects the full structured document on first cmd+a", async ({ page }) => 
 
 	await page.keyboard.press("ControlOrMeta+A");
 
+	const afterSelectAll = await getEditorDocumentSnapshot(page);
+	await test.info().attach("selectAll-after-cmd-a", {
+		body: JSON.stringify(afterSelectAll, null, 2),
+		contentType: "application/json",
+	});
+
 	await expect
 		.poll(async () => (await getEditorDocumentSnapshot(page)).selectedText)
 		.toBe("First\nSecond\nThird");

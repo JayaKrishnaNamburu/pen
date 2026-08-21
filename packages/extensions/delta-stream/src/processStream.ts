@@ -12,6 +12,7 @@ import {
 } from "@input/pen-types";
 import type { StreamingTarget } from "./streamingTarget";
 import {
+  applyValidatedOps,
   assertToolCanMutateBlock,
   assertToolCanUseBlockType,
   getDocumentToolRuntime,
@@ -23,6 +24,7 @@ import {
   executeAITool,
   isAIToolCallDenied,
   type AIToolRuntime,
+  type AIToolTurn,
 } from "@input/pen-ai-tools";
 
 export interface ProcessStreamOptions {
@@ -36,6 +38,12 @@ export interface ProcessStreamOptions {
    * applies use `{ origin: "ai" }` only.
    */
   groupId?: string;
+  /**
+   * Mutating tools this stream may run or emulate via structural parts.
+   * Default deny. `gen-start` / `gen-delta` / `gen-end` do not consult this;
+   * they write through the host-opened streaming target.
+   */
+  allowedMutatingTools?: readonly string[];
 }
 
 export async function processStream(
@@ -69,7 +77,7 @@ export async function processStream(
     ) ?? getDocumentToolRuntime(editor);
   const groupId = options?.groupId;
   const toolTurn = createAIToolTurn({
-    allowedMutatingTools: [],
+    allowedMutatingTools: options?.allowedMutatingTools ?? [],
     groupId: groupId ?? undefined,
   });
   const seenUnknownTypes = new Set<string>();
@@ -195,7 +203,7 @@ export async function processStream(
           closed = true;
           break;
         }
-        const applied = applyGuarded(editor, groupId, () => {
+        const applied = applyGuarded(editor, groupId, toolTurn, () => {
           assertToolCanUseBlockType(editor, part.blockType);
           return [
             {
@@ -225,7 +233,7 @@ export async function processStream(
           closed = true;
           break;
         }
-        const applied = applyGuarded(editor, groupId, () => {
+        const applied = applyGuarded(editor, groupId, toolTurn, () => {
           assertToolCanMutateBlock(editor, part.blockId);
           return [
             {
@@ -253,7 +261,7 @@ export async function processStream(
           closed = true;
           break;
         }
-        const applied = applyGuarded(editor, groupId, () => {
+        const applied = applyGuarded(editor, groupId, toolTurn, () => {
           assertToolCanMutateBlock(editor, part.blockId);
           return [{ type: "delete-block", blockId: part.blockId }];
         });
@@ -275,7 +283,7 @@ export async function processStream(
           closed = true;
           break;
         }
-        const applied = applyGuarded(editor, groupId, () => {
+        const applied = applyGuarded(editor, groupId, toolTurn, () => {
           assertToolCanMutateBlock(editor, part.blockId);
           return [
             {
@@ -303,7 +311,7 @@ export async function processStream(
           closed = true;
           break;
         }
-        const applied = applyGuarded(editor, groupId, () => {
+        const applied = applyGuarded(editor, groupId, toolTurn, () => {
           assertToolCanMutateBlock(editor, part.blockId);
           return [
             {
@@ -336,7 +344,7 @@ export async function processStream(
           closed = true;
           break;
         }
-        const applied = applyGuarded(editor, groupId, () => [
+        const applied = applyGuarded(editor, groupId, toolTurn, () => [
           {
             type: "create-app",
             appId: part.appId,
@@ -363,7 +371,7 @@ export async function processStream(
           closed = true;
           break;
         }
-        const applied = applyGuarded(editor, groupId, () => [
+        const applied = applyGuarded(editor, groupId, toolTurn, () => [
           {
             type: "update-app",
             appId: part.appId,
@@ -388,7 +396,7 @@ export async function processStream(
           closed = true;
           break;
         }
-        const applied = applyGuarded(editor, groupId, () => [
+        const applied = applyGuarded(editor, groupId, toolTurn, () => [
           { type: "delete-app", appId: part.appId },
         ]);
         if (!applied.ok) {
@@ -609,14 +617,48 @@ function streamApplyOptions(groupId: string | undefined): ApplyOptions {
 function applyGuarded(
   editor: Editor,
   groupId: string | undefined,
+  toolTurn: AIToolTurn,
   buildOps: () => DocumentOp[],
 ): { ok: true } | { ok: false; error: unknown } {
   try {
-    editor.apply(buildOps(), streamApplyOptions(groupId));
+    const ops = buildOps();
+    const denied = deniedStreamMutation(ops, toolTurn);
+    if (denied) {
+      return { ok: false, error: new Error(denied) };
+    }
+    applyValidatedOps(editor, ops, streamApplyOptions(groupId));
     return { ok: true };
   } catch (error) {
     return { ok: false, error };
   }
+}
+
+/** Op type → grant name. Missing keys fail closed. */
+const STREAM_OP_TOOL_NAMES: Partial<Record<DocumentOp["type"], string>> = {
+  "insert-block": "insert_block",
+  "update-block": "update_block",
+  "update-layout": "update_block",
+  "delete-block": "delete_block",
+  "move-block": "move_block",
+  "create-app": "create_app",
+  "update-app": "update_app",
+  "delete-app": "delete_app",
+};
+
+function deniedStreamMutation(
+  ops: readonly DocumentOp[],
+  toolTurn: AIToolTurn,
+): string | null {
+  for (const op of ops) {
+    const toolName = STREAM_OP_TOOL_NAMES[op.type];
+    if (toolName === undefined) {
+      return `Stream part produced an unauthorized op type "${op.type}".`;
+    }
+    if (!toolTurn.grant.allowedMutatingTools.includes(toolName)) {
+      return `Tool "${toolName}" was not granted for this stream (tool-not-allowed).`;
+    }
+  }
+  return null;
 }
 
 function closeMalformed(

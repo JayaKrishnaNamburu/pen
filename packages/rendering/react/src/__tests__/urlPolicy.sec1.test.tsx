@@ -252,4 +252,45 @@ describe("SEC1 React host urlPolicy", () => {
 
 		await cleanupEditor(editor, root, container);
 	});
+
+	it("SEC1: idle TableCellContent admits a blob: link the host wrap allows", async () => {
+		const editor = createEditor(admitBlob);
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "t1",
+				blockType: "table",
+				props: {},
+				position: "last",
+			},
+			{
+				type: "insert-table-cell-text",
+				blockId: "t1",
+				row: 0,
+				col: 0,
+				offset: 0,
+				text: "click",
+			},
+			{
+				type: "format-table-cell-text",
+				blockId: "t1",
+				row: 0,
+				col: 0,
+				offset: 0,
+				length: 5,
+				marks: { link: { href: ADMITTED_BLOB } },
+			},
+		]);
+
+		const { container, root } = await renderEditor(editor);
+		const anchor = container.querySelector(
+			'[data-pen-table-cell][data-cell-row="0"][data-cell-col="0"] a',
+		);
+
+		expect(anchor).not.toBeNull();
+		expect(anchor?.getAttribute("href")).toBe(ADMITTED_BLOB);
+		expect(anchor?.hasAttribute("data-pen-blocked-url")).toBe(false);
+
+		await cleanupEditor(editor, root, container);
+	});
 });

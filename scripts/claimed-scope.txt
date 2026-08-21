@@ -11,6 +11,8 @@
 # Already greppable in this checkout: HOST4, CH7, DUR1–DUR5, SEC1–SEC9,
 # IOP3, IOP5, CH5, R1–R5, R7, I8, BR1, BR2, G1, G2, G5, AIB5, AIB6, COL1.
 # Wave P leftovers: API1, API2, API3, API5, API9.
+# Wave P gated: API8 (positioning-check). Declined: API4 (one sibling
+#   is not the boundary), API7 (size-limit held; provenance unexercised).
 # Wave C leftovers: COL2–COL4, COL6.
 # Wave T leftovers: IOP1, IOP2, IOP4, IOP6.
 # Wave V leftovers: DUR6, DUR7.

@@ -79,12 +79,18 @@ function TableRendererInner(props: {
 	}
 
 	function handleAddRow() {
-		editor.apply([{ type: "insert-table-row", blockId: block.id, index: rowCount }]);
+		editor.apply(
+			[{ type: "insert-table-row", blockId: block.id, index: rowCount }],
+			{ origin: "user" },
+		);
 		queueMicrotask(() => addRowRef.current?.focus());
 	}
 
 	function handleAddColumn() {
-		editor.apply([{ type: "insert-table-column", blockId: block.id, index: colCount }]);
+		editor.apply(
+			[{ type: "insert-table-column", blockId: block.id, index: colCount }],
+			{ origin: "user" },
+		);
 		queueMicrotask(() => addColumnRef.current?.focus());
 	}
 

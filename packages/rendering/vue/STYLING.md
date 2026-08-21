@@ -31,9 +31,9 @@ Hosts that run a highlighter (Prism, highlight.js, Shiki) can target that class.
 
 ## Data-attribute hooks
 
-Boolean `data-*` attributes are the valueless HTML form (`data-readonly=""`), omitted when off. The `present` column below means that form. Write the bare selector `[data-readonly]`, not `[data-readonly=""]` or `[data-readonly="true"]`. Both the bare form and `[data-readonly=""]` match today; the bare form stays correct if one of these attributes ever carries a real value.
+Boolean `data-*` attributes are the valueless HTML form (`data-readonly=""`), omitted when off. The `present` column below means that form. Write the bare selector `[data-readonly]`, not `[data-readonly=""]` or `[data-readonly="true"]`. Both the bare form and `[data-readonly=""]` match today; the bare form stays correct if one of these attributes ever carries a real value. The bare-attribute rule is for `data-*` only.
 
-ARIA booleans are not valueless. They are the strings `"true"` and `"false"` (`aria-expanded="true"`, `aria-hidden="true"`, `aria-readonly="true"`). `aria-hidden=""` is invalid, and `[aria-hidden=""]` matches nothing.
+ARIA booleans are not valueless. They are the strings `"true"` and `"false"` (`aria-expanded="true"`, `aria-hidden="true"`, `aria-readonly="true"`). `aria-hidden=""` is invalid, and `[aria-hidden=""]` matches nothing. Do not extend the valueless `data-*` convention to ARIA.
 
 Do not invent attributes that are not in this list.
 
@@ -49,12 +49,12 @@ Do not invent attributes that are not in this list.
 
 ### Content (`PenContent`)
 
-| Attribute                              | Value   | Meaning                                                       |
-| -------------------------------------- | ------- | ------------------------------------------------------------- |
-| `data-pen-editor-content`              | present | Scrollable content surface (`role="textbox"`).                |
-| `data-pen-editor-blocks-host`          | present | Block list host. Field-editor attaches here in expanded mode. |
-| `data-pen-field-editor-surface`        | present | Expanded mode: this host is a field-editor surface.           |
-| `data-pen-field-editor-active-surface` | present | Expanded mode: this host is the active surface.               |
+| Attribute                              | Value   | Meaning                                                                           |
+| -------------------------------------- | ------- | --------------------------------------------------------------------------------- |
+| `data-pen-editor-content`              | present | Scrollable content surface. Also `data-empty` present when the document is empty. |
+| `data-pen-editor-blocks-host`          | present | Block list host. Field-editor attaches here in expanded mode.                     |
+| `data-pen-field-editor-surface`        | present | Expanded mode: this host is a field-editor surface.                               |
+| `data-pen-field-editor-active-surface` | present | Expanded mode: this host is the active surface.                                   |
 
 ### Block wrapper (`PenBlock`)
 
@@ -136,6 +136,10 @@ Target the hooks above from host stylesheets. Example:
 ```css
 [data-pen-editor-root] {
   font-family: inherit;
+}
+
+[data-readonly] {
+  /* host taste — not [data-readonly="true"] or [data-readonly=""] */
 }
 
 [data-block-type="heading"][data-level="1"] {

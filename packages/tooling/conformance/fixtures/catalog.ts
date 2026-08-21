@@ -1,5 +1,6 @@
 import type { TestBlock } from "@input/pen-test";
 import { BIDI_MIXED_BLOCKS } from "./bidi";
+import { GRAPHEME_CLUSTER_BLOCKS } from "./grapheme";
 
 export type FixtureName =
 	| "hello-world"
@@ -9,7 +10,8 @@ export type FixtureName =
 	| "windowed-large"
 	| "wave3-geometry"
 	| "bidi-mixed"
-	| "nested-toggle";
+	| "nested-toggle"
+	| "grapheme-clusters";
 
 export const NESTED_TOGGLE_PARENT_ID = "nest-parent";
 export const NESTED_TOGGLE_CHILD_ID = "nest-child";
@@ -31,6 +33,7 @@ const FIXTURE_PRESENT = {
 	"wave3-geometry": true,
 	"bidi-mixed": true,
 	"nested-toggle": true,
+	"grapheme-clusters": true,
 } as const satisfies Record<FixtureName, true>;
 
 export const FIXTURE_NAMES: readonly FixtureName[] = Object.keys(
@@ -142,6 +145,7 @@ export const LOCAL_FIXTURES: Record<
 			],
 		},
 	],
+	"grapheme-clusters": [...GRAPHEME_CLUSTER_BLOCKS],
 };
 
 export function isLocalFixtureName(

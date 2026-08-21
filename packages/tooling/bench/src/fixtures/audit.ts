@@ -1,6 +1,8 @@
 import { SCALE1_MEASUREMENTS, type EnvelopeRungId } from "../constants/scale1";
 
 export type FixtureVerdict = "agrees" | "name-overstates" | "wrong-subject";
+export type CountTrust = "trusted" | "untrusted";
+export type ClockTrust = "load-taken" | "untrustworthy" | "not-a-clock";
 
 export interface FixtureAuditRow {
 	id: string;
@@ -8,6 +10,8 @@ export interface FixtureAuditRow {
 	claimedSubject: string;
 	actualSubject: string;
 	verdict: FixtureVerdict;
+	countTrust: CountTrust;
+	clockTrust: ClockTrust;
 	floorKind:
 		| "empty-timer"
 		| "empty-sync"
@@ -31,9 +35,11 @@ export const SCALE1_FIXTURE_AUDIT: readonly FixtureAuditRow[] = [
 		actualSubject:
 			"100 mixed heading/code/paragraph blocks. Timed work is one `insert-text` on the middle block. Construction is outside the clock.",
 		verdict: "agrees",
+		countTrust: "trusted",
+		clockTrust: "load-taken",
 		floorKind: "empty-timer",
 		howMeasured:
-			"median of 21 insert-text walls minus empty-timer floor; construction outside the clock",
+			"count: blockOrder.length === 100; one insert-text. Wall is load-taken 2026-08-20 minus empty-timer floor; construction outside the clock",
 	},
 	{
 		id: "blocks-1000",
@@ -42,9 +48,11 @@ export const SCALE1_FIXTURE_AUDIT: readonly FixtureAuditRow[] = [
 		actualSubject:
 			"1,000 mixed blocks. Timed work is one `insert-text` on the middle block. Construction is outside the clock.",
 		verdict: "agrees",
+		countTrust: "trusted",
+		clockTrust: "load-taken",
 		floorKind: "empty-timer",
 		howMeasured:
-			"median of 21 insert-text walls minus empty-timer floor; construction outside the clock",
+			"count: blockOrder.length === 1000; one insert-text. Wall is load-taken 2026-08-20 minus empty-timer floor; construction outside the clock",
 	},
 	{
 		id: "blocks-5000",
@@ -53,9 +61,11 @@ export const SCALE1_FIXTURE_AUDIT: readonly FixtureAuditRow[] = [
 		actualSubject:
 			"5,000 mixed blocks. Timed work is one `insert-text` on the middle block. Construction is outside the clock.",
 		verdict: "agrees",
+		countTrust: "trusted",
+		clockTrust: "load-taken",
 		floorKind: "empty-timer",
 		howMeasured:
-			"median of 21 insert-text walls minus empty-timer floor; construction outside the clock",
+			"count: blockOrder.length === 5000; one insert-text. Wall is load-taken 2026-08-20 minus empty-timer floor; construction outside the clock",
 	},
 	{
 		id: "long-block",
@@ -64,9 +74,11 @@ export const SCALE1_FIXTURE_AUDIT: readonly FixtureAuditRow[] = [
 		actualSubject:
 			"One paragraph of 100,000 `A` characters. Timed work is one `insert-text` at offset 100000.",
 		verdict: "agrees",
+		countTrust: "trusted",
+		clockTrust: "load-taken",
 		floorKind: "empty-timer",
 		howMeasured:
-			"median of 21 insert-text walls minus empty-timer floor; construction outside the clock",
+			"count: textContent().length === 100000; one insert-text. Wall is load-taken 2026-08-20 minus empty-timer floor; construction outside the clock",
 	},
 	{
 		id: "nesting-10",
@@ -75,9 +87,11 @@ export const SCALE1_FIXTURE_AUDIT: readonly FixtureAuditRow[] = [
 		actualSubject:
 			"Ten nested callouts as the only top-level tree (empty-editor default paragraph removed). Timed work is one `insert-text` on the innermost block.",
 		verdict: "agrees",
+		countTrust: "trusted",
+		clockTrust: "load-taken",
 		floorKind: "empty-timer",
 		howMeasured:
-			"median of 21 insert-text walls on the innermost block minus empty-timer floor",
+			"count: measureNestingDepth === 10; one insert-text. Wall is load-taken 2026-08-20 minus empty-timer floor",
 	},
 	{
 		id: "table-50x20",
@@ -86,9 +100,11 @@ export const SCALE1_FIXTURE_AUDIT: readonly FixtureAuditRow[] = [
 		actualSubject:
 			"A 50-row × 20-column table as the only top-level block. Timed work is one `insert-table-cell-text` on the last cell.",
 		verdict: "agrees",
+		countTrust: "trusted",
+		clockTrust: "load-taken",
 		floorKind: "empty-timer",
 		howMeasured:
-			"median of 21 insert-table-cell-text walls minus empty-timer floor",
+			"count: 50 rows × 20 cols; one insert-table-cell-text. Wall is load-taken 2026-08-20 minus empty-timer floor",
 	},
 	{
 		id: "concurrentPeers-2",
@@ -97,9 +113,11 @@ export const SCALE1_FIXTURE_AUDIT: readonly FixtureAuditRow[] = [
 		actualSubject:
 			"Shared-seed fork so peer B can receive peer A's insert (the independently-populated fixture could not). Timed work is peer A `insert-text` plus `sync()`. Peer B does not write during the clock.",
 		verdict: "name-overstates",
+		countTrust: "trusted",
+		clockTrust: "untrustworthy",
 		floorKind: "empty-sync",
 		howMeasured:
-			"B observation asserted before the clock; then median of 21 (A insert-text + sync) walls minus empty-sync floor",
+			"count: 2 peers and B observation asserted before the clock. Wall is load-taken 2026-08-20 (1.49ms vs later isolated 0.198ms) minus empty-sync floor",
 	},
 ];
 
@@ -116,9 +134,11 @@ export const RELATED_FIXTURE_AUDIT: readonly FixtureAuditRow[] = [
 		actualSubject:
 			"1000 `appendDelta` calls plus 100 `setTimeout(0)` yields. Same-run yield floor is ~115ms; coalesced no-yield work is ~0.13ms and one apply. The clock is the scheduler.",
 		verdict: "wrong-subject",
+		countTrust: "trusted",
+		clockTrust: "untrustworthy",
 		floorKind: "yield-macrotasks",
 		howMeasured:
-			"apply-count, not the clock: 1000 appends coalesce to one apply when yields are removed; the wall is 100 macrotasks",
+			"count: apply-count, not the clock. 1000 appends coalesce to one apply when yields are removed; the wall is 100 macrotasks",
 	},
 	{
 		id: "scale3.peer-count.8",
@@ -127,9 +147,11 @@ export const RELATED_FIXTURE_AUDIT: readonly FixtureAuditRow[] = [
 		actualSubject:
 			"Eight `data-pen-remote-caret` decorations on the multiplayer stand-in. No second Y.Doc, no sync.",
 		verdict: "name-overstates",
+		countTrust: "trusted",
+		clockTrust: "untrustworthy",
 		floorKind: "empty-timer",
 		howMeasured:
-			"keystroke median on a single editor; peer count is a decoration count, not a synced Y.Doc count",
+			"count: 8 remote-caret decorations. Clock is a keystroke median on a single editor, not a synced Y.Doc count",
 	},
 	{
 		id: "createLargeDocument",
@@ -138,9 +160,11 @@ export const RELATED_FIXTURE_AUDIT: readonly FixtureAuditRow[] = [
 		actualSubject:
 			"n blocks written with `adapter.transact` + `initBlockMap`, not `editor.apply`. Different generator than the SCALE1 envelope specs.",
 		verdict: "agrees",
+		countTrust: "trusted",
+		clockTrust: "not-a-clock",
 		floorKind: "unmeasurable",
 		howMeasured:
-			"size is a block count asserted by the fixture, not a timed envelope row",
+			"count: blockOrder.length === n. Size is a block count asserted by the fixture, not a timed envelope row",
 	},
 ];
 

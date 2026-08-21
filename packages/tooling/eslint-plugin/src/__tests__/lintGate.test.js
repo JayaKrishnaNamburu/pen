@@ -190,6 +190,68 @@ describe("CH2 lint gate", () => {
 		).toHaveLength(1);
 	});
 
+	it("reports seeded ASCII word-boundary regex as an error through the root config", async () => {
+		const messages = await lintSeededViolation(
+			"const word = /\\bword\\b/;\n",
+			"src/seeded-ascii-word.ts",
+			"packages/extensions/search",
+		);
+
+		expect(
+			messages.filter(
+				(message) =>
+					message.ruleId === "pen/no-ascii-word-boundaries" &&
+					message.severity === 2,
+			),
+		).toHaveLength(1);
+	});
+
+	it("reports a seeded setTimeout in a *Selection* module the prefix matcher used to miss", async () => {
+		const eslint = new ESLint({
+			cwd: repoRoot,
+			overrideConfig: {
+				rules: { "pen/no-selection-timers": "error" },
+			},
+		});
+		const [result] = await eslint.lintText("setTimeout(() => {}, 0);\n", {
+			filePath: path.join(
+				repoRoot,
+				"packages/rendering/dom/src/field-editor/contenteditableBackendSelectionSeeded.ts",
+			),
+		});
+
+		expect(
+			(result?.messages ?? []).filter(
+				(message) =>
+					message.ruleId === "pen/no-selection-timers" &&
+					message.severity === 2,
+			),
+		).toHaveLength(1);
+	});
+
+	it("reports a seeded setTimeout in a selection module when the rule is enabled", async () => {
+		const eslint = new ESLint({
+			cwd: repoRoot,
+			overrideConfig: {
+				rules: { "pen/no-selection-timers": "error" },
+			},
+		});
+		const [result] = await eslint.lintText("setTimeout(() => {}, 0);\n", {
+			filePath: path.join(
+				repoRoot,
+				"packages/rendering/dom/src/field-editor/selectionSeededTimer.ts",
+			),
+		});
+
+		expect(
+			(result?.messages ?? []).filter(
+				(message) =>
+					message.ruleId === "pen/no-selection-timers" &&
+					message.severity === 2,
+			),
+		).toHaveLength(1);
+	});
+
 	it("reports a seeded matching-path case fold as an error through the root config", async () => {
 		const messages = await lintSeededViolation(
 			"const lower = query.toLowerCase();\n",

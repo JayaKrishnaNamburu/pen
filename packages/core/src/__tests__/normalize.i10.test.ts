@@ -1,5 +1,5 @@
 import { createDefaultSchema } from "./fixtures/testSchema";
-import type { BlockSchema, CommitEvent } from "@input/pen-types";
+import type { BlockSchema, CommitEvent, Editor } from "@input/pen-types";
 import {
 	defineBlock,
 	mergeSchemas,
@@ -7,6 +7,7 @@ import {
 	SchemaRegistryImpl,
 } from "@input/pen-core";
 import { describe, expect, it } from "vitest";
+import * as Y from "yjs";
 
 import { createEditor as createCoreEditor } from "../index";
 
@@ -62,6 +63,27 @@ function createEditor() {
 		schema: countedSchema,
 		preset: noDefaultExtensionsPreset,
 	});
+}
+
+function setStoredProp(
+	editor: Editor,
+	blockId: string,
+	key: string,
+	value: unknown,
+): void {
+	const adapter = editor.internals.adapter;
+	const ydoc = adapter.raw<Y.Doc>(editor.internals.crdtDoc);
+	const blocks = ydoc.getMap("blocks") as Y.Map<Y.Map<unknown>>;
+	adapter.transact(
+		editor.internals.crdtDoc,
+		() => {
+			const props = blocks.get(blockId)?.get("props") as
+				| Y.Map<unknown>
+				| undefined;
+			props?.set(key, value);
+		},
+		{ type: "system" },
+	);
 }
 
 describe("normalization in the commit transaction (Wave 2 I10)", () => {
@@ -144,12 +166,17 @@ describe("normalization in the commit transaction (Wave 2 I10)", () => {
 			},
 		]);
 
+		expect(editor.documentState.blockOrder).not.toContain("counted-nested");
+		setStoredProp(editor, "counted-nested", "charCount", 999);
+		expect(editor.getBlock("counted-nested")!.props.charCount).toBe(999);
+
+		editor.normalizeAll();
 		const nested = editor.getBlock("counted-nested")!;
 		expect(nested.props.charCount).toBe([...nested.textContent()].length);
+		expect(nested.props.charCount).not.toBe(999);
 
 		const adapter = editor.internals.adapter;
 		const before = adapter.encodeState(editor.internals.crdtDoc);
-		editor.normalizeAll();
 		editor.normalizeAll();
 		expect(adapter.encodeState(editor.internals.crdtDoc)).toEqual(before);
 		expect(editor.getBlock("counted-nested")!.props.charCount).toBe(
@@ -198,14 +225,23 @@ describe("normalization in the commit transaction (Wave 2 I10)", () => {
 		]);
 
 		expect(editor.getBlock("cols")).not.toBeNull();
+		expect(editor.documentState.blockOrder).not.toContain("counted-left");
+		expect(editor.documentState.blockOrder).not.toContain("counted-right");
+		setStoredProp(editor, "counted-left", "charCount", 999);
+		setStoredProp(editor, "counted-right", "charCount", 888);
+		expect(editor.getBlock("counted-left")!.props.charCount).toBe(999);
+		expect(editor.getBlock("counted-right")!.props.charCount).toBe(888);
+
+		editor.normalizeAll();
 		const left = editor.getBlock("counted-left")!;
 		const right = editor.getBlock("counted-right")!;
 		expect(left.props.charCount).toBe([...left.textContent()].length);
 		expect(right.props.charCount).toBe([...right.textContent()].length);
+		expect(left.props.charCount).not.toBe(999);
+		expect(right.props.charCount).not.toBe(888);
 
 		const adapter = editor.internals.adapter;
 		const before = adapter.encodeState(editor.internals.crdtDoc);
-		editor.normalizeAll();
 		editor.normalizeAll();
 		expect(adapter.encodeState(editor.internals.crdtDoc)).toEqual(before);
 

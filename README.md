@@ -6,7 +6,6 @@
 </h3>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@input/pen-core"><img src="https://img.shields.io/npm/v/@input/pen-core?color=0368FF&label=version" alt="npm version" /></a>
   <a href="https://github.com/lemni/pen/stargazers"><img src="https://img.shields.io/github/stars/lemni/pen?style=flat&color=8D30FF" alt="GitHub stars" /></a>
   <a href="LICENSE.md"><img src="https://img.shields.io/badge/license-MIT-FF2B6E" alt="license" /></a>
 </p>
@@ -14,15 +13,15 @@
 
 # Pen
 
-Pen is an MIT-licensed SDK published as public npm packages.
+Pen is an MIT-licensed SDK. Packages are intended for the public npm registry.
 
 The first release train has not been published (every package is `0.0.1`). Until it is, `pnpm add @input/pen-*` 404s on the public registry. Clone this repository, run `pnpm install` and `pnpm build`, and consume the built workspace artifacts. The commands below are the post-publish install path.
 
 ```bash
-pnpm add @input/pen-core @input/pen-preset-default @input/pen-react react react-dom yjs
+pnpm add @input/pen-core @input/pen-preset-default @input/pen-react react react-dom yjs y-protocols
 ```
 
-`react` and `react-dom` are peers of `@input/pen-react`. `yjs` is a peer of `@input/pen-crdt-yjs`, which `@input/pen-core` depends on, so every Pen install needs it — including non-collaborative ones, since the document model is a Yjs document either way. It is a peer rather than a dependency so that exactly one copy is resolved; the adapter asserts that at document creation and fails loudly if a second copy is present. Package managers that auto-install peers will add it for you, but naming it explicitly is what pins the version you get.
+`react` and `react-dom` are peers of `@input/pen-react`. `yjs` and `y-protocols` are peers of `@input/pen-crdt-yjs`, which `@input/pen-core` depends on, so every Pen install needs both — including non-collaborative ones, since the document model is a Yjs document and the adapter imports awareness. `yjs` is a peer rather than a dependency so that exactly one copy is resolved; the adapter asserts that at document creation and fails loudly if a second copy is present. Package managers that auto-install peers will add them for you, but naming them explicitly is what pins the versions you get.
 
 ## What Pen Is
 
@@ -30,7 +29,7 @@ Pen is a package-first editor toolkit built around a headless runtime, schema-dr
 
 ## Quick Start
 
-The smallest recommended setup uses the core runtime, the default preset, and the React renderer.
+The smallest recommended setup uses the core runtime, the default preset, and the React renderer. Bare `createEditor()` installs no schema and no extensions. Without `preset: defaultPreset()`, `editor.undoManager` is an inert stub and Mod-Z does nothing, silently.
 
 ```tsx
 import { createEditor } from "@input/pen-core";
@@ -46,7 +45,7 @@ export function App() {
 }
 ```
 
-`PenEditor` is the fastest path. If you want to own the shell, layout, and controls, use the compound primitives directly.
+`PenEditor` is the fastest path. The editor is functional unstyled, including on an empty document — no extra CSS is required to land a click or the first keystroke. If you want to own the shell, layout, and controls, use the compound primitives directly.
 
 ## Examples
 
@@ -65,6 +64,8 @@ This example keeps Pen headless where it matters while still giving you a batter
 ```bash
 pnpm add @input/pen-ai @input/pen-input-rules @input/pen-search @input/pen-shortcuts
 ```
+
+Those commands 404 until the first publish. From a clone, the same packages resolve as workspace members after `pnpm install` and `pnpm build`.
 
 ```tsx
 import { createEditor } from "@input/pen-core";
@@ -340,7 +341,7 @@ Published packages declare the Node floor as `engines.node: ">=22"`. CI verifies
 ## Repository Resources
 
 - `packages/docs`: repository docs app for the current public Pen surface
-- `.github/workflows/docs.yml`: GitHub Pages deployment for the docs app after Pages is enabled for the repository
+- `.github/workflows/docs.yml`: GitHub Pages deployment for the docs app (Pages is enabled on this repository)
 - `playground`: integration sandbox for trying renderer, AI, and collaboration flows
 - `playground/src/utils/playgroundCollaboration.ts`: concrete `y-websocket` wiring used by the playground
 
@@ -353,6 +354,8 @@ pnpm build
 pnpm test
 pnpm typecheck
 ```
+
+`pnpm lint` runs Prettier on an explicit docs/config path list, then ESLint. TypeScript source is not in the Prettier list; ESLint owns source style. See `CONTRIBUTING.md`.
 
 ## Community
 

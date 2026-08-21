@@ -131,7 +131,10 @@ describe("@input/pen-delta-stream processStream AIB5", () => {
 				},
 			]),
 			editor,
-			{ protocolVersion: PEN_STREAM_PROTOCOL_VERSION },
+			{
+				protocolVersion: PEN_STREAM_PROTOCOL_VERSION,
+				allowedMutatingTools: ["insert_block"],
+			},
 		);
 
 		expect(apply).toHaveBeenCalledTimes(1);
@@ -150,6 +153,7 @@ describe("@input/pen-delta-stream processStream AIB5", () => {
 				},
 			]),
 			editor,
+			{ allowedMutatingTools: ["insert_block"] },
 		);
 
 		expect(apply).toHaveBeenCalledTimes(1);
@@ -281,7 +285,10 @@ describe("@input/pen-delta-stream processStream AIB5", () => {
 				},
 			]),
 			editor,
-			{ groupId: "turn-1" },
+			{
+				groupId: "turn-1",
+				allowedMutatingTools: ["update_block"],
+			},
 		);
 
 		expect(apply).toHaveBeenCalledWith(
@@ -323,7 +330,10 @@ describe("@input/pen-delta-stream processStream AIB5", () => {
 				},
 			]),
 			editor,
-			{ groupId: "turn-1" },
+			{
+				groupId: "turn-1",
+				allowedMutatingTools: ["create_app", "update_app", "delete_app"],
+			},
 		);
 
 		expect(apply.mock.calls.map((call) => call[0][0]?.type)).toEqual([
@@ -441,7 +451,10 @@ describe("@input/pen-delta-stream processStream AIB5", () => {
 					},
 				]),
 				editor,
-				{ groupId: "turn-1" },
+				{
+					groupId: "turn-1",
+					allowedMutatingTools: ["insert_block"],
+				},
 			),
 		).resolves.toBeUndefined();
 
@@ -506,7 +519,10 @@ describe("@input/pen-delta-stream processStream AIB5", () => {
 				},
 			]),
 			editor,
-			{ groupId: "turn-1" },
+			{
+				groupId: "turn-1",
+				allowedMutatingTools: ["insert_block"],
+			},
 		);
 
 		expect(streamingTarget.beginStreaming).toHaveBeenCalledWith(
@@ -544,6 +560,7 @@ describe("@input/pen-delta-stream processStream AIB5", () => {
 				{ type: "abort", reason: "user-cancel" },
 			]),
 			editor,
+			{ allowedMutatingTools: ["insert_block"] },
 		);
 
 		expect(apply).toHaveBeenCalledWith(expect.any(Array), { origin: "ai" });
@@ -582,7 +599,11 @@ describe("@input/pen-delta-stream processStream AIB5", () => {
 				} satisfies PenStreamPart;
 			})(),
 			editor,
-			{ signal: controller.signal, groupId: "turn-1" },
+			{
+				signal: controller.signal,
+				groupId: "turn-1",
+				allowedMutatingTools: ["insert_block"],
+			},
 		);
 
 		expect(apply).toHaveBeenCalledTimes(1);
@@ -647,7 +668,14 @@ describe("@input/pen-delta-stream processStream AIB5", () => {
 		];
 
 		await expect(
-			processStream(createStream(formerlyInert), editor),
+			processStream(createStream(formerlyInert), editor, {
+				allowedMutatingTools: [
+					"create_app",
+					"update_app",
+					"delete_app",
+					"update_block",
+				],
+			}),
 		).resolves.toBeUndefined();
 
 		expect(apply.mock.calls.map((call) => call[0][0]?.type)).toEqual([

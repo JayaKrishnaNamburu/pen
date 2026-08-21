@@ -4,7 +4,7 @@ Generated from `packages/tooling/bench/baselines/envelope.json`. Do not edit by 
 
 Rule: SCALE1 (`spec-v2/22-scale-envelope.md`). Grades: **verified** — a suite asserts behavior at this size on every run. **measured** — a benchmark records it, with harness floor subtracted, no pass/fail on the clock. **untested above** — the honest ceiling.
 
-**Status: provisional.** Wall-clock medians are the 2026-08-20 macos-arm64 sample (n=21). Floors were recorded 2026-08-21 on the same class at load 7.87 on 14 CPUs while other lanes were running. Empty-timer floors are 0.00ms; the peer empty-sync floor is 0.02ms. A later isolated note recorded concurrentPeers-2 wall p50 at 0.198ms against this file's 1.49ms — that row is especially untrustworthy until a quiet-machine remeasure. This is not a quiet-machine envelope.
+**Status: provisional.** Wall-clock medians are the 2026-08-20 macos-arm64 sample (n=21). Floors were recorded 2026-08-21 on the same class at load 7.87 on 14 CPUs while other lanes were running. Empty-timer floors are 0.00ms; the peer empty-sync floor is 0.02ms. A later isolated note recorded concurrentPeers-2 wall p50 at 0.198ms against this file's 1.49ms — that row is especially untrustworthy until a quiet-machine remeasure. This is not a quiet-machine envelope. Counts are the durable measure; do not re-record these clocks under load.
 
 Wall-clock sample: 2026-08-20 on macos-arm64 (darwin 25, Apple Silicon). Not the CI runner (github-actions-ubuntu-latest). Median of 21. Floors: 2026-08-21. A row without a floor is not a measurement.
 
@@ -12,18 +12,18 @@ Wall-clock sample: 2026-08-20 on macos-arm64 (darwin 25, Apple Silicon). Not the
 
 Claimed subject versus what the fixture actually does. The last two published defects lived here: a concurrent-peers row whose peer B never received peer A's insert, and a streaming "regression" whose clock was 100 `setTimeout(0)` yields.
 
-| Fixture | Claimed | Actual | Verdict | How measured |
-| ------- | ------- | ------ | ------- | ------------ |
-| `generateBlockSpecs(100)` / `createEnvelopeEditor` | one insert-text in a 100-block document | 100 mixed heading/code/paragraph blocks. Timed work is one `insert-text` on the middle block. Construction is outside the clock. | agrees | median of 21 insert-text walls minus empty-timer floor; construction outside the clock |
-| `generateBlockSpecs(1000)` / `createEnvelopeEditor` | one insert-text in a 1,000-block document | 1,000 mixed blocks. Timed work is one `insert-text` on the middle block. Construction is outside the clock. | agrees | median of 21 insert-text walls minus empty-timer floor; construction outside the clock |
-| `generateBlockSpecs(5000)` / `createEnvelopeEditor` | one insert-text in a 5,000-block document | 5,000 mixed blocks. Timed work is one `insert-text` on the middle block. Construction is outside the clock. | agrees | median of 21 insert-text walls minus empty-timer floor; construction outside the clock |
-| `generateLongBlockSpec` / `createEnvelopeEditor` | one insert-text at the end of a 100k-character block | One paragraph of 100,000 `A` characters. Timed work is one `insert-text` at offset 100000. | agrees | median of 21 insert-text walls minus empty-timer floor; construction outside the clock |
-| `buildNestingYDoc` / `createEnvelopeEditor` | one insert-text at nesting depth 10 | Ten nested callouts as the only top-level tree (empty-editor default paragraph removed). Timed work is one `insert-text` on the innermost block. | agrees | median of 21 insert-text walls on the innermost block minus empty-timer floor |
-| `buildTableYDoc` / `createEnvelopeEditor` | one cell insert in a 50×20 table | A 50-row × 20-column table as the only top-level block. Timed work is one `insert-table-cell-text` on the last cell. | agrees | median of 21 insert-table-cell-text walls minus empty-timer floor |
-| `createEnvelopeCollaboration` → `createTwoPeerHarness` | concurrent 2-peer edit | Shared-seed fork so peer B can receive peer A's insert (the independently-populated fixture could not). Timed work is peer A `insert-text` plus `sync()`. Peer B does not write during the clock. | name-overstates | B observation asserted before the clock; then median of 21 (A insert-text + sync) walls minus empty-sync floor |
-| `streaming.bench.ts` 1000-part harness | 1000 gen-delta parts through `editor.apply` | 1000 `appendDelta` calls plus 100 `setTimeout(0)` yields. Same-run yield floor is ~115ms; coalesced no-yield work is ~0.13ms and one apply. The clock is the scheduler. | wrong-subject | apply-count, not the clock: 1000 appends coalesce to one apply when yields are removed; the wall is 100 macrotasks |
-| `createScale3Editor` peer-count axis | keystroke with 8 remote peers | Eight `data-pen-remote-caret` decorations on the multiplayer stand-in. No second Y.Doc, no sync. | name-overstates | keystroke median on a single editor; peer count is a decoration count, not a synced Y.Doc count |
-| `createLargeDocument(n)` | n-block document (SCALE3 / CRDT / schema) | n blocks written with `adapter.transact` + `initBlockMap`, not `editor.apply`. Different generator than the SCALE1 envelope specs. | agrees | size is a block count asserted by the fixture, not a timed envelope row |
+| Fixture | Claimed | Actual | Verdict | Trust | How measured |
+| ------- | ------- | ------ | ------- | ----- | ------------ |
+| `generateBlockSpecs(100)` / `createEnvelopeEditor` | one insert-text in a 100-block document | 100 mixed heading/code/paragraph blocks. Timed work is one `insert-text` on the middle block. Construction is outside the clock. | agrees | count-trusted; clock load-taken | count: blockOrder.length === 100; one insert-text. Wall is load-taken 2026-08-20 minus empty-timer floor; construction outside the clock |
+| `generateBlockSpecs(1000)` / `createEnvelopeEditor` | one insert-text in a 1,000-block document | 1,000 mixed blocks. Timed work is one `insert-text` on the middle block. Construction is outside the clock. | agrees | count-trusted; clock load-taken | count: blockOrder.length === 1000; one insert-text. Wall is load-taken 2026-08-20 minus empty-timer floor; construction outside the clock |
+| `generateBlockSpecs(5000)` / `createEnvelopeEditor` | one insert-text in a 5,000-block document | 5,000 mixed blocks. Timed work is one `insert-text` on the middle block. Construction is outside the clock. | agrees | count-trusted; clock load-taken | count: blockOrder.length === 5000; one insert-text. Wall is load-taken 2026-08-20 minus empty-timer floor; construction outside the clock |
+| `generateLongBlockSpec` / `createEnvelopeEditor` | one insert-text at the end of a 100k-character block | One paragraph of 100,000 `A` characters. Timed work is one `insert-text` at offset 100000. | agrees | count-trusted; clock load-taken | count: textContent().length === 100000; one insert-text. Wall is load-taken 2026-08-20 minus empty-timer floor; construction outside the clock |
+| `buildNestingYDoc` / `createEnvelopeEditor` | one insert-text at nesting depth 10 | Ten nested callouts as the only top-level tree (empty-editor default paragraph removed). Timed work is one `insert-text` on the innermost block. | agrees | count-trusted; clock load-taken | count: measureNestingDepth === 10; one insert-text. Wall is load-taken 2026-08-20 minus empty-timer floor |
+| `buildTableYDoc` / `createEnvelopeEditor` | one cell insert in a 50×20 table | A 50-row × 20-column table as the only top-level block. Timed work is one `insert-table-cell-text` on the last cell. | agrees | count-trusted; clock load-taken | count: 50 rows × 20 cols; one insert-table-cell-text. Wall is load-taken 2026-08-20 minus empty-timer floor |
+| `createEnvelopeCollaboration` → `createTwoPeerHarness` | concurrent 2-peer edit | Shared-seed fork so peer B can receive peer A's insert (the independently-populated fixture could not). Timed work is peer A `insert-text` plus `sync()`. Peer B does not write during the clock. | name-overstates | count-trusted; clock untrustworthy | count: 2 peers and B observation asserted before the clock. Wall is load-taken 2026-08-20 (1.49ms vs later isolated 0.198ms) minus empty-sync floor |
+| `streaming.bench.ts` 1000-part harness | 1000 gen-delta parts through `editor.apply` | 1000 `appendDelta` calls plus 100 `setTimeout(0)` yields. Same-run yield floor is ~115ms; coalesced no-yield work is ~0.13ms and one apply. The clock is the scheduler. | wrong-subject | count-trusted; clock untrustworthy | count: apply-count, not the clock. 1000 appends coalesce to one apply when yields are removed; the wall is 100 macrotasks |
+| `createScale3Editor` peer-count axis | keystroke with 8 remote peers | Eight `data-pen-remote-caret` decorations on the multiplayer stand-in. No second Y.Doc, no sync. | name-overstates | count-trusted; clock untrustworthy | count: 8 remote-caret decorations. Clock is a keystroke median on a single editor, not a synced Y.Doc count |
+| `createLargeDocument(n)` | n-block document (SCALE3 / CRDT / schema) | n blocks written with `adapter.transact` + `initBlockMap`, not `editor.apply`. Different generator than the SCALE1 envelope specs. | agrees | count-trusted | count: blockOrder.length === n. Size is a block count asserted by the fixture, not a timed envelope row |
 
 ## Envelope
 
@@ -37,21 +37,41 @@ Claimed subject versus what the fixture actually does. The last two published de
 
 Verification for the ladder is headless (`createTestEditor`). No renderer suite yet asserts these sizes. Concurrent peers is verified for *survival of both inserts* (`createTwoPeerHarness`); the measured clock is A insert + sync, not concurrent A+B.
 
-## Fixture ladder (attributed)
+## Fixture ladder (counts)
 
-Wall minus harness floor. The block-count rungs are the curve: a single point cannot show drift. `p95/p50` is same-run variance on the wall-clock sample.
+Counts are the durable measure and do not decay under load. Wall-clocks below are **load-taken 2026-08-20** and must be re-measured on a quiet machine. A row without a fixture count is not a measurement.
 
-| Rung | Size | Operation | Wall p50 (ms) | Floor p50 (ms) | Attributed p50 (ms) | p95/p50 | Grade | How measured |
-| ---- | ---- | --------- | ------------- | -------------- | ------------------- | ------- | ----- | ------------ |
-| `blocks-100` | 100 blocks | insert-text | 0.21 | 0.00 (empty-timer) | 0.21 | 2.38 | measured (below signal) | median of 21 insert-text walls minus empty-timer floor; construction outside the clock |
-| `blocks-1000` | 1,000 blocks | insert-text | 0.86 | 0.00 (empty-timer) | 0.86 | 1.65 | measured (gated) | median of 21 insert-text walls minus empty-timer floor; construction outside the clock |
-| `blocks-5000` | 5,000 blocks | insert-text | 6.13 | 0.00 (empty-timer) | 6.13 | 1.35 | measured (gated) | median of 21 insert-text walls minus empty-timer floor; construction outside the clock |
-| `long-block` | 100,000 characters | insert-text | 0.03 | 0.00 (empty-timer) | 0.03 | 1.67 | measured (below signal) | median of 21 insert-text walls minus empty-timer floor; construction outside the clock |
-| `nesting-10` | depth 10 | insert-text | 0.05 | 0.00 (empty-timer) | 0.05 | 1.20 | measured (below signal) | median of 21 insert-text walls on the innermost block minus empty-timer floor |
-| `table-50x20` | 50 × 20 | insert-table-cell-text | 0.03 | 0.00 (empty-timer) | 0.03 | 1.33 | measured (below signal) | median of 21 insert-table-cell-text walls minus empty-timer floor |
-| `concurrentPeers-2` | 2 peers | insert-text + sync | 1.49 | 0.02 (empty-sync) | 1.47 | 1.15 | measured (gated) | B observation asserted before the clock; then median of 21 (A insert-text + sync) walls minus empty-sync floor |
+| Rung | Fixture | Count | Ops | Floor | Date | Load | Wall p50 (ms) | Trust |
+| ---- | ------- | ----- | --- | ----- | ---- | ---- | ------------- | ----- |
+| `blocks-100` | `generateBlockSpecs(100)` / `createEnvelopeEditor` | 100 blocks | 1 | empty-timer 0.00ms | 2026-08-20 | load-taken 2026-08-20 | 0.21 | count-trusted; clock load-taken |
+| `blocks-1000` | `generateBlockSpecs(1000)` / `createEnvelopeEditor` | 1000 blocks | 1 | empty-timer 0.00ms | 2026-08-20 | load-taken 2026-08-20 | 0.86 | count-trusted; clock load-taken |
+| `blocks-5000` | `generateBlockSpecs(5000)` / `createEnvelopeEditor` | 5000 blocks | 1 | empty-timer 0.00ms | 2026-08-20 | load-taken 2026-08-20 | 6.13 | count-trusted; clock load-taken |
+| `long-block` | `generateLongBlockSpec` / `createEnvelopeEditor` | 100000 characters | 1 | empty-timer 0.00ms | 2026-08-20 | load-taken 2026-08-20 | 0.03 | count-trusted; clock load-taken |
+| `nesting-10` | `buildNestingYDoc` / `createEnvelopeEditor` | 10 depth | 1 | empty-timer 0.00ms | 2026-08-20 | load-taken 2026-08-20 | 0.05 | count-trusted; clock load-taken |
+| `table-50x20` | `buildTableYDoc` / `createEnvelopeEditor` | 1000 cells | 1 | empty-timer 0.00ms | 2026-08-20 | load-taken 2026-08-20 | 0.03 | count-trusted; clock load-taken |
+| `concurrentPeers-2` | `createEnvelopeCollaboration` → `createTwoPeerHarness` | 2 peers | 1 | empty-sync 0.02ms | 2026-08-20 | load-taken 2026-08-20 | 1.49 | count-trusted; clock untrustworthy |
 
-Same-class timing gate: gated when attributedP50Ms >= 0.5; gateP50Ms = max(attributedP50Ms * 3, attributedP50Ms + 1). Same-run p95/p50 on the committed macos-arm64 sample (n=21) peaked at 2.38× (100-block). The same-class gate is 3× attributed median for rungs whose attributed p50 is at least 0.5ms. Below that the clock is inside timer noise and a ratio cannot be attributed to Pen. The +1ms term applies only above that signal. P95 and Max are trend-only (CH8). Gated rungs: `blocks-1000` gate 2.58ms; `blocks-5000` gate 18.39ms; `concurrentPeers-2` gate 4.41ms. Recorded, not gated: `blocks-100`, `long-block`, `nesting-10`, `table-50x20`. Timing is not compared across machine classes. macos-arm64 medians are not a ubuntu-latest budget; a ratio picked to absorb that gap cannot catch a regression.
+Count drift always fails, on every machine class. Same-class timing gate: gated when attributedP50Ms >= 0.5; gateP50Ms = max(attributedP50Ms * 3, attributedP50Ms + 1). Same-run p95/p50 on the committed macos-arm64 sample (n=21) peaked at 2.38× (100-block). The same-class gate is 3× attributed median for rungs whose attributed p50 is at least 0.5ms. Below that the clock is inside timer noise and a ratio cannot be attributed to Pen. The +1ms term applies only above that signal. P95 and Max are trend-only (CH8). Gated clocks: `blocks-1000` gate 2.58ms; `blocks-5000` gate 18.39ms; `concurrentPeers-2` gate 4.41ms. Recorded clocks, not gated: `blocks-100`, `long-block`, `nesting-10`, `table-50x20`. Timing is not compared across machine classes. macos-arm64 medians are not a ubuntu-latest budget; a ratio picked to absorb that gap cannot catch a regression.
+
+## Enforced vs record-only
+
+A check that cannot fail is record-only even when a clock column exists. The unit suite never compares a live wall-clock to a budget. Isolated `bench:envelope` / `bench:ci` clocks are named below; decorative means a `critical: true` flag whose slack or subject cannot catch a regression.
+
+| Row | Subject | Unit | Unit fails on | Isolated clock | Clock note |
+| --- | ------- | ---- | ------------- | -------------- | ---------- |
+| `blocks-100` | 100-block insert-text | enforced | blockOrder.length !== 100 | record-only | attributed p50 below 0.5ms signal; ratio is timer noise |
+| `blocks-1000` | 1,000-block insert-text | enforced | blockOrder.length !== 1000 | gated | same-class 3× attributed median; not compared in unit suite |
+| `blocks-5000` | 5,000-block insert-text | enforced | blockOrder.length !== 5000 | gated | same-class 3× attributed median; not compared in unit suite |
+| `long-block` | 100k-character insert-text | enforced | textContent().length !== 100000 | record-only | attributed p50 below 0.5ms signal |
+| `nesting-10` | nesting depth 10 insert-text | enforced | measureNestingDepth !== 10 | record-only | attributed p50 below 0.5ms signal |
+| `table-50x20` | 50×20 table cell insert | enforced | row/col counts !== 50/20 | record-only | attributed p50 below 0.5ms signal |
+| `concurrentPeers-2` | 2-peer A insert + sync | enforced | assertPeerBObservesPeerAInsert: B missing A's token after sync | untrusted-gated | committed wall 1.49ms vs later isolated 0.198ms; load-taken, not reproduced |
+| `streaming.gen-delta-1000-parts` | 1000 gen-delta parts | enforced | apply count is not < 1000 when the harness yields | record-only | clock is 100 setTimeout(0) yields; critical is false |
+| `streaming.batch-flush-latency` | streaming batch flush | enforced | timedApplyCount !== 0 inside the timed window | decorative | critical:true but timedApplyCount is 0; the apply is after b.end() |
+| `scale3.peer-count.8` | SCALE3 peer-count 8 | enforced | remote-caret decorations !== 8 or a second Y.Doc appears | decorative | critical:true with ~13× slack (3.73ms → 50ms); peer count is decorations |
+| `scale3.keystroke.realistic-stack` | SCALE3 realistic-stack keystroke clocks | record-only | synthetic gate compare only; no live p50 assertion | decorative | critical:true; gates are 25–50ms on 0.5–3.8ms medians (7–50× slack) |
+| `createLargeDocument` | n-block SCALE3/CRDT fixture | enforced | blockOrder.length !== n | record-only | size is a count, not a timed envelope row |
+| `wave3-typing-budget.chromium` | Chromium typing budget (other package) | n/a | none — @input/pen-conformance record-only scenario | record-only | sch-typing-budget.record.spec.ts writes drift; RECORD_TYPING_BUDGET=1 to update; no budget assert |
 
 ## Past the ceiling
 

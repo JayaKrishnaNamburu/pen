@@ -2,7 +2,17 @@
  * AX2: one visually-hidden live region per editor root.
  * Rate-limit one per key per 500ms, latest wins.
  *
- * wave-3-adopt: direct DOM write; move into DomScheduler.write when wired.
+ * wave-3-adopt: announcement writes (`aria-live` + textContent) move
+ * into DomScheduler.write when wired. Construction of the region is
+ * wave-3-exempt — the node must exist before the first announce.
+ *
+ * Wave 3.4 inventory is `rg 'wave-3-(adopt|exempt)'` across a11y/.
+ * `rg wave-3-adopt` alone is not the inventory: focus-sink writes are
+ * exempt (see focusSink.ts) and must not be converted with this file.
+ *
+ * ARIA booleans stay the literal strings "true"/"false". Do not apply
+ * the data-* present/absent spelling to `aria-atomic` (or any ARIA
+ * boolean). `aria-live` is a token (`polite`/`assertive`), not a boolean.
  */
 
 export const ANNOUNCE_RATE_LIMIT_MS = 500;
@@ -115,6 +125,7 @@ function createLiveRegion(doc: Document, root?: ParentNode): HTMLElement | null 
 	// wave-3-exempt: construction of the live region, not a scheduled paint write
 	region.setAttribute("role", "status");
 	region.setAttribute("aria-live", "polite");
+	// ARIA boolean: literal "true". `aria-atomic=""` is invalid.
 	region.setAttribute("aria-atomic", "true");
 	hideVisually(region);
 	mount.appendChild(region);

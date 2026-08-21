@@ -11,6 +11,8 @@ export type IngestBoundRow = {
 export const INGEST_BOUND_SOURCES: readonly string[] = [
 	"packages/extensions/import-html/src/ingestBounds.ts",
 	"packages/extensions/import-markdown/src/ingestBounds.ts",
+	"packages/extensions/import-json/src/ingestBounds.ts",
+	"packages/extensions/export-xml/src/ingestBounds.ts",
 	"packages/rendering/dom/src/utils/clipboardIngest.ts",
 ];
 
@@ -34,7 +36,7 @@ export const INGEST_BOUND_ROWS: readonly IngestBoundRow[] = [
 		value: 1048576,
 		formattedValue: "1,048,576",
 		enforcement: "hard",
-		caps: "Imported plain text, UTF-16 code units. HTML and Markdown also slice the raw source to this size before parse, so a 40MB paste is O(cap), not O(input).",
+		caps: "Imported plain text, UTF-16 code units. HTML, Markdown, and JSON slice the raw source to this size before parse. XML refuses an oversize source before parse — it cannot slice to a valid document. Either way a 40MB paste is O(cap), not O(input).",
 	},
 	{
 		name: "INGEST_MAX_IMAGE_COUNT",

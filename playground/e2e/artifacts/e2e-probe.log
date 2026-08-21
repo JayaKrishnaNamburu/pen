@@ -1,0 +1,8 @@
+
+Running 3 tests using 3 workers
+
+  ✓  3 [webkit] › playground/e2e/enginePromotionEvidence.spec.ts:32:1 › capture authority-range projection vs untrusted addRange (1.2s)
+  ✓  2 [chromium] › playground/e2e/enginePromotionEvidence.spec.ts:32:1 › capture authority-range projection vs untrusted addRange (1.0s)
+  ✓  1 [firefox] › playground/e2e/enginePromotionEvidence.spec.ts:32:1 › capture authority-range projection vs untrusted addRange (2.1s)
+
+  3 passed (3.6s)

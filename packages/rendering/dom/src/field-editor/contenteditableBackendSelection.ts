@@ -176,6 +176,11 @@ export class ContentEditableBackendSelection extends ContentEditableBackendEvent
 		) {
 			if (this.shouldRestoreSuppressedFullBlockSelection()) {
 				this.restoreDOMSelectionFromEditor();
+			} else if (
+				isApplyingSelection > 0 &&
+				this.shouldRestoreSuppressedProjectedSelection()
+			) {
+				this.restoreDOMSelectionFromEditor();
 			}
 			return;
 		}
@@ -318,6 +323,27 @@ export class ContentEditableBackendSelection extends ContentEditableBackendEvent
 		return (
 			selection.anchor.offset !== projectedSelection.anchorOffset ||
 			selection.focus.offset !== projectedSelection.focusOffset
+		);
+	}
+
+	protected shouldRestoreSuppressedProjectedSelection(): boolean {
+		if (!this.element) {
+			return false;
+		}
+		const root = this.element.closest(
+			"[data-pen-editor-root]",
+		) as HTMLElement | null;
+		if (!root) {
+			return false;
+		}
+
+		const selection = domSelectionToEditor(root);
+		if (!selection) {
+			return false;
+		}
+
+		return this.shouldRestoreStaleProjectedSelection(
+			normalizeSelectionFormation(this.editor, selection),
 		);
 	}
 

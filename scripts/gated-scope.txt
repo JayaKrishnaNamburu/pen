@@ -33,6 +33,9 @@
 #   AIB2 — PenStreamRequest has no editor field (top-level or nested);
 #           runNestedEditorFixture / runTopLevelEditorFixture fail-close
 #           both shapes every run. Bounds tests remain in claimed-scope.
+#   API8 — retired source-available / commercial wording stays in the
+#           license decision record; runSelfTests fail-close a planted
+#           "production use requires a commercial license" every run.
 #
 # Declined (do not register):
 #   AIB7  — api-report.md currently has no "playground" token; that is
@@ -42,6 +45,11 @@
 #   API4  — api-reports.mjs owns the report-diff half. The rule also
 #           requires published-exports, no-pen-deep-imports, and
 #           strip-internal. One sibling is not the boundary.
+#   API7  — release-check provenance preconditions, publint, attw, and
+#           version-sync are wired. The rule also asks for size-limit
+#           baselines and a real provenance publish. Baselines are
+#           held; 0 tags / 0 CHANGELOGs — preconditions are not a run.
+#           One sibling is not the boundary.
 #   DOC1  — doc-refs.mjs checks package/version refs and "public npm"
 #           once; examples.yml executes three host apps. Neither is
 #           "quickstarts are correct and executed" by itself.
@@ -67,3 +75,4 @@ COL5 | packages/docs/scripts/check-collaboration-contract.mjs | .github/workflow
 DOC4 | scripts/readme-sections.mjs | .github/workflows/readme-sections.yml | readme-sections.mjs | DOC4
 SCH1 | scripts/no-unscheduled-measure.mjs | .github/workflows/unscheduled-measure.yml | no-unscheduled-measure.mjs | getBoundingClientRect
 AIB2 | scripts/pen-stream-request-no-editor.mjs | .github/workflows/static-gates.yml | pen-stream-request-no-editor.mjs | PenStreamRequest
+API8 | scripts/positioning-check.mjs | .github/workflows/static-gates.yml | positioning-check.mjs | commercial license

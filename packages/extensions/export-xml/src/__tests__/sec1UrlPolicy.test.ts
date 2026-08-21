@@ -175,6 +175,39 @@ describe("SEC1 url policy", () => {
     expect(xml).not.toContain("&quot;href&quot;");
   });
 
+  it("SEC1: mixed-case HREF and SRC keys are URL fields, not passed through", () => {
+    const xml = serializePenDocumentToXml({
+      version: 1,
+      blocks: [
+        {
+          id: "img",
+          type: "image",
+          props: { SRC: "javascript:alert(1)", alt: "Photo" },
+        },
+        {
+          id: "p1",
+          type: "paragraph",
+          props: {},
+          content: {
+            text: "link",
+            marks: [
+              {
+                type: "link",
+                start: 0,
+                end: 4,
+                props: { HREF: "javascript:alert(1)", title: "Safe" },
+              },
+            ],
+          },
+        },
+      ],
+    });
+
+    expect(xml).not.toContain("javascript:");
+    expect(xml).toContain("&quot;title&quot;:&quot;Safe&quot;");
+    expect(xml).toContain("&quot;alt&quot;:&quot;Photo&quot;");
+  });
+
   it("SEC1: omits hostile href from nested segment attributes", () => {
     const xml = serializePenDocumentToXml({
       version: 1,

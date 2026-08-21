@@ -23,6 +23,7 @@ describe("createFocusSink (AX1)", () => {
 		const sink = makeSink();
 
 		expect(sink.element.getAttribute(FOCUS_SINK_ATTR)).toBe("");
+		// ARIA boolean: literal "true". `aria-hidden=""` matches nothing.
 		expect(sink.element.getAttribute("aria-hidden")).toBe("true");
 		expect(sink.element.tabIndex).toBe(-1);
 		expect(sink.element.hasAttribute("role")).toBe(false);

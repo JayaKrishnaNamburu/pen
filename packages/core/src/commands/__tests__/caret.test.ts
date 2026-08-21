@@ -248,6 +248,43 @@ describe("caret commands", () => {
 		editor.destroy();
 	});
 
+	it("G5: successful caretLeft clears a persisted vertical goalX", () => {
+		const editor = createCommandEditor([
+			{ id: "a", type: "paragraph", text: "hello" },
+		]);
+		const registry = createCommandHarness(editor);
+		setVerticalCaretMeasure(editor, (_ed, current, _direction, goalX) => ({
+			point: current,
+			goalX: goalX ?? 40,
+		}));
+		editor.selectText("a", 2, 2);
+		expect(registry.dispatch(caretDown, { extend: false })).toBe(true);
+		expect(getVerticalCaretGoalX(editor)).toBe(40);
+
+		expect(registry.dispatch(caretLeft, { extend: false })).toBe(true);
+		expect(caretOf(editor)).toEqual({ blockId: "a", offset: 1 });
+		expect(getVerticalCaretGoalX(editor)).toBeNull();
+		editor.destroy();
+	});
+
+	it("pen.caretDown extend keeps the original anchor", () => {
+		const editor = createCommandEditor([
+			{ id: "a", type: "paragraph", text: "aa" },
+			{ id: "b", type: "paragraph", text: "bbb" },
+		]);
+		const registry = createCommandHarness(editor);
+		editor.selectText("a", 2, 2);
+
+		expect(registry.dispatch(caretDown, { extend: true })).toBe(true);
+		expect(editor.selection?.type).toBe("text");
+		if (editor.selection?.type !== "text") {
+			throw new Error("expected text selection");
+		}
+		expect(editor.selection.anchor).toEqual({ blockId: "a", offset: 2 });
+		expect(editor.selection.focus).toEqual({ blockId: "b", offset: 0 });
+		editor.destroy();
+	});
+
 	it("pen.selectBlock selects the named block", () => {
 		const editor = createCommandEditor([
 			{ id: "a", type: "paragraph", text: "a" },

@@ -13,9 +13,22 @@
  * DomScheduler.write would desync AT from the focused element — a
  * deferred hide leaves the sink in the tab order after the user has
  * moved on; a deferred reveal can focus an unlabeled, still-hidden
- * element. Inventory for Wave 3.4 is `rg 'wave-3-(adopt|exempt)'` —
- * adopt converts, exempt leaves. Do not mark these adopt: converting
- * them later would be the wrong fix.
+ * element.
+ *
+ * Wave 3.4 inventory is `rg 'wave-3-(adopt|exempt)'` across a11y/.
+ * `rg wave-3-adopt` alone is not the inventory — it misses these
+ * exempt writes and would convert only the announcer. Do not mark
+ * these adopt: converting them later would be the wrong fix.
+ *
+ * Three setAttribute sites, all exempt:
+ * 1. construction — `data-pen-focus-sink=""` (data-*, bare presence)
+ * 2. hide — `aria-hidden="true"` (ARIA boolean literal, not `=""`)
+ * 3. reveal — `aria-label` (string). `aria-hidden` is removed, not
+ *    set false-y.
+ *
+ * ARIA booleans stay the literal strings "true"/"false". The
+ * data-* present/absent spelling must not be extended here:
+ * `aria-hidden=""` is invalid, and `[aria-hidden=""]` matches nothing.
  */
 
 export const FOCUS_SINK_ATTR = "data-pen-focus-sink";

@@ -1,0 +1,216 @@
+
+Running 18 tests using 7 workers
+
+  ✓   4 [chromium] › playground/e2e/selectAll.spec.ts:39:1 › keeps table available in the structured playground slash menu (1.1s)
+  ✓   1 [chromium] › playground/e2e/selectAll.spec.ts:12:1 › selects the full structured document on first cmd+a (1.6s)
+  ✓   5 [chromium] › playground/e2e/nativeSelection.spec.ts:25:1 › collapses an immediate follow-up click after triple-click paragraph selection (1.7s)
+  ✓   3 [chromium] › playground/e2e/history.spec.ts:100:1 › restores history through keyboard shortcuts (2.0s)
+  ✓   2 [webkit] › playground/e2e/history.spec.ts:25:1 › restores same-block caret offsets through undo and redo (2.6s)
+  ✓   7 [chromium] › playground/e2e/history.spec.ts:59:1 › keeps content visible and moves the caret across blocks via topbar history (2.1s)
+  ✓   6 [chromium] › playground/e2e/history.spec.ts:25:1 › restores same-block caret offsets through undo and redo (2.5s)
+  ✓   9 [webkit] › playground/e2e/selectAll.spec.ts:39:1 › keeps table available in the structured playground slash menu (1.4s)
+  -  11 [webkit] › playground/e2e/nativeSelection.spec.ts:25:1 › collapses an immediate follow-up click after triple-click paragraph selection
+  ✓  12 [webkit] › playground/e2e/selectAll.spec.ts:12:1 › selects the full structured document on first cmd+a (1.2s)
+  ✓  13 [firefox] › playground/e2e/history.spec.ts:25:1 › restores same-block caret offsets through undo and redo (3.4s)
+  ✓  17 [firefox] › playground/e2e/selectAll.spec.ts:12:1 › selects the full structured document on first cmd+a (1.8s)
+  ✓  18 [firefox] › playground/e2e/selectAll.spec.ts:39:1 › keeps table available in the structured playground slash menu (762ms)
+  ✘   8 [webkit] › playground/e2e/history.spec.ts:59:1 › keeps content visible and moves the caret across blocks via topbar history (12.2s)
+  ✘  10 [webkit] › playground/e2e/history.spec.ts:100:1 › restores history through keyboard shortcuts (12.3s)
+  ✘  14 [firefox] › playground/e2e/history.spec.ts:59:1 › keeps content visible and moves the caret across blocks via topbar history (12.6s)
+  ✘  15 [firefox] › playground/e2e/history.spec.ts:100:1 › restores history through keyboard shortcuts (12.5s)
+  ✘  16 [firefox] › playground/e2e/nativeSelection.spec.ts:25:1 › collapses an immediate follow-up click after triple-click paragraph selection (12.2s)
+
+
+  1) [webkit] › playground/e2e/history.spec.ts:59:1 › keeps content visible and moves the caret across blocks via topbar history 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoMatchObject[2m([22m[32mexpected[39m[2m)[22m
+
+    [32m- Expected  - 4[39m
+    [31m+ Received  + 4[39m
+
+    [2m  Object {[22m
+    [2m    "anchor": Object {[22m
+    [32m-     "blockId": "aaf6700c-a8cb-4029-bcb1-8d9ea4841eb0",[39m
+    [32m-     "offset": 0,[39m
+    [31m+     "blockId": "f9328d7d-711b-4359-8433-6ab04995df51",[39m
+    [31m+     "offset": 5,[39m
+    [2m    },[22m
+    [2m    "focus": Object {[22m
+    [32m-     "blockId": "aaf6700c-a8cb-4029-bcb1-8d9ea4841eb0",[39m
+    [32m-     "offset": 0,[39m
+    [31m+     "blockId": "f9328d7d-711b-4359-8433-6ab04995df51",[39m
+    [31m+     "offset": 5,[39m
+    [2m    },[22m
+    [2m    "isCollapsed": true,[22m
+    [2m  }[22m
+
+    Call Log:
+    - Timeout 10000ms exceeded while waiting on the predicate
+
+      141 | 	expected: { blockId: string; offset: number },
+      142 | ): Promise<void> {
+    > 143 | 	await expect
+          | 	^
+      144 | 		.poll(async () => {
+      145 | 			const native = await getSelectionSnapshot(page);
+      146 | 			const evidence = await captureSelectionEvidence(page);
+        at expectCaretPosition (/Users/krijn/Code/pen/playground/e2e/history.spec.ts:143:2)
+        at /Users/krijn/Code/pen/playground/e2e/history.spec.ts:97:2
+
+    Error Context: test-results/history-keeps-content-visi-752f0-s-blocks-via-topbar-history-webkit/error-context.md
+
+  2) [webkit] › playground/e2e/history.spec.ts:100:1 › restores history through keyboard shortcuts ─
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoMatchObject[2m([22m[32mexpected[39m[2m)[22m
+
+    [32m- Expected  - 4[39m
+    [31m+ Received  + 4[39m
+
+    [2m  Object {[22m
+    [2m    "anchor": Object {[22m
+    [32m-     "blockId": "d496f44d-0a5f-427b-a698-24466ab87999",[39m
+    [32m-     "offset": 0,[39m
+    [31m+     "blockId": "7f5fb8e1-fe6b-4d66-bada-022db7a0c336",[39m
+    [31m+     "offset": 5,[39m
+    [2m    },[22m
+    [2m    "focus": Object {[22m
+    [32m-     "blockId": "d496f44d-0a5f-427b-a698-24466ab87999",[39m
+    [32m-     "offset": 0,[39m
+    [31m+     "blockId": "7f5fb8e1-fe6b-4d66-bada-022db7a0c336",[39m
+    [31m+     "offset": 5,[39m
+    [2m    },[22m
+    [2m    "isCollapsed": true,[22m
+    [2m  }[22m
+
+    Call Log:
+    - Timeout 10000ms exceeded while waiting on the predicate
+
+      141 | 	expected: { blockId: string; offset: number },
+      142 | ): Promise<void> {
+    > 143 | 	await expect
+          | 	^
+      144 | 		.poll(async () => {
+      145 | 			const native = await getSelectionSnapshot(page);
+      146 | 			const evidence = await captureSelectionEvidence(page);
+        at expectCaretPosition (/Users/krijn/Code/pen/playground/e2e/history.spec.ts:143:2)
+        at /Users/krijn/Code/pen/playground/e2e/history.spec.ts:126:2
+
+    Error Context: test-results/history-restores-history-through-keyboard-shortcuts-webkit/error-context.md
+
+  3) [firefox] › playground/e2e/history.spec.ts:59:1 › keeps content visible and moves the caret across blocks via topbar history 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoMatchObject[2m([22m[32mexpected[39m[2m)[22m
+
+    [32m- Expected  - 4[39m
+    [31m+ Received  + 4[39m
+
+    [2m  Object {[22m
+    [2m    "anchor": Object {[22m
+    [32m-     "blockId": "dc0d5680-9c43-4602-8fdb-e682851d6a0f",[39m
+    [32m-     "offset": 0,[39m
+    [31m+     "blockId": "4b3ec0cb-824a-4590-a241-acf2945433ed",[39m
+    [31m+     "offset": 5,[39m
+    [2m    },[22m
+    [2m    "focus": Object {[22m
+    [32m-     "blockId": "dc0d5680-9c43-4602-8fdb-e682851d6a0f",[39m
+    [32m-     "offset": 0,[39m
+    [31m+     "blockId": "4b3ec0cb-824a-4590-a241-acf2945433ed",[39m
+    [31m+     "offset": 5,[39m
+    [2m    },[22m
+    [2m    "isCollapsed": true,[22m
+    [2m  }[22m
+
+    Call Log:
+    - Timeout 10000ms exceeded while waiting on the predicate
+
+      141 | 	expected: { blockId: string; offset: number },
+      142 | ): Promise<void> {
+    > 143 | 	await expect
+          | 	^
+      144 | 		.poll(async () => {
+      145 | 			const native = await getSelectionSnapshot(page);
+      146 | 			const evidence = await captureSelectionEvidence(page);
+        at expectCaretPosition (/Users/krijn/Code/pen/playground/e2e/history.spec.ts:143:2)
+        at /Users/krijn/Code/pen/playground/e2e/history.spec.ts:97:2
+
+    Error Context: test-results/history-keeps-content-visi-752f0-s-blocks-via-topbar-history-firefox/error-context.md
+
+  4) [firefox] › playground/e2e/history.spec.ts:100:1 › restores history through keyboard shortcuts 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoMatchObject[2m([22m[32mexpected[39m[2m)[22m
+
+    [32m- Expected  - 4[39m
+    [31m+ Received  + 4[39m
+
+    [2m  Object {[22m
+    [2m    "anchor": Object {[22m
+    [32m-     "blockId": "25c65a24-fed0-42a8-a4c7-cff4533daac1",[39m
+    [32m-     "offset": 0,[39m
+    [31m+     "blockId": "e89617e5-9d61-41e1-a531-21d219d1595b",[39m
+    [31m+     "offset": 5,[39m
+    [2m    },[22m
+    [2m    "focus": Object {[22m
+    [32m-     "blockId": "25c65a24-fed0-42a8-a4c7-cff4533daac1",[39m
+    [32m-     "offset": 0,[39m
+    [31m+     "blockId": "e89617e5-9d61-41e1-a531-21d219d1595b",[39m
+    [31m+     "offset": 5,[39m
+    [2m    },[22m
+    [2m    "isCollapsed": true,[22m
+    [2m  }[22m
+
+    Call Log:
+    - Timeout 10000ms exceeded while waiting on the predicate
+
+      141 | 	expected: { blockId: string; offset: number },
+      142 | ): Promise<void> {
+    > 143 | 	await expect
+          | 	^
+      144 | 		.poll(async () => {
+      145 | 			const native = await getSelectionSnapshot(page);
+      146 | 			const evidence = await captureSelectionEvidence(page);
+        at expectCaretPosition (/Users/krijn/Code/pen/playground/e2e/history.spec.ts:143:2)
+        at /Users/krijn/Code/pen/playground/e2e/history.spec.ts:126:2
+
+    Error Context: test-results/history-restores-history-through-keyboard-shortcuts-firefox/error-context.md
+
+  5) [firefox] › playground/e2e/nativeSelection.spec.ts:25:1 › collapses an immediate follow-up click after triple-click paragraph selection 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoMatchObject[2m([22m[32mexpected[39m[2m)[22m
+
+    [32m- Expected  - 2[39m
+    [31m+ Received  + 2[39m
+
+    [33m@@ -3,8 +3,8 @@[39m
+    [2m      "blockId": "08671f76-0c66-4735-afe3-23603118eab6",[22m
+    [2m    },[22m
+    [2m    "focus": Object {[22m
+    [2m      "blockId": "08671f76-0c66-4735-afe3-23603118eab6",[22m
+    [2m    },[22m
+    [32m-   "isCollapsed": false,[39m
+    [32m-   "text": "Alpha bravo charlie delta echo",[39m
+    [31m+   "isCollapsed": true,[39m
+    [31m+   "text": "",[39m
+    [2m  }[22m
+
+    Call Log:
+    - Timeout 10000ms exceeded while waiting on the predicate
+
+      66 | 	});
+      67 |
+    > 68 | 	await expect
+         | 	^
+      69 | 		.poll(async () => getSelectionSnapshot(page))
+      70 | 		.toMatchObject({
+      71 | 			isCollapsed: false,
+        at /Users/krijn/Code/pen/playground/e2e/nativeSelection.spec.ts:68:2
+
+    Error Context: test-results/nativeSelection-collapses--fa71b-e-click-paragraph-selection-firefox/error-context.md
+
+  5 failed
+    [webkit] › playground/e2e/history.spec.ts:59:1 › keeps content visible and moves the caret across blocks via topbar history 
+    [webkit] › playground/e2e/history.spec.ts:100:1 › restores history through keyboard shortcuts ──
+    [firefox] › playground/e2e/history.spec.ts:59:1 › keeps content visible and moves the caret across blocks via topbar history 
+    [firefox] › playground/e2e/history.spec.ts:100:1 › restores history through keyboard shortcuts ─
+    [firefox] › playground/e2e/nativeSelection.spec.ts:25:1 › collapses an immediate follow-up click after triple-click paragraph selection 
+  1 skipped
+  12 passed (22.4s)

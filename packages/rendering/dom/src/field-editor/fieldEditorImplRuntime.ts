@@ -260,11 +260,10 @@ export abstract class FieldEditorImplRuntime extends FieldEditorImplSelection {
 		);
 		this._updateSurfaceState(surface.mode, surface.blockIds);
 		const selection = this._editor.selection;
-		const isAuthorityRange =
-			selection?.type === "text" && !selection.isCollapsed;
-		// a pending rAF projection must not swallow an authority range write.
-		// collapsed stays gated: that stamp is the Vue live-range seam.
-		if ((options?.syncSelectionToBackend ?? true) || isAuthorityRange) {
+		const isAuthorityText = selection?.type === "text";
+		// a pending projection must not swallow an authority text write.
+		// collapsed carets are authority too (click-collapse, Escape).
+		if ((options?.syncSelectionToBackend ?? true) || isAuthorityText) {
 			this._backendLifecycle.updateSelection(null);
 		}
 	}

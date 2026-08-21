@@ -112,22 +112,28 @@ Code blocks may also get `language-${language}` from the fence language (Prism c
 
 ## Data-attribute hooks
 
-Boolean `data-*` attributes are the valueless HTML form (`data-readonly=""`), omitted when off. Write the bare selector `[data-readonly]`, not `[data-readonly=""]` or `[data-readonly="true"]`. Both the bare form and `[data-readonly=""]` match today; the bare form stays correct if one of these attributes ever carries a real value.
+Boolean `data-*` attributes are the valueless HTML form (`data-readonly=""`), omitted when off. Write the bare selector `[data-readonly]`, not `[data-readonly=""]` or `[data-readonly="true"]`. Both the bare form and `[data-readonly=""]` match today; the bare form stays correct if one of these attributes ever carries a real value. The bare-attribute rule is for `data-*` only.
 
-ARIA booleans are not valueless. They are the strings `"true"` and `"false"` (`aria-expanded="true"`, `aria-hidden="true"`, `aria-readonly="true"`). `aria-hidden=""` is invalid, and `[aria-hidden=""]` matches nothing.
+ARIA booleans are not valueless. They are the strings `"true"` and `"false"` (`aria-expanded="true"`, `aria-hidden="true"`, `aria-readonly="true"`). `aria-hidden=""` is invalid, and `[aria-hidden=""]` matches nothing. Do not extend the valueless `data-*` convention to ARIA.
 
-State attributes below are written when the state is true. Do not invent selectors that are not in this list.
+State attributes below are written when the state is true — **present** (valueless), never `"true"`. `data-readonly` tracks the `readonly` **prop**, not `pen.readOnly`. Do not invent selectors that are not in this list.
+
+```css
+[data-readonly] {
+  /* host taste — not [data-readonly="true"] or [data-readonly=""] */
+}
+```
 
 ### Editor chrome
 
 | Attribute | Role |
 | --- | --- |
-| `data-pen-editor-root` | Editor root. Also `data-pen-view-id`, and `data-focused` / `data-readonly` / `data-empty` when those apply. |
-| `data-pen-editor-content` | Block list surface. Also `data-drop-target` / `data-empty` when those apply. |
-| `data-pen-editor-blocks-host` | Inner blocks host. Also `data-pen-field-editor-surface` when the host is the field-editor surface. |
-| `data-pen-editor-block` | Block wrapper. Also `data-block-id`, `data-block-type`, and `data-selected` / `data-focused` / `data-surface-role` / `data-drop-target` / `data-drop-position` / `data-ai-generating` when those apply. |
-| `data-pen-inline-content` | Text field. Also `data-pen-field-editor-surface`, and `data-pen-field-editor-active-surface` / `data-placeholder-visible` / `data-placeholder` / `data-suggestion-id` / `data-suggestion-text` / `data-suggestion-type` / `data-suggestion-placement` when those apply. |
-| `data-pen-field-editor` | Field-editor primitive. Also `data-active` / `data-input-mode` / `data-surface-mode` / `data-expanded` / `data-block-count` when those apply. |
+| `data-pen-editor-root` | Editor root. Also `data-pen-view-id`. Booleans, present when they apply: `data-focused` (root contains focus), `data-readonly` (`readonly` prop is on), `data-empty` (document has no content). |
+| `data-pen-editor-content` | Block list surface. Also `data-drop-target` / `data-empty` present when those apply. |
+| `data-pen-editor-blocks-host` | Inner blocks host. Also `data-pen-field-editor-surface` present when the host is the field-editor surface. |
+| `data-pen-editor-block` | Block wrapper. Also `data-block-id`, `data-block-type`, and `data-selected` / `data-focused` / `data-surface-role` / `data-drop-target` / `data-drop-position` / `data-ai-generating` present when those apply. |
+| `data-pen-inline-content` | Text field. Also `data-pen-field-editor-surface`, and `data-pen-field-editor-active-surface` / `data-placeholder-visible` / `data-placeholder` / `data-suggestion-id` / `data-suggestion-text` / `data-suggestion-type` / `data-suggestion-placement` present when those apply. |
+| `data-pen-field-editor` | Field-editor primitive. Also `data-active` / `data-input-mode` / `data-surface-mode` / `data-expanded` / `data-block-count` present when those apply. |
 | `data-pen-editor-caret-overlay` | Local caret overlay host (`aria-hidden`). |
 | `data-pen-editor-caret` | Local caret. Also `data-block-id`, `data-offset`. |
 | `data-pen-selection-rect` | Block-selection geometry. Also `data-selecting` while a live drag rect is active. |

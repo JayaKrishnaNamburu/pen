@@ -122,7 +122,7 @@ function handleVerticalCaret(
 ): CommandResult | false {
 	const fromBlock = handleBlockSelectionArrow(editor, param, direction);
 	if (fromBlock !== undefined) {
-		return fromBlock;
+		return finishNonVertical(editor, fromBlock);
 	}
 
 	const focus = readTextFocus(editor);
@@ -142,21 +142,55 @@ function handleVerticalCaret(
 	if (!block) {
 		return false;
 	}
-	const atEdge =
-		direction === "up" ? focus.offset === 0 : focus.offset === block.length();
+	const atEdge = isVerticalBlockEdge(block.length(), focus.offset, direction);
 	if (!atEdge) {
 		return false;
 	}
 
+	// Logical fallback has no column. Drop goalX so the next geometry
+	// step does not reuse a stale horizontal target (G5).
+	setVerticalCaretGoalX(editor, null);
 	const crossed = crossBlock(
 		editor,
 		focus.blockId,
-		direction === "down" ? "next" : "previous",
+		verticalCrossDirection(direction),
 	);
 	if (!crossed) {
 		return { selection: extendSelection(editor, param.extend, focus) };
 	}
 	return { selection: extendSelection(editor, param.extend, crossed) };
+}
+
+function verticalCrossDirection(
+	direction: VerticalCaretDirection,
+): "previous" | "next" {
+	switch (direction) {
+		case "up":
+			return "previous";
+		case "down":
+			return "next";
+		default: {
+			const _exhaustive: never = direction;
+			return _exhaustive;
+		}
+	}
+}
+
+function isVerticalBlockEdge(
+	length: number,
+	offset: number,
+	direction: VerticalCaretDirection,
+): boolean {
+	switch (direction) {
+		case "up":
+			return offset === 0;
+		case "down":
+			return offset === length;
+		default: {
+			const _exhaustive: never = direction;
+			return _exhaustive;
+		}
+	}
 }
 
 function measureVerticalStep(
@@ -191,7 +225,7 @@ function handleGraphemeCaret(
 		direction === 1 ? "right" : "left",
 	);
 	if (fromBlock !== undefined) {
-		return fromBlock;
+		return finishNonVertical(editor, fromBlock);
 	}
 
 	const focus = readTextFocus(editor);
@@ -201,7 +235,7 @@ function handleGraphemeCaret(
 
 	const atomSelection = stepInlineAtom(editor, param, focus, direction);
 	if (atomSelection !== undefined) {
-		return atomSelection;
+		return finishNonVertical(editor, atomSelection);
 	}
 
 	const snapshot = buildNormalPositionSnapshot(editor);
@@ -210,7 +244,9 @@ function handleGraphemeCaret(
 	if (!next) {
 		return false;
 	}
-	return { selection: extendSelection(editor, param.extend, next) };
+	return finishNonVertical(editor, {
+		selection: extendSelection(editor, param.extend, next),
+	});
 }
 
 function handleWordCaret(
@@ -224,7 +260,7 @@ function handleWordCaret(
 		direction === 1 ? "right" : "left",
 	);
 	if (fromBlock !== undefined) {
-		return fromBlock;
+		return finishNonVertical(editor, fromBlock);
 	}
 
 	const focus = readTextFocus(editor);
@@ -245,12 +281,12 @@ function handleWordCaret(
 			: previousWordBoundary(text, focus.offset, locale);
 
 	if (nextOffset !== focus.offset) {
-		return {
+		return finishNonVertical(editor, {
 			selection: extendSelection(editor, param.extend, {
 				blockId: focus.blockId,
 				offset: nextOffset,
 			}),
-		};
+		});
 	}
 
 	const crossed = crossBlock(
@@ -261,7 +297,9 @@ function handleWordCaret(
 	if (!crossed) {
 		return false;
 	}
-	return { selection: extendSelection(editor, param.extend, crossed) };
+	return finishNonVertical(editor, {
+		selection: extendSelection(editor, param.extend, crossed),
+	});
 }
 
 function handleLineOrBlockEdge(
@@ -277,7 +315,7 @@ function handleLineOrBlockEdge(
 		edge === "end" ? "right" : "left",
 	);
 	if (fromBlock !== undefined) {
-		return fromBlock;
+		return finishNonVertical(editor, fromBlock);
 	}
 
 	const focus = readTextFocus(editor);
@@ -289,12 +327,12 @@ function handleLineOrBlockEdge(
 		return false;
 	}
 	const offset = edge === "start" ? 0 : block.length();
-	return {
+	return finishNonVertical(editor, {
 		selection: extendSelection(editor, param.extend, {
 			blockId: focus.blockId,
 			offset,
 		}),
-	};
+	});
 }
 
 function handleDocEdge(
@@ -308,7 +346,7 @@ function handleDocEdge(
 		edge === "end" ? "down" : "up",
 	);
 	if (fromBlock !== undefined) {
-		return fromBlock;
+		return finishNonVertical(editor, fromBlock);
 	}
 
 	const focus = readTextFocus(editor);
@@ -321,11 +359,11 @@ function handleDocEdge(
 		return false;
 	}
 	if (target.type === "block") {
-		return { selection: target.selection };
+		return finishNonVertical(editor, { selection: target.selection });
 	}
-	return {
+	return finishNonVertical(editor, {
 		selection: extendSelection(editor, param.extend, target.point),
-	};
+	});
 }
 
 function handleSelectAll(editor: Editor): CommandResult | false {
@@ -337,7 +375,7 @@ function handleSelectAll(editor: Editor): CommandResult | false {
 	if (!selection) {
 		return false;
 	}
-	return { selection };
+	return finishNonVertical(editor, { selection });
 }
 
 function handleSelectBlock(
@@ -347,7 +385,23 @@ function handleSelectBlock(
 	if (!editor.getBlock(param.blockId)) {
 		return false;
 	}
-	return { selection: blockSelectionResult([param.blockId]) };
+	return finishNonVertical(editor, {
+		selection: blockSelectionResult([param.blockId]),
+	});
+}
+
+/**
+ * G5: goalX is a vertical-only column. Successful left/right/word/line/doc
+ * motion must not reuse the last vertical x. Misses leave it alone.
+ */
+function finishNonVertical(
+	editor: Editor,
+	result: CommandResult | false,
+): CommandResult | false {
+	if (result !== false) {
+		setVerticalCaretGoalX(editor, null);
+	}
+	return result;
 }
 
 function handleBlockSelectionArrow(

@@ -281,20 +281,41 @@ describe("InputRuleEngine — inline rules", () => {
 		});
 
 		it("does not rematch the inner text a rule just inserted", () => {
+			const cases: Array<{
+				before: string;
+				trigger: string;
+				inner: string;
+				markType: string;
+			}> = [
+				{ before: "**hello*", trigger: "*", inner: "hello", markType: "bold" },
+				{ before: "*hello", trigger: "*", inner: "hello", markType: "italic" },
+				{ before: "`code", trigger: "`", inner: "code", markType: "code" },
+				{ before: "~~text~", trigger: "~", inner: "text", markType: "strikethrough" },
+				{ before: "==text=", trigger: "=", inner: "text", markType: "highlight" },
+			];
+
 			const engine = engineWithInlineRules();
-			const before = mockEditor({ textContent: "**hello*" });
-			const ops = engine.tryMatchInline(before, "b1", "*");
-
-			expect(ops).not.toBeNull();
-			expect(ops![1]).toMatchObject({
-				type: "insert-text",
-				text: "hello",
-				marks: { bold: true },
-			});
-			expect(engine.tryMatchInline(before, "b1", "hello")).toBeNull();
-
-			const after = mockEditor({ textContent: "hello" });
-			expect(engine.tryMatchInline(after, "b1", "o")).toBeNull();
+			for (const { before, trigger, inner, markType } of cases) {
+				const ops = engine.tryMatchInline(
+					mockEditor({ textContent: before }),
+					"b1",
+					trigger,
+				);
+				expect(ops, markType).not.toBeNull();
+				expect(ops![1]).toMatchObject({
+					type: "insert-text",
+					text: inner,
+					marks: { [markType]: true },
+				});
+				expect(
+					engine.tryMatchInline(
+						mockEditor({ textContent: inner }),
+						"b1",
+						trigger,
+					),
+					markType,
+				).toBeNull();
+			}
 		});
 	});
 });

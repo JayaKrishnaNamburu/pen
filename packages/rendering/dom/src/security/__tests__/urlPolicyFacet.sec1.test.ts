@@ -2,6 +2,7 @@
 
 import { describe, expect, it } from "vitest";
 import { createEditor, urlPolicyFacet } from "@input/pen-core";
+import { fullReconcileDeltasToDOM } from "../../field-editor/reconciler";
 import { createMarkedNode } from "../../field-editor/reconcilerMarks";
 import { resolveEditorUrl, urlPolicyFromEditor } from "../resolveEditorUrl";
 import { urlPolicy } from "../urlPolicy";
@@ -95,6 +96,40 @@ describe("SEC1 / S.1-facet host binding", () => {
 		) as HTMLAnchorElement;
 		expect(blocked.hasAttribute("href")).toBe(false);
 		expect(blocked.getAttribute("data-pen-blocked-url")).toBe("");
+
+		editor.destroy();
+	});
+
+	it("SEC1: fullReconcileDeltasToDOM honors the host wrap from editor", () => {
+		const hostile = "https://blocked.example/x";
+		const editor = createEditor({
+			schema: defaultSchema,
+			preset: noDefaultExtensionsPreset,
+			extensions: [
+				urlPolicyExtension((defaults) => ({
+					resolve(raw, context) {
+						if (raw === hostile) {
+							return null;
+						}
+						return defaults.resolve(raw, context);
+					},
+				})),
+			],
+		});
+		const element = document.createElement("span");
+		fullReconcileDeltasToDOM(
+			[{ insert: "click", attributes: { link: { href: hostile } } }],
+			element,
+			defaultSchema,
+			{ editor },
+		);
+
+		const anchor = element.querySelector("a");
+		expect(anchor).toBeInstanceOf(HTMLAnchorElement);
+		expect(anchor?.hasAttribute("href")).toBe(false);
+		expect(anchor?.getAttribute("data-pen-blocked-url")).toBe("");
+		expect(element.innerHTML).not.toContain("blocked.example");
+		expect(element.innerHTML).not.toContain(hostile);
 
 		editor.destroy();
 	});

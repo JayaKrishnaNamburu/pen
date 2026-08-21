@@ -173,4 +173,31 @@ describe("@input/pen-content-ops", () => {
 			}),
 		);
 	});
+
+	it("returns no ops when an unknown type is mixed with an allowed sibling", () => {
+		const editor = createEditorStub("structured");
+
+		const result = buildDocumentWriteOps(editor, {
+			format: "blocks",
+			blocks: [
+				{ blockType: "paragraph", content: "Allowed sibling" },
+				{ blockType: "not-a-real-type", content: "Dropped by normalize" },
+			],
+			position: "last",
+		});
+
+		// Normalize would strip the unknown type and keep the paragraph.
+		// The write path must not treat that as a successful partial apply.
+		expect(result.blocks).toEqual([]);
+		expect(result.ops).toEqual([]);
+		expect(editor.internals.emit).toHaveBeenCalledWith(
+			"diagnostic",
+			expect.objectContaining({
+				code: "content-ops-unexposed-block",
+				source: "content-ops",
+				message:
+					'Block type "not-a-real-type" is not available in structured documents.',
+			}),
+		);
+	});
 });

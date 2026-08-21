@@ -123,6 +123,23 @@ describe("bindEditorAnnouncer (AX2)", () => {
 		expect(liveRegion(root)?.textContent).toBe("Redid Paragraph");
 	});
 
+	it("AX2: empty-document text caret does not write the live region", () => {
+		const editor = createHeadlessEditor({ schema: defaultSchema });
+		const root = document.createElement("div");
+		document.body.appendChild(root);
+		const stop = bindEditorAnnouncer(editor, root);
+		fixtures.push({ editor, root, stop });
+
+		const first = editor.firstBlock();
+		expect(first).not.toBeNull();
+		editor.selectText(first!.id, 0, 0);
+
+		// Pointer activation on an empty document ends here: text caret,
+		// no atom. AX2 must stay silent. What AT speaks for the empty
+		// textbox is a real-AT question (MANUAL.md scenario 2).
+		expect(liveRegion(root)?.textContent ?? "").toBe("");
+	});
+
 	it("AX2: FieldEditorImpl mounts the live region on the editor root", () => {
 		const editor = createHeadlessEditor({ schema: defaultSchema });
 		const fieldEditor = new FieldEditorImpl(editor);

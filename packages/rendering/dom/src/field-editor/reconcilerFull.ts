@@ -1,5 +1,6 @@
-import type { InlineDecoration, SchemaRegistry } from "@input/pen-types";
+import type { Editor, InlineDecoration, SchemaRegistry } from "@input/pen-types";
 import { sortDeltaAttributes } from "@input/pen-core";
+import { urlPolicyFromEditor } from "../security/resolveEditorUrl";
 import type { UrlPolicy } from "../security/urlPolicy";
 import type { FieldEditorDelta, FieldEditorTextLike } from "./crdt";
 import { restoreSelection, saveSelection } from "./reconcilerSelection";
@@ -11,14 +12,17 @@ import { createInlineAtomElement } from "./inlineAtomDom";
 import { wrapWithMarks } from "./reconcilerMarks";
 import { patchDOM } from "./reconcilerPatch";
 
+type ReconcilePolicyOptions =
+	| { editor: Editor; urlPolicy?: undefined }
+	| { urlPolicy: UrlPolicy; editor?: undefined };
+
 export function fullReconcileToDOM(
 	ytext: FieldEditorTextLike,
 	element: HTMLElement,
 	registry: SchemaRegistry,
-	options?: {
+	options: ReconcilePolicyOptions & {
 		preserveSelection?: boolean;
 		inlineDecorations?: readonly InlineDecoration[];
-		urlPolicy?: UrlPolicy;
 	},
 ): void {
 	const textDeltas = ytext.toDelta().filter(
@@ -29,7 +33,7 @@ export function fullReconcileToDOM(
 		} => delta.insert != null,
 	);
 	const renderedDeltas =
-		options?.inlineDecorations && options.inlineDecorations.length > 0
+		options.inlineDecorations && options.inlineDecorations.length > 0
 			? filterVisibleInlineDecorationDeltas(
 					applyInlineDecorationsToDeltas(
 						textDeltas,
@@ -44,8 +48,12 @@ export function fullReconcileDeltasToDOM(
 	deltas: FieldEditorDelta[],
 	element: HTMLElement,
 	registry: SchemaRegistry,
-	options?: { preserveSelection?: boolean; urlPolicy?: UrlPolicy },
+	options: ReconcilePolicyOptions & { preserveSelection?: boolean },
 ): void {
+	const policy =
+		options.editor !== undefined
+			? urlPolicyFromEditor(options.editor)
+			: options.urlPolicy;
 	const orderedDeltas = deltas.map((delta) => {
 		if (!delta.attributes || Object.keys(delta.attributes).length < 2) {
 			return delta;
@@ -56,7 +64,7 @@ export function fullReconcileDeltasToDOM(
 		};
 	});
 
-	const preserveSelection = options?.preserveSelection ?? true;
+	const preserveSelection = options.preserveSelection ?? true;
 	const savedSelection = preserveSelection ? saveSelection(element) : null;
 
 	const fragment = document.createDocumentFragment();
@@ -67,12 +75,7 @@ export function fullReconcileDeltasToDOM(
 				? document.createTextNode(delta.insert)
 				: createInlineAtomElement(delta.insert, registry);
 		if (delta.attributes) {
-			node = wrapWithMarks(
-				node,
-				delta.attributes,
-				registry,
-				options?.urlPolicy,
-			);
+			node = wrapWithMarks(node, delta.attributes, registry, policy);
 		}
 		fragment.appendChild(node);
 	}

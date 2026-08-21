@@ -3,7 +3,6 @@ import { createDocumentSession } from "@input/pen-core";
 import { yjsAdapter } from "@input/pen-crdt-yjs";
 import type { PenPersistence, VersionEntry, VersionMetadata } from "@input/pen-types";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import * as Y from "yjs";
 import { getHistoryController, historyExtension } from "../index";
 import { defaultSchema } from "@input/pen-schema-default";
 
@@ -250,12 +249,14 @@ function appendText(
 	blockId: string,
 	text: string,
 ): void {
-	const ydoc = editor.internals.adapter.raw<Y.Doc>(editor.internals.crdtDoc);
-	const blockMap = ydoc.getMap("blocks").get(blockId) as Y.Map<unknown>;
-	const content = blockMap.get("content") as Y.Text;
-	ydoc.transact(() => {
-		content.insert(content.length, text);
-	}, "user");
+	const block = editor.getBlock(blockId);
+	if (!block) {
+		throw new Error(`missing block ${blockId}`);
+	}
+	editor.apply(
+		[{ type: "insert-text", blockId, offset: block.length(), text }],
+		{ origin: "user" },
+	);
 }
 
 async function flushMicrotasks(): Promise<void> {

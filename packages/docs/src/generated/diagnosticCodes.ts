@@ -27,12 +27,12 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 	},
 	{
 		code: "ai-tool-read-only-mutation",
-		levels: [],
+		levels: ["info"],
 		sources: ["extensions/ai-tools/src/execution.ts"],
 	},
 	{
 		code: "ai-tool-unconfirmed",
-		levels: [],
+		levels: ["info"],
 		sources: ["extensions/ai-tools/src/authority.ts"],
 	},
 	{
@@ -132,7 +132,7 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 	},
 	{
 		code: "PEN_APPLY_002",
-		levels: ["error", "warn"],
+		levels: ["warn"],
 		sources: ["core/src/editor/applyPipelineRunner.ts"],
 	},
 	{
@@ -162,7 +162,7 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 	},
 	{
 		code: "PEN_APPLY_009",
-		levels: ["error", "warn"],
+		levels: ["warn"],
 		sources: ["core/src/editor/applyInlineAndMetaOps.ts", "core/src/editor/applyPipelineRunner.ts"],
 	},
 	{
@@ -247,7 +247,7 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 	},
 	{
 		code: "schema-unknown-block",
-		levels: ["warn"],
+		levels: ["info"],
 		sources: ["core/src/editor/applyPipelineRunner.ts"],
 	},
 	{
@@ -267,7 +267,7 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 	},
 	{
 		code: "stream-aborted",
-		levels: ["error", "warn"],
+		levels: ["info"],
 		sources: ["extensions/delta-stream/src/processStream.ts"],
 	},
 	{
@@ -282,12 +282,12 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 	},
 	{
 		code: "stream-part-unknown",
-		levels: ["error", "warn"],
+		levels: ["warn"],
 		sources: ["extensions/delta-stream/src/processStream.ts"],
 	},
 	{
 		code: "stream-protocol-mismatch",
-		levels: ["error", "warn"],
+		levels: ["error"],
 		sources: ["extensions/delta-stream/src/processStream.ts"],
 	},
 	{

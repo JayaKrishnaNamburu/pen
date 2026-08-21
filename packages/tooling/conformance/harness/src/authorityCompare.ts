@@ -1,0 +1,55 @@
+import type { LogicalPoint, DomAuthorityCheck, SerializedSelection } from "../../src/types";
+
+export function pointsEqual(left: LogicalPoint, right: LogicalPoint): boolean {
+	return left.blockId === right.blockId && left.offset === right.offset;
+}
+
+export function compareMappedToAuthority(
+	authority: SerializedSelection,
+	mapped: { anchor: LogicalPoint; focus: LogicalPoint } | null,
+): DomAuthorityCheck {
+	if (authority == null) {
+		if (mapped == null) {
+			return { ok: true, authority, dom: mapped };
+		}
+		return {
+			ok: false,
+			reason: "DOM has a selection while editor.selection is null",
+			authority,
+			dom: mapped,
+		};
+	}
+	if (authority.type !== "text") {
+		return { ok: true, skipped: true, authority, dom: mapped };
+	}
+	if (!mapped) {
+		return {
+			ok: false,
+			reason: "DOM selection does not map to a logical text selection",
+			authority,
+			dom: mapped,
+		};
+	}
+	if (
+		pointsEqual(mapped.anchor, authority.anchor) &&
+		pointsEqual(mapped.focus, authority.focus)
+	) {
+		return { ok: true, authority, dom: mapped };
+	}
+	return {
+		ok: false,
+		reason: "DOM selection does not match editor.selection (v1 authority)",
+		authority,
+		dom: mapped,
+	};
+}
+
+export function misplacedOffset(offset: number, length: number): number {
+	if (length <= 0) {
+		return offset === 0 ? 1 : 0;
+	}
+	if (offset === 0) {
+		return Math.min(1, length);
+	}
+	return 0;
+}

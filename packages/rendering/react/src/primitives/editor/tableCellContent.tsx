@@ -4,7 +4,6 @@ import { useEditorContext } from "../../context/editorContext";
 import { useIsomorphicLayoutEffect } from "../../hooks/useIsomorphicLayoutEffect";
 import { useFieldEditorContext } from "../../context/fieldEditorContext";
 import { useFieldEditorState } from "../../hooks/useFieldEditorState";
-import { urlPolicyFromEditor } from "@input/pen-dom";
 import { fullReconcileDeltasToDOM } from "@input/pen-dom/field-editor/reconciler";
 import { useCellTextSnapshot } from "../../hooks/useCellTextSnapshot";
 import { DATA_ATTRS } from "../../utils/dataAttributes";
@@ -56,8 +55,8 @@ function TextCell(props: TableCellContentProps) {
 			elementRef.current,
 			editor.schema,
 			{
+				editor,
 				preserveSelection: false,
-				urlPolicy: urlPolicyFromEditor(editor),
 			},
 		);
 	}, [editor, isActiveCell, textSnapshot]);

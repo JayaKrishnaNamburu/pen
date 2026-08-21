@@ -65,6 +65,14 @@ export function buildDocumentWriteOps(
           content,
         } satisfies PendingBlock];
 
+  if (hasUnexposedToolBlock(editor, parsedBlocks)) {
+    return {
+      format,
+      blocks: [],
+      ops: [],
+    };
+  }
+
   const normalized = normalizePendingBlocksForImport(
     parsedBlocks,
     editor.documentProfile,
@@ -88,6 +96,14 @@ function buildBlockWriteOps(
     props: block.props ?? {},
     ...(typeof block.content === "string" ? { content: block.content } : {}),
   })) satisfies PendingBlock[];
+
+  if (hasUnexposedToolBlock(editor, pendingBlocks)) {
+    return {
+      format: "blocks",
+      blocks: [],
+      ops: [],
+    };
+  }
 
   const normalized = normalizePendingBlocksForImport(
     pendingBlocks,

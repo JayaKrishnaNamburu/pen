@@ -21,7 +21,7 @@
     "test:host4": "playwright test scenarios/host4-degradation.spec.ts --project=chromium",
     "test:pseudo-locale": "playwright test scenarios/loc1-pseudo-locale.spec.ts --project=chromium",
     "test:hosts": "node --test src/hosts/*.test.js",
-    "test": "node --test src/hosts/*.test.js",
+    "test": "node --experimental-strip-types --test src/hosts/*.test.js",
     "coverage:rules": "node ../../../scripts/coverage-rules.mjs",
     "fuzz:node": "node src/fuzz/node.mjs",
     "fuzz:nightly": "node src/fuzz/nightly.mjs",

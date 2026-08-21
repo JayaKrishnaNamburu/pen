@@ -257,6 +257,18 @@ const HOSTILE_BODIES: Array<{ name: string; body: unknown }> = [
 		},
 	},
 	{ name: "null body", body: null },
+	{
+		name: "allowedMutatingTools on the wire",
+		body: {
+			prompt: "x",
+			toolCalls: [TOOL_CALL],
+			allowedMutatingTools: ["insert_block"],
+		},
+	},
+	{
+		name: "signal object is not an AbortSignal",
+		body: { prompt: "x", toolCalls: [TOOL_CALL], signal: { aborted: false } },
+	},
 ];
 
 const HOSTILE_JSON: Array<{ name: string; json: string }> = [

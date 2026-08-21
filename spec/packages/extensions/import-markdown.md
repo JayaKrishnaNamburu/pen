@@ -11,7 +11,8 @@ This package is the main plain-text authoring ingest layer for Pen. It handles M
 ## Key Exports / Entrypoints
 
 - Export map: `.`
-- Import APIs such as `markdownImporter` and `parseMarkdownToBlocks()`
+- Import APIs such as `markdownImporter`, `parseMarkdownToBlocks()`, and `parseMarkdownWithReport()`
+- Ingest-envelope constants, including `INGEST_TIME_BUDGET_MS`
 - Workspace scripts: `build`, `clean`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
@@ -42,7 +43,8 @@ flowchart TD
 
 Important rules:
 
-- `capRawMarkdownSource()` slices the raw string to `INGEST_MAX_TEXT_SIZE` (preferring a newline boundary) before parse, so work is O(cap) rather than O(input). Overflow is recorded as a `text-size-exceeded` drop, not a hard refuse. JSON ingest is different: it refuses rather than slices, because a sliced JSON string is invalid.
+- Cap-before-parse: `parseCappedMarkdownToBlocks(input)` is `parseMarkdownSource(capRawMarkdownSource(input))`. `capRawMarkdownSource()` slices the raw string to `INGEST_MAX_TEXT_SIZE` (preferring a newline boundary) before parse, so work is O(cap) rather than O(input). Overflow is recorded as a `text-size-exceeded` drop, not a hard refuse. JSON ingest is different: it refuses rather than slices, because a sliced JSON string is invalid.
+- `INGEST_TIME_BUDGET_MS` (1000) is advisory. It is not a unit-suite gate and is not enforced as a wall-clock abort. The enforceable bound is the pre-parse source cap. Record timing in `@input/pen-bench` if the clock itself needs a home.
 - Markdown parsing produces pending blocks, not final document truth.
 - The current editor schema and document profile still decide what survives normalization.
 - Imported Markdown lands through editor operations and `editor.apply(...)`, preserving the core authority boundary.

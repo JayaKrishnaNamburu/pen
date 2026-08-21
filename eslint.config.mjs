@@ -31,6 +31,11 @@ export default tseslint.config(
     rules: {
       "pen/no-html-injection-sinks": "error",
 
+      // S4: selection paths get no timers. The rule self-scopes to production
+      // `selection*` modules, so do not add a `files:` glob here — one would
+      // exclude the only sites that can violate it.
+      "pen/no-selection-timers": "error",
+
       // HOST4: crypto.randomUUID is secure-context-only, so it throws on plain-HTTP origins
       // and on Safari < 15.4. generateId owns the feature test and fallback (F24).
       "pen/no-bare-random-uuid": "error",

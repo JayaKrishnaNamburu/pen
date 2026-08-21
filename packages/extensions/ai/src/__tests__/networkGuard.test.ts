@@ -1,6 +1,8 @@
+import dgram from "node:dgram";
 import http from "node:http";
 import http2 from "node:http2";
 import net from "node:net";
+import tls from "node:tls";
 import { describe, expect, it } from "vitest";
 
 const PROBE = "https://example.invalid/ai-suite-probe";
@@ -26,6 +28,24 @@ describe("AI suite network guard", () => {
 
 	it("rejects http2.connect so the HTTP/2 client is not a second door", () => {
 		expect(() => http2.connect(PROBE)).toThrow(
+			/AI suite forbids network access/,
+		);
+	});
+
+	it("rejects Socket.prototype.connect so a constructed socket is not a second door", () => {
+		expect(() =>
+			new net.Socket().connect({ host: "example.invalid", port: 9 }),
+		).toThrow(/AI suite forbids network access/);
+	});
+
+	it("rejects tls.connect so TLS is not a second door", () => {
+		expect(() =>
+			tls.connect({ host: "example.invalid", port: 443 }),
+		).toThrow(/AI suite forbids network access/);
+	});
+
+	it("rejects dgram.createSocket so UDP is not a second door", () => {
+		expect(() => dgram.createSocket("udp4")).toThrow(
 			/AI suite forbids network access/,
 		);
 	});

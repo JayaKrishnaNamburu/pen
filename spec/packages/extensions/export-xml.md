@@ -44,6 +44,7 @@ flowchart TD
 Important rules:
 
 - XML export first derives the canonical Pen JSON document shape, then serializes that shape into XML.
+- XML import caps the raw string before parse. A source longer than `INGEST_MAX_TEXT_SIZE` is refused (`capRawXmlSource()` returns `null`); it is not sliced, because a sliced XML string is not a valid document. `xmlImporter.import` emits `import-truncated` and inserts nothing; `parseXmlDocument` throws. After parse, the same node / depth / image envelope as JSON ingest truncates the tree. `INGEST_TIME_BUDGET_MS` is advisory — the enforceable bound is the cap-before-parse refusal.
 - XML import parses the XML document into the Pen JSON envelope, then delegates actual import application to `@input/pen-export-json`'s `jsonImporter`, not `@input/pen-import-json`.
 - XML is a transport syntax choice, not a divergent runtime contract.
 

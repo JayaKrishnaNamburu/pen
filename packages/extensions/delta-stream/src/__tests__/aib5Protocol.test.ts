@@ -79,6 +79,7 @@ describe("@input/pen-delta-stream AIB5 protocol leftovers", () => {
 				},
 			]),
 			editor,
+			{ allowedMutatingTools: ["insert_block"] },
 		);
 
 		expect(diagnosticsOf(emit)).toEqual([

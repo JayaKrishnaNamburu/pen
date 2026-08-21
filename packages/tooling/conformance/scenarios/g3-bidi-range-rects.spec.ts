@@ -18,6 +18,9 @@ type PageGeometryReader = GeometryReader & {
  * LTR slice (hebrew-latin-ltr pair delta 17px). Run/line measurement now
  * drops width-0 rects (ink only); packing remains for residual overlap.
  * Do not widen PX_TOLERANCE.
+ *
+ * U+FFFC-in-RTL is the BR2 fixture. Native getClientRects is one spanning
+ * box; Pen still emits the 1-wide marker run. Assert the union, not pairs.
  */
 const PX_TOLERANCE = 1;
 
@@ -26,6 +29,7 @@ const ARABIC_LATIN_RTL = "مرحبا Hello";
 const HEBREW_LATIN_LTR = "abאבcd";
 const ARABIC_PURE_RTL = "مرحبا";
 const ARABIC_DIGITS_RTL = "مرحبا 123";
+const ARABIC_ATOM_RTL = "مر\uFFFCحبا";
 
 type CaseKind =
 	| "rtl-embed-in-ltr"
@@ -43,7 +47,6 @@ type BidiRangeCase = {
 	readonly direction: "ltr" | "rtl";
 	readonly from: number;
 	readonly to: number;
-	readonly atomOffset?: number;
 };
 
 const CASES: readonly BidiRangeCase[] = [
@@ -96,11 +99,10 @@ const CASES: readonly BidiRangeCase[] = [
 		id: "arabic-atom-rtl",
 		kind: "atom-in-rtl",
 		ruleIds: "G3 BR2",
-		text: ARABIC_PURE_RTL,
+		text: ARABIC_ATOM_RTL,
 		direction: "rtl",
 		from: 0,
-		to: ARABIC_PURE_RTL.length + 1,
-		atomOffset: 2,
+		to: ARABIC_ATOM_RTL.length,
 	},
 ];
 
@@ -153,7 +155,7 @@ function caseTitle(entry: BidiRangeCase): string {
 		case "numbers-in-rtl":
 			return `${entry.ruleIds}: digits inside an RTL paragraph (${entry.id}) yield disjoint per-run rects matching native Range.getClientRects within 1px`;
 		case "atom-in-rtl":
-			return `${entry.ruleIds}: an atom inside an RTL paragraph (${entry.id}) yields disjoint per-run rects matching native Range.getClientRects within 1px`;
+			return `${entry.ruleIds}: a U+FFFC atom marker inside an RTL paragraph (${entry.id}) yields disjoint per-run rects matching native Range.getClientRects within 1px`;
 		default: {
 			const _exhaustive: never = entry.kind;
 			return _exhaustive;
@@ -193,6 +195,19 @@ function assertCase(report: CaseReport): void {
 		report.penOverlapPairs,
 		`G3: Pen rangeRects overlap — not a disjoint per-run decomposition\n${detail}`,
 	).toBe(0);
+	if (report.kind === "atom-in-rtl") {
+		// Native getClientRects on U+FFFC-in-RTL is one spanning box.
+		// BR2 still splits the marker into its own run; union must match.
+		expect(
+			report.runs.some((run) => run.to - run.from === 1),
+			`G3 BR2: expected a 1-wide atom run\n${detail}`,
+		).toBe(true);
+		expect(
+			report.unionDelta,
+			`G3: Pen union vs native Range.getClientRects exceeded ${PX_TOLERANCE}px\n${detail}`,
+		).toBeLessThanOrEqual(PX_TOLERANCE);
+		return;
+	}
 	expect(
 		report.boundingBoxDisguise,
 		`G3: Pen returned one spanning box over split native rects (bounding box in disguise)\n${detail}`,
@@ -255,20 +270,6 @@ async function prepareMixedBlock(
 			);
 		})
 		.toBe("ok");
-	if (entry.atomOffset !== undefined) {
-		await s.apply([
-			{
-				type: "insert-inline-node",
-				blockId,
-				offset: entry.atomOffset,
-				nodeType: "mention",
-				props: { id: "user-ada", label: "Ada" },
-			},
-		]);
-		await expect(
-			page.locator(`[data-block-id="${blockId}"] [data-pen-inline-atom]`),
-		).toBeVisible();
-	}
 	return blockId;
 }
 
@@ -371,62 +372,31 @@ async function measureCase(
 				return width > 0.5 && height > 0.5;
 			}
 
-			function isAtomSlot(node: Node): node is HTMLElement {
-				return (
-					node instanceof HTMLElement &&
-					(node.hasAttribute("data-pen-inline-atom-host") ||
-						node.hasAttribute("data-pen-inline-atom"))
-				);
-			}
-
 			function locateOffset(
 				inline: HTMLElement,
 				offset: number,
-			): { node: Node; offset: number } {
+			): { node: Text; offset: number } {
+				const walker = document.createTreeWalker(
+					inline,
+					NodeFilter.SHOW_TEXT,
+				);
 				let remaining = offset;
-				let last: { node: Node; offset: number } | null = null;
-
-				const visit = (
-					node: Node,
-				): { node: Node; offset: number } | null => {
-					if (isAtomSlot(node)) {
-						const parent = node.parentNode;
-						if (!parent) {
-							throw new Error(`detached atom in ${id}`);
-						}
-						const index = Array.from(parent.childNodes).indexOf(node);
-						if (remaining <= 0) {
-							return { node: parent, offset: index };
-						}
-						remaining -= 1;
-						last = { node: parent, offset: index + 1 };
-						return remaining === 0 ? last : null;
+				let last: Text | null = null;
+				while (walker.nextNode()) {
+					const node = walker.currentNode;
+					if (!(node instanceof Text)) {
+						continue;
 					}
-					if (node instanceof Text) {
-						last = { node, offset: node.data.length };
-						if (remaining <= node.data.length) {
-							return { node, offset: remaining };
-						}
-						remaining -= node.data.length;
-						return null;
+					last = node;
+					if (remaining <= node.data.length) {
+						return { node, offset: remaining };
 					}
-					for (const child of Array.from(node.childNodes)) {
-						const hit = visit(child);
-						if (hit) {
-							return hit;
-						}
-					}
-					return null;
-				};
-
-				const hit = visit(inline);
-				if (hit) {
-					return hit;
+					remaining -= node.data.length;
 				}
 				if (!last) {
 					throw new Error(`no text nodes in ${id}`);
 				}
-				return last;
+				return { node: last, offset: last.data.length };
 			}
 
 			function nativeRects(

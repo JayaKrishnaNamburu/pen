@@ -92,7 +92,9 @@ describe("Pen inline atom DOM operations", () => {
 			{ insert: "B" },
 		];
 
-		fullReconcileDeltasToDOM(firstDelta, element, editor.schema);
+		fullReconcileDeltasToDOM(firstDelta, element, editor.schema, {
+			editor,
+		});
 		const firstAtom = element.querySelector(
 			`[${DATA_ATTRS.inlineAtom}]`,
 		) as HTMLElement | null;
@@ -102,7 +104,9 @@ describe("Pen inline atom DOM operations", () => {
 			text: "@Ada",
 		});
 
-		fullReconcileDeltasToDOM(secondDelta, element, editor.schema);
+		fullReconcileDeltasToDOM(secondDelta, element, editor.schema, {
+			editor,
+		});
 		const secondAtom = element.querySelector(
 			`[${DATA_ATTRS.inlineAtom}]`,
 		) as HTMLElement | null;

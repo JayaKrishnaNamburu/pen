@@ -2,7 +2,9 @@
 
 Undo/redo extension with origin tagging for Pen.
 
-`defaultPreset()` installs this extension. This package does not reimplement Yjs stack trimming; the Yjs adapter trims oldest items past `maxDepth`.
+`defaultPreset()` installs this extension. A bare `createEditor()` does not. Without it, `editor.undoManager` is an inert stub: `canUndo()` is false, `undo()` does nothing, Mod-Z is dead, and nothing throws.
+
+This package does not reimplement Yjs stack trimming; the Yjs adapter trims oldest items past `maxDepth`.
 
 ## Install
 

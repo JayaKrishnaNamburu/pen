@@ -1,0 +1,74 @@
+
+Running 6 tests using 6 workers
+
+  ✘  3 [chromium] › packages/tooling/conformance/src/scenario.ts:7:3 › M6: Backspace on an RTL mixed block deletes the previous logical grapheme (no swap) (5.1s)
+  ✓  2 [webkit] › packages/tooling/conformance/src/scenario.ts:7:3 › M6: Delete on an RTL mixed block deletes the next logical grapheme (no swap) (7.1s)
+  ✓  6 [webkit] › packages/tooling/conformance/src/scenario.ts:7:3 › M6: Backspace on an RTL mixed block deletes the previous logical grapheme (no swap) (7.1s)
+  ✓  4 [firefox] › packages/tooling/conformance/src/scenario.ts:7:3 › M6: Backspace on an RTL mixed block deletes the previous logical grapheme (no swap) (6.7s)
+  ✓  1 [firefox] › packages/tooling/conformance/src/scenario.ts:7:3 › M6: Delete on an RTL mixed block deletes the next logical grapheme (no swap) (5.3s)
+  ✘  5 [chromium] › packages/tooling/conformance/src/scenario.ts:7:3 › M6: Delete on an RTL mixed block deletes the next logical grapheme (no swap) (15.1s)
+
+
+  1) [chromium] › packages/tooling/conformance/src/scenario.ts:7:3 › M6: Backspace on an RTL mixed block deletes the previous logical grapheme (no swap) 
+
+    Error: page.evaluate: TypeError: Cannot read properties of undefined (reading 'domMatchesAuthority')
+        at eval (eval at evaluate (:290:30), <anonymous>:1:31)
+        at UtilityScript.evaluate (<anonymous>:292:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at eval (eval at evaluate (:290:30), <anonymous>:1:31)
+        at UtilityScript.evaluate (<anonymous>:292:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at assertStandingDomMatchesAuthority (/Users/krijn/Code/pen/packages/tooling/conformance/src/standingAssertions.ts:36:28)
+        at standing (/Users/krijn/Code/pen/packages/tooling/conformance/src/scenario.ts:59:9)
+        at step (/Users/krijn/Code/pen/packages/tooling/conformance/src/scenario.ts:69:10)
+        at Object.load (/Users/krijn/Code/pen/packages/tooling/conformance/src/scenario.ts:76:4)
+        at /Users/krijn/Code/pen/packages/tooling/conformance/scenarios/m6-delete-logical.spec.ts:66:3
+        at /Users/krijn/Code/pen/packages/tooling/conformance/src/scenario.ts:43:3
+
+    Error Context: packages/tooling/conformance/test-results/scenarios-m6-delete-logica-7e626-s-logical-grapheme-no-swap--chromium/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    packages/tooling/conformance/test-results/scenarios-m6-delete-logica-7e626-s-logical-grapheme-no-swap--chromium/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace packages/tooling/conformance/test-results/scenarios-m6-delete-logica-7e626-s-logical-grapheme-no-swap--chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [chromium] › packages/tooling/conformance/src/scenario.ts:7:3 › M6: Delete on an RTL mixed block deletes the next logical grapheme (no swap) 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+    Expected: [32m"[7mo[27mk"[39m
+    Received: [31m"[7mmissing-bloc[27mk"[39m
+
+    Call Log:
+    - Timeout 10000ms exceeded while waiting on the predicate
+
+       at scenarios/m6-delete-logical.spec.ts:12
+
+      10 |
+      11 | async function assertRtlEmbed(page: Page): Promise<void> {
+    > 12 | 	await expect
+         | 	^
+      13 | 		.poll(async () => {
+      14 | 			return page.evaluate(
+      15 | 				({ id, text }) => {
+        at assertRtlEmbed (/Users/krijn/Code/pen/packages/tooling/conformance/scenarios/m6-delete-logical.spec.ts:12:2)
+        at /Users/krijn/Code/pen/packages/tooling/conformance/scenarios/m6-delete-logical.spec.ts:88:3
+        at /Users/krijn/Code/pen/packages/tooling/conformance/src/scenario.ts:43:3
+
+    Error Context: packages/tooling/conformance/test-results/scenarios-m6-delete-logica-8cb1a-t-logical-grapheme-no-swap--chromium/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    packages/tooling/conformance/test-results/scenarios-m6-delete-logica-8cb1a-t-logical-grapheme-no-swap--chromium/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace packages/tooling/conformance/test-results/scenarios-m6-delete-logica-8cb1a-t-logical-grapheme-no-swap--chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    [chromium] › packages/tooling/conformance/src/scenario.ts:7:3 › M6: Backspace on an RTL mixed block deletes the previous logical grapheme (no swap) 
+    [chromium] › packages/tooling/conformance/src/scenario.ts:7:3 › M6: Delete on an RTL mixed block deletes the next logical grapheme (no swap) 
+  4 passed (18.8s)

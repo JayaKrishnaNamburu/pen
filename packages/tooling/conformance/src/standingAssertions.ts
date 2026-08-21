@@ -3,30 +3,24 @@ import {
 	formatDiagnosticsReport,
 	formatDomAuthorityReport,
 } from "./checkReport";
+import type { DomAuthorityCheck } from "./types";
 import {
-	DIAGNOSTICS_ALLOWLIST,
-	STANDING_DIAGNOSTIC_CODES,
-} from "./diagnosticsAllowlist";
-import type { DomAuthorityCheck, SerializedDiagnostic } from "./types";
+	standingAuthorityHolds,
+	unexpectedStandingDiagnostics,
+} from "./standingFilter";
 
-const allowlistedCodes = new Set<string>(
-	DIAGNOSTICS_ALLOWLIST.map((entry) => entry.code),
-);
+export {
+	isStandingCode,
+	standingAuthorityHolds,
+	unexpectedStandingDiagnostics,
+} from "./standingFilter";
 
 export async function assertStandingDiagnostics(
 	page: Page,
 	expectedCodes: ReadonlySet<string>,
 ): Promise<void> {
 	const diagnostics = await page.evaluate(() => window.__penConformance.diagnostics);
-	const unexpected = diagnostics.filter((event: SerializedDiagnostic) => {
-		if (!isStandingCode(event.code)) {
-			return false;
-		}
-		if (expectedCodes.has(event.code) || allowlistedCodes.has(event.code)) {
-			return false;
-		}
-		return true;
-	});
+	const unexpected = unexpectedStandingDiagnostics(diagnostics, expectedCodes);
 	expect(unexpected, formatDiagnosticsReport(unexpected)).toEqual([]);
 }
 
@@ -41,9 +35,8 @@ export async function assertStandingDomMatchesAuthority(
 
 export function assertDomAuthorityResult(result: DomAuthorityCheck): void {
 	// v1 snapshot (blockId+offset), not affinity/goalX — projectSelection is not live.
-	expect(result.ok, formatDomAuthorityReport(result)).toBe(true);
-}
-
-function isStandingCode(code: string): boolean {
-	return (STANDING_DIAGNOSTIC_CODES as readonly string[]).includes(code);
+	expect(
+		standingAuthorityHolds(result),
+		formatDomAuthorityReport(result),
+	).toBe(true);
 }

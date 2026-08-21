@@ -35,7 +35,9 @@ if (!(root instanceof HTMLElement)) {
 mountEditor(editor, root);
 ```
 
-That snippet is the vanilla mount path. React and Vue hosts should keep using those packages; they already construct `FieldEditorImpl` and the same document shell.
+That snippet is the vanilla mount path. `FieldEditorImpl.setRootElement` alone binds a focus sink and never builds the document tree — the page stays blank while it typechecks. React and Vue hosts should keep using those packages; they already construct `FieldEditorImpl` and the same document shell.
+
+Pen ships no required stylesheet — the editor is functional unstyled, including on an empty document. You do not need extra CSS to land a click or the first keystroke.
 
 The root export also includes `urlPolicy`, `urlPolicyExtension`, `DomScheduler`, and keyboard helpers such as `handleEditorDocumentKeyDown`. Extra subpaths exist on the `exports` map (`./field-editor`, `./constants/selectAll`, and the listed `./utils/*` keys). Prefer the root export unless you already depend on a subpath.
 
@@ -43,11 +45,11 @@ The root export also includes `urlPolicy`, `urlPolicyExtension`, `DomScheduler`,
 
 `mountEditor(editor, root, options?)` returns `{ fieldEditor, root, destroy }`. Options:
 
-| Option             | Default           | Effect                                             |
-| ------------------ | ----------------- | -------------------------------------------------- |
-| `readonly`         | `false`           | Blocks pointer activation and sets `aria-readonly` |
-| `interactionModel` | `"content-first"` | Passed through `resolveSelectAllBehavior`          |
-| `focusPolicy`      | unset             | Host focus policy passed to `FieldEditorImpl`      |
+| Option             | Default           | Effect                                                                                                                                                                                                                   |
+| ------------------ | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `readonly`         | `false`           | Declines typing and pointer activation; sets `data-readonly` (match with `[data-readonly]`, not `="true"`) and `aria-readonly="true"`. Does not stop `editor.apply`. `pen.readOnly` the facet only sets `aria-readonly`. |
+| `interactionModel` | `"content-first"` | Passed through `resolveSelectAllBehavior`                                                                                                                                                                                |
+| `focusPolicy`      | unset             | Host focus policy passed to `FieldEditorImpl`                                                                                                                                                                            |
 
 `FieldEditorImpl` accepts a second argument:
 

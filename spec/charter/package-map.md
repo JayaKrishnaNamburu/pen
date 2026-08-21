@@ -61,7 +61,7 @@ Provide a stable overview of the workspace layout and the spec paths that mirror
 
 ## Packages Without A Current-State Spec
 
-These workspace packages exist and have no `spec/packages/` file. That is intentional:
+`packages/` currently has 38 `package.json` files. 36 of those have a matching current-state spec. These two workspace packages exist and have no `spec/packages/` file. That is intentional:
 
 - `@input/pen-conformance` (`packages/tooling/conformance`) — private Playwright / browser-real harness. Scenario names and host pins change with the wave work; a current-state spec would rot faster than it would help.
 - `@input/pen-eslint-plugin` (`packages/tooling/eslint-plugin`) — private lint rules that enforce `spec-v2` invariants mechanically. The rules _are_ the documentation.

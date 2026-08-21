@@ -130,6 +130,7 @@ describe("inline atom delete divergence", () => {
 			expect(
 				registry.dispatch(deleteBackward, { granularity: "grapheme" }),
 			).toBe(true);
+			expect(hasMention(editor)).toBe(false);
 			expect(editor.getBlock("a")?.textContent()).toBe("hiz");
 			expect(caretOf(editor)).toEqual({ blockId: "a", offset: 2 });
 			editor.destroy();
@@ -141,10 +142,12 @@ describe("inline atom delete divergence", () => {
 			const editor = mentionDoc();
 			const registry = createCommandHarness(editor);
 			editor.selectText("a", 3, 3);
+			expect(hasMention(editor)).toBe(true);
 
 			expect(
 				registry.dispatch(deleteBackward, { granularity: "grapheme" }),
 			).toBe(true);
+			expect(hasMention(editor)).toBe(false);
 			expect(editor.getBlock("a")?.textContent()).toBe("hiz");
 			expect(caretOf(editor)).toEqual({ blockId: "a", offset: 2 });
 			editor.destroy();
@@ -154,10 +157,12 @@ describe("inline atom delete divergence", () => {
 			const editor = mentionDoc();
 			const registry = createCommandHarness(editor);
 			editor.selectText("a", 2, 2);
+			expect(hasMention(editor)).toBe(true);
 
 			expect(
 				registry.dispatch(deleteForward, { granularity: "grapheme" }),
 			).toBe(true);
+			expect(hasMention(editor)).toBe(false);
 			expect(editor.getBlock("a")?.textContent()).toBe("hiz");
 			expect(caretOf(editor)).toEqual({ blockId: "a", offset: 2 });
 			editor.destroy();
@@ -179,10 +184,46 @@ describe("inline atom delete divergence", () => {
 				],
 				caret: { blockId: "a", offset: 2 },
 			});
-			expect(editor.getBlock("a")?.textContent()).not.toBe("hiz");
+			expect(hasMention(editor)).toBe(true);
 			editor.apply(oneShot!.ops, { origin: "user" });
+			expect(hasMention(editor)).toBe(false);
 			expect(editor.getBlock("a")?.textContent()).toBe("hiz");
 			editor.destroy();
 		});
+	});
+
+	it("select vs delete are different products on the same fixture", () => {
+		const selectEditor = mentionDoc();
+		const deleteEditor = mentionDoc();
+		selectEditor.selectText("a", 3, 3);
+		deleteEditor.selectText("a", 3, 3);
+
+		const selected = selectAdjacentInlineAtom(selectEditor, "backward");
+		const oneShot = deleteAdjacentInlineAtom(deleteEditor, "backward");
+
+		expect(selected).toEqual(
+			expect.objectContaining({
+				type: "text",
+				isCollapsed: false,
+				anchor: { blockId: "a", offset: 2 },
+				focus: { blockId: "a", offset: 3 },
+			}),
+		);
+		expect(oneShot).toEqual({
+			ops: [
+				{
+					type: "delete-text",
+					blockId: "a",
+					offset: 2,
+					length: 1,
+				},
+			],
+			caret: { blockId: "a", offset: 2 },
+		});
+		expect(selected).not.toEqual(oneShot);
+		expect(hasMention(selectEditor)).toBe(true);
+		expect(hasMention(deleteEditor)).toBe(true);
+		selectEditor.destroy();
+		deleteEditor.destroy();
 	});
 });

@@ -93,7 +93,7 @@ describe("flushOverlay OV1", () => {
 		flushFrame();
 		const plan = await done;
 
-		expect(phases).toEqual(["caretRect:write"]);
+		expect(phases).toEqual(["caretRect:read"]);
 		expect(plan.items).toEqual([
 			{ id: "caret:focus", kind: "caret", ...caretRect },
 		]);

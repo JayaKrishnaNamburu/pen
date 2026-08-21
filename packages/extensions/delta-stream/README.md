@@ -28,7 +28,7 @@ async function* emptyStream() {}
 await processStream(emptyStream(), editor);
 ```
 
-`processStream` refuses the stream and emits `stream-target-missing` when the extension is not active. It does not mint an undo `groupId`; if you omit `groupId`, each apply uses `{ origin: "ai" }` only. A `tool-input-available` part runs through `executeAITool` with an empty mutating allowlist — mutating and destructive tools are denied and the stream continues.
+`processStream` refuses the stream and emits `stream-target-missing` when the extension is not active. It does not mint an undo `groupId`; if you omit `groupId`, each apply uses `{ origin: "ai" }` only. Mutating `tool-input-available` parts and structural stream parts (`block-insert`, `block-update`, and the other apply cases) inherit `allowedMutatingTools` (default deny). `gen-start` / `gen-delta` / `gen-end` write through the host-opened streaming target and do not consult that list.
 
 ## Options
 
@@ -40,12 +40,13 @@ await processStream(emptyStream(), editor);
 
 ### `processStream`
 
-| Option            | Default | Effect                                                                 |
-| ----------------- | ------- | ---------------------------------------------------------------------- |
-| `onPart`          | none    | Called with each `PenStreamPart`                                       |
-| `signal`          | none    | Abort the stream                                                       |
-| `protocolVersion` | unset   | Must equal `PEN_STREAM_PROTOCOL_VERSION` (`1`) when sent; omit to skip |
-| `groupId`         | unset   | Undo group for every apply in this stream                              |
+| Option                 | Default | Effect                                                                 |
+| ---------------------- | ------- | ---------------------------------------------------------------------- |
+| `onPart`               | none    | Called with each `PenStreamPart`                                       |
+| `signal`               | none    | Abort the stream                                                       |
+| `protocolVersion`      | unset   | Must equal `PEN_STREAM_PROTOCOL_VERSION` (`1`) when sent; omit to skip |
+| `groupId`              | unset   | Undo group for every apply in this stream                              |
+| `allowedMutatingTools` | `[]`    | Mutating tools (and equivalent structural parts) this stream may run   |
 
 ## Facets and commands
 

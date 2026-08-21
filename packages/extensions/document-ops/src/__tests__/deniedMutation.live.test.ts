@@ -272,4 +272,87 @@ describe("denied mutating tools leave the live document unchanged", () => {
 			),
 		);
 	});
+
+	it("write_document mixed unknown type: schema throw is not the assertion — bytes stay identical", async () => {
+		const editor = createLiveEditor();
+
+		await expectUnchanged(editor, () =>
+			writeDocumentTool(editor).handler(
+				{
+					format: "blocks",
+					blocks: [
+						{ blockType: "paragraph", content: "Allowed sibling" },
+						{ blockType: "not-a-real-type", content: "Should not land" },
+					],
+				},
+				{} as never,
+			),
+		);
+	});
+
+	it("invalid move_block / write_document schema: executeTool does not write", async () => {
+		const editor = createLiveEditor();
+		const runtime = new ToolRuntimeImpl();
+		runtime.registerTool(moveBlockTool(editor));
+		runtime.registerTool(writeDocumentTool(editor));
+
+		await expectUnchanged(editor, () =>
+			runtime.executeTool(
+				"move_block",
+				{
+					blockId: "fixture-body",
+					position: { after: "" },
+				},
+				{} as never,
+			),
+		);
+		await expectUnchanged(editor, () =>
+			runtime.executeTool(
+				"write_document",
+				{
+					content: "Hello",
+					position: {
+						parent: "fixture-body",
+						index: -1,
+					},
+				},
+				{} as never,
+			),
+		);
+	});
+
+	it("a denied call does not leave editor.apply discarding later writes", async () => {
+		const editor = createLiveEditor();
+		const runtime = new ToolRuntimeImpl();
+		runtime.registerTool(insertBlockTool(editor));
+
+		await expectUnchanged(editor, () =>
+			runtime.executeTool(
+				"insert_block",
+				{
+					position: "last",
+					blockType: "subdocument",
+					content: "Should not land",
+				},
+				{} as never,
+			),
+		);
+
+		const beforeIds = [...editor.ydoc.getArray("blockOrder").toJSON()];
+		editor.apply(
+			[
+				{
+					type: "insert-text",
+					blockId: "fixture-body",
+					offset: 0,
+					text: "after-denial",
+				},
+			],
+			{ origin: "user" },
+		);
+		expect(editor.getBlock("fixture-body")?.textContent()).toContain(
+			"after-denial",
+		);
+		expect(editor.ydoc.getArray("blockOrder").toJSON()).toEqual(beforeIds);
+	});
 });

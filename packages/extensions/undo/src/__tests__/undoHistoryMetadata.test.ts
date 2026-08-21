@@ -51,11 +51,14 @@ describe("@input/pen-undo history metadata", () => {
 		editor.apply([{ type: "insert-text", blockId, offset: 1, text: "B" }], {
 			origin: "user",
 		});
+		expect(editor.getBlock(blockId)?.textContent()).toBe("AB");
 
 		expect(editor.undoManager.undo()).toBe(true);
+		expect(editor.getBlock(blockId)?.textContent()).toBe("A");
 		expect(restoredValues).toEqual(["step-2-before"]);
 
 		expect(editor.undoManager.undo()).toBe(true);
+		expect(editor.getBlock(blockId)?.textContent()).toBe("");
 		expect(restoredValues).toEqual(["step-2-before", "step-1-before"]);
 
 		editor.destroy();
@@ -91,8 +94,10 @@ describe("@input/pen-undo history metadata", () => {
 		editor.apply([{ type: "insert-text", blockId, offset: 1, text: "B" }], {
 			origin: "user",
 		});
+		expect(editor.getBlock(blockId)?.textContent()).toBe("AB");
 
 		expect(editor.undoManager.undo()).toBe(true);
+		expect(editor.getBlock(blockId)?.textContent()).toBe("A");
 		expect(restoredValues).toEqual([null]);
 
 		editor.destroy();

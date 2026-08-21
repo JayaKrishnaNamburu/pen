@@ -18,6 +18,7 @@ import {
 	resolveDirectedCommand,
 	resolveFocusBlockDirection,
 	serializeDefaultKeymap,
+	setVerticalCaretMeasure,
 	type DefaultKeymapBinding,
 	type KeymapPlatform,
 } from "..";
@@ -272,6 +273,17 @@ describe("motion semantics M1–M6", () => {
 					provider.command.name === caretDown.name,
 			),
 		).toBe(true);
+
+		const directions: Array<"up" | "down"> = [];
+		setVerticalCaretMeasure(editor, (_ed, current, direction, goalX) => {
+			directions.push(direction);
+			return { point: current, goalX: goalX ?? 12 };
+		});
+		const registry = createCommandHarness(editor);
+		editor.selectText("a", 0, 0);
+		expect(registry.dispatch(caretUp, { extend: false })).toBe(true);
+		expect(registry.dispatch(caretDown, { extend: false })).toBe(true);
+		expect(directions).toEqual(["up", "down"]);
 		editor.destroy();
 	});
 

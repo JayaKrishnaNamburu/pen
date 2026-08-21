@@ -9,6 +9,7 @@ import * as Y from "yjs";
 import {
 	SCALE1_LONG_BLOCK_CHARS,
 	SCALE1_NESTING_DEPTH,
+	SCALE1_PEER_COUNT,
 	SCALE1_TABLE_COLS,
 	SCALE1_TABLE_ROWS,
 	assertNeverEnvelopeRung,
@@ -146,6 +147,188 @@ export function measureNestingDepth(
 	return depth;
 }
 
+export function createNestingEditor(depth: number): TestEditor {
+	const editor = createTestEditor({ blocks: [] });
+	const ops: DocumentOp[] = [];
+	for (let level = 0; level < depth; level++) {
+		const blockId = envelopeNestId(level);
+		if (level === 0) {
+			ops.push({
+				type: "insert-block",
+				blockId,
+				blockType: "callout",
+				props: { type: "info" },
+				position: "last",
+			});
+			continue;
+		}
+		const parentId = envelopeNestId(level - 1);
+		ops.push({
+			type: "insert-block",
+			blockId,
+			blockType: "callout",
+			props: { type: "info", parentId },
+			position: { parent: parentId, index: 0 },
+		});
+	}
+	editor.apply(ops, { origin: "user" });
+	dropForeignTopLevelBlocks(editor, envelopeNestId(0));
+	return editor;
+}
+
+export function createTableEditor(rows: number, cols: number): TestEditor {
+	const editor = createTestEditor({ blocks: [] });
+	const ops: DocumentOp[] = [
+		{
+			type: "insert-block",
+			blockId: ENVELOPE_TABLE_BLOCK_ID,
+			blockType: "table",
+			props: { hasHeaderRow: true },
+			position: "last",
+		},
+	];
+	for (let col = 2; col < cols; col++) {
+		ops.push({
+			type: "insert-table-column",
+			blockId: ENVELOPE_TABLE_BLOCK_ID,
+			index: col,
+		});
+	}
+	for (let row = 2; row < rows; row++) {
+		ops.push({
+			type: "insert-table-row",
+			blockId: ENVELOPE_TABLE_BLOCK_ID,
+			index: row,
+		});
+	}
+	editor.apply(ops, { origin: "user" });
+	dropForeignTopLevelBlocks(editor, ENVELOPE_TABLE_BLOCK_ID);
+	return editor;
+}
+
+/**
+ * Live fixture dimension for a SCALE1 rung. Block-count rungs use the
+ * generator length (cheap). Nesting, table, and peers build a document.
+ */
+export function measurePublishedCount(rungId: EnvelopeRungId): number {
+	switch (rungId) {
+		case "blocks-100":
+			return generateBlockSpecs(100).length;
+		case "blocks-1000":
+			return generateBlockSpecs(1000).length;
+		case "blocks-5000":
+			return generateBlockSpecs(5000).length;
+		case "long-block":
+			return longBlockCharCount();
+		case "nesting-10":
+			return measureCreatedNestingDepth(SCALE1_NESTING_DEPTH);
+		case "table-50x20":
+			return measureCreatedTableCells(
+				SCALE1_TABLE_ROWS,
+				SCALE1_TABLE_COLS,
+			);
+		case "concurrentPeers-2":
+			return measureSharedSeedPeerCount();
+		default:
+			return assertNeverEnvelopeRung(rungId);
+	}
+}
+
+export function measureCreatedNestingDepth(depth: number): number {
+	const editor = createNestingEditor(depth);
+	const measured = measureNestingDepth(editor, envelopeNestId(0));
+	void editor.destroy();
+	return measured;
+}
+
+export function measureCreatedTableCells(rows: number, cols: number): number {
+	const editor = createTableEditor(rows, cols);
+	const table = editor.getBlock(ENVELOPE_TABLE_BLOCK_ID).as("table");
+	const measured =
+		(table?.tableRowCount() ?? 0) * (table?.tableColumnCount() ?? 0);
+	void editor.destroy();
+	return measured;
+}
+
+export function measureSharedSeedPeerCount(): number {
+	const collab = createEnvelopeCollaboration(4);
+	try {
+		assertPeerBObservesPeerAInsert(collab);
+		return SCALE1_PEER_COUNT;
+	} finally {
+		void collab.editorA.destroy();
+		void collab.editorB.destroy();
+	}
+}
+
+/**
+ * Both peers write, then sync, then count tokens present on both
+ * documents. Shared-seed survival is 2. Independent populate is the
+ * historical defect: LWW keeps one Y.Text and drops the other edit,
+ * so this returns 0 or 1 — never 2.
+ */
+export function measurePeerTokenSurvival(
+	collab: ReturnType<typeof createEnvelopeCollaboration>,
+): number {
+	const blockId = envelopeBlockId(0);
+	const tokenA = "TOKEN-A-SURVIVE";
+	const tokenB = "TOKEN-B-SURVIVE";
+	collab.editorA.apply(
+		[{ type: "insert-text", blockId, offset: 0, text: tokenA }],
+		{ origin: "user" },
+	);
+	collab.editorB.apply(
+		[{ type: "insert-text", blockId, offset: 0, text: tokenB }],
+		{ origin: "user" },
+	);
+	collab.sync();
+	const textA = collab.editorA.getBlock(blockId).textContent();
+	const textB = collab.editorB.getBlock(blockId).textContent();
+	return [tokenA, tokenB].filter(
+		(token) => textA.includes(token) && textB.includes(token),
+	).length;
+}
+
+/** The independently-populated fixture that published a fake peer number. */
+export function measureIndependentPeerSurvival(): number {
+	const editorA = createTestEditor({ blocks: generateBlockSpecs(4) });
+	const editorB = createTestEditor({ blocks: generateBlockSpecs(4) });
+	const collab = {
+		editorA,
+		editorB,
+		sync() {
+			const fromA = editorA.crdtDoc.adapter.encodeUpdate(
+				editorA.crdtDoc,
+				Y.encodeStateVector(editorB.ydoc),
+			);
+			const fromB = editorB.crdtDoc.adapter.encodeUpdate(
+				editorB.crdtDoc,
+				Y.encodeStateVector(editorA.ydoc),
+			);
+			if (fromA.byteLength > 0) {
+				editorB.crdtDoc.adapter.applyUpdate(editorB.crdtDoc, fromA);
+			}
+			if (fromB.byteLength > 0) {
+				editorA.crdtDoc.adapter.applyUpdate(editorA.crdtDoc, fromB);
+			}
+		},
+	};
+	try {
+		return measurePeerTokenSurvival(collab);
+	} finally {
+		void editorA.destroy();
+		void editorB.destroy();
+	}
+}
+
+function longBlockCharCount(chars: number = SCALE1_LONG_BLOCK_CHARS): number {
+	const spec = generateLongBlockSpec(chars)[0];
+	if (!spec?.content) {
+		throw new Error("long-block fixture has no content");
+	}
+	return spec.content.length;
+}
+
 export interface EnvelopeKeystroke {
 	ops: DocumentOp[];
 	targetId: string;
@@ -255,63 +438,14 @@ function buildRungYDoc(rungId: EnvelopeRungId): Y.Doc {
 }
 
 function buildNestingYDoc(): Y.Doc {
-	const editor = createTestEditor({ blocks: [] });
-	const ops: DocumentOp[] = [];
-	for (let level = 0; level < SCALE1_NESTING_DEPTH; level++) {
-		const blockId = envelopeNestId(level);
-		if (level === 0) {
-			ops.push({
-				type: "insert-block",
-				blockId,
-				blockType: "callout",
-				props: { type: "info" },
-				position: "last",
-			});
-			continue;
-		}
-		const parentId = envelopeNestId(level - 1);
-		ops.push({
-			type: "insert-block",
-			blockId,
-			blockType: "callout",
-			props: { type: "info", parentId },
-			position: { parent: parentId, index: 0 },
-		});
-	}
-	editor.apply(ops, { origin: "user" });
-	dropForeignTopLevelBlocks(editor, envelopeNestId(0));
+	const editor = createNestingEditor(SCALE1_NESTING_DEPTH);
 	const ydoc = snapshotYDoc(editor.ydoc);
 	void editor.destroy();
 	return ydoc;
 }
 
 function buildTableYDoc(): Y.Doc {
-	const editor = createTestEditor({ blocks: [] });
-	const ops: DocumentOp[] = [
-		{
-			type: "insert-block",
-			blockId: ENVELOPE_TABLE_BLOCK_ID,
-			blockType: "table",
-			props: { hasHeaderRow: true },
-			position: "last",
-		},
-	];
-	for (let col = 2; col < SCALE1_TABLE_COLS; col++) {
-		ops.push({
-			type: "insert-table-column",
-			blockId: ENVELOPE_TABLE_BLOCK_ID,
-			index: col,
-		});
-	}
-	for (let row = 2; row < SCALE1_TABLE_ROWS; row++) {
-		ops.push({
-			type: "insert-table-row",
-			blockId: ENVELOPE_TABLE_BLOCK_ID,
-			index: row,
-		});
-	}
-	editor.apply(ops, { origin: "user" });
-	dropForeignTopLevelBlocks(editor, ENVELOPE_TABLE_BLOCK_ID);
+	const editor = createTableEditor(SCALE1_TABLE_ROWS, SCALE1_TABLE_COLS);
 	const ydoc = snapshotYDoc(editor.ydoc);
 	void editor.destroy();
 	return ydoc;

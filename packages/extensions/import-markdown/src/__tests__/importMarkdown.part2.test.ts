@@ -113,6 +113,64 @@ describe("@input/pen-import-markdown", () => {
 		});
 	});
 
+	it("attaches compact details body children instead of dropping them", () => {
+		const blocks = convert(
+			"<details><summary>TOGGLE-TITLE</summary><p>NESTED-TOGGLE-CHILD</p></details>",
+			defaultRegistry,
+		);
+
+		expect(blocks).toHaveLength(1);
+		expect(blocks[0]).toMatchObject({
+			type: "toggle",
+			content: "TOGGLE-TITLE",
+		});
+		expect(blocks[0]?.children).toEqual([
+			expect.objectContaining({
+				type: "paragraph",
+				content: "NESTED-TOGGLE-CHILD",
+			}),
+		]);
+	});
+
+	it("attaches details siblings after a blank line until </details>", () => {
+		const blocks = convert(
+			"<details>\n<summary>TOGGLE-TITLE</summary>\n\nNESTED-TOGGLE-CHILD\n\n</details>",
+			defaultRegistry,
+		);
+
+		expect(blocks).toHaveLength(1);
+		expect(blocks[0]).toMatchObject({
+			type: "toggle",
+			content: "TOGGLE-TITLE",
+		});
+		expect(blocks[0]?.children).toEqual([
+			expect.objectContaining({
+				type: "paragraph",
+				content: "NESTED-TOGGLE-CHILD",
+			}),
+		]);
+	});
+
+	it("attaches remaining callout paragraphs as children, not drops them", () => {
+		const blocks = convert(
+			"> **Note:** CALLOUT-TITLE\n>\n> NESTED-CALLOUT-CHILD",
+			defaultRegistry,
+		);
+
+		expect(blocks).toHaveLength(1);
+		expect(blocks[0]).toMatchObject({
+			type: "callout",
+			props: { type: "info" },
+			content: "CALLOUT-TITLE",
+		});
+		expect(blocks[0]?.children).toEqual([
+			expect.objectContaining({
+				type: "paragraph",
+				content: "NESTED-CALLOUT-CHILD",
+			}),
+		]);
+	});
+
 	it("plain blockquote stays blockquote (not callout)", () => {
 		const blocks = convert("> Just a regular quote", defaultRegistry);
 

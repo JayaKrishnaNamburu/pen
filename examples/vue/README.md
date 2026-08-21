@@ -6,7 +6,17 @@ This package is a workspace member (`examples/vue` in `pnpm-workspace.yaml`).
 
 ## Install
 
-Consumer install, including peers:
+Pen has not been published. `pnpm add @input/pen-vue` 404s on the public registry. This app consumes the workspace packages (`workspace:*` in `package.json`).
+
+From the repository root:
+
+```bash
+pnpm install
+pnpm build
+pnpm --filter @input/pen-example-vue dev
+```
+
+The post-publish consumer command, including peers, will be:
 
 ```bash
 pnpm add @input/pen-preset-default @input/pen-core @input/pen-vue vue yjs
@@ -38,14 +48,6 @@ Pen ships no required stylesheet — the editor is functional unstyled, includin
 
 Client-only mount: Vue has no `"use client"` directive, so `@input/pen-vue` does not emit one — mount `PenEditor` in the browser, not during SSR.
 
-## Run from this repository
+## Run
 
-Requires Node 22+ and pnpm 9. From the repository root:
-
-```bash
-pnpm install
-pnpm build
-pnpm --filter @input/pen-example-vue dev
-```
-
-Vite serves the app at `http://localhost:5173`.
+Requires Node 22+ and pnpm 9. The install commands above start Vite at `http://localhost:5173`.

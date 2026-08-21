@@ -58,8 +58,10 @@ describe("@input/pen-undo import and history origins", () => {
 				text: "Hello",
 			},
 		]);
+		expect(visibleText(editor.getBlock(blockId)!.textContent())).toBe("Hello");
 
-		editor.undoManager.undo();
+		expect(editor.undoManager.undo()).toBe(true);
+		expect(visibleText(editor.getBlock(blockId)!.textContent())).toBe("");
 
 		expect(commitOrigins).toContain("user");
 		expect(commitOrigins).toContain("history");

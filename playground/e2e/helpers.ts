@@ -1,5 +1,8 @@
 import { expect, type Page } from "@playwright/test";
 import { generateId, type Editor } from "@input/pen-types";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 declare global {
 	interface Window {
@@ -11,6 +14,15 @@ declare global {
 
 const EDITOR_ROOT = "[data-pen-editor-root]";
 const INLINE_CONTENT = "[data-pen-inline-content]";
+const EVIDENCE_DIR = join(dirname(fileURLToPath(import.meta.url)), "artifacts");
+
+export function writeEvidence(name: string, payload: unknown): void {
+	mkdirSync(EVIDENCE_DIR, { recursive: true });
+	writeFileSync(
+		join(EVIDENCE_DIR, name),
+		`${JSON.stringify(payload, null, 2)}\n`,
+	);
+}
 
 export async function openPlayground(page: Page, path?: string): Promise<void> {
 	await page.goto(path ?? `/?room=${createPlaygroundRoomId()}`);

@@ -23,6 +23,7 @@ import type {
 	CRDTArray,
 } from "@input/pen-types";
 import { EMPTY_BLOCK_SENTINEL } from "@input/pen-types";
+import { STRUCTURAL_ORIGIN_META_KEY } from "@input/pen-crdt-yjs";
 import { resolveRuntimeContentType } from "../schema/contentType";
 import {
 	type CRDTUnknownArray,
@@ -241,18 +242,13 @@ function tagStructuralOrigin(
 	structural: StructuralOriginTag,
 ): void {
 	const raw = pipeline._adapter.raw?.(pipeline._crdtDoc) as
-		| { _transaction?: { origin: unknown; meta?: Map<unknown, unknown> } }
+		| { _transaction?: { meta?: Map<unknown, unknown> } }
 		| undefined;
 	const txn = raw?._transaction;
-	if (!txn) return;
-
-	const current = txn.origin;
-	if (current != null && typeof current === "object") {
-		(current as { structural?: StructuralOriginTag }).structural = structural;
-		return;
-	}
-
-	txn.meta?.set("structural", structural);
+	// write split/merge intent onto txn.meta only — never mutate the origin
+	// object. Y.UndoManager matches trackedOrigins by identity; hanging extra
+	// fields on the live origin is the same class of bug as copying it.
+	txn?.meta?.set(STRUCTURAL_ORIGIN_META_KEY, structural);
 }
 
 export function splitBlock(pipeline: ApplyPipeline, op: SplitBlockOp): string[] {

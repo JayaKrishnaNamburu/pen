@@ -79,7 +79,10 @@ export function ColumnHeaderMenu(props: ColumnHeaderMenuProps) {
 	const [activeIndex, setActiveIndex] = useState(TITLE_ROVING_INDEX);
 
 	function updateColumns(updated: TableColumnSchema[]) {
-		editor.apply([{ type: "update-table-columns", blockId, columns: updated }]);
+		editor.apply(
+			[{ type: "update-table-columns", blockId, columns: updated }],
+			{ origin: "user" },
+		);
 	}
 
 	function commitTitle() {
@@ -186,10 +189,13 @@ export function ColumnHeaderMenu(props: ColumnHeaderMenuProps) {
 		};
 		const updated = [...allColumns];
 		updated.splice(columnIndex, 0, newCol);
-		editor.apply([
-			{ type: "update-table-columns", blockId, columns: updated },
-			{ type: "insert-table-column", blockId, index: columnIndex },
-		]);
+		editor.apply(
+			[
+				{ type: "update-table-columns", blockId, columns: updated },
+				{ type: "insert-table-column", blockId, index: columnIndex },
+			],
+			{ origin: "user" },
+		);
 		onClose();
 	}
 
@@ -201,20 +207,26 @@ export function ColumnHeaderMenu(props: ColumnHeaderMenuProps) {
 		};
 		const updated = [...allColumns];
 		updated.splice(columnIndex + 1, 0, newCol);
-		editor.apply([
-			{ type: "update-table-columns", blockId, columns: updated },
-			{ type: "insert-table-column", blockId, index: columnIndex + 1 },
-		]);
+		editor.apply(
+			[
+				{ type: "update-table-columns", blockId, columns: updated },
+				{ type: "insert-table-column", blockId, index: columnIndex + 1 },
+			],
+			{ origin: "user" },
+		);
 		onClose();
 	}
 
 	function handleDelete() {
 		if (colCount <= 1) return;
 		const updated = allColumns.filter((_, i) => i !== columnIndex);
-		editor.apply([
-			{ type: "update-table-columns", blockId, columns: [...updated] },
-			{ type: "delete-table-column", blockId, index: columnIndex },
-		]);
+		editor.apply(
+			[
+				{ type: "update-table-columns", blockId, columns: [...updated] },
+				{ type: "delete-table-column", blockId, index: columnIndex },
+			],
+			{ origin: "user" },
+		);
 		onClose();
 	}
 

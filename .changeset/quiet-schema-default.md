@@ -1,5 +1,5 @@
 ---
-"@input/pen-core": patch
+"@input/pen-core": minor
 "@input/pen-types": patch
 "@input/pen-preset-default": patch
 "@input/pen-react": patch

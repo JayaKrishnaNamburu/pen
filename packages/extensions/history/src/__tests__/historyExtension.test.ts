@@ -2,7 +2,6 @@ import { createDocumentSession, createEditor } from "@input/pen-core";
 import { yjsAdapter } from "@input/pen-crdt-yjs";
 import type { PenPersistence, VersionEntry, VersionMetadata } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
-import * as Y from "yjs";
 import { defaultSchema } from "@input/pen-schema-default";
 import {
 	getHistoryController,
@@ -351,21 +350,22 @@ function toVersionEntry(entry: StoredVersion): VersionEntry {
 }
 
 function setBlockText(editor: ReturnType<typeof createEditor>, blockId: string, text: string): void {
-	const ydoc = editor.internals.adapter.raw<Y.Doc>(editor.internals.crdtDoc);
-	const blockMap = ydoc.getMap("blocks").get(blockId) as Y.Map<unknown>;
-	const content = blockMap.get("content") as Y.Text;
-	ydoc.transact(() => {
-		content.delete(0, content.length);
-		content.insert(0, text);
-	}, "user");
+	const block = editor.getBlock(blockId);
+	if (!block) {
+		throw new Error(`missing block ${blockId}`);
+	}
+	const length = block.length();
+	editor.apply(
+		length > 0
+			? [{ type: "replace-text", blockId, offset: 0, length, text }]
+			: [{ type: "insert-text", blockId, offset: 0, text }],
+		{ origin: "user" },
+	);
 }
 
 function readBlockText(
 	editor: ReturnType<typeof createEditor>,
 	blockId: string,
 ): string {
-	const ydoc = editor.internals.adapter.raw<Y.Doc>(editor.internals.crdtDoc);
-	const blockMap = ydoc.getMap("blocks").get(blockId) as Y.Map<unknown>;
-	const content = blockMap.get("content") as Y.Text;
-	return content.toString();
+	return (editor.getBlock(blockId)?.textContent() ?? "").replace(/\u200B/g, "");
 }

@@ -1,7 +1,7 @@
-import { urlPolicyFromEditor } from "@input/pen-dom";
 import { fullReconcileDeltasToDOM } from "@input/pen-dom/field-editor/reconciler";
 import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 import { isInlineContentEmpty } from "@input/pen-dom/utils/editorEmptyState";
+import { fieldEditorTextEntryAttrs } from "@input/pen-dom/utils/fieldEditorTextEntryAttrs";
 import { replaceElementChildren } from "@input/pen-dom/utils/replaceElementChildren";
 import {
   computed,
@@ -97,8 +97,8 @@ export const PenTableCellContent = defineComponent({
           nextElement,
           editor.schema,
           {
+            editor,
             preserveSelection: false,
-            urlPolicy: urlPolicyFromEditor(editor),
           },
         );
       },
@@ -117,7 +117,7 @@ export const PenTableCellContent = defineComponent({
         },
         [DATA_ATTRS.inlineContent]: "",
         [DATA_ATTRS.fieldEditorSurface]: "",
-        [DATA_ATTRS.fieldEditorActiveSurface]: isActiveCell.value ? "" : undefined,
+        ...fieldEditorTextEntryAttrs(isActiveCell.value, editor),
         [DATA_ATTRS.ignorePointerGesture]: isActiveCell.value ? "" : undefined,
         [DATA_ATTRS.placeholderVisible]: showPlaceholder.value ? "" : undefined,
         [DATA_ATTRS.tableCellRow]: props.row,

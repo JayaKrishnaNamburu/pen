@@ -36,6 +36,7 @@ describe("createAnnouncer (AX2)", () => {
 		expect(region).not.toBeNull();
 		expect(region?.getAttribute("role")).toBe("status");
 		expect(region?.getAttribute("aria-live")).toBe("polite");
+		// ARIA boolean: literal "true". `aria-atomic=""` is invalid.
 		expect(region?.getAttribute("aria-atomic")).toBe("true");
 		expect(document.body.querySelectorAll('[role="status"]').length).toBe(1);
 	});

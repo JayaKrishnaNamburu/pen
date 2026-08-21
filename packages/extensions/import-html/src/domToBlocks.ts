@@ -70,15 +70,28 @@ function walkElements(
 
   const schemaBlock = resolveFromHTMLSchema(node, registry);
   if (schemaBlock) {
-    if (schemaBlock.content === undefined) {
-      const inlineSource = getHtmlInlineSource(schemaBlock, node);
-      if (!inlineSource) {
-        blocks.push(schemaBlock);
-        return;
+    const consumed = findConsumedChild(node, schemaBlock);
+    const nested: PendingBlock[] = [];
+    for (const child of node.children ?? []) {
+      if (child === consumed) {
+        continue;
       }
-      const inline = parseInlineContent(inlineSource);
-      schemaBlock.content = inline.text;
-      schemaBlock.marks = inline.marks;
+      if (isBlockishChild(child)) {
+        walkElements(child, nested, registry);
+      }
+    }
+    if (schemaBlock.content === undefined) {
+      const inlineFallback =
+        nested.length > 0 && !consumed ? inlineOnlyClone(node) : node;
+      const inlineSource = getHtmlInlineSource(schemaBlock, inlineFallback);
+      if (inlineSource) {
+        const inline = parseInlineContent(inlineSource);
+        schemaBlock.content = inline.text;
+        schemaBlock.marks = inline.marks;
+      }
+    }
+    if (nested.length > 0) {
+      schemaBlock.children = [...(schemaBlock.children ?? []), ...nested];
     }
     blocks.push(schemaBlock);
     return;
@@ -327,6 +340,47 @@ function toHTMLImportNode(node: DOMNode): HTMLImportNode | null {
     };
   }
   return toHTMLImportElement(node);
+}
+
+function findConsumedChild(
+  node: DOMNode,
+  block: BlockImportMatch,
+): DOMNode | null {
+  const source = block.importContentSource?.htmlElement;
+  if (!source) {
+    return null;
+  }
+  return (
+    (node.children ?? []).find(
+      (child) =>
+        child.type === "element" && child.tagName === source.tagName,
+    ) ?? null
+  );
+}
+
+function isBlockishChild(child: DOMNode): boolean {
+  if (child.type !== "element" || !child.tagName) {
+    return false;
+  }
+  if (BLOCK_ELEMENT_MAP[child.tagName]) {
+    return true;
+  }
+  if (
+    child.tagName === "ul" ||
+    child.tagName === "ol" ||
+    child.tagName === "table" ||
+    child.tagName === "details"
+  ) {
+    return true;
+  }
+  return isBlockElement(child.tagName);
+}
+
+function inlineOnlyClone(node: DOMNode): DOMNode {
+  return {
+    ...node,
+    children: (node.children ?? []).filter((child) => !isBlockishChild(child)),
+  };
 }
 
 function getHtmlInlineSource(

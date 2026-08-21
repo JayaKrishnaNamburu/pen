@@ -13,6 +13,7 @@ import { SchemaRegistryImpl } from "../../schema/registry";
 import {
 	builtinCommandHandlers,
 	createCommandRegistry,
+	getCommandRegistry,
 	type CommandRegistry,
 } from "..";
 
@@ -254,6 +255,19 @@ export function createCommandHarness(
 			applyCommandSelection(editor, selection);
 		},
 	});
+}
+
+/**
+ * The registry `createEditor` / `createHeadlessEditor` installed — not a
+ * parallel harness. Family-migration tests must use this so a miss cannot
+ * be rescued by a second registry.
+ */
+export function liveRegistry(editor: Editor): CommandRegistry {
+	const registry = getCommandRegistry(editor);
+	if (!registry) {
+		throw new Error("createEditor did not install a command registry");
+	}
+	return registry;
 }
 
 export function insertMention(

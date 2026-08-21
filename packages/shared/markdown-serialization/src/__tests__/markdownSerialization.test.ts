@@ -1,7 +1,10 @@
 import type { BlockHandle, Editor, SchemaRegistry } from "@input/pen-types";
 import { EMPTY_BLOCK_SENTINEL } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
-import { exportMarkdownForBlocks } from "../markdownSerialization";
+import {
+  exportMarkdownForBlocks,
+  exportMarkdownRange,
+} from "../markdownSerialization";
 import { getNumberedListItemValue } from "../orderedList";
 
 describe("@input/pen-markdown-serialization", () => {
@@ -56,6 +59,29 @@ describe("@input/pen-markdown-serialization", () => {
     );
 
     expect(markdown).toBe("keep\u200Bme");
+  });
+
+  it("exportMarkdownRange walks nested children from allBlocks, not only top-level blocks()", () => {
+    const parent = createTextBlock("toggle-1", "toggle", "TOGGLE-TITLE");
+    const child = createTextBlock(
+      "toggle-child",
+      "paragraph",
+      "NESTED-TOGGLE-CHILD",
+    );
+    const markdown = exportMarkdownRange(
+      createExportEditor(
+        [parent],
+        {
+          toggle: (block) =>
+            `<details><summary>${block.content ?? ""}</summary></details>`,
+          paragraph: (block) => block.content ?? "",
+        },
+        [parent, child],
+      ),
+    );
+
+    expect(markdown).toContain("TOGGLE-TITLE");
+    expect(markdown).toContain("NESTED-TOGGLE-CHILD");
   });
 
   it("I11: empty table cell serializes to empty markdown text, not a ZWSP", () => {
@@ -151,6 +177,7 @@ function createExportEditor(
     string,
     (block: { content?: string }) => string
   > = {},
+  allHandles: BlockHandle[] = handles,
 ): Editor {
   const schema = {
     resolve(type: string) {
@@ -170,5 +197,8 @@ function createExportEditor(
   return {
     schema,
     blocks: () => handles,
+    documentState: {
+      allBlocks: () => allHandles,
+    },
   } as unknown as Editor;
 }

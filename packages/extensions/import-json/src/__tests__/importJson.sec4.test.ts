@@ -82,6 +82,8 @@ describe("IOP5 JSON ingest bounds", () => {
 				reason: "count-exceeded",
 				count: 5,
 				bound: "INGEST_MAX_NODE_COUNT",
+				limit: INGEST_MAX_NODE_COUNT,
+				actual: INGEST_MAX_NODE_COUNT + 5,
 				dropped: "5 blocks",
 			},
 		]);
@@ -110,6 +112,8 @@ describe("IOP5 JSON ingest bounds", () => {
 				reason: "text-size-exceeded",
 				count: 4,
 				bound: "INGEST_MAX_TEXT_SIZE",
+				limit: INGEST_MAX_TEXT_SIZE,
+				actual: INGEST_MAX_TEXT_SIZE + 4,
 				dropped: "4 code units",
 			},
 		]);
@@ -129,6 +133,8 @@ describe("IOP5 JSON ingest bounds", () => {
 				reason: "depth-exceeded",
 				count: 1,
 				bound: "INGEST_MAX_NESTING_DEPTH",
+				limit: INGEST_MAX_NESTING_DEPTH,
+				actual: INGEST_MAX_NESTING_DEPTH + 1,
 				dropped: "1 block",
 			},
 		]);
@@ -166,6 +172,8 @@ describe("IOP5 JSON ingest bounds", () => {
 				reason: "image-count-exceeded",
 				count: 2,
 				bound: "INGEST_MAX_IMAGE_COUNT",
+				limit: INGEST_MAX_IMAGE_COUNT,
+				actual: INGEST_MAX_IMAGE_COUNT + 2,
 				dropped: "2 images",
 			},
 		]);
@@ -463,6 +471,8 @@ describe("SEC4 JSON ingestion", () => {
 				reason: "depth-exceeded",
 				count: 1,
 				bound: "INGEST_MAX_NESTING_DEPTH",
+				limit: INGEST_MAX_NESTING_DEPTH,
+				actual: INGEST_MAX_NESTING_DEPTH + 1,
 				dropped: "1 block",
 			},
 		]);
@@ -483,6 +493,8 @@ describe("SEC4 JSON ingestion", () => {
 				reason: "count-exceeded",
 				count: 3,
 				bound: "INGEST_MAX_NODE_COUNT",
+				limit: INGEST_MAX_NODE_COUNT,
+				actual: INGEST_MAX_NODE_COUNT + 3,
 				dropped: "3 blocks",
 			},
 		]);

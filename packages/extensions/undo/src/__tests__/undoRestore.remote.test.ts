@@ -168,4 +168,119 @@ describe("@input/pen-undo restore under remote edits", () => {
 
 		editor.destroy();
 	});
+
+	it("restores a collapsed caret after undoing an insert at that caret", async () => {
+		const editor = createEditor();
+		await editor.whenReady();
+		const blockId = editor.firstBlock()!.id;
+
+		editor.apply(
+			[
+				{
+					type: "insert-text",
+					blockId,
+					offset: 0,
+					text: "hello",
+				},
+			],
+			{ origin: "user" },
+		);
+		editor.undoManager.stopCapturing();
+		editor.selectText(blockId, 5, 5);
+
+		editor.apply(
+			[
+				{
+					type: "insert-text",
+					blockId,
+					offset: 5,
+					text: "X",
+				},
+			],
+			{ origin: "user" },
+		);
+		await Promise.resolve();
+		editor.undoManager.stopCapturing();
+
+		expect(editor.getBlock(blockId)?.textContent()).toBe("helloX");
+		expect(editor.undoManager.undo()).toBe(true);
+		expect(editor.getBlock(blockId)?.textContent()).toBe("hello");
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId, offset: 5 },
+			focus: { blockId, offset: 5 },
+		});
+
+		editor.destroy();
+	});
+
+	it("keeps a collapsed caret collapsed when a remote insert lands on that caret", async () => {
+		const editor = createEditor();
+		await editor.whenReady();
+		const blockId = editor.firstBlock()!.id;
+
+		editor.apply(
+			[
+				{
+					type: "insert-text",
+					blockId,
+					offset: 0,
+					text: "hello world",
+				},
+			],
+			{ origin: "user" },
+		);
+		editor.undoManager.stopCapturing();
+		editor.selectText(blockId, 5, 5);
+
+		editor.apply(
+			[
+				{
+					type: "insert-text",
+					blockId,
+					offset: 5,
+					text: "X",
+				},
+			],
+			{ origin: "user" },
+		);
+		editor.undoManager.stopCapturing();
+
+		const adapter = editor.internals.adapter;
+		const editorDoc = editor.internals.crdtDoc;
+		const remoteDoc = adapter.loadDocument(adapter.encodeState(editorDoc));
+		const remoteYText = adapter
+			.raw<TestRawDocLike>(remoteDoc)
+			.getMap("blocks")
+			.get(blockId)
+			?.get("content") as TestYTextLike | undefined;
+		if (!remoteYText) {
+			throw new Error(`Missing collaborator text for block ${blockId}`);
+		}
+
+		const since = Y.encodeStateVector(
+			(editorDoc as unknown as { ydoc: Y.Doc }).ydoc,
+		);
+		adapter.transact(
+			remoteDoc,
+			() => {
+				remoteYText.insert(5, "Y");
+			},
+			"collaborator",
+		);
+		adapter.applyUpdate(editorDoc, adapter.encodeUpdate(remoteDoc, since));
+
+		expect(editor.getBlock(blockId)?.textContent()).toBe("helloYX world");
+
+		expect(editor.undoManager.undo()).toBe(true);
+
+		expect(editor.getBlock(blockId)?.textContent()).toBe("helloY world");
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId, offset: 6 },
+			focus: { blockId, offset: 6 },
+		});
+
+		editor.destroy();
+	});
 });

@@ -7,7 +7,7 @@
 "@input/pen-markdown-serialization": minor
 "@input/pen-import-html": minor
 "@input/pen-import-json": minor
-"@input/pen-import-markdown": minor
+"@input/pen-import-markdown": patch
 "@input/pen-export-html": minor
 "@input/pen-export-markdown": minor
 "@input/pen-export-json": minor

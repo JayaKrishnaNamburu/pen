@@ -4,6 +4,7 @@ import { useBlockList } from "../../../../rendering/react/src/hooks/useBlockList
 import { Pen } from "../../../../rendering/react/src/primitives";
 import type { ReactElement } from "react";
 import { WINDOWED_WINDOW_SIZE } from "../../fixtures/catalog";
+import { visibleWindowedBlockIds } from "../../src/windowedRange";
 
 export function WindowedContent({
 	windowStart,
@@ -13,9 +14,10 @@ export function WindowedContent({
 	const { editor } = useEditorContext();
 	const fieldEditor = useFieldEditorContext();
 	const blockIds = useBlockList(editor);
-	const mountedIds = blockIds.slice(
+	const mountedIds = visibleWindowedBlockIds(
+		blockIds,
 		windowStart,
-		windowStart + WINDOWED_WINDOW_SIZE,
+		WINDOWED_WINDOW_SIZE,
 	);
 
 	const blockItems = mountedIds.map((blockId) => (

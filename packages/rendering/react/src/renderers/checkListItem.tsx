@@ -36,19 +36,23 @@ function CheckboxToggle({
 
   const handleChange = () => {
     if (readonly) return;
-    editor.apply([
-      {
-        type: "update-block",
-        blockId,
-        props: { checked: !checked },
-      },
-    ]);
+    editor.apply(
+      [
+        {
+          type: "update-block",
+          blockId,
+          props: { checked: !checked },
+        },
+      ],
+      { origin: "user" },
+    );
   };
 
   return (
     <input
       type="checkbox"
       checked={checked}
+      disabled={readonly}
       onChange={handleChange}
       aria-label={resolveEditorMessage(editor, "pen.checklist.toggle")}
     />

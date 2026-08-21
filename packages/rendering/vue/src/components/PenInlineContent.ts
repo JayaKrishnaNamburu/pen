@@ -1,8 +1,11 @@
-import { urlPolicyFromEditor } from "@input/pen-dom";
 import { fullReconcileDeltasToDOM } from "@input/pen-dom/field-editor/reconciler";
 import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 import { isInlineContentEmpty } from "@input/pen-dom/utils/editorEmptyState";
-import { applyInlineDecorationsToDeltas } from "@input/pen-dom/utils/inlineDecorations";
+import { fieldEditorTextEntryAttrs } from "@input/pen-dom/utils/fieldEditorTextEntryAttrs";
+import {
+  applyInlineDecorationsToDeltas,
+  filterVisibleInlineDecorationDeltas,
+} from "@input/pen-dom/utils/inlineDecorations";
 import { resolveInlinePlaceholderVisibility } from "@input/pen-dom/utils/placeholderVisibility";
 import { replaceElementChildren } from "@input/pen-dom/utils/replaceElementChildren";
 import type { InlineDecoration } from "@input/pen-types";
@@ -116,9 +119,11 @@ export const PenInlineContent = defineComponent({
       );
 
       return inlineDecorations.length > 0
-        ? applyInlineDecorationsToDeltas(
-            textSnapshot.value.deltas,
-            inlineDecorations,
+        ? filterVisibleInlineDecorationDeltas(
+            applyInlineDecorationsToDeltas(
+              textSnapshot.value.deltas,
+              inlineDecorations,
+            ),
           )
         : [...textSnapshot.value.deltas];
     });
@@ -160,8 +165,8 @@ export const PenInlineContent = defineComponent({
           nextElement,
           editor.schema,
           {
+            editor,
             preserveSelection: false,
-            urlPolicy: urlPolicyFromEditor(editor),
           },
         );
       },
@@ -185,10 +190,10 @@ export const PenInlineContent = defineComponent({
           },
           [DATA_ATTRS.inlineContent]: "",
           [DATA_ATTRS.fieldEditorSurface]: "",
-          [DATA_ATTRS.fieldEditorActiveSurface]:
-            isActive.value && fieldEditorState.value.mode !== "expanded"
-              ? ""
-              : undefined,
+          ...fieldEditorTextEntryAttrs(
+            isActive.value && fieldEditorState.value.mode !== "expanded",
+            editor,
+          ),
           [DATA_ATTRS.placeholderVisible]: placeholder.value ? "" : undefined,
           "data-placeholder": placeholder.value,
           dir: resolveInlineContentDir(

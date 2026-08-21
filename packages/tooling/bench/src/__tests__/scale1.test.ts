@@ -1,4 +1,4 @@
-import { assertPeerEditsSurvive } from "@input/pen-test";
+import { assertPeerEditsSurvive, createTestEditor } from "@input/pen-test";
 import { describe, expect, it } from "vitest";
 import * as Y from "yjs";
 import { bench, type BenchResult } from "../bench";
@@ -36,10 +36,18 @@ import {
 	assertPeerBObservesPeerAInsert,
 	createEnvelopeCollaboration,
 	createEnvelopeEditor,
+	createNestingEditor,
+	createTableEditor,
 	envelopeBlockId,
 	envelopeNestId,
 	generateBlockSpecs,
+	generateLongBlockSpec,
+	measureCreatedNestingDepth,
+	measureCreatedTableCells,
+	measureIndependentPeerSurvival,
+	measurePeerTokenSurvival,
 	measureNestingDepth,
+	measurePublishedCount,
 } from "../fixtures/envelope";
 import { parseBenchCLIArgs } from "../run";
 import {
@@ -208,6 +216,53 @@ describe("SCALE1 envelope ladder", () => {
 		void collab.editorB.destroy();
 	});
 
+	it("SCALE1: observation fails when B already has A's token", () => {
+		const collab = createEnvelopeCollaboration(4);
+		collab.editorB.apply(
+			[
+				{
+					type: "insert-text",
+					blockId: envelopeBlockId(0),
+					offset: 0,
+					text: "PEER-A-OBSERVED",
+				},
+			],
+			{ origin: "user" },
+		);
+		expect(() => assertPeerBObservesPeerAInsert(collab)).toThrow(
+			/already present on peer B/,
+		);
+		void collab.editorA.destroy();
+		void collab.editorB.destroy();
+	});
+
+	it("SCALE1: observation fails when A and B are the same document", () => {
+		const editor = createTestEditor({ blocks: generateBlockSpecs(4) });
+		const collab = {
+			editorA: editor,
+			editorB: editor,
+			sync() {},
+		};
+		expect(() => assertPeerBObservesPeerAInsert(collab)).toThrow(
+			/before sync/,
+		);
+		void editor.destroy();
+	});
+
+	it("SCALE1: observation fails when sync is a no-op", () => {
+		const collab = createEnvelopeCollaboration(4);
+		collab.sync = () => {};
+		expect(() => assertPeerBObservesPeerAInsert(collab)).toThrow(
+			/did not observe peer A's insert/,
+		);
+		void collab.editorA.destroy();
+		void collab.editorB.destroy();
+	});
+
+	it("SCALE1: independently populated peers lose an edit after sync", () => {
+		expect(measureIndependentPeerSurvival()).toBeLessThan(2);
+	});
+
 	it("SCALE1: the concurrent-peers bench refuses to time until B observes A's insert", async () => {
 		const peerBench = scale1Benchmarks.find(
 			(entry) => entry.id === "scale1.envelope.concurrentPeers-2",
@@ -233,6 +288,8 @@ describe("SCALE1 envelope ladder", () => {
 		expect(peers?.verdict).toBe("name-overstates");
 		expect(peers?.actualSubject).toMatch(/Peer B does not write/);
 		expect(peers?.floorKind).toBe("empty-sync");
+		expect(peers?.countTrust).toBe("trusted");
+		expect(peers?.clockTrust).toBe("untrustworthy");
 		expect(peers?.howMeasured).toMatch(/B observation asserted before the clock/);
 	});
 
@@ -272,6 +329,9 @@ describe("SCALE1 envelope ladder", () => {
 		expect(blocks5000?.measuredP50Ms).toBe(6.13);
 		expect(blocks5000?.floorP50Ms).toBe(0.13);
 		expect(blocks5000?.attributedP50Ms).toBe(6);
+		expect(blocks5000?.count).toBe(5000);
+		expect(blocks5000?.countUnit).toBe("blocks");
+		expect(blocks5000?.opsApplied).toBe(1);
 		expect(blocks5000?.gated).toBe(true);
 		expect(blocks5000?.gateP50Ms).toBe(18);
 	});
@@ -315,33 +375,18 @@ describe("SCALE1 envelope ladder", () => {
 		expect(drift.failures).toEqual([]);
 	});
 
-	it("SCALE1: a slowed gated bench fails the committed envelope compare", async () => {
+	it("SCALE1: a drifted count fails the envelope compare by name", async () => {
 		const committed = await loadCommittedEnvelope();
-		const gated = committed.points.find((point) => point.id === "blocks-1000");
-		if (!gated?.gateP50Ms) {
-			throw new Error("blocks-1000 gate missing");
-		}
-		const delayMs = gated.gateP50Ms + 2;
-
-		const slowed = await bench(
-			"scale1.envelope.blocks-1000",
-			(ctx) => {
-				ctx.start();
-				const until = performance.now() + delayMs;
-				while (performance.now() < until) {
-					// busy-wait so the mutation is on the clock, not a yield
-				}
-				ctx.end();
-			},
-			{ iterations: 5, warmup: 0 },
-		);
-		const fresh = withAttributed(committed, "blocks-1000", slowed.p50Ms);
+		const fresh = withCount(committed, "blocks-1000", 10);
 		const drift = compareEnvelopeDrift(fresh, committed);
 		expect(drift.ok).toBe(false);
 		expect(drift.failures.map((failure) => failure.id)).toEqual([
 			"blocks-1000",
 		]);
-		expect(formatEnvelopeDrift(drift)).toMatch(/blocks-1000/);
+		expect(drift.failures[0]?.reason).toBe("count");
+		expect(formatEnvelopeDrift(drift)).toMatch(
+			/blocks-1000 count 10 !== committed 1000/,
+		);
 	});
 
 	it("SCALE1: a median past the committed same-class gate fails drift", () => {
@@ -399,6 +444,109 @@ describe("SCALE1 envelope ladder", () => {
 	});
 });
 
+describe("SCALE1 ladder mutation", () => {
+	it("SCALE1: mutating generateBlockSpecs moves the block-count rows", async () => {
+		const committed = await loadCommittedEnvelope();
+		expect(generateBlockSpecs(100)).toHaveLength(100);
+		expect(generateBlockSpecs(20)).toHaveLength(20);
+		expect(generateBlockSpecs(1000)).toHaveLength(1000);
+		expect(generateBlockSpecs(10)).toHaveLength(10);
+		expect(generateBlockSpecs(5000)).toHaveLength(5000);
+		expect(generateBlockSpecs(15)).toHaveLength(15);
+
+		expect(measurePublishedCount("blocks-100")).toBe(100);
+		expect(measurePublishedCount("blocks-1000")).toBe(1000);
+		expect(measurePublishedCount("blocks-5000")).toBe(5000);
+
+		for (const [id, mutated] of [
+			["blocks-100", 20],
+			["blocks-1000", 10],
+			["blocks-5000", 15],
+		] as const) {
+			const drift = compareEnvelopeDrift(
+				withCount(committed, id, mutated),
+				committed,
+			);
+			expect(drift.ok, id).toBe(false);
+			expect(drift.failures.map((failure) => failure.id)).toEqual([id]);
+			expect(formatEnvelopeDrift(drift)).toContain(id);
+		}
+	});
+
+	it("SCALE1: mutating generateLongBlockSpec moves the long-block row", async () => {
+		const committed = await loadCommittedEnvelope();
+		const published = generateLongBlockSpec()[0]?.content?.length;
+		expect(published).toBe(100_000);
+		expect(generateLongBlockSpec(100)[0]?.content?.length).toBe(100);
+		expect(measurePublishedCount("long-block")).toBe(100_000);
+
+		const drift = compareEnvelopeDrift(
+			withCount(committed, "long-block", 100),
+			committed,
+		);
+		expect(drift.ok).toBe(false);
+		expect(formatEnvelopeDrift(drift)).toMatch(
+			/long-block count 100 !== committed 100000/,
+		);
+	});
+
+	it("SCALE1: mutating nesting depth moves the nesting-10 row", async () => {
+		const committed = await loadCommittedEnvelope();
+		expect(measureCreatedNestingDepth(10)).toBe(10);
+		expect(measureCreatedNestingDepth(3)).toBe(3);
+		const mutated = createNestingEditor(3);
+		expect(measureNestingDepth(mutated, envelopeNestId(0))).toBe(3);
+		void mutated.destroy();
+
+		const drift = compareEnvelopeDrift(
+			withCount(committed, "nesting-10", 3),
+			committed,
+		);
+		expect(drift.ok).toBe(false);
+		expect(formatEnvelopeDrift(drift)).toMatch(
+			/nesting-10 count 3 !== committed 10/,
+		);
+	});
+
+	it("SCALE1: mutating table dimensions moves the table-50x20 row", async () => {
+		const committed = await loadCommittedEnvelope();
+		expect(measureCreatedTableCells(50, 20)).toBe(1000);
+		expect(measureCreatedTableCells(5, 4)).toBe(20);
+		const mutated = createTableEditor(5, 4);
+		const table = mutated.getBlock(ENVELOPE_TABLE_BLOCK_ID).as("table");
+		expect(table?.tableRowCount()).toBe(5);
+		expect(table?.tableColumnCount()).toBe(4);
+		void mutated.destroy();
+
+		const drift = compareEnvelopeDrift(
+			withCount(committed, "table-50x20", 20),
+			committed,
+		);
+		expect(drift.ok).toBe(false);
+		expect(formatEnvelopeDrift(drift)).toMatch(
+			/table-50x20 count 20 !== committed 1000/,
+		);
+	});
+
+	it("SCALE1: independently populated peers move survival below 2", async () => {
+		const committed = await loadCommittedEnvelope();
+		const shared = createEnvelopeCollaboration(4);
+		expect(measurePeerTokenSurvival(shared)).toBe(2);
+		void shared.editorA.destroy();
+		void shared.editorB.destroy();
+
+		const independent = measureIndependentPeerSurvival();
+		expect(independent).toBeLessThan(2);
+
+		const drift = compareEnvelopeDrift(
+			withCount(committed, "concurrentPeers-2", independent),
+			committed,
+		);
+		expect(drift.ok).toBe(false);
+		expect(formatEnvelopeDrift(drift)).toContain("concurrentPeers-2");
+	});
+});
+
 function blockTypesIn(
 	editor: ReturnType<typeof createEnvelopeEditor>,
 ): Set<string> {
@@ -408,6 +556,22 @@ function blockTypesIn(
 		types.add(editor.getBlock(id).type);
 	}
 	return types;
+}
+
+function withCount(
+	record: EnvelopeRecord,
+	id: string,
+	count: number,
+): EnvelopeRecord {
+	return {
+		...record,
+		points: record.points.map((point) => {
+			if (point.id !== id) {
+				return point;
+			}
+			return { ...point, count };
+		}),
+	};
 }
 
 function withAttributed(

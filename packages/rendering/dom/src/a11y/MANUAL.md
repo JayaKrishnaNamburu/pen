@@ -16,11 +16,12 @@ Do **VO-mac first** (VoiceOver + Safari on macOS). That is the cheapest required
 4. Run scenarios 1–5 in order. Tick the VO-mac boxes only after that session. Record tester, date, OS, VO version, Safari version, and host in the matrix row.
 5. Leave every other row incomplete. NVDA needs a Windows machine; VO-ios needs a device; TalkBack and JAWS are later.
 
-Known product bugs, so a fail here is not a setup error (checked 2026-08-21):
+Known product bugs, so a fail here is not a setup error (rechecked 2026-08-21; do not treat an earlier "known failure" label as a diagnosis):
 
-- Slash confirm on `/query` (for example `/head`) still leaves the query in the field. `useSlashMenu` confirm only deletes the trigger when `currentText === "/"`; a filtered query takes the sibling-insert branch and leaves `/head` in place (`packages/rendering/react/src/hooks/useSlashMenu.ts`). The listbox reopens if selection stays on that paragraph. Confirm on a lone `/` is the path that closes. Outside `a11y/`.
-- Autocomplete accept: the recorded cause moved. `contenteditableBackendCore.updateSelection` is no longer a no-op (it calls `restoreDOMSelectionFromEditor`), and accept already calls `commitProgrammaticTextSelection`. `DomScheduler.projectSelection` is still an empty stub. Whether WebKit/Firefox still leave the DOM caret behind is a real-browser question — do not trust a jsdom pass. Outside `a11y/`.
-- After an empty-document click, the focus sink must stay `aria-hidden` (text caret is on the field). Pointer activation now resolves `[data-pen-editor-block]` rather than the zero-width inline span; the sink is not supposed to take focus until Wave 5 §5.4.
+- **Slash leftover query — still reproduces.** Confirm on `/query` (for example `/head`) still leaves the query in the field. `useSlashMenu` confirm (`packages/rendering/react/src/hooks/useSlashMenu.ts` ~141–188) only deletes the trigger when `blockLogicalText === "/"`; a filtered query takes the sibling-insert branch and leaves `/head` in place. `getSlashTarget` (~234–256) then sees a paragraph that still starts with `/`, so the listbox reopens if selection stays there. Confirm on a lone `/` is the path that closes. The AX3 scenario `scenarios/ax3-keyboard.spec.ts` types `/head` + Enter but only asserts a heading exists and the menu closed — leftover `/head` would still pass. Outside `a11y/`.
+- **Autocomplete caret — original diagnosis is stale; whether speech/caret still fail is a real-browser question.** `contenteditableBackendCore.updateSelection` is no longer a no-op (it calls `restoreDOMSelectionFromEditor`). Accept already calls `selectText` + `commitProgrammaticTextSelection` (`packages/extensions/ai-autocomplete/src/autocompleteControllerLifecycle.ts` ~236–257). `DomScheduler.projectSelection` is still an empty stub (`packages/rendering/dom/src/scheduler.ts` ~228). jsdom cannot tell whether WebKit/Firefox still leave the DOM caret behind. Outside `a11y/`.
+- **Empty-document / block click — attributes are assertable; AT speech is not.** Pointer activation now resolves the clicked `[data-pen-editor-block]` (or host-chrome fallback to the first/last text block) rather than listening on a zero-width inline span (`packages/rendering/dom/src/host/pointerActivation.ts`). That path calls `activateTextSelection` + `attachElement` on the inline. The editor selection is a text caret, so `syncFocusSink` keeps the sink `aria-hidden="true"` / `tabIndex=-1` / no role. `bindEditorAnnouncer` does not write the live region (text caret, no atom). Focus stays on the field, not the sink — routing focus onto the sink is leftover for Wave 5 §5.4. Tab order: the sink is out of it; the textbox is the accessible surface. jsdom can lock the attributes and the empty live region. Whether VoiceOver/NVDA announce the empty textbox on click needs a real AT session (scenario 2).
+- **Below-last-block host chrome activates, it does not stay inactive.** A click on the editor root / blocks host with `clientY` strictly below the last text block activates that block at its end offset (`pointerActivation.ts` ~167; `pointerActivation.hostClick.test.ts`). The a11y outcome is the same text-caret path as a block click (sink hidden, live region silent). The inactive case is the **gap between blocks** (and the jsdom zero-rect host-gap). Do not treat a tall-host click below the last block as a dead zone.
 
 ## Host and fixture
 
@@ -34,7 +35,9 @@ Until a dedicated AX8 fixture is committed, assemble a document that includes at
 - a quote and a code block
 - one atom/widget (image or unlabeled fallback)
 
-The surface must carry an `aria-label` / `aria-labelledby` from `pen.a11yLabel`. Read-only checks use `pen.readOnly` → `aria-readonly="true"`.
+The surface must carry an `aria-label` / `aria-labelledby` from `pen.a11yLabel`.
+
+Read-only is two knobs. `pen.readOnly` **the facet** only sets `aria-readonly="true"` on the surface. It does not decline typing, does not stop `editor.apply`, and does not stop the wire. The `readonly` **prop** is what declines typing (pointer activation, React/Vue gesture guards). A host that only sets the facet gets an editor that announces itself read-only and then accepts edits. That split is an owner decision — do not treat the facet as an edit gate, and do not fail this checklist for a facet-only host that still accepts keystrokes. When checking read-only *speech*, set the facet (or the prop, which also sets `aria-readonly`). When checking that typing is declined, set the prop.
 
 Record per session: tester, date, OS, AT version, browser version, host (playground / example), fixture note.
 
@@ -63,6 +66,8 @@ Fail on silence for a labeled block, a visible atom with no name, or overlay/car
 ### 2. Typing echo
 
 Focus the surface. Type a short word, then delete it, in a paragraph.
+
+Pointer: a click anywhere in a text block (including an empty document's only paragraph) activates that field. A click on tall host chrome below the last block also activates the last field at its end. A click in the gap between blocks does not. After an activating click the sink stays `aria-hidden="true"` and the live region stays empty — do not expect an AX2 announcement. Whether the empty textbox is spoken is this scenario.
 
 Pass when:
 

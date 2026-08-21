@@ -28,6 +28,8 @@ const editor = createEditor({
 });
 ```
 
+This installs the default blocks and no extensions. Undo is an inert stub (`canUndo()` false, Mod-Z dead, no error). Mod-B does nothing. Pass `preset: defaultPreset()` for those.
+
 ## Shipped Surface
 
 The default schema includes common rich-text building blocks such as:

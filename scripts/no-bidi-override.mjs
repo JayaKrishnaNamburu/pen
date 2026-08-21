@@ -12,6 +12,7 @@
  */
 
 import fs from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -263,6 +264,22 @@ export function runRI1Fixture() {
 	}
 }
 
+export async function runMissingRootSelfTest() {
+	const missingRoot = path.join(os.tmpdir(), `pen-ri1-missing-${process.pid}`);
+	try {
+		await collectBidiOverrideHits(missingRoot);
+		throw new Error("RI1: missing packages/rendering must fail closed");
+	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error);
+		if (!/missing packages\/rendering/.test(message)) {
+			throw new Error(
+				`RI1: missing scan root must fail by name, got ${message}`,
+				{ cause: error },
+			);
+		}
+	}
+}
+
 async function collectSourceFiles(directory, repoRoot, files) {
 	let entries;
 	try {
@@ -292,8 +309,24 @@ async function collectSourceFiles(directory, repoRoot, files) {
 }
 
 export async function collectBidiOverrideHits(repoRoot) {
+	const scanRoot = path.join(repoRoot, SCAN_ROOT);
+	try {
+		await fs.access(scanRoot);
+	} catch (error) {
+		if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
+			throw new Error(`RI1: missing ${SCAN_ROOT} (skip of nothing)`, {
+				cause: error,
+			});
+		}
+		throw error;
+	}
 	const files = [];
-	await collectSourceFiles(path.join(repoRoot, SCAN_ROOT), repoRoot, files);
+	await collectSourceFiles(scanRoot, repoRoot, files);
+	if (files.length === 0) {
+		throw new Error(
+			`RI1: walker found zero source files under ${SCAN_ROOT} (skip of nothing)`,
+		);
+	}
 	files.sort((left, right) => left.localeCompare(right));
 
 	const hits = [];
@@ -350,7 +383,9 @@ async function writeStepSummary(markdown) {
 
 async function main() {
 	runRI1Fixture();
+	await runMissingRootSelfTest();
 	console.log("RI1 fixture: bidi-override in a temp string failed the checker.");
+	console.log("  red-proof: missing packages/rendering fails closed by name");
 
 	const args = parseArgs(process.argv.slice(2));
 	const hits = await collectBidiOverrideHits(args.repoRoot);

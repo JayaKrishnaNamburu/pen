@@ -22,7 +22,7 @@ Package the standard runtime stack for most adopters so they can start from a co
 
 ## Data Flow / Runtime Model
 
-`defaultPreset()` is the only batteries-included composition path. Bare `createEditor()` does not install this stack.
+`defaultPreset()` is the only batteries-included composition path. Bare `createEditor()` installs neither this stack nor a schema.
 
 The preset's `resolve()` returns `createDefaultSchema()` plus, unless turned off, `documentOpsExtension()`, `deltaStreamExtension()`, `undoExtension()`, and `richTextShortcutsExtension()`. Hosts can turn individual defaults off or pass typed options to the composed packages. Hosts that need full control should skip the preset and register extensions explicitly through `createEditor({ extensions: [...] })`.
 
@@ -31,7 +31,7 @@ The preset's `resolve()` returns `createDefaultSchema()` plus, unless turned off
 - Path in workspace: `packages/presets/default`
 - Spec path mirrors workspace path: `packages/presets/default.md`
 - This package is part of the current package surface and should stay aligned with the headless runtime architecture.
-- Use `createEditor({ preset: defaultPreset(...) })` when a host wants the standard rich-text stack. Do not assume `createEditor()` already includes shortcuts or delta-stream.
+- Use `createEditor({ preset: defaultPreset(...) })` when a host wants the standard rich-text stack. Do not assume `createEditor()` already includes shortcuts or delta-stream. React and Vue `useEditor()` inject `defaultSchema` only; they still do not call this preset.
 
 ## Current Maturity / Intended Usage
 

@@ -11,7 +11,7 @@
     "test": "turbo run test",
     "test:e2e": "playwright test",
     "typecheck": "turbo run typecheck",
-    "lint:format": "prettier --check \"README.md\" \"AGENTS.md\" \"CLA.md\" \"CODE_OF_CONDUCT.md\" \"CONTRIBUTING.md\" \"LICENSE.md\" \"SECURITY.md\" \"SUPPORT.md\" \"package.json\" \"pnpm-workspace.yaml\" \"turbo.json\" \"tsconfig.base.json\" \"playwright.config.ts\" \"vitest.config.ts\" \".github/**/*.yml\" \"packages/**/README.md\" \"packages/**/package.json\" \"playground/package.json\" \"spec/**/*.md\" \"spec-v2/**/*.md\"",
+    "lint:format": "node scripts/lint-format.mjs",
     "lint:eslint": "eslint .",
     "lint": "pnpm lint:format && pnpm lint:eslint",
     "version-packages": "changeset version",
@@ -31,7 +31,29 @@
     "workspace-pins": "node scripts/workspace-pins.mjs",
     "readme-sections": "node scripts/readme-sections.mjs",
     "api-docs-coverage": "node scripts/api-docs-coverage.mjs",
+    "above-floor-api-allowlist": "node scripts/above-floor-api-allowlist.mjs",
     "clean": "turbo run clean && rm -rf node_modules"
+  },
+  "prettier": {
+    "overrides": [
+      {
+        "files": [
+          "*.ts",
+          "*.tsx",
+          "*.mts",
+          "*.cts",
+          "*.mjs",
+          "*.cjs",
+          "*.js",
+          "*.jsx"
+        ],
+        "options": {
+          "useTabs": true,
+          "tabWidth": 4,
+          "endOfLine": "lf"
+        }
+      }
+    ]
   },
   "pnpm": {
     "overrides": {

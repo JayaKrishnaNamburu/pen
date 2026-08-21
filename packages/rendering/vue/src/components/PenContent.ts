@@ -1,4 +1,8 @@
-import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
+import {
+  buildDataAttributes,
+  DATA_ATTRS,
+} from "@input/pen-dom/utils/dataAttributes";
+import { fieldEditorTextEntryAttrs } from "@input/pen-dom/utils/fieldEditorTextEntryAttrs";
 import {
   defineComponent,
   h,
@@ -9,7 +13,10 @@ import {
 } from "vue";
 import { useBlockList } from "../composables/useBlockList";
 import { useEditorContext } from "../internal/editorContext";
-import { useFieldEditorState } from "../internal/editorState";
+import {
+  useDocumentEmptyState,
+  useFieldEditorState,
+} from "../internal/editorState";
 import { useFieldEditorContext } from "../internal/fieldEditorContext";
 import { PenBlock } from "./PenBlock";
 
@@ -26,6 +33,7 @@ export const PenContent = defineComponent({
     const fieldEditor = useFieldEditorContext();
     const fieldEditorState = useFieldEditorState(fieldEditor);
     const blockIds = useBlockList(editor);
+    const isEmpty = useDocumentEmptyState(editor);
     const blocksHostElement = ref<HTMLElement | null>(null);
 
     watch(
@@ -54,6 +62,9 @@ export const PenContent = defineComponent({
         props.as,
         {
           [DATA_ATTRS.editorContent]: "",
+          ...buildDataAttributes({
+            empty: isEmpty.value,
+          }),
         },
         [
           h(
@@ -64,10 +75,12 @@ export const PenContent = defineComponent({
                   element instanceof HTMLElement ? element : null;
               },
               "data-pen-editor-blocks-host": "",
-              [DATA_ATTRS.fieldEditorSurface]:
-                fieldEditorState.value.mode === "expanded" ? "" : undefined,
-              [DATA_ATTRS.fieldEditorActiveSurface]:
-                fieldEditorState.value.mode === "expanded" ? "" : undefined,
+              ...(fieldEditorState.value.mode === "expanded"
+                ? {
+                    [DATA_ATTRS.fieldEditorSurface]: "",
+                    ...fieldEditorTextEntryAttrs(true, editor),
+                  }
+                : {}),
             },
             blockNodes,
           ),

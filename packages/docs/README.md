@@ -23,8 +23,9 @@ the Pages artifact is uploaded:
   `<pre><code>` sample. The old placeholder string is gone. The script
   always prints how many pages it checked.
 - `scripts/generate-doc-tables.mjs` — diagnostic, message, export-fidelity,
-  and paste-corpus tables match their sources (check by default; `--write`
-  refreshes)
+  paste-corpus, and ingest-bound tables match their sources (check by
+  default; `--write` refreshes). A diagnostic row with no emit level fails
+  the gate — that is the scanner-lie the DOC3 table used to publish.
 - `scripts/check-doc2-samples.mjs` — every `<pre><code>` sample on a docs
   page type-checks
 

@@ -1,7 +1,6 @@
 import React, { useRef, useState } from "react";
 import { getOpOriginType } from "@input/pen-core";
 import type { Decoration, InlineDecoration } from "@input/pen-types";
-import { urlPolicyFromEditor } from "@input/pen-dom";
 import { getLogicalTextContent } from "@input/pen-dom/field-editor/inlineAtomDom";
 import { INLINE_ATOM_REPLACEMENT_TEXT } from "@input/pen-dom/field-editor/inlineAtomModel";
 import { fullReconcileDeltasToDOM } from "@input/pen-dom/field-editor/reconciler";
@@ -196,8 +195,8 @@ export function InlineContent(props: InlineContentProps) {
 				elementRef.current,
 				editor.schema,
 				{
+					editor,
 					preserveSelection: true,
-					urlPolicy: urlPolicyFromEditor(editor),
 				},
 			);
 			previousRenderedDeltasRef.current = renderedDeltas;
@@ -227,8 +226,8 @@ export function InlineContent(props: InlineContentProps) {
 			elementRef.current,
 			editor.schema,
 			{
+				editor,
 				preserveSelection: false,
-				urlPolicy: urlPolicyFromEditor(editor),
 			},
 		);
 		previousRenderedDeltasRef.current = renderedDeltas;

@@ -1,0 +1,60 @@
+{
+  "browserName": "firefox",
+  "firstBlockId": "7fd86e59-df09-4ca7-b1d3-5bf089439abe",
+  "insertedBlockId": "f008d3ca-1080-4ef3-87b8-4f929198923b",
+  "redoneBlockId": "f008d3ca-1080-4ef3-87b8-4f929198923b",
+  "afterRedo": {
+    "editorSelection": {
+      "type": "text",
+      "anchor": {
+        "blockId": "f008d3ca-1080-4ef3-87b8-4f929198923b",
+        "offset": 0
+      },
+      "focus": {
+        "blockId": "f008d3ca-1080-4ef3-87b8-4f929198923b",
+        "offset": 0
+      },
+      "isCollapsed": true,
+      "isMultiBlock": false,
+      "blockRange": [
+        "f008d3ca-1080-4ef3-87b8-4f929198923b"
+      ]
+    },
+    "editorFocusBlockId": "f008d3ca-1080-4ef3-87b8-4f929198923b",
+    "activeElement": {
+      "tag": "SPAN",
+      "blockId": "f008d3ca-1080-4ef3-87b8-4f929198923b",
+      "className": ""
+    },
+    "attachedInlineBlockId": "f008d3ca-1080-4ef3-87b8-4f929198923b",
+    "native": {
+      "isCollapsed": true,
+      "text": "",
+      "rangeCount": 1,
+      "anchor": {
+        "blockId": "7fd86e59-df09-4ca7-b1d3-5bf089439abe",
+        "offset": 5,
+        "nodePath": "text:\"Hello\"@SPAN.",
+        "domOffset": 5
+      },
+      "focus": {
+        "blockId": "7fd86e59-df09-4ca7-b1d3-5bf089439abe",
+        "offset": 5,
+        "nodePath": "text:\"Hello\"@SPAN.",
+        "domOffset": 5
+      }
+    },
+    "blocks": [
+      {
+        "id": "7fd86e59-df09-4ca7-b1d3-5bf089439abe",
+        "text": "Hello",
+        "active": false
+      },
+      {
+        "id": "f008d3ca-1080-4ef3-87b8-4f929198923b",
+        "text": "​",
+        "active": true
+      }
+    ]
+  }
+}

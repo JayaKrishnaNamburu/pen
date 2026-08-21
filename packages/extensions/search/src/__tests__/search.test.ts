@@ -1,7 +1,7 @@
-import { createHeadlessEditor } from "@input/pen-core";
-import type { DiagnosticEvent, Editor } from "@input/pen-types";
+import { createHeadlessEditor, defineBlock } from "@input/pen-core";
+import type { BlockSchema, DiagnosticEvent, Editor } from "@input/pen-types";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { defaultSchema } from "@input/pen-schema-default";
+import { createDefaultSchema, defaultSchema } from "@input/pen-schema-default";
 import {
 	DEFAULT_SEARCH_OPTIONS,
 	SEARCH_BUDGET_EXCEEDED_CODE,
@@ -221,24 +221,46 @@ describe("@input/pen-search helpers", () => {
 		english.destroy();
 	});
 
-	it("finds matches in parentId-nested children, not only root blocks", () => {
+	it("LOC5: Turkish İ/i and I/ı are distinct pairs under locale tr", () => {
+		const dotted = createDocumentWithText("İ", { locale: "tr" });
+		const capitalI = createDocumentWithText("I", { locale: "tr" });
+
+		expect(
+			findDocumentMatches(dotted, "i", DEFAULT_SEARCH_OPTIONS),
+		).toHaveLength(1);
+		expect(
+			findDocumentMatches(dotted, "ı", DEFAULT_SEARCH_OPTIONS),
+		).toHaveLength(0);
+
+		expect(
+			findDocumentMatches(capitalI, "ı", DEFAULT_SEARCH_OPTIONS),
+		).toHaveLength(1);
+		expect(
+			findDocumentMatches(capitalI, "i", DEFAULT_SEARCH_OPTIONS),
+		).toHaveLength(0);
+
+		dotted.destroy();
+		capitalI.destroy();
+	});
+
+	it("finds matches in nested children that are absent from blockOrder", () => {
 		const editor = createHeadlessEditor({ schema: defaultSchema });
-		const parentId = editor.firstBlock()!.id;
 
 		editor.apply(
 			[
 				{
-					type: "convert-block",
-					blockId: parentId,
-					newType: "toggle",
-					newProps: { open: true },
+					type: "insert-block",
+					blockId: "parent",
+					blockType: "toggle",
+					props: { open: true },
+					position: "last",
 				},
 				{
 					type: "insert-block",
 					blockId: "nested-child",
 					blockType: "paragraph",
-					props: { parentId },
-					position: { after: parentId },
+					props: {},
+					position: { parent: "parent", index: 0 },
 				},
 				{
 					type: "insert-text",
@@ -250,6 +272,12 @@ describe("@input/pen-search helpers", () => {
 			{ origin: "user" },
 		);
 
+		expect(editor.documentState.blockOrder).toContain("parent");
+		expect(editor.documentState.blockOrder).not.toContain("nested-child");
+		expect(
+			[...editor.documentState.allBlocks()].map((block) => block.id),
+		).toContain("nested-child");
+
 		const matches = findDocumentMatches(
 			editor,
 			"nested",
@@ -260,6 +288,80 @@ describe("@input/pen-search helpers", () => {
 			kind: "block",
 			blockId: "nested-child",
 			text: "nested",
+		});
+
+		editor.destroy();
+	});
+
+	it("finds matches in layout children that are absent from blockOrder", () => {
+		const columns = defineBlock("columns", {
+			content: [],
+			isContainer: true,
+			layout: {
+				modes: ["flex"],
+				defaultMode: "flex",
+				minChildren: 2,
+			},
+		});
+		const editor = createHeadlessEditor({
+			schema: createDefaultSchema().extend([
+				columns as unknown as BlockSchema,
+			]),
+		});
+
+		editor.apply(
+			[
+				{
+					type: "insert-block",
+					blockId: "cols",
+					blockType: "columns",
+					props: {},
+					position: "last",
+				},
+				{
+					type: "insert-block",
+					blockId: "left",
+					blockType: "paragraph",
+					props: {},
+					position: { parent: "cols", index: 0 },
+				},
+				{
+					type: "insert-block",
+					blockId: "right",
+					blockType: "paragraph",
+					props: {},
+					position: { parent: "cols", index: 1 },
+				},
+				{
+					type: "insert-text",
+					blockId: "left",
+					offset: 0,
+					text: "hidden layout match",
+				},
+				{
+					type: "insert-text",
+					blockId: "right",
+					offset: 0,
+					text: "other column",
+				},
+			],
+			{ origin: "user" },
+		);
+
+		expect(editor.documentState.blockOrder).toContain("cols");
+		expect(editor.documentState.blockOrder).not.toContain("left");
+		expect(editor.documentState.blockOrder).not.toContain("right");
+
+		const matches = findDocumentMatches(
+			editor,
+			"layout",
+			DEFAULT_SEARCH_OPTIONS,
+		);
+		expect(matches).toHaveLength(1);
+		expect(matches[0]).toMatchObject({
+			kind: "block",
+			blockId: "left",
+			text: "layout",
 		});
 
 		editor.destroy();

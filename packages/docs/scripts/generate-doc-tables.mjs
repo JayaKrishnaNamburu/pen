@@ -55,6 +55,17 @@ const LIFECYCLE_HELPER_RE = /_emitLifecycleDiagnostic\s*\(\s*["']([^"']+)["']/g;
 
 const CLIPBOARD_HELPER_RE = /clipboardFallback\s*\(\s*["']([^"']+)["']/g;
 
+// runBeforeApplyHook takes a label bag whose `code` carries no `level` beside
+// it; the helper emits at "error" for both the throw and non-array branches.
+const BEFORE_APPLY_HELPER_RE =
+	/runBeforeApplyHook\s*\([^)]*?\bcode\s*:\s*["']([^"']+)["']/g;
+
+// emitAuthorityDiagnostic always emits at "info". Call sites pass
+// `{ code, message }` — or a bag built in another file with the same
+// shape — and never a `level` beside the code.
+const AUTHORITY_HELPER_RE = /emitAuthorityDiagnostic\s*\(/;
+const AUTHORITY_CODE_CONST_RE = /^AI_TOOL_[A-Z0-9_]+_CODE$/;
+
 function walkFiles(directory, files = []) {
 	const entries = readdirSync(directory, { withFileTypes: true });
 	for (const entry of entries) {
@@ -426,19 +437,34 @@ function extractLevels(windowText) {
 	const levelRe = /\blevel\s*:\s*["'](warn|error|info)["']/g;
 	let match = levelRe.exec(windowText);
 	while (match) {
-		levels.push(match[1]);
+		levels.push({ level: match[1], index: match.index });
 		match = levelRe.exec(windowText);
 	}
 	return levels;
 }
 
+// A window can hold several diagnostics at different levels, so the level a
+// code gets is the closest one to it, not the first one in the window.
+function levelNear(levels, index) {
+	let best = "";
+	let bestDistance = Infinity;
+	for (const entry of levels) {
+		const distance = Math.abs(entry.index - index);
+		if (distance < bestDistance) {
+			best = entry.level;
+			bestDistance = distance;
+		}
+	}
+	return best;
+}
+
 function collectCodesFromText(text, file, constants, rows) {
 	const levels = extractLevels(text);
-	const level = levels[0] ?? "";
 
 	TERNARY_CODES_RE.lastIndex = 0;
 	const ternary = TERNARY_CODES_RE.exec(text);
 	if (ternary) {
+		const level = levelNear(levels, ternary.index);
 		addDiagnostic(rows, ternary[1], file, level);
 		addDiagnostic(rows, ternary[2], file, level);
 	}
@@ -448,17 +474,30 @@ function collectCodesFromText(text, file, constants, rows) {
 	while (match) {
 		const literal = match[1];
 		const ident = match[2];
+		const level = levelNear(levels, match.index);
 		if (literal && levels.length > 0) {
 			addDiagnostic(rows, literal, file, level);
 		}
 		if (ident && NAMED_CODE_CONST_RE.test(ident)) {
 			const code = constants.get(ident);
 			const isCrdt = /[/\\]crdt[/\\]/.test(file);
-			if (code && (levels.length > 0 || !isCrdt)) {
-				addDiagnostic(rows, code, file, level);
+			const authorityInfo =
+				!level &&
+				AUTHORITY_CODE_CONST_RE.test(ident) &&
+				(/[/\\]ai-tools[/\\]/.test(file) || AUTHORITY_HELPER_RE.test(text));
+			const resolvedLevel = authorityInfo ? "info" : level;
+			if (code && (levels.length > 0 || !isCrdt || authorityInfo)) {
+				addDiagnostic(rows, code, file, resolvedLevel);
 			}
 		}
 		match = CODE_LITERAL_RE.exec(text);
+	}
+
+	BEFORE_APPLY_HELPER_RE.lastIndex = 0;
+	let beforeApply = BEFORE_APPLY_HELPER_RE.exec(text);
+	while (beforeApply) {
+		addDiagnostic(rows, beforeApply[1], file, "error");
+		beforeApply = BEFORE_APPLY_HELPER_RE.exec(text);
 	}
 
 	SEARCH_HELPER_RE.lastIndex = 0;
@@ -466,7 +505,7 @@ function collectCodesFromText(text, file, constants, rows) {
 	while (helper) {
 		const code = helper[2] ?? constants.get(helper[3]);
 		if (code) {
-			addDiagnostic(rows, code, file, level || "warn");
+			addDiagnostic(rows, code, file, levelNear(levels, helper.index) || "warn");
 		}
 		helper = SEARCH_HELPER_RE.exec(text);
 	}
@@ -522,13 +561,50 @@ function collectDiagnosticRows() {
 		}
 	}
 
-	return [...rows.values()]
+	const collected = [...rows.values()]
 		.map((row) => ({
 			code: row.code,
 			levels: [...row.levels].sort(),
 			sources: [...row.sources].sort(),
 		}))
 		.sort((left, right) => left.code.localeCompare(right.code));
+
+	// A row with no level is the DOC3 scanner lie: the gate matches the
+	// generated file, and the published table prints "—". Fail closed.
+	assertDiagnosticRowsHaveLevels(collected);
+	return collected;
+}
+
+function assertDiagnosticRowsHaveLevels(rows) {
+	const missing = rows.filter((row) => row.levels.length === 0);
+	if (missing.length > 0) {
+		throw new Error(
+			`DOC3 table gate: ${missing.map((row) => row.code).join(", ")} have no level. The scanner found the code but not its emit level — add a helper pattern; do not publish an empty Level cell.`,
+		);
+	}
+}
+
+function selfTestEmptyDiagnosticLevels() {
+	let failedClosed = false;
+	try {
+		assertDiagnosticRowsHaveLevels([
+			{
+				code: "leaked-no-level",
+				levels: [],
+				sources: ["fake"],
+			},
+		]);
+	} catch (error) {
+		failedClosed =
+			error instanceof Error &&
+			error.message.includes("leaked-no-level") &&
+			error.message.includes("DOC3 table gate");
+	}
+	if (!failedClosed) {
+		throw new Error(
+			"DOC3 table gate: empty-level self-test did not fail closed",
+		);
+	}
 }
 
 function stringify(value) {
@@ -796,6 +872,28 @@ const INGEST_BOUND_FILES = [
 		},
 	},
 	{
+		id: "json",
+		path: "packages/extensions/import-json/src/ingestBounds.ts",
+		names: {
+			INGEST_MAX_NESTING_DEPTH: "maxNestingDepth",
+			INGEST_MAX_NODE_COUNT: "maxNodeCount",
+			INGEST_MAX_TEXT_SIZE: "maxTextSize",
+			INGEST_MAX_IMAGE_COUNT: "maxImageCount",
+			INGEST_TIME_BUDGET_MS: "timeBudgetMs",
+		},
+	},
+	{
+		id: "xml",
+		path: "packages/extensions/export-xml/src/ingestBounds.ts",
+		names: {
+			INGEST_MAX_NESTING_DEPTH: "maxNestingDepth",
+			INGEST_MAX_NODE_COUNT: "maxNodeCount",
+			INGEST_MAX_TEXT_SIZE: "maxTextSize",
+			INGEST_MAX_IMAGE_COUNT: "maxImageCount",
+			INGEST_TIME_BUDGET_MS: "timeBudgetMs",
+		},
+	},
+	{
 		id: "clipboard",
 		path: "packages/rendering/dom/src/utils/clipboardIngest.ts",
 		names: {
@@ -825,7 +923,7 @@ const INGEST_BOUND_META = [
 		key: "maxTextSize",
 		name: "INGEST_MAX_TEXT_SIZE",
 		enforcement: "hard",
-		caps: "Imported plain text, UTF-16 code units. HTML and Markdown also slice the raw source to this size before parse, so a 40MB paste is O(cap), not O(input).",
+		caps: "Imported plain text, UTF-16 code units. HTML, Markdown, and JSON slice the raw source to this size before parse. XML refuses an oversize source before parse — it cannot slice to a valid document. Either way a 40MB paste is O(cap), not O(input).",
 	},
 	{
 		key: "maxImageCount",
@@ -1062,6 +1160,8 @@ function writeOrCheck(path, next) {
 	mkdirSync(dirname(path), { recursive: true });
 	writeFileSync(path, next);
 }
+
+selfTestEmptyDiagnosticLevels();
 
 const messageRows = collectMessageRows();
 const diagnosticRows = collectDiagnosticRows();

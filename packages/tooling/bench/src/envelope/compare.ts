@@ -30,6 +30,9 @@ export interface EnvelopePointRecord {
 	metadataRungId: string | null;
 	size: string;
 	operation: string;
+	count: number;
+	countUnit: string;
+	opsApplied: number;
 	measuredP50Ms: number;
 	floorP50Ms: number;
 	floorKind: EnvelopeFloorKind;
@@ -51,6 +54,7 @@ export interface EnvelopeRecord {
 	floorProducedOn: string;
 	status: EnvelopeStatus;
 	caveat: string;
+	loadTaken: boolean;
 	tolerance: {
 		ratio: number;
 		floorMs: number;
@@ -64,11 +68,13 @@ export interface EnvelopeRecord {
 
 export interface EnvelopeDriftFailure {
 	id: string;
-	reason: "missing" | "missing-floor" | "timing";
+	reason: "missing" | "missing-floor" | "timing" | "count";
 	measuredP50Ms: number;
 	attributedP50Ms: number;
 	committedP50Ms: number;
 	gateP50Ms: number;
+	measuredCount: number;
+	committedCount: number;
 }
 
 export interface EnvelopeDriftResult {
@@ -148,6 +154,9 @@ export function buildEnvelopeRecord(
 			metadataRungId: spec.metadataRungId,
 			size: spec.size,
 			operation: operationFor(spec.id),
+			count: spec.point,
+			countUnit: spec.unit,
+			opsApplied: 1,
 			measuredP50Ms,
 			floorP50Ms,
 			floorKind: audit.floorKind,
@@ -173,6 +182,7 @@ export function buildEnvelopeRecord(
 		floorProducedOn,
 		status: options.status ?? "envelope",
 		caveat: options.caveat ?? "",
+		loadTaken: options.status === "provisional",
 		tolerance: {
 			ratio: ENVELOPE_DRIFT_RATIO,
 			floorMs: ENVELOPE_DRIFT_FLOOR_MS,
@@ -212,8 +222,22 @@ export function compareEnvelopeDrift(
 				attributedP50Ms: point.attributedP50Ms,
 				committedP50Ms: Number.NaN,
 				gateP50Ms: point.gateP50Ms ?? Number.NaN,
+				measuredCount: point.count,
+				committedCount: Number.NaN,
 			});
 			continue;
+		}
+		if (point.count !== baseline.count) {
+			failures.push({
+				id: point.id,
+				reason: "count",
+				measuredP50Ms: point.measuredP50Ms,
+				attributedP50Ms: point.attributedP50Ms,
+				committedP50Ms: baseline.attributedP50Ms,
+				gateP50Ms: baseline.gateP50Ms ?? Number.NaN,
+				measuredCount: point.count,
+				committedCount: baseline.count,
+			});
 		}
 		if (!hasMeasuredFloor(point) || !hasMeasuredFloor(baseline)) {
 			failures.push({
@@ -223,6 +247,8 @@ export function compareEnvelopeDrift(
 				attributedP50Ms: point.attributedP50Ms,
 				committedP50Ms: baseline.measuredP50Ms,
 				gateP50Ms: baseline.gateP50Ms ?? Number.NaN,
+				measuredCount: point.count,
+				committedCount: baseline.count,
 			});
 			continue;
 		}
@@ -237,6 +263,8 @@ export function compareEnvelopeDrift(
 				attributedP50Ms: point.attributedP50Ms,
 				committedP50Ms: baseline.attributedP50Ms,
 				gateP50Ms: baseline.gateP50Ms,
+				measuredCount: point.count,
+				committedCount: baseline.count,
 			});
 		}
 	}
@@ -259,6 +287,9 @@ export function formatEnvelopeDrift(result: EnvelopeDriftResult): string {
 			if (failure.reason === "missing-floor") {
 				return `${failure.id} has no harness floor`;
 			}
+			if (failure.reason === "count") {
+				return `${failure.id} count ${failure.measuredCount} !== committed ${failure.committedCount}`;
+			}
 			return `${failure.id} attributed ${failure.attributedP50Ms.toFixed(2)}ms > gate ${failure.gateP50Ms.toFixed(2)}ms (committed ${failure.committedP50Ms.toFixed(2)}ms)`;
 		})
 		.join("; ");
@@ -268,7 +299,21 @@ export function formatEnvelopeDrift(result: EnvelopeDriftResult): string {
 export async function loadCommittedEnvelope(
 	path = envelopeBaselinePath(),
 ): Promise<EnvelopeRecord> {
-	const raw = await readFile(path, "utf8");
+	let raw: string;
+	try {
+		raw = await readFile(path, "utf8");
+	} catch (error) {
+		const code =
+			error && typeof error === "object" && "code" in error
+				? String(error.code)
+				: "";
+		if (code === "ENOENT") {
+			throw new Error(`SCALE1 envelope record missing: ${path}`, {
+				cause: error,
+			});
+		}
+		throw error;
+	}
 	const parsed = JSON.parse(raw) as EnvelopeRecord;
 	assertEnvelopeRecord(parsed);
 	return parsed;
@@ -298,6 +343,15 @@ function assertEnvelopeRecord(value: EnvelopeRecord): void {
 		if (!hasMeasuredFloor(point)) {
 			throw new Error(
 				`SCALE1 envelope baseline ${point.id} has no harness floor; a wall-clock without a floor is not a measurement`,
+			);
+		}
+		if (
+			typeof point.count !== "number" ||
+			!Number.isFinite(point.count) ||
+			typeof point.opsApplied !== "number"
+		) {
+			throw new Error(
+				`SCALE1 envelope baseline ${point.id} has no fixture count; a row without a count is not a measurement`,
 			);
 		}
 	}

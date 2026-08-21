@@ -239,6 +239,7 @@ describe("Pen inline atom editing", () => {
 			>[0],
 			inlineElement,
 			editor.schema,
+			{ editor },
 		);
 		document.body.appendChild(inlineElement);
 

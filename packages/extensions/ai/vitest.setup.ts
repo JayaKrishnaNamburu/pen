@@ -1,7 +1,9 @@
+import dgram from "node:dgram";
 import http from "node:http";
 import http2 from "node:http2";
 import https from "node:https";
 import net from "node:net";
+import tls from "node:tls";
 
 const INSTALLED = Symbol.for("pen.aiSuiteNetworkGuard");
 
@@ -100,6 +102,18 @@ export function installAISuiteNetworkGuard(): void {
 	http2.connect = ((authority: unknown) => {
 		throw networkError(requestUrl(authority));
 	}) as typeof http2.connect;
+
+	net.Socket.prototype.connect = function connect(...args: unknown[]) {
+		throw networkError(requestUrl(args[0]));
+	} as typeof net.Socket.prototype.connect;
+
+	tls.connect = ((...args: unknown[]) => {
+		throw networkError(requestUrl(args[0]));
+	}) as typeof tls.connect;
+
+	dgram.createSocket = ((...args: unknown[]) => {
+		throw networkError(requestUrl(args[0]));
+	}) as typeof dgram.createSocket;
 }
 
 installAISuiteNetworkGuard();

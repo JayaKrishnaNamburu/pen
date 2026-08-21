@@ -25,11 +25,14 @@ export type { Block, App, Range, AppPlacement, AnchorPosition } from "./block";
 
 // ── Selection ───────────────────────────────────────────────
 export type {
+	Affinity,
 	SelectionState,
 	TextSelection,
 	BlockSelection,
 	AppSelection,
 	CellSelection,
+	SelectionOrigin,
+	SelectionRecordState,
 } from "./selection";
 
 // ── Document Range ──────────────────────────────────────────

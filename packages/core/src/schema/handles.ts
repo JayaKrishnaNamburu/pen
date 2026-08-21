@@ -16,6 +16,7 @@ import type {
 	PenDocument,
 	SchemaRegistry,
 } from "@input/pen-types";
+import { logicalTextFromStored } from "@input/pen-types";
 import {
 	crdtMapToPlainRecord,
 	getCellMap,
@@ -317,11 +318,10 @@ class BlockHandleImpl implements TableBlockHandle {
 		const content = getTextProp(this.blockMap, "content");
 		if (content) {
 			const text = content.toString();
-			if (text === "\u200B") return "";
 			if (options?.resolved) {
-				return resolveText(content);
+				return logicalTextFromStored(resolveText(content));
 			}
-			return text;
+			return logicalTextFromStored(text);
 		}
 		return "";
 	}
@@ -347,7 +347,7 @@ class BlockHandleImpl implements TableBlockHandle {
 			return 0;
 		}
 		const text = content.toString();
-		if (!text || text === "\u200B") {
+		if (!logicalTextFromStored(text)) {
 			return 0;
 		}
 		return content.length;

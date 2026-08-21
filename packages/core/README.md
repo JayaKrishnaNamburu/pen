@@ -10,7 +10,7 @@ Headless editor runtime for Pen.
 pnpm add @input/pen-core @input/pen-preset-default
 ```
 
-`defaultPreset()` is the batteries-included path. A bare `createEditor()` does not install rich-text shortcuts or delta-stream.
+`defaultPreset()` is the batteries-included path. A bare `createEditor()` installs no extensions — the fallback list is empty. Four that used to come from core are gone: `document-ops`, `undo`, `rich-text-shortcuts`, and `delta-stream`. Dependents of the first three fail loudly. Undo fails silently: `canUndo()` is false, Mod-Z is dead, and nothing throws.
 
 ## What It Provides
 
@@ -74,7 +74,9 @@ Every `CreateEditorOptions` field is optional.
 | `editorViewMode`  | unset   | View mode                                                             |
 | `documentProfile` | unset   | Authoring profile                                                     |
 
-`createHeadlessEditor` adds `useDefaultExtensions`, default `false`. When that flag is false and no `preset` is passed, the editor uses an empty preset. `true` only skips that empty preset; it does not install undo, shortcuts, or delta-stream. Pass `preset: defaultPreset()` for those.
+`createHeadlessEditor` adds `useDefaultExtensions`, default `false`. When that flag is false and no `preset` is passed, the editor uses an empty preset. `useDefaultExtensions: true` installs nothing — the fallback list is empty. It does not install `document-ops`, `undo`, `rich-text-shortcuts`, or `delta-stream`. Pass `preset: defaultPreset()` for those.
+
+`readOnlyFacet` (`pen.readOnly`) only sets `aria-readonly` on a mounted surface. It does not decline typing or stop `editor.apply`. The renderer `readonly` prop is what declines typing.
 
 ## Documentation
 

@@ -20,21 +20,24 @@ export function SecurityPage() {
 
 			<h2>Content ingresses</h2>
 			<p>
-				External content reaches the live document by nine ingresses.
-				Only two call <code>sanitizeHTML</code> (DOMPurify in{" "}
-				<code>@input/pen-import-html</code>): paste{" "}
-				<code>text/html</code>, and the HTML import API. The other
-				seven bypass the sanitizer by design: Pen-blocks JSON (
+				Only two ingresses call <code>sanitizeHTML</code> (DOMPurify
+				in <code>@input/pen-import-html</code>): paste{" "}
+				<code>text/html</code>, and the HTML import API (
+				<code>htmlImporter.import</code> /{" "}
+				<code>parseHtmlToBlocks</code>). Every other ingest bypasses
+				the sanitizer by design: Pen-blocks JSON (
 				<code>application/x-pen-blocks+json</code> and the HTML{" "}
-				<code>data-pen-blocks</code> embed), plain text and
-				Markdown paste, file drag-and-drop, AI / stream /
-				document-ops writes, remote collaborator Y updates, asset
-				upload and resolve, and the host&apos;s own initial
-				document. Schema validation and ingest bounds are not
-				HTML sanitization. A{" "}
-				<code>javascript:</code> href written through any of those
-				seven never meets DOMPurify. SEC1&apos;s render-time{" "}
-				<code>urlPolicy</code> is what keeps it off the live DOM.
+				<code>data-pen-blocks</code> embed), plain-text paste, file
+				drag-and-drop, the Markdown / JSON / XML import APIs, AI /
+				stream / document-ops writes, remote collaborator Y
+				updates, asset upload and resolve, and the host&apos;s own
+				initial document. Schema validation and ingest bounds are
+				not HTML sanitization. A <code>javascript:</code> href
+				written through any of those paths never meets DOMPurify.
+				SEC1&apos;s render-time <code>urlPolicy</code> is what
+				keeps it off the live DOM. Do not stop sanitizing host
+				input because this library also sanitizes two of the
+				paths.
 			</p>
 
 			<h2>URL policy</h2>
@@ -83,8 +86,10 @@ export function SecurityPage() {
 				</li>
 				<li>
 					<code>@input/pen-import-html</code> owns the sanitizer
-					(DOMPurify via <code>isomorphic-dompurify</code>). Paste
-					uses the same module.
+					(DOMPurify via <code>isomorphic-dompurify</code>).
+					Paste <code>text/html</code> is the only paste flavor
+					that calls it. Pen-blocks JSON and plain text /
+					Markdown paste do not.
 				</li>
 				<li>
 					<code>@input/pen-document-ops</code> validates tool

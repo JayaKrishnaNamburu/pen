@@ -32,7 +32,7 @@ const editor = createEditor({
 </template>
 ```
 
-`useEditor()` still exists. With no argument it calls `createEditor({ schema: defaultSchema })` and does not install `defaultPreset()` — no Mod-B / Mod-I, undo, or delta-stream. Pass `{ preset: defaultPreset() }` when you want that stack. `PenVuePlugin` only registers the components.
+`useEditor()` still exists. With no argument it calls `createEditor({ schema: defaultSchema })` and does not install `defaultPreset()` — no Mod-B / Mod-I, undo, `document-ops`, or `delta-stream`. Undo fails silently. Pass `{ preset: defaultPreset() }` when you want that stack. `PenVuePlugin` only registers the components.
 
 ## Public Surface
 
@@ -68,7 +68,7 @@ export const PenExample = defineComponent({
 ## Notes
 
 - Client-only mount: Vue has no `"use client"` directive, so this package does not emit one — mount `PenEditor` in the browser.
-- Pen ships no required stylesheet — the editor is functional unstyled. The HOST6 styling contract is [STYLING.md](./STYLING.md).
+- Pen ships no required stylesheet — the editor is functional unstyled, including on an empty document. You do not need extra CSS to land a click or the first keystroke. The HOST6 styling contract is [STYLING.md](./STYLING.md).
 - `PenEditor` installs the shared DOM field-editor engine from `@input/pen-dom`.
 - Renderer overrides let host apps customize block rendering without forking the editor runtime.
 - Paste importers can be passed through the `importers` prop on `PenEditor`.
@@ -76,6 +76,8 @@ export const PenExample = defineComponent({
 ## Options
 
 `PenEditor` takes a required `editor` prop. `emptyPlaceholder` is optional; when omitted, the editor uses the message-catalog string for `pen.schema.document.emptyPlaceholder` (`Start writing...`). `importers` is optional.
+
+`readonly` defaults to `false`. The prop declines typing and pointer activation, sets `data-readonly` (match with `[data-readonly]`, not `[data-readonly="true"]`), and sets `aria-readonly="true"`. It does not stop `editor.apply`. `pen.readOnly` the facet only sets `aria-readonly`.
 
 `engines.node` is `>=22`. The required peer is `vue` (`^3.4.0`).
 

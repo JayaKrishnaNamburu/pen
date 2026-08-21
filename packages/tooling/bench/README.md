@@ -14,13 +14,16 @@ Critical budgets are judged on the **median of 50 measured iterations** (`BENCH_
 
 ## SCALE1
 
-The attributed envelope table is `ENVELOPE.md` in this package, generated from `baselines/envelope.json`. `@input/pen-test` publishes the size grades (verified / measured / untested above). This package owns the clocks, the harness floors, and the fixture-shape audit.
+The attributed envelope table is `ENVELOPE.md` in this package, generated from `baselines/envelope.json`. `@input/pen-test` publishes the size grades (verified / measured / untested above). This package owns the **counts** (the durable measure), the clocks, the harness floors, and the fixture-shape audit.
+
+Counts are the published envelope. Wall-clocks in the table are load-taken 2026-08-20 and must be re-measured on a quiet machine. A row without a fixture count is not a measurement. A wall-clock without a harness floor is not attributed to Pen.
 
 The concurrent-peers row is verified as a count (2) plus observation: peer A inserts, peer B must contain that insert after `sync()` before the clock starts. The timed work is A insert + sync, not concurrent A+B. An earlier published number timed two independently-populated Y.Docs that never collaborated.
 
-- `pnpm --filter @input/pen-bench bench:envelope` runs the ladder (median of 21, floor subtracted) and fails if a same-class gated rung exceeds the committed gate.
+- `pnpm --filter @input/pen-bench bench:envelope:drift` is the named count gate. `--fresh <record.json>` compares that record to the committed envelope and exits non-zero by row name. A missing file also exits 1. No `--fresh` measures live fixture counts against the committed table.
+- `pnpm --filter @input/pen-bench bench:envelope` runs the ladder (median of 21, floor subtracted) and fails if a same-class gated rung exceeds the committed gate. Do not run this to re-record under load.
 - `pnpm --filter @input/pen-bench bench:envelope:write` regenerates `baselines/envelope.json` and `ENVELOPE.md` from a fresh run.
-- Same-class gate: rungs whose attributed p50 is at least 0.5ms are gated at `max(attributed × 3, attributed + 1ms)`. Below that the clock is timer noise and a ratio cannot be attributed to Pen. P95 is recorded, not gated (CH8). Cross-class (macos-arm64 vs ubuntu-latest) is not compared.
+- Same-class clock gate: rungs whose attributed p50 is at least 0.5ms are gated at `max(attributed × 3, attributed + 1ms)`. Below that the clock is timer noise. P95 is recorded, not gated (CH8). Cross-class (macos-arm64 vs ubuntu-latest) is not compared. Count drift is compared on every class.
 - `.github/workflows/bench.yml` runs `bench:envelope` after `bench:ci`. The size-grade table (`packages/tooling/test/ENVELOPE.md`) is a separate generator-diff job.
 
 ## SCALE3

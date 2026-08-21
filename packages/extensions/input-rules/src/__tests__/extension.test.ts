@@ -106,6 +106,54 @@ describe("inputRulesExtension", () => {
 		expect(apply).not.toHaveBeenCalled();
 	});
 
+	it("does not re-apply a rule against the insert-text it just appended", async () => {
+		let fires = 0;
+		const { editor, getHook } = createMockEditor("!");
+		const extension = inputRulesExtension({
+			disableDefaults: true,
+			disableDefaultInlineRules: true,
+			rules: [
+				{
+					id: "echo-space",
+					match: /^!\s$/,
+					blockTypes: ["paragraph"],
+					handler: (_match, ctx) => {
+						fires += 1;
+						if (fires > 8) {
+							throw new Error("input rule rematched its own output");
+						}
+						return [
+							{
+								type: "insert-text",
+								blockId: ctx.blockId,
+								offset: ctx.fullText.length + 1,
+								text: " ",
+							},
+						];
+					},
+				},
+			],
+		});
+
+		await extension.activateClient?.({
+			editor,
+			dom: {} as Document,
+			emit: () => undefined,
+			getState: () => undefined,
+		});
+
+		const ops = getHook()!(
+			[{ type: "insert-text", blockId: "b1", offset: 1, text: " " }],
+			{ origin: "user" },
+		);
+
+		expect(fires).toBe(1);
+		expect(ops).toEqual([
+			{ type: "insert-text", blockId: "b1", offset: 1, text: " " },
+			{ type: "insert-text", blockId: "b1", offset: 2, text: " " },
+		]);
+	});
+
 	it("skips transforms for bypass origins", async () => {
 		const { editor, getHook } = createMockEditor("#");
 		const extension = inputRulesExtension();

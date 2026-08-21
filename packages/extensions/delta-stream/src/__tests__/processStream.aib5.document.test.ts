@@ -89,7 +89,10 @@ describe("@input/pen-delta-stream processStream AIB5 document", () => {
 					},
 				]),
 				editor,
-				{ groupId: "malformed-turn" },
+				{
+					groupId: "malformed-turn",
+					allowedMutatingTools: ["insert_block"],
+				},
 			),
 		).resolves.toBeUndefined();
 
@@ -139,7 +142,10 @@ describe("@input/pen-delta-stream processStream AIB5 document", () => {
 					},
 				]),
 				editor,
-				{ groupId: "ooo-turn" },
+				{
+					groupId: "ooo-turn",
+					allowedMutatingTools: ["insert_block"],
+				},
 			),
 		).resolves.toBeUndefined();
 
@@ -187,7 +193,10 @@ describe("@input/pen-delta-stream processStream AIB5 document", () => {
 				},
 			]),
 			editor,
-			{ groupId: "malformed-undo" },
+			{
+				groupId: "malformed-undo",
+				allowedMutatingTools: ["insert_block"],
+			},
 		);
 
 		expect(editor.getBlock("prefix-a")).toBeTruthy();

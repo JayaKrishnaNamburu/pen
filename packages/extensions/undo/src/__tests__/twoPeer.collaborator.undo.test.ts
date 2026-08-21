@@ -21,34 +21,44 @@ describe("@input/pen-undo two-peer collaborator isolation", () => {
 		);
 		harness.exchange("a-then-b");
 		harness.assertConverged();
-		expect(visibleText(harness.peerA.editor.getBlock("b1").textContent())).toBe(
-			"Hello local",
-		);
+		expect(
+			visibleText(harness.peerB.editor.getBlock("b1").textContent()),
+		).toBe("Hello local");
+		expect(
+			visibleText(harness.peerA.editor.getBlock("b1").textContent()),
+		).toBe("Hello local");
 
 		harness.peerB.editor.apply(
-			[{ type: "insert-text", blockId: "b1", offset: 11, text: " remote" }],
+			[
+				{
+					type: "insert-text",
+					blockId: "b1",
+					offset: 11,
+					text: " remote",
+				},
+			],
 			{ origin: "user" },
 		);
 		harness.exchange("b-then-a");
 		harness.assertConverged();
-		expect(visibleText(harness.peerA.editor.getBlock("b1").textContent())).toBe(
-			"Hello local remote",
-		);
+		expect(
+			visibleText(harness.peerA.editor.getBlock("b1").textContent()),
+		).toBe("Hello local remote");
 
 		expect(harness.peerA.editor.undoManager.undo()).toBe(true);
-		expect(visibleText(harness.peerA.editor.getBlock("b1").textContent())).toBe(
-			"Hello remote",
-		);
+		expect(
+			visibleText(harness.peerA.editor.getBlock("b1").textContent()),
+		).toBe("Hello remote");
 		expect(harness.peerA.editor.undoManager.undo()).toBe(false);
-		expect(visibleText(harness.peerA.editor.getBlock("b1").textContent())).toBe(
-			"Hello remote",
-		);
+		expect(
+			visibleText(harness.peerA.editor.getBlock("b1").textContent()),
+		).toBe("Hello remote");
 
 		harness.exchange("a-then-b");
 		harness.assertConverged();
-		expect(visibleText(harness.peerB.editor.getBlock("b1").textContent())).toBe(
-			"Hello remote",
-		);
+		expect(
+			visibleText(harness.peerB.editor.getBlock("b1").textContent()),
+		).toBe("Hello remote");
 
 		harness.destroy();
 	});
@@ -66,23 +76,35 @@ describe("@input/pen-undo two-peer collaborator isolation", () => {
 		});
 
 		harness.peerB.editor.apply(
-			[{ type: "insert-text", blockId: "b1", offset: 5, text: " from-b" }],
+			[
+				{
+					type: "insert-text",
+					blockId: "b1",
+					offset: 5,
+					text: " from-b",
+				},
+			],
 			{ origin: "user" },
 		);
 		harness.exchange("b-then-a");
 		harness.assertConverged();
-		expect(visibleText(harness.peerA.editor.getBlock("b1").textContent())).toBe(
-			"Hello from-b",
-		);
+		expect(
+			visibleText(harness.peerB.editor.getBlock("b1").textContent()),
+		).toBe("Hello from-b");
+		expect(
+			visibleText(harness.peerA.editor.getBlock("b1").textContent()),
+		).toBe("Hello from-b");
 		expect(remoteOrigins.length).toBeGreaterThan(0);
-		expect(remoteOrigins.every((type) => type === "collaborator")).toBe(true);
+		expect(remoteOrigins.every((type) => type === "collaborator")).toBe(
+			true,
+		);
 		expect(remoteOrigins).not.toContain("user");
 
 		expect(harness.peerA.editor.undoManager.canUndo()).toBe(false);
 		expect(harness.peerA.editor.undoManager.undo()).toBe(false);
-		expect(visibleText(harness.peerA.editor.getBlock("b1").textContent())).toBe(
-			"Hello from-b",
-		);
+		expect(
+			visibleText(harness.peerA.editor.getBlock("b1").textContent()),
+		).toBe("Hello from-b");
 
 		harness.destroy();
 	});

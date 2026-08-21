@@ -141,7 +141,8 @@ export function ImportExportPage() {
 				layout children. HTML import sanitizes untrusted markup
 				through <code>sanitizeHTML</code> (DOMPurify). That call
 				runs on two ingresses only: paste <code>text/html</code>{" "}
-				and the HTML import API. Pen-blocks JSON, Markdown,
+				and the HTML import API. Pen-blocks JSON, plain-text
+				paste, the Markdown / JSON / XML import APIs,
 				drag-and-drop, AI writes, remote Y updates, assets, and
 				the host&apos;s initial document do not pass the
 				sanitizer. Render-time URL policy is the load-bearing
@@ -313,18 +314,20 @@ function renderHtml(hostDocument: CRDTDocument) {
 
 			<h2>Ingest bounds</h2>
 			<p>
-				HTML, Markdown, JSON, and clipboard-JSON ingest share one
-				envelope. Each importer keeps a local copy of the
-				constants (they are not a shared package). Clipboard JSON
-				paste uses the same numbers under{" "}
+				HTML, Markdown, JSON, XML, and clipboard-JSON ingest
+				share one envelope. Each importer keeps a local copy of
+				the constants (they are not a shared package). Clipboard
+				JSON paste uses the same numbers under{" "}
 				<code>CLIPBOARD_INGEST_*</code> aliases. The table is
 				generated from <code>{boundSources}</code>; the docs
 				build fails if those files disagree.
 			</p>
 			<table>
 				<caption>
-					Exceeding a hard bound truncates at a block boundary.
-					The content that fit is inserted.{" "}
+					Exceeding a hard bound on the block tree truncates at
+					a block boundary. The content that fit is inserted.
+					An oversize XML <em>source</em> is refused before
+					parse — XML cannot slice to a valid document.{" "}
 					<code>import-truncated</code> names the bound when a
 					cap was hit; <code>import-dropped</code> covers other
 					drops. One report per operation, not one diagnostic

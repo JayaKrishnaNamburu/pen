@@ -12,6 +12,7 @@ import type {
 import { describe, expect, it } from "vitest";
 
 import { inputRulesExtension } from "../extension";
+import type { InputRulesConfig } from "../types";
 
 const noDefaultExtensionsPreset = {
 	resolve() {
@@ -48,10 +49,10 @@ function createTestSchema(): ComposableSchema {
 	});
 }
 
-function createEditor() {
+function createEditor(config?: InputRulesConfig) {
 	return createCoreEditor({
 		schema: createTestSchema(),
-		extensions: [inputRulesExtension()],
+		extensions: [inputRulesExtension(config)],
 		preset: noDefaultExtensionsPreset,
 	});
 }
@@ -142,6 +143,104 @@ describe("inputRulesExtension editor activation", () => {
 				attributes: { bold: true },
 			},
 		]);
+
+		editor.destroy();
+	});
+
+	it("a rule whose replacement rematches its trigger fires once per apply", async () => {
+		let fires = 0;
+		const editor = createEditor({
+			disableDefaults: true,
+			disableDefaultInlineRules: true,
+			rules: [
+				{
+					id: "echo-space",
+					match: /^!\s$/,
+					blockTypes: ["paragraph"],
+					handler: (_match, ctx) => {
+						fires += 1;
+						if (fires > 8) {
+							throw new Error("input rule rematched its own output");
+						}
+						return [
+							{
+								type: "insert-text",
+								blockId: ctx.blockId,
+								offset: ctx.fullText.length + 1,
+								text: " ",
+							},
+						];
+					},
+				},
+			],
+		});
+		const blockId = editor.firstBlock()!.id;
+		await editor.whenReady();
+
+		editor.apply(
+			[
+				{
+					type: "insert-text",
+					blockId,
+					offset: 0,
+					text: "!",
+				},
+			],
+			{ origin: "user" },
+		);
+		editor.selectTextRange({ blockId, offset: 1 }, { blockId, offset: 1 });
+		editor.apply(
+			[
+				{
+					type: "insert-text",
+					blockId,
+					offset: 1,
+					text: " ",
+				},
+			],
+			{ origin: "user" },
+		);
+		await flushMicrotasks();
+
+		expect(fires).toBe(1);
+		expect(visibleText(editor.getBlock(blockId)!.textContent())).toBe("!  ");
+
+		editor.destroy();
+	});
+
+	it("does not convert when the apply origin is input-rule", async () => {
+		const editor = createEditor();
+		const blockId = editor.firstBlock()!.id;
+		await editor.whenReady();
+
+		editor.selectTextRange({ blockId, offset: 0 }, { blockId, offset: 0 });
+		editor.apply(
+			[
+				{
+					type: "insert-text",
+					blockId,
+					offset: 0,
+					text: "#",
+				},
+			],
+			{ origin: "input-rule" },
+		);
+		editor.selectTextRange({ blockId, offset: 1 }, { blockId, offset: 1 });
+		editor.apply(
+			[
+				{
+					type: "insert-text",
+					blockId,
+					offset: 1,
+					text: " ",
+				},
+			],
+			{ origin: "input-rule" },
+		);
+		await flushMicrotasks();
+
+		expect(editor.getBlock(blockId)?.type).toBe("paragraph");
+		expect(visibleText(editor.getBlock(blockId)!.textContent())).toBe("# ");
 
 		editor.destroy();
 	});

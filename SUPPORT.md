@@ -6,10 +6,12 @@
 - Read `spec/README.md` for architecture and package-boundary documentation.
 - Use GitHub issues for reproducible bugs, documentation problems, and concrete feature requests.
 
+There is no Discord, Slack, or GitHub Discussions channel for Pen.
+
 ## Before Opening An Issue
 
 - Confirm the behavior against the current docs and package README for the area you are using.
-- Include the package names, version range, framework, and reproduction steps.
+- Include the package names, framework, and reproduction steps. Packages have not been published: there is no npm version to cite. Give the git revision of this repository instead.
 - Mention whether the issue affects the headless runtime, a renderer package, or a workspace app such as the playground.
 
 ## Licensing

@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("empty document accepts a first keystroke from an editor-root click", async ({
+test("empty document accepts a first keystroke and undoes it with Mod-Z", async ({
 	page,
 }) => {
 	await page.goto("/");
@@ -25,14 +25,19 @@ test("empty document accepts a first keystroke from an editor-root click", async
 
 	const before = await page.evaluate(() => {
 		const root = document.querySelector("[data-pen-editor-root]");
+		const block = document.querySelector("[data-pen-editor-block]");
 		const inline = document.querySelector("[data-pen-inline-content]");
-		if (!(root instanceof HTMLElement) || !(inline instanceof HTMLElement)) {
+		if (
+			!(root instanceof HTMLElement) ||
+			!(block instanceof HTMLElement) ||
+			!(inline instanceof HTMLElement)
+		) {
 			return null;
 		}
-		const rootBox = root.getBoundingClientRect();
+		const blockBox = block.getBoundingClientRect();
 		const inlineBox = inline.getBoundingClientRect();
-		const x = rootBox.left + rootBox.width / 2;
-		const y = rootBox.top + rootBox.height / 2;
+		const x = blockBox.left + blockBox.width / 2;
+		const y = blockBox.top + blockBox.height / 2;
 		const hit = document.elementFromPoint(x, y);
 		return {
 			inlineWidth: inlineBox.width,
@@ -61,7 +66,7 @@ test("empty document accepts a first keystroke from an editor-root click", async
 	await page.mouse.click(before!.clickX, before!.clickY);
 	await page.keyboard.type("x");
 
-	const after = await page.evaluate(() => {
+	const afterType = await page.evaluate(() => {
 		const inline = document.querySelector("[data-pen-inline-content]");
 		const selection = document.getSelection();
 		return {
@@ -73,7 +78,20 @@ test("empty document accepts a first keystroke from an editor-root click", async
 		};
 	});
 
-	expect(after.activeSurface).toBe(true);
-	expect(after.text).toContain("x");
-	expect(after.selectionType).toBe("Caret");
+	expect(afterType.activeSurface).toBe(true);
+	expect(afterType.text).toContain("x");
+	expect(afterType.selectionType).toBe("Caret");
+
+	// Mod-Z is the silent-fail trap: bare createEditor() leaves
+	// editor.undoManager as a stub whose canUndo() is false and
+	// whose shortcut does nothing. The examples use defaultPreset();
+	// this keystroke is what proves the batteries are actually live.
+	await page.keyboard.press("ControlOrMeta+Z");
+
+	const afterUndo = await page.evaluate(() => {
+		const inline = document.querySelector("[data-pen-inline-content]");
+		return inline?.textContent ?? "";
+	});
+
+	expect(afterUndo.includes("x")).toBe(false);
 });

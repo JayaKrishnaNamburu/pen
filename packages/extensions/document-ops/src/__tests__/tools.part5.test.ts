@@ -307,5 +307,7 @@ describe("@input/pen-document-ops tools", () => {
 				{} as never,
 			),
 		).rejects.toThrow('Invalid input for tool "write_document"');
+
+		expect(mutationEditor.apply).not.toHaveBeenCalled();
 	});
 });

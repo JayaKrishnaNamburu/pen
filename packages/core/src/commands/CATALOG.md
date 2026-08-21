@@ -85,7 +85,11 @@ Block-selection delete is also handled by `pen.deleteBackward` / `pen.deleteForw
 | not-yet-moved | 0 |
 | **total (frozen)** | **33** |
 
-`pen.caretUp` / `pen.caretDown` now have registered handlers. Geometry is injected with `setVerticalCaretMeasure`; until the field-editor host does that, dispatch still does the logical edge-crossing that `moveCaretAcrossBlocks` did, and mid-block wrap remains a miss.
+`pen.caretUp` / `pen.caretDown` have registered handlers. Geometry is injected with `setVerticalCaretMeasure`; until the field-editor host does that, dispatch still does the logical edge-crossing that `moveCaretAcrossBlocks` did, and mid-block wrap remains a miss. Successful left/right/word/line/doc motion clears `goalX` (G5). M5: vertical bindings and the measure `direction` argument are never RTL-swapped.
+
+I6 headless half: `__tests__/keymapParity.headless.test.ts` iterates the default keymap table and dispatches every binding on the live registry. The browser-harness half is outstanding — do not compare `createEditor` to `createHeadlessEditor` in Node; they are the same factory.
+
+Inline-atom delete recommendation (owner decision, not applied): SELECT, matching v1 `applyDeleteBehavior` and N1 caret. Registry still one-shots delete so the fork stays visible in `__tests__/inlineAtomDelete.test.ts`.
 
 ## Field-editor names that are not catalog commands
 

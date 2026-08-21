@@ -4,6 +4,7 @@ import {
 	type FixtureAuditRow,
 } from "../fixtures/audit";
 import type { EnvelopePointRecord, EnvelopeRecord } from "./compare";
+import { ENFORCEMENT_INVENTORY, type EnforcementRow } from "./enforcement";
 
 export function renderEnvelopeMarkdown(record: EnvelopeRecord): string {
 	const statusLine =
@@ -12,11 +13,14 @@ export function renderEnvelopeMarkdown(record: EnvelopeRecord): string {
 			: record.caveat;
 	const axisRows = renderAxisRows(record);
 	const ladderRows = record.points
-		.map((point) => renderLadderRow(point))
+		.map((point) => renderLadderRow(point, record))
 		.join("\n");
 	const auditRows = [...SCALE1_FIXTURE_AUDIT, ...RELATED_FIXTURE_AUDIT]
 		.map((row) => renderAuditRow(row))
 		.join("\n");
+	const enforcementRows = ENFORCEMENT_INVENTORY.map((row) =>
+		renderEnforcementRow(row),
+	).join("\n");
 
 	return `# Scale envelope
 
@@ -32,8 +36,8 @@ Wall-clock sample: ${record.producedOn} on ${record.machineClass.replace(/\.$/, 
 
 Claimed subject versus what the fixture actually does. The last two published defects lived here: a concurrent-peers row whose peer B never received peer A's insert, and a streaming "regression" whose clock was 100 \`setTimeout(0)\` yields.
 
-| Fixture | Claimed | Actual | Verdict | How measured |
-| ------- | ------- | ------ | ------- | ------------ |
+| Fixture | Claimed | Actual | Verdict | Trust | How measured |
+| ------- | ------- | ------ | ------- | ----- | ------------ |
 ${auditRows}
 
 ## Envelope
@@ -44,15 +48,23 @@ ${axisRows}
 
 Verification for the ladder is headless (\`createTestEditor\`). No renderer suite yet asserts these sizes. Concurrent peers is verified for *survival of both inserts* (\`createTwoPeerHarness\`); the measured clock is A insert + sync, not concurrent A+B.
 
-## Fixture ladder (attributed)
+## Fixture ladder (counts)
 
-Wall minus harness floor. The block-count rungs are the curve: a single point cannot show drift. \`p95/p50\` is same-run variance on the wall-clock sample.
+Counts are the durable measure and do not decay under load. Wall-clocks below are **load-taken ${record.producedOn}** and must be re-measured on a quiet machine. A row without a fixture count is not a measurement.
 
-| Rung | Size | Operation | Wall p50 (ms) | Floor p50 (ms) | Attributed p50 (ms) | p95/p50 | Grade | How measured |
-| ---- | ---- | --------- | ------------- | -------------- | ------------------- | ------- | ----- | ------------ |
+| Rung | Fixture | Count | Ops | Floor | Date | Load | Wall p50 (ms) | Trust |
+| ---- | ------- | ----- | --- | ----- | ---- | ---- | ------------- | ----- |
 ${ladderRows}
 
 ${renderGateNote(record)}
+
+## Enforced vs record-only
+
+A check that cannot fail is record-only even when a clock column exists. The unit suite never compares a live wall-clock to a budget. Isolated \`bench:envelope\` / \`bench:ci\` clocks are named below; decorative means a \`critical: true\` flag whose slack or subject cannot catch a regression.
+
+| Row | Subject | Unit | Unit fails on | Isolated clock | Clock note |
+| --- | ------- | ---- | ------------- | -------------- | ---------- |
+${enforcementRows}
 
 ## Past the ceiling
 
@@ -107,17 +119,38 @@ function renderAxisRows(record: EnvelopeRecord): string {
 	return rows.map((cells) => `| ${cells.join(" | ")} |`).join("\n");
 }
 
-function renderLadderRow(point: EnvelopePointRecord): string {
-	const grade = point.gated ? "measured (gated)" : "measured (below signal)";
+function renderLadderRow(
+	point: EnvelopePointRecord,
+	record: EnvelopeRecord,
+): string {
 	const audit = SCALE1_FIXTURE_AUDIT.find((row) => row.id === point.id);
 	if (!audit) {
 		throw new Error(`SCALE1 fixture audit missing ${point.id}`);
 	}
-	return `| \`${point.id}\` | ${point.size} | ${point.operation} | ${fmt(point.measuredP50Ms)} | ${fmt(point.floorP50Ms)} (${point.floorKind}) | ${fmt(point.attributedP50Ms)} | ${fmt(point.p95Ratio)} | ${grade} | ${audit.howMeasured} |`;
+	const load = record.loadTaken
+		? `load-taken ${record.producedOn}`
+		: `quiet ${record.producedOn}`;
+	return `| \`${point.id}\` | ${audit.fixture} | ${point.count} ${point.countUnit} | ${point.opsApplied} | ${point.floorKind} ${fmt(point.floorP50Ms)}ms | ${record.producedOn} | ${load} | ${fmt(point.measuredP50Ms)} | ${renderTrust(audit)} |`;
+}
+
+function renderTrust(row: FixtureAuditRow): string {
+	const count =
+		row.countTrust === "trusted" ? "count-trusted" : "count-untrusted";
+	if (row.clockTrust === "not-a-clock") {
+		return count;
+	}
+	if (row.clockTrust === "untrustworthy") {
+		return `${count}; clock untrustworthy`;
+	}
+	return `${count}; clock load-taken`;
 }
 
 function renderAuditRow(row: FixtureAuditRow): string {
-	return `| ${row.fixture} | ${row.claimedSubject} | ${row.actualSubject} | ${row.verdict} | ${row.howMeasured} |`;
+	return `| ${row.fixture} | ${row.claimedSubject} | ${row.actualSubject} | ${row.verdict} | ${renderTrust(row)} | ${row.howMeasured} |`;
+}
+
+function renderEnforcementRow(row: EnforcementRow): string {
+	return `| \`${row.id}\` | ${row.subject} | ${row.unit} | ${row.unitFailsOn} | ${row.isolatedClock} | ${row.clockNote} |`;
 }
 
 function renderGateNote(record: EnvelopeRecord): string {
@@ -130,7 +163,7 @@ function renderGateNote(record: EnvelopeRecord): string {
 		)
 		.join("; ");
 	const ungatedList = ungated.map((point) => `\`${point.id}\``).join(", ");
-	return `Same-class timing gate: ${record.tolerance.formula}. ${record.tolerance.justification} Gated rungs: ${gatedList || "none"}. Recorded, not gated: ${ungatedList || "none"}. ${record.tolerance.crossClass}`;
+	return `Count drift always fails, on every machine class. Same-class timing gate: ${record.tolerance.formula}. ${record.tolerance.justification} Gated clocks: ${gatedList || "none"}. Recorded clocks, not gated: ${ungatedList || "none"}. ${record.tolerance.crossClass}`;
 }
 
 function findPoint(record: EnvelopeRecord, id: string): EnvelopePointRecord {

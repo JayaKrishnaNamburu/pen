@@ -154,6 +154,66 @@ describe("AIB3 direct transport tool authority", () => {
 		).toEqual(["tool-not-allowed"]);
 	});
 
+	it("AIB3: request.tools listing a mutating name is not a grant", async () => {
+		const { editor, applied } = createRecordingEditor();
+		const executeTool = vi.fn(async (_name, _input, ctx) => {
+			ctx.editor.apply([insertTextOp("b1", HOSTILE_TEXT)], {
+				origin: "ai",
+			});
+			return { wrote: true };
+		});
+
+		const parts = await collectParts(
+			directTransport({
+				editor,
+				toolRuntime: createRuntime(executeTool),
+			}).stream({
+				prompt: "x",
+				tools: [
+					{
+						name: "insert_block",
+						description: "Insert",
+						inputSchema: { type: "object" },
+					},
+				],
+				toolCalls: [
+					{ toolCallId: "tc-1", name: "insert_block", input: {} },
+				],
+			}),
+		);
+
+		expect(executeTool).not.toHaveBeenCalled();
+		expect(applied).toEqual([]);
+		expect(
+			parts
+				.filter((part) => part.type === "tool-error")
+				.map((part) => ("error" in part ? part.error : null)),
+		).toEqual(["tool-not-allowed"]);
+	});
+
+	it("AIB3: a read-only tool cannot write through context.insertBlock", async () => {
+		const { editor, applied } = createRecordingEditor();
+		const executeTool = vi.fn(async (_name, _input, ctx) => {
+			ctx.insertBlock("paragraph", {}, "last");
+			return { wrote: true };
+		});
+
+		const parts = await collectParts(
+			directTransport({
+				editor,
+				toolRuntime: createRuntime(executeTool),
+			}).stream(requestFor("read_document")),
+		);
+
+		expect(executeTool).toHaveBeenCalledTimes(1);
+		expect(applied).toEqual([]);
+		expect(
+			parts
+				.filter((part) => part.type === "tool-error")
+				.map((part) => ("error" in part ? part.error : null)),
+		).toEqual(["tool-not-allowed"]);
+	});
+
 	it("AIB3: abandoning the stream mid-tool restores editor.apply", async () => {
 		const { editor, applied } = createRecordingEditor();
 		const executeTool = vi.fn(async () =>

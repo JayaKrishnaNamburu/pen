@@ -82,15 +82,37 @@ jobs:
         run: pnpm test
 
   e2e:
+    # Check names are e2e-chromium / e2e-webkit / e2e-firefox (this `name:`).
+    # Branch protection must require e2e-chromium and e2e-webkit — not the
+    # retired job name `e2e`. firefox stays continue-on-error until S1/S2
+    # range projection lands. That rename is a GitHub settings change.
     name: e2e-${{ matrix.engine }}
     needs: changes
     if: ${{ needs.changes.outputs.e2e == 'true' }}
     timeout-minutes: 30
     runs-on: ubuntu-latest
 
-    # chromium blocks the merge. webkit and firefox report only, until their
-    # first fully green run — same staging as the conformance matrix.
-    continue-on-error: ${{ matrix.engine != 'chromium' }}
+    # chromium and webkit block the merge. firefox reports only.
+    #
+    # webkit promoted 2026-08-21 on the condition this comment already named —
+    # its first fully green run: 11 passed, 1 pre-existing skip, 0 failed, on a
+    # low-concurrency confirm run. chromium was 12/12 on the same run. earlier
+    # single failures on both engines (chromium selectAll, a webkit history
+    # topbar miss) appeared only under 7-worker load and passed on confirm, so
+    # they were load artifacts rather than distinct bugs.
+    #
+    # firefox is held on ONE real defect, not on flake: after
+    # editor.selectTextRange(0, 30) the authority carries the range and the
+    # projector never writes it to window.getSelection(). That is an S1/S2 miss
+    # (see spec-v2/03-selection.md), not the §4.1 gesture rule — an untrusted
+    # addRange is correctly rejected, but a host calling the authority API is
+    # not a proposal. Promote firefox when that projection lands; do not
+    # promote it by widening a tolerance or skipping the spec.
+    #
+    # this staging is now DECOUPLED from the conformance matrix, which was not
+    # clean in the round that produced these numbers. promote the two matrices
+    # separately and on their own evidence.
+    continue-on-error: ${{ matrix.engine == 'firefox' }}
 
     strategy:
       fail-fast: false

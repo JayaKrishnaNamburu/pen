@@ -40,8 +40,6 @@ export interface HtmlImportOptions extends ImportOptions {
 	onProgress?: (progress: number) => void;
 }
 
-const INGESTIBLE_SRC_RE = /^(https?:|data:)/i;
-
 /**
  * Schemes an in-memory or blob-backed `AssetProvider` legitimately returns.
  * `urlPolicy` does not admit either, so they are compared here — on the
@@ -49,8 +47,32 @@ const INGESTIBLE_SRC_RE = /^(https?:|data:)/i;
  */
 const LOCAL_PROVIDER_PROTOCOLS = new Set(["blob:", "memory:"]);
 
+const INGESTIBLE_PROTOCOLS = new Set(["http:", "https:"]);
+
+/**
+ * Whether `imageSrc: "ingest"` should fetch this src.
+ *
+ * Decision is on the parsed protocol, not a raw-string prefix. Relative
+ * URLs are not ingestible (they are kept). `data:` is ingestible only
+ * when `urlPolicy` admits it as an image.
+ */
 export function isIngestibleImageSrc(src: string): boolean {
-	return INGESTIBLE_SRC_RE.test(src);
+	if (src.trim().length === 0) {
+		return false;
+	}
+	let protocol: string;
+	try {
+		protocol = new URL(src).protocol;
+	} catch {
+		return false;
+	}
+	if (INGESTIBLE_PROTOCOLS.has(protocol)) {
+		return true;
+	}
+	if (protocol === "data:") {
+		return urlPolicy.resolve(src, "image") != null;
+	}
+	return false;
 }
 
 /**
@@ -198,11 +220,20 @@ async function ingestPendingBlock(
 }
 
 async function fileFromImageSrc(src: string): Promise<File> {
-	if (src.startsWith("data:")) {
+	let protocol: string;
+	try {
+		protocol = new URL(src).protocol;
+	} catch {
+		throw new Error("Invalid image URL");
+	}
+	if (protocol === "data:") {
 		const blob = blobFromDataUrl(src);
 		return new File([blob], "image", {
 			type: blob.type || "application/octet-stream",
 		});
+	}
+	if (protocol !== "http:" && protocol !== "https:") {
+		throw new Error("Unsupported image URL protocol");
 	}
 
 	const response = await fetch(src);

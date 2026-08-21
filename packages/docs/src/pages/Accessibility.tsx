@@ -38,7 +38,12 @@ const editor = createEditor({
 				label, and <code>aria-readonly</code> from the{" "}
 				<code>readonly</code> prop or <code>pen.readOnly</code>. The
 				facet sets the attribute. The prop is what declines local
-				typing.
+				typing. A host that sets only the facet announces
+				read-only and still accepts keystrokes. Pointer
+				activation is the same path: an empty-block click
+				activates; a click on tall host chrome below the last
+				block activates that block; the gap between blocks stays
+				inactive.
 			</p>
 
 			<h2>What the library owns</h2>

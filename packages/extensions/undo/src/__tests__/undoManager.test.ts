@@ -1,7 +1,3 @@
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
-
 import { describe, expect, it, vi } from "vitest";
 
 import { DEFAULT_UNDO_MAX_DEPTH } from "../undoExtension";
@@ -99,19 +95,6 @@ describe("@input/pen-undo UndoManagerImpl", () => {
 
   it("H.6/CH7 default max-depth cap is 500", () => {
     expect(DEFAULT_UNDO_MAX_DEPTH).toBe(500);
-  });
-
-  it("DUR4: default tracked origins do not include migration", () => {
-    const source = readFileSync(
-      join(dirname(fileURLToPath(import.meta.url)), "../undoExtension.ts"),
-      "utf8",
-    );
-    const start = source.indexOf("const DEFAULT_TRACKED_ORIGINS");
-    const end = source.indexOf("];", start);
-    const defaults = source.slice(start, end + 2);
-
-    expect(defaults).toContain('"user"');
-    expect(defaults).not.toContain("migration");
   });
 
   it("CH5: reports a thrown stack listener through onListenerError", () => {

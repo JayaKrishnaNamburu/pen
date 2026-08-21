@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { measureWithRoot } from "@input/pen-dom";
 import { useEditorContext } from "../../context/editorContext";
 import { useSelection } from "../../hooks/useSelection";
@@ -21,7 +21,6 @@ export function EditorSelectionRect(props: SelectionRectProps) {
   const { rootElement, store } = useEditorRegionSelectionContext();
   const selection = useSelection(editor);
   const [rect, setRect] = useState<DOMRect | null>(null);
-  const rafRef = useRef<number>(0);
   const liveRect = useSyncExternalStoreWithSelector(
     store.subscribe,
     store.getSnapshot,
@@ -103,9 +102,6 @@ export function EditorSelectionRect(props: SelectionRectProps) {
     };
 
     computeRect();
-
-    rafRef.current = requestAnimationFrame(computeRect);
-    return () => cancelAnimationFrame(rafRef.current);
   }, [blockSelection.enabled, selection, isBlockSelection, liveRect, regionConfig, rootElement]);
 
   if (!rect) {

@@ -1,0 +1,79 @@
+
+Running 6 tests using 6 workers
+
+  ✓  5 [chromium] › packages/tooling/conformance/src/scenario.ts:7:3 › M6: Delete on an RTL mixed block deletes the next logical grapheme (no swap) (2.4s)
+  ✓  6 [chromium] › packages/tooling/conformance/src/scenario.ts:7:3 › M6: Backspace on an RTL mixed block deletes the previous logical grapheme (no swap) (2.5s)
+  ✘  2 [webkit] › packages/tooling/conformance/src/scenario.ts:7:3 › M6: Backspace on an RTL mixed block deletes the previous logical grapheme (no swap) (3.8s)
+  ✓  3 [webkit] › packages/tooling/conformance/src/scenario.ts:7:3 › M6: Delete on an RTL mixed block deletes the next logical grapheme (no swap) (4.2s)
+  ✘  1 [firefox] › packages/tooling/conformance/src/scenario.ts:7:3 › M6: Backspace on an RTL mixed block deletes the previous logical grapheme (no swap) (6.2s)
+  ✓  4 [firefox] › packages/tooling/conformance/src/scenario.ts:7:3 › M6: Delete on an RTL mixed block deletes the next logical grapheme (no swap) (7.0s)
+
+
+  1) [webkit] › packages/tooling/conformance/src/scenario.ts:7:3 › M6: Backspace on an RTL mixed block deletes the previous logical grapheme (no swap) 
+
+    Error: failed: standing: DOM vs editor.selection (v1 authority) — DOM selection does not match editor.selection (v1 authority)
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+    Expected: [32mtrue[39m
+    Received: [31mfalse[39m
+
+       at src/standingAssertions.ts:44
+
+      42 | export function assertDomAuthorityResult(result: DomAuthorityCheck): void {
+      43 | 	// v1 snapshot (blockId+offset), not affinity/goalX — projectSelection is not live.
+    > 44 | 	expect(result.ok, formatDomAuthorityReport(result)).toBe(true);
+         | 	                                                    ^
+      45 | }
+      46 |
+      47 | function isStandingCode(code: string): boolean {
+        at assertDomAuthorityResult (/Users/krijn/Code/pen/packages/tooling/conformance/src/standingAssertions.ts:44:54)
+        at /Users/krijn/Code/pen/packages/tooling/conformance/scenarios/m6-delete-logical.spec.ts:80:3
+        at /Users/krijn/Code/pen/packages/tooling/conformance/src/scenario.ts:43:3
+
+    Error Context: packages/tooling/conformance/test-results/scenarios-m6-delete-logica-7e626-s-logical-grapheme-no-swap--webkit/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    packages/tooling/conformance/test-results/scenarios-m6-delete-logica-7e626-s-logical-grapheme-no-swap--webkit/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace packages/tooling/conformance/test-results/scenarios-m6-delete-logica-7e626-s-logical-grapheme-no-swap--webkit/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [firefox] › packages/tooling/conformance/src/scenario.ts:7:3 › M6: Backspace on an RTL mixed block deletes the previous logical grapheme (no swap) 
+
+    Error: failed: standing: DOM vs editor.selection (v1 authority) — DOM selection does not match editor.selection (v1 authority)
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+    Expected: [32mtrue[39m
+    Received: [31mfalse[39m
+
+       at src/standingAssertions.ts:44
+
+      42 | export function assertDomAuthorityResult(result: DomAuthorityCheck): void {
+      43 | 	// v1 snapshot (blockId+offset), not affinity/goalX — projectSelection is not live.
+    > 44 | 	expect(result.ok, formatDomAuthorityReport(result)).toBe(true);
+         | 	                                                    ^
+      45 | }
+      46 |
+      47 | function isStandingCode(code: string): boolean {
+        at assertDomAuthorityResult (/Users/krijn/Code/pen/packages/tooling/conformance/src/standingAssertions.ts:44:54)
+        at /Users/krijn/Code/pen/packages/tooling/conformance/scenarios/m6-delete-logical.spec.ts:80:3
+        at /Users/krijn/Code/pen/packages/tooling/conformance/src/scenario.ts:43:3
+
+    Error Context: packages/tooling/conformance/test-results/scenarios-m6-delete-logica-7e626-s-logical-grapheme-no-swap--firefox/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    packages/tooling/conformance/test-results/scenarios-m6-delete-logica-7e626-s-logical-grapheme-no-swap--firefox/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace packages/tooling/conformance/test-results/scenarios-m6-delete-logica-7e626-s-logical-grapheme-no-swap--firefox/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    [webkit] › packages/tooling/conformance/src/scenario.ts:7:3 › M6: Backspace on an RTL mixed block deletes the previous logical grapheme (no swap) 
+    [firefox] › packages/tooling/conformance/src/scenario.ts:7:3 › M6: Backspace on an RTL mixed block deletes the previous logical grapheme (no swap) 
+  4 passed (13.6s)

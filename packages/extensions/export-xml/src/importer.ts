@@ -16,60 +16,100 @@ import type {
 } from "@input/pen-types";
 import {
   assertXmlSourceWithinCap,
+  boundPenDocument,
   capRawXmlSource,
   INGEST_MAX_TEXT_SIZE,
+  XmlIngestDropCounts,
+  type XmlDroppedByReason,
 } from "./ingestBounds";
 
-export const xmlImporter: Importer<string, PenDocumentJSON> = {
+export interface XmlImportResult extends ImportResult {
+  readonly droppedByReason?: readonly XmlDroppedByReason[];
+}
+
+export interface XmlImporter extends Importer<string, PenDocumentJSON> {
+  import(
+    input: string,
+    editor: Editor,
+    options?: ImportOptions,
+  ): XmlImportResult | void | Promise<XmlImportResult | void>;
+}
+
+export const xmlImporter: XmlImporter = {
   name: "xml",
   mimeType: "application/xml",
 
   parse(input: string): PenDocumentJSON {
-    const capped = capRawXmlSource(input);
-    if (capped == null) {
-      return { version: 1, blocks: [] };
-    }
-    return parseXmlDocument(capped);
+    return ingestXmlDocument(input).document;
   },
 
   import(
     input: string,
     editor: Editor,
     options?: ImportOptions,
-  ): ImportResult | void | Promise<ImportResult | void> {
-    const capped = capRawXmlSource(input);
-    if (capped == null) {
+  ): XmlImportResult | void | Promise<XmlImportResult | void> {
+    const { document, drops, refused } = ingestXmlDocument(input);
+    const droppedByReason = drops.toDroppedByReason();
+    if (droppedByReason.length > 0) {
       editor.internals.emit("diagnostic", {
         code: "import-truncated",
         level: "warn",
         source: "import-xml",
-        message:
-          `import truncated: ${input.length - INGEST_MAX_TEXT_SIZE} code units ` +
-          `text-size-exceeded (INGEST_MAX_TEXT_SIZE) actual ${input.length} ` +
-          `limit ${INGEST_MAX_TEXT_SIZE}`,
-        droppedByReason: [
-          {
-            reason: "text-size-exceeded",
-            count: input.length - INGEST_MAX_TEXT_SIZE,
-            bound: "INGEST_MAX_TEXT_SIZE",
-            limit: INGEST_MAX_TEXT_SIZE,
-            actual: input.length,
-            dropped: `${input.length - INGEST_MAX_TEXT_SIZE} code units`,
-          },
-        ],
+        message: formatXmlIngestMessage(droppedByReason),
+        droppedByReason,
       });
+    }
+    if (refused) {
       return {
         parsedTopLevelBlockCount: 0,
         importedTopLevelBlockCount: 0,
         droppedBlockCount: 0,
         droppedBlockTypes: [],
         normalized: true,
+        droppedByReason,
       };
     }
-    const document = parseXmlDocument(capped);
-    return jsonImporter.import(document, editor, options);
+    const result = jsonImporter.import(document, editor, options);
+    if (!result || result instanceof Promise) {
+      return result;
+    }
+    return droppedByReason.length > 0
+      ? { ...result, droppedByReason, normalized: true }
+      : result;
   },
 };
+
+function ingestXmlDocument(input: string): {
+  document: PenDocumentJSON;
+  drops: XmlIngestDropCounts;
+  refused: boolean;
+} {
+  const drops = new XmlIngestDropCounts();
+  const capped = capRawXmlSource(input);
+  if (capped == null) {
+    drops.add(
+      "text-size-exceeded",
+      input.length - INGEST_MAX_TEXT_SIZE,
+      input.length,
+    );
+    return { document: { version: 1, blocks: [] }, drops, refused: true };
+  }
+  return {
+    document: boundPenDocument(parseXmlDocument(capped), drops),
+    drops,
+    refused: false,
+  };
+}
+
+function formatXmlIngestMessage(
+  droppedByReason: readonly { dropped: string; reason: string; bound: string; actual: number; limit: number }[],
+): string {
+  const parts = droppedByReason.map(
+    (entry) =>
+      `${entry.dropped} ${entry.reason} (${entry.bound}) actual ${entry.actual} limit ${entry.limit}`,
+  );
+  return `import truncated: ${parts.join("; ")}`;
+}
 
 export function parseXmlDocument(input: string): PenDocumentJSON {
   assertXmlSourceWithinCap(input);

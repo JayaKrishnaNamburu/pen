@@ -224,4 +224,114 @@ describe("AIB3 SSE tool authority", () => {
 				.map((part) => ("error" in part ? part.error : null)),
 		).toEqual(["tool-not-allowed"]);
 	});
+
+	it("AIB3: request.tools listing a mutating name is not a grant", async () => {
+		const { editor, applied } = createRecordingEditor();
+		const executeTool = vi.fn(async (_name, _input, ctx) => {
+			ctx.editor.apply([insertTextOp("b1", HOSTILE_TEXT)], {
+				origin: "ai",
+			});
+			return { wrote: true };
+		});
+		const handler = createSSEHandler({
+			editor,
+			toolRuntime: createRuntime(executeTool),
+			pingInterval: 60_000,
+		});
+		const response = await handler(
+			new Request("http://localhost/sse", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					prompt: "x",
+					tools: [
+						{
+							name: "insert_block",
+							description: "Insert",
+							inputSchema: { type: "object" },
+						},
+					],
+					toolCalls: [
+						{ toolCallId: "tc-1", name: "insert_block", input: {} },
+					],
+				}),
+			}),
+		);
+		const events = await readAllSSEEvents(response);
+		const parts = events.map((event) => JSON.parse(event.data) as PenStreamPart);
+
+		expect(response.status).toBe(200);
+		expect(executeTool).not.toHaveBeenCalled();
+		expect(applied).toEqual([]);
+		expect(
+			parts
+				.filter((part) => part.type === "tool-error")
+				.map((part) => ("error" in part ? part.error : null)),
+		).toEqual(["tool-not-allowed"]);
+	});
+
+	it("AIB3: a read-only tool cannot write through context.insertBlock", async () => {
+		const { editor, applied } = createRecordingEditor();
+		const executeTool = vi.fn(async (_name, _input, ctx) => {
+			ctx.insertBlock("paragraph", {}, "last");
+			return { wrote: true };
+		});
+
+		const { parts } = await postToolCall(
+			createSSEHandler({
+				editor,
+				toolRuntime: createRuntime(executeTool),
+				pingInterval: 60_000,
+			}),
+			"read_document",
+		);
+
+		expect(executeTool).toHaveBeenCalledTimes(1);
+		expect(applied).toEqual([]);
+		expect(
+			parts
+				.filter((part) => part.type === "tool-error")
+				.map((part) => ("error" in part ? part.error : null)),
+		).toEqual(["tool-not-allowed"]);
+	});
+
+	it("AIB3: cancelling the SSE body mid-tool restores editor.apply", async () => {
+		const { editor, applied } = createRecordingEditor();
+		let releaseSecond: () => void = () => {};
+		const secondGate = new Promise<void>((resolve) => {
+			releaseSecond = resolve;
+		});
+		const executeTool = vi.fn(async () =>
+			(async function* () {
+				yield { type: "tool-delta", toolCallId: "tc-1", delta: "one" };
+				await secondGate;
+				yield { type: "tool-delta", toolCallId: "tc-1", delta: "two" };
+			})(),
+		);
+		const handler = createSSEHandler({
+			editor,
+			toolRuntime: createRuntime(executeTool),
+			pingInterval: 60_000,
+		});
+		const response = await handler(
+			new Request("http://localhost/sse", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					prompt: "x",
+					toolCalls: [
+						{ toolCallId: "tc-1", name: "read_document", input: {} },
+					],
+				}),
+			}),
+		);
+		const reader = response.body!.getReader();
+		await reader.read();
+		await reader.cancel();
+		releaseSecond();
+		await new Promise((resolve) => setTimeout(resolve, 0));
+
+		editor.apply([insertTextOp("b1", "after-cancel")], { origin: "user" });
+		expect(applied).toEqual([insertTextOp("b1", "after-cancel")]);
+	});
 });

@@ -7,6 +7,7 @@ import { noFrameworkFreeModulesInRenderers } from "./rules/noFrameworkFreeModule
 import { noHtmlInjectionSinks } from "./rules/noHtmlInjectionSinks.js";
 import { noImplicitLocale } from "./rules/noImplicitLocale.js";
 import { noModuleScopeBrowserGlobals } from "./rules/noModuleScopeBrowserGlobals.js";
+import { noSelectionTimers } from "./rules/noSelectionTimers.js";
 import { noUnescapedMarkupConcat } from "./rules/noUnescapedMarkupConcat.js";
 import { noUnstyledFocus } from "./rules/noUnstyledFocus.js";
 import { noUserFacingLiterals } from "./rules/noUserFacingLiterals.js";
@@ -22,6 +23,7 @@ export const rules = {
 	"no-html-injection-sinks": noHtmlInjectionSinks,
 	"no-implicit-locale": noImplicitLocale,
 	"no-module-scope-browser-globals": noModuleScopeBrowserGlobals,
+	"no-selection-timers": noSelectionTimers,
 	"no-unescaped-markup-concat": noUnescapedMarkupConcat,
 	"no-unstyled-focus": noUnstyledFocus,
 	"no-user-facing-literals": noUserFacingLiterals,

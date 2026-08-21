@@ -21,6 +21,17 @@
  * printed as unreachable so API3 is not judged on the artifact alone.
  * Unreachable functions do not fail the gate (deletion is a types-
  * package change); they exist so "only N left" cannot hide dead source.
+ *
+ * Source scan is `^export function` only — not a full AST, on purpose
+ * (the api-extractor trap). Unexported helpers (`^function` /
+ * `^async function`) are invisible to that count: a fixture of four
+ * unexported helpers plus a matching empty `.d.ts` reports
+ * "source-level runtime 0" and exits 0. Those helpers are printed as
+ * the measured hole so "2 remaining" cannot be read as almost-pure.
+ * They do not fail the gate. Chasing zero leftovers would invert the
+ * DAG: generateId is required by crdt-yjs (below core);
+ * logicalTextFromStored is required by export-json and
+ * markdown-serialization (no core dep). Amend API3 to a bounded set.
  */
 
 import fs from "node:fs/promises";
@@ -101,6 +112,17 @@ export function collectSourceExportedFunctions(source) {
 	return names;
 }
 
+export function collectSourceUnexportedFunctions(source) {
+	const names = [];
+	for (const match of source.matchAll(/^function (\w+)/gm)) {
+		names.push(match[1]);
+	}
+	for (const match of source.matchAll(/^async function (\w+)/gm)) {
+		names.push(match[1]);
+	}
+	return names;
+}
+
 export function isSourceTypePredicate(source, name) {
 	const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 	return new RegExp(
@@ -108,7 +130,11 @@ export function isSourceTypePredicate(source, name) {
 	).test(source);
 }
 
-export function classifySourceRuntime({ functions, leftoverNames }) {
+export function classifySourceRuntime({
+	functions,
+	leftoverNames,
+	unexported = [],
+}) {
 	const leftoverSet = new Set(leftoverNames);
 	const runtime = functions.filter(
 		(entry) => !entry.isGuard && !BRAND_CONSTRUCTORS.has(entry.name),
@@ -117,6 +143,7 @@ export function classifySourceRuntime({ functions, leftoverNames }) {
 		total: runtime.length,
 		shipped: runtime.filter((entry) => leftoverSet.has(entry.name)),
 		unreachable: runtime.filter((entry) => !leftoverSet.has(entry.name)),
+		unexported,
 	};
 }
 
@@ -173,13 +200,17 @@ export function formatReport(result) {
 		total: 0,
 		shipped: [],
 		unreachable: [],
+		unexported: [],
 	};
+	const unexported = sourceRuntime.unexported ?? [];
 	lines.push(`dependencies     ${result.depNames.length}`);
 	lines.push(`runtime leftovers allowlisted ${result.allowed.length}`);
 	lines.push(`unmarked         ${result.unexpected.length}`);
+	lines.push(`scanner bound    ^export function`);
 	lines.push(`source-level runtime ${sourceRuntime.total}`);
 	lines.push(`  shipped        ${sourceRuntime.shipped.length}`);
 	lines.push(`  unreachable    ${sourceRuntime.unreachable.length}`);
+	lines.push(`unexported helpers ${unexported.length}`);
 	lines.push(`outdated dist    ${result.outdatedDist?.length ?? 0}`);
 	if (result.depNames.length > 0) {
 		lines.push("");
@@ -214,6 +245,20 @@ export function formatReport(result) {
 			lines.push(`  function ${entry.name}${where}`);
 		}
 	}
+	if (unexported.length > 0) {
+		lines.push("");
+		lines.push(
+			"unexported source helpers (invisible to ^export function; measured hole, not a purity failure):",
+		);
+		for (const entry of unexported) {
+			const where = entry.file ? `  (${entry.file})` : "";
+			lines.push(`  function ${entry.name}${where}`);
+		}
+	}
+	lines.push("");
+	lines.push(
+		"API3 leftover count is the published artifact, not source purity. Chasing zero inverts the DAG: generateId is required by crdt-yjs (below core); logicalTextFromStored is required by export-json and markdown-serialization (no core dep). Amend API3 to a bounded set.",
+	);
 	appendOutdatedDistLines(lines, result.outdatedDist ?? []);
 	if (!hasFailures(result) && !hasInconclusive(result)) {
 		lines.push("");
@@ -331,6 +376,32 @@ export function runSelfTests() {
 		throw new Error("self-test: source export function names");
 	}
 	if (
+		collectSourceExportedFunctions(
+			"export async function later() {}\nfunction hidden() {}\n",
+		).join(",") !== ""
+	) {
+		throw new Error(
+			"self-test: scanner bound misses export async and unexported function",
+		);
+	}
+	const holeSource = [
+		"function helperA() {}",
+		"function helperB() {}",
+		"async function helperC() {}",
+		"function helperD() {}",
+	].join("\n");
+	if (
+		collectSourceUnexportedFunctions(holeSource).join(",") !==
+		"helperA,helperB,helperD,helperC"
+	) {
+		throw new Error("self-test: unexported helpers are the measured hole");
+	}
+	if (collectSourceExportedFunctions(holeSource).length !== 0) {
+		throw new Error(
+			"self-test: unexported helpers are invisible to ^export function",
+		);
+	}
+	if (
 		!isSourceTypePredicate(
 			"export function isFoo(value: unknown): value is Foo { return true; }",
 			"isFoo",
@@ -388,6 +459,53 @@ export function runSelfTests() {
 	if (!sourceReport.includes("function isCollapsed")) {
 		throw new Error("self-test: report names the unreachable function");
 	}
+
+	const holeRuntime = classifySourceRuntime({
+		functions: [],
+		leftoverNames: [],
+		unexported: [
+			{ name: "helperA", file: "a.ts" },
+			{ name: "helperB", file: "b.ts" },
+			{ name: "helperC", file: "c.ts" },
+			{ name: "helperD", file: "d.ts" },
+		],
+	});
+	if (holeRuntime.total !== 0) {
+		throw new Error(
+			"self-test: four unexported helpers report source-level runtime 0",
+		);
+	}
+	const holeResult = evaluateTypesPurity({
+		dependencies: {},
+		leftovers: [],
+		allowlist: [],
+		sourceRuntime: holeRuntime,
+	});
+	if (hasFailures(holeResult)) {
+		throw new Error(
+			"self-test: unexported helpers are not a purity failure",
+		);
+	}
+	const holeReport = formatReport(holeResult);
+	if (!holeReport.includes("source-level runtime 0")) {
+		throw new Error(
+			"self-test: hole fixture prints source-level runtime 0",
+		);
+	}
+	if (!holeReport.includes("unexported helpers 4")) {
+		throw new Error("self-test: hole fixture prints the unexported count");
+	}
+	if (!holeReport.includes("scanner bound    ^export function")) {
+		throw new Error("self-test: report names the scanner bound");
+	}
+	if (!holeReport.includes("Amend API3 to a bounded set")) {
+		throw new Error("self-test: report names the API3 amendment");
+	}
+	if (!holeReport.includes("OK:")) {
+		throw new Error(
+			"self-test: hole fixture still exits as purity-green (do not force red)",
+		);
+	}
 }
 
 const IGNORE_DIR_NAMES = new Set(["__tests__", "node_modules", "dist"]);
@@ -396,6 +514,7 @@ async function collectTypesSourceFunctions(typesDir) {
 	const files = [];
 	await collectSourceFiles(path.join(typesDir, "src"), files);
 	const functions = [];
+	const unexported = [];
 	for (const filePath of files) {
 		const source = await fs.readFile(filePath, "utf8");
 		const relative = path.relative(typesDir, filePath);
@@ -406,9 +525,16 @@ async function collectTypesSourceFunctions(typesDir) {
 				isGuard: isSourceTypePredicate(source, name),
 			});
 		}
+		for (const name of collectSourceUnexportedFunctions(source)) {
+			unexported.push({
+				name,
+				file: relative,
+			});
+		}
 	}
 	functions.sort((left, right) => left.name.localeCompare(right.name));
-	return functions;
+	unexported.sort((left, right) => left.name.localeCompare(right.name));
+	return { functions, unexported };
 }
 
 async function collectSourceFiles(directory, files) {
@@ -449,6 +575,12 @@ async function main() {
 	runSelfTests();
 	await runFreshnessSelfTests();
 	console.log("API3 types-purity self-test ok");
+	console.log(
+		"  red-proof: unmarked class, new dependency, and stale allowlist fail closed",
+	);
+	console.log(
+		"  measured: four unexported helpers + empty .d.ts print source-level runtime 0 and stay purity-green",
+	);
 
 	const args = parseArgs(process.argv.slice(2));
 	const typesDir = path.join(args.repoRoot, TYPES_DIR);
@@ -474,9 +606,11 @@ async function main() {
 		freshness.status === "outdated"
 			? [{ package: typesJson.name, newerCount: freshness.newer.length }]
 			: [];
+	const sourceFunctions = await collectTypesSourceFunctions(typesDir);
 	const sourceRuntime = classifySourceRuntime({
-		functions: await collectTypesSourceFunctions(typesDir),
+		functions: sourceFunctions.functions,
 		leftoverNames: leftovers.map((entry) => entry.name),
+		unexported: sourceFunctions.unexported,
 	});
 	const result = evaluateTypesPurity({
 		dependencies: typesJson.dependencies,

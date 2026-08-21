@@ -4,6 +4,7 @@ import type {
 	YArrayDelta,
 	YTextDelta,
 } from "@input/pen-crdt-yjs";
+import { EMPTY_BLOCK_SENTINEL } from "@input/pen-types";
 
 import type { BlockIndexSnapshot } from "./blockIndex";
 import { createChangeSummary } from "./mapping";
@@ -15,7 +16,7 @@ import type {
 	TextSplice,
 } from "./types";
 
-const SENTINEL = "\u200B";
+const SENTINEL = EMPTY_BLOCK_SENTINEL;
 
 const IGNORABLE_BLOCK_KEYS = new Set(["content", "children", "type"]);
 const TABLE_KEYS = new Set(["tableColumns", "tableContent", "rows", "cells"]);

@@ -15,7 +15,7 @@
 
 `resolve()` also returns `schema: createDefaultSchema()` from `@input/pen-schema-default`. `createEditor({ preset: defaultPreset() })` therefore installs the default blocks. `createEditor()` with no schema and no preset does not.
 
-A bare `createEditor({ schema })` (no preset) does not register `rich-text-shortcuts` or `delta-stream`. Those used to come from core's no-preset fallback and were removed to break package-graph cycles. This preset is the batteries-included path: Mod-B / Mod-I and `aiExtension()`'s `delta-stream` dependency both require it (or an explicit `extensions` entry).
+A bare `createEditor({ schema })` (no preset) installs no extensions. The four that used to come from core's no-preset fallback — `document-ops`, `undo`, `rich-text-shortcuts`, and `delta-stream` — are gone. Dependents of the first three fail loudly. Undo fails silently: `canUndo()` is false, Mod-Z is dead, and nothing throws. This preset is the batteries-included path: Mod-B / Mod-I, undo / Mod-Z, and `aiExtension()`'s `delta-stream` dependency all require it (or an explicit `extensions` entry).
 
 This package does not assemble a renderer, AI, search, history, input-rules, multiplayer, or import/export.
 

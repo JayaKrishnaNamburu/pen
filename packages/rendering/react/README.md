@@ -28,7 +28,9 @@ export function App() {
 }
 ```
 
-`PenEditor` requires `editor`. This package does not ship a stylesheet — the editor is functional unstyled. The custom-property surface and the few correctness styles are listed in `STYLING.md`, which ships inside this package.
+`PenEditor` requires `editor`. This package does not ship a stylesheet — the editor is functional unstyled, including on an empty document. You do not need extra CSS to land a click or the first keystroke. The custom-property surface is listed in `STYLING.md`, which ships inside this package.
+
+`useEditor()` with no argument calls `createEditor({ schema: defaultSchema })` and does not install `defaultPreset()` — no Mod-B / Mod-I, undo, `document-ops`, or `delta-stream`. Undo fails silently. Pass `{ preset: defaultPreset() }` when you want that stack.
 
 ## Server rendering (HOST5)
 
@@ -59,6 +61,8 @@ See the root README for the full package overview and licensing details.
 ## Options
 
 `PenEditor` takes a required `editor` prop. This package has no create-function options. The optional peer `@input/pen-import-markdown` is not required to mount the editor.
+
+`readonly` defaults to `false`. The prop declines typing and pointer activation, sets `data-readonly` (match with `[data-readonly]`, not `[data-readonly="true"]`), and sets `aria-readonly="true"`. It does not stop `editor.apply`. `pen.readOnly` the facet only sets `aria-readonly`.
 
 `engines.node` is `>=22`. Required peers are `react` and `react-dom` (`^18` or `^19`).
 

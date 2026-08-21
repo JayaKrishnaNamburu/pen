@@ -138,8 +138,9 @@ function admitUrlFields(value: Record<string, unknown>): Record<string, unknown>
   const admitted: Record<string, unknown> = {};
 
   for (const [key, raw] of Object.entries(value)) {
-    if (key === "href" || key === "src") {
-      const resolved = urlPolicy.resolve(raw, key === "href" ? "link" : "image");
+    const urlKind = urlFieldKind(key);
+    if (urlKind) {
+      const resolved = urlPolicy.resolve(raw, urlKind);
       if (resolved !== null) {
         admitted[key] = resolved;
       }
@@ -150,6 +151,17 @@ function admitUrlFields(value: Record<string, unknown>): Record<string, unknown>
   }
 
   return admitted;
+}
+
+function urlFieldKind(key: string): "link" | "image" | null {
+  const lower = key.toLowerCase();
+  if (lower === "href") {
+    return "link";
+  }
+  if (lower === "src") {
+    return "image";
+  }
+  return null;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -191,8 +203,9 @@ function serializeAttributes(
 
   let result = "";
   for (const [name, raw] of Object.entries(attributes)) {
-    if (name === "href" || name === "src") {
-      const resolved = urlPolicy.resolve(raw, name === "href" ? "link" : "image");
+    const urlKind = urlFieldKind(name);
+    if (urlKind) {
+      const resolved = urlPolicy.resolve(raw, urlKind);
       if (resolved === null) {
         continue;
       }

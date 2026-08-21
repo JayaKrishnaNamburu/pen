@@ -7,14 +7,14 @@
       "path": "packages/types/dist/index.mjs",
       "baselineBytes": 30625,
       "limitBytes": 30625,
-      "note": "Measured from packages/types/dist/index.mjs after a local build."
+      "note": "Wave P.7 first baseline. Public-surface shrink in flight (live 15762 B); not re-recorded."
     },
     {
       "name": "@input/pen-transport-direct",
       "path": "packages/transports/direct/dist/index.mjs",
-      "baselineBytes": 3880,
-      "limitBytes": 3880,
-      "note": "Measured from packages/transports/direct/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+      "baselineBytes": 6034,
+      "limitBytes": 6034,
+      "note": "Wave P.7 re-record 2026-08-21. Wave M AIB3: allowedMutatingTools / createAIToolTurn on the in-process transport. 3880 → 6034. Source quiet (test-only dirty)."
     },
     {
       "name": "@input/pen-shortcuts",
@@ -28,105 +28,105 @@
       "path": "packages/extensions/export-xml/dist/index.mjs",
       "baselineBytes": 11064,
       "limitBytes": 11064,
-      "note": "Lane 173 re-record 2026-08-21. Wave S SEC1 url admission + Wave T IOP3 fidelity/escape. 8866 → 11064."
+      "note": "Lane 173 re-record 2026-08-21. Wave S SEC1 url admission + Wave T IOP3 fidelity/escape. 8866 → 11064. Live 16214 B deferred (importer / ingestBounds mid-edit)."
     },
     {
       "name": "@input/pen-undo",
       "path": "packages/extensions/undo/dist/index.mjs",
-      "baselineBytes": 13458,
-      "limitBytes": 13458,
-      "note": "Measured from packages/extensions/undo/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+      "baselineBytes": 16154,
+      "limitBytes": 16154,
+      "note": "Wave P.7 re-record 2026-08-21. Wave 2: undo.restoreController / origin-tag seams + Wave C remote-origin mapping. 13458 → 16154. Source quiet (test-only dirty)."
     },
     {
       "name": "@input/pen-ai",
       "path": "packages/extensions/ai/dist/index.mjs",
-      "baselineBytes": 520171,
-      "limitBytes": 520171,
-      "note": "Measured from packages/extensions/ai/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+      "baselineBytes": 435771,
+      "limitBytes": 435771,
+      "note": "Wave P.7 re-record 2026-08-21. Wave M AIB7: playground planner helpers removed from the published barrel. 520171 → 435771. Source quiet."
     },
     {
       "name": "@input/pen-ai-autocomplete",
       "path": "packages/extensions/ai-autocomplete/dist/index.mjs",
       "baselineBytes": 68096,
       "limitBytes": 68096,
-      "note": "Measured from packages/extensions/ai-autocomplete/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+      "note": "Wave P.7 first baseline kept. Wave M autocomplete controller; live 71884 B is within +10%."
     },
     {
       "name": "@input/pen-ai-skills",
       "path": "packages/extensions/ai-skills/dist/index.mjs",
       "baselineBytes": 4531,
       "limitBytes": 4531,
-      "note": "Measured from packages/extensions/ai-skills/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+      "note": "Wave P.7 first baseline kept. Wave M skills catalog; live 4184 B is under budget."
     },
     {
       "name": "@input/pen-ai-suggestions",
       "path": "packages/extensions/ai-suggestions/dist/index.mjs",
       "baselineBytes": 43353,
       "limitBytes": 43353,
-      "note": "Measured from packages/extensions/ai-suggestions/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+      "note": "Wave P.7 first baseline kept. Wave M suggestions controller; live 45128 B is within +10%."
     },
     {
       "name": "@input/pen-ai-tools",
       "path": "packages/extensions/ai-tools/dist/index.mjs",
       "baselineBytes": 1186,
       "limitBytes": 1186,
-      "note": "Measured from packages/extensions/ai-tools/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+      "note": "Wave P.7 first baseline. Wave M AIB3 tool-authority in execution.ts. Live 14544 B deferred (execution.ts mid-edit)."
     },
     {
       "name": "@input/pen-assets-memory",
       "path": "packages/tooling/assets-memory/dist/index.mjs",
-      "baselineBytes": 1291,
-      "limitBytes": 1291,
-      "note": "Lane 173 re-record 2026-08-21. Wave T T.3 IOP4: maxSize, onProgress, delete, rejectUpload. 927 → 1291."
+      "baselineBytes": 1403,
+      "limitBytes": 1403,
+      "note": "Wave P.7 re-record 2026-08-21. Wave T T.3 IOP4: maxSize, onProgress, delete, rejectUpload. 1291 → 1403. Source quiet."
     },
     {
       "name": "@input/pen-bench",
       "path": "packages/tooling/bench/dist/index.mjs",
       "baselineBytes": 1421,
       "limitBytes": 1421,
-      "note": "Measured from packages/tooling/bench/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+      "note": "Wave P.7 first baseline. Wave F / SCALE1 envelope table. Live 24105 B deferred (envelope/table.ts + enforcement.ts mid-edit)."
     },
     {
       "name": "@input/pen-content-ops",
       "path": "packages/shared/content-ops/dist/index.mjs",
       "baselineBytes": 29428,
       "limitBytes": 29428,
-      "note": "Measured from packages/shared/content-ops/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+      "note": "Wave P.7 first baseline. Wave P API3 blockCapabilities live here. Live 17572 B shrink deferred (writeContent.ts mid-edit)."
     },
     {
       "name": "@input/pen-core",
       "path": "packages/core/dist/index.mjs",
       "baselineBytes": 275169,
       "limitBytes": 275169,
-      "note": "Measured from packages/core/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+      "note": "Wave P.7 first baseline. Wave 2 apply pipeline + Wave P.1 extension-free core. Live 404512 B deferred (apply pipeline / caret / normalize mid-edit)."
     },
     {
       "name": "@input/pen-crdt-yjs",
       "path": "packages/crdt/yjs/dist/index.mjs",
       "baselineBytes": 54245,
       "limitBytes": 54245,
-      "note": "Measured from packages/crdt/yjs/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+      "note": "Wave P.7 first baseline kept. Wave P API2 yjs peer + singleton guard; live 55563 B is within +10%."
     },
     {
       "name": "@input/pen-delta-stream",
       "path": "packages/extensions/delta-stream/dist/index.mjs",
       "baselineBytes": 10269,
       "limitBytes": 10269,
-      "note": "Measured from packages/extensions/delta-stream/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+      "note": "Wave P.7 first baseline. Wave 2 TextStreamWriter + Wave M toolExecution. Live 25211 B deferred (processStream.ts mid-edit)."
     },
     {
       "name": "@input/pen-document-ops",
       "path": "packages/extensions/document-ops/dist/index.mjs",
-      "baselineBytes": 45579,
-      "limitBytes": 45579,
-      "note": "Measured from packages/extensions/document-ops/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+      "baselineBytes": 58134,
+      "limitBytes": 58134,
+      "note": "Wave P.7 re-record 2026-08-21. Wave M AIB3 tool-authority paths. 45579 → 58134. Source quiet (test-only dirty)."
     },
     {
       "name": "@input/pen-dom",
       "path": "packages/rendering/dom/dist/index.mjs",
       "baselineBytes": 28589,
       "limitBytes": 28589,
-      "note": "Measured from packages/rendering/dom/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+      "note": "Wave P.7 first baseline. Wave 3 GeometryReader + Wave 5 selection + Wave X a11y. Live 42817 B deferred (field-editor / a11y / reconciler mid-edit)."
     },
     {
       "name": "@input/pen-export-html",
@@ -138,9 +138,9 @@
     {
       "name": "@input/pen-export-json",
       "path": "packages/extensions/export-json/dist/index.mjs",
-      "baselineBytes": 16573,
-      "limitBytes": 16573,
-      "note": "Measured from packages/extensions/export-json/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+      "baselineBytes": 15551,
+      "limitBytes": 15551,
+      "note": "Wave P.7 re-record 2026-08-21. Under previous budget after Wave P API3 logicalTextFromStored stayed in types (16573 → 15551). Source quiet."
     },
     {
       "name": "@input/pen-export-markdown",
@@ -161,42 +161,42 @@
       "path": "packages/extensions/import-html/dist/index.mjs",
       "baselineBytes": 21015,
       "limitBytes": 21015,
-      "note": "Measured from packages/extensions/import-html/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+      "note": "Wave P.7 first baseline. Wave T ingest + Wave S SEC1 image src policy. Live 30302 B deferred (domToBlocks.ts / imageSrcPolicy.ts mid-edit)."
     },
     {
       "name": "@input/pen-import-json",
       "path": "packages/extensions/import-json/dist/index.mjs",
       "baselineBytes": 12473,
       "limitBytes": 12473,
-      "note": "Lane 173 first baseline 2026-08-21. Was missing from the 34-entry set. Wave T JSON import + Wave S SEC4 ingest bounds. 12473 B."
+      "note": "Lane 173 first baseline 2026-08-21. Wave T JSON import + Wave S SEC4 ingest bounds. Live 14228 B deferred (ingestBounds.ts / validateJson.ts mid-edit)."
     },
     {
       "name": "@input/pen-import-markdown",
       "path": "packages/extensions/import-markdown/dist/index.mjs",
-      "baselineBytes": 1412,
-      "limitBytes": 1412,
-      "note": "Measured from packages/extensions/import-markdown/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+      "baselineBytes": 9197,
+      "limitBytes": 9197,
+      "note": "Wave P.7 re-record 2026-08-21. Wave T IOP5 ingest bounds + Wave S SEC1/SEC4 caps. 1412 → 9197. Source quiet (test-only dirty)."
     },
     {
       "name": "@input/pen-input-rules",
       "path": "packages/extensions/input-rules/dist/index.mjs",
       "baselineBytes": 9553,
       "limitBytes": 9553,
-      "note": "Measured from packages/extensions/input-rules/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+      "note": "Wave P.7 first baseline kept. Wave 4 input-rule commands; live 9837 B is within +10%."
     },
     {
       "name": "@input/pen-markdown-serialization",
       "path": "packages/shared/markdown-serialization/dist/index.mjs",
-      "baselineBytes": 10359,
-      "limitBytes": 10359,
-      "note": "Measured from packages/shared/markdown-serialization/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+      "baselineBytes": 7446,
+      "limitBytes": 7446,
+      "note": "Wave P.7 re-record 2026-08-21. Under previous budget after Wave P API3 (logicalTextFromStored stays in types; 10359 → 7446). Source quiet (test-only dirty)."
     },
     {
       "name": "@input/pen-multiplayer",
       "path": "packages/extensions/multiplayer/dist/index.mjs",
       "baselineBytes": 43166,
       "limitBytes": 43166,
-      "note": "Lane 173 re-record 2026-08-21. Path .js → .mjs (Wave P.8). Bytes: Wave C awareness validation / presence bounds. 20968 → 43166. Source was README + a test only."
+      "note": "Lane 173 re-record 2026-08-21. Path .js → .mjs (Wave P.8). Bytes: Wave C awareness validation / presence bounds. 20968 → 43166."
     },
     {
       "name": "@input/pen-preset-default",
@@ -210,7 +210,7 @@
       "path": "packages/rendering/react/dist/index.mjs",
       "baselineBytes": 264324,
       "limitBytes": 264324,
-      "note": "Measured from packages/rendering/react/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+      "note": "Wave P.7 first baseline. Wave P.6 renderer bindings over pen-dom. Live 265954 B is within +10%; 13 dirty source files, not re-recorded."
     },
     {
       "name": "@input/pen-schema-default",
@@ -229,88 +229,76 @@
     {
       "name": "@input/pen-test",
       "path": "packages/tooling/test/dist/index.mjs",
-      "baselineBytes": 18429,
-      "limitBytes": 18429,
-      "note": "Measured from packages/tooling/test/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+      "baselineBytes": 40505,
+      "limitBytes": 40505,
+      "note": "Wave P.7 re-record 2026-08-21. Wave C COL4 two-peer harness + Wave F envelope fixtures + Wave 18 durability corpus. 18429 → 40505. Source quiet (test-only dirty)."
     },
     {
       "name": "@input/pen-transport-sse",
       "path": "packages/transports/sse/dist/index.mjs",
-      "baselineBytes": 11867,
-      "limitBytes": 11867,
-      "note": "Measured from packages/transports/sse/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+      "baselineBytes": 22076,
+      "limitBytes": 22076,
+      "note": "Wave P.7 re-record 2026-08-21. Wave C COL6 reconnect surface + Wave M AIB2 (no editor on PenStreamRequest) / AIB3 authority. 11867 → 22076. Source quiet (test-only dirty)."
     },
     {
       "name": "@input/pen-vue",
       "path": "packages/rendering/vue/dist/index.mjs",
       "baselineBytes": 1054,
       "limitBytes": 1054,
-      "note": "Measured from packages/rendering/vue/dist/index.mjs via node fs.stat (same method as scripts/size-limit.mjs)."
+      "note": "Wave P.7 first baseline. Wave P.6 Vue bindings. Live 1153 B is just under the +10% ceiling; renderer mid-edit, not re-recorded."
     }
   ],
   "_deferred": {
     "recorded": "2026-08-21",
-    "note": "Partial re-baseline. Do not treat a missing re-record as a waiver — these packages were mid-edit.",
+    "note": "Partial re-baseline. Do not treat a missing re-record as a waiver — these packages were mid-edit. They stay in entries at the last quiet baseline so they still fail until a quiet re-record lands.",
     "packages": [
       {
-        "name": "@input/pen-dom",
-        "reason": "Large in-flight refactor. 28589 → 40210 would be stale within the hour."
-      },
-      {
-        "name": "@input/pen-types",
-        "reason": "Public-surface shrink in flight. Already under budget (30625 → 15696); re-recording now would hide the shrink."
-      },
-      {
-        "name": "@input/pen-ai",
-        "reason": "Public-surface shrink in flight. Already under budget (520171 → 451342)."
-      },
-      {
-        "name": "@input/pen-react",
-        "reason": "Public-surface shrink in flight (41 dirty source files)."
-      },
-      {
-        "name": "@input/pen-core",
-        "reason": "25 dirty source files; 275169 → 389724 is real P.1/apply-pipeline growth but the package is mid-edit."
-      },
-      {
-        "name": "@input/pen-undo",
-        "reason": "10 dirty source files; 13458 → 15804."
+        "name": "@input/pen-export-xml",
+        "reason": "importer.ts / ingestBounds.ts / index.ts dirty. Wave S SEC1 + Wave T IOP3 already attributed; live 11064 → 16214."
       },
       {
         "name": "@input/pen-ai-tools",
-        "reason": "Wave M AIB3 tool-authority growth (1186 → 11426) but 5 dirty source files."
+        "reason": "execution.ts dirty. Wave M AIB3 tool authority; live 1186 → 14544."
       },
       {
         "name": "@input/pen-bench",
-        "reason": "Lane 170 owns the envelope; 1421 → 14429."
+        "reason": "envelope/table.ts + enforcement.ts dirty. Wave F SCALE1; live 1421 → 24105."
+      },
+      {
+        "name": "@input/pen-core",
+        "reason": "apply pipeline, caret, normalize, handles dirty (22 files). Wave 2 / P.1; live 275169 → 404512."
       },
       {
         "name": "@input/pen-delta-stream",
-        "reason": "3 dirty source files; Wave 2/M toolExecution growth 10269 → 23491."
+        "reason": "processStream.ts dirty. Wave 2 / M toolExecution; live 10269 → 25211."
       },
       {
-        "name": "@input/pen-document-ops",
-        "reason": "8 dirty source files; 45579 → 56039."
+        "name": "@input/pen-dom",
+        "reason": "field-editor / a11y / reconciler dirty (26 files). Wave 3 / 5 / X; live 28589 → 42817."
       },
       {
         "name": "@input/pen-import-html",
-        "reason": "12 dirty source files; Wave T/S ingest work 21015 → 27605."
+        "reason": "domToBlocks.ts / imageSrcPolicy.ts dirty. Wave T / S SEC1; live 21015 → 30302."
       },
       {
-        "name": "@input/pen-import-markdown",
-        "reason": "4 dirty source files; 1412 → 9197."
+        "name": "@input/pen-import-json",
+        "reason": "ingestBounds.ts / validateJson.ts dirty. Wave T / S SEC4; live 12473 → 14228."
       },
       {
-        "name": "@input/pen-test",
-        "reason": "12 dirty source files; 18429 → 40314."
+        "name": "@input/pen-types",
+        "reason": "Public-surface shrink in flight (9 dirty files). Already under budget (30625 → 15762); re-recording now would hide the shrink."
       },
       {
-        "name": "@input/pen-transport-sse",
-        "reason": "6 dirty source files; Wave C COL6 / AIB2 11867 → 16941."
+        "name": "@input/pen-content-ops",
+        "reason": "writeContent.ts dirty. Shrink 29428 → 17572 not re-recorded."
+      },
+      {
+        "name": "@input/pen-react",
+        "reason": "13 dirty source files. Within +10% (264324 → 265954)."
       },
       {
         "name": "@input/pen-vue",
-        "reason": "Renderer work in flight; currently within the +10% ceiling."
+        "reason": "Renderer work in flight. Live 1153 B vs ceiling 1159 B."
       }
     ]
   }

@@ -47,6 +47,7 @@ Important rules:
 
 - Treat HTML input as untrusted.
 - `capRawHtmlSource()` slices the raw string to `INGEST_MAX_TEXT_SIZE` (preferring a newline boundary) before sanitize/parse, so work is O(cap) rather than O(input). Overflow is recorded as a `text-size-exceeded` drop, not a hard refuse. `parseHtmlSource()` also throws if a caller bypasses the cap and hands it a longer string.
+- `admitProviderImageUrl()` decides on the parsed URL protocol (`new URL(...)`), not a regex over the raw string. Local provider schemes (`blob:`, `memory:`) pass; everything else goes through `urlPolicy`. A scheme obfuscated with entities, unicode, or leading control characters can slip past a raw-string pattern and still parse.
 - The same local ingest-envelope numbers (depth, node count, text size, image count) live in this package, import-markdown, and import-json. They are copies, not a shared module.
 - Sanitize after the cap, then parse, then normalize against the active editor schema and document profile.
 - Imported content only becomes document state after conversion into operations and `editor.apply(...)`.

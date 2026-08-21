@@ -15,8 +15,16 @@
  * `@param` / `@returns` / field defaults; class or interface member
  * docs; README-only docs; JSDoc sitting only on a renamed local
  * (`export { foo as bar }` is followed one hop); JSDoc in another
- * package that this barrel re-exports; glob surfaces (API4 lists
- * files there, not symbols); comments forged inside strings.
+ * package that this barrel re-exports; comments forged inside strings.
+ *
+ * Glob surfaces are a declared skip (API4 lists files, not symbols)
+ * and a measured hole: `@input/pen-dom` `./field-editor/*` is the
+ * subpath extension authors should be pointed at. The report prints
+ * file count, `^export ` statement count, and names that appear only
+ * on the glob (host-reachable, absent from every non-glob surface).
+ * Those counts are not added to MAX_UNDOCUMENTED — widening the
+ * ratchet to signatures/files recreates the api-extractor problem.
+ * A declared glob that lists zero files fails closed (skip of nothing).
  *
  * The live tree is expected to have a large undocumented count until
  * the TSDoc pass (or API4 un-exports) lands. `MAX_UNDOCUMENTED` is a
@@ -41,7 +49,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { loadPublishedPackages } from "./api-reports.mjs";
+import { collectExportNames, loadPublishedPackages } from "./api-reports.mjs";
 import {
 	appendOutdatedDistLines,
 	collectOutdatedDist,
@@ -51,7 +59,14 @@ import {
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_REPO_ROOT = path.resolve(SCRIPT_DIR, "..");
 const REPORT_NAME = "api-report.md";
-const SOURCE_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx", ".mts", ".cts"]);
+const SOURCE_EXTENSIONS = new Set([
+	".ts",
+	".tsx",
+	".js",
+	".jsx",
+	".mts",
+	".cts",
+]);
 const SKIP_DIR_NAMES = new Set([
 	"node_modules",
 	"dist",
@@ -114,7 +129,9 @@ export function collectFileDocs(source) {
 		if (!jsdocHasProse(match[0])) {
 			continue;
 		}
-		const after = source.slice(match.index + match[0].length).replace(/^\s*/, "");
+		const after = source
+			.slice(match.index + match[0].length)
+			.replace(/^\s*/, "");
 		const decl = after.match(DECL_RE);
 		if (decl) {
 			documented.add(decl[1]);
@@ -175,6 +192,8 @@ export function parseApiReport(text) {
 			current = {
 				key: line.slice(3).trim(),
 				glob: false,
+				typesPath: null,
+				globFiles: [],
 				entries: [],
 			};
 			surfaces.push(current);
@@ -182,6 +201,14 @@ export function parseApiReport(text) {
 			continue;
 		}
 		if (current == null) {
+			continue;
+		}
+		if (
+			line.startsWith("`") &&
+			line.endsWith("`") &&
+			current.typesPath == null
+		) {
+			current.typesPath = line.slice(1, -1);
 			continue;
 		}
 		if (line === "glob members:") {
@@ -193,7 +220,14 @@ export function parseApiReport(text) {
 			currentKind = line.slice(4).trim();
 			continue;
 		}
-		if (line.startsWith("- ") && currentKind != null && !current.glob) {
+		if (line.startsWith("- ") && current.glob) {
+			const name = line.slice(2).trim();
+			if (name.length > 0) {
+				current.globFiles.push(name);
+			}
+			continue;
+		}
+		if (line.startsWith("- ") && currentKind != null) {
 			current.entries.push({
 				name: line.slice(2).trim(),
 				kind: currentKind,
@@ -232,6 +266,62 @@ export function uniquePublicSymbols(report) {
 	);
 }
 
+export function countExportStatements(text) {
+	return (text.match(/^export\s/gm) ?? []).length;
+}
+
+export function globDirectory(typesPath) {
+	if (typeof typesPath !== "string") {
+		return null;
+	}
+	const star = typesPath.indexOf("*");
+	if (star < 0) {
+		return null;
+	}
+	return typesPath.slice(0, star);
+}
+
+export function measureGlobSurface({ files, texts, inventoriedNames }) {
+	const fileNames = files ?? [];
+	if (texts == null) {
+		return {
+			files: fileNames.length,
+			exports: null,
+			globOnly: [],
+		};
+	}
+	let exportCount = 0;
+	let read = 0;
+	const names = new Set();
+	for (const file of fileNames) {
+		const text = texts[file];
+		if (typeof text !== "string") {
+			continue;
+		}
+		read += 1;
+		exportCount += countExportStatements(text);
+		for (const name of collectExportNames(text).keys()) {
+			names.add(name);
+		}
+	}
+	if (read === 0 || read < fileNames.length) {
+		return {
+			files: fileNames.length,
+			exports: null,
+			globOnly: [],
+		};
+	}
+	const inventoried = inventoriedNames ?? new Set();
+	const globOnly = [...names]
+		.filter((name) => !inventoried.has(name))
+		.sort((left, right) => left.localeCompare(right));
+	return {
+		files: fileNames.length,
+		exports: exportCount,
+		globOnly,
+	};
+}
+
 export function evaluateCoverage({
 	packages,
 	maxUndocumented = MAX_UNDOCUMENTED,
@@ -264,13 +354,9 @@ export function evaluateCoverage({
 				reportName: report.packageName,
 			});
 		}
-		for (const surface of report.surfaces) {
-			if (surface.glob) {
-				globSurfaces.push({ package: pkg.name, key: surface.key });
-			}
-		}
 		const documentedNames = documentedNamesFromSources(pkg.sources ?? []);
 		const symbols = uniquePublicSymbols(report);
+		const inventoriedNames = new Set(symbols.map((symbol) => symbol.name));
 		publicSymbols += symbols.length;
 		for (const symbol of symbols) {
 			const hit = {
@@ -284,6 +370,24 @@ export function evaluateCoverage({
 			} else {
 				undocumented.push(hit);
 			}
+		}
+		for (const surface of report.surfaces) {
+			if (!surface.glob) {
+				continue;
+			}
+			const measured = measureGlobSurface({
+				files: surface.globFiles ?? [],
+				texts: pkg.globFileTexts ?? null,
+				inventoriedNames,
+			});
+			globSurfaces.push({
+				package: pkg.name,
+				key: surface.key,
+				typesPath: surface.typesPath ?? null,
+				files: measured.files,
+				exports: measured.exports,
+				globOnly: measured.globOnly,
+			});
 		}
 	}
 
@@ -311,12 +415,44 @@ export function evaluateCoverage({
 	};
 }
 
+const GLOB_ONLY_SAMPLE = 12;
+const GLOB_ONLY_PREFERRED = "getSelectionPointRect";
+
+export function sampleGlobOnlyNames(names, limit = GLOB_ONLY_SAMPLE) {
+	const list = names ?? [];
+	if (list.length === 0) {
+		return { names: [], more: 0 };
+	}
+	const picked = [];
+	if (list.includes(GLOB_ONLY_PREFERRED)) {
+		picked.push(GLOB_ONLY_PREFERRED);
+	}
+	for (const name of list) {
+		if (picked.length >= limit) {
+			break;
+		}
+		if (name === GLOB_ONLY_PREFERRED) {
+			continue;
+		}
+		picked.push(name);
+	}
+	return {
+		names: picked,
+		more: Math.max(0, list.length - picked.length),
+	};
+}
+
+export function emptyGlobSurfaces(globSurfaces) {
+	return (globSurfaces ?? []).filter((hit) => hit.files === 0);
+}
+
 export function hasFailures(result) {
 	return (
 		result.missingReports.length > 0 ||
 		result.reportNameMismatches.length > 0 ||
 		result.regression ||
-		result.staleBaseline
+		result.staleBaseline ||
+		emptyGlobSurfaces(result.globSurfaces).length > 0
 	);
 }
 
@@ -349,8 +485,39 @@ export function formatReport(result) {
 	}
 	if (result.globSurfaces.length > 0) {
 		lines.push("");
-		lines.push("glob surfaces skipped (API4 lists files, not symbols):");
+		lines.push(
+			"glob surfaces skipped (API4 lists files, not symbols; exports are host-reachable and uncounted):",
+		);
 		for (const hit of result.globSurfaces) {
+			const fileLabel = `${hit.files} file${hit.files === 1 ? "" : "s"}`;
+			const exportLabel =
+				hit.exports == null
+					? "exports unknown (dist unread)"
+					: `${hit.exports} export statement${hit.exports === 1 ? "" : "s"}`;
+			const only = hit.globOnly ?? [];
+			const onlyLabel =
+				only.length > 0
+					? `  ${only.length} glob-only name${only.length === 1 ? "" : "s"}`
+					: "";
+			lines.push(
+				`  ${hit.package} ${hit.key}  ${fileLabel}  ${exportLabel}${onlyLabel}`,
+			);
+			const sample = sampleGlobOnlyNames(only);
+			for (const name of sample.names) {
+				lines.push(`    ${name}`);
+			}
+			if (sample.more > 0) {
+				lines.push(`    … ${sample.more} more`);
+			}
+		}
+	}
+	const emptyGlobs = emptyGlobSurfaces(result.globSurfaces);
+	if (emptyGlobs.length > 0) {
+		lines.push("");
+		lines.push(
+			"FAIL declared glob surface lists zero files (skip of nothing):",
+		);
+		for (const hit of emptyGlobs) {
 			lines.push(`  ${hit.package} ${hit.key}`);
 		}
 	}
@@ -359,7 +526,9 @@ export function formatReport(result) {
 		lines.push(
 			`FAIL undocumented count ${result.count} exceeds baseline ${result.maxUndocumented}.`,
 		);
-		lines.push("New public symbols need TSDoc, or un-export them (feed API4).");
+		lines.push(
+			"New public symbols need TSDoc, or un-export them (feed API4).",
+		);
 	}
 	if (result.staleBaseline) {
 		lines.push("");
@@ -381,9 +550,15 @@ export function formatReport(result) {
 		}
 	}
 	appendOutdatedDistLines(lines, result.outdatedDist ?? []);
-	if (!hasFailures(result) && !hasInconclusive(result) && result.count === 0) {
+	if (
+		!hasFailures(result) &&
+		!hasInconclusive(result) &&
+		result.count === 0
+	) {
 		lines.push("");
-		lines.push("OK: every public symbol in the API reports has TSDoc in source.");
+		lines.push(
+			"OK: every public symbol in the API reports has TSDoc in source.",
+		);
 	} else if (!hasFailures(result) && !hasInconclusive(result)) {
 		lines.push("");
 		lines.push(
@@ -420,8 +595,14 @@ export function hiddenHelper() {}
 		!fileDocs.documented.has("hiddenHelper"),
 		"self-test: tag-only @internal is not documentation",
 	);
-	assert(jsdocHasProse("/** The editor. */"), "self-test: quality is not judged");
-	assert(!jsdocHasProse("/** @internal */"), "self-test: @internal alone has no prose");
+	assert(
+		jsdocHasProse("/** The editor. */"),
+		"self-test: quality is not judged",
+	);
+	assert(
+		!jsdocHasProse("/** @internal */"),
+		"self-test: @internal alone has no prose",
+	);
 	assert(
 		!jsdocHasProse("/** @public */"),
 		"self-test: @public alone has no prose",
@@ -436,7 +617,9 @@ export function hiddenHelper() {}
 function makeEditor() {}
 export { makeEditor as createEditor };
 `;
-	const aliasDocs = documentedNamesFromSources([{ file: "a.ts", text: aliasSource }]);
+	const aliasDocs = documentedNamesFromSources([
+		{ file: "a.ts", text: aliasSource },
+	]);
 	assert(
 		aliasDocs.has("createEditor"),
 		"self-test: one-hop export rename inherits JSDoc",
@@ -465,11 +648,146 @@ glob members:
 	assert(report.surfaces.length === 2, "self-test: two surfaces");
 	assert(report.surfaces[1].glob === true, "self-test: glob surface");
 	assert(
+		report.surfaces[1].typesPath === "./dist/field-editor/*.d.ts",
+		"self-test: glob types path",
+	);
+	assert(
+		report.surfaces[1].globFiles.join(",") === "fieldEditorImpl.d.ts",
+		"self-test: glob member files are captured",
+	);
+	assert(
 		uniquePublicSymbols(report)
 			.map((entry) => entry.name)
 			.join(",") === "createEditor,leakedHelper",
 		"self-test: glob files are not symbols",
 	);
+	assert(
+		countExportStatements(
+			"export function getSelectionPointRect(): void;\nexport type Point = {};\nfunction hidden(): void;\n",
+		) === 2,
+		"self-test: ^export statements only",
+	);
+
+	const measured = measureGlobSurface({
+		files: ["selectionBridgeOffsets.d.ts", "other.d.ts"],
+		texts: {
+			"selectionBridgeOffsets.d.ts":
+				"export function getSelectionPointRect(): void;\nexport function createEditor(): void;\n",
+			"other.d.ts": "export function helperA(): void;\n",
+		},
+		inventoriedNames: new Set(["createEditor"]),
+	});
+	assert(measured.files === 2, "self-test: glob file count");
+	assert(measured.exports === 3, "self-test: glob export-statement count");
+	assert(
+		measured.globOnly.join(",") === "getSelectionPointRect,helperA",
+		"self-test: glob-only names exclude barrel inventory",
+	);
+
+	const unread = measureGlobSurface({
+		files: ["missing.d.ts"],
+		texts: {},
+		inventoriedNames: new Set(),
+	});
+	assert(unread.exports === null, "self-test: unread glob dist is unknown");
+
+	const emptyGlob = evaluateCoverage({
+		packages: [
+			{
+				name: "@input/pen-dom",
+				reportText: `# @input/pen-dom
+
+## ./field-editor/*
+
+\`./dist/field-editor/*.d.ts\`
+
+glob members:
+`,
+				sources: [],
+			},
+		],
+		maxUndocumented: 0,
+	});
+	assert(
+		emptyGlob.globSurfaces[0]?.files === 0,
+		"self-test: empty glob files",
+	);
+	assert(hasFailures(emptyGlob), "self-test: empty glob fails closed");
+	assert(
+		formatReport(emptyGlob).includes("skip of nothing"),
+		"self-test: empty glob names the skip-of-nothing failure",
+	);
+
+	const quantified = evaluateCoverage({
+		packages: [
+			{
+				name: "@input/pen-dom",
+				reportText: `# @input/pen-dom
+
+## .
+
+\`./dist/index.d.ts\`
+
+### function
+
+- createEditor
+
+## ./field-editor/*
+
+\`./dist/field-editor/*.d.ts\`
+
+glob members:
+
+- selectionBridgeOffsets.d.ts
+`,
+				sources: [
+					{
+						file: "index.ts",
+						text: "/** Create the editor. */\nexport function createEditor() {}\n",
+					},
+				],
+				globFileTexts: {
+					"selectionBridgeOffsets.d.ts":
+						"export function getSelectionPointRect(): void;\nexport function createEditor(): void;\n",
+				},
+			},
+		],
+		maxUndocumented: 0,
+	});
+	assert(
+		quantified.count === 0,
+		"self-test: glob exports stay out of the ratchet",
+	);
+	assert(
+		!quantified.regression,
+		"self-test: glob skip does not raise undocumented",
+	);
+	assert(
+		quantified.globSurfaces[0]?.files === 1,
+		"self-test: quantified files",
+	);
+	assert(
+		quantified.globSurfaces[0]?.exports === 2,
+		"self-test: quantified exports",
+	);
+	assert(
+		quantified.globSurfaces[0]?.globOnly.join(",") ===
+			"getSelectionPointRect",
+		"self-test: getSelectionPointRect is glob-only",
+	);
+	assert(
+		!hasFailures(quantified),
+		"self-test: quantified skip is not a coverage failure",
+	);
+	const sample = sampleGlobOnlyNames(
+		["applyBackspaceBehavior", "getSelectionPointRect", "helperA"],
+		2,
+	);
+	assert(
+		sample.names[0] === "getSelectionPointRect",
+		"self-test: glob-only sample leads with getSelectionPointRect",
+	);
+	assert(sample.more === 1, "self-test: glob-only sample reports remainder");
 
 	const healthy = evaluateCoverage({
 		packages: [
@@ -523,7 +841,10 @@ glob members:
 		injected.undocumented.some((hit) => hit.name === "leakedHelper"),
 		"self-test: red-proof names leakedHelper",
 	);
-	assert(hasFailures(injected), "self-test: injected undocumented export fails closed");
+	assert(
+		hasFailures(injected),
+		"self-test: injected undocumented export fails closed",
+	);
 
 	const restored = evaluateCoverage({
 		packages: [
@@ -571,7 +892,12 @@ glob members:
 
 - leakedHelper
 `,
-				sources: [{ file: "index.ts", text: "export function leakedHelper() {}\n" }],
+				sources: [
+					{
+						file: "index.ts",
+						text: "export function leakedHelper() {}\n",
+					},
+				],
 			},
 		],
 		maxUndocumented: 0,
@@ -597,7 +923,10 @@ glob members:
 		],
 		maxUndocumented: 4,
 	});
-	assert(stale.staleBaseline, "self-test: a drop without lowering the ratchet fails");
+	assert(
+		stale.staleBaseline,
+		"self-test: a drop without lowering the ratchet fails",
+	);
 	assert(hasFailures(stale), "self-test: stale baseline fails closed");
 
 	const outdatedOnly = evaluateCoverage({
@@ -620,11 +949,23 @@ glob members:
 		maxUndocumented: 0,
 		outdatedDist: [{ package: "@input/pen-core", newerCount: 1 }],
 	});
-	assert(!hasFailures(outdatedOnly), "self-test: outdated dist is not a coverage failure");
-	assert(hasInconclusive(outdatedOnly), "self-test: outdated dist is inconclusive");
+	assert(
+		!hasFailures(outdatedOnly),
+		"self-test: outdated dist is not a coverage failure",
+	);
+	assert(
+		hasInconclusive(outdatedOnly),
+		"self-test: outdated dist is inconclusive",
+	);
 	const outdatedReport = formatReport(outdatedOnly);
-	assert(!outdatedReport.includes("OK:"), "self-test: outdated dist must not print OK");
-	assert(outdatedReport.includes("INCONCLUSIVE:"), "self-test: outdated dist prints INCONCLUSIVE");
+	assert(
+		!outdatedReport.includes("OK:"),
+		"self-test: outdated dist must not print OK",
+	);
+	assert(
+		outdatedReport.includes("INCONCLUSIVE:"),
+		"self-test: outdated dist prints INCONCLUSIVE",
+	);
 	assert(
 		outdatedReport.includes("@input/pen-core"),
 		"self-test: INCONCLUSIVE names the package",
@@ -660,7 +1001,10 @@ glob members:
 		maxUndocumented: 0,
 		outdatedDist: [{ package: "@input/pen-core", newerCount: 1 }],
 	});
-	assert(hasFailures(injectedAndOutdated), "self-test: undocumented export still fails when dist is outdated");
+	assert(
+		hasFailures(injectedAndOutdated),
+		"self-test: undocumented export still fails when dist is outdated",
+	);
 	assert(
 		formatReport(injectedAndOutdated).includes("leakedHelper"),
 		"self-test: outdated dist does not hide an undocumented export",
@@ -730,9 +1074,48 @@ export async function loadCoveragePackages(repoRoot) {
 		const sources = [];
 		for (const filePath of sourceFiles.sort()) {
 			sources.push({
-				file: path.relative(pkg.dir, filePath).split(path.sep).join("/"),
+				file: path
+					.relative(pkg.dir, filePath)
+					.split(path.sep)
+					.join("/"),
 				text: await fs.readFile(filePath, "utf8"),
 			});
+		}
+		let globFileTexts = null;
+		if (reportText != null) {
+			let report;
+			try {
+				report = parseApiReport(reportText);
+			} catch {
+				report = null;
+			}
+			if (report != null) {
+				const texts = {};
+				let read = 0;
+				for (const surface of report.surfaces) {
+					if (!surface.glob) {
+						continue;
+					}
+					const directory = globDirectory(surface.typesPath);
+					if (directory == null) {
+						continue;
+					}
+					for (const file of surface.globFiles ?? []) {
+						try {
+							texts[file] = await fs.readFile(
+								path.join(pkg.dir, directory, file),
+								"utf8",
+							);
+							read += 1;
+						} catch {
+							// dist unread — exports stay unknown
+						}
+					}
+				}
+				if (read > 0) {
+					globFileTexts = texts;
+				}
+			}
 		}
 		packages.push({
 			name: pkg.name,
@@ -741,6 +1124,7 @@ export async function loadCoveragePackages(repoRoot) {
 			reportPath,
 			reportText,
 			sources,
+			globFileTexts,
 		});
 	}
 	return packages;
@@ -779,7 +1163,15 @@ async function main() {
 	);
 	console.log("  red-proof: tag-only @internal failed closed");
 	console.log("  red-proof: missing api-report.md failed closed");
-	console.log("  red-proof: baseline regression and stale baseline failed closed");
+	console.log(
+		"  red-proof: baseline regression and stale baseline failed closed",
+	);
+	console.log(
+		"  red-proof: declared glob with zero files failed closed (skip of nothing)",
+	);
+	console.log(
+		"  measured: glob exports stay out of MAX_UNDOCUMENTED; getSelectionPointRect is glob-only",
+	);
 
 	const args = parseArgs(process.argv.slice(2));
 	const packages = await loadCoveragePackages(args.repoRoot);

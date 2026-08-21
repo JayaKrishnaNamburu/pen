@@ -300,6 +300,7 @@ describe("Pen inline atom editing", () => {
 			>[0],
 			inlineElement,
 			editor.schema,
+			{ editor },
 		);
 		blockElement.appendChild(inlineElement);
 		root.appendChild(blockElement);
@@ -351,6 +352,7 @@ describe("Pen inline atom editing", () => {
 			>[0],
 			inlineElement,
 			editor.schema,
+			{ editor },
 		);
 		blockElement.appendChild(inlineElement);
 		root.appendChild(blockElement);
@@ -392,6 +394,7 @@ describe("Pen inline atom editing", () => {
 			>[0],
 			inlineElement,
 			editor.schema,
+			{ editor },
 		);
 		blockElement.appendChild(inlineElement);
 		root.appendChild(blockElement);

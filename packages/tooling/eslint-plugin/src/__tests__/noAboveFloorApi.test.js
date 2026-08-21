@@ -5,7 +5,9 @@ import tseslint from "typescript-eslint";
 import { describe, expect, it } from "vitest";
 import {
 	missingAllowlistField,
+	missingSiteField,
 	noAboveFloorApi,
+	sitePath,
 } from "../rules/noAboveFloorApi.js";
 
 const ruleTester = new RuleTester({
@@ -144,6 +146,9 @@ describe("no-above-floor-api (HOST4)", () => {
 		for (const entry of parsed.apis) {
 			expect(missingAllowlistField(entry)).toBeNull();
 			expect(Array.isArray(entry.sites)).toBe(true);
+			for (const site of entry.sites) {
+				expect(missingSiteField(site)).toBeNull();
+			}
 		}
 		const apis = parsed.apis.map((entry) => entry.api);
 		expect(apis).toEqual([
@@ -156,5 +161,103 @@ describe("no-above-floor-api (HOST4)", () => {
 			"color-mix",
 			"Intl.Segmenter",
 		]);
+	});
+
+	it("HOST4: a site may be a path string or { path, reason }", () => {
+		expect(sitePath("packages/core/src/bare.ts")).toBe(
+			"packages/core/src/bare.ts",
+		);
+		expect(
+			sitePath({
+				path: "packages/core/src/bare.ts",
+				reason: "Wave L LOC4: fixture asserts the fallback path",
+			}),
+		).toBe("packages/core/src/bare.ts");
+		expect(missingSiteField("packages/core/src/bare.ts")).toBeNull();
+		expect(
+			missingSiteField({
+				path: "packages/core/src/bare.ts",
+				reason: "Wave L LOC4: fixture asserts the fallback path",
+			}),
+		).toBeNull();
+		expect(missingSiteField({ path: "packages/core/src/bare.ts" })).toBe(
+			"reason",
+		);
+
+		const bare = "const next = structuredClone(value);\n";
+		const siteFile = "packages/core/src/allowlisted-clone.ts";
+		ruleTester.run("no-above-floor-api-sites", noAboveFloorApi, {
+			valid: [
+				{
+					code: bare,
+					filename: siteFile,
+					options: [
+						{
+							allowlist: [
+								{
+									api: "structuredClone",
+									fallback: "JSON.parse(JSON.stringify(value))",
+									degradation: "drops non-JSON values",
+									sites: [siteFile],
+								},
+							],
+						},
+					],
+				},
+				{
+					code: bare,
+					filename: siteFile,
+					options: [
+						{
+							allowlist: [
+								{
+									api: "structuredClone",
+									fallback: "JSON.parse(JSON.stringify(value))",
+									degradation: "drops non-JSON values",
+									sites: [
+										{
+											path: siteFile,
+											reason:
+												"Wave L: Node test asserts the documented fallback, not production clone",
+										},
+									],
+								},
+							],
+						},
+					],
+				},
+			],
+			invalid: [
+				{
+					code: bare,
+					filename: siteFile,
+					options: [
+						{
+							allowlist: [
+								{
+									api: "structuredClone",
+									fallback: "JSON.parse(JSON.stringify(value))",
+									degradation: "drops non-JSON values",
+									sites: [{ path: siteFile }],
+								},
+							],
+						},
+					],
+					errors: [
+						{
+							messageId: "incompleteAllowlist",
+							data: {
+								api: "structuredClone",
+								field: "sites.reason",
+							},
+						},
+						{
+							messageId: "bareUse",
+							data: { api: "structuredClone" },
+						},
+					],
+				},
+			],
+		});
 	});
 });

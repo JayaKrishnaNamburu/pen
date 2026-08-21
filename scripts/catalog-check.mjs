@@ -15,6 +15,9 @@
  * Reserved prefixes are documented allowlist, not silent holes:
  * - `pen.a11y.*` — Wave X announcements
  * - `pen.schema.*` / `pen.display.group.*` — resolved through schema helpers
+ *
+ * Fail-closed: a missing catalog file, zero catalog keys, or a walk
+ * that finds zero source files is a skip of nothing and exits 1 by name.
  */
 
 import fs from "node:fs";
@@ -22,7 +25,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = path.resolve(SCRIPT_DIR, "..");
+const DEFAULT_REPO_ROOT = path.resolve(SCRIPT_DIR, "..");
 
 const CATALOG_FILES = [
 	"packages/types/src/types/messages.ts",
@@ -40,8 +43,17 @@ const SKIP_DIR_NAMES = new Set([
 	".turbo",
 ]);
 
-function walk(dir, files = []) {
-	for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+export function walk(dir, files = []) {
+	let entries;
+	try {
+		entries = fs.readdirSync(dir, { withFileTypes: true });
+	} catch (error) {
+		if (error && error.code === "ENOENT") {
+			return files;
+		}
+		throw error;
+	}
+	for (const entry of entries) {
 		if (SKIP_DIR_NAMES.has(entry.name)) {
 			continue;
 		}
@@ -57,8 +69,7 @@ function walk(dir, files = []) {
 	return files;
 }
 
-function keysInFile(filePath) {
-	const source = fs.readFileSync(filePath, "utf8");
+export function keysInSource(source) {
 	const keys = new Set();
 	for (const match of source.matchAll(KEY_RE)) {
 		keys.add(match[1]);
@@ -66,63 +77,192 @@ function keysInFile(filePath) {
 	return keys;
 }
 
-function isReserved(key) {
-	return RESERVED_PREFIXES.some((prefix) => key.startsWith(prefix));
+export function isReserved(key, reservedPrefixes = RESERVED_PREFIXES) {
+	return reservedPrefixes.some((prefix) => key.startsWith(prefix));
 }
 
-function relative(filePath) {
-	return path.relative(REPO_ROOT, filePath);
+export function evaluateCatalog({
+	catalogKeys,
+	referenced,
+	reservedPrefixes = RESERVED_PREFIXES,
+	catalogFileCount,
+	walkedFileCount,
+	missingCatalogFiles = [],
+}) {
+	if (missingCatalogFiles.length > 0) {
+		return {
+			ok: false,
+			reason: `LOC1: missing catalog file(s): ${missingCatalogFiles.join(", ")}`,
+			missing: [],
+			dead: [],
+		};
+	}
+	if (catalogFileCount === 0 || catalogKeys.size === 0) {
+		return {
+			ok: false,
+			reason: "LOC1: catalog files produced zero keys (skip of nothing)",
+			missing: [],
+			dead: [],
+		};
+	}
+	if (walkedFileCount === 0) {
+		return {
+			ok: false,
+			reason: "LOC1: walker found zero source files under packages/ (skip of nothing)",
+			missing: [],
+			dead: [],
+		};
+	}
+
+	const missing = [...referenced].filter((key) => !catalogKeys.has(key)).sort();
+	const dead = [...catalogKeys]
+		.filter((key) => !referenced.has(key) && !isReserved(key, reservedPrefixes))
+		.sort();
+	if (missing.length > 0 || dead.length > 0) {
+		return { ok: false, reason: "LOC1: catalog completeness failed", missing, dead };
+	}
+	return { ok: true, reason: null, missing: [], dead: [] };
 }
 
-const catalogKeys = new Set();
-for (const rel of CATALOG_FILES) {
-	for (const key of keysInFile(path.join(REPO_ROOT, rel))) {
-		catalogKeys.add(key);
+export function runSelfTests() {
+	const missingFile = evaluateCatalog({
+		catalogKeys: new Set(),
+		referenced: new Set(),
+		catalogFileCount: 0,
+		walkedFileCount: 10,
+		missingCatalogFiles: ["packages/types/src/types/messages.ts"],
+	});
+	if (missingFile.ok || !/missing catalog file/.test(missingFile.reason)) {
+		throw new Error("self-test: missing catalog file must fail by name");
+	}
+
+	const emptyKeys = evaluateCatalog({
+		catalogKeys: new Set(),
+		referenced: new Set(),
+		catalogFileCount: 2,
+		walkedFileCount: 10,
+	});
+	if (emptyKeys.ok || !/zero keys/.test(emptyKeys.reason)) {
+		throw new Error("self-test: zero catalog keys must fail closed");
+	}
+
+	const emptyWalk = evaluateCatalog({
+		catalogKeys: new Set(["pen.editor.foo"]),
+		referenced: new Set(["pen.editor.foo"]),
+		catalogFileCount: 1,
+		walkedFileCount: 0,
+	});
+	if (emptyWalk.ok || !/zero source files/.test(emptyWalk.reason)) {
+		throw new Error("self-test: empty walk must fail closed");
+	}
+
+	const healthy = evaluateCatalog({
+		catalogKeys: new Set(["pen.editor.foo"]),
+		referenced: new Set(["pen.editor.foo"]),
+		catalogFileCount: 1,
+		walkedFileCount: 4,
+	});
+	if (!healthy.ok) {
+		throw new Error("self-test: matching catalog must pass");
 	}
 }
 
-const catalogAreas = new Set(
-	[...catalogKeys].map((key) => key.split(".")[1]).filter(Boolean),
-);
-
-function isCatalogShaped(key) {
-	return catalogAreas.has(key.split(".")[1]);
+function parseArgs(argv) {
+	let repoRoot = DEFAULT_REPO_ROOT;
+	for (let i = 0; i < argv.length; i += 1) {
+		const arg = argv[i];
+		if (arg === "--repo-root") {
+			repoRoot = path.resolve(argv[i + 1] ?? "");
+			i += 1;
+			continue;
+		}
+		throw new Error(`Unknown flag: ${arg}`);
+	}
+	return { repoRoot };
 }
 
-const referenced = new Set();
-const catalogRel = new Set(CATALOG_FILES);
-for (const file of walk(path.join(REPO_ROOT, "packages"))) {
-	if (catalogRel.has(relative(file))) {
-		continue;
-	}
-	for (const key of keysInFile(file)) {
-		if (isCatalogShaped(key)) {
-			referenced.add(key);
+function main() {
+	runSelfTests();
+	console.log("LOC1 catalog-check self-test ok");
+	console.log(
+		"  red-proof: missing catalog file, zero keys, and empty walk fail closed",
+	);
+
+	const args = parseArgs(process.argv.slice(2));
+	const missingCatalogFiles = [];
+	const catalogKeys = new Set();
+	for (const rel of CATALOG_FILES) {
+		const full = path.join(args.repoRoot, rel);
+		try {
+			for (const key of keysInSource(fs.readFileSync(full, "utf8"))) {
+				catalogKeys.add(key);
+			}
+		} catch (error) {
+			if (error && error.code === "ENOENT") {
+				missingCatalogFiles.push(rel);
+				continue;
+			}
+			throw error;
 		}
 	}
-}
 
-const missing = [...referenced].filter((key) => !catalogKeys.has(key)).sort();
-const dead = [...catalogKeys]
-	.filter((key) => !referenced.has(key) && !isReserved(key))
-	.sort();
+	const catalogAreas = new Set(
+		[...catalogKeys].map((key) => key.split(".")[1]).filter(Boolean),
+	);
+	function isCatalogShaped(key) {
+		return catalogAreas.has(key.split(".")[1]);
+	}
 
-if (missing.length > 0 || dead.length > 0) {
-	if (missing.length > 0) {
-		console.error("LOC1: referenced keys missing from the default catalogs:");
-		for (const key of missing) {
-			console.error(`  ${key}`);
+	const catalogRel = new Set(CATALOG_FILES);
+	const walked = walk(path.join(args.repoRoot, "packages"));
+	const referenced = new Set();
+	for (const file of walked) {
+		const rel = path.relative(args.repoRoot, file);
+		if (catalogRel.has(rel)) {
+			continue;
+		}
+		for (const key of keysInSource(fs.readFileSync(file, "utf8"))) {
+			if (isCatalogShaped(key)) {
+				referenced.add(key);
+			}
 		}
 	}
-	if (dead.length > 0) {
-		console.error("LOC1: default-catalog keys are not referenced:");
-		for (const key of dead) {
-			console.error(`  ${key}`);
+
+	const result = evaluateCatalog({
+		catalogKeys,
+		referenced,
+		catalogFileCount: CATALOG_FILES.length - missingCatalogFiles.length,
+		walkedFileCount: walked.length,
+		missingCatalogFiles,
+	});
+	if (!result.ok) {
+		console.error(result.reason);
+		if (result.missing.length > 0) {
+			console.error("LOC1: referenced keys missing from the default catalogs:");
+			for (const key of result.missing) {
+				console.error(`  ${key}`);
+			}
 		}
+		if (result.dead.length > 0) {
+			console.error("LOC1: default-catalog keys are not referenced:");
+			for (const key of result.dead) {
+				console.error(`  ${key}`);
+			}
+		}
+		process.exitCode = 1;
+		return;
 	}
-	process.exit(1);
+	console.log(
+		`LOC1: catalog completeness ok (${catalogKeys.size} keys, ${referenced.size} references)`,
+	);
 }
 
-console.log(
-	`LOC1: catalog completeness ok (${catalogKeys.size} keys, ${referenced.size} references)`,
-);
+const isDirectRun = process.argv[1] === fileURLToPath(import.meta.url);
+if (isDirectRun) {
+	try {
+		main();
+	} catch (error) {
+		console.error(error instanceof Error ? error.message : error);
+		process.exitCode = 1;
+	}
+}

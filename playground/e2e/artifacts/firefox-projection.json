@@ -1,0 +1,177 @@
+{
+  "capturedAt": "2026-08-21T09:54:02.921Z",
+  "browserName": "firefox",
+  "concurrentPackagesLoad": true,
+  "paragraph": "Alpha bravo charlie delta echo",
+  "blockId": "5a0e96ea-2bdf-4a17-bcc4-2a3c18cfbf62",
+  "afterType": {
+    "editor": {
+      "type": "text",
+      "isCollapsed": true,
+      "anchorOffset": 30,
+      "focusOffset": 30
+    },
+    "native": {
+      "isCollapsed": true,
+      "text": "",
+      "rangeCount": 1,
+      "anchorOffset": 30,
+      "focusOffset": 30,
+      "anchorPath": "text:\"Alpha bravo charlie delta echo\"@SPAN.",
+      "focusPath": "text:\"Alpha bravo charlie delta echo\"@SPAN."
+    },
+    "activeBlockId": "5a0e96ea-2bdf-4a17-bcc4-2a3c18cfbf62",
+    "attachedInlineBlockId": "5a0e96ea-2bdf-4a17-bcc4-2a3c18cfbf62"
+  },
+  "afterTripleClick": [
+    {
+      "label": "triple-click:t0",
+      "editor": {
+        "type": "text",
+        "isCollapsed": true,
+        "anchorOffset": 30,
+        "focusOffset": 30
+      },
+      "native": {
+        "isCollapsed": true,
+        "text": "",
+        "rangeCount": 1,
+        "anchorOffset": 30,
+        "focusOffset": 30,
+        "anchorPath": "text:\"Alpha bravo charlie delta echo\"@SPAN.",
+        "focusPath": "text:\"Alpha bravo charlie delta echo\"@SPAN."
+      },
+      "activeBlockId": "5a0e96ea-2bdf-4a17-bcc4-2a3c18cfbf62",
+      "attachedInlineBlockId": "5a0e96ea-2bdf-4a17-bcc4-2a3c18cfbf62"
+    },
+    {
+      "label": "triple-click:t2raf",
+      "editor": {
+        "type": "text",
+        "isCollapsed": false,
+        "anchorOffset": 0,
+        "focusOffset": 30
+      },
+      "native": {
+        "isCollapsed": true,
+        "text": "",
+        "rangeCount": 1,
+        "anchorOffset": 30,
+        "focusOffset": 30,
+        "anchorPath": "text:\"Alpha bravo charlie delta echo\"@SPAN.",
+        "focusPath": "text:\"Alpha bravo charlie delta echo\"@SPAN."
+      },
+      "activeBlockId": "5a0e96ea-2bdf-4a17-bcc4-2a3c18cfbf62",
+      "attachedInlineBlockId": "5a0e96ea-2bdf-4a17-bcc4-2a3c18cfbf62"
+    }
+  ],
+  "afterCollapse": {
+    "editor": {
+      "type": "text",
+      "isCollapsed": true,
+      "anchorOffset": 12,
+      "focusOffset": 12
+    },
+    "native": {
+      "isCollapsed": true,
+      "text": "",
+      "rangeCount": 1,
+      "anchorOffset": 30,
+      "focusOffset": 30,
+      "anchorPath": "text:\"Alpha bravo charlie delta echo\"@SPAN.",
+      "focusPath": "text:\"Alpha bravo charlie delta echo\"@SPAN."
+    },
+    "activeBlockId": "5a0e96ea-2bdf-4a17-bcc4-2a3c18cfbf62",
+    "attachedInlineBlockId": "5a0e96ea-2bdf-4a17-bcc4-2a3c18cfbf62"
+  },
+  "afterAuthorityRange": [
+    {
+      "label": "selectTextRange:t0",
+      "editor": {
+        "type": "text",
+        "isCollapsed": false,
+        "anchorOffset": 0,
+        "focusOffset": 30
+      },
+      "native": {
+        "isCollapsed": true,
+        "text": "",
+        "rangeCount": 1,
+        "anchorOffset": 30,
+        "focusOffset": 30,
+        "anchorPath": "text:\"Alpha bravo charlie delta echo\"@SPAN.",
+        "focusPath": "text:\"Alpha bravo charlie delta echo\"@SPAN."
+      },
+      "activeBlockId": "5a0e96ea-2bdf-4a17-bcc4-2a3c18cfbf62",
+      "attachedInlineBlockId": "5a0e96ea-2bdf-4a17-bcc4-2a3c18cfbf62"
+    },
+    {
+      "label": "selectTextRange:t2raf",
+      "editor": {
+        "type": "text",
+        "isCollapsed": false,
+        "anchorOffset": 0,
+        "focusOffset": 30
+      },
+      "native": {
+        "isCollapsed": true,
+        "text": "",
+        "rangeCount": 1,
+        "anchorOffset": 30,
+        "focusOffset": 30,
+        "anchorPath": "text:\"Alpha bravo charlie delta echo\"@SPAN.",
+        "focusPath": "text:\"Alpha bravo charlie delta echo\"@SPAN."
+      },
+      "activeBlockId": "5a0e96ea-2bdf-4a17-bcc4-2a3c18cfbf62",
+      "attachedInlineBlockId": "5a0e96ea-2bdf-4a17-bcc4-2a3c18cfbf62"
+    }
+  ],
+  "afterUntrustedAddRange": [
+    {
+      "label": "addRange:t0",
+      "editor": {
+        "type": "text",
+        "isCollapsed": true,
+        "anchorOffset": 12,
+        "focusOffset": 12
+      },
+      "native": {
+        "isCollapsed": true,
+        "text": "",
+        "rangeCount": 1,
+        "anchorOffset": 30,
+        "focusOffset": 30,
+        "anchorPath": "text:\"Alpha bravo charlie delta echo\"@SPAN.",
+        "focusPath": "text:\"Alpha bravo charlie delta echo\"@SPAN."
+      },
+      "activeBlockId": "5a0e96ea-2bdf-4a17-bcc4-2a3c18cfbf62",
+      "attachedInlineBlockId": "5a0e96ea-2bdf-4a17-bcc4-2a3c18cfbf62"
+    },
+    {
+      "label": "addRange:t2raf",
+      "editor": {
+        "type": "text",
+        "isCollapsed": true,
+        "anchorOffset": 12,
+        "focusOffset": 12
+      },
+      "native": {
+        "isCollapsed": true,
+        "text": "",
+        "rangeCount": 1,
+        "anchorOffset": 30,
+        "focusOffset": 30,
+        "anchorPath": "text:\"Alpha bravo charlie delta echo\"@SPAN.",
+        "focusPath": "text:\"Alpha bravo charlie delta echo\"@SPAN."
+      },
+      "activeBlockId": "5a0e96ea-2bdf-4a17-bcc4-2a3c18cfbf62",
+      "attachedInlineBlockId": "5a0e96ea-2bdf-4a17-bcc4-2a3c18cfbf62"
+    }
+  ],
+  "classificationHints": {
+    "authorityRangeProjected": false,
+    "authorityWroteRange": true,
+    "untrustedAddRangeStuck": false,
+    "tripleClickHeldRange": false
+  }
+}

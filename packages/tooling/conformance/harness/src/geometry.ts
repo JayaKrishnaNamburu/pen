@@ -3,7 +3,6 @@ import {
 	DomScheduler,
 	verticalCaretTarget,
 	type GeometryReaderHost,
-	type Rect,
 } from "@input/pen-dom";
 import type { CommitEvent, Editor, Unsubscribe } from "@input/pen-types";
 import {
@@ -14,7 +13,6 @@ import {
 	type PaintPlan,
 } from "../../../../rendering/dom/src/overlays";
 import type {
-	GeometryAffinity,
 	GeometryBlockInfo,
 	GeometryCaretCompare,
 	GeometryCaretCompareResult,
@@ -22,9 +20,14 @@ import type {
 	GeometryLineBox,
 	GeometryPoint,
 	GeometryPointRef,
-	GeometryRect,
 	GeometryVerticalMotion,
 } from "../../src/types";
+import {
+	geometryBlocksFromEditor,
+	normalizePoint,
+	rectsEqual,
+	serializeRect,
+} from "./geometryCompare";
 
 const CONTENT_SELECTOR = "[data-pen-editor-content]";
 const ROOT_SELECTOR = "[data-pen-editor-root]";
@@ -56,51 +59,6 @@ function editorRoot(): HTMLElement {
 function contentRoot(root: HTMLElement): HTMLElement {
 	const content = root.querySelector(CONTENT_SELECTOR);
 	return content instanceof HTMLElement ? content : root;
-}
-
-function serializeRect(rect: Rect | null): GeometryRect | null {
-	if (!rect) {
-		return null;
-	}
-	return {
-		x: rect.x,
-		y: rect.y,
-		width: rect.width,
-		height: rect.height,
-		top: rect.top,
-		left: rect.left,
-		right: rect.right,
-		bottom: rect.bottom,
-	};
-}
-
-function rectsEqual(
-	left: GeometryRect | null,
-	right: GeometryRect | null,
-): boolean {
-	if (left == null || right == null) {
-		return left === right;
-	}
-	return (
-		Object.is(left.x, right.x) &&
-		Object.is(left.y, right.y) &&
-		Object.is(left.width, right.width) &&
-		Object.is(left.height, right.height) &&
-		Object.is(left.top, right.top) &&
-		Object.is(left.left, right.left) &&
-		Object.is(left.right, right.right) &&
-		Object.is(left.bottom, right.bottom)
-	);
-}
-
-function normalizePoint(point: GeometryPointRef): {
-	point: GeometryPoint;
-	affinity: GeometryAffinity;
-} {
-	return {
-		point: { blockId: point.blockId, offset: point.offset },
-		affinity: point.affinity ?? "downstream",
-	};
 }
 
 function serializeLineBoxes(
@@ -243,10 +201,7 @@ export function invalidateGeometry(editor: Editor): void {
 }
 
 export function geometryBlocks(editor: Editor): GeometryBlockInfo[] {
-	return editor.documentState.blockOrder.map((id) => ({
-		id,
-		length: editor.getBlock(id)?.length() ?? 0,
-	}));
+	return geometryBlocksFromEditor(editor);
 }
 
 export function geometryLineBoxes(

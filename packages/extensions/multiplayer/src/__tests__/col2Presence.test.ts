@@ -77,6 +77,22 @@ function withOwnKey(
 	return base;
 }
 
+function throwingAfterMeasure(): Record<string, unknown> {
+	const state: Record<string, unknown> = {
+		user: { id: "u-bad", name: "Ada" },
+		toJSON() {
+			return { user: { id: "u-bad", name: "Ada" } };
+		},
+	};
+	Object.defineProperty(state, "cursor", {
+		enumerable: true,
+		get() {
+			throw new Error("hostile-getter");
+		},
+	});
+	return state;
+}
+
 function createPresenceEditor(now?: () => number) {
 	const { crdtDoc } = createTestDocument([
 		{ id: "b1", type: "paragraph", content: "Hello" },
@@ -145,9 +161,12 @@ function applyStates(
 }
 
 function goodPeerDecoration(editor: ReturnType<typeof createEditor>) {
-	return editor.getDecorations().inlineForBlock("b1").find((decoration) => {
-		return decoration.attributes?.["data-user-id"] === "u-good";
-	});
+	return editor
+		.getDecorations()
+		.inlineForBlock("b1")
+		.find((decoration) => {
+			return decoration.attributes?.["data-user-id"] === "u-good";
+		});
 }
 
 function rejectedReasons(diagnostics: DiagnosticEvent[]): string[] {
@@ -378,7 +397,10 @@ describe("COL2 awareness is untrusted input", () => {
 
 		for (const selection of selectionCases) {
 			const result = validate([
-				[BAD_PEER_ID, { user: { id: "u-bad", name: "Ada" }, selection }],
+				[
+					BAD_PEER_ID,
+					{ user: { id: "u-bad", name: "Ada" }, selection },
+				],
 			]);
 			expect(result.states.get(BAD_PEER_ID)).toEqual({
 				user: { id: "u-bad", name: "Ada" },
@@ -413,7 +435,11 @@ describe("COL2 awareness is untrusted input", () => {
 	});
 
 	it("COL2: commitId does not admit hostile offsets — negative, fractional, and absurd values are dropped", () => {
-		const cases: Array<{ offset: number; commitId: number; reason: string }> = [
+		const cases: Array<{
+			offset: number;
+			commitId: number;
+			reason: string;
+		}> = [
 			{ offset: -1, commitId: 1, reason: "wrong-typed" },
 			{ offset: 2.5, commitId: 1, reason: "wrong-typed" },
 			{ offset: Number.MAX_VALUE, commitId: 1, reason: "wrong-typed" },
@@ -463,12 +489,66 @@ describe("COL2 awareness is untrusted input", () => {
 		expect(staleButPlausible.rejections).toEqual([]);
 	});
 
+	it("COL2: a throwing peer state is wrong-typed and does not drop a good peer", () => {
+		const result = validate([
+			[GOOD_PEER_ID, validPeer],
+			[BAD_PEER_ID, throwingAfterMeasure()],
+		]);
+
+		expect(result.states.get(GOOD_PEER_ID)).toEqual({
+			user: validPeer.user,
+			cursor: validPeer.cursor,
+			selection: validPeer.selection,
+		});
+		expect(result.states.has(BAD_PEER_ID)).toBe(false);
+		expect(result.rejections).toEqual([
+			{ clientId: BAD_PEER_ID, reason: "wrong-typed" },
+		]);
+	});
+
+	it("COL2: control-character script and javascript: strings are script-bearing", () => {
+		const cases: Array<{
+			user: { id: string; name: string; avatar?: string };
+		}> = [
+			{
+				user: {
+					id: "u-nul",
+					name: "<\u0000script>window.__xssProbe=1</script>",
+				},
+			},
+			{
+				user: {
+					id: "u-js",
+					name: "Ada",
+					avatar: "java\u0000script:alert(1)",
+				},
+			},
+			{
+				user: {
+					id: "u-bom",
+					name: "\uFEFF<script>window.__xssProbe=1</script>",
+				},
+			},
+		];
+
+		for (const state of cases) {
+			const result = validate([[BAD_PEER_ID, state]]);
+			expect(result.states.has(BAD_PEER_ID)).toBe(false);
+			expect(result.rejections).toEqual([
+				{ clientId: BAD_PEER_ID, reason: "script-bearing" },
+			]);
+		}
+	});
+
 	it("COL2: entity-escaped and unicode names are not script-bearing; raw markup still is", () => {
 		const escaped = validate([
 			[
 				BAD_PEER_ID,
 				{
-					user: { id: "u-ent", name: "&lt;script&gt;alert(1)&lt;/script&gt;" },
+					user: {
+						id: "u-ent",
+						name: "&lt;script&gt;alert(1)&lt;/script&gt;",
+					},
 				},
 			],
 		]);
@@ -481,7 +561,10 @@ describe("COL2 awareness is untrusted input", () => {
 			[
 				BAD_PEER_ID,
 				{
-					user: { id: "u-uni", name: "<scr\u0069pt>alert(1)</script>" },
+					user: {
+						id: "u-uni",
+						name: "<scr\u0069pt>alert(1)</script>",
+					},
 				},
 			],
 		]);
@@ -530,8 +613,14 @@ describe("COL2 awareness is untrusted input", () => {
 			[
 				BAD_PEER_ID,
 				{
-					user: { id: "u-extra", name: "Ada", email: "hidden@example.com" },
-					streaming: { prompt: "<script>window.__xssProbe=1</script>" },
+					user: {
+						id: "u-extra",
+						name: "Ada",
+						email: "hidden@example.com",
+					},
+					streaming: {
+						prompt: "<script>window.__xssProbe=1</script>",
+					},
 					ai: { role: "admin" },
 					cursor: { blockId: "b1", offset: 2, clock: 10 },
 				},
@@ -542,9 +631,13 @@ describe("COL2 awareness is untrusted input", () => {
 			cursor: { blockId: "b1", offset: 2, clock: 10 },
 			selection: null,
 		});
-		expect(extraKeys.states.get(BAD_PEER_ID)).not.toHaveProperty("streaming");
+		expect(extraKeys.states.get(BAD_PEER_ID)).not.toHaveProperty(
+			"streaming",
+		);
 		expect(extraKeys.states.get(BAD_PEER_ID)).not.toHaveProperty("ai");
-		expect(extraKeys.states.get(BAD_PEER_ID)?.user).not.toHaveProperty("email");
+		expect(extraKeys.states.get(BAD_PEER_ID)?.user).not.toHaveProperty(
+			"email",
+		);
 		expect(extraKeys.rejections).toEqual([]);
 	});
 
@@ -640,9 +733,12 @@ describe("COL2 awareness is untrusted input", () => {
 		expect(decoration).toBeDefined();
 		expect(decoration?.attributes?.["data-user-name"]).toBe("Grace");
 		expect(
-			editor.getDecorations().inlineForBlock("b1").some((item) => {
-				return item.attributes?.["data-user-id"] === "u-bad";
-			}),
+			editor
+				.getDecorations()
+				.inlineForBlock("b1")
+				.some((item) => {
+					return item.attributes?.["data-user-id"] === "u-bad";
+				}),
 		).toBe(false);
 		expect(
 			controller.getRemoteCursors().map((cursor) => cursor.clientId),
@@ -652,6 +748,33 @@ describe("COL2 awareness is untrusted input", () => {
 			"oversized",
 			"wrong-typed",
 		]);
+
+		editor.destroy();
+	});
+
+	it("COL2: a throwing peer never reaches a decoration and does not break good peers", () => {
+		const { editor, controller, diagnostics } = createPresenceEditor();
+
+		applyStates(controller, editor, [
+			[GOOD_PEER_ID, goodPeerState()],
+			[BAD_PEER_ID, throwingAfterMeasure() as MultiplayerAwarenessState],
+		]);
+
+		expect(goodPeerDecoration(editor)?.attributes?.["data-user-id"]).toBe(
+			"u-good",
+		);
+		expect(
+			controller.getRemoteCursors().map((cursor) => cursor.clientId),
+		).toEqual([GOOD_PEER_ID]);
+		expect(
+			editor
+				.getDecorations()
+				.inlineForBlock("b1")
+				.some((item) => {
+					return item.attributes?.["data-user-id"] === "u-bad";
+				}),
+		).toBe(false);
+		expect(rejectedReasons(diagnostics)).toEqual(["wrong-typed"]);
 
 		editor.destroy();
 	});
@@ -734,7 +857,11 @@ describe("COL2 awareness is untrusted input", () => {
 			entries.push([
 				100 + index,
 				{
-					user: { id: `u-${index}`, name: `Peer ${index}`, color: "#abc123" },
+					user: {
+						id: `u-${index}`,
+						name: `Peer ${index}`,
+						color: "#abc123",
+					},
 					cursor: { blockId: "b1", offset: 1, clock: index },
 				},
 			]);
@@ -806,9 +933,15 @@ describe("COL2 awareness is untrusted input", () => {
 			controller.getRemoteCursors().map((cursor) => cursor.clientId),
 		).toEqual([GOOD_PEER_ID]);
 		expect(
-			editor.getDecorations().inlineForBlock("b1").some((item) => {
-				return item.from === Number.MAX_VALUE || item.to === Number.MAX_VALUE;
-			}),
+			editor
+				.getDecorations()
+				.inlineForBlock("b1")
+				.some((item) => {
+					return (
+						item.from === Number.MAX_VALUE ||
+						item.to === Number.MAX_VALUE
+					);
+				}),
 		).toBe(false);
 		expect(rejectedReasons(diagnostics)).toEqual(["wrong-typed"]);
 
@@ -843,12 +976,14 @@ describe("COL2 awareness is untrusted input", () => {
 		editor.requestDecorationUpdate();
 
 		expect(
-			JSON.stringify(editor.getDecorations().inlineForBlock("b1")).includes(
-				"<script",
-			),
+			JSON.stringify(
+				editor.getDecorations().inlineForBlock("b1"),
+			).includes("<script"),
 		).toBe(false);
 		expect(
-			controller.getRemoteCursors().some((cursor) => cursor.user.id === "u-wire"),
+			controller
+				.getRemoteCursors()
+				.some((cursor) => cursor.user.id === "u-wire"),
 		).toBe(false);
 		expect(rejectedReasons(diagnostics)).toContain("script-bearing");
 
@@ -909,7 +1044,11 @@ describe("COL2 awareness is untrusted input", () => {
 			entries.push([
 				100 + index,
 				{
-					user: { id: `u-${index}`, name: `Peer ${index}`, color: "#abc123" },
+					user: {
+						id: `u-${index}`,
+						name: `Peer ${index}`,
+						color: "#abc123",
+					},
 					cursor: { blockId: "b1", offset: 1, clock: index },
 				},
 			]);
@@ -937,8 +1076,9 @@ describe("COL2 awareness is untrusted input", () => {
 			...entries.slice(1),
 		]);
 		expect(
-			controller.getRemoteCursors().find((cursor) => cursor.clientId === 100)
-				?.offset,
+			controller
+				.getRemoteCursors()
+				.find((cursor) => cursor.clientId === 100)?.offset,
 		).toBe(3);
 		expect(controller.getRemoteCursors()).toHaveLength(MAX_TRACKED_PEERS);
 		expect(controller.getPeers()).toHaveLength(MAX_TRACKED_PEERS);
@@ -1000,7 +1140,9 @@ describe("COL2 awareness is untrusted input", () => {
 				},
 			],
 		]);
-		expect(admitted.states.get(BAD_PEER_ID)?.user?.avatar).toBe(httpsAvatar);
+		expect(admitted.states.get(BAD_PEER_ID)?.user?.avatar).toBe(
+			httpsAvatar,
+		);
 		expect(admitted.rejections).toEqual([]);
 
 		const svg = validate([
@@ -1040,7 +1182,11 @@ describe("COL2 awareness is untrusted input", () => {
 				[
 					BAD_PEER_ID,
 					{
-						user: { id: "u-deny", name: "Ada", avatar: httpsAvatar },
+						user: {
+							id: "u-deny",
+							name: "Ada",
+							avatar: httpsAvatar,
+						},
 					},
 				],
 			],
@@ -1093,16 +1239,26 @@ describe("COL2 awareness is untrusted input", () => {
 
 	it("COL2: per-peer update rate limit keeps the last accepted presence", () => {
 		let now = 1_000_000;
-		const { editor, controller, diagnostics } = createPresenceEditor(() => now);
+		const { editor, controller, diagnostics } = createPresenceEditor(
+			() => now,
+		);
 
-		for (let index = 0; index < MAX_PRESENCE_UPDATES_PER_SECOND; index += 1) {
+		for (
+			let index = 0;
+			index < MAX_PRESENCE_UPDATES_PER_SECOND;
+			index += 1
+		) {
 			now += 1;
 			applyStates(controller, editor, [
 				[
 					GOOD_PEER_ID,
 					{
 						user: { id: "u-good", name: "Grace", color: "#abc123" },
-						cursor: { blockId: "b1", offset: index % 5, clock: index },
+						cursor: {
+							blockId: "b1",
+							offset: index % 5,
+							clock: index,
+						},
 					},
 				],
 			]);
@@ -1141,7 +1297,9 @@ describe("COL2 awareness is untrusted input", () => {
 
 	it("COL2: rate-limit flood keeps one cursor and never throws", () => {
 		let now = 1_000_000;
-		const { editor, controller, diagnostics } = createPresenceEditor(() => now);
+		const { editor, controller, diagnostics } = createPresenceEditor(
+			() => now,
+		);
 		const floodCount = MAX_PRESENCE_UPDATES_PER_SECOND * 64;
 
 		expect(() => {
@@ -1151,8 +1309,16 @@ describe("COL2 awareness is untrusted input", () => {
 					[
 						GOOD_PEER_ID,
 						{
-							user: { id: "u-good", name: "Grace", color: "#abc123" },
-							cursor: { blockId: "b1", offset: index % 5, clock: index },
+							user: {
+								id: "u-good",
+								name: "Grace",
+								color: "#abc123",
+							},
+							cursor: {
+								blockId: "b1",
+								offset: index % 5,
+								clock: index,
+							},
 						},
 					],
 				]);
@@ -1162,7 +1328,8 @@ describe("COL2 awareness is untrusted input", () => {
 		expect(controller.getRemoteCursors()).toHaveLength(1);
 		expect(controller.getPeers()).toHaveLength(1);
 		expect(
-			diagnostics.filter((event) => event.reason === "rate-limited").length,
+			diagnostics.filter((event) => event.reason === "rate-limited")
+				.length,
 		).toBe(floodCount - MAX_PRESENCE_UPDATES_PER_SECOND);
 		expect(controller.getRemoteCursors()[0]?.clock).toBeLessThan(
 			MAX_PRESENCE_UPDATES_PER_SECOND,

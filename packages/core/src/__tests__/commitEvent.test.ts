@@ -11,6 +11,26 @@ describe("commitEvent helpers (Wave 2.2)", () => {
 		});
 	});
 
+	it("toStructuredOrigin returns the same structured object it was given", () => {
+		const origin = { type: "user" as const, groupId: "g1", requestId: "r1" };
+		const frozen = Object.freeze({
+			type: "ai" as const,
+			requestId: "r2",
+		});
+		const extra = {
+			type: "user" as const,
+			unexpected: "field",
+		};
+
+		expect(toStructuredOrigin(origin)).toBe(origin);
+		expect(toStructuredOrigin(frozen)).toBe(frozen);
+		expect(toStructuredOrigin(extra)).toBe(extra);
+		expect(toStructuredOrigin(extra)).toEqual({
+			type: "user",
+			unexpected: "field",
+		});
+	});
+
 	it("resolveCommitSource maps history / collaborator / stream", () => {
 		expect(resolveCommitSource("user", "apply")).toBe("apply");
 		expect(resolveCommitSource("collaborator", "apply")).toBe("remote");

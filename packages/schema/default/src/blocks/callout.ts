@@ -61,6 +61,11 @@ export const callout = defineBlock("callout", {
         importContentSource: {
           markdownNodes: trimLeadingWhitespaceNodes(first.children.slice(1)),
         },
+        children: (node.children ?? []).slice(1).map((child) => ({
+          type: child.type,
+          props: {},
+          importContentSource: { markdownNodes: [child] },
+        })),
       };
     },
     toHTML: (block) => {

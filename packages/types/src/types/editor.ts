@@ -1,5 +1,5 @@
 import type { Block } from "./block";
-import type { SelectionState } from "./selection";
+import type { SelectionRecord, SelectionState } from "./selection";
 import type {
 	CRDTAdapter,
 	CRDTDocument,
@@ -13,7 +13,6 @@ import type {
 import type { ChangeSummary, Point, SummaryLog } from "./changes";
 import type { Facet, FacetOutput } from "./facets";
 import type { DocumentOp, OpOrigin, ApplyOptions, StructuredOpOrigin } from "./ops";
-import type { SelectionRecordV2 } from "./selectionV2";
 import type { Decoration, DecorationSet } from "./decorations";
 import type { Extension } from "./extension";
 import type { BlockHandle, AppHandle } from "./handles";
@@ -127,8 +126,7 @@ export type CommitEventSource =
 /** Dropped ops and validation failures for one commit (`06-commit-pipeline.md`). */
 export type Diagnostic = DiagnosticEvent;
 
-/** Selection record as of a commit (`03-selection.md` §1.1; Wave 5.1 additive type). */
-export type SelectionRecord = SelectionRecordV2;
+export type { SelectionRecord };
 
 export interface CommitEvent {
 	readonly commitId: number;

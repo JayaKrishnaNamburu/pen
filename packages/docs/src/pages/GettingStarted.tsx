@@ -40,11 +40,16 @@ export function GettingStartedPage() {
 			<p>
 				An empty <code>[data-pen-inline-content]</code> has zero width
 				until it contains text, so a click on an empty paragraph never
-				lands on the inline surface. Activation resolves the clicked{" "}
-				<code>[data-pen-editor-block]</code> instead, in every binding.
-				The first keystroke lands with no stylesheet at all, including
-				on an empty document; you do not need to give the inline
-				surface a <code>min-width</code>.
+				lands on the inline surface. Activation is block-level: it
+				resolves the clicked <code>[data-pen-editor-block]</code> in
+				every binding, including on an empty document. A click on
+				tall host chrome <em>below</em> the last text block
+				activates that block at its end offset; a click{" "}
+				<em>above</em> the first text block activates that block at
+				offset 0. The gap <em>between</em> blocks stays inactive.
+				The first keystroke lands with no stylesheet at all; you do
+				not need to give the inline surface a{" "}
+				<code>min-width</code>.
 			</p>
 			<p>
 				Runtime floor (HOST3): Node <code>&gt;=22</code>, Chromium

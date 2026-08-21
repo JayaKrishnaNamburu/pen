@@ -95,7 +95,7 @@ export class IngestDropCounts {
 		return reasons.map(([reason, count]) => {
 			const bound = BOUND_BY_REASON[reason];
 			const limit = LIMIT_BY_REASON[reason];
-			const actual = this.actuals.get(reason);
+			const actual = resolveActual(reason, count, this.actuals.get(reason));
 			const entry: IngestDroppedByReason = {
 				reason,
 				count,
@@ -228,6 +228,23 @@ export function copyRecord(
 		);
 	}
 	return record;
+}
+
+function resolveActual(
+	reason: IngestDropReason,
+	count: number,
+	stored: number | undefined,
+): number | undefined {
+	if (stored !== undefined) {
+		return stored;
+	}
+	if (reason === "count-exceeded") {
+		return INGEST_MAX_NODE_COUNT + count;
+	}
+	if (reason === "image-count-exceeded") {
+		return INGEST_MAX_IMAGE_COUNT + count;
+	}
+	return undefined;
 }
 
 function formatIngestMessage(report: IngestReport, truncated: boolean): string {

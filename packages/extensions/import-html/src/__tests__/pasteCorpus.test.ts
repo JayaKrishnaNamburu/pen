@@ -70,7 +70,7 @@ function collectHrefAndSrc(value: unknown, acc: string[]): void {
   }
   const record = value as Record<string, unknown>;
   for (const [key, nested] of Object.entries(record)) {
-    if ((key === "href" || key === "src") && typeof nested === "string") {
+    if (/^(href|src)$/i.test(key) && typeof nested === "string") {
       acc.push(nested);
     } else {
       collectHrefAndSrc(nested, acc);

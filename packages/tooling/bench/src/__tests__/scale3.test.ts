@@ -23,6 +23,9 @@ import {
 	SCALE3_AXIS_BENCH_PAIRS,
 	SCALE3_BASELINES,
 	SCALE3_MACHINE_CLASS,
+	SCALE3_DECORATION_COUNT_POINTS,
+	SCALE3_EXTENSION_COUNT_POINTS,
+	SCALE3_PEER_COUNT_POINTS,
 	SCALE3_PLUS_EXTENSIONS,
 	SCALE3_SHIPPED_STACK,
 	compareScale2Plus8Tolerance,
@@ -30,7 +33,11 @@ import {
 	getScale3Baseline,
 	scale2Plus8GateMs,
 } from "../constants/scale3";
-import { createScale3Editor, scale3KeystrokeTarget } from "../fixtures/scale3Stack";
+import {
+	createScale3Editor,
+	createScale3Extensions,
+	scale3KeystrokeTarget,
+} from "../fixtures/scale3Stack";
 import {
 	assertScale2Plus8Tolerance,
 	createBenchSuites,
@@ -171,6 +178,48 @@ describe("SCALE3 realistic-stack keystroke", () => {
 
 		expect(editor.getBlock(blockId).textContent().length).toBe(before + 1);
 		expect(editor.document.blockOrder.length).toBe(100);
+		void editor.destroy();
+	});
+
+	it("SCALE3: peer-count.8 is eight caret decorations on one document", () => {
+		const editor = createScale3Editor({
+			blockCount: 100,
+			peerCount: SCALE3_PEER_COUNT_POINTS[1],
+		});
+		editor.requestDecorationUpdate();
+		const carets = editor.getDecorations().decorations.filter(
+			(decoration) =>
+				decoration.type === "block" &&
+				decoration.attributes["data-pen-remote-caret"] === true,
+		);
+		expect(carets).toHaveLength(8);
+		expect(editor.document.blockOrder.length).toBe(100);
+		void editor.destroy();
+	});
+
+	it("SCALE3: decoration-count.256 and plus8 are counts, not clocks", () => {
+		const editor = createScale3Editor({
+			blockCount: 1000,
+			decorationCount: SCALE3_DECORATION_COUNT_POINTS[1],
+		});
+		editor.requestDecorationUpdate();
+		const marks = editor.getDecorations().decorations.filter(
+			(decoration) =>
+				decoration.type === "inline" &&
+				decoration.attributes["data-pen-scale3-decoration"] === true,
+		);
+		expect(marks).toHaveLength(256);
+		void editor.destroy();
+
+		expect(
+			createScale3Extensions({
+				blockCount: 1000,
+				extraDecoratingExtensions: 8,
+			}),
+		).toHaveLength(SCALE3_PLUS_EXTENSIONS.length + 8);
+		expect(SCALE3_EXTENSION_COUNT_POINTS[1]).toBe(
+			SCALE3_SHIPPED_STACK.length + 8,
+		);
 	});
 
 	it("SCALE3: a deliberately slowed keystroke fails the committed baseline comparison", () => {

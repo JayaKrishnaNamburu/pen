@@ -167,6 +167,54 @@ describe("AC 24 — paragraph and heading serialization", () => {
     );
   });
 
+  it("toggle.serialize.fromMarkdown keeps leftover body HTML after the summary", () => {
+    const result = toggle.serialize!.fromMarkdown!({
+      type: "html",
+      value:
+        "<details><summary>Title</summary><p>NESTED-TOGGLE-CHILD</p></details>",
+    });
+    expect(result).toMatchObject({
+      type: "toggle",
+      importContentSource: {
+        markdownHtml: "Title",
+        markdownNodes: [
+          { type: "html", value: "<p>NESTED-TOGGLE-CHILD</p>" },
+        ],
+      },
+    });
+  });
+
+  it("callout.serialize.fromMarkdown keeps remaining blockquote children", () => {
+    const second = {
+      type: "paragraph",
+      children: [{ type: "text", value: "NESTED-CALLOUT-CHILD" }],
+    };
+    const result = callout.serialize!.fromMarkdown!({
+      type: "blockquote",
+      children: [
+        {
+          type: "paragraph",
+          children: [
+            { type: "strong", children: [{ type: "text", value: "Note:" }] },
+            { type: "text", value: " first" },
+          ],
+        },
+        second,
+      ],
+    });
+    expect(result).toMatchObject({
+      type: "callout",
+      props: { type: "info" },
+    });
+    expect(result?.children).toEqual([
+      {
+        type: "paragraph",
+        props: {},
+        importContentSource: { markdownNodes: [second] },
+      },
+    ]);
+  });
+
   it("table.serialize.toMarkdown includes nested cell children", () => {
     const block = {
       id: "1",

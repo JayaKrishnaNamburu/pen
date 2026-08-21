@@ -1,0 +1,29 @@
+{
+	"_comment": "S4 (spec-v2/03-selection.md): timer sites in selection modules. Allowed kinds: setTimeout, setInterval, setImmediate, requestAnimationFrame. Each entry needs file, enclosing symbol, kind, and a reason that names why this site remains and which wave retires it. Remove an entry in the same PR that deletes the call. Basename matching is `selection` anywhere in the filename (any case), not a `selection*` prefix — a prefix walker misses *Selection* modules.",
+	"entries": [
+		{
+			"file": "packages/rendering/dom/src/field-editor/selectionAuthority.ts",
+			"symbol": "applySelectionUntilNextFrame",
+			"kind": "requestAnimationFrame",
+			"reason": "Wave 05 replaces this with the selection engine's own write window. This is NOT a projection retry - the two projector retries this list used to hold were deleted when the Firefox authority-range fix landed, because a rAF there was a missing attach in disguise. This one is the backends' self-echo suppression window: applySelectionUntilNextFrame raises applyingSelectionDepth and drops it a frame later so a backend's own selection write is not read back as a user gesture, and it has nine callers across contenteditableBackendCore, editContextBackendCore, editContextBackendSelection and expandedContentEditableBackend. Removing it means giving the backends a synchronous end-of-write signal, which is Wave 05's job. FIELD-EDITOR-TEARDOWN.md also records it as an uncancelled leftover on reset()."
+		},
+		{
+			"file": "packages/rendering/dom/src/field-editor/contenteditableBackendSelection.ts",
+			"symbol": "scheduleActiveDOMMatchCheck",
+			"kind": "requestAnimationFrame",
+			"reason": "Wave 05 retires this when the selection engine owns DOM-match after decoration changes. UNINVESTIGATED WAIVER recorded the moment isSelectionModule widened from a selection* prefix to a basename that contains selection: this file is a selection module by any reading of S4 and the prefix matcher walked past it. The shape is a deferred ensureActiveDOMMatchesYText plus restoreDOMSelectionFromEditor — treat the rAF as a missing attach or a wrong seam, not an engine accommodation. Whoever takes Wave 05's backend write window owns deleting it; do not renew without saying what the next frame observes that this turn cannot."
+		},
+		{
+			"file": "packages/rendering/react/src/primitives/editor/inlineAtomSelectionInteraction.ts",
+			"symbol": "destructureInlineAtom",
+			"kind": "requestAnimationFrame",
+			"reason": "Wave 05 retires this by activating the post-destructure caret in the same turn as the replace. UNINVESTIGATED WAIVER from the isSelectionModule widen: a React primitive whose basename contains Selection, walked past by the prefix matcher. The shape is activateTextSelection plus focus deferred one frame after replaceInlineAtomWithText — S4's missing-attach class. Wave 05 owns the delete."
+		},
+		{
+			"file": "packages/rendering/react/src/hooks/useSelectionToolbar.ts",
+			"symbol": "update",
+			"kind": "requestAnimationFrame",
+			"reason": "Wave 03 retires this by routing the toolbar rect through the scheduler read phase. UNINVESTIGATED WAIVER from the isSelectionModule widen. The shape is a measurement retry: update() cancels the previous frame and schedules resolveNativeSelectionRect on the next — the same class as the selectionRect rAF that another agent deleted today. Wave 03 overlay work owns the delete; do not renew without saying what the second measurement observes that the first cannot."
+		}
+	]
+}

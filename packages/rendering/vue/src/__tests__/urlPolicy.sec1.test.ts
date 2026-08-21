@@ -219,4 +219,50 @@ describe("SEC1 Vue host urlPolicy", () => {
     wrapper.unmount();
     editor.destroy();
   });
+
+  it("SEC1: idle PenTableCellContent admits a blob: link the host wrap allows", () => {
+    const editor = createTestEditor({
+      extensions: [urlPolicyExtension(admitBlob)],
+      blocks: [
+        {
+          id: "t1",
+          type: "table",
+          props: {},
+        },
+      ],
+    });
+    editor.apply([
+      {
+        type: "insert-table-cell-text",
+        blockId: "t1",
+        row: 0,
+        col: 0,
+        offset: 0,
+        text: "click",
+      },
+      {
+        type: "format-table-cell-text",
+        blockId: "t1",
+        row: 0,
+        col: 0,
+        offset: 0,
+        length: 5,
+        marks: { link: { href: ADMITTED_BLOB } },
+      },
+    ]);
+
+    const wrapper = mount(PenEditor, {
+      attachTo: document.body,
+      props: { editor },
+    });
+
+    const anchor = wrapper.get(
+      '[data-pen-table-cell][data-cell-row="0"][data-cell-col="0"] a',
+    );
+    expect(anchor.attributes("href")).toBe(ADMITTED_BLOB);
+    expect(anchor.attributes("data-pen-blocked-url")).toBeUndefined();
+
+    wrapper.unmount();
+    editor.destroy();
+  });
 });

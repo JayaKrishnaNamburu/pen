@@ -1,8 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
 import {
+	captureSelectionEvidence,
 	clickInlineOffset,
 	openPlayground,
 	selectEditorTextRange,
+	writeEvidence,
 } from "./helpers";
 
 interface SelectionPointSnapshot {
@@ -40,13 +42,27 @@ test("collapses an immediate follow-up click after triple-click paragraph select
 
 	await firstInline.click({ clickCount: 3 });
 	const tripleClickSnapshot = await getSelectionSnapshot(page);
-	if (tripleClickSnapshot?.isCollapsed !== false) {
+	const usedAuthorityFallback = tripleClickSnapshot?.isCollapsed !== false;
+	if (usedAuthorityFallback) {
 		await selectEditorTextRange(
 			page,
 			{ blockId, offset: 0 },
 			{ blockId, offset: paragraphText.length },
 		);
 	}
+
+	const afterRangeAttempt = await captureSelectionEvidence(page);
+	const rangeEvidence = {
+		browserName,
+		usedAuthorityFallback,
+		tripleClickSnapshot,
+		afterRangeAttempt,
+	};
+	writeEvidence(`${browserName}-nativeSelection.json`, rangeEvidence);
+	await test.info().attach("nativeSelection-after-range", {
+		body: JSON.stringify(rangeEvidence, null, 2),
+		contentType: "application/json",
+	});
 
 	await expect
 		.poll(async () => getSelectionSnapshot(page))

@@ -1,0 +1,43 @@
+{
+  "browserName": "webkit",
+  "capturedAt": "2026-08-21T09:56:05.491Z",
+  "clickedOffset": 8,
+  "documentText": "Hello مرحبا\nمرحبا Hllo\nשלום עולם\nשורה שנייה\nمرحبا 123\nمرحبا",
+  "selection": {
+    "type": "text",
+    "anchor": {
+      "blockId": "bidi-rtl-embed",
+      "offset": 7
+    },
+    "focus": {
+      "blockId": "bidi-rtl-embed",
+      "offset": 7
+    },
+    "isCollapsed": true
+  },
+  "s2": {
+    "ok": true,
+    "authority": {
+      "type": "text",
+      "anchor": {
+        "blockId": "bidi-rtl-embed",
+        "offset": 7
+      },
+      "focus": {
+        "blockId": "bidi-rtl-embed",
+        "offset": 7
+      },
+      "isCollapsed": true
+    },
+    "dom": {
+      "anchor": {
+        "blockId": "bidi-rtl-embed",
+        "offset": 7
+      },
+      "focus": {
+        "blockId": "bidi-rtl-embed",
+        "offset": 7
+      }
+    }
+  }
+}

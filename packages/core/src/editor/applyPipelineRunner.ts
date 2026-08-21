@@ -46,6 +46,7 @@ import {
 	type PipelinePhase,
 } from "./pipelinePhases";
 import { resolveCommitSource } from "./commitEvent";
+import { snapshotOrigin } from "./origin";
 import { rejectedOwnPropKeys } from "./rejectedOwnKeys";
 
 type ApplyPipelineRuntime = any;
@@ -273,8 +274,27 @@ export function transformOpsThroughHooks(
 	return transformedOps;
 }
 
+function snapshotPlain(value: unknown): unknown {
+	if (value === null || typeof value !== "object") {
+		return value;
+	}
+	if (Array.isArray(value)) {
+		return value.map(snapshotPlain);
+	}
+	const next: Record<string, unknown> = {};
+	for (const key of Object.keys(value as object)) {
+		Object.defineProperty(next, key, {
+			value: snapshotPlain((value as Record<string, unknown>)[key]),
+			enumerable: true,
+			configurable: true,
+			writable: true,
+		});
+	}
+	return next;
+}
+
 function snapshotOps(ops: readonly DocumentOp[]): DocumentOp[] {
-	return ops.map((op) => Object.assign({}, op));
+	return ops.map((op) => snapshotPlain(op) as DocumentOp);
 }
 
 function runBeforeApplyHook(
@@ -293,7 +313,7 @@ function runBeforeApplyHook(
 	},
 ): DocumentOp[] | null {
 	try {
-		const next = hook(snapshotOps(ops), { origin });
+		const next = hook(snapshotOps(ops), { origin: snapshotOrigin(origin) });
 		if (!Array.isArray(next)) {
 			emitPipelineDiagnostic(pipeline, {
 				code: labels.code,
@@ -407,6 +427,12 @@ function malformedOpMessage(op: DocumentOp): string | null {
 			if (!isNonEmptyString(op.blockId)) {
 				return "insert-table-cell-text requires a non-empty blockId";
 			}
+			if (!isNonNegativeInt(op.row)) {
+				return "insert-table-cell-text requires a non-negative integer row";
+			}
+			if (!isNonNegativeInt(op.col)) {
+				return "insert-table-cell-text requires a non-negative integer col";
+			}
 			if (!isNonNegativeInt(op.offset)) {
 				return "insert-table-cell-text requires a non-negative integer offset";
 			}
@@ -419,34 +445,117 @@ function malformedOpMessage(op: DocumentOp): string | null {
 			if (!isNonEmptyString(op.blockId)) {
 				return `${op.type} requires a non-empty blockId`;
 			}
+			if (!isNonNegativeInt(op.row)) {
+				return `${op.type} requires a non-negative integer row`;
+			}
+			if (!isNonNegativeInt(op.col)) {
+				return `${op.type} requires a non-negative integer col`;
+			}
 			if (!isNonNegativeInt(op.offset)) {
 				return `${op.type} requires a non-negative integer offset`;
 			}
 			if (!isNonNegativeInt(op.length)) {
 				return `${op.type} requires a non-negative integer length`;
 			}
+			if (op.type === "format-table-cell-text" && !isRecord(op.marks)) {
+				return "format-table-cell-text requires a marks object";
+			}
 			return null;
 		case "insert-block":
+			if (!isNonEmptyString(op.blockId)) {
+				return "insert-block requires a non-empty blockId";
+			}
+			if (!isNonEmptyString(op.blockType)) {
+				return "insert-block requires a non-empty blockType";
+			}
+			return null;
 		case "update-block":
 		case "delete-block":
 		case "move-block":
-		case "convert-block":
-		case "split-block":
-		case "merge-blocks":
-		case "set-selection":
 		case "update-layout":
+		case "set-meta":
+		case "stream-open":
+			if (!isNonEmptyString(op.blockId)) {
+				return `${op.type} requires a non-empty blockId`;
+			}
+			return null;
+		case "convert-block":
+			if (!isNonEmptyString(op.blockId)) {
+				return "convert-block requires a non-empty blockId";
+			}
+			if (!isNonEmptyString(op.newType)) {
+				return "convert-block requires a non-empty newType";
+			}
+			return null;
+		case "split-block":
+			if (!isNonEmptyString(op.blockId)) {
+				return "split-block requires a non-empty blockId";
+			}
+			if (!isNonEmptyString(op.newBlockId)) {
+				return "split-block requires a non-empty newBlockId";
+			}
+			if (!isNonNegativeInt(op.offset)) {
+				return "split-block requires a non-negative integer offset";
+			}
+			return null;
+		case "merge-blocks":
+			if (!isNonEmptyString(op.targetBlockId)) {
+				return "merge-blocks requires a non-empty targetBlockId";
+			}
+			if (!isNonEmptyString(op.sourceBlockId)) {
+				return "merge-blocks requires a non-empty sourceBlockId";
+			}
+			return null;
+		case "set-selection":
+			if (op.selection !== null && !isRecord(op.selection)) {
+				return "set-selection requires a selection object or null";
+			}
+			return null;
 		case "create-app":
+			if (!isNonEmptyString(op.appId)) {
+				return "create-app requires a non-empty appId";
+			}
+			if (!isNonEmptyString(op.appType)) {
+				return "create-app requires a non-empty appType";
+			}
+			return null;
 		case "update-app":
 		case "delete-app":
+			if (!isNonEmptyString(op.appId)) {
+				return `${op.type} requires a non-empty appId`;
+			}
+			return null;
 		case "insert-table-row":
 		case "delete-table-row":
 		case "insert-table-column":
 		case "delete-table-column":
+			if (!isNonEmptyString(op.blockId)) {
+				return `${op.type} requires a non-empty blockId`;
+			}
+			if (!isNonNegativeInt(op.index)) {
+				return `${op.type} requires a non-negative integer index`;
+			}
+			return null;
 		case "merge-table-cells":
+			if (!isNonEmptyString(op.blockId)) {
+				return "merge-table-cells requires a non-empty blockId";
+			}
+			return null;
 		case "split-table-cell":
+			if (!isNonEmptyString(op.blockId)) {
+				return "split-table-cell requires a non-empty blockId";
+			}
+			if (!isNonNegativeInt(op.row)) {
+				return "split-table-cell requires a non-negative integer row";
+			}
+			if (!isNonNegativeInt(op.col)) {
+				return "split-table-cell requires a non-negative integer col";
+			}
+			return null;
 		case "update-table-columns":
-		case "set-meta":
-		case "stream-open":
+			if (!isNonEmptyString(op.blockId)) {
+				return "update-table-columns requires a non-empty blockId";
+			}
 			return null;
 		default: {
 			const _exhaustive: never = op;
@@ -598,7 +707,10 @@ export function emitApplyBoundary(pipeline: ApplyPipeline, event: {
 	const self = pipeline as ApplyPipelineRuntime;
 	for (const hook of self._applyBoundaryHooks) {
 		try {
-			hook(event);
+			hook({
+				...event,
+				origin: snapshotOrigin(event.origin),
+			});
 		} catch (err) {
 			emitPipelineDiagnostic(pipeline, {
 				code: "PEN_APPLY_008",

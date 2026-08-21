@@ -9,6 +9,7 @@ import type {
   SchemaEngine,
   SchemaRegistry,
 } from "@input/pen-types";
+import { EMPTY_BLOCK_SENTINEL } from "@input/pen-types";
 import {
   getArrayProp,
   getMapProp,
@@ -271,7 +272,8 @@ export class SchemaEngineImpl implements SchemaEngine {
 
     if (!content || content.length > 0) return;
 
-    content.insert(0, "\u200B");
+    // sentinel-storage: empty-block caret target in Y.Text. Not a logical character.
+    content.insert(0, EMPTY_BLOCK_SENTINEL);
   }
 
   // ── Rule 4: Strip Default Props ─────────────────────────

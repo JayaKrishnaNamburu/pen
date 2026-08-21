@@ -27,6 +27,11 @@ import type {
 	FieldEditorTextLike,
 } from "./crdt";
 import { setSelectionOffsets } from "./contenteditableDomHelpers";
+import {
+	resolveLiveTextSelection,
+	resolveRestoreCellEndpoints,
+	resolveRestoreTextEndpoints,
+} from "./selectionAuthority";
 
 export abstract class ContentEditableBackendCore {
 	protected element: HTMLElement | null = null;
@@ -261,23 +266,12 @@ export abstract class ContentEditableBackendCore {
 			blockId,
 		);
 		const activeCell = this._getActiveCellCoord(blockId);
-		if (
-			activeCell &&
-			(!pendingSelection ||
-				(pendingSelection.cell?.row === activeCell.row &&
-					pendingSelection.cell?.col === activeCell.col))
-		) {
-			const activeSelection =
-				pendingSelection ??
-				this.fieldEditor.getBackendSelectionAuthority("cell", blockId) ??
-				(selection?.type === "text" &&
-				selection.anchor.blockId === blockId &&
-				selection.focus.blockId === blockId
-					? {
-							anchorOffset: selection.anchor.offset,
-							focusOffset: selection.focus.offset,
-						}
-					: null);
+		if (activeCell) {
+			const activeSelection = resolveRestoreCellEndpoints(
+				pendingSelection,
+				this.fieldEditor.getBackendSelectionAuthority("cell", blockId),
+				activeCell,
+			);
 			if (!activeSelection) return;
 			const start = activeSelection.anchorOffset;
 			const end = activeSelection.focusOffset;
@@ -285,36 +279,23 @@ export abstract class ContentEditableBackendCore {
 			setSelectionOffsets(this.element, start, end);
 			return;
 		}
-		const anchor =
-			pendingSelection != null
-				? {
-						blockId: pendingSelection.blockId,
-						offset: pendingSelection.anchorOffset,
-					}
-				: selection?.type === "text"
-					? selection.anchor
-					: null;
-		const focus =
-			pendingSelection != null
-				? {
-						blockId: pendingSelection.blockId,
-						offset: pendingSelection.focusOffset,
-					}
-				: selection?.type === "text"
-					? selection.focus
-					: null;
+		const restored = resolveRestoreTextEndpoints(
+			blockId,
+			resolveLiveTextSelection(selection, blockId, activeCell),
+			pendingSelection,
+		);
+		const anchor = restored?.anchor ?? null;
+		const focus = restored?.focus ?? null;
 
 		if (!anchor || !focus) return;
 		if (anchor.blockId !== blockId || focus.blockId !== blockId) {
 			return;
 		}
-		if (pendingSelection == null && selection?.type === "text") {
-			this.fieldEditor.setBackendSelectionAuthority("programmatic", {
-				blockId,
-				anchorOffset: anchor.offset,
-				focusOffset: focus.offset,
-			});
-		}
+		this.fieldEditor.setBackendSelectionAuthority("programmatic", {
+			blockId,
+			anchorOffset: anchor.offset,
+			focusOffset: focus.offset,
+		});
 
 		const root = this.element.closest(
 			"[data-pen-editor-root]",

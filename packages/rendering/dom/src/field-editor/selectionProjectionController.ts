@@ -303,73 +303,49 @@ export class SelectionProjectionController {
 		if (options?.syncBackendImmediately ?? true) {
 			this._options.updateBackendSelection();
 		}
-		this.syncDomSelectionOnce(4, undefined, options);
+		this.syncDomSelectionOnce(options);
 	}
 
-	syncDomSelectionOnce(
-		remainingAttempts = 4,
-		version?: number,
-		options: PenFieldEditorFocusOptions = {},
-		selectionIntentEpoch = this._selectionIntentEpoch,
-	): void {
-		if (version === undefined) {
-			version = ++this._syncDomVersion;
-			this._pendingSelectionProjectionVersion = version;
+	syncDomSelectionOnce(options: PenFieldEditorFocusOptions = {}): void {
+		const version = ++this._syncDomVersion;
+		this._pendingSelectionProjectionVersion = version;
+
+		if (!this._options.isEditing()) {
+			this._cancelSelectionProjection(version);
+			return;
 		}
-		const v = version;
-		requestAnimationFrame(() => {
-			if (!this._options.isEditing() || this._syncDomVersion !== v)
-				return;
-			if (selectionIntentEpoch !== this._selectionIntentEpoch) {
-				this._cancelSelectionProjection(v);
-				return;
+
+		let projected = false;
+		const pendingProjectionRequestId =
+			this._historySelectionCoordinator.getPendingProjectionRequestId();
+
+		if (this._options.getMode() === "expanded") {
+			const expandedHost = this._options.findExpandedHost();
+			if (expandedHost) {
+				projected = this._projectIntoElement(expandedHost, options);
 			}
-
-			let projected = false;
-			const pendingProjectionRequestId =
-				this._historySelectionCoordinator.getPendingProjectionRequestId();
-
-			if (this._options.getMode() === "expanded") {
-				const expandedHost = this._options.findExpandedHost();
-				if (expandedHost) {
-					projected = this._projectIntoElement(expandedHost, options);
-				}
-			} else {
-				const focusBlockId = this._options.getFocusBlockId();
-				if (focusBlockId) {
-					const inlineEl =
-						this._options.resolveInlineElement(focusBlockId);
-					if (inlineEl) {
-						projected = this._projectIntoElement(inlineEl, options);
-					}
+		} else {
+			const focusBlockId = this._options.getFocusBlockId();
+			if (focusBlockId) {
+				const inlineEl = this._options.resolveInlineElement(focusBlockId);
+				if (inlineEl) {
+					projected = this._projectIntoElement(inlineEl, options);
 				}
 			}
+		}
 
-			if (projected) {
-				this._options.emitSelectionProjected();
-				requestAnimationFrame(() => {
-					if (this._syncDomVersion === v) {
-						if (this._pendingSelectionProjectionVersion === v) {
-							this._pendingSelectionProjectionVersion = null;
-						}
-						this._historySelectionCoordinator.completeDeferredProjection(
-							pendingProjectionRequestId,
-						);
-					}
-				});
+		if (projected) {
+			this._options.emitSelectionProjected();
+			if (this._pendingSelectionProjectionVersion === version) {
+				this._pendingSelectionProjectionVersion = null;
 			}
+			this._historySelectionCoordinator.completeDeferredProjection(
+				pendingProjectionRequestId,
+			);
+			return;
+		}
 
-			if (!projected && remainingAttempts > 0) {
-				this.syncDomSelectionOnce(
-					remainingAttempts - 1,
-					v,
-					options,
-					selectionIntentEpoch,
-				);
-			} else if (!projected) {
-				this._cancelSelectionProjection(v);
-			}
-		});
+		this._cancelSelectionProjection(version);
 	}
 
 	shouldProjectSelectionAfterReconcile(): boolean {

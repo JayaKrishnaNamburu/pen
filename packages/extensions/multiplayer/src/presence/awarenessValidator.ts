@@ -38,7 +38,8 @@ export interface AwarenessValidationOptions {
 }
 
 const FORBIDDEN_KEYS = new Set(["__proto__", "constructor", "prototype"]);
-const HOSTILE_MARKUP = /<\s*script|javascript:|vbscript:|data:\s*text\/html|on\w+\s*=/i;
+const HOSTILE_MARKUP =
+	/<\s*script|javascript:|vbscript:|data:\s*text\/html|on\w+\s*=/i;
 const IMAGE_DATA_URL = /^data:image\/(?:png|jpeg|gif|webp|avif)/i;
 
 export function validateAwarenessStates(
@@ -58,15 +59,19 @@ export function validateAwarenessStates(
 			continue;
 		}
 
-		const validated = validatePeerState(rawState, document, options);
-		if (validated.rejection) {
-			rejections.push({ clientId, reason: validated.rejection });
-		}
-		for (const reason of validated.fieldRejections) {
-			rejections.push({ clientId, reason });
-		}
-		if (validated.state) {
-			accepted.set(clientId, validated.state);
+		try {
+			const validated = validatePeerState(rawState, document, options);
+			if (validated.rejection) {
+				rejections.push({ clientId, reason: validated.rejection });
+			}
+			for (const reason of validated.fieldRejections) {
+				rejections.push({ clientId, reason });
+			}
+			if (validated.state) {
+				accepted.set(clientId, validated.state);
+			}
+		} catch {
+			rejections.push({ clientId, reason: "wrong-typed" });
 		}
 	}
 
@@ -95,7 +100,11 @@ function validatePeerState(
 	if (rawState.user !== undefined) {
 		const userResult = validateUser(rawState.user, options);
 		if (userResult.reason) {
-			return { state: null, rejection: userResult.reason, fieldRejections: [] };
+			return {
+				state: null,
+				rejection: userResult.reason,
+				fieldRejections: [],
+			};
 		}
 		user = userResult.user;
 	}
@@ -125,7 +134,9 @@ function validatePeerState(
 function validateUser(
 	value: unknown,
 	options?: AwarenessValidationOptions,
-): { user: MultiplayerUser; reason?: undefined } | { user?: undefined; reason: PresenceRejectionReason } {
+):
+	| { user: MultiplayerUser; reason?: undefined }
+	| { user?: undefined; reason: PresenceRejectionReason } {
 	if (!isRecord(value) || hasForbiddenKeys(value)) {
 		return { reason: "wrong-typed" };
 	}
@@ -221,7 +232,10 @@ function validateCursor(
 	const point = resolveDocumentPoint(value.blockId, value.offset, document);
 	if (
 		point.reason &&
-		!(point.reason === "out-of-range-offset" && isPresenceInteger(value.commitId))
+		!(
+			point.reason === "out-of-range-offset" &&
+			isPresenceInteger(value.commitId)
+		)
 	) {
 		return { cursor: null, reason: point.reason };
 	}
@@ -369,14 +383,21 @@ function validatePoint(
 	if (isScriptBearing(value.blockId)) {
 		return { point: null, reason: "script-bearing" };
 	}
-	const resolved = resolveDocumentPoint(value.blockId, value.offset, document);
+	const resolved = resolveDocumentPoint(
+		value.blockId,
+		value.offset,
+		document,
+	);
 	if (
 		resolved.reason &&
 		!(allowStaleOffset && resolved.reason === "out-of-range-offset")
 	) {
 		return { point: null, reason: resolved.reason };
 	}
-	return { point: { blockId: value.blockId, offset: value.offset }, reason: null };
+	return {
+		point: { blockId: value.blockId, offset: value.offset },
+		reason: null,
+	};
 }
 
 function resolveDocumentPoint(
@@ -403,7 +424,10 @@ function resolvePresenceAvatarUrl(
 		return null;
 	}
 	try {
-		const protocol = new URL(admitted, "https://pen.invalid/").protocol.toLowerCase();
+		const protocol = new URL(
+			admitted,
+			"https://pen.invalid/",
+		).protocol.toLowerCase();
 		if (protocol === "http:" || protocol === "https:") {
 			return admitted;
 		}
@@ -423,7 +447,10 @@ function defaultResolveAvatarUrl(raw: string): string | null {
 
 function isHostileAvatarUrl(raw: string): boolean {
 	try {
-		const protocol = new URL(raw, "https://pen.invalid/").protocol.toLowerCase();
+		const protocol = new URL(
+			raw,
+			"https://pen.invalid/",
+		).protocol.toLowerCase();
 		return (
 			protocol === "javascript:" ||
 			protocol === "vbscript:" ||
@@ -445,11 +472,17 @@ function utf8ByteLength(value: unknown): number {
 }
 
 function isScriptBearing(value: string): boolean {
-	return HOSTILE_MARKUP.test(value);
+	// the control characters are the point: stripping them first stops a payload
+	// hiding `<script>` behind them from reading as inert to HOSTILE_MARKUP.
+	// eslint-disable-next-line no-control-regex
+	const withoutControls = value.replace(/[\u0000-\u001F\u007F]/g, "");
+	return HOSTILE_MARKUP.test(withoutControls.trim());
 }
 
 function isPresenceInteger(value: unknown): value is number {
-	return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+	return (
+		typeof value === "number" && Number.isSafeInteger(value) && value >= 0
+	);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

@@ -280,6 +280,18 @@ describe("GeometryReader G2", () => {
 		expect(caretRect).toHaveBeenCalledTimes(10);
 	});
 
+	it("G2: a miss caches null so a same-generation retry does not remasure", () => {
+		const root = mountEditorRoot();
+		const blockRect = vi.fn(() => null);
+		const reader = createReader(root, {
+			measure: { blockRect },
+		});
+
+		expect(reader.blockRect("missing")).toBeNull();
+		expect(reader.blockRect("missing")).toBeNull();
+		expect(blockRect).toHaveBeenCalledTimes(1);
+	});
+
 	it("G2: a height-unchanged edit drops only the named block", () => {
 		const root = mountEditorRoot();
 		const boxes: Record<string, Rect> = {

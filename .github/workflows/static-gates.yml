@@ -89,6 +89,10 @@ jobs:
           # Samples type-check when present; today's guide has zero fences.
           - gate: migration-guide-check
             command: node scripts/migration-guide-check.mjs
+          # HOST4: above-floor allowlist sites must be { path, reason }.
+          # Bare path strings are the parking-lot shape and fail.
+          - gate: above-floor-api-allowlist
+            command: node scripts/above-floor-api-allowlist.mjs
 
     steps:
       - name: Check out repository

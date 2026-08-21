@@ -69,7 +69,8 @@ export function UpgradePage() {
 				live selection) is specified and not on the package index.
 				Do not migrate to those names until they appear there.
 				Per-package changelogs and git tags are not in this
-				repository today.
+				repository today. There has never been a release train.{" "}
+				<code>pnpm add @input/pen-*</code> 404s.
 			</p>
 		</>
 	);

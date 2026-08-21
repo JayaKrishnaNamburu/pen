@@ -104,7 +104,7 @@ function ingestBlock(
 	}
 
 	if (depth > INGEST_MAX_NESTING_DEPTH) {
-		drops.add("depth-exceeded");
+		drops.add("depth-exceeded", 1, depth);
 		return null;
 	}
 
@@ -166,7 +166,11 @@ function ingestBlock(
 
 	const content = ingestContent(record.content, editor, drops);
 	if (state.text + content.textLength > INGEST_MAX_TEXT_SIZE) {
-		drops.add("text-size-exceeded", content.textLength);
+		drops.add(
+			"text-size-exceeded",
+			content.textLength,
+			state.text + content.textLength,
+		);
 		return null;
 	}
 

@@ -44,6 +44,7 @@ Important rules:
 
 - Undo and redo operate on previously applied operations; they do not bypass the core mutation path.
 - Origins matter: the package decides which operation origins are tracked and how explicit undo groups change capture behavior. The Yjs adapter, not this package, owns `TrackedOriginSet` — the apply pipeline tags transactions with a structured origin object, and `Y.UndoManager` would otherwise miss those transactions because it matches `trackedOrigins` by identity.
+- This package is not installed by bare `createEditor()`. Without it, `editor.undoManager` is an inert stub (`canUndo()` is `false`, `undo()` returns `false`) and the `undo:manager` slot is absent. Mod-Z reaches that stub and does nothing. No diagnostic is emitted. Install this extension or `defaultPreset()`.
 - This package does not depend on `@input/pen-core`. It keeps a local `getOpOriginType` rather than importing core's.
 - Cursor and metadata restoration are part of the package contract so history operations restore editor state, not just document bytes.
 

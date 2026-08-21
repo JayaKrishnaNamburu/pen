@@ -138,7 +138,10 @@ editor.apply(
 			<h2>Headless vs host</h2>
 			<p>
 				<code>createEditor</code> and <code>createHeadlessEditor</code>{" "}
-				are the constructors. Headless construction and apply work in
+				are the constructors. Neither installs a schema or
+				extensions. Without <code>preset: defaultPreset()</code>,{" "}
+				<code>editor.undoManager</code> is an inert stub and Mod-Z
+				does nothing. Headless construction and apply work in
 				Node. Only <code>@input/pen-dom</code> may touch browser
 				globals. React and Vue are bindings over that DOM engine.
 			</p>

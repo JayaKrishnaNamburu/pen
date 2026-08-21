@@ -34,7 +34,7 @@ describe("default keymap K2", () => {
 		expect(serializeDefaultKeymap("linux")).toMatchSnapshot();
 	});
 
-	it("K2: vertical caret bindings stay in the table even without handlers", () => {
+	it("K2: vertical caret bindings stay in the table and now have handlers", () => {
 		const macos = serializeDefaultKeymap("macos");
 		expect(macos).toEqual(
 			expect.arrayContaining([
@@ -64,10 +64,16 @@ describe("default keymap K2", () => {
 			builtinCommandHandlers().some(
 				(provider) =>
 					isCommandHandlerProvider(provider) &&
-					(provider.command.name === caretUp.name ||
-						provider.command.name === caretDown.name),
+					provider.command.name === caretUp.name,
 			),
-		).toBe(false);
+		).toBe(true);
+		expect(
+			builtinCommandHandlers().some(
+				(provider) =>
+					isCommandHandlerProvider(provider) &&
+					provider.command.name === caretDown.name,
+			),
+		).toBe(true);
 	});
 
 	it("K2: macos uses Alt/Cmd variants; windows uses Ctrl/Home/End", () => {

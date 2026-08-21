@@ -1,5 +1,5 @@
 import type { EditorInternals, CreateEditorOptions, PenEventMap, DocumentCommitEvent, CRDTAdapter, CRDTDocument, CRDTEvent, PenDocument, SchemaRegistry, Awareness, DocumentSession, DocumentScope, DocumentScopeReplacementEvent, DocumentProfile, Extension, DocumentOp, ApplyOptions, OpOrigin, MutationGroupMetadata, SelectionState, TextSelection, DocumentRange, BlockHandle, Block, DocumentState, Unsubscribe, CRDTMap, CRDTArray, Position, DecorationSet, EditorViewMode } from "@input/pen-types";
-import { AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY, COLLECT_KEY_BINDINGS_SLOT_KEY, MUTATION_GROUP_METADATA_KEY, UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY, generateId } from "@input/pen-types";
+import { AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY, COLLECT_KEY_BINDINGS_SLOT_KEY, EMPTY_BLOCK_SENTINEL, MUTATION_GROUP_METADATA_KEY, UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY, generateId } from "@input/pen-types";
 import { usesInlineTextSelection } from "../schema/fieldEditorCapabilities";
 import { SchemaEngineImpl } from "../schema/normalize";
 import { createBlockHandle } from "../schema/handles";
@@ -282,7 +282,7 @@ export function sliceInlineDeltas(
 	const self = editor as EditorImplRuntime;
 	const handle = self.getBlock(blockId);
 	if (!handle) return [];
-	const deltas = handle.textDeltas().filter((delta: { insert: string }) => delta.insert !== "\u200B");
+	const deltas = handle.textDeltas().filter((delta: { insert: string }) => delta.insert !== EMPTY_BLOCK_SENTINEL);
 	const sliced: Array<{ insert: string; attributes?: Record<string, unknown> }> = [];
 	let offset = 0;
 	for (const delta of deltas) {

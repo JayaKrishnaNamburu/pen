@@ -3,6 +3,7 @@ import {
 	captureSelectionEvidence,
 	clickInlineOffset,
 	openPlayground,
+	writeEvidence,
 } from "./helpers";
 
 const HISTORY_GROUP_SETTLE_MS = 450;
@@ -85,6 +86,22 @@ test("keeps content visible and moves the caret across blocks via topbar history
 	await expect(firstInline).toHaveText("Hello");
 
 	const redoneBlockId = await getBlockId(page, 1);
+	const afterRedo = await captureSelectionEvidence(page);
+	const redoEvidence = {
+		browserName: test.info().project.name,
+		firstBlockId,
+		insertedBlockId,
+		redoneBlockId,
+		afterRedo,
+	};
+	writeEvidence(
+		`${test.info().project.name}-history-topbar-redo.json`,
+		redoEvidence,
+	);
+	await test.info().attach("history-topbar-after-redo", {
+		body: JSON.stringify(redoEvidence, null, 2),
+		contentType: "application/json",
+	});
 	await expectCaretPosition(page, { blockId: redoneBlockId, offset: 0 });
 });
 
@@ -114,6 +131,13 @@ test("restores history through keyboard shortcuts", async ({ page }) => {
 	await expect(page.locator("[data-pen-editor-block]")).toHaveCount(2);
 	const redoneBlockId = await getBlockId(page, 1);
 	await expect(redoneBlockId).toBe(insertedBlockId);
+	writeEvidence(`${test.info().project.name}-history-keyboard-redo.json`, {
+		browserName: test.info().project.name,
+		firstBlockId,
+		insertedBlockId,
+		redoneBlockId,
+		afterRedo: await captureSelectionEvidence(page),
+	});
 	await expectCaretPosition(page, { blockId: insertedBlockId, offset: 0 });
 });
 
