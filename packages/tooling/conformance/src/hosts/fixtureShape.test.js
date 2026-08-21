@@ -24,9 +24,47 @@ function sliceBetween(source, start, end) {
 }
 
 function contentLiterals(source) {
-	return [...source.matchAll(/content:\s*("(?:\\.|[^"])*")/g)].map(
-		(match) => match[1],
-	);
+	const literals = [];
+	const marker = "content:";
+	let from = 0;
+	while (from < source.length) {
+		const at = source.indexOf(marker, from);
+		if (at === -1) {
+			break;
+		}
+		let i = at + marker.length;
+		while (i < source.length && (source[i] === " " || source[i] === "\t")) {
+			i += 1;
+		}
+		if (source[i] !== '"') {
+			from = at + marker.length;
+			continue;
+		}
+		const start = i;
+		i += 1;
+		let escaped = false;
+		while (i < source.length) {
+			const ch = source[i];
+			if (escaped) {
+				escaped = false;
+				i += 1;
+				continue;
+			}
+			if (ch === "\\") {
+				escaped = true;
+				i += 1;
+				continue;
+			}
+			if (ch === '"') {
+				literals.push(source.slice(start, i + 1));
+				i += 1;
+				break;
+			}
+			i += 1;
+		}
+		from = i;
+	}
+	return literals;
 }
 
 test("empty is letterless; hello-world is not", () => {

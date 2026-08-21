@@ -38,8 +38,6 @@ export interface AwarenessValidationOptions {
 }
 
 const FORBIDDEN_KEYS = new Set(["__proto__", "constructor", "prototype"]);
-const HOSTILE_MARKUP =
-	/<\s*script|javascript:|vbscript:|data:\s*text\/html|on\w+\s*=/i;
 const IMAGE_DATA_URL = /^data:image\/(?:png|jpeg|gif|webp|avif)/i;
 
 export function validateAwarenessStates(
@@ -473,10 +471,74 @@ function utf8ByteLength(value: unknown): number {
 
 function isScriptBearing(value: string): boolean {
 	// the control characters are the point: stripping them first stops a payload
-	// hiding `<script>` behind them from reading as inert to HOSTILE_MARKUP.
+	// hiding `<script>` behind them from reading as inert.
 	// eslint-disable-next-line no-control-regex
-	const withoutControls = value.replace(/[\u0000-\u001F\u007F]/g, "");
-	return HOSTILE_MARKUP.test(withoutControls.trim());
+	const text = value.replace(/[\u0000-\u001F\u007F]/g, "").trim().toLowerCase();
+	return (
+		text.includes("javascript:") ||
+		text.includes("vbscript:") ||
+		containsPrefixedToken(text, "<", "script") ||
+		containsPrefixedToken(text, "data:", "text/html") ||
+		containsInlineHandler(text)
+	);
+}
+
+function containsPrefixedToken(
+	text: string,
+	prefix: string,
+	token: string,
+): boolean {
+	let from = 0;
+	while (from < text.length) {
+		const at = text.indexOf(prefix, from);
+		if (at === -1) {
+			return false;
+		}
+		let i = at + prefix.length;
+		while (i < text.length && /\s/.test(text[i] ?? "")) {
+			i += 1;
+		}
+		if (text.startsWith(token, i)) {
+			return true;
+		}
+		from = at + 1;
+	}
+	return false;
+}
+
+function containsInlineHandler(text: string): boolean {
+	let from = 0;
+	while (from < text.length) {
+		const at = text.indexOf("on", from);
+		if (at === -1) {
+			return false;
+		}
+		let i = at + 2;
+		if (i >= text.length || !isAsciiWordChar(text.charCodeAt(i))) {
+			from = at + 1;
+			continue;
+		}
+		i += 1;
+		while (i < text.length && isAsciiWordChar(text.charCodeAt(i))) {
+			i += 1;
+		}
+		while (i < text.length && /\s/.test(text[i] ?? "")) {
+			i += 1;
+		}
+		if (text[i] === "=") {
+			return true;
+		}
+		from = at + 1;
+	}
+	return false;
+}
+
+function isAsciiWordChar(code: number): boolean {
+	return (
+		(code >= 48 && code <= 57) ||
+		(code >= 97 && code <= 122) ||
+		code === 95
+	);
 }
 
 function isPresenceInteger(value: unknown): value is number {

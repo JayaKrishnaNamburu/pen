@@ -162,7 +162,7 @@ function classifySample(code) {
 }
 
 function vueScript(code) {
-	const match = code.match(/<script\b([^>]*)>([\s\S]*?)<\/script>/i);
+	const match = code.match(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/i);
 	if (!match) {
 		return null;
 	}

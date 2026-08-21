@@ -104,7 +104,27 @@ export function isSelectionModule(filename) {
 		return false;
 	}
 	const base = posixFilename(filename).split("/").pop() ?? "";
-	return /selection.*\.[cm]?[jt]sx?$/i.test(base);
+	return (
+		base.toLowerCase().includes("selection") && hasScriptExtension(base)
+	);
+}
+
+function hasScriptExtension(base) {
+	const dot = base.lastIndexOf(".");
+	if (dot === -1) {
+		return false;
+	}
+	const ext = base.slice(dot + 1).toLowerCase();
+	return (
+		ext === "js" ||
+		ext === "ts" ||
+		ext === "jsx" ||
+		ext === "tsx" ||
+		ext === "cjs" ||
+		ext === "cts" ||
+		ext === "mjs" ||
+		ext === "mts"
+	);
 }
 
 function propertyName(node) {

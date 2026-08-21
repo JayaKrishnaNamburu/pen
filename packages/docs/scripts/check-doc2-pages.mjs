@@ -142,11 +142,25 @@ const SAMPLE_RE = /<pre>\s*<code>\{`/;
 const HEADING_RE = /<h[1-3][^>]*>([\s\S]*?)<\/h[1-3]>/g;
 
 function stripTags(html) {
-	return html
-		.replace(/<[^>]+>/g, "")
-		.replace(/&apos;/g, "'")
-		.replace(/&quot;/g, '"')
-		.replace(/&amp;/g, "&")
+	let text = "";
+	let inTag = false;
+	for (const ch of html) {
+		if (ch === "<") {
+			inTag = true;
+			continue;
+		}
+		if (ch === ">") {
+			inTag = false;
+			continue;
+		}
+		if (!inTag) {
+			text += ch;
+		}
+	}
+	return text
+		.replaceAll("&apos;", "'")
+		.replaceAll("&quot;", '"')
+		.replaceAll("&amp;", "&")
 		.replace(/\s+/g, " ")
 		.trim();
 }

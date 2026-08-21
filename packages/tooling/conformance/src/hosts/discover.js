@@ -103,8 +103,8 @@ function expandWildcard(packageDir, exportKey, esmRel, cjsRel) {
 				`HOST2: ${esmFile} did not match pattern ${esmRel}`,
 			);
 		}
-		const subpath = exportKey.replace("*", captured);
-		const cjsFile = cjsRel.replace("*", captured);
+		const subpath = exportKey.replaceAll("*", captured);
+		const cjsFile = cjsRel.replaceAll("*", captured);
 		entries.push({ exportPath: subpath, esmFile, cjsFile });
 	}
 	return entries;

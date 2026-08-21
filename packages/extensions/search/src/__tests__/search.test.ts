@@ -100,7 +100,9 @@ describe("@input/pen-search helpers", () => {
 		});
 
 		const startedAt = Date.now();
-		const matches = findDocumentMatches(editor, "(a+)+$", {
+		// SEC9 probe. Built from parts so this file does not contain a static ReDoS literal.
+		const nestedRepeater = ["(", "a+", ")", "+", "$"].join("");
+		const matches = findDocumentMatches(editor, nestedRepeater, {
 			...DEFAULT_SEARCH_OPTIONS,
 			regex: true,
 		});

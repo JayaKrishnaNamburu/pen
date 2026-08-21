@@ -212,7 +212,7 @@ function normalizeLang(lang) {
 
 export function vueScript(code) {
 	const match = code.match(
-		/<script\b([^>]*)>([\s\S]*?)<\/script>/i,
+		/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/i,
 	);
 	if (!match) {
 		return null;
@@ -436,6 +436,10 @@ export function runSelfTests() {
 
 	const vue = vueScript("<template><div /></template>");
 	assert(vue === null, "self-test: template-only vue is skipped");
+	assert(
+		vueScript("<script>const x = 1</script >") === "const x = 1",
+		"self-test: vue script close tag allows whitespace",
+	);
 
 	const phrase = evaluatePublicNpm([
 		{ file: "README.md", text: "published as public npm packages" },
