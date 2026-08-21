@@ -128,6 +128,11 @@ async function selectBlockOffset(
 	blockId: string,
 	offset: number,
 ): Promise<void> {
+	// Click activates the field on this block. RTL clusters can land the
+	// click one unit off, so the exact caret is programmatic selectText
+	// (P1) after the field is live — otherwise Backspace hits nothing.
+	const point = await getInlineOffsetPoint(page, { blockId, offset: 0 });
+	await page.mouse.click(point.x, point.y);
 	await page.evaluate(
 		({ id, caret }) => {
 			const ids = window.__penConformance.blockIds;

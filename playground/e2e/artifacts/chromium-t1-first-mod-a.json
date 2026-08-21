@@ -1,0 +1,105 @@
+{
+  "immediate": {
+    "selection": {
+      "type": "text",
+      "isCollapsed": false,
+      "isMultiBlock": true,
+      "anchor": {
+        "blockId": "62909be7-3325-4cc2-bba8-4cf4ce388323",
+        "offset": 0
+      },
+      "focus": {
+        "blockId": "6d2f85f3-702e-4e42-8953-85baa5ea4700",
+        "offset": 7
+      }
+    },
+    "selectedText": "Alpha\nBravo\nCharlie",
+    "blockCount": 3,
+    "blocks": [
+      {
+        "id": "62909be7-3325-4cc2-bba8-4cf4ce388323",
+        "type": "paragraph",
+        "text": "Alpha",
+        "length": 5
+      },
+      {
+        "id": "bd09deeb-fd1a-4bd8-a2d0-fb66f6a2b6b6",
+        "type": "paragraph",
+        "text": "Bravo",
+        "length": 5
+      },
+      {
+        "id": "6d2f85f3-702e-4e42-8953-85baa5ea4700",
+        "type": "paragraph",
+        "text": "Charlie",
+        "length": 7
+      }
+    ],
+    "native": {
+      "isCollapsed": true,
+      "text": "",
+      "rangeCount": 1
+    },
+    "overlayCaretCount": 0,
+    "selectionRectCount": 0,
+    "inlineAtomCount": 0,
+    "inlineAtomTypes": [],
+    "activeCaretColor": "rgb(10, 132, 255)",
+    "keyProbe": null
+  },
+  "settled": {
+    "selection": {
+      "type": "text",
+      "isCollapsed": false,
+      "isMultiBlock": true,
+      "anchor": {
+        "blockId": "62909be7-3325-4cc2-bba8-4cf4ce388323",
+        "offset": 0
+      },
+      "focus": {
+        "blockId": "6d2f85f3-702e-4e42-8953-85baa5ea4700",
+        "offset": 7
+      }
+    },
+    "selectedText": "Alpha\nBravo\nCharlie",
+    "blockCount": 3,
+    "blocks": [
+      {
+        "id": "62909be7-3325-4cc2-bba8-4cf4ce388323",
+        "type": "paragraph",
+        "text": "Alpha",
+        "length": 5
+      },
+      {
+        "id": "bd09deeb-fd1a-4bd8-a2d0-fb66f6a2b6b6",
+        "type": "paragraph",
+        "text": "Bravo",
+        "length": 5
+      },
+      {
+        "id": "6d2f85f3-702e-4e42-8953-85baa5ea4700",
+        "type": "paragraph",
+        "text": "Charlie",
+        "length": 7
+      }
+    ],
+    "native": {
+      "isCollapsed": true,
+      "text": "",
+      "rangeCount": 1
+    },
+    "overlayCaretCount": 0,
+    "selectionRectCount": 0,
+    "inlineAtomCount": 0,
+    "inlineAtomTypes": [],
+    "activeCaretColor": "rgb(10, 132, 255)",
+    "keyProbe": null
+  },
+  "browserName": "chromium",
+  "step": "t1-first-mod-a",
+  "loadavg": [
+    4.47509765625,
+    5.2373046875,
+    9.10888671875
+  ]
+}

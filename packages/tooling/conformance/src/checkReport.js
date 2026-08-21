@@ -8,10 +8,9 @@
  * Standing DOM↔authority compares mapped caret/range points to the v1
  * selection snapshot (`anchor` / `focus` `{ blockId, offset }`).
  *
- * That is intentional and temporary: `DomScheduler.projectSelection` is a
- * reserved empty slot and is not wired into the live editor, so `affinity`
- * and `goalX` are not part of this check. Do not upgrade it to a Wave 5
- * compare until that slot is live.
+ * That is intentional: P1 is live (`DomScheduler.projectSelection` in the
+ * write-phase slot) but `affinity` / `goalX` are still unwritten at
+ * runtime. Do not upgrade this check to those fields until they are.
  */
 export const STANDING_DOM_AUTHORITY_CHECK =
 	"standing: DOM vs editor.selection (v1 authority)";

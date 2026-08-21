@@ -8,7 +8,9 @@ Private Playwright harness for spec-v2 conformance. Never published.
 
 Standing DOM↔authority has three results: **matched** (checked and equal), **mismatch** (checked and unequal), **unchecked** (could not check — unfocused or non-text). Unchecked is not success. `caretCacheHolds` fails when `missingCount > 0`, not only when `staleCount > 0`.
 
-Standing assertions (`assertStandingDiagnostics`, `assertStandingDomMatchesAuthority`), axe analyzers (`analyzeEditorSurface`, `analyzeEditorWcag22Aa`), `harness/src/geometry.ts`, and most of `harness/src/session.ts` are **Playwright-only**. Their extractable predicates live in Node (`standingFilter`, `axeFormat`, `authorityCompare`, `geometryCompare`, `serialize`). The wrappers themselves need a page.
+Standing assertions (`assertStandingDiagnostics`, `assertStandingDomMatchesAuthority`), axe analyzers (`analyzeEditorSurface`, `analyzeEditorWcag22Aa`), `harness/src/geometry.ts`, and most of `harness/src/session.ts` are **Playwright-only**. Their extractable predicates live in Node (`standingFilter`, `axeFormat`, `domAuthorityCompare`, `geometryCompare`, `serialize`). The wrappers themselves need a page.
+
+`domAuthorityCompare` compares the live DOM selection to `editor.selection`. That name is not `authorityCompare`. Wave 1 GATE 1.11 (`--run authorityCompare`) is reserved for recorded-trace replay and must not go green by hitting this helper.
 
 The scenario gate is a separate command:
 
@@ -26,7 +28,7 @@ pnpm --filter @input/pen-conformance run coverage:rules
 - `harness/` — Vite app: one v1-preset editor, fixture loader, `window.__penConformance`
 - `src/` — scenario DSL, standing assertions, rule-coverage and lint scripts
 - `scenarios/` — scripted journeys (hello-world, harness self-test, wave suites)
-- `suites/` — selection, input, IME, geometry, bidi, overlays (mostly `.gitkeep`; live wiring is `harness-live.spec.ts`)
+- `suites/` — selection (live P1/S3/S5/S6 scenarios), plus input/IME/geometry/bidi/overlays still `.gitkeep`. Other live wiring stays in `scenarios/` and `harness-live.spec.ts`.
 - `fixtures/` — documents plus the diagnostics allowlist
 - `fixtures/hostile/` — Wave S.0 attacker corpus (`window.__xssProbe` canary)
 

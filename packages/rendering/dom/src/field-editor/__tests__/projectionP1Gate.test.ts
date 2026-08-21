@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { createEditor } from "@input/pen-core";
+import { createEditor, getEditorSelectionRecord } from "@input/pen-core";
 import { defaultSchema } from "@input/pen-schema-default";
 import type { SelectionRecord } from "@input/pen-types";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -43,7 +43,10 @@ class ProbeFieldEditor extends FieldEditorImpl {
 		super._projectFromScheduler(record);
 		this._selectionCoordinator.recordProjectedVersion(record.version);
 		this.skipBackendWrite = [];
-		this._editor.internals.emit("selectionChange", this._editor.selection);
+		this._editor.internals.emit(
+			"selectionChange",
+			getEditorSelectionRecord(this._editor)!,
+		);
 		this.echoSkipBackendWrite = [...this.skipBackendWrite];
 	}
 

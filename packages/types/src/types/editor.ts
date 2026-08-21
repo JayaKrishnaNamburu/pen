@@ -184,7 +184,7 @@ export interface PenEventMap {
 	documentCommit: (event: DocumentCommitEvent) => void;
 	historyApplied: (event: HistoryAppliedEvent) => void;
 	decorationsChange: (generation: number) => void;
-	selectionChange: (selection: SelectionState) => void;
+	selectionChange: (record: SelectionRecord) => void;
 	diagnostic: (event: DiagnosticEvent) => void;
 	"crdt:corruption": (errors: DocumentValidationError[]) => void;
 	"crdt:recovered": (method: "snapshot" | "repair") => void;

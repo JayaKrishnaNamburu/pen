@@ -28,6 +28,7 @@ import { canOpenLinkEditor } from "../utils/linkMarks";
 import { createPlaygroundAIModel } from "../utils/playgroundAI";
 import { createPlaygroundAISuggestionsAnalyzer } from "../utils/playgroundAISuggestions";
 import { installPlaygroundAISuggestionsDebug } from "../utils/playgroundAISuggestionsDebug";
+import { seedSpecPortLiveTraceIfRequested } from "../fixtures/specPortLiveTrace";
 import {
 	createPlaygroundCollaborationExtension,
 	normalizePlaygroundCollaborationDocument,
@@ -88,6 +89,7 @@ export function PlaygroundCollaborationBootstrap({
 
 	useEffect(() => {
 		normalizePlaygroundCollaborationDocument(editor);
+		seedSpecPortLiveTraceIfRequested(editor);
 	}, [editor, multiplayerState.connectionState]);
 
 	return null;

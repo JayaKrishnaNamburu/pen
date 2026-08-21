@@ -307,6 +307,7 @@ export async function getEditorDocumentSnapshot(
 			editorSelection = {
 				type: selection.type,
 				blockIds: [...selection.blockIds],
+				head: selection.head ?? null,
 			};
 		} else if (selection) {
 			editorSelection = { type: selection.type };

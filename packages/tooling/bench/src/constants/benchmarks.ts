@@ -29,6 +29,26 @@ export const CRDT_FORK_MERGE_100_BENCH: BenchMetadata = {
 	name: "fork + merge 100-block document",
 };
 
+export const ANCHORS_ENCODE_SIZE_1000_BENCH: BenchMetadata = {
+	id: "anchors.encode-size-1000",
+	name: "Yjs relative-position encode size x1000",
+};
+
+export const ANCHORS_RESOLVE_70K_1000_BENCH: BenchMetadata = {
+	id: "anchors.resolve-70k-1000",
+	name: "Yjs relative-position resolve 70k chars x1000",
+};
+
+export const ANCHORS_RESOLVE_200_BLOCKS_BENCH: BenchMetadata = {
+	id: "anchors.resolve-200-blocks",
+	name: "Yjs relative-position resolve across 200 blocks",
+};
+
+export const ANCHORS_SPLIT_FOLLOW_BENCH: BenchMetadata = {
+	id: "anchors.split-follow",
+	name: "Yjs relative-position follow after Pen copy-split",
+};
+
 export const SCHEMA_RESOLVE_X10000_BENCH: BenchMetadata = {
 	id: "schema.resolve-x10000",
 	name: "schema resolve x10000",
@@ -224,6 +244,10 @@ export const SCALE3_KEYSTROKE_PEER_COUNT_8_BENCH: BenchMetadata = {
 
 export const BENCHMARK_METADATA: BenchMetadata[] = [
 	CRDT_INSERT_1000_BLOCKS_BENCH,
+	ANCHORS_ENCODE_SIZE_1000_BENCH,
+	ANCHORS_RESOLVE_70K_1000_BENCH,
+	ANCHORS_RESOLVE_200_BLOCKS_BENCH,
+	ANCHORS_SPLIT_FOLLOW_BENCH,
 	CRDT_ENCODE_STATE_500_BENCH,
 	CRDT_LOAD_DOCUMENT_500_BENCH,
 	CRDT_FORK_MERGE_100_BENCH,

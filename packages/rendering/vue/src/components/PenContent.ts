@@ -6,6 +6,8 @@ import { fieldEditorTextEntryAttrs } from "@input/pen-dom/utils/fieldEditorTextE
 import {
   defineComponent,
   h,
+  onMounted,
+  onUpdated,
   ref,
   watch,
   type ComponentPublicInstance,
@@ -49,6 +51,26 @@ export const PenContent = defineComponent({
       },
       { immediate: true },
     );
+
+    const ackMountedBlocks = () => {
+      const host = blocksHostElement.value;
+      if (!host || !fieldEditor) {
+        return;
+      }
+      for (const element of host.querySelectorAll(
+        `[${DATA_ATTRS.editorBlock}]`,
+      )) {
+        if (!(element instanceof HTMLElement)) {
+          continue;
+        }
+        const blockId = element.getAttribute(DATA_ATTRS.blockId);
+        if (blockId) {
+          fieldEditor.ackBlockMounted(blockId, element);
+        }
+      }
+    };
+    onMounted(ackMountedBlocks);
+    onUpdated(ackMountedBlocks);
 
     return () => {
       const blockNodes = blockIds.value.map((blockId) =>

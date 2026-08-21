@@ -35,7 +35,8 @@ export async function assertStandingDomMatchesAuthority(
 }
 
 export function assertDomAuthorityResult(result: DomAuthorityCheck): void {
-	// v1 snapshot (blockId+offset), not affinity/goalX — projectSelection is not live.
+	// v1 snapshot (blockId+offset), not affinity/goalX. P1 is live in the
+	// scheduler write-phase slot; affinity is still unwritten at runtime.
 	// Unchecked (unfocused / non-text) is not a hold — that collapse was the skip-as-success hole.
 	expect(
 		standingAuthorityHolds(result),

@@ -1,6 +1,7 @@
 import type {
 	Editor,
 	Extension,
+	SelectionRecord,
 	SelectionState,
 } from "@input/pen-types";
 import { MULTIPLAYER_CONTROLLER_SLOT } from "@input/pen-types";
@@ -84,7 +85,7 @@ export function getMultiplayerController(
 
 function buildLocalAwarenessState(
 	user: MultiplayerAwarenessState["user"],
-	selection: SelectionState,
+	selection: SelectionState | SelectionRecord["state"],
 	commitId: number,
 ): MultiplayerAwarenessState {
 	if (selection?.type === "text") {

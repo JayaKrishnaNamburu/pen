@@ -80,8 +80,31 @@
 #           hosted try-it link. Three host smokes are not the set.
 #   DOC6  — release workflow does not yet assert changelogs and tags;
 #           wave D's first D.7 checkpoint is still open.
-#   A1, API10, BR3, DIR2, M3, OV3, P2, R6 — mismatched test claims,
+#   API10, BR3, DIR2, M3, OV3, P2, R6 — mismatched test claims,
 #           no gate. Stay held back in claimed-scope.txt.
+#   C1–C4, O1–O5, S1 — no test name asserts the rule yet.
+#
+# Inventory scope (coverage:rules, 2026-08-21):
+#   Walks spec-v2 and spec-v3 when the directory exists. EXTRA_PREFIXES
+#   includes AN/AS so v3 namespaces are visible. A missing spec-v3 is
+#   skipped; zero collected IDs is `empty inventory` and exits 1.
+#   Previously spec-v2 only, prefixes DUR/COL/AIB/IOP/SCALE — GATE 1.14
+#   (AN/AS claimed) was unsatisfiable.
+#
+# Nightly slot (vitest.nightly.ts, 2026-08-21):
+#   Properties pin is unchanged (closed list vs packages/**/*.properties.test.ts).
+#   Extra glob packages/**/*an-fuzz*.test.ts is included when present so
+#   GATE 1.7 is a real include, not a comment. Empty extra glob is ok.
+#   workflow nightly.yml is on this branch; not on default branch — no
+#   scheduled run exists until an owner lands it on main.
+#
+# Conformance engines (conformance.yml, 2026-08-21):
+#   webkit/firefox stay continue-on-error. Evidence required to promote:
+#   a conformance-${engine} job that ran the Playwright suite to
+#   completion (not missing-dist) with 0 failed. Three PR runs on this
+#   branch all failed on missing @input/pen-core/dist before any
+#   assertion. Playground e2e green is a different matrix. Build step
+#   added so the workflow can produce that evidence.
 
 COL5 | packages/docs/scripts/check-collaboration-contract.mjs | .github/workflows/docs.yml | check:collaboration | data-col5
 DOC4 | scripts/readme-sections.mjs | .github/workflows/readme-sections.yml | readme-sections.mjs | DOC4

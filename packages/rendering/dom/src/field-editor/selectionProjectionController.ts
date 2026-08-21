@@ -1,5 +1,5 @@
 import { isMultiBlock } from "@input/pen-core";
-import type { SelectionState } from "@input/pen-types";
+import type { DiagnosticEvent, SelectionState } from "@input/pen-types";
 import type { PenFieldEditorFocusOptions } from "./controller";
 import type { HistorySelectionCoordinator } from "./historySelectionCoordinator";
 
@@ -42,6 +42,7 @@ type SelectionProjectionControllerOptions = {
 	activate: (blockId: string) => void;
 	emitSelectionProjected: () => void;
 	getRecordVersion?: () => number;
+	emitDiagnostic?: (event: DiagnosticEvent) => void;
 };
 
 export class SelectionProjectionController {
@@ -58,6 +59,7 @@ export class SelectionProjectionController {
 	private _committedProgrammaticTextSelection: ProgrammaticTextSelection | null =
 		null;
 	private _lastProjectedVersion = 0;
+	private _parked: { version: number; blockId: string | null } | null = null;
 
 	constructor(options: SelectionProjectionControllerOptions) {
 		this._historySelectionCoordinator = options.historySelectionCoordinator;
@@ -79,6 +81,17 @@ export class SelectionProjectionController {
 
 	recordProjectedVersion(version: number): void {
 		this._lastProjectedVersion = version;
+	}
+
+	get parkedProjectionVersion(): number | null {
+		return this._parked?.version ?? null;
+	}
+
+	ackBlockMounted(_blockId: string, _element: HTMLElement): void {
+		if (this._parked == null) {
+			return;
+		}
+		this.syncDomSelectionOnce();
 	}
 
 	peekProgrammaticTextSelection(): ProgrammaticTextSelection | null {
@@ -364,6 +377,7 @@ export class SelectionProjectionController {
 		}
 
 		if (projected) {
+			this._parked = null;
 			const recordVersion = this._options.getRecordVersion?.();
 			if (recordVersion != null) {
 				this._lastProjectedVersion = recordVersion;
@@ -379,6 +393,21 @@ export class SelectionProjectionController {
 		}
 
 		this._cancelSelectionProjection(version);
+		this._parkProjection();
+	}
+
+	private _parkProjection(): void {
+		const recordVersion = this._options.getRecordVersion?.() ?? 0;
+		this._parked = {
+			version: recordVersion,
+			blockId: this._options.getFocusBlockId(),
+		};
+		this._options.emitDiagnostic?.({
+			code: "selection-target-unmounted",
+			level: "warn",
+			source: "selection",
+			message: "selection target is not mounted; projection parked",
+		});
 	}
 
 	shouldProjectSelectionAfterReconcile(): boolean {

@@ -1,0 +1,85 @@
+{
+  "immediate": {
+    "selection": {
+      "type": "text",
+      "isCollapsed": false,
+      "isMultiBlock": false,
+      "anchor": {
+        "blockId": "e87c9de4-5d67-4270-88c0-62f927ad3075",
+        "offset": 2
+      },
+      "focus": {
+        "blockId": "e87c9de4-5d67-4270-88c0-62f927ad3075",
+        "offset": 3
+      }
+    },
+    "selectedText": "z",
+    "blockCount": 1,
+    "blocks": [
+      {
+        "id": "e87c9de4-5d67-4270-88c0-62f927ad3075",
+        "type": "paragraph",
+        "text": "hiz",
+        "length": 4
+      }
+    ],
+    "native": {
+      "isCollapsed": false,
+      "text": "​@Ada​",
+      "rangeCount": 1
+    },
+    "overlayCaretCount": 0,
+    "selectionRectCount": 0,
+    "inlineAtomCount": 1,
+    "inlineAtomTypes": [
+      "mention"
+    ],
+    "activeCaretColor": "rgb(10, 132, 255)",
+    "keyProbe": null
+  },
+  "settled": {
+    "selection": {
+      "type": "text",
+      "isCollapsed": false,
+      "isMultiBlock": false,
+      "anchor": {
+        "blockId": "e87c9de4-5d67-4270-88c0-62f927ad3075",
+        "offset": 2
+      },
+      "focus": {
+        "blockId": "e87c9de4-5d67-4270-88c0-62f927ad3075",
+        "offset": 3
+      }
+    },
+    "selectedText": "z",
+    "blockCount": 1,
+    "blocks": [
+      {
+        "id": "e87c9de4-5d67-4270-88c0-62f927ad3075",
+        "type": "paragraph",
+        "text": "hiz",
+        "length": 4
+      }
+    ],
+    "native": {
+      "isCollapsed": false,
+      "text": "​@Ada​",
+      "rangeCount": 1
+    },
+    "overlayCaretCount": 0,
+    "selectionRectCount": 0,
+    "inlineAtomCount": 1,
+    "inlineAtomTypes": [
+      "mention"
+    ],
+    "activeCaretColor": "rgb(10, 132, 255)",
+    "keyProbe": null
+  },
+  "browserName": "chromium",
+  "step": "atom-arrow-left",
+  "loadavg": [
+    4.79443359375,
+    5.23974609375,
+    8.806640625
+  ]
+}

@@ -12,6 +12,7 @@ import {
 	getCriticalBenchFailures,
 	runSuite,
 } from "./bench";
+import { anchorsBenchmarks } from "./suites/anchors.bench";
 import { crdtBenchmarks } from "./suites/crdt.bench";
 import { schemaBenchmarks } from "./suites/schema.bench";
 import { streamingBenchmarks } from "./suites/streaming.bench";
@@ -49,6 +50,7 @@ export interface RunAllSuitesOptions {
 export function createBenchSuites(): BenchSuite[] {
 	return [
 		{ name: "CRDT", benchmarks: crdtBenchmarks },
+		{ name: "Anchors", benchmarks: anchorsBenchmarks },
 		{ name: "Schema", benchmarks: schemaBenchmarks },
 		{ name: "Editor", benchmarks: editorBenchmarks },
 		{ name: "Streaming", benchmarks: streamingBenchmarks },

@@ -105,6 +105,16 @@ function createScenario(page: Page): ScenarioApi {
 				}, ops);
 			});
 		},
+		async selectText(block: number, offset = 0) {
+			await step(async () => {
+				await page.evaluate(
+					(target) => {
+						window.__penConformance.selectText(target.block, target.offset);
+					},
+					{ block, offset },
+				);
+			});
+		},
 		async applyAiRangeReplacement(args) {
 			await step(async () => {
 				await page.evaluate((replacement) => {

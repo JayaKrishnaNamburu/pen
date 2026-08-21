@@ -1,0 +1,173 @@
+// @vitest-environment jsdom
+
+import { createEditor, getEditorSelectionRecord } from "@input/pen-core";
+import { defaultSchema } from "@input/pen-schema-default";
+import type { DiagnosticEvent } from "@input/pen-types";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { getRootGeometry } from "../../geometry/rootGeometry";
+import { DATA_ATTRS } from "../../utils/dataAttributes";
+import { FieldEditorImpl } from "../fieldEditorImpl";
+
+let frameQueue: FrameRequestCallback[] = [];
+
+function installMockRaf(): void {
+	frameQueue = [];
+	vi.stubGlobal(
+		"requestAnimationFrame",
+		(callback: FrameRequestCallback): number => {
+			frameQueue.push(callback);
+			return frameQueue.length;
+		},
+	);
+}
+
+function flushFrame(): void {
+	const batch = frameQueue.splice(0);
+	for (const callback of batch) {
+		callback(0);
+	}
+}
+
+function mountBlock(root: HTMLElement, blockId: string, text: string): HTMLElement {
+	const block = document.createElement("div");
+	block.setAttribute(DATA_ATTRS.editorBlock, "");
+	block.setAttribute(DATA_ATTRS.blockId, blockId);
+	const inline = document.createElement("div");
+	inline.setAttribute(DATA_ATTRS.inlineContent, "");
+	inline.textContent = text;
+	block.appendChild(inline);
+	root.appendChild(block);
+	return block;
+}
+
+class ProbeFieldEditor extends FieldEditorImpl {
+	get lastProjectedVersion(): number {
+		return this._selectionCoordinator.lastProjectedVersion;
+	}
+
+	get parkedProjectionVersion(): number | null {
+		return this._selectionCoordinator.parkedProjectionVersion;
+	}
+}
+
+const fixtures: Array<{
+	editor: ReturnType<typeof createEditor>;
+	fieldEditor: ProbeFieldEditor;
+	root: HTMLElement;
+}> = [];
+
+afterEach(() => {
+	while (fixtures.length > 0) {
+		const fixture = fixtures.pop();
+		if (!fixture) {
+			break;
+		}
+		fixture.fieldEditor.destroy();
+		fixture.root.remove();
+		fixture.editor.destroy();
+	}
+	vi.unstubAllGlobals();
+});
+
+describe("mount ack and parked projections", () => {
+	beforeEach(() => {
+		installMockRaf();
+	});
+
+	it("parks when the target block is not mounted and emits selection-target-unmounted", () => {
+		const editor = createEditor({ schema: defaultSchema });
+		const fieldEditor = new ProbeFieldEditor(editor);
+		const root = document.createElement("div");
+		document.body.appendChild(root);
+		fixtures.push({ editor, fieldEditor, root });
+		fieldEditor.setRootElement(root);
+
+		const diagnostics: DiagnosticEvent[] = [];
+		editor.on("diagnostic", (event) => {
+			diagnostics.push(event);
+		});
+
+		const blockId = editor.firstBlock()!.id;
+		editor.apply([{ type: "insert-text", blockId, offset: 0, text: "Hi" }]);
+		fieldEditor.activate(blockId);
+		editor.selectText(blockId, 2, 2);
+		flushFrame();
+
+		expect(fieldEditor.parkedProjectionVersion).toBe(
+			getEditorSelectionRecord(editor)!.version,
+		);
+		expect(fieldEditor.lastProjectedVersion).toBe(0);
+		expect(
+			diagnostics.filter((event) => event.code === "selection-target-unmounted"),
+		).toHaveLength(1);
+	});
+
+	it("discards a parked projection when a newer version parks", () => {
+		const editor = createEditor({ schema: defaultSchema });
+		const fieldEditor = new ProbeFieldEditor(editor);
+		const root = document.createElement("div");
+		document.body.appendChild(root);
+		fixtures.push({ editor, fieldEditor, root });
+		fieldEditor.setRootElement(root);
+
+		const blockId = editor.firstBlock()!.id;
+		editor.apply([{ type: "insert-text", blockId, offset: 0, text: "Hi" }]);
+		fieldEditor.activate(blockId);
+		editor.selectText(blockId, 0, 0);
+		flushFrame();
+		const firstParked = fieldEditor.parkedProjectionVersion;
+		expect(firstParked).not.toBeNull();
+
+		editor.selectText(blockId, 2, 2);
+		flushFrame();
+		const secondParked = fieldEditor.parkedProjectionVersion;
+		expect(secondParked).toBe(getEditorSelectionRecord(editor)!.version);
+		expect(secondParked).toBeGreaterThan(firstParked!);
+	});
+
+	it("projects a parked version on ack without a scheduler flush", () => {
+		const editor = createEditor({ schema: defaultSchema });
+		const fieldEditor = new ProbeFieldEditor(editor);
+		const root = document.createElement("div");
+		document.body.appendChild(root);
+		fixtures.push({ editor, fieldEditor, root });
+		fieldEditor.setRootElement(root);
+
+		const blockId = editor.firstBlock()!.id;
+		editor.apply([{ type: "insert-text", blockId, offset: 0, text: "Hi" }]);
+		fieldEditor.activate(blockId);
+		editor.selectText(blockId, 2, 2);
+		flushFrame();
+		expect(fieldEditor.parkedProjectionVersion).not.toBeNull();
+
+		const block = mountBlock(root, blockId, "Hi");
+		fieldEditor.ackBlockMounted(blockId, block);
+
+		expect(fieldEditor.parkedProjectionVersion).toBeNull();
+		expect(fieldEditor.lastProjectedVersion).toBe(
+			getEditorSelectionRecord(editor)!.version,
+		);
+	});
+
+	it("resolves waitForAttachment same-turn when the ack never comes", async () => {
+		const editor = createEditor({ schema: defaultSchema });
+		const fieldEditor = new ProbeFieldEditor(editor);
+		const root = document.createElement("div");
+		document.body.appendChild(root);
+		fixtures.push({ editor, fieldEditor, root });
+		fieldEditor.setRootElement(root);
+
+		const blockId = editor.firstBlock()!.id;
+		fieldEditor.activate(blockId);
+		editor.selectText(blockId, 0, 0);
+		flushFrame();
+		expect(fieldEditor.parkedProjectionVersion).not.toBeNull();
+
+		const attached = await fieldEditor.waitForAttachment(blockId);
+		expect(attached).toBe(false);
+		expect(fieldEditor.parkedProjectionVersion).toBe(
+			getEditorSelectionRecord(editor)!.version,
+		);
+		expect(getRootGeometry(root).scheduler.phase).toBe("idle");
+	});
+});

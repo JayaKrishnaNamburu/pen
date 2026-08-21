@@ -1,4 +1,9 @@
-import type { DiagnosticEvent, SelectionState, TextSelection } from "@input/pen-types";
+import type {
+	DiagnosticEvent,
+	SelectionRecord,
+	SelectionState,
+	TextSelection,
+} from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 
 import { createBlockIndexSnapshot } from "../changes/blockIndex";
@@ -128,9 +133,9 @@ describe("SelectionAuthority A1–A6", () => {
 		]);
 		editor.selectText(id, 2, 2);
 		const version = authorityOf(editor).record.version;
-		const changes: SelectionState[] = [];
-		editor.on("selectionChange", (selection) => {
-			changes.push(selection);
+		const changes: SelectionRecord[] = [];
+		editor.on("selectionChange", (record) => {
+			changes.push(record);
 		});
 
 		const current = editor.selection as TextSelection;
@@ -156,6 +161,34 @@ describe("SelectionAuthority A1–A6", () => {
 		});
 		expect(authorityOf(editor).record.version).toBe(version + 1);
 		expect((editor.selection as TextSelection).affinity).toBe("upstream");
+		editor.destroy();
+	});
+
+	it("A3: set emits selectionChange with the record, not the state", () => {
+		const editor = createEditor();
+		const id = editor.firstBlock()!.id;
+		const changes: SelectionRecord[] = [];
+		editor.on("selectionChange", (record) => {
+			changes.push(record);
+		});
+
+		editor.selectText(id, 0, 0);
+
+		expect(changes).toHaveLength(1);
+		const record = changes[0]!;
+		expect(record).toEqual(authorityOf(editor).record);
+		expect(record).toMatchObject({
+			state: {
+				type: "text",
+				anchor: { blockId: id, offset: 0 },
+				focus: { blockId: id, offset: 0 },
+			},
+			origin: "programmatic",
+		});
+		expect(record.version).toBe(authorityOf(editor).record.version);
+		expect(record.commitId).toBe(authorityOf(editor).record.commitId);
+		expect(record).not.toHaveProperty("type");
+		expect(record.state).not.toBeNull();
 		editor.destroy();
 	});
 
@@ -275,8 +308,10 @@ describe("SelectionAuthority A1–A6", () => {
 		editor.apply([{ type: "insert-text", blockId: id, offset: 0, text: "Hello" }]);
 		editor.selectText(id, 2, 2);
 		const order: string[] = [];
-		editor.on("selectionChange", () => {
+		const changes: SelectionRecord[] = [];
+		editor.on("selectionChange", (record) => {
 			order.push("selection");
+			changes.push(record);
 		});
 		editor.on("commit", () => {
 			order.push("commit");
@@ -289,6 +324,9 @@ describe("SelectionAuthority A1–A6", () => {
 			focus: { blockId: id, offset: 5 },
 		});
 		expect(authorityOf(editor).record.origin).toBe("mapped");
+		expect(changes).toHaveLength(1);
+		expect(changes[0]).toEqual(authorityOf(editor).record);
+		expect(changes[0]).not.toHaveProperty("type");
 		editor.destroy();
 	});
 
@@ -298,9 +336,9 @@ describe("SelectionAuthority A1–A6", () => {
 		editor.selectText(id, 0, 0);
 		const auth = authorityOf(editor);
 		const version = auth.record.version;
-		const changes: SelectionState[] = [];
-		editor.on("selectionChange", (selection) => {
-			changes.push(selection);
+		const changes: SelectionRecord[] = [];
+		editor.on("selectionChange", (record) => {
+			changes.push(record);
 		});
 
 		auth.updateDocument(runtimeOf(editor)._doc, runtimeOf(editor)._crdtDoc);
@@ -308,7 +346,13 @@ describe("SelectionAuthority A1–A6", () => {
 		expect(editor.selection).toBeNull();
 		expect(auth.record.version).toBe(version + 1);
 		expect(auth.record.origin).toBe("programmatic");
-		expect(changes).toEqual([null]);
+		expect(changes).toEqual([auth.record]);
+		expect(changes[0]).toMatchObject({
+			state: null,
+			version: version + 1,
+			origin: "programmatic",
+		});
+		expect(changes[0]).not.toBeNull();
 		editor.destroy();
 	});
 

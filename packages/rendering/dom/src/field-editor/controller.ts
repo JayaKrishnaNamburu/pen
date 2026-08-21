@@ -280,5 +280,6 @@ export type FieldEditorSession = FieldEditorStore &
 			listener: PenFocusLifecycleListener,
 		): () => void;
 		waitForAttachment(blockId?: string | null): Promise<boolean>;
+		ackBlockMounted(blockId: string, element: HTMLElement): void;
 		delegate(blockSchema: BlockSchema): boolean;
 	};

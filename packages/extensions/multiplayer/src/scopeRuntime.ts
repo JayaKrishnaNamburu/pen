@@ -2,6 +2,7 @@ import type {
 	Awareness,
 	Editor,
 	MultiplayerSession,
+	SelectionRecord,
 	SelectionState,
 	Unsubscribe,
 } from "@input/pen-types";
@@ -27,7 +28,7 @@ export function attachMultiplayerScopeRuntime(
 	user: MultiplayerUser,
 	buildLocalAwarenessState: (
 		user: MultiplayerAwarenessState["user"],
-		selection: SelectionState,
+		selection: SelectionState | SelectionRecord["state"],
 		commitId: number,
 	) => MultiplayerAwarenessState,
 ): MultiplayerScopeRuntimeHandle {
@@ -67,7 +68,7 @@ export function attachMultiplayerScopeRuntime(
 
 type BuildLocalAwarenessState = (
 	user: MultiplayerAwarenessState["user"],
-	selection: SelectionState,
+	selection: SelectionState | SelectionRecord["state"],
 	commitId: number,
 ) => MultiplayerAwarenessState;
 
@@ -156,12 +157,12 @@ class MultiplayerScopeRuntime {
 		this.editors.add(editor);
 		this.selectionUnsubscribers.set(
 			editor,
-			editor.onSelectionChange((selection) => {
+			editor.onSelectionChange((record) => {
 				this.awareness.setLocalState(
 					this.buildLocalAwarenessState(
 						this.user,
-						selection,
-						latestCommitId(editor),
+						record.state,
+						record.commitId,
 					),
 				);
 			}),

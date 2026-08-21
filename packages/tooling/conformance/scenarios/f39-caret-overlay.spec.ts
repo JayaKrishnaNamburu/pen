@@ -97,15 +97,15 @@ scenario(
 		await page.keyboard.press("ArrowRight");
 		await page.keyboard.up("Shift");
 		await expect
-			.poll(async () => {
-				const selection = await page.evaluate(
-					() => window.__penConformance.selection,
-				);
-				return (
-					selection?.type === "text" &&
-					!window.__penConformance.isCollapsed()
-				);
-			})
+			.poll(() =>
+				page.evaluate(() => {
+					const selection = window.__penConformance.selection;
+					return (
+						selection?.type === "text" &&
+						!window.__penConformance.isCollapsed()
+					);
+				}),
+			)
 			.toBe(true);
 		await expect(page.locator("[data-pen-editor-caret]")).toHaveCount(0);
 		const expanded = await page.evaluate(() => {

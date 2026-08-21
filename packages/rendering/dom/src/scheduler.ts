@@ -19,7 +19,9 @@ export type FlushCollect = {
 	readonly selection: SelectionRecord | null;
 };
 
-export type SelectionProjector = (record: SelectionRecord) => void;
+export type SelectionProjector = (
+	record: SelectionRecord,
+) => void | "parked";
 
 export type DomSchedulerOptions = {
 	onDiagnostic?: (event: DiagnosticEvent) => void;
@@ -246,8 +248,8 @@ export class DomScheduler {
 		}
 		const queued = this.selection;
 		this._projectedThisFlush = true;
-		this.onProjectSelection?.(record);
-		if (this.selection === queued) {
+		const result = this.onProjectSelection?.(record);
+		if (result !== "parked" && this.selection === queued) {
 			this.selection = null;
 		}
 	}

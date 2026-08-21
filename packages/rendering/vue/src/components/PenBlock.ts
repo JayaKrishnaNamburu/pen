@@ -10,7 +10,16 @@ import {
 } from "@input/pen-dom/utils/dataAttributes";
 import { isCellInSelection } from "@input/pen-dom/utils/cellSelection";
 import type { BlockHandle, CellSelection } from "@input/pen-types";
-import { defineComponent, h, type VNode, type VNodeChild } from "vue";
+import {
+  defineComponent,
+  h,
+  onMounted,
+  onUpdated,
+  ref,
+  type ComponentPublicInstance,
+  type VNode,
+  type VNodeChild,
+} from "vue";
 import { useSelection } from "../composables/useSelection";
 import {
   isBlockSelected,
@@ -41,6 +50,17 @@ export const PenBlock = defineComponent({
     const fieldEditorState = useFieldEditorState(fieldEditor);
     const blockModel = useBlockModel(editor, props.blockId);
     const childBlockIds = useParentIdChildBlockIds(editor, props.blockId);
+    const blockElement = ref<HTMLElement | null>(null);
+
+    const ackMounted = () => {
+      const element = blockElement.value;
+      if (!element || !fieldEditor) {
+        return;
+      }
+      fieldEditor.ackBlockMounted(props.blockId, element);
+    };
+    onMounted(ackMounted);
+    onUpdated(ackMounted);
 
     return (): VNode | null => {
       if (!blockModel.value.exists) {
@@ -95,6 +115,10 @@ export const PenBlock = defineComponent({
       return h(
         "div",
         {
+          ref: (element: Element | ComponentPublicInstance | null) => {
+            blockElement.value =
+              element instanceof HTMLElement ? element : null;
+          },
           [DATA_ATTRS.editorBlock]: "",
           [DATA_ATTRS.blockId]: props.blockId,
           [DATA_ATTRS.blockType]: block.type,

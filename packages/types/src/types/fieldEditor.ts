@@ -1,5 +1,5 @@
 import type { BlockSchema } from "./schema";
-import type { SelectionState } from "./selection";
+import type { SelectionRecord, SelectionState } from "./selection";
 import type { GenerationZone } from "./crdt";
 import type { OpOrigin } from "./ops";
 import type { Unsubscribe } from "./utility";
@@ -80,7 +80,7 @@ export interface FieldEditor {
 	onActivate?(callback: (blockIds: string[]) => void): Unsubscribe;
 	onDeactivate?(callback: (blockIds: string[]) => void): Unsubscribe;
 	onSelectionChange?(
-		callback: (selection: SelectionState) => void,
+		callback: (record: SelectionRecord) => void,
 	): Unsubscribe;
 }
 

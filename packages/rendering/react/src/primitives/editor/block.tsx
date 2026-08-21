@@ -1,4 +1,5 @@
 import React, { Children, cloneElement, isValidElement, useRef } from "react";
+import { useIsomorphicLayoutEffect } from "../../hooks/useIsomorphicLayoutEffect";
 import { resolveBlockDirection } from "@input/pen-core";
 import type { BlockHandle, BlockRenderContext, Decoration, Editor } from "@input/pen-types";
 import { useEditorContext } from "../../context/editorContext";
@@ -34,6 +35,14 @@ export function EditorBlock(props: EditorBlockProps) {
 	const blockDecorations = useBlockDecorations(editor, blockId);
 	const externalDropPosition = useBlockDropPreview(blockId);
 	const blockRef = useRef<HTMLElement>(null);
+
+	useIsomorphicLayoutEffect(() => {
+		const element = blockRef.current;
+		if (!fieldEditor || !element) {
+			return;
+		}
+		fieldEditor.ackBlockMounted(blockId, element);
+	}, [fieldEditor, blockId, blockModel.exists]);
 
 	if (!blockModel.exists) return null;
 

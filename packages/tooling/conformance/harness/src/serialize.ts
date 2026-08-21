@@ -1,8 +1,13 @@
 import { isCollapsed } from "@input/pen-core";
-import type { DiagnosticEvent, SelectionState } from "@input/pen-types";
+import type {
+	DiagnosticEvent,
+	SelectionRecord,
+	SelectionState,
+} from "@input/pen-types";
 import type {
 	SerializedDiagnostic,
 	SerializedSelection,
+	SerializedSelectionRecord,
 } from "../../src/types";
 
 /** Snapshot `isCollapsed` via the official helper — never copy a live field. */
@@ -49,6 +54,66 @@ export function serializeSelection(
 			return _exhaustive;
 		}
 	}
+}
+
+export function serializeSelectionRecord(
+	record: SelectionRecord | null,
+): SerializedSelectionRecord | null {
+	if (record == null) {
+		return null;
+	}
+	const state = record.state;
+	let serialized: SerializedSelection = null;
+	if (state != null) {
+		switch (state.type) {
+			case "text":
+				serialized = {
+					type: "text",
+					anchor: {
+						blockId: state.anchor.blockId,
+						offset: state.anchor.offset,
+					},
+					focus: {
+						blockId: state.focus.blockId,
+						offset: state.focus.offset,
+					},
+					isCollapsed:
+						state.anchor.blockId === state.focus.blockId &&
+						state.anchor.offset === state.focus.offset,
+				};
+				break;
+			case "block":
+				serialized = {
+					type: "block",
+					blockIds: [...state.blockIds],
+				};
+				break;
+			case "app":
+				serialized = {
+					type: "app",
+					appId: state.appId,
+				};
+				break;
+			case "cell":
+				serialized = {
+					type: "cell",
+					blockId: state.blockId,
+					anchor: { ...state.anchor },
+					head: { ...state.head },
+				};
+				break;
+			default: {
+				const _exhaustive: never = state;
+				return _exhaustive;
+			}
+		}
+	}
+	return {
+		version: record.version,
+		origin: record.origin,
+		commitId: record.commitId,
+		state: serialized,
+	};
 }
 
 export function serializeDiagnostic(

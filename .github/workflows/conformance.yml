@@ -43,9 +43,13 @@ jobs:
     timeout-minutes: 30
     runs-on: ubuntu-latest
 
-    # chromium blocks the merge. webkit and firefox report only, until their
-    # first fully green run — see spec-v2/09-reliability-testing.md. Flipping
-    # them to blocking is a one-line change here and is what closes F27.
+    # chromium blocks the merge. webkit and firefox report only until a
+    # conformance-${{ matrix.engine }} job on THIS workflow finishes the
+    # Playwright suite with 0 failed. Playground e2e green is a different
+    # matrix (ci.yml) and does not promote these jobs. Three PR runs on
+    # this branch (32479438979, 32480899373, 32481309576) all failed on
+    # missing @input/pen-core/dist before any assertion — not engine
+    # evidence. Do not flip continue-on-error on that class of red.
     continue-on-error: ${{ matrix.engine != 'chromium' }}
 
     strategy:
@@ -70,6 +74,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Build conformance and dependencies
+        run: pnpm --filter @input/pen-conformance... build
 
       - name: Install Playwright ${{ matrix.engine }}
         run: pnpm --filter @input/pen-conformance exec playwright install --with-deps ${{ matrix.engine }}

@@ -42,7 +42,7 @@ export class CellEditingController {
 		this.coord = null;
 	}
 
-	trySyncBackend(attempt = 0): void {
+	trySyncBackend(): void {
 		const coord = this.coord;
 		if (!coord) return;
 
@@ -58,15 +58,11 @@ export class CellEditingController {
 			coord.row,
 			coord.col,
 		);
-		if (cellEl) {
-			this.options.attachElement(cellEl);
-			this.placeCaretInCell(cellEl);
+		if (!cellEl) {
 			return;
 		}
-
-		if (attempt < 3) {
-			requestAnimationFrame(() => this.trySyncBackend(attempt + 1));
-		}
+		this.options.attachElement(cellEl);
+		this.placeCaretInCell(cellEl);
 	}
 
 	placeCaretInCell(cellEl: HTMLElement): void {

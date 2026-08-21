@@ -24,8 +24,9 @@
  *   imported by this Node suite.
  */
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { test } from "node:test";
+import { fileURLToPath } from "node:url";
 import {
 	AXE_INCLUDE,
 	AXE_SURFACE_TAGS,
@@ -50,7 +51,17 @@ import {
 	misplacedOffset,
 	pointsEqual,
 	resolveDomAuthorityCheck,
-} from "../../harness/src/authorityCompare.ts";
+} from "../../harness/src/domAuthorityCompare.ts";
+import {
+	graphemeWalkHolds,
+	graphemeBoundaryOffsets,
+} from "../graphemeBoundaries.ts";
+import {
+	caretShiftHolds,
+	monotonicHolds,
+	originHolds,
+	recordPresence,
+} from "../selectionRecordCheck.ts";
 import {
 	caretCacheHolds,
 	geometryBlocksFromEditor,
@@ -59,6 +70,10 @@ import {
 	serializeRect,
 	tallyCaretCompares,
 } from "../../harness/src/geometryCompare.ts";
+import {
+	GRAPHEME_ZWJ_AFTER,
+	GRAPHEME_ZWJ_LINE,
+} from "../../fixtures/grapheme.ts";
 
 function readRel(rel) {
 	return readFileSync(new URL(rel, import.meta.url), "utf8");
@@ -347,10 +362,131 @@ test("Playwright-only helpers stay imported by a named scenario", () => {
 	const session = readRel("../../harness/src/session.ts");
 	assert.match(session, /resolveDomAuthorityCheck/);
 	assert.match(session, /clampWindowStart/);
-	assert.match(session, /from "\.\/authorityCompare"/);
+	assert.match(session, /from "\.\/domAuthorityCompare"/);
+	assert.doesNotMatch(session, /from "\.\/authorityCompare"/);
+	assert.match(session, /getEditorSelectionRecord/);
+	assert.match(session, /selectionRecord/);
 	assert.match(session, /selectionIsCollapsed/);
 	const geometry = readRel("../../harness/src/geometry.ts");
 	assert.match(geometry, /from "\.\/geometryCompare"/);
 	assert.match(geometry, /geometryBlocksFromEditor/);
 	assert.match(geometry, /tallyCaretCompares/);
+});
+
+test("authorityCompare filename is free for Wave 1 trace replay", () => {
+	const harnessDir = fileURLToPath(new URL("../../harness/src/", import.meta.url));
+	const oldName = `${harnessDir}authorityCompare.ts`;
+	const newName = `${harnessDir}domAuthorityCompare.ts`;
+	console.log(`harness/src/authorityCompare.ts → ${existsSync(oldName) ? 1 : 0} files`);
+	console.log(`harness/src/domAuthorityCompare.ts → ${existsSync(newName) ? 1 : 0} files`);
+	assert.equal(existsSync(oldName), false);
+	assert.equal(existsSync(newName), true);
+});
+
+test("caretShiftHolds distinguishes missing, identity, wrong landing, and match", () => {
+	const textRecord = (offset) => ({
+		version: 1,
+		origin: "programmatic",
+		commitId: 0,
+		state: {
+			type: "text",
+			anchor: { blockId: "p1", offset },
+			focus: { blockId: "p1", offset },
+			isCollapsed: true,
+		},
+	});
+	const missing = caretShiftHolds(null, textRecord(6), 6);
+	assert.equal(missing.ok, false);
+	assert.equal(missing.skipped, true);
+	const identity = caretShiftHolds(textRecord(5), textRecord(5), 6);
+	assert.equal(identity.ok, false);
+	assert.equal(identity.skipped, true);
+	assert.match(identity.reason ?? "", /stayed at 5/);
+	const wrong = caretShiftHolds(textRecord(5), textRecord(7), 6);
+	assert.equal(wrong.ok, false);
+	assert.equal(wrong.skipped, undefined);
+	assert.match(wrong.reason ?? "", /5 → 7/);
+	const hit = caretShiftHolds(textRecord(5), textRecord(6), 6);
+	assert.equal(hit.ok, true);
+	assert.equal(hit.skipped, undefined);
+});
+
+test("originHolds distinguishes missing, mismatch, and match", () => {
+	assert.equal(recordPresence(null), "missing");
+	const missing = originHolds(null, "mapped");
+	assert.equal(missing.ok, false);
+	assert.equal(missing.skipped, true);
+	const miss = originHolds(
+		{ version: 1, origin: "programmatic", commitId: 0, state: null },
+		"mapped",
+	);
+	assert.equal(miss.ok, false);
+	assert.equal(miss.skipped, undefined);
+	const hit = originHolds(
+		{ version: 2, origin: "mapped", commitId: 3, state: null },
+		"mapped",
+	);
+	assert.equal(hit.ok, true);
+});
+
+test("monotonicHolds fails a decrease and skips a no-op walk", () => {
+	const decreased = monotonicHolds([
+		{ version: 4, commitId: 2 },
+		{ version: 3, commitId: 2 },
+	]);
+	assert.equal(decreased.ok, false);
+	assert.equal(decreased.skipped, undefined);
+	assert.match(decreased.reason ?? "", /version decreased/);
+
+	const commitDrop = monotonicHolds([
+		{ version: 4, commitId: 5 },
+		{ version: 4, commitId: 4 },
+	]);
+	assert.equal(commitDrop.ok, false);
+	assert.match(commitDrop.reason ?? "", /commitId decreased/);
+
+	const noop = monotonicHolds([
+		{ version: 1, commitId: 0 },
+		{ version: 1, commitId: 0 },
+	]);
+	assert.equal(noop.ok, false);
+	assert.equal(noop.skipped, true);
+
+	const rising = monotonicHolds([
+		{ version: 1, commitId: 0 },
+		{ version: 2, commitId: 1 },
+	]);
+	assert.equal(rising.ok, true);
+});
+
+test("graphemeWalkHolds fails an interior offset and skips a no-op walk", () => {
+	const boundaries = graphemeBoundaryOffsets(GRAPHEME_ZWJ_LINE);
+	assert.ok(boundaries.includes(0));
+	assert.ok(boundaries.includes(GRAPHEME_ZWJ_AFTER));
+	assert.ok(boundaries.length < GRAPHEME_ZWJ_LINE.length + 1);
+
+	const interior = graphemeWalkHolds({
+		text: GRAPHEME_ZWJ_LINE,
+		offsets: [0, 1, 2],
+		mustVisit: GRAPHEME_ZWJ_AFTER,
+	});
+	assert.equal(interior.ok, false);
+	assert.equal(interior.skipped, undefined);
+	assert.match(interior.reason ?? "", /inside a grapheme/);
+
+	const idle = graphemeWalkHolds({
+		text: GRAPHEME_ZWJ_LINE,
+		offsets: [0],
+		mustVisit: GRAPHEME_ZWJ_AFTER,
+	});
+	assert.equal(idle.ok, false);
+	assert.equal(idle.skipped, undefined);
+	assert.match(idle.reason ?? "", /never reached/);
+
+	const walk = graphemeWalkHolds({
+		text: GRAPHEME_ZWJ_LINE,
+		offsets: boundaries,
+		mustVisit: GRAPHEME_ZWJ_AFTER,
+	});
+	assert.equal(walk.ok, true);
 });

@@ -31,7 +31,8 @@ export function bindEditorAnnouncer(
 		editor.on("historyApplied", (event) => {
 			announceHistory(editor, event);
 		}),
-		editor.on("selectionChange", (selection) => {
+		editor.on("selectionChange", () => {
+			const selection = editor.selection;
 			announceSelectionChange(editor, previousSelection, selection);
 			previousSelection = selection;
 		}),

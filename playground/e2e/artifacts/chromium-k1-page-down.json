@@ -1,0 +1,99 @@
+{
+  "immediate": {
+    "selection": {
+      "type": "text",
+      "isCollapsed": true,
+      "isMultiBlock": false,
+      "anchor": {
+        "blockId": "750c167a-b0ca-4f35-bd24-21857b5dfd2a",
+        "offset": 5
+      },
+      "focus": {
+        "blockId": "750c167a-b0ca-4f35-bd24-21857b5dfd2a",
+        "offset": 5
+      }
+    },
+    "selectedText": "",
+    "blockCount": 2,
+    "blocks": [
+      {
+        "id": "750c167a-b0ca-4f35-bd24-21857b5dfd2a",
+        "type": "paragraph",
+        "text": "Alpha",
+        "length": 5
+      },
+      {
+        "id": "b4956184-1fca-42bc-8979-32becf22cb4a",
+        "type": "paragraph",
+        "text": "Bravo",
+        "length": 5
+      }
+    ],
+    "native": {
+      "isCollapsed": true,
+      "text": "",
+      "rangeCount": 1
+    },
+    "overlayCaretCount": 1,
+    "selectionRectCount": 0,
+    "inlineAtomCount": 0,
+    "inlineAtomTypes": [],
+    "activeCaretColor": "rgba(0, 0, 0, 0)",
+    "keyProbe": {
+      "key": "PageDown",
+      "defaultPrevented": false
+    }
+  },
+  "settled": {
+    "selection": {
+      "type": "text",
+      "isCollapsed": true,
+      "isMultiBlock": false,
+      "anchor": {
+        "blockId": "750c167a-b0ca-4f35-bd24-21857b5dfd2a",
+        "offset": 5
+      },
+      "focus": {
+        "blockId": "750c167a-b0ca-4f35-bd24-21857b5dfd2a",
+        "offset": 5
+      }
+    },
+    "selectedText": "",
+    "blockCount": 2,
+    "blocks": [
+      {
+        "id": "750c167a-b0ca-4f35-bd24-21857b5dfd2a",
+        "type": "paragraph",
+        "text": "Alpha",
+        "length": 5
+      },
+      {
+        "id": "b4956184-1fca-42bc-8979-32becf22cb4a",
+        "type": "paragraph",
+        "text": "Bravo",
+        "length": 5
+      }
+    ],
+    "native": {
+      "isCollapsed": true,
+      "text": "",
+      "rangeCount": 1
+    },
+    "overlayCaretCount": 1,
+    "selectionRectCount": 0,
+    "inlineAtomCount": 0,
+    "inlineAtomTypes": [],
+    "activeCaretColor": "rgba(0, 0, 0, 0)",
+    "keyProbe": {
+      "key": "PageDown",
+      "defaultPrevented": false
+    }
+  },
+  "browserName": "chromium",
+  "step": "k1-page-down",
+  "loadavg": [
+    5.44287109375,
+    5.41162109375,
+    9.125
+  ]
+}

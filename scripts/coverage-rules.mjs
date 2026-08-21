@@ -2,9 +2,11 @@
 /**
  * coverage:rules (Wave 0.6)
  *
- * Greps spec-v2 for rule-ID tokens (inventory prefixes from
- * spec-v2/09-reliability-testing.md "Rule:" line, plus later-wave
- * prefixes DUR/COL/AIB/IOP/SCALE) and greps tests for claims.
+ * Greps spec-v2 and spec-v3 (when present) for rule-ID tokens
+ * (inventory prefixes from spec-v2/09-reliability-testing.md "Rule:"
+ * line, plus later-wave prefixes DUR/COL/AIB/IOP/SCALE/AN/AS) and
+ * greps tests for claims. spec-v3 is optional; a missing directory
+ * is skipped. Zero collected IDs is empty inventory and fails.
  *
  * Claimed-scope IDs without a claiming test name fail.
  * Gated-scope IDs without a verified, wired gate fail.
@@ -24,13 +26,15 @@ import { fileURLToPath } from "node:url";
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_REPO_ROOT = path.resolve(SCRIPT_DIR, "..");
 const INVENTORY_DOC = path.join("spec-v2", "09-reliability-testing.md");
+const SPEC_ROOTS = ["spec-v2", "spec-v3"];
 const DEFAULT_CLAIMED_SCOPE = path.join("scripts", "claimed-scope.txt");
 const DEFAULT_GATED_SCOPE = path.join("scripts", "gated-scope.txt");
 const WORKFLOW_DIR = ".github/workflows/";
 const GATED_ROW_RE =
 	/^([A-Z]+\d+)\s*\|\s*(\S+)\s*\|\s*(\S+)\s*\|\s*(\S+)\s*\|\s*(.+)$/;
 
-const EXTRA_PREFIXES = ["DUR", "COL", "AIB", "IOP", "SCALE"];
+const EXTRA_PREFIXES = ["DUR", "COL", "AIB", "IOP", "SCALE", "AN", "AS"];
+const EMPTY_INVENTORY = "empty inventory";
 
 const TEST_FILE_RE = /\.(?:test|spec)\.(?:[cm]?[jt]sx?)$/;
 const SKIP_DIR_NAMES = new Set([
@@ -293,10 +297,14 @@ function toPosix(repoRoot, filePath) {
 }
 
 export async function collectSpecIds(repoRoot, idRegex, isRuleId) {
-	const specRoot = path.join(repoRoot, "spec-v2");
-	const files = await walkFiles(specRoot, (filePath) =>
-		filePath.endsWith(".md"),
-	);
+	const files = [];
+	for (const specDir of SPEC_ROOTS) {
+		files.push(
+			...(await walkFiles(path.join(repoRoot, specDir), (filePath) =>
+				filePath.endsWith(".md"),
+			)),
+		);
+	}
 	const ids = new Set();
 	const locations = new Map();
 	for (const filePath of files) {
@@ -309,6 +317,14 @@ export async function collectSpecIds(repoRoot, idRegex, isRuleId) {
 		}
 	}
 	return { ids, locations };
+}
+
+export function assertNonEmptyInventory(ids) {
+	if (ids.size === 0) {
+		throw new Error(
+			`${EMPTY_INVENTORY}: no rule IDs found under ${SPEC_ROOTS.join(" or ")}`,
+		);
+	}
 }
 
 export async function collectTestClaims(
@@ -530,6 +546,7 @@ async function runCoverage(
 		gateChecks.push(await verifyGatedRow(repoRoot, row));
 	}
 	const { ids: specIds } = await collectSpecIds(repoRoot, idRegex, isRuleId);
+	assertNonEmptyInventory(specIds);
 	const claims = await collectTestClaims(
 		repoRoot,
 		claimedIds,
@@ -703,6 +720,89 @@ async function runSelfTest() {
 	);
 	console.log(
 		"coverage:rules self-test ok (gated I4 fails closed when the gate is deleted or unwired)",
+	);
+
+	const v3tmp = await fs.mkdtemp(
+		path.join(os.tmpdir(), "pen-coverage-rules-v3-"),
+	);
+	const v3SpecV2 = path.join(v3tmp, "spec-v2");
+	const v3SpecV3 = path.join(v3tmp, "spec-v3");
+	const v3Tests = path.join(v3tmp, "packages", "core", "src", "__tests__");
+	await fs.mkdir(v3SpecV2, { recursive: true });
+	await fs.mkdir(v3SpecV3, { recursive: true });
+	await fs.mkdir(v3Tests, { recursive: true });
+	await fs.writeFile(
+		path.join(v3SpecV2, "09-reliability-testing.md"),
+		`Rule: every normative rule ID in spec-v2 documents (I1–I12, HOST1–HOST6) must be claimed.\n`,
+	);
+	await fs.writeFile(
+		path.join(v3SpecV2, "fixture-v2.md"),
+		"- I2. Mapping stays in range.\n",
+	);
+	await fs.writeFile(
+		path.join(v3SpecV3, "01-anchors.md"),
+		"- AN1. Resolution is total.\n- AS2. Repair then resolve.\n",
+	);
+	await fs.writeFile(path.join(v3tmp, "claimed-scope.txt"), "I2\n");
+	await fs.writeFile(path.join(v3tmp, "gated-scope.txt"), "");
+	await fs.writeFile(
+		path.join(v3Tests, "mapping.test.ts"),
+		`import { describe, it } from "vitest";\ndescribe("summaries", () => {\n  it("I2 maps every pre-commit point into range or null", () => {});\n});\n`,
+	);
+
+	const withV3 = await runCoverage(
+		v3tmp,
+		"claimed-scope.txt",
+		"gated-scope.txt",
+	);
+	if (!withV3.unlisted.includes("AN1") || !withV3.unlisted.includes("AS2")) {
+		throw new Error(
+			`self-test: spec-v3 AN/AS must be inventoried, got ${withV3.unlisted.join(",")}`,
+		);
+	}
+
+	await fs.rm(v3SpecV3, { recursive: true, force: true });
+	const withoutV3 = await runCoverage(
+		v3tmp,
+		"claimed-scope.txt",
+		"gated-scope.txt",
+	);
+	if (withoutV3.claimedUnclaimed.length !== 0) {
+		throw new Error(
+			"self-test: absent spec-v3 must not break a v2 inventory",
+		);
+	}
+	if (withoutV3.unlisted.includes("AN1")) {
+		throw new Error(
+			"self-test: absent spec-v3 must not invent AN/AS IDs",
+		);
+	}
+
+	const emptyIds = await collectSpecIds(
+		v3tmp,
+		ruleIdRegex(["NOPE"]),
+		() => false,
+	);
+	if (emptyIds.ids.size !== 0) {
+		throw new Error(
+			`self-test: rejecting predicate must yield zero IDs, got ${[...emptyIds.ids]}`,
+		);
+	}
+	let emptyThrew = false;
+	try {
+		assertNonEmptyInventory(emptyIds.ids);
+	} catch (error) {
+		emptyThrew = String(error.message).includes(EMPTY_INVENTORY);
+	}
+	if (!emptyThrew) {
+		throw new Error(
+			"self-test: an inventory that finds zero rule IDs must fail empty inventory",
+		);
+	}
+
+	await fs.rm(v3tmp, { recursive: true, force: true });
+	console.log(
+		"coverage:rules self-test ok (spec-v3 AN/AS inventoried; absent spec-v3 stays on v2; empty inventory fails)",
 	);
 }
 

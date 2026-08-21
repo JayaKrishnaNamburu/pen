@@ -3,7 +3,7 @@ import type {
 	Editor,
 	BlockSchema,
 	HistoryAppliedEvent,
-	SelectionState,
+	SelectionRecord,
 	Unsubscribe,
 } from "@input/pen-types";
 import {
@@ -158,7 +158,7 @@ export abstract class FieldEditorImplRuntime extends FieldEditorImplSelection {
 		return this._focusController.onFocusLifecycle(listener);
 	}
 
-	onSelectionChange(cb: (sel: SelectionState) => void): Unsubscribe {
+	onSelectionChange(cb: (record: SelectionRecord) => void): Unsubscribe {
 		return this._editor.onSelectionChange(cb);
 	}
 
@@ -188,6 +188,13 @@ export abstract class FieldEditorImplRuntime extends FieldEditorImplSelection {
 
 	waitForAttachment(blockId = this._focusBlockId): Promise<boolean> {
 		return this._focusController.waitForAttachment(blockId);
+	}
+
+	ackBlockMounted(blockId: string, element: HTMLElement): void {
+		this._selectionCoordinator.ackBlockMounted(blockId, element);
+		if (this._cellEditingController.activeCellCoord?.blockId === blockId) {
+			this._cellEditingController.trySyncBackend();
+		}
 	}
 
 	destroy(): void {

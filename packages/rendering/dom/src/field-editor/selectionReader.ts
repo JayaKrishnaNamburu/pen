@@ -114,7 +114,10 @@ export function isLogicallyEquivalent(
 			if (authorityState.type !== "block") {
 				return false;
 			}
-			return sameBlockIds(domRead.blockIds, authorityState.blockIds);
+			return (
+				sameBlockIds(domRead.blockIds, authorityState.blockIds) &&
+				defaultBlockHead(domRead) === defaultBlockHead(authorityState)
+			);
 		}
 		case "app": {
 			if (authorityState.type !== "app") {
@@ -274,9 +277,16 @@ function sameSnappedPoint(
 	if (logicalDom === null) {
 		return false;
 	}
-	return sameSnapResult(
-		snapToNormalPosition(snapshot, logicalDom, 1),
-		snapToNormalPosition(snapshot, authorityPoint, 1),
+	const authoritySnap = snapToNormalPosition(snapshot, authorityPoint, 1);
+	return (
+		sameSnapResult(
+			snapToNormalPosition(snapshot, logicalDom, 1),
+			authoritySnap,
+		) ||
+		sameSnapResult(
+			snapToNormalPosition(snapshot, logicalDom, -1),
+			authoritySnap,
+		)
 	);
 }
 
@@ -325,6 +335,18 @@ function resolveTextBlock(
 		return null;
 	}
 	return block;
+}
+
+function defaultBlockHead(selection: {
+	readonly blockIds: readonly string[];
+	readonly head?: string;
+}): string {
+	return (
+		selection.head ??
+		selection.blockIds[selection.blockIds.length - 1] ??
+		selection.blockIds[0] ??
+		""
+	);
 }
 
 function sameBlockIds(

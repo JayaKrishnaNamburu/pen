@@ -1,0 +1,81 @@
+{
+  "immediate": {
+    "selection": {
+      "type": "text",
+      "isCollapsed": true,
+      "isMultiBlock": false,
+      "anchor": {
+        "blockId": "3dca8f5c-1947-49ec-8937-18e344c8154d",
+        "offset": 5
+      },
+      "focus": {
+        "blockId": "3dca8f5c-1947-49ec-8937-18e344c8154d",
+        "offset": 5
+      }
+    },
+    "selectedText": "",
+    "blockCount": 1,
+    "blocks": [
+      {
+        "id": "3dca8f5c-1947-49ec-8937-18e344c8154d",
+        "type": "paragraph",
+        "text": "Hello",
+        "length": 5
+      }
+    ],
+    "native": {
+      "isCollapsed": true,
+      "text": "",
+      "rangeCount": 1
+    },
+    "overlayCaretCount": 1,
+    "selectionRectCount": 0,
+    "inlineAtomCount": 0,
+    "inlineAtomTypes": [],
+    "activeCaretColor": "rgba(0, 0, 0, 0)",
+    "keyProbe": null
+  },
+  "settled": {
+    "selection": {
+      "type": "text",
+      "isCollapsed": true,
+      "isMultiBlock": false,
+      "anchor": {
+        "blockId": "3dca8f5c-1947-49ec-8937-18e344c8154d",
+        "offset": 5
+      },
+      "focus": {
+        "blockId": "3dca8f5c-1947-49ec-8937-18e344c8154d",
+        "offset": 5
+      }
+    },
+    "selectedText": "",
+    "blockCount": 1,
+    "blocks": [
+      {
+        "id": "3dca8f5c-1947-49ec-8937-18e344c8154d",
+        "type": "paragraph",
+        "text": "Hello",
+        "length": 5
+      }
+    ],
+    "native": {
+      "isCollapsed": true,
+      "text": "",
+      "rangeCount": 1
+    },
+    "overlayCaretCount": 1,
+    "selectionRectCount": 0,
+    "inlineAtomCount": 0,
+    "inlineAtomTypes": [],
+    "activeCaretColor": "rgba(0, 0, 0, 0)",
+    "keyProbe": null
+  },
+  "browserName": "chromium",
+  "step": "b1-after-dom-rewrite",
+  "loadavg": [
+    5.44287109375,
+    5.41162109375,
+    9.125
+  ]
+}

@@ -3,6 +3,7 @@ import {
 	createEditor,
 	createHeadlessEditor,
 	createPseudoLocaleCatalog,
+	getEditorSelectionRecord,
 	isCollapsed as selectionIsCollapsed,
 } from "@input/pen-core";
 import {
@@ -75,8 +76,12 @@ import {
 	misplacedOffset,
 	pointsEqual,
 	resolveDomAuthorityCheck,
-} from "./authorityCompare";
-import { serializeDiagnostic, serializeSelection } from "./serialize";
+} from "./domAuthorityCompare";
+import {
+	serializeDiagnostic,
+	serializeSelection,
+	serializeSelectionRecord,
+} from "./serialize";
 import {
 	compareCaretCache,
 	disposeGeometry,
@@ -270,8 +275,14 @@ function wireEvents(target: Session): void {
 				affectedBlocks: [...event.affectedBlocks],
 			});
 		}),
-		editor.on("selectionChange", (selection) => {
-			recordEvent(target, "selectionChange", serializeSelection(selection));
+		editor.on("selectionChange", () => {
+			// Do not read the event argument: another lane is changing the
+			// payload from SelectionState to SelectionRecord (A3).
+			recordEvent(
+				target,
+				"selectionChange",
+				serializeSelection(editor.selection),
+			);
 		}),
 		editor.on("change", (events) => {
 			recordEvent(target, "change", events.length);
@@ -790,6 +801,11 @@ function installBridge(): void {
 		},
 		isCollapsed() {
 			return selectionIsCollapsed(getHarnessSession().editor.selection);
+		},
+		get selectionRecord() {
+			return serializeSelectionRecord(
+				getEditorSelectionRecord(getHarnessSession().editor),
+			);
 		},
 		get lastEvents() {
 			return getHarnessSession().lastEvents;

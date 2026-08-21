@@ -1,0 +1,105 @@
+{
+  "immediate": {
+    "selection": {
+      "type": "text",
+      "isCollapsed": false,
+      "isMultiBlock": false,
+      "anchor": {
+        "blockId": "12d5bd1e-f676-4688-a956-7ace53e61506",
+        "offset": 0
+      },
+      "focus": {
+        "blockId": "12d5bd1e-f676-4688-a956-7ace53e61506",
+        "offset": 5
+      }
+    },
+    "selectedText": "Bravo",
+    "blockCount": 3,
+    "blocks": [
+      {
+        "id": "a87af95a-17a8-401c-a3b9-f9ecf83d4263",
+        "type": "paragraph",
+        "text": "Alpha",
+        "length": 5
+      },
+      {
+        "id": "12d5bd1e-f676-4688-a956-7ace53e61506",
+        "type": "paragraph",
+        "text": "Bravo",
+        "length": 5
+      },
+      {
+        "id": "cd392266-8e3d-47b6-b3ce-565cad10e5bd",
+        "type": "paragraph",
+        "text": "Charlie",
+        "length": 7
+      }
+    ],
+    "native": {
+      "isCollapsed": false,
+      "text": "Bravo",
+      "rangeCount": 1
+    },
+    "overlayCaretCount": 0,
+    "selectionRectCount": 0,
+    "inlineAtomCount": 0,
+    "inlineAtomTypes": [],
+    "activeCaretColor": "rgb(10, 132, 255)",
+    "keyProbe": null
+  },
+  "settled": {
+    "selection": {
+      "type": "text",
+      "isCollapsed": false,
+      "isMultiBlock": false,
+      "anchor": {
+        "blockId": "12d5bd1e-f676-4688-a956-7ace53e61506",
+        "offset": 0
+      },
+      "focus": {
+        "blockId": "12d5bd1e-f676-4688-a956-7ace53e61506",
+        "offset": 5
+      }
+    },
+    "selectedText": "Bravo",
+    "blockCount": 3,
+    "blocks": [
+      {
+        "id": "a87af95a-17a8-401c-a3b9-f9ecf83d4263",
+        "type": "paragraph",
+        "text": "Alpha",
+        "length": 5
+      },
+      {
+        "id": "12d5bd1e-f676-4688-a956-7ace53e61506",
+        "type": "paragraph",
+        "text": "Bravo",
+        "length": 5
+      },
+      {
+        "id": "cd392266-8e3d-47b6-b3ce-565cad10e5bd",
+        "type": "paragraph",
+        "text": "Charlie",
+        "length": 7
+      }
+    ],
+    "native": {
+      "isCollapsed": false,
+      "text": "Bravo",
+      "rangeCount": 1
+    },
+    "overlayCaretCount": 0,
+    "selectionRectCount": 0,
+    "inlineAtomCount": 0,
+    "inlineAtomTypes": [],
+    "activeCaretColor": "rgb(10, 132, 255)",
+    "keyProbe": null
+  },
+  "browserName": "chromium",
+  "step": "t1-block-first-first-mod-a",
+  "loadavg": [
+    4.47509765625,
+    5.2373046875,
+    9.10888671875
+  ]
+}

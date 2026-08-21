@@ -59,9 +59,8 @@ test("connectPeers no-op would drop the insert", () => {
 });
 
 test("serializeSelection computes isCollapsed; a lying input field is ignored", async () => {
-	const { serializeSelection, serializeDiagnostic } = await import(
-		"../../harness/src/serialize.ts"
-	);
+	const { serializeSelection, serializeDiagnostic, serializeSelectionRecord } =
+		await import("../../harness/src/serialize.ts");
 	assert.equal(serializeSelection(null), null);
 	const expanded = serializeSelection({
 		type: "text",
@@ -90,6 +89,23 @@ test("serializeSelection computes isCollapsed; a lying input field is ignored", 
 	});
 	assert.equal(diagnostic.code, "dom-divergence");
 	assert.equal(diagnostic.reason, "why");
+	assert.equal(serializeSelectionRecord(null), null);
+	const record = serializeSelectionRecord({
+		version: 4,
+		origin: "mapped",
+		commitId: 7,
+		state: {
+			type: "text",
+			anchor: { blockId: "p1", offset: 2 },
+			focus: { blockId: "p1", offset: 2 },
+			affinity: "downstream",
+			goalX: null,
+		},
+	});
+	assert.equal(record?.version, 4);
+	assert.equal(record?.origin, "mapped");
+	assert.equal(record?.commitId, 7);
+	assert.equal(record?.state?.type, "text");
 });
 
 test("scenarios call the bridge helper, not selection.isCollapsed", () => {
@@ -109,6 +125,11 @@ test("scenarios call the bridge helper, not selection.isCollapsed", () => {
 			body,
 			/selection\.isCollapsed/,
 			`${rel} still reads the live/DTO property Wave 5.1 is removing`,
+		);
+		assert.doesNotMatch(
+			body,
+			/const selection = await page\.evaluate[\s\S]{0,240}window\.__penConformance\.isCollapsed\(\)/,
+			`${rel} calls isCollapsed() in Node after a page.evaluate — window is not defined there`,
 		);
 	}
 	const serialize = readFileSync(
@@ -141,22 +162,35 @@ test("sampleCaretPoints samples empty and mid offsets", async () => {
 	assert.equal(sampleCaretPoints([]).length, 0);
 });
 
-test("tenK generator is 10000 words and matches the committed hash", async () => {
+test("tenK generator is 10000 paragraph words plus a cell-text cohort", async () => {
 	const { readFileSync } = await import("node:fs");
 	const { fileURLToPath } = await import("node:url");
 	const {
 		generateTenKParagraphs,
+		generateTenKCells,
 		tenKFixtureIdentity,
+		tenKParagraphsSha256,
 		tenKWordOps,
 		tenKBlockId,
 		TEN_K_WORD_COUNT,
 		TEN_K_PARAGRAPH_COUNT,
+		TEN_K_CELL_COUNT,
+		TEN_K_CELL_WORD_COUNT,
+		TEN_K_TABLE_ID,
 	} = await import("../tenKWordFixture.ts");
 	const paragraphs = generateTenKParagraphs();
+	const cells = generateTenKCells();
 	assert.equal(paragraphs.length, TEN_K_PARAGRAPH_COUNT);
-	const identity = tenKFixtureIdentity(paragraphs);
-	assert.equal(identity.wordCount, TEN_K_WORD_COUNT);
-	assert.equal(identity.wordCount, 10_000);
+	assert.equal(cells.length, TEN_K_CELL_COUNT);
+	assert.ok(
+		cells.every((cell) => cell.text.split(" ").length === 50),
+		"each cell must carry a 50-word cohort, not an empty string",
+	);
+	const identity = tenKFixtureIdentity(paragraphs, cells);
+	assert.equal(identity.paragraphCount, TEN_K_PARAGRAPH_COUNT);
+	assert.equal(identity.wordCount - identity.cellWordCount, TEN_K_WORD_COUNT);
+	assert.equal(identity.cellWordCount, TEN_K_CELL_WORD_COUNT);
+	assert.equal(identity.cellCount, TEN_K_CELL_COUNT);
 	const baseline = JSON.parse(
 		readFileSync(
 			fileURLToPath(
@@ -165,15 +199,62 @@ test("tenK generator is 10000 words and matches the committed hash", async () =>
 			"utf8",
 		),
 	);
-	assert.equal(identity.contentSha256, baseline.fixture.contentSha256);
+	assert.equal(
+		typeof baseline.fixture.paragraphSha256,
+		"string",
+		"re-recorded baseline must keep paragraphSha256 so a cell-only edit is visible",
+	);
+	assert.equal(
+		tenKParagraphsSha256(paragraphs),
+		baseline.fixture.paragraphSha256,
+		"paragraph LCG walk must stay bit-identical to the committed baseline",
+	);
+	assert.equal(
+		identity.contentSha256,
+		baseline.fixture.contentSha256,
+		"contentSha256 must match the re-recorded cell-inclusive fixture",
+	);
+	assert.notEqual(
+		identity.contentSha256,
+		baseline.fixture.paragraphSha256,
+		"contentSha256 must include the cell cohort so Wave 0 cannot ignore it",
+	);
+	assert.equal(baseline.fixture.cellWordCount, TEN_K_CELL_WORD_COUNT);
+	assert.equal(baseline.fixture.cellCount, TEN_K_CELL_COUNT);
 	const independent = createHash("sha256")
-		.update(paragraphs.join("\n"), "utf8")
+		.update(
+			[
+				...paragraphs,
+				...cells.map((cell) => `${cell.row},${cell.col}:${cell.text}`),
+			].join("\n"),
+			"utf8",
+		)
 		.digest("hex");
 	assert.equal(identity.contentSha256, independent);
+	console.log(
+		`tenK contentSha256 (paragraphs+cells) → ${identity.contentSha256}`,
+	);
+	console.log(
+		`tenK paragraphSha256 (unchanged) → ${identity.paragraphSha256}`,
+	);
 
 	const ops = tenKWordOps("hello-p1", 11);
 	assert.ok(ops.some((op) => op.type === "delete-text" && op.length === 11));
-	assert.ok(ops.some((op) => op.type === "insert-block"));
+	assert.ok(ops.some((op) => op.type === "insert-block" && op.blockType === "paragraph"));
+	assert.ok(
+		ops.some(
+			(op) =>
+				op.type === "insert-block" &&
+				op.blockType === "table" &&
+				op.blockId === TEN_K_TABLE_ID,
+		),
+		"tenKWordOps must insert the cell-text table",
+	);
+	const cellOps = ops.filter((op) => op.type === "insert-table-cell-text");
+	console.log(
+		`tenKWordOps insert-table-cell-text → ${cellOps.length} ops`,
+	);
+	assert.equal(cellOps.length, TEN_K_CELL_COUNT);
 	assert.equal(tenKBlockId(3), "w3-10k-p03");
 });
 

@@ -22,7 +22,6 @@
 # Wave P leftovers, second pass: API6 (renderer framework-free lint).
 # Lane 102 (2026-08-21): moved informational claims into force where the
 # named test can fail the rule. Held back (do not treat as covered):
-#   A1  — isCollapsed helper shape, not authority validation
 #   API10 — IOP4 ingest names, not the inert-surface inventory
 #   BR3 — proves computeBidiRuns is stateless, not G2-cached
 #   DIR2 — asserts props.direction / omit-on-auto, not resolved dir
@@ -37,6 +36,10 @@
 #   gate (pen-stream-request-no-editor.mjs) is green and self-tests
 #   nested + top-level editor. The other eight stay held back: each
 #   claiming test names the ID but asserts a different property.
+# Lane infra (2026-08-21): A1 holdback lifted — selectionAuthority tests
+# now assert total validation (missing block rejected, empty-block clamp).
+# Still held: P2 (UAX#9, not projector-on-divergence). Not claimed, no
+# asserting test yet: C1–C4, O1–O5, S1.
 
 I2
 I3
@@ -132,7 +135,12 @@ HOST1
 HOST2
 HOST5
 API6
+A1
+A2
+A3
+A4
 A5
+A6
 AIB1
 AIB2
 AIB3
@@ -162,7 +170,12 @@ N2
 N3
 OV1
 OV2
+P1
 S2
+S3
+S4
+S5
+S6
 SCALE2
 SCH2
 SCH3

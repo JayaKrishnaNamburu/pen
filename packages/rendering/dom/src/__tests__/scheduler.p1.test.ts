@@ -66,6 +66,29 @@ describe("DomScheduler P1 slot", () => {
 		expect(scheduler.phase).toBe("idle");
 	});
 
+	it("P1: a parked projection keeps the queued record for the next flush", () => {
+		const projected: number[] = [];
+		let park = true;
+		const scheduler = new DomScheduler("root-a", {
+			onProjectSelection: (next) => {
+				projected.push(next.version);
+				if (park) {
+					return "parked";
+				}
+			},
+		});
+
+		scheduler.setSelection(record(4));
+		flushFrame();
+		expect(projected).toEqual([4]);
+
+		park = false;
+		void scheduler.write(() => {});
+		flushFrame();
+		expect(projected).toEqual([4, 4]);
+		expect(scheduler.projectedThisFlush).toBe(true);
+	});
+
 	it("P1: a flush without setSelection does not run the slot", () => {
 		const projected: number[] = [];
 		const scheduler = new DomScheduler("root-a", {

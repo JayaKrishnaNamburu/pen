@@ -9,10 +9,13 @@ import { fileURLToPath } from "node:url";
 import { expect, test, type Page } from "@playwright/test";
 import { scenario } from "../src/scenario";
 import {
+	generateTenKCells,
 	generateTenKParagraphs,
+	TEN_K_CELL_WORD_COUNT,
 	TEN_K_FIXTURE_ID,
 	TEN_K_GENERATOR,
 	TEN_K_PARAGRAPH_COUNT,
+	TEN_K_TABLE_ID,
 	TEN_K_WORD_COUNT,
 	tenKBlockId,
 	tenKFixtureIdentity,
@@ -98,6 +101,9 @@ type TypingBudgetDocument = {
 		lexiconSize: number;
 		wordCount: number;
 		paragraphCount: number;
+		cellCount: number;
+		cellWordCount: number;
+		paragraphSha256: string;
 		contentSha256: string;
 	};
 	environment: {
@@ -524,11 +530,16 @@ scenario(
 		test.setTimeout(120_000);
 
 		const paragraphs = generateTenKParagraphs();
-		const fixture = tenKFixtureIdentity(paragraphs);
+		const cells = generateTenKCells();
+		const fixture = tenKFixtureIdentity(paragraphs, cells);
 		expect(
-			fixture.wordCount,
-			"10k-word fixture must be exactly 10000 words",
+			fixture.wordCount - fixture.cellWordCount,
+			"10k-word fixture must keep 10000 paragraph words",
 		).toBe(TEN_K_WORD_COUNT);
+		expect(
+			fixture.cellWordCount,
+			"10k-word fixture must include the cell-text cohort",
+		).toBe(TEN_K_CELL_WORD_COUNT);
 
 		await s.load("hello-world");
 		const first = await page.evaluate(() => {
@@ -549,6 +560,9 @@ scenario(
 		await expect(
 			page.locator(`[data-block-id="${lastBlockId}"]`),
 		).toBeVisible();
+		await expect(
+			page.locator(`[data-block-id="${TEN_K_TABLE_ID}"]`),
+		).toBeVisible();
 
 		const wordCount = await page.evaluate(() => {
 			return window.__penConformance.documentText
@@ -557,8 +571,14 @@ scenario(
 		});
 		expect(
 			wordCount,
-			"mounted document must keep the 10k-word fixture",
-		).toBe(TEN_K_WORD_COUNT);
+			"mounted document must keep the 10k paragraph words",
+		).toBeGreaterThanOrEqual(TEN_K_WORD_COUNT);
+		const tablePresent = await page.evaluate((tableId) => {
+			return window.__penConformance.blockIds.includes(tableId);
+		}, TEN_K_TABLE_ID);
+		expect(tablePresent, "mounted document must include the cell-text table").toBe(
+			true,
+		);
 
 		await page
 			.locator(
@@ -617,6 +637,9 @@ scenario(
 				lexiconSize: TEN_K_GENERATOR.lexicon.length,
 				wordCount: fixture.wordCount,
 				paragraphCount: fixture.paragraphCount,
+				cellCount: fixture.cellCount,
+				cellWordCount: fixture.cellWordCount,
+				paragraphSha256: fixture.paragraphSha256,
 				contentSha256: fixture.contentSha256,
 			},
 			environment: {
@@ -673,7 +696,7 @@ scenario(
 		}
 
 		const compareTo = recording
-			? document
+			? (baseline ?? document)
 			: (baseline as TypingBudgetDocument);
 		const drift = formatDriftReport(compareTo, document);
 		console.log(`\n${drift.text}\n`);

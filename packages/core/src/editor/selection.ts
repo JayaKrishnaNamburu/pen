@@ -129,7 +129,7 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 		this._state = null;
 		this._version += 1;
 		this._origin = "programmatic";
-		this._emitter.emit("selectionChange", null);
+		this._emitter.emit("selectionChange", this.record);
 	}
 
 	getSelectedText(): string {
@@ -221,7 +221,7 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 		this._origin = origin;
 		this._commitId = commitId;
 		if (options?.emit !== false) {
-			this._emitter.emit("selectionChange", validated);
+			this._emitter.emit("selectionChange", this.record);
 		}
 		return this.record;
 	}

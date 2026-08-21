@@ -3,6 +3,7 @@ import React, {
 	useSyncExternalStore,
 } from "react";
 import { resolveEditorMessage } from "@input/pen-core";
+import type { FieldEditorSession } from "@input/pen-dom";
 import { EditorContentContext } from "../../context/editorContentContext";
 import { useEditorContext } from "../../context/editorContext";
 import { useFieldEditorContext } from "../../context/fieldEditorContext";
@@ -105,6 +106,10 @@ export function EditorContent(props: EditorContentProps) {
 		if (!blocksHostRef.current) return;
 		fieldEditor.attachElement(blocksHostRef.current);
 	}, [fieldEditor, fieldEditorState.mode, fieldEditorState.activeBlockIds]);
+
+	useIsomorphicLayoutEffect(() => {
+		ackMountedBlockElements(fieldEditor, blocksHostRef.current);
+	}, [fieldEditor, blockIds, contentItems, fieldEditorState.mode]);
 
 	// Click-to-activate: when user clicks on a block, activate the field editor.
 	// Shift-click: select a range of blocks (AC #22).
@@ -312,5 +317,23 @@ export function EditorContent(props: EditorContentProps) {
 			</DropPreviewProvider>
 		</EditorContentContext.Provider>
 	);
+}
+
+function ackMountedBlockElements(
+	fieldEditor: FieldEditorSession | null,
+	host: HTMLElement | null,
+): void {
+	if (!fieldEditor || !host) {
+		return;
+	}
+	for (const element of host.querySelectorAll(`[${DATA_ATTRS.editorBlock}]`)) {
+		if (!(element instanceof HTMLElement)) {
+			continue;
+		}
+		const blockId = element.getAttribute(DATA_ATTRS.blockId);
+		if (blockId) {
+			fieldEditor.ackBlockMounted(blockId, element);
+		}
+	}
 }
 

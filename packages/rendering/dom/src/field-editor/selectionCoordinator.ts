@@ -38,6 +38,14 @@ export class FieldEditorSelectionCoordinator {
 		this._projection.recordProjectedVersion(version);
 	}
 
+	get parkedProjectionVersion(): number | null {
+		return this._projection.parkedProjectionVersion;
+	}
+
+	ackBlockMounted(blockId: string, element: HTMLElement): void {
+		this._projection.ackBlockMounted(blockId, element);
+	}
+
 	peekProgrammaticTextSelection(): {
 		blockId: string;
 		anchorOffset: number;

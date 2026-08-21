@@ -21,6 +21,16 @@ function textSelection(
 	return { type: "text", anchor, focus };
 }
 
+function blockSelection(
+	blockIds: readonly string[],
+	head?: string,
+): ReaderSelection {
+	if (head === undefined) {
+		return { type: "block", blockIds };
+	}
+	return { type: "block", blockIds, head };
+}
+
 describe("isLogicallyEquivalent", () => {
 	describe("empty block", () => {
 		const snapshot: ReaderSnapshot = {
@@ -97,14 +107,80 @@ describe("isLogicallyEquivalent", () => {
 			).toBe(false);
 		});
 
-		it("E2 N1: an interior offset snaps downstream to the atom end", () => {
+		it("E2 N1: an interior offset is equivalent to either atom side", () => {
 			const interior = textSelection({ blockId: "embed", offset: 2 });
 			expect(isLogicallyEquivalent(interior, afterAtom, snapshot)).toBe(
 				true,
 			);
 			expect(isLogicallyEquivalent(interior, beforeAtom, snapshot)).toBe(
-				false,
+				true,
 			);
+		});
+
+		it("E2 N1: an interior offset is not equivalent to a caret off the atom", () => {
+			const interior = textSelection({ blockId: "embed", offset: 2 });
+			expect(
+				isLogicallyEquivalent(
+					interior,
+					textSelection({ blockId: "embed", offset: 0 }),
+					snapshot,
+				),
+			).toBe(false);
+		});
+	});
+
+	describe("block selection", () => {
+		const snapshot: ReaderSnapshot = {
+			blockOrder: ["p1", "p2", "p3"],
+			blocks: {
+				p1: { kind: "text", text: "a" },
+				p2: { kind: "text", text: "b" },
+				p3: { kind: "text", text: "c" },
+			},
+		};
+
+		it("E2 A2: the same block ids and head are equivalent", () => {
+			const selection = blockSelection(["p1", "p2"], "p2");
+			expect(isLogicallyEquivalent(selection, selection, snapshot)).toBe(
+				true,
+			);
+		});
+
+		it("E2 A2: the same block ids with a different head are not equivalent", () => {
+			expect(
+				isLogicallyEquivalent(
+					blockSelection(["p1", "p2"], "p1"),
+					blockSelection(["p1", "p2"], "p2"),
+					snapshot,
+				),
+			).toBe(false);
+		});
+
+		it("E2 A2: a missing head defaults to the last block id", () => {
+			expect(
+				isLogicallyEquivalent(
+					blockSelection(["p1", "p2"]),
+					blockSelection(["p1", "p2"], "p2"),
+					snapshot,
+				),
+			).toBe(true);
+			expect(
+				isLogicallyEquivalent(
+					blockSelection(["p1", "p2"]),
+					blockSelection(["p1", "p2"], "p1"),
+					snapshot,
+				),
+			).toBe(false);
+		});
+
+		it("E2 A2: a missing head on one block defaults to that id", () => {
+			expect(
+				isLogicallyEquivalent(
+					blockSelection(["p1"]),
+					blockSelection(["p1"], "p1"),
+					snapshot,
+				),
+			).toBe(true);
 		});
 	});
 
@@ -230,6 +306,45 @@ describe("classifyDomSelectionRead §4.2 steps 1–3", () => {
 				proposal: moved,
 				authorityState: caret,
 				snapshot,
+			}),
+		).toBe("continue");
+	});
+
+	it("step 3: an interior atom read is equivalent to a before-side authority", () => {
+		const atomSnapshot: ReaderSnapshot = {
+			blockOrder: ["embed"],
+			blocks: {
+				embed: {
+					kind: "text",
+					text: "hello",
+					atoms: [{ start: 1, end: 4 }],
+				},
+			},
+		};
+		expect(
+			classifyDomSelectionRead({
+				projectionInFlight: false,
+				proposal: textSelection({ blockId: "embed", offset: 2 }),
+				authorityState: textSelection({ blockId: "embed", offset: 1 }),
+				snapshot: atomSnapshot,
+			}),
+		).toBe("equivalent");
+	});
+
+	it("step 3: the same block ids with a different head fall through", () => {
+		const blockSnapshot: ReaderSnapshot = {
+			blockOrder: ["p1", "p2"],
+			blocks: {
+				p1: { kind: "text", text: "a" },
+				p2: { kind: "text", text: "b" },
+			},
+		};
+		expect(
+			classifyDomSelectionRead({
+				projectionInFlight: false,
+				proposal: blockSelection(["p1", "p2"], "p1"),
+				authorityState: blockSelection(["p1", "p2"], "p2"),
+				snapshot: blockSnapshot,
 			}),
 		).toBe("continue");
 	});

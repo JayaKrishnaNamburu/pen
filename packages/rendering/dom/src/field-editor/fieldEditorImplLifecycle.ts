@@ -370,11 +370,9 @@ export abstract class FieldEditorImplLifecycle extends FieldEditorImplCore {
 		const sink = createFocusSink(root.ownerDocument);
 		root.appendChild(sink.element);
 		this._focusSink = sink;
-		this._unsubscribeFocusSink = this._editor.onSelectionChange(
-			(selection) => {
-				syncFocusSink(sink, this._editor, selection);
-			},
-		);
+		this._unsubscribeFocusSink = this._editor.onSelectionChange(() => {
+			syncFocusSink(sink, this._editor);
+		});
 		syncFocusSink(sink, this._editor);
 	}
 
@@ -447,7 +445,6 @@ export abstract class FieldEditorImplLifecycle extends FieldEditorImplCore {
 			target: element,
 			blockId: this._focusBlockId,
 		});
-		this._focusController.resolveAttachmentWaiters();
 		return true;
 	}
 }

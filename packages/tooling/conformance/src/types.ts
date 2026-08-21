@@ -45,6 +45,13 @@ export type SerializedSelection =
 	| SerializedCellSelection
 	| null;
 
+export type SerializedSelectionRecord = {
+	version: number;
+	origin: string;
+	commitId: number;
+	state: SerializedSelection;
+};
+
 export type SerializedDiagnostic = {
 	code: string;
 	level: string;
@@ -264,6 +271,8 @@ export type PenConformanceBridge = {
 	readonly selection: SerializedSelection;
 	/** Official `isCollapsed` from `@input/pen-core` over the live editor selection. */
 	isCollapsed(): boolean;
+	/** Authority record (version / origin / commitId). Missing is unchecked, not a match. */
+	readonly selectionRecord: SerializedSelectionRecord | null;
 	readonly lastEvents: readonly ConformanceEventRecord[];
 	readonly diagnostics: readonly SerializedDiagnostic[];
 	readonly documentText: string;
@@ -357,6 +366,7 @@ export type ScenarioApi = {
 	): Promise<{ ok: boolean; message?: string }>;
 	importHtml(html: string): Promise<void>;
 	pasteHtml(html: string): Promise<void>;
+	selectText(block: number, offset?: number): Promise<void>;
 	keyboard: {
 		type(text: string): Promise<void>;
 		press(key: string): Promise<void>;

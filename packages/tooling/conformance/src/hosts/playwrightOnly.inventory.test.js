@@ -120,7 +120,18 @@ test("pnpm test is src/hosts/*.test.js; Playwright specs are a separate populati
 
 	assert.equal(
 		playwrightSpecs.length,
-		30,
+		31,
 		`Playwright spec population drifted: ${playwrightSpecs.join(", ")}`,
+	);
+
+	const selectionSpecs = suiteSpecs.filter((rel) =>
+		rel.startsWith("suites/selection/"),
+	);
+	console.log(
+		`suites/selection/**/*.spec.ts → ${selectionSpecs.length} files:\n  ${selectionSpecs.join("\n  ")}`,
+	);
+	assert.ok(
+		selectionSpecs.length > 0,
+		"suites/selection/ must contain live spec files, not only .gitkeep",
 	);
 });

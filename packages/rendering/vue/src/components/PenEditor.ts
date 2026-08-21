@@ -28,6 +28,8 @@ import {
 	h,
 	mergeProps,
 	onBeforeUnmount,
+	onMounted,
+	onUpdated,
 	ref,
 	toRef,
 	watch,
@@ -223,6 +225,26 @@ export const PenEditor = defineComponent({
 			},
 			{ immediate: true },
 		);
+
+		const ackMountedBlocks = () => {
+			const root = rootElement.value;
+			if (!root) {
+				return;
+			}
+			for (const element of root.querySelectorAll(
+				`[${DATA_ATTRS.editorBlock}]`,
+			)) {
+				if (!(element instanceof HTMLElement)) {
+					continue;
+				}
+				const blockId = element.getAttribute(DATA_ATTRS.blockId);
+				if (blockId) {
+					fieldEditor.ackBlockMounted(blockId, element);
+				}
+			}
+		};
+		onMounted(ackMountedBlocks);
+		onUpdated(ackMountedBlocks);
 
 		onBeforeUnmount(() => {
 			props.editor.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, undefined);

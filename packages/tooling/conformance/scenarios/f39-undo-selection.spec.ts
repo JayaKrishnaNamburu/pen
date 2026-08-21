@@ -79,15 +79,15 @@ scenario(
 
 		await history.undo();
 		await expect
-			.poll(async () => {
-				const selection = await page.evaluate(
-					() => window.__penConformance.selection,
-				);
-				if (selection?.type !== "text") {
-					return "";
-				}
-				return `${selection.anchor.offset}:${selection.focus.offset}:${window.__penConformance.isCollapsed()}`;
-			})
+			.poll(() =>
+				page.evaluate(() => {
+					const selection = window.__penConformance.selection;
+					if (selection?.type !== "text") {
+						return "";
+					}
+					return `${selection.anchor.offset}:${selection.focus.offset}:${window.__penConformance.isCollapsed()}`;
+				}),
+			)
 			.toBe("2:2:true");
 		await expect
 			.poll(() =>

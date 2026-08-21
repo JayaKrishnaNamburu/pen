@@ -338,7 +338,7 @@ export function dispatchCRDTEvent(editor: EditorImplRuntime, event: CRDTEvent): 
 	});
 	self._emitter.emit("commit", commit);
 	if (mappedSelection) {
-		self._emitter.emit("selectionChange", self._selection.getSelection());
+		self._emitter.emit("selectionChange", self._selection.record);
 	}
 	self._extensions.dispatchObserve([commit], self);
 	emitDeprecatedAdapter(

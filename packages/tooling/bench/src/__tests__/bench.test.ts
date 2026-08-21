@@ -221,6 +221,7 @@ describe("@input/pen-bench runner", () => {
 
 		expect(suiteNames).toEqual([
 			"CRDT",
+			"Anchors",
 			"Schema",
 			"Editor",
 			"Streaming",
@@ -237,7 +238,7 @@ describe("@input/pen-bench runner", () => {
 			warmup: 0,
 		});
 
-		expect(allSuiteResults).toHaveLength(7);
+		expect(allSuiteResults).toHaveLength(8);
 
 		for (const suite of allSuiteResults) {
 			expect(suite.results.length).toBeGreaterThan(0);

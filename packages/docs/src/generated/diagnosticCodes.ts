@@ -276,6 +276,11 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 		sources: ["core/src/editor/selection.ts"],
 	},
 	{
+		code: "selection-target-unmounted",
+		levels: ["warn"],
+		sources: ["rendering/dom/src/field-editor/selectionProjectionController.ts"],
+	},
+	{
 		code: "slot-deprecated",
 		levels: ["warn"],
 		sources: ["core/src/editor/editorApiHelpers.ts"],

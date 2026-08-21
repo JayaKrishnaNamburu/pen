@@ -55,6 +55,11 @@ test("wave3 fixture identity is the only enforced baseline field", () => {
 	);
 	assert.match(recordSpec, /expect\(\s*\n?\s*fixture\.contentSha256/);
 	assert.match(recordSpec, /expect\(baseline\.schemaVersion/);
+	assert.match(
+		recordSpec,
+		/recording\s*\n\s*\? \(baseline \?\? document\)/,
+		"record-time drift must compare against the previous baseline, not the file just written",
+	);
 	assert.doesNotMatch(recordSpec, /expect\([^\n]*readPhaseP95Ms/);
 	assert.doesNotMatch(recordSpec, /expect\([^\n]*flushCount/);
 	assert.doesNotMatch(
@@ -213,6 +218,13 @@ test("enforced-vs-decorative baseline table is complete for this package", () =>
 	);
 
 	assert.equal(typeof baseline.fixture.contentSha256, "string");
+	assert.equal(typeof baseline.fixture.paragraphSha256, "string");
+	assert.equal(baseline.fixture.cellWordCount, 200);
+	assert.equal(baseline.fixture.cellCount, 4);
+	assert.notEqual(
+		baseline.fixture.contentSha256,
+		baseline.fixture.paragraphSha256,
+	);
 	assert.equal(baseline.schemaVersion, 1);
 	assert.equal(baseline.versusSpec.readPhaseP95Ms.blown, true);
 	assert.equal(baseline.versusSpec.readPhaseP95Ms.measured, 3.4);

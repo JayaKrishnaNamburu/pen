@@ -173,9 +173,13 @@ export abstract class FieldEditorImplCore {
 			},
 			getRecordVersion: () =>
 				getEditorSelectionRecord(this._editor)?.version ?? 0,
+			emitDiagnostic: (event) => {
+				this._editor.internals.emit("diagnostic", event);
+			},
 		});
 		this._unsubscribeSelection = this._editor.onSelectionChange(
-			(selection) => {
+			(record) => {
+				const selection = this._editor.selection;
 				this._selectAllController.consumeShouldPreserveCycle(
 					selection,
 					(cycle, nextSelection) =>
@@ -191,14 +195,12 @@ export abstract class FieldEditorImplCore {
 				) {
 					this._pendingMarkController.clear(true);
 				}
-				const record = getEditorSelectionRecord(this._editor);
 				const scheduler = this._ensureScheduler();
 				const queuedP1 =
-					record != null &&
 					scheduler != null &&
 					record.version >
 						this._selectionCoordinator.lastProjectedVersion;
-				if (queuedP1 && scheduler && record) {
+				if (queuedP1 && scheduler) {
 					scheduler.setSelection(record);
 				}
 				const suppressSelectionSync =
@@ -296,6 +298,7 @@ export abstract class FieldEditorImplCore {
 		options?: PenFieldEditorFocusOptions,
 	): void;
 	abstract waitForAttachment(blockId?: string | null): Promise<boolean>;
+	abstract ackBlockMounted(blockId: string, element: HTMLElement): void;
 	protected abstract _startSession(
 		blockId: string,
 		options: {
@@ -348,18 +351,21 @@ export abstract class FieldEditorImplCore {
 		if (this._scheduler !== scheduler) {
 			this._scheduler?.setProjector(null);
 			scheduler.setProjector((record) => {
-				this._projectFromScheduler(record);
+				return this._projectFromScheduler(record);
 			});
 			this._scheduler = scheduler;
 		}
 		return scheduler;
 	}
 
-	protected _projectFromScheduler(record: SelectionRecord): void {
+	protected _projectFromScheduler(record: SelectionRecord): void | "parked" {
 		if (record.version <= this._selectionCoordinator.lastProjectedVersion) {
 			return;
 		}
 		this._selectionCoordinator.syncDomSelectionOnce();
+		if (this._selectionCoordinator.parkedProjectionVersion != null) {
+			return "parked";
+		}
 	}
 
 	protected _unbindSchedulerProjector(): void {
