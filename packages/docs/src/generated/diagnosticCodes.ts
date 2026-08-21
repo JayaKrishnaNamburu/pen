@@ -261,6 +261,16 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 		sources: ["extensions/search/src/search.ts"],
 	},
 	{
+		code: "selection-invalid-block",
+		levels: ["warn"],
+		sources: ["core/src/editor/selection.ts"],
+	},
+	{
+		code: "selection-reserved-origin",
+		levels: ["warn"],
+		sources: ["core/src/editor/selection.ts"],
+	},
+	{
 		code: "slot-deprecated",
 		levels: ["warn"],
 		sources: ["core/src/editor/editorApiHelpers.ts"],

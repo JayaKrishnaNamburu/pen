@@ -2,41 +2,43 @@ import { createDocumentSession, createEditor } from "@input/pen-core";
 import { yjsAdapter } from "@input/pen-crdt-yjs";
 import {
 	AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY,
+	MULTIPLAYER_CONTROLLER_SLOT,
 	type ConnectionState,
 	type MultiplayerSession,
 } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 import { defaultSchema } from "@input/pen-schema-default";
-import {
-	getMultiplayerController,
-	multiplayerExtension,
-	MULTIPLAYER_CONTROLLER_SLOT,
-} from "../index";
+import { getMultiplayerController, multiplayerExtension } from "../index";
 
 describe("multiplayerExtension", () => {
 	it("registers the controller on the editor", () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [
+			schema: defaultSchema,
+			extensions: [
 				multiplayerExtension({
 					user: { id: "u1", name: "Ada" },
 				}),
 			],
 		});
 
-		expect(editor.internals.getSlot(MULTIPLAYER_CONTROLLER_SLOT)).toBeTruthy();
+		expect(
+			editor.internals.getSlot(MULTIPLAYER_CONTROLLER_SLOT),
+		).toBeTruthy();
 		expect(getMultiplayerController(editor)).toBeTruthy();
 	});
 
 	it("assigns a deterministic color when the user does not provide one", () => {
 		const firstEditor = createEditor({
-			schema: defaultSchema,extensions: [
+			schema: defaultSchema,
+			extensions: [
 				multiplayerExtension({
 					user: { id: "u1", name: "Ada" },
 				}),
 			],
 		});
 		const secondEditor = createEditor({
-			schema: defaultSchema,extensions: [
+			schema: defaultSchema,
+			extensions: [
 				multiplayerExtension({
 					user: { id: "u1", name: "Ada" },
 				}),
@@ -55,21 +57,23 @@ describe("multiplayerExtension", () => {
 
 	it("preserves an explicit user color", () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [
+			schema: defaultSchema,
+			extensions: [
 				multiplayerExtension({
 					user: { id: "u1", name: "Ada", color: "#123456" },
 				}),
 			],
 		});
 
-		expect(getMultiplayerController(editor)?.getState().localUser.color).toBe(
-			"#123456",
-		);
+		expect(
+			getMultiplayerController(editor)?.getState().localUser.color,
+		).toBe("#123456");
 	});
 
 	it("clears the controller slot on destroy", async () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [
+			schema: defaultSchema,
+			extensions: [
 				multiplayerExtension({
 					user: { id: "u1", name: "Ada" },
 				}),
@@ -77,18 +81,19 @@ describe("multiplayerExtension", () => {
 		});
 
 		editor.destroy();
-		await (
-			editor.internals.getSlot<() => Promise<void>>(
-				AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY,
-			)?.() ?? Promise.resolve()
-		);
+		await (editor.internals.getSlot<() => Promise<void>>(
+			AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY,
+		)?.() ?? Promise.resolve());
 
-		expect(editor.internals.getSlot(MULTIPLAYER_CONTROLLER_SLOT)).toBeFalsy();
+		expect(
+			editor.internals.getSlot(MULTIPLAYER_CONTROLLER_SLOT),
+		).toBeFalsy();
 	});
 
 	it("publishes local text selection into awareness state", () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [
+			schema: defaultSchema,
+			extensions: [
 				multiplayerExtension({
 					user: { id: "u1", name: "Ada" },
 				}),
@@ -113,7 +118,8 @@ describe("multiplayerExtension", () => {
 			adapter: yjsAdapter(),
 		});
 		const editorA = createEditor({
-			schema: defaultSchema,documentSession: session,
+			schema: defaultSchema,
+			documentSession: session,
 			extensions: [
 				multiplayerExtension({
 					user: { id: "u1", name: "Ada" },
@@ -121,7 +127,8 @@ describe("multiplayerExtension", () => {
 			],
 		});
 		const editorB = createEditor({
-			schema: defaultSchema,documentSession: session,
+			schema: defaultSchema,
+			documentSession: session,
 			extensions: [
 				multiplayerExtension({
 					user: { id: "u1", name: "Ada" },
@@ -148,7 +155,8 @@ describe("multiplayerExtension", () => {
 			adapter: yjsAdapter(),
 		});
 		const editor = createEditor({
-			schema: defaultSchema,documentSession: session,
+			schema: defaultSchema,
+			documentSession: session,
 			extensions: [
 				multiplayerExtension({
 					user: { id: "u1", name: "Ada" },
@@ -162,11 +170,9 @@ describe("multiplayerExtension", () => {
 		});
 
 		editor.destroy();
-		await (
-			editor.internals.getSlot<() => Promise<void>>(
-				AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY,
-			)?.() ?? Promise.resolve()
-		);
+		await (editor.internals.getSlot<() => Promise<void>>(
+			AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY,
+		)?.() ?? Promise.resolve());
 
 		expect(awareness?.getLocalState()).toBeNull();
 
@@ -176,7 +182,8 @@ describe("multiplayerExtension", () => {
 	it("wires provider connection state through the controller", () => {
 		const session = new FakeSession();
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [
+			schema: defaultSchema,
+			extensions: [
 				multiplayerExtension({
 					user: { id: "u1", name: "Ada" },
 					session,

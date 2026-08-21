@@ -8,7 +8,6 @@
 
 - AuthorLedger
 - ClientIdentityMap
-- MultiplayerControllerImpl
 
 ### function
 
@@ -30,7 +29,6 @@
 - MAX_PRESENCE_UPDATES_PER_SECOND
 - MAX_PRESENCE_USER_ID_LENGTH
 - MAX_TRACKED_PEERS
-- MULTIPLAYER_CONTROLLER_SLOT
 - MULTIPLAYER_EXTENSION_NAME
 - MultiplayerSession
 - MultiplayerSessionContext

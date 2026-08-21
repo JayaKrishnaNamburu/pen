@@ -5,7 +5,6 @@ import type {
 	DiagnosticEvent,
 	OpOrigin,
 	SelectionRecord,
-	SelectionState,
 	StructuredOpOrigin,
 } from "@input/pen-types";
 import { getOpOriginType } from "./origin";
@@ -41,53 +40,48 @@ export function resolveCommitSource(
 }
 
 export function snapshotSelectionRecord(
-	selection: SelectionState,
-	version: number,
-	commitId: number,
+	record: SelectionRecord,
 ): SelectionRecord {
 	return {
-		state: snapshotSelectionState(selection),
-		version,
-		origin: "programmatic",
-		commitId,
+		state: cloneRecordState(record.state),
+		version: record.version,
+		origin: record.origin,
+		commitId: record.commitId,
 	};
 }
 
-function snapshotSelectionState(
-	selection: SelectionState,
+function cloneRecordState(
+	state: SelectionRecord["state"],
 ): SelectionRecord["state"] {
-	if (selection === null) {
+	if (state === null) {
 		return null;
 	}
-	switch (selection.type) {
+	switch (state.type) {
 		case "text":
 			return {
 				type: "text",
-				anchor: { ...selection.anchor },
-				focus: { ...selection.focus },
-				affinity: "downstream",
-				goalX: null,
+				anchor: { ...state.anchor },
+				focus: { ...state.focus },
+				affinity: state.affinity,
+				goalX: state.goalX,
 			};
 		case "block":
 			return {
 				type: "block",
-				blockIds: [...selection.blockIds],
-				head:
-					selection.blockIds[selection.blockIds.length - 1] ??
-					selection.blockIds[0] ??
-					"",
+				blockIds: [...state.blockIds],
+				head: state.head,
 			};
 		case "app":
-			return { type: "app", appId: selection.appId };
+			return { type: "app", appId: state.appId };
 		case "cell":
 			return {
 				type: "cell",
-				blockId: selection.blockId,
-				anchor: { ...selection.anchor },
-				head: { ...selection.head },
+				blockId: state.blockId,
+				anchor: { ...state.anchor },
+				head: { ...state.head },
 			};
 		default: {
-			const _exhaustive: never = selection;
+			const _exhaustive: never = state;
 			return _exhaustive;
 		}
 	}

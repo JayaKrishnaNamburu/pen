@@ -6,8 +6,6 @@
 
 ### function
 
-- boundPendingBlocks
-- createIngestReport
 - parseMarkdownToBlocks
 - parseMarkdownWithReport
 

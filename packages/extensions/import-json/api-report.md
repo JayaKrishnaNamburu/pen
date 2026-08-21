@@ -6,9 +6,6 @@
 
 ### function
 
-- capRawJsonSource
-- createIngestReport
-- emptyRecord
 - parseJsonToBlocks
 - parseJsonWithReport
 

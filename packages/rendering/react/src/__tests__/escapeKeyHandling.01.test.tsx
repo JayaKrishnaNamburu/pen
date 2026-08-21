@@ -226,6 +226,7 @@ describe("@input/pen-react escape key handling", () => {
 		expect(editor.selection).toEqual({
 			type: "block",
 			blockIds: [blockId],
+			head: blockId,
 		});
 		expect(fieldEditor.getSnapshot()).toMatchObject({
 			focusBlockId: null,

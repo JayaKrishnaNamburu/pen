@@ -1,8 +1,6 @@
-import {
-	buildTableChildren,
-	sortDeltaAttributes,
-} from "@input/pen-core";
+import { buildTableChildren, sortDeltaAttributes } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
+import { logicalTextFromStored } from "@input/pen-types";
 import {
 	encodePenBlocksForHtml,
 	type Delta,
@@ -37,14 +35,12 @@ export function writePenClipboard(
 	const penBlocksJson = JSON.stringify(penBlocks);
 	const encodedPenBlocks = encodePenBlocksForHtml(penBlocksJson);
 	const htmlWithPenData = `<meta data-pen-blocks="${encodedPenBlocks}" />${htmlContent}`;
+	const clipboardPlainText = logicalTextFromStored(plainText);
 
 	if (event?.clipboardData) {
-		event.clipboardData.setData("text/plain", plainText);
+		event.clipboardData.setData("text/plain", clipboardPlainText);
 		event.clipboardData.setData("text/html", htmlWithPenData);
-		event.clipboardData.setData(
-			"application/x-pen-blocks",
-			penBlocksJson,
-		);
+		event.clipboardData.setData("application/x-pen-blocks", penBlocksJson);
 		return;
 	}
 
@@ -57,14 +53,14 @@ export function writePenClipboard(
 				"text/html": new Blob([htmlWithPenData], {
 					type: "text/html",
 				}),
-				"text/plain": new Blob([plainText], {
+				"text/plain": new Blob([clipboardPlainText], {
 					type: "text/plain",
 				}),
 			}),
 		])
 		.catch((error: unknown) => {
 			navigator.clipboard
-				.writeText(plainText)
+				.writeText(clipboardPlainText)
 				.catch((fallbackError: unknown) => {
 					// CH5: terminal clipboard write — no remaining copy fallback.
 					emitClipboardWriteFailed(editor, fallbackError ?? error);
@@ -72,7 +68,11 @@ export function writePenClipboard(
 		});
 }
 
-export function sliceDeltas(deltas: Delta[], from: number, to: number): Delta[] {
+export function sliceDeltas(
+	deltas: Delta[],
+	from: number,
+	to: number,
+): Delta[] {
 	const result: Delta[] = [];
 	let offset = 0;
 
@@ -113,11 +113,14 @@ export function serializeDeltasToFormat(
 	let result = "";
 	for (const delta of deltas) {
 		if (typeof delta.insert !== "string") continue;
-		let text = delta.insert;
-		if (text === "\u200B") continue;
+		let text = logicalTextFromStored(delta.insert);
+		if (!text) continue;
 
 		if (delta.attributes) {
-			const ordered = sortDeltaAttributes(delta.attributes, editor.schema);
+			const ordered = sortDeltaAttributes(
+				delta.attributes,
+				editor.schema,
+			);
 			for (const [mark, props] of Object.entries(ordered)) {
 				const inlineSchema = editor.schema.resolveInline(mark);
 				if (format === "html") {
@@ -147,4 +150,3 @@ export function serializeDeltasToFormat(
 }
 
 export { buildTableChildren };
-

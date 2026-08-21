@@ -1,4 +1,5 @@
 import type { DocumentOp, Editor, TextSelection } from "@input/pen-types";
+import { logicalTextFromStored } from "@input/pen-types";
 
 export function buildSelectionReplacementOps(
 	editor: Editor,
@@ -187,10 +188,13 @@ export function trimLeadingBlankBlockGenerationText(text: string): string {
 }
 
 export function isVisuallyEmptyInlineText(text: string): boolean {
-	return text.replace(/\u200B/g, "").trim().length === 0;
+	return logicalTextFromStored(text).trim().length === 0;
 }
 
-export function resolveBlockInsertionOffset(editor: Editor, blockId: string): number {
+export function resolveBlockInsertionOffset(
+	editor: Editor,
+	blockId: string,
+): number {
 	const selection = editor.selection;
 	const block = editor.getBlock(blockId);
 	const fallbackOffset =

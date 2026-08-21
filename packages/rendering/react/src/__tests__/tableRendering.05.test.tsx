@@ -245,6 +245,7 @@ describe("@input/pen-react table rendering", () => {
 		expect(editor.selection).toEqual({
 			type: "block",
 			blockIds: ["t10-shift-structured", paragraphId],
+			head: paragraphId,
 		});
 
 		await act(async () => {

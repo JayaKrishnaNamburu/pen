@@ -1,11 +1,8 @@
 export {
 	searchExtension,
 	SEARCH_EXTENSION_NAME,
-	SEARCH_CONTROLLER_SLOT,
 	getSearchController,
 } from "./extension";
-
-export { SearchControllerImpl } from "./controller";
 
 export {
 	DEFAULT_SEARCH_LOCALE,
@@ -18,12 +15,9 @@ export {
 	buildReplaceAllOps,
 	buildReplaceOps,
 	buildSearchRegex,
-	createInitialSearchState,
 	findDocumentMatches,
 	getNextActiveIndex,
 	getPreviousActiveIndex,
-	normalizeActiveIndex,
-	revealActiveMatch,
 } from "./search";
 
 export type {

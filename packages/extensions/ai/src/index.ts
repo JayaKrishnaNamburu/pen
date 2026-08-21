@@ -1,7 +1,8 @@
+// getAIInlineCompletionController is the AI-package accessor.
+// @input/pen-core already publishes getInlineCompletionController.
 export {
 	aiExtension,
 	AI_EXTENSION_NAME,
-	getInlineCompletionController,
 	getAIController,
 	getAIInlineCompletionController,
 	getAIInlineHistoryController,
@@ -18,7 +19,6 @@ export {
 	AI_FEATURE_CONTENT,
 	AI_EGRESS_INVENTORY_CODE,
 	AI_REQUEST_REFUSED_CODE,
-	excerptKindsOf,
 } from "./egress";
 export { AICommandRegistry } from "./commands/registry";
 export { defaultAICommands } from "./commands/defaultCommands";
@@ -75,22 +75,8 @@ export {
 export {
 	AI_SESSION_SUGGESTION_ORIGIN,
 	SUGGESTION_RESOLUTION_ORIGIN,
-	shouldBypassSuggestMode,
 } from "./suggestions/suggestMode";
 export { applySuggestedAIOperations } from "./suggestions/applySuggestedAIOperations";
-export {
-	AI_REVIEW_ROLE_ATTRIBUTE,
-	AI_REVIEW_STATE_ATTRIBUTE,
-	AI_REVIEW_PREVIEW_NEW_ATTRIBUTE,
-	AI_REVIEW_PREVIEW_VIRTUAL_ATTRIBUTE,
-	FINAL_TEXT_REVIEW_HIDDEN_ATTRIBUTE,
-	resolveAIReviewPresentationState,
-} from "./review/reviewPresentation";
-export type {
-	AIReviewPresentationRole,
-	AIReviewPresentationState,
-} from "./review/reviewPresentation";
-export { EphemeralSuggestionManager } from "./suggestions/ephemeral";
 
 export type {
 	AIExtensionConfig,

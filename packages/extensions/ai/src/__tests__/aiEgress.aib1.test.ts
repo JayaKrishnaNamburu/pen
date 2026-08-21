@@ -9,12 +9,12 @@ import {
 	AI_REQUEST_REFUSED_CODE,
 	aiEgressExtension,
 	aiExtension,
-	excerptKindsOf,
 	filterAIRequest,
 	getAIController,
 	runAgenticLoop,
 	streamThroughEgress,
 } from "../index";
+import { excerptKindsOf } from "../egress";
 import { defaultSchema } from "@input/pen-schema-default";
 import { createModelDouble } from "@input/pen-test";
 import type {

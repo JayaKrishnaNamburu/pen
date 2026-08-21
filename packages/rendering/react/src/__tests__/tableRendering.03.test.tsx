@@ -249,6 +249,7 @@ describe("@input/pen-react table rendering", () => {
 		expect(editor.selection).toEqual({
 			type: "block",
 			blockIds: ["t8-copy-structured"],
+			head: "t8-copy-structured",
 		});
 
 		handleCopy(editor, { clipboardData } as ClipboardEvent);

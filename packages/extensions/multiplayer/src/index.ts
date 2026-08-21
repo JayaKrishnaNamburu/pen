@@ -1,11 +1,9 @@
 export {
 	multiplayerExtension,
 	MULTIPLAYER_EXTENSION_NAME,
-	MULTIPLAYER_CONTROLLER_SLOT,
 	getMultiplayerController,
 } from "./extension";
 
-export { MultiplayerControllerImpl } from "./controller";
 export { AuthorLedger } from "./presence/authorLedger";
 export {
 	ClientIdentityMap,

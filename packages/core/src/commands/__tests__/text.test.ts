@@ -80,6 +80,7 @@ describe("text commands", () => {
 		expect(editor.selection).toEqual({
 			type: "block",
 			blockIds: ["div"],
+			head: "div",
 		});
 		editor.destroy();
 	});

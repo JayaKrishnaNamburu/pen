@@ -1,7 +1,6 @@
 export {
 	autocompleteExtension,
 	AI_AUTOCOMPLETE_EXTENSION_NAME,
-	AUTOCOMPLETE_CONTROLLER_SLOT,
 	getAutocompleteController,
 } from "./extension";
 export { createAutocompleteProvider } from "./providers/types";

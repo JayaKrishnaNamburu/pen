@@ -1,4 +1,8 @@
-import type { Editor, SelectionState } from "@input/pen-types";
+import type {
+	Editor,
+	SelectionOrigin,
+	SelectionState,
+} from "@input/pen-types";
 
 import { builtinCommandHandlers } from "./builtin";
 import {
@@ -11,33 +15,15 @@ const registries = new WeakMap<Editor, CommandRegistry>();
 export function applyCommandSelection(
 	editor: Editor,
 	selection: SelectionState,
+	origin: SelectionOrigin = "programmatic",
 ): void {
-	if (!selection) {
-		editor.setSelection(null);
-		return;
-	}
-	switch (selection.type) {
-		case "text":
-			editor.selectTextRange(selection.anchor, selection.focus);
-			return;
-		case "block":
-			editor.selectBlocks([...selection.blockIds]);
-			return;
-		case "cell":
-			editor.selectCellRange(
-				selection.blockId,
-				selection.anchor,
-				selection.head,
-			);
-			return;
-		case "app":
-			editor.setSelection(selection);
-			return;
-		default: {
-			const _exhaustive: never = selection;
-			return _exhaustive;
-		}
-	}
+	const write = editor as Editor & {
+		setSelection(
+			next: SelectionState,
+			options?: { origin?: SelectionOrigin },
+		): void;
+	};
+	write.setSelection(selection, { origin });
 }
 
 export function installEditorCommandRegistry(editor: Editor): CommandRegistry {
@@ -51,8 +37,8 @@ export function installEditorCommandRegistry(editor: Editor): CommandRegistry {
 		apply: (ops, options) => {
 			editor.apply(ops, options);
 		},
-		setSelection: (selection) => {
-			applyCommandSelection(editor, selection);
+		setSelection: (selection, origin) => {
+			applyCommandSelection(editor, selection, origin);
 		},
 	});
 	registries.set(editor, registry);

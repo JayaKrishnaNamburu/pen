@@ -1,5 +1,20 @@
 {
-	"_comment": "S4 (spec-v2/03-selection.md): timer sites in selection modules. Allowed kinds: setTimeout, setInterval, setImmediate, requestAnimationFrame. Each entry needs file, enclosing symbol, kind, and a reason that names why this site remains and which wave retires it. Remove an entry in the same PR that deletes the call. Basename matching is `selection` anywhere in the filename (any case), not a `selection*` prefix — a prefix walker misses *Selection* modules.",
+	"_comment": "S4 (spec-v2/03-selection.md) / Wave 5.8. `modules` is the protected set the basename-contains-selection matcher cannot see (focus, offsetDomain, caretPositions, v1 backend/IME offenders). Basename `selection` is a fail-closed net so selectionReader.ts cannot silently escape. `outOfScope` is a decision that a file is not a selection module — not a waiver. `entries` waive a live timer in an in-scope file; each needs file, enclosing symbol, kind, and a reason that names why the site remains and which wave retires it. Remove an entry in the same PR that deletes the call. Liveness checks the named symbol and kind, not merely the path.",
+	"modules": [
+		"packages/rendering/dom/src/field-editor/focusController.ts",
+		"packages/rendering/dom/src/field-editor/offsetDomain.ts",
+		"packages/core/src/selection/normalPosition.ts",
+		"caretPositions.ts",
+		"packages/rendering/dom/src/field-editor/expandedContentEditableBackend.ts",
+		"packages/rendering/dom/src/field-editor/contenteditableBackendEvents.ts",
+		"packages/rendering/dom/src/field-editor/cellEditingController.ts"
+	],
+	"outOfScope": [
+		{
+			"file": "packages/rendering/dom/src/field-editor/sessionReconciler.ts",
+			"reason": "Not a Wave 5.8 selection module. scheduleFlush coalesces commit/decoration DOM reconcile onto the next animation frame — a Wave 03 DomScheduler stand-in (SCH), not a selection retry. projectSelection is a post-flush callback, not the reason for the timer. S4 does not apply; listing it here is the decision, not an allowlist waiver."
+		}
+	],
 	"entries": [
 		{
 			"file": "packages/rendering/dom/src/field-editor/selectionAuthority.ts",
@@ -24,6 +39,42 @@
 			"symbol": "update",
 			"kind": "requestAnimationFrame",
 			"reason": "Wave 03 retires this by routing the toolbar rect through the scheduler read phase. UNINVESTIGATED WAIVER from the isSelectionModule widen. The shape is a measurement retry: update() cancels the previous frame and schedules resolveNativeSelectionRect on the next — the same class as the selectionRect rAF that another agent deleted today. Wave 03 overlay work owns the delete; do not renew without saying what the second measurement observes that the first cannot."
+		},
+		{
+			"file": "packages/rendering/dom/src/field-editor/focusController.ts",
+			"symbol": "check",
+			"kind": "requestAnimationFrame",
+			"reason": "Wave 05 step 5.5 retires this when §5.3 mount ack makes attach same-flush and §5.4 rewrites focusController. waitForAttachment polls `_getAttachedElement()?.isConnected` (and matching blockId) for up to four frames; this entry is the retry inside waiter.check (`requestAnimationFrame(waiter.check)`). The thing it is waiting for is a mount ack, not a browser caret settle — the same missing-attach class that already made two projector rAFs unnecessary once attach ran in-turn. resolveAttachmentWaiters can complete a waiter early; after 5.5 the initial check should be enough."
+		},
+		{
+			"file": "packages/rendering/dom/src/field-editor/focusController.ts",
+			"symbol": "waitForAttachment",
+			"kind": "requestAnimationFrame",
+			"reason": "Wave 05 step 5.5 retires this with the sibling retry above. This entry is the initial `requestAnimationFrame(check)` that starts the waiter. Same wait: the focused block's attached element is not connected in this turn. §5.3 parks a projection on the missing element and the ack projects in the same flush's write phase, so a frame poll of isConnected has nothing left to observe."
+		},
+		{
+			"file": "packages/rendering/dom/src/field-editor/cellEditingController.ts",
+			"symbol": "trySyncBackend",
+			"kind": "requestAnimationFrame",
+			"reason": "Wave 05 step 5.5 mount ack retires this. trySyncBackend waits up to three frames for resolveCellInlineElement to return a mounted cell host, then attachElement + placeCaretInCell (a native selection write). The wait is a missing cell-host attach, not a selection-engine accommodation. In scope because the success path writes window.getSelection(); Wave 5.8's 'may survive as non-selection' does not hold for a file whose job on success is a caret write. After 5.5 the cell host is acked same-flush and the retry has nothing left to wait for."
+		},
+		{
+			"file": "packages/rendering/dom/src/field-editor/expandedContentEditableBackend.ts",
+			"symbol": "handleBeforeInput",
+			"kind": "requestAnimationFrame",
+			"reason": "Wave 05 step 5.5 retires this by activating the post-split caret in the same turn as the replace. This entry is the multi-block insertParagraph/insertLineBreak path: deactivate, replaceSelection('\\n'), then one frame before activateTextSelection on the new collapsed caret. It is waiting for the post-replace block host to attach. The command-dispatch branch in the same method already calls activateTextSelection synchronously, so the frame is not an engine requirement — it is the missing-attach fallback. Do not renew without saying what the next frame observes that the command path does not need."
+		},
+		{
+			"file": "packages/rendering/dom/src/field-editor/expandedContentEditableBackend.ts",
+			"symbol": "handleBeforeInput",
+			"kind": "requestAnimationFrame",
+			"reason": "Wave 05 step 5.5 retires this with the sibling above. This entry is the applyEnterBehavior fallback: one frame before activateTextSelection on target.blockId. Waiting for the newly split block host to attach. Same evidence as the multi-block branch: the command path in this method activates in-turn. Fix, do not accommodate."
+		},
+		{
+			"file": "packages/rendering/dom/src/field-editor/contenteditableBackendEvents.ts",
+			"symbol": "handleCompositionEnd",
+			"kind": "requestAnimationFrame",
+			"reason": "Wave 05 step 5.6 / §8 C3 retires this. Safari may fire compositionend before the final DOM mutation; the rAF waits one frame for that mutation before reconcileAfterComposition. C3 replaces this with input-event sequence tracking (composition event sequence on contenteditable; EditContext textupdate ordering on Chromium) so reconcile runs after the backend observes DOM quiescence in the same task-queue turn. No setTimeout-based composition timer is permitted; the 50ms GBoard path above this call is a Date.now() comparison, not a timer, and dies with the same rewrite."
 		}
 	]
 }

@@ -1,4 +1,5 @@
 import type {
+	Affinity,
 	BlockHandle,
 	DiagnosticEvent,
 	DocumentOp,
@@ -7,6 +8,7 @@ import type {
 	SelectionState,
 	TextSelection,
 } from "@input/pen-types";
+import { isCollapsed, isMultiBlock } from "../selection/helpers";
 
 import {
 	getFlowCapabilityFromSchema,
@@ -311,28 +313,36 @@ export function documentOrderedTextPoints(
 export function textSelectionResult(
 	anchor: Point,
 	focus: Point = anchor,
+	extras?: { affinity?: Affinity; goalX?: number | null },
 ): SelectionState {
-	const collapsed =
-		anchor.blockId === focus.blockId && anchor.offset === focus.offset;
-	return {
+	const selection: SelectionState = {
 		type: "text",
 		anchor,
 		focus,
-		isCollapsed: collapsed,
-		isMultiBlock: anchor.blockId !== focus.blockId,
+		affinity: extras?.affinity ?? "downstream",
+		goalX: extras?.goalX ?? null,
+		isCollapsed: false,
+		isMultiBlock: false,
 		blockRange: [anchor.blockId],
 		toRange: () => {
 			throw new Error("command text selection is a write payload");
 		},
 	};
+	return {
+		...selection,
+		isCollapsed: isCollapsed(selection),
+		isMultiBlock: isMultiBlock(selection),
+	};
 }
 
 export function blockSelectionResult(
 	blockIds: readonly string[],
+	head: string = blockIds[blockIds.length - 1] ?? blockIds[0] ?? "",
 ): SelectionState {
 	return {
 		type: "block",
 		blockIds: [...blockIds],
+		head,
 	};
 }
 
@@ -419,14 +429,15 @@ export function toTransitionSelection(
 				type: "text",
 				anchor: selection.anchor,
 				focus: selection.focus,
-				affinity: "downstream",
-				goalX: null,
+				affinity: selection.affinity ?? "downstream",
+				goalX: selection.goalX ?? null,
 			};
 		case "block":
 			return {
 				type: "block",
 				blockIds: selection.blockIds,
 				head:
+					selection.head ??
 					selection.blockIds[selection.blockIds.length - 1] ??
 					selection.blockIds[0] ??
 					"",
@@ -455,9 +466,12 @@ export function fromTransitionSelection(
 	}
 	switch (selection.type) {
 		case "text":
-			return textSelectionResult(selection.anchor, selection.focus);
+			return textSelectionResult(selection.anchor, selection.focus, {
+				affinity: selection.affinity,
+				goalX: selection.goalX,
+			});
 		case "block":
-			return blockSelectionResult(selection.blockIds);
+			return blockSelectionResult(selection.blockIds, selection.head);
 		case "cell":
 			return {
 				type: "cell",

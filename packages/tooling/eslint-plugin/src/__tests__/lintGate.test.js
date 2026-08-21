@@ -229,6 +229,32 @@ describe("CH2 lint gate", () => {
 		).toHaveLength(1);
 	});
 
+	it("reports a seeded setTimeout in a Wave 5.8 module the basename matcher used to miss", async () => {
+		const eslint = new ESLint({
+			cwd: repoRoot,
+			overrideConfig: {
+				rules: { "pen/no-selection-timers": "error" },
+			},
+		});
+		const [result] = await eslint.lintText(
+			"function seededS4Timer() { setTimeout(() => {}, 0); }\n",
+			{
+				filePath: path.join(
+					repoRoot,
+					"packages/rendering/dom/src/field-editor/offsetDomain.ts",
+				),
+			},
+		);
+
+		expect(
+			(result?.messages ?? []).filter(
+				(message) =>
+					message.ruleId === "pen/no-selection-timers" &&
+					message.severity === 2,
+			),
+		).toHaveLength(1);
+	});
+
 	it("reports a seeded setTimeout in a selection module when the rule is enabled", async () => {
 		const eslint = new ESLint({
 			cwd: repoRoot,

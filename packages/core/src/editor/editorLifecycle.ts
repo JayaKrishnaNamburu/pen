@@ -189,6 +189,9 @@ self._engine = new SchemaEngineImpl(
 	self._crdtDoc,
 );
 self._selection.updateDocument(self._doc, self._crdtDoc);
+self._facetRegistry?.settle({
+	selectionVersion: self._selection.record.version,
+});
 self._pipeline.updateDocument(self._doc, self._crdtDoc, self._engine);
 self._documentState.updateDocument(
 	self._doc,
@@ -303,21 +306,20 @@ export function dispatchCRDTEvent(editor: EditorImplRuntime, event: CRDTEvent): 
 	self._documentState.incrementalUpdate(event.affectedBlocks);
 	const selectionBefore =
 		self._selectionBeforeRecord ??
-		snapshotSelectionRecord(
-			self.selection,
-			self._selectionVersion,
-			documentCommit.commitId - 1,
-		);
+		snapshotSelectionRecord(self._selection.record);
 	self._selectionBeforeRecord = null;
 	self._recordPipelinePhase("map-selection");
-	self._selection.mapOnCommit();
-	self._recordPipelinePhase("settle-facets");
 	const summary =
 		self._summaryLog.latest() ?? createEmptySummary(documentCommit.commitId);
+	const selectionVersionBeforeMap = self._selection.record.version;
+	self._selection.onCommit(summary);
+	const mappedSelection =
+		self._selection.record.version !== selectionVersionBeforeMap;
+	self._recordPipelinePhase("settle-facets");
 	self._facetRegistry?.settle({
 		commitId: documentCommit.commitId,
 		emptyCommit: summary.isEmpty,
-		selectionVersion: self._selectionVersion,
+		selectionVersion: self._selection.record.version,
 	});
 	const previousDecorationGeneration = self._decorations.generation;
 	const nextDecorations = self._refreshDecorations();
@@ -330,15 +332,14 @@ export function dispatchCRDTEvent(editor: EditorImplRuntime, event: CRDTEvent): 
 		origin: event.origin,
 		summary,
 		selectionBefore,
-		selectionAfter: snapshotSelectionRecord(
-			self.selection,
-			self._selectionVersion,
-			documentCommit.commitId,
-		),
+		selectionAfter: snapshotSelectionRecord(self._selection.record),
 		source: event.source ?? resolveCommitSource(event.origin, "remote"),
 		diagnostics: self._pipeline.takeCommitDiagnostics(),
 	});
 	self._emitter.emit("commit", commit);
+	if (mappedSelection) {
+		self._emitter.emit("selectionChange", self._selection.getSelection());
+	}
 	self._extensions.dispatchObserve([commit], self);
 	emitDeprecatedAdapter(
 		self,

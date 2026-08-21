@@ -174,7 +174,7 @@ return [op.blockId];
 
 export function setSelectionOp(pipeline: ApplyPipeline, op: SetSelectionOp): string[] {
 	const self = pipeline as ApplyPipelineRuntime;
-self._selection.setSelection(op.selection);
+self._selection.set(op.selection, { origin: "programmatic" });
 return [];
 }
 

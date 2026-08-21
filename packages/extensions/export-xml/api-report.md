@@ -6,8 +6,6 @@
 
 ### function
 
-- escapeMarkupAttribute
-- escapeMarkupText
 - parseXmlDocument
 - serializePenDocumentToXml
 
@@ -20,3 +18,5 @@
 
 - PenXmlDocument
 - XmlExporterExtraOptions
+- XmlImporter
+- XmlImportResult

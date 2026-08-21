@@ -8,8 +8,6 @@
 
 - admitProviderImageUrl
 - applyHtmlImageSrcPolicy
-- boundPendingBlocks
-- createIngestReport
 - isIngestibleImageSrc
 - parseHtmlToBlocks
 - parseHtmlWithReport

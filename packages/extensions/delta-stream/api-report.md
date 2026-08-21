@@ -6,7 +6,6 @@
 
 ### class
 
-- BatchingBuffer
 - StreamingTargetImpl
 
 ### function

@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { RuleTester } from "eslint";
 import tseslint from "typescript-eslint";
@@ -23,7 +23,7 @@ const allowlist = JSON.parse(readFileSync(allowlistPath, "utf8"));
 // Synthetic sources keyed by a real selection-module path. Reading the actual
 // file here is what made the previous version of this suite go red when the
 // Firefox projection fix deleted the two rAFs it had pinned: the assertions
-// described a tree state rather than the rule's behavior.
+// describe the rule's behavior, not a tree state.
 const authorityPath =
 	"packages/rendering/dom/src/field-editor/selectionAuthority.ts";
 
@@ -41,8 +41,21 @@ function applySelectionUntilNextFrame() {
 }
 `;
 
+function existingModulePaths() {
+	return allowlist.modules.filter((file) => {
+		const full = path.join(repoRoot, file);
+		return file.includes("/") && existsSync(full);
+	});
+}
+
+function outOfScopePaths() {
+	return allowlist.outOfScope.map((entry) =>
+		typeof entry === "string" ? entry : entry.file,
+	);
+}
+
 describe("no-selection-timers (S4)", () => {
-	it("treats selection modules as in scope and everything else as out", () => {
+	it("treats the Wave 5.8 set as in scope and named non-selection files as out", () => {
 		expect(isSelectionModule(authorityPath)).toBe(true);
 		expect(
 			isSelectionModule(
@@ -55,7 +68,6 @@ describe("no-selection-timers (S4)", () => {
 		expect(isSelectionModule("packages/docs/src/pages/Selection.tsx")).toBe(
 			true,
 		);
-		// prefix-only `^selection` walked past these; they are selection modules
 		expect(
 			isSelectionModule(
 				"packages/rendering/dom/src/field-editor/contenteditableBackendSelection.ts",
@@ -83,19 +95,25 @@ describe("no-selection-timers (S4)", () => {
 		).toBe(false);
 		expect(
 			isSelectionModule(
-				"packages/rendering/dom/src/field-editor/focusController.ts",
-			),
-		).toBe(false);
-		expect(
-			isSelectionModule(
-				"packages/rendering/dom/src/field-editor/cellEditingController.ts",
-			),
-		).toBe(false);
-		expect(
-			isSelectionModule(
 				"packages/rendering/dom/src/__tests__/selectionBridge.test.ts",
 			),
 		).toBe(false);
+
+		for (const file of existingModulePaths()) {
+			expect(isSelectionModule(file)).toBe(true);
+		}
+		expect(
+			isSelectionModule("packages/core/src/editor/caretPositions.ts"),
+		).toBe(true);
+		expect(
+			isSelectionModule(
+				"packages/rendering/dom/src/field-editor/selectionReader.ts",
+			),
+		).toBe(true);
+
+		for (const file of outOfScopePaths()) {
+			expect(isSelectionModule(file)).toBe(false);
+		}
 	});
 
 	it("S4: every allowlist entry names file, symbol, kind, and a retiring wave", () => {
@@ -106,11 +124,31 @@ describe("no-selection-timers (S4)", () => {
 		}
 	});
 
+	it("S4: every allowlist file is in the protected set", () => {
+		for (const entry of allowlist.entries) {
+			expect(isSelectionModule(entry.file)).toBe(true);
+		}
+	});
+
+	it("S4: every outOfScope entry names a file and a reason", () => {
+		expect(allowlist.outOfScope.length).toBeGreaterThan(0);
+		for (const entry of allowlist.outOfScope) {
+			expect(typeof entry.file).toBe("string");
+			expect(entry.file.length).toBeGreaterThan(0);
+			expect(typeof entry.reason).toBe("string");
+			expect(entry.reason.length).toBeGreaterThan(0);
+			expect(isSelectionModule(entry.file)).toBe(false);
+		}
+	});
+
 	// A waiver for a call that no longer exists is how this list turns into a
 	// parking lot, and it is the exact drift that broke the previous suite.
 	it("S4: every allowlist entry is still live in the file it names", () => {
 		for (const entry of allowlist.entries) {
-			const source = readFileSync(path.join(repoRoot, entry.file), "utf8");
+			const source = readFileSync(
+				path.join(repoRoot, entry.file),
+				"utf8",
+			);
 			expect(source).toContain(entry.kind);
 			expect(source).toContain(entry.symbol);
 		}
@@ -124,9 +162,9 @@ describe("no-selection-timers (S4)", () => {
 			reason: "Wave 99 stale entry for the liveness mutation",
 		};
 		const source = readFileSync(path.join(repoRoot, stale.file), "utf8");
-		expect(source.includes(stale.kind) && source.includes(stale.symbol)).toBe(
-			false,
-		);
+		expect(
+			source.includes(stale.kind) && source.includes(stale.symbol),
+		).toBe(false);
 		expect(() => {
 			expect(source).toContain(stale.kind);
 			expect(source).toContain(stale.symbol);
@@ -138,12 +176,18 @@ describe("no-selection-timers (S4)", () => {
 			valid: [
 				{
 					code: "setTimeout(() => {}, 0);\n",
-					filename: "packages/rendering/dom/src/field-editor/fieldEditor.ts",
+					filename:
+						"packages/rendering/dom/src/field-editor/fieldEditor.ts",
 				},
 				{
 					code: "setTimeout(() => {}, 0);\n",
 					filename:
 						"packages/rendering/dom/src/__tests__/selectionBridge.test.ts",
+				},
+				{
+					code: "requestAnimationFrame(() => {});\n",
+					filename:
+						"packages/rendering/dom/src/field-editor/sessionReconciler.ts",
 				},
 				{ code: allowlistedRaf, filename: authorityPath },
 			],
@@ -152,7 +196,16 @@ describe("no-selection-timers (S4)", () => {
 					code: "setTimeout(() => {}, 0);\n",
 					filename:
 						"packages/rendering/dom/src/field-editor/selectionBridge.ts",
-					errors: [{ messageId: "timer", data: { kind: "setTimeout" } }],
+					errors: [
+						{
+							messageId: "timer",
+							data: {
+								kind: "setTimeout",
+								symbol: "(module)",
+								file: "packages/rendering/dom/src/field-editor/selectionBridge.ts",
+							},
+						},
+					],
 				},
 				{
 					code: "requestAnimationFrame(() => {});\n",
@@ -160,7 +213,11 @@ describe("no-selection-timers (S4)", () => {
 					errors: [
 						{
 							messageId: "timer",
-							data: { kind: "requestAnimationFrame" },
+							data: {
+								kind: "requestAnimationFrame",
+								symbol: "(module)",
+								file: "packages/core/src/editor/selection.ts",
+							},
 						},
 					],
 				},
@@ -168,12 +225,59 @@ describe("no-selection-timers (S4)", () => {
 					code: "window.setImmediate(() => {});\n",
 					filename:
 						"packages/rendering/dom/src/field-editor/selectionProjectionController.ts",
-					errors: [{ messageId: "timer", data: { kind: "setImmediate" } }],
+					errors: [
+						{
+							messageId: "timer",
+							data: {
+								kind: "setImmediate",
+								symbol: "(module)",
+								file: "packages/rendering/dom/src/field-editor/selectionProjectionController.ts",
+							},
+						},
+					],
+				},
+				{
+					code: "setTimeout(() => {}, 0);\n",
+					filename:
+						"packages/rendering/dom/src/field-editor/selectionReader.ts",
+					errors: [
+						{
+							messageId: "timer",
+							data: {
+								kind: "setTimeout",
+								symbol: "(module)",
+								file: "packages/rendering/dom/src/field-editor/selectionReader.ts",
+							},
+						},
+					],
+				},
+				{
+					code: "requestAnimationFrame(() => {});\n",
+					filename: "packages/core/src/editor/caretPositions.ts",
+					errors: [
+						{
+							messageId: "timer",
+							data: {
+								kind: "requestAnimationFrame",
+								symbol: "(module)",
+								file: "packages/core/src/editor/caretPositions.ts",
+							},
+						},
+					],
 				},
 				{
 					code: `${allowlistedRaf}\nsetTimeout(() => {}, 16);\n`,
 					filename: authorityPath,
-					errors: [{ messageId: "timer", data: { kind: "setTimeout" } }],
+					errors: [
+						{
+							messageId: "timer",
+							data: {
+								kind: "setTimeout",
+								symbol: "(module)",
+								file: authorityPath,
+							},
+						},
+					],
 				},
 				{
 					code: allowlistedSymbolWithoutRaf,
@@ -195,9 +299,26 @@ describe("no-selection-timers (S4)", () => {
 
 	it("the real allowlisted sources lint clean as committed", () => {
 		for (const entry of allowlist.entries) {
-			const source = readFileSync(path.join(repoRoot, entry.file), "utf8");
-			ruleTester.run("no-selection-timers-production", noSelectionTimers, {
-				valid: [{ code: source, filename: entry.file }],
+			const source = readFileSync(
+				path.join(repoRoot, entry.file),
+				"utf8",
+			);
+			ruleTester.run(
+				"no-selection-timers-production",
+				noSelectionTimers,
+				{
+					valid: [{ code: source, filename: entry.file }],
+					invalid: [],
+				},
+			);
+		}
+	});
+
+	it("the real in-config module-list sources lint clean as committed", () => {
+		for (const file of existingModulePaths()) {
+			const source = readFileSync(path.join(repoRoot, file), "utf8");
+			ruleTester.run("no-selection-timers-modules", noSelectionTimers, {
+				valid: [{ code: source, filename: file }],
 				invalid: [],
 			});
 		}
@@ -205,22 +326,69 @@ describe("no-selection-timers (S4)", () => {
 
 	it("errors by name when an allowlisted selection module gains a new timer", () => {
 		for (const entry of allowlist.entries) {
-			const source = readFileSync(path.join(repoRoot, entry.file), "utf8");
+			const source = readFileSync(
+				path.join(repoRoot, entry.file),
+				"utf8",
+			);
 			const mutated = `${source}\nsetTimeout(() => { void 0; }, 0);\n`;
 			expect(() => {
-				ruleTester.run("no-selection-timers-mutation", noSelectionTimers, {
-					valid: [],
-					invalid: [
-						{
-							code: mutated,
-							filename: entry.file,
-							errors: [
-								{ messageId: "timer", data: { kind: "setTimeout" } },
-							],
-						},
-					],
-				});
+				ruleTester.run(
+					"no-selection-timers-mutation",
+					noSelectionTimers,
+					{
+						valid: [],
+						invalid: [
+							{
+								code: mutated,
+								filename: entry.file,
+								errors: [
+									{
+										messageId: "timer",
+										data: {
+											kind: "setTimeout",
+											symbol: "(module)",
+											file: entry.file,
+										},
+									},
+								],
+							},
+						],
+					},
+				);
 			}).not.toThrow();
 		}
+	});
+
+	it("errors by file and symbol when a newly-in-scope module gains a timer", () => {
+		const file = existingModulePaths().find(
+			(modulePath) =>
+				!allowlist.entries.some((entry) => entry.file === modulePath),
+		);
+		expect(file).toBeTruthy();
+		const source = readFileSync(path.join(repoRoot, file), "utf8");
+		const mutated = `${source}\nfunction seededS4Timer() {\n\tsetTimeout(() => { void 0; }, 0);\n}\n`;
+		ruleTester.run(
+			"no-selection-timers-new-scope-mutation",
+			noSelectionTimers,
+			{
+				valid: [],
+				invalid: [
+					{
+						code: mutated,
+						filename: file,
+						errors: [
+							{
+								messageId: "timer",
+								data: {
+									kind: "setTimeout",
+									symbol: "seededS4Timer",
+									file,
+								},
+							},
+						],
+					},
+				],
+			},
+		);
 	});
 });

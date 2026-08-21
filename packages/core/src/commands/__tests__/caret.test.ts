@@ -59,6 +59,7 @@ describe("caret commands", () => {
 		expect(editor.selection).toEqual({
 			type: "block",
 			blockIds: ["div"],
+			head: "div",
 		});
 		editor.destroy();
 	});
@@ -153,6 +154,7 @@ describe("caret commands", () => {
 		expect(editor.selection).toEqual({
 			type: "block",
 			blockIds: ["a", "b"],
+			head: "b",
 		});
 		editor.destroy();
 	});
@@ -217,6 +219,7 @@ describe("caret commands", () => {
 		expect(editor.selection).toEqual({
 			type: "block",
 			blockIds: ["div"],
+			head: "div",
 		});
 		editor.destroy();
 	});
@@ -293,7 +296,11 @@ describe("caret commands", () => {
 		const registry = createCommandHarness(editor);
 
 		expect(registry.dispatch(selectBlock, { blockId: "b" })).toBe(true);
-		expect(editor.selection).toEqual({ type: "block", blockIds: ["b"] });
+		expect(editor.selection).toEqual({
+			type: "block",
+			blockIds: ["b"],
+			head: "b",
+		});
 		expect(registry.dispatch(selectBlock, { blockId: "missing" })).toBe(
 			false,
 		);

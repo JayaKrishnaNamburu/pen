@@ -229,10 +229,6 @@ export function getTextForBlock(editor: EditorImplRuntime, blockId: string): str
 return self.getBlock(blockId)?.textContent() ?? "";
 }
 
-export function getSelectionRange(_editor: EditorImplRuntime, sel: TextSelection): DocumentRange {
-	return sel.toRange();
-}
-
 export function usesInlineTextSelectionForBlock(editor: EditorImplRuntime, blockId: string): boolean {
 	const self = editor as EditorImplRuntime;
 const block = self.getBlock(blockId);
@@ -267,11 +263,6 @@ if (span <= 0) {
 	return false;
 }
 return startOffset <= 0 && endOffset >= span;
-}
-
-export function collapseToPoint(editor: EditorImplRuntime, point: { blockId: string; offset: number }): void {
-	const self = editor as EditorImplRuntime;
-	self.selectTextRange(point, point);
 }
 
 export function sliceInlineDeltas(

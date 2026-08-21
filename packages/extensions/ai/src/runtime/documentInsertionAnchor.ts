@@ -1,4 +1,5 @@
 import type { Editor } from "@input/pen-types";
+import { logicalTextFromStored } from "@input/pen-types";
 
 export interface DocumentInsertionAnchor {
 	blockId: string;
@@ -99,7 +100,8 @@ function isReclaimableEmptyBlock(editor: Editor, blockId: string): boolean {
 
 	return (
 		block.children.length === 0 &&
-		isVisuallyEmptyInlineText(block.textContent({ resolved: true }))
+		logicalTextFromStored(block.textContent({ resolved: true })).trim()
+			.length === 0
 	);
 }
 
@@ -128,8 +130,4 @@ function resolveSelectionBlockId(editor: Editor): string | null {
 		return selection.blockId;
 	}
 	return null;
-}
-
-function isVisuallyEmptyInlineText(text: string): boolean {
-	return text.replace(/\u200B/g, "").trim().length === 0;
 }

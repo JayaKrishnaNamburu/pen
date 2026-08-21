@@ -3,19 +3,11 @@ export {
 	AI_SUGGESTIONS_EXTENSION_NAME,
 	getAISuggestionsController,
 } from "./extension";
-export { AI_SUGGESTIONS_CONTROLLER_SLOT } from "@input/pen-types";
-
-export { AISuggestionsControllerImpl } from "./controller";
-export { resolveAISuggestionsConfig } from "./config";
-export { buildAISuggestionDecorations } from "./decorations";
-export { buildApplySuggestionOps } from "./apply";
-export { materializeSuggestionsFromCandidates } from "./matcher";
-export { buildSuggestionGroups } from "./grouping";
 export {
 	AI_SUGGESTIONS_SYSTEM_PROMPT,
 	buildAISuggestionMessages,
 } from "./promptBuilder";
-export { analyzeSuggestionScope, parseSuggestionResponse } from "./analyzer";
+export { parseSuggestionResponse } from "./analyzer";
 export {
 	AI_SUGGESTIONS_REQUEST_MODE,
 	DEFAULT_ALLOWED_BLOCK_TYPES,

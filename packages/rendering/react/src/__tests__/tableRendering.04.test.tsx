@@ -393,6 +393,7 @@ describe("@input/pen-react table rendering", () => {
 		expect(editor.selection).toEqual({
 			type: "block",
 			blockIds: ["t9-structured", paragraphId],
+			head: paragraphId,
 		});
 
 		docWithCaretRange.caretRangeFromPoint = originalCaretRangeFromPoint;

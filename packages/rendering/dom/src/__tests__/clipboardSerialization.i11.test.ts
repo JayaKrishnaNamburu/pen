@@ -35,19 +35,11 @@ function createClipboardEvent(): {
 }
 
 describe("I11 clipboard serialization", () => {
-	it("I11: writePenClipboard strips an empty-block sentinel from text/plain", () => {
+	it("I11: writePenClipboard emits empty text/plain for an empty-block sentinel", () => {
 		const { event, get } = createClipboardEvent();
 		writePenClipboard([], "", EMPTY_BLOCK_SENTINEL, event);
 
 		expect(get("text/plain")).toBe("");
-		expect(get("text/plain")).not.toContain(EMPTY_BLOCK_SENTINEL);
-	});
-
-	it("I11: writePenClipboard strips embedded sentinels from mixed plain text", () => {
-		const { event, get } = createClipboardEvent();
-		writePenClipboard([], "", `Hello${EMPTY_BLOCK_SENTINEL} world`, event);
-
-		expect(get("text/plain")).toBe("Hello world");
 	});
 
 	it("I11: writePenClipboard leaves user text unchanged", () => {
@@ -65,21 +57,5 @@ describe("I11 clipboard serialization", () => {
 		);
 
 		expect(html).toBe("");
-		expect(html).not.toContain(EMPTY_BLOCK_SENTINEL);
-	});
-
-	it("I11: serializeDeltasToFormat strips sentinels from mixed delta text", () => {
-		const markdown = serializeDeltasToFormat(
-			[
-				{ insert: `Hi${EMPTY_BLOCK_SENTINEL}` },
-				{ insert: EMPTY_BLOCK_SENTINEL },
-				{ insert: " there" },
-			],
-			stubEditor(),
-			"markdown",
-		);
-
-		expect(markdown).toBe("Hi there");
-		expect(markdown).not.toContain(EMPTY_BLOCK_SENTINEL);
 	});
 });

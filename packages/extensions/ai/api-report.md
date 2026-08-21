@@ -7,7 +7,6 @@
 ### class
 
 - AICommandRegistry
-- EphemeralSuggestionManager
 
 ### function
 
@@ -17,13 +16,11 @@
 - applySuggestedAIOperations
 - buildStructuredIntentModelPrompt
 - createSuggestionMark
-- excerptKindsOf
 - getAIController
 - getAIInlineCompletionController
 - getAIInlineHistoryController
 - getAIReviewController
 - getBlockAdapter
-- getInlineCompletionController
 - getStructuredIntentOutputSchema
 - listBlockAdapters
 - parseStructuredIntentRequestPrompt
@@ -32,11 +29,9 @@
 - readSuggestionsFromBlock
 - rejectAllSuggestions
 - rejectSuggestion
-- resolveAIReviewPresentationState
 - resolveBlockAdapter
 - resolveBlockAdapterContentFormat
 - runAgenticLoop
-- shouldBypassSuggestMode
 - validateDocumentMutationPlanShape
 
 ### guard
@@ -54,10 +49,6 @@
 - AI_FEATURE_CONTENT
 - AI_PLANNER_MODES
 - AI_REQUEST_REFUSED_CODE
-- AI_REVIEW_PREVIEW_NEW_ATTRIBUTE
-- AI_REVIEW_PREVIEW_VIRTUAL_ATTRIBUTE
-- AI_REVIEW_ROLE_ATTRIBUTE
-- AI_REVIEW_STATE_ATTRIBUTE
 - AI_SESSION_SUGGESTION_ORIGIN
 - AI_STRUCTURED_LANES
 - AI_TARGET_KINDS
@@ -68,7 +59,6 @@
 - defaultAICommands
 - DOCUMENT_MUTATION_PLAN_KINDS
 - filterAIRequest
-- FINAL_TEXT_REVIEW_HIDDEN_ATTRIBUTE
 - PLAN_VALIDATION_SEVERITIES
 - streamThroughEgress
 - SUGGESTION_RESOLUTION_ORIGIN
@@ -106,8 +96,6 @@
 - AIPlannerMode
 - AIPromptTarget
 - AIReviewController
-- AIReviewPresentationRole
-- AIReviewPresentationState
 - AISession
 - AISessionAnchor
 - AISessionFastApplyMetrics

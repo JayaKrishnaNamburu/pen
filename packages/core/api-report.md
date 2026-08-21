@@ -14,7 +14,6 @@
 - ExtensionManagerImpl
 - SchemaEngineImpl
 - SchemaRegistryImpl
-- SelectionManagerImpl
 
 ### function
 
@@ -63,11 +62,14 @@
 - getNumberedListItemValue
 - getOpOriginGroupId
 - getOpOriginType
+- getSelectionBlockRange
 - hasFieldEditorSurface
 - hasIndexedCellSelectionMetadata
 - hookPriorityToPrecedence
 - interpolateMessage
+- isCollapsed
 - isContinuousTextFlowCapability
+- isMultiBlock
 - isPseudoLocaleText
 - keyBindingPriorityToPrecedence
 - mergeDecorationSets
@@ -103,6 +105,7 @@
 - resolveSelectionTargetBlockIds
 - resolveToolExecution
 - runMigrations
+- selectionToRange
 - shouldAllowDirectBlockPaste
 - shouldAllowFlowInsertionInSlashMenu
 - shouldExposeBlockInTooling
@@ -186,6 +189,7 @@
 - searchControllerFacet
 - selectAll
 - selectBlock
+- SelectionAuthority
 - SLOT_DEPRECATED_CODE
 - SLOT_DISPOSITION_BY_KEY
 - splitBlock

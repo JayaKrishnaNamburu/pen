@@ -60,7 +60,13 @@ export {
 } from "./editor/inlineCompletion";
 export { DocumentStateImpl } from "./editor/documentState";
 export { DocumentRangeImpl } from "./editor/range";
-export { SelectionManagerImpl } from "./editor/selection";
+export { SelectionAuthorityImpl as SelectionAuthority } from "./editor/selection";
+export {
+	getSelectionBlockRange,
+	isCollapsed,
+	isMultiBlock,
+	selectionToRange,
+} from "./selection/helpers";
 export { ExtensionManagerImpl } from "./editor/extensionManager";
 export { ApplyPipeline } from "./editor/apply";
 export {

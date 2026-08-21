@@ -1,8 +1,6 @@
-import {
-	buildTableChildren,
-	sortDeltaAttributes,
-} from "@input/pen-core";
+import { buildTableChildren, sortDeltaAttributes } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
+import { logicalTextFromStored } from "@input/pen-types";
 import { resolveEditorUrl } from "../security/resolveEditorUrl";
 import {
 	PEN_CLIPBOARD_JSON_MIME,
@@ -13,13 +11,8 @@ import {
 	type PenBlock,
 } from "./clipboardPayload";
 
-// sentinel-storage: apply executors still persist the empty-block sentinel in
-// Y.Text. Clipboard serialization emits the logical text domain and strips that
-// storage sentinel at the export boundary — it does not treat the sentinel as
-// empty-block meaning.
-function logicalExportText(text: string): string {
-	return text.replaceAll("\u200B", "");
-}
+// Apply executors persist the empty-block sentinel in Y.Text. Clipboard
+// serialization emits the logical text domain via logicalTextFromStored (I11).
 
 const HTML_ESCAPE_PATTERN = /[&<>"']/g;
 
@@ -66,7 +59,7 @@ export function writePenClipboard(
 	const penBlocksJson = serializePenClipboardPayload(penBlocks);
 	const encodedPenBlocks = encodePenBlocksForHtml(penBlocksJson);
 	const htmlWithPenData = `<meta data-pen-blocks="${encodedPenBlocks}" />${htmlContent}`;
-	const clipboardPlainText = logicalExportText(plainText);
+	const clipboardPlainText = logicalTextFromStored(plainText);
 
 	if (event?.clipboardData) {
 		event.clipboardData.setData("text/plain", clipboardPlainText);
@@ -106,7 +99,11 @@ export function writePenClipboard(
 		});
 }
 
-export function sliceDeltas(deltas: Delta[], from: number, to: number): Delta[] {
+export function sliceDeltas(
+	deltas: Delta[],
+	from: number,
+	to: number,
+): Delta[] {
 	const result: Delta[] = [];
 	let offset = 0;
 
@@ -147,14 +144,17 @@ export function serializeDeltasToFormat(
 	let result = "";
 	for (const delta of deltas) {
 		if (typeof delta.insert !== "string") continue;
-		let text = logicalExportText(delta.insert);
+		let text = logicalTextFromStored(delta.insert);
 		if (!text) continue;
 		if (format === "html") {
 			text = escapeHtmlText(text);
 		}
 
 		if (delta.attributes) {
-			const ordered = sortDeltaAttributes(delta.attributes, editor.schema);
+			const ordered = sortDeltaAttributes(
+				delta.attributes,
+				editor.schema,
+			);
 			for (const [mark, props] of Object.entries(ordered)) {
 				const inlineSchema = editor.schema.resolveInline(mark);
 				if (format === "html") {
@@ -201,4 +201,3 @@ function admitClipboardLinkProps(
 }
 
 export { buildTableChildren };
-

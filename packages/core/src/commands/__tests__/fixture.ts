@@ -3,7 +3,6 @@ import type {
 	Editor,
 	FacetProvider,
 	InlineSchema,
-	SelectionState,
 } from "@input/pen-types";
 
 import { createHeadlessEditor } from "../../editor/editor";
@@ -16,6 +15,9 @@ import {
 	getCommandRegistry,
 	type CommandRegistry,
 } from "..";
+import { applyCommandSelection } from "../install";
+
+export { applyCommandSelection };
 
 const paragraph = defineBlock("paragraph", {
 	props: {
@@ -209,38 +211,6 @@ export function createCommandEditor(blocks: readonly TestBlockSpec[]): Editor {
 	return editor;
 }
 
-export function applyCommandSelection(
-	editor: Editor,
-	selection: SelectionState,
-): void {
-	if (!selection) {
-		editor.setSelection(null);
-		return;
-	}
-	switch (selection.type) {
-		case "text":
-			editor.selectTextRange(selection.anchor, selection.focus);
-			return;
-		case "block":
-			editor.selectBlocks([...selection.blockIds]);
-			return;
-		case "cell":
-			editor.selectCellRange(
-				selection.blockId,
-				selection.anchor,
-				selection.head,
-			);
-			return;
-		case "app":
-			editor.setSelection(selection);
-			return;
-		default: {
-			const _exhaustive: never = selection;
-			return _exhaustive;
-		}
-	}
-}
-
 export function createCommandHarness(
 	editor: Editor,
 	extraProviders: readonly FacetProvider[] = [],
@@ -251,8 +221,8 @@ export function createCommandHarness(
 		apply: (ops, options) => {
 			editor.apply(ops, options);
 		},
-		setSelection: (selection) => {
-			applyCommandSelection(editor, selection);
+		setSelection: (selection, origin) => {
+			applyCommandSelection(editor, selection, origin);
 		},
 	});
 }

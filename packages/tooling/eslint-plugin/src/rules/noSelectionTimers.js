@@ -6,8 +6,16 @@ import { fileURLToPath } from "node:url";
  * S4 (`spec-v2/03-selection.md`): selection modules must not defer with
  * `requestAnimationFrame`, `setTimeout`, `setInterval`, or `setImmediate`.
  * A timer in this path has repeatedly been a missing attach or a wrong seam,
- * not an engine accommodation. Wave 05 deletes the selection bridge; the two
- * existing rAFs in `syncDomSelectionOnce` stay only via the allowlist.
+ * not an engine accommodation.
+ *
+ * Scope is a decision, not a guess. Wave 5.8 names the protected set
+ * (authority, reader, projector, focus, offsetDomain, transitions,
+ * caretPositions) and asks for the module list in-config. Files whose
+ * basename contains `selection` stay in as a fail-closed net so a new
+ * `selectionReader.ts` cannot silently escape. Files that set cannot see
+ * (focus, offsetDomain, caretPositions, the v1 backend/IME offenders) are
+ * listed in `modules`. Files the wave may keep as non-selection live in
+ * `outOfScope`, not in the allowlist — those mean different things.
  */
 
 const REPO_ROOT = path.resolve(
@@ -32,16 +40,23 @@ const FUNCTION_TYPES = new Set([
 	"ArrowFunctionExpression",
 ]);
 
-function loadAllowlist(filePath) {
+function loadConfig(filePath) {
 	try {
 		const parsed = JSON.parse(readFileSync(filePath, "utf8"));
-		return Array.isArray(parsed.entries) ? parsed.entries : [];
+		return {
+			entries: Array.isArray(parsed.entries) ? parsed.entries : [],
+			modules: Array.isArray(parsed.modules) ? parsed.modules : [],
+			outOfScope: Array.isArray(parsed.outOfScope)
+				? parsed.outOfScope
+				: [],
+		};
 	} catch {
-		return [];
+		return { entries: [], modules: [], outOfScope: [] };
 	}
 }
 
-const committedAllowlist = loadAllowlist(DEFAULT_ALLOWLIST_PATH);
+const committedConfig = loadConfig(DEFAULT_ALLOWLIST_PATH);
+const committedAllowlist = committedConfig.entries;
 
 export function missingAllowlistField(entry) {
 	if (!entry || typeof entry !== "object") {
@@ -91,22 +106,55 @@ function isTestPath(filename) {
 	);
 }
 
+function pathFromListEntry(entry) {
+	if (typeof entry === "string") {
+		return entry;
+	}
+	if (entry && typeof entry === "object" && typeof entry.file === "string") {
+		return entry.file;
+	}
+	return "";
+}
+
+function listHasPath(list, relative) {
+	const base = relative.split("/").pop() ?? "";
+	return list.some((entry) => {
+		const item = posixFilename(pathFromListEntry(entry)).replace(
+			/^\/+/,
+			"",
+		);
+		if (item.length === 0) {
+			return false;
+		}
+		return (
+			relative === item || base === item || relative.endsWith(`/${item}`)
+		);
+	});
+}
+
 /**
- * Selection modules are production files whose basename contains
- * `selection` (any case). Prefix-only `^selection` is how this gate
- * walked past contenteditableBackendSelection, useSelectionToolbar,
- * and inlineAtomSelectionInteraction — the same miss class that left
- * selectionRect unflagged until the file happened to start with
- * `selection`. Tests stay out. Do not shrink this to a folder glob.
+ * A file is a selection module when it is production code and either
+ * (1) its basename contains `selection` (the fail-closed net for the
+ * files Wave 05 will create under that name) or (2) it is on the
+ * explicit `modules` list (the decision for files that name cannot
+ * see). `outOfScope` wins so a non-selection file can be named without
+ * becoming an allowlist waiver.
  */
-export function isSelectionModule(filename) {
+export function isSelectionModule(filename, options = {}) {
 	if (isTestPath(filename)) {
 		return false;
 	}
-	const base = posixFilename(filename).split("/").pop() ?? "";
-	return (
-		base.toLowerCase().includes("selection") && hasScriptExtension(base)
-	);
+	const relative = repoRelativeFilename(filename);
+	const modules = options.modules ?? committedConfig.modules;
+	const outOfScope = options.outOfScope ?? committedConfig.outOfScope;
+	if (listHasPath(outOfScope, relative)) {
+		return false;
+	}
+	if (listHasPath(modules, relative)) {
+		return true;
+	}
+	const base = relative.split("/").pop() ?? "";
+	return base.toLowerCase().includes("selection") && hasScriptExtension(base);
 }
 
 function hasScriptExtension(base) {
@@ -137,10 +185,7 @@ function propertyName(node) {
 	if (node.type === "Literal" && typeof node.value === "string") {
 		return node.value;
 	}
-	if (
-		node.type === "PrivateIdentifier" ||
-		node.type === "PrivateName"
-	) {
+	if (node.type === "PrivateIdentifier" || node.type === "PrivateName") {
 		return `#${node.name}`;
 	}
 	return null;
@@ -205,13 +250,14 @@ export const noSelectionTimers = {
 				type: "object",
 				properties: {
 					allowlist: { type: "array" },
+					modules: { type: "array" },
+					outOfScope: { type: "array" },
 				},
 				additionalProperties: false,
 			},
 		],
 		messages: {
-			timer:
-				"`{{kind}}` in a selection module is banned (S4). A timer here is evidence of a missing attach or a wrong seam, not an engine accommodation. Delete it or add an allowlist entry that names the retiring wave (spec-v2 03-selection S4).",
+			timer: "`{{kind}}` in `{{symbol}}` ({{file}}) is banned (S4). A timer here is evidence of a missing attach or a wrong seam, not an engine accommodation. Delete it or add an allowlist entry that names the retiring wave (spec-v2 03-selection S4).",
 			incompleteAllowlist:
 				"S4 allowlist entry is missing `{{field}}`. Every entry must name file, symbol, kind, and a reason (spec-v2 03-selection S4).",
 			unusedAllowlist:
@@ -222,8 +268,11 @@ export const noSelectionTimers = {
 		const filename = context.filename ?? context.getFilename();
 		const relative = repoRelativeFilename(filename);
 		const allowlist = context.options[0]?.allowlist ?? committedAllowlist;
+		const modules = context.options[0]?.modules ?? committedConfig.modules;
+		const outOfScope =
+			context.options[0]?.outOfScope ?? committedConfig.outOfScope;
 
-		if (!isSelectionModule(filename)) {
+		if (!isSelectionModule(filename, { modules, outOfScope })) {
 			return {};
 		}
 
@@ -287,7 +336,7 @@ export const noSelectionTimers = {
 				context.report({
 					node,
 					messageId: "timer",
-					data: { kind },
+					data: { kind, symbol, file: relative },
 				});
 			},
 		};

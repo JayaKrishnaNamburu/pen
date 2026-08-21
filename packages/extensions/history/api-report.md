@@ -7,7 +7,6 @@
 ### class
 
 - AutoSnapshotScheduler
-- HistoryControllerImpl
 - SnapshotManager
 
 ### function
@@ -22,7 +21,6 @@
 
 ### value
 
-- HISTORY_CONTROLLER_SLOT
 - HISTORY_EXTENSION_NAME
 
 ### type

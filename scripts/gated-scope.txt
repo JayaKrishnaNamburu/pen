@@ -61,7 +61,9 @@
 #           tables (watched fail on real drift). The rule is a
 #           generated API reference that fails on an undocumented
 #           public symbol. scripts/api-docs-coverage.mjs is a ratchet
-#           at MAX_UNDOCUMENTED=2008, not that hard gate. The number rose
+#           at MAX_UNDOCUMENTED=1968, not that hard gate. It moved twice
+#           on 2026-08-21: up to 2008, then down to 1968 when 49 accidental
+#           extension-barrel exports were unexported. The first move rose
 #           from 1858 on 2026-08-21 when the gate stopped skipping
 #           @input/pen-dom's ./field-editor/* glob subpath (212 further
 #           undocumented names). That is a widened denominator, not a

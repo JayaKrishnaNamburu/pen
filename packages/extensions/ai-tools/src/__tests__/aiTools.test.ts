@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ToolDefinition } from "@input/pen-types";
 import {
-	AI_TOOL_RUNTIME_SLOT,
 	AIToolContextImpl,
 	AIToolRuntimeImpl,
 	collectAIToolOutput,
@@ -9,6 +8,7 @@ import {
 	getAIToolRuntime,
 	listAITools,
 } from "../index";
+import { AI_TOOL_RUNTIME_SLOT } from "../toolServer";
 
 describe("@input/pen-ai-tools", () => {
 	it("reads the canonical tool runtime slot from the editor", () => {
@@ -16,7 +16,9 @@ describe("@input/pen-ai-tools", () => {
 		const editor = {
 			internals: {
 				getSlot<T>(key: string): T | undefined {
-					return key === AI_TOOL_RUNTIME_SLOT ? (runtime as T) : undefined;
+					return key === AI_TOOL_RUNTIME_SLOT
+						? (runtime as T)
+						: undefined;
 				},
 			},
 		} as never;

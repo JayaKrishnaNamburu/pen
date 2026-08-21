@@ -4,26 +4,15 @@
 
 `./dist/index.d.ts`
 
-### class
-
-- AISuggestionsControllerImpl
-
 ### function
 
 - aiSuggestionsExtension
-- analyzeSuggestionScope
-- buildAISuggestionDecorations
 - buildAISuggestionMessages
-- buildApplySuggestionOps
-- buildSuggestionGroups
 - getAISuggestionsController
-- materializeSuggestionsFromCandidates
 - parseSuggestionResponse
-- resolveAISuggestionsConfig
 
 ### value
 
-- AI_SUGGESTIONS_CONTROLLER_SLOT
 - AI_SUGGESTIONS_EXTENSION_NAME
 - AI_SUGGESTIONS_REQUEST_MODE
 - AI_SUGGESTIONS_SYSTEM_PROMPT

@@ -4,7 +4,7 @@ import { resolveRuntimeContentType } from "../schema/contentType";
 import type { SchemaEngineImpl } from "../schema/normalize";
 import { type CRDTUnknownArray, type CRDTUnknownMap, getArrayProp, getMapProp, getStringProp, getTableColumns, getTableContent, isCRDTMap } from "./crdtShapes";
 import type { EventEmitter } from "./events";
-import type { SelectionManagerImpl } from "./selection";
+import type { SelectionAuthorityImpl } from "./selection";
 import { TableGridExecutor } from "./tableGridExecutor";
 
 import { blockExists, createMutableMap, getMutableBlockMap, getMutableAppMap, getOrCreateMapProp, getOrCreateStringArrayProp, removeBlockIdFromArray, removeBlockIdFromAllChildren, getTextContent, getInlineTextContent, opBlockId } from "./applySharedHelpers";
@@ -55,7 +55,7 @@ export class ApplyPipeline {
 	private readonly _tableGrid: TableGridExecutor;
 	private _engine: SchemaEngineImpl;
 	private readonly _emitter: EventEmitter;
-	private readonly _selection: SelectionManagerImpl;
+	private readonly _selection: SelectionAuthorityImpl;
 	private _onDidApply: ((event: CRDTEvent) => void) | null = null;
 	private _applying = false;
 	private _suppressObserver = false;
@@ -122,7 +122,7 @@ export class ApplyPipeline {
 		registry: SchemaRegistry,
 		engine: SchemaEngineImpl,
 		emitter: EventEmitter,
-		selection: SelectionManagerImpl,
+		selection: SelectionAuthorityImpl,
 	) {
 		this._doc = doc;
 		this._crdtDoc = crdtDoc;

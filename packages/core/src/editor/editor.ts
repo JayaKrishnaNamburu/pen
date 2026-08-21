@@ -1,4 +1,4 @@
-import type { Editor, EditorInternals, CreateEditorOptions, PenEventMap, DocumentCommitEvent, CRDTAdapter, CRDTDocument, CRDTEvent, PenDocument, SchemaRegistry, Awareness, DocumentSession, DocumentScope, DocumentScopeReplacementEvent, DocumentProfile, Extension, DocumentOp, ApplyOptions, OpOrigin, MutationGroupMetadata, SelectionState, TextSelection, DocumentRange, BlockHandle, Block, DocumentState, UndoManager, Unsubscribe, CRDTMap, CRDTArray, Position, DecorationSet, EditorViewMode, ChangeSummary, SummaryLog, Facet, FacetOutput, PipelinePhase, SelectionRecord, OpenTextStreamOptions, TextStreamWriter } from "@input/pen-types";
+import type { Editor, EditorInternals, CreateEditorOptions, PenEventMap, DocumentCommitEvent, CRDTAdapter, CRDTDocument, CRDTEvent, PenDocument, SchemaRegistry, Awareness, DocumentSession, DocumentScope, DocumentScopeReplacementEvent, DocumentProfile, Extension, DocumentOp, ApplyOptions, OpOrigin, MutationGroupMetadata, SelectionState, TextSelection, DocumentRange, BlockHandle, Block, DocumentState, UndoManager, Unsubscribe, CRDTMap, CRDTArray, Position, DecorationSet, EditorViewMode, ChangeSummary, SummaryLog, Facet, FacetOutput, PipelinePhase, SelectionRecord, SelectionOrigin, OpenTextStreamOptions, TextStreamWriter } from "@input/pen-types";
 import { AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY, COLLECT_KEY_BINDINGS_SLOT_KEY, MUTATION_GROUP_METADATA_KEY, UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY, generateId } from "@input/pen-types";
 import { yjsAdapter } from "@input/pen-crdt-yjs";
 import { resolveEditorSchema } from "../schema/emptySchema";
@@ -11,7 +11,7 @@ import { filterOpsForDocumentProfile } from "./profilePolicy";
 import type { CRDTUnknownMap } from "./crdtShapes";
 import { getTextProp, getTableContent, getCellText as getCellTextFromRow, isCRDTMap } from "./crdtShapes";
 import { ExtensionManagerImpl } from "./extensionManager";
-import { SelectionManagerImpl } from "./selection";
+import { SelectionAuthorityImpl } from "./selection";
 import { DocumentStateImpl } from "./documentState";
 import { emptyDecorationSet } from "./decorations";
 import { DocumentRangeImpl } from "./range";
@@ -37,7 +37,14 @@ import type { SummaryLog as CoreSummaryLog } from "../changes/summaryLog";
 import { snapshotSelectionRecord } from "./commitEvent";
 import { openEditorTextStream } from "./openTextStream";
 import { createPenDocumentForEditor, resolveEditorExtensions, installProfilePolicyHook, enforceDocumentProfileBoundary, refreshCoreSlots, bindEditorSession, bindEditorScope, handleEditorScopeReplacement, resolveEditorDocumentProfile, rebindActiveScope, refreshUndoManager, activateEditorExtensions, queueExtensionLifecycle, ensureInitialParagraph, createCommitEvent, dispatchCRDTEvent, syncDocumentProfileFromStorage, wireEditorObservation, teardownEditorObservation } from "./editorLifecycle";
-import { replaceEditorSelection, deleteEditorSelection, getTextForBlock, getSelectionRange, usesInlineTextSelectionForBlock, getBlockSelectionSpan, isWholeBlockSelection, collapseToPoint, sliceInlineDeltas, buildMultiBlockTextReplacement, deleteMultiBlockTextRange, replaceMultiBlockTextRange } from "./editorSelectionMutations";
+import { replaceEditorSelection, deleteEditorSelection, getTextForBlock, usesInlineTextSelectionForBlock, getBlockSelectionSpan, isWholeBlockSelection, sliceInlineDeltas, buildMultiBlockTextReplacement, deleteMultiBlockTextRange, replaceMultiBlockTextRange } from "./editorSelectionMutations";
+import { stampTextSelection, selectionToRange } from "../selection/helpers";
+import {
+	buildTransitionSnapshot,
+	fromTransitionSelection,
+	toTransitionSelection,
+} from "../commands/helpers";
+import { escalateSelectAll } from "../selection/transitions";
 type CRDTBlockMap = CRDTMap<CRDTMap<unknown>>;
 
 // Stub undo manager for when @input/pen-undo is excluded
@@ -48,7 +55,7 @@ class EditorImpl implements Editor {
 	private readonly _registry: SchemaRegistry;
 	private _engine: SchemaEngineImpl;
 	private readonly _extensions: ExtensionManagerImpl;
-	private _selection: SelectionManagerImpl;
+	private _selection: SelectionAuthorityImpl;
 	private readonly _emitter: EventEmitter;
 	private _pipeline: ApplyPipeline;
 	private _documentState: DocumentStateImpl;
@@ -75,7 +82,6 @@ class EditorImpl implements Editor {
 	private _extensionLifecycle: Promise<void> = Promise.resolve();
 	private _facetRegistry!: FacetRegistry;
 	private _slotDeprecationWarned = new Set<string>();
-	private _selectionVersion = 0;
 	private _isDestroyed = false;
 	private readonly _pipelinePhaseListeners: Array<(phase: PipelinePhase) => void> =
 		[];
@@ -111,7 +117,7 @@ class EditorImpl implements Editor {
 			this._doc,
 			this._crdtDoc,
 		);
-		this._selection = new SelectionManagerImpl(
+		this._selection = new SelectionAuthorityImpl(
 			this._doc,
 			this._crdtDoc,
 			this._registry,
@@ -281,12 +287,11 @@ class EditorImpl implements Editor {
 
 	// ── Selection ────────────────────────────────────────────
 
-	setSelection(selection: SelectionState): void {
-		this._selection.setSelection(selection);
-		this._selectionVersion += 1;
-		this._facetRegistry.settle({
-			selectionVersion: this._selectionVersion,
-		});
+	setSelection(
+		selection: SelectionState,
+		options?: { origin?: SelectionOrigin },
+	): void {
+		this._writeSelection(selection, options?.origin ?? "programmatic");
 	}
 
 	getSelection(): SelectionState {
@@ -294,15 +299,33 @@ class EditorImpl implements Editor {
 	}
 
 	selectBlock(blockId: string): void {
-		this._selection.selectBlock(blockId);
+		this._writeSelection(
+			{ type: "block", blockIds: [blockId], head: blockId },
+			"programmatic",
+		);
 	}
 
 	selectBlocks(blockIds: string[]): void {
-		this._selection.selectBlocks(blockIds);
+		this._writeSelection(
+			{
+				type: "block",
+				blockIds,
+				head: blockIds[blockIds.length - 1] ?? blockIds[0] ?? "",
+			},
+			"programmatic",
+		);
 	}
 
 	selectCell(blockId: string, row: number, col: number): void {
-		this._selection.selectCell(blockId, row, col);
+		this._writeSelection(
+			{
+				type: "cell",
+				blockId,
+				anchor: { row, col },
+				head: { row, col },
+			},
+			"programmatic",
+		);
 	}
 
 	selectCellRange(
@@ -310,22 +333,38 @@ class EditorImpl implements Editor {
 		anchor: { row: number; col: number },
 		head: { row: number; col: number },
 	): void {
-		this._selection.selectCellRange(blockId, anchor, head);
+		this._writeSelection(
+			{ type: "cell", blockId, anchor, head },
+			"programmatic",
+		);
 	}
 
 	selectText(blockId: string, from: number, to: number): void {
-		this._selection.selectText(blockId, from, to);
+		this.selectTextRange(
+			{ blockId, offset: from },
+			{ blockId, offset: to },
+		);
 	}
 
 	selectTextRange(
 		anchor: { blockId: string; offset: number },
 		focus: { blockId: string; offset: number },
 	): void {
-		this._selection.selectTextRange(anchor, focus);
+		this._writeSelection(
+			stampTextSelection(this._doc, { anchor, focus }),
+			"programmatic",
+		);
 	}
 
 	selectAll(): void {
-		this._selection.selectAll();
+		const next = escalateSelectAll(
+			buildTransitionSnapshot(this),
+			toTransitionSelection(this),
+		);
+		this._writeSelection(
+			fromTransitionSelection(next),
+			"programmatic",
+		);
 	}
 
 	getSelectedText(): string {
@@ -452,10 +491,22 @@ class EditorImpl implements Editor {
 
 	private _captureSelectionBeforeForCommit(): void {
 		this._selectionBeforeRecord = snapshotSelectionRecord(
-			this.selection,
-			this._selectionVersion,
-			this._commitId,
+			this._selection.record,
 		);
+	}
+
+	private _writeSelection(
+		selection: SelectionState,
+		origin: SelectionOrigin,
+	): void {
+		const before = this._selection.record.version;
+		this._selection.set(selection, { origin });
+		const after = this._selection.record.version;
+		if (after !== before) {
+			this._facetRegistry.settle({
+				selectionVersion: after,
+			});
+		}
 	}
 
 	private _syncDocumentProfileFromStorage(): void { syncDocumentProfileFromStorage(this); }
@@ -466,7 +517,7 @@ class EditorImpl implements Editor {
 
 	private _getTextForBlock(blockId: string): string { return getTextForBlock(this, blockId); }
 
-	private _getSelectionRange(sel: TextSelection): DocumentRange { return getSelectionRange(this, sel); }
+	private _getSelectionRange(sel: TextSelection): DocumentRange { return selectionToRange(this._doc, sel); }
 
 	private _usesInlineTextSelection(blockId: string): boolean { return usesInlineTextSelectionForBlock(this, blockId); }
 
@@ -474,7 +525,12 @@ class EditorImpl implements Editor {
 
 	private _isWholeBlockSelection(blockId: string, startOffset: number, endOffset: number): boolean { return isWholeBlockSelection(this, blockId, startOffset, endOffset); }
 
-	private _collapseToPoint(point: { blockId: string; offset: number }): void { return collapseToPoint(this, point); }
+	private _collapseToPoint(point: { blockId: string; offset: number }): void {
+		this._writeSelection(
+			stampTextSelection(this._doc, { anchor: point, focus: point }),
+			"programmatic",
+		);
+	}
 
 	private _sliceInlineDeltas(blockId: string, startOffset: number): Array<{ insert: string; attributes?: Record<string, unknown> }> { return sliceInlineDeltas(this, blockId, startOffset); }
 

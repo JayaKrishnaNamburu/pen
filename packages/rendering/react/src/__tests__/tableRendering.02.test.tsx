@@ -231,6 +231,7 @@ describe("@input/pen-react table rendering", () => {
 		expect(editor.selection).toEqual({
 			type: "block",
 			blockIds: ["t6"],
+			head: "t6",
 		});
 
 		await act(async () => {
@@ -298,6 +299,7 @@ describe("@input/pen-react table rendering", () => {
 		expect(editor.selection).toEqual({
 			type: "block",
 			blockIds: ["t7"],
+			head: "t7",
 		});
 
 		await act(async () => {
@@ -376,6 +378,7 @@ describe("@input/pen-react table rendering", () => {
 		expect(editor.selection).toEqual({
 			type: "block",
 			blockIds: ["t7-beforeinput"],
+			head: "t7-beforeinput",
 		});
 		expect(tableBlock?.getAttribute("data-selected")).toBe("");
 		expect(

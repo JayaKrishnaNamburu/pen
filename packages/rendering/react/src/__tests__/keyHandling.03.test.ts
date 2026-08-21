@@ -217,6 +217,21 @@ describe("@input/pen-react field editor inline atom navigation", () => {
 			},
 		});
 		const blockId = editor.firstBlock()!.id;
+		// the mock ytext below claims a one-atom block, so the real document has
+		// to hold one too: A1 clamps to logical length, and an empty paragraph
+		// has no offset 1 to anchor at.
+		editor.apply(
+			[
+				{
+					type: "insert-inline-node",
+					blockId,
+					offset: 0,
+					nodeType: "mention",
+					props: { id: "user-1", label: "Ada" },
+				},
+			],
+			{ origin: "user" },
+		);
 		editor.selectText(blockId, 1, 0);
 		const fieldEditor = createFieldEditorMock(blockId);
 
