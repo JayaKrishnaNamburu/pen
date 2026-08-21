@@ -1,10 +1,14 @@
+import { createEditor } from "@input/pen-core";
+import { defaultSchema } from "@input/pen-schema-default";
 import { EMPTY_BLOCK_SENTINEL } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 import {
 	CLOSED_GESTURE_WINDOWS,
+	classifyDomSelectionRead,
 	isAdmissibleDomRead,
 	isLogicallyEquivalent,
 	nextGestureWindowState,
+	shouldStopEquivalentDomRead,
 	type GestureWindowState,
 	type ReaderSelection,
 	type ReaderSnapshot,
@@ -175,6 +179,103 @@ describe("isLogicallyEquivalent", () => {
 				snapshot,
 			),
 		).toBe(false);
+	});
+});
+
+describe("classifyDomSelectionRead §4.2 steps 1–3", () => {
+	const snapshot: ReaderSnapshot = {
+		blockOrder: ["p1"],
+		blocks: { p1: { kind: "text", text: "hello" } },
+	};
+	const caret = textSelection({ blockId: "p1", offset: 0 });
+	const moved = textSelection({ blockId: "p1", offset: 2 });
+
+	it("step 1: an in-flight projection is ignored before mapping", () => {
+		expect(
+			classifyDomSelectionRead({
+				projectionInFlight: true,
+				proposal: moved,
+				authorityState: caret,
+				snapshot,
+			}),
+		).toBe("ignore-inflight");
+	});
+
+	it("step 2: an unresolvable DOM read produces no proposal", () => {
+		expect(
+			classifyDomSelectionRead({
+				projectionInFlight: false,
+				proposal: null,
+				authorityState: caret,
+				snapshot,
+			}),
+		).toBe("no-proposal");
+	});
+
+	it("step 3: an equivalent proposal stops", () => {
+		expect(
+			classifyDomSelectionRead({
+				projectionInFlight: false,
+				proposal: caret,
+				authorityState: caret,
+				snapshot,
+			}),
+		).toBe("equivalent");
+	});
+
+	it("step 3: a real move falls through to the v1 heuristics", () => {
+		expect(
+			classifyDomSelectionRead({
+				projectionInFlight: false,
+				proposal: moved,
+				authorityState: caret,
+				snapshot,
+			}),
+		).toBe("continue");
+	});
+});
+
+describe("shouldStopEquivalentDomRead", () => {
+	it("stops when the mapped proposal snaps to the record", () => {
+		const editor = createEditor({ schema: defaultSchema });
+		const id = editor.firstBlock()!.id;
+		editor.selectText(id, 0, 0);
+		expect(
+			shouldStopEquivalentDomRead(
+				editor,
+				textSelection({ blockId: id, offset: 0 }),
+			),
+		).toBe(true);
+		void editor.destroy();
+	});
+
+	it("falls through when the proposal is a real caret move", () => {
+		const editor = createEditor({ schema: defaultSchema });
+		const id = editor.firstBlock()!.id;
+		editor.apply([
+			{ type: "insert-text", blockId: id, offset: 0, text: "hello" },
+		]);
+		editor.selectText(id, 0, 0);
+		expect(
+			shouldStopEquivalentDomRead(
+				editor,
+				textSelection({ blockId: id, offset: 2 }),
+			),
+		).toBe(false);
+		void editor.destroy();
+	});
+
+	it("stops an empty-block sentinel DOM offset against logical 0", () => {
+		const editor = createEditor({ schema: defaultSchema });
+		const id = editor.firstBlock()!.id;
+		editor.selectText(id, 0, 0);
+		expect(
+			shouldStopEquivalentDomRead(
+				editor,
+				textSelection({ blockId: id, offset: 1 }),
+			),
+		).toBe(true);
+		void editor.destroy();
 	});
 });
 

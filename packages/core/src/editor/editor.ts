@@ -213,6 +213,10 @@ class EditorImpl implements Editor {
 		return this._selection.getSelection();
 	}
 
+	get selectionRecord(): SelectionRecord {
+		return this._selection.record;
+	}
+
 	get documentState(): DocumentState {
 		return this._documentState;
 	}

@@ -20,6 +20,7 @@
 - applyDirectedBinding
 - blockLogicalText
 - blocksToOps
+- buildNormalPositionSnapshot
 - buildTableChildren
 - builtinCommandHandlers
 - collectToolExecutionOutput
@@ -53,6 +54,7 @@
 - getBlockSelectionRoleFromSchema
 - getBlockSelectionRoleFromType
 - getCommandRegistry
+- getEditorSelectionRecord
 - getFlowCapabilityFromSchema
 - getFlowCapabilityFromType
 - getInlineCompletionController
@@ -116,6 +118,7 @@
 - shouldForceBlockScopedSelectAll
 - shouldShowBlockInDefaultMenus
 - singleController
+- snapToNormalPosition
 - sortDeltaAttributes
 - streamThroughEgress
 - supportsInlineInputRules
@@ -234,6 +237,7 @@
 - Keymap
 - KeymapPlatform
 - MigrationReport
+- NormalPositionSnapshot
 - PendingBlock
 - PendingBlockImportPolicyViolation
 - PendingBlockProfilePolicyViolation

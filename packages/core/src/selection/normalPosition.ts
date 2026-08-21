@@ -39,6 +39,13 @@ export interface NormalPositionBlock {
 	readonly atoms?: readonly AtomExtent[];
 }
 
+/**
+ * A document-shaped view sufficient to decide whether a point is a normal position.
+ *
+ * Deliberately not the live document: normal-position checks run on the DOM read
+ * path, and walking the CRDT there couples reading to document mutation. Build one
+ * with `buildNormalPositionSnapshot`.
+ */
 export interface NormalPositionSnapshot {
 	readonly blockOrder: readonly string[];
 	readonly blocks: Readonly<Record<string, NormalPositionBlock>>;

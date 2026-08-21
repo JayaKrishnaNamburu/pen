@@ -50,6 +50,7 @@
   },
   "dependencies": {
     "@input/pen-content-ops": "workspace:^",
+    "@input/pen-core": "workspace:^",
     "@input/pen-markdown-serialization": "workspace:^",
     "@input/pen-types": "workspace:^"
   },

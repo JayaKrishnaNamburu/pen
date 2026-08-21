@@ -1,3 +1,4 @@
+import { selectionToRange } from "@input/pen-core";
 import { exportMarkdownForBlocks } from "@input/pen-markdown-serialization";
 import type { Editor, SelectionState, TextSelection } from "@input/pen-types";
 import type { StructuredTargetInspection } from "./structuredTargets";
@@ -142,7 +143,7 @@ export function resolveSelectionText(
 	selection: TextSelection,
 	viewMode: DocumentContextViewMode,
 ): string {
-	const range = selection.toRange();
+	const range = selectionToRange(editor.internals.doc, selection);
 	const blockIds = range.blockRange;
 	const parts = blockIds.map((blockId, index) => {
 		const block = editor.getBlock(blockId);

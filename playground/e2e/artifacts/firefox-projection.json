@@ -1,9 +1,9 @@
 {
-  "capturedAt": "2026-08-21T12:57:42.335Z",
+  "capturedAt": "2026-08-21T14:59:31.461Z",
   "browserName": "firefox",
   "concurrentPackagesLoad": true,
   "paragraph": "Alpha bravo charlie delta echo",
-  "blockId": "74d2fcad-656f-4f2a-8ddf-9e805dbb0ef2",
+  "blockId": "fe273a7c-9868-4952-95ed-04e718b4d01b",
   "afterType": {
     "editor": {
       "type": "text",
@@ -20,8 +20,8 @@
       "anchorPath": "text:\"Alpha bravo charlie delta echo\"@SPAN.",
       "focusPath": "text:\"Alpha bravo charlie delta echo\"@SPAN."
     },
-    "activeBlockId": "74d2fcad-656f-4f2a-8ddf-9e805dbb0ef2",
-    "attachedInlineBlockId": "74d2fcad-656f-4f2a-8ddf-9e805dbb0ef2"
+    "activeBlockId": "fe273a7c-9868-4952-95ed-04e718b4d01b",
+    "attachedInlineBlockId": "fe273a7c-9868-4952-95ed-04e718b4d01b"
   },
   "afterTripleClick": [
     {
@@ -41,8 +41,8 @@
         "anchorPath": "text:\"Alpha bravo charlie delta echo\"@SPAN.",
         "focusPath": "text:\"Alpha bravo charlie delta echo\"@SPAN."
       },
-      "activeBlockId": "74d2fcad-656f-4f2a-8ddf-9e805dbb0ef2",
-      "attachedInlineBlockId": "74d2fcad-656f-4f2a-8ddf-9e805dbb0ef2"
+      "activeBlockId": "fe273a7c-9868-4952-95ed-04e718b4d01b",
+      "attachedInlineBlockId": "fe273a7c-9868-4952-95ed-04e718b4d01b"
     },
     {
       "label": "triple-click:t2raf",
@@ -61,8 +61,8 @@
         "anchorPath": "text:\"Alpha bravo charlie delta echo\"@SPAN.",
         "focusPath": "text:\"Alpha bravo charlie delta echo\"@SPAN."
       },
-      "activeBlockId": "74d2fcad-656f-4f2a-8ddf-9e805dbb0ef2",
-      "attachedInlineBlockId": "74d2fcad-656f-4f2a-8ddf-9e805dbb0ef2"
+      "activeBlockId": "fe273a7c-9868-4952-95ed-04e718b4d01b",
+      "attachedInlineBlockId": "fe273a7c-9868-4952-95ed-04e718b4d01b"
     }
   ],
   "afterCollapse": {
@@ -81,8 +81,8 @@
       "anchorPath": "text:\"Alpha bravo charlie delta echo\"@SPAN.",
       "focusPath": "text:\"Alpha bravo charlie delta echo\"@SPAN."
     },
-    "activeBlockId": "74d2fcad-656f-4f2a-8ddf-9e805dbb0ef2",
-    "attachedInlineBlockId": "74d2fcad-656f-4f2a-8ddf-9e805dbb0ef2"
+    "activeBlockId": "fe273a7c-9868-4952-95ed-04e718b4d01b",
+    "attachedInlineBlockId": "fe273a7c-9868-4952-95ed-04e718b4d01b"
   },
   "afterAuthorityRange": [
     {
@@ -102,8 +102,8 @@
         "anchorPath": "text:\"Alpha bravo charlie delta echo\"@SPAN.",
         "focusPath": "text:\"Alpha bravo charlie delta echo\"@SPAN."
       },
-      "activeBlockId": "74d2fcad-656f-4f2a-8ddf-9e805dbb0ef2",
-      "attachedInlineBlockId": "74d2fcad-656f-4f2a-8ddf-9e805dbb0ef2"
+      "activeBlockId": "fe273a7c-9868-4952-95ed-04e718b4d01b",
+      "attachedInlineBlockId": "fe273a7c-9868-4952-95ed-04e718b4d01b"
     },
     {
       "label": "selectTextRange:t2raf",
@@ -122,8 +122,8 @@
         "anchorPath": "text:\"Alpha bravo charlie delta echo\"@SPAN.",
         "focusPath": "text:\"Alpha bravo charlie delta echo\"@SPAN."
       },
-      "activeBlockId": "74d2fcad-656f-4f2a-8ddf-9e805dbb0ef2",
-      "attachedInlineBlockId": "74d2fcad-656f-4f2a-8ddf-9e805dbb0ef2"
+      "activeBlockId": "fe273a7c-9868-4952-95ed-04e718b4d01b",
+      "attachedInlineBlockId": "fe273a7c-9868-4952-95ed-04e718b4d01b"
     }
   ],
   "afterUntrustedAddRange": [
@@ -144,8 +144,8 @@
         "anchorPath": "text:\"Alpha bravo charlie delta echo\"@SPAN.",
         "focusPath": "text:\"Alpha bravo charlie delta echo\"@SPAN."
       },
-      "activeBlockId": "74d2fcad-656f-4f2a-8ddf-9e805dbb0ef2",
-      "attachedInlineBlockId": "74d2fcad-656f-4f2a-8ddf-9e805dbb0ef2"
+      "activeBlockId": "fe273a7c-9868-4952-95ed-04e718b4d01b",
+      "attachedInlineBlockId": "fe273a7c-9868-4952-95ed-04e718b4d01b"
     },
     {
       "label": "addRange:t2raf",
@@ -164,8 +164,8 @@
         "anchorPath": "text:\"Alpha bravo charlie delta echo\"@SPAN.",
         "focusPath": "text:\"Alpha bravo charlie delta echo\"@SPAN."
       },
-      "activeBlockId": "74d2fcad-656f-4f2a-8ddf-9e805dbb0ef2",
-      "attachedInlineBlockId": "74d2fcad-656f-4f2a-8ddf-9e805dbb0ef2"
+      "activeBlockId": "fe273a7c-9868-4952-95ed-04e718b4d01b",
+      "attachedInlineBlockId": "fe273a7c-9868-4952-95ed-04e718b4d01b"
     }
   ],
   "classificationHints": {

@@ -86,7 +86,7 @@ scenario(
 				if (selection?.type !== "text") {
 					return "";
 				}
-				return `${selection.anchor.offset}:${selection.focus.offset}:${selection.isCollapsed}`;
+				return `${selection.anchor.offset}:${selection.focus.offset}:${window.__penConformance.isCollapsed()}`;
 			})
 			.toBe("2:2:true");
 		await expect

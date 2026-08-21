@@ -1,4 +1,9 @@
-import type { Point } from "@input/pen-types";
+import {
+	buildNormalPositionSnapshot,
+	getEditorSelectionRecord,
+	snapToNormalPosition,
+} from "@input/pen-core";
+import type { Editor, Point, SelectionRecordState } from "@input/pen-types";
 import { toLogicalOffset } from "./offsetDomain";
 
 export type ReaderPoint = Point;
@@ -74,6 +79,12 @@ export type GestureEventKind =
 	| "keydown"
 	| "keyup";
 
+export type DomSelectionReadDecision =
+	| "ignore-inflight"
+	| "no-proposal"
+	| "equivalent"
+	| "continue";
+
 export function isLogicallyEquivalent(
 	domRead: ReaderSelection,
 	authorityState: ReaderSelection,
@@ -130,6 +141,53 @@ export function isLogicallyEquivalent(
 	}
 }
 
+/**
+ * §4.2 steps 1–3. Step 4 (I4 re-project) and step 5 (`authority.set`)
+ * stay unwired — fall through to the v1 heuristics when this returns
+ * `"continue"`.
+ */
+export function classifyDomSelectionRead(input: {
+	projectionInFlight: boolean;
+	proposal: ReaderSelection | null;
+	authorityState: ReaderSelection;
+	snapshot: ReaderSnapshot;
+}): DomSelectionReadDecision {
+	if (input.projectionInFlight) {
+		return "ignore-inflight";
+	}
+	if (input.proposal === null) {
+		return "no-proposal";
+	}
+	if (
+		isLogicallyEquivalent(
+			input.proposal,
+			input.authorityState,
+			input.snapshot,
+		)
+	) {
+		return "equivalent";
+	}
+	return "continue";
+}
+
+export function shouldStopEquivalentDomRead(
+	editor: Editor,
+	proposal: ReaderSelection,
+): boolean {
+	const record = getEditorSelectionRecord(editor);
+	if (record === null) {
+		return false;
+	}
+	return (
+		classifyDomSelectionRead({
+			projectionInFlight: false,
+			proposal,
+			authorityState: toReaderSelection(record.state),
+			snapshot: buildNormalPositionSnapshot(editor),
+		}) === "equivalent"
+	);
+}
+
 export function nextGestureWindowState(
 	eventKind: GestureEventKind,
 	state: GestureWindowState,
@@ -174,20 +232,71 @@ export function isAdmissibleDomRead(
 	return state.pointer || state.ime || state.contextMenu || state.drag;
 }
 
+function toReaderSelection(state: SelectionRecordState): ReaderSelection {
+	if (state === null) {
+		return null;
+	}
+	switch (state.type) {
+		case "text":
+			return {
+				type: "text",
+				anchor: state.anchor,
+				focus: state.focus,
+			};
+		case "block":
+			return {
+				type: "block",
+				blockIds: state.blockIds,
+				head: state.head,
+			};
+		case "app":
+			return { type: "app", appId: state.appId };
+		case "cell":
+			return {
+				type: "cell",
+				blockId: state.blockId,
+				anchor: state.anchor,
+				head: state.head,
+			};
+		default: {
+			const _exhaustive: never = state;
+			return _exhaustive;
+		}
+	}
+}
+
 function sameSnappedPoint(
 	domPoint: ReaderPoint,
 	authorityPoint: ReaderPoint,
 	snapshot: ReaderSnapshot,
 ): boolean {
-	const fromDom = snapIdentity(toLogicalPoint(domPoint, snapshot), snapshot);
-	const fromAuthority = snapIdentity(authorityPoint, snapshot);
-	if (fromDom === null || fromAuthority === null) {
+	const logicalDom = toLogicalPoint(domPoint, snapshot);
+	if (logicalDom === null) {
 		return false;
 	}
-	return (
-		fromDom.blockId === fromAuthority.blockId &&
-		fromDom.offset === fromAuthority.offset
+	return sameSnapResult(
+		snapToNormalPosition(snapshot, logicalDom, 1),
+		snapToNormalPosition(snapshot, authorityPoint, 1),
 	);
+}
+
+function sameSnapResult(
+	left: ReturnType<typeof snapToNormalPosition>,
+	right: ReturnType<typeof snapToNormalPosition>,
+): boolean {
+	if (left === null || right === null) {
+		return false;
+	}
+	const leftBoundary = "blockBoundary" in left;
+	const rightBoundary = "blockBoundary" in right;
+	if (leftBoundary || rightBoundary) {
+		return (
+			leftBoundary &&
+			rightBoundary &&
+			left.blockBoundary === right.blockBoundary
+		);
+	}
+	return left.blockId === right.blockId && left.offset === right.offset;
 }
 
 function toLogicalPoint(
@@ -204,25 +313,6 @@ function toLogicalPoint(
 	};
 }
 
-function snapIdentity(
-	point: ReaderPoint | null,
-	snapshot: ReaderSnapshot,
-): ReaderPoint | null {
-	if (point === null) {
-		return null;
-	}
-	const block = resolveTextBlock(snapshot, point.blockId);
-	if (!block) {
-		return null;
-	}
-	const offset = clampOffset(block.text.length, point.offset);
-	const atom = atomContaining(block, offset);
-	if (!atom) {
-		return { blockId: point.blockId, offset };
-	}
-	return { blockId: point.blockId, offset: atom.end };
-}
-
 function resolveTextBlock(
 	snapshot: ReaderSnapshot,
 	blockId: string,
@@ -235,28 +325,6 @@ function resolveTextBlock(
 		return null;
 	}
 	return block;
-}
-
-function atomContaining(
-	block: ReaderBlock,
-	offset: number,
-): ReaderAtomExtent | null {
-	for (const atom of block.atoms ?? []) {
-		if (offset > atom.start && offset < atom.end) {
-			return atom;
-		}
-	}
-	return null;
-}
-
-function clampOffset(max: number, offset: number): number {
-	if (offset <= 0) {
-		return 0;
-	}
-	if (offset >= max) {
-		return max;
-	}
-	return offset;
 }
 
 function sameBlockIds(

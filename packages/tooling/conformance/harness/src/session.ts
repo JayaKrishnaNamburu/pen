@@ -3,6 +3,7 @@ import {
 	createEditor,
 	createHeadlessEditor,
 	createPseudoLocaleCatalog,
+	isCollapsed as selectionIsCollapsed,
 } from "@input/pen-core";
 import {
 	applyYjsAwarenessUpdate,
@@ -787,6 +788,9 @@ function installBridge(): void {
 	const bridge: PenConformanceBridge = {
 		get selection() {
 			return serializeSelection(getHarnessSession().editor.selection);
+		},
+		isCollapsed() {
+			return selectionIsCollapsed(getHarnessSession().editor.selection);
 		},
 		get lastEvents() {
 			return getHarnessSession().lastEvents;

@@ -32,7 +32,7 @@ async function readCaret(page: Page): Promise<TextCaret | null> {
 		return {
 			blockId: selection.focus.blockId,
 			offset: selection.focus.offset,
-			isCollapsed: selection.isCollapsed,
+			isCollapsed: window.__penConformance.isCollapsed(),
 			anchorOffset: selection.anchor.offset,
 			focusOffset: selection.focus.offset,
 		};

@@ -59,6 +59,7 @@ export {
 // DocumentStateImpl stays off the barrel; hosts read editor.documentState (DocumentState from @input/pen-types).
 export { DocumentRangeImpl } from "./editor/range";
 export { SelectionAuthorityImpl as SelectionAuthority } from "./editor/selection";
+export { getEditorSelectionRecord } from "./editor/selectionRecord";
 export {
 	getSelectionBlockRange,
 	getTrustedSelectionBlockRange,
@@ -66,6 +67,9 @@ export {
 	isMultiBlock,
 	selectionToRange,
 } from "./selection/helpers";
+export { snapToNormalPosition } from "./selection/normalPosition";
+export type { NormalPositionSnapshot } from "./selection/normalPosition";
+export { buildNormalPositionSnapshot } from "./commands/helpers";
 export { ExtensionManagerImpl } from "./editor/extensionManager";
 // ApplyPipeline stays off the barrel; hosts call editor.apply.
 export {

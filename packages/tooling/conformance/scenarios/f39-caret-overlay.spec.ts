@@ -101,7 +101,10 @@ scenario(
 				const selection = await page.evaluate(
 					() => window.__penConformance.selection,
 				);
-				return selection?.type === "text" && !selection.isCollapsed;
+				return (
+					selection?.type === "text" &&
+					!window.__penConformance.isCollapsed()
+				);
 			})
 			.toBe(true);
 		await expect(page.locator("[data-pen-editor-caret]")).toHaveCount(0);

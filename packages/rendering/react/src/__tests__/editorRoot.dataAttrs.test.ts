@@ -1,8 +1,20 @@
+// @vitest-environment jsdom
+
 import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import React, { act } from "react";
+import { createRoot, type Root } from "react-dom/client";
+import { createEditor as createCoreEditor } from "@input/pen-core";
+import { defaultPreset } from "@input/pen-preset-default";
+import { defaultSchema } from "@input/pen-schema-default";
 import { describe, expect, it } from "vitest";
-import { DATA_ATTRS } from "../utils/dataAttributes";
+import { EditorRoot } from "../primitives/editor/root";
+import { buildDataAttributes, DATA_ATTRS } from "../utils/dataAttributes";
+
+(
+	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
+).IS_REACT_ACT_ENVIRONMENT = true;
 
 const SRC_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const CATALOG = new Set<string>(Object.values(DATA_ATTRS));
@@ -98,5 +110,94 @@ describe("editor root data-attribute catalog pin", () => {
 		}
 		expect(calls).toBeGreaterThan(0);
 		expect(unknown).toEqual([]);
+	});
+});
+
+function createEditor() {
+	return createCoreEditor({
+		schema: defaultSchema,
+		preset: defaultPreset({
+			documentOps: false,
+			deltaStream: false,
+			undo: false,
+		}),
+	});
+}
+
+async function renderRoot(
+	editor: ReturnType<typeof createEditor>,
+	readonly?: boolean,
+): Promise<{ container: HTMLDivElement; root: Root; host: HTMLElement }> {
+	const container = document.createElement("div");
+	document.body.appendChild(container);
+	const reactRoot = createRoot(container);
+
+	await act(async () => {
+		reactRoot.render(React.createElement(EditorRoot, { editor, readonly }));
+	});
+
+	const host = container.querySelector("[data-pen-editor-root]");
+	if (!(host instanceof HTMLElement)) {
+		throw new Error("Missing editor root host");
+	}
+	return { container, root: reactRoot, host };
+}
+
+async function cleanupEditor(
+	editor: ReturnType<typeof createEditor>,
+	root: Root,
+	container: HTMLElement,
+): Promise<void> {
+	await act(async () => {
+		root.unmount();
+	});
+	container.remove();
+	editor.destroy();
+}
+
+describe("HOST6 boolean data-attribute form", () => {
+	it("HOST6: true is valueless and false is omitted", () => {
+		expect(
+			buildDataAttributes({
+				[DATA_ATTRS.readonly]: true,
+				[DATA_ATTRS.empty]: false,
+				[DATA_ATTRS.focused]: undefined,
+			}),
+		).toEqual({
+			[DATA_ATTRS.readonly]: "",
+		});
+		expect(
+			Object.keys(
+				buildDataAttributes({
+					[DATA_ATTRS.readonly]: false,
+				}),
+			),
+		).toEqual([]);
+	});
+
+	it("HOST6: rendered root matches [data-readonly] and not [data-readonly=\"true\"]", async () => {
+		const editor = createEditor();
+		const { container, root, host } = await renderRoot(editor, true);
+
+		expect(host.getAttribute("data-readonly")).toBe("");
+		expect(host.matches("[data-readonly]")).toBe(true);
+		expect(host.matches('[data-readonly=""]')).toBe(true);
+		expect(host.matches('[data-readonly="true"]')).toBe(false);
+		expect(host.matches('[data-readonly="false"]')).toBe(false);
+		expect(host.getAttribute("aria-readonly")).toBe("true");
+
+		await cleanupEditor(editor, root, container);
+	});
+
+	it("HOST6: false boolean is absent so [data-readonly] does not match", async () => {
+		const editor = createEditor();
+		const { container, root, host } = await renderRoot(editor);
+
+		expect(host.hasAttribute("data-readonly")).toBe(false);
+		expect(host.matches("[data-readonly]")).toBe(false);
+		expect(host.matches('[data-readonly="false"]')).toBe(false);
+		expect(host.hasAttribute("aria-readonly")).toBe(false);
+
+		await cleanupEditor(editor, root, container);
 	});
 });

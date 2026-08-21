@@ -18,6 +18,7 @@ import { applyEnterBehavior, toggleInlineMark } from "./commands";
 import { dispatchEditorCommand } from "./commandDispatch";
 import { normalizeSelectionFormation } from "../utils/selectionFormation";
 import { shouldIgnoreLeftoverFieldAfterDocumentSelectAll } from "./documentSelectAllLeftover";
+import { shouldStopEquivalentDomRead } from "./selectionReader";
 import {
 	handleEditorKeyBindings,
 	handleSelectAllShortcut,
@@ -127,6 +128,10 @@ export class ExpandedContentEditableBackend {
 			this.editor,
 			selection,
 		);
+
+		if (shouldStopEquivalentDomRead(this.editor, normalizedSelection)) {
+			return;
+		}
 
 		if (normalizedSelection.type === "block") {
 			this.fieldEditor.deactivate();

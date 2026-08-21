@@ -13,6 +13,7 @@
  */
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import * as Y from "yjs";
@@ -57,23 +58,29 @@ test("connectPeers no-op would drop the insert", () => {
 	assert.deepEqual(remote.getArray("blockOrder").toArray(), []);
 });
 
-test("serializeSelection copies the live points; null stays null", async () => {
+test("serializeSelection computes isCollapsed; a lying input field is ignored", async () => {
 	const { serializeSelection, serializeDiagnostic } = await import(
 		"../../harness/src/serialize.ts"
 	);
 	assert.equal(serializeSelection(null), null);
-	const text = serializeSelection({
+	const expanded = serializeSelection({
+		type: "text",
+		anchor: { blockId: "p1", offset: 2 },
+		focus: { blockId: "p1", offset: 4 },
+		isCollapsed: true,
+	});
+	assert.deepEqual(expanded, {
 		type: "text",
 		anchor: { blockId: "p1", offset: 2 },
 		focus: { blockId: "p1", offset: 4 },
 		isCollapsed: false,
 	});
-	assert.deepEqual(text, {
+	const collapsed = serializeSelection({
 		type: "text",
-		anchor: { blockId: "p1", offset: 2 },
-		focus: { blockId: "p1", offset: 4 },
-		isCollapsed: false,
+		anchor: { blockId: "p1", offset: 3 },
+		focus: { blockId: "p1", offset: 3 },
 	});
+	assert.equal(collapsed?.type === "text" && collapsed.isCollapsed, true);
 	const diagnostic = serializeDiagnostic({
 		code: "dom-divergence",
 		level: "error",
@@ -83,6 +90,39 @@ test("serializeSelection copies the live points; null stays null", async () => {
 	});
 	assert.equal(diagnostic.code, "dom-divergence");
 	assert.equal(diagnostic.reason, "why");
+});
+
+test("scenarios call the bridge helper, not selection.isCollapsed", () => {
+	const files = [
+		"../../scenarios/f39-undo-selection.spec.ts",
+		"../../scenarios/f39-caret-overlay.spec.ts",
+		"../../scenarios/m2-arrow-swap.spec.ts",
+	];
+	for (const rel of files) {
+		const body = readFileSync(new URL(rel, import.meta.url), "utf8");
+		assert.match(
+			body,
+			/__penConformance\.isCollapsed\(\)/,
+			`${rel} must call the official helper on the bridge`,
+		);
+		assert.doesNotMatch(
+			body,
+			/selection\.isCollapsed/,
+			`${rel} still reads the live/DTO property Wave 5.1 is removing`,
+		);
+	}
+	const serialize = readFileSync(
+		new URL("../../harness/src/serialize.ts", import.meta.url),
+		"utf8",
+	);
+	assert.match(serialize, /isCollapsed\(selection\)/);
+	assert.doesNotMatch(serialize, /isCollapsed:\s*selection\.isCollapsed/);
+	const session = readFileSync(
+		new URL("../../harness/src/session.ts", import.meta.url),
+		"utf8",
+	);
+	assert.match(session, /selectionIsCollapsed\(/);
+	assert.match(session, /isCollapsed\(\)\s*\{/);
 });
 
 test("sampleCaretPoints samples empty and mid offsets", async () => {

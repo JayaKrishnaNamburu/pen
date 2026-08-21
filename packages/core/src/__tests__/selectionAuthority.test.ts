@@ -3,7 +3,11 @@ import { describe, expect, it } from "vitest";
 
 import { createBlockIndexSnapshot } from "../changes/blockIndex";
 import { createChangeSummary } from "../changes/mapping";
-import { createEditor as createCoreEditor } from "../index";
+import {
+	createEditor as createCoreEditor,
+	getEditorSelectionRecord,
+	snapToNormalPosition,
+} from "../index";
 import type { SelectionAuthorityImpl } from "../editor/selection";
 import { getSelectionBlockRange } from "../selection/helpers";
 import { createDefaultSchema } from "./fixtures/testSchema";
@@ -411,5 +415,57 @@ describe("SelectionAuthority A1–A6", () => {
 			"b",
 		]);
 		editor.destroy();
+	});
+});
+
+describe("editor.selectionRecord", () => {
+	it("exposes the authority record without a cast through the barrel helper", () => {
+		const editor = createEditor();
+		const id = editor.firstBlock()!.id;
+		const before = getEditorSelectionRecord(editor);
+		expect(before).not.toBeNull();
+		const version = before!.version;
+		editor.selectText(id, 0, 0);
+		const after = getEditorSelectionRecord(editor);
+		expect(after).not.toBeNull();
+		expect(after!.version).toBeGreaterThanOrEqual(version);
+		expect(after!.state).toMatchObject({
+			type: "text",
+			anchor: { blockId: id, offset: 0 },
+			focus: { blockId: id, offset: 0 },
+		});
+		expect(
+			(editor as unknown as { selectionRecord: { version: number } })
+				.selectionRecord.version,
+		).toBe(after!.version);
+		editor.destroy();
+	});
+
+	it("A2: a coalesced write leaves selectionRecord.version unchanged", () => {
+		const editor = createEditor();
+		const id = editor.firstBlock()!.id;
+		editor.selectText(id, 0, 0);
+		const record = getEditorSelectionRecord(editor);
+		expect(record).not.toBeNull();
+		const version = record!.version;
+		editor.selectText(id, 0, 0);
+		expect(getEditorSelectionRecord(editor)?.version).toBe(version);
+		editor.destroy();
+	});
+});
+
+describe("snapToNormalPosition barrel", () => {
+	it("exports the core snap, not a second adapter", () => {
+		const snapshot = {
+			blockOrder: ["p1"],
+			blocks: { p1: { kind: "text" as const, text: "hello" } },
+		};
+		expect(
+			snapToNormalPosition(
+				snapshot,
+				{ blockId: "p1", offset: 2 },
+				1,
+			),
+		).toEqual({ blockId: "p1", offset: 2 });
 	});
 });

@@ -381,6 +381,9 @@ importers:
       '@input/pen-content-ops':
         specifier: workspace:^
         version: link:../../shared/content-ops
+      '@input/pen-core':
+        specifier: workspace:^
+        version: link:../../core
       '@input/pen-markdown-serialization':
         specifier: workspace:^
         version: link:../../shared/markdown-serialization

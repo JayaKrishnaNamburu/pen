@@ -1,3 +1,4 @@
+import { isCollapsed } from "@input/pen-core";
 import type { CommitEvent, DiagnosticEvent, Editor } from "@input/pen-types";
 import {
 	assertDocEquals,
@@ -91,7 +92,7 @@ function selectionPoint(editor: Editor) {
 		type: selection.type,
 		anchor: selection.anchor,
 		focus: selection.focus,
-		isCollapsed: selection.isCollapsed,
+		isCollapsed: isCollapsed(selection),
 	};
 }
 
@@ -1035,6 +1036,7 @@ describe("@input/pen-document-ops live document tools", () => {
 			const editor = createLiveEditor();
 			editor.selectText("fixture-body", 0, 6);
 			const before = selectionPoint(editor);
+			expect(before).toMatchObject({ isCollapsed: false });
 
 			await insertBlockTool(editor).handler(
 				{

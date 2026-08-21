@@ -308,6 +308,15 @@ describe("@input/pen-document-ops tools", () => {
 		const editor = {
 			documentProfile: "structured",
 			schema: defaultSchema,
+			internals: {
+				doc: {
+					blockOrder: {
+						length: 3,
+						get: (index: number) =>
+							["block-1", "block-2", "block-3"][index],
+					},
+				},
+			},
 			getSelection: () => ({
 				type: "text",
 				anchor: { blockId: "block-2", offset: 0 },

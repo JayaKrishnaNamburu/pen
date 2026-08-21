@@ -15,6 +15,7 @@ import type { InlineTextDiffOp } from "./inlineTextTransaction";
 import { applyInlineTextDiffInput } from "./textInputPipeline";
 import { ContentEditableBackendEvents } from "./contenteditableBackendEvents";
 import { shouldIgnoreLeftoverFieldAfterDocumentSelectAll } from "./documentSelectAllLeftover";
+import { shouldStopEquivalentDomRead } from "./selectionReader";
 import {
 	isNavigationSelectionKey,
 	setSelectionOffsets,
@@ -214,6 +215,10 @@ export class ContentEditableBackendSelection extends ContentEditableBackendEvent
 			this.editor,
 			selection,
 		);
+
+		if (shouldStopEquivalentDomRead(this.editor, normalizedSelection)) {
+			return;
+		}
 
 		if (this.shouldRestoreStaleFullBlockSelection(normalizedSelection)) {
 			this.restoreDOMSelectionFromEditor();

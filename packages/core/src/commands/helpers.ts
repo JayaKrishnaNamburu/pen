@@ -378,6 +378,16 @@ export function readTextAnchor(editor: Editor): Point | null {
 	return selection.anchor;
 }
 
+/**
+ * Captures a {@link NormalPositionSnapshot} from an editor's current document.
+ *
+ * Exported so renderers can feed `snapToNormalPosition` without building a second
+ * adapter over the document shape; two snapshot builders would drift apart and the
+ * snap rule would disagree with core about where a caret may legally sit.
+ *
+ * @param editor - The editor to read block order and block content from.
+ * @returns A snapshot detached from the live document.
+ */
 export function buildNormalPositionSnapshot(
 	editor: Editor,
 ): NormalPositionSnapshot {

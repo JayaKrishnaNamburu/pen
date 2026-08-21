@@ -14,6 +14,10 @@ export type SerializedTextSelection = {
 	type: "text";
 	anchor: LogicalPoint;
 	focus: LogicalPoint;
+	/**
+	 * Serialize-time snapshot from `@input/pen-core`'s `isCollapsed()`.
+	 * Not the live `TextSelection` field Wave 5.1 is removing.
+	 */
 	isCollapsed: boolean;
 };
 
@@ -256,6 +260,8 @@ export type SelectionEqualsArgs = {
 
 export type PenConformanceBridge = {
 	readonly selection: SerializedSelection;
+	/** Official `isCollapsed` from `@input/pen-core` over the live editor selection. */
+	isCollapsed(): boolean;
 	readonly lastEvents: readonly ConformanceEventRecord[];
 	readonly diagnostics: readonly SerializedDiagnostic[];
 	readonly documentText: string;

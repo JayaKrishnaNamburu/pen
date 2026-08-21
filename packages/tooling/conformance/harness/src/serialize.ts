@@ -5,6 +5,7 @@ import type {
 	SerializedSelection,
 } from "../../src/types";
 
+/** Snapshot `isCollapsed` via the official helper — never copy a live field. */
 export function serializeSelection(
 	selection: SelectionState,
 ): SerializedSelection {

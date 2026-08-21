@@ -4,11 +4,11 @@
   "tripleClickSnapshot": {
     "isCollapsed": true,
     "anchor": {
-      "blockId": "1e0b4805-824e-49c3-a72a-0bdee354e9ed",
+      "blockId": "28574226-8d8a-40a9-b70f-c4d821e2ed6c",
       "offset": 30
     },
     "focus": {
-      "blockId": "1e0b4805-824e-49c3-a72a-0bdee354e9ed",
+      "blockId": "28574226-8d8a-40a9-b70f-c4d821e2ed6c",
       "offset": 30
     },
     "text": ""
@@ -17,11 +17,11 @@
     "editorSelection": {
       "type": "text",
       "anchor": {
-        "blockId": "1e0b4805-824e-49c3-a72a-0bdee354e9ed",
+        "blockId": "28574226-8d8a-40a9-b70f-c4d821e2ed6c",
         "offset": 0
       },
       "focus": {
-        "blockId": "1e0b4805-824e-49c3-a72a-0bdee354e9ed",
+        "blockId": "28574226-8d8a-40a9-b70f-c4d821e2ed6c",
         "offset": 30
       },
       "affinity": "downstream",
@@ -29,28 +29,28 @@
       "isCollapsed": false,
       "isMultiBlock": false,
       "blockRange": [
-        "1e0b4805-824e-49c3-a72a-0bdee354e9ed"
+        "28574226-8d8a-40a9-b70f-c4d821e2ed6c"
       ]
     },
-    "editorFocusBlockId": "1e0b4805-824e-49c3-a72a-0bdee354e9ed",
+    "editorFocusBlockId": "28574226-8d8a-40a9-b70f-c4d821e2ed6c",
     "activeElement": {
       "tag": "SPAN",
-      "blockId": "1e0b4805-824e-49c3-a72a-0bdee354e9ed",
+      "blockId": "28574226-8d8a-40a9-b70f-c4d821e2ed6c",
       "className": ""
     },
-    "attachedInlineBlockId": "1e0b4805-824e-49c3-a72a-0bdee354e9ed",
+    "attachedInlineBlockId": "28574226-8d8a-40a9-b70f-c4d821e2ed6c",
     "native": {
       "isCollapsed": false,
       "text": "Alpha bravo charlie delta echo",
       "rangeCount": 1,
       "anchor": {
-        "blockId": "1e0b4805-824e-49c3-a72a-0bdee354e9ed",
+        "blockId": "28574226-8d8a-40a9-b70f-c4d821e2ed6c",
         "offset": 0,
         "nodePath": "text:\"Alpha bravo charlie delta echo\"@SPAN.",
         "domOffset": 0
       },
       "focus": {
-        "blockId": "1e0b4805-824e-49c3-a72a-0bdee354e9ed",
+        "blockId": "28574226-8d8a-40a9-b70f-c4d821e2ed6c",
         "offset": 30,
         "nodePath": "text:\"Alpha bravo charlie delta echo\"@SPAN.",
         "domOffset": 30
@@ -58,7 +58,7 @@
     },
     "blocks": [
       {
-        "id": "1e0b4805-824e-49c3-a72a-0bdee354e9ed",
+        "id": "28574226-8d8a-40a9-b70f-c4d821e2ed6c",
         "text": "Alpha bravo charlie delta echo",
         "active": true
       }

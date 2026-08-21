@@ -215,6 +215,7 @@ test("Playwright-only helpers stay imported by a named scenario", () => {
 	assert.match(session, /compareMappedToAuthority/);
 	assert.match(session, /clampWindowStart/);
 	assert.match(session, /from "\.\/authorityCompare"/);
+	assert.match(session, /selectionIsCollapsed/);
 	const geometry = readRel("../../harness/src/geometry.ts");
 	assert.match(geometry, /from "\.\/geometryCompare"/);
 	assert.match(geometry, /geometryBlocksFromEditor/);

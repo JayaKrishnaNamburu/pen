@@ -1,9 +1,9 @@
 {
-  "capturedAt": "2026-08-21T12:57:19.985Z",
+  "capturedAt": "2026-08-21T14:59:07.079Z",
   "browserName": "webkit",
   "concurrentPackagesLoad": true,
   "paragraph": "Alpha bravo charlie delta echo",
-  "blockId": "038ec7d8-eac3-4da3-9156-95bbbd0a646a",
+  "blockId": "b5f9a67c-b6eb-4d62-ab72-db6347be7c01",
   "afterType": {
     "editor": {
       "type": "text",
@@ -20,29 +20,29 @@
       "anchorPath": "text:\"Alpha bravo charlie delta echo\"@SPAN.",
       "focusPath": "text:\"Alpha bravo charlie delta echo\"@SPAN."
     },
-    "activeBlockId": "038ec7d8-eac3-4da3-9156-95bbbd0a646a",
-    "attachedInlineBlockId": "038ec7d8-eac3-4da3-9156-95bbbd0a646a"
+    "activeBlockId": "b5f9a67c-b6eb-4d62-ab72-db6347be7c01",
+    "attachedInlineBlockId": "b5f9a67c-b6eb-4d62-ab72-db6347be7c01"
   },
   "afterTripleClick": [
     {
       "label": "triple-click:t0",
       "editor": {
         "type": "text",
-        "isCollapsed": true,
-        "anchorOffset": 30,
+        "isCollapsed": false,
+        "anchorOffset": 0,
         "focusOffset": 30
       },
       "native": {
-        "isCollapsed": true,
-        "text": "",
+        "isCollapsed": false,
+        "text": "Alpha bravo charlie delta echo",
         "rangeCount": 1,
-        "anchorOffset": 30,
+        "anchorOffset": 0,
         "focusOffset": 30,
         "anchorPath": "text:\"Alpha bravo charlie delta echo\"@SPAN.",
         "focusPath": "text:\"Alpha bravo charlie delta echo\"@SPAN."
       },
-      "activeBlockId": "038ec7d8-eac3-4da3-9156-95bbbd0a646a",
-      "attachedInlineBlockId": "038ec7d8-eac3-4da3-9156-95bbbd0a646a"
+      "activeBlockId": "b5f9a67c-b6eb-4d62-ab72-db6347be7c01",
+      "attachedInlineBlockId": "b5f9a67c-b6eb-4d62-ab72-db6347be7c01"
     },
     {
       "label": "triple-click:t2raf",
@@ -61,8 +61,8 @@
         "anchorPath": "text:\"Alpha bravo charlie delta echo\"@SPAN.",
         "focusPath": "text:\"Alpha bravo charlie delta echo\"@SPAN."
       },
-      "activeBlockId": "038ec7d8-eac3-4da3-9156-95bbbd0a646a",
-      "attachedInlineBlockId": "038ec7d8-eac3-4da3-9156-95bbbd0a646a"
+      "activeBlockId": "b5f9a67c-b6eb-4d62-ab72-db6347be7c01",
+      "attachedInlineBlockId": "b5f9a67c-b6eb-4d62-ab72-db6347be7c01"
     }
   ],
   "afterCollapse": {
@@ -81,8 +81,8 @@
       "anchorPath": "text:\"Alpha bravo charlie delta echo\"@SPAN.",
       "focusPath": "text:\"Alpha bravo charlie delta echo\"@SPAN."
     },
-    "activeBlockId": "038ec7d8-eac3-4da3-9156-95bbbd0a646a",
-    "attachedInlineBlockId": "038ec7d8-eac3-4da3-9156-95bbbd0a646a"
+    "activeBlockId": "b5f9a67c-b6eb-4d62-ab72-db6347be7c01",
+    "attachedInlineBlockId": "b5f9a67c-b6eb-4d62-ab72-db6347be7c01"
   },
   "afterAuthorityRange": [
     {
@@ -102,8 +102,8 @@
         "anchorPath": "text:\"Alpha bravo charlie delta echo\"@SPAN.",
         "focusPath": "text:\"Alpha bravo charlie delta echo\"@SPAN."
       },
-      "activeBlockId": "038ec7d8-eac3-4da3-9156-95bbbd0a646a",
-      "attachedInlineBlockId": "038ec7d8-eac3-4da3-9156-95bbbd0a646a"
+      "activeBlockId": "b5f9a67c-b6eb-4d62-ab72-db6347be7c01",
+      "attachedInlineBlockId": "b5f9a67c-b6eb-4d62-ab72-db6347be7c01"
     },
     {
       "label": "selectTextRange:t2raf",
@@ -122,8 +122,8 @@
         "anchorPath": "text:\"Alpha bravo charlie delta echo\"@SPAN.",
         "focusPath": "text:\"Alpha bravo charlie delta echo\"@SPAN."
       },
-      "activeBlockId": "038ec7d8-eac3-4da3-9156-95bbbd0a646a",
-      "attachedInlineBlockId": "038ec7d8-eac3-4da3-9156-95bbbd0a646a"
+      "activeBlockId": "b5f9a67c-b6eb-4d62-ab72-db6347be7c01",
+      "attachedInlineBlockId": "b5f9a67c-b6eb-4d62-ab72-db6347be7c01"
     }
   ],
   "afterUntrustedAddRange": [
@@ -144,8 +144,8 @@
         "anchorPath": "text:\"Alpha bravo charlie delta echo\"@SPAN.",
         "focusPath": "text:\"Alpha bravo charlie delta echo\"@SPAN."
       },
-      "activeBlockId": "038ec7d8-eac3-4da3-9156-95bbbd0a646a",
-      "attachedInlineBlockId": "038ec7d8-eac3-4da3-9156-95bbbd0a646a"
+      "activeBlockId": "b5f9a67c-b6eb-4d62-ab72-db6347be7c01",
+      "attachedInlineBlockId": "b5f9a67c-b6eb-4d62-ab72-db6347be7c01"
     },
     {
       "label": "addRange:t2raf",
@@ -164,8 +164,8 @@
         "anchorPath": "text:\"Alpha bravo charlie delta echo\"@SPAN.",
         "focusPath": "text:\"Alpha bravo charlie delta echo\"@SPAN."
       },
-      "activeBlockId": "038ec7d8-eac3-4da3-9156-95bbbd0a646a",
-      "attachedInlineBlockId": "038ec7d8-eac3-4da3-9156-95bbbd0a646a"
+      "activeBlockId": "b5f9a67c-b6eb-4d62-ab72-db6347be7c01",
+      "attachedInlineBlockId": "b5f9a67c-b6eb-4d62-ab72-db6347be7c01"
     }
   ],
   "classificationHints": {
