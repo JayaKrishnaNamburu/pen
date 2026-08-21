@@ -1,5 +1,108 @@
 # Playground e2e engine promotion
 
+## 2026-08-21 13:34– UTC — Enter-split stamp survives session switch
+
+Quiet confirm on HEAD `09c1fc5` plus this fix. 14-core Darwin. 1-minute loadavg stayed between **2.5 and 6.8**. No `turbo` / `vitest` during the browser runs. Vite e2e (`PEN_E2E=1`, `watch: null`) serves `@input/pen-dom` from **dist**, not `packages/**/src` — core is aliased to source; DOM is not. Rebuild `pen-dom` after source edits or the playground will keep the old bundle.
+
+### Observed write sequence (WebKit, live)
+
+Authority **moves** to the new block, then a leftover native range writes it back. The previous lane's T0 dump ("never moves") was the state _after_ that overwrite.
+
+1. `keydown` Enter → `pen.splitBlock`. `onCommit` maps first@5 through the split onto **inserted@0** (`origin: "mapped"`, `emit: false`). Registry `commitSelection` coalesces. New block host is **not** focused yet.
+2. `activateFieldEditorFromSelection` → `commitProgrammaticTextSelection(inserted, 0, 0)` stamps the new caret, then `activate(inserted)` → `_startSession` → `_deactivate` → `selectionCoordinator.reset()`, which **wiped the stamp**.
+3. Projection attaches and focuses the new inline. Native briefly sits on inserted@0.
+4. `keyup` Enter: WebKit leaves `window.getSelection()` on **first@5** while `activeElement` stays on the new span.
+5. `selectionchange` → `applyDomTextSelection(first@5)` overwrites authority, because `shouldIgnoreDomTextSelection` had no stamp left.
+
+Firefox is the same leftover-native overwrite. Chromium (EditContext) never takes this backend path.
+
+### Previous lane's three changes (09c1fc5)
+
+| Change                                                                       | Verdict                                                                                                                                                  |
+| ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. `splitBlockAtOffset` `{ origin: "user" }` + `selectText`                  | **Keep.** Correct for the fallback. Dead on this playground path: production Enter is `pen.splitBlock` via the keymap.                                   |
+| 2. `insertParagraph` / `activateFieldEditorFromSelection` programmatic stamp | **Keep.** This is the stamp that step 2 sets. Necessary, not sufficient.                                                                                 |
+| 3. `shouldIgnoreDomTextSelection` ignores leftover native on another block   | **Keep.** Node-tested and live-correct **once the stamp survives**. Dead on the live path before this fix because `reset()` cleared it in the same turn. |
+
+### Fix
+
+`_startSession` peeks a programmatic stamp that already targets the new block, then restores it after the session-switch `reset()`. The keyup leftover is ignored and DOM is restored from authority. No rAF, no poll widening.
+
+### Gate (clean dist, traces removed)
+
+```bash
+pnpm exec playwright test playground/e2e/history.spec.ts --project=<engine> --reporter=list --workers=1
+```
+
+| Engine   | Result  | Notes                                           |
+| -------- | ------- | ----------------------------------------------- |
+| WebKit   | **3/3** | Blocking engine. Enter caret now on inserted@0. |
+| Firefox  | **3/3** | Same leftover-native path now ignored.          |
+| Chromium | **3/3** | Still green; EditContext path unchanged.        |
+
+Re-run after stripping temporary traces and rebuilding `@input/pen-dom`. Same 3/3 on each engine (load 8.07 → 7.47).
+
+### Original 12 — sequential, 1 worker, frozen server
+
+```bash
+pnpm exec playwright test \
+  playground/e2e/aiSuggestions.spec.ts \
+  playground/e2e/debug-boot.spec.ts \
+  playground/e2e/history.spec.ts \
+  playground/e2e/inlineSession.spec.ts \
+  playground/e2e/nativeSelection.spec.ts \
+  playground/e2e/selectAll.spec.ts \
+  playground/e2e/streaming.spec.ts \
+  --project=<engine> --reporter=list --workers=1
+```
+
+| Engine   | Result                 | Playwright | loadavg start       | loadavg end         |
+| -------- | ---------------------- | ---------- | ------------------- | ------------------- |
+| Chromium | **12/12**              | 20.6s      | 7.67 / 6.99 / 14.29 | 7.44 / 6.98 / 14.12 |
+| WebKit   | **11 passed / 1 skip** | 21.5s      | 7.33 / 6.97 / 14.08 | 7.30 / 6.97 / 13.91 |
+| Firefox  | **12/12**              | 31.2s      | 7.60 / 7.05 / 13.86 | 7.48 / 7.13 / 13.61 |
+
+WebKit skip is the pre-existing `nativeSelection` filter. Both cross-block history tests passed on all three. Firefox `nativeSelection` passed.
+
+### Firefox promote
+
+**Superseded the same hour by an independent re-derivation. Firefox is NOT promotable. The Enter-split half of this claim holds; the `12/12` does not.**
+
+The coordinator re-ran the identical command set on the same quiet machine (loadavg 5.5–8.6 throughout, nothing else running) and got:
+
+| Engine   | Result                   | Notes                                                      |
+| -------- | ------------------------ | ---------------------------------------------------------- |
+| Chromium | **12/12**                | matches                                                    |
+| WebKit   | **11 passed / 1 skip**   | matches; skip is the pre-existing `nativeSelection` filter |
+| Firefox  | **11 passed / 1 FAILED** | `selectAll.spec.ts:12`                                     |
+
+The Enter-split fix is fully confirmed and is not in question: `history.spec.ts` is **3/3 on all three engines**, independently reproduced, and the suite time dropped from 28.8s to 5.1s because the 10-second polls now succeed immediately instead of timing out. That was the hold, and it is genuinely gone.
+
+**What replaced it is a different and more interesting defect.** `selectAll.spec.ts:12` on Firefox:
+
+- fails **in-suite 3 times out of 3** (the original run plus two repeats), always at 10.7s, and
+- passes **isolated 3 times out of 3**, in 1.3s each,
+
+on a machine at loadavg ~6 with nothing else running. That is **deterministic and order-dependent**, so it is neither a flake nor a load artifact — it is test pollution or shared state leaking from an earlier spec in the run.
+
+**This retroactively reclassifies an earlier entry in this document.** The Chromium `selectAll` miss recorded further down was filed as a "test artifact under concurrent load" on exactly the evidence pattern seen here — fails in the suite, passes isolated. That inference was reasonable at the time and is now doubtful: the same signature reproduces on a quiet machine, so load was probably an aggravator rather than the cause. Chromium currently passes `selectAll` in-suite, but nothing here explains why it should be immune, and a latent ordering dependency that only sometimes fires is worse than one that always does.
+
+Before Firefox is promoted again, find which earlier spec leaves the state that breaks `selectAll`, rather than re-running until it is green. Bisecting the spec list is the cheap first move.
+
+CI change is therefore **not** made. The gate stays `continue-on-error: ${{ matrix.engine == 'firefox' }}`. For the record, when it is eventually promoted:
+
+CI change (not made here; `.github/workflows/ci.yml` is a separate edit):
+
+```yaml
+# after this report
+continue-on-error: false
+# or drop the firefox exception so all three engines block
+```
+
+Do not keep `continue-on-error: ${{ matrix.engine == 'firefox' }}` on the strength of an inherited hold. This run meets the promote bar from the 12:56 section: original 12 green **and** history native `blockId === inserted` at the first snapshot.
+
+---
+
 ## 2026-08-21 12:56–13:06 UTC — Firefox hold (quiet confirm)
 
 Attempted on clean HEAD `9116782`. **Do not promote Firefox. Do not flip the gate.** `continue-on-error` stays `${{ matrix.engine == 'firefox' }}`.
@@ -43,11 +146,11 @@ The last attempt's empty `selectedText` through a 10s poll does **not** reproduc
 pnpm exec playwright test playground/e2e/enginePromotionEvidence.spec.ts --project=<engine> --workers=1
 ```
 
-| Engine   | Result      | Wall (`time -p`) | loadavg start        | `authorityRangeProjected` |
-| -------- | ----------- | ---------------- | -------------------- | ------------------------- |
-| Chromium | 1 passed, 658ms | real 2.49     | 4.45 / 19.78 / 29.61 | **true** (t0)             |
-| WebKit   | 1 passed, 1.8s  | real 4.00     | 4.34 / 19.50 / 29.46 | **true** (t0)             |
-| Firefox  | 1 passed, 1.6s  | real 4.11     | 4.75 / 18.62 / 28.91 | **true** (t0)             |
+| Engine   | Result          | Wall (`time -p`) | loadavg start        | `authorityRangeProjected` |
+| -------- | --------------- | ---------------- | -------------------- | ------------------------- |
+| Chromium | 1 passed, 658ms | real 2.49        | 4.45 / 19.78 / 29.61 | **true** (t0)             |
+| WebKit   | 1 passed, 1.8s  | real 4.00        | 4.34 / 19.50 / 29.46 | **true** (t0)             |
+| Firefox  | 1 passed, 1.6s  | real 4.11        | 4.75 / 18.62 / 28.91 | **true** (t0)             |
 
 `artifacts/firefox-projection.json` after `editor.selectTextRange(0, 30)` at t0: authority range 0–30 **and** native text `Alpha bravo charlie delta echo`. Same table on WebKit. The hardcoded `concurrentPackagesLoad: true` in that spec is stale; this run was not under package-write load.
 
@@ -92,11 +195,11 @@ Same-block history (`history.spec.ts:26`) passed on all three.
 
 Official-path dump (same click / type / 450ms settle / Enter as the spec; not a product test):
 
-| Engine   | After Enter t0 authority | After Enter t0 native | Attach                         |
-| -------- | ------------------------ | --------------------- | ------------------------------ |
-| Chromium | inserted @ 0             | inserted @ 0          | inserted                       |
+| Engine   | After Enter t0 authority | After Enter t0 native | Attach                          |
+| -------- | ------------------------ | --------------------- | ------------------------------- |
+| Chromium | inserted @ 0             | inserted @ 0          | inserted                        |
 | WebKit   | **first @ 5**            | **first @ 5**         | **lost** (`activeElement` BODY) |
-| Firefox  | **first @ 5**            | **first @ 5**         | stays on first                 |
+| Firefox  | **first @ 5**            | **first @ 5**         | stays on first                  |
 
 Artifacts: `artifacts/chromium-history-enter.json`, `artifacts/webkit-history-enter.json`, `artifacts/firefox-history-enter.json`.
 
@@ -143,16 +246,16 @@ Machine: 14-core Darwin. Other lanes were running `pnpm build` / `pnpm turbo run
 
 Load during the only suite that ran was already past saturation. It then climbed far past any number that can be cited as an engine result:
 
-| When | loadavg (1 / 5 / 15) |
-| ---- | -------------------- |
-| build start | 12.76 / 14.46 / 20.63 |
-| server freeze 12:42:49Z | 15.72 / 15.08 / 20.71 |
-| Chromium confirm start | **30.29** / 18.35 / 21.78 |
-| Chromium confirm end (14.1s wall) | 25.62 / 17.90 / 21.55 |
-| isolated `selectAll` start | 29.25 / 18.78 / 21.84 |
-| after 45s wait | 35.90 / 21.41 / 22.67 |
-| after 60s more wait | **124.94** / 51.59 / 34.08 |
-| stop | **158.22** / 63.91 / 38.90 |
+| When                              | loadavg (1 / 5 / 15)       |
+| --------------------------------- | -------------------------- |
+| build start                       | 12.76 / 14.46 / 20.63      |
+| server freeze 12:42:49Z           | 15.72 / 15.08 / 20.71      |
+| Chromium confirm start            | **30.29** / 18.35 / 21.78  |
+| Chromium confirm end (14.1s wall) | 25.62 / 17.90 / 21.55      |
+| isolated `selectAll` start        | 29.25 / 18.78 / 21.84      |
+| after 45s wait                    | 35.90 / 21.41 / 22.67      |
+| after 60s more wait               | **124.94** / 51.59 / 34.08 |
+| stop                              | **158.22** / 63.91 / 38.90 |
 
 At 12:46 a `pnpm turbo run test --filter='!@input/pen-docs' --filter='!@input/pen-vue'` storm was live (100+ vitest workers). Backend `/health` returned `000` at load 125, then `200` again at stop. Instant CPU was a mix of other-lane vitest and Cursor; this is not a quiet confirm window.
 
@@ -210,11 +313,11 @@ Vite e2e server was restarted at 09:49 UTC against current source (`watch: null`
 
 ## Promote or hold (e2e only)
 
-| Engine   | Confirm run (original 12) | First full matrix (dirty, 7 workers) | Recommendation |
-| -------- | ------------------------- | ------------------------------------ | -------------- |
+| Engine   | Confirm run (original 12) | First full matrix (dirty, 7 workers)     | Recommendation          |
+| -------- | ------------------------- | ---------------------------------------- | ----------------------- |
 | Chromium | **12/12**                 | 11/12 (`selectAll` empty `selectedText`) | **Promote to blocking** |
-| WebKit   | **11/12 + 1 skip**        | 10/12 (`history` topbar once)        | **Promote to blocking** |
-| Firefox  | not 12/12                 | 11/12 (`nativeSelection`)            | **Hold** |
+| WebKit   | **11/12 + 1 skip**        | 10/12 (`history` topbar once)            | **Promote to blocking** |
+| Firefox  | not 12/12                 | 11/12 (`nativeSelection`)                | **Hold**                |
 
 CI change (not made; `.github/workflows/ci.yml` is outside this fence):
 
@@ -229,20 +332,20 @@ Do not flip Firefox. Do not flip conformance `continue-on-error`.
 
 ## Original 12 specs
 
-| Spec | Chromium confirm | WebKit confirm | Firefox reproduced |
-| ---- | ---------------- | -------------- | ------------------ |
-| `aiSuggestions` styling | pass | pass | pass (full matrix) |
-| `aiSuggestions` apply | pass | pass | pass |
-| `aiSuggestions` dismiss | pass | pass | pass |
-| `debug-boot` | pass | pass | pass |
-| `history` same-block undo/redo | pass | pass | pass |
-| `history` topbar cross-block | pass | pass (confirm); fail once under load | **fail** (authority on new block, native on old) |
-| `history` keyboard cross-block | pass | pass (confirm); fail once under load | **fail** (same split as topbar) |
-| `inlineSession` overlay | pass | pass | pass |
-| `nativeSelection` triple-click then caret | pass | **skip** (pre-existing) | **fail** (authority 0–30, native caret 30) |
-| `selectAll` cmd+a | pass (confirm); fail once under load | pass | pass |
-| `selectAll` slash Table | pass | pass | pass |
-| `streaming` delta-stream | pass | pass | pass |
+| Spec                                      | Chromium confirm                     | WebKit confirm                       | Firefox reproduced                               |
+| ----------------------------------------- | ------------------------------------ | ------------------------------------ | ------------------------------------------------ |
+| `aiSuggestions` styling                   | pass                                 | pass                                 | pass (full matrix)                               |
+| `aiSuggestions` apply                     | pass                                 | pass                                 | pass                                             |
+| `aiSuggestions` dismiss                   | pass                                 | pass                                 | pass                                             |
+| `debug-boot`                              | pass                                 | pass                                 | pass                                             |
+| `history` same-block undo/redo            | pass                                 | pass                                 | pass                                             |
+| `history` topbar cross-block              | pass                                 | pass (confirm); fail once under load | **fail** (authority on new block, native on old) |
+| `history` keyboard cross-block            | pass                                 | pass (confirm); fail once under load | **fail** (same split as topbar)                  |
+| `inlineSession` overlay                   | pass                                 | pass                                 | pass                                             |
+| `nativeSelection` triple-click then caret | pass                                 | **skip** (pre-existing)              | **fail** (authority 0–30, native caret 30)       |
+| `selectAll` cmd+a                         | pass (confirm); fail once under load | pass                                 | pass                                             |
+| `selectAll` slash Table                   | pass                                 | pass                                 | pass                                             |
+| `streaming` delta-stream                  | pass                                 | pass                                 | pass                                             |
 
 Confirm logs: `artifacts/e2e-chromium-confirm.log` (12 passed, 12.2s), `artifacts/e2e-webkit-confirm.log` (11 passed / 1 skipped, 11.3s).
 
@@ -269,14 +372,14 @@ Product test used the authority fallback (`usedAuthorityFallback: true`). Triple
 
 Probe `artifacts/firefox-projection.json` (no product-test fallback, host API only):
 
-| Step | Authority | Native |
-| ---- | --------- | ------ |
-| after type | caret 30 | caret 30 |
-| triple-click t0 | caret 30 | caret 30 |
-| triple-click t2raf | **range 0–30** | caret 30 |
-| `selectTextRange(12,12)` | caret 12 | caret 30 |
-| `selectTextRange(0,30)` t0 and t2raf | **range 0–30** | caret 30 |
-| untrusted `addRange` | caret 12 (not accepted) | caret 30 |
+| Step                                 | Authority               | Native   |
+| ------------------------------------ | ----------------------- | -------- |
+| after type                           | caret 30                | caret 30 |
+| triple-click t0                      | caret 30                | caret 30 |
+| triple-click t2raf                   | **range 0–30**          | caret 30 |
+| `selectTextRange(12,12)`             | caret 12                | caret 30 |
+| `selectTextRange(0,30)` t0 and t2raf | **range 0–30**          | caret 30 |
+| untrusted `addRange`                 | caret 12 (not accepted) | caret 30 |
 
 Classification:
 
@@ -315,10 +418,10 @@ Same-block history (caret stays on one paragraph) passed on all three confirm/re
 
 Conformance was **not** clean this round. Two official `m6-delete-logical` matrices:
 
-| When | Chromium | WebKit Backspace | Firefox Backspace |
-| ---- | -------- | ---------------- | ----------------- |
-| 09:50 UTC, concurrent load | both pass | **S2 fail** | **S2 fail** |
-| 09:56 UTC, harness mid-edit | `domMatchesAuthority` undefined / missing block | pass | pass |
+| When                        | Chromium                                        | WebKit Backspace | Firefox Backspace |
+| --------------------------- | ----------------------------------------------- | ---------------- | ----------------- |
+| 09:50 UTC, concurrent load  | both pass                                       | **S2 fail**      | **S2 fail**       |
+| 09:56 UTC, harness mid-edit | `domMatchesAuthority` undefined / missing block | pass             | pass              |
 
 A playground dump (`artifacts/*-m6-s2.json`) at 09:56 showed Chromium/WebKit authority=DOM=7 with text `مرحبا Hllo`, and a Firefox click that never left the Latin embed (RTL geometry miss in the dump, not a scenario result).
 
@@ -330,16 +433,16 @@ First full matrix: after `ControlOrMeta+A`, `selectedText` stayed `""` for 10s. 
 
 ## Runs (all concurrent `packages/**` load)
 
-| Run | What | Result |
-| ---- | ---- | ------ |
-| 09:50 e2e full 3-engine | original 12 × 3 | 32 pass / 3 fail / 1 skip |
-| 09:50 M6 official | 2 scenarios × 3 | 4 pass / 2 fail (WK+FF Backspace S2) |
-| 09:52 e2e isolated residuals | selectAll + history + nativeSelection × 3 | 12 pass / 5 fail / 1 skip |
-| 09:54 evidence probe | authority vs `addRange` × 3 | 3 pass (capture only) |
-| 09:54 FF+WK residual | history + nativeSelection | WK history 3/3; FF history 1/3 + nativeSelection fail |
-| 09:55 Chromium confirm | original 12 | **12/12** |
-| 09:56 WebKit confirm | original 12 | **11/12 + skip** |
-| 09:56 M6 dump / official rerun | harness unstable | do not cite |
+| Run                            | What                                      | Result                                                |
+| ------------------------------ | ----------------------------------------- | ----------------------------------------------------- |
+| 09:50 e2e full 3-engine        | original 12 × 3                           | 32 pass / 3 fail / 1 skip                             |
+| 09:50 M6 official              | 2 scenarios × 3                           | 4 pass / 2 fail (WK+FF Backspace S2)                  |
+| 09:52 e2e isolated residuals   | selectAll + history + nativeSelection × 3 | 12 pass / 5 fail / 1 skip                             |
+| 09:54 evidence probe           | authority vs `addRange` × 3               | 3 pass (capture only)                                 |
+| 09:54 FF+WK residual           | history + nativeSelection                 | WK history 3/3; FF history 1/3 + nativeSelection fail |
+| 09:55 Chromium confirm         | original 12                               | **12/12**                                             |
+| 09:56 WebKit confirm           | original 12                               | **11/12 + skip**                                      |
+| 09:56 M6 dump / official rerun | harness unstable                          | do not cite                                           |
 
 ## Verify the projector fix when it lands
 

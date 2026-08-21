@@ -343,6 +343,8 @@ export abstract class FieldEditorImplRuntime extends FieldEditorImplSelection {
 			attachImmediately: boolean;
 		},
 	): boolean {
+		const programmaticStamp =
+			this._selectionCoordinator.peekProgrammaticTextSelection();
 		if (this._isEditing) this._deactivate({ restoreFocus: false });
 
 		const block = this._editor.getBlock(blockId);
@@ -357,6 +359,11 @@ export abstract class FieldEditorImplRuntime extends FieldEditorImplSelection {
 		this._isComposing = false;
 		this._mode = "single";
 		this._pendingMarkController.reset();
+		if (programmaticStamp?.blockId === blockId) {
+			this._selectionCoordinator.restoreProgrammaticTextSelection(
+				programmaticStamp,
+			);
+		}
 
 		if (options.stopCapturing) {
 			this._editor.undoManager.stopCapturing();

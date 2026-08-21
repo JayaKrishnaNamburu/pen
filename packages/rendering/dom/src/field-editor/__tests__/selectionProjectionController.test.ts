@@ -43,4 +43,27 @@ describe("SelectionProjectionController shouldIgnoreDomTextSelection", () => {
 			),
 		).toBe(true);
 	});
+
+	it("keeps the leftover-ignore stamp across a session-switch reset", () => {
+		const { controller } = createController();
+		controller.commitProgrammaticTextSelection("inserted", 0, 0);
+		const stamp = controller.peekProgrammaticTextSelection();
+		expect(stamp?.blockId).toBe("inserted");
+
+		controller.reset();
+		expect(
+			controller.shouldIgnoreDomTextSelection(
+				{ blockId: "first", offset: 5 },
+				{ blockId: "first", offset: 5 },
+			),
+		).toBe(false);
+
+		controller.restoreProgrammaticTextSelection(stamp!);
+		expect(
+			controller.shouldIgnoreDomTextSelection(
+				{ blockId: "first", offset: 5 },
+				{ blockId: "first", offset: 5 },
+			),
+		).toBe(true);
+	});
 });

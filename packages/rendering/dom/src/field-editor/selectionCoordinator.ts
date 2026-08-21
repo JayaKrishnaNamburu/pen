@@ -30,6 +30,24 @@ export class FieldEditorSelectionCoordinator {
 		this._projection.reset();
 	}
 
+	peekProgrammaticTextSelection(): {
+		blockId: string;
+		anchorOffset: number;
+		focusOffset: number;
+		selectionIntentEpoch: number;
+	} | null {
+		return this._projection.peekProgrammaticTextSelection();
+	}
+
+	restoreProgrammaticTextSelection(selection: {
+		blockId: string;
+		anchorOffset: number;
+		focusOffset: number;
+		selectionIntentEpoch: number;
+	}): void {
+		this._projection.restoreProgrammaticTextSelection(selection);
+	}
+
 	resetAuthority(): void {
 		this._authority.reset();
 		this._editContextSelection = null;

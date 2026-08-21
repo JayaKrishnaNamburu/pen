@@ -71,6 +71,21 @@ export class SelectionProjectionController {
 		this._pendingSelectionProjectionVersion = null;
 	}
 
+	peekProgrammaticTextSelection(): ProgrammaticTextSelection | null {
+		const current = this._readProgrammaticTextSelection();
+		if (!current) {
+			return null;
+		}
+		return { ...current };
+	}
+
+	restoreProgrammaticTextSelection(
+		selection: ProgrammaticTextSelection,
+	): void {
+		this._programmaticTextSelection = { ...selection };
+		this._pendingProgrammaticTextSelection = { ...selection };
+	}
+
 	beginPointerSelection(): void {
 		this.recordUserSelectionIntent();
 		this._pointerSelectionDepth += 1;
