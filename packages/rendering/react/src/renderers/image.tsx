@@ -1,6 +1,6 @@
 import React from "react";
 import { resolveSchemaA11y } from "@input/pen-core";
-import { urlPolicy } from "@input/pen-dom";
+import { resolveEditorUrl } from "@input/pen-dom";
 import type { BlockHandle, BlockRenderContext } from "@input/pen-types";
 import { useEditorContext } from "../context/editorContext";
 
@@ -19,7 +19,7 @@ function ImageFigure({
   ctx: BlockRenderContext;
 }) {
   const { editor } = useEditorContext();
-  const src = urlPolicy.resolve(block.props?.src, "image");
+  const src = resolveEditorUrl(editor, block.props?.src, "image");
   const caption = (block.props?.caption as string) ?? "";
   const width = block.props?.width as number | undefined;
   const a11y = resolveSchemaA11y(editor, {

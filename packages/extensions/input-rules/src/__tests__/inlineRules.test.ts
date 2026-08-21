@@ -279,5 +279,22 @@ describe("InputRuleEngine — inline rules", () => {
 				marks: { bold: true },
 			});
 		});
+
+		it("does not rematch the inner text a rule just inserted", () => {
+			const engine = engineWithInlineRules();
+			const before = mockEditor({ textContent: "**hello*" });
+			const ops = engine.tryMatchInline(before, "b1", "*");
+
+			expect(ops).not.toBeNull();
+			expect(ops![1]).toMatchObject({
+				type: "insert-text",
+				text: "hello",
+				marks: { bold: true },
+			});
+			expect(engine.tryMatchInline(before, "b1", "hello")).toBeNull();
+
+			const after = mockEditor({ textContent: "hello" });
+			expect(engine.tryMatchInline(after, "b1", "o")).toBeNull();
+		});
 	});
 });

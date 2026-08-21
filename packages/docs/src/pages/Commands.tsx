@@ -462,7 +462,12 @@ void registry.dispatch(splitBlock, undefined);`}</code>
 						</td>
 						<td>
 							Calls the undo controller /{" "}
-							<code>editor.undoManager</code>.
+							<code>editor.undoManager</code>. Without{" "}
+							<code>undoExtension</code> /{" "}
+							<code>defaultPreset()</code> that manager is
+							an inert stub: <code>canUndo()</code> is{" "}
+							<code>false</code>, <code>undo()</code> does
+							nothing, no error.
 						</td>
 					</tr>
 				</tbody>

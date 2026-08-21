@@ -77,7 +77,9 @@ export function setSelectionOffsets(
 	const endPoint = resolveDomPointForOffset(element, endOffset);
 	if (!startPoint || !endPoint) return;
 
-	selection.removeAllRanges();
+	const intendedRange =
+		startPoint.node !== endPoint.node ||
+		startPoint.offset !== endPoint.offset;
 
 	const setBaseAndExtent = (
 		selection as Selection & {
@@ -98,23 +100,40 @@ export function setSelectionOffsets(
 				endPoint.node,
 				endPoint.offset,
 			);
-			return;
+			if (
+				!intendedRange ||
+				(selection.rangeCount > 0 &&
+					selection.anchorNode === startPoint.node &&
+					selection.anchorOffset === startPoint.offset &&
+					selection.focusNode === endPoint.node &&
+					selection.focusOffset === endPoint.offset)
+			) {
+				return;
+			}
 		} catch {
 			// Fall back to the range-based path in non-browser test environments.
 		}
 	}
+
+	selection.removeAllRanges();
 
 	const collapseRange = element.ownerDocument.createRange();
 	collapseRange.setStart(startPoint.node, startPoint.offset);
 	collapseRange.collapse(true);
 	selection.addRange(collapseRange);
 
-	if (
-		(startPoint.node !== endPoint.node ||
-			startPoint.offset !== endPoint.offset) &&
-		typeof selection.extend === "function"
-	) {
-		selection.extend(endPoint.node, endPoint.offset);
+	if (intendedRange && typeof selection.extend === "function") {
+		try {
+			selection.extend(endPoint.node, endPoint.offset);
+			if (!selection.isCollapsed) {
+				return;
+			}
+		} catch {
+			// Fall through to an ordered addRange.
+		}
+	}
+
+	if (!intendedRange) {
 		return;
 	}
 

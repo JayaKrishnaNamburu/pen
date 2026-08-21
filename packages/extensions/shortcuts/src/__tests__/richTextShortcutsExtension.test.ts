@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { createHeadlessEditor, keymapFacet } from "@input/pen-core";
+import {
+	createEditor,
+	createHeadlessEditor,
+	keymapFacet,
+} from "@input/pen-core";
 import { defaultSchema } from "@input/pen-schema-default";
 import { richTextShortcutsExtension } from "../index";
+
+const RICH_TEXT_MARK_KEYS = ["Mod-b", "Mod-i", "Mod-u"] as const;
 
 describe("@input/pen-shortcuts", () => {
 	it("creates default rich-text shortcut keymap providers", () => {
@@ -25,6 +31,53 @@ describe("@input/pen-shortcuts", () => {
 		});
 
 		expect(extension.facets).toHaveLength(2);
+	});
+
+	it("a bare createEditor() does not install Mod-b / Mod-i / Mod-u", () => {
+		const editor = createEditor({ schema: defaultSchema });
+		const keys = new Set(
+			editor.facet(keymapFacet).map((binding) => binding.key),
+		);
+
+		for (const key of RICH_TEXT_MARK_KEYS) {
+			expect(keys.has(key)).toBe(false);
+		}
+
+		editor.destroy();
+	});
+
+	it("createHeadlessEditor() does not install Mod-b / Mod-i / Mod-u, including useDefaultExtensions", () => {
+		const bare = createHeadlessEditor({ schema: defaultSchema });
+		const withCoreFallback = createHeadlessEditor({
+			schema: defaultSchema,
+			useDefaultExtensions: true,
+		});
+
+		for (const editor of [bare, withCoreFallback]) {
+			const keys = new Set(
+				editor.facet(keymapFacet).map((binding) => binding.key),
+			);
+			for (const key of RICH_TEXT_MARK_KEYS) {
+				expect(keys.has(key)).toBe(false);
+			}
+			editor.destroy();
+		}
+	});
+
+	it("installing richTextShortcutsExtension() is what registers Mod-b / Mod-i / Mod-u", () => {
+		const editor = createHeadlessEditor({
+			schema: defaultSchema,
+			extensions: [richTextShortcutsExtension()],
+		});
+		const keys = new Set(
+			editor.facet(keymapFacet).map((binding) => binding.key),
+		);
+
+		for (const key of RICH_TEXT_MARK_KEYS) {
+			expect(keys.has(key)).toBe(true);
+		}
+
+		editor.destroy();
 	});
 
 	it("toggles bold and italic on a live selection when installed", () => {

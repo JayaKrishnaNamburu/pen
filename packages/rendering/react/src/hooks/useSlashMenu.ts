@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { foldAndNormalize, localeFacet } from "@input/pen-core";
+import { blockLogicalText, foldAndNormalize, localeFacet } from "@input/pen-core";
 import type { BlockDisplay, BlockSchema, Editor } from "@input/pen-types";
 import { generateId } from "@input/pen-types";
 import {
@@ -137,11 +137,9 @@ export function useSlashMenu(
 			let insertedOrConvertedBlockId: string | null = null;
 
 			if (block) {
-				const currentText = block.textContent();
+				const currentText = blockLogicalText(ed, blockId);
 				const isEmptyOrSlash =
-					!currentText ||
-					currentText === "/" ||
-					currentText === "\u200B";
+					currentText.length === 0 || currentText === "/";
 				const isTableInsert = item.type === "table";
 				const tableActivationTarget = isTableInsert
 					? getTableActivationTarget(undefined)

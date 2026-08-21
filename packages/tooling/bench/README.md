@@ -14,14 +14,14 @@ Critical budgets are judged on the **median of 50 measured iterations** (`BENCH_
 
 ## SCALE1
 
-The published envelope table lives in `@input/pen-test` (`ENVELOPE.md`, generated from fixture metadata). This package measures the same axes (`blockCount`, `longestBlock`, `nestingDepth`, `table`, `concurrentPeers`) and writes medians to `baselines/envelope.json`. It does not render a second table.
+The attributed envelope table is `ENVELOPE.md` in this package, generated from `baselines/envelope.json`. `@input/pen-test` publishes the size grades (verified / measured / untested above). This package owns the clocks, the harness floors, and the fixture-shape audit.
 
-The concurrent-peers row is a count (2), not a clock. It is verified by `assertPeerEditsSurvive` on a shared-seed two-peer harness. An earlier verified grade cited `createTestCollaboration` while that helper independently populated two Y.Docs, so `sync()` dropped one side and equality still passed. See the correction note in `packages/tooling/test/ENVELOPE.md`.
+The concurrent-peers row is verified as a count (2) plus observation: peer A inserts, peer B must contain that insert after `sync()` before the clock starts. The timed work is A insert + sync, not concurrent A+B. An earlier published number timed two independently-populated Y.Docs that never collaborated.
 
-- `pnpm --filter @input/pen-bench bench:envelope` runs the ladder (median of 21) and fails if a rung exceeds the committed gate.
-- `pnpm --filter @input/pen-bench bench:envelope:write` regenerates `baselines/envelope.json` from a fresh run.
-- Gates are `max(measured × 4, measured + 15ms)` on the median. P95 is recorded, not gated (CH8). Numbers are macos-arm64; they are not CI measurements.
-- `.github/workflows/bench.yml` runs `bench:envelope` after `bench:ci` so measurement drift is a red check, not a printed table. The published size table (`packages/tooling/test/ENVELOPE.md`) is a separate generator-diff job.
+- `pnpm --filter @input/pen-bench bench:envelope` runs the ladder (median of 21, floor subtracted) and fails if a same-class gated rung exceeds the committed gate.
+- `pnpm --filter @input/pen-bench bench:envelope:write` regenerates `baselines/envelope.json` and `ENVELOPE.md` from a fresh run.
+- Same-class gate: rungs whose attributed p50 is at least 0.5ms are gated at `max(attributed × 3, attributed + 1ms)`. Below that the clock is timer noise and a ratio cannot be attributed to Pen. P95 is recorded, not gated (CH8). Cross-class (macos-arm64 vs ubuntu-latest) is not compared.
+- `.github/workflows/bench.yml` runs `bench:envelope` after `bench:ci`. The size-grade table (`packages/tooling/test/ENVELOPE.md`) is a separate generator-diff job.
 
 ## SCALE3
 

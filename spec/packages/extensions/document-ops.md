@@ -52,7 +52,7 @@ Important rules:
 - Tool-facing operations still resolve back into editor mutations.
 - Context retrieval and structured target inspection should stay explicit and bounded so tools do not mutate blindly.
 - Shared write-op construction comes from `@input/pen-content-ops`; this package owns the editor-aware tooling boundary built around it.
-- Document search and span retrieval fold text with a local `foldAndNormalize` copy. A package import of core's helper would cycle (`core` does not depend on this package; this package already sits on content-ops). The bodies must stay identical.
+- Document search and span retrieval fold text with a local `foldAndNormalize` copy in `utils/editorLocale.ts`. This package does not depend on `@input/pen-core` (only content-ops, markdown-serialization, and types). A core import would not cycle — core does not load `documentOpsExtension` — but it would add a dependency this package currently avoids. The local body must stay identical to core's (`toLocaleLowerCase`, final-sigma fold, NFC).
 
 ## Integration Notes
 
@@ -64,7 +64,7 @@ Important rules:
 
 ## Current Maturity / Intended Usage
 
-Workspace package at version `0.0.0`; intended usage is current-state but still evolving. It already has an outsized architectural role because it defines how non-human actors interact with Pen documents without bypassing editor boundaries.
+Workspace package at version `0.0.1`; intended usage is current-state but still evolving. It already has an outsized architectural role because it defines how non-human actors interact with Pen documents without bypassing editor boundaries.
 
 ## Non-goals
 

@@ -148,6 +148,20 @@ describe("Markdown export nested traversal", () => {
       expect(markdown).toContain(marker);
     }
 
+    // Flattening is the markdown contract: children are siblings after the
+    // parent construct, not dropped and not nested inside details/blockquote.
+    expect(markdown).toContain("<summary>TOGGLE-TITLE</summary>");
+    expect(markdown).not.toMatch(
+      /<details>[\s\S]*NESTED-TOGGLE-CHILD[\s\S]*<\/details>/,
+    );
+    expect(markdown).toMatch(/<\/details>\s+NESTED-TOGGLE-CHILD/);
+    expect(markdown).toContain("> **Note:** CALLOUT-TITLE");
+    expect(markdown).toMatch(
+      /> \*\*Note:\*\* CALLOUT-TITLE\s+NESTED-CALLOUT-CHILD/,
+    );
+    expect(markdown).toContain(MARKERS.tableCell);
+    expect(markdown).toContain("- LIST-ITEM-FIRST\n  - LIST-ITEM-NESTED");
+
     editor.destroy();
   });
 });

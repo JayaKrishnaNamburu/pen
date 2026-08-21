@@ -5,8 +5,6 @@ import {
 } from "@input/pen-core";
 export type { BlockSelectionRole } from "@input/pen-types";
 
-const ZERO_WIDTH_SPACE = "\u200B";
-
 export function getBlockSelectionRoleFromSchema(
 	schema: Parameters<typeof getSharedBlockSelectionRoleFromSchema>[0],
 ): BlockSelectionRole | null {
@@ -53,23 +51,8 @@ export function getEditorBlockSelectionLength(
 
 	return getSelectionLengthForRole(
 		getEditorBlockSelectionRole(editor, blockId),
-		getLogicalBlockTextLength(block),
+		block.length(),
 	);
-}
-
-function getLogicalBlockTextLength(
-	block: NonNullable<ReturnType<Editor["getBlock"]>>,
-): number {
-	return block
-		.inlineDeltas()
-		.reduce(
-			(length, delta) =>
-				length +
-				(typeof delta.insert === "string"
-					? delta.insert.replaceAll(ZERO_WIDTH_SPACE, "").length
-					: 1),
-			0,
-		);
 }
 
 export function isInlineEditableBlock(

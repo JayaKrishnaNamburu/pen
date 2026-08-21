@@ -47,7 +47,11 @@ export class DocumentStateImpl implements DocumentState {
   }
 
   get blockCount(): number {
-    return this._blockOrder.length;
+    let count = 0;
+    for (const _block of this.allBlocks()) {
+      count += 1;
+    }
+    return count;
   }
 
   get generation(): number {
@@ -58,8 +62,12 @@ export class DocumentStateImpl implements DocumentState {
     return this._blockOrder.length === 0;
   }
 
+  /**
+   * Document-wide traversal, including nested and layout children, matching
+   * `editor.blocks()`. Use `blockOrder` for the top-level sequence.
+   */
   get blocks(): Iterable<BlockHandle> {
-    return this._iterateBlocks();
+    return this.allBlocks();
   }
 
   indexOf(blockId: string): number {
@@ -183,17 +191,6 @@ export class DocumentStateImpl implements DocumentState {
 		this._documentProfile = documentProfile;
 		this._generation++;
 	}
-
-  private *_iterateBlocks(): Iterable<BlockHandle> {
-    for (const id of this._blockOrder) {
-      yield createBlockHandle(
-        id,
-        this._doc,
-        this._crdtDoc,
-        this._registry,
-      );
-    }
-  }
 
   private *_walkChildren(
     blockId: string,

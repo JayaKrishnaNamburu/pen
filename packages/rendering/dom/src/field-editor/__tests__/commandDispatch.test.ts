@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-	createEditor,
-	getCommandRegistry,
-	splitBlock,
-} from "@input/pen-core";
+import { createEditor, getCommandRegistry, splitBlock } from "@input/pen-core";
 import { defaultSchema } from "@input/pen-schema-default";
 import { handleFieldEditorKeyDown } from "../keyHandling";
 import { DIRECT_HANDLERS } from "../contenteditableDirectHandlers";
@@ -73,6 +69,11 @@ function createFieldEditor(blockId: string) {
 		anchorOffset: number;
 		focusOffset: number;
 	}> = [];
+	let programmaticCaret: {
+		blockId: string;
+		anchorOffset: number;
+		focusOffset: number;
+	} | null = null;
 	return {
 		controller: {
 			focusBlockId: blockId,
@@ -84,11 +85,46 @@ function createFieldEditor(blockId: string) {
 				anchorOffset: number,
 				focusOffset: number,
 			) => {
+				programmaticCaret = null;
 				activations.push({
 					blockId: targetBlockId,
 					anchorOffset,
 					focusOffset,
 				});
+			},
+			commitProgrammaticTextSelection: (
+				targetBlockId: string,
+				anchorOffset: number,
+				focusOffset: number,
+			) => {
+				programmaticCaret = {
+					blockId: targetBlockId,
+					anchorOffset,
+					focusOffset,
+				};
+			},
+			resolveProgrammaticInputRange: (
+				targetBlockId: string | null,
+				liveRange: { start: number; end: number } | null,
+			) => {
+				if (
+					!targetBlockId ||
+					programmaticCaret?.blockId !== targetBlockId
+				) {
+					return null;
+				}
+				if (
+					!liveRange ||
+					(liveRange.start === liveRange.end &&
+						(liveRange.start !== programmaticCaret.anchorOffset ||
+							liveRange.end !== programmaticCaret.focusOffset))
+				) {
+					return {
+						start: programmaticCaret.anchorOffset,
+						end: programmaticCaret.focusOffset,
+					};
+				}
+				return null;
 			},
 			deactivate: () => {},
 			selectAll: () => false,
@@ -240,7 +276,7 @@ describe("field-editor command registry dispatch", () => {
 		editor.destroy();
 	});
 
-	it("inserts at the live caret when no programmatic selection is committed", () => {
+	it("inserts at the live range when activateTextSelection cleared the programmatic caret", () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
@@ -249,6 +285,7 @@ describe("field-editor command registry dispatch", () => {
 		editor.selectText(blockId, 0, 0);
 
 		const fieldEditor = createFieldEditor(blockId);
+		fieldEditor.controller.activateTextSelection(blockId, 0, 0);
 		DIRECT_HANDLERS.insertText(
 			{
 				inputType: "insertText",
@@ -269,7 +306,7 @@ describe("field-editor command registry dispatch", () => {
 		editor.destroy();
 	});
 
-	it("inserts at the committed programmatic caret when the live range is stale", () => {
+	it("inserts at the resolved live range when editor.selectText is stale", () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
@@ -295,6 +332,40 @@ describe("field-editor command registry dispatch", () => {
 		);
 
 		expect(editor.getBlock(blockId)?.textContent()).toBe("Hello world!");
+		editor.destroy();
+	});
+
+	it("inserts at the committed programmatic caret when the live range is stale", () => {
+		const editor = createEditor({ schema: defaultSchema });
+		const blockId = editor.firstBlock()!.id;
+		editor.apply([
+			{ type: "insert-text", blockId, offset: 0, text: "Hello world" },
+		]);
+		editor.selectText(blockId, 3, 3);
+
+		const fieldEditor = createFieldEditor(blockId);
+		fieldEditor.controller.commitProgrammaticTextSelection(blockId, 3, 3);
+		DIRECT_HANDLERS.insertText(
+			{
+				inputType: "insertText",
+				data: "!",
+			} as InputEvent,
+			editor,
+			getYText(editor, blockId),
+			fieldEditor.controller as unknown as FieldEditorInputController,
+			{} as HTMLElement,
+			{
+				resolveCurrentInputRange: () =>
+					fieldEditor.controller.resolveProgrammaticInputRange(
+						blockId,
+						{ start: 11, end: 11 },
+					) ?? { start: 11, end: 11 },
+				applyListInputRule: () => false,
+				applyInlineTextEdit: () => {},
+			},
+		);
+
+		expect(editor.getBlock(blockId)?.textContent()).toBe("Hel!lo world");
 		editor.destroy();
 	});
 });

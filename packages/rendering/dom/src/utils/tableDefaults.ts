@@ -1,7 +1,5 @@
 import type { TableColumnSchema } from "@input/pen-types";
-import { generateId } from "@input/pen-types";
-
-const ZERO_WIDTH_SPACE = "\u200B";
+import { generateId, logicalTextFromStored } from "@input/pen-types";
 
 export interface TableActivationTarget {
 	row: number;
@@ -11,7 +9,8 @@ export interface TableActivationTarget {
 export function hasMeaningfulBlockText(
 	text: string | null | undefined,
 ): boolean {
-	return !!text && text !== ZERO_WIDTH_SPACE && text !== "/";
+	const logical = logicalTextFromStored(text ?? "");
+	return logical.length > 0 && logical !== "/";
 }
 
 export function getStarterTableProps(): { hasHeaderRow: true } {

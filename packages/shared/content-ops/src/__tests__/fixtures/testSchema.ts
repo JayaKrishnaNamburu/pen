@@ -121,12 +121,29 @@ const image = block("image", {
 	},
 });
 
+const subdocument = block("subdocument", {
+	propSchema: {
+		title: { type: "string", default: "Subdocument" },
+	},
+	content: "subdocument",
+	fieldEditor: "none",
+	authoring: {
+		flowCapability: "flow-delegated",
+		selectionRole: "delegated",
+	},
+	display: {
+		title: "Subdocument",
+		hidden: true,
+	},
+});
+
 const testBlocks = [
 	paragraph,
 	heading,
 	bulletListItem,
 	table,
 	image,
+	subdocument,
 ] as BlockSchema[];
 
 export function createDefaultSchema(): SchemaRegistry {

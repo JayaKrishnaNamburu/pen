@@ -147,4 +147,35 @@ describe("overlay visual contract", () => {
 		layer.applyPaintPlan(decorationSetPlan(4));
 		expect(snapshotOverlay(layer.element)).toEqual(afterFirst);
 	});
+
+	it("OV2: a one-pixel caret shift changes the painted transform", () => {
+		const root = document.createElement("div");
+		document.body.append(root);
+		const layer = createOverlayLayer({ root });
+		root.append(layer.element);
+
+		const first = decorationSetPlan(3);
+		layer.applyPaintPlan(first);
+		const afterFirst = snapshotOverlay(layer.element);
+		const firstCaret = afterFirst.items[0];
+		expect(firstCaret?.transform).toBe(
+			`translate3d(${CARETS[0]!.x}px, ${CARETS[0]!.y}px, 0)`,
+		);
+
+		const shifted = {
+			generation: 4,
+			items: first.items.map((item, index) =>
+				index === 0 ? { ...item, x: item.x + 1 } : item,
+			),
+		};
+		layer.applyPaintPlan(shifted);
+		const afterShift = snapshotOverlay(layer.element);
+		expect(afterShift).not.toEqual(afterFirst);
+		expect(afterShift.items[0]?.transform).toBe(
+			`translate3d(${CARETS[0]!.x}px, ${CARETS[0]!.y}px, 0)`,
+		);
+
+		layer.applyPaintPlan(first);
+		expect(snapshotOverlay(layer.element)).toEqual(afterFirst);
+	});
 });

@@ -48,6 +48,7 @@ Important responsibilities:
 - Expose key editor-derived state through composables instead of duplicating state inside components
 - Register the shared field-editor slots, paste importer/assets slots, focused/read-only/empty root attributes, and captured document-keyboard handling from `@input/pen-dom`
 - Pointer activation listens on the editor root and resolves through `handleFieldEditorPointerActivate()` against the blocks host. It does not listen only on the inline-content span (that surface is zero-width on an empty document).
+- Boolean `data-*` attributes use the same valueless form as `@input/pen-dom` (`data-readonly=""`). ARIA booleans remain `"true"` / `"false"`.
 - Support renderer overrides so host apps can customize block rendering without forking the runtime
 - Validate that keyboard routing, Escape selection transitions, select-all behavior, clipboard, and table-editing behavior stay portable across frameworks
 
@@ -61,7 +62,7 @@ Important responsibilities:
 
 ## Current Maturity / Intended Usage
 
-Workspace package at version `0.0.0`; intended usage is current-state but still evolving. The package is intentionally lean, but it is now important enough that regressions here should be treated as architectural regressions, not just renderer-specific bugs.
+Workspace package at version `0.0.1`; intended usage is current-state but still evolving. The package is intentionally lean, but it is now important enough that regressions here should be treated as architectural regressions, not just renderer-specific bugs.
 
 ## Non-goals
 

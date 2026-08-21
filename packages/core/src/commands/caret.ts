@@ -36,6 +36,12 @@ import {
 	toTransitionSelection,
 	type Point,
 } from "./helpers";
+import {
+	getVerticalCaretGoalX,
+	getVerticalCaretMeasure,
+	setVerticalCaretGoalX,
+	type VerticalCaretDirection,
+} from "./verticalCaret";
 
 export interface CaretMotionParam {
 	readonly extend: boolean;
@@ -74,6 +80,12 @@ export function caretCommandHandlers(): FacetProvider[] {
 		commandHandler(caretRight, (editor, param) =>
 			handleGraphemeCaret(editor, param, 1),
 		),
+		commandHandler(caretUp, (editor, param) =>
+			handleVerticalCaret(editor, param, "up"),
+		),
+		commandHandler(caretDown, (editor, param) =>
+			handleVerticalCaret(editor, param, "down"),
+		),
 		commandHandler(caretLineStart, (editor, param) =>
 			handleLineOrBlockEdge(editor, param, "start"),
 		),
@@ -101,6 +113,71 @@ export function caretCommandHandlers(): FacetProvider[] {
 		commandHandler(selectAll, handleSelectAll),
 		commandHandler(selectBlock, handleSelectBlock),
 	];
+}
+
+function handleVerticalCaret(
+	editor: Editor,
+	param: CaretMotionParam,
+	direction: VerticalCaretDirection,
+): CommandResult | false {
+	const fromBlock = handleBlockSelectionArrow(editor, param, direction);
+	if (fromBlock !== undefined) {
+		return fromBlock;
+	}
+
+	const focus = readTextFocus(editor);
+	if (!focus) {
+		return false;
+	}
+
+	const measured = measureVerticalStep(editor, focus, direction);
+	if (measured) {
+		setVerticalCaretGoalX(editor, measured.goalX);
+		return {
+			selection: extendSelection(editor, param.extend, measured.point),
+		};
+	}
+
+	const block = editor.getBlock(focus.blockId);
+	if (!block) {
+		return false;
+	}
+	const atEdge =
+		direction === "up" ? focus.offset === 0 : focus.offset === block.length();
+	if (!atEdge) {
+		return false;
+	}
+
+	const crossed = crossBlock(
+		editor,
+		focus.blockId,
+		direction === "down" ? "next" : "previous",
+	);
+	if (!crossed) {
+		return { selection: extendSelection(editor, param.extend, focus) };
+	}
+	return { selection: extendSelection(editor, param.extend, crossed) };
+}
+
+function measureVerticalStep(
+	editor: Editor,
+	focus: Point,
+	direction: VerticalCaretDirection,
+): { point: Point; goalX: number } | null {
+	const measure = getVerticalCaretMeasure(editor);
+	if (!measure) {
+		return null;
+	}
+	const result = measure(
+		editor,
+		focus,
+		direction,
+		getVerticalCaretGoalX(editor),
+	);
+	if (!result) {
+		return null;
+	}
+	return result;
 }
 
 function handleGraphemeCaret(

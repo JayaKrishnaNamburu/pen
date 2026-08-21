@@ -6,7 +6,7 @@
 
 ## Public Role
 
-This is the dedicated JSON *ingest* package. `@input/pen-export-json` still ships its own `jsonImporter` for round-trip tests and XML handoff. Hosts that want ingest bounds and proto-key rejection should use this package.
+This is the dedicated JSON _ingest_ package. `@input/pen-export-json` still ships its own `jsonImporter` for round-trip tests and XML handoff. Hosts that want ingest bounds and proto-key rejection should use this package.
 
 ## Key Exports / Entrypoints
 
@@ -26,15 +26,19 @@ This is the dedicated JSON *ingest* package. `@input/pen-export-json` still ship
 ```mermaid
 flowchart TD
   JSON[RawJSON]
+  Cap[CapRawSource]
+  Parse[ParseJSON]
   Validate[ValidateShapeAndKeys]
-  Cap[IngestEnvelope]
+  Envelope[IngestEnvelope]
   Normalize[NormalizeToSchema]
   Ops[BuildImportOps]
   Core["@input/pen-core"]
 
-  JSON --> Validate
-  Validate --> Cap
-  Cap --> Normalize
+  JSON --> Cap
+  Cap --> Parse
+  Parse --> Validate
+  Validate --> Envelope
+  Envelope --> Normalize
   Normalize --> Ops
   Ops --> Core
 ```
@@ -42,6 +46,7 @@ flowchart TD
 Important rules:
 
 - Treat JSON input as untrusted.
+- `capRawJsonSource()` runs on the raw string _before_ `JSON.parse`. A source over `INGEST_MAX_TEXT_SIZE` is refused (`null`), not sliced — a slice would be invalid JSON. Parse work is therefore O(cap), not O(input).
 - Unknown block types and unknown props are dropped. Own keys `__proto__`, `constructor`, and `prototype` are rejected anywhere in the payload. Validation builds fresh null-prototype records; it does not deep-merge parsed JSON.
 - The same local ingest-envelope numbers (depth, node count, text size, image count) live here, in import-html, and in import-markdown. They are copies, not a shared module.
 - Imported content only becomes document state after `blocksToOps()` and `editor.apply(...)`.
@@ -57,7 +62,7 @@ Important rules:
 
 ## Current Maturity / Intended Usage
 
-Workspace package at version `0.0.0`; intended usage is current-state but still evolving.
+Workspace package at version `0.0.1`; intended usage is current-state but still evolving.
 
 ## Non-goals
 

@@ -39,7 +39,7 @@ const documentJson = exportEditorToJson(editor);
 const textFromEditor = exportEditorToText(editor);
 const plainText = exportPlainText(editor);
 const textFromJson = exportPenDocumentToText(documentJson, {
-  excludeBlockTypes: ["quote"],
+  excludeBlockTypes: ["blockquote"],
   separator: " ",
 });
 ```

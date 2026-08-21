@@ -6,7 +6,7 @@
 
 ## Public Role
 
-This package is the canonical structured *export* boundary for Pen. It still also ships `jsonImporter` / `parseJsonDocument()` for round-trip tests and XML import handoff. The dedicated ingest package is `@input/pen-import-json` (schema validation, ingest envelope, `parseJsonWithReport()`). Both `jsonImporter` exports exist today.
+This package is the canonical structured _export_ boundary for Pen. It still also ships `jsonImporter` / `parseJsonDocument()` for round-trip tests and XML import handoff. The dedicated ingest package is `@input/pen-import-json` (schema validation, ingest envelope, `parseJsonWithReport()`). Both `jsonImporter` exports exist today.
 
 ## Key Exports / Entrypoints
 
@@ -67,7 +67,7 @@ Important rules:
 
 ## Current Maturity / Intended Usage
 
-Workspace package at version `0.0.0`; intended usage is current-state but still evolving. Despite the version, this package already plays an outsized role because it effectively defines Pen's explicit structured document contract.
+Workspace package at version `0.0.1`; intended usage is current-state but still evolving. Despite the version, this package already plays an outsized role because it effectively defines Pen's explicit structured document contract.
 
 ## Non-goals
 

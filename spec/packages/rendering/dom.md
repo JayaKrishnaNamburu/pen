@@ -58,6 +58,8 @@ Important rules:
 - Table cell copy, cut, paste, printable-key entry, and navigation must preserve structured cell selection metadata and apply document changes through `editor.apply(...)`.
 - Pointer activation is resolved on the **block** element (`data-pen-editor-block`), not the inline-content span. An empty document's inline span is zero-width; listening only there never receives the first click. `handleFieldEditorPointerActivate()` walks from the event target to the block, then attaches the field editor to the inline surface if one exists.
 - `mountEditor(editor, root)` is the public vanilla document-shell composition: it constructs `FieldEditorImpl`, calls `createDocumentTree`, sets the root, and wires focus, pointer activation, and document keydown. Installing `FieldEditorImpl` and calling `setRootElement` alone does not build the document tree and renders a blank page.
+- Boolean `data-*` attributes are emitted in the valueless HTML form (`data-readonly=""`) and omitted when off. `buildDataAttributes()` is the helper: `true` becomes `""`, `false`/`undefined` are dropped. Hosts should write `[data-readonly]`, not `[data-readonly="true"]`. ARIA booleans stay the literal strings `"true"` / `"false"` (`aria-hidden="true"`); a valueless ARIA boolean is invalid.
+- Selection bridging and geometry are mid-redesign (Wave 05). Do not treat the current selection-bridge or bidi-geometry details in this package as a settled contract.
 
 ## Integration Notes
 
@@ -71,7 +73,7 @@ Important rules:
 
 ## Current Maturity / Intended Usage
 
-Workspace package at version `0.0.0`; intended usage is current-state but still evolving. It is now a key architectural package because it proves the shared editing engine can outlive any single framework renderer.
+Workspace package at version `0.0.1`; intended usage is current-state but still evolving. It is now a key architectural package because it proves the shared editing engine can outlive any single framework renderer.
 
 ## Non-goals
 

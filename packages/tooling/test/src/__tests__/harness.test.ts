@@ -176,6 +176,18 @@ describe("@input/pen-test harness", () => {
 
       expect(() => assertDocEquals(editorA, editorB)).not.toThrow();
     });
+
+    it("throws for table cell mismatch", () => {
+      const editor = createTestEditor({
+        blocks: [{ id: "t1", type: "table" }],
+      });
+
+      expect(() =>
+        assertDocEquals(editor, [
+          { type: "table", table: [{ cells: [{ content: "nope" }] }] },
+        ]),
+      ).toThrow("table mismatch");
+    });
   });
 
   // ── AC 21: round-trip ───────────────────────────────────
@@ -245,22 +257,14 @@ describe("@input/pen-test harness", () => {
         ],
       });
 
-      const ydocA = collab.editorA.ydoc as Y.Doc;
-      const ydocB = collab.editorB.ydoc as Y.Doc;
-
-      ydocA.transact(() => {
-        const blocks = ydocA.getMap("blocks");
-        const blockMap = blocks.get("p1") as Y.Map<unknown>;
-        const content = blockMap.get("content") as Y.Text;
-        content.insert(5, " A");
-      });
-
-      ydocB.transact(() => {
-        const blocks = ydocB.getMap("blocks");
-        const blockMap = blocks.get("p1") as Y.Map<unknown>;
-        const content = blockMap.get("content") as Y.Text;
-        content.insert(5, " B");
-      });
+      collab.editorA.apply(
+        [{ type: "insert-text", blockId: "p1", offset: 5, text: " A" }],
+        { origin: "user" },
+      );
+      collab.editorB.apply(
+        [{ type: "insert-text", blockId: "p1", offset: 5, text: " B" }],
+        { origin: "user" },
+      );
 
       collab.sync();
 

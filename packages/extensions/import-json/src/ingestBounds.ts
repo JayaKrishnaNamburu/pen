@@ -22,6 +22,18 @@ export const INGEST_MAX_TEXT_SIZE = 1_048_576;
 /** Maximum image blocks accepted in one ingest. */
 export const INGEST_MAX_IMAGE_COUNT = 256;
 
+/**
+ * Advisory IOP5 wall-clock ceiling for one JSON ingest. Same number as
+ * `CLIPBOARD_INGEST_TIME_BUDGET_MS`.
+ *
+ * Not a unit-suite gate — the suite pins the cardinality caps and the
+ * cap-before-parse ordering, which is why a pathological paste finishes.
+ * `capRawJsonSource` refuses a longer string before `JSON.parse`, so
+ * parse work is O(cap), not O(input). Record timing in `@input/pen-bench`
+ * if the clock itself needs a home.
+ */
+export const INGEST_TIME_BUDGET_MS = 1_000;
+
 export const INGEST_FORBIDDEN_KEYS = [
 	"__proto__",
 	"constructor",
@@ -45,10 +57,19 @@ const BOUND_BY_REASON: Partial<Record<IngestDropReason, string>> = {
 	"image-count-exceeded": "INGEST_MAX_IMAGE_COUNT",
 };
 
+const LIMIT_BY_REASON: Partial<Record<IngestDropReason, number>> = {
+	"depth-exceeded": INGEST_MAX_NESTING_DEPTH,
+	"count-exceeded": INGEST_MAX_NODE_COUNT,
+	"text-size-exceeded": INGEST_MAX_TEXT_SIZE,
+	"image-count-exceeded": INGEST_MAX_IMAGE_COUNT,
+};
+
 export interface IngestDroppedByReason {
 	readonly reason: IngestDropReason;
 	readonly count: number;
 	readonly bound?: string;
+	readonly limit?: number;
+	readonly actual?: number;
 	readonly dropped: string;
 }
 
@@ -58,9 +79,13 @@ export interface IngestReport extends ImportResult {
 
 export class IngestDropCounts {
 	private readonly counts = new Map<IngestDropReason, number>();
+	private readonly actuals = new Map<IngestDropReason, number>();
 
-	add(reason: IngestDropReason, count = 1): void {
+	add(reason: IngestDropReason, count = 1, actual?: number): void {
 		this.counts.set(reason, (this.counts.get(reason) ?? 0) + count);
+		if (actual !== undefined) {
+			this.actuals.set(reason, Math.max(this.actuals.get(reason) ?? 0, actual));
+		}
 	}
 
 	toDroppedByReason(): IngestDroppedByReason[] {
@@ -69,14 +94,47 @@ export class IngestDropCounts {
 		);
 		return reasons.map(([reason, count]) => {
 			const bound = BOUND_BY_REASON[reason];
+			const limit = LIMIT_BY_REASON[reason];
+			const actual = this.actuals.get(reason);
 			const entry: IngestDroppedByReason = {
 				reason,
 				count,
 				dropped: formatDropped(reason, count),
 			};
+			if (bound && limit !== undefined && actual !== undefined) {
+				return { ...entry, bound, limit, actual };
+			}
 			return bound ? { ...entry, bound } : entry;
 		});
 	}
+}
+
+/**
+ * Refuse a JSON source that exceeds the text cap. Slicing would produce
+ * invalid JSON, so parse never runs on the oversize string.
+ */
+export function capRawJsonSource(
+	input: string,
+	drops: IngestDropCounts,
+): string | null {
+	if (input.length <= INGEST_MAX_TEXT_SIZE) {
+		return input;
+	}
+	drops.add(
+		"text-size-exceeded",
+		input.length - INGEST_MAX_TEXT_SIZE,
+		input.length,
+	);
+	return null;
+}
+
+export function parseJsonSource(source: string): unknown {
+	if (source.length > INGEST_MAX_TEXT_SIZE) {
+		throw new Error(
+			`JSON parse received ${source.length} code units; INGEST_MAX_TEXT_SIZE is ${INGEST_MAX_TEXT_SIZE}`,
+		);
+	}
+	return JSON.parse(source);
 }
 
 export function createIngestReport(

@@ -8,6 +8,4 @@
 "@input/pen-types": patch
 ---
 
-Improve document fidelity and in-editor search for richer content.
-
-Inline node segments now round-trip through the shared content pipeline and the JSON/XML exporters, and search now covers table cells with matching React search primitives for the updated extension behavior.
+Round-trip inline node segments through the shared content pipeline and the JSON/XML exporters, and search table cells with matching React search primitives.

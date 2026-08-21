@@ -76,6 +76,11 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 		sources: ["core/src/commands/registry.ts"],
 	},
 	{
+		code: "content-ops-unexposed-block",
+		levels: ["error"],
+		sources: ["shared/content-ops/src/writeContent.ts"],
+	},
+	{
 		code: "event-deprecated",
 		levels: ["warn"],
 		sources: ["core/src/editor/commitEvent.ts"],
@@ -98,7 +103,7 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 	{
 		code: "import-truncated",
 		levels: ["warn"],
-		sources: ["extensions/import-html/src/ingestBounds.ts", "extensions/import-json/src/ingestBounds.ts", "extensions/import-markdown/src/ingestBounds.ts", "rendering/dom/src/utils/clipboardIngest.ts"],
+		sources: ["extensions/export-xml/src/importer.ts", "extensions/import-html/src/ingestBounds.ts", "extensions/import-json/src/ingestBounds.ts", "extensions/import-markdown/src/ingestBounds.ts", "rendering/dom/src/utils/clipboardIngest.ts"],
 	},
 	{
 		code: "invalid-block-type",
@@ -132,6 +137,11 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 	},
 	{
 		code: "PEN_APPLY_003",
+		levels: ["warn"],
+		sources: ["core/src/editor/applyPipelineRunner.ts"],
+	},
+	{
+		code: "PEN_APPLY_004",
 		levels: ["warn"],
 		sources: ["core/src/editor/applyPipelineRunner.ts"],
 	},

@@ -32,7 +32,7 @@ export interface LineBox {
 	readonly bottom: number;
 	readonly startOffset: number;
 	readonly endOffset: number;
-	readonly runs: readonly BidiRunGeometry[]; // visual order; single-run boxes until Wave 6
+	readonly runs: readonly BidiRunGeometry[]; // visual order
 }
 
 export interface GeometryReader {
@@ -132,6 +132,11 @@ export function rectCenterY(rect: Rect): number {
 
 export function isUsefulRect(rect: Pick<DOMRect, "width" | "height">): boolean {
 	return rect.width > 0 || rect.height > 0;
+}
+
+/** glyph box; excludes collapsed caret and WebKit bidi-boundary ghosts */
+export function isInkRect(rect: Pick<DOMRect, "width">): boolean {
+	return rect.width > 0;
 }
 
 export function singleRunLineBox(

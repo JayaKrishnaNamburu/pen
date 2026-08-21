@@ -79,8 +79,8 @@ export const EXPORT_FIDELITY_TABLES: readonly ExportFidelityTable[] = [
 			{
 				kind: "block",
 				type: "callout",
-				fidelity: "full",
-				notes: "",
+				fidelity: "degraded",
+				notes: "children exported as sibling blocks, not nested in the callout div",
 			},
 			{
 				kind: "block",
@@ -232,13 +232,13 @@ export const EXPORT_FIDELITY_TABLES: readonly ExportFidelityTable[] = [
 				kind: "block",
 				type: "callout",
 				fidelity: "degraded",
-				notes: "blockquote with Note/Warning/Error prefix",
+				notes: "blockquote with Note/Warning/Error prefix; children exported as sibling blocks",
 			},
 			{
 				kind: "block",
 				type: "toggle",
 				fidelity: "degraded",
-				notes: "raw HTML details (Pen-specific)",
+				notes: "raw HTML details (Pen-specific); children exported as sibling blocks",
 			},
 			{
 				kind: "block",

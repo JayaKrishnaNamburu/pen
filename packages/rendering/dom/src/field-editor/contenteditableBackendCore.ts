@@ -308,12 +308,7 @@ export abstract class ContentEditableBackendCore {
 		if (anchor.blockId !== blockId || focus.blockId !== blockId) {
 			return;
 		}
-		if (
-			pendingSelection == null &&
-			anchor.offset === focus.offset &&
-			selection?.type === "text" &&
-			selection.isCollapsed
-		) {
+		if (pendingSelection == null && selection?.type === "text") {
 			this.fieldEditor.setBackendSelectionAuthority("programmatic", {
 				blockId,
 				anchorOffset: anchor.offset,

@@ -75,7 +75,7 @@ export const PenExample = defineComponent({
 
 ## Options
 
-`PenEditor` takes a required `editor` prop. `emptyPlaceholder` is optional and has no package default — omit it when you do not want placeholder copy. `importers` is optional.
+`PenEditor` takes a required `editor` prop. `emptyPlaceholder` is optional; when omitted, the editor uses the message-catalog string for `pen.schema.document.emptyPlaceholder` (`Start writing...`). `importers` is optional.
 
 `engines.node` is `>=22`. The required peer is `vue` (`^3.4.0`).
 

@@ -16,11 +16,11 @@ Do **VO-mac first** (VoiceOver + Safari on macOS). That is the cheapest required
 4. Run scenarios 1–5 in order. Tick the VO-mac boxes only after that session. Record tester, date, OS, VO version, Safari version, and host in the matrix row.
 5. Leave every other row incomplete. NVDA needs a Windows machine; VO-ios needs a device; TalkBack and JAWS are later.
 
-Known product bugs, so a fail here is not a setup error:
+Known product bugs, so a fail here is not a setup error (checked 2026-08-21):
 
-- Slash confirm on `/query` (for example `/head`) can leave the query in the field and reopen the listbox. Confirm on a lone `/` is the path that closes.
-- Autocomplete accept on the contenteditable backend (WebKit / Firefox; Chromium EditContext hides it) can leave the DOM caret behind `editor.selection`.
-- After an empty-document click, the focus sink must stay `aria-hidden` (text caret is on the field). The sink is not supposed to take focus until Wave 5 §5.4.
+- Slash confirm on `/query` (for example `/head`) still leaves the query in the field. `useSlashMenu` confirm only deletes the trigger when `currentText === "/"`; a filtered query takes the sibling-insert branch and leaves `/head` in place (`packages/rendering/react/src/hooks/useSlashMenu.ts`). The listbox reopens if selection stays on that paragraph. Confirm on a lone `/` is the path that closes. Outside `a11y/`.
+- Autocomplete accept: the recorded cause moved. `contenteditableBackendCore.updateSelection` is no longer a no-op (it calls `restoreDOMSelectionFromEditor`), and accept already calls `commitProgrammaticTextSelection`. `DomScheduler.projectSelection` is still an empty stub. Whether WebKit/Firefox still leave the DOM caret behind is a real-browser question — do not trust a jsdom pass. Outside `a11y/`.
+- After an empty-document click, the focus sink must stay `aria-hidden` (text caret is on the field). Pointer activation now resolves `[data-pen-editor-block]` rather than the zero-width inline span; the sink is not supposed to take focus until Wave 5 §5.4.
 
 ## Host and fixture
 

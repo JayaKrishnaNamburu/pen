@@ -1,4 +1,5 @@
 import type { BlockHandle, DiagnosticEvent, Editor } from "@input/pen-types";
+import { EMPTY_BLOCK_SENTINEL } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 
 import { createDefaultSchema } from "./fixtures/testSchema";
@@ -7,8 +8,6 @@ import {
 	blockLogicalText,
 	logicalTextFromStored,
 } from "../text/blockLogicalText";
-
-const EMPTY_BLOCK_SENTINEL = "\u200B";
 
 describe("blockLogicalText I11", () => {
 	it("I11: empty string and sentinel-only storage are identical", () => {

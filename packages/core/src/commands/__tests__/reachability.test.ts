@@ -22,14 +22,21 @@ describe("command registry public API reachability", () => {
 		editor.destroy();
 	});
 
-	it("pen.caretUp and pen.caretDown stay a miss until the geometry seam exists", () => {
+	it("pen.caretUp and pen.caretDown handle document-edge stay without geometry", () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const registry = getCommandRegistry(editor);
 		const block = editor.firstBlock()!;
 		editor.selectText(block.id, 0, 0);
 
-		expect(registry!.dispatch(caretUp, { extend: false })).toBe(false);
-		expect(registry!.dispatch(caretDown, { extend: false })).toBe(false);
+		expect(registry!.dispatch(caretUp, { extend: false })).toBe(true);
+		expect(registry!.dispatch(caretDown, { extend: false })).toBe(true);
+		expect(editor.selection?.type).toBe("text");
+		if (editor.selection?.type === "text") {
+			expect(editor.selection.focus).toEqual({
+				blockId: block.id,
+				offset: 0,
+			});
+		}
 		expect(registry!.diagnostics).toEqual([]);
 		editor.destroy();
 	});

@@ -1185,6 +1185,9 @@ importers:
 
   packages/transports/direct:
     dependencies:
+      '@input/pen-ai-tools':
+        specifier: workspace:^
+        version: link:../../extensions/ai-tools
       '@input/pen-core':
         specifier: workspace:^
         version: link:../../core
@@ -1204,6 +1207,9 @@ importers:
 
   packages/transports/sse:
     dependencies:
+      '@input/pen-ai-tools':
+        specifier: workspace:^
+        version: link:../../extensions/ai-tools
       '@input/pen-core':
         specifier: workspace:^
         version: link:../../core

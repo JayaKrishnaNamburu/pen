@@ -142,6 +142,8 @@ export type GeometryCaretCompareResult = {
 	rootHeight: number;
 	compares: GeometryCaretCompare[];
 	staleCount: number;
+	/** Both-null caretRects are equal, so staleCount stays 0. This is the other axis. */
+	missingCount: number;
 };
 
 export type GeometryLineBox = {
@@ -228,7 +230,9 @@ export type DocumentContentSnapshot = {
 		readonly text: string;
 		readonly props: Readonly<Record<string, unknown>>;
 		readonly deltas: readonly {
-			readonly insert: string | { type: string; props: Record<string, unknown> };
+			readonly insert:
+				| string
+				| { type: string; props: Record<string, unknown> };
 			readonly attributes?: Record<string, unknown>;
 		}[];
 	}[];
@@ -270,14 +274,19 @@ export type PenConformanceBridge = {
 	setWindow(start: number): void;
 	apply(ops: readonly DocumentOp[]): void;
 	remoteApply(ops: readonly DocumentOp[]): void;
-	applyToolPayloads(payloads: readonly unknown[]): { ok: boolean; message?: string };
+	applyToolPayloads(payloads: readonly unknown[]): {
+		ok: boolean;
+		message?: string;
+	};
 	importHtml(html: string): Promise<void>;
 	pasteHtml(html: string): Promise<void>;
 	scanHostileDom(): HostileDomScan;
 	resetXssProbe(): void;
 	remoteSplice(args: RemoteSpliceArgs): void;
 	remoteInjectY(args: RemoteYInjectArgs): void;
-	injectPresence(peers: readonly PresencePeerInject[]): Promise<PresenceSnapshot>;
+	injectPresence(
+		peers: readonly PresencePeerInject[],
+	): Promise<PresenceSnapshot>;
 	installBrokenProjector(): void;
 	domMatchesAuthority(): DomAuthorityCheck;
 	applyAiRangeReplacement(args: {
@@ -307,7 +316,9 @@ export type PenConformanceBridge = {
 	flushEightRemoteCarets(
 		points: readonly GeometryPoint[],
 	): Promise<GeometryEightCaretBudget>;
-	readonly beforeinputMap: Readonly<Record<string, SerializedBeforeInputMapping>>;
+	readonly beforeinputMap: Readonly<
+		Record<string, SerializedBeforeInputMapping>
+	>;
 	mapBeforeInput(inputType: string): SerializedBeforeInputMapping;
 	documentSnapshot(): DocumentContentSnapshot;
 	dispatchBeforeInput(args: {
@@ -333,7 +344,9 @@ export type ScenarioApi = {
 		end: { blockId: string; offset: number };
 		replacementText: string;
 	}): Promise<void>;
-	applyToolPayloads(payloadsJson: string): Promise<{ ok: boolean; message?: string }>;
+	applyToolPayloads(
+		payloadsJson: string,
+	): Promise<{ ok: boolean; message?: string }>;
 	importHtml(html: string): Promise<void>;
 	pasteHtml(html: string): Promise<void>;
 	keyboard: {
@@ -347,7 +360,9 @@ export type ScenarioApi = {
 		splice(args: RemoteSpliceArgs): Promise<void>;
 		apply(ops: readonly DocumentOp[]): Promise<void>;
 		injectY(args: RemoteYInjectArgs): Promise<void>;
-		injectPresence(peers: readonly PresencePeerInject[]): Promise<PresenceSnapshot>;
+		injectPresence(
+			peers: readonly PresencePeerInject[],
+		): Promise<PresenceSnapshot>;
 	};
 	expectDiagnostic(code: StandingDiagnosticCode | string): void;
 	installBrokenProjector(): Promise<void>;

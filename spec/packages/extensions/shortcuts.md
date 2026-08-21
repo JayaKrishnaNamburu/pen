@@ -11,6 +11,7 @@ Add optional runtime behavior on top of the editor core without changing the can
 ## Key Exports / Entrypoints
 
 - Export map: `.`
+- Primary extension entrypoint: `richTextShortcutsExtension()`
 - Workspace scripts: `build`, `clean`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
@@ -31,7 +32,7 @@ Add optional runtime behavior on top of the editor core without changing the can
 
 ## Current Maturity / Intended Usage
 
-Workspace package at version `0.0.0`; intended usage is current-state but still evolving.
+Workspace package at version `0.0.1`; intended usage is current-state but still evolving.
 
 ## Non-goals
 

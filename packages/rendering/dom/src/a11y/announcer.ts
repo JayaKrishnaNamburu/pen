@@ -98,6 +98,7 @@ function write(
 	if (region === null) {
 		return;
 	}
+	// wave-3-adopt: schedule this write in DomScheduler.write when wired
 	region.setAttribute("aria-live", priority);
 	// wave-3-adopt: schedule this write in DomScheduler.write when wired
 	region.textContent = "";
@@ -111,6 +112,7 @@ function createLiveRegion(doc: Document, root?: ParentNode): HTMLElement | null 
 	}
 
 	const region = doc.createElement("div");
+	// wave-3-exempt: construction of the live region, not a scheduled paint write
 	region.setAttribute("role", "status");
 	region.setAttribute("aria-live", "polite");
 	region.setAttribute("aria-atomic", "true");

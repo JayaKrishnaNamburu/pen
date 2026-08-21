@@ -194,12 +194,55 @@ export function getCaretOffset(inlineElement: HTMLElement): number {
 	return offsets?.start ?? 0;
 }
 
-function setDOMSelection(
+function resolveWritableDOMPoint(point: {
+	node: Node;
+	offset: number;
+}): { node: Node; offset: number } {
+	if (point.node.nodeType !== Node.ELEMENT_NODE) {
+		return point;
+	}
+
+	const childAtOffset = point.node.childNodes[point.offset];
+	if (childAtOffset?.nodeType === Node.TEXT_NODE) {
+		return { node: childAtOffset, offset: 0 };
+	}
+
+	if (point.offset > 0) {
+		const previousChild = point.node.childNodes[point.offset - 1];
+		if (previousChild?.nodeType === Node.TEXT_NODE) {
+			return {
+				node: previousChild,
+				offset: previousChild.textContent?.length ?? 0,
+			};
+		}
+	}
+
+	return point;
+}
+
+function selectionHasEndpoints(
 	selection: Selection,
 	anchor: { node: Node; offset: number },
 	focus: { node: Node; offset: number },
+): boolean {
+	return (
+		selection.rangeCount > 0 &&
+		selection.anchorNode === anchor.node &&
+		selection.anchorOffset === anchor.offset &&
+		selection.focusNode === focus.node &&
+		selection.focusOffset === focus.offset
+	);
+}
+
+function setDOMSelection(
+	selection: Selection,
+	rawAnchor: { node: Node; offset: number },
+	rawFocus: { node: Node; offset: number },
 ): void {
-	selection.removeAllRanges();
+	const anchor = resolveWritableDOMPoint(rawAnchor);
+	const focus = resolveWritableDOMPoint(rawFocus);
+	const intendedRange =
+		anchor.node !== focus.node || anchor.offset !== focus.offset;
 
 	const setBaseAndExtent = (
 		selection as Selection & {
@@ -220,22 +263,35 @@ function setDOMSelection(
 				focus.node,
 				focus.offset,
 			);
-			return;
+			// Firefox accepts the call for mixed element/text points but
+			// leaves a caret; only trust the write when the endpoints stuck
+			if (!intendedRange || selectionHasEndpoints(selection, anchor, focus)) {
+				return;
+			}
 		} catch {
 			// Fall back to the range-based path in test environments like jsdom.
 		}
 	}
+
+	selection.removeAllRanges();
 
 	const collapseRange = document.createRange();
 	collapseRange.setStart(anchor.node, anchor.offset);
 	collapseRange.collapse(true);
 	selection.addRange(collapseRange);
 
-	if (
-		(anchor.node !== focus.node || anchor.offset !== focus.offset) &&
-		typeof selection.extend === "function"
-	) {
-		selection.extend(focus.node, focus.offset);
+	if (intendedRange && typeof selection.extend === "function") {
+		try {
+			selection.extend(focus.node, focus.offset);
+			if (selectionHasEndpoints(selection, anchor, focus) || !selection.isCollapsed) {
+				return;
+			}
+		} catch {
+			// Fall through to an ordered addRange.
+		}
+	}
+
+	if (!intendedRange) {
 		return;
 	}
 

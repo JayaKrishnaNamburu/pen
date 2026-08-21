@@ -35,7 +35,7 @@ export function syncEditorTextSelection(
 	blockId: string,
 	range: { start: number; end: number } | null,
 ): void {
-	if (!range || typeof editor.selectText !== "function") {
+	if (!range) {
 		return;
 	}
 	const selection = editor.selection;

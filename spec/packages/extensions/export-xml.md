@@ -57,7 +57,7 @@ Important rules:
 
 ## Current Maturity / Intended Usage
 
-Workspace package at version `0.0.0`; intended usage is current-state but still evolving. The package is intentionally smaller than `@input/pen-export-json` because it should stay thin and derivative rather than becoming a competing serialization center.
+Workspace package at version `0.0.1`; intended usage is current-state but still evolving. The package is intentionally smaller than `@input/pen-export-json` because it should stay thin and derivative rather than becoming a competing serialization center.
 
 ## Non-goals
 

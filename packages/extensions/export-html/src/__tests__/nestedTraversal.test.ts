@@ -153,6 +153,28 @@ describe("HTML export nested traversal", () => {
       expect(html).toContain(marker);
     }
 
+    // Flattening is the HTML contract: children are siblings, not dropped
+    // and not nested inside the parent markup (toggle/callout serializers
+    // only emit the title).
+    expect(html).toContain(
+      "<details><summary>TOGGLE-TITLE</summary></details>",
+    );
+    expect(html).not.toMatch(
+      /<details[\s\S]*NESTED-TOGGLE-CHILD[\s\S]*<\/details>/,
+    );
+    expect(html).toContain(`<p>${MARKERS.toggleChild}</p>`);
+    expect(html).toContain(
+      `<div class="callout callout-info">CALLOUT-TITLE</div>`,
+    );
+    expect(html).not.toContain(
+      `<div class="callout callout-info">CALLOUT-TITLE${MARKERS.calloutChild}`,
+    );
+    expect(html).toContain(`<p>${MARKERS.calloutChild}</p>`);
+    expect(html).toContain(`<th>${MARKERS.tableCell}</th>`);
+    expect(html).toContain(
+      `<ul><li>LIST-ITEM-FIRST<ul><li>LIST-ITEM-NESTED</li></ul></li></ul>`,
+    );
+
     editor.destroy();
   });
 });

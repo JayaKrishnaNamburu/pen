@@ -392,6 +392,9 @@ function findLogicalDOMPointInElement(
 					return boundaryPoint;
 				}
 			}
+			if (child.nodeType === Node.TEXT_NODE) {
+				return { node: child, offset: 0 };
+			}
 			return { node: element, offset: index };
 		}
 

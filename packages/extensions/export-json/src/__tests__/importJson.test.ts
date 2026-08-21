@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
 import { jsonExporter } from "../exporter";
-import { jsonImporter } from "../importer";
+import { jsonImporter, parseJsonDocument } from "../importer";
 import { defaultSchema } from "@input/pen-schema-default";
 
 const noDefaultExtensionsPreset = {
@@ -203,5 +203,11 @@ describe("@input/pen-export-json import", () => {
     ).toThrow("Unsupported Pen JSON document version.");
 
     editor.destroy();
+  });
+
+  it("refuses an oversize JSON string before parse", () => {
+    const oversize = `{"version":1,"blocks":[]}${"x".repeat(1_048_576)}`;
+    expect(oversize.length).toBeGreaterThan(1_048_576);
+    expect(() => parseJsonDocument(oversize)).toThrow(/INGEST_MAX_TEXT_SIZE/);
   });
 });

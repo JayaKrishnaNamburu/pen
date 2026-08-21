@@ -112,16 +112,51 @@ async function forceExtraLayoutPass(page: Page): Promise<void> {
 	});
 }
 
+async function forceLayoutShiftEntry(page: Page): Promise<number> {
+	return page.evaluate(async () => {
+		const supported = (
+			globalThis as typeof globalThis & {
+				PerformanceObserver?: { supportedEntryTypes?: readonly string[] };
+			}
+		).PerformanceObserver?.supportedEntryTypes;
+		if (!supported?.includes("layout-shift")) {
+			throw new Error("forceLayoutShiftEntry: layout-shift is not supported");
+		}
+
+		const shifts: PerformanceEntry[] = [];
+		const observer = new PerformanceObserver((list) => {
+			shifts.push(...list.getEntries());
+		});
+		observer.observe({ type: "layout-shift", buffered: false });
+
+		const spacer = document.createElement("div");
+		spacer.style.height = "240px";
+		document.body.prepend(spacer);
+
+		await new Promise<void>((resolve) => {
+			requestAnimationFrame(() => resolve());
+		});
+		shifts.push(...observer.takeRecords());
+		observer.disconnect();
+		spacer.remove();
+		return shifts.length;
+	});
+}
+
 scenario(
 	"OV1 OV2 SCH1: eight remote carets paint in one read phase with no extra layout passes",
 	async (s, page) => {
 		await s.load("hello-world");
 
-		const blockId = (await s.geometry.blocks())[0]?.id;
-		expect(blockId).toBeTruthy();
+		const firstBlock = (await s.geometry.blocks())[0];
+		expect(firstBlock?.id).toBeTruthy();
+		expect(
+			firstBlock?.length,
+			"hello-world first block must be long enough for eight distinct caret offsets",
+		).toBeGreaterThanOrEqual(REMOTE_CARET_COUNT);
 		const points: GeometryPoint[] = [];
 		for (let offset = 0; offset < REMOTE_CARET_COUNT; offset += 1) {
-			points.push({ blockId: blockId!, offset });
+			points.push({ blockId: firstBlock!.id, offset });
 		}
 
 		const layouts = await chromiumLayoutCount(page);
@@ -154,6 +189,10 @@ scenario(
 		expect(budget.writePhaseMeasureCount).toBe(0);
 		expect(budget.readPhaseMeasureCount).toBeGreaterThan(0);
 		expect(budget.items).toHaveLength(REMOTE_CARET_COUNT);
+		expect(
+			new Set(budget.items.map((item) => item.x)).size,
+			"eight carets must land on distinct x so the fixture is not a stacked unfailable paint",
+		).toBe(REMOTE_CARET_COUNT);
 
 		const painted = await paintedCarets(page);
 		assertPaintedMatchesPlan(budget.items, painted);
@@ -181,6 +220,12 @@ scenario(
 			expect(budget.longTaskSupported).toBe(true);
 			expect(budget.layoutShiftCount).toBe(0);
 			expect(budget.longTaskCount).toBe(0);
+
+			const forcedShifts = await forceLayoutShiftEntry(page);
+			expect(
+				forcedShifts,
+				"OV1: layout-shift observer stayed at 0 on a forced spacer — the budget assertion would be inert.",
+			).toBeGreaterThan(0);
 			return;
 		}
 

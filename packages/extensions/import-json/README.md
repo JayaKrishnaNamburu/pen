@@ -20,14 +20,15 @@ pnpm add @input/pen-core @input/pen-preset-default @input/pen-import-json
 
 The same envelope governs every ingest path. These constants are not configurable. They sit beside the published runtime envelope in `spec-v2/22-scale-envelope.md` SCALE1 (verified document size is a different number — ingest caps are what a single paste/import will accept).
 
-| Constant                   |     Value | What it caps                           |
-| -------------------------- | --------: | -------------------------------------- |
-| `INGEST_MAX_NESTING_DEPTH` |        32 | Block-tree depth (top-level = 1)       |
-| `INGEST_MAX_NODE_COUNT`    |    10,000 | Blocks including table rows/cells      |
-| `INGEST_MAX_TEXT_SIZE`     | 1,048,576 | Imported plain text, UTF-16 code units |
-| `INGEST_MAX_IMAGE_COUNT`   |       256 | Image blocks                           |
+| Constant                   |     Value | What it caps                                                                                                                                                                                             |
+| -------------------------- | --------: | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `INGEST_MAX_NESTING_DEPTH` |        32 | Block-tree depth (top-level = 1)                                                                                                                                                                         |
+| `INGEST_MAX_NODE_COUNT`    |    10,000 | Blocks including table rows/cells                                                                                                                                                                        |
+| `INGEST_MAX_TEXT_SIZE`     | 1,048,576 | Imported plain text, UTF-16 code units                                                                                                                                                                   |
+| `INGEST_MAX_IMAGE_COUNT`   |       256 | Image blocks                                                                                                                                                                                             |
+| `INGEST_TIME_BUDGET_MS`    |     1,000 | Advisory wall-clock ceiling. Same number as clipboard ingest. Not a unit-suite gate — a string longer than `INGEST_MAX_TEXT_SIZE` is refused before `JSON.parse`, so parse work is O(cap), not O(input). |
 
-Exceeding a bound truncates at a block boundary and names the bound in `droppedByReason` plus a single `import-truncated` diagnostic.
+Exceeding a bound truncates at a block boundary and names the bound in `droppedByReason` plus a single `import-truncated` diagnostic. An oversize JSON string is refused before parse (slicing would be invalid JSON).
 
 ## JSON validation (SEC4)
 

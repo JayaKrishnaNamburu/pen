@@ -1,7 +1,9 @@
 import type {
 	CommandResult,
+	DocumentOp,
 	Editor,
 	FacetProvider,
+	SelectionState,
 	TextSelection,
 } from "@input/pen-types";
 import { generateId } from "@input/pen-types";
@@ -37,7 +39,9 @@ import {
 	marksAtOffset,
 	readTextFocus,
 	replaceRangeOps,
+	textSelectionResult,
 	usesInlineMarks,
+	type Point,
 } from "./helpers";
 
 export type DeleteGranularity = "grapheme" | "word" | "line";
@@ -71,6 +75,68 @@ export const indent = defineCommand("pen.indent");
 export const outdent = defineCommand("pen.outdent");
 export const toggleMark = defineCommand<ToggleMarkParam>("pen.toggleMark");
 export const convertBlock = defineCommand<ConvertBlockParam>("pen.convertBlock");
+
+/**
+ * Field-editor / v1 `applyDeleteBehavior`: adjacent inline atom → SELECT it.
+ * Does not mutate the document. The next delete (non-collapsed range) removes it.
+ */
+export function selectAdjacentInlineAtom(
+	editor: Editor,
+	direction: "backward" | "forward",
+): SelectionState | null {
+	const atom = adjacentInlineAtomRange(editor, direction);
+	if (!atom) {
+		return null;
+	}
+	return textSelectionResult(
+		{ blockId: atom.blockId, offset: atom.start },
+		{ blockId: atom.blockId, offset: atom.end },
+	);
+}
+
+/**
+ * Current registry one-shot: adjacent inline atom → DELETE it.
+ * Same detection as `selectAdjacentInlineAtom`; different product.
+ */
+export function deleteAdjacentInlineAtom(
+	editor: Editor,
+	direction: "backward" | "forward",
+): { ops: DocumentOp[]; caret: Point } | null {
+	const atom = adjacentInlineAtomRange(editor, direction);
+	if (!atom) {
+		return null;
+	}
+	return {
+		ops: [
+			{
+				type: "delete-text",
+				blockId: atom.blockId,
+				offset: atom.start,
+				length: atom.end - atom.start,
+			},
+		],
+		caret: { blockId: atom.blockId, offset: atom.start },
+	};
+}
+
+function adjacentInlineAtomRange(
+	editor: Editor,
+	direction: "backward" | "forward",
+): { blockId: string; start: number; end: number } | null {
+	const focus = readTextFocus(editor);
+	if (!focus) {
+		return null;
+	}
+	const range = getInlineNodeRange(editor, {
+		blockId: focus.blockId,
+		offset: focus.offset,
+		direction,
+	});
+	if (!range) {
+		return null;
+	}
+	return { blockId: focus.blockId, start: range.start, end: range.end };
+}
 
 export function textCommandHandlers(): FacetProvider[] {
 	return [
@@ -170,24 +236,12 @@ function deleteCollapsed(
 		return false;
 	}
 
-	const atom = getInlineNodeRange(editor, {
-		blockId,
-		offset: selection.focus.offset,
-		direction,
-	});
-	if (atom) {
-		editor.apply(
-			[
-				{
-					type: "delete-text",
-					blockId,
-					offset: atom.start,
-					length: atom.end - atom.start,
-				},
-			],
-			{ origin: "user" },
-		);
-		return { selection: collapsedAt(blockId, atom.start) };
+	const oneShot = deleteAdjacentInlineAtom(editor, direction);
+	if (oneShot) {
+		editor.apply(oneShot.ops, { origin: "user" });
+		return {
+			selection: collapsedAt(oneShot.caret.blockId, oneShot.caret.offset),
+		};
 	}
 
 	const { text } = logicalInline(block);

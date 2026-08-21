@@ -6,6 +6,7 @@
 
 ### function
 
+- admitProviderImageUrl
 - applyHtmlImageSrcPolicy
 - boundPendingBlocks
 - createIngestReport

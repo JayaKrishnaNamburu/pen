@@ -9,7 +9,7 @@ import {
 
 const TOOL_CALL = {
 	toolCallId: "tc-1",
-	name: "echo",
+	name: "read_document",
 	input: {},
 };
 
@@ -213,12 +213,50 @@ const HOSTILE_BODIES: Array<{ name: string; body: unknown }> = [
 				{ length: MAX_PEN_STREAM_REQUEST_ARRAY_ITEMS + 1 },
 				(_, i) => ({
 					toolCallId: `tc-${i}`,
-					name: "echo",
+					name: "read_document",
 					input: {},
 				}),
 			),
 		},
 	},
+	{ name: "tools as non-array", body: { prompt: "x", tools: { name: "echo" } } },
+	{
+		name: "messages as non-array",
+		body: { prompt: "x", messages: { role: "user", content: "x" } },
+	},
+	{
+		name: "protocolVersion string",
+		body: { prompt: "x", toolCalls: [TOOL_CALL], protocolVersion: "1" },
+	},
+	{
+		name: "NaN text offset",
+		body: {
+			prompt: "x",
+			toolCalls: [TOOL_CALL],
+			context: {
+				selection: {
+					type: "text",
+					anchor: { blockId: "b1", offset: Number.NaN },
+					focus: { blockId: "b1", offset: 0 },
+				},
+			},
+		},
+	},
+	{
+		name: "Infinity text offset",
+		body: {
+			prompt: "x",
+			toolCalls: [TOOL_CALL],
+			context: {
+				selection: {
+					type: "text",
+					anchor: { blockId: "b1", offset: Number.POSITIVE_INFINITY },
+					focus: { blockId: "b1", offset: 0 },
+				},
+			},
+		},
+	},
+	{ name: "null body", body: null },
 ];
 
 const HOSTILE_JSON: Array<{ name: string; json: string }> = [
@@ -263,7 +301,7 @@ describe("SSE hostile bodies are 400 before executeTool", () => {
 		expect(onRequest).toHaveBeenCalledTimes(1);
 		expect(executeTool).toHaveBeenCalledTimes(1);
 		expect(executeTool).toHaveBeenCalledWith(
-			"echo",
+			"read_document",
 			{},
 			expect.anything(),
 		);

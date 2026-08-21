@@ -189,4 +189,121 @@ describe("IOP4 HTML img src policy", () => {
 		expect(diagnostics[0]?.message).toContain("4");
 		editor.destroy();
 	});
+
+	it("IOP4 API10 ingest forwards onProgress to the provider", async () => {
+		const progress: number[] = [];
+		const { provider, upload } = stubProvider();
+		const editor = editorWithProvider(provider);
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async () =>
+				new Response(new Uint8Array([1, 2, 3, 4]), {
+					headers: { "content-type": "image/png" },
+				}),
+			),
+		);
+
+		await htmlImporter.import(
+			'<img src="https://cdn.example/progress.png" alt="remote" />',
+			editor,
+			{
+				imageSrc: "ingest",
+				onProgress: (value) => {
+					progress.push(value);
+				},
+			},
+		);
+
+		expect(upload).toHaveBeenCalledTimes(1);
+		expect(upload.mock.calls[0]?.[1]).toEqual(
+			expect.objectContaining({
+				onProgress: expect.any(Function),
+			}),
+		);
+		upload.mock.calls[0]?.[1]?.onProgress?.(0.5);
+		expect(progress).toEqual([0.5]);
+		editor.destroy();
+	});
+
+	it("IOP4 ingest mid-transfer failure emits asset-upload-failed and inserts no image", async () => {
+		const { provider } = stubProvider({
+			upload: vi.fn(async (_file, options) => {
+				options?.onProgress?.(0);
+				throw new Error("socket reset");
+			}),
+		});
+		const editor = editorWithProvider(provider);
+		const diagnostics: DiagnosticEvent[] = [];
+		editor.on("diagnostic", (event) => {
+			diagnostics.push(event);
+		});
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async () =>
+				new Response(new Uint8Array([1, 2, 3, 4]), {
+					headers: { "content-type": "image/png" },
+				}),
+			),
+		);
+
+		await htmlImporter.import(
+			'<img src="https://cdn.example/mid.png" alt="remote" />',
+			editor,
+			{ imageSrc: "ingest" },
+		);
+
+		expect([...editor.blocks("image")]).toHaveLength(0);
+		expect(diagnostics).toEqual([
+			expect.objectContaining({
+				code: "asset-upload-failed",
+				reason: "provider",
+				message: expect.stringContaining("socket reset"),
+			}),
+		]);
+		editor.destroy();
+	});
+
+	it("IOP4 ingest drops a hostile URL the provider returned", async () => {
+		const { provider, upload } = stubProvider({
+			upload: vi.fn(async (file: File | Blob) => ({
+				id: "hostile",
+				url: "javascript:alert(1)",
+				mimeType: "image/png",
+				size: file.size,
+			})),
+			resolve(ref) {
+				return ref.url;
+			},
+		});
+		const editor = editorWithProvider(provider);
+		const diagnostics: DiagnosticEvent[] = [];
+		editor.on("diagnostic", (event) => {
+			diagnostics.push(event);
+		});
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async () =>
+				new Response(new Uint8Array([1, 2, 3, 4]), {
+					headers: { "content-type": "image/png" },
+				}),
+			),
+		);
+
+		await htmlImporter.import(
+			'<img src="https://cdn.example/ok.png" alt="remote" />',
+			editor,
+			{ imageSrc: "ingest" },
+		);
+
+		expect(upload).toHaveBeenCalledTimes(1);
+		expect([...editor.blocks("image")]).toHaveLength(0);
+		expect(diagnostics).toEqual([
+			expect.objectContaining({
+				code: "asset-upload-failed",
+				reason: "provider",
+				message: expect.stringContaining("blocked URL"),
+			}),
+		]);
+		editor.destroy();
+	});
 });

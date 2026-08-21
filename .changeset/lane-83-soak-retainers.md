@@ -1,5 +1,4 @@
 ---
-"@input/pen-core": patch
 "@input/pen-bench": patch
 ---
 

@@ -56,6 +56,7 @@ import {
 	getEditorFlowCapability,
 	shouldForceBlockScopedSelectAll,
 } from "../utils/flowCapabilities";
+import { DATA_ATTRS } from "../utils/dataAttributes";
 import type { FieldEditorStoreSnapshot } from "./store";
 import type { EditorSelectAllBehavior } from "../constants/selectAll";
 import { bindEditorAnnouncer } from "../a11y/bindEditorAnnouncer";
@@ -408,7 +409,7 @@ export abstract class FieldEditorImplLifecycle extends FieldEditorImplCore {
 		const root = this._findEditorRoot();
 		if (!root) return null;
 		return root.querySelector(
-			"[data-pen-editor-blocks-host]",
+			`[${DATA_ATTRS.editorBlocksHost}]`,
 		) as HTMLElement | null;
 	}
 

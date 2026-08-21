@@ -63,10 +63,18 @@ const SHAPED_BUT_NON_EXECUTABLE = [
 	"\uFEFFjavascript:alert(1)",
 	"\u2028javascript:alert(1)",
 	"\u2029javascript:alert(1)",
+	"\u200Bjavascript:alert(1)",
+	"\u00A0javascript:alert(1)",
 	"javascript\u0000:alert(1)",
+	"javascript\u200B:alert(1)",
+	"javascript\u00A0:alert(1)",
 	"javascript&#58;alert(1)",
 	"javascript&#x3a;alert(1)",
 	"javascript&colon;alert(1)",
+	"javascript：alert(1)",
+	"јavascript:alert(1)",
+	"java script:alert(1)",
+	"javascript :alert(1)",
 	"http:javascript:alert(1)",
 	"//javascript:alert(1)",
 	"/javascript:alert(1)",
@@ -112,6 +120,12 @@ describe("SEC1 adversarial urlPolicy", () => {
 		expect(urlPolicy.resolve("data:text/html,<b>x</b>", "image")).toBe(
 			null,
 		);
+		const pngWithSvgPayload =
+			"data:image/png;charset=utf-8,<svg onload=alert(1)></svg>";
+		expect(urlPolicy.resolve(pngWithSvgPayload, "image")).toBe(
+			pngWithSvgPayload,
+		);
+		expect(urlPolicy.resolve(pngWithSvgPayload, "link")).toBe(null);
 	});
 
 	it("SEC1 / F1: createMarkedNode drops textbook and mixed-case javascript:", () => {
@@ -144,8 +158,10 @@ describe("SEC1 documentTree render path", () => {
 
 	function mountTree(args: {
 		href: string;
+		text?: string;
 		policy?: UrlPolicy;
 	}): HTMLElement {
+		const text = args.text ?? "click";
 		const root = document.createElement("div");
 		document.body.append(root);
 		const editor = {
@@ -161,10 +177,10 @@ describe("SEC1 documentTree render path", () => {
 				id: "p1",
 				type: "paragraph",
 				props: {},
-				textContent: () => "click",
+				textContent: () => text,
 				textDeltas: () => [
 					{
-						insert: "click",
+						insert: text,
 						attributes: { link: { href: args.href } },
 					},
 				],
@@ -196,6 +212,44 @@ describe("SEC1 documentTree render path", () => {
 		expect(anchor?.hasAttribute("href")).toBe(false);
 		expect(anchor?.getAttribute("data-pen-blocked-url")).toBe("");
 		expect(root.innerHTML).not.toContain("javascript:");
+	});
+
+	it("SEC1: SVG and MathML markup in text stays a text node", () => {
+		const root = mountTree({
+			href: "https://example.com/ok",
+			text: `<svg onload=alert(1)></svg><math><mi>x</mi></math>`,
+		});
+		expect(root.querySelector("svg")).toBeNull();
+		expect(root.querySelector("math")).toBeNull();
+		expect(root.querySelector("script")).toBeNull();
+		expect(root.textContent).toContain("<svg onload=alert(1)>");
+		expect(root.textContent).toContain("<math>");
+	});
+
+	it("SEC1: event-handler markup in text does not become an attribute", () => {
+		const root = mountTree({
+			href: "https://example.com/ok",
+			text: `<img src=x onerror=alert(1)><div onclick=alert(1)>x</div>`,
+		});
+		expect(root.querySelector("img")).toBeNull();
+		expect(root.querySelector("[onerror]")).toBeNull();
+		expect(root.querySelector("[onclick]")).toBeNull();
+		expect(root.textContent).toContain("onerror=alert(1)");
+	});
+
+	it("SEC3: serializing then re-parsing document-tree HTML does not revive markup", () => {
+		const root = mountTree({
+			href: "javascript:alert(1)",
+			text: `<svg><desc><![CDATA[</desc><script>window.__xssProbe()</script>]]></svg>`,
+		});
+		const replay = new DOMParser().parseFromString(
+			root.innerHTML,
+			"text/html",
+		).body;
+		expect(replay.querySelector("script")).toBeNull();
+		expect(replay.querySelector("svg")).toBeNull();
+		expect(replay.querySelector("a")?.hasAttribute("href")).toBe(false);
+		expect(replay.innerHTML).not.toContain("javascript:");
 	});
 
 	it("SEC1: host wrap policy is enforced on the document tree path", () => {

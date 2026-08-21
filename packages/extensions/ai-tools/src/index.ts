@@ -1,7 +1,8 @@
 export { AI_TOOL_RUNTIME_SLOT, getAIToolRuntime } from "./toolServer";
 export { AIToolContextImpl, AIToolRuntimeImpl } from "./toolServer";
 export { toAIToolDescriptor, listAITools } from "./descriptors";
-export { executeAITool } from "./execution";
+export { executeAITool, openAIToolCall } from "./execution";
+export type { OpenAIToolCall } from "./execution";
 export {
   AI_AGENTIC_MAX_STEPS_DEFAULT,
   AI_DESTRUCTIVE_TOOL_NAMES,

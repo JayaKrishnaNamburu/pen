@@ -91,4 +91,39 @@ describe("AC 20 — memoryAssets", () => {
     ).rejects.toThrow("storage down");
     expect(progress).toEqual([]);
   });
+
+  it("IOP4 mid-transfer rejectAfterProgress fires onProgress(0) and does not store", async () => {
+    const provider = memoryAssets({
+      rejectAfterProgress: new Error("socket reset"),
+    });
+    const blob = new Blob(["hello"], { type: "text/plain" });
+    const progress: number[] = [];
+
+    await expect(
+      provider.upload(blob, {
+        onProgress: (value) => {
+          progress.push(value);
+        },
+      }),
+    ).rejects.toThrow("socket reset");
+    expect(progress).toEqual([0]);
+
+    const leaked = {
+      id: "missing",
+      url: "https://example.com/leaked",
+      mimeType: "text/plain",
+      size: blob.size,
+    };
+    expect(provider.resolve(leaked)).toBe("https://example.com/leaked");
+  });
+
+  it("IOP4 uploadUrl override is stored as-is (importer admits, this double does not)", async () => {
+    const provider = memoryAssets({
+      uploadUrl: "javascript:alert(1)",
+    });
+    const blob = new Blob(["hello"], { type: "text/plain" });
+    const ref = await provider.upload(blob);
+    expect(ref.url).toBe("javascript:alert(1)");
+    expect(provider.resolve(ref)).toBe("javascript:alert(1)");
+  });
 });

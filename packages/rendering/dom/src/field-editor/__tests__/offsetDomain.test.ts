@@ -1,7 +1,6 @@
+import { EMPTY_BLOCK_SENTINEL } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 import { logicalLength, toDomOffset, toLogicalOffset } from "../offsetDomain";
-
-const EMPTY_BLOCK_SENTINEL = "\u200B";
 
 function expectInvertible(text: string): void {
 	const logicalEnd = logicalLength(text);

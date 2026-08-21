@@ -14,13 +14,22 @@ import type {
   ImportResult,
   XMLElement,
 } from "@input/pen-types";
+import {
+  assertXmlSourceWithinCap,
+  capRawXmlSource,
+  INGEST_MAX_TEXT_SIZE,
+} from "./ingestBounds";
 
 export const xmlImporter: Importer<string, PenDocumentJSON> = {
   name: "xml",
   mimeType: "application/xml",
 
   parse(input: string): PenDocumentJSON {
-    return parseXmlDocument(input);
+    const capped = capRawXmlSource(input);
+    if (capped == null) {
+      return { version: 1, blocks: [] };
+    }
+    return parseXmlDocument(capped);
   },
 
   import(
@@ -28,12 +37,42 @@ export const xmlImporter: Importer<string, PenDocumentJSON> = {
     editor: Editor,
     options?: ImportOptions,
   ): ImportResult | void | Promise<ImportResult | void> {
-    const document = parseXmlDocument(input);
+    const capped = capRawXmlSource(input);
+    if (capped == null) {
+      editor.internals.emit("diagnostic", {
+        code: "import-truncated",
+        level: "warn",
+        source: "import-xml",
+        message:
+          `import truncated: ${input.length - INGEST_MAX_TEXT_SIZE} code units ` +
+          `text-size-exceeded (INGEST_MAX_TEXT_SIZE) actual ${input.length} ` +
+          `limit ${INGEST_MAX_TEXT_SIZE}`,
+        droppedByReason: [
+          {
+            reason: "text-size-exceeded",
+            count: input.length - INGEST_MAX_TEXT_SIZE,
+            bound: "INGEST_MAX_TEXT_SIZE",
+            limit: INGEST_MAX_TEXT_SIZE,
+            actual: input.length,
+            dropped: `${input.length - INGEST_MAX_TEXT_SIZE} code units`,
+          },
+        ],
+      });
+      return {
+        parsedTopLevelBlockCount: 0,
+        importedTopLevelBlockCount: 0,
+        droppedBlockCount: 0,
+        droppedBlockTypes: [],
+        normalized: true,
+      };
+    }
+    const document = parseXmlDocument(capped);
     return jsonImporter.import(document, editor, options);
   },
 };
 
 export function parseXmlDocument(input: string): PenDocumentJSON {
+  assertXmlSourceWithinCap(input);
   const document = parseDocument(input, {
     xmlMode: true,
     recognizeCDATA: true,

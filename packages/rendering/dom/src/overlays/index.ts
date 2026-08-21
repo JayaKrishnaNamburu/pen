@@ -1,9 +1,11 @@
 export { createOverlayLayer, applyPaintPlan, onPaintPlan } from "./overlayLayer";
+export { flushOverlay } from "./flushOverlay";
 export { readPaintPlan } from "./paintPlan";
 export {
 	OVERLAY_ITEM_ATTR,
 	OVERLAY_LAYER_ATTR,
 	type OverlayAffinity,
+	type OverlayFlushScheduler,
 	type OverlayBlockSelection,
 	type OverlayFlushCommit,
 	type OverlayGeometryReader,

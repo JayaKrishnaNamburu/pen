@@ -32,7 +32,9 @@ function makeRequest(
 ): PenStreamRequest {
 	return {
 		prompt: "test",
-		toolCalls: [{ toolCallId: "tc-1", name: "test-tool", input: { a: 1 } }],
+		toolCalls: [
+			{ toolCallId: "tc-1", name: "read_document", input: { a: 1 } },
+		],
 		...overrides,
 	};
 }
@@ -236,21 +238,44 @@ describe("@input/pen-transport-direct", () => {
 	it("AIB2 tools receive the construction-time editor and can apply", async () => {
 		const editor = createHeadlessEditor();
 		const apply = vi.spyOn(editor, "apply");
+		const seedId = editor.firstBlock()?.id ?? "b1";
 
 		const toolRuntime = createMockToolRuntime(
 			async (_name, _input, ctx) => {
 				expect(ctx.editor).toBe(editor);
-				ctx.editor.apply([], { origin: "ai" });
+				ctx.editor.apply(
+					[
+						{
+							type: "insert-text",
+							blockId: seedId,
+							offset: 0,
+							text: "granted",
+						},
+					],
+					{ origin: "ai" },
+				);
 				return { applied: true };
 			},
 		);
-		const transport = directTransport({ toolRuntime, editor });
+		const transport = directTransport({
+			toolRuntime,
+			editor,
+			allowedMutatingTools: ["insert_block"],
+		});
 
-		const parts = await collectParts(transport.stream(makeRequest()));
+		const parts = await collectParts(
+			transport.stream(
+				makeRequest({
+					toolCalls: [
+						{ toolCallId: "tc-1", name: "insert_block", input: {} },
+					],
+				}),
+			),
+		);
 
 		expect(parts.filter((p) => p.type === "error")).toHaveLength(0);
 		expect(parts.filter((p) => p.type === "tool-output")).toHaveLength(1);
-		expect(apply).toHaveBeenCalledTimes(1);
+		expect(apply).toHaveBeenCalled();
 		expect(apply.mock.calls[0]?.[1]).toEqual({ origin: "ai" });
 	});
 });

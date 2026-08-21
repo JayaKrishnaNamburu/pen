@@ -1,3 +1,4 @@
+import { urlPolicyFromEditor } from "@input/pen-dom";
 import { fullReconcileDeltasToDOM } from "@input/pen-dom/field-editor/reconciler";
 import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 import { isInlineContentEmpty } from "@input/pen-dom/utils/editorEmptyState";
@@ -95,7 +96,10 @@ export const PenTableCellContent = defineComponent({
           [...nextTextSnapshot.deltas],
           nextElement,
           editor.schema,
-          { preserveSelection: false },
+          {
+            preserveSelection: false,
+            urlPolicy: urlPolicyFromEditor(editor),
+          },
         );
       },
       { immediate: true },

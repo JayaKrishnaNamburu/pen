@@ -5,8 +5,9 @@ export function SecurityPage() {
 			<p>
 				Pen renders and mutates a collaborative document. Remote Yjs
 				updates write shared state without passing through import
-				sanitization. The load-bearing boundary is render and
-				interaction time. The host owns who may write. The posture is{" "}
+				sanitization. The load-bearing boundary is render-time{" "}
+				<code>urlPolicy</code> (SEC1), not the HTML sanitizer. The
+				host owns who may write. The posture is{" "}
 				<code>spec-v2/12-security.md</code>.
 			</p>
 			<p>
@@ -15,6 +16,25 @@ export function SecurityPage() {
 				<code>SECURITY.md</code>. Prefer GitHub private vulnerability
 				reporting. Fallback: email <code>support@input.so</code> with
 				subject <code>Pen security</code>.
+			</p>
+
+			<h2>Content ingresses</h2>
+			<p>
+				External content reaches the live document by nine ingresses.
+				Only two call <code>sanitizeHTML</code> (DOMPurify in{" "}
+				<code>@input/pen-import-html</code>): paste{" "}
+				<code>text/html</code>, and the HTML import API. The other
+				seven bypass the sanitizer by design: Pen-blocks JSON (
+				<code>application/x-pen-blocks+json</code> and the HTML{" "}
+				<code>data-pen-blocks</code> embed), plain text and
+				Markdown paste, file drag-and-drop, AI / stream /
+				document-ops writes, remote collaborator Y updates, asset
+				upload and resolve, and the host&apos;s own initial
+				document. Schema validation and ingest bounds are not
+				HTML sanitization. A{" "}
+				<code>javascript:</code> href written through any of those
+				seven never meets DOMPurify. SEC1&apos;s render-time{" "}
+				<code>urlPolicy</code> is what keeps it off the live DOM.
 			</p>
 
 			<h2>URL policy</h2>
@@ -40,11 +60,16 @@ export function SecurityPage() {
 			<p>
 				Hosts that need extra schemes wrap the default policy with{" "}
 				<code>urlPolicyExtension</code>. That wrap is{" "}
-				<code>pen.urlPolicy</code>: render-time sinks and clipboard
-				HTML read the editor facet. HTML and XML exporters call the
-				default <code>urlPolicy.resolve</code> and do not read the
-				facet — a wrap that admits <code>blob:</code> at render
-				time still drops it on those exports.
+				<code>pen.urlPolicy</code>. These sinks read the facet
+				through <code>resolveEditorUrl</code> /{" "}
+				<code>urlPolicyFromEditor</code>: DOM field-editor marks
+				and inline surfaces, clipboard HTML, image-file transfer,
+				the React image renderer, and the Vue image renderer. These
+				sinks call the default <code>urlPolicy.resolve</code> and
+				do not read the facet: the HTML exporter and the XML
+				exporter. A wrap that denies an otherwise-admitted URL
+				still emits it from those two exporters. A wrap that
+				admits <code>blob:</code> still drops it there.
 			</p>
 
 			<h2>Other library boundaries</h2>
@@ -63,8 +88,8 @@ export function SecurityPage() {
 				</li>
 				<li>
 					<code>@input/pen-document-ops</code> validates tool
-					payloads before building ops. Invalid payloads produce
-					diagnostics and no partial apply.
+					payloads before building ops. Invalid payloads emit a
+					diagnostic and throw. The batch is not applied.
 				</li>
 				<li>
 					<code>@input/pen-search</code> defaults{" "}
@@ -74,8 +99,14 @@ export function SecurityPage() {
 					<code>search-budget-exceeded</code>.
 				</li>
 				<li>
-					<code>pen.readOnly</code> is a local UI mode. It does not
-					stop writes arriving over the wire.
+					<code>pen.readOnly</code> sets{" "}
+					<code>aria-readonly</code> only. Local typing and pointer
+					activation stop when the host passes the{" "}
+					<code>readonly</code> prop to <code>EditorRoot</code>,{" "}
+					<code>PenEditor</code>, or <code>mountEditor</code>.
+					Neither the facet nor the prop stops{" "}
+					<code>editor.apply</code> or writes arriving over the
+					wire.
 				</li>
 			</ul>
 			<p>

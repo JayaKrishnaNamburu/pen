@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { ApplyOptions, DocumentOp, Editor, ToolDefinition } from "@input/pen-types";
 import { createModelDouble } from "@input/pen-test";
 import {
@@ -11,6 +11,7 @@ import {
 	authorizeAIToolCall,
 	createAIToolTurn,
 	executeAITool,
+	openAIToolCall,
 	isAIToolCallDenied,
 	isDestructiveAITool,
 	isMutatingAITool,
@@ -92,6 +93,41 @@ describe("AIB3 tool authority", () => {
 			{ allowedMutatingTools: ["insert_block"] },
 		);
 		expect(allowed.allowed).toBe(true);
+	});
+
+	it("AIB3: openAIToolCall denies an un-allowlisted mutating tool before executeTool", async () => {
+		const runtime = new AIToolRuntimeImpl();
+		const execute = vi.fn(async () => {
+			throw new Error("handler must not run");
+		});
+		runtime.registerTool({
+			name: "insert_block",
+			description: "Insert",
+			inputSchema: { type: "object", properties: {} },
+			handler: execute,
+		});
+		const { editor, applied } = createRecordingEditor();
+		const context = new AIToolContextImpl(editor, "doc-1", () => {});
+		const turn = createAIToolTurn({ allowedMutatingTools: [] });
+
+		const opened = await openAIToolCall(
+			runtime,
+			"insert_block",
+			{},
+			context,
+			turn,
+		);
+
+		expect(opened.ok).toBe(false);
+		if (!opened.ok) {
+			expect(opened.denial).toEqual({
+				ok: false,
+				status: "blocked",
+				reason: "tool-not-allowed",
+			});
+		}
+		expect(execute).not.toHaveBeenCalled();
+		expect(applied).toEqual([]);
 	});
 
 	it("AIB3: executeAITool without a turn default-denies mutating and destructive tools", async () => {

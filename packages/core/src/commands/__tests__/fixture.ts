@@ -256,6 +256,29 @@ export function createCommandHarness(
 	});
 }
 
+export function insertMention(
+	editor: Editor,
+	blockId: string,
+	offset: number,
+	props: { id?: string; label?: string } = {},
+): void {
+	editor.apply(
+		[
+			{
+				type: "insert-inline-node",
+				blockId,
+				offset,
+				nodeType: "mention",
+				props: {
+					id: props.id ?? "1",
+					label: props.label ?? "Ada",
+				},
+			},
+		],
+		{ origin: "user" },
+	);
+}
+
 export function caretOf(editor: Editor): { blockId: string; offset: number } {
 	const selection = editor.selection;
 	if (!selection || selection.type !== "text") {

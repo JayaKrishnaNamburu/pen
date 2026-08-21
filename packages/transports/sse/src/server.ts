@@ -6,6 +6,11 @@ import type {
 	ToolContext,
 } from "@input/pen-types";
 import { resolveToolExecution } from "@input/pen-core";
+import {
+	createAIToolTurn,
+	isAIToolCallDenied,
+	openAIToolCall,
+} from "@input/pen-ai-tools";
 import { generateId, isAsyncIterable } from "@input/pen-types";
 import {
 	MAX_PEN_STREAM_REQUEST_BYTES,
@@ -22,6 +27,7 @@ export function createSSEHandler(
 		onRequest,
 		onError,
 		pingInterval = 15_000,
+		allowedMutatingTools = [],
 	} = options;
 
 	return async (request: Request): Promise<Response> => {
@@ -76,28 +82,72 @@ export function createSSEHandler(
 					pingTimer = setInterval(sendPing, pingInterval);
 
 					if (toolRuntime && body.toolCalls) {
+						const turn = createAIToolTurn({
+							allowedMutatingTools,
+						});
 						for (const toolCall of body.toolCalls) {
-							const result = toolRuntime.executeTool(
+							const context = createTransportToolContext(
+								body.context,
+								send,
+								editor,
+							);
+							const opened = await openAIToolCall(
+								toolRuntime,
 								toolCall.name,
 								toolCall.input,
-								createTransportToolContext(
-									body.context,
-									send,
-									editor,
-								),
+								context,
+								turn,
 							);
-
-							const resolved = await resolveToolExecution(result);
-							if (isAsyncIterable(resolved)) {
-								for await (const part of resolved) {
-									send(part as PenStreamPart);
-								}
-							} else {
+							if (!opened.ok) {
 								send({
-									type: "tool-output",
+									type: "tool-error",
 									toolCallId: toolCall.toolCallId,
-									output: resolved,
+									error: opened.denial.reason,
 								} as PenStreamPart);
+								continue;
+							}
+							try {
+								const result = toolRuntime.executeTool(
+									toolCall.name,
+									toolCall.input,
+									context,
+								);
+								const resolved =
+									await resolveToolExecution(result);
+								if (isAsyncIterable(resolved)) {
+									for await (const part of resolved) {
+										send(part as PenStreamPart);
+									}
+									const closed = opened.close();
+									if (isAIToolCallDenied(closed)) {
+										send({
+											type: "tool-error",
+											toolCallId: toolCall.toolCallId,
+											error: closed.reason,
+										} as PenStreamPart);
+									}
+								} else {
+									const closed = opened.close(resolved);
+									if (isAIToolCallDenied(closed)) {
+										send({
+											type: "tool-error",
+											toolCallId: toolCall.toolCallId,
+											error: closed.reason,
+										} as PenStreamPart);
+									} else {
+										send({
+											type: "tool-output",
+											toolCallId: toolCall.toolCallId,
+											output: closed,
+										} as PenStreamPart);
+									}
+								}
+							} finally {
+								// Matches the direct transport: `close()` is
+								// idempotent, and a `finally` also covers any
+								// non-throw unwind that would otherwise leave the
+								// write guard patched onto the host's editor.
+								opened.close();
 							}
 						}
 					}

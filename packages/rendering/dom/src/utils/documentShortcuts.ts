@@ -1,5 +1,10 @@
 import { usesInlineTextSelection } from "@input/pen-core";
-import { generateId, type Editor, type InteractionModel } from "@input/pen-types";
+import {
+	generateId,
+	logicalTextFromStored,
+	type Editor,
+	type InteractionModel,
+} from "@input/pen-types";
 import type { FieldEditorSession } from "../field-editor/controller";
 import {
 	handleHistoryShortcut,
@@ -9,8 +14,6 @@ import { DATA_ATTRS } from "./dataAttributes";
 import { handleEscapeSelectionTransition } from "./escapeSelection";
 import { getAdjacentVisibleBlockId } from "./parentIdTree";
 import { handleTableCellSelectionKeyDown } from "./tableCellNavigation";
-
-const ZERO_WIDTH_SPACE = "\u200B";
 
 export function handleEditorDocumentKeyDown(options: {
 	event: KeyboardEvent;
@@ -244,7 +247,7 @@ function textSelectionContainsInlineAtom(
 	for (const delta of block.inlineDeltas()) {
 		const length =
 			typeof delta.insert === "string"
-				? delta.insert.replaceAll(ZERO_WIDTH_SPACE, "").length
+				? logicalTextFromStored(delta.insert).length
 				: 1;
 		const overlapsSelection =
 			offset < selectionEnd && offset + length > selectionStart;

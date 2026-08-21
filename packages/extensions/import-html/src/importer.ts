@@ -150,6 +150,7 @@ export const htmlImporter: HtmlImporter = {
       blocks,
       editor,
       imageSrc,
+      options?.onProgress,
     );
     if (resolvedBlocks.length === 0) return result;
 

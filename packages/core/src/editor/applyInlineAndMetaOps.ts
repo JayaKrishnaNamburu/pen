@@ -22,7 +22,7 @@ import type {
 	SetSelectionOp,
 	CRDTArray,
 } from "@input/pen-types";
-import { generateId } from "@input/pen-types";
+import { EMPTY_BLOCK_SENTINEL, generateId } from "@input/pen-types";
 import { resolveRuntimeContentType } from "../schema/contentType";
 import {
 	type CRDTUnknownArray,
@@ -51,7 +51,8 @@ interface CRDTText {
 	toString(): string;
 	readonly length: number;
 }
-const ZERO_WIDTH_SPACE = "\u200B";
+
+// sentinel-storage: empty-block caret target in Y.Text. Not a logical character.
 
 function embedRecordFromInlineOp(op: InsertInlineNodeOp): Record<string, unknown> {
 	const embed = Object.create(null) as Record<string, unknown>;
@@ -72,7 +73,8 @@ if (!blockMap) return [];
 const content = self._getTextContent(blockMap);
 if (!content) return [];
 
-if (content.length === 1 && content.toString() === ZERO_WIDTH_SPACE) {
+// sentinel-storage: drop the empty-block caret target before a real insert
+if (content.length === 1 && content.toString() === EMPTY_BLOCK_SENTINEL) {
 	content.delete(0, 1);
 }
 
@@ -110,7 +112,8 @@ if (!blockMap) return [];
 const content = self._getTextContent(blockMap);
 if (!content) return [];
 
-if (content.length === 1 && content.toString() === ZERO_WIDTH_SPACE) {
+// sentinel-storage: drop the empty-block caret target before a real replace
+if (content.length === 1 && content.toString() === EMPTY_BLOCK_SENTINEL) {
 	content.delete(0, 1);
 }
 
@@ -257,7 +260,8 @@ export function getPreservedInlineDeltas(
 	}
 	return content.toDelta().filter(
 		(delta): delta is { insert: string; attributes?: Record<string, unknown> } =>
-			typeof delta.insert === "string" && delta.insert !== ZERO_WIDTH_SPACE,
+			// sentinel-storage: empty-block caret target is not preserved inline content
+			typeof delta.insert === "string" && delta.insert !== EMPTY_BLOCK_SENTINEL,
 	);
 }
 

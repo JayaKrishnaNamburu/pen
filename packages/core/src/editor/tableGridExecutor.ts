@@ -11,7 +11,7 @@ import type {
 	TableColumnSchema,
 	UpdateTableColumnsOp,
 } from "@input/pen-types";
-import { generateId } from "@input/pen-types";
+import { EMPTY_BLOCK_SENTINEL, generateId } from "@input/pen-types";
 import {
 	type CRDTUnknownArray,
 	type CRDTUnknownMap,
@@ -30,7 +30,7 @@ import {
 	writeCellDeltas,
 } from "./tableGridCellHelpers";
 
-const ZERO_WIDTH_SPACE = "\u200B";
+// sentinel-storage: empty-block caret target in cell Y.Text. Not a logical character.
 
 export type TableCellDelta = {
 	insert: string;
@@ -214,7 +214,8 @@ export class TableGridExecutor {
 		const content = getCellContent(rowMap, columnIndex);
 		if (content && typeof content.toString === "function") {
 			const text = content.toString();
-			return text === ZERO_WIDTH_SPACE ? "" : text;
+			// sentinel-storage: cell Y.Text may be the empty-block caret target
+			return text === EMPTY_BLOCK_SENTINEL ? "" : text;
 		}
 		return "";
 	}

@@ -1,5 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
-import { clickInlineOffset, openPlayground } from "./helpers";
+import {
+	captureSelectionEvidence,
+	clickInlineOffset,
+	openPlayground,
+} from "./helpers";
 
 const HISTORY_GROUP_SETTLE_MS = 450;
 
@@ -128,7 +132,15 @@ async function expectCaretPosition(
 	expected: { blockId: string; offset: number },
 ): Promise<void> {
 	await expect
-		.poll(async () => getSelectionSnapshot(page))
+		.poll(async () => {
+			const native = await getSelectionSnapshot(page);
+			const evidence = await captureSelectionEvidence(page);
+			return {
+				...native,
+				editorSelection: evidence.editorSelection,
+				activeBlockId: evidence.activeElement?.blockId ?? null,
+			};
+		})
 		.toMatchObject({
 			isCollapsed: true,
 			anchor: expected,

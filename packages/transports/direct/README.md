@@ -41,13 +41,16 @@ const transport = directTransport({
 
 A live `Editor` is passed at construction. It is not a field on `PenStreamRequest` — that type is the wire shape, and direct does not smuggle a handle through it.
 
+Mutating `toolCalls` are default-deny. Set `allowedMutatingTools` to grant specific names.
+
 ## Options
 
-| Option        | Default | Effect                                                         |
-| ------------- | ------- | -------------------------------------------------------------- |
-| `toolRuntime` | none    | Required at runtime. `directTransport` throws if it is omitted |
-| `editor`      | unset   | In-process editor handed to `ToolContext.editor`               |
-| `onError`     | unset   | Called with tool-execution errors                              |
+| Option                 | Default | Effect                                                         |
+| ---------------------- | ------- | -------------------------------------------------------------- |
+| `toolRuntime`          | none    | Required at runtime. `directTransport` throws if it is omitted |
+| `editor`               | unset   | In-process editor handed to `ToolContext.editor`               |
+| `allowedMutatingTools` | `[]`    | Mutating tools the request may run. Default deny               |
+| `onError`              | unset   | Called with tool-execution errors                              |
 
 ## Documentation
 

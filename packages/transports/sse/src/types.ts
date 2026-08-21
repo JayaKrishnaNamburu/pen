@@ -22,6 +22,10 @@ export interface SSEServerOptions {
 	 * (AIB2), and a live `Editor` cannot survive `JSON.parse`.
 	 */
 	editor?: Editor;
+	/**
+	 * Mutating tools the model may invoke on this handler. Default deny.
+	 */
+	allowedMutatingTools?: readonly string[];
 	onRequest?: (request: PenStreamRequest) => void;
 	onError?: (error: unknown) => void;
 	pingInterval?: number;

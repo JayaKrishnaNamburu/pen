@@ -46,7 +46,7 @@ flowchart TD
 Important rules:
 
 - Treat HTML input as untrusted.
-- `capRawHtmlSource()` slices the raw string to `INGEST_MAX_TEXT_SIZE` before parse, so work is O(cap) rather than O(input). A source over the cap is refused by the parse step after the slice.
+- `capRawHtmlSource()` slices the raw string to `INGEST_MAX_TEXT_SIZE` (preferring a newline boundary) before sanitize/parse, so work is O(cap) rather than O(input). Overflow is recorded as a `text-size-exceeded` drop, not a hard refuse. `parseHtmlSource()` also throws if a caller bypasses the cap and hands it a longer string.
 - The same local ingest-envelope numbers (depth, node count, text size, image count) live in this package, import-markdown, and import-json. They are copies, not a shared module.
 - Sanitize after the cap, then parse, then normalize against the active editor schema and document profile.
 - Imported content only becomes document state after conversion into operations and `editor.apply(...)`.
@@ -61,7 +61,7 @@ Important rules:
 
 ## Current Maturity / Intended Usage
 
-Workspace package at version `0.0.0`; intended usage is current-state but still evolving. This package is security-sensitive because it handles untrusted markup, so boundary clarity matters more here than in most format helpers.
+Workspace package at version `0.0.1`; intended usage is current-state but still evolving. This package is security-sensitive because it handles untrusted markup, so boundary clarity matters more here than in most format helpers.
 
 ## Non-goals
 

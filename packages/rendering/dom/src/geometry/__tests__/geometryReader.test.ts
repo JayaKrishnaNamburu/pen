@@ -188,6 +188,46 @@ describe("GeometryReader G1", () => {
 
 		expect(caret).toEqual(collapsedRect(40, 8, 16));
 	});
+
+	it("G3: zero-width getClientRects ghosts are not unioned into run boxes", () => {
+		const root = mountEditorRoot();
+		mountBlock(root, "p1", "abאבcd", mockDOMRect(24, 0, 51, 20));
+		const ink = mockDOMRect(24, 0, 51, 20);
+		const ghost = mockDOMRect(0, 0, 0, 20);
+		const getClientRects = vi.fn(
+			() => [ghost, ink] as unknown as DOMRectList,
+		);
+		const previous = Object.getOwnPropertyDescriptor(
+			Range.prototype,
+			"getClientRects",
+		);
+		Object.defineProperty(Range.prototype, "getClientRects", {
+			configurable: true,
+			writable: true,
+			value: getClientRects,
+		});
+
+		try {
+			const reader = createReader(root);
+			const line = reader.lineBoxes("p1")[0];
+			expect(line, "G3: expected a line box").toBeTruthy();
+			expect(line?.runs[0]?.rect.left).toBe(24);
+			expect(line?.runs[0]?.rect.width).toBe(51);
+			expect(
+				Math.min(
+					...(line?.runs.map((geo) => geo.rect.left) ?? [
+						Number.POSITIVE_INFINITY,
+					]),
+				),
+			).toBe(24);
+		} finally {
+			if (previous) {
+				Object.defineProperty(Range.prototype, "getClientRects", previous);
+			} else {
+				delete (Range.prototype as { getClientRects?: unknown }).getClientRects;
+			}
+		}
+	});
 });
 
 describe("GeometryReader G2", () => {

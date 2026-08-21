@@ -6,6 +6,7 @@ import type {
 	SchemaRegistry,
 	BlockHandle,
 } from "@input/pen-types";
+import { EMPTY_BLOCK_SENTINEL } from "@input/pen-types";
 import { usesInlineTextSelection } from "../schema/fieldEditorCapabilities";
 import { createBlockHandle } from "../schema/handles";
 import { resolveCellSelectionMatrix } from "./cellSelection";
@@ -13,7 +14,6 @@ import { EventEmitter } from "./events";
 import { DocumentRangeImpl } from "./range";
 
 type CRDTBlockMap = CRDTMap<CRDTMap<unknown>>;
-const ZERO_WIDTH_SPACE = "\u200B";
 
 export class SelectionManagerImpl {
 	private _selection: SelectionState = null;
@@ -137,7 +137,7 @@ export class SelectionManagerImpl {
 				if (!content || typeof content.toString !== "function")
 					return "";
 				const raw = content.toString();
-				const full = raw === ZERO_WIDTH_SPACE ? "" : raw;
+				const full = raw === EMPTY_BLOCK_SENTINEL ? "" : raw;
 				const from = Math.min(sel.anchor.offset, sel.focus.offset);
 				const to = Math.max(sel.anchor.offset, sel.focus.offset);
 				return full.slice(from, to);
@@ -156,7 +156,7 @@ export class SelectionManagerImpl {
 					return "";
 
 				const raw = content.toString();
-				const full = raw === ZERO_WIDTH_SPACE ? "" : raw;
+				const full = raw === EMPTY_BLOCK_SENTINEL ? "" : raw;
 				if (blockIds.length === 1) {
 					return full.slice(range.start.offset, range.end.offset);
 				}

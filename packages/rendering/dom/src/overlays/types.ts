@@ -78,3 +78,14 @@ export type OverlayLayer = {
 	applyPaintPlan(plan: PaintPlan): void;
 	onPaintPlan(listener: (plan: PaintPlan) => void): () => void;
 };
+
+/**
+ * Scheduler surface overlays need for OV1. Structural so the overlay
+ * module does not import `DomScheduler` (Wave 2 still owns apply-path
+ * wiring).
+ */
+export type OverlayFlushScheduler = {
+	read<T>(fn: () => T): Promise<T>;
+	write(fn: () => void): Promise<void>;
+	readonly phase: "idle" | "read" | "write";
+};

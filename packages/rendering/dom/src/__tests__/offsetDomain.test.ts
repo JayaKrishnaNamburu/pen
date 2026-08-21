@@ -1,11 +1,10 @@
+import { EMPTY_BLOCK_SENTINEL } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 import {
 	logicalLength,
 	toDomOffset,
 	toLogicalOffset,
 } from "../field-editor/offsetDomain";
-
-const EMPTY_BLOCK_SENTINEL = "\u200B";
 
 const STORAGE_SAMPLES = [
 	"",

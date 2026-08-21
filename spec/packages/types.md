@@ -59,7 +59,7 @@ Important rules:
 - `groupId`: a logical mutation group shared across one or more `editor.apply(...)` calls.
 - `requestId`, `actorId`, and `source`: optional attribution fields for workflow and diagnostics.
 
-`getOpOriginType()`, `getApplyOptionsGroupId()`, and `createMutationGroupMetadata()` live on `@input/pen-core`. Packages that still sit on inverted or below-core edges (undo, crdt-yjs tests) keep a local copy until P.1. Hosts should use structured origins for AI/workflow changes instead of encoding request metadata in ad hoc strings.
+`getOpOriginType()`, `getApplyOptionsGroupId()`, and `createMutationGroupMetadata()` live on `@input/pen-core`. `@input/pen-undo` keeps a local `getOpOriginType` because it does not depend on core. Hosts should use structured origins for AI/workflow changes instead of encoding request metadata in ad hoc strings.
 
 ## Shared AI Target Contract
 
@@ -82,7 +82,7 @@ Important rules:
 
 ## Current Maturity / Intended Usage
 
-Workspace package at version `0.0.0`; intended usage is current-state but still evolving. In practice it is one of the most sensitive packages in the repo because seemingly small contract changes can cascade through most of the workspace.
+Workspace package at version `0.0.1`; intended usage is current-state but still evolving. In practice it is one of the most sensitive packages in the repo because seemingly small contract changes can cascade through most of the workspace.
 
 ## Non-goals
 

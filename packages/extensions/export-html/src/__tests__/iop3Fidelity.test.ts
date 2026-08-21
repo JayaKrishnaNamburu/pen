@@ -115,7 +115,6 @@ function blockSampleOps(type: string): DocumentOp[] {
   switch (type) {
     case "paragraph":
     case "blockquote":
-    case "callout":
     case "codeBlock":
       return [
         {
@@ -190,13 +189,14 @@ function blockSampleOps(type: string): DocumentOp[] {
           position: "last",
         },
       ];
+    case "callout":
     case "toggle":
       return [
         {
           type: "insert-block",
           blockId: "b1",
-          blockType: "toggle",
-          props: {},
+          blockType: type,
+          props: type === "callout" ? { type: "info" } : {},
           position: "last",
         },
         { type: "insert-text", blockId: "b1", offset: 0, text: "Hello" },
@@ -287,6 +287,10 @@ function assertHtmlFidelity(row: ExportFidelityRow, html: string): void {
     case "callout":
       expect(html).toContain("callout");
       expect(html).toContain("Hello");
+      expect(html).toContain("Nested");
+      expect(html).not.toContain(
+        `<div class="callout callout-info">HelloNested`,
+      );
       return;
     case "toggle":
       expect(html).toContain("<details>");

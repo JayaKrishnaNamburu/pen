@@ -7,16 +7,28 @@ export function GettingStartedPage() {
 				binding. <code>@input/pen-core</code> is the assembly point if
 				you skip the preset. <code>createEditor()</code> does not
 				install a schema or any extension — no bold/italic shortcuts,
-				no undo, no <code>delta-stream</code>. Pass{" "}
-				<code>preset: defaultPreset()</code>, or compose{" "}
+				no undo, no <code>delta-stream</code>.{" "}
+				<code>createHeadlessEditor({"{ useDefaultExtensions: true }"})</code>{" "}
+				is a no-op: the fallback list is empty.{" "}
+				<code>editor.undoManager</code> becomes an inert stub (
+				<code>canUndo()</code> is <code>false</code>,{" "}
+				<code>undo()</code> does nothing, no error). React and Vue{" "}
+				<code>useEditor</code> inject <code>defaultSchema</code>{" "}
+				and still install no preset.
+				Pass <code>preset: defaultPreset()</code>, or compose{" "}
 				<code>schema: createDefaultSchema()</code> and an{" "}
 				<code>extensions</code> list yourself.
 			</p>
 			<p>
-				Minimal apps live in this repository at{" "}
-				<code>examples/react</code>, <code>examples/vue</code>, and{" "}
-				<code>examples/vanilla</code>. Each is a workspace member. Each
-				README lists the packages and peer dependencies for that host.
+				Packages are not on the public registry. There has never
+				been a release train, a git tag, or a{" "}
+				<code>CHANGELOG.md</code>.{" "}
+				<code>pnpm add @input/pen-*</code> 404s today. Minimal
+				apps live in this repository at <code>examples/react</code>
+				, <code>examples/vue</code>, and{" "}
+				<code>examples/vanilla</code>. Each is a workspace member.
+				Each README lists the packages and peer dependencies for
+				that host.
 			</p>
 			<p>
 				Pen ships no required stylesheet. Tokens live in the{" "}
@@ -30,8 +42,15 @@ export function GettingStartedPage() {
 				until it contains text, so a click on an empty paragraph never
 				lands on the inline surface. Activation resolves the clicked{" "}
 				<code>[data-pen-editor-block]</code> instead, in every binding.
-				The first keystroke lands with no stylesheet at all; you do not
-				need to give the inline surface a <code>min-width</code>.
+				The first keystroke lands with no stylesheet at all, including
+				on an empty document; you do not need to give the inline
+				surface a <code>min-width</code>.
+			</p>
+			<p>
+				Runtime floor (HOST3): Node <code>&gt;=22</code>, Chromium
+				93, Firefox 92, Safari 15.4. The table and the
+				feature-detection fallbacks live on{" "}
+				<a href="#/support">Browser and Node support</a>.
 			</p>
 			<p>
 				License and distribution are stated in the repository root

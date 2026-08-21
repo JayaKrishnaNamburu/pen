@@ -72,6 +72,44 @@ describe("SEC6 tool payload validation", () => {
 		);
 	});
 
+	it("SEC6: hidden block type does not apply even when mixed with a valid insert", () => {
+		const editor = createEditor(["paragraph-1"]);
+
+		expect(() =>
+			applyValidatedOps(
+				editor,
+				[
+					{
+						type: "insert-block",
+						blockId: "ok-1",
+						blockType: "paragraph",
+						props: {},
+						position: "last",
+					},
+					{
+						type: "insert-block",
+						blockId: "hidden-1",
+						blockType: "subdocument",
+						props: {},
+						position: "last",
+					},
+				],
+				{ origin: "ai" },
+			),
+		).toThrow("Invalid tool payload");
+
+		expect(editor.apply).not.toHaveBeenCalled();
+		expect(editor.internals.emit).toHaveBeenCalledWith(
+			"diagnostic",
+			expect.objectContaining({
+				code: INVALID_TOOL_PAYLOAD_CODE,
+				source: "document-ops",
+				message:
+					'Block type "subdocument" is not available in structured documents.',
+			}),
+		);
+	});
+
 	it("SEC6: oversized text rejected", async () => {
 		const editor = createEditor();
 		const content = "x".repeat(MAX_OP_TEXT_FIELD_LENGTH + 1);

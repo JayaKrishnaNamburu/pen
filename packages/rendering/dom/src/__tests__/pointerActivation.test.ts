@@ -262,6 +262,88 @@ describe("handleFieldEditorPointerActivate", () => {
 		expect(target.activations).toEqual([]);
 	});
 
+	it("activates a paragraph inside a table cell, not the table", () => {
+		const { root, blocksHost } = mountShell("tbl", "table");
+		const table = blocksHost.querySelector(
+			`[${DATA_ATTRS.editorBlock}]`,
+		) as HTMLElement;
+		const cell = document.createElement("div");
+		cell.setAttribute(DATA_ATTRS.tableCell, "");
+		const paragraph = document.createElement("div");
+		paragraph.setAttribute(DATA_ATTRS.editorBlock, "");
+		paragraph.setAttribute(DATA_ATTRS.blockId, "cell-p");
+		const cellInline = document.createElement("span");
+		cellInline.setAttribute(DATA_ATTRS.inlineContent, "");
+		paragraph.append(cellInline);
+		cell.append(paragraph);
+		table.append(cell);
+
+		const target = createTarget({ isEditing: false, focusBlockId: null });
+		const handled = handleFieldEditorPointerActivate({
+			event: mouseEvent(cellInline),
+			editor: stubEditor({
+				tbl: { type: "table" },
+				"cell-p": { type: "paragraph", length: 3 },
+			}),
+			fieldEditor: target.fieldEditor,
+			root,
+			blocksHost,
+		});
+
+		expect(handled).toBe(true);
+		expect(target.activations).toEqual([
+			{ blockId: "cell-p", anchorOffset: 3, focusOffset: 3 },
+		]);
+		expect(target.attached).toEqual([cellInline]);
+	});
+
+	it("does not activate when the click lands on table cell chrome", () => {
+		const { root, blocksHost, block: table } = mountShell("tbl", "table");
+		const cell = document.createElement("div");
+		cell.setAttribute(DATA_ATTRS.tableCell, "");
+		table.append(cell);
+
+		const target = createTarget({ isEditing: false, focusBlockId: null });
+		const handled = handleFieldEditorPointerActivate({
+			event: mouseEvent(cell),
+			editor: stubEditor({ tbl: { type: "table" } }),
+			fieldEditor: target.fieldEditor,
+			root,
+			blocksHost,
+		});
+
+		expect(handled).toBe(false);
+		expect(target.activations).toEqual([]);
+	});
+
+	it("does not activate a nested editor root, even with a colliding block id", () => {
+		const { root, blocksHost, block } = mountShell("p1");
+		root.setAttribute(DATA_ATTRS.editorRoot, "");
+		const nestedRoot = document.createElement("div");
+		nestedRoot.setAttribute(DATA_ATTRS.editorRoot, "");
+		nestedRoot.setAttribute(DATA_ATTRS.readonly, "");
+		const nestedBlock = document.createElement("div");
+		nestedBlock.setAttribute(DATA_ATTRS.editorBlock, "");
+		nestedBlock.setAttribute(DATA_ATTRS.blockId, "p1");
+		const nestedInline = document.createElement("span");
+		nestedInline.setAttribute(DATA_ATTRS.inlineContent, "");
+		nestedBlock.append(nestedInline);
+		nestedRoot.append(nestedBlock);
+		block.append(nestedRoot);
+
+		const target = createTarget({ isEditing: false, focusBlockId: null });
+		const handled = handleFieldEditorPointerActivate({
+			event: mouseEvent(nestedInline),
+			editor: stubEditor({ p1: { type: "paragraph", length: 4 } }),
+			fieldEditor: target.fieldEditor,
+			root,
+			blocksHost,
+		});
+
+		expect(handled).toBe(false);
+		expect(target.activations).toEqual([]);
+	});
+
 	it("activates from a text-node target via the parent element", () => {
 		const { root, blocksHost, inline } = mountShell("p1");
 		const text = document.createTextNode("Hello");

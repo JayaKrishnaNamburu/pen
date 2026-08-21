@@ -32,7 +32,7 @@ export function createDocumentTree(
 	const content = parent.ownerDocument.createElement("div");
 	content.setAttribute(DATA_ATTRS.editorContent, "");
 	const blocksHost = parent.ownerDocument.createElement("div");
-	blocksHost.setAttribute("data-pen-editor-blocks-host", "");
+	blocksHost.setAttribute(DATA_ATTRS.editorBlocksHost, "");
 	content.append(blocksHost);
 	parent.append(content);
 

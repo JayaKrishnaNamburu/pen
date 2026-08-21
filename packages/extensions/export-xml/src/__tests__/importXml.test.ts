@@ -179,4 +179,32 @@ describe("@input/pen-export-xml import", () => {
       ),
     ).toThrow("Unsupported Pen XML document version.");
   });
+
+  it("IOP5 a 2×-cap source is refused before parse", async () => {
+    const editor = createBareEditor();
+    const diagnostics: Array<{ code: string; message?: string }> = [];
+    editor.on("diagnostic", (event) => {
+      diagnostics.push(event);
+    });
+
+    const keep =
+      `<?xml version="1.0" encoding="UTF-8"?><pen-document version="1"></pen-document>`;
+    const input = `${keep}${"x".repeat(1_048_576)}`;
+    expect(input.length).toBeGreaterThan(1_048_576);
+
+    const result = await xmlImporter.import(input, editor);
+    expect(result).toMatchObject({
+      parsedTopLevelBlockCount: 0,
+      importedTopLevelBlockCount: 0,
+    });
+    expect(diagnostics).toEqual([
+      expect.objectContaining({
+        code: "import-truncated",
+        message: expect.stringContaining("INGEST_MAX_TEXT_SIZE"),
+      }),
+    ]);
+    expect([...editor.documentState.allBlocks()]).toHaveLength(0);
+
+    editor.destroy();
+  });
 });

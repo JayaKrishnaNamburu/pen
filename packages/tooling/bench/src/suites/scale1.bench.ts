@@ -2,6 +2,7 @@ import type { BenchDefinition } from "../bench";
 import type { EnvelopeRungId } from "../constants/scale1";
 import { SCALE1_MEASUREMENTS } from "../constants/scale1";
 import {
+	assertPeerBObservesPeerAInsert,
 	createEnvelopeCollaboration,
 	createEnvelopeEditor,
 	envelopeKeystroke,
@@ -52,6 +53,7 @@ function createPeerRunner(): Pick<BenchDefinition, "fn" | "teardown"> {
 		fn: (b) => {
 			if (!collab) {
 				collab = createEnvelopeCollaboration(100);
+				assertPeerBObservesPeerAInsert(collab);
 			}
 			b.start();
 			collab.editorA.apply(keystroke.ops, { origin: "user" });

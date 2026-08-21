@@ -6,7 +6,7 @@
 
 ## Public Role
 
-This package used to sit *under* core (core imported it). That inversion is gone: content-ops now depends on `@input/pen-core` and re-exports the moved helpers. Hosts should import those helpers from core. This package remains because importers and document-ops still call `parseMarkdownToBlocks()` and `buildDocumentWriteOps()` here.
+This package used to sit _under_ core (core imported it). That inversion is gone: content-ops now depends on `@input/pen-core` and re-exports the moved helpers. Hosts should import those helpers from core. This package remains because importers and document-ops still call `parseMarkdownToBlocks()` and `buildDocumentWriteOps()` here.
 
 ## Key Exports / Entrypoints
 
@@ -58,7 +58,7 @@ Important rules:
 
 ## Current Maturity / Intended Usage
 
-Workspace package at version `0.0.0`; intended usage is current-state but still evolving. It is already a high-leverage package because many higher-level features depend on its normalization and write-op rules staying stable.
+Workspace package at version `0.0.1`; intended usage is current-state but still evolving. It is already a high-leverage package because many higher-level features depend on its normalization and write-op rules staying stable.
 
 ## Non-goals
 

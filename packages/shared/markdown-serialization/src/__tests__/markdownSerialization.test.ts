@@ -1,9 +1,8 @@
 import type { BlockHandle, Editor, SchemaRegistry } from "@input/pen-types";
+import { EMPTY_BLOCK_SENTINEL } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 import { exportMarkdownForBlocks } from "../markdownSerialization";
 import { getNumberedListItemValue } from "../orderedList";
-
-const STORAGE_SENTINEL = "\u200B";
 
 describe("@input/pen-markdown-serialization", () => {
   it("derives numbered list values from prior siblings at the same indent", () => {
@@ -19,7 +18,7 @@ describe("@input/pen-markdown-serialization", () => {
   });
 
   it("I11: empty block serializes to empty markdown text, not a ZWSP", () => {
-    const handle = createTextBlock("b1", "paragraph", STORAGE_SENTINEL);
+    const handle = createTextBlock("b1", "paragraph", EMPTY_BLOCK_SENTINEL);
     const markdown = exportMarkdownForBlocks(
       createExportEditor([handle], {
         paragraph: (block) => block.content ?? "",
@@ -28,7 +27,7 @@ describe("@input/pen-markdown-serialization", () => {
     );
 
     expect(markdown).toBe("");
-    expect(markdown).not.toContain(STORAGE_SENTINEL);
+    expect(markdown).not.toContain(EMPTY_BLOCK_SENTINEL);
   });
 
   it("I11: user-typed zero-width space is kept in markdown", () => {
@@ -46,7 +45,7 @@ describe("@input/pen-markdown-serialization", () => {
   it("I11: user-typed ZWSP as its own delta is not stripped", () => {
     const handle = createSegmentedTextBlock("b1", "paragraph", [
       "keep",
-      STORAGE_SENTINEL,
+      EMPTY_BLOCK_SENTINEL,
       "me",
     ]);
     const markdown = exportMarkdownForBlocks(
@@ -68,7 +67,7 @@ describe("@input/pen-markdown-serialization", () => {
       [handle],
     );
 
-    expect(markdown).not.toContain(STORAGE_SENTINEL);
+    expect(markdown).not.toContain(EMPTY_BLOCK_SENTINEL);
     expect(markdown).toBe("|  |\n| --- |");
   });
 });
@@ -136,8 +135,8 @@ function createEmptyTableHandle(): BlockHandle {
     tableRowCount: () => 1,
     tableColumnCount: () => 1,
     tableCell: () => ({
-      textDeltas: () => [{ insert: STORAGE_SENTINEL }],
-      textContent: () => STORAGE_SENTINEL,
+      textDeltas: () => [{ insert: EMPTY_BLOCK_SENTINEL }],
+      textContent: () => EMPTY_BLOCK_SENTINEL,
     }),
     as(capability: string) {
       return capability === "table" ? handle : null;

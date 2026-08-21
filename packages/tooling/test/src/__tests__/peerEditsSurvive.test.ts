@@ -93,9 +93,15 @@ describe("assertPeerEditsSurvive", () => {
 		const collab = createTestCollaboration({
 			blocks: [{ id: BLOCK_ID, type: "paragraph", content: "Hello" }],
 		});
-		insertToken(collab.editorA, " A");
+		collab.editorA.apply(
+			[{ type: "insert-text", blockId: BLOCK_ID, offset: 5, text: " A" }],
+			{ origin: "user" },
+		);
 		expect(collab.editorB.getBlock(BLOCK_ID).textContent()).not.toContain(" A");
-		insertToken(collab.editorB, " B");
+		collab.editorB.apply(
+			[{ type: "insert-text", blockId: BLOCK_ID, offset: 5, text: " B" }],
+			{ origin: "user" },
+		);
 		collab.sync();
 
 		assertDocEquals(collab.editorA, collab.editorB);

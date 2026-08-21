@@ -14,7 +14,7 @@ pnpm add @input/pen-history
 
 Yjs records only a numeric `clientId`. That is an opaque session number — not a user, not stable across reloads, and not attributable on its own.
 
-The host resolver is authoritative. `getCharacterAttribution` and `getBlameRanges` resolve identity through `resolveAuthor` (`clientId` → author). Pen stamps `verified: true` on that result. Presence names never become `author` and are not stored on a snapshot.
+The host resolver is authoritative. `getCharacterAttribution` and `buildBlameRanges` resolve identity through `resolveAuthor` (`clientId` → author). The controller's `getBlameRanges(blockId)` is that same path. Pen stamps `verified: true` on that result. Presence names never become `author` and are not stored on a snapshot.
 
 Peer-asserted presence stays on `displayHint` (`unverified: true`). That field is an unverified display hint (a live cursor label), not authorship.
 

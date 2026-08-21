@@ -114,7 +114,6 @@ function blockSampleOps(type: string): DocumentOp[] {
   switch (type) {
     case "paragraph":
     case "blockquote":
-    case "callout":
     case "codeBlock":
     case "bulletListItem":
     case "checkListItem":
@@ -178,13 +177,14 @@ function blockSampleOps(type: string): DocumentOp[] {
           position: "last",
         },
       ];
+    case "callout":
     case "toggle":
       return [
         {
           type: "insert-block",
           blockId: "b1",
-          blockType: "toggle",
-          props: {},
+          blockType: type,
+          props: type === "callout" ? { type: "info" } : {},
           position: "last",
         },
         { type: "insert-text", blockId: "b1", offset: 0, text: "Hello" },
@@ -264,11 +264,16 @@ function assertMarkdownFidelity(row: ExportFidelityRow, markdown: string): void 
       return;
     case "callout":
       expect(markdown).toContain("> **Note:** Hello");
+      expect(markdown).toContain("Nested");
+      expect(markdown).toMatch(/> \*\*Note:\*\* Hello\s+Nested/);
       return;
     case "toggle":
       expect(markdown).toContain("<details>");
       expect(markdown).toContain("Hello");
       expect(markdown).toContain("Nested");
+      expect(markdown).not.toMatch(
+        /<details>[\s\S]*Nested[\s\S]*<\/details>/,
+      );
       return;
     case "blockquote":
       expect(markdown).toContain("> Hello");

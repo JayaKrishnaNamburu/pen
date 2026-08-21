@@ -1,4 +1,5 @@
 import { createEditor, keymapFacet } from "@input/pen-core";
+import { getDocumentToolRuntime } from "@input/pen-document-ops";
 import { createDefaultSchema } from "@input/pen-schema-default";
 import type { CreateEditorOptions, Editor, Extension } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
@@ -54,11 +55,11 @@ function seedSelectedHello(editor: Editor): string {
 
 async function withEditor(
 	options: CreateEditorOptions,
-	run: (editor: ReturnType<typeof createEditor>) => void,
+	run: (editor: ReturnType<typeof createEditor>) => void | Promise<void>,
 ): Promise<void> {
 	const editor = createEditor(options);
 	try {
-		run(editor);
+		await run(editor);
 	} finally {
 		await editor.destroy();
 	}
@@ -141,6 +142,53 @@ describe("bare createEditor vs defaultPreset — bold/italic shortcuts", () => {
 			expect(dispatchShortcut(editor, "Mod-b")).toBe(false);
 			expect(dispatchShortcut(editor, "Mod-i")).toBe(false);
 			expect(editor.getBlock(blockId)?.textDeltas()).toEqual([{ insert: "hello" }]);
+		});
+	});
+});
+
+describe("defaultPreset() batteries actually work", () => {
+	it("undo reverts a user insert that a bare editor cannot undo", async () => {
+		await withEditor({ preset: defaultPreset() }, (editor) => {
+			const blockId = seedSelectedHello(editor);
+			expect(editor.undoManager.canUndo()).toBe(true);
+			expect(editor.undoManager.undo()).toBe(true);
+			expect(editor.getBlock(blockId)?.textContent()).toBe("");
+		});
+
+		await withEditor({ schema: createDefaultSchema() }, (editor) => {
+			seedSelectedHello(editor);
+			expect(editor.undoManager.canUndo()).toBe(false);
+			expect(editor.undoManager.undo()).toBe(false);
+		});
+	});
+
+	it("document-ops insert_block is registered and writes through the live runtime", async () => {
+		await withEditor({ preset: defaultPreset() }, async (editor) => {
+			const runtime = getDocumentToolRuntime(editor);
+			expect(runtime).not.toBeNull();
+			expect(runtime?.getTool("insert_block")?.mutating).toBe(true);
+
+			const result = (await runtime!.executeTool(
+				"insert_block",
+				{
+					position: "last",
+					blockType: "paragraph",
+					content: "from preset",
+				},
+				{} as never,
+			)) as { blockId: string };
+
+			expect(editor.getBlock(result.blockId)?.textContent()).toBe("from preset");
+		});
+	});
+
+	it("delta-stream installs a live streaming target slot", async () => {
+		await withEditor({ preset: defaultPreset() }, (editor) => {
+			expect(editor.internals.getSlot("delta-stream:target")).toBeTruthy();
+		});
+
+		await withEditor({ schema: createDefaultSchema() }, (editor) => {
+			expect(editor.internals.getSlot("delta-stream:target")).toBeUndefined();
 		});
 	});
 });

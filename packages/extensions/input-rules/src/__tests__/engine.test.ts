@@ -414,6 +414,129 @@ describe("InputRuleEngine", () => {
 		});
 	});
 
+	describe("self-trigger and overlapping rules", () => {
+		const conversions: Array<{ text: string; newType: string }> = [
+			{ text: "#", newType: "heading" },
+			{ text: "-", newType: "bulletListItem" },
+			{ text: "*", newType: "bulletListItem" },
+			{ text: "+", newType: "bulletListItem" },
+			{ text: "1.", newType: "numberedListItem" },
+			{ text: "[ ]", newType: "checkListItem" },
+			{ text: "[x]", newType: "checkListItem" },
+			{ text: ">", newType: "blockquote" },
+			{ text: "```", newType: "codeBlock" },
+			{ text: "---", newType: "divider" },
+			{ text: "***", newType: "divider" },
+			{ text: "___", newType: "divider" },
+			{ text: "> [!note]", newType: "callout" },
+		];
+
+		it("does not rematch after converting a paragraph into the rule's result type", () => {
+			const engine = engineWithDefaults();
+
+			for (const { text, newType } of conversions) {
+				const before = mockEditor({
+					blockType: "paragraph",
+					textContent: text,
+				});
+				const ops = engine.tryMatch(before, "b1", " ");
+				expect(ops, text).not.toBeNull();
+				expect(ops).toEqual(
+					expect.arrayContaining([
+						expect.objectContaining({
+							type: "convert-block",
+							newType,
+						}),
+					]),
+				);
+
+				const leftoverTrigger = mockEditor({
+					blockType: newType,
+					textContent: text,
+				});
+				expect(engine.tryMatch(leftoverTrigger, "b1", " ")).toBeNull();
+
+				const emptied = mockEditor({
+					blockType: newType,
+					textContent: "",
+				});
+				expect(engine.tryMatch(emptied, "b1", " ")).toBeNull();
+			}
+		});
+
+		it("matches at most one default block rule for each trigger", () => {
+			const triggers = [
+				"# ",
+				"## ",
+				"### ",
+				"- ",
+				"* ",
+				"+ ",
+				"1. ",
+				"[ ] ",
+				"[x] ",
+				"> ",
+				"``` ",
+				"--- ",
+				"*** ",
+				"___ ",
+				"> [!note] ",
+			];
+
+			for (const trigger of triggers) {
+				const matches = defaultBlockRules.filter((rule) =>
+					rule.match.test(trigger),
+				);
+				expect(matches, trigger).toHaveLength(1);
+			}
+		});
+
+		it("when two rules match the same input, the first registered wins", () => {
+			const engine = new InputRuleEngine();
+			engine.register({
+				id: "first",
+				match: /^-\s$/,
+				blockTypes: ["paragraph"],
+				handler: (_match, ctx) => [
+					{
+						type: "convert-block",
+						blockId: ctx.blockId,
+						newType: "bulletListItem",
+						newProps: {},
+					},
+				],
+			});
+			engine.register({
+				id: "second",
+				match: /^-\s$/,
+				blockTypes: ["paragraph"],
+				handler: (_match, ctx) => [
+					{
+						type: "convert-block",
+						blockId: ctx.blockId,
+						newType: "heading",
+						newProps: { level: 1 },
+					},
+				],
+			});
+
+			const result = engine.tryMatch(
+				mockEditor({ blockType: "paragraph", textContent: "-" }),
+				"b1",
+				" ",
+			);
+
+			expect(result).toEqual([
+				{
+					type: "convert-block",
+					blockId: "b1",
+					newType: "bulletListItem",
+					newProps: {},
+				},
+			]);
+		});
+	});
+
 	describe("tryMatchInline", () => {
 		it("skips inline rules for code field editors", () => {
 			const engine = new InputRuleEngine();

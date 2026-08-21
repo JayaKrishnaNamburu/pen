@@ -22,12 +22,15 @@ describe("SCALE1 generated envelope table", () => {
 		expect(markdown).toMatch(/wrong-subject/);
 		expect(markdown).toMatch(/100 `setTimeout\(0\)`/);
 		expect(markdown).toMatch(/Peer B does not write/);
+		expect(markdown).toMatch(/How measured/);
+		expect(markdown).toMatch(/B observation asserted before the clock/);
 
 		for (const spec of SCALE1_MEASUREMENTS) {
 			expect(markdown).toContain(`\`${spec.id}\``);
 		}
 		for (const row of [...SCALE1_FIXTURE_AUDIT, ...RELATED_FIXTURE_AUDIT]) {
 			expect(markdown).toContain(row.verdict);
+			expect(markdown).toContain(row.howMeasured);
 		}
 		for (const point of record.points) {
 			expect(markdown).toContain(point.floorKind);

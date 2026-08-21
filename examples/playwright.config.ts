@@ -28,7 +28,7 @@ export default defineConfig({
 	webServer: {
 		command: `pnpm --filter @input/pen-example-${example} exec vite preview --host 127.0.0.1 --port ${PORT} --strictPort`,
 		url: BASE_URL,
-		reuseExistingServer: !process.env.CI,
+		reuseExistingServer: false,
 		timeout: 60_000,
 	},
 	projects: [

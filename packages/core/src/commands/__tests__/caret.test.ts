@@ -5,16 +5,25 @@ import {
 	caretBlockStart,
 	caretDocEnd,
 	caretDocStart,
+	caretDown,
 	caretLeft,
 	caretLineEnd,
 	caretLineStart,
 	caretRight,
+	caretUp,
 	caretWordLeft,
 	caretWordRight,
 	selectAll,
 	selectBlock,
+	setVerticalCaretMeasure,
+	getVerticalCaretGoalX,
 } from "..";
-import { caretOf, createCommandEditor, createCommandHarness } from "./fixture";
+import {
+	caretOf,
+	createCommandEditor,
+	createCommandHarness,
+	insertMention,
+} from "./fixture";
 
 describe("caret commands", () => {
 	it("T4: caretLeft/Right step by grapheme and cross into the next text block", () => {
@@ -145,6 +154,97 @@ describe("caret commands", () => {
 			type: "block",
 			blockIds: ["a", "b"],
 		});
+		editor.destroy();
+	});
+
+	it("N1: caretRight adjacent to a mention selects the atom", () => {
+		const editor = createCommandEditor([
+			{ id: "a", type: "paragraph", text: "hiz" },
+		]);
+		insertMention(editor, "a", 2);
+		const registry = createCommandHarness(editor);
+		editor.selectText("a", 2, 2);
+
+		expect(registry.dispatch(caretRight, { extend: false })).toBe(true);
+		expect(editor.selection?.type).toBe("text");
+		if (editor.selection?.type !== "text") {
+			throw new Error("expected text selection");
+		}
+		expect(editor.selection.isCollapsed).toBe(false);
+		expect(editor.selection.anchor).toEqual({ blockId: "a", offset: 2 });
+		expect(editor.selection.focus).toEqual({ blockId: "a", offset: 3 });
+		editor.destroy();
+	});
+
+	it("pen.caretUp/Down cross at block edges without geometry", () => {
+		const editor = createCommandEditor([
+			{ id: "a", type: "paragraph", text: "aa" },
+			{ id: "b", type: "paragraph", text: "bbb" },
+		]);
+		const registry = createCommandHarness(editor);
+		editor.selectText("a", 2, 2);
+
+		expect(registry.dispatch(caretDown, { extend: false })).toBe(true);
+		expect(caretOf(editor)).toEqual({ blockId: "b", offset: 0 });
+		expect(registry.dispatch(caretUp, { extend: false })).toBe(true);
+		expect(caretOf(editor)).toEqual({ blockId: "a", offset: 2 });
+		editor.destroy();
+	});
+
+	it("pen.caretUp/Down mid-block miss without geometry", () => {
+		const editor = createCommandEditor([
+			{ id: "a", type: "paragraph", text: "hello" },
+		]);
+		const registry = createCommandHarness(editor);
+		editor.selectText("a", 2, 2);
+
+		expect(registry.dispatch(caretUp, { extend: false })).toBe(false);
+		expect(registry.dispatch(caretDown, { extend: false })).toBe(false);
+		expect(caretOf(editor)).toEqual({ blockId: "a", offset: 2 });
+		editor.destroy();
+	});
+
+	it("pen.caretDown at a structural neighbor selects the block", () => {
+		const editor = createCommandEditor([
+			{ id: "a", type: "paragraph", text: "hi" },
+			{ id: "div", type: "divider" },
+			{ id: "b", type: "paragraph", text: "yo" },
+		]);
+		const registry = createCommandHarness(editor);
+		editor.selectText("a", 2, 2);
+
+		expect(registry.dispatch(caretDown, { extend: false })).toBe(true);
+		expect(editor.selection).toEqual({
+			type: "block",
+			blockIds: ["div"],
+		});
+		editor.destroy();
+	});
+
+	it("pen.caretUp/Down use the injected geometry measure and persist goalX", () => {
+		const editor = createCommandEditor([
+			{ id: "a", type: "paragraph", text: "hello" },
+			{ id: "b", type: "paragraph", text: "world" },
+		]);
+		const registry = createCommandHarness(editor);
+		const calls: Array<{
+			direction: "up" | "down";
+			goalX: number | null;
+		}> = [];
+		setVerticalCaretMeasure(editor, (_ed, _current, direction, goalX) => {
+			calls.push({ direction, goalX });
+			return { point: { blockId: "b", offset: 3 }, goalX: goalX ?? 40 };
+		});
+		editor.selectText("a", 2, 2);
+
+		expect(registry.dispatch(caretDown, { extend: false })).toBe(true);
+		expect(caretOf(editor)).toEqual({ blockId: "b", offset: 3 });
+		expect(getVerticalCaretGoalX(editor)).toBe(40);
+		expect(calls).toEqual([{ direction: "down", goalX: null }]);
+
+		expect(registry.dispatch(caretUp, { extend: false })).toBe(true);
+		expect(caretOf(editor)).toEqual({ blockId: "b", offset: 3 });
+		expect(calls[1]).toEqual({ direction: "up", goalX: 40 });
 		editor.destroy();
 	});
 

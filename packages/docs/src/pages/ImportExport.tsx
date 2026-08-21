@@ -139,9 +139,13 @@ export function ImportExportPage() {
 				Importers turn foreign markup or JSON into document ops.
 				Exporters walk the live document, including nested and
 				layout children. HTML import sanitizes untrusted markup
-				through <code>sanitizeHTML</code> (DOMPurify). That is a
-				safety step, not a fidelity guarantee. Render-time URL
-				policy is what makes stored URLs safe to show. See{" "}
+				through <code>sanitizeHTML</code> (DOMPurify). That call
+				runs on two ingresses only: paste <code>text/html</code>{" "}
+				and the HTML import API. Pen-blocks JSON, Markdown,
+				drag-and-drop, AI writes, remote Y updates, assets, and
+				the host&apos;s initial document do not pass the
+				sanitizer. Render-time URL policy is the load-bearing
+				defense for stored URLs. See{" "}
 				<a href="#/security">Security</a>.
 			</p>
 

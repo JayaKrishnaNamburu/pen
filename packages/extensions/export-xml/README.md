@@ -28,7 +28,7 @@ const xml = await xmlExporter.export(editor);
 await xmlImporter.import(xml, editor, { replace: true });
 ```
 
-`parseXmlDocument(input)` returns the JSON document without applying it. The root element must be `pen-document` with `version` `1`; anything else throws.
+`parseXmlDocument(input)` returns the JSON document without applying it. The root element must be `pen-document` with `version` `1`; anything else throws. A source longer than `INGEST_MAX_TEXT_SIZE` (1,048,576 code units) is refused before parse: `xmlImporter.import` emits `import-truncated` and inserts nothing; `parseXmlDocument` throws. Slicing XML cannot produce a valid document, so the cap is a refuse-before-parse precondition.
 
 `xmlExporter.name` is `"xml"`, `mimeType` is `"application/xml"`, and `fileExtension` is `".xml"`.
 

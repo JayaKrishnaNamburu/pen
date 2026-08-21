@@ -76,6 +76,8 @@ export default defineConfig({
 		dedupe: ["react", "react-dom", "yjs"],
 	},
 	server: {
+		hmr: process.env.PEN_E2E === "1" ? false : undefined,
+		watch: process.env.PEN_E2E === "1" ? null : undefined,
 		fs: {
 			allow: [fileURLToPath(new URL("..", import.meta.url))],
 		},

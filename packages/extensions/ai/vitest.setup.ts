@@ -1,5 +1,7 @@
 import http from "node:http";
+import http2 from "node:http2";
 import https from "node:https";
+import net from "node:net";
 
 const INSTALLED = Symbol.for("pen.aiSuiteNetworkGuard");
 
@@ -88,6 +90,16 @@ export function installAISuiteNetworkGuard(): void {
 	http.get = blockNodeRequest as typeof http.get;
 	https.request = blockNodeRequest as typeof https.request;
 	https.get = blockNodeRequest as typeof https.get;
+
+	const blockNet = ((...args: unknown[]) => {
+		throw networkError(requestUrl(args[0]));
+	}) as typeof net.connect;
+	net.connect = blockNet;
+	net.createConnection = blockNet as typeof net.createConnection;
+
+	http2.connect = ((authority: unknown) => {
+		throw networkError(requestUrl(authority));
+	}) as typeof http2.connect;
 }
 
 installAISuiteNetworkGuard();

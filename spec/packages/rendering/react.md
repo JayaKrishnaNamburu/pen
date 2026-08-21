@@ -52,6 +52,7 @@ Important responsibilities:
 - Subscribe React state to editor state through hooks and contexts
 - Install the shared field-editor session, paste importer slots, and captured document-keyboard handlers for the active editor root
 - Pointer activation walks to the block element (`data-pen-editor-block`), not the inline span. React keeps its own gesture path in `useEditorContentGestures` rather than calling `handleFieldEditorPointerActivate()`; the hit target is still the block.
+- Boolean `data-*` attributes use the same valueless form as `@input/pen-dom` (`data-readonly=""`). ARIA booleans remain `"true"` / `"false"`.
 - Delegate shared DOM editing, selection transition, table-cell navigation, and shortcut routing behavior to `@input/pen-dom`
 - Surface extension state through React-friendly primitives rather than reimplementing extension logic locally
 
@@ -67,7 +68,7 @@ Important responsibilities:
 
 ## Current Maturity / Intended Usage
 
-Workspace package at version `0.0.0`; intended usage is current-state but still evolving. This is still the main renderer the repo documents and validates most thoroughly.
+Workspace package at version `0.0.1`; intended usage is current-state but still evolving. This is still the main renderer the repo documents and validates most thoroughly.
 
 ## Non-goals
 

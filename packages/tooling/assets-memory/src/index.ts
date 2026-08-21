@@ -13,6 +13,17 @@ export interface MemoryAssetsOptions {
    * the size check and does not store.
    */
   rejectUpload?: Error;
+  /**
+   * Mid-transfer failure double. Invokes `onProgress(0)` then rejects
+   * without storing.
+   */
+  rejectAfterProgress?: Error;
+  /**
+   * Override the stored URL. Used to simulate a provider that returns a
+   * malformed or hostile URL. `resolve` does not admit URLs — hosts and
+   * importers must apply SEC1 themselves.
+   */
+  uploadUrl?: string;
 }
 
 /**
@@ -47,11 +58,15 @@ export function memoryAssets(config: MemoryAssetsOptions = {}): AssetProvider {
       }
 
       options?.onProgress?.(0);
+      if (config.rejectAfterProgress) {
+        throw config.rejectAfterProgress;
+      }
       const id = generateId();
       const url =
-        typeof URL.createObjectURL === "function"
+        config.uploadUrl ??
+        (typeof URL.createObjectURL === "function"
           ? URL.createObjectURL(file)
-          : `blob:memory/${id}`;
+          : `blob:memory/${id}`);
       const ref: AssetRef = {
         id,
         url,

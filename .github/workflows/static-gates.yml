@@ -78,6 +78,17 @@ jobs:
           # same-class only.
           - gate: bench-envelope-drift
             command: node scripts/bench-envelope-drift.mjs
+          # API7: npm provenance preconditions (id-token, NPM_CONFIG_PROVENANCE,
+          # --provenance, repository.url). Outcome is unobservable until the
+          # first publish; this holds the static contract. Zero tags is not
+          # a failure — it is printed as UNEXERCISED.
+          - gate: provenance-preconditions
+            command: node scripts/release-check.mjs --provenance-preconditions
+          # Wave P exit: MIGRATION.md host-guide mechanical truth.
+          # Export claims, origin union, yjs peer, named paths.
+          # Samples type-check when present; today's guide has zero fences.
+          - gate: migration-guide-check
+            command: node scripts/migration-guide-check.mjs
 
     steps:
       - name: Check out repository

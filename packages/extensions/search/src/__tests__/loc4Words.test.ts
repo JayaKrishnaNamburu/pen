@@ -43,6 +43,7 @@ describe("@input/pen-search LOC4 leftovers", () => {
 
 	it("LOC4: case-insensitive search uses foldAndNormalize and skips folding when sensitive", () => {
 		expect(foldAndNormalize("I", "tr")).toBe(foldAndNormalize("ı", "tr"));
+		expect(foldAndNormalize("İ", "tr")).toBe(foldAndNormalize("i", "tr"));
 		expect(foldAndNormalize("Café", "en")).toBe(
 			foldAndNormalize("cafe\u0301", "en"),
 		);

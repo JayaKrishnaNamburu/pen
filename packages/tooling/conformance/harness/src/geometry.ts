@@ -74,7 +74,10 @@ function serializeRect(rect: Rect | null): GeometryRect | null {
 	};
 }
 
-function rectsEqual(left: GeometryRect | null, right: GeometryRect | null): boolean {
+function rectsEqual(
+	left: GeometryRect | null,
+	right: GeometryRect | null,
+): boolean {
 	if (left == null || right == null) {
 		return left === right;
 	}
@@ -100,7 +103,10 @@ function normalizePoint(point: GeometryPointRef): {
 	};
 }
 
-function serializeLineBoxes(blockId: string, reader: GeometryReaderHost): GeometryLineBox[] {
+function serializeLineBoxes(
+	blockId: string,
+	reader: GeometryReaderHost,
+): GeometryLineBox[] {
 	return reader.lineBoxes(blockId).map((line) => ({
 		top: line.top,
 		bottom: line.bottom,
@@ -115,7 +121,9 @@ function supportedEntryTypes(): string[] {
 			PerformanceObserver?: { supportedEntryTypes?: readonly string[] };
 		}
 	).PerformanceObserver;
-	return observer?.supportedEntryTypes ? [...observer.supportedEntryTypes] : [];
+	return observer?.supportedEntryTypes
+		? [...observer.supportedEntryTypes]
+		: [];
 }
 
 function observeEntries(type: string): {
@@ -277,8 +285,12 @@ export async function compareCaretCache(
 		try {
 			const compares: GeometryCaretCompare[] = points.map((ref) => {
 				const { point, affinity } = normalizePoint(ref);
-				const cached = serializeRect(current.reader.caretRect(point, affinity));
-				const fromScratch = serializeRect(fresh.caretRect(point, affinity));
+				const cached = serializeRect(
+					current.reader.caretRect(point, affinity),
+				);
+				const fromScratch = serializeRect(
+					fresh.caretRect(point, affinity),
+				);
 				return {
 					point,
 					affinity,
@@ -292,6 +304,10 @@ export async function compareCaretCache(
 				rootHeight: root.getBoundingClientRect().height,
 				compares,
 				staleCount: compares.filter((entry) => entry.stale).length,
+				missingCount: compares.filter(
+					(entry) =>
+						entry.cached == null || entry.fromScratch == null,
+				).length,
 			};
 		} finally {
 			fresh.dispose();
@@ -389,7 +405,10 @@ function countLayoutReads(
 		if (typeof original !== "function") {
 			return;
 		}
-		const method = original as (this: unknown, ...args: unknown[]) => unknown;
+		const method = original as (
+			this: unknown,
+			...args: unknown[]
+		) => unknown;
 		(target as Record<string, unknown>)[key] = function (
 			this: unknown,
 			...args: unknown[]
@@ -454,6 +473,12 @@ export async function flushEightRemoteCarets(
 		restoreReads();
 	}
 
+	// layout-shift / longtask entries are delivered after the current task
+	// and the next presented frame. same-turn takeRecords() always returns [].
+	await new Promise<void>((resolve) => {
+		requestAnimationFrame(() => resolve());
+	});
+
 	const layoutShiftEntries = layoutShift?.take() ?? [];
 	const longTaskEntries = longTask?.take() ?? [];
 	layoutShift?.disconnect();
@@ -484,7 +509,9 @@ export async function flushEightRemoteCarets(
 		layoutShiftCount: layoutShiftEntries.length,
 		longTaskCount: longTaskEntries.length,
 		layoutShiftValues: layoutShiftEntries.map((entry) =>
-			"value" in entry && typeof entry.value === "number" ? entry.value : 0,
+			"value" in entry && typeof entry.value === "number"
+				? entry.value
+				: 0,
 		),
 		missingObserverTypes,
 	};

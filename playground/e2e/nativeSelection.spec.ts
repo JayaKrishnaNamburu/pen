@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import {
 	clickInlineOffset,
 	openPlayground,
-	selectNativeInlineRange,
+	selectEditorTextRange,
 } from "./helpers";
 
 interface SelectionPointSnapshot {
@@ -41,7 +41,11 @@ test("collapses an immediate follow-up click after triple-click paragraph select
 	await firstInline.click({ clickCount: 3 });
 	const tripleClickSnapshot = await getSelectionSnapshot(page);
 	if (tripleClickSnapshot?.isCollapsed !== false) {
-		await selectNativeInlineRange(page, blockId, 0, paragraphText.length);
+		await selectEditorTextRange(
+			page,
+			{ blockId, offset: 0 },
+			{ blockId, offset: paragraphText.length },
+		);
 	}
 
 	await expect

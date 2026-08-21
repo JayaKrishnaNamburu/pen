@@ -188,10 +188,26 @@ describe("conflict resolution", () => {
       });
 
       const docB = forkPeerDoc(adapter, docA, 2);
+      const textA = docA.penDocument.blocks.get("b1")!.get("content") as Y.Text;
+      const textB = docB.penDocument.blocks.get("b1")!.get("content") as Y.Text;
 
-      const block = docB.penDocument.blocks.get("b1")!;
-      expect(block.get("type")).toBe("callout");
-      expect((block.get("content") as Y.Text).toString()).toBe("Important note");
+      docA.ydoc.transact(() => {
+        textA.insert(textA.length, " from A");
+      }, "user");
+
+      const fromA = Y.encodeStateAsUpdate(docA.ydoc, Y.encodeStateVector(docB.ydoc));
+      Y.applyUpdate(docB.ydoc, fromA);
+      expect(textB.toString()).toBe("Important note from A");
+
+      docB.ydoc.transact(() => {
+        textB.insert(textB.length, " from B");
+      }, "user");
+      syncDocs(docA, docB);
+
+      expect(textA.toString()).toBe(textB.toString());
+      expect(textA.toString()).toBe("Important note from A from B");
+      expect(docA.penDocument.blocks.get("b1")!.get("type")).toBe("callout");
+      expect(docB.penDocument.blocks.get("b1")!.get("type")).toBe("callout");
     });
   });
 });

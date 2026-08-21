@@ -1,4 +1,5 @@
 import { createTwoPeerHarness } from "@input/pen-test";
+import type { CommitEvent } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 
 import { undoExtension } from "../undoExtension";
@@ -57,6 +58,12 @@ describe("@input/pen-undo two-peer collaborator isolation", () => {
 			blocks: [{ id: "b1", type: "paragraph", content: "Hello" }],
 			extensions: [undoExtension({ groupTimeout: 0 })],
 		});
+		const remoteOrigins: string[] = [];
+		harness.peerA.editor.on("commit", (event: CommitEvent) => {
+			if (event.source === "remote") {
+				remoteOrigins.push(event.origin.type);
+			}
+		});
 
 		harness.peerB.editor.apply(
 			[{ type: "insert-text", blockId: "b1", offset: 5, text: " from-b" }],
@@ -67,6 +74,9 @@ describe("@input/pen-undo two-peer collaborator isolation", () => {
 		expect(visibleText(harness.peerA.editor.getBlock("b1").textContent())).toBe(
 			"Hello from-b",
 		);
+		expect(remoteOrigins.length).toBeGreaterThan(0);
+		expect(remoteOrigins.every((type) => type === "collaborator")).toBe(true);
+		expect(remoteOrigins).not.toContain("user");
 
 		expect(harness.peerA.editor.undoManager.canUndo()).toBe(false);
 		expect(harness.peerA.editor.undoManager.undo()).toBe(false);

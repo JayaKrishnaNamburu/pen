@@ -51,7 +51,7 @@ function insertText(
 	doc: YjsCRDTDocument,
 	blockId: string,
 	text: string,
-	origin: unknown = "user",
+	origin: unknown = { type: "user" },
 ): void {
 	adapter.transact(
 		doc,

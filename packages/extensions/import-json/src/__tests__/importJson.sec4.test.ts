@@ -174,6 +174,40 @@ describe("IOP5 JSON ingest bounds", () => {
 	});
 });
 
+describe("IOP5 JSON ingest pre-parse cap", () => {
+	it("IOP5 a 2×-cap string is refused before JSON.parse, so trailing junk never parses", () => {
+		const editor = createBareEditor();
+		const keep =
+			'{"version":1,"blocks":[{"id":"k","type":"paragraph","props":{},"content":{"text":"keep"}}]}';
+		const input2x = `${keep}${"x".repeat(INGEST_MAX_TEXT_SIZE)}`;
+		const input4x = `${keep}${"x".repeat(INGEST_MAX_TEXT_SIZE * 3)}`;
+
+		expect(input2x.length).toBeGreaterThan(INGEST_MAX_TEXT_SIZE);
+		expect(() => JSON.parse(input2x)).toThrow();
+
+		const full2x = parseJsonWithReport(input2x, editor);
+		const full4x = parseJsonWithReport(input4x, editor);
+
+		expect(full2x.blocks).toEqual([]);
+		expect(full2x.blocks).toEqual(full4x.blocks);
+		expect(full2x.report.droppedByReason).toEqual([
+			{
+				reason: "text-size-exceeded",
+				count: input2x.length - INGEST_MAX_TEXT_SIZE,
+				bound: "INGEST_MAX_TEXT_SIZE",
+				limit: INGEST_MAX_TEXT_SIZE,
+				actual: input2x.length,
+				dropped: `${input2x.length - INGEST_MAX_TEXT_SIZE} code units`,
+			},
+		]);
+		expect(full4x.report.droppedByReason[0]?.actual).toBeGreaterThan(
+			full2x.report.droppedByReason[0]?.actual ?? 0,
+		);
+
+		editor.destroy();
+	});
+});
+
 describe("IOP6 JSON ingest report", () => {
 	it("IOP6 returns one dropped-by-reason report instead of a diagnostic stream", () => {
 		const editor = createBareEditor();

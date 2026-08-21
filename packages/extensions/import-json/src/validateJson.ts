@@ -9,11 +9,13 @@ import {
 	INGEST_MAX_NESTING_DEPTH,
 	INGEST_MAX_NODE_COUNT,
 	INGEST_MAX_TEXT_SIZE,
+	capRawJsonSource,
 	copyRecord,
 	createIngestReport,
 	emptyRecord,
 	IngestDropCounts,
 	isRecord,
+	parseJsonSource,
 	type IngestReport,
 } from "./ingestBounds";
 
@@ -33,7 +35,19 @@ export function ingestJsonDocument(
 	editor: Editor,
 ): JsonIngestResult {
 	const drops = new IngestDropCounts();
-	const value = typeof input === "string" ? JSON.parse(input) : input;
+	let value: unknown;
+	if (typeof input === "string") {
+		const capped = capRawJsonSource(input, drops);
+		if (capped == null) {
+			return {
+				blocks: [],
+				report: createIngestReport(0, 0, [], drops),
+			};
+		}
+		value = parseJsonSource(capped);
+	} else {
+		value = input;
+	}
 
 	if (!isRecord(value)) {
 		throw new Error("Invalid Pen JSON document.");

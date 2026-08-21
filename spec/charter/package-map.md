@@ -64,6 +64,6 @@ Provide a stable overview of the workspace layout and the spec paths that mirror
 These workspace packages exist and have no `spec/packages/` file. That is intentional:
 
 - `@input/pen-conformance` (`packages/tooling/conformance`) — private Playwright / browser-real harness. Scenario names and host pins change with the wave work; a current-state spec would rot faster than it would help.
-- `@input/pen-eslint-plugin` (`packages/tooling/eslint-plugin`) — private lint rules that enforce `spec-v2` invariants mechanically. The rules *are* the documentation.
+- `@input/pen-eslint-plugin` (`packages/tooling/eslint-plugin`) — private lint rules that enforce `spec-v2` invariants mechanically. The rules _are_ the documentation.
 
 `@input/pen-import-json` is a published package and does have a spec.

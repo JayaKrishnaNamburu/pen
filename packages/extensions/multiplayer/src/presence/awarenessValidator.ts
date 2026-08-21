@@ -6,6 +6,7 @@ import {
 	MAX_PRESENCE_BYTES_PER_PEER,
 	MAX_PRESENCE_COLOR_LENGTH,
 	MAX_PRESENCE_DISPLAY_NAME_LENGTH,
+	MAX_PRESENCE_OFFSET,
 	MAX_PRESENCE_USER_ID_LENGTH,
 	type PresenceRejectionReason,
 } from "./constants";
@@ -195,13 +196,19 @@ function validateCursor(
 	if (!isRecord(value) || hasForbiddenKeys(value)) {
 		return { cursor: null, reason: "wrong-typed" };
 	}
-	if (typeof value.blockId !== "string" || !isFiniteNumber(value.offset)) {
+	if (typeof value.blockId !== "string") {
 		return { cursor: null, reason: "wrong-typed" };
 	}
-	if (value.clock !== undefined && !isFiniteNumber(value.clock)) {
+	if (!isPresenceInteger(value.offset)) {
 		return { cursor: null, reason: "wrong-typed" };
 	}
-	if (value.commitId !== undefined && !isFiniteNumber(value.commitId)) {
+	if (value.offset > MAX_PRESENCE_OFFSET) {
+		return { cursor: null, reason: "oversized" };
+	}
+	if (value.clock !== undefined && !isPresenceInteger(value.clock)) {
+		return { cursor: null, reason: "wrong-typed" };
+	}
+	if (value.commitId !== undefined && !isPresenceInteger(value.commitId)) {
 		return { cursor: null, reason: "wrong-typed" };
 	}
 	if (value.blockId.length > MAX_PRESENCE_USER_ID_LENGTH) {
@@ -214,7 +221,7 @@ function validateCursor(
 	const point = resolveDocumentPoint(value.blockId, value.offset, document);
 	if (
 		point.reason &&
-		!(point.reason === "out-of-range-offset" && isFiniteNumber(value.commitId))
+		!(point.reason === "out-of-range-offset" && isPresenceInteger(value.commitId))
 	) {
 		return { cursor: null, reason: point.reason };
 	}
@@ -223,8 +230,8 @@ function validateCursor(
 		cursor: {
 			blockId: value.blockId,
 			offset: value.offset,
-			clock: isFiniteNumber(value.clock) ? value.clock : 0,
-			...(isFiniteNumber(value.commitId)
+			clock: isPresenceInteger(value.clock) ? value.clock : 0,
+			...(isPresenceInteger(value.commitId)
 				? { commitId: value.commitId }
 				: {}),
 		},
@@ -245,10 +252,10 @@ function validateSelection(
 	if (!isRecord(value) || hasForbiddenKeys(value)) {
 		return { selection: null, reason: "wrong-typed" };
 	}
-	if (value.clock !== undefined && !isFiniteNumber(value.clock)) {
+	if (value.clock !== undefined && !isPresenceInteger(value.clock)) {
 		return { selection: null, reason: "wrong-typed" };
 	}
-	if (value.commitId !== undefined && !isFiniteNumber(value.commitId)) {
+	if (value.commitId !== undefined && !isPresenceInteger(value.commitId)) {
 		return { selection: null, reason: "wrong-typed" };
 	}
 
@@ -268,7 +275,7 @@ function validateTextSelection(
 	selection: MultiplayerTextSelectionPayload | null;
 	reason: PresenceRejectionReason | null;
 } {
-	const allowStaleOffset = isFiniteNumber(value.commitId);
+	const allowStaleOffset = isPresenceInteger(value.commitId);
 	const anchor = validatePoint(value.anchor, document, allowStaleOffset);
 	if (anchor.reason) {
 		return { selection: null, reason: anchor.reason };
@@ -286,8 +293,8 @@ function validateTextSelection(
 			kind: "text",
 			anchor: anchor.point,
 			head: head.point,
-			clock: isFiniteNumber(value.clock) ? value.clock : 0,
-			...(isFiniteNumber(value.commitId)
+			clock: isPresenceInteger(value.clock) ? value.clock : 0,
+			...(isPresenceInteger(value.commitId)
 				? { commitId: value.commitId }
 				: {}),
 		},
@@ -330,8 +337,8 @@ function validateBlockSelection(
 		selection: {
 			kind: "block",
 			blockIds,
-			clock: isFiniteNumber(value.clock) ? value.clock : 0,
-			...(isFiniteNumber(value.commitId)
+			clock: isPresenceInteger(value.clock) ? value.clock : 0,
+			...(isPresenceInteger(value.commitId)
 				? { commitId: value.commitId }
 				: {}),
 		},
@@ -350,8 +357,11 @@ function validatePoint(
 	if (!isRecord(value) || hasForbiddenKeys(value)) {
 		return { point: null, reason: "wrong-typed" };
 	}
-	if (typeof value.blockId !== "string" || !isFiniteNumber(value.offset)) {
+	if (typeof value.blockId !== "string" || !isPresenceInteger(value.offset)) {
 		return { point: null, reason: "wrong-typed" };
+	}
+	if (value.offset > MAX_PRESENCE_OFFSET) {
+		return { point: null, reason: "oversized" };
 	}
 	if (value.blockId.length > MAX_PRESENCE_USER_ID_LENGTH) {
 		return { point: null, reason: "oversized" };
@@ -438,8 +448,8 @@ function isScriptBearing(value: string): boolean {
 	return HOSTILE_MARKUP.test(value);
 }
 
-function isFiniteNumber(value: unknown): value is number {
-	return typeof value === "number" && Number.isFinite(value);
+function isPresenceInteger(value: unknown): value is number {
+	return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

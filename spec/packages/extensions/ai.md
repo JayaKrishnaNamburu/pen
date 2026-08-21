@@ -94,7 +94,7 @@ Sessions are first-class runtime state, not renderer-local convenience state.
 
 ## Current Maturity / Intended Usage
 
-Workspace package at version `0.0.0`; intended usage is current-state but still evolving. This is one of the most ambitious packages in the workspace and should be treated as a large extension surface rather than a minimal helper package.
+Workspace package at version `0.0.1`; intended usage is current-state but still evolving. This is one of the most ambitious packages in the workspace and should be treated as a large extension surface rather than a minimal helper package.
 
 ## Non-goals
 

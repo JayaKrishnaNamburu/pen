@@ -84,7 +84,7 @@ The current package stages proactive edits in a few explicit phases:
 
 ## Current Maturity / Intended Usage
 
-Workspace package at version `0.0.0`; intended usage is current-state but still evolving. The package is suitable for proactive writing assistance in host apps that can provide a bounded analyzer implementation and renderer UI.
+Workspace package at version `0.0.1`; intended usage is current-state but still evolving. The package is suitable for proactive writing assistance in host apps that can provide a bounded analyzer implementation and renderer UI.
 
 ## Non-goals
 

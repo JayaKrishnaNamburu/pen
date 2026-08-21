@@ -1,13 +1,14 @@
 import React, { useRef, useState } from "react";
 import { getOpOriginType } from "@input/pen-core";
 import type { Decoration, InlineDecoration } from "@input/pen-types";
+import { urlPolicyFromEditor } from "@input/pen-dom";
 import { getLogicalTextContent } from "@input/pen-dom/field-editor/inlineAtomDom";
 import { INLINE_ATOM_REPLACEMENT_TEXT } from "@input/pen-dom/field-editor/inlineAtomModel";
+import { fullReconcileDeltasToDOM } from "@input/pen-dom/field-editor/reconciler";
 import { replaceElementChildren } from "@input/pen-dom/utils/replaceElementChildren";
 import { useEditorContentContext } from "../../context/editorContentContext";
 import { useEditorContext } from "../../context/editorContext";
 import { useFieldEditorContext } from "../../context/fieldEditorContext";
-import { fullReconcileDeltasToDOM } from "@input/pen-dom/field-editor/reconciler";
 import { useBlockEditingState } from "../../hooks/useBlockEditingState";
 import { useBlockCommitState } from "../../hooks/useBlockCommitState";
 import { useBlockDecorations } from "../../hooks/useBlockDecorations";
@@ -194,7 +195,10 @@ export function InlineContent(props: InlineContentProps) {
 				[...renderedDeltas],
 				elementRef.current,
 				editor.schema,
-				{ preserveSelection: true },
+				{
+					preserveSelection: true,
+					urlPolicy: urlPolicyFromEditor(editor),
+				},
 			);
 			previousRenderedDeltasRef.current = renderedDeltas;
 			syncInlineAtomTargets();
@@ -222,7 +226,10 @@ export function InlineContent(props: InlineContentProps) {
 			[...renderedDeltas],
 			elementRef.current,
 			editor.schema,
-			{ preserveSelection: false },
+			{
+				preserveSelection: false,
+				urlPolicy: urlPolicyFromEditor(editor),
+			},
 		);
 		previousRenderedDeltasRef.current = renderedDeltas;
 		syncInlineAtomTargets();

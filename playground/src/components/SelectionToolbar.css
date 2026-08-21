@@ -32,7 +32,7 @@
 
 .playground-inline-session {
 	position: absolute;
-	top: var(--pen-ai-contextual-prompt-top);
+	top: max(8px, var(--pen-ai-contextual-prompt-top));
 	left: var(--pen-ai-contextual-prompt-left);
 	z-index: 60;
 	display: grid;

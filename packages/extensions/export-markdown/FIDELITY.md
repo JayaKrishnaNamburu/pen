@@ -15,8 +15,8 @@ Generated from `src/fidelityTable.ts` and asserted by `src/__tests__/iop3Fidelit
 | block | image | degraded | caption dropped; hostile src omitted (SEC1) |
 | block | table | full | GFM pipe-table; tables without a header row fall back to HTML |
 | block | divider | full |  |
-| block | callout | degraded | blockquote with Note/Warning/Error prefix |
-| block | toggle | degraded | raw HTML details (Pen-specific) |
+| block | callout | degraded | blockquote with Note/Warning/Error prefix; children exported as sibling blocks |
+| block | toggle | degraded | raw HTML details (Pen-specific); children exported as sibling blocks |
 | block | blockquote | full |  |
 | block | subdocument | dropped | comment marker only; nested document dropped |
 | mark | bold | full |  |

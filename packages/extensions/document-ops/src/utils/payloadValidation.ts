@@ -1,3 +1,4 @@
+import { shouldExposeBlockInTooling } from "@input/pen-content-ops";
 import type {
 	ApplyOptions,
 	DiagnosticEvent,
@@ -138,6 +139,11 @@ function validateOnePayload(
 		return failure(unresolved, payload);
 	}
 
+	const unexposed = unexposedToolMutation(editor, record, pendingBlockIds);
+	if (unexposed) {
+		return failure(unexposed, payload);
+	}
+
 	const offsetFailure = outOfRangeOffset(
 		editor,
 		record,
@@ -188,6 +194,65 @@ function unresolvedTargets(
 	}
 
 	return unresolvedBlock(editor, payload.blockId, pendingBlockIds, "blockId");
+}
+
+function unexposedToolMutation(
+	editor: Editor,
+	payload: Record<string, unknown>,
+	pendingBlockIds: Set<string>,
+): string | null {
+	if (payload.type === "insert-block") {
+		const blockType = payload.blockType;
+		if (typeof blockType !== "string" || blockType.length === 0) {
+			return "Unresolved target: insert-block is missing blockType";
+		}
+		return unexposedBlockType(editor, blockType);
+	}
+
+	if (
+		payload.type === "set-selection" ||
+		payload.type === "create-app" ||
+		payload.type === "update-app" ||
+		payload.type === "delete-app" ||
+		payload.type === "set-meta"
+	) {
+		return null;
+	}
+
+	const blockId =
+		payload.type === "merge-blocks" ? payload.targetBlockId : payload.blockId;
+	if (typeof blockId !== "string" || blockId.length === 0) {
+		return null;
+	}
+	if (pendingBlockIds.has(blockId)) {
+		return null;
+	}
+
+	const block = editor.getBlock(blockId);
+	if (!block) {
+		return null;
+	}
+	return unexposedExistingBlock(editor, block.id, block.type);
+}
+
+function unexposedBlockType(editor: Editor, blockType: string): string | null {
+	const schema = editor.schema.resolve(blockType);
+	if (!schema || !shouldExposeBlockInTooling(editor.documentProfile, schema)) {
+		return `Block type "${blockType}" is not available in ${editor.documentProfile} documents.`;
+	}
+	return null;
+}
+
+function unexposedExistingBlock(
+	editor: Editor,
+	blockId: string,
+	blockType: string,
+): string | null {
+	const schema = editor.schema.resolve(blockType);
+	if (!schema || !shouldExposeBlockInTooling(editor.documentProfile, schema)) {
+		return `Block "${blockId}" of type "${blockType}" is not editable in ${editor.documentProfile} documents.`;
+	}
+	return null;
 }
 
 function unresolvedBlock(

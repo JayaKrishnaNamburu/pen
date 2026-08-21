@@ -1,0 +1,227 @@
+import { describe, expect, it, vi } from "vitest";
+import type { DocumentOp, Editor, PenStreamPart, ToolRuntime } from "@input/pen-types";
+import { createSSEHandler } from "../server";
+import { parseSSELine } from "../parser";
+import type { SSEEvent } from "../types";
+
+const HOSTILE_TEXT = "hostile-ungranted-write";
+
+function insertTextOp(blockId: string, text: string): DocumentOp {
+	return { type: "insert-text", blockId, offset: 0, text };
+}
+
+function createRecordingEditor() {
+	const applied: DocumentOp[] = [];
+	const editor = {
+		apply(ops: DocumentOp[]) {
+			applied.push(...ops);
+		},
+		internals: {
+			getSlot() {
+				return undefined;
+			},
+			emit() {},
+		},
+	} as unknown as Editor;
+	return { editor, applied };
+}
+
+function createRuntime(
+	executeTool: ToolRuntime["executeTool"],
+): ToolRuntime {
+	return {
+		registerTool() {},
+		unregisterTool() {},
+		listTools: () => [],
+		getTool: () => null,
+		executeTool,
+	};
+}
+
+async function readAllSSEEvents(response: Response): Promise<SSEEvent[]> {
+	const events: SSEEvent[] = [];
+	const reader = response.body!.getReader();
+	const decoder = new TextDecoder();
+	let buffer = "";
+	let pending: Partial<SSEEvent> = {};
+
+	while (true) {
+		const { done, value } = await reader.read();
+		if (done) break;
+		buffer += decoder.decode(value, { stream: true });
+		const lines = buffer.split("\n");
+		buffer = lines.pop() ?? "";
+		for (const line of lines) {
+			const result = parseSSELine(line, pending);
+			pending = result.pending;
+			if (result.event) events.push(result.event);
+		}
+	}
+	if (buffer.length > 0) {
+		const result = parseSSELine(buffer, pending);
+		if (result.event) events.push(result.event);
+	}
+	return events;
+}
+
+async function postToolCall(
+	handler: ReturnType<typeof createSSEHandler>,
+	name: string,
+): Promise<{
+	status: number;
+	parts: PenStreamPart[];
+}> {
+	const response = await handler(
+		new Request("http://localhost/sse", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				prompt: "x",
+				toolCalls: [{ toolCallId: "tc-1", name, input: {} }],
+			}),
+		}),
+	);
+	const events = await readAllSSEEvents(response);
+	return {
+		status: response.status,
+		parts: events.map((event) => JSON.parse(event.data) as PenStreamPart),
+	};
+}
+
+describe("AIB3 SSE tool authority", () => {
+	it("AIB3: an un-allowlisted mutating toolCall does not execute and does not write", async () => {
+		const { editor, applied } = createRecordingEditor();
+		const executeTool = vi.fn(async (_name, _input, ctx) => {
+			ctx.editor.apply([insertTextOp("b1", HOSTILE_TEXT)], {
+				origin: "ai",
+			});
+			return { wrote: true };
+		});
+
+		const { status, parts } = await postToolCall(
+			createSSEHandler({
+				editor,
+				toolRuntime: createRuntime(executeTool),
+				pingInterval: 60_000,
+			}),
+			"insert_block",
+		);
+
+		expect(status).toBe(200);
+		expect(executeTool).not.toHaveBeenCalled();
+		expect(applied).toEqual([]);
+		expect(JSON.stringify(applied)).not.toContain(HOSTILE_TEXT);
+		expect(
+			parts.filter((part) => part.type === "tool-error").map((part) => ({
+				toolCallId: "toolCallId" in part ? part.toolCallId : null,
+				error: "error" in part ? part.error : null,
+			})),
+		).toEqual([{ toolCallId: "tc-1", error: "tool-not-allowed" }]);
+		expect(parts.some((part) => part.type === "tool-output")).toBe(false);
+	});
+
+	it("AIB3: executeTool without a grant is default-deny even when the handler is already on the runtime", async () => {
+		const { editor, applied } = createRecordingEditor();
+		const executeTool = vi.fn(async () => {
+			throw new Error("handler must not run");
+		});
+
+		const { parts } = await postToolCall(
+			createSSEHandler({
+				editor,
+				allowedMutatingTools: [],
+				toolRuntime: createRuntime(executeTool),
+				pingInterval: 60_000,
+			}),
+			"write_document",
+		);
+
+		expect(executeTool).not.toHaveBeenCalled();
+		expect(applied).toEqual([]);
+		expect(parts.some((part) => part.type === "tool-error")).toBe(true);
+	});
+
+	it("AIB3: a granted mutating tool may write; a sibling un-allowlisted call does not", async () => {
+		const { editor, applied } = createRecordingEditor();
+		const executeTool = vi.fn(async (name, _input, ctx) => {
+			ctx.editor.apply(
+				[
+					insertTextOp(
+						"b1",
+						name === "insert_block" ? "granted" : HOSTILE_TEXT,
+					),
+				],
+				{ origin: "ai" },
+			);
+			return { name };
+		});
+
+		const handler = createSSEHandler({
+			editor,
+			allowedMutatingTools: ["insert_block"],
+			toolRuntime: createRuntime(executeTool),
+			pingInterval: 60_000,
+		});
+		const response = await handler(
+			new Request("http://localhost/sse", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					prompt: "x",
+					toolCalls: [
+						{
+							toolCallId: "ok",
+							name: "insert_block",
+							input: {},
+						},
+						{
+							toolCallId: "denied",
+							name: "delete_block",
+							input: {},
+						},
+					],
+				}),
+			}),
+		);
+		const events = await readAllSSEEvents(response);
+		const parts = events.map((event) => JSON.parse(event.data) as PenStreamPart);
+
+		expect(executeTool).toHaveBeenCalledTimes(1);
+		expect(executeTool.mock.calls[0]?.[0]).toBe("insert_block");
+		expect(applied).toEqual([insertTextOp("b1", "granted")]);
+		expect(JSON.stringify(applied)).not.toContain(HOSTILE_TEXT);
+		expect(
+			parts
+				.filter((part) => part.type === "tool-error")
+				.map((part) => ("error" in part ? part.error : null)),
+		).toEqual(["tool-not-allowed"]);
+	});
+
+	it("AIB3: a read-only catalog name that calls apply does not change the document", async () => {
+		const { editor, applied } = createRecordingEditor();
+		const executeTool = vi.fn(async (_name, _input, ctx) => {
+			ctx.editor.apply([insertTextOp("b1", HOSTILE_TEXT)], {
+				origin: "ai",
+			});
+			return { wrote: true };
+		});
+
+		const { parts } = await postToolCall(
+			createSSEHandler({
+				editor,
+				toolRuntime: createRuntime(executeTool),
+				pingInterval: 60_000,
+			}),
+			"read_document",
+		);
+
+		expect(executeTool).toHaveBeenCalledTimes(1);
+		expect(applied).toEqual([]);
+		expect(JSON.stringify(applied)).not.toContain(HOSTILE_TEXT);
+		expect(
+			parts
+				.filter((part) => part.type === "tool-error")
+				.map((part) => ("error" in part ? part.error : null)),
+		).toEqual(["tool-not-allowed"]);
+	});
+});

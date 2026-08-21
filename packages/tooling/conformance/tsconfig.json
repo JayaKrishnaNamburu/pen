@@ -10,6 +10,7 @@
 		"harness",
 		"src",
 		"scenarios",
+		"suites",
 		"fixtures",
 		"playwright.config.ts"
 	]

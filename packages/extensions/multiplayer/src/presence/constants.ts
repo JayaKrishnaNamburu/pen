@@ -13,6 +13,9 @@ export const MAX_PRESENCE_COLOR_LENGTH = 64;
 /** COL2: max UTF-8 bytes of one peer's awareness payload. */
 export const MAX_PRESENCE_BYTES_PER_PEER = 4_096;
 
+/** COL2: max cursor/selection offset accepted from a peer, including stale remaps. */
+export const MAX_PRESENCE_OFFSET = 1_048_576;
+
 /** COL2: max block ids in one remote block selection. */
 export const MAX_PRESENCE_BLOCK_SELECTION_IDS = 256;
 

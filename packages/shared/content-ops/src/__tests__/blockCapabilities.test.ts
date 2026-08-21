@@ -5,8 +5,12 @@ import {
 	getBlockSelectionRoleFromType,
 	getFlowCapabilityFromSchema,
 	getFlowCapabilityFromType,
+	isContinuousTextFlowCapability,
 	shouldAllowDirectBlockPaste,
+	shouldAllowFlowInsertionInSlashMenu,
 	shouldExposeBlockInTooling,
+	shouldFallbackMixedSelectionToBlock,
+	shouldForceBlockScopedSelectAll,
 	shouldShowBlockInDefaultMenus,
 } from "../blockCapabilities";
 
@@ -121,5 +125,46 @@ describe("block capability helpers", () => {
 	it("treats unknown block capabilities as ineligible for direct flow paste", () => {
 		expect(shouldAllowDirectBlockPaste("flow", null)).toBe(false);
 		expect(shouldAllowDirectBlockPaste("flow", "flow-inline")).toBe(true);
+	});
+
+	it("isContinuousTextFlowCapability is true only for flow-inline", () => {
+		expect(isContinuousTextFlowCapability("flow-inline")).toBe(true);
+		expect(isContinuousTextFlowCapability("flow-delegated")).toBe(false);
+		expect(isContinuousTextFlowCapability("flow-structural")).toBe(false);
+		expect(isContinuousTextFlowCapability("flow-disallowed")).toBe(false);
+		expect(isContinuousTextFlowCapability(null)).toBe(false);
+	});
+
+	it("shouldAllowFlowInsertionInSlashMenu denies only flow-disallowed in flow documents", () => {
+		expect(shouldAllowFlowInsertionInSlashMenu("structured", "flow-disallowed")).toBe(
+			true,
+		);
+		expect(shouldAllowFlowInsertionInSlashMenu("flow", "flow-disallowed")).toBe(
+			false,
+		);
+		expect(shouldAllowFlowInsertionInSlashMenu("flow", "flow-inline")).toBe(true);
+	});
+
+	it("shouldFallbackMixedSelectionToBlock follows profile and capability", () => {
+		expect(shouldFallbackMixedSelectionToBlock("structured", "flow-inline")).toBe(
+			false,
+		);
+		expect(shouldFallbackMixedSelectionToBlock("structured", "flow-delegated")).toBe(
+			true,
+		);
+		expect(shouldFallbackMixedSelectionToBlock("flow", "flow-structural")).toBe(
+			true,
+		);
+		expect(shouldFallbackMixedSelectionToBlock("flow", "flow-inline")).toBe(false);
+		expect(shouldFallbackMixedSelectionToBlock("flow", null)).toBe(true);
+	});
+
+	it("shouldForceBlockScopedSelectAll is flow-only for structural and disallowed", () => {
+		expect(shouldForceBlockScopedSelectAll("flow", "flow-structural")).toBe(true);
+		expect(shouldForceBlockScopedSelectAll("flow", "flow-disallowed")).toBe(true);
+		expect(shouldForceBlockScopedSelectAll("flow", "flow-inline")).toBe(false);
+		expect(shouldForceBlockScopedSelectAll("structured", "flow-structural")).toBe(
+			false,
+		);
 	});
 });

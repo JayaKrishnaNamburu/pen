@@ -31,13 +31,15 @@ export const MARKDOWN_EXPORT_FIDELITY: readonly ExportFidelityRow[] = [
     kind: "block",
     type: "callout",
     fidelity: "degraded",
-    notes: "blockquote with Note/Warning/Error prefix",
+    notes:
+      "blockquote with Note/Warning/Error prefix; children exported as sibling blocks",
   },
   {
     kind: "block",
     type: "toggle",
     fidelity: "degraded",
-    notes: "raw HTML details (Pen-specific)",
+    notes:
+      "raw HTML details (Pen-specific); children exported as sibling blocks",
   },
   { kind: "block", type: "blockquote", fidelity: "full", notes: "" },
   {

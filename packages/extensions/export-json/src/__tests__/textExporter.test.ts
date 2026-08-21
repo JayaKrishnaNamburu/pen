@@ -4,9 +4,8 @@ import { defaultSchema } from "@input/pen-schema-default";
 import { exportEditorToJson } from "../exporter";
 import { jsonImporter } from "../importer";
 import { exportEditorToText, exportPenDocumentToText } from "../textExporter";
+import { EMPTY_BLOCK_SENTINEL } from "@input/pen-types";
 import type { PenDocumentJSON } from "../types";
-
-const EMPTY_BLOCK_SENTINEL = "\u200B";
 
 const noDefaultExtensionsPreset = {
 	resolve() {

@@ -1,6 +1,7 @@
+import { assertPeerEditsSurvive } from "@input/pen-test";
 import { describe, expect, it } from "vitest";
 import * as Y from "yjs";
-import type { BenchResult } from "../bench";
+import { bench, type BenchResult } from "../bench";
 import {
 	ENVELOPE_DRIFT_FLOOR_MS,
 	ENVELOPE_DRIFT_RATIO,
@@ -21,6 +22,8 @@ import {
 	buildEnvelopeRecord,
 	compareEnvelopeDrift,
 	formatEnvelopeDrift,
+	loadCommittedEnvelope,
+	type EnvelopeRecord,
 } from "../envelope/compare";
 import { envelopeGateClass } from "../envelope/machine";
 import {
@@ -30,6 +33,7 @@ import {
 import {
 	ENVELOPE_LONG_BLOCK_ID,
 	ENVELOPE_TABLE_BLOCK_ID,
+	assertPeerBObservesPeerAInsert,
 	createEnvelopeCollaboration,
 	createEnvelopeEditor,
 	envelopeBlockId,
@@ -95,8 +99,30 @@ describe("SCALE1 envelope ladder", () => {
 		expect(editor.getBlock(envelopeBlockId(99)).textContent()).toBe(
 			"Block 99",
 		);
+		expect(blockTypesIn(editor)).toEqual(
+			new Set(["heading", "codeBlock", "paragraph"]),
+		);
 		void editor.destroy();
 	});
+
+	it("SCALE1: 1000-block and 5000-block rungs load the claimed sizes", () => {
+		expect(generateBlockSpecs(1000)).toHaveLength(1000);
+		expect(generateBlockSpecs(5000)).toHaveLength(5000);
+		for (const [rungId, count] of [
+			["blocks-1000", 1000],
+			["blocks-5000", 5000],
+		] as const) {
+			const editor = createEnvelopeEditor(rungId);
+			expect(editor.document.blockOrder.length).toBe(count);
+			expect(editor.getBlock(envelopeBlockId(count - 1)).textContent()).toBe(
+				`Block ${count - 1}`,
+			);
+			expect(blockTypesIn(editor)).toEqual(
+				new Set(["heading", "codeBlock", "paragraph"]),
+			);
+			void editor.destroy();
+		}
+	}, 60_000);
 
 	it("SCALE1: 100k-character block loads", () => {
 		const editor = createEnvelopeEditor("long-block");
@@ -106,16 +132,28 @@ describe("SCALE1 envelope ladder", () => {
 		void editor.destroy();
 	});
 
-	it("SCALE1: nesting depth 10 loads", () => {
+	it("SCALE1: nesting depth 10 is a chain, not ten siblings", () => {
 		const editor = createEnvelopeEditor("nesting-10");
+		expect(editor.document.blockOrder.length).toBe(1);
+		expect(editor.document.blockOrder.get(0)).toBe(envelopeNestId(0));
 		expect(measureNestingDepth(editor, envelopeNestId(0))).toBe(
 			SCALE1_NESTING_DEPTH,
 		);
+		for (let level = 0; level < SCALE1_NESTING_DEPTH - 1; level++) {
+			const parent = editor.getBlock(envelopeNestId(level));
+			expect(parent.children.map((child) => child.id)).toEqual([
+				envelopeNestId(level + 1),
+			]);
+		}
+		expect(editor.getBlock(envelopeNestId(SCALE1_NESTING_DEPTH - 1)).children)
+			.toHaveLength(0);
 		void editor.destroy();
 	});
 
 	it("SCALE1: 50x20 table loads", () => {
 		const editor = createEnvelopeEditor("table-50x20");
+		expect(editor.document.blockOrder.length).toBe(1);
+		expect(editor.document.blockOrder.get(0)).toBe(ENVELOPE_TABLE_BLOCK_ID);
 		const table = editor.getBlock(ENVELOPE_TABLE_BLOCK_ID).as("table");
 		expect(table?.tableRowCount()).toBe(SCALE1_TABLE_ROWS);
 		expect(table?.tableColumnCount()).toBe(SCALE1_TABLE_COLS);
@@ -126,7 +164,9 @@ describe("SCALE1 envelope ladder", () => {
 		const collab = createEnvelopeCollaboration(100);
 		expect(collab.editorA.document.blockOrder.length).toBe(100);
 		expect(collab.editorB.document.blockOrder.length).toBe(100);
-		const blockId = envelopeBlockId(0);
+		assertPeerBObservesPeerAInsert(collab);
+
+		const blockId = envelopeBlockId(50);
 		collab.editorA.apply(
 			[
 				{
@@ -160,13 +200,26 @@ describe("SCALE1 envelope ladder", () => {
 		expect(fromA.byteLength).toBeGreaterThan(0);
 		expect(fromB.byteLength).toBeGreaterThan(0);
 		collab.sync();
-		for (const editor of [collab.editorA, collab.editorB]) {
-			const text = editor.getBlock(blockId).textContent();
-			expect(text).toContain("PEER-A");
-			expect(text).toContain("PEER-B");
-		}
+		assertPeerEditsSurvive([collab.editorA, collab.editorB], {
+			blockId,
+			tokens: ["PEER-A", "PEER-B"],
+		});
 		void collab.editorA.destroy();
 		void collab.editorB.destroy();
+	});
+
+	it("SCALE1: the concurrent-peers bench refuses to time until B observes A's insert", async () => {
+		const peerBench = scale1Benchmarks.find(
+			(entry) => entry.id === "scale1.envelope.concurrentPeers-2",
+		);
+		if (!peerBench) {
+			throw new Error("concurrentPeers-2 bench missing");
+		}
+		await bench(peerBench.name, peerBench.fn, {
+			iterations: 1,
+			warmup: 0,
+		});
+		await peerBench.teardown?.();
 	});
 
 	it("SCALE1: fixture audit covers every measurement and names the two historical misses", () => {
@@ -180,6 +233,7 @@ describe("SCALE1 envelope ladder", () => {
 		expect(peers?.verdict).toBe("name-overstates");
 		expect(peers?.actualSubject).toMatch(/Peer B does not write/);
 		expect(peers?.floorKind).toBe("empty-sync");
+		expect(peers?.howMeasured).toMatch(/B observation asserted before the clock/);
 	});
 
 	it("SCALE1: floor benches pair 1:1 with the wall-clock benches", () => {
@@ -232,6 +286,62 @@ describe("SCALE1 envelope ladder", () => {
 				producedOn: "2026-08-20",
 			}),
 		).toThrow(/harness floor missing/);
+	});
+
+	it("SCALE1: a 3x attributed median on a gated rung stays at the gate", async () => {
+		const committed = await loadCommittedEnvelope();
+		const gated = committed.points.find((point) => point.id === "blocks-1000");
+		expect(gated?.gated).toBe(true);
+		expect(gated?.gateP50Ms).toBe(envelopeGateP50Ms(gated!.attributedP50Ms));
+
+		const at3x = withAttributed(committed, "blocks-1000", gated!.gateP50Ms!);
+		const drift = compareEnvelopeDrift(at3x, committed);
+		expect(drift.ok).toBe(true);
+		expect(drift.failures).toEqual([]);
+	});
+
+	it("SCALE1: a 3x attributed median on an ungated rung does not trip the gate", async () => {
+		const committed = await loadCommittedEnvelope();
+		const ungated = committed.points.find((point) => point.id === "long-block");
+		expect(ungated?.gated).toBe(false);
+
+		const slowed = withAttributed(
+			committed,
+			"long-block",
+			ungated!.attributedP50Ms * 10,
+		);
+		const drift = compareEnvelopeDrift(slowed, committed);
+		expect(drift.ok).toBe(true);
+		expect(drift.failures).toEqual([]);
+	});
+
+	it("SCALE1: a slowed gated bench fails the committed envelope compare", async () => {
+		const committed = await loadCommittedEnvelope();
+		const gated = committed.points.find((point) => point.id === "blocks-1000");
+		if (!gated?.gateP50Ms) {
+			throw new Error("blocks-1000 gate missing");
+		}
+		const delayMs = gated.gateP50Ms + 2;
+
+		const slowed = await bench(
+			"scale1.envelope.blocks-1000",
+			(ctx) => {
+				ctx.start();
+				const until = performance.now() + delayMs;
+				while (performance.now() < until) {
+					// busy-wait so the mutation is on the clock, not a yield
+				}
+				ctx.end();
+			},
+			{ iterations: 5, warmup: 0 },
+		);
+		const fresh = withAttributed(committed, "blocks-1000", slowed.p50Ms);
+		const drift = compareEnvelopeDrift(fresh, committed);
+		expect(drift.ok).toBe(false);
+		expect(drift.failures.map((failure) => failure.id)).toEqual([
+			"blocks-1000",
+		]);
+		expect(formatEnvelopeDrift(drift)).toMatch(/blocks-1000/);
 	});
 
 	it("SCALE1: a median past the committed same-class gate fails drift", () => {
@@ -288,6 +398,37 @@ describe("SCALE1 envelope ladder", () => {
 		});
 	});
 });
+
+function blockTypesIn(
+	editor: ReturnType<typeof createEnvelopeEditor>,
+): Set<string> {
+	const types = new Set<string>();
+	for (let index = 0; index < editor.document.blockOrder.length; index++) {
+		const id = editor.document.blockOrder.get(index);
+		types.add(editor.getBlock(id).type);
+	}
+	return types;
+}
+
+function withAttributed(
+	record: EnvelopeRecord,
+	id: string,
+	attributedP50Ms: number,
+): EnvelopeRecord {
+	return {
+		...record,
+		points: record.points.map((point) => {
+			if (point.id !== id) {
+				return point;
+			}
+			return {
+				...point,
+				measuredP50Ms: attributedP50Ms + point.floorP50Ms,
+				attributedP50Ms,
+			};
+		}),
+	};
+}
 
 function resultFor(id: string, p50Ms: number): BenchResult {
 	return {

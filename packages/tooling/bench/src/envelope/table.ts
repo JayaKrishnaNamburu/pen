@@ -32,8 +32,8 @@ Wall-clock sample: ${record.producedOn} on ${record.machineClass.replace(/\.$/, 
 
 Claimed subject versus what the fixture actually does. The last two published defects lived here: a concurrent-peers row whose peer B never received peer A's insert, and a streaming "regression" whose clock was 100 \`setTimeout(0)\` yields.
 
-| Fixture | Claimed | Actual | Verdict |
-| ------- | ------- | ------ | ------- |
+| Fixture | Claimed | Actual | Verdict | How measured |
+| ------- | ------- | ------ | ------- | ------------ |
 ${auditRows}
 
 ## Envelope
@@ -48,8 +48,8 @@ Verification for the ladder is headless (\`createTestEditor\`). No renderer suit
 
 Wall minus harness floor. The block-count rungs are the curve: a single point cannot show drift. \`p95/p50\` is same-run variance on the wall-clock sample.
 
-| Rung | Size | Operation | Wall p50 (ms) | Floor p50 (ms) | Attributed p50 (ms) | p95/p50 | Grade |
-| ---- | ---- | --------- | ------------- | -------------- | ------------------- | ------- | ----- |
+| Rung | Size | Operation | Wall p50 (ms) | Floor p50 (ms) | Attributed p50 (ms) | p95/p50 | Grade | How measured |
+| ---- | ---- | --------- | ------------- | -------------- | ------------------- | ------- | ----- | ------------ |
 ${ladderRows}
 
 ${renderGateNote(record)}
@@ -109,11 +109,15 @@ function renderAxisRows(record: EnvelopeRecord): string {
 
 function renderLadderRow(point: EnvelopePointRecord): string {
 	const grade = point.gated ? "measured (gated)" : "measured (below signal)";
-	return `| \`${point.id}\` | ${point.size} | ${point.operation} | ${fmt(point.measuredP50Ms)} | ${fmt(point.floorP50Ms)} (${point.floorKind}) | ${fmt(point.attributedP50Ms)} | ${fmt(point.p95Ratio)} | ${grade} |`;
+	const audit = SCALE1_FIXTURE_AUDIT.find((row) => row.id === point.id);
+	if (!audit) {
+		throw new Error(`SCALE1 fixture audit missing ${point.id}`);
+	}
+	return `| \`${point.id}\` | ${point.size} | ${point.operation} | ${fmt(point.measuredP50Ms)} | ${fmt(point.floorP50Ms)} (${point.floorKind}) | ${fmt(point.attributedP50Ms)} | ${fmt(point.p95Ratio)} | ${grade} | ${audit.howMeasured} |`;
 }
 
 function renderAuditRow(row: FixtureAuditRow): string {
-	return `| ${row.fixture} | ${row.claimedSubject} | ${row.actualSubject} | ${row.verdict} |`;
+	return `| ${row.fixture} | ${row.claimedSubject} | ${row.actualSubject} | ${row.verdict} | ${row.howMeasured} |`;
 }
 
 function renderGateNote(record: EnvelopeRecord): string {

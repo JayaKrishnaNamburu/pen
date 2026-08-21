@@ -51,4 +51,30 @@ describe("@input/pen-undo DUR4 migration origin", () => {
 
 		editor.destroy();
 	});
+
+	it("DUR4: undo after a user edit and a migration reverts only the user edit", () => {
+		const editor = createEditor({
+			schema: defaultSchema,
+			extensions: [undoExtension({ groupTimeout: 0 })],
+		});
+		const blockId = editor.firstBlock()!.id;
+		editor.apply(
+			[{ type: "insert-text", blockId, offset: 0, text: "user" }],
+			{ origin: "user" },
+		);
+
+		const report = runMigrations(editor, [
+			insertTextMigration("upgrade", "upgraded"),
+		]);
+
+		expect(report.applied).toEqual(["upgrade"]);
+		expect(visibleText(editor)).toBe("userupgraded");
+
+		expect(editor.undoManager.undo()).toBe(true);
+		expect(visibleText(editor)).toBe("upgraded");
+		expect(editor.undoManager.undo()).toBe(false);
+		expect(visibleText(editor)).toBe("upgraded");
+
+		editor.destroy();
+	});
 });

@@ -84,4 +84,28 @@ describe("contract helpers", () => {
 			text: "Deterministic fixture\nStable body text",
 		});
 	});
+
+	it("CRDT state-vector contract fails when the empty document already satisfies", () => {
+		expect(() =>
+			runCRDTStateVectorContract({
+				blocks: [],
+			}),
+		).toThrow(/empty document satisfied a populated fixture/);
+	});
+
+	it("headless editor contract fails when the fixture has no blocks", () => {
+		expect(() =>
+			runHeadlessEditorContract({
+				blocks: [],
+			}),
+		).toThrow(/fixture document has no blocks/);
+	});
+
+	it("export contract fails when the fixture has no blocks", () => {
+		expect(() =>
+			runExportContract({
+				blocks: [],
+			}),
+		).toThrow(/fixture document has no blocks/);
+	});
 });

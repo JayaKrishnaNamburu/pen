@@ -82,6 +82,11 @@
       "reason": "SCH1 geometry — GeometryReader G4 nearest-block-edge uses block boxes."
     },
     {
+      "file": "packages/rendering/dom/src/host/pointerActivation.ts",
+      "symbol": "resolveHostChromeFallbackBlock",
+      "reason": "Host chrome click-above/below compares each text-block box to clientY in the same pointer handler; GeometryReader.pointAt (G4) is the scheduled replacement once this host path is wired."
+    },
+    {
       "file": "packages/rendering/dom/src/utils/inlineAtomDragPreview.ts",
       "symbol": "createInlineAtomDragPreview",
       "reason": "HTML5 dragstart must size the ghost from the source atom box before setDragImage; not a document block."

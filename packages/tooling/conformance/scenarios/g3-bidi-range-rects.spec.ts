@@ -15,19 +15,25 @@ type PageGeometryReader = GeometryReader & {
  * WebKit getClientRects for a range that starts at an RTL→LTR boundary
  * also emits a zero-width ghost at the RTL run's visual left. Unioning
  * that ghost with the real glyph box is what used to inflate Pen's later
- * LTR slice (hebrew-latin-ltr pair delta 17px, union still 0). After
- * packing overlapping run boxes the leftover pairwise delta is ~0.85px
- * on the "c" left edge — native "c" starts at 57 while the packed run
- * abuts the Hebrew right at 57.85. Still under PX_TOLERANCE; do not
- * widen it.
+ * LTR slice (hebrew-latin-ltr pair delta 17px). Run/line measurement now
+ * drops width-0 rects (ink only); packing remains for residual overlap.
+ * Do not widen PX_TOLERANCE.
  */
 const PX_TOLERANCE = 1;
 
 const LATIN_ARABIC_LTR = "Hello مرحبا";
 const ARABIC_LATIN_RTL = "مرحبا Hello";
 const HEBREW_LATIN_LTR = "abאבcd";
+const ARABIC_PURE_RTL = "مرحبا";
+const ARABIC_DIGITS_RTL = "مرحبا 123";
 
-type CaseKind = "rtl-embed-in-ltr" | "ltr-embed-in-rtl" | "cross-boundary";
+type CaseKind =
+	| "rtl-embed-in-ltr"
+	| "ltr-embed-in-rtl"
+	| "cross-boundary"
+	| "pure-rtl"
+	| "numbers-in-rtl"
+	| "atom-in-rtl";
 
 type BidiRangeCase = {
 	readonly id: string;
@@ -37,6 +43,7 @@ type BidiRangeCase = {
 	readonly direction: "ltr" | "rtl";
 	readonly from: number;
 	readonly to: number;
+	readonly atomOffset?: number;
 };
 
 const CASES: readonly BidiRangeCase[] = [
@@ -66,6 +73,34 @@ const CASES: readonly BidiRangeCase[] = [
 		direction: "ltr",
 		from: 1,
 		to: 5,
+	},
+	{
+		id: "arabic-pure-rtl",
+		kind: "pure-rtl",
+		ruleIds: "G3 DIR2",
+		text: ARABIC_PURE_RTL,
+		direction: "rtl",
+		from: 0,
+		to: ARABIC_PURE_RTL.length,
+	},
+	{
+		id: "arabic-digits-rtl",
+		kind: "numbers-in-rtl",
+		ruleIds: "G3 BR1",
+		text: ARABIC_DIGITS_RTL,
+		direction: "rtl",
+		from: 0,
+		to: ARABIC_DIGITS_RTL.length,
+	},
+	{
+		id: "arabic-atom-rtl",
+		kind: "atom-in-rtl",
+		ruleIds: "G3 BR2",
+		text: ARABIC_PURE_RTL,
+		direction: "rtl",
+		from: 0,
+		to: ARABIC_PURE_RTL.length + 1,
+		atomOffset: 2,
 	},
 ];
 
@@ -113,6 +148,12 @@ function caseTitle(entry: BidiRangeCase): string {
 			return `${entry.ruleIds}: LTR embedding inside an RTL paragraph (${entry.id}) yields disjoint per-run rects matching native Range.getClientRects within 1px`;
 		case "cross-boundary":
 			return `${entry.ruleIds}: range endpoints on opposite sides of a direction boundary (${entry.id}) yield disjoint per-run rects matching native Range.getClientRects within 1px`;
+		case "pure-rtl":
+			return `${entry.ruleIds}: a pure RTL paragraph (${entry.id}) yields per-run rects matching native Range.getClientRects within 1px`;
+		case "numbers-in-rtl":
+			return `${entry.ruleIds}: digits inside an RTL paragraph (${entry.id}) yield disjoint per-run rects matching native Range.getClientRects within 1px`;
+		case "atom-in-rtl":
+			return `${entry.ruleIds}: an atom inside an RTL paragraph (${entry.id}) yields disjoint per-run rects matching native Range.getClientRects within 1px`;
 		default: {
 			const _exhaustive: never = entry.kind;
 			return _exhaustive;
@@ -214,6 +255,20 @@ async function prepareMixedBlock(
 			);
 		})
 		.toBe("ok");
+	if (entry.atomOffset !== undefined) {
+		await s.apply([
+			{
+				type: "insert-inline-node",
+				blockId,
+				offset: entry.atomOffset,
+				nodeType: "mention",
+				props: { id: "user-ada", label: "Ada" },
+			},
+		]);
+		await expect(
+			page.locator(`[data-block-id="${blockId}"] [data-pen-inline-atom]`),
+		).toBeVisible();
+	}
 	return blockId;
 }
 
@@ -316,31 +371,62 @@ async function measureCase(
 				return width > 0.5 && height > 0.5;
 			}
 
+			function isAtomSlot(node: Node): node is HTMLElement {
+				return (
+					node instanceof HTMLElement &&
+					(node.hasAttribute("data-pen-inline-atom-host") ||
+						node.hasAttribute("data-pen-inline-atom"))
+				);
+			}
+
 			function locateOffset(
 				inline: HTMLElement,
 				offset: number,
-			): { node: Text; offset: number } {
-				const walker = document.createTreeWalker(
-					inline,
-					NodeFilter.SHOW_TEXT,
-				);
+			): { node: Node; offset: number } {
 				let remaining = offset;
-				let last: Text | null = null;
-				while (walker.nextNode()) {
-					const node = walker.currentNode;
-					if (!(node instanceof Text)) {
-						continue;
+				let last: { node: Node; offset: number } | null = null;
+
+				const visit = (
+					node: Node,
+				): { node: Node; offset: number } | null => {
+					if (isAtomSlot(node)) {
+						const parent = node.parentNode;
+						if (!parent) {
+							throw new Error(`detached atom in ${id}`);
+						}
+						const index = Array.from(parent.childNodes).indexOf(node);
+						if (remaining <= 0) {
+							return { node: parent, offset: index };
+						}
+						remaining -= 1;
+						last = { node: parent, offset: index + 1 };
+						return remaining === 0 ? last : null;
 					}
-					last = node;
-					if (remaining <= node.data.length) {
-						return { node, offset: remaining };
+					if (node instanceof Text) {
+						last = { node, offset: node.data.length };
+						if (remaining <= node.data.length) {
+							return { node, offset: remaining };
+						}
+						remaining -= node.data.length;
+						return null;
 					}
-					remaining -= node.data.length;
+					for (const child of Array.from(node.childNodes)) {
+						const hit = visit(child);
+						if (hit) {
+							return hit;
+						}
+					}
+					return null;
+				};
+
+				const hit = visit(inline);
+				if (hit) {
+					return hit;
 				}
 				if (!last) {
 					throw new Error(`no text nodes in ${id}`);
 				}
-				return { node: last, offset: last.data.length };
+				return last;
 			}
 
 			function nativeRects(
@@ -429,9 +515,6 @@ async function measureCase(
 			if (document.fonts?.ready) {
 				await document.fonts.ready;
 			}
-			await new Promise<void>((resolve) => {
-				requestAnimationFrame(() => resolve());
-			});
 
 			const root = document.querySelector("[data-pen-editor-root]");
 			if (!(root instanceof HTMLElement)) {

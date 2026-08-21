@@ -1,6 +1,12 @@
-import type { CommitEvent, DiagnosticEvent, DocumentOp } from "@input/pen-types";
+import type {
+	BlockSchema,
+	CommitEvent,
+	DiagnosticEvent,
+	DocumentOp,
+} from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 
+import { defineBlock } from "../schema/defineBlock";
 import { createDefaultSchema } from "./fixtures/testSchema";
 import { createEditor as createCoreEditor } from "../index";
 
@@ -29,6 +35,28 @@ type TestYDocLike = {
 	): void;
 };
 
+const columns = defineBlock("columns", {
+	content: [],
+	isContainer: true,
+	layout: {
+		modes: ["flex"],
+		defaultMode: "flex",
+		minChildren: 2,
+	},
+});
+
+function collectLocalTxnOrigins(editor: ReturnType<typeof createEditor>) {
+	const txnOrigins: unknown[] = [];
+	editor.internals.adapter
+		.raw<TestYDocLike>(editor.internals.crdtDoc)
+		.on("afterTransaction", (txn) => {
+			if (txn.local) {
+				txnOrigins.push(txn.origin);
+			}
+		});
+	return txnOrigins;
+}
+
 describe("apply pipeline contract (Lane 179)", () => {
 	it("keeps a structured origin intact on the commit and the Y transaction", () => {
 		const editor = createEditor();
@@ -40,17 +68,10 @@ describe("apply pipeline contract (Lane 179)", () => {
 			actorId: "model-a",
 		};
 		const commits: CommitEvent[] = [];
-		const txnOrigins: unknown[] = [];
+		const txnOrigins = collectLocalTxnOrigins(editor);
 		editor.on("commit", (event) => {
 			commits.push(event);
 		});
-		editor.internals.adapter
-			.raw<TestYDocLike>(editor.internals.crdtDoc)
-			.on("afterTransaction", (txn) => {
-				if (txn.local) {
-					txnOrigins.push(txn.origin);
-				}
-			});
 
 		editor.apply(
 			[
@@ -65,10 +86,10 @@ describe("apply pipeline contract (Lane 179)", () => {
 		);
 
 		expect(commits).toHaveLength(1);
-		expect(commits[0]!.origin).toEqual(origin);
+		expect(commits[0]!.origin).toBe(origin);
 		expect(commits[0]!.source).toBe("apply");
 		expect(txnOrigins.length).toBeGreaterThan(0);
-		expect(txnOrigins[0]).toEqual(expect.objectContaining(origin));
+		expect(txnOrigins[0]).toBe(origin);
 		expect(visibleText(editor.getBlock(blockId)!.textContent())).toBe(
 			"hello",
 		);
@@ -79,7 +100,12 @@ describe("apply pipeline contract (Lane 179)", () => {
 	it("does not rewrite a collaborator apply origin to user", () => {
 		const editor = createEditor();
 		const blockId = editor.firstBlock()!.id;
+		const origin = {
+			type: "collaborator" as const,
+			actorId: "peer-1",
+		};
 		const commits: CommitEvent[] = [];
+		const txnOrigins = collectLocalTxnOrigins(editor);
 		editor.on("commit", (event) => {
 			commits.push(event);
 		});
@@ -93,16 +119,15 @@ describe("apply pipeline contract (Lane 179)", () => {
 					text: "peer",
 				},
 			],
-			{ origin: { type: "collaborator", actorId: "peer-1" } },
+			{ origin },
 		);
 
 		expect(commits).toHaveLength(1);
-		expect(commits[0]!.origin).toEqual({
-			type: "collaborator",
-			actorId: "peer-1",
-		});
+		expect(commits[0]!.origin).toBe(origin);
 		expect(commits[0]!.origin.type).not.toBe("user");
 		expect(commits[0]!.source).toBe("remote");
+		expect(txnOrigins.length).toBeGreaterThan(0);
+		expect(txnOrigins[0]).toBe(origin);
 
 		editor.destroy();
 	});
@@ -144,6 +169,54 @@ describe("apply pipeline contract (Lane 179)", () => {
 		editor.destroy();
 	});
 
+	it("ignores in-place hook mutation when the hook then throws", () => {
+		const editor = createEditor();
+		const blockId = editor.firstBlock()!.id;
+		const diagnostics: DiagnosticEvent[] = [];
+		const ops: DocumentOp[] = [
+			{
+				type: "insert-text",
+				blockId,
+				offset: 0,
+				text: "kept",
+			},
+		];
+		editor.on("diagnostic", (event) => {
+			diagnostics.push(event);
+		});
+		editor.onBeforeApply((incoming) => {
+			incoming[0] = {
+				type: "insert-text",
+				blockId,
+				offset: 0,
+				text: "pwned",
+			};
+			throw new Error("hook boom");
+		});
+
+		expect(() => {
+			editor.apply(ops);
+		}).not.toThrow();
+
+		expect(ops[0]).toEqual({
+			type: "insert-text",
+			blockId,
+			offset: 0,
+			text: "kept",
+		});
+		expect(visibleText(editor.getBlock(blockId)!.textContent())).toBe(
+			"kept",
+		);
+		expect(diagnostics).toContainEqual(
+			expect.objectContaining({
+				code: "PEN_APPLY_005",
+				message: "onBeforeApply hook threw",
+			}),
+		);
+
+		editor.destroy();
+	});
+
 	it("drops a non-array onBeforeApply return with a diagnostic and still applies", () => {
 		const editor = createEditor();
 		const blockId = editor.firstBlock()!.id;
@@ -176,6 +249,61 @@ describe("apply pipeline contract (Lane 179)", () => {
 				source: "apply",
 				message: "onBeforeApply hook returned a non-array",
 			}),
+		);
+
+		editor.destroy();
+	});
+
+	it("drops genuinely malformed text ops with a diagnostic and does not throw", () => {
+		const editor = createEditor();
+		const blockId = editor.firstBlock()!.id;
+		const diagnostics: DiagnosticEvent[] = [];
+		const commits: CommitEvent[] = [];
+		editor.on("diagnostic", (event) => {
+			diagnostics.push(event);
+		});
+		editor.on("commit", (event) => {
+			commits.push(event);
+		});
+
+		expect(() => {
+			editor.apply([
+				{
+					type: "insert-text",
+					blockId,
+					offset: -1,
+					text: "nope",
+				} as DocumentOp,
+				{
+					type: "insert-text",
+					blockId,
+					offset: 0,
+					text: 123,
+				} as unknown as DocumentOp,
+				{
+					type: "delete-text",
+					blockId,
+					offset: 0,
+					length: Number.NaN,
+				} as DocumentOp,
+				{
+					type: "insert-text",
+					blockId,
+					offset: 0,
+					text: "ok",
+				},
+			]);
+		}).not.toThrow();
+
+		expect(visibleText(editor.getBlock(blockId)!.textContent())).toBe("ok");
+		expect(commits).toHaveLength(1);
+		expect(
+			diagnostics.filter((event) => event.code === "PEN_APPLY_004"),
+		).toHaveLength(3);
+		expect(commits[0]!.diagnostics).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ code: "PEN_APPLY_004" }),
+			]),
 		);
 
 		editor.destroy();
@@ -256,6 +384,79 @@ describe("apply pipeline contract (Lane 179)", () => {
 		expect(fromEditor).toContain("child");
 		expect(editor.getBlock("child")?.textContent()).toBe("nested");
 		expect(editor.documentState.blockOrder).not.toContain("child");
+		expect(editor.blockCount()).toBe(fromEditor.length);
+
+		// `editor.blocks()` and `documentState.blocks` are the same contract.
+		// They drifted apart once, silently, because only `allBlocks()` was
+		// compared here; `blockOrder` is the top-level sequence.
+		const fromStateBlocks = [...editor.documentState.blocks].map(
+			(block) => block.id,
+		);
+		expect(fromStateBlocks).toEqual(fromEditor);
+		expect(editor.documentState.blockCount).toBe(editor.blockCount());
+
+		editor.destroy();
+	});
+
+	it("walks layout children from editor.blocks and documentState.allBlocks", () => {
+		const editor = createEditor({
+			schema: createDefaultSchema().extend([
+				columns as unknown as BlockSchema,
+			]),
+		});
+		const rootId = editor.firstBlock()!.id;
+
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "cols",
+				blockType: "columns",
+				props: {},
+				position: "last",
+			},
+			{
+				type: "insert-block",
+				blockId: "left",
+				blockType: "paragraph",
+				props: {},
+				position: { parent: "cols", index: 0 },
+			},
+			{
+				type: "insert-block",
+				blockId: "right",
+				blockType: "paragraph",
+				props: {},
+				position: { parent: "cols", index: 1 },
+			},
+			{
+				type: "insert-text",
+				blockId: "left",
+				offset: 0,
+				text: "L",
+			},
+			{
+				type: "insert-text",
+				blockId: "right",
+				offset: 0,
+				text: "R",
+			},
+		]);
+
+		const fromEditor = [...editor.blocks()].map((block) => block.id);
+		const fromState = [...editor.documentState.allBlocks()].map(
+			(block) => block.id,
+		);
+
+		expect(fromEditor).toEqual(
+			expect.arrayContaining([rootId, "cols", "left", "right"]),
+		);
+		expect(fromState).toEqual(
+			expect.arrayContaining([rootId, "cols", "left", "right"]),
+		);
+		expect(editor.documentState.blockOrder).not.toContain("left");
+		expect(editor.documentState.blockOrder).not.toContain("right");
+		expect(visibleText(editor.getBlock("left")!.textContent())).toBe("L");
+		expect(visibleText(editor.getBlock("right")!.textContent())).toBe("R");
 		expect(editor.blockCount()).toBe(fromEditor.length);
 
 		editor.destroy();

@@ -273,6 +273,10 @@ export function transformOpsThroughHooks(
 	return transformedOps;
 }
 
+function snapshotOps(ops: readonly DocumentOp[]): DocumentOp[] {
+	return ops.map((op) => Object.assign({}, op));
+}
+
 function runBeforeApplyHook(
 	pipeline: ApplyPipeline,
 	hook: (
@@ -289,7 +293,7 @@ function runBeforeApplyHook(
 	},
 ): DocumentOp[] | null {
 	try {
-		const next = hook(ops, { origin });
+		const next = hook(snapshotOps(ops), { origin });
 		if (!Array.isArray(next)) {
 			emitPipelineDiagnostic(pipeline, {
 				code: labels.code,
@@ -312,6 +316,160 @@ function runBeforeApplyHook(
 		});
 		return null;
 	}
+}
+
+const MALFORMED_OP_CODE = "PEN_APPLY_004";
+
+function isNonEmptyString(value: unknown): value is string {
+	return typeof value === "string" && value.length > 0;
+}
+
+function isNonNegativeInt(value: unknown): value is number {
+	return typeof value === "number" && Number.isInteger(value) && value >= 0;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function malformedOpMessage(op: DocumentOp): string | null {
+	switch (op.type) {
+		case "insert-text":
+			if (!isNonEmptyString(op.blockId)) {
+				return "insert-text requires a non-empty blockId";
+			}
+			if (!isNonNegativeInt(op.offset)) {
+				return "insert-text requires a non-negative integer offset";
+			}
+			if (typeof op.text !== "string") {
+				return "insert-text requires string text";
+			}
+			return null;
+		case "delete-text":
+			if (!isNonEmptyString(op.blockId)) {
+				return "delete-text requires a non-empty blockId";
+			}
+			if (!isNonNegativeInt(op.offset)) {
+				return "delete-text requires a non-negative integer offset";
+			}
+			if (!isNonNegativeInt(op.length)) {
+				return "delete-text requires a non-negative integer length";
+			}
+			return null;
+		case "format-text":
+			if (!isNonEmptyString(op.blockId)) {
+				return "format-text requires a non-empty blockId";
+			}
+			if (!isNonNegativeInt(op.offset)) {
+				return "format-text requires a non-negative integer offset";
+			}
+			if (!isNonNegativeInt(op.length)) {
+				return "format-text requires a non-negative integer length";
+			}
+			if (!isRecord(op.marks)) {
+				return "format-text requires a marks object";
+			}
+			return null;
+		case "replace-text":
+			if (!isNonEmptyString(op.blockId)) {
+				return "replace-text requires a non-empty blockId";
+			}
+			if (!isNonNegativeInt(op.offset)) {
+				return "replace-text requires a non-negative integer offset";
+			}
+			if (!isNonNegativeInt(op.length)) {
+				return "replace-text requires a non-negative integer length";
+			}
+			if (typeof op.text !== "string") {
+				return "replace-text requires string text";
+			}
+			return null;
+		case "insert-inline-node":
+			if (!isNonEmptyString(op.blockId)) {
+				return "insert-inline-node requires a non-empty blockId";
+			}
+			if (!isNonNegativeInt(op.offset)) {
+				return "insert-inline-node requires a non-negative integer offset";
+			}
+			if (!isNonEmptyString(op.nodeType)) {
+				return "insert-inline-node requires a non-empty nodeType";
+			}
+			return null;
+		case "remove-inline-node":
+			if (!isNonEmptyString(op.blockId)) {
+				return "remove-inline-node requires a non-empty blockId";
+			}
+			if (!isNonNegativeInt(op.offset)) {
+				return "remove-inline-node requires a non-negative integer offset";
+			}
+			return null;
+		case "insert-table-cell-text":
+			if (!isNonEmptyString(op.blockId)) {
+				return "insert-table-cell-text requires a non-empty blockId";
+			}
+			if (!isNonNegativeInt(op.offset)) {
+				return "insert-table-cell-text requires a non-negative integer offset";
+			}
+			if (typeof op.text !== "string") {
+				return "insert-table-cell-text requires string text";
+			}
+			return null;
+		case "delete-table-cell-text":
+		case "format-table-cell-text":
+			if (!isNonEmptyString(op.blockId)) {
+				return `${op.type} requires a non-empty blockId`;
+			}
+			if (!isNonNegativeInt(op.offset)) {
+				return `${op.type} requires a non-negative integer offset`;
+			}
+			if (!isNonNegativeInt(op.length)) {
+				return `${op.type} requires a non-negative integer length`;
+			}
+			return null;
+		case "insert-block":
+		case "update-block":
+		case "delete-block":
+		case "move-block":
+		case "convert-block":
+		case "split-block":
+		case "merge-blocks":
+		case "set-selection":
+		case "update-layout":
+		case "create-app":
+		case "update-app":
+		case "delete-app":
+		case "insert-table-row":
+		case "delete-table-row":
+		case "insert-table-column":
+		case "delete-table-column":
+		case "merge-table-cells":
+		case "split-table-cell":
+		case "update-table-columns":
+		case "set-meta":
+		case "stream-open":
+			return null;
+		default: {
+			const _exhaustive: never = op;
+			return `unknown op type ${String((_exhaustive as { type?: unknown }).type)}`;
+		}
+	}
+}
+
+function emitMalformedOpDiagnostic(
+	pipeline: ApplyPipeline,
+	op: DocumentOp,
+	error?: unknown,
+): void {
+	emitPipelineDiagnostic(pipeline, {
+		code: MALFORMED_OP_CODE,
+		level: "warn",
+		source: "apply",
+		message: malformedOpMessage(op) ?? `apply: dropped malformed ${op.type}`,
+		remediation:
+			"Pass well-formed DocumentOp fields: string ids, non-negative integer offsets, and string text.",
+		op,
+		...(error !== undefined ? { error } : {}),
+	});
 }
 
 export function executeOps(pipeline: ApplyPipeline, ops: DocumentOp[], origin: OpOrigin): void {
@@ -365,6 +523,11 @@ for (const op of transformedOps) {
 		continue;
 	}
 
+	if (malformedOpMessage(nextOp)) {
+		emitMalformedOpDiagnostic(pipeline, nextOp);
+		continue;
+	}
+
 	validatedOps.push(nextOp);
 }
 
@@ -387,8 +550,12 @@ try {
 		self._crdtDoc,
 		() => {
 			for (const op of validatedOps) {
-				const affected = self._executeSingleOp(op);
-				affectedBlocks.push(...affected);
+				try {
+					const affected = self._executeSingleOp(op);
+					affectedBlocks.push(...affected);
+				} catch (err) {
+					emitMalformedOpDiagnostic(pipeline, op, err);
+				}
 			}
 
 			for (const blockId of affectedBlocks) {
@@ -398,7 +565,8 @@ try {
 			recordPhase(pipeline, "normalize");
 			self._engine.normalizeDirty();
 		},
-		{ ...toStructuredOrigin(origin) },
+		// pass the structured origin through; do not copy — Y.UndoManager matches trackedOrigins by identity
+		toStructuredOrigin(origin),
 	);
 } finally {
 	self._suppressObserver = false;

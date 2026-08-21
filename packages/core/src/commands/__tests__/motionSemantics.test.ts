@@ -262,10 +262,16 @@ describe("motion semantics M1–M6", () => {
 			builtinCommandHandlers().some(
 				(provider) =>
 					isCommandHandlerProvider(provider) &&
-					(provider.command.name === caretUp.name ||
-						provider.command.name === caretDown.name),
+					provider.command.name === caretUp.name,
 			),
-		).toBe(false);
+		).toBe(true);
+		expect(
+			builtinCommandHandlers().some(
+				(provider) =>
+					isCommandHandlerProvider(provider) &&
+					provider.command.name === caretDown.name,
+			),
+		).toBe(true);
 		editor.destroy();
 	});
 

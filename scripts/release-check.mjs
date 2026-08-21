@@ -17,6 +17,98 @@ const EXPECTED_REPOSITORY_URL = "https://github.com/lemni/pen.git";
 // Publish (API7): changeset publish --provenance
 //   uses the workflow id-token: write grant; no extra npm permission.
 
+function provenanceWorkflowProblems(workflow, rootReleaseScript) {
+	const problems = [];
+	if (!/id-token:\s*write/.test(workflow)) {
+		problems.push(
+			".github/workflows/release.yml is missing permissions.id-token: write",
+		);
+	}
+	if (!/NPM_CONFIG_PROVENANCE:\s*true/.test(workflow)) {
+		problems.push(
+			".github/workflows/release.yml is missing NPM_CONFIG_PROVENANCE: true",
+		);
+	}
+	if (
+		typeof rootReleaseScript !== "string" ||
+		!rootReleaseScript.includes("--provenance")
+	) {
+		problems.push(
+			'root package.json "release" script must pass --provenance',
+		);
+	}
+	return problems;
+}
+
+function versionSyncGroups(packages) {
+	const versions = new Map();
+	for (const pkg of packages) {
+		const list = versions.get(pkg.version) ?? [];
+		list.push(pkg.name);
+		versions.set(pkg.version, list);
+	}
+	return versions;
+}
+
+function runSelfTests() {
+	const healthy = provenanceWorkflowProblems(
+		"permissions:\n  id-token: write\nenv:\n  NPM_CONFIG_PROVENANCE: true\n",
+		"changeset publish --provenance",
+	);
+	if (healthy.length !== 0) {
+		throw new Error("self-test: healthy provenance workflow must pass");
+	}
+
+	const missingToken = provenanceWorkflowProblems(
+		"env:\n  NPM_CONFIG_PROVENANCE: true\n",
+		"changeset publish --provenance",
+	);
+	if (!missingToken.some((problem) => problem.includes("id-token: write"))) {
+		throw new Error("self-test: missing id-token: write must fail closed");
+	}
+
+	const missingEnv = provenanceWorkflowProblems(
+		"permissions:\n  id-token: write\n",
+		"changeset publish --provenance",
+	);
+	if (
+		!missingEnv.some((problem) => problem.includes("NPM_CONFIG_PROVENANCE"))
+	) {
+		throw new Error(
+			"self-test: missing NPM_CONFIG_PROVENANCE must fail closed",
+		);
+	}
+
+	const missingFlag = provenanceWorkflowProblems(
+		"permissions:\n  id-token: write\nenv:\n  NPM_CONFIG_PROVENANCE: true\n",
+		"changeset publish",
+	);
+	if (!missingFlag.some((problem) => problem.includes("--provenance"))) {
+		throw new Error(
+			"self-test: release script without --provenance must fail closed",
+		);
+	}
+
+	const split = versionSyncGroups([
+		{ name: "@input/pen-core", version: "0.0.1" },
+		{ name: "@input/pen-types", version: "0.0.2" },
+	]);
+	if (split.size !== 2) {
+		throw new Error("self-test: mixed train versions must fail closed");
+	}
+	const aligned = versionSyncGroups([
+		{ name: "@input/pen-core", version: "0.0.1" },
+		{ name: "@input/pen-types", version: "0.0.1" },
+	]);
+	if (aligned.size !== 1) {
+		throw new Error("self-test: one train version must pass");
+	}
+
+	console.log(
+		"release-check self-test ok (missing id-token, NPM_CONFIG_PROVENANCE, and --provenance fail closed)",
+	);
+}
+
 const requested = new Set(process.argv.slice(2));
 const runAll = requested.size === 0;
 const shouldRunVersionSync = runAll || requested.has("--version-sync");
@@ -41,6 +133,8 @@ if (!runAll) {
 		}
 	}
 }
+
+runSelfTests();
 
 const publishedPackages = await collectPublishedPackages(
 	path.join(repoRoot, "packages"),
@@ -81,26 +175,10 @@ async function checkProvenancePreconditions(packages) {
 	const rootPackagePath = path.join(repoRoot, "package.json");
 	const workflow = await fs.readFile(workflowPath, "utf8");
 	const rootPackage = JSON.parse(await fs.readFile(rootPackagePath, "utf8"));
-	const problems = [];
-
-	if (!/id-token:\s*write/.test(workflow)) {
-		problems.push(
-			".github/workflows/release.yml is missing permissions.id-token: write",
-		);
-	}
-	if (!/NPM_CONFIG_PROVENANCE:\s*true/.test(workflow)) {
-		problems.push(
-			".github/workflows/release.yml is missing NPM_CONFIG_PROVENANCE: true",
-		);
-	}
-	if (
-		typeof rootPackage.scripts?.release !== "string" ||
-		!rootPackage.scripts.release.includes("--provenance")
-	) {
-		problems.push(
-			'root package.json "release" script must pass --provenance',
-		);
-	}
+	const problems = provenanceWorkflowProblems(
+		workflow,
+		rootPackage.scripts?.release,
+	);
 
 	const urls = new Set();
 	for (const pkg of packages) {
@@ -180,13 +258,7 @@ async function collectChangelogPaths(directory) {
 }
 
 function checkVersionSync(packages) {
-	const versions = new Map();
-
-	for (const pkg of packages) {
-		const list = versions.get(pkg.version) ?? [];
-		list.push(pkg.name);
-		versions.set(pkg.version, list);
-	}
+	const versions = versionSyncGroups(packages);
 
 	if (versions.size === 1) {
 		const [version] = versions.keys();

@@ -173,7 +173,7 @@ export const PenEditor = defineComponent({
 
 				const handlePointerActivate = (event: MouseEvent) => {
 					const blocksHost = nextElement.querySelector(
-						"[data-pen-editor-blocks-host]",
+						`[${DATA_ATTRS.editorBlocksHost}]`,
 					);
 					if (!(blocksHost instanceof HTMLElement)) {
 						return;

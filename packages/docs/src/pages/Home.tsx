@@ -10,7 +10,10 @@ export function HomePage() {
 			</p>
 			<p>
 				It is licensed under the MIT License. License and distribution
-				are stated in the repository root README.
+				are stated in the repository root README. Packages are not
+				on the public registry: there has never been a release
+				train, a git tag, or a <code>CHANGELOG.md</code>.{" "}
+				<code>pnpm add @input/pen-*</code> 404s today.
 			</p>
 
 			<h2>Getting started</h2>

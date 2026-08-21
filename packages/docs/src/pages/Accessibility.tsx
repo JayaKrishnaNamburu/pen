@@ -15,9 +15,11 @@ export function AccessibilityPage() {
 				Provide a label at construction. A string becomes{" "}
 				<code>aria-label</code>. <code>{"{ labelledBy }"}</code>{" "}
 				becomes <code>aria-labelledby</code>. A missing label
-				diagnoses <code>a11y-missing-label</code> once when a
-				surface binds and a diagnostic listener is attached, then
-				falls back to <code>pen.editor.label</code>.
+				diagnoses <code>a11y-missing-label</code> once, then falls
+				back to <code>pen.editor.label</code>. The diagnostic fires
+				only if a listener is already attached when the surface
+				first resolves the label. Attach later and the warning is
+				consumed silently.
 			</p>
 			<pre>
 				<code>{`import { createEditor } from "@input/pen-core";
@@ -29,11 +31,14 @@ const editor = createEditor({
 });`}</code>
 			</pre>
 			<p>
-				React <code>EditorRoot</code> and Vue <code>PenEditor</code>{" "}
-				set <code>role=&quot;textbox&quot;</code>,{" "}
+				React <code>EditorRoot</code>, Vue <code>PenEditor</code>,
+				and <code>mountEditor</code> set{" "}
+				<code>role=&quot;textbox&quot;</code>,{" "}
 				<code>aria-multiline=&quot;true&quot;</code>, the resolved
 				label, and <code>aria-readonly</code> from the{" "}
-				<code>readonly</code> prop or <code>pen.readOnly</code>.
+				<code>readonly</code> prop or <code>pen.readOnly</code>. The
+				facet sets the attribute. The prop is what declines local
+				typing.
 			</p>
 
 			<h2>What the library owns</h2>
@@ -55,8 +60,11 @@ const editor = createEditor({
 					<code>aria-hidden</code> presentation.
 				</li>
 				<li>
-					<code>prefers-reduced-motion: reduce</code> is read from
-					one motion helper in <code>@input/pen-dom</code>.
+					A motion helper in <code>@input/pen-dom</code> reads{" "}
+					<code>prefers-reduced-motion: reduce</code>. It is not on
+					the package index. Overlay and paint do not apply that
+					flag yet. Missing <code>matchMedia</code> leaves
+					animations on.
 				</li>
 			</ul>
 			<p>
@@ -66,8 +74,11 @@ const editor = createEditor({
 			</p>
 			<p>
 				Conformance runs axe-core WCAG 2.2 AA on Chromium against
-				the editor root. VoiceOver and NVDA checklist rows are a
-				release-cut obligation, not a per-PR gate. The library does
+				the editor root after every scenario unless the scenario
+				opts out. VoiceOver and NVDA checklist rows are a
+				release-cut obligation, not a per-PR gate. The committed
+				matrix at <code>packages/rendering/dom/src/a11y/MANUAL.md</code>{" "}
+				is a stub: no AT session has been recorded. The library does
 				not ship a high-contrast theme.
 			</p>
 		</>

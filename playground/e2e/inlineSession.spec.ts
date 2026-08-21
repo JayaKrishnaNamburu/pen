@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import {
+	captureOverlayEvidence,
 	openPlayground,
 	selectEditorTextRange,
 	selectNativeInlineRange,
@@ -37,6 +38,11 @@ test("opens and closes the playground inline session from a text selection", asy
 		".playground-inline-session [data-pen-ai-inline-session-input]",
 	);
 	await expect(promptInput).toBeVisible();
+	const overlay = await captureOverlayEvidence(page);
+	expect(overlay.overlapToolbar).toBe(false);
+	expect(overlay.prompt?.top ?? -1).toBeGreaterThanOrEqual(
+		overlay.toolbar?.bottom ?? 0,
+	);
 	await promptInput.click();
 	await expect(promptInput).toBeFocused();
 

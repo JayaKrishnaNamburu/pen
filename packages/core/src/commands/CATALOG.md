@@ -2,7 +2,7 @@
 
 Frozen names from `spec-v2/05-commands.md`. Step 4.2 moved caret (except verticals), text, structure, table, and history handlers into this directory. `installEditorCommandRegistry` wires `createCommandRegistry` + `builtinCommandHandlers` onto `createEditor`.
 
-Field-editor keydown (`handleFieldEditorKeyDown`) and beforeinput (`DIRECT_HANDLERS`, expanded backend) now dispatch those handlers through `getCommandRegistry(editor).dispatch`. Local `apply*` / `moveCaretAcrossBlocks` functions remain as compatibility exports and no-registry fallbacks; they are not the live path for cataloged commands except `pen.caretUp` / `pen.caretDown` (still a miss; ArrowUp/Down fall back to `moveCaretAcrossBlocks` at block edges).
+Field-editor keydown (`handleFieldEditorKeyDown`) and beforeinput (`DIRECT_HANDLERS`, expanded backend) now dispatch those handlers through `getCommandRegistry(editor).dispatch`. Local `apply*` / `moveCaretAcrossBlocks` functions remain as compatibility exports and no-registry fallbacks. `pen.caretUp` / `pen.caretDown` now have handlers: geometry via `setVerticalCaretMeasure` (G5), logical block-edge crossing when no measure is registered. Field-editor ArrowUp/Down can dispatch these; `commandsNavigation.ts` is then a leftover caller, not a missing handler.
 
 Owner:
 
@@ -22,8 +22,8 @@ Param `{ extend: boolean }` unless noted.
 | --- | --- | --- | --- |
 | `pen.caretLeft` | `{ extend }` | core | `handleGraphemeCaret` (`-1`) + atom-adjacent select. T4 at block boundary. |
 | `pen.caretRight` | `{ extend }` | core | `handleGraphemeCaret` (`1`) + atom-adjacent select. T4 at block boundary. |
-| `pen.caretUp` | `{ extend }` | not-yet-moved | Token + keymap only. No registered handler. `dispatch` returns `false` (silent miss, no diagnostic). Field-editor ArrowUp still calls `moveCaretAcrossBlocks` on a parallel path, not this command. Geometry seam (`measureNow` / `GeometryReader`) is still missing. |
-| `pen.caretDown` | `{ extend }` | not-yet-moved | Same as `pen.caretUp`. |
+| `pen.caretUp` | `{ extend }` | core | G5 via `setVerticalCaretMeasure` (`measureNow` + `verticalCaretTarget`). No measure → logical previous-block landing (field-editor `moveCaretAcrossBlocks`). Document edge stays put. Mid-block without measure is a miss (wrap needs geometry). |
+| `pen.caretDown` | `{ extend }` | core | Symmetric to `pen.caretUp`. |
 | `pen.caretLineStart` | `{ extend }` | core | Block offset 0. M3 visual line-box edges need `GeometryReader` (pen-dom); not inverted for rtl. |
 | `pen.caretLineEnd` | `{ extend }` | core | Block logical length. Same M3 deferral. |
 | `pen.caretBlockStart` | `{ extend }` | core | Offset 0 of the focus block. |
@@ -40,8 +40,8 @@ Param `{ extend: boolean }` unless noted.
 | Command | Param | Owner | Current name |
 | --- | --- | --- | --- |
 | `pen.insertText` | `{ text }` | core | Replace the current text selection / insert at caret. |
-| `pen.deleteBackward` | `{ granularity }` | core | Grapheme/word/line within the block (F2); merge/select/convert at block start. |
-| `pen.deleteForward` | `{ granularity }` | core | Symmetric to backward, including merge at block end. |
+| `pen.deleteBackward` | `{ granularity }` | core | Grapheme/word/line within the block (F2); merge/select/convert at block start. Adjacent inline atom: registry **deletes** (`deleteAdjacentInlineAtom`); field-editor `applyDeleteBehavior` **selects** (`selectAdjacentInlineAtom`). Both pinned in `__tests__/inlineAtomDelete.test.ts`. |
+| `pen.deleteForward` | `{ granularity }` | core | Symmetric to backward, including merge at block end. Same atom-delete divergence. |
 | `pen.insertLineBreak` | `void` | core | Insert `"\n"`. |
 | `pen.splitBlock` | `void` | core | Port of `applyEnterBehavior`: split, list continuation, empty-list convert, heading → paragraph. |
 | `pen.indent` | `void` | core | Port of `applyListTabBehavior` (`shiftKey: false`). |
@@ -80,12 +80,12 @@ Block-selection delete is also handled by `pen.deleteBackward` / `pen.deleteForw
 
 | Owner | Names |
 | --- | --- |
-| core | 31 |
+| core | 33 |
 | field-editor | 0 |
-| not-yet-moved | 2 |
+| not-yet-moved | 0 |
 | **total (frozen)** | **33** |
 
-Moved this slice: 4 structure + 4 table + 2 history = 10. Deferred: `pen.caretUp` / `pen.caretDown` — tokens and keymap rows only; registry `dispatch` is a silent miss. Field-editor ArrowUp/Down still call `moveCaretAcrossBlocks` (mapped to left/right boundary crossing, not these names).
+`pen.caretUp` / `pen.caretDown` now have registered handlers. Geometry is injected with `setVerticalCaretMeasure`; until the field-editor host does that, dispatch still does the logical edge-crossing that `moveCaretAcrossBlocks` did, and mid-block wrap remains a miss.
 
 ## Field-editor names that are not catalog commands
 

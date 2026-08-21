@@ -43,7 +43,8 @@ flowchart TD
 Important rules:
 
 - Undo and redo operate on previously applied operations; they do not bypass the core mutation path.
-- Origins matter: the package decides which operation origins are tracked and how explicit undo groups change capture behavior.
+- Origins matter: the package decides which operation origins are tracked and how explicit undo groups change capture behavior. The Yjs adapter, not this package, owns `TrackedOriginSet` — the apply pipeline tags transactions with a structured origin object, and `Y.UndoManager` would otherwise miss those transactions because it matches `trackedOrigins` by identity.
+- This package does not depend on `@input/pen-core`. It keeps a local `getOpOriginType` rather than importing core's.
 - Cursor and metadata restoration are part of the package contract so history operations restore editor state, not just document bytes.
 
 ## Integration Notes
@@ -56,7 +57,7 @@ Important rules:
 
 ## Current Maturity / Intended Usage
 
-Workspace package at version `0.0.0`; intended usage is current-state but still evolving. Even so, it is already a subtle package because grouping and restore behavior shape how editing feels across typing, paste, AI operations, and collaboration-aware origins.
+Workspace package at version `0.0.1`; intended usage is current-state but still evolving. Even so, it is already a subtle package because grouping and restore behavior shape how editing feels across typing, paste, AI operations, and collaboration-aware origins.
 
 ## Non-goals
 

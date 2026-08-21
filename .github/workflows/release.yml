@@ -67,6 +67,9 @@ jobs:
       - name: Check published package types
         run: node scripts/release-check.mjs --attw
 
+      - name: Check npm provenance preconditions
+        run: node scripts/release-check.mjs --provenance-preconditions
+
       - name: Check bundle size against baseline
         run: node scripts/size-limit.mjs
 

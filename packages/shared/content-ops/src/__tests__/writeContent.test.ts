@@ -67,4 +67,110 @@ describe("@input/pen-content-ops", () => {
 			}),
 		]);
 	});
+
+	it("keeps heading and list item text, not just block types", () => {
+		const editor = createEditorStub("structured");
+
+		const result = buildDocumentWriteOps(editor, {
+			format: "markdown",
+			content: "# Heading\n\n- Item",
+			position: "last",
+		});
+
+		expect(result.blocks).toEqual([
+			expect.objectContaining({
+				type: "heading",
+				content: "Heading",
+			}),
+			expect.objectContaining({
+				type: "bulletListItem",
+				content: "Item",
+			}),
+		]);
+		expect(
+			result.ops.filter((op) => op.type === "insert-text").map((op) => op.text),
+		).toEqual(["Heading", "Item"]);
+	});
+
+	it("keeps bold and italic marks from markdown inline nodes", () => {
+		const editor = createEditorStub("structured");
+
+		const result = buildDocumentWriteOps(editor, {
+			format: "markdown",
+			content: "**bold** and *italic*",
+			position: "last",
+		});
+
+		expect(result.blocks).toEqual([
+			expect.objectContaining({
+				type: "paragraph",
+				content: "bold and italic",
+				marks: [
+					{ type: "bold", start: 0, end: 4 },
+					{ type: "italic", start: 9, end: 15 },
+				],
+			}),
+		]);
+	});
+
+	it("keeps table cell text from GFM tables", () => {
+		const editor = createEditorStub("structured");
+
+		const result = buildDocumentWriteOps(editor, {
+			format: "markdown",
+			content: "| Name |\n| --- |\n| Ship |",
+			position: "last",
+		});
+
+		expect(result.blocks).toEqual([
+			expect.objectContaining({
+				type: "table",
+				children: [
+					expect.objectContaining({
+						type: "__table_row",
+						children: [
+							expect.objectContaining({
+								type: "__table_cell",
+								content: "Name",
+							}),
+						],
+					}),
+					expect.objectContaining({
+						type: "__table_row",
+						children: [
+							expect.objectContaining({
+								type: "__table_cell",
+								content: "Ship",
+							}),
+						],
+					}),
+				],
+			}),
+		]);
+	});
+
+	it("returns no ops when any block type is hidden from tooling", () => {
+		const editor = createEditorStub("structured");
+
+		const result = buildDocumentWriteOps(editor, {
+			format: "blocks",
+			blocks: [
+				{ blockType: "paragraph", content: "Allowed" },
+				{ blockType: "subdocument", content: "Blocked" },
+			],
+			position: "last",
+		});
+
+		expect(result.blocks).toEqual([]);
+		expect(result.ops).toEqual([]);
+		expect(editor.internals.emit).toHaveBeenCalledWith(
+			"diagnostic",
+			expect.objectContaining({
+				code: "content-ops-unexposed-block",
+				source: "content-ops",
+				message:
+					'Block type "subdocument" is not available in structured documents.',
+			}),
+		);
+	});
 });

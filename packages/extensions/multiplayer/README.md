@@ -55,6 +55,7 @@ A bad `user` drops the whole peer. A bad cursor or selection is dropped for that
 | Color                         | `MAX_PRESENCE_COLOR_LENGTH`        | 64      |
 | Awareness bytes per peer      | `MAX_PRESENCE_BYTES_PER_PEER`      | 4096    |
 | Block ids per block selection | `MAX_PRESENCE_BLOCK_SELECTION_IDS` | 256     |
+| Cursor / selection offset     | `MAX_PRESENCE_OFFSET`              | 1048576 |
 | Updates per second per peer   | `MAX_PRESENCE_UPDATES_PER_SECOND`  | 10      |
 | Tracked peers per document    | `MAX_TRACKED_PEERS`                | 32      |
 

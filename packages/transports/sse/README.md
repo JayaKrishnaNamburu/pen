@@ -44,6 +44,8 @@ const handler = createSSEHandler({
 
 A live `Editor` is passed at construction. `PenStreamRequest` is the wire body and has no `editor` field. The handler rejects a body that is not a `PenStreamRequest` — including a top-level or nested `editor`, a wrong-shaped field, a prototype key, or an oversized payload — with `400` before any tool runs.
 
+Mutating `toolCalls` are default-deny. Set `allowedMutatingTools` to grant specific names; an un-allowlisted mutating call emits `tool-error` and does not run the handler or apply.
+
 ## Client Example
 
 ```ts
@@ -75,13 +77,14 @@ const transport = sseTransport({
 
 ### `createSSEHandler`
 
-| Option         | Default  | Effect                               |
-| -------------- | -------- | ------------------------------------ |
-| `toolRuntime`  | unset    | In-process tool execution            |
-| `editor`       | unset    | In-process editor for `ToolContext`  |
-| `onRequest`    | unset    | Called with each `PenStreamRequest`  |
-| `onError`      | unset    | Called with handler errors           |
-| `pingInterval` | `15_000` | Server ping interval in milliseconds |
+| Option                 | Default  | Effect                                           |
+| ---------------------- | -------- | ------------------------------------------------ |
+| `toolRuntime`          | unset    | In-process tool execution                        |
+| `editor`               | unset    | In-process editor for `ToolContext`              |
+| `allowedMutatingTools` | `[]`     | Mutating tools the request may run. Default deny |
+| `onRequest`            | unset    | Called with each `PenStreamRequest`              |
+| `onError`              | unset    | Called with handler errors                       |
+| `pingInterval`         | `15_000` | Server ping interval in milliseconds             |
 
 ## Documentation
 

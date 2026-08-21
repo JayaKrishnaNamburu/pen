@@ -35,6 +35,8 @@ Then read package specs by layer:
 - JSON is the canonical machine-readable format. XML is an interoperability surface layered on top of that model.
 - React is the primary documented renderer. Vue is a shipped renderer proof built on the shared DOM engine.
 - Private apps such as `@input/pen-docs` and `@input/pen-playground` are specified because they are part of the workspace, but they are not publishable runtime packages.
+- Two workspace packages have no current-state spec on purpose: `@input/pen-conformance` and `@input/pen-eslint-plugin`. See `charter/package-map.md`.
+- Command registration and the Wave 05 selection engine are mid-flight. Package specs that mention them mark them as unsettled; do not read those sections as shipped contracts.
 
 ## What Changed
 

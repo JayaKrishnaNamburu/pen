@@ -932,6 +932,102 @@ describe("@input/pen-document-ops live document tools", () => {
 				expect.objectContaining({ blockId: "nested-1" }),
 			]);
 		});
+
+		it("read_document and get_context include nested children, not only top-level order", async () => {
+			const editor = createLiveEditor(nestedBlocks);
+
+			const read = (await readDocumentTool(editor).handler(
+				{ format: "json" },
+				{} as never,
+			)) as { blocks: Array<{ id: string }> };
+			const context = (await getContextTool(editor).handler(
+				{ format: "json" },
+				{} as never,
+			)) as { blocks: Array<{ id: string }> };
+
+			expect(read.blocks.map((block) => block.id)).toContain("nested-1");
+			expect(context.blocks.map((block) => block.id)).toContain("nested-1");
+			expect(editor.documentState.blockOrder).not.toContain("nested-1");
+		});
+
+		it("retrieve_document_spans ranks a nested child hit", async () => {
+			const editor = createLiveEditor(nestedBlocks);
+			const result = (await retrieveDocumentSpansTool(editor).handler(
+				{ query: "NESTED-SEARCH-HIT" },
+				{} as never,
+			)) as { spans: Array<{ blockIds: string[] }> };
+
+			expect(
+				result.spans.some((span) => span.blockIds.includes("nested-1")),
+			).toBe(true);
+		});
+
+		it("search_document reaches a grandchild inserted under a nested toggle", async () => {
+			const editor = createLiveEditor(nestedBlocks);
+			editor.apply(
+				[
+					{
+						type: "insert-block",
+						blockId: "inner-toggle",
+						blockType: "toggle",
+						props: {},
+						position: { parent: "toggle-1", index: 1 },
+					},
+					{
+						type: "insert-block",
+						blockId: "deep-1",
+						blockType: "paragraph",
+						props: {},
+						position: { parent: "inner-toggle", index: 0 },
+					},
+					{
+						type: "insert-text",
+						blockId: "deep-1",
+						offset: 0,
+						text: "DEEP-NESTED-HIT",
+					},
+				],
+				{ origin: "user" },
+			);
+
+			const matches = (await searchDocumentTool(editor).handler(
+				{ query: "DEEP-NESTED-HIT" },
+				{} as never,
+			)) as Array<{ blockId: string }>;
+
+			expect(matches).toEqual([
+				expect.objectContaining({ blockId: "deep-1" }),
+			]);
+			expect(editor.documentState.blockOrder).not.toContain("deep-1");
+		});
+
+		it("search_document finds a child hanging off a callout, not only toggle", async () => {
+			const editor = createLiveEditor([
+				{
+					id: "callout-1",
+					type: "callout",
+					content: "Callout title",
+					children: [
+						{
+							id: "layout-child-1",
+							type: "paragraph",
+							content: "LAYOUT-CHILD-HIT",
+						},
+					],
+				},
+				...FIXTURE_BLOCKS,
+			]);
+
+			const matches = (await searchDocumentTool(editor).handler(
+				{ query: "LAYOUT-CHILD-HIT" },
+				{} as never,
+			)) as Array<{ blockId: string }>;
+
+			expect(matches).toEqual([
+				expect.objectContaining({ blockId: "layout-child-1" }),
+			]);
+			expect(editor.documentState.blockOrder).not.toContain("layout-child-1");
+		});
 	});
 
 	describe("selection", () => {

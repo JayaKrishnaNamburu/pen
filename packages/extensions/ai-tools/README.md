@@ -101,6 +101,8 @@ if (isAIToolCallDenied(output) || turn.ended) {
 
 Defaults: `AI_TOOL_MAX_CALLS_PER_TURN` 20, `AI_TOOL_MAX_OPS_PER_CALL` 32, `AI_TOOL_MAX_TOTAL_OPS_PER_TURN` 128. The agentic loop's `maxSteps` default is 10 (`AI_AGENTIC_MAX_STEPS_DEFAULT`); the first of steps, calls, or ops that hits its cap ends the turn.
 
+`openAIToolCall` is the same grant for hosts that stream `executeTool` themselves (SSE and direct). It returns `{ ok: false }` without running the handler, or `{ ok: true, close }` after installing the write guard. Do not call `executeTool` unless it opened.
+
 `executeAITool` without a turn allows read-only tools only. Mutating and destructive tools require a turn whose `allowedMutatingTools` lists them. A tool classified as read-only — by an explicit `mutating: false` or by an exact catalog name in `AI_READ_ONLY_TOOL_NAMES` — is still refused at `editor.apply`: the write is dropped, a diagnostic (`ai-tool-read-only-mutation`) is emitted, and the call returns `{ ok: false, status: "blocked", reason: "tool-not-allowed" }`. Classification is a grant signal, not a description of what the handler does. `@input/pen-ai-tools` builds on the same document semantics as `@input/pen-document-ops`; it does not fork or replace them.
 
 ## Options

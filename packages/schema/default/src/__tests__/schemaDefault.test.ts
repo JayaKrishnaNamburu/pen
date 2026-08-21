@@ -335,6 +335,92 @@ describe("heading.normalize", () => {
   });
 });
 
+describe("normalize idempotence on nested and layout fixtures", () => {
+  const schemasWithNormalize = defaultBlocks.filter((schema) => schema.normalize);
+
+  it("clamps a heading that owns nested children and a second pass is a no-op", () => {
+    const fixture = {
+      id: "toggle-heading",
+      type: "heading" as const,
+      props: { level: 99 },
+      content: "Summary",
+      children: [
+        {
+          id: "nested-child",
+          type: "paragraph" as const,
+          props: { parentId: "toggle-heading" },
+          content: "only in the nested child",
+        },
+      ],
+    };
+
+    const once = heading.normalize!(fixture);
+    const twice = heading.normalize!(once);
+
+    expect(once.props.level).toBe(6);
+    expect(once.children).toEqual(fixture.children);
+    expect(twice).toBe(once);
+    expect(twice.children?.[0]?.content).toBe("only in the nested child");
+  });
+
+  it("is a no-op on a layout-shaped heading whose children are table rows", () => {
+    const fixture = {
+      id: "layout-heading",
+      type: "heading" as const,
+      props: { level: 2 },
+      content: "Grid title",
+      children: [
+        {
+          id: "row",
+          type: "tableRow" as const,
+          props: {},
+          content: "",
+          children: [
+            {
+              id: "cell",
+              type: "tableCell" as const,
+              props: {},
+              content: "only in the cell",
+            },
+          ],
+        },
+      ],
+    };
+
+    const once = heading.normalize!(fixture);
+    const twice = heading.normalize!(once);
+
+    expect(once).toBe(fixture);
+    expect(twice).toBe(once);
+    expect(once.children?.[0]?.children?.[0]?.content).toBe("only in the cell");
+  });
+
+  it("every schema normalize is idempotent on a nested child fixture", () => {
+    expect(schemasWithNormalize.map((schema) => schema.type)).toEqual(["heading"]);
+
+    for (const schema of schemasWithNormalize) {
+      const fixture = {
+        id: "nested",
+        type: schema.type,
+        props: schema.type === "heading" ? { level: 0 } : {},
+        content: "host",
+        children: [
+          {
+            id: "inner",
+            type: "paragraph",
+            props: { parentId: "nested" },
+            content: "only in the child",
+          },
+        ],
+      };
+      const once = schema.normalize!(fixture);
+      const twice = schema.normalize!(once);
+      expect(twice).toEqual(once);
+      expect(twice.children?.[0]?.content).toBe("only in the child");
+    }
+  });
+});
+
 describe("AX4 — default atom and widget a11y specs", () => {
   it("AX4: mention, inlineApp, and image each have an a11y label", () => {
     expect(typeof mention.a11y?.label).toBe("function");

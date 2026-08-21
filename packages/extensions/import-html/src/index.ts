@@ -6,6 +6,7 @@ export {
 export type { HtmlImporter } from "./importer";
 export { ALLOWED_DATA_PEN_ATTRS, sanitizeHTML } from "./sanitize";
 export {
+  admitProviderImageUrl,
   applyHtmlImageSrcPolicy,
   DEFAULT_HTML_IMAGE_SRC_POLICY,
   isIngestibleImageSrc,

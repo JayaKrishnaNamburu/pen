@@ -259,7 +259,12 @@ export abstract class FieldEditorImplRuntime extends FieldEditorImplSelection {
 			this._isEditing,
 		);
 		this._updateSurfaceState(surface.mode, surface.blockIds);
-		if (options?.syncSelectionToBackend ?? true) {
+		const selection = this._editor.selection;
+		const isAuthorityRange =
+			selection?.type === "text" && !selection.isCollapsed;
+		// a pending rAF projection must not swallow an authority range write.
+		// collapsed stays gated: that stamp is the Vue live-range seam.
+		if ((options?.syncSelectionToBackend ?? true) || isAuthorityRange) {
 			this._backendLifecycle.updateSelection(null);
 		}
 	}
@@ -294,11 +299,10 @@ export abstract class FieldEditorImplRuntime extends FieldEditorImplSelection {
 	protected _syncBackendForSurfaceMode(): void {
 		if (!this._isEditing || !this._focusBlockId) return;
 		const NextBackendClass = this._resolveBackendClass();
-		if (this._backendLifecycle.hasBackend(NextBackendClass)) {
-			return;
+		if (!this._backendLifecycle.hasBackend(NextBackendClass)) {
+			this._backendLifecycle.replace(NextBackendClass);
+			this._attachedElement = null;
 		}
-
-		this._backendLifecycle.replace(NextBackendClass);
 
 		if (this._mode === "expanded") {
 			const expandedHost = this._findExpandedHost();
@@ -312,7 +316,6 @@ export abstract class FieldEditorImplRuntime extends FieldEditorImplSelection {
 		if (this._mode === "single") {
 			const inlineEl = this._resolveInlineElement(this._focusBlockId);
 			if (inlineEl) {
-				this._attachedElement = null;
 				this.attachElement(inlineEl);
 				return;
 			}
@@ -401,9 +404,23 @@ export abstract class FieldEditorImplRuntime extends FieldEditorImplSelection {
 			event.requestId,
 		);
 
+		// skip backend sync until the restored inline is attached — a write
+		// against the previous field races selectionchange with the restored caret
 		this._recomputeSurfaceFromSelection({
 			syncSelectionToBackend: false,
 		});
+
+		const restoredInline = this._focusBlockId
+			? this._resolveInlineElement(this._focusBlockId)
+			: null;
+		if (!restoredInline || !this.attachElement(restoredInline)) {
+			return;
+		}
+
+		this.focus();
+		this._historySelectionCoordinator.completeDeferredProjection(
+			event.requestId,
+		);
 	}
 
 	protected _attachedElementOwnsFocus(): boolean {

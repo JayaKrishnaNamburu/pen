@@ -1,4 +1,8 @@
 import { createEditor, defineExtension, urlPolicyFacet } from "@input/pen-core";
+import {
+	applyYjsAwarenessUpdate,
+	encodeYjsAwarenessUpdate,
+} from "@input/pen-crdt-yjs";
 import { defaultSchema } from "@input/pen-schema-default";
 import { createTestDocument } from "@input/pen-test";
 import type { DiagnosticEvent } from "@input/pen-types";
@@ -16,6 +20,7 @@ import {
 	MAX_PRESENCE_BLOCK_SELECTION_IDS,
 	MAX_PRESENCE_BYTES_PER_PEER,
 	MAX_PRESENCE_DISPLAY_NAME_LENGTH,
+	MAX_PRESENCE_OFFSET,
 	MAX_PRESENCE_UPDATES_PER_SECOND,
 	MAX_PRESENCE_USER_ID_LENGTH,
 	MAX_TRACKED_PEERS,
@@ -407,6 +412,142 @@ describe("COL2 awareness is untrusted input", () => {
 		]);
 	});
 
+	it("COL2: commitId does not admit hostile offsets — negative, fractional, and absurd values are dropped", () => {
+		const cases: Array<{ offset: number; commitId: number; reason: string }> = [
+			{ offset: -1, commitId: 1, reason: "wrong-typed" },
+			{ offset: 2.5, commitId: 1, reason: "wrong-typed" },
+			{ offset: Number.MAX_VALUE, commitId: 1, reason: "wrong-typed" },
+			{ offset: 1e20, commitId: 0, reason: "wrong-typed" },
+			{
+				offset: MAX_PRESENCE_OFFSET + 1,
+				commitId: 1,
+				reason: "oversized",
+			},
+		];
+
+		for (const { offset, commitId, reason } of cases) {
+			const result = validate([
+				[
+					BAD_PEER_ID,
+					{
+						user: { id: "u-bad", name: "Ada" },
+						cursor: { blockId: "b1", offset, commitId },
+					},
+				],
+			]);
+			expect(result.states.get(BAD_PEER_ID)).toEqual({
+				user: { id: "u-bad", name: "Ada" },
+				cursor: null,
+				selection: null,
+			});
+			expect(result.rejections).toEqual([
+				{ clientId: BAD_PEER_ID, reason },
+			]);
+		}
+
+		const staleButPlausible = validate([
+			[
+				BAD_PEER_ID,
+				{
+					user: { id: "u-stale", name: "Ada" },
+					cursor: { blockId: "b1", offset: 8, commitId: 3 },
+				},
+			],
+		]);
+		expect(staleButPlausible.states.get(BAD_PEER_ID)?.cursor).toEqual({
+			blockId: "b1",
+			offset: 8,
+			clock: 0,
+			commitId: 3,
+		});
+		expect(staleButPlausible.rejections).toEqual([]);
+	});
+
+	it("COL2: entity-escaped and unicode names are not script-bearing; raw markup still is", () => {
+		const escaped = validate([
+			[
+				BAD_PEER_ID,
+				{
+					user: { id: "u-ent", name: "&lt;script&gt;alert(1)&lt;/script&gt;" },
+				},
+			],
+		]);
+		expect(escaped.states.get(BAD_PEER_ID)?.user?.name).toBe(
+			"&lt;script&gt;alert(1)&lt;/script&gt;",
+		);
+		expect(escaped.rejections).toEqual([]);
+
+		const decodedUnicode = validate([
+			[
+				BAD_PEER_ID,
+				{
+					user: { id: "u-uni", name: "<scr\u0069pt>alert(1)</script>" },
+				},
+			],
+		]);
+		expect(decodedUnicode.states.has(BAD_PEER_ID)).toBe(false);
+		expect(decodedUnicode.rejections).toEqual([
+			{ clientId: BAD_PEER_ID, reason: "script-bearing" },
+		]);
+	});
+
+	it("COL2: whitespace and case variants of hostile avatar schemes are dropped", () => {
+		const cases = [
+			"\tjavascript:alert(1)",
+			"JAVASCRIPT:alert(1)",
+			" data:text/html,<script>window.__xssProbe=1</script>",
+			"data:TEXT/HTML;base64,PHNjcmlwdD48L3NjcmlwdD4=",
+			"vbscript:msgbox(1)",
+		];
+
+		for (const avatar of cases) {
+			const result = validate([
+				[
+					BAD_PEER_ID,
+					{
+						user: { id: "u-url", name: "Ada", avatar },
+					},
+				],
+			]);
+			expect(result.states.has(BAD_PEER_ID)).toBe(false);
+			expect(result.rejections).toEqual([
+				{ clientId: BAD_PEER_ID, reason: "script-bearing" },
+			]);
+		}
+	});
+
+	it("COL2: JSON __proto__ pollution and undeclared keys never reach accepted state", () => {
+		const polluted = JSON.parse(
+			'{"user":{"id":"u-bad","name":"Ada"},"__proto__":{"polluted":true}}',
+		) as Record<string, unknown>;
+		const protoResult = validate([[BAD_PEER_ID, polluted]]);
+		expect(protoResult.states.has(BAD_PEER_ID)).toBe(false);
+		expect(protoResult.rejections).toEqual([
+			{ clientId: BAD_PEER_ID, reason: "wrong-typed" },
+		]);
+
+		const extraKeys = validate([
+			[
+				BAD_PEER_ID,
+				{
+					user: { id: "u-extra", name: "Ada", email: "hidden@example.com" },
+					streaming: { prompt: "<script>window.__xssProbe=1</script>" },
+					ai: { role: "admin" },
+					cursor: { blockId: "b1", offset: 2, clock: 10 },
+				},
+			],
+		]);
+		expect(extraKeys.states.get(BAD_PEER_ID)).toEqual({
+			user: { id: "u-extra", name: "Ada" },
+			cursor: { blockId: "b1", offset: 2, clock: 10 },
+			selection: null,
+		});
+		expect(extraKeys.states.get(BAD_PEER_ID)).not.toHaveProperty("streaming");
+		expect(extraKeys.states.get(BAD_PEER_ID)).not.toHaveProperty("ai");
+		expect(extraKeys.states.get(BAD_PEER_ID)?.user).not.toHaveProperty("email");
+		expect(extraKeys.rejections).toEqual([]);
+	});
+
 	it("COL2: hostile avatar URL ignored — javascript: and data:text/html drop the peer", () => {
 		const cases: unknown[] = [
 			{
@@ -636,6 +777,82 @@ describe("COL2 awareness is untrusted input", () => {
 		).toEqual([GOOD_PEER_ID]);
 		expect(rejectedReasons(diagnostics)).toEqual(["out-of-range-offset"]);
 
+		editor.destroy();
+	});
+
+	it("COL2: a commitId-tagged absurd offset never reaches a remote-cursor decoration", () => {
+		const { editor, controller, diagnostics } = createPresenceEditor();
+
+		applyStates(controller, editor, [
+			[GOOD_PEER_ID, goodPeerState()],
+			[
+				BAD_PEER_ID,
+				{
+					user: { id: "u-far", name: "Far", color: "#abc123" },
+					cursor: {
+						blockId: "b1",
+						offset: Number.MAX_VALUE,
+						clock: 11,
+						commitId: 1,
+					},
+				},
+			],
+		]);
+
+		expect(goodPeerDecoration(editor)?.attributes?.["data-user-id"]).toBe(
+			"u-good",
+		);
+		expect(
+			controller.getRemoteCursors().map((cursor) => cursor.clientId),
+		).toEqual([GOOD_PEER_ID]);
+		expect(
+			editor.getDecorations().inlineForBlock("b1").some((item) => {
+				return item.from === Number.MAX_VALUE || item.to === Number.MAX_VALUE;
+			}),
+		).toBe(false);
+		expect(rejectedReasons(diagnostics)).toEqual(["wrong-typed"]);
+
+		editor.destroy();
+	});
+
+	it("COL2: applyYjsAwarenessUpdate is not a second path — ingest still rejects the payload", () => {
+		const { editor, controller, diagnostics } = createPresenceEditor();
+		const remote = createPresenceEditor();
+		const remoteAwareness = remote.editor.internals.awareness;
+		const target = editor.internals.awareness;
+		expect(remote.editor.clientId).not.toBe(editor.clientId);
+		expect(remoteAwareness && target).toBeTruthy();
+		if (!remoteAwareness || !target) {
+			remote.editor.destroy();
+			editor.destroy();
+			return;
+		}
+
+		remoteAwareness.setLocalState({
+			user: { id: "u-wire", name: SCRIPT_NAME },
+			cursor: { blockId: "b1", offset: 1, clock: 11 },
+		});
+		applyYjsAwarenessUpdate(
+			target,
+			encodeYjsAwarenessUpdate(
+				remoteAwareness,
+				Array.from(remoteAwareness.getStates().keys()),
+			),
+		);
+		controller.handleAwarenessChange(target.getStates());
+		editor.requestDecorationUpdate();
+
+		expect(
+			JSON.stringify(editor.getDecorations().inlineForBlock("b1")).includes(
+				"<script",
+			),
+		).toBe(false);
+		expect(
+			controller.getRemoteCursors().some((cursor) => cursor.user.id === "u-wire"),
+		).toBe(false);
+		expect(rejectedReasons(diagnostics)).toContain("script-bearing");
+
+		remote.editor.destroy();
 		editor.destroy();
 	});
 

@@ -15,7 +15,7 @@ Generated from `src/fidelityTable.ts` and asserted by `src/__tests__/iop3Fidelit
 | block | image | degraded | caption dropped; hostile src omitted (SEC1) |
 | block | table | full |  |
 | block | divider | full |  |
-| block | callout | full |  |
+| block | callout | degraded | children exported as sibling blocks, not nested in the callout div |
 | block | toggle | degraded | children exported as sibling blocks, not nested in details |
 | block | blockquote | full |  |
 | block | subdocument | degraded | empty data-pen-subdocument marker; nested document dropped |

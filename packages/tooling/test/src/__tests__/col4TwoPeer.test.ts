@@ -184,6 +184,39 @@ describe("COL4 two-peer structural concurrency", () => {
 	it("COL4: seeded random op pairs converge in both interleavings", () => {
 		runCol4SeededFuzz();
 	});
+
+	it("TWO_PEER_INTERLEAVINGS is the pair runBothInterleavings actually walks", () => {
+		expect(TWO_PEER_INTERLEAVINGS.length).toBeGreaterThanOrEqual(2);
+		expect(new Set(TWO_PEER_INTERLEAVINGS).size).toBe(
+			TWO_PEER_INTERLEAVINGS.length,
+		);
+
+		const seen: string[] = [];
+		runBothInterleavings(
+			{ blocks: [{ id: "p1", type: "paragraph", content: "Hello" }] },
+			(_harness, interleaving) => {
+				seen.push(interleaving);
+			},
+		);
+		expect(seen).toEqual([...TWO_PEER_INTERLEAVINGS]);
+	});
+
+	it("assertConverged throws when peers diverge and nobody syncs", () => {
+		const harness = createTwoPeerHarness({
+			blocks: [{ id: "p1", type: "paragraph", content: "Hello" }],
+		});
+		try {
+			harness.peerA.editor.apply(
+				[{ type: "insert-text", blockId: "p1", offset: 5, text: " A" }],
+				{ origin: "user" },
+			);
+			expect(() => harness.assertConverged()).toThrow(
+				/Two-peer documents did not converge/,
+			);
+		} finally {
+			harness.destroy();
+		}
+	});
 });
 
 function blockOrderIds(harness: TwoPeerHarness): string[] {

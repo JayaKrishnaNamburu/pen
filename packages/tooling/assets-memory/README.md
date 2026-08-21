@@ -67,11 +67,14 @@ counting and should call `delete` only when their count reaches zero.
 
 ## Options
 
-| Option    | Default | Effect                                                                         |
-| --------- | ------- | ------------------------------------------------------------------------------ |
-| `maxSize` | unset   | Provider-level upload cap. `upload` uses `options.maxSize ?? provider.maxSize` |
+| Option                | Default | Effect                                                                         |
+| --------------------- | ------- | ------------------------------------------------------------------------------ |
+| `maxSize`             | unset   | Provider-level upload cap. `upload` uses `options.maxSize ?? provider.maxSize` |
+| `rejectUpload`        | unset   | Failure double: throw after the size check, before `onProgress` or store       |
+| `rejectAfterProgress` | unset   | Mid-transfer double: `onProgress(0)`, then throw without storing               |
+| `uploadUrl`           | unset   | Store this URL instead of a blob URL. This double does not admit URLs          |
 
-`onProgress` is an `upload` option, not a factory option. This provider calls it at `0` then `1`.
+`onProgress` is an `upload` option, not a factory option. This provider calls it at `0` then `1`. `resolve` returns the stored URL or echoes `ref.url` for unknown refs — it is not a sanitizer.
 
 ## Documentation
 

@@ -29,6 +29,10 @@ function createHarness(options: {
 	const editor = {
 		selection: null,
 		getBlock: () => null,
+		// Required on Editor. The dispatch path calls it unconditionally now
+		// that the `typeof editor.selectText !== "function"` guard is gone —
+		// that guard was compensating for this stub, not for a real editor.
+		selectText: vi.fn(),
 		internals: {
 			getSlot: (key: string) =>
 				key === "pen.locale" ? options.locale : undefined,

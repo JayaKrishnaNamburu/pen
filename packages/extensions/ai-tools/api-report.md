@@ -13,6 +13,7 @@
 - isDestructiveAITool
 - isMutatingAITool
 - listAITools
+- openAIToolCall
 - toAIToolDescriptor
 
 ### guard
@@ -50,3 +51,4 @@
 - AIToolRuntime
 - AIToolTurn
 - AIToolTurnOptions
+- OpenAIToolCall

@@ -205,13 +205,27 @@ export {
 } from "./commands/caret";
 export type { CaretMotionParam, SelectBlockParam } from "./commands/caret";
 export {
+	getVerticalCaretGoalX,
+	getVerticalCaretMeasure,
+	setVerticalCaretGoalX,
+	setVerticalCaretMeasure,
+} from "./commands/verticalCaret";
+export type {
+	VerticalCaretDirection,
+	VerticalCaretMeasure,
+	VerticalCaretMeasureResult,
+	VerticalCaretPoint,
+} from "./commands/verticalCaret";
+export {
 	convertBlock,
+	deleteAdjacentInlineAtom,
 	deleteBackward,
 	deleteForward,
 	indent,
 	insertLineBreak,
 	insertText,
 	outdent,
+	selectAdjacentInlineAtom,
 	splitBlock,
 	toggleMark,
 } from "./commands/text";

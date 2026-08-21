@@ -25,6 +25,12 @@ Bridge Pen contracts to a specific CRDT implementation.
 - Peer dependencies: `y-protocols`, `yjs`
 - Boundary: Adapters must respect the editor authority boundary while exposing persistence and sync integration points.
 
+## Undo Origin Matching
+
+The apply pipeline passes a freshly built structured origin object into `adapter.transact` so `groupId` / `requestId` survive on the Yjs transaction. `Y.UndoManager` matches `trackedOrigins` by identity, so neither the bare type string (`"user"`) nor an interned canonical object is the same reference as that transaction origin.
+
+`createYjsUndoManager()` therefore installs a `TrackedOriginSet` (`packages/crdt/yjs/src/undo.ts`) that extends `Set` and overrides `has()`: identity still wins, and a structured object also matches when its `type` string is in the set. Default tracked types are `"user"` and `"ai"`. The class is adapter-local, not a public export.
+
 ## Data Flow / Runtime Model
 
 CRDT adapter packages in Pen should stay package-first and explicit about ownership. Use this package when a host app adopts the matching CRDT backend.
@@ -45,7 +51,7 @@ Extension-root helpers reserve namespaced Yjs maps under the document `apps` roo
 
 ## Current Maturity / Intended Usage
 
-Workspace package at version `0.0.0`; intended usage is current-state but still evolving.
+Workspace package at version `0.0.1`; intended usage is current-state but still evolving.
 
 ## Non-goals
 

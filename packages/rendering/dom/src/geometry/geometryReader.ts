@@ -33,6 +33,7 @@ import type {
 import {
 	collapsedRect,
 	getDistanceToRect,
+	isInkRect,
 	isUsefulRect,
 	rectFromDOMRect,
 	unionRects,
@@ -427,14 +428,15 @@ function measureRangeSlice(
 	start: number,
 	end: number,
 ): Rect | null {
-	const rects = getTextSelectionClientRects(root, {
-		anchor: { blockId, offset: start },
-		focus: { blockId, offset: end },
-	}).map(rectFromDOMRect);
-	if (rects.length === 0) {
+	const blockEl = queryBlockElement(root, blockId);
+	const inlineEl = blockEl
+		? (findInlineContentElement(blockEl) ??
+			queryInlineElement(root, blockId))
+		: null;
+	if (!inlineEl) {
 		return null;
 	}
-	return unionRects(rects);
+	return measureLogicalRange(root, inlineEl, start, end);
 }
 
 function readBlockDirection(
@@ -519,7 +521,7 @@ function measureLogicalRange(
 		// detached or out-of-range DOM points.
 		return null;
 	}
-	const rects = readClientRects(range);
+	const rects = readInkRects(range);
 	if (rects.length === 0) {
 		return null;
 	}
@@ -616,6 +618,10 @@ function readClientRects(range: Range): DOMRect[] {
 		return [];
 	}
 	return Array.from(getter.call(range)).filter(isUsefulRect);
+}
+
+function readInkRects(range: Range): DOMRect[] {
+	return readClientRects(range).filter(isInkRect);
 }
 
 function caretFromAffinity(
@@ -783,7 +789,7 @@ function fragmentsForTextNode(
 		// detached text node.
 		return [];
 	}
-	const rects = readClientRects(range);
+	const rects = readInkRects(range);
 	if (rects.length === 0) {
 		return [];
 	}

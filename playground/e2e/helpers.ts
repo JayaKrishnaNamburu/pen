@@ -211,6 +211,52 @@ function createPlaygroundRoomId(): string {
 	return `pen-e2e-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+export interface NativeSelectionPoint {
+	blockId: string | null;
+	offset: number;
+	nodePath: string;
+	domOffset: number;
+}
+
+export interface SelectionEvidence {
+	editorSelection: unknown;
+	editorFocusBlockId: string | null;
+	activeElement: {
+		tag: string;
+		blockId: string | null;
+		className: string;
+	} | null;
+	attachedInlineBlockId: string | null;
+	native: {
+		isCollapsed: boolean | null;
+		text: string;
+		rangeCount: number;
+		anchor: NativeSelectionPoint | null;
+		focus: NativeSelectionPoint | null;
+	};
+	blocks: Array<{
+		id: string;
+		text: string;
+		active: boolean;
+	}>;
+}
+
+export interface OverlayEvidence {
+	toolbar: { top: number; left: number; bottom: number; right: number } | null;
+	session: {
+		top: number;
+		left: number;
+		bottom: number;
+		right: number;
+		cssTop: string;
+		cssLeft: string;
+		layoutReady: boolean;
+	} | null;
+	prompt: { top: number; left: number; bottom: number; right: number } | null;
+	viewport: { top: number; left: number; bottom: number; right: number } | null;
+	overlapToolbar: boolean;
+}
+
 export interface EditorDocumentSnapshot {
 	editorBlockCount: number;
 	editorBlocks: Array<{
@@ -270,6 +316,151 @@ export async function getEditorDocumentSnapshot(
 			),
 			nativeText: native?.toString() ?? "",
 			nativeCollapsed: native?.isCollapsed ?? null,
+		};
+	});
+}
+
+export async function captureSelectionEvidence(
+	page: Page,
+): Promise<SelectionEvidence> {
+	return page.evaluate(() => {
+		const editor = window.penPlayground?.editor;
+		if (!editor) {
+			throw new Error("Missing playground editor debug handle.");
+		}
+
+		const describeNode = (node: Node | null): string => {
+			if (!node) return "null";
+			if (node.nodeType === Node.TEXT_NODE) {
+				const parent = node.parentElement;
+				return `text:${JSON.stringify(node.textContent)}@${parent?.tagName ?? "?"}.${parent?.className ?? ""}`;
+			}
+			if (node instanceof Element) {
+				return `${node.tagName}#${node.id}.${node.className}`;
+			}
+			return node.nodeName;
+		};
+
+		const toPoint = (
+			node: Node | null,
+			offset: number,
+		): NativeSelectionPoint | null => {
+			if (!node) return null;
+			const ownerElement =
+				node.nodeType === Node.ELEMENT_NODE
+					? (node as Element)
+					: node.parentElement;
+			const blockElement = ownerElement?.closest("[data-block-id]");
+			const inlineElement = blockElement?.querySelector(
+				"[data-pen-inline-content]",
+			);
+			let logicalOffset = -1;
+			if (inlineElement instanceof HTMLElement) {
+				const range = document.createRange();
+				range.selectNodeContents(inlineElement);
+				try {
+					range.setEnd(node, offset);
+					logicalOffset = range.toString().replaceAll("\u200B", "").length;
+				} catch {
+					logicalOffset = -1;
+				}
+			}
+			return {
+				blockId: blockElement?.getAttribute("data-block-id") ?? null,
+				offset: logicalOffset,
+				nodePath: describeNode(node),
+				domOffset: offset,
+			};
+		};
+
+		const native = window.getSelection();
+		const active = document.activeElement;
+		const activeBlock = active?.closest("[data-block-id]");
+		const attached = document.querySelector(
+			"[data-pen-inline-content]:focus, [data-pen-editor-block] [contenteditable]:focus",
+		);
+		const attachedBlock = attached?.closest("[data-block-id]");
+
+		return {
+			editorSelection: editor.selection,
+			editorFocusBlockId:
+				editor.selection?.type === "text"
+					? editor.selection.focus.blockId
+					: editor.selection?.type === "block"
+						? (editor.selection.blockIds[0] ?? null)
+						: null,
+			activeElement: active
+				? {
+						tag: active.tagName,
+						blockId: activeBlock?.getAttribute("data-block-id") ?? null,
+						className: active.className,
+					}
+				: null,
+			attachedInlineBlockId:
+				attachedBlock?.getAttribute("data-block-id") ?? null,
+			native: {
+				isCollapsed: native?.isCollapsed ?? null,
+				text: native?.toString() ?? "",
+				rangeCount: native?.rangeCount ?? 0,
+				anchor: toPoint(native?.anchorNode ?? null, native?.anchorOffset ?? 0),
+				focus: toPoint(native?.focusNode ?? null, native?.focusOffset ?? 0),
+			},
+			blocks: [...document.querySelectorAll("[data-pen-editor-block]")].map(
+				(element) => ({
+					id: element.getAttribute("data-block-id") ?? "",
+					text:
+						element.querySelector("[data-pen-inline-content]")
+							?.textContent ?? "",
+					active: element.contains(document.activeElement),
+				}),
+			),
+		};
+	});
+}
+
+export async function captureOverlayEvidence(
+	page: Page,
+): Promise<OverlayEvidence> {
+	return page.evaluate(() => {
+		const box = (element: Element | null) => {
+			if (!element) return null;
+			const rect = element.getBoundingClientRect();
+			return {
+				top: rect.top,
+				left: rect.left,
+				bottom: rect.bottom,
+				right: rect.right,
+			};
+		};
+		const toolbar = document.querySelector("header.toolbar");
+		const session = document.querySelector(".playground-inline-session");
+		const prompt = document.querySelector(
+			".playground-inline-session [data-pen-ai-inline-session-input]",
+		);
+		const viewport = document.querySelector(".playground-editor-viewport");
+		const toolbarBox = box(toolbar);
+		const promptBox = box(prompt);
+		const overlapToolbar = Boolean(
+			toolbarBox &&
+				promptBox &&
+				promptBox.top < toolbarBox.bottom &&
+				promptBox.bottom > toolbarBox.top &&
+				promptBox.left < toolbarBox.right &&
+				promptBox.right > toolbarBox.left,
+		);
+		return {
+			toolbar: toolbarBox,
+			session: session
+				? {
+						...box(session)!,
+						cssTop: getComputedStyle(session).top,
+						cssLeft: getComputedStyle(session).left,
+						layoutReady: session.hasAttribute("data-layout-ready"),
+					}
+				: null,
+			prompt: promptBox,
+			viewport: box(viewport),
+			overlapToolbar,
 		};
 	});
 }

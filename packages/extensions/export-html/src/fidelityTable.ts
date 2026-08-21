@@ -27,7 +27,12 @@ export const HTML_EXPORT_FIDELITY: readonly ExportFidelityRow[] = [
   },
   { kind: "block", type: "table", fidelity: "full", notes: "" },
   { kind: "block", type: "divider", fidelity: "full", notes: "" },
-  { kind: "block", type: "callout", fidelity: "full", notes: "" },
+  {
+    kind: "block",
+    type: "callout",
+    fidelity: "degraded",
+    notes: "children exported as sibling blocks, not nested in the callout div",
+  },
   {
     kind: "block",
     type: "toggle",

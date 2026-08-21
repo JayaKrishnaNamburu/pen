@@ -36,10 +36,23 @@ const counted = defineBlock("counted", {
 	},
 });
 
+const columns = defineBlock("columns", {
+	content: [],
+	isContainer: true,
+	layout: {
+		modes: ["flex"],
+		defaultMode: "flex",
+		minChildren: 2,
+	},
+});
+
 const countedSchema = mergeSchemas(
 	createDefaultSchema(),
 	new SchemaRegistryImpl({
-		blocks: [counted as unknown as BlockSchema],
+		blocks: [
+			counted as unknown as BlockSchema,
+			columns as unknown as BlockSchema,
+		],
 		inlines: [],
 	}),
 );
@@ -142,6 +155,59 @@ describe("normalization in the commit transaction (Wave 2 I10)", () => {
 		expect(editor.getBlock("counted-nested")!.props.charCount).toBe(
 			[...nested.textContent()].length,
 		);
+
+		editor.destroy();
+	});
+
+	it("I10: a second normalizeAll pass writes nothing on a layout container", () => {
+		const editor = createEditor();
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "cols",
+				blockType: "columns",
+				props: {},
+				position: "last",
+			},
+			{
+				type: "insert-block",
+				blockId: "counted-left",
+				blockType: "counted",
+				props: {},
+				position: { parent: "cols", index: 0 },
+			},
+			{
+				type: "insert-block",
+				blockId: "counted-right",
+				blockType: "counted",
+				props: {},
+				position: { parent: "cols", index: 1 },
+			},
+			{
+				type: "insert-text",
+				blockId: "counted-left",
+				offset: 0,
+				text: "ab",
+			},
+			{
+				type: "insert-text",
+				blockId: "counted-right",
+				offset: 0,
+				text: "cd",
+			},
+		]);
+
+		expect(editor.getBlock("cols")).not.toBeNull();
+		const left = editor.getBlock("counted-left")!;
+		const right = editor.getBlock("counted-right")!;
+		expect(left.props.charCount).toBe([...left.textContent()].length);
+		expect(right.props.charCount).toBe([...right.textContent()].length);
+
+		const adapter = editor.internals.adapter;
+		const before = adapter.encodeState(editor.internals.crdtDoc);
+		editor.normalizeAll();
+		editor.normalizeAll();
+		expect(adapter.encodeState(editor.internals.crdtDoc)).toEqual(before);
 
 		editor.destroy();
 	});

@@ -22,6 +22,7 @@ import type {
 	SetSelectionOp,
 	CRDTArray,
 } from "@input/pen-types";
+import { EMPTY_BLOCK_SENTINEL } from "@input/pen-types";
 import { resolveRuntimeContentType } from "../schema/contentType";
 import {
 	type CRDTUnknownArray,
@@ -45,7 +46,8 @@ interface CRDTText {
 	toString(): string;
 	readonly length: number;
 }
-const ZERO_WIDTH_SPACE = "\u200B";
+
+// sentinel-storage: empty-block caret target in Y.Text. Not a logical character.
 
 
 export function insertBlock(pipeline: ApplyPipeline, op: InsertBlockOp): string[] {
@@ -367,8 +369,9 @@ if (
 ) {
 	if (
 		targetContent.length === 1 &&
-		targetContent.toString() === ZERO_WIDTH_SPACE
+		targetContent.toString() === EMPTY_BLOCK_SENTINEL
 	) {
+		// sentinel-storage: drop the empty-block caret target before merging in real text
 		targetContent.delete(0, 1);
 	}
 
@@ -376,8 +379,9 @@ if (
 	for (const delta of deltas) {
 		if (
 			typeof delta.insert === "string" &&
-			delta.insert === ZERO_WIDTH_SPACE
+			delta.insert === EMPTY_BLOCK_SENTINEL
 		) {
+			// sentinel-storage: source empty-block caret target is not merge content
 			continue;
 		}
 		targetContent.insert(
@@ -388,9 +392,10 @@ if (
 	}
 
 	while (targetContent.length > 1) {
+		// sentinel-storage: leftover empty-block caret targets are not merge content
 		const placeholderOffset = targetContent
 			.toString()
-			.indexOf(ZERO_WIDTH_SPACE);
+			.indexOf(EMPTY_BLOCK_SENTINEL);
 		if (placeholderOffset < 0) break;
 		targetContent.delete(placeholderOffset, 1);
 	}

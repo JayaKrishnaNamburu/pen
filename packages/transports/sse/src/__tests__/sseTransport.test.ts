@@ -15,7 +15,9 @@ function makeRequest(
 ): PenStreamRequest {
 	return {
 		prompt: "test",
-		toolCalls: [{ toolCallId: "tc-1", name: "echo", input: { msg: "hi" } }],
+		toolCalls: [
+			{ toolCallId: "tc-1", name: "read_document", input: { msg: "hi" } },
+		],
 		...overrides,
 	};
 }
@@ -377,9 +379,11 @@ describe("SSE server handler", () => {
 	it("AIB2 tools receive the construction-time editor, not a wire value", async () => {
 		const editor = createHeadlessEditor();
 		const apply = vi.spyOn(editor, "apply");
+		const seedId = editor.firstBlock()?.id ?? "b1";
 
 		const handler = createSSEHandler({
 			editor,
+			allowedMutatingTools: ["insert_block"],
 			toolRuntime: {
 				registerTool() {},
 				unregisterTool() {},
@@ -387,7 +391,17 @@ describe("SSE server handler", () => {
 				getTool: () => null,
 				executeTool: async (_name, _input, ctx) => {
 					expect(ctx.editor).toBe(editor);
-					ctx.editor.apply([], { origin: "ai" });
+					ctx.editor.apply(
+						[
+							{
+								type: "insert-text",
+								blockId: seedId,
+								offset: 0,
+								text: "granted",
+							},
+						],
+						{ origin: "ai" },
+					);
 					return { applied: true };
 				},
 			},
@@ -401,6 +415,13 @@ describe("SSE server handler", () => {
 				body: JSON.stringify(
 					makeRequest({
 						context: { docId: "doc-1", blockId: "b1" },
+						toolCalls: [
+							{
+								toolCallId: "tc-1",
+								name: "insert_block",
+								input: {},
+							},
+						],
 					}),
 				),
 			}),
@@ -410,7 +431,7 @@ describe("SSE server handler", () => {
 		const events = await readAllSSEEvents(response);
 		const parts = events.map((e) => JSON.parse(e.data) as PenStreamPart);
 		expect(parts.filter((p) => p.type === "error")).toHaveLength(0);
-		expect(apply).toHaveBeenCalledTimes(1);
+		expect(apply).toHaveBeenCalled();
 		expect(apply.mock.calls[0]?.[1]).toEqual({ origin: "ai" });
 	});
 });

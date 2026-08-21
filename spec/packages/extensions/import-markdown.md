@@ -42,7 +42,7 @@ flowchart TD
 
 Important rules:
 
-- `capRawMarkdownSource()` slices the raw string to `INGEST_MAX_TEXT_SIZE` before parse, so work is O(cap) rather than O(input).
+- `capRawMarkdownSource()` slices the raw string to `INGEST_MAX_TEXT_SIZE` (preferring a newline boundary) before parse, so work is O(cap) rather than O(input). Overflow is recorded as a `text-size-exceeded` drop, not a hard refuse. JSON ingest is different: it refuses rather than slices, because a sliced JSON string is invalid.
 - Markdown parsing produces pending blocks, not final document truth.
 - The current editor schema and document profile still decide what survives normalization.
 - Imported Markdown lands through editor operations and `editor.apply(...)`, preserving the core authority boundary.
@@ -57,7 +57,7 @@ Important rules:
 
 ## Current Maturity / Intended Usage
 
-Workspace package at version `0.0.0`; intended usage is current-state but still evolving. It is simpler than HTML import in threat model, but still architecturally important because it shows how text-based importers should remain schema-aware and mutation-safe.
+Workspace package at version `0.0.1`; intended usage is current-state but still evolving. It is simpler than HTML import in threat model, but still architecturally important because it shows how text-based importers should remain schema-aware and mutation-safe.
 
 ## Non-goals
 

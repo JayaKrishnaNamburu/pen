@@ -94,7 +94,8 @@ function createMarkElement(
 			const mark = document.createElement("mark");
 			if (typeof props === "object" && props !== null) {
 				const record = props as Record<string, unknown>;
-				if (record.color) mark.style.backgroundColor = record.color as string;
+				if (record.color)
+					mark.style.backgroundColor = record.color as string;
 			}
 			return mark;
 		}
@@ -150,15 +151,20 @@ export function applyElementAttributes(
 		if (/^on/i.test(key) || key.toLowerCase() === "style") {
 			continue;
 		}
-		if (key === "href" || key === "src") {
+		const attributeName = key.toLowerCase();
+		if (
+			attributeName === "href" ||
+			attributeName === "src" ||
+			attributeName === "xlink:href"
+		) {
 			const resolved = policy.resolve(
 				value,
-				key === "href" ? "link" : "image",
+				attributeName === "src" ? "image" : "link",
 			);
 			if (resolved === null) {
 				element.setAttribute("data-pen-blocked-url", "");
 			} else {
-				element.setAttribute(key, resolved);
+				element.setAttribute(attributeName, resolved);
 			}
 			continue;
 		}

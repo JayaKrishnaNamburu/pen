@@ -87,6 +87,52 @@ export function createEnvelopeCollaboration(blockCount = 100) {
 	};
 }
 
+const PEER_A_OBSERVE_TOKEN = "PEER-A-OBSERVED";
+
+/**
+ * The SCALE1 peer row is only a measurement after B has seen A's insert.
+ * A prior published number timed two documents that never collaborated.
+ */
+export function assertPeerBObservesPeerAInsert(
+	collab: ReturnType<typeof createEnvelopeCollaboration>,
+): void {
+	const blockId = envelopeBlockId(0);
+	const beforeB = collab.editorB.getBlock(blockId).textContent();
+	if (beforeB.includes(PEER_A_OBSERVE_TOKEN)) {
+		throw new Error(
+			"observation token already present on peer B before A wrote",
+		);
+	}
+
+	collab.editorA.apply(
+		[
+			{
+				type: "insert-text",
+				blockId,
+				offset: 0,
+				text: PEER_A_OBSERVE_TOKEN,
+			},
+		],
+		{ origin: "user" },
+	);
+
+	const midB = collab.editorB.getBlock(blockId).textContent();
+	if (midB.includes(PEER_A_OBSERVE_TOKEN)) {
+		throw new Error(
+			"peer B observed A's insert before sync; the fixture is not measuring collaboration",
+		);
+	}
+
+	collab.sync();
+
+	const afterB = collab.editorB.getBlock(blockId).textContent();
+	if (!afterB.includes(PEER_A_OBSERVE_TOKEN)) {
+		throw new Error(
+			`peer B did not observe peer A's insert after sync: ${JSON.stringify(afterB)}`,
+		);
+	}
+}
+
 export function measureNestingDepth(
 	editor: TestEditor,
 	rootId: string,
@@ -233,6 +279,7 @@ function buildNestingYDoc(): Y.Doc {
 		});
 	}
 	editor.apply(ops, { origin: "user" });
+	dropForeignTopLevelBlocks(editor, envelopeNestId(0));
 	const ydoc = snapshotYDoc(editor.ydoc);
 	void editor.destroy();
 	return ydoc;
@@ -264,9 +311,26 @@ function buildTableYDoc(): Y.Doc {
 		});
 	}
 	editor.apply(ops, { origin: "user" });
+	dropForeignTopLevelBlocks(editor, ENVELOPE_TABLE_BLOCK_ID);
 	const ydoc = snapshotYDoc(editor.ydoc);
 	void editor.destroy();
 	return ydoc;
+}
+
+function dropForeignTopLevelBlocks(
+	editor: TestEditor,
+	keepId: string,
+): void {
+	const extras: DocumentOp[] = [];
+	for (let index = 0; index < editor.document.blockOrder.length; index++) {
+		const blockId = editor.document.blockOrder.get(index);
+		if (typeof blockId === "string" && blockId !== keepId) {
+			extras.push({ type: "delete-block", blockId });
+		}
+	}
+	if (extras.length > 0) {
+		editor.apply(extras, { origin: "user" });
+	}
 }
 
 function snapshotYDoc(source: Y.Doc): Y.Doc {

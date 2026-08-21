@@ -11,6 +11,8 @@ Provide shared lower-level helpers used by higher-level packages.
 ## Key Exports / Entrypoints
 
 - Export map: `.`
+- Owned here: `exportMarkdownForBlocks()`, `exportMarkdownRange()`
+- Re-exports from `@input/pen-core`: `buildTableChildren()`, `getNumberedListItemValue()`, `sortDeltaAttributes()`
 - Workspace scripts: `build`, `clean`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
@@ -31,7 +33,7 @@ This package still owns markdown serialization (`exportMarkdownForBlocks()`, `ex
 
 ## Current Maturity / Intended Usage
 
-Workspace package at version `0.0.0`; intended usage is current-state but still evolving.
+Workspace package at version `0.0.1`; intended usage is current-state but still evolving.
 
 ## Non-goals
 

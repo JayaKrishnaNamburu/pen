@@ -4,6 +4,6 @@
 "@input/pen-react": patch
 ---
 
-Tell adopters the public npm install path is not live yet, and keep the documented React install complete.
+Document the React install with its `react` / `react-dom` peers, and check that every `@input/pen-*` name in adopter markdown exists in the workspace.
 
-The root README now states that the first release train has not been published (workspace version 0.0.1), so registry `pnpm add` 404s until it is. The post-publish command includes the `react` / `react-dom` peers `@input/pen-react` actually requires. `scripts/doc-refs.mjs` is the DOC1/DOC2 gate: every `@input/pen-*` name and version in adopter markdown must exist in the workspace, and extracted samples must type-check against built `.d.ts`.
+Extracted README samples type-check against built `.d.ts`.

@@ -18,14 +18,23 @@ import {
 import { AI_TOOL_READ_ONLY_MUTATION_CODE } from "./constants";
 import type { AIToolRuntime } from "./types";
 
-export async function executeAITool(
+export type OpenAIToolCall =
+  | { ok: false; denial: AIToolCallDenied }
+  | { ok: true; close: (output?: unknown) => unknown };
+
+/**
+ * Authorize a model-driven tool call and install the write guard without
+ * executing the handler. Transports stream `executeTool` themselves so
+ * they can abort mid-iterable; they must not call `executeTool` unless
+ * this returns `{ ok: true }`.
+ */
+export async function openAIToolCall(
   toolRuntime: AIToolRuntime,
   name: string,
   input: unknown,
   context: ToolContext,
   turn?: AIToolTurn,
-  onPart?: (part: unknown, output: unknown) => void,
-): Promise<unknown> {
+): Promise<OpenAIToolCall> {
   if (!turn) {
     const authorization = await authorizeAIToolCall(
       name,
@@ -34,24 +43,26 @@ export async function executeAITool(
       { allowedMutatingTools: [] },
     );
     if (!authorization.allowed || authorization.destructive) {
-      return denyAIToolCall(
-        "blocked",
-        authorization.reason ?? "tool-not-allowed",
-      );
+      return {
+        ok: false,
+        denial: denyAIToolCall(
+          "blocked",
+          authorization.reason ?? "tool-not-allowed",
+        ),
+      };
     }
-    return runToolHandler(
-      toolRuntime,
-      name,
-      input,
-      context,
-      onPart,
-      authorization.mutating,
-    );
+    return openGuardedCall(name, context, authorization.mutating);
   }
 
   if (turn.ended) {
     turn.markStatus("turn-ended", turn.reason ?? "budget-calls-exhausted");
-    return denyAIToolCall("turn-ended", turn.reason ?? "budget-calls-exhausted");
+    return {
+      ok: false,
+      denial: denyAIToolCall(
+        "turn-ended",
+        turn.reason ?? "budget-calls-exhausted",
+      ),
+    };
   }
 
   const authorization = await authorizeAIToolCall(
@@ -63,75 +74,122 @@ export async function executeAITool(
 
   if (!turn.tryRecordCall()) {
     turn.markStatus("turn-ended", turn.reason ?? "budget-calls-exhausted");
-    return denyAIToolCall("turn-ended", turn.reason ?? "budget-calls-exhausted");
+    return {
+      ok: false,
+      denial: denyAIToolCall(
+        "turn-ended",
+        turn.reason ?? "budget-calls-exhausted",
+      ),
+    };
   }
 
   if (!authorization.allowed) {
     turn.closeCall();
-    return finishDeniedCall(turn, authorization.reason ?? "tool-not-allowed");
+    return {
+      ok: false,
+      denial: finishDeniedCall(
+        turn,
+        authorization.reason ?? "tool-not-allowed",
+      ),
+    };
   }
 
   if (authorization.diagnostic) {
     emitAuthorityDiagnostic(context, authorization.diagnostic);
   }
 
-  const output = await runToolHandler(
-    toolRuntime,
-    name,
-    input,
-    context,
-    onPart,
-    authorization.mutating,
-    turn,
-  );
-  turn.closeCall();
-  if (isAIToolCallDenied(output)) {
-    return finishDeniedCall(turn, output.reason);
-  }
-  if (turn.ended) {
-    turn.markStatus("executed", turn.reason ?? undefined);
-  } else {
-    turn.markStatus("executed");
-  }
-  return output;
+  return openGuardedCall(name, context, authorization.mutating, turn);
 }
 
-async function runToolHandler(
+export async function executeAITool(
   toolRuntime: AIToolRuntime,
   name: string,
   input: unknown,
   context: ToolContext,
-  onPart: ((part: unknown, output: unknown) => void) | undefined,
-  mutating: boolean,
   turn?: AIToolTurn,
+  onPart?: (part: unknown, output: unknown) => void,
 ): Promise<unknown> {
-  let readOnlyMutation = false;
-  const restoreWrites = guardEditorWrites(context.editor, {
-    mutating,
+  const opened = await openAIToolCall(
+    toolRuntime,
+    name,
+    input,
+    context,
     turn,
-    onReadOnlyMutation: () => {
-      if (readOnlyMutation) {
-        return;
-      }
-      readOnlyMutation = true;
-      emitAuthorityDiagnostic(context, {
-        code: AI_TOOL_READ_ONLY_MUTATION_CODE,
-        message: `Read-only tool "${name}" attempted a document write and was refused.`,
-      });
-    },
-  });
+  );
+  if (!opened.ok) {
+    return opened.denial;
+  }
   try {
     const output = await collectToolExecutionOutput(
       toolRuntime.executeTool(name, input, context),
       onPart,
     );
-    if (readOnlyMutation) {
-      return denyAIToolCall("blocked", "tool-not-allowed");
-    }
-    return output;
-  } finally {
-    restoreWrites();
+    return opened.close(output);
+  } catch (error) {
+    opened.close();
+    throw error;
   }
+}
+
+function resolveToolEditor(context: ToolContext): Editor | null {
+  try {
+    return context.editor ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function openGuardedCall(
+  name: string,
+  context: ToolContext,
+  mutating: boolean,
+  turn?: AIToolTurn,
+): Extract<OpenAIToolCall, { ok: true }> {
+  let readOnlyMutation = false;
+  let closed = false;
+  const editor = resolveToolEditor(context);
+  const restoreWrites = editor
+    ? guardEditorWrites(editor, {
+        mutating,
+        turn,
+        onReadOnlyMutation: () => {
+          if (readOnlyMutation) {
+            return;
+          }
+          readOnlyMutation = true;
+          emitAuthorityDiagnostic(context, {
+            code: AI_TOOL_READ_ONLY_MUTATION_CODE,
+            message: `Read-only tool "${name}" attempted a document write and was refused.`,
+          });
+        },
+      })
+    : () => {};
+  return {
+    ok: true,
+    close: (output?: unknown) => {
+      if (!closed) {
+        closed = true;
+        restoreWrites();
+        turn?.closeCall();
+      }
+      if (readOnlyMutation) {
+        return turn
+          ? finishDeniedCall(turn, "tool-not-allowed")
+          : denyAIToolCall("blocked", "tool-not-allowed");
+      }
+      if (isAIToolCallDenied(output)) {
+        return turn ? finishDeniedCall(turn, output.reason) : output;
+      }
+      if (turn) {
+        if (turn.ended) {
+          turn.markStatus("executed", turn.reason ?? undefined);
+        } else {
+          turn.markStatus("executed");
+        }
+      }
+      return output;
+    },
+  };
 }
 
 function finishDeniedCall(
