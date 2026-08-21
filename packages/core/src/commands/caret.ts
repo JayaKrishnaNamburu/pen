@@ -19,11 +19,13 @@ import {
 	type ArrowDirection,
 } from "../selection/transitions";
 import { commandHandler, defineCommand } from "./define";
+import { isCollapsed } from "../selection/helpers";
 import {
 	blockSelectionResult,
 	buildNormalPositionSnapshot,
 	buildTransitionSnapshot,
 	collapsedAt,
+	emitCommandDiagnostic,
 	fromTransitionSelection,
 	getAdjacentVisibleBlockId,
 	getAtomRangeAtOffset,
@@ -144,6 +146,18 @@ function handleVerticalCaret(
 	}
 	const atEdge = isVerticalBlockEdge(block.length(), focus.offset, direction);
 	if (!atEdge) {
+		if (!getVerticalCaretMeasure(editor)) {
+			emitCommandDiagnostic(editor, {
+				code: "caret-geometry-unavailable",
+				level: "info",
+				source: "commands",
+				message:
+					"pen.caretUp / pen.caretDown has no geometry; mid-block vertical motion is a no-op",
+				remediation:
+					"Register setVerticalCaretMeasure after createEditor().",
+			});
+			return true;
+		}
 		return false;
 	}
 
@@ -442,7 +456,7 @@ function stepInlineAtom(
 	}
 
 	if (
-		!selection.isCollapsed &&
+		!isCollapsed(selection) &&
 		selection.anchor.blockId === focus.blockId &&
 		selection.focus.blockId === focus.blockId
 	) {

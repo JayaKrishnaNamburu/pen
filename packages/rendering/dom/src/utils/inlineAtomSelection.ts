@@ -1,3 +1,4 @@
+import { isCollapsed } from "@input/pen-core";
 import type { SelectionState } from "@input/pen-types";
 
 export function isInlineAtomSelected(
@@ -7,7 +8,7 @@ export function isInlineAtomSelected(
 ): boolean {
 	if (
 		selection?.type !== "text" ||
-		selection.isCollapsed ||
+		isCollapsed(selection) ||
 		selection.anchor.blockId !== blockId ||
 		selection.focus.blockId !== blockId
 	) {

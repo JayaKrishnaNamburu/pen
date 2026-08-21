@@ -193,16 +193,25 @@ describe("caret commands", () => {
 		editor.destroy();
 	});
 
-	it("pen.caretUp/Down mid-block miss without geometry", () => {
+	it("pen.caretUp/Down mid-block without geometry is a diagnostic no-op", () => {
 		const editor = createCommandEditor([
 			{ id: "a", type: "paragraph", text: "hello" },
 		]);
 		const registry = createCommandHarness(editor);
+		const diagnostics: Array<{ code: string }> = [];
+		editor.on("diagnostic", (event) => {
+			diagnostics.push(event);
+		});
 		editor.selectText("a", 2, 2);
 
-		expect(registry.dispatch(caretUp, { extend: false })).toBe(false);
-		expect(registry.dispatch(caretDown, { extend: false })).toBe(false);
+		expect(registry.dispatch(caretUp, { extend: false })).toBe(true);
+		expect(registry.dispatch(caretDown, { extend: false })).toBe(true);
 		expect(caretOf(editor)).toEqual({ blockId: "a", offset: 2 });
+		expect(
+			diagnostics.filter(
+				(event) => event.code === "caret-geometry-unavailable",
+			),
+		).toHaveLength(2);
 		editor.destroy();
 	});
 

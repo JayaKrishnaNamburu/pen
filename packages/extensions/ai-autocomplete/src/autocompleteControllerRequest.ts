@@ -1,4 +1,8 @@
-import { fieldEditorHostFacet } from "@input/pen-core";
+import {
+	fieldEditorHostFacet,
+	isCollapsed,
+	isMultiBlock,
+} from "@input/pen-core";
 import type { ChangeSummary, FieldEditor } from "@input/pen-types";
 import {
 	handleModelEvent,
@@ -230,11 +234,11 @@ export function buildContext(
 		setBlockedReason(controller, "selection-not-text");
 		return null;
 	}
-	if (!selection.isCollapsed) {
+	if (!isCollapsed(selection)) {
 		setBlockedReason(controller, "selection-not-collapsed");
 		return null;
 	}
-	if (selection.isMultiBlock) {
+	if (isMultiBlock(selection)) {
 		setBlockedReason(controller, "selection-multi-block");
 		return null;
 	}
@@ -318,8 +322,8 @@ export function shouldContinueRequest(
 	const selection = controller._editor.selection;
 	if (
 		selection?.type !== "text" ||
-		!selection.isCollapsed ||
-		selection.isMultiBlock ||
+		!isCollapsed(selection) ||
+		isMultiBlock(selection) ||
 		selection.focus.blockId !== context.blockId ||
 		selection.focus.offset !== context.offset
 	) {
@@ -337,8 +341,8 @@ export function shouldContinueRequest(
 								type: selection.type,
 								blockId: selection.focus.blockId,
 								offset: selection.focus.offset,
-								isCollapsed: selection.isCollapsed,
-								isMultiBlock: selection.isMultiBlock,
+								isCollapsed: isCollapsed(selection),
+								isMultiBlock: isMultiBlock(selection),
 							}
 						: selection,
 			},
@@ -422,8 +426,8 @@ export function shouldDismissForSelectionChange(
 	const selection = controller._editor.selection;
 	if (
 		selection?.type !== "text" ||
-		!selection.isCollapsed ||
-		selection.isMultiBlock
+		!isCollapsed(selection) ||
+		isMultiBlock(selection)
 	) {
 		return true;
 	}

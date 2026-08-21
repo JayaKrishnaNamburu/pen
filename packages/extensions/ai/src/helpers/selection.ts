@@ -1,3 +1,4 @@
+import { isCollapsed, selectionToRange } from "@input/pen-core";
 import type { DocumentOp, Editor, TextSelection } from "@input/pen-types";
 import { logicalTextFromStored } from "@input/pen-types";
 
@@ -6,7 +7,7 @@ export function buildSelectionReplacementOps(
 	selection: TextSelection,
 	insertedText: string,
 ): DocumentOp[] {
-	const range = selection.toRange();
+	const range = selectionToRange(editor.internals.doc, selection);
 	if (range.start.blockId === range.end.blockId) {
 		return [
 			{
@@ -115,7 +116,7 @@ export function resolveSelectionText(
 	editor: Editor,
 	selection: TextSelection,
 ): string {
-	const range = selection.toRange();
+	const range = selectionToRange(editor.internals.doc, selection);
 	const blockIds = range.blockRange;
 	const parts = blockIds.map((blockId, index) => {
 		const block = editor.getBlock(blockId);
@@ -204,8 +205,8 @@ export function resolveBlockInsertionOffset(
 	if (selection?.type !== "text") {
 		return fallbackOffset;
 	}
-	const range = selection.toRange();
-	if (selection.isCollapsed) {
+	const range = selectionToRange(editor.internals.doc, selection);
+	if (isCollapsed(selection)) {
 		return selection.anchor.blockId === blockId
 			? selection.anchor.offset
 			: fallbackOffset;

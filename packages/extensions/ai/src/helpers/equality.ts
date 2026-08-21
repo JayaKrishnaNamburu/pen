@@ -1,4 +1,4 @@
-import type { TextSelection } from "@input/pen-types";
+import type { Editor, TextSelection } from "@input/pen-types";
 import type {
 	AIControllerState,
 	AIInlineHistorySnapshot,
@@ -51,6 +51,7 @@ export function areStringArraysEqual(
 }
 
 export function resolveSessionSelectionSnapshots(
+	editor: Editor,
 	session: AISession,
 ): readonly AISessionSelectionSnapshot[] {
 	const snapshots: AISessionSelectionSnapshot[] = [];
@@ -67,13 +68,14 @@ export function resolveSessionSelectionSnapshots(
 	}
 	if (session.target.kind === "selection") {
 		snapshots.push(
-			resolveSessionSelectionSnapshot(session.target.selection),
+			resolveSessionSelectionSnapshot(editor, session.target.selection),
 		);
 	}
 	return snapshots;
 }
 
 export function sessionTargetMatches(
+	editor: Editor,
 	session: AISession,
 	target: AISessionTarget,
 ): boolean {
@@ -83,15 +85,16 @@ export function sessionTargetMatches(
 	if (target.kind !== "selection") {
 		return areStructuredValuesEqual(session.target, target);
 	}
-	return sessionSelectionMatches(session, target.selection);
+	return sessionSelectionMatches(editor, session, target.selection);
 }
 
 export function sessionSelectionMatches(
+	editor: Editor,
 	session: AISession,
 	selection: TextSelection,
 ): boolean {
-	return resolveSessionSelectionSnapshots(session).some((snapshot) =>
-		selectionMatchesSnapshot(selection, snapshot),
+	return resolveSessionSelectionSnapshots(editor, session).some((snapshot) =>
+		selectionMatchesSnapshot(editor, selection, snapshot),
 	);
 }
 
@@ -325,16 +328,20 @@ export function areInlineHistorySnapshotsEqual(
 }
 
 export function didInlineHistoryCheckpointChange(
+	editor: Editor,
 	previousState: AIControllerState,
 	nextState: AIControllerState,
 ): boolean {
 	return !areStructuredValuesEqual(
-		buildInlineHistoryCheckpoint(previousState),
-		buildInlineHistoryCheckpoint(nextState),
+		buildInlineHistoryCheckpoint(editor, previousState),
+		buildInlineHistoryCheckpoint(editor, nextState),
 	);
 }
 
-export function buildInlineHistoryCheckpoint(state: AIControllerState): {
+export function buildInlineHistoryCheckpoint(
+	editor: Editor,
+	state: AIControllerState,
+): {
 	activeSessionId: string | null;
 	sessions: Array<{
 		id: string;
@@ -366,6 +373,7 @@ export function buildInlineHistoryCheckpoint(state: AIControllerState): {
 					session.contextualPrompt?.anchor.selectionSnapshot ??
 					(session.target.kind === "selection"
 						? resolveSessionSelectionSnapshot(
+								editor,
 								session.target.selection,
 							)
 						: null),

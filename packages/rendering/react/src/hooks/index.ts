@@ -92,7 +92,3 @@ export {
 	useBlockDragHandle,
 	type BlockDragHandleHookResult,
 } from "./useBlockDragHandle";
-export {
-	useVisualViewport,
-	type VisualViewportState,
-} from "./useVisualViewport";

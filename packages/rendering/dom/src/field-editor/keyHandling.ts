@@ -2,6 +2,8 @@ import {
 	getInlineCompletionController,
 	historyRedo,
 	historyUndo,
+	isCollapsed,
+	isMultiBlock,
 } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
 import type { FieldEditorKeyboardController } from "./controller";
@@ -245,8 +247,8 @@ function syncAcceptedInlineCompletionSelection(
 	const selection = editor.selection;
 	if (
 		selection?.type !== "text" ||
-		!selection.isCollapsed ||
-		selection.isMultiBlock
+		!isCollapsed(selection) ||
+		isMultiBlock(selection)
 	) {
 		return;
 	}

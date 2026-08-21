@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { resolveEditorMessage } from "@input/pen-core";
+import { isCollapsed, resolveEditorMessage } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
 import { useSelectionToolbarContext } from "./root";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
@@ -144,7 +144,7 @@ export function SelectionToolbarContent(props: SelectionToolbarContentProps) {
 
 function textSelectionKey(editor: Editor): string | null {
 	const selection = editor.selection;
-	if (!selection || selection.type !== "text" || selection.isCollapsed) {
+	if (!selection || selection.type !== "text" || isCollapsed(selection)) {
 		return null;
 	}
 	return [

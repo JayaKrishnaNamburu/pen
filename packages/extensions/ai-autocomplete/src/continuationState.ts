@@ -1,5 +1,5 @@
 import type { ChangeSummary, OpOrigin, SelectionState } from "@input/pen-types";
-import { getOpOriginType } from "@input/pen-core";
+import { getOpOriginType, isCollapsed, isMultiBlock } from "@input/pen-core";
 import type { AutocompleteStructuredCandidate } from "./structuredCandidate";
 
 export type AutocompleteSequence = {
@@ -160,8 +160,8 @@ export class AutocompleteContinuationState {
 		}
 		if (
 			selection?.type !== "text" ||
-			!selection.isCollapsed ||
-			selection.isMultiBlock ||
+			!isCollapsed(selection) ||
+			isMultiBlock(selection) ||
 			selection.focus.blockId !== pending.blockId ||
 			selection.focus.offset !== pending.startOffset
 		) {

@@ -1,3 +1,4 @@
+import { selectionToRange } from "@input/pen-core";
 import { runAgenticLoop } from "../agentic/loop";
 import { compileStructuredIntentToPlan } from "../runtime/structuredIntentCompiler";
 import {
@@ -180,7 +181,10 @@ export async function runGenerationLoop(
 						controller._inlineCompletion.showSuggestion({
 							id: seedGeneration.id,
 							blockId: blockId,
-							offset: target.selection.toRange().start.offset,
+							offset: selectionToRange(
+								controller._editor.internals.doc,
+								target.selection,
+							).start.offset,
 							text: state.currentText,
 							type: "inline",
 						});

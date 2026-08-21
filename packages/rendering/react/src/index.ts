@@ -220,6 +220,7 @@ export {
 } from "./primitives/multiplayer/index";
 
 // ── Hooks ───────────────────────────────────────────────────
+// useVisualViewport stays off the barrel (API10: declared, never called).
 export {
 	useAI,
 	useAISuggestions,
@@ -262,7 +263,6 @@ export {
 	resolveSuggestionMenuTarget,
 	useBlockList,
 	useBlockDragHandle,
-	useVisualViewport,
 	type AIDebugLogEntry,
 	type AIDebugLogFastApplyMetrics,
 	type AIDebugLogState,
@@ -296,10 +296,11 @@ export {
 	type SuggestionMenuTarget,
 	type SuggestionMenuTrigger,
 	type UseSuggestionMenuOptions,
-	type VisualViewportState,
 } from "./hooks/index";
 
 // ── Contexts (for advanced composition) ─────────────────────
+// EMPTY_TOOLBAR_STATE stays off the barrel. Hosts read toolbar state
+// through useToolbar.
 export {
 	EditorContext,
 	useEditorContext,
@@ -307,7 +308,6 @@ export {
 	useFieldEditorContext,
 	ToolbarContext,
 	useToolbarContext,
-	EMPTY_TOOLBAR_STATE,
 	SelectionToolbarContext,
 	type EditorContextValue,
 	type BlockControlsProps,

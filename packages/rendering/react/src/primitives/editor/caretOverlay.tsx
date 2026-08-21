@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useRef, useState } from "react";
+import { isCollapsed, isMultiBlock } from "@input/pen-core";
 import { measureWithRoot, type Rect } from "@input/pen-dom";
 import type { Editor, TextSelection } from "@input/pen-types";
 import { EditorContext } from "../../context/editorContext";
@@ -151,7 +152,7 @@ function resolveCaretSelection(
 	if (selection?.type !== "text") {
 		return null;
 	}
-	if (!selection.isCollapsed || selection.isMultiBlock) {
+	if (!isCollapsed(selection) || isMultiBlock(selection)) {
 		return null;
 	}
 	if (

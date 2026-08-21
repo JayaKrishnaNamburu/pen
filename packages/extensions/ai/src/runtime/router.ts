@@ -1,3 +1,4 @@
+import { isCollapsed } from "@input/pen-core";
 import type { SelectionState } from "@input/pen-types";
 import type { AISurface } from "../types";
 import type {
@@ -84,7 +85,7 @@ export function routeAIRequest(
 	input: RequestRouterInput,
 ): RequestRouterDecision {
 	const selectionExpanded =
-		input.selection?.type === "text" && !input.selection.isCollapsed;
+		input.selection?.type === "text" && !isCollapsed(input.selection);
 	const intent = classifyPromptIntent(input.prompt);
 
 	let lane: AIRouteLane;

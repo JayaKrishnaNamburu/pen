@@ -8,6 +8,8 @@ import type {
 } from "@input/pen-types";
 import {
 	hasFieldEditorSurface,
+	isCollapsed,
+	isMultiBlock,
 	resolveFieldEditorInputMode,
 	usesInlineTextSelection,
 } from "@input/pen-core";
@@ -177,8 +179,8 @@ export abstract class FieldEditorImplCore {
 				);
 				if (
 					selection?.type !== "text" ||
-					!selection.isCollapsed ||
-					selection.isMultiBlock
+					!isCollapsed(selection) ||
+					isMultiBlock(selection)
 				) {
 					this._pendingMarkController.clear(true);
 				}

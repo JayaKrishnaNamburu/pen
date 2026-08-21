@@ -1,5 +1,5 @@
 import React from "react";
-import { resolveEditorMessage } from "@input/pen-core";
+import { isMultiBlock, resolveEditorMessage } from "@input/pen-core";
 import type { AIContextualPromptAnchor, AISession } from "@input/pen-ai";
 import type { Editor } from "@input/pen-types";
 import { useIsomorphicLayoutEffect } from "../../hooks/useIsomorphicLayoutEffect";
@@ -444,7 +444,7 @@ function resolveInlineSessionLabel(editor: Editor, session: AISession): string {
 	if (session.target.kind !== "selection") {
 		return resolveEditorMessage(editor, "pen.ai.session.inlineEdit");
 	}
-	return session.target.selection.isMultiBlock
+	return isMultiBlock(session.target.selection)
 		? resolveEditorMessage(editor, "pen.ai.session.selectedRange")
 		: resolveEditorMessage(editor, "pen.ai.session.selectedText");
 }

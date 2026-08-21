@@ -9,6 +9,7 @@ import type {
 import {
 	DocumentRangeImpl,
 	hasFieldEditorSurface,
+	isMultiBlock,
 	resolveFieldEditorInputMode,
 	usesInlineTextSelection,
 } from "@input/pen-core";
@@ -364,7 +365,7 @@ export abstract class FieldEditorImplSelection extends FieldEditorImplLifecycle 
 		rootElement?: HTMLElement | null,
 	): string | null {
 		const selection = this._editor.selection;
-		if (selection?.type === "text" && !selection.isMultiBlock) {
+		if (selection?.type === "text" && !isMultiBlock(selection)) {
 			return selection.focus.blockId;
 		}
 		if (
@@ -439,7 +440,7 @@ export abstract class FieldEditorImplSelection extends FieldEditorImplLifecycle 
 				return false;
 			}
 			return (
-				!selection.isMultiBlock &&
+				!isMultiBlock(selection) &&
 				selection.anchor.blockId === cycle.blockId &&
 				selection.focus.blockId === cycle.blockId &&
 				Math.min(selection.anchor.offset, selection.focus.offset) ===
@@ -459,7 +460,7 @@ export abstract class FieldEditorImplSelection extends FieldEditorImplLifecycle 
 		}
 
 		return (
-			selection.isMultiBlock &&
+			isMultiBlock(selection) &&
 			((pointsEqual(selection.anchor, range.start) &&
 				pointsEqual(selection.focus, range.end)) ||
 				(pointsEqual(selection.anchor, range.end) &&

@@ -1,3 +1,4 @@
+import { isCollapsed } from "@input/pen-core";
 import type { SelectionState } from "@input/pen-types";
 import { measureWithRoot } from "../geometry/rootGeometry";
 import { rectToDOMRect, unionRects } from "../geometry/types";
@@ -6,7 +7,7 @@ export function resolveSelectionRect(
 	root: HTMLElement,
 	selection: SelectionState | null,
 ): DOMRect | null {
-	if (!selection || selection.type !== "text" || selection.isCollapsed) {
+	if (!selection || selection.type !== "text" || isCollapsed(selection)) {
 		return null;
 	}
 

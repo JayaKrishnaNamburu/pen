@@ -4,8 +4,9 @@ import {
 	useRef,
 	useState,
 } from "react";
-import { useIsomorphicLayoutEffect } from "./useIsomorphicLayoutEffect";
+import { isCollapsed } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
+import { useIsomorphicLayoutEffect } from "./useIsomorphicLayoutEffect";
 
 export type SuggestionMenuStatus = "idle" | "loading" | "ready" | "error";
 
@@ -332,7 +333,7 @@ export function resolveSuggestionMenuTarget(
 	}
 
 	const selection = editor.selection;
-	if (selection?.type !== "text" || !selection.isCollapsed) {
+	if (selection?.type !== "text" || !isCollapsed(selection)) {
 		return null;
 	}
 	if (selection.anchor.blockId !== selection.focus.blockId) {

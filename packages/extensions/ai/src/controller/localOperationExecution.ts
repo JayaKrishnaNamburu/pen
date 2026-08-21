@@ -1,3 +1,4 @@
+import { selectionToRange } from "@input/pen-core";
 import { generateId } from "@input/pen-types";
 import type { AIApplyStrategy } from "../runtime/contracts";
 import type { AIMutationReceipt, GenerationState } from "../types";
@@ -114,7 +115,10 @@ export async function executeLocalOperation(
 		if (context?.sessionId) {
 			const nextSelectionSnapshot =
 				target.type === "selection"
-					? resolveSessionSelectionSnapshot(target.selection)
+					? resolveSessionSelectionSnapshot(
+							controller._editor,
+							target.selection,
+						)
 					: undefined;
 			controller._updateSession(context.sessionId, {
 				status: "streaming",
@@ -122,8 +126,14 @@ export async function executeLocalOperation(
 				activeTurnId: sessionTurnId,
 				anchor:
 					target.type === "selection"
-						? resolveSessionAnchor(target.selection)
-						: resolveSessionAnchor(controller._editor.selection),
+						? resolveSessionAnchor(
+								controller._editor,
+								target.selection,
+							)
+						: resolveSessionAnchor(
+								controller._editor,
+								controller._editor.selection,
+							),
 				generationIds: appendUniqueString(
 					existingSession?.generationIds ?? [],
 					seedGeneration.id,
@@ -156,11 +166,15 @@ export async function executeLocalOperation(
 								structuredPreview: null,
 								anchor:
 									target.type === "selection"
-										? resolveSessionAnchor(target.selection)
+										? resolveSessionAnchor(
+												controller._editor,
+												target.selection,
+											)
 										: undefined,
 								selection:
 									target.type === "selection"
 										? resolveSessionSelectionSnapshot(
+												controller._editor,
 												target.selection,
 											)
 										: undefined,
@@ -177,9 +191,11 @@ export async function executeLocalOperation(
 												.anchor,
 											selectionSnapshot:
 												nextSelectionSnapshot,
-											focusBlockId:
-												target.selection.toRange().start
-													.blockId,
+											focusBlockId: selectionToRange(
+												controller._editor.internals
+													.doc,
+												target.selection,
+											).start.blockId,
 											status: "valid",
 										}
 									: existingSession.contextualPrompt.anchor,

@@ -82,7 +82,6 @@
 - useSuggestionMenuContext
 - useToolbar
 - useToolbarContext
-- useVisualViewport
 
 ### value
 
@@ -177,7 +176,6 @@
 - DecorationSet
 - Editor
 - EditorContext
-- EMPTY_TOOLBAR_STATE
 - FieldEditor
 - FieldEditorContext
 - FieldEditorFocusRequest
@@ -340,7 +338,6 @@
 - ToolbarState
 - ToolbarToggleProps
 - UseSuggestionMenuOptions
-- VisualViewportState
 
 ## ./ai
 

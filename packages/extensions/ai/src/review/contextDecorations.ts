@@ -1,3 +1,4 @@
+import { getSelectionBlockRange, isMultiBlock } from "@input/pen-core";
 import type { Editor, InlineDecoration } from "@input/pen-types";
 import type { AIExtensionConfig, AISession } from "../types";
 import {
@@ -52,7 +53,7 @@ export function buildContextDecorations({
 		return [];
 	}
 
-	const selectionSnapshot = resolveContextSelection(activeSession);
+	const selectionSnapshot = resolveContextSelection(editor, activeSession);
 	if (!selectionSnapshot) {
 		return [];
 	}
@@ -122,7 +123,7 @@ export function buildContextDecorations({
 	return decorations;
 }
 
-function resolveContextSelection(session: AISession) {
+function resolveContextSelection(editor: Editor, session: AISession) {
 	const activeTurn =
 		session.activeTurnId != null
 			? (session.turns.find((turn) => turn.id === session.activeTurnId) ??
@@ -136,8 +137,13 @@ function resolveContextSelection(session: AISession) {
 			? {
 					anchor: { ...session.target.selection.anchor },
 					focus: { ...session.target.selection.focus },
-					blockRange: [...session.target.selection.blockRange],
-					isMultiBlock: session.target.selection.isMultiBlock,
+					blockRange: [
+						...getSelectionBlockRange(
+							editor.internals.doc,
+							session.target.selection,
+						),
+					],
+					isMultiBlock: isMultiBlock(session.target.selection),
 				}
 			: null)
 	);

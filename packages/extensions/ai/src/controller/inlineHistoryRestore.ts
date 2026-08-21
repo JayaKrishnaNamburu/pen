@@ -1,3 +1,4 @@
+import { isCollapsed } from "@input/pen-core";
 import type { HistoryAppliedEvent } from "@input/pen-types";
 import type {
 	AIInlineHistoryDirection,
@@ -256,7 +257,7 @@ export const inlineHistoryRestore = {
 			return;
 		}
 		const selection = event.selection;
-		if (selection?.type !== "text" || selection.isCollapsed) {
+		if (selection?.type !== "text" || isCollapsed(selection)) {
 			return;
 		}
 		const matchingSession = [...this._state.sessions]
@@ -265,7 +266,7 @@ export const inlineHistoryRestore = {
 				(session) =>
 					session.surface === "inline-edit" &&
 					session.status !== "cancelled" &&
-					sessionSelectionMatches(session, selection),
+					sessionSelectionMatches(this._editor, session, selection),
 			);
 		if (!matchingSession) {
 			return;

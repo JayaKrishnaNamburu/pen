@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { getOpOriginType } from "@input/pen-core";
+import { getOpOriginType, isCollapsed } from "@input/pen-core";
 import type { Decoration, InlineDecoration } from "@input/pen-types";
 import { getLogicalTextContent } from "@input/pen-dom/field-editor/inlineAtomDom";
 import { INLINE_ATOM_REPLACEMENT_TEXT } from "@input/pen-dom/field-editor/inlineAtomModel";
@@ -79,7 +79,7 @@ export function InlineContent(props: InlineContentProps) {
 	const isFocusedBlock =
 		isActive ||
 		(selection?.type === "text" &&
-			selection.isCollapsed &&
+			isCollapsed(selection) &&
 			selection.focus.blockId === blockId);
 
 	const blockTextEmpty = isInlineContentEmpty(textSnapshot.deltas);

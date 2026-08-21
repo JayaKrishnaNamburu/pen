@@ -1,5 +1,6 @@
 import {
 	getCommandRegistry,
+	isMultiBlock,
 	type CommandDispatchContext,
 } from "@input/pen-core";
 import type { Command, Editor, SelectionState } from "@input/pen-types";
@@ -39,7 +40,7 @@ export function syncEditorTextSelection(
 		return;
 	}
 	const selection = editor.selection;
-	if (selection?.type === "text" && selection.isMultiBlock) {
+	if (selection?.type === "text" && isMultiBlock(selection)) {
 		return;
 	}
 	if (
@@ -64,7 +65,7 @@ export function activateFieldEditorFromSelection(
 	}
 	switch (selection.type) {
 		case "text":
-			if (selection.isMultiBlock) {
+			if (isMultiBlock(selection)) {
 				fieldEditor.deactivate();
 				return;
 			}

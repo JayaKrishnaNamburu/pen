@@ -74,11 +74,13 @@ export const reviewResolutionMethods = {
 								structuredPreview: null,
 								anchor: refreshedInlineSelectionTarget
 									? resolveSessionAnchor(
+											this._editor,
 											refreshedInlineSelectionTarget.selection,
 										)
 									: undefined,
 								selection: refreshedInlineSelectionTarget
 									? resolveSessionSelectionSnapshot(
+											this._editor,
 											refreshedInlineSelectionTarget.selection,
 										)
 									: undefined,
@@ -92,6 +94,7 @@ export const reviewResolutionMethods = {
 							? {
 									target: refreshedInlineSelectionTarget,
 									anchor: resolveSessionAnchor(
+										this._editor,
 										refreshedInlineSelectionTarget.selection,
 									),
 									contextualPrompt:
@@ -99,6 +102,7 @@ export const reviewResolutionMethods = {
 											? {
 													...existingSession.contextualPrompt,
 													anchor: resolveContextualPromptAnchor(
+														this._editor,
 														refreshedInlineSelectionTarget,
 													),
 												}

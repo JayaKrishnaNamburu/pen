@@ -1,5 +1,5 @@
 import React from "react";
-import { foldAndNormalize } from "@input/pen-core";
+import { foldAndNormalize, isCollapsed } from "@input/pen-core";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { shouldIgnoreAIKeyboardEvent } from "../../utils/aiKeyboardScope";
 import { useAIContext } from "./root";
@@ -15,10 +15,10 @@ export function AISelectionTrigger(props: AISelectionTriggerProps) {
 	const activeSelection = editor.selection;
 	const isSelectionEligible =
 		activeSelection?.type === "text" &&
-		!activeSelection.isCollapsed;
+		!isCollapsed(activeSelection);
 	const openInlineSession = React.useCallback(() => {
 		const selection = editor.selection;
-		if (selection?.type !== "text" || selection.isCollapsed) {
+		if (selection?.type !== "text" || isCollapsed(selection)) {
 			return;
 		}
 		editor.selectTextRange(selection.anchor, selection.focus);

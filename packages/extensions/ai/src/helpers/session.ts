@@ -1,3 +1,9 @@
+import {
+	getSelectionBlockRange,
+	isCollapsed,
+	isMultiBlock,
+	selectionToRange,
+} from "@input/pen-core";
 import { generateId, type Editor, type TextSelection } from "@input/pen-types";
 import type {
 	AIInlineHistorySnapshot,
@@ -11,13 +17,15 @@ import {
 } from "./types";
 
 export function resolveContextualPromptAnchor(
+	editor: Editor,
 	target: AISessionTarget,
 ): NonNullable<AISession["contextualPrompt"]>["anchor"] {
 	if (target.kind === "selection") {
-		const range = target.selection.toRange();
+		const range = selectionToRange(editor.internals.doc, target.selection);
 		return {
 			kind: "text-range",
 			selectionSnapshot: resolveSessionSelectionSnapshot(
+				editor,
 				target.selection,
 			),
 			focusBlockId: range.start.blockId,
@@ -42,10 +50,11 @@ export function resolveContextualPromptAnchor(
 }
 
 export function resolveContextualPromptState(
+	editor: Editor,
 	target: AISessionTarget,
 ): NonNullable<AISession["contextualPrompt"]> {
 	return {
-		anchor: resolveContextualPromptAnchor(target),
+		anchor: resolveContextualPromptAnchor(editor, target),
 		composer: {
 			draftPrompt: "",
 			isOpen: true,
@@ -87,7 +96,7 @@ export function cloneSessionTarget(
 		blockId: target.blockId,
 		selection: recreateTextSelection(
 			editor,
-			resolveSessionSelectionSnapshot(target.selection),
+			resolveSessionSelectionSnapshot(editor, target.selection),
 		),
 	};
 }
@@ -160,7 +169,7 @@ export function recreateTextSelection(
 	snapshot: AISessionSelectionSnapshot,
 ): TextSelection {
 	const blockRange = resolveSelectionSnapshotBlockRange(editor, snapshot);
-	const isCollapsed =
+	const collapsed =
 		snapshot.anchor.blockId === snapshot.focus.blockId &&
 		snapshot.anchor.offset === snapshot.focus.offset;
 	const documentRange = {
@@ -222,7 +231,7 @@ export function recreateTextSelection(
 		anchor: { ...snapshot.anchor },
 		focus: { ...snapshot.focus },
 		get isCollapsed() {
-			return isCollapsed;
+			return collapsed;
 		},
 		get isMultiBlock() {
 			return blockRange.length > 1;
@@ -298,10 +307,13 @@ export function resolveSessionTarget(
 	if (
 		(target === "selection" || target === "auto") &&
 		selection?.type === "text" &&
-		!selection.isCollapsed
+		!isCollapsed(selection)
 	) {
-		const range = selection.toRange();
-		const selectionSnapshot = resolveSessionSelectionSnapshot(selection);
+		const range = selectionToRange(editor.internals.doc, selection);
+		const selectionSnapshot = resolveSessionSelectionSnapshot(
+			editor,
+			selection,
+		);
 		return {
 			kind: "selection",
 			selection: recreateTextSelection(editor, selectionSnapshot),
@@ -319,6 +331,7 @@ export function resolveSessionTarget(
 }
 
 export function selectionMatchesSnapshot(
+	editor: Editor,
 	selection: TextSelection,
 	snapshot: AISessionSelectionSnapshot | null,
 ): boolean {
@@ -326,14 +339,15 @@ export function selectionMatchesSnapshot(
 		return false;
 	}
 
+	const blockRange = getSelectionBlockRange(editor.internals.doc, selection);
 	return (
 		selection.anchor.blockId === snapshot.anchor.blockId &&
 		selection.anchor.offset === snapshot.anchor.offset &&
 		selection.focus.blockId === snapshot.focus.blockId &&
 		selection.focus.offset === snapshot.focus.offset &&
-		selection.isMultiBlock === snapshot.isMultiBlock &&
-		selection.blockRange.length === snapshot.blockRange.length &&
-		selection.blockRange.every(
+		isMultiBlock(selection) === snapshot.isMultiBlock &&
+		blockRange.length === snapshot.blockRange.length &&
+		blockRange.every(
 			(blockId, index) => blockId === snapshot.blockRange[index],
 		)
 	);

@@ -1,6 +1,6 @@
 import { useEffect, type RefObject } from "react";
 import { flushSync } from "react-dom";
-import { usesInlineTextSelection } from "@input/pen-core";
+import { isCollapsed, isMultiBlock, usesInlineTextSelection } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
 import { generateId } from "@input/pen-types";
 import { measureWithRoot, type FieldEditorSession } from "@input/pen-dom";
@@ -284,7 +284,7 @@ export function useEditorContentGestures(options: UseEditorContentGesturesOption
 	return anchorPoint.offset <= focusPoint.offset; } return anchorIdx <= focusIdx;
 	};
 	const isExpandedSingleBlockTextSelection = ( selection: ReturnType<Editor["getSelection"]>, ): boolean =>
-	selection?.type === "text" && !selection.isCollapsed && !selection.isMultiBlock &&
+	selection?.type === "text" && !isCollapsed(selection) && !isMultiBlock(selection) &&
 	selection.anchor.blockId === selection.focus.blockId; const shouldPreferNativeInlineSelection = ( anchorPoint: { blockId: string; offset: number },
 	focusPoint: { blockId: string; offset: number }, ): boolean => {
 	const anchorRole = getEditorBlockSelectionRole( editor, anchorPoint.blockId,
@@ -301,7 +301,7 @@ export function useEditorContentGestures(options: UseEditorContentGesturesOption
 	const tryHandleMappedDomSelection = (): boolean => {
 	if (!root) {
 	return false; } const startedWithExpandedTextSelection =
-	gesture.startSelection?.type === "text" && !gesture.startSelection.isCollapsed; if (clickCount === 1 && !moved && startedWithExpandedTextSelection) {
+	gesture.startSelection?.type === "text" && !isCollapsed(gesture.startSelection); if (clickCount === 1 && !moved && startedWithExpandedTextSelection) {
 	const pointerPoint = pointToEditorSelectionPoint( root, clientX,
 	clientY, ); if (pointerPoint) {
 	fieldEditor.collapseSelectionToPoint(pointerPoint); return true; }

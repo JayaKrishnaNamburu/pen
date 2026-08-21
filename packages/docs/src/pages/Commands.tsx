@@ -178,11 +178,18 @@ void registry.dispatch(splitBlock, undefined);`}</code>
 
 			<h2>Built-in catalog</h2>
 			<p>
-				Thirty-three frozen names. Thirty-one have a core handler.
-				<code>pen.caretUp</code> and <code>pen.caretDown</code> are
-				tokens plus keymap rows only: <code>dispatch</code> returns{" "}
-				<code>false</code> and emits nothing. Field-editor ArrowUp /
-				ArrowDown still move on a parallel path, not these commands.
+				Thirty-three frozen names, all thirty-three with a core
+				handler. <code>pen.caretUp</code> and{" "}
+				<code>pen.caretDown</code> need geometry that core, being
+				headless, does not have: register{" "}
+				<code>setVerticalCaretMeasure</code> after{" "}
+				<code>createEditor</code> to get real column-preserving motion.
+				Without it they still cross block boundaries logically, and a
+				mid-block press is a handled no-op that emits{" "}
+				<code>caret-geometry-unavailable</code> rather than failing
+				silently. Field-editor ArrowUp / ArrowDown still move on a
+				parallel path ahead of the keymap; that path is what these
+				handlers exist to replace.
 			</p>
 			<table>
 				<caption>Caret and selection. Param is {`{ extend }`} unless noted.</caption>
@@ -212,7 +219,11 @@ void registry.dispatch(splitBlock, undefined);`}</code>
 						<td>
 							<code>caretUp</code> / <code>caretDown</code>
 						</td>
-						<td>No handler. Silent miss.</td>
+						<td>
+							Geometry via <code>setVerticalCaretMeasure</code>;
+							goalX preserved. Without it: logical cross at a
+							block edge, diagnostic no-op mid-block.
+						</td>
 					</tr>
 					<tr>
 						<td>

@@ -1,3 +1,4 @@
+import { isCollapsed, isMultiBlock } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
 import type { FieldEditorKeyboardController } from "./controller";
 import {
@@ -72,8 +73,8 @@ function extendInlineAtomSelectionWithArrowKey(options: {
 	const selection = editor.selection;
 	if (
 		selection?.type === "text" &&
-		!selection.isCollapsed &&
-		!selection.isMultiBlock &&
+		!isCollapsed(selection) &&
+		!isMultiBlock(selection) &&
 		selection.anchor.blockId === blockId &&
 		selection.focus.blockId === blockId
 	) {

@@ -6,7 +6,8 @@ import type { Editor } from "@input/pen-types";
  * Core cannot import `@input/pen-dom`. The field-editor host registers
  * `measureNow(() => verticalCaretTarget(...))` here after `createEditor()`.
  * Headless tests inject a fake. Until a measure is registered, the handlers
- * fall back to logical block-edge crossing (`moveCaretAcrossBlocks`).
+ * cross at logical block edges and emit `caret-geometry-unavailable` as a
+ * defined no-op when the caret is mid-block (no throw, no silent miss).
  *
  * Stored on a symbol of the editor instance so registry dispatch proxies
  * (which forward `get` to the source) still see the same seam. `goalX` is

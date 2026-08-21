@@ -1,6 +1,8 @@
 import {
+	isCollapsed,
 	renderSelectionTargetBlockText,
 	resolveSelectionTargetBlockIds,
+	selectionToRange,
 	usesInlineTextSelection,
 } from "@input/pen-core";
 import {
@@ -55,7 +57,8 @@ export function resolveRequestedOperationForSession(
 	const liveSelection =
 		session.surface === "inline-edit"
 			? capturedSelection
-			: editor.selection?.type === "text" && !editor.selection.isCollapsed
+			: editor.selection?.type === "text" &&
+				!isCollapsed(editor.selection)
 				? editor.selection
 				: capturedSelection;
 	const activeBlockId =
@@ -362,7 +365,7 @@ export function createRewriteSelectionOperation(
 		sourceText?: string;
 	},
 ): AIRequestedOperation {
-	const range = selection.toRange();
+	const range = selectionToRange(editor.internals.doc, selection);
 	return {
 		kind: "rewrite-selection",
 		applyPolicy: "selection-replace",
@@ -562,7 +565,7 @@ export function createResolvedSelectionEditTarget(
 	editor: Editor,
 	selection: TextSelection,
 ): ResolvedEditTarget {
-	const range = selection.toRange();
+	const range = selectionToRange(editor.internals.doc, selection);
 	return {
 		kind: "selection",
 		blockId: range.start.blockId,
@@ -578,7 +581,7 @@ export function createResolvedScopedEditTarget(
 	scope: ModelOperationScopedRangeTarget["scope"],
 	contentFormat: AIContentFormat,
 ): ResolvedEditTarget {
-	const range = selection.toRange();
+	const range = selectionToRange(editor.internals.doc, selection);
 	return {
 		kind: "scoped-range",
 		scope,
@@ -950,7 +953,7 @@ export function resolveContinueInsertionOffset(
 	const selection = editor.selection;
 	if (
 		selection?.type === "text" &&
-		selection.isCollapsed &&
+		isCollapsed(selection) &&
 		selection.anchor.blockId === blockId
 	) {
 		return selection.anchor.offset;
@@ -965,7 +968,7 @@ export function createSelectionSignature(selection: TextSelection): string {
 		selection.anchor.offset,
 		selection.focus.blockId,
 		selection.focus.offset,
-		String(selection.isCollapsed),
+		String(isCollapsed(selection)),
 	].join(":");
 }
 
@@ -986,18 +989,19 @@ export function resolveSessionSelectionTarget(
 			editor,
 			activeTurnSelection,
 		);
-		if (!restoredSelection.isCollapsed) {
+		if (!isCollapsed(restoredSelection)) {
 			return restoredSelection;
 		}
 	}
 	const selection = editor.selection;
 	if (
 		selection?.type === "text" &&
-		!selection.isCollapsed &&
+		!isCollapsed(selection) &&
 		selectionMatchesSnapshot(
+			editor,
 			selection,
 			session.target.kind === "selection"
-				? resolveSessionSelectionSnapshot(session.target.selection)
+				? resolveSessionSelectionSnapshot(editor, session.target.selection)
 				: (anchorSelection ?? null),
 		)
 	) {
@@ -1008,13 +1012,13 @@ export function resolveSessionSelectionTarget(
 			editor,
 			anchorSelection,
 		);
-		if (!restoredSelection.isCollapsed) {
+		if (!isCollapsed(restoredSelection)) {
 			return restoredSelection;
 		}
 	}
 	if (
 		session.target.kind === "selection" &&
-		!session.target.selection.isCollapsed
+		!isCollapsed(session.target.selection)
 	) {
 		return session.target.selection;
 	}
@@ -1025,7 +1029,7 @@ export function resolveLiveInlineSelectionTarget(
 	editor: Editor,
 ): Extract<AISessionTarget, { kind: "selection" }> | null {
 	const selection = editor.selection;
-	if (selection?.type !== "text" || selection.isCollapsed) {
+	if (selection?.type !== "text" || isCollapsed(selection)) {
 		return null;
 	}
 	const target = resolveSessionTarget(editor, "selection");

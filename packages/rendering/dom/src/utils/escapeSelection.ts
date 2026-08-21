@@ -1,3 +1,4 @@
+import { isCollapsed } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
 import type { FieldEditorEscapeController } from "../field-editor/controller";
 
@@ -32,7 +33,7 @@ export function handleEscapeSelectionTransition(options: {
 		return true;
 	}
 
-	if (selection?.type === "text" && !selection.isCollapsed) {
+	if (selection?.type === "text" && !isCollapsed(selection)) {
 		fieldEditor.collapseSelectionToFocus();
 		return true;
 	}

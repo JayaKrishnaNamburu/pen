@@ -1,5 +1,6 @@
 import {
 	announceEditorA11y,
+	isCollapsed,
 	resolveA11yBlockTypeLabel,
 	resolveSchemaA11y,
 } from "@input/pen-core";
@@ -157,7 +158,7 @@ function announceAtomSelection(
 	previous: SelectionState,
 	next: Extract<SelectionState, { type: "text" }>,
 ): void {
-	if (!next.isCollapsed) {
+	if (!isCollapsed(next)) {
 		return;
 	}
 	const atom = getInlineAtomAtOffset(editor, next.focus);
@@ -165,7 +166,7 @@ function announceAtomSelection(
 		return;
 	}
 	const previousAtom =
-		previous?.type === "text" && previous.isCollapsed
+		previous?.type === "text" && isCollapsed(previous)
 			? getInlineAtomAtOffset(editor, previous.focus)
 			: null;
 	if (

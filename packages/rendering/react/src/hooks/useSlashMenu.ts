@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { blockLogicalText, foldAndNormalize, localeFacet } from "@input/pen-core";
+import { blockLogicalText, foldAndNormalize, isCollapsed, localeFacet } from "@input/pen-core";
 import type { BlockDisplay, BlockSchema, Editor } from "@input/pen-types";
 import { generateId } from "@input/pen-types";
 import {
@@ -233,7 +233,7 @@ export function useSlashMenu(
 
 function getSlashTarget(editor: Editor): SlashMenuTarget | null {
 	const selection = editor.selection;
-	if (!selection || selection.type !== "text" || !selection.isCollapsed) {
+	if (!selection || selection.type !== "text" || !isCollapsed(selection)) {
 		return null;
 	}
 

@@ -61,6 +61,11 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 		sources: ["core/src/text/blockLogicalText.ts"],
 	},
 	{
+		code: "caret-geometry-unavailable",
+		levels: ["info"],
+		sources: ["core/src/commands/caret.ts"],
+	},
+	{
 		code: "clipboard-invalid-payload",
 		levels: ["warn"],
 		sources: ["rendering/dom/src/utils/clipboardPayload.ts"],

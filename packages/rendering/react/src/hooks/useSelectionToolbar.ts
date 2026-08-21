@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from "react";
+import { isCollapsed } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
 import { getAIController } from "@input/pen-ai";
 import { DATA_ATTRS } from "../utils/dataAttributes";
@@ -64,7 +65,7 @@ export function useSelectionToolbar(editor: Editor): SelectionToolbarState {
 				if (
 					!selection ||
 					selection.type !== "text" ||
-					selection.isCollapsed
+					isCollapsed(selection)
 				) {
 					setState(CLOSED_STATE);
 					return;

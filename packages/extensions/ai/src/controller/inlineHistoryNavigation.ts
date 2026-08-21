@@ -1,3 +1,4 @@
+import { isCollapsed } from "@input/pen-core";
 import type {
 	AIExternalInlineTurnResult,
 	AIInlineHistoryDirection,
@@ -61,14 +62,18 @@ export const inlineHistoryNavigation = {
 		if (
 			currentSnapshot &&
 			selection?.type === "text" &&
-			!selection.isCollapsed
+			!isCollapsed(selection)
 		) {
 			const matchingSession = [...currentSnapshot.sessions]
 				.reverse()
 				.find(
 					(session) =>
 						session.surface === "inline-edit" &&
-						sessionSelectionMatches(session, selection),
+						sessionSelectionMatches(
+							this._editor,
+							session,
+							selection,
+						),
 				);
 			if (matchingSession) {
 				return matchingSession.id;
@@ -96,13 +101,17 @@ export const inlineHistoryNavigation = {
 		while (searchIndex >= 0 && searchIndex < this._inlineHistory.length) {
 			const searchSnapshot = this._inlineHistory[searchIndex];
 			const matchingSelectionSession =
-				selection?.type === "text" && !selection.isCollapsed
+				selection?.type === "text" && !isCollapsed(selection)
 					? ([...(searchSnapshot?.sessions ?? [])]
 							.reverse()
 							.find(
 								(session) =>
 									session.surface === "inline-edit" &&
-									sessionSelectionMatches(session, selection),
+									sessionSelectionMatches(
+										this._editor,
+										session,
+										selection,
+									),
 							) ?? null)
 					: null;
 			if (matchingSelectionSession) {

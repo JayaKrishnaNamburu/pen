@@ -352,6 +352,8 @@ export {
 export type { PenFormatStamp, ReservedMetadataKey } from "./format";
 
 // ── Decorations ─────────────────────────────────────────────
+// Canonical path for INLINE_COMPLETION_VISIBLE_BLOCK_ATTRIBUTE (also
+// defined in `../constants/decorations`; do not re-export from `../index`).
 export { INLINE_COMPLETION_VISIBLE_BLOCK_ATTRIBUTE } from "../constants/decorations";
 export type {
 	Decoration,

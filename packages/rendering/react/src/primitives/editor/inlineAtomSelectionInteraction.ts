@@ -1,3 +1,4 @@
+import { isCollapsed, isMultiBlock } from "@input/pen-core";
 import {
 	getInlineAtomAtOffset,
 	replaceInlineAtomWithText,
@@ -75,7 +76,7 @@ export function resolveShiftClickInlineAtomSelection(
 	const selection = editor.selection;
 	if (
 		selection?.type !== "text" ||
-		selection.isMultiBlock ||
+		isMultiBlock(selection) ||
 		selection.anchor.blockId !== blockId ||
 		selection.focus.blockId !== blockId
 	) {
@@ -94,7 +95,7 @@ export function resolveShiftClickInlineAtomSelection(
 		selection.anchor.offset,
 		selection.focus.offset,
 	);
-	if (!selection.isCollapsed) {
+	if (!isCollapsed(selection)) {
 		if (atomEnd <= selectionStart) {
 			return {
 				blockId,

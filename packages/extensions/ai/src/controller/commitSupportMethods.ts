@@ -1,3 +1,4 @@
+import { isCollapsed } from "@input/pen-core";
 import type { DocumentOp, OpOrigin, SelectionState } from "@input/pen-types";
 import type { GenerationState } from "../types";
 import type { AIControllerMethodHost } from "./aiControllerMethodHost";
@@ -33,7 +34,7 @@ export const commitSupportMethods = {
 				selection.anchor.offset,
 				selection.focus.blockId,
 				selection.focus.offset,
-				String(selection.isCollapsed),
+				String(isCollapsed(selection)),
 			].join(":");
 		}
 		if (selection.type === "block") {

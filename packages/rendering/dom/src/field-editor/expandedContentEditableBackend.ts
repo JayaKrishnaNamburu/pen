@@ -198,13 +198,11 @@ export class ExpandedContentEditableBackend {
 						nextSelection?.type === "text" &&
 						!nextSelection.isMultiBlock
 					) {
-						requestAnimationFrame(() => {
-							this.fieldEditor.activateTextSelection(
-								nextSelection.anchor.blockId,
-								nextSelection.anchor.offset,
-								nextSelection.focus.offset,
-							);
-						});
+						this.fieldEditor.activateTextSelection(
+							nextSelection.anchor.blockId,
+							nextSelection.anchor.offset,
+							nextSelection.focus.offset,
+						);
 					}
 					return;
 				}
@@ -253,13 +251,11 @@ export class ExpandedContentEditableBackend {
 				});
 				if (!target) return;
 
-				requestAnimationFrame(() => {
-					this.fieldEditor.activateTextSelection(
-						target.blockId,
-						target.anchorOffset,
-						target.focusOffset,
-					);
-				});
+				this.fieldEditor.activateTextSelection(
+					target.blockId,
+					target.anchorOffset,
+					target.focusOffset,
+				);
 				return;
 			}
 			case "deleteContentBackward":

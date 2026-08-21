@@ -27,4 +27,5 @@ export {
 	ANNOUNCER_SLOT_KEY,
 	HISTORY_ORIGIN_TAG,
 } from "./constants/slots";
-export { INLINE_COMPLETION_VISIBLE_BLOCK_ATTRIBUTE } from "./constants/decorations";
+// INLINE_COMPLETION_VISIBLE_BLOCK_ATTRIBUTE is exported once, from the
+// Decorations section of `./types/index`. Do not re-export it here.

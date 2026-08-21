@@ -33,7 +33,7 @@ function textSelection(isCollapsed = false): Extract<
 	return {
 		type: "text",
 		anchor: { blockId: "p1", offset: 0 },
-		focus: { blockId: "p1", offset: 4 },
+		focus: { blockId: "p1", offset: isCollapsed ? 0 : 4 },
 		isCollapsed,
 		isMultiBlock: false,
 		blockRange: ["p1"],

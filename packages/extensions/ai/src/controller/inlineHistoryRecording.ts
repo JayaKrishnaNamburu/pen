@@ -198,7 +198,13 @@ export const inlineHistoryRecording = {
 		previousState: AIControllerState,
 		nextState: AIControllerState,
 	): void {
-		if (!didInlineHistoryCheckpointChange(previousState, nextState)) {
+		if (
+			!didInlineHistoryCheckpointChange(
+				this._editor,
+				previousState,
+				nextState,
+			)
+		) {
 			return;
 		}
 		if (

@@ -1,3 +1,4 @@
+import { isCollapsed } from "@input/pen-core";
 import type { DiagnosticEvent, SelectionState } from "@input/pen-types";
 import type {
 	SerializedDiagnostic,
@@ -23,7 +24,7 @@ export function serializeSelection(
 					blockId: selection.focus.blockId,
 					offset: selection.focus.offset,
 				},
-				isCollapsed: selection.isCollapsed,
+				isCollapsed: isCollapsed(selection),
 			};
 		case "block":
 			return {

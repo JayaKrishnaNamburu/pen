@@ -42,7 +42,8 @@ export {
 	parentsOf,
 	visibleText,
 } from "./twoPeerInspect";
-export { simulateKeypress, simulateTyping } from "./simulation";
+// simulateKeypress / simulateTyping stay off the barrel. Hosts call
+// those methods on the TestEditor returned by createTestEditor.
 export { resetTestIdCounter, toYMap } from "./helpers";
 export {
 	DEFAULT_PEN_ROOTS,

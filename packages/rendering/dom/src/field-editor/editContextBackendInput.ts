@@ -1,3 +1,4 @@
+import { isCollapsed } from "@input/pen-core";
 import type { Editor, InlineDecoration } from "@input/pen-types";
 import type { FieldEditorInputController } from "./controller";
 import { fullReconcileToDOM, applyDeltaToDOM } from "./reconciler";
@@ -173,7 +174,7 @@ export abstract class EditContextBackendInput extends EditContextBackendCore {
 		const selection = this.fieldEditor.selection;
 		const editorCaret =
 			selection?.type === "text" &&
-			selection.isCollapsed &&
+			isCollapsed(selection) &&
 			selection.focus.blockId === input.blockId
 				? selection.focus.offset
 				: null;
@@ -248,7 +249,7 @@ export abstract class EditContextBackendInput extends EditContextBackendCore {
 		const selection = this.fieldEditor.selection;
 		if (
 			selection?.type !== "text" ||
-			selection.isCollapsed ||
+			isCollapsed(selection) ||
 			selection.anchor.blockId !== blockId ||
 			selection.focus.blockId !== blockId
 		) {

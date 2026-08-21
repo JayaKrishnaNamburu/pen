@@ -1,4 +1,4 @@
-import { usesInlineTextSelection } from "@input/pen-core";
+import { isCollapsed, isMultiBlock, usesInlineTextSelection } from "@input/pen-core";
 import {
 	generateId,
 	logicalTextFromStored,
@@ -169,15 +169,15 @@ function handleDeleteSelectionShortcut(
 		return false;
 	}
 
-	if (selection.type === "text" && !selection.isCollapsed) {
+	if (selection.type === "text" && !isCollapsed(selection)) {
 		if (
-			!selection.isMultiBlock &&
+			!isMultiBlock(selection) &&
 			!textSelectionContainsInlineAtom(editor, selection) &&
 			!shouldUseDocumentTextDeletionFallback(root, fieldEditor)
 		) {
 			return false;
 		}
-		if (selection.isMultiBlock) {
+		if (isMultiBlock(selection)) {
 			fieldEditor.deactivate();
 		}
 		editor.deleteSelection({ origin: "user" });
@@ -220,7 +220,7 @@ function textSelectionContainsInlineAtom(
 	selection: Extract<NonNullable<Editor["selection"]>, { type: "text" }>,
 ): boolean {
 	if (
-		selection.isMultiBlock ||
+		isMultiBlock(selection) ||
 		selection.anchor.blockId !== selection.focus.blockId
 	) {
 		return false;

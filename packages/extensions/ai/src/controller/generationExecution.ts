@@ -1,3 +1,4 @@
+import { selectionToRange } from "@input/pen-core";
 import { getDocumentToolRuntime } from "@input/pen-document-ops";
 import { generateId, type StreamingTarget } from "@input/pen-types";
 import { getBlockAdapter } from "../runtime/blockAdapters";
@@ -46,7 +47,10 @@ export async function executeGeneration(
 		const blockId =
 			target.type === "block"
 				? target.blockId
-				: target.selection.toRange().start.blockId;
+				: selectionToRange(
+						controller._editor.internals.doc,
+						target.selection,
+					).start.blockId;
 		const requestedOperation = context?.operation ?? null;
 		if (
 			context?.surface === "bottom-chat" &&
@@ -105,7 +109,12 @@ export async function executeGeneration(
 			) ?? null;
 		const shouldStreamDirectly = route.shouldStreamDirectly;
 		const selectionRange =
-			target.type === "selection" ? target.selection.toRange() : null;
+			target.type === "selection"
+				? selectionToRange(
+						controller._editor.internals.doc,
+						target.selection,
+					)
+				: null;
 		const selectionSourceText =
 			target.type === "selection"
 				? resolveSelectionText(controller._editor, target.selection)
@@ -225,7 +234,10 @@ export async function executeGeneration(
 		if (context?.sessionId) {
 			const nextSelectionSnapshot =
 				target.type === "selection"
-					? resolveSessionSelectionSnapshot(target.selection)
+					? resolveSessionSelectionSnapshot(
+							controller._editor,
+							target.selection,
+						)
 					: undefined;
 			controller._updateSession(context.sessionId, {
 				status: "streaming",
@@ -233,8 +245,14 @@ export async function executeGeneration(
 				activeTurnId: sessionTurnId,
 				anchor:
 					target.type === "selection"
-						? resolveSessionAnchor(target.selection)
-						: resolveSessionAnchor(controller._editor.selection),
+						? resolveSessionAnchor(
+								controller._editor,
+								target.selection,
+							)
+						: resolveSessionAnchor(
+								controller._editor,
+								controller._editor.selection,
+							),
 				generationIds: appendUniqueString(
 					existingSession?.generationIds ?? [],
 					seedGeneration.id,
@@ -267,11 +285,15 @@ export async function executeGeneration(
 								structuredPreview: null,
 								anchor:
 									target.type === "selection"
-										? resolveSessionAnchor(target.selection)
+										? resolveSessionAnchor(
+												controller._editor,
+												target.selection,
+											)
 										: undefined,
 								selection:
 									target.type === "selection"
 										? resolveSessionSelectionSnapshot(
+												controller._editor,
 												target.selection,
 											)
 										: undefined,
@@ -288,9 +310,11 @@ export async function executeGeneration(
 												.anchor,
 											selectionSnapshot:
 												nextSelectionSnapshot,
-											focusBlockId:
-												target.selection.toRange().start
-													.blockId,
+											focusBlockId: selectionToRange(
+												controller._editor.internals
+													.doc,
+												target.selection,
+											).start.blockId,
 											status: "valid",
 										}
 									: existingSession.contextualPrompt.anchor,

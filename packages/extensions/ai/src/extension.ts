@@ -12,6 +12,7 @@ import {
 	ensureInlineCompletionController,
 	getInlineCompletionController as getInlineCompletionControllerFromCore,
 	getOpOriginType,
+	isCollapsed,
 } from "@input/pen-core";
 import type {
 	CommitEvent,
@@ -388,7 +389,7 @@ class AIControllerImpl extends AIControllerSessionState {
 		if (
 			command.target === "selection" &&
 			ctx.selection?.type === "text" &&
-			!ctx.selection.isCollapsed
+			!isCollapsed(ctx.selection)
 		) {
 			return this.asHost()._runSelectionGeneration(
 				prompt,
@@ -426,7 +427,7 @@ class AIControllerImpl extends AIControllerSessionState {
 		);
 		if (promptTarget === "selection") {
 			const selection = this._editor.selection;
-			if (selection?.type !== "text" || selection.isCollapsed) {
+			if (selection?.type !== "text" || isCollapsed(selection)) {
 				throw new Error(
 					"Cannot run a selection prompt without selected text",
 				);

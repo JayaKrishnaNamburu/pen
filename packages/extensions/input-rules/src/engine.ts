@@ -1,5 +1,5 @@
 import type { Editor, DocumentOp, InputRule, InputRuleContext } from "@input/pen-types";
-import { supportsInlineInputRules } from "@input/pen-core";
+import { isCollapsed, supportsInlineInputRules } from "@input/pen-core";
 import type { InlineInputRule } from "./types";
 
 interface InputRuleMatchOptions {
@@ -148,7 +148,7 @@ export class InputRuleEngine {
 		}
 
 		const sel = editor.selection;
-		if (!sel || sel.type !== "text" || !sel.isCollapsed) return null;
+		if (!sel || sel.type !== "text" || !isCollapsed(sel)) return null;
 		if (sel.anchor.blockId !== blockId) return null;
 		return sel.anchor.offset;
 	}

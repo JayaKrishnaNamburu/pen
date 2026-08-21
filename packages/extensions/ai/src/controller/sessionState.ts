@@ -130,7 +130,9 @@ export class AIControllerSessionState {
 			target,
 			contextualPrompt:
 				input.surface === "inline-edit"
-					? resolveContextualPromptState(target)
+					? resolveContextualPromptState(
+												this._editor,
+												target)
 					: undefined,
 			turns: [],
 			activeTurnId: undefined,
@@ -145,7 +147,7 @@ export class AIControllerSessionState {
 				patchCount: 0,
 				fastApply: createDefaultSessionFastApplyMetrics(),
 			},
-			anchor: resolveSessionAnchor(this._editor.selection),
+			anchor: resolveSessionAnchor(this._editor, this._editor.selection),
 		};
 		this._setState({
 			sessions: [...this._state.sessions, session],
@@ -175,15 +177,17 @@ export class AIControllerSessionState {
 		if (
 			activeSession &&
 			activeSession.status !== "complete" &&
-			sessionTargetMatches(activeSession, target)
+			sessionTargetMatches(this._editor, activeSession, target)
 		) {
 			this._updateSession(activeSession.id, {
 				target,
-				anchor: resolveSessionAnchor(this._editor.selection),
+				anchor: resolveSessionAnchor(this._editor, this._editor.selection),
 				contextualPrompt: {
 					...(activeSession.contextualPrompt ??
-						resolveContextualPromptState(target)),
-					anchor: resolveContextualPromptAnchor(target),
+						resolveContextualPromptState(
+												this._editor,
+												target)),
+					anchor: resolveContextualPromptAnchor(this._editor, target),
 					composer: {
 						...(activeSession.contextualPrompt?.composer ?? {
 							draftPrompt: "",
@@ -675,10 +679,14 @@ export class AIControllerSessionState {
 			reviewItemIds: [],
 			structuredPreview: null,
 			anchor: refreshedInlineSelectionTarget
-				? resolveSessionAnchor(refreshedInlineSelectionTarget.selection)
+				? resolveSessionAnchor(
+						this._editor,
+						refreshedInlineSelectionTarget.selection,
+					)
 				: undefined,
 			selection: refreshedInlineSelectionTarget
 				? resolveSessionSelectionSnapshot(
+						this._editor,
 						refreshedInlineSelectionTarget.selection,
 					)
 				: undefined,
@@ -687,12 +695,14 @@ export class AIControllerSessionState {
 			this._updateSession(sessionId, {
 				target: refreshedInlineSelectionTarget,
 				anchor: resolveSessionAnchor(
+					this._editor,
 					refreshedInlineSelectionTarget.selection,
 				),
 				contextualPrompt: session.contextualPrompt
 					? {
 							...session.contextualPrompt,
 							anchor: resolveContextualPromptAnchor(
+								this._editor,
 								refreshedInlineSelectionTarget,
 							),
 						}
@@ -758,6 +768,7 @@ export class AIControllerSessionState {
 								? {
 										...(session.contextualPrompt ??
 											resolveContextualPromptState(
+												this._editor,
 												overrides.target ??
 													session.target,
 											)),
@@ -766,6 +777,7 @@ export class AIControllerSessionState {
 											...(
 												session.contextualPrompt ??
 												resolveContextualPromptState(
+													this._editor,
 													overrides.target ??
 														session.target,
 												)
@@ -777,6 +789,7 @@ export class AIControllerSessionState {
 											...(
 												session.contextualPrompt ??
 												resolveContextualPromptState(
+													this._editor,
 													overrides.target ??
 														session.target,
 												)
@@ -794,6 +807,7 @@ export class AIControllerSessionState {
 														: (
 																session.contextualPrompt ??
 																resolveContextualPromptState(
+																	this._editor,
 																	overrides.target ??
 																		session.target,
 																)

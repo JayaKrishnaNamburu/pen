@@ -1,4 +1,4 @@
-import { usesInlineTextSelection } from "@input/pen-core";
+import { isCollapsed, usesInlineTextSelection } from "@input/pen-core";
 import type { Editor, KeyBindingContext } from "@input/pen-types";
 import { COLLECT_KEY_BINDINGS_SLOT_KEY } from "@input/pen-types";
 import { getEditorBlockSelectionLength } from "../utils/blockSelectionSemantics";
@@ -90,7 +90,7 @@ export function matchesBindingContext(
 	if (context.hasSelection !== undefined) {
 		const hasSelection =
 			selection?.type === "text"
-				? !selection.isCollapsed
+				? !isCollapsed(selection)
 				: selection !== null;
 		if (hasSelection !== context.hasSelection) {
 			return false;
@@ -98,8 +98,8 @@ export function matchesBindingContext(
 	}
 
 	if (context.collapsed !== undefined) {
-		const isCollapsed = selection?.type === "text" && selection.isCollapsed;
-		if (isCollapsed !== context.collapsed) {
+		const collapsed = selection?.type === "text" && isCollapsed(selection);
+		if (collapsed !== context.collapsed) {
 			return false;
 		}
 	}

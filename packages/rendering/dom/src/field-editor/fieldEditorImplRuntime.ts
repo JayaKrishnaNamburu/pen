@@ -8,6 +8,7 @@ import type {
 } from "@input/pen-types";
 import {
 	DocumentRangeImpl,
+	getSelectionBlockRange,
 	hasFieldEditorSurface,
 	resolveFieldEditorInputMode,
 	usesInlineTextSelection,
@@ -110,7 +111,10 @@ export abstract class FieldEditorImplRuntime extends FieldEditorImplSelection {
 		const selection = this._editor.selection;
 		const anchor =
 			selection?.type === "text" &&
-			selection.blockRange.includes(this._focusBlockId)
+			getSelectionBlockRange(
+				this._editor.internals.doc,
+				selection,
+			).includes(this._focusBlockId)
 				? selection.anchor
 				: { blockId: this._focusBlockId, offset: 0 };
 		const doc = this._editor.documentState;

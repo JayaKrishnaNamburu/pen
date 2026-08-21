@@ -1,3 +1,4 @@
+import { getSelectionBlockRange, isMultiBlock } from "@input/pen-core";
 import type { Editor, FieldEditor, SelectionState } from "@input/pen-types";
 import { getBlockSelectionRoleFromSchema } from "../utils/blockSelectionSemantics";
 
@@ -81,15 +82,16 @@ export function classifySelectionSurface(
 	}
 
 	if (selection?.type === "text") {
-		if (selection.isMultiBlock) {
+		const blockRange = getSelectionBlockRange(
+			editor.internals.doc,
+			selection,
+		);
+		if (isMultiBlock(selection)) {
 			return {
-				mode: shouldUseBlockSelection(
-					editor,
-					selection.blockRange.length,
-				)
+				mode: shouldUseBlockSelection(editor, blockRange.length)
 					? "block"
 					: "expanded",
-				blockIds: [...selection.blockRange],
+				blockIds: [...blockRange],
 			};
 		}
 
@@ -97,7 +99,7 @@ export function classifySelectionSurface(
 			return { mode: "inactive", blockIds: [] };
 		}
 
-		if (!selection.blockRange.includes(focusBlockId)) {
+		if (!blockRange.includes(focusBlockId)) {
 			return { mode: "single", blockIds: [focusBlockId] };
 		}
 

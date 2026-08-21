@@ -257,11 +257,13 @@ export function finalizeGenerationExecution(
 							finalGeneration.structuredPreview ?? null,
 						anchor: refreshedInlineReviewSelectionTarget
 							? resolveSessionAnchor(
+									controller._editor,
 									refreshedInlineReviewSelectionTarget.selection,
 								)
 							: undefined,
 						selection: refreshedInlineReviewSelectionTarget
 							? resolveSessionSelectionSnapshot(
+									controller._editor,
 									refreshedInlineReviewSelectionTarget.selection,
 								)
 							: undefined,

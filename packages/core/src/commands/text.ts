@@ -9,6 +9,7 @@ import type {
 import { generateId } from "@input/pen-types";
 
 import { isContinuousTextFlowCapability } from "../editor/profilePolicy";
+import { isCollapsed } from "../selection/helpers";
 import {
 	nextGraphemeBoundary,
 	nextWordBoundary,
@@ -207,7 +208,7 @@ function handleDelete(
 		return false;
 	}
 
-	if (!selection.isCollapsed) {
+	if (!isCollapsed(selection)) {
 		const replacement = replaceRangeOps(editor, selection, "");
 		if (!replacement) {
 			return false;
@@ -655,7 +656,7 @@ function handleToggleMark(
 	if (!editor.schema.resolveInline(param.mark)) {
 		return false;
 	}
-	if (selection.isCollapsed) {
+	if (isCollapsed(selection)) {
 		return false;
 	}
 

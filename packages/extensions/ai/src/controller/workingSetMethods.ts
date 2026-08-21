@@ -1,3 +1,4 @@
+import { selectionToRange } from "@input/pen-core";
 import type { ToolRuntime } from "@input/pen-types";
 import { buildMutationReceipt } from "../runtime/mutationReceipt";
 import type { StructuralReviewItem } from "../runtime/reviewArtifacts";
@@ -73,7 +74,12 @@ export const workingSetMethods = {
 		);
 		if (target.type === "selection") {
 			const trackedBlockIds = [
-				...new Set(target.selection.toRange().blockRange),
+				...new Set(
+					selectionToRange(
+						this._editor.internals.doc,
+						target.selection,
+					).blockRange,
+				),
 			];
 			return {
 				documentVersion: this._documentVersion,

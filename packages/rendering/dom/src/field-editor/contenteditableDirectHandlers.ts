@@ -5,6 +5,8 @@ import {
 	historyUndo,
 	insertLineBreak,
 	insertText as insertTextCommand,
+	isCollapsed,
+	isMultiBlock,
 	nextGraphemeBoundary,
 	nextWordBoundary,
 	previousGraphemeBoundary,
@@ -503,7 +505,7 @@ function tryDispatchMarkToggle(
 	mark: string,
 ): boolean {
 	const selection = editor.selection;
-	if (!selection || selection.type !== "text" || selection.isCollapsed) {
+	if (!selection || selection.type !== "text" || isCollapsed(selection)) {
 		return false;
 	}
 	return dispatchAndActivate(editor, fe, toggleMark, { mark });
@@ -555,7 +557,7 @@ function tryDispatchMapped<P>(
 
 function hasMultiBlockTextSelection(editor: Editor): boolean {
 	const selection = editor.selection;
-	return selection?.type === "text" && selection.isMultiBlock;
+	return selection?.type === "text" && isMultiBlock(selection);
 }
 
 function resolveEditorLocale(editor: Editor): string {

@@ -1,6 +1,77 @@
 # Playground e2e engine promotion
 
-Re-derived 2026-08-21. Concurrent `packages/**` writes were in flight for every run. Conformance is **not** promoted from anything below.
+## 2026-08-21 12:42–12:46 UTC — Firefox re-confirm: not measurable
+
+Attempted on HEAD `3f2ecae` after `SelectionAuthority` and synchronous `syncDomSelectionOnce`. **Do not promote Firefox from this attempt. Do not treat the Chromium miss below as a regression.** Gate left as `continue-on-error: ${{ matrix.engine == 'firefox' }}`.
+
+Machine: 14-core Darwin. Other lanes were running `pnpm build` / `pnpm turbo run test` against the same tree. Vite e2e (`PEN_E2E=1`, `watch: null`, HMR off) and backend were started at 12:42:53 UTC against the dirty working tree (field-editor / react / extension writes in flight; freeze list is in the run table). Playground aliases `packages/**/src`, so the frozen server is source-at-start, not `dist/`.
+
+### Verdict: not measurable
+
+Load during the only suite that ran was already past saturation. It then climbed far past any number that can be cited as an engine result:
+
+| When | loadavg (1 / 5 / 15) |
+| ---- | -------------------- |
+| build start | 12.76 / 14.46 / 20.63 |
+| server freeze 12:42:49Z | 15.72 / 15.08 / 20.71 |
+| Chromium confirm start | **30.29** / 18.35 / 21.78 |
+| Chromium confirm end (14.1s wall) | 25.62 / 17.90 / 21.55 |
+| isolated `selectAll` start | 29.25 / 18.78 / 21.84 |
+| after 45s wait | 35.90 / 21.41 / 22.67 |
+| after 60s more wait | **124.94** / 51.59 / 34.08 |
+| stop | **158.22** / 63.91 / 38.90 |
+
+At 12:46 a `pnpm turbo run test --filter='!@input/pen-docs' --filter='!@input/pen-vue'` storm was live (100+ vitest workers). Backend `/health` returned `000` at load 125, then `200` again at stop. Instant CPU was a mix of other-lane vitest and Cursor; this is not a quiet confirm window.
+
+WebKit confirm, Firefox confirm, and `enginePromotionEvidence.spec.ts` (the `selectTextRange(0, 30)` → `window.getSelection()` probe) were **not run**. Running them on this load would mint another inherited count. The known projection defect is therefore **untested on this tree**, not fixed and not still-failing.
+
+### What did run (untrusted)
+
+Build: `pnpm build` — 40/40, 28 cached, 9.2s.
+
+Chromium original 12, 7 workers, no `CI` retries, frozen server reused:
+
+```bash
+pnpm exec playwright test \
+  playground/e2e/aiSuggestions.spec.ts \
+  playground/e2e/debug-boot.spec.ts \
+  playground/e2e/history.spec.ts \
+  playground/e2e/inlineSession.spec.ts \
+  playground/e2e/nativeSelection.spec.ts \
+  playground/e2e/selectAll.spec.ts \
+  playground/e2e/streaming.spec.ts \
+  --project=chromium --reporter=list
+```
+
+Result: **11 passed, 1 failed, 14.1s** (`real 15.15`). Failure is `selectAll.spec.ts:12` / assertion `selectAll.spec.ts:34` — `getEditorDocumentSnapshot().selectedText` stayed `""` for the 10s poll; expected `"First\nSecond\nThird"`. Same shape as the earlier load artifact.
+
+Isolated re-run, 1 worker, still under load 29:
+
+```bash
+pnpm exec playwright test playground/e2e/selectAll.spec.ts:12 \
+  --project=chromium --reporter=list --workers=1
+```
+
+Result: **same fail, 10.5s**. Playwright also tried to spawn its own `webServer` (`EADDRINUSE` on 8787); the frozen Vite on 4173 was still the one under test. Because the isolate was not a quiet machine, this does **not** reclassify the miss as a Chromium regression. It also does **not** clear it. Next attempt must re-run Chromium on a quiet tree before anyone cites a blocking-engine regression.
+
+Logs: `/tmp/e2e-chromium-confirm.log`, `/tmp/e2e-chromium-selectAll-isolated.log` (not copied into `artifacts/` — this fence writes only this file, `ci.yml`, and the wave note).
+
+### Next attempt
+
+Need a quiet machine: 1-minute loadavg well under core count, no `turbo run test` / multi-package vitest, backend `/health` staying 200. Then, in order, on a freshly started `dev:e2e` server:
+
+```bash
+pnpm exec playwright test playground/e2e/enginePromotionEvidence.spec.ts --project=firefox
+pnpm exec playwright test playground/e2e/aiSuggestions.spec.ts playground/e2e/debug-boot.spec.ts playground/e2e/history.spec.ts playground/e2e/inlineSession.spec.ts playground/e2e/nativeSelection.spec.ts playground/e2e/selectAll.spec.ts playground/e2e/streaming.spec.ts --project=chromium
+pnpm exec playwright test playground/e2e/aiSuggestions.spec.ts playground/e2e/debug-boot.spec.ts playground/e2e/history.spec.ts playground/e2e/inlineSession.spec.ts playground/e2e/nativeSelection.spec.ts playground/e2e/selectAll.spec.ts playground/e2e/streaming.spec.ts --project=webkit
+pnpm exec playwright test playground/e2e/aiSuggestions.spec.ts playground/e2e/debug-boot.spec.ts playground/e2e/history.spec.ts playground/e2e/inlineSession.spec.ts playground/e2e/nativeSelection.spec.ts playground/e2e/selectAll.spec.ts playground/e2e/streaming.spec.ts --project=firefox
+```
+
+Promote Firefox only if the original 12 is fully green and reproducible **and** the evidence spec shows `authorityRangeProjected: true` on Firefox. Do not infer that from synchronous `syncDomSelectionOnce` or from `SelectionAuthority` landing. If `selectAll` fails again, isolate on that same quiet machine before calling it a hold or a Chromium regression.
+
+---
+
+Re-derived 2026-08-21 (morning confirm). Concurrent `packages/**` writes were in flight for every run. Conformance is **not** promoted from anything below.
 
 Vite e2e server was restarted at 09:49 UTC against current source (`watch: null`, HMR off) so the 11:41 `setDOMSelection` fallback was in the bundle. Numbers are not inherited.
 

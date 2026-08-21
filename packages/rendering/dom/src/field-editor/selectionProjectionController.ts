@@ -1,3 +1,4 @@
+import { isMultiBlock } from "@input/pen-core";
 import type { SelectionState } from "@input/pen-types";
 import type { PenFieldEditorFocusOptions } from "./controller";
 import type { HistorySelectionCoordinator } from "./historySelectionCoordinator";
@@ -184,7 +185,7 @@ export class SelectionProjectionController {
 			this._pendingProgrammaticTextSelection;
 		const isAlreadyCurrentSelection =
 			currentSelection?.type === "text" &&
-			!currentSelection.isMultiBlock &&
+			!isMultiBlock(currentSelection) &&
 			currentSelection.anchor.blockId === blockId &&
 			currentSelection.focus.blockId === blockId &&
 			currentSelection.anchor.offset === anchorOffset &&

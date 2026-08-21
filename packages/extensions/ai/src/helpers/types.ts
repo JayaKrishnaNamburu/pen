@@ -1,3 +1,9 @@
+import {
+	getSelectionBlockRange,
+	isCollapsed,
+	isMultiBlock,
+	selectionToRange,
+} from "@input/pen-core";
 import type {
 	Editor,
 	ModelAdapter,
@@ -283,18 +289,19 @@ export function resolvePromptTarget(
 	if (target === "document") {
 		return "document";
 	}
-	return selection?.type === "text" && !selection.isCollapsed
+	return selection?.type === "text" && !isCollapsed(selection)
 		? "selection"
 		: "block";
 }
 
 export function resolveSessionAnchor(
+	editor: Editor,
 	selection: SelectionState | TextSelection,
 ): AISession["anchor"] | undefined {
 	if (selection?.type !== "text") {
 		return undefined;
 	}
-	const range = selection.toRange();
+	const range = selectionToRange(editor.internals.doc, selection);
 	return {
 		blockId: range.start.blockId,
 		from: range.start.offset,
@@ -303,13 +310,14 @@ export function resolveSessionAnchor(
 }
 
 export function resolveSessionSelectionSnapshot(
+	editor: Editor,
 	selection: TextSelection,
 ): AISessionSelectionSnapshot {
 	return {
 		anchor: { ...selection.anchor },
 		focus: { ...selection.focus },
-		blockRange: [...selection.blockRange],
-		isMultiBlock: selection.isMultiBlock,
+		blockRange: [...getSelectionBlockRange(editor.internals.doc, selection)],
+		isMultiBlock: isMultiBlock(selection),
 	};
 }
 

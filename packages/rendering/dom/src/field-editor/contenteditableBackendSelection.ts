@@ -1,3 +1,4 @@
+import { isCollapsed } from "@input/pen-core";
 import type { InlineDecoration } from "@input/pen-types";
 import { buildInlineDecorationsRenderSignature } from "../utils/inlineDecorations";
 import { urlPolicyFromEditor } from "../security/resolveEditorUrl";
@@ -277,7 +278,7 @@ export class ContentEditableBackendSelection extends ContentEditableBackendEvent
 		const currentSelection = this.fieldEditor.selection;
 		if (
 			currentSelection?.type !== "text" ||
-			!currentSelection.isCollapsed ||
+			!isCollapsed(currentSelection) ||
 			currentSelection.focus.blockId !== selection.anchor.blockId
 		) {
 			return false;

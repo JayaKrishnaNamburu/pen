@@ -1,5 +1,8 @@
 import {
 	buildTableChildren,
+	isCollapsed,
+	isMultiBlock,
+	selectionToRange,
 } from "@input/pen-core";
 import type { Editor, TextSelection } from "@input/pen-types";
 import type { FieldEditorTransferController } from "./controller";
@@ -81,11 +84,11 @@ function applyPasteFromDataTransfer(
 export function handleCopy(editor: Editor, event?: ClipboardEvent): void {
 	const selection = editor.selection;
 	if (!selection) return;
-	if (selection.type === "text" && selection.isCollapsed) return;
+	if (selection.type === "text" && isCollapsed(selection)) return;
 
 	if (selection.type === "cell") return;
 
-	if (selection.type === "text" && !selection.isMultiBlock) {
+	if (selection.type === "text" && !isMultiBlock(selection)) {
 		copyInlineSelection(editor, selection, event);
 		return;
 	}
@@ -165,7 +168,9 @@ function copyBlockSelection(editor: Editor, event?: ClipboardEvent): void {
 	if (blocks.length === 0) return;
 
 	const isText = selection.type === "text";
-	const range = isText ? (selection as TextSelection).toRange() : null;
+	const range = isText
+		? selectionToRange(editor.internals.doc, selection as TextSelection)
+		: null;
 
 	const htmlParts: string[] = [];
 	const mdParts: string[] = [];

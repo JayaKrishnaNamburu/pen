@@ -1,3 +1,4 @@
+import { isCollapsed, selectionToRange } from "@input/pen-core";
 import type {
 	DocumentOp,
 	Editor,
@@ -12,7 +13,7 @@ export function toggleInlineMark(editor: Editor, markType: string): boolean {
 	if (!editor.schema.resolveInline(markType)) return false;
 
 	const fieldEditor = getAttachedFieldEditor(editor);
-	if (selection.isCollapsed) {
+	if (isCollapsed(selection)) {
 		if (
 			!fieldEditor ||
 			fieldEditor.inputMode !== "richtext" ||
@@ -55,7 +56,7 @@ function getSelectionSegments(
 	editor: Editor,
 	selection: TextSelection,
 ): Array<{ blockId: string; start: number; end: number }> {
-	const range = selection.toRange();
+	const range = selectionToRange(editor.internals.doc, selection);
 	const blockIds = range.blockRange;
 	const segments: Array<{ blockId: string; start: number; end: number }> = [];
 
@@ -115,7 +116,7 @@ export function setInlineMark(
 	if (!editor.schema.resolveInline(markType)) return false;
 
 	const fieldEditor = getAttachedFieldEditor(editor);
-	if (selection.isCollapsed) {
+	if (isCollapsed(selection)) {
 		return false;
 	}
 

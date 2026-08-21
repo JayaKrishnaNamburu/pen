@@ -1,5 +1,5 @@
 import React from "react";
-import { foldAndNormalize } from "@input/pen-core";
+import { foldAndNormalize, isCollapsed } from "@input/pen-core";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { useAIContext } from "./root";
 
@@ -15,7 +15,7 @@ export function AIContextualPromptTrigger(
 	const { controller, editor } = useAIContext();
 	const activeSelection = editor.selection;
 	const isSelectionEligible =
-		activeSelection?.type === "text" && !activeSelection.isCollapsed;
+		activeSelection?.type === "text" && !isCollapsed(activeSelection);
 
 	const openContextualPrompt = React.useCallback(() => {
 		if (!isSelectionEligible) {

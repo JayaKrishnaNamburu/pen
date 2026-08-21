@@ -13,12 +13,9 @@
 - createEnvelopeEditor
 - createLargeDocument
 - createScale3Editor
-- emptyTimerFloor
 - envelopeGateP50Ms
 - envelopePointIsGated
-- generateGenDeltaParts
 - getScale3Baseline
-- macrotaskYieldFloor
 - reportConsole
 - reportJSON
 - scale2Plus8GateMs
@@ -36,30 +33,19 @@
 - BenchResult
 - BenchSuite
 - BenchWaiver
-- crdtBenchmarks
 - createBenchSuites
-- DEFAULT_BENCH_WAIVER_FILE
-- editorBenchmarks
 - ENVELOPE_DRIFT_FLOOR_MS
 - ENVELOPE_DRIFT_RATIO
 - ENVELOPE_GATE_MIN_SIGNAL_MS
 - ENVELOPE_SAMPLE_SIZE
 - evaluateBenchResult
-- extensionBenchmarks
 - getBenchTarget
-- getCriticalBenchFailures
-- isBenchWaiverExpired
 - isCriticalBench
-- loadBenchWaivers
-- parseBenchCLIArgs
-- resolveDefaultWaiverFilePath
-- resolvePackageWaiverFilePath
 - runAllSuites
 - RunAllSuitesOptions
 - runSuite
 - SCALE1_MACHINE_CLASS
 - SCALE1_MEASUREMENTS
-- scale1Benchmarks
 - SCALE2_PLUS8_BASE_ID
 - SCALE2_PLUS8_ID
 - SCALE2_PLUS8_TOLERANCE_FLOOR_MS
@@ -68,9 +54,6 @@
 - SCALE3_BASELINES
 - SCALE3_MACHINE_CLASS
 - SCALE3_SHIPPED_STACK
-- scale3Benchmarks
-- schemaBenchmarks
-- streamingBenchmarks
 
 ### type
 

@@ -40,8 +40,6 @@
 - runCRDTStateVectorContract
 - runExportContract
 - runHeadlessEditorContract
-- simulateKeypress
-- simulateTyping
 - toYMap
 - visibleText
 
