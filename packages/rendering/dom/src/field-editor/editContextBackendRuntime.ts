@@ -214,14 +214,17 @@ export class EditContextBackendRuntime extends EditContextBackendSelection {
 	};
 
 	protected handleDragStart = (event: DragEvent): void => {
+		this.fieldEditor.notifyGestureEvent?.("dragstart");
 		event.preventDefault();
 	};
 
 	protected handleDrop = (event: DragEvent): void => {
+		this.fieldEditor.notifyGestureEvent?.("drop-completed");
 		event.preventDefault();
 	};
 
 	protected handlePointerDown = (): void => {
+		this.fieldEditor.notifyGestureEvent?.("pointerdown");
 		this.fieldEditor.clearBackendSelectionAuthority(
 			"edit-context-textupdate",
 		);

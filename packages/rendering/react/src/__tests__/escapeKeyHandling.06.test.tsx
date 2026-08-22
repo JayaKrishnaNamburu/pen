@@ -158,6 +158,7 @@ describe("@input/pen-react escape key handling", () => {
 				{ blockId: firstBlockId, offset: 1 },
 				{ blockId: firstBlockId, offset: 5 },
 			);
+			fieldEditor.beginPointerSelection();
 			firstInlineElement?.dispatchEvent(
 				new MouseEvent("mousedown", {
 					bubbles: true,

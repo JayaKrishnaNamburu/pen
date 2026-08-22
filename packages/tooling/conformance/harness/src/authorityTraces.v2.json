@@ -1,0 +1,577 @@
+{
+	"schemaVersion": 1,
+	"scriptId": "authority-v2-structural",
+	"scriptHash": "[{\"id\":\"split-head\",\"kind\":\"split\",\"region\":\"head\",\"setup\":[{\"type\":\"insert-block\",\"blockId\":\"b1\",\"blockType\":\"paragraph\",\"props\":{},\"position\":\"last\"},{\"type\":\"insert-text\",\"blockId\":\"b1\",\"offset\":0,\"text\":\"meadow sage\"}],\"select\":{\"blockId\":\"b1\",\"offset\":3},\"commit\":[{\"type\":\"split-block\",\"blockId\":\"b1\",\"offset\":6,\"newBlockId\":\"b2\"}]},{\"id\":\"split-point\",\"kind\":\"split\",\"region\":\"split-point\",\"setup\":[{\"type\":\"insert-block\",\"blockId\":\"b1\",\"blockType\":\"paragraph\",\"props\":{},\"position\":\"last\"},{\"type\":\"insert-text\",\"blockId\":\"b1\",\"offset\":0,\"text\":\"meadow sage\"}],\"select\":{\"blockId\":\"b1\",\"offset\":6},\"commit\":[{\"type\":\"split-block\",\"blockId\":\"b1\",\"offset\":6,\"newBlockId\":\"b2\"}]},{\"id\":\"split-tail\",\"kind\":\"split\",\"region\":\"tail\",\"setup\":[{\"type\":\"insert-block\",\"blockId\":\"b1\",\"blockType\":\"paragraph\",\"props\":{},\"position\":\"last\"},{\"type\":\"insert-text\",\"blockId\":\"b1\",\"offset\":0,\"text\":\"meadow sage\"}],\"select\":{\"blockId\":\"b1\",\"offset\":9},\"commit\":[{\"type\":\"split-block\",\"blockId\":\"b1\",\"offset\":6,\"newBlockId\":\"b2\"}]},{\"id\":\"merge-target\",\"kind\":\"merge\",\"region\":\"target\",\"setup\":[{\"type\":\"insert-block\",\"blockId\":\"b1\",\"blockType\":\"paragraph\",\"props\":{},\"position\":\"last\"},{\"type\":\"insert-text\",\"blockId\":\"b1\",\"offset\":0,\"text\":\"meadow\"},{\"type\":\"insert-block\",\"blockId\":\"b2\",\"blockType\":\"paragraph\",\"props\":{},\"position\":\"last\"},{\"type\":\"insert-text\",\"blockId\":\"b2\",\"offset\":0,\"text\":\" sage\"}],\"select\":{\"blockId\":\"b1\",\"offset\":3},\"commit\":[{\"type\":\"merge-blocks\",\"targetBlockId\":\"b1\",\"sourceBlockId\":\"b2\"}]},{\"id\":\"merge-source\",\"kind\":\"merge\",\"region\":\"source\",\"setup\":[{\"type\":\"insert-block\",\"blockId\":\"b1\",\"blockType\":\"paragraph\",\"props\":{},\"position\":\"last\"},{\"type\":\"insert-text\",\"blockId\":\"b1\",\"offset\":0,\"text\":\"meadow\"},{\"type\":\"insert-block\",\"blockId\":\"b2\",\"blockType\":\"paragraph\",\"props\":{},\"position\":\"last\"},{\"type\":\"insert-text\",\"blockId\":\"b2\",\"offset\":0,\"text\":\" sage\"}],\"select\":{\"blockId\":\"b2\",\"offset\":1},\"commit\":[{\"type\":\"merge-blocks\",\"targetBlockId\":\"b1\",\"sourceBlockId\":\"b2\"}]},{\"id\":\"remove-selected\",\"kind\":\"remove\",\"region\":\"removed\",\"setup\":[{\"type\":\"insert-block\",\"blockId\":\"b1\",\"blockType\":\"paragraph\",\"props\":{},\"position\":\"last\"},{\"type\":\"insert-text\",\"blockId\":\"b1\",\"offset\":0,\"text\":\"stay\"},{\"type\":\"insert-block\",\"blockId\":\"b2\",\"blockType\":\"paragraph\",\"props\":{},\"position\":\"last\"},{\"type\":\"insert-text\",\"blockId\":\"b2\",\"offset\":0,\"text\":\"gone\"}],\"select\":{\"blockId\":\"b2\",\"offset\":0},\"commit\":[{\"type\":\"delete-block\",\"blockId\":\"b2\"}]},{\"id\":\"remove-kept\",\"kind\":\"remove\",\"region\":\"kept\",\"setup\":[{\"type\":\"insert-block\",\"blockId\":\"b1\",\"blockType\":\"paragraph\",\"props\":{},\"position\":\"last\"},{\"type\":\"insert-text\",\"blockId\":\"b1\",\"offset\":0,\"text\":\"stay\"},{\"type\":\"insert-block\",\"blockId\":\"b2\",\"blockType\":\"paragraph\",\"props\":{},\"position\":\"last\"},{\"type\":\"insert-text\",\"blockId\":\"b2\",\"offset\":0,\"text\":\"gone\"}],\"select\":{\"blockId\":\"b1\",\"offset\":2},\"commit\":[{\"type\":\"delete-block\",\"blockId\":\"b2\"}]}]",
+	"cases": [
+		{
+			"id": "split-head",
+			"kind": "split",
+			"region": "head",
+			"setup": [
+				{
+					"type": "insert-block",
+					"blockId": "b1",
+					"blockType": "paragraph",
+					"props": {},
+					"position": "last"
+				},
+				{
+					"type": "insert-text",
+					"blockId": "b1",
+					"offset": 0,
+					"text": "meadow sage"
+				}
+			],
+			"select": {
+				"blockId": "b1",
+				"offset": 3
+			},
+			"commit": [
+				{
+					"type": "split-block",
+					"blockId": "b1",
+					"offset": 6,
+					"newBlockId": "b2"
+				}
+			],
+			"before": {
+				"version": 1,
+				"origin": "programmatic",
+				"commitId": 0,
+				"state": {
+					"type": "text",
+					"anchor": {
+						"blockId": "b1",
+						"offset": 3
+					},
+					"focus": {
+						"blockId": "b1",
+						"offset": 3
+					},
+					"isCollapsed": true
+				}
+			},
+			"after": {
+				"version": 1,
+				"origin": "programmatic",
+				"commitId": 0,
+				"state": {
+					"type": "text",
+					"anchor": {
+						"blockId": "b1",
+						"offset": 3
+					},
+					"focus": {
+						"blockId": "b1",
+						"offset": 3
+					},
+					"isCollapsed": true
+				}
+			},
+			"documentAfter": {
+				"blockOrder": [
+					"b1",
+					"b2"
+				],
+				"texts": {
+					"b1": "meadow",
+					"b2": " sage"
+				}
+			}
+		},
+		{
+			"id": "split-point",
+			"kind": "split",
+			"region": "split-point",
+			"setup": [
+				{
+					"type": "insert-block",
+					"blockId": "b1",
+					"blockType": "paragraph",
+					"props": {},
+					"position": "last"
+				},
+				{
+					"type": "insert-text",
+					"blockId": "b1",
+					"offset": 0,
+					"text": "meadow sage"
+				}
+			],
+			"select": {
+				"blockId": "b1",
+				"offset": 6
+			},
+			"commit": [
+				{
+					"type": "split-block",
+					"blockId": "b1",
+					"offset": 6,
+					"newBlockId": "b2"
+				}
+			],
+			"before": {
+				"version": 1,
+				"origin": "programmatic",
+				"commitId": 0,
+				"state": {
+					"type": "text",
+					"anchor": {
+						"blockId": "b1",
+						"offset": 6
+					},
+					"focus": {
+						"blockId": "b1",
+						"offset": 6
+					},
+					"isCollapsed": true
+				}
+			},
+			"after": {
+				"version": 2,
+				"origin": "mapped",
+				"commitId": 3,
+				"state": {
+					"type": "text",
+					"anchor": {
+						"blockId": "b2",
+						"offset": 0
+					},
+					"focus": {
+						"blockId": "b2",
+						"offset": 0
+					},
+					"isCollapsed": true
+				}
+			},
+			"documentAfter": {
+				"blockOrder": [
+					"b1",
+					"b2"
+				],
+				"texts": {
+					"b1": "meadow",
+					"b2": " sage"
+				}
+			}
+		},
+		{
+			"id": "split-tail",
+			"kind": "split",
+			"region": "tail",
+			"setup": [
+				{
+					"type": "insert-block",
+					"blockId": "b1",
+					"blockType": "paragraph",
+					"props": {},
+					"position": "last"
+				},
+				{
+					"type": "insert-text",
+					"blockId": "b1",
+					"offset": 0,
+					"text": "meadow sage"
+				}
+			],
+			"select": {
+				"blockId": "b1",
+				"offset": 9
+			},
+			"commit": [
+				{
+					"type": "split-block",
+					"blockId": "b1",
+					"offset": 6,
+					"newBlockId": "b2"
+				}
+			],
+			"before": {
+				"version": 1,
+				"origin": "programmatic",
+				"commitId": 0,
+				"state": {
+					"type": "text",
+					"anchor": {
+						"blockId": "b1",
+						"offset": 9
+					},
+					"focus": {
+						"blockId": "b1",
+						"offset": 9
+					},
+					"isCollapsed": true
+				}
+			},
+			"after": {
+				"version": 2,
+				"origin": "mapped",
+				"commitId": 3,
+				"state": {
+					"type": "text",
+					"anchor": {
+						"blockId": "b2",
+						"offset": 3
+					},
+					"focus": {
+						"blockId": "b2",
+						"offset": 3
+					},
+					"isCollapsed": true
+				}
+			},
+			"documentAfter": {
+				"blockOrder": [
+					"b1",
+					"b2"
+				],
+				"texts": {
+					"b1": "meadow",
+					"b2": " sage"
+				}
+			}
+		},
+		{
+			"id": "merge-target",
+			"kind": "merge",
+			"region": "target",
+			"setup": [
+				{
+					"type": "insert-block",
+					"blockId": "b1",
+					"blockType": "paragraph",
+					"props": {},
+					"position": "last"
+				},
+				{
+					"type": "insert-text",
+					"blockId": "b1",
+					"offset": 0,
+					"text": "meadow"
+				},
+				{
+					"type": "insert-block",
+					"blockId": "b2",
+					"blockType": "paragraph",
+					"props": {},
+					"position": "last"
+				},
+				{
+					"type": "insert-text",
+					"blockId": "b2",
+					"offset": 0,
+					"text": " sage"
+				}
+			],
+			"select": {
+				"blockId": "b1",
+				"offset": 3
+			},
+			"commit": [
+				{
+					"type": "merge-blocks",
+					"targetBlockId": "b1",
+					"sourceBlockId": "b2"
+				}
+			],
+			"before": {
+				"version": 1,
+				"origin": "programmatic",
+				"commitId": 0,
+				"state": {
+					"type": "text",
+					"anchor": {
+						"blockId": "b1",
+						"offset": 3
+					},
+					"focus": {
+						"blockId": "b1",
+						"offset": 3
+					},
+					"isCollapsed": true
+				}
+			},
+			"after": {
+				"version": 1,
+				"origin": "programmatic",
+				"commitId": 0,
+				"state": {
+					"type": "text",
+					"anchor": {
+						"blockId": "b1",
+						"offset": 3
+					},
+					"focus": {
+						"blockId": "b1",
+						"offset": 3
+					},
+					"isCollapsed": true
+				}
+			},
+			"documentAfter": {
+				"blockOrder": [
+					"b1"
+				],
+				"texts": {
+					"b1": "meadow sage"
+				}
+			}
+		},
+		{
+			"id": "merge-source",
+			"kind": "merge",
+			"region": "source",
+			"setup": [
+				{
+					"type": "insert-block",
+					"blockId": "b1",
+					"blockType": "paragraph",
+					"props": {},
+					"position": "last"
+				},
+				{
+					"type": "insert-text",
+					"blockId": "b1",
+					"offset": 0,
+					"text": "meadow"
+				},
+				{
+					"type": "insert-block",
+					"blockId": "b2",
+					"blockType": "paragraph",
+					"props": {},
+					"position": "last"
+				},
+				{
+					"type": "insert-text",
+					"blockId": "b2",
+					"offset": 0,
+					"text": " sage"
+				}
+			],
+			"select": {
+				"blockId": "b2",
+				"offset": 1
+			},
+			"commit": [
+				{
+					"type": "merge-blocks",
+					"targetBlockId": "b1",
+					"sourceBlockId": "b2"
+				}
+			],
+			"before": {
+				"version": 1,
+				"origin": "programmatic",
+				"commitId": 0,
+				"state": {
+					"type": "text",
+					"anchor": {
+						"blockId": "b2",
+						"offset": 1
+					},
+					"focus": {
+						"blockId": "b2",
+						"offset": 1
+					},
+					"isCollapsed": true
+				}
+			},
+			"after": {
+				"version": 2,
+				"origin": "mapped",
+				"commitId": 3,
+				"state": {
+					"type": "text",
+					"anchor": {
+						"blockId": "b1",
+						"offset": 7
+					},
+					"focus": {
+						"blockId": "b1",
+						"offset": 7
+					},
+					"isCollapsed": true
+				}
+			},
+			"documentAfter": {
+				"blockOrder": [
+					"b1"
+				],
+				"texts": {
+					"b1": "meadow sage"
+				}
+			}
+		},
+		{
+			"id": "remove-selected",
+			"kind": "remove",
+			"region": "removed",
+			"setup": [
+				{
+					"type": "insert-block",
+					"blockId": "b1",
+					"blockType": "paragraph",
+					"props": {},
+					"position": "last"
+				},
+				{
+					"type": "insert-text",
+					"blockId": "b1",
+					"offset": 0,
+					"text": "stay"
+				},
+				{
+					"type": "insert-block",
+					"blockId": "b2",
+					"blockType": "paragraph",
+					"props": {},
+					"position": "last"
+				},
+				{
+					"type": "insert-text",
+					"blockId": "b2",
+					"offset": 0,
+					"text": "gone"
+				}
+			],
+			"select": {
+				"blockId": "b2",
+				"offset": 0
+			},
+			"commit": [
+				{
+					"type": "delete-block",
+					"blockId": "b2"
+				}
+			],
+			"before": {
+				"version": 1,
+				"origin": "programmatic",
+				"commitId": 0,
+				"state": {
+					"type": "text",
+					"anchor": {
+						"blockId": "b2",
+						"offset": 0
+					},
+					"focus": {
+						"blockId": "b2",
+						"offset": 0
+					},
+					"isCollapsed": true
+				}
+			},
+			"after": {
+				"version": 2,
+				"origin": "mapped",
+				"commitId": 3,
+				"state": {
+					"type": "text",
+					"anchor": {
+						"blockId": "b1",
+						"offset": 0
+					},
+					"focus": {
+						"blockId": "b1",
+						"offset": 0
+					},
+					"isCollapsed": true
+				}
+			},
+			"documentAfter": {
+				"blockOrder": [
+					"b1"
+				],
+				"texts": {
+					"b1": "stay"
+				}
+			}
+		},
+		{
+			"id": "remove-kept",
+			"kind": "remove",
+			"region": "kept",
+			"setup": [
+				{
+					"type": "insert-block",
+					"blockId": "b1",
+					"blockType": "paragraph",
+					"props": {},
+					"position": "last"
+				},
+				{
+					"type": "insert-text",
+					"blockId": "b1",
+					"offset": 0,
+					"text": "stay"
+				},
+				{
+					"type": "insert-block",
+					"blockId": "b2",
+					"blockType": "paragraph",
+					"props": {},
+					"position": "last"
+				},
+				{
+					"type": "insert-text",
+					"blockId": "b2",
+					"offset": 0,
+					"text": "gone"
+				}
+			],
+			"select": {
+				"blockId": "b1",
+				"offset": 2
+			},
+			"commit": [
+				{
+					"type": "delete-block",
+					"blockId": "b2"
+				}
+			],
+			"before": {
+				"version": 1,
+				"origin": "programmatic",
+				"commitId": 0,
+				"state": {
+					"type": "text",
+					"anchor": {
+						"blockId": "b1",
+						"offset": 2
+					},
+					"focus": {
+						"blockId": "b1",
+						"offset": 2
+					},
+					"isCollapsed": true
+				}
+			},
+			"after": {
+				"version": 1,
+				"origin": "programmatic",
+				"commitId": 0,
+				"state": {
+					"type": "text",
+					"anchor": {
+						"blockId": "b1",
+						"offset": 2
+					},
+					"focus": {
+						"blockId": "b1",
+						"offset": 2
+					},
+					"isCollapsed": true
+				}
+			},
+			"documentAfter": {
+				"blockOrder": [
+					"b1"
+				],
+				"texts": {
+					"b1": "stay"
+				}
+			}
+		}
+	]
+}

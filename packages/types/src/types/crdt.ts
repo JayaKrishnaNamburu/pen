@@ -1,3 +1,8 @@
+import type {
+	AnchorTarget,
+	Assoc,
+	ResolveRelativePositionOptions,
+} from "./anchors";
 import type { DocumentOp, OpOrigin } from "./ops";
 import type { Unsubscribe } from "./utility";
 import type { DocumentRange } from "./documentRange";
@@ -90,6 +95,24 @@ export interface CRDTAdapter {
 		doc: CRDTDocument,
 		blockId: string,
 	): AttributionRange[];
+
+	/** Mint an encoded relative position for `target`, or `null` if it is missing. */
+	createRelativePosition(
+		doc: CRDTDocument,
+		target: AnchorTarget,
+		assoc: Assoc,
+	): Uint8Array | null;
+
+	/**
+	 * Resolve an encoded relative position (AN1).
+	 *
+	 * `options.followUndoneDeletions` is the AN13 path flag, never a constant.
+	 */
+	resolveRelativePosition(
+		doc: CRDTDocument,
+		encoded: Uint8Array,
+		options?: ResolveRelativePositionOptions,
+	): AnchorTarget | null;
 }
 
 export interface AttributionRange {

@@ -105,6 +105,9 @@ export abstract class EditContextBackendCore {
 		element.addEventListener("dragstart", this.handleDragStart);
 		element.addEventListener("drop", this.handleDrop);
 		element.addEventListener("pointerdown", this.handlePointerDown);
+		element.addEventListener("contextmenu", this.handleContextMenu);
+		element.addEventListener("compositionstart", this.handleCompositionStart);
+		element.addEventListener("compositionend", this.handleCompositionEnd);
 		ec.addEventListener("textupdate", this.handleTextUpdate);
 		ec.addEventListener("textformatupdate", this.handleTextFormatUpdate);
 		ec.addEventListener(
@@ -169,6 +172,18 @@ export abstract class EditContextBackendCore {
 			this.element.removeEventListener(
 				"pointerdown",
 				this.handlePointerDown,
+			);
+			this.element.removeEventListener(
+				"contextmenu",
+				this.handleContextMenu,
+			);
+			this.element.removeEventListener(
+				"compositionstart",
+				this.handleCompositionStart,
+			);
+			this.element.removeEventListener(
+				"compositionend",
+				this.handleCompositionEnd,
 			);
 			this.element.ownerDocument?.removeEventListener(
 				"selectionchange",
@@ -261,6 +276,17 @@ export abstract class EditContextBackendCore {
 	protected abstract handleDragStart: (event: DragEvent) => void;
 	protected abstract handleDrop: (event: DragEvent) => void;
 	protected abstract handlePointerDown: () => void;
+	protected handleContextMenu = (): void => {
+		this.fieldEditor.notifyGestureEvent?.("contextmenu");
+	};
+	protected handleCompositionStart = (): void => {
+		this.fieldEditor.notifyGestureEvent?.("compositionstart");
+		this.fieldEditor.setComposing(true);
+	};
+	protected handleCompositionEnd = (): void => {
+		this.fieldEditor.setComposing(false);
+		this.fieldEditor.notifyGestureEvent?.("compositionend-completed");
+	};
 	protected abstract restoreDOMCaret(): void;
 	protected abstract getInlineDecorationsForBlock(): readonly InlineDecoration[];
 	protected abstract getInlineDecorationsSignature(): readonly InlineDecoration[];

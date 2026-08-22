@@ -97,6 +97,7 @@ export abstract class ContentEditableBackendEvents extends ContentEditableBacken
 		this.compositionStartText = this.ytext?.toString() ?? "";
 		this.deferredRemoteDeltas = [];
 		this.fieldEditor.setComposing(true);
+		this.fieldEditor.notifyGestureEvent?.("compositionstart");
 	};
 
 	protected handleCompositionEnd = (): void => {
@@ -112,6 +113,9 @@ export abstract class ContentEditableBackendEvents extends ContentEditableBacken
 			const crdtText = this.ytext?.toString() ?? "";
 			if (Math.abs(domText.length - crdtText.length) <= 1) {
 				this.reconcileAfterComposition();
+				this.fieldEditor.notifyGestureEvent?.(
+					"compositionend-completed",
+				);
 				return;
 			}
 		}
@@ -121,6 +125,7 @@ export abstract class ContentEditableBackendEvents extends ContentEditableBacken
 			if (this.isComposing) return;
 			this.reconcileAfterComposition();
 		});
+		this.fieldEditor.notifyGestureEvent?.("compositionend-completed");
 	};
 
 	protected reconcileAfterComposition(): void {

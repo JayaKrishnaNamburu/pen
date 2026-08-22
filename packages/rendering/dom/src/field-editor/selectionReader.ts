@@ -83,7 +83,10 @@ export type DomSelectionReadDecision =
 	| "ignore-inflight"
 	| "no-proposal"
 	| "equivalent"
-	| "continue";
+	| "diverge"
+	| "accept";
+
+export type GestureSelectionOrigin = "pointer" | "ime";
 
 export function isLogicallyEquivalent(
 	domRead: ReaderSelection,
@@ -145,15 +148,15 @@ export function isLogicallyEquivalent(
 }
 
 /**
- * §4.2 steps 1–3. Step 4 (I4 re-project) and step 5 (`authority.set`)
- * stay unwired — fall through to the v1 heuristics when this returns
- * `"continue"`.
+ * §4.2 steps 1–5. A proposal is accepted only inside an open gesture
+ * window. Closed-window divergence does not write the authority (I4).
  */
 export function classifyDomSelectionRead(input: {
 	projectionInFlight: boolean;
 	proposal: ReaderSelection | null;
 	authorityState: ReaderSelection;
 	snapshot: ReaderSnapshot;
+	gestureWindows: GestureWindowState;
 }): DomSelectionReadDecision {
 	if (input.projectionInFlight) {
 		return "ignore-inflight";
@@ -170,7 +173,12 @@ export function classifyDomSelectionRead(input: {
 	) {
 		return "equivalent";
 	}
-	return "continue";
+	if (
+		!isAdmissibleDomRead("selectionchange", input.gestureWindows)
+	) {
+		return "diverge";
+	}
+	return "accept";
 }
 
 export function shouldStopEquivalentDomRead(
@@ -187,8 +195,76 @@ export function shouldStopEquivalentDomRead(
 			proposal,
 			authorityState: toReaderSelection(record.state),
 			snapshot: buildNormalPositionSnapshot(editor),
+			gestureWindows: CLOSED_GESTURE_WINDOWS,
 		}) === "equivalent"
 	);
+}
+
+export function decideDomSelectionRead(input: {
+	editor: Editor;
+	proposal: ReaderSelection;
+	gestureWindows: GestureWindowState;
+	projectionInFlight: boolean;
+}): {
+	decision: DomSelectionReadDecision;
+	normalized: ReaderSelection | null;
+	origin: GestureSelectionOrigin;
+} {
+	const record = getEditorSelectionRecord(input.editor);
+	const snapshot = buildNormalPositionSnapshot(input.editor);
+	const decision = classifyDomSelectionRead({
+		projectionInFlight: input.projectionInFlight,
+		proposal: input.proposal,
+		authorityState:
+			record === null ? null : toReaderSelection(record.state),
+		snapshot,
+		gestureWindows: input.gestureWindows,
+	});
+	const origin = originForGestureWindows(input.gestureWindows);
+	if (decision !== "accept") {
+		return { decision, normalized: null, origin };
+	}
+	const authorityState =
+		record === null ? null : toReaderSelection(record.state);
+	return {
+		decision,
+		normalized: normalizeDomSelectionProposal(
+			input.proposal,
+			snapshot,
+			undefined,
+			authorityState,
+		),
+		origin,
+	};
+}
+
+export function originForGestureWindows(
+	state: GestureWindowState,
+): GestureSelectionOrigin {
+	return state.ime ? "ime" : "pointer";
+}
+
+export function normalizeDomSelectionProposal(
+	proposal: ReaderSelection,
+	snapshot: ReaderSnapshot,
+	dir?: 1 | -1,
+	authorityState?: ReaderSelection,
+): ReaderSelection {
+	if (proposal === null) {
+		return proposal;
+	}
+	if (proposal.type === "block") {
+		return preserveAuthorityBlockHead(proposal, authorityState ?? null);
+	}
+	if (proposal.type !== "text") {
+		return proposal;
+	}
+	const snapDir = dir ?? gestureFocusDir(proposal, snapshot);
+	return {
+		type: "text",
+		anchor: snapAcceptedPoint(proposal.anchor, snapshot, snapDir),
+		focus: snapAcceptedPoint(proposal.focus, snapshot, snapDir),
+	};
 }
 
 export function nextGestureWindowState(
@@ -347,6 +423,48 @@ function defaultBlockHead(selection: {
 		selection.blockIds[0] ??
 		""
 	);
+}
+
+function preserveAuthorityBlockHead(
+	proposal: Extract<ReaderSelection, { type: "block" }>,
+	authorityState: ReaderSelection,
+): Extract<ReaderSelection, { type: "block" }> {
+	if (proposal.head) {
+		return proposal;
+	}
+	if (
+		authorityState?.type === "block" &&
+		sameBlockIds(proposal.blockIds, authorityState.blockIds) &&
+		authorityState.head
+	) {
+		return { ...proposal, head: authorityState.head };
+	}
+	return proposal;
+}
+
+function gestureFocusDir(
+	proposal: Extract<ReaderSelection, { type: "text" }>,
+	snapshot: ReaderSnapshot,
+): 1 | -1 {
+	const anchorIndex = snapshot.blockOrder.indexOf(proposal.anchor.blockId);
+	const focusIndex = snapshot.blockOrder.indexOf(proposal.focus.blockId);
+	if (anchorIndex === focusIndex) {
+		return proposal.anchor.offset <= proposal.focus.offset ? 1 : -1;
+	}
+	return anchorIndex <= focusIndex ? 1 : -1;
+}
+
+function snapAcceptedPoint(
+	point: ReaderPoint,
+	snapshot: ReaderSnapshot,
+	dir: 1 | -1,
+): ReaderPoint {
+	const logical = toLogicalPoint(point, snapshot);
+	const snapped = snapToNormalPosition(snapshot, logical ?? point, dir);
+	if (snapped === null || "blockBoundary" in snapped) {
+		return logical ?? point;
+	}
+	return snapped;
 }
 
 function sameBlockIds(

@@ -32,7 +32,7 @@ function createController() {
 }
 
 describe("SelectionProjectionController shouldIgnoreDomTextSelection", () => {
-	it("ignores leftover native range on the first block after a programmatic enter split", () => {
+	it("ignores leftover native range on another block after a programmatic stamp", () => {
 		const { controller } = createController();
 		controller.commitProgrammaticTextSelection("inserted", 0, 0);
 
@@ -73,5 +73,29 @@ describe("SelectionProjectionController shouldIgnoreDomTextSelection", () => {
 				{ blockId: "first", offset: 5 },
 			),
 		).toBe(true);
+	});
+});
+
+describe("SelectionProjectionController gesture windows", () => {
+	it("opens the pointer window on beginPointerSelection and keeps it open after end", () => {
+		const { controller } = createController();
+		expect(controller.isAdmissibleGestureRead()).toBe(false);
+		controller.beginPointerSelection();
+		expect(controller.isAdmissibleGestureRead()).toBe(true);
+		controller.endPointerSelection();
+		expect(controller.isAdmissibleGestureRead()).toBe(true);
+	});
+
+	it("step 4: shouldSuppressSelectionSync is dead", () => {
+		const { controller } = createController();
+		expect(controller.shouldSuppressSelectionSync()).toBe(false);
+	});
+
+	it("step 4: consumeDomSelectionProjectionSuppression is dead", () => {
+		const { controller } = createController();
+		controller.suppressNextDomSelectionProjection();
+		expect(controller.consumeDomSelectionProjectionSuppression()).toBe(
+			false,
+		);
 	});
 });

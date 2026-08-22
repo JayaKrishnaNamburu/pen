@@ -5,6 +5,12 @@ import type {
 	FieldEditorSelectionSnapshot,
 	FieldEditorSelectionSource,
 } from "./selectionAuthority";
+import type {
+	DomSelectionReadDecision,
+	GestureEventKind,
+	GestureWindowState,
+	ReaderSelection,
+} from "./selectionReader";
 
 export type FieldEditorFocusReason =
 	| "activate"
@@ -167,6 +173,12 @@ export interface FieldEditorDomController extends FieldEditorSelectionState {
 		anchor: { blockId: string; offset: number },
 		focus: { blockId: string; offset: number },
 	): boolean;
+	notifyGestureEvent?(eventKind: GestureEventKind): void;
+	getGestureWindows?(): GestureWindowState;
+	isAdmissibleGestureRead?(): boolean;
+	isProjectionInFlight?(): boolean;
+	requestDivergenceProjection?(): void;
+	readDomSelection?(proposal: ReaderSelection): DomSelectionReadDecision;
 	applyDocumentTextSelection(
 		anchor: { blockId: string; offset: number },
 		focus: { blockId: string; offset: number },
@@ -265,6 +277,9 @@ export type FieldEditorSession = FieldEditorStore &
 	FieldEditorEscapeController & {
 		beginPointerSelection(): void;
 		endPointerSelection(): void;
+		notifyGestureEvent(eventKind: GestureEventKind): void;
+		isAdmissibleGestureRead(): boolean;
+		readDomSelection(proposal: ReaderSelection): DomSelectionReadDecision;
 		selectAll(rootElement?: HTMLElement | null): boolean;
 		resetSelectAllCycle(): void;
 		suspendForPointerSelection(): void;

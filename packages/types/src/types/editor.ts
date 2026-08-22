@@ -1,5 +1,9 @@
 import type { Block } from "./block";
-import type { SelectionRecord, SelectionState } from "./selection";
+import type {
+	SelectionOrigin,
+	SelectionRecord,
+	SelectionState,
+} from "./selection";
 import type {
 	CRDTAdapter,
 	CRDTDocument,
@@ -10,6 +14,7 @@ import type {
 	DocumentScope,
 	DocumentProfile,
 } from "./crdt";
+import type { EditorAnchors } from "./anchors";
 import type { ChangeSummary, Point, SummaryLog } from "./changes";
 import type { Facet, FacetOutput } from "./facets";
 import type { DocumentOp, OpOrigin, ApplyOptions, StructuredOpOrigin } from "./ops";
@@ -305,6 +310,8 @@ export interface Editor {
 
 	readonly schema: SchemaRegistry;
 	readonly selection: SelectionState;
+	/** CRDT-relative positions that survive commits (AN1–AN14). */
+	readonly anchors: EditorAnchors;
 	readonly documentState: DocumentState;
 	readonly internals: EditorInternals;
 	readonly lastChangeSummary: ChangeSummary | null;
@@ -321,7 +328,10 @@ export interface Editor {
 	blockCount(): number;
 	getBlockRevision(blockId: string): number;
 
-	setSelection(selection: SelectionState): void;
+	setSelection(
+		selection: SelectionState,
+		options?: { origin?: SelectionOrigin },
+	): void;
 	getSelection(): SelectionState;
 	selectBlock(blockId: string): void;
 	selectBlocks(blockIds: string[]): void;

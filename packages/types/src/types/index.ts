@@ -401,6 +401,16 @@ export type { BlockRenderContext, BlockRenderer } from "./rendering";
 // ── Suggestions ─────────────────────────────────────────────
 export type { BlockSuggestion } from "./suggestions";
 
+// ── Anchors ─────────────────────────────────────────────────
+export type {
+	Anchor,
+	AnchorRange,
+	AnchorTarget,
+	EditorAnchors,
+	ResolvedAnchorRange,
+	ResolveRelativePositionOptions,
+} from "./anchors";
+
 // ── Change summaries ────────────────────────────────────────
 export type {
 	Assoc,

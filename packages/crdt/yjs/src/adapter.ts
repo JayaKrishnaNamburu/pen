@@ -34,6 +34,10 @@ import {
 	mergeYjsUpdates,
 	restoreYjsSnapshot,
 } from "./snapshots";
+import {
+	createRelativePosition,
+	resolveRelativePosition,
+} from "./relativePosition";
 import { createYjsUndoManager } from "./undo";
 
 export type { CRDTDiagnostic } from "./loadDocument";
@@ -232,6 +236,14 @@ export function yjsAdapter(options?: YjsAdapterOptions): CRDTAdapter {
 			}
 
 			return ranges;
+		},
+
+		createRelativePosition(doc, target, assoc) {
+			return createRelativePosition(doc, target, assoc);
+		},
+
+		resolveRelativePosition(doc, encoded, options) {
+			return resolveRelativePosition(doc, encoded, options);
 		},
 	};
 

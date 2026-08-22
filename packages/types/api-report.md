@@ -10,6 +10,7 @@
 - blockId
 - docId
 - generateId
+- logicalTextFromStored
 - zoneId
 
 ### guard
@@ -25,8 +26,10 @@
 
 - AI_AUTOCOMPLETE_CONTROLLER_SLOT
 - AI_CONTROLLER_SLOT
+- AI_EGRESS_INVENTORY_CODE
 - AI_INLINE_COMPLETION_SLOT
 - AI_INLINE_HISTORY_SLOT
+- AI_REQUEST_REFUSED_CODE
 - AI_REVIEW_CONTROLLER_SLOT
 - AI_SUGGESTIONS_CONTROLLER_SLOT
 - ANNOUNCER_SLOT_KEY
@@ -35,6 +38,7 @@
 - DECORATION_OMIT_FROM_RENDER_ATTRIBUTE
 - DEFAULT_MESSAGE_CATALOG
 - DOCUMENT_PROFILE_METADATA_KEY
+- EMPTY_BLOCK_SENTINEL
 - FIELD_EDITOR_SLOT_KEY
 - HISTORY_CONTROLLER_SLOT
 - HISTORY_ORIGIN_TAG
@@ -66,9 +70,16 @@
 - A11yMessageCatalog
 - A11yMessageKey
 - AbortPart
+- Affinity
+- AIDocumentExcerpt
+- AIDocumentExcerptKind
 - AIRequestContext
+- AIRequestFeature
 - AIRequestFilter
+- Anchor
 - AnchorPosition
+- AnchorRange
+- AnchorTarget
 - App
 - AppCreatePart
 - AppDecoration
@@ -167,6 +178,7 @@
 - DocumentValidationError
 - DonePart
 - Editor
+- EditorAnchors
 - EditorAnnouncer
 - EditorInternals
 - EditorPreset
@@ -285,9 +297,13 @@
 - ReplaceScopeDocumentOptions
 - ReplaceTextOp
 - ReservedMetadataKey
+- ResolvedAnchorRange
+- ResolveRelativePositionOptions
 - SchemaEngine
 - SchemaRegistry
+- SelectionOrigin
 - SelectionRecord
+- SelectionRecordState
 - SelectionState
 - SelectOption
 - ServerConfig

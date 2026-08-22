@@ -59,6 +59,8 @@ export {
 // DocumentStateImpl stays off the barrel; hosts read editor.documentState (DocumentState from @input/pen-types).
 export { DocumentRangeImpl } from "./editor/range";
 export { SelectionAuthorityImpl as SelectionAuthority } from "./editor/selection";
+export { deriveContentMoves, repairAnchor } from "./editor/anchorRepair";
+export type { ContentMove } from "./editor/anchorRepair";
 export { getEditorSelectionRecord } from "./editor/selectionRecord";
 export {
 	getSelectionBlockRange,

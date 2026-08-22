@@ -1,5 +1,6 @@
 import type { SelectionState } from "@input/pen-types";
 import type { PenFieldEditorFocusOptions } from "./controller";
+import type { GestureEventKind, GestureWindowState } from "./selectionReader";
 import {
 	FieldEditorSelectionAuthority,
 	type FieldEditorSelectionSnapshot,
@@ -121,6 +122,26 @@ export class FieldEditorSelectionCoordinator {
 
 	endPointerSelection(): void {
 		this._projection.endPointerSelection();
+	}
+
+	notifyGestureEvent(eventKind: GestureEventKind): void {
+		this._projection.notifyGestureEvent(eventKind);
+	}
+
+	getGestureWindows(): GestureWindowState {
+		return this._projection.getGestureWindows();
+	}
+
+	isAdmissibleGestureRead(): boolean {
+		return this._projection.isAdmissibleGestureRead();
+	}
+
+	isProjectionInFlight(): boolean {
+		return this._projection.isProjectionInFlight();
+	}
+
+	requestDivergenceProjection(): void {
+		this._projection.requestDivergenceProjection();
 	}
 
 	consumeDomSelectionProjectionSuppression(): boolean {

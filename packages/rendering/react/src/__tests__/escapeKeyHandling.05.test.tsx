@@ -155,6 +155,7 @@ describe("@input/pen-react escape key handling", () => {
 		});
 
 		await act(async () => {
+			fieldEditor.beginPointerSelection();
 			const selection = document.getSelection();
 			const range = document.createRange();
 			range.setStart(

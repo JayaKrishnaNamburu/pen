@@ -80,6 +80,7 @@ export abstract class ContentEditableBackendCore {
 		element.addEventListener("dragstart", this.handleDragStart);
 		element.addEventListener("drop", this.handleDrop);
 		element.addEventListener("pointerdown", this.handlePointerDown);
+		element.addEventListener("contextmenu", this.handleContextMenu);
 		element.ownerDocument?.addEventListener(
 			"selectionchange",
 			this.handleSelectionChange,
@@ -134,6 +135,10 @@ export abstract class ContentEditableBackendCore {
 			this.element.removeEventListener(
 				"pointerdown",
 				this.handlePointerDown,
+			);
+			this.element.removeEventListener(
+				"contextmenu",
+				this.handleContextMenu,
 			);
 			this.element.ownerDocument?.removeEventListener(
 				"selectionchange",
@@ -315,6 +320,9 @@ export abstract class ContentEditableBackendCore {
 	protected abstract handleDragStart: (event: DragEvent) => void;
 	protected abstract handleDrop: (event: DragEvent) => void;
 	protected abstract handlePointerDown: () => void;
+	protected handleContextMenu = (): void => {
+		this.fieldEditor.notifyGestureEvent?.("contextmenu");
+	};
 	protected abstract handleSelectionChange: () => void;
 	protected abstract handleMutations: (mutations: MutationRecord[]) => void;
 	protected abstract handleYTextChange(event: FieldEditorTextChangeEvent): void;

@@ -8,6 +8,9 @@ import {
 	isAdmissibleDomRead,
 	isLogicallyEquivalent,
 	nextGestureWindowState,
+	normalizeDomSelectionProposal,
+	originForGestureWindows,
+	decideDomSelectionRead,
 	shouldStopEquivalentDomRead,
 	type GestureWindowState,
 	type ReaderSelection,
@@ -258,7 +261,7 @@ describe("isLogicallyEquivalent", () => {
 	});
 });
 
-describe("classifyDomSelectionRead §4.2 steps 1–3", () => {
+describe("classifyDomSelectionRead §4.2 steps 1–5", () => {
 	const snapshot: ReaderSnapshot = {
 		blockOrder: ["p1"],
 		blocks: { p1: { kind: "text", text: "hello" } },
@@ -273,6 +276,7 @@ describe("classifyDomSelectionRead §4.2 steps 1–3", () => {
 				proposal: moved,
 				authorityState: caret,
 				snapshot,
+				gestureWindows: CLOSED_GESTURE_WINDOWS,
 			}),
 		).toBe("ignore-inflight");
 	});
@@ -284,6 +288,7 @@ describe("classifyDomSelectionRead §4.2 steps 1–3", () => {
 				proposal: null,
 				authorityState: caret,
 				snapshot,
+				gestureWindows: CLOSED_GESTURE_WINDOWS,
 			}),
 		).toBe("no-proposal");
 	});
@@ -295,19 +300,21 @@ describe("classifyDomSelectionRead §4.2 steps 1–3", () => {
 				proposal: caret,
 				authorityState: caret,
 				snapshot,
+				gestureWindows: CLOSED_GESTURE_WINDOWS,
 			}),
 		).toBe("equivalent");
 	});
 
-	it("step 3: a real move falls through to the v1 heuristics", () => {
+	it("step 3: a real move is not equivalent", () => {
 		expect(
 			classifyDomSelectionRead({
 				projectionInFlight: false,
 				proposal: moved,
 				authorityState: caret,
 				snapshot,
+				gestureWindows: CLOSED_GESTURE_WINDOWS,
 			}),
-		).toBe("continue");
+		).toBe("diverge");
 	});
 
 	it("step 3: an interior atom read is equivalent to a before-side authority", () => {
@@ -327,11 +334,12 @@ describe("classifyDomSelectionRead §4.2 steps 1–3", () => {
 				proposal: textSelection({ blockId: "embed", offset: 2 }),
 				authorityState: textSelection({ blockId: "embed", offset: 1 }),
 				snapshot: atomSnapshot,
+				gestureWindows: CLOSED_GESTURE_WINDOWS,
 			}),
 		).toBe("equivalent");
 	});
 
-	it("step 3: the same block ids with a different head fall through", () => {
+	it("step 3: the same block ids with a different head are not equivalent", () => {
 		const blockSnapshot: ReaderSnapshot = {
 			blockOrder: ["p1", "p2"],
 			blocks: {
@@ -345,8 +353,388 @@ describe("classifyDomSelectionRead §4.2 steps 1–3", () => {
 				proposal: blockSelection(["p1", "p2"], "p1"),
 				authorityState: blockSelection(["p1", "p2"], "p2"),
 				snapshot: blockSnapshot,
+				gestureWindows: CLOSED_GESTURE_WINDOWS,
 			}),
-		).toBe("continue");
+		).toBe("diverge");
+	});
+});
+
+describe("classifyDomSelectionRead §4.2 steps 4–5", () => {
+	const snapshot: ReaderSnapshot = {
+		blockOrder: ["p1", "p2"],
+		blocks: {
+			p1: { kind: "text", text: "hello" },
+			p2: { kind: "text", text: "world" },
+		},
+	};
+	const caret = textSelection({ blockId: "p1", offset: 0 });
+	const moved = textSelection({ blockId: "p1", offset: 2 });
+
+	it("step 4: a closed window rejects the proposal and requests P2", () => {
+		expect(
+			classifyDomSelectionRead({
+				projectionInFlight: false,
+				proposal: moved,
+				authorityState: caret,
+				snapshot,
+				gestureWindows: CLOSED_GESTURE_WINDOWS,
+			}),
+		).toBe("diverge");
+	});
+
+	it("step 5: an open pointer window accepts the proposal", () => {
+		expect(
+			classifyDomSelectionRead({
+				projectionInFlight: false,
+				proposal: moved,
+				authorityState: caret,
+				snapshot,
+				gestureWindows: nextGestureWindowState(
+					"pointerdown",
+					CLOSED_GESTURE_WINDOWS,
+				),
+			}),
+		).toBe("accept");
+	});
+
+	it("step 5: an open ime window accepts the proposal", () => {
+		expect(
+			classifyDomSelectionRead({
+				projectionInFlight: false,
+				proposal: moved,
+				authorityState: caret,
+				snapshot,
+				gestureWindows: nextGestureWindowState(
+					"compositionstart",
+					CLOSED_GESTURE_WINDOWS,
+				),
+			}),
+		).toBe("accept");
+	});
+
+	it("step 5: an open context-menu window accepts the proposal", () => {
+		expect(
+			classifyDomSelectionRead({
+				projectionInFlight: false,
+				proposal: moved,
+				authorityState: caret,
+				snapshot,
+				gestureWindows: nextGestureWindowState(
+					"contextmenu",
+					CLOSED_GESTURE_WINDOWS,
+				),
+			}),
+		).toBe("accept");
+	});
+
+	it("step 5: an open drag window accepts the proposal", () => {
+		expect(
+			classifyDomSelectionRead({
+				projectionInFlight: false,
+				proposal: moved,
+				authorityState: caret,
+				snapshot,
+				gestureWindows: nextGestureWindowState(
+					"dragstart",
+					CLOSED_GESTURE_WINDOWS,
+				),
+			}),
+		).toBe("accept");
+	});
+
+	it("step 4: keyboard events do not make a later selectionchange admissible", () => {
+		const afterKeys = nextGestureWindowState(
+			"keyup",
+			nextGestureWindowState("keydown", CLOSED_GESTURE_WINDOWS),
+		);
+		expect(
+			classifyDomSelectionRead({
+				projectionInFlight: false,
+				proposal: moved,
+				authorityState: caret,
+				snapshot,
+				gestureWindows: afterKeys,
+			}),
+		).toBe("diverge");
+	});
+
+	it("step 3 still wins over an open window", () => {
+		expect(
+			classifyDomSelectionRead({
+				projectionInFlight: false,
+				proposal: caret,
+				authorityState: caret,
+				snapshot,
+				gestureWindows: nextGestureWindowState(
+					"pointerdown",
+					CLOSED_GESTURE_WINDOWS,
+				),
+			}),
+		).toBe("equivalent");
+	});
+
+	it("R3: overlapping ime+pointer is admissible", () => {
+		const overlapping = nextGestureWindowState(
+			"pointerdown",
+			nextGestureWindowState("compositionstart", CLOSED_GESTURE_WINDOWS),
+		);
+		expect(overlapping.ime).toBe(true);
+		expect(overlapping.pointer).toBe(true);
+		expect(
+			classifyDomSelectionRead({
+				projectionInFlight: false,
+				proposal: moved,
+				authorityState: caret,
+				snapshot,
+				gestureWindows: overlapping,
+			}),
+		).toBe("accept");
+	});
+});
+
+describe("originForGestureWindows", () => {
+	it("is ime whenever the ime window is open", () => {
+		const ime = nextGestureWindowState(
+			"compositionstart",
+			CLOSED_GESTURE_WINDOWS,
+		);
+		expect(originForGestureWindows(ime)).toBe("ime");
+		expect(
+			originForGestureWindows(
+				nextGestureWindowState("pointerdown", ime),
+			),
+		).toBe("ime");
+	});
+
+	it("is pointer for pointer, drag, and context-menu", () => {
+		expect(
+			originForGestureWindows(
+				nextGestureWindowState("pointerdown", CLOSED_GESTURE_WINDOWS),
+			),
+		).toBe("pointer");
+		expect(
+			originForGestureWindows(
+				nextGestureWindowState("dragstart", CLOSED_GESTURE_WINDOWS),
+			),
+		).toBe("pointer");
+		expect(
+			originForGestureWindows(
+				nextGestureWindowState("contextmenu", CLOSED_GESTURE_WINDOWS),
+			),
+		).toBe("pointer");
+	});
+});
+
+describe("normalizeDomSelectionProposal", () => {
+	const snapshot: ReaderSnapshot = {
+		blockOrder: ["p1", "divider"],
+		blocks: {
+			p1: { kind: "text", text: "hello" },
+			divider: { kind: "structural", text: "" },
+		},
+	};
+
+	it("snaps an interior atom point with dir 1 by default", () => {
+		const atomSnapshot: ReaderSnapshot = {
+			blockOrder: ["embed"],
+			blocks: {
+				embed: {
+					kind: "text",
+					text: "hello",
+					atoms: [{ start: 1, end: 4 }],
+				},
+			},
+		};
+		expect(
+			normalizeDomSelectionProposal(
+				textSelection({ blockId: "embed", offset: 2 }),
+				atomSnapshot,
+			),
+		).toEqual(textSelection({ blockId: "embed", offset: 4 }));
+	});
+
+	it("does not escalate a mixed text/structural range to BlockSelection", () => {
+		const mixed = textSelection(
+			{ blockId: "p1", offset: 2 },
+			{ blockId: "divider", offset: 1 },
+		);
+		expect(normalizeDomSelectionProposal(mixed, snapshot)).toEqual(mixed);
+	});
+});
+
+describe("decideDomSelectionRead §4.2 steps 4–5", () => {
+	it("step 4: a closed window does not normalize or accept", () => {
+		const editor = createEditor({ schema: defaultSchema });
+		const id = editor.firstBlock()!.id;
+		editor.apply([
+			{ type: "insert-text", blockId: id, offset: 0, text: "hello" },
+		]);
+		editor.selectText(id, 0, 0);
+		const decided = decideDomSelectionRead({
+			editor,
+			proposal: textSelection({ blockId: id, offset: 2 }),
+			gestureWindows: CLOSED_GESTURE_WINDOWS,
+			projectionInFlight: false,
+		});
+		expect(decided.decision).toBe("diverge");
+		expect(decided.normalized).toBeNull();
+		void editor.destroy();
+	});
+
+	it("step 5: an open pointer window normalizes and accepts with origin pointer", () => {
+		const editor = createEditor({ schema: defaultSchema });
+		const id = editor.firstBlock()!.id;
+		editor.apply([
+			{ type: "insert-text", blockId: id, offset: 0, text: "hello" },
+		]);
+		editor.selectText(id, 0, 0);
+		const decided = decideDomSelectionRead({
+			editor,
+			proposal: textSelection({ blockId: id, offset: 2 }),
+			gestureWindows: nextGestureWindowState(
+				"pointerdown",
+				CLOSED_GESTURE_WINDOWS,
+			),
+			projectionInFlight: false,
+		});
+		expect(decided.decision).toBe("accept");
+		expect(decided.origin).toBe("pointer");
+		expect(decided.normalized).toEqual(
+			textSelection({ blockId: id, offset: 2 }),
+		);
+		void editor.destroy();
+	});
+
+	it("step 5: overlapping ime+pointer accepts with origin ime", () => {
+		const editor = createEditor({ schema: defaultSchema });
+		const id = editor.firstBlock()!.id;
+		editor.apply([
+			{ type: "insert-text", blockId: id, offset: 0, text: "hello" },
+		]);
+		editor.selectText(id, 0, 0);
+		const overlapping = nextGestureWindowState(
+			"pointerdown",
+			nextGestureWindowState("compositionstart", CLOSED_GESTURE_WINDOWS),
+		);
+		const decided = decideDomSelectionRead({
+			editor,
+			proposal: textSelection({ blockId: id, offset: 2 }),
+			gestureWindows: overlapping,
+			projectionInFlight: false,
+		});
+		expect(decided.decision).toBe("accept");
+		expect(decided.origin).toBe("ime");
+		void editor.destroy();
+	});
+
+	it("step 5: a same-ids block proposal without head keeps the authority head", () => {
+		const editor = createEditor({ schema: defaultSchema });
+		const first = editor.firstBlock()!.id;
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "second",
+				blockType: "paragraph",
+				props: {},
+				position: "last",
+			},
+		]);
+		editor.setSelection({
+			type: "block",
+			blockIds: [first, "second"],
+			head: first,
+		});
+		const decided = decideDomSelectionRead({
+			editor,
+			proposal: blockSelection([first, "second"]),
+			gestureWindows: nextGestureWindowState(
+				"pointerdown",
+				CLOSED_GESTURE_WINDOWS,
+			),
+			projectionInFlight: false,
+		});
+		expect(decided.decision).toBe("accept");
+		expect(decided.normalized).toEqual(
+			blockSelection([first, "second"], first),
+		);
+		void editor.destroy();
+	});
+});
+
+describe("decideDomSelectionRead §4.2 steps 4–5", () => {
+	it("step 5: an open pointer window returns a normalized accept with pointer origin", () => {
+		const editor = createEditor({ schema: defaultSchema });
+		const id = editor.firstBlock()!.id;
+		editor.apply([
+			{ type: "insert-text", blockId: id, offset: 0, text: "hello" },
+		]);
+		editor.selectText(id, 0, 0);
+		const result = decideDomSelectionRead({
+			editor,
+			proposal: textSelection({ blockId: id, offset: 2 }),
+			gestureWindows: nextGestureWindowState(
+				"pointerdown",
+				CLOSED_GESTURE_WINDOWS,
+			),
+			projectionInFlight: false,
+		});
+		expect(result.decision).toBe("accept");
+		expect(result.origin).toBe("pointer");
+		expect(result.normalized).toEqual(
+			textSelection({ blockId: id, offset: 2 }),
+		);
+		void editor.destroy();
+	});
+
+	it("step 4: a closed window returns diverge and does not normalize", () => {
+		const editor = createEditor({ schema: defaultSchema });
+		const id = editor.firstBlock()!.id;
+		editor.apply([
+			{ type: "insert-text", blockId: id, offset: 0, text: "hello" },
+		]);
+		editor.selectText(id, 0, 0);
+		const result = decideDomSelectionRead({
+			editor,
+			proposal: textSelection({ blockId: id, offset: 2 }),
+			gestureWindows: CLOSED_GESTURE_WINDOWS,
+			projectionInFlight: false,
+		});
+		expect(result.decision).toBe("diverge");
+		expect(result.normalized).toBeNull();
+		void editor.destroy();
+	});
+
+	it("step 5: a same-ids block proposal without head keeps the authority head", () => {
+		const editor = createEditor({ schema: defaultSchema });
+		const first = editor.firstBlock()!.id;
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "second",
+				blockType: "paragraph",
+				props: {},
+				position: "last",
+			},
+		]);
+		editor.setSelection({
+			type: "block",
+			blockIds: [first, "second"],
+			head: first,
+		});
+		const result = decideDomSelectionRead({
+			editor,
+			proposal: blockSelection([first, "second"]),
+			gestureWindows: nextGestureWindowState(
+				"pointerdown",
+				CLOSED_GESTURE_WINDOWS,
+			),
+			projectionInFlight: false,
+		});
+		expect(result.decision).toBe("accept");
+		expect(result.normalized).toEqual(
+			blockSelection([first, "second"], first),
+		);
+		void editor.destroy();
 	});
 });
 

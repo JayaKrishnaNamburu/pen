@@ -1,4 +1,5 @@
 import type {
+	Anchor,
 	BlockHandle,
 	BlockSelection,
 	CellSelection,
@@ -6,6 +7,7 @@ import type {
 	CRDTDocument,
 	CRDTMap,
 	DiagnosticEvent,
+	Editor,
 	PenDocument,
 	Point,
 	SchemaRegistry,
@@ -16,7 +18,6 @@ import type {
 	TextSelection,
 } from "@input/pen-types";
 import { logicalTextFromStored } from "@input/pen-types";
-import { getSummaryState } from "../changes/mapping";
 import type { ChangeSummary as CoreChangeSummary } from "../changes/types";
 import { usesInlineTextSelection } from "../schema/fieldEditorCapabilities";
 import { createBlockHandle } from "../schema/handles";
@@ -25,6 +26,8 @@ import {
 	selectionToRange,
 	stampTextSelection,
 } from "../selection/helpers";
+import { deriveContentMoves, repairAnchor } from "./anchorRepair";
+import type { EditorAnchorsImpl } from "./anchors";
 import { resolveCellSelectionMatrix } from "./cellSelection";
 import { EventEmitter } from "./events";
 
@@ -71,17 +74,27 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 	private _crdtDoc: CRDTDocument;
 	private readonly _registry: SchemaRegistry;
 	private readonly _emitter: EventEmitter;
+	private readonly _anchors: EditorAnchorsImpl;
+	private _editor: Editor | null = null;
+	private _fromAnchor: Anchor | null = null;
+	private _toAnchor: Anchor | null = null;
 
 	constructor(
 		doc: PenDocument,
 		crdtDoc: CRDTDocument,
 		registry: SchemaRegistry,
 		emitter: EventEmitter,
+		anchors: EditorAnchorsImpl,
 	) {
 		this._doc = doc;
 		this._crdtDoc = crdtDoc;
 		this._registry = registry;
 		this._emitter = emitter;
+		this._anchors = anchors;
+	}
+
+	bindEditor(editor: Editor): void {
+		this._editor = editor;
 	}
 
 	get record(): SelectionRecord {
@@ -116,6 +129,7 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 	}
 
 	onCommit(summary: ChangeSummary | CoreChangeSummary): void {
+		this._repairHeldAnchors(summary);
 		const mapped = this._mapState(this._state, summary);
 		if (mapped === undefined) {
 			return;
@@ -127,6 +141,8 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 		this._doc = doc;
 		this._crdtDoc = crdtDoc;
 		this._state = null;
+		this._fromAnchor = null;
+		this._toAnchor = null;
 		this._version += 1;
 		this._origin = "programmatic";
 		this._emitter.emit("selectionChange", this.record);
@@ -220,6 +236,7 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 		this._version += 1;
 		this._origin = origin;
 		this._commitId = commitId;
+		this._mintTextAnchors(validated);
 		if (options?.emit !== false) {
 			this._emitter.emit("selectionChange", this.record);
 		}
@@ -487,6 +504,43 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 		return next;
 	}
 
+	private _mintTextAnchors(state: SelectionState): void {
+		if (!state || state.type !== "text") {
+			this._fromAnchor = null;
+			this._toAnchor = null;
+			return;
+		}
+		if (
+			this._isNonTextBlock(state.anchor.blockId) ||
+			this._isNonTextBlock(state.focus.blockId)
+		) {
+			this._fromAnchor = null;
+			this._toAnchor = null;
+			return;
+		}
+		const collapsed = isCollapsedRange(state);
+		this._fromAnchor = this._anchors.create(
+			state.anchor,
+			collapsed ? 1 : -1,
+		);
+		this._toAnchor = this._anchors.create(state.focus, 1);
+	}
+
+	private _repairHeldAnchors(summary: ChangeSummary | CoreChangeSummary): void {
+		if (!this._editor || !this._fromAnchor || !this._toAnchor) {
+			return;
+		}
+		if (summary.structural.length === 0) {
+			return;
+		}
+		const moves = deriveContentMoves(summary, undefined);
+		if (moves.length === 0) {
+			return;
+		}
+		this._fromAnchor = repairAnchor(this._editor, this._fromAnchor, moves);
+		this._toAnchor = repairAnchor(this._editor, this._toAnchor, moves);
+	}
+
 	/**
 	 * Mapping clamps against the pre-commit index. When that index is
 	 * missing or 0 for a block that still exists and had no splices, the
@@ -508,9 +562,6 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 				offset: clampOffsetToLength(mapped.offset, liveLength),
 			};
 		}
-		const indexLength = getSummaryState(summary).index.lengthById.get(
-			original.blockId,
-		);
 		const textChange = summary.text.find(
 			(change) => change.blockId === original.blockId,
 		);
@@ -518,7 +569,8 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 		if (
 			!removedBlockIds(summary).has(original.blockId) &&
 			!hasSplices &&
-			(indexLength === undefined || indexLength === 0)
+			mapped.offset === 0 &&
+			original.offset !== 0
 		) {
 			return {
 				blockId: original.blockId,

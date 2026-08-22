@@ -96,12 +96,30 @@ export abstract class EditContextBackendSelection extends EditContextBackendInpu
 			return;
 		}
 
+		if (
+			normalizedSelection.type === "text" &&
+			this.fieldEditor.shouldIgnoreDomTextSelection(
+				normalizedSelection.anchor,
+				normalizedSelection.focus,
+			)
+		) {
+			this.restoreDOMCaret();
+			return;
+		}
+
 		if (this.shouldIgnoreStaleCollapsedDomSelection(normalizedSelection)) {
 			this.restoreDOMCaret();
 			return;
 		}
 
 		if (normalizedSelection.type === "block") {
+			if (this.fieldEditor.readDomSelection) {
+				this.fieldEditor.readDomSelection({
+					type: "block",
+					blockIds: normalizedSelection.blockIds,
+				});
+				return;
+			}
 			this.fieldEditor.deactivate();
 			this.editor.setSelection({
 				type: "block",
@@ -114,6 +132,14 @@ export abstract class EditContextBackendSelection extends EditContextBackendInpu
 			normalizedSelection.anchor.blockId !==
 			normalizedSelection.focus.blockId
 		) {
+			if (this.fieldEditor.readDomSelection) {
+				this.fieldEditor.readDomSelection({
+					type: "text",
+					anchor: normalizedSelection.anchor,
+					focus: normalizedSelection.focus,
+				});
+				return;
+			}
 			this.fieldEditor.applyDocumentTextSelection(
 				normalizedSelection.anchor,
 				normalizedSelection.focus,
@@ -124,6 +150,14 @@ export abstract class EditContextBackendSelection extends EditContextBackendInpu
 		if (
 			normalizedSelection.anchor.blockId !== this.fieldEditor.focusBlockId
 		) {
+			if (this.fieldEditor.readDomSelection) {
+				this.fieldEditor.readDomSelection({
+					type: "text",
+					anchor: normalizedSelection.anchor,
+					focus: normalizedSelection.focus,
+				});
+				return;
+			}
 			this.fieldEditor.activateTextSelection(
 				normalizedSelection.anchor.blockId,
 				normalizedSelection.anchor.offset,
@@ -180,6 +214,20 @@ export abstract class EditContextBackendSelection extends EditContextBackendInpu
 		};
 		this.fieldEditor.setEditContextSelectionSnapshot(nextSelection);
 		this.fieldEditor.setBackendSelectionAuthority("user-dom", nextSelection);
+		if (this.fieldEditor.readDomSelection) {
+			this.fieldEditor.readDomSelection({
+				type: "text",
+				anchor: {
+					blockId: normalizedSelection.anchor.blockId,
+					offset: offsets.anchor,
+				},
+				focus: {
+					blockId: normalizedSelection.anchor.blockId,
+					offset: offsets.focus,
+				},
+			});
+			return;
+		}
 		this.fieldEditor.syncTextSelection(
 			normalizedSelection.anchor.blockId,
 			offsets.anchor,

@@ -10,7 +10,7 @@ Standing DOM↔authority has three results: **matched** (checked and equal), **m
 
 Standing assertions (`assertStandingDiagnostics`, `assertStandingDomMatchesAuthority`), axe analyzers (`analyzeEditorSurface`, `analyzeEditorWcag22Aa`), `harness/src/geometry.ts`, and most of `harness/src/session.ts` are **Playwright-only**. Their extractable predicates live in Node (`standingFilter`, `axeFormat`, `domAuthorityCompare`, `geometryCompare`, `serialize`). The wrappers themselves need a page.
 
-`domAuthorityCompare` compares the live DOM selection to `editor.selection`. That name is not `authorityCompare`. Wave 1 GATE 1.11 (`--run authorityCompare`) is reserved for recorded-trace replay and must not go green by hitting this helper.
+`domAuthorityCompare` compares the live DOM selection to `editor.selection`. That name is not `authorityCompare`. Wave 1 GATE 1.11 is the recorded-trace replay in `harness/src/authorityCompare.ts` (`pnpm --filter @input/pen-conformance test -- --test-name-pattern authorityCompare`, and `pnpm --filter @input/pen-conformance run test:chromium -- --grep authorityCompare`). The committed corpus is split/merge/remove with mapPoint algebra landings; a live copy-split that stays on the source must mismatch, not pass.
 
 The scenario gate is a separate command:
 

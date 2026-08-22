@@ -188,6 +188,7 @@ self._engine = new SchemaEngineImpl(
 	self._doc,
 	self._crdtDoc,
 );
+self._anchors.updateDocument(self._crdtDoc);
 self._selection.updateDocument(self._doc, self._crdtDoc);
 self._facetRegistry?.settle({
 	selectionVersion: self._selection.record.version,

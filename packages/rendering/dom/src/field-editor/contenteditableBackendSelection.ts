@@ -240,6 +240,13 @@ export class ContentEditableBackendSelection extends ContentEditableBackendEvent
 		}
 
 		if (normalizedSelection.type === "block") {
+			if (this.fieldEditor.readDomSelection) {
+				this.fieldEditor.readDomSelection({
+					type: "block",
+					blockIds: normalizedSelection.blockIds,
+				});
+				return;
+			}
 			this.fieldEditor.deactivate();
 			this.editor.setSelection({
 				type: "block",
@@ -255,6 +262,15 @@ export class ContentEditableBackendSelection extends ContentEditableBackendEvent
 			)
 		) {
 			this.restoreDOMSelectionFromEditor();
+			return;
+		}
+
+		if (this.fieldEditor.readDomSelection) {
+			this.fieldEditor.readDomSelection({
+				type: "text",
+				anchor: normalizedSelection.anchor,
+				focus: normalizedSelection.focus,
+			});
 			return;
 		}
 
@@ -397,14 +413,17 @@ export class ContentEditableBackendSelection extends ContentEditableBackendEvent
 	};
 
 	protected handleDragStart = (event: DragEvent): void => {
+		this.fieldEditor.notifyGestureEvent?.("dragstart");
 		event.preventDefault();
 	};
 
 	protected handleDrop = (event: DragEvent): void => {
+		this.fieldEditor.notifyGestureEvent?.("drop-completed");
 		event.preventDefault();
 	};
 
 	protected handlePointerDown = (): void => {
+		this.fieldEditor.notifyGestureEvent?.("pointerdown");
 		this.fieldEditor.clearBackendSelectionAuthority("programmatic");
 	};
 }

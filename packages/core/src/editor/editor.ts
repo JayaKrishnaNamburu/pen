@@ -1,4 +1,4 @@
-import type { Editor, EditorInternals, CreateEditorOptions, PenEventMap, DocumentCommitEvent, CRDTAdapter, CRDTDocument, CRDTEvent, PenDocument, SchemaRegistry, Awareness, DocumentSession, DocumentScope, DocumentScopeReplacementEvent, DocumentProfile, Extension, DocumentOp, ApplyOptions, OpOrigin, MutationGroupMetadata, SelectionState, TextSelection, DocumentRange, BlockHandle, Block, DocumentState, UndoManager, Unsubscribe, CRDTMap, CRDTArray, Position, DecorationSet, EditorViewMode, ChangeSummary, SummaryLog, Facet, FacetOutput, PipelinePhase, SelectionRecord, SelectionOrigin, OpenTextStreamOptions, TextStreamWriter } from "@input/pen-types";
+import type { Editor, EditorInternals, CreateEditorOptions, PenEventMap, DocumentCommitEvent, CRDTAdapter, CRDTDocument, CRDTEvent, PenDocument, SchemaRegistry, Awareness, DocumentSession, DocumentScope, DocumentScopeReplacementEvent, DocumentProfile, Extension, DocumentOp, ApplyOptions, OpOrigin, MutationGroupMetadata, SelectionState, TextSelection, DocumentRange, BlockHandle, Block, DocumentState, UndoManager, Unsubscribe, CRDTMap, CRDTArray, Position, DecorationSet, EditorViewMode, ChangeSummary, SummaryLog, Facet, FacetOutput, PipelinePhase, SelectionRecord, SelectionOrigin, OpenTextStreamOptions, TextStreamWriter, EditorAnchors } from "@input/pen-types";
 import { AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY, COLLECT_KEY_BINDINGS_SLOT_KEY, MUTATION_GROUP_METADATA_KEY, UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY, generateId } from "@input/pen-types";
 import { yjsAdapter } from "@input/pen-crdt-yjs";
 import { resolveEditorSchema } from "../schema/emptySchema";
@@ -11,6 +11,7 @@ import { filterOpsForDocumentProfile } from "./profilePolicy";
 import type { CRDTUnknownMap } from "./crdtShapes";
 import { getTextProp, getTableContent, getCellText as getCellTextFromRow, isCRDTMap } from "./crdtShapes";
 import { ExtensionManagerImpl } from "./extensionManager";
+import { EditorAnchorsImpl } from "./anchors";
 import { SelectionAuthorityImpl } from "./selection";
 import { DocumentStateImpl } from "./documentState";
 import { emptyDecorationSet } from "./decorations";
@@ -56,6 +57,7 @@ class EditorImpl implements Editor {
 	private _engine: SchemaEngineImpl;
 	private readonly _extensions: ExtensionManagerImpl;
 	private _selection: SelectionAuthorityImpl;
+	private _anchors: EditorAnchorsImpl;
 	private readonly _emitter: EventEmitter;
 	private _pipeline: ApplyPipeline;
 	private _documentState: DocumentStateImpl;
@@ -117,11 +119,19 @@ class EditorImpl implements Editor {
 			this._doc,
 			this._crdtDoc,
 		);
+		this._anchors = new EditorAnchorsImpl(this._crdtDoc, {
+			adapter: this._adapter,
+			emit: (event) => {
+				this._emitter.emit("diagnostic", event);
+			},
+			commitId: () => this._commitId,
+		});
 		this._selection = new SelectionAuthorityImpl(
 			this._doc,
 			this._crdtDoc,
 			this._registry,
 			this._emitter,
+			this._anchors,
 		);
 		this._pipeline = new ApplyPipeline(
 			this._doc,
@@ -185,6 +195,7 @@ class EditorImpl implements Editor {
 
 		this._engine.normalizeAll();
 		this._refreshDecorations();
+		this._selection.bindEditor(this);
 	}
 
 	// ── Public API ───────────────────────────────────────────
@@ -211,6 +222,10 @@ class EditorImpl implements Editor {
 
 	get selection(): SelectionState {
 		return this._selection.getSelection();
+	}
+
+	get anchors(): EditorAnchors {
+		return this._anchors;
 	}
 
 	get selectionRecord(): SelectionRecord {

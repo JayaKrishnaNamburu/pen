@@ -49,6 +49,7 @@ describe("@input/pen-react selected text deletion", () => {
 		});
 
 		await act(async () => {
+			fieldEditor.beginPointerSelection();
 			const selection = document.getSelection();
 			const range = document.createRange();
 			range.setStart(inlineElement!.firstChild ?? inlineElement!, 1);

@@ -44,6 +44,7 @@
 - defineFacet
 - delegatesToGridEditing
 - deleteAdjacentInlineAtom
+- deriveContentMoves
 - emptyDecorationSet
 - ensureInlineCompletionController
 - filterAIRequest
@@ -84,6 +85,7 @@
 - priorityToPrecedence
 - renderSelectionTargetBlockText
 - renderSelectionTargetText
+- repairAnchor
 - reportPendingBlockImportViolations
 - reportPendingBlockProfileViolations
 - resolveA11yBlockTypeLabel
@@ -219,6 +221,7 @@
 - CommandDispatchContext
 - CommandHandlerTable
 - CommandRegistry
+- ContentMove
 - ConvertBlockParam
 - CreateCommandRegistryOptions
 - CreateFacetRegistryOptions

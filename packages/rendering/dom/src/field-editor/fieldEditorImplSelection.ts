@@ -64,6 +64,13 @@ import {
 	getFullDocumentTextRange,
 	pointsEqual,
 } from "./fieldEditorImplHelpers";
+import {
+	decideDomSelectionRead,
+	type DomSelectionReadDecision,
+	type GestureEventKind,
+	type GestureSelectionOrigin,
+	type ReaderSelection,
+} from "./selectionReader";
 
 export abstract class FieldEditorImplSelection extends FieldEditorImplLifecycle {
 	syncTextSelection(
@@ -167,6 +174,34 @@ export abstract class FieldEditorImplSelection extends FieldEditorImplLifecycle 
 		);
 	}
 
+	notifyGestureEvent(eventKind: GestureEventKind): void {
+		this._selectionCoordinator.notifyGestureEvent(eventKind);
+	}
+
+	isAdmissibleGestureRead(): boolean {
+		return this._selectionCoordinator.isAdmissibleGestureRead();
+	}
+
+	readDomSelection(proposal: ReaderSelection): DomSelectionReadDecision {
+		const decided = decideDomSelectionRead({
+			editor: this._editor,
+			proposal,
+			gestureWindows: this._selectionCoordinator.getGestureWindows(),
+			projectionInFlight:
+				this._selectionCoordinator.isProjectionInFlight(),
+		});
+		this.notifyGestureEvent("selectionchange");
+		if (decided.decision === "diverge") {
+			this._selectionCoordinator.requestDivergenceProjection();
+			return decided.decision;
+		}
+		if (decided.decision !== "accept" || decided.normalized === null) {
+			return decided.decision;
+		}
+		this._applyAcceptedDomSelection(decided.normalized, decided.origin);
+		return decided.decision;
+	}
+
 	resetBackendSelectionAuthority(): void {
 		this._selectionCoordinator.resetAuthority();
 	}
@@ -234,6 +269,87 @@ export abstract class FieldEditorImplSelection extends FieldEditorImplLifecycle 
 			anchor,
 			focus,
 		);
+	}
+
+	private _applyAcceptedDomSelection(
+		normalized: Exclude<ReaderSelection, null>,
+		origin: GestureSelectionOrigin,
+	): void {
+		this._selectionCoordinator.recordUserSelectionIntent();
+		switch (normalized.type) {
+			case "text": {
+				if (
+					normalized.anchor.blockId === normalized.focus.blockId &&
+					(!this._isEditing ||
+						this._focusBlockId !== normalized.anchor.blockId)
+				) {
+					this._startSession(normalized.anchor.blockId, {
+						stopCapturing: false,
+						syncSelectionToBackend: false,
+						attachImmediately: false,
+					});
+				} else if (
+					normalized.anchor.blockId !== normalized.focus.blockId &&
+					(!this._isEditing || !this._focusBlockId)
+				) {
+					this._startSession(normalized.anchor.blockId, {
+						stopCapturing: false,
+						syncSelectionToBackend: false,
+						attachImmediately: false,
+					});
+				}
+				this._editor.setSelection(
+					{
+						type: "text",
+						anchor: normalized.anchor,
+						focus: normalized.focus,
+					} as SelectionState,
+					{ origin },
+				);
+				this._emitStateChange();
+				return;
+			}
+			case "block": {
+				if (this._isEditing) {
+					this.deactivate();
+				}
+				this._editor.setSelection(
+					{
+						type: "block",
+						blockIds: [...normalized.blockIds],
+						head: normalized.head,
+					},
+					{ origin },
+				);
+				this._emitStateChange();
+				return;
+			}
+			case "app": {
+				this._editor.setSelection(
+					{ type: "app", appId: normalized.appId },
+					{ origin },
+				);
+				this._emitStateChange();
+				return;
+			}
+			case "cell": {
+				this._editor.setSelection(
+					{
+						type: "cell",
+						blockId: normalized.blockId,
+						anchor: normalized.anchor,
+						head: normalized.head,
+					},
+					{ origin },
+				);
+				this._emitStateChange();
+				return;
+			}
+			default: {
+				const _exhaustive: never = normalized;
+				return _exhaustive;
+			}
+		}
 	}
 
 	setTextSelection(

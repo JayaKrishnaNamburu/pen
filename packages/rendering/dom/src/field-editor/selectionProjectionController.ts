@@ -2,6 +2,13 @@ import { isMultiBlock } from "@input/pen-core";
 import type { DiagnosticEvent, SelectionState } from "@input/pen-types";
 import type { PenFieldEditorFocusOptions } from "./controller";
 import type { HistorySelectionCoordinator } from "./historySelectionCoordinator";
+import {
+	CLOSED_GESTURE_WINDOWS,
+	isAdmissibleDomRead,
+	nextGestureWindowState,
+	type GestureEventKind,
+	type GestureWindowState,
+} from "./selectionReader";
 
 type ProgrammaticTextSelection = {
 	blockId: string;
@@ -49,8 +56,9 @@ export class SelectionProjectionController {
 	private readonly _historySelectionCoordinator: HistorySelectionCoordinator;
 	private readonly _options: SelectionProjectionControllerOptions;
 	private _syncDomVersion = 0;
-	private _suppressNextDomSelectionProjection = false;
 	private _pointerSelectionDepth = 0;
+	private _gestureWindows: GestureWindowState = CLOSED_GESTURE_WINDOWS;
+	private _pointerSettledBound = false;
 	private _pendingSelectionProjectionVersion: number | null = null;
 	private _selectionIntentEpoch = 0;
 	private _programmaticTextSelection: ProgrammaticTextSelection | null = null;
@@ -67,12 +75,13 @@ export class SelectionProjectionController {
 	}
 
 	reset(): void {
-		this._suppressNextDomSelectionProjection = false;
 		this._programmaticTextSelection = null;
 		this._pendingProgrammaticTextSelection = null;
 		this._committedProgrammaticTextSelection = null;
 		this._pointerSelectionDepth = 0;
 		this._pendingSelectionProjectionVersion = null;
+		this._gestureWindows = CLOSED_GESTURE_WINDOWS;
+		this._pointerSettledBound = false;
 	}
 
 	get lastProjectedVersion(): number {
@@ -112,41 +121,61 @@ export class SelectionProjectionController {
 	beginPointerSelection(): void {
 		this.recordUserSelectionIntent();
 		this._pointerSelectionDepth += 1;
+		this.notifyGestureEvent("pointerdown");
 	}
 
 	endPointerSelection(): void {
 		if (this._pointerSelectionDepth === 0) {
+			this.notifyGestureEvent("pointerup");
 			return;
 		}
 		this._pointerSelectionDepth -= 1;
 		this.recordUserSelectionIntent();
+		if (this._pointerSelectionDepth === 0) {
+			this.notifyGestureEvent("pointerup");
+		}
 	}
 
 	consumeDomSelectionProjectionSuppression(): boolean {
-		const shouldSuppress = this._suppressNextDomSelectionProjection;
-		this._suppressNextDomSelectionProjection = false;
-		return shouldSuppress;
+		return false;
 	}
 
-	suppressNextDomSelectionProjection(): void {
-		this._suppressNextDomSelectionProjection = true;
+	suppressNextDomSelectionProjection(): void {}
+
+	notifyGestureEvent(eventKind: GestureEventKind): void {
+		this._gestureWindows = nextGestureWindowState(
+			eventKind,
+			this._gestureWindows,
+		);
+		if (eventKind === "pointerdown") {
+			this._bindPointerSettled();
+		}
+		if (eventKind === "pointerup") {
+			this._schedulePointerSettled();
+		}
+	}
+
+	getGestureWindows(): GestureWindowState {
+		return this._gestureWindows;
+	}
+
+	isAdmissibleGestureRead(): boolean {
+		return isAdmissibleDomRead("selectionchange", this._gestureWindows);
+	}
+
+	isProjectionInFlight(): boolean {
+		return this._pendingSelectionProjectionVersion !== null;
+	}
+
+	requestDivergenceProjection(): void {
+		this.syncDomSelectionOnce();
 	}
 
 	shouldHandleDomSelectionChange(
-		blockId: string | null,
+		_blockId: string | null,
 		isApplyingSelection: number,
 	): boolean {
-		const hasProgrammaticSelection =
-			this._getActiveProgrammaticTextSelection(blockId) !== null;
-		const hasPendingProjection =
-			this._pendingSelectionProjectionVersion !== null;
-		return (
-			isApplyingSelection === 0 &&
-			this._pointerSelectionDepth === 0 &&
-			(hasProgrammaticSelection ||
-				hasPendingProjection ||
-				!this._historySelectionCoordinator.shouldSuppressSelectionSync())
-		);
+		return isApplyingSelection === 0;
 	}
 
 	resolveProgrammaticInputRange(
@@ -181,24 +210,12 @@ export class SelectionProjectionController {
 
 	shouldIgnoreDomTextSelection(
 		anchor: { blockId: string; offset: number },
-		focus: { blockId: string; offset: number },
+		_focus: { blockId: string; offset: number },
 	): boolean {
-		const programmaticSelection = this._getActiveProgrammaticTextSelection(
-			anchor.blockId,
+		return (
+			this._getProgrammaticTextSelectionOnOtherBlock(anchor.blockId) !=
+			null
 		);
-		if (this._getProgrammaticTextSelectionOnOtherBlock(anchor.blockId)) {
-			return true;
-		}
-		if (!programmaticSelection || anchor.blockId !== focus.blockId) {
-			return false;
-		}
-		if (
-			anchor.offset === programmaticSelection.anchorOffset &&
-			focus.offset === programmaticSelection.focusOffset
-		) {
-			return false;
-		}
-		return anchor.offset === focus.offset;
 	}
 
 	isProgrammaticDomTextSelection(
@@ -445,10 +462,34 @@ export class SelectionProjectionController {
 	}
 
 	shouldSuppressSelectionSync(): boolean {
-		return (
-			this._historySelectionCoordinator.shouldSuppressSelectionSync() ||
-			this._pendingSelectionProjectionVersion !== null
-		);
+		return false;
+	}
+
+	private _bindPointerSettled(): void {
+		if (this._pointerSettledBound) {
+			return;
+		}
+		const root = this._options.getRootElement();
+		const doc = root?.ownerDocument ?? globalThis.document;
+		if (typeof doc?.addEventListener !== "function") {
+			return;
+		}
+		this._pointerSettledBound = true;
+		const onUp = (): void => {
+			doc.removeEventListener("pointerup", onUp);
+			this._pointerSettledBound = false;
+			this.notifyGestureEvent("pointerup");
+		};
+		doc.addEventListener("pointerup", onUp);
+	}
+
+	private _schedulePointerSettled(): void {
+		queueMicrotask(() => {
+			this._gestureWindows = nextGestureWindowState(
+				"pointer-settled",
+				this._gestureWindows,
+			);
+		});
 	}
 
 	private _projectIntoElement(

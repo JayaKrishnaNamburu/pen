@@ -135,6 +135,13 @@ export class ExpandedContentEditableBackend {
 		}
 
 		if (normalizedSelection.type === "block") {
+			if (this.fieldEditor.readDomSelection) {
+				this.fieldEditor.readDomSelection({
+					type: "block",
+					blockIds: normalizedSelection.blockIds,
+				});
+				return;
+			}
 			this.fieldEditor.deactivate();
 			this.editor.setSelection({
 				type: "block",
@@ -149,6 +156,24 @@ export class ExpandedContentEditableBackend {
 				normalizedSelection,
 			)
 		) {
+			return;
+		}
+
+		if (
+			this.fieldEditor.shouldIgnoreDomTextSelection(
+				normalizedSelection.anchor,
+				normalizedSelection.focus,
+			)
+		) {
+			return;
+		}
+
+		if (this.fieldEditor.readDomSelection) {
+			this.fieldEditor.readDomSelection({
+				type: "text",
+				anchor: normalizedSelection.anchor,
+				focus: normalizedSelection.focus,
+			});
 			return;
 		}
 
@@ -413,10 +438,12 @@ export class ExpandedContentEditableBackend {
 		// Native text dragging inside the shared expanded host conflicts with
 		// cross-block selection extension and can cause the browser to move/remove
 		// the selected DOM range. Pen does not support drag-move semantics here.
+		this.fieldEditor.notifyGestureEvent?.("dragstart");
 		event.preventDefault();
 	};
 
 	private handleDrop = (event: DragEvent): void => {
+		this.fieldEditor.notifyGestureEvent?.("drop-completed");
 		event.preventDefault();
 	};
 }

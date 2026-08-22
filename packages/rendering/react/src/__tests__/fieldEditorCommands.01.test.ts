@@ -190,20 +190,19 @@ describe("@input/pen-react field-editor commands", () => {
 		editor.destroy();
 	});
 
-	it("resets pointer-selection suppression on deactivate and destroy", () => {
+	it("opens the pointer window on beginPointerSelection without muting reads", () => {
 		const editor = createEditor(editorOpts());
 		const blockId = editor.firstBlock()!.id;
 		const fieldEditor = new FieldEditorImpl(editor);
 
 		fieldEditor.activate(blockId);
+		expect(fieldEditor.shouldHandleDomSelectionChange(0)).toBe(true);
 		fieldEditor.beginPointerSelection();
-		expect(fieldEditor.shouldHandleDomSelectionChange(0)).toBe(false);
+		expect(fieldEditor.isAdmissibleGestureRead()).toBe(true);
+		expect(fieldEditor.shouldHandleDomSelectionChange(0)).toBe(true);
 
 		fieldEditor.deactivate();
 		expect(fieldEditor.shouldHandleDomSelectionChange(0)).toBe(true);
-
-		fieldEditor.beginPointerSelection();
-		expect(fieldEditor.shouldHandleDomSelectionChange(0)).toBe(false);
 
 		fieldEditor.destroy();
 		expect(fieldEditor.getSnapshot().mode).toBe("inactive");

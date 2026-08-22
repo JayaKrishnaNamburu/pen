@@ -120,7 +120,7 @@ test("pnpm test is src/hosts/*.test.js; Playwright specs are a separate populati
 
 	assert.equal(
 		playwrightSpecs.length,
-		31,
+		32,
 		`Playwright spec population drifted: ${playwrightSpecs.join(", ")}`,
 	);
 

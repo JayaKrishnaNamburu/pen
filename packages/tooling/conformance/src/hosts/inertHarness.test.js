@@ -373,14 +373,36 @@ test("Playwright-only helpers stay imported by a named scenario", () => {
 	assert.match(geometry, /tallyCaretCompares/);
 });
 
-test("authorityCompare filename is free for Wave 1 trace replay", () => {
+test("authorityCompare is the Wave 1 trace replay, not the old DOM helper", () => {
 	const harnessDir = fileURLToPath(new URL("../../harness/src/", import.meta.url));
-	const oldName = `${harnessDir}authorityCompare.ts`;
-	const newName = `${harnessDir}domAuthorityCompare.ts`;
-	console.log(`harness/src/authorityCompare.ts → ${existsSync(oldName) ? 1 : 0} files`);
-	console.log(`harness/src/domAuthorityCompare.ts → ${existsSync(newName) ? 1 : 0} files`);
-	assert.equal(existsSync(oldName), false);
-	assert.equal(existsSync(newName), true);
+	const replayPath = `${harnessDir}authorityCompare.ts`;
+	const domPath = `${harnessDir}domAuthorityCompare.ts`;
+	console.log(`harness/src/authorityCompare.ts → ${existsSync(replayPath) ? 1 : 0} files`);
+	console.log(`harness/src/domAuthorityCompare.ts → ${existsSync(domPath) ? 1 : 0} files`);
+	assert.equal(existsSync(replayPath), true);
+	assert.equal(existsSync(domPath), true);
+
+	const replay = readRel("../../harness/src/authorityCompare.ts");
+	const dom = readRel("../../harness/src/domAuthorityCompare.ts");
+	const session = readRel("../../harness/src/session.ts");
+
+	assert.match(dom, /export function compareMappedToAuthority/);
+	assert.match(dom, /export function resolveDomAuthorityCheck/);
+	assert.match(dom, /export function misplacedOffset/);
+	assert.match(dom, /export function pointsEqual/);
+
+	assert.doesNotMatch(replay, /export function compareMappedToAuthority/);
+	assert.doesNotMatch(replay, /export function resolveDomAuthorityCheck/);
+	assert.doesNotMatch(replay, /export function misplacedOffset/);
+	assert.doesNotMatch(replay, /export function pointsEqual/);
+
+	assert.match(replay, /export function recordAuthorityTraces/);
+	assert.match(replay, /export function compareAuthorityTraces/);
+	assert.match(replay, /export function inventoryHolds/);
+	assert.match(replay, /export function algebraHolds/);
+
+	assert.match(session, /from "\.\/domAuthorityCompare"/);
+	assert.doesNotMatch(session, /from "\.\/authorityCompare"/);
 });
 
 test("caretShiftHolds distinguishes missing, identity, wrong landing, and match", () => {

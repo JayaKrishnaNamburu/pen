@@ -36,6 +36,21 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 		sources: ["extensions/ai-tools/src/authority.ts"],
 	},
 	{
+		code: "anchor-budget",
+		levels: ["warn"],
+		sources: ["core/src/editor/anchors.ts"],
+	},
+	{
+		code: "anchor-decode",
+		levels: ["warn"],
+		sources: ["core/src/editor/anchors.ts"],
+	},
+	{
+		code: "anchor-target-missing",
+		levels: ["warn"],
+		sources: ["core/src/editor/anchors.ts"],
+	},
+	{
 		code: "apply-storm",
 		levels: ["warn"],
 		sources: ["core/src/editor/applyPipelineRunner.ts"],
