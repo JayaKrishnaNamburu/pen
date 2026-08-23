@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import * as Y from "yjs";
 import { createHeadlessEditor, getCommandRegistry } from "@input/pen-core";
 import { wrapYjsDocument, yjsAdapter } from "@input/pen-crdt-yjs";
@@ -9,7 +11,43 @@ import {
 	FIXED_GUID,
 	installDeterministicIds,
 } from "./determinism.js";
+import { readLiveDocumentOpTypes } from "./liveUnion.js";
 import { snapshotDocument } from "./snapshot.js";
+import { isSetSelectionReplay, opsForReplay } from "./translate.js";
+
+const opsTsPath = fileURLToPath(
+	new URL("../../../../types/src/types/ops.ts", import.meta.url),
+);
+
+export function readLiveOpTypeSet(source = readFileSync(opsTsPath, "utf8")) {
+	return new Set(readLiveDocumentOpTypes(source).map((entry) => entry.type));
+}
+
+export function createReplayContext(session) {
+	return {
+		readBlock(blockId) {
+			const snap = snapshotDocument(session.editor, session.ydoc);
+			const block = snap.blocks[blockId];
+			if (!block) {
+				return null;
+			}
+			const delta = block.content?.delta;
+			return {
+				type: block.type,
+				delta,
+				text: Array.isArray(delta)
+					? delta
+							.map((item) =>
+								typeof item.insert === "string"
+									? item.insert
+									: "",
+							)
+							.join("")
+					: undefined,
+			};
+		},
+	};
+}
 
 export function createCorpusSession() {
 	const ids = installDeterministicIds();
@@ -76,11 +114,49 @@ function setupOps(spec) {
 	return ops;
 }
 
+export function applyReplayOps(session, recordedOps, options = {}) {
+	const liveTypes = options.liveTypes ?? readLiveOpTypeSet();
+	const translated = opsForReplay(recordedOps, {
+		liveTypes,
+		context: options.context ?? createReplayContext(session),
+	});
+	const applyOps = [];
+	const flush = () => {
+		if (applyOps.length === 0) {
+			return;
+		}
+		session.editor.apply(applyOps, { origin: "user" });
+		applyOps.length = 0;
+	};
+	for (const op of translated) {
+		if (isSetSelectionReplay(op)) {
+			flush();
+			const selection = op.selection;
+			if (
+				selection?.type === "text" &&
+				selection.anchor?.blockId &&
+				typeof selection.anchor.offset === "number" &&
+				typeof selection.focus?.offset === "number"
+			) {
+				session.editor.selectText(
+					selection.anchor.blockId,
+					selection.anchor.offset,
+					selection.focus.offset,
+				);
+			}
+			continue;
+		}
+		applyOps.push(op);
+	}
+	flush();
+	return translated;
+}
+
 export function applySetup(session, spec) {
 	const existing = [...session.editor.documentState.blockOrder];
 	const ops = setupOps({ ...spec, clearBlockIds: existing });
 	if (ops.length > 0) {
-		session.editor.apply(ops, { origin: "user" });
+		applyReplayOps(session, ops);
 	}
 	if (spec.selection) {
 		session.editor.selectText(

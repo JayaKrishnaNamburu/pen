@@ -35,7 +35,7 @@ function createFieldEditor(blockId: string) {
 			deactivated += 1;
 		},
 		resetBackendSelectionAuthority: () => {},
-		applyBackendSelectionUntilNextFrame: () => {},
+		withBackendSelectionWrite: <T>(write: () => T) => write(),
 		requestDomFocus: () => false,
 		shouldHandleDomSelectionChange: () => false,
 		getBackendSelectionApplicationDepth: () => 0,

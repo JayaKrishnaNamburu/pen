@@ -199,13 +199,10 @@ export abstract class FieldEditorImplCore {
 				const alreadyProjected =
 					record.version <=
 					this._selectionCoordinator.lastProjectedVersion;
-				const suppressSelectionSync =
-					this._selectionCoordinator.consumeDomSelectionProjectionSuppression() ||
-					this._selectionCoordinator.shouldSuppressSelectionSync();
 				// surface first so P1 sees the new focus block. skip is
 				// not delivery — the projector has not run yet.
 				this._recomputeSurfaceFromSelection({
-					syncSelectionToBackend: !suppressSelectionSync,
+					syncSelectionToBackend: true,
 					skipBackendWrite: true,
 				});
 				if (!alreadyProjected) {
@@ -216,7 +213,7 @@ export abstract class FieldEditorImplCore {
 					record.version <=
 					this._selectionCoordinator.lastProjectedVersion;
 				this._recomputeSurfaceFromSelection({
-					syncSelectionToBackend: !suppressSelectionSync,
+					syncSelectionToBackend: true,
 					skipBackendWrite: delivered,
 				});
 			},

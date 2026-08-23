@@ -420,7 +420,16 @@ function main() {
 		"command-catalog-check self-test: uncatalogued token and missing core handler failed the checker.",
 	);
 
-	const repoRoot = DEFAULT_REPO_ROOT;
+	let repoRoot = DEFAULT_REPO_ROOT;
+	const argv = process.argv.slice(2);
+	for (let i = 0; i < argv.length; i += 1) {
+		if (argv[i] === "--repo-root") {
+			repoRoot = path.resolve(argv[i + 1] ?? "");
+			i += 1;
+			continue;
+		}
+		throw new Error(`Unknown flag: ${argv[i]}`);
+	}
 	const loaded = loadRepo(repoRoot);
 	if (loaded.coverageError) {
 		console.error(loaded.coverageError);

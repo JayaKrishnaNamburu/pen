@@ -104,12 +104,6 @@ export class SelectionProjectionController {
 		this.notifyGestureEvent("pointerup");
 	}
 
-	consumeDomSelectionProjectionSuppression(): boolean {
-		return false;
-	}
-
-	suppressNextDomSelectionProjection(): void {}
-
 	notifyGestureEvent(eventKind: GestureEventKind): void {
 		if (eventKind === "pointerdown") {
 			this.recordUserSelectionIntent();
@@ -145,16 +139,6 @@ export class SelectionProjectionController {
 		isApplyingSelection: number,
 	): boolean {
 		return isApplyingSelection === 0;
-	}
-
-	shouldIgnoreDomTextSelection(
-		anchor: { blockId: string; offset: number },
-		_focus: { blockId: string; offset: number },
-	): boolean {
-		return (
-			this._getProgrammaticTextSelectionOnOtherBlock(anchor.blockId) !=
-			null
-		);
 	}
 
 	isProgrammaticDomTextSelection(
@@ -257,6 +241,9 @@ export class SelectionProjectionController {
 		} else {
 			const focusBlockId = this._projectionTargetBlockId();
 			if (focusBlockId) {
+				if (this._options.getFocusBlockId() !== focusBlockId) {
+					this._options.activate(focusBlockId);
+				}
 				const inlineEl = this._options.resolveInlineElement(focusBlockId);
 				if (inlineEl) {
 					foundTarget = true;
@@ -353,10 +340,6 @@ export class SelectionProjectionController {
 		}
 	}
 
-	shouldSuppressSelectionSync(): boolean {
-		return false;
-	}
-
 	private _bindPointerSettled(): void {
 		if (this._pointerSettledBound) {
 			return;
@@ -422,16 +405,6 @@ export class SelectionProjectionController {
 	): ProgrammaticTextSelection | null {
 		const programmaticSelection = this._readProgrammaticTextSelection();
 		if (!blockId || programmaticSelection?.blockId !== blockId) {
-			return null;
-		}
-		return programmaticSelection;
-	}
-
-	private _getProgrammaticTextSelectionOnOtherBlock(
-		blockId: string | null,
-	): ProgrammaticTextSelection | null {
-		const programmaticSelection = this._readProgrammaticTextSelection();
-		if (!programmaticSelection || programmaticSelection.blockId === blockId) {
 			return null;
 		}
 		return programmaticSelection;

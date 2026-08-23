@@ -140,6 +140,16 @@ async function runCh1() {
 	files.push(
 		...(await walkFiles(path.join(repoRoot, "playground"), TS_EXTENSIONS)),
 	);
+	if (files.length === 0) {
+		return {
+			id: "CH1",
+			title: "@ts-nocheck / @ts-expect-error",
+			status: "fail",
+			details: [
+				"cannot check: packages+playground *.ts/*.tsx walk matched 0 files",
+			],
+		};
+	}
 
 	const nocheckFiles = [];
 	const uncommentedExpectError = [];
@@ -161,7 +171,14 @@ async function runCh1() {
 		.sort();
 	const remaining = nocheckFiles.filter((rel) => allowed.has(rel)).sort();
 
-	const details = [];
+	const details = [
+		`population: ${files.length} files (packages+playground *.ts/*.tsx)`,
+	];
+	if (remaining.length === 0 && extra.length === 0 && stale.length === 0 && uncommentedExpectError.length === 0) {
+		details.push(
+			"zero @ts-nocheck; allowlist empty; no bare @ts-expect-error",
+		);
+	}
 	if (remaining.length > 0) {
 		details.push(
 			`WARN remaining allowlisted @ts-nocheck: ${remaining.length} (H.2 shrinks scripts/ch-nocheck-allowlist.txt)`,
@@ -188,11 +205,6 @@ async function runCh1() {
 		for (const hit of uncommentedExpectError) {
 			details.push(`  ${hit}`);
 		}
-	}
-	if (details.length === 0) {
-		details.push(
-			"zero @ts-nocheck; allowlist empty; no bare @ts-expect-error",
-		);
 	}
 
 	const failed =
@@ -249,22 +261,36 @@ async function runCh3() {
 	);
 	const violations = [];
 
+	const testFiles = [];
 	for (const root of testRoots) {
 		const files = (await walkFiles(root, TEST_EXTENSIONS)).filter(
 			isTestFile,
 		);
+		testFiles.push(...files);
 		for (const filePath of files) {
 			const source = await fs.readFile(filePath, "utf8");
 			violations.push(...findSkipViolations(source, toPosix(filePath)));
 		}
 	}
+	if (testFiles.length === 0) {
+		return {
+			id: "CH3",
+			title: "skip-hygiene",
+			status: "fail",
+			details: [
+				"cannot check: packages+playground test walk matched 0 files",
+			],
+		};
+	}
 
-	const details =
-		violations.length === 0
+	const details = [
+		`population: ${testFiles.length} files (packages+playground tests)`,
+		...(violations.length === 0
 			? [
 					"no skipped/todo tests missing a body or a tracked-issue + wave comment",
 				]
-			: violations.map((hit) => `FAIL ${hit}`);
+			: violations.map((hit) => `FAIL ${hit}`)),
+	];
 
 	return {
 		id: "CH3",
@@ -279,6 +305,16 @@ async function runCh4() {
 		path.join(repoRoot, "packages"),
 		TS_EXTENSIONS,
 	);
+	if (files.length === 0) {
+		return {
+			id: "CH4",
+			title: "this: any",
+			status: "fail",
+			details: [
+				"cannot check: packages *.ts/*.tsx walk matched 0 files",
+			],
+		};
+	}
 	const hits = [];
 
 	for (const filePath of files) {
@@ -291,8 +327,12 @@ async function runCh4() {
 
 	const details =
 		hits.length === 0
-			? ["zero `this: any` signatures"]
+			? [
+					`population: ${files.length} files (packages *.ts/*.tsx)`,
+					"zero `this: any` signatures",
+				]
 			: [
+					`population: ${files.length} files (packages *.ts/*.tsx)`,
 					`FAIL ${hits.length} this: any signature(s) — H.2 deletes these with the mixin reassembly:`,
 					...hits.map((hit) => `  ${hit}`),
 				];
@@ -315,6 +355,16 @@ async function runCh5() {
 		(filePath) =>
 			!isTestFile(filePath) && !isConsoleAllowed(toPosix(filePath)),
 	);
+	if (files.length === 0) {
+		return {
+			id: "CH5",
+			title: "console.*",
+			status: "fail",
+			details: [
+				"cannot check: packages runtime *.ts/*.tsx walk matched 0 files",
+			],
+		};
+	}
 	const hits = [];
 
 	for (const filePath of files) {
@@ -329,8 +379,12 @@ async function runCh5() {
 
 	const details =
 		hits.length === 0
-			? ["no runtime console.* outside sink/debug modules"]
+			? [
+					`population: ${files.length} files (packages runtime *.ts/*.tsx)`,
+					"no runtime console.* outside sink/debug modules",
+				]
 			: [
+					`population: ${files.length} files (packages runtime *.ts/*.tsx)`,
 					`FAIL ${hits.length} console.* call(s) outside sink/debug modules (H.4 routes these through diagnostic):`,
 					...hits.map((hit) => `  ${hit}`),
 				];

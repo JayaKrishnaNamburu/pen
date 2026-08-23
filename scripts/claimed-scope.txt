@@ -44,6 +44,38 @@
 # now assert total validation (missing block rejected, empty-block clamp).
 # Still held: P2 (UAX#9, not projector-on-divergence). Not claimed, no
 # asserting test yet: C1–C4, O1–O5, S1.
+#
+# Lane bench/coverage (2026-08-23): re-measured C1–C4, O1–O5, P2 with
+# coverage-rules test-name detection (positive control: K1, K4).
+#   C1–C4 — no test name contains the token. IME suite not staffed
+#     (spec-v2/03-selection.md §8; wave-05-selection 5.6). K4 covers
+#     composition Escape in keymap.test.ts but is not named C1.
+#   O1 — playground/e2e/specPortLiveTrace.spec.ts names O1 and asserts
+#     the opposite (overlay shown for ordinary typing). Do not claim.
+#   O2–O5 — no test name contains the token.
+#   P2 — greppable, but the claiming names are UAX#9 first-strong
+#     (direction.test.ts, bidi wave) or reader "diverge" / request
+#     counts (selectionReader, unfocusedReconcileProjection), not
+#     projector flush after a divergence report with unchanged version.
+#
+# Lane coverage-ratchet (2026-08-23): adjudicated the 18 claims-outside
+# claimed-scope IDs. Appended only those whose assertion fails if the
+# rule is violated: AN4, AN10, C2, C3, C4, DIR2, I4, M3, O2.
+# Still held (name is not coverage):
+#   API10 — IOP4 ingest + DUR6 describe; not the inert-surface inventory
+#   B2 — EditContext typing landed; not textupdate → pen.insertText
+#   BR3 — computeBidiRuns is stateless; spec is G2-cached with geometry
+#   C1 — live CDP scenario is knownDefect / test.fail(); do not convert
+#     an expected product failure into coverage. Synthetic Escape
+#     scenario asserts never-preventDefault but is not real IME.
+#   I6 — keymap catalog dispatches commands; file says key-press half
+#     (rule I6) is outstanding
+#   O1 — playground/e2e and O1-LIVE assert overlay for ordinary caret
+#     (recorded divergence / opposite of O1's atom-adjacent-only list).
+#     The atom-edge scenario is real; the claiming set is contaminated.
+#   OV3 — DOM onPaintPlan callback only; React/Vue primitives not rebound
+#   P2 — UAX#9 first-strong or reader "diverge", not projector flush
+#   R6 — compute receives editor; purity (no apply / set / DOM) untested
 
 # I2/I3 unclaimed 2026-08-23: v3 Wave 3 deleted the mapping algebra those
 # invariants describe, along with changeSummaries.properties.test.ts.
@@ -207,3 +239,12 @@ AS2
 AS3
 AS4
 AS5
+AN4
+AN10
+C2
+C3
+C4
+DIR2
+I4
+M3
+O2

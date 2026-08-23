@@ -23,8 +23,10 @@ The field stays editable. Typing, paste, and undo still apply.
 
 Without EditContext, IME is the contenteditable composition-event path instead of EditContext `textupdate`:
 
-- Safari may fire `compositionend` before the last DOM mutation; the fallback waits a frame.
-- GBoard fast cycles use a 50ms single-character heuristic rather than EditContext's `textupdate` order.
+- A commit is recognised from the event sequence, not from a clock. If the live DOM already differs from the recorded start text, or `compositionend.data` is already in the field, the fallback reconciles in the same turn.
+- Safari may fire `compositionend` before the last DOM mutation. The start text stays recorded, and the sequence completes on the following mutation — or, for a GBoard fast cycle where a second `compositionstart` arrives first, on that `compositionstart`, which flushes the leftover so the earlier commit is not dropped.
 - Composition underline and IME candidate-window bounds follow the native contenteditable caret. EditContext paints underline from `textformatupdate` and reports character bounds via `characterboundsupdate`.
+
+This replaced a 50ms `Date.now()` window plus a `requestAnimationFrame` retry, which stood in for "the field already has the committed text" and got it wrong twice: a multi-character commit missed the same-turn path, and a second `compositionstart` arriving before the rAF made it bail and drop the first commit (conformance C3).
 
 `FieldEditorImpl.destroy()` deactivates the current backend (element and document listeners, MutationObserver, Y.Text observer, EditContext) and then drops the long-lived editor subscriptions. Core `editor.destroy()` does not. What that call actually releases, and what is still open (including announcer and geometry, which the field editor does not own), is in `FIELD-EDITOR-TEARDOWN.md`.

@@ -16,6 +16,7 @@ export interface FixtureAuditRow {
 		| "empty-timer"
 		| "empty-sync"
 		| "yield-macrotasks"
+		| "delayed-timer"
 		| "unmeasurable";
 	howMeasured: string;
 }
@@ -171,26 +172,52 @@ export const RELATED_FIXTURE_AUDIT: readonly FixtureAuditRow[] = [
 		fixture: "`crdt.bench.ts` fork + merge",
 		claimedSubject: "fork + merge 100-block document",
 		actualSubject:
-			"forks one Y.Doc and merges that fork back into itself. No second peer, no remote insert, no observation that merge changed anything.",
-		verdict: "name-overstates",
-		countTrust: "untrusted",
-		clockTrust: "untrustworthy",
+			"Forks a 100-block Y.Doc, inserts FORK-MERGE-TOKEN on block-50 of the fork, then clocks merge into the target. Observation after the clock names block-50.",
+		verdict: "agrees",
+		countTrust: "trusted",
+		clockTrust: "load-taken",
 		floorKind: "empty-timer",
 		howMeasured:
-			"count: none. If merge is a no-op the clock still publishes. No token survival, no update byteLength",
+			"count: target block-50 contains FORK-MERGE-TOKEN after merge. A skipped merge or a self-copy fails assertMergeTransferred",
 	},
 	{
 		id: "generateGenDeltaParts",
 		fixture: "`fixtures/streamingParts.ts`",
 		claimedSubject: "1000 gen-delta parts for the streaming bench",
 		actualSubject:
-			"Exported and unused. streaming.bench.ts inlines appendDelta plus 100 setTimeout(0) yields.",
-		verdict: "wrong-subject",
-		countTrust: "untrusted",
+			"Consumed inside the 1000-part clock. generateGenDeltaParts must produce 1000 gen-delta parts; the named block must contain the last token after the clock.",
+		verdict: "agrees",
+		countTrust: "trusted",
 		clockTrust: "not-a-clock",
 		floorKind: "unmeasurable",
 		howMeasured:
-			"count: not consulted. If this helper returned [] the streaming bench would not go red",
+			"count: 1000 gen-delta parts and last token on the named block. If the helper returned [] the bench goes red",
+	},
+	{
+		id: "ai.autocomplete-requesting-cancel-churn",
+		fixture: "`ai.bench.ts` requesting-cancel churn",
+		claimedSubject: "autocomplete request/cancel cycles",
+		actualSubject:
+			"Ten request/cancel cycles. The model stream and waitForCondition each clock setTimeout(0). Observation after the clock names requestCount/cancelCount/modelCallCount.",
+		verdict: "name-overstates",
+		countTrust: "trusted",
+		clockTrust: "untrustworthy",
+		floorKind: "yield-macrotasks",
+		howMeasured:
+			"count: requestCount === cancel floor === modelCallCount === 10. A skipped loop fails assertRequestingCancelObserved",
+	},
+	{
+		id: "ai.autocomplete-provider-budget",
+		fixture: "`ai.bench.ts` provider budget",
+		claimedSubject: "autocomplete provider budget",
+		actualSubject:
+			"Three providers; the slow one is raced against setTimeout(5). Observation after the clock names local-shape and refuses slow-timeout.",
+		verdict: "name-overstates",
+		countTrust: "trusted",
+		clockTrust: "untrustworthy",
+		floorKind: "delayed-timer",
+		howMeasured:
+			"count: local-shape present, slow-timeout absent, clipped chars <= 48. A skipped request fails assertProviderBudgetObserved",
 	},
 ];
 

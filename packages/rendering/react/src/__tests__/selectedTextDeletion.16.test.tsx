@@ -256,7 +256,7 @@ describe("@input/pen-react selected text deletion", () => {
 			expect(inlineElement).not.toBeNull();
 
 			await act(async () => {
-				fieldEditor.activate(blockId);
+				fieldEditor.activateTextSelection(blockId, 2, 2);
 				await flushAnimationFrames(2);
 			});
 

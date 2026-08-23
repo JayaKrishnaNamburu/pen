@@ -565,7 +565,7 @@ export async function collectStringifyHits(repoRoot) {
 			.join(path.posix.sep);
 		hits.push(...extractStringifyHits(relPosix, text));
 	}
-	return hits;
+	return { hits, fileCount: files.length };
 }
 
 async function loadReasonedList(repoRoot, relPath, fieldName) {
@@ -600,7 +600,17 @@ async function main() {
 	console.log("SCALE2 fixture: JSON.stringify in a temp string failed the checker.");
 
 	const args = parseArgs(process.argv.slice(2));
-	const hits = await collectStringifyHits(args.repoRoot);
+	const { hits, fileCount } = await collectStringifyHits(args.repoRoot);
+	if (fileCount === 0) {
+		console.error(
+			"no-json-stringify-signatures: cannot check: packages/{rendering,core} runtime src walk matched 0 files",
+		);
+		process.exitCode = 1;
+		return;
+	}
+	console.log(
+		`population: ${fileCount} files (packages/{rendering,core} runtime src)`,
+	);
 	const allowlist = await loadReasonedList(
 		args.repoRoot,
 		DEFAULT_ALLOWLIST,

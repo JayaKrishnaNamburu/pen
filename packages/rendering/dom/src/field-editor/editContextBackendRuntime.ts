@@ -94,7 +94,6 @@ export class EditContextBackendRuntime extends EditContextBackendSelection {
 			editorSelectionRange: blockId
 				? this.resolveEditorSelectionRange(blockId)
 				: null,
-			programmaticInputRange: null,
 			authoritativeTextInputSelection: blockId
 				? this.getAuthoritativeTextInputSelection(blockId)
 				: null,

@@ -117,16 +117,19 @@ export function shouldReplaceEditContextText(
 }
 
 export function isNavigationSelectionKey(event: KeyboardEvent): boolean {
-	return (
-		event.key === "ArrowLeft" ||
-		event.key === "ArrowRight" ||
-		event.key === "ArrowUp" ||
-		event.key === "ArrowDown" ||
-		event.key === "Home" ||
-		event.key === "End" ||
-		event.key === "PageUp" ||
-		event.key === "PageDown"
-	);
+	switch (event.key) {
+		case "ArrowLeft":
+		case "ArrowRight":
+		case "ArrowUp":
+		case "ArrowDown":
+		case "Home":
+		case "End":
+		case "PageUp":
+		case "PageDown":
+			return true;
+		default:
+			return false;
+	}
 }
 
 function getCharacterRect(element: HTMLElement, charOffset: number): DOMRect {

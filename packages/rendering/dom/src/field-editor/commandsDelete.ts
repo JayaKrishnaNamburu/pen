@@ -212,9 +212,7 @@ export function applyDeleteBehavior(
 		direction,
 	});
 	if (inlineNodeTarget) {
-		// SELECT the atom. Registry `handleDelete` DELETES it instead.
-		// Pinned in `__tests__/commandsDelete.inlineAtomDivergence.test.ts`.
-		// Do not "align" this with registry.dispatch — they are different products.
+		// SELECT the atom. Live registry `handleDelete` does the same.
 		return inlineNodeTarget;
 	}
 

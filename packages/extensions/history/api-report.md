@@ -4,20 +4,12 @@
 
 `./dist/index.d.ts`
 
-### class
-
-- AutoSnapshotScheduler
-- SnapshotManager
-
 ### function
 
 - buildBlameRanges
 - getCharacterAttribution
 - getHistoryController
 - historyExtension
-- opaqueClientHandle
-- resolveHistoryAuthor
-- resolvePresenceDisplayHint
 
 ### value
 

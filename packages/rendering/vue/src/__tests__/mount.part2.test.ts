@@ -155,7 +155,7 @@ describe("@input/pen-vue", () => {
     editor.destroy();
   });
 
-  it("selects the document text with Mod-A", async () => {
+  it("selects the current block with the first Mod-A", async () => {
     const editor = createParagraphEditor();
     editor.selectText("paragraph-1", 0, 0);
 
@@ -176,7 +176,22 @@ describe("@input/pen-vue", () => {
     expect(editor.selection).toMatchObject({
       type: "text",
       anchor: { blockId: "paragraph-1", offset: 0 },
-      focus: { blockId: "paragraph-2", offset: 6 },
+      focus: { blockId: "paragraph-1", offset: 5 },
+    });
+
+    document.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "a",
+        metaKey: true,
+        bubbles: true,
+      }),
+    );
+    await nextTick();
+
+    expect(editor.selection).toEqual({
+      type: "block",
+      blockIds: ["paragraph-1", "paragraph-2"],
+      head: "paragraph-2",
     });
 
     wrapper.unmount();

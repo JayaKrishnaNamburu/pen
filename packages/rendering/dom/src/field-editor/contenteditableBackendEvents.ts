@@ -91,41 +91,40 @@ export abstract class ContentEditableBackendEvents extends ContentEditableBacken
 	// ── Composition handling ──────────────────────────────────
 
 	protected handleCompositionStart = (): void => {
+		if (this.compositionStartText != null) {
+			this.reconcileAfterComposition();
+			this.fieldEditor.notifyGestureEvent?.(
+				"compositionend-completed",
+			);
+		}
 		this.isComposing = true;
 		this.ignoreBrowserMutations = false;
-		this.compositionStartTimestamp = Date.now();
 		this.compositionStartText = this.ytext?.toString() ?? "";
 		this.deferredRemoteDeltas = [];
 		this.fieldEditor.setComposing(true);
 		this.fieldEditor.notifyGestureEvent?.("compositionstart");
 	};
 
-	protected handleCompositionEnd = (): void => {
+	protected handleCompositionEnd = (event?: CompositionEvent): void => {
 		this.isComposing = false;
 		this.fieldEditor.setComposing(false);
 
-		const elapsed = Date.now() - this.compositionStartTimestamp;
+		const startText = this.compositionStartText ?? "";
+		const domText = this.element
+			? extractTextFromDOM(this.element)
+			: startText;
+		const committed = event?.data ?? "";
+		const fieldIsQuiescent =
+			domText !== startText ||
+			committed.length === 0 ||
+			domText.includes(committed);
 
-		// GBoard rapid composition optimization: skip full diff for single-char
-		// compositions under 50ms — treat as direct insert.
-		if (elapsed < 50 && this.element) {
-			const domText = extractTextFromDOM(this.element);
-			const crdtText = this.ytext?.toString() ?? "";
-			if (Math.abs(domText.length - crdtText.length) <= 1) {
-				this.reconcileAfterComposition();
-				this.fieldEditor.notifyGestureEvent?.(
-					"compositionend-completed",
-				);
-				return;
-			}
-		}
-
-		// Safari may fire compositionend before the final DOM mutation.
-		requestAnimationFrame(() => {
-			if (this.isComposing) return;
+		if (fieldIsQuiescent) {
 			this.reconcileAfterComposition();
-		});
-		this.fieldEditor.notifyGestureEvent?.("compositionend-completed");
+			this.fieldEditor.notifyGestureEvent?.(
+				"compositionend-completed",
+			);
+		}
 	};
 
 	protected reconcileAfterComposition(): void {
@@ -150,6 +149,7 @@ export abstract class ContentEditableBackendEvents extends ContentEditableBacken
 				urlPolicy: urlPolicyFromEditor(this.editor),
 				inlineDecorations: this.getInlineDecorationsForBlock(),
 			});
+			this.discardObservedMutations();
 			this.fieldEditor.notifyDomReconciled(
 				this.fieldEditor.focusBlockId ?? undefined,
 			);
@@ -157,11 +157,20 @@ export abstract class ContentEditableBackendEvents extends ContentEditableBacken
 
 		this.compositionStartText = null;
 		this.restoreDOMSelectionFromEditor();
+		this.discardObservedMutations();
 	}
 
 	// ── Mutation observer watchdog ────────────────────────────
 
 	protected handleMutations = (_mutations: MutationRecord[]): void => {
+		if (this.restoringDomFromModel) return;
+		if (!this.isComposing && this.compositionStartText != null) {
+			this.reconcileAfterComposition();
+			this.fieldEditor.notifyGestureEvent?.(
+				"compositionend-completed",
+			);
+			return;
+		}
 		if (this.isComposing) return;
 		if (!this.element || !this.ytext) return;
 		const blockId = this.fieldEditor.focusBlockId;
@@ -170,8 +179,14 @@ export abstract class ContentEditableBackendEvents extends ContentEditableBacken
 		const domText = extractTextFromDOM(this.element);
 		const crdtText = this.ytext.toString();
 		if (domText === crdtText) {
+			this.lastWatchdogMismatch = null;
 			return;
 		}
+		const mismatchKey = `${crdtText}\0${domText}`;
+		if (this.lastWatchdogMismatch === mismatchKey) {
+			return;
+		}
+		this.lastWatchdogMismatch = mismatchKey;
 
 		if (!this.ignoreBrowserMutations) {
 			this.editor.internals.emit("diagnostic", {
@@ -183,10 +198,19 @@ export abstract class ContentEditableBackendEvents extends ContentEditableBacken
 			});
 		}
 
-		fullReconcileToDOM(this.ytext, this.element, this.editor.schema, {
-			urlPolicy: urlPolicyFromEditor(this.editor),
-			inlineDecorations: this.getInlineDecorationsForBlock(),
-		});
+		// do not put a foreign caret back — that re-dirties WebKit/Firefox
+		// contenteditable and the observer re-enters on its own write.
+		this.restoringDomFromModel = true;
+		try {
+			fullReconcileToDOM(this.ytext, this.element, this.editor.schema, {
+				urlPolicy: urlPolicyFromEditor(this.editor),
+				preserveSelection: false,
+				inlineDecorations: this.getInlineDecorationsForBlock(),
+			});
+			this.discardObservedMutations();
+		} finally {
+			this.restoringDomFromModel = false;
+		}
 		this.fieldEditor.notifyDomReconciled(blockId);
 	};
 
@@ -215,6 +239,7 @@ export abstract class ContentEditableBackendEvents extends ContentEditableBacken
 				this.fieldEditor.focusBlockId ?? undefined,
 			);
 			this.restoreDOMSelectionFromEditor();
+			this.discardObservedMutations();
 			return;
 		}
 
@@ -236,6 +261,7 @@ export abstract class ContentEditableBackendEvents extends ContentEditableBacken
 			) {
 				this.restoreDOMSelectionFromEditor();
 			}
+			this.discardObservedMutations();
 			return;
 		}
 
@@ -254,6 +280,7 @@ export abstract class ContentEditableBackendEvents extends ContentEditableBacken
 			) {
 				this.restoreDOMSelectionFromEditor();
 			}
+			this.discardObservedMutations();
 			return;
 		}
 
@@ -279,5 +306,6 @@ export abstract class ContentEditableBackendEvents extends ContentEditableBacken
 		) {
 			this.restoreDOMSelectionFromEditor();
 		}
+		this.discardObservedMutations();
 	};
 }

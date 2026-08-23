@@ -294,6 +294,13 @@ async function main() {
 	}
 
 	const packages = await loadPublishedPackages(args.repoRoot);
+	if (packages.length === 0) {
+		console.error(
+			"engines-inventory: cannot check: packages/**/package.json walk matched 0 published manifests",
+		);
+		process.exitCode = 1;
+		return;
+	}
 	const result = evaluateEngines(packages);
 	const markdown = renderEnginesMarkdown(result);
 

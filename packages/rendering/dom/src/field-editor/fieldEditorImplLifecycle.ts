@@ -439,6 +439,17 @@ export abstract class FieldEditorImplLifecycle extends FieldEditorImplCore {
 		options: PenFieldEditorFocusOptions = {},
 	): boolean {
 		if (!this._focusBlockId) return false;
+		const hostedBlockId = element
+			.closest(`[${DATA_ATTRS.blockId}]`)
+			?.getAttribute(DATA_ATTRS.blockId);
+		if (hostedBlockId && hostedBlockId !== this._focusBlockId) {
+			this.activate(hostedBlockId);
+			return (
+				this._focusBlockId === hostedBlockId &&
+				this._attachedElement === element &&
+				this._backendLifecycle.current != null
+			);
+		}
 		if (this._attachedElement === element && this._backendLifecycle.current)
 			return true;
 		if (!this.requestActivation(element, "backend-attach", options))

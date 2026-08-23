@@ -438,6 +438,34 @@ exports[`default keymap K2 > K2: macos resolved bindings match the normative pla
     },
   },
   {
+    "command": "pen.caretLineStart",
+    "key": "Home",
+    "param": {
+      "extend": false,
+    },
+  },
+  {
+    "command": "pen.caretLineStart",
+    "key": "Shift-Home",
+    "param": {
+      "extend": true,
+    },
+  },
+  {
+    "command": "pen.caretLineEnd",
+    "key": "End",
+    "param": {
+      "extend": false,
+    },
+  },
+  {
+    "command": "pen.caretLineEnd",
+    "key": "Shift-End",
+    "param": {
+      "extend": true,
+    },
+  },
+  {
     "command": "pen.caretDocStart",
     "key": "Meta-ArrowUp",
     "param": {

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { createEditor } from "@input/pen-core";
+import { createEditor, getEditorSelectionRecord } from "@input/pen-core";
 import { defaultSchema } from "@input/pen-schema-default";
 import { afterEach, describe, expect, it } from "vitest";
 import { FieldEditorImpl } from "../fieldEditorImpl";
@@ -21,41 +21,86 @@ afterEach(() => {
 	}
 });
 
-describe("enter-split leftover-ignore via authority.record", () => {
-	it("survives the session switch onto the new block without peek/restore", () => {
-		const editor = createEditor({ schema: defaultSchema });
-		const fieldEditor = new FieldEditorImpl(editor);
-		fixtures.push({ editor, fieldEditor });
+function seedSplitSession() {
+	const editor = createEditor({ schema: defaultSchema });
+	const fieldEditor = new FieldEditorImpl(editor);
+	fixtures.push({ editor, fieldEditor });
 
-		const firstBlockId = editor.firstBlock()!.id;
-		editor.apply([
-			{
-				type: "insert-text",
-				blockId: firstBlockId,
-				offset: 0,
-				text: "Hello",
-			},
-			{
-				type: "insert-block",
-				blockId: "inserted",
-				blockType: "paragraph",
-				props: {},
-				position: "last",
-			},
-		]);
-		editor.selectText(firstBlockId, 5, 5);
-		fieldEditor.activate(firstBlockId);
-		expect(fieldEditor.focusBlockId).toBe(firstBlockId);
+	const firstBlockId = editor.firstBlock()!.id;
+	editor.apply([
+		{
+			type: "insert-text",
+			blockId: firstBlockId,
+			offset: 0,
+			text: "Hello",
+		},
+		{
+			type: "insert-block",
+			blockId: "inserted",
+			blockType: "paragraph",
+			props: {},
+			position: "last",
+		},
+	]);
+	editor.selectText(firstBlockId, 5, 5);
+	fieldEditor.activate(firstBlockId);
+	fieldEditor.commitProgrammaticTextSelection("inserted", 0, 0);
+	return { editor, fieldEditor, firstBlockId };
+}
 
-		fieldEditor.commitProgrammaticTextSelection("inserted", 0, 0);
+describe("enter-split leftover via readDomSelection", () => {
+	it("diverges a leftover native range on the previous block and does not write authority", () => {
+		const { editor, fieldEditor, firstBlockId } = seedSplitSession();
+		const before = getEditorSelectionRecord(editor)!;
 
-		expect(fieldEditor.focusBlockId).toBe("inserted");
-		expect(
-			fieldEditor.shouldIgnoreDomTextSelection(
-				{ blockId: firstBlockId, offset: 5 },
-				{ blockId: firstBlockId, offset: 5 },
-			),
-		).toBe(true);
+		const decision = fieldEditor.readDomSelection({
+			type: "text",
+			anchor: { blockId: firstBlockId, offset: 5 },
+			focus: { blockId: firstBlockId, offset: 5 },
+		});
+
+		expect(decision).toBe("diverge");
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId: "inserted", offset: 0 },
+			focus: { blockId: "inserted", offset: 0 },
+		});
+		expect(getEditorSelectionRecord(editor)?.version).toBe(before.version);
 	});
 
+	it("still diverges leftover after a session-switch reset because it reads the record", () => {
+		const { editor, fieldEditor, firstBlockId } = seedSplitSession();
+
+		expect(fieldEditor.focusBlockId).toBe("inserted");
+		const decision = fieldEditor.readDomSelection({
+			type: "text",
+			anchor: { blockId: firstBlockId, offset: 5 },
+			focus: { blockId: firstBlockId, offset: 5 },
+		});
+
+		expect(decision).toBe("diverge");
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId: "inserted", offset: 0 },
+			focus: { blockId: "inserted", offset: 0 },
+		});
+	});
+
+	it("accepts leftover on another block while a pointer window is open", () => {
+		const { editor, fieldEditor, firstBlockId } = seedSplitSession();
+		fieldEditor.notifyGestureEvent("pointerdown");
+
+		const decision = fieldEditor.readDomSelection({
+			type: "text",
+			anchor: { blockId: firstBlockId, offset: 5 },
+			focus: { blockId: firstBlockId, offset: 5 },
+		});
+
+		expect(decision).toBe("accept");
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId: firstBlockId, offset: 5 },
+			focus: { blockId: firstBlockId, offset: 5 },
+		});
+	});
 });

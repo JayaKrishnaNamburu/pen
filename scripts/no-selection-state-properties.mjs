@@ -534,6 +534,9 @@ async function main() {
 
 	const args = parseArgs(process.argv.slice(2));
 	const { hits, fileTexts: scannedTexts } = await collectHits(args.repoRoot);
+	console.log(
+		`population: ${scannedTexts.size} files (packages source, tests excluded)`,
+	);
 	const allowlist = await loadAllowlist(args.repoRoot, args.allowlistPath);
 	const fileTexts = await loadAllowlistFileTexts(
 		args.repoRoot,

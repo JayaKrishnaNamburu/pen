@@ -4,11 +4,6 @@
 
 `./dist/index.d.ts`
 
-### class
-
-- AuthorLedger
-- ClientIdentityMap
-
 ### function
 
 - asPresenceDisplayHint
@@ -20,6 +15,7 @@
 ### value
 
 - ConnectionState
+- MAX_PRESENCE_ANCHOR_LENGTH
 - MAX_PRESENCE_AVATAR_URL_LENGTH
 - MAX_PRESENCE_BLOCK_SELECTION_IDS
 - MAX_PRESENCE_BYTES_PER_PEER

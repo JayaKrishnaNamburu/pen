@@ -258,6 +258,11 @@ async function walkFiles(rootDir, extensions) {
 
 export async function collectForbiddenHits(repoRoot) {
 	const files = await walkFiles(path.join(repoRoot, "packages"), SOURCE_EXTENSIONS);
+	if (files.length === 0) {
+		throw new Error(
+			"f22-dead-bindings: cannot check: packages *.{ts,tsx} walk matched 0 files",
+		);
+	}
 	const hits = [];
 	for (const filePath of files) {
 		const source = await fs.readFile(filePath, "utf8");
@@ -267,7 +272,7 @@ export async function collectForbiddenHits(repoRoot) {
 		const byFile = left.file.localeCompare(right.file);
 		return byFile !== 0 ? byFile : left.line - right.line;
 	});
-	return hits;
+	return { hits, fileCount: files.length };
 }
 
 export async function loadWriteSources(repoRoot) {
@@ -306,8 +311,12 @@ async function main() {
 	);
 
 	const args = parseArgs(process.argv.slice(2));
+	const forbidden = await collectForbiddenHits(args.repoRoot);
+	console.log(
+		`population: ${forbidden.fileCount} files (packages *.{ts,tsx})`,
+	);
 	const result = evaluateF22({
-		forbiddenHits: await collectForbiddenHits(args.repoRoot),
+		forbiddenHits: forbidden.hits,
 		writeSources: await loadWriteSources(args.repoRoot),
 	});
 	console.log(formatReport(result));

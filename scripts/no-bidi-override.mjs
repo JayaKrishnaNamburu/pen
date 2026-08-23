@@ -338,7 +338,7 @@ export async function collectBidiOverrideHits(repoRoot) {
 			.join(path.posix.sep);
 		hits.push(...extractHits(text, relPosix));
 	}
-	return hits;
+	return { hits, fileCount: files.length };
 }
 
 async function loadAllowlist(repoRoot, relPath) {
@@ -388,7 +388,10 @@ async function main() {
 	console.log("  red-proof: missing packages/rendering fails closed by name");
 
 	const args = parseArgs(process.argv.slice(2));
-	const hits = await collectBidiOverrideHits(args.repoRoot);
+	const { hits, fileCount } = await collectBidiOverrideHits(args.repoRoot);
+	console.log(
+		`population: ${fileCount} files (packages/rendering source)`,
+	);
 	const allowlist = await loadAllowlist(args.repoRoot, args.allowlistPath);
 	const result = evaluateHits({ hits, allowlist });
 	const report = formatReport(result);

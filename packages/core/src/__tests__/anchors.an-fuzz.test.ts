@@ -475,4 +475,102 @@ describe("an-fuzz AN1–AN5 AN14", () => {
 
 		editor.destroy();
 	});
+
+	it("AN10: cell-text anchors survive generated in-cell insert and delete", () => {
+		const editor = createEditor();
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "t1",
+				blockType: "table",
+				props: {},
+				position: "last",
+			},
+			{
+				type: "insert-table-cell-text",
+				blockId: "t1",
+				row: 0,
+				col: 0,
+				offset: 0,
+				text: "0123456789",
+			},
+			{
+				type: "insert-table-cell-text",
+				blockId: "t1",
+				row: 1,
+				col: 1,
+				offset: 0,
+				text: "cell two",
+			},
+		]);
+		const north = editor.anchors.create(
+			{ blockId: "t1", offset: 5, cell: { row: 0, col: 0 } },
+			1,
+		);
+		const south = editor.anchors.create(
+			{ blockId: "t1", offset: 4, cell: { row: 1, col: 1 } },
+			1,
+		);
+		expect(north, "AN10 cell north mint").not.toBeNull();
+		expect(south, "AN10 cell south mint").not.toBeNull();
+
+		const cellSteps = Math.min(50, OP_COUNT);
+		for (let i = 1; i <= cellSteps; i++) {
+			editor.apply([
+				{
+					type: "insert-table-cell-text",
+					blockId: "t1",
+					row: 0,
+					col: 0,
+					offset: 0,
+					text: "x",
+				},
+			]);
+			expect(
+				editor.anchors.resolve(north!),
+				`AN10 cell north prefix-insert op=${i}`,
+			).toEqual({
+				blockId: "t1",
+				offset: 5 + i,
+				cell: { row: 0, col: 0 },
+			});
+			expect(
+				editor.anchors.resolve(south!),
+				`AN10 cell south stays put op=${i}`,
+			).toEqual({
+				blockId: "t1",
+				offset: 4,
+				cell: { row: 1, col: 1 },
+			});
+		}
+
+		const northAfterInserts = 5 + cellSteps;
+		editor.apply([
+			{
+				type: "delete-table-cell-text",
+				blockId: "t1",
+				row: 0,
+				col: 0,
+				offset: northAfterInserts - 2,
+				length: 5,
+			},
+		]);
+		expect(
+			editor.anchors.resolve(north!),
+			"AN10 cell north delete-collapse",
+		).toEqual({
+			blockId: "t1",
+			offset: northAfterInserts - 2,
+			cell: { row: 0, col: 0 },
+		});
+		expect(
+			editor.anchors.resolve(south!),
+			"AN10 cell south after north delete",
+		).toEqual({
+			blockId: "t1",
+			offset: 4,
+			cell: { row: 1, col: 1 },
+		});
+		editor.destroy();
+	});
 });

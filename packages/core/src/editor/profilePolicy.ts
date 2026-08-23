@@ -540,8 +540,39 @@ function getProfileControlledBlockType(op: DocumentOp): string | null {
 			return op.newType;
 		case "split-block":
 			return op.newBlockType ?? null;
-		default:
+		case "update-block":
+		case "delete-block":
+		case "move-block":
+		case "merge-blocks":
+		case "insert-text":
+		case "delete-text":
+		case "format-text":
+		case "replace-text":
+		case "insert-inline-node":
+		case "remove-inline-node":
+		case "update-layout":
+		case "insert-table-row":
+		case "delete-table-row":
+		case "insert-table-column":
+		case "delete-table-column":
+		case "merge-table-cells":
+		case "split-table-cell":
+		case "insert-table-cell-text":
+		case "delete-table-cell-text":
+		case "format-table-cell-text":
+		case "update-table-columns":
+		case "set-meta":
+		case "create-app":
+		case "update-app":
+		case "delete-app":
+		case "set-selection":
+		case "stream-open":
 			return null;
+		default: {
+			const _exhaustive: never = op;
+			void _exhaustive;
+			return null;
+		}
 	}
 }
 

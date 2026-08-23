@@ -511,9 +511,6 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 		if (!this._editor || !this._fromAnchor || !this._toAnchor) {
 			return;
 		}
-		if (summary.structural.length === 0) {
-			return;
-		}
 		const moves = deriveContentMoves(summary, undefined);
 		if (moves.length === 0) {
 			return;

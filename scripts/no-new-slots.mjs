@@ -153,7 +153,17 @@ function main() {
   console.log("SM3 fixture: NEW_SLOT_KEY in a temp string failed the checker.");
 
   const allowlist = loadAllowlist();
-  const result = checkNoNewSlots(loadRepoFiles(), allowlist);
+  const files = loadRepoFiles();
+  if (files.length === 0) {
+    console.error(
+      "no-new-slots: cannot check: packages+playground source walk matched 0 files",
+    );
+    process.exit(1);
+  }
+  console.log(
+    `population: ${files.length} files (packages+playground source, tests excluded)`,
+  );
+  const result = checkNoNewSlots(files, allowlist);
   if (!result.ok) {
     console.error("no-new-slots failed:");
     for (const line of result.violations) {

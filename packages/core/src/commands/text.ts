@@ -78,9 +78,9 @@ export const toggleMark = defineCommand<ToggleMarkParam>("pen.toggleMark");
 export const convertBlock = defineCommand<ConvertBlockParam>("pen.convertBlock");
 
 /**
- * Field-editor / v1 `applyDeleteBehavior`: adjacent inline atom → SELECT it.
- * Does not mutate the document. The next delete (non-collapsed range) removes it.
- * This is the intended product, not the live keystroke (see handleDelete).
+ * Adjacent inline atom → SELECT it. Does not mutate the document.
+ * The next delete (non-collapsed `handleDelete`) removes it through the
+ * ordinary selection-delete path.
  */
 export function selectAdjacentInlineAtom(
 	editor: Editor,
@@ -97,9 +97,9 @@ export function selectAdjacentInlineAtom(
 }
 
 /**
- * Current registry one-shot: adjacent inline atom → DELETE it.
- * Same detection as `selectAdjacentInlineAtom`; different product.
- * This is the live keystroke (`createEditor` registry + keymap).
+ * One-shot helper: adjacent inline atom → DELETE it.
+ * Same detection as `selectAdjacentInlineAtom`. The live registry no
+ * longer calls this; first-press Backspace / Delete selects instead.
  */
 export function deleteAdjacentInlineAtom(
 	editor: Editor,
@@ -239,12 +239,9 @@ function deleteCollapsed(
 		return false;
 	}
 
-	const oneShot = deleteAdjacentInlineAtom(editor, direction);
-	if (oneShot) {
-		editor.apply(oneShot.ops, { origin: "user" });
-		return {
-			selection: collapsedAt(oneShot.caret.blockId, oneShot.caret.offset),
-		};
+	const selectedAtom = selectAdjacentInlineAtom(editor, direction);
+	if (selectedAtom) {
+		return { selection: selectedAtom };
 	}
 
 	const { text } = logicalInline(block);

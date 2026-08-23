@@ -198,7 +198,7 @@ describe("@input/pen-react escape key handling", () => {
 		editor.destroy();
 	});
 
-	it("maps cmd+a from block selection directly to full-document selection in flow documents", async () => {
+	it("maps cmd+a from a partial text selection to the current block in flow documents", async () => {
 		const editor = createEditor({
 			documentProfile: "flow",
 		});
@@ -271,14 +271,14 @@ describe("@input/pen-react escape key handling", () => {
 		expect(editor.selection).toMatchObject({
 			type: "text",
 			anchor: { blockId: firstBlockId, offset: 0 },
-			focus: { blockId: thirdBlockId, offset: 5 },
-			isMultiBlock: true,
+			focus: { blockId: firstBlockId, offset: 5 },
+			isMultiBlock: false,
 		});
 		expect(fieldEditor.getSnapshot()).toMatchObject({
 			focusBlockId: firstBlockId,
-			activeBlockIds: [firstBlockId, secondBlockId, thirdBlockId],
+			activeBlockIds: [firstBlockId],
 			isEditing: true,
-			mode: "expanded",
+			mode: "single",
 		});
 
 		await act(async () => {
@@ -288,7 +288,7 @@ describe("@input/pen-react escape key handling", () => {
 		editor.destroy();
 	});
 
-	it("maps cmd+a from an empty block directly to full-document selection in flow documents", async () => {
+	it("maps cmd+a from an empty block to top-level BlockSelection in flow documents", async () => {
 		const editor = createEditor({
 			documentProfile: "flow",
 		});
@@ -348,17 +348,13 @@ describe("@input/pen-react escape key handling", () => {
 			await flushAnimationFrames(2);
 		});
 
-		expect(editor.selection).toMatchObject({
-			type: "text",
-			anchor: { blockId: firstBlockId, offset: 0 },
-			focus: { blockId: thirdBlockId, offset: 5 },
-			isMultiBlock: true,
+		expect(editor.selection).toEqual({
+			type: "block",
+			blockIds: [firstBlockId, secondBlockId, thirdBlockId],
+			head: thirdBlockId,
 		});
 		expect(fieldEditor.getSnapshot()).toMatchObject({
-			focusBlockId: firstBlockId,
-			activeBlockIds: [firstBlockId, secondBlockId, thirdBlockId],
-			isEditing: true,
-			mode: "expanded",
+			isEditing: false,
 		});
 
 		await act(async () => {

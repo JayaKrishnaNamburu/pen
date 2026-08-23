@@ -73,6 +73,7 @@ export class ContentEditableBackendSelection extends ContentEditableBackendEvent
 			preserveSelection: true,
 			inlineDecorations: this.getInlineDecorationsForBlock(),
 		});
+		this.discardObservedMutations();
 		this.fieldEditor.notifyDomReconciled(
 			this.fieldEditor.focusBlockId ?? undefined,
 		);
@@ -244,16 +245,6 @@ export class ContentEditableBackendSelection extends ContentEditableBackendEvent
 				type: "block",
 				blockIds: normalizedSelection.blockIds,
 			});
-			return;
-		}
-
-		if (
-			this.fieldEditor.shouldIgnoreDomTextSelection(
-				normalizedSelection.anchor,
-				normalizedSelection.focus,
-			)
-		) {
-			this.restoreDOMSelectionFromEditor();
 			return;
 		}
 

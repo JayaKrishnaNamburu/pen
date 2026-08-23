@@ -107,6 +107,8 @@ const macosBindings: readonly DefaultKeymapBinding[] = [
 	...extendPair("Alt-ArrowRight", caretWordRight),
 	...extendPair("Meta-ArrowLeft", caretLineStart),
 	...extendPair("Meta-ArrowRight", caretLineEnd),
+	...extendPair("Home", caretLineStart),
+	...extendPair("End", caretLineEnd),
 	...extendPair("Meta-ArrowUp", caretDocStart),
 	...extendPair("Meta-ArrowDown", caretDocEnd),
 	{

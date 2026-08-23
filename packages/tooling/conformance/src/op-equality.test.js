@@ -11,16 +11,13 @@
  */
 
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { readFileSync, readdirSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
 import {
-	countTightDocumentOpMembers,
-	readLiveDocumentOpTypes,
-} from "./opCorpus/liveUnion.js";
-import {
+	applyReplayOps,
 	applySetup,
 	captureApply,
 	createCorpusSession,
@@ -28,12 +25,10 @@ import {
 	snapshotSession,
 } from "./opCorpus/session.js";
 import { encodeUpdateBytes } from "./opCorpus/snapshot.js";
+import { opsForReplay, translateRecordedOp } from "./opCorpus/translate.js";
 
 const corpusDir = fileURLToPath(
 	new URL("../corpus/op-equality/", import.meta.url),
-);
-const opsTsPath = fileURLToPath(
-	new URL("../../../types/src/types/ops.ts", import.meta.url),
 );
 
 function listFixtureFiles() {
@@ -59,7 +54,7 @@ function replayFixtureFile(path) {
 			`op-equality initial-snapshot mismatch: ${fixture.id}`,
 		);
 		const captured = captureApply(session, () => {
-			session.editor.apply(fixture.ops, { origin: "user" });
+			applyReplayOps(session, fixture.ops);
 		});
 		const actualBytes = encodeUpdateBytes(captured.update);
 		assert.equal(
@@ -78,16 +73,19 @@ function replayFixtureFile(path) {
 	}
 }
 
+function readManifest() {
+	return JSON.parse(readFileSync(join(corpusDir, "manifest.json"), "utf8"));
+}
+
 function checkCoverage() {
-	const opsSource = readFileSync(opsTsPath, "utf8");
-	const tightCount = countTightDocumentOpMembers(opsSource);
-	const live = readLiveDocumentOpTypes(opsSource);
+	const manifest = readManifest();
+	const expectedTypes = Object.keys(manifest.coverage);
 	const files = listFixtureFiles();
 	console.log(
 		`op-equality glob: ${files.length} files (pattern corpus/op-equality/*.json excluding manifest.json)`,
 	);
 	console.log(
-		`op-equality live union: ${tightCount} members via ^\\s*\\| [A-Z][A-Za-z]+Op on packages/types/src/types/ops.ts`,
+		`op-equality frozen corpus: ${expectedTypes.length} v2 types from manifest.json (live union is not the inventory)`,
 	);
 	assert.equal(
 		files.length > 0,
@@ -95,11 +93,15 @@ function checkCoverage() {
 		"op-equality glob: 0 files — a glob that matches nothing cannot claim coverage",
 	);
 	assert.equal(
-		tightCount,
+		manifest.documentOpMemberCount,
 		30,
-		`op-equality could-not-check: tight DocumentOp count is ${tightCount}, not 30`,
+		`op-equality could-not-check: manifest documentOpMemberCount is ${manifest.documentOpMemberCount}, not 30`,
 	);
-	assert.equal(live.length, tightCount);
+	assert.equal(
+		expectedTypes.length,
+		30,
+		`op-equality coverage: manifest lists ${expectedTypes.length} types, not 30`,
+	);
 
 	const claimed = new Map();
 	const covered = new Set();
@@ -117,21 +119,30 @@ function checkCoverage() {
 		}
 	}
 
-	const missing = live
-		.map((entry) => entry.type)
-		.filter((type) => !covered.has(type));
-	if (missing.length > 0) {
-		throw new Error(
-			`op-equality coverage: missing ${missing.join(", ")}`,
+	const missing = expectedTypes.filter((type) => {
+		const entry = manifest.coverage[type];
+		return (
+			!claimed.has(type) ||
+			!files.some((file) => file.endsWith(`/${entry.fixture}`))
 		);
+	});
+	if (missing.length > 0) {
+		throw new Error(`op-equality coverage: missing ${missing.join(", ")}`);
 	}
-	return { live, files, covered };
+	return { expectedTypes, files, covered };
 }
 
-test("coverage is verified against the live DocumentOp union", () => {
-	const { live, files, covered } = checkCoverage();
+test("coverage is frozen to the committed v2 corpus, not the live union", () => {
+	const { expectedTypes, files, covered } = checkCoverage();
 	assert.equal(files.length, 30);
-	assert.equal(covered.size, live.length);
+	assert.equal(expectedTypes.length, 30);
+	for (const type of expectedTypes) {
+		assert.equal(
+			covered.has(type),
+			true,
+			`op-equality coverage: fixture ops never mention ${type}`,
+		);
+	}
 });
 
 test("each committed fixture replays to the bytes and snapshot on disk", () => {
@@ -148,13 +159,12 @@ test("table / layout / app fixtures nest; split / merge cross blocks", () => {
 	const rows = table.initialSnapshot.blocks.tbl.tableContent;
 	assert.ok(Array.isArray(rows), "insert-table-row initial table missing");
 	assert.ok(rows.length >= 3, "insert-table-row is a flat 2-row default");
-	assert.ok(
-		rows[0].cells.length >= 2,
-		"insert-table-row row 0 has no cells",
-	);
+	assert.ok(rows[0].cells.length >= 2, "insert-table-row row 0 has no cells");
 	assert.match(JSON.stringify(rows), /third-row/);
 
-	const mergeCells = readFixtureFile(join(corpusDir, "merge-table-cells.json"));
+	const mergeCells = readFixtureFile(
+		join(corpusDir, "merge-table-cells.json"),
+	);
 	assert.ok(
 		mergeCells.initialSnapshot.blocks.tbl.tableContent.length >= 3,
 		"merge-table-cells fixture is a flat table",
@@ -214,7 +224,8 @@ test("table / layout / app fixtures nest; split / merge cross blocks", () => {
 	const split = readFixtureFile(join(corpusDir, "split-block.json"));
 	assert.equal(split.initialSnapshot.blockOrder.length, 1);
 	assert.ok(
-		split.snapshot.blockOrder.length > split.initialSnapshot.blockOrder.length,
+		split.snapshot.blockOrder.length >
+			split.initialSnapshot.blockOrder.length,
 		"split-block stayed in one block",
 	);
 	const afterIds = split.snapshot.blockOrder;
@@ -229,7 +240,8 @@ test("table / layout / app fixtures nest; split / merge cross blocks", () => {
 		"merge-blocks started with one block",
 	);
 	assert.ok(
-		merge.snapshot.blockOrder.length < merge.initialSnapshot.blockOrder.length,
+		merge.snapshot.blockOrder.length <
+			merge.initialSnapshot.blockOrder.length,
 		"merge-blocks did not cross a block boundary",
 	);
 	assert.match(
@@ -280,5 +292,56 @@ test("mislabelled fixture fails coverage by name", () => {
 		);
 	} finally {
 		writeFileSync(file, original);
+	}
+});
+
+test("hidden fixture fails coverage by name", () => {
+	const file = join(corpusDir, "replace-text.json");
+	const original = readFileSync(file, "utf8");
+	try {
+		unlinkSync(file);
+		assert.throws(
+			() => checkCoverage(),
+			/op-equality coverage: missing replace-text/,
+		);
+	} finally {
+		writeFileSync(file, original);
+	}
+});
+
+test("replay translates a shape-changed op and still compares the document snapshot", () => {
+	const fixture = readFixtureFile(join(corpusDir, "insert-text.json"));
+	const recorded = fixture.ops[0];
+	const translated = translateRecordedOp(recorded);
+	assert.equal(recorded.type, "insert-text");
+	assert.equal(translated[0].type, "splice-text");
+	assert.notDeepEqual(translated[0], recorded);
+	assert.equal(translated[0].blockId, recorded.blockId);
+	assert.equal(translated[0].from, recorded.offset);
+	assert.equal(translated[0].to, recorded.offset);
+	assert.equal(translated[0].insert, recorded.text);
+
+	const today = opsForReplay(fixture.ops, {
+		liveTypes: new Set(fixture.ops.map((op) => op.type)),
+	});
+	assert.deepEqual(today, fixture.ops);
+
+	const afterRewrite = opsForReplay(fixture.ops, {
+		liveTypes: new Set(["splice-text", "insert-block", "delete-block"]),
+	});
+	assert.deepEqual(afterRewrite, translated);
+	assert.notEqual(afterRewrite[0].type, fixture.ops[0].type);
+
+	const session = createCorpusSession();
+	try {
+		applySetup(session, fixture.setup);
+		applyReplayOps(session, fixture.ops);
+		assert.deepEqual(
+			snapshotSession(session),
+			fixture.snapshot,
+			"replay oracle is the committed snapshot, not the recorded op shape",
+		);
+	} finally {
+		destroyCorpusSession(session);
 	}
 });

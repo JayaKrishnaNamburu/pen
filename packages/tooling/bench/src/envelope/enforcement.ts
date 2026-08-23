@@ -135,19 +135,41 @@ export const ENFORCEMENT_INVENTORY: readonly EnforcementRow[] = [
 	},
 	{
 		id: "crdt.fork-merge-100",
-		subject: "CRDT fork + merge of one document into itself",
-		unit: "record-only",
-		unitFailsOn: "none — no observation that merge delivered an update",
+		subject: "CRDT fork + merge of a diverged 100-block document",
+		unit: "enforced",
+		unitFailsOn:
+			"assertMergeTransferred: target block-50 missing FORK-MERGE-TOKEN",
 		isolatedClock: "record-only",
-		clockNote: "self-copy: fork merged back into its source; no second peer",
+		clockNote: "empty-timer floor; count is the token on the named block",
 	},
 	{
 		id: "generateGenDeltaParts",
-		subject: "unused streaming parts fixture",
-		unit: "record-only",
-		unitFailsOn: "none — helper is not called by streaming.bench.ts",
+		subject: "streaming parts fixture consumed by the 1000-part clock",
+		unit: "enforced",
+		unitFailsOn:
+			"assertGenDeltaPartsFeedClock: helper produced !== 1000 gen-delta parts",
 		isolatedClock: "record-only",
-		clockNote: "if the helper returned [] the streaming bench would not go red",
+		clockNote: "if the helper returned [] the streaming bench goes red",
+	},
+	{
+		id: "ai.autocomplete-requesting-cancel-churn",
+		subject: "autocomplete request/cancel cycles",
+		unit: "enforced",
+		unitFailsOn:
+			"assertRequestingCancelObserved: requestCount !== cycleCount",
+		isolatedClock: "record-only",
+		clockNote:
+			"floor is 10 setTimeout(0) yields; the stream and waitForCondition also yield",
+	},
+	{
+		id: "ai.autocomplete-provider-budget",
+		subject: "autocomplete provider budget",
+		unit: "enforced",
+		unitFailsOn:
+			"assertProviderBudgetObserved: model never called or local-shape missing",
+		isolatedClock: "record-only",
+		clockNote:
+			"floor is the 5ms provider timeout; count is named provider presence",
 	},
 ];
 

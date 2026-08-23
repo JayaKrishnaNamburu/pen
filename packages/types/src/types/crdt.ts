@@ -107,6 +107,8 @@ export interface CRDTAdapter {
 	 * Resolve an encoded relative position (AN1).
 	 *
 	 * `options.followUndoneDeletions` is the AN13 path flag, never a constant.
+	 * The three-argument form is shipped; a two-arg adapter was never frozen.
+	 * Host policy lives on `editor.anchors.resolve` (provenance), not here.
 	 */
 	resolveRelativePosition(
 		doc: CRDTDocument,

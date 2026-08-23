@@ -77,13 +77,24 @@ test("empty is letterless; hello-world is not", () => {
 	assert.deepEqual(contentLiterals(hello), ['"Hello world"']);
 });
 
-test("nested-toggle has a child by construction", () => {
+test("nested-toggle has a parentId child by construction", () => {
 	const catalog = readFixture("catalog.ts");
-	const nested = sliceBetween(catalog, '"nested-toggle": [', "};");
+	const nested = sliceBetween(
+		catalog,
+		'"nested-toggle": [',
+		'"grapheme-clusters"',
+	);
 	assert.match(nested, /type:\s*"toggle"/);
-	assert.match(nested, /children:\s*\[/);
+	assert.match(nested, /id:\s*NESTED_TOGGLE_PARENT_ID/);
+	assert.match(nested, /id:\s*NESTED_TOGGLE_CHILD_ID/);
+	assert.match(nested, /parentId:\s*NESTED_TOGGLE_PARENT_ID/);
 	assert.match(nested, /NESTED_TOGGLE_CHILD_TEXT/);
 	assert.match(catalog, /NESTED_TOGGLE_CHILD_TEXT = "Nested child"/);
+	assert.doesNotMatch(
+		nested,
+		/children:\s*\[/,
+		"toggle children live in blockOrder with parentId, not a layout children array",
+	);
 });
 
 test("bidi-mixed is mixed LTR/RTL by construction", () => {

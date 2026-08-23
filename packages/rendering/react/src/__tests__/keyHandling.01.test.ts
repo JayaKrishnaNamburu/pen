@@ -313,7 +313,7 @@ describe("@input/pen-react key binding contexts", () => {
 		editor.destroy();
 	});
 
-	it("maps select-all shortcuts to full-document text selection", () => {
+	it("maps select-all shortcuts through the T1 ladder", () => {
 		const editor = createPresetEditor({
 			preset: {
 				documentOps: false,
@@ -346,6 +346,7 @@ describe("@input/pen-react key binding contexts", () => {
 				text: "World",
 			},
 		]);
+		editor.selectText(firstBlockId, 2, 2);
 
 		expect(
 			handleEditorKeyBindings(
@@ -356,8 +357,20 @@ describe("@input/pen-react key binding contexts", () => {
 		expect(editor.selection).toMatchObject({
 			type: "text",
 			anchor: { blockId: firstBlockId, offset: 0 },
-			focus: { blockId: secondBlockId, offset: 5 },
-			isMultiBlock: true,
+			focus: { blockId: firstBlockId, offset: 5 },
+			isMultiBlock: false,
+		});
+
+		expect(
+			handleEditorKeyBindings(
+				editor,
+				createKeyEvent("a", { metaKey: true }),
+			),
+		).toBe(true);
+		expect(editor.selection).toEqual({
+			type: "block",
+			blockIds: [firstBlockId, secondBlockId],
+			head: secondBlockId,
 		});
 
 		editor.destroy();

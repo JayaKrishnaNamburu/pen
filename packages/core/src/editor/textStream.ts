@@ -75,6 +75,7 @@ export function resolveStreamOrigin(origin: OpOrigin | undefined): StructuredOpO
 		requestId: origin.requestId,
 		actorId: origin.actorId,
 		source: STREAM_SOURCE,
+		...(origin.intent !== undefined ? { intent: origin.intent } : {}),
 	};
 }
 

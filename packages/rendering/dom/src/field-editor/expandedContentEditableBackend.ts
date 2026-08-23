@@ -61,15 +61,24 @@ export class ExpandedContentEditableBackend {
 
 		const selection = this.editor.selection;
 		if (selection?.type === "text") {
-			this.fieldEditor.applyBackendSelectionUntilNextFrame();
-			if (
-				!this.fieldEditor.requestDomFocus(element, "backend-activate", {
-					preventScroll: true,
-				})
-			) {
-				return;
-			}
-			editorSelectionToDOM(element, selection.anchor, selection.focus);
+			this.fieldEditor.withBackendSelectionWrite(() => {
+				if (
+					!this.fieldEditor.requestDomFocus(
+						element,
+						"backend-activate",
+						{
+							preventScroll: true,
+						},
+					)
+				) {
+					return;
+				}
+				editorSelectionToDOM(
+					element,
+					selection.anchor,
+					selection.focus,
+				);
+			});
 			return;
 		}
 
@@ -106,11 +115,13 @@ export class ExpandedContentEditableBackend {
 	}
 
 	private projectCurrentSelection(): void {
-		if (!this.element) return;
+		const element = this.element;
+		if (!element) return;
 		const selection = this.editor.selection;
 		if (selection?.type !== "text") return;
-		this.fieldEditor.applyBackendSelectionUntilNextFrame();
-		editorSelectionToDOM(this.element, selection.anchor, selection.focus);
+		this.fieldEditor.withBackendSelectionWrite(() => {
+			editorSelectionToDOM(element, selection.anchor, selection.focus);
+		});
 	}
 
 	private handleSelectionChange = (): void => {
@@ -154,15 +165,6 @@ export class ExpandedContentEditableBackend {
 			shouldIgnoreLeftoverFieldAfterDocumentSelectAll(
 				this.editor.selection,
 				normalizedSelection,
-			)
-		) {
-			return;
-		}
-
-		if (
-			this.fieldEditor.shouldIgnoreDomTextSelection(
-				normalizedSelection.anchor,
-				normalizedSelection.focus,
 			)
 		) {
 			return;
@@ -219,9 +221,14 @@ export class ExpandedContentEditableBackend {
 				const text = event.data ?? "";
 				if (!text) return;
 				if (
-					dispatchEditorCommand(this.editor, insertText, { text }, {
-						origin: "user",
-					})
+					dispatchEditorCommand(
+						this.editor,
+						insertText,
+						{ text },
+						{
+							origin: "user",
+						},
+					)
 				) {
 					return;
 				}

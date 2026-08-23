@@ -1,5 +1,5 @@
 {
-	"_comment": "Wave 5.1: waived SelectionState-shaped property accesses. Each entry needs file, the exact waived construct, and a reason. A missing file or a vanished construct fails. Remove the entry in the same PR that deletes the access.",
+	"_comment": "Wave 5.1: waived SelectionState-shaped property accesses. Each entry needs file, the exact waived construct, and a reason. A missing file or a vanished construct fails. Two kinds of entry live here and the reason must say which. A PENDING waiver is removed in the same PR that deletes the access. A PERMANENT one marks a construct that is not a SelectionState access at all, matched only because the receiver is named selection or sel; do not convert a permanent entry to a helper call.",
 	"entries": [
 		{
 			"file": "packages/rendering/dom/src/field-editor/contenteditableDomHelpers.ts",
@@ -24,7 +24,7 @@
 		{
 			"file": "packages/extensions/ai/src/helpers/session.ts",
 			"construct": "turn.selection.blockRange",
-			"reason": "wave 5.1 conversion owned by the extensions lane"
+			"reason": "permanent: not a SelectionState. AISessionTurn.selection is AISessionSelectionSnapshot (extensions/ai types/session.ts:133), a plain anchor/focus/blockRange/isMultiBlock record with no type discriminant, deep-cloned here. getTrustedSelectionBlockRange switches on sel.type and does not accept it; forcing the call through a cast falls to the never default and yields undefined."
 		}
 	]
 }

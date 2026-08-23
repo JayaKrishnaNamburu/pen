@@ -79,6 +79,7 @@ export function openEditorTextStream(
 		editor.undoManager.stopCapturing();
 		return createRejectedWriter(writeHead);
 	}
+	let mintPoint: Point | null = writeHead;
 	let blockGone = false;
 	let lengthAtHead = editor.getBlock(writeHead.blockId)?.length() ?? 0;
 
@@ -106,27 +107,31 @@ export function openEditorTextStream(
 		);
 	}
 
-	function attachIfStuck(resolved: { blockId: string; offset: number }): void {
-		if (!head) {
+	function resolvedAtMint(resolved: Point): boolean {
+		return (
+			mintPoint != null &&
+			resolved.blockId === mintPoint.blockId &&
+			resolved.offset === mintPoint.offset
+		);
+	}
+
+	function adoptResolved(resolved: Point): void {
+		// An empty-block mint can sit on the sentinel and never follow (AN2).
+		// AN4 forbids reminting here; keep the write head at the block end
+		// until resolve leaves the mint point or AN14 repair replaces the head.
+		if (!resolvedAtMint(resolved)) {
+			mintPoint = null;
+			writeHead = pointOf(resolved);
+			return;
+		}
+		if (writeHead.offset !== lengthAtHead) {
 			return;
 		}
 		const length = editor.getBlock(resolved.blockId)?.length() ?? 0;
-		if (writeHead.offset !== lengthAtHead || length <= lengthAtHead) {
+		if (length === lengthAtHead) {
 			return;
 		}
-		if (
-			resolved.blockId !== writeHead.blockId ||
-			resolved.offset !== writeHead.offset
-		) {
-			return;
-		}
-		const next = { blockId: resolved.blockId, offset: length };
-		const reminted = editor.anchors.create(next, 1);
-		if (!reminted) {
-			return;
-		}
-		head = reminted;
-		writeHead = next;
+		writeHead = { blockId: resolved.blockId, offset: Math.max(0, length) };
 	}
 
 	function syncHead(summary: CommitEvent["summary"]): void {
@@ -136,19 +141,15 @@ export function openEditorTextStream(
 		const moves = deriveContentMoves(summary, undefined);
 		const previous = head;
 		head = repairAnchor(editor, head, moves);
+		if (head !== previous) {
+			mintPoint = null;
+		}
 		if (head === previous && moves.length === 0 && !summaryTouchesHead(summary)) {
 			return;
 		}
 		const resolved = editor.anchors.resolve(head);
 		if (resolved) {
-			if (
-				resolved.blockId !== writeHead.blockId ||
-				resolved.offset !== writeHead.offset
-			) {
-				writeHead = pointOf(resolved);
-			} else {
-				attachIfStuck(resolved);
-			}
+			adoptResolved(resolved);
 			rememberLength();
 			return;
 		}

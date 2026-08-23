@@ -261,12 +261,6 @@ describe("Pen inline atom editing", () => {
 				{ blockId, offset: endOffset },
 			);
 
-			expect(
-				fieldEditor.shouldIgnoreDomTextSelection(
-					{ blockId, offset: endOffset },
-					{ blockId, offset: endOffset },
-				),
-			).toBe(false);
 			expect(editor.selection).toMatchObject({
 				type: "text",
 				anchor: { blockId, offset: endOffset },

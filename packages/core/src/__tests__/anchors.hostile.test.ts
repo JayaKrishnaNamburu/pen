@@ -72,4 +72,38 @@ describe("editor.anchors AN6 hostile corpus", () => {
 		).toBe(true);
 		editor.destroy();
 	});
+
+	it("AN10: a live cell payload with c:[row,col] deserializes and resolves on the cell", () => {
+		const editor = createEditor();
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "t1",
+				blockType: "table",
+				props: {},
+				position: "last",
+			},
+			{
+				type: "insert-table-cell-text",
+				blockId: "t1",
+				row: 1,
+				col: 1,
+				offset: 0,
+				text: "cell text",
+			},
+		]);
+		const live = editor.anchors.create(
+			{ blockId: "t1", offset: 5, cell: { row: 1, col: 1 } },
+			1,
+		)!;
+		const restored = editor.anchors.deserialize(editor.anchors.serialize(live));
+		expect(restored).not.toBeNull();
+		expect(restored?.cell).toEqual({ row: 1, col: 1 });
+		expect(editor.anchors.resolve(restored!)).toEqual({
+			blockId: "t1",
+			offset: 5,
+			cell: { row: 1, col: 1 },
+		});
+		editor.destroy();
+	});
 });

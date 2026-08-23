@@ -4,11 +4,7 @@ export {
 	getMultiplayerController,
 } from "./extension";
 
-export { AuthorLedger } from "./presence/authorLedger";
-export {
-	ClientIdentityMap,
-	asPresenceDisplayHint,
-} from "./presence/identityMap";
+export { asPresenceDisplayHint } from "./presence/identityMap";
 export {
 	assignMultiplayerColor,
 	normalizeMultiplayerColor,

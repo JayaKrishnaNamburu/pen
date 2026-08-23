@@ -4,14 +4,9 @@
 
 `./dist/index.d.ts`
 
-### class
-
-- InputRuleEngine
-
 ### function
 
 - inputRulesExtension
-- inputRulesToProviders
 
 ### value
 

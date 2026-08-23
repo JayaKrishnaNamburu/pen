@@ -309,11 +309,60 @@ function proveBidi() {
 }
 
 function proveTypesPurityClaim() {
-	const result = runNode(path.join(REPO_ROOT, "scripts/types-purity.mjs"), []);
+	const writeTypesFixture = (helpers) => (dir) => {
+		const typesDir = path.join(dir, "packages/types");
+		fs.mkdirSync(path.join(typesDir, "src"), { recursive: true });
+		fs.mkdirSync(path.join(typesDir, "dist"), { recursive: true });
+		fs.mkdirSync(path.join(dir, "scripts"), { recursive: true });
+		fs.writeFileSync(
+			path.join(typesDir, "package.json"),
+			JSON.stringify({ name: "@input/pen-types" }),
+		);
+		if (helpers != null) {
+			fs.writeFileSync(path.join(typesDir, "src/helpers.ts"), helpers);
+		}
+		fs.writeFileSync(path.join(typesDir, "dist/index.d.ts"), "export {};\n");
+		fs.writeFileSync(
+			path.join(dir, "scripts/types-runtime-allowlist.json"),
+			JSON.stringify({ entries: [] }),
+		);
+	};
+	const runPurity = (dir) =>
+		runNode(path.join(REPO_ROOT, "scripts/types-purity.mjs"), [
+			"--repo-root",
+			dir,
+		]);
+
+	const hole = withTemp(
+		"pen-types-purity-hole-",
+		writeTypesFixture(
+			[
+				"function helperA() {}",
+				"function helperB() {}",
+				"async function helperC() {}",
+				"function helperD() {}",
+			].join("\n"),
+		),
+		runPurity,
+	);
 	record(
-		"types-purity names scanner bound (leave the gate, fix the claim)",
-		/scanner bound/.test(result.out) && /unexported helpers/.test(result.out),
-		`exit ${result.status} (claim is the gate; unexported helpers do not fail)`,
+		"types-purity four unexported helpers",
+		hole.status !== 0 &&
+			/helperA/.test(hole.out) &&
+			/source-level runtime 0/.test(hole.out) &&
+			!/\bOK:/.test(hole.out),
+		`exit ${hole.status}`,
+	);
+
+	const empty = withTemp(
+		"pen-types-purity-empty-",
+		writeTypesFixture(null),
+		runPurity,
+	);
+	record(
+		"types-purity empty source walk",
+		empty.status !== 0 && /cannot check/.test(empty.out),
+		`exit ${empty.status}`,
 	);
 }
 

@@ -75,11 +75,12 @@ import {
  * EditContext exists.
  *
  * Degradation when EditContext is absent: IME uses the composition-event
- * path (Safari late mutation, GBoard 50ms heuristic) instead of EditContext
- * `textupdate`; composition underline and IME window bounds follow the native
- * contenteditable caret rather than `textformatupdate` /
- * `characterboundsupdate`. The field stays editable — typing, paste, and
- * undo still apply.
+ * path instead of EditContext `textupdate`, resolving a commit from the event
+ * sequence — live DOM against the recorded start text, then the following
+ * mutation or the next `compositionstart` for Safari's late `compositionend`.
+ * Composition underline and IME window bounds follow the native contenteditable
+ * caret rather than `textformatupdate` / `characterboundsupdate`. The field
+ * stays editable — typing, paste, and undo still apply.
  */
 export const FIELD_EDITOR_BACKEND_SPLIT = {
 	preferred: "edit-context",

@@ -4,10 +4,6 @@
 
 `./dist/index.d.ts`
 
-### class
-
-- StreamingTargetImpl
-
 ### function
 
 - deltaStreamExtension
@@ -17,4 +13,3 @@
 
 - DeltaStreamOptions
 - ProcessStreamOptions
-- StreamingTarget

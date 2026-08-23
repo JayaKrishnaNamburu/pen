@@ -171,4 +171,91 @@ describe("anchorRepair AN14", () => {
 		]);
 		editor.destroy();
 	});
+
+	it("AN10: in-cell edits produce no content moves and repair is identity", () => {
+		const editor = createEditor();
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "t1",
+				blockType: "table",
+				props: {},
+				position: "last",
+			},
+			{
+				type: "insert-table-cell-text",
+				blockId: "t1",
+				row: 1,
+				col: 1,
+				offset: 0,
+				text: "0123456789",
+			},
+		]);
+		const cellAnchor = editor.anchors.create(
+			{ blockId: "t1", offset: 5, cell: { row: 1, col: 1 } },
+			1,
+		)!;
+		editor.apply([
+			{
+				type: "insert-table-cell-text",
+				blockId: "t1",
+				row: 1,
+				col: 1,
+				offset: 0,
+				text: "xx",
+			},
+		]);
+		const moves = deriveContentMoves(editor.lastChangeSummary!, undefined);
+		expect(moves).toEqual([]);
+		expect(repairAnchor(editor, cellAnchor, moves)).toBe(cellAnchor);
+		expect(editor.anchors.resolve(cellAnchor)).toEqual({
+			blockId: "t1",
+			offset: 7,
+			cell: { row: 1, col: 1 },
+		});
+		editor.destroy();
+	});
+
+	it("AN14: a paragraph split does not retarget a cell anchor", () => {
+		const editor = createEditor();
+		const source = editor.firstBlock()!.id;
+		editor.apply([
+			{ type: "insert-text", blockId: source, offset: 0, text: "meadow sage" },
+			{
+				type: "insert-block",
+				blockId: "t1",
+				blockType: "table",
+				props: {},
+				position: "last",
+			},
+			{
+				type: "insert-table-cell-text",
+				blockId: "t1",
+				row: 0,
+				col: 0,
+				offset: 0,
+				text: "cell text",
+			},
+		]);
+		const cellAnchor = editor.anchors.create(
+			{ blockId: "t1", offset: 5, cell: { row: 0, col: 0 } },
+			1,
+		)!;
+		editor.apply([
+			{
+				type: "split-block",
+				blockId: source,
+				offset: 6,
+				newBlockId: "dest",
+			},
+		]);
+		const moves = deriveContentMoves(editor.lastChangeSummary!, "split-block");
+		expect(repairAnchor(editor, cellAnchor, moves)).toBe(cellAnchor);
+		expect(editor.anchors.resolve(cellAnchor)).toEqual({
+			blockId: "t1",
+			offset: 5,
+			cell: { row: 0, col: 0 },
+		});
+		editor.destroy();
+	});
 });

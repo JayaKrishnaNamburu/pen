@@ -429,6 +429,16 @@ async function main() {
 
 	const args = parseArgs(process.argv.slice(2));
 	const packages = await loadWorkspacePackages(args.repoRoot);
+	if (packages.names.length === 0) {
+		console.error(
+			"no-pen-deep-imports: cannot check: packages/**/package.json walk matched 0 workspace manifests",
+		);
+		process.exitCode = 1;
+		return;
+	}
+	console.log(
+		`population: ${packages.names.length} workspace manifests (packages/**/package.json)`,
+	);
 	const hits = await collectDeepImportHits(args.repoRoot, packages);
 	const allowlist = await loadReasonedList(
 		args.repoRoot,

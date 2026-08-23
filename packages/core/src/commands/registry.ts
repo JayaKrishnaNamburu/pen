@@ -11,6 +11,7 @@ import type {
 	OpOrigin,
 	Precedence,
 	SelectionState,
+	StructuredOpOrigin,
 } from "@input/pen-types";
 
 import { isCommandHandlerProvider } from "./define";
@@ -139,7 +140,15 @@ export function createCommandRegistry(
 			const dispatchEditor = wrapEditor(sourceEditor, {
 				onApply(ops, applyOptions) {
 					appliedDuringHandler = true;
-					commitApply(ops, applyOptions);
+					commitApply(
+						ops,
+						stampDispatchOrigin(
+							entry.commandName,
+							applyOptions,
+							context?.origin,
+							emitDiagnostic,
+						),
+					);
 				},
 				onSetSelection(selection) {
 					commitSelection(
@@ -168,10 +177,18 @@ export function createCommandRegistry(
 						});
 						return true;
 					}
-					commitApply(interpreted.ops, {
-						origin: context?.origin ?? "user",
-						...interpreted.options,
-					});
+					commitApply(
+						interpreted.ops,
+						stampDispatchOrigin(
+							command.name,
+							{
+								origin: context?.origin ?? "user",
+								...interpreted.options,
+							},
+							context?.origin,
+							emitDiagnostic,
+						),
+					);
 					return true;
 				}
 				case "selection":
@@ -270,6 +287,39 @@ function resolveHandlers(
 		return left.index - right.index;
 	});
 	return resolved;
+}
+
+function asStructuredOrigin(origin: OpOrigin): StructuredOpOrigin {
+	return typeof origin === "string" ? { type: origin } : { ...origin };
+}
+
+function stampDispatchOrigin(
+	commandName: string,
+	applyOptions: ApplyOptions | undefined,
+	contextOrigin: OpOrigin | undefined,
+	emitDiagnostic: (event: DiagnosticEvent) => void,
+): ApplyOptions {
+	const incoming = applyOptions?.origin ?? contextOrigin ?? "user";
+	const structured = asStructuredOrigin(incoming);
+	const overwriteAttempted =
+		structured.intent !== undefined && structured.intent !== commandName;
+	if (overwriteAttempted) {
+		emitDiagnostic({
+			code: "command-intent-overwrite",
+			level: "warn",
+			source: "commands",
+			message: "handler or host origin.intent was ignored; dispatch stamps the command name",
+			command: commandName,
+			attempted: structured.intent,
+		});
+	}
+	return {
+		...applyOptions,
+		origin: {
+			...structured,
+			intent: commandName,
+		},
+	};
 }
 
 function interpretCommandResult(result: CommandResult | false): InterpretedResult {

@@ -19,18 +19,18 @@
  * The shipped leftover count is the artifact. Source can still hold
  * runtime functions that never reach the barrel or `dist` — those are
  * printed as unreachable so API3 is not judged on the artifact alone.
- * Unreachable functions do not fail the gate (deletion is a types-
- * package change); they exist so "only N left" cannot hide dead source.
+ * Unreachable *exported* functions do not fail the gate (deletion is a
+ * types-package change); they exist so "only N left" cannot hide dead
+ * source.
  *
- * Source scan is `^export function` only — not a full AST, on purpose
- * (the api-extractor trap). Unexported helpers (`^function` /
- * `^async function`) are invisible to that count: a fixture of four
- * unexported helpers plus a matching empty `.d.ts` reports
- * "source-level runtime 0" and exits 0. Those helpers are printed as
- * the measured hole so "2 remaining" cannot be read as almost-pure.
- * They do not fail the gate. Chasing zero leftovers would invert the
- * DAG: generateId is required by crdt-yjs (below core);
- * logicalTextFromStored is required by export-json and
+ * Source scan is line-prefix regex, not a full AST, on purpose (the
+ * api-extractor trap). `^export function` is the leftover bound.
+ * Unexported helpers (`^function` / `^async function`) used to be
+ * invisible: a fixture of four of them plus a matching empty `.d.ts`
+ * printed "source-level runtime 0" and exited 0. They now fail the
+ * gate unless allowlisted as kind `helper`. Chasing zero leftover
+ * *exports* would invert the DAG: generateId is required by crdt-yjs
+ * (below core); logicalTextFromStored is required by export-json and
  * markdown-serialization (no core dep). Amend API3 to a bounded set.
  */
 
@@ -68,11 +68,13 @@ export function parseAllowlist(raw) {
 			typeof entry?.kind !== "string" ||
 			typeof entry?.reason !== "string" ||
 			entry.name.length === 0 ||
-			(entry.kind !== "function" && entry.kind !== "class") ||
+			(entry.kind !== "function" &&
+				entry.kind !== "class" &&
+				entry.kind !== "helper") ||
 			entry.reason.trim().length === 0
 		) {
 			throw new Error(
-				`types-runtime-allowlist.json entries[${index}] needs name, kind function|class, and a reason`,
+				`types-runtime-allowlist.json entries[${index}] needs name, kind function|class|helper, and a reason`,
 			);
 		}
 		if (!REASON_RE.test(entry.reason)) {
@@ -152,17 +154,20 @@ export function evaluateTypesPurity({
 	leftovers,
 	allowlist,
 	outdatedDist = [],
-	sourceRuntime = { total: 0, shipped: [], unreachable: [] },
+	sourceRuntime = { total: 0, shipped: [], unreachable: [], unexported: [] },
+	sourceFilesScanned,
 }) {
 	const depNames = Object.keys(dependencies ?? {});
+	const leftoverAllowlist = allowlist.filter((entry) => entry.kind !== "helper");
+	const helperAllowlist = allowlist.filter((entry) => entry.kind === "helper");
 	const allowByKey = new Map(
-		allowlist.map((entry) => [exportKey(entry), entry]),
+		leftoverAllowlist.map((entry) => [exportKey(entry), entry]),
 	);
 	const leftoverKeys = new Set(leftovers.map(exportKey));
 	const unexpected = leftovers.filter(
 		(entry) => !allowByKey.has(exportKey(entry)),
 	);
-	const stale = allowlist.filter(
+	const stale = leftoverAllowlist.filter(
 		(entry) => !leftoverKeys.has(exportKey(entry)),
 	);
 	const allowed = leftovers
@@ -171,6 +176,17 @@ export function evaluateTypesPurity({
 			...entry,
 			reason: allowByKey.get(exportKey(entry)).reason,
 		}));
+	const unexported = sourceRuntime.unexported ?? [];
+	const helperNames = new Set(helperAllowlist.map((entry) => entry.name));
+	const unexpectedHelpers = unexported.filter(
+		(entry) => !helperNames.has(entry.name),
+	);
+	const allowedHelpers = helperAllowlist.filter((entry) =>
+		unexported.some((helper) => helper.name === entry.name),
+	);
+	const staleHelpers = helperAllowlist.filter(
+		(entry) => !unexported.some((helper) => helper.name === entry.name),
+	);
 	return {
 		depNames,
 		unexpected,
@@ -178,6 +194,10 @@ export function evaluateTypesPurity({
 		allowed,
 		outdatedDist,
 		sourceRuntime,
+		unexpectedHelpers,
+		allowedHelpers,
+		staleHelpers,
+		sourceFilesScanned,
 	};
 }
 
@@ -185,7 +205,10 @@ export function hasFailures(result) {
 	return (
 		result.depNames.length > 0 ||
 		result.unexpected.length > 0 ||
-		result.stale.length > 0
+		result.stale.length > 0 ||
+		(result.unexpectedHelpers?.length ?? 0) > 0 ||
+		(result.staleHelpers?.length ?? 0) > 0 ||
+		result.sourceFilesScanned === 0
 	);
 }
 
@@ -203,15 +226,31 @@ export function formatReport(result) {
 		unexported: [],
 	};
 	const unexported = sourceRuntime.unexported ?? [];
+	const unexpectedHelpers = result.unexpectedHelpers ?? [];
+	const allowedHelpers = result.allowedHelpers ?? [];
+	const staleHelpers = result.staleHelpers ?? [];
 	lines.push(`dependencies     ${result.depNames.length}`);
 	lines.push(`runtime leftovers allowlisted ${result.allowed.length}`);
 	lines.push(`unmarked         ${result.unexpected.length}`);
-	lines.push(`scanner bound    ^export function`);
+	lines.push(`scanner bound    ^export function | ^function | ^async function`);
+	if (result.sourceFilesScanned != null) {
+		lines.push(
+			`source files scanned ${result.sourceFilesScanned} (packages/types/src **/*.ts, tests excluded)`,
+		);
+	}
 	lines.push(`source-level runtime ${sourceRuntime.total}`);
 	lines.push(`  shipped        ${sourceRuntime.shipped.length}`);
 	lines.push(`  unreachable    ${sourceRuntime.unreachable.length}`);
 	lines.push(`unexported helpers ${unexported.length}`);
+	lines.push(`  unexpected     ${unexpectedHelpers.length}`);
+	lines.push(`  allowlisted    ${allowedHelpers.length}`);
 	lines.push(`outdated dist    ${result.outdatedDist?.length ?? 0}`);
+	if (result.sourceFilesScanned === 0) {
+		lines.push("");
+		lines.push(
+			"cannot check: packages/types/src walk matched 0 files",
+		);
+	}
 	if (result.depNames.length > 0) {
 		lines.push("");
 		lines.push("types package.json must have zero dependencies:");
@@ -245,14 +284,21 @@ export function formatReport(result) {
 			lines.push(`  function ${entry.name}${where}`);
 		}
 	}
-	if (unexported.length > 0) {
+	if (unexpectedHelpers.length > 0) {
 		lines.push("");
 		lines.push(
-			"unexported source helpers (invisible to ^export function; measured hole, not a purity failure):",
+			"unexported source helpers (invisible to ^export function; relocate, export, or allowlist as kind helper with a P.3 reason):",
 		);
-		for (const entry of unexported) {
+		for (const entry of unexpectedHelpers) {
 			const where = entry.file ? `  (${entry.file})` : "";
 			lines.push(`  function ${entry.name}${where}`);
+		}
+	}
+	if (staleHelpers.length > 0) {
+		lines.push("");
+		lines.push("stale helper allowlist entries:");
+		for (const entry of staleHelpers) {
+			lines.push(`  helper ${entry.name}`);
 		}
 	}
 	lines.push("");
@@ -481,10 +527,13 @@ export function runSelfTests() {
 		allowlist: [],
 		sourceRuntime: holeRuntime,
 	});
-	if (hasFailures(holeResult)) {
+	if (!hasFailures(holeResult)) {
 		throw new Error(
-			"self-test: unexported helpers are not a purity failure",
+			"self-test: four unexported helpers must fail purity",
 		);
+	}
+	if (holeResult.unexpectedHelpers.length !== 4) {
+		throw new Error("self-test: hole fixture names four unexpected helpers");
 	}
 	const holeReport = formatReport(holeResult);
 	if (!holeReport.includes("source-level runtime 0")) {
@@ -495,16 +544,49 @@ export function runSelfTests() {
 	if (!holeReport.includes("unexported helpers 4")) {
 		throw new Error("self-test: hole fixture prints the unexported count");
 	}
-	if (!holeReport.includes("scanner bound    ^export function")) {
-		throw new Error("self-test: report names the scanner bound");
+	if (!holeReport.includes("function helperA")) {
+		throw new Error("self-test: hole fixture names helperA");
 	}
-	if (!holeReport.includes("Amend API3 to a bounded set")) {
-		throw new Error("self-test: report names the API3 amendment");
-	}
-	if (!holeReport.includes("OK:")) {
+	if (holeReport.includes("OK:")) {
 		throw new Error(
-			"self-test: hole fixture still exits as purity-green (do not force red)",
+			"self-test: hole fixture must not print OK over unexported helpers",
 		);
+	}
+
+	const allowedHelper = evaluateTypesPurity({
+		dependencies: {},
+		leftovers: [],
+		allowlist: parseAllowlist({
+			entries: [
+				{
+					name: "helperA",
+					kind: "helper",
+					reason: "P.3: fixture helper",
+				},
+			],
+		}),
+		sourceRuntime: classifySourceRuntime({
+			functions: [],
+			leftoverNames: [],
+			unexported: [{ name: "helperA", file: "a.ts" }],
+		}),
+	});
+	if (hasFailures(allowedHelper)) {
+		throw new Error("self-test: allowlisted helper must not fail purity");
+	}
+
+	const emptyWalk = evaluateTypesPurity({
+		dependencies: {},
+		leftovers: [],
+		allowlist: [],
+		sourceFilesScanned: 0,
+	});
+	if (!hasFailures(emptyWalk)) {
+		throw new Error("self-test: zero source files must fail closed");
+	}
+	const emptyReport = formatReport(emptyWalk);
+	if (!emptyReport.includes("cannot check: packages/types/src walk matched 0 files")) {
+		throw new Error("self-test: empty walk prints cannot check");
 	}
 }
 
@@ -512,7 +594,20 @@ const IGNORE_DIR_NAMES = new Set(["__tests__", "node_modules", "dist"]);
 
 async function collectTypesSourceFunctions(typesDir) {
 	const files = [];
-	await collectSourceFiles(path.join(typesDir, "src"), files);
+	const srcDir = path.join(typesDir, "src");
+	try {
+		await collectSourceFiles(srcDir, files);
+	} catch (error) {
+		if (
+			error &&
+			typeof error === "object" &&
+			"code" in error &&
+			error.code === "ENOENT"
+		) {
+			return { functions: [], unexported: [], fileCount: 0 };
+		}
+		throw error;
+	}
 	const functions = [];
 	const unexported = [];
 	for (const filePath of files) {
@@ -534,7 +629,7 @@ async function collectTypesSourceFunctions(typesDir) {
 	}
 	functions.sort((left, right) => left.name.localeCompare(right.name));
 	unexported.sort((left, right) => left.name.localeCompare(right.name));
-	return { functions, unexported };
+	return { functions, unexported, fileCount: files.length };
 }
 
 async function collectSourceFiles(directory, files) {
@@ -576,10 +671,7 @@ async function main() {
 	await runFreshnessSelfTests();
 	console.log("API3 types-purity self-test ok");
 	console.log(
-		"  red-proof: unmarked class, new dependency, and stale allowlist fail closed",
-	);
-	console.log(
-		"  measured: four unexported helpers + empty .d.ts print source-level runtime 0 and stay purity-green",
+		"  red-proof: unmarked class, new dependency, stale allowlist, four unexported helpers, and empty source walk fail closed",
 	);
 
 	const args = parseArgs(process.argv.slice(2));
@@ -618,6 +710,7 @@ async function main() {
 		allowlist,
 		outdatedDist,
 		sourceRuntime,
+		sourceFilesScanned: sourceFunctions.fileCount,
 	});
 	console.log("");
 	console.log(formatReport(result));

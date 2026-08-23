@@ -175,8 +175,8 @@ describe("@input/pen-react escape key handling", () => {
 			expect(editor.selection).toMatchObject({
 				type: "text",
 				anchor: { blockId: firstBlockId, offset: 0 },
-				focus: { blockId: thirdBlockId, offset: 5 },
-				isMultiBlock: true,
+				focus: { blockId: firstBlockId, offset: 5 },
+				isMultiBlock: false,
 			});
 
 			await act(async () => {
@@ -193,7 +193,7 @@ describe("@input/pen-react escape key handling", () => {
 		}
 	});
 
-	it("uses document-first cmd+a by default for content-first structured documents", async () => {
+	it("escalates whole-block cmd+a to BlockSelection in content-first structured documents", async () => {
 		const editor = createEditor();
 		const firstBlockId = editor.firstBlock()!.id;
 		const secondBlockId = crypto.randomUUID();
@@ -243,11 +243,10 @@ describe("@input/pen-react escape key handling", () => {
 			await flushAnimationFrames(2);
 		});
 
-		expect(editor.selection).toMatchObject({
-			type: "text",
-			anchor: { blockId: firstBlockId, offset: 0 },
-			focus: { blockId: secondBlockId, offset: 6 },
-			isMultiBlock: true,
+		expect(editor.selection).toEqual({
+			type: "block",
+			blockIds: [firstBlockId, secondBlockId],
+			head: secondBlockId,
 		});
 
 		await act(async () => {
@@ -333,11 +332,10 @@ describe("@input/pen-react escape key handling", () => {
 			await flushAnimationFrames(2);
 		});
 
-		expect(editor.selection).toMatchObject({
-			type: "text",
-			anchor: { blockId: firstBlockId, offset: 0 },
-			focus: { blockId: thirdBlockId, offset: 5 },
-			isMultiBlock: true,
+		expect(editor.selection).toEqual({
+			type: "block",
+			blockIds: [firstBlockId, secondBlockId, thirdBlockId],
+			head: thirdBlockId,
 		});
 
 		await act(async () => {
@@ -347,7 +345,7 @@ describe("@input/pen-react escape key handling", () => {
 		editor.destroy();
 	});
 
-	it("keeps cmd+a block-scoped before selecting the document when a block is selected in block-first mode", async () => {
+	it("escalates a selected block to top-level BlockSelection on cmd+a in block-first mode", async () => {
 		const editor = createEditor();
 		const firstBlockId = editor.firstBlock()!.id;
 		const secondBlockId = crypto.randomUUID();
@@ -402,11 +400,10 @@ describe("@input/pen-react escape key handling", () => {
 			await flushAnimationFrames(2);
 		});
 
-		expect(editor.selection).toMatchObject({
-			type: "text",
-			anchor: { blockId: firstBlockId, offset: 0 },
-			focus: { blockId: firstBlockId, offset: 5 },
-			isMultiBlock: false,
+		expect(editor.selection).toEqual({
+			type: "block",
+			blockIds: [firstBlockId, secondBlockId],
+			head: secondBlockId,
 		});
 
 		await act(async () => {
@@ -414,11 +411,10 @@ describe("@input/pen-react escape key handling", () => {
 			await flushAnimationFrames(2);
 		});
 
-		expect(editor.selection).toMatchObject({
-			type: "text",
-			anchor: { blockId: firstBlockId, offset: 0 },
-			focus: { blockId: secondBlockId, offset: 6 },
-			isMultiBlock: true,
+		expect(editor.selection).toEqual({
+			type: "block",
+			blockIds: [firstBlockId, secondBlockId],
+			head: secondBlockId,
 		});
 
 		await act(async () => {

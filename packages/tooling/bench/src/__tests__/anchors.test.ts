@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import * as Y from "yjs";
 import { attributeBenchResult, runSuite } from "../bench";
 import {
 	ANCHORS_ENCODE_SIZE_1000_BENCH,
@@ -8,27 +9,44 @@ import {
 } from "../constants/benchmarks";
 import {
 	ANCHOR_BLOCK_COUNT,
+	ANCHOR_CELL_COL,
+	ANCHOR_CELL_COUNT,
+	ANCHOR_CELL_ROW,
 	ANCHOR_ENCODE_COUNT,
 	ANCHOR_WORD,
 	ANCHOR_WORD_REPEAT,
+	CELL_COPY_SPLIT_ANALOG,
+	CELL_DELETE_AT,
+	CELL_EDIT_OFFSET,
+	CELL_EDIT_TEXT,
+	CELL_INSERT_TEXT,
 	SPLIT_HEAD_TEXT,
 	SPLIT_OFFSET,
 	SPLIT_SOURCE_TEXT,
 	SPLIT_TAIL_TEXT,
 	createBlockScaleFixture,
+	createCellGridFixture,
+	createCellScaleTextFixture,
 	createPenShapedDoc,
 	createScaleTextFixture,
 	encodeSizes,
 	insertBlockText,
+	measureCellInBlockEdit,
 	measureSplitFollow,
 	mintEncoded,
 	resolveEncoded,
 } from "../fixtures/anchors";
-import { anchorsBenchmarks } from "../suites/anchors.bench";
+import {
+	ANCHORS_CELL_IN_BLOCK_EDIT_BENCH,
+	ANCHORS_ENCODE_SIZE_CELL_1000_BENCH,
+	ANCHORS_RESOLVE_200_CELLS_BENCH,
+	ANCHORS_RESOLVE_CELL_70K_1000_BENCH,
+	anchorsBenchmarks,
+} from "../suites/anchors.bench";
 
 describe("Yjs relative-position substrate", () => {
 	it("every anchors bench declares a Pen-removed floor", () => {
-		expect(anchorsBenchmarks.length).toBe(4);
+		expect(anchorsBenchmarks.length).toBe(8);
 		expect(
 			anchorsBenchmarks.every((entry) => typeof entry.floor === "function"),
 		).toBe(true);
@@ -167,6 +185,134 @@ describe("Yjs relative-position substrate", () => {
 		expect(byId["anchors.resolve-200-blocks"]?.metrics).toMatchObject({
 			resolveCount: ANCHOR_BLOCK_COUNT,
 			blockCount: ANCHOR_BLOCK_COUNT,
+		});
+		for (const result of results) {
+			expect(typeof result.floorP50Ms).toBe("number");
+			expect(typeof result.attributedP50Ms).toBe("number");
+		}
+	});
+});
+
+describe("Yjs relative-position table-cell cohort", () => {
+	it("a table block stores cell text on nested Y.Text, not block.content", () => {
+		const fixture = createCellScaleTextFixture();
+		expect(fixture.block.get("type")).toBe("table");
+		expect(fixture.block.get("content")).toBeUndefined();
+		expect(fixture.content).toBeInstanceOf(Y.Text);
+		expect(fixture.content.toString()).toBe(fixture.text);
+		expect(fixture.cell).toEqual({
+			row: ANCHOR_CELL_ROW,
+			col: ANCHOR_CELL_COL,
+		});
+	});
+
+	it("encode size in a table cell is a 4–6 byte count, not a clock", () => {
+		const fixture = createCellScaleTextFixture();
+		expect(fixture.text).toBe(ANCHOR_WORD.repeat(ANCHOR_WORD_REPEAT));
+		expect(fixture.text.length).toBe(70_000);
+		expect(fixture.encoded).toHaveLength(ANCHOR_ENCODE_COUNT);
+		const sizes = encodeSizes(fixture.encoded);
+		expect(sizes.count).toBe(ANCHOR_ENCODE_COUNT);
+		expect(sizes.minBytes).toBeGreaterThanOrEqual(4);
+		expect(sizes.maxBytes).toBeLessThanOrEqual(6);
+	});
+
+	it("resolve at 70k cell chars returns the minted offsets on the cell Y.Text", () => {
+		const fixture = createCellScaleTextFixture();
+		const resolved = fixture.encoded.map((encoded) =>
+			resolveEncoded(fixture.doc, encoded),
+		);
+		expect(resolved).toHaveLength(ANCHOR_ENCODE_COUNT);
+		for (let i = 0; i < resolved.length; i++) {
+			expect(resolved[i]?.index).toBe(fixture.offsets[i]);
+			expect(
+				resolved[i]?.type,
+				"cell-resolve-stays-on-cell-ytext",
+			).toBe(fixture.content);
+			expect(resolved[i]?.type).not.toBe(fixture.block.get("content"));
+		}
+	});
+
+	it("resolve across 200 cells hits mint-at-0 on each cell Y.Text", () => {
+		const fixture = createCellGridFixture();
+		expect(fixture.cells).toHaveLength(ANCHOR_CELL_COUNT);
+		expect(fixture.block.get("content")).toBeUndefined();
+		const resolved = fixture.encoded.map((encoded) =>
+			resolveEncoded(fixture.doc, encoded),
+		);
+		expect(resolved).toHaveLength(ANCHOR_CELL_COUNT);
+		for (let i = 0; i < resolved.length; i++) {
+			expect(resolved[i]?.index, `cell ${i} index`).toBe(0);
+			expect(
+				resolved[i]?.type,
+				`cell-grid-stays-on-cell-ytext-${i}`,
+			).toBe(fixture.cells[i]);
+		}
+		const uniqueTypes = new Set(resolved.map((point) => point.type));
+		expect(uniqueTypes.size).toBe(ANCHOR_CELL_COUNT);
+	});
+
+	it("in-cell insert shifts the mint and in-cell delete collapses it, both on the cell", () => {
+		const measured = measureCellInBlockEdit();
+		expect(measured.tableHasContent).toBe(false);
+		expect(measured.insert.text).toBe(`${CELL_INSERT_TEXT}${CELL_EDIT_TEXT}`);
+		expect(measured.insert.resolvedIndex).toBe(
+			CELL_EDIT_OFFSET + CELL_INSERT_TEXT.length,
+		);
+		expect(measured.insert.onCell).toBe(true);
+		expect(measured.insert.onWrongType).toBe(false);
+		expect(measured.delete.text).toBe("012789");
+		expect(measured.delete.resolvedIndex).toBe(CELL_DELETE_AT);
+		expect(measured.delete.onCell).toBe(true);
+		expect(measured.delete.onWrongType).toBe(false);
+	});
+
+	it("a table cell has no Pen copy-split analog", () => {
+		expect(CELL_COPY_SPLIT_ANALOG).toBeNull();
+	});
+
+	it("cell benches attribute a floor and keep the post-clock counts", async () => {
+		const results = await runSuite(
+			"anchors-cell-counts",
+			anchorsBenchmarks.filter((entry) =>
+				[
+					ANCHORS_ENCODE_SIZE_CELL_1000_BENCH.id,
+					ANCHORS_RESOLVE_CELL_70K_1000_BENCH.id,
+					ANCHORS_RESOLVE_200_CELLS_BENCH.id,
+					ANCHORS_CELL_IN_BLOCK_EDIT_BENCH.id,
+				].includes(entry.id ?? ""),
+			),
+			{ iterations: 1, warmup: 0 },
+		);
+		const byId = Object.fromEntries(
+			results.map((result) => [result.id, result]),
+		);
+		expect(byId["anchors.encode-size-cell-1000"]?.metrics).toMatchObject({
+			encodeCount: ANCHOR_ENCODE_COUNT,
+			charCount: 70_000,
+			resolvedOnCell: 1,
+			tableHasContent: 0,
+		});
+		expect(byId["anchors.resolve-cell-70k-1000"]?.metrics).toMatchObject({
+			resolveCount: ANCHOR_ENCODE_COUNT,
+			nullCount: 0,
+			wrongTypeCount: 0,
+			tableHasContent: 0,
+		});
+		expect(byId["anchors.resolve-200-cells"]?.metrics).toMatchObject({
+			resolveCount: ANCHOR_CELL_COUNT,
+			cellCount: ANCHOR_CELL_COUNT,
+			wrongTypeCount: 0,
+			tableHasContent: 0,
+		});
+		expect(byId["anchors.cell-in-block-edit"]?.metrics).toMatchObject({
+			insertShifted: CELL_EDIT_OFFSET + CELL_INSERT_TEXT.length,
+			insertExpected: CELL_EDIT_OFFSET + CELL_INSERT_TEXT.length,
+			insertOnCell: 1,
+			deleteCollapsed: CELL_DELETE_AT,
+			deleteExpected: CELL_DELETE_AT,
+			deleteOnCell: 1,
+			tableHasContent: 0,
 		});
 		for (const result of results) {
 			expect(typeof result.floorP50Ms).toBe("number");

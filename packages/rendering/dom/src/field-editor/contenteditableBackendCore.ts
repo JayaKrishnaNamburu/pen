@@ -41,7 +41,9 @@ export abstract class ContentEditableBackendCore {
 	protected isComposing = false;
 	// block-policy beforeinput: do not absorb later browser leftovers as ops
 	protected ignoreBrowserMutations = false;
-	protected compositionStartTimestamp = 0;
+	// watchdog must not observe its own restore writes
+	protected restoringDomFromModel = false;
+	protected lastWatchdogMismatch: string | null = null;
 	protected compositionStartText: string | null = null;
 	protected deferredRemoteDeltas: Array<{ delta: FieldEditorDelta[] }> = [];
 	protected pendingDomSyncFrame: number | null = null;
@@ -58,58 +60,71 @@ export abstract class ContentEditableBackendCore {
 
 	activate(element: HTMLElement, ytext: unknown): void {
 		this.element = element;
-		this.ytext = ytext as FieldEditorTextLike;
+		const activeYText = ytext as FieldEditorTextLike;
+		this.ytext = activeYText;
 
 		element.contentEditable = "true";
 		this.fieldEditor.resetBackendSelectionAuthority();
-		this.fieldEditor.applyBackendSelectionUntilNextFrame();
-		this.isComposing = false;
-		this.ignoreBrowserMutations = false;
-		this.compositionStartText = null;
-		this.fieldEditor.setComposing(false);
+		this.fieldEditor.withBackendSelectionWrite(() => {
+			this.isComposing = false;
+			this.ignoreBrowserMutations = false;
+			this.restoringDomFromModel = false;
+			this.lastWatchdogMismatch = null;
+			this.compositionStartText = null;
+			this.fieldEditor.setComposing(false);
 
-		element.addEventListener("beforeinput", this.handleBeforeInput);
-		element.addEventListener(
-			"compositionstart",
-			this.handleCompositionStart,
-		);
-		element.addEventListener("compositionend", this.handleCompositionEnd);
-		element.addEventListener("keydown", this.handleKeyDown);
-		element.addEventListener("copy", this.handleCopyEvent);
-		element.addEventListener("cut", this.handleCutEvent);
-		element.addEventListener("dragstart", this.handleDragStart);
-		element.addEventListener("drop", this.handleDrop);
-		element.addEventListener("pointerdown", this.handlePointerDown);
-		element.addEventListener("contextmenu", this.handleContextMenu);
-		element.ownerDocument?.addEventListener(
-			"selectionchange",
-			this.handleSelectionChange,
-		);
+			element.addEventListener("beforeinput", this.handleBeforeInput);
+			element.addEventListener(
+				"compositionstart",
+				this.handleCompositionStart,
+			);
+			element.addEventListener(
+				"compositionend",
+				this.handleCompositionEnd,
+			);
+			element.addEventListener("keydown", this.handleKeyDown);
+			element.addEventListener("copy", this.handleCopyEvent);
+			element.addEventListener("cut", this.handleCutEvent);
+			element.addEventListener("dragstart", this.handleDragStart);
+			element.addEventListener("drop", this.handleDrop);
+			element.addEventListener("pointerdown", this.handlePointerDown);
+			element.addEventListener("contextmenu", this.handleContextMenu);
+			element.ownerDocument?.addEventListener(
+				"selectionchange",
+				this.handleSelectionChange,
+			);
 
-		this.mutationObserver = new MutationObserver(this.handleMutations);
-		this.mutationObserver.observe(element, {
-			childList: true,
-			subtree: true,
-			characterData: true,
-			characterDataOldValue: true,
+			this.mutationObserver = new MutationObserver(this.handleMutations);
+			this.mutationObserver.observe(element, {
+				childList: true,
+				subtree: true,
+				characterData: true,
+				characterDataOldValue: true,
+			});
+
+			this.observer = (event) => this.handleYTextChange(event);
+			activeYText.observe(this.observer);
+			this.unsubscribeDecorationsChange = this.editor.on(
+				"decorationsChange",
+				this.handleDecorationsChange,
+			);
+			this.inlineDecorationsSignature =
+				this.getInlineDecorationsSignature();
+
+			fullReconcileToDOM(activeYText, element, this.editor.schema, {
+				urlPolicy: urlPolicyFromEditor(this.editor),
+				inlineDecorations: this.getInlineDecorationsForBlock(),
+			});
+			this.fieldEditor.notifyDomReconciled(
+				this.fieldEditor.focusBlockId ?? undefined,
+			);
+			this.restoreDOMSelectionFromEditor();
+			this.discardObservedMutations();
 		});
+	}
 
-		this.observer = (event) => this.handleYTextChange(event);
-		this.ytext.observe(this.observer);
-		this.unsubscribeDecorationsChange = this.editor.on(
-			"decorationsChange",
-			this.handleDecorationsChange,
-		);
-		this.inlineDecorationsSignature = this.getInlineDecorationsSignature();
-
-		fullReconcileToDOM(this.ytext, element, this.editor.schema, {
-			urlPolicy: urlPolicyFromEditor(this.editor),
-			inlineDecorations: this.getInlineDecorationsForBlock(),
-		});
-		this.fieldEditor.notifyDomReconciled(
-			this.fieldEditor.focusBlockId ?? undefined,
-		);
-		this.restoreDOMSelectionFromEditor();
+	protected discardObservedMutations(): void {
+		this.mutationObserver?.takeRecords();
 	}
 
 	deactivate(): void {
@@ -166,6 +181,8 @@ export abstract class ContentEditableBackendCore {
 		this.fieldEditor.resetBackendSelectionAuthority();
 		this.isComposing = false;
 		this.ignoreBrowserMutations = false;
+		this.restoringDomFromModel = false;
+		this.lastWatchdogMismatch = null;
 		this.compositionStartText = null;
 		this.fieldEditor.setComposing(false);
 	}
@@ -260,7 +277,8 @@ export abstract class ContentEditableBackendCore {
 	}
 
 	restoreDOMSelectionFromEditor(): void {
-		if (!this.element) return;
+		const element = this.element;
+		if (!element) return;
 
 		const blockId = this.fieldEditor.focusBlockId;
 		if (!blockId) return;
@@ -280,8 +298,9 @@ export abstract class ContentEditableBackendCore {
 			if (!activeSelection) return;
 			const start = activeSelection.anchorOffset;
 			const end = activeSelection.focusOffset;
-			this.fieldEditor.applyBackendSelectionUntilNextFrame();
-			setSelectionOffsets(this.element, start, end);
+			this.fieldEditor.withBackendSelectionWrite(() => {
+				setSelectionOffsets(element, start, end);
+			});
 			return;
 		}
 		const restored = resolveRestoreTextEndpoints(
@@ -302,18 +321,21 @@ export abstract class ContentEditableBackendCore {
 			focusOffset: focus.offset,
 		});
 
-		const root = this.element.closest(
+		const root = element.closest(
 			"[data-pen-editor-root]",
 		) as HTMLElement | null;
 		if (!root) return;
 
-		this.fieldEditor.applyBackendSelectionUntilNextFrame();
-		editorSelectionToDOM(root, anchor, focus);
+		this.fieldEditor.withBackendSelectionWrite(() => {
+			editorSelectionToDOM(root, anchor, focus);
+		});
 	}
 
 	protected abstract handleBeforeInput: (event: InputEvent) => void;
-	protected abstract handleCompositionStart: () => void;
-	protected abstract handleCompositionEnd: () => void;
+	protected abstract handleCompositionStart: (
+		event?: CompositionEvent,
+	) => void;
+	protected abstract handleCompositionEnd: (event?: CompositionEvent) => void;
 	protected abstract handleKeyDown: (event: KeyboardEvent) => void;
 	protected abstract handleCopyEvent: (event: ClipboardEvent) => void;
 	protected abstract handleCutEvent: (event: ClipboardEvent) => void;
@@ -325,7 +347,9 @@ export abstract class ContentEditableBackendCore {
 	};
 	protected abstract handleSelectionChange: () => void;
 	protected abstract handleMutations: (mutations: MutationRecord[]) => void;
-	protected abstract handleYTextChange(event: FieldEditorTextChangeEvent): void;
+	protected abstract handleYTextChange(
+		event: FieldEditorTextChangeEvent,
+	): void;
 	protected abstract handleDecorationsChange: () => void;
 	abstract resolveCurrentInputRange(): { start: number; end: number } | null;
 	protected abstract applyTextDiffAsOps(

@@ -23,6 +23,36 @@ function seedText(editor: ReturnType<typeof createEditor>, text: string): string
 	return blockId;
 }
 
+function seedTableCell(
+	editor: ReturnType<typeof createEditor>,
+	tableId: string,
+	row: number,
+	col: number,
+	text: string,
+): void {
+	if (!editor.getBlock(tableId)) {
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: tableId,
+				blockType: "table",
+				props: {},
+				position: "last",
+			},
+		]);
+	}
+	editor.apply([
+		{
+			type: "insert-table-cell-text",
+			blockId: tableId,
+			row,
+			col,
+			offset: 0,
+			text,
+		},
+	]);
+}
+
 describe("editor.anchors AN1", () => {
 	it("AN1: create returns null and emits anchor-target-missing when the block is gone", () => {
 		const editor = createEditor();
@@ -193,6 +223,95 @@ describe("editor.anchors values", () => {
 				focus: { blockId: "missing", offset: 0 },
 			}),
 		).toBeNull();
+		editor.destroy();
+	});
+});
+
+describe("editor.anchors AN10 table-cell cohort", () => {
+	it("AN10: mint and resolve against tableContent[row].cells[col], not block.content", () => {
+		const editor = createEditor();
+		seedTableCell(editor, "t1", 1, 1, "cell text");
+		const missingCell = editor.anchors.create({ blockId: "t1", offset: 0 });
+		expect(missingCell).toBeNull();
+		const anchor = editor.anchors.create(
+			{ blockId: "t1", offset: 5, cell: { row: 1, col: 1 } },
+			1,
+		);
+		expect(anchor).not.toBeNull();
+		expect(anchor?.cell).toEqual({ row: 1, col: 1 });
+		expect(editor.anchors.resolve(anchor!)).toEqual({
+			blockId: "t1",
+			offset: 5,
+			cell: { row: 1, col: 1 },
+		});
+		editor.destroy();
+	});
+
+	it("AN10: in-cell insert shifts the mint and in-cell delete collapses it", () => {
+		const editor = createEditor();
+		seedTableCell(editor, "t1", 1, 1, "0123456789");
+		const target = { blockId: "t1", offset: 5, cell: { row: 1, col: 1 } };
+		const insertAnchor = editor.anchors.create(target, 1)!;
+		const deleteAnchor = editor.anchors.create(target, 1)!;
+		editor.apply([
+			{
+				type: "insert-table-cell-text",
+				blockId: "t1",
+				row: 1,
+				col: 1,
+				offset: 0,
+				text: "xx",
+			},
+		]);
+		expect(editor.anchors.resolve(insertAnchor)).toEqual({
+			blockId: "t1",
+			offset: 7,
+			cell: { row: 1, col: 1 },
+		});
+		editor.apply([
+			{
+				type: "delete-table-cell-text",
+				blockId: "t1",
+				row: 1,
+				col: 1,
+				offset: 3,
+				length: 4,
+			},
+		]);
+		expect(editor.anchors.resolve(deleteAnchor)).toEqual({
+			blockId: "t1",
+			offset: 3,
+			cell: { row: 1, col: 1 },
+		});
+		expect(
+			editor.getBlock("t1")!.as("table")!.tableCell(1, 1)!.textContent(),
+		).toBe("xx056789");
+		editor.destroy();
+	});
+
+	it("AN11: cell serialize stamps c and deserialize restores the cell", () => {
+		const editor = createEditor();
+		seedTableCell(editor, "t1", 0, 1, "hello");
+		const local = editor.anchors.create(
+			{ blockId: "t1", offset: 2, cell: { row: 0, col: 1 } },
+			-1,
+		)!;
+		const wire = JSON.parse(editor.anchors.serialize(local)) as {
+			v: number;
+			b: string;
+			a: number;
+			c: [number, number];
+			p: string;
+		};
+		expect(wire).toMatchObject({ v: 1, b: "t1", a: -1, c: [0, 1] });
+		const restored = editor.anchors.deserialize(editor.anchors.serialize(local))!;
+		expect(restored.provenance).toBe("wire");
+		expect(restored.cell).toEqual({ row: 0, col: 1 });
+		expect(editor.anchors.resolve(restored)).toEqual({
+			blockId: "t1",
+			offset: 2,
+			cell: { row: 0, col: 1 },
+		});
 		editor.destroy();
 	});
 });

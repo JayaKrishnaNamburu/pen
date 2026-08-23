@@ -143,6 +143,32 @@ export class TableGridExecutor {
 				}
 				break;
 			}
+			case "insert-block":
+			case "update-block":
+			case "delete-block":
+			case "move-block":
+			case "convert-block":
+			case "split-block":
+			case "merge-blocks":
+			case "insert-text":
+			case "delete-text":
+			case "format-text":
+			case "replace-text":
+			case "insert-inline-node":
+			case "remove-inline-node":
+			case "update-layout":
+			case "set-meta":
+			case "create-app":
+			case "update-app":
+			case "delete-app":
+			case "set-selection":
+			case "stream-open":
+				break;
+			default: {
+				const _exhaustive: never = op;
+				void _exhaustive;
+				break;
+			}
 		}
 
 		return [tableOp.blockId];

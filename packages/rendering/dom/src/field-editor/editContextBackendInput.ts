@@ -42,7 +42,9 @@ import { applyListInputRule } from "./commands";
 import { isFieldEditorTextEditingKey } from "../utils/textEntryTarget";
 import { applyInlineInputRule } from "./inlineInputRules";
 import { applyInlineTextInput } from "./textInputPipeline";
+import { urlPolicyFromEditor } from "../security/resolveEditorUrl";
 import type {
+	FieldEditorDelta,
 	FieldEditorObserver,
 	FieldEditorTextChangeEvent,
 	FieldEditorTextLike,
@@ -53,6 +55,79 @@ import {
 } from "./editContextBackendCore";
 
 export abstract class EditContextBackendInput extends EditContextBackendCore {
+	protected isComposing = false;
+	protected deferredRemoteDeltas: Array<{ delta: FieldEditorDelta[] }> = [];
+
+	activate(element: HTMLElement, ytext: unknown): void {
+		this.isComposing = false;
+		this.deferredRemoteDeltas = [];
+		super.activate(element, ytext);
+	}
+
+	deactivate(): void {
+		this.isComposing = false;
+		this.deferredRemoteDeltas = [];
+		super.deactivate();
+	}
+
+	protected handleCompositionStart = (): void => {
+		this.beginEditContextComposition();
+	};
+
+	protected handleCompositionEnd = (): void => {
+		this.isComposing = false;
+		this.fieldEditor.setComposing(false);
+		this.flushDeferredRemoteDeltas();
+		this.fieldEditor.notifyGestureEvent?.("compositionend-completed");
+	};
+
+	protected hasInFlightEditContextComposition(): boolean {
+		return this.isComposing || this.fieldEditor.isComposing;
+	}
+
+	protected beginEditContextComposition(): void {
+		if (this.isComposing) {
+			return;
+		}
+		this.isComposing = true;
+		this.deferredRemoteDeltas = [];
+		this.fieldEditor.notifyGestureEvent?.("compositionstart");
+		this.fieldEditor.setComposing(true);
+	}
+
+	protected flushDeferredRemoteDeltas(): void {
+		if (this.deferredRemoteDeltas.length === 0) {
+			return;
+		}
+		this.deferredRemoteDeltas = [];
+		if (!this.editContext || !this.element || !this.ytext) {
+			return;
+		}
+		const nextText = toEditContextText(this.ytext.toString());
+		this.editContext.updateText(0, this.editContext.text.length, nextText);
+		const clampedSelectionStart = Math.min(
+			this.editContext.selectionStart,
+			nextText.length,
+		);
+		const clampedSelectionEnd = Math.min(
+			this.editContext.selectionEnd,
+			nextText.length,
+		);
+		this.editContext.updateSelection(
+			clampedSelectionStart,
+			clampedSelectionEnd,
+		);
+		fullReconcileToDOM(this.ytext, this.element, this.editor.schema, {
+			urlPolicy: urlPolicyFromEditor(this.editor),
+			preserveSelection: true,
+			inlineDecorations: this.getInlineDecorationsForBlock(),
+		});
+		this.fieldEditor.notifyDomReconciled(
+			this.fieldEditor.focusBlockId ?? undefined,
+		);
+		this.restoreDOMCaret();
+	}
+
 	protected handleTextUpdate = (event: Event): void => {
 		if (!this.ytext) return;
 		const {
@@ -187,7 +262,6 @@ export abstract class EditContextBackendInput extends EditContextBackendCore {
 			editorSelectionRange: this.resolveEditorSelectionRange(
 				input.blockId,
 			),
-			programmaticInputRange: null,
 			editContextSelection:
 				this.fieldEditor.getEditContextSelectionSnapshot(
 					input.blockId,
@@ -290,6 +364,7 @@ export abstract class EditContextBackendInput extends EditContextBackendCore {
 		const ranges =
 			(event as EditContextTextFormatUpdateEvent).getTextFormats?.() ??
 			[];
+		this.beginEditContextComposition();
 		applyEditContextTextFormats(this.element, ranges);
 	};
 

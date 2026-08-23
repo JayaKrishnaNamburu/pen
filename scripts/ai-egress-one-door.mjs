@@ -280,6 +280,15 @@ function main() {
 	console.log("extra-method fixture: ModelAdapter.generate failed the checker.");
 
 	const files = loadRepoFiles();
+	if (files.length === 0) {
+		console.error(
+			"ai-egress-one-door: cannot check: packages+playground source walk matched 0 files",
+		);
+		process.exit(1);
+	}
+	console.log(
+		`population: ${files.length} files (packages+playground source, tests excluded)`,
+	);
 	const adapterFile = files.find((file) => file.file === ADAPTER_FILE);
 	if (!adapterFile) {
 		console.error(`ai-egress-one-door failed: missing ${ADAPTER_FILE}`);

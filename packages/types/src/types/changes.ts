@@ -1,3 +1,11 @@
+/**
+ * Which side of a position inserted text lands on. `-1` sticks to the
+ * character before the position, `1` to the character after — so a caret with
+ * `assoc: -1` stays put when text is inserted at its offset, and one with
+ * `assoc: 1` is pushed along by it.
+ *
+ * This is the single declaration; `@input/pen-types/anchors` re-exports it.
+ */
 export type Assoc = -1 | 1;
 
 export type PointMapMode =

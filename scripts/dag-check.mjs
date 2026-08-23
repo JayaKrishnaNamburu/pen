@@ -673,8 +673,18 @@ async function main() {
 	}
 
 	const taskGraph = await loadTaskGraphPackages(args.repoRoot);
+	if (taskGraph.length === 0) {
+		console.error(
+			"dag-check: cannot check: packages/**/package.json walk matched 0 files",
+		);
+		process.exitCode = 1;
+		return;
+	}
 	const cycle = findCycle({ packages: taskGraph });
 	console.log("");
+	console.log(
+		`population: ${taskGraph.length} workspace packages (packages/**/package.json, private included)`,
+	);
 	console.log(
 		`Task graph: ${taskGraph.length} workspace packages (devDependencies counted)`,
 	);

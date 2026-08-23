@@ -18,7 +18,6 @@ import { getAutocompleteController } from "../utils/autocompleteController";
 import { selectInlineAtomWithArrowKey } from "./keyHandlingInlineAtoms";
 import {
 	collectKeyBindings,
-	getDocumentTextRange,
 	isRedoShortcut,
 	isSelectAllShortcut,
 	isUndoShortcut,
@@ -27,6 +26,27 @@ import {
 	tryHandleHistoryOverrideBinding,
 } from "./keyBindingShortcuts";
 import { dispatchKeymapEvent } from "./keymap";
+import {
+	isNavigationSelectionKey,
+	measureVisualLineEdge,
+} from "./contenteditableDomHelpers";
+
+const LINE_EDGE_SEAM = Symbol.for("pen.lineEdgeSeam");
+
+type LineEdgeMeasure = (
+	editor: Editor,
+	current: { blockId: string; offset: number },
+	edge: "start" | "end",
+) => { blockId: string; offset: number } | null;
+
+function ensureLineEdgeMeasure(editor: Editor): void {
+	const host = editor as unknown as Record<symbol, LineEdgeMeasure | undefined>;
+	if (host[LINE_EDGE_SEAM]) {
+		return;
+	}
+	host[LINE_EDGE_SEAM] = (_ed, current, edge) =>
+		measureVisualLineEdge(current, edge);
+}
 
 export function handleFieldEditorKeyDown(options: {
 	event: KeyboardEvent;
@@ -89,6 +109,8 @@ export function handleFieldEditorKeyDown(options: {
 		syncEditorTextSelection(editor, blockId, range);
 	}
 
+	ensureLineEdgeMeasure(editor);
+
 	if (
 		dispatchKeymapEvent(editor, event, {
 			composing: event.isComposing === true,
@@ -98,6 +120,7 @@ export function handleFieldEditorKeyDown(options: {
 			),
 		})
 	) {
+		event.preventDefault();
 		activateFieldEditorFromSelection(editor, fieldEditor);
 		return true;
 	}
@@ -129,7 +152,19 @@ export function handleFieldEditorKeyDown(options: {
 		}
 	}
 
-	return handleEditorKeyBindings(editor, event, { includeSelectAll: false });
+	if (handleEditorKeyBindings(editor, event, { includeSelectAll: false })) {
+		return true;
+	}
+
+	if (event.isComposing === true) {
+		return false;
+	}
+	if (isNavigationSelectionKey(event)) {
+		event.preventDefault();
+		return true;
+	}
+
+	return false;
 }
 
 function handleTableCellKey(
@@ -289,21 +324,16 @@ export function handleSelectAllShortcut(
 	editor: Editor,
 	event: KeyboardEvent,
 	fieldEditor?: FieldEditorKeyboardController,
-	options?: { rootElement?: HTMLElement | null },
+	_options?: { rootElement?: HTMLElement | null },
 ): boolean {
 	if (!isSelectAllShortcut(event)) {
 		return false;
 	}
 
+	editor.selectAll();
 	if (fieldEditor) {
-		return fieldEditor.selectAll(options?.rootElement);
+		activateFieldEditorFromSelection(editor, fieldEditor);
 	}
-
-	const range = getDocumentTextRange(editor);
-	if (!range) {
-		return true;
-	}
-	editor.selectTextRange(range.start, range.end);
 	return true;
 }
 

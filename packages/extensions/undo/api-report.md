@@ -4,10 +4,6 @@
 
 `./dist/index.d.ts`
 
-### class
-
-- UndoManagerImpl
-
 ### function
 
 - undoExtension

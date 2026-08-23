@@ -135,14 +135,12 @@ export const LOCAL_FIXTURES: Record<
 			type: "toggle",
 			props: { open: true },
 			content: "Toggle parent",
-			children: [
-				{
-					id: NESTED_TOGGLE_CHILD_ID,
-					type: "paragraph",
-					props: { parentId: NESTED_TOGGLE_PARENT_ID },
-					content: NESTED_TOGGLE_CHILD_TEXT,
-				},
-			],
+		},
+		{
+			id: NESTED_TOGGLE_CHILD_ID,
+			type: "paragraph",
+			props: { parentId: NESTED_TOGGLE_PARENT_ID },
+			content: NESTED_TOGGLE_CHILD_TEXT,
 		},
 	],
 	"grapheme-clusters": [...GRAPHEME_CLUSTER_BLOCKS],

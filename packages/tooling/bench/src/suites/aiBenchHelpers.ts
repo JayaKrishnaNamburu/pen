@@ -170,8 +170,8 @@ export function createAutocompleteProviderBudgetBenchEditor() {
 	const benchEditor = createAutocompleteBenchEditor({
 		benchExtensionName: "bench-provider-budget-field-editor-slot",
 		debounceMs: 0,
-		maxProviderChars: 48,
-		maxProviderTimeMs: 5,
+		maxProviderChars: AUTOCOMPLETE_PROVIDER_BUDGET_MAX_CHARS,
+		maxProviderTimeMs: AUTOCOMPLETE_PROVIDER_BUDGET_TIMEOUT_MS,
 		blockId: "bench-provider-budget-block",
 		initialText: "Hello",
 		cursorOffset: 5,
@@ -341,9 +341,83 @@ export function createAutocompleteBenchEditor(input: {
 	};
 }
 
+export const AUTOCOMPLETE_REQUESTING_CANCEL_CYCLES = 10;
+export const AUTOCOMPLETE_PROVIDER_BUDGET_MAX_CHARS = 48;
+export const AUTOCOMPLETE_PROVIDER_BUDGET_TIMEOUT_MS = 5;
+export const AUTOCOMPLETE_SLOW_PROVIDER_ID = "slow-timeout";
+export const AUTOCOMPLETE_LOCAL_PROVIDER_ID = "local-shape";
+export const AUTOCOMPLETE_CLIPPED_PROVIDER_ID = "consumer-clipped";
+
 export function expectControllerRequest(value: boolean): void {
 	if (!value) {
 		throw new Error("Autocomplete bench operation unexpectedly returned false.");
+	}
+}
+
+/**
+ * After the clock: each cycle must have requested and cancelled.
+ * A skipped loop still publishes a fast time without this check.
+ */
+export function assertRequestingCancelObserved(input: {
+	cycleCount: number;
+	requestCount: number;
+	cancelCount: number;
+	modelCallCount: number;
+}): void {
+	if (input.requestCount !== input.cycleCount) {
+		throw new Error(
+			`autocomplete requesting-cancel bench requestCount ${input.requestCount} !== cycleCount ${input.cycleCount}`,
+		);
+	}
+	if (input.cancelCount < input.cycleCount) {
+		throw new Error(
+			`autocomplete requesting-cancel bench cancelCount ${input.cancelCount} < cycleCount ${input.cycleCount}`,
+		);
+	}
+	if (input.modelCallCount !== input.cycleCount) {
+		throw new Error(
+			`autocomplete requesting-cancel bench modelCallCount ${input.modelCallCount} !== cycleCount ${input.cycleCount}`,
+		);
+	}
+}
+
+/**
+ * After the clock: named providers must have been consulted. A
+ * request that never ran still publishes without this check.
+ */
+export function assertProviderBudgetObserved(input: {
+	providerTimings: readonly { id: string; chars: number }[];
+	modelCallCount: number;
+	maxProviderChars: number;
+}): void {
+	if (input.modelCallCount < 1) {
+		throw new Error(
+			"autocomplete provider-budget bench model was never called",
+		);
+	}
+	if (input.providerTimings.length === 0) {
+		throw new Error(
+			"autocomplete provider-budget bench recorded no provider timings",
+		);
+	}
+	const ids = input.providerTimings.map((timing) => timing.id);
+	if (!ids.includes(AUTOCOMPLETE_LOCAL_PROVIDER_ID)) {
+		throw new Error(
+			`autocomplete provider-budget bench missing ${AUTOCOMPLETE_LOCAL_PROVIDER_ID}: ${JSON.stringify(ids)}`,
+		);
+	}
+	if (ids.includes(AUTOCOMPLETE_SLOW_PROVIDER_ID)) {
+		throw new Error(
+			`autocomplete provider-budget bench included ${AUTOCOMPLETE_SLOW_PROVIDER_ID} after the timeout budget`,
+		);
+	}
+	const clipped = input.providerTimings.find(
+		(timing) => timing.id === AUTOCOMPLETE_CLIPPED_PROVIDER_ID,
+	);
+	if (clipped && clipped.chars > input.maxProviderChars) {
+		throw new Error(
+			`autocomplete provider-budget bench ${AUTOCOMPLETE_CLIPPED_PROVIDER_ID} kept ${clipped.chars} chars over ${input.maxProviderChars}`,
+		);
 	}
 }
 

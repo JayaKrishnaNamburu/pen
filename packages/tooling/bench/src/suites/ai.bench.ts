@@ -9,7 +9,7 @@ import {
 	buildBenchFlowPatchScopedReplacementExecution,
 	buildBenchFlowPatchTextEditExecution,
 } from "../utils/flowPatchExecution";
-import type { BenchDefinition } from "../bench";
+import type { BenchContext, BenchDefinition } from "../bench";
 import {
 	AI_FLOW_PATCH_ALIGNMENT_BENCH,
 	AI_FLOW_PATCH_SCOPED_REPLACEMENT_BENCH,
@@ -28,9 +28,16 @@ import {
 	AI_RETRIEVE_DOCUMENT_SPANS_BENCH,
 	AI_FLOW_PATCH_TEXT_EDIT_BENCH,
 } from "../constants/benchmarks";
+import { delayedTimerFloor, macrotaskYieldFloor } from "../harness/floor";
 import {
 	AI_RANGE_END_BLOCK_ID,
 	AI_RANGE_START_BLOCK_ID,
+	AUTOCOMPLETE_PROVIDER_BUDGET_MAX_CHARS,
+	AUTOCOMPLETE_PROVIDER_BUDGET_TIMEOUT_MS,
+	AUTOCOMPLETE_REQUESTING_CANCEL_CYCLES,
+	AUTOCOMPLETE_SLOW_PROVIDER_ID,
+	assertProviderBudgetObserved,
+	assertRequestingCancelObserved,
 	buildPromptAssemblyMessages,
 	createAIBenchEditor,
 	createAutocompleteCancelChurnBenchEditor,
@@ -298,73 +305,13 @@ export const aiBenchmarks: BenchDefinition[] = [
 	},
 	{
 		...AI_AUTOCOMPLETE_REQUESTING_CANCEL_CHURN_BENCH,
-		async fn(b) {
-			const cycleCount = 10;
-			const {
-				controller,
-				editor,
-				getModelCallCount,
-			} = createAutocompleteRequestingCancelChurnBenchEditor();
-
-			b.start();
-			for (let index = 0; index < cycleCount; index += 1) {
-				controller.request({ explicit: true });
-				await waitForCondition(
-					() => controller.getState().status === "requesting",
-				);
-				controller.updateBlockPolicy({ allowInCodeBlocks: false });
-				await waitForCondition(() => controller.getState().status === "idle");
-				controller.updateBlockPolicy({ allowInCodeBlocks: true });
-			}
-			b.end();
-
-			const metrics = controller.getState().metrics;
-			b.setMetrics({
-				cycleCount,
-				requestCount: metrics.requestCount,
-				cancelCount: metrics.cancelCount,
-				policyInvalidationRequestingCount:
-					metrics.policyInvalidationRequestingCount,
-				modelCallCount: getModelCallCount(),
-			});
-			await editor.destroy();
-		},
+		floor: macrotaskYieldFloor(AUTOCOMPLETE_REQUESTING_CANCEL_CYCLES),
+		fn: createRequestingCancelChurnRunner().fn,
 	},
 	{
 		...AI_AUTOCOMPLETE_PROVIDER_BUDGET_BENCH,
-		async fn(b) {
-			const {
-				controller,
-				editor,
-				getModelCallCount,
-			} = createAutocompleteProviderBudgetBenchEditor();
-
-			b.start();
-			expectControllerRequest(controller.request({ explicit: true }));
-			await waitForCondition(
-				() => controller.getState().providerTimings.length > 0,
-				80,
-			);
-			b.end();
-
-			const providerTimings = controller.getState().providerTimings;
-			const totalProviderChars = providerTimings.reduce(
-				(total, timing) => total + timing.chars,
-				0,
-			);
-			b.setMetrics({
-				includedProviderCount: providerTimings.length,
-				totalProviderChars,
-				slowProviderIncluded: providerTimings.some(
-					(timing) => timing.id === "slow-timeout",
-				),
-				clippedProviderChars:
-					providerTimings.find((timing) => timing.id === "consumer-clipped")
-						?.chars ?? 0,
-				modelCallCount: getModelCallCount(),
-			});
-			await editor.destroy();
-		},
+		floor: delayedTimerFloor(AUTOCOMPLETE_PROVIDER_BUDGET_TIMEOUT_MS),
+		fn: createProviderBudgetRunner().fn,
 	},
 	{
 		...AI_AUTOCOMPLETE_PARTIAL_ACCEPT_BENCH,
@@ -427,4 +374,99 @@ export const aiBenchmarks: BenchDefinition[] = [
 		},
 	},
 ];
+
+export function createRequestingCancelChurnRunner(
+	options: { skipRequests?: boolean } = {},
+): Pick<BenchDefinition, "fn"> {
+	const cycleCount = AUTOCOMPLETE_REQUESTING_CANCEL_CYCLES;
+	return {
+		async fn(b: BenchContext) {
+			const {
+				controller,
+				editor,
+				getModelCallCount,
+			} = createAutocompleteRequestingCancelChurnBenchEditor();
+
+			b.start();
+			if (!options.skipRequests) {
+				for (let index = 0; index < cycleCount; index += 1) {
+					controller.request({ explicit: true });
+					await waitForCondition(
+						() => controller.getState().status === "requesting",
+					);
+					controller.updateBlockPolicy({ allowInCodeBlocks: false });
+					await waitForCondition(
+						() => controller.getState().status === "idle",
+					);
+					controller.updateBlockPolicy({ allowInCodeBlocks: true });
+				}
+			}
+			b.end();
+
+			const metrics = controller.getState().metrics;
+			assertRequestingCancelObserved({
+				cycleCount,
+				requestCount: metrics.requestCount,
+				cancelCount: metrics.cancelCount,
+				modelCallCount: getModelCallCount(),
+			});
+			b.setMetrics({
+				cycleCount,
+				requestCount: metrics.requestCount,
+				cancelCount: metrics.cancelCount,
+				policyInvalidationRequestingCount:
+					metrics.policyInvalidationRequestingCount,
+				modelCallCount: getModelCallCount(),
+			});
+			await editor.destroy();
+		},
+	};
+}
+
+export function createProviderBudgetRunner(
+	options: { skipRequest?: boolean } = {},
+): Pick<BenchDefinition, "fn"> {
+	return {
+		async fn(b: BenchContext) {
+			const {
+				controller,
+				editor,
+				getModelCallCount,
+			} = createAutocompleteProviderBudgetBenchEditor();
+
+			b.start();
+			if (!options.skipRequest) {
+				expectControllerRequest(controller.request({ explicit: true }));
+				await waitForCondition(
+					() => controller.getState().providerTimings.length > 0,
+					80,
+				);
+			}
+			b.end();
+
+			const providerTimings = controller.getState().providerTimings;
+			assertProviderBudgetObserved({
+				providerTimings,
+				modelCallCount: getModelCallCount(),
+				maxProviderChars: AUTOCOMPLETE_PROVIDER_BUDGET_MAX_CHARS,
+			});
+			b.setMetrics({
+				includedProviderCount: providerTimings.length,
+				totalProviderChars: providerTimings.reduce(
+					(total, timing) => total + timing.chars,
+					0,
+				),
+				slowProviderIncluded: providerTimings.some(
+					(timing) => timing.id === AUTOCOMPLETE_SLOW_PROVIDER_ID,
+				),
+				clippedProviderChars:
+					providerTimings.find(
+						(timing) => timing.id === "consumer-clipped",
+					)?.chars ?? 0,
+				modelCallCount: getModelCallCount(),
+			});
+			await editor.destroy();
+		},
+	};
+}
 

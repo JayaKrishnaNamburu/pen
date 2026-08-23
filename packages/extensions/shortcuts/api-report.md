@@ -6,7 +6,6 @@
 
 ### function
 
-- getAttachedFieldEditor
 - richTextShortcutsExtension
 - setInlineMark
 - shortcutsToKeymapProviders

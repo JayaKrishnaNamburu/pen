@@ -187,7 +187,7 @@ describe("motion semantics M1–M6", () => {
 		editor.destroy();
 	});
 
-	it("M3: caretLineStart/End stay at logical block edges; Home/End do not swap", () => {
+	it("M3: caretLineStart/End stay at logical block edges without a measure; Home/End do not swap", () => {
 		const editor = rtlEditor("hello");
 		const registry = createCommandHarness(editor);
 		editor.selectText("a", 2, 2);
@@ -203,6 +203,14 @@ describe("motion semantics M1–M6", () => {
 		).toBe(caretLineStart.name);
 		expect(
 			resolveDirectedBinding(editor, bindingNamed("windows", "End")).command
+				.name,
+		).toBe(caretLineEnd.name);
+		expect(
+			resolveDirectedBinding(editor, bindingNamed("macos", "Home")).command
+				.name,
+		).toBe(caretLineStart.name);
+		expect(
+			resolveDirectedBinding(editor, bindingNamed("macos", "End")).command
 				.name,
 		).toBe(caretLineEnd.name);
 		expect(

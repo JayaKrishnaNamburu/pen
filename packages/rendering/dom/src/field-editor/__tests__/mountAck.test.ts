@@ -149,6 +149,45 @@ describe("mount ack and parked projections", () => {
 		);
 	});
 
+	it("does not write the previous field into a remounted parked target", () => {
+		const editor = createEditor({ schema: defaultSchema });
+		const fieldEditor = new ProbeFieldEditor(editor);
+		const root = document.createElement("div");
+		document.body.appendChild(root);
+		fixtures.push({ editor, fieldEditor, root });
+		fieldEditor.setRootElement(root);
+
+		const liveId = editor.firstBlock()!.id;
+		editor.apply([
+			{ type: "insert-text", blockId: liveId, offset: 0, text: "Alive" },
+			{
+				type: "insert-block",
+				blockId: "parked",
+				blockType: "paragraph",
+				props: {},
+				position: "last",
+			},
+			{ type: "insert-text", blockId: "parked", offset: 0, text: "Parked" },
+		]);
+		const live = mountBlock(root, liveId, "Alive");
+		fieldEditor.activate(liveId);
+		editor.selectText("parked", 0, 0);
+		flushFrame();
+		expect(fieldEditor.parkedProjectionVersion).not.toBeNull();
+		expect(fieldEditor.focusBlockId).toBe("parked");
+
+		const remounted = mountBlock(root, "parked", "Parked");
+		fieldEditor.ackBlockMounted("parked", remounted);
+
+		expect(
+			remounted.querySelector(`[${DATA_ATTRS.inlineContent}]`)?.textContent,
+		).toBe("Parked");
+		expect(
+			live.querySelector(`[${DATA_ATTRS.inlineContent}]`)?.textContent,
+		).toBe("Alive");
+		expect(fieldEditor.focusBlockId).toBe("parked");
+	});
+
 	it("resolves waitForAttachment same-turn when the ack never comes", async () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const fieldEditor = new ProbeFieldEditor(editor);

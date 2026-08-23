@@ -78,8 +78,8 @@ export class FieldEditorSelectionCoordinator {
 		return this._authority.beginApplyingSelection();
 	}
 
-	applySelectionUntilNextFrame(): void {
-		this._authority.applySelectionUntilNextFrame();
+	withSelectionWrite<T>(write: () => T): T {
+		return this._authority.withSelectionWrite(write);
 	}
 
 	setEditContextSelection(
@@ -88,7 +88,9 @@ export class FieldEditorSelectionCoordinator {
 		this._editContextSelection = selection;
 	}
 
-	getEditContextSelection(blockId?: string | null): FieldEditorSelectionSnapshot | null {
+	getEditContextSelection(
+		blockId?: string | null,
+	): FieldEditorSelectionSnapshot | null {
 		if (
 			!this._editContextSelection ||
 			(blockId && this._editContextSelection.blockId !== blockId)
@@ -126,14 +128,6 @@ export class FieldEditorSelectionCoordinator {
 		this._projection.requestDivergenceProjection();
 	}
 
-	consumeDomSelectionProjectionSuppression(): boolean {
-		return this._projection.consumeDomSelectionProjectionSuppression();
-	}
-
-	suppressNextDomSelectionProjection(): void {
-		this._projection.suppressNextDomSelectionProjection();
-	}
-
 	shouldHandleDomSelectionChange(
 		blockId: string | null,
 		isApplyingSelection: number,
@@ -142,13 +136,6 @@ export class FieldEditorSelectionCoordinator {
 			blockId,
 			isApplyingSelection,
 		);
-	}
-
-	shouldIgnoreDomTextSelection(
-		anchor: { blockId: string; offset: number },
-		focus: { blockId: string; offset: number },
-	): boolean {
-		return this._projection.shouldIgnoreDomTextSelection(anchor, focus);
 	}
 
 	isProgrammaticDomTextSelection(
@@ -210,9 +197,5 @@ export class FieldEditorSelectionCoordinator {
 
 	recordUserSelectionIntent(): void {
 		this._projection.recordUserSelectionIntent();
-	}
-
-	shouldSuppressSelectionSync(): boolean {
-		return this._projection.shouldSuppressSelectionSync();
 	}
 }

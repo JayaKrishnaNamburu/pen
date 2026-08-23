@@ -38,7 +38,7 @@ describe("anchors AN1 adapter totality", () => {
 		).toBeNull();
 	});
 
-	it("AN1: a removed block resolves null via the registry, not index 0 on a deleted type", () => {
+	it("AN1: a removed block resolves null via the blocks-map scan, not index 0 on a deleted type", () => {
 		const adapter = yjsAdapter();
 		const doc = createYjsDocument(adapter);
 		const ytext = seedParagraph(doc, "b1", "0123456789");
@@ -142,10 +142,12 @@ describe("anchors AN3 ordinary convergence", () => {
 		});
 		adapter.applyUpdate(b, adapter.encodeState(a));
 		adapter.applyUpdate(a, adapter.encodeState(b));
-		expect(aText.toString()).toBe(bText.toString());
-		expect(adapter.resolveRelativePosition(a, encoded)).toEqual(
-			adapter.resolveRelativePosition(b, encoded),
-		);
+		expect(aText.toString()).toBe("wild meadow sage!");
+		expect(bText.toString()).toBe("wild meadow sage!");
+		const resolvedA = adapter.resolveRelativePosition(a, encoded);
+		const resolvedB = adapter.resolveRelativePosition(b, encoded);
+		expect(resolvedA).toEqual({ blockId: "b1", offset: 12 });
+		expect(resolvedB).toEqual({ blockId: "b1", offset: 12 });
 	});
 });
 
@@ -209,5 +211,99 @@ describe("anchors AN13 resolver flag", () => {
 		expect(localNoFollow).toEqual(remoteNoFollow);
 		expect(remoteFollow).toEqual(remoteNoFollow);
 		expect(localFollow).not.toEqual(remoteFollow);
+		expect(adapter.resolveRelativePosition(local, encoded)).toEqual(localFollow);
+	});
+});
+
+describe("anchors AN1 deleted characters and AN10 cells", () => {
+	it("AN1: deleted characters collapse to a live index, not null", () => {
+		const adapter = yjsAdapter();
+		const doc = createYjsDocument(adapter);
+		seedParagraph(doc, "b1", "0123456789");
+		const encoded = adapter.createRelativePosition(
+			doc,
+			{ blockId: "b1", offset: 5 },
+			1,
+		)!;
+		const ytext = doc.penDocument.blocks.get("b1")!.get("content") as Y.Text;
+		doc.ydoc.transact(() => {
+			ytext.delete(3, 4);
+		});
+		expect(ytext.toString()).toBe("012789");
+		expect(adapter.resolveRelativePosition(doc, encoded)).toEqual({
+			blockId: "b1",
+			offset: 3,
+		});
+	});
+
+	it("AN10: cell targets mint and resolve against tableContent[row].cells[col]", () => {
+		const adapter = yjsAdapter();
+		const doc = createYjsDocument(adapter);
+		doc.ydoc.transact(() => {
+			initBlockMap(doc.penDocument.blocks, "t1", "table", "table");
+			doc.penDocument.blockOrder.push(["t1"]);
+		});
+		const table = doc.penDocument.blocks.get("t1")!.get(
+			"tableContent",
+		) as Y.Array<Y.Map<unknown>>;
+		const cell = (table.get(1).get("cells") as Y.Array<Y.Map<unknown>>)
+			.get(1)
+			.get("content") as Y.Text;
+		doc.ydoc.transact(() => {
+			cell.insert(0, "cell text");
+		});
+		const encoded = adapter.createRelativePosition(
+			doc,
+			{ blockId: "t1", offset: 5, cell: { row: 1, col: 1 } },
+			1,
+		);
+		expect(encoded).not.toBeNull();
+		expect(
+			adapter.resolveRelativePosition(doc, encoded!, {
+				followUndoneDeletions: true,
+			}),
+		).toEqual({
+			blockId: "t1",
+			offset: 5,
+			cell: { row: 1, col: 1 },
+		});
+	});
+
+	it("AN1: createRelativePosition is null for an existing block with no Y.Text", () => {
+		const adapter = yjsAdapter();
+		const doc = createYjsDocument(adapter);
+		doc.ydoc.transact(() => {
+			initBlockMap(doc.penDocument.blocks, "s1", "section", "nested");
+			doc.penDocument.blockOrder.push(["s1"]);
+		});
+		expect(doc.penDocument.blocks.has("s1")).toBe(true);
+		expect(
+			adapter.createRelativePosition(doc, { blockId: "s1", offset: 0 }, 1),
+		).toBeNull();
+	});
+});
+
+describe("anchors encode size is client-id dependent", () => {
+	it("AN11: clientID 0 encodes in 4–6 bytes; a live clientID encodes larger", () => {
+		const adapter = yjsAdapter();
+		const zero = createPeerDoc(adapter, 0);
+		seedParagraph(zero, "b1", "meadow ".repeat(100));
+		const zeroEncoded = adapter.createRelativePosition(
+			zero,
+			{ blockId: "b1", offset: 50 },
+			1,
+		)!;
+		expect(zeroEncoded.byteLength).toBeGreaterThanOrEqual(4);
+		expect(zeroEncoded.byteLength).toBeLessThanOrEqual(6);
+
+		const live = createPeerDoc(adapter, 0x24d3a198);
+		seedParagraph(live, "b1", "meadow ".repeat(100));
+		const liveEncoded = adapter.createRelativePosition(
+			live,
+			{ blockId: "b1", offset: 50 },
+			1,
+		)!;
+		expect(liveEncoded.byteLength).toBeGreaterThan(6);
+		expect(liveEncoded.byteLength).toBeLessThanOrEqual(256);
 	});
 });

@@ -24,8 +24,8 @@ Param `{ extend: boolean }` unless noted.
 | `pen.caretRight` | `{ extend }` | core | `handleGraphemeCaret` (`1`) + atom-adjacent select. T4 at block boundary. |
 | `pen.caretUp` | `{ extend }` | core | G5 via `setVerticalCaretMeasure` (`measureNow` + `verticalCaretTarget`). No measure → logical previous-block landing (field-editor `moveCaretAcrossBlocks`). Document edge stays put. Mid-block without measure is a miss (wrap needs geometry). |
 | `pen.caretDown` | `{ extend }` | core | Symmetric to `pen.caretUp`. |
-| `pen.caretLineStart` | `{ extend }` | core | Block offset 0. M3 visual line-box edges need `GeometryReader` (pen-dom); not inverted for rtl. |
-| `pen.caretLineEnd` | `{ extend }` | core | Block logical length. Same M3 deferral. |
+| `pen.caretLineStart` | `{ extend }` | core | Visual line-box start (M3). Field-editor injects a DOM measure on `Symbol.for("pen.lineEdgeSeam")`; no measure → logical offset 0. Home is bound on macos and windows/linux. Not keymap-swapped. |
+| `pen.caretLineEnd` | `{ extend }` | core | Visual line-box end (M3). Same seam and logical fallback as `pen.caretLineStart`. |
 | `pen.caretBlockStart` | `{ extend }` | core | Offset 0 of the focus block. |
 | `pen.caretBlockEnd` | `{ extend }` | core | Logical length of the focus block. |
 | `pen.caretDocStart` | `{ extend }` | core | First normal position in document order. |
@@ -40,8 +40,8 @@ Param `{ extend: boolean }` unless noted.
 | Command | Param | Owner | Current name |
 | --- | --- | --- | --- |
 | `pen.insertText` | `{ text }` | core | Replace the current text selection / insert at caret. |
-| `pen.deleteBackward` | `{ granularity }` | core | Grapheme/word/line within the block (F2); merge/select/convert at block start. Adjacent inline atom: registry **deletes** (`deleteAdjacentInlineAtom`); field-editor `applyDeleteBehavior` **selects** (`selectAdjacentInlineAtom`). Both pinned in `__tests__/inlineAtomDelete.test.ts`. |
-| `pen.deleteForward` | `{ granularity }` | core | Symmetric to backward, including merge at block end. Same atom-delete divergence. |
+| `pen.deleteBackward` | `{ granularity }` | core | Grapheme/word/line within the block (F2); merge/select/convert at block start. Adjacent inline atom: first press **selects** (`selectAdjacentInlineAtom`); second press deletes via ordinary selection-delete. Pinned in `__tests__/inlineAtomDelete.test.ts`. |
+| `pen.deleteForward` | `{ granularity }` | core | Symmetric to backward, including merge at block end. Same select-then-delete for adjacent atoms. |
 | `pen.insertLineBreak` | `void` | core | Insert `"\n"`. |
 | `pen.splitBlock` | `void` | core | Port of `applyEnterBehavior`: split, list continuation, empty-list convert, heading → paragraph. |
 | `pen.indent` | `void` | core | Port of `applyListTabBehavior` (`shiftKey: false`). |
@@ -89,7 +89,7 @@ Block-selection delete is also handled by `pen.deleteBackward` / `pen.deleteForw
 
 I6 headless half: `__tests__/keymapParity.headless.test.ts` iterates the default keymap table and dispatches every binding on the live registry. The browser-harness half is outstanding — do not compare `createEditor` to `createHeadlessEditor` in Node; they are the same factory.
 
-Inline-atom delete (owner decision, not applied). Pinned fork in `__tests__/inlineAtomDelete.test.ts` and field-editor `__tests__/commandsDelete.inlineAtomDivergence.test.ts`: `applyDeleteBehavior` / `selectAdjacentInlineAtom` SELECTs; registry `handleDelete` / `deleteAdjacentInlineAtom` DELETES. Live keystroke at this commit is DELETE — vanilla / React / Vue all go `FieldEditorImpl` → `handleFieldEditorKeyDown` → `dispatchKeymapEvent` → `registry.dispatch`. `applyDeleteBehavior` is the no-dispatch fallback. SELECT is the intended product (spec 4.2 "applyDeleteBehavior moved", caret already selects atoms, Word/Docs two-step). DELETE is the shipped product. Do not converge without an owner: flipping the handler changes UX on every binding. Do not retarget field-editor delete tests onto `registry.dispatch` until then — the paths differ semantically, and a naive retarget would stay green while changing what the editor does.
+Inline-atom delete (owner decision, applied 2026-08-23). First Backspace / Delete next to an atom SELECTs (`selectAdjacentInlineAtom`); the second press deletes through ordinary non-collapsed `handleDelete`. Live keystroke is `FieldEditorImpl` → `handleFieldEditorKeyDown` → `dispatchKeymapEvent` → `registry.dispatch`. `applyDeleteBehavior` is the no-dispatch fallback and already selected. `deleteAdjacentInlineAtom` remains a helper, not the live path. Pinned in `__tests__/inlineAtomDelete.test.ts` and field-editor `__tests__/commandsDelete.inlineAtomDivergence.test.ts`.
 
 ## Field-editor names that are not catalog commands
 

@@ -16,40 +16,13 @@ import {
 } from "./fixture";
 
 /**
- * Unresolved product fork, pinned so it cannot be lost by retargeting tests.
+ * Owner-approved UX: first Backspace / Delete next to an inline atom
+ * SELECTs it (`selectAdjacentInlineAtom`). Second press deletes it through
+ * the ordinary non-collapsed `handleDelete` path (`replaceRangeOps`), not
+ * a second atom-specific step.
  *
- * Field-editor `applyDeleteBehavior` SELECTs an adjacent inline atom
- * (`getInlineNodeSelectionTarget`). The core registry DELETES it
- * (`deleteAdjacentInlineAtom`). Both are defensible. They are not the same
- * product. `registry.dispatch(deleteBackward)` currently keeps the registry
- * one-shot so this file does not silently pick a winner.
- *
- * Live keystroke at bb354ea: DELETE. Vanilla `mountEditor`, React
- * `PenEditor`, and Vue `PenEditor` all construct `FieldEditorImpl`. Field
- * backends call `handleFieldEditorKeyDown` → `dispatchKeymapEvent` →
- * `registry.dispatch(pen.deleteBackward)`. `createEditor` always installs
- * that registry. `applyDeleteBehavior` SELECT is the no-dispatch fallback,
- * not the live path. See field-editor
- * `__tests__/commandsDelete.inlineAtomDivergence.test.ts`.
- *
- * Recommendation (not applied): SELECT is the intended product; DELETE is
- * the shipped product. Do not converge here.
- *
- * 1. Spec 4.2 says `pen.deleteBackward/Forward` is v1 `applyDeleteBehavior`
- *    moved. That function selects. Immediate delete is a rewrite, not a move.
- * 2. Caret already selects an adjacent atom (`stepInlineAtom` / N1).
- *    Select-then-delete is one two-step object. Immediate delete makes
- *    atoms feel like characters on Backspace and chips on Arrow.
- * 3. Word / Notion / Google Docs use the two-step for mentions. Immediate
- *    delete is closer to a code editor.
- * 4. Implementing SELECT would change what every binding does today. That
- *    is an owner UX call, not a bugfix. The previous "live path selects"
- *    claim is false at this commit.
- *
- * Flipping the handler is one call: `selectAdjacentInlineAtom` instead of
- * `deleteAdjacentInlineAtom`. Do not retarget field-editor delete tests onto
- * `registry.dispatch` until an owner confirms — the paths differ, and a
- * naive retarget would stay green while changing what the editor does.
+ * `deleteAdjacentInlineAtom` remains as a helper that still returns a
+ * one-shot delete. The live registry no longer calls it.
  */
 
 function mentionDoc() {
@@ -82,8 +55,8 @@ function hasMention(editor: ReturnType<typeof mentionDoc>): boolean {
 	});
 }
 
-describe("inline atom delete divergence", () => {
-	describe("field-editor / v1 applyDeleteBehavior (select)", () => {
+describe("inline atom delete select-then-delete", () => {
+	describe("selectAdjacentInlineAtom", () => {
 		it("selectAdjacentInlineAtom backward selects the atom and does not mutate", () => {
 			const editor = mentionDoc();
 			editor.selectText("a", 3, 3);
@@ -149,8 +122,8 @@ describe("inline atom delete divergence", () => {
 		});
 	});
 
-	describe("registry one-shot (delete)", () => {
-		it("dispatch deleteBackward adjacent to an atom deletes it in one step", () => {
+	describe("registry live path (select then delete)", () => {
+		it("dispatch deleteBackward adjacent to an atom selects it on the first step", () => {
 			const editor = mentionDoc();
 			const registry = createCommandHarness(editor);
 			editor.selectText("a", 3, 3);
@@ -159,13 +132,13 @@ describe("inline atom delete divergence", () => {
 			expect(
 				registry.dispatch(deleteBackward, { granularity: "grapheme" }),
 			).toBe(true);
-			expect(hasMention(editor)).toBe(false);
+			expect(hasMention(editor)).toBe(true);
 			expect(editor.getBlock("a")?.textContent()).toBe("hiz");
-			expect(caretOf(editor)).toEqual({ blockId: "a", offset: 2 });
+			expectAtomSelected(editor);
 			editor.destroy();
 		});
 
-		it("liveRegistry deleteBackward adjacent to an atom deletes it in one step", () => {
+		it("liveRegistry deleteBackward adjacent to an atom selects it on the first step", () => {
 			const editor = mentionDoc();
 			const registry = liveRegistry(editor);
 			editor.selectText("a", 3, 3);
@@ -174,13 +147,13 @@ describe("inline atom delete divergence", () => {
 			expect(
 				registry.dispatch(deleteBackward, { granularity: "grapheme" }),
 			).toBe(true);
-			expect(hasMention(editor)).toBe(false);
+			expect(hasMention(editor)).toBe(true);
 			expect(editor.getBlock("a")?.textContent()).toBe("hiz");
-			expect(caretOf(editor)).toEqual({ blockId: "a", offset: 2 });
+			expectAtomSelected(editor);
 			editor.destroy();
 		});
 
-		it("dispatch deleteForward adjacent to an atom deletes it in one step", () => {
+		it("dispatch deleteForward adjacent to an atom selects it on the first step", () => {
 			const editor = mentionDoc();
 			const registry = createCommandHarness(editor);
 			editor.selectText("a", 2, 2);
@@ -189,13 +162,32 @@ describe("inline atom delete divergence", () => {
 			expect(
 				registry.dispatch(deleteForward, { granularity: "grapheme" }),
 			).toBe(true);
+			expect(hasMention(editor)).toBe(true);
+			expect(editor.getBlock("a")?.textContent()).toBe("hiz");
+			expectAtomSelected(editor);
+			editor.destroy();
+		});
+
+		it("second deleteBackward after select removes the atom through selection-delete", () => {
+			const editor = mentionDoc();
+			const registry = createCommandHarness(editor);
+			editor.selectText("a", 3, 3);
+
+			expect(
+				registry.dispatch(deleteBackward, { granularity: "grapheme" }),
+			).toBe(true);
+			expectAtomSelected(editor);
+
+			expect(
+				registry.dispatch(deleteBackward, { granularity: "grapheme" }),
+			).toBe(true);
 			expect(hasMention(editor)).toBe(false);
 			expect(editor.getBlock("a")?.textContent()).toBe("hiz");
 			expect(caretOf(editor)).toEqual({ blockId: "a", offset: 2 });
 			editor.destroy();
 		});
 
-		it("deleteAdjacentInlineAtom returns the delete-text op without selecting", () => {
+		it("deleteAdjacentInlineAtom still returns the delete-text op without selecting", () => {
 			const editor = mentionDoc();
 			editor.selectText("a", 3, 3);
 
@@ -219,14 +211,17 @@ describe("inline atom delete divergence", () => {
 		});
 	});
 
-	it("select vs delete are different products on the same fixture", () => {
+	it("live dispatch and selectAdjacentInlineAtom are the same product", () => {
 		const selectEditor = mentionDoc();
-		const deleteEditor = mentionDoc();
+		const liveEditor = mentionDoc();
 		selectEditor.selectText("a", 3, 3);
-		deleteEditor.selectText("a", 3, 3);
+		liveEditor.selectText("a", 3, 3);
 
 		const selected = selectAdjacentInlineAtom(selectEditor, "backward");
-		const oneShot = deleteAdjacentInlineAtom(deleteEditor, "backward");
+		const registry = createCommandHarness(liveEditor);
+		expect(
+			registry.dispatch(deleteBackward, { granularity: "grapheme" }),
+		).toBe(true);
 
 		expect(selected).toEqual(
 			expect.objectContaining({
@@ -236,21 +231,10 @@ describe("inline atom delete divergence", () => {
 				focus: { blockId: "a", offset: 3 },
 			}),
 		);
-		expect(oneShot).toEqual({
-			ops: [
-				{
-					type: "delete-text",
-					blockId: "a",
-					offset: 2,
-					length: 1,
-				},
-			],
-			caret: { blockId: "a", offset: 2 },
-		});
-		expect(selected).not.toEqual(oneShot);
+		expectAtomSelected(liveEditor);
 		expect(hasMention(selectEditor)).toBe(true);
-		expect(hasMention(deleteEditor)).toBe(true);
+		expect(hasMention(liveEditor)).toBe(true);
 		selectEditor.destroy();
-		deleteEditor.destroy();
+		liveEditor.destroy();
 	});
 });

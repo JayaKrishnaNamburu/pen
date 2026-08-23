@@ -18,6 +18,7 @@ import {
 	setVerticalCaretMeasure,
 	getVerticalCaretGoalX,
 } from "..";
+import { setLineEdgeMeasure } from "../caret";
 import { isCollapsed } from "../../selection/helpers";
 import {
 	caretOf,
@@ -100,6 +101,26 @@ describe("caret commands", () => {
 		expect(caretOf(editor)).toEqual({ blockId: "a", offset: 0 });
 		expect(registry.dispatch(caretBlockEnd, { extend: false })).toBe(true);
 		expect(caretOf(editor)).toEqual({ blockId: "a", offset: 5 });
+		editor.destroy();
+	});
+
+	it("M3: caretLineStart uses the injected visual measure; caretBlockStart stays logical", () => {
+		const editor = createCommandEditor([
+			{ id: "a", type: "paragraph", text: "Hello مرحبا" },
+		]);
+		const registry = createCommandHarness(editor);
+		setLineEdgeMeasure(editor, (_ed, current, edge) => ({
+			blockId: current.blockId,
+			offset: edge === "start" ? 4 : 0,
+		}));
+		editor.selectText("a", 2, 2);
+
+		expect(registry.dispatch(caretLineStart, { extend: false })).toBe(true);
+		expect(caretOf(editor)).toEqual({ blockId: "a", offset: 4 });
+
+		editor.selectText("a", 2, 2);
+		expect(registry.dispatch(caretBlockStart, { extend: false })).toBe(true);
+		expect(caretOf(editor)).toEqual({ blockId: "a", offset: 0 });
 		editor.destroy();
 	});
 

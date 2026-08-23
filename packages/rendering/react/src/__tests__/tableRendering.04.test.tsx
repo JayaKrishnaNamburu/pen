@@ -5,7 +5,6 @@ import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
 import {
 	createEditor as createCoreEditor,
-	getTrustedSelectionBlockRange,
 	isMultiBlock,
 } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
@@ -110,7 +109,7 @@ function getFieldEditor(
 }
 
 describe("@input/pen-react table rendering", () => {
-	it("keeps the first cmd+a cell-local before promoting to the document in flow documents", async () => {
+	it("escalates cmd+a from a selected cell to top-level BlockSelection in flow documents", async () => {
 		const editor = createEditor({
 			documentProfile: "flow",
 		});
@@ -189,29 +188,12 @@ describe("@input/pen-react table rendering", () => {
 			await flushAnimationFrames(2);
 		});
 
-		expect(document.getSelection()?.toString()).toBe("Bravo");
-		expect(editor.selection).toMatchObject({
-			type: "cell",
-			blockId: "t8-cell",
-			anchor: { row: 0, col: 1 },
-			head: { row: 0, col: 1 },
+		const firstBlockId = editor.firstBlock()!.id;
+		expect(editor.selection).toEqual({
+			type: "block",
+			blockIds: [firstBlockId, "t8-cell", paragraphId],
+			head: paragraphId,
 		});
-
-		await act(async () => {
-			document.dispatchEvent(createSelectAllEvent());
-			await flushAnimationFrames(2);
-		});
-
-		expect(editor.selection).toMatchObject({
-			type: "text",
-			focus: { blockId: paragraphId, offset: 5 },
-		});
-		expect(isMultiBlock(editor.selection)).toBe(true);
-		expect(
-			editor.selection?.type === "text"
-				? getTrustedSelectionBlockRange(editor.selection)
-				: [],
-		).toEqual(expect.arrayContaining(["t8-cell", paragraphId]));
 
 		await act(async () => {
 			root.unmount();

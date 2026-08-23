@@ -17,6 +17,30 @@ import type {
 	SelectionEqualsArgs,
 } from "./types";
 
+/**
+ * A scenario that asserts the spec correctly and fails because the product is
+ * wrong. Marked expected-to-fail so `conformance-chromium` stays honest instead
+ * of sitting permanently red — a red job nobody can act on is how a real
+ * regression hides (WebKit spent a week that way).
+ *
+ * The assertion is NOT weakened: it still states what the spec requires, so
+ * when the defect is fixed Playwright reports the scenario as unexpectedly
+ * passing and the job goes red until the annotation is removed.
+ *
+ * The cost, stated because it is real: a scenario that fails for the WRONG
+ * reason — a broken selector, a fixture that stopped loading — also counts as
+ * expected. Every entry therefore records the exact observed `symptom` in the
+ * conformance README, so the claim can be re-verified rather than trusted.
+ */
+export interface KnownDefect {
+	/** Spec rule the product violates, e.g. `"K1"`. */
+	rule: string;
+	/** Where the fix belongs, so the entry routes itself. */
+	route: string;
+	/** Observed failure, verbatim, so a wrong-reason pass is detectable. */
+	symptom: string;
+}
+
 export function scenario(
 	name: string,
 	fn: (s: ScenarioApi, page: Page) => Promise<void>,
@@ -27,9 +51,14 @@ export function scenario(
 			reducedMotion?: "reduce" | "no-preference";
 		};
 		initScript?: () => void;
+		knownDefect?: KnownDefect;
 	},
 ): void {
 	test(name, async ({ page }) => {
+		if (options?.knownDefect) {
+			const { rule, route, symptom } = options.knownDefect;
+			test.fail(true, `${rule} — ${symptom} (route: ${route})`);
+		}
 		if (options?.initScript) {
 			await page.addInitScript(options.initScript);
 		}

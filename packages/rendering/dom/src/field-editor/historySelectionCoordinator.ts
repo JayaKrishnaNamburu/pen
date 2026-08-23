@@ -1,4 +1,3 @@
-import { undoRestoreControllerFacet } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
 import { UNDO_HISTORY_RESTORE_SLOT_KEY } from "@input/pen-types";
 
@@ -6,24 +5,14 @@ export const HISTORY_RESTORING_SELECTION_SLOT_KEY =
 	UNDO_HISTORY_RESTORE_SLOT_KEY;
 
 /**
- * Coordinates the period where history restores the logical selection and the
- * field editor still needs to finish DOM reconciliation before it can safely
- * accept browser-driven selection updates again.
+ * Tracks a deferred projection request id across history restore so the
+ * projector can complete or cancel that request. Selection sync suppression
+ * lived here and is gone — P1-after-undo plus mount ack own that window.
  */
 export class HistorySelectionCoordinator {
 	private pendingProjectionRequestId: number | null = null;
-	private readonly editor: Pick<Editor, "facet">;
 
-	constructor(editor: Pick<Editor, "facet">) {
-		this.editor = editor;
-	}
-
-	shouldSuppressSelectionSync(): boolean {
-		return (
-			this.isLogicalSelectionRestoreInProgress() ||
-			this.pendingProjectionRequestId !== null
-		);
-	}
+	constructor(_editor: Pick<Editor, "facet">) {}
 
 	beginDeferredProjection(requestId: number): void {
 		this.pendingProjectionRequestId = requestId;
@@ -45,9 +34,5 @@ export class HistorySelectionCoordinator {
 
 	reset(): void {
 		this.pendingProjectionRequestId = null;
-	}
-
-	private isLogicalSelectionRestoreInProgress(): boolean {
-		return this.editor.facet(undoRestoreControllerFacet) === true;
 	}
 }

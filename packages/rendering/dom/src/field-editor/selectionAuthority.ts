@@ -195,8 +195,13 @@ export class FieldEditorSelectionAuthority {
 		};
 	}
 
-	applySelectionUntilNextFrame(): void {
-		const release = this.beginApplyingSelection();
-		requestAnimationFrame(release);
+	// mute echoes during the write; release in the same turn (S4)
+	withSelectionWrite<T>(write: () => T): T {
+		const endWrite = this.beginApplyingSelection();
+		try {
+			return write();
+		} finally {
+			endWrite();
+		}
 	}
 }

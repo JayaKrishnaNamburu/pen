@@ -10,6 +10,11 @@
       "name": "logicalTextFromStored",
       "kind": "function",
       "reason": "P.3: pure resolver over the frozen EMPTY_BLOCK_SENTINEL, needed by serialization packages (export-json, markdown-serialization) that deliberately carry no runtime dependency on core; relocating it to core would force one on them"
+    },
+    {
+      "name": "formatUuidV4",
+      "kind": "helper",
+      "reason": "P.3: private formatter for generateId; counted so unexported helpers cannot hide from the leftover total"
     }
   ]
 }

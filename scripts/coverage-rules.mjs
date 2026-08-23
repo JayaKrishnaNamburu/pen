@@ -316,7 +316,7 @@ export async function collectSpecIds(repoRoot, idRegex, isRuleId) {
 			}
 		}
 	}
-	return { ids, locations };
+	return { ids, locations, fileCount: files.length };
 }
 
 export function assertNonEmptyInventory(ids) {
@@ -370,7 +370,7 @@ export async function collectTestClaims(
 			claims.get(id).push(relative);
 		}
 	}
-	return claims;
+	return { claims, fileCount: files.length };
 }
 
 export function evaluateCoverage({
@@ -429,14 +429,19 @@ function formatReport({
 	gatedFailed = [],
 	unlisted,
 	claims,
+	specFileCount,
+	testFileCount,
 }) {
 	const lines = [
 		"coverage:rules",
 		"",
+		specFileCount != null
+			? `population: ${specFileCount} spec files (spec-v2 + spec-v3), ${testFileCount} test files`
+			: null,
 		`Claimed scope (${claimedIds.length}): ${claimedIds.join(", ")}`,
 		`Gated scope (${gatedRows.length}): ${gatedRows.map((row) => row.id).join(", ") || "(none)"}`,
 		"",
-	];
+	].filter((line) => line != null);
 
 	for (const { id, files } of claimedOk) {
 		lines.push(`OK    ${id}  ${files[0]}`);
@@ -545,14 +550,27 @@ async function runCoverage(
 	for (const row of gatedRows) {
 		gateChecks.push(await verifyGatedRow(repoRoot, row));
 	}
-	const { ids: specIds } = await collectSpecIds(repoRoot, idRegex, isRuleId);
+	const {
+		ids: specIds,
+		fileCount: specFileCount,
+	} = await collectSpecIds(repoRoot, idRegex, isRuleId);
+	if (specFileCount === 0) {
+		throw new Error(
+			"coverage-rules: cannot check: spec-v2/spec-v3 markdown walk matched 0 files",
+		);
+	}
 	assertNonEmptyInventory(specIds);
-	const claims = await collectTestClaims(
+	const { claims, fileCount: testFileCount } = await collectTestClaims(
 		repoRoot,
 		claimedIds,
 		idRegex,
 		isRuleId,
 	);
+	if (testFileCount === 0) {
+		throw new Error(
+			"coverage-rules: cannot check: packages+playground+scripts test walk matched 0 files",
+		);
+	}
 	const result = evaluateCoverage({
 		specIds,
 		claimedIds,
@@ -560,7 +578,14 @@ async function runCoverage(
 		gatedRows,
 		gateChecks,
 	});
-	return { ...result, claimedIds, claims, gatedRows };
+	return {
+		...result,
+		claimedIds,
+		claims,
+		gatedRows,
+		specFileCount,
+		testFileCount,
+	};
 }
 
 async function runSelfTest() {

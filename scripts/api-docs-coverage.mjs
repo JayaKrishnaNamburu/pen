@@ -105,7 +105,7 @@ const SKIP_DIR_NAMES = new Set([
  * 1796 as lanes added TSDoc. Those drops were progress and were
  * re-recorded; this write is the expansion on top of that 1796.
  */
-export const MAX_UNDOCUMENTED = 1947;
+export const MAX_UNDOCUMENTED = 1934;
 
 const JSDOC_RE = /\/\*\*[\s\S]*?\*\//g;
 const DECL_RE =

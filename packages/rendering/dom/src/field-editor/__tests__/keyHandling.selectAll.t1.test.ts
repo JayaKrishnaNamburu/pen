@@ -40,7 +40,7 @@ function createSelectAllEvent(): KeyboardEvent {
 }
 
 describe("handleSelectAllShortcut vs T1 ladder", () => {
-	it("T1: Mod-a keystroke stays document-first; editor.selectAll() already runs the ladder", () => {
+	it("T1: Mod-a keystroke runs the same ladder as editor.selectAll()", () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const fieldEditor = new FieldEditorImpl(editor);
 		fixtures.push({ editor, fieldEditor });
@@ -80,17 +80,16 @@ describe("handleSelectAllShortcut vs T1 ladder", () => {
 		expect(editor.selection).toMatchObject({
 			type: "text",
 			anchor: { blockId: firstBlockId, offset: 0 },
-			focus: { blockId: "second", offset: 5 },
-		});
-
-		editor.selectText(firstBlockId, 2, 2);
-		editor.selectAll();
-		expect(editor.selection).toMatchObject({
-			type: "text",
-			anchor: { blockId: firstBlockId, offset: 0 },
 			focus: { blockId: firstBlockId, offset: 5 },
 		});
-		editor.selectAll();
+
+		expect(
+			handleSelectAllShortcut(
+				editor,
+				createSelectAllEvent(),
+				fieldEditor,
+			),
+		).toBe(true);
 		expect(editor.selection).toEqual({
 			type: "block",
 			blockIds: [firstBlockId, "second"],

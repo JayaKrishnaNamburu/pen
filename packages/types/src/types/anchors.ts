@@ -1,10 +1,6 @@
-/**
- * Insertion-side stickiness for an {@link Anchor} (AN2).
- *
- * `-1` stays before an insert at the marked offset; `1` moves after it.
- * Yjs `assoc: 0` is never used.
- */
-export type Assoc = -1 | 1;
+import type { Assoc } from "./changes";
+
+export type { Assoc };
 
 /**
  * A resolved document location in the logical text domain (AN1, AN10).

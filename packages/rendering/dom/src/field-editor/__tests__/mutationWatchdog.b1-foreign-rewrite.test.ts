@@ -42,7 +42,7 @@ function createFieldEditor(blockId: string) {
 		selectAll: () => false,
 		resolveInsertMarks: () => undefined,
 		resetBackendSelectionAuthority: () => {},
-		applyBackendSelectionUntilNextFrame: () => {},
+		withBackendSelectionWrite: <T>(write: () => T) => write(),
 		setComposing: () => {},
 		notifyDomReconciled: () => {},
 		requestDomFocus: () => false,
@@ -57,7 +57,6 @@ function createFieldEditor(blockId: string) {
 		clearBackendSelectionAuthority: () => {},
 		setEditContextSelectionSnapshot: () => {},
 		getEditContextSelectionSnapshot: () => null,
-		shouldIgnoreDomTextSelection: () => false,
 		notifyGestureEvent: () => {},
 	};
 }
@@ -117,6 +116,79 @@ describe("B1 mutation watchdog", () => {
 					}),
 				]),
 			);
+		} finally {
+			backend.deactivate();
+			host.remove();
+			editor.destroy();
+		}
+	});
+
+	it("does not emit again when the restore already matches the model", () => {
+		const editor = createEditor({ schema: defaultSchema });
+		const blockId = editor.firstBlock()!.id;
+		editor.apply([
+			{ type: "insert-text", blockId, offset: 0, text: "Hello" },
+		]);
+
+		const diagnostics: DiagnosticEvent[] = [];
+		editor.on("diagnostic", (event) => {
+			diagnostics.push(event);
+		});
+
+		const backend = new ProbeContentEditableBackend(
+			editor,
+			createFieldEditor(blockId) as unknown as FieldEditorInputController,
+		);
+		const host = document.createElement("div");
+		document.body.appendChild(host);
+
+		try {
+			backend.activate(host, getYText(editor, blockId));
+			rewriteFirstTextNode(host, "X");
+			backend.invokeHandleMutations([]);
+			const afterRestore = diagnostics.filter(
+				(event) => event.code === "dom-divergence",
+			).length;
+			expect(afterRestore).toBeGreaterThan(0);
+			expect(extractTextFromDOM(host)).toBe("Hello");
+
+			backend.invokeHandleMutations([]);
+			expect(
+				diagnostics.filter((event) => event.code === "dom-divergence"),
+			).toHaveLength(afterRestore);
+		} finally {
+			backend.deactivate();
+			host.remove();
+			editor.destroy();
+		}
+	});
+
+	it("does not treat the activate reconcile as a foreign rewrite", () => {
+		const editor = createEditor({ schema: defaultSchema });
+		const blockId = editor.firstBlock()!.id;
+		editor.apply([
+			{ type: "insert-text", blockId, offset: 0, text: "Hello" },
+		]);
+
+		const diagnostics: DiagnosticEvent[] = [];
+		editor.on("diagnostic", (event) => {
+			diagnostics.push(event);
+		});
+
+		const backend = new ProbeContentEditableBackend(
+			editor,
+			createFieldEditor(blockId) as unknown as FieldEditorInputController,
+		);
+		const host = document.createElement("div");
+		document.body.appendChild(host);
+
+		try {
+			backend.activate(host, getYText(editor, blockId));
+			backend.invokeHandleMutations([]);
+			expect(
+				diagnostics.filter((event) => event.code === "dom-divergence"),
+			).toHaveLength(0);
+			expect(extractTextFromDOM(host)).toBe("Hello");
 		} finally {
 			backend.deactivate();
 			host.remove();

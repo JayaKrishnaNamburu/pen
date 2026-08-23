@@ -9,7 +9,13 @@ test.beforeEach(async ({ page }) => {
 	await openPlayground(page);
 });
 
-test("selects the full structured document on first cmd+a", async ({ page }) => {
+// T1 (spec-v2/03-selection.md §7): the first cmd+a selects the current block,
+// the next escalates to BlockSelection. Keys only — driving this through
+// editor.selectAll() would pass even when the keystroke path diverges, which is
+// how the earlier document-first behaviour survived unnoticed.
+test("cmd+a walks the T1 ladder: current block, then BlockSelection", async ({
+	page,
+}) => {
 	await seedParagraphs(page, ["First", "Second", "Third"]);
 
 	const inlines = page.locator("[data-pen-inline-content]");
@@ -25,15 +31,27 @@ test("selects the full structured document on first cmd+a", async ({ page }) => 
 
 	await page.keyboard.press("ControlOrMeta+A");
 
-	const afterSelectAll = await getEditorDocumentSnapshot(page);
-	await test.info().attach("selectAll-after-cmd-a", {
-		body: JSON.stringify(afterSelectAll, null, 2),
+	const afterFirstPress = await getEditorDocumentSnapshot(page);
+	await test.info().attach("selectAll-after-first-cmd-a", {
+		body: JSON.stringify(afterFirstPress, null, 2),
 		contentType: "application/json",
 	});
 
 	await expect
 		.poll(async () => (await getEditorDocumentSnapshot(page)).selectedText)
-		.toBe("First\nSecond\nThird");
+		.toBe("First");
+
+	await page.keyboard.press("ControlOrMeta+A");
+
+	const afterSecondPress = await getEditorDocumentSnapshot(page);
+	await test.info().attach("selectAll-after-second-cmd-a", {
+		body: JSON.stringify(afterSecondPress, null, 2),
+		contentType: "application/json",
+	});
+
+	await expect
+		.poll(async () => (await getEditorDocumentSnapshot(page)).editorSelection?.type)
+		.toBe("block");
 });
 
 test("keeps table available in the structured playground slash menu", async ({

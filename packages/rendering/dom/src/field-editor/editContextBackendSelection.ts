@@ -96,17 +96,6 @@ export abstract class EditContextBackendSelection extends EditContextBackendInpu
 			return;
 		}
 
-		if (
-			normalizedSelection.type === "text" &&
-			this.fieldEditor.shouldIgnoreDomTextSelection(
-				normalizedSelection.anchor,
-				normalizedSelection.focus,
-			)
-		) {
-			this.restoreDOMCaret();
-			return;
-		}
-
 		if (this.shouldIgnoreStaleCollapsedDomSelection(normalizedSelection)) {
 			this.restoreDOMCaret();
 			return;
@@ -213,7 +202,10 @@ export abstract class EditContextBackendSelection extends EditContextBackendInpu
 			focusOffset: offsets.focus,
 		};
 		this.fieldEditor.setEditContextSelectionSnapshot(nextSelection);
-		this.fieldEditor.setBackendSelectionAuthority("user-dom", nextSelection);
+		this.fieldEditor.setBackendSelectionAuthority(
+			"user-dom",
+			nextSelection,
+		);
 		if (this.fieldEditor.readDomSelection) {
 			this.fieldEditor.readDomSelection({
 				type: "text",
@@ -238,6 +230,15 @@ export abstract class EditContextBackendSelection extends EditContextBackendInpu
 	protected handleYTextChange = (event: FieldEditorTextChangeEvent): void => {
 		if (!this.editContext || !this.element || !this.ytext) return;
 		const isHistory = isHistoryTransactionOrigin(event.transaction?.origin);
+		if (!isHistory && this.hasInFlightEditContextComposition()) {
+			if (
+				event.transaction?.origin === "remote" ||
+				event.transaction?.origin === "collaborator"
+			) {
+				this.deferredRemoteDeltas.push({ delta: event.delta });
+			}
+			return;
+		}
 		if (isHistory) {
 			this.fieldEditor.clearBackendSelectionAuthority(
 				"edit-context-textupdate",
@@ -298,11 +299,16 @@ export abstract class EditContextBackendSelection extends EditContextBackendInpu
 				urlPolicyFromEditor(this.editor),
 			);
 			if (!applied) {
-				fullReconcileToDOM(this.ytext, this.element, this.editor.schema, {
-				urlPolicy: urlPolicyFromEditor(this.editor),
-					preserveSelection: true,
-					inlineDecorations,
-				});
+				fullReconcileToDOM(
+					this.ytext,
+					this.element,
+					this.editor.schema,
+					{
+						urlPolicy: urlPolicyFromEditor(this.editor),
+						preserveSelection: true,
+						inlineDecorations,
+					},
+				);
 				this.fieldEditor.notifyDomReconciled(
 					this.fieldEditor.focusBlockId ?? undefined,
 				);
@@ -358,12 +364,15 @@ export abstract class EditContextBackendSelection extends EditContextBackendInpu
 		if (!this.element || !this.ytext) {
 			return;
 		}
-		const nextInlineDecorationsSignature = this.getInlineDecorationsSignature();
-		if (nextInlineDecorationsSignature === this.inlineDecorationsSignature) {
+		const nextInlineDecorationsSignature =
+			this.getInlineDecorationsSignature();
+		if (
+			nextInlineDecorationsSignature === this.inlineDecorationsSignature
+		) {
 			return;
 		}
 		fullReconcileToDOM(this.ytext, this.element, this.editor.schema, {
-				urlPolicy: urlPolicyFromEditor(this.editor),
+			urlPolicy: urlPolicyFromEditor(this.editor),
 			preserveSelection: true,
 			inlineDecorations: this.getInlineDecorationsForBlock(),
 		});
@@ -418,12 +427,13 @@ export abstract class EditContextBackendSelection extends EditContextBackendInpu
 			editContextSelection?.focusOffset ??
 			null;
 		if (root && blockId && anchorOffset != null && focusOffset != null) {
-			this.fieldEditor.applyBackendSelectionUntilNextFrame();
-			editorSelectionToDOM(
-				root,
-				{ blockId, offset: anchorOffset },
-				{ blockId, offset: focusOffset },
-			);
+			this.fieldEditor.withBackendSelectionWrite(() => {
+				editorSelectionToDOM(
+					root,
+					{ blockId, offset: anchorOffset },
+					{ blockId, offset: focusOffset },
+				);
+			});
 			return;
 		}
 
@@ -438,12 +448,13 @@ export abstract class EditContextBackendSelection extends EditContextBackendInpu
 		const sel = this.element.ownerDocument?.getSelection();
 		if (!sel) return;
 
-		this.fieldEditor.applyBackendSelectionUntilNextFrame();
-		sel.removeAllRanges();
-		const range = document.createRange();
-		range.setStart(anchorPoint.node, anchorPoint.offset);
-		range.setEnd(focusPoint.node, focusPoint.offset);
-		sel.addRange(range);
+		this.fieldEditor.withBackendSelectionWrite(() => {
+			sel.removeAllRanges();
+			const range = document.createRange();
+			range.setStart(anchorPoint.node, anchorPoint.offset);
+			range.setEnd(focusPoint.node, focusPoint.offset);
+			sel.addRange(range);
+		});
 	}
 
 	protected getInlineDecorationsForBlock(): readonly InlineDecoration[] {
@@ -466,5 +477,4 @@ export abstract class EditContextBackendSelection extends EditContextBackendInpu
 			this.inlineDecorationsSignature,
 		);
 	}
-
 }

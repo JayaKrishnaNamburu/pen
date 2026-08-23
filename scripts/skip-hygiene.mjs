@@ -547,7 +547,7 @@ export async function collectSkipHits(repoRoot) {
 			.join(path.posix.sep);
 		hits.push(...extractSkipHits(text, relPosix));
 	}
-	return hits;
+	return { hits, fileCount: files.length };
 }
 
 async function loadAllowlist(repoRoot, relPath) {
@@ -597,7 +597,17 @@ async function main() {
 	);
 
 	const args = parseArgs(process.argv.slice(2));
-	const hits = await collectSkipHits(args.repoRoot);
+	const { hits, fileCount } = await collectSkipHits(args.repoRoot);
+	if (fileCount === 0) {
+		console.error(
+			"skip-hygiene: cannot check: packages+playground *.test.ts/*.spec.ts walk matched 0 files",
+		);
+		process.exitCode = 1;
+		return;
+	}
+	console.log(
+		`population: ${fileCount} files (packages+playground *.test.ts/*.spec.ts)`,
+	);
 	const allowlist = await loadAllowlist(args.repoRoot, args.allowlistPath);
 	const result = evaluateSkipHits({ hits, allowlist });
 	const report = formatReport(result);

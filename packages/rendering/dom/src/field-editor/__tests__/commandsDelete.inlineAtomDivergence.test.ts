@@ -8,10 +8,13 @@ import type { FieldEditorInputController } from "../controller";
 import type { FieldEditorTextLike } from "../crdt";
 
 /**
- * Unresolved product fork. `applyDeleteBehavior` SELECTs an adjacent inline
- * atom. Live keydown / beforeinput DELETES it via `registry.dispatch`.
- * These are not the same product. Do not retarget the select tests onto
- * `registry.dispatch` — that would stay green while changing the editor.
+ * Owner-approved UX: Backspace next to an inline atom SELECTs on the first
+ * press and deletes on the second. Live keydown / beforeinput go through
+ * `registry.dispatch`. `applyDeleteBehavior` is the no-dispatch fallback
+ * and already selected; both paths must stay on SELECT.
+ *
+ * Second press is ordinary delete-the-selection (`handleDelete` on a
+ * non-collapsed range), not a second atom-specific step.
  */
 
 function mentionDeltas() {
@@ -56,6 +59,18 @@ function hasMention(
 			insert.type === "mention"
 		);
 	});
+}
+
+function expectAtomSelected(
+	editor: ReturnType<typeof createEditor>,
+	blockId: string,
+): void {
+	expect(editor.selection?.type).toBe("text");
+	if (editor.selection?.type !== "text") {
+		throw new Error("expected text selection");
+	}
+	expect(editor.selection.anchor).toEqual({ blockId, offset: 2 });
+	expect(editor.selection.focus).toEqual({ blockId, offset: 3 });
 }
 
 function getYText(
@@ -112,7 +127,21 @@ function createFieldEditor(blockId: string) {
 	};
 }
 
-describe("inline atom delete divergence", () => {
+function spyDispatch(editor: ReturnType<typeof createEditor>): string[] {
+	const registry = getCommandRegistry(editor);
+	if (!registry) {
+		throw new Error("expected command registry");
+	}
+	const dispatched: string[] = [];
+	const originalDispatch = registry.dispatch.bind(registry);
+	registry.dispatch = ((command, param, context) => {
+		dispatched.push(command.name);
+		return originalDispatch(command, param, context);
+	}) as typeof registry.dispatch;
+	return dispatched;
+}
+
+describe("inline atom delete select-then-delete", () => {
 	describe("fallback applyDeleteBehavior (select)", () => {
 		it("applyDeleteBehavior backward selects the adjacent atom and does not mutate", () => {
 			const { editor, blockId } = createMentionEditor();
@@ -155,19 +184,10 @@ describe("inline atom delete divergence", () => {
 		});
 	});
 
-	describe("live keydown / beforeinput (delete)", () => {
-		it("handleFieldEditorKeyDown Backspace deletes the adjacent atom in one step", () => {
+	describe("live keydown / beforeinput (select then delete)", () => {
+		it("handleFieldEditorKeyDown Backspace selects the adjacent atom on the first press", () => {
 			const { editor, blockId } = createMentionEditor();
-			const registry = getCommandRegistry(editor);
-			if (!registry) {
-				throw new Error("expected command registry");
-			}
-			const dispatched: string[] = [];
-			const originalDispatch = registry.dispatch.bind(registry);
-			registry.dispatch = ((command, param, context) => {
-				dispatched.push(command.name);
-				return originalDispatch(command, param, context);
-			}) as typeof registry.dispatch;
+			const dispatched = spyDispatch(editor);
 
 			const handled = handleFieldEditorKeyDown({
 				event: createKeyEvent("Backspace"),
@@ -179,23 +199,50 @@ describe("inline atom delete divergence", () => {
 
 			expect(handled).toBe(true);
 			expect(dispatched).toContain("pen.deleteBackward");
+			expect(hasMention(editor, blockId)).toBe(true);
+			expect(editor.getBlock(blockId)?.inlineDeltas()).toEqual(
+				mentionDeltas(),
+			);
+			expectAtomSelected(editor, blockId);
+			editor.destroy();
+		});
+
+		it("handleFieldEditorKeyDown Backspace deletes the selected atom on the second press", () => {
+			const { editor, blockId } = createMentionEditor();
+			const dispatched = spyDispatch(editor);
+			const fieldEditor = createFieldEditor(blockId);
+			const ytext = getYText(editor, blockId);
+
+			handleFieldEditorKeyDown({
+				event: createKeyEvent("Backspace"),
+				editor,
+				fieldEditor,
+				ytext,
+				range: { start: 3, end: 3 },
+			});
+			expect(hasMention(editor, blockId)).toBe(true);
+			expectAtomSelected(editor, blockId);
+
+			const handled = handleFieldEditorKeyDown({
+				event: createKeyEvent("Backspace"),
+				editor,
+				fieldEditor,
+				ytext,
+				range: { start: 2, end: 3 },
+			});
+
+			expect(handled).toBe(true);
+			expect(dispatched.filter((name) => name === "pen.deleteBackward"))
+				.toHaveLength(2);
 			expect(hasMention(editor, blockId)).toBe(false);
 			expect(editor.getBlock(blockId)?.textContent()).toBe("hiz");
 			editor.destroy();
 		});
 
-		it("DIRECT_HANDLERS.deleteContentBackward deletes the adjacent atom in one step", () => {
+		it("DIRECT_HANDLERS.deleteContentBackward selects the adjacent atom on the first press", () => {
 			const { editor, blockId } = createMentionEditor();
-			const registry = getCommandRegistry(editor);
-			if (!registry) {
-				throw new Error("expected command registry");
-			}
-			const dispatched: string[] = [];
-			const originalDispatch = registry.dispatch.bind(registry);
-			registry.dispatch = ((command, param, context) => {
-				dispatched.push(command.name);
-				return originalDispatch(command, param, context);
-			}) as typeof registry.dispatch;
+			const dispatched = spyDispatch(editor);
+			const inputRange = { start: 3, end: 3 };
 
 			DIRECT_HANDLERS.deleteContentBackward(
 				{ inputType: "deleteContentBackward" } as InputEvent,
@@ -204,7 +251,7 @@ describe("inline atom delete divergence", () => {
 				createFieldEditor(blockId) as unknown as FieldEditorInputController,
 				{} as HTMLElement,
 				{
-					resolveCurrentInputRange: () => ({ start: 3, end: 3 }),
+					resolveCurrentInputRange: () => inputRange,
 					applyListInputRule: () => false,
 					applyInlineTextEdit: () => {
 						throw new Error(
@@ -215,15 +262,61 @@ describe("inline atom delete divergence", () => {
 			);
 
 			expect(dispatched).toContain("pen.deleteBackward");
+			expect(hasMention(editor, blockId)).toBe(true);
+			expectAtomSelected(editor, blockId);
+			editor.destroy();
+		});
+
+		it("DIRECT_HANDLERS.deleteContentBackward deletes the selected atom on the second press", () => {
+			const { editor, blockId } = createMentionEditor();
+			const dispatched = spyDispatch(editor);
+			let inputRange = { start: 3, end: 3 };
+			const backend = {
+				resolveCurrentInputRange: () => inputRange,
+				applyListInputRule: () => false,
+				applyInlineTextEdit: () => {
+					throw new Error(
+						"fallback applyInlineTextEdit must not run when registry dispatch succeeds",
+					);
+				},
+			};
+			const fieldEditor = createFieldEditor(
+				blockId,
+			) as unknown as FieldEditorInputController;
+			const ytext = getYText(editor, blockId);
+
+			DIRECT_HANDLERS.deleteContentBackward(
+				{ inputType: "deleteContentBackward" } as InputEvent,
+				editor,
+				ytext,
+				fieldEditor,
+				{} as HTMLElement,
+				backend,
+			);
+			expect(hasMention(editor, blockId)).toBe(true);
+			expectAtomSelected(editor, blockId);
+
+			inputRange = { start: 2, end: 3 };
+			DIRECT_HANDLERS.deleteContentBackward(
+				{ inputType: "deleteContentBackward" } as InputEvent,
+				editor,
+				ytext,
+				fieldEditor,
+				{} as HTMLElement,
+				backend,
+			);
+
+			expect(dispatched.filter((name) => name === "pen.deleteBackward"))
+				.toHaveLength(2);
 			expect(hasMention(editor, blockId)).toBe(false);
 			expect(editor.getBlock(blockId)?.textContent()).toBe("hiz");
 			editor.destroy();
 		});
 	});
 
-	it("select vs delete are different products on the same fixture", () => {
+	it("fallback and live keystroke are the same product on the same fixture", () => {
 		const selectSide = createMentionEditor();
-		const deleteSide = createMentionEditor();
+		const liveSide = createMentionEditor();
 
 		const selected = applyDeleteBehavior(selectSide.editor, {
 			blockId: selectSide.blockId,
@@ -233,9 +326,9 @@ describe("inline atom delete divergence", () => {
 		});
 		const handled = handleFieldEditorKeyDown({
 			event: createKeyEvent("Backspace"),
-			editor: deleteSide.editor,
-			fieldEditor: createFieldEditor(deleteSide.blockId),
-			ytext: getYText(deleteSide.editor, deleteSide.blockId),
+			editor: liveSide.editor,
+			fieldEditor: createFieldEditor(liveSide.blockId),
+			ytext: getYText(liveSide.editor, liveSide.blockId),
 			range: { start: 3, end: 3 },
 		});
 
@@ -246,8 +339,9 @@ describe("inline atom delete divergence", () => {
 		});
 		expect(hasMention(selectSide.editor, selectSide.blockId)).toBe(true);
 		expect(handled).toBe(true);
-		expect(hasMention(deleteSide.editor, deleteSide.blockId)).toBe(false);
+		expect(hasMention(liveSide.editor, liveSide.blockId)).toBe(true);
+		expectAtomSelected(liveSide.editor, liveSide.blockId);
 		selectSide.editor.destroy();
-		deleteSide.editor.destroy();
+		liveSide.editor.destroy();
 	});
 });

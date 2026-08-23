@@ -73,49 +73,12 @@ function createController(
 	return { controller, setTextSelection, diagnostics };
 }
 
-describe("SelectionProjectionController shouldIgnoreDomTextSelection", () => {
-	it("ignores leftover native range on another block after a programmatic record write", () => {
-		const { controller } = createController();
-		controller.commitProgrammaticTextSelection("inserted", 0, 0);
-
-		expect(
-			controller.shouldIgnoreDomTextSelection(
-				{ blockId: "first", offset: 5 },
-				{ blockId: "first", offset: 5 },
-			),
-		).toBe(true);
-	});
-
+describe("SelectionProjectionController lastProjectedVersion", () => {
 	it("does not clear lastProjectedVersion on reset", () => {
 		const { controller } = createController();
 		controller.recordProjectedVersion(9);
 		controller.reset();
 		expect(controller.lastProjectedVersion).toBe(9);
-	});
-
-	it("keeps leftover-ignore across a session-switch reset because it reads the record", () => {
-		const { controller } = createController();
-		controller.commitProgrammaticTextSelection("inserted", 0, 0);
-
-		controller.reset();
-		expect(
-			controller.shouldIgnoreDomTextSelection(
-				{ blockId: "first", offset: 5 },
-				{ blockId: "first", offset: 5 },
-			),
-		).toBe(true);
-	});
-
-	it("does not ignore leftover ranges while a pointer window is open", () => {
-		const { controller } = createController();
-		controller.commitProgrammaticTextSelection("inserted", 0, 0);
-		controller.beginPointerSelection();
-		expect(
-			controller.shouldIgnoreDomTextSelection(
-				{ blockId: "first", offset: 5 },
-				{ blockId: "first", offset: 5 },
-			),
-		).toBe(false);
 	});
 });
 
@@ -129,17 +92,13 @@ describe("SelectionProjectionController gesture windows", () => {
 		expect(controller.isAdmissibleGestureRead()).toBe(true);
 	});
 
-	it("step 4: shouldSuppressSelectionSync is dead", () => {
+	it("does not expose leftover suppress stubs", () => {
 		const { controller } = createController();
-		expect(controller.shouldSuppressSelectionSync()).toBe(false);
-	});
-
-	it("step 4: consumeDomSelectionProjectionSuppression is dead", () => {
-		const { controller } = createController();
-		controller.suppressNextDomSelectionProjection();
-		expect(controller.consumeDomSelectionProjectionSuppression()).toBe(
+		expect("shouldSuppressSelectionSync" in controller).toBe(false);
+		expect("consumeDomSelectionProjectionSuppression" in controller).toBe(
 			false,
 		);
+		expect("suppressNextDomSelectionProjection" in controller).toBe(false);
 	});
 });
 

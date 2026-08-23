@@ -84,6 +84,8 @@ describe("default keymap K2", () => {
 			expect.arrayContaining([
 				"Alt-ArrowLeft->pen.caretWordLeft",
 				"Meta-ArrowLeft->pen.caretLineStart",
+				"Home->pen.caretLineStart",
+				"End->pen.caretLineEnd",
 				"Meta-ArrowUp->pen.caretDocStart",
 				"Alt-Backspace->pen.deleteBackward",
 				"Meta-a->pen.selectAll",
@@ -101,14 +103,13 @@ describe("default keymap K2", () => {
 				"Ctrl-y->history.redo",
 			]),
 		);
-		expect(macos.some((entry) => entry.startsWith("Home->"))).toBe(false);
 		expect(windows.some((entry) => entry.startsWith("Alt-Arrow"))).toBe(
 			false,
 		);
 	});
 
 	it("K2: an added or dropped binding changes the resolved table length", () => {
-		expect(resolveDefaultKeymap("macos")).toHaveLength(38);
+		expect(resolveDefaultKeymap("macos")).toHaveLength(42);
 		expect(resolveDefaultKeymap("windows")).toHaveLength(38);
 	});
 

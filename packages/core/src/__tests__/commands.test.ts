@@ -126,7 +126,10 @@ describe("command registry", () => {
 
 		expect(registry.dispatch(insert, undefined)).toBe(true);
 		expect(registry.recordedApplies).toEqual([
-			{ ops: [insertHello], options: { origin: "user" } },
+			{
+				ops: [insertHello],
+				options: { origin: { type: "user", intent: "test.insert" } },
+			},
 		]);
 		expect(fixture.applyCount.value).toBe(0);
 	});
@@ -151,7 +154,7 @@ describe("command registry", () => {
 		registry.dispatch(insert, undefined, { origin: "ai" });
 		expect(hooked).toEqual([[insertHello]]);
 		expect(registry.recordedApplies[0]?.options).toEqual({
-			origin: "ai",
+			origin: { type: "ai", intent: "test.insert" },
 			undoGroup: true,
 		});
 		expect(fixture.applyCount.value).toBe(0);
@@ -191,7 +194,10 @@ describe("command registry", () => {
 
 		expect(registry.dispatch(insert, undefined)).toBe(true);
 		expect(registry.recordedApplies).toEqual([
-			{ ops: [insertHello], options: undefined },
+			{
+				ops: [insertHello],
+				options: { origin: { type: "user", intent: "test.insert" } },
+			},
 		]);
 		expect(registry.diagnostics).toEqual([
 			expect.objectContaining({

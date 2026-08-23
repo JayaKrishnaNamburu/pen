@@ -49,9 +49,11 @@ const allowlist = await loadAllowlist();
 
 const findings = [];
 const allowlisted = [];
+const scanned = [];
 
 for (const renderer of RENDERERS) {
 	const files = await collectSourceFiles(renderer.root);
+	scanned.push({ id: renderer.id, count: files.length });
 	for (const filePath of files) {
 		const source = await fs.readFile(filePath, "utf8");
 		if (usesFramework(source, renderer.specifiers)) {
@@ -81,10 +83,20 @@ for (const renderer of RENDERERS) {
 	}
 }
 
-printReport(findings, allowlisted);
-
-if (strict && findings.length > 0) {
+const emptyRenderer = scanned.find((row) => row.count === 0);
+console.log(
+	`population: ${scanned.map((row) => `${row.id} ${row.count}`).join(", ")} files (packages/rendering/{react,vue}/src)`,
+);
+if (emptyRenderer) {
+	console.error(
+		`renderer-inventory: cannot check: packages/rendering/${emptyRenderer.id}/src walk matched 0 files`,
+	);
 	process.exitCode = 1;
+} else {
+	printReport(findings, allowlisted);
+	if (strict && findings.length > 0) {
+		process.exitCode = 1;
+	}
 }
 
 async function loadAllowlist() {

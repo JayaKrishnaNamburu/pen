@@ -89,16 +89,16 @@ export function caretCommandHandlers(): FacetProvider[] {
 			handleVerticalCaret(editor, param, "down"),
 		),
 		commandHandler(caretLineStart, (editor, param) =>
-			handleLineOrBlockEdge(editor, param, "start"),
+			handleLineOrBlockEdge(editor, param, "start", true),
 		),
 		commandHandler(caretLineEnd, (editor, param) =>
-			handleLineOrBlockEdge(editor, param, "end"),
+			handleLineOrBlockEdge(editor, param, "end", true),
 		),
 		commandHandler(caretBlockStart, (editor, param) =>
-			handleLineOrBlockEdge(editor, param, "start"),
+			handleLineOrBlockEdge(editor, param, "start", false),
 		),
 		commandHandler(caretBlockEnd, (editor, param) =>
-			handleLineOrBlockEdge(editor, param, "end"),
+			handleLineOrBlockEdge(editor, param, "end", false),
 		),
 		commandHandler(caretDocStart, (editor, param) =>
 			handleDocEdge(editor, param, "start"),
@@ -316,13 +316,44 @@ function handleWordCaret(
 	});
 }
 
+const LINE_EDGE_SEAM = Symbol.for("pen.lineEdgeSeam");
+
+export type LineEdgePoint = {
+	readonly blockId: string;
+	readonly offset: number;
+};
+
+export type LineEdgeMeasure = (
+	editor: Editor,
+	current: LineEdgePoint,
+	edge: "start" | "end",
+) => LineEdgePoint | null;
+
+export function setLineEdgeMeasure(
+	editor: Editor,
+	measure: LineEdgeMeasure | null,
+): void {
+	(
+		editor as unknown as Record<symbol, LineEdgeMeasure | null>
+	)[LINE_EDGE_SEAM] = measure;
+}
+
+export function getLineEdgeMeasure(
+	editor: Editor,
+): LineEdgeMeasure | undefined {
+	return (
+		(editor as unknown as Record<symbol, LineEdgeMeasure | undefined>)[
+			LINE_EDGE_SEAM
+		] ?? undefined
+	);
+}
+
 function handleLineOrBlockEdge(
 	editor: Editor,
 	param: CaretMotionParam,
 	edge: "start" | "end",
+	visual: boolean,
 ): CommandResult | false {
-	// M3 visual line-box edges need GeometryReader.lineBoxes (pen-dom).
-	// Core has no wrap/run geometry; stay at logical block edges.
 	const fromBlock = handleBlockSelectionArrow(
 		editor,
 		param,
@@ -340,12 +371,15 @@ function handleLineOrBlockEdge(
 	if (!block) {
 		return false;
 	}
-	const offset = edge === "start" ? 0 : block.length();
+	const measured = visual
+		? (getLineEdgeMeasure(editor)?.(editor, focus, edge) ?? null)
+		: null;
+	const next = measured ?? {
+		blockId: focus.blockId,
+		offset: edge === "start" ? 0 : block.length(),
+	};
 	return finishNonVertical(editor, {
-		selection: extendSelection(editor, param.extend, {
-			blockId: focus.blockId,
-			offset,
-		}),
+		selection: extendSelection(editor, param.extend, next),
 	});
 }
 

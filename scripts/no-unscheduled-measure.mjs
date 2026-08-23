@@ -505,7 +505,7 @@ export async function collectMeasureHits(repoRoot) {
 			.join(path.posix.sep);
 		hits.push(...extractMeasureHits(relPosix, text));
 	}
-	return hits;
+	return { hits, fileCount: files.length };
 }
 
 async function loadReasonedList(repoRoot, relPath, fieldName) {
@@ -542,7 +542,17 @@ async function main() {
 	);
 
 	const args = parseArgs(process.argv.slice(2));
-	const hits = await collectMeasureHits(args.repoRoot);
+	const { hits, fileCount } = await collectMeasureHits(args.repoRoot);
+	if (fileCount === 0) {
+		console.error(
+			"no-unscheduled-measure: cannot check: packages/rendering/**/src walk matched 0 files",
+		);
+		process.exitCode = 1;
+		return;
+	}
+	console.log(
+		`population: ${fileCount} files (packages/rendering/**/src)`,
+	);
 	const allowlist = await loadReasonedList(
 		args.repoRoot,
 		DEFAULT_ALLOWLIST,

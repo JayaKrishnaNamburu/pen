@@ -7,9 +7,18 @@
  * Spec budgets stay at the wave-doc targets (read-phase p95 = 2ms). The
  * committed Chromium recording is already 3.4ms, so versusSpec.blown is
  * true on purpose. Raising the budget to hide that would launder the
- * overrun; failing the tree on it would lock a known pre-Wave-7 gap.
+ * number; failing the tree on it would fail on a measurement that does
+ * not describe the product.
  * The report must print a blown spec as a loud banner. Missing last-run
  * is a hard fail in reportTypingBudget.js — silent pass is the worst case.
+ *
+ * What 3.4ms is NOT (corrected 2026-08-23, spec-v2/SCHEDULER-WIRING-AUDIT.md):
+ * it is not a product overrun. The timed flush belongs to a second
+ * DomScheduler the harness constructs, and caretRect is inside the timed
+ * region only because the harness queued it — acceptCommit has zero
+ * production callers, so a real keystroke never runs that flush. All four
+ * metrics are harness numbers; the production read phase is unmeasured,
+ * and becomes measurable when the scheduler is on the apply path.
  */
 
 /**

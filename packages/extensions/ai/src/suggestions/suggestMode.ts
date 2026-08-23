@@ -353,8 +353,36 @@ export function transformOpsForSuggestModeWithMetadata(
 				break;
 			}
 
-			default:
+			case "update-block":
+			case "split-block":
+			case "merge-blocks":
+			case "format-text":
+			case "insert-inline-node":
+			case "remove-inline-node":
+			case "update-layout":
+			case "insert-table-row":
+			case "delete-table-row":
+			case "insert-table-column":
+			case "delete-table-column":
+			case "merge-table-cells":
+			case "split-table-cell":
+			case "insert-table-cell-text":
+			case "delete-table-cell-text":
+			case "format-table-cell-text":
+			case "update-table-columns":
+			case "set-meta":
+			case "create-app":
+			case "update-app":
+			case "delete-app":
+			case "set-selection":
+			case "stream-open":
 				intercepted.push(op);
+				break;
+			default: {
+				const _exhaustive: never = op;
+				void _exhaustive;
+				intercepted.push(op);
+			}
 		}
 	}
 

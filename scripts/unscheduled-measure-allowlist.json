@@ -2,6 +2,11 @@
   "_comment": "SCH1 (spec-v2/07-dom-scheduling.md, Wave 3 step 3.4): measurement sites in packages/rendering runtime src. Allowed kinds: geometry module (GeometryReader G1/G4) or a site that cannot move onto GeometryReader. Each entry needs file, enclosing symbol, and a reason that names why this site cannot move. Remove an entry in the same PR that deletes or reschedules the last call in that symbol.",
   "entries": [
     {
+      "file": "packages/rendering/dom/src/field-editor/contenteditableDomHelpers.ts",
+      "symbol": "collapsedCaretRect",
+      "reason": "M3 visual line-start needs the collapsed-Range caret-x the conformance ink probe uses; GeometryReader.caretRect disagrees with Firefox by one offset at a bidi space. Already inside measureWithRoot — measureVisualLineEdge:322 wraps the caretXAt/caretYAt callers, so this is the checker's call-chain blind spot, not an unscheduled read."
+    },
+    {
       "file": "packages/rendering/dom/src/field-editor/editContextDom.ts",
       "symbol": "getCharacterRect",
       "reason": "EditContext characterboundsupdate must return a DOMRect[] for the requested range in the same callback; GeometryReader G1 forbids per-character spans."

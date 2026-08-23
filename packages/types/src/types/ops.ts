@@ -23,6 +23,7 @@ export interface StructuredOpOrigin {
 	requestId?: string;
 	actorId?: string;
 	source?: string;
+	intent?: string;
 }
 
 export type OpOrigin = OpOriginType | StructuredOpOrigin;

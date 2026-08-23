@@ -87,7 +87,7 @@ describe("@input/pen-react selected text deletion", () => {
 		SLOW_BEFOREINPUT_TEST_TIMEOUT_MS,
 	);
 
-	it("deletes the full-document selection after first cmd+a in flow documents", async () => {
+	it("deletes every top-level block after two cmd+a presses in flow documents", async () => {
 		const editor = createEditor({
 			schema: defaultSchema,
 			documentProfile: "flow",
@@ -141,7 +141,7 @@ describe("@input/pen-react selected text deletion", () => {
 		expect(rootElement).not.toBeNull();
 
 		await act(async () => {
-			fieldEditor.activate(firstBlockId);
+			fieldEditor.activateTextSelection(firstBlockId, 2, 2);
 			await flushAnimationFrames(2);
 		});
 
@@ -153,9 +153,20 @@ describe("@input/pen-react selected text deletion", () => {
 		expect(editor.selection).toMatchObject({
 			type: "text",
 			anchor: { blockId: firstBlockId, offset: 0 },
-			focus: { blockId: secondBlockId, offset: 5 },
+			focus: { blockId: firstBlockId, offset: 5 },
 			isCollapsed: false,
-			isMultiBlock: true,
+			isMultiBlock: false,
+		});
+
+		await act(async () => {
+			inlineElement!.dispatchEvent(createSelectAllEvent());
+			await flushAnimationFrames(2);
+		});
+
+		expect(editor.selection).toEqual({
+			type: "block",
+			blockIds: [firstBlockId, secondBlockId],
+			head: secondBlockId,
 		});
 
 		await act(async () => {
@@ -165,19 +176,9 @@ describe("@input/pen-react selected text deletion", () => {
 			await flushAnimationFrames(4);
 		});
 
-		expect(editor.blockCount()).toBe(1);
-		expect(editor.getBlock(firstBlockId)?.textContent()).toBe("");
-		expect(editor.selection).toMatchObject({
-			type: "text",
-			anchor: { blockId: firstBlockId, offset: 0 },
-			focus: { blockId: firstBlockId, offset: 0 },
-			isCollapsed: true,
-			isMultiBlock: false,
-		});
-		expect(domSelectionToEditor(rootElement!)).toMatchObject({
-			anchor: { blockId: firstBlockId, offset: 0 },
-			focus: { blockId: firstBlockId, offset: 0 },
-		});
+		expect(editor.blockCount()).toBe(0);
+		expect(editor.getBlock(firstBlockId)).toBeNull();
+		expect(editor.selection).toBeNull();
 
 		await act(async () => {
 			root.unmount();

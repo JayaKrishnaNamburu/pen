@@ -1,5 +1,7 @@
 # Playground e2e engine promotion
 
+> **Read this first (2026-08-23).** This file is a **debug record, not a description of current code.** The 2026-08-21 entries below describe the programmatic stamps, the `_startSession` peek/restore and `shouldIgnoreDomTextSelection` as live mechanism. All three are **deleted** — the stamps and peek/restore in Wave 05 PR 7, the leftover-ignore flag in PR 8 — and Enter-split now survives with no compensator, because the copy-split mapping was fixed in core first. The full supersession note, including why a green `history.spec.ts` was evidence of a compensator rather than of correctness, is at the end of the 2026-08-21 section. The reasoning in these entries is still how you would find the next bug of this shape; the mechanism names are historical.
+
 ## 2026-08-21 16:00– UTC — Firefox selectAll leftover overwrite
 
 Quiet machine, HEAD `eb315d1` plus this leftover-native fix. 14-core Darwin. 1-minute loadavg stayed between **4.3 and 6.1**. Servers frozen after a `pen-dom` rebuild (`@input/pen-dom` is **not** in the Vite source alias map). `.github/workflows/ci.yml` is **not** edited.
@@ -95,6 +97,12 @@ Firefox is the same leftover-native overwrite. Chromium (EditContext) never take
 ### Fix
 
 `_startSession` peeks a programmatic stamp that already targets the new block, then restores it after the session-switch `reset()`. The keyup leftover is ignored and DOM is restored from authority. No rAF, no poll widening.
+
+**Superseded 2026-08-23 — every mechanism named above is now deleted.** Keep this section: it is the debug record of how the WebKit/Firefox Enter-split failure was found, and the reasoning is still how you would find the next one. But do not read it as a description of the current code.
+
+The stamps and the `_startSession` peek/restore went in Wave 05 PR 7, and `shouldIgnoreDomTextSelection` — the change 3 row above says "Keep" — went in PR 8. Enter-split now survives with no compensator at all: the copy-split mapping was fixed in core first, so the caret lands on the new block because the mapping says so rather than because a stamp overrode it. `history.spec.ts` remains the gate, and the command below is unchanged.
+
+That sequencing was deliberate and is the transferable part. The stamp was what made `history.spec.ts` green, so "the gate still passes" could not license deleting the stamp — a green browser test can be proof of a compensator rather than proof of correctness. The precondition used instead was the conformance trace replay flipping against the mapping-algebra oracle.
 
 ### Gate (clean dist, traces removed)
 

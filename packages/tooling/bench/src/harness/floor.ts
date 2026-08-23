@@ -24,3 +24,20 @@ export function macrotaskYieldFloor(
 		b.setMetrics({ applyCount: 0, yieldCount: yields });
 	};
 }
+
+/**
+ * The autocomplete provider budget races each provider against this
+ * delay. Time it with Pen removed before attributing the wall-clock.
+ */
+export function delayedTimerFloor(
+	delayMs: number,
+): (b: BenchContext) => Promise<void> {
+	return async (b) => {
+		b.start();
+		await new Promise<void>((resolve) => {
+			setTimeout(resolve, delayMs);
+		});
+		b.end();
+		b.setMetrics({ applyCount: 0, delayMs });
+	};
+}

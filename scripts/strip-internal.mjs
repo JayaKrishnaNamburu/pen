@@ -326,6 +326,16 @@ async function main() {
 	);
 	const tsupConfigs = await loadTsupConfigs(args.repoRoot);
 	const packages = await loadPublishedPackages(args.repoRoot);
+	if (packages.length === 0) {
+		console.error(
+			"strip-internal: cannot check: packages/**/package.json walk matched 0 published manifests",
+		);
+		process.exitCode = 1;
+		return;
+	}
+	console.log(
+		`population: ${packages.length} published manifests (packages/**/package.json)`,
+	);
 	const outdatedDist = await collectOutdatedDist(packages);
 	const leaks = [];
 	for (const pkg of packages) {

@@ -110,13 +110,14 @@ function walk(absDir, relDir, out) {
 	}
 }
 
-export function formatReport(hits) {
+export function formatReport(hits, fileCount) {
 	const noun = hits.length === 1 ? "site" : "sites";
 	const lines = [
 		"CH5 console.* inventory (report only)",
 		"",
+		`population: ${fileCount} files (packages/**/src, tests excluded)`,
 		`${hits.length} ${noun} under package src trees (tests excluded).`,
-		"Workspace sweep is contested. This script never fails.",
+		"Workspace sweep is contested. Hits do not fail this inventory.",
 	];
 
 	if (hits.length === 0) {
@@ -149,8 +150,17 @@ function parseArgs(argv) {
 
 function main() {
 	const args = parseArgs(process.argv.slice(2));
+	const files = [];
+	walk(path.join(args.repoRoot, SCAN_ROOT), SCAN_ROOT, files);
+	if (files.length === 0) {
+		console.error(
+			"console-inventory: cannot check: packages/**/src walk matched 0 files",
+		);
+		process.exitCode = 1;
+		return;
+	}
 	const hits = collectConsoleHits(args.repoRoot);
-	process.stdout.write(`${formatReport(hits)}\n`);
+	process.stdout.write(`${formatReport(hits, files.length)}\n`);
 }
 
 const isDirectRun = process.argv[1] === fileURLToPath(import.meta.url);
@@ -160,9 +170,9 @@ if (isDirectRun) {
 	} catch (error) {
 		const message =
 			error instanceof Error ? (error.stack ?? error.message) : String(error);
-		process.stdout.write(
-			`CH5 console.* inventory (report only)\n\nInventory failed to complete:\n${message}\n`,
+		console.error(
+			`console-inventory: cannot check: inventory failed to complete\n${message}`,
 		);
+		process.exitCode = 1;
 	}
-	process.exit(0);
 }

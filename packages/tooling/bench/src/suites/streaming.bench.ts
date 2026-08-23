@@ -1,11 +1,17 @@
-import type { BenchDefinition } from "../bench";
-import type { DocumentOp, StreamingTarget } from "@input/pen-types";
+import type { BenchContext, BenchDefinition } from "../bench";
+import type { DocumentOp, PenStreamPart, StreamingTarget } from "@input/pen-types";
 import { deltaStreamExtension } from "@input/pen-delta-stream";
 import { createTestEditor } from "@input/pen-test";
 import {
 	STREAMING_BATCH_FLUSH_LATENCY_BENCH,
 	STREAMING_GEN_DELTA_1000_PARTS_BENCH,
 } from "../constants/benchmarks";
+import {
+	assertGenDeltaPartsFeedClock,
+	assertStreamingBlockReceivedDelta,
+	consumeGenDeltaParts,
+	generateGenDeltaParts,
+} from "../fixtures/streamingParts";
 import { macrotaskYieldFloor } from "../harness/floor";
 
 function createStreamingBenchEditor() {
@@ -51,37 +57,55 @@ export const STREAMING_GEN_DELTA_YIELD_EVERY = 10;
 export const STREAMING_GEN_DELTA_YIELDS = 100;
 export const STREAMING_BATCH_FLUSH_YIELDS = 1;
 
-export const streamingBenchmarks: BenchDefinition[] = [
-	{
-		...STREAMING_GEN_DELTA_1000_PARTS_BENCH,
-		floor: macrotaskYieldFloor(STREAMING_GEN_DELTA_YIELDS),
-		async fn(b) {
+export function createStreamingGenDeltaRunner(
+	generateParts: (
+		count: number,
+		blockId: string,
+	) => PenStreamPart[] = generateGenDeltaParts,
+): Pick<BenchDefinition, "fn"> {
+	return {
+		async fn(b: BenchContext) {
 			const editor = createStreamingBenchEditor();
 			await editor.whenReady();
 			const blockId = editor.document.blockOrder.get(0);
 			const streaming = getStreamingTarget(editor);
 			const applyCount = countApplies(editor);
+			const parts = generateParts(STREAMING_GEN_DELTA_PARTS, blockId);
+			const { lastDelta } = assertGenDeltaPartsFeedClock(
+				parts,
+				STREAMING_GEN_DELTA_PARTS,
+			);
 
 			b.start();
-
-			const zoneId = "bench-zone";
-			streaming.beginStreaming(zoneId, blockId);
-
-			for (let i = 0; i < STREAMING_GEN_DELTA_PARTS; i++) {
-				streaming.appendDelta(`token-${i} `);
-				if (i % STREAMING_GEN_DELTA_YIELD_EVERY === 0) {
-					await flushMacrotask();
-				}
-			}
-
-			streaming.endStreaming("complete");
+			const { deltaCount } = await consumeGenDeltaParts(
+				streaming,
+				parts,
+				STREAMING_GEN_DELTA_YIELD_EVERY,
+				flushMacrotask,
+			);
 			b.end();
+
+			assertStreamingBlockReceivedDelta(
+				blockId,
+				editor.getBlock(blockId).textContent(),
+				lastDelta,
+			);
 			b.setMetrics({
 				applyCount: applyCount(),
 				yieldCount: STREAMING_GEN_DELTA_YIELDS,
+				deltaCount,
+				namedBlock: blockId,
 			});
 			await editor.destroy();
 		},
+	};
+}
+
+export const streamingBenchmarks: BenchDefinition[] = [
+	{
+		...STREAMING_GEN_DELTA_1000_PARTS_BENCH,
+		floor: macrotaskYieldFloor(STREAMING_GEN_DELTA_YIELDS),
+		fn: createStreamingGenDeltaRunner().fn,
 	},
 	{
 		...STREAMING_BATCH_FLUSH_LATENCY_BENCH,

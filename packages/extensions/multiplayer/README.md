@@ -30,15 +30,15 @@ Pen treats remote awareness as untrusted input. One validator owns the payload a
 
 **Hostile or invalid presence is ignored.** That peer degrades to invisible. The document is unchanged. Pen emits a `presence-rejected` diagnostic (`PRESENCE_REJECTED_CODE`) with a reason. One bad peer never breaks the others.
 
-| Reason                | When                                                                                |
-| --------------------- | ----------------------------------------------------------------------------------- |
-| `oversized`           | A string or the whole payload exceeds a bound                                       |
+| Reason                | When                                                                                                                                      |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `oversized`           | A string or the whole payload exceeds a bound                                                                                             |
 | `wrong-typed`         | Invalid shape or type, a forbidden key (`__proto__`, `constructor`, `prototype`), or offset-form cursor/selection (`{ blockId, offset }`) |
-| `script-bearing`      | Script/markup in a string, or a hostile avatar scheme                               |
-| `nonexistent-block`   | A block selection names a block that is not in the local document                   |
-| `out-of-range-offset` | Reserved; cursor offsets are no longer on the wire                                  |
-| `rate-limited`        | More than `MAX_PRESENCE_UPDATES_PER_SECOND` updates from that peer                  |
-| `peer-cap`            | Extra peers past `MAX_TRACKED_PEERS`                                                |
+| `script-bearing`      | Script/markup in a string, or a hostile avatar scheme                                                                                     |
+| `nonexistent-block`   | A block selection names a block that is not in the local document                                                                         |
+| `out-of-range-offset` | Reserved; cursor offsets are no longer on the wire                                                                                        |
+| `rate-limited`        | More than `MAX_PRESENCE_UPDATES_PER_SECOND` updates from that peer                                                                        |
+| `peer-cap`            | Extra peers past `MAX_TRACKED_PEERS`                                                                                                      |
 
 Awareness `cursor` / text `selection` are serialized anchors only (`{ anchor, clock }` / `{ anchor, head, clock }`). Offset-form payloads are `wrong-typed` and never reach the decoder. The shape and `MAX_PRESENCE_ANCHOR_LENGTH` checks run before decode.
 

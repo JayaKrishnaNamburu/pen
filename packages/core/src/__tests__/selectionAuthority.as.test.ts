@@ -27,7 +27,9 @@ type EditorRuntime = {
 	_crdtDoc: Parameters<SelectionAuthorityImpl["updateDocument"]>[1];
 };
 
-function authorityOf(editor: ReturnType<typeof createEditor>): SelectionAuthorityImpl {
+function authorityOf(
+	editor: ReturnType<typeof createEditor>,
+): SelectionAuthorityImpl {
 	return (editor as unknown as EditorRuntime)._selection;
 }
 
@@ -35,13 +37,18 @@ describe("SelectionAuthority AS1–AS5", () => {
 	it("AS1: a non-collapsed text write mints assoc -1 / +1 local anchors", () => {
 		const editor = createEditor();
 		const id = editor.firstBlock()!.id;
-		editor.apply([{ type: "insert-text", blockId: id, offset: 0, text: "hello" }]);
+		editor.apply([
+			{ type: "insert-text", blockId: id, offset: 0, text: "hello" },
+		]);
 		editor.selectText(id, 1, 4);
 		const auth = authorityOf(editor) as unknown as {
 			_fromAnchor: { assoc: number; provenance: string } | null;
 			_toAnchor: { assoc: number; provenance: string } | null;
 		};
-		expect(auth._fromAnchor).toMatchObject({ assoc: -1, provenance: "local" });
+		expect(auth._fromAnchor).toMatchObject({
+			assoc: -1,
+			provenance: "local",
+		});
 		expect(auth._toAnchor).toMatchObject({ assoc: 1, provenance: "local" });
 		editor.destroy();
 	});
@@ -50,7 +57,12 @@ describe("SelectionAuthority AS1–AS5", () => {
 		const editor = createEditor();
 		const source = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "insert-text", blockId: source, offset: 0, text: "meadow sage" },
+			{
+				type: "insert-text",
+				blockId: source,
+				offset: 0,
+				text: "meadow sage",
+			},
 		]);
 		editor.selectText(source, 9, 9);
 		editor.apply([
@@ -82,7 +94,12 @@ describe("SelectionAuthority AS1–AS5", () => {
 				props: {},
 				position: "last",
 			},
-			{ type: "insert-text", blockId: "b1", offset: 0, text: "meadow sage" },
+			{
+				type: "insert-text",
+				blockId: "b1",
+				offset: 0,
+				text: "meadow sage",
+			},
 		]);
 		editor.selectText("b1", 9, 9);
 		editor.apply([
@@ -134,7 +151,12 @@ describe("SelectionAuthority AS1–AS5", () => {
 				props: {},
 				position: "last",
 			},
-			{ type: "insert-text", blockId: "b1", offset: 0, text: "meadow sage" },
+			{
+				type: "insert-text",
+				blockId: "b1",
+				offset: 0,
+				text: "meadow sage",
+			},
 		]);
 		editor.selectText("b1", 9, 9);
 		editor.apply([
@@ -216,7 +238,10 @@ describe("SelectionAuthority AS1–AS5", () => {
 
 	it("AS4: selection.ts does not import changes/mapping", () => {
 		const source = readFileSync(
-			resolve(dirname(fileURLToPath(import.meta.url)), "../editor/selection.ts"),
+			resolve(
+				dirname(fileURLToPath(import.meta.url)),
+				"../editor/selection.ts",
+			),
 			"utf8",
 		);
 		expect(source).not.toMatch(/changes\/mapping/);
@@ -225,12 +250,107 @@ describe("SelectionAuthority AS1–AS5", () => {
 
 	it("AS5: updateDocument releases authority anchors and writes null", () => {
 		const editor = createEditor();
+		const replacement = createEditor();
 		const id = editor.firstBlock()!.id;
-		editor.selectText(id, 0, 0);
-		const auth = authorityOf(editor);
-		const runtime = editor as unknown as EditorRuntime;
-		auth.updateDocument(runtime._doc, runtime._crdtDoc);
+		editor.apply([
+			{ type: "insert-text", blockId: id, offset: 0, text: "keep" },
+		]);
+		editor.selectText(id, 1, 3);
+		const auth = authorityOf(editor) as unknown as {
+			updateDocument: SelectionAuthorityImpl["updateDocument"];
+			_fromAnchor: { blockId: string } | null;
+			_toAnchor: { blockId: string } | null;
+		};
+		expect(auth._fromAnchor).toMatchObject({ blockId: id });
+		expect(auth._toAnchor).toMatchObject({ blockId: id });
+		const replacementRuntime = replacement as unknown as EditorRuntime;
+		expect(replacementRuntime._crdtDoc).not.toBe(
+			(editor as unknown as EditorRuntime)._crdtDoc,
+		);
+		auth.updateDocument(
+			replacementRuntime._doc,
+			replacementRuntime._crdtDoc,
+		);
+		expect(auth._fromAnchor).toBeNull();
+		expect(auth._toAnchor).toBeNull();
 		expect(editor.selection).toBeNull();
+		editor.destroy();
+		replacement.destroy();
+	});
+
+	it("AN14: remote-shaped empty-structural move repairs the held selection", () => {
+		const editor = createEditor();
+		const source = editor.firstBlock()!.id;
+		editor.apply([
+			{
+				type: "insert-text",
+				blockId: source,
+				offset: 0,
+				text: "meadow sage",
+			},
+			{
+				type: "insert-block",
+				blockId: "dest",
+				blockType: "paragraph",
+				props: {},
+				position: "last",
+			},
+		]);
+		editor.selectText(source, 9, 9);
+		editor.apply([
+			{ type: "delete-text", blockId: source, offset: 6, length: 5 },
+			{ type: "insert-text", blockId: "dest", offset: 0, text: " sage" },
+		]);
+		expect(editor.lastChangeSummary?.structural).toEqual([]);
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId: "dest", offset: 3 },
+			focus: { blockId: "dest", offset: 3 },
+		});
+		expect(authorityOf(editor).record.origin).toBe("mapped");
+		editor.destroy();
+	});
+
+	// The test above is this one's positive control. Removing the
+	// `structural.length === 0` early return from `_repairHeldAnchors` put the
+	// remote fallback on every ordinary commit, and the fallback pairs a delete
+	// with any same-length insert in a *different* block. A cross-block
+	// find-and-replace produces exactly that shape without moving any content,
+	// so it is the case that would strand a caret in the wrong block.
+	it("AN14: a cross-block same-length replace is not read as a move", () => {
+		const editor = createEditor();
+		const a = editor.firstBlock()!.id;
+		editor.apply([
+			{ type: "insert-text", blockId: a, offset: 0, text: "the cat sat" },
+			{
+				type: "insert-block",
+				blockId: "b",
+				blockType: "paragraph",
+				props: {},
+				position: "last",
+			},
+		]);
+		editor.apply([
+			{
+				type: "insert-text",
+				blockId: "b",
+				offset: 0,
+				text: "the cat ran",
+			},
+		]);
+		editor.selectText(a, 5, 5);
+		editor.apply([
+			{ type: "delete-text", blockId: a, offset: 4, length: 3 },
+			{ type: "insert-text", blockId: a, offset: 4, text: "dog" },
+			{ type: "delete-text", blockId: "b", offset: 4, length: 3 },
+			{ type: "insert-text", blockId: "b", offset: 4, text: "dog" },
+		]);
+		expect(editor.lastChangeSummary?.structural).toEqual([]);
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId: a },
+			focus: { blockId: a },
+		});
 		editor.destroy();
 	});
 });

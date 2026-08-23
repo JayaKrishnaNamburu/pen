@@ -99,7 +99,6 @@ export abstract class FieldEditorImplSelection extends FieldEditorImplLifecycle 
 		focus: { blockId: string; offset: number },
 	): void {
 		this._selectionCoordinator.recordUserSelectionIntent();
-		this._selectionCoordinator.suppressNextDomSelectionProjection();
 
 		if (!this._isEditing || !this._focusBlockId) {
 			this._startSession(anchor.blockId, {
@@ -142,7 +141,6 @@ export abstract class FieldEditorImplSelection extends FieldEditorImplLifecycle 
 		if (!isProgrammaticDomSelection) {
 			this._selectionCoordinator.recordUserSelectionIntent();
 		}
-		this._selectionCoordinator.suppressNextDomSelectionProjection();
 
 		if (
 			anchor.blockId === focus.blockId &&
@@ -235,8 +233,8 @@ export abstract class FieldEditorImplSelection extends FieldEditorImplLifecycle 
 		this._selectionCoordinator.clearAuthoritySelection(source);
 	}
 
-	applyBackendSelectionUntilNextFrame(): void {
-		this._selectionCoordinator.applySelectionUntilNextFrame();
+	withBackendSelectionWrite<T>(write: () => T): T {
+		return this._selectionCoordinator.withSelectionWrite(write);
 	}
 
 	getBackendSelectionApplicationDepth(): number {
@@ -253,16 +251,6 @@ export abstract class FieldEditorImplSelection extends FieldEditorImplLifecycle 
 		blockId?: string | null,
 	): FieldEditorSelectionSnapshot | null {
 		return this._selectionCoordinator.getEditContextSelection(blockId);
-	}
-
-	shouldIgnoreDomTextSelection(
-		anchor: { blockId: string; offset: number },
-		focus: { blockId: string; offset: number },
-	): boolean {
-		return this._selectionCoordinator.shouldIgnoreDomTextSelection(
-			anchor,
-			focus,
-		);
 	}
 
 	private _applyAcceptedDomSelection(

@@ -398,16 +398,19 @@ describe("editor.openTextStream (Wave 2.4)", () => {
 			{ blockId },
 			{ origin: { type: "ai", groupId: "live-count" } },
 		);
+		const minted = editor.anchors.liveCount;
+		expect(minted).toBeGreaterThan(0);
+
 		writer.append("a");
 		writer.flush();
-		const afterAttach = editor.anchors.liveCount;
+		expect(editor.anchors.liveCount).toBe(minted);
 
 		for (let i = 0; i < 99; i++) {
 			writer.append("a");
 			writer.flush();
 		}
 
-		expect(editor.anchors.liveCount).toBe(afterAttach);
+		expect(editor.anchors.liveCount).toBe(minted);
 		expect(visibleText(editor.getBlock(blockId)!.textContent())).toBe(
 			"a".repeat(100),
 		);

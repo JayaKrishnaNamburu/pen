@@ -3,11 +3,7 @@
 import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
-import {
-	createEditor as createCoreEditor,
-	getTrustedSelectionBlockRange,
-	isMultiBlock,
-} from "@input/pen-core";
+import { createEditor as createCoreEditor } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
 import type { FieldEditorImpl } from "@input/pen-dom/field-editor/fieldEditorImpl";
 import { handleCopy } from "@input/pen-dom/field-editor/clipboard";
@@ -110,7 +106,7 @@ function getFieldEditor(
 }
 
 describe("@input/pen-react table rendering", () => {
-	it("maps cmd+a from a selected table directly to full-document selection in flow documents", async () => {
+	it("maps cmd+a from a selected table to top-level BlockSelection in flow documents", async () => {
 		const editor = createEditor({
 			documentProfile: "flow",
 		});
@@ -166,25 +162,12 @@ describe("@input/pen-react table rendering", () => {
 			await flushAnimationFrames(2);
 		});
 
-		expect(editor.selection?.type).toBe("text");
-		expect(isMultiBlock(editor.selection)).toBe(true);
-		expect(
-			editor.selection?.type === "text"
-				? getTrustedSelectionBlockRange(editor.selection)
-				: [],
-		).toEqual(expect.arrayContaining(["t8", paragraphId]));
-		expect([
-			JSON.stringify(
-				editor.selection?.type === "text"
-					? editor.selection.anchor
-					: null,
-			),
-			JSON.stringify(
-				editor.selection?.type === "text"
-					? editor.selection.focus
-					: null,
-			),
-		]).toContain(JSON.stringify({ blockId: paragraphId, offset: 5 }));
+		const firstBlockId = editor.firstBlock()!.id;
+		expect(editor.selection).toEqual({
+			type: "block",
+			blockIds: [firstBlockId, "t8", paragraphId],
+			head: paragraphId,
+		});
 
 		await act(async () => {
 			root.unmount();
@@ -193,7 +176,7 @@ describe("@input/pen-react table rendering", () => {
 		editor.destroy();
 	});
 
-	it("keeps block-first cmd+a copy scoped to the selected table when block-first interaction is enabled", async () => {
+	it("escalates block-first cmd+a from a selected table to the document BlockSelection", async () => {
 		const editor = createEditor();
 		const paragraphId = crypto.randomUUID();
 		const clipboardData = createClipboardData();
@@ -248,10 +231,11 @@ describe("@input/pen-react table rendering", () => {
 			await flushAnimationFrames(2);
 		});
 
+		const firstBlockId = editor.firstBlock()!.id;
 		expect(editor.selection).toEqual({
 			type: "block",
-			blockIds: ["t8-copy-structured"],
-			head: "t8-copy-structured",
+			blockIds: [firstBlockId, "t8-copy-structured", paragraphId],
+			head: paragraphId,
 		});
 
 		handleCopy(editor, { clipboardData } as ClipboardEvent);
@@ -261,8 +245,12 @@ describe("@input/pen-react table rendering", () => {
 		) as { blocks: Array<{ type: string }> };
 		const penBlocks = copied.blocks;
 
-		expect(penBlocks.map((block) => block.type)).toEqual(["table"]);
-		expect(clipboardData.getData("text/plain")).not.toContain("After");
+		expect(penBlocks.map((block) => block.type)).toEqual([
+			"paragraph",
+			"table",
+			"paragraph",
+		]);
+		expect(clipboardData.getData("text/plain")).toContain("After");
 
 		await act(async () => {
 			root.unmount();
@@ -328,9 +316,11 @@ describe("@input/pen-react table rendering", () => {
 			await flushAnimationFrames(2);
 		});
 
-		expect(editor.selection).toMatchObject({
-			type: "text",
-			isMultiBlock: true,
+		const firstBlockId = editor.firstBlock()!.id;
+		expect(editor.selection).toEqual({
+			type: "block",
+			blockIds: [firstBlockId, "t8-copy-flow", paragraphId],
+			head: paragraphId,
 		});
 
 		handleCopy(editor, { clipboardData } as ClipboardEvent);

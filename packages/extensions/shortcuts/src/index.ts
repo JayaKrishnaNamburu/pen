@@ -8,8 +8,4 @@ export {
 	PEN_KEYMAP_FACET_NAME,
 } from "./providers";
 export type { ShortcutKeymapProvider } from "./providers";
-export {
-	toggleInlineMark,
-	setInlineMark,
-	getAttachedFieldEditor,
-} from "./toggleInlineMark";
+export { toggleInlineMark, setInlineMark } from "./toggleInlineMark";

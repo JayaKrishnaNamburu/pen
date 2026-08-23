@@ -85,10 +85,6 @@ export class DomScheduler {
 		return this._projectedThisFlush;
 	}
 
-	setGeometry(geometry: GeometryInvalidator | null): void {
-		this.geometry = geometry;
-	}
-
 	setProjector(projector: SelectionProjector | null): void {
 		this.onProjectSelection = projector;
 	}

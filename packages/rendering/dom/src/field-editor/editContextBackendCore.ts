@@ -106,7 +106,10 @@ export abstract class EditContextBackendCore {
 		element.addEventListener("drop", this.handleDrop);
 		element.addEventListener("pointerdown", this.handlePointerDown);
 		element.addEventListener("contextmenu", this.handleContextMenu);
-		element.addEventListener("compositionstart", this.handleCompositionStart);
+		element.addEventListener(
+			"compositionstart",
+			this.handleCompositionStart,
+		);
 		element.addEventListener("compositionend", this.handleCompositionEnd);
 		ec.addEventListener("textupdate", this.handleTextUpdate);
 		ec.addEventListener("textformatupdate", this.handleTextFormatUpdate);
@@ -135,10 +138,11 @@ export abstract class EditContextBackendCore {
 			this.fieldEditor.focusBlockId ?? undefined,
 		);
 		this.fieldEditor.resetBackendSelectionAuthority();
-		this.fieldEditor.applyBackendSelectionUntilNextFrame();
-		this.updateSelection();
-		this.fieldEditor.requestDomFocus(element, "backend-activate", {
-			preventScroll: true,
+		this.fieldEditor.withBackendSelectionWrite(() => {
+			this.updateSelection();
+			this.fieldEditor.requestDomFocus(element, "backend-activate", {
+				preventScroll: true,
+			});
 		});
 	}
 
@@ -226,8 +230,9 @@ export abstract class EditContextBackendCore {
 				anchorOffset,
 				focusOffset,
 			});
-			this.fieldEditor.applyBackendSelectionUntilNextFrame();
-			this.projectDOMSelection(blockId, anchorOffset, focusOffset);
+			this.fieldEditor.withBackendSelectionWrite(() => {
+				this.projectDOMSelection(blockId, anchorOffset, focusOffset);
+			});
 			return;
 		}
 
@@ -267,7 +272,9 @@ export abstract class EditContextBackendCore {
 	protected abstract handleTextFormatUpdate: (event: Event) => void;
 	protected abstract handleCharacterBoundsUpdate: (event: Event) => void;
 	protected abstract handleSelectionChange: () => void;
-	protected abstract handleYTextChange: (event: FieldEditorTextChangeEvent) => void;
+	protected abstract handleYTextChange: (
+		event: FieldEditorTextChangeEvent,
+	) => void;
 	protected abstract handleDecorationsChange: () => void;
 	protected abstract handleKeyDown: (event: KeyboardEvent) => void;
 	protected abstract handleCopyEvent: (event: ClipboardEvent) => void;
