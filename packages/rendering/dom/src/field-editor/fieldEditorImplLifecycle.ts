@@ -56,11 +56,12 @@ import {
 	getEditorFlowCapability,
 	shouldForceBlockScopedSelectAll,
 } from "../utils/flowCapabilities";
+import { OVERLAY_ITEM_ATTR, OVERLAY_LAYER_ATTR } from "../overlays/types";
 import { DATA_ATTRS } from "../utils/dataAttributes";
 import type { FieldEditorStoreSnapshot } from "./store";
 import type { EditorSelectAllBehavior } from "../constants/selectAll";
 import { bindEditorAnnouncer } from "../a11y/bindEditorAnnouncer";
-import { createFocusSink } from "../a11y/focusSink";
+import { createFocusSink, FOCUS_SINK_ATTR } from "../a11y/focusSink";
 import { syncFocusSink } from "../a11y/syncFocusSink";
 import { FieldEditorImplCore } from "./fieldEditorImplCore";
 import {
@@ -355,10 +356,12 @@ export abstract class FieldEditorImplLifecycle extends FieldEditorImplCore {
 	setRootElement(element: HTMLElement | null): void {
 		this._unbindFocusSink();
 		this._unbindAnnouncer();
+		this._unbindRootPointerGesture();
 		this._rootElement = element;
 		if (element) {
 			this._bindFocusSink(element);
 			this._bindAnnouncer(element);
+			this._bindRootPointerGesture(element);
 			this._focusController.notifyRootAttached(element);
 		}
 		if (element && this._isEditing) {
@@ -390,6 +393,26 @@ export abstract class FieldEditorImplLifecycle extends FieldEditorImplCore {
 	protected _unbindAnnouncer(): void {
 		this._unsubscribeAnnouncer?.();
 		this._unsubscribeAnnouncer = null;
+	}
+
+	protected _bindRootPointerGesture(root: HTMLElement): void {
+		this._unbindRootPointerGesture();
+		const onPointerDown = (event: PointerEvent): void => {
+			if (!isInEditorContentPointerTarget(root, event.target)) {
+				return;
+			}
+			this._selectionCoordinator.notifyGestureEvent("pointerdown");
+		};
+		root.addEventListener("pointerdown", onPointerDown, true);
+		this._unbindRootPointerWindow = () => {
+			root.removeEventListener("pointerdown", onPointerDown, true);
+			this._unbindRootPointerWindow = null;
+		};
+	}
+
+	protected _unbindRootPointerGesture(): void {
+		this._unbindRootPointerWindow?.();
+		this._unbindRootPointerWindow = null;
 	}
 
 	setFocused(focused: boolean): void {
@@ -447,4 +470,27 @@ export abstract class FieldEditorImplLifecycle extends FieldEditorImplCore {
 		});
 		return true;
 	}
+}
+
+function isInEditorContentPointerTarget(
+	root: HTMLElement,
+	target: EventTarget | null,
+): boolean {
+	if (!(target instanceof Element) || !root.contains(target)) {
+		return false;
+	}
+	const owningRoot = target.closest(`[${DATA_ATTRS.editorRoot}]`);
+	if (owningRoot && owningRoot !== root) {
+		return false;
+	}
+	if (target.closest(`[${DATA_ATTRS.ignorePointerGesture}]`)) {
+		return false;
+	}
+	if (target.closest(`[${OVERLAY_LAYER_ATTR}], [${OVERLAY_ITEM_ATTR}]`)) {
+		return false;
+	}
+	if (target.closest(`[${FOCUS_SINK_ATTR}]`)) {
+		return false;
+	}
+	return true;
 }

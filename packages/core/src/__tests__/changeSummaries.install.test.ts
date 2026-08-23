@@ -11,6 +11,42 @@ async function flushMicrotasks(count = 4): Promise<void> {
 }
 
 describe("change summaries — editor install", () => {
+	it("copy-split mapPoint retargets a tail after same-apply insert-block+text", () => {
+		const editor = createHeadlessEditor({ schema: defaultSchema });
+		const seed = editor.firstBlock()!.id;
+		editor.apply([{ type: "delete-block", blockId: seed }]);
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "b1",
+				blockType: "paragraph",
+				props: {},
+				position: "last",
+			},
+			{ type: "insert-text", blockId: "b1", offset: 0, text: "meadow sage" },
+		]);
+		editor.selectText("b1", 9, 9);
+		editor.apply([
+			{
+				type: "split-block",
+				blockId: "b1",
+				offset: 6,
+				newBlockId: "b2",
+			},
+		]);
+		const summary = editor.lastChangeSummary;
+		expect(summary).not.toBeNull();
+		expect(summary!.mapPoint({ blockId: "b1", offset: 9 }, 1, "clamp")).toEqual({
+			blockId: "b2",
+			offset: 3,
+		});
+		expect(summary!.mapPoint({ blockId: "b1", offset: 6 }, 1, "clamp")).toEqual({
+			blockId: "b2",
+			offset: 0,
+		});
+		editor.destroy();
+	});
+
 	it("emits a summary for apply with mapped insert offsets", () => {
 		const editor = createHeadlessEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;

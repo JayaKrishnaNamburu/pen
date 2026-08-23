@@ -17,6 +17,7 @@ import { describe, expect, it } from "vitest";
 import { getMultiplayerController, multiplayerExtension } from "../index";
 import { MultiplayerControllerImpl } from "../controller";
 import type { MultiplayerAwarenessState } from "../types";
+import { wireCursor } from "./presenceAnchors";
 
 type DecorationCall = {
 	readonly state: DocumentState;
@@ -128,7 +129,7 @@ function seedRemoteCursor(editor: Editor): void {
 				77,
 				{
 					user: { id: "u2", name: "Babbage", color: "#abc123" },
-					cursor: { blockId, offset: 2, clock: 10 },
+					cursor: wireCursor(editor, 2, 10, blockId),
 				},
 			],
 		]),

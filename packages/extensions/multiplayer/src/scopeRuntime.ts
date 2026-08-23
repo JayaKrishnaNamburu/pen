@@ -27,9 +27,9 @@ export function attachMultiplayerScopeRuntime(
 	config: MultiplayerConfig,
 	user: MultiplayerUser,
 	buildLocalAwarenessState: (
+		editor: Editor,
 		user: MultiplayerAwarenessState["user"],
 		selection: SelectionState | SelectionRecord["state"],
-		commitId: number,
 	) => MultiplayerAwarenessState,
 ): MultiplayerScopeRuntimeHandle {
 	const scopeOwner = resolveScopeOwner(editor);
@@ -67,9 +67,9 @@ export function attachMultiplayerScopeRuntime(
 }
 
 type BuildLocalAwarenessState = (
+	editor: Editor,
 	user: MultiplayerAwarenessState["user"],
 	selection: SelectionState | SelectionRecord["state"],
-	commitId: number,
 ) => MultiplayerAwarenessState;
 
 interface MultiplayerScopeRuntimeOptions {
@@ -86,6 +86,7 @@ class MultiplayerScopeRuntime {
 	private readonly buildLocalAwarenessState: BuildLocalAwarenessState;
 	private readonly editors = new Set<Editor>();
 	private readonly selectionUnsubscribers = new Map<Editor, Unsubscribe>();
+	private readonly commitUnsubscribers = new Map<Editor, Unsubscribe>();
 	private readonly session: MultiplayerSession | null;
 	private readonly unsubscribeSessionState: Unsubscribe | null;
 	private readonly user: MultiplayerUser;
@@ -112,11 +113,7 @@ class MultiplayerScopeRuntime {
 			}),
 		});
 		this.awareness.setLocalState(
-			this.buildLocalAwarenessState(
-				user,
-				editor.selection,
-				latestCommitId(editor),
-			),
+			this.buildLocalAwarenessState(editor, user, editor.selection),
 		);
 		this.controller.handleAwarenessChange(
 			this.awareness.getStates() as Map<number, MultiplayerAwarenessState>,
@@ -160,9 +157,24 @@ class MultiplayerScopeRuntime {
 			editor.onSelectionChange((record) => {
 				this.awareness.setLocalState(
 					this.buildLocalAwarenessState(
+						editor,
 						this.user,
 						record.state,
-						record.commitId,
+					),
+				);
+			}),
+		);
+		this.commitUnsubscribers.set(
+			editor,
+			editor.on("commit", (event) => {
+				if (event.summary.structural.length === 0) {
+					return;
+				}
+				this.awareness.setLocalState(
+					this.buildLocalAwarenessState(
+						editor,
+						this.user,
+						editor.selection,
 					),
 				);
 			}),
@@ -173,6 +185,8 @@ class MultiplayerScopeRuntime {
 	detachEditor(editor: Editor): void {
 		this.selectionUnsubscribers.get(editor)?.();
 		this.selectionUnsubscribers.delete(editor);
+		this.commitUnsubscribers.get(editor)?.();
+		this.commitUnsubscribers.delete(editor);
 		this.editors.delete(editor);
 
 		const remainingEditor = this.editors.values().next().value as
@@ -184,9 +198,9 @@ class MultiplayerScopeRuntime {
 		}
 		this.awareness.setLocalState(
 			this.buildLocalAwarenessState(
+				remainingEditor,
 				this.user,
 				remainingEditor.selection,
-				latestCommitId(remainingEditor),
 			),
 		);
 	}
@@ -201,6 +215,10 @@ class MultiplayerScopeRuntime {
 			unsubscribe();
 		}
 		this.selectionUnsubscribers.clear();
+		for (const unsubscribe of this.commitUnsubscribers.values()) {
+			unsubscribe();
+		}
+		this.commitUnsubscribers.clear();
 		this.editors.clear();
 		this.unsubscribeSessionState?.();
 		this.session?.destroy();
@@ -222,6 +240,3 @@ function resolveScopeOwner(editor: Editor): object {
 	return editor.internals.documentSession ?? editor;
 }
 
-function latestCommitId(editor: Editor): number {
-	return editor.summaryLog.latest()?.commitId ?? 0;
-}

@@ -90,6 +90,7 @@ export abstract class FieldEditorImplCore {
 	protected _focusSink: FocusSink | null = null;
 	protected _unsubscribeFocusSink: Unsubscribe | null = null;
 	protected _unsubscribeAnnouncer: Unsubscribe | null = null;
+	protected _unbindRootPointerWindow: (() => void) | null = null;
 	protected _domSyncVersion = 0;
 	protected readonly _sessionReconciler: SessionReconciler;
 	protected readonly _backendLifecycle: BackendLifecycleController;

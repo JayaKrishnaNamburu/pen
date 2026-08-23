@@ -9,6 +9,7 @@ import { graphemeWalkHolds } from "../../src/graphemeBoundaries";
 import { scenario } from "../../src/scenario";
 import {
 	caretShiftHolds,
+	divergenceRestoreHolds,
 	monotonicHolds,
 	originHolds,
 	recordPresence,
@@ -29,6 +30,94 @@ async function clickOffset(
 	const point = await getInlineOffsetPoint(page, { blockId, offset });
 	await page.mouse.click(point.x, point.y);
 }
+
+scenario(
+	"I4: closed-window DOM divergence is restored without writing the authority",
+	async (s, page) => {
+		await s.load("hello-world");
+		await s.selectText(0, 5);
+		await s.assert.selectionEquals({
+			anchor: { blockId: "hello-p1", offset: 5 },
+			focus: { blockId: "hello-p1", offset: 5 },
+		});
+
+		const before = await readRecord(page);
+		expect(
+			recordPresence(before),
+			formatCheckReport(
+				"I4: selectionRecord before the force",
+				before ? "passed" : "skipped",
+				before ? undefined : "selectionRecord is not available",
+			),
+		).toBe("present");
+
+		const forced = await s.forceUnwindowedDomDivergence();
+		expect(
+			forced.focused ? "focused" : "unfocused",
+			formatCheckReport(
+				"I4: editor focused for the force",
+				forced.focused ? "passed" : "skipped",
+				forced.reason,
+			),
+		).toBe("focused");
+		expect(
+			forced.created ? "diverged" : "could-not-diverge",
+			formatCheckReport(
+				"I4: native write left the authority",
+				forced.created ? "passed" : "skipped",
+				forced.reason,
+			),
+		).toBe("diverged");
+
+		await expect
+			.poll(async () => {
+				const after = await readRecord(page);
+				const compare = await page.evaluate(() =>
+					window.__penConformance.domMatchesAuthority(),
+				);
+				const hold = divergenceRestoreHolds({
+					focused: forced.focused,
+					createdDivergence: forced.created,
+					beforeVersion: before!.version,
+					afterVersion: after?.version ?? null,
+					compare,
+				});
+				if (hold.skipped === true) {
+					return "unchecked";
+				}
+				return hold.ok ? "matched" : "mismatch";
+			})
+			.toBe("matched");
+
+		const after = await readRecord(page);
+		const compare = await page.evaluate(() =>
+			window.__penConformance.domMatchesAuthority(),
+		);
+		const hold = divergenceRestoreHolds({
+			focused: forced.focused,
+			createdDivergence: forced.created,
+			beforeVersion: before!.version,
+			afterVersion: after?.version ?? null,
+			compare,
+		});
+		expect(
+			hold.skipped === true ? "unchecked" : "checked",
+			formatCheckReport(
+				"I4: restore was checkable",
+				hold.skipped ? "skipped" : "passed",
+				hold.reason,
+			),
+		).toBe("checked");
+		expect(
+			hold.ok,
+			formatCheckReport(
+				"I4: DOM restored and version unchanged",
+				hold.ok ? "passed" : "failed",
+				hold.reason,
+			),
+		).toBe(true);
+	},
+);
 
 scenario(
 	"P1: programmatic selectText is projected so DOM matches the new version",

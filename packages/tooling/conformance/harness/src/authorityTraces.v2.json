@@ -470,11 +470,11 @@
 					"type": "text",
 					"anchor": {
 						"blockId": "b1",
-						"offset": 0
+						"offset": 4
 					},
 					"focus": {
 						"blockId": "b1",
-						"offset": 0
+						"offset": 4
 					},
 					"isCollapsed": true
 				}

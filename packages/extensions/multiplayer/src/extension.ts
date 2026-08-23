@@ -84,27 +84,33 @@ export function getMultiplayerController(
 }
 
 function buildLocalAwarenessState(
+	editor: Editor,
 	user: MultiplayerAwarenessState["user"],
 	selection: SelectionState | SelectionRecord["state"],
-	commitId: number,
 ): MultiplayerAwarenessState {
 	if (selection?.type === "text") {
+		const collapsed =
+			selection.anchor.blockId === selection.focus.blockId &&
+			selection.anchor.offset === selection.focus.offset;
+		const cursorAnchor = editor.anchors.create(selection.focus, 1);
+		const rangeAnchor = editor.anchors.create(
+			selection.anchor,
+			collapsed ? 1 : -1,
+		);
+		const rangeHead = editor.anchors.create(selection.focus, 1);
+		if (!cursorAnchor || !rangeAnchor || !rangeHead) {
+			return { user, cursor: null, selection: null };
+		}
 		return {
 			user,
 			cursor: {
-				blockId: selection.focus.blockId,
-				offset: selection.focus.offset,
+				anchor: editor.anchors.serialize(cursorAnchor),
 				clock: Date.now(),
-				commitId,
 			},
 			selection: {
-				anchor: selection.anchor,
-				head: {
-					blockId: selection.focus.blockId,
-					offset: selection.focus.offset,
-				},
+				anchor: editor.anchors.serialize(rangeAnchor),
+				head: editor.anchors.serialize(rangeHead),
 				clock: Date.now(),
-				commitId,
 			},
 		};
 	}
@@ -117,7 +123,6 @@ function buildLocalAwarenessState(
 				kind: "block",
 				blockIds: [...selection.blockIds],
 				clock: Date.now(),
-				commitId,
 			},
 		};
 	}

@@ -94,25 +94,24 @@ export interface MultiplayerSnapshot {
 }
 
 export interface MultiplayerCursorPayload {
-	blockId: string;
-	offset: number;
+	/** Serialized `editor.anchors.serialize` payload (AN11). */
+	anchor: string;
 	clock: number;
-	commitId?: number;
 }
 
 export interface MultiplayerTextSelectionPayload {
 	kind?: "text";
-	anchor: { blockId: string; offset: number };
-	head: { blockId: string; offset: number };
+	/** Serialized anchor for the selection start. */
+	anchor: string;
+	/** Serialized anchor for the selection head. */
+	head: string;
 	clock: number;
-	commitId?: number;
 }
 
 export interface MultiplayerBlockSelectionPayload {
 	kind: "block";
 	blockIds: readonly string[];
 	clock: number;
-	commitId?: number;
 }
 
 export type MultiplayerSelectionPayload =

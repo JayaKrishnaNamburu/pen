@@ -183,7 +183,7 @@ export function useEditorContentGestures(options: UseEditorContentGesturesOption
 	pointerGestureVersionRef.current += 1; pointerGestureRef.current = createPointerSelectionGesture(editor, {
 	blockId, clientX: event.clientX, clientY: event.clientY,
 	});
-	fieldEditor.beginPointerSelection(); skipNextClickRef.current = false; fieldEditor.resetSelectAllCycle?.();
+	fieldEditor.notifyGestureEvent?.("pointerdown"); skipNextClickRef.current = false; fieldEditor.resetSelectAllCycle?.();
 	const clickedBlock = editor.getBlock(blockId); const clickedSchema = clickedBlock ? editor.schema.resolve(clickedBlock.type)
 	: null; const root = gestureEl.closest( "[data-pen-editor-root]",
 	) as HTMLElement | null; if ( pointerGestureRef.current &&
@@ -432,7 +432,7 @@ export function useEditorContentGestures(options: UseEditorContentGesturesOption
 	const completePointerSelection = () => {
 	try {
 	finalizePointerSelection(); } finally {
-	fieldEditor.endPointerSelection(); } };
+	fieldEditor.notifyGestureEvent?.("pointerup"); } };
 	if (clickCount > 1) {
 	requestAnimationFrame(completePointerSelection); return; }
 	completePointerSelection(); };
@@ -442,7 +442,7 @@ export function useEditorContentGestures(options: UseEditorContentGesturesOption
 	gestureEl.ownerDocument?.removeEventListener( "mousemove", handleMouseMove,
 	); gestureEl.ownerDocument?.removeEventListener( "mouseup",
 	handleMouseUp, ); if (pointerGestureRef.current) {
-	fieldEditor.endPointerSelection(); clearPointerSelectionState(); }
+	fieldEditor.notifyGestureEvent?.("pointerup"); clearPointerSelectionState(); }
 	clearRegionSelectionState(); };
 	}, [ blockSelection.enabled,
 	editor, fieldEditor, isDocumentPlaceholderVisible,

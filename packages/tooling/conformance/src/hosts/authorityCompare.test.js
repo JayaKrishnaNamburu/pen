@@ -8,7 +8,6 @@ import { test } from "node:test";
 import {
 	AUTHORITY_TRACE_SCRIPT,
 	algebraHolds,
-	applyAlgebraLandings,
 	authorityCompareKind,
 	cloneAuthorityTrace,
 	compareAuthorityTraces,
@@ -67,8 +66,8 @@ test("authorityCompare corpus is split/merge/remove, not insert-only", () => {
 
 	const inventory = inventoryHolds(committed);
 	assert.equal(inventory.outcome, "matched", inventory.reason);
-	assert.equal(inventoryHolds(live).outcome, "could-not-check");
-	assert.match(inventoryHolds(live).reason ?? "", /split-point/);
+	const liveInventory = inventoryHolds(live);
+	assert.equal(liveInventory.outcome, "matched", liveInventory.reason);
 });
 
 test("authorityCompare inventory rejects a kind-labeled insert-only corpus", () => {
@@ -91,7 +90,7 @@ test("authorityCompare committed recording is the mapPoint algebra oracle", () =
 	assert.equal(algebra.ok, true);
 });
 
-test("authorityCompare live copy-split still diverges from the algebra oracle", () => {
+test("authorityCompare live copy-split lands on the destination block", () => {
 	const live = recordAuthorityTraces();
 	const algebra = algebraHolds(live);
 	console.log(
@@ -100,24 +99,26 @@ test("authorityCompare live copy-split still diverges from the algebra oracle", 
 	for (const entry of live.cases) {
 		console.log(`  live ${entry.id}: ${pointOf(entry.before)} → ${pointOf(entry.after)}`);
 	}
-	assert.equal(algebra.outcome, "mismatch", algebra.reason);
-	assert.equal(algebra.ok, false);
-	assert.match(algebra.reason ?? "", /split-point|split-tail/);
+	assert.equal(algebra.outcome, "matched", algebra.reason);
+	assert.equal(algebra.ok, true);
+
+	const byId = new Map(live.cases.map((entry) => [entry.id, entry]));
+	assert.equal(pointOf(byId.get("split-point")?.after), "b2:0");
+	assert.equal(pointOf(byId.get("split-tail")?.after), "b2:3");
 });
 
 test("authorityCompare three outcomes: matched, mismatch, could-not-check", () => {
 	const committed = loadCommittedAuthorityTrace();
 	const live = recordAuthorityTraces();
-	const retargeted = applyAlgebraLandings(live);
 	const noop = noopAuthorityTrace(cloneAuthorityTrace(committed));
 
-	const matched = compareAuthorityTraces(committed, retargeted);
+	const matched = compareAuthorityTraces(committed, live);
 	assert.equal(authorityCompareKind(matched), "matched");
 	assert.equal(matched.ok, true);
 	assert.equal(matched.skipped, undefined);
 	assert.match(formatAuthorityCompareReport("replay", matched), /^passed:/);
 
-	const mismatch = compareAuthorityTraces(committed, live);
+	const mismatch = compareAuthorityTraces(committed, noop);
 	assert.equal(authorityCompareKind(mismatch), "mismatch");
 	assert.equal(mismatch.ok, false);
 	assert.equal(mismatch.skipped, undefined);

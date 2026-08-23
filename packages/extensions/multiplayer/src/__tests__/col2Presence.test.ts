@@ -5,7 +5,7 @@ import {
 } from "@input/pen-crdt-yjs";
 import { defaultSchema } from "@input/pen-schema-default";
 import { createTestDocument } from "@input/pen-test";
-import type { DiagnosticEvent } from "@input/pen-types";
+import type { DiagnosticEvent, Editor } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 import { MultiplayerControllerImpl } from "../controller";
 import { getMultiplayerController, multiplayerExtension } from "../index";
@@ -20,14 +20,18 @@ import {
 	MAX_PRESENCE_BLOCK_SELECTION_IDS,
 	MAX_PRESENCE_BYTES_PER_PEER,
 	MAX_PRESENCE_DISPLAY_NAME_LENGTH,
-	MAX_PRESENCE_OFFSET,
+	MAX_PRESENCE_ANCHOR_LENGTH,
 	MAX_PRESENCE_UPDATES_PER_SECOND,
 	MAX_PRESENCE_USER_ID_LENGTH,
 	MAX_TRACKED_PEERS,
 	PRESENCE_REJECTED_CODE,
 } from "../presence/constants";
 import { ClientIdentityMap } from "../presence/identityMap";
-import type { MultiplayerAwarenessState } from "../types";
+import type {
+	MultiplayerAwarenessState,
+	MultiplayerCursorPayload,
+} from "../types";
+import { VALID_WIRE_ANCHOR, wireCursor, wireTextSelection } from "./presenceAnchors";
 
 const LOCAL_CLIENT_ID = 1;
 const GOOD_PEER_ID = 77;
@@ -42,11 +46,11 @@ const documentView = {
 
 const validPeer = {
 	user: { id: "u2", name: "Babbage", color: "#abc123" },
-	cursor: { blockId: "b1", offset: 2, clock: 10 },
+	cursor: { anchor: VALID_WIRE_ANCHOR, clock: 10 },
 	selection: {
 		kind: "text" as const,
-		anchor: { blockId: "b1", offset: 1 },
-		head: { blockId: "b1", offset: 3 },
+		anchor: VALID_WIRE_ANCHOR,
+		head: VALID_WIRE_ANCHOR,
 		clock: 11,
 	},
 };
@@ -139,22 +143,24 @@ function localState(
 	return [editor.clientId, { user: { id: "u1", name: "Ada" } }];
 }
 
-function goodPeerState(): MultiplayerAwarenessState {
+function goodPeerState(editor?: Editor): MultiplayerAwarenessState {
 	return {
 		user: { id: "u-good", name: "Grace", color: "#abc123" },
-		cursor: { blockId: "b1", offset: 2, clock: 10 },
+		cursor: editor
+			? wireCursor(editor, 2)
+			: { anchor: VALID_WIRE_ANCHOR, clock: 10 },
 	};
 }
 
 function applyStates(
 	controller: MultiplayerControllerImpl,
 	editor: ReturnType<typeof createEditor>,
-	entries: Array<[number, MultiplayerAwarenessState]>,
+	entries: Array<[number, MultiplayerAwarenessState | Record<string, unknown>]>,
 ): void {
 	controller.handleAwarenessChange(
 		new Map<number, MultiplayerAwarenessState>([
 			localState(editor),
-			...entries,
+			...(entries as Array<[number, MultiplayerAwarenessState]>),
 		]),
 	);
 	editor.requestDecorationUpdate();
@@ -240,7 +246,7 @@ describe("COL2 awareness is untrusted input", () => {
 	});
 
 	it("COL2: oversized ignored — over-long cursor and selection fields drop those fields only", () => {
-		const longBlockId = "b".repeat(MAX_PRESENCE_USER_ID_LENGTH + 1);
+		const longAnchor = "a".repeat(MAX_PRESENCE_ANCHOR_LENGTH + 1);
 		const tooManyBlockIds = Array.from(
 			{ length: MAX_PRESENCE_BLOCK_SELECTION_IDS + 1 },
 			(_, index) => `b${index}`,
@@ -251,7 +257,7 @@ describe("COL2 awareness is untrusted input", () => {
 				BAD_PEER_ID,
 				{
 					user: { id: "u-bad", name: "Ada" },
-					cursor: { blockId: longBlockId, offset: 0 },
+					cursor: { anchor: longAnchor },
 					selection: validPeer.selection,
 				},
 			],
@@ -272,8 +278,8 @@ describe("COL2 awareness is untrusted input", () => {
 					user: { id: "u-bad", name: "Ada" },
 					cursor: validPeer.cursor,
 					selection: {
-						anchor: { blockId: longBlockId, offset: 0 },
-						head: { blockId: "b1", offset: 1 },
+						anchor: longAnchor,
+						head: VALID_WIRE_ANCHOR,
 					},
 				},
 			],
@@ -413,7 +419,7 @@ describe("COL2 awareness is untrusted input", () => {
 		}
 	});
 
-	it("COL2: out-of-range-offset ignored — cursor past the block length is dropped", () => {
+	it("COL2: offset-form cursor payloads are wrong-typed after the anchor wire swap", () => {
 		const result = validate([
 			[
 				BAD_PEER_ID,
@@ -430,34 +436,28 @@ describe("COL2 awareness is untrusted input", () => {
 			selection: null,
 		});
 		expect(result.rejections).toEqual([
-			{ clientId: BAD_PEER_ID, reason: "out-of-range-offset" },
+			{ clientId: BAD_PEER_ID, reason: "wrong-typed" },
 		]);
 	});
 
-	it("COL2: commitId does not admit hostile offsets — negative, fractional, and absurd values are dropped", () => {
-		const cases: Array<{
-			offset: number;
-			commitId: number;
-			reason: string;
-		}> = [
-			{ offset: -1, commitId: 1, reason: "wrong-typed" },
-			{ offset: 2.5, commitId: 1, reason: "wrong-typed" },
-			{ offset: Number.MAX_VALUE, commitId: 1, reason: "wrong-typed" },
-			{ offset: 1e20, commitId: 0, reason: "wrong-typed" },
+	it("COL2: hostile serialized anchors are dropped before decode", () => {
+		const cases: Array<{ anchor: unknown; reason: string }> = [
+			{ anchor: 1, reason: "wrong-typed" },
+			{ anchor: "", reason: "wrong-typed" },
+			{ anchor: { blockId: "b1", offset: 2 }, reason: "wrong-typed" },
 			{
-				offset: MAX_PRESENCE_OFFSET + 1,
-				commitId: 1,
+				anchor: "a".repeat(MAX_PRESENCE_ANCHOR_LENGTH + 1),
 				reason: "oversized",
 			},
 		];
 
-		for (const { offset, commitId, reason } of cases) {
+		for (const { anchor, reason } of cases) {
 			const result = validate([
 				[
 					BAD_PEER_ID,
 					{
 						user: { id: "u-bad", name: "Ada" },
-						cursor: { blockId: "b1", offset, commitId },
+						cursor: { anchor, clock: 1 },
 					},
 				],
 			]);
@@ -471,22 +471,20 @@ describe("COL2 awareness is untrusted input", () => {
 			]);
 		}
 
-		const staleButPlausible = validate([
+		const accepted = validate([
 			[
 				BAD_PEER_ID,
 				{
 					user: { id: "u-stale", name: "Ada" },
-					cursor: { blockId: "b1", offset: 8, commitId: 3 },
+					cursor: { anchor: VALID_WIRE_ANCHOR, clock: 3 },
 				},
 			],
 		]);
-		expect(staleButPlausible.states.get(BAD_PEER_ID)?.cursor).toEqual({
-			blockId: "b1",
-			offset: 8,
-			clock: 0,
-			commitId: 3,
+		expect(accepted.states.get(BAD_PEER_ID)?.cursor).toEqual({
+			anchor: VALID_WIRE_ANCHOR,
+			clock: 3,
 		});
-		expect(staleButPlausible.rejections).toEqual([]);
+		expect(accepted.rejections).toEqual([]);
 	});
 
 	it("COL2: a throwing peer state is wrong-typed and does not drop a good peer", () => {
@@ -622,13 +620,13 @@ describe("COL2 awareness is untrusted input", () => {
 						prompt: "<script>window.__xssProbe=1</script>",
 					},
 					ai: { role: "admin" },
-					cursor: { blockId: "b1", offset: 2, clock: 10 },
+					cursor: { anchor: VALID_WIRE_ANCHOR, clock: 10 },
 				},
 			],
 		]);
 		expect(extraKeys.states.get(BAD_PEER_ID)).toEqual({
 			user: { id: "u-extra", name: "Ada" },
-			cursor: { blockId: "b1", offset: 2, clock: 10 },
+			cursor: { anchor: VALID_WIRE_ANCHOR, clock: 10 },
 			selection: null,
 		});
 		expect(extraKeys.states.get(BAD_PEER_ID)).not.toHaveProperty(
@@ -701,7 +699,7 @@ describe("COL2 awareness is untrusted input", () => {
 		const { editor, controller, diagnostics } = createPresenceEditor();
 
 		applyStates(controller, editor, [
-			[GOOD_PEER_ID, goodPeerState()],
+			[GOOD_PEER_ID, goodPeerState(editor)],
 			[
 				BAD_PEER_ID,
 				{
@@ -709,7 +707,7 @@ describe("COL2 awareness is untrusted input", () => {
 						id: "u-bad",
 						name: "x".repeat(MAX_PRESENCE_DISPLAY_NAME_LENGTH + 1),
 					},
-					cursor: { blockId: "b1", offset: 1, clock: 11 },
+					cursor: { anchor: VALID_WIRE_ANCHOR, clock: 11 },
 				},
 			],
 			[
@@ -717,14 +715,14 @@ describe("COL2 awareness is untrusted input", () => {
 				{
 					user: { id: "u-huge", name: "Pad" },
 					padding: "x".repeat(MAX_PRESENCE_BYTES_PER_PEER),
-					cursor: { blockId: "b1", offset: 1, clock: 12 },
+					cursor: { anchor: VALID_WIRE_ANCHOR, clock: 12 },
 				} as MultiplayerAwarenessState,
 			],
 			[
 				100,
 				{
 					user: { id: 2, name: "Invalid" },
-					cursor: { blockId: "b1", offset: 1, clock: 11 },
+					cursor: { anchor: VALID_WIRE_ANCHOR, clock: 11 },
 				} as unknown as MultiplayerAwarenessState,
 			],
 		]);
@@ -756,7 +754,7 @@ describe("COL2 awareness is untrusted input", () => {
 		const { editor, controller, diagnostics } = createPresenceEditor();
 
 		applyStates(controller, editor, [
-			[GOOD_PEER_ID, goodPeerState()],
+			[GOOD_PEER_ID, goodPeerState(editor)],
 			[BAD_PEER_ID, throwingAfterMeasure() as MultiplayerAwarenessState],
 		]);
 
@@ -783,12 +781,12 @@ describe("COL2 awareness is untrusted input", () => {
 		const { editor, controller, diagnostics } = createPresenceEditor();
 
 		applyStates(controller, editor, [
-			[GOOD_PEER_ID, goodPeerState()],
+			[GOOD_PEER_ID, goodPeerState(editor)],
 			[
 				BAD_PEER_ID,
 				{
 					user: { id: "u-xss", name: SCRIPT_NAME },
-					cursor: { blockId: "b1", offset: 1, clock: 11 },
+					cursor: { anchor: VALID_WIRE_ANCHOR, clock: 11 },
 				},
 			],
 		]);
@@ -816,11 +814,11 @@ describe("COL2 awareness is untrusted input", () => {
 		editor.destroy();
 	});
 
-	it("COL2: nonexistent-block presence is dropped with a diagnostic and does not break good peers", () => {
+	it("COL2: offset-form presence is dropped with a diagnostic and does not break good peers", () => {
 		const { editor, controller, diagnostics } = createPresenceEditor();
 
 		applyStates(controller, editor, [
-			[GOOD_PEER_ID, goodPeerState()],
+			[GOOD_PEER_ID, goodPeerState(editor)],
 			[
 				BAD_PEER_ID,
 				{
@@ -831,7 +829,7 @@ describe("COL2 awareness is untrusted input", () => {
 						head: { blockId: "b1", offset: 2 },
 						clock: 12,
 					},
-				},
+				} as unknown as MultiplayerAwarenessState,
 			],
 		]);
 
@@ -845,7 +843,7 @@ describe("COL2 awareness is untrusted input", () => {
 		expect(
 			controller.getPeers().some((peer) => peer.clientId === BAD_PEER_ID),
 		).toBe(true);
-		expect(rejectedReasons(diagnostics)).toEqual(["nonexistent-block"]);
+		expect(rejectedReasons(diagnostics)).toEqual(["wrong-typed"]);
 
 		editor.destroy();
 	});
@@ -862,7 +860,7 @@ describe("COL2 awareness is untrusted input", () => {
 						name: `Peer ${index}`,
 						color: "#abc123",
 					},
-					cursor: { blockId: "b1", offset: 1, clock: index },
+					cursor: wireCursor(editor, 1, index),
 				},
 			]);
 		}
@@ -880,17 +878,17 @@ describe("COL2 awareness is untrusted input", () => {
 		editor.destroy();
 	});
 
-	it("COL2: out-of-range-offset presence is dropped with a diagnostic and does not break good peers", () => {
+	it("COL2: offset-form out-of-range presence is dropped with a diagnostic and does not break good peers", () => {
 		const { editor, controller, diagnostics } = createPresenceEditor();
 
 		expect(() => {
 			applyStates(controller, editor, [
-				[GOOD_PEER_ID, goodPeerState()],
+				[GOOD_PEER_ID, goodPeerState(editor)],
 				[
 					BAD_PEER_ID,
 					{
 						user: { id: "u-far", name: "Far", color: "#abc123" },
-						cursor: { blockId: "b1", offset: 99, clock: 11 },
+						cursor: { blockId: "b1", offset: 99, clock: 11 } as unknown as MultiplayerCursorPayload,
 					},
 				],
 			]);
@@ -902,7 +900,7 @@ describe("COL2 awareness is untrusted input", () => {
 		expect(
 			controller.getRemoteCursors().map((cursor) => cursor.clientId),
 		).toEqual([GOOD_PEER_ID]);
-		expect(rejectedReasons(diagnostics)).toEqual(["out-of-range-offset"]);
+		expect(rejectedReasons(diagnostics)).toEqual(["wrong-typed"]);
 
 		editor.destroy();
 	});
@@ -911,7 +909,7 @@ describe("COL2 awareness is untrusted input", () => {
 		const { editor, controller, diagnostics } = createPresenceEditor();
 
 		applyStates(controller, editor, [
-			[GOOD_PEER_ID, goodPeerState()],
+			[GOOD_PEER_ID, goodPeerState(editor)],
 			[
 				BAD_PEER_ID,
 				{
@@ -921,7 +919,7 @@ describe("COL2 awareness is untrusted input", () => {
 						offset: Number.MAX_VALUE,
 						clock: 11,
 						commitId: 1,
-					},
+					} as unknown as MultiplayerCursorPayload,
 				},
 			],
 		]);
@@ -963,7 +961,7 @@ describe("COL2 awareness is untrusted input", () => {
 
 		remoteAwareness.setLocalState({
 			user: { id: "u-wire", name: SCRIPT_NAME },
-			cursor: { blockId: "b1", offset: 1, clock: 11 },
+			cursor: { anchor: VALID_WIRE_ANCHOR, clock: 11 },
 		});
 		applyYjsAwarenessUpdate(
 			target,
@@ -996,7 +994,7 @@ describe("COL2 awareness is untrusted input", () => {
 
 		expect(() => {
 			applyStates(controller, editor, [
-				[GOOD_PEER_ID, goodPeerState()],
+				[GOOD_PEER_ID, goodPeerState(editor)],
 				[
 					BAD_PEER_ID,
 					{
@@ -1005,7 +1003,7 @@ describe("COL2 awareness is untrusted input", () => {
 							name: "Hostile",
 							avatar: "javascript:alert(1)",
 						},
-						cursor: { blockId: "b1", offset: 1, clock: 11 },
+						cursor: { anchor: VALID_WIRE_ANCHOR, clock: 11 },
 					},
 				],
 				[
@@ -1016,7 +1014,7 @@ describe("COL2 awareness is untrusted input", () => {
 							name: "Hostile",
 							avatar: "data:text/html,<script>window.__xssProbe=1</script>",
 						},
-						cursor: { blockId: "b1", offset: 1, clock: 12 },
+						cursor: { anchor: VALID_WIRE_ANCHOR, clock: 12 },
 					},
 				],
 			]);
@@ -1049,7 +1047,7 @@ describe("COL2 awareness is untrusted input", () => {
 						name: `Peer ${index}`,
 						color: "#abc123",
 					},
-					cursor: { blockId: "b1", offset: 1, clock: index },
+					cursor: wireCursor(editor, 1, index),
 				},
 			]);
 		}
@@ -1070,7 +1068,7 @@ describe("COL2 awareness is untrusted input", () => {
 				100,
 				{
 					user: { id: "u-0", name: "Peer 0", color: "#abc123" },
-					cursor: { blockId: "b1", offset: 3, clock: 9_001 },
+					cursor: wireCursor(editor, 3, 9_001),
 				},
 			],
 			...entries.slice(1),
@@ -1093,7 +1091,7 @@ describe("COL2 awareness is untrusted input", () => {
 				BAD_PEER_ID,
 				{
 					user: { id: "u-css", name: "Ada", color: injected },
-					cursor: { blockId: "b1", offset: 2, clock: 10 },
+					cursor: { anchor: VALID_WIRE_ANCHOR, clock: 10 },
 				},
 			],
 		]);
@@ -1111,7 +1109,7 @@ describe("COL2 awareness is untrusted input", () => {
 				BAD_PEER_ID,
 				{
 					user: { id: "u-css", name: "Ada", color: injected },
-					cursor: { blockId: "b1", offset: 2, clock: 10 },
+					cursor: wireCursor(editor, 2, 10),
 				},
 			],
 		]);
@@ -1227,7 +1225,7 @@ describe("COL2 awareness is untrusted input", () => {
 						name: "Grace",
 						avatar: "https://example.com/a.png",
 					},
-					cursor: { blockId: "b1", offset: 2, clock: 10 },
+					cursor: { anchor: VALID_WIRE_ANCHOR, clock: 10 },
 				},
 			],
 		]);
@@ -1254,11 +1252,7 @@ describe("COL2 awareness is untrusted input", () => {
 					GOOD_PEER_ID,
 					{
 						user: { id: "u-good", name: "Grace", color: "#abc123" },
-						cursor: {
-							blockId: "b1",
-							offset: index % 5,
-							clock: index,
-						},
+						cursor: wireCursor(editor, index % 5, index),
 					},
 				],
 			]);
@@ -1271,7 +1265,7 @@ describe("COL2 awareness is untrusted input", () => {
 				GOOD_PEER_ID,
 				{
 					user: { id: "u-good", name: "Grace", color: "#abc123" },
-					cursor: { blockId: "b1", offset: 4, clock: 99 },
+					cursor: wireCursor(editor, 4, 99),
 				},
 			],
 		]);
@@ -1286,7 +1280,7 @@ describe("COL2 awareness is untrusted input", () => {
 				GOOD_PEER_ID,
 				{
 					user: { id: "u-good", name: "Grace", color: "#abc123" },
-					cursor: { blockId: "b1", offset: 4, clock: 100 },
+					cursor: wireCursor(editor, 4, 100),
 				},
 			],
 		]);
@@ -1314,11 +1308,7 @@ describe("COL2 awareness is untrusted input", () => {
 								name: "Grace",
 								color: "#abc123",
 							},
-							cursor: {
-								blockId: "b1",
-								offset: index % 5,
-								clock: index,
-							},
+							cursor: wireCursor(editor, index % 5, index),
 						},
 					],
 				]);

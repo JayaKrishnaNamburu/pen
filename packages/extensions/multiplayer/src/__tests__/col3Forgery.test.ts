@@ -10,6 +10,7 @@ import {
 	asPresenceDisplayHint,
 } from "../presence/identityMap";
 import type { MultiplayerAwarenessState } from "../types";
+import { wireCursor } from "./presenceAnchors";
 
 const PEER_A_NAME = "Ada Lovelace";
 const PEER_B_CLIENT_ID = 88;
@@ -43,7 +44,7 @@ describe("COL3 identity is host-authoritative", () => {
 							name: PEER_A_NAME,
 							color: "#ff0000",
 						},
-						cursor: { blockId: "b1", offset: 1, clock: 10 },
+						cursor: wireCursor(editor, 1),
 					},
 				],
 			]),

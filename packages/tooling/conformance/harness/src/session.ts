@@ -62,7 +62,9 @@ import type {
 	ConformanceEventRecord,
 	DocumentContentSnapshot,
 	DomAuthorityCheck,
+	ForcedDomDivergence,
 	HostileDomScan,
+	LogicalPoint,
 	PenConformanceBridge,
 	PresencePeerInject,
 	PresenceSnapshot,
@@ -413,6 +415,131 @@ function installBrokenProjector(): void {
 		throw new Error("broken projector stub failed to misplace DOM selection");
 	}
 	current.brokenProjection = mismatch;
+}
+
+function forceUnwindowedDomDivergence(): ForcedDomDivergence {
+	const current = getHarnessSession();
+	const root = editorRoot();
+	const record = getEditorSelectionRecord(current.editor);
+	const authority = serializeSelection(current.editor.selection);
+	const version = record?.version ?? null;
+
+	if (!root) {
+		return {
+			created: false,
+			focused: false,
+			reason: "editor root is not mounted",
+			version,
+			authority,
+			observed: null,
+		};
+	}
+
+	const focused = editorHasFocus(root);
+	if (!focused) {
+		return {
+			created: false,
+			focused: false,
+			reason: "editor is unfocused",
+			version,
+			authority,
+			observed: null,
+		};
+	}
+
+	if (authority == null || authority.type !== "text") {
+		return {
+			created: false,
+			focused,
+			reason: "authority is not a collapsed text caret",
+			version,
+			authority,
+			observed: null,
+		};
+	}
+
+	const block = current.editor.getBlock(authority.anchor.blockId);
+	const length = block?.length() ?? 0;
+	const offset = misplacedOffset(authority.anchor.offset, length);
+	if (
+		offset === authority.anchor.offset &&
+		offset === authority.focus.offset
+	) {
+		return {
+			created: false,
+			focused,
+			reason: "could not pick a different offset",
+			version,
+			authority,
+			observed: null,
+		};
+	}
+
+	const wrong = { blockId: authority.anchor.blockId, offset };
+	const capture: {
+		observed: { anchor: LogicalPoint; focus: LogicalPoint } | null;
+	} = { observed: null };
+	const onChange = (): void => {
+		capture.observed = domSelectionToEditor(root);
+	};
+	root.ownerDocument.addEventListener("selectionchange", onChange, true);
+	try {
+		editorSelectionToDOM(root, wrong, wrong);
+	} finally {
+		root.ownerDocument.removeEventListener(
+			"selectionchange",
+			onChange,
+			true,
+		);
+	}
+
+	const observed = capture.observed;
+	if (
+		observed &&
+		pointsEqual(observed.anchor, authority.anchor) &&
+		pointsEqual(observed.focus, authority.focus)
+	) {
+		return {
+			created: false,
+			focused,
+			reason: "forced native selection never left the authority",
+			version,
+			authority,
+			observed,
+		};
+	}
+	if (!observed) {
+		const mapped = domSelectionToEditor(root);
+		if (
+			mapped &&
+			(!pointsEqual(mapped.anchor, authority.anchor) ||
+				!pointsEqual(mapped.focus, authority.focus))
+		) {
+			return {
+				created: true,
+				focused,
+				version,
+				authority,
+				observed: mapped,
+			};
+		}
+		return {
+			created: false,
+			focused,
+			reason: "no selectionchange observed after the native write",
+			version,
+			authority,
+			observed: mapped,
+		};
+	}
+
+	return {
+		created: true,
+		focused,
+		version,
+		authority,
+		observed,
+	};
 }
 
 function remoteSplice(args: RemoteSpliceArgs): void {
@@ -864,6 +991,7 @@ function installBridge(): void {
 		remoteInjectY,
 		injectPresence,
 		installBrokenProjector,
+		forceUnwindowedDomDivergence,
 		domMatchesAuthority: checkDomMatchesAuthority,
 		applyAiRangeReplacement,
 		parseClipboardPayload,

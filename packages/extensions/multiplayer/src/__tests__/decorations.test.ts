@@ -5,6 +5,7 @@ import { getMultiplayerController, multiplayerExtension } from "../index";
 import type { MultiplayerAwarenessState } from "../types";
 import { MultiplayerControllerImpl } from "../controller";
 import { defaultSchema } from "@input/pen-schema-default";
+import { serializePoint, wireCursor } from "./presenceAnchors";
 
 describe("multiplayer decorations", () => {
 	it("renders remote cursor decorations", () => {
@@ -34,7 +35,7 @@ describe("multiplayer decorations", () => {
 					77,
 					{
 						user: { id: "u2", name: "Babbage", color: "#abc123" },
-						cursor: { blockId, offset: 2, clock: 10 },
+						cursor: wireCursor(editor, 2, 10, blockId),
 					},
 				],
 			]),
@@ -87,8 +88,9 @@ describe("multiplayer decorations", () => {
 					{
 						user: { id: "u2", name: "Babbage", color: "#abc123" },
 						selection: {
-							anchor: { blockId: "b1", offset: 2 },
-							head: { blockId: "b3", offset: 3 },
+							kind: "text",
+							anchor: serializePoint(editor, "b1", 2),
+							head: serializePoint(editor, "b3", 3),
 							clock: 11,
 						},
 					},
@@ -151,8 +153,9 @@ describe("multiplayer decorations", () => {
 					{
 						user: { id: "u2", name: "Babbage", color: "#abc123" },
 						selection: {
-							anchor: { blockId: "b3", offset: 4 },
-							head: { blockId: "b1", offset: 1 },
+							kind: "text",
+							anchor: serializePoint(editor, "b3", 4),
+							head: serializePoint(editor, "b1", 1),
 							clock: 12,
 						},
 					},

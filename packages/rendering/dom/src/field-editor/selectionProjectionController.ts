@@ -143,13 +143,14 @@ export class SelectionProjectionController {
 	suppressNextDomSelectionProjection(): void {}
 
 	notifyGestureEvent(eventKind: GestureEventKind): void {
+		if (eventKind === "pointerdown") {
+			this.recordUserSelectionIntent();
+			this._bindPointerSettled();
+		}
 		this._gestureWindows = nextGestureWindowState(
 			eventKind,
 			this._gestureWindows,
 		);
-		if (eventKind === "pointerdown") {
-			this._bindPointerSettled();
-		}
 		if (eventKind === "pointerup") {
 			this._schedulePointerSettled();
 		}

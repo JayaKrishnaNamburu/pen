@@ -134,6 +134,16 @@ function createMarkElement(
 	}
 }
 
+/**
+ * Writes decoration-supplied attributes onto a rendered element, dropping any
+ * that fail the URL policy so untrusted decoration props cannot inject a
+ * navigable or script-bearing value.
+ *
+ * @param element - The element receiving the attributes.
+ * @param props - Candidate attribute values; ignored unless they are a valid
+ * decoration attributes object.
+ * @param policy - URL policy used to vet attribute values.
+ */
 export function applyElementAttributes(
 	element: HTMLElement,
 	props: unknown,

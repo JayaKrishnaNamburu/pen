@@ -1,10 +1,13 @@
 import {
+	deriveContentMoves,
 	fieldEditorHostFacet,
 	getOpOriginType,
 	localeFacet,
+	repairAnchor,
 } from "@input/pen-core";
 import { generateId } from "@input/pen-types";
 import type {
+	AnchorRange,
 	ChangeSummary,
 	CommitEvent,
 	Editor,
@@ -70,6 +73,7 @@ export class AISuggestionsControllerImpl implements AISuggestionsController {
 	private readonly analysisCache = new Map<string, CachedAnalysisResult>();
 	private readonly dismissedFingerprints = new Map<string, number>();
 	private abortController: AbortController | null = null;
+	private readonly ranges = new Map<string, AnchorRange>();
 	private state: AISuggestionsState;
 
 	constructor(editor: Editor, config: AISuggestionsExtensionConfig = {}) {
@@ -441,6 +445,7 @@ export class AISuggestionsControllerImpl implements AISuggestionsController {
 		this.scheduler.destroy();
 		this.analysisCache.clear();
 		this.dismissedFingerprints.clear();
+		this.ranges.clear();
 		this.listeners.clear();
 	}
 
@@ -577,6 +582,7 @@ export class AISuggestionsControllerImpl implements AISuggestionsController {
 			return;
 		}
 
+		const moves = deriveContentMoves(summary, undefined);
 		let changed = false;
 		const nextSuggestions: AISuggestion[] = [];
 		for (const suggestion of this.state.suggestions) {
@@ -585,41 +591,27 @@ export class AISuggestionsControllerImpl implements AISuggestionsController {
 				continue;
 			}
 
-			const mapped = summary.mapRange(
-				{
-					anchor: {
-						blockId: suggestion.blockId,
-						offset: suggestion.from,
-					},
-					focus: {
-						blockId: suggestion.blockId,
-						offset: suggestion.to,
-					},
-				},
-				{ mode: "delete" },
-			);
-			if (!mapped || mapped.anchor.blockId !== mapped.focus.blockId) {
+			const synced = this.syncSuggestionRange(suggestion, moves);
+			if (synced.kind === "dead") {
+				this.ranges.delete(suggestion.id);
 				changed = true;
 				continue;
 			}
-
-			const from = Math.min(mapped.anchor.offset, mapped.focus.offset);
-			const to = Math.max(mapped.anchor.offset, mapped.focus.offset);
-			if (from === to) {
-				changed = true;
+			if (synced.kind === "retry") {
+				nextSuggestions.push(suggestion);
 				continue;
 			}
 			if (
-				mapped.anchor.blockId !== suggestion.blockId ||
-				from !== suggestion.from ||
-				to !== suggestion.to
+				synced.blockId !== suggestion.blockId ||
+				synced.from !== suggestion.from ||
+				synced.to !== suggestion.to
 			) {
 				changed = true;
 				nextSuggestions.push({
 					...suggestion,
-					blockId: mapped.anchor.blockId,
-					from,
-					to,
+					blockId: synced.blockId,
+					from: synced.from,
+					to: synced.to,
 				});
 				continue;
 			}
@@ -646,6 +638,103 @@ export class AISuggestionsControllerImpl implements AISuggestionsController {
 		});
 	}
 
+	private retargetThroughMerge(
+		suggestion: AISuggestion,
+		moves: ReturnType<typeof deriveContentMoves>,
+	): { blockId: string; from: number; to: number } | null {
+		for (const move of moves) {
+			if (move.fromBlockId !== suggestion.blockId) {
+				continue;
+			}
+			if (move.fromRange.from !== 0) {
+				continue;
+			}
+			if (this.editor.getBlock(suggestion.blockId)) {
+				continue;
+			}
+			return {
+				blockId: move.toBlockId,
+				from: move.toOffset + suggestion.from,
+				to: move.toOffset + suggestion.to,
+			};
+		}
+		return null;
+	}
+
+	private syncSuggestionRange(
+		suggestion: AISuggestion,
+		moves: ReturnType<typeof deriveContentMoves>,
+	):
+		| { kind: "live"; blockId: string; from: number; to: number }
+		| { kind: "retry" }
+		| { kind: "dead" } {
+		let range = this.ranges.get(suggestion.id) ?? null;
+		if (!range) {
+			range = this.editor.anchors.range({
+				anchor: {
+					blockId: suggestion.blockId,
+					offset: suggestion.from,
+				},
+				focus: {
+					blockId: suggestion.blockId,
+					offset: suggestion.to,
+				},
+			});
+			if (!range) {
+				return { kind: "dead" };
+			}
+			this.ranges.set(suggestion.id, range);
+		}
+
+		const from = repairAnchor(this.editor, range.from, moves);
+		const to = repairAnchor(this.editor, range.to, moves);
+		if (from !== range.from || to !== range.to) {
+			range = { kind: "anchor-range", from, to };
+			this.ranges.set(suggestion.id, range);
+		}
+
+		const merged = this.retargetThroughMerge(suggestion, moves);
+		if (merged) {
+			const reminted = this.editor.anchors.range({
+				anchor: { blockId: merged.blockId, offset: merged.from },
+				focus: { blockId: merged.blockId, offset: merged.to },
+			});
+			if (reminted) {
+				this.ranges.set(suggestion.id, reminted);
+			}
+			return { kind: "live", ...merged };
+		}
+
+		const resolved = this.editor.anchors.resolveRange(range);
+		if (!resolved) {
+			if (
+				this.editor.getBlock(range.from.blockId) ||
+				this.editor.getBlock(range.to.blockId) ||
+				this.editor.getBlock(suggestion.blockId)
+			) {
+				return { kind: "retry" };
+			}
+			return { kind: "dead" };
+		}
+		if (resolved.collapsed) {
+			return { kind: "dead" };
+		}
+		if (resolved.from.blockId !== resolved.to.blockId) {
+			return { kind: "dead" };
+		}
+		const nextFrom = Math.min(resolved.from.offset, resolved.to.offset);
+		const nextTo = Math.max(resolved.from.offset, resolved.to.offset);
+		if (nextFrom === nextTo) {
+			return { kind: "dead" };
+		}
+		return {
+			kind: "live",
+			blockId: resolved.from.blockId,
+			from: nextFrom,
+			to: nextTo,
+		};
+	}
+
 	private replaceSuggestionsForBlock(
 		blockId: string,
 		nextSuggestions: readonly AISuggestion[],
@@ -664,6 +753,30 @@ export class AISuggestionsControllerImpl implements AISuggestionsController {
 		nextSuggestions: readonly AISuggestion[],
 		patch?: StatePatch,
 	): void {
+		const kept = new Set(nextSuggestions.map((suggestion) => suggestion.id));
+		for (const id of this.ranges.keys()) {
+			if (!kept.has(id)) {
+				this.ranges.delete(id);
+			}
+		}
+		for (const suggestion of nextSuggestions) {
+			if (this.ranges.has(suggestion.id)) {
+				continue;
+			}
+			const range = this.editor.anchors.range({
+				anchor: {
+					blockId: suggestion.blockId,
+					offset: suggestion.from,
+				},
+				focus: {
+					blockId: suggestion.blockId,
+					offset: suggestion.to,
+				},
+			});
+			if (range) {
+				this.ranges.set(suggestion.id, range);
+			}
+		}
 		const groups = buildSuggestionGroups(nextSuggestions, this.config);
 		const hasActiveSuggestionPatch =
 			patch != null &&

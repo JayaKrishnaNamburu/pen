@@ -14,10 +14,6 @@ import type {
 } from "./types";
 import { PRESENCE_REJECTED_CODE } from "./presence/constants";
 import { RemoteCursorManager } from "./presence/cursorManager";
-import {
-	mapRemoteCursors,
-	mapRemoteSelections,
-} from "./presence/mapRemoteSelection";
 import { PresenceIngest } from "./presence/presenceIngest";
 import { RemoteSelectionManager } from "./presence/selectionManager";
 
@@ -34,13 +30,12 @@ export class MultiplayerControllerImpl implements MultiplayerController {
 	private disconnectHandler: (() => void) | null = null;
 
 	private lastAccepted: Map<number, MultiplayerAwarenessState> | null = null;
-	private remoteCursors: readonly RemoteCursorState[] = [];
-	private remoteSelections: readonly RemoteSelectionState[] = [];
 	private peers: readonly PeerState[] = [];
 	private mappedCursors: readonly RemoteCursorState[] = [];
 	private mappedSelections: readonly RemoteSelectionState[] = [];
 	private mappedPeers: readonly PeerState[] = [];
-	private mappedCommitId = -1;
+	private resolvedGeneration = -1;
+	private resolveGeneration = 0;
 	private mappedAccepted: Map<number, MultiplayerAwarenessState> | null =
 		null;
 	private readonly unsubscribeCommit: Unsubscribe;
@@ -65,6 +60,7 @@ export class MultiplayerControllerImpl implements MultiplayerController {
 			isConnected: false,
 		};
 		this.unsubscribeCommit = options.editor.on("commit", () => {
+			this.resolveGeneration += 1;
 			this.invalidateMapped();
 			this.ensureMapped();
 			if (this.state.peers !== this.mappedPeers) {
@@ -168,12 +164,11 @@ export class MultiplayerControllerImpl implements MultiplayerController {
 				this.authorLedger.record(clientId, user);
 			}
 			this.lastAccepted = accepted;
-			this.remoteCursors = this.cursorManager.build(accepted, (clientId) =>
+			this.cursorManager.ingest(this.editor, accepted, (clientId) =>
 				this.identityMap.resolve(clientId),
 			);
-			this.remoteSelections = this.selectionManager.build(
-				accepted,
-				(clientId) => this.identityMap.resolve(clientId),
+			this.selectionManager.ingest(this.editor, accepted, (clientId) =>
+				this.identityMap.resolve(clientId),
 			);
 			this.invalidateMapped();
 			this.ensureMapped();
@@ -231,29 +226,20 @@ export class MultiplayerControllerImpl implements MultiplayerController {
 	}
 
 	private invalidateMapped(): void {
-		this.mappedCommitId = -1;
+		this.resolvedGeneration = -1;
 		this.mappedAccepted = null;
 	}
 
 	private ensureMapped(): void {
-		const latest = this.editor.summaryLog.latest()?.commitId ?? 0;
 		if (
-			this.mappedCommitId === latest &&
+			this.resolvedGeneration === this.resolveGeneration &&
 			this.mappedAccepted === this.lastAccepted
 		) {
 			return;
 		}
 
-		const nextCursors = this.lastAccepted
-			? mapRemoteCursors(this.editor, this.remoteCursors, this.lastAccepted)
-			: this.remoteCursors;
-		const nextSelections = this.lastAccepted
-			? mapRemoteSelections(
-					this.editor,
-					this.remoteSelections,
-					this.lastAccepted,
-				)
-			: this.remoteSelections;
+		const nextCursors = this.cursorManager.resolve(this.editor);
+		const nextSelections = this.selectionManager.resolve(this.editor);
 		this.mappedCursors = reuseIfSame(this.mappedCursors, nextCursors);
 		this.mappedSelections = reuseIfSame(
 			this.mappedSelections,
@@ -264,7 +250,7 @@ export class MultiplayerControllerImpl implements MultiplayerController {
 			? this.buildPeers(this.lastAccepted)
 			: this.peers;
 		this.mappedPeers = reuseIfSame(this.mappedPeers, nextPeers);
-		this.mappedCommitId = latest;
+		this.resolvedGeneration = this.resolveGeneration;
 		this.mappedAccepted = this.lastAccepted;
 	}
 

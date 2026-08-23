@@ -9,6 +9,16 @@ export type InlineInputRuleSelectionTarget = {
 	focusOffset: number;
 };
 
+/**
+ * Runs the registered inline input rules against a single typed character and
+ * applies the first match, so that markdown-style shorthand becomes marks as
+ * the user types.
+ *
+ * @param editor - The editor whose document receives the resulting ops.
+ * @param options - The block, the caret offset, and the single character typed.
+ * @returns The selection target to restore after the rewrite, or `null` when no
+ * rule matches.
+ */
 export function applyInlineInputRule(
 	editor: Editor,
 	options: {

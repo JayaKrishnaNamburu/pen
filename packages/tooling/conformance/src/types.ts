@@ -75,6 +75,20 @@ export type DomAuthorityCheck = {
 	dom?: { anchor: LogicalPoint; focus: LogicalPoint } | null;
 };
 
+/**
+ * Result of forcing a native selection off the authority with no
+ * gesture window. `created` is true only when a capture-phase
+ * `selectionchange` observed a mapped point that differed.
+ */
+export type ForcedDomDivergence = {
+	created: boolean;
+	focused: boolean;
+	reason?: string;
+	version: number | null;
+	authority: SerializedSelection;
+	observed: { anchor: LogicalPoint; focus: LogicalPoint } | null;
+};
+
 export type HostileDomScan = {
 	urlAttributes: string[];
 	javascriptUrls: string[];
@@ -305,6 +319,7 @@ export type PenConformanceBridge = {
 		peers: readonly PresencePeerInject[],
 	): Promise<PresenceSnapshot>;
 	installBrokenProjector(): void;
+	forceUnwindowedDomDivergence(): ForcedDomDivergence;
 	domMatchesAuthority(): DomAuthorityCheck;
 	applyAiRangeReplacement(args: {
 		start: { blockId: string; offset: number };
@@ -384,6 +399,7 @@ export type ScenarioApi = {
 	};
 	expectDiagnostic(code: StandingDiagnosticCode | string): void;
 	installBrokenProjector(): Promise<void>;
+	forceUnwindowedDomDivergence(): Promise<ForcedDomDivergence>;
 	geometry: {
 		blocks(): Promise<GeometryBlockInfo[]>;
 		lineBoxes(blockId: string): Promise<GeometryLineBox[]>;

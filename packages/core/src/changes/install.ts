@@ -37,7 +37,9 @@ export function installChangeSummaries(host: ChangeSummaryHost): void {
 				commitId,
 			);
 			host._summaryLog.append(summary);
-			host._blockIndex.apply(summary);
+			host._blockIndex.replace(
+				createBlockIndexSnapshotFromDocument(host._doc),
+			);
 		});
 	} catch {
 		// I1: summary source install failed; host stays without incremental summaries.

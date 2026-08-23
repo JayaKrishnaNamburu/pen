@@ -45,6 +45,7 @@ const ai = getAIController(editor);
 - Suggest mode lets AI-authored edits flow through Pen's suggestion and review pipeline instead of immediately replacing document content.
 - The host application still owns model adapters, auth, transport, and any product-specific orchestration.
 - Outbound model calls go through the single `pen.aiEgress` facet in `@input/pen-core` (re-exported here). Suggestions and autocomplete share that same facet.
+- Async request/response ranges: mint anchors when the request leaves, run the repair step on structural commits, and resolve when the response arrives. Do not map through `summaryLog.between`. A resolve of `null` is not deletion — check whether the block still exists (not-yet-seen) before dropping the range.
 - Playground request planning (`buildPlaygroundRequestPlan` and related helpers) lives in the playground app, not this package.
 
 ## Typical Pairing

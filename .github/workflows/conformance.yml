@@ -46,10 +46,14 @@ jobs:
     # chromium blocks the merge. webkit and firefox report only until a
     # conformance-${{ matrix.engine }} job on THIS workflow finishes the
     # Playwright suite with 0 failed. Playground e2e green is a different
-    # matrix (ci.yml) and does not promote these jobs. Three PR runs on
-    # this branch (32479438979, 32480899373, 32481309576) all failed on
-    # missing @input/pen-core/dist before any assertion — not engine
-    # evidence. Do not flip continue-on-error on that class of red.
+    # matrix (ci.yml) and does not promote these jobs.
+    #
+    # Local 2026-08-22 after pnpm build, 1-min loadavg < 8, workers=1:
+    # webkit 98 passed / 5 failed / 2 skipped; firefox 97 / 6 / 2.
+    # Assertions were reached (not mount-wait / missing-dist). Failures
+    # were torn-tree (core selection.ts, undoExtension mid-edit) or
+    # product (HOST4 cell refill, standing S2, COL2 cursors) — not a
+    # 0-failed job on this workflow. Do not promote on that class of red.
     continue-on-error: ${{ matrix.engine != 'chromium' }}
 
     strategy:

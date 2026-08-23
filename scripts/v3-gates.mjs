@@ -271,19 +271,38 @@ export function formatPopulation(entries, repoRoot) {
 	return lines.join("\n");
 }
 
-export function executeGate(gate, repoRoot) {
+/**
+ * Long enough for a browser suite under load, short enough that a gate waiting
+ * on input cannot consume the whole run. A timeout is reported as a distinct
+ * failure, never as a silent pass.
+ */
+export const GATE_TIMEOUT_MS = 900_000;
+
+export function executeGate(gate, repoRoot, timeoutMs = GATE_TIMEOUT_MS) {
 	const result = spawnSync(commandShell(), ["-c", gate.command], {
 		cwd: repoRoot,
 		encoding: "utf8",
 		env: process.env,
 		maxBuffer: 8 * 1024 * 1024,
+		input: "",
+		timeout: timeoutMs,
 	});
+	if (result.error && result.error.code === "ETIMEDOUT") {
+		return {
+			exitCode: 1,
+			stdout: result.stdout ?? "",
+			stderr: result.stderr ?? "",
+			error: `gate exceeded ${timeoutMs}ms and was killed`,
+			timedOut: true,
+		};
+	}
 	const exitCode = result.error ? 1 : (result.status ?? 1);
 	return {
 		exitCode,
 		stdout: result.stdout ?? "",
 		stderr: result.stderr ?? "",
 		error: result.error ? result.error.message : null,
+		timedOut: false,
 	};
 }
 

@@ -1,4 +1,5 @@
 import type {
+	Anchor,
 	Editor,
 	InlineCompletionController,
 	ModelAdapter,
@@ -38,4 +39,6 @@ export type AutocompleteControllerHost = {
 	_unsubscribeCommit: (() => void) | null;
 	readonly _continuation: AutocompleteContinuationState;
 	_prefetchAbortController: AbortController | null;
+	_visibleAnchor: Anchor | null;
+	_visibleSuggestionId: string | null;
 };

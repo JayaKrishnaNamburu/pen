@@ -203,8 +203,9 @@ export const MOVING_CASE_IDS = [
 
 /**
  * v2 `mapPoint` landings (validation §3 / A5 assoc 1 on a collapsed caret).
- * Copy-split Yjs resolve stays on the source for split-point and split-tail;
- * those two are the cases a flat insert corpus cannot distinguish.
+ * `remove-selected` lands at `b1:4` because `resolveRemovedBlock` gives a
+ * following sibling offset 0 but a preceding sibling its own length, and `b1`
+ * ("stay") precedes the removed block.
  */
 export const AUTHORITY_ALGEBRA_AFTER: Readonly<
 	Record<string, { blockId: string; offset: number }>
@@ -214,7 +215,7 @@ export const AUTHORITY_ALGEBRA_AFTER: Readonly<
 	"split-tail": { blockId: "b2", offset: 3 },
 	"merge-target": { blockId: "b1", offset: 3 },
 	"merge-source": { blockId: "b1", offset: 7 },
-	"remove-selected": { blockId: "b1", offset: 0 },
+	"remove-selected": { blockId: "b1", offset: 4 },
 	"remove-kept": { blockId: "b1", offset: 2 },
 };
 
@@ -612,46 +613,6 @@ function textPointOf(
 		blockId: state.anchor.blockId,
 		offset: state.anchor.offset,
 	};
-}
-
-function algebraIdentity(
-	caseId: string,
-	before: SerializedSelectionRecord,
-): boolean {
-	const expected = AUTHORITY_ALGEBRA_AFTER[caseId];
-	const point = textPointOf(before);
-	if (expected === undefined || point === null) {
-		return false;
-	}
-	return (
-		point.blockId === expected.blockId && point.offset === expected.offset
-	);
-}
-
-export function applyAlgebraLandings(trace: AuthorityTrace): AuthorityTrace {
-	const clone = cloneAuthorityTrace(trace);
-	for (const entry of clone.cases) {
-		const expected = AUTHORITY_ALGEBRA_AFTER[entry.id];
-		if (expected === undefined) {
-			continue;
-		}
-		if (algebraIdentity(entry.id, entry.before)) {
-			entry.after = structuredClone(entry.before);
-			continue;
-		}
-		entry.after = {
-			version: 2,
-			origin: "mapped",
-			commitId: 3,
-			state: {
-				type: "text",
-				anchor: { blockId: expected.blockId, offset: expected.offset },
-				focus: { blockId: expected.blockId, offset: expected.offset },
-				isCollapsed: true,
-			},
-		};
-	}
-	return clone;
 }
 
 export function algebraHolds(

@@ -3,6 +3,7 @@ import {
 	isCollapsed,
 	isMultiBlock,
 } from "@input/pen-core";
+import { deriveContentMoves, repairAnchor } from "@input/pen-core";
 import type { ChangeSummary, FieldEditor } from "@input/pen-types";
 import {
 	handleModelEvent,
@@ -196,13 +197,17 @@ export async function runRequest(
 			continuationDepth: 0,
 		},
 	);
-	controller._continuation.setSequence({
-		requestId,
-		blockId: context.blockId,
-		startOffset: context.offset,
-		candidate,
-		continuationDepth: 0,
-	});
+	controller._continuation.setSequence(
+		{
+			requestId,
+			blockId: context.blockId,
+			startOffset: context.offset,
+			candidate,
+			continuationDepth: 0,
+			requestPrefix: context.prefixText,
+		},
+		controller._editor,
+	);
 	setState(controller, {
 		metrics: {
 			...controller._state.metrics,
@@ -389,27 +394,48 @@ export function remapVisibleSuggestion(
 	const visibleSuggestion =
 		controller._inlineCompletion.getState().visibleSuggestion;
 	if (!visibleSuggestion) {
+		controller._visibleAnchor = null;
+		controller._visibleSuggestionId = null;
 		return true;
 	}
-	const mapped = summary.mapPoint(
-		{
-			blockId: visibleSuggestion.blockId,
-			offset: visibleSuggestion.offset,
-		},
-		1,
-		"delete",
+	if (
+		controller._visibleSuggestionId !== visibleSuggestion.id ||
+		!controller._visibleAnchor
+	) {
+		controller._visibleAnchor = controller._editor.anchors.create(
+			{
+				blockId: visibleSuggestion.blockId,
+				offset: visibleSuggestion.offset,
+			},
+			1,
+		);
+		controller._visibleSuggestionId = visibleSuggestion.id;
+	}
+	if (!controller._visibleAnchor) {
+		return controller._editor.getBlock(visibleSuggestion.blockId) != null;
+	}
+	const moves = deriveContentMoves(summary, undefined);
+	controller._visibleAnchor = repairAnchor(
+		controller._editor,
+		controller._visibleAnchor,
+		moves,
 	);
-	if (!mapped) {
-		return false;
+	const target = controller._editor.anchors.resolve(controller._visibleAnchor);
+	if (!target) {
+		return (
+			controller._editor.getBlock(controller._visibleAnchor.blockId) !=
+				null ||
+			controller._editor.getBlock(visibleSuggestion.blockId) != null
+		);
 	}
 	if (
-		mapped.blockId !== visibleSuggestion.blockId ||
-		mapped.offset !== visibleSuggestion.offset
+		target.blockId !== visibleSuggestion.blockId ||
+		target.offset !== visibleSuggestion.offset
 	) {
 		controller._inlineCompletion.showSuggestion({
 			...visibleSuggestion,
-			blockId: mapped.blockId,
-			offset: mapped.offset,
+			blockId: target.blockId,
+			offset: target.offset,
 		});
 	}
 	return true;

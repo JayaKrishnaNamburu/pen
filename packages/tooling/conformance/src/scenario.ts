@@ -212,6 +212,16 @@ function createScenario(page: Page): ScenarioApi {
 				{ skipStanding: true },
 			);
 		},
+		async forceUnwindowedDomDivergence() {
+			return step(
+				async () => {
+					return page.evaluate(() =>
+						window.__penConformance.forceUnwindowedDomDivergence(),
+					);
+				},
+				{ skipStanding: true },
+			);
+		},
 		geometry: {
 			async blocks() {
 				return page.evaluate(() => window.__penConformance.geometryBlocks());

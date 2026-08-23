@@ -92,6 +92,15 @@ export function resolveBackspaceAction(
 	};
 }
 
+/**
+ * Applies the Backspace behaviour for a block: unwrapping a list or quote,
+ * merging into the previous block, or deleting an adjacent inline atom.
+ *
+ * @param editor - The editor whose document receives the resulting ops.
+ * @param options - The block being edited, its inline text, and the current range.
+ * @returns The selection target to restore after the edit, or `null` when the
+ * keystroke has no effect and the caller should fall through.
+ */
 export function applyBackspaceBehavior(
 	editor: Editor,
 	options: {
@@ -163,6 +172,15 @@ function getCollapsedTextSelectionTarget(
 	};
 }
 
+/**
+ * Applies a directional delete within a block, collapsing a non-empty range or
+ * removing the single grapheme next to a collapsed caret.
+ *
+ * @param editor - The editor whose document receives the resulting ops.
+ * @param options - The block, its inline text, the current range, and the delete direction.
+ * @returns The selection target to restore after the edit, or `null` when there
+ * is nothing to delete.
+ */
 export function applyDeleteBehavior(
 	editor: Editor,
 	options: {

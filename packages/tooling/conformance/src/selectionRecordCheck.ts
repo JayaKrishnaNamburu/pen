@@ -1,4 +1,4 @@
-import type { SerializedSelectionRecord } from "./types";
+import type { DomAuthorityCheck, SerializedSelectionRecord } from "./types";
 
 export type RecordPresence = "present" | "missing";
 
@@ -145,6 +145,73 @@ export function monotonicHolds(samples: readonly RecordSample[]): RecordCheck {
 			ok: false,
 			skipped: true,
 			reason: "version and commitId never increased — could not check S6",
+		};
+	}
+	return { ok: true };
+}
+
+export type DivergenceRestoreInput = {
+	focused: boolean;
+	createdDivergence: boolean;
+	beforeVersion: number | null;
+	afterVersion: number | null;
+	compare: DomAuthorityCheck;
+};
+
+/**
+ * I4: a closed-window DOM divergence must be restored without writing
+ * the authority. Three outcomes: matched (restored, version unchanged),
+ * mismatch (still diverged, or version bumped), unchecked (unfocused or
+ * the force never landed). Unchecked is not a hold.
+ */
+export function divergenceRestoreHolds(
+	input: DivergenceRestoreInput,
+): RecordCheck {
+	if (!input.focused) {
+		return {
+			ok: false,
+			skipped: true,
+			reason: "editor is unfocused",
+		};
+	}
+	if (!input.createdDivergence) {
+		return {
+			ok: false,
+			skipped: true,
+			reason: "could not create a DOM divergence",
+		};
+	}
+	if (input.beforeVersion == null || input.afterVersion == null) {
+		return {
+			ok: false,
+			skipped: true,
+			reason: "selectionRecord is not available",
+		};
+	}
+	if (input.afterVersion !== input.beforeVersion) {
+		return {
+			ok: false,
+			reason: `version bumped ${input.beforeVersion} → ${input.afterVersion} — reader wrote the authority`,
+		};
+	}
+	const kind =
+		input.compare.skipped === true
+			? "unchecked"
+			: input.compare.ok === true
+				? "matched"
+				: "mismatch";
+	if (kind === "unchecked") {
+		return {
+			ok: false,
+			skipped: true,
+			reason: input.compare.reason ?? "DOM↔authority compare was unchecked",
+		};
+	}
+	if (kind === "mismatch") {
+		return {
+			ok: false,
+			reason:
+				input.compare.reason ?? "DOM still diverged after the next flush",
 		};
 	}
 	return { ok: true };

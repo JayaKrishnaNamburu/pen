@@ -58,6 +58,7 @@ import {
 } from "../graphemeBoundaries.ts";
 import {
 	caretShiftHolds,
+	divergenceRestoreHolds,
 	monotonicHolds,
 	originHolds,
 	recordPresence,
@@ -367,6 +368,12 @@ test("Playwright-only helpers stay imported by a named scenario", () => {
 	assert.match(session, /getEditorSelectionRecord/);
 	assert.match(session, /selectionRecord/);
 	assert.match(session, /selectionIsCollapsed/);
+	assert.match(session, /forceUnwindowedDomDivergence/);
+	const liveRules = readRel("../../suites/selection/live-rules.spec.ts");
+	assert.match(liveRules, /"I4:/);
+	assert.doesNotMatch(liveRules, /"(?:P2|I4 P2):/);
+	assert.match(liveRules, /forceUnwindowedDomDivergence/);
+	assert.match(liveRules, /divergenceRestoreHolds/);
 	const geometry = readRel("../../harness/src/geometry.ts");
 	assert.match(geometry, /from "\.\/geometryCompare"/);
 	assert.match(geometry, /geometryBlocksFromEditor/);
@@ -479,6 +486,80 @@ test("monotonicHolds fails a decrease and skips a no-op walk", () => {
 		{ version: 2, commitId: 1 },
 	]);
 	assert.equal(rising.ok, true);
+});
+
+test("divergenceRestoreHolds is three outcomes, never skip-as-success", () => {
+	const matchedCompare = { ok: true };
+	const mismatchCompare = { ok: false, reason: "still diverged" };
+	const uncheckedCompare = {
+		ok: false,
+		skipped: true,
+		reason: "editor is unfocused",
+	};
+
+	const unfocused = divergenceRestoreHolds({
+		focused: false,
+		createdDivergence: true,
+		beforeVersion: 4,
+		afterVersion: 4,
+		compare: matchedCompare,
+	});
+	assert.equal(unfocused.ok, false);
+	assert.equal(unfocused.skipped, true);
+	assert.match(unfocused.reason ?? "", /unfocused/);
+
+	const neverLanded = divergenceRestoreHolds({
+		focused: true,
+		createdDivergence: false,
+		beforeVersion: 4,
+		afterVersion: 4,
+		compare: matchedCompare,
+	});
+	assert.equal(neverLanded.ok, false);
+	assert.equal(neverLanded.skipped, true);
+	assert.match(neverLanded.reason ?? "", /could not create/);
+
+	const wrote = divergenceRestoreHolds({
+		focused: true,
+		createdDivergence: true,
+		beforeVersion: 4,
+		afterVersion: 5,
+		compare: matchedCompare,
+	});
+	assert.equal(wrote.ok, false);
+	assert.equal(wrote.skipped, undefined);
+	assert.match(wrote.reason ?? "", /version bumped 4 → 5/);
+
+	const leftover = divergenceRestoreHolds({
+		focused: true,
+		createdDivergence: true,
+		beforeVersion: 4,
+		afterVersion: 4,
+		compare: mismatchCompare,
+	});
+	assert.equal(leftover.ok, false);
+	assert.equal(leftover.skipped, undefined);
+	assert.match(leftover.reason ?? "", /still diverged/);
+
+	const compareSkip = divergenceRestoreHolds({
+		focused: true,
+		createdDivergence: true,
+		beforeVersion: 4,
+		afterVersion: 4,
+		compare: uncheckedCompare,
+	});
+	assert.equal(compareSkip.ok, false);
+	assert.equal(compareSkip.skipped, true);
+
+	const hit = divergenceRestoreHolds({
+		focused: true,
+		createdDivergence: true,
+		beforeVersion: 4,
+		afterVersion: 4,
+		compare: matchedCompare,
+	});
+	assert.equal(hit.ok, true);
+	assert.equal(hit.skipped, undefined);
 });
 
 test("graphemeWalkHolds fails an interior offset and skips a no-op walk", () => {

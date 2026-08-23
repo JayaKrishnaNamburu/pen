@@ -103,13 +103,21 @@ describe("multiplayerExtension", () => {
 
 		editor.selectText(blockId, 0, 0);
 
-		expect(editor.internals.awareness?.getLocalState()).toMatchObject({
-			user: { id: "u1", name: "Ada" },
-			cursor: { blockId, offset: 0 },
-			selection: {
-				anchor: { blockId, offset: 0 },
-				head: { blockId, offset: 0 },
-			},
+		const local = editor.internals.awareness?.getLocalState() as {
+			cursor?: { anchor?: string };
+			selection?: { anchor?: string; head?: string };
+		};
+		expect(local?.cursor?.anchor).toEqual(expect.any(String));
+		expect(local?.selection?.anchor).toEqual(expect.any(String));
+		const cursor = editor.anchors.deserialize(local.cursor!.anchor!);
+		const head = editor.anchors.deserialize(local.selection!.head!);
+		expect(editor.anchors.resolve(cursor!)).toEqual({
+			blockId,
+			offset: 0,
+		});
+		expect(editor.anchors.resolve(head!)).toEqual({
+			blockId,
+			offset: 0,
 		});
 	});
 

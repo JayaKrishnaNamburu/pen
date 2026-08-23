@@ -71,19 +71,12 @@ describe("@input/pen-react history and multiplayer hooks", () => {
 							color: "#abc123",
 						},
 						cursor: {
-							blockId,
-							offset: 2,
+							anchor: encodeAnchor(editor, blockId, 2),
 							clock: 1,
 						},
 						selection: {
-							anchor: {
-								blockId,
-								offset: 1,
-							},
-							head: {
-								blockId,
-								offset: 2,
-							},
+							anchor: encodeAnchor(editor, blockId, 1),
+							head: encodeAnchor(editor, blockId, 2),
 							clock: 1,
 						},
 					},
@@ -437,4 +430,16 @@ function createMemoryPersistence() {
 			};
 		},
 	};
+}
+
+function encodeAnchor(
+	editor: ReturnType<typeof createEditor>,
+	blockId: string,
+	offset: number,
+): string {
+	const minted = editor.anchors.create({ blockId, offset }, 1);
+	if (minted === null) {
+		throw new Error("Could not mint a presence anchor");
+	}
+	return editor.anchors.serialize(minted);
 }

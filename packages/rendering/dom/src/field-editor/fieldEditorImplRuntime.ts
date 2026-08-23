@@ -201,6 +201,7 @@ export abstract class FieldEditorImplRuntime extends FieldEditorImplSelection {
 		this._unbindSchedulerProjector();
 		this._unbindFocusSink();
 		this._unbindAnnouncer();
+		this._unbindRootPointerGesture();
 		this._unsubscribeSelection?.();
 		this._unsubscribeSelection = null;
 		this._unsubscribeHistoryApplied?.();

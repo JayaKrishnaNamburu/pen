@@ -6,7 +6,7 @@ import {
 	MAX_PRESENCE_BYTES_PER_PEER,
 	MAX_PRESENCE_COLOR_LENGTH,
 	MAX_PRESENCE_DISPLAY_NAME_LENGTH,
-	MAX_PRESENCE_OFFSET,
+	MAX_PRESENCE_ANCHOR_LENGTH,
 	MAX_PRESENCE_USER_ID_LENGTH,
 	type PresenceRejectionReason,
 } from "./constants";
@@ -194,7 +194,7 @@ function validateUser(
 
 function validateCursor(
 	value: unknown,
-	document: AwarenessDocumentView,
+	_document: AwarenessDocumentView,
 ): {
 	cursor: MultiplayerCursorPayload | null;
 	reason: PresenceRejectionReason | null;
@@ -205,47 +205,18 @@ function validateCursor(
 	if (!isRecord(value) || hasForbiddenKeys(value)) {
 		return { cursor: null, reason: "wrong-typed" };
 	}
-	if (typeof value.blockId !== "string") {
-		return { cursor: null, reason: "wrong-typed" };
-	}
-	if (!isPresenceInteger(value.offset)) {
-		return { cursor: null, reason: "wrong-typed" };
-	}
-	if (value.offset > MAX_PRESENCE_OFFSET) {
-		return { cursor: null, reason: "oversized" };
+	const encoded = validateSerializedAnchor(value.anchor);
+	if (encoded.reason) {
+		return { cursor: null, reason: encoded.reason };
 	}
 	if (value.clock !== undefined && !isPresenceInteger(value.clock)) {
 		return { cursor: null, reason: "wrong-typed" };
 	}
-	if (value.commitId !== undefined && !isPresenceInteger(value.commitId)) {
-		return { cursor: null, reason: "wrong-typed" };
-	}
-	if (value.blockId.length > MAX_PRESENCE_USER_ID_LENGTH) {
-		return { cursor: null, reason: "oversized" };
-	}
-	if (isScriptBearing(value.blockId)) {
-		return { cursor: null, reason: "script-bearing" };
-	}
-
-	const point = resolveDocumentPoint(value.blockId, value.offset, document);
-	if (
-		point.reason &&
-		!(
-			point.reason === "out-of-range-offset" &&
-			isPresenceInteger(value.commitId)
-		)
-	) {
-		return { cursor: null, reason: point.reason };
-	}
 
 	return {
 		cursor: {
-			blockId: value.blockId,
-			offset: value.offset,
+			anchor: encoded.anchor,
 			clock: isPresenceInteger(value.clock) ? value.clock : 0,
-			...(isPresenceInteger(value.commitId)
-				? { commitId: value.commitId }
-				: {}),
 		},
 		reason: null,
 	};
@@ -267,9 +238,6 @@ function validateSelection(
 	if (value.clock !== undefined && !isPresenceInteger(value.clock)) {
 		return { selection: null, reason: "wrong-typed" };
 	}
-	if (value.commitId !== undefined && !isPresenceInteger(value.commitId)) {
-		return { selection: null, reason: "wrong-typed" };
-	}
 
 	if (value.kind === "block") {
 		return validateBlockSelection(value, document);
@@ -282,33 +250,26 @@ function validateSelection(
 
 function validateTextSelection(
 	value: Record<string, unknown>,
-	document: AwarenessDocumentView,
+	_document: AwarenessDocumentView,
 ): {
 	selection: MultiplayerTextSelectionPayload | null;
 	reason: PresenceRejectionReason | null;
 } {
-	const allowStaleOffset = isPresenceInteger(value.commitId);
-	const anchor = validatePoint(value.anchor, document, allowStaleOffset);
+	const anchor = validateSerializedAnchor(value.anchor);
 	if (anchor.reason) {
 		return { selection: null, reason: anchor.reason };
 	}
-	const head = validatePoint(value.head, document, allowStaleOffset);
+	const head = validateSerializedAnchor(value.head);
 	if (head.reason) {
 		return { selection: null, reason: head.reason };
-	}
-	if (!anchor.point || !head.point) {
-		return { selection: null, reason: "wrong-typed" };
 	}
 
 	return {
 		selection: {
 			kind: "text",
-			anchor: anchor.point,
-			head: head.point,
+			anchor: anchor.anchor,
+			head: head.anchor,
 			clock: isPresenceInteger(value.clock) ? value.clock : 0,
-			...(isPresenceInteger(value.commitId)
-				? { commitId: value.commitId }
-				: {}),
 		},
 		reason: null,
 	};
@@ -350,52 +311,27 @@ function validateBlockSelection(
 			kind: "block",
 			blockIds,
 			clock: isPresenceInteger(value.clock) ? value.clock : 0,
-			...(isPresenceInteger(value.commitId)
-				? { commitId: value.commitId }
-				: {}),
 		},
 		reason: null,
 	};
 }
 
-function validatePoint(
-	value: unknown,
-	document: AwarenessDocumentView,
-	allowStaleOffset = false,
-): {
-	point: { blockId: string; offset: number } | null;
-	reason: PresenceRejectionReason | null;
-} {
-	if (!isRecord(value) || hasForbiddenKeys(value)) {
-		return { point: null, reason: "wrong-typed" };
+function validateSerializedAnchor(value: unknown):
+	| { anchor: string; reason?: undefined }
+	| { anchor: ""; reason: PresenceRejectionReason } {
+	if (typeof value !== "string") {
+		return { anchor: "", reason: "wrong-typed" };
 	}
-	if (typeof value.blockId !== "string" || !isPresenceInteger(value.offset)) {
-		return { point: null, reason: "wrong-typed" };
+	if (value.length === 0) {
+		return { anchor: "", reason: "wrong-typed" };
 	}
-	if (value.offset > MAX_PRESENCE_OFFSET) {
-		return { point: null, reason: "oversized" };
+	if (value.length > MAX_PRESENCE_ANCHOR_LENGTH) {
+		return { anchor: "", reason: "oversized" };
 	}
-	if (value.blockId.length > MAX_PRESENCE_USER_ID_LENGTH) {
-		return { point: null, reason: "oversized" };
+	if (isScriptBearing(value)) {
+		return { anchor: "", reason: "script-bearing" };
 	}
-	if (isScriptBearing(value.blockId)) {
-		return { point: null, reason: "script-bearing" };
-	}
-	const resolved = resolveDocumentPoint(
-		value.blockId,
-		value.offset,
-		document,
-	);
-	if (
-		resolved.reason &&
-		!(allowStaleOffset && resolved.reason === "out-of-range-offset")
-	) {
-		return { point: null, reason: resolved.reason };
-	}
-	return {
-		point: { blockId: value.blockId, offset: value.offset },
-		reason: null,
-	};
+	return { anchor: value };
 }
 
 function resolveDocumentPoint(

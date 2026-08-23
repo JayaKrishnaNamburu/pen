@@ -8,6 +8,10 @@
 #
 # Wave 0: I2, I3, I10, I11 (I11 seam 1 half).
 # Wave H: CH1–CH9 (CH5/CH7 were already greppable).
+# Wave 1 (2026-08-22): AN1–AN3, AN5–AN9, AN11–AN14, AS1–AS5 — only
+# IDs whose test names contain the token and whose assertions match
+# the rule. Held back: AN4 (fuzz name is AN1-AN5, not AN4), AN10
+# (cell addressing has no claiming test).
 # Already greppable in this checkout: HOST4, CH7, DUR1–DUR5, SEC1–SEC9,
 # IOP3, IOP5, CH5, R1–R5, R7, I8, BR1, BR2, G1, G2, G5, AIB5, AIB6, COL1.
 # Wave P leftovers: API1, API2, API3, API5, API9.
@@ -185,3 +189,20 @@ T3
 T4
 T5
 T6
+AN1
+AN2
+AN3
+AN5
+AN6
+AN7
+AN8
+AN9
+AN11
+AN12
+AN13
+AN14
+AS1
+AS2
+AS3
+AS4
+AS5

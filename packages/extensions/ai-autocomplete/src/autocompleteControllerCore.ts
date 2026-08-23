@@ -1,4 +1,5 @@
 import type {
+	Anchor,
 	Editor,
 	InlineCompletionController,
 	ModelAdapter,
@@ -114,6 +115,8 @@ export class AutocompleteControllerImpl
 	_unsubscribeCommit: (() => void) | null = null;
 	readonly _continuation = new AutocompleteContinuationState();
 	_prefetchAbortController: AbortController | null = null;
+	_visibleAnchor: Anchor | null = null;
+	_visibleSuggestionId: string | null = null;
 
 	constructor(
 		editor: Editor,
@@ -168,7 +171,7 @@ export class AutocompleteControllerImpl
 			if (this._continuation.consumeAcceptedAiCommit(event.origin)) {
 				return;
 			}
-			this._continuation.mapThroughSummary(event.summary);
+			this._continuation.syncThroughCommit(this._editor, event.summary);
 			if (!remapVisibleSuggestion(this, event.summary)) {
 				dismiss(this, "external-edit");
 			}

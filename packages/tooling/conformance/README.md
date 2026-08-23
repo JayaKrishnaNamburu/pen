@@ -28,7 +28,7 @@ pnpm --filter @input/pen-conformance run coverage:rules
 - `harness/` — Vite app: one v1-preset editor, fixture loader, `window.__penConformance`
 - `src/` — scenario DSL, standing assertions, rule-coverage and lint scripts
 - `scenarios/` — scripted journeys (hello-world, harness self-test, wave suites)
-- `suites/` — selection (live P1/S3/S5/S6 scenarios), plus input/IME/geometry/bidi/overlays still `.gitkeep`. Other live wiring stays in `scenarios/` and `harness-live.spec.ts`.
+- `suites/` — selection (live I4/P1/S3/S5/S6 scenarios), plus input/IME/geometry/bidi/overlays still `.gitkeep`. Other live wiring stays in `scenarios/` and `harness-live.spec.ts`.
 - `fixtures/` — documents plus the diagnostics allowlist
 - `fixtures/hostile/` — Wave S.0 attacker corpus (`window.__xssProbe` canary)
 

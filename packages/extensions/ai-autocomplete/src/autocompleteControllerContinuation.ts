@@ -41,6 +41,11 @@ export function showSequenceSuggestion(
 				activateContinuation: true,
 			}),
 	});
+	controller._visibleAnchor = controller._editor.anchors.create(
+		{ blockId: sequence.blockId, offset: sequence.startOffset },
+		1,
+	);
+	controller._visibleSuggestionId = suggestionId;
 	setState(controller, {
 		status: "showing",
 		activeRequestId: sequence.requestId,
@@ -169,14 +174,18 @@ export async function runPrefetchRequest(
 		appendedBlockTypes: candidate.appendedBlocks.map((block) => block.type),
 		previewBlockCount: candidate.previewBlocks.length,
 	});
-	controller._continuation.setPrefetchedContinuation({
-		sourceRequestId,
-		requestId,
-		blockId: context.blockId,
-		startOffset: context.offset,
-		candidate,
-		continuationDepth,
-	});
+	controller._continuation.setPrefetchedContinuation(
+		{
+			sourceRequestId,
+			requestId,
+			blockId: context.blockId,
+			startOffset: context.offset,
+			candidate,
+			continuationDepth,
+			requestPrefix: context.prefixText,
+		},
+		controller._editor,
+	);
 	activatePendingAcceptedContinuation(controller);
 }
 

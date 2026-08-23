@@ -37,7 +37,7 @@ describe("@input/pen-react multiplayer caret overlay", () => {
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([{ type: "insert-text", blockId, offset: 0, text: "Hi" }]);
 
-		publishRemoteCursor(controller, editor.clientId, blockId, 1);
+		publishRemoteCursor(controller, editor.clientId, encodeCursorAnchor(editor, blockId, 1), 1);
 
 		const container = document.createElement("div");
 		document.body.appendChild(container);
@@ -104,7 +104,7 @@ function publishRemoteCursor(
 		): void;
 	} | null,
 	localClientId: number,
-	blockId: string,
+	anchor: string,
 	clock: number,
 ): void {
 	controller?.handleAwarenessChange(
@@ -127,12 +127,23 @@ function publishRemoteCursor(
 						color: "#abc123",
 					},
 					cursor: {
-						blockId,
-						offset: 1,
+						anchor,
 						clock,
 					},
 				},
 			],
 		]),
 	);
+}
+
+function encodeCursorAnchor(
+	editor: ReturnType<typeof createEditor>,
+	blockId: string,
+	offset: number,
+): string {
+	const minted = editor.anchors.create({ blockId, offset }, 1);
+	if (minted === null) {
+		throw new Error("Could not mint a cursor anchor");
+	}
+	return editor.anchors.serialize(minted);
 }

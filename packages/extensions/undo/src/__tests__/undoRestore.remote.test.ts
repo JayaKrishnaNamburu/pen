@@ -35,6 +35,32 @@ type TestRawDocLike = {
 };
 
 describe("@input/pen-undo restore under remote edits", () => {
+	it("stack-item snapshot metadata still round-trips unchanged", async () => {
+		const editor = createEditor();
+		await editor.whenReady();
+		const blockId = editor.firstBlock()!.id;
+		editor.apply(
+			[{ type: "insert-text", blockId, offset: 0, text: "hello" }],
+			{ origin: "user" },
+		);
+		editor.undoManager.stopCapturing();
+		editor.selectBlocks([blockId]);
+		editor.apply(
+			[{ type: "insert-text", blockId, offset: 5, text: "!" }],
+			{ origin: "user" },
+		);
+		await Promise.resolve();
+		editor.undoManager.stopCapturing();
+
+		expect(editor.undoManager.undo()).toBe(true);
+		expect(editor.selection).toMatchObject({
+			type: "block",
+			blockIds: [blockId],
+		});
+
+		editor.destroy();
+	});
+
 	it("maps the stored caret through 100 remote inserts before restore", async () => {
 		const editor = createEditor();
 		await editor.whenReady();

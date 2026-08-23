@@ -1,22 +1,24 @@
 import type {
-	ChangeSummary,
+	Anchor,
 	CRDTUndoStackItem,
 	Editor,
 	Extension,
 	FieldEditor,
 	HistoryAppliedEvent,
 	OpOrigin,
-	Point,
+	SelectionRecordState,
 	SelectionState,
 	UndoHistoryMetadataController,
 	UndoHistoryMetadataEntry,
 	UndoHistoryMetadataRestoreContext,
+	Unsubscribe,
 } from "@input/pen-types";
 import {
 	FIELD_EDITOR_SLOT_KEY,
 	UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY,
 	UNDO_HISTORY_RESTORE_SLOT_KEY,
 } from "@input/pen-types";
+import { deriveContentMoves, repairAnchor } from "@input/pen-core";
 import { getOpOriginType } from "./origin";
 import { UndoManagerImpl } from "./undoManager";
 
@@ -103,6 +105,8 @@ export function undoExtension(options?: UndoExtensionOptions): Extension {
 	let unsubscribeStackItemAdded: (() => void) | null = null;
 	let unsubscribeStackItemUpdated: (() => void) | null = null;
 	let unsubscribeStackItemPopped: (() => void) | null = null;
+	let unsubscribeCommit: Unsubscribe | null = null;
+	let unsubscribeSelection: Unsubscribe | null = null;
 	let historyRestoreRequestId = 0;
 	const trackedOrigins = new Set<OpOrigin>(
 		options?.trackedOrigins ?? DEFAULT_TRACKED_ORIGINS,
@@ -125,6 +129,34 @@ export function undoExtension(options?: UndoExtensionOptions): Extension {
 			let pendingReverseItem: CRDTUndoStackItem | null = null;
 			let activeUndoStackItem: CRDTUndoStackItem | null = null;
 			let afterCaptureVersion = 0;
+			const driftById = new Map<string, CursorDrift>();
+			let driftSeq = 0;
+			let liveCaret: DriftPair | null = mintDrift(
+				ctx.editor,
+				ctx.editor.selection,
+			);
+			unsubscribeSelection = ctx.editor.onSelectionChange((record) => {
+				if (manager?._isHistoryOperation) {
+					return;
+				}
+				liveCaret = mintDrift(ctx.editor, record.state);
+			});
+			function driftIdOf(stackItem: CRDTUndoStackItem): string | null {
+				return stackItem.getMeta<string>(DRIFT_ID_KEY) ?? null;
+			}
+			function ensureDriftId(stackItem: CRDTUndoStackItem): string {
+				const existing = driftIdOf(stackItem);
+				if (existing) {
+					return existing;
+				}
+				const id = `d${++driftSeq}`;
+				stackItem.setMeta(DRIFT_ID_KEY, id);
+				return id;
+			}
+			function readDrift(stackItem: CRDTUndoStackItem): CursorDrift | null {
+				const id = driftIdOf(stackItem);
+				return id ? (driftById.get(id) ?? null) : null;
+			}
 			const pendingMetadataEntries = new Map<
 				string,
 				UndoHistoryMetadataEntry<unknown>
@@ -186,6 +218,12 @@ export function undoExtension(options?: UndoExtensionOptions): Extension {
 				queueMicrotask(() => {
 					if (afterCaptureVersion !== version) return;
 					stackItem.setMeta(CURSOR_AFTER_KEY, captureCursor(ctx.editor));
+					const id = ensureDriftId(stackItem);
+					const existing = driftById.get(id) ?? emptyDrift();
+					driftById.set(id, {
+						...existing,
+						after: mintDrift(ctx.editor, ctx.editor.selection),
+					});
 				});
 			}
 
@@ -201,6 +239,11 @@ export function undoExtension(options?: UndoExtensionOptions): Extension {
 							CURSOR_BEFORE_KEY,
 							captureCursor(ctx.editor),
 						);
+						const id = ensureDriftId(stackItem);
+						driftById.set(id, {
+							before: liveCaret,
+							after: null,
+						});
 						scheduleCursorAfterCapture(stackItem);
 					}
 				}) ?? null;
@@ -232,6 +275,10 @@ export function undoExtension(options?: UndoExtensionOptions): Extension {
 							pendingReverseItem,
 							trackedMetadataKeys,
 						);
+						const poppedId = driftIdOf(stackItem);
+						if (poppedId) {
+							pendingReverseItem.setMeta(DRIFT_ID_KEY, poppedId);
+						}
 						pendingReverseItem = null;
 					}
 
@@ -244,7 +291,13 @@ export function undoExtension(options?: UndoExtensionOptions): Extension {
 					);
 					try {
 						const restoredSelection = cursor
-							? mapStoredSelection(ctx.editor, cursor)
+							? mapStoredSelection(
+									ctx.editor,
+									cursor,
+									kind === "undo"
+										? (readDrift(stackItem)?.before ?? null)
+										: (readDrift(stackItem)?.after ?? null),
+								)
 							: undefined;
 						if (cursor) {
 							restoreSelection(ctx.editor, restoredSelection);
@@ -305,6 +358,19 @@ export function undoExtension(options?: UndoExtensionOptions): Extension {
 			};
 			manager.setGroupTimeout(options?.groupTimeout ?? 400);
 
+			unsubscribeCommit = ctx.editor.on("commit", (event) => {
+				const moves = deriveContentMoves(event.summary, undefined);
+				if (moves.length === 0) {
+					return;
+				}
+				for (const [id, drift] of driftById) {
+					driftById.set(id, {
+						before: repairDrift(ctx.editor, drift.before, moves),
+						after: repairDrift(ctx.editor, drift.after, moves),
+					});
+				}
+			});
+
 			ctx.editor.internals.assignSlot(
 				UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY,
 				historyMetadataController,
@@ -325,6 +391,10 @@ export function undoExtension(options?: UndoExtensionOptions): Extension {
 			unsubscribeStackItemUpdated = null;
 			unsubscribeStackItemPopped?.();
 			unsubscribeStackItemPopped = null;
+			unsubscribeCommit?.();
+			unsubscribeCommit = null;
+			unsubscribeSelection?.();
+			unsubscribeSelection = null;
 			if (manager) {
 				manager._onCaptureBoundary = null;
 			}
@@ -355,6 +425,7 @@ const DEFAULT_TRACKED_ORIGINS: OpOrigin[] = [
 ];
 const CURSOR_BEFORE_KEY = "pen:cursor-before";
 const CURSOR_AFTER_KEY = "pen:cursor-after";
+const DRIFT_ID_KEY = "pen:cursor-drift-id";
 const HISTORY_METADATA_PREFIX = "pen:history-metadata:";
 
 // ── Cursor snapshot types ────────────────────────────────────
@@ -363,6 +434,16 @@ interface CursorSnapshot {
 	selection: StoredSelection;
 	focusBlockId: string | null;
 	commitId: number;
+}
+
+interface DriftPair {
+	anchor: Anchor;
+	focus: Anchor;
+}
+
+interface CursorDrift {
+	before: DriftPair | null;
+	after: DriftPair | null;
 }
 
 interface CursorMeta {
@@ -394,56 +475,75 @@ type StoredSelection =
 
 // ── Capture / Restore ────────────────────────────────────────
 
+function emptyDrift(): CursorDrift {
+	return { before: null, after: null };
+}
+
+function mintDrift(
+	editor: Editor,
+	selection: SelectionState | SelectionRecordState,
+): DriftPair | null {
+	if (selection?.type !== "text") {
+		return null;
+	}
+	const collapsed =
+		selection.anchor.blockId === selection.focus.blockId &&
+		selection.anchor.offset === selection.focus.offset;
+	const anchor = editor.anchors.create(
+		selection.anchor,
+		collapsed ? 1 : -1,
+	);
+	const focus = editor.anchors.create(selection.focus, 1);
+	if (!anchor || !focus) {
+		return null;
+	}
+	return { anchor, focus };
+}
+
+function repairDrift(
+	editor: Editor,
+	pair: DriftPair | null,
+	moves: ReturnType<typeof deriveContentMoves>,
+): DriftPair | null {
+	if (!pair || moves.length === 0) {
+		return pair;
+	}
+	return {
+		anchor: repairAnchor(editor, pair.anchor, moves),
+		focus: repairAnchor(editor, pair.focus, moves),
+	};
+}
+
 function captureCursor(editor: Editor): CursorSnapshot {
 	return {
 		selection: captureSelection(editor.selection),
 		focusBlockId: captureFocusBlockId(editor),
-		commitId: editor.summaryLog.latest()?.commitId ?? 0,
+		commitId: 0,
 	};
 }
 
 function mapStoredSelection(
 	editor: Editor,
 	snapshot: CursorSnapshot,
+	drift: DriftPair | null,
 ): StoredSelection {
 	const selection = snapshot.selection;
-	const recordedCommitId = snapshot.commitId ?? 0;
-	const currentCommitId =
-		editor.summaryLog.latest()?.commitId ?? recordedCommitId;
-	const composed = editor.summaryLog.between(
-		recordedCommitId,
-		currentCommitId,
-	);
-	if (!composed || !selection) {
+	if (!selection || selection.type !== "text") {
 		return selection;
 	}
-	if (selection.type !== "text") {
+	if (!drift) {
 		return selection;
 	}
-	const mapped = composed.mapRange(
-		{ anchor: selection.anchor, focus: selection.focus },
-		{ mode: "clamp" },
-	);
-	if (!mapped) {
+	const anchor = editor.anchors.resolve(drift.anchor);
+	const focus = editor.anchors.resolve(drift.focus);
+	if (!anchor || !focus) {
 		return selection;
 	}
 	return {
 		type: "text",
-		anchor: resolveRestoredPoint(editor, selection.anchor, mapped.anchor, composed),
-		focus: resolveRestoredPoint(editor, selection.focus, mapped.focus, composed),
+		anchor: { blockId: anchor.blockId, offset: anchor.offset },
+		focus: { blockId: focus.blockId, offset: focus.offset },
 	};
-}
-
-function resolveRestoredPoint(
-	editor: Editor,
-	stored: Point,
-	mapped: Point,
-	summary: ChangeSummary,
-): Point {
-	if (stored.blockId === mapped.blockId) return mapped;
-	if (summary.mapPoint(stored, 1, "delete")) return mapped;
-	if (editor.getBlock(stored.blockId)) return stored;
-	return mapped;
 }
 
 function captureSelection(selection: SelectionState): StoredSelection {

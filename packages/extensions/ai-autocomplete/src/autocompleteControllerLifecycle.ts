@@ -270,12 +270,15 @@ export function acceptFullVisibleSuggestion(
 	}
 
 	if (options?.activateContinuation && controller._prefetchAfterAccept) {
-		controller._continuation.setPendingAcceptedContinuation({
-			sourceRequestId: requestId,
-			blockId: nextCaretBlockId,
-			startOffset: nextCaretOffset,
-			continuationDepth,
-		});
+		controller._continuation.setPendingAcceptedContinuation(
+			{
+				sourceRequestId: requestId,
+				blockId: nextCaretBlockId,
+				startOffset: nextCaretOffset,
+				continuationDepth,
+			},
+			controller._editor,
+		);
 		clearVisibleSuggestionAfterAccept(controller);
 		startPrefetchForAcceptedContinuation(controller, {
 			sourceRequestId: requestId,

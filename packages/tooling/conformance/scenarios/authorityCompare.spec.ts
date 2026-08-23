@@ -1,11 +1,12 @@
 import { expect, test } from "@playwright/test";
 import {
 	algebraHolds,
-	applyAlgebraLandings,
+	cloneAuthorityTrace,
 	compareAuthorityTraces,
 	describeAuthorityTracePopulation,
 	inventoryHolds,
 	loadCommittedAuthorityTrace,
+	noopAuthorityTrace,
 	recordAuthorityTraces,
 } from "../harness/src/authorityCompare";
 
@@ -13,6 +14,8 @@ test("authorityCompare: structural traces replay against the algebra oracle", ()
 	const committed = loadCommittedAuthorityTrace();
 	const live = recordAuthorityTraces();
 	console.log(describeAuthorityTracePopulation(committed));
+	expect(committed, "committed recording must be present").not.toBeNull();
+	if (committed === null) return;
 
 	const inventory = inventoryHolds(committed);
 	expect(inventory.outcome, inventory.reason).toBe("matched");
@@ -25,12 +28,12 @@ test("authorityCompare: structural traces replay against the algebra oracle", ()
 	expect(self.kind).toBe("self-replay");
 
 	const liveReplay = compareAuthorityTraces(committed, live);
-	expect(liveReplay.outcome, liveReplay.reason).toBe("mismatch");
-	expect(liveReplay.reason ?? "").toMatch(/split-point|split-tail|merge-/);
+	expect(liveReplay.outcome, liveReplay.reason).toBe("matched");
 
-	const retargeted = compareAuthorityTraces(
+	const stalled = compareAuthorityTraces(
 		committed,
-		applyAlgebraLandings(live),
+		noopAuthorityTrace(cloneAuthorityTrace(committed)),
 	);
-	expect(retargeted.outcome, retargeted.reason).toBe("matched");
+	expect(stalled.outcome, stalled.reason).toBe("mismatch");
+	expect(stalled.reason ?? "").toMatch(/split-point|split-tail|merge-/);
 });

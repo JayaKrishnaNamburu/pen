@@ -6,6 +6,7 @@ import { AuthorLedger } from "../presence/authorLedger";
 import { ClientIdentityMap } from "../presence/identityMap";
 import type { MultiplayerAwarenessState } from "../types";
 import { defaultSchema } from "@input/pen-schema-default";
+import { wireCursor, wireTextSelection } from "./presenceAnchors";
 
 function createDocumentEditor() {
 	const { crdtDoc } = createTestDocument([
@@ -96,12 +97,8 @@ describe("MultiplayerControllerImpl", () => {
 					77,
 					{
 						user: { id: "u2", name: "Babbage", color: "#abc123" },
-						cursor: { blockId: "b1", offset: 3, clock: 10 },
-						selection: {
-							anchor: { blockId: "b1", offset: 1 },
-							head: { blockId: "b1", offset: 3 },
-							clock: 11,
-						},
+						cursor: wireCursor(editor, 3),
+						selection: wireTextSelection(editor, 1, 3),
 					},
 				],
 			]),
@@ -222,9 +219,10 @@ describe("MultiplayerControllerImpl", () => {
 		});
 	});
 
-	it("maps stale remote carets through summaryLog.between", () => {
+	it("resolves remote carets minted before a later local insert", () => {
 		const editor = createDocumentEditor();
-		const recordedCommitId = editor.summaryLog.latest()?.commitId ?? 0;
+		const cursor = wireCursor(editor, 3);
+		const selection = wireTextSelection(editor, 1, 3);
 		editor.apply(
 			[{ type: "insert-text", blockId: "b1", offset: 0, text: "xxx" }],
 			{ origin: { type: "collaborator" } },
@@ -251,18 +249,8 @@ describe("MultiplayerControllerImpl", () => {
 					77,
 					{
 						user: { id: "u2", name: "Babbage", color: "#abc123" },
-						cursor: {
-							blockId: "b1",
-							offset: 3,
-							clock: 10,
-							commitId: recordedCommitId,
-						},
-						selection: {
-							anchor: { blockId: "b1", offset: 1 },
-							head: { blockId: "b1", offset: 3 },
-							clock: 11,
-							commitId: recordedCommitId,
-						},
+						cursor,
+						selection,
 					},
 				],
 			]),
@@ -316,7 +304,6 @@ describe("MultiplayerControllerImpl", () => {
 			controller.getRemoteSelections(),
 		);
 
-		const latestCommitId = editor.summaryLog.latest()?.commitId ?? 0;
 		controller.handleAwarenessChange(
 			new Map<number, MultiplayerAwarenessState>([
 				[
@@ -329,18 +316,8 @@ describe("MultiplayerControllerImpl", () => {
 					77,
 					{
 						user: { id: "u2", name: "Babbage", color: "#abc123" },
-						cursor: {
-							blockId: "b1",
-							offset: 3,
-							clock: 10,
-							commitId: latestCommitId,
-						},
-						selection: {
-							anchor: { blockId: "b1", offset: 1 },
-							head: { blockId: "b1", offset: 3 },
-							clock: 11,
-							commitId: latestCommitId,
-						},
+						cursor: wireCursor(editor, 3),
+						selection: wireTextSelection(editor, 1, 3),
 					},
 				],
 			]),

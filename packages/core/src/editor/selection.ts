@@ -11,6 +11,7 @@ import type {
 	PenDocument,
 	Point,
 	SchemaRegistry,
+	Assoc,
 	SelectionOrigin,
 	SelectionRecord,
 	SelectionRecordState,
@@ -130,6 +131,11 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 
 	onCommit(summary: ChangeSummary | CoreChangeSummary): void {
 		this._repairHeldAnchors(summary);
+		const resolved = this._resolveHeldText();
+		if (resolved !== undefined && !selectionEquals(this._state, resolved)) {
+			this._accept(resolved, "mapped", summary.commitId, { emit: false });
+			return;
+		}
 		const mapped = this._mapState(this._state, summary);
 		if (mapped === undefined) {
 			return;
@@ -389,8 +395,13 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 			return null;
 		}
 		const next = stampTextSelection(this._doc, {
-			anchor: this._liveMappedPoint(state.anchor, mapped.anchor, summary),
-			focus: this._liveMappedPoint(state.focus, mapped.focus, summary),
+			anchor: this._liveMappedPoint(
+				state.anchor,
+				mapped.anchor,
+				summary,
+				collapsed ? 1 : -1,
+			),
+			focus: this._liveMappedPoint(state.focus, mapped.focus, summary, 1),
 			affinity: state.affinity,
 			goalX: state.goalX,
 		});
@@ -437,6 +448,7 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 			{ blockId: firstDeleted, offset: 0 },
 			mapped,
 			summary,
+			1,
 		);
 		return stampTextSelection(this._doc, {
 			anchor: point,
@@ -541,16 +553,38 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 		this._toAnchor = repairAnchor(this._editor, this._toAnchor, moves);
 	}
 
+	private _resolveHeldText(): TextSelection | undefined {
+		if (
+			this._state?.type !== "text" ||
+			!this._fromAnchor ||
+			!this._toAnchor
+		) {
+			return undefined;
+		}
+		const from = this._anchors.resolve(this._fromAnchor);
+		const to = this._anchors.resolve(this._toAnchor);
+		if (!from || !to) {
+			return undefined;
+		}
+		return stampTextSelection(this._doc, {
+			anchor: from,
+			focus: to,
+			affinity: this._state.affinity,
+			goalX: this._state.goalX,
+		});
+	}
+
 	/**
 	 * Mapping clamps against the pre-commit index. When that index is
 	 * missing or 0 for a block that still exists and had no splices, the
-	 * clamp is a stale-index artifact — keep the original offset against
-	 * the live logical length (A1 + I5).
+	 * clamp is a stale-index artifact — retarget through the summary's
+	 * split/merge, then clamp against the live logical length (A1 + I5).
 	 */
 	private _liveMappedPoint(
 		original: Point,
 		mapped: Point,
 		summary: ChangeSummary | CoreChangeSummary,
+		assoc: Assoc,
 	): Point {
 		if (!this._blockExists(mapped.blockId)) {
 			return mapped;
@@ -572,6 +606,20 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 			mapped.offset === 0 &&
 			original.offset !== 0
 		) {
+			const retargeted = readdressThroughStructural(
+				original,
+				summary.structural,
+				assoc,
+			);
+			if (this._blockExists(retargeted.blockId)) {
+				return {
+					blockId: retargeted.blockId,
+					offset: clampOffsetToLength(
+						retargeted.offset,
+						this._logicalLength(retargeted.blockId),
+					),
+				};
+			}
 			return {
 				blockId: original.blockId,
 				offset: clampOffsetToLength(original.offset, liveLength),
@@ -837,6 +885,37 @@ function clampIndex(value: number, length: number): number {
 		return 0;
 	}
 	return Math.max(0, Math.min(Math.trunc(value), length - 1));
+}
+
+function readdressThroughStructural(
+	point: Point,
+	structural: ChangeSummary["structural"] | CoreChangeSummary["structural"],
+	assoc: Assoc,
+): Point {
+	let current = point;
+	for (const change of structural) {
+		if (
+			change.type === "blocks-merged" &&
+			current.blockId === change.sourceBlockId
+		) {
+			current = {
+				blockId: change.targetBlockId,
+				offset: change.joinOffset + current.offset,
+			};
+			continue;
+		}
+		if (change.type === "block-split" && current.blockId === change.blockId) {
+			if (current.offset > change.offset) {
+				current = {
+					blockId: change.newBlockId,
+					offset: current.offset - change.offset,
+				};
+			} else if (current.offset === change.offset && assoc === 1) {
+				current = { blockId: change.newBlockId, offset: 0 };
+			}
+		}
+	}
+	return current;
 }
 
 function removedBlockIds(

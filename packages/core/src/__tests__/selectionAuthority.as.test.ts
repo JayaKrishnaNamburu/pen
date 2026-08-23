@@ -37,9 +37,12 @@ describe("SelectionAuthority AS1–AS5", () => {
 		const id = editor.firstBlock()!.id;
 		editor.apply([{ type: "insert-text", blockId: id, offset: 0, text: "hello" }]);
 		editor.selectText(id, 1, 4);
-		const from = editor.anchors.create({ blockId: id, offset: 1 }, -1);
-		expect(from).not.toBeNull();
-		expect(editor.anchors.resolve(from!)).toEqual({ blockId: id, offset: 1 });
+		const auth = authorityOf(editor) as unknown as {
+			_fromAnchor: { assoc: number; provenance: string } | null;
+			_toAnchor: { assoc: number; provenance: string } | null;
+		};
+		expect(auth._fromAnchor).toMatchObject({ assoc: -1, provenance: "local" });
+		expect(auth._toAnchor).toMatchObject({ assoc: 1, provenance: "local" });
 		editor.destroy();
 	});
 
@@ -62,6 +65,38 @@ describe("SelectionAuthority AS1–AS5", () => {
 			type: "text",
 			anchor: { blockId: "dest", offset: 3 },
 			focus: { blockId: "dest", offset: 3 },
+		});
+		expect(authorityOf(editor).record.origin).toBe("mapped");
+		editor.destroy();
+	});
+
+	it("AS2: copy-split of a same-apply insert-block+text retargets the tail onto the destination", () => {
+		const editor = createEditor();
+		const seed = editor.firstBlock()!.id;
+		editor.apply([{ type: "delete-block", blockId: seed }]);
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "b1",
+				blockType: "paragraph",
+				props: {},
+				position: "last",
+			},
+			{ type: "insert-text", blockId: "b1", offset: 0, text: "meadow sage" },
+		]);
+		editor.selectText("b1", 9, 9);
+		editor.apply([
+			{
+				type: "split-block",
+				blockId: "b1",
+				offset: 6,
+				newBlockId: "b2",
+			},
+		]);
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId: "b2", offset: 3 },
+			focus: { blockId: "b2", offset: 3 },
 		});
 		editor.destroy();
 	});

@@ -33,6 +33,7 @@ const HOSTILE: readonly { name: string; input: string }[] = [
 	},
 	{ name: "cell-wrong-shape", input: JSON.stringify({ v: 1, b: "b1", a: 1, c: "nope", p: "AA==" }) },
 	{ name: "cell-short", input: JSON.stringify({ v: 1, b: "b1", a: 1, c: [1], p: "AA==" }) },
+	{ name: "empty-position", input: JSON.stringify({ v: 1, b: "b1", a: 1, p: "" }) },
 ];
 
 describe("editor.anchors AN6 hostile corpus", () => {
