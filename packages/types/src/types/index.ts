@@ -422,5 +422,4 @@ export type {
 	BlockTextChange,
 	StructuralChange,
 	ChangeSummary,
-	SummaryLog,
 } from "./changes";

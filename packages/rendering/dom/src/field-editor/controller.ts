@@ -165,10 +165,6 @@ export interface FieldEditorDomController extends FieldEditorSelectionState {
 	getEditContextSelectionSnapshot(
 		blockId?: string | null,
 	): FieldEditorSelectionSnapshot | null;
-	resolveProgrammaticInputRange(
-		blockId: string | null,
-		liveRange: { start: number; end: number } | null,
-	): { start: number; end: number } | null;
 	shouldIgnoreDomTextSelection(
 		anchor: { blockId: string; offset: number },
 		focus: { blockId: string; offset: number },

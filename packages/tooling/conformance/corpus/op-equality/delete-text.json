@@ -1,0 +1,107 @@
+{
+	"id": "delete-text",
+	"opType": "delete-text",
+	"family": "typing",
+	"path": "command",
+	"command": "pen.deleteBackward",
+	"setup": {
+		"blocks": [
+			{
+				"id": "p1",
+				"type": "paragraph",
+				"text": "Hello"
+			}
+		],
+		"selection": {
+			"blockId": "p1",
+			"from": 5,
+			"to": 5
+		}
+	},
+	"ops": [
+		{
+			"type": "delete-text",
+			"blockId": "p1",
+			"offset": 4,
+			"length": 1
+		}
+	],
+	"updateBytes": "AAEBAgIHEwE=",
+	"updateByteLength": 8,
+	"initialSnapshot": {
+		"apps": {},
+		"blockOrder": [
+			"p1"
+		],
+		"blocks": {
+			"p1": {
+				"content": {
+					"delta": [
+						{
+							"insert": "Hello"
+						}
+					],
+					"kind": "text"
+				},
+				"meta": {},
+				"props": {},
+				"type": "paragraph"
+			}
+		},
+		"metadata": {
+			"documentProfile": "structured",
+			"penFormat": {
+				"format": 2,
+				"minReader": 1,
+				"writer": "0.0.1"
+			}
+		}
+	},
+	"snapshot": {
+		"apps": {},
+		"blockOrder": [
+			"p1"
+		],
+		"blocks": {
+			"p1": {
+				"content": {
+					"delta": [
+						{
+							"insert": "Hell"
+						}
+					],
+					"kind": "text"
+				},
+				"meta": {},
+				"props": {},
+				"type": "paragraph"
+			}
+		},
+		"metadata": {
+			"documentProfile": "structured",
+			"penFormat": {
+				"format": 2,
+				"minReader": 1,
+				"writer": "0.0.1"
+			}
+		}
+	},
+	"selectionAfter": {
+		"affinity": "downstream",
+		"anchor": {
+			"blockId": "p1",
+			"offset": 4
+		},
+		"blockRange": [
+			"p1"
+		],
+		"focus": {
+			"blockId": "p1",
+			"offset": 4
+		},
+		"goalX": null,
+		"isCollapsed": true,
+		"isMultiBlock": false,
+		"type": "text"
+	}
+}

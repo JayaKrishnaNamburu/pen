@@ -4,6 +4,7 @@ import {
 	yjsAdapter,
 	type RawCommitDelta,
 	type YjsCRDTDocument,
+	type YTextDelta,
 } from "@input/pen-crdt-yjs";
 import { describe, expect, it } from "vitest";
 import * as Y from "yjs";
@@ -25,6 +26,12 @@ function meadowIndex() {
 		lengthById: { b1: MEADOW.length },
 		typeById: { b1: "paragraph" },
 	});
+}
+
+function textDeltaMap(
+	...entries: [string, YTextDelta][]
+): Map<string, YTextDelta[]> {
+	return new Map(entries.map(([blockId, delta]) => [blockId, [delta]]));
 }
 
 function emptyDelta(overrides: Partial<RawCommitDelta> = {}): RawCommitDelta {
@@ -215,8 +222,9 @@ describe("change summaries — sentinel cancellation (I11)", () => {
 	it("I11: emptying a block then inserting the sentinel leaves no insertLength artifact", () => {
 		const summary = buildChangeSummary(
 			emptyDelta({
-				textDeltas: new Map([
-					["b1", [{ delete: MEADOW.length }, { insert: "\u200B" }]],
+				textDeltas: textDeltaMap([
+					"b1",
+					[{ delete: MEADOW.length }, { insert: "\u200B" }],
 				]),
 			}),
 			meadowIndex(),
@@ -239,7 +247,7 @@ describe("change summaries — sentinel cancellation (I11)", () => {
 		});
 		const summary = buildChangeSummary(
 			emptyDelta({
-				textDeltas: new Map([["b1", [{ delete: 1 }, { insert: "a" }]]]),
+				textDeltas: textDeltaMap(["b1", [{ delete: 1 }, { insert: "a" }]]),
 			}),
 			index,
 			1,
@@ -261,8 +269,9 @@ describe("change summaries — sentinel cancellation (I11)", () => {
 		});
 		const summary = buildChangeSummary(
 			emptyDelta({
-				textDeltas: new Map([
-					["host4-table", [{ delete: 11 }, { insert: "\u200B" }]],
+				textDeltas: textDeltaMap([
+					"host4-table",
+					[{ delete: 11 }, { insert: "\u200B" }],
 				]),
 			}),
 			index,
@@ -286,7 +295,7 @@ describe("change summaries — sentinel cancellation (I11)", () => {
 		});
 		const summary = buildChangeSummary(
 			emptyDelta({
-				textDeltas: new Map([["host4-table", [{ delete: 1 }]]]),
+				textDeltas: textDeltaMap(["host4-table", [{ delete: 1 }]]),
 			}),
 			index,
 			1,
@@ -308,8 +317,9 @@ describe("change summaries — sentinel cancellation (I11)", () => {
 		});
 		const summary = buildChangeSummary(
 			emptyDelta({
-				textDeltas: new Map([
-					["host4-table", [{ insert: "Cell before" }]],
+				textDeltas: textDeltaMap([
+					"host4-table",
+					[{ insert: "Cell before" }],
 				]),
 			}),
 			index,

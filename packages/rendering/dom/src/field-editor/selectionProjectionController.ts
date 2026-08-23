@@ -63,9 +63,8 @@ export class SelectionProjectionController {
 	private _pointerSettledBound = false;
 	private _pendingSelectionProjectionVersion: number | null = null;
 	private _lastProjectedVersion = 0;
-	private _programmaticInputVersion: number | null = null;
-	private _consumedInputRecordVersion: number | null = null;
 	private _parked: { version: number; blockId: string | null } | null = null;
+	private _parkedDiagnosticKey: string | null = null;
 
 	constructor(options: SelectionProjectionControllerOptions) {
 		this._historySelectionCoordinator = options.historySelectionCoordinator;
@@ -74,7 +73,6 @@ export class SelectionProjectionController {
 
 	reset(): void {
 		this._pendingSelectionProjectionVersion = null;
-		this._consumedInputRecordVersion = null;
 		this._gestureWindows = CLOSED_GESTURE_WINDOWS;
 		this._pointerSettledBound = false;
 	}
@@ -149,43 +147,6 @@ export class SelectionProjectionController {
 		return isApplyingSelection === 0;
 	}
 
-	resolveProgrammaticInputRange(
-		blockId: string | null,
-		liveRange: { start: number; end: number } | null,
-	): { start: number; end: number } | null {
-		const programmaticSelection =
-			this._getActiveProgrammaticTextSelection(blockId);
-		if (!programmaticSelection) {
-			return null;
-		}
-		const recordVersion = this._options.getRecord?.()?.version ?? null;
-		if (
-			recordVersion != null &&
-			this._consumedInputRecordVersion === recordVersion
-		) {
-			return null;
-		}
-		if (!liveRange) {
-			this._consumedInputRecordVersion = recordVersion;
-			return {
-				start: programmaticSelection.anchorOffset,
-				end: programmaticSelection.focusOffset,
-			};
-		}
-		if (
-			liveRange.start === liveRange.end &&
-			(liveRange.start !== programmaticSelection.anchorOffset ||
-				liveRange.end !== programmaticSelection.focusOffset)
-		) {
-			this._consumedInputRecordVersion = recordVersion;
-			return {
-				start: programmaticSelection.anchorOffset,
-				end: programmaticSelection.focusOffset,
-			};
-		}
-		return null;
-	}
-
 	shouldIgnoreDomTextSelection(
 		anchor: { blockId: string; offset: number },
 		_focus: { blockId: string; offset: number },
@@ -237,7 +198,6 @@ export class SelectionProjectionController {
 		focusOffset: number,
 		options?: PenFieldEditorFocusOptions,
 	): void {
-		this._programmaticInputVersion = null;
 		this.projectTextSelection(blockId, anchorOffset, focusOffset, options);
 	}
 
@@ -251,8 +211,6 @@ export class SelectionProjectionController {
 			...options,
 			syncBackendImmediately: true,
 		});
-		this._programmaticInputVersion =
-			this._options.getRecord?.()?.version ?? null;
 	}
 
 	projectTextSelection(
@@ -286,19 +244,22 @@ export class SelectionProjectionController {
 		}
 
 		let projected = false;
+		let foundTarget = false;
 		const pendingProjectionRequestId =
 			this._historySelectionCoordinator.getPendingProjectionRequestId();
 
 		if (this._options.getMode() === "expanded") {
 			const expandedHost = this._options.findExpandedHost();
 			if (expandedHost) {
+				foundTarget = true;
 				projected = this._projectIntoElement(expandedHost, options);
 			}
 		} else {
-			const focusBlockId = this._options.getFocusBlockId();
+			const focusBlockId = this._projectionTargetBlockId();
 			if (focusBlockId) {
 				const inlineEl = this._options.resolveInlineElement(focusBlockId);
 				if (inlineEl) {
+					foundTarget = true;
 					projected = this._projectIntoElement(inlineEl, options);
 				}
 			}
@@ -306,6 +267,7 @@ export class SelectionProjectionController {
 
 		if (projected) {
 			this._parked = null;
+			this._parkedDiagnosticKey = null;
 			const recordVersion = this._options.getRecord?.()?.version;
 			if (recordVersion != null) {
 				this._lastProjectedVersion = recordVersion;
@@ -321,21 +283,42 @@ export class SelectionProjectionController {
 		}
 
 		this._cancelSelectionProjection(version);
-		this._parkProjection();
+		this._parkProjection(foundTarget);
 	}
 
-	private _parkProjection(): void {
+	private _parkProjection(foundTarget: boolean): void {
 		const recordVersion = this._options.getRecord?.()?.version ?? 0;
+		const blockId = this._projectionTargetBlockId();
 		this._parked = {
 			version: recordVersion,
-			blockId: this._options.getFocusBlockId(),
+			blockId,
 		};
+		// a missing element is host virtualization, not an error.
+		if (!foundTarget) {
+			return;
+		}
+		const key = `${recordVersion}:${blockId ?? ""}`;
+		if (this._parkedDiagnosticKey === key) {
+			return;
+		}
+		this._parkedDiagnosticKey = key;
 		this._options.emitDiagnostic?.({
 			code: "selection-target-unmounted",
 			level: "warn",
 			source: "selection",
 			message: "selection target is not mounted; projection parked",
 		});
+	}
+
+	private _projectionTargetBlockId(): string | null {
+		const state = this._options.getRecord?.()?.state;
+		if (
+			state?.type === "text" &&
+			state.anchor.blockId === state.focus.blockId
+		) {
+			return state.focus.blockId;
+		}
+		return this._options.getFocusBlockId();
 	}
 
 	shouldProjectSelectionAfterReconcile(): boolean {
@@ -362,8 +345,6 @@ export class SelectionProjectionController {
 	}
 
 	recordUserSelectionIntent(): void {
-		this._programmaticInputVersion = null;
-		this._consumedInputRecordVersion = null;
 		const pendingProjectionVersion =
 			this._pendingSelectionProjectionVersion;
 		if (pendingProjectionVersion !== null) {
@@ -441,13 +422,6 @@ export class SelectionProjectionController {
 	): ProgrammaticTextSelection | null {
 		const programmaticSelection = this._readProgrammaticTextSelection();
 		if (!blockId || programmaticSelection?.blockId !== blockId) {
-			return null;
-		}
-		const recordVersion = this._options.getRecord?.()?.version ?? null;
-		if (
-			recordVersion == null ||
-			recordVersion !== this._programmaticInputVersion
-		) {
 			return null;
 		}
 		return programmaticSelection;

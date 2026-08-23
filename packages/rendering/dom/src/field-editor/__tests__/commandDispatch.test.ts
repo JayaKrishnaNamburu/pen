@@ -69,11 +69,6 @@ function createFieldEditor(blockId: string) {
 		anchorOffset: number;
 		focusOffset: number;
 	}> = [];
-	let programmaticCaret: {
-		blockId: string;
-		anchorOffset: number;
-		focusOffset: number;
-	} | null = null;
 	return {
 		controller: {
 			focusBlockId: blockId,
@@ -85,7 +80,6 @@ function createFieldEditor(blockId: string) {
 				anchorOffset: number,
 				focusOffset: number,
 			) => {
-				programmaticCaret = null;
 				activations.push({
 					blockId: targetBlockId,
 					anchorOffset,
@@ -93,39 +87,10 @@ function createFieldEditor(blockId: string) {
 				});
 			},
 			commitProgrammaticTextSelection: (
-				targetBlockId: string,
-				anchorOffset: number,
-				focusOffset: number,
-			) => {
-				programmaticCaret = {
-					blockId: targetBlockId,
-					anchorOffset,
-					focusOffset,
-				};
-			},
-			resolveProgrammaticInputRange: (
-				targetBlockId: string | null,
-				liveRange: { start: number; end: number } | null,
-			) => {
-				if (
-					!targetBlockId ||
-					programmaticCaret?.blockId !== targetBlockId
-				) {
-					return null;
-				}
-				if (
-					!liveRange ||
-					(liveRange.start === liveRange.end &&
-						(liveRange.start !== programmaticCaret.anchorOffset ||
-							liveRange.end !== programmaticCaret.focusOffset))
-				) {
-					return {
-						start: programmaticCaret.anchorOffset,
-						end: programmaticCaret.focusOffset,
-					};
-				}
-				return null;
-			},
+				_targetBlockId: string,
+				_anchorOffset: number,
+				_focusOffset: number,
+			) => {},
 			deactivate: () => {},
 			selectAll: () => false,
 			resolveInsertMarks: () => undefined,
@@ -382,7 +347,7 @@ describe("field-editor command registry dispatch", () => {
 		editor.destroy();
 	});
 
-	it("inserts at the committed programmatic caret when the live range is stale", () => {
+	it("inserts at the live caret after same-turn P1, without a programmatic range resolver", () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
@@ -402,11 +367,8 @@ describe("field-editor command registry dispatch", () => {
 			fieldEditor.controller as unknown as FieldEditorInputController,
 			{} as HTMLElement,
 			{
-				resolveCurrentInputRange: () =>
-					fieldEditor.controller.resolveProgrammaticInputRange(
-						blockId,
-						{ start: 11, end: 11 },
-					) ?? { start: 11, end: 11 },
+				// live range after same-turn P1. a stale {11,11} lands at the end.
+				resolveCurrentInputRange: () => ({ start: 3, end: 3 }),
 				applyListInputRule: () => false,
 				applyInlineTextEdit: () => {},
 			},

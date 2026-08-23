@@ -86,12 +86,6 @@ export class EditContextBackendRuntime extends EditContextBackendSelection {
 		liveDomOffsets: DirectionalSelectionOffsets | null,
 	): KeyDownRangeResolution {
 		const isTextEditingKey = isFieldEditorTextEditingKey(event);
-		const liveRange = liveDomOffsets
-			? {
-					start: liveDomOffsets.start,
-					end: liveDomOffsets.end,
-				}
-			: null;
 		return resolveEditContextKeyDownRange({
 			blockId,
 			isTextEditingKey,
@@ -100,13 +94,7 @@ export class EditContextBackendRuntime extends EditContextBackendSelection {
 			editorSelectionRange: blockId
 				? this.resolveEditorSelectionRange(blockId)
 				: null,
-			programmaticInputRange:
-				blockId && isTextEditingKey
-					? this.fieldEditor.resolveProgrammaticInputRange(
-							blockId,
-							liveRange,
-						)
-					: null,
+			programmaticInputRange: null,
 			authoritativeTextInputSelection: blockId
 				? this.getAuthoritativeTextInputSelection(blockId)
 				: null,

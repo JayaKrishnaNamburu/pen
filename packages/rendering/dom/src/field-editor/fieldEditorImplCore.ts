@@ -196,22 +196,28 @@ export abstract class FieldEditorImplCore {
 					this._pendingMarkController.clear(true);
 				}
 				const scheduler = this._ensureScheduler();
-				const queuedP1 =
-					scheduler != null &&
-					record.version >
-						this._selectionCoordinator.lastProjectedVersion;
-				if (queuedP1 && scheduler) {
-					scheduler.setSelection(record);
-				}
+				const alreadyProjected =
+					record.version <=
+					this._selectionCoordinator.lastProjectedVersion;
 				const suppressSelectionSync =
 					this._selectionCoordinator.consumeDomSelectionProjectionSuppression() ||
 					this._selectionCoordinator.shouldSuppressSelectionSync();
+				// surface first so P1 sees the new focus block. skip is
+				// not delivery — the projector has not run yet.
 				this._recomputeSurfaceFromSelection({
 					syncSelectionToBackend: !suppressSelectionSync,
-					skipBackendWrite:
-						scheduler != null &&
-						scheduler.phase === "write" &&
-						scheduler.projectedThisFlush,
+					skipBackendWrite: true,
+				});
+				if (!alreadyProjected) {
+					this._selectionCoordinator.syncDomSelectionOnce();
+					scheduler?.setSelection(record);
+				}
+				const delivered =
+					record.version <=
+					this._selectionCoordinator.lastProjectedVersion;
+				this._recomputeSurfaceFromSelection({
+					syncSelectionToBackend: !suppressSelectionSync,
+					skipBackendWrite: delivered,
 				});
 			},
 		);

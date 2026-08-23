@@ -74,7 +74,7 @@ describe("mount ack and parked projections", () => {
 		installMockRaf();
 	});
 
-	it("parks when the target block is not mounted and emits selection-target-unmounted", () => {
+	it("parks when the target block is not mounted without inventing selection-target-unmounted", () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const fieldEditor = new ProbeFieldEditor(editor);
 		const root = document.createElement("div");
@@ -99,7 +99,7 @@ describe("mount ack and parked projections", () => {
 		expect(fieldEditor.lastProjectedVersion).toBe(0);
 		expect(
 			diagnostics.filter((event) => event.code === "selection-target-unmounted"),
-		).toHaveLength(1);
+		).toHaveLength(0);
 	});
 
 	it("discards a parked projection when a newer version parks", () => {

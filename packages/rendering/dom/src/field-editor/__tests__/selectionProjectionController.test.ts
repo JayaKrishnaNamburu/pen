@@ -23,12 +23,21 @@ function programmaticRecord(
 	};
 }
 
-function createController(initialRecord: SelectionRecord | null = null) {
+function createController(
+	initialRecord: SelectionRecord | null = null,
+	overrides: {
+		resolveInlineElement?: () => HTMLElement | null;
+		attachElement?: () => boolean;
+		requestDomFocus?: () => boolean;
+		emitDiagnostic?: (event: { code: string }) => void;
+	} = {},
+) {
 	const setTextSelection: Array<{
 		blockId: string;
 		anchorOffset: number;
 		focusOffset: number;
 	}> = [];
+	const diagnostics: Array<{ code: string }> = [];
 	let record = initialRecord;
 	const controller = new SelectionProjectionController({
 		historySelectionCoordinator: new HistorySelectionCoordinator({
@@ -40,9 +49,9 @@ function createController(initialRecord: SelectionRecord | null = null) {
 		getAttachedElement: () => null,
 		getRootElement: () => null,
 		findExpandedHost: () => null,
-		resolveInlineElement: () => null,
-		attachElement: () => false,
-		requestDomFocus: () => false,
+		resolveInlineElement: overrides.resolveInlineElement ?? (() => null),
+		attachElement: overrides.attachElement ?? (() => false),
+		requestDomFocus: overrides.requestDomFocus ?? (() => false),
 		updateBackendSelection: () => {},
 		setTextSelection: (blockId, anchorOffset, focusOffset) => {
 			setTextSelection.push({ blockId, anchorOffset, focusOffset });
@@ -56,8 +65,12 @@ function createController(initialRecord: SelectionRecord | null = null) {
 		activate: () => {},
 		emitSelectionProjected: () => {},
 		getRecord: () => record,
+		emitDiagnostic: (event) => {
+			diagnostics.push(event);
+			overrides.emitDiagnostic?.(event);
+		},
 	});
-	return { controller, setTextSelection };
+	return { controller, setTextSelection, diagnostics };
 }
 
 describe("SelectionProjectionController shouldIgnoreDomTextSelection", () => {
@@ -106,75 +119,6 @@ describe("SelectionProjectionController shouldIgnoreDomTextSelection", () => {
 	});
 });
 
-describe("SelectionProjectionController resolveProgrammaticInputRange", () => {
-	it("returns the record caret when the live range is a stale collapse", () => {
-		const { controller } = createController();
-		controller.commitProgrammaticTextSelection("hello", 3, 3);
-
-		expect(
-			controller.resolveProgrammaticInputRange("hello", {
-				start: 11,
-				end: 11,
-			}),
-		).toEqual({ start: 3, end: 3 });
-		expect(
-			controller.resolveProgrammaticInputRange("hello", {
-				start: 3,
-				end: 3,
-			}),
-		).toBeNull();
-		expect(
-			controller.resolveProgrammaticInputRange("other", {
-				start: 11,
-				end: 11,
-			}),
-		).toBeNull();
-	});
-
-	it("consumes a record version after one input resolve so the next keystroke uses live", () => {
-		const { controller } = createController();
-		controller.commitProgrammaticTextSelection("hello", 0, 0);
-
-		expect(
-			controller.resolveProgrammaticInputRange("hello", {
-				start: 0,
-				end: 0,
-			}),
-		).toBeNull();
-		expect(
-			controller.resolveProgrammaticInputRange("hello", {
-				start: 2,
-				end: 2,
-			}),
-		).toEqual({ start: 0, end: 0 });
-		expect(
-			controller.resolveProgrammaticInputRange("hello", {
-				start: 2,
-				end: 2,
-			}),
-		).toBeNull();
-
-		controller.commitProgrammaticTextSelection("hello", 1, 1);
-		expect(
-			controller.resolveProgrammaticInputRange("hello", {
-				start: 2,
-				end: 2,
-			}),
-		).toEqual({ start: 1, end: 1 });
-	});
-
-	it("does not override live after activate without a programmatic commit", () => {
-		const { controller } = createController();
-		controller.activateTextSelection("hello", 0, 0);
-		expect(
-			controller.resolveProgrammaticInputRange("hello", {
-				start: 5,
-				end: 5,
-			}),
-		).toBeNull();
-	});
-});
-
 describe("SelectionProjectionController gesture windows", () => {
 	it("opens the pointer window on beginPointerSelection and keeps it open after end", () => {
 		const { controller } = createController();
@@ -196,5 +140,41 @@ describe("SelectionProjectionController gesture windows", () => {
 		expect(controller.consumeDomSelectionProjectionSuppression()).toBe(
 			false,
 		);
+	});
+});
+
+describe("SelectionProjectionController park diagnostics", () => {
+	it("does not invent selection-target-unmounted for a virtualized unmount", () => {
+		const { controller, diagnostics } = createController(
+			programmaticRecord("first", 0, 0, 4),
+		);
+
+		controller.syncDomSelectionOnce();
+		controller.syncDomSelectionOnce();
+
+		expect(controller.parkedProjectionVersion).toBe(4);
+		expect(diagnostics.map((event) => event.code)).toEqual([]);
+	});
+
+	it("emits selection-target-unmounted once when the target is present but projection fails", () => {
+		const target = { isConnected: true } as HTMLElement;
+		const { controller, diagnostics } = createController(
+			programmaticRecord("first", 0, 0, 7),
+			{
+				resolveInlineElement: () => target,
+				attachElement: () => false,
+				requestDomFocus: () => false,
+			},
+		);
+
+		controller.syncDomSelectionOnce();
+		controller.syncDomSelectionOnce();
+
+		expect(controller.parkedProjectionVersion).toBe(7);
+		expect(
+			diagnostics.filter(
+				(event) => event.code === "selection-target-unmounted",
+			),
+		).toHaveLength(1);
 	});
 });

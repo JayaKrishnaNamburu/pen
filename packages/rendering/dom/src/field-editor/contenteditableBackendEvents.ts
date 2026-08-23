@@ -159,7 +159,7 @@ export abstract class ContentEditableBackendEvents extends ContentEditableBacken
 		this.restoreDOMSelectionFromEditor();
 	}
 
-	// ── Mutation observation fallback ─────────────────────────
+	// ── Mutation observer watchdog ────────────────────────────
 
 	protected handleMutations = (_mutations: MutationRecord[]): void => {
 		if (this.isComposing) return;
@@ -173,18 +173,21 @@ export abstract class ContentEditableBackendEvents extends ContentEditableBacken
 			return;
 		}
 
-		if (this.ignoreBrowserMutations) {
-			// block policy already cancelled this input; revert leftovers, do not apply as ops
-			fullReconcileToDOM(this.ytext, this.element, this.editor.schema, {
-				urlPolicy: urlPolicyFromEditor(this.editor),
-				inlineDecorations: this.getInlineDecorationsForBlock(),
+		if (!this.ignoreBrowserMutations) {
+			this.editor.internals.emit("diagnostic", {
+				code: "dom-divergence",
+				level: "warn",
+				source: "mutation-observer",
+				message:
+					"contenteditable DOM diverged from the document; restoring from the model",
 			});
-			this.fieldEditor.notifyDomReconciled(blockId);
-			return;
 		}
 
-		const diff = computeTextDiff(crdtText, domText);
-		this.applyTextDiffAsOps(blockId, diff);
+		fullReconcileToDOM(this.ytext, this.element, this.editor.schema, {
+			urlPolicy: urlPolicyFromEditor(this.editor),
+			inlineDecorations: this.getInlineDecorationsForBlock(),
+		});
+		this.fieldEditor.notifyDomReconciled(blockId);
 	};
 
 	// ── CRDT→DOM reconciliation ───────────────────────────────

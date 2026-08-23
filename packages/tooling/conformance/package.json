@@ -23,6 +23,8 @@
     "test:hosts": "node --experimental-strip-types --test src/hosts/*.test.js",
     "test:node": "node --experimental-strip-types --test src/hosts/*.test.js",
     "test": "node --experimental-strip-types --test src/hosts/*.test.js",
+    "test:op-equality": "node --experimental-strip-types --test src/op-equality.test.js",
+    "record:op-equality": "node --experimental-strip-types src/opCorpus/record.js",
     "coverage:rules": "node ../../../scripts/coverage-rules.mjs",
     "fuzz:node": "node src/fuzz/node.mjs",
     "fuzz:nightly": "node src/fuzz/nightly.mjs",

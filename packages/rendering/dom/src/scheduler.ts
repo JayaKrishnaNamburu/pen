@@ -236,10 +236,10 @@ export class DomScheduler {
 
 	/**
 	 * Write-phase P1 slot (`spec-v2/07-dom-scheduling.md` flush step 3):
-	 * after queued writes, before overlay paints. Queued by
-	 * `setSelection` when `record.version` is newer than
-	 * `lastProjectedVersion`. Do not schedule projection from timers
-	 * or rAF retries (S4).
+	 * after queued writes, before overlay paints. The field editor
+	 * writes same-turn on `selectionChange`; this slot retries a
+	 * parked record on a later flush. Do not schedule projection
+	 * from timers or rAF retries (S4).
 	 */
 	private projectSelection(): void {
 		const record = this._collect?.selection ?? null;

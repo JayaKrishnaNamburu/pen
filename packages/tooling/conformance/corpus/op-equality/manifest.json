@@ -1,0 +1,326 @@
+{
+	"schemaVersion": 1,
+	"recordedAt": "2026-08-23",
+	"documentOpMemberCount": 30,
+	"tightPattern": "^\\s*\\| [A-Z][A-Za-z]+Op",
+	"determinism": {
+		"yjsClientId": 1,
+		"yjsGuid": "pen-op-equality-v2",
+		"uuidSeed": "incrementing v4-shaped crypto.randomUUID; reset to 1 at session start; APPLY_ID_BASE=10000 at first captured apply",
+		"compared": [
+			"canonical JSON document snapshot (blockOrder/blocks/apps/metadata)",
+			"Y.encodeStateAsUpdate(ydoc, stateVectorBeforeApply) base64"
+		]
+	},
+	"coverage": {
+		"insert-text": {
+			"fixture": "insert-text.json",
+			"path": "command",
+			"command": "pen.insertText",
+			"family": "typing",
+			"opsInBatch": [
+				"insert-text"
+			],
+			"updateByteLength": 14
+		},
+		"delete-text": {
+			"fixture": "delete-text.json",
+			"path": "command",
+			"command": "pen.deleteBackward",
+			"family": "typing",
+			"opsInBatch": [
+				"delete-text"
+			],
+			"updateByteLength": 8
+		},
+		"format-text": {
+			"fixture": "format-text.json",
+			"path": "command",
+			"command": "pen.toggleMark",
+			"family": "marks",
+			"opsInBatch": [
+				"format-text"
+			],
+			"updateByteLength": 35
+		},
+		"replace-text": {
+			"fixture": "replace-text.json",
+			"path": "command",
+			"command": "editor.openTextStream.splice",
+			"family": "typing",
+			"opsInBatch": [
+				"replace-text"
+			],
+			"updateByteLength": 17
+		},
+		"insert-inline-node": {
+			"fixture": "insert-inline-node.json",
+			"path": "command",
+			"command": "pen.duplicateBlock",
+			"family": "atoms",
+			"opsInBatch": [
+				"insert-block",
+				"insert-text",
+				"insert-inline-node"
+			],
+			"updateByteLength": 210
+		},
+		"remove-inline-node": {
+			"fixture": "remove-inline-node.json",
+			"path": "synthetic",
+			"command": null,
+			"family": "atoms",
+			"opsInBatch": [
+				"remove-inline-node"
+			],
+			"updateByteLength": 8
+		},
+		"insert-block": {
+			"fixture": "insert-block.json",
+			"path": "command",
+			"command": "pen.duplicateBlock",
+			"family": "conversions",
+			"opsInBatch": [
+				"insert-block",
+				"insert-text"
+			],
+			"updateByteLength": 165
+		},
+		"update-block": {
+			"fixture": "update-block.json",
+			"path": "command",
+			"command": "pen.indent",
+			"family": "conversions",
+			"opsInBatch": [
+				"update-block"
+			],
+			"updateByteLength": 19
+		},
+		"delete-block": {
+			"fixture": "delete-block.json",
+			"path": "command",
+			"command": "pen.deleteBlock",
+			"family": "conversions",
+			"opsInBatch": [
+				"delete-block"
+			],
+			"updateByteLength": 8
+		},
+		"move-block": {
+			"fixture": "move-block.json",
+			"path": "command",
+			"command": "pen.moveBlockDown",
+			"family": "layout",
+			"opsInBatch": [
+				"move-block"
+			],
+			"updateByteLength": 21
+		},
+		"convert-block": {
+			"fixture": "convert-block.json",
+			"path": "command",
+			"command": "pen.convertBlock",
+			"family": "conversions",
+			"opsInBatch": [
+				"convert-block"
+			],
+			"updateByteLength": 37
+		},
+		"split-block": {
+			"fixture": "split-block.json",
+			"path": "command",
+			"command": "pen.splitBlock",
+			"family": "splits",
+			"opsInBatch": [
+				"split-block"
+			],
+			"updateByteLength": 167
+		},
+		"merge-blocks": {
+			"fixture": "merge-blocks.json",
+			"path": "command",
+			"command": "pen.deleteBackward",
+			"family": "merges",
+			"opsInBatch": [
+				"merge-blocks"
+			],
+			"updateByteLength": 20
+		},
+		"update-layout": {
+			"fixture": "update-layout.json",
+			"path": "synthetic",
+			"command": null,
+			"family": "layout",
+			"opsInBatch": [
+				"update-layout"
+			],
+			"updateByteLength": 74
+		},
+		"insert-table-row": {
+			"fixture": "insert-table-row.json",
+			"path": "command",
+			"command": "pen.duplicateBlock",
+			"family": "tables",
+			"opsInBatch": [
+				"insert-block",
+				"insert-table-row",
+				"insert-table-cell-text"
+			],
+			"updateByteLength": 800
+		},
+		"delete-table-row": {
+			"fixture": "delete-table-row.json",
+			"path": "synthetic",
+			"command": null,
+			"family": "tables",
+			"opsInBatch": [
+				"delete-table-row"
+			],
+			"updateByteLength": 12
+		},
+		"insert-table-column": {
+			"fixture": "insert-table-column.json",
+			"path": "command",
+			"command": "pen.duplicateBlock",
+			"family": "tables",
+			"opsInBatch": [
+				"insert-block",
+				"insert-table-column",
+				"insert-table-cell-text"
+			],
+			"updateByteLength": 738
+		},
+		"delete-table-column": {
+			"fixture": "delete-table-column.json",
+			"path": "synthetic",
+			"command": null,
+			"family": "tables",
+			"opsInBatch": [
+				"delete-table-column"
+			],
+			"updateByteLength": 14
+		},
+		"merge-table-cells": {
+			"fixture": "merge-table-cells.json",
+			"path": "synthetic",
+			"command": null,
+			"family": "tables",
+			"opsInBatch": [
+				"merge-table-cells"
+			],
+			"updateByteLength": 8
+		},
+		"split-table-cell": {
+			"fixture": "split-table-cell.json",
+			"path": "synthetic",
+			"command": null,
+			"family": "tables",
+			"opsInBatch": [
+				"split-table-cell"
+			],
+			"updateByteLength": 8
+		},
+		"insert-table-cell-text": {
+			"fixture": "insert-table-cell-text.json",
+			"path": "command",
+			"command": "pen.duplicateBlock",
+			"family": "cells",
+			"opsInBatch": [
+				"insert-block",
+				"insert-table-cell-text",
+				"insert-table-cell-text"
+			],
+			"updateByteLength": 618
+		},
+		"delete-table-cell-text": {
+			"fixture": "delete-table-cell-text.json",
+			"path": "synthetic",
+			"command": null,
+			"family": "cells",
+			"opsInBatch": [
+				"delete-table-cell-text"
+			],
+			"updateByteLength": 10
+		},
+		"format-table-cell-text": {
+			"fixture": "format-table-cell-text.json",
+			"path": "synthetic",
+			"command": null,
+			"family": "cells",
+			"opsInBatch": [
+				"format-table-cell-text"
+			],
+			"updateByteLength": 37
+		},
+		"update-table-columns": {
+			"fixture": "update-table-columns.json",
+			"path": "synthetic",
+			"command": null,
+			"family": "tables",
+			"opsInBatch": [
+				"update-table-columns"
+			],
+			"updateByteLength": 223
+		},
+		"set-meta": {
+			"fixture": "set-meta.json",
+			"path": "synthetic",
+			"command": null,
+			"family": "apps",
+			"opsInBatch": [
+				"set-meta"
+			],
+			"updateByteLength": 45
+		},
+		"create-app": {
+			"fixture": "create-app.json",
+			"path": "synthetic",
+			"command": null,
+			"family": "apps",
+			"opsInBatch": [
+				"create-app"
+			],
+			"updateByteLength": 132
+		},
+		"update-app": {
+			"fixture": "update-app.json",
+			"path": "synthetic",
+			"command": null,
+			"family": "apps",
+			"opsInBatch": [
+				"update-app"
+			],
+			"updateByteLength": 44
+		},
+		"delete-app": {
+			"fixture": "delete-app.json",
+			"path": "synthetic",
+			"command": null,
+			"family": "apps",
+			"opsInBatch": [
+				"delete-app"
+			],
+			"updateByteLength": 8
+		},
+		"set-selection": {
+			"fixture": "set-selection.json",
+			"path": "synthetic",
+			"command": null,
+			"family": "typing",
+			"opsInBatch": [
+				"set-selection"
+			],
+			"updateByteLength": 6
+		},
+		"stream-open": {
+			"fixture": "stream-open.json",
+			"path": "command",
+			"command": "editor.openTextStream",
+			"family": "streams",
+			"opsInBatch": [
+				"stream-open"
+			],
+			"updateByteLength": 6
+		}
+	}
+}

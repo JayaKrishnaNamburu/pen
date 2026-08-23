@@ -319,7 +319,6 @@
 - StreamOpenOp
 - StructuralChange
 - StructuredOpOrigin
-- SummaryLog
 - TableBlockHandle
 - TableCellHandle
 - TableColumnSchema

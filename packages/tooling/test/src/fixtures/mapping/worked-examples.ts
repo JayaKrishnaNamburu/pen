@@ -251,9 +251,9 @@ export const CHANGE_SUMMARY_WORKED_EXAMPLES = [
 ] as const;
 
 export function toRawCommitDelta(delta: WorkedExampleDelta): RawCommitDelta {
-	const textDeltas = new Map<string, YTextDelta>();
+	const textDeltas = new Map<string, YTextDelta[]>();
 	for (const [blockId, ydelta] of Object.entries(delta.textDeltas ?? {})) {
-		textDeltas.set(blockId, ydelta);
+		textDeltas.set(blockId, [ydelta]);
 	}
 	const childArrayDeltas = new Map<string, YArrayDelta>();
 	for (const [parentId, ydelta] of Object.entries(delta.childArrayDeltas ?? {})) {

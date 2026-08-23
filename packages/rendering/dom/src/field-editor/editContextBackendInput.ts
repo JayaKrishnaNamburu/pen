@@ -187,11 +187,7 @@ export abstract class EditContextBackendInput extends EditContextBackendCore {
 			editorSelectionRange: this.resolveEditorSelectionRange(
 				input.blockId,
 			),
-			programmaticInputRange:
-				this.fieldEditor.resolveProgrammaticInputRange(input.blockId, {
-					start: input.updateRangeStart,
-					end: input.updateRangeEnd,
-				}),
+			programmaticInputRange: null,
 			editContextSelection:
 				this.fieldEditor.getEditContextSelectionSnapshot(
 					input.blockId,

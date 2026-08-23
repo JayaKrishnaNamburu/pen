@@ -1,0 +1,139 @@
+{
+	"id": "update-layout",
+	"opType": "update-layout",
+	"family": "layout",
+	"path": "synthetic",
+	"command": null,
+	"setup": {
+		"blocks": [
+			{
+				"id": "toggle",
+				"type": "toggle",
+				"text": "Parent",
+				"props": {
+					"open": true
+				}
+			},
+			{
+				"id": "child",
+				"type": "paragraph",
+				"text": "Nested child",
+				"parent": "toggle",
+				"index": 0
+			}
+		]
+	},
+	"ops": [
+		{
+			"type": "update-layout",
+			"blockId": "toggle",
+			"layout": {
+				"display": "flex",
+				"gap": 8,
+				"direction": "column"
+			}
+		}
+	],
+	"updateBytes": "AQQBKScAAQkGbGF5b3V0ASgAASkHZGlzcGxheQF3BGZsZXgoAAEpA2dhcAF9CCgAASkJZGlyZWN0aW9uAXcGY29sdW1uAQEBAgc=",
+	"updateByteLength": 74,
+	"initialSnapshot": {
+		"apps": {},
+		"blockOrder": [
+			"toggle"
+		],
+		"blocks": {
+			"child": {
+				"content": {
+					"delta": [
+						{
+							"insert": "Nested child"
+						}
+					],
+					"kind": "text"
+				},
+				"meta": {},
+				"props": {},
+				"type": "paragraph"
+			},
+			"toggle": {
+				"children": [
+					"child"
+				],
+				"content": {
+					"delta": [
+						{
+							"insert": "Parent"
+						}
+					],
+					"kind": "text"
+				},
+				"meta": {},
+				"props": {
+					"open": true
+				},
+				"type": "toggle"
+			}
+		},
+		"metadata": {
+			"documentProfile": "structured",
+			"penFormat": {
+				"format": 2,
+				"minReader": 1,
+				"writer": "0.0.1"
+			}
+		}
+	},
+	"snapshot": {
+		"apps": {},
+		"blockOrder": [
+			"toggle"
+		],
+		"blocks": {
+			"child": {
+				"content": {
+					"delta": [
+						{
+							"insert": "Nested child"
+						}
+					],
+					"kind": "text"
+				},
+				"meta": {},
+				"props": {},
+				"type": "paragraph"
+			},
+			"toggle": {
+				"children": [
+					"child"
+				],
+				"content": {
+					"delta": [
+						{
+							"insert": "Parent"
+						}
+					],
+					"kind": "text"
+				},
+				"layout": {
+					"direction": "column",
+					"display": "flex",
+					"gap": 8
+				},
+				"meta": {},
+				"props": {
+					"open": true
+				},
+				"type": "toggle"
+			}
+		},
+		"metadata": {
+			"documentProfile": "structured",
+			"penFormat": {
+				"format": 2,
+				"minReader": 1,
+				"writer": "0.0.1"
+			}
+		}
+	},
+	"selectionAfter": null
+}

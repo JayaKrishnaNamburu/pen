@@ -1,0 +1,107 @@
+{
+	"id": "insert-text",
+	"opType": "insert-text",
+	"family": "typing",
+	"path": "command",
+	"command": "pen.insertText",
+	"setup": {
+		"blocks": [
+			{
+				"id": "p1",
+				"type": "paragraph",
+				"text": "Hello"
+			}
+		],
+		"selection": {
+			"blockId": "p1",
+			"from": 5,
+			"to": 5
+		}
+	},
+	"ops": [
+		{
+			"type": "insert-text",
+			"blockId": "p1",
+			"offset": 5,
+			"text": "!"
+		}
+	],
+	"updateBytes": "AQEBFIQBEwEhAQEBAgc=",
+	"updateByteLength": 14,
+	"initialSnapshot": {
+		"apps": {},
+		"blockOrder": [
+			"p1"
+		],
+		"blocks": {
+			"p1": {
+				"content": {
+					"delta": [
+						{
+							"insert": "Hello"
+						}
+					],
+					"kind": "text"
+				},
+				"meta": {},
+				"props": {},
+				"type": "paragraph"
+			}
+		},
+		"metadata": {
+			"documentProfile": "structured",
+			"penFormat": {
+				"format": 2,
+				"minReader": 1,
+				"writer": "0.0.1"
+			}
+		}
+	},
+	"snapshot": {
+		"apps": {},
+		"blockOrder": [
+			"p1"
+		],
+		"blocks": {
+			"p1": {
+				"content": {
+					"delta": [
+						{
+							"insert": "Hello!"
+						}
+					],
+					"kind": "text"
+				},
+				"meta": {},
+				"props": {},
+				"type": "paragraph"
+			}
+		},
+		"metadata": {
+			"documentProfile": "structured",
+			"penFormat": {
+				"format": 2,
+				"minReader": 1,
+				"writer": "0.0.1"
+			}
+		}
+	},
+	"selectionAfter": {
+		"affinity": "downstream",
+		"anchor": {
+			"blockId": "p1",
+			"offset": 6
+		},
+		"blockRange": [
+			"p1"
+		],
+		"focus": {
+			"blockId": "p1",
+			"offset": 6
+		},
+		"goalX": null,
+		"isCollapsed": true,
+		"isMultiBlock": false,
+		"type": "text"
+	}
+}

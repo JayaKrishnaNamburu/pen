@@ -47,11 +47,16 @@ function buildTextChanges(
 	index: BlockIndexSnapshot,
 ): BlockTextChange[] {
 	const changes: BlockTextChange[] = [];
-	for (const [blockId, textDelta] of delta.textDeltas) {
-		const logicalLength = logicalLengthForTextDelta(blockId, textDelta, index);
-		const { splices, formatRanges } = textDeltaToSplices(textDelta, logicalLength);
-		if (splices.length === 0 && formatRanges.length === 0) continue;
-		changes.push({ blockId, splices, formatRanges });
+	for (const [blockId, textDeltaList] of delta.textDeltas) {
+		for (const textDelta of textDeltaList) {
+			const logicalLength = logicalLengthForTextDelta(blockId, textDelta, index);
+			const { splices, formatRanges } = textDeltaToSplices(
+				textDelta,
+				logicalLength,
+			);
+			if (splices.length === 0 && formatRanges.length === 0) continue;
+			changes.push({ blockId, splices, formatRanges });
+		}
 	}
 	return changes;
 }

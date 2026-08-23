@@ -58,25 +58,4 @@ describe("enter-split leftover-ignore via authority.record", () => {
 		).toBe(true);
 	});
 
-	it("resolveProgrammaticInputRange reads the record caret while the live range is stale", () => {
-		const editor = createEditor({ schema: defaultSchema });
-		const fieldEditor = new FieldEditorImpl(editor);
-		fixtures.push({ editor, fieldEditor });
-
-		const blockId = editor.firstBlock()!.id;
-		editor.apply([
-			{ type: "insert-text", blockId, offset: 0, text: "Hello world" },
-		]);
-		editor.selectText(blockId, 3, 3);
-		fieldEditor.activate(blockId);
-		fieldEditor.commitProgrammaticTextSelection(blockId, 3, 3);
-
-		expect(
-			fieldEditor.resolveProgrammaticInputRange(blockId, {
-				start: 11,
-				end: 11,
-			}),
-		).toEqual({ start: 3, end: 3 });
-		expect(editor.getBlock(blockId)?.textContent()).toBe("Hello world");
-	});
 });

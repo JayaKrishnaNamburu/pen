@@ -1,0 +1,125 @@
+{
+	"id": "merge-blocks",
+	"opType": "merge-blocks",
+	"family": "merges",
+	"path": "command",
+	"command": "pen.deleteBackward",
+	"setup": {
+		"blocks": [
+			{
+				"id": "p1",
+				"type": "paragraph",
+				"text": "Hello"
+			},
+			{
+				"id": "p2",
+				"type": "paragraph",
+				"text": "World"
+			}
+		],
+		"selection": {
+			"blockId": "p2",
+			"from": 0,
+			"to": 0
+		}
+	},
+	"ops": [
+		{
+			"type": "merge-blocks",
+			"targetBlockId": "p1",
+			"sourceBlockId": "p2"
+		}
+	],
+	"updateBytes": "AQEBH4QBEwVXb3JsZAEBAgIHFAs=",
+	"updateByteLength": 20,
+	"initialSnapshot": {
+		"apps": {},
+		"blockOrder": [
+			"p1",
+			"p2"
+		],
+		"blocks": {
+			"p1": {
+				"content": {
+					"delta": [
+						{
+							"insert": "Hello"
+						}
+					],
+					"kind": "text"
+				},
+				"meta": {},
+				"props": {},
+				"type": "paragraph"
+			},
+			"p2": {
+				"content": {
+					"delta": [
+						{
+							"insert": "World"
+						}
+					],
+					"kind": "text"
+				},
+				"meta": {},
+				"props": {},
+				"type": "paragraph"
+			}
+		},
+		"metadata": {
+			"documentProfile": "structured",
+			"penFormat": {
+				"format": 2,
+				"minReader": 1,
+				"writer": "0.0.1"
+			}
+		}
+	},
+	"snapshot": {
+		"apps": {},
+		"blockOrder": [
+			"p1"
+		],
+		"blocks": {
+			"p1": {
+				"content": {
+					"delta": [
+						{
+							"insert": "HelloWorld"
+						}
+					],
+					"kind": "text"
+				},
+				"meta": {},
+				"props": {},
+				"type": "paragraph"
+			}
+		},
+		"metadata": {
+			"documentProfile": "structured",
+			"penFormat": {
+				"format": 2,
+				"minReader": 1,
+				"writer": "0.0.1"
+			}
+		}
+	},
+	"selectionAfter": {
+		"affinity": "downstream",
+		"anchor": {
+			"blockId": "p1",
+			"offset": 5
+		},
+		"blockRange": [
+			"p1"
+		],
+		"focus": {
+			"blockId": "p1",
+			"offset": 5
+		},
+		"goalX": null,
+		"isCollapsed": true,
+		"isMultiBlock": false,
+		"type": "text"
+	}
+}

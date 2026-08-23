@@ -103,9 +103,9 @@
 		{
 			"name": "@input/pen-crdt-yjs",
 			"path": "packages/crdt/yjs/dist/index.mjs",
-			"baselineBytes": 54245,
-			"limitBytes": 54245,
-			"note": "Wave P.7 first baseline kept. Wave P API2 yjs peer + singleton guard; live 55563 B is within +10%."
+			"baselineBytes": 59734,
+			"limitBytes": 59734,
+			"note": "Wave P.7 first baseline kept through Wave P API2 yjs peer + singleton guard (live 55563 B). Re-recorded 2026-08-23: v3 Wave 1 placed the createRelativePosition/resolveRelativePosition anchor primitives in this package and Wave 3 rewrote summarySource to carry a per-block list of cell text deltas. 55563 -> 59734 B."
 		},
 		{
 			"name": "@input/pen-delta-stream",

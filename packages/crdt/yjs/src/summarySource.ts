@@ -42,7 +42,7 @@ export type StructuralOriginTag =
 
 export interface RawCommitDelta {
 	readonly originTag: unknown;
-	readonly textDeltas: ReadonlyMap<string, YTextDelta>;
+	readonly textDeltas: ReadonlyMap<string, readonly YTextDelta[]>;
 	readonly blockOrderDelta: YArrayDelta;
 	readonly childArrayDeltas: ReadonlyMap<string, YArrayDelta>;
 	readonly blockMapChanges: ReadonlyMap<string, ReadonlySet<string>>;
@@ -169,7 +169,7 @@ export function transactionToRawCommitDelta(txn: Y.Transaction): RawCommitDelta 
 	const apps = txn.doc.getMap(APPS) as Y.Map<Y.Map<unknown>>;
 	const metadata = txn.doc.getMap(METADATA);
 
-	const textDeltas = new Map<string, YTextDelta>();
+	const textDeltas = new Map<string, YTextDelta[]>();
 	const childArrayDeltas = new Map<string, YArrayDelta>();
 	const blockMapChanges = new Map<string, Set<string>>();
 	const appChanges = new Set<string>();
@@ -210,10 +210,13 @@ export function transactionToRawCommitDelta(txn: Y.Transaction): RawCommitDelta 
 			const blockId = resolveSharedKey(ytype, blocks);
 			const event = eventForType(txn, ytype);
 			if (blockId && event) {
-				textDeltas.set(
-					blockId,
-					snapshotTextDelta(event.delta as YTextDeltaOp[]),
-				);
+				const snapshot = snapshotTextDelta(event.delta as YTextDeltaOp[]);
+				const existing = textDeltas.get(blockId);
+				if (existing) {
+					existing.push(snapshot);
+				} else {
+					textDeltas.set(blockId, [snapshot]);
+				}
 			}
 			continue;
 		}

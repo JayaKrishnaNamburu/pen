@@ -255,16 +255,6 @@ export abstract class FieldEditorImplSelection extends FieldEditorImplLifecycle 
 		return this._selectionCoordinator.getEditContextSelection(blockId);
 	}
 
-	resolveProgrammaticInputRange(
-		blockId: string | null,
-		liveRange: { start: number; end: number } | null,
-	): { start: number; end: number } | null {
-		return this._selectionCoordinator.resolveProgrammaticInputRange(
-			blockId,
-			liveRange,
-		);
-	}
-
 	shouldIgnoreDomTextSelection(
 		anchor: { blockId: string; offset: number },
 		focus: { blockId: string; offset: number },

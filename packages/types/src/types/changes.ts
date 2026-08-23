@@ -102,8 +102,3 @@ export interface ChangeSummary {
 
 	compose(next: ChangeSummary): ChangeSummary;
 }
-
-export interface SummaryLog {
-	latest(): ChangeSummary | null;
-	between(fromCommitId: number, toCommitId: number): ChangeSummary | null;
-}

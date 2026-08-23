@@ -76,8 +76,7 @@ describe("summarySource", () => {
 		const delta = deltas[0];
 		expect(delta.originTag).toBe(origin);
 		expect(delta.textDeltas.get("b1")).toEqual([
-			{ retain: 5 },
-			{ insert: " world" },
+			[{ retain: 5 }, { insert: " world" }],
 		]);
 		expect(delta.blockOrderDelta.some((op) => op.insert?.includes("b3"))).toBe(
 			true,
@@ -204,4 +203,48 @@ describe("summarySource", () => {
 			structural,
 		});
 	});
+
+	it("keeps both cell Y.Text deltas when they share a table block key", () => {
+		const doc = adapter.createDocument() as YjsCRDTDocument;
+		doc.ydoc.transact(() => {
+			initBlockMap(doc.penDocument.blocks, "t1", "table", "table");
+			doc.penDocument.blockOrder.push(["t1"]);
+		});
+
+		const deltas: RawCommitDelta[] = [];
+		createSummarySource(doc, (delta) => {
+			deltas.push(delta);
+		});
+
+		const north = cellText(doc, "t1", 0, 0);
+		const south = cellText(doc, "t1", 1, 1);
+
+		adapter.transact(doc, () => {
+			north.insert(0, "meadow");
+			south.insert(0, "sage-brush");
+		});
+
+		expect(deltas).toHaveLength(1);
+		const tableDeltas = deltas[0]!.textDeltas.get("t1");
+		expect(tableDeltas).toHaveLength(2);
+		expect(tableDeltas).toEqual(
+			expect.arrayContaining([
+				[{ insert: "meadow" }],
+				[{ insert: "sage-brush" }],
+			]),
+		);
+	});
 });
+
+function cellText(
+	doc: YjsCRDTDocument,
+	blockId: string,
+	row: number,
+	col: number,
+): Y.Text {
+	const tableContent = doc.penDocument.blocks
+		.get(blockId)!
+		.get("tableContent") as Y.Array<Y.Map<unknown>>;
+	const cells = tableContent.get(row).get("cells") as Y.Array<Y.Map<unknown>>;
+	return cells.get(col).get("content") as Y.Text;
+}

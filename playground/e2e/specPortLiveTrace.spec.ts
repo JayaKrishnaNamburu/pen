@@ -314,10 +314,13 @@ test("B1 live: rewriting a text node without beforeinput", async ({
 	const after = await recordStep(page, testInfo, browserName, "b1-after-dom-rewrite");
 
 	expect(before.blocks[0]?.text.replaceAll("\u200B", "")).toBe("Hello");
-	if (browserName === "chromium") {
-		expect(after.blocks[0]?.text.replaceAll("\u200B", "")).toBe("Hello");
-	} else {
-		expect(after.blocks[0]?.text.replaceAll("\u200B", "")).toBe("HelloX");
+	expect(after.blocks[0]?.text.replaceAll("\u200B", "")).toBe("Hello");
+	if (browserName !== "chromium") {
+		const visible = await page
+			.locator("[data-pen-inline-content]")
+			.first()
+			.innerText();
+		expect(visible.replaceAll("\u200B", "")).toBe("Hello");
 	}
 });
 

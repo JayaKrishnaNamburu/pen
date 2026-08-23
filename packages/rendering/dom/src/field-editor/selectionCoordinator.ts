@@ -144,16 +144,6 @@ export class FieldEditorSelectionCoordinator {
 		);
 	}
 
-	resolveProgrammaticInputRange(
-		blockId: string | null,
-		liveRange: { start: number; end: number } | null,
-	): { start: number; end: number } | null {
-		return this._projection.resolveProgrammaticInputRange(
-			blockId,
-			liveRange,
-		);
-	}
-
 	shouldIgnoreDomTextSelection(
 		anchor: { blockId: string; offset: number },
 		focus: { blockId: string; offset: number },
