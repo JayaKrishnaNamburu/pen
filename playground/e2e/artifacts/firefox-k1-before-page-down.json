@@ -1,0 +1,93 @@
+{
+  "immediate": {
+    "selection": {
+      "type": "text",
+      "isCollapsed": true,
+      "isMultiBlock": false,
+      "anchor": {
+        "blockId": "7a7106ac-a712-4296-be04-5e2ab07f2bd5",
+        "offset": 5
+      },
+      "focus": {
+        "blockId": "7a7106ac-a712-4296-be04-5e2ab07f2bd5",
+        "offset": 5
+      }
+    },
+    "selectedText": "",
+    "blockCount": 2,
+    "blocks": [
+      {
+        "id": "7a7106ac-a712-4296-be04-5e2ab07f2bd5",
+        "type": "paragraph",
+        "text": "Alpha",
+        "length": 5
+      },
+      {
+        "id": "7546ae67-4f86-41e1-b24f-18625a490150",
+        "type": "paragraph",
+        "text": "Bravo",
+        "length": 5
+      }
+    ],
+    "native": {
+      "isCollapsed": true,
+      "text": "",
+      "rangeCount": 1
+    },
+    "overlayCaretCount": 1,
+    "selectionRectCount": 0,
+    "inlineAtomCount": 0,
+    "inlineAtomTypes": [],
+    "activeCaretColor": "rgba(0, 0, 0, 0)",
+    "keyProbe": null
+  },
+  "settled": {
+    "selection": {
+      "type": "text",
+      "isCollapsed": true,
+      "isMultiBlock": false,
+      "anchor": {
+        "blockId": "7a7106ac-a712-4296-be04-5e2ab07f2bd5",
+        "offset": 5
+      },
+      "focus": {
+        "blockId": "7a7106ac-a712-4296-be04-5e2ab07f2bd5",
+        "offset": 5
+      }
+    },
+    "selectedText": "",
+    "blockCount": 2,
+    "blocks": [
+      {
+        "id": "7a7106ac-a712-4296-be04-5e2ab07f2bd5",
+        "type": "paragraph",
+        "text": "Alpha",
+        "length": 5
+      },
+      {
+        "id": "7546ae67-4f86-41e1-b24f-18625a490150",
+        "type": "paragraph",
+        "text": "Bravo",
+        "length": 5
+      }
+    ],
+    "native": {
+      "isCollapsed": true,
+      "text": "",
+      "rangeCount": 1
+    },
+    "overlayCaretCount": 1,
+    "selectionRectCount": 0,
+    "inlineAtomCount": 0,
+    "inlineAtomTypes": [],
+    "activeCaretColor": "rgba(0, 0, 0, 0)",
+    "keyProbe": null
+  },
+  "browserName": "firefox",
+  "step": "k1-before-page-down",
+  "loadavg": [
+    6.87158203125,
+    7.76171875,
+    13.21728515625
+  ]
+}

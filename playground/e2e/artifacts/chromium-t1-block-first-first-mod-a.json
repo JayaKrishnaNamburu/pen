@@ -5,11 +5,11 @@
       "isCollapsed": false,
       "isMultiBlock": false,
       "anchor": {
-        "blockId": "ff543106-127c-473c-bb7d-3f0814d0973b",
+        "blockId": "3580ff62-3a04-47a2-b384-5868b727e7ad",
         "offset": 0
       },
       "focus": {
-        "blockId": "ff543106-127c-473c-bb7d-3f0814d0973b",
+        "blockId": "3580ff62-3a04-47a2-b384-5868b727e7ad",
         "offset": 5
       }
     },
@@ -17,19 +17,19 @@
     "blockCount": 3,
     "blocks": [
       {
-        "id": "5d158c82-8cc7-4d06-ba60-71d2e554d7f5",
+        "id": "675e1438-bac6-4ac3-b521-3bb1ab171a18",
         "type": "paragraph",
         "text": "Alpha",
         "length": 5
       },
       {
-        "id": "ff543106-127c-473c-bb7d-3f0814d0973b",
+        "id": "3580ff62-3a04-47a2-b384-5868b727e7ad",
         "type": "paragraph",
         "text": "Bravo",
         "length": 5
       },
       {
-        "id": "657b7d9e-7727-4eb6-8727-c00e8f937f60",
+        "id": "58bdca9f-65be-4caa-84a1-24f43d9c8af2",
         "type": "paragraph",
         "text": "Charlie",
         "length": 7
@@ -53,11 +53,11 @@
       "isCollapsed": false,
       "isMultiBlock": false,
       "anchor": {
-        "blockId": "ff543106-127c-473c-bb7d-3f0814d0973b",
+        "blockId": "3580ff62-3a04-47a2-b384-5868b727e7ad",
         "offset": 0
       },
       "focus": {
-        "blockId": "ff543106-127c-473c-bb7d-3f0814d0973b",
+        "blockId": "3580ff62-3a04-47a2-b384-5868b727e7ad",
         "offset": 5
       }
     },
@@ -65,19 +65,19 @@
     "blockCount": 3,
     "blocks": [
       {
-        "id": "5d158c82-8cc7-4d06-ba60-71d2e554d7f5",
+        "id": "675e1438-bac6-4ac3-b521-3bb1ab171a18",
         "type": "paragraph",
         "text": "Alpha",
         "length": 5
       },
       {
-        "id": "ff543106-127c-473c-bb7d-3f0814d0973b",
+        "id": "3580ff62-3a04-47a2-b384-5868b727e7ad",
         "type": "paragraph",
         "text": "Bravo",
         "length": 5
       },
       {
-        "id": "657b7d9e-7727-4eb6-8727-c00e8f937f60",
+        "id": "58bdca9f-65be-4caa-84a1-24f43d9c8af2",
         "type": "paragraph",
         "text": "Charlie",
         "length": 7
@@ -98,8 +98,8 @@
   "browserName": "chromium",
   "step": "t1-block-first-first-mod-a",
   "loadavg": [
-    10.12060546875,
-    10.0595703125,
-    11.79443359375
+    5.6435546875,
+    9.72119140625,
+    15.4423828125
   ]
 }

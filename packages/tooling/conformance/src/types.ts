@@ -318,6 +318,7 @@ export type PenConformanceBridge = {
 	injectPresence(
 		peers: readonly PresencePeerInject[],
 	): Promise<PresenceSnapshot>;
+	serializePresenceAnchor(blockId: string, offset: number): string;
 	installBrokenProjector(): void;
 	forceUnwindowedDomDivergence(): ForcedDomDivergence;
 	domMatchesAuthority(): DomAuthorityCheck;

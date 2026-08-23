@@ -1,0 +1,91 @@
+{
+  "immediate": {
+    "selection": {
+      "type": "cell",
+      "blockId": "600470ba-ea28-4f82-b5ce-2fd53910be26",
+      "cellAnchor": {
+        "row": 0,
+        "col": 0
+      },
+      "cellHead": {
+        "row": 0,
+        "col": 1
+      }
+    },
+    "selectedText": "\t",
+    "blockCount": 2,
+    "blocks": [
+      {
+        "id": "760c6d2c-62d0-48fd-9a16-6f94637c1963",
+        "type": "paragraph",
+        "text": "/table",
+        "length": 6
+      },
+      {
+        "id": "600470ba-ea28-4f82-b5ce-2fd53910be26",
+        "type": "table",
+        "text": "",
+        "length": 0
+      }
+    ],
+    "native": {
+      "isCollapsed": true,
+      "text": "",
+      "rangeCount": 1
+    },
+    "overlayCaretCount": 0,
+    "selectionRectCount": 0,
+    "inlineAtomCount": 0,
+    "inlineAtomTypes": [],
+    "activeCaretColor": "rgb(24, 24, 27)",
+    "keyProbe": null
+  },
+  "settled": {
+    "selection": {
+      "type": "cell",
+      "blockId": "600470ba-ea28-4f82-b5ce-2fd53910be26",
+      "cellAnchor": {
+        "row": 0,
+        "col": 0
+      },
+      "cellHead": {
+        "row": 0,
+        "col": 1
+      }
+    },
+    "selectedText": "\t",
+    "blockCount": 2,
+    "blocks": [
+      {
+        "id": "760c6d2c-62d0-48fd-9a16-6f94637c1963",
+        "type": "paragraph",
+        "text": "/table",
+        "length": 6
+      },
+      {
+        "id": "600470ba-ea28-4f82-b5ce-2fd53910be26",
+        "type": "table",
+        "text": "",
+        "length": 0
+      }
+    ],
+    "native": {
+      "isCollapsed": true,
+      "text": "",
+      "rangeCount": 1
+    },
+    "overlayCaretCount": 0,
+    "selectionRectCount": 0,
+    "inlineAtomCount": 0,
+    "inlineAtomTypes": [],
+    "activeCaretColor": "rgb(24, 24, 27)",
+    "keyProbe": null
+  },
+  "browserName": "firefox",
+  "step": "t6-shift-arrow-cell",
+  "loadavg": [
+    6.87158203125,
+    7.76171875,
+    13.21728515625
+  ]
+}

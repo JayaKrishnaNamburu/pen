@@ -172,8 +172,7 @@ export abstract class FieldEditorImplCore {
 					blockId: this._focusBlockId,
 				});
 			},
-			getRecordVersion: () =>
-				getEditorSelectionRecord(this._editor)?.version ?? 0,
+			getRecord: () => getEditorSelectionRecord(this._editor),
 			emitDiagnostic: (event) => {
 				this._editor.internals.emit("diagnostic", event);
 			},

@@ -206,4 +206,213 @@ describe("editor.openTextStream (Wave 2.4)", () => {
 		writerB.close();
 		editor.destroy();
 	});
+
+	it("ST2: split-during-stream carries the write head with the moved tail", () => {
+		const editor = createEditor();
+		const source = editor.firstBlock()!.id;
+		editor.apply([
+			{ type: "insert-text", blockId: source, offset: 0, text: "meadow sage" },
+		]);
+
+		const writer = editor.openTextStream(
+			{ blockId: source },
+			{ origin: { type: "ai", groupId: "split-stream" } },
+		);
+		expect(writer.position).toEqual({ blockId: source, offset: 11 });
+
+		editor.apply([
+			{
+				type: "split-block",
+				blockId: source,
+				offset: 6,
+				newBlockId: "dest",
+			},
+		]);
+
+		expect(writer.position).toEqual({ blockId: "dest", offset: 5 });
+
+		writer.append("!");
+		writer.flush();
+		expect(visibleText(editor.getBlock(source)!.textContent())).toBe("meadow");
+		expect(visibleText(editor.getBlock("dest")!.textContent())).toBe(" sage!");
+		expect(writer.position).toEqual({ blockId: "dest", offset: 6 });
+
+		writer.close();
+		editor.destroy();
+	});
+
+	it("ST2: stream-head survival through split, merge, and removal", () => {
+		const editor = createEditor();
+		const target = editor.firstBlock()!.id;
+		editor.apply([
+			{ type: "insert-text", blockId: target, offset: 0, text: "meadow sage" },
+			{
+				type: "insert-block",
+				blockId: "keep",
+				blockType: "paragraph",
+				props: {},
+				position: "last",
+			},
+			{ type: "insert-text", blockId: "keep", offset: 0, text: "keep" },
+		]);
+
+		const writer = editor.openTextStream(
+			{ blockId: target },
+			{ origin: { type: "ai", groupId: "survive" } },
+		);
+
+		editor.apply([
+			{
+				type: "split-block",
+				blockId: target,
+				offset: 6,
+				newBlockId: "tail",
+			},
+		]);
+		expect(writer.position).toEqual({ blockId: "tail", offset: 5 });
+
+		writer.append("!");
+		writer.flush();
+		expect(visibleText(editor.getBlock("tail")!.textContent())).toBe(" sage!");
+		expect(writer.position).toEqual({ blockId: "tail", offset: 6 });
+
+		editor.apply([
+			{ type: "merge-blocks", targetBlockId: target, sourceBlockId: "tail" },
+		]);
+		expect(writer.position).toEqual({ blockId: target, offset: 12 });
+
+		writer.append("?");
+		writer.flush();
+		expect(visibleText(editor.getBlock(target)!.textContent())).toBe(
+			"meadow sage!?",
+		);
+		expect(writer.position).toEqual({ blockId: target, offset: 13 });
+
+		const lastKnown = writer.position;
+		const commits: CommitEvent[] = [];
+		editor.on("commit", (event) => {
+			commits.push(event);
+		});
+		editor.apply([{ type: "delete-block", blockId: target }]);
+		expect(editor.getBlock(target)).toBeNull();
+		expect(writer.position).toEqual(lastKnown);
+
+		writer.append("dropped");
+		writer.flush();
+		expect(commits).toHaveLength(1);
+		expect(
+			commits[0]?.summary.structural.some(
+				(change) => change.type === "block-removed" && change.blockId === target,
+			),
+		).toBe(true);
+		expect(visibleText(editor.getBlock("keep")!.textContent())).toBe("keep");
+
+		writer.close();
+		editor.destroy();
+	});
+
+	it("ST2: resolve null retries while the block lives and drops when it is gone", () => {
+		const editor = createEditor();
+		const blockId = editor.firstBlock()!.id;
+		const writer = editor.openTextStream(
+			{ blockId },
+			{ origin: { type: "ai", groupId: "null-resolve" } },
+		);
+		const start = writer.position;
+		const anchors = editor.anchors as {
+			resolve: typeof editor.anchors.resolve;
+		};
+		const originalResolve = anchors.resolve.bind(editor.anchors);
+		let forceNull = true;
+		anchors.resolve = (anchor) => {
+			if (forceNull) {
+				return null;
+			}
+			return originalResolve(anchor);
+		};
+
+		editor.apply([{ type: "insert-text", blockId, offset: 0, text: "x" }]);
+		expect(writer.position).toEqual(start);
+		expect(editor.getBlock(blockId)).not.toBeNull();
+
+		forceNull = false;
+		editor.apply([{ type: "insert-text", blockId, offset: 0, text: "y" }]);
+		expect(writer.position).toEqual({ blockId, offset: 2 });
+
+		forceNull = true;
+		editor.apply([{ type: "delete-block", blockId }]);
+		expect(editor.getBlock(blockId)).toBeNull();
+		expect(writer.position).toEqual({ blockId, offset: 2 });
+
+		const commits: CommitEvent[] = [];
+		editor.on("commit", (event) => {
+			commits.push(event);
+		});
+		writer.append("dropped");
+		writer.flush();
+		expect(commits).toHaveLength(0);
+
+		anchors.resolve = originalResolve;
+		writer.close();
+		editor.destroy();
+	});
+
+	it("ST2: merge-source head at offset 0 follows the join", () => {
+		const editor = createEditor();
+		const target = editor.firstBlock()!.id;
+		editor.apply([
+			{ type: "insert-text", blockId: target, offset: 0, text: "meadow" },
+			{
+				type: "insert-block",
+				blockId: "source",
+				blockType: "paragraph",
+				props: {},
+				position: "last",
+			},
+		]);
+
+		const writer = editor.openTextStream(
+			{ blockId: "source" },
+			{ origin: { type: "ai", groupId: "merge-zero" } },
+		);
+		expect(writer.position).toEqual({ blockId: "source", offset: 0 });
+
+		editor.apply([
+			{ type: "merge-blocks", targetBlockId: target, sourceBlockId: "source" },
+		]);
+		expect(writer.position).toEqual({ blockId: target, offset: 6 });
+
+		writer.append("!");
+		writer.flush();
+		expect(visibleText(editor.getBlock(target)!.textContent())).toBe("meadow!");
+		expect(writer.position).toEqual({ blockId: target, offset: 7 });
+
+		writer.close();
+		editor.destroy();
+	});
+
+	it("AN4: stream head liveCount is stable across ordinary flushes", () => {
+		const editor = createEditor();
+		const blockId = editor.firstBlock()!.id;
+		const writer = editor.openTextStream(
+			{ blockId },
+			{ origin: { type: "ai", groupId: "live-count" } },
+		);
+		writer.append("a");
+		writer.flush();
+		const afterAttach = editor.anchors.liveCount;
+
+		for (let i = 0; i < 99; i++) {
+			writer.append("a");
+			writer.flush();
+		}
+
+		expect(editor.anchors.liveCount).toBe(afterAttach);
+		expect(visibleText(editor.getBlock(blockId)!.textContent())).toBe(
+			"a".repeat(100),
+		);
+
+		writer.close();
+		editor.destroy();
+	});
 });

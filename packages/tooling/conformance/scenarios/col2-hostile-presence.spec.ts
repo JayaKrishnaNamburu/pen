@@ -1,5 +1,6 @@
 import { expect, type Page } from "@playwright/test";
 import {
+	MAX_PRESENCE_ANCHOR_LENGTH,
 	MAX_PRESENCE_BYTES_PER_PEER,
 	MAX_PRESENCE_DISPLAY_NAME_LENGTH,
 	MAX_PRESENCE_UPDATES_PER_SECOND,
@@ -21,6 +22,22 @@ function collectPageErrors(page: Page): string[] {
 		errors.push(error.message);
 	});
 	return errors;
+}
+
+async function serializePresenceAnchors(
+	page: Page,
+	points: ReadonlyArray<{ key: string; blockId: string; offset: number }>,
+): Promise<Record<string, string>> {
+	return page.evaluate((requested) => {
+		const encoded: Record<string, string> = {};
+		for (const point of requested) {
+			encoded[point.key] = window.__penConformance.serializePresenceAnchor(
+				point.blockId,
+				point.offset,
+			);
+		}
+		return encoded;
+	}, points);
 }
 
 async function waitForMultiplayer(page: Page): Promise<void> {
@@ -97,18 +114,30 @@ scenario(
 		await waitForMultiplayer(page);
 		await s.assert.xssProbeNotTripped();
 
+		const rateOffsets = Array.from({ length: 13 }, (_, offset) => offset);
+		const anchors = await serializePresenceAnchors(page, [
+			{ key: "good", blockId: "two-p1", offset: 2 },
+			{ key: "stale", blockId: "two-p2", offset: 1 },
+			{ key: "inRange", blockId: "two-p1", offset: 1 },
+			...rateOffsets.map((offset) => ({
+				key: `rate-${offset}`,
+				blockId: "two-p1",
+				offset,
+			})),
+		]);
+
 		const goodPeer = {
 			clientId: GOOD_PEER_ID,
 			state: {
 				user: { id: "u-good", name: "Grace", color: PEER_COLOR },
-				cursor: { blockId: "two-p1", offset: 2, clock: 10 },
+				cursor: { anchor: anchors.good, clock: 10 },
 			},
 		};
 		const stalePeer = {
 			clientId: STALE_PEER_ID,
 			state: {
 				user: { id: "u-stale", name: "SoonGone", color: PEER_COLOR },
-				cursor: { blockId: "two-p2", offset: 1, clock: 11 },
+				cursor: { anchor: anchors.stale, clock: 11 },
 			},
 		};
 
@@ -122,7 +151,7 @@ scenario(
 						id: "u-oversize",
 						name: "x".repeat(MAX_PRESENCE_DISPLAY_NAME_LENGTH + 1),
 					},
-					cursor: { blockId: "two-p1", offset: 1, clock: 12 },
+					cursor: { anchor: anchors.inRange, clock: 12 },
 				},
 			},
 			{
@@ -130,21 +159,21 @@ scenario(
 				state: {
 					user: { id: "u-huge", name: "Pad" },
 					padding: "x".repeat(MAX_PRESENCE_BYTES_PER_PEER),
-					cursor: { blockId: "two-p1", offset: 1, clock: 13 },
+					cursor: { anchor: anchors.inRange, clock: 13 },
 				},
 			},
 			{
 				clientId: 90,
 				state: {
 					user: { id: 2, name: "Invalid" },
-					cursor: { blockId: "two-p1", offset: 1, clock: 14 },
+					cursor: { anchor: anchors.inRange, clock: 14 },
 				},
 			},
 			{
 				clientId: 91,
 				state: {
 					user: { id: "u-xss", name: SCRIPT_NAME },
-					cursor: { blockId: "two-p1", offset: 1, clock: 15 },
+					cursor: { anchor: anchors.inRange, clock: 15 },
 				},
 			},
 			{
@@ -155,7 +184,7 @@ scenario(
 						name: "HostileJs",
 						avatar: HOSTILE_AVATAR_JS,
 					},
-					cursor: { blockId: "two-p1", offset: 1, clock: 16 },
+					cursor: { anchor: anchors.inRange, clock: 16 },
 				},
 			},
 			{
@@ -166,7 +195,7 @@ scenario(
 						name: "HostileHtml",
 						avatar: HOSTILE_AVATAR_HTML,
 					},
-					cursor: { blockId: "two-p1", offset: 1, clock: 17 },
+					cursor: { anchor: anchors.inRange, clock: 17 },
 				},
 			},
 			{
@@ -174,13 +203,28 @@ scenario(
 				state: {
 					user: { id: "u-ghost", name: "Ghost", color: PEER_COLOR },
 					cursor: { blockId: "missing-block", offset: 0, clock: 18 },
+					selection: {
+						kind: "block",
+						blockIds: ["missing-block"],
+						clock: 18,
+					},
 				},
 			},
 			{
 				clientId: 95,
 				state: {
 					user: { id: "u-far", name: "Far", color: PEER_COLOR },
-					cursor: { blockId: "two-p1", offset: 99, clock: 19 },
+					cursor: {
+						anchor: "x".repeat(MAX_PRESENCE_ANCHOR_LENGTH + 1),
+						clock: 19,
+					},
+				},
+			},
+			{
+				clientId: 96,
+				state: {
+					user: { id: "u-malformed", name: "Broken", color: PEER_COLOR },
+					cursor: { anchor: "{not-json", clock: 20 },
 				},
 			},
 		]);
@@ -213,9 +257,19 @@ scenario(
 			[],
 		);
 		expect(hostileSurface.renderedUserIds).toContain("u-good");
+		expect(hostileSurface.renderedUserIds).toContain("u-stale");
 		expect(hostileSurface.renderedUserIds).not.toContain("u-xss");
 		expect(hostileSurface.renderedUserIds).not.toContain("u-js");
 		expect(hostileSurface.renderedUserIds).not.toContain("u-html");
+		expect(hostileSurface.cursors.map((cursor) => cursor.userId)).not.toContain(
+			"u-ghost",
+		);
+		expect(hostileSurface.cursors.map((cursor) => cursor.userId)).not.toContain(
+			"u-far",
+		);
+		expect(hostileSurface.cursors.map((cursor) => cursor.userId)).not.toContain(
+			"u-malformed",
+		);
 		expect(hostileSurface.renderedNames.join("\n")).not.toContain("<script");
 		expect(hostileSurface.renderedNames.join("\n")).not.toContain(
 			"window.__xssProbe",
@@ -243,17 +297,21 @@ scenario(
 		const afterDelete = await scanPresenceSurface(page);
 		expect(afterDelete.probeTripped).toBe(false);
 		expect(afterDelete.hostileLiveUrls).toEqual([]);
+		expect(afterDelete.cursors.map((cursor) => cursor.userId)).toEqual([
+			"u-good",
+		]);
+		expect(afterDelete.peers.map((peer) => peer.userId)).toContain("u-stale");
 		expect(pageErrors, pageErrors.join("\n")).toEqual([]);
 
 		const rateUpdates = [];
 		for (let index = 0; index < MAX_PRESENCE_UPDATES_PER_SECOND + 8; index += 1) {
+			const offset = Math.min(index, 12);
 			rateUpdates.push({
 				clientId: GOOD_PEER_ID,
 				state: {
 					user: { id: "u-good", name: "Grace", color: PEER_COLOR },
 					cursor: {
-						blockId: "two-p1",
-						offset: Math.min(index, 12),
+						anchor: anchors[`rate-${offset}`],
 						clock: 100 + index,
 					},
 				},
@@ -284,7 +342,7 @@ scenario(
 						name: `Flood ${index}`,
 						color: PEER_COLOR,
 					},
-					cursor: { blockId: "two-p1", offset: 1, clock: 200 + index },
+					cursor: { anchor: anchors.inRange, clock: 200 + index },
 				},
 			});
 		}
@@ -322,7 +380,6 @@ scenario(
 			"wrong-typed",
 			"script-bearing",
 			"nonexistent-block",
-			"out-of-range-offset",
 			"rate-limited",
 			"peer-cap",
 		]) {

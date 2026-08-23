@@ -1,0 +1,93 @@
+{
+  "immediate": {
+    "selection": {
+      "type": "text",
+      "isCollapsed": true,
+      "isMultiBlock": false,
+      "anchor": {
+        "blockId": "760c6d2c-62d0-48fd-9a16-6f94637c1963",
+        "offset": 5
+      },
+      "focus": {
+        "blockId": "760c6d2c-62d0-48fd-9a16-6f94637c1963",
+        "offset": 5
+      }
+    },
+    "selectedText": "",
+    "blockCount": 2,
+    "blocks": [
+      {
+        "id": "760c6d2c-62d0-48fd-9a16-6f94637c1963",
+        "type": "paragraph",
+        "text": "/table",
+        "length": 6
+      },
+      {
+        "id": "600470ba-ea28-4f82-b5ce-2fd53910be26",
+        "type": "table",
+        "text": "",
+        "length": 0
+      }
+    ],
+    "native": {
+      "isCollapsed": true,
+      "text": "",
+      "rangeCount": 1
+    },
+    "overlayCaretCount": 1,
+    "selectionRectCount": 0,
+    "inlineAtomCount": 0,
+    "inlineAtomTypes": [],
+    "activeCaretColor": "rgba(0, 0, 0, 0)",
+    "keyProbe": null
+  },
+  "settled": {
+    "selection": {
+      "type": "text",
+      "isCollapsed": true,
+      "isMultiBlock": false,
+      "anchor": {
+        "blockId": "760c6d2c-62d0-48fd-9a16-6f94637c1963",
+        "offset": 5
+      },
+      "focus": {
+        "blockId": "760c6d2c-62d0-48fd-9a16-6f94637c1963",
+        "offset": 5
+      }
+    },
+    "selectedText": "",
+    "blockCount": 2,
+    "blocks": [
+      {
+        "id": "760c6d2c-62d0-48fd-9a16-6f94637c1963",
+        "type": "paragraph",
+        "text": "/table",
+        "length": 6
+      },
+      {
+        "id": "600470ba-ea28-4f82-b5ce-2fd53910be26",
+        "type": "table",
+        "text": "",
+        "length": 0
+      }
+    ],
+    "native": {
+      "isCollapsed": true,
+      "text": "",
+      "rangeCount": 1
+    },
+    "overlayCaretCount": 1,
+    "selectionRectCount": 0,
+    "inlineAtomCount": 0,
+    "inlineAtomTypes": [],
+    "activeCaretColor": "rgba(0, 0, 0, 0)",
+    "keyProbe": null
+  },
+  "browserName": "firefox",
+  "step": "t6-arrow-at-grid-edge",
+  "loadavg": [
+    6.87158203125,
+    7.76171875,
+    13.21728515625
+  ]
+}

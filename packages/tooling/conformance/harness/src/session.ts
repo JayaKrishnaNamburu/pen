@@ -694,6 +694,19 @@ function encodePeerPresence(
 	}
 }
 
+function serializePresenceAnchor(blockId: string, offset: number): string {
+	const minted = getHarnessSession().editor.anchors.create(
+		{ blockId, offset },
+		1,
+	);
+	if (minted === null) {
+		throw new Error(
+			`serializePresenceAnchor: could not mint at ${blockId}:${offset}`,
+		);
+	}
+	return getHarnessSession().editor.anchors.serialize(minted);
+}
+
 function presenceSnapshot(): PresenceSnapshot {
 	const controller = getMultiplayerController(getHarnessSession().editor);
 	if (!controller) {
@@ -990,6 +1003,7 @@ function installBridge(): void {
 		remoteSplice,
 		remoteInjectY,
 		injectPresence,
+		serializePresenceAnchor,
 		installBrokenProjector,
 		forceUnwindowedDomDivergence,
 		domMatchesAuthority: checkDomMatchesAuthority,

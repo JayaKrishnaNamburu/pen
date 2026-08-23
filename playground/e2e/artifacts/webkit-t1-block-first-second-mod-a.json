@@ -5,11 +5,11 @@
       "isCollapsed": false,
       "isMultiBlock": true,
       "anchor": {
-        "blockId": "c41d6890-786b-4fb7-86b6-79a2aad06e8a",
+        "blockId": "b5925164-36dc-45d8-8551-f5a9422e7bac",
         "offset": 0
       },
       "focus": {
-        "blockId": "0e145a71-3c5b-4b40-882a-a6db3924fb03",
+        "blockId": "4d3f8765-f91e-4f60-8abf-01a11cf62b5a",
         "offset": 7
       }
     },
@@ -17,27 +17,27 @@
     "blockCount": 3,
     "blocks": [
       {
-        "id": "c41d6890-786b-4fb7-86b6-79a2aad06e8a",
+        "id": "b5925164-36dc-45d8-8551-f5a9422e7bac",
         "type": "paragraph",
         "text": "Alpha",
         "length": 5
       },
       {
-        "id": "cc614042-9a51-4c00-8067-140be4df35aa",
+        "id": "f82b71e8-a1ea-4291-aee1-addf607a9298",
         "type": "paragraph",
         "text": "Bravo",
         "length": 5
       },
       {
-        "id": "0e145a71-3c5b-4b40-882a-a6db3924fb03",
+        "id": "4d3f8765-f91e-4f60-8abf-01a11cf62b5a",
         "type": "paragraph",
         "text": "Charlie",
         "length": 7
       }
     ],
     "native": {
-      "isCollapsed": false,
-      "text": "Alpha\n\nBravo\n\nCharlie",
+      "isCollapsed": true,
+      "text": "",
       "rangeCount": 1
     },
     "overlayCaretCount": 0,
@@ -53,11 +53,11 @@
       "isCollapsed": false,
       "isMultiBlock": true,
       "anchor": {
-        "blockId": "c41d6890-786b-4fb7-86b6-79a2aad06e8a",
+        "blockId": "b5925164-36dc-45d8-8551-f5a9422e7bac",
         "offset": 0
       },
       "focus": {
-        "blockId": "0e145a71-3c5b-4b40-882a-a6db3924fb03",
+        "blockId": "4d3f8765-f91e-4f60-8abf-01a11cf62b5a",
         "offset": 7
       }
     },
@@ -65,19 +65,19 @@
     "blockCount": 3,
     "blocks": [
       {
-        "id": "c41d6890-786b-4fb7-86b6-79a2aad06e8a",
+        "id": "b5925164-36dc-45d8-8551-f5a9422e7bac",
         "type": "paragraph",
         "text": "Alpha",
         "length": 5
       },
       {
-        "id": "cc614042-9a51-4c00-8067-140be4df35aa",
+        "id": "f82b71e8-a1ea-4291-aee1-addf607a9298",
         "type": "paragraph",
         "text": "Bravo",
         "length": 5
       },
       {
-        "id": "0e145a71-3c5b-4b40-882a-a6db3924fb03",
+        "id": "4d3f8765-f91e-4f60-8abf-01a11cf62b5a",
         "type": "paragraph",
         "text": "Charlie",
         "length": 7
@@ -98,8 +98,8 @@
   "browserName": "webkit",
   "step": "t1-block-first-second-mod-a",
   "loadavg": [
-    11.79248046875,
-    10.40673828125,
-    11.90673828125
+    5.5380859375,
+    9.23193359375,
+    15.03173828125
   ]
 }

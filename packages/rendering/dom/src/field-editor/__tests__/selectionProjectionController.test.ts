@@ -1,13 +1,35 @@
 import { describe, expect, it } from "vitest";
+import type { SelectionRecord } from "@input/pen-types";
 import { HistorySelectionCoordinator } from "../historySelectionCoordinator";
 import { SelectionProjectionController } from "../selectionProjectionController";
 
-function createController() {
+function programmaticRecord(
+	blockId: string,
+	anchorOffset: number,
+	focusOffset: number,
+	version = 1,
+): SelectionRecord {
+	return {
+		state: {
+			type: "text",
+			anchor: { blockId, offset: anchorOffset },
+			focus: { blockId, offset: focusOffset },
+			affinity: "downstream",
+			goalX: null,
+		},
+		version,
+		origin: "programmatic",
+		commitId: 0,
+	};
+}
+
+function createController(initialRecord: SelectionRecord | null = null) {
 	const setTextSelection: Array<{
 		blockId: string;
 		anchorOffset: number;
 		focusOffset: number;
 	}> = [];
+	let record = initialRecord;
 	const controller = new SelectionProjectionController({
 		historySelectionCoordinator: new HistorySelectionCoordinator({
 			facet: () => undefined as never,
@@ -24,15 +46,22 @@ function createController() {
 		updateBackendSelection: () => {},
 		setTextSelection: (blockId, anchorOffset, focusOffset) => {
 			setTextSelection.push({ blockId, anchorOffset, focusOffset });
+			record = programmaticRecord(
+				blockId,
+				anchorOffset,
+				focusOffset,
+				(record?.version ?? 0) + 1,
+			);
 		},
 		activate: () => {},
 		emitSelectionProjected: () => {},
+		getRecord: () => record,
 	});
 	return { controller, setTextSelection };
 }
 
 describe("SelectionProjectionController shouldIgnoreDomTextSelection", () => {
-	it("ignores leftover native range on another block after a programmatic stamp", () => {
+	it("ignores leftover native range on another block after a programmatic record write", () => {
 		const { controller } = createController();
 		controller.commitProgrammaticTextSelection("inserted", 0, 0);
 
@@ -49,14 +78,11 @@ describe("SelectionProjectionController shouldIgnoreDomTextSelection", () => {
 		controller.recordProjectedVersion(9);
 		controller.reset();
 		expect(controller.lastProjectedVersion).toBe(9);
-		expect(controller.peekProgrammaticTextSelection()).toBeNull();
 	});
 
-	it("keeps the leftover-ignore stamp across a session-switch reset", () => {
+	it("keeps leftover-ignore across a session-switch reset because it reads the record", () => {
 		const { controller } = createController();
 		controller.commitProgrammaticTextSelection("inserted", 0, 0);
-		const stamp = controller.peekProgrammaticTextSelection();
-		expect(stamp?.blockId).toBe("inserted");
 
 		controller.reset();
 		expect(
@@ -64,15 +90,88 @@ describe("SelectionProjectionController shouldIgnoreDomTextSelection", () => {
 				{ blockId: "first", offset: 5 },
 				{ blockId: "first", offset: 5 },
 			),
-		).toBe(false);
+		).toBe(true);
+	});
 
-		controller.restoreProgrammaticTextSelection(stamp!);
+	it("does not ignore leftover ranges while a pointer window is open", () => {
+		const { controller } = createController();
+		controller.commitProgrammaticTextSelection("inserted", 0, 0);
+		controller.beginPointerSelection();
 		expect(
 			controller.shouldIgnoreDomTextSelection(
 				{ blockId: "first", offset: 5 },
 				{ blockId: "first", offset: 5 },
 			),
-		).toBe(true);
+		).toBe(false);
+	});
+});
+
+describe("SelectionProjectionController resolveProgrammaticInputRange", () => {
+	it("returns the record caret when the live range is a stale collapse", () => {
+		const { controller } = createController();
+		controller.commitProgrammaticTextSelection("hello", 3, 3);
+
+		expect(
+			controller.resolveProgrammaticInputRange("hello", {
+				start: 11,
+				end: 11,
+			}),
+		).toEqual({ start: 3, end: 3 });
+		expect(
+			controller.resolveProgrammaticInputRange("hello", {
+				start: 3,
+				end: 3,
+			}),
+		).toBeNull();
+		expect(
+			controller.resolveProgrammaticInputRange("other", {
+				start: 11,
+				end: 11,
+			}),
+		).toBeNull();
+	});
+
+	it("consumes a record version after one input resolve so the next keystroke uses live", () => {
+		const { controller } = createController();
+		controller.commitProgrammaticTextSelection("hello", 0, 0);
+
+		expect(
+			controller.resolveProgrammaticInputRange("hello", {
+				start: 0,
+				end: 0,
+			}),
+		).toBeNull();
+		expect(
+			controller.resolveProgrammaticInputRange("hello", {
+				start: 2,
+				end: 2,
+			}),
+		).toEqual({ start: 0, end: 0 });
+		expect(
+			controller.resolveProgrammaticInputRange("hello", {
+				start: 2,
+				end: 2,
+			}),
+		).toBeNull();
+
+		controller.commitProgrammaticTextSelection("hello", 1, 1);
+		expect(
+			controller.resolveProgrammaticInputRange("hello", {
+				start: 2,
+				end: 2,
+			}),
+		).toEqual({ start: 1, end: 1 });
+	});
+
+	it("does not override live after activate without a programmatic commit", () => {
+		const { controller } = createController();
+		controller.activateTextSelection("hello", 0, 0);
+		expect(
+			controller.resolveProgrammaticInputRange("hello", {
+				start: 5,
+				end: 5,
+			}),
+		).toBeNull();
 	});
 });
 

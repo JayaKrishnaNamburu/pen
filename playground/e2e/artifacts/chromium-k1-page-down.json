@@ -5,11 +5,11 @@
       "isCollapsed": true,
       "isMultiBlock": false,
       "anchor": {
-        "blockId": "9966e46b-1432-4ab2-9df5-602da76ce265",
+        "blockId": "d24fc3a7-5b43-4e7f-968e-fd851bffd82c",
         "offset": 5
       },
       "focus": {
-        "blockId": "9966e46b-1432-4ab2-9df5-602da76ce265",
+        "blockId": "d24fc3a7-5b43-4e7f-968e-fd851bffd82c",
         "offset": 5
       }
     },
@@ -17,13 +17,13 @@
     "blockCount": 2,
     "blocks": [
       {
-        "id": "9966e46b-1432-4ab2-9df5-602da76ce265",
+        "id": "d24fc3a7-5b43-4e7f-968e-fd851bffd82c",
         "type": "paragraph",
         "text": "Alpha",
         "length": 5
       },
       {
-        "id": "190a741c-4701-48ed-ab30-34c9683655c7",
+        "id": "56c8bca7-8cf8-460a-a805-aa6dea342600",
         "type": "paragraph",
         "text": "Bravo",
         "length": 5
@@ -50,11 +50,11 @@
       "isCollapsed": true,
       "isMultiBlock": false,
       "anchor": {
-        "blockId": "9966e46b-1432-4ab2-9df5-602da76ce265",
+        "blockId": "d24fc3a7-5b43-4e7f-968e-fd851bffd82c",
         "offset": 5
       },
       "focus": {
-        "blockId": "9966e46b-1432-4ab2-9df5-602da76ce265",
+        "blockId": "d24fc3a7-5b43-4e7f-968e-fd851bffd82c",
         "offset": 5
       }
     },
@@ -62,13 +62,13 @@
     "blockCount": 2,
     "blocks": [
       {
-        "id": "9966e46b-1432-4ab2-9df5-602da76ce265",
+        "id": "d24fc3a7-5b43-4e7f-968e-fd851bffd82c",
         "type": "paragraph",
         "text": "Alpha",
         "length": 5
       },
       {
-        "id": "190a741c-4701-48ed-ab30-34c9683655c7",
+        "id": "56c8bca7-8cf8-460a-a805-aa6dea342600",
         "type": "paragraph",
         "text": "Bravo",
         "length": 5
@@ -92,8 +92,8 @@
   "browserName": "chromium",
   "step": "k1-page-down",
   "loadavg": [
-    10.12060546875,
-    10.0595703125,
-    11.79443359375
+    5.32958984375,
+    9.5166015625,
+    15.30224609375
   ]
 }

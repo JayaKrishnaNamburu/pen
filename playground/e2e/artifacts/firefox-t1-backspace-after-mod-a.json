@@ -1,0 +1,81 @@
+{
+  "immediate": {
+    "selection": {
+      "type": "text",
+      "isCollapsed": true,
+      "isMultiBlock": false,
+      "anchor": {
+        "blockId": "dbe45acf-55ee-4fd3-aa02-ec184f28ef55",
+        "offset": 0
+      },
+      "focus": {
+        "blockId": "dbe45acf-55ee-4fd3-aa02-ec184f28ef55",
+        "offset": 0
+      }
+    },
+    "selectedText": "",
+    "blockCount": 1,
+    "blocks": [
+      {
+        "id": "dbe45acf-55ee-4fd3-aa02-ec184f28ef55",
+        "type": "paragraph",
+        "text": "",
+        "length": 0
+      }
+    ],
+    "native": {
+      "isCollapsed": true,
+      "text": "",
+      "rangeCount": 1
+    },
+    "overlayCaretCount": 1,
+    "selectionRectCount": 0,
+    "inlineAtomCount": 0,
+    "inlineAtomTypes": [],
+    "activeCaretColor": "rgba(0, 0, 0, 0)",
+    "keyProbe": null
+  },
+  "settled": {
+    "selection": {
+      "type": "text",
+      "isCollapsed": true,
+      "isMultiBlock": false,
+      "anchor": {
+        "blockId": "dbe45acf-55ee-4fd3-aa02-ec184f28ef55",
+        "offset": 0
+      },
+      "focus": {
+        "blockId": "dbe45acf-55ee-4fd3-aa02-ec184f28ef55",
+        "offset": 0
+      }
+    },
+    "selectedText": "",
+    "blockCount": 1,
+    "blocks": [
+      {
+        "id": "dbe45acf-55ee-4fd3-aa02-ec184f28ef55",
+        "type": "paragraph",
+        "text": "",
+        "length": 0
+      }
+    ],
+    "native": {
+      "isCollapsed": true,
+      "text": "",
+      "rangeCount": 1
+    },
+    "overlayCaretCount": 1,
+    "selectionRectCount": 0,
+    "inlineAtomCount": 0,
+    "inlineAtomTypes": [],
+    "activeCaretColor": "rgba(0, 0, 0, 0)",
+    "keyProbe": null
+  },
+  "browserName": "firefox",
+  "step": "t1-backspace-after-mod-a",
+  "loadavg": [
+    4.81591796875,
+    7.7353515625,
+    13.61279296875
+  ]
+}

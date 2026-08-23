@@ -155,7 +155,7 @@ describe("createTextStreamWriter", () => {
 		expect(closes).toHaveLength(0);
 	});
 
-	it("ST2: position is maintained via mapPoint", () => {
+	it("ST2: position tracks getPoint plus pending delta", () => {
 		const applies: DocumentOp[][] = [];
 		const point = { current: { blockId: "b1", offset: 1 } };
 		const writer = createTextStreamWriter({
@@ -163,20 +163,16 @@ describe("createTextStreamWriter", () => {
 				applies.push(ops);
 			},
 			getPoint: () => point.current,
-			mapPoint: (next) => ({
-				blockId: next.blockId,
-				offset: next.offset + 10,
-			}),
 			origin: { type: "ai", groupId: "stream-1" },
 		});
 
-		expect(writer.position).toEqual({ blockId: "b1", offset: 11 });
+		expect(writer.position).toEqual({ blockId: "b1", offset: 1 });
 
 		writer.append("ab");
-		expect(writer.position).toEqual({ blockId: "b1", offset: 13 });
+		expect(writer.position).toEqual({ blockId: "b1", offset: 3 });
 
 		point.current = { blockId: "b1", offset: 4 };
-		expect(writer.position).toEqual({ blockId: "b1", offset: 16 });
+		expect(writer.position).toEqual({ blockId: "b1", offset: 6 });
 
 		writer.flush();
 		expect(applies).toEqual([
@@ -184,7 +180,7 @@ describe("createTextStreamWriter", () => {
 				{
 					type: "insert-text",
 					blockId: "b1",
-					offset: 14,
+					offset: 4,
 					text: "ab",
 				},
 			],

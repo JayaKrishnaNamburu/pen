@@ -361,11 +361,6 @@ export abstract class FieldEditorImplSelection extends FieldEditorImplLifecycle 
 			this._pendingMarkController.clear(true);
 		}
 		this._editor.selectText(blockId, anchorOffset, focusOffset);
-		this._selectionCoordinator.notifyTextSelectionSet(
-			blockId,
-			anchorOffset,
-			focusOffset,
-		);
 		this._emitStateChange();
 	}
 

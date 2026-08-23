@@ -47,24 +47,6 @@ export class FieldEditorSelectionCoordinator {
 		this._projection.ackBlockMounted(blockId, element);
 	}
 
-	peekProgrammaticTextSelection(): {
-		blockId: string;
-		anchorOffset: number;
-		focusOffset: number;
-		selectionIntentEpoch: number;
-	} | null {
-		return this._projection.peekProgrammaticTextSelection();
-	}
-
-	restoreProgrammaticTextSelection(selection: {
-		blockId: string;
-		anchorOffset: number;
-		focusOffset: number;
-		selectionIntentEpoch: number;
-	}): void {
-		this._projection.restoreProgrammaticTextSelection(selection);
-	}
-
 	resetAuthority(): void {
 		this._authority.reset();
 		this._editContextSelection = null;
@@ -194,18 +176,6 @@ export class FieldEditorSelectionCoordinator {
 	): "skip" | "apply" {
 		return this._projection.prepareSyncedTextSelection(
 			currentSelection,
-			blockId,
-			anchorOffset,
-			focusOffset,
-		);
-	}
-
-	notifyTextSelectionSet(
-		blockId: string,
-		anchorOffset: number,
-		focusOffset: number,
-	): void {
-		this._projection.notifyTextSelectionSet(
 			blockId,
 			anchorOffset,
 			focusOffset,

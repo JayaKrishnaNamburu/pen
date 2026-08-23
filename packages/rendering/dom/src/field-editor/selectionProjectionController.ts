@@ -1,5 +1,9 @@
 import { isMultiBlock } from "@input/pen-core";
-import type { DiagnosticEvent, SelectionState } from "@input/pen-types";
+import type {
+	DiagnosticEvent,
+	SelectionRecord,
+	SelectionState,
+} from "@input/pen-types";
 import type { PenFieldEditorFocusOptions } from "./controller";
 import type { HistorySelectionCoordinator } from "./historySelectionCoordinator";
 import {
@@ -14,7 +18,6 @@ type ProgrammaticTextSelection = {
 	blockId: string;
 	anchorOffset: number;
 	focusOffset: number;
-	selectionIntentEpoch: number;
 };
 
 type ProjectionOptions = {
@@ -48,7 +51,7 @@ type SelectionProjectionControllerOptions = {
 	) => void;
 	activate: (blockId: string) => void;
 	emitSelectionProjected: () => void;
-	getRecordVersion?: () => number;
+	getRecord?: () => SelectionRecord | null;
 	emitDiagnostic?: (event: DiagnosticEvent) => void;
 };
 
@@ -56,17 +59,12 @@ export class SelectionProjectionController {
 	private readonly _historySelectionCoordinator: HistorySelectionCoordinator;
 	private readonly _options: SelectionProjectionControllerOptions;
 	private _syncDomVersion = 0;
-	private _pointerSelectionDepth = 0;
 	private _gestureWindows: GestureWindowState = CLOSED_GESTURE_WINDOWS;
 	private _pointerSettledBound = false;
 	private _pendingSelectionProjectionVersion: number | null = null;
-	private _selectionIntentEpoch = 0;
-	private _programmaticTextSelection: ProgrammaticTextSelection | null = null;
-	private _pendingProgrammaticTextSelection: ProgrammaticTextSelection | null =
-		null;
-	private _committedProgrammaticTextSelection: ProgrammaticTextSelection | null =
-		null;
 	private _lastProjectedVersion = 0;
+	private _programmaticInputVersion: number | null = null;
+	private _consumedInputRecordVersion: number | null = null;
 	private _parked: { version: number; blockId: string | null } | null = null;
 
 	constructor(options: SelectionProjectionControllerOptions) {
@@ -75,11 +73,8 @@ export class SelectionProjectionController {
 	}
 
 	reset(): void {
-		this._programmaticTextSelection = null;
-		this._pendingProgrammaticTextSelection = null;
-		this._committedProgrammaticTextSelection = null;
-		this._pointerSelectionDepth = 0;
 		this._pendingSelectionProjectionVersion = null;
+		this._consumedInputRecordVersion = null;
 		this._gestureWindows = CLOSED_GESTURE_WINDOWS;
 		this._pointerSettledBound = false;
 	}
@@ -103,37 +98,12 @@ export class SelectionProjectionController {
 		this.syncDomSelectionOnce();
 	}
 
-	peekProgrammaticTextSelection(): ProgrammaticTextSelection | null {
-		const current = this._readProgrammaticTextSelection();
-		if (!current) {
-			return null;
-		}
-		return { ...current };
-	}
-
-	restoreProgrammaticTextSelection(
-		selection: ProgrammaticTextSelection,
-	): void {
-		this._programmaticTextSelection = { ...selection };
-		this._pendingProgrammaticTextSelection = { ...selection };
-	}
-
 	beginPointerSelection(): void {
-		this.recordUserSelectionIntent();
-		this._pointerSelectionDepth += 1;
 		this.notifyGestureEvent("pointerdown");
 	}
 
 	endPointerSelection(): void {
-		if (this._pointerSelectionDepth === 0) {
-			this.notifyGestureEvent("pointerup");
-			return;
-		}
-		this._pointerSelectionDepth -= 1;
-		this.recordUserSelectionIntent();
-		if (this._pointerSelectionDepth === 0) {
-			this.notifyGestureEvent("pointerup");
-		}
+		this.notifyGestureEvent("pointerup");
 	}
 
 	consumeDomSelectionProjectionSuppression(): boolean {
@@ -188,8 +158,15 @@ export class SelectionProjectionController {
 		if (!programmaticSelection) {
 			return null;
 		}
+		const recordVersion = this._options.getRecord?.()?.version ?? null;
+		if (
+			recordVersion != null &&
+			this._consumedInputRecordVersion === recordVersion
+		) {
+			return null;
+		}
 		if (!liveRange) {
-			this._clearProgrammaticTextSelections();
+			this._consumedInputRecordVersion = recordVersion;
 			return {
 				start: programmaticSelection.anchorOffset,
 				end: programmaticSelection.focusOffset,
@@ -200,7 +177,7 @@ export class SelectionProjectionController {
 			(liveRange.start !== programmaticSelection.anchorOffset ||
 				liveRange.end !== programmaticSelection.focusOffset)
 		) {
-			this._clearProgrammaticTextSelections();
+			this._consumedInputRecordVersion = recordVersion;
 			return {
 				start: programmaticSelection.anchorOffset,
 				end: programmaticSelection.focusOffset,
@@ -240,8 +217,6 @@ export class SelectionProjectionController {
 		anchorOffset: number,
 		focusOffset: number,
 	): "skip" | "apply" {
-		const pendingProgrammaticSelection =
-			this._pendingProgrammaticTextSelection;
 		const isAlreadyCurrentSelection =
 			currentSelection?.type === "text" &&
 			!isMultiBlock(currentSelection) &&
@@ -250,62 +225,10 @@ export class SelectionProjectionController {
 			currentSelection.anchor.offset === anchorOffset &&
 			currentSelection.focus.offset === focusOffset;
 		if (isAlreadyCurrentSelection) {
-			if (
-				pendingProgrammaticSelection &&
-				pendingProgrammaticSelection.blockId === blockId &&
-				pendingProgrammaticSelection.anchorOffset === anchorOffset &&
-				pendingProgrammaticSelection.focusOffset === focusOffset
-			) {
-				this._pendingProgrammaticTextSelection = null;
-			}
 			return "skip";
 		}
-
-		if (
-			pendingProgrammaticSelection &&
-			(pendingProgrammaticSelection.blockId !== blockId ||
-				pendingProgrammaticSelection.anchorOffset !== anchorOffset ||
-				pendingProgrammaticSelection.focusOffset !== focusOffset)
-		) {
-			this.recordUserSelectionIntent();
-		} else if (!pendingProgrammaticSelection) {
-			this._selectionIntentEpoch += 1;
-		}
+		this.recordUserSelectionIntent();
 		return "apply";
-	}
-
-	notifyTextSelectionSet(
-		blockId: string,
-		anchorOffset: number,
-		focusOffset: number,
-	): void {
-		const programmaticSelection = this._programmaticTextSelection;
-		if (
-			programmaticSelection &&
-			(programmaticSelection.blockId !== blockId ||
-				programmaticSelection.anchorOffset !== anchorOffset ||
-				programmaticSelection.focusOffset !== focusOffset)
-		) {
-			this._programmaticTextSelection = null;
-		}
-		const pendingProgrammaticSelection =
-			this._pendingProgrammaticTextSelection;
-		if (
-			pendingProgrammaticSelection &&
-			(pendingProgrammaticSelection.blockId !== blockId ||
-				pendingProgrammaticSelection.anchorOffset !== anchorOffset ||
-				pendingProgrammaticSelection.focusOffset !== focusOffset)
-		) {
-			this._pendingProgrammaticTextSelection = null;
-		}
-		if (
-			programmaticSelection &&
-			programmaticSelection.blockId === blockId &&
-			programmaticSelection.anchorOffset === anchorOffset &&
-			programmaticSelection.focusOffset === focusOffset
-		) {
-			this._committedProgrammaticTextSelection = programmaticSelection;
-		}
 	}
 
 	activateTextSelection(
@@ -314,9 +237,7 @@ export class SelectionProjectionController {
 		focusOffset: number,
 		options?: PenFieldEditorFocusOptions,
 	): void {
-		this._programmaticTextSelection = null;
-		this._pendingProgrammaticTextSelection = null;
-		this._committedProgrammaticTextSelection = null;
+		this._programmaticInputVersion = null;
 		this.projectTextSelection(blockId, anchorOffset, focusOffset, options);
 	}
 
@@ -326,23 +247,12 @@ export class SelectionProjectionController {
 		focusOffset: number,
 		options: PenFieldEditorFocusOptions = {},
 	): void {
-		this._programmaticTextSelection = {
-			blockId,
-			anchorOffset,
-			focusOffset,
-			selectionIntentEpoch: this._selectionIntentEpoch,
-		};
-		this._pendingProgrammaticTextSelection = {
-			blockId,
-			anchorOffset,
-			focusOffset,
-			selectionIntentEpoch: this._selectionIntentEpoch,
-		};
-		this._committedProgrammaticTextSelection = null;
 		this.projectTextSelection(blockId, anchorOffset, focusOffset, {
 			...options,
 			syncBackendImmediately: true,
 		});
+		this._programmaticInputVersion =
+			this._options.getRecord?.()?.version ?? null;
 	}
 
 	projectTextSelection(
@@ -396,7 +306,7 @@ export class SelectionProjectionController {
 
 		if (projected) {
 			this._parked = null;
-			const recordVersion = this._options.getRecordVersion?.();
+			const recordVersion = this._options.getRecord?.()?.version;
 			if (recordVersion != null) {
 				this._lastProjectedVersion = recordVersion;
 			}
@@ -415,7 +325,7 @@ export class SelectionProjectionController {
 	}
 
 	private _parkProjection(): void {
-		const recordVersion = this._options.getRecordVersion?.() ?? 0;
+		const recordVersion = this._options.getRecord?.()?.version ?? 0;
 		this._parked = {
 			version: recordVersion,
 			blockId: this._options.getFocusBlockId(),
@@ -452,8 +362,8 @@ export class SelectionProjectionController {
 	}
 
 	recordUserSelectionIntent(): void {
-		this._selectionIntentEpoch += 1;
-		this._clearProgrammaticTextSelections();
+		this._programmaticInputVersion = null;
+		this._consumedInputRecordVersion = null;
 		const pendingProjectionVersion =
 			this._pendingSelectionProjectionVersion;
 		if (pendingProjectionVersion !== null) {
@@ -533,6 +443,13 @@ export class SelectionProjectionController {
 		if (!blockId || programmaticSelection?.blockId !== blockId) {
 			return null;
 		}
+		const recordVersion = this._options.getRecord?.()?.version ?? null;
+		if (
+			recordVersion == null ||
+			recordVersion !== this._programmaticInputVersion
+		) {
+			return null;
+		}
 		return programmaticSelection;
 	}
 
@@ -547,16 +464,28 @@ export class SelectionProjectionController {
 	}
 
 	private _readProgrammaticTextSelection(): ProgrammaticTextSelection | null {
-		return (
-			this._programmaticTextSelection ??
-			this._pendingProgrammaticTextSelection ??
-			this._committedProgrammaticTextSelection
-		);
-	}
-
-	private _clearProgrammaticTextSelections(): void {
-		this._programmaticTextSelection = null;
-		this._pendingProgrammaticTextSelection = null;
-		this._committedProgrammaticTextSelection = null;
+		if (isAdmissibleDomRead("selectionchange", this._gestureWindows)) {
+			return null;
+		}
+		const record = this._options.getRecord?.();
+		if (
+			!record ||
+			record.origin === "pointer" ||
+			record.origin === "ime"
+		) {
+			return null;
+		}
+		const state = record.state;
+		if (state?.type !== "text") {
+			return null;
+		}
+		if (state.anchor.blockId !== state.focus.blockId) {
+			return null;
+		}
+		return {
+			blockId: state.anchor.blockId,
+			anchorOffset: state.anchor.offset,
+			focusOffset: state.focus.offset,
+		};
 	}
 }

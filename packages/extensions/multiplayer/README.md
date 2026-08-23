@@ -33,14 +33,16 @@ Pen treats remote awareness as untrusted input. One validator owns the payload a
 | Reason                | When                                                                                |
 | --------------------- | ----------------------------------------------------------------------------------- |
 | `oversized`           | A string or the whole payload exceeds a bound                                       |
-| `wrong-typed`         | Invalid shape or type, or a forbidden key (`__proto__`, `constructor`, `prototype`) |
+| `wrong-typed`         | Invalid shape or type, a forbidden key (`__proto__`, `constructor`, `prototype`), or offset-form cursor/selection (`{ blockId, offset }`) |
 | `script-bearing`      | Script/markup in a string, or a hostile avatar scheme                               |
-| `nonexistent-block`   | Cursor or selection names a block that is not in the local document                 |
-| `out-of-range-offset` | Offset is outside the block                                                         |
+| `nonexistent-block`   | A block selection names a block that is not in the local document                   |
+| `out-of-range-offset` | Reserved; cursor offsets are no longer on the wire                                  |
 | `rate-limited`        | More than `MAX_PRESENCE_UPDATES_PER_SECOND` updates from that peer                  |
 | `peer-cap`            | Extra peers past `MAX_TRACKED_PEERS`                                                |
 
-A bad `user` drops the whole peer. A bad cursor or selection is dropped for that field only; a valid user can still appear. Cursor and selection ranges are resolved against the local document — a nonexistent block is not rendered. Undeclared keys are ignored: hosts may carry their own presence data, and Pen never interprets it.
+Awareness `cursor` / text `selection` are serialized anchors only (`{ anchor, clock }` / `{ anchor, head, clock }`). Offset-form payloads are `wrong-typed` and never reach the decoder. The shape and `MAX_PRESENCE_ANCHOR_LENGTH` checks run before decode.
+
+A bad `user` drops the whole peer. A bad cursor or selection is dropped for that field only; a valid user can still appear. A serialized anchor that does not resolve hides that caret until the next awareness frame — the peer is not treated as departed. Undeclared keys are ignored: hosts may carry their own presence data, and Pen never interprets it.
 
 ### Peer cap and rate limit
 
@@ -54,6 +56,7 @@ A bad `user` drops the whole peer. A bad cursor or selection is dropped for that
 | Avatar URL                    | `MAX_PRESENCE_AVATAR_URL_LENGTH`   | 2048    |
 | Color                         | `MAX_PRESENCE_COLOR_LENGTH`        | 64      |
 | Awareness bytes per peer      | `MAX_PRESENCE_BYTES_PER_PEER`      | 4096    |
+| Serialized presence anchor    | `MAX_PRESENCE_ANCHOR_LENGTH`       | 768     |
 | Block ids per block selection | `MAX_PRESENCE_BLOCK_SELECTION_IDS` | 256     |
 | Cursor / selection offset     | `MAX_PRESENCE_OFFSET`              | 1048576 |
 | Updates per second per peer   | `MAX_PRESENCE_UPDATES_PER_SECOND`  | 10      |

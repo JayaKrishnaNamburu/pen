@@ -1,6 +1,6 @@
 /**
  * Stream buffer/flush client (ST1–ST4, `spec-v2/06-commit-pipeline.md`).
- * `editor.openTextStream` wires this to apply, summaries, defer, and undo.
+ * `editor.openTextStream` wires this to apply, the write head, defer, and undo.
  */
 
 import type {
@@ -30,7 +30,6 @@ export interface TextStreamWriter {
 export interface CreateTextStreamWriterOptions {
 	apply: (ops: DocumentOp[], options?: ApplyOptions) => void;
 	getPoint: () => Point;
-	mapPoint?: (point: Point) => Point;
 	onClose?: (info: { deferNormalization: boolean }) => void;
 	origin?: OpOrigin;
 	flushIntervalMs?: number;
@@ -126,8 +125,7 @@ export function createTextStreamWriter(
 	let pendingHeadDelta = 0;
 
 	function committedPoint(): Point {
-		const point = options.getPoint();
-		return options.mapPoint?.(point) ?? point;
+		return options.getPoint();
 	}
 
 	function clearTimer(): void {
