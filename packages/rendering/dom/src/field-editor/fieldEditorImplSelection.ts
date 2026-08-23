@@ -182,6 +182,10 @@ export abstract class FieldEditorImplSelection extends FieldEditorImplLifecycle 
 		return this._selectionCoordinator.isAdmissibleGestureRead();
 	}
 
+	requestDivergenceProjection(): void {
+		this._selectionCoordinator.requestDivergenceProjection();
+	}
+
 	readDomSelection(proposal: ReaderSelection): DomSelectionReadDecision {
 		const decided = decideDomSelectionRead({
 			editor: this._editor,

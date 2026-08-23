@@ -5,11 +5,11 @@
       "isCollapsed": true,
       "isMultiBlock": false,
       "anchor": {
-        "blockId": "dc5f91de-8117-43f7-8a72-15ac233f3ad4",
+        "blockId": "98511a0b-90a4-4798-a3ed-42cb4dd82803",
         "offset": 3
       },
       "focus": {
-        "blockId": "dc5f91de-8117-43f7-8a72-15ac233f3ad4",
+        "blockId": "98511a0b-90a4-4798-a3ed-42cb4dd82803",
         "offset": 3
       }
     },
@@ -17,7 +17,7 @@
     "blockCount": 1,
     "blocks": [
       {
-        "id": "dc5f91de-8117-43f7-8a72-15ac233f3ad4",
+        "id": "98511a0b-90a4-4798-a3ed-42cb4dd82803",
         "type": "paragraph",
         "text": "Hello",
         "length": 5
@@ -41,11 +41,11 @@
       "isCollapsed": true,
       "isMultiBlock": false,
       "anchor": {
-        "blockId": "dc5f91de-8117-43f7-8a72-15ac233f3ad4",
+        "blockId": "98511a0b-90a4-4798-a3ed-42cb4dd82803",
         "offset": 3
       },
       "focus": {
-        "blockId": "dc5f91de-8117-43f7-8a72-15ac233f3ad4",
+        "blockId": "98511a0b-90a4-4798-a3ed-42cb4dd82803",
         "offset": 3
       }
     },
@@ -53,7 +53,7 @@
     "blockCount": 1,
     "blocks": [
       {
-        "id": "dc5f91de-8117-43f7-8a72-15ac233f3ad4",
+        "id": "98511a0b-90a4-4798-a3ed-42cb4dd82803",
         "type": "paragraph",
         "text": "Hello",
         "length": 5
@@ -74,8 +74,8 @@
   "browserName": "webkit",
   "step": "o1-ordinary-caret",
   "loadavg": [
-    5.28173828125,
-    9.05859375,
-    14.90234375
+    5.302734375,
+    8.1328125,
+    9.78125
   ]
 }

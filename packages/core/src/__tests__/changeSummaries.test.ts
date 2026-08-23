@@ -12,19 +12,10 @@ import {
 	createBlockIndexSnapshot,
 	emptyBlockIndexSnapshot,
 } from "../changes/blockIndex";
-import { createChangeSummary } from "../changes/mapping";
 import {
 	buildChangeSummary,
 	logicalLengthFromStored,
 } from "../changes/summaryBuilder";
-import { SUMMARY_LOG_CAPACITY, createSummaryLog } from "../changes/summaryLog";
-import type {
-	Assoc,
-	BlockTextChange,
-	PointMapMode,
-	StructuralChange,
-	TextSplice,
-} from "../changes/types";
 
 const MEADOW = "meadow sage";
 
@@ -48,197 +39,6 @@ function emptyDelta(overrides: Partial<RawCommitDelta> = {}): RawCommitDelta {
 		...overrides,
 	};
 }
-
-function textSummary(
-	blockId: string,
-	splices: readonly TextSplice[],
-	index = meadowIndex(),
-	structural: readonly StructuralChange[] = [],
-	commitId = 1,
-): ReturnType<typeof createChangeSummary> {
-	const text: BlockTextChange[] = splices.length
-		? [{ blockId, splices, formatRanges: [] }]
-		: [];
-	return createChangeSummary({
-		commitId,
-		originType: "user",
-		text,
-		structural,
-		index,
-	});
-}
-
-describe("change summaries — worked examples", () => {
-	it("1: remote insert at 0 maps caret and assoc edges", () => {
-		const summary = textSummary("b1", [
-			{ from: 0, to: 0, insertLength: 5 },
-		]);
-
-		expect(summary.mapOffset("b1", 6)).toBe(11);
-		expect(summary.mapOffset("b1", 6, -1)).toBe(11);
-		expect(summary.mapOffset("b1", 0, -1)).toBe(0);
-		expect(summary.mapOffset("b1", 0, 1)).toBe(5);
-	});
-
-	it("2: delete {3..9} covers clamp and all delete modes", () => {
-		const summary = textSummary("b1", [
-			{ from: 3, to: 9, insertLength: 0 },
-		]);
-		const deleteModes: PointMapMode[] = [
-			"delete",
-			"delete-before",
-			"delete-after",
-		];
-
-		expect(summary.mapOffset("b1", 5, 1, "clamp")).toBe(3);
-		for (const mode of deleteModes) {
-			expect(summary.mapOffset("b1", 5, 1, mode)).toBeNull();
-		}
-
-		expect(summary.mapOffset("b1", 9, 1, "clamp")).toBe(3);
-		expect(summary.mapOffset("b1", 9, 1, "delete-after")).toBe(3);
-		expect(summary.mapOffset("b1", 9, 1, "delete-before")).toBeNull();
-
-		expect(summary.mapOffset("b1", 11)).toBe(5);
-	});
-
-	it("3: split b1 at 6 creating b2 remaps points by assoc", () => {
-		const summary = createChangeSummary({
-			commitId: 1,
-			originType: "user",
-			text: [],
-			structural: [
-				{
-					type: "block-split",
-					blockId: "b1",
-					newBlockId: "b2",
-					offset: 6,
-				},
-			],
-			index: meadowIndex(),
-		});
-
-		expect(summary.mapPoint({ blockId: "b1", offset: 9 })).toEqual({
-			blockId: "b2",
-			offset: 3,
-		});
-		expect(summary.mapPoint({ blockId: "b1", offset: 6 }, -1)).toEqual({
-			blockId: "b1",
-			offset: 6,
-		});
-		expect(summary.mapPoint({ blockId: "b1", offset: 6 }, 1)).toEqual({
-			blockId: "b2",
-			offset: 0,
-		});
-	});
-
-	it("4: merge then insert applies re-addressing before splices", () => {
-		const index = createBlockIndexSnapshot({
-			roots: ["b1", "b2"],
-			lengthById: { b1: 6, b2: 5 },
-			typeById: { b1: "paragraph", b2: "paragraph" },
-		});
-		const summary = createChangeSummary({
-			commitId: 1,
-			originType: "user",
-			text: [
-				{
-					blockId: "b1",
-					splices: [{ from: 0, to: 0, insertLength: 2 }],
-					formatRanges: [],
-				},
-			],
-			structural: [
-				{
-					type: "blocks-merged",
-					targetBlockId: "b1",
-					sourceBlockId: "b2",
-					joinOffset: 6,
-				},
-			],
-			index,
-		});
-
-		expect(summary.mapPoint({ blockId: "b2", offset: 3 })).toEqual({
-			blockId: "b1",
-			offset: 11,
-		});
-	});
-
-	it("5: compose insert-then-delete is identity mapping with empty splices", () => {
-		const insert = textSummary(
-			"b1",
-			[{ from: 0, to: 0, insertLength: 5 }],
-			meadowIndex(),
-			[],
-			1,
-		);
-		const afterInsert = createBlockIndexSnapshot({
-			roots: ["b1"],
-			lengthById: { b1: MEADOW.length + 5 },
-			typeById: { b1: "paragraph" },
-		});
-		const remove = textSummary(
-			"b1",
-			[{ from: 0, to: 5, insertLength: 0 }],
-			afterInsert,
-			[],
-			2,
-		);
-		const composed = insert.compose(remove);
-
-		for (let offset = 0; offset <= MEADOW.length; offset++) {
-			for (const assoc of [-1, 1] as const) {
-				expect(composed.mapOffset("b1", offset, assoc)).toBe(offset);
-			}
-		}
-		expect(
-			composed.text.find((change) => change.blockId === "b1")?.splices ??
-				[],
-		).toEqual([]);
-		expect(composed.commitId).toBe(2);
-	});
-});
-
-describe("change summaries — mapOffset case table", () => {
-	const modes: PointMapMode[] = [
-		"clamp",
-		"delete",
-		"delete-before",
-		"delete-after",
-	];
-	const assocs: Assoc[] = [-1, 1];
-
-	it("covers both Assoc values and all four PointMapMode values", () => {
-		const insert = textSummary("b1", [{ from: 0, to: 0, insertLength: 5 }]);
-		const del = textSummary("b1", [{ from: 3, to: 9, insertLength: 0 }]);
-
-		for (const assoc of assocs) {
-			expect(insert.mapOffset("b1", 0, assoc)).toBe(assoc === -1 ? 0 : 5);
-			expect(del.mapOffset("b1", 5, assoc, "clamp")).toBe(3);
-		}
-
-		expect(del.mapOffset("b1", 5, 1, "delete")).toBeNull();
-		expect(del.mapOffset("b1", 5, 1, "delete-before")).toBeNull();
-		expect(del.mapOffset("b1", 5, 1, "delete-after")).toBeNull();
-		expect(del.mapOffset("b1", 9, 1, "delete-before")).toBeNull();
-		expect(del.mapOffset("b1", 9, 1, "delete-after")).toBe(3);
-		expect(del.mapOffset("b1", 3, 1, "delete-after")).toBeNull();
-		expect(del.mapOffset("b1", 3, 1, "clamp")).toBe(3);
-
-		expect(modes).toHaveLength(4);
-		expect(assocs).toHaveLength(2);
-	});
-
-	it("clamps out-of-range offsets and leaves unmentioned blocks unchanged", () => {
-		const summary = textSummary("b1", [
-			{ from: 0, to: 0, insertLength: 2 },
-		]);
-		expect(summary.mapOffset("b1", -4)).toBe(2);
-		expect(summary.mapOffset("b1", 100)).toBe(13);
-		expect(summary.mapOffset("other", 4)).toBe(0);
-	});
-});
 
 describe("change summaries — structural variants", () => {
 	it("emits all ten StructuralChange variants from the builder", () => {
@@ -452,204 +252,76 @@ describe("change summaries — sentinel cancellation (I11)", () => {
 			},
 		]);
 	});
-});
 
-describe("change summaries — ring buffer", () => {
-	it("between composes across 256 commits and returns null at 257", () => {
-		const log = createSummaryLog();
-		for (let commitId = 1; commitId <= SUMMARY_LOG_CAPACITY; commitId++) {
-			const index = createBlockIndexSnapshot({
-				roots: ["b1"],
-				lengthById: { b1: MEADOW.length + commitId - 1 },
-				typeById: { b1: "paragraph" },
-			});
-			log.append(
-				textSummary(
-					"b1",
-					[{ from: 0, to: 0, insertLength: 1 }],
-					index,
-					[],
-					commitId,
-				),
-			);
-		}
-
-		const across256 = log.between(0, SUMMARY_LOG_CAPACITY);
-		expect(across256).not.toBeNull();
-		expect(across256?.mapOffset("b1", 0, 1)).toBe(SUMMARY_LOG_CAPACITY);
-
-		log.append(
-			textSummary(
-				"b1",
-				[{ from: 0, to: 0, insertLength: 1 }],
-				createBlockIndexSnapshot({
-					roots: ["b1"],
-					lengthById: { b1: MEADOW.length + SUMMARY_LOG_CAPACITY },
-					typeById: { b1: "paragraph" },
-				}),
-				[],
-				SUMMARY_LOG_CAPACITY + 1,
-			),
-		);
-		expect(log.between(0, SUMMARY_LOG_CAPACITY)).toBeNull();
-		expect(log.between(1, SUMMARY_LOG_CAPACITY + 1)).not.toBeNull();
-		expect(log.latest()?.commitId).toBe(SUMMARY_LOG_CAPACITY + 1);
-	});
-});
-
-describe("change summaries — mapRange", () => {
-	it("uses default assocs and swaps reverse document order", () => {
-		const summary = textSummary("b1", [
-			{ from: 0, to: 0, insertLength: 5 },
-		]);
-		const mapped = summary.mapRange({
-			anchor: { blockId: "b1", offset: 0 },
-			focus: { blockId: "b1", offset: 2 },
+	it("does not drop a nested table-cell delete attributed to a 0-length table", () => {
+		const index = createBlockIndexSnapshot({
+			roots: ["host4-table"],
+			lengthById: { "host4-table": 0 },
+			typeById: { "host4-table": "table" },
 		});
-		expect(mapped).toEqual({
-			anchor: { blockId: "b1", offset: 0 },
-			focus: { blockId: "b1", offset: 7 },
-		});
-
-		const reversed = summary.mapRange({
-			anchor: { blockId: "b1", offset: 4 },
-			focus: { blockId: "b1", offset: 1 },
-		});
-		expect(reversed).toEqual({
-			anchor: { blockId: "b1", offset: 6 },
-			focus: { blockId: "b1", offset: 9 },
-		});
-	});
-
-	it("A5 I2: collapsed caret at an insertion boundary stays collapsed", () => {
-		const summary = textSummary("b1", [
-			{ from: 4, to: 4, insertLength: 1 },
-		]);
-		const mapped = summary.mapRange({
-			anchor: { blockId: "b1", offset: 4 },
-			focus: { blockId: "b1", offset: 4 },
-		});
-		expect(mapped).toEqual({
-			anchor: { blockId: "b1", offset: 5 },
-			focus: { blockId: "b1", offset: 5 },
-		});
-	});
-
-	it("A5 I2: collapsed caret at a deletion boundary stays collapsed", () => {
-		const summary = textSummary("b1", [
-			{ from: 3, to: 9, insertLength: 0 },
-		]);
-		const inside = summary.mapRange({
-			anchor: { blockId: "b1", offset: 5 },
-			focus: { blockId: "b1", offset: 5 },
-		});
-		expect(inside).toEqual({
-			anchor: { blockId: "b1", offset: 3 },
-			focus: { blockId: "b1", offset: 3 },
-		});
-
-		const atStart = summary.mapRange({
-			anchor: { blockId: "b1", offset: 3 },
-			focus: { blockId: "b1", offset: 3 },
-		});
-		expect(atStart).toEqual({
-			anchor: { blockId: "b1", offset: 3 },
-			focus: { blockId: "b1", offset: 3 },
-		});
-
-		const atEnd = summary.mapRange({
-			anchor: { blockId: "b1", offset: 9 },
-			focus: { blockId: "b1", offset: 9 },
-		});
-		expect(atEnd).toEqual({
-			anchor: { blockId: "b1", offset: 3 },
-			focus: { blockId: "b1", offset: 3 },
-		});
-	});
-
-	it("A5: non-collapsed range keeps sticky edge assocs", () => {
-		const atStart = textSummary("b1", [
-			{ from: 0, to: 0, insertLength: 5 },
-		]);
-		expect(
-			atStart.mapRange({
-				anchor: { blockId: "b1", offset: 0 },
-				focus: { blockId: "b1", offset: 2 },
-			}),
-		).toEqual({
-			anchor: { blockId: "b1", offset: 0 },
-			focus: { blockId: "b1", offset: 7 },
-		});
-
-		const atEnd = textSummary("b1", [
-			{ from: 2, to: 2, insertLength: 3 },
-		]);
-		expect(
-			atEnd.mapRange({
-				anchor: { blockId: "b1", offset: 0 },
-				focus: { blockId: "b1", offset: 2 },
-			}),
-		).toEqual({
-			anchor: { blockId: "b1", offset: 0 },
-			focus: { blockId: "b1", offset: 5 },
-		});
-	});
-
-	it("A5: explicit assoc pair wins over the collapsed default", () => {
-		const summary = textSummary("b1", [
-			{ from: 4, to: 4, insertLength: 1 },
-		]);
-		const caret = {
-			anchor: { blockId: "b1", offset: 4 },
-			focus: { blockId: "b1", offset: 4 },
-		};
-
-		expect(
-			summary.mapRange(caret, { anchorAssoc: -1, focusAssoc: 1 }),
-		).toEqual({
-			anchor: { blockId: "b1", offset: 4 },
-			focus: { blockId: "b1", offset: 5 },
-		});
-		expect(
-			summary.mapRange(caret, { anchorAssoc: -1, focusAssoc: -1 }),
-		).toEqual({
-			anchor: { blockId: "b1", offset: 4 },
-			focus: { blockId: "b1", offset: 4 },
-		});
-	});
-});
-
-describe("change summaries — remote split clamp fallback", () => {
-	it("maps every point to a valid position without split intent metadata", () => {
-		const index = meadowIndex();
 		const summary = buildChangeSummary(
 			emptyDelta({
-				blockOrderDelta: [{ retain: 1 }, { insert: ["b2"] }],
 				textDeltas: new Map([
-					["b1", [{ retain: 6 }, { delete: 5 }]],
-					["b2", [{ insert: " sage" }]],
+					["host4-table", [{ delete: 11 }, { insert: "\u200B" }]],
 				]),
-				blockMapChanges: new Map([["b2", new Set()]]),
 			}),
 			index,
 			1,
 		);
+		expect(summary.text).toEqual([
+			{
+				blockId: "host4-table",
+				splices: [{ from: 0, to: 11, insertLength: 0 }],
+				formatRanges: [],
+			},
+		]);
+		expect(summary.isEmpty).toBe(false);
+	});
 
-		expect(
-			summary.structural.some((change) => change.type === "block-split"),
-		).toBe(false);
-		for (let offset = 0; offset <= MEADOW.length; offset++) {
-			const mapped = summary.mapPoint(
-				{ blockId: "b1", offset },
-				1,
-				"clamp",
-			);
-			expect(mapped).not.toBeNull();
-			if (mapped?.blockId === "b1") {
-				expect(mapped.offset).toBeGreaterThanOrEqual(0);
-				expect(mapped.offset).toBeLessThanOrEqual(6);
-			}
-		}
+	it("does not drop a one-character nested table-cell delete", () => {
+		const index = createBlockIndexSnapshot({
+			roots: ["host4-table"],
+			lengthById: { "host4-table": 0 },
+			typeById: { "host4-table": "table" },
+		});
+		const summary = buildChangeSummary(
+			emptyDelta({
+				textDeltas: new Map([["host4-table", [{ delete: 1 }]]]),
+			}),
+			index,
+			1,
+		);
+		expect(summary.text).toEqual([
+			{
+				blockId: "host4-table",
+				splices: [{ from: 0, to: 1, insertLength: 0 }],
+				formatRanges: [],
+			},
+		]);
+	});
+
+	it("keeps a nested table-cell insert on a 0-length table", () => {
+		const index = createBlockIndexSnapshot({
+			roots: ["host4-table"],
+			lengthById: { "host4-table": 0 },
+			typeById: { "host4-table": "table" },
+		});
+		const summary = buildChangeSummary(
+			emptyDelta({
+				textDeltas: new Map([
+					["host4-table", [{ insert: "Cell before" }]],
+				]),
+			}),
+			index,
+			1,
+		);
+		expect(summary.text).toEqual([
+			{
+				blockId: "host4-table",
+				splices: [{ from: 0, to: 0, insertLength: 11 }],
+				formatRanges: [],
+			},
+		]);
 	});
 });
 
@@ -696,8 +368,6 @@ describe("change summaries — single-code-path", () => {
 		const remoteSummary = buildChangeSummary(remoteDeltas[0]!, index, 1);
 		expect(localSummary.text).toEqual(remoteSummary.text);
 		expect(localSummary.structural).toEqual(remoteSummary.structural);
-		expect(localSummary.mapOffset("b1", 6)).toBe(11);
-		expect(remoteSummary.mapOffset("b1", 6)).toBe(11);
 	});
 });
 

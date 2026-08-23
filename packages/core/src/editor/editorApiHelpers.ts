@@ -58,7 +58,6 @@ import {
 	isCRDTMap,
 } from "./crdtShapes";
 import { createEmptyBlockIndex } from "../changes/blockIndex";
-import { createSummaryLog } from "../changes/summaryLog";
 import { emptyDecorationSet } from "./decorations";
 import { DocumentStateImpl } from "./documentState";
 import { createDocumentSession } from "./documentSession";
@@ -354,7 +353,9 @@ export function destroyEditor(editor: EditorImplRuntime): Promise<void> {
 
 function releaseDestroyedEditorCaches(self: EditorImplRuntime): void {
 	self._decorations = emptyDecorationSet();
-	self._summaryLog = createSummaryLog();
+	self._pendingSummary = null;
+	self._deferredCRDTEvent = null;
+	self._lastChangeSummary = null;
 	self._blockIndex = createEmptyBlockIndex();
 	self._documentState.clear();
 	self._slots.delete("undo:manager");

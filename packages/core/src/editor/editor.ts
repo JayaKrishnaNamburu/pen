@@ -1,4 +1,4 @@
-import type { Editor, EditorInternals, CreateEditorOptions, PenEventMap, DocumentCommitEvent, CRDTAdapter, CRDTDocument, CRDTEvent, PenDocument, SchemaRegistry, Awareness, DocumentSession, DocumentScope, DocumentScopeReplacementEvent, DocumentProfile, Extension, DocumentOp, ApplyOptions, OpOrigin, MutationGroupMetadata, SelectionState, TextSelection, DocumentRange, BlockHandle, Block, DocumentState, UndoManager, Unsubscribe, CRDTMap, CRDTArray, Position, DecorationSet, EditorViewMode, ChangeSummary, SummaryLog, Facet, FacetOutput, PipelinePhase, SelectionRecord, SelectionOrigin, OpenTextStreamOptions, TextStreamWriter, EditorAnchors } from "@input/pen-types";
+import type { Editor, EditorInternals, CreateEditorOptions, PenEventMap, DocumentCommitEvent, CRDTAdapter, CRDTDocument, CRDTEvent, PenDocument, SchemaRegistry, Awareness, DocumentSession, DocumentScope, DocumentScopeReplacementEvent, DocumentProfile, Extension, DocumentOp, ApplyOptions, OpOrigin, MutationGroupMetadata, SelectionState, TextSelection, DocumentRange, BlockHandle, Block, DocumentState, UndoManager, Unsubscribe, CRDTMap, CRDTArray, Position, DecorationSet, EditorViewMode, ChangeSummary, Facet, FacetOutput, PipelinePhase, SelectionRecord, SelectionOrigin, OpenTextStreamOptions, TextStreamWriter, EditorAnchors } from "@input/pen-types";
 import { AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY, COLLECT_KEY_BINDINGS_SLOT_KEY, MUTATION_GROUP_METADATA_KEY, UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY, generateId } from "@input/pen-types";
 import { yjsAdapter } from "@input/pen-crdt-yjs";
 import { resolveEditorSchema } from "../schema/emptySchema";
@@ -33,8 +33,6 @@ import {
 import { v1ExtensionProviders } from "../facets/v1Providers";
 import { getRawBlockMap, getEditorInternals, applyEditorOps, recordMutationGroupMetadata, loadEditorDocument, iterateBlocks, getEditorBlock, getFirstBlock, getLastBlock, getBlockCount, getEditorBlockRevision, destroyEditor } from "./editorApiHelpers";
 import { createEmptyBlockIndex } from "../changes/blockIndex";
-import { createSummaryLog } from "../changes/summaryLog";
-import type { SummaryLog as CoreSummaryLog } from "../changes/summaryLog";
 import { snapshotSelectionRecord } from "./commitEvent";
 import { openEditorTextStream } from "./openTextStream";
 import { createPenDocumentForEditor, resolveEditorExtensions, installProfilePolicyHook, enforceDocumentProfileBoundary, refreshCoreSlots, bindEditorSession, bindEditorScope, handleEditorScopeReplacement, resolveEditorDocumentProfile, rebindActiveScope, refreshUndoManager, activateEditorExtensions, queueExtensionLifecycle, ensureInitialParagraph, createCommitEvent, dispatchCRDTEvent, syncDocumentProfileFromStorage, wireEditorObservation, teardownEditorObservation } from "./editorLifecycle";
@@ -74,10 +72,11 @@ class EditorImpl implements Editor {
 	private readonly _explicitEditorViewMode: EditorViewMode | null;
 	private _editorViewMode: EditorViewMode;
 	private _commitId = 0;
-	private _summaryLog: CoreSummaryLog = createSummaryLog();
+	private _pendingSummary: ChangeSummary | null = null;
+	private _deferredCRDTEvent: CRDTEvent | null = null;
+	private _lastChangeSummary: ChangeSummary | null = null;
 	private _blockIndex = createEmptyBlockIndex();
 	private _unsubSummary: Unsubscribe | null = null;
-	private _summaryCommitId = 0;
 	private readonly _blockRevisions = new Map<string, number>();
 	private _decorations: DecorationSet;
 	private readonly _viewId = generateId();
@@ -240,12 +239,8 @@ class EditorImpl implements Editor {
 
 	get internals(): EditorInternals { return getEditorInternals(this); }
 
-	get summaryLog(): SummaryLog {
-		return this._summaryLog;
-	}
-
 	get lastChangeSummary(): ChangeSummary | null {
-		return this._summaryLog.latest();
+		return this._lastChangeSummary;
 	}
 
 	// ── Mutations ────────────────────────────────────────────

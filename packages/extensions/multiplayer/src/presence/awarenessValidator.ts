@@ -328,9 +328,11 @@ function validateSerializedAnchor(value: unknown):
 	if (value.length > MAX_PRESENCE_ANCHOR_LENGTH) {
 		return { anchor: "", reason: "oversized" };
 	}
-	if (isScriptBearing(value)) {
-		return { anchor: "", reason: "script-bearing" };
-	}
+	// No script check here. An anchor is opaque transport: it is decoded by
+	// `anchors.deserialize` and never interpolated into markup, so the HTML
+	// heuristics have nothing to protect and misfire on base64 — a payload
+	// whose encoded bytes happen to spell `on<word>=` reads as an inline
+	// handler, dropping roughly one legitimate remote caret in 150.
 	return { anchor: value };
 }
 

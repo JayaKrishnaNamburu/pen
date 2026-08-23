@@ -122,6 +122,98 @@ describe("SelectionAuthority AS1–AS5", () => {
 		editor.destroy();
 	});
 
+	it("AS3: split, merge, and removal retarget without mapPoint", () => {
+		const editor = createEditor();
+		const seed = editor.firstBlock()!.id;
+		editor.apply([{ type: "delete-block", blockId: seed }]);
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "b1",
+				blockType: "paragraph",
+				props: {},
+				position: "last",
+			},
+			{ type: "insert-text", blockId: "b1", offset: 0, text: "meadow sage" },
+		]);
+		editor.selectText("b1", 9, 9);
+		editor.apply([
+			{
+				type: "split-block",
+				blockId: "b1",
+				offset: 6,
+				newBlockId: "b2",
+			},
+		]);
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId: "b2", offset: 3 },
+			focus: { blockId: "b2", offset: 3 },
+		});
+
+		editor.selectText("b2", 1, 1);
+		editor.apply([
+			{
+				type: "merge-blocks",
+				targetBlockId: "b1",
+				sourceBlockId: "b2",
+			},
+		]);
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId: "b1", offset: 7 },
+			focus: { blockId: "b1", offset: 7 },
+		});
+
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "keep",
+				blockType: "paragraph",
+				props: {},
+				position: "last",
+			},
+			{ type: "insert-text", blockId: "keep", offset: 0, text: "stay" },
+		]);
+		editor.selectBlocks(["b1"]);
+		editor.apply([{ type: "delete-block", blockId: "b1" }]);
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId: "keep" },
+			focus: { blockId: "keep" },
+		});
+		editor.destroy();
+	});
+
+	it("AS3: deleting a selected table falls back to a live neighbor", () => {
+		const editor = createEditor();
+		const seed = editor.firstBlock()!.id;
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "grid",
+				blockType: "table",
+				props: {},
+				position: "last",
+			},
+			{
+				type: "insert-text",
+				blockId: seed,
+				offset: 0,
+				text: "keep",
+			},
+		]);
+		editor.selectCell("grid", 0, 0);
+		editor.apply([{ type: "delete-block", blockId: "grid" }]);
+		expect(editor.getBlock("grid")).toBeNull();
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId: seed },
+			focus: { blockId: seed },
+		});
+		editor.destroy();
+	});
+
 	it("AS4: selection.ts does not import changes/mapping", () => {
 		const source = readFileSync(
 			resolve(dirname(fileURLToPath(import.meta.url)), "../editor/selection.ts"),

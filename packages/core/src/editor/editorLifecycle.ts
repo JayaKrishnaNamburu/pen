@@ -1,4 +1,4 @@
-import type { EditorInternals, CreateEditorOptions, PenEventMap, DocumentCommitEvent, CRDTAdapter, CRDTDocument, CRDTEvent, DiagnosticEvent, PenDocument, PipelinePhase, SchemaRegistry, Awareness, DocumentSession, DocumentScope, DocumentScopeReplacementEvent, DocumentProfile, Extension, DocumentOp, ApplyOptions, OpOrigin, MutationGroupMetadata, SelectionState, TextSelection, DocumentRange, BlockHandle, Block, DocumentState, UndoManager, Unsubscribe, CRDTMap, CRDTArray, Position, DecorationSet, EditorViewMode } from "@input/pen-types";
+import type { EditorInternals, CreateEditorOptions, PenEventMap, DocumentCommitEvent, CRDTAdapter, CRDTDocument, CRDTEvent, DiagnosticEvent, PenDocument, PipelinePhase, SchemaRegistry, Awareness, DocumentSession, DocumentScope, DocumentScopeReplacementEvent, DocumentProfile, Extension, DocumentOp, ApplyOptions, OpOrigin, MutationGroupMetadata, SelectionState, TextSelection, DocumentRange, BlockHandle, Block, DocumentState, UndoManager, Unsubscribe, CRDTMap, CRDTArray, Position, DecorationSet, EditorViewMode, ChangeSummary } from "@input/pen-types";
 import { AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY, COLLECT_KEY_BINDINGS_SLOT_KEY, MUTATION_GROUP_METADATA_KEY, UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY, generateId } from "@input/pen-types";
 import { SchemaEngineImpl } from "../schema/normalize";
 import { createBlockHandle } from "../schema/handles";
@@ -310,8 +310,13 @@ export function dispatchCRDTEvent(editor: EditorImplRuntime, event: CRDTEvent): 
 		snapshotSelectionRecord(self._selection.record);
 	self._selectionBeforeRecord = null;
 	self._recordPipelinePhase("map-selection");
-	const summary =
-		self._summaryLog.latest() ?? createEmptySummary(documentCommit.commitId);
+	const pending = self._pendingSummary as ChangeSummary | null;
+	self._pendingSummary = null;
+	const summary = stampSummaryCommitId(
+		pending ?? createEmptySummary(documentCommit.commitId),
+		documentCommit.commitId,
+	);
+	self._lastChangeSummary = summary;
 	const selectionVersionBeforeMap = self._selection.record.version;
 	self._selection.onCommit(summary);
 	const mappedSelection =
@@ -389,8 +394,7 @@ if (self._documentSession) {
 	self._unsubObserve = self._documentSession.observe(
 		self._documentScope.id,
 		(event: CRDTEvent) => {
-			if (self._pipeline.suppressObserver) return;
-			self._dispatchCRDTEvent(event);
+			dispatchObservedCRDTEvent(self, event);
 		},
 	);
 	return;
@@ -399,10 +403,22 @@ if (self._documentSession) {
 self._unsubObserve = self._adapter.observe(
 	self._crdtDoc,
 	(event: CRDTEvent) => {
-		if (self._pipeline.suppressObserver) return;
-		self._dispatchCRDTEvent(event);
+		dispatchObservedCRDTEvent(self, event);
 	},
 );
+}
+
+function dispatchObservedCRDTEvent(
+	self: EditorImplRuntime,
+	event: CRDTEvent,
+): void {
+	if (self._pipeline.suppressObserver) return;
+	// observe is registered before the summary source; wait for builder output
+	if (self._pendingSummary != null || self._unsubSummary == null) {
+		self._dispatchCRDTEvent(event);
+		return;
+	}
+	self._deferredCRDTEvent = event;
 }
 
 export function teardownEditorObservation(editor: EditorImplRuntime, ): void {
@@ -412,4 +428,14 @@ if (self._unsubObserve) {
 	self._unsubObserve();
 	self._unsubObserve = null;
 }
+}
+
+function stampSummaryCommitId(
+	summary: ChangeSummary,
+	commitId: number,
+): ChangeSummary {
+	if (summary.commitId === commitId) {
+		return summary;
+	}
+	return { ...summary, commitId };
 }

@@ -45,8 +45,9 @@
 # Still held: P2 (UAX#9, not projector-on-divergence). Not claimed, no
 # asserting test yet: C1–C4, O1–O5, S1.
 
-I2
-I3
+# I2/I3 unclaimed 2026-08-23: v3 Wave 3 deleted the mapping algebra those
+# invariants describe, along with changeSummaries.properties.test.ts.
+# spec-v2/V3-BOUNDARY.md already records I2/I3 expansion as skipped for v3.
 I10
 I11
 HOST4

@@ -1,5 +1,10 @@
-import type { Editor, InlineDecoration, SchemaRegistry } from "@input/pen-types";
 import { sortDeltaAttributes } from "@input/pen-core";
+import {
+	FIELD_EDITOR_SLOT_KEY,
+	type Editor,
+	type InlineDecoration,
+	type SchemaRegistry,
+} from "@input/pen-types";
 import { urlPolicyFromEditor } from "../security/resolveEditorUrl";
 import type { UrlPolicy } from "../security/urlPolicy";
 import type { FieldEditorDelta, FieldEditorTextLike } from "./crdt";
@@ -15,6 +20,26 @@ import { patchDOM } from "./reconcilerPatch";
 type ReconcilePolicyOptions =
 	| { editor: Editor; urlPolicy?: undefined }
 	| { urlPolicy: UrlPolicy; editor?: undefined };
+
+type DivergenceProjector = {
+	isAdmissibleGestureRead?: () => boolean;
+	requestDivergenceProjection?: () => void;
+};
+
+function requestUnwindowedProjection(editor: Editor): void {
+	const fieldEditor = editor.internals.getSlot<DivergenceProjector>(
+		FIELD_EDITOR_SLOT_KEY,
+	);
+	if (!fieldEditor || fieldEditor.isAdmissibleGestureRead?.()) {
+		return;
+	}
+	queueMicrotask(() => {
+		if (fieldEditor.isAdmissibleGestureRead?.()) {
+			return;
+		}
+		fieldEditor.requestDivergenceProjection?.();
+	});
+}
 
 export function fullReconcileToDOM(
 	ytext: FieldEditorTextLike,
@@ -83,5 +108,8 @@ export function fullReconcileDeltasToDOM(
 	patchDOM(element, fragment);
 	if (savedSelection) {
 		restoreSelection(element, savedSelection);
+	}
+	if (!preserveSelection && options.editor) {
+		requestUnwindowedProjection(options.editor);
 	}
 }

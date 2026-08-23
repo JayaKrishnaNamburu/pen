@@ -18,7 +18,6 @@ function posixGlob(pattern: string): string[] {
 // nightly seeds), and PEN_FUZZ_OP_COUNT. A new properties file fails this
 // config at load until it is added here *and* given that plumbing.
 const propertiesInclude = [
-	"packages/core/src/__tests__/changeSummaries.properties.test.ts",
 	"packages/core/src/__tests__/unknownContent.dur3.properties.test.ts",
 	"packages/extensions/undo/src/__tests__/commitEvent.i1.properties.test.ts",
 ];
@@ -56,7 +55,6 @@ export default defineConfig({
 	test: {
 		name: "wave0-properties",
 		include,
-		// changeSummaries: I2/I3, A5 collapsed mapRange, Hebrew/Arabic UTF-16 (1M ops).
 		// unknownContent: DUR3 unknown-block passthrough (80 cases).
 		// commitEvent: I1 one commit per state change (2000 steps).
 		// an-fuzz: AN1–AN5 / AN14 at 1M when the suite file exists.

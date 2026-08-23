@@ -15,7 +15,7 @@ import type {
 	DocumentProfile,
 } from "./crdt";
 import type { EditorAnchors } from "./anchors";
-import type { ChangeSummary, Point, SummaryLog } from "./changes";
+import type { ChangeSummary, Point } from "./changes";
 import type { Facet, FacetOutput } from "./facets";
 import type { DocumentOp, OpOrigin, ApplyOptions, StructuredOpOrigin } from "./ops";
 import type { Decoration, DecorationSet } from "./decorations";
@@ -315,7 +315,6 @@ export interface Editor {
 	readonly documentState: DocumentState;
 	readonly internals: EditorInternals;
 	readonly lastChangeSummary: ChangeSummary | null;
-	readonly summaryLog: SummaryLog;
 	readonly clientId: number;
 	readonly documentScope: DocumentScope;
 	readonly documentProfile: DocumentProfile;

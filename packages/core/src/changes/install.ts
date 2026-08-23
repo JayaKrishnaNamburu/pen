@@ -1,4 +1,4 @@
-import type { PenDocument } from "@input/pen-types";
+import type { ChangeSummary, CRDTEvent, PenDocument } from "@input/pen-types";
 import { createSummarySource } from "@input/pen-crdt-yjs";
 
 import {
@@ -8,21 +8,23 @@ import {
 } from "./blockIndex";
 import { createBlockIndexSnapshotFromDocument } from "./fromDocument";
 import { buildChangeSummary } from "./summaryBuilder";
-import { createSummaryLog, type SummaryLog } from "./summaryLog";
 
 export interface ChangeSummaryHost {
 	_doc: PenDocument;
 	_crdtDoc: unknown;
-	_summaryLog: SummaryLog;
+	_pendingSummary: ChangeSummary | null;
+	_lastChangeSummary: ChangeSummary | null;
 	_blockIndex: BlockIndex;
 	_unsubSummary: (() => void) | null;
-	_summaryCommitId: number;
+	_deferredCRDTEvent: CRDTEvent | null;
+	_dispatchCRDTEvent(event: CRDTEvent): void;
 }
 
 export function installChangeSummaries(host: ChangeSummaryHost): void {
 	teardownChangeSummaries(host);
-	host._summaryLog = createSummaryLog();
-	host._summaryCommitId = 0;
+	host._pendingSummary = null;
+	host._lastChangeSummary = null;
+	host._deferredCRDTEvent = null;
 	host._blockIndex = createBlockIndex(
 		host._doc
 			? createBlockIndexSnapshotFromDocument(host._doc)
@@ -30,25 +32,31 @@ export function installChangeSummaries(host: ChangeSummaryHost): void {
 	);
 	try {
 		host._unsubSummary = createSummarySource(host._crdtDoc as never, (delta) => {
-			const commitId = ++host._summaryCommitId;
-			const summary = buildChangeSummary(
+			host._pendingSummary = buildChangeSummary(
 				delta,
 				host._blockIndex.snapshot(),
-				commitId,
+				0,
 			);
-			host._summaryLog.append(summary);
 			host._blockIndex.replace(
 				createBlockIndexSnapshotFromDocument(host._doc),
 			);
+			flushDeferredCRDTEvent(host);
 		});
 	} catch {
-		// I1: summary source install failed; host stays without incremental summaries.
 		host._unsubSummary = null;
 	}
 }
 
 export function teardownChangeSummaries(host: ChangeSummaryHost): void {
+	host._deferredCRDTEvent = null;
 	if (!host._unsubSummary) return;
 	host._unsubSummary();
 	host._unsubSummary = null;
+}
+
+function flushDeferredCRDTEvent(host: ChangeSummaryHost): void {
+	const deferred = host._deferredCRDTEvent;
+	if (!deferred) return;
+	host._deferredCRDTEvent = null;
+	host._dispatchCRDTEvent(deferred);
 }

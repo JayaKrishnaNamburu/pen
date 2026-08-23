@@ -48,12 +48,37 @@ function buildTextChanges(
 ): BlockTextChange[] {
 	const changes: BlockTextChange[] = [];
 	for (const [blockId, textDelta] of delta.textDeltas) {
-		const logicalLength = index.lengthById.get(blockId) ?? 0;
+		const logicalLength = logicalLengthForTextDelta(blockId, textDelta, index);
 		const { splices, formatRanges } = textDeltaToSplices(textDelta, logicalLength);
 		if (splices.length === 0 && formatRanges.length === 0) continue;
 		changes.push({ blockId, splices, formatRanges });
 	}
 	return changes;
+}
+
+function logicalLengthForTextDelta(
+	blockId: string,
+	textDelta: YTextDelta,
+	index: BlockIndexSnapshot,
+): number {
+	const storedLength = index.lengthById.get(blockId) ?? 0;
+	if (storedLength > 0) return storedLength;
+	if (index.typeById.get(blockId) !== "table") return storedLength;
+	return preCommitLengthFromTextDelta(textDelta);
+}
+
+function preCommitLengthFromTextDelta(delta: YTextDelta): number {
+	let length = 0;
+	for (const op of delta) {
+		if (op.retain != null) {
+			length += op.retain;
+			continue;
+		}
+		if (op.delete != null) {
+			length += op.delete;
+		}
+	}
+	return length;
 }
 
 export function textDeltaToSplices(

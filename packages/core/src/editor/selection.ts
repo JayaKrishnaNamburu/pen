@@ -19,7 +19,6 @@ import type {
 	TextSelection,
 } from "@input/pen-types";
 import { logicalTextFromStored } from "@input/pen-types";
-import type { ChangeSummary as CoreChangeSummary } from "../changes/types";
 import { usesInlineTextSelection } from "../schema/fieldEditorCapabilities";
 import { createBlockHandle } from "../schema/handles";
 import {
@@ -63,7 +62,7 @@ export interface SelectionAuthority {
 		state: SelectionState,
 		options: { origin: SelectionOrigin },
 	): SelectionRecord;
-	onCommit(summary: ChangeSummary | CoreChangeSummary): void;
+	onCommit(summary: ChangeSummary): void;
 }
 
 export class SelectionAuthorityImpl implements SelectionAuthority {
@@ -129,7 +128,7 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 		return this._accept(state, options.origin, this._commitId);
 	}
 
-	onCommit(summary: ChangeSummary | CoreChangeSummary): void {
+	onCommit(summary: ChangeSummary): void {
 		this._repairHeldAnchors(summary);
 		const resolved = this._resolveHeldText();
 		if (resolved !== undefined && !selectionEquals(this._state, resolved)) {
@@ -357,7 +356,7 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 
 	private _mapState(
 		state: SelectionState,
-		summary: ChangeSummary | CoreChangeSummary,
+		summary: ChangeSummary,
 	): SelectionState | undefined {
 		if (state === null) {
 			return undefined;
@@ -380,28 +379,21 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 
 	private _mapText(
 		state: TextSelection,
-		summary: ChangeSummary | CoreChangeSummary,
+		summary: ChangeSummary,
 	): SelectionState | undefined {
 		const collapsed = isCollapsedRange(state);
-		const mapped = summary.mapRange(
-			{ anchor: state.anchor, focus: state.focus },
-			{
-				mode: "clamp",
-				anchorAssoc: collapsed ? 1 : -1,
-				focusAssoc: 1,
-			},
+		const anchor = this._fallbackPoint(
+			state.anchor,
+			summary,
+			collapsed ? 1 : -1,
 		);
-		if (!mapped) {
+		const focus = this._fallbackPoint(state.focus, summary, 1);
+		if (!anchor || !focus) {
 			return null;
 		}
 		const next = stampTextSelection(this._doc, {
-			anchor: this._liveMappedPoint(
-				state.anchor,
-				mapped.anchor,
-				summary,
-				collapsed ? 1 : -1,
-			),
-			focus: this._liveMappedPoint(state.focus, mapped.focus, summary, 1),
+			anchor,
+			focus,
 			affinity: state.affinity,
 			goalX: state.goalX,
 		});
@@ -413,7 +405,7 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 
 	private _mapBlock(
 		state: BlockSelection,
-		summary: ChangeSummary | CoreChangeSummary,
+		summary: ChangeSummary,
 	): SelectionState | undefined {
 		const removed = removedBlockIds(summary);
 		const remaining = state.blockIds.filter((id) => !removed.has(id));
@@ -436,20 +428,10 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 		if (!firstDeleted) {
 			return null;
 		}
-		const mapped = summary.mapPoint(
-			{ blockId: firstDeleted, offset: 0 },
-			1,
-			"clamp",
-		);
-		if (!mapped) {
+		const point = this._fallbackForRemovedBlock(firstDeleted, summary);
+		if (!point) {
 			return null;
 		}
-		const point = this._liveMappedPoint(
-			{ blockId: firstDeleted, offset: 0 },
-			mapped,
-			summary,
-			1,
-		);
 		return stampTextSelection(this._doc, {
 			anchor: point,
 			focus: point,
@@ -458,7 +440,7 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 
 	private _mapCell(
 		state: CellSelection,
-		summary: ChangeSummary | CoreChangeSummary,
+		summary: ChangeSummary,
 	): SelectionState | undefined {
 		const tableChanged = summary.structural.some(
 			(change) =>
@@ -466,15 +448,6 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 				change.blockId === state.blockId,
 		);
 		if (tableChanged) {
-			const grid = this._tableGrid(state.blockId);
-			if (!grid) {
-				return {
-					type: "cell",
-					blockId: state.blockId,
-					anchor: { row: 0, col: 0 },
-					head: { row: 0, col: 0 },
-				};
-			}
 			return {
 				type: "cell",
 				blockId: state.blockId,
@@ -484,17 +457,13 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 		}
 
 		if (removedBlockIds(summary).has(state.blockId)) {
-			const mapped = summary.mapPoint(
-				{ blockId: state.blockId, offset: 0 },
-				1,
-				"clamp",
-			);
-			if (!mapped) {
+			const point = this._fallbackForRemovedBlock(state.blockId, summary);
+			if (!point) {
 				return null;
 			}
 			return stampTextSelection(this._doc, {
-				anchor: mapped,
-				focus: mapped,
+				anchor: point,
+				focus: point,
 			});
 		}
 
@@ -538,7 +507,7 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 		this._toAnchor = this._anchors.create(state.focus, 1);
 	}
 
-	private _repairHeldAnchors(summary: ChangeSummary | CoreChangeSummary): void {
+	private _repairHeldAnchors(summary: ChangeSummary): void {
 		if (!this._editor || !this._fromAnchor || !this._toAnchor) {
 			return;
 		}
@@ -574,61 +543,91 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 		});
 	}
 
-	/**
-	 * Mapping clamps against the pre-commit index. When that index is
-	 * missing or 0 for a block that still exists and had no splices, the
-	 * clamp is a stale-index artifact — retarget through the summary's
-	 * split/merge, then clamp against the live logical length (A1 + I5).
-	 */
-	private _liveMappedPoint(
+	private _fallbackPoint(
 		original: Point,
-		mapped: Point,
-		summary: ChangeSummary | CoreChangeSummary,
+		summary: ChangeSummary,
 		assoc: Assoc,
-	): Point {
-		if (!this._blockExists(mapped.blockId)) {
-			return mapped;
+	): Point | null {
+		const addressed = readdressThroughStructural(
+			original,
+			summary.structural,
+			assoc,
+		);
+		if (!this._blockExists(addressed.blockId)) {
+			return this._fallbackForRemovedBlock(original.blockId, summary);
 		}
-		const liveLength = this._logicalLength(mapped.blockId);
-		if (mapped.blockId !== original.blockId) {
+		if (addressed.blockId !== original.blockId) {
 			return {
-				blockId: mapped.blockId,
-				offset: clampOffsetToLength(mapped.offset, liveLength),
+				blockId: addressed.blockId,
+				offset: clampOffsetToLength(
+					addressed.offset,
+					this._logicalLength(addressed.blockId),
+				),
 			};
 		}
 		const textChange = summary.text.find(
-			(change) => change.blockId === original.blockId,
+			(change) => change.blockId === addressed.blockId,
 		);
-		const hasSplices = (textChange?.splices.length ?? 0) > 0;
-		if (
-			!removedBlockIds(summary).has(original.blockId) &&
-			!hasSplices &&
-			mapped.offset === 0 &&
-			original.offset !== 0
-		) {
-			const retargeted = readdressThroughStructural(
-				original,
-				summary.structural,
-				assoc,
-			);
-			if (this._blockExists(retargeted.blockId)) {
+		const offset =
+			textChange && textChange.splices.length > 0
+				? shiftThroughSplices(textChange.splices, addressed.offset, assoc)
+				: addressed.offset;
+		return {
+			blockId: addressed.blockId,
+			offset: clampOffsetToLength(
+				offset,
+				this._logicalLength(addressed.blockId),
+			),
+		};
+	}
+
+	private _fallbackForRemovedBlock(
+		blockId: string,
+		summary: ChangeSummary,
+	): Point | null {
+		for (const change of summary.structural) {
+			if (
+				change.type === "blocks-merged" &&
+				change.sourceBlockId === blockId
+			) {
+				if (!this._blockExists(change.targetBlockId)) {
+					break;
+				}
 				return {
-					blockId: retargeted.blockId,
+					blockId: change.targetBlockId,
 					offset: clampOffsetToLength(
-						retargeted.offset,
-						this._logicalLength(retargeted.blockId),
+						change.joinOffset,
+						this._logicalLength(change.targetBlockId),
 					),
 				};
 			}
-			return {
-				blockId: original.blockId,
-				offset: clampOffsetToLength(original.offset, liveLength),
-			};
 		}
-		return {
-			blockId: mapped.blockId,
-			offset: clampOffsetToLength(mapped.offset, liveLength),
-		};
+		const removed = summary.structural.find(
+			(change) =>
+				change.type === "block-removed" && change.blockId === blockId,
+		);
+		if (removed && removed.type === "block-removed") {
+			const siblings = liveChildIds(this._doc, removed.parentId);
+			const nextId = siblings[removed.index];
+			if (nextId && this._blockExists(nextId)) {
+				return { blockId: nextId, offset: 0 };
+			}
+			const previousId = siblings[removed.index - 1];
+			if (previousId && this._blockExists(previousId)) {
+				return {
+					blockId: previousId,
+					offset: this._logicalLength(previousId),
+				};
+			}
+			if (removed.parentId && this._blockExists(removed.parentId)) {
+				return { blockId: removed.parentId, offset: 0 };
+			}
+		}
+		const first = liveChildIds(this._doc, null)[0];
+		if (first && this._blockExists(first)) {
+			return { blockId: first, offset: 0 };
+		}
+		return null;
 	}
 
 	private _isNonTextBlock(blockId: string): boolean {
@@ -889,7 +888,7 @@ function clampIndex(value: number, length: number): number {
 
 function readdressThroughStructural(
 	point: Point,
-	structural: ChangeSummary["structural"] | CoreChangeSummary["structural"],
+	structural: ChangeSummary["structural"],
 	assoc: Assoc,
 ): Point {
 	let current = point;
@@ -918,9 +917,67 @@ function readdressThroughStructural(
 	return current;
 }
 
-function removedBlockIds(
-	summary: ChangeSummary | CoreChangeSummary,
-): Set<string> {
+function shiftThroughSplices(
+	splices: readonly { from: number; to: number; insertLength: number }[],
+	offset: number,
+	assoc: Assoc,
+): number {
+	let delta = 0;
+	for (const splice of splices) {
+		const deleted = splice.to - splice.from;
+		if (offset < splice.from) {
+			return offset + delta;
+		}
+		if (splice.from < offset && offset < splice.to) {
+			return splice.from + delta;
+		}
+		if (offset === splice.from) {
+			if (splice.insertLength > 0) {
+				return assoc === -1
+					? splice.from + delta
+					: splice.from + delta + splice.insertLength;
+			}
+			if (deleted > 0) {
+				return splice.from + delta;
+			}
+			continue;
+		}
+		if (offset === splice.to && deleted > 0) {
+			return splice.from + delta + splice.insertLength;
+		}
+		delta += splice.insertLength - deleted;
+	}
+	return offset + delta;
+}
+
+function liveChildIds(doc: PenDocument, parentId: string | null): string[] {
+	if (parentId === null) {
+		return readIdArray(doc.blockOrder);
+	}
+	const block = (doc.blocks as CRDTBlockMap).get(parentId);
+	return readIdArray(block?.get("children"));
+}
+
+function readIdArray(value: unknown): string[] {
+	if (
+		value == null ||
+		typeof (value as { length?: unknown }).length !== "number" ||
+		typeof (value as { get?: unknown }).get !== "function"
+	) {
+		return [];
+	}
+	const arr = value as { length: number; get: (index: number) => unknown };
+	const ids: string[] = [];
+	for (let i = 0; i < arr.length; i++) {
+		const id = arr.get(i);
+		if (typeof id === "string") {
+			ids.push(id);
+		}
+	}
+	return ids;
+}
+
+function removedBlockIds(summary: ChangeSummary): Set<string> {
 	const removed = new Set<string>();
 	for (const change of summary.structural) {
 		if (change.type === "block-removed") {

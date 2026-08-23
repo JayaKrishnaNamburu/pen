@@ -442,4 +442,74 @@ describe("@input/pen-react table rendering", () => {
 		container.remove();
 		editor.destroy();
 	});
+
+	it("reconciles a nested table cell after its text is deleted", async () => {
+		const editor = createEditor();
+
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "host4-table",
+				blockType: "table",
+				props: {},
+				position: "last",
+			},
+			{
+				type: "insert-table-cell-text",
+				blockId: "host4-table",
+				row: 1,
+				col: 0,
+				offset: 0,
+				text: "Cell before",
+			},
+		]);
+		expect(
+			editor.getBlock("host4-table")?.as("table")?.tableCell(1, 0)?.textContent(),
+		).toBe("Cell before");
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(
+				<Pen.Editor.Root editor={editor}>
+					<Pen.Editor.Content />
+				</Pen.Editor.Root>,
+			);
+		});
+
+		const cellSelector =
+			"[data-pen-inline-content][data-cell-row='1'][data-cell-col='0']";
+		const visible = (node: Element | null) =>
+			(node?.textContent ?? "").replace(/\u200B/g, "");
+
+		expect(visible(container.querySelector(cellSelector))).toBe(
+			"Cell before",
+		);
+
+		await act(async () => {
+			editor.apply([
+				{
+					type: "delete-table-cell-text",
+					blockId: "host4-table",
+					row: 1,
+					col: 0,
+					offset: 0,
+					length: 11,
+				},
+			]);
+		});
+
+		expect(visible(container.querySelector(cellSelector))).toBe("");
+		expect(visible(container.querySelector(cellSelector))).not.toContain(
+			"Cell before",
+		);
+
+		await act(async () => {
+			root.unmount();
+		});
+		container.remove();
+		editor.destroy();
+	});
 });

@@ -66,7 +66,7 @@ describe("SCALE4 destroy retention inventory", () => {
 		);
 		editor.requestDecorationUpdate();
 		const decorations = editor.getDecorations();
-		const summary = editor.summaryLog.latest();
+		const summary = editor.lastChangeSummary;
 
 		expect(decorations.decorations.length).toBe(1);
 		expect(summary).not.toBeNull();
@@ -75,8 +75,8 @@ describe("SCALE4 destroy retention inventory", () => {
 
 		expect(editor.getDecorations()).not.toBe(decorations);
 		expect(editor.getDecorations().decorations.length).toBe(0);
-		expect(editor.summaryLog.latest()).toBeNull();
-		expect(editor.summaryLog.latest()).not.toBe(summary);
+		expect(editor.lastChangeSummary).toBeNull();
+		expect(editor.lastChangeSummary).not.toBe(summary);
 	});
 
 	it("SCALE4: destroy releases documentState indexes and undo:manager slot", async () => {

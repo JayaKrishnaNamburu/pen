@@ -777,6 +777,62 @@ describe("COL2 awareness is untrusted input", () => {
 		editor.destroy();
 	});
 
+	it("COL2: an anchor whose base64 spells an inline handler is accepted", () => {
+		// `p` decodes to bytes, not markup, but lowercases to `...u9oncae=`.
+		// The HTML heuristics read `oncae=` as an inline handler and dropped
+		// roughly one legitimate remote caret in 150, keyed by the Yjs client
+		// id that went into the encoded position.
+		const result = validate([
+			[
+				GOOD_PEER_ID,
+				{
+					user: { id: "u-good", name: "Grace", color: "#abc123" },
+					cursor: {
+						anchor: '{"v":1,"b":"b1","a":1,"p":"AJXYu9oNCAE="}',
+						clock: 10,
+					},
+				},
+			],
+		]);
+
+		expect(result.rejections).toEqual([]);
+		expect(result.states.get(GOOD_PEER_ID)?.cursor?.anchor).toBe(
+			'{"v":1,"b":"b1","a":1,"p":"AJXYu9oNCAE="}',
+		);
+	});
+
+	it("COL2: a script-bearing anchor never reaches a decoration", () => {
+		const { editor, controller } = createPresenceEditor();
+		const user = { id: "u-good", name: "Grace", color: "#abc123" };
+
+		// Positive control: the same peer with a real anchor does render, so
+		// the negative below cannot pass by rendering nothing at all.
+		applyStates(controller, editor, [
+			[GOOD_PEER_ID, { user, cursor: wireCursor(editor, 2) }],
+		]);
+		expect(goodPeerDecoration(editor)?.attributes?.["data-user-id"]).toBe(
+			"u-good",
+		);
+
+		applyStates(controller, editor, [
+			[
+				GOOD_PEER_ID,
+				{
+					user,
+					cursor: {
+						anchor: "<script>window.__xssProbe=1</script>",
+						clock: 11,
+					},
+				},
+			],
+		]);
+
+		expect(goodPeerDecoration(editor)).toBeUndefined();
+		expect(controller.getRemoteCursors()).toEqual([]);
+
+		editor.destroy();
+	});
+
 	it("COL2: script-bearing presence is dropped with a diagnostic and does not break good peers", () => {
 		const { editor, controller, diagnostics } = createPresenceEditor();
 
