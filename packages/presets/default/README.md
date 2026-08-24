@@ -9,7 +9,7 @@
 | Extension name        | Package                   |
 | --------------------- | ------------------------- |
 | `document-ops`        | `@input/pen-document-ops` |
-| `delta-stream`        | `@input/pen-delta-stream` |
+| `delta-stream`        | `@input/pen-ai/stream`    |
 | `undo`                | `@input/pen-undo`         |
 | `rich-text-shortcuts` | `@input/pen-shortcuts`    |
 

@@ -12,7 +12,7 @@ export default defineConfig({
     "@input/pen-crdt-yjs",
     "@input/pen-undo",
     "@input/pen-document-ops",
-    "@input/pen-delta-stream",
+    "@input/pen-ai",
     "@input/pen-markdown-serialization",
   ],
   outExtension({ format }) {

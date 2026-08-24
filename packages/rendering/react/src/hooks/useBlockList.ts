@@ -3,7 +3,7 @@ import { getRootBlockIds } from "../utils/parentIdTree";
 import { useSyncExternalStoreWithSelector } from "../utils/useSyncExternalStoreWithSelector";
 
 // HOST5: empty order is correct for shell-only SSR. Do not read the live
-// document here — hosts that need HTML content use @input/pen-export-html
+// document here — hosts that need HTML content use @input/pen-interop/html
 // on their own copy.
 const SSR_BLOCK_ORDER: readonly string[] = [];
 

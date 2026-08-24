@@ -1,10 +1,7 @@
 ---
-"@input/pen-ai-autocomplete": patch
-"@input/pen-ai-suggestions": patch
 "@input/pen-ai": patch
 "@input/pen-assets-memory": patch
 "@input/pen-core": patch
-"@input/pen-delta-stream": patch
 "@input/pen-document-ops": patch
 "@input/pen-dom": patch
 "@input/pen-history": patch

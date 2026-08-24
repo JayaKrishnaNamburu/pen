@@ -62,7 +62,7 @@
   "dependencies": {
     "@input/pen-core": "workspace:^",
     "@input/pen-dom": "workspace:^",
-    "@input/pen-import-html": "workspace:^",
+    "@input/pen-interop": "workspace:^",
     "@input/pen-schema-default": "workspace:^",
     "@input/pen-types": "workspace:^"
   },

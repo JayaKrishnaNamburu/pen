@@ -88,7 +88,10 @@ export class ExpandedContentEditableBackend {
 
 	deactivate(): void {
 		if (this.element) {
-			this.element.contentEditable = "false";
+			// see ContentEditableBackendCore.deactivate: release editability by
+			// removing the attribute so this host never becomes a read-only
+			// island inside a wider editing host.
+			this.element.removeAttribute("contenteditable");
 			this.element.removeAttribute("tabindex");
 			this.element.removeEventListener(
 				"beforeinput",

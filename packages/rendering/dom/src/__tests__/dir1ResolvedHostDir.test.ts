@@ -163,6 +163,21 @@ describe("DOM host DIR1 resolved host dir", () => {
 		expect(getBlockHost(root, blockId).getAttribute("dir")).toBe("rtl");
 	});
 
+	it("RI1: block and inline content hosts are unicode-bidi isolate", () => {
+		const editor = createBareEditor();
+		const blockId = editor.firstBlock()!.id;
+		setBlockText(editor, blockId, "مرحبا");
+		const root = mount(editor);
+		const host = getBlockHost(root, blockId);
+		const inline = host.querySelector(`[${DATA_ATTRS.inlineContent}]`);
+
+		expect(host.style.unicodeBidi).toBe("isolate");
+		if (!(inline instanceof HTMLElement)) {
+			throw new Error(`Missing inline content host for ${blockId}`);
+		}
+		expect(inline.style.unicodeBidi).toBe("isolate");
+	});
+
 	it("DIR1: host dir tracks cache invalidation when block text changes", () => {
 		const editor = createBareEditor();
 		const blockId = editor.firstBlock()!.id;

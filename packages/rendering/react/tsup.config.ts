@@ -19,8 +19,7 @@ export default defineConfig({
     "@input/pen-core",
     "@input/pen-types",
     "@input/pen-schema-default",
-    "@input/pen-import-html",
-    "@input/pen-import-markdown",
+    "@input/pen-interop",
   ],
   outExtension({ format }) {
     return { js: format === "esm" ? ".mjs" : ".cjs" };

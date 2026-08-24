@@ -28,12 +28,12 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 	{
 		code: "ai-tool-read-only-mutation",
 		levels: ["info"],
-		sources: ["extensions/ai-tools/src/execution.ts"],
+		sources: ["extensions/ai/src/tools/execution.ts"],
 	},
 	{
 		code: "ai-tool-unconfirmed",
 		levels: ["info"],
-		sources: ["extensions/ai-tools/src/authority.ts"],
+		sources: ["extensions/ai/src/tools/authority.ts"],
 	},
 	{
 		code: "anchor-budget",
@@ -63,7 +63,7 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 	{
 		code: "asset-upload-failed",
 		levels: ["error"],
-		sources: ["extensions/import-html/src/imageSrcPolicy.ts", "rendering/dom/src/field-editor/transferImages.ts"],
+		sources: ["extensions/interop/src/html/import/imageSrcPolicy.ts", "rendering/dom/src/field-editor/transferImages.ts"],
 	},
 	{
 		code: "block-direction-resolver",
@@ -133,12 +133,12 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 	{
 		code: "import-dropped",
 		levels: ["warn"],
-		sources: ["extensions/import-html/src/ingestBounds.ts", "extensions/import-json/src/ingestBounds.ts", "extensions/import-markdown/src/ingestBounds.ts", "rendering/dom/src/utils/clipboardIngest.ts"],
+		sources: ["extensions/interop/src/html/import/ingestBounds.ts", "extensions/interop/src/json/import/ingestBounds.ts", "extensions/interop/src/markdown/import/ingestBounds.ts", "rendering/dom/src/utils/clipboardIngest.ts"],
 	},
 	{
 		code: "import-truncated",
 		levels: ["warn"],
-		sources: ["extensions/export-xml/src/importer.ts", "extensions/import-html/src/ingestBounds.ts", "extensions/import-json/src/ingestBounds.ts", "extensions/import-markdown/src/ingestBounds.ts", "rendering/dom/src/utils/clipboardIngest.ts"],
+		sources: ["extensions/interop/src/html/import/ingestBounds.ts", "extensions/interop/src/json/import/ingestBounds.ts", "extensions/interop/src/markdown/import/ingestBounds.ts", "extensions/interop/src/xml/importer.ts", "rendering/dom/src/utils/clipboardIngest.ts"],
 	},
 	{
 		code: "invalid-block-type",
@@ -328,36 +328,36 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 	{
 		code: "stream-aborted",
 		levels: ["info"],
-		sources: ["extensions/delta-stream/src/processStream.ts"],
+		sources: ["extensions/ai/src/stream/processStream.ts"],
 	},
 	{
 		code: "stream-part-malformed",
 		levels: ["error"],
-		sources: ["extensions/delta-stream/src/processStream.ts"],
+		sources: ["extensions/ai/src/stream/processStream.ts"],
 	},
 	{
 		code: "stream-part-out-of-order",
 		levels: ["error"],
-		sources: ["extensions/delta-stream/src/processStream.ts"],
+		sources: ["extensions/ai/src/stream/processStream.ts"],
 	},
 	{
 		code: "stream-part-unknown",
 		levels: ["warn"],
-		sources: ["extensions/delta-stream/src/processStream.ts"],
+		sources: ["extensions/ai/src/stream/processStream.ts"],
 	},
 	{
 		code: "stream-protocol-mismatch",
 		levels: ["error"],
-		sources: ["extensions/delta-stream/src/processStream.ts"],
+		sources: ["extensions/ai/src/stream/processStream.ts"],
 	},
 	{
 		code: "stream-target-missing",
 		levels: ["error"],
-		sources: ["extensions/delta-stream/src/processStream.ts"],
+		sources: ["extensions/ai/src/stream/processStream.ts"],
 	},
 	{
 		code: "stream-tool-error",
 		levels: ["error", "warn"],
-		sources: ["extensions/delta-stream/src/processStream.ts"],
+		sources: ["extensions/ai/src/stream/processStream.ts"],
 	},
 ];

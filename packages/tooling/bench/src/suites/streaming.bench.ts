@@ -1,6 +1,6 @@
 import type { BenchContext, BenchDefinition } from "../bench";
 import type { DocumentOp, PenStreamPart, StreamingTarget } from "@input/pen-types";
-import { deltaStreamExtension } from "@input/pen-delta-stream";
+import { deltaStreamExtension } from "@input/pen-ai/stream";
 import { createTestEditor } from "@input/pen-test";
 import {
 	STREAMING_BATCH_FLUSH_LATENCY_BENCH,

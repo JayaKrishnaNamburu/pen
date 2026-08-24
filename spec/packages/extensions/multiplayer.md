@@ -48,6 +48,7 @@ Important rules:
 
 - Remote presence is collaboration state, not document truth.
 - Remote cursor and selection visuals are derived from controller state and emitted as decorations.
+- Peers put serialized `editor.anchors` payloads on the awareness wire. Receivers `deserialize` them as `provenance: "wire"` and resolve per flush. A `null` resolve hides the caret until the next awareness frame or catch-up.
 - Identity resolution and author ledgers should enrich collaboration state without coupling the package to one transport provider.
 
 ## Integration Notes

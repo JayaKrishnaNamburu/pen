@@ -2,7 +2,7 @@
 
 `@input/pen-document-ops` owns Pen's built-in document tool semantics.
 
-The standard `defaultPreset()` installs this extension, so most editors start with the document read/write/context tools already registered. This package does not talk to a model or grant mutating tools — that is `@input/pen-ai-tools`.
+The standard `defaultPreset()` installs this extension, so most editors start with the document read/write/context tools already registered. This package does not talk to a model or grant mutating tools — that is `@input/pen-ai/tools`.
 
 ## Install
 
@@ -39,7 +39,7 @@ if (!toolRuntime) {
 const tools = toolRuntime.listTools();
 ```
 
-Prefer `@input/pen-ai-tools` for the main public agent/tool integration story. Reach for `@input/pen-document-ops` when you need the underlying document semantics or lower-level runtime escape hatches.
+Prefer `@input/pen-ai/tools` for the main public agent/tool integration story. Reach for `@input/pen-document-ops` when you need the underlying document semantics or lower-level runtime escape hatches.
 
 ## Payload validation (SEC6)
 
@@ -105,7 +105,7 @@ applyValidatedOps(editor, payloads, { origin: "ai" });
 
 ## Facets and commands
 
-This package contributes no facets and no commands. It requires no other extensions. It registers document tools on a slot (`document-ops:toolRuntime`). Prefer `@input/pen-ai-tools` for the public agent surface.
+This package contributes no facets and no commands. It requires no other extensions. It registers document tools on a slot (`document-ops:toolRuntime`). Prefer `@input/pen-ai/tools` for the public agent surface.
 
 ## Documentation
 

@@ -438,6 +438,13 @@ export abstract class FieldEditorImplLifecycle extends FieldEditorImplCore {
 		element: HTMLElement,
 		options: PenFieldEditorFocusOptions = {},
 	): boolean {
+		if (this._mode === "block") {
+			// T3: surface mode `block` skips contenteditable. React still
+			// calls attachElement on the focused field when leaving
+			// expanded; remounting clamps native to that field and the
+			// open pointer window accepts the leftover.
+			return false;
+		}
 		if (!this._focusBlockId) return false;
 		const hostedBlockId = element
 			.closest(`[${DATA_ATTRS.blockId}]`)

@@ -141,8 +141,20 @@ const SKIP_DIR_NAMES = new Set([
  * stayed 0 throughout. The published surface did not move: the 18
  * enumerated subpaths plus the bare `./field-editor` barrel cover all
  * 19 dist `.d.ts` files exactly.
+ *
+ * 1797 → 1796 on 2026-08-24, where two opposing moves nearly cancel. Wave
+ * 6 merged twelve packages into `@input/pen-ai` and `@input/pen-interop`,
+ * so this count now reads 24 committed reports instead of 35. No symbol
+ * left the published surface — each moved to a feature or format subpath
+ * of a survivor, and a symbol reachable through several subpaths counts
+ * once. Against that, waves 5 and X added seven public symbols:
+ * `STRIP_EMPTY_BLOCK_ZWSP_ID`, `createStripEmptyBlockZwspMigration` and
+ * `isLoneEmptyBlockZwsp` (core), `recordDocumentLoadMigration` (crdt-yjs),
+ * and `ReducedMotionListener` / `ReducedMotionSignal` /
+ * `createReducedMotionSignal` (pen-dom). The net is one fewer symbol, not
+ * a TSDoc pass.
  */
-export const MAX_UNDOCUMENTED = 1797;
+export const MAX_UNDOCUMENTED = 1796;
 
 const JSDOC_RE = /\/\*\*[\s\S]*?\*\//g;
 const DECL_RE =

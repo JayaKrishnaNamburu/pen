@@ -5,8 +5,7 @@
 "@input/pen-dom": minor
 "@input/pen-react": minor
 "@input/pen-ai": minor
-"@input/pen-export-json": minor
-"@input/pen-export-html": minor
+"@input/pen-interop": minor
 "@input/pen-markdown-serialization": minor
 "@input/pen-test": minor
 ---

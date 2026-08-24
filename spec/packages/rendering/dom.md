@@ -63,7 +63,8 @@ Important rules:
 - `applyElementAttributes()` lowercases attribute keys before deciding. `href`, `src`, and `xlink:href` go through `urlPolicy` (`xlink:href` as a link URL). Event-handler names and `style` are dropped. The helper still defaults to the package `urlPolicy` if the caller omits a policy; hosts must pass the editor so a configured `pen.urlPolicy` is not skipped.
 - `fullReconcileToDOM` / `fullReconcileDeltasToDOM` require either `{ editor }` or `{ urlPolicy }`. Passing `editor` reads `urlPolicyFromEditor(editor)`. Idle React and Vue inline and table-cell surfaces pass `{ editor }`. Image `src` on the React `ImageRenderer` and Vue `PenBlock` image fallback goes through `resolveEditorUrl(editor, src, "image")`.
 - Boolean `data-*` attributes are emitted in the valueless HTML form (`data-readonly=""`) and omitted when off. `buildDataAttributes()` is the helper: `true` becomes `""`, `false`/`undefined` are dropped. Hosts should write `[data-readonly]`, not `[data-readonly="true"]`. ARIA booleans stay the literal strings `"true"` / `"false"` (`aria-hidden="true"`); a valueless ARIA boolean is invalid.
-- Selection bridging and geometry are mid-redesign (Wave 05). Do not treat the current selection-bridge or bidi-geometry details in this package as a settled contract.
+- An empty text-capable field renders exactly one `<br data-pen-empty="">` child. Reconciliation writes and removes it. `extractTextFromDOM` ignores `data-pen-empty` nodes, so field `textContent` and extracted text are `""`. The caret overlay `data-offset` on an empty field is `0`. The placeholder is never serialized.
+- Selection bridging and geometry are under redesign. Do not treat the current selection-bridge or bidi-geometry details in this package as a settled contract.
 
 ## Integration Notes
 

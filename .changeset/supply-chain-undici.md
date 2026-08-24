@@ -1,5 +1,5 @@
 ---
-"@input/pen-import-html": patch
+"@input/pen-interop": patch
 ---
 
 Pin the sanitizer dependency graph to undici 7.29.0 and dompurify 3.4.14, and make the published-package audit blocking.

@@ -13,7 +13,7 @@ import {
 	createAIToolTurn,
 	isAIToolCallDenied,
 	openAIToolCall,
-} from "@input/pen-ai-tools";
+} from "@input/pen-ai/tools";
 import { generateId, isAsyncIterable } from "@input/pen-types";
 
 export interface DirectTransportOptions {

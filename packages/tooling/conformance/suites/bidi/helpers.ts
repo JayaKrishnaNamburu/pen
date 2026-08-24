@@ -66,6 +66,61 @@ export async function readDir(page: Page, blockId: string): Promise<DirSnapshot 
 	}, blockId);
 }
 
+export async function replayImeCommit(
+	page: Page,
+	blockId: string,
+	composed: string,
+): Promise<string> {
+	return page.evaluate(
+		({ id, text }) => {
+			const block = document.querySelector(`[data-block-id="${id}"]`);
+			if (!(block instanceof HTMLElement)) {
+				throw new Error(`replayImeCommit: missing block ${id}`);
+			}
+			const surface =
+				block.querySelector(
+					"[data-pen-inline-content][contenteditable='true']",
+				) ??
+				block.querySelector("[data-pen-field-editor-active-surface]") ??
+				block.querySelector("[data-pen-inline-content]");
+			if (!(surface instanceof HTMLElement)) {
+				throw new Error(`replayImeCommit: no surface on ${id}`);
+			}
+			surface.dispatchEvent(
+				new CompositionEvent("compositionstart", { bubbles: true }),
+			);
+			surface.dispatchEvent(
+				new CompositionEvent("compositionupdate", {
+					bubbles: true,
+					data: text,
+				}),
+			);
+			const before = new InputEvent("beforeinput", {
+				bubbles: true,
+				cancelable: true,
+				inputType: "insertCompositionText",
+				data: text,
+			});
+			Object.defineProperty(before, "inputType", {
+				configurable: true,
+				value: "insertCompositionText",
+			});
+			surface.dispatchEvent(before);
+			// a real IME mutates the field before compositionend; the
+			// contenteditable backend commits a DOM-vs-start-text diff.
+			surface.append(text);
+			surface.dispatchEvent(
+				new CompositionEvent("compositionend", {
+					bubbles: true,
+					data: text,
+				}),
+			);
+			return window.__penConformance.documentText;
+		},
+		{ id: blockId, text: composed },
+	);
+}
+
 export async function readBlockText(page: Page, blockId: string): Promise<string> {
 	return page.evaluate((id) => {
 		const block = document.querySelector(`[data-block-id="${id}"]`);
@@ -82,6 +137,19 @@ export async function clickOffset(
 ): Promise<void> {
 	const point = await getInlineOffsetPoint(page, { blockId, offset });
 	await page.mouse.click(point.x, point.y);
+	// range(0,1).left is the visual left. in an rtl block Chromium's
+	// caretPositionFromPoint maps that edge to the logical end, and
+	// selectionBridge agrees — the click only activates the field.
+	await page.evaluate(
+		({ id, caret }) => {
+			const index = window.__penConformance.blockIds.indexOf(id);
+			if (index < 0) {
+				throw new Error(`clickOffset: missing block ${id}`);
+			}
+			window.__penConformance.selectText(index, caret);
+		},
+		{ id: blockId, caret: offset },
+	);
 	await expect
 		.poll(async () => {
 			const caret = await readCaret(page);

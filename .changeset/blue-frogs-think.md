@@ -1,8 +1,7 @@
 ---
 "@input/pen-content-ops": patch
 "@input/pen-core": patch
-"@input/pen-export-json": patch
-"@input/pen-export-xml": patch
+"@input/pen-interop": patch
 "@input/pen-react": patch
 "@input/pen-search": patch
 "@input/pen-types": patch

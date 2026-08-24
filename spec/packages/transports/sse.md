@@ -25,7 +25,7 @@ Provide transport-specific wiring around Pen protocols and sessions. The live `E
 
 `createSSEHandler` reads the POST body, rejects oversized or malformed JSON with HTTP 400, then runs `parsePenStreamRequest()`. That parser admits only the serializable `PenStreamRequest` keys. `context.editor` is not a valid field and fails the parse, so tool execution never sees a live editor handle from the network. The editor used for tool context is the one passed at handler construction.
 
-Each `toolCalls` entry is authorized with `openAIToolCall()` before `executeTool()`. A denied call sends `tool-error` and skips execution. The write guard is restored in `finally`, not `catch`, matching the direct transport: a non-throw unwind would otherwise leave the guard patched onto the host editor. `opened.close()` is idempotent and returns its first result on later calls (owned by `@input/pen-ai-tools`).
+Each `toolCalls` entry is authorized with `openAIToolCall()` before `toolRuntime.executeTool()`. A denied call sends `tool-error` and skips execution. The write guard is restored in `finally`, not `catch`, matching the direct transport: a non-throw unwind would otherwise leave the guard patched onto the host editor. `opened.close()` is idempotent and returns its first result on later calls (owned by `@input/pen-ai/tools`).
 
 ## Integration Notes
 

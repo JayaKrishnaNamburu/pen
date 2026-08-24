@@ -22,7 +22,7 @@ export type PasteCorpusRow = {
 };
 
 export const PASTE_CORPUS_SOURCE =
-	"packages/extensions/import-html/src/__tests__/pasteCorpus";
+	"packages/extensions/interop/src/html/import/__tests__/pasteCorpus";
 
 export const PASTE_CORPUS_ROWS: readonly PasteCorpusRow[] = [
 	{

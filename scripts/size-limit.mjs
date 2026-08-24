@@ -2,8 +2,10 @@
 /**
  * API7 bundle budgets (spec-v2/14-api-and-packaging.md, Wave P step P.7).
  *
- * Weighs each published `dist/index.mjs` against `.size-limit.baseline.json`
- * via `fs.stat` (same method that recorded the numbers). Growth above
+ * Weighs each published entry path against `.size-limit.baseline.json` via
+ * `fs.stat` (same method that recorded the numbers) — `dist/index.mjs`, or
+ * `dist/*.mjs` where code splitting means no single file is the package.
+ * Growth above
  * `regressionPercent` fails. A re-record is a re-record, not a waiver:
  * every entry's `note` must name the wave that added the bytes.
  *
@@ -23,6 +25,31 @@ const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_REPO_ROOT = path.resolve(SCRIPT_DIR, "..");
 const BASELINE_NAME = ".size-limit.baseline.json";
 const WAVE_RE = /\bWave\b/;
+
+/**
+ * A code-split package ships content-hashed chunk names, so no single file
+ * is the package and a hashed name cannot be written into the baseline. An
+ * entry path may therefore carry one `*` (`dist/*.mjs`), and the weight is
+ * the sum of the matches — the shipped ESM closure. Zero matches records
+ * nothing, so the entry reports as missing and fails closed.
+ */
+export function matchGlobNames(pattern, names) {
+	const star = pattern.indexOf("*");
+	if (star === -1) {
+		return names.filter((name) => name === pattern);
+	}
+	if (pattern.indexOf("*", star + 1) !== -1) {
+		throw new Error(`size-limit: ${pattern} may contain at most one *`);
+	}
+	const prefix = pattern.slice(0, star);
+	const suffix = pattern.slice(star + 1);
+	return names.filter(
+		(name) =>
+			name.length >= prefix.length + suffix.length &&
+			name.startsWith(prefix) &&
+			name.endsWith(suffix),
+	);
+}
 
 export function resolveLimitBytes(entry) {
 	if (typeof entry.limitBytes === "number") {
@@ -183,6 +210,32 @@ export function runSelfTests() {
 		throw new Error("self-test: attributed in-budget entry must pass");
 	}
 
+	const globbed = matchGlobNames("*.mjs", [
+		"index.mjs",
+		"html.mjs",
+		"chunk-EPDWUSBK.mjs",
+		"index.cjs",
+		"index.d.ts",
+	]);
+	if (globbed.length !== 3 || globbed.includes("index.cjs")) {
+		throw new Error("self-test: glob sums hashed chunks and entries, ESM only");
+	}
+	if (matchGlobNames("*.mjs", ["index.cjs"]).length !== 0) {
+		throw new Error("self-test: a glob matching nothing records nothing");
+	}
+	if (matchGlobNames("index.mjs", ["index.mjs", "other.mjs"]).length !== 1) {
+		throw new Error("self-test: a starless path stays an exact match");
+	}
+	let rejectedTwoStars = false;
+	try {
+		matchGlobNames("*.*.mjs", ["a.b.mjs"]);
+	} catch {
+		rejectedTwoStars = true;
+	}
+	if (!rejectedTwoStars) {
+		throw new Error("self-test: more than one * must fail closed");
+	}
+
 	const missingBaseline = evaluateSizeLimit({
 		baseline: { regressionPercent: 10, entries: [] },
 		stats: {},
@@ -286,12 +339,34 @@ async function loadBaseline(repoRoot) {
 	}
 }
 
+async function measureEntryBytes(repoRoot, entryPath) {
+	const absolute = path.join(repoRoot, entryPath);
+	if (!entryPath.includes("*")) {
+		return (await fs.stat(absolute)).size;
+	}
+	const directory = path.dirname(absolute);
+	const matched = matchGlobNames(
+		path.basename(entryPath),
+		await fs.readdir(directory),
+	);
+	if (matched.length === 0) {
+		return null;
+	}
+	let total = 0;
+	for (const name of matched) {
+		total += (await fs.stat(path.join(directory, name))).size;
+	}
+	return total;
+}
+
 async function collectStats(repoRoot, entries) {
 	const stats = {};
 	for (const entry of entries) {
 		try {
-			stats[entry.path] = (await fs.stat(path.join(repoRoot, entry.path)))
-				.size;
+			const bytes = await measureEntryBytes(repoRoot, entry.path);
+			if (bytes != null) {
+				stats[entry.path] = bytes;
+			}
 		} catch (error) {
 			if (error && error.code === "ENOENT") {
 				continue;

@@ -1,7 +1,6 @@
 ---
 "@input/pen-undo": patch
-"@input/pen-ai-suggestions": patch
-"@input/pen-ai-autocomplete": patch
+"@input/pen-ai": patch
 "@input/pen-multiplayer": patch
 ---
 

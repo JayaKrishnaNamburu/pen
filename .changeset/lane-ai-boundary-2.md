@@ -1,5 +1,5 @@
 ---
-"@input/pen-ai-tools": patch
+"@input/pen-ai": patch
 ---
 
 Refuse writes through a live `delta-stream:target` writer during a read-only tool call.

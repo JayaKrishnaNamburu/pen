@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { aiEgressFacet, createEditor, defineExtension } from "@input/pen-core";
 import { undoExtension } from "@input/pen-undo";
-import { deltaStreamExtension } from "@input/pen-delta-stream";
+import { deltaStreamExtension } from "../stream";
 import { documentOpsExtension } from "@input/pen-document-ops";
 import {
 	AI_EGRESS_INVENTORY_CODE,

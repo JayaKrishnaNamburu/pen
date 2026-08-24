@@ -321,8 +321,7 @@ Make export more composable for host-defined targets such as web previews, markd
 Primary packages:
 
 ```text
-packages/extensions/export-html
-packages/extensions/export-markdown
+packages/extensions/interop
 packages/core
 packages/types
 ```
@@ -550,7 +549,7 @@ As waves ship, update:
 
 - `spec/packages/crdt/yjs.md`,
 - `spec/packages/core.md`,
-- `spec/packages/extensions/export-html.md`,
+- `spec/packages/extensions/interop.md`,
 - `spec/packages/extensions/ai.md`,
 - package READMEs,
 - playground examples where helpful.

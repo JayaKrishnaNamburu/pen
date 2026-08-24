@@ -1,7 +1,7 @@
 import React from "react";
 import type { Editor } from "@input/pen-types";
 import { useIsomorphicLayoutEffect } from "./useIsomorphicLayoutEffect";
-import type { AISuggestionGroup } from "@input/pen-ai-suggestions";
+import type { AISuggestionGroup } from "@input/pen-ai/suggestions";
 import { queryAISuggestionAnchorElement } from "../utils/aiDomScope";
 import { useAISuggestions } from "./useAISuggestions";
 

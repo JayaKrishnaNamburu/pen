@@ -1,5 +1,5 @@
 ---
-"@input/pen-ai-suggestions": patch
+"@input/pen-ai": patch
 ---
 
 Move suggestion controller methods onto the class so the package no longer mutates prototypes at import time.

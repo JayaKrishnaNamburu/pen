@@ -1,5 +1,5 @@
 ---
-"@input/pen-import-html": patch
+"@input/pen-interop": patch
 "@input/pen-react": patch
 "@input/pen-vue": patch
 ---

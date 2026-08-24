@@ -65,6 +65,13 @@ const BEFORE_APPLY_HELPER_RE =
 // shape — and never a `level` beside the code.
 const AUTHORITY_HELPER_RE = /emitAuthorityDiagnostic\s*\(/;
 const AUTHORITY_CODE_CONST_RE = /^AI_TOOL_[A-Z0-9_]+_CODE$/;
+// The codes are declared in `constants.ts` while the helper that emits them
+// lives in the sibling `execution.ts`, so the directory is the only in-file
+// signal that a bare constant belongs to the tool surface. This path moved in
+// the SF1 merge (`extensions/ai-tools/src` -> `extensions/ai/src/tools`); if it
+// moves again the level goes unresolved and the DOC3 gate throws rather than
+// publishing an empty cell.
+const AUTHORITY_TOOL_DIR_RE = /[/\\]ai[/\\]src[/\\]tools[/\\]/;
 
 function walkFiles(directory, files = []) {
 	const entries = readdirSync(directory, { withFileTypes: true });
@@ -484,7 +491,7 @@ function collectCodesFromText(text, file, constants, rows) {
 			const authorityInfo =
 				!level &&
 				AUTHORITY_CODE_CONST_RE.test(ident) &&
-				(/[/\\]ai-tools[/\\]/.test(file) || AUTHORITY_HELPER_RE.test(text));
+				(AUTHORITY_TOOL_DIR_RE.test(file) || AUTHORITY_HELPER_RE.test(text));
 			const resolvedLevel = authorityInfo ? "info" : level;
 			if (code && (levels.length > 0 || !isCrdt || authorityInfo)) {
 				addDiagnostic(rows, code, file, resolvedLevel);
@@ -682,22 +689,22 @@ const EXPORT_FIDELITY_SOURCES = [
 	{
 		id: "html",
 		constName: "HTML_EXPORT_FIDELITY",
-		path: "packages/extensions/export-html/src/fidelityTable.ts",
+		path: "packages/extensions/interop/src/html/export/fidelityTable.ts",
 	},
 	{
 		id: "markdown",
 		constName: "MARKDOWN_EXPORT_FIDELITY",
-		path: "packages/extensions/export-markdown/src/fidelityTable.ts",
+		path: "packages/extensions/interop/src/markdown/export/fidelityTable.ts",
 	},
 	{
 		id: "json",
 		constName: "JSON_EXPORT_FIDELITY",
-		path: "packages/extensions/export-json/src/fidelityTable.ts",
+		path: "packages/extensions/interop/src/json/export/fidelityTable.ts",
 	},
 	{
 		id: "xml",
 		constName: "XML_EXPORT_FIDELITY",
-		path: "packages/extensions/export-xml/src/fidelityTable.ts",
+		path: "packages/extensions/interop/src/xml/fidelityTable.ts",
 	},
 ];
 
@@ -810,7 +817,7 @@ function formatCapturedProvenance(id, provenance) {
 function collectPasteCorpusRows() {
 	const corpusDir = join(
 		repoRoot,
-		"packages/extensions/import-html/src/__tests__/pasteCorpus",
+		"packages/extensions/interop/src/html/import/__tests__/pasteCorpus",
 	);
 	const typesSource = readFileSync(join(corpusDir, "types.ts"), "utf8");
 	const idsMatch = typesSource.match(
@@ -851,7 +858,7 @@ function collectPasteCorpusRows() {
 const INGEST_BOUND_FILES = [
 	{
 		id: "html",
-		path: "packages/extensions/import-html/src/ingestBounds.ts",
+		path: "packages/extensions/interop/src/html/import/ingestBounds.ts",
 		names: {
 			INGEST_MAX_NESTING_DEPTH: "maxNestingDepth",
 			INGEST_MAX_NODE_COUNT: "maxNodeCount",
@@ -862,7 +869,7 @@ const INGEST_BOUND_FILES = [
 	},
 	{
 		id: "markdown",
-		path: "packages/extensions/import-markdown/src/ingestBounds.ts",
+		path: "packages/extensions/interop/src/markdown/import/ingestBounds.ts",
 		names: {
 			INGEST_MAX_NESTING_DEPTH: "maxNestingDepth",
 			INGEST_MAX_NODE_COUNT: "maxNodeCount",
@@ -873,7 +880,7 @@ const INGEST_BOUND_FILES = [
 	},
 	{
 		id: "json",
-		path: "packages/extensions/import-json/src/ingestBounds.ts",
+		path: "packages/extensions/interop/src/json/import/ingestBounds.ts",
 		names: {
 			INGEST_MAX_NESTING_DEPTH: "maxNestingDepth",
 			INGEST_MAX_NODE_COUNT: "maxNodeCount",
@@ -884,7 +891,7 @@ const INGEST_BOUND_FILES = [
 	},
 	{
 		id: "xml",
-		path: "packages/extensions/export-xml/src/ingestBounds.ts",
+		path: "packages/extensions/interop/src/xml/ingestBounds.ts",
 		names: {
 			INGEST_MAX_NESTING_DEPTH: "maxNestingDepth",
 			INGEST_MAX_NODE_COUNT: "maxNodeCount",
@@ -1092,7 +1099,7 @@ function renderPasteCorpusModule(rows) {
 		"};",
 		"",
 		"export const PASTE_CORPUS_SOURCE =",
-		'\t"packages/extensions/import-html/src/__tests__/pasteCorpus";',
+		'\t"packages/extensions/interop/src/html/import/__tests__/pasteCorpus";',
 		"",
 		"export const PASTE_CORPUS_ROWS: readonly PasteCorpusRow[] = [",
 		...rowLines,

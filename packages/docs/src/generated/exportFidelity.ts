@@ -20,7 +20,7 @@ export const EXPORT_FIDELITY_TABLES: readonly ExportFidelityTable[] = [
 		id: "html",
 		title: "HTML export fidelity (IOP3)",
 		intro: "What the HTML exporter preserves for each default block, mark, and inline node. Schema `toHTML` attribute interpolations are deferred to a later S.5 slice.",
-		source: "packages/extensions/export-html/src/fidelityTable.ts",
+		source: "packages/extensions/interop/src/html/export/fidelityTable.ts",
 		rows: [
 			{
 				kind: "block",
@@ -172,7 +172,7 @@ export const EXPORT_FIDELITY_TABLES: readonly ExportFidelityTable[] = [
 		id: "markdown",
 		title: "Markdown export fidelity (IOP3)",
 		intro: "Pen markdown is GitHub-flavored Markdown for blocks with a standard representation, plus Pen-specific constructs for the rest. A non-Pen reader sees GFM for headings, lists, code, tables, images, and emphasis. Subdocument and toggle become HTML comments or raw HTML.",
-		source: "packages/extensions/export-markdown/src/fidelityTable.ts",
+		source: "packages/extensions/interop/src/markdown/export/fidelityTable.ts",
 		rows: [
 			{
 				kind: "block",
@@ -324,7 +324,7 @@ export const EXPORT_FIDELITY_TABLES: readonly ExportFidelityTable[] = [
 		id: "json",
 		title: "JSON export fidelity (IOP3)",
 		intro: "JSON is the lossless interchange format for schema-known document content: blocks, props, marks, inline nodes, and structured table payloads. Unknown props are preserved (DUR3). Metadata is included when requested. Apps are not part of this exporter.",
-		source: "packages/extensions/export-json/src/fidelityTable.ts",
+		source: "packages/extensions/interop/src/json/export/fidelityTable.ts",
 		rows: [
 			{
 				kind: "block",
@@ -476,7 +476,7 @@ export const EXPORT_FIDELITY_TABLES: readonly ExportFidelityTable[] = [
 		id: "xml",
 		title: "XML export fidelity (IOP3)",
 		intro: "XML is a lossless interchange format layered on the JSON document model. Schema-known blocks, props, marks, inline nodes, and structured table payloads round-trip.",
-		source: "packages/extensions/export-xml/src/fidelityTable.ts",
+		source: "packages/extensions/interop/src/xml/fidelityTable.ts",
 		rows: [
 			{
 				kind: "block",

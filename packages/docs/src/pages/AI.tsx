@@ -39,7 +39,7 @@ export function AIPage() {
 				<code>null</code> stops the chain. With no filter installed, the
 				context passes through unchanged.
 			</p>
-				<pre>
+			<pre>
 				<code>{`import { createEditor, aiEgressFacet, defineExtension } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
 import { aiExtension } from "@input/pen-ai";
@@ -169,7 +169,7 @@ const editor = createEditor({
 					</tr>
 					<tr>
 						<td>
-							<code>@input/pen-ai-suggestions</code>
+							<code>@input/pen-ai/suggestions</code>
 						</td>
 						<td>
 							<code>suggestions</code>
@@ -183,7 +183,7 @@ const editor = createEditor({
 					</tr>
 					<tr>
 						<td>
-							<code>@input/pen-ai-autocomplete</code>
+							<code>@input/pen-ai/autocomplete</code>
 						</td>
 						<td>
 							<code>autocomplete</code>
@@ -271,8 +271,8 @@ import {
   AI_TOOL_MAX_CALLS_PER_TURN,
   AI_TOOL_MAX_OPS_PER_CALL,
   AI_TOOL_MAX_TOTAL_OPS_PER_TURN,
-} from "@input/pen-ai-tools";
-import type { AIToolCallDenied } from "@input/pen-ai-tools";
+} from "@input/pen-ai/tools";
+import type { AIToolCallDenied } from "@input/pen-ai/tools";
 
 aiExtension({
   allowedMutatingTools: ["insert_block", "update_block"],
@@ -370,13 +370,13 @@ const denied: AIToolCallDenied = {
 				<code>sseTransport</code> and <code>createSSEHandler</code>.
 			</p>
 			<p>
-				<code>@input/pen-ai</code> installs the AI extension. It
-				depends on <code>document-ops</code>,{" "}
-				<code>delta-stream</code>, and <code>undo</code>.{" "}
-				<code>defaultPreset()</code> registers those. A bare{" "}
+				<code>@input/pen-ai</code> installs the AI extension. It depends
+				on <code>document-ops</code>, <code>delta-stream</code>, and{" "}
+				<code>undo</code>. <code>defaultPreset()</code> registers those.
+				A bare{" "}
 				<code>{`createEditor({ extensions: [aiExtension()] })`}</code>{" "}
-				throws. Pair the extension with a renderer when you want
-				review chrome. React exposes AI surfaces on the{" "}
+				throws. Pair the extension with a renderer when you want review
+				chrome. React exposes AI surfaces on the{" "}
 				<code>@input/pen-react/ai</code> and{" "}
 				<code>@input/pen-react/ai-suggestions</code> subpaths.
 			</p>
@@ -401,26 +401,27 @@ const ai = getAIController(editor);`}</code>
 				Suggest mode sends AI-authored edits through the suggestion and
 				review path instead of replacing document text immediately.
 				Streaming writes go through <code>editor.openTextStream</code> /{" "}
-				<code>@input/pen-delta-stream</code>, not direct Yjs text
-				writes.
+				<code>@input/pen-ai/stream</code>, not direct Yjs text writes.
+				Install <code>@input/pen-ai</code>; suggestions, autocomplete,
+				tools, skills, and stream are subpath entries.
 			</p>
 			<ul>
 				<li>
-					<code>@input/pen-ai-suggestions</code> —{" "}
+					<code>@input/pen-ai/suggestions</code> —{" "}
 					<code>aiSuggestionsExtension</code>, host-provided analyzer
 				</li>
 				<li>
-					<code>@input/pen-ai-autocomplete</code> —{" "}
+					<code>@input/pen-ai/autocomplete</code> —{" "}
 					<code>autocompleteExtension</code>,{" "}
 					<code>getAutocompleteController</code>
 				</li>
 				<li>
-					<code>@input/pen-ai-tools</code> —{" "}
+					<code>@input/pen-ai/tools</code> —{" "}
 					<code>getAIToolRuntime</code>, <code>listAITools</code>,{" "}
 					<code>executeAITool</code>
 				</li>
 				<li>
-					<code>@input/pen-ai-skills</code> — skill descriptions for
+					<code>@input/pen-ai/skills</code> — skill descriptions for
 					agent workflows
 				</li>
 				<li>

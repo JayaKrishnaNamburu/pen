@@ -200,6 +200,24 @@ describe("React DIR1 resolved host dir", () => {
 		await cleanupEditor(editor, root, container);
 	});
 
+	it("RI1: block and inline content hosts are unicode-bidi isolate", async () => {
+		const editor = createEditor();
+		const blockId = editor.firstBlock()!.id;
+		setBlockText(editor, blockId, "مرحبا");
+
+		const { container, root } = await renderEditor(editor);
+		const host = getBlockHost(container, blockId);
+		const inline = host.querySelector("[data-pen-inline-content]");
+
+		expect(host.style.unicodeBidi).toBe("isolate");
+		if (!(inline instanceof HTMLElement)) {
+			throw new Error(`Missing inline content host for ${blockId}`);
+		}
+		expect(inline.style.unicodeBidi).toBe("isolate");
+
+		await cleanupEditor(editor, root, container);
+	});
+
 	it("DIR1: host dir tracks cache invalidation when block text changes", async () => {
 		const editor = createEditor();
 		const blockId = editor.firstBlock()!.id;

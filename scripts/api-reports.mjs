@@ -229,7 +229,12 @@ export function exportKeys(manifest) {
 	if (typeof exportsField !== "object" || Array.isArray(exportsField)) {
 		return ["."];
 	}
-	const keys = Object.keys(exportsField);
+	// a subpath resolving straight to a .json file (`./package.json`) is a
+	// manifest passthrough, not a typed entry point, so it carries no surface
+	const keys = Object.keys(exportsField).filter((key) => {
+		const target = exportsField[key];
+		return !(typeof target === "string" && target.endsWith(".json"));
+	});
 	return keys.length > 0 ? keys : ["."];
 }
 
@@ -357,6 +362,20 @@ export { type Foo, isFoo, isBar, doWork, Box, FLAG };
 	}
 	if (byName.FLAG !== "value") {
 		throw new Error("self-test: const");
+	}
+
+	const merged = exportKeys({
+		exports: {
+			".": { import: { types: "./dist/index.d.ts" } },
+			"./suggestions": { import: { types: "./dist/suggestions.d.ts" } },
+			"./package.json": "./package.json",
+		},
+	});
+	if (!merged.includes("./suggestions")) {
+		throw new Error("self-test: typed subpath stays an entry point");
+	}
+	if (merged.includes("./package.json")) {
+		throw new Error("self-test: manifest passthrough is not an entry point");
 	}
 
 	const rendered = renderApiReport({

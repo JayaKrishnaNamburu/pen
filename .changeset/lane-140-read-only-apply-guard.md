@@ -1,5 +1,5 @@
 ---
-"@input/pen-ai-tools": patch
+"@input/pen-ai": patch
 ---
 
 Refuse `editor.apply` from a tool classified as read-only.

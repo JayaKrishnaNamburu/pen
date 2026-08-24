@@ -1,5 +1,5 @@
 ---
-"@input/pen-export-xml": patch
+"@input/pen-interop": patch
 ---
 
 Admit exported href and src values through the SEC1 URL policy.

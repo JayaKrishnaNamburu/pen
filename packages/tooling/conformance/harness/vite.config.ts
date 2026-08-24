@@ -5,11 +5,26 @@ import react from "@vitejs/plugin-react";
 const repoRoot = fileURLToPath(new URL("../../../../", import.meta.url));
 
 const PEN_SOURCE_ALIASES = {
-	"@input/pen-ai-autocomplete": fileURLToPath(
+	"@input/pen-ai/autocomplete": fileURLToPath(
 		new URL(
-			"../../../../packages/extensions/ai-autocomplete/src/index.ts",
+			"../../../../packages/extensions/ai/src/autocomplete.ts",
 			import.meta.url,
 		),
+	),
+	"@input/pen-ai/stream": fileURLToPath(
+		new URL("../../../../packages/extensions/ai/src/stream.ts", import.meta.url),
+	),
+	"@input/pen-ai/suggestions": fileURLToPath(
+		new URL(
+			"../../../../packages/extensions/ai/src/suggestions.ts",
+			import.meta.url,
+		),
+	),
+	// keep the bare specifier below every @input/pen-ai/* key: vite matches
+	// `find` or `find + "/"` in insertion order, so a root-first entry would
+	// swallow the subpaths above
+	"@input/pen-ai": fileURLToPath(
+		new URL("../../../../packages/extensions/ai/src/index.ts", import.meta.url),
 	),
 	"@input/pen-core": fileURLToPath(
 		new URL("../../../../packages/core/src/index.ts", import.meta.url),
@@ -17,15 +32,15 @@ const PEN_SOURCE_ALIASES = {
 	"@input/pen-crdt-yjs": fileURLToPath(
 		new URL("../../../../packages/crdt/yjs/src/index.ts", import.meta.url),
 	),
-	"@input/pen-delta-stream": fileURLToPath(
-		new URL(
-			"../../../../packages/extensions/delta-stream/src/index.ts",
-			import.meta.url,
-		),
-	),
 	"@input/pen-document-ops": fileURLToPath(
 		new URL(
 			"../../../../packages/extensions/document-ops/src/index.ts",
+			import.meta.url,
+		),
+	),
+	"@input/pen-interop/html": fileURLToPath(
+		new URL(
+			"../../../../packages/extensions/interop/src/html.ts",
 			import.meta.url,
 		),
 	),

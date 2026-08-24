@@ -317,7 +317,9 @@ export abstract class FieldEditorImplRuntime extends FieldEditorImplSelection {
 		if (!this._isEditing || !this._focusBlockId) return;
 		const NextBackendClass = this._resolveBackendClass();
 		if (!this._backendLifecycle.hasBackend(NextBackendClass)) {
-			this._backendLifecycle.replace(NextBackendClass);
+			this.withBackendSelectionWrite(() => {
+				this._backendLifecycle.replace(NextBackendClass);
+			});
 			this._attachedElement = null;
 		}
 
@@ -327,6 +329,10 @@ export abstract class FieldEditorImplRuntime extends FieldEditorImplSelection {
 			if (expandedHost) {
 				this.attachElement(expandedHost);
 			}
+			return;
+		}
+
+		if (this._mode === "block") {
 			return;
 		}
 

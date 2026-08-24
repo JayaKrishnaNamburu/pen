@@ -1,9 +1,5 @@
 ---
 "@input/pen-ai": patch
-"@input/pen-ai-tools": patch
-"@input/pen-ai-suggestions": patch
-"@input/pen-ai-autocomplete": patch
-"@input/pen-delta-stream": patch
 "@input/pen-test": patch
 ---
 

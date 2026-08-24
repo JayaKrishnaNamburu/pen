@@ -1,8 +1,5 @@
 ---
-"@input/pen-export-html": patch
-"@input/pen-export-xml": patch
-"@input/pen-export-markdown": patch
-"@input/pen-export-json": patch
+"@input/pen-interop": patch
 ---
 
 Escape exporter markup and publish per-format fidelity tables.

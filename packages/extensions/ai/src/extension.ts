@@ -31,7 +31,7 @@ import {
 	AI_REVIEW_CONTROLLER_SLOT,
 } from "@input/pen-types";
 import { defineExtension } from "@input/pen-core";
-import { AI_AGENTIC_MAX_STEPS_DEFAULT } from "@input/pen-ai-tools";
+import { AI_AGENTIC_MAX_STEPS_DEFAULT } from "./tools";
 import { defaultAICommands } from "./commands/defaultCommands";
 import { resolveCatalogCopy } from "./i18n/resolveCatalogCopy";
 import { AICommandRegistry } from "./commands/registry";

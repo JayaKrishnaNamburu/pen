@@ -9,7 +9,7 @@ import {
 	executeAITool,
 	isAIToolCallDenied,
 	listAITools,
-} from "@input/pen-ai-tools";
+} from "../tools";
 import {
 	excerptsFromAgenticStep,
 	requestFeatureForAgenticStep,

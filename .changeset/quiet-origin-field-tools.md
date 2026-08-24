@@ -1,7 +1,7 @@
 ---
 "@input/pen-core": patch
 "@input/pen-types": patch
-"@input/pen-ai-tools": patch
+"@input/pen-ai": patch
 "@input/pen-input-rules": patch
 ---
 

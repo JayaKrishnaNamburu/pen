@@ -58,6 +58,34 @@
 #     counts (selectionReader, unfocusedReconcileProjection), not
 #     projector flush after a divergence report with unchanged version.
 #
+# spec-v3 OP / OPB / INT entered the inventory by derivation
+# (2026-08-24), not by this file. GATE 0.1 reports them; it does
+# not fail. Do not append the unclaimed ones here to dodge a red
+# — that is someone else's claim work.
+#
+# That claim work landed later the same day, so the holdback above is
+# discharged rather than dodged: INT1–INT3, OP1–OP5 and OPB1–OPB6 now
+# have named tests, each with a recorded break-on-purpose failure.
+# Appended below: INT1–INT3, OP1–OP5, OPB1–OPB4, OPB6 (13).
+#
+# HELD BACK — OPB5, and this one is a spec-vs-code gap rather than
+# missing test work, so it must not be appended until the code moves.
+# 03-ops.md:159 requires that a profile which denied `split-block`
+# now denies `intent: "pen.splitBlock"`. `filterOpsForDocumentProfile`
+# never receives origin, so denial by intent is not implemented at
+# all. The OPB5-named test asserts something else that is true — a
+# split whose `insert-block` is flow-disallowed is dropped — while a
+# paragraph→paragraph split with that intent still applies. Same
+# category as the BR3 / R6 holdbacks: the name is not the coverage.
+#
+# OPB2 is appended for its first half only ("one executor per
+# primitive"), which the named test asserts and can fail. Its second
+# half — Y-level wire shape unchanged between v2 and v3 — is carried
+# by the op-equality corpus behind GATE 4.5, which does not name
+# OPB2. That is the intended gate/claim split this file describes at
+# the top: gate-enforced substance belongs in gated-scope.txt, not
+# here. Do not "fix" it by renaming a corpus test to contain OPB2.
+#
 # Lane coverage-ratchet (2026-08-23): adjudicated the 18 claims-outside
 # claimed-scope IDs. Appended only those whose assertion fails if the
 # rule is violated: AN4, AN10, C2, C3, C4, DIR2, I4, M3, O2.
@@ -256,3 +284,16 @@ EM5
 EM6
 EM7
 EM8
+INT1
+INT2
+INT3
+OP1
+OP2
+OP3
+OP4
+OP5
+OPB1
+OPB2
+OPB3
+OPB4
+OPB6

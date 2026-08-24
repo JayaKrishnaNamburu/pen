@@ -40,11 +40,11 @@ This is HOST5 (`spec-v2/15-host-integration.md`). Canonical copy: the docs site 
 
 `<PenEditor>` therefore hydrates an empty shell. Block-list and text-snapshot hooks return empty snapshots on the server on purpose. After hydration the client fills from the live document. Layout effects run through one `useIsomorphicLayoutEffect` seam so a server pass produces zero React warnings.
 
-Hosts that need crawler-visible or statically indexed HTML render it from their own persisted copy with `@input/pen-export-html`, which is DOM-free and server-safe. Construct a headless editor from that copy, export, and destroy — do not expect the React tree to emit this HTML.
+Hosts that need crawler-visible or statically indexed HTML render it from their own persisted copy with `@input/pen-interop/html`, which is DOM-free and server-safe. Construct a headless editor from that copy, export, and destroy — do not expect the React tree to emit this HTML.
 
 ```ts
 import { createHeadlessEditor } from "@input/pen-core";
-import { htmlExporter } from "@input/pen-export-html";
+import { htmlExporter } from "@input/pen-interop/html";
 import type { CRDTDocument } from "@input/pen-types";
 
 declare const hostDocument: CRDTDocument;
@@ -60,7 +60,7 @@ See the root README for the full package overview and licensing details.
 
 ## Options
 
-`PenEditor` takes a required `editor` prop. This package has no create-function options. The optional peer `@input/pen-import-markdown` is not required to mount the editor.
+`PenEditor` takes a required `editor` prop. This package has no create-function options. The optional peer `@input/pen-interop` is not required to mount the editor.
 
 `readonly` defaults to `false`. The prop declines typing and pointer activation, sets `data-readonly` (match with `[data-readonly]`, not `[data-readonly="true"]`), and sets `aria-readonly="true"`. It does not stop `editor.apply`. `pen.ariaReadOnly` the facet only sets `aria-readonly`.
 

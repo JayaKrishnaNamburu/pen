@@ -1,0 +1,27 @@
+import { defineConfig } from "tsup";
+
+export default defineConfig({
+  entry: [
+    "src/index.ts",
+    "src/html.ts",
+    "src/markdown.ts",
+    "src/json.ts",
+    "src/xml.ts",
+  ],
+  format: ["esm", "cjs"],
+  dts: { compilerOptions: { stripInternal: true } },
+  outDir: "dist",
+  clean: true,
+  external: [
+    "@input/pen-core",
+    "@input/pen-content-ops",
+    "@input/pen-markdown-serialization",
+    "@input/pen-types",
+    "domhandler",
+    "htmlparser2",
+    "isomorphic-dompurify",
+  ],
+  outExtension({ format }) {
+    return { js: format === "esm" ? ".mjs" : ".cjs" };
+  },
+});

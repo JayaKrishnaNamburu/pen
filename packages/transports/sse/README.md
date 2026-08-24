@@ -21,7 +21,7 @@ pnpm add @input/pen-core @input/pen-transport-sse
 ```ts
 import { createEditor } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
-import { getAIToolRuntime } from "@input/pen-ai-tools";
+import { getAIToolRuntime } from "@input/pen-ai/tools";
 import { createSSEHandler } from "@input/pen-transport-sse";
 
 const editor = createEditor({

@@ -7,7 +7,7 @@ import { createEditor } from "@input/pen-core";
 import {
 	aiSuggestionsExtension,
 	getAISuggestionsController,
-} from "@input/pen-ai-suggestions";
+} from "@input/pen-ai/suggestions";
 import { Pen } from "../primitives/index";
 import { defaultSchema } from "@input/pen-schema-default";
 

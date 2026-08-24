@@ -11,7 +11,7 @@ import { AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY } from "@input/pen-types";
 import {
 	AI_TOOL_MAX_CALLS_PER_TURN,
 	isAIToolCallDenied,
-} from "@input/pen-ai-tools";
+} from "../tools";
 import { runAgenticLoop } from "../index";
 
 async function awaitExtensionLifecycle(

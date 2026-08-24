@@ -18,7 +18,7 @@ import { getDocumentToolRuntime } from "../utils/toolServer";
  * Every in-package path that can execute a document-op.
  *
  * Authorization here is the block-type / payload policy. The AI grant
- * (`allowedMutatingTools`) is owned by `@input/pen-ai-tools` and the
+ * (`allowedMutatingTools`) is owned by `@input/pen-ai/tools` and the
  * transports; this runtime is the trusted-host sink those layers must
  * not call until the grant is open.
  *

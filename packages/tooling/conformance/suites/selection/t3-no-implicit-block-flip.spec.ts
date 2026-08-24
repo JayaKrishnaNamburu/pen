@@ -12,6 +12,15 @@ const LAST_ID = "t3-p50";
 const LAST_TEXT = "P50";
 
 /**
+ * Tall enough for all 51 paragraphs, so the pointer drag is one uninterrupted
+ * sweep. Scrolling between `mouse.down` and `mouse.move` is a different
+ * scenario: WebKit runs its own drag autoscroll against the programmatic
+ * scroll, the pointer ends over a block the caller never measured, and the
+ * range comes back short — under the >50 blocks this test exists to cross.
+ */
+const TALL_VIEWPORT = { width: 1280, height: 2000 };
+
+/**
  * T3: a large pointer range stays TextSelection. The v1 count flip
  * (`shouldUseBlockSelection` → `selectBlocks` at >50) is a read
  * escalation, same family as the deleted block-type threshold.
@@ -66,20 +75,16 @@ async function clickOffset(
 }
 
 async function dragFirstToLast(page: Page): Promise<void> {
-	const first = page.locator(`[data-block-id="${FIRST_ID}"]`);
-	const last = page.locator(`[data-block-id="${LAST_ID}"]`);
-	await first.scrollIntoViewIfNeeded();
 	const from = await getInlineOffsetPoint(page, {
 		blockId: FIRST_ID,
 		offset: 0,
 	});
-	await page.mouse.move(from.x, from.y);
-	await page.mouse.down();
-	await last.scrollIntoViewIfNeeded();
 	const to = await getInlineOffsetPoint(page, {
 		blockId: LAST_ID,
 		offset: LAST_TEXT.length,
 	});
+	await page.mouse.move(from.x, from.y);
+	await page.mouse.down();
 	await page.mouse.move(to.x, to.y, { steps: 24 });
 	await page.mouse.up();
 }
@@ -133,6 +138,7 @@ scenario(
 	"T3: 51-block pointer drag stays a multi-block text selection",
 	async (s, page) => {
 		test.setTimeout(60_000);
+		await page.setViewportSize(TALL_VIEWPORT);
 		await seedFiftyOneParagraphs(s, page);
 		await dragFirstToLast(page);
 		const afterDrag = await readSelection(page);

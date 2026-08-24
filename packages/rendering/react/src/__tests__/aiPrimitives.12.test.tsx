@@ -8,7 +8,7 @@ import type { ToolRuntime } from "@input/pen-types";
 import { defineExtension } from "@input/pen-core";
 import { aiExtension, getAIController } from "@input/pen-ai";
 import { undoExtension } from "@input/pen-undo";
-import { deltaStreamExtension } from "@input/pen-delta-stream";
+import { deltaStreamExtension } from "@input/pen-ai/stream";
 import { documentOpsExtension } from "@input/pen-document-ops";
 import { defaultPreset } from "@input/pen-preset-default";
 import { defaultSchema } from "@input/pen-schema-default";

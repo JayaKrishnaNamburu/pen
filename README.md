@@ -135,7 +135,13 @@ function FormattingToolbar() {
     }
 
     editor.apply(
-      [{ type: "convert-block", blockId: currentBlockId, newType: "heading" }],
+      [
+        {
+          type: "set-props",
+          blockId: currentBlockId,
+          props: { type: "heading" },
+        },
+      ],
       { origin: "user" },
     );
   }
@@ -294,22 +300,17 @@ If you want less custom UI code, `@input/pen-react` also ships `Pen.Toolbar.*` a
 
 ### AI
 
-- `@input/pen-ai`: AI extension, suggest mode, and track changes
-- `@input/pen-ai-autocomplete`: inline autocomplete
-- `@input/pen-ai-tools`: canonical AI tool surface
-- `@input/pen-ai-skills`: agent-facing skill artifacts
+- `@input/pen-ai`: AI extension, suggest mode, and track changes. Subpaths: `./suggestions`, `./autocomplete`, `./tools`, `./skills`, `./stream`
 
 ### Collaboration And Transport
 
 - `@input/pen-multiplayer`: multiplayer presence and sync primitives
-- `@input/pen-delta-stream`: streaming protocol and processing pipeline
 - `@input/pen-transport-direct`: in-process transport
 - `@input/pen-transport-sse`: Server-Sent Events transport
 
 ### Import And Export
 
-- `@input/pen-import-markdown` and `@input/pen-import-html`
-- `@input/pen-export-markdown`, `@input/pen-export-html`, `@input/pen-export-json`, and `@input/pen-export-xml`
+- `@input/pen-interop`: HTML, Markdown, JSON, and XML import and export (`./html`, `./markdown`, `./json`, `./xml`)
 
 ## Architecture
 

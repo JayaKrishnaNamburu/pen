@@ -1,12 +1,12 @@
 # `@input/pen-markdown-serialization`
 
-`@input/pen-markdown-serialization` is not a package to install alone. Install `@input/pen-export-markdown`, which is the host-facing markdown exporter and runs URL admission on the serialized output.
+`@input/pen-markdown-serialization` is not a package to install alone. Install `@input/pen-interop` and import `markdownExporter` from `@input/pen-interop/markdown`, which is the host-facing markdown exporter and runs URL admission on the serialized output.
 
 This package owns the shared markdown serializer used by that exporter and by a few other Pen packages. It does not create an editor, apply ops, or admit URLs. `getNumberedListItemValue` and `sortDeltaAttributes` are re-exported from `@input/pen-core`.
 
 ## Install
 
-This package has no peer dependencies. Hosts should install `@input/pen-export-markdown` instead of depending on this package directly.
+This package has no peer dependencies. Hosts should install `@input/pen-interop` instead of depending on this package directly.
 
 ```bash
 pnpm add @input/pen-markdown-serialization
@@ -30,7 +30,7 @@ const markdown = exportMarkdownForBlocks(
 );
 ```
 
-`exportMarkdownRange(editor, range)` serializes a start/end block-id span. Omit `range`, or pass a range with no ids, to serialize every block. Hosts that need the admitted URL form should call `markdownExporter` from `@input/pen-export-markdown` instead.
+`exportMarkdownRange(editor, range)` serializes a start/end block-id span. Omit `range`, or pass a range with no ids, to serialize every block. Hosts that need the admitted URL form should call `markdownExporter` from `@input/pen-interop/markdown` instead.
 
 ## Options
 

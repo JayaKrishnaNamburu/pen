@@ -10,7 +10,7 @@ import {
 	createAIToolTurn,
 	isAIToolCallDenied,
 	openAIToolCall,
-} from "@input/pen-ai-tools";
+} from "@input/pen-ai/tools";
 import { generateId, isAsyncIterable } from "@input/pen-types";
 import {
 	MAX_PEN_STREAM_REQUEST_BYTES,

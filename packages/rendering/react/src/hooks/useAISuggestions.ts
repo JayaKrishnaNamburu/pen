@@ -4,7 +4,7 @@ import {
 	getAISuggestionsController,
 	type AISuggestion,
 	type AISuggestionsState,
-} from "@input/pen-ai-suggestions";
+} from "@input/pen-ai/suggestions";
 
 const EMPTY_STATE: AISuggestionsState = {
 	enabled: true,

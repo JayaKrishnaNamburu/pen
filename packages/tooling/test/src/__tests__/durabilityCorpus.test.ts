@@ -7,8 +7,8 @@ import {
 	initBlockMap,
 	type BlockContentType,
 } from "@input/pen-crdt-yjs";
-import { exportEditorToJson, jsonImporter } from "@input/pen-export-json";
-import type { PenBlockJSON, PenDocumentJSON } from "@input/pen-export-json";
+import { exportEditorToJson, jsonDocumentImporter } from "@input/pen-interop/json";
+import type { PenBlockJSON, PenDocumentJSON } from "@input/pen-interop/json";
 import {
 	INIT_BLOCK_MAP_ASSERT_COVERAGE,
 	PEN_DOCUMENT_ASSERT_COVERAGE,
@@ -193,7 +193,7 @@ describe("DUR7 durability corpus", () => {
 			resetTestIdCounter();
 			const snapshot = loadSnapshot(id);
 			const imported = createTestEditor({ blocks: [] });
-			jsonImporter.import(snapshot.document, imported, { replace: true });
+			jsonDocumentImporter.import(snapshot.document, imported, { replace: true });
 
 			expect(exportEditorToJson(imported)).toEqual(snapshot.document);
 
@@ -205,7 +205,7 @@ describe("DUR7 durability corpus", () => {
 		resetTestIdCounter();
 		const snapshot = loadSnapshot("DUR7-unknown-block-type");
 		const imported = createTestEditor({ blocks: [] });
-		jsonImporter.import(snapshot.document, imported, { replace: true });
+		jsonDocumentImporter.import(snapshot.document, imported, { replace: true });
 
 		expect(imported.document.blocks.has("DUR7-host-widget")).toBe(false);
 		expect(exportEditorToJson(imported).blocks.some((block) => block.type === "hostWidget")).toBe(

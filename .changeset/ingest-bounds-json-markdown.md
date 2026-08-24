@@ -1,6 +1,5 @@
 ---
-"@input/pen-import-markdown": patch
-"@input/pen-import-json": patch
+"@input/pen-interop": patch
 ---
 
 Bound markdown and JSON import by node count, nesting depth, text size, and image count, and schema-validate JSON before ops.

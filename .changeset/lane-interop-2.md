@@ -1,8 +1,7 @@
 ---
 "@input/pen-schema-default": patch
 "@input/pen-content-ops": patch
-"@input/pen-import-markdown": patch
-"@input/pen-export-xml": patch
+"@input/pen-interop": patch
 ---
 
 Keep details and callout body children on markdown import, and treat mixed-case href/src as URL fields on XML export.

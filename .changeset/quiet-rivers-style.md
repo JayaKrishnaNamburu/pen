@@ -1,5 +1,5 @@
 ---
-"@input/pen-ai-suggestions": patch
+"@input/pen-ai": patch
 "@input/pen-react": patch
 ---
 

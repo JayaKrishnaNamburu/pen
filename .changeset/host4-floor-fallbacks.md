@@ -2,8 +2,7 @@
 "@input/pen-ai": patch
 "@input/pen-core": patch
 "@input/pen-dom": patch
-"@input/pen-import-html": patch
-"@input/pen-import-json": patch
+"@input/pen-interop": patch
 "@input/pen-react": patch
 ---
 

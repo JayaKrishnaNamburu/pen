@@ -156,6 +156,10 @@ function updateBlockNodes(
 	} else {
 		nodes.element.removeAttribute("dir");
 	}
+	nodes.element.style.unicodeBidi = "isolate";
+	if (nodes.inline) {
+		nodes.inline.style.unicodeBidi = "isolate";
+	}
 
 	const snapshot = fieldEditor.getSnapshot();
 	const isFocused = snapshot.focusBlockId === blockId;

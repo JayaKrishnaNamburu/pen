@@ -3,7 +3,7 @@ import {
 	resolveEditorA11yLabel,
 	resolveEditorMessage,
 } from "@input/pen-core";
-import { htmlImporter } from "@input/pen-import-html";
+import { htmlImporter } from "@input/pen-interop/html";
 import {
 	FieldEditorImpl,
 	handleEditorDocumentKeyDown,

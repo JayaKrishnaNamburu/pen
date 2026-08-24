@@ -2,7 +2,7 @@ import {
 	getAISuggestionsController,
 	type AISuggestionsController,
 	type AISuggestionsExtensionConfig,
-} from "@input/pen-ai-suggestions";
+} from "@input/pen-ai/suggestions";
 import type { Editor } from "@input/pen-types";
 
 type AISuggestionsRuntimePatch = Partial<

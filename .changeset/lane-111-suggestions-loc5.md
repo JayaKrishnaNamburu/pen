@@ -1,5 +1,5 @@
 ---
-"@input/pen-ai-suggestions": patch
+"@input/pen-ai": patch
 ---
 
 Fold suggestion no-op detection and dismiss fingerprints with locale-aware case folding.

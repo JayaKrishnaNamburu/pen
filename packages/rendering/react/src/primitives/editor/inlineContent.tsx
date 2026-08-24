@@ -277,11 +277,12 @@ export function InlineContent(props: InlineContentProps) {
 			: undefined,
 		[DATA_ATTRS.placeholderVisible]: showPlaceholder ? "" : undefined,
 		"data-placeholder": showPlaceholder ? placeholder : undefined,
-		style: showPlaceholder
-			? {
-					position: "relative" as const,
-				}
-			: undefined,
+		// RI1: unicode-bidi does not inherit, so the block host's isolate does not
+		// reach this surface and it needs its own.
+		style: {
+			position: showPlaceholder ? ("relative" as const) : undefined,
+			unicodeBidi: "isolate" as const,
+		},
 	};
 	return (
 		<>

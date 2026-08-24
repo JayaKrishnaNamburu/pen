@@ -5,7 +5,7 @@ import {
 	getYjsDoc,
 	readExtensionRoot,
 } from "@input/pen-crdt-yjs";
-import { exportPlainText } from "@input/pen-export-json";
+import { exportPlainText } from "@input/pen-interop/json";
 import { defaultPreset } from "@input/pen-preset-default";
 import { createDefaultSchema } from "@input/pen-schema-default";
 import type { Editor } from "@input/pen-types";

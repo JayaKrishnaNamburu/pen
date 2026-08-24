@@ -1,6 +1,6 @@
 ---
 "@input/pen-undo": minor
-"@input/pen-delta-stream": minor
+"@input/pen-ai": minor
 "@input/pen-input-rules": minor
 "@input/pen-shortcuts": minor
 "@input/pen-history": minor

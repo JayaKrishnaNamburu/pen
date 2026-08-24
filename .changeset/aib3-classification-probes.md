@@ -1,5 +1,5 @@
 ---
-"@input/pen-ai-tools": patch
+"@input/pen-ai": patch
 ---
 
 Add AIB3 classification probes for tool authority.

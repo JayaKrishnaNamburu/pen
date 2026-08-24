@@ -1,7 +1,7 @@
 import type {
 	AutocompleteController,
 	AutocompleteControllerState,
-} from "@input/pen-ai-autocomplete";
+} from "@input/pen-ai/autocomplete";
 
 type AutocompleteDebugSummary = {
 	enabled: boolean;

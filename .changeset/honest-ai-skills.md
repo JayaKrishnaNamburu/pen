@@ -1,5 +1,5 @@
 ---
-"@input/pen-ai-skills": patch
+"@input/pen-ai": patch
 ---
 
 Drop the unused `AISkillRegistry` from the public skill-artifact surface.

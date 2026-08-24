@@ -9,7 +9,7 @@ export default defineConfig({
   external: [
     "@input/pen-core",
     "@input/pen-dom",
-    "@input/pen-import-html",
+    "@input/pen-interop",
     "@input/pen-types",
     "vue",
   ],

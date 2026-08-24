@@ -1,15 +1,15 @@
 import { aiExtension } from "@input/pen-ai";
-import type { AISuggestionsExtensionConfig } from "@input/pen-ai-suggestions";
+import type { AISuggestionsExtensionConfig } from "@input/pen-ai/suggestions";
 import {
 	aiSuggestionsExtension,
 	getAISuggestionsController,
-} from "@input/pen-ai-suggestions";
+} from "@input/pen-ai/suggestions";
 import {
 	autocompleteExtension,
 	getAutocompleteController,
 	type AutocompleteAcceptanceStrategy,
 	type AutocompleteBlockPolicy,
-} from "@input/pen-ai-autocomplete";
+} from "@input/pen-ai/autocomplete";
 import { createEditor } from "@input/pen-core";
 import { inputRulesExtension } from "@input/pen-input-rules";
 import { getMultiplayerController } from "@input/pen-multiplayer";

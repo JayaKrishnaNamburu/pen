@@ -188,6 +188,64 @@ describe("@input/pen-react table rendering", () => {
 		editor.destroy();
 	});
 
+	it("RI1: every table cell content host is unicode-bidi isolate", async () => {
+		const editor = createEditor();
+
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "t1",
+				blockType: "table",
+				props: { hasHeaderRow: true },
+				position: "last",
+			},
+			{
+				type: "splice-text",
+				blockId: "t1",
+				cell: { row: 0, col: 0 },
+				from: 0,
+				to: 0,
+				insert: "مرحبا",
+			},
+			{
+				type: "splice-text",
+				blockId: "t1",
+				cell: { row: 1, col: 1 },
+				from: 0,
+				to: 0,
+				insert: "Hello",
+			},
+		]);
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(
+				<Pen.Editor.Root editor={editor}>
+					<Pen.Editor.Content />
+				</Pen.Editor.Root>,
+			);
+		});
+
+		const table = container.querySelector("table");
+		const surfaces = table!.querySelectorAll("[data-pen-inline-content]");
+		// A writer that stamps one surface per block satisfies a single-cell
+		// assertion, so the count guard is what makes the loop below mean
+		// anything.
+		expect(surfaces.length).toBeGreaterThan(1);
+		for (const surface of surfaces) {
+			expect((surface as HTMLElement).style.unicodeBidi).toBe("isolate");
+		}
+
+		await act(async () => {
+			root.unmount();
+		});
+		container.remove();
+		editor.destroy();
+	});
+
 	it("renders cell text content through TableCellContent", async () => {
 		const editor = createEditor();
 
@@ -274,7 +332,9 @@ describe("@input/pen-react table rendering", () => {
 		await act(async () => {
 			editor.apply([
 				{
-					type: "grid", blockId: "t3", change: { kind: "insert-row", index: 2 },
+					type: "grid",
+					blockId: "t3",
+					change: { kind: "insert-row", index: 2 },
 				},
 			]);
 		});
@@ -285,7 +345,9 @@ describe("@input/pen-react table rendering", () => {
 		await act(async () => {
 			editor.apply([
 				{
-					type: "grid", blockId: "t3", change: { kind: "insert-column", index: 2 },
+					type: "grid",
+					blockId: "t3",
+					change: { kind: "insert-column", index: 2 },
 				},
 			]);
 		});
@@ -354,7 +416,9 @@ describe("@input/pen-react table rendering", () => {
 				position: "last",
 			},
 			{
-				type: "grid", blockId: "t4-short-row", change: { kind: "insert-column", index: 2 },
+				type: "grid",
+				blockId: "t4-short-row",
+				change: { kind: "insert-column", index: 2 },
 			},
 		]);
 
@@ -458,7 +522,11 @@ describe("@input/pen-react table rendering", () => {
 			},
 		]);
 		expect(
-			editor.getBlock("host4-table")?.as("table")?.tableCell(1, 0)?.textContent(),
+			editor
+				.getBlock("host4-table")
+				?.as("table")
+				?.tableCell(1, 0)
+				?.textContent(),
 		).toBe("Cell before");
 
 		const container = document.createElement("div");

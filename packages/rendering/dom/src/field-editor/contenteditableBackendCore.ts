@@ -129,7 +129,15 @@ export abstract class ContentEditableBackendCore {
 
 	deactivate(): void {
 		if (this.element) {
-			this.element.contentEditable = "false";
+			// remove, never `contentEditable = "false"`. When the surface
+			// expands, the blocks host becomes the editing host and this
+			// element stays inside it; an explicit `false` would leave a
+			// read-only island there. WebKit refuses to extend a selection
+			// out of such an island and clamps at its boundary, so a
+			// cross-block pointer drag that starts in this field can never
+			// reach the next block. Absent is equivalent while the parent is
+			// not editable, which is the single-field case.
+			this.element.removeAttribute("contenteditable");
 			this.element.removeEventListener(
 				"beforeinput",
 				this.handleBeforeInput,

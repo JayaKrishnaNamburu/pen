@@ -1,6 +1,5 @@
 ---
-"@input/pen-ai-tools": patch
-"@input/pen-delta-stream": patch
+"@input/pen-ai": patch
 "@input/pen-transport-direct": patch
 ---
 

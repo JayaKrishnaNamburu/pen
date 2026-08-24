@@ -2,7 +2,7 @@ import { Pen, type RendererOverrides } from "@input/pen-react";
 import type {
 	AutocompleteAcceptanceStrategy,
 	AutocompleteBlockPolicy,
-} from "@input/pen-ai-autocomplete";
+} from "@input/pen-ai/autocomplete";
 import type { Editor, InteractionModel } from "@input/pen-types";
 import { useRef, useState, useSyncExternalStore } from "react";
 import "./App.css";

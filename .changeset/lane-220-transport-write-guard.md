@@ -1,7 +1,7 @@
 ---
 "@input/pen-transport-direct": patch
 "@input/pen-transport-sse": patch
-"@input/pen-import-html": patch
+"@input/pen-interop": patch
 ---
 
 Restore `editor.apply` when an AI tool stream is abandoned, and decide provider image URLs on the parsed protocol.

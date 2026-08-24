@@ -90,7 +90,7 @@ const requiredPages = [
 	{
 		id: "import-export",
 		file: "ImportExport.tsx",
-		owner: "@input/pen-import-html",
+		owner: "@input/pen-interop/html",
 		headings: [
 			"Packages",
 			"Clipboard payload",

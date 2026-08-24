@@ -5,11 +5,8 @@
 "@input/pen-react": patch
 "@input/pen-vue": patch
 "@input/pen-dom": patch
-"@input/pen-import-html": patch
-"@input/pen-import-markdown": patch
-"@input/pen-import-json": patch
-"@input/pen-ai-autocomplete": patch
-"@input/pen-ai-suggestions": patch
+"@input/pen-interop": patch
+"@input/pen-ai": patch
 ---
 
 Add localization lint gates, catalog completeness, and pseudo-locale chrome checks.

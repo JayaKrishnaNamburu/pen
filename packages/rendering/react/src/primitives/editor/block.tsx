@@ -1,7 +1,12 @@
 import React, { Children, cloneElement, isValidElement, useRef } from "react";
 import { useIsomorphicLayoutEffect } from "../../hooks/useIsomorphicLayoutEffect";
 import { resolveBlockDirection } from "@input/pen-core";
-import type { BlockHandle, BlockRenderContext, Decoration, Editor } from "@input/pen-types";
+import type {
+	BlockHandle,
+	BlockRenderContext,
+	Decoration,
+	Editor,
+} from "@input/pen-types";
 import { useEditorContext } from "../../context/editorContext";
 import { useFieldEditorContext } from "../../context/fieldEditorContext";
 import { useBlockDecorations } from "../../hooks/useBlockDecorations";
@@ -21,12 +26,7 @@ export interface EditorBlockProps extends AsChildProps {
 
 export function EditorBlock(props: EditorBlockProps) {
 	const { blockId, ...rest } = props;
-	const {
-		editor,
-		readonly,
-		renderers,
-		blockControls,
-	} = useEditorContext();
+	const { editor, readonly, renderers, blockControls } = useEditorContext();
 	const fieldEditor = useFieldEditorContext();
 	const isEditable = useBlockEditingState(fieldEditor, blockId);
 	const blockModel = useBlockModel(editor, blockId);
@@ -38,7 +38,10 @@ export function EditorBlock(props: EditorBlockProps) {
 
 	useIsomorphicLayoutEffect(() => {
 		const element = blockRef.current;
-		if (!fieldEditor || !element) {
+		if (!element) {
+			return;
+		}
+		if (!fieldEditor) {
 			return;
 		}
 		fieldEditor.ackBlockMounted(blockId, element);
@@ -81,16 +84,19 @@ export function EditorBlock(props: EditorBlockProps) {
 		(d: Decoration) =>
 			"attributes" in d &&
 			Boolean(
-				d.attributes[DATA_ATTRS.aiGenerating] ?? d.attributes["ai-generating"],
+				d.attributes[DATA_ATTRS.aiGenerating] ??
+				d.attributes["ai-generating"],
 			),
 	);
-	const blockDecorationAttributes = mergeBlockDecorationAttributes(blockDecorations);
+	const blockDecorationAttributes =
+		mergeBlockDecorationAttributes(blockDecorations);
 
 	const primitiveProps: Record<string, unknown> = {
 		[DATA_ATTRS.editorBlock]: "",
 		[DATA_ATTRS.blockId]: blockId,
 		[DATA_ATTRS.blockType]: blockType,
 		dir,
+		style: { unicodeBidi: "isolate" },
 		"data-level": headingLevel,
 		[DATA_ATTRS.surfaceRole]: surfaceRole ?? undefined,
 		[DATA_ATTRS.dropPosition]: externalDropPosition,
@@ -152,7 +158,11 @@ function injectBlockDecorationsIntoInlineContent(
 
 	if (props.children) {
 		const nextChildren = Children.map(props.children, (child) =>
-			injectBlockDecorationsIntoInlineContent(child, blockId, decorations),
+			injectBlockDecorationsIntoInlineContent(
+				child,
+				blockId,
+				decorations,
+			),
 		);
 		if (nextChildren !== props.children) {
 			nextProps.children = nextChildren;
@@ -176,10 +186,7 @@ function mergeBlockDecorationAttributes(
 		if (decoration.type !== "block") {
 			continue;
 		}
-		if (
-			decoration.position != null &&
-			decoration.position !== "wrap"
-		) {
+		if (decoration.position != null && decoration.position !== "wrap") {
 			continue;
 		}
 		for (const [key, value] of Object.entries(decoration.attributes)) {

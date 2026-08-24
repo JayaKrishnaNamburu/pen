@@ -36,6 +36,7 @@
 - originToOpOrigin
 - readExtensionRoot
 - readFormatStamp
+- recordDocumentLoadMigration
 - refreshFormatStamp
 - setDocumentProfile
 - validateDocument

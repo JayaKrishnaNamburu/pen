@@ -15,7 +15,7 @@ Support development, testing, benchmarking, or local integration workflows aroun
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@input/pen-core`, `@input/pen-crdt-yjs`, `@input/pen-export-json`, `@input/pen-schema-default`, `@input/pen-types`, `yjs`
+- Runtime dependencies: `@input/pen-core`, `@input/pen-crdt-yjs`, `@input/pen-interop`, `@input/pen-schema-default`, `@input/pen-types`, `yjs`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: Tooling packages serve the workspace and advanced integrators more than standard runtime embedding.
 

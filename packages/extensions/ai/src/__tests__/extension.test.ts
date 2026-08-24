@@ -1,6 +1,6 @@
 import { createEditor } from "@input/pen-core";
 import { undoExtension } from "@input/pen-undo";
-import { deltaStreamExtension } from "@input/pen-delta-stream";
+import { deltaStreamExtension } from "../stream";
 import { documentOpsExtension } from "@input/pen-document-ops";
 import {
 	AI_CONTROLLER_SLOT,

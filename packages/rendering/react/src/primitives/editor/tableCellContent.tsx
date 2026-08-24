@@ -77,7 +77,9 @@ function TextCell(props: TableCellContentProps) {
 }
 
 function isCellActive(
-	fieldEditorState: { activeCellCoord: { blockId: string; row: number; col: number } | null },
+	fieldEditorState: {
+		activeCellCoord: { blockId: string; row: number; col: number } | null;
+	},
 	tableBlockId: string,
 	row: number,
 	col: number,
@@ -112,6 +114,9 @@ function cellSurfaceAttrs(
 			display: "block",
 			width: "100%",
 			position: showPlaceholder ? ("relative" as const) : undefined,
+			// RI1: unicode-bidi does not inherit, so every cell needs its own
+			// isolate — the table host's does not reach them.
+			unicodeBidi: "isolate" as const,
 		},
 	};
 }

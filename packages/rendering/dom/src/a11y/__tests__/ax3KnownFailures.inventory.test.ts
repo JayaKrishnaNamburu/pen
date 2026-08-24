@@ -19,7 +19,7 @@ const CONTENT_EDITABLE = join(
 );
 const AUTOCOMPLETE_ACCEPT = join(
 	PACKAGES,
-	"extensions/ai-autocomplete/src/autocompleteControllerLifecycle.ts",
+	"extensions/ai/src/autocomplete/autocompleteControllerLifecycle.ts",
 );
 const SCHEDULER = join(DOM_SRC, "scheduler.ts");
 

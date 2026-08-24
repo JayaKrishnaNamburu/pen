@@ -1,256 +1,179 @@
 {
-	"regressionPercent": 10,
-	"overrideLabel": "size-limit-override",
-	"entries": [
-		{
-			"name": "@input/pen-types",
-			"path": "packages/types/dist/index.mjs",
-			"baselineBytes": 30625,
-			"limitBytes": 30625,
-			"note": "Wave P.7 first baseline. Public-surface shrink in flight (live 15762 B); not re-recorded."
-		},
-		{
-			"name": "@input/pen-transport-direct",
-			"path": "packages/transports/direct/dist/index.mjs",
-			"baselineBytes": 6034,
-			"limitBytes": 6034,
-			"note": "Wave P.7 re-record 2026-08-21. Wave M AIB3: allowedMutatingTools / createAIToolTurn on the in-process transport. 3880 \u2192 6034. Source quiet (test-only dirty)."
-		},
-		{
-			"name": "@input/pen-shortcuts",
-			"path": "packages/extensions/shortcuts/dist/index.mjs",
-			"baselineBytes": 5471,
-			"limitBytes": 5471,
-			"note": "Lane 173 re-record 2026-08-21. Wave 4: keymap facet conversion (shortcutsToKeymapProviders / pen.keymap). 4876 \u2192 5471."
-		},
-		{
-			"name": "@input/pen-export-xml",
-			"path": "packages/extensions/export-xml/dist/index.mjs",
-			"baselineBytes": 16369,
-			"limitBytes": 16369,
-			"note": "Wave P.7 re-record 2026-08-21. Wave T IOP5 XML importer + ingest bounds (importer.ts 8.9 kB, ingestBounds.ts 5.3 kB) on top of Wave S SEC1 / Wave T IOP3. 11064 \u2192 16369. Source quiet."
-		},
-		{
-			"name": "@input/pen-undo",
-			"path": "packages/extensions/undo/dist/index.mjs",
-			"baselineBytes": 18628,
-			"limitBytes": 18628,
-			"note": "v3 Wave 2 re-record 2026-08-22. Anchor-based cursor drift replaces summaryLog/mapPoint restore; drift keyed by stack-item meta id."
-		},
-		{
-			"name": "@input/pen-ai",
-			"path": "packages/extensions/ai/dist/index.mjs",
-			"baselineBytes": 435771,
-			"limitBytes": 435771,
-			"note": "Wave P.7 re-record 2026-08-21. Wave M AIB7: playground planner helpers removed from the published barrel. 520171 \u2192 435771. Source quiet."
-		},
-		{
-			"name": "@input/pen-ai-autocomplete",
-			"path": "packages/extensions/ai-autocomplete/dist/index.mjs",
-			"baselineBytes": 75536,
-			"limitBytes": 75536,
-			"note": "v3 Wave 2 re-record 2026-08-22. Continuation head holds an anchor with AN14 repair instead of mapPoint."
-		},
-		{
-			"name": "@input/pen-ai-skills",
-			"path": "packages/extensions/ai-skills/dist/index.mjs",
-			"baselineBytes": 4531,
-			"limitBytes": 4531,
-			"note": "Wave P.7 first baseline kept. Wave M skills catalog; live 4184 B is under budget."
-		},
-		{
-			"name": "@input/pen-ai-suggestions",
-			"path": "packages/extensions/ai-suggestions/dist/index.mjs",
-			"baselineBytes": 47823,
-			"limitBytes": 47823,
-			"note": "v3 Wave 2 re-record 2026-08-22. Suggestions hold an AnchorRange with AN14 repair instead of mapRange."
-		},
-		{
-			"name": "@input/pen-ai-tools",
-			"path": "packages/extensions/ai-tools/dist/index.mjs",
-			"baselineBytes": 15831,
-			"limitBytes": 15831,
-			"note": "Wave P.7 re-record 2026-08-21. Wave M AIB3: execution.ts (11.5 kB) + authority.ts (7.9 kB) \u2014 openAIToolCall / authorizeAIToolCall / createAIToolTurn. 1186 \u2192 15831. Source quiet."
-		},
-		{
-			"name": "@input/pen-assets-memory",
-			"path": "packages/tooling/assets-memory/dist/index.mjs",
-			"baselineBytes": 1403,
-			"limitBytes": 1403,
-			"note": "Wave P.7 re-record 2026-08-21. Wave T T.3 IOP4: maxSize, onProgress, delete, rejectUpload. 1291 \u2192 1403. Source quiet."
-		},
-		{
-			"name": "@input/pen-bench",
-			"path": "packages/tooling/bench/dist/index.mjs",
-			"baselineBytes": 27000,
-			"limitBytes": 27000,
-			"note": "Wave F / SCALE1 envelope table, reporters, drift check and CLI, plus the harness-floor feature (a Pen-removed null implementation timed alongside each bench, so a wall-clock cannot be attributed to Pen without one). Re-recorded twice on 2026-08-21: 1421 \u2192 25779 once the lane editing envelope/compare.ts reported, then \u2192 27000 when the floor landed. The first jump is 18x and is stated rather than smoothed over \u2014 the Wave P.7 figure was taken when the package was a stub, so it was the first measurement of a bench harness that actually exists, not a regression in one."
-		},
-		{
-			"name": "@input/pen-content-ops",
-			"path": "packages/shared/content-ops/dist/index.mjs",
-			"baselineBytes": 29428,
-			"limitBytes": 29428,
-			"note": "Wave P.7 first baseline. Wave P API3 blockCapabilities live here. Live 17572 B shrink deferred (writeContent.ts mid-edit)."
-		},
-		{
-			"name": "@input/pen-core",
-			"path": "packages/core/dist/index.mjs",
-			"baselineBytes": 405550,
-			"limitBytes": 405550,
-			"note": "Wave 2 apply pipeline and commit path, plus Wave P.1 extension-free core and the Wave 4 command registry. Re-recorded 2026-08-21 after the core-commands lane reported and the package went quiet. 275169 \u2192 405550 B."
-		},
-		{
-			"name": "@input/pen-crdt-yjs",
-			"path": "packages/crdt/yjs/dist/index.mjs",
-			"baselineBytes": 59734,
-			"limitBytes": 59734,
-			"note": "Wave P.7 first baseline kept through Wave P API2 yjs peer + singleton guard (live 55563 B). Re-recorded 2026-08-23: v3 Wave 1 placed the createRelativePosition/resolveRelativePosition anchor primitives in this package and Wave 3 rewrote summarySource to carry a per-block list of cell text deltas. 55563 -> 59734 B."
-		},
-		{
-			"name": "@input/pen-delta-stream",
-			"path": "packages/extensions/delta-stream/dist/index.mjs",
-			"baselineBytes": 25211,
-			"limitBytes": 25211,
-			"note": "Wave P.7 re-record 2026-08-21. Wave 2 processStream.ts (22.5 kB) + Wave M AIB3/AIB5 (createAIToolTurn / PEN_STREAM_PROTOCOL_VERSION). 10269 \u2192 25211. Source quiet."
-		},
-		{
-			"name": "@input/pen-document-ops",
-			"path": "packages/extensions/document-ops/dist/index.mjs",
-			"baselineBytes": 58134,
-			"limitBytes": 58134,
-			"note": "Wave P.7 re-record 2026-08-21. Wave M AIB3 tool-authority paths. 45579 \u2192 58134. Source quiet (test-only dirty)."
-		},
-		{
-			"name": "@input/pen-dom",
-			"path": "packages/rendering/dom/dist/index.mjs",
-			"baselineBytes": 42817,
-			"limitBytes": 42817,
-			"note": "Wave 3 GeometryReader and DOM scheduling, Wave 5 field-editor work, and the Wave S urlPolicy seam in the published barrel. Re-recorded 2026-08-21 after the a11y lane reported and focusSink.ts went quiet. 28589 \u2192 42817 B."
-		},
-		{
-			"name": "@input/pen-export-html",
-			"path": "packages/extensions/export-html/dist/index.mjs",
-			"baselineBytes": 10107,
-			"limitBytes": 10107,
-			"note": "Lane 173 re-record 2026-08-21. Wave S SEC1 url admission + Wave T IOP3 fidelity. 7003 \u2192 10107."
-		},
-		{
-			"name": "@input/pen-export-json",
-			"path": "packages/extensions/export-json/dist/index.mjs",
-			"baselineBytes": 15551,
-			"limitBytes": 15551,
-			"note": "Wave P.7 re-record 2026-08-21. Under previous budget after Wave P API3 logicalTextFromStored stayed in types (16573 \u2192 15551). Source quiet."
-		},
-		{
-			"name": "@input/pen-export-markdown",
-			"path": "packages/extensions/export-markdown/dist/index.mjs",
-			"baselineBytes": 4607,
-			"limitBytes": 4607,
-			"note": "Lane 173 re-record 2026-08-21. Wave S admitMarkdownUrls (SEC1) + Wave T IOP3 fidelity table. 720 \u2192 4607."
-		},
-		{
-			"name": "@input/pen-history",
-			"path": "packages/extensions/history/dist/index.mjs",
-			"baselineBytes": 38744,
-			"limitBytes": 38744,
-			"note": "Lane 173 re-record 2026-08-21. Path .js \u2192 .mjs (Wave P.8). Bytes: Wave C identity resolution + Wave V snapshot restore. 11886 \u2192 38744."
-		},
-		{
-			"name": "@input/pen-import-html",
-			"path": "packages/extensions/import-html/dist/index.mjs",
-			"baselineBytes": 30302,
-			"limitBytes": 30302,
-			"note": "Wave P.7 re-record 2026-08-21. Wave T IOP5 ingestBounds.ts (9.5 kB) + Wave S SEC1 imageSrcPolicy.ts (8.0 kB). 21015 \u2192 30302. Source quiet."
-		},
-		{
-			"name": "@input/pen-import-json",
-			"path": "packages/extensions/import-json/dist/index.mjs",
-			"baselineBytes": 14228,
-			"limitBytes": 14228,
-			"note": "Wave P.7 re-record 2026-08-21. Wave T IOP5 ingestBounds.ts + Wave S SEC4 validateJson.ts. 12473 \u2192 14228. Source quiet."
-		},
-		{
-			"name": "@input/pen-import-markdown",
-			"path": "packages/extensions/import-markdown/dist/index.mjs",
-			"baselineBytes": 9197,
-			"limitBytes": 9197,
-			"note": "Wave P.7 re-record 2026-08-21. Wave T IOP5 ingest bounds + Wave S SEC1/SEC4 caps. 1412 \u2192 9197. Source quiet (test-only dirty)."
-		},
-		{
-			"name": "@input/pen-input-rules",
-			"path": "packages/extensions/input-rules/dist/index.mjs",
-			"baselineBytes": 9553,
-			"limitBytes": 9553,
-			"note": "Wave P.7 first baseline kept. Wave 4 input-rule commands; live 9837 B is within +10%."
-		},
-		{
-			"name": "@input/pen-markdown-serialization",
-			"path": "packages/shared/markdown-serialization/dist/index.mjs",
-			"baselineBytes": 7446,
-			"limitBytes": 7446,
-			"note": "Wave P.7 re-record 2026-08-21. Under previous budget after Wave P API3 (logicalTextFromStored stays in types; 10359 \u2192 7446). Source quiet (test-only dirty)."
-		},
-		{
-			"name": "@input/pen-multiplayer",
-			"path": "packages/extensions/multiplayer/dist/index.mjs",
-			"baselineBytes": 43166,
-			"limitBytes": 43166,
-			"note": "Lane 173 re-record 2026-08-21. Path .js \u2192 .mjs (Wave P.8). Bytes: Wave C awareness validation / presence bounds. 20968 \u2192 43166."
-		},
-		{
-			"name": "@input/pen-preset-default",
-			"path": "packages/presets/default/dist/index.mjs",
-			"baselineBytes": 1442,
-			"limitBytes": 1442,
-			"note": "Lane 173 re-record 2026-08-21. Path .js \u2192 .mjs (Wave P.8). Bytes: Wave P preset-first assembly. 1324 \u2192 1442."
-		},
-		{
-			"name": "@input/pen-react",
-			"path": "packages/rendering/react/dist/index.mjs",
-			"baselineBytes": 264324,
-			"limitBytes": 264324,
-			"note": "Wave P.7 first baseline. Wave P.6 renderer bindings over pen-dom. Live 265954 B is within +10%; 13 dirty source files, not re-recorded."
-		},
-		{
-			"name": "@input/pen-schema-default",
-			"path": "packages/schema/default/dist/index.mjs",
-			"baselineBytes": 4899,
-			"limitBytes": 4899,
-			"note": "Lane 173 re-record 2026-08-21. Wave L LOC2 display catalog (primary); Wave S SEC5 escapeHtml; Wave X a11y specs. 1068 \u2192 4899."
-		},
-		{
-			"name": "@input/pen-search",
-			"path": "packages/extensions/search/dist/index.mjs",
-			"baselineBytes": 22866,
-			"limitBytes": 22866,
-			"note": "Lane 173 re-record 2026-08-21. Wave L LOC4/LOC5 fold-and-normalize + Wave S SEC9 query/budget caps. 18130 \u2192 22866."
-		},
-		{
-			"name": "@input/pen-test",
-			"path": "packages/tooling/test/dist/index.mjs",
-			"baselineBytes": 40505,
-			"limitBytes": 40505,
-			"note": "Wave P.7 re-record 2026-08-21. Wave C COL4 two-peer harness + Wave F envelope fixtures + Wave 18 durability corpus. 18429 \u2192 40505. Source quiet (test-only dirty)."
-		},
-		{
-			"name": "@input/pen-transport-sse",
-			"path": "packages/transports/sse/dist/index.mjs",
-			"baselineBytes": 22076,
-			"limitBytes": 22076,
-			"note": "Wave P.7 re-record 2026-08-21. Wave C COL6 reconnect surface + Wave M AIB2 (no editor on PenStreamRequest) / AIB3 authority. 11867 \u2192 22076. Source quiet (test-only dirty)."
-		},
-		{
-			"name": "@input/pen-vue",
-			"path": "packages/rendering/vue/dist/index.mjs",
-			"baselineBytes": 1054,
-			"limitBytes": 1054,
-			"note": "Wave P.7 first baseline. Wave P.6 Vue bindings. Live 1153 B is just under the +10% ceiling; renderer mid-edit, not re-recorded."
-		}
-	],
-	"_deferred": {
-		"recorded": "2026-08-21",
-		"note": "Empty, and discharged rather than abandoned. Three packages (bench, core, dom) were deferred earlier the same day because their sources were being edited while the baseline was taken; each was re-recorded once its lane reported and a rebuild produced the same byte count twice. Keep this mechanism: deferring a mid-edit package leaves it failing against the last quiet baseline, which is the honest state, whereas recording a half-finished package silently blesses whatever size it happened to have. Re-record only after a rebuild reproduces the number.",
-		"packages": []
-	}
+  "regressionPercent": 10,
+  "overrideLabel": "size-limit-override",
+  "entries": [
+    {
+      "name": "@input/pen-types",
+      "path": "packages/types/dist/index.mjs",
+      "baselineBytes": 30625,
+      "limitBytes": 30625,
+      "note": "Wave P.7 first baseline. Public-surface shrink in flight (live 15762 B); not re-recorded."
+    },
+    {
+      "name": "@input/pen-transport-direct",
+      "path": "packages/transports/direct/dist/index.mjs",
+      "baselineBytes": 6034,
+      "limitBytes": 6034,
+      "note": "Wave P.7 re-record 2026-08-21. Wave M AIB3: allowedMutatingTools / createAIToolTurn on the in-process transport. 3880 \u2192 6034. Source quiet (test-only dirty)."
+    },
+    {
+      "name": "@input/pen-shortcuts",
+      "path": "packages/extensions/shortcuts/dist/index.mjs",
+      "baselineBytes": 5471,
+      "limitBytes": 5471,
+      "note": "Lane 173 re-record 2026-08-21. Wave 4: keymap facet conversion (shortcutsToKeymapProviders / pen.keymap). 4876 \u2192 5471."
+    },
+    {
+      "name": "@input/pen-undo",
+      "path": "packages/extensions/undo/dist/index.mjs",
+      "baselineBytes": 18628,
+      "limitBytes": 18628,
+      "note": "v3 Wave 2 re-record 2026-08-22. Anchor-based cursor drift replaces summaryLog/mapPoint restore; drift keyed by stack-item meta id."
+    },
+    {
+      "name": "@input/pen-ai",
+      "path": "packages/extensions/ai/dist/*.mjs",
+      "baselineBytes": 607722,
+      "limitBytes": 607722,
+      "note": "v3 Wave 6 SF1 re-record 2026-08-24. The five AI satellites became subpaths of this package, so the budget is now the whole shipped ESM closure rather than dist/index.mjs: tsup code-splits the subpaths into content-hashed chunks, and a hashed name cannot be written into a baseline. Replaces six budgets totalling 604703 B (435771 root + 75536 autocomplete + 47823 suggestions + 25211 delta-stream + 15831 tools + 4531 skills). 604703 \u2192 607722, +0.5% for duplicated barrel wiring; no satellite budget was dropped without a successor. Byte total reproduced across three rebuilds."
+    },
+    {
+      "name": "@input/pen-assets-memory",
+      "path": "packages/tooling/assets-memory/dist/index.mjs",
+      "baselineBytes": 1403,
+      "limitBytes": 1403,
+      "note": "Wave P.7 re-record 2026-08-21. Wave T T.3 IOP4: maxSize, onProgress, delete, rejectUpload. 1291 \u2192 1403. Source quiet."
+    },
+    {
+      "name": "@input/pen-bench",
+      "path": "packages/tooling/bench/dist/index.mjs",
+      "baselineBytes": 27000,
+      "limitBytes": 27000,
+      "note": "Wave F / SCALE1 envelope table, reporters, drift check and CLI, plus the harness-floor feature (a Pen-removed null implementation timed alongside each bench, so a wall-clock cannot be attributed to Pen without one). Re-recorded twice on 2026-08-21: 1421 \u2192 25779 once the lane editing envelope/compare.ts reported, then \u2192 27000 when the floor landed. The first jump is 18x and is stated rather than smoothed over \u2014 the Wave P.7 figure was taken when the package was a stub, so it was the first measurement of a bench harness that actually exists, not a regression in one."
+    },
+    {
+      "name": "@input/pen-content-ops",
+      "path": "packages/shared/content-ops/dist/index.mjs",
+      "baselineBytes": 29428,
+      "limitBytes": 29428,
+      "note": "Wave P.7 first baseline. Wave P API3 blockCapabilities live here. Live 17572 B shrink deferred (writeContent.ts mid-edit)."
+    },
+    {
+      "name": "@input/pen-core",
+      "path": "packages/core/dist/index.mjs",
+      "baselineBytes": 405550,
+      "limitBytes": 405550,
+      "note": "Wave 2 apply pipeline and commit path, plus Wave P.1 extension-free core and the Wave 4 command registry. Re-recorded 2026-08-21 after the core-commands lane reported and the package went quiet. 275169 \u2192 405550 B."
+    },
+    {
+      "name": "@input/pen-crdt-yjs",
+      "path": "packages/crdt/yjs/dist/index.mjs",
+      "baselineBytes": 59734,
+      "limitBytes": 59734,
+      "note": "Wave P.7 first baseline kept through Wave P API2 yjs peer + singleton guard (live 55563 B). Re-recorded 2026-08-23: v3 Wave 1 placed the createRelativePosition/resolveRelativePosition anchor primitives in this package and Wave 3 rewrote summarySource to carry a per-block list of cell text deltas. 55563 -> 59734 B."
+    },
+    {
+      "name": "@input/pen-document-ops",
+      "path": "packages/extensions/document-ops/dist/index.mjs",
+      "baselineBytes": 58134,
+      "limitBytes": 58134,
+      "note": "Wave P.7 re-record 2026-08-21. Wave M AIB3 tool-authority paths. 45579 \u2192 58134. Source quiet (test-only dirty)."
+    },
+    {
+      "name": "@input/pen-dom",
+      "path": "packages/rendering/dom/dist/index.mjs",
+      "baselineBytes": 42817,
+      "limitBytes": 42817,
+      "note": "Wave 3 GeometryReader and DOM scheduling, Wave 5 field-editor work, and the Wave S urlPolicy seam in the published barrel. Re-recorded 2026-08-21 after the a11y lane reported and focusSink.ts went quiet. 28589 \u2192 42817 B."
+    },
+    {
+      "name": "@input/pen-interop",
+      "path": "packages/extensions/interop/dist/*.mjs",
+      "baselineBytes": 104761,
+      "limitBytes": 104761,
+      "note": "v3 Wave 6 SF2 first baseline 2026-08-24. Budgeted as the whole shipped ESM closure, not dist/index.mjs: the four format subpaths code-split into content-hashed chunks, so the root entry is 1722 B of re-exports while the chunks carry 100335 B \u2014 an index.mjs budget would guard 1.6% of the package. Replaces seven budgets totalling 100361 B (30302 import-html + 16369 export-xml + 15551 export-json + 14228 import-json + 10107 export-html + 9197 import-markdown + 4607 export-markdown). 100361 \u2192 104761, +4.4% for per-format barrel wiring. Byte total reproduced across three rebuilds."
+    },
+    {
+      "name": "@input/pen-history",
+      "path": "packages/extensions/history/dist/index.mjs",
+      "baselineBytes": 38744,
+      "limitBytes": 38744,
+      "note": "Lane 173 re-record 2026-08-21. Path .js \u2192 .mjs (Wave P.8). Bytes: Wave C identity resolution + Wave V snapshot restore. 11886 \u2192 38744."
+    },
+    {
+      "name": "@input/pen-input-rules",
+      "path": "packages/extensions/input-rules/dist/index.mjs",
+      "baselineBytes": 9553,
+      "limitBytes": 9553,
+      "note": "Wave P.7 first baseline kept. Wave 4 input-rule commands; live 9837 B is within +10%."
+    },
+    {
+      "name": "@input/pen-markdown-serialization",
+      "path": "packages/shared/markdown-serialization/dist/index.mjs",
+      "baselineBytes": 7446,
+      "limitBytes": 7446,
+      "note": "Wave P.7 re-record 2026-08-21. Under previous budget after Wave P API3 (logicalTextFromStored stays in types; 10359 \u2192 7446). Source quiet (test-only dirty)."
+    },
+    {
+      "name": "@input/pen-multiplayer",
+      "path": "packages/extensions/multiplayer/dist/index.mjs",
+      "baselineBytes": 43166,
+      "limitBytes": 43166,
+      "note": "Lane 173 re-record 2026-08-21. Path .js \u2192 .mjs (Wave P.8). Bytes: Wave C awareness validation / presence bounds. 20968 \u2192 43166."
+    },
+    {
+      "name": "@input/pen-preset-default",
+      "path": "packages/presets/default/dist/index.mjs",
+      "baselineBytes": 1442,
+      "limitBytes": 1442,
+      "note": "Lane 173 re-record 2026-08-21. Path .js \u2192 .mjs (Wave P.8). Bytes: Wave P preset-first assembly. 1324 \u2192 1442."
+    },
+    {
+      "name": "@input/pen-react",
+      "path": "packages/rendering/react/dist/index.mjs",
+      "baselineBytes": 264324,
+      "limitBytes": 264324,
+      "note": "Wave P.7 first baseline. Wave P.6 renderer bindings over pen-dom. Live 265954 B is within +10%; 13 dirty source files, not re-recorded."
+    },
+    {
+      "name": "@input/pen-schema-default",
+      "path": "packages/schema/default/dist/index.mjs",
+      "baselineBytes": 4899,
+      "limitBytes": 4899,
+      "note": "Lane 173 re-record 2026-08-21. Wave L LOC2 display catalog (primary); Wave S SEC5 escapeHtml; Wave X a11y specs. 1068 \u2192 4899."
+    },
+    {
+      "name": "@input/pen-search",
+      "path": "packages/extensions/search/dist/index.mjs",
+      "baselineBytes": 22866,
+      "limitBytes": 22866,
+      "note": "Lane 173 re-record 2026-08-21. Wave L LOC4/LOC5 fold-and-normalize + Wave S SEC9 query/budget caps. 18130 \u2192 22866."
+    },
+    {
+      "name": "@input/pen-test",
+      "path": "packages/tooling/test/dist/index.mjs",
+      "baselineBytes": 40505,
+      "limitBytes": 40505,
+      "note": "Wave P.7 re-record 2026-08-21. Wave C COL4 two-peer harness + Wave F envelope fixtures + Wave 18 durability corpus. 18429 \u2192 40505. Source quiet (test-only dirty)."
+    },
+    {
+      "name": "@input/pen-transport-sse",
+      "path": "packages/transports/sse/dist/index.mjs",
+      "baselineBytes": 22076,
+      "limitBytes": 22076,
+      "note": "Wave P.7 re-record 2026-08-21. Wave C COL6 reconnect surface + Wave M AIB2 (no editor on PenStreamRequest) / AIB3 authority. 11867 \u2192 22076. Source quiet (test-only dirty)."
+    },
+    {
+      "name": "@input/pen-vue",
+      "path": "packages/rendering/vue/dist/index.mjs",
+      "baselineBytes": 1054,
+      "limitBytes": 1054,
+      "note": "Wave P.7 first baseline. Wave P.6 Vue bindings. Live 1153 B is just under the +10% ceiling; renderer mid-edit, not re-recorded."
+    }
+  ],
+  "_deferred": {
+    "recorded": "2026-08-21",
+    "note": "Empty, and discharged rather than abandoned. Three packages (bench, core, dom) were deferred earlier the same day because their sources were being edited while the baseline was taken; each was re-recorded once its lane reported and a rebuild produced the same byte count twice. Keep this mechanism: deferring a mid-edit package leaves it failing against the last quiet baseline, which is the honest state, whereas recording a half-finished package silently blesses whatever size it happened to have. Re-record only after a rebuild reproduces the number.",
+    "packages": []
+  }
 }

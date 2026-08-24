@@ -23,7 +23,7 @@ Provide transport-specific wiring around Pen protocols and sessions.
 
 In-process transport. The live `Editor` is a `directTransport({ editor })` constructor option. `PenStreamRequest` has no `editor` field; direct never reads one off the request.
 
-Each `toolCalls` entry is authorized with `openAIToolCall()` before `executeTool()`. A denied call yields `tool-error` and skips execution. The write guard installed for the call is restored in `finally`, not `catch`: abandoning a stream mid-`yield` resumes the generator with a return completion, which runs `finally` and skips `catch`. A `catch`-only restore left a read-only guard patched onto the host editor and silently dropped later writes. `opened.close()` is idempotent and returns its first result on later calls (owned by `@input/pen-ai-tools`).
+Each `toolCalls` entry is authorized with `openAIToolCall()` before `toolRuntime.executeTool()`. A denied call yields `tool-error` and skips execution. The write guard installed for the call is restored in `finally`, not `catch`: abandoning a stream mid-`yield` resumes the generator with a return completion, which runs `finally` and skips `catch`. A `catch`-only restore left a read-only guard patched onto the host editor and silently dropped later writes. `opened.close()` is idempotent and returns its first result on later calls (owned by `@input/pen-ai/tools`).
 
 ## Integration Notes
 

@@ -1,6 +1,5 @@
 ---
-"@input/pen-ai-autocomplete": minor
-"@input/pen-ai-suggestions": minor
+"@input/pen-ai": minor
 "@input/pen-undo": minor
 "@input/pen-multiplayer": minor
 ---

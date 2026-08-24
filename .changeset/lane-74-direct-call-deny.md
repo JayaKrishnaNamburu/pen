@@ -1,5 +1,5 @@
 ---
-"@input/pen-ai-tools": patch
+"@input/pen-ai": patch
 ---
 
 Default-deny mutating tools when `executeAITool` is called without a turn.

@@ -1,12 +1,9 @@
 ---
-"@input/pen-ai-suggestions": patch
-"@input/pen-ai-tools": patch
+"@input/pen-ai": patch
 "@input/pen-crdt-yjs": patch
 "@input/pen-document-ops": patch
-"@input/pen-export-json": patch
-"@input/pen-export-xml": patch
+"@input/pen-interop": patch
 "@input/pen-history": patch
-"@input/pen-import-html": patch
 "@input/pen-input-rules": patch
 "@input/pen-multiplayer": patch
 "@input/pen-react": patch

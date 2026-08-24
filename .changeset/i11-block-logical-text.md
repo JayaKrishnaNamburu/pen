@@ -1,6 +1,6 @@
 ---
 "@input/pen-core": patch
-"@input/pen-export-json": patch
+"@input/pen-interop": patch
 "@input/pen-markdown-serialization": patch
 ---
 

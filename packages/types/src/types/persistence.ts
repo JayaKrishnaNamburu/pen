@@ -153,7 +153,7 @@ export interface AssetProvider {
 	 *
 	 * @remarks
 	 * Read by `@input/pen-dom` `uploadImageFiles` and
-	 * `@input/pen-import-html` `applyHtmlImageSrcPolicy` before `upload`.
+	 * `@input/pen-interop/html` `applyHtmlImageSrcPolicy` before `upload`.
 	 * The same limit is forwarded as {@link AssetUploadOptions.maxSize}.
 	 */
 	readonly maxSize?: number;
@@ -162,7 +162,7 @@ export interface AssetProvider {
 	 *
 	 * @remarks
 	 * Called by `@input/pen-dom` `uploadImageFiles` (paste/drop) and
-	 * `@input/pen-import-html` `applyHtmlImageSrcPolicy` when `imageSrc` is
+	 * `@input/pen-interop/html` `applyHtmlImageSrcPolicy` when `imageSrc` is
 	 * `"ingest"`.
 	 */
 	upload(file: File | Blob, options?: AssetUploadOptions): Promise<AssetRef>;

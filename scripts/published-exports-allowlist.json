@@ -2,6 +2,36 @@
   "_comment": "API4 (spec-v2/14-api-and-packaging.md): extra public exports keys besides `.`. Each entry needs package, key, and a reason. Remove an entry in the same PR that deletes the export.",
   "entries": [
     {
+      "package": "@input/pen-ai",
+      "key": "./autocomplete",
+      "reason": "SF1 merged feature subpath; first-class surface that replaced the @input/pen-ai-autocomplete package, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-ai",
+      "key": "./package.json",
+      "reason": "SF4 requires each merged manifest to export every subpath including ./package.json, so tooling can read the manifest under exports encapsulation."
+    },
+    {
+      "package": "@input/pen-ai",
+      "key": "./skills",
+      "reason": "SF1 merged feature subpath; first-class surface that replaced the @input/pen-ai-skills package, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-ai",
+      "key": "./stream",
+      "reason": "SF1 merged feature subpath; first-class surface that replaced the @input/pen-delta-stream package, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-ai",
+      "key": "./suggestions",
+      "reason": "SF1 merged feature subpath; first-class surface that replaced the @input/pen-ai-suggestions package, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-ai",
+      "key": "./tools",
+      "reason": "SF1 merged feature subpath; first-class surface that replaced the @input/pen-ai-tools package, not a src/dist escape hatch."
+    },
+    {
       "package": "@input/pen-dom",
       "key": "./constants/selectAll",
       "reason": "P.6 / E.3 first-class field-editor surface, not a src/dist escape hatch."
@@ -250,6 +280,31 @@
       "package": "@input/pen-dom",
       "key": "./utils/tableDefaults",
       "reason": "P.6 relocated tableDefaults, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-interop",
+      "key": "./html",
+      "reason": "SF2 merged format subpath; first-class surface that replaced the @input/pen-import-html and @input/pen-export-html packages, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-interop",
+      "key": "./json",
+      "reason": "SF2 merged format subpath; first-class surface that replaced the @input/pen-import-json and @input/pen-export-json packages, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-interop",
+      "key": "./markdown",
+      "reason": "SF2 merged format subpath; first-class surface that replaced the @input/pen-import-markdown and @input/pen-export-markdown packages, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-interop",
+      "key": "./package.json",
+      "reason": "SF4 requires each merged manifest to export every subpath including ./package.json, so tooling can read the manifest under exports encapsulation."
+    },
+    {
+      "package": "@input/pen-interop",
+      "key": "./xml",
+      "reason": "SF2 merged format subpath; first-class surface that replaced the @input/pen-export-xml package, not a src/dist escape hatch."
     },
     {
       "package": "@input/pen-react",

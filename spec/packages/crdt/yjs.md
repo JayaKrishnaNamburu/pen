@@ -17,6 +17,8 @@ Bridge Pen contracts to a specific CRDT implementation.
 - State-vector helpers such as `encodeYjsStateVectorBase64()`, `compareYjsStateVectors()`, and `isYjsStateVectorBase64Satisfied()`
 - Generic field adapters such as `createYTextFieldAdapter()` and `createYArrayFieldAdapter()`
 - Extension-root helpers such as `ensureExtensionRoot()` and `readExtensionRoot()`
+- Anchor adapter methods `createRelativePosition(doc, target, assoc)` and `resolveRelativePosition(doc, encoded, options?)` — `editor.anchors` is the host surface; these methods are the CRDT implementation
+- Format stamp helpers; new documents stamp `PEN_DOCUMENT_FORMAT` (`3`)
 - Workspace scripts: `build`, `clean`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
@@ -40,6 +42,8 @@ State-vector helpers are the generic synchronization primitive for host-owned wo
 Field adapters cover host-owned non-body fields that live next to Pen document roots, such as titles, labels, tags, or app-specific structured arrays. They are storage helpers only: hosts provide normalization and stable IDs, while Pen provides deterministic Yjs text/array operations.
 
 Extension-root helpers reserve namespaced Yjs maps under the document `apps` root. They provide version checks and deterministic field initialization for app-owned collaboration data without teaching Pen product-specific schema.
+
+Empty text-capable `Y.Text` is `""`. Relative-position mint and resolve walk `penDocument.blocks` (and nested table cells) for the resolved `Y.Text`; a missing or deleted type is `null`. The adapter never throws on hostile or stale encoded positions.
 
 ## Integration Notes
 

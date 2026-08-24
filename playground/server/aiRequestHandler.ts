@@ -6,7 +6,7 @@ import {
 	getStructuredIntentOutputSchema,
 	parseStructuredIntentRequestPrompt,
 } from "@input/pen-ai";
-import { AI_SUGGESTIONS_REQUEST_MODE } from "@input/pen-ai-suggestions";
+import { AI_SUGGESTIONS_REQUEST_MODE } from "@input/pen-ai/suggestions";
 import {
 	PLAYGROUND_MAX_TOOL_STEPS,
 	createPlaygroundLanguageModel,

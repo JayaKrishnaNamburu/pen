@@ -1,9 +1,7 @@
 ---
 "@input/pen-core": patch
 "@input/pen-dom": patch
-"@input/pen-export-html": patch
-"@input/pen-export-markdown": patch
-"@input/pen-export-xml": patch
+"@input/pen-interop": patch
 ---
 
 Move the SEC1 URL admission policy into `@input/pen-core` so no exporter depends on a renderer.

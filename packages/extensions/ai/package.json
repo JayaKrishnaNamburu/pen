@@ -1,7 +1,7 @@
 {
   "name": "@input/pen-ai",
   "version": "0.0.1",
-  "description": "AI extension, suggest mode, and track changes for Pen",
+  "description": "AI extension, suggestions, autocomplete, skills, tools, and streaming for Pen",
   "license": "MIT",
   "homepage": "https://github.com/lemni/pen#readme",
   "bugs": {
@@ -27,7 +27,58 @@
         "types": "./dist/index.d.cts",
         "default": "./dist/index.cjs"
       }
-    }
+    },
+    "./suggestions": {
+      "import": {
+        "types": "./dist/suggestions.d.ts",
+        "default": "./dist/suggestions.mjs"
+      },
+      "require": {
+        "types": "./dist/suggestions.d.cts",
+        "default": "./dist/suggestions.cjs"
+      }
+    },
+    "./autocomplete": {
+      "import": {
+        "types": "./dist/autocomplete.d.ts",
+        "default": "./dist/autocomplete.mjs"
+      },
+      "require": {
+        "types": "./dist/autocomplete.d.cts",
+        "default": "./dist/autocomplete.cjs"
+      }
+    },
+    "./skills": {
+      "import": {
+        "types": "./dist/skills.d.ts",
+        "default": "./dist/skills.mjs"
+      },
+      "require": {
+        "types": "./dist/skills.d.cts",
+        "default": "./dist/skills.cjs"
+      }
+    },
+    "./tools": {
+      "import": {
+        "types": "./dist/tools.d.ts",
+        "default": "./dist/tools.mjs"
+      },
+      "require": {
+        "types": "./dist/tools.d.cts",
+        "default": "./dist/tools.cjs"
+      }
+    },
+    "./stream": {
+      "import": {
+        "types": "./dist/stream.d.ts",
+        "default": "./dist/stream.mjs"
+      },
+      "require": {
+        "types": "./dist/stream.d.cts",
+        "default": "./dist/stream.cjs"
+      }
+    },
+    "./package.json": "./package.json"
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
@@ -49,14 +100,12 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@input/pen-ai-tools": "workspace:^",
     "@input/pen-content-ops": "workspace:^",
     "@input/pen-core": "workspace:^",
     "@input/pen-document-ops": "workspace:^",
     "@input/pen-types": "workspace:^"
   },
   "devDependencies": {
-    "@input/pen-delta-stream": "workspace:*",
     "@input/pen-schema-default": "workspace:^",
     "@input/pen-test": "workspace:*",
     "@input/pen-undo": "workspace:*",

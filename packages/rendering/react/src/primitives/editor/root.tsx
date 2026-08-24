@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from "react";
-import { htmlImporter } from "@input/pen-import-html";
+import { htmlImporter } from "@input/pen-interop/html";
 import { ariaReadOnlyFacet, resolveEditorA11yLabel } from "@input/pen-core";
 import { FIELD_EDITOR_SLOT_KEY as CORE_FIELD_EDITOR_SLOT_KEY } from "@input/pen-types";
 import type {

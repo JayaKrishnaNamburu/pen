@@ -26,6 +26,7 @@ function programmaticRecord(
 function createController(
 	initialRecord: SelectionRecord | null = null,
 	overrides: {
+		getMode?: () => "inactive" | "single" | "expanded" | "block";
 		resolveInlineElement?: () => HTMLElement | null;
 		attachElement?: () => boolean;
 		requestDomFocus?: () => boolean;
@@ -44,7 +45,7 @@ function createController(
 			facet: () => undefined as never,
 		}),
 		isEditing: () => true,
-		getMode: () => "single",
+		getMode: overrides.getMode ?? (() => "single"),
 		getFocusBlockId: () => "first",
 		getAttachedElement: () => null,
 		getRootElement: () => null,
@@ -112,6 +113,41 @@ describe("SelectionProjectionController park diagnostics", () => {
 		controller.syncDomSelectionOnce();
 
 		expect(controller.parkedProjectionVersion).toBe(4);
+		expect(diagnostics.map((event) => event.code)).toEqual([]);
+	});
+
+	it("T3: mode block does not clamp a multi-block text range onto the focused field", () => {
+		const target = { isConnected: true } as HTMLElement;
+		let attached = 0;
+		const { controller, diagnostics } = createController(
+			{
+				state: {
+					type: "text",
+					anchor: { blockId: "first", offset: 0 },
+					focus: { blockId: "last", offset: 3 },
+					affinity: "downstream",
+					goalX: null,
+				},
+				version: 11,
+				origin: "pointer",
+				commitId: 0,
+			},
+			{
+				getMode: () => "block",
+				resolveInlineElement: () => target,
+				attachElement: () => {
+					attached += 1;
+					return true;
+				},
+				requestDomFocus: () => true,
+			},
+		);
+
+		controller.syncDomSelectionOnce();
+
+		expect(attached).toBe(0);
+		expect(controller.lastProjectedVersion).toBe(11);
+		expect(controller.parkedProjectionVersion).toBeNull();
 		expect(diagnostics.map((event) => event.code)).toEqual([]);
 	});
 

@@ -1,5 +1,5 @@
 ---
-"@input/pen-delta-stream": patch
+"@input/pen-ai": patch
 ---
 
 Close AIB5 stream-protocol gaps that mock apply-counts could not prove.

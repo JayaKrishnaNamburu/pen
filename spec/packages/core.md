@@ -28,7 +28,7 @@ Every higher-level package depends on the contracts and runtime behavior establi
 
 - Runtime dependencies: `@input/pen-crdt-yjs`, `@input/pen-types`
 - Peer dependencies: No peer dependencies declared.
-- Boundary: `@input/pen-core` is the runtime center of gravity for Pen and should remain headless. It does not depend on shortcuts, undo, delta-stream, document-ops, content-ops, or markdown-serialization. Those packages depend on core, or re-export helpers that now live here.
+- Boundary: `@input/pen-core` is the runtime center of gravity for Pen and should remain headless. It does not depend on shortcuts, undo, `@input/pen-ai/stream`, document-ops, content-ops, or markdown-serialization. Those packages depend on core, or re-export helpers that now live here.
 
 ## Runtime Model
 
@@ -57,23 +57,27 @@ flowchart TD
 
 Important rules:
 
-- `DocumentOp[]` is the mutation currency.
+- `DocumentOp[]` is the mutation currency. The union is closed at ten variants: `splice-text`, `format-text`, `insert-block`, `delete-block`, `move-block`, `set-props`, `set-meta`, `grid`, `app`, `stream-open`.
 - Durable document writes go through `editor.apply(...)`.
-- Structured operation origins can carry `groupId`, `requestId`, `actorId`, and `source` metadata so hosts can attribute and group mutations without inventing a parallel apply path. The apply pipeline passes that structured object into `adapter.transact` without copying it; the Yjs adapter matches it with a `TrackedOriginSet` (see `@input/pen-crdt-yjs`).
-- Feature composition is opt-in. Bare `createEditor()` installs the apply pipeline only: no schema (empty registry, `firstBlock()` is `null`), no rich-text shortcuts, no undo, no delta-stream, no document-ops. The no-preset fallback list is empty. `createEmptySchema()` still _resolves_ unknown types as passthrough (`onUnknownBlock: "passthrough"`), so `schema.resolve("paragraph")` is not `null` — it is just not a registered type. `defaultPreset()` is the batteries-included path.
+- Structured operation origins can carry `groupId`, `requestId`, `actorId`, `source`, and `intent` so hosts can attribute and group mutations without inventing a parallel apply path. Dispatch stamps `origin.intent` with the command name; a pre-set intent is preserved only when no command is on the dispatch stack. The apply pipeline passes that structured object into `adapter.transact` without copying it; the Yjs adapter matches it with a `TrackedOriginSet` (see `@input/pen-crdt-yjs`).
+- Split and merge are command recipes, not ops. `pen.splitBlock` is one apply of `insert-block` plus two `splice-text` ops, stamped `intent: "pen.splitBlock"`. Merge is `pen.deleteBackward` / `pen.deleteForward` at a block boundary. The summary carries `block-split` / `blocks-merged` from an in-transaction structural tag, not from the intent string.
+- `editor.anchors` is the selection-anchor API: mint, resolve, serialize, deserialize. Resolution returns a live target or `null`. Split/merge content moves are repaired in core (`deriveContentMoves` / `repairAnchor`) before resolve. A position that must survive commits is an anchor; summaries do not map raw points across commits.
+- `editor.lastChangeSummary` is the latest commit's summary, or `null` before the first observable apply. Commit numbering starts at 1. There is no summary ring buffer and no `summaryLog.between`.
+- Empty text-capable `Y.Text` is `""`. `BlockHandle.textContent()` / `textDeltas()` on that block are empty. Load migrates lone stored `"\u200B"` via `strip-empty-block-sentinels` (`origin: { type: "migration" }`). A lone `"\u200B"` arriving as a remote commit is stripped with `diagnostic { code: "sentinel-stripped" }`. Embedded `\u200B` in longer text is kept.
+- Feature composition is opt-in. Bare `createEditor()` installs the apply pipeline only: no schema (empty registry, `firstBlock()` is `null`), no rich-text shortcuts, no undo, no stream extension, no document-ops. The no-preset fallback list is empty. `createEmptySchema()` still _resolves_ unknown types as passthrough (`onUnknownBlock: "passthrough"`), so `schema.resolve("paragraph")` is not `null` — it is just not a registered type. `defaultPreset()` is the batteries-included path.
 - Without `undoExtension()`, `editor.undoManager` is an inert stub: `canUndo()` / `canRedo()` return `false`, `undo()` / `redo()` return `false`, and the `undo:manager` slot is absent. There is no error. Undo looks present and does nothing. Install `undoExtension()` or `defaultPreset()`.
 - `pen.ariaReadOnly` (`ariaReadOnlyFacet`) some-combines booleans. It does **not** decline typing, does **not** stop `editor.apply`, and does **not** stop the wire. Renderers read it only to set `aria-readonly`. The `readonly` prop on `EditorRoot` / `PenEditor` / `mountEditor` is what declines local typing. That split is shipped and is an open owner decision; this spec records it, it does not resolve it.
 - `editor.blocks()` / `editor.blockCount()` walk nested and layout children, matching `documentState.blocks` / `documentState.blockCount`. `documentState.blockOrder` is the top-level sequence only.
 - Extensions can prepare work, observe editor events, and register slots, but they do not bypass the core mutation boundary.
 - Renderer packages read `DocumentState`, `BlockHandle`, selection, and decorations from the editor; they do not become alternate document authorities.
 - `Extension.keyBindings` still exists as a v1 rider. Core copies those bindings onto `keymapFacet` at install. New shortcut work should declare `keymapFacet` providers; several shipped extensions already do.
-- Command registration and the selection engine are mid-flight (command registry migration; Wave 05 selection). Do not treat either as settled from this spec.
+- Command registration and the selection engine are unsettled. Do not treat either as a finished contract from this spec.
 
 ## Headless Workflows
 
 `createHeadlessEditor()` is the preferred factory for server-side or workflow-only editor use. It keeps Pen headless and applies the same document pipeline to existing CRDT documents without mounting a renderer. Hosts should use it for AI workers, export workers, migrations, and contract tests that need editor semantics without UI behavior.
 
-Headless editors default to the core apply pipeline only, same as bare `createEditor()`: empty schema unless one is passed, empty extension list. To get undo, shortcuts, or delta-stream in a non-rendered workflow, pass `preset: defaultPreset(...)` or register those extensions explicitly. `createHeadlessEditor({ useDefaultExtensions: true })` currently does not install any of those packages — it only skips the empty headless preset object. That option is vestigial; the JSDoc on the flag still claims it enables undo/shortcuts/delta-stream. Prefer an explicit preset.
+Headless editors default to the core apply pipeline only, same as bare `createEditor()`: empty schema unless one is passed, empty extension list. To get undo, shortcuts, or the stream extension in a non-rendered workflow, pass `preset: defaultPreset(...)` or register those extensions explicitly. `createHeadlessEditor({ useDefaultExtensions: true })` currently does not install any of those packages — it only skips the empty headless preset object. That option is vestigial; the JSDoc on the flag still claims it enables undo/shortcuts/delta-stream. Prefer an explicit preset.
 
 ## Integration Notes
 

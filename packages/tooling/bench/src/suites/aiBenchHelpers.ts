@@ -6,14 +6,14 @@ import { FIELD_EDITOR_SLOT_KEY,
 } from "@input/pen-types";
 import { defineExtension } from "@input/pen-core";
 import { aiExtension } from "@input/pen-ai";
-import { deltaStreamExtension } from "@input/pen-delta-stream";
+import { deltaStreamExtension } from "@input/pen-ai/stream";
 import { undoExtension } from "@input/pen-undo";
 import {
 	autocompleteExtension,
 	createAutocompleteProvider,
 	getAutocompleteController,
-} from "@input/pen-ai-autocomplete";
-import type { AutocompleteContextProvider } from "@input/pen-ai-autocomplete";
+} from "@input/pen-ai/autocomplete";
+import type { AutocompleteContextProvider } from "@input/pen-ai/autocomplete";
 import { createTestEditor } from "@input/pen-test";
 import type { ToolRuntime } from "@input/pen-types";
 import {

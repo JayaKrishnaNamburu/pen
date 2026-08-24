@@ -1,15 +1,15 @@
 import { jsonSchema, tool } from "ai";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { Editor, ToolRuntime } from "@input/pen-types";
-import { getAutocompleteController } from "@input/pen-ai-autocomplete";
+import { getAutocompleteController } from "@input/pen-ai/autocomplete";
 import {
 	AIToolContextImpl,
 	createAIToolTurn,
 	executeAITool,
 	getAIToolRuntime,
 	listAITools,
-} from "@input/pen-ai-tools";
-import { listDefaultAISkills, renderSkillFiles } from "@input/pen-ai-skills";
+} from "@input/pen-ai/tools";
+import { listDefaultAISkills, renderSkillFiles } from "@input/pen-ai/skills";
 import {
 	PLAYGROUND_DIRECT_TOOL_NAMES,
 	PLAYGROUND_TOOL_ROUTE_PREFIX,

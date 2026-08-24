@@ -24,22 +24,11 @@ Provide a stable overview of the workspace layout and the spec paths that mirror
 - `@input/pen-core` -> `packages/core.md`
 - `@input/pen-crdt-yjs` -> `packages/crdt/yjs.md`
 - `@input/pen-docs` -> `packages/docs.md`
-- `@input/pen-ai-autocomplete` -> `packages/extensions/ai-autocomplete.md`
-- `@input/pen-ai-skills` -> `packages/extensions/ai-skills.md`
-- `@input/pen-ai-suggestions` -> `packages/extensions/ai-suggestions.md`
-- `@input/pen-ai-tools` -> `packages/extensions/ai-tools.md`
 - `@input/pen-ai` -> `packages/extensions/ai.md`
-- `@input/pen-delta-stream` -> `packages/extensions/delta-stream.md`
 - `@input/pen-document-ops` -> `packages/extensions/document-ops.md`
-- `@input/pen-export-html` -> `packages/extensions/export-html.md`
-- `@input/pen-export-json` -> `packages/extensions/export-json.md`
-- `@input/pen-export-markdown` -> `packages/extensions/export-markdown.md`
-- `@input/pen-export-xml` -> `packages/extensions/export-xml.md`
 - `@input/pen-history` -> `packages/extensions/history.md`
-- `@input/pen-import-html` -> `packages/extensions/import-html.md`
-- `@input/pen-import-json` -> `packages/extensions/import-json.md`
-- `@input/pen-import-markdown` -> `packages/extensions/import-markdown.md`
 - `@input/pen-input-rules` -> `packages/extensions/input-rules.md`
+- `@input/pen-interop` -> `packages/extensions/interop.md`
 - `@input/pen-multiplayer` -> `packages/extensions/multiplayer.md`
 - `@input/pen-search` -> `packages/extensions/search.md`
 - `@input/pen-shortcuts` -> `packages/extensions/shortcuts.md`
@@ -59,11 +48,11 @@ Provide a stable overview of the workspace layout and the spec paths that mirror
 - `@input/pen-types` -> `packages/types.md`
 - `@input/pen-playground` -> `packages/playground.md`
 
+AI feature subpaths (`@input/pen-ai/suggestions`, `/autocomplete`, `/skills`, `/tools`, `/stream`) are documented in `packages/extensions/ai.md`. Interop format subpaths (`@input/pen-interop/html`, `/markdown`, `/json`, `/xml`) are documented in `packages/extensions/interop.md`.
+
 ## Packages Without A Current-State Spec
 
-`packages/` currently has 38 `package.json` files. 36 of those have a matching current-state spec. These two workspace packages exist and have no `spec/packages/` file. That is intentional:
+`packages/` currently has 27 `package.json` files. 25 of those have a matching current-state spec. These two workspace packages exist and have no `spec/packages/` file. That is intentional:
 
 - `@input/pen-conformance` (`packages/tooling/conformance`) — private Playwright / browser-real harness. Scenario names and host pins change with the wave work; a current-state spec would rot faster than it would help.
 - `@input/pen-eslint-plugin` (`packages/tooling/eslint-plugin`) — private lint rules that enforce `spec-v2` invariants mechanically. The rules _are_ the documentation.
-
-`@input/pen-import-json` is a published package and does have a spec.

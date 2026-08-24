@@ -3,7 +3,7 @@ import type { ServerResponse } from "node:http";
 import {
 	AI_SUGGESTIONS_SYSTEM_PROMPT,
 	parseSuggestionResponse,
-} from "@input/pen-ai-suggestions";
+} from "@input/pen-ai/suggestions";
 import {
 	PLAYGROUND_SELECTION_MODEL,
 	createPlaygroundLanguageModel,

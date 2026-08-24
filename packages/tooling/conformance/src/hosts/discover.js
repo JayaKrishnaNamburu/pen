@@ -146,6 +146,15 @@ export function discoverPublishedExportPaths(repoRoot) {
 				: manifest.exports;
 
 		for (const [exportKey, target] of Object.entries(exportMap)) {
+			// SF4 requires published packages to expose "./package.json" so tooling
+			// can resolve the manifest. It is a resolution target, not a module
+			// entry: ESM cannot import() JSON without a type attribute. Nothing is
+			// left unverified by skipping it — the file being resolvable is already
+			// proven by this loop reading it.
+			if (exportKey === "./package.json") {
+				continue;
+			}
+
 			const esmRel = resolveRuntimeTarget(target, "import");
 			const cjsRel = resolveRuntimeTarget(target, "require");
 			if (!esmRel || !cjsRel) {

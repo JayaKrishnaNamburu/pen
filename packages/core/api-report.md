@@ -41,6 +41,7 @@
 - createImportResult
 - createMutationGroupMetadata
 - createPseudoLocaleCatalog
+- createStripEmptyBlockZwspMigration
 - deepEqual
 - defineBlock
 - defineCommand
@@ -77,6 +78,7 @@
 - interpolateMessage
 - isCollapsed
 - isContinuousTextFlowCapability
+- isLoneEmptyBlockZwsp
 - isMultiBlock
 - isPseudoLocaleText
 - keyBindingPriorityToPrecedence
@@ -205,6 +207,7 @@
 - SelectionAuthority
 - SLOT_DEPRECATED_CODE
 - splitBlock
+- STRIP_EMPTY_BLOCK_ZWSP_ID
 - suggestion
 - tableCellDown
 - tableCellNext

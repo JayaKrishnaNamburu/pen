@@ -4,7 +4,7 @@ import {
 	decorationsFacet,
 	defineExtension,
 } from "@input/pen-core";
-import { deltaStreamExtension } from "@input/pen-delta-stream";
+import { deltaStreamExtension } from "../stream";
 import { documentOpsExtension } from "@input/pen-document-ops";
 import { defaultSchema } from "@input/pen-schema-default";
 import type {

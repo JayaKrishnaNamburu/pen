@@ -1,5 +1,5 @@
 ---
-"@input/pen-ai-tools": patch
+"@input/pen-ai": patch
 ---
 
 Add session tool grants and turn budgets for AIB3 tool authority.

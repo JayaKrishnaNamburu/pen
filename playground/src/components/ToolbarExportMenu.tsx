@@ -1,5 +1,5 @@
-import { htmlExporter } from "@input/pen-export-html";
-import { markdownExporter } from "@input/pen-export-markdown";
+import { htmlExporter } from "@input/pen-interop/html";
+import { markdownExporter } from "@input/pen-interop/markdown";
 import type { Editor } from "@input/pen-types";
 import { useEffect, useRef, useState } from "react";
 import { IconArrowUp } from "./icons";

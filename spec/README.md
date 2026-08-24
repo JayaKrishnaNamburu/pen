@@ -17,8 +17,8 @@ Then read package specs by layer:
 - Rendering: `packages/rendering/dom.md`, `packages/rendering/react.md`, `packages/rendering/vue.md`
 - Editing and extensions: `packages/extensions/search.md`, `packages/extensions/undo.md`, `packages/extensions/history.md`, `packages/extensions/multiplayer.md`
 - AI and tooling: `packages/extensions/ai.md`, `packages/extensions/document-ops.md`, `packages/shared/content-ops.md`
-- Import/export: `packages/extensions/import-markdown.md`, `packages/extensions/import-html.md`, `packages/extensions/import-json.md`, `packages/extensions/export-json.md`, `packages/extensions/export-xml.md`
-- Transports and AI tools: `packages/transports/direct.md`, `packages/transports/sse.md`, `packages/extensions/ai-tools.md`
+- Import/export: `packages/extensions/interop.md`, `packages/shared/markdown-serialization.md`
+- Transports: `packages/transports/direct.md`, `packages/transports/sse.md`
 
 ## Structure
 
@@ -30,15 +30,17 @@ Then read package specs by layer:
 ## Core Conventions
 
 - Runtime authority lives with `@input/pen-core` and the `Editor` API.
-- `DocumentOp[]` and `editor.apply(...)` remain the canonical mutation path.
+- `DocumentOp[]` is a closed ten-member union. Durable writes go through `editor.apply(...)`.
+- Positions that must survive commits are `editor.anchors`. Change summaries describe what a commit touched; they do not map positions across commits.
+- Empty text-capable storage is `""`. The renderer empty-block placeholder is a `<br data-pen-empty="">` and is not stored.
 - `@input/pen-types` is the shared contract layer, not a hidden runtime layer.
 - Renderer packages bind to the editor runtime but do not own document truth.
-- JSON is the canonical machine-readable format. XML is an interoperability surface layered on top of that model.
+- JSON is the canonical machine-readable format. XML is an interoperability surface layered on top of that model. Both live on `@input/pen-interop`.
 - React is the primary documented renderer. Vue is a shipped renderer proof built on the shared DOM engine.
 - Private apps such as `@input/pen-docs` and `@input/pen-playground` are specified because they are part of the workspace, but they are not publishable runtime packages.
-- Two workspace packages have no current-state spec on purpose: `@input/pen-conformance` and `@input/pen-eslint-plugin`. `packages/` has 38 package.json files; 36 have a matching spec. See `charter/package-map.md`.
+- Two workspace packages have no current-state spec on purpose: `@input/pen-conformance` and `@input/pen-eslint-plugin`. `packages/` has 27 package.json files; 25 have a matching spec. See `charter/package-map.md`.
 - `pen.ariaReadOnly` (the facet) only sets `aria-readonly`. The renderer `readonly` prop is what declines typing. That split is shipped and unresolved; package specs describe it, they do not pick a winner.
-- Command registration and the Wave 05 selection engine are mid-flight. Package specs that mention them mark them as unsettled; do not read those sections as shipped contracts.
+- Command registration and selection bridging are unsettled. Package specs that mention them mark them as such; do not read those sections as shipped contracts.
 
 ## What Changed
 

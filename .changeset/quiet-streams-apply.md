@@ -1,5 +1,5 @@
 ---
-"@input/pen-delta-stream": patch
+"@input/pen-ai": patch
 ---
 
 Handle every inbound stream part and refuse protocol mismatches.

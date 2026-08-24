@@ -13,7 +13,7 @@ Pen is a headless, extension-first editor engine. The document model, mutation p
 - `@input/pen-types` owns contracts and lightweight shared helpers.
 - `@input/pen-core` owns editor authority, document state, normalization, selection, extensions, and the canonical mutation pipeline.
 - Schema packages define block and inline surfaces.
-- Extension packages add optional runtime behavior such as AI, search, undo, multiplayer, input rules, import, and export.
+- Extension packages add optional runtime behavior such as AI, search, undo, multiplayer, input rules, and interchange (`@input/pen-interop`).
 - `@input/pen-dom` owns the framework-neutral browser editing engine, including field-editor sessions, DOM selection bridging, clipboard flows, text-entry target detection, and shared document-keyboard behavior.
 - Rendering packages bind the headless runtime and DOM editing engine to framework-native component, hook, or composable systems.
 - Tooling and app packages support development, testing, docs, and examples.

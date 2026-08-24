@@ -80,6 +80,7 @@ export function App() {
 		>
 			<div
 				data-pen-conformance-harness=""
+				data-ax6={showAx6Caret ? "" : undefined}
 				data-fixture={session.fixtureName}
 				data-generation={String(generation)}
 			>

@@ -21,8 +21,8 @@ This package is where most adopters start when embedding Pen in a React applicat
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@input/pen-ai`, `@input/pen-ai-suggestions`, `@input/pen-core`, `@input/pen-dom`, `@input/pen-history`, `@input/pen-import-html`, `@input/pen-multiplayer`, `@input/pen-schema-default`, `@input/pen-search`, `@input/pen-shortcuts`, `@input/pen-types`
-- Peer dependencies: `@input/pen-import-markdown`, `react`, `react-dom`
+- Runtime dependencies: `@input/pen-ai`, `@input/pen-core`, `@input/pen-dom`, `@input/pen-history`, `@input/pen-interop`, `@input/pen-multiplayer`, `@input/pen-schema-default`, `@input/pen-search`, `@input/pen-shortcuts`, `@input/pen-types`
+- Peer dependencies: `@input/pen-interop` (optional), `react`, `react-dom`
 - Boundary: `@input/pen-react` binds the headless runtime to React without taking ownership of document truth.
 
 ## Runtime Model
@@ -53,7 +53,7 @@ Important responsibilities:
 - Install the shared field-editor session, paste importer slots, and captured document-keyboard handlers for the active editor root
 - Pointer activation walks to the block element (`data-pen-editor-block`), not the inline span. React keeps its own gesture path in `useEditorContentGestures` rather than calling `handleFieldEditorPointerActivate()`; the hit target is still the block. Clicks in the empty space above the first block or below the last block are handled by `handleClickOutsideBlocks` (focus an empty adjacent text block, or insert a paragraph). Vanilla and Vue share a different fallback in `handleFieldEditorPointerActivate` that places the caret at the last text block's end instead of inserting.
 - Idle `InlineContent` and `TableCellContent` pass `{ editor }` into `fullReconcileDeltasToDOM` so `pen.urlPolicy` cannot be skipped by omitting a policy. `ImageRenderer` resolves `src` with `resolveEditorUrl(editor, src, "image")`. Denied URLs omit the attribute and set `data-pen-blocked-url`.
-- `useEditor()` with no argument calls `createEditor({ schema: defaultSchema })`. It injects the default schema and still installs no preset — no undo, no shortcuts, no document-ops, no delta-stream. Pass `preset: defaultPreset()` or an explicit `extensions` list when the host wants those.
+- `useEditor()` with no argument calls `createEditor({ schema: defaultSchema })`. It injects the default schema and still installs no preset — no undo, no shortcuts, no document-ops, no stream extension. Pass `preset: defaultPreset()` or an explicit `extensions` list when the host wants those.
 - The `readonly` prop on `EditorRoot` / `PenEditor` is what declines typing and gestures. `pen.ariaReadOnly` is read only for `aria-readonly` and does not set `data-readonly`. The facet does not decline typing, `editor.apply`, or the wire. That split is an open owner decision.
 - Boolean `data-*` attributes use the same valueless form as `@input/pen-dom` (`data-readonly=""`). ARIA booleans remain `"true"` / `"false"`.
 - Delegate shared DOM editing, selection transition, table-cell navigation, and shortcut routing behavior to `@input/pen-dom`
@@ -67,7 +67,7 @@ Important responsibilities:
 - The `Pen` namespace exists for lower-level composition when hosts need toolbar, slash-menu, AI, search, or multiplayer surfaces
 - Optional subpath entrypoints let hosts import AI, AI suggestions, history, multiplayer, and search surfaces without pulling from the root barrel directly.
 - `Pen.Editor.CaretOverlay` renders an optional local caret for collapsed active text selections, exposes `CARET` variants, and hides the native caret while the overlay is visible.
-- HTML import is a runtime dependency. Markdown import stays an optional peer because not every React integration needs it.
+- HTML ingest comes from `@input/pen-interop`. Markdown ingest stays an optional peer on the same package because not every React integration needs it. The renderer still exports `./ai-suggestions` as a UI subpath; the headless suggestion runtime is `@input/pen-ai/suggestions`.
 
 ## Current Maturity / Intended Usage
 

@@ -2,7 +2,7 @@ import "./InspectorPanel.css";
 import type {
 	AutocompleteAcceptanceStrategy,
 	AutocompleteBlockPolicy,
-} from "@input/pen-ai-autocomplete";
+} from "@input/pen-ai/autocomplete";
 import type { Editor } from "@input/pen-types";
 import { useEditorInspector } from "../hooks/useEditorInspector";
 import { AISuggestionsInspectorSection } from "./AISuggestionsInspectorSection";

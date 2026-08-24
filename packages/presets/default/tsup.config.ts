@@ -7,7 +7,7 @@ export default defineConfig({
   outDir: "dist",
   clean: true,
   external: [
-    "@input/pen-delta-stream",
+    "@input/pen-ai",
     "@input/pen-document-ops",
     "@input/pen-shortcuts",
     "@input/pen-types",

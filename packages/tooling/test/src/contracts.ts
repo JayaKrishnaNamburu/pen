@@ -6,7 +6,7 @@ import {
 	encodeYjsStateVector,
 	wrapYjsDocument,
 } from "@input/pen-crdt-yjs";
-import { exportEditorToJson, exportEditorToText } from "@input/pen-export-json";
+import { exportEditorToJson, exportEditorToText } from "@input/pen-interop/json";
 import type { Editor, SchemaRegistry } from "@input/pen-types";
 import type {
 	DeterministicYDocFixture,

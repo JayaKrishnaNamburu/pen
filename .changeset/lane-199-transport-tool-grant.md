@@ -1,5 +1,5 @@
 ---
-"@input/pen-ai-tools": patch
+"@input/pen-ai": patch
 "@input/pen-transport-sse": patch
 "@input/pen-transport-direct": patch
 ---

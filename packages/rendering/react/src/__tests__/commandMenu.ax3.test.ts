@@ -10,7 +10,7 @@ import {
 	type AICommandBinding,
 } from "@input/pen-ai";
 import { undoExtension } from "@input/pen-undo";
-import { deltaStreamExtension } from "@input/pen-delta-stream";
+import { deltaStreamExtension } from "@input/pen-ai/stream";
 import { documentOpsExtension } from "@input/pen-document-ops";
 import { Pen } from "../primitives/index";
 import { defaultSchema } from "@input/pen-schema-default";

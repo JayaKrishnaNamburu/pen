@@ -1,6 +1,6 @@
 import { memoryAssets } from "@input/pen-assets-memory";
-import { htmlImporter } from "@input/pen-import-html";
-import { markdownImporter } from "@input/pen-import-markdown";
+import { htmlImporter } from "@input/pen-interop/html";
+import { markdownImporter } from "@input/pen-interop/markdown";
 import type { PasteImporters } from "@input/pen-react";
 
 export const PLAYGROUND_BLOCK_TYPE_ORDER = [

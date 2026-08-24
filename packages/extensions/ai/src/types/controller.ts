@@ -16,7 +16,7 @@ import type {
 	AIToolBudgetLimits,
 	AIToolConfirmFn,
 	AIToolTurn,
-} from "@input/pen-ai-tools";
+} from "../tools";
 import type {
 	AIApplyStrategy,
 	AIMutationMode,

@@ -17,6 +17,21 @@ import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
 import {
+	createHeadlessEditor,
+	STRIP_EMPTY_BLOCK_ZWSP_ID,
+} from "@input/pen-core";
+import {
+	initBlockMap,
+	readFormatStamp,
+	yjsAdapter,
+} from "@input/pen-crdt-yjs";
+import { defaultSchema } from "@input/pen-schema-default";
+import {
+	MIGRATION_LEDGER_METADATA_KEY,
+	PEN_FORMAT_METADATA_KEY,
+} from "@input/pen-types";
+
+import {
 	applyReplayOps,
 	applySetup,
 	captureApply,
@@ -26,7 +41,11 @@ import {
 	readLiveOpTypeSet,
 	snapshotSession,
 } from "./opCorpus/session.js";
-import { encodeUpdateBytes } from "./opCorpus/snapshot.js";
+import {
+	assertCorpusSnapshot,
+	assertCorpusUpdateBytes,
+	encodeUpdateBytes,
+} from "./opCorpus/snapshot.js";
 import {
 	isSetSelectionReplay,
 	opsForReplay,
@@ -57,7 +76,7 @@ function replayFixtureFile(path) {
 	try {
 		applySetup(session, fixture.setup);
 		const initial = snapshotSession(session);
-		assert.deepEqual(
+		assertCorpusSnapshot(
 			initial,
 			fixture.initialSnapshot,
 			`op-equality initial-snapshot mismatch: ${fixture.id}`,
@@ -67,19 +86,19 @@ function replayFixtureFile(path) {
 		});
 		const actualBytes = encodeUpdateBytes(captured.update);
 		if (SNAPSHOT_ONLY_OP_TYPES.has(fixture.opType)) {
-			assert.deepEqual(
+			assertCorpusSnapshot(
 				snapshotSession(session),
 				fixture.snapshot,
 				`op-equality snapshot mismatch: ${fixture.id}`,
 			);
 			return fixture;
 		}
-		assert.equal(
+		assertCorpusUpdateBytes(
 			actualBytes,
 			fixture.updateBytes,
 			`op-equality update-bytes mismatch: ${fixture.id}`,
 		);
-		assert.deepEqual(
+		assertCorpusSnapshot(
 			snapshotSession(session),
 			fixture.snapshot,
 			`op-equality snapshot mismatch: ${fixture.id}`,
@@ -147,6 +166,32 @@ function checkCoverage() {
 		throw new Error(`op-equality coverage: missing ${missing.join(", ")}`);
 	}
 	return { expectedTypes, files, covered };
+}
+
+const noDefaultExtensionsPreset = {
+	resolve() {
+		return { extensions: [] };
+	},
+};
+
+function seedStamp2LoneSentinelDocument() {
+	const adapter = yjsAdapter();
+	const doc = adapter.createDocument();
+	const ydoc = adapter.raw(doc);
+	ydoc.transact(() => {
+		const blocks = ydoc.getMap("blocks");
+		const blockOrder = ydoc.getArray("blockOrder");
+		const metadata = ydoc.getMap("metadata");
+		initBlockMap(blocks, "p1", "paragraph", "inline");
+		blocks.get("p1").get("content").insert(0, "\u200B");
+		blockOrder.push(["p1"]);
+		metadata.set(PEN_FORMAT_METADATA_KEY, {
+			format: 2,
+			minReader: 1,
+			writer: "0.0.1",
+		});
+	});
+	return { adapter, binary: adapter.encodeState(doc) };
 }
 
 test("coverage is frozen to the committed v2 corpus, not the live union", () => {
@@ -322,6 +367,86 @@ test("mislabelled fixture fails coverage by name", () => {
 	}
 });
 
+test("exact-match updateBytes fail because Wave 5 delete-set drift must stay visible", () => {
+	const file = join(corpusDir, "insert-text.json");
+	const original = readFileSync(file, "utf8");
+	try {
+		const fixture = JSON.parse(original);
+		const session = createCorpusSession();
+		try {
+			applySetup(session, fixture.setup);
+			const captured = captureApply(session, () => {
+				applyReplayOps(session, fixture.ops);
+			});
+			fixture.updateBytes = encodeUpdateBytes(captured.update);
+		} finally {
+			destroyCorpusSession(session);
+		}
+		writeFileSync(file, `${JSON.stringify(fixture, null, "\t")}\n`);
+		assert.throws(
+			() => replayFixtureFile(file),
+			/op-equality update-bytes mismatch: insert-text: Wave 5 delete-set drift vanished/,
+		);
+	} finally {
+		writeFileSync(file, original);
+	}
+});
+
+test("divergent block content fails snapshot by name", () => {
+	const file = join(corpusDir, "insert-text.json");
+	const original = readFileSync(file, "utf8");
+	try {
+		const fixture = JSON.parse(original);
+		fixture.snapshot.blocks.p1.content.delta[0].insert = "CORRUPTED";
+		writeFileSync(file, `${JSON.stringify(fixture, null, "\t")}\n`);
+		assert.throws(
+			() => replayFixtureFile(file),
+			/op-equality snapshot mismatch: insert-text/,
+		);
+	} finally {
+		writeFileSync(file, original);
+	}
+});
+
+test("poisoned non-excluded metadata fails snapshot by name", () => {
+	const file = join(corpusDir, "insert-text.json");
+	const original = readFileSync(file, "utf8");
+	try {
+		const fixture = JSON.parse(original);
+		fixture.initialSnapshot.metadata.documentProfile = "plain";
+		writeFileSync(file, `${JSON.stringify(fixture, null, "\t")}\n`);
+		assert.throws(
+			() => replayFixtureFile(file),
+			/op-equality initial-snapshot mismatch: insert-text/,
+		);
+	} finally {
+		writeFileSync(file, original);
+	}
+});
+
+test("stamp-2 lone sentinel still migrates and records the ledger", () => {
+	const { adapter, binary } = seedStamp2LoneSentinelDocument();
+	const editor = createHeadlessEditor({
+		crdt: adapter,
+		document: adapter.loadDocument(binary),
+		schema: defaultSchema,
+		preset: noDefaultExtensionsPreset,
+	});
+	try {
+		assert.equal(readFormatStamp(editor.internals.crdtDoc).format, 3);
+		assert.equal(editor.getBlock("p1")?.textContent(), "");
+		const ydoc = adapter.raw(editor.internals.crdtDoc);
+		const stored = ydoc.getMap("blocks").get("p1").get("content").toString();
+		assert.equal(stored, "");
+		assert.deepEqual(
+			ydoc.getMap("metadata").get(MIGRATION_LEDGER_METADATA_KEY),
+			[STRIP_EMPTY_BLOCK_ZWSP_ID],
+		);
+	} finally {
+		editor.destroy();
+	}
+});
+
 test("hidden fixture fails coverage by name", () => {
 	const file = join(corpusDir, "replace-text.json");
 	const original = readFileSync(file, "utf8");
@@ -363,7 +488,7 @@ test("replay translates a shape-changed op and still compares the document snaps
 	try {
 		applySetup(session, fixture.setup);
 		applyReplayOps(session, fixture.ops);
-		assert.deepEqual(
+		assertCorpusSnapshot(
 			snapshotSession(session),
 			fixture.snapshot,
 			"replay oracle is the committed snapshot, not the recorded op shape",

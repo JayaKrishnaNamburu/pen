@@ -1,0 +1,147 @@
+{
+  "config": {
+    "rootDir": "/Users/krijn/Code/pen/packages/tooling/conformance",
+    "version": "1.58.2",
+    "projects": [
+      {
+        "outputDir": "/tmp/test-results/chromium",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": { "browserVersion": "145.0.7632.6" },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/krijn/Code/pen/packages/tooling/conformance",
+        "testIgnore": [],
+        "testMatch": ["scenarios/**/*.spec.ts", "suites/**/*.spec.ts"],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/tmp/test-results/webkit",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": { "browserVersion": "26.0" },
+        "id": "webkit",
+        "name": "webkit",
+        "testDir": "/Users/krijn/Code/pen/packages/tooling/conformance",
+        "testIgnore": [],
+        "testMatch": ["scenarios/**/*.spec.ts", "suites/**/*.spec.ts"],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/tmp/test-results/firefox",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": { "browserVersion": "146.0.1" },
+        "id": "firefox",
+        "name": "firefox",
+        "testDir": "/Users/krijn/Code/pen/packages/tooling/conformance",
+        "testIgnore": [],
+        "testMatch": ["scenarios/**/*.spec.ts", "suites/**/*.spec.ts"],
+        "timeout": 30000
+      }
+    ]
+  },
+  "suites": [
+    {
+      "title": "hello-world.spec.ts",
+      "file": "scenarios/hello-world.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "S2 hello-world: type a character and match authority",
+          "ok": true,
+          "tags": [],
+          "id": "hello-world",
+          "file": "scenarios/hello-world.spec.ts",
+          "line": 3,
+          "column": 1,
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectName": "chromium",
+              "projectId": "chromium",
+              "results": [],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectName": "webkit",
+              "projectId": "webkit",
+              "results": [],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectName": "firefox",
+              "projectId": "firefox",
+              "results": [],
+              "status": "expected"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "harness-self-test.spec.ts",
+      "file": "scenarios/harness-self-test.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "harness self-test",
+          "ok": true,
+          "tags": [],
+          "id": "harness-self-test",
+          "file": "scenarios/harness-self-test.spec.ts",
+          "line": 4,
+          "column": 1,
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectName": "chromium",
+              "projectId": "chromium",
+              "results": [],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectName": "webkit",
+              "projectId": "webkit",
+              "results": [],
+              "status": "expected"
+            },
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "skipped",
+              "projectName": "firefox",
+              "projectId": "firefox",
+              "results": [],
+              "status": "skipped"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-08-24T00:00:00.000Z",
+    "duration": 12000,
+    "expected": 5,
+    "unexpected": 0,
+    "flaky": 0,
+    "skipped": 1
+  }
+}

@@ -1,5 +1,5 @@
 ---
-"@input/pen-delta-stream": patch
+"@input/pen-ai": patch
 "@input/pen-types": patch
 ---
 

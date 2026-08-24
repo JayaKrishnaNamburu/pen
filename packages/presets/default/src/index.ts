@@ -1,5 +1,5 @@
-import { deltaStreamExtension } from "@input/pen-delta-stream";
-import type { DeltaStreamOptions } from "@input/pen-delta-stream";
+import { deltaStreamExtension } from "@input/pen-ai/stream";
+import type { DeltaStreamOptions } from "@input/pen-ai/stream";
 import { documentOpsExtension } from "@input/pen-document-ops";
 import { createDefaultSchema } from "@input/pen-schema-default";
 import {

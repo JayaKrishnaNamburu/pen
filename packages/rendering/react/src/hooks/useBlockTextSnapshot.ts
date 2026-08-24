@@ -16,7 +16,7 @@ interface BlockTextSnapshot {
 const EMPTY_DELTAS: readonly BlockTextDelta[] = [];
 
 // HOST5: empty snapshot is correct for shell-only SSR. Do not populate
-// this from the live document — hosts export content with @input/pen-export-html.
+// this from the live document — hosts export content with @input/pen-interop/html.
 const SSR_SNAPSHOT: BlockTextSnapshot = {
 	exists: false,
 	text: "",

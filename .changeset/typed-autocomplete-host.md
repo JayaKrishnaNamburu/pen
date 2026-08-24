@@ -1,5 +1,5 @@
 ---
-"@input/pen-ai-autocomplete": patch
+"@input/pen-ai": patch
 ---
 
 Remove module-scope prototype mutation from the autocomplete controller.

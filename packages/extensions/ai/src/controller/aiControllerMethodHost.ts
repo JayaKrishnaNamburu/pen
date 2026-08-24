@@ -10,7 +10,7 @@ import type {
 	ToolRuntime,
 	UndoHistoryMetadataController,
 } from "@input/pen-types";
-import type { AIToolConfirmFn } from "@input/pen-ai-tools";
+import type { AIToolConfirmFn } from "../tools";
 import type {
 	AIApplyStrategy,
 	AIContentFormat,

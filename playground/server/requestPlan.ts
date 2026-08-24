@@ -1,4 +1,4 @@
-import { AUTOCOMPLETE_SYSTEM_PROMPT } from "@input/pen-ai-autocomplete";
+import { AUTOCOMPLETE_SYSTEM_PROMPT } from "@input/pen-ai/autocomplete";
 import type { Editor, ModelRequestedOperation } from "@input/pen-types";
 import {
 	PLAYGROUND_AUTOCOMPLETE_OUTPUT_TOKEN_CAP,

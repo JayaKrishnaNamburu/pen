@@ -17,4 +17,4 @@ export type {
 	AISuggestionGroup,
 	AISuggestionsMetrics,
 	AISuggestionsState,
-} from "@input/pen-ai-suggestions";
+} from "@input/pen-ai/suggestions";

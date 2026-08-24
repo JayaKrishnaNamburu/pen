@@ -15,6 +15,7 @@ import {
 	readBlockText,
 	readDir,
 	readS2,
+	replayImeCommit,
 } from "./helpers";
 
 const DIR3_QUOTE_ID = "dir3-quote-ltr";
@@ -71,41 +72,7 @@ scenario(
 		const loads = logLoad("RI2");
 		await s.load("bidi-mixed");
 		await clickOffset(page, BIDI_RTL_EMBED_ID, BIDI_RTL_LATIN_MID);
-		const after = await page.evaluate((composed) => {
-			const surface = document.querySelector(
-				"[data-pen-field-editor-active-surface], [data-pen-inline-content]",
-			);
-			if (!(surface instanceof HTMLElement)) {
-				throw new Error("no active surface");
-			}
-			surface.dispatchEvent(
-				new CompositionEvent("compositionstart", { bubbles: true }),
-			);
-			surface.dispatchEvent(
-				new CompositionEvent("compositionupdate", {
-					bubbles: true,
-					data: composed,
-				}),
-			);
-			const before = new InputEvent("beforeinput", {
-				bubbles: true,
-				cancelable: true,
-				inputType: "insertCompositionText",
-				data: composed,
-			});
-			Object.defineProperty(before, "inputType", {
-				configurable: true,
-				value: "insertCompositionText",
-			});
-			surface.dispatchEvent(before);
-			surface.dispatchEvent(
-				new CompositionEvent("compositionend", {
-					bubbles: true,
-					data: composed,
-				}),
-			);
-			return window.__penConformance.documentText;
-		}, "x");
+		const after = await replayImeCommit(page, BIDI_RTL_EMBED_ID, "x");
 		const text = await readBlockText(page, BIDI_RTL_EMBED_ID);
 		const s2 = await readS2(page);
 		await attachJson("ri2", { loads, after, text, s2 });

@@ -1,4 +1,4 @@
-import { autocompleteExtension } from "@input/pen-ai-autocomplete";
+import { autocompleteExtension } from "@input/pen-ai/autocomplete";
 import {
 	createEditor,
 	createHeadlessEditor,
@@ -26,7 +26,7 @@ import {
 	clearInlineAtomDragPreview,
 	createInlineAtomDragPreview,
 } from "@input/pen-dom/utils/inlineAtomDragPreview";
-import { htmlImporter } from "@input/pen-import-html";
+import { htmlImporter } from "@input/pen-interop/html";
 import { defaultPreset } from "@input/pen-preset-default";
 import { defaultSchema } from "@input/pen-schema-default";
 import {

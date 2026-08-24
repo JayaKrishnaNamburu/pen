@@ -18,7 +18,7 @@ pnpm add @input/pen-core @input/pen-transport-direct
 ```ts
 import { createEditor } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
-import { getAIToolRuntime } from "@input/pen-ai-tools";
+import { getAIToolRuntime } from "@input/pen-ai/tools";
 import { directTransport } from "@input/pen-transport-direct";
 
 const editor = createEditor({

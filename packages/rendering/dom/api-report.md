@@ -8,6 +8,7 @@
 
 - collapsedRect
 - createGeometryReader
+- createReducedMotionSignal
 - getClosestEditorRoot
 - getRootGeometry
 - handleEditorDocumentKeyDown
@@ -76,6 +77,8 @@
 - MountEditorOptions
 - Point
 - Rect
+- ReducedMotionListener
+- ReducedMotionSignal
 - RootGeometry
 - VerticalCaretTarget
 - VerticalDirection

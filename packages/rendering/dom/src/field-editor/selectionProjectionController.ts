@@ -232,6 +232,27 @@ export class SelectionProjectionController {
 		const pendingProjectionRequestId =
 			this._historySelectionCoordinator.getPendingProjectionRequestId();
 
+		if (this._options.getMode() === "block") {
+			// T3: surface mode `block` skips contenteditable expansion.
+			// projecting a 51-block text range into the focused field
+			// clamps native to that field (empty-p1 0..length) and an
+			// open pointer window accepts the leftover.
+			this._parked = null;
+			this._parkedDiagnosticKey = null;
+			const recordVersion = this._options.getRecord?.()?.version;
+			if (recordVersion != null) {
+				this._lastProjectedVersion = recordVersion;
+			}
+			this._options.emitSelectionProjected();
+			if (this._pendingSelectionProjectionVersion === version) {
+				this._pendingSelectionProjectionVersion = null;
+			}
+			this._historySelectionCoordinator.completeDeferredProjection(
+				pendingProjectionRequestId,
+			);
+			return;
+		}
+
 		if (this._options.getMode() === "expanded") {
 			const expandedHost = this._options.findExpandedHost();
 			if (expandedHost) {
