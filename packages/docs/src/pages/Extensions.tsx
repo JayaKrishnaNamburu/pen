@@ -46,7 +46,7 @@ export function ExtensionsPage() {
 					<code>commandsFacet</code> (<code>pen.commands</code>)
 				</li>
 				<li>
-					<code>readOnlyFacet</code> (<code>pen.readOnly</code>
+					<code>ariaReadOnlyFacet</code> (<code>pen.ariaReadOnly</code>
 					) — sets <code>aria-readonly</code> only. It does
 					not decline typing, <code>editor.apply</code>, or
 					the wire. The <code>readonly</code> prop on{" "}
@@ -90,14 +90,14 @@ export function ExtensionsPage() {
 				<code>slot-deprecated</code> once per key per session.
 			</p>
 			<pre>
-				<code>{`import { createEditor, readOnlyFacet } from "@input/pen-core";
+				<code>{`import { createEditor, ariaReadOnlyFacet } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
 
 const editor = createEditor({
   preset: defaultPreset(),
 });
 
-const readOnly = editor.facet(readOnlyFacet);`}</code>
+const ariaReadOnly = editor.facet(ariaReadOnlyFacet);`}</code>
 			</pre>
 		</>
 	);

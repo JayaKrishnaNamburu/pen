@@ -29,10 +29,11 @@ function seedSplitSession() {
 	const firstBlockId = editor.firstBlock()!.id;
 	editor.apply([
 		{
-			type: "insert-text",
+			type: "splice-text",
 			blockId: firstBlockId,
-			offset: 0,
-			text: "Hello",
+			from: 0,
+				to: 0,
+				insert: "Hello",
 		},
 		{
 			type: "insert-block",

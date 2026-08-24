@@ -77,7 +77,7 @@ export const PenExample = defineComponent({
 
 `PenEditor` takes a required `editor` prop. `emptyPlaceholder` is optional; when omitted, the editor uses the message-catalog string for `pen.schema.document.emptyPlaceholder` (`Start writing...`). `importers` is optional.
 
-`readonly` defaults to `false`. The prop declines typing and pointer activation, sets `data-readonly` (match with `[data-readonly]`, not `[data-readonly="true"]`), and sets `aria-readonly="true"`. It does not stop `editor.apply`. `pen.readOnly` the facet only sets `aria-readonly`.
+`readonly` defaults to `false`. The prop declines typing and pointer activation, sets `data-readonly` (match with `[data-readonly]`, not `[data-readonly="true"]`), and sets `aria-readonly="true"`. It does not stop `editor.apply`. `pen.ariaReadOnly` the facet only sets `aria-readonly`.
 
 `engines.node` is `>=22`. The required peer is `vue` (`^3.4.0`).
 

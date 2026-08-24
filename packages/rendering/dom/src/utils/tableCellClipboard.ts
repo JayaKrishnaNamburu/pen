@@ -199,23 +199,23 @@ function applyPastedCells(
 			const existingLen = cell.textContent().length;
 			if (existingLen > 0) {
 				ops.push({
-					type: "delete-table-cell-text",
+					type: "splice-text",
 					blockId: selection.blockId,
-					row: resolvedCoord.row,
-					col: resolvedCoord.col,
-					offset: 0,
-					length: existingLen,
+					cell: { row: resolvedCoord.row, col: resolvedCoord.col },
+					from: 0,
+					to: existingLen,
+					insert: "",
 				});
 			}
 			const pasteText = cellData[r][c];
 			if (pasteText.length > 0) {
 				ops.push({
-					type: "insert-table-cell-text",
+					type: "splice-text",
 					blockId: selection.blockId,
-					row: resolvedCoord.row,
-					col: resolvedCoord.col,
-					offset: 0,
-					text: pasteText,
+					cell: { row: resolvedCoord.row, col: resolvedCoord.col },
+					from: 0,
+					to: 0,
+					insert: pasteText,
 				});
 			}
 		}

@@ -72,10 +72,11 @@ describe("@input/pen-delta-stream StreamingTarget apply cardinality", () => {
 		expect(applyCount()).toBe(1);
 		expect(applyOps[0]).toEqual([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: expectedTokens(1000),
+				from: 0,
+				to: 0,
+				insert: expectedTokens(1000),
 			},
 		]);
 		expect(visibleText(editor.getBlock(blockId).textContent())).toBe(

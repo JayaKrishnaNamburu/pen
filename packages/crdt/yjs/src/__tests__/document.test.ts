@@ -40,9 +40,9 @@ describe("document", () => {
       expect(doc.ydoc.gc).toBe(false);
     });
 
-    it("respects gc: false option", () => {
-      const doc = createYjsDocument(adapter, { gc: false });
-      expect(doc.ydoc.gc).toBe(false);
+    it("respects gc: true option", () => {
+      const doc = createYjsDocument(adapter, { gc: true });
+      expect(doc.ydoc.gc).toBe(true);
     });
 
     it("starts without a persisted document profile", () => {

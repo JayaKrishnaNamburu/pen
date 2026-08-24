@@ -63,10 +63,11 @@ describe("ExpandedContentEditableBackend handleBeforeInput enter", () => {
 		const secondBlockId = crypto.randomUUID();
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: firstBlockId,
-				offset: 0,
-				text: "Hello",
+				from: 0,
+				to: 0,
+				insert: "Hello",
 			},
 			{
 				type: "insert-block",
@@ -76,10 +77,11 @@ describe("ExpandedContentEditableBackend handleBeforeInput enter", () => {
 				position: { after: firstBlockId },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: secondBlockId,
-				offset: 0,
-				text: "World",
+				from: 0,
+				to: 0,
+				insert: "World",
 			},
 		]);
 		editor.selectTextRange(
@@ -149,7 +151,9 @@ describe("ExpandedContentEditableBackend handleBeforeInput enter", () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "insert-text", blockId, offset: 0, text: "Hello" },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello" },
 		]);
 		editor.selectText(blockId, 2, 2);
 
@@ -208,7 +212,9 @@ describe("ExpandedContentEditableBackend handleBeforeInput enter", () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "insert-text", blockId, offset: 0, text: "Hello" },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello" },
 		]);
 		editor.selectText(blockId, 2, 2);
 

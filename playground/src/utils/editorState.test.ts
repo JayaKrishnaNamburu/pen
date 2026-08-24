@@ -23,16 +23,14 @@ describe("playground editor state serialization", () => {
 
 		editor.apply([
 			{
-				type: "convert-block",
-				blockId: parentId,
-				newType: "toggle",
-				newProps: { open: true },
+				type: "set-props", blockId: parentId, props: { type: "toggle", ...{ open: true  }},
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: parentId,
-				offset: 0,
-				text: "Parent",
+				from: 0,
+				to: 0,
+				insert: "Parent",
 			},
 			{
 				type: "insert-block",
@@ -42,15 +40,16 @@ describe("playground editor state serialization", () => {
 				position: { after: parentId },
 			},
 			{
-				type: "update-block",
+				type: "set-props",
 				blockId: "child-1",
 				props: { parentId },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: "child-1",
-				offset: 0,
-				text: "Nested child",
+				from: 0,
+				to: 0,
+				insert: "Nested child",
 			},
 		]);
 
@@ -87,28 +86,30 @@ describe("playground editor state serialization", () => {
 				position: "last",
 			},
 			{
-				type: "update-table-columns",
+				type: "set-props",
 				blockId: "table-1",
-				columns: [
-					{ id: "name", title: "Name", type: "text" },
-					{ id: "status", title: "Status", type: "text" },
-				],
+				props: {
+					columns: [
+						{ id: "name", title: "Name", type: "text" },
+						{ id: "status", title: "Status", type: "text" },
+					],
+				},
 			},
 			{
-				type: "insert-table-cell-text",
+				type: "splice-text",
 				blockId: "table-1",
-				row: 0,
-				col: 0,
-				offset: 0,
-				text: "Alice",
+				cell: { row: 0, col: 0 },
+				from: 0,
+				to: 0,
+				insert: "Alice",
 			},
 			{
-				type: "insert-table-cell-text",
+				type: "splice-text",
 				blockId: "table-1",
-				row: 0,
-				col: 1,
-				offset: 0,
-				text: "Active",
+				cell: { row: 0, col: 1 },
+				from: 0,
+				to: 0,
+				insert: "Active",
 			},
 		]);
 

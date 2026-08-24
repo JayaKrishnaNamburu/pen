@@ -10,6 +10,7 @@ import { createDefaultSchema } from "./fixtures/testSchema";
 import {
 	createDecorationSet,
 	createDocumentSession,
+	applySplitBlock,
 	createEditor as createCoreEditor,
 	createHeadlessEditor,
 	ensureInlineCompletionController,
@@ -76,21 +77,19 @@ describe("@input/pen-core createEditor", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "hello world",
+				from: 0,
+				to: 0,
+				insert: "hello world",
 			},
 		]);
 
-		editor.apply([
-			{
-				type: "split-block",
-				blockId,
-				offset: 0,
-				newBlockId: "b2",
-			},
-		]);
+		applySplitBlock(editor, {
+			blockId,
+			offset: 0,
+			newBlockId: "b2",
+		});
 
 		expect(editor.documentState.blockOrder).toEqual([blockId, "b2"]);
 		expect(editor.getBlock(blockId)?.textContent()).toBe("");
@@ -104,8 +103,10 @@ describe("@input/pen-core createEditor", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "convert-block", blockId, newType: "codeBlock" },
-			{ type: "insert-text", blockId, offset: 0, text: "abcd" },
+			{ type: "set-props", blockId, props: { type: "codeBlock" } },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "abcd" },
 		]);
 
 		editor.selectTextRange({ blockId, offset: 1 }, { blockId, offset: 3 });
@@ -135,10 +136,7 @@ describe("@input/pen-core createEditor", () => {
 
 		editor.apply([
 			{
-				type: "convert-block",
-				blockId: "table-block",
-				newType: "paragraph",
-			},
+				type: "set-props", blockId: "table-block", props: { type: "paragraph" }},
 		]);
 
 		const tableBlock = editor.getBlock("table-block")!;
@@ -162,7 +160,9 @@ describe("@input/pen-core createEditor", () => {
 				if (appended) return;
 				const hasUserEdit = events.some(
 					(event) =>
-						event.origin.type === "user" && !event.summary.isEmpty,
+						event.origin.type === "user" &&
+						(event.summary.blockText.length > 0 ||
+							event.summary.structural.length > 0),
 				);
 				if (!hasUserEdit) return;
 
@@ -170,10 +170,11 @@ describe("@input/pen-core createEditor", () => {
 				editor.apply(
 					[
 						{
-							type: "insert-text",
+							type: "splice-text",
 							blockId: "b1",
-							offset: 5,
-							text: "!",
+							from: 5,
+				to: 5,
+				insert: "!",
 						},
 					],
 					{ origin: "extension" },
@@ -194,10 +195,11 @@ describe("@input/pen-core createEditor", () => {
 				position: "last",
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: "b1",
-				offset: 0,
-				text: "hello",
+				from: 0,
+				to: 0,
+				insert: "hello",
 			},
 		]);
 
@@ -233,10 +235,11 @@ describe("@input/pen-core createEditor", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "hello",
+				from: 0,
+				to: 0,
+				insert: "hello",
 			},
 		]);
 
@@ -248,7 +251,7 @@ describe("@input/pen-core createEditor", () => {
 		});
 		expect(documentCommits).toHaveLength(1);
 		expect(documentCommits[0]).toMatchObject({
-			commitId: 2,
+			commitId: 1,
 			origin: "user",
 			affectedBlocks: [blockId],
 		});

@@ -1,4 +1,3 @@
-import { EMPTY_BLOCK_SENTINEL } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 import { logicalLength, toDomOffset, toLogicalOffset } from "../offsetDomain";
 
@@ -15,15 +14,15 @@ function expectInvertible(text: string): void {
 }
 
 describe("offsetDomain I11 S2-seam", () => {
-	it("I11 S2-seam: empty-block sentinel has logical length 0 and maps invertibly", () => {
-		expect(logicalLength(EMPTY_BLOCK_SENTINEL)).toBe(0);
-		expect(toDomOffset(0, EMPTY_BLOCK_SENTINEL)).toBe(0);
-		expect(toLogicalOffset(0, EMPTY_BLOCK_SENTINEL)).toBe(0);
-		expect(toLogicalOffset(1, EMPTY_BLOCK_SENTINEL)).toBe(0);
-		expectInvertible(EMPTY_BLOCK_SENTINEL);
+	it("I11 EM5: empty string has logical length 0 and maps invertibly", () => {
+		expect(logicalLength("")).toBe(0);
+		expect(toDomOffset(0, "")).toBe(0);
+		expect(toLogicalOffset(0, "")).toBe(0);
+		expect(toLogicalOffset(1, "")).toBe(0);
+		expectInvertible("");
 	});
 
-	it("I11 S2-seam: normal text maps invertibly without a sentinel", () => {
+	it("I11 S2-seam: normal text maps invertibly", () => {
 		const text = "hello";
 		expect(logicalLength(text)).toBe(5);
 		expect(toDomOffset(0, text)).toBe(0);
@@ -32,12 +31,16 @@ describe("offsetDomain I11 S2-seam", () => {
 		expectInvertible(text);
 	});
 
-	it("I11 S2-seam: emoji uses UTF-16 offsets and ignores the empty-block sentinel", () => {
+	it("I11 S2-seam: emoji uses UTF-16 offsets; mid-string ZWSP is length 1", () => {
 		const text = "hi 👍";
 		expect(text.length).toBe(5);
 		expect(logicalLength(text)).toBe(5);
 		expect(toDomOffset(3, text)).toBe(3);
 		expect(toLogicalOffset(5, text)).toBe(5);
 		expectInvertible(text);
+
+		const withZwsp = "a\u200Bb";
+		expect(logicalLength(withZwsp)).toBe(3);
+		expectInvertible(withZwsp);
 	});
 });

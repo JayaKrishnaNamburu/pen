@@ -1,9 +1,9 @@
 import type { CommitEvent, Point } from "@input/pen-types";
-import { HOOK_PRIORITY_AUTH } from "@input/pen-types";
+import { HOOK_PRIORITY_AUTH, mapOffsetThroughSplices } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 
 import { createDefaultSchema } from "./fixtures/testSchema";
-import { createEditor as createCoreEditor } from "../index";
+import { applyMergeBlocks, applySplitBlock, createEditor as createCoreEditor } from "../index";
 
 const noDefaultExtensionsPreset = {
 	resolve() {
@@ -26,7 +26,14 @@ function visibleText(text: string): string {
 function mapSerial(start: Point, summaries: readonly CommitEvent["summary"][]): Point {
 	let point = start;
 	for (const summary of summaries) {
-		point = summary.mapPoint(point) ?? point;
+		const change = summary.blockText.find((item) => item.blockId === point.blockId);
+		if (!change) {
+			continue;
+		}
+		point = {
+			blockId: point.blockId,
+			offset: mapOffsetThroughSplices(change.splices, point.offset, 1),
+		};
 	}
 	return point;
 }
@@ -211,7 +218,9 @@ describe("editor.openTextStream (Wave 2.4)", () => {
 		const editor = createEditor();
 		const source = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "insert-text", blockId: source, offset: 0, text: "meadow sage" },
+			{ type: "splice-text", blockId: source, from: 0,
+				to: 0,
+				insert: "meadow sage" },
 		]);
 
 		const writer = editor.openTextStream(
@@ -220,14 +229,11 @@ describe("editor.openTextStream (Wave 2.4)", () => {
 		);
 		expect(writer.position).toEqual({ blockId: source, offset: 11 });
 
-		editor.apply([
-			{
-				type: "split-block",
-				blockId: source,
-				offset: 6,
-				newBlockId: "dest",
-			},
-		]);
+		applySplitBlock(editor, {
+			blockId: source,
+			offset: 6,
+			newBlockId: "dest",
+		});
 
 		expect(writer.position).toEqual({ blockId: "dest", offset: 5 });
 
@@ -245,7 +251,9 @@ describe("editor.openTextStream (Wave 2.4)", () => {
 		const editor = createEditor();
 		const target = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "insert-text", blockId: target, offset: 0, text: "meadow sage" },
+			{ type: "splice-text", blockId: target, from: 0,
+				to: 0,
+				insert: "meadow sage" },
 			{
 				type: "insert-block",
 				blockId: "keep",
@@ -253,7 +261,9 @@ describe("editor.openTextStream (Wave 2.4)", () => {
 				props: {},
 				position: "last",
 			},
-			{ type: "insert-text", blockId: "keep", offset: 0, text: "keep" },
+			{ type: "splice-text", blockId: "keep", from: 0,
+				to: 0,
+				insert: "keep" },
 		]);
 
 		const writer = editor.openTextStream(
@@ -261,14 +271,11 @@ describe("editor.openTextStream (Wave 2.4)", () => {
 			{ origin: { type: "ai", groupId: "survive" } },
 		);
 
-		editor.apply([
-			{
-				type: "split-block",
-				blockId: target,
-				offset: 6,
-				newBlockId: "tail",
-			},
-		]);
+		applySplitBlock(editor, {
+			blockId: target,
+			offset: 6,
+			newBlockId: "tail",
+		});
 		expect(writer.position).toEqual({ blockId: "tail", offset: 5 });
 
 		writer.append("!");
@@ -276,9 +283,10 @@ describe("editor.openTextStream (Wave 2.4)", () => {
 		expect(visibleText(editor.getBlock("tail")!.textContent())).toBe(" sage!");
 		expect(writer.position).toEqual({ blockId: "tail", offset: 6 });
 
-		editor.apply([
-			{ type: "merge-blocks", targetBlockId: target, sourceBlockId: "tail" },
-		]);
+		applyMergeBlocks(editor, {
+			targetBlockId: target,
+			sourceBlockId: "tail",
+		});
 		expect(writer.position).toEqual({ blockId: target, offset: 12 });
 
 		writer.append("?");
@@ -331,12 +339,16 @@ describe("editor.openTextStream (Wave 2.4)", () => {
 			return originalResolve(anchor);
 		};
 
-		editor.apply([{ type: "insert-text", blockId, offset: 0, text: "x" }]);
+		editor.apply([{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "x" }]);
 		expect(writer.position).toEqual(start);
 		expect(editor.getBlock(blockId)).not.toBeNull();
 
 		forceNull = false;
-		editor.apply([{ type: "insert-text", blockId, offset: 0, text: "y" }]);
+		editor.apply([{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "y" }]);
 		expect(writer.position).toEqual({ blockId, offset: 2 });
 
 		forceNull = true;
@@ -361,7 +373,9 @@ describe("editor.openTextStream (Wave 2.4)", () => {
 		const editor = createEditor();
 		const target = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "insert-text", blockId: target, offset: 0, text: "meadow" },
+			{ type: "splice-text", blockId: target, from: 0,
+				to: 0,
+				insert: "meadow" },
 			{
 				type: "insert-block",
 				blockId: "source",
@@ -377,9 +391,10 @@ describe("editor.openTextStream (Wave 2.4)", () => {
 		);
 		expect(writer.position).toEqual({ blockId: "source", offset: 0 });
 
-		editor.apply([
-			{ type: "merge-blocks", targetBlockId: target, sourceBlockId: "source" },
-		]);
+		applyMergeBlocks(editor, {
+			targetBlockId: target,
+			sourceBlockId: "source",
+		});
 		expect(writer.position).toEqual({ blockId: target, offset: 6 });
 
 		writer.append("!");

@@ -1,18 +1,21 @@
 import { isCollapsed, isMultiBlock, usesInlineTextSelection } from "@input/pen-core";
 import {
 	generateId,
-	logicalTextFromStored,
 	type Editor,
 	type InteractionModel,
 } from "@input/pen-types";
+import {
+	activateFieldEditorFromSelection,
+	keymapContextFromSelection,
+} from "../field-editor/commandDispatch";
 import type { FieldEditorSession } from "../field-editor/controller";
 import {
 	handleHistoryShortcut,
 	handleSelectAllShortcut,
 } from "../field-editor/keyHandling";
+import { dispatchKeymapEvent } from "../field-editor/keymap";
 import { DATA_ATTRS } from "./dataAttributes";
 import { handleEscapeSelectionTransition } from "./escapeSelection";
-import { getAdjacentVisibleBlockId } from "./parentIdTree";
 import { handleTableCellSelectionKeyDown } from "./tableCellNavigation";
 
 export function handleEditorDocumentKeyDown(options: {
@@ -48,43 +51,30 @@ function handleBlockSelectionArrow(
 	fieldEditor: FieldEditorSession,
 ): boolean {
 	if (
-		event.altKey ||
-		event.ctrlKey ||
-		event.metaKey ||
-		event.shiftKey ||
-		event.isComposing
+		event.key !== "ArrowUp" &&
+		event.key !== "ArrowDown" &&
+		event.key !== "ArrowLeft" &&
+		event.key !== "ArrowRight"
 	) {
 		return false;
 	}
-
-	const isUp = event.key === "ArrowUp" || event.key === "ArrowLeft";
-	const isDown = event.key === "ArrowDown" || event.key === "ArrowRight";
-	if (!isUp && !isDown) return false;
 
 	const selection = editor.selection;
 	if (selection?.type !== "block" || selection.blockIds.length === 0) {
 		return false;
 	}
 
-	const blockId = isUp
-		? selection.blockIds[0]!
-		: selection.blockIds[selection.blockIds.length - 1]!;
-	const direction = isUp ? "previous" : "next";
-
-	const adjacentId = getAdjacentVisibleBlockId(editor, blockId, direction);
-	if (!adjacentId) return false;
-
-	const adjacentBlock = editor.getBlock(adjacentId);
-	if (!adjacentBlock) return false;
-
-	const schema = editor.schema.resolve(adjacentBlock.type);
-	if (usesInlineTextSelection(schema)) {
-		const offset = isUp ? adjacentBlock.length() : 0;
-		fieldEditor.activateTextSelection(adjacentId, offset, offset);
-		return true;
+	if (
+		!dispatchKeymapEvent(editor, event, {
+			composing: event.isComposing === true,
+			context: keymapContextFromSelection(selection, false),
+		})
+	) {
+		return false;
 	}
 
-	editor.selectBlock(adjacentId);
+	event.preventDefault();
+	activateFieldEditorFromSelection(editor, fieldEditor);
 	return true;
 }
 
@@ -247,7 +237,7 @@ function textSelectionContainsInlineAtom(
 	for (const delta of block.inlineDeltas()) {
 		const length =
 			typeof delta.insert === "string"
-				? logicalTextFromStored(delta.insert).length
+				? delta.insert.length
 				: 1;
 		const overlapsSelection =
 			offset < selectionEnd && offset + length > selectionStart;

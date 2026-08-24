@@ -88,7 +88,9 @@ describe("mount ack and parked projections", () => {
 		});
 
 		const blockId = editor.firstBlock()!.id;
-		editor.apply([{ type: "insert-text", blockId, offset: 0, text: "Hi" }]);
+		editor.apply([{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hi" }]);
 		fieldEditor.activate(blockId);
 		editor.selectText(blockId, 2, 2);
 		flushFrame();
@@ -111,7 +113,9 @@ describe("mount ack and parked projections", () => {
 		fieldEditor.setRootElement(root);
 
 		const blockId = editor.firstBlock()!.id;
-		editor.apply([{ type: "insert-text", blockId, offset: 0, text: "Hi" }]);
+		editor.apply([{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hi" }]);
 		fieldEditor.activate(blockId);
 		editor.selectText(blockId, 0, 0);
 		flushFrame();
@@ -134,7 +138,9 @@ describe("mount ack and parked projections", () => {
 		fieldEditor.setRootElement(root);
 
 		const blockId = editor.firstBlock()!.id;
-		editor.apply([{ type: "insert-text", blockId, offset: 0, text: "Hi" }]);
+		editor.apply([{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hi" }]);
 		fieldEditor.activate(blockId);
 		editor.selectText(blockId, 2, 2);
 		flushFrame();
@@ -159,7 +165,9 @@ describe("mount ack and parked projections", () => {
 
 		const liveId = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "insert-text", blockId: liveId, offset: 0, text: "Alive" },
+			{ type: "splice-text", blockId: liveId, from: 0,
+				to: 0,
+				insert: "Alive" },
 			{
 				type: "insert-block",
 				blockId: "parked",
@@ -167,7 +175,9 @@ describe("mount ack and parked projections", () => {
 				props: {},
 				position: "last",
 			},
-			{ type: "insert-text", blockId: "parked", offset: 0, text: "Parked" },
+			{ type: "splice-text", blockId: "parked", from: 0,
+				to: 0,
+				insert: "Parked" },
 		]);
 		const live = mountBlock(root, liveId, "Alive");
 		fieldEditor.activate(liveId);

@@ -275,7 +275,7 @@ function blockIdsFromCommits(commits: readonly CommitEvent[]): string[] {
 
 function blockIdsFromSummary(summary: ChangeSummary): string[] {
 	const ids: string[] = [];
-	for (const text of summary.text) {
+	for (const text of summary.blockText) {
 		ids.push(text.blockId);
 	}
 	for (const change of summary.structural) {
@@ -289,7 +289,6 @@ function blockIdsFromStructural(change: StructuralChange): readonly string[] {
 		case "block-inserted":
 		case "block-removed":
 		case "block-moved":
-		case "block-converted":
 		case "block-props-changed":
 		case "table-changed":
 			return [change.blockId];

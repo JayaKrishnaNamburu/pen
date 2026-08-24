@@ -12,9 +12,9 @@ This package adds collaboration awareness around the editor without turning itse
 
 - Export map: `.`
 - Primary extension entrypoint: `multiplayerExtension()`
-- Controller slot and accessors such as `MULTIPLAYER_CONTROLLER_SLOT` and `getMultiplayerController()`
-- Runtime controller: `MultiplayerControllerImpl`
-- Presence helpers such as `AuthorLedger`, `ClientIdentityMap`, `assignMultiplayerColor()`, and `normalizeMultiplayerColor()`
+- Controller lookup: `getMultiplayerController()` — the slot key `MULTIPLAYER_CONTROLLER_SLOT` lives on `@input/pen-types`
+- `MultiplayerControllerImpl` is the runtime controller; it is reached through `multiplayerExtension()` / `getMultiplayerController()`, not the barrel
+- Presence helpers such as `assignMultiplayerColor()` and `normalizeMultiplayerColor()`
 - Public multiplayer state and snapshot types covering users, peers, cursors, selections, and session context
 - Workspace scripts: `build`, `clean`, `test`, `typecheck`
 

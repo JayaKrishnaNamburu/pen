@@ -172,7 +172,18 @@ describe("denied mutating tools leave the live document unchanged", () => {
 			runtime.registerTool(tool);
 		}
 
-		for (const tool of runtime.listTools()) {
+		const tools = runtime.listTools();
+		expect(tools.map((tool) => tool.name).sort()).toEqual(
+			[
+				"delete_block",
+				"insert_block",
+				"move_block",
+				"update_block",
+				"write_document",
+			].sort(),
+		);
+
+		for (const tool of tools) {
 			await expectUnchanged(editor, () =>
 				runtime.executeTool(tool.name, deniedInput(tool.name), {} as never),
 			);
@@ -241,7 +252,7 @@ describe("denied mutating tools leave the live document unchanged", () => {
 				editor,
 				[
 					{
-						type: "update-block",
+						type: "set-props",
 						blockId: "fixture-subdoc",
 						props: { title: "No" },
 					},
@@ -342,10 +353,11 @@ describe("denied mutating tools leave the live document unchanged", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: "fixture-body",
-					offset: 0,
-					text: "after-denial",
+					from: 0,
+				to: 0,
+				insert: "after-denial",
 				},
 			],
 			{ origin: "user" },

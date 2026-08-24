@@ -88,7 +88,7 @@ describe("@input/pen-content-ops", () => {
 			}),
 		]);
 		expect(
-			result.ops.filter((op) => op.type === "insert-text").map((op) => op.text),
+			result.ops.filter((op) => op.type === "splice-text").map((op) => op.insert),
 		).toEqual(["Heading", "Item"]);
 	});
 

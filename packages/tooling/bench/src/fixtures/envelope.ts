@@ -108,10 +108,11 @@ export function assertPeerBObservesPeerAInsert(
 	collab.editorA.apply(
 		[
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: PEER_A_OBSERVE_TOKEN,
+				from: 0,
+				to: 0,
+				insert: PEER_A_OBSERVE_TOKEN,
 			},
 		],
 		{ origin: "user" },
@@ -169,7 +170,7 @@ export function createNestingEditor(depth: number): TestEditor {
 				type: "insert-block",
 				blockId,
 				blockType: "callout",
-				props: { type: "info" },
+				props: { severity: "info" },
 				position: "last",
 			});
 			continue;
@@ -179,7 +180,7 @@ export function createNestingEditor(depth: number): TestEditor {
 			type: "insert-block",
 			blockId,
 			blockType: "callout",
-			props: { type: "info", parentId },
+			props: { severity: "info", parentId },
 			position: { parent: parentId, index: 0 },
 		});
 	}
@@ -201,16 +202,12 @@ export function createTableEditor(rows: number, cols: number): TestEditor {
 	];
 	for (let col = 2; col < cols; col++) {
 		ops.push({
-			type: "insert-table-column",
-			blockId: ENVELOPE_TABLE_BLOCK_ID,
-			index: col,
+			type: "grid", blockId: ENVELOPE_TABLE_BLOCK_ID, change: { kind: "insert-column", index: col },
 		});
 	}
 	for (let row = 2; row < rows; row++) {
 		ops.push({
-			type: "insert-table-row",
-			blockId: ENVELOPE_TABLE_BLOCK_ID,
-			index: row,
+			type: "grid", blockId: ENVELOPE_TABLE_BLOCK_ID, change: { kind: "insert-row", index: row },
 		});
 	}
 	editor.apply(ops, { origin: "user" });
@@ -286,11 +283,15 @@ export function measurePeerTokenSurvival(
 	const tokenA = "TOKEN-A-SURVIVE";
 	const tokenB = "TOKEN-B-SURVIVE";
 	collab.editorA.apply(
-		[{ type: "insert-text", blockId, offset: 0, text: tokenA }],
+		[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: tokenA }],
 		{ origin: "user" },
 	);
 	collab.editorB.apply(
-		[{ type: "insert-text", blockId, offset: 0, text: tokenB }],
+		[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: tokenB }],
 		{ origin: "user" },
 	);
 	collab.sync();
@@ -358,10 +359,11 @@ export function envelopeKeystroke(rungId: EnvelopeRungId): EnvelopeKeystroke {
 			return {
 				ops: [
 					{
-						type: "insert-text",
+						type: "splice-text",
 						blockId: ENVELOPE_LONG_BLOCK_ID,
-						offset: SCALE1_LONG_BLOCK_CHARS,
-						text: "x",
+						from: SCALE1_LONG_BLOCK_CHARS,
+				to: SCALE1_LONG_BLOCK_CHARS,
+				insert: "x",
 					},
 				],
 				targetId: ENVELOPE_LONG_BLOCK_ID,
@@ -371,10 +373,11 @@ export function envelopeKeystroke(rungId: EnvelopeRungId): EnvelopeKeystroke {
 			return {
 				ops: [
 					{
-						type: "insert-text",
+						type: "splice-text",
 						blockId,
-						offset: 0,
-						text: "x",
+						from: 0,
+				to: 0,
+				insert: "x",
 					},
 				],
 				targetId: blockId,
@@ -384,12 +387,15 @@ export function envelopeKeystroke(rungId: EnvelopeRungId): EnvelopeKeystroke {
 			return {
 				ops: [
 					{
-						type: "insert-table-cell-text",
+						type: "splice-text",
 						blockId: ENVELOPE_TABLE_BLOCK_ID,
-						row: SCALE1_TABLE_ROWS - 1,
-						col: SCALE1_TABLE_COLS - 1,
-						offset: 0,
-						text: "x",
+						cell: {
+							row: SCALE1_TABLE_ROWS - 1,
+							col: SCALE1_TABLE_COLS - 1,
+						},
+						from: 0,
+						to: 0,
+						insert: "x",
 					},
 				],
 				targetId: ENVELOPE_TABLE_BLOCK_ID,
@@ -406,10 +412,11 @@ function blockCountKeystroke(count: number): EnvelopeKeystroke {
 	return {
 		ops: [
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "x",
+				from: 0,
+				to: 0,
+				insert: "x",
 			},
 		],
 		targetId: blockId,

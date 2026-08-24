@@ -17,14 +17,11 @@ export function buildInlineBlockRewriteOps(
 	const ops: DocumentOp[] = [];
 	if (parsedBlock.type !== targetBlock.type) {
 		ops.push({
-			type: "convert-block",
-			blockId: targetBlock.id,
-			newType: parsedBlock.type,
-			newProps: parsedBlock.props,
+			type: "set-props", blockId: targetBlock.id, props: { type: parsedBlock.type, ...parsedBlock.props },
 		});
 	} else if (!areRecordValuesEqual(targetBlock.props, parsedBlock.props)) {
 		ops.push({
-			type: "update-block",
+			type: "set-props",
 			blockId: targetBlock.id,
 			props: parsedBlock.props,
 		});
@@ -35,11 +32,11 @@ export function buildInlineBlockRewriteOps(
 		targetBlock.textContent() !== nextText || (parsedBlock.marks?.length ?? 0) > 0;
 	if (needsTextRewrite) {
 		ops.push({
-			type: "replace-text",
+			type: "splice-text",
 			blockId: targetBlock.id,
-			offset: 0,
-			length: targetBlock.length(),
-			text: nextText,
+			from: 0,
+				to: 0 + targetBlock.length(),
+			insert: nextText,
 		});
 		for (const mark of parsedBlock.marks ?? []) {
 			if (mark.end <= mark.start) {
@@ -48,8 +45,8 @@ export function buildInlineBlockRewriteOps(
 			ops.push({
 				type: "format-text",
 				blockId: targetBlock.id,
-				offset: mark.start,
-				length: mark.end - mark.start,
+				from: mark.start,
+				to: mark.start + mark.end - mark.start,
 				marks: { [mark.type]: mark.props ?? true },
 			});
 		}

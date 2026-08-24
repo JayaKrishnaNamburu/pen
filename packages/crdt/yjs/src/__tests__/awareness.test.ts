@@ -62,17 +62,22 @@ describe("awareness", () => {
     const doc = createYjsDocument(adapter);
     const awareness = createYjsAwareness(doc);
 
-    awareness.setLocalState({ initial: true });
-
     const changes: unknown[] = [];
-    const cb = (event: unknown) => changes.push(event);
-    awareness.on("change", cb);
+    awareness.on("change", (event) => changes.push(event));
+    awareness.setLocalState({ initial: true });
+    expect(changes.length).toBeGreaterThanOrEqual(1);
 
     awareness.destroy();
+    const afterDestroy = changes.length;
 
-    const postDestroy: unknown[] = [];
-    awareness.on("change", (e) => postDestroy.push(e));
-    expect(postDestroy).toHaveLength(0);
+    try {
+      awareness.setLocalState({ after: true });
+    } catch {
+      // destroyed instances may reject later writes
+    }
+
+    expect(changes.length).toBe(afterDestroy);
+    expect(awareness.getLocalState()).not.toEqual({ after: true });
   });
 
   it("encodes and applies awareness updates across instances", () => {

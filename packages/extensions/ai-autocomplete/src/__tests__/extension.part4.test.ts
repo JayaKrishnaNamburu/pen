@@ -77,10 +77,11 @@ describe("@input/pen-ai-autocomplete", () => {
 				position: { after: firstBlockId },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: codeBlockId,
-				offset: 0,
-				text: "const answer =",
+				from: 0,
+				to: 0,
+				insert: "const answer =",
 			},
 		]);
 		fieldEditor.focusBlockId = codeBlockId;
@@ -163,10 +164,11 @@ describe("@input/pen-ai-autocomplete", () => {
 				position: { after: firstBlockId },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: codeBlockId,
-				offset: 0,
-				text: "const answer =",
+				from: 0,
+				to: 0,
+				insert: "const answer =",
 			},
 		]);
 		fieldEditor.focusBlockId = codeBlockId;
@@ -243,10 +245,11 @@ describe("@input/pen-ai-autocomplete", () => {
 				position: { after: firstBlockId },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: codeBlockId,
-				offset: 0,
-				text: "const answer =",
+				from: 0,
+				to: 0,
+				insert: "const answer =",
 			},
 		]);
 		fieldEditor.focusBlockId = codeBlockId;

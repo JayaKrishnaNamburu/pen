@@ -1,5 +1,5 @@
 import {
-	readOnlyFacet,
+	ariaReadOnlyFacet,
 	resolveEditorA11yLabel,
 } from "@input/pen-core";
 import {
@@ -165,7 +165,7 @@ function applyEditorRootAttrs(
 	setBooleanAttr(root, DATA_ATTRS.readonly, state.readonly);
 	setBooleanAttr(root, DATA_ATTRS.empty, computeDocumentEmpty(editor));
 
-	const ariaReadonly = state.readonly || editor.facet(readOnlyFacet);
+	const ariaReadonly = state.readonly || editor.facet(ariaReadOnlyFacet);
 	if (ariaReadonly) {
 		root.setAttribute("aria-readonly", "true");
 	} else {

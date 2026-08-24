@@ -57,12 +57,12 @@ function tableEditor() {
 		position: "last",
 	}]);
 	editor.apply([{
-		type: "insert-table-cell-text",
+		type: "splice-text",
 		blockId: "t1",
-		row: 0,
-		col: 0,
-		offset: 0,
-		text: "Name",
+		cell: { row: 0, col: 0 },
+		from: 0,
+		to: 0,
+		insert: "Name",
 	}]);
 	return editor;
 }
@@ -189,7 +189,7 @@ describe("@input/pen-import-html dom-to-blocks", () => {
 		expect(blocks).toHaveLength(1);
 		expect(blocks[0]).toMatchObject({
 			type: "callout",
-			props: { type: "warning" },
+			props: { severity: "warning" },
 			content: "Be careful",
 		});
 	});
@@ -203,7 +203,7 @@ describe("@input/pen-import-html dom-to-blocks", () => {
 		expect(blocks).toHaveLength(1);
 		expect(blocks[0]).toMatchObject({
 			type: "callout",
-			props: { type: "error" },
+			props: { severity: "error" },
 			content: "Something failed",
 		});
 	});
@@ -217,7 +217,7 @@ describe("@input/pen-import-html dom-to-blocks", () => {
 		expect(blocks).toHaveLength(1);
 		expect(blocks[0]).toMatchObject({
 			type: "callout",
-			props: { type: "info" },
+			props: { severity: "info" },
 			content: "FYI",
 		});
 	});

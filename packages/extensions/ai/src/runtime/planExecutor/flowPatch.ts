@@ -81,11 +81,11 @@ export function buildFlowPatchEditExecution(
 			}
 			return {
 				ops: [{
-					type: "replace-text",
+					type: "splice-text",
 					blockId: primaryBlockId,
-					offset: 0,
-					length: primaryBlock.length(),
-					text: edit.text ?? "",
+					from: 0,
+				to: 0 + primaryBlock.length(),
+					insert: edit.text ?? "",
 				}],
 				issues: [],
 				reviewSafe: true,
@@ -101,10 +101,11 @@ export function buildFlowPatchEditExecution(
 			}
 			return {
 				ops: [{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: primaryBlockId,
-					offset: primaryBlock.length(),
-					text: edit.text ?? "",
+					from: primaryBlock.length(),
+				to: primaryBlock.length(),
+				insert: edit.text ?? "",
 				}],
 				issues: [],
 				reviewSafe: true,

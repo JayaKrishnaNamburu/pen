@@ -44,7 +44,9 @@ describe("AX3 previously-reclassified bugs (rechecked, not trusted)", () => {
 		editors.push(editor);
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "insert-text", blockId, offset: 0, text: "/head" },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "/head" },
 		]);
 		editor.selectText(blockId, 5, 5);
 

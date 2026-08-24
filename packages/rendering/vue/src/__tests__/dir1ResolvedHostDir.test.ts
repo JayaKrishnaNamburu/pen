@@ -178,11 +178,11 @@ describe("Vue DIR1 resolved host dir", () => {
 
     editor.apply([
       {
-        type: "replace-text",
+        type: "splice-text",
         blockId: "paragraph-flip",
-        offset: 0,
-        length: editor.getBlock("paragraph-flip").length(),
-        text: "Hello",
+        from: 0,
+				to: 0 + editor.getBlock("paragraph-flip").length(),
+        insert: "Hello",
       },
     ]);
     await nextTick();

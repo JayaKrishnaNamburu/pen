@@ -87,20 +87,25 @@ function appendInputRuleTransforms(
 	for (const op of ops) {
 		transformedOps.push(op);
 
-		if (op.type !== "insert-text" || op.text.length !== 1) {
+		if (
+			op.type !== "splice-text" ||
+			typeof op.insert !== "string" ||
+			op.insert.length !== 1 ||
+			op.from !== op.to
+		) {
 			continue;
 		}
 
-		const blockResult = engine.tryMatch(editor, op.blockId, op.text, {
-			offset: op.offset,
+		const blockResult = engine.tryMatch(editor, op.blockId, op.insert, {
+			offset: op.from,
 		});
 		if (blockResult) {
 			transformedOps.push(...blockResult);
 			continue;
 		}
 
-		const inlineResult = engine.tryMatchInline(editor, op.blockId, op.text, {
-			offset: op.offset,
+		const inlineResult = engine.tryMatchInline(editor, op.blockId, op.insert, {
+			offset: op.from,
 		});
 		if (inlineResult) {
 			transformedOps.push(...inlineResult);

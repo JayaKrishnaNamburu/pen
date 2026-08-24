@@ -1,5 +1,12 @@
 import type { InputRule, InputRuleContext, DocumentOp } from "@input/pen-types";
 
+const CALLOUT_SEVERITY_MAP: Record<string, "info" | "warning" | "error"> = {
+	note: "info",
+	info: "info",
+	warning: "warning",
+	error: "error",
+};
+
 export const defaultBlockRules: InputRule[] = [
 	headingRule(1, /^#\s$/),
 	headingRule(2, /^##\s$/),
@@ -39,16 +46,16 @@ export const defaultBlockRules: InputRule[] = [
 			const checked = match[0].toLowerCase().includes("x");
 			return [
 				{
-					type: "delete-text",
+					type: "splice-text",
 					blockId: ctx.blockId,
-					offset: 0,
-					length: match[0].length,
+					from: 0,
+				to: 0 + match[0].length,
+				insert: "",
 				},
 				{
-					type: "convert-block",
+					type: "set-props",
 					blockId: ctx.blockId,
-					newType: "checkListItem",
-					newProps: { checked },
+					props: { type: "checkListItem", checked },
 				},
 			];
 		},
@@ -76,16 +83,16 @@ export const defaultBlockRules: InputRule[] = [
 		blockTypes: ["paragraph"],
 		handler: (match, ctx) => [
 			{
-				type: "delete-text",
+				type: "splice-text",
 				blockId: ctx.blockId,
-				offset: 0,
-				length: match[0].length,
+				from: 0,
+				to: 0 + match[0].length,
+				insert: "",
 			},
 			{
-				type: "convert-block",
+				type: "set-props",
 				blockId: ctx.blockId,
-				newType: "divider",
-				newProps: {},
+				props: { type: "divider" },
 			},
 		],
 	},
@@ -95,21 +102,9 @@ export const defaultBlockRules: InputRule[] = [
 		match: /^>\s*\[!(\w+)\]\s$/i,
 		blockTypes: ["paragraph"],
 		handler: (match, ctx) => {
-			const calloutType = match[1]!.toLowerCase();
-			return [
-				{
-					type: "delete-text",
-					blockId: ctx.blockId,
-					offset: 0,
-					length: match[0].length,
-				},
-				{
-					type: "convert-block",
-					blockId: ctx.blockId,
-					newType: "callout",
-					newProps: { type: calloutType },
-				},
-			];
+			const raw = (match[1] ?? "info").toLowerCase();
+			const severity = CALLOUT_SEVERITY_MAP[raw] ?? "info";
+			return convertBlockOps(ctx, "callout", match[0].length, { severity });
 		},
 	},
 ];
@@ -132,16 +127,16 @@ function convertBlockOps(
 ): DocumentOp[] {
 	return [
 		{
-			type: "delete-text",
+			type: "splice-text",
 			blockId: ctx.blockId,
-			offset: 0,
-			length: deleteLength,
+			from: 0,
+				to: 0 + deleteLength,
+				insert: "",
 		},
 		{
-			type: "convert-block",
+			type: "set-props",
 			blockId: ctx.blockId,
-			newType,
-			newProps,
+			props: { type: newType, ...newProps },
 		},
 	];
 }

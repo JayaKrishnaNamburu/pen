@@ -1,7 +1,31 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { RuleTester } from "eslint";
 import tseslint from "typescript-eslint";
 import { describe, expect, it } from "vitest";
 import { rules } from "../index.js";
+
+// Derived, not hardcoded: the unusedAllowlist case needs a waiver that is
+// actually in the allowlist, so naming one directly makes this suite go red
+// whenever a waiver retires — which is exactly what Wave 05 did to
+// `applySelectionUntilNextFrame`.
+const selectionTimersAllowlist = JSON.parse(
+	readFileSync(
+		path.join(
+			import.meta.dirname,
+			"../rules/no-selection-timers-allowlist.json",
+		),
+		"utf8",
+	),
+);
+const liveTimerWaiver = selectionTimersAllowlist.entries.find(
+	(entry) => entry.kind === "requestAnimationFrame",
+);
+if (!liveTimerWaiver) {
+	throw new Error(
+		"no-selection-timers allowlist has no requestAnimationFrame entry left to exercise",
+	);
+}
 
 const jsxTester = new RuleTester({
 	languageOptions: {
@@ -262,9 +286,8 @@ describe("per-rule can-it-fail (write a violation, error by name)", () => {
 			"no-selection-timers",
 			rules["no-selection-timers"],
 			{
-				code: "export function applySelectionUntilNextFrame() { void 0; }\n",
-				filename:
-					"packages/rendering/dom/src/field-editor/selectionAuthority.ts",
+				code: `export function ${liveTimerWaiver.symbol}() { void 0; }\n`,
+				filename: liveTimerWaiver.file,
 				errors: [{ messageId: "unusedAllowlist" }],
 			},
 		);
@@ -283,7 +306,58 @@ describe("per-rule can-it-fail (write a violation, error by name)", () => {
 		);
 	});
 
-	it("plugin ships fourteen rules and each can-it-fail case is registered", () => {
+	it("no-new-ops errors by name on an eleventh DocumentOp member", () => {
+		expectRuleErrors(tsTester, "no-new-ops", rules["no-new-ops"], {
+			code: `export type DocumentOp =\n${[
+				"SpliceTextOp",
+				"FormatTextOp",
+				"InsertBlockOp",
+				"DeleteBlockOp",
+				"MoveBlockOp",
+				"SetPropsOp",
+				"SetMetaOp",
+				"GridOp",
+				"AppOp",
+				"StreamOpenOp",
+				"EleventhOp",
+			]
+				.map((name) => `\t| ${name}`)
+				.join("\n")};\n`,
+			filename: "packages/types/src/types/ops.ts",
+			errors: [{ messageId: "count", data: { count: "11" } }],
+		});
+	});
+
+	// The ten sanctioned members are all still present here, so a count that
+	// filtered on the *Op naming pattern would see exactly ten and pass while
+	// an eleventh member rode along anonymously. Counting every member is
+	// what makes this case error.
+	it("no-new-ops errors by name on an inline eleventh member that evades the *Op naming pattern", () => {
+		expectRuleErrors(tsTester, "no-new-ops", rules["no-new-ops"], {
+			code: `export type DocumentOp =\n${[
+				"SpliceTextOp",
+				"FormatTextOp",
+				"InsertBlockOp",
+				"DeleteBlockOp",
+				"MoveBlockOp",
+				"SetPropsOp",
+				"SetMetaOp",
+				"GridOp",
+				"AppOp",
+				"StreamOpenOp",
+				'{ type: "smuggled" }',
+			]
+				.map((name) => `\t| ${name}`)
+				.join("\n")};\n`,
+			filename: "packages/types/src/types/ops.ts",
+			errors: [
+				{ messageId: "count", data: { count: "11" } },
+				{ messageId: "anonymous", data: { index: "11" } },
+			],
+		});
+	});
+
+	it("plugin ships fifteen rules and each can-it-fail case is registered", () => {
 		expect(Object.keys(rules).sort()).toEqual([
 			"no-above-floor-api",
 			"no-aria-hidden-visible",
@@ -294,6 +368,7 @@ describe("per-rule can-it-fail (write a violation, error by name)", () => {
 			"no-html-injection-sinks",
 			"no-implicit-locale",
 			"no-module-scope-browser-globals",
+			"no-new-ops",
 			"no-selection-timers",
 			"no-unescaped-markup-concat",
 			"no-unstyled-focus",

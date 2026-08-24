@@ -201,11 +201,11 @@ export const workingSetValidationMethods = {
 		}
 		return [
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset:
-					insertionOffset ?? targetBlock?.textContent().length ?? 0,
-				text: normalizedText,
+				from: insertionOffset ?? targetBlock?.textContent().length ?? 0,
+				to: insertionOffset ?? targetBlock?.textContent().length ?? 0,
+				insert: normalizedText,
 			},
 		];
 	},

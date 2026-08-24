@@ -1,42 +1,23 @@
 import type { BlockHandle, DiagnosticEvent, Editor } from "@input/pen-types";
-import { EMPTY_BLOCK_SENTINEL } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 
 import { createDefaultSchema } from "./fixtures/testSchema";
 import { createHeadlessEditor } from "../editor/editor";
-import {
-	blockLogicalText,
-	logicalTextFromStored,
-} from "../text/blockLogicalText";
+import { blockLogicalText } from "../text/blockLogicalText";
 
 describe("blockLogicalText I11", () => {
-	it("I11: empty string and sentinel-only storage are identical", () => {
-		expect(logicalTextFromStored("")).toBe("");
-		expect(logicalTextFromStored(EMPTY_BLOCK_SENTINEL)).toBe("");
-		expect(logicalTextFromStored("")).toBe(
-			logicalTextFromStored(EMPTY_BLOCK_SENTINEL),
-		);
-	});
-
 	it("I11: a user-typed zero-width space in non-empty text is kept", () => {
-		expect(logicalTextFromStored("keep\u200Bme")).toBe("keep\u200Bme");
-		expect(logicalTextFromStored("\u200Blead")).toBe("\u200Blead");
-		expect(logicalTextFromStored("trail\u200B")).toBe("trail\u200B");
-	});
-
-	it("I11: blockLogicalText resolves an empty block to empty text", () => {
 		const editor = createFakeEditor({
 			empty: "",
-			sentinel: EMPTY_BLOCK_SENTINEL,
 			typed: "keep\u200Bme",
+			lead: "\u200Blead",
+			trail: "trail\u200B",
 		});
 
 		expect(blockLogicalText(editor, "empty")).toBe("");
-		expect(blockLogicalText(editor, "sentinel")).toBe("");
-		expect(blockLogicalText(editor, "empty")).toBe(
-			blockLogicalText(editor, "sentinel"),
-		);
 		expect(blockLogicalText(editor, "typed")).toBe("keep\u200Bme");
+		expect(blockLogicalText(editor, "lead")).toBe("\u200Blead");
+		expect(blockLogicalText(editor, "trail")).toBe("trail\u200B");
 	});
 
 	it("I11: missing block emits a diagnostic and returns empty text", () => {
@@ -68,10 +49,11 @@ describe("blockLogicalText I11", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: block.id,
-				offset: 0,
-				text: "keep\u200Bme",
+				from: 0,
+				to: 0,
+				insert: "keep\u200Bme",
 			},
 		]);
 		expect(blockLogicalText(editor, block.id)).toBe("keep\u200Bme");
@@ -93,8 +75,7 @@ function createFakeEditor(
 			return {
 				id: blockId,
 				textDeltas: () => [{ insert: stored }],
-				textContent: () =>
-					stored === EMPTY_BLOCK_SENTINEL ? "" : stored,
+				textContent: () => stored,
 			} as unknown as BlockHandle;
 		},
 		internals: {

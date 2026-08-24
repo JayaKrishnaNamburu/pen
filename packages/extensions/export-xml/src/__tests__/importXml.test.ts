@@ -81,16 +81,17 @@ describe("@input/pen-export-xml import", () => {
         position: { parent: "parent", index: 0 },
       },
       {
-        type: "insert-text",
+        type: "splice-text",
         blockId: "child",
-        offset: 0,
-        text: "Hello world",
+        from: 0,
+				to: 0,
+				insert: "Hello world",
       },
       {
         type: "format-text",
         blockId: "child",
-        offset: 6,
-        length: 5,
+        from: 6,
+        to: 11,
         marks: { italic: true },
       },
     ]);
@@ -151,12 +152,12 @@ describe("@input/pen-export-xml import", () => {
         position: "last",
       },
       {
-        type: "insert-table-cell-text",
+        type: "splice-text",
         blockId: "table-1",
-        row: 0,
-        col: 0,
-        offset: 0,
-        text: "A1",
+        cell: { row: 0, col: 0 },
+        from: 0,
+        to: 0,
+        insert: "A1",
       },
     ]);
 

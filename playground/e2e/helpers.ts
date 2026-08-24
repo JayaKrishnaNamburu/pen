@@ -500,10 +500,11 @@ export async function seedParagraphs(
 				editor.apply(
 					[
 						{
-							type: "insert-text",
+							type: "splice-text",
 							blockId: first.id,
-							offset: 0,
-							text: texts[0],
+							from: 0,
+				to: 0,
+				insert: texts[0],
 						},
 					],
 					{ origin: "user" },
@@ -524,22 +525,34 @@ export async function seedParagraphs(
 				editor.apply(
 					[
 						{
-							type: "split-block",
-							blockId: currentId,
-							offset: current.length(),
-							newBlockId,
+							type: "insert-block",
+							blockId: newBlockId,
+							blockType: current.type,
+							props: current.props.parentId
+								? { parentId: current.props.parentId }
+								: {},
+							position: { after: currentId },
 						},
 					],
-					{ origin: "user" },
+					{
+						origin: "user",
+						structural: {
+							kind: "split",
+							blockId: currentId,
+							newBlockId,
+							offset: current.length(),
+						},
+					},
 				);
 				if (texts[index]) {
 					editor.apply(
 						[
 							{
-								type: "insert-text",
+								type: "splice-text",
 								blockId: newBlockId,
-								offset: 0,
-								text: texts[index],
+								from: 0,
+				to: 0,
+				insert: texts[index],
 							},
 						],
 						{ origin: "user" },

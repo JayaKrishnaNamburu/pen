@@ -123,12 +123,4 @@ scenario(
 			),
 		).toBe(false);
 	},
-	{
-		knownDefect: {
-			rule: "C1",
-			route: "@input/pen-dom EditContext composition + Escape",
-			symptom:
-				'C1: Escape did not commit the CDP composition — text="Hello worldnihao" afterDom="Hello worldnihao". Input.imeSetComposition shows nihao in the field and Escape leaves it in the authority; the keydown never reaches the page probe.',
-		},
-	},
 );

@@ -1,6 +1,5 @@
 import { createEditor } from "@input/pen-core";
 import { defaultSchema } from "@input/pen-schema-default";
-import { EMPTY_BLOCK_SENTINEL } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 import {
 	CLOSED_GESTURE_WINDOWS,
@@ -39,7 +38,7 @@ describe("isLogicallyEquivalent", () => {
 		const snapshot: ReaderSnapshot = {
 			blockOrder: ["empty"],
 			blocks: {
-				empty: { kind: "text", text: EMPTY_BLOCK_SENTINEL },
+				empty: { kind: "text", text: "" },
 			},
 		};
 		const authority = textSelection({ blockId: "empty", offset: 0 });
@@ -64,8 +63,8 @@ describe("isLogicallyEquivalent", () => {
 			const other: ReaderSnapshot = {
 				blockOrder: ["empty", "other"],
 				blocks: {
-					empty: { kind: "text", text: EMPTY_BLOCK_SENTINEL },
-					other: { kind: "text", text: EMPTY_BLOCK_SENTINEL },
+					empty: { kind: "text", text: "" },
+					other: { kind: "text", text: "" },
 				},
 			};
 			expect(
@@ -567,7 +566,9 @@ describe("decideDomSelectionRead §4.2 steps 4–5", () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const id = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "insert-text", blockId: id, offset: 0, text: "hello" },
+			{ type: "splice-text", blockId: id, from: 0,
+				to: 0,
+				insert: "hello" },
 		]);
 		editor.selectText(id, 0, 0);
 		const decided = decideDomSelectionRead({
@@ -585,7 +586,9 @@ describe("decideDomSelectionRead §4.2 steps 4–5", () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const id = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "insert-text", blockId: id, offset: 0, text: "hello" },
+			{ type: "splice-text", blockId: id, from: 0,
+				to: 0,
+				insert: "hello" },
 		]);
 		editor.selectText(id, 0, 0);
 		const decided = decideDomSelectionRead({
@@ -609,7 +612,9 @@ describe("decideDomSelectionRead §4.2 steps 4–5", () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const id = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "insert-text", blockId: id, offset: 0, text: "hello" },
+			{ type: "splice-text", blockId: id, from: 0,
+				to: 0,
+				insert: "hello" },
 		]);
 		editor.selectText(id, 0, 0);
 		const overlapping = nextGestureWindowState(
@@ -666,7 +671,9 @@ describe("decideDomSelectionRead §4.2 steps 4–5", () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const id = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "insert-text", blockId: id, offset: 0, text: "hello" },
+			{ type: "splice-text", blockId: id, from: 0,
+				to: 0,
+				insert: "hello" },
 		]);
 		editor.selectText(id, 0, 0);
 		const result = decideDomSelectionRead({
@@ -690,7 +697,9 @@ describe("decideDomSelectionRead §4.2 steps 4–5", () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const id = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "insert-text", blockId: id, offset: 0, text: "hello" },
+			{ type: "splice-text", blockId: id, from: 0,
+				to: 0,
+				insert: "hello" },
 		]);
 		editor.selectText(id, 0, 0);
 		const result = decideDomSelectionRead({
@@ -756,7 +765,9 @@ describe("shouldStopEquivalentDomRead", () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const id = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "insert-text", blockId: id, offset: 0, text: "hello" },
+			{ type: "splice-text", blockId: id, from: 0,
+				to: 0,
+				insert: "hello" },
 		]);
 		editor.selectText(id, 0, 0);
 		expect(

@@ -70,10 +70,11 @@ describe("@input/pen-react field-editor commands", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: firstBlockId,
-				offset: 0,
-				text: "Hello",
+				from: 0,
+				to: 0,
+				insert: "Hello",
 			},
 			{
 				type: "insert-block",
@@ -108,10 +109,11 @@ describe("@input/pen-react field-editor commands", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: firstBlockId,
-				offset: 0,
-				text: "Hello",
+				from: 0,
+				to: 0,
+				insert: "Hello",
 			},
 			{
 				type: "insert-block",
@@ -147,16 +149,14 @@ describe("@input/pen-react field-editor commands", () => {
 
 		editor.apply([
 			{
-				type: "convert-block",
-				blockId: toggleBlockId,
-				newType: "toggle",
-				newProps: { open: false },
+				type: "set-props", blockId: toggleBlockId, props: { type: "toggle", ...{ open: false  }},
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: toggleBlockId,
-				offset: 0,
-				text: "Toggle",
+				from: 0,
+				to: 0,
+				insert: "Toggle",
 			},
 			{
 				type: "insert-block",
@@ -166,13 +166,14 @@ describe("@input/pen-react field-editor commands", () => {
 				position: { after: toggleBlockId },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: childBlockId,
-				offset: 0,
-				text: "Hidden child",
+				from: 0,
+				to: 0,
+				insert: "Hidden child",
 			},
 			{
-				type: "update-block",
+				type: "set-props",
 				blockId: childBlockId,
 				props: { parentId: toggleBlockId },
 			},
@@ -184,10 +185,11 @@ describe("@input/pen-react field-editor commands", () => {
 				position: { after: childBlockId },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: afterBlockId,
-				offset: 0,
-				text: "After toggle",
+				from: 0,
+				to: 0,
+				insert: "After toggle",
 			},
 		]);
 

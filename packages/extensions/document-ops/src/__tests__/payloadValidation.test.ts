@@ -44,7 +44,7 @@ describe("SEC6 tool payload validation", () => {
 						blockId: "paragraph-1",
 					},
 					{
-						type: "update-block",
+						type: "set-props",
 						blockId: "missing-block",
 						props: {},
 					},
@@ -207,9 +207,9 @@ describe("SEC6 tool payload validation", () => {
 				position: "last",
 			}),
 			expect.objectContaining({
-				type: "insert-text",
+				type: "splice-text",
 				blockId: result.blockId,
-				text: "Hello",
+				insert: "Hello",
 			}),
 		]);
 		expect(editor.internals.emit).not.toHaveBeenCalled();

@@ -14,7 +14,6 @@
 - isMutatingAITool
 - listAITools
 - openAIToolCall
-- toAIToolDescriptor
 
 ### guard
 
@@ -33,7 +32,6 @@
 - AI_TOOL_UNCONFIRMED_CODE
 - AIToolContextImpl
 - AIToolRuntimeImpl
-- collectAIToolOutput
 
 ### type
 

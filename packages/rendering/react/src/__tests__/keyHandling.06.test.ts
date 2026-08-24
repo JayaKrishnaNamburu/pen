@@ -158,7 +158,9 @@ describe("@input/pen-react field editor Tab handling", () => {
 		const fieldEditor = createFieldEditorMock(blockId);
 		const inlineCompletion = getInlineCompletionController(editor);
 		editor.apply([
-			{ type: "insert-text", blockId, offset: 0, text: "Hello" },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello" },
 		]);
 		editor.selectText(blockId, 5, 5);
 		inlineCompletion?.showSuggestion({

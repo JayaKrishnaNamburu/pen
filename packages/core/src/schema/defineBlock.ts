@@ -76,7 +76,14 @@ function generateValidator(
 				value = value === "true";
 			}
 
-			if (schema.type && typeof value !== schemaType && schemaType !== undefined) {
+			// typeof never yields "array", so an array prop needs its own check or
+			// every value falls back to the default and the caller loses the data.
+			const matchesSchemaType =
+				schemaType === "array"
+					? Array.isArray(value)
+					: typeof value === schemaType;
+
+			if (schema.type && schemaType !== undefined && !matchesSchemaType) {
 				result[key] = schema.default;
 				continue;
 			}

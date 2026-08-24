@@ -36,7 +36,7 @@ const editor = createEditor({
 				<code>role=&quot;textbox&quot;</code>,{" "}
 				<code>aria-multiline=&quot;true&quot;</code>, the resolved
 				label, and <code>aria-readonly</code> from the{" "}
-				<code>readonly</code> prop or <code>pen.readOnly</code>. The
+				<code>readonly</code> prop or <code>pen.ariaReadOnly</code>. The
 				facet sets the attribute. The prop is what declines local
 				typing. A host that sets only the facet announces
 				read-only and still accepts keystrokes. Pointer

@@ -114,12 +114,21 @@ export function evaluateCatalog({
 		};
 	}
 
-	const missing = [...referenced].filter((key) => !catalogKeys.has(key)).sort();
+	const missing = [...referenced]
+		.filter((key) => !catalogKeys.has(key))
+		.sort();
 	const dead = [...catalogKeys]
-		.filter((key) => !referenced.has(key) && !isReserved(key, reservedPrefixes))
+		.filter(
+			(key) => !referenced.has(key) && !isReserved(key, reservedPrefixes),
+		)
 		.sort();
 	if (missing.length > 0 || dead.length > 0) {
-		return { ok: false, reason: "LOC1: catalog completeness failed", missing, dead };
+		return {
+			ok: false,
+			reason: "LOC1: catalog completeness failed",
+			missing,
+			dead,
+		};
 	}
 	return { ok: true, reason: null, missing: [], dead: [] };
 }
@@ -235,10 +244,15 @@ function main() {
 		walkedFileCount: walked.length,
 		missingCatalogFiles,
 	});
+	console.log(
+		`population: ${walked.length} source files under packages/, ${catalogKeys.size} catalog keys, ${referenced.size} references`,
+	);
 	if (!result.ok) {
 		console.error(result.reason);
 		if (result.missing.length > 0) {
-			console.error("LOC1: referenced keys missing from the default catalogs:");
+			console.error(
+				"LOC1: referenced keys missing from the default catalogs:",
+			);
 			for (const key of result.missing) {
 				console.error(`  ${key}`);
 			}

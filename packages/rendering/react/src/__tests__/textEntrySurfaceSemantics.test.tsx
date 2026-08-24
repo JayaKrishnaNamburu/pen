@@ -136,20 +136,20 @@ describe("@input/pen-react text entry surface semantics", () => {
 				position: "last",
 			},
 			{
-				type: "insert-table-cell-text",
+				type: "splice-text",
 				blockId: "semantic-table",
-				row: 0,
-				col: 0,
-				offset: 0,
-				text: "Alpha",
+				cell: { row: 0, col: 0 },
+				from: 0,
+				to: 0,
+				insert: "Alpha",
 			},
 			{
-				type: "insert-table-cell-text",
+				type: "splice-text",
 				blockId: "semantic-table",
-				row: 0,
-				col: 1,
-				offset: 0,
-				text: "Beta",
+				cell: { row: 0, col: 1 },
+				from: 0,
+				to: 0,
+				insert: "Beta",
 			},
 		]);
 
@@ -197,10 +197,11 @@ describe("@input/pen-react text entry surface semantics", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: firstBlockId,
-				offset: 0,
-				text: "Hello",
+				from: 0,
+				to: 0,
+				insert: "Hello",
 			},
 			{
 				type: "insert-block",
@@ -210,10 +211,11 @@ describe("@input/pen-react text entry surface semantics", () => {
 				position: { after: firstBlockId },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: secondBlockId,
-				offset: 0,
-				text: "World",
+				from: 0,
+				to: 0,
+				insert: "World",
 			},
 		]);
 

@@ -163,16 +163,18 @@ export function buildReplaceOps(
 	if (match.kind === "block") {
 		return [
 			{
-				type: "delete-text",
+				type: "splice-text",
 				blockId: match.blockId,
-				offset: match.from,
-				length: match.to - match.from,
+				from: match.from,
+				to: match.from + match.to - match.from,
+				insert: "",
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: match.blockId,
-				offset: match.from,
-				text: replaceText,
+				from: match.from,
+				to: match.from,
+				insert: replaceText,
 			},
 		];
 	}
@@ -180,20 +182,20 @@ export function buildReplaceOps(
 	if (match.kind === "table-cell") {
 		return [
 			{
-				type: "delete-table-cell-text",
+				type: "splice-text",
 				blockId: match.blockId,
-				row: match.row ?? 0,
-				col: match.col ?? 0,
-				offset: match.from,
-				length: match.to - match.from,
+				cell: { row: match.row ?? 0, col: match.col ?? 0 },
+				from: match.from,
+				to: match.to,
+				insert: "",
 			},
 			{
-				type: "insert-table-cell-text",
+				type: "splice-text",
 				blockId: match.blockId,
-				row: match.row ?? 0,
-				col: match.col ?? 0,
-				offset: match.from,
-				text: replaceText,
+				cell: { row: match.row ?? 0, col: match.col ?? 0 },
+				from: match.from,
+				to: match.from,
+				insert: replaceText,
 			},
 		];
 	}
@@ -228,16 +230,18 @@ export function buildReplaceAllOps(
 			if (match.kind === "block") {
 				ops.push(
 					{
-						type: "delete-text",
+						type: "splice-text",
 						blockId: match.blockId,
-						offset: match.from,
-						length: match.to - match.from,
+						from: match.from,
+				to: match.from + match.to - match.from,
+				insert: "",
 					},
 					{
-						type: "insert-text",
+						type: "splice-text",
 						blockId: match.blockId,
-						offset: match.from,
-						text: replaceText,
+						from: match.from,
+				to: match.from,
+				insert: replaceText,
 					},
 				);
 				continue;
@@ -245,20 +249,20 @@ export function buildReplaceAllOps(
 
 			ops.push(
 				{
-					type: "delete-table-cell-text",
+					type: "splice-text",
 					blockId: match.blockId,
-					row: match.row ?? 0,
-					col: match.col ?? 0,
-					offset: match.from,
-					length: match.to - match.from,
+					cell: { row: match.row ?? 0, col: match.col ?? 0 },
+					from: match.from,
+					to: match.to,
+					insert: "",
 				},
 				{
-					type: "insert-table-cell-text",
+					type: "splice-text",
 					blockId: match.blockId,
-					row: match.row ?? 0,
-					col: match.col ?? 0,
-					offset: match.from,
-					text: replaceText,
+					cell: { row: match.row ?? 0, col: match.col ?? 0 },
+					from: match.from,
+					to: match.from,
+					insert: replaceText,
 				},
 			);
 		}

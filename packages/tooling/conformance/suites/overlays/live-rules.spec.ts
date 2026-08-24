@@ -59,7 +59,9 @@ async function clickOffset(
 
 async function readOverlay(page: Page): Promise<OverlaySnapshot> {
 	return page.evaluate(() => {
-		const overlay = document.querySelector("[data-pen-editor-caret-overlay]");
+		const overlay = document.querySelector(
+			"[data-pen-editor-caret-overlay]",
+		);
 		if (!(overlay instanceof HTMLElement)) {
 			return {
 				kind: "unchecked" as const,
@@ -91,7 +93,9 @@ async function readOverlay(page: Page): Promise<OverlaySnapshot> {
 				overlayVisible: visible,
 				caretCount: 0,
 				caretColor:
-					surface instanceof HTMLElement ? surface.style.caretColor : null,
+					surface instanceof HTMLElement
+						? surface.style.caretColor
+						: null,
 				blockId: null,
 				offset: null,
 				width: 0,
@@ -108,7 +112,9 @@ async function readOverlay(page: Page): Promise<OverlaySnapshot> {
 			overlayVisible: visible,
 			caretCount: 1,
 			caretColor:
-				surface instanceof HTMLElement ? surface.style.caretColor : null,
+				surface instanceof HTMLElement
+					? surface.style.caretColor
+					: null,
 			blockId: caret.getAttribute("data-block-id"),
 			offset: caret.getAttribute("data-offset"),
 			width: box.width,
@@ -178,11 +184,14 @@ scenario(
 		await s.load("hello-world");
 		await s.apply([
 			{
-				type: "insert-inline-node",
+				type: "splice-text",
 				blockId: "hello-p1",
-				offset: 5,
-				nodeType: "mention",
-				props: { id: "user-ada", label: "Ada" },
+				from: 5,
+				to: 5,
+				insert: {
+					nodeType: "mention",
+					props: { id: "user-ada", label: "Ada" },
+				},
 			},
 		]);
 		await expect(page.locator("[data-pen-inline-atom]")).toBeVisible();
@@ -194,7 +203,12 @@ scenario(
 				return null;
 			}
 			const box = node.getBoundingClientRect();
-			return { left: box.left, right: box.right, top: box.top, width: box.width };
+			return {
+				left: box.left,
+				right: box.right,
+				top: box.top,
+				width: box.width,
+			};
 		});
 		await attachJson("o1-atom", { loads, overlay, atom });
 

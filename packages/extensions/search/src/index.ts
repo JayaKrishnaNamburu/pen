@@ -16,8 +16,6 @@ export {
 	buildReplaceOps,
 	buildSearchRegex,
 	findDocumentMatches,
-	getNextActiveIndex,
-	getPreviousActiveIndex,
 } from "./search";
 
 export type {

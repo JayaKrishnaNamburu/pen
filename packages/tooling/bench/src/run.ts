@@ -60,6 +60,17 @@ export function createBenchSuites(): BenchSuite[] {
 	];
 }
 
+export function runningBenchPopulation(): Array<{ id: string; name: string }> {
+	return createBenchSuites().flatMap((suite) =>
+		suite.benchmarks.map((benchmark) => {
+			if (!benchmark.id) {
+				throw new Error(`running bench missing id: ${benchmark.name}`);
+			}
+			return { id: benchmark.id, name: benchmark.name };
+		}),
+	);
+}
+
 export function assertCriticalBenchmarkTargets(
 	results: readonly BenchResult[],
 	waivers: readonly BenchWaiver[] = [],

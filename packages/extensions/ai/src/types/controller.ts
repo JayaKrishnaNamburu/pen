@@ -42,7 +42,12 @@ import type { AIExtensionConfig, AIContentFormatOptions, ResolvedEditTarget, Res
 
 export interface PersistentBlockSuggestion extends PersistentSuggestionBase {
 	kind: "block";
-	action: "insert-block" | "delete-block" | "move-block" | "convert-block";
+	action:
+		| "insert-block"
+		| "delete-block"
+		| "move-block"
+		| "convert-block"
+		| "split-block";
 	previousState?: {
 		type?: string;
 		position?: import("@input/pen-types").Position;
@@ -56,7 +61,12 @@ export type PersistentSuggestion =
 
 export interface BlockSuggestionMeta {
 	id: string;
-	action: "insert-block" | "delete-block" | "move-block" | "convert-block";
+	action:
+		| "insert-block"
+		| "delete-block"
+		| "move-block"
+		| "convert-block"
+		| "split-block";
 	author: string;
 	authorType: "user" | "ai";
 	createdAt: number;

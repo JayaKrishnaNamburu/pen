@@ -223,6 +223,13 @@ export interface FieldEditorKeyboardController extends Pick<
 		anchorOffset: number,
 		focusOffset: number,
 	): void;
+	commitCellTextSelection?(
+		blockId: string,
+		row: number,
+		col: number,
+		anchorOffset: number,
+		focusOffset: number,
+	): void;
 	deactivate(): void;
 	selectAll(rootElement?: HTMLElement | null): boolean;
 }

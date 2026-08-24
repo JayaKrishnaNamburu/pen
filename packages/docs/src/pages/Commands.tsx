@@ -148,10 +148,11 @@ const registry = createCommandRegistry({
         return {
           ops: [
             {
-              type: "insert-text",
+              type: "splice-text",
               blockId: block.id,
-              offset: selection.focus.offset,
-              text: "|",
+              from: selection.focus.offset,
+				to: selection.focus.offset,
+				insert: "|",
             },
           ],
         };

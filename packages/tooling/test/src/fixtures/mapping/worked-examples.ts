@@ -1,4 +1,4 @@
-import type { Assoc, Point, PointMapMode } from "@input/pen-types";
+import type { Assoc, Point } from "@input/pen-types";
 import type {
 	RawCommitDelta,
 	YArrayDelta,
@@ -31,7 +31,6 @@ export interface WorkedExampleDelta {
 export interface WorkedExampleMapCase {
 	readonly point: Point;
 	readonly assoc?: Assoc;
-	readonly mode?: PointMapMode;
 	readonly expected: Point | number | null;
 }
 
@@ -93,38 +92,11 @@ export const workedExample2: WorkedExample = {
 	cases: [
 		{
 			point: { blockId: MEADOW_BLOCK_ID, offset: 5 },
-			mode: "clamp",
-			expected: 3,
-		},
-		{
-			point: { blockId: MEADOW_BLOCK_ID, offset: 5 },
-			mode: "delete",
-			expected: null,
-		},
-		{
-			point: { blockId: MEADOW_BLOCK_ID, offset: 5 },
-			mode: "delete-before",
-			expected: null,
-		},
-		{
-			point: { blockId: MEADOW_BLOCK_ID, offset: 5 },
-			mode: "delete-after",
-			expected: null,
-		},
-		{
-			point: { blockId: MEADOW_BLOCK_ID, offset: 9 },
-			mode: "clamp",
 			expected: 3,
 		},
 		{
 			point: { blockId: MEADOW_BLOCK_ID, offset: 9 },
-			mode: "delete-after",
 			expected: 3,
-		},
-		{
-			point: { blockId: MEADOW_BLOCK_ID, offset: 9 },
-			mode: "delete-before",
-			expected: null,
 		},
 		{ point: { blockId: MEADOW_BLOCK_ID, offset: 11 }, expected: 5 },
 	],

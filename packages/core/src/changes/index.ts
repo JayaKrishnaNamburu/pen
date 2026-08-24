@@ -10,11 +10,7 @@ export { affectedBlockIdsFromSummary } from "./affectedBlocks";
 export { createBlockIndexSnapshotFromDocument } from "./fromDocument";
 export { installChangeSummaries, teardownChangeSummaries } from "./install";
 export type { ChangeSummaryHost } from "./install";
-export {
-	createChangeSummary,
-	createEmptySummary,
-	DEFAULT_ASSOC,
-} from "./mapping";
+export { createChangeSummary, createEmptySummary } from "./mapping";
 export {
 	buildChangeSummary,
 	logicalLengthFromStored,

@@ -1,0 +1,19 @@
+{
+  "name": "@input/pen-react",
+  "dependencies": {
+    "@input/pen-ai": "workspace:^",
+    "@input/pen-core": "workspace:^",
+    "@input/pen-interop": "workspace:^"
+  },
+  "peerDependencies": {
+    "@input/pen-interop": "workspace:^"
+  },
+  "peerDependenciesMeta": {
+    "@input/pen-interop": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@input/pen-ai": "workspace:*"
+  }
+}

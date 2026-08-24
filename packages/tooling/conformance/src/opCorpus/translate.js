@@ -17,6 +17,10 @@ const UNCHANGED_TYPES = new Set([
 	"move-block",
 	"set-meta",
 	"stream-open",
+	"splice-text",
+	"set-props",
+	"grid",
+	"app",
 ]);
 
 /**
@@ -117,6 +121,9 @@ export function translateRecordedOp(op, context = {}) {
 				},
 			];
 		case "format-text":
+			if (typeof op.from === "number") {
+				return [op];
+			}
 			return [
 				{
 					type: "format-text",

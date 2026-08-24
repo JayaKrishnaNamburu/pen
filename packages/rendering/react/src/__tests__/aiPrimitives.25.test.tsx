@@ -279,7 +279,9 @@ describe("@input/pen-react AI primitives", () => {
 		const blockId = editor.firstBlock()!.id;
 		streamedBlockId = blockId;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello" }],
 			{ origin: "system" },
 		);
 		const controller = getAIController(editor);

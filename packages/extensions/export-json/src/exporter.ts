@@ -1,5 +1,4 @@
 import {
-  logicalTextFromStored,
   type BlockHandle,
   type Exporter,
   type ExportOptions,
@@ -118,7 +117,7 @@ function serializeInlineContent(
   const visibleDeltas = deltas.filter(
     (delta) =>
       typeof delta.insert !== "string" ||
-      logicalTextFromStored(delta.insert) !== "",
+      delta.insert !== "",
   );
   const textDeltas: Array<{ insert: string; attributes?: Record<string, unknown> }> =
     visibleDeltas.flatMap((delta) =>

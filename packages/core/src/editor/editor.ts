@@ -35,8 +35,9 @@ import { getRawBlockMap, getEditorInternals, applyEditorOps, recordMutationGroup
 import { createEmptyBlockIndex } from "../changes/blockIndex";
 import { snapshotSelectionRecord } from "./commitEvent";
 import { openEditorTextStream } from "./openTextStream";
-import { createPenDocumentForEditor, resolveEditorExtensions, installProfilePolicyHook, enforceDocumentProfileBoundary, refreshCoreSlots, bindEditorSession, bindEditorScope, handleEditorScopeReplacement, resolveEditorDocumentProfile, rebindActiveScope, refreshUndoManager, activateEditorExtensions, queueExtensionLifecycle, ensureInitialParagraph, createCommitEvent, dispatchCRDTEvent, syncDocumentProfileFromStorage, wireEditorObservation, teardownEditorObservation } from "./editorLifecycle";
+import { createPenDocumentForEditor, resolveEditorExtensions, installProfilePolicyHook, enforceDocumentProfileBoundary, refreshCoreSlots, bindEditorSession, bindEditorScope, handleEditorScopeReplacement, resolveEditorDocumentProfile, persistEditorDocumentProfile, rebindActiveScope, refreshUndoManager, activateEditorExtensions, queueExtensionLifecycle, ensureInitialParagraph, createCommitEvent, dispatchCRDTEvent, syncDocumentProfileFromStorage, wireEditorObservation, teardownEditorObservation } from "./editorLifecycle";
 import { replaceEditorSelection, deleteEditorSelection, getTextForBlock, usesInlineTextSelectionForBlock, getBlockSelectionSpan, isWholeBlockSelection, sliceInlineDeltas, buildMultiBlockTextReplacement, deleteMultiBlockTextRange, replaceMultiBlockTextRange } from "./editorSelectionMutations";
+import { runPendingEmptyBlockMigrations } from "../migrations/runPendingEmptyBlockMigrations";
 import { stampTextSelection, selectionToRange } from "../selection/helpers";
 import {
 	buildTransitionSnapshot,
@@ -174,6 +175,34 @@ class EditorImpl implements Editor {
 		this._facetRegistry.markReady();
 		installEditorCommandRegistry(this);
 
+		this._installProfilePolicyHook();
+
+		this.undoManager = NOOP_UNDO;
+		this._decorations = emptyDecorationSet();
+		this._refreshCoreSlots();
+
+		// Constructing a document is not a change to one, so none of the three
+		// writes below may produce a commit: a host cannot subscribe before the
+		// constructor returns, and a commit nobody observes still consumes the
+		// id its first apply should get (OB6). They land before the pipeline's
+		// dispatch callback and the observer are wired, which is what keeps
+		// them silent.
+		//
+		// Migrations run before the profile write: persisting refreshes the
+		// format stamp, which would hide a stamp-2 document from the migration
+		// check. The initial paragraph still goes through apply for validation
+		// and normalization; the profile policy hook reaches it through the
+		// pipeline's pre-init hook fallback.
+		runPendingEmptyBlockMigrations(this);
+		persistEditorDocumentProfile(this);
+		this._ensureInitialParagraph();
+		// Silent writes skip the dispatch that normally refreshes these indexes.
+		this._documentState.updateDocument(
+			this._doc,
+			this._crdtDoc,
+			this._documentProfile,
+		);
+
 		this._pipeline._init(
 			(event) => {
 				this._dispatchCRDTEvent(event);
@@ -182,15 +211,8 @@ class EditorImpl implements Editor {
 			(phase) => this._recordPipelinePhase(phase),
 			() => this._captureSelectionBeforeForCommit(),
 		);
-		this._installProfilePolicyHook();
-
-		this.undoManager = NOOP_UNDO;
-		this._decorations = emptyDecorationSet();
-		this._refreshCoreSlots();
-
 		this._wireObservation();
 		this._extensionLifecycle = this._activateExtensions();
-		this._ensureInitialParagraph();
 
 		this._engine.normalizeAll();
 		this._refreshDecorations();

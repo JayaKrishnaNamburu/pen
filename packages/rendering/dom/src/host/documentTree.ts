@@ -8,7 +8,6 @@ import {
 	getParentIdChildBlockIds,
 	getRootBlockIds,
 } from "../utils/parentIdTree";
-import { replaceElementChildren } from "../utils/replaceElementChildren";
 
 const PARENT_ID_CONTAINER_TYPES = new Set(["toggle", "callout", "blockquote"]);
 
@@ -173,16 +172,15 @@ function updateBlockNodes(
 		return;
 	}
 
-	const deltas = block.textDeltas();
-	if (deltas.length === 0) {
-		replaceElementChildren(nodes.inline);
-		return;
-	}
-
-	fullReconcileDeltasToDOM([...deltas], nodes.inline, editor.schema, {
-		preserveSelection: false,
-		urlPolicy: urlPolicyFromEditor(editor),
-	});
+	fullReconcileDeltasToDOM(
+		[...block.textDeltas()],
+		nodes.inline,
+		editor.schema,
+		{
+			preserveSelection: false,
+			urlPolicy: urlPolicyFromEditor(editor),
+		},
+	);
 }
 
 function visibleChildBlockIds(editor: Editor, parentBlockId: string): readonly string[] {

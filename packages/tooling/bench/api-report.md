@@ -6,7 +6,6 @@
 
 ### function
 
-- attributeBenchResult
 - buildEnvelopeRecord
 - compareEnvelopeDrift
 - compareScale2Plus8Tolerance
@@ -24,6 +23,7 @@
 
 - assertCriticalBenchmarkTargets
 - assertScale2Plus8Tolerance
+- attributeBenchResult
 - bench
 - BENCH_GATE_SAMPLE_SIZE
 - BenchContext

@@ -38,10 +38,10 @@ const opsTsPath = join(here, "../../../../types/src/types/ops.ts");
 const TABLE_3X3_SETUP = {
 	blocks: [{ id: "tbl", type: "table", props: { hasHeaderRow: true } }],
 	extraOps: [
-		{ type: "insert-table-row", blockId: "tbl", index: 2 },
-		{ type: "insert-table-column", blockId: "tbl", index: 2 },
+		{ type: "grid", blockId: "tbl", change: { kind: "insert-row", index: 2  }},
+		{ type: "grid", blockId: "tbl", change: { kind: "insert-column", index: 2  }},
 		{
-			type: "insert-table-cell-text",
+			type: "splice-text",
 			blockId: "tbl",
 			row: 0,
 			col: 0,
@@ -49,7 +49,7 @@ const TABLE_3X3_SETUP = {
 			text: "r0c0",
 		},
 		{
-			type: "insert-table-cell-text",
+			type: "splice-text",
 			blockId: "tbl",
 			row: 0,
 			col: 1,
@@ -57,7 +57,7 @@ const TABLE_3X3_SETUP = {
 			text: "r0c1",
 		},
 		{
-			type: "insert-table-cell-text",
+			type: "splice-text",
 			blockId: "tbl",
 			row: 1,
 			col: 0,
@@ -65,7 +65,7 @@ const TABLE_3X3_SETUP = {
 			text: "r1c0",
 		},
 		{
-			type: "insert-table-cell-text",
+			type: "splice-text",
 			blockId: "tbl",
 			row: 2,
 			col: 2,
@@ -389,7 +389,7 @@ const FIXTURES = [
 		recordPath: "synthetic",
 		ops: [
 			{
-				type: "update-layout",
+				type: "set-props",
 				blockId: "toggle",
 				layout: { display: "flex", gap: 8, direction: "column" },
 			},
@@ -408,9 +408,9 @@ const FIXTURES = [
 		setup: {
 			blocks: [{ id: "tbl", type: "table", props: { hasHeaderRow: true } }],
 			extraOps: [
-				{ type: "insert-table-row", blockId: "tbl", index: 2 },
+				{ type: "grid", blockId: "tbl", change: { kind: "insert-row", index: 2  }},
 				{
-					type: "insert-table-cell-text",
+					type: "splice-text",
 					blockId: "tbl",
 					row: 2,
 					col: 0,
@@ -426,7 +426,7 @@ const FIXTURES = [
 		family: "tables",
 		path: "apply",
 		recordPath: "synthetic",
-		ops: [{ type: "delete-table-row", blockId: "tbl", index: 1 }],
+		ops: [{ type: "grid", blockId: "tbl", change: { kind: "delete-row", index: 1  }}],
 		setup: TABLE_3X3_SETUP,
 	},
 	{
@@ -441,9 +441,9 @@ const FIXTURES = [
 		setup: {
 			blocks: [{ id: "tbl", type: "table", props: { hasHeaderRow: true } }],
 			extraOps: [
-				{ type: "insert-table-column", blockId: "tbl", index: 2 },
+				{ type: "grid", blockId: "tbl", change: { kind: "insert-column", index: 2  }},
 				{
-					type: "insert-table-cell-text",
+					type: "splice-text",
 					blockId: "tbl",
 					row: 0,
 					col: 2,
@@ -459,7 +459,7 @@ const FIXTURES = [
 		family: "tables",
 		path: "apply",
 		recordPath: "synthetic",
-		ops: [{ type: "delete-table-column", blockId: "tbl", index: 1 }],
+		ops: [{ type: "grid", blockId: "tbl", change: { kind: "delete-column", index: 1  }}],
 		setup: TABLE_3X3_SETUP,
 	},
 	{
@@ -500,7 +500,7 @@ const FIXTURES = [
 			blocks: [{ id: "tbl", type: "table", props: { hasHeaderRow: true } }],
 			extraOps: [
 				{
-					type: "insert-table-cell-text",
+					type: "splice-text",
 					blockId: "tbl",
 					row: 0,
 					col: 0,
@@ -508,7 +508,7 @@ const FIXTURES = [
 					text: "alpha",
 				},
 				{
-					type: "insert-table-cell-text",
+					type: "splice-text",
 					blockId: "tbl",
 					row: 1,
 					col: 1,
@@ -526,7 +526,7 @@ const FIXTURES = [
 		recordPath: "synthetic",
 		ops: [
 			{
-				type: "delete-table-cell-text",
+				type: "splice-text",
 				blockId: "tbl",
 				row: 0,
 				col: 0,
@@ -544,7 +544,7 @@ const FIXTURES = [
 		recordPath: "synthetic",
 		ops: [
 			{
-				type: "format-table-cell-text",
+				type: "format-text",
 				blockId: "tbl",
 				row: 0,
 				col: 0,
@@ -563,7 +563,7 @@ const FIXTURES = [
 		recordPath: "synthetic",
 		ops: [
 			{
-				type: "update-table-columns",
+				type: "set-props",
 				blockId: "tbl",
 				columns: [
 					{ id: "col-a", title: "A", type: "text", width: 120 },

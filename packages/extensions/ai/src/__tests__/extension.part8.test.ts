@@ -55,7 +55,9 @@ describe("aiExtension", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello world" }],
 			{ origin: "system" },
 		);
 		editor.selectTextRange({ blockId, offset: 6 }, { blockId, offset: 11 });
@@ -95,7 +97,9 @@ describe("aiExtension", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello world" }],
 			{ origin: "system" },
 		);
 		editor.selectTextRange({ blockId, offset: 5 }, { blockId, offset: 5 });
@@ -140,7 +144,9 @@ describe("aiExtension", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello world" }],
 			{ origin: "system" },
 		);
 		editor.selectTextRange({ blockId, offset: 6 }, { blockId, offset: 11 });
@@ -196,13 +202,18 @@ describe("aiExtension", () => {
 				position: "last",
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: firstBlockId,
-				offset: 0,
-				text: "Hello",
+				from: 0,
+				to: 0,
+				insert: "Hello",
 			},
-			{ type: "insert-text", blockId: "b2", offset: 0, text: "World" },
-			{ type: "insert-text", blockId: "b3", offset: 0, text: "Again" },
+			{ type: "splice-text", blockId: "b2", from: 0,
+				to: 0,
+				insert: "World" },
+			{ type: "splice-text", blockId: "b3", from: 0,
+				to: 0,
+				insert: "Again" },
 		]);
 		editor.selectTextRange(
 			{ blockId: firstBlockId, offset: 2 },
@@ -340,7 +351,9 @@ describe("aiExtension", () => {
 		const blockId = editor.firstBlock()!.id;
 		streamedBlockId = blockId;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello" }],
 			{ origin: "system" },
 		);
 

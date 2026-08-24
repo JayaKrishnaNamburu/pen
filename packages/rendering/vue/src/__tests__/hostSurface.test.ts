@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { defineExtension, readOnlyFacet } from "@input/pen-core";
+import { defineExtension, ariaReadOnlyFacet } from "@input/pen-core";
 import { FIELD_EDITOR_SLOT_KEY } from "@input/pen-types";
 import { createTestEditor } from "@input/pen-test";
 import { mount } from "@vue/test-utils";
@@ -42,10 +42,11 @@ describe("@input/pen-vue host surface", () => {
     editor.apply(
       [
         {
-          type: "insert-text",
+          type: "splice-text",
           blockId: "paragraph-1",
-          offset: 0,
-          text: "Hello",
+          from: 0,
+				to: 0,
+				insert: "Hello",
         },
       ],
       { origin: "user" },
@@ -196,12 +197,12 @@ describe("@input/pen-vue host surface", () => {
     editor.destroy();
   });
 
-  it("AX1: pen.readOnly facet is reflected as aria-readonly", () => {
+  it("AX1: pen.ariaReadOnly facet is reflected as aria-readonly", () => {
     const editor = createTestEditor({
       extensions: [
         defineExtension({
-          name: "readonly-ext",
-          facets: [readOnlyFacet.of(true)],
+          name: "aria-readonly-ext",
+          facets: [ariaReadOnlyFacet.of(true)],
         }),
       ],
       blocks: [

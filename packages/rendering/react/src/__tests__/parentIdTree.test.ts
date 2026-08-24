@@ -19,10 +19,7 @@ describe("@input/pen-react parentIdTree", () => {
 
 		editor.apply([
 			{
-				type: "convert-block",
-				blockId: parentToggleId,
-				newType: "toggle",
-				newProps: { open: true },
+				type: "set-props", blockId: parentToggleId, props: { type: "toggle", ...{ open: true  }},
 			},
 			{
 				type: "insert-block",
@@ -32,7 +29,7 @@ describe("@input/pen-react parentIdTree", () => {
 				position: { after: parentToggleId },
 			},
 			{
-				type: "update-block",
+				type: "set-props",
 				blockId: nestedToggleId,
 				props: { parentId: parentToggleId },
 			},
@@ -44,7 +41,7 @@ describe("@input/pen-react parentIdTree", () => {
 				position: { after: nestedToggleId },
 			},
 			{
-				type: "update-block",
+				type: "set-props",
 				blockId: nestedChildId,
 				props: { parentId: nestedToggleId },
 			},

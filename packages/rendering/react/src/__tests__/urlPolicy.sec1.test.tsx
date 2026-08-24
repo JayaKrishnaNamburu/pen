@@ -92,10 +92,9 @@ describe("SEC1 React host urlPolicy", () => {
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
 			{
-				type: "convert-block",
+				type: "set-props",
 				blockId,
-				newType: "image",
-				newProps: { src: DENIED_IMAGE, alt: "denied" },
+				props: { type: "image", src: DENIED_IMAGE, alt: "denied" },
 			},
 		]);
 
@@ -115,10 +114,9 @@ describe("SEC1 React host urlPolicy", () => {
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
 			{
-				type: "convert-block",
+				type: "set-props",
 				blockId,
-				newType: "image",
-				newProps: { src: ADMITTED_BLOB, alt: "admitted" },
+				props: { type: "image", src: ADMITTED_BLOB, alt: "admitted" },
 			},
 		]);
 
@@ -144,16 +142,17 @@ describe("SEC1 React host urlPolicy", () => {
 				position: "last",
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: "linked",
-				offset: 0,
-				text: "click",
+				from: 0,
+				to: 0,
+				insert: "click",
 			},
 			{
 				type: "format-text",
 				blockId: "linked",
-				offset: 0,
-				length: 5,
+				from: 0,
+				to: 0 + 5,
 				marks: { link: { href: DENIED_HTTPS } },
 			},
 		]);
@@ -184,16 +183,17 @@ describe("SEC1 React host urlPolicy", () => {
 				position: "last",
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: "linked",
-				offset: 0,
-				text: "click",
+				from: 0,
+				to: 0,
+				insert: "click",
 			},
 			{
 				type: "format-text",
 				blockId: "linked",
-				offset: 0,
-				length: 5,
+				from: 0,
+				to: 0 + 5,
 				marks: { link: { href: ADMITTED_BLOB } },
 			},
 		]);
@@ -222,20 +222,19 @@ describe("SEC1 React host urlPolicy", () => {
 				position: "last",
 			},
 			{
-				type: "insert-table-cell-text",
+				type: "splice-text",
 				blockId: "t1",
-				row: 0,
-				col: 0,
-				offset: 0,
-				text: "click",
+				cell: { row: 0, col: 0 },
+				from: 0,
+				to: 0,
+				insert: "click",
 			},
 			{
-				type: "format-table-cell-text",
+				type: "format-text",
 				blockId: "t1",
-				row: 0,
-				col: 0,
-				offset: 0,
-				length: 5,
+				cell: { row: 0, col: 0 },
+				from: 0,
+				to: 5,
 				marks: { link: { href: DENIED_HTTPS } },
 			},
 		]);
@@ -264,20 +263,19 @@ describe("SEC1 React host urlPolicy", () => {
 				position: "last",
 			},
 			{
-				type: "insert-table-cell-text",
+				type: "splice-text",
 				blockId: "t1",
-				row: 0,
-				col: 0,
-				offset: 0,
-				text: "click",
+				cell: { row: 0, col: 0 },
+				from: 0,
+				to: 0,
+				insert: "click",
 			},
 			{
-				type: "format-table-cell-text",
+				type: "format-text",
 				blockId: "t1",
-				row: 0,
-				col: 0,
-				offset: 0,
-				length: 5,
+				cell: { row: 0, col: 0 },
+				from: 0,
+				to: 5,
 				marks: { link: { href: ADMITTED_BLOB } },
 			},
 		]);

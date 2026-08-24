@@ -307,7 +307,7 @@ describe("SchemaEngineImpl — Normalization Rules", () => {
 
   // ── Rule 3: No empty containers ─────────────────────────
   describe("Rule 3: ensureNonEmptyContent", () => {
-    it("inserts ZWS into empty inline blocks", () => {
+    it("EM1: leaves empty inline blocks as the empty string", () => {
       const editor = createTestEditor({
         blocks: [{ id: "p1", type: "paragraph" }],
       });
@@ -316,7 +316,7 @@ describe("SchemaEngineImpl — Normalization Rules", () => {
       const blockMap = (ydoc.getMap("blocks").get("p1") as Y.Map<unknown>);
       const content = blockMap.get("content") as Y.Text;
 
-      expect(content.toString()).toBe("\u200B");
+      expect(content.toString()).toBe("");
     });
 
     it("does not insert ZWS into non-empty blocks", () => {

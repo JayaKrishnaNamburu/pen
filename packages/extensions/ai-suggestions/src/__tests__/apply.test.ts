@@ -10,10 +10,11 @@ describe("@input/pen-ai-suggestions apply", () => {
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "Ths is good.",
+				from: 0,
+				to: 0,
+				insert: "Ths is good.",
 			},
 		]);
 
@@ -34,11 +35,11 @@ describe("@input/pen-ai-suggestions apply", () => {
 
 		expect(buildApplySuggestionOps(editor, suggestion)).toEqual([
 			{
-				type: "replace-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				length: 3,
-				text: "This",
+				from: 0,
+				to: 0 + 3,
+				insert: "This",
 			},
 		]);
 

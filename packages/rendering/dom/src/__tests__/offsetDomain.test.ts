@@ -1,4 +1,3 @@
-import { EMPTY_BLOCK_SENTINEL } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 import {
 	logicalLength,
@@ -8,9 +7,9 @@ import {
 
 const STORAGE_SAMPLES = [
 	"",
-	EMPTY_BLOCK_SENTINEL,
-	`${EMPTY_BLOCK_SENTINEL}${EMPTY_BLOCK_SENTINEL}`,
-	`a${EMPTY_BLOCK_SENTINEL}b`,
+	"\u200B",
+	"\u200B\u200B",
+	"a\u200Bb",
 	"hello",
 	" ",
 	"hi 👍",
@@ -18,10 +17,9 @@ const STORAGE_SAMPLES = [
 ] as const;
 
 describe("offsetDomain I11", () => {
-	it("I11: empty-block sentinel is storage not logical; toDomOffset/toLogicalOffset invert on a sample of storage strings", () => {
+	it("I11 EM5: empty string is length 0; mid-string ZWSP is real; clamps invert", () => {
 		for (const text of STORAGE_SAMPLES) {
-			const isEmptyBlockStorage = text === EMPTY_BLOCK_SENTINEL;
-			expect(logicalLength(text)).toBe(isEmptyBlockStorage ? 0 : text.length);
+			expect(logicalLength(text)).toBe(text.length);
 
 			const logicalEnd = logicalLength(text);
 			for (let logical = 0; logical <= logicalEnd; logical++) {

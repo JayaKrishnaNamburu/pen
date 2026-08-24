@@ -1,16 +1,29 @@
 import type { ChangeSummary, StructuralChange } from "./types";
 
 export function affectedBlockIdsFromSummary(
-	summary: ChangeSummary,
+	summary: Pick<ChangeSummary, "blockText" | "structural">,
+	documentOrder?: readonly string[],
 ): string[] {
 	const ids = new Set<string>();
-	for (const text of summary.text) {
+	for (const text of summary.blockText) {
 		ids.add(text.blockId);
 	}
 	for (const change of summary.structural) {
 		addStructuralBlockIds(ids, change);
 	}
-	return [...ids];
+	const collected = [...ids];
+	if (!documentOrder || documentOrder.length === 0) {
+		return collected;
+	}
+	const rank = new Map<string, number>();
+	for (let index = 0; index < documentOrder.length; index += 1) {
+		rank.set(documentOrder[index]!, index);
+	}
+	return collected.sort((left, right) => {
+		const leftRank = rank.get(left) ?? Number.MAX_SAFE_INTEGER;
+		const rightRank = rank.get(right) ?? Number.MAX_SAFE_INTEGER;
+		return leftRank - rightRank;
+	});
 }
 
 function addStructuralBlockIds(
@@ -21,7 +34,6 @@ function addStructuralBlockIds(
 		case "block-inserted":
 		case "block-removed":
 		case "block-moved":
-		case "block-converted":
 		case "block-props-changed":
 		case "table-changed":
 			ids.add(change.blockId);

@@ -23,10 +23,11 @@ describe("@input/pen-undo import and history origins", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "Imported text",
+					from: 0,
+				to: 0,
+				insert: "Imported text",
 				},
 			],
 			{ origin: "import", undoGroup: true },
@@ -52,10 +53,11 @@ describe("@input/pen-undo import and history origins", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "Hello",
+				from: 0,
+				to: 0,
+				insert: "Hello",
 			},
 		]);
 		expect(visibleText(editor.getBlock(blockId)!.textContent())).toBe("Hello");

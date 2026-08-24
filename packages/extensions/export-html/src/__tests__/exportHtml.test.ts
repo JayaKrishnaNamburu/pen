@@ -1,11 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { createEditor } from "@input/pen-core";
-import type { DocumentOp } from "@input/pen-types";
 import { htmlExporter } from "../exporter";
 import { defaultSchema } from "@input/pen-schema-default";
-
-type InsertTableCellTextOp = Extract<DocumentOp, { type: "insert-table-cell-text" }>;
-type FormatTableCellTextOp = Extract<DocumentOp, { type: "format-table-cell-text" }>;
 
 const noDefaultExtensionsPreset = {
   resolve() {
@@ -64,7 +60,9 @@ describe("@input/pen-export-html", () => {
         props: { level: 1 },
         position: "last",
       },
-      { type: "insert-text", blockId: "b1", offset: 0, text: "Hello" },
+      { type: "splice-text", blockId: "b1", from: 0,
+				to: 0,
+				insert: "Hello" },
     ]);
 
     const html = htmlExporter.export(editor);
@@ -83,7 +81,9 @@ describe("@input/pen-export-html", () => {
         props: {},
         position: "last",
       },
-      { type: "insert-text", blockId: "b1", offset: 0, text: "Hello world" },
+      { type: "splice-text", blockId: "b1", from: 0,
+				to: 0,
+				insert: "Hello world" },
     ]);
 
     const html = htmlExporter.export(editor);
@@ -103,10 +103,11 @@ describe("@input/pen-export-html", () => {
         position: "last",
       },
       {
-        type: "insert-text",
+        type: "splice-text",
         blockId: "b1",
-        offset: 0,
-        text: '<script>alert("xss")</script>',
+        from: 0,
+				to: 0,
+				insert: '<script>alert("xss")</script>',
       },
     ]);
 
@@ -126,16 +127,17 @@ describe("@input/pen-export-html", () => {
         position: "last",
       },
       {
-        type: "insert-text",
+        type: "splice-text",
         blockId: "b1",
-        offset: 0,
-        text: "hello world",
+        from: 0,
+				to: 0,
+				insert: "hello world",
       },
       {
         type: "format-text",
         blockId: "b1",
-        offset: 0,
-        length: 5,
+        from: 0,
+				to: 0 + 5,
         marks: { bold: true },
       },
     ]);
@@ -156,16 +158,17 @@ describe("@input/pen-export-html", () => {
         position: "last",
       },
       {
-        type: "insert-text",
+        type: "splice-text",
         blockId: "b1",
-        offset: 0,
-        text: "ab",
+        from: 0,
+				to: 0,
+				insert: "ab",
       },
       {
         type: "format-text",
         blockId: "b1",
-        offset: 0,
-        length: 1,
+        from: 0,
+				to: 0 + 1,
         marks: {
           suggestion: { id: "s-insert", action: "insert" },
         },
@@ -173,8 +176,8 @@ describe("@input/pen-export-html", () => {
       {
         type: "format-text",
         blockId: "b1",
-        offset: 1,
-        length: 1,
+        from: 1,
+				to: 1 + 1,
         marks: {
           suggestion: { id: "s-delete", action: "delete" },
         },
@@ -205,7 +208,9 @@ describe("@input/pen-export-html", () => {
         props: {},
         position: "last",
       },
-      { type: "insert-text", blockId: "l1", offset: 0, text: "First" },
+      { type: "splice-text", blockId: "l1", from: 0,
+				to: 0,
+				insert: "First" },
       {
         type: "insert-block",
         blockId: "l2",
@@ -213,7 +218,9 @@ describe("@input/pen-export-html", () => {
         props: {},
         position: "last",
       },
-      { type: "insert-text", blockId: "l2", offset: 0, text: "Second" },
+      { type: "splice-text", blockId: "l2", from: 0,
+				to: 0,
+				insert: "Second" },
     ]);
 
     const html = htmlExporter.export(editor);
@@ -240,10 +247,11 @@ describe("@input/pen-export-html", () => {
         position: { parent: "toggle-1", index: 0 },
       },
       {
-        type: "insert-text",
+        type: "splice-text",
         blockId: "child-1",
-        offset: 0,
-        text: "Nested child",
+        from: 0,
+				to: 0,
+				insert: "Nested child",
       },
     ]);
 
@@ -269,37 +277,37 @@ describe("@input/pen-export-html", () => {
       },
       [
         {
-          type: "insert-table-cell-text",
+          type: "splice-text",
           blockId: "t1",
-          row: 0,
-          col: 0,
-          offset: 0,
-          text: "Name",
-        } as InsertTableCellTextOp,
+          cell: { row: 0, col: 0 },
+          from: 0,
+          to: 0,
+          insert: "Name",
+        },
         {
-          type: "insert-table-cell-text",
+          type: "splice-text",
           blockId: "t1",
-          row: 0,
-          col: 1,
-          offset: 0,
-          text: "Age",
-        } as InsertTableCellTextOp,
+          cell: { row: 0, col: 1 },
+          from: 0,
+          to: 0,
+          insert: "Age",
+        },
         {
-          type: "insert-table-cell-text",
+          type: "splice-text",
           blockId: "t1",
-          row: 1,
-          col: 0,
-          offset: 0,
-          text: "Alice",
-        } as InsertTableCellTextOp,
+          cell: { row: 1, col: 0 },
+          from: 0,
+          to: 0,
+          insert: "Alice",
+        },
         {
-          type: "insert-table-cell-text",
+          type: "splice-text",
           blockId: "t1",
-          row: 1,
-          col: 1,
-          offset: 0,
-          text: "30",
-        } as InsertTableCellTextOp,
+          cell: { row: 1, col: 1 },
+          from: 0,
+          to: 0,
+          insert: "30",
+        },
       ],
     );
 
@@ -326,21 +334,21 @@ describe("@input/pen-export-html", () => {
       },
       [
         {
-          type: "insert-table-cell-text",
+          type: "splice-text",
           blockId: "t1",
-          row: 0,
-          col: 0,
-          offset: 0,
-          text: "A",
-        } as InsertTableCellTextOp,
+          cell: { row: 0, col: 0 },
+          from: 0,
+          to: 0,
+          insert: "A",
+        },
         {
-          type: "insert-table-cell-text",
+          type: "splice-text",
           blockId: "t1",
-          row: 1,
-          col: 0,
-          offset: 0,
-          text: "B",
-        } as InsertTableCellTextOp,
+          cell: { row: 1, col: 0 },
+          from: 0,
+          to: 0,
+          insert: "B",
+        },
       ],
     );
 
@@ -363,13 +371,13 @@ describe("@input/pen-export-html", () => {
       },
       [
         {
-          type: "insert-table-cell-text",
+          type: "splice-text",
           blockId: "t1",
-          row: 0,
-          col: 0,
-          offset: 0,
-          text: "<script>",
-        } as InsertTableCellTextOp,
+          cell: { row: 0, col: 0 },
+          from: 0,
+          to: 0,
+          insert: "<script>",
+        },
       ],
     );
 
@@ -390,22 +398,21 @@ describe("@input/pen-export-html", () => {
       },
       [
         {
-          type: "insert-table-cell-text",
+          type: "splice-text",
           blockId: "t2",
-          row: 0,
-          col: 0,
-          offset: 0,
-          text: "Alpha",
-        } as InsertTableCellTextOp,
+          cell: { row: 0, col: 0 },
+          from: 0,
+          to: 0,
+          insert: "Alpha",
+        },
         {
-          type: "format-table-cell-text",
+          type: "format-text",
           blockId: "t2",
-          row: 0,
-          col: 0,
-          offset: 0,
-          length: 5,
+          cell: { row: 0, col: 0 },
+          from: 0,
+          to: 5,
           marks: { bold: true },
-        } as FormatTableCellTextOp,
+        },
       ],
     );
 

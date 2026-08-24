@@ -1,5 +1,9 @@
-import { logicalTextFromStored } from "@input/pen-types";
 import type { FieldEditorTextChangeEvent } from "./crdt";
+import {
+	findEmptyBlockPlaceholder,
+	isEmptyBlockPlaceholder,
+} from "./emptyBlockPlaceholder";
+import { findLogicalDOMPoint } from "./inlineAtomDom";
 import { logicalLength } from "./offsetDomain";
 
 export type EditContextTextFormat = {
@@ -79,6 +83,10 @@ export function findTextPosition(
 		remaining -= len;
 	}
 
+	if (isEmptyBlockPlaceholder(container.lastChild)) {
+		return findLogicalDOMPoint(container, 0);
+	}
+
 	const last = container.lastChild;
 	if (last) {
 		return { node: last, offset: last.textContent?.length ?? 0 };
@@ -91,7 +99,7 @@ export function isLogicallyEmptyText(text: string): boolean {
 }
 
 export function toEditContextText(text: string): string {
-	return logicalTextFromStored(text);
+	return text;
 }
 
 export function shouldReplaceEditContextText(
@@ -152,5 +160,9 @@ function getCharacterRect(element: HTMLElement, charOffset: number): DOMRect {
 		remaining -= len;
 	}
 
+	const placeholder = findEmptyBlockPlaceholder(element);
+	if (placeholder) {
+		return placeholder.getBoundingClientRect();
+	}
 	return element.getBoundingClientRect();
 }

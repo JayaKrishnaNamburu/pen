@@ -18,6 +18,7 @@ import {
 	snapshotSelectionRecord,
 } from "./commitEvent";
 import { createDocumentSession } from "./documentSession";
+import { runPendingEmptyBlockMigrations } from "../migrations/runPendingEmptyBlockMigrations";
 
 type EditorImplRuntime = any;
 type CRDTBlockMap = CRDTMap<CRDTMap<unknown>>;
@@ -168,12 +169,16 @@ export function resolveEditorDocumentProfile(editor: EditorImplRuntime,
 	const self = editor as EditorImplRuntime;
 const persistedProfile =
 	self._adapter.getDocumentProfile?.(self._crdtDoc) ?? null;
-const resolvedProfile =
-	persistedProfile ?? requestedProfile ?? "structured";
-if (persistedProfile == null) {
-	self._adapter.setDocumentProfile?.(self._crdtDoc, resolvedProfile);
+return persistedProfile ?? requestedProfile ?? "structured";
 }
-return resolvedProfile;
+
+export function persistEditorDocumentProfile(editor: EditorImplRuntime): void {
+	const self = editor as EditorImplRuntime;
+	const persistedProfile =
+		self._adapter.getDocumentProfile?.(self._crdtDoc) ?? null;
+	if (persistedProfile == null) {
+		self._adapter.setDocumentProfile?.(self._crdtDoc, self._documentProfile);
+	}
 }
 
 export async function rebindActiveScope(editor: EditorImplRuntime, ): Promise<void> {
@@ -199,6 +204,16 @@ self._documentState.updateDocument(
 	self._crdtDoc,
 	self._documentProfile,
 );
+self._refreshCoreSlots();
+
+// Same construction rule as the EditorImpl constructor: binding a scope is
+// bookkeeping, so neither write may reach hosts as a commit, and both land
+// before the pipeline's dispatch callback and the observer are wired.
+// Migrations run before the profile write: persisting refreshes the format
+// stamp, which would hide a stamp-2 document from the migration check.
+runPendingEmptyBlockMigrations(self);
+persistEditorDocumentProfile(self);
+
 self._pipeline._init(
 	(event: CRDTEvent) => {
 		self._dispatchCRDTEvent(event);
@@ -207,8 +222,6 @@ self._pipeline._init(
 	(phase: PipelinePhase) => self._recordPipelinePhase(phase),
 	() => self._captureSelectionBeforeForCommit(),
 );
-self._refreshCoreSlots();
-
 self._wireObservation();
 await self._activateExtensions();
 self._engine.normalizeAll();
@@ -324,7 +337,8 @@ export function dispatchCRDTEvent(editor: EditorImplRuntime, event: CRDTEvent): 
 	self._recordPipelinePhase("settle-facets");
 	self._facetRegistry?.settle({
 		commitId: documentCommit.commitId,
-		emptyCommit: summary.isEmpty,
+		emptyCommit:
+			summary.blockText.length === 0 && summary.structural.length === 0,
 		selectionVersion: self._selection.record.version,
 	});
 	const previousDecorationGeneration = self._decorations.generation;
@@ -413,6 +427,14 @@ function dispatchObservedCRDTEvent(
 	event: CRDTEvent,
 ): void {
 	if (self._pipeline.suppressObserver) return;
+	if (!self._healingRemoteSentinels) {
+		self._healingRemoteSentinels = true;
+		try {
+			self._engine.healForeignSentinels(event.affectedBlocks);
+		} finally {
+			self._healingRemoteSentinels = false;
+		}
+	}
 	// observe is registered before the summary source; wait for builder output
 	if (self._pendingSummary != null || self._unsubSummary == null) {
 		self._dispatchCRDTEvent(event);

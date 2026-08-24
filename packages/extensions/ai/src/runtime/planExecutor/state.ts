@@ -90,10 +90,11 @@ export function buildInlinePendingBlockInsertOps(
 		});
 		if ((block.content ?? "").length > 0) {
 			ops.push({
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: block.content!,
+				from: 0,
+				to: 0,
+				insert: block.content!,
 			});
 		}
 		for (const mark of block.marks ?? []) {
@@ -103,8 +104,8 @@ export function buildInlinePendingBlockInsertOps(
 			ops.push({
 				type: "format-text",
 				blockId,
-				offset: mark.start,
-				length: mark.end - mark.start,
+				from: mark.start,
+				to: mark.start + mark.end - mark.start,
 				marks: { [mark.type]: mark.props ?? true },
 			});
 		}

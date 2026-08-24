@@ -74,7 +74,7 @@ export function appendParentIdChildBlock(
 				position: { after: insertionAnchorId },
 			},
 			{
-				type: "update-block",
+				type: "set-props",
 				blockId: childBlockId,
 				props: { parentId: parentBlockId },
 			},

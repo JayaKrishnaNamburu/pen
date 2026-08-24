@@ -132,7 +132,7 @@ describe("@input/pen-core createEditor", () => {
 		});
 		expect(documentCommits).toHaveLength(1);
 		expect(documentCommits[0]).toMatchObject({
-			commitId: 2,
+			commitId: 1,
 			affectedBlocks: [blockId],
 		});
 		expect(
@@ -157,10 +157,11 @@ describe("@input/pen-core createEditor", () => {
 				position: "last",
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: "b1",
-				offset: 0,
-				text: "hello",
+				from: 0,
+				to: 0,
+				insert: "hello",
 			},
 		]);
 
@@ -213,9 +214,15 @@ describe("@input/pen-core createEditor", () => {
 				props: {},
 				position: "last",
 			},
-			{ type: "insert-text", blockId: "b1", offset: 0, text: "Hello" },
-			{ type: "insert-text", blockId: "b2", offset: 0, text: "World" },
-			{ type: "insert-text", blockId: "b3", offset: 0, text: "Again" },
+			{ type: "splice-text", blockId: "b1", from: 0,
+				to: 0,
+				insert: "Hello" },
+			{ type: "splice-text", blockId: "b2", from: 0,
+				to: 0,
+				insert: "World" },
+			{ type: "splice-text", blockId: "b3", from: 0,
+				to: 0,
+				insert: "Again" },
 		]);
 
 		editor.selectTextRange(
@@ -265,9 +272,15 @@ describe("@input/pen-core createEditor", () => {
 				props: {},
 				position: "last",
 			},
-			{ type: "insert-text", blockId: "b1", offset: 0, text: "Hello" },
-			{ type: "insert-text", blockId: "b2", offset: 0, text: "World" },
-			{ type: "insert-text", blockId: "b3", offset: 0, text: "Again" },
+			{ type: "splice-text", blockId: "b1", from: 0,
+				to: 0,
+				insert: "Hello" },
+			{ type: "splice-text", blockId: "b2", from: 0,
+				to: 0,
+				insert: "World" },
+			{ type: "splice-text", blockId: "b3", from: 0,
+				to: 0,
+				insert: "Again" },
 		]);
 
 		editor.selectTextRange(
@@ -368,17 +381,31 @@ describe("@input/pen-core createEditor", () => {
 				props: {},
 				position: "last",
 			},
-			{ type: "insert-text", blockId: "p1", offset: 0, text: "Hello" },
+			{
+				type: "insert-block",
+				blockId: "p2",
+				blockType: "paragraph",
+				props: {},
+				position: "last",
+			},
+			{ type: "splice-text", blockId: "p1", from: 0,
+				to: 0,
+				insert: "Hello" },
+			{ type: "splice-text", blockId: "p2", from: 0,
+				to: 0,
+				insert: "World" },
 		]);
 
 		editor.selectTextRange(
 			{ blockId: "p1", offset: 2 },
 			{ blockId: "d1", offset: 1 },
 		);
+		expect(editor.getSelection()?.type).toBe("text");
 		editor.deleteSelection();
 
 		expect(editor.getBlock("p1")?.textContent()).toBe("He");
 		expect(editor.getBlock("d1")).toBeNull();
+		expect(editor.getBlock("p2")?.textContent()).toBe("World");
 		expect(editor.getSelection()).toMatchObject({
 			type: "text",
 			anchor: { blockId: "p1", offset: 2 },
@@ -415,9 +442,15 @@ describe("@input/pen-core createEditor", () => {
 				props: {},
 				position: "last",
 			},
-			{ type: "insert-text", blockId: "b1", offset: 0, text: "Hello" },
-			{ type: "insert-text", blockId: "b2", offset: 0, text: "World" },
-			{ type: "insert-text", blockId: "b3", offset: 0, text: "Again" },
+			{ type: "splice-text", blockId: "b1", from: 0,
+				to: 0,
+				insert: "Hello" },
+			{ type: "splice-text", blockId: "b2", from: 0,
+				to: 0,
+				insert: "World" },
+			{ type: "splice-text", blockId: "b3", from: 0,
+				to: 0,
+				insert: "Again" },
 		]);
 
 		editor.selectTextRange(

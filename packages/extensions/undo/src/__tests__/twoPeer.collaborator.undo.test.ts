@@ -16,7 +16,9 @@ describe("@input/pen-undo two-peer collaborator isolation", () => {
 		});
 
 		harness.peerA.editor.apply(
-			[{ type: "insert-text", blockId: "b1", offset: 5, text: " local" }],
+			[{ type: "splice-text", blockId: "b1", from: 5,
+				to: 5,
+				insert: " local" }],
 			{ origin: "user" },
 		);
 		harness.exchange("a-then-b");
@@ -31,10 +33,11 @@ describe("@input/pen-undo two-peer collaborator isolation", () => {
 		harness.peerB.editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: "b1",
-					offset: 11,
-					text: " remote",
+					from: 11,
+				to: 11,
+				insert: " remote",
 				},
 			],
 			{ origin: "user" },
@@ -78,10 +81,11 @@ describe("@input/pen-undo two-peer collaborator isolation", () => {
 		harness.peerB.editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: "b1",
-					offset: 5,
-					text: " from-b",
+					from: 5,
+				to: 5,
+				insert: " from-b",
 				},
 			],
 			{ origin: "user" },

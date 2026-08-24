@@ -14,7 +14,6 @@ import {
 	getInlineAtomElementData,
 	getLogicalTextContent,
 	getLogicalNodeLength,
-	INLINE_ATOM_CARET_BOUNDARY_TEXT,
 	INLINE_ATOM_REPLACEMENT_TEXT,
 	findLogicalDOMPoint,
 	isInlineAtomCaretBoundaryNode,
@@ -62,15 +61,22 @@ function createPresetEditor() {
 function seedInlineAtomDocument(editor: ReturnType<typeof createPresetEditor>) {
 	const blockId = editor.firstBlock()!.id;
 	editor.apply([
-		{ type: "insert-text", blockId, offset: 0, text: "A" },
+		{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "A" },
 		{
-			type: "insert-inline-node",
+			type: "splice-text",
 			blockId,
-			offset: 1,
-			nodeType: "mention",
-			props: { id: "user-1", label: "Ada" },
+			from: 1,
+			to: 1,
+			insert: {
+				nodeType: "mention",
+				props: { id: "user-1", label: "Ada" },
+			},
 		},
-		{ type: "insert-text", blockId, offset: 2, text: "B" },
+		{ type: "splice-text", blockId, from: 2,
+				to: 2,
+				insert: "B" },
 	]);
 	return blockId;
 }

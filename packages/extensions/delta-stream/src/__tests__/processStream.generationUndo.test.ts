@@ -79,10 +79,11 @@ describe("@input/pen-delta-stream processStream generation undo", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: firstBlockId,
-					offset: 0,
-					text: "hello",
+					from: 0,
+				to: 0,
+				insert: "hello",
 				},
 			],
 			{ origin: "user" },
@@ -158,10 +159,11 @@ describe("@input/pen-delta-stream processStream generation undo", () => {
 				editor.apply(
 					[
 						{
-							type: "insert-text",
+							type: "splice-text",
 							blockId: firstBlockId,
-							offset: 0,
-							text: "user edit",
+							from: 0,
+				to: 0,
+				insert: "user edit",
 						},
 					],
 					{ origin: "user" },
@@ -229,10 +231,11 @@ describe("@input/pen-delta-stream processStream generation undo", () => {
 				editor.apply(
 					[
 						{
-							type: "insert-text",
+							type: "splice-text",
 							blockId,
-							offset: 3,
-							text: "user ",
+							from: 3,
+				to: 3,
+				insert: "user ",
 						},
 					],
 					{ origin: "user" },

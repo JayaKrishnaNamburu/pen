@@ -53,7 +53,9 @@ function midpoint(line: GeometryLineBox): number {
 	if (line.endOffset <= line.startOffset) {
 		return line.startOffset;
 	}
-	return line.startOffset + Math.floor((line.endOffset - line.startOffset) / 2);
+	return (
+		line.startOffset + Math.floor((line.endOffset - line.startOffset) / 2)
+	);
 }
 
 function assertDeterministic(result: GeometryVerticalMotion): void {
@@ -79,28 +81,40 @@ scenario(
 		await s.geometry.invalidate();
 
 		await expect
-			.poll(async () => (await s.geometry.lineBoxes(WAVE3_WRAP_BLOCK)).length)
+			.poll(
+				async () =>
+					(await s.geometry.lineBoxes(WAVE3_WRAP_BLOCK)).length,
+			)
 			.toBeGreaterThanOrEqual(2);
 
 		await s.apply([
 			{
-				type: "insert-inline-node",
+				type: "splice-text",
 				blockId: WAVE3_ATOMS_BLOCK,
-				offset: 5,
-				nodeType: "mention",
-				props: { id: "user-ada", label: "Ada" },
+				from: 5,
+				to: 5,
+				insert: {
+					nodeType: "mention",
+					props: { id: "user-ada", label: "Ada" },
+				},
 			},
 		]);
 		await expect(page.locator("[data-pen-inline-atom]")).toBeVisible();
 		await forceWrap(page);
 		await s.geometry.invalidate();
 		await expect
-			.poll(async () => (await s.geometry.lineBoxes(WAVE3_ATOMS_BLOCK)).length)
+			.poll(
+				async () =>
+					(await s.geometry.lineBoxes(WAVE3_ATOMS_BLOCK)).length,
+			)
 			.toBeGreaterThanOrEqual(2);
 
 		const wrapLines = await s.geometry.lineBoxes(WAVE3_WRAP_BLOCK);
 		const firstWrap = wrapLines[0];
-		expect(firstWrap, "G5 wrapped lines: expected at least one line box").toBeTruthy();
+		expect(
+			firstWrap,
+			"G5 wrapped lines: expected at least one line box",
+		).toBeTruthy();
 		const wrapFrom: GeometryPoint = {
 			blockId: WAVE3_WRAP_BLOCK,
 			offset: midpoint(firstWrap!),
@@ -112,7 +126,10 @@ scenario(
 			direction: "down",
 		});
 		assertDeterministic(wrapped);
-		const wrappedLanding = lineContaining(wrapLines, wrapped.first!.point.offset);
+		const wrappedLanding = lineContaining(
+			wrapLines,
+			wrapped.first!.point.offset,
+		);
 		expect.soft(wrapped.first!.point.blockId).toBe(WAVE3_WRAP_BLOCK);
 		expect
 			.soft(
@@ -155,7 +172,10 @@ scenario(
 		});
 		assertDeterministic(atoms);
 		expect.soft(atoms.first!.point.blockId).toBe(WAVE3_ATOMS_BLOCK);
-		const atomLanding = lineContaining(atomLines, atoms.first!.point.offset);
+		const atomLanding = lineContaining(
+			atomLines,
+			atoms.first!.point.offset,
+		);
 		expect
 			.soft(atomLanding?.startOffset)
 			.toBeGreaterThan(firstAtomLine!.startOffset);

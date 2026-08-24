@@ -1,4 +1,4 @@
-import { createEditor } from "@input/pen-core";
+import { applyMergeBlocks, applySplitBlock, createEditor } from "@input/pen-core";
 import { defaultSchema } from "@input/pen-schema-default";
 import type { SelectionState } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
@@ -29,7 +29,9 @@ function textSelection(blockId: string, offset: number): SelectionState {
 function createDocumentEditor(text = "Hello world") {
 	const editor = createEditor({ schema: defaultSchema });
 	const blockId = editor.firstBlock()!.id;
-	editor.apply([{ type: "insert-text", blockId, offset: 0, text }]);
+	editor.apply([
+		{ type: "splice-text", blockId, from: 0, to: 0, insert: text },
+	]);
 	return { editor, blockId };
 }
 
@@ -97,7 +99,9 @@ describe("AutocompleteContinuationState", () => {
 		);
 
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "xx" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "xx" }],
 			{ origin: { type: "collaborator" } },
 		);
 		expect(
@@ -159,17 +163,12 @@ describe("AutocompleteContinuationState", () => {
 			editor,
 		);
 
-		editor.apply(
-			[
-				{
-					type: "split-block",
-					blockId,
-					offset: 6,
-					newBlockId: "tail",
-				},
-			],
-			{ origin: { type: "collaborator" } },
-		);
+		applySplitBlock(editor, {
+			blockId,
+			offset: 6,
+			newBlockId: "tail",
+			applyOptions: { origin: { type: "collaborator" } },
+		});
 		expect(
 			state.syncThroughCommit(editor, editor.lastChangeSummary!),
 		).toBe(true);
@@ -191,7 +190,9 @@ describe("AutocompleteContinuationState", () => {
 				props: {},
 				position: "last",
 			},
-			{ type: "insert-text", blockId: "source", offset: 0, text: " sage" },
+			{ type: "splice-text", blockId: "source", from: 0,
+				to: 0,
+				insert: " sage" },
 		]);
 		const state = new AutocompleteContinuationState();
 		state.setSequence(
@@ -205,16 +206,11 @@ describe("AutocompleteContinuationState", () => {
 			editor,
 		);
 
-		editor.apply(
-			[
-				{
-					type: "merge-blocks",
-					targetBlockId: blockId,
-					sourceBlockId: "source",
-				},
-			],
-			{ origin: { type: "collaborator" } },
-		);
+		applyMergeBlocks(editor, {
+			targetBlockId: blockId,
+			sourceBlockId: "source",
+			applyOptions: { origin: { type: "collaborator" } },
+		});
 		expect(
 			state.syncThroughCommit(editor, editor.lastChangeSummary!),
 		).toBe(true);

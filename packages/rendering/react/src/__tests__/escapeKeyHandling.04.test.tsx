@@ -101,10 +101,11 @@ describe("@input/pen-react escape key handling", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: firstBlockId,
-				offset: 0,
-				text: "Hello",
+				from: 0,
+				to: 0,
+				insert: "Hello",
 			},
 			{
 				type: "insert-block",
@@ -114,10 +115,11 @@ describe("@input/pen-react escape key handling", () => {
 				position: { after: firstBlockId },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: secondBlockId,
-				offset: 0,
-				text: "World",
+				from: 0,
+				to: 0,
+				insert: "World",
 			},
 		]);
 
@@ -197,10 +199,11 @@ describe("@input/pen-react escape key handling", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: firstBlockId,
-				offset: 0,
-				text: "First",
+				from: 0,
+				to: 0,
+				insert: "First",
 			},
 			{
 				type: "insert-block",
@@ -210,10 +213,11 @@ describe("@input/pen-react escape key handling", () => {
 				position: { after: firstBlockId },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: secondBlockId,
-				offset: 0,
-				text: "Second",
+				from: 0,
+				to: 0,
+				insert: "Second",
 			},
 			{
 				type: "insert-block",
@@ -223,10 +227,11 @@ describe("@input/pen-react escape key handling", () => {
 				position: { after: secondBlockId },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: thirdBlockId,
-				offset: 0,
-				text: "Third",
+				from: 0,
+				to: 0,
+				insert: "Third",
 			},
 		]);
 
@@ -286,10 +291,11 @@ describe("@input/pen-react escape key handling", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: firstBlockId,
-				offset: 0,
-				text: "Hello",
+				from: 0,
+				to: 0,
+				insert: "Hello",
 			},
 			{
 				type: "insert-block",
@@ -299,10 +305,11 @@ describe("@input/pen-react escape key handling", () => {
 				position: { after: firstBlockId },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: secondBlockId,
-				offset: 0,
-				text: "World",
+				from: 0,
+				to: 0,
+				insert: "World",
 			},
 		]);
 

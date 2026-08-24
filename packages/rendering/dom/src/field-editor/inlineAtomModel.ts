@@ -1,20 +1,12 @@
-import {
-	EMPTY_BLOCK_SENTINEL,
-	logicalTextFromStored,
-	type Editor,
-	type InlineDelta,
-	type InlineNodeDeltaInsert,
-	type SchemaRegistry,
+import type {
+	Editor,
+	InlineDelta,
+	InlineNodeDeltaInsert,
+	SchemaRegistry,
 } from "@input/pen-types";
 
 export const INLINE_ATOM_LOGICAL_LENGTH = 1;
 export const INLINE_ATOM_REPLACEMENT_TEXT = "\uFFFC";
-/**
- * DOM caret-boundary marker around an inline atom. Same character as
- * `EMPTY_BLOCK_SENTINEL`, different meaning — this is not empty-block
- * storage. Alias, not a second definition of the character.
- */
-export const INLINE_ATOM_CARET_BOUNDARY_TEXT = EMPTY_BLOCK_SENTINEL;
 
 export interface InlineAtomInsert {
 	type: string;
@@ -93,10 +85,7 @@ export function resolveInlineAtomDisplayText(
 
 export function getInlineDeltaLength(delta: InlineDelta): number {
 	return typeof delta.insert === "string"
-		? logicalTextFromStored(delta.insert).replaceAll(
-				INLINE_ATOM_REPLACEMENT_TEXT,
-				"",
-			).length
+		? delta.insert.replaceAll(INLINE_ATOM_REPLACEMENT_TEXT, "").length
 		: INLINE_ATOM_LOGICAL_LENGTH;
 }
 

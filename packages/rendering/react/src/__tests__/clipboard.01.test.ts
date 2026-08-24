@@ -83,20 +83,20 @@ function seedTable(
 			position: "last",
 		},
 		{
-			type: "insert-table-cell-text",
+			type: "splice-text",
 			blockId: tableId,
-			row: 0,
-			col: 0,
-			offset: 0,
-			text: "Alpha",
+			cell: { row: 0, col: 0 },
+			from: 0,
+			to: 0,
+			insert: "Alpha",
 		},
 		{
-			type: "insert-table-cell-text",
+			type: "splice-text",
 			blockId: tableId,
-			row: 0,
-			col: 1,
-			offset: 0,
-			text: "Bravo",
+			cell: { row: 0, col: 1 },
+			from: 0,
+			to: 0,
+			insert: "Bravo",
 		},
 	]);
 }
@@ -109,12 +109,14 @@ describe("@input/pen-react clipboard", () => {
 		const fieldEditor = createFieldEditorStub();
 
 		editor.apply([
-			{ type: "insert-text", blockId, offset: 0, text: "Hi there" },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hi there" },
 			{
 				type: "format-text",
 				blockId,
-				offset: 0,
-				length: 2,
+				from: 0,
+				to: 0 + 2,
 				marks: { bold: true },
 			},
 		]);
@@ -144,7 +146,9 @@ describe("@input/pen-react clipboard", () => {
 		const clipboardData = createClipboardData();
 		const fieldEditor = createFieldEditorStub();
 
-		editor.apply([{ type: "insert-text", blockId, offset: 0, text: "a 文🦄 z" }]);
+		editor.apply([{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "a 文🦄 z" }]);
 
 		editor.selectText(blockId, 2, 5);
 		handleCopy(editor, { clipboardData } as ClipboardEvent);
@@ -169,7 +173,9 @@ describe("@input/pen-react clipboard", () => {
 		const clipboardData = createClipboardData();
 		const fieldEditor = createFieldEditorStub();
 
-		editor.apply([{ type: "insert-text", blockId, offset: 0, text: "Hello" }]);
+		editor.apply([{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello" }]);
 		clipboardData.setData("text/plain", "X");
 
 		editor.selectText(blockId, 1, 4);
@@ -203,7 +209,9 @@ describe("@input/pen-react clipboard", () => {
 		};
 
 		editor.apply([
-			{ type: "insert-text", blockId, offset: 0, text: "Hello" },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello" },
 		]);
 		editor.selectText(blockId, 0, 5);
 		editor.internals.setSlot("paste:assetProvider", assetProvider);
@@ -240,7 +248,9 @@ describe("@input/pen-react clipboard", () => {
 		};
 
 		editor.apply([
-			{ type: "insert-text", blockId, offset: 0, text: "Hello" },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello" },
 		]);
 		editor.selectText(blockId, 5, 5);
 		editor.internals.setSlot("paste:assetProvider", assetProvider);
@@ -303,7 +313,9 @@ describe("@input/pen-react clipboard", () => {
 		const fieldEditor = createFieldEditorStub();
 
 		editor.apply([
-			{ type: "insert-text", blockId, offset: 0, text: "existing" },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "existing" },
 		]);
 
 		const penBlocks = JSON.stringify([

@@ -39,7 +39,7 @@ function CheckboxToggle({
     editor.apply(
       [
         {
-          type: "update-block",
+          type: "set-props",
           blockId,
           props: { checked: !checked },
         },

@@ -127,7 +127,9 @@ describe("@input/pen-react block type rendering", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "insert-text", blockId, offset: 0, text: "Hello world" },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello world" },
 		]);
 		editor.selectText(blockId, 0, 0);
 
@@ -205,10 +207,11 @@ describe("@input/pen-react block type rendering", () => {
 		await act(async () => {
 			editor.apply([
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "Hello streamed world",
+					from: 0,
+				to: 0,
+				insert: "Hello streamed world",
 				},
 			]);
 		});
@@ -229,7 +232,9 @@ describe("@input/pen-react block type rendering", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "insert-text", blockId, offset: 0, text: "Toggle me" },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Toggle me" },
 		]);
 
 		const container = document.createElement("div");
@@ -250,7 +255,7 @@ describe("@input/pen-react block type rendering", () => {
 
 		await act(async () => {
 			editor.apply([
-				{ type: "convert-block", blockId, newType: "toggle" },
+				{ type: "set-props", blockId, props: { type: "toggle" } },
 			]);
 		});
 
@@ -274,7 +279,9 @@ describe("@input/pen-react block type rendering", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "insert-text", blockId, offset: 0, text: "Name" },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Name" },
 		]);
 		editor.selectText(blockId, 0, 0);
 
@@ -338,8 +345,10 @@ describe("@input/pen-react block type rendering", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "convert-block", blockId, newType: "toggle" },
-			{ type: "insert-text", blockId, offset: 0, text: "Toggle title" },
+			{ type: "set-props", blockId, props: { type: "toggle" } },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Toggle title" },
 		]);
 
 		const container = document.createElement("div");

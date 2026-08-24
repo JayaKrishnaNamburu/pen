@@ -68,7 +68,9 @@ describe("@input/pen-ai-autocomplete", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		fieldEditor.focusBlockId = blockId;
-		editor.apply([{ type: "insert-text", blockId, offset: 0, text: "Trip plan" }]);
+		editor.apply([{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Trip plan" }]);
 		editor.selectText(blockId, 9, 9);
 
 		const controller = getAutocompleteController(editor);
@@ -157,7 +159,9 @@ describe("@input/pen-ai-autocomplete", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		fieldEditor.focusBlockId = blockId;
-		editor.apply([{ type: "insert-text", blockId, offset: 0, text: "Trip plan" }]);
+		editor.apply([{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Trip plan" }]);
 		editor.selectText(blockId, 9, 9);
 
 		const controller = getAutocompleteController(editor);
@@ -218,7 +222,9 @@ describe("@input/pen-ai-autocomplete", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		fieldEditor.focusBlockId = blockId;
-		editor.apply([{ type: "insert-text", blockId, offset: 0, text: "Trip plan" }]);
+		editor.apply([{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Trip plan" }]);
 		editor.selectText(blockId, 9, 9);
 
 		const controller = getAutocompleteController(editor);
@@ -311,10 +317,11 @@ describe("@input/pen-ai-autocomplete", () => {
 		const blockId = editor.firstBlock()!.id;
 		fieldEditor.focusBlockId = blockId;
 		editor.apply([{
-			type: "insert-text",
+			type: "splice-text",
 			blockId,
-			offset: 0,
-			text: "He came home to",
+			from: 0,
+				to: 0,
+				insert: "He came home to",
 		}]);
 		editor.selectText(blockId, 16, 16);
 

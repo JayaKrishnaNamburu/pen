@@ -273,7 +273,9 @@ describe("@input/pen-react AI primitives", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello world" }],
 			{ origin: "system" },
 		);
 		editor.selectTextRange({ blockId, offset: 0 }, { blockId, offset: 5 });
@@ -358,7 +360,9 @@ describe("@input/pen-react AI primitives", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello world" }],
 			{ origin: "system" },
 		);
 		editor.selectTextRange({ blockId, offset: 6 }, { blockId, offset: 11 });

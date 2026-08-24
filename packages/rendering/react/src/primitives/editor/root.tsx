@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from "react";
 import { htmlImporter } from "@input/pen-import-html";
-import { readOnlyFacet, resolveEditorA11yLabel } from "@input/pen-core";
+import { ariaReadOnlyFacet, resolveEditorA11yLabel } from "@input/pen-core";
 import { FIELD_EDITOR_SLOT_KEY as CORE_FIELD_EDITOR_SLOT_KEY } from "@input/pen-types";
 import type {
 	AssetProvider,
@@ -27,6 +27,7 @@ import { FIELD_EDITOR_SLOT_KEY } from "../../constants/fieldEditor";
 import {
 	FieldEditorImpl,
 	handleEditorDocumentKeyDown,
+	registerVerticalCaretMeasure,
 	shouldHandleEditorKeyboardEvent as shouldHandlePenEditorKeyboardEvent,
 	type FieldEditorSession,
 	type PenFocusLifecycleListener,
@@ -216,6 +217,15 @@ export function EditorRoot(props: EditorRootProps) {
 
 	useEffect(() => {
 		const root = rootElement;
+		if (!root) {
+			return;
+		}
+
+		return registerVerticalCaretMeasure(editor, root);
+	}, [editor, rootElement]);
+
+	useEffect(() => {
+		const root = rootElement;
 		const fieldEditor = fieldEditorRef.current;
 		if (!root || !fieldEditor) {
 			return;
@@ -275,7 +285,7 @@ export function EditorRoot(props: EditorRootProps) {
 		role: "textbox",
 		"aria-multiline": true,
 		...resolveEditorA11yLabel(editor),
-		"aria-readonly": readonly || editor.facet(readOnlyFacet) || undefined,
+		"aria-readonly": readonly || editor.facet(ariaReadOnlyFacet) || undefined,
 	};
 
 	return (

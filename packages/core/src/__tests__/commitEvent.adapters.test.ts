@@ -42,10 +42,11 @@ describe("commit event adapters (Wave 2.2)", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "hello",
+				from: 0,
+				to: 0,
+				insert: "hello",
 			},
 		]);
 
@@ -56,25 +57,27 @@ describe("commit event adapters (Wave 2.2)", () => {
 			affectedBlocks: [blockId],
 			ops: [
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "hello",
+					from: 0,
+				to: 0,
+				insert: "hello",
 				},
 			],
 		});
 
 		expect(documentCommits).toHaveLength(1);
 		expect(documentCommits[0]).toMatchObject({
-			commitId: 2,
+			commitId: 1,
 			origin: "user",
 			affectedBlocks: [blockId],
 			ops: [
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "hello",
+					from: 0,
+				to: 0,
+				insert: "hello",
 				},
 			],
 		});
@@ -83,11 +86,11 @@ describe("commit event adapters (Wave 2.2)", () => {
 		);
 
 		expect(commits).toHaveLength(1);
-		expect(commits[0].commitId).toBe(2);
+		expect(commits[0].commitId).toBe(1);
 		expect(commits[0].origin).toEqual({ type: "user" });
 		expect(commits[0].source).toBe("apply");
 		expect(commits[0].diagnostics).toEqual([]);
-		expect(commits[0].summary.text.map((text) => text.blockId)).toContain(
+		expect(commits[0].summary.blockText.map((text) => text.blockId)).toContain(
 			blockId,
 		);
 
@@ -104,22 +107,24 @@ describe("commit event adapters (Wave 2.2)", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "a",
+				from: 0,
+				to: 0,
+				insert: "a",
 			},
 		]);
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 1,
-				text: "b",
+				from: 1,
+				to: 1,
+				insert: "b",
 			},
 		]);
 
-		expect(commits).toEqual([2, 3]);
+		expect(commits).toEqual([1, 2]);
 
 		editor.destroy();
 	});
@@ -138,10 +143,11 @@ describe("commit event adapters (Wave 2.2)", () => {
 		const applyOnce = () =>
 			editor.apply([
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "x",
+					from: 0,
+				to: 0,
+				insert: "x",
 				},
 			]);
 
@@ -170,10 +176,11 @@ describe("commit event adapters (Wave 2.2)", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "x",
+				from: 0,
+				to: 0,
+				insert: "x",
 			},
 		]);
 

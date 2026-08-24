@@ -46,10 +46,11 @@ describe("@input/pen-react search primitives", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "alpha beta alpha",
+					from: 0,
+				to: 0,
+				insert: "alpha beta alpha",
 				},
 			],
 			{ origin: "user" },
@@ -124,10 +125,11 @@ describe("@input/pen-react search primitives", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "alpha beta alpha",
+					from: 0,
+				to: 0,
+				insert: "alpha beta alpha",
 				},
 			],
 			{ origin: "user" },

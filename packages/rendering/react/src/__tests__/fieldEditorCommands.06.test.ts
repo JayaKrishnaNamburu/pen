@@ -68,7 +68,7 @@ describe("applyBackspaceBehavior – integration", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "convert-block", blockId, newType: "bulletListItem" },
+			{ type: "set-props", blockId, props: { type: "bulletListItem" } },
 		]);
 
 		const target = applyBackspaceBehavior(editor, {
@@ -89,7 +89,7 @@ describe("applyBackspaceBehavior – integration", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "convert-block", blockId, newType: "blockquote" },
+			{ type: "set-props", blockId, props: { type: "blockquote" } },
 		]);
 
 		const target = applyBackspaceBehavior(editor, {
@@ -112,10 +112,11 @@ describe("applyBackspaceBehavior – integration", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: firstBlockId,
-				offset: 0,
-				text: "Hello",
+				from: 0,
+				to: 0,
+				insert: "Hello",
 			},
 			{
 				type: "insert-block",

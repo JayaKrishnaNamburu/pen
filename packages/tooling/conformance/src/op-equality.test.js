@@ -21,15 +21,24 @@ import {
 	applySetup,
 	captureApply,
 	createCorpusSession,
+	createReplayContext,
 	destroyCorpusSession,
+	readLiveOpTypeSet,
 	snapshotSession,
 } from "./opCorpus/session.js";
 import { encodeUpdateBytes } from "./opCorpus/snapshot.js";
-import { opsForReplay, translateRecordedOp } from "./opCorpus/translate.js";
+import {
+	isSetSelectionReplay,
+	opsForReplay,
+	translateRecordedOp,
+} from "./opCorpus/translate.js";
 
 const corpusDir = fileURLToPath(
 	new URL("../corpus/op-equality/", import.meta.url),
 );
+
+/** Split/merge recipes insert before they delete; v2 compound executors deleted first. Same document, different Yjs item order. */
+const SNAPSHOT_ONLY_OP_TYPES = new Set(["split-block", "merge-blocks"]);
 
 function listFixtureFiles() {
 	const names = readdirSync(corpusDir)
@@ -57,6 +66,14 @@ function replayFixtureFile(path) {
 			applyReplayOps(session, fixture.ops);
 		});
 		const actualBytes = encodeUpdateBytes(captured.update);
+		if (SNAPSHOT_ONLY_OP_TYPES.has(fixture.opType)) {
+			assert.deepEqual(
+				snapshotSession(session),
+				fixture.snapshot,
+				`op-equality snapshot mismatch: ${fixture.id}`,
+			);
+			return fixture;
+		}
 		assert.equal(
 			actualBytes,
 			fixture.updateBytes,
@@ -149,9 +166,19 @@ test("each committed fixture replays to the bytes and snapshot on disk", () => {
 	const files = listFixtureFiles();
 	console.log(`op-equality replay glob: ${files.length} files`);
 	assert.equal(files.length, 30);
+	const replayed = [];
 	for (const file of files) {
-		replayFixtureFile(file);
+		const fixture = replayFixtureFile(file);
+		replayed.push(fixture.id);
 	}
+	console.log(
+		`op-equality replayed: ${replayed.length} [${replayed.join(", ")}]`,
+	);
+	assert.equal(
+		replayed.length,
+		30,
+		`op-equality replayed ${replayed.length} fixtures, not 30`,
+	);
 });
 
 test("table / layout / app fixtures nest; split / merge cross blocks", () => {
@@ -344,4 +371,138 @@ test("replay translates a shape-changed op and still compares the document snaps
 	} finally {
 		destroyCorpusSession(session);
 	}
+});
+
+test("translation is on, fail-closed, and every folded fixture is exercised", () => {
+	const liveTypes = readLiveOpTypeSet();
+	assert.equal(
+		liveTypes.has("splice-text"),
+		true,
+		"op-equality translation gate is off — opsForReplay would pass v2 shapes through",
+	);
+	assert.equal(
+		liveTypes.has("insert-text"),
+		false,
+		"op-equality live union still names insert-text; replay would not translate",
+	);
+
+	assert.throws(
+		() =>
+			translateRecordedOp({
+				type: "split-block",
+				blockId: "p1",
+				offset: 5,
+				newBlockId: "n",
+			}),
+		/split-block needs readBlock\("p1"\)/,
+	);
+	assert.throws(
+		() =>
+			translateRecordedOp({
+				type: "merge-blocks",
+				targetBlockId: "p1",
+				sourceBlockId: "p2",
+			}),
+		/merge-blocks needs readBlock\("p1"\) and readBlock\("p2"\)/,
+	);
+	assert.throws(
+		() => translateRecordedOp({ type: "not-a-recorded-op" }),
+		/unknown recorded type not-a-recorded-op/,
+	);
+
+	const files = listFixtureFiles();
+	const replayed = [];
+	const foldedExercised = [];
+	for (const file of files) {
+		const fixture = readFixtureFile(file);
+		const session = createCorpusSession();
+		try {
+			applySetup(session, fixture.setup);
+			const context = createReplayContext(session);
+			assert.ok(
+				context.readBlock,
+				`op-equality ${fixture.id}: replay context missing readBlock`,
+			);
+			if (fixture.opType === "split-block") {
+				assert.ok(
+					context.readBlock(fixture.ops[0].blockId),
+					`op-equality split-block replay has no block ${fixture.ops[0].blockId}`,
+				);
+			}
+			if (fixture.opType === "merge-blocks") {
+				assert.ok(
+					context.readBlock(fixture.ops[0].targetBlockId) &&
+						context.readBlock(fixture.ops[0].sourceBlockId),
+					"op-equality merge-blocks replay is missing target or source",
+				);
+			}
+			const translated = opsForReplay(fixture.ops, {
+				liveTypes,
+				context,
+			});
+			for (const op of translated) {
+				if (isSetSelectionReplay(op)) {
+					continue;
+				}
+				assert.equal(
+					liveTypes.has(op.type),
+					true,
+					`op-equality ${fixture.id}: translated type ${op.type} is not in the live union`,
+				);
+			}
+			for (const recorded of fixture.ops) {
+				if (recorded.type === "set-selection") {
+					assert.equal(isSetSelectionReplay(translated[0]), true);
+					continue;
+				}
+				if (
+					recorded.type === "split-block" ||
+					recorded.type === "merge-blocks"
+				) {
+					assert.ok(
+						translated.some((op) => op.type === "splice-text"),
+						`op-equality ${fixture.id}: ${recorded.type} produced no splice-text`,
+					);
+					foldedExercised.push(recorded.type);
+					continue;
+				}
+				if (!liveTypes.has(recorded.type)) {
+					assert.equal(
+						translated.some((op) => op.type === recorded.type),
+						false,
+						`op-equality ${fixture.id}: ${recorded.type} passed through after rewrite`,
+					);
+					foldedExercised.push(recorded.type);
+				} else if (
+					recorded.type === "format-text" &&
+					typeof recorded.offset === "number"
+				) {
+					const format = translated.find(
+						(op) => op.type === "format-text",
+					);
+					assert.equal(typeof format?.from, "number");
+					assert.equal(typeof format?.offset, "undefined");
+					foldedExercised.push(recorded.type);
+				}
+			}
+			replayed.push(fixture.id);
+		} finally {
+			destroyCorpusSession(session);
+		}
+	}
+	const uniqueFolded = [...new Set(foldedExercised)].sort();
+	console.log(
+		`op-equality translated fixtures: ${replayed.length} folded-types: ${uniqueFolded.length} [${uniqueFolded.join(", ")}]`,
+	);
+	assert.equal(replayed.length, 30);
+	assert.equal(
+		uniqueFolded.length,
+		24,
+		`op-equality folded types exercised: ${uniqueFolded.length}, not 24 (30 v2 minus 5 unchanged primitives minus set-selection)`,
+	);
+	assert.ok(
+		uniqueFolded.includes("split-block") &&
+			uniqueFolded.includes("merge-blocks"),
+		"op-equality folded split/merge were not exercised with readBlock",
+	);
 });

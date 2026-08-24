@@ -124,49 +124,56 @@ export function transformOpsForSuggestModeWithMetadata(
 		});
 	};
 
-	for (const op of ops) {
-		switch (op.type) {
-			case "insert-text": {
-				const suggestionOptions = nextSuggestionOptions();
-				pushTextSuggestion(
-					"insert",
-					op.blockId,
-					op.offset,
-					op.text.length,
-					suggestionOptions,
-				);
-				intercepted.push({
-					...op,
-					marks: {
-						...(op.marks ?? {}),
-						...createSuggestionMark(
-							"insert",
-							author,
-							authorType,
-							model,
-							sessionId,
-							suggestionOptions,
-						),
-					},
-				});
-				break;
-			}
+	const intent =
+		options.origin && typeof options.origin === "object"
+			? options.origin.intent
+			: undefined;
 
-			case "replace-text": {
-				if (op.length > 0) {
+	for (const op of ops) {
+		if (intent === "pen.splitBlock" && op.type === "insert-block") {
+			const suggestionOptions = nextSuggestionOptions();
+			pushBlockSuggestion(
+				"split-block",
+				op.blockId,
+				undefined,
+				suggestionOptions,
+			);
+			intercepted.push(op);
+			intercepted.push({
+				type: "set-meta",
+				blockId: op.blockId,
+				namespace: "suggestion",
+				data: createBlockSuggestionMeta(
+					"split-block",
+					author,
+					authorType,
+					model,
+					undefined,
+					sessionId,
+					suggestionOptions,
+				),
+			});
+			continue;
+		}
+
+		switch (op.type) {
+			case "splice-text": {
+				const deleteLen = op.to - op.from;
+				const insertLen = spliceInsertLength(op.insert);
+				if (deleteLen > 0) {
 					const suggestionOptions = nextSuggestionOptions();
 					pushTextSuggestion(
 						"delete",
 						op.blockId,
-						op.offset,
-						op.length,
+						op.from,
+						deleteLen,
 						suggestionOptions,
 					);
 					intercepted.push({
 						type: "format-text",
 						blockId: op.blockId,
-						offset: op.offset,
-						length: op.length,
+						from: op.from,
+						to: op.to,
 						marks: createSuggestionMark(
 							"delete",
 							author,
@@ -177,20 +184,19 @@ export function transformOpsForSuggestModeWithMetadata(
 						),
 					});
 				}
-				if (op.text.length > 0) {
+				if (insertLen > 0) {
 					const suggestionOptions = nextSuggestionOptions();
 					pushTextSuggestion(
 						"insert",
 						op.blockId,
-						op.offset + op.length,
-						op.text.length,
+						op.from + deleteLen,
+						insertLen,
 						suggestionOptions,
 					);
 					intercepted.push({
-						type: "insert-text",
-						blockId: op.blockId,
-						offset: op.offset + op.length,
-						text: op.text,
+						...op,
+						from: op.from + deleteLen,
+						to: op.from + deleteLen,
 						marks: {
 							...(op.marks ?? {}),
 							...createSuggestionMark(
@@ -204,32 +210,9 @@ export function transformOpsForSuggestModeWithMetadata(
 						},
 					});
 				}
-				break;
-			}
-
-			case "delete-text": {
-				const suggestionOptions = nextSuggestionOptions();
-				pushTextSuggestion(
-					"delete",
-					op.blockId,
-					op.offset,
-					op.length,
-					suggestionOptions,
-				);
-				intercepted.push({
-					type: "format-text",
-					blockId: op.blockId,
-					offset: op.offset,
-					length: op.length,
-					marks: createSuggestionMark(
-						"delete",
-						author,
-						authorType,
-						model,
-						sessionId,
-						suggestionOptions,
-					),
-				});
+				if (deleteLen === 0 && insertLen === 0) {
+					intercepted.push(op);
+				}
 				break;
 			}
 
@@ -322,59 +305,45 @@ export function transformOpsForSuggestModeWithMetadata(
 				break;
 			}
 
-			case "convert-block": {
-				const block = editor.getBlock(op.blockId);
-				const previousState: BlockSuggestionMeta["previousState"] = {
-					type: block?.type,
-					props: block ? { ...block.props } : undefined,
-				};
-				const suggestionOptions = nextSuggestionOptions();
-				pushBlockSuggestion(
-					"convert-block",
-					op.blockId,
-					previousState,
-					suggestionOptions,
-				);
-				intercepted.push(op);
-				intercepted.push({
-					type: "set-meta",
-					blockId: op.blockId,
-					namespace: "suggestion",
-					data: createBlockSuggestionMeta(
+			case "set-props": {
+				if (typeof op.props.type === "string") {
+					const block = editor.getBlock(op.blockId);
+					const previousState: BlockSuggestionMeta["previousState"] = {
+						type: block?.type,
+						props: block ? { ...block.props } : undefined,
+					};
+					const suggestionOptions = nextSuggestionOptions();
+					pushBlockSuggestion(
 						"convert-block",
-						author,
-						authorType,
-						model,
+						op.blockId,
 						previousState,
-						sessionId,
 						suggestionOptions,
-					),
-				});
+					);
+					intercepted.push(op);
+					intercepted.push({
+						type: "set-meta",
+						blockId: op.blockId,
+						namespace: "suggestion",
+						data: createBlockSuggestionMeta(
+							"convert-block",
+							author,
+							authorType,
+							model,
+							previousState,
+							sessionId,
+							suggestionOptions,
+						),
+					});
+					break;
+				}
+				intercepted.push(op);
 				break;
 			}
 
-			case "update-block":
-			case "split-block":
-			case "merge-blocks":
 			case "format-text":
-			case "insert-inline-node":
-			case "remove-inline-node":
-			case "update-layout":
-			case "insert-table-row":
-			case "delete-table-row":
-			case "insert-table-column":
-			case "delete-table-column":
-			case "merge-table-cells":
-			case "split-table-cell":
-			case "insert-table-cell-text":
-			case "delete-table-cell-text":
-			case "format-table-cell-text":
-			case "update-table-columns":
 			case "set-meta":
-			case "create-app":
-			case "update-app":
-			case "delete-app":
-			case "set-selection":
+			case "grid":
+			case "app":
 			case "stream-open":
 				intercepted.push(op);
 				break;
@@ -399,7 +368,17 @@ export type SuggestModeSuggestionOptions = {
 	generationId?: string;
 	createdAt?: number;
 	suggestionIds?: readonly string[];
+	origin?: OpOrigin;
 };
+
+function spliceInsertLength(insert: unknown): number {
+	const items = Array.isArray(insert) ? insert : [insert];
+	let length = 0;
+	for (const item of items) {
+		length += typeof item === "string" ? item.length : 1;
+	}
+	return length;
+}
 
 type RequiredSuggestionCreationOptions = SuggestionCreationOptions & {
 	suggestionId: string;

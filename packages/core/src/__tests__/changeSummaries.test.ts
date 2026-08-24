@@ -13,10 +13,8 @@ import {
 	createBlockIndexSnapshot,
 	emptyBlockIndexSnapshot,
 } from "../changes/blockIndex";
-import {
-	buildChangeSummary,
-	logicalLengthFromStored,
-} from "../changes/summaryBuilder";
+import { buildChangeSummary } from "../changes/summaryBuilder";
+import type { StructuralChange } from "../changes/types";
 
 const MEADOW = "meadow sage";
 
@@ -48,7 +46,7 @@ function emptyDelta(overrides: Partial<RawCommitDelta> = {}): RawCommitDelta {
 }
 
 describe("change summaries — structural variants", () => {
-	it("emits all ten StructuralChange variants from the builder", () => {
+	it("OB1: emits all nine StructuralChange variants from the builder", () => {
 		const index = createBlockIndexSnapshot({
 			roots: ["b1", "b2", "table"],
 			lengthById: { b1: 6, b2: 5, table: 0 },
@@ -111,10 +109,9 @@ describe("change summaries — structural variants", () => {
 			4,
 		);
 		expect(converted.structural).toContainEqual({
-			type: "block-converted",
+			type: "block-props-changed",
 			blockId: "b1",
-			fromType: "paragraph",
-			toType: "paragraph",
+			keys: ["type"],
 		});
 
 		const props = buildChangeSummary(
@@ -215,22 +212,54 @@ describe("change summaries — structural variants", () => {
 			type: "metadata-changed",
 			namespaces: ["title"],
 		});
+
+		const nine: StructuralChange["type"][] = [
+			"block-inserted",
+			"block-removed",
+			"block-moved",
+			"block-props-changed",
+			"block-split",
+			"blocks-merged",
+			"table-changed",
+			"apps-changed",
+			"metadata-changed",
+		];
+		expect(nine).toHaveLength(9);
+		for (const type of nine) {
+			assertNineStructuralVariants(type);
+		}
 	});
 });
 
-describe("change summaries — sentinel cancellation (I11)", () => {
-	it("I11: emptying a block then inserting the sentinel leaves no insertLength artifact", () => {
+function assertNineStructuralVariants(type: StructuralChange["type"]): void {
+	switch (type) {
+		case "block-inserted":
+		case "block-removed":
+		case "block-moved":
+		case "block-props-changed":
+		case "block-split":
+		case "blocks-merged":
+		case "table-changed":
+		case "apps-changed":
+		case "metadata-changed":
+			return;
+		default: {
+			const _exhaustive: never = type;
+			return _exhaustive;
+		}
+	}
+}
+
+describe("change summaries — empty-block inserts (EM5)", () => {
+	it("EM5 I11: emptying a block leaves no insertLength artifact", () => {
 		const summary = buildChangeSummary(
 			emptyDelta({
-				textDeltas: textDeltaMap([
-					"b1",
-					[{ delete: MEADOW.length }, { insert: "\u200B" }],
-				]),
+				textDeltas: textDeltaMap(["b1", [{ delete: MEADOW.length }]]),
 			}),
 			meadowIndex(),
 			1,
 		);
-		expect(summary.text).toEqual([
+		expect(summary.blockText).toEqual([
 			{
 				blockId: "b1",
 				splices: [{ from: 0, to: MEADOW.length, insertLength: 0 }],
@@ -239,20 +268,20 @@ describe("change summaries — sentinel cancellation (I11)", () => {
 		]);
 	});
 
-	it("I11: typing into an empty sentinel block is a logical insert at 0", () => {
+	it("EM5 I11: typing into an empty block is a logical insert at 0", () => {
 		const index = createBlockIndexSnapshot({
 			roots: ["b1"],
-			lengthById: { b1: logicalLengthFromStored("\u200B") },
+			lengthById: { b1: 0 },
 			typeById: { b1: "paragraph" },
 		});
 		const summary = buildChangeSummary(
 			emptyDelta({
-				textDeltas: textDeltaMap(["b1", [{ delete: 1 }, { insert: "a" }]]),
+				textDeltas: textDeltaMap(["b1", [{ insert: "a" }]]),
 			}),
 			index,
 			1,
 		);
-		expect(summary.text).toEqual([
+		expect(summary.blockText).toEqual([
 			{
 				blockId: "b1",
 				splices: [{ from: 0, to: 0, insertLength: 1 }],
@@ -269,22 +298,21 @@ describe("change summaries — sentinel cancellation (I11)", () => {
 		});
 		const summary = buildChangeSummary(
 			emptyDelta({
-				textDeltas: textDeltaMap([
-					"host4-table",
-					[{ delete: 11 }, { insert: "\u200B" }],
-				]),
+				textDeltas: textDeltaMap(["host4-table", [{ delete: 11 }]]),
 			}),
 			index,
 			1,
 		);
-		expect(summary.text).toEqual([
+		expect(summary.blockText).toEqual([
 			{
 				blockId: "host4-table",
 				splices: [{ from: 0, to: 11, insertLength: 0 }],
 				formatRanges: [],
 			},
 		]);
-		expect(summary.isEmpty).toBe(false);
+		expect(
+			summary.blockText.length === 0 && summary.structural.length === 0,
+		).toBe(false);
 	});
 
 	it("does not drop a one-character nested table-cell delete", () => {
@@ -300,7 +328,7 @@ describe("change summaries — sentinel cancellation (I11)", () => {
 			index,
 			1,
 		);
-		expect(summary.text).toEqual([
+		expect(summary.blockText).toEqual([
 			{
 				blockId: "host4-table",
 				splices: [{ from: 0, to: 1, insertLength: 0 }],
@@ -325,7 +353,7 @@ describe("change summaries — sentinel cancellation (I11)", () => {
 			index,
 			1,
 		);
-		expect(summary.text).toEqual([
+		expect(summary.blockText).toEqual([
 			{
 				blockId: "host4-table",
 				splices: [{ from: 0, to: 0, insertLength: 11 }],
@@ -376,18 +404,20 @@ describe("change summaries — single-code-path", () => {
 		const index = meadowIndex();
 		const localSummary = buildChangeSummary(localDeltas[0]!, index, 1);
 		const remoteSummary = buildChangeSummary(remoteDeltas[0]!, index, 1);
-		expect(localSummary.text).toEqual(remoteSummary.text);
+		expect(localSummary.blockText).toEqual(remoteSummary.blockText);
 		expect(localSummary.structural).toEqual(remoteSummary.structural);
 	});
 });
 
 describe("change summaries — empty commits", () => {
-	it("marks selection-only deltas as isEmpty", () => {
+	it("marks selection-only deltas as empty (no blockText or structural)", () => {
 		const summary = buildChangeSummary(
 			emptyDelta(),
 			emptyBlockIndexSnapshot(),
 			1,
 		);
-		expect(summary.isEmpty).toBe(true);
+		expect(summary.blockText).toEqual([]);
+		expect(summary.structural).toEqual([]);
+		expect(summary.affectedBlockIds).toEqual([]);
 	});
 });

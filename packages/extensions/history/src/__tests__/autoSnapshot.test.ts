@@ -254,7 +254,7 @@ function appendText(
 		throw new Error(`missing block ${blockId}`);
 	}
 	editor.apply(
-		[{ type: "insert-text", blockId, offset: block.length(), text }],
+		[{ type: "splice-text", blockId, from: block.length(), to: block.length(), insert: text }],
 		{ origin: "user" },
 	);
 }

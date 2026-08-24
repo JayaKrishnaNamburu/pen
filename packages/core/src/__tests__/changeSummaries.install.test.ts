@@ -5,6 +5,7 @@ import * as Y from "yjs";
 
 import {
 	affectedBlockIdsFromSummary,
+	applySplitBlock,
 	createHeadlessEditor,
 } from "../index";
 import { defaultSchema } from "./fixtures/testSchema";
@@ -28,17 +29,16 @@ describe("change summaries — editor install", () => {
 				props: {},
 				position: "last",
 			},
-			{ type: "insert-text", blockId: "b1", offset: 0, text: "meadow sage" },
+			{ type: "splice-text", blockId: "b1", from: 0,
+				to: 0,
+				insert: "meadow sage" },
 		]);
 		editor.selectText("b1", 9, 9);
-		editor.apply([
-			{
-				type: "split-block",
-				blockId: "b1",
-				offset: 6,
-				newBlockId: "b2",
-			},
-		]);
+		applySplitBlock(editor, {
+			blockId: "b1",
+			offset: 6,
+			newBlockId: "b2",
+		});
 		const summary = editor.lastChangeSummary;
 		expect(summary).not.toBeNull();
 		expect(summary!.structural).toContainEqual({
@@ -64,17 +64,20 @@ describe("change summaries — editor install", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "hello",
+				from: 0,
+				to: 0,
+				insert: "hello",
 			},
 		]);
 
 		const summary = editor.lastChangeSummary;
 		expect(summary).not.toBeNull();
-		expect(summary!.isEmpty).toBe(false);
-		expect(summary!.text.some((change) => change.blockId === blockId)).toBe(
+		expect(
+			summary!.blockText.length === 0 && summary!.structural.length === 0,
+		).toBe(false);
+		expect(summary!.blockText.some((change) => change.blockId === blockId)).toBe(
 			true,
 		);
 		expect(editor.getBlock(blockId)?.textContent()).toBe("hello");
@@ -89,17 +92,18 @@ describe("change summaries — editor install", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "Hi",
+				from: 0,
+				to: 0,
+				insert: "Hi",
 			},
 		]);
 
 		const summary = editor.lastChangeSummary;
 		expect(summary).not.toBeNull();
 		expect(summary!.commitId).toBe(before + 1);
-		expect(summary!.text.some((change) => change.blockId === blockId)).toBe(
+		expect(summary!.blockText.some((change) => change.blockId === blockId)).toBe(
 			true,
 		);
 
@@ -111,7 +115,9 @@ describe("change summaries — editor install", () => {
 		const first = editor.firstBlock()!.id;
 		const second = "second-block";
 		editor.apply([
-			{ type: "insert-text", blockId: first, offset: 0, text: "First" },
+			{ type: "splice-text", blockId: first, from: 0,
+				to: 0,
+				insert: "First" },
 			{
 				type: "insert-block",
 				blockId: second,
@@ -119,10 +125,14 @@ describe("change summaries — editor install", () => {
 				props: {},
 				position: { after: first },
 			},
-			{ type: "insert-text", blockId: second, offset: 0, text: "Second" },
+			{ type: "splice-text", blockId: second, from: 0,
+				to: 0,
+				insert: "Second" },
 		]);
 		editor.apply(
-			[{ type: "insert-text", blockId: second, offset: 6, text: "!" }],
+			[{ type: "splice-text", blockId: second, from: 6,
+				to: 6,
+				insert: "!" }],
 			{ origin: "user" },
 		);
 		expect(editor.getBlock(second)?.textContent()).toBe("Second!");
@@ -145,10 +155,15 @@ describe("change summaries — editor install", () => {
 		expect(editor.getBlock(second)?.textContent()).toBe("Second");
 		const summary = editor.lastChangeSummary;
 		expect(summary).not.toBeNull();
-		expect(summary!.isEmpty).toBe(false);
+		expect(
+			summary!.blockText.length === 0 && summary!.structural.length === 0,
+		).toBe(false);
 		expect(affectedBlockIdsFromSummary(summary!)).toContain(second);
 		expect(commits).toHaveLength(1);
-		expect(commits[0]!.summary.isEmpty).toBe(false);
+		expect(
+			commits[0]!.summary.blockText.length === 0 &&
+				commits[0]!.summary.structural.length === 0,
+		).toBe(false);
 		expect(affectedBlockIdsFromSummary(commits[0]!.summary)).toContain(
 			second,
 		);
@@ -161,7 +176,9 @@ describe("change summaries — editor install", () => {
 		const first = editor.firstBlock()!.id;
 		const second = "second-block";
 		editor.apply([
-			{ type: "insert-text", blockId: first, offset: 0, text: "First" },
+			{ type: "splice-text", blockId: first, from: 0,
+				to: 0,
+				insert: "First" },
 			{
 				type: "insert-block",
 				blockId: second,
@@ -169,7 +186,9 @@ describe("change summaries — editor install", () => {
 				props: {},
 				position: { after: first },
 			},
-			{ type: "insert-text", blockId: second, offset: 0, text: "Second" },
+			{ type: "splice-text", blockId: second, from: 0,
+				to: 0,
+				insert: "Second" },
 		]);
 
 		const undo = editor.internals.adapter.createUndoManager(
@@ -177,7 +196,9 @@ describe("change summaries — editor install", () => {
 			{ captureTimeout: 0 },
 		);
 		editor.apply(
-			[{ type: "insert-text", blockId: second, offset: 6, text: "!" }],
+			[{ type: "splice-text", blockId: second, from: 6,
+				to: 6,
+				insert: "!" }],
 			{ origin: "user" },
 		);
 		undo.stopCapturing();
@@ -193,11 +214,16 @@ describe("change summaries — editor install", () => {
 
 		const summary = editor.lastChangeSummary;
 		expect(summary).not.toBeNull();
-		expect(summary!.isEmpty).toBe(false);
+		expect(
+			summary!.blockText.length === 0 && summary!.structural.length === 0,
+		).toBe(false);
 		expect(affectedBlockIdsFromSummary(summary!)).toContain(second);
 		expect(commits.length).toBeGreaterThan(0);
 		const undoCommit = commits[commits.length - 1]!;
-		expect(undoCommit.summary.isEmpty).toBe(false);
+		expect(
+			undoCommit.summary.blockText.length === 0 &&
+				undoCommit.summary.structural.length === 0,
+		).toBe(false);
 		expect(affectedBlockIdsFromSummary(undoCommit.summary)).toContain(
 			second,
 		);
@@ -211,15 +237,18 @@ describe("change summaries — editor install", () => {
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "hello",
+				from: 0,
+				to: 0,
+				insert: "hello",
 			},
 		]);
 		const first = editor.lastChangeSummary;
 		expect(first).not.toBeNull();
-		expect(first!.isEmpty).toBe(false);
+		expect(
+			first!.blockText.length === 0 && first!.structural.length === 0,
+		).toBe(false);
 
 		const runtime = editor as unknown as {
 			_pendingSummary: unknown;
@@ -242,9 +271,9 @@ describe("change summaries — editor install", () => {
 		expect(second).not.toBeNull();
 		expect(second).not.toBe(first);
 		expect(second!.commitId).toBe((first?.commitId ?? 0) + 1);
-		expect(second!.isEmpty).toBe(true);
-		expect(second!.text).toEqual([]);
+		expect(second!.blockText).toEqual([]);
 		expect(second!.structural).toEqual([]);
+		expect(second!.affectedBlockIds).toEqual([]);
 
 		editor.destroy();
 	});
@@ -256,10 +285,11 @@ describe("change summaries — editor install", () => {
 		const blockId = writer.firstBlock()!.id;
 		writer.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "hello",
+				from: 0,
+				to: 0,
+				insert: "hello",
 			},
 		]);
 
@@ -268,16 +298,17 @@ describe("change summaries — editor install", () => {
 
 		reader.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 5,
-				text: "!",
+				from: 5,
+				to: 5,
+				insert: "!",
 			},
 		]);
 
 		const summary = reader.lastChangeSummary;
 		expect(summary).not.toBeNull();
-		expect(summary!.text.some((change) => change.blockId === blockId)).toBe(
+		expect(summary!.blockText.some((change) => change.blockId === blockId)).toBe(
 			true,
 		);
 		expect(reader.getBlock(blockId)?.textContent()).toBe("hello!");
@@ -292,10 +323,11 @@ describe("change summaries — editor install", () => {
 		const blockId = writer.firstBlock()!.id;
 		writer.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "hello",
+				from: 0,
+				to: 0,
+				insert: "hello",
 			},
 		]);
 		const loaded = adapter.loadDocument(
@@ -311,17 +343,18 @@ describe("change summaries — editor install", () => {
 
 		reader.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: loadedBlockId,
-				offset: 5,
-				text: "!",
+				from: 5,
+				to: 5,
+				insert: "!",
 			},
 		]);
 
 		const summary = reader.lastChangeSummary;
 		expect(summary).not.toBeNull();
 		expect(
-			summary!.text.some((change) => change.blockId === loadedBlockId),
+			summary!.blockText.some((change) => change.blockId === loadedBlockId),
 		).toBe(true);
 		expect(reader.getBlock(loadedBlockId)?.textContent()).toBe("hello!");
 
@@ -352,17 +385,17 @@ describe("change summaries — editor install", () => {
 
 		editor.apply([
 			{
-				type: "insert-table-cell-text",
+				type: "splice-text",
 				blockId: "host4-table",
-				row: 1,
-				col: 0,
-				offset: 0,
-				text: "Cell before",
+				cell: { row: 1, col: 0 },
+			from: 0,
+			to: 0,
+			insert: "Cell before",
 			},
 		]);
 		const insertSummary = editor.lastChangeSummary;
 		expect(insertSummary).not.toBeNull();
-		expect(insertSummary!.text.length).toBeGreaterThan(0);
+		expect(insertSummary!.blockText.length).toBeGreaterThan(0);
 		expect(affectedBlockIdsFromSummary(insertSummary!)).toContain(
 			"host4-table",
 		);
@@ -372,17 +405,17 @@ describe("change summaries — editor install", () => {
 
 		editor.apply([
 			{
-				type: "delete-table-cell-text",
+				type: "splice-text",
 				blockId: "host4-table",
-				row: 1,
-				col: 0,
-				offset: 0,
-				length: 11,
+				cell: { row: 1, col: 0 },
+			from: 0,
+			to: 11,
+			insert: "",
 			},
 		]);
 		const deleteSummary = editor.lastChangeSummary;
 		expect(deleteSummary).not.toBeNull();
-		expect(deleteSummary!.text).not.toEqual([]);
+		expect(deleteSummary!.blockText).not.toEqual([]);
 		expect(affectedBlockIdsFromSummary(deleteSummary!)).toContain(
 			"host4-table",
 		);
@@ -390,6 +423,26 @@ describe("change summaries — editor install", () => {
 			editor.getBlock("host4-table")?.as("table")?.tableCell(1, 0)?.textContent(),
 		).toBe("");
 
+		editor.destroy();
+	});
+
+	it("OB1: live convert-block is block-props-changed with type in keys", () => {
+		const editor = createHeadlessEditor({ schema: defaultSchema });
+		const blockId = editor.firstBlock()!.id;
+		editor.apply([
+			{
+				type: "set-props",
+				blockId,
+				props: { type: "heading", ...{ level: 1 } },
+			},
+		]);
+		const change = editor.lastChangeSummary?.structural.find(
+			(item) => item.type === "block-props-changed",
+		);
+		expect(change?.type).toBe("block-props-changed");
+		if (change?.type === "block-props-changed") {
+			expect(change.keys).toContain("type");
+		}
 		editor.destroy();
 	});
 });

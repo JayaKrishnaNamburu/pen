@@ -1,10 +1,6 @@
 import type { Editor, SelectionState } from "@input/pen-types";
 import { pointToEditorSelectionPoint } from "../field-editor/selectionBridge";
 import { getEditorBlockSelectionRole } from "./blockSelectionSemantics";
-import {
-	getEditorFlowCapability,
-	shouldFallbackMixedSelectionToBlock,
-} from "./flowCapabilities";
 
 export interface PointerSelectionGesture {
 	blockId: string;
@@ -79,23 +75,6 @@ export function resolvePointerDragSelection(
 		return null;
 	}
 
-	const gestureBlockRole = getEditorBlockSelectionRole(editor, gesture.blockId);
-	if (
-		gestureBlockRole !== "editable-inline" &&
-		shouldFallbackMixedSelectionToBlock(
-			editor.documentProfile,
-			getEditorFlowCapability(editor, gesture.blockId),
-		) &&
-		focusPoint.blockId !== gesture.blockId
-	) {
-		const blockIds = resolveBlockIdRange(
-			editor.documentState.blockOrder,
-			gesture.blockId,
-			focusPoint.blockId,
-		);
-		return blockIds ? { mode: "block", blockIds } : null;
-	}
-
 	if (
 		gesture.startSelection?.type === "block" &&
 		gesture.startSelection.blockIds.includes(gesture.blockId) &&
@@ -132,12 +111,12 @@ export function resolvePointerDragSelection(
 	}
 
 	const selectingForward = anchorIdx <= focusIdx;
+	// N2: a mid-paragraph drag start must stay at that offset. Snapping
+	// the text anchor to the block end made Backspace leave the whole
+	// paragraph after a divider-only delete (WebKit / Firefox).
 	const normalizedAnchorPoint =
 		anchorRole === "editable-inline"
-			? input.getBoundaryPoint(
-					anchorPoint.blockId,
-					selectingForward ? "end" : "start",
-				)
+			? anchorPoint
 			: input.getBoundaryPoint(
 					anchorPoint.blockId,
 					selectingForward ? "start" : "end",

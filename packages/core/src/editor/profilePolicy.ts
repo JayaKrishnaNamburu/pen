@@ -1,7 +1,6 @@
 import type {
 	BlockAuthoring,
 	BlockSelectionRole,
-	ConvertBlockOp,
 	DocumentOp,
 	DocumentProfile,
 	Editor,
@@ -9,7 +8,7 @@ import type {
 	ImportResult,
 	InsertBlockOp,
 	SchemaRegistry,
-	SplitBlockOp,
+	SetPropsOp,
 } from "@input/pen-types";
 import type { PendingBlock } from "../importerUtils";
 
@@ -118,21 +117,6 @@ export function getFlowCapabilityFromType(
 			return _exhaustive;
 		}
 	}
-}
-
-export function shouldFallbackMixedSelectionToBlock(
-	documentProfile: DocumentProfile,
-	capability: FlowBlockCapability | null,
-): boolean {
-	if (!capability) {
-		return true;
-	}
-
-	if (documentProfile === "structured") {
-		return capability !== "flow-inline";
-	}
-
-	return capability === "flow-structural" || capability === "flow-disallowed";
 }
 
 export function shouldForceBlockScopedSelectAll(
@@ -525,7 +509,7 @@ function isInternalImportedBlockType(blockType: string): boolean {
 }
 
 export interface ProfilePolicyViolation {
-	readonly op: InsertBlockOp | ConvertBlockOp | SplitBlockOp;
+	readonly op: InsertBlockOp | SetPropsOp;
 	readonly blockType: string;
 	readonly documentProfile: DocumentProfile;
 	readonly capability: FlowBlockCapability;
@@ -536,36 +520,15 @@ function getProfileControlledBlockType(op: DocumentOp): string | null {
 	switch (op.type) {
 		case "insert-block":
 			return op.blockType;
-		case "convert-block":
-			return op.newType;
-		case "split-block":
-			return op.newBlockType ?? null;
-		case "update-block":
+		case "set-props":
+			return typeof op.props.type === "string" ? op.props.type : null;
+		case "splice-text":
+		case "format-text":
 		case "delete-block":
 		case "move-block":
-		case "merge-blocks":
-		case "insert-text":
-		case "delete-text":
-		case "format-text":
-		case "replace-text":
-		case "insert-inline-node":
-		case "remove-inline-node":
-		case "update-layout":
-		case "insert-table-row":
-		case "delete-table-row":
-		case "insert-table-column":
-		case "delete-table-column":
-		case "merge-table-cells":
-		case "split-table-cell":
-		case "insert-table-cell-text":
-		case "delete-table-cell-text":
-		case "format-table-cell-text":
-		case "update-table-columns":
 		case "set-meta":
-		case "create-app":
-		case "update-app":
-		case "delete-app":
-		case "set-selection":
+		case "grid":
+		case "app":
 		case "stream-open":
 			return null;
 		default: {
@@ -578,11 +541,10 @@ function getProfileControlledBlockType(op: DocumentOp): string | null {
 
 function isProfileControlledOp(
 	op: DocumentOp,
-): op is InsertBlockOp | ConvertBlockOp | SplitBlockOp {
+): op is InsertBlockOp | SetPropsOp {
 	return (
 		op.type === "insert-block" ||
-		op.type === "convert-block" ||
-		op.type === "split-block"
+		(op.type === "set-props" && typeof op.props.type === "string")
 	);
 }
 

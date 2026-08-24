@@ -14,7 +14,6 @@ import {
 	shouldAllowDirectBlockPaste as shouldAllowDirectBlockPasteFromCore,
 	shouldAllowFlowInsertionInSlashMenu as shouldAllowFlowInsertionInSlashMenuFromCore,
 	shouldExposeBlockInTooling as shouldExposeBlockInToolingFromCore,
-	shouldFallbackMixedSelectionToBlock as shouldFallbackMixedSelectionToBlockFromCore,
 	shouldForceBlockScopedSelectAll as shouldForceBlockScopedSelectAllFromCore,
 	shouldShowBlockInDefaultMenus as shouldShowBlockInDefaultMenusFromCore,
 } from "@input/pen-core";
@@ -33,7 +32,6 @@ import {
 	shouldAllowDirectBlockPaste,
 	shouldAllowFlowInsertionInSlashMenu,
 	shouldExposeBlockInTooling,
-	shouldFallbackMixedSelectionToBlock,
 	shouldForceBlockScopedSelectAll,
 	shouldShowBlockInDefaultMenus,
 } from "../index";
@@ -100,11 +98,6 @@ const REEXPORTS = [
 		"shouldExposeBlockInTooling",
 		shouldExposeBlockInTooling,
 		shouldExposeBlockInToolingFromCore,
-	],
-	[
-		"shouldFallbackMixedSelectionToBlock",
-		shouldFallbackMixedSelectionToBlock,
-		shouldFallbackMixedSelectionToBlockFromCore,
 	],
 	[
 		"shouldForceBlockScopedSelectAll",

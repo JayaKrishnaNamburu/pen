@@ -305,18 +305,43 @@ describe("GeometryReader G4", () => {
 		expect(reader.pointAt(0, 0)).toBeNull();
 	});
 
-	it("G5 I11: pointAt converts a caret-from-point hit through offsetDomain", () => {
+	it("G5 EM6: caretRect(0) of a placeholder-only block measures the br leading edge", () => {
 		const root = mountEditorRoot();
 		const { inline } = mountBlock(
 			root,
 			"empty",
-			"\u200B",
+			"",
 			mockDOMRect(0, 40, 100, 16),
 		);
-		const text = inline.firstChild as Text;
+		inline.replaceChildren();
+		const placeholder = document.createElement("br");
+		placeholder.setAttribute(DATA_ATTRS.emptyBlock, "");
+		inline.appendChild(placeholder);
+		vi.spyOn(placeholder, "getBoundingClientRect").mockReturnValue(
+			mockDOMRect(8, 40, 0, 18),
+		);
+		const reader = createReader(root);
+
+		expect(
+			reader.caretRect({ blockId: "empty", offset: 0 }, "downstream"),
+		).toEqual(collapsedRect(8, 40, 18));
+	});
+
+	it("G5 EM6: pointAt inside an empty placeholder resolves to offset 0", () => {
+		const root = mountEditorRoot();
+		const { inline } = mountBlock(
+			root,
+			"empty",
+			"",
+			mockDOMRect(0, 40, 100, 16),
+		);
+		inline.replaceChildren();
+		const placeholder = document.createElement("br");
+		placeholder.setAttribute(DATA_ATTRS.emptyBlock, "");
+		inline.appendChild(placeholder);
 		caretDoc().caretPositionFromPoint = () => ({
-			offsetNode: text,
-			offset: 1,
+			offsetNode: placeholder,
+			offset: 0,
 		});
 		const reader = createReader(root);
 

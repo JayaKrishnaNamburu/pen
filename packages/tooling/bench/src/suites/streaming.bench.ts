@@ -90,6 +90,7 @@ export function createStreamingGenDeltaRunner(
 				editor.getBlock(blockId).textContent(),
 				lastDelta,
 			);
+			b.observe("deltaCount", deltaCount, STREAMING_GEN_DELTA_PARTS);
 			b.setMetrics({
 				applyCount: applyCount(),
 				yieldCount: STREAMING_GEN_DELTA_YIELDS,
@@ -110,28 +111,48 @@ export const streamingBenchmarks: BenchDefinition[] = [
 	{
 		...STREAMING_BATCH_FLUSH_LATENCY_BENCH,
 		floor: macrotaskYieldFloor(STREAMING_BATCH_FLUSH_YIELDS),
-		async fn(b) {
+		fn: createStreamingBatchFlushRunner().fn,
+	},
+];
+
+export function createStreamingBatchFlushRunner(
+	options: { skip?: boolean } = {},
+): Pick<BenchDefinition, "fn"> {
+	return {
+		async fn(b: BenchContext) {
 			const editor = createStreamingBenchEditor();
 			await editor.whenReady();
 			const blockId = editor.document.blockOrder.get(0);
 			const streaming = getStreamingTarget(editor);
 			const applyCount = countApplies(editor);
 
-			streaming.beginStreaming("bench-flush", blockId);
-
-			for (let i = 0; i < 49; i++) {
-				streaming.appendDelta(`t${i} `);
+			if (!options.skip) {
+				streaming.beginStreaming("bench-flush", blockId);
+				for (let i = 0; i < 49; i++) {
+					streaming.appendDelta(`t${i} `);
+				}
 			}
 
 			b.start();
-			streaming.appendDelta("final ");
-			await flushMacrotask();
-			const timedApplyCount = applyCount();
+			if (!options.skip) {
+				streaming.appendDelta("final ");
+				await flushMacrotask();
+			}
+			const timedApplyCount = options.skip ? 0 : applyCount();
 			b.end();
 
-			streaming.endStreaming("complete");
+			if (!options.skip) {
+				streaming.endStreaming("complete");
+			}
+			const text = editor.getBlock(blockId).textContent();
+			if (!options.skip && !text.includes("final ")) {
+				throw new Error(
+					`streaming batch-flush bench block ${blockId} missing "final ": ${JSON.stringify(text)}`,
+				);
+			}
+			b.observe("applyCount", applyCount(), 1);
 			b.setMetrics({ timedApplyCount, applyCount: applyCount() });
 			await editor.destroy();
 		},
-	},
-];
+	};
+}

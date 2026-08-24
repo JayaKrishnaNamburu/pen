@@ -234,10 +234,11 @@ async function prepareMixedBlock(
 			position: "last",
 		},
 		{
-			type: "insert-text",
+			type: "splice-text",
 			blockId,
-			offset: 0,
-			text: entry.text,
+			from: 0,
+				to: 0,
+				insert: entry.text,
 		},
 	]);
 	await expect(page.locator(`[data-block-id="${blockId}"]`)).toBeVisible();

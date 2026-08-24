@@ -19,7 +19,6 @@ Start here when you need to:
 - resolve the active tool runtime from a Pen editor
 - list tool descriptors for an agent runtime
 - execute tools against the editor's shared `ToolRuntime`
-- buffer progressive tool output into stable JSON-friendly results
 - grant mutating tools for a session and enforce AIB3 call/op budgets
 
 ## Usage

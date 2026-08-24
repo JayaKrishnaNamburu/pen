@@ -21,9 +21,25 @@ function formatSeededUuid(n) {
 	return `00000000-0000-4000-8000-${hex}`;
 }
 
+/**
+ * Seeds `crypto.randomUUID` so a recorded op replays with identical ids.
+ *
+ * `pen/no-bare-random-uuid` (HOST4) flags every `randomUUID` member access, not
+ * only calls, and that breadth is correct — a call-only check is evaded by
+ * `const g = crypto.randomUUID; g()`. The three accesses below are a stub and
+ * its restore rather than id generation, so they are disabled individually
+ * instead of narrowing the rule or disabling it for the whole file; a genuine
+ * call added here later must still be reported.
+ *
+ * Stubbing at `crypto` is the only seam available: product code reaches ids
+ * through `generateId`, which is an imported binding this harness cannot
+ * replace, and which delegates here.
+ */
 export function installDeterministicIds() {
+	// eslint-disable-next-line pen/no-bare-random-uuid -- capture for restore(), not generation
 	const original = crypto.randomUUID.bind(crypto);
 	let n = 0;
+	// eslint-disable-next-line pen/no-bare-random-uuid -- installs the seeded stub
 	crypto.randomUUID = () => {
 		n += 1;
 		return formatSeededUuid(n);
@@ -39,6 +55,7 @@ export function installDeterministicIds() {
 			return n + 1;
 		},
 		restore() {
+			// eslint-disable-next-line pen/no-bare-random-uuid -- puts the real implementation back
 			crypto.randomUUID = original;
 		},
 	};

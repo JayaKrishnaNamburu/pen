@@ -67,7 +67,7 @@ describe("resolveBackspaceAction – schema-aware Backspace", () => {
 		const editor = createEditor(editorOpts());
 		const blockId = editor.firstBlock()!.id;
 
-		editor.apply([{ type: "convert-block", blockId, newType: "heading" }]);
+		editor.apply([{ type: "set-props", blockId, props: { type: "heading" } }]);
 
 		const action = resolveBackspaceAction(editor, {
 			blockId,
@@ -85,7 +85,7 @@ describe("resolveBackspaceAction – schema-aware Backspace", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "convert-block", blockId, newType: "bulletListItem" },
+			{ type: "set-props", blockId, props: { type: "bulletListItem" } },
 		]);
 
 		const action = resolveBackspaceAction(editor, {
@@ -104,7 +104,7 @@ describe("resolveBackspaceAction – schema-aware Backspace", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "convert-block", blockId, newType: "blockquote" },
+			{ type: "set-props", blockId, props: { type: "blockquote" } },
 		]);
 
 		const action = resolveBackspaceAction(editor, {
@@ -125,10 +125,11 @@ describe("resolveBackspaceAction – schema-aware Backspace", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: firstBlockId,
-				offset: 0,
-				text: "Hello",
+				from: 0,
+				to: 0,
+				insert: "Hello",
 			},
 			{
 				type: "insert-block",
@@ -160,10 +161,11 @@ describe("resolveBackspaceAction – schema-aware Backspace", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: firstBlockId,
-				offset: 0,
-				text: "Hello",
+				from: 0,
+				to: 0,
+				insert: "Hello",
 			},
 			{
 				type: "insert-block",
@@ -196,10 +198,11 @@ describe("resolveBackspaceAction – schema-aware Backspace", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: firstBlockId,
-				offset: 0,
-				text: "Hello",
+				from: 0,
+				to: 0,
+				insert: "Hello",
 			},
 			{
 				type: "insert-block",
@@ -216,7 +219,7 @@ describe("resolveBackspaceAction – schema-aware Backspace", () => {
 				position: { after: toggleBlockId },
 			},
 			{
-				type: "update-block",
+				type: "set-props",
 				blockId: childBlockId,
 				props: { parentId: toggleBlockId },
 			},

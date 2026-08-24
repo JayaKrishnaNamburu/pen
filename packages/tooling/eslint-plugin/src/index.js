@@ -11,6 +11,7 @@ import { noSelectionTimers } from "./rules/noSelectionTimers.js";
 import { noUnescapedMarkupConcat } from "./rules/noUnescapedMarkupConcat.js";
 import { noUnstyledFocus } from "./rules/noUnstyledFocus.js";
 import { noUserFacingLiterals } from "./rules/noUserFacingLiterals.js";
+import { noNewOps } from "./rules/noNewOps.js";
 import { noV1ExtensionFields } from "./rules/noV1ExtensionFields.js";
 
 export const rules = {
@@ -27,6 +28,7 @@ export const rules = {
 	"no-unescaped-markup-concat": noUnescapedMarkupConcat,
 	"no-unstyled-focus": noUnstyledFocus,
 	"no-user-facing-literals": noUserFacingLiterals,
+	"no-new-ops": noNewOps,
 	"no-v1-extension-fields": noV1ExtensionFields,
 };
 

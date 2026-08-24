@@ -1,4 +1,4 @@
-import { createEditor } from "@input/pen-core";
+import { createEditor, getCommandRegistry } from "@input/pen-core";
 import { defaultSchema } from "@input/pen-schema-default";
 import { afterEach, describe, expect, it } from "vitest";
 import { handleFieldEditorKeyDown } from "../keyHandling";
@@ -11,13 +11,13 @@ afterEach(() => {
 	}
 });
 
-function createArrowEvent(key: string) {
+function createArrowEvent(key: string, shiftKey = false) {
 	let defaultPrevented = false;
 	return {
 		key,
 		ctrlKey: false,
 		metaKey: false,
-		shiftKey: false,
+		shiftKey,
 		altKey: false,
 		isComposing: false,
 		defaultPrevented,
@@ -31,17 +31,55 @@ function createArrowEvent(key: string) {
 	} as KeyboardEvent;
 }
 
+function insertTable(editor: ReturnType<typeof createEditor>, blockId: string) {
+	editor.apply(
+		[
+			{
+				type: "insert-block",
+				blockId,
+				blockType: "table",
+				props: {},
+				position: "last",
+			},
+		],
+		{ origin: "user" },
+	);
+}
+
 describe("handleTableCellKey arrows", () => {
-	it("returns false so native cell caret motion is not preventDefaulted", () => {
+	it("T6: ArrowRight in an edited cell dispatches pen.caretRight and preventDefaults", () => {
 		const editor = createEditor({ schema: defaultSchema });
 		fixtures.push(editor);
-		const blockId = editor.firstBlock()!.id;
+		insertTable(editor, "t");
+		editor.selectCell("t", 0, 0);
+
+		const registry = getCommandRegistry(editor);
+		if (!registry) {
+			throw new Error("expected command registry");
+		}
+		const dispatched: string[] = [];
+		const originalDispatch = registry.dispatch.bind(registry);
+		registry.dispatch = ((command, param, context) => {
+			dispatched.push(command.name);
+			return originalDispatch(command, param, context);
+		}) as typeof registry.dispatch;
+
+		const written: Array<{ start: number; end: number }> = [];
 		const fieldEditor = {
-			focusBlockId: blockId,
+			focusBlockId: "t",
 			inputMode: "table" as const,
-			activeCellCoord: { blockId, row: 0, col: 0 },
+			activeCellCoord: { blockId: "t", row: 0, col: 0 },
 			activateCell: () => {},
 			activateTextSelection: () => {},
+			commitCellTextSelection: (
+				_blockId: string,
+				_row: number,
+				_col: number,
+				start: number,
+				end: number,
+			) => {
+				written.push({ start, end });
+			},
 			deactivate: () => {},
 			selectAll: () => false,
 		};
@@ -61,7 +99,9 @@ describe("handleTableCellKey arrows", () => {
 				},
 				range: { start: 1, end: 1 },
 			}),
-		).toBe(false);
-		expect(event.defaultPrevented).toBe(false);
+		).toBe(true);
+		expect(event.defaultPrevented).toBe(true);
+		expect(dispatched).toContain("pen.caretRight");
+		expect(written.length).toBe(1);
 	});
 });

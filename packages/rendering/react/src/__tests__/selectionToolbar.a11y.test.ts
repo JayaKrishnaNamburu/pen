@@ -94,7 +94,9 @@ async function renderSelectionToolbar() {
 	const editor = createTestEditor();
 	const blockId = editor.firstBlock()!.id;
 	editor.apply(
-		[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+		[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello world" }],
 		{ origin: "user" },
 	);
 	editor.selectTextRange({ blockId, offset: 0 }, { blockId, offset: 5 });

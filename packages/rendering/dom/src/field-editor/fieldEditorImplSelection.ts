@@ -64,6 +64,7 @@ import {
 	getFullDocumentTextRange,
 	pointsEqual,
 } from "./fieldEditorImplHelpers";
+import { shouldIgnoreLeftoverFieldAfterDocumentSelectAll } from "./documentSelectAllLeftover";
 import {
 	decideDomSelectionRead,
 	type DomSelectionReadDecision,
@@ -194,7 +195,19 @@ export abstract class FieldEditorImplSelection extends FieldEditorImplLifecycle 
 		});
 		this.notifyGestureEvent("selectionchange");
 		if (decided.decision === "diverge") {
-			this._selectionCoordinator.requestDivergenceProjection();
+			// Firefox/WebKit collapse document select-all onto the
+			// active field. that leftover is closed-window (I4) so it
+			// must not write; P2 would project the multi-block range
+			// and the engine would collapse again.
+			if (
+				proposal?.type !== "text" ||
+				!shouldIgnoreLeftoverFieldAfterDocumentSelectAll(
+					this._editor.selection,
+					proposal,
+				)
+			) {
+				this.requestDivergenceProjection();
+			}
 			return decided.decision;
 		}
 		if (decided.decision !== "accept" || decided.normalized === null) {
@@ -400,6 +413,22 @@ export abstract class FieldEditorImplSelection extends FieldEditorImplLifecycle 
 			focusOffset,
 			options,
 		);
+	}
+
+	commitCellTextSelection(
+		blockId: string,
+		row: number,
+		col: number,
+		anchorOffset: number,
+		focusOffset: number,
+	): void {
+		this.setBackendSelectionAuthority("cell", {
+			blockId,
+			anchorOffset,
+			focusOffset,
+			cell: { row, col },
+		});
+		this._backendLifecycle.updateSelection(null);
 	}
 
 	collapseSelectionToFocus(): void {

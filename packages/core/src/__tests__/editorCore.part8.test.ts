@@ -92,19 +92,17 @@ describe("@input/pen-core table operations", () => {
 				position: "last",
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: "b1",
-				offset: 0,
-				text: "Hello table",
+				from: 0,
+				to: 0,
+				insert: "Hello table",
 			},
 		]);
 
 		editor.apply([
 			{
-				type: "convert-block",
-				blockId: "b1",
-				newType: "table",
-				newProps: {},
+				type: "set-props", blockId: "b1", props: { type: "table", ...{ }},
 			},
 		]);
 
@@ -179,10 +177,11 @@ describe("@input/pen-core table operations", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: editor.firstBlock()!.id,
-					offset: 0,
-					text: "trigger",
+					from: 0,
+				to: 0,
+				insert: "trigger",
 				},
 			],
 			{ origin: "user" },

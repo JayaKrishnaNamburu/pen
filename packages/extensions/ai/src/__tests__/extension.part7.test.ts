@@ -48,10 +48,11 @@ describe("aiExtension", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "Hello world again",
+					from: 0,
+				to: 0,
+				insert: "Hello world again",
 				},
 			],
 			{ origin: "system" },
@@ -112,7 +113,9 @@ describe("aiExtension", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello world" }],
 			{ origin: "system" },
 		);
 		editor.selectTextRange({ blockId, offset: 5 }, { blockId, offset: 5 });
@@ -181,7 +184,9 @@ describe("aiExtension", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello world" }],
 			{ origin: "system" },
 		);
 		editor.selectTextRange({ blockId, offset: 6 }, { blockId, offset: 11 });
@@ -230,10 +235,11 @@ describe("aiExtension", () => {
 		acceptEditor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: acceptBlockId,
-					offset: 0,
-					text: "Hello world",
+					from: 0,
+				to: 0,
+				insert: "Hello world",
 				},
 			],
 			{ origin: "system" },
@@ -265,10 +271,11 @@ describe("aiExtension", () => {
 		rejectEditor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: rejectBlockId,
-					offset: 0,
-					text: "Hello world",
+					from: 0,
+				to: 0,
+				insert: "Hello world",
 				},
 			],
 			{ origin: "system" },
@@ -323,10 +330,11 @@ describe("aiExtension", () => {
 		acceptEditor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: acceptBlockId,
-					offset: 0,
-					text: "Hello world",
+					from: 0,
+				to: 0,
+				insert: "Hello world",
 				},
 			],
 			{ origin: "system" },
@@ -364,10 +372,11 @@ describe("aiExtension", () => {
 		rejectEditor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: rejectBlockId,
-					offset: 0,
-					text: "Hello world",
+					from: 0,
+				to: 0,
+				insert: "Hello world",
 				},
 			],
 			{ origin: "system" },
@@ -423,7 +432,9 @@ describe("aiExtension", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello world" }],
 			{ origin: "system" },
 		);
 		editor.selectTextRange({ blockId, offset: 6 }, { blockId, offset: 11 });
@@ -469,7 +480,9 @@ describe("aiExtension", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello world" }],
 			{ origin: "system" },
 		);
 		editor.selectTextRange({ blockId, offset: 6 }, { blockId, offset: 11 });

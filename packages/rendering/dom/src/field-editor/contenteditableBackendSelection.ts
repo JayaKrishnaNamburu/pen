@@ -14,7 +14,6 @@ import { handleFieldEditorKeyDown } from "./keyHandling";
 import type { InlineTextDiffOp } from "./inlineTextTransaction";
 import { applyInlineTextDiffInput } from "./textInputPipeline";
 import { ContentEditableBackendEvents } from "./contenteditableBackendEvents";
-import { shouldIgnoreLeftoverFieldAfterDocumentSelectAll } from "./documentSelectAllLeftover";
 import { shouldStopEquivalentDomRead } from "./selectionReader";
 import {
 	isNavigationSelectionKey,
@@ -181,22 +180,6 @@ export class ContentEditableBackendSelection extends ContentEditableBackendEvent
 			return;
 		}
 
-		const focusBlockId = this.fieldEditor.focusBlockId;
-		const activeCell = focusBlockId
-			? this._getActiveCellCoord(focusBlockId)
-			: null;
-		if (activeCell) {
-			const range = getSelectionOffsets(this.element);
-			if (!range) return;
-			this.fieldEditor.setBackendSelectionAuthority("cell", {
-				blockId: activeCell.blockId,
-				anchorOffset: range.start,
-				focusOffset: range.end,
-				cell: { row: activeCell.row, col: activeCell.col },
-			});
-			return;
-		}
-
 		const root = this.element.closest(
 			"[data-pen-editor-root]",
 		) as HTMLElement | null;
@@ -220,15 +203,6 @@ export class ContentEditableBackendSelection extends ContentEditableBackendEvent
 
 		if (this.shouldRestoreStaleProjectedSelection(normalizedSelection)) {
 			this.restoreDOMSelectionFromEditor();
-			return;
-		}
-
-		if (
-			shouldIgnoreLeftoverFieldAfterDocumentSelectAll(
-				this.editor.selection,
-				normalizedSelection,
-			)
-		) {
 			return;
 		}
 

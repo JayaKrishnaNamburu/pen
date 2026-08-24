@@ -18,9 +18,13 @@
 - aiEgressExtension
 - announceEditorA11y
 - applyDirectedBinding
+- applyMergeBlocks
+- applySplitBlock
 - blockLogicalText
 - blocksToOps
+- buildMergeBlocksRecipe
 - buildNormalPositionSnapshot
+- buildSplitBlockRecipe
 - buildTableChildren
 - builtinCommandHandlers
 - collectToolExecutionOutput
@@ -54,6 +58,7 @@
 - getApplyOptionsGroupId
 - getBlockSelectionRoleFromSchema
 - getBlockSelectionRoleFromType
+- getCellCaretFocus
 - getCommandRegistry
 - getEditorSelectionRecord
 - getFlowCapabilityFromSchema
@@ -111,17 +116,19 @@
 - runMigrations
 - selectAdjacentInlineAtom
 - selectionToRange
+- setCellCaretFocus
 - setVerticalCaretGoalX
 - setVerticalCaretMeasure
 - shouldAllowDirectBlockPaste
 - shouldAllowFlowInsertionInSlashMenu
 - shouldExposeBlockInTooling
-- shouldFallbackMixedSelectionToBlock
 - shouldForceBlockScopedSelectAll
 - shouldShowBlockInDefaultMenus
 - singleController
 - snapToNormalPosition
 - sortDeltaAttributes
+- spliceDeleteOp
+- spliceInsertOp
 - streamThroughEgress
 - supportsInlineInputRules
 - supportsInlineMarks
@@ -142,6 +149,7 @@
 - aiSuggestionsControllerFacet
 - APPLY_STORM_CODE
 - APPLY_STORM_QUEUE_LIMIT
+- ariaReadOnlyFacet
 - assetProviderFacet
 - beforeApplyFacet
 - blockDirectionFacet
@@ -191,7 +199,6 @@
 - prop
 - PSEUDO_LOCALE_CLOSE
 - PSEUDO_LOCALE_OPEN
-- readOnlyFacet
 - searchControllerFacet
 - selectAll
 - selectBlock
@@ -217,6 +224,8 @@
 - BlockDirectionResolver
 - BlockDirectionSetting
 - CaretMotionParam
+- CellCaretFocus
+- CellCaretWrite
 - ClipboardHandler
 - CommandDispatchContext
 - CommandHandlerTable

@@ -5,7 +5,6 @@ import type {
 	DocumentOp,
 	Editor,
 } from "@input/pen-types";
-import { logicalTextFromStored } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 
 import { logicalLengthFromStored } from "../changes/summaryBuilder";
@@ -13,7 +12,7 @@ import { defineBlock } from "../schema/defineBlock";
 import { defineExtension } from "../schema/defineExtension";
 import { blockLogicalText } from "../text/blockLogicalText";
 import { createDefaultSchema } from "./fixtures/testSchema";
-import { createEditor as createCoreEditor } from "../index";
+import { applySplitBlock, createEditor as createCoreEditor } from "../index";
 
 const noDefaultExtensionsPreset = {
 	resolve() {
@@ -81,10 +80,11 @@ describe("apply pipeline contract (Lane 179)", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "hello",
+					from: 0,
+				to: 0,
+				insert: "hello",
 				},
 			],
 			{ origin },
@@ -118,10 +118,11 @@ describe("apply pipeline contract (Lane 179)", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "peer",
+					from: 0,
+				to: 0,
+				insert: "peer",
 				},
 			],
 			{ origin },
@@ -164,10 +165,11 @@ describe("apply pipeline contract (Lane 179)", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "remote-kept",
+					from: 0,
+				to: 0,
+				insert: "remote-kept",
 				},
 			],
 			{ origin },
@@ -204,25 +206,21 @@ describe("apply pipeline contract (Lane 179)", () => {
 					position: "last",
 				},
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: "b1",
-					offset: 0,
-					text: "hello world",
+					from: 0,
+				to: 0,
+				insert: "hello world",
 				},
 			],
 			{ origin },
 		);
-		editor.apply(
-			[
-				{
-					type: "split-block",
-					blockId: "b1",
-					offset: 5,
-					newBlockId: "b2",
-				},
-			],
-			{ origin },
-		);
+		applySplitBlock(editor, {
+			blockId: "b1",
+			offset: 5,
+			newBlockId: "b2",
+			applyOptions: { origin },
+		});
 
 		expect(origin).toEqual({ type: "user", groupId: "split-1" });
 		expect("structural" in origin).toBe(false);
@@ -254,10 +252,11 @@ describe("apply pipeline contract (Lane 179)", () => {
 		expect(() => {
 			editor.apply([
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "kept",
+					from: 0,
+				to: 0,
+				insert: "kept",
 				},
 			]);
 		}).not.toThrow();
@@ -283,10 +282,11 @@ describe("apply pipeline contract (Lane 179)", () => {
 		const diagnostics: DiagnosticEvent[] = [];
 		const ops: DocumentOp[] = [
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "kept",
+				from: 0,
+				to: 0,
+				insert: "kept",
 			},
 		];
 		editor.on("diagnostic", (event) => {
@@ -294,10 +294,11 @@ describe("apply pipeline contract (Lane 179)", () => {
 		});
 		editor.onBeforeApply((incoming) => {
 			incoming[0] = {
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "pwned",
+				from: 0,
+				to: 0,
+				insert: "pwned",
 			};
 			throw new Error("hook boom");
 		});
@@ -307,10 +308,11 @@ describe("apply pipeline contract (Lane 179)", () => {
 		}).not.toThrow();
 
 		expect(ops[0]).toEqual({
-			type: "insert-text",
+			type: "splice-text",
 			blockId,
-			offset: 0,
-			text: "kept",
+			from: 0,
+				to: 0,
+				insert: "kept",
 		});
 		expect(visibleText(editor.getBlock(blockId)!.textContent())).toBe(
 			"kept",
@@ -374,10 +376,11 @@ describe("apply pipeline contract (Lane 179)", () => {
 		expect(() => {
 			editor.apply([
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "kept",
+					from: 0,
+				to: 0,
+				insert: "kept",
 				},
 			]);
 		}).not.toThrow();
@@ -412,28 +415,32 @@ describe("apply pipeline contract (Lane 179)", () => {
 		expect(() => {
 			editor.apply([
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: -1,
-					text: "nope",
+					from: -1,
+				to: -1,
+				insert: "nope",
 				} as DocumentOp,
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: 123,
+					from: 0,
+				to: 0,
+				insert: 123,
 				} as unknown as DocumentOp,
 				{
-					type: "delete-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					length: Number.NaN,
+					from: 0,
+				to: 0 + Number.NaN,
+				insert: "",
 				} as DocumentOp,
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "ok",
+					from: 0,
+				to: 0,
+				insert: "ok",
 				},
 			]);
 		}).not.toThrow();
@@ -448,6 +455,40 @@ describe("apply pipeline contract (Lane 179)", () => {
 				expect.objectContaining({ code: "PEN_APPLY_004" }),
 			]),
 		);
+
+		editor.destroy();
+	});
+
+	it("drops a splice-text with missing insert with PEN_APPLY_004 and does not throw", () => {
+		const editor = createEditor();
+		const blockId = editor.firstBlock()!.id;
+		const diagnostics: DiagnosticEvent[] = [];
+		editor.on("diagnostic", (event) => {
+			diagnostics.push(event);
+		});
+
+		expect(() => {
+			editor.apply([
+				{
+					type: "splice-text",
+					blockId,
+					from: 0,
+					to: 0,
+				} as DocumentOp,
+				{
+					type: "splice-text",
+					blockId,
+					from: 0,
+					to: 0,
+					insert: "ok",
+				},
+			]);
+		}).not.toThrow();
+
+		expect(visibleText(editor.getBlock(blockId)!.textContent())).toBe("ok");
+		expect(
+			diagnostics.filter((event) => event.code === "PEN_APPLY_004"),
+		).toHaveLength(1);
 
 		editor.destroy();
 	});
@@ -489,10 +530,11 @@ describe("apply pipeline contract (Lane 179)", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "ok",
+				from: 0,
+				to: 0,
+				insert: "ok",
 			},
 			{
 				type: "insert-block",
@@ -537,10 +579,11 @@ describe("apply pipeline contract (Lane 179)", () => {
 				position: { parent: "parent", index: 0 },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: "child",
-				offset: 0,
-				text: "nested",
+				from: 0,
+				to: 0,
+				insert: "nested",
 			},
 		]);
 
@@ -601,16 +644,18 @@ describe("apply pipeline contract (Lane 179)", () => {
 				position: { parent: "cols", index: 1 },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: "left",
-				offset: 0,
-				text: "L",
+				from: 0,
+				to: 0,
+				insert: "L",
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: "right",
-				offset: 0,
-				text: "R",
+				from: 0,
+				to: 0,
+				insert: "R",
 			},
 		]);
 
@@ -651,20 +696,22 @@ describe("apply pipeline contract (Lane 179)", () => {
 			return [
 				...ops,
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "x",
+					from: 0,
+				to: 0,
+				insert: "x",
 				},
 			];
 		});
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "a",
+				from: 0,
+				to: 0,
+				insert: "a",
 			},
 		]);
 
@@ -673,10 +720,11 @@ describe("apply pipeline contract (Lane 179)", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "b",
+				from: 0,
+				to: 0,
+				insert: "b",
 			},
 		]);
 		expect(calls).toBe(2);
@@ -690,27 +738,32 @@ describe("apply pipeline contract (Lane 179)", () => {
 		const seen: string[] = [];
 		editor.onBeforeApply((ops) => {
 			const first = ops[0];
-			if (first && first.type === "insert-text") {
-				seen.push(first.text);
-				first.text = "mutated";
+			if (first && first.type === "splice-text") {
+				const insert = first.insert;
+				if (typeof insert === "string") {
+					seen.push(insert);
+					first.insert = "mutated";
+				}
 			}
 			return ops;
 		});
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "one",
+				from: 0,
+				to: 0,
+				insert: "one",
 			},
 		]);
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "two",
+				from: 0,
+				to: 0,
+				insert: "two",
 			},
 		]);
 
@@ -742,10 +795,11 @@ describe("apply pipeline contract (Lane 179)", () => {
 		expect(() => {
 			editor.apply([
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "kept",
+					from: 0,
+				to: 0,
+				insert: "kept",
 				},
 			]);
 		}).not.toThrow();
@@ -807,10 +861,11 @@ describe("apply pipeline contract (Lane 179)", () => {
 				position: { parent: "parent", index: 0 },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: "child",
-				offset: 0,
-				text: "nested",
+				from: 0,
+				to: 0,
+				insert: "nested",
 			},
 		]);
 
@@ -820,12 +875,10 @@ describe("apply pipeline contract (Lane 179)", () => {
 		editor.destroy();
 	});
 
-	it("pins logicalLengthFromStored against logicalTextFromStored", () => {
+	it("pins logicalLengthFromStored as stored length", () => {
 		const samples = ["", "ab", "keep", "keep\u200Bme"];
 		for (const sample of samples) {
-			expect(logicalLengthFromStored(sample)).toBe(
-				logicalTextFromStored(sample).length,
-			);
+			expect(logicalLengthFromStored(sample)).toBe(sample.length);
 		}
 	});
 });

@@ -572,6 +572,8 @@ export function aiExtension(config: AIExtensionConfig = {}): Extension {
 						: (config.author ?? "user"),
 					originType === "ai" ? "ai" : "user",
 					readModelId(config.model),
+					undefined,
+					{ origin: options.origin },
 				);
 			}, "high"),
 		],

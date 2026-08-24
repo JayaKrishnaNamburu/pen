@@ -85,6 +85,14 @@ describe("SCALE1 generated envelope table", () => {
 				(row) => row.id === "scale3.keystroke.realistic-stack",
 			)?.unit,
 		).toBe("record-only");
+		expect(
+			ENFORCEMENT_INVENTORY.find((row) => row.id === "pg1-anchor-budget")
+				?.unit,
+		).toBe("enforced");
+		expect(
+			ENFORCEMENT_INVENTORY.find((row) => row.id === "pg1-anchor-budget")
+				?.isolatedClock,
+		).toBe("record-only");
 	});
 
 	it("SCALE1: marking a unit-enforced row as a p50 gate fails the inventory check", () => {

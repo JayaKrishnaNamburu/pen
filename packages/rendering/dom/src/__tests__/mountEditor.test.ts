@@ -48,6 +48,10 @@ describe("mountEditor", () => {
 
 		const inline = root.querySelector(`[${DATA_ATTRS.inlineContent}]`);
 		expect(inline).toBeInstanceOf(HTMLElement);
+		const placeholder = inline?.querySelector(`[${DATA_ATTRS.emptyBlock}]`);
+		expect(placeholder?.tagName).toBe("BR");
+		expect(placeholder?.getAttribute(DATA_ATTRS.emptyBlock)).toBe("");
+		expect(inline?.textContent).toBe("");
 		expect(editor.internals.getSlot(FIELD_EDITOR_SLOT_KEY)).toBe(
 			mounted.fieldEditor,
 		);
@@ -112,10 +116,11 @@ describe("mountEditor", () => {
 			editor.apply(
 				[
 					{
-						type: "insert-text",
+						type: "splice-text",
 						blockId: firstBlock.id,
-						offset: 0,
-						text: "Hello",
+						from: 0,
+				to: 0,
+				insert: "Hello",
 					},
 				],
 				{ origin: "user" },

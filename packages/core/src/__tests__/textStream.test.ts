@@ -35,13 +35,14 @@ function createWriter(
 		((ops: DocumentOp[], options?: ApplyOptions) => {
 			applies.push({ ops, options });
 			for (const op of ops) {
-				if (op.type !== "insert-text" || op.blockId !== point.current.blockId) {
+				if (op.type !== "splice-text" || op.blockId !== point.current.blockId) {
 					continue;
 				}
-				if (op.offset <= point.current.offset) {
+				const insert = typeof op.insert === "string" ? op.insert : "";
+				if (op.from <= point.current.offset) {
 					point.current = {
 						blockId: point.current.blockId,
-						offset: point.current.offset + op.text.length,
+						offset: point.current.offset + insert.length,
 					};
 				}
 			}
@@ -69,10 +70,11 @@ describe("createTextStreamWriter", () => {
 		expect(applies).toHaveLength(1);
 		expect(applies[0]?.ops).toEqual([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: "b1",
-				offset: 0,
-				text: "hello",
+				from: 0,
+				to: 0,
+				insert: "hello",
 			},
 		]);
 		expect(originOf(applies[0])).toMatchObject({
@@ -86,10 +88,11 @@ describe("createTextStreamWriter", () => {
 		expect(applies).toHaveLength(2);
 		expect(applies[1]?.ops).toEqual([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: "b1",
-				offset: 5,
-				text: "!",
+				from: 5,
+				to: 5,
+				insert: "!",
 			},
 		]);
 
@@ -98,11 +101,11 @@ describe("createTextStreamWriter", () => {
 		expect(applies).toHaveLength(3);
 		expect(applies[2]?.ops).toEqual([
 			{
-				type: "replace-text",
+				type: "splice-text",
 				blockId: "b1",
-				offset: 0,
-				length: 5,
-				text: "Hello",
+				from: 0,
+				to: 0 + 5,
+				insert: "Hello",
 			},
 		]);
 	});
@@ -178,10 +181,11 @@ describe("createTextStreamWriter", () => {
 		expect(applies).toEqual([
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: "b1",
-					offset: 4,
-					text: "ab",
+					from: 4,
+				to: 4,
+				insert: "ab",
 				},
 			],
 		]);

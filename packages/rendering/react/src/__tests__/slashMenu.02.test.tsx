@@ -55,16 +55,14 @@ describe("@input/pen-react slash menu", () => {
 
 		editor.apply([
 			{
-				type: "convert-block",
-				blockId: toggleBlockId,
-				newType: "toggle",
-				newProps: { open: true },
+				type: "set-props", blockId: toggleBlockId, props: { type: "toggle", ...{ open: true  }},
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: toggleBlockId,
-				offset: 0,
-				text: "Parent",
+				from: 0,
+				to: 0,
+				insert: "Parent",
 			},
 			{
 				type: "insert-block",
@@ -74,13 +72,14 @@ describe("@input/pen-react slash menu", () => {
 				position: { after: toggleBlockId },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: nestedToggleId,
-				offset: 0,
-				text: "Nested",
+				from: 0,
+				to: 0,
+				insert: "Nested",
 			},
 			{
-				type: "update-block",
+				type: "set-props",
 				blockId: nestedToggleId,
 				props: { parentId: toggleBlockId },
 			},
@@ -92,13 +91,14 @@ describe("@input/pen-react slash menu", () => {
 				position: { after: nestedToggleId },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: nestedChildId,
-				offset: 0,
-				text: "Nested child",
+				from: 0,
+				to: 0,
+				insert: "Nested child",
 			},
 			{
-				type: "update-block",
+				type: "set-props",
 				blockId: nestedChildId,
 				props: { parentId: nestedToggleId },
 			},

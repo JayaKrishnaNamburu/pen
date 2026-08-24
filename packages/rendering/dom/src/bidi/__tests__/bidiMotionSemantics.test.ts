@@ -87,11 +87,11 @@ function createMixedEditor(
 	const blockId = editor.firstBlock()!.id;
 	editor.apply(
 		[
-			{ type: "insert-text", blockId, offset: 0, text },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: text },
 			...(direction
 				? [
 						{
-							type: "update-block" as const,
+							type: "set-props" as const,
 							blockId,
 							props: { direction },
 						},

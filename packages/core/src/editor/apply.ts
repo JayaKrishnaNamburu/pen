@@ -1,4 +1,4 @@
-import type { DiagnosticEvent, DocumentOp, OpOrigin, PenDocument, CRDTDocument, CRDTAdapter, CRDTEvent, SchemaRegistry, CRDTMap, CRDTArray, InsertBlockOp, UpdateBlockOp, DeleteBlockOp, MoveBlockOp, ConvertBlockOp, SplitBlockOp, MergeBlocksOp, InsertTextOp, DeleteTextOp, FormatTextOp, ReplaceTextOp, InsertInlineNodeOp, RemoveInlineNodeOp, UpdateLayoutOp, SetMetaOp, CreateAppOp, UpdateAppOp, DeleteAppOp, SetSelectionOp, UpdateTableColumnsOp } from "@input/pen-types";
+import type { DiagnosticEvent, DocumentOp, OpOrigin, PenDocument, CRDTDocument, CRDTAdapter, CRDTEvent, SchemaRegistry, CRDTMap, CRDTArray, InsertBlockOp, DeleteBlockOp, MoveBlockOp, SetPropsOp, SpliceTextOp, FormatTextOp, SetMetaOp, GridOp, AppOp, StructuralOriginTag } from "@input/pen-types";
 import { generateId } from "@input/pen-types";
 import { resolveRuntimeContentType } from "../schema/contentType";
 import type { SchemaEngineImpl } from "../schema/normalize";
@@ -10,8 +10,8 @@ import { TableGridExecutor } from "./tableGridExecutor";
 import { blockExists, createMutableMap, getMutableBlockMap, getMutableAppMap, getOrCreateMapProp, getOrCreateStringArrayProp, removeBlockIdFromArray, removeBlockIdFromAllChildren, getTextContent, getInlineTextContent, opBlockId } from "./applySharedHelpers";
 import { applyInternal, executeOps, emitApplyBoundary, validateOp, resolvePosition, executeSingleOp, transformOpsThroughHooks } from "./applyPipelineRunner";
 import type { PipelinePhase } from "./pipelinePhases";
-import { insertBlock, updateBlock, deleteBlock, moveBlock, convertBlock, splitBlock, mergeBlocks } from "./applyBlockOps";
-import { insertText, deleteText, formatText, replaceText, resolveMarks, insertInlineNode, removeInlineNode, setSelectionOp, updateLayout, createApp, updateApp, deleteApp, tableOp, clearTableState, getPreservedInlineDeltas, setMeta } from "./applyInlineAndMetaOps";
+import { insertBlock, deleteBlock, moveBlock, setProps } from "./applyBlockOps";
+import { spliceText, formatText, resolveMarks, applyApp, tableOp, clearTableState, getPreservedInlineDeltas, setMeta } from "./applyInlineAndMetaOps";
 // Typed CRDT structure interfaces used by the op executor.
 type CRDTBlockMap = CRDTMap<CRDTMap<unknown>>;
 type MutableMap = CRDTUnknownMap & { delete(key: string): void };
@@ -59,7 +59,11 @@ export class ApplyPipeline {
 	private _onDidApply: ((event: CRDTEvent) => void) | null = null;
 	private _applying = false;
 	private _suppressObserver = false;
-	private readonly _queue: { ops: DocumentOp[]; origin: OpOrigin }[] = [];
+	private readonly _queue: {
+		ops: DocumentOp[];
+		origin: OpOrigin;
+		structural?: StructuralOriginTag;
+	}[] = [];
 	private _applyBoundaryHooks: Array<
 		(event: {
 			phase: "before" | "after";
@@ -211,22 +215,34 @@ export class ApplyPipeline {
 		return diagnostics;
 	}
 
-	apply(ops: DocumentOp[], origin: OpOrigin): void {
-		this._applyInternal(ops, origin);
+	apply(
+		ops: DocumentOp[],
+		origin: OpOrigin,
+		structural?: StructuralOriginTag,
+	): void {
+		this._applyInternal(ops, origin, structural);
 	}
 
 	runBeforeApplyHooks(ops: DocumentOp[], origin: OpOrigin): DocumentOp[] {
 		return transformOpsThroughHooks(this, ops, origin);
 	}
 
-	private _applyInternal(ops: DocumentOp[], origin: OpOrigin): void {
-		applyInternal(this, ops, origin);
+	private _applyInternal(
+		ops: DocumentOp[],
+		origin: OpOrigin,
+		structural?: StructuralOriginTag,
+	): void {
+		applyInternal(this, ops, origin, structural);
 	}
 
 	// ── Core Pipeline ────────────────────────────────────────
 
-	private _executeOps(ops: DocumentOp[], origin: OpOrigin): void {
-		executeOps(this, ops, origin);
+	private _executeOps(
+		ops: DocumentOp[],
+		origin: OpOrigin,
+		structural?: StructuralOriginTag,
+	): void {
+		executeOps(this, ops, origin, structural);
 	}
 
 	private _emitApplyBoundary(event: {
@@ -262,10 +278,6 @@ export class ApplyPipeline {
 		return insertBlock(this, op);
 	}
 
-	private _updateBlock(op: UpdateBlockOp): string[] {
-		return updateBlock(this, op);
-	}
-
 	private _deleteBlock(op: DeleteBlockOp): string[] {
 		return deleteBlock(this, op);
 	}
@@ -274,34 +286,18 @@ export class ApplyPipeline {
 		return moveBlock(this, op);
 	}
 
-	private _convertBlock(op: ConvertBlockOp): string[] {
-		return convertBlock(this, op);
-	}
-
-	private _splitBlock(op: SplitBlockOp): string[] {
-		return splitBlock(this, op);
-	}
-
-	private _mergeBlocks(op: MergeBlocksOp): string[] {
-		return mergeBlocks(this, op);
+	private _setProps(op: SetPropsOp): string[] {
+		return setProps(this, op);
 	}
 
 	// ── Text Ops ─────────────────────────────────────────────
 
-	private _insertText(op: InsertTextOp): string[] {
-		return insertText(this, op);
-	}
-
-	private _deleteText(op: DeleteTextOp): string[] {
-		return deleteText(this, op);
+	private _spliceText(op: SpliceTextOp): string[] {
+		return spliceText(this, op);
 	}
 
 	private _formatText(op: FormatTextOp): string[] {
 		return formatText(this, op);
-	}
-
-	private _replaceText(op: ReplaceTextOp): string[] {
-		return replaceText(this, op);
 	}
 
 	private _resolveMarks(
@@ -310,45 +306,13 @@ export class ApplyPipeline {
 		return resolveMarks(this, marks);
 	}
 
-	// ── Inline Node Ops ──────────────────────────────────────
+	// ── App / grid / meta ────────────────────────────────────
 
-	private _insertInlineNode(op: InsertInlineNodeOp): string[] {
-		return insertInlineNode(this, op);
+	private _applyApp(op: AppOp): string[] {
+		return applyApp(this, op);
 	}
 
-	private _removeInlineNode(op: RemoveInlineNodeOp): string[] {
-		return removeInlineNode(this, op);
-	}
-
-	// ── Selection Op ─────────────────────────────────────────
-
-	private _setSelection(op: SetSelectionOp): string[] {
-		return setSelectionOp(this, op);
-	}
-
-	// ── Layout Op ────────────────────────────────────────────
-
-	private _updateLayout(op: UpdateLayoutOp): string[] {
-		return updateLayout(this, op);
-	}
-
-	// ── App Ops ──────────────────────────────────────────────
-
-	private _createApp(op: CreateAppOp): string[] {
-		return createApp(this, op);
-	}
-
-	private _updateApp(op: UpdateAppOp): string[] {
-		return updateApp(this, op);
-	}
-
-	private _deleteApp(op: DeleteAppOp): string[] {
-		return deleteApp(this, op);
-	}
-
-	// ── Table Ops ────────────────────────────────────────────
-
-	private _tableOp(op: DocumentOp): string[] {
+	private _tableOp(op: GridOp): string[] {
 		return tableOp(this, op);
 	}
 

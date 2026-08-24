@@ -1,3 +1,4 @@
+import { applyMergeBlocks } from "@input/pen-core";
 import type { DocumentOp, Editor } from "@input/pen-types";
 import { getAdjacentVisibleBlockId } from "../utils/parentIdTree";
 import {
@@ -141,13 +142,10 @@ export function applyBackspaceBehavior(
 			} as DocumentOp,
 		]);
 	} else {
-		editor.apply([
-			{
-				type: "merge-blocks",
-				targetBlockId: previousBlock.id,
-				sourceBlockId: blockId,
-			} as DocumentOp,
-		]);
+		applyMergeBlocks(editor, {
+			targetBlockId: previousBlock.id,
+			sourceBlockId: blockId,
+		});
 	}
 
 	return {

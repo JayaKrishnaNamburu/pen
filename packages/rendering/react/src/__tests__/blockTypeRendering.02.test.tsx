@@ -57,16 +57,14 @@ describe("@input/pen-react block type rendering", () => {
 
 		editor.apply([
 			{
-				type: "convert-block",
-				blockId: toggleBlockId,
-				newType: "toggle",
-				newProps: { open: true },
+				type: "set-props", blockId: toggleBlockId, props: { type: "toggle", ...{ open: true  }},
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: toggleBlockId,
-				offset: 0,
-				text: "Parent toggle",
+				from: 0,
+				to: 0,
+				insert: "Parent toggle",
 			},
 			{
 				type: "insert-block",
@@ -76,13 +74,14 @@ describe("@input/pen-react block type rendering", () => {
 				position: "last",
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: childBlockId,
-				offset: 0,
-				text: "Nested heading",
+				from: 0,
+				to: 0,
+				insert: "Nested heading",
 			},
 			{
-				type: "update-block",
+				type: "set-props",
 				blockId: childBlockId,
 				props: { parentId: toggleBlockId },
 			},
@@ -121,7 +120,7 @@ describe("@input/pen-react block type rendering", () => {
 		await act(async () => {
 			editor.apply([
 				{
-					type: "update-block",
+					type: "set-props",
 					blockId: toggleBlockId,
 					props: { open: false },
 				},
@@ -146,16 +145,14 @@ describe("@input/pen-react block type rendering", () => {
 
 		editor.apply([
 			{
-				type: "convert-block",
-				blockId: toggleBlockId,
-				newType: "toggle",
-				newProps: { open: true },
+				type: "set-props", blockId: toggleBlockId, props: { type: "toggle", ...{ open: true  }},
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: toggleBlockId,
-				offset: 0,
-				text: "Toggle",
+				from: 0,
+				to: 0,
+				insert: "Toggle",
 			},
 		]);
 
@@ -224,8 +221,10 @@ describe("@input/pen-react block type rendering", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "convert-block", blockId, newType: "numberedListItem" },
-			{ type: "insert-text", blockId, offset: 0, text: "First item" },
+			{ type: "set-props", blockId, props: { type: "numberedListItem" } },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "First item" },
 		]);
 
 		const container = document.createElement("div");
@@ -268,15 +267,13 @@ describe("@input/pen-react block type rendering", () => {
 
 		editor.apply([
 			{
-				type: "convert-block",
-				blockId: firstBlockId,
-				newType: "numberedListItem",
-			},
+				type: "set-props", blockId: firstBlockId, props: { type: "numberedListItem" }},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: firstBlockId,
-				offset: 0,
-				text: "First item",
+				from: 0,
+				to: 0,
+				insert: "First item",
 			},
 			{
 				type: "insert-block",
@@ -286,10 +283,11 @@ describe("@input/pen-react block type rendering", () => {
 				position: "last",
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: secondBlockId,
-				offset: 0,
-				text: "Third item",
+				from: 0,
+				to: 0,
+				insert: "Third item",
 			},
 		]);
 
@@ -317,10 +315,11 @@ describe("@input/pen-react block type rendering", () => {
 					position: { after: firstBlockId },
 				},
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: insertedBlockId,
-					offset: 0,
-					text: "Second item",
+					from: 0,
+				to: 0,
+				insert: "Second item",
 				},
 			]);
 		});
@@ -339,8 +338,10 @@ describe("@input/pen-react block type rendering", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "convert-block", blockId, newType: "bulletListItem" },
-			{ type: "insert-text", blockId, offset: 0, text: "Bullet item" },
+			{ type: "set-props", blockId, props: { type: "bulletListItem" } },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Bullet item" },
 		]);
 
 		const container = document.createElement("div");
@@ -380,8 +381,10 @@ describe("@input/pen-react block type rendering", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "convert-block", blockId, newType: "checkListItem" },
-			{ type: "insert-text", blockId, offset: 0, text: "Task item" },
+			{ type: "set-props", blockId, props: { type: "checkListItem" } },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Task item" },
 		]);
 
 		const container = document.createElement("div");
@@ -441,10 +444,11 @@ describe("@input/pen-react block type rendering", () => {
 		await act(async () => {
 			editor.apply([
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "Synced text",
+					from: 0,
+				to: 0,
+				insert: "Synced text",
 				},
 			]);
 		});

@@ -93,10 +93,11 @@ function createDocumentWithText(text: string): Editor {
 	editor.apply(
 		[
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text,
+				from: 0,
+				to: 0,
+				insert: text,
 			},
 		],
 		{ origin: "user" },

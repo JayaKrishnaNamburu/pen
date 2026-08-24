@@ -4,9 +4,10 @@
  *
  * Greps spec-v2 and spec-v3 (when present) for rule-ID tokens
  * (inventory prefixes from spec-v2/09-reliability-testing.md "Rule:"
- * line, plus later-wave prefixes DUR/COL/AIB/IOP/SCALE/AN/AS) and
- * greps tests for claims. spec-v3 is optional; a missing directory
- * is skipped. Zero collected IDs is empty inventory and fails.
+ * line, plus EXTRA_PREFIXES) and greps tests for claims. spec-v3 is
+ * optional; a missing directory is skipped. Zero collected IDs is
+ * empty inventory and fails. Prefixes defined as rules in both
+ * spec roots are printed as COLLISION (D is the known case).
  *
  * Claimed-scope IDs without a claiming test name fail.
  * Gated-scope IDs without a verified, wired gate fail.
@@ -33,8 +34,45 @@ const WORKFLOW_DIR = ".github/workflows/";
 const GATED_ROW_RE =
 	/^([A-Z]+\d+)\s*\|\s*(\S+)\s*\|\s*(\S+)\s*\|\s*(\S+)\s*\|\s*(.+)$/;
 
-const EXTRA_PREFIXES = ["DUR", "COL", "AIB", "IOP", "SCALE", "AN", "AS"];
+const EXTRA_PREFIXES = [
+	"DUR",
+	"COL",
+	"AIB",
+	"IOP",
+	"SCALE",
+	"AN",
+	"AS",
+	"EM",
+	"OB",
+	"PR",
+	// SF1–SF6 are Wave 6 (two package merges). In the denominator so
+	// the filter is not blind. Not IN_FORCE: Wave 0 GATE 0.1 is an
+	// entry gate, and a fail-now on SF would block Waves 1–5 until
+	// those merges land. They stay unlisted until Wave 6 appends
+	// claimed-scope. A prefix carved out of EXTRA_PREFIXES cannot
+	// fail; an unlisted prefix can still be seen.
+	"SF",
+];
+// Spec IDs with these prefixes fail if no test name claims them,
+// even when claimed-scope.txt has not listed them yet. Fail now,
+// pass when the claiming tests land.
+const IN_FORCE_PREFIXES = ["OB", "PR"];
+// WA1–WA6 are working agreements (process), not product invariants.
+// Excluded from the denominator so they are not mistaken for
+// unclaimed test-name obligations. This list is the documented
+// exclusion; omitting WA from EXTRA_PREFIXES without naming it
+// here would be the silent-filter defect. Script-gateable: WA1
+// (spec-v3 closed at 00–06 + waves/), WA2 (scripts/v3-gates.mjs;
+// wave files must contain no status prose), WA5
+// (scripts/wave-deletions-migration-check.mjs). Review-only: WA3
+// (mechanism + first consumer in the same wave), WA4 (do not put
+// standing gates on the v3 critical path), WA6 (name the native
+// capability before borrowing).
+const PROCESS_PREFIXES = ["WA"];
 const EMPTY_INVENTORY = "empty inventory";
+const DEFINITION_LINE_RE = /^[-*]\s+([A-Z]+)\d+\s*[.—–]/;
+const COLLISION_LINE =
+	"defined as rules in spec-v2 and spec-v3; a test named for either root claims both";
 
 const TEST_FILE_RE = /\.(?:test|spec)\.(?:[cm]?[jt]sx?)$/;
 const SKIP_DIR_NAMES = new Set([
@@ -89,6 +127,47 @@ export function prefixesFromRanges(ranges, extraPrefixes = EXTRA_PREFIXES) {
 	return [...prefixes].sort(
 		(a, b) => b.length - a.length || a.localeCompare(b),
 	);
+}
+
+export function prefixesDefinedInMarkdown(text) {
+	const prefixes = new Set();
+	for (const line of text.split(/\r?\n/)) {
+		const match = line.match(DEFINITION_LINE_RE);
+		if (match != null) {
+			prefixes.add(match[1]);
+		}
+	}
+	return prefixes;
+}
+
+export function collidingPrefixes(byRoot) {
+	const v2 = byRoot.get("spec-v2") ?? new Set();
+	const v3 = byRoot.get("spec-v3") ?? new Set();
+	return [...v2]
+		.filter((prefix) => v3.has(prefix))
+		.sort((a, b) => b.length - a.length || a.localeCompare(b));
+}
+
+export function inForceIds(specIds, prefixes = IN_FORCE_PREFIXES) {
+	const set = new Set(prefixes);
+	return [...specIds]
+		.filter((id) => {
+			const match = id.match(/^([A-Z]+)\d+$/);
+			return match != null && set.has(match[1]);
+		})
+		.sort(compareIds);
+}
+
+export function mergeClaimedIds(claimedIds, specIds) {
+	const seen = new Set(claimedIds);
+	const merged = [...claimedIds];
+	for (const id of inForceIds(specIds)) {
+		if (!seen.has(id)) {
+			seen.add(id);
+			merged.push(id);
+		}
+	}
+	return merged;
 }
 
 export function ruleIdRegex(prefixes) {
@@ -319,6 +398,25 @@ export async function collectSpecIds(repoRoot, idRegex, isRuleId) {
 	return { ids, locations, fileCount: files.length };
 }
 
+export async function collectDefinedPrefixes(repoRoot) {
+	const byRoot = new Map();
+	for (const specDir of SPEC_ROOTS) {
+		const prefixes = new Set();
+		const files = await walkFiles(
+			path.join(repoRoot, specDir),
+			(filePath) => filePath.endsWith(".md"),
+		);
+		for (const filePath of files) {
+			const text = await fs.readFile(filePath, "utf8");
+			for (const prefix of prefixesDefinedInMarkdown(text)) {
+				prefixes.add(prefix);
+			}
+		}
+		byRoot.set(specDir, prefixes);
+	}
+	return byRoot;
+}
+
 export function assertNonEmptyInventory(ids) {
 	if (ids.size === 0) {
 		throw new Error(
@@ -431,6 +529,7 @@ function formatReport({
 	claims,
 	specFileCount,
 	testFileCount,
+	collisions = [],
 }) {
 	const lines = [
 		"coverage:rules",
@@ -438,6 +537,10 @@ function formatReport({
 		specFileCount != null
 			? `population: ${specFileCount} spec files (spec-v2 + spec-v3), ${testFileCount} test files`
 			: null,
+		collisions.length > 0
+			? `COLLISION  ${collisions.join(", ")}  ${COLLISION_LINE}`
+			: null,
+		`Process excluded: ${PROCESS_PREFIXES.join(", ")} (working agreements, not test-name rules)`,
 		`Claimed scope (${claimedIds.length}): ${claimedIds.join(", ")}`,
 		`Gated scope (${gatedRows.length}): ${gatedRows.map((row) => row.id).join(", ") || "(none)"}`,
 		"",
@@ -540,7 +643,7 @@ async function runCoverage(
 	const idRegex = ruleIdRegex(prefixes);
 	const isRuleId = ruleIdPredicate(ranges);
 
-	const claimedIds = parseClaimedScope(
+	const listedClaimedIds = parseClaimedScope(
 		await fs.readFile(resolveRepoPath(repoRoot, claimedScopeRel), "utf8"),
 	);
 	const gatedRows = parseGatedScope(
@@ -550,16 +653,21 @@ async function runCoverage(
 	for (const row of gatedRows) {
 		gateChecks.push(await verifyGatedRow(repoRoot, row));
 	}
-	const {
-		ids: specIds,
-		fileCount: specFileCount,
-	} = await collectSpecIds(repoRoot, idRegex, isRuleId);
+	const { ids: specIds, fileCount: specFileCount } = await collectSpecIds(
+		repoRoot,
+		idRegex,
+		isRuleId,
+	);
 	if (specFileCount === 0) {
 		throw new Error(
 			"coverage-rules: cannot check: spec-v2/spec-v3 markdown walk matched 0 files",
 		);
 	}
 	assertNonEmptyInventory(specIds);
+	const claimedIds = mergeClaimedIds(listedClaimedIds, specIds);
+	const collisions = collidingPrefixes(
+		await collectDefinedPrefixes(repoRoot),
+	);
 	const { claims, fileCount: testFileCount } = await collectTestClaims(
 		repoRoot,
 		claimedIds,
@@ -585,6 +693,7 @@ async function runCoverage(
 		gatedRows,
 		specFileCount,
 		testFileCount,
+		collisions,
 	};
 }
 
@@ -798,9 +907,7 @@ async function runSelfTest() {
 		);
 	}
 	if (withoutV3.unlisted.includes("AN1")) {
-		throw new Error(
-			"self-test: absent spec-v3 must not invent AN/AS IDs",
-		);
+		throw new Error("self-test: absent spec-v3 must not invent AN/AS IDs");
 	}
 
 	const emptyIds = await collectSpecIds(
@@ -825,9 +932,145 @@ async function runSelfTest() {
 		);
 	}
 
+	if (withV3.collisions.includes("D")) {
+		throw new Error(
+			"self-test: D-collision must stay silent when only one root defines D",
+		);
+	}
+
 	await fs.rm(v3tmp, { recursive: true, force: true });
 	console.log(
 		"coverage:rules self-test ok (spec-v3 AN/AS inventoried; absent spec-v3 stays on v2; empty inventory fails)",
+	);
+
+	const obtmp = await fs.mkdtemp(
+		path.join(os.tmpdir(), "pen-coverage-rules-ob-"),
+	);
+	const obSpecV2 = path.join(obtmp, "spec-v2");
+	const obSpecV3 = path.join(obtmp, "spec-v3");
+	const obTests = path.join(obtmp, "packages", "core", "src", "__tests__");
+	await fs.mkdir(obSpecV2, { recursive: true });
+	await fs.mkdir(obSpecV3, { recursive: true });
+	await fs.mkdir(obTests, { recursive: true });
+	await fs.writeFile(
+		path.join(obSpecV2, "09-reliability-testing.md"),
+		`Rule: every normative rule ID in spec-v2 documents (I1–I12, HOST1–HOST6) must be claimed.\n`,
+	);
+	await fs.writeFile(
+		path.join(obSpecV2, "fixture-v2.md"),
+		"- I2. Mapping stays in range.\n",
+	);
+	await fs.writeFile(
+		path.join(obSpecV3, "02-observation.md"),
+		"- OB2. One builder, one code path.\n",
+	);
+	await fs.writeFile(path.join(obtmp, "claimed-scope.txt"), "I2\n");
+	await fs.writeFile(path.join(obtmp, "gated-scope.txt"), "");
+	await fs.writeFile(
+		path.join(obTests, "mapping.test.ts"),
+		`import { describe, it } from "vitest";\ndescribe("summaries", () => {\n  it("I2 maps every pre-commit point into range or null", () => {});\n});\n`,
+	);
+
+	const unclaimedOb = await runCoverage(
+		obtmp,
+		"claimed-scope.txt",
+		"gated-scope.txt",
+	);
+	if (!unclaimedOb.claimedUnclaimed.includes("OB2")) {
+		throw new Error(
+			`self-test: spec-v3 OB2 must be unclaimed, got ${unclaimedOb.claimedUnclaimed.join(",")}`,
+		);
+	}
+
+	await fs.writeFile(
+		path.join(obTests, "observation.test.ts"),
+		`import { describe, it } from "vitest";\ndescribe("observation", () => {\n  it("OB2 keeps one builder path", () => {});\n});\n`,
+	);
+	const claimedOb = await runCoverage(
+		obtmp,
+		"claimed-scope.txt",
+		"gated-scope.txt",
+	);
+	if (claimedOb.claimedUnclaimed.includes("OB2")) {
+		throw new Error(
+			"self-test: OB2 must leave claimedUnclaimed once named",
+		);
+	}
+
+	await fs.rm(obtmp, { recursive: true, force: true });
+	console.log(
+		"coverage:rules self-test ok (spec-v3 OB2 fails closed without a claiming test, then claims)",
+	);
+
+	const dtmp = await fs.mkdtemp(
+		path.join(os.tmpdir(), "pen-coverage-rules-d-"),
+	);
+	const dSpecV2 = path.join(dtmp, "spec-v2");
+	const dSpecV3 = path.join(dtmp, "spec-v3");
+	const dTests = path.join(dtmp, "packages", "core", "src", "__tests__");
+	await fs.mkdir(dSpecV2, { recursive: true });
+	await fs.mkdir(dSpecV3, { recursive: true });
+	await fs.mkdir(dTests, { recursive: true });
+	await fs.writeFile(
+		path.join(dSpecV2, "09-reliability-testing.md"),
+		`Rule: every normative rule ID in spec-v2 documents (D1–D5, I1–I12) must be claimed.\n`,
+	);
+	await fs.writeFile(
+		path.join(dSpecV2, "05-commands.md"),
+		"- D1. Handlers run in facet order.\n",
+	);
+	await fs.writeFile(
+		path.join(dSpecV3, "00-concept.md"),
+		"- D1 — The mapping algebra duplicates CRDT position identity.\n",
+	);
+	await fs.writeFile(path.join(dtmp, "claimed-scope.txt"), "D1\n");
+	await fs.writeFile(path.join(dtmp, "gated-scope.txt"), "");
+	await fs.writeFile(
+		path.join(dTests, "commands.test.ts"),
+		`import { describe, it } from "vitest";\ndescribe("dispatch", () => {\n  it("D1 tries handlers in facet order", () => {});\n});\n`,
+	);
+
+	const bothDefineD = await runCoverage(
+		dtmp,
+		"claimed-scope.txt",
+		"gated-scope.txt",
+	);
+	if (!bothDefineD.collisions.includes("D")) {
+		throw new Error(
+			`self-test: D-collision must fire when both roots define D, got ${bothDefineD.collisions.join(",")}`,
+		);
+	}
+	const bothReport = formatReport(bothDefineD);
+	if (!bothReport.includes(`COLLISION  D  ${COLLISION_LINE}`)) {
+		throw new Error(
+			`self-test: D-collision must print COLLISION D, got ${bothReport.split("\n").slice(0, 8).join(" | ")}`,
+		);
+	}
+
+	await fs.writeFile(
+		path.join(dSpecV3, "00-concept.md"),
+		"- OB1. Effect plus the two repair recipes.\n",
+	);
+	const onlyV2DefinesD = await runCoverage(
+		dtmp,
+		"claimed-scope.txt",
+		"gated-scope.txt",
+	);
+	if (onlyV2DefinesD.collisions.includes("D")) {
+		throw new Error(
+			"self-test: D-collision must stay silent when only one root defines D",
+		);
+	}
+	const silentReport = formatReport(onlyV2DefinesD);
+	if (silentReport.includes("COLLISION  D  ")) {
+		throw new Error(
+			"self-test: silent D-collision must omit the COLLISION D line",
+		);
+	}
+
+	await fs.rm(dtmp, { recursive: true, force: true });
+	console.log(
+		"coverage:rules self-test ok (D-collision fires when both roots define D; silent when only one does)",
 	);
 }
 

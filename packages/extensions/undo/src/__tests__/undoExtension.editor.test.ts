@@ -1,3 +1,4 @@
+import { applyMergeBlocks, applySplitBlock } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 import * as Y from "yjs";
@@ -37,10 +38,11 @@ describe("@input/pen-undo editor document restore", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: BODY_ID,
-					offset: BODY_TEXT.length,
-					text: " extra",
+					from: BODY_TEXT.length,
+				to: BODY_TEXT.length,
+				insert: " extra",
 				},
 			],
 			{ origin: "user" },
@@ -61,33 +63,23 @@ describe("@input/pen-undo editor document restore", () => {
 		const { editor } = createUndoEditor();
 		const prior = snapshot(editor);
 
-		editor.apply(
-			[
-				{
-					type: "split-block",
-					blockId: BODY_ID,
-					offset: 7,
-					newBlockId: BODY_TAIL_ID,
-				},
-			],
-			{ origin: "user" },
-		);
+		applySplitBlock(editor, {
+			blockId: BODY_ID,
+			offset: 7,
+			newBlockId: BODY_TAIL_ID,
+			applyOptions: { origin: "user" },
+		});
 		expect(snapshot(editor)).toEqual([
 			{ id: TITLE_ID, text: TITLE_TEXT },
 			{ id: BODY_ID, text: "Stable " },
 			{ id: BODY_TAIL_ID, text: "body text" },
 		]);
 
-		editor.apply(
-			[
-				{
-					type: "merge-blocks",
-					targetBlockId: BODY_ID,
-					sourceBlockId: BODY_TAIL_ID,
-				},
-			],
-			{ origin: "user" },
-		);
+		applyMergeBlocks(editor, {
+			targetBlockId: BODY_ID,
+			sourceBlockId: BODY_TAIL_ID,
+			applyOptions: { origin: "user" },
+		});
 		expect(snapshot(editor)).toEqual(prior);
 
 		editor.apply([{ type: "delete-block", blockId: TITLE_ID }], {
@@ -122,10 +114,11 @@ describe("@input/pen-undo editor document restore", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: BODY_ID,
-					offset: BODY_TEXT.length,
-					text: " one",
+					from: BODY_TEXT.length,
+				to: BODY_TEXT.length,
+				insert: " one",
 				},
 			],
 			{ origin: "user", undoGroupId: "turn-1" },
@@ -133,10 +126,11 @@ describe("@input/pen-undo editor document restore", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: BODY_ID,
-					offset: BODY_TEXT.length + 4,
-					text: " two",
+					from: BODY_TEXT.length + 4,
+				to: BODY_TEXT.length + 4,
+				insert: " two",
 				},
 			],
 			{ origin: "user", undoGroupId: "turn-1" },
@@ -158,10 +152,11 @@ describe("@input/pen-undo editor document restore", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: BODY_ID,
-					offset: BODY_TEXT.length,
-					text: " one",
+					from: BODY_TEXT.length,
+				to: BODY_TEXT.length,
+				insert: " one",
 				},
 			],
 			{ origin: "user", undoGroupId: "turn-1" },
@@ -169,10 +164,11 @@ describe("@input/pen-undo editor document restore", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: BODY_ID,
-					offset: BODY_TEXT.length + 4,
-					text: " two",
+					from: BODY_TEXT.length + 4,
+				to: BODY_TEXT.length + 4,
+				insert: " two",
 				},
 			],
 			{ origin: "user", undoGroupId: "turn-2" },
@@ -199,10 +195,11 @@ describe("@input/pen-undo editor document restore", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: TITLE_ID,
-					offset: TITLE_TEXT.length,
-					text: " remote",
+					from: TITLE_TEXT.length,
+				to: TITLE_TEXT.length,
+				insert: " remote",
 				},
 			],
 			{ origin: "collaborator" },
@@ -228,10 +225,11 @@ describe("@input/pen-undo editor document restore", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: BODY_ID,
-					offset: BODY_TEXT.length,
-					text: " local",
+					from: BODY_TEXT.length,
+				to: BODY_TEXT.length,
+				insert: " local",
 				},
 			],
 			{ origin: "user" },
@@ -287,10 +285,11 @@ describe("@input/pen-undo editor document restore", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: BODY_ID,
-					offset: BODY_TEXT.length,
-					text: " drafted",
+					from: BODY_TEXT.length,
+				to: BODY_TEXT.length,
+				insert: " drafted",
 				},
 			],
 			{ origin: "ai" },
@@ -312,10 +311,11 @@ describe("@input/pen-undo editor document restore", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: BODY_ID,
-					offset: BODY_TEXT.length,
-					text: " one",
+					from: BODY_TEXT.length,
+				to: BODY_TEXT.length,
+				insert: " one",
 				},
 			],
 			{ origin: { type: "ai", groupId: "turn-1" } },
@@ -323,10 +323,11 @@ describe("@input/pen-undo editor document restore", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: BODY_ID,
-					offset: BODY_TEXT.length + 4,
-					text: " two",
+					from: BODY_TEXT.length + 4,
+				to: BODY_TEXT.length + 4,
+				insert: " two",
 				},
 			],
 			{ origin: { type: "ai", groupId: "turn-1" } },
@@ -347,10 +348,11 @@ describe("@input/pen-undo editor document restore", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: TITLE_ID,
-					offset: TITLE_TEXT.length,
-					text: " expanded",
+					from: TITLE_TEXT.length,
+				to: TITLE_TEXT.length,
+				insert: " expanded",
 				},
 			],
 			{ origin: "input-rule" },
@@ -373,10 +375,11 @@ describe("@input/pen-undo editor document restore", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: TITLE_ID,
-					offset: TITLE_TEXT.length,
-					text: " seeded",
+					from: TITLE_TEXT.length,
+				to: TITLE_TEXT.length,
+				insert: " seeded",
 				},
 			],
 			{ origin: "system" },
@@ -399,10 +402,11 @@ describe("@input/pen-undo editor document restore", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: TITLE_ID,
-					offset: TITLE_TEXT.length,
-					text: " remote",
+					from: TITLE_TEXT.length,
+				to: TITLE_TEXT.length,
+				insert: " remote",
 				},
 			],
 			{ origin: { type: "collaborator" } },

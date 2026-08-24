@@ -29,10 +29,17 @@ export {
 	caretUp,
 	caretWordLeft,
 	caretWordRight,
+	getCellCaretFocus,
 	selectAll,
 	selectBlock,
+	setCellCaretFocus,
 } from "./caret";
-export type { CaretMotionParam, SelectBlockParam } from "./caret";
+export type {
+	CaretMotionParam,
+	CellCaretFocus,
+	CellCaretWrite,
+	SelectBlockParam,
+} from "./caret";
 export {
 	convertBlock,
 	deleteAdjacentInlineAtom,

@@ -152,20 +152,20 @@ describe("@input/pen-vue AX1 surface", () => {
     });
     editor.apply([
       {
-        type: "insert-table-cell-text",
+        type: "splice-text",
         blockId: "t1",
-        row: 0,
-        col: 0,
-        offset: 0,
-        text: "Alpha",
+        cell: { row: 0, col: 0 },
+        from: 0,
+        to: 0,
+        insert: "Alpha",
       },
       {
-        type: "insert-table-cell-text",
+        type: "splice-text",
         blockId: "t1",
-        row: 0,
-        col: 1,
-        offset: 0,
-        text: "Beta",
+        cell: { row: 0, col: 1 },
+        from: 0,
+        to: 0,
+        insert: "Beta",
       },
     ]);
 

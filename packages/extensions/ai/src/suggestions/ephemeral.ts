@@ -29,10 +29,11 @@ export class EphemeralSuggestionManager {
 		if (suggestion.type === "inline") {
 			editor.apply(
 				[{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: suggestion.blockId,
-					offset: suggestion.offset,
-					text: suggestion.text,
+					from: suggestion.offset,
+				to: suggestion.offset,
+				insert: suggestion.text,
 				}],
 				{ origin: "ai", undoGroup: true },
 			);
@@ -51,10 +52,11 @@ export class EphemeralSuggestionManager {
 					position: { after: suggestion.blockId },
 				},
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: suggestion.text,
+					from: 0,
+				to: 0,
+				insert: suggestion.text,
 				},
 			],
 			{ origin: "ai", undoGroup: true },

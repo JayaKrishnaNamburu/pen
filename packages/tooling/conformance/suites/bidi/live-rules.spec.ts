@@ -245,10 +245,11 @@ scenario(
 				position: "last",
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: M3_BLOCK_ID,
-				offset: 0,
-				text: M3_TEXT,
+				from: 0,
+				to: 0,
+				insert: M3_TEXT,
 			},
 		]);
 		await expect(page.locator(`[data-block-id="${M3_BLOCK_ID}"]`)).toBeVisible();
@@ -470,10 +471,11 @@ scenario(
 				position: "last",
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: "dir2-first-strong",
-				offset: 0,
-				text: "مرحبا",
+				from: 0,
+				to: 0,
+				insert: "مرحبا",
 			},
 		]);
 
@@ -532,5 +534,15 @@ scenario(
 				`dir=${firstStrong!.dir} text=${JSON.stringify(firstStrong!.text)}`,
 			),
 		).toBe("rtl");
+		expect(
+			/isolate/i.test(rtl!.unicodeBidi) && !/override/i.test(rtl!.unicodeBidi),
+			formatCheckReport(
+				"RI1: rtl embed host is unicode-bidi isolate",
+				/isolate/i.test(rtl!.unicodeBidi) && !/override/i.test(rtl!.unicodeBidi)
+					? "passed"
+					: "failed",
+				`unicodeBidi=${rtl!.unicodeBidi}`,
+			),
+		).toBe(true);
 	},
 );

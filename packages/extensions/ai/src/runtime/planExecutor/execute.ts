@@ -93,10 +93,11 @@ export function buildTextEditExecution(
 		});
 		return {
 			ops: [{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: plan.target.blockId,
-				offset: blockLength,
-				text: plan.text,
+				from: blockLength,
+				to: blockLength,
+				insert: plan.text,
 			}],
 			issues: [],
 			reviewSafe: true,
@@ -111,10 +112,11 @@ export function buildTextEditExecution(
 		});
 		return {
 			ops: [{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: plan.target.blockId,
-				offset,
-				text: plan.text,
+				from: offset,
+				to: offset,
+				insert: plan.text,
 			}],
 			issues: [],
 			reviewSafe: true,
@@ -133,11 +135,11 @@ export function buildTextEditExecution(
 
 	return {
 		ops: [{
-			type: "replace-text",
+			type: "splice-text",
 			blockId: plan.target.blockId,
-			offset,
-			length,
-			text: plan.text,
+			from: offset,
+			to: offset + length,
+			insert: plan.text,
 		}],
 		issues: [],
 		reviewSafe: true,
@@ -176,10 +178,11 @@ export function buildBlockInsertExecution(
 
 	if (plan.initialText && plan.initialText.length > 0) {
 		ops.push({
-			type: "insert-text",
+			type: "splice-text",
 			blockId,
-			offset: 0,
-			text: plan.initialText,
+			from: 0,
+				to: 0,
+				insert: plan.initialText,
 		});
 	}
 
@@ -210,7 +213,7 @@ export function buildBlockUpdateExecution(
 
 	return {
 		ops: [{
-			type: "update-block",
+			type: "set-props",
 			blockId: plan.blockId,
 			props: plan.props,
 		}],
@@ -267,10 +270,7 @@ export function buildBlockConvertExecution(
 
 	return {
 		ops: [{
-			type: "convert-block",
-			blockId: plan.blockId,
-			newType: plan.newType,
-			newProps: plan.props,
+			type: "set-props", blockId: plan.blockId, props: { type: plan.newType, ...plan.props },
 		}],
 		issues: [],
 		reviewSafe: true,

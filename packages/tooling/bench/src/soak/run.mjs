@@ -119,10 +119,11 @@ function insertOn(editor, offset, text) {
 	editor.apply(
 		[
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: id,
-				offset: 0,
-				text,
+				from: 0,
+				to: 0,
+				insert: text,
 			},
 		],
 		{ origin: "user" },
@@ -176,10 +177,11 @@ function tickSession(session, harness, i) {
 			harness.peerA.editor.apply(
 				[
 					{
-						type: "insert-text",
+						type: "splice-text",
 						blockId: peerBlock.id,
-						offset: 0,
-						text: "r",
+						from: 0,
+				to: 0,
+				insert: "r",
 					},
 				],
 				{ origin: "user" },

@@ -2,6 +2,7 @@ import { createEditor } from "@input/pen-core";
 import { defaultSchema } from "@input/pen-schema-default";
 import { createTestDocument, createTwoPeerHarness } from "@input/pen-test";
 import type { DiagnosticEvent } from "@input/pen-types";
+import { undoExtension } from "@input/pen-undo";
 import { describe, expect, it } from "vitest";
 
 import { MultiplayerControllerImpl } from "../controller";
@@ -9,7 +10,11 @@ import { AuthorLedger } from "../presence/authorLedger";
 import { ClientIdentityMap } from "../presence/identityMap";
 import { multiplayerExtension } from "../index";
 import type { MultiplayerAwarenessState } from "../types";
-import { serializePoint, wireCursor, wireTextSelection } from "./presenceAnchors";
+import {
+	serializePoint,
+	wireCursor,
+	wireTextSelection,
+} from "./presenceAnchors";
 
 function createDocumentEditor(content = "Hello") {
 	const { crdtDoc } = createTestDocument([
@@ -45,7 +50,15 @@ describe("remote awareness anchors", () => {
 		expect(controller.getRemoteCursors()[0]?.offset).toBe(3);
 
 		editor.apply(
-			[{ type: "insert-text", blockId: "b1", offset: 0, text: "xxx" }],
+			[
+				{
+					type: "splice-text",
+					blockId: "b1",
+					from: 0,
+					to: 0,
+					insert: "xxx",
+				},
+			],
 			{ origin: "user" },
 		);
 
@@ -67,6 +80,7 @@ describe("remote awareness anchors", () => {
 		const harness = createTwoPeerHarness({
 			blocks: [{ id: "b1", type: "paragraph", content: "hello world" }],
 			extensions: [
+				undoExtension({ groupTimeout: 0 }),
 				multiplayerExtension({ user: { id: "u1", name: "Ada" } }),
 			],
 		});
@@ -84,17 +98,36 @@ describe("remote awareness anchors", () => {
 		expect(onB).not.toBeNull();
 
 		harness.peerA.editor.apply(
-			[{ type: "delete-text", blockId: "b1", offset: 6, length: 5 }],
+			[
+				{
+					type: "splice-text",
+					blockId: "b1",
+					from: 6,
+					to: 6 + 5,
+					insert: "",
+				},
+			],
 			{ origin: "user" },
 		);
 		harness.exchange("a-then-b");
-		harness.peerA.editor.undoManager.undo();
+		expect(harness.peerA.editor.getBlock("b1").textContent()).toBe("hello ");
+		expect(harness.peerB.editor.getBlock("b1").textContent()).toBe("hello ");
+
+		expect(harness.peerA.editor.undoManager.undo()).toBe(true);
 		harness.exchange("a-then-b");
 		harness.assertConverged();
+		expect(harness.peerA.editor.getBlock("b1").textContent()).toBe(
+			"hello world",
+		);
+		expect(harness.peerB.editor.getBlock("b1").textContent()).toBe(
+			"hello world",
+		);
 
 		const resolvedA = harness.peerA.editor.anchors.resolve(onA!);
 		const resolvedB = harness.peerB.editor.anchors.resolve(onB!);
-		expect(resolvedA).toEqual(resolvedB);
+		// AN13: wire provenance converges at the restored-text boundary.
+		expect(resolvedA).toEqual({ blockId: "b1", offset: 11 });
+		expect(resolvedB).toEqual({ blockId: "b1", offset: 11 });
 		expect(onA!.provenance).toBe("wire");
 		expect(onB!.provenance).toBe("wire");
 
@@ -150,9 +183,9 @@ describe("remote awareness anchors", () => {
 			);
 		}).not.toThrow();
 		expect(controller.getRemoteCursors()).toEqual([]);
-		expect(diagnostics.some((event) => event.code === "anchor-decode")).toBe(
-			true,
-		);
+		expect(
+			diagnostics.some((event) => event.code === "anchor-decode"),
+		).toBe(true);
 
 		expect(() => {
 			controller.handleAwarenessChange(

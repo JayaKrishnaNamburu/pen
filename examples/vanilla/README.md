@@ -12,8 +12,7 @@ From the repository root:
 
 ```bash
 pnpm install
-pnpm build
-pnpm --filter @input/pen-example-vanilla dev
+pnpm dev -- --filter=@input/pen-example-vanilla
 ```
 
 The post-publish consumer command will be:

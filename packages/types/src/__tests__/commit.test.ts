@@ -9,16 +9,9 @@ import type {
 function emptySummary(commitId: number): ChangeSummary {
   return {
     commitId,
-    originType: "user",
-    text: [],
+    blockText: [],
     structural: [],
-    isEmpty: true,
-    mapOffset: () => null,
-    mapPoint: () => null,
-    mapRange: () => null,
-    compose(next) {
-      return next;
-    },
+    affectedBlockIds: [],
   };
 }
 
@@ -49,7 +42,9 @@ describe("CommitEvent", () => {
 
     expect(event.commitId).toBe(1);
     expect(event.origin).toEqual({ type: "user" });
-    expect(event.summary.isEmpty).toBe(true);
+    expect(event.summary.blockText).toEqual([]);
+    expect(event.summary.structural).toEqual([]);
+    expect(event.summary.affectedBlockIds).toEqual([]);
     expect(event.selectionBefore.commitId).toBe(0);
     expect(event.selectionAfter.commitId).toBe(1);
     expect(event.source).toBe("apply");

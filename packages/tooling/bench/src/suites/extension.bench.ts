@@ -7,7 +7,8 @@ import {
 	EXTENSION_DISPATCH_OBSERVE_X5_BENCH,
 } from "../constants/benchmarks";
 
-const DECORATION_REFRESH_ITERATIONS = 250;
+export const DECORATION_REFRESH_ITERATIONS = 250;
+const INSERTED_TEXT = "benchmark text";
 
 function makeNoopExtension(name: string) {
 	return defineExtension({
@@ -31,38 +32,69 @@ function createTestEditorWithExtensions(count: number) {
 	});
 }
 
+export function createDispatchObserveRunner(
+	options: { skip?: boolean } = {},
+): Pick<BenchDefinition, "fn"> {
+	return {
+		async fn(b: BenchContext) {
+			const editor = createTestEditorWithExtensions(5);
+			const blockId = editor.document.blockOrder.get(0);
+			const before = editor.getBlock(blockId).textContent().length;
+
+			b.start();
+			if (!options.skip) {
+				editor.apply([
+					{
+						type: "splice-text",
+						blockId,
+						from: 0,
+				to: 0,
+				insert: INSERTED_TEXT,
+					},
+				]);
+			}
+			b.end();
+			b.observe(
+				"insertedCharCount",
+				editor.getBlock(blockId).textContent().length - before,
+				INSERTED_TEXT.length,
+			);
+			await editor.destroy();
+		},
+	};
+}
+
+export function createCollectDecorationsRunner(
+	options: { skip?: boolean } = {},
+): Pick<BenchDefinition, "fn"> {
+	return {
+		async fn(b: BenchContext) {
+			const editor = createTestEditorWithExtensions(5);
+			let refreshCount = 0;
+
+			b.start();
+			if (!options.skip) {
+				for (let i = 0; i < DECORATION_REFRESH_ITERATIONS; i++) {
+					editor.requestDecorationUpdate();
+					editor.getDecorations();
+					refreshCount += 1;
+				}
+			}
+			b.end();
+			b.observe("refreshCount", refreshCount, DECORATION_REFRESH_ITERATIONS);
+			b.setMetrics({ refreshCount });
+			await editor.destroy();
+		},
+	};
+}
+
 export const extensionBenchmarks: BenchDefinition[] = [
 	{
 		...EXTENSION_DISPATCH_OBSERVE_X5_BENCH,
-		async fn(b) {
-			const editor = createTestEditorWithExtensions(5);
-			const blockId = editor.document.blockOrder.get(0);
-
-			b.start();
-			editor.apply([
-				{
-					type: "insert-text",
-					blockId,
-					offset: 0,
-					text: "benchmark text",
-				},
-			]);
-			b.end();
-			await editor.destroy();
-		},
+		fn: createDispatchObserveRunner().fn,
 	},
 	{
 		...EXTENSION_COLLECT_DECORATIONS_X5_BENCH,
-		async fn(b) {
-			const editor = createTestEditorWithExtensions(5);
-
-			b.start();
-			for (let i = 0; i < DECORATION_REFRESH_ITERATIONS; i++) {
-				editor.requestDecorationUpdate();
-			}
-			b.end();
-			b.setMetrics({ refreshCount: DECORATION_REFRESH_ITERATIONS });
-			await editor.destroy();
-		},
+		fn: createCollectDecorationsRunner().fn,
 	},
 ];

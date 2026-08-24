@@ -84,12 +84,12 @@ describe("editor.anchors AN6 hostile corpus", () => {
 				position: "last",
 			},
 			{
-				type: "insert-table-cell-text",
+				type: "splice-text",
 				blockId: "t1",
-				row: 1,
-				col: 1,
-				offset: 0,
-				text: "cell text",
+				cell: { row: 1, col: 1 },
+			from: 0,
+			to: 0,
+			insert: "cell text",
 			},
 		]);
 		const live = editor.anchors.create(

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EMPTY_BLOCK_SENTINEL, type Editor } from "@input/pen-types";
+import type { Editor } from "@input/pen-types";
 import {
 	serializeDeltasToFormat,
 	writePenClipboard,
@@ -35,9 +35,9 @@ function createClipboardEvent(): {
 }
 
 describe("I11 clipboard serialization", () => {
-	it("I11: writePenClipboard emits empty text/plain for an empty-block sentinel", () => {
+	it("I11: writePenClipboard emits empty text/plain for an empty block", () => {
 		const { event, get } = createClipboardEvent();
-		writePenClipboard([], "", EMPTY_BLOCK_SENTINEL, event);
+		writePenClipboard([], "", "", event);
 
 		expect(get("text/plain")).toBe("");
 	});
@@ -49,9 +49,9 @@ describe("I11 clipboard serialization", () => {
 		expect(get("text/plain")).toBe("Hello world");
 	});
 
-	it("I11: serializeDeltasToFormat omits a sentinel-only delta", () => {
+	it("I11: serializeDeltasToFormat omits an empty-block delta", () => {
 		const html = serializeDeltasToFormat(
-			[{ insert: EMPTY_BLOCK_SENTINEL }],
+			[{ insert: "" }],
 			stubEditor(),
 			"html",
 		);

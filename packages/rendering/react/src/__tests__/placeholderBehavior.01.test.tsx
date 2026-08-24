@@ -103,11 +103,14 @@ describe("@input/pen-react placeholder behavior", () => {
 
 		editor.apply([
 			{
-				type: "insert-inline-node",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				nodeType: "mention",
-				props: { id: "user-1", label: "Ada" },
+				from: 0,
+				to: 0,
+				insert: {
+					nodeType: "mention",
+					props: { id: "user-1", label: "Ada" },
+				},
 			},
 		]);
 
@@ -333,7 +336,7 @@ describe("@input/pen-react placeholder behavior", () => {
 		document.body.appendChild(container);
 		const root = createRoot(container);
 
-		editor.apply([{ type: "convert-block", blockId, newType: "divider" }]);
+		editor.apply([{ type: "set-props", blockId, props: { type: "divider" } }]);
 
 		await act(async () => {
 			root.render(

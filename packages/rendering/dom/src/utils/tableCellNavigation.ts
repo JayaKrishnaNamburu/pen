@@ -300,12 +300,12 @@ function clearCellContent(
 	const length = cell.length();
 	if (length > 0) {
 		editor.apply([{
-			type: "delete-table-cell-text",
+			type: "splice-text",
 			blockId,
-			row: resolvedCoord.row,
-			col: resolvedCoord.col,
-			offset: 0,
-			length,
+			cell: { row: resolvedCoord.row, col: resolvedCoord.col },
+			from: 0,
+			to: length,
+			insert: "",
 		}], { origin: "user" });
 	}
 }
@@ -327,12 +327,12 @@ function insertCharInActiveCell(
 		return;
 	}
 	editor.apply([{
-		type: "insert-table-cell-text",
+		type: "splice-text",
 		blockId,
-		row: resolvedCoord.row,
-		col: resolvedCoord.col,
-		offset: 0,
-		text: char,
+		cell: { row: resolvedCoord.row, col: resolvedCoord.col },
+		from: 0,
+		to: 0,
+		insert: char,
 	}], { origin: "user" });
 }
 

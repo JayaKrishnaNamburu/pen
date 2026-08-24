@@ -5,7 +5,6 @@ export {
 	isContinuousTextFlowCapability,
 	shouldAllowDirectBlockPaste,
 	shouldAllowFlowInsertionInSlashMenu,
-	shouldFallbackMixedSelectionToBlock,
 	shouldForceBlockScopedSelectAll,
 	shouldShowBlockInDefaultMenus,
 } from "@input/pen-dom/utils/flowCapabilities";

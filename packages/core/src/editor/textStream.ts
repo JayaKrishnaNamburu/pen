@@ -6,8 +6,8 @@
 import type {
 	ApplyOptions,
 	DocumentOp,
-	InsertTextOp,
 	OpOrigin,
+	SpliceTextOp,
 	Point,
 	StructuredOpOrigin,
 } from "@input/pen-types";
@@ -102,12 +102,12 @@ function spliceOp(
 ): DocumentOp {
 	const length = to - from;
 	if (length === 0) {
-		return { type: "insert-text", blockId, offset: from, text };
+		return { type: "splice-text", blockId, from, to: from, insert: text };
 	}
 	if (text.length === 0) {
-		return { type: "delete-text", blockId, offset: from, length };
+		return { type: "splice-text", blockId, from, to, insert: "" };
 	}
-	return { type: "replace-text", blockId, offset: from, length, text };
+	return { type: "splice-text", blockId, from, to, insert: text };
 }
 
 /** @internal Hosts use `editor.openTextStream`. */
@@ -154,11 +154,12 @@ export function createTextStreamWriter(
 		for (const item of pending) {
 			switch (item.kind) {
 				case "append": {
-					const op: InsertTextOp = {
-						type: "insert-text",
+					const op: SpliceTextOp = {
+						type: "splice-text",
 						blockId,
-						offset: appendOffset,
-						text: item.text,
+						from: appendOffset,
+						to: appendOffset,
+						insert: item.text,
 					};
 					if (item.marks !== undefined) {
 						op.marks = item.marks;

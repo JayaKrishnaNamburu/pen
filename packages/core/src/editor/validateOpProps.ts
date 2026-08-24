@@ -1,5 +1,7 @@
 import type { BlockSchema, DiagnosticEvent, PropSchema } from "@input/pen-types";
 
+import { deepEqual } from "../schema/normalize";
+
 export type ValidateOpPropsResult = {
 	props: Record<string, unknown>;
 	diagnostics: DiagnosticEvent[];
@@ -36,7 +38,9 @@ export function validateOpProps(
 	for (const key of Object.keys(declared)) {
 		const incoming = declared[key];
 		const outgoing = validated[key];
-		if (Object.is(incoming, outgoing)) {
+		// Structural, not reference: validateProps returns a fresh array/object for
+		// every non-primitive prop, so Object.is reports an unchanged value as changed.
+		if (deepEqual(incoming, outgoing)) {
 			continue;
 		}
 		next[key] = outgoing;

@@ -80,7 +80,9 @@ describe("@input/pen-ai-autocomplete", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		fieldEditor.focusBlockId = blockId;
-		editor.apply([{ type: "insert-text", blockId, offset: 0, text: "Hello" }]);
+		editor.apply([{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello" }]);
 		editor.selectText(blockId, 5, 5);
 
 		const controller = getAutocompleteController(editor);
@@ -143,7 +145,9 @@ describe("@input/pen-ai-autocomplete", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		fieldEditor.focusBlockId = blockId;
-		editor.apply([{ type: "insert-text", blockId, offset: 0, text: "pri" }]);
+		editor.apply([{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "pri" }]);
 		editor.selectText(blockId, 3, 3);
 
 		const controller = getAutocompleteController(editor);
@@ -198,10 +202,11 @@ describe("@input/pen-ai-autocomplete", () => {
 		fieldEditor.focusBlockId = blockId;
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "He came home ",
+				from: 0,
+				to: 0,
+				insert: "He came home ",
 			},
 		]);
 		editor.selectText(blockId, 13, 13);
@@ -262,10 +267,11 @@ describe("@input/pen-ai-autocomplete", () => {
 		fieldEditor.focusBlockId = blockId;
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "The ",
+				from: 0,
+				to: 0,
+				insert: "The ",
 			},
 		]);
 		editor.selectText(blockId, 4, 4);
@@ -322,10 +328,11 @@ describe("@input/pen-ai-autocomplete", () => {
 		fieldEditor.focusBlockId = blockId;
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "He came home.",
+				from: 0,
+				to: 0,
+				insert: "He came home.",
 			},
 		]);
 		editor.selectText(blockId, 13, 13);
@@ -386,10 +393,11 @@ describe("@input/pen-ai-autocomplete", () => {
 		fieldEditor.focusBlockId = blockId;
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "He came home tired from a long day at work. ",
+				from: 0,
+				to: 0,
+				insert: "He came home tired from a long day at work. ",
 			},
 		]);
 		editor.selectText(blockId, 44, 44);

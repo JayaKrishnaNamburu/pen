@@ -1,4 +1,4 @@
-export const PEN_DOCUMENT_FORMAT = 2;
+export const PEN_DOCUMENT_FORMAT = 3;
 
 export const PEN_FORMAT_METADATA_KEY = "penFormat";
 export const DOCUMENT_PROFILE_METADATA_KEY = "documentProfile";

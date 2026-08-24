@@ -10,12 +10,7 @@ import { compileReplacementSuggestionOps } from "./textDiffEngine";
 export type ReplacementReviewOperation = Extract<
 	DocumentOp,
 	{
-		type:
-			| "delete-block"
-			| "delete-text"
-			| "insert-block"
-			| "insert-text"
-			| "replace-text";
+		type: "delete-block" | "insert-block" | "splice-text";
 	}
 >;
 
@@ -108,21 +103,21 @@ export function buildMultiBlockReplacementOperations({
 
 	if (normalizedRange.start.offset < normalizedRange.startBlock.text.length) {
 		operations.push({
-			type: "delete-text",
+			type: "splice-text",
 			blockId: normalizedRange.start.blockId,
-			offset: normalizedRange.start.offset,
-			length:
-				normalizedRange.startBlock.text.length -
-				normalizedRange.start.offset,
+			from: normalizedRange.start.offset,
+			to: normalizedRange.startBlock.text.length,
+			insert: "",
 		});
 	}
 
 	if (normalizedRange.end.offset > 0) {
 		operations.push({
-			type: "delete-text",
+			type: "splice-text",
 			blockId: normalizedRange.end.blockId,
-			offset: 0,
-			length: normalizedRange.end.offset,
+			from: 0,
+			to: 0 + normalizedRange.end.offset,
+			insert: "",
 		});
 	}
 
@@ -158,14 +153,18 @@ export function buildMultiBlockReplacementOperations({
 		normalizedRange.end.offset,
 	);
 	if (endSuffix.length > 0) {
-		const suffixBlock = insertedParagraphBlocks[insertedParagraphBlocks.length - 1];
+		const suffixBlock =
+			insertedParagraphBlocks[insertedParagraphBlocks.length - 1];
 		operations.push({
-			type: "insert-text",
+			type: "splice-text",
 			blockId: suffixBlock?.blockId ?? normalizedRange.start.blockId,
-			offset: suffixBlock
+			from: suffixBlock
 				? suffixBlock.text.length
 				: normalizedRange.start.offset + firstReplacementText.length,
-			text: endSuffix,
+			to: suffixBlock
+				? suffixBlock.text.length
+				: normalizedRange.start.offset + firstReplacementText.length,
+			insert: endSuffix,
 		});
 	}
 
@@ -274,10 +273,11 @@ export function toInsertedParagraphBlockOperations(
 
 	if (block.text.length > 0) {
 		operations.push({
-			type: "insert-text",
+			type: "splice-text",
 			blockId: block.blockId,
-			offset: 0,
-			text: block.text,
+			from: 0,
+			to: 0,
+			insert: block.text,
 		});
 	}
 

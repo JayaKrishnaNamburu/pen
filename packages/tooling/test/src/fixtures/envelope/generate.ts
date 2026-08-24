@@ -80,7 +80,7 @@ export function createNestingEditor(
 				type: "insert-block",
 				blockId,
 				blockType: "callout",
-				props: { type: "info" },
+				props: { severity: "info" },
 				position: "last",
 			});
 			continue;
@@ -90,7 +90,7 @@ export function createNestingEditor(
 			type: "insert-block",
 			blockId,
 			blockType: "callout",
-			props: { type: "info", parentId },
+			props: { severity: "info", parentId },
 			position: { parent: parentId, index: 0 },
 		});
 	}
@@ -114,16 +114,12 @@ export function createTableEditor(
 	];
 	for (let col = 2; col < cols; col++) {
 		ops.push({
-			type: "insert-table-column",
-			blockId: TABLE_BLOCK_ID,
-			index: col,
+			type: "grid", blockId: TABLE_BLOCK_ID, change: { kind: "insert-column", index: col },
 		});
 	}
 	for (let row = 2; row < rows; row++) {
 		ops.push({
-			type: "insert-table-row",
-			blockId: TABLE_BLOCK_ID,
-			index: row,
+			type: "grid", blockId: TABLE_BLOCK_ID, change: { kind: "insert-row", index: row },
 		});
 	}
 	editor.apply(ops, { origin: "user" });

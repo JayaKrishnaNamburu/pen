@@ -11,10 +11,11 @@ import { caretOf, createCommandEditor, createCommandHarness } from "./fixture";
 
 function insertAt(blockId: string, offset: number, text: string): DocumentOp {
 	return {
-		type: "insert-text",
+		type: "splice-text",
 		blockId,
-		offset,
-		text,
+		from: offset,
+		to: offset,
+		insert: text,
 	};
 }
 

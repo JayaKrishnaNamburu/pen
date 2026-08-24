@@ -9,12 +9,11 @@ describe("document mutation plan executor", () => {
 			editor.apply(
 				[
 					{
-						type: "convert-block",
-						blockId: firstId,
-						newType: "heading",
-						newProps: { level: 1 },
+						type: "set-props", blockId: firstId, props: { type: "heading", ...{ level: 1  }},
 					},
-					{ type: "insert-text", blockId: firstId, offset: 0, text: "Alpha" },
+					{ type: "splice-text", blockId: firstId, from: 0,
+				to: 0,
+				insert: "Alpha" },
 					{
 						type: "insert-block",
 						blockId: "block-2",
@@ -23,10 +22,11 @@ describe("document mutation plan executor", () => {
 						position: { after: firstId },
 					},
 					{
-						type: "insert-text",
+						type: "splice-text",
 						blockId: "block-2",
-						offset: 0,
-						text: "Note",
+						from: 0,
+				to: 0,
+				insert: "Note",
 					},
 					{
 						type: "insert-block",
@@ -36,10 +36,11 @@ describe("document mutation plan executor", () => {
 						position: { after: "block-2" },
 					},
 					{
-						type: "insert-text",
+						type: "splice-text",
 						blockId: "block-3",
-						offset: 0,
-						text: "Omega",
+						from: 0,
+				to: 0,
+				insert: "Omega",
 					},
 				],
 				{ origin: "system" },
@@ -72,10 +73,11 @@ describe("document mutation plan executor", () => {
 					position: { before: firstId },
 				},
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: expect.any(String),
-					offset: 0,
-					text: "Note updated",
+					from: 0,
+				to: 0,
+				insert: "Note updated",
 				},
 				{
 					type: "delete-block",
@@ -137,22 +139,23 @@ describe("document mutation plan executor", () => {
 					position: "last",
 				},
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: "heading-new",
-					offset: 0,
-					text: "Draft",
+					from: 0,
+				to: 0,
+				insert: "Draft",
 				},
 				{
-					type: "update-block",
+					type: "set-props",
 					blockId: "heading-new",
 					props: { tone: "title" },
 				},
 				{
-					type: "replace-text",
+					type: "splice-text",
 					blockId: "heading-new",
-					offset: 0,
-					length: 5,
-					text: "Final",
+					from: 0,
+				to: 0 + 5,
+					insert: "Final",
 				},
 			]);
 		});
@@ -191,16 +194,14 @@ describe("document mutation plan executor", () => {
 					position: "last",
 				},
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: "heading-new",
-					offset: 0,
-					text: "Hello",
+					from: 0,
+				to: 0,
+				insert: "Hello",
 				},
 				{
-					type: "convert-block",
-					blockId: "heading-new",
-					newType: "heading",
-					newProps: { level: 2 },
+					type: "set-props", blockId: "heading-new", props: { type: "heading", ...{ level: 2  }},
 				},
 			]);
 		});

@@ -69,12 +69,13 @@ describe("applyEnterBehavior – integration", () => {
 
 		editor.apply([
 			{
-				type: "convert-block",
+				type: "set-props",
 				blockId,
-				newType: "heading",
-				newProps: { level: 2 },
+				props: { type: "heading", level: 2 },
 			},
-			{ type: "insert-text", blockId, offset: 0, text: "Section" },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Section" },
 		]);
 
 		const target = applyEnterBehavior(editor, {
@@ -97,7 +98,7 @@ describe("applyEnterBehavior – integration", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "convert-block", blockId, newType: "bulletListItem" },
+			{ type: "set-props", blockId, props: { type: "bulletListItem" } },
 		]);
 
 		const target = applyEnterBehavior(editor, {
@@ -120,8 +121,10 @@ describe("applyEnterBehavior – integration", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "convert-block", blockId, newType: "bulletListItem" },
-			{ type: "insert-text", blockId, offset: 0, text: "task" },
+			{ type: "set-props", blockId, props: { type: "bulletListItem" } },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "task" },
 		]);
 
 		const target = applyEnterBehavior(editor, {
@@ -146,10 +149,7 @@ describe("applyEnterBehavior – integration", () => {
 
 		editor.apply([
 			{
-				type: "convert-block",
-				blockId: toggleBlockId,
-				newType: "toggle",
-				newProps: { open: true },
+				type: "set-props", blockId: toggleBlockId, props: { type: "toggle", ...{ open: true  }},
 			},
 			{
 				type: "insert-block",
@@ -159,7 +159,7 @@ describe("applyEnterBehavior – integration", () => {
 				position: { after: toggleBlockId },
 			},
 			{
-				type: "update-block",
+				type: "set-props",
 				blockId: childBlockId,
 				props: { parentId: toggleBlockId },
 			},
@@ -187,10 +187,7 @@ describe("applyEnterBehavior – integration", () => {
 
 		editor.apply([
 			{
-				type: "convert-block",
-				blockId: toggleBlockId,
-				newType: "toggle",
-				newProps: { open: true },
+				type: "set-props", blockId: toggleBlockId, props: { type: "toggle", ...{ open: true  }},
 			},
 			{
 				type: "insert-block",
@@ -200,7 +197,7 @@ describe("applyEnterBehavior – integration", () => {
 				position: { after: toggleBlockId },
 			},
 			{
-				type: "update-block",
+				type: "set-props",
 				blockId: childBlockId,
 				props: { parentId: toggleBlockId },
 			},

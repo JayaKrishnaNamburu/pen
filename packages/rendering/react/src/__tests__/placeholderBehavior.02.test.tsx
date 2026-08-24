@@ -123,10 +123,11 @@ describe("@input/pen-react placeholder behavior", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: firstBlockId,
-				offset: 0,
-				text: "Hello",
+				from: 0,
+				to: 0,
+				insert: "Hello",
 			},
 			{
 				type: "insert-block",
@@ -136,11 +137,14 @@ describe("@input/pen-react placeholder behavior", () => {
 				position: { after: firstBlockId },
 			},
 			{
-				type: "insert-inline-node",
+				type: "splice-text",
 				blockId: secondBlockId,
-				offset: 0,
-				nodeType: "mention",
-				props: { id: "user-1", label: "Ada" },
+				from: 0,
+				to: 0,
+				insert: {
+					nodeType: "mention",
+					props: { id: "user-1", label: "Ada" },
+				},
 			},
 		]);
 
@@ -190,10 +194,11 @@ describe("@input/pen-react placeholder behavior", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: firstBlockId,
-				offset: 0,
-				text: "Hello",
+				from: 0,
+				to: 0,
+				insert: "Hello",
 			},
 			{
 				type: "insert-block",

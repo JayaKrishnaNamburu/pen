@@ -40,10 +40,11 @@ describe("SCALE1 envelope ladder", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: lastId,
-					offset: before.length,
-					text: "x",
+					from: before.length,
+				to: before.length,
+				insert: "x",
 				},
 			],
 			{ origin: "user" },
@@ -60,10 +61,11 @@ describe("SCALE1 envelope ladder", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: lastId,
-					offset: before.length,
-					text: "x",
+					from: before.length,
+				to: before.length,
+				insert: "x",
 				},
 			],
 			{ origin: "user" },
@@ -80,10 +82,11 @@ describe("SCALE1 envelope ladder", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: lastId,
-					offset: before.length,
-					text: "x",
+					from: before.length,
+				to: before.length,
+				insert: "x",
 				},
 			],
 			{ origin: "user" },
@@ -99,10 +102,11 @@ describe("SCALE1 envelope ladder", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: LONG_BLOCK_ID,
-					offset: ENVELOPE_LONG_BLOCK_CHARS,
-					text: "x",
+					from: ENVELOPE_LONG_BLOCK_CHARS,
+				to: ENVELOPE_LONG_BLOCK_CHARS,
+				insert: "x",
 				},
 			],
 			{ origin: "user" },

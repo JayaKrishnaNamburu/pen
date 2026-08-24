@@ -92,10 +92,11 @@ function setupOps(spec) {
 		});
 		if (block.text) {
 			ops.push({
-				type: "insert-text",
+				type: "splice-text",
 				blockId: block.id,
-				offset: 0,
-				text: block.text,
+				from: 0,
+				to: 0,
+				insert: block.text,
 			});
 		}
 		if (block.mention) {
@@ -114,6 +115,32 @@ function setupOps(spec) {
 	return ops;
 }
 
+function structuralOptions(recordedOps) {
+	const recorded = recordedOps.find(
+		(op) => op?.type === "split-block" || op?.type === "merge-blocks",
+	);
+	if (recorded?.type === "split-block") {
+		return {
+			structural: {
+				kind: "split",
+				blockId: recorded.blockId,
+				newBlockId: recorded.newBlockId,
+				offset: recorded.offset,
+			},
+		};
+	}
+	if (recorded?.type === "merge-blocks") {
+		return {
+			structural: {
+				kind: "merge",
+				targetBlockId: recorded.targetBlockId,
+				sourceBlockId: recorded.sourceBlockId,
+			},
+		};
+	}
+	return {};
+}
+
 export function applyReplayOps(session, recordedOps, options = {}) {
 	const liveTypes = options.liveTypes ?? readLiveOpTypeSet();
 	const translated = opsForReplay(recordedOps, {
@@ -125,7 +152,10 @@ export function applyReplayOps(session, recordedOps, options = {}) {
 		if (applyOps.length === 0) {
 			return;
 		}
-		session.editor.apply(applyOps, { origin: "user" });
+		session.editor.apply(applyOps, {
+			origin: "user",
+			...structuralOptions(recordedOps),
+		});
 		applyOps.length = 0;
 	};
 	for (const op of translated) {

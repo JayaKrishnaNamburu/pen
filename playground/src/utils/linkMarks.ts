@@ -99,8 +99,8 @@ export function removeLinkMark(editor: Editor): boolean {
 			{
 				type: "format-text",
 				blockId: activeLinkRange.blockId,
-				offset: activeLinkRange.start,
-				length: activeLinkRange.end - activeLinkRange.start,
+				from: activeLinkRange.start,
+				to: activeLinkRange.start + (activeLinkRange.end - activeLinkRange.start),
 				marks: { link: null },
 			},
 		],

@@ -143,10 +143,11 @@ describe("@input/pen-core createEditor", () => {
 
 		editorA.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "Shared",
+				from: 0,
+				to: 0,
+				insert: "Shared",
 			},
 		]);
 
@@ -158,10 +159,11 @@ describe("@input/pen-core createEditor", () => {
 		editorA.destroy();
 		editorB.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 6,
-				text: " doc",
+				from: 6,
+				to: 6,
+				insert: " doc",
 			},
 		]);
 
@@ -179,10 +181,11 @@ describe("@input/pen-core createEditor", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "Server edit",
+				from: 0,
+				to: 0,
+				insert: "Server edit",
 			},
 		]);
 
@@ -202,10 +205,11 @@ describe("@input/pen-core createEditor", () => {
 
 		editorA.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "Persisted",
+				from: 0,
+				to: 0,
+				insert: "Persisted",
 			},
 		]);
 		editorA.destroy();
@@ -364,19 +368,17 @@ describe("@input/pen-core createEditor", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: firstBlockId,
-				offset: 0,
-				text: "Hello",
+				from: 0,
+				to: 0,
+				insert: "Hello",
 			},
 		]);
 
 		editor.apply([
 			{
-				type: "convert-block",
-				blockId: firstBlockId,
-				newType: "widget",
-				newProps: {},
+				type: "set-props", blockId: firstBlockId, props: { type: "widget", ...{ }},
 			},
 		]);
 

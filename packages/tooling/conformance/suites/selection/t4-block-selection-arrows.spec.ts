@@ -80,14 +80,6 @@ scenario(
 			focus: { blockId: "two-p2", offset: TWO_P2_TEXT.length },
 		});
 	},
-	{
-		knownDefect: {
-			rule: "T4",
-			route: "packages/rendering/dom/src/utils/documentShortcuts.ts handleBlockSelectionArrow",
-			symptom:
-				'failed: T4: ArrowDown collapses to a caret at the end of head — selection={"type":"block","blockIds":["two-p1","two-p2"]}',
-		},
-	},
 );
 
 scenario(
@@ -131,13 +123,5 @@ scenario(
 			type: "block",
 			blockIds: ["two-p1"],
 		});
-	},
-	{
-		knownDefect: {
-			rule: "T4",
-			route: "packages/rendering/dom/src/utils/documentShortcuts.ts handleBlockSelectionArrow",
-			symptom:
-				'failed: T4: Shift+ArrowUp shrinks blockIds at head — selection={"type":"block","blockIds":["two-p1","two-p2"]}',
-		},
 	},
 );

@@ -15,6 +15,7 @@ import {
 	caretWordRight,
 	selectAll,
 	selectBlock,
+	setCellCaretFocus,
 	setVerticalCaretMeasure,
 	getVerticalCaretGoalX,
 } from "..";
@@ -335,6 +336,58 @@ describe("caret commands", () => {
 		expect(registry.dispatch(selectBlock, { blockId: "missing" })).toBe(
 			false,
 		);
+		editor.destroy();
+	});
+
+	it("T6: caretRight from a CellSelection steps to the next cell", () => {
+		const editor = createCommandEditor([{ id: "t", type: "table" }]);
+		const registry = createCommandHarness(editor);
+		editor.selectCell("t", 0, 0);
+
+		expect(registry.dispatch(caretRight, { extend: false })).toBe(true);
+		expect(editor.selection).toMatchObject({
+			type: "cell",
+			blockId: "t",
+			anchor: { row: 0, col: 1 },
+			head: { row: 0, col: 1 },
+		});
+		editor.destroy();
+	});
+
+	it("T6: caretDown at the last row leaves the grid via T4", () => {
+		const editor = createCommandEditor([
+			{ id: "t", type: "table" },
+			{ id: "after", type: "paragraph", text: "yo" },
+		]);
+		const registry = createCommandHarness(editor);
+		editor.selectCell("t", 1, 0);
+
+		expect(registry.dispatch(caretDown, { extend: false })).toBe(true);
+		expect(caretOf(editor)).toEqual({ blockId: "after", offset: 0 });
+		editor.destroy();
+	});
+
+	it("cell-editing seam: caretRight stays in the cell instead of T6", () => {
+		const editor = createCommandEditor([{ id: "t", type: "table" }]);
+		const registry = createCommandHarness(editor);
+		editor.selectCell("t", 0, 0);
+
+		const written: Array<{ start: number; end: number }> = [];
+		setCellCaretFocus(
+			editor,
+			{ blockId: "t", row: 0, col: 0, start: 0, end: 0 },
+			(next) => {
+				written.push(next);
+			},
+		);
+
+		expect(registry.dispatch(caretRight, { extend: false })).toBe(true);
+		expect(written).toEqual([{ start: 0, end: 0 }]);
+		expect(editor.selection).toMatchObject({
+			type: "cell",
+			head: { row: 0, col: 0 },
+		});
+		setCellCaretFocus(editor, null);
 		editor.destroy();
 	});
 });

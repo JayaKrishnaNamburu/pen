@@ -1,0 +1,18 @@
+{
+  "name": "@input/pen-host",
+  "dependencies": {
+    "@input/pen-ai-suggestions": "workspace:*",
+    "@input/pen-ai-autocomplete": "workspace:*",
+    "@input/pen-ai-skills": "workspace:*",
+    "@input/pen-ai-tools": "workspace:*",
+    "@input/pen-delta-stream": "workspace:*",
+    "@input/pen-core": "workspace:*",
+    "@input/pen-import-html": "workspace:*",
+    "@input/pen-export-html": "workspace:*",
+    "@input/pen-import-json": "workspace:*",
+    "@input/pen-export-json": "workspace:*",
+    "@input/pen-import-markdown": "workspace:*",
+    "@input/pen-export-markdown": "workspace:*",
+    "@input/pen-export-xml": "workspace:*"
+  }
+}

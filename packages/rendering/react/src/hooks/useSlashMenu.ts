@@ -152,10 +152,11 @@ export function useSlashMenu(
 					const ops = [];
 					if (currentText === "/") {
 						ops.push({
-							type: "delete-text" as const,
+							type: "splice-text" as const,
 							blockId,
-							offset: 0,
-							length: 1,
+							from: 0,
+				to: 0 + 1,
+				insert: "",
 						});
 					}
 					if (block.type !== item.type) {
@@ -196,9 +197,9 @@ export function useSlashMenu(
 					ed.apply(
 						[
 							{
-								type: "update-table-columns",
+								type: "set-props",
 								blockId: insertedOrConvertedBlockId,
-								columns: defaultCols,
+								props: { columns: defaultCols },
 							},
 						],
 						{ origin: "user", undoGroup: true },

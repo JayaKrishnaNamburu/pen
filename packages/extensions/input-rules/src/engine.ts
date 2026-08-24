@@ -120,16 +120,18 @@ export class InputRuleEngine {
 
 			return [
 				{
-					type: "delete-text",
+					type: "splice-text",
 					blockId,
-					offset: matchStart,
-					length: fullMatchLength,
+					from: matchStart,
+				to: matchStart + fullMatchLength,
+				insert: "",
 				},
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: matchStart,
-					text: innerText,
+					from: matchStart,
+				to: matchStart,
+				insert: innerText,
 					marks: { [rule.markType]: true },
 				},
 			];

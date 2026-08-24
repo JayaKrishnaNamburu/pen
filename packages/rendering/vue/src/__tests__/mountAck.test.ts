@@ -45,10 +45,11 @@ describe("@input/pen-vue mount ack", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: "paragraph-1",
-				offset: 5,
-				text: "!",
+				from: 5,
+				to: 5,
+				insert: "!",
 			},
 		]);
 		await nextTick();

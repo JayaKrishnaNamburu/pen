@@ -104,8 +104,45 @@ const SKIP_DIR_NAMES = new Set([
  * Earlier the same day the barrel-only ratchet moved 1858 → 1852 →
  * 1796 as lanes added TSDoc. Those drops were progress and were
  * re-recorded; this write is the expansion on top of that 1796.
+ *
+ * Expanded again 2026-08-24, 1930 → 1956, for the same reason and
+ * with the same caveat. The `./field-editor/*` glob then matched 80
+ * `.d.ts` files, not 76. Regenerating `packages/rendering/dom/api-report.md`
+ * from a fresh `.d.ts` admitted four members the committed report had
+ * never listed: `commandDispatch`, `documentSelectAllLeftover`,
+ * `selectionMapping`, `selectionReader`. All four were tracked at HEAD
+ * and already host-reachable through the glob, so no API widened
+ * that write — the report caught up to a surface that was already published.
+ *
+ * Those 26 were NOT documented away, and that is deliberate. The
+ * previous expansion was closed by writing TSDoc; here the members are
+ * internal implementation, and `documentSelectAllLeftover` is on the
+ * Wave 05 step 5.6 delete list. Giving it host-facing prose would
+ * advertise a module scheduled for removal.
+ *
+ * Closed 2026-08-24 by enumerating the 18 importer-backed
+ * `./field-editor/<name>` subpaths (plus the curated barrel). Dist
+ * `field-editor/*.d.ts` went 80 → 19. 61 modules left the published
+ * surface, including the four the report had just admitted and the
+ * rest of the Wave 05 delete list that had no published-path importer.
+ * Undocumented 1956 → 1806. That drop is the glob close, not TSDoc
+ * and not an un-expand-without-enumeration scope hole. A later drop
+ * toward 1796 that removed one of the 18 without migrating its
+ * importers would be a build break, not progress.
+ *
+ * 1806 → 1797 the same day, and this one is a record correction rather
+ * than a surface change. Adding `registerVerticalCaretMeasure` to
+ * pen-dom's barrel (hosts must register a vertical caret measure, and
+ * both bindings could not reach it) required regenerating all 35 api
+ * reports, which also reconciled six packages whose committed reports
+ * had drifted behind their `.d.ts` — core, types, ai-tools, search,
+ * content-ops and bench. This count reads the committed reports, so
+ * the drop is the reports catching up, and `glob surfaces expanded`
+ * stayed 0 throughout. The published surface did not move: the 18
+ * enumerated subpaths plus the bare `./field-editor` barrel cover all
+ * 19 dist `.d.ts` files exactly.
  */
-export const MAX_UNDOCUMENTED = 1934;
+export const MAX_UNDOCUMENTED = 1797;
 
 const JSDOC_RE = /\/\*\*[\s\S]*?\*\//g;
 const DECL_RE =
@@ -414,7 +451,9 @@ export function evaluateCoverage({
 				surfaces: [...symbol.surfaces],
 			});
 		}
-		const inventoriedNames = new Set(barrelSymbols.map((symbol) => symbol.name));
+		const inventoriedNames = new Set(
+			barrelSymbols.map((symbol) => symbol.name),
+		);
 		for (const surface of report.surfaces) {
 			if (!surface.glob) {
 				continue;
@@ -848,14 +887,19 @@ glob members:
 		"self-test: glob-only export enters the ratchet",
 	);
 	assert(
-		quantified.undocumented.some((hit) => hit.name === "getSelectionPointRect"),
+		quantified.undocumented.some(
+			(hit) => hit.name === "getSelectionPointRect",
+		),
 		"self-test: undocumented glob-only getSelectionPointRect fails by name",
 	);
 	assert(
 		quantified.regression,
 		"self-test: undocumented glob-only is a regression at max 0",
 	);
-	assert(hasFailures(quantified), "self-test: undocumented glob-only fails closed");
+	assert(
+		hasFailures(quantified),
+		"self-test: undocumented glob-only fails closed",
+	);
 	assert(
 		formatReport(quantified).includes("getSelectionPointRect"),
 		"self-test: report names getSelectionPointRect",
@@ -957,7 +1001,10 @@ glob members:
 		),
 		"self-test: unread glob member is named",
 	);
-	assert(hasFailures(unreadGlob), "self-test: unread glob member fails closed");
+	assert(
+		hasFailures(unreadGlob),
+		"self-test: unread glob member fails closed",
+	);
 	assert(
 		formatReport(unreadGlob).includes("selectionBridgeOffsets.d.ts"),
 		"self-test: unread glob failure names the file",

@@ -70,10 +70,7 @@ describe("applyListTabBehavior", () => {
 
 		editor.apply([
 			{
-				type: "convert-block",
-				blockId: firstBlockId,
-				newType: "bulletListItem",
-			},
+				type: "set-props", blockId: firstBlockId, props: { type: "bulletListItem" }},
 			{
 				type: "insert-block",
 				blockId: secondBlockId,
@@ -82,10 +79,11 @@ describe("applyListTabBehavior", () => {
 				position: { after: firstBlockId },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: secondBlockId,
-				offset: 0,
-				text: "child",
+				from: 0,
+				to: 0,
+				insert: "child",
 			},
 		]);
 
@@ -111,8 +109,10 @@ describe("applyListTabBehavior", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "convert-block", blockId, newType: "bulletListItem" },
-			{ type: "insert-text", blockId, offset: 0, text: "root" },
+			{ type: "set-props", blockId, props: { type: "bulletListItem" } },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "root" },
 		]);
 
 		const target = applyListTabBehavior(editor, {
@@ -133,8 +133,10 @@ describe("applyListTabBehavior", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "convert-block", blockId, newType: "bulletListItem" },
-			{ type: "insert-text", blockId, offset: 0, text: "root" },
+			{ type: "set-props", blockId, props: { type: "bulletListItem" } },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "root" },
 		]);
 
 		const target = applyListTabBehavior(editor, {
@@ -157,10 +159,7 @@ describe("applyListTabBehavior", () => {
 
 		editor.apply([
 			{
-				type: "convert-block",
-				blockId: firstBlockId,
-				newType: "bulletListItem",
-			},
+				type: "set-props", blockId: firstBlockId, props: { type: "bulletListItem" }},
 			{
 				type: "insert-block",
 				blockId: secondBlockId,
@@ -169,10 +168,11 @@ describe("applyListTabBehavior", () => {
 				position: { after: firstBlockId },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: secondBlockId,
-				offset: 0,
-				text: "child",
+				from: 0,
+				to: 0,
+				insert: "child",
 			},
 		]);
 

@@ -4,10 +4,6 @@ export * from "./types/index";
 // Runtime
 export { generateId } from "./utils/generateId";
 export {
-	EMPTY_BLOCK_SENTINEL,
-	logicalTextFromStored,
-} from "./utils/logicalText";
-export {
 	FIELD_EDITOR_SLOT_KEY,
 	COLLECT_KEY_BINDINGS_SLOT_KEY,
 	AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY,

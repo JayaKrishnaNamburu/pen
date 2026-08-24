@@ -19,7 +19,7 @@ function createEditor() {
 
 function seedText(editor: ReturnType<typeof createEditor>, text: string): string {
 	const blockId = editor.firstBlock()!.id;
-	editor.apply([{ type: "insert-text", blockId, offset: 0, text }]);
+	editor.apply([{ type: "splice-text", blockId, from: 0, to: 0, insert: text }]);
 	return blockId;
 }
 
@@ -43,12 +43,12 @@ function seedTableCell(
 	}
 	editor.apply([
 		{
-			type: "insert-table-cell-text",
+			type: "splice-text",
 			blockId: tableId,
-			row,
-			col,
-			offset: 0,
-			text,
+			cell: { row, col },
+			from: 0,
+			to: 0,
+			insert: text,
 		},
 	]);
 }
@@ -81,7 +81,9 @@ describe("editor.anchors AN1", () => {
 			},
 		]);
 		const initial = editor.firstBlock()!.id;
-		editor.apply([{ type: "insert-text", blockId: initial, offset: 0, text: "gone" }]);
+		editor.apply([{ type: "splice-text", blockId: initial, from: 0,
+				to: 0,
+				insert: "gone" }]);
 		const anchor = editor.anchors.create({ blockId: initial, offset: 2 }, 1)!;
 		editor.apply([{ type: "delete-block", blockId: initial }]);
 		expect(editor.anchors.resolve(anchor)).toBeNull();
@@ -97,7 +99,15 @@ describe("editor.anchors AN5", () => {
 			anchor: { blockId, offset: 3 },
 			focus: { blockId, offset: 6 },
 		})!;
-		editor.apply([{ type: "delete-text", blockId, offset: 3, length: 3 }]);
+		editor.apply([
+			{
+				type: "splice-text",
+				blockId,
+				from: 3,
+				to: 6,
+				insert: "",
+			},
+		]);
 		const resolved = editor.anchors.resolveRange(range);
 		expect(resolved).toEqual({
 			from: { blockId, offset: 3 },
@@ -166,7 +176,9 @@ describe("editor.anchors AN8", () => {
 		expect(editor.anchors.resolve(anchor)).toEqual({ blockId, offset: 2 });
 		expect(editor.anchors.resolve(anchor)).toEqual({ blockId, offset: 2 });
 		expect(calls).toBe(1);
-		editor.apply([{ type: "insert-text", blockId, offset: 0, text: "xx" }]);
+		editor.apply([{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "xx" }]);
 		expect(editor.anchors.resolve(anchor)).toEqual({ blockId, offset: 4 });
 		expect(editor.anchors.resolve(anchor)).toEqual({ blockId, offset: 4 });
 		expect(calls).toBe(2);
@@ -205,7 +217,15 @@ describe("editor.anchors AN13", () => {
 		const undo = editor.internals.adapter.createUndoManager(
 			editor.internals.crdtDoc,
 		);
-		editor.apply([{ type: "delete-text", blockId, offset: 6, length: 5 }]);
+		editor.apply([
+			{
+				type: "splice-text",
+				blockId,
+				from: 6,
+				to: 11,
+				insert: "",
+			},
+		]);
 		undo.undo();
 		expect(editor.anchors.resolve(local)).toEqual({ blockId, offset: 6 });
 		expect(editor.anchors.resolve(wire)).toEqual({ blockId, offset: 11 });
@@ -255,12 +275,12 @@ describe("editor.anchors AN10 table-cell cohort", () => {
 		const deleteAnchor = editor.anchors.create(target, 1)!;
 		editor.apply([
 			{
-				type: "insert-table-cell-text",
+				type: "splice-text",
 				blockId: "t1",
-				row: 1,
-				col: 1,
-				offset: 0,
-				text: "xx",
+				cell: { row: 1, col: 1 },
+			from: 0,
+			to: 0,
+			insert: "xx",
 			},
 		]);
 		expect(editor.anchors.resolve(insertAnchor)).toEqual({
@@ -270,12 +290,12 @@ describe("editor.anchors AN10 table-cell cohort", () => {
 		});
 		editor.apply([
 			{
-				type: "delete-table-cell-text",
+				type: "splice-text",
 				blockId: "t1",
-				row: 1,
-				col: 1,
-				offset: 3,
-				length: 4,
+				cell: { row: 1, col: 1 },
+			from: 3,
+			to: 7,
+			insert: "",
 			},
 		]);
 		expect(editor.anchors.resolve(deleteAnchor)).toEqual({

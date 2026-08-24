@@ -1,4 +1,4 @@
-import { inputRulesEngineFacet } from "@input/pen-core";
+import { applySplitBlock, inputRulesEngineFacet } from "@input/pen-core";
 import { generateId } from "@input/pen-types";
 import type { DocumentOp, Editor } from "@input/pen-types";
 import {
@@ -46,18 +46,13 @@ export function splitBlockAtOffset(
 	const { blockId, offset, newBlockType } = options;
 	const newBlockId = generateId();
 
-	editor.apply(
-		[
-			{
-				type: "split-block",
-				blockId,
-				offset,
-				newBlockId,
-				newBlockType,
-			} as DocumentOp,
-		],
-		{ origin: "user" },
-	);
+	applySplitBlock(editor, {
+		blockId,
+		offset,
+		newBlockId,
+		newBlockType,
+		applyOptions: { origin: "user" },
+	});
 	editor.selectText(newBlockId, 0, 0);
 
 	return {
@@ -95,16 +90,13 @@ export function getConvertBlockOps(
 	const existingParentId = editor.documentState.parentOf(options.blockId);
 	const ops: DocumentOp[] = [
 		{
-			type: "convert-block",
-			blockId: options.blockId,
-			newType: options.newType,
-			newProps: options.newProps,
+			type: "set-props", blockId: options.blockId, props: { type: options.newType, ...options.newProps },
 		} as DocumentOp,
 	];
 
 	if (existingParentId) {
 		ops.push({
-			type: "update-block",
+			type: "set-props",
 			blockId: options.blockId,
 			props: { parentId: existingParentId },
 		} as DocumentOp);
@@ -128,19 +120,21 @@ export function insertTextAtRange(
 
 	if (end > start) {
 		ops.push({
-			type: "delete-text",
+			type: "splice-text",
 			blockId,
-			offset: start,
-			length: end - start,
+			from: start,
+			to: end,
+			insert: "",
 		});
 	}
 
 	if (text.length > 0) {
 		ops.push({
-			type: "insert-text",
+			type: "splice-text",
 			blockId,
-			offset: start,
-			text,
+			from: start,
+			to: start,
+			insert: text,
 		});
 	}
 
@@ -203,17 +197,17 @@ export function applyListInputRule(
 	editor.apply(
 		[
 			{
-				type: "delete-text",
+				type: "splice-text",
 				blockId,
-				offset: match.deleteRange.start,
-				length: match.deleteRange.end - match.deleteRange.start,
-			} as DocumentOp,
+				from: match.deleteRange.start,
+				to: match.deleteRange.end,
+				insert: "",
+			},
 			{
-				type: "convert-block",
+				type: "set-props",
 				blockId,
-				newType: match.blockType,
-				newProps: match.newProps,
-			} as DocumentOp,
+				props: { type: match.blockType, ...match.newProps },
+			},
 		],
 		{ origin: "input-rule" },
 	);

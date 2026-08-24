@@ -77,10 +77,11 @@ describe("inputRulesExtension editor activation", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "#",
+					from: 0,
+				to: 0,
+				insert: "#",
 				},
 			],
 			{ origin: "user" },
@@ -89,10 +90,11 @@ describe("inputRulesExtension editor activation", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 1,
-					text: " ",
+					from: 1,
+				to: 1,
+				insert: " ",
 				},
 			],
 			{ origin: "user" },
@@ -113,10 +115,11 @@ describe("inputRulesExtension editor activation", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "**hello*",
+					from: 0,
+				to: 0,
+				insert: "**hello*",
 				},
 			],
 			{ origin: "user" },
@@ -124,10 +127,11 @@ describe("inputRulesExtension editor activation", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 8,
-					text: "*",
+					from: 8,
+				to: 8,
+				insert: "*",
 				},
 			],
 			{ origin: "user" },
@@ -164,10 +168,11 @@ describe("inputRulesExtension editor activation", () => {
 						}
 						return [
 							{
-								type: "insert-text",
+								type: "splice-text",
 								blockId: ctx.blockId,
-								offset: ctx.fullText.length + 1,
-								text: " ",
+								from: ctx.fullText.length + 1,
+				to: ctx.fullText.length + 1,
+				insert: " ",
 							},
 						];
 					},
@@ -180,10 +185,11 @@ describe("inputRulesExtension editor activation", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "!",
+					from: 0,
+				to: 0,
+				insert: "!",
 				},
 			],
 			{ origin: "user" },
@@ -192,10 +198,11 @@ describe("inputRulesExtension editor activation", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 1,
-					text: " ",
+					from: 1,
+				to: 1,
+				insert: " ",
 				},
 			],
 			{ origin: "user" },
@@ -217,10 +224,11 @@ describe("inputRulesExtension editor activation", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "#",
+					from: 0,
+				to: 0,
+				insert: "#",
 				},
 			],
 			{ origin: "input-rule" },
@@ -229,10 +237,11 @@ describe("inputRulesExtension editor activation", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 1,
-					text: " ",
+					from: 1,
+				to: 1,
+				insert: " ",
 				},
 			],
 			{ origin: "input-rule" },

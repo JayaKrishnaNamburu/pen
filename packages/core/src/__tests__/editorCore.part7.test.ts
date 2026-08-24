@@ -121,9 +121,7 @@ describe("@input/pen-core table operations", () => {
 
 		editor.apply([
 			{
-				type: "insert-table-row",
-				blockId: "t1",
-				index: 2,
+				type: "grid", blockId: "t1", change: { kind: "insert-row", index: 2 },
 			},
 		]);
 
@@ -151,9 +149,7 @@ describe("@input/pen-core table operations", () => {
 
 		editor.apply([
 			{
-				type: "insert-table-column",
-				blockId: "t1",
-				index: 2,
+				type: "grid", blockId: "t1", change: { kind: "insert-column", index: 2 },
 			},
 		]);
 
@@ -171,17 +167,15 @@ describe("@input/pen-core table operations", () => {
 
 		editor.apply([
 			{
-				type: "insert-table-row",
-				blockId: "t1",
-				index: block.as("table")!.tableRowCount(),
+				type: "grid", blockId: "t1", change: { kind: "insert-row", index: block.as("table")!.tableRowCount() },
 			},
 			{
-				type: "insert-table-cell-text",
+				type: "splice-text",
 				blockId: "t1",
-				row: 0,
-				col: 2,
-				offset: 0,
-				text: "Recovered",
+				cell: { row: 0, col: 2 },
+			from: 0,
+			to: 0,
+			insert: "Recovered",
 			},
 		]);
 
@@ -210,9 +204,7 @@ describe("@input/pen-core table operations", () => {
 
 		editor.apply([
 			{
-				type: "insert-table-column",
-				blockId: "t1",
-				index: 2,
+				type: "grid", blockId: "t1", change: { kind: "insert-column", index: 2 },
 			},
 		]);
 
@@ -240,9 +232,7 @@ describe("@input/pen-core table operations", () => {
 
 		editor.apply([
 			{
-				type: "delete-table-row",
-				blockId: "t1",
-				index: 0,
+				type: "grid", blockId: "t1", change: { kind: "delete-row", index: 0 },
 			},
 		]);
 
@@ -266,9 +256,7 @@ describe("@input/pen-core table operations", () => {
 
 		editor.apply([
 			{
-				type: "delete-table-column",
-				blockId: "t1",
-				index: 0,
+				type: "grid", blockId: "t1", change: { kind: "delete-column", index: 0 },
 			},
 		]);
 
@@ -292,12 +280,12 @@ describe("@input/pen-core table operations", () => {
 
 		editor.apply([
 			{
-				type: "insert-table-cell-text",
+				type: "splice-text",
 				blockId: "t1",
-				row: 0,
-				col: 1,
-				offset: 0,
-				text: "Hello",
+				cell: { row: 0, col: 1 },
+			from: 0,
+			to: 0,
+			insert: "Hello",
 			},
 		]);
 
@@ -319,20 +307,20 @@ describe("@input/pen-core table operations", () => {
 				position: "last",
 			},
 			{
-				type: "insert-table-cell-text",
+				type: "splice-text",
 				blockId: "t1",
-				row: 0,
-				col: 0,
-				offset: 0,
-				text: "Hello",
+				cell: { row: 0, col: 0 },
+			from: 0,
+			to: 0,
+			insert: "Hello",
 			},
 			{
-				type: "delete-table-cell-text",
+				type: "splice-text",
 				blockId: "t1",
-				row: 0,
-				col: 0,
-				offset: 1,
-				length: 3,
+				cell: { row: 0, col: 0 },
+			from: 1,
+			to: 4,
+			insert: "",
 			},
 		]);
 
@@ -354,20 +342,19 @@ describe("@input/pen-core table operations", () => {
 				position: "last",
 			},
 			{
-				type: "insert-table-cell-text",
+				type: "splice-text",
 				blockId: "t1",
-				row: 0,
-				col: 0,
-				offset: 0,
-				text: "bold text",
+				cell: { row: 0, col: 0 },
+			from: 0,
+			to: 0,
+			insert: "bold text",
 			},
 			{
-				type: "format-table-cell-text",
+				type: "format-text",
 				blockId: "t1",
-				row: 0,
-				col: 0,
-				offset: 0,
-				length: 4,
+				cell: { row: 0, col: 0 },
+				from: 0,
+				to: 4,
 				marks: { bold: true },
 			},
 		]);
@@ -396,10 +383,7 @@ describe("@input/pen-core table operations", () => {
 
 		editor.apply([
 			{
-				type: "convert-block",
-				blockId: "b1",
-				newType: "table",
-				newProps: {},
+				type: "set-props", blockId: "b1", props: { type: "table", ...{ }},
 			},
 		]);
 

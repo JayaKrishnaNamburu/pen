@@ -4,12 +4,10 @@ import { isCollapsed, isMultiBlock, usesInlineTextSelection } from "@input/pen-c
 import type { Editor } from "@input/pen-types";
 import { generateId } from "@input/pen-types";
 import { measureWithRoot, type FieldEditorSession } from "@input/pen-dom";
-import { shouldUseBlockSelection } from "@input/pen-dom/field-editor";
 import { domSelectionToEditor, getBlockBoundaryPoint, pointToEditorSelectionPoint } from "@input/pen-dom/field-editor/selectionBridge";
 import { getEditorBlockSelectionLength, getEditorBlockSelectionRole } from "../../utils/blockSelectionSemantics";
 import { DATA_ATTRS } from "../../utils/dataAttributes";
 import { isRepeatedCellSelection, resolveBlockPointerIntent } from "../../utils/editorInteractionModel";
-import { getEditorFlowCapability, shouldFallbackMixedSelectionToBlock } from "../../utils/flowCapabilities";
 import { normalizeSelectionFormation } from "../../utils/selectionFormation";
 import { createPointerSelectionGesture, resolvePointerDragSelection } from "../../selection/interactionController";
 import type { ResolvedBlockSelectionOptions, ResolvedInteractionModel } from "../../context/editorContext";
@@ -101,6 +99,16 @@ export function useEditorContentGestures(options: UseEditorContentGesturesOption
 	const blockOrder = editor.documentState.blockOrder; const anchorIdx = blockOrder.indexOf(anchorBlockId); const targetIdx = blockOrder.indexOf(targetBlockId);
 	if (anchorIdx < 0 || targetIdx < 0) return null; const from = Math.min(anchorIdx, targetIdx); const to = Math.max(anchorIdx, targetIdx);
 	return blockOrder.slice(from, to + 1); };
+	let shiftClickAnchor: { blockId: string; offset: number } | null = null;
+	const resolveShiftAnchor = (): { blockId: string; offset: number } | null => {
+	const currentSelection = editor.selection;
+	if (currentSelection?.type === "text") {
+	return currentSelection.anchor; }
+	if (currentSelection?.type === "block" && currentSelection.blockIds.length > 0) {
+	return getBoundaryPoint(currentSelection.blockIds[0], "start"); }
+	if (fieldEditor.focusBlockId) {
+	return getBoundaryPoint(fieldEditor.focusBlockId, "start"); }
+	return null; };
 	const getRegionSelectorConfig = ( event: MouseEvent, ): RegionSelectorConfig | null => {
 	if (!blockSelection.enabled) return null; const config = regionSelectionStore.getSnapshot().config; if (!config?.enabled) return null;
 	if (config.selectionMode !== "block") return null; if (config.activation !== "whenInactive") return null; if (event.shiftKey || event.button !== 0) return null;
@@ -142,10 +150,7 @@ export function useEditorContentGestures(options: UseEditorContentGesturesOption
 	if (!blockSelection.enabled) return; gestureEl.ownerDocument?.getSelection()?.removeAllRanges(); editor.selectBlocks(normalizedSelection.blockIds);
 	fieldEditor.deactivate(); return; }
 	const selectedIds = getBlockIdRange( normalizedSelection.anchor.blockId, normalizedSelection.focus.blockId,
-	); if (!selectedIds) return; if (shouldUseBlockSelection(editor, selectedIds.length)) {
-	if (blockSelection.enabled) {
-	editor.selectBlocks(selectedIds); fieldEditor.deactivate(); return;
-	} } fieldEditor.applyDocumentTextSelection(
+	); if (!selectedIds) return; fieldEditor.applyDocumentTextSelection(
 	normalizedSelection.anchor, normalizedSelection.focus, );
 	};
 	const handleClick = (event: MouseEvent) => {
@@ -156,24 +161,19 @@ export function useEditorContentGestures(options: UseEditorContentGesturesOption
 	if (handleClickOutsideBlocks(event)) {
 	event.preventDefault(); } return;
 	} if (event.shiftKey) {
-	const currentSelection = editor.selection; const anchorPoint = currentSelection?.type === "text"
-	? currentSelection.anchor : currentSelection?.type === "block" && currentSelection.blockIds.length > 0
-	? getBoundaryPoint( currentSelection.blockIds[0], "start",
-	) : fieldEditor.focusBlockId ? getBoundaryPoint(
-	fieldEditor.focusBlockId, "start", )
-	: null; if (anchorPoint && anchorPoint.blockId !== blockId) {
+	const anchorPoint = shiftClickAnchor ?? resolveShiftAnchor();
+	shiftClickAnchor = null; if (anchorPoint && anchorPoint.blockId !== blockId) {
 	const selectedIds = getBlockIdRange( anchorPoint.blockId, blockId,
 	); if (!selectedIds) return; const blockOrder = editor.documentState.blockOrder;
 	const anchorIdx = blockOrder.indexOf(anchorPoint.blockId); const targetIdx = blockOrder.indexOf(blockId); const selectingForward = anchorIdx <= targetIdx;
 	const targetPoint = getBoundaryPoint( blockId, selectingForward ? "end" : "start",
-	); if ( blockSelection.enabled &&
-	shouldUseBlockSelection(editor, selectedIds.length) ) {
-	editor.selectBlocks(selectedIds); fieldEditor.deactivate(); event.preventDefault();
-	return; } activateCanonicalSelection(anchorPoint, targetPoint);
+	); activateCanonicalSelection(anchorPoint, targetPoint);
 	event.preventDefault(); return; }
 	} };
 	const handleMouseDown = (event: MouseEvent) => {
-	if (event.shiftKey || event.button !== 0) return; if (fieldEditor.isComposing) return; if (shouldIgnorePointerGesture(event)) return;
+	if (event.button !== 0) return; if (event.shiftKey) {
+	shiftClickAnchor = resolveShiftAnchor(); return; }
+	shiftClickAnchor = null; if (fieldEditor.isComposing) return; if (shouldIgnorePointerGesture(event)) return;
 	const regionSelectorConfig = getRegionSelectorConfig(event); if (regionSelectorConfig) {
 	regionGestureRef.current = {
 	clientX: event.clientX, clientY: event.clientY, isSelecting: false,
@@ -192,16 +192,10 @@ export function useEditorContentGestures(options: UseEditorContentGesturesOption
 	const initialPointerPoint = pointToEditorSelectionPoint( root, event.clientX,
 	event.clientY, ); if (initialPointerPoint?.blockId === blockId) {
 	pointerGestureRef.current.anchorPoint = initialPointerPoint; } }
-	const shouldSeedBlockSelection = shouldFallbackMixedSelectionToBlock( editor.documentProfile,
-	getEditorFlowCapability(editor, blockId), ); if (
+	if (
 	pointerGestureRef.current && clickedSchema && !usesInlineTextSelection(clickedSchema) &&
 	pointerGestureRef.current.anchorPoint == null ) {
-	pointerGestureRef.current.anchorPoint = getBoundaryPoint(blockId, "start"); } if (
-	pointerGestureRef.current && clickedSchema && !usesInlineTextSelection(clickedSchema) &&
-	shouldSeedBlockSelection && pointerGestureRef.current.startSelection == null ) {
-	pointerGestureRef.current.startSelection = {
-	type: "block", blockIds: [blockId], };
-	} const shouldPreserveNativeInlinePointerSelection = fieldEditor.isEditing &&
+	pointerGestureRef.current.anchorPoint = getBoundaryPoint(blockId, "start"); } const shouldPreserveNativeInlinePointerSelection = fieldEditor.isEditing &&
 	fieldEditor.focusBlockId === blockId && usesInlineTextSelection(clickedSchema); if (interactionModelRef.current.clickToSelect) {
 	if (fieldEditor.isEditing && fieldEditor.focusBlockId !== blockId) {
 	fieldEditor.deactivate(); } } else if (
@@ -332,11 +326,7 @@ export function useEditorContentGestures(options: UseEditorContentGesturesOption
 	return commitMappedTextSelection( mappedSelection.anchor, mappedSelection.focus,
 	); } if (startedWithExpandedTextSelection && clickCount < 3) {
 	return commitMappedTextSelection( mappedSelection.anchor, mappedSelection.focus,
-	); } const startedFromFallbackBlock =
-	getEditorBlockSelectionRole(editor, gesture.blockId) !== "editable-inline" && shouldFallbackMixedSelectionToBlock(
-	editor.documentProfile, getEditorFlowCapability(editor, gesture.blockId), );
-	if (moved && collapsed && startedFromFallbackBlock) {
-	return false; } if (moved) {
+	); } if (moved) {
 	return commitMappedTextSelection( mappedSelection.anchor, mappedSelection.focus,
 	); } return false;
 	};
@@ -418,15 +408,7 @@ export function useEditorContentGestures(options: UseEditorContentGesturesOption
 	if (!blockId) {
 	if (handleClickOutsideBlocks(event)) {
 	skipNextClickRef.current = true; } return;
-	} if ( blockSelection.enabled &&
-	moved && gesture.blockId !== blockId && getEditorBlockSelectionRole(editor, gesture.blockId) !==
-	"editable-inline" && shouldFallbackMixedSelectionToBlock( editor.documentProfile,
-	getEditorFlowCapability(editor, gesture.blockId), ) ) {
-	const blockIds = getBlockIdRange(gesture.blockId, blockId); if (blockIds) {
-	editor.selectBlocks(blockIds); fieldEditor.deactivate(); if (root) {
-	ensureEditorFocus(root); } skipNextClickRef.current = true;
-	return; } }
-	const block = editor.getBlock(blockId); if (!block) return; if (tryHandleCellSelection(blockId)) {
+	} const block = editor.getBlock(blockId); if (!block) return; if (tryHandleCellSelection(blockId)) {
 	return; } tryHandleBlockSelection(blockId, block.type);
 	};
 	const completePointerSelection = () => {

@@ -1,10 +1,12 @@
 import type { BenchDefinition } from "../bench";
 import { getScale3Baseline } from "./scale3";
 
-type BenchMetadata = Pick<
-	BenchDefinition,
-	"id" | "name" | "targetMs" | "critical"
->;
+// id is optional on BenchDefinition (a bench can run unregistered) but REQUIRED here:
+// the registry is keyed by id and the population parity check compares registered ids
+// against running ids, so a metadata entry without one cannot participate in it at all.
+type BenchMetadata = Pick<BenchDefinition, "name" | "targetMs" | "critical"> & {
+	id: string;
+};
 
 export const CRDT_INSERT_1000_BLOCKS_BENCH: BenchMetadata = {
 	id: "crdt.insert-1000-blocks",
@@ -47,6 +49,31 @@ export const ANCHORS_RESOLVE_200_BLOCKS_BENCH: BenchMetadata = {
 export const ANCHORS_SPLIT_FOLLOW_BENCH: BenchMetadata = {
 	id: "anchors.split-follow",
 	name: "Yjs relative-position follow after Pen copy-split",
+};
+
+// The four above address a paragraph's `block.content`. A table cell's text is a
+// nested Y.Text at `tableContent[row].cells[col].content` and a table block has no
+// `content` key at all, so these are a different substrate rather than a size
+// variant. There is no cell equivalent of `anchors.split-follow`:
+// `split-table-cell` is a validated no-op, so a cell never undergoes copy-split.
+export const ANCHORS_ENCODE_SIZE_CELL_1000_BENCH: BenchMetadata = {
+	id: "anchors.encode-size-cell-1000",
+	name: "Yjs relative-position encode size in a table cell x1000",
+};
+
+export const ANCHORS_RESOLVE_CELL_70K_1000_BENCH: BenchMetadata = {
+	id: "anchors.resolve-cell-70k-1000",
+	name: "Yjs relative-position resolve 70k chars in a table cell x1000",
+};
+
+export const ANCHORS_RESOLVE_200_CELLS_BENCH: BenchMetadata = {
+	id: "anchors.resolve-200-cells",
+	name: "Yjs relative-position resolve across 200 table cells",
+};
+
+export const ANCHORS_CELL_IN_BLOCK_EDIT_BENCH: BenchMetadata = {
+	id: "anchors.cell-in-block-edit",
+	name: "Yjs relative-position shift and collapse within a table cell",
 };
 
 export const SCHEMA_RESOLVE_X10000_BENCH: BenchMetadata = {
@@ -203,8 +230,8 @@ const scale3ExtensionCountPlus8 = getScale3Baseline(
 const scale3DecorationCount256 = getScale3Baseline(
 	"scale3.keystroke.realistic-stack.decoration-count.256",
 );
-const scale3PeerCount8 = getScale3Baseline(
-	"scale3.keystroke.realistic-stack.peer-count.8",
+const scale3RemoteCaretCount8 = getScale3Baseline(
+	"scale3.keystroke.realistic-stack.remote-caret-count.8",
 );
 
 export const SCALE3_KEYSTROKE_DOCUMENT_SIZE_100_BENCH: BenchMetadata = {
@@ -235,10 +262,10 @@ export const SCALE3_KEYSTROKE_DECORATION_COUNT_256_BENCH: BenchMetadata = {
 	critical: true,
 };
 
-export const SCALE3_KEYSTROKE_PEER_COUNT_8_BENCH: BenchMetadata = {
-	id: scale3PeerCount8.id,
-	name: "SCALE3 keystroke realistic-stack peer-count 8",
-	targetMs: scale3PeerCount8.gateP50Ms,
+export const SCALE3_KEYSTROKE_REMOTE_CARET_COUNT_8_BENCH: BenchMetadata = {
+	id: scale3RemoteCaretCount8.id,
+	name: "SCALE3 keystroke realistic-stack remote-caret-count 8",
+	targetMs: scale3RemoteCaretCount8.gateP50Ms,
 	critical: true,
 };
 
@@ -248,6 +275,10 @@ export const BENCHMARK_METADATA: BenchMetadata[] = [
 	ANCHORS_RESOLVE_70K_1000_BENCH,
 	ANCHORS_RESOLVE_200_BLOCKS_BENCH,
 	ANCHORS_SPLIT_FOLLOW_BENCH,
+	ANCHORS_ENCODE_SIZE_CELL_1000_BENCH,
+	ANCHORS_RESOLVE_CELL_70K_1000_BENCH,
+	ANCHORS_RESOLVE_200_CELLS_BENCH,
+	ANCHORS_CELL_IN_BLOCK_EDIT_BENCH,
 	CRDT_ENCODE_STATE_500_BENCH,
 	CRDT_LOAD_DOCUMENT_500_BENCH,
 	CRDT_FORK_MERGE_100_BENCH,
@@ -280,7 +311,7 @@ export const BENCHMARK_METADATA: BenchMetadata[] = [
 	SCALE3_KEYSTROKE_DOCUMENT_SIZE_1000_BENCH,
 	SCALE3_KEYSTROKE_EXTENSION_COUNT_PLUS8_BENCH,
 	SCALE3_KEYSTROKE_DECORATION_COUNT_256_BENCH,
-	SCALE3_KEYSTROKE_PEER_COUNT_8_BENCH,
+	SCALE3_KEYSTROKE_REMOTE_CARET_COUNT_8_BENCH,
 ];
 
 export function findBenchMetadataById(id: string): BenchMetadata | undefined {

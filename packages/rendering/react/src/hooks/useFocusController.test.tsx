@@ -221,10 +221,11 @@ describe("useFocusController", () => {
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "Hello",
+				from: 0,
+				to: 0,
+				insert: "Hello",
 			},
 		]);
 		let controller: PenFocusController | undefined;

@@ -2,6 +2,10 @@ import type { SchemaRegistry } from "@input/pen-types";
 import type { UrlPolicy } from "../security/urlPolicy";
 import type { FieldEditorDelta } from "./crdt";
 import {
+	clearEmptyBlockPlaceholder,
+	ensureEmptyBlockPlaceholder,
+} from "./emptyBlockPlaceholder";
+import {
 	createInlineAtomElement,
 	getLogicalNodeLength,
 	isInlineAtomNode,
@@ -16,6 +20,7 @@ export function applyDeltaToDOM(
 ): boolean {
 	let childIndex = 0;
 	let textOffset = 0;
+	clearEmptyBlockPlaceholder(element);
 
 	for (const entry of delta) {
 		if (entry.retain != null) {
@@ -128,6 +133,7 @@ export function applyDeltaToDOM(
 			}
 		}
 	}
+	ensureEmptyBlockPlaceholder(element);
 	return true;
 }
 

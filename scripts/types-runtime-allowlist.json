@@ -7,14 +7,14 @@
       "reason": "P.3: generateId stays; HOST4 requires a single ID helper and crdt-yjs still imports it from types"
     },
     {
-      "name": "logicalTextFromStored",
-      "kind": "function",
-      "reason": "P.3: pure resolver over the frozen EMPTY_BLOCK_SENTINEL, needed by serialization packages (export-json, markdown-serialization) that deliberately carry no runtime dependency on core; relocating it to core would force one on them"
-    },
-    {
       "name": "formatUuidV4",
       "kind": "helper",
       "reason": "P.3: private formatter for generateId; counted so unexported helpers cannot hide from the leftover total"
+    },
+    {
+      "name": "mapOffsetThroughSplices",
+      "kind": "function",
+      "reason": "P.3: required public by spec-v3 OB3, which supersedes API3 for this symbol. It replaces the deleted ChangeSummary.mapOffset/mapPoint/mapRange/compose algebra, so pen-types is where the derived tier already looks. Relocating it to core would put a runtime dependency on the same serialization packages the Wave 3 allowlist was written to spare. Added 2026-08-24 with the Wave 3 closure that deleted the algebra"
     }
   ]
 }

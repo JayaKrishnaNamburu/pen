@@ -353,16 +353,16 @@ describe("@input/pen-document-ops tools", () => {
 			position: "last",
 		});
 		expect(appliedOps[1]).toMatchObject({
-			type: "insert-text",
-			text: "Heading",
+			type: "splice-text",
+			insert: "Heading",
 		});
 		expect(appliedOps[2]).toMatchObject({
 			type: "insert-block",
 			blockType: "bulletListItem",
 		});
 		expect(appliedOps[3]).toMatchObject({
-			type: "insert-text",
-			text: "Item",
+			type: "splice-text",
+			insert: "Item",
 		});
 	});
 

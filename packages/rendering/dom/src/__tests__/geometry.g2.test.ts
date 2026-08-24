@@ -138,14 +138,9 @@ describe("GeometryReader G2 cache (injected measure)", () => {
 			origin: { type: "user" },
 			summary: {
 				commitId: 2,
-				originType: "user",
-				text: [{ blockId: "a", splices: [], formatRanges: [] }],
+				blockText: [{ blockId: "a", splices: [], formatRanges: [] }],
 				structural: [],
-				isEmpty: false,
-				mapOffset: () => 0,
-				mapPoint: () => null,
-				mapRange: () => null,
-				compose: (next) => next,
+				affectedBlockIds: ["a"],
 			},
 			selectionBefore: {
 				state: null,

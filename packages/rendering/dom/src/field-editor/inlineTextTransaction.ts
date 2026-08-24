@@ -39,18 +39,19 @@ export function buildInlineTextEditTransaction(options: {
 		ops.push(
 			cellCoord
 				? {
-						type: "delete-table-cell-text",
+						type: "splice-text",
 						blockId,
-						row: cellCoord.row,
-						col: cellCoord.col,
-						offset: range.start,
-						length: range.end - range.start,
+						cell: { row: cellCoord.row, col: cellCoord.col },
+						from: range.start,
+						to: range.end,
+						insert: "",
 					}
 				: {
-						type: "delete-text",
+						type: "splice-text",
 						blockId,
-						offset: range.start,
-						length: range.end - range.start,
+						from: range.start,
+						to: range.end,
+						insert: "",
 					},
 		);
 	}
@@ -59,18 +60,19 @@ export function buildInlineTextEditTransaction(options: {
 		ops.push(
 			cellCoord
 				? {
-						type: "insert-table-cell-text",
+						type: "splice-text",
 						blockId,
-						row: cellCoord.row,
-						col: cellCoord.col,
-						offset: range.start,
-						text,
+						cell: { row: cellCoord.row, col: cellCoord.col },
+						from: range.start,
+						to: range.start,
+						insert: text,
 					}
 				: {
-						type: "insert-text",
+						type: "splice-text",
 						blockId,
-						offset: range.start,
-						text,
+						from: range.start,
+						to: range.start,
+						insert: text,
 						marks,
 					},
 		);
@@ -107,18 +109,19 @@ export function buildInlineTextDiffOps(options: {
 			ops.push(
 				cellCoord
 					? {
-							type: "delete-table-cell-text",
+							type: "splice-text",
 							blockId,
-							row: cellCoord.row,
-							col: cellCoord.col,
-							offset: op.offset,
-							length: op.length,
+							cell: { row: cellCoord.row, col: cellCoord.col },
+							from: op.offset,
+							to: op.offset + op.length,
+							insert: "",
 						}
 					: {
-							type: "delete-text",
+							type: "splice-text",
 							blockId,
-							offset: op.offset,
-							length: op.length,
+							from: op.offset,
+							to: op.offset + op.length,
+							insert: "",
 						},
 			);
 			continue;
@@ -127,18 +130,19 @@ export function buildInlineTextDiffOps(options: {
 		ops.push(
 			cellCoord
 				? {
-						type: "insert-table-cell-text",
+						type: "splice-text",
 						blockId,
-						row: cellCoord.row,
-						col: cellCoord.col,
-						offset: op.offset,
-						text: op.text,
+						cell: { row: cellCoord.row, col: cellCoord.col },
+						from: op.offset,
+						to: op.offset,
+						insert: op.text,
 					}
 				: {
-						type: "insert-text",
+						type: "splice-text",
 						blockId,
-						offset: op.offset,
-						text: op.text,
+						from: op.offset,
+						to: op.offset,
+						insert: op.text,
 						marks: resolveInsertMarks(ytext, op.offset),
 					},
 		);

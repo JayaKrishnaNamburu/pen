@@ -1,7 +1,6 @@
-import { EMPTY_BLOCK_SENTINEL } from "@input/pen-types";
 import { beforeEach, describe, expect, it } from "vitest";
 import * as Y from "yjs";
-import { createTestEditor, resetTestIdCounter } from "../index";
+import { createTestDocument, createTestEditor, resetTestIdCounter } from "../index";
 import {
 	collectInlineText,
 	concatenatedInlineText,
@@ -36,7 +35,7 @@ describe("two-peer inspect helpers", () => {
 		editor.destroy();
 	});
 
-	it("visibleText returns stored text and maps an exact empty-block sentinel to empty", () => {
+	it("visibleText returns stored text and treats an empty block as empty", () => {
 		const editor = createTestEditor({
 			blocks: [
 				{ id: "p1", type: "paragraph", content: "Hello" },
@@ -46,7 +45,7 @@ describe("two-peer inspect helpers", () => {
 
 		expect(visibleText(editor, "p1")).toBe("Hello");
 		expect(visibleText(editor, "empty")).toBe("");
-		expect(visibleText(EMPTY_BLOCK_SENTINEL)).toBe("");
+		expect(visibleText("")).toBe("");
 
 		editor.destroy();
 	});
@@ -71,17 +70,15 @@ describe("two-peer inspect helpers", () => {
 	});
 
 	it("findParentCycle reports a cycle and stays quiet when there is none", () => {
-		const editor = createTestEditor({
-			blocks: [
-				{ id: "block-a", type: "callout", content: "A" },
-				{ id: "block-b", type: "callout", content: "B" },
-			],
-		});
+		const { ydoc, doc } = createTestDocument([
+			{ id: "block-a", type: "callout", content: "A" },
+			{ id: "block-b", type: "callout", content: "B" },
+		]);
 
-		expect(hasParentCycle(editor)).toBe(false);
-		expect(findParentCycle(editor)).toBeNull();
+		expect(hasParentCycle(doc)).toBe(false);
+		expect(findParentCycle(doc)).toBeNull();
 
-		const blocks = editor.ydoc.getMap("blocks");
+		const blocks = ydoc.getMap("blocks");
 		const propsA = (blocks.get("block-a") as Y.Map<unknown>).get(
 			"props",
 		) as Y.Map<unknown>;
@@ -91,14 +88,12 @@ describe("two-peer inspect helpers", () => {
 		propsA.set("parentId", "block-b");
 		propsB.set("parentId", "block-a");
 
-		expect(hasParentCycle(editor)).toBe(true);
-		expect(findParentCycle(editor, "block-a")).toEqual([
+		expect(hasParentCycle(doc)).toBe(true);
+		expect(findParentCycle(doc, "block-a")).toEqual([
 			"block-a",
 			"block-b",
 			"block-a",
 		]);
-
-		editor.destroy();
 	});
 
 	it("getChildrenIds reads stored children, not a parentId-only view", () => {

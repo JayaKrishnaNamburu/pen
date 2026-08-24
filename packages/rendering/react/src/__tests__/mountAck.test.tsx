@@ -62,10 +62,11 @@ describe("@input/pen-react mount ack", () => {
 			await act(async () => {
 				editor.apply([
 					{
-						type: "insert-text",
+						type: "splice-text",
 						blockId,
-						offset: 0,
-						text: "Hi",
+						from: 0,
+				to: 0,
+				insert: "Hi",
 					},
 				]);
 			});

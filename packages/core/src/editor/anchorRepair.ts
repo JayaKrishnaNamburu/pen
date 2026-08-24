@@ -95,7 +95,7 @@ function spliceInserts(change: {
 function remoteMoves(summary: ChangeSummary, taken: ReadonlySet<string>): ContentMove[] {
 	const deletes: Array<{ blockId: string; from: number; to: number }> = [];
 	const inserts: Array<{ blockId: string; from: number; length: number }> = [];
-	for (const change of summary.text) {
+	for (const change of summary.blockText) {
 		deletes.push(...spliceDeletes(change));
 		inserts.push(...spliceInserts(change));
 	}

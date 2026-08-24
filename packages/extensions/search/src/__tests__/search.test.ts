@@ -12,9 +12,8 @@ import {
 	buildReplaceAllOps,
 	buildSearchRegex,
 	findDocumentMatches,
-	getNextActiveIndex,
-	getPreviousActiveIndex,
 } from "../index";
+import { getNextActiveIndex, getPreviousActiveIndex } from "../search";
 
 const HOMOGENEOUS_DOCUMENT_CHARS = 100_000;
 
@@ -265,10 +264,11 @@ describe("@input/pen-search helpers", () => {
 					position: { parent: "parent", index: 0 },
 				},
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: "nested-child",
-					offset: 0,
-					text: "hidden nested match",
+					from: 0,
+				to: 0,
+				insert: "hidden nested match",
 				},
 			],
 			{ origin: "user" },
@@ -335,16 +335,18 @@ describe("@input/pen-search helpers", () => {
 					position: { parent: "cols", index: 1 },
 				},
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: "left",
-					offset: 0,
-					text: "hidden layout match",
+					from: 0,
+				to: 0,
+				insert: "hidden layout match",
 				},
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: "right",
-					offset: 0,
-					text: "other column",
+					from: 0,
+				to: 0,
+				insert: "other column",
 				},
 			],
 			{ origin: "user" },
@@ -387,12 +389,21 @@ describe("@input/pen-search helpers", () => {
 		);
 
 		expect(ops).toMatchObject([
-			{ type: "delete-text", blockId: "b1", offset: 4, length: 1 },
-			{ type: "insert-text", blockId: "b1", offset: 4, text: "z" },
-			{ type: "delete-text", blockId: "b1", offset: 1, length: 1 },
-			{ type: "insert-text", blockId: "b1", offset: 1, text: "z" },
-			{ type: "delete-text", blockId: "b2", offset: 0, length: 1 },
-			{ type: "insert-text", blockId: "b2", offset: 0, text: "z" },
+			{ type: "splice-text", blockId: "b1", from: 4,
+				to: 4 + 1 , insert: "" },
+			{ type: "splice-text", blockId: "b1", from: 4,
+				to: 4,
+				insert: "z" },
+			{ type: "splice-text", blockId: "b1", from: 1,
+				to: 1 + 1 , insert: "" },
+			{ type: "splice-text", blockId: "b1", from: 1,
+				to: 1,
+				insert: "z" },
+			{ type: "splice-text", blockId: "b2", from: 0,
+				to: 0 + 1 , insert: "" },
+			{ type: "splice-text", blockId: "b2", from: 0,
+				to: 0,
+				insert: "z" },
 		]);
 	});
 
@@ -422,10 +433,11 @@ function createDocumentWithText(
 	editor.apply(
 		[
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text,
+				from: 0,
+				to: 0,
+				insert: text,
 			},
 		],
 		{ origin: "user" },

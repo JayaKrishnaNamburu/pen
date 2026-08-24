@@ -201,7 +201,9 @@ describe("AIB1 pen.aiEgress", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello SECRET" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello SECRET" }],
 			{ origin: "user" },
 		);
 
@@ -240,7 +242,9 @@ describe("AIB1 pen.aiEgress", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello SECRET" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello SECRET" }],
 			{ origin: "user" },
 		);
 

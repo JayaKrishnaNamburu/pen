@@ -5,7 +5,6 @@ import {
 	shouldAllowDirectBlockPaste as shouldAllowSharedDirectBlockPaste,
 	shouldAllowFlowInsertionInSlashMenu as shouldAllowSharedFlowInsertionInSlashMenu,
 	shouldShowBlockInDefaultMenus as shouldShowSharedBlockInDefaultMenus,
-	shouldFallbackMixedSelectionToBlock as shouldFallbackSharedMixedSelectionToBlock,
 	shouldForceBlockScopedSelectAll as shouldForceSharedBlockScopedSelectAll,
 } from "@input/pen-core";
 import type {
@@ -37,16 +36,6 @@ export function getEditorFlowCapability(
 	}
 
 	return getFlowCapabilityFromSchema(editor.schema.resolve(block.type));
-}
-
-export function shouldFallbackMixedSelectionToBlock(
-	documentProfile: DocumentProfile,
-	capability: FlowBlockCapability | null,
-): boolean {
-	return shouldFallbackSharedMixedSelectionToBlock(
-		documentProfile,
-		capability,
-	);
 }
 
 export function shouldForceBlockScopedSelectAll(

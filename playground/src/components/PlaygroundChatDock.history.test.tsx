@@ -69,10 +69,11 @@ describe("PlaygroundChatDock history", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "Hello world again",
+					from: 0,
+				to: 0,
+				insert: "Hello world again",
 				},
 			],
 			{ origin: "system" },

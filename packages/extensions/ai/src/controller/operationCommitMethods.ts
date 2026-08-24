@@ -280,10 +280,11 @@ export const operationCommitMethods = {
 			this._editor.apply(
 				[
 					{
-						type: "insert-text",
+						type: "splice-text",
 						blockId: caret.blockId,
-						offset: caret.offset,
-						text,
+						from: caret.offset,
+						to: caret.offset,
+						insert: text,
 					},
 				],
 				{ origin: "ai" },

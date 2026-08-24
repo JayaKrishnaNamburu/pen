@@ -83,10 +83,11 @@ describe("@input/pen-react image drag and drop", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: paragraphId,
-				offset: 0,
-				text: "Hello",
+				from: 0,
+				to: 0,
+				insert: "Hello",
 			},
 		]);
 
@@ -241,10 +242,11 @@ describe("@input/pen-react image drag and drop", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: firstParagraphId,
-				offset: 0,
-				text: "Hello",
+				from: 0,
+				to: 0,
+				insert: "Hello",
 			},
 			{
 				type: "insert-block",
@@ -254,10 +256,11 @@ describe("@input/pen-react image drag and drop", () => {
 				position: { after: firstParagraphId },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: secondParagraphId,
-				offset: 0,
-				text: "World",
+				from: 0,
+				to: 0,
+				insert: "World",
 			},
 		]);
 

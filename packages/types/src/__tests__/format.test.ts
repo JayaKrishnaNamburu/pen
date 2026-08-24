@@ -10,7 +10,7 @@ import {
 
 describe("document format contracts (DUR1)", () => {
 	it("DUR1: freezes the store generation at 2 with minReader 1 for implicit v1 stamps", () => {
-		expect(PEN_DOCUMENT_FORMAT).toBe(2);
+		expect(PEN_DOCUMENT_FORMAT).toBe(3);
 		expect(IMPLICIT_V1_FORMAT_STAMP).toEqual({
 			format: 1,
 			minReader: 1,

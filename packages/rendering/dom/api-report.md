@@ -4,10 +4,6 @@
 
 `./dist/index.d.ts`
 
-### class
-
-- DomScheduler
-
 ### function
 
 - collapsedRect
@@ -21,6 +17,7 @@
 - isFieldEditorTextEditingKey
 - measureWithRoot
 - mountEditor
+- registerVerticalCaretMeasure
 - resolveEditorUrl
 - shouldHandleEditorKeyboardEvent
 - singleRunLineBox
@@ -38,11 +35,17 @@
 ### value
 
 - DEFAULT_SELECT_ALL_BEHAVIOR
+- DomScheduler
+- DomSchedulerOptions
+- DomSchedulerOwner
+- DomSchedulerPhase
 - EditorSelectAllBehavior
 - FieldEditorFocusReason
 - FieldEditorFocusRequest
 - FieldEditorImpl
 - FieldEditorSession
+- FlushCollect
+- GeometryInvalidator
 - PasteImporters
 - PenFieldEditorFocusOptions
 - PenFocusAction
@@ -62,13 +65,8 @@
 - Affinity
 - BidiRun
 - BidiRunGeometry
-- DomSchedulerOptions
-- DomSchedulerOwner
-- DomSchedulerPhase
 - FieldEditorPointerActivateOptions
 - FieldEditorPointerTarget
-- FlushCollect
-- GeometryInvalidator
 - GeometryMeasureAdapter
 - GeometryReader
 - GeometryReaderHost
@@ -86,27 +84,29 @@
 
 `./dist/field-editor/index.d.ts`
 
+### function
+
+- classifySelectionSurface
+- contractFieldEditorRange
+- expandFieldEditorRange
+- getExpandedBlockRole
+- resolveMarksAtPosition
+- shouldUseBlockSelection
+
 ### value
 
 - applyDeltaToDOM
 - buildMoveInlineAtomOps
-- classifySelectionSurface
 - computeTextDiff
-- contractFieldEditorRange
 - domSelectionToEditor
 - editorSelectionToDOM
-- ExpandedBlockRole
-- expandFieldEditorRange
 - extractTextFromDOM
 - FieldEditorFocusReason
 - FieldEditorFocusRequest
 - FieldEditorStore
 - FieldEditorStoreSnapshot
-- FieldEditorSurfaceMode
-- FieldEditorSurfaceState
 - fullReconcileToDOM
 - getCaretOffset
-- getExpandedBlockRole
 - getInlineAtomAtOffset
 - getSelectionOffsets
 - handleClipboardPaste
@@ -131,95 +131,314 @@
 - ReplaceInlineAtomWithTextOptions
 - resolveInlineAtomDropTarget
 - ResolveInlineAtomDropTargetOptions
-- resolveMarksAtPosition
 - restoreSelection
 - saveSelection
 - SelectionPoint
-- shouldUseBlockSelection
 - TextDiffOp
 
-## ./field-editor/*
+### type
 
-`./dist/field-editor/*.d.ts`
+- ExpandedBlockRole
+- FieldEditorSurfaceMode
+- FieldEditorSurfaceState
 
-glob members:
+## ./field-editor/beforeinputMap
 
-- backendLifecycleController.d.ts
-- beforeinputMap.d.ts
-- cellEditingController.d.ts
-- clipboard.d.ts
-- commands.d.ts
-- commandsBlock.d.ts
-- commandsDelete.d.ts
-- commandsEnter.d.ts
-- commandsListTab.d.ts
-- commandsShared.d.ts
-- contenteditableBackend.d.ts
-- contenteditableBackendCore.d.ts
-- contenteditableBackendEvents.d.ts
-- contenteditableBackendSelection.d.ts
-- contenteditableDirectHandlers.d.ts
-- contenteditableDomHelpers.d.ts
-- contentResolution.d.ts
-- controller.d.ts
-- crdt.d.ts
-- crossBlock.d.ts
-- dropResolver.d.ts
-- editContextBackend.d.ts
-- editContextBackendCore.d.ts
-- editContextBackendInput.d.ts
-- editContextBackendRuntime.d.ts
-- editContextBackendSelection.d.ts
-- editContextDom.d.ts
-- editContextSelectionAuthority.d.ts
-- editContextTypes.d.ts
-- expandedContentEditableBackend.d.ts
-- fieldEditorImpl.d.ts
-- fieldEditorImplCore.d.ts
-- fieldEditorImplHelpers.d.ts
-- fieldEditorImplLifecycle.d.ts
-- fieldEditorImplRuntime.d.ts
-- fieldEditorImplSelection.d.ts
-- focusController.d.ts
-- historyOrigin.d.ts
-- historySelectionCoordinator.d.ts
-- index.d.ts
-- inlineAtomDom.d.ts
-- inlineAtomInteraction.d.ts
-- inlineAtomLogicalDom.d.ts
-- inlineAtomModel.d.ts
-- inlineInputRules.d.ts
-- inlineTextTransaction.d.ts
-- keyBindingShortcuts.d.ts
-- keyHandling.d.ts
-- keyHandlingInlineAtoms.d.ts
-- keymap.d.ts
-- markBoundary.d.ts
-- offsetDomain.d.ts
-- pendingMarkController.d.ts
-- reconciler.d.ts
-- reconcilerDeltaApply.d.ts
-- reconcilerFull.d.ts
-- reconcilerMarks.d.ts
-- reconcilerPatch.d.ts
-- reconcilerSelection.d.ts
-- selectAllController.d.ts
-- selectionAuthority.d.ts
-- selectionBridge.d.ts
-- selectionBridgeOffsets.d.ts
-- selectionCoordinator.d.ts
-- selectionDomQueries.d.ts
-- selectionProjectionController.d.ts
-- sessionReconciler.d.ts
-- store.d.ts
-- textDiff.d.ts
-- textInputPipeline.d.ts
-- transfer.d.ts
-- transferBlocks.d.ts
-- transferImages.d.ts
-- transferPaste.d.ts
-- transferSelection.d.ts
-- transferTypes.d.ts
+`./dist/field-editor/beforeinputMap.d.ts`
+
+### function
+
+- mapBeforeInput
+
+### value
+
+- BEFOREINPUT_MAP
+- COMPOSITION_INPUT_TYPES
+
+### type
+
+- BeforeInputAllowPolicy
+- BeforeInputBlockPolicy
+- BeforeInputCommandMapping
+- BeforeInputMapping
+
+## ./field-editor/clipboard
+
+`./dist/field-editor/clipboard.d.ts`
+
+### function
+
+- handleClipboardPaste
+- handleCopy
+- handleCut
+- handlePaste
+
+## ./field-editor/commands
+
+`./dist/field-editor/commands.d.ts`
+
+### function
+
+- applyBackspaceBehavior
+- applyDeleteBehavior
+- applyEnterBehavior
+- applyListInputRule
+- applyListTabBehavior
+- convertBlock
+- getConvertBlockOps
+- insertTextAtRange
+- mergeBackwardAtBlockStart
+- moveCaretAcrossBlocks
+- normalizeInlineOffset
+- resolveBackspaceAction
+- resolveEnterAction
+- setInlineMark
+- splitBlockAtOffset
+- toggleInlineMark
+
+### value
+
+- getLogicalInlineLength
+- InlineTextLike
+- normalizeInlineRange
+- SelectionRange
+- SelectionTarget
+
+## ./field-editor/contenteditableBackend
+
+`./dist/field-editor/contenteditableBackend.d.ts`
+
+### class
+
+- ContentEditableBackend
+
+## ./field-editor/crdt
+
+`./dist/field-editor/crdt.d.ts`
+
+_no exports_
+
+## ./field-editor/dropResolver
+
+`./dist/field-editor/dropResolver.d.ts`
+
+### function
+
+- getDropPreview
+- resolveDropTarget
+
+### type
+
+- DropPreview
+- ResolvedDropTarget
+- ResolveDropTargetOptions
+
+## ./field-editor/editContextBackend
+
+`./dist/field-editor/editContextBackend.d.ts`
+
+### class
+
+- EditContextBackend
+
+## ./field-editor/expandedContentEditableBackend
+
+`./dist/field-editor/expandedContentEditableBackend.d.ts`
+
+### class
+
+- ExpandedContentEditableBackend
+
+## ./field-editor/fieldEditorImpl
+
+`./dist/field-editor/fieldEditorImpl.d.ts`
+
+### value
+
+- FieldEditorImpl
+
+## ./field-editor/inlineAtomDom
+
+`./dist/field-editor/inlineAtomDom.d.ts`
+
+### function
+
+- areInlineAtomElementDataEqual
+- copyInlineAtomElementData
+- createInlineAtomCaretBoundaryElement
+- createInlineAtomElement
+- domPointToLogicalOffset
+- findLogicalDOMPoint
+- getInlineAtomElementData
+- getInlineAtomPointerOffset
+- getLogicalNodeLength
+- getLogicalTextContent
+
+### guard
+
+- isInlineAtomCaretBoundaryNode
+- isInlineAtomChipNode
+- isInlineAtomHostNode
+- isInlineAtomNode
+
+### value
+
+- INLINE_ATOM_REPLACEMENT_TEXT
+- resolveInlineAtomInsert
+
+### type
+
+- InlineAtomCaretBoundarySide
+- InlineAtomElementData
+
+## ./field-editor/inlineAtomInteraction
+
+`./dist/field-editor/inlineAtomInteraction.d.ts`
+
+### function
+
+- buildMoveInlineAtomOps
+- getInlineAtomAtOffset
+- moveInlineAtom
+- replaceInlineAtomWithText
+- resolveInlineAtomDropTarget
+
+### value
+
+- INLINE_ATOM_LOGICAL_LENGTH
+
+### type
+
+- InlineAtomDropTarget
+- InlineAtomSnapshot
+- InlineAtomSource
+- MoveInlineAtomOptions
+- ReplaceInlineAtomWithTextOptions
+- ResolveInlineAtomDropTargetOptions
+
+## ./field-editor/inlineAtomModel
+
+`./dist/field-editor/inlineAtomModel.d.ts`
+
+### function
+
+- getInlineAtomAtOffset
+- getInlineAtomInsertText
+- getInlineAtomRangeAtOffset
+- getInlineDeltaLength
+- isInlineAtomRange
+- resolveInlineAtomDisplayText
+- resolveInlineAtomInsert
+
+### value
+
+- INLINE_ATOM_LOGICAL_LENGTH
+- INLINE_ATOM_REPLACEMENT_TEXT
+
+### type
+
+- InlineAtomInsert
+- InlineAtomRange
+- InlineAtomSnapshot
+
+## ./field-editor/keyHandling
+
+`./dist/field-editor/keyHandling.d.ts`
+
+### function
+
+- handleEditorKeyBindings
+- handleFieldEditorKeyDown
+- handleHistoryShortcut
+- handleSelectAllShortcut
+
+## ./field-editor/reconciler
+
+`./dist/field-editor/reconciler.d.ts`
+
+### function
+
+- applyDeltaToDOM
+- fullReconcileDeltasToDOM
+- fullReconcileToDOM
+- restoreSelection
+- saveSelection
+
+### type
+
+- SavedSelection
+
+## ./field-editor/selectionBridge
+
+`./dist/field-editor/selectionBridge.d.ts`
+
+### function
+
+- findBlockElement
+- findInlineContentElement
+- getClosestBlockElementFromPoint
+- getSelectionPointForBlockAtPointer
+- pointToEditorSelectionPoint
+- queryBlockElement
+- queryInlineElement
+
+### value
+
+- computeTextDiff
+- DirectionalSelectionOffsets
+- domPointToOffset
+- domSelectionToEditor
+- editorSelectionToDOM
+- extractTextFromDOM
+- getBlockBoundaryPoint
+- getCaretOffset
+- getDirectionalSelectionOffsets
+- getSelectionOffsets
+- getSelectionPointRect
+- getTextSelectionClientRects
+- SelectionBoundary
+- SelectionPoint
+- TextDiffOp
+
+## ./field-editor/store
+
+`./dist/field-editor/store.d.ts`
+
+_no exports_
+
+## ./field-editor/transfer
+
+`./dist/field-editor/transfer.d.ts`
+
+### function
+
+- executeTransfer
+- resolveTransferKind
+
+### value
+
+- ExecuteTransferOptions
+- IMAGE_BLOCK_TYPE
+- TransferKind
+- TransferSource
+
+## ./field-editor/transferImages
+
+`./dist/field-editor/transferImages.d.ts`
+
+### function
+
+- canAcceptImageTransfer
+- getAssetProvider
+- getImageFiles
+- insertUploadedImages
+- insertUploadedImagesAtDropTarget
+- resolveDefaultDropTarget
+- uploadImageFiles
+
+### type
+
+- UploadImageFilesOptions
 
 ## ./constants/selectAll
 
@@ -319,7 +538,6 @@ _no exports_
 - isContinuousTextFlowCapability
 - shouldAllowDirectBlockPaste
 - shouldAllowFlowInsertionInSlashMenu
-- shouldFallbackMixedSelectionToBlock
 - shouldForceBlockScopedSelectAll
 - shouldShowBlockInDefaultMenus
 

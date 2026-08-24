@@ -8,8 +8,6 @@ import type { DocumentOp } from "@input/pen-types";
 import { markdownExporter } from "../exporter";
 import { defaultSchema } from "@input/pen-schema-default";
 
-type InsertTableCellTextOp = Extract<DocumentOp, { type: "insert-table-cell-text" }>;
-type FormatTableCellTextOp = Extract<DocumentOp, { type: "format-table-cell-text" }>;
 type InsertBlockOp = Extract<DocumentOp, { type: "insert-block" }>;
 
 const noDefaultExtensionsPreset = {

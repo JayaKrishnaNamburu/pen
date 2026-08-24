@@ -24,11 +24,23 @@ const allowlist = JSON.parse(readFileSync(allowlistPath, "utf8"));
 // file here is what made the previous version of this suite go red when the
 // Firefox projection fix deleted the two rAFs it had pinned: the assertions
 // describe the rule's behavior, not a tree state.
-const authorityPath =
-	"packages/rendering/dom/src/field-editor/selectionAuthority.ts";
+// The pair is derived from a live waiver rather than hardcoded. Hardcoding it
+// reintroduced the same staleness one layer up: Wave 05's end-of-write signal
+// deleted `applySelectionUntilNextFrame`, and this suite — which exists to keep
+// the rule honest — went red for naming the construct that retired.
+const allowlistedEntry = allowlist.entries.find(
+	(entry) => entry.kind === "requestAnimationFrame",
+);
+if (!allowlistedEntry) {
+	throw new Error(
+		"no-selection-timers allowlist has no requestAnimationFrame entry left to exercise",
+	);
+}
+const authorityPath = allowlistedEntry.file;
+const allowlistedSymbol = allowlistedEntry.symbol;
 
 const allowlistedRaf = `
-function applySelectionUntilNextFrame() {
+function ${allowlistedSymbol}() {
 	requestAnimationFrame(() => {
 		void 0;
 	});
@@ -36,7 +48,7 @@ function applySelectionUntilNextFrame() {
 `;
 
 const allowlistedSymbolWithoutRaf = `
-function applySelectionUntilNextFrame() {
+function ${allowlistedSymbol}() {
 	void 0;
 }
 `;
@@ -287,7 +299,7 @@ describe("no-selection-timers (S4)", () => {
 							messageId: "unusedAllowlist",
 							data: {
 								file: authorityPath,
-								symbol: "applySelectionUntilNextFrame",
+								symbol: allowlistedSymbol,
 								kind: "requestAnimationFrame",
 							},
 						},

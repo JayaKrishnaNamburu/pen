@@ -29,6 +29,10 @@ import { subdocument } from "../blocks/subdocument";
 
 // ── AC 11: All blocks have serialize.toMarkdown ───────────
 describe("AC 11 — serialize.toMarkdown", () => {
+  it("defaultBlocks is a non-empty population", () => {
+    expect(defaultBlocks.length).toBeGreaterThan(0);
+  });
+
   for (const schema of defaultBlocks) {
     it(`${schema.type} has serialize.toMarkdown defined`, () => {
       expect(schema.serialize?.toMarkdown).toBeDefined();
@@ -125,11 +129,23 @@ describe("AC 24 — paragraph and heading serialization", () => {
     const block = {
       id: "1",
       type: "callout" as const,
-      props: { type: "warning" },
+      props: { severity: "warning" },
       content: "Be careful",
     };
     expect(callout.serialize!.toMarkdown!(block)).toBe(
       "> **Warning:** Be careful",
+    );
+  });
+
+  it("callout.serialize.toHTML keeps the callout-warning class", () => {
+    const block = {
+      id: "1",
+      type: "callout" as const,
+      props: { severity: "warning" },
+      content: "Be careful",
+    };
+    expect(callout.serialize!.toHTML!(block)).toBe(
+      '<div class="callout callout-warning">Be careful</div>',
     );
   });
 
@@ -204,7 +220,7 @@ describe("AC 24 — paragraph and heading serialization", () => {
     });
     expect(result).toMatchObject({
       type: "callout",
-      props: { type: "info" },
+      props: { severity: "info" },
     });
     expect(result?.children).toEqual([
       {
@@ -328,6 +344,10 @@ describe("DIR1 — optional direction prop", () => {
   const nonText = defaultBlocks.filter(
     (schema) => !schema.propSchema.direction,
   );
+
+  it("DIR1: at least one default block declares direction", () => {
+    expect(textCapable.length).toBeGreaterThan(0);
+  });
 
   for (const schema of textCapable) {
     it(`DIR1: ${schema.type} has optional direction ltr|rtl|auto`, () => {

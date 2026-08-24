@@ -93,13 +93,31 @@ describe("assertPeerEditsSurvive", () => {
 		const collab = createTestCollaboration({
 			blocks: [{ id: BLOCK_ID, type: "paragraph", content: "Hello" }],
 		});
+		expect(collab.editorA).not.toBe(collab.editorB);
+		expect(collab.editorA.ydoc).not.toBe(collab.editorB.ydoc);
 		collab.editorA.apply(
-			[{ type: "insert-text", blockId: BLOCK_ID, offset: 5, text: " A" }],
+			[
+				{
+					type: "splice-text",
+					blockId: BLOCK_ID,
+					from: 5,
+					to: 5,
+					insert: " A",
+				},
+			],
 			{ origin: "user" },
 		);
 		expect(collab.editorB.getBlock(BLOCK_ID).textContent()).not.toContain(" A");
 		collab.editorB.apply(
-			[{ type: "insert-text", blockId: BLOCK_ID, offset: 5, text: " B" }],
+			[
+				{
+					type: "splice-text",
+					blockId: BLOCK_ID,
+					from: 5,
+					to: 5,
+					insert: " B",
+				},
+			],
 			{ origin: "user" },
 		);
 		collab.sync();
@@ -109,6 +127,9 @@ describe("assertPeerEditsSurvive", () => {
 			blockId: BLOCK_ID,
 			tokens: TOKENS,
 		});
+		const merged = collab.editorA.getBlock(BLOCK_ID).textContent();
+		expect(collab.editorB.getBlock(BLOCK_ID).textContent()).toBe(merged);
+		expect(["Hello A B", "Hello B A"]).toContain(merged);
 
 		void collab.editorA.destroy();
 		void collab.editorB.destroy();

@@ -553,18 +553,20 @@ function remoteSplice(args: RemoteSpliceArgs): void {
 	const ops = [];
 	if (to > from) {
 		ops.push({
-			type: "delete-text" as const,
+			type: "splice-text" as const,
 			blockId,
-			offset: from,
-			length: to - from,
+			from: from,
+				to: from + to - from,
+				insert: "",
 		});
 	}
 	if (args.insert.length > 0) {
 		ops.push({
-			type: "insert-text" as const,
+			type: "splice-text" as const,
 			blockId,
-			offset: from,
-			text: args.insert,
+			from: from,
+				to: from,
+				insert: args.insert,
 		});
 	}
 	if (ops.length === 0) {

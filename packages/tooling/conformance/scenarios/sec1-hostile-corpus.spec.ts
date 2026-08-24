@@ -15,8 +15,8 @@ scenario(
 			{
 				type: "format-text",
 				blockId: "hello-p1",
-				offset: 0,
-				length: 11,
+				from: 0,
+				to: 11,
 				marks: { link: { href: JAVASCRIPT_HREF } },
 			},
 		]);
@@ -54,8 +54,8 @@ scenario(
 			{
 				type: "format-text",
 				blockId: "hello-p1",
-				offset: 0,
-				length: 11,
+				from: 0,
+				to: 11,
 				marks: { link: { href: JAVASCRIPT_HREF } },
 			},
 			{

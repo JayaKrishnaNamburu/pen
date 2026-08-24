@@ -34,7 +34,9 @@ function seedMountedEditor() {
 	document.body.appendChild(root);
 	const blockId = editor.firstBlock()!.id;
 	editor.apply([
-		{ type: "insert-text", blockId, offset: 0, text: "hello" },
+		{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "hello" },
 	]);
 	editor.selectText(blockId, 0, 0);
 	const block = document.createElement("div");

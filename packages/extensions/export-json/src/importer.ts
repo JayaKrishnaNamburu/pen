@@ -219,26 +219,26 @@ function materializeTableChildren(
 
   for (let rowIdx = seedRows - 1; rowIdx >= desiredRowCount; rowIdx -= 1) {
     ops.push({
-      type: "delete-table-row",
+      type: "grid",
       blockId,
-      index: rowIdx,
-    } as DocumentOp);
+      change: { kind: "delete-row", index: rowIdx },
+    });
   }
 
   for (let colIdx = seedCols - 1; colIdx >= desiredColCount; colIdx -= 1) {
     ops.push({
-      type: "delete-table-column",
+      type: "grid",
       blockId,
-      index: colIdx,
-    } as DocumentOp);
+      change: { kind: "delete-column", index: colIdx },
+    });
   }
 
   for (let colIdx = seedCols; colIdx < desiredColCount; colIdx += 1) {
     ops.push({
-      type: "insert-table-column",
+      type: "grid",
       blockId,
-      index: colIdx,
-    } as DocumentOp);
+      change: { kind: "insert-column", index: colIdx },
+    });
   }
 
   for (let rowIdx = 0; rowIdx < tableRows.length; rowIdx += 1) {
@@ -249,10 +249,10 @@ function materializeTableChildren(
 
     if (rowIdx >= seedRows) {
       ops.push({
-        type: "insert-table-row",
+        type: "grid",
         blockId,
-        index: rowIdx,
-      } as DocumentOp);
+        change: { kind: "insert-row", index: rowIdx },
+      });
     }
 
     for (let colIdx = 0; colIdx < cells.length; colIdx += 1) {
@@ -276,17 +276,18 @@ function materializeInlineContent(
           continue;
         }
         ops.push({
-          type: "insert-text",
+          type: "splice-text",
           blockId,
-          offset,
-          text: segment.text,
+          from: offset,
+          to: offset,
+          insert: segment.text,
         });
         if (segment.attributes) {
           ops.push({
             type: "format-text",
             blockId,
-            offset,
-            length: segment.text.length,
+            from: offset,
+            to: offset + segment.text.length,
             marks: segment.attributes,
           });
         }
@@ -295,11 +296,14 @@ function materializeInlineContent(
       }
 
       ops.push({
-        type: "insert-inline-node",
+        type: "splice-text",
         blockId,
-        offset,
-        nodeType: segment.nodeType,
-        props: segment.props ?? {},
+        from: offset,
+        to: offset,
+        insert: {
+          nodeType: segment.nodeType,
+          props: segment.props ?? {},
+        },
       });
       offset += 1;
     }
@@ -311,10 +315,11 @@ function materializeInlineContent(
   }
 
   ops.push({
-    type: "insert-text",
+    type: "splice-text",
     blockId,
-    offset: 0,
-    text: block.content,
+    from: 0,
+    to: 0,
+    insert: block.content,
   });
 
   for (const mark of block.marks ?? []) {
@@ -325,8 +330,8 @@ function materializeInlineContent(
     ops.push({
       type: "format-text",
       blockId,
-      offset: mark.start,
-      length: mark.end - mark.start,
+      from: mark.start,
+      to: mark.end,
       marks: { [mark.type]: mark.props ?? true },
     });
   }
@@ -344,13 +349,13 @@ function materializeTableCellContent(
   }
 
   ops.push({
-    type: "insert-table-cell-text",
+    type: "splice-text",
     blockId,
-    row,
-    col,
-    offset: 0,
-    text: cell.content,
-  } as DocumentOp);
+    cell: { row, col },
+    from: 0,
+    to: 0,
+    insert: cell.content,
+  });
 
   for (const mark of cell.marks ?? []) {
     if (mark.start >= mark.end) {
@@ -358,14 +363,13 @@ function materializeTableCellContent(
     }
 
     ops.push({
-      type: "format-table-cell-text",
+      type: "format-text",
       blockId,
-      row,
-      col,
-      offset: mark.start,
-      length: mark.end - mark.start,
+      cell: { row, col },
+      from: mark.start,
+      to: mark.end,
       marks: { [mark.type]: mark.props ?? true },
-    } as DocumentOp);
+    });
   }
 }
 

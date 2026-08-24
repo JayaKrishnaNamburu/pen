@@ -17,12 +17,6 @@
 	],
 	"entries": [
 		{
-			"file": "packages/rendering/dom/src/field-editor/selectionAuthority.ts",
-			"symbol": "applySelectionUntilNextFrame",
-			"kind": "requestAnimationFrame",
-			"reason": "Wave 05 replaces this with the selection engine's own write window. This is NOT a projection retry - the two projector retries this list used to hold were deleted when the Firefox authority-range fix landed, because a rAF there was a missing attach in disguise. This one is the backends' self-echo suppression window: applySelectionUntilNextFrame raises applyingSelectionDepth and drops it a frame later so a backend's own selection write is not read back as a user gesture, and it has nine callers across contenteditableBackendCore, editContextBackendCore, editContextBackendSelection and expandedContentEditableBackend. Removing it means giving the backends a synchronous end-of-write signal, which is Wave 05's job. FIELD-EDITOR-TEARDOWN.md also records it as an uncancelled leftover on reset()."
-		},
-		{
 			"file": "packages/rendering/dom/src/field-editor/contenteditableBackendSelection.ts",
 			"symbol": "scheduleActiveDOMMatchCheck",
 			"kind": "requestAnimationFrame",
@@ -39,12 +33,6 @@
 			"symbol": "update",
 			"kind": "requestAnimationFrame",
 			"reason": "Wave 03 retires this by routing the toolbar rect through the scheduler read phase. UNINVESTIGATED WAIVER from the isSelectionModule widen. The shape is a measurement retry: update() cancels the previous frame and schedules resolveNativeSelectionRect on the next — the same class as the selectionRect rAF that another agent deleted today. Wave 03 overlay work owns the delete; do not renew without saying what the second measurement observes that the first cannot."
-		},
-		{
-			"file": "packages/rendering/dom/src/field-editor/contenteditableBackendEvents.ts",
-			"symbol": "handleCompositionEnd",
-			"kind": "requestAnimationFrame",
-			"reason": "Wave 05 step 5.6 / §8 C3 retires this. Safari may fire compositionend before the final DOM mutation; the rAF waits one frame for that mutation before reconcileAfterComposition. C3 replaces this with input-event sequence tracking (composition event sequence on contenteditable; EditContext textupdate ordering on Chromium) so reconcile runs after the backend observes DOM quiescence in the same task-queue turn. No setTimeout-based composition timer is permitted; the 50ms GBoard path above this call is a Date.now() comparison, not a timer, and dies with the same rewrite."
 		}
 	]
 }

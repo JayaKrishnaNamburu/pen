@@ -161,10 +161,7 @@ describe("@input/pen-react field editor Tab handling", () => {
 
 		editor.apply([
 			{
-				type: "convert-block",
-				blockId: firstBlockId,
-				newType: "bulletListItem",
-			},
+				type: "set-props", blockId: firstBlockId, props: { type: "bulletListItem" }},
 			{
 				type: "insert-block",
 				blockId: secondBlockId,
@@ -173,10 +170,11 @@ describe("@input/pen-react field editor Tab handling", () => {
 				position: { after: firstBlockId },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: secondBlockId,
-				offset: 0,
-				text: "child",
+				from: 0,
+				to: 0,
+				insert: "child",
 			},
 		]);
 
@@ -210,8 +208,10 @@ describe("@input/pen-react field editor Tab handling", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "convert-block", blockId, newType: "bulletListItem" },
-			{ type: "insert-text", blockId, offset: 0, text: "root" },
+			{ type: "set-props", blockId, props: { type: "bulletListItem" } },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "root" },
 		]);
 
 		const fieldEditor = createFieldEditorMock(blockId);
@@ -302,7 +302,9 @@ describe("@input/pen-react field editor Tab handling", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "insert-text", blockId, offset: 0, text: "root" },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "root" },
 		]);
 
 		const fieldEditor = createFieldEditorMock(blockId);

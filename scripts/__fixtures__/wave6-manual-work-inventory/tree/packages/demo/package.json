@@ -1,0 +1,6 @@
+{
+	"name": "@input/pen-export-html",
+	"dependencies": {
+		"@input/pen-ai-tools": "workspace:*"
+	}
+}

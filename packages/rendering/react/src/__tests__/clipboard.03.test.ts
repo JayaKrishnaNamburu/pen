@@ -63,7 +63,9 @@ describe("@input/pen-react clipboard", () => {
 		const fieldEditor = createFieldEditorStub();
 
 		targetEditor.apply([
-			{ type: "insert-text", blockId: emptyBlockId, offset: 0, text: "Hello" },
+			{ type: "splice-text", blockId: emptyBlockId, from: 0,
+				to: 0,
+				insert: "Hello" },
 		]);
 		targetEditor.selectText(emptyBlockId, 0, 5);
 		clipboardData.setData(

@@ -257,14 +257,20 @@ describe("@input/pen-test harness", () => {
         ],
       });
 
+      expect(collab.editorA).not.toBe(collab.editorB);
+      expect(collab.editorA.ydoc).not.toBe(collab.editorB.ydoc);
+
       collab.editorA.apply(
-        [{ type: "insert-text", blockId: "p1", offset: 5, text: " A" }],
+        [{ type: "splice-text", blockId: "p1", from: 5, to: 5, insert: " A" }],
         { origin: "user" },
       );
+      expect(collab.editorB.getBlock("p1").textContent()).not.toContain(" A");
+
       collab.editorB.apply(
-        [{ type: "insert-text", blockId: "p1", offset: 5, text: " B" }],
+        [{ type: "splice-text", blockId: "p1", from: 5, to: 5, insert: " B" }],
         { origin: "user" },
       );
+      expect(collab.editorA.getBlock("p1").textContent()).not.toContain(" B");
 
       collab.sync();
 
@@ -276,9 +282,8 @@ describe("@input/pen-test harness", () => {
 
       const mergedA = collab.editorA.getBlock("p1").textContent();
       const mergedB = collab.editorB.getBlock("p1").textContent();
-      for (const text of [mergedA, mergedB]) {
-        expect(text.split("Hello").length - 1).toBe(1);
-      }
+      expect(mergedA).toBe(mergedB);
+      expect(["Hello A B", "Hello B A"]).toContain(mergedA);
     });
   });
 });

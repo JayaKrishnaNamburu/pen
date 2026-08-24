@@ -1,12 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
-import type { DocumentOp } from "@input/pen-types";
 import { xmlExporter } from "../exporter";
 import { serializePenDocumentToXml } from "../serializer";
 import { defaultSchema } from "@input/pen-schema-default";
-
-type InsertTableCellTextOp = Extract<DocumentOp, { type: "insert-table-cell-text" }>;
-type FormatTableCellTextOp = Extract<DocumentOp, { type: "format-table-cell-text" }>;
 
 const noDefaultExtensionsPreset = {
   resolve() {
@@ -246,16 +242,17 @@ describe("SEC1 url policy", () => {
         position: "last",
       },
       {
-        type: "insert-text",
+        type: "splice-text",
         blockId: "p1",
-        offset: 0,
-        text: "hello",
+        from: 0,
+				to: 0,
+				insert: "hello",
       },
       {
         type: "format-text",
         blockId: "p1",
-        offset: 0,
-        length: 5,
+        from: 0,
+				to: 0 + 5,
         marks: { link: { href: "javascript:alert(1)", title: "Hello" } },
       },
       {
@@ -286,22 +283,21 @@ describe("SEC1 url policy", () => {
         position: "last",
       },
       {
-        type: "insert-table-cell-text",
+        type: "splice-text",
         blockId: "t1",
-        row: 0,
-        col: 0,
-        offset: 0,
-        text: "go",
-      } as InsertTableCellTextOp,
+        cell: { row: 0, col: 0 },
+        from: 0,
+        to: 0,
+        insert: "go",
+      },
       {
-        type: "format-table-cell-text",
+        type: "format-text",
         blockId: "t1",
-        row: 0,
-        col: 0,
-        offset: 0,
-        length: 2,
+        cell: { row: 0, col: 0 },
+        from: 0,
+        to: 2,
         marks: { link: { href: "javascript:alert(1)", title: "Go" } },
-      } as FormatTableCellTextOp,
+      },
     ]);
 
     const xml = await xmlExporter.export(editor);

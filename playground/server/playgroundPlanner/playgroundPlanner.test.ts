@@ -137,10 +137,11 @@ describe("playground planner", () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([{
-			type: "insert-text",
+			type: "splice-text",
 			blockId,
-			offset: 0,
-			text: "Hello there",
+			from: 0,
+				to: 0,
+				insert: "Hello there",
 		}]);
 		editor.selectText(blockId, 0, 5);
 
@@ -162,10 +163,11 @@ describe("playground planner", () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([{
-			type: "insert-text",
+			type: "splice-text",
 			blockId,
-			offset: 0,
-			text: "Hello there",
+			from: 0,
+				to: 0,
+				insert: "Hello there",
 		}]);
 		editor.selectText(blockId, 0, 5);
 
@@ -346,10 +348,11 @@ describe("playground planner", () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([{
-			type: "insert-text",
+			type: "splice-text",
 			blockId,
-			offset: 0,
-			text: "Hello there",
+			from: 0,
+				to: 0,
+				insert: "Hello there",
 		}]);
 		editor.selectText(blockId, 0, 5);
 

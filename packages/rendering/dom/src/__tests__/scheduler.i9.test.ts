@@ -30,18 +30,13 @@ function flushFrame(): void {
 function emptySummary(commitId: number, blockIds: readonly string[]): ChangeSummary {
 	return {
 		commitId,
-		originType: "user",
-		text: blockIds.map((blockId) => ({
+		blockText: blockIds.map((blockId) => ({
 			blockId,
 			splices: [],
 			formatRanges: [],
 		})),
 		structural: [],
-		isEmpty: blockIds.length === 0,
-		mapOffset: () => 0,
-		mapPoint: () => null,
-		mapRange: () => null,
-		compose: (next) => next,
+		affectedBlockIds: [...blockIds],
 	};
 }
 

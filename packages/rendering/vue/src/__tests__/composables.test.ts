@@ -60,10 +60,11 @@ describe("@input/pen-vue composables", () => {
     editor.apply(
       [
         {
-          type: "insert-text",
+          type: "splice-text",
           blockId: "paragraph-1",
-          offset: 7,
-          text: "!",
+          from: 7,
+				to: 7,
+				insert: "!",
         },
       ],
       { origin: "user" },

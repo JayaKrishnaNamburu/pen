@@ -1,5 +1,4 @@
 import type { InlineDelta, TableCellHandle } from "@input/pen-types";
-import { logicalTextFromStored } from "@input/pen-types";
 import {
 	getStringProp,
 	getTextProp,
@@ -29,7 +28,7 @@ export class TableCellHandleImpl implements TableCellHandle {
 	textContent(): string {
 		const content = getTextProp(this._cellMap, "content");
 		if (content) {
-			return logicalTextFromStored(content.toString());
+			return content.toString();
 		}
 		return "";
 	}

@@ -1,8 +1,5 @@
 packages:
-  - "packages/types"
-  - "packages/core"
-  - "packages/docs"
-  - "packages/*/*"
+  - "packages/**"
   - "examples/react"
   - "examples/vue"
   - "examples/vanilla"

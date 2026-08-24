@@ -49,10 +49,9 @@ export function contractFieldEditorRange(
 }
 
 /**
- * Determine whether a block selection should use cross-block contenteditable
- * expansion or switch to BlockSelection mode.
- *
- * Per spec: >50 blocks uses BlockSelection instead of contenteditable expansion.
+ * Surface heuristic: a text range over >50 blocks skips contenteditable
+ * expansion (`mode: "block"`). This is not an authority-type change.
+ * T3: pointer reads never flip to BlockSelection by count.
  */
 export function shouldUseBlockSelection(
 	_editor: Editor,

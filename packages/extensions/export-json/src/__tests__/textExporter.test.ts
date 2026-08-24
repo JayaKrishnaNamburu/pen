@@ -4,7 +4,6 @@ import { defaultSchema } from "@input/pen-schema-default";
 import { exportEditorToJson } from "../exporter";
 import { jsonImporter } from "../importer";
 import { exportEditorToText, exportPenDocumentToText } from "../textExporter";
-import { EMPTY_BLOCK_SENTINEL } from "@input/pen-types";
 import type { PenDocumentJSON } from "../types";
 
 const noDefaultExtensionsPreset = {
@@ -115,7 +114,7 @@ describe("exportPenDocumentToText", () => {
 						id: "empty",
 						type: "paragraph",
 						props: {},
-						content: { text: EMPTY_BLOCK_SENTINEL },
+						content: { text: "" },
 					},
 				],
 			}),
@@ -159,7 +158,7 @@ describe("exportPenDocumentToText", () => {
 
 		expect(exportEditorToText(source)).toBe("");
 		const json = exportEditorToJson(source);
-		expect(JSON.stringify(json)).not.toContain(EMPTY_BLOCK_SENTINEL);
+		expect(JSON.stringify(json)).not.toContain("\u200B");
 
 		const target = createBareEditor();
 		await jsonImporter.import(json, target);
@@ -179,11 +178,14 @@ describe("exportPenDocumentToText", () => {
 				props: {},
 				position: "last",
 			},
+		]);
+		source.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: "p1",
-				offset: 0,
-				text: "keep\u200Bme",
+				from: 0,
+				to: 0,
+				insert: "keep\u200Bme",
 			},
 		]);
 

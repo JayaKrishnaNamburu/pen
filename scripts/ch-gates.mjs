@@ -6,10 +6,7 @@ import { fileURLToPath } from "node:url";
 // only — the blocking ESLint pass already runs in .github/workflows/ci.yml.
 // CH8/CH9 are owned by bench.yml / flake.yml and are linked, not re-run.
 
-const repoRoot = path.resolve(
-	path.dirname(fileURLToPath(import.meta.url)),
-	"..",
-);
+let repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 const IGNORE_DIR_NAMES = new Set([
 	"node_modules",
@@ -41,12 +38,6 @@ const CONSOLE_SINK_PATHS = new Set([
 	"packages/extensions/ai-autocomplete/src/autocompleteDebug.ts",
 ]);
 
-const EXPLICIT_WORKSPACE_PACKAGES = [
-	"packages/types",
-	"packages/core",
-	"packages/docs",
-];
-const DEPTH1_PACKAGE_NAMES = new Set(["types", "core", "docs"]);
 const PACKAGE_SLOT_SKIP = new Set([
 	"src",
 	"dist",
@@ -68,7 +59,9 @@ const GATES = {
 	ch9: runCh9,
 };
 
-const selected = parseGateSelection(process.argv.slice(2));
+const parsedArgs = parseArgs(process.argv.slice(2));
+repoRoot = parsedArgs.repoRoot;
+const selected = parsedArgs.selected;
 const results = [];
 
 for (const id of selected) {
@@ -102,14 +95,7 @@ if (failed.length > 0) {
 	process.exitCode = 1;
 }
 
-function parseGateSelection(argv) {
-	const equalsArg = argv.find((arg) => arg.startsWith("--gate="));
-	const flagIndex = argv.indexOf("--gate");
-	const gateArg = equalsArg
-		? equalsArg.slice("--gate=".length)
-		: flagIndex >= 0
-			? argv[flagIndex + 1]
-			: null;
+function parseGateIds(gateArg) {
 	if (!gateArg || gateArg.startsWith("--")) {
 		return ["ch1", "ch2", "ch3", "ch4", "ch5", "ch6", "ch8", "ch9"];
 	}
@@ -125,6 +111,33 @@ function parseGateSelection(argv) {
 		}
 	}
 	return ids;
+}
+
+function parseArgs(argv) {
+	let selected = null;
+	let root = repoRoot;
+	for (let i = 0; i < argv.length; i += 1) {
+		const arg = argv[i];
+		if (arg === "--repo-root") {
+			root = path.resolve(argv[i + 1] ?? "");
+			i += 1;
+			continue;
+		}
+		if (arg === "--gate") {
+			selected = parseGateIds(argv[i + 1]);
+			i += 1;
+			continue;
+		}
+		if (arg.startsWith("--gate=")) {
+			selected = parseGateIds(arg.slice("--gate=".length));
+			continue;
+		}
+		throw new Error(`Unknown flag: ${arg}`);
+	}
+	return {
+		selected: selected ?? parseGateIds(null),
+		repoRoot: root,
+	};
 }
 
 async function runCh1() {
@@ -174,7 +187,12 @@ async function runCh1() {
 	const details = [
 		`population: ${files.length} files (packages+playground *.ts/*.tsx)`,
 	];
-	if (remaining.length === 0 && extra.length === 0 && stale.length === 0 && uncommentedExpectError.length === 0) {
+	if (
+		remaining.length === 0 &&
+		extra.length === 0 &&
+		stale.length === 0 &&
+		uncommentedExpectError.length === 0
+	) {
 		details.push(
 			"zero @ts-nocheck; allowlist empty; no bare @ts-expect-error",
 		);
@@ -310,9 +328,7 @@ async function runCh4() {
 			id: "CH4",
 			title: "this: any",
 			status: "fail",
-			details: [
-				"cannot check: packages *.ts/*.tsx walk matched 0 files",
-			],
+			details: ["cannot check: packages *.ts/*.tsx walk matched 0 files"],
 		};
 	}
 	const hits = [];
@@ -397,47 +413,96 @@ async function runCh5() {
 	};
 }
 
-async function runCh6() {
-	const orphans = [];
-	const packagesRoot = path.join(repoRoot, "packages");
+async function collectWorkspacePackageRels(packagesRoot) {
+	const slots = [];
+	const emptyGroups = [];
 
-	for (const rel of EXPLICIT_WORKSPACE_PACKAGES) {
-		orphans.push(...(await inspectPackageDir(rel)));
-	}
-
-	const groups = await fs.readdir(packagesRoot, { withFileTypes: true });
-	for (const group of groups) {
-		if (!group.isDirectory() || IGNORE_DIR_NAMES.has(group.name)) {
-			continue;
+	async function visit(abs, rel, insidePackage) {
+		let entries;
+		try {
+			entries = await fs.readdir(abs, { withFileTypes: true });
+		} catch {
+			return 0;
 		}
-		if (DEPTH1_PACKAGE_NAMES.has(group.name)) {
-			continue;
+		const hasManifest = await pathExists(path.join(abs, "package.json"));
+		if (hasManifest) {
+			slots.push(rel);
 		}
-		const groupPath = path.join(packagesRoot, group.name);
-		const children = await fs.readdir(groupPath, { withFileTypes: true });
-		let sawPackageSlot = false;
-		for (const child of children) {
-			if (!child.isDirectory() || PACKAGE_SLOT_SKIP.has(child.name)) {
+		const childInsidePackage = insidePackage || hasManifest;
+		let descendantSlots = 0;
+		for (const entry of entries) {
+			if (!entry.isDirectory()) {
 				continue;
 			}
-			sawPackageSlot = true;
-			orphans.push(
-				...(await inspectPackageDir(
-					path.posix.join("packages", group.name, child.name),
-				)),
+			if (
+				IGNORE_DIR_NAMES.has(entry.name) ||
+				PACKAGE_SLOT_SKIP.has(entry.name)
+			) {
+				continue;
+			}
+			descendantSlots += await visit(
+				path.join(abs, entry.name),
+				path.posix.join(rel, entry.name),
+				childInsidePackage,
 			);
 		}
-		if (!sawPackageSlot) {
-			orphans.push(
-				`packages/${group.name} is not a workspace grouping with package slots (manifest + sources)`,
-			);
+		if (
+			!hasManifest &&
+			!insidePackage &&
+			descendantSlots === 0 &&
+			rel !== "packages"
+		) {
+			emptyGroups.push(rel);
 		}
+		return (hasManifest ? 1 : 0) + descendantSlots;
 	}
 
-	const details =
-		orphans.length === 0
+	await visit(packagesRoot, "packages", false);
+	slots.sort();
+	emptyGroups.sort();
+	return { slots, emptyGroups };
+}
+
+async function runCh6() {
+	const packagesRoot = path.join(repoRoot, "packages");
+	if (!(await pathExists(packagesRoot))) {
+		return {
+			id: "CH6",
+			title: "orphan packages",
+			status: "fail",
+			details: ["cannot check: packages/ is absent"],
+		};
+	}
+
+	const { slots, emptyGroups } =
+		await collectWorkspacePackageRels(packagesRoot);
+	if (slots.length === 0) {
+		return {
+			id: "CH6",
+			title: "orphan packages",
+			status: "fail",
+			details: [
+				"cannot check: packages/** recursive walk matched 0 package slots",
+			],
+		};
+	}
+
+	const orphans = [];
+	for (const rel of slots) {
+		orphans.push(...(await inspectPackageDir(rel)));
+	}
+	for (const group of emptyGroups) {
+		orphans.push(
+			`${group} is not a workspace grouping with package slots (manifest + sources)`,
+		);
+	}
+
+	const details = [
+		`population: ${slots.length} workspace package slots (packages/** recursive)`,
+		...(orphans.length === 0
 			? ["every packages/** workspace dir has a manifest and sources"]
-			: orphans.map((hit) => `FAIL ${hit}`);
+			: orphans.map((hit) => `FAIL ${hit}`)),
+	];
 
 	return {
 		id: "CH6",

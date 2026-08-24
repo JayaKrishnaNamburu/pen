@@ -26,15 +26,16 @@ function setBlock(
 ) {
 	editor.apply([
 		{
-			type: "insert-text",
+			type: "splice-text",
 			blockId,
-			offset: 0,
-			text,
+			from: 0,
+			to: 0,
+			insert: text,
 		},
 		...(direction
 			? [
 					{
-						type: "update-block" as const,
+						type: "set-props" as const,
 						blockId,
 						props: { direction },
 					},
@@ -76,7 +77,7 @@ describe("block direction resolution DIR1 DIR2 DIR3", () => {
 
 		editor.apply([
 			{
-				type: "update-block",
+				type: "set-props",
 				blockId,
 				props: { direction: "auto" },
 			},
@@ -205,14 +206,14 @@ describe("block direction resolution DIR1 DIR2 DIR3", () => {
 
 		editor.apply([
 			{
-				type: "replace-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				length: editor.getBlock(blockId)!.length(),
-				text: "Hello",
+				from: 0,
+				to: 0 + editor.getBlock(blockId)!.length(),
+				insert: "Hello",
 			},
 		]);
-		expect(editor.lastChangeSummary?.text.some((change) => change.blockId === blockId)).toBe(
+		expect(editor.lastChangeSummary?.blockText.some((change) => change.blockId === blockId)).toBe(
 			true,
 		);
 		expect(resolveBlockDirection(editor, editor.getBlock(blockId)!)).toBe(
@@ -221,7 +222,7 @@ describe("block direction resolution DIR1 DIR2 DIR3", () => {
 
 		editor.apply([
 			{
-				type: "update-block",
+				type: "set-props",
 				blockId,
 				props: { direction: "rtl" },
 			},
@@ -269,10 +270,11 @@ describe("block direction resolution DIR1 DIR2 DIR3", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: firstId,
-				offset: 0,
-				text: "!",
+				from: 0,
+				to: 0,
+				insert: "!",
 			},
 		]);
 		expect(editor.facet(defaultDirectionFacet)).toBe("rtl");
@@ -342,7 +344,7 @@ describe("block direction resolution DIR1 DIR2 DIR3", () => {
 		const childId = "child";
 		editor.apply([
 			{
-				type: "update-block",
+				type: "set-props",
 				blockId: parentId,
 				props: { direction: "rtl" },
 			},

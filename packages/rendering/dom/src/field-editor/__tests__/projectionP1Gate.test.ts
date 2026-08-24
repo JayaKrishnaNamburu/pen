@@ -94,10 +94,11 @@ describe("P1 double-write gate", () => {
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "Hi",
+				from: 0,
+				to: 0,
+				insert: "Hi",
 			},
 		]);
 		editor.selectText(blockId, 0, 0);
@@ -121,10 +122,11 @@ describe("P1 double-write gate", () => {
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "Hi",
+				from: 0,
+				to: 0,
+				insert: "Hi",
 			},
 		]);
 		editor.selectText(blockId, 2, 2);

@@ -14,7 +14,9 @@ describe("autocomplete anchor mapping", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "insert-text", blockId, offset: 0, text: "Hello" },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello" },
 			{
 				type: "insert-block",
 				blockId: "keep",
@@ -43,7 +45,9 @@ describe("autocomplete anchor mapping", () => {
 		controller._visibleSuggestionId = "ghost-1";
 
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "xxx" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "xxx" }],
 			{ origin: { type: "collaborator" } },
 		);
 

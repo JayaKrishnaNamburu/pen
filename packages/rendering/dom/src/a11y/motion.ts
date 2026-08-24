@@ -1,11 +1,12 @@
 /**
- * Central AX6 `prefers-reduced-motion` flag. Overlay/paint reads `reduced`;
- * do not add per-feature media queries (this file is the only site).
+ * Central AX6 `prefers-reduced-motion` flag. The React editor caret overlay
+ * reads `reduced` and paints a solid caret (`AX6_MOTION_MAPPING.caretBlink`).
+ * Do not add per-feature media queries (this file is the only site).
  *
- * AX6 mapping when `reduced` is true (not applied here — Wave 3/5 overlays):
- * - caret blink → solid
- * - shimmer → static badge
- * - transitions → instant
+ * AX6 mapping when `reduced` is true:
+ * - caret blink → solid (React `EditorCaretOverlay`)
+ * - shimmer → static badge (not consumed yet)
+ * - transitions → instant (not consumed yet)
  *
  * HOST4: missing `matchMedia` → `reduced=false` (animations stay on).
  */

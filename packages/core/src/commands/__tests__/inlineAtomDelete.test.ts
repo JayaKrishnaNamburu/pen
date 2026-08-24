@@ -195,10 +195,11 @@ describe("inline atom delete select-then-delete", () => {
 			expect(oneShot).toEqual({
 				ops: [
 					{
-						type: "delete-text",
+						type: "splice-text",
 						blockId: "a",
-						offset: 2,
-						length: 1,
+						from: 2,
+				to: 2 + 1,
+				insert: "",
 					},
 				],
 				caret: { blockId: "a", offset: 2 },

@@ -71,7 +71,7 @@ describe("@input/pen-react DIR2 block content host dir", () => {
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
 			{
-				type: "update-block",
+				type: "set-props",
 				blockId,
 				props: { direction: "ltr" },
 			},
@@ -91,7 +91,7 @@ describe("@input/pen-react DIR2 block content host dir", () => {
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
 			{
-				type: "update-block",
+				type: "set-props",
 				blockId,
 				props: { direction: "rtl" },
 			},
@@ -124,7 +124,7 @@ describe("@input/pen-react DIR2 block content host dir", () => {
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
 			{
-				type: "update-block",
+				type: "set-props",
 				blockId,
 				props: { direction: "auto" },
 			},
@@ -144,7 +144,7 @@ describe("@input/pen-react DIR2 block content host dir", () => {
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
 			{
-				type: "update-block",
+				type: "set-props",
 				blockId,
 				props: { direction: "rtl" },
 			},
@@ -158,7 +158,7 @@ describe("@input/pen-react DIR2 block content host dir", () => {
 		await act(async () => {
 			editor.apply([
 				{
-					type: "update-block",
+					type: "set-props",
 					blockId,
 					props: { direction: "auto" },
 				},
@@ -180,7 +180,7 @@ describe("@input/pen-react DIR2 block content host dir", () => {
 
 		editor.apply([
 			{
-				type: "update-block",
+				type: "set-props",
 				blockId: ltrBlockId,
 				props: { direction: "ltr" },
 			},

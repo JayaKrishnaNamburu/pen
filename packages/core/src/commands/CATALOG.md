@@ -20,10 +20,10 @@ Param `{ extend: boolean }` unless noted.
 
 | Command | Param | Owner | Current name |
 | --- | --- | --- | --- |
-| `pen.caretLeft` | `{ extend }` | core | `handleGraphemeCaret` (`-1`) + atom-adjacent select. T4 at block boundary. |
-| `pen.caretRight` | `{ extend }` | core | `handleGraphemeCaret` (`1`) + atom-adjacent select. T4 at block boundary. |
-| `pen.caretUp` | `{ extend }` | core | G5 via `setVerticalCaretMeasure` (`measureNow` + `verticalCaretTarget`). No measure → logical previous-block landing (field-editor `moveCaretAcrossBlocks`). Document edge stays put. Mid-block without measure is a miss (wrap needs geometry). |
-| `pen.caretDown` | `{ extend }` | core | Symmetric to `pen.caretUp`. |
+| `pen.caretLeft` | `{ extend }` | core | `handleGraphemeCaret` (`-1`) + atom-adjacent select. T4 at block boundary. T6 from `CellSelection` via `transitionCellSelection`. In-cell editing (field-editor `activeCellCoord`) uses `setCellCaretFocus` and stays inside the cell. |
+| `pen.caretRight` | `{ extend }` | core | `handleGraphemeCaret` (`1`) + atom-adjacent select. T4 at block boundary. Same T6 / in-cell seam as `pen.caretLeft`. |
+| `pen.caretUp` | `{ extend }` | core | G5 via `setVerticalCaretMeasure` (`measureNow` + `verticalCaretTarget`). No measure → logical previous-block landing (field-editor `moveCaretAcrossBlocks`). Document edge stays put. Mid-block without measure is a miss (wrap needs geometry). T6 from `CellSelection`. In-cell editing seam falls back to offset 0 (single-line). |
+| `pen.caretDown` | `{ extend }` | core | Symmetric to `pen.caretUp`. In-cell editing seam falls back to cell text end. |
 | `pen.caretLineStart` | `{ extend }` | core | Visual line-box start (M3). Field-editor injects a DOM measure on `Symbol.for("pen.lineEdgeSeam")`; no measure → logical offset 0. Home is bound on macos and windows/linux. Not keymap-swapped. |
 | `pen.caretLineEnd` | `{ extend }` | core | Visual line-box end (M3). Same seam and logical fallback as `pen.caretLineStart`. |
 | `pen.caretBlockStart` | `{ extend }` | core | Offset 0 of the focus block. |
@@ -40,7 +40,7 @@ Param `{ extend: boolean }` unless noted.
 | Command | Param | Owner | Current name |
 | --- | --- | --- | --- |
 | `pen.insertText` | `{ text }` | core | Replace the current text selection / insert at caret. |
-| `pen.deleteBackward` | `{ granularity }` | core | Grapheme/word/line within the block (F2); merge/select/convert at block start. Adjacent inline atom: first press **selects** (`selectAdjacentInlineAtom`); second press deletes via ordinary selection-delete. Pinned in `__tests__/inlineAtomDelete.test.ts`. |
+| `pen.deleteBackward` | `{ granularity }` | core | Grapheme/word/line within the block (F2); merge/select/convert at block start. Adjacent inline atom: first press **selects** (`selectAdjacentInlineAtom`); second press deletes via ordinary selection-delete. N2 mixed-boundary (text endpoint mid-paragraph, other endpoint a non-text 0..1 span): keep the text prefix/suffix and `delete-block` the structural end — do not escalate to `BlockSelection` of both. Pinned in `__tests__/mixedBoundaryDelete.n2.test.ts`. |
 | `pen.deleteForward` | `{ granularity }` | core | Symmetric to backward, including merge at block end. Same select-then-delete for adjacent atoms. |
 | `pen.insertLineBreak` | `void` | core | Insert `"\n"`. |
 | `pen.splitBlock` | `void` | core | Port of `applyEnterBehavior`: split, list continuation, empty-list convert, heading → paragraph. |
@@ -68,6 +68,8 @@ Block-selection delete is also handled by `pen.deleteBackward` / `pen.deleteForw
 | `table.cellPrev` | core | Port of field-editor Shift-Tab: reverse linear step, clamp at first cell. |
 | `table.cellDown` | core | Port of field-editor Enter: next row, same column, clamp at last row. |
 | `table.escapeGrid` | core | Leave cell selection for the next visible block (else previous; else BlockSelection of the table). Unbound. |
+
+Cell-editing arrows are `pen.caretLeft` / `pen.caretRight` / `pen.caretUp` / `pen.caretDown`, not extra `table.*` names. `handleTableCellKey` dispatches those commands (no RTL swap — table stays logical) and preventDefaults so they do not produce a keyboard `selectionchange`.
 
 ## History (`history.ts`)
 

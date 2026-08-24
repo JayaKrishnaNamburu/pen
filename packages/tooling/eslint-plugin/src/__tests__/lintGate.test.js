@@ -310,6 +310,22 @@ describe("CH2 lint gate", () => {
 		).toHaveLength(1);
 	});
 
+	it("reports a seeded above-floor API in a src deeper than packages/*/*/src", async () => {
+		const messages = await lintSeededViolation(
+			"const copy = structuredClone(value);\n",
+			"src/seeded-above-floor.ts",
+			"packages/tooling/conformance/harness",
+		);
+
+		expect(
+			messages.filter(
+				(message) =>
+					message.ruleId === "pen/no-above-floor-api" &&
+					message.severity === 2,
+			),
+		).toHaveLength(1);
+	});
+
 	it("reports seeded dynamic code as an error through the root config", async () => {
 		const messages = await lintSeededViolation(
 			'const run = new Function("return 1");\n',

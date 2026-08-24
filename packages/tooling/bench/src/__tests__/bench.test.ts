@@ -95,6 +95,7 @@ describe("@input/pen-bench runner", () => {
 					fn: (b) => {
 						b.start();
 						b.end();
+						b.observe("noopCount", 1, 1);
 					},
 				},
 				{
@@ -102,6 +103,7 @@ describe("@input/pen-bench runner", () => {
 					fn: (b) => {
 						b.start();
 						b.end();
+						b.observe("noopCount", 1, 1);
 					},
 				},
 			],
@@ -123,6 +125,7 @@ describe("@input/pen-bench runner", () => {
 					fn: (b) => {
 						b.start();
 						b.end();
+						b.observe("noopCount", 1, 1);
 					},
 					teardown: () => {
 						teardowns.push("first");
@@ -133,6 +136,7 @@ describe("@input/pen-bench runner", () => {
 					fn: (b) => {
 						b.start();
 						b.end();
+						b.observe("noopCount", 1, 1);
 					},
 					teardown: async () => {
 						teardowns.push("second");
@@ -157,6 +161,7 @@ describe("@input/pen-bench runner", () => {
 							Math.sqrt(i);
 						}
 						b.end();
+						b.observe("sqrtCount", 2000, 2000);
 					},
 					floor: (b) => {
 						b.start();
@@ -205,6 +210,7 @@ describe("@input/pen-bench runner", () => {
 					fn: (b) => {
 						b.start();
 						b.end();
+						b.observe("noopCount", 1, 1);
 						b.setMetrics({ alignment: "substitute" });
 					},
 				},
@@ -212,7 +218,7 @@ describe("@input/pen-bench runner", () => {
 			{ iterations: 2, warmup: 0 },
 		);
 
-		expect(results[0]?.metrics).toEqual({ alignment: "substitute" });
+		expect(results[0]?.metrics).toMatchObject({ alignment: "substitute" });
 	});
 
 	it("defines all wave 6 benchmark suites", () => {

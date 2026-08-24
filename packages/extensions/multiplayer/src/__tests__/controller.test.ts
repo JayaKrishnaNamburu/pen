@@ -224,7 +224,9 @@ describe("MultiplayerControllerImpl", () => {
 		const cursor = wireCursor(editor, 3);
 		const selection = wireTextSelection(editor, 1, 3);
 		editor.apply(
-			[{ type: "insert-text", blockId: "b1", offset: 0, text: "xxx" }],
+			[{ type: "splice-text", blockId: "b1", from: 0,
+				to: 0,
+				insert: "xxx" }],
 			{ origin: { type: "collaborator" } },
 		);
 

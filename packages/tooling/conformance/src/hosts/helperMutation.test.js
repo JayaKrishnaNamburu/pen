@@ -239,7 +239,15 @@ test("tenK generator is 10000 paragraph words plus a cell-text cohort", async ()
 	);
 
 	const ops = tenKWordOps("hello-p1", 11);
-	assert.ok(ops.some((op) => op.type === "delete-text" && op.length === 11));
+	assert.ok(
+		ops.some(
+			(op) =>
+				op.type === "splice-text" &&
+				op.insert === "" &&
+				op.from === 0 &&
+				op.to === 11,
+		),
+	);
 	assert.ok(ops.some((op) => op.type === "insert-block" && op.blockType === "paragraph"));
 	assert.ok(
 		ops.some(
@@ -250,9 +258,11 @@ test("tenK generator is 10000 paragraph words plus a cell-text cohort", async ()
 		),
 		"tenKWordOps must insert the cell-text table",
 	);
-	const cellOps = ops.filter((op) => op.type === "insert-table-cell-text");
+	const cellOps = ops.filter(
+		(op) => op.type === "splice-text" && op.cell != null,
+	);
 	console.log(
-		`tenKWordOps insert-table-cell-text → ${cellOps.length} ops`,
+		`tenKWordOps splice-text cell → ${cellOps.length} ops`,
 	);
 	assert.equal(cellOps.length, TEN_K_CELL_COUNT);
 	assert.equal(tenKBlockId(3), "w3-10k-p03");

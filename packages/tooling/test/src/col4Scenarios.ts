@@ -1,4 +1,5 @@
-import type { DocumentOp } from "@input/pen-types";
+import { applySplitBlock } from "@input/pen-core";
+import type { DocumentOp, Editor } from "@input/pen-types";
 import { runBothInterleavings } from "./twoPeerHarness";
 import {
 	concatenatedInlineText,
@@ -35,22 +36,16 @@ export const col4SplitSameOffset: Col4Scenario = {
 		blocks: [{ id: "p1", type: "paragraph", content: SPLIT_TEXT }],
 	},
 	apply(harness) {
-		harness.peerA.editor.apply([
-			{
-				type: "split-block",
-				blockId: "p1",
-				offset: 5,
-				newBlockId: "split-a",
-			},
-		]);
-		harness.peerB.editor.apply([
-			{
-				type: "split-block",
-				blockId: "p1",
-				offset: 5,
-				newBlockId: "split-b",
-			},
-		]);
+		applySplitBlock(harness.peerA.editor, {
+			blockId: "p1",
+			offset: 5,
+			newBlockId: "split-a",
+		});
+		applySplitBlock(harness.peerB.editor, {
+			blockId: "p1",
+			offset: 5,
+			newBlockId: "split-b",
+		});
 	},
 	invariant(harness) {
 		for (const peer of [harness.peerA, harness.peerB]) {
@@ -75,22 +70,16 @@ export const col4SplitDifferentOffsets: Col4Scenario = {
 		blocks: [{ id: "p1", type: "paragraph", content: SPLIT_TEXT }],
 	},
 	apply(harness) {
-		harness.peerA.editor.apply([
-			{
-				type: "split-block",
-				blockId: "p1",
-				offset: 5,
-				newBlockId: "split-a",
-			},
-		]);
-		harness.peerB.editor.apply([
-			{
-				type: "split-block",
-				blockId: "p1",
-				offset: 8,
-				newBlockId: "split-b",
-			},
-		]);
+		applySplitBlock(harness.peerA.editor, {
+			blockId: "p1",
+			offset: 5,
+			newBlockId: "split-a",
+		});
+		applySplitBlock(harness.peerB.editor, {
+			blockId: "p1",
+			offset: 8,
+			newBlockId: "split-b",
+		});
 	},
 	invariant(harness) {
 		for (const peer of [harness.peerA, harness.peerB]) {
@@ -173,10 +162,11 @@ export const col4DeleteParentWhileChildEdited: Col4Scenario = {
 		harness.peerA.editor.apply([{ type: "delete-block", blockId: "parent" }]);
 		harness.peerB.editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: "child",
-				offset: 5,
-				text: " edited",
+				from: 5,
+				to: 5,
+				insert: " edited",
 			},
 		]);
 	},
@@ -219,14 +209,14 @@ export const col4ListReparent: Col4Scenario = {
 	apply(harness) {
 		harness.peerA.editor.apply([
 			{
-				type: "update-block",
+				type: "set-props",
 				blockId: "l3",
 				props: { parentId: "l1" },
 			},
 		]);
 		harness.peerB.editor.apply([
 			{
-				type: "update-block",
+				type: "set-props",
 				blockId: "l3",
 				props: { parentId: "l2" },
 			},
@@ -265,10 +255,10 @@ export const col4TableRowColumn: Col4Scenario = {
 	},
 	apply(harness) {
 		harness.peerA.editor.apply([
-			{ type: "insert-table-row", blockId: "t1", index: 2 },
+			{ type: "grid", blockId: "t1", change: { kind: "insert-row", index: 2  }},
 		]);
 		harness.peerB.editor.apply([
-			{ type: "insert-table-column", blockId: "t1", index: 2 },
+			{ type: "grid", blockId: "t1", change: { kind: "insert-column", index: 2  }},
 		]);
 	},
 	invariant(harness) {
@@ -388,7 +378,14 @@ function fuzzSeedOptions(): TwoPeerHarnessOptions {
 	};
 }
 
-type FuzzOp = DocumentOp;
+type FuzzSplit = {
+	kind: "split";
+	blockId: string;
+	offset: number;
+	newBlockId: string;
+};
+
+type FuzzOp = DocumentOp | FuzzSplit;
 
 function pickOpPair(
 	iteration: number,
@@ -402,16 +399,16 @@ function pickOpPair(
 
 function pickOp(tag: string, random: () => number): FuzzOp {
 	const catalog: FuzzOp[] = [
-		{ type: "insert-text", blockId: "p1", offset: 5, text: tag },
-		{ type: "insert-text", blockId: "p2", offset: 0, text: tag },
+		{ type: "splice-text", blockId: "p1", from: 5, to: 5, insert: tag },
+		{ type: "splice-text", blockId: "p2", from: 0, to: 0, insert: tag },
 		{
-			type: "split-block",
+			kind: "split",
 			blockId: "p1",
 			offset: 1 + Math.floor(random() * 8),
 			newBlockId: `split-${tag}`,
 		},
 		{
-			type: "update-block",
+			type: "set-props",
 			blockId: "l2",
 			props: { parentId: random() < 0.5 ? "l1" : null },
 		},
@@ -427,16 +424,25 @@ function pickOp(tag: string, random: () => number): FuzzOp {
 			props: {},
 			position: "last",
 		},
-		{ type: "insert-table-row", blockId: "t1", index: 2 },
-		{ type: "insert-table-column", blockId: "t1", index: 2 },
+		{ type: "grid", blockId: "t1", change: { kind: "insert-row", index: 2 } },
+		{ type: "grid", blockId: "t1", change: { kind: "insert-column", index: 2 } },
 	];
 	return catalog[Math.floor(random() * catalog.length)]!;
 }
 
-function applyFuzzOp(
-	editor: TwoPeerHarness["peerA"]["editor"],
-	op: FuzzOp,
-): void {
+function isFuzzSplit(op: FuzzOp): op is FuzzSplit {
+	return "kind" in op && op.kind === "split";
+}
+
+function applyFuzzOp(editor: Editor, op: FuzzOp): void {
+	if (isFuzzSplit(op)) {
+		applySplitBlock(editor, {
+			blockId: op.blockId,
+			offset: op.offset,
+			newBlockId: op.newBlockId,
+		});
+		return;
+	}
 	editor.apply([op]);
 }
 

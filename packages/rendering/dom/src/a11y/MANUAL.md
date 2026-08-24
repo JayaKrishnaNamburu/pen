@@ -37,7 +37,7 @@ Until a dedicated AX8 fixture is committed, assemble a document that includes at
 
 The surface must carry an `aria-label` / `aria-labelledby` from `pen.a11yLabel`.
 
-Read-only is two knobs. `pen.readOnly` **the facet** only sets `aria-readonly="true"` on the surface. It does not decline typing, does not stop `editor.apply`, and does not stop the wire. The `readonly` **prop** is what declines typing (pointer activation, React/Vue gesture guards). A host that only sets the facet gets an editor that announces itself read-only and then accepts edits. That split is an owner decision — do not treat the facet as an edit gate, and do not fail this checklist for a facet-only host that still accepts keystrokes. When checking read-only *speech*, set the facet (or the prop, which also sets `aria-readonly`). When checking that typing is declined, set the prop.
+Read-only is two knobs. `pen.ariaReadOnly` **the facet** only sets `aria-readonly="true"` on the surface. It does not decline typing, does not stop `editor.apply`, and does not stop the wire. The `readonly` **prop** is what declines typing (pointer activation, React/Vue gesture guards). A host that only sets the facet gets an editor that announces itself read-only and then accepts edits. That split is intended — do not treat the facet as an edit gate, and do not fail this checklist for a facet-only host that still accepts keystrokes. When checking read-only *speech*, set the facet (or the prop, which also sets `aria-readonly`). When checking that typing is declined, set the prop.
 
 Record per session: tester, date, OS, AT version, browser version, host (playground / example), fixture note.
 

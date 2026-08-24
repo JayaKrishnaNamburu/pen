@@ -110,8 +110,8 @@ describe("SEC1 Vue host urlPolicy", () => {
       {
         type: "format-text",
         blockId: "linked",
-        offset: 0,
-        length: 5,
+        from: 0,
+				to: 0 + 5,
         marks: { link: { href: DENIED_HTTPS } },
       },
     ]);
@@ -153,8 +153,8 @@ describe("SEC1 Vue host urlPolicy", () => {
       {
         type: "format-text",
         blockId: "linked",
-        offset: 0,
-        length: 5,
+        from: 0,
+				to: 0 + 5,
         marks: { link: { href: ADMITTED_BLOB } },
       },
     ]);
@@ -186,20 +186,19 @@ describe("SEC1 Vue host urlPolicy", () => {
     });
     editor.apply([
       {
-        type: "insert-table-cell-text",
+        type: "splice-text",
         blockId: "t1",
-        row: 0,
-        col: 0,
-        offset: 0,
-        text: "click",
+        cell: { row: 0, col: 0 },
+        from: 0,
+        to: 0,
+        insert: "click",
       },
       {
-        type: "format-table-cell-text",
+        type: "format-text",
         blockId: "t1",
-        row: 0,
-        col: 0,
-        offset: 0,
-        length: 5,
+        cell: { row: 0, col: 0 },
+        from: 0,
+        to: 0 + 5,
         marks: { link: { href: DENIED_HTTPS } },
       },
     ]);
@@ -233,20 +232,19 @@ describe("SEC1 Vue host urlPolicy", () => {
     });
     editor.apply([
       {
-        type: "insert-table-cell-text",
+        type: "splice-text",
         blockId: "t1",
-        row: 0,
-        col: 0,
-        offset: 0,
-        text: "click",
+        cell: { row: 0, col: 0 },
+        from: 0,
+        to: 0,
+        insert: "click",
       },
       {
-        type: "format-table-cell-text",
+        type: "format-text",
         blockId: "t1",
-        row: 0,
-        col: 0,
-        offset: 0,
-        length: 5,
+        cell: { row: 0, col: 0 },
+        from: 0,
+        to: 0 + 5,
         marks: { link: { href: ADMITTED_BLOB } },
       },
     ]);

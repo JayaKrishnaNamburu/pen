@@ -150,7 +150,9 @@ describe("AX3 caret-anchored suggestion menu", () => {
 
 		await act(async () => {
 			editor.apply([
-				{ type: "insert-text", blockId, offset: 0, text: "Hi @al" },
+				{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hi @al" },
 			]);
 			editor.selectText(blockId, 6, 6);
 			await waitForCondition(
@@ -260,7 +262,9 @@ describe("AX3 caret-anchored suggestion menu", () => {
 
 		await act(async () => {
 			editor.apply([
-				{ type: "insert-text", blockId, offset: 0, text: "Hi @a" },
+				{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hi @a" },
 			]);
 			editor.selectText(blockId, 5, 5);
 			await waitForCondition(
@@ -391,7 +395,9 @@ describe("AX3 caret-anchored suggestion menu", () => {
 
 		await act(async () => {
 			editor.apply([
-				{ type: "insert-text", blockId, offset: 0, text: "Hi @a" },
+				{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hi @a" },
 			]);
 			editor.selectText(blockId, 5, 5);
 			await waitForCondition(

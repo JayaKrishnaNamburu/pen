@@ -111,7 +111,9 @@ describe("@input/pen-react escape key handling", () => {
 			const blockId = editor.firstBlock()!.id;
 
 			editor.apply([
-				{ type: "insert-text", blockId, offset: 0, text: "Hel" },
+				{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hel" },
 			]);
 
 			const container = document.createElement("div");
@@ -142,10 +144,11 @@ describe("@input/pen-react escape key handling", () => {
 				editor.apply(
 					[
 						{
-							type: "insert-text",
+							type: "splice-text",
 							blockId,
-							offset: 3,
-							text: "lo world",
+							from: 3,
+				to: 3,
+				insert: "lo world",
 						},
 					],
 					{ origin: "ai" },
@@ -196,10 +199,11 @@ describe("@input/pen-react escape key handling", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: firstBlockId,
-				offset: 0,
-				text: "Hello",
+				from: 0,
+				to: 0,
+				insert: "Hello",
 			},
 			{
 				type: "insert-block",
@@ -209,10 +213,11 @@ describe("@input/pen-react escape key handling", () => {
 				position: { after: firstBlockId },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: secondBlockId,
-				offset: 0,
-				text: "World",
+				from: 0,
+				to: 0,
+				insert: "World",
 			},
 		]);
 

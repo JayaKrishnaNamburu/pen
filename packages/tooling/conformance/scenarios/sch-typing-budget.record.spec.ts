@@ -84,6 +84,8 @@ type FedObservation = {
 	measureNowPerKeystroke: number[];
 	flushesPerFrame: number[];
 	flushCount: number;
+	flushWrapCount: number;
+	acceptCommitCount: number;
 	keystrokeCount: number;
 	measureNowTotal: number;
 };
@@ -157,11 +159,16 @@ type TypingBudgetDocument = {
 	};
 };
 
+type ProbeWiring = {
+	flushIsFunction: boolean;
+	phaseFieldPatched: boolean;
+	phaseSetterFiresOnForcedFlush: boolean;
+	forcedFlushWrapCount: number;
+	forcedPhaseSetterCount: number;
+	forcedCollectChanged: boolean;
+};
+
 type ProbeApi = {
-	install(): Promise<{
-		flushIsFunction: boolean;
-		phaseFieldPatched: boolean;
-	}>;
 	startUnwired(): void;
 	endUnwired(): UnwiredObservation;
 	startFed(): void;
@@ -245,6 +252,10 @@ async function installProbe(page: Page): Promise<void> {
 						read: <T>(fn: () => T) => Promise<T>;
 						write: (fn: () => void) => Promise<void>;
 						flush?: () => void;
+						// Declared with its real type rather than `unknown`: the
+						// forced-acceptCommit canary compares this by identity, so a
+						// shape change in DomScheduler.collect should surface here.
+						collect: import("@input/pen-dom").FlushCollect | null;
 					};
 					reader: {
 						generation: number;
@@ -297,6 +308,9 @@ async function installProbe(page: Page): Promise<void> {
 			} | null = null;
 			let phase = scheduler.phase;
 			let phaseFieldPatched = false;
+			let phaseSetterCalls = 0;
+			let flushWrapCalls = 0;
+			let acceptCommitCalls = 0;
 			try {
 				Object.defineProperty(scheduler, "_phase", {
 					configurable: true,
@@ -304,6 +318,7 @@ async function installProbe(page: Page): Promise<void> {
 						return phase;
 					},
 					set(next: string) {
+						phaseSetterCalls += 1;
 						const now = performance.now();
 						if (phase === "idle" && next === "read") {
 							current = {
@@ -341,15 +356,25 @@ async function installProbe(page: Page): Promise<void> {
 				});
 				phaseFieldPatched = true;
 			} catch {
-				phaseFieldPatched = false;
+				// Initialised false above; a throw leaves it false, which the
+				// wiring assertion reads as "_phase is not patchable".
 			}
 
 			if (flushIsFunction) {
 				const originalFlush = scheduler.flush!.bind(scheduler);
 				scheduler.flush = function instrumentedFlush() {
+					flushWrapCalls += 1;
 					return originalFlush();
 				};
 			}
+
+			const originalAcceptCommit = scheduler.acceptCommit.bind(scheduler);
+			scheduler.acceptCommit = function instrumentedAcceptCommit(
+				event: unknown,
+			) {
+				acceptCommitCalls += 1;
+				return originalAcceptCommit(event);
+			};
 
 			let feeding = false;
 			session.editor.on("commit", (event) => {
@@ -401,12 +426,52 @@ async function installProbe(page: Page): Promise<void> {
 			let unwiredStartMeasure = 0;
 			let fedStartFlush = 0;
 			let fedStartMeasure = 0;
+			let fedStartWrap = 0;
+			let fedStartAccept = 0;
 			const measureNowPerKeystroke: number[] = [];
 
-			window.__typingBudget = {
-				async install() {
-					return { flushIsFunction, phaseFieldPatched };
+			const beforeCanaryWrap = flushWrapCalls;
+			const beforeCanaryPhase = phaseSetterCalls;
+			const beforeCanaryCollect = scheduler.collect;
+			scheduler.acceptCommit({
+				commitId: -1,
+				origin: { type: "user" },
+				summary: {
+					commitId: -1,
+					blockText: [],
+					structural: [],
+					affectedBlockIds: [],
 				},
+				selectionBefore: {
+					state: null,
+					version: 0,
+					origin: "programmatic",
+					commitId: 0,
+				},
+				selectionAfter: {
+					state: null,
+					version: 0,
+					origin: "programmatic",
+					commitId: 0,
+				},
+				source: "apply",
+				diagnostics: [],
+			});
+			await new Promise<void>((resolve) => {
+				requestAnimationFrame(() => {
+					requestAnimationFrame(() => resolve());
+				});
+			});
+			const forcedFlushWrapCount = flushWrapCalls - beforeCanaryWrap;
+			const forcedPhaseSetterCount = phaseSetterCalls - beforeCanaryPhase;
+			const forcedCollectChanged =
+				scheduler.collect !== beforeCanaryCollect;
+			flushSamples.length = 0;
+			flushWrapCalls = 0;
+			phaseSetterCalls = 0;
+			acceptCommitCalls = 0;
+
+			window.__typingBudget = {
 				startUnwired() {
 					unwiredStartFlush = flushSamples.length;
 					unwiredStartMeasure = scheduler.diagnostics.measureNowCount;
@@ -424,11 +489,15 @@ async function installProbe(page: Page): Promise<void> {
 					feeding = true;
 					fedStartFlush = flushSamples.length;
 					fedStartMeasure = scheduler.diagnostics.measureNowCount;
+					fedStartWrap = flushWrapCalls;
+					fedStartAccept = acceptCommitCalls;
 					measureNowPerKeystroke.length = 0;
 				},
 				markSteady() {
 					fedStartFlush = flushSamples.length;
 					fedStartMeasure = scheduler.diagnostics.measureNowCount;
+					fedStartWrap = flushWrapCalls;
+					fedStartAccept = acceptCommitCalls;
 					measureNowPerKeystroke.length = 0;
 				},
 				markKeystroke() {
@@ -471,6 +540,8 @@ async function installProbe(page: Page): Promise<void> {
 						measureNowPerKeystroke: [...measureNowPerKeystroke],
 						flushesPerFrame: [...byFrame.values()],
 						flushCount: samples.length,
+						flushWrapCount: flushWrapCalls - fedStartWrap,
+						acceptCommitCount: acceptCommitCalls - fedStartAccept,
 						keystrokeCount: measureNowPerKeystroke.length,
 						measureNowTotal:
 							scheduler.diagnostics.measureNowCount -
@@ -479,7 +550,14 @@ async function installProbe(page: Page): Promise<void> {
 				},
 			};
 
-			return { flushIsFunction, phaseFieldPatched };
+			return {
+				flushIsFunction,
+				phaseFieldPatched,
+				phaseSetterFiresOnForcedFlush: forcedPhaseSetterCount > 0,
+				forcedFlushWrapCount,
+				forcedPhaseSetterCount,
+				forcedCollectChanged,
+			} satisfies ProbeWiring;
 		},
 		{
 			sessionHref: SESSION_HREF,
@@ -495,6 +573,14 @@ async function installProbe(page: Page): Promise<void> {
 	expect(
 		installed.phaseFieldPatched,
 		"DomScheduler._phase must be patchable to time read/write phases",
+	).toBe(true);
+	expect(
+		installed.forcedFlushWrapCount,
+		"forced acceptCommit must be visible to the flush wrap — a no-op observation stays 0",
+	).toBeGreaterThan(0);
+	expect(
+		installed.forcedCollectChanged,
+		"forced acceptCommit must replace scheduler.collect after a frame",
 	).toBe(true);
 }
 
@@ -576,9 +662,10 @@ scenario(
 		const tablePresent = await page.evaluate((tableId) => {
 			return window.__penConformance.blockIds.includes(tableId);
 		}, TEN_K_TABLE_ID);
-		expect(tablePresent, "mounted document must include the cell-text table").toBe(
-			true,
-		);
+		expect(
+			tablePresent,
+			"mounted document must include the cell-text table",
+		).toBe(true);
 
 		await page
 			.locator(
@@ -592,6 +679,10 @@ scenario(
 		const unwired = await page.evaluate(() =>
 			window.__typingBudget!.endUnwired(),
 		);
+		expect(
+			unwired.flushCount,
+			"unwired typing must not flush — DomScheduler.acceptCommit is not on the production apply path",
+		).toBe(0);
 
 		await page.evaluate(() => window.__typingBudget!.startFed());
 		await typeAndCollect(page, WARMUP_TEXT, false);
@@ -609,6 +700,14 @@ scenario(
 		expect(
 			fed.flushCount,
 			"steady-state should flush once per keystroke at 60cps (protocol, not a budget gate)",
+		).toBe(STEADY_TEXT.length);
+		expect(
+			fed.flushWrapCount,
+			"flush wrap must see the same flushes as _phase — a dead wrap stays 0",
+		).toBe(STEADY_TEXT.length);
+		expect(
+			fed.acceptCommitCount,
+			"harness-fed acceptCommit must run once per steady keystroke",
 		).toBe(STEADY_TEXT.length);
 
 		const readPhaseMs = fed.readPhaseMs.map(roundMs);

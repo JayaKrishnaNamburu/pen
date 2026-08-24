@@ -69,7 +69,7 @@ describe("SEC5 escaped HTML serialization", () => {
           props: {},
           position: "last",
         },
-        { type: "insert-text", blockId: "b1", offset: 0, text },
+        { type: "splice-text", blockId: "b1", from: 0, to: 0, insert: text },
       ]);
 
       const html = await htmlExporter.export(source);

@@ -78,24 +78,35 @@ describe("snapshots", () => {
 
   describe("mergeYjsUpdates", () => {
     it("compacts multiple updates into one", () => {
-      const doc = createYjsDocument(adapter);
-      doc.ydoc.transact(() => {
-        doc.penDocument.blockOrder.push(["b1"]);
+      const docA = createYjsDocument(adapter);
+      docA.ydoc.clientID = 1;
+      docA.ydoc.transact(() => {
+        docA.penDocument.blockOrder.push(["b1"]);
       });
+      const updateA = Y.encodeStateAsUpdate(docA.ydoc);
 
-      const update1 = Y.encodeStateAsUpdate(doc.ydoc);
-
-      doc.ydoc.transact(() => {
-        doc.penDocument.blockOrder.push(["b2"]);
+      const docB = createYjsDocument(adapter);
+      docB.ydoc.clientID = 2;
+      docB.ydoc.transact(() => {
+        docB.penDocument.blockOrder.push(["b2"]);
       });
+      const updateB = Y.encodeStateAsUpdate(docB.ydoc);
 
-      const update2 = Y.encodeStateAsUpdate(doc.ydoc);
+      const onlyA = new Y.Doc();
+      Y.applyUpdate(onlyA, updateA);
+      expect(onlyA.getArray("blockOrder").toArray()).toEqual(["b1"]);
 
-      const merged = mergeYjsUpdates([update1, update2]);
+      const onlyB = new Y.Doc();
+      Y.applyUpdate(onlyB, updateB);
+      expect(onlyB.getArray("blockOrder").toArray()).toEqual(["b2"]);
 
+      const merged = mergeYjsUpdates([updateA, updateB]);
       const freshDoc = new Y.Doc();
       Y.applyUpdate(freshDoc, merged);
-      expect(freshDoc.getArray("blockOrder").toArray()).toEqual(["b1", "b2"]);
+      expect(freshDoc.getArray("blockOrder").toArray().sort()).toEqual([
+        "b1",
+        "b2",
+      ]);
     });
   });
 

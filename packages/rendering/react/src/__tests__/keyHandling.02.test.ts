@@ -158,7 +158,9 @@ describe("@input/pen-react key binding contexts", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "insert-text", blockId, offset: 0, text: "Hello" },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello" },
 		]);
 		editor.selectText(blockId, 5, 5);
 
@@ -209,7 +211,9 @@ describe("@input/pen-react key binding contexts", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "insert-text", blockId, offset: 0, text: "Hello" },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello" },
 		]);
 		editor.selectText(blockId, 5, 5);
 
@@ -277,10 +281,11 @@ describe("@input/pen-react key binding contexts", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "alpha beta alpha",
+				from: 0,
+				to: 0,
+				insert: "alpha beta alpha",
 			},
 		]);
 
@@ -331,10 +336,11 @@ describe("@input/pen-react key binding contexts", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "alpha beta alpha",
+				from: 0,
+				to: 0,
+				insert: "alpha beta alpha",
 			},
 		]);
 

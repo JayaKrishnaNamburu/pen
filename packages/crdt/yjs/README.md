@@ -94,7 +94,7 @@ Extension roots give host apps a predictable place for CRDT-backed data that tra
 
 ## Collaboration boundary
 
-What Pen guarantees versus what the host owns is stated in [COLLABORATION.md](./COLLABORATION.md). `pen.readOnly` the facet only sets `aria-readonly`. It does not decline typing or stop `editor.apply`. The renderer `readonly` prop is what declines typing. Neither stops the wire.
+What Pen guarantees versus what the host owns is stated in [COLLABORATION.md](./COLLABORATION.md). `pen.ariaReadOnly` the facet only sets `aria-readonly`. It does not decline typing or stop `editor.apply`. The renderer `readonly` prop is what declines typing. Neither stops the wire.
 
 When using multiplayer with Yjs, Pen expects the application to choose the provider and hand Pen a `MultiplayerSession`.
 

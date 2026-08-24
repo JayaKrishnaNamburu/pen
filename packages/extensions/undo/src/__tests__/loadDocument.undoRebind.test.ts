@@ -18,10 +18,11 @@ describe("@input/pen-undo loadDocument rebind", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: BODY_ID,
-					offset: BODY_TEXT.length,
-					text: " before-load",
+					from: BODY_TEXT.length,
+				to: BODY_TEXT.length,
+				insert: " before-load",
 				},
 			],
 			{ origin: "user" },
@@ -46,10 +47,11 @@ describe("@input/pen-undo loadDocument rebind", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: BODY_ID,
-					offset: BODY_TEXT.length,
-					text: " after-load",
+					from: BODY_TEXT.length,
+				to: BODY_TEXT.length,
+				insert: " after-load",
 				},
 			],
 			{ origin: "user" },

@@ -164,16 +164,18 @@ describe("motion semantics M1–M6", () => {
 		editor.apply(
 			[
 				{
-					type: "delete-text",
+					type: "splice-text",
 					blockId: "a",
-					offset: 0,
-					length: ARABIC.length,
+					from: 0,
+				to: 0 + ARABIC.length,
+				insert: "",
 				},
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: "a",
-					offset: 0,
-					text: "Hello",
+					from: 0,
+				to: 0,
+				insert: "Hello",
 				},
 			],
 			{ origin: "user" },

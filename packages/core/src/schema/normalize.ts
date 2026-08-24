@@ -9,16 +9,18 @@ import type {
   SchemaEngine,
   SchemaRegistry,
 } from "@input/pen-types";
-import { EMPTY_BLOCK_SENTINEL } from "@input/pen-types";
 import {
   getArrayProp,
+  getCellText,
   getMapProp,
+  getRowCells,
+  getTableContent,
   getTextProp,
   isCRDTMap,
-  type CRDTTextLike,
   type CRDTUnknownArray,
   type CRDTUnknownMap,
 } from "../editor/crdtShapes";
+import { stripForeignSentinel } from "./emptyBlockSentinel";
 
 export function sortDeltaAttributes(
   attributes: Record<string, unknown>,
@@ -190,6 +192,21 @@ export class SchemaEngineImpl implements SchemaEngine {
     this.normalizeDirty();
   }
 
+  // EM4: strip lone sentinels arriving in remote updates. Deliberately narrower
+  // than normalizeDirty — an observed event must not run structural rules or
+  // recompute stored props, which belong to the local apply pipeline.
+  healForeignSentinels(blockIds: Iterable<string>): void {
+    this.doc.adapter.transact(this.crdtDoc, () => {
+      for (const blockId of blockIds) {
+        const blockMap = this.getBlockMap(blockId);
+        if (!blockMap) continue;
+        const schema = this.registry.resolve(blockMap.get("type") as string);
+        if (!schema) continue;
+        this.stripForeignSentinels(blockId, schema);
+      }
+    });
+  }
+
   // ── normalizeBlock Pipeline ─────────────────────────────
 
   private normalizeBlock(blockId: string): void {
@@ -214,7 +231,8 @@ export class SchemaEngineImpl implements SchemaEngine {
 
     if (this.normalizeLayout(blockId, schema)) return;
 
-    this.ensureNonEmptyContent(blockId, schema);
+    this.ensureContentExists(blockId, schema);
+    this.stripForeignSentinels(blockId, schema);
 
     // Phase 3: Inline content rules
     if (schema.content === "inline") {
@@ -253,27 +271,47 @@ export class SchemaEngineImpl implements SchemaEngine {
 
   // ── Rule 3: No Empty Containers ─────────────────────────
 
-  private ensureNonEmptyContent(
-    blockId: string,
-    schema: BlockSchema,
-  ): void {
+  private ensureContentExists(blockId: string, schema: BlockSchema): void {
     if (schema.content !== "inline") return;
 
     const blockMap = this.getBlockMap(blockId);
     if (!blockMap) return;
 
-    let content = getTextProp(blockMap, "content");
+    if (getTextProp(blockMap, "content")) return;
+    blockMap.set("content", this.doc.adapter.createText());
+  }
 
-    if (!content) {
-      const ytext = this.doc.adapter.createText();
-      blockMap.set("content", ytext);
-      content = this.asTextLike(ytext);
+  private stripForeignSentinels(
+    blockId: string,
+    schema: BlockSchema,
+  ): void {
+    const blockMap = this.getBlockMap(blockId);
+    if (!blockMap) return;
+
+    if (schema.content === "inline") {
+      const content = getTextProp(blockMap, "content");
+      if (content) {
+        stripForeignSentinel(content, blockId, this.onDiagnostic);
+      }
     }
 
-    if (!content || content.length > 0) return;
-
-    // sentinel-storage: empty-block caret target in Y.Text. Not a logical character.
-    content.insert(0, EMPTY_BLOCK_SENTINEL);
+    const table = getTableContent(blockMap);
+    if (!table) return;
+    for (let row = 0; row < table.length; row++) {
+      const rowMap = table.get(row);
+      if (!isCRDTMap(rowMap)) continue;
+      const cells = getRowCells(rowMap);
+      if (!cells) continue;
+      for (let col = 0; col < cells.length; col++) {
+        const content = getCellText(rowMap, col);
+        if (!content) continue;
+        stripForeignSentinel(
+          content,
+          `${blockId}:${row}:${col}`,
+          this.onDiagnostic,
+        );
+      }
+    }
   }
 
   // ── Rule 4: Strip Default Props ─────────────────────────
@@ -296,9 +334,9 @@ export class SchemaEngineImpl implements SchemaEngine {
       }
       const value = props.get(key);
       const defaultValue = (propSchema as Record<string, unknown>).default;
-      if (defaultValue !== undefined && deepEqual(value, defaultValue)) {
-        props.delete?.(key);
-      }
+          if (defaultValue !== undefined && deepEqual(value, defaultValue)) {
+            props.delete?.(key);
+          }
     }
   }
 
@@ -440,18 +478,19 @@ export class SchemaEngineImpl implements SchemaEngine {
     const cycle = this.walkParentCycle(blockId);
     if (!cycle) return;
 
-    let ownerToClear = cycle[0];
-    let childToClear = cycle[0];
+    let ownerToClear: string | undefined;
+    let childToClear: string | undefined;
     for (const childId of cycle) {
       const parentId = this.parentOf(childId);
       if (!parentId) continue;
       const ownerId = this.parentEdgeOwner(childId, parentId);
-      if (ownerId < ownerToClear) {
+      if (ownerToClear === undefined || ownerId < ownerToClear) {
         ownerToClear = ownerId;
         childToClear = childId;
       }
     }
 
+    if (childToClear === undefined) return;
     const parentId = this.parentOf(childToClear);
     if (!parentId) return;
     this.clearParentEdge(childToClear, parentId);
@@ -615,16 +654,4 @@ export class SchemaEngineImpl implements SchemaEngine {
     this.blocksMap.delete?.(blockId);
   }
 
-  private asTextLike(value: unknown): CRDTTextLike | null {
-    if (
-      typeof value === "object" &&
-      value !== null &&
-      typeof (value as { insert?: unknown }).insert === "function" &&
-      typeof (value as { delete?: unknown }).delete === "function" &&
-      typeof (value as { toString?: unknown }).toString === "function"
-    ) {
-      return value as CRDTTextLike;
-    }
-    return null;
-  }
 }

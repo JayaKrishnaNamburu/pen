@@ -40,10 +40,11 @@ scenario(
 		expect(blockId).toBeTruthy();
 		await s.apply([
 			{
-				type: "delete-text",
+				type: "splice-text",
 				blockId: blockId!,
-				offset: 0,
-				length: 11,
+				from: 0,
+				to: 0 + 11,
+				insert: "",
 			},
 		]);
 		await s.keyboard.type("/head");

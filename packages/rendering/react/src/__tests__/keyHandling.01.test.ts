@@ -158,15 +158,22 @@ describe("@input/pen-react key binding contexts", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "insert-text", blockId, offset: 0, text: "A" },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "A" },
 			{
-				type: "insert-inline-node",
+				type: "splice-text",
 				blockId,
-				offset: 1,
-				nodeType: "mention",
-				props: { id: "user-1", label: "Ada" },
+				from: 1,
+				to: 1,
+				insert: {
+					nodeType: "mention",
+					props: { id: "user-1", label: "Ada" },
+				},
 			},
-			{ type: "insert-text", blockId, offset: 2, text: "B" },
+			{ type: "splice-text", blockId, from: 2,
+				to: 2,
+				insert: "B" },
 		]);
 		const ytext = getYText(editor, blockId);
 		const fieldEditor = createFieldEditorMock(blockId);
@@ -255,7 +262,9 @@ describe("@input/pen-react key binding contexts", () => {
 		).toBe(true);
 
 		editor.apply([
-			{ type: "insert-text", blockId, offset: 0, text: "Hello" },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello" },
 		]);
 		editor.selectText(blockId, 0, 5);
 		expect(
@@ -302,7 +311,7 @@ describe("@input/pen-react key binding contexts", () => {
 		);
 
 		editor.apply([
-			{ type: "convert-block", blockId, newType: "codeBlock" },
+			{ type: "set-props", blockId, props: { type: "codeBlock" } },
 		]);
 		editor.selectText(blockId, 0, 0);
 		expect(handleEditorKeyBindings(editor, createKeyEvent("Tab"))).toBe(
@@ -334,16 +343,18 @@ describe("@input/pen-react key binding contexts", () => {
 				position: { after: firstBlockId },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: firstBlockId,
-				offset: 0,
-				text: "Hello",
+				from: 0,
+				to: 0,
+				insert: "Hello",
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: secondBlockId,
-				offset: 0,
-				text: "World",
+				from: 0,
+				to: 0,
+				insert: "World",
 			},
 		]);
 		editor.selectText(firstBlockId, 2, 2);
@@ -387,7 +398,9 @@ describe("@input/pen-react key binding contexts", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "insert-text", blockId, offset: 0, text: "Hello" },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello" },
 		]);
 		editor.selectText(blockId, 0, 5);
 
@@ -421,7 +434,9 @@ describe("@input/pen-react key binding contexts", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "insert-text", blockId, offset: 0, text: "Hello" },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello" },
 		]);
 		editor.selectText(blockId, 0, 5);
 

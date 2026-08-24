@@ -1,5 +1,6 @@
 import { yjsAdapter } from "@input/pen-crdt-yjs";
 import {
+	type DocumentOp,
 	type DocumentSession,
 	type PenStreamPart,
 } from "@input/pen-types";
@@ -98,13 +99,17 @@ describe("@input/pen-core createEditor", () => {
 				props: {},
 				position: "last",
 			},
-			{ type: "insert-text", blockId: "b1", offset: 0, text: "Hello" },
-			{ type: "insert-text", blockId: "b2", offset: 0, text: "Again" },
+			{ type: "splice-text", blockId: "b1", from: 0,
+				to: 0,
+				insert: "Hello" },
+			{ type: "splice-text", blockId: "b2", from: 0,
+				to: 0,
+				insert: "Again" },
 			{
 				type: "format-text",
 				blockId: "b2",
-				offset: 2,
-				length: 3,
+				from: 2,
+				to: 2 + 3,
 				marks: { bold: true },
 			},
 		]);
@@ -129,10 +134,10 @@ describe("@input/pen-core createEditor", () => {
 
 	it("replaces multi-block text selections in a single document commit batch", () => {
 		const editor = createEditor();
-		const events: Array<{ ops: readonly { type: string }[] }> = [];
+		const events: Array<{ ops: readonly DocumentOp[] }> = [];
 
 		editor.on("documentCommit", (event) => {
-			events.push(event as { ops: readonly { type: string }[] });
+			events.push(event);
 		});
 
 		editor.apply([
@@ -157,9 +162,15 @@ describe("@input/pen-core createEditor", () => {
 				props: {},
 				position: "last",
 			},
-			{ type: "insert-text", blockId: "b1", offset: 0, text: "Hello" },
-			{ type: "insert-text", blockId: "b2", offset: 0, text: "World" },
-			{ type: "insert-text", blockId: "b3", offset: 0, text: "Again" },
+			{ type: "splice-text", blockId: "b1", from: 0,
+				to: 0,
+				insert: "Hello" },
+			{ type: "splice-text", blockId: "b2", from: 0,
+				to: 0,
+				insert: "World" },
+			{ type: "splice-text", blockId: "b3", from: 0,
+				to: 0,
+				insert: "Again" },
 		]);
 		events.length = 0;
 
@@ -170,14 +181,20 @@ describe("@input/pen-core createEditor", () => {
 		editor.replaceSelection("X");
 
 		expect(events).toHaveLength(1);
-		expect(events[0]?.ops.map((op) => op.type)).toEqual([
-			"delete-text",
-			"delete-text",
-			"delete-block",
-			"insert-text",
-			"insert-text",
-			"delete-block",
+		// Deletes and inserts are both splice-text under the 10-primitive union, so
+		// the op shape is what distinguishes them: a delete empties a non-empty
+		// range, an insert is collapsed (from === to) and carries content.
+		expect(events[0]?.ops).toEqual([
+			{ type: "splice-text", blockId: "b1", from: 2, to: 5, insert: "" },
+			{ type: "splice-text", blockId: "b3", from: 0, to: 2, insert: "" },
+			{ type: "delete-block", blockId: "b2" },
+			{ type: "splice-text", blockId: "b1", from: 2, to: 2, insert: "X" },
+			{ type: "splice-text", blockId: "b1", from: 3, to: 3, insert: "ain" },
+			{ type: "delete-block", blockId: "b3" },
 		]);
+		expect(editor.getBlock("b1")?.textContent()).toBe("HeXain");
+		expect(editor.getBlock("b2")).toBeNull();
+		expect(editor.getBlock("b3")).toBeNull();
 
 		editor.destroy();
 	});
@@ -282,7 +299,7 @@ describe("@input/pen-core createEditor", () => {
 				position: "last",
 			},
 			{
-				type: "update-block",
+				type: "set-props",
 				blockId: "child",
 				props: { parentId: "parent" },
 			},
@@ -292,7 +309,7 @@ describe("@input/pen-core createEditor", () => {
 
 		editor.apply([
 			{
-				type: "update-block",
+				type: "set-props",
 				blockId: "child",
 				props: { parentId: null },
 			},

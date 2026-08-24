@@ -1,4 +1,4 @@
-import { createEditor as createCoreEditor } from "@input/pen-core";
+import { applySplitBlock, createEditor as createCoreEditor } from "@input/pen-core";
 import { createDefaultSchema } from "@input/pen-schema-default";
 import { describe, expect, it } from "vitest";
 import * as Y from "yjs";
@@ -40,13 +40,17 @@ describe("@input/pen-undo restore under remote edits", () => {
 		await editor.whenReady();
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "hello" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "hello" }],
 			{ origin: "user" },
 		);
 		editor.undoManager.stopCapturing();
 		editor.selectBlocks([blockId]);
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 5, text: "!" }],
+			[{ type: "splice-text", blockId, from: 5,
+				to: 5,
+				insert: "!" }],
 			{ origin: "user" },
 		);
 		await Promise.resolve();
@@ -69,10 +73,11 @@ describe("@input/pen-undo restore under remote edits", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "hello world",
+					from: 0,
+				to: 0,
+				insert: "hello world",
 				},
 			],
 			{ origin: "user" },
@@ -83,10 +88,11 @@ describe("@input/pen-undo restore under remote edits", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 5,
-					text: "X",
+					from: 5,
+				to: 5,
+				insert: "X",
 				},
 			],
 			{ origin: "user" },
@@ -149,10 +155,11 @@ describe("@input/pen-undo restore under remote edits", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: firstBlockId,
-					offset: 0,
-					text: "Hello",
+					from: 0,
+				to: 0,
+				insert: "Hello",
 				},
 			],
 			{ origin: "user" },
@@ -161,17 +168,12 @@ describe("@input/pen-undo restore under remote edits", () => {
 		editor.selectText(firstBlockId, 5, 5);
 
 		const newBlockId = "redo-split-caret";
-		editor.apply(
-			[
-				{
-					type: "split-block",
-					blockId: firstBlockId,
-					offset: 5,
-					newBlockId,
-				},
-			],
-			{ origin: "user" },
-		);
+		applySplitBlock(editor, {
+			blockId: firstBlockId,
+			offset: 5,
+			newBlockId,
+			applyOptions: { origin: "user" },
+		});
 		editor.selectText(newBlockId, 0, 0);
 		await Promise.resolve();
 		editor.undoManager.stopCapturing();
@@ -203,10 +205,11 @@ describe("@input/pen-undo restore under remote edits", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "hello",
+					from: 0,
+				to: 0,
+				insert: "hello",
 				},
 			],
 			{ origin: "user" },
@@ -217,10 +220,11 @@ describe("@input/pen-undo restore under remote edits", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 5,
-					text: "X",
+					from: 5,
+				to: 5,
+				insert: "X",
 				},
 			],
 			{ origin: "user" },
@@ -248,10 +252,11 @@ describe("@input/pen-undo restore under remote edits", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "hello world",
+					from: 0,
+				to: 0,
+				insert: "hello world",
 				},
 			],
 			{ origin: "user" },
@@ -262,10 +267,11 @@ describe("@input/pen-undo restore under remote edits", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 5,
-					text: "X",
+					from: 5,
+				to: 5,
+				insert: "X",
 				},
 			],
 			{ origin: "user" },

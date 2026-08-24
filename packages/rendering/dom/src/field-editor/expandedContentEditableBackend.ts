@@ -18,7 +18,6 @@ import {
 import { applyEnterBehavior, toggleInlineMark } from "./commands";
 import { dispatchEditorCommand } from "./commandDispatch";
 import { normalizeSelectionFormation } from "../utils/selectionFormation";
-import { shouldIgnoreLeftoverFieldAfterDocumentSelectAll } from "./documentSelectAllLeftover";
 import { shouldStopEquivalentDomRead } from "./selectionReader";
 import {
 	handleEditorKeyBindings,
@@ -158,15 +157,6 @@ export class ExpandedContentEditableBackend {
 				type: "block",
 				blockIds: normalizedSelection.blockIds,
 			});
-			return;
-		}
-
-		if (
-			shouldIgnoreLeftoverFieldAfterDocumentSelectAll(
-				this.editor.selection,
-				normalizedSelection,
-			)
-		) {
 			return;
 		}
 

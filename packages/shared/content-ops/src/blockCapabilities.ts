@@ -8,6 +8,5 @@ export {
 	shouldAllowFlowInsertionInSlashMenu,
 	shouldExposeBlockInTooling,
 	shouldShowBlockInDefaultMenus,
-	shouldFallbackMixedSelectionToBlock,
 	shouldForceBlockScopedSelectAll,
 } from "@input/pen-core";

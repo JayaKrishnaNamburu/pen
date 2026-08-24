@@ -223,11 +223,14 @@ describe("@input/pen-react field editor inline atom navigation", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-inline-node",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					nodeType: "mention",
-					props: { id: "user-1", label: "Ada" },
+					from: 0,
+					to: 0,
+					insert: {
+						nodeType: "mention",
+						props: { id: "user-1", label: "Ada" },
+					},
 				},
 			],
 			{ origin: "user" },

@@ -350,7 +350,9 @@ describe("COL3 identity is host-authoritative", () => {
 		});
 
 		harness.peerB.editor.apply(
-			[{ type: "insert-text", blockId: "b1", offset: 5, text: " world" }],
+			[{ type: "splice-text", blockId: "b1", from: 5,
+				to: 5,
+				insert: " world" }],
 			{ origin: { type: "user" } },
 		);
 		harness.exchange("b-then-a");

@@ -35,13 +35,11 @@ function listFiles(root, predicate) {
 
 test("pnpm test is src/hosts/*.test.js; Playwright specs are a separate population", () => {
 	const hostTests = listFiles(hostsDir, (name) => name.endsWith(".test.js"));
-	const scenarioSpecs = listFiles(
-		join(packageRoot, "scenarios"),
-		(name) => name.endsWith(".spec.ts"),
+	const scenarioSpecs = listFiles(join(packageRoot, "scenarios"), (name) =>
+		name.endsWith(".spec.ts"),
 	);
-	const suiteSpecs = listFiles(
-		join(packageRoot, "suites"),
-		(name) => name.endsWith(".spec.ts"),
+	const suiteSpecs = listFiles(join(packageRoot, "suites"), (name) =>
+		name.endsWith(".spec.ts"),
 	);
 	const playwrightSpecs = [...scenarioSpecs, ...suiteSpecs];
 
@@ -59,7 +57,9 @@ test("pnpm test is src/hosts/*.test.js; Playwright specs are a separate populati
 		`host population missing this file: ${hostTests.join(", ")}`,
 	);
 
-	const manifest = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8"));
+	const manifest = JSON.parse(
+		readFileSync(join(packageRoot, "package.json"), "utf8"),
+	);
 	assert.match(manifest.scripts.test, /src\/hosts\/\*\.test\.js/);
 	assert.doesNotMatch(manifest.scripts.test, /playwright/);
 	assert.doesNotMatch(manifest.scripts.test, /scenarios/);
@@ -118,10 +118,23 @@ test("pnpm test is src/hosts/*.test.js; Playwright specs are a separate populati
 		"Node hosts must not import harness/src/session.ts",
 	);
 
+	// Hardcoded on purpose: a derived count cannot detect drift, which is this
+	// assertion's only job. The number is a shared resource across concurrent
+	// work — any lane adding a spec must bump it, and two lanes adding specs in
+	// the same round will both be right and still collide here (48 -> 56 on
+	// 2026-08-24 was geometry/overlays staffing plus a concurrent selection
+	// spec; 56 -> 63 later the same day was a seven-lane round adding AX6,
+	// T3, T4, bidi, EM empty-blocks and two geometry specs at once). The
+	// message states actual vs expected so the fix does not require
+	// re-deriving the count by hand.
+	// Derived into the message rather than written twice: the literal and the
+	// message had already drifted apart (56 asserted, "expected 55" reported),
+	// which is the one failure this message exists to prevent.
+	const expectedPlaywrightSpecs = 63;
 	assert.equal(
 		playwrightSpecs.length,
-		45,
-		`Playwright spec population drifted: ${playwrightSpecs.join(", ")}`,
+		expectedPlaywrightSpecs,
+		`Playwright spec population drifted: expected ${expectedPlaywrightSpecs}, found ${playwrightSpecs.length}. Update this number if the change is intended. Specs: ${playwrightSpecs.join(", ")}`,
 	);
 
 	// Five of these six were empty until 2026-08-23, and an empty directory is

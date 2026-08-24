@@ -34,13 +34,18 @@ function createMentionEditor() {
 	const editor = createEditor({ schema: defaultSchema });
 	const blockId = editor.firstBlock()!.id;
 	editor.apply([
-		{ type: "insert-text", blockId, offset: 0, text: "hiz" },
+		{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "hiz" },
 		{
-			type: "insert-inline-node",
+			type: "splice-text",
 			blockId,
-			offset: 2,
-			nodeType: "mention",
-			props: { id: "1", label: "Ada" },
+			from: 2,
+			to: 2,
+			insert: {
+				nodeType: "mention",
+				props: { id: "1", label: "Ada" },
+			},
 		},
 	]);
 	return { editor, blockId };

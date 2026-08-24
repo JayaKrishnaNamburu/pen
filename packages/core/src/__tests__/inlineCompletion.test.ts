@@ -20,7 +20,9 @@ describe("inline completion decorations", () => {
 		const inlineCompletion = ensureInlineCompletionController(editor);
 
 		try {
-			editor.apply([{ type: "insert-text", blockId, offset: 0, text: "Hello" }]);
+			editor.apply([{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello" }]);
 			inlineCompletion.controller.showSuggestion({
 				id: "suggestion-1",
 				blockId,

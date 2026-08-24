@@ -224,10 +224,11 @@ scenario(
 			}
 			window.__penConformance.apply([
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "X",
+					from: 0,
+				to: 0,
+				insert: "X",
 				},
 			]);
 		});

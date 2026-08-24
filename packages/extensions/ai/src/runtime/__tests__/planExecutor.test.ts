@@ -9,7 +9,9 @@ describe("document mutation plan executor", () => {
 		const editor = createPlanExecutorEditor();
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello world" }],
 			{ origin: "system" },
 		);
 
@@ -30,11 +32,11 @@ describe("document mutation plan executor", () => {
 		expect(execution.issues).toEqual([]);
 		expect(execution.ops).toEqual([
 			{
-				type: "replace-text",
+				type: "splice-text",
 				blockId,
-				offset: 6,
-				length: 5,
-				text: "planet",
+				from: 6,
+				to: 6 + 5,
+				insert: "planet",
 			},
 		]);
 	});
@@ -99,7 +101,9 @@ describe("document mutation plan executor", () => {
 		const editor = createPlanExecutorEditor();
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello world" }],
 			{ origin: "system" },
 		);
 

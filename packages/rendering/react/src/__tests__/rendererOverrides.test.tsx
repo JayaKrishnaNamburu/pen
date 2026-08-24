@@ -105,7 +105,7 @@ function UploadCard(props: {
 		editor.apply(
 			[
 				{
-					type: "update-block",
+					type: "set-props",
 					blockId: block.id,
 					props: {
 						src: assets.resolve(ref),
@@ -154,10 +154,9 @@ function createImageEditor() {
 
 	editor.apply([
 		{
-			type: "convert-block",
+			type: "set-props",
 			blockId,
-			newType: "image",
-			newProps: {},
+			props: { type: "image" },
 		},
 	]);
 
@@ -170,7 +169,7 @@ describe("@input/pen-react renderer overrides", () => {
 		const second = createImageEditor();
 		second.editor.apply([
 			{
-				type: "update-block",
+				type: "set-props",
 				blockId: second.blockId,
 				props: {
 					src: "memory://existing.png",

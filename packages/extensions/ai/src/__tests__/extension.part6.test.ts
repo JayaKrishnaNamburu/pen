@@ -42,7 +42,9 @@ describe("aiExtension", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello world" }],
 			{ origin: "system" },
 		);
 		editor.selectTextRange({ blockId, offset: 6 }, { blockId, offset: 11 });
@@ -118,7 +120,9 @@ describe("aiExtension", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello world" }],
 			{ origin: "system" },
 		);
 		editor.selectTextRange({ blockId, offset: 6 }, { blockId, offset: 11 });
@@ -179,7 +183,9 @@ describe("aiExtension", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello world" }],
 			{ origin: "system" },
 		);
 		editor.selectTextRange({ blockId, offset: 6 }, { blockId, offset: 11 });
@@ -233,7 +239,9 @@ describe("aiExtension", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello world" }],
 			{ origin: "system" },
 		);
 		editor.selectTextRange({ blockId, offset: 6 }, { blockId, offset: 11 });
@@ -251,11 +259,11 @@ describe("aiExtension", () => {
 
 		const operations = [
 			{
-				type: "replace-text" as const,
+				type: "splice-text" as const,
 				blockId,
-				offset: 6,
-				length: 5,
-				text: "planet",
+				from: 6,
+				to: 6 + 5,
+				insert: "planet",
 			},
 		];
 		const applyResult = applySuggestedAIOperations(editor, {
@@ -318,7 +326,9 @@ describe("aiExtension", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello world" }],
 			{ origin: "system" },
 		);
 		editor.selectTextRange({ blockId, offset: 6 }, { blockId, offset: 11 });
@@ -332,11 +342,11 @@ describe("aiExtension", () => {
 		const turn = controller.getState().sessions[0]?.turns[0];
 		const operations = [
 			{
-				type: "replace-text" as const,
+				type: "splice-text" as const,
 				blockId,
-				offset: 6,
-				length: 5,
-				text: "planet",
+				from: 6,
+				to: 6 + 5,
+				insert: "planet",
 			},
 		];
 		const applyResult = applySuggestedAIOperations(editor, {
@@ -390,7 +400,9 @@ describe("aiExtension", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello" }],
 			{
 				origin: "system",
 			},
@@ -408,10 +420,11 @@ describe("aiExtension", () => {
 		const firstTurn = controller.getState().sessions[0]?.turns[0];
 		const firstOperations = [
 			{
-				type: "insert-text" as const,
+				type: "splice-text" as const,
 				blockId,
-				offset: 5,
-				text: " there",
+				from: 5,
+				to: 5,
+				insert: " there",
 			},
 		];
 		const firstApplyResult = applySuggestedAIOperations(editor, {
@@ -439,10 +452,11 @@ describe("aiExtension", () => {
 		const secondTurn = controller.getState().sessions[0]?.turns[1];
 		const secondOperations = [
 			{
-				type: "insert-text" as const,
+				type: "splice-text" as const,
 				blockId,
-				offset: 11,
-				text: " friend",
+				from: 11,
+				to: 11,
+				insert: " friend",
 			},
 		];
 		const secondApplyResult = applySuggestedAIOperations(editor, {
@@ -513,7 +527,9 @@ describe("aiExtension", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello" }],
 			{
 				origin: "system",
 			},
@@ -529,10 +545,11 @@ describe("aiExtension", () => {
 		const firstTurn = controller.getState().sessions[0]?.turns[0];
 		const firstOperations = [
 			{
-				type: "insert-text" as const,
+				type: "splice-text" as const,
 				blockId,
-				offset: 5,
-				text: " there",
+				from: 5,
+				to: 5,
+				insert: " there",
 			},
 		];
 		const firstApplyResult = applySuggestedAIOperations(editor, {
@@ -553,10 +570,11 @@ describe("aiExtension", () => {
 		const secondTurn = controller.getState().sessions[0]?.turns[1];
 		const secondOperations = [
 			{
-				type: "insert-text" as const,
+				type: "splice-text" as const,
 				blockId,
-				offset: 11,
-				text: " friend",
+				from: 11,
+				to: 11,
+				insert: " friend",
 			},
 		];
 		const secondApplyResult = applySuggestedAIOperations(editor, {
@@ -630,7 +648,9 @@ describe("aiExtension", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello world" }],
 			{ origin: "system" },
 		);
 		editor.selectTextRange({ blockId, offset: 6 }, { blockId, offset: 11 });
@@ -683,7 +703,9 @@ describe("aiExtension", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello world" }],
 			{ origin: "system" },
 		);
 		editor.selectTextRange({ blockId, offset: 6 }, { blockId, offset: 11 });
@@ -727,7 +749,9 @@ describe("aiExtension", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello world" }],
 			{ origin: "system" },
 		);
 		editor.selectTextRange({ blockId, offset: 6 }, { blockId, offset: 11 });
@@ -742,7 +766,9 @@ describe("aiExtension", () => {
 		controller.suspendInlineSession(session!.id);
 
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 11, text: "!" }],
+			[{ type: "splice-text", blockId, from: 11,
+				to: 11,
+				insert: "!" }],
 			{ origin: "user" },
 		);
 

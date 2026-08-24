@@ -103,16 +103,18 @@ describe("@input/pen-react suggestion menu", () => {
 					selectedItems.push(item);
 					editor.apply([
 						{
-							type: "delete-text",
+							type: "splice-text",
 							blockId: target.blockId,
-							offset: target.startOffset,
-							length: target.endOffset - target.startOffset,
+							from: target.startOffset,
+				to: target.startOffset + target.endOffset - target.startOffset,
+				insert: "",
 						},
 						{
-							type: "insert-text",
+							type: "splice-text",
 							blockId: target.blockId,
-							offset: target.startOffset,
-							text: item,
+							from: target.startOffset,
+				to: target.startOffset,
+				insert: item,
 						},
 					]);
 				},
@@ -147,7 +149,9 @@ describe("@input/pen-react suggestion menu", () => {
 
 		await act(async () => {
 			editor.apply([
-				{ type: "insert-text", blockId, offset: 0, text: "Hi @al" },
+				{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hi @al" },
 			]);
 			editor.selectText(blockId, 6, 6);
 			await waitForCondition(
@@ -226,7 +230,9 @@ describe("@input/pen-react suggestion menu", () => {
 
 		await act(async () => {
 			editor.apply([
-				{ type: "insert-text", blockId, offset: 0, text: "@a" },
+				{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "@a" },
 			]);
 			editor.selectText(blockId, 2, 2);
 			await waitForCondition(
@@ -291,7 +297,9 @@ describe("@input/pen-react suggestion menu", () => {
 
 		await act(async () => {
 			editor.apply([
-				{ type: "insert-text", blockId, offset: 0, text: "@a" },
+				{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "@a" },
 			]);
 			editor.selectText(blockId, 2, 2);
 			await waitForCondition(
@@ -365,7 +373,9 @@ describe("@input/pen-react suggestion menu", () => {
 		try {
 			await act(async () => {
 				editor.apply([
-					{ type: "insert-text", blockId, offset: 0, text: "Hi @al" },
+					{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hi @al" },
 				]);
 				editor.selectText(blockId, 6, 6);
 				root.render(<Harness />);

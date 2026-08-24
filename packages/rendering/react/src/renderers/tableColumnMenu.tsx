@@ -80,7 +80,7 @@ export function ColumnHeaderMenu(props: ColumnHeaderMenuProps) {
 
 	function updateColumns(updated: TableColumnSchema[]) {
 		editor.apply(
-			[{ type: "update-table-columns", blockId, columns: updated }],
+			[{ type: "set-props", blockId, props: { columns: updated } }],
 			{ origin: "user" },
 		);
 	}
@@ -191,8 +191,12 @@ export function ColumnHeaderMenu(props: ColumnHeaderMenuProps) {
 		updated.splice(columnIndex, 0, newCol);
 		editor.apply(
 			[
-				{ type: "update-table-columns", blockId, columns: updated },
-				{ type: "insert-table-column", blockId, index: columnIndex },
+				{ type: "set-props", blockId, props: { columns: updated } },
+				{
+					type: "grid",
+					blockId,
+					change: { kind: "insert-column", index: columnIndex },
+				},
 			],
 			{ origin: "user" },
 		);
@@ -209,8 +213,12 @@ export function ColumnHeaderMenu(props: ColumnHeaderMenuProps) {
 		updated.splice(columnIndex + 1, 0, newCol);
 		editor.apply(
 			[
-				{ type: "update-table-columns", blockId, columns: updated },
-				{ type: "insert-table-column", blockId, index: columnIndex + 1 },
+				{ type: "set-props", blockId, props: { columns: updated } },
+				{
+					type: "grid",
+					blockId,
+					change: { kind: "insert-column", index: columnIndex + 1 },
+				},
 			],
 			{ origin: "user" },
 		);
@@ -222,8 +230,12 @@ export function ColumnHeaderMenu(props: ColumnHeaderMenuProps) {
 		const updated = allColumns.filter((_, i) => i !== columnIndex);
 		editor.apply(
 			[
-				{ type: "update-table-columns", blockId, columns: [...updated] },
-				{ type: "delete-table-column", blockId, index: columnIndex },
+				{ type: "set-props", blockId, props: { columns: [...updated] } },
+				{
+					type: "grid",
+					blockId,
+					change: { kind: "delete-column", index: columnIndex },
+				},
 			],
 			{ origin: "user" },
 		);

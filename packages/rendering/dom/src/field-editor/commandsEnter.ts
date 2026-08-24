@@ -119,7 +119,7 @@ function liftBlockOutOfParent(
 	editor.apply(
 		[
 			{
-				type: "update-block",
+				type: "set-props",
 				blockId: options.blockId,
 				props: { parentId: null },
 			} as DocumentOp,

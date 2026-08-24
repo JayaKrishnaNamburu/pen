@@ -1,4 +1,4 @@
-import { createEditor } from "@input/pen-core";
+import { applyMergeBlocks, applySplitBlock, createEditor } from "@input/pen-core";
 import { describe, expect, it } from "vitest";
 import {
 	aiSuggestionsExtension,
@@ -63,10 +63,11 @@ describe("suggestion survival under concurrent edits", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "Ths sentence works.",
+					from: 0,
+				to: 0,
+				insert: "Ths sentence works.",
 				},
 			],
 			{ origin: "user" },
@@ -88,10 +89,11 @@ describe("suggestion survival under concurrent edits", () => {
 				editor.apply(
 					[
 						{
-							type: "insert-text",
+							type: "splice-text",
 							blockId: liveBefore.blockId,
-							offset,
-							text: random() < 0.5 ? "x" : "yy",
+							from: offset,
+							to: offset,
+							insert: random() < 0.5 ? "x" : "yy",
 						},
 					],
 					{ origin: { type: "collaborator" } },
@@ -104,10 +106,11 @@ describe("suggestion survival under concurrent edits", () => {
 				editor.apply(
 					[
 						{
-							type: "insert-text",
+							type: "splice-text",
 							blockId: liveBefore.blockId,
-							offset,
-							text: "z",
+							from: offset,
+							to: offset,
+							insert: "z",
 						},
 					],
 					{ origin: { type: "collaborator" } },
@@ -116,10 +119,11 @@ describe("suggestion survival under concurrent edits", () => {
 				editor.apply(
 					[
 						{
-							type: "insert-text",
+							type: "splice-text",
 							blockId: liveBefore.blockId,
-							offset: 0,
-							text: "q",
+							from: 0,
+				to: 0,
+				insert: "q",
 						},
 					],
 					{ origin: { type: "collaborator" } },
@@ -138,10 +142,11 @@ describe("suggestion survival under concurrent edits", () => {
 		editor.apply(
 			[
 				{
-					type: "delete-text",
+					type: "splice-text",
 					blockId: doomed.blockId,
-					offset: doomed.from,
-					length: doomed.to - doomed.from,
+					from: doomed.from,
+					to: doomed.to,
+					insert: "",
 				},
 			],
 			{ origin: { type: "collaborator" } },
@@ -151,10 +156,11 @@ describe("suggestion survival under concurrent edits", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: doomed.blockId,
-					offset: 0,
-					text: "more",
+					from: 0,
+				to: 0,
+				insert: "more",
 				},
 			],
 			{ origin: { type: "collaborator" } },
@@ -170,10 +176,11 @@ describe("suggestion survival under concurrent edits", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "aa Ths bb",
+					from: 0,
+				to: 0,
+				insert: "aa Ths bb",
 				},
 			],
 			{ origin: "user" },
@@ -183,17 +190,12 @@ describe("suggestion survival under concurrent edits", () => {
 		const controller = getAISuggestionsController(editor)!;
 		expect(liveSuggestions(controller.getState().suggestions)).toHaveLength(1);
 
-		editor.apply(
-			[
-				{
-					type: "split-block",
-					blockId,
-					offset: 2,
-					newBlockId: "tail",
-				},
-			],
-			{ origin: { type: "collaborator" } },
-		);
+		applySplitBlock(editor, {
+			blockId,
+			offset: 2,
+			newBlockId: "tail",
+			applyOptions: { origin: { type: "collaborator" } },
+		});
 
 		const live = liveSuggestions(controller.getState().suggestions);
 		expect(live).toHaveLength(1);
@@ -214,7 +216,9 @@ describe("suggestion survival under concurrent edits", () => {
 		const target = editor.firstBlock()!.id;
 		editor.apply(
 			[
-				{ type: "insert-text", blockId: target, offset: 0, text: "aa " },
+				{ type: "splice-text", blockId: target, from: 0,
+				to: 0,
+				insert: "aa " },
 				{
 					type: "insert-block",
 					blockId: "source",
@@ -222,7 +226,9 @@ describe("suggestion survival under concurrent edits", () => {
 					props: {},
 					position: "last",
 				},
-				{ type: "insert-text", blockId: "source", offset: 0, text: "Ths zz" },
+				{ type: "splice-text", blockId: "source", from: 0,
+				to: 0,
+				insert: "Ths zz" },
 			],
 			{ origin: "user" },
 		);
@@ -233,16 +239,11 @@ describe("suggestion survival under concurrent edits", () => {
 		await flushTimers();
 		expect(liveSuggestions(controller.getState().suggestions)).toHaveLength(1);
 
-		editor.apply(
-			[
-				{
-					type: "merge-blocks",
-					targetBlockId: target,
-					sourceBlockId: "source",
-				},
-			],
-			{ origin: { type: "collaborator" } },
-		);
+		applyMergeBlocks(editor, {
+			targetBlockId: target,
+			sourceBlockId: "source",
+			applyOptions: { origin: { type: "collaborator" } },
+		});
 
 		const live = liveSuggestions(controller.getState().suggestions);
 		expect(live).toHaveLength(1);
@@ -288,10 +289,11 @@ describe("suggestion survival under concurrent edits", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: words.join(" "),
+					from: 0,
+				to: 0,
+				insert: words.join(" "),
 				},
 			],
 			{ origin: "user" },
@@ -307,7 +309,9 @@ describe("suggestion survival under concurrent edits", () => {
 
 		for (let step = 0; step < 100; step += 1) {
 			editor.apply(
-				[{ type: "insert-text", blockId, offset: 0, text: "q" }],
+				[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "q" }],
 				{ origin: { type: "collaborator" } },
 			);
 		}
@@ -324,7 +328,9 @@ describe("suggestion survival under concurrent edits", () => {
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
 			[
-				{ type: "insert-text", blockId, offset: 0, text: "Ths here" },
+				{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Ths here" },
 				{
 					type: "insert-block",
 					blockId: "keep",

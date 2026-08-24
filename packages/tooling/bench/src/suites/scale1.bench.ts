@@ -1,13 +1,17 @@
 import type { BenchDefinition } from "../bench";
-import type { EnvelopeRungId } from "../constants/scale1";
-import { SCALE1_MEASUREMENTS } from "../constants/scale1";
+import {
+	SCALE1_MEASUREMENTS,
+	type EnvelopeRungId,
+} from "../constants/scale1";
 import { emptyTimerFloor } from "../harness/floor";
 import {
+	ENVELOPE_TABLE_BLOCK_ID,
 	assertPeerBObservedText,
 	assertPeerBObservesPeerAInsert,
 	createEnvelopeCollaboration,
 	createEnvelopeEditor,
 	envelopeKeystroke,
+	type EnvelopeKeystroke,
 } from "../fixtures/envelope";
 
 export function scale1EnvelopeBenchId(rungId: EnvelopeRungId): string {
@@ -34,9 +38,15 @@ function createRungRunner(
 			if (!editor) {
 				editor = createEnvelopeEditor(rungId);
 			}
+			const before = measureTargetLength(editor, keystroke);
 			b.start();
 			editor.apply(keystroke.ops, { origin: "user" });
 			b.end();
+			b.observe(
+				"insertedCharCount",
+				measureTargetLength(editor, keystroke) - before,
+				1,
+			);
 		},
 		floor: (b) => {
 			if (!floorEditor) {
@@ -59,6 +69,23 @@ function createRungRunner(
 
 const PEER_TIMED_INSERT = "x";
 
+function measureTargetLength(
+	editor: ReturnType<typeof createEnvelopeEditor>,
+	keystroke: EnvelopeKeystroke,
+): number {
+	const op = keystroke.ops[0];
+	if (op?.type === "splice-text" && op.cell) {
+		return String(
+			editor.internals.getCellText(
+				ENVELOPE_TABLE_BLOCK_ID,
+				op.cell.row,
+				op.cell.col,
+			) ?? "",
+		).length;
+	}
+	return editor.getBlock(keystroke.targetId).textContent().length;
+}
+
 export function createPeerRunner(
 	createCollab: () => ReturnType<typeof createEnvelopeCollaboration> = () =>
 		createEnvelopeCollaboration(100),
@@ -79,6 +106,7 @@ export function createPeerRunner(
 			collab.sync();
 			b.end();
 			assertPeerBObservedText(collab, keystroke.targetId, PEER_TIMED_INSERT);
+			b.observe("peerObservedInsert", 1, 1);
 		},
 		floor: (b) => {
 			if (!floorCollab) {

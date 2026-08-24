@@ -48,10 +48,11 @@ describe("handleSelectAllShortcut vs T1 ladder", () => {
 		const firstBlockId = editor.firstBlock()!.id;
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: firstBlockId,
-				offset: 0,
-				text: "hello",
+				from: 0,
+				to: 0,
+				insert: "hello",
 			},
 			{
 				type: "insert-block",
@@ -61,10 +62,11 @@ describe("handleSelectAllShortcut vs T1 ladder", () => {
 				position: "last",
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: "second",
-				offset: 0,
-				text: "world",
+				from: 0,
+				to: 0,
+				insert: "world",
 			},
 		]);
 		editor.selectText(firstBlockId, 2, 2);

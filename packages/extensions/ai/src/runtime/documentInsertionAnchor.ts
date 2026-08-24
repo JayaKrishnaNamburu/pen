@@ -1,5 +1,4 @@
 import type { Editor } from "@input/pen-types";
-import { logicalTextFromStored } from "@input/pen-types";
 
 export interface DocumentInsertionAnchor {
 	blockId: string;
@@ -100,7 +99,7 @@ function isReclaimableEmptyBlock(editor: Editor, blockId: string): boolean {
 
 	return (
 		block.children.length === 0 &&
-		logicalTextFromStored(block.textContent({ resolved: true })).trim()
+		block.textContent({ resolved: true }).trim()
 			.length === 0
 	);
 }

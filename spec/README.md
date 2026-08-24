@@ -37,7 +37,7 @@ Then read package specs by layer:
 - React is the primary documented renderer. Vue is a shipped renderer proof built on the shared DOM engine.
 - Private apps such as `@input/pen-docs` and `@input/pen-playground` are specified because they are part of the workspace, but they are not publishable runtime packages.
 - Two workspace packages have no current-state spec on purpose: `@input/pen-conformance` and `@input/pen-eslint-plugin`. `packages/` has 38 package.json files; 36 have a matching spec. See `charter/package-map.md`.
-- `pen.readOnly` (the facet) only sets `aria-readonly`. The renderer `readonly` prop is what declines typing. That split is shipped and unresolved; package specs describe it, they do not pick a winner.
+- `pen.ariaReadOnly` (the facet) only sets `aria-readonly`. The renderer `readonly` prop is what declines typing. That split is shipped and unresolved; package specs describe it, they do not pick a winner.
 - Command registration and the Wave 05 selection engine are mid-flight. Package specs that mention them mark them as unsettled; do not read those sections as shipped contracts.
 
 ## What Changed

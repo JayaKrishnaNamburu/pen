@@ -78,10 +78,11 @@ function insertText(
 	editor.apply(
 		[
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: editor.getBlock(blockId)!.length(),
-				text,
+				from: editor.getBlock(blockId)!.length(),
+				to: editor.getBlock(blockId)!.length(),
+				insert: text,
 			},
 		],
 		{ origin },
@@ -242,10 +243,11 @@ describe("@input/pen-core origin shape contract", () => {
 				const blockId = next.firstBlock()!.id;
 				next.apply([
 					{
-						type: "insert-text",
+						type: "splice-text",
 						blockId,
-						offset: next.getBlock(blockId)!.length(),
-						text: "upgraded",
+						from: next.getBlock(blockId)!.length(),
+				to: next.getBlock(blockId)!.length(),
+				insert: "upgraded",
 					},
 				]);
 			},

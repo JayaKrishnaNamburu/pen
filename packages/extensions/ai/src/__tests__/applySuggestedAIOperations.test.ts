@@ -18,7 +18,9 @@ describe("applySuggestedAIOperations", () => {
 
 		const result = applySuggestedAIOperations(editor, {
 			operations: [
-				{ type: "insert-text", blockId, offset: 0, text: "Hello" },
+				{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello" },
 			],
 			requestId: "request-1",
 			sessionId: "session-1",
@@ -54,18 +56,20 @@ describe("applySuggestedAIOperations", () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello" }],
 			{ origin: "system" },
 		);
 
 		const result = applySuggestedAIOperations(editor, {
 			operations: [
 				{
-					type: "replace-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					length: 5,
-					text: "Hi",
+					from: 0,
+				to: 0 + 5,
+					insert: "Hi",
 				},
 			],
 			requestId: "request-2",
@@ -93,13 +97,16 @@ describe("applySuggestedAIOperations", () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello" }],
 			{ origin: "system" },
 		);
 
 		const result = applySuggestedAIOperations(editor, {
 			operations: [
-				{ type: "delete-text", blockId, offset: 0, length: 5 },
+				{ type: "splice-text", blockId, from: 0,
+				to: 0 + 5 , insert: "" },
 			],
 			requestId: "request-3",
 			sessionId: "session-3",

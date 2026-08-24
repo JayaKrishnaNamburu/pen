@@ -13,8 +13,93 @@
     },
     {
       "package": "@input/pen-dom",
-      "key": "./field-editor/*",
-      "reason": "P.6 / E.3 first-class field-editor surface, not a src/dist escape hatch."
+      "key": "./field-editor/beforeinputMap",
+      "reason": "P.6 / E.3 first-class field-editor subpath enumerated from live importers, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./field-editor/clipboard",
+      "reason": "P.6 / E.3 first-class field-editor subpath enumerated from live importers, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./field-editor/commands",
+      "reason": "P.6 / E.3 first-class field-editor subpath enumerated from live importers, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./field-editor/contenteditableBackend",
+      "reason": "P.6 / E.3 first-class field-editor subpath enumerated from live importers, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./field-editor/crdt",
+      "reason": "P.6 / E.3 first-class field-editor subpath enumerated from live importers, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./field-editor/dropResolver",
+      "reason": "P.6 / E.3 first-class field-editor subpath enumerated from live importers, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./field-editor/editContextBackend",
+      "reason": "P.6 / E.3 first-class field-editor subpath enumerated from live importers, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./field-editor/expandedContentEditableBackend",
+      "reason": "P.6 / E.3 first-class field-editor subpath enumerated from live importers, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./field-editor/fieldEditorImpl",
+      "reason": "P.6 / E.3 first-class field-editor subpath enumerated from live importers, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./field-editor/inlineAtomDom",
+      "reason": "P.6 / E.3 first-class field-editor subpath enumerated from live importers, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./field-editor/inlineAtomInteraction",
+      "reason": "P.6 / E.3 first-class field-editor subpath enumerated from live importers, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./field-editor/inlineAtomModel",
+      "reason": "P.6 / E.3 first-class field-editor subpath enumerated from live importers, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./field-editor/keyHandling",
+      "reason": "P.6 / E.3 first-class field-editor subpath enumerated from live importers, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./field-editor/reconciler",
+      "reason": "P.6 / E.3 first-class field-editor subpath enumerated from live importers, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./field-editor/selectionBridge",
+      "reason": "P.6 / E.3 first-class field-editor subpath enumerated from live importers, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./field-editor/store",
+      "reason": "P.6 / E.3 first-class field-editor subpath enumerated from live importers, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./field-editor/transfer",
+      "reason": "P.6 / E.3 first-class field-editor subpath enumerated from live importers, not a src/dist escape hatch."
+    },
+    {
+      "package": "@input/pen-dom",
+      "key": "./field-editor/transferImages",
+      "reason": "P.6 / E.3 first-class field-editor subpath enumerated from live importers, not a src/dist escape hatch."
     },
     {
       "package": "@input/pen-dom",

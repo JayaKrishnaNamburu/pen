@@ -104,7 +104,7 @@ export function SecurityPage() {
 					<code>search-budget-exceeded</code>.
 				</li>
 				<li>
-					<code>pen.readOnly</code> sets{" "}
+					<code>pen.ariaReadOnly</code> sets{" "}
 					<code>aria-readonly</code> only. Local typing and pointer
 					activation stop when the host passes the{" "}
 					<code>readonly</code> prop to <code>EditorRoot</code>,{" "}

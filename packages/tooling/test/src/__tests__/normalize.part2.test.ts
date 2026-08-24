@@ -338,7 +338,7 @@ describe("SchemaEngineImpl — Normalization Rules", () => {
       const content = (
         (blocksMap.get("p1") as Y.Map<unknown>).get("content") as Y.Text
       ).toString();
-      expect(content).toBe("\u200B");
+      expect(content).toBe("");
     });
   });
 

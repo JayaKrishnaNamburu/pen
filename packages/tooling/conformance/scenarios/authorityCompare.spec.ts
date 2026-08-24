@@ -24,7 +24,7 @@ test("authorityCompare: structural traces replay against the algebra oracle", ()
 	expect(oracle.outcome, oracle.reason).toBe("matched");
 
 	const self = compareAuthorityTraces(committed, committed);
-	expect(self.outcome, self.reason).toBe("could-not-check");
+	expect(self.outcome, self.reason).toBe("unchecked");
 	expect(self.kind).toBe("self-replay");
 
 	const liveReplay = compareAuthorityTraces(committed, live);

@@ -118,36 +118,36 @@ describe("@input/pen-react table rendering", () => {
 				position: "last",
 			},
 			{
-				type: "insert-table-cell-text",
+				type: "splice-text",
 				blockId: "t1",
-				row: 0,
-				col: 0,
-				offset: 0,
-				text: "Alice",
+				cell: { row: 0, col: 0 },
+				from: 0,
+				to: 0,
+				insert: "Alice",
 			},
 			{
-				type: "insert-table-cell-text",
+				type: "splice-text",
 				blockId: "t1",
-				row: 0,
-				col: 1,
-				offset: 0,
-				text: "30",
+				cell: { row: 0, col: 1 },
+				from: 0,
+				to: 0,
+				insert: "30",
 			},
 			{
-				type: "insert-table-cell-text",
+				type: "splice-text",
 				blockId: "t1",
-				row: 1,
-				col: 0,
-				offset: 0,
-				text: "Bob",
+				cell: { row: 1, col: 0 },
+				from: 0,
+				to: 0,
+				insert: "Bob",
 			},
 			{
-				type: "insert-table-cell-text",
+				type: "splice-text",
 				blockId: "t1",
-				row: 1,
-				col: 1,
-				offset: 0,
-				text: "25",
+				cell: { row: 1, col: 1 },
+				from: 0,
+				to: 0,
+				insert: "25",
 			},
 		]);
 
@@ -200,12 +200,12 @@ describe("@input/pen-react table rendering", () => {
 				position: "last",
 			},
 			{
-				type: "insert-table-cell-text",
+				type: "splice-text",
 				blockId: "t2",
-				row: 0,
-				col: 0,
-				offset: 0,
-				text: "Hello",
+				cell: { row: 0, col: 0 },
+				from: 0,
+				to: 0,
+				insert: "Hello",
 			},
 		]);
 
@@ -274,9 +274,7 @@ describe("@input/pen-react table rendering", () => {
 		await act(async () => {
 			editor.apply([
 				{
-					type: "insert-table-row",
-					blockId: "t3",
-					index: 2,
+					type: "grid", blockId: "t3", change: { kind: "insert-row", index: 2 },
 				},
 			]);
 		});
@@ -287,9 +285,7 @@ describe("@input/pen-react table rendering", () => {
 		await act(async () => {
 			editor.apply([
 				{
-					type: "insert-table-column",
-					blockId: "t3",
-					index: 2,
+					type: "grid", blockId: "t3", change: { kind: "insert-column", index: 2 },
 				},
 			]);
 		});
@@ -358,9 +354,7 @@ describe("@input/pen-react table rendering", () => {
 				position: "last",
 			},
 			{
-				type: "insert-table-column",
-				blockId: "t4-short-row",
-				index: 2,
+				type: "grid", blockId: "t4-short-row", change: { kind: "insert-column", index: 2 },
 			},
 		]);
 
@@ -455,12 +449,12 @@ describe("@input/pen-react table rendering", () => {
 				position: "last",
 			},
 			{
-				type: "insert-table-cell-text",
+				type: "splice-text",
 				blockId: "host4-table",
-				row: 1,
-				col: 0,
-				offset: 0,
-				text: "Cell before",
+				cell: { row: 1, col: 0 },
+				from: 0,
+				to: 0,
+				insert: "Cell before",
 			},
 		]);
 		expect(
@@ -491,12 +485,12 @@ describe("@input/pen-react table rendering", () => {
 		await act(async () => {
 			editor.apply([
 				{
-					type: "delete-table-cell-text",
+					type: "splice-text",
 					blockId: "host4-table",
-					row: 1,
-					col: 0,
-					offset: 0,
-					length: 11,
+					cell: { row: 1, col: 0 },
+					from: 0,
+					to: 11,
+					insert: "",
 				},
 			]);
 		});

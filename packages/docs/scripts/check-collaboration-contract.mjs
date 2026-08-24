@@ -6,7 +6,7 @@
  * checks token groups inside each anchored element. That tracks the
  * claim, not a frozen sentence: a rewrite that keeps the meaning stays
  * green; deleting the paragraph, emptying the anchor, or dropping a
- * load-bearing half (especially the readOnly security-boundary warning)
+ * load-bearing half (especially the ariaReadOnly security-boundary warning)
  * goes red.
  *
  * COL6: every non-private package under packages/transports/ must
@@ -53,9 +53,9 @@ const COL5_CLAIMS = [
 	},
 	{
 		id: "readonly-is-ui",
-		label: "pen.readOnly is a UI mode, not a security boundary, and stops nothing over the wire",
+		label: "pen.ariaReadOnly is a UI mode, not a security boundary, and stops nothing over the wire",
 		groups: [
-			{ name: "pen.readOnly", pattern: /\breadonly\b/ },
+			{ name: "pen.ariaReadOnly", pattern: /pen\.ariareadonly/ },
 			{ name: "ui-or-local-mode", pattern: /\bui\b|\blocal\b/ },
 			{
 				name: "not-a-security-boundary",
@@ -203,7 +203,7 @@ function checkCol5(pageSource, pageLabel) {
 			if (!group.pattern.test(text)) {
 				const extra =
 					claim.id === "readonly-is-ui"
-						? " Both halves of the readOnly warning must ship together: it is a UI mode, not a security boundary, and it stops nothing arriving over the wire."
+						? " Both halves of the ariaReadOnly warning must ship together: it is a UI mode, not a security boundary, and it stops nothing arriving over the wire."
 						: "";
 				failures.push(
 					`COL5: ${pageLabel} data-col5="${claim.id}" is missing the "${group.name}" claim (${claim.label}).${extra}`,
@@ -305,7 +305,7 @@ function gutReadonlySecurityHalf(pageSource) {
 	}
 	return (
 		pageSource.slice(0, innerStart) +
-		"Permissions. pen.readOnly makes a local editor decline local edits." +
+		"Permissions. pen.ariaReadOnly sets aria-readonly on a local editor." +
 		pageSource.slice(closeAt)
 	);
 }
@@ -319,7 +319,7 @@ function watchReadonlyFailure(pageSource, pageLabel) {
 	}
 	const failures = checkCol5(
 		scratch,
-		`${pageLabel} (scratch, readOnly security-boundary half removed)`,
+		`${pageLabel} (scratch, ariaReadOnly security-boundary half removed)`,
 	);
 	const named = failures.filter(
 		(line) =>
@@ -330,7 +330,7 @@ function watchReadonlyFailure(pageSource, pageLabel) {
 	);
 	if (named.length === 0) {
 		return [
-			`COL5: gutting the readOnly security-boundary half in ${pageLabel} did not fail the gate (failure path is a no-op)`,
+			`COL5: gutting the ariaReadOnly security-boundary half in ${pageLabel} did not fail the gate (failure path is a no-op)`,
 		];
 	}
 	return [];

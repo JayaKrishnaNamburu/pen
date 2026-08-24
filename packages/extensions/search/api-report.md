@@ -10,8 +10,6 @@
 - buildReplaceOps
 - buildSearchRegex
 - findDocumentMatches
-- getNextActiveIndex
-- getPreviousActiveIndex
 - getSearchController
 - searchExtension
 

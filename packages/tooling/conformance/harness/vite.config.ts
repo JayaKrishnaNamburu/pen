@@ -78,6 +78,8 @@ export default defineConfig({
 	server: {
 		host: "127.0.0.1",
 		allowedHosts: ["pen.test"],
+		// do not reload Playwright pages when aliased workspace sources change
+		watch: null,
 		fs: {
 			allow: [repoRoot],
 		},

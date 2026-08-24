@@ -221,7 +221,7 @@ function createTransportToolContext(
 			const liveEditor = requireTransportEditor(editor);
 
 			emit({ type: "block-update", blockId, props });
-			liveEditor.apply([{ type: "update-block", blockId, props }], {
+			liveEditor.apply([{ type: "set-props", blockId, props }], {
 				origin: "ai",
 			});
 		},

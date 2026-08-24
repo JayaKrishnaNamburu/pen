@@ -1,0 +1,282 @@
+{
+	"schemaVersion": 1,
+	"ruleId": "PG1",
+	"spec": "spec-v3/01-anchors.md",
+	"recordedAt": "2026-08-24T09:43:20.329Z",
+	"caveat": "PG1 names Chromium and absolute µs/ms budgets. Those clocks are machine-dependent (CH8 / SCALE3) and are record-only here. The gate is counts: encode sizes for clientID 0, mint/resolve cardinalities, and the cell cohort. 4–6 byte encodings occur for clientID 0 ONLY. liveCount is a mint-ever counter, not a currently-held count.",
+	"fixture": {
+		"id": "wave3-10k-words",
+		"generator": "packages/tooling/conformance/src/tenKWordFixture.ts",
+		"seed": 1885695539,
+		"seedHex": "0x70656e33",
+		"wordCount": 10200,
+		"paragraphCount": 20,
+		"cellCount": 4,
+		"cellWordCount": 200,
+		"paragraphSha256": "5fea352d718dc4a3674716a062db62d0e71041c78fb44a58497853e45232e400",
+		"contentSha256": "def214258d042eec4bc7a3ca3b7d096ff8c505f8b309ebddd098578cf5f1ccee",
+		"substrate": {
+			"word": "meadow ",
+			"wordRepeat": 10000,
+			"charCount": 70000,
+			"encodeCount": 1000,
+			"blockCount": 200,
+			"cellCount": 200,
+			"clientID": 0
+		}
+	},
+	"environment": {
+		"producedOn": "2026-08-24",
+		"platform": "darwin",
+		"arch": "arm64",
+		"node": "v25.6.1",
+		"cpuCount": 14,
+		"loadavg1": 4.88525390625,
+		"loadTaken": false,
+		"browser": "none",
+		"browserVersion": null,
+		"machineClass": "darwin-arm64"
+	},
+	"protocol": {
+		"wiring": "Substrate benches mint/resolve through raw Yjs (clientID 0), not adapter.createRelativePosition / resolveRelativePosition. Chromium scenario asserts the same counts on editor.anchors against the 10k fixture. Nothing is unwired — the harness is the consumer.",
+		"clientID": 0,
+		"clientIDNote": "4–6 byte encodings occur for clientID 0 ONLY. A live Y.Doc client id encodes larger (still under the 256-byte hostile-input cap).",
+		"liveCountNote": "Shipped liveCount is a monotonically increasing mint / deserialize / remint counter. It does not decrement when an Anchor is dropped.",
+		"clockPolicy": "versusSpec clocks have enforced: false. A slow number under load is unmeasurable, not a regression. Counts are the gate."
+	},
+	"counts": {
+		"encodeSize": {
+			"minBytes": 4,
+			"maxBytes": 6,
+			"p50Bytes": 6,
+			"p95Bytes": 6,
+			"count": 1000
+		},
+		"encodeSizeCell": {
+			"minBytes": 4,
+			"maxBytes": 6,
+			"p50Bytes": 6,
+			"p95Bytes": 6,
+			"count": 1000
+		},
+		"resolve70k": {
+			"resolveCount": 1000,
+			"nullCount": 0,
+			"charCount": 70000
+		},
+		"resolve200Blocks": {
+			"resolveCount": 200,
+			"nullCount": 0,
+			"blockCount": 200
+		},
+		"resolveCell70k": {
+			"resolveCount": 1000,
+			"nullCount": 0,
+			"charCount": 70000,
+			"wrongTypeCount": 0
+		},
+		"resolve200Cells": {
+			"resolveCount": 200,
+			"nullCount": 0,
+			"cellCount": 200,
+			"wrongTypeCount": 0
+		},
+		"splitFollow": {
+			"stuckCount": 2,
+			"followedCount": 2,
+			"v2MismatchCount": 2
+		},
+		"cellInBlockEdit": {
+			"insertOnCell": 1,
+			"deleteOnCell": 1,
+			"tableHasContent": 0
+		}
+	},
+	"timings": {
+		"measurable": true,
+		"reason": "loadavg1 4.89 on 14 CPUs; attributed as raw Yjs clientID 0, not adapter.resolveRelativePosition",
+		"loadavg1": 4.88525390625,
+		"cpuCount": 14,
+		"mintUsPerCall": 0.3908545000000032,
+		"resolveUsPerCall": 0.1495209999999929,
+		"resolve200UsPerCall": 0.1923749999999842,
+		"floorUsPerCall": 0.023104000000003566
+	},
+	"versusSpec": {
+		"anchors.encode-size-1000.encodeCount": {
+			"budget": 1000,
+			"measured": 1000,
+			"blown": false,
+			"enforced": true,
+			"unit": "count"
+		},
+		"anchors.encode-size-1000.minBytes": {
+			"budget": 4,
+			"measured": 4,
+			"blown": false,
+			"enforced": true,
+			"unit": "bytes"
+		},
+		"anchors.encode-size-1000.p50Bytes": {
+			"budget": 6,
+			"measured": 6,
+			"blown": false,
+			"enforced": true,
+			"unit": "bytes"
+		},
+		"anchors.encode-size-1000.p95Bytes": {
+			"budget": 6,
+			"measured": 6,
+			"blown": false,
+			"enforced": true,
+			"unit": "bytes"
+		},
+		"anchors.encode-size-1000.maxBytes": {
+			"budget": 6,
+			"measured": 6,
+			"blown": false,
+			"enforced": true,
+			"unit": "bytes"
+		},
+		"anchors.encode-size-cell-1000.encodeCount": {
+			"budget": 1000,
+			"measured": 1000,
+			"blown": false,
+			"enforced": true,
+			"unit": "count"
+		},
+		"anchors.encode-size-cell-1000.minBytes": {
+			"budget": 4,
+			"measured": 4,
+			"blown": false,
+			"enforced": true,
+			"unit": "bytes"
+		},
+		"anchors.encode-size-cell-1000.maxBytes": {
+			"budget": 6,
+			"measured": 6,
+			"blown": false,
+			"enforced": true,
+			"unit": "bytes"
+		},
+		"anchors.resolve-70k-1000.resolveCount": {
+			"budget": 1000,
+			"measured": 1000,
+			"blown": false,
+			"enforced": true,
+			"unit": "count"
+		},
+		"anchors.resolve-70k-1000.nullCount": {
+			"budget": 0,
+			"measured": 0,
+			"blown": false,
+			"enforced": true,
+			"unit": "count"
+		},
+		"anchors.resolve-200-blocks.resolveCount": {
+			"budget": 200,
+			"measured": 200,
+			"blown": false,
+			"enforced": true,
+			"unit": "count"
+		},
+		"anchors.resolve-200-blocks.nullCount": {
+			"budget": 0,
+			"measured": 0,
+			"blown": false,
+			"enforced": true,
+			"unit": "count"
+		},
+		"anchors.resolve-cell-70k-1000.resolveCount": {
+			"budget": 1000,
+			"measured": 1000,
+			"blown": false,
+			"enforced": true,
+			"unit": "count"
+		},
+		"anchors.resolve-cell-70k-1000.wrongTypeCount": {
+			"budget": 0,
+			"measured": 0,
+			"blown": false,
+			"enforced": true,
+			"unit": "count"
+		},
+		"anchors.resolve-200-cells.resolveCount": {
+			"budget": 200,
+			"measured": 200,
+			"blown": false,
+			"enforced": true,
+			"unit": "count"
+		},
+		"anchors.resolve-200-cells.wrongTypeCount": {
+			"budget": 0,
+			"measured": 0,
+			"blown": false,
+			"enforced": true,
+			"unit": "count"
+		},
+		"anchors.split-follow.stuckCount": {
+			"budget": 2,
+			"measured": 2,
+			"blown": false,
+			"enforced": true,
+			"unit": "count"
+		},
+		"anchors.cell-in-block-edit.insertOnCell": {
+			"budget": 1,
+			"measured": 1,
+			"blown": false,
+			"enforced": true,
+			"unit": "count"
+		},
+		"anchors.cell-in-block-edit.deleteOnCell": {
+			"budget": 1,
+			"measured": 1,
+			"blown": false,
+			"enforced": true,
+			"unit": "count"
+		},
+		"anchors.cell-in-block-edit.tableHasContent": {
+			"budget": 0,
+			"measured": 0,
+			"blown": false,
+			"enforced": true,
+			"unit": "count"
+		},
+		"pg1.mintP95Us": {
+			"budget": 5,
+			"measured": 0.390855,
+			"blown": false,
+			"enforced": false,
+			"unit": "us"
+		},
+		"pg1.resolveColdP95Ms": {
+			"budget": 1,
+			"measured": 0.149521,
+			"blown": false,
+			"enforced": false,
+			"unit": "ms"
+		},
+		"pg1.resolveCachedP95Us": {
+			"budget": 50,
+			"measured": -1,
+			"blown": true,
+			"enforced": false,
+			"unit": "us"
+		},
+		"pg1.repairP95Ms": {
+			"budget": 0.5,
+			"measured": -1,
+			"blown": true,
+			"enforced": false,
+			"unit": "ms"
+		},
+		"pg1.phase6DeltaP95Ms": {
+			"budget": 0.1,
+			"measured": -1,
+			"blown": true,
+			"enforced": false,
+			"unit": "ms"
+		}
+	}
+}

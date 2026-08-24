@@ -23,6 +23,7 @@ const widget = defineBlock("widget", {
 		height: prop.number().min(10).max(500),
 		level: prop.enum([1, 2, 3]),
 		title: prop.string(),
+		columns: prop.array(prop.number()).optional(),
 	},
 	content: "none",
 });
@@ -84,6 +85,23 @@ describe("DUR5 validateProps at apply", () => {
 				value: 99,
 				fallback: 1,
 			}),
+		]);
+	});
+
+	it("DUR5: a valid array prop is left alone and emits no diagnostic", () => {
+		for (const columns of [[], [100, 200]]) {
+			const result = validateOpProps(widget, { columns });
+
+			expect(result.props).toEqual({ columns });
+			expect(result.diagnostics).toEqual([]);
+		}
+	});
+
+	it("DUR5: an invalid array prop still emits prop-invalid", () => {
+		const result = validateOpProps(widget, { columns: "not-an-array" });
+
+		expect(result.diagnostics).toEqual([
+			expect.objectContaining({ code: "prop-invalid", prop: "columns" }),
 		]);
 	});
 
@@ -184,7 +202,7 @@ describe("DUR5 validateProps at apply", () => {
 
 			editor.apply([
 				{
-					type: "update-block",
+					type: "set-props",
 					blockId: "w1",
 					props: { height: 999, theme: "dark" },
 				},
@@ -224,7 +242,7 @@ describe("DUR5 validateProps at apply", () => {
 
 		editor.apply([
 			{
-				type: "update-block",
+				type: "set-props",
 				blockId: "w1",
 				props: { level: 99 },
 			},

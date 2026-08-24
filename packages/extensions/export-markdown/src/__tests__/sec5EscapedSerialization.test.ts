@@ -41,10 +41,11 @@ describe("SEC5 markdown serialization", () => {
         position: "last",
       },
       {
-        type: "insert-text",
+        type: "splice-text",
         blockId: "b1",
-        offset: 0,
-        text: `<script>alert("xss")</script>`,
+        from: 0,
+				to: 0,
+				insert: `<script>alert("xss")</script>`,
       },
     ]);
 
@@ -65,10 +66,11 @@ describe("SEC5 markdown serialization", () => {
         position: "last",
       },
       {
-        type: "insert-text",
+        type: "splice-text",
         blockId: "b1",
-        offset: 0,
-        text: MARKDOWN_SAFE_HOSTILE_TEXT,
+        from: 0,
+				to: 0,
+				insert: MARKDOWN_SAFE_HOSTILE_TEXT,
       },
     ]);
 

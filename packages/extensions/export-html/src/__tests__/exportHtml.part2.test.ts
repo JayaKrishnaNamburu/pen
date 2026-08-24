@@ -1,11 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { createEditor } from "@input/pen-core";
-import type { DocumentOp } from "@input/pen-types";
 import { htmlExporter } from "../exporter";
 import { defaultSchema } from "@input/pen-schema-default";
-
-type InsertTableCellTextOp = Extract<DocumentOp, { type: "insert-table-cell-text" }>;
-type FormatTableCellTextOp = Extract<DocumentOp, { type: "format-table-cell-text" }>;
 
 const noDefaultExtensionsPreset = {
   resolve() {
@@ -66,35 +62,33 @@ describe("@input/pen-export-html", () => {
       },
       [
         {
-          type: "insert-table-cell-text",
+          type: "splice-text",
           blockId: "t3",
-          row: 0,
-          col: 0,
-          offset: 0,
-          text: "ab",
-        } as InsertTableCellTextOp,
+          cell: { row: 0, col: 0 },
+          from: 0,
+          to: 0,
+          insert: "ab",
+        },
         {
-          type: "format-table-cell-text",
+          type: "format-text",
           blockId: "t3",
-          row: 0,
-          col: 0,
-          offset: 0,
-          length: 1,
+          cell: { row: 0, col: 0 },
+          from: 0,
+          to: 1,
           marks: {
             suggestion: { id: "cell-insert", action: "insert" },
           },
-        } as FormatTableCellTextOp,
+        },
         {
-          type: "format-table-cell-text",
+          type: "format-text",
           blockId: "t3",
-          row: 0,
-          col: 0,
-          offset: 1,
-          length: 1,
+          cell: { row: 0, col: 0 },
+          from: 1,
+          to: 2,
           marks: {
             suggestion: { id: "cell-delete", action: "delete" },
           },
-        } as FormatTableCellTextOp,
+        },
       ],
     );
 
@@ -124,13 +118,13 @@ describe("@input/pen-export-html", () => {
           position: "last",
         },
         {
-          type: "insert-table-cell-text",
+          type: "splice-text",
           blockId: "t1",
-          row: 0,
-          col: 0,
-          offset: 0,
-          text: "Alice",
-        } as InsertTableCellTextOp,
+          cell: { row: 0, col: 0 },
+          from: 0,
+          to: 0,
+          insert: "Alice",
+        },
         {
           type: "insert-block",
           blockId: "sub-1",

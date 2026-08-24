@@ -40,7 +40,9 @@ describe("AIB3 hostile agentic turn", () => {
 
 		const seedId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId: seedId, offset: 0, text: "seed" }],
+			[{ type: "splice-text", blockId: seedId, from: 0,
+				to: 0,
+				insert: "seed" }],
 			{ origin: "user" },
 		);
 

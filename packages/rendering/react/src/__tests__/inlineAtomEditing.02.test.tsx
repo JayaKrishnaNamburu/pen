@@ -14,7 +14,6 @@ import {
 	getInlineAtomElementData,
 	getLogicalTextContent,
 	getLogicalNodeLength,
-	INLINE_ATOM_CARET_BOUNDARY_TEXT,
 	INLINE_ATOM_REPLACEMENT_TEXT,
 	findLogicalDOMPoint,
 	isInlineAtomCaretBoundaryNode,
@@ -62,15 +61,22 @@ function createPresetEditor() {
 function seedInlineAtomDocument(editor: ReturnType<typeof createPresetEditor>) {
 	const blockId = editor.firstBlock()!.id;
 	editor.apply([
-		{ type: "insert-text", blockId, offset: 0, text: "A" },
+		{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "A" },
 		{
-			type: "insert-inline-node",
+			type: "splice-text",
 			blockId,
-			offset: 1,
-			nodeType: "mention",
-			props: { id: "user-1", label: "Ada" },
+			from: 1,
+			to: 1,
+			insert: {
+				nodeType: "mention",
+				props: { id: "user-1", label: "Ada" },
+			},
 		},
-		{ type: "insert-text", blockId, offset: 2, text: "B" },
+		{ type: "splice-text", blockId, from: 2,
+				to: 2,
+				insert: "B" },
 	]);
 	return blockId;
 }
@@ -227,7 +233,7 @@ describe("Pen inline atom editing", () => {
 		}
 	});
 
-	it("projects caret selections into inline atom boundary text nodes", () => {
+	it("projects caret selections onto inline atom caret boundaries", () => {
 		const editor = createPresetEditor();
 		const blockId = seedInlineAtomDocument(editor);
 		const block = editor.getBlock(blockId)!;
@@ -251,14 +257,11 @@ describe("Pen inline atom editing", () => {
 			expect(isInlineAtomHostNode(host)).toBe(true);
 
 			const afterAtomPoint = findLogicalDOMPoint(inlineElement, 2);
-			expect(
-				isInlineAtomCaretBoundaryNode(
-					afterAtomPoint.node.parentElement,
-				),
-			).toBe(true);
-			expect(afterAtomPoint.node.textContent).toBe(
-				INLINE_ATOM_CARET_BOUNDARY_TEXT,
+			expect(isInlineAtomCaretBoundaryNode(afterAtomPoint.node)).toBe(
+				true,
 			);
+			expect(afterAtomPoint.offset).toBe(0);
+			expect(afterAtomPoint.node.textContent).toBe("");
 			expect(getLogicalNodeLength(afterAtomPoint.node)).toBe(0);
 			expect(getLogicalTextContent(inlineElement)).toBe(
 				`A${INLINE_ATOM_REPLACEMENT_TEXT}B`,

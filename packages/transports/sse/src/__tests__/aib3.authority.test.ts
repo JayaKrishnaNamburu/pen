@@ -7,7 +7,7 @@ import type { SSEEvent } from "../types";
 const HOSTILE_TEXT = "hostile-ungranted-write";
 
 function insertTextOp(blockId: string, text: string): DocumentOp {
-	return { type: "insert-text", blockId, offset: 0, text };
+	return { type: "splice-text", blockId, from: 0, to: 0, insert: text };
 }
 
 function createRecordingEditor() {

@@ -40,7 +40,7 @@ Rules for agents:
 - Keep Pen headless: core and extensions must work without a DOM (`createHeadlessEditor`). Only `@input/pen-dom` may touch browser globals.
 - Prefer non-fatal behavior in runtime paths: drop invalid input with a `diagnostic` event rather than throwing from hooks, observers, or extension code.
 - Normalization is incremental and idempotent; repeated passes must not produce new changes.
-- The `\u200B` empty-block sentinel is an implementation detail; do not add new code that tests for it (see `spec-v2/03-selection.md` §2 for the two sanctioned seams).
+- The `\u200B` empty-block sentinel is removed from storage (v3 Wave 5, 2026-08-24; `spec-v3/04-empty-blocks.md` EM1–EM8). Do not add new code that tests for it. The two-seam confinement in `spec-v2/03-selection.md` §2 was the interim v2 position and is retired (I11 → I14).
 - Selection code is under redesign; do not add `requestAnimationFrame`/`setTimeout` retries, suppression flags, or intent counters to selection paths (`spec-v2/03-selection.md` S4). If a selection bug cannot be fixed without one, stop and surface it.
 - Follow `.cursor/rules/*.mdc` for import style (extensionless), extension resilience, and headless React primitive conventions.
 

@@ -169,10 +169,11 @@ describe("@input/pen-undo commit event one-event property (Wave 2)", () => {
 				editor.apply(
 					[
 						{
-							type: "insert-text",
+							type: "splice-text",
 							blockId,
-							offset: rng.int(length + 1),
-							text: rng.pick(["a", "bb", " "]),
+							from: rng.int(length + 1),
+				to: rng.int(length + 1),
+				insert: rng.pick(["a", "bb", " "]),
 						},
 					],
 					{ origin: "user" },

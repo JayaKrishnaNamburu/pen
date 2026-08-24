@@ -16,7 +16,7 @@ Pen does not provide a transport, a provider, a server, rooms, or presence infra
 
 - **Auth.** There is no session, token, or trusted peer in the library. A peer that can write to the Yjs room can write to the whole document. Access control lives in the host's transport.
 - **Persistence.** Pen does not store documents, manage rooms, or replay history. Offline editing is Yjs's guarantee: an offline client's edits converge when its provider reconnects. Pen adds no queue, backoff, or conflict UI.
-- **Permissions.** `pen.readOnly` makes a local editor decline local edits. It is a UI mode, not a security boundary, and it stops nothing arriving over the wire.
+- **Permissions.** Pen does not enforce per-user or per-block permissions. `pen.ariaReadOnly` sets `aria-readonly` only. Local typing stops when the host passes the `readonly` prop. Neither is a security boundary: both stop nothing arriving over the wire, and neither stops `editor.apply`.
 - **Presence-payload policy.** Awareness contents are host-provided and visible to every peer. An email or internal id put in presence is broadcast. Pen does not authenticate those strings.
 - **Schema agreement.** Pen does not merge document schemas between peers. Two clients on different registries against one document is a host deployment concern.
 

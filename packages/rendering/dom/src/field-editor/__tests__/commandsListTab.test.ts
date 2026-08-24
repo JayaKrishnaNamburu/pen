@@ -37,10 +37,7 @@ describe("applyListTabBehavior", () => {
 
 		editor.apply([
 			{
-				type: "convert-block",
-				blockId: firstBlockId,
-				newType: "bulletListItem",
-			},
+				type: "set-props", blockId: firstBlockId, props: { type: "bulletListItem" }},
 			{
 				type: "insert-block",
 				blockId: secondBlockId,
@@ -49,10 +46,11 @@ describe("applyListTabBehavior", () => {
 				position: { after: firstBlockId },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: secondBlockId,
-				offset: 0,
-				text: "child",
+				from: 0,
+				to: 0,
+				insert: "child",
 			},
 		]);
 

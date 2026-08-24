@@ -3,25 +3,8 @@ import type {
 	OpOrigin,
 	CRDTEvent,
 	InsertBlockOp,
-	UpdateBlockOp,
-	DeleteBlockOp,
-	MoveBlockOp,
-	ConvertBlockOp,
-	SplitBlockOp,
-	MergeBlocksOp,
-	InsertTextOp,
-	DeleteTextOp,
-	FormatTextOp,
-	ReplaceTextOp,
-	InsertInlineNodeOp,
-	RemoveInlineNodeOp,
-	UpdateLayoutOp,
-	SetMetaOp,
-	CreateAppOp,
-	UpdateAppOp,
-	DeleteAppOp,
-	SetSelectionOp,
-	UpdateTableColumnsOp,
+	SetPropsOp,
+	StructuralOriginTag,
 	CRDTArray,
 } from "@input/pen-types";
 import { generateId } from "@input/pen-types";
@@ -48,6 +31,7 @@ import {
 import { resolveCommitSource } from "./commitEvent";
 import { snapshotOrigin } from "./origin";
 import { rejectedOwnPropKeys } from "./rejectedOwnKeys";
+import { tagStructuralOrigin } from "./applyBlockOps";
 
 type ApplyPipelineRuntime = any;
 type MutableMap = CRDTUnknownMap & { delete(key: string): void };
@@ -63,7 +47,12 @@ interface CRDTText {
 	toString(): string;
 	readonly length: number;
 }
-export function applyInternal(pipeline: ApplyPipeline, ops: DocumentOp[], origin: OpOrigin): void {
+export function applyInternal(
+	pipeline: ApplyPipeline,
+	ops: DocumentOp[],
+	origin: OpOrigin,
+	structural?: StructuralOriginTag,
+): void {
 	const self = pipeline as ApplyPipelineRuntime;
 	if (self._applying) {
 		if (self._applyTurnCount >= APPLY_STORM_QUEUE_LIMIT) {
@@ -71,7 +60,7 @@ export function applyInternal(pipeline: ApplyPipeline, ops: DocumentOp[], origin
 			return;
 		}
 		self._applyTurnCount += 1;
-		self._queue.push({ ops, origin });
+		self._queue.push({ ops, origin, structural });
 		return;
 	}
 
@@ -79,10 +68,14 @@ export function applyInternal(pipeline: ApplyPipeline, ops: DocumentOp[], origin
 	self._applyTurnCount = 1;
 	self._applyStormEmitted = false;
 	try {
-		self._executeOps(ops, origin);
+		self._executeOps(ops, origin, structural);
 		while (self._queue.length > 0) {
-			const { ops: queued, origin: queuedOrigin } = self._queue.shift()!;
-			self._executeOps(queued, queuedOrigin);
+			const {
+				ops: queued,
+				origin: queuedOrigin,
+				structural: queuedStructural,
+			} = self._queue.shift()!;
+			self._executeOps(queued, queuedOrigin, queuedStructural);
 		}
 	} finally {
 		self._applying = false;
@@ -193,14 +186,19 @@ function readStoredBlockType(
 
 function rewriteBlockOpProps(
 	pipeline: ApplyPipeline,
-	op: InsertBlockOp | UpdateBlockOp,
+	op: InsertBlockOp | SetPropsOp,
 	pendingBlockTypes: Map<string, string>,
-): InsertBlockOp | UpdateBlockOp {
+): InsertBlockOp | SetPropsOp {
 	const self = pipeline as ApplyPipelineRuntime;
+	const conversionType =
+		op.type === "set-props" && typeof op.props.type === "string"
+			? op.props.type
+			: null;
 	const blockType =
 		op.type === "insert-block"
 			? op.blockType
-			: (pendingBlockTypes.get(op.blockId) ??
+			: (conversionType ??
+				pendingBlockTypes.get(op.blockId) ??
 				readStoredBlockType(pipeline, op.blockId));
 	if (!blockType) {
 		return op;
@@ -209,17 +207,57 @@ function rewriteBlockOpProps(
 	if (!schema) {
 		return op;
 	}
-	const result = validateOpProps(schema, op.props);
+	const propsForValidation: Record<string, unknown> = {};
+	for (const [key, value] of Object.entries(op.props)) {
+		if (key === "type" || key === "layout" || key === "columns") {
+			continue;
+		}
+		if (value === null) {
+			continue;
+		}
+		propsForValidation[key] = value;
+	}
+	const result = validateOpProps(schema, propsForValidation);
 	for (const diagnostic of result.diagnostics) {
 		emitPipelineDiagnostic(pipeline, {
 			...diagnostic,
 			op,
 		});
 	}
-	if (result.props === op.props) {
-		return op;
+	if (op.type === "insert-block") {
+		if (result.props === op.props) {
+			return op;
+		}
+		return { ...op, props: result.props };
 	}
-	return { ...op, props: result.props };
+	const nextProps: Record<string, unknown | null> = { ...op.props };
+	for (const [key, value] of Object.entries(result.props)) {
+		nextProps[key] = value;
+	}
+	if (conversionType) {
+		const allowed = new Set(Object.keys(schema.propSchema ?? {}));
+		for (const key of Object.keys(nextProps)) {
+			if (
+				key === "type" ||
+				key === "layout" ||
+				key === "columns" ||
+				nextProps[key] === null
+			) {
+				continue;
+			}
+			if (!allowed.has(key)) {
+				delete nextProps[key];
+				emitPipelineDiagnostic(pipeline, {
+					code: "prop-invalid",
+					level: "warn",
+					source: "schema",
+					message: `Dropped incompatible prop "${key}" for type "${conversionType}"`,
+					op,
+				});
+			}
+		}
+	}
+	return { ...op, props: nextProps };
 }
 
 export function transformOpsThroughHooks(
@@ -352,115 +390,65 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
+function isInlineInsert(value: unknown): boolean {
+	if (typeof value === "string") {
+		return true;
+	}
+	if (!isRecord(value)) {
+		return false;
+	}
+	return isNonEmptyString(value.nodeType) && isRecord(value.props);
+}
+
 function malformedOpMessage(op: DocumentOp): string | null {
 	switch (op.type) {
-		case "insert-text":
+		case "splice-text": {
 			if (!isNonEmptyString(op.blockId)) {
-				return "insert-text requires a non-empty blockId";
+				return "splice-text requires a non-empty blockId";
 			}
-			if (!isNonNegativeInt(op.offset)) {
-				return "insert-text requires a non-negative integer offset";
+			if (!isNonNegativeInt(op.from)) {
+				return "splice-text requires a non-negative integer from";
 			}
-			if (typeof op.text !== "string") {
-				return "insert-text requires string text";
+			if (!isNonNegativeInt(op.to)) {
+				return "splice-text requires a non-negative integer to";
+			}
+			if (op.from > op.to) {
+				return "splice-text requires from <= to";
+			}
+			const items = Array.isArray(op.insert) ? op.insert : [op.insert];
+			if (!items.every(isInlineInsert)) {
+				return "splice-text requires string or atom insert";
+			}
+			if (op.cell) {
+				if (!isNonNegativeInt(op.cell.row) || !isNonNegativeInt(op.cell.col)) {
+					return "splice-text cell requires non-negative integer row and col";
+				}
 			}
 			return null;
-		case "delete-text":
-			if (!isNonEmptyString(op.blockId)) {
-				return "delete-text requires a non-empty blockId";
-			}
-			if (!isNonNegativeInt(op.offset)) {
-				return "delete-text requires a non-negative integer offset";
-			}
-			if (!isNonNegativeInt(op.length)) {
-				return "delete-text requires a non-negative integer length";
-			}
-			return null;
-		case "format-text":
+		}
+		case "format-text": {
 			if (!isNonEmptyString(op.blockId)) {
 				return "format-text requires a non-empty blockId";
 			}
-			if (!isNonNegativeInt(op.offset)) {
-				return "format-text requires a non-negative integer offset";
+			if (!isNonNegativeInt(op.from)) {
+				return "format-text requires a non-negative integer from";
 			}
-			if (!isNonNegativeInt(op.length)) {
-				return "format-text requires a non-negative integer length";
+			if (!isNonNegativeInt(op.to)) {
+				return "format-text requires a non-negative integer to";
+			}
+			if (op.from > op.to) {
+				return "format-text requires from <= to";
 			}
 			if (!isRecord(op.marks)) {
 				return "format-text requires a marks object";
 			}
-			return null;
-		case "replace-text":
-			if (!isNonEmptyString(op.blockId)) {
-				return "replace-text requires a non-empty blockId";
-			}
-			if (!isNonNegativeInt(op.offset)) {
-				return "replace-text requires a non-negative integer offset";
-			}
-			if (!isNonNegativeInt(op.length)) {
-				return "replace-text requires a non-negative integer length";
-			}
-			if (typeof op.text !== "string") {
-				return "replace-text requires string text";
+			if (op.cell) {
+				if (!isNonNegativeInt(op.cell.row) || !isNonNegativeInt(op.cell.col)) {
+					return "format-text cell requires non-negative integer row and col";
+				}
 			}
 			return null;
-		case "insert-inline-node":
-			if (!isNonEmptyString(op.blockId)) {
-				return "insert-inline-node requires a non-empty blockId";
-			}
-			if (!isNonNegativeInt(op.offset)) {
-				return "insert-inline-node requires a non-negative integer offset";
-			}
-			if (!isNonEmptyString(op.nodeType)) {
-				return "insert-inline-node requires a non-empty nodeType";
-			}
-			return null;
-		case "remove-inline-node":
-			if (!isNonEmptyString(op.blockId)) {
-				return "remove-inline-node requires a non-empty blockId";
-			}
-			if (!isNonNegativeInt(op.offset)) {
-				return "remove-inline-node requires a non-negative integer offset";
-			}
-			return null;
-		case "insert-table-cell-text":
-			if (!isNonEmptyString(op.blockId)) {
-				return "insert-table-cell-text requires a non-empty blockId";
-			}
-			if (!isNonNegativeInt(op.row)) {
-				return "insert-table-cell-text requires a non-negative integer row";
-			}
-			if (!isNonNegativeInt(op.col)) {
-				return "insert-table-cell-text requires a non-negative integer col";
-			}
-			if (!isNonNegativeInt(op.offset)) {
-				return "insert-table-cell-text requires a non-negative integer offset";
-			}
-			if (typeof op.text !== "string") {
-				return "insert-table-cell-text requires string text";
-			}
-			return null;
-		case "delete-table-cell-text":
-		case "format-table-cell-text":
-			if (!isNonEmptyString(op.blockId)) {
-				return `${op.type} requires a non-empty blockId`;
-			}
-			if (!isNonNegativeInt(op.row)) {
-				return `${op.type} requires a non-negative integer row`;
-			}
-			if (!isNonNegativeInt(op.col)) {
-				return `${op.type} requires a non-negative integer col`;
-			}
-			if (!isNonNegativeInt(op.offset)) {
-				return `${op.type} requires a non-negative integer offset`;
-			}
-			if (!isNonNegativeInt(op.length)) {
-				return `${op.type} requires a non-negative integer length`;
-			}
-			if (op.type === "format-table-cell-text" && !isRecord(op.marks)) {
-				return "format-table-cell-text requires a marks object";
-			}
-			return null;
+		}
 		case "insert-block":
 			if (!isNonEmptyString(op.blockId)) {
 				return "insert-block requires a non-empty blockId";
@@ -469,94 +457,48 @@ function malformedOpMessage(op: DocumentOp): string | null {
 				return "insert-block requires a non-empty blockType";
 			}
 			return null;
-		case "update-block":
 		case "delete-block":
 		case "move-block":
-		case "update-layout":
+		case "set-props":
 		case "set-meta":
 		case "stream-open":
 			if (!isNonEmptyString(op.blockId)) {
 				return `${op.type} requires a non-empty blockId`;
 			}
+			if (op.type === "set-props" && !isRecord(op.props)) {
+				return "set-props requires a props object";
+			}
 			return null;
-		case "convert-block":
+		case "grid": {
 			if (!isNonEmptyString(op.blockId)) {
-				return "convert-block requires a non-empty blockId";
+				return "grid requires a non-empty blockId";
 			}
-			if (!isNonEmptyString(op.newType)) {
-				return "convert-block requires a non-empty newType";
-			}
-			return null;
-		case "split-block":
-			if (!isNonEmptyString(op.blockId)) {
-				return "split-block requires a non-empty blockId";
-			}
-			if (!isNonEmptyString(op.newBlockId)) {
-				return "split-block requires a non-empty newBlockId";
-			}
-			if (!isNonNegativeInt(op.offset)) {
-				return "split-block requires a non-negative integer offset";
+			if (!isRecord(op.change) || typeof op.change.kind !== "string") {
+				return "grid requires a change object";
 			}
 			return null;
-		case "merge-blocks":
-			if (!isNonEmptyString(op.targetBlockId)) {
-				return "merge-blocks requires a non-empty targetBlockId";
+		}
+		case "app": {
+			if (!isRecord(op.change) || typeof op.change.kind !== "string") {
+				return "app requires a change object";
 			}
-			if (!isNonEmptyString(op.sourceBlockId)) {
-				return "merge-blocks requires a non-empty sourceBlockId";
-			}
-			return null;
-		case "set-selection":
-			if (op.selection !== null && !isRecord(op.selection)) {
-				return "set-selection requires a selection object or null";
-			}
-			return null;
-		case "create-app":
-			if (!isNonEmptyString(op.appId)) {
-				return "create-app requires a non-empty appId";
-			}
-			if (!isNonEmptyString(op.appType)) {
-				return "create-app requires a non-empty appType";
-			}
-			return null;
-		case "update-app":
-		case "delete-app":
-			if (!isNonEmptyString(op.appId)) {
-				return `${op.type} requires a non-empty appId`;
+			if (op.change.kind === "create") {
+				if (!isNonEmptyString(op.change.appId)) {
+					return "app create requires a non-empty appId";
+				}
+				if (!isNonEmptyString(op.change.appType)) {
+					return "app create requires a non-empty appType";
+				}
+			} else if (
+				op.change.kind === "update" ||
+				op.change.kind === "delete"
+			) {
+				if (!isNonEmptyString(op.change.appId)) {
+					return `app ${op.change.kind} requires a non-empty appId`;
+				}
 			}
 			return null;
-		case "insert-table-row":
-		case "delete-table-row":
-		case "insert-table-column":
-		case "delete-table-column":
-			if (!isNonEmptyString(op.blockId)) {
-				return `${op.type} requires a non-empty blockId`;
-			}
-			if (!isNonNegativeInt(op.index)) {
-				return `${op.type} requires a non-negative integer index`;
-			}
-			return null;
-		case "merge-table-cells":
-			if (!isNonEmptyString(op.blockId)) {
-				return "merge-table-cells requires a non-empty blockId";
-			}
-			return null;
-		case "split-table-cell":
-			if (!isNonEmptyString(op.blockId)) {
-				return "split-table-cell requires a non-empty blockId";
-			}
-			if (!isNonNegativeInt(op.row)) {
-				return "split-table-cell requires a non-negative integer row";
-			}
-			if (!isNonNegativeInt(op.col)) {
-				return "split-table-cell requires a non-negative integer col";
-			}
-			return null;
-		case "update-table-columns":
-			if (!isNonEmptyString(op.blockId)) {
-				return "update-table-columns requires a non-empty blockId";
-			}
-			return null;
+		}
 		default: {
 			const _exhaustive: never = op;
 			return `unknown op type ${String((_exhaustive as { type?: unknown }).type)}`;
@@ -581,7 +523,12 @@ function emitMalformedOpDiagnostic(
 	});
 }
 
-export function executeOps(pipeline: ApplyPipeline, ops: DocumentOp[], origin: OpOrigin): void {
+export function executeOps(
+	pipeline: ApplyPipeline,
+	ops: DocumentOp[],
+	origin: OpOrigin,
+	structural?: StructuralOriginTag,
+): void {
 	const self = pipeline as ApplyPipelineRuntime;
 	self._commitDiagnostics = [];
 	reportUnknownBlocksInDocument(pipeline);
@@ -613,7 +560,7 @@ for (const op of transformedOps) {
 	}
 
 	const nextOp =
-		op.type === "insert-block" || op.type === "update-block"
+		op.type === "insert-block" || op.type === "set-props"
 			? rewriteBlockOpProps(pipeline, op, pendingBlockTypes)
 			: op;
 
@@ -658,6 +605,9 @@ try {
 	self._adapter.transact(
 		self._crdtDoc,
 		() => {
+			if (structural) {
+				tagStructuralOrigin(pipeline, structural);
+			}
 			for (const op of validatedOps) {
 				try {
 					const affected = self._executeSingleOp(op);
@@ -754,59 +704,50 @@ switch (op.type) {
 		}
 		return true;
 	}
-	case "convert-block": {
-		if (!isRegisteredBlockType(self._registry, op.newType)) {
-			emitPipelineDiagnostic(pipeline, {
-				code: "PEN_APPLY_002",
-				level: "warn",
-				source: "apply",
-				message: `Unknown block type: "${op.newType}"`,
-				op,
-			});
-			return false;
+	case "set-props": {
+		if (typeof op.props.type === "string") {
+			if (!isRegisteredBlockType(self._registry, op.props.type)) {
+				emitPipelineDiagnostic(pipeline, {
+					code: "PEN_APPLY_002",
+					level: "warn",
+					source: "apply",
+					message: `Unknown block type: "${op.props.type}"`,
+					op,
+				});
+				return false;
+			}
 		}
 		return true;
 	}
-	case "insert-inline-node": {
-		const schema = self._registry.resolveInline(op.nodeType);
-		if (!schema || schema.kind !== "node") {
-			emitPipelineDiagnostic(pipeline, {
-				code: "PEN_APPLY_002",
-				level: "warn",
-				source: "apply",
-				message: `Unknown inline node type: "${op.nodeType}"`,
-				op,
-			});
-			return false;
+	case "splice-text": {
+		const items = Array.isArray(op.insert) ? op.insert : [op.insert];
+		if (!items.every(isInlineInsert)) {
+			return true;
+		}
+		for (const item of items) {
+			if (typeof item === "string") {
+				continue;
+			}
+			const schema = self._registry.resolveInline(item.nodeType);
+			if (!schema || schema.kind !== "node") {
+				emitPipelineDiagnostic(pipeline, {
+					code: "PEN_APPLY_002",
+					level: "warn",
+					source: "apply",
+					message: `Unknown inline node type: "${item.nodeType}"`,
+					op,
+				});
+				return false;
+			}
 		}
 		return true;
 	}
-	case "update-block":
+	case "format-text":
 	case "delete-block":
 	case "move-block":
-	case "split-block":
-	case "merge-blocks":
-	case "insert-text":
-	case "delete-text":
-	case "format-text":
-	case "replace-text":
-	case "remove-inline-node":
-	case "update-layout":
-	case "insert-table-row":
-	case "delete-table-row":
-	case "insert-table-column":
-	case "delete-table-column":
-	case "merge-table-cells":
-	case "split-table-cell":
-	case "insert-table-cell-text":
-	case "delete-table-cell-text":
-	case "format-table-cell-text":
-	case "update-table-columns":
 	case "set-meta":
-	case "create-app":
-	case "update-app":
-	case "delete-app":
-	case "set-selection":
+	case "grid":
+	case "app":
 	case "stream-open":
 		return true;
 	default: {
@@ -854,61 +795,30 @@ return blockOrder.length;
 
 export function executeSingleOp(pipeline: ApplyPipeline, op: DocumentOp): string[] {
 	const self = pipeline as ApplyPipelineRuntime;
-switch (op.type) {
-	case "insert-block":
-		return self._insertBlock(op);
-	case "update-block":
-		return self._updateBlock(op);
-	case "delete-block":
-		return self._deleteBlock(op);
-	case "move-block":
-		return self._moveBlock(op);
-	case "convert-block":
-		return self._convertBlock(op);
-	case "split-block":
-		return self._splitBlock(op);
-	case "merge-blocks":
-		return self._mergeBlocks(op);
-	case "insert-text":
-		return self._insertText(op);
-	case "delete-text":
-		return self._deleteText(op);
-	case "format-text":
-		return self._formatText(op);
-	case "replace-text":
-		return self._replaceText(op);
-	case "insert-inline-node":
-		return self._insertInlineNode(op);
-	case "remove-inline-node":
-		return self._removeInlineNode(op);
-	case "set-selection":
-		return self._setSelection(op);
-	case "update-layout":
-		return self._updateLayout(op);
-	case "create-app":
-		return self._createApp(op);
-	case "update-app":
-		return self._updateApp(op);
-	case "delete-app":
-		return self._deleteApp(op);
-	case "insert-table-row":
-	case "delete-table-row":
-	case "insert-table-column":
-	case "delete-table-column":
-	case "merge-table-cells":
-	case "split-table-cell":
-	case "insert-table-cell-text":
-	case "delete-table-cell-text":
-	case "format-table-cell-text":
-	case "update-table-columns":
-		return self._tableOp(op);
-	case "set-meta":
-		return self._setMeta(op);
-	case "stream-open":
-		return [];
-	default: {
-		const _exhaustive: never = op;
-		return _exhaustive;
+	switch (op.type) {
+		case "insert-block":
+			return self._insertBlock(op);
+		case "delete-block":
+			return self._deleteBlock(op);
+		case "move-block":
+			return self._moveBlock(op);
+		case "set-props":
+			return self._setProps(op);
+		case "splice-text":
+			return self._spliceText(op);
+		case "format-text":
+			return self._formatText(op);
+		case "set-meta":
+			return self._setMeta(op);
+		case "grid":
+			return self._tableOp(op);
+		case "app":
+			return self._applyApp(op);
+		case "stream-open":
+			return [];
+		default: {
+			const _exhaustive: never = op;
+			return _exhaustive;
+		}
 	}
-}
 }

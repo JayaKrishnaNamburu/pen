@@ -180,10 +180,11 @@ describe("SCALE1 envelope ladder", () => {
 		collab.editorA.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "PEER-A",
+					from: 0,
+				to: 0,
+				insert: "PEER-A",
 				},
 			],
 			{ origin: "user" },
@@ -191,10 +192,11 @@ describe("SCALE1 envelope ladder", () => {
 		collab.editorB.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "PEER-B",
+					from: 0,
+				to: 0,
+				insert: "PEER-B",
 				},
 			],
 			{ origin: "user" },
@@ -223,10 +225,11 @@ describe("SCALE1 envelope ladder", () => {
 		collab.editorB.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: envelopeBlockId(0),
-					offset: 0,
-					text: "PEER-A-OBSERVED",
+					from: 0,
+				to: 0,
+				insert: "PEER-A-OBSERVED",
 				},
 			],
 			{ origin: "user" },

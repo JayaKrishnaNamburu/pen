@@ -2,7 +2,7 @@
 // DOCUMENT_OPS_TOOL_RUNTIME_SLOT on @input/pen-document-ops.
 export { getAIToolRuntime } from "./toolServer";
 export { AIToolContextImpl, AIToolRuntimeImpl } from "./toolServer";
-export { toAIToolDescriptor, listAITools } from "./descriptors";
+export { listAITools } from "./descriptors";
 export { executeAITool, openAIToolCall } from "./execution";
 export type { OpenAIToolCall } from "./execution";
 export {
@@ -23,7 +23,6 @@ export {
 	isDestructiveAITool,
 	isMutatingAITool,
 } from "./authority";
-export { collectToolExecutionOutput as collectAIToolOutput } from "@input/pen-core";
 export type { AIToolDescriptor, AIToolRuntime } from "./types";
 export type {
 	AIToolAuthorityReason,

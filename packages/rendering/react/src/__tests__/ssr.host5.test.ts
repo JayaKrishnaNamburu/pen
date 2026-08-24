@@ -36,10 +36,11 @@ function fillDocument(editor: ReturnType<typeof createTestEditor>) {
 	}
 	editor.apply([
 		{
-			type: "insert-text",
+			type: "splice-text",
 			blockId,
-			offset: 0,
-			text: MARKER_TEXT,
+			from: 0,
+				to: 0,
+				insert: MARKER_TEXT,
 		},
 	]);
 }

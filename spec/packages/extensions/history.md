@@ -12,10 +12,9 @@ This package adds document-history capabilities around the editor without replac
 
 - Export map: `.`
 - Primary extension entrypoint: `historyExtension()`
-- Controller slot and accessors such as `HISTORY_CONTROLLER_SLOT` and `getHistoryController()`
-- Runtime controller: `HistoryControllerImpl`
-- Snapshot primitives such as `SnapshotManager` and `AutoSnapshotScheduler`
-- Attribution helpers such as `getCharacterAttribution()`, `buildBlameRanges()`, and `resolveHistoryAuthor()`
+- Controller lookup: `getHistoryController()` — the slot key `HISTORY_CONTROLLER_SLOT` lives on `@input/pen-types`
+- `HistoryControllerImpl`, `SnapshotManager`, and `AutoSnapshotScheduler` are runtime internals; they are reached through `historyExtension()` / `getHistoryController()`, not the barrel
+- Attribution helpers such as `getCharacterAttribution()` and `buildBlameRanges()`
 - Public history types covering config, controller state, authors, blame ranges, and auto-snapshot options
 - Workspace scripts: `build`, `clean`, `test`, `typecheck`
 

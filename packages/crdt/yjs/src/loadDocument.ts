@@ -39,6 +39,7 @@ export type DocumentLoadState = "ok" | "repaired";
 export interface DocumentLoadReport {
 	readonly state: DocumentLoadState;
 	readonly diagnostics: readonly CRDTDiagnostic[];
+	readonly strippedSentinelCount?: number;
 }
 
 export type RecoveredMethod = "repair";
@@ -69,6 +70,24 @@ export function getDocumentLoadReport(
 		return undefined;
 	}
 	return loadReports.get(ydoc);
+}
+
+export function recordDocumentLoadMigration(
+	doc: CRDTDocument,
+	fields: { strippedSentinelCount: number },
+): void {
+	const ydoc = (doc as YjsCRDTDocument).ydoc;
+	if (!(ydoc instanceof Y.Doc)) {
+		return;
+	}
+	const previous = loadReports.get(ydoc) ?? {
+		state: "ok" as const,
+		diagnostics: [],
+	};
+	loadReports.set(ydoc, {
+		...previous,
+		strippedSentinelCount: fields.strippedSentinelCount,
+	});
 }
 
 function peekSharedKind(ydoc: Y.Doc, name: string): SharedKind {

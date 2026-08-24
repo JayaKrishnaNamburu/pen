@@ -21,20 +21,20 @@ describe("change summaries — two-cell collision", () => {
 
 		editor.apply([
 			{
-				type: "insert-table-cell-text",
+				type: "splice-text",
 				blockId: "two-cell-table",
-				row: 0,
-				col: 0,
-				offset: 0,
-				text: NORTH,
+				cell: { row: 0, col: 0 },
+			from: 0,
+			to: 0,
+			insert: NORTH,
 			},
 			{
-				type: "insert-table-cell-text",
+				type: "splice-text",
 				blockId: "two-cell-table",
-				row: 1,
-				col: 1,
-				offset: 0,
-				text: SOUTH,
+				cell: { row: 1, col: 1 },
+			from: 0,
+			to: 0,
+			insert: SOUTH,
 			},
 		]);
 
@@ -44,7 +44,7 @@ describe("change summaries — two-cell collision", () => {
 
 		const summary = editor.lastChangeSummary;
 		expect(summary).not.toBeNull();
-		const insertLengths = (summary?.text ?? []).flatMap((change) =>
+		const insertLengths = (summary?.blockText ?? []).flatMap((change) =>
 			change.splices.map((splice) => splice.insertLength),
 		);
 		expect(insertLengths).toContain(NORTH.length);

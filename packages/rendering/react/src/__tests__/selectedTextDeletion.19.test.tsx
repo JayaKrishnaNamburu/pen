@@ -36,7 +36,9 @@ describe("@input/pen-react selected text deletion", () => {
 			const blockId = editor.firstBlock()!.id;
 
 			editor.apply([
-				{ type: "insert-text", blockId, offset: 0, text: "Hello" },
+				{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello" },
 			]);
 
 			const container = document.createElement("div");
@@ -152,7 +154,9 @@ describe("@input/pen-react selected text deletion", () => {
 			const blockId = editor.firstBlock()!.id;
 
 			editor.apply([
-				{ type: "insert-text", blockId, offset: 0, text: "Hello" },
+				{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello" },
 			]);
 
 			const container = document.createElement("div");

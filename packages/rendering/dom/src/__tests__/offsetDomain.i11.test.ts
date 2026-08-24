@@ -1,4 +1,3 @@
-import { EMPTY_BLOCK_SENTINEL } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 import {
 	logicalLength,
@@ -14,7 +13,7 @@ const ALPHABET = [
 	"👍",
 	"日",
 	"\n",
-	EMPTY_BLOCK_SENTINEL,
+	"\u200B",
 ] as const;
 
 function mulberry32(seed: number): () => number {
@@ -32,9 +31,6 @@ function randomStorage(rng: () => number): string {
 	const kind = rng();
 	if (kind < 0.1) {
 		return "";
-	}
-	if (kind < 0.25) {
-		return EMPTY_BLOCK_SENTINEL;
 	}
 	const length = Math.floor(rng() * 16);
 	let text = "";
@@ -58,27 +54,16 @@ function randomOffset(rng: () => number, text: string): number {
 	return Math.floor(rng() * (text.length + 1));
 }
 
-function expectedLogicalLength(text: string): number {
-	return text === EMPTY_BLOCK_SENTINEL ? 0 : text.length;
-}
-
 describe("offsetDomain I11 properties", () => {
-	it("I11: U+200B not in logical domain", () => {
+	it("I11 EM5: empty string is length 0; mid-string ZWSP is real", () => {
+		expect(logicalLength("")).toBe(0);
+		expect(logicalLength("a\u200Bb")).toBe(3);
 		const rng = mulberry32(0x49313100);
 		for (let i = 0; i < TRIALS; i++) {
 			const text = randomStorage(rng);
-			const logicalEnd = expectedLogicalLength(text);
+			const logicalEnd = text.length;
 
 			expect(logicalLength(text)).toBe(logicalEnd);
-
-			if (text === EMPTY_BLOCK_SENTINEL) {
-				expect(logicalEnd).toBe(0);
-				for (let dom = 0; dom <= text.length; dom++) {
-					expect(toLogicalOffset(dom, text)).toBe(0);
-				}
-				expect(toDomOffset(0, text)).toBe(0);
-				expect(toDomOffset(1, text)).toBe(0);
-			}
 
 			const offset = randomOffset(rng, text);
 			const logical = toLogicalOffset(offset, text);
@@ -90,23 +75,7 @@ describe("offsetDomain I11 properties", () => {
 		}
 	});
 
-	it("I11: U+200B empty-block sentinel never occupies a logical offset under random mapping", () => {
-		const rng = mulberry32(0x49313101);
-		for (let i = 0; i < TRIALS; i++) {
-			const text = randomStorage(rng);
-			const logicalEnd = logicalLength(text);
-			const offset = randomOffset(rng, text);
-			const logical = toLogicalOffset(offset, text);
-
-			expect(logical).toBeLessThanOrEqual(logicalEnd);
-			if (text === EMPTY_BLOCK_SENTINEL) {
-				expect(logical).toBe(0);
-				expect(toDomOffset(offset, text)).toBe(0);
-			}
-		}
-	});
-
-	it("I11: toDomOffset and toLogicalOffset invert on the logical domain of random storage", () => {
+	it("I11: toDomOffset and toLogicalOffset invert on the stored domain of random text", () => {
 		const rng = mulberry32(0x49313102);
 		for (let i = 0; i < TRIALS; i++) {
 			const text = randomStorage(rng);

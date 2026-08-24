@@ -45,11 +45,11 @@ The root export also includes `urlPolicy`, `urlPolicyExtension`, `DomScheduler`,
 
 `mountEditor(editor, root, options?)` returns `{ fieldEditor, root, destroy }`. Options:
 
-| Option             | Default           | Effect                                                                                                                                                                                                                   |
-| ------------------ | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `readonly`         | `false`           | Declines typing and pointer activation; sets `data-readonly` (match with `[data-readonly]`, not `="true"`) and `aria-readonly="true"`. Does not stop `editor.apply`. `pen.readOnly` the facet only sets `aria-readonly`. |
-| `interactionModel` | `"content-first"` | Passed through `resolveSelectAllBehavior`                                                                                                                                                                                |
-| `focusPolicy`      | unset             | Host focus policy passed to `FieldEditorImpl`                                                                                                                                                                            |
+| Option             | Default           | Effect                                                                                                                                                                                                                       |
+| ------------------ | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `readonly`         | `false`           | Declines typing and pointer activation; sets `data-readonly` (match with `[data-readonly]`, not `="true"`) and `aria-readonly="true"`. Does not stop `editor.apply`. `pen.ariaReadOnly` the facet only sets `aria-readonly`. |
+| `interactionModel` | `"content-first"` | Passed through `resolveSelectAllBehavior`                                                                                                                                                                                    |
+| `focusPolicy`      | unset             | Host focus policy passed to `FieldEditorImpl`                                                                                                                                                                                |
 
 `FieldEditorImpl` accepts a second argument:
 

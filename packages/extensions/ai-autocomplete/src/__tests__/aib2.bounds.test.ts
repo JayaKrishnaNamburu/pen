@@ -113,10 +113,11 @@ describe("AIB2 autocomplete send bounds", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: prevBlockId,
-					offset: 0,
-					text: oversizedPrev,
+					from: 0,
+				to: 0,
+				insert: oversizedPrev,
 				},
 			],
 			{ origin: "user" },
@@ -134,10 +135,11 @@ describe("AIB2 autocomplete send bounds", () => {
 					position: { after: prevBlockId },
 				},
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: targetBlockId,
-					offset: 0,
-					text: `${oversizedPrefix}${oversizedSuffix}`,
+					from: 0,
+				to: 0,
+				insert: `${oversizedPrefix}${oversizedSuffix}`,
 				},
 				{
 					type: "insert-block",
@@ -147,10 +149,11 @@ describe("AIB2 autocomplete send bounds", () => {
 					position: { after: targetBlockId },
 				},
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: nextBlockId,
-					offset: 0,
-					text: oversizedNext,
+					from: 0,
+				to: 0,
+				insert: oversizedNext,
 				},
 			],
 			{ origin: "user" },

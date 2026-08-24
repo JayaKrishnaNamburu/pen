@@ -25,7 +25,7 @@ export function updateBlockTool(editor: Editor): ToolDefinition {
         editor,
         [
           {
-            type: "update-block",
+            type: "set-props",
             blockId: opts.blockId,
             props: opts.props,
           },

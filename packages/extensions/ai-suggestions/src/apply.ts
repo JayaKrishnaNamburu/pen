@@ -19,11 +19,11 @@ export function buildApplySuggestionOps(
 
 	return [
 		{
-			type: "replace-text",
+			type: "splice-text",
 			blockId: suggestion.blockId,
-			offset: suggestion.from,
-			length: suggestion.to - suggestion.from,
-			text: suggestion.replacementText,
+			from: suggestion.from,
+				to: suggestion.from + suggestion.to - suggestion.from,
+			insert: suggestion.replacementText,
 		},
 	];
 }

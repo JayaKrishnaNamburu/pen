@@ -79,15 +79,16 @@ function setBlockText(
 ) {
 	editor.apply([
 		{
-			type: "insert-text",
+			type: "splice-text",
 			blockId,
-			offset: 0,
-			text,
+			from: 0,
+			to: 0,
+			insert: text,
 		},
 		...(direction
 			? [
 					{
-						type: "update-block" as const,
+						type: "set-props" as const,
 						blockId,
 						props: { direction },
 					},
@@ -212,11 +213,11 @@ describe("React DIR1 resolved host dir", () => {
 		await act(async () => {
 			editor.apply([
 				{
-					type: "replace-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					length: editor.getBlock(blockId)!.length(),
-					text: "Hello",
+					from: 0,
+				to: 0 + editor.getBlock(blockId)!.length(),
+					insert: "Hello",
 				},
 			]);
 		});

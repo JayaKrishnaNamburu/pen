@@ -96,9 +96,24 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 		sources: ["core/src/commands/registry.ts"],
 	},
 	{
+		code: "command-intent-overwrite",
+		levels: ["warn"],
+		sources: ["core/src/commands/registry.ts"],
+	},
+	{
 		code: "content-ops-unexposed-block",
 		levels: ["error"],
 		sources: ["shared/content-ops/src/writeContent.ts"],
+	},
+	{
+		code: "dom-divergence",
+		levels: ["warn"],
+		sources: ["rendering/dom/src/field-editor/contenteditableBackendEvents.ts"],
+	},
+	{
+		code: "empty-block-sentinels-stripped",
+		levels: ["info"],
+		sources: ["core/src/migrations/stripEmptyBlockSentinels.ts"],
 	},
 	{
 		code: "event-deprecated",
@@ -146,6 +161,11 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 		sources: ["core/src/schema/normalize.ts"],
 	},
 	{
+		code: "op-clamped",
+		levels: ["warn"],
+		sources: ["core/src/editor/applyInlineAndMetaOps.ts"],
+	},
+	{
 		code: "parent-cycle",
 		levels: ["warn"],
 		sources: ["core/src/schema/normalize.ts"],
@@ -167,12 +187,12 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 	},
 	{
 		code: "PEN_APPLY_005",
-		levels: ["error"],
+		levels: ["error", "warn"],
 		sources: ["core/src/editor/applyPipelineRunner.ts"],
 	},
 	{
 		code: "PEN_APPLY_007",
-		levels: ["error"],
+		levels: ["error", "warn"],
 		sources: ["core/src/editor/applyPipelineRunner.ts"],
 	},
 	{
@@ -258,7 +278,7 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 	{
 		code: "prop-invalid",
 		levels: ["warn"],
-		sources: ["core/src/editor/validateOpProps.ts"],
+		sources: ["core/src/editor/applyPipelineRunner.ts", "core/src/editor/validateOpProps.ts"],
 	},
 	{
 		code: "read-after-write",
@@ -294,6 +314,11 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 		code: "selection-target-unmounted",
 		levels: ["warn"],
 		sources: ["rendering/dom/src/field-editor/selectionProjectionController.ts"],
+	},
+	{
+		code: "sentinel-stripped",
+		levels: ["info"],
+		sources: ["core/src/schema/emptyBlockSentinel.ts"],
 	},
 	{
 		code: "slot-deprecated",

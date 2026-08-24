@@ -165,10 +165,6 @@ describe("@input/pen-react selected text deletion", () => {
 
 		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
-		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "\u200B" }],
-			{ origin: "import" },
-		);
 		const container = document.createElement("div");
 		document.body.appendChild(container);
 		const root = createRoot(container);
@@ -196,7 +192,7 @@ describe("@input/pen-react selected text deletion", () => {
 			expect(rootElement).not.toBeNull();
 
 			await act(async () => {
-				fieldEditor.activateTextSelection(blockId, 1, 1);
+				fieldEditor.activateTextSelection(blockId, 0, 0);
 				await flushAnimationFrames(2);
 			});
 
@@ -208,8 +204,8 @@ describe("@input/pen-react selected text deletion", () => {
 
 			await act(async () => {
 				editContext!.emit("textupdate", {
-					updateRangeStart: 1,
-					updateRangeEnd: 1,
+					updateRangeStart: 0,
+					updateRangeEnd: 0,
 					text: "H",
 					selectionStart: 1,
 					selectionEnd: 1,

@@ -8,7 +8,9 @@ describe("document mutation plan executor", () => {
 			const firstId = editor.firstBlock()!.id;
 			editor.apply(
 				[
-					{ type: "insert-text", blockId: firstId, offset: 0, text: "Keep first" },
+					{ type: "splice-text", blockId: firstId, from: 0,
+				to: 0,
+				insert: "Keep first" },
 					{
 						type: "insert-block",
 						blockId: "block-2",
@@ -17,10 +19,11 @@ describe("document mutation plan executor", () => {
 						position: { after: firstId },
 					},
 					{
-						type: "insert-text",
+						type: "splice-text",
 						blockId: "block-2",
-						offset: 0,
-						text: "Keep second",
+						from: 0,
+				to: 0,
+				insert: "Keep second",
 					},
 					{
 						type: "insert-block",
@@ -30,10 +33,11 @@ describe("document mutation plan executor", () => {
 						position: { after: "block-2" },
 					},
 					{
-						type: "insert-text",
+						type: "splice-text",
 						blockId: "block-3",
-						offset: 0,
-						text: "Remove me",
+						from: 0,
+				to: 0,
+				insert: "Remove me",
 					},
 				],
 				{ origin: "system" },
@@ -70,7 +74,9 @@ describe("document mutation plan executor", () => {
 			const firstId = editor.firstBlock()!.id;
 			editor.apply(
 				[
-					{ type: "insert-text", blockId: firstId, offset: 0, text: "Keep first" },
+					{ type: "splice-text", blockId: firstId, from: 0,
+				to: 0,
+				insert: "Keep first" },
 					{
 						type: "insert-block",
 						blockId: "block-2",
@@ -79,10 +85,11 @@ describe("document mutation plan executor", () => {
 						position: { after: firstId },
 					},
 					{
-						type: "insert-text",
+						type: "splice-text",
 						blockId: "block-2",
-						offset: 0,
-						text: "Final thoughts",
+						from: 0,
+				to: 0,
+				insert: "Final thoughts",
 					},
 				],
 				{ origin: "system" },
@@ -121,17 +128,18 @@ describe("document mutation plan executor", () => {
 					position: { before: firstId },
 				},
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: expect.any(String),
-					offset: 0,
-					text: "New intro",
+					from: 0,
+				to: 0,
+				insert: "New intro",
 				},
 				{
-					type: "replace-text",
+					type: "splice-text",
 					blockId: "block-2",
-					offset: 0,
-					length: "Final thoughts".length,
-					text: "Final thoughts updated",
+					from: 0,
+				to: 0 + "Final thoughts".length,
+					insert: "Final thoughts updated",
 				},
 			]);
 		});
@@ -141,7 +149,9 @@ describe("document mutation plan executor", () => {
 			const firstId = editor.firstBlock()!.id;
 			editor.apply(
 				[
-					{ type: "insert-text", blockId: firstId, offset: 0, text: "Keep first" },
+					{ type: "splice-text", blockId: firstId, from: 0,
+				to: 0,
+				insert: "Keep first" },
 					{
 						type: "insert-block",
 						blockId: "block-2",
@@ -150,10 +160,11 @@ describe("document mutation plan executor", () => {
 						position: { after: firstId },
 					},
 					{
-						type: "insert-text",
+						type: "splice-text",
 						blockId: "block-2",
-						offset: 0,
-						text: "Final thoughts",
+						from: 0,
+				to: 0,
+				insert: "Final thoughts",
 					},
 				],
 				{ origin: "system" },
@@ -192,23 +203,24 @@ describe("document mutation plan executor", () => {
 					position: { before: firstId },
 				},
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: expect.any(String),
-					offset: 0,
-					text: "New intro",
+					from: 0,
+				to: 0,
+				insert: "New intro",
 				},
 				{
-					type: "replace-text",
+					type: "splice-text",
 					blockId: "block-2",
-					offset: 0,
-					length: "Final thoughts".length,
-					text: "Final thoughts",
+					from: 0,
+				to: 0 + "Final thoughts".length,
+					insert: "Final thoughts",
 				},
 				{
 					type: "format-text",
 					blockId: "block-2",
-					offset: 0,
-					length: "Final thoughts".length,
+					from: 0,
+				to: 0 + "Final thoughts".length,
 					marks: { bold: true },
 				},
 			]);
@@ -219,7 +231,9 @@ describe("document mutation plan executor", () => {
 			const firstId = editor.firstBlock()!.id;
 			editor.apply(
 				[
-					{ type: "insert-text", blockId: firstId, offset: 0, text: "Alpha" },
+					{ type: "splice-text", blockId: firstId, from: 0,
+				to: 0,
+				insert: "Alpha" },
 					{
 						type: "insert-block",
 						blockId: "block-2",
@@ -228,10 +242,11 @@ describe("document mutation plan executor", () => {
 						position: { after: firstId },
 					},
 					{
-						type: "insert-text",
+						type: "splice-text",
 						blockId: "block-2",
-						offset: 0,
-						text: "Bravo",
+						from: 0,
+				to: 0,
+				insert: "Bravo",
 					},
 					{
 						type: "insert-block",
@@ -241,10 +256,11 @@ describe("document mutation plan executor", () => {
 						position: { after: "block-2" },
 					},
 					{
-						type: "insert-text",
+						type: "splice-text",
 						blockId: "block-3",
-						offset: 0,
-						text: "Charlie",
+						from: 0,
+				to: 0,
+				insert: "Charlie",
 					},
 				],
 				{ origin: "system" },
@@ -277,10 +293,11 @@ describe("document mutation plan executor", () => {
 					position: { after: "block-2" },
 				},
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: expect.any(String),
-					offset: 0,
-					text: "Inserted middle",
+					from: 0,
+				to: 0,
+				insert: "Inserted middle",
 				},
 			]);
 			expect(execution.metrics?.flowPatchAlignment).toEqual({
@@ -298,7 +315,9 @@ describe("document mutation plan executor", () => {
 			const firstId = editor.firstBlock()!.id;
 			editor.apply(
 				[
-					{ type: "insert-text", blockId: firstId, offset: 0, text: "Alpha" },
+					{ type: "splice-text", blockId: firstId, from: 0,
+				to: 0,
+				insert: "Alpha" },
 					{
 						type: "insert-block",
 						blockId: "block-2",
@@ -307,10 +326,11 @@ describe("document mutation plan executor", () => {
 						position: { after: firstId },
 					},
 					{
-						type: "insert-text",
+						type: "splice-text",
 						blockId: "block-2",
-						offset: 0,
-						text: "Remove me",
+						from: 0,
+				to: 0,
+				insert: "Remove me",
 					},
 					{
 						type: "insert-block",
@@ -320,10 +340,11 @@ describe("document mutation plan executor", () => {
 						position: { after: "block-2" },
 					},
 					{
-						type: "insert-text",
+						type: "splice-text",
 						blockId: "block-3",
-						offset: 0,
-						text: "Charlie",
+						from: 0,
+				to: 0,
+				insert: "Charlie",
 					},
 				],
 				{ origin: "system" },

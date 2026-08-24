@@ -1,5 +1,5 @@
 import {
-	readOnlyFacet,
+	ariaReadOnlyFacet,
 	resolveEditorA11yLabel,
 	resolveEditorMessage,
 } from "@input/pen-core";
@@ -8,6 +8,7 @@ import {
 	FieldEditorImpl,
 	handleEditorDocumentKeyDown,
 	handleFieldEditorPointerActivate,
+	registerVerticalCaretMeasure,
 	resolveSelectAllBehavior,
 	shouldHandleEditorKeyboardEvent as shouldHandlePenEditorKeyboardEvent,
 } from "@input/pen-dom";
@@ -128,6 +129,11 @@ export const PenEditor = defineComponent({
 					return;
 				}
 
+				const unregisterVerticalCaret = registerVerticalCaretMeasure(
+					props.editor,
+					nextElement,
+				);
+
 				const ownerDocument = nextElement.ownerDocument;
 				const handleFocusIn = () => {
 					focused.value = true;
@@ -206,6 +212,7 @@ export const PenEditor = defineComponent({
 						handleKeyDown,
 						true,
 					);
+					unregisterVerticalCaret();
 				});
 			},
 			{ immediate: true },
@@ -283,7 +290,7 @@ export const PenEditor = defineComponent({
 					...resolveEditorA11yLabel(props.editor),
 					"aria-readonly":
 						props.readonly ||
-						props.editor.facet(readOnlyFacet) ||
+						props.editor.facet(ariaReadOnlyFacet) ||
 						undefined,
 				}),
 				children,

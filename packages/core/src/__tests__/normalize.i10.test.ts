@@ -108,17 +108,18 @@ describe("normalization in the commit transaction (Wave 2 I10)", () => {
 		const beforeCount = commits.length;
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: "counted-1",
-				offset: 0,
-				text: "ab",
+				from: 0,
+				to: 0,
+				insert: "ab",
 			},
 		]);
 
 		expect(commits).toHaveLength(beforeCount + 1);
 		const event = commits[beforeCount]!;
 		expect(event.source).toBe("apply");
-		expect(event.summary.text).toEqual(
+		expect(event.summary.blockText).toEqual(
 			expect.arrayContaining([
 				expect.objectContaining({
 					blockId: "counted-1",
@@ -159,10 +160,11 @@ describe("normalization in the commit transaction (Wave 2 I10)", () => {
 				position: { parent: "parent", index: 0 },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: "counted-nested",
-				offset: 0,
-				text: "ab",
+				from: 0,
+				to: 0,
+				insert: "ab",
 			},
 		]);
 
@@ -211,16 +213,18 @@ describe("normalization in the commit transaction (Wave 2 I10)", () => {
 				position: { parent: "cols", index: 1 },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: "counted-left",
-				offset: 0,
-				text: "ab",
+				from: 0,
+				to: 0,
+				insert: "ab",
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: "counted-right",
-				offset: 0,
-				text: "cd",
+				from: 0,
+				to: 0,
+				insert: "cd",
 			},
 		]);
 

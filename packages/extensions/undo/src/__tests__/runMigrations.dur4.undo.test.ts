@@ -12,10 +12,11 @@ function insertTextMigration(id: string, text: string): DocumentMigration {
 			const blockId = editor.firstBlock()!.id;
 			editor.apply([
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: editor.getBlock(blockId)!.length(),
-					text,
+					from: editor.getBlock(blockId)!.length(),
+					to: editor.getBlock(blockId)!.length(),
+					insert: text,
 				},
 			]);
 		},
@@ -34,7 +35,9 @@ describe("@input/pen-undo DUR4 migration origin", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "user" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "user" }],
 			{ origin: "user" },
 		);
 		expect(editor.undoManager.canUndo()).toBe(true);
@@ -59,7 +62,9 @@ describe("@input/pen-undo DUR4 migration origin", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "user" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "user" }],
 			{ origin: "user" },
 		);
 

@@ -133,10 +133,11 @@ describe("document-ops execution path inventory", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "context-write",
+					from: 0,
+				to: 0,
+				insert: "context-write",
 				},
 			],
 			{ origin: "ai" },

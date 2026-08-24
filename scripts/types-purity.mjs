@@ -30,8 +30,7 @@
  * printed "source-level runtime 0" and exited 0. They now fail the
  * gate unless allowlisted as kind `helper`. Chasing zero leftover
  * *exports* would invert the DAG: generateId is required by crdt-yjs
- * (below core); logicalTextFromStored is required by export-json and
- * markdown-serialization (no core dep). Amend API3 to a bounded set.
+ * (below core). Amend API3 to a bounded set.
  */
 
 import fs from "node:fs/promises";
@@ -303,7 +302,7 @@ export function formatReport(result) {
 	}
 	lines.push("");
 	lines.push(
-		"API3 leftover count is the published artifact, not source purity. Chasing zero inverts the DAG: generateId is required by crdt-yjs (below core); logicalTextFromStored is required by export-json and markdown-serialization (no core dep). Amend API3 to a bounded set.",
+		"API3 leftover count is the published artifact, not source purity. Chasing zero inverts the DAG: generateId is required by crdt-yjs (below core). Amend API3 to a bounded set.",
 	);
 	appendOutdatedDistLines(lines, result.outdatedDist ?? []);
 	if (!hasFailures(result) && !hasInconclusive(result)) {

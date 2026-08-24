@@ -68,9 +68,7 @@ describe("crdt.fork-merge-100 observation", () => {
 				iterations: 1,
 				warmup: 0,
 			}),
-		).rejects.toThrow(
-			/merge did not transfer FORK-MERGE-TOKEN onto target block block-50/,
-		);
+		).rejects.toThrow(/mergeTransferred 0 !== 1/);
 	});
 
 	it("the live bench transfers the named token and records the floor", async () => {
@@ -83,6 +81,11 @@ describe("crdt.fork-merge-100 observation", () => {
 		const [result] = await runSuite("crdt-fork-merge", [definition], {
 			iterations: 1,
 			warmup: 0,
+		});
+		expect(result?.observation).toEqual({
+			name: "mergeTransferred",
+			actual: 1,
+			expected: 1,
 		});
 		expect(result?.metrics).toMatchObject({
 			blockCount: FORK_MERGE_BLOCK_COUNT,

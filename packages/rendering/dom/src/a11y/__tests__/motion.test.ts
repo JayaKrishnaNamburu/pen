@@ -133,8 +133,14 @@ describe("createReducedMotionSignal (AX6)", () => {
 		expect(listener).not.toHaveBeenCalled();
 	});
 
+	it("AX6: createReducedMotionSignal is exported from the package entry", async () => {
+		const pkg = await import("@input/pen-dom");
+		expect(typeof pkg.createReducedMotionSignal).toBe("function");
+	});
+
 	it("AX6: maps caret blink to solid, shimmer to a static badge, transitions to instant", () => {
-		// contract constant only — overlay/paint adoption is Wave 3/5
+		// caretBlink is consumed by React EditorCaretOverlay; shimmer and
+		// transitions are still unclaimed by overlay/paint.
 		expect(AX6_MOTION_MAPPING).toEqual({
 			caretBlink: "solid",
 			shimmer: "static-badge",

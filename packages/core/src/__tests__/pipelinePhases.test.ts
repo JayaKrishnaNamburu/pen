@@ -34,10 +34,11 @@ describe("commit pipeline phases (Wave 2.1)", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "hello",
+				from: 0,
+				to: 0,
+				insert: "hello",
 			},
 		]);
 
@@ -72,10 +73,11 @@ describe("commit pipeline phases (Wave 2.1)", () => {
 			}
 			editor.apply([
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "x",
+					from: 0,
+				to: 0,
+				insert: "x",
 				},
 			]);
 		});
@@ -83,10 +85,11 @@ describe("commit pipeline phases (Wave 2.1)", () => {
 		armed = true;
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "start",
+				from: 0,
+				to: 0,
+				insert: "start",
 			},
 		]);
 

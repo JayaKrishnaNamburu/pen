@@ -14,17 +14,19 @@ import {
 } from "../commands";
 
 const insertHello: DocumentOp = {
-	type: "insert-text",
+	type: "splice-text",
 	blockId: "b1",
-	offset: 0,
-	text: "hello",
+	from: 0,
+				to: 0,
+				insert: "hello",
 };
 
 const insertWorld: DocumentOp = {
-	type: "insert-text",
+	type: "splice-text",
 	blockId: "b1",
-	offset: 5,
-	text: " world",
+	from: 5,
+				to: 5,
+				insert: " world",
 };
 
 const blockSelection = (blockId: string): SelectionState => ({

@@ -43,10 +43,9 @@ describe("bindEditorAnnouncer (AX2)", () => {
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
 			{
-				type: "convert-block",
+				type: "set-props",
 				blockId,
-				newType: "heading",
-				newProps: { level: 1 },
+				props: { type: "heading", level: 1 },
 			},
 		]);
 
@@ -68,10 +67,9 @@ describe("bindEditorAnnouncer (AX2)", () => {
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
 			{
-				type: "convert-block",
+				type: "set-props",
 				blockId,
-				newType: "heading",
-				newProps: { level: 1 },
+				props: { type: "heading", level: 1 },
 			},
 		]);
 
@@ -114,7 +112,9 @@ describe("bindEditorAnnouncer (AX2)", () => {
 
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "insert-text", blockId, offset: 0, text: "hello" },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "hello" },
 		]);
 		editor.undoManager.undo();
 		expect(liveRegion(root)?.textContent).toBe("Undid Paragraph");

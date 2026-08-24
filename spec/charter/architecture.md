@@ -28,4 +28,4 @@ Pen is a headless, extension-first editor engine. The document model, mutation p
 - Shared helpers should stay below package boundaries rather than leaking renderer or app assumptions into the core.
 - `@input/pen-content-ops` and `@input/pen-markdown-serialization` depend on `@input/pen-core` and re-export helpers that moved there. Core no longer depends on those packages.
 - `defaultPreset()` is the batteries-included composition. Bare `createEditor()` is the apply pipeline only: no schema, no extensions.
-- `pen.readOnly` (the facet) and the renderer `readonly` prop are not the same switch. The facet sets `aria-readonly`. The prop is what declines local typing. That split is shipped and is an open owner decision; do not collapse them in this spec.
+- `pen.ariaReadOnly` (the facet) and the renderer `readonly` prop are not the same switch. The facet sets `aria-readonly`. The prop is what declines local typing. That split is shipped and is an open owner decision; do not collapse them in this spec.

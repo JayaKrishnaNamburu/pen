@@ -116,7 +116,7 @@ Boolean `data-*` attributes are the valueless HTML form (`data-readonly=""`), om
 
 ARIA booleans are not valueless. They are the strings `"true"` and `"false"` (`aria-expanded="true"`, `aria-hidden="true"`, `aria-readonly="true"`). `aria-hidden=""` is invalid, and `[aria-hidden=""]` matches nothing. Do not extend the valueless `data-*` convention to ARIA.
 
-State attributes below are written when the state is true — **present** (valueless), never `"true"`. `data-readonly` tracks the `readonly` **prop**, not `pen.readOnly`. Do not invent selectors that are not in this list.
+State attributes below are written when the state is true — **present** (valueless), never `"true"`. `data-readonly` tracks the `readonly` **prop**, not `pen.ariaReadOnly`. Do not invent selectors that are not in this list.
 
 ```css
 [data-readonly] {

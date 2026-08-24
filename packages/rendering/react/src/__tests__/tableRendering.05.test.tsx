@@ -128,10 +128,11 @@ describe("@input/pen-react table rendering", () => {
 				position: "last",
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: paragraphId,
-				offset: 0,
-				text: "After",
+				from: 0,
+				to: 0,
+				insert: "After",
 			},
 		]);
 
@@ -182,7 +183,7 @@ describe("@input/pen-react table rendering", () => {
 		editor.destroy();
 	});
 
-	it("falls back to block selection when shift-clicking from a table into text in structured documents", async () => {
+	it("keeps a T2 multi-block text selection when shift-clicking from a table into text in structured documents", async () => {
 		const editor = createEditor();
 		const paragraphId = crypto.randomUUID();
 
@@ -202,10 +203,11 @@ describe("@input/pen-react table rendering", () => {
 				position: "last",
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: paragraphId,
-				offset: 0,
-				text: "After",
+				from: 0,
+				to: 0,
+				insert: "After",
 			},
 		]);
 
@@ -242,10 +244,13 @@ describe("@input/pen-react table rendering", () => {
 			await flushAnimationFrames(2);
 		});
 
-		expect(editor.selection).toEqual({
-			type: "block",
-			blockIds: ["t10-shift-structured", paragraphId],
-			head: paragraphId,
+		// T2 / §4.2: pointer reads never escalate by block type. Profile
+		// does not modulate that — structured matches the flow sibling.
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			isMultiBlock: true,
+			anchor: { blockId: "t10-shift-structured", offset: 0 },
+			focus: { blockId: paragraphId, offset: 5 },
 		});
 
 		await act(async () => {

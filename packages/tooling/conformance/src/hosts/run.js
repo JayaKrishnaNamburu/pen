@@ -41,7 +41,9 @@ function runHeadless(createHeadlessEditor, schema, label) {
 				props: {},
 				position: "last",
 			},
-			{ type: "insert-text", blockId: "host2", offset: 0, text: "host2" },
+			{ type: "splice-text", blockId: "host2", from: 0,
+				to: 0,
+				insert: "host2" },
 		],
 		{ origin: "user" },
 	);

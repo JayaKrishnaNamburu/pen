@@ -21,11 +21,14 @@ describe("@input/pen-delta-stream BatchingBuffer", () => {
     const flushed: string[] = [];
     const buffer = new BatchingBuffer((text) => flushed.push(text), 50);
     buffer.append("hello");
+    expect(buffer.pending).toBe(true);
     buffer.destroy();
 
+    buffer.append("world");
     vi.advanceTimersByTime(100);
 
     expect(flushed).toEqual([]);
+    expect(buffer.pending).toBe(false);
     vi.useRealTimers();
   });
 });

@@ -126,14 +126,18 @@ describe("@input/pen-react suggestion menu", () => {
 
 		await act(async () => {
 			editor.apply([
-				{ type: "insert-text", blockId, offset: 0, text: ":f" },
+				{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: ":f" },
 			]);
 			editor.selectText(blockId, 2, 2);
 		});
 
 		await act(async () => {
 			editor.apply([
-				{ type: "insert-text", blockId, offset: 2, text: "i" },
+				{ type: "splice-text", blockId, from: 2,
+				to: 2,
+				insert: "i" },
 			]);
 			editor.selectText(blockId, 3, 3);
 		});
@@ -212,7 +216,9 @@ describe("@input/pen-react suggestion menu", () => {
 
 		await act(async () => {
 			editor.apply([
-				{ type: "insert-text", blockId, offset: 0, text: "@a" },
+				{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "@a" },
 			]);
 			editor.selectText(blockId, 2, 2);
 			await waitForCondition(

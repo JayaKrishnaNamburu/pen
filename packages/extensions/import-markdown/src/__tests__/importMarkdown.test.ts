@@ -220,8 +220,8 @@ describe("@input/pen-import-markdown", () => {
 		expect(insertBlocks[0].blockType).toBe("heading");
 		expect(insertBlocks[1].blockType).toBe("paragraph");
 
-		const insertTexts = ops.filter((o) => o.type === "insert-text");
-		expect(insertTexts).toHaveLength(2);
+		const spliceTexts = ops.filter((o) => o.type === "splice-text");
+		expect(spliceTexts).toHaveLength(2);
 
 		const formatTexts = ops.filter((o) => o.type === "format-text");
 		expect(formatTexts.length).toBeGreaterThan(0);
@@ -233,7 +233,7 @@ describe("@input/pen-import-markdown", () => {
 		const ops = blocksToOps(blocks);
 
 		expect(ops.length).toBeGreaterThan(0);
-		expect(ops.every((o) => o.type === "insert-block" || o.type === "insert-text" || o.type === "format-text")).toBe(true);
+		expect(ops.every((o) => o.type === "insert-block" || o.type === "splice-text" || o.type === "format-text")).toBe(true);
 	});
 
 	it("> **Note:** text → callout block via schema fromMarkdown", () => {
@@ -242,7 +242,7 @@ describe("@input/pen-import-markdown", () => {
 		expect(blocks).toHaveLength(1);
 		expect(blocks[0]).toMatchObject({
 			type: "callout",
-			props: { type: "info" },
+			props: { severity: "info" },
 		});
 		expect(blocks[0].content).toContain("This is important");
 	});
@@ -253,7 +253,7 @@ describe("@input/pen-import-markdown", () => {
 		expect(blocks).toHaveLength(1);
 		expect(blocks[0]).toMatchObject({
 			type: "callout",
-			props: { type: "warning" },
+			props: { severity: "warning" },
 		});
 	});
 
@@ -263,7 +263,7 @@ describe("@input/pen-import-markdown", () => {
 		expect(blocks).toHaveLength(1);
 		expect(blocks[0]).toMatchObject({
 			type: "callout",
-			props: { type: "error" },
+			props: { severity: "error" },
 		});
 	});
 

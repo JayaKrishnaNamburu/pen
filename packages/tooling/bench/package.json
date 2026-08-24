@@ -53,6 +53,8 @@
     "bench:envelope:write": "tsx src/cli.ts --write-envelope",
     "bench:envelope:table": "tsx src/envelope/writeTable.ts",
     "bench:envelope:drift": "tsx src/envelope/checkDrift.cli.ts",
+    "bench:anchors": "tsx src/anchors/run.cli.ts",
+    "bench:anchors:compare": "tsx src/anchors/run.cli.ts --compare",
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "devDependencies": {

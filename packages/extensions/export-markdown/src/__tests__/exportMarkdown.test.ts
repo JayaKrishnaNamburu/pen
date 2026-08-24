@@ -4,13 +4,8 @@ import {
   createEditor,
   type PendingBlock,
 } from "@input/pen-core";
-import type { DocumentOp } from "@input/pen-types";
 import { markdownExporter } from "../exporter";
 import { defaultSchema } from "@input/pen-schema-default";
-
-type InsertTableCellTextOp = Extract<DocumentOp, { type: "insert-table-cell-text" }>;
-type FormatTableCellTextOp = Extract<DocumentOp, { type: "format-table-cell-text" }>;
-type InsertBlockOp = Extract<DocumentOp, { type: "insert-block" }>;
 
 const noDefaultExtensionsPreset = {
   resolve() {
@@ -69,7 +64,9 @@ describe("@input/pen-export-markdown", () => {
         props: { level: 1 },
         position: "last",
       },
-      { type: "insert-text", blockId: "b1", offset: 0, text: "Hello" },
+      { type: "splice-text", blockId: "b1", from: 0,
+				to: 0,
+				insert: "Hello" },
     ]);
 
     const md = markdownExporter.export(editor);
@@ -86,7 +83,9 @@ describe("@input/pen-export-markdown", () => {
         props: {},
         position: "last",
       },
-      { type: "insert-text", blockId: "b1", offset: 0, text: "Hello world" },
+      { type: "splice-text", blockId: "b1", from: 0,
+				to: 0,
+				insert: "Hello world" },
     ]);
 
     const md = markdownExporter.export(editor);
@@ -103,7 +102,9 @@ describe("@input/pen-export-markdown", () => {
         props: { level: 2 },
         position: "last",
       },
-      { type: "insert-text", blockId: "b1", offset: 0, text: "Title" },
+      { type: "splice-text", blockId: "b1", from: 0,
+				to: 0,
+				insert: "Title" },
       {
         type: "insert-block",
         blockId: "b2",
@@ -111,7 +112,9 @@ describe("@input/pen-export-markdown", () => {
         props: {},
         position: "last",
       },
-      { type: "insert-text", blockId: "b2", offset: 0, text: "Body" },
+      { type: "splice-text", blockId: "b2", from: 0,
+				to: 0,
+				insert: "Body" },
     ]);
 
     const md = markdownExporter.export(editor);
@@ -129,7 +132,9 @@ describe("@input/pen-export-markdown", () => {
         props: { start: 3 },
         position: "last",
       },
-      { type: "insert-text", blockId: "b1", offset: 0, text: "Third" },
+      { type: "splice-text", blockId: "b1", from: 0,
+				to: 0,
+				insert: "Third" },
       {
         type: "insert-block",
         blockId: "b2",
@@ -137,7 +142,9 @@ describe("@input/pen-export-markdown", () => {
         props: {},
         position: "last",
       },
-      { type: "insert-text", blockId: "b2", offset: 0, text: "Fourth" },
+      { type: "splice-text", blockId: "b2", from: 0,
+				to: 0,
+				insert: "Fourth" },
     ]);
 
     const md = markdownExporter.export(editor);
@@ -155,16 +162,17 @@ describe("@input/pen-export-markdown", () => {
         position: "last",
       },
       {
-        type: "insert-text",
+        type: "splice-text",
         blockId: "b1",
-        offset: 0,
-        text: "hello world",
+        from: 0,
+				to: 0,
+				insert: "hello world",
       },
       {
         type: "format-text",
         blockId: "b1",
-        offset: 0,
-        length: 5,
+        from: 0,
+				to: 0 + 5,
         marks: { bold: true },
       },
     ]);
@@ -192,10 +200,11 @@ describe("@input/pen-export-markdown", () => {
         position: { parent: "toggle-1", index: 0 },
       },
       {
-        type: "insert-text",
+        type: "splice-text",
         blockId: "child-1",
-        offset: 0,
-        text: "Nested child",
+        from: 0,
+				to: 0,
+				insert: "Nested child",
       },
     ]);
 
@@ -219,18 +228,21 @@ describe("@input/pen-export-markdown", () => {
         props: {},
         position: "last",
       },
-      { type: "insert-text", blockId: "b1", offset: 0, text: "Keep" },
+      { type: "splice-text", blockId: "b1", from: 0,
+				to: 0,
+				insert: "Keep" },
       {
-        type: "insert-text",
+        type: "splice-text",
         blockId: "b1",
-        offset: 4,
-        text: " draft",
+        from: 4,
+				to: 4,
+				insert: " draft",
       },
       {
         type: "format-text",
         blockId: "b1",
-        offset: 4,
-        length: 6,
+        from: 4,
+				to: 4 + 6,
         marks: {
           suggestion: {
             action: "delete",
@@ -244,7 +256,9 @@ describe("@input/pen-export-markdown", () => {
         props: {},
         position: "last",
       },
-      { type: "insert-text", blockId: "b2", offset: 0, text: "Tail" },
+      { type: "splice-text", blockId: "b2", from: 0,
+				to: 0,
+				insert: "Tail" },
     ]);
 
     const md = markdownExporter.export(editor, {
@@ -272,37 +286,37 @@ describe("@input/pen-export-markdown", () => {
       },
       [
         {
-          type: "insert-table-cell-text",
+          type: "splice-text",
           blockId: "t1",
-          row: 0,
-          col: 0,
-          offset: 0,
-          text: "Name",
-        } as InsertTableCellTextOp,
+          cell: { row: 0, col: 0 },
+          from: 0,
+          to: 0,
+          insert: "Name",
+        },
         {
-          type: "insert-table-cell-text",
+          type: "splice-text",
           blockId: "t1",
-          row: 0,
-          col: 1,
-          offset: 0,
-          text: "Age",
-        } as InsertTableCellTextOp,
+          cell: { row: 0, col: 1 },
+          from: 0,
+          to: 0,
+          insert: "Age",
+        },
         {
-          type: "insert-table-cell-text",
+          type: "splice-text",
           blockId: "t1",
-          row: 1,
-          col: 0,
-          offset: 0,
-          text: "Alice",
-        } as InsertTableCellTextOp,
+          cell: { row: 1, col: 0 },
+          from: 0,
+          to: 0,
+          insert: "Alice",
+        },
         {
-          type: "insert-table-cell-text",
+          type: "splice-text",
           blockId: "t1",
-          row: 1,
-          col: 1,
-          offset: 0,
-          text: "30",
-        } as InsertTableCellTextOp,
+          cell: { row: 1, col: 1 },
+          from: 0,
+          to: 0,
+          insert: "30",
+        },
       ],
     );
 
@@ -324,13 +338,13 @@ describe("@input/pen-export-markdown", () => {
       },
       [
         {
-          type: "insert-table-cell-text",
+          type: "splice-text",
           blockId: "t1",
-          row: 0,
-          col: 0,
-          offset: 0,
-          text: "a|b",
-        } as InsertTableCellTextOp,
+          cell: { row: 0, col: 0 },
+          from: 0,
+          to: 0,
+          insert: "a|b",
+        },
       ],
     );
 
@@ -352,22 +366,21 @@ describe("@input/pen-export-markdown", () => {
       },
       [
         {
-          type: "insert-table-cell-text",
+          type: "splice-text",
           blockId: "t2",
-          row: 0,
-          col: 0,
-          offset: 0,
-          text: "Name",
-        } as InsertTableCellTextOp,
+          cell: { row: 0, col: 0 },
+          from: 0,
+          to: 0,
+          insert: "Name",
+        },
         {
-          type: "format-table-cell-text",
+          type: "format-text",
           blockId: "t2",
-          row: 0,
-          col: 0,
-          offset: 0,
-          length: 4,
+          cell: { row: 0, col: 0 },
+          from: 0,
+          to: 4,
           marks: { bold: true },
-        } as FormatTableCellTextOp,
+        },
       ],
     );
 
@@ -387,13 +400,13 @@ describe("@input/pen-export-markdown", () => {
           position: "last",
         },
         {
-          type: "insert-table-cell-text",
+          type: "splice-text",
           blockId: "t1",
-          row: 0,
-          col: 0,
-          offset: 0,
-          text: "Alice",
-        } as InsertTableCellTextOp,
+          cell: { row: 0, col: 0 },
+          from: 0,
+          to: 0,
+          insert: "Alice",
+        },
         {
           type: "insert-block",
           blockId: "sub-1",

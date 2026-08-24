@@ -35,7 +35,9 @@ describe("@input/pen-react multiplayer caret overlay", () => {
 			): void;
 		} | null;
 		const blockId = editor.firstBlock()!.id;
-		editor.apply([{ type: "insert-text", blockId, offset: 0, text: "Hi" }]);
+		editor.apply([{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hi" }]);
 
 		publishRemoteCursor(controller, editor.clientId, encodeCursorAnchor(editor, blockId, 1), 1);
 

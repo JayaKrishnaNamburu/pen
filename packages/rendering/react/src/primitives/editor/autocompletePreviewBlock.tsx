@@ -26,10 +26,10 @@ export function AutocompletePreviewBlock(props: AutocompletePreviewBlockProps) {
 				? anchorProps.level
 				: undefined;
 	const calloutType =
-		block.blockType === "callout" && typeof block.props?.type === "string"
-			? block.props.type
-			: anchorBlockType === "callout" && typeof anchorProps?.type === "string"
-				? anchorProps.type
+		block.blockType === "callout" && typeof block.props?.severity === "string"
+			? block.props.severity
+			: anchorBlockType === "callout" && typeof anchorProps?.severity === "string"
+				? anchorProps.severity
 				: undefined;
 	const listPreview = buildListPreview({
 		blockType: block.blockType,

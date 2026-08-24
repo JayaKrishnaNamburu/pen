@@ -3,7 +3,7 @@
 import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, describe, expect, it } from "vitest";
-import { a11yLabelFacet, createEditor, readOnlyFacet } from "@input/pen-core";
+import { a11yLabelFacet, createEditor, ariaReadOnlyFacet } from "@input/pen-core";
 import { defineExtension } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
 import { EditorRoot } from "../primitives/editor/root";
@@ -102,7 +102,7 @@ describe("AX1 React editor root", () => {
 		expect(surface?.hasAttribute("aria-labelledby")).toBe(false);
 	});
 
-	it("AX1 reflects pen.readOnly as aria-readonly", async () => {
+	it("AX1 reflects pen.ariaReadOnly as aria-readonly", async () => {
 		const editor = createEditor({
 			schema: defaultSchema, preset: defaultPreset({
 				documentOps: false,
@@ -111,8 +111,8 @@ describe("AX1 React editor root", () => {
 			}),
 			extensions: [
 				defineExtension({
-					name: "readonly-ext",
-					facets: [readOnlyFacet.of(true)],
+					name: "aria-readonly-ext",
+					facets: [ariaReadOnlyFacet.of(true)],
 				}),
 			],
 		});

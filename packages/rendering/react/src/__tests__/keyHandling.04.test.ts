@@ -151,7 +151,9 @@ describe("@input/pen-react inline atom shift-click selection", () => {
 		const editor = createPresetEditor({ preset: { shortcuts: false } });
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "insert-text", blockId, offset: 0, text: "xxx" },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "xxx" },
 		]);
 		editor.selectText(blockId, 0, 1);
 
@@ -170,7 +172,9 @@ describe("@input/pen-react inline atom shift-click selection", () => {
 		const editor = createPresetEditor({ preset: { shortcuts: false } });
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "insert-text", blockId, offset: 0, text: "xxx" },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "xxx" },
 		]);
 		editor.selectText(blockId, 1, 2);
 
@@ -189,7 +193,9 @@ describe("@input/pen-react inline atom shift-click selection", () => {
 		const editor = createPresetEditor({ preset: { shortcuts: false } });
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "insert-text", blockId, offset: 0, text: "xxx" },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "xxx" },
 		]);
 		editor.selectText(blockId, 0, 2);
 
@@ -208,7 +214,9 @@ describe("@input/pen-react inline atom shift-click selection", () => {
 		const editor = createPresetEditor({ preset: { shortcuts: false } });
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "insert-text", blockId, offset: 0, text: "xxx" },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "xxx" },
 		]);
 		editor.selectText(blockId, 0, 2);
 

@@ -101,10 +101,11 @@ describe("@input/pen-react escape key handling", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: firstBlockId,
-				offset: 0,
-				text: "First",
+				from: 0,
+				to: 0,
+				insert: "First",
 			},
 			{
 				type: "insert-block",
@@ -114,10 +115,11 @@ describe("@input/pen-react escape key handling", () => {
 				position: { after: firstBlockId },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: secondBlockId,
-				offset: 0,
-				text: "Second",
+				from: 0,
+				to: 0,
+				insert: "Second",
 			},
 		]);
 
@@ -175,7 +177,9 @@ describe("@input/pen-react escape key handling", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "insert-text", blockId, offset: 0, text: "Hel" },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hel" },
 		]);
 
 		const container = document.createElement("div");
@@ -208,10 +212,11 @@ describe("@input/pen-react escape key handling", () => {
 			editor.apply(
 				[
 					{
-						type: "insert-text",
+						type: "splice-text",
 						blockId,
-						offset: 3,
-						text: "lo world",
+						from: 3,
+				to: 3,
+				insert: "lo world",
 					},
 				],
 				{ origin: "ai" },
@@ -270,7 +275,9 @@ describe("@input/pen-react escape key handling", () => {
 				ensureInlineCompletionController(editor);
 
 			editor.apply([
-				{ type: "insert-text", blockId, offset: 0, text: "Hel" },
+				{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hel" },
 			]);
 
 			const container = document.createElement("div");
@@ -326,10 +333,11 @@ describe("@input/pen-react escape key handling", () => {
 				if (editor.getBlock(blockId)?.textContent() === "Hel") {
 					editor.apply([
 						{
-							type: "insert-text",
+							type: "splice-text",
 							blockId,
-							offset: 3,
-							text: "lo world",
+							from: 3,
+				to: 3,
+				insert: "lo world",
 						},
 					]);
 				}
@@ -353,10 +361,11 @@ describe("@input/pen-react escape key handling", () => {
 			if (editor.getBlock(blockId)?.textContent() === "Hel") {
 				editor.apply([
 					{
-						type: "insert-text",
+						type: "splice-text",
 						blockId,
-						offset: 3,
-						text: "lo world",
+						from: 3,
+				to: 3,
+				insert: "lo world",
 					},
 				]);
 			}

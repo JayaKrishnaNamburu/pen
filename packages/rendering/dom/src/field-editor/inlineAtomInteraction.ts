@@ -1,6 +1,5 @@
 import { fieldEditorHostFacet } from "@input/pen-core";
 import {
-	logicalTextFromStored,
 	type ApplyOptions,
 	type DocumentOp,
 	type Editor,
@@ -125,17 +124,21 @@ export function buildMoveInlineAtomOps(
 	const targetOffset = getAdjustedTargetOffset(source, target);
 	return [
 		{
-			type: "delete-text",
+			type: "splice-text",
 			blockId: source.blockId,
-			offset: source.offset,
-			length: INLINE_ATOM_LOGICAL_LENGTH,
+			from: source.offset,
+				to: source.offset + INLINE_ATOM_LOGICAL_LENGTH,
+				insert: "",
 		},
 		{
-			type: "insert-inline-node",
+			type: "splice-text",
 			blockId: target.blockId,
-			offset: targetOffset,
-			nodeType: sourceAtom.type,
-			props: { ...sourceAtom.props },
+			from: targetOffset,
+			to: targetOffset,
+			insert: {
+				nodeType: sourceAtom.type,
+				props: { ...sourceAtom.props },
+			},
 		},
 	];
 }
@@ -165,18 +168,20 @@ export function replaceInlineAtomWithText({
 
 	const ops: DocumentOp[] = [
 		{
-			type: "delete-text",
+			type: "splice-text",
 			blockId: source.blockId,
-			offset: source.offset,
-			length: INLINE_ATOM_LOGICAL_LENGTH,
+			from: source.offset,
+				to: source.offset + INLINE_ATOM_LOGICAL_LENGTH,
+				insert: "",
 		},
 	];
 	if (text.length > 0) {
 		ops.push({
-			type: "insert-text",
+			type: "splice-text",
 			blockId: source.blockId,
-			offset: source.offset,
-			text,
+			from: source.offset,
+			to: source.offset,
+			insert: text,
 		});
 	}
 
@@ -263,11 +268,14 @@ function moveInlineAtomBetweenEditors({
 	target.editor.apply(
 		[
 			{
-				type: "insert-inline-node",
+				type: "splice-text",
 				blockId: target.blockId,
-				offset: target.offset,
-				nodeType: sourceAtom.type,
-				props: { ...sourceAtom.props },
+				from: target.offset,
+				to: target.offset,
+				insert: {
+					nodeType: sourceAtom.type,
+					props: { ...sourceAtom.props },
+				},
 			},
 		],
 		applyOptions,
@@ -275,10 +283,11 @@ function moveInlineAtomBetweenEditors({
 	source.editor.apply(
 		[
 			{
-				type: "delete-text",
+				type: "splice-text",
 				blockId: source.blockId,
-				offset: source.offset,
-				length: INLINE_ATOM_LOGICAL_LENGTH,
+				from: source.offset,
+				to: source.offset + INLINE_ATOM_LOGICAL_LENGTH,
+				insert: "",
 			},
 		],
 		applyOptions,
@@ -321,7 +330,7 @@ function getAdjustedTargetOffset(
 
 function getInlineDeltaLength(delta: InlineDelta): number {
 	return typeof delta.insert === "string"
-		? logicalTextFromStored(delta.insert).replaceAll(
+		? delta.insert.replaceAll(
 				OBJECT_REPLACEMENT_CHARACTER,
 				"",
 			).length

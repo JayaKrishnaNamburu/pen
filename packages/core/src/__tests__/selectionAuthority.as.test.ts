@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
-import { createEditor as createCoreEditor } from "../index";
+import { applyMergeBlocks, applySplitBlock, createEditor as createCoreEditor } from "../index";
 import type { SelectionAuthorityImpl } from "../editor/selection";
 import { createDefaultSchema } from "./fixtures/testSchema";
 
@@ -38,7 +38,9 @@ describe("SelectionAuthority AS1–AS5", () => {
 		const editor = createEditor();
 		const id = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "insert-text", blockId: id, offset: 0, text: "hello" },
+			{ type: "splice-text", blockId: id, from: 0,
+				to: 0,
+				insert: "hello" },
 		]);
 		editor.selectText(id, 1, 4);
 		const auth = authorityOf(editor) as unknown as {
@@ -58,21 +60,19 @@ describe("SelectionAuthority AS1–AS5", () => {
 		const source = editor.firstBlock()!.id;
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: source,
-				offset: 0,
-				text: "meadow sage",
+				from: 0,
+				to: 0,
+				insert: "meadow sage",
 			},
 		]);
 		editor.selectText(source, 9, 9);
-		editor.apply([
-			{
-				type: "split-block",
-				blockId: source,
-				offset: 6,
-				newBlockId: "dest",
-			},
-		]);
+		applySplitBlock(editor, {
+			blockId: source,
+			offset: 6,
+			newBlockId: "dest",
+		});
 		expect(editor.selection).toMatchObject({
 			type: "text",
 			anchor: { blockId: "dest", offset: 3 },
@@ -95,21 +95,19 @@ describe("SelectionAuthority AS1–AS5", () => {
 				position: "last",
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: "b1",
-				offset: 0,
-				text: "meadow sage",
+				from: 0,
+				to: 0,
+				insert: "meadow sage",
 			},
 		]);
 		editor.selectText("b1", 9, 9);
-		editor.apply([
-			{
-				type: "split-block",
-				blockId: "b1",
-				offset: 6,
-				newBlockId: "b2",
-			},
-		]);
+		applySplitBlock(editor, {
+			blockId: "b1",
+			offset: 6,
+			newBlockId: "b2",
+		});
 		expect(editor.selection).toMatchObject({
 			type: "text",
 			anchor: { blockId: "b2", offset: 3 },
@@ -152,21 +150,19 @@ describe("SelectionAuthority AS1–AS5", () => {
 				position: "last",
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: "b1",
-				offset: 0,
-				text: "meadow sage",
+				from: 0,
+				to: 0,
+				insert: "meadow sage",
 			},
 		]);
 		editor.selectText("b1", 9, 9);
-		editor.apply([
-			{
-				type: "split-block",
-				blockId: "b1",
-				offset: 6,
-				newBlockId: "b2",
-			},
-		]);
+		applySplitBlock(editor, {
+			blockId: "b1",
+			offset: 6,
+			newBlockId: "b2",
+		});
 		expect(editor.selection).toMatchObject({
 			type: "text",
 			anchor: { blockId: "b2", offset: 3 },
@@ -174,13 +170,10 @@ describe("SelectionAuthority AS1–AS5", () => {
 		});
 
 		editor.selectText("b2", 1, 1);
-		editor.apply([
-			{
-				type: "merge-blocks",
-				targetBlockId: "b1",
-				sourceBlockId: "b2",
-			},
-		]);
+		applyMergeBlocks(editor, {
+			targetBlockId: "b1",
+			sourceBlockId: "b2",
+		});
 		expect(editor.selection).toMatchObject({
 			type: "text",
 			anchor: { blockId: "b1", offset: 7 },
@@ -195,7 +188,9 @@ describe("SelectionAuthority AS1–AS5", () => {
 				props: {},
 				position: "last",
 			},
-			{ type: "insert-text", blockId: "keep", offset: 0, text: "stay" },
+			{ type: "splice-text", blockId: "keep", from: 0,
+				to: 0,
+				insert: "stay" },
 		]);
 		editor.selectBlocks(["b1"]);
 		editor.apply([{ type: "delete-block", blockId: "b1" }]);
@@ -219,10 +214,11 @@ describe("SelectionAuthority AS1–AS5", () => {
 				position: "last",
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: seed,
-				offset: 0,
-				text: "keep",
+				from: 0,
+				to: 0,
+				insert: "keep",
 			},
 		]);
 		editor.selectCell("grid", 0, 0);
@@ -253,7 +249,9 @@ describe("SelectionAuthority AS1–AS5", () => {
 		const replacement = createEditor();
 		const id = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "insert-text", blockId: id, offset: 0, text: "keep" },
+			{ type: "splice-text", blockId: id, from: 0,
+				to: 0,
+				insert: "keep" },
 		]);
 		editor.selectText(id, 1, 3);
 		const auth = authorityOf(editor) as unknown as {
@@ -283,10 +281,11 @@ describe("SelectionAuthority AS1–AS5", () => {
 		const source = editor.firstBlock()!.id;
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: source,
-				offset: 0,
-				text: "meadow sage",
+				from: 0,
+				to: 0,
+				insert: "meadow sage",
 			},
 			{
 				type: "insert-block",
@@ -298,8 +297,11 @@ describe("SelectionAuthority AS1–AS5", () => {
 		]);
 		editor.selectText(source, 9, 9);
 		editor.apply([
-			{ type: "delete-text", blockId: source, offset: 6, length: 5 },
-			{ type: "insert-text", blockId: "dest", offset: 0, text: " sage" },
+			{ type: "splice-text", blockId: source, from: 6,
+				to: 6 + 5 , insert: "" },
+			{ type: "splice-text", blockId: "dest", from: 0,
+				to: 0,
+				insert: " sage" },
 		]);
 		expect(editor.lastChangeSummary?.structural).toEqual([]);
 		expect(editor.selection).toMatchObject({
@@ -321,7 +323,9 @@ describe("SelectionAuthority AS1–AS5", () => {
 		const editor = createEditor();
 		const a = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "insert-text", blockId: a, offset: 0, text: "the cat sat" },
+			{ type: "splice-text", blockId: a, from: 0,
+				to: 0,
+				insert: "the cat sat" },
 			{
 				type: "insert-block",
 				blockId: "b",
@@ -332,18 +336,25 @@ describe("SelectionAuthority AS1–AS5", () => {
 		]);
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: "b",
-				offset: 0,
-				text: "the cat ran",
+				from: 0,
+				to: 0,
+				insert: "the cat ran",
 			},
 		]);
 		editor.selectText(a, 5, 5);
 		editor.apply([
-			{ type: "delete-text", blockId: a, offset: 4, length: 3 },
-			{ type: "insert-text", blockId: a, offset: 4, text: "dog" },
-			{ type: "delete-text", blockId: "b", offset: 4, length: 3 },
-			{ type: "insert-text", blockId: "b", offset: 4, text: "dog" },
+			{ type: "splice-text", blockId: a, from: 4,
+				to: 4 + 3 , insert: "" },
+			{ type: "splice-text", blockId: a, from: 4,
+				to: 4,
+				insert: "dog" },
+			{ type: "splice-text", blockId: "b", from: 4,
+				to: 4 + 3 , insert: "" },
+			{ type: "splice-text", blockId: "b", from: 4,
+				to: 4,
+				insert: "dog" },
 		]);
 		expect(editor.lastChangeSummary?.structural).toEqual([]);
 		expect(editor.selection).toMatchObject({

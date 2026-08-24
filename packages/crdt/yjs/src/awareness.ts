@@ -12,12 +12,19 @@ export type YjsAwareness = YAwareness;
 export function createYjsAwareness(doc: YjsCRDTDocument): Awareness {
   const awareness = new YAwareness(doc.ydoc);
   const callbackMap = new WeakMap<Function, Function>();
+  let destroyed = false;
 
   const wrappedAwareness: Awareness = {
     getLocalState(): Record<string, unknown> | null {
+      if (destroyed) {
+        return null;
+      }
       return awareness.getLocalState() as Record<string, unknown> | null;
     },
     setLocalState(state: Record<string, unknown> | null) {
+      if (destroyed) {
+        return;
+      }
       awareness.setLocalState(state);
     },
     getStates(): Map<number, Record<string, unknown>> {
@@ -50,6 +57,10 @@ export function createYjsAwareness(doc: YjsCRDTDocument): Awareness {
       }
     },
     destroy() {
+      if (destroyed) {
+        return;
+      }
+      destroyed = true;
       awareness.destroy();
     },
   };

@@ -1,11 +1,16 @@
 // @vitest-environment jsdom
 
+import {
+  handleEditorDocumentKeyDown,
+  type FieldEditorImpl,
+} from "@input/pen-dom";
 import { FIELD_EDITOR_SLOT_KEY } from "@input/pen-types";
 import { createTestEditor } from "@input/pen-test";
 import { mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it } from "vitest";
 import { h, nextTick } from "vue";
 import { PenEditor } from "../components/PenEditor";
+import { FIELD_EDITOR_SLOT_KEY as VUE_FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
 
 afterEach(() => {
   document.body.replaceChildren();
@@ -24,12 +29,12 @@ function createTableEditor() {
 
   editor.apply([
     {
-      type: "insert-table-cell-text",
+      type: "splice-text",
       blockId: "table-1",
-      row: 0,
-      col: 0,
-      offset: 0,
-      text: "A1",
+      cell: { row: 0, col: 0 },
+      from: 0,
+      to: 0,
+      insert: "A1",
     },
   ]);
 
@@ -377,13 +382,24 @@ describe("@input/pen-vue", () => {
     });
     await nextTick();
 
-    document.dispatchEvent(
-      new KeyboardEvent("keydown", {
+    const fieldEditor =
+      editor.internals.getSlot<FieldEditorImpl>(FIELD_EDITOR_SLOT_KEY) ??
+      editor.internals.getSlot<FieldEditorImpl>(VUE_FIELD_EDITOR_SLOT_KEY);
+    if (!fieldEditor) {
+      throw new Error("expected mounted field editor");
+    }
+
+    const handled = handleEditorDocumentKeyDown({
+      event: new KeyboardEvent("keydown", {
         key: "ArrowDown",
         bubbles: true,
+        cancelable: true,
       }),
-    );
-    await nextTick();
+      editor,
+      fieldEditor,
+      root: wrapper.element as HTMLElement,
+    });
+    expect(handled).toBe(true);
 
     expect(editor.selection).toMatchObject({
       type: "text",

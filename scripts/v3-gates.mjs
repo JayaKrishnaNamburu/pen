@@ -4,10 +4,16 @@
  * prints the population, and executes what can be checked. An absent
  * spec-v3 tree or a wave file with zero gates is a failure — never a
  * pass over an empty set.
+ *
+ * `--scope-lint` classifies without executing and fails when a command
+ * is structurally unable to fail: vitest `-t` / Node `--test-name-pattern`
+ * matching nothing exits 0; a path glob matching zero files is an empty
+ * population. This is separate from `cannot-run` so existing waves stay
+ * parseable while their owners rewrite the commands.
  */
 
 import { spawnSync } from "node:child_process";
-import fs from "node:fs";
+import fs, { globSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -28,6 +34,7 @@ export function parseArgs(argv, repoRoot = DEFAULT_REPO_ROOT) {
 	let wavesDir = path.join(repoRoot, "spec-v3", "waves");
 	let preflight = false;
 	let selfTest = false;
+	let scopeLint = false;
 	for (let i = 0; i < argv.length; i += 1) {
 		const arg = argv[i];
 		if (arg === "--preflight") {
@@ -36,6 +43,10 @@ export function parseArgs(argv, repoRoot = DEFAULT_REPO_ROOT) {
 		}
 		if (arg === "--self-test") {
 			selfTest = true;
+			continue;
+		}
+		if (arg === "--scope-lint") {
+			scopeLint = true;
 			continue;
 		}
 		if (arg === "--waves-dir") {
@@ -55,7 +66,7 @@ export function parseArgs(argv, repoRoot = DEFAULT_REPO_ROOT) {
 		}
 		files.push(path.resolve(repoRoot, arg));
 	}
-	return { files, wavesDir, preflight, selfTest, repoRoot };
+	return { files, wavesDir, preflight, selfTest, scopeLint, repoRoot };
 }
 
 export function collectWaveFiles(wavesDir, explicitFiles = []) {
@@ -259,6 +270,99 @@ export function classifyGate(gate, repoRoot, packages) {
 	return { status: "runnable", reason: null };
 }
 
+const NAME_FILTER_RE =
+	/(?:^|\s)(?:-t|--testNamePattern|--test-name-pattern)(?:\s|=)/;
+const PATH_GLOB_RE =
+	/(?:^|[\s])((?:packages|scripts|spec(?:-v[23])?|playground)\/[^\s]*\*[^\s]*)/g;
+
+/**
+ * Structural defects that make a gate unable to fail (or unable to pass)
+ * regardless of how sensible the command looks when read. Matching nothing
+ * on a vitest `-t` / Node `--test-name-pattern` exits 0. A path glob that
+ * expands to zero files is a population claim over the empty set.
+ *
+ * This does not change `classifyGate` status — off-limits waves still
+ * report `cannot-run 0` until their owners rewrite the commands. Use
+ * `--scope-lint` to fail on these by name.
+ */
+export function detectScopeDefects(gate, repoRoot, packages) {
+	const command = gate.command ?? "";
+	const defects = [];
+
+	if (NAME_FILTER_RE.test(command)) {
+		defects.push({
+			class: "cannot-fail-name-filter",
+			reason: "name filter matching nothing skips tests and exits 0",
+		});
+	}
+
+	const positional = command.match(/\s--\s+([A-Za-z][\w-]*)\s*$/);
+	if (positional && !NAME_FILTER_RE.test(command)) {
+		defects.push({
+			class: "cannot-fail-name-filter",
+			reason: `vitest positional filter "${positional[1]}" matching nothing exits 0`,
+		});
+	}
+
+	PATH_GLOB_RE.lastIndex = 0;
+	let globMatch = PATH_GLOB_RE.exec(command);
+	while (globMatch) {
+		const pattern = globMatch[1].replace(/[)\\`]+$/g, "");
+		if (/[$\n{]/.test(pattern)) {
+			globMatch = PATH_GLOB_RE.exec(command);
+			continue;
+		}
+		const matched = expandPathGlob(repoRoot, pattern);
+		if (matched.length === 0) {
+			defects.push({
+				class: "empty-population",
+				reason: `glob ${pattern} matched 0 files`,
+			});
+		}
+		globMatch = PATH_GLOB_RE.exec(command);
+	}
+
+	if (!/^\s*test\s/.test(command)) {
+		for (const filterMatch of command.matchAll(/pnpm --filter (\S+)/g)) {
+			const pkg = filterMatch[1];
+			if (packages && !packages.has(pkg)) {
+				defects.push({
+					class: "cannot-fail-empty-filter",
+					reason: `pnpm --filter ${pkg} matches no package and exits 0`,
+				});
+			}
+		}
+	}
+
+	return defects;
+}
+
+function expandPathGlob(repoRoot, pattern) {
+	try {
+		return globSync(pattern, { cwd: repoRoot });
+	} catch {
+		return [];
+	}
+}
+
+export function collectScopeDefects(entries, repoRoot, packages) {
+	const found = [];
+	for (const entry of entries) {
+		for (const gate of entry.gates) {
+			for (const defect of detectScopeDefects(gate, repoRoot, packages)) {
+				found.push({
+					id: gate.id,
+					file: gate.file,
+					command: gate.command,
+					class: defect.class,
+					reason: defect.reason,
+				});
+			}
+		}
+	}
+	return found;
+}
+
 export function formatPopulation(entries, repoRoot) {
 	const totalGates = entries.reduce((sum, entry) => sum + entry.gates.length, 0);
 	const lines = [
@@ -388,12 +492,15 @@ export function runGates(options) {
 	}
 
 	const ok = results.every((result) => result.status === "pass");
+	const scopeDefects = collectScopeDefects(entries, repoRoot, packages);
 	return {
 		ok,
 		error: ok ? null : "one or more gates did not pass",
 		population,
 		entries,
 		results,
+		scopeDefects,
+		repoRoot,
 	};
 }
 
@@ -423,6 +530,19 @@ export function formatReport(run) {
 	lines.push(
 		`summary: ${counts.pass} pass, ${counts.fail} fail, ${counts["cannot-run"]} cannot-run, ${counts.runnable} classified-runnable`,
 	);
+	const scopeDefects = run.scopeDefects ?? [];
+	if (scopeDefects.length > 0) {
+		lines.push("");
+		lines.push(`scope-defects: ${scopeDefects.length}`);
+		for (const defect of scopeDefects) {
+			const rel = run.repoRoot
+				? path.relative(run.repoRoot, defect.file).split(path.sep).join("/")
+				: defect.file;
+			lines.push(`  ${defect.id}  ${rel}  ${defect.class}  ${defect.reason}`);
+		}
+	} else if (run.results.length > 0) {
+		lines.push("scope-defects: 0");
+	}
 	if (run.error) {
 		lines.push(run.error);
 	}
@@ -556,6 +676,45 @@ export function runSelfTests(repoRoot = DEFAULT_REPO_ROOT) {
 		`self-test: passing fixture statuses, got ${JSON.stringify(passing.results.map((r) => r.status))}`,
 	);
 
+	const scopeFile = path.join(fixtureDir, "scope-defect-wave.md");
+	const scoped = parseWaveFile(scopeFile);
+	const byScopeId = Object.fromEntries(scoped.map((gate) => [gate.id, gate]));
+	const nameFilter = detectScopeDefects(byScopeId["96.1"], repoRoot, packages);
+	assert(
+		nameFilter.some((defect) => defect.class === "cannot-fail-name-filter"),
+		`self-test: 96.1 must be cannot-fail-name-filter, got ${JSON.stringify(nameFilter)}`,
+	);
+	const nodeNameFilter = detectScopeDefects(byScopeId["96.2"], repoRoot, packages);
+	assert(
+		nodeNameFilter.some((defect) => defect.class === "cannot-fail-name-filter"),
+		`self-test: 96.2 must be cannot-fail-name-filter, got ${JSON.stringify(nodeNameFilter)}`,
+	);
+	const emptyPop = detectScopeDefects(byScopeId["96.3"], repoRoot, packages);
+	assert(
+		emptyPop.some((defect) => defect.class === "empty-population"),
+		`self-test: 96.3 must be empty-population, got ${JSON.stringify(emptyPop)}`,
+	);
+	assert(
+		/convert\*\.ts/.test(emptyPop.find((defect) => defect.class === "empty-population")?.reason ?? ""),
+		`self-test: 96.3 reason must name convert*.ts, got ${JSON.stringify(emptyPop)}`,
+	);
+	const clean = detectScopeDefects(byScopeId["96.4"], repoRoot, packages);
+	assert(
+		clean.length === 0,
+		`self-test: 96.4 must be clean, got ${JSON.stringify(clean)}`,
+	);
+	const positional = detectScopeDefects(byScopeId["96.5"], repoRoot, packages);
+	assert(
+		positional.some((defect) => defect.class === "cannot-fail-name-filter"),
+		`self-test: 96.5 must be cannot-fail-name-filter, got ${JSON.stringify(positional)}`,
+	);
+
+	const passingScope = collectScopeDefects(passing.entries, repoRoot, packages);
+	assert(
+		passingScope.length === 0,
+		`self-test: passing fixture must have 0 scope defects, got ${JSON.stringify(passingScope)}`,
+	);
+
 	return {
 		absent: absent.population,
 		emptyFile: zeroGates.population,
@@ -581,9 +740,16 @@ function main() {
 		repoRoot: parsed.repoRoot,
 		wavesDir: parsed.wavesDir,
 		files: parsed.files,
-		preflight: parsed.preflight,
+		preflight: parsed.preflight || parsed.scopeLint,
 	});
 	console.log(formatReport(run));
+	if (parsed.scopeLint) {
+		const n = run.scopeDefects?.length ?? 0;
+		if (n > 0) {
+			process.exitCode = 1;
+		}
+		return;
+	}
 	if (!run.ok) {
 		process.exitCode = 1;
 	}

@@ -4,6 +4,7 @@ import type {
 	SelectionState,
 	TextSelection,
 } from "@input/pen-types";
+import { mapOffsetThroughSplices } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 
 import { createBlockIndexSnapshot } from "../changes/blockIndex";
@@ -66,13 +67,15 @@ describe("SelectionAuthority A1–A6", () => {
 		const editor = createEditor();
 		const id = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "insert-text", blockId: id, offset: 0, text: "ab" },
+			{ type: "splice-text", blockId: id, from: 0,
+				to: 0,
+				insert: "ab" },
 			{
-				type: "insert-inline-node",
+				type: "splice-text",
 				blockId: id,
-				offset: 2,
-				nodeType: "mention",
-				props: { id: "1", label: "Ada" },
+				from: 2,
+				to: 2,
+				insert: { nodeType: "mention", props: { id: "1", label: "Ada" } },
 			},
 		]);
 		editor.selectText(id, 3, 3);
@@ -129,7 +132,9 @@ describe("SelectionAuthority A1–A6", () => {
 		const editor = createEditor();
 		const id = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "insert-text", blockId: id, offset: 0, text: "hello" },
+			{ type: "splice-text", blockId: id, from: 0,
+				to: 0,
+				insert: "hello" },
 		]);
 		editor.selectText(id, 2, 2);
 		const version = authorityOf(editor).record.version;
@@ -212,17 +217,18 @@ describe("SelectionAuthority A1–A6", () => {
 		editor.destroy();
 	});
 
-	it("A5: caret stays collapsed through mapRange on an insert at 0", () => {
+	it("A5: caret stays collapsed through mapOffsetThroughSplices on an insert at 0", () => {
 		const editor = createEditor();
 		const id = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "insert-text", blockId: id, offset: 0, text: "meadow sage" },
+			{ type: "splice-text", blockId: id, from: 0,
+				to: 0,
+				insert: "meadow sage" },
 		]);
 		editor.selectText(id, 4, 4);
 		const summary = createChangeSummary({
 			commitId: 99,
-			originType: "user",
-			text: [
+			blockText: [
 				{
 					blockId: id,
 					splices: [{ from: 0, to: 0, insertLength: 5 }],
@@ -236,10 +242,14 @@ describe("SelectionAuthority A1–A6", () => {
 				typeById: { [id]: "paragraph" },
 			}),
 		});
-		const mapped = summary.mapRange({
-			anchor: { blockId: id, offset: 4 },
-			focus: { blockId: id, offset: 4 },
-		});
+		const observedSplices = summary.blockText.find(
+			(change) => change.blockId === id,
+		)!.splices;
+		const mappedOffset = mapOffsetThroughSplices(observedSplices, 4, 1);
+		const mapped = {
+			anchor: { blockId: id, offset: mappedOffset },
+			focus: { blockId: id, offset: mappedOffset },
+		};
 		authorityOf(editor).onCommit(summary);
 		expect(mapped).toEqual({
 			anchor: { blockId: id, offset: 9 },
@@ -265,7 +275,9 @@ describe("SelectionAuthority A1–A6", () => {
 				props: {},
 				position: "last",
 			},
-			{ type: "insert-text", blockId: "keep", offset: 0, text: "stay" },
+			{ type: "splice-text", blockId: "keep", from: 0,
+				to: 0,
+				insert: "stay" },
 		]);
 		editor.selectText(initial, 0, 0);
 		editor.apply([{ type: "delete-block", blockId: initial }]);
@@ -288,8 +300,7 @@ describe("SelectionAuthority A1–A6", () => {
 		authorityOf(editor).onCommit(
 			createChangeSummary({
 				commitId: 7,
-				originType: "user",
-				text: [],
+				blockText: [],
 				structural: [],
 				index: createBlockIndexSnapshot({
 					roots: [id],
@@ -305,7 +316,9 @@ describe("SelectionAuthority A1–A6", () => {
 	it("A5: mapped writes emit selectionChange after commit listeners", () => {
 		const editor = createEditor();
 		const id = editor.firstBlock()!.id;
-		editor.apply([{ type: "insert-text", blockId: id, offset: 0, text: "Hello" }]);
+		editor.apply([{ type: "splice-text", blockId: id, from: 0,
+				to: 0,
+				insert: "Hello" }]);
 		editor.selectText(id, 2, 2);
 		const order: string[] = [];
 		const changes: SelectionRecord[] = [];
@@ -316,7 +329,9 @@ describe("SelectionAuthority A1–A6", () => {
 		editor.on("commit", () => {
 			order.push("commit");
 		});
-		editor.apply([{ type: "insert-text", blockId: id, offset: 0, text: "xxx" }]);
+		editor.apply([{ type: "splice-text", blockId: id, from: 0,
+				to: 0,
+				insert: "xxx" }]);
 		expect(order).toEqual(["commit", "selection"]);
 		expect(editor.selection).toMatchObject({
 			type: "text",
@@ -369,7 +384,9 @@ describe("SelectionAuthority A1–A6", () => {
 			},
 		]);
 		editor.apply([
-			{ type: "insert-text", blockId: first, offset: 0, text: "hello" },
+			{ type: "splice-text", blockId: first, from: 0,
+				to: 0,
+				insert: "hello" },
 		]);
 		editor.selectText(first, 2, 2);
 		editor.selectAll();
@@ -384,6 +401,63 @@ describe("SelectionAuthority A1–A6", () => {
 			type: "block",
 			blockIds: [first, "second"],
 			head: "second",
+		});
+		editor.destroy();
+	});
+
+	it("N2: a mixed-boundary divider endpoint at 0 expands to a full cover", () => {
+		const editor = createEditor();
+		const p1 = editor.firstBlock()!.id;
+		editor.apply([
+			{ type: "splice-text", blockId: p1, from: 0, to: 0, insert: "Hello" },
+			{
+				type: "insert-block",
+				blockId: "d1",
+				blockType: "divider",
+				props: {},
+				position: { after: p1 },
+			},
+		]);
+		editor.selectTextRange(
+			{ blockId: p1, offset: 2 },
+			{ blockId: "d1", offset: 0 },
+		);
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId: p1, offset: 2 },
+			focus: { blockId: "d1", offset: 1 },
+		});
+		editor.destroy();
+	});
+
+	it("N2: a reversed mixed-boundary divider start stays at 0", () => {
+		const editor = createEditor();
+		const p1 = editor.firstBlock()!.id;
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "d1",
+				blockType: "divider",
+				props: {},
+				position: { after: p1 },
+			},
+			{
+				type: "insert-block",
+				blockId: "p2",
+				blockType: "paragraph",
+				props: {},
+				position: { after: "d1" },
+			},
+			{ type: "splice-text", blockId: "p2", from: 0, to: 0, insert: "World" },
+		]);
+		editor.selectTextRange(
+			{ blockId: "d1", offset: 0 },
+			{ blockId: "p2", offset: 2 },
+		);
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId: "d1", offset: 0 },
+			focus: { blockId: "p2", offset: 2 },
 		});
 		editor.destroy();
 	});

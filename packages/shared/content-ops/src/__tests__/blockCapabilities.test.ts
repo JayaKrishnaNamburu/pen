@@ -9,7 +9,6 @@ import {
 	shouldAllowDirectBlockPaste,
 	shouldAllowFlowInsertionInSlashMenu,
 	shouldExposeBlockInTooling,
-	shouldFallbackMixedSelectionToBlock,
 	shouldForceBlockScopedSelectAll,
 	shouldShowBlockInDefaultMenus,
 } from "../blockCapabilities";
@@ -143,20 +142,6 @@ describe("block capability helpers", () => {
 			false,
 		);
 		expect(shouldAllowFlowInsertionInSlashMenu("flow", "flow-inline")).toBe(true);
-	});
-
-	it("shouldFallbackMixedSelectionToBlock follows profile and capability", () => {
-		expect(shouldFallbackMixedSelectionToBlock("structured", "flow-inline")).toBe(
-			false,
-		);
-		expect(shouldFallbackMixedSelectionToBlock("structured", "flow-delegated")).toBe(
-			true,
-		);
-		expect(shouldFallbackMixedSelectionToBlock("flow", "flow-structural")).toBe(
-			true,
-		);
-		expect(shouldFallbackMixedSelectionToBlock("flow", "flow-inline")).toBe(false);
-		expect(shouldFallbackMixedSelectionToBlock("flow", null)).toBe(true);
 	});
 
 	it("shouldForceBlockScopedSelectAll is flow-only for structural and disallowed", () => {

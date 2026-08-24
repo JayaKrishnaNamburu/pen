@@ -59,7 +59,7 @@ describe("SEC5 escaped XML serialization", () => {
           props: {},
           position: "last",
         },
-        { type: "insert-text", blockId: "b1", offset: 0, text },
+        { type: "splice-text", blockId: "b1", from: 0, to: 0, insert: text },
       ]);
 
       const xml = await xmlExporter.export(source);
@@ -98,10 +98,11 @@ describe("SEC5 escaped XML serialization", () => {
         position: "last",
       },
       {
-        type: "insert-text",
+        type: "splice-text",
         blockId: `b'"&<>`,
-        offset: 0,
-        text: "safe",
+        from: 0,
+				to: 0,
+				insert: "safe",
       },
     ]);
 

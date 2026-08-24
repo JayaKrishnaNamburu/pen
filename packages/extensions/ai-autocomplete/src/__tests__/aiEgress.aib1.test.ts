@@ -144,7 +144,9 @@ describe("AIB1 autocomplete live egress", () => {
 		const blockId = editor.firstBlock()!.id;
 		slot.fieldEditor.focusBlockId = blockId;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello" }],
 			{ origin: "user" },
 		);
 		editor.selectText(blockId, 5, 5);
@@ -188,10 +190,11 @@ describe("AIB1 autocomplete live egress", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: firstBlockId,
-					offset: 0,
-					text: "Neighbor SECRET context.",
+					from: 0,
+				to: 0,
+				insert: "Neighbor SECRET context.",
 				},
 			],
 			{ origin: "user" },
@@ -207,10 +210,11 @@ describe("AIB1 autocomplete live egress", () => {
 					position: { after: firstBlockId },
 				},
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: targetBlockId,
-					offset: 0,
-					text: "Hello SECRET",
+					from: 0,
+				to: 0,
+				insert: "Hello SECRET",
 				},
 			],
 			{ origin: "user" },
@@ -283,7 +287,9 @@ describe("AIB1 autocomplete live egress", () => {
 		const blockId = editor.firstBlock()!.id;
 		slot.fieldEditor.focusBlockId = blockId;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello" }],
 			{ origin: "user" },
 		);
 		editor.selectText(blockId, 5, 5);
@@ -335,10 +341,11 @@ describe("AIB1 autocomplete live egress", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "Hello SECRET",
+					from: 0,
+				to: 0,
+				insert: "Hello SECRET",
 				},
 			],
 			{ origin: "user" },

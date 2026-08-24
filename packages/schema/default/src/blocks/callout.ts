@@ -16,7 +16,7 @@ const MARKDOWN_CALLOUT_TYPE_MAP: Record<string, string> = {
 
 export const callout = defineBlock("callout", {
   props: {
-    type: prop
+    severity: prop
       .enum(["info", "warning", "error"])
       .default("info")
       .describe("Callout severity"),
@@ -34,9 +34,9 @@ export const callout = defineBlock("callout", {
   serialize: {
     toMarkdown: (block) => {
       const prefix =
-        block.props.type === "warning"
+        block.props.severity === "warning"
           ? "> **Warning:**"
-          : block.props.type === "error"
+          : block.props.severity === "error"
             ? "> **Error:**"
             : "> **Note:**";
       return `${prefix} ${block.content ?? ""}`;
@@ -57,7 +57,7 @@ export const callout = defineBlock("callout", {
 
       return {
         type: "callout",
-        props: { type: calloutType },
+        props: { severity: calloutType },
         importContentSource: {
           markdownNodes: trimLeadingWhitespaceNodes(first.children.slice(1)),
         },
@@ -69,11 +69,11 @@ export const callout = defineBlock("callout", {
       };
     },
     toHTML: (block) => {
-      const raw = block.props.type;
-      const type =
+      const raw = block.props.severity;
+      const severity =
         raw === "warning" || raw === "error" || raw === "info" ? raw : "info";
-      // SEC5: clamped callout type
-      return `<div class="callout callout-${type}">${block.content ?? ""}</div>`;
+      // SEC5: clamped callout class token
+      return `<div class="callout callout-${severity}">${block.content ?? ""}</div>`;
     },
     fromHTML: (el: HTMLImportElement) => {
       if (el.tagName !== "div") return null;
@@ -84,7 +84,7 @@ export const callout = defineBlock("callout", {
       return {
         type: "callout",
         props: {
-          type: ["info", "warning", "error"].includes(calloutType)
+          severity: ["info", "warning", "error"].includes(calloutType)
             ? calloutType
             : "info",
         },

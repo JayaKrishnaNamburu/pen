@@ -63,7 +63,9 @@ describe("@input/pen-delta-stream processStream AIB5 document", () => {
 		const diagnostics = listenDiagnostics(editor);
 		const seedId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId: seedId, offset: 0, text: "seed" }],
+			[{ type: "splice-text", blockId: seedId, from: 0,
+				to: 0,
+				insert: "seed" }],
 			{ origin: "user" },
 		);
 
@@ -106,7 +108,9 @@ describe("@input/pen-delta-stream processStream AIB5 document", () => {
 		]);
 
 		editor.apply(
-			[{ type: "insert-text", blockId: seedId, offset: 4, text: " still-writable" }],
+			[{ type: "splice-text", blockId: seedId, from: 4,
+				to: 4,
+				insert: " still-writable" }],
 			{ origin: "user" },
 		);
 		expect(editor.getBlock(seedId)?.textContent()).toContain("still-writable");
@@ -165,7 +169,9 @@ describe("@input/pen-delta-stream processStream AIB5 document", () => {
 		const editor = createStreamEditor();
 		const seedId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId: seedId, offset: 0, text: "before" }],
+			[{ type: "splice-text", blockId: seedId, from: 0,
+				to: 0,
+				insert: "before" }],
 			{ origin: "user" },
 		);
 		const before = editor.documentState.blockOrder.map(

@@ -13,10 +13,11 @@ scenario("harness: remoteApply reaches the local document", async (s) => {
 	await s.load("hello-world");
 	await s.remote.apply([
 		{
-			type: "insert-text",
+			type: "splice-text",
 			blockId: "hello-p1",
-			offset: 0,
-			text: "R",
+			from: 0,
+				to: 0,
+				insert: "R",
 		},
 	]);
 	await s.assert.textContains("RHello");

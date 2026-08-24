@@ -6,7 +6,7 @@ import * as Y from "yjs";
 import {
 	SCALE3_DECORATION_COUNT_POINTS,
 	SCALE3_EXTENSION_COUNT_POINTS,
-	SCALE3_PEER_COUNT_POINTS,
+	SCALE3_REMOTE_CARET_COUNT_POINTS,
 	SCALE3_PLUS_EXTENSIONS,
 } from "../constants/scale3";
 import { createLargeDocument } from "./largeDoc";
@@ -15,7 +15,7 @@ export interface Scale3StackOptions {
 	blockCount: number;
 	extraDecoratingExtensions?: number;
 	decorationCount?: number;
-	peerCount?: number;
+	remoteCaretCount?: number;
 }
 
 const seedUpdates = new Map<number, Uint8Array>();
@@ -73,7 +73,7 @@ function inlineDecorations(count: number): Decoration[] {
 	return decorations;
 }
 
-function peerDecorations(count: number): Decoration[] {
+function remoteCaretDecorations(count: number): Decoration[] {
 	const decorations: Decoration[] = [];
 	for (let i = 0; i < count; i++) {
 		decorations.push({
@@ -101,7 +101,7 @@ export function createScale3Extensions(
 	options: Scale3StackOptions,
 ): Extension[] {
 	const decorationCount = options.decorationCount ?? 0;
-	const peerCount = options.peerCount ?? 0;
+	const remoteCaretCount = options.remoteCaretCount ?? 0;
 	const extraCount = options.extraDecoratingExtensions ?? 0;
 
 	const plus = SCALE3_PLUS_EXTENSIONS.map((name) => {
@@ -109,7 +109,7 @@ export function createScale3Extensions(
 			return makeNoopPlusExtension(name, inlineDecorations(decorationCount));
 		}
 		if (name === "multiplayer") {
-			return makeNoopPlusExtension(name, peerDecorations(peerCount));
+			return makeNoopPlusExtension(name, remoteCaretDecorations(remoteCaretCount));
 		}
 		return makeNoopPlusExtension(name, []);
 	});
@@ -128,6 +128,17 @@ export function createScale3Editor(options: Scale3StackOptions) {
 	});
 }
 
+export function countScale3RemoteCarets(
+	editor: ReturnType<typeof createScale3Editor>,
+): number {
+	editor.requestDecorationUpdate();
+	return editor.getDecorations().decorations.filter(
+		(decoration) =>
+			decoration.type === "block" &&
+			decoration.attributes["data-pen-remote-caret"] === true,
+	).length;
+}
+
 export function scale3KeystrokeTarget(blockCount: number): string {
 	return `block-${Math.floor(blockCount / 2)}`;
 }
@@ -136,6 +147,6 @@ export const SCALE3_SHARED_POINT = {
 	blockCount: 1000,
 	extraDecoratingExtensions: 0,
 	decorationCount: SCALE3_DECORATION_COUNT_POINTS[0],
-	peerCount: SCALE3_PEER_COUNT_POINTS[0],
+	remoteCaretCount: SCALE3_REMOTE_CARET_COUNT_POINTS[0],
 	extensionCount: SCALE3_EXTENSION_COUNT_POINTS[0],
 } as const;

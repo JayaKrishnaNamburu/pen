@@ -15,9 +15,9 @@ export function buildTableSnapshotOps(
 
 	if (table.columns.length > 0) {
 		ops.push({
-			type: "update-table-columns",
+			type: "set-props",
 			blockId,
-			columns: [...table.columns],
+			props: { columns: [...table.columns] },
 		});
 	}
 
@@ -27,9 +27,9 @@ export function buildTableSnapshotOps(
 		index -= 1
 	) {
 		ops.push({
-			type: "delete-table-row",
+			type: "grid",
 			blockId,
-			index,
+			change: { kind: "delete-row", index },
 		});
 	}
 
@@ -39,25 +39,25 @@ export function buildTableSnapshotOps(
 		index -= 1
 	) {
 		ops.push({
-			type: "delete-table-column",
+			type: "grid",
 			blockId,
-			index,
+			change: { kind: "delete-column", index },
 		});
 	}
 
 	for (let index = currentShape.columnCount; index < table.columnCount; index += 1) {
 		ops.push({
-			type: "insert-table-column",
+			type: "grid",
 			blockId,
-			index,
+			change: { kind: "insert-column", index },
 		});
 	}
 
 	for (let index = currentShape.rowCount; index < table.rowCount; index += 1) {
 		ops.push({
-			type: "insert-table-row",
+			type: "grid",
 			blockId,
-			index,
+			change: { kind: "insert-row", index },
 		});
 	}
 
@@ -68,12 +68,12 @@ export function buildTableSnapshotOps(
 			}
 
 			ops.push({
-				type: "insert-table-cell-text",
+				type: "splice-text",
 				blockId,
-				row: cell.row,
-				col: cell.col,
-				offset: 0,
-				text: cell.text,
+				cell: { row: cell.row, col: cell.col },
+				from: 0,
+				to: 0,
+				insert: cell.text,
 			});
 		}
 	}

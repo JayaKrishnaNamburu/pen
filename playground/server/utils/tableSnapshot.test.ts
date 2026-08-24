@@ -21,15 +21,15 @@ describe("tableSnapshot", () => {
 		);
 
 		expect(ops).toEqual([
-			{ type: "delete-table-row", blockId: "table-1", index: 1 },
-			{ type: "delete-table-column", blockId: "table-1", index: 1 },
+			{ type: "grid", blockId: "table-1", change: { kind: "delete-row", index: 1  }},
+			{ type: "grid", blockId: "table-1", change: { kind: "delete-column", index: 1  }},
 			{
-				type: "insert-table-cell-text",
+				type: "splice-text",
 				blockId: "table-1",
-				row: 0,
-				col: 0,
-				offset: 0,
-				text: "A1",
+				cell: { row: 0, col: 0 },
+				from: 0,
+				to: 0,
+				insert: "A1",
 			},
 		]);
 	});
@@ -47,8 +47,8 @@ describe("tableSnapshot", () => {
 		);
 
 		expect(ops).toEqual([
-			{ type: "insert-table-column", blockId: "table-1", index: 2 },
-			{ type: "insert-table-row", blockId: "table-1", index: 2 },
+			{ type: "grid", blockId: "table-1", change: { kind: "insert-column", index: 2  }},
+			{ type: "grid", blockId: "table-1", change: { kind: "insert-row", index: 2  }},
 		]);
 	});
 });

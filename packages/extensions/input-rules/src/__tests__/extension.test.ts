@@ -89,18 +89,20 @@ describe("inputRulesExtension", () => {
 		expect(hook).toBeTypeOf("function");
 
 		const ops = hook!(
-			[{ type: "insert-text", blockId: "b1", offset: 1, text: " " }],
+			[{ type: "splice-text", blockId: "b1", from: 1,
+				to: 1,
+				insert: " " }],
 			{ origin: "user" },
 		);
 
 		expect(ops).toEqual([
-			{ type: "insert-text", blockId: "b1", offset: 1, text: " " },
-			{ type: "delete-text", blockId: "b1", offset: 0, length: 2 },
+			{ type: "splice-text", blockId: "b1", from: 1,
+				to: 1,
+				insert: " " },
+			{ type: "splice-text", blockId: "b1", from: 0,
+				to: 0 + 2 , insert: "" },
 			{
-				type: "convert-block",
-				blockId: "b1",
-				newType: "heading",
-				newProps: { level: 1 },
+				type: "set-props", blockId: "b1", props: { type: "heading", ...{ level: 1  }},
 			},
 		]);
 		expect(apply).not.toHaveBeenCalled();
@@ -124,10 +126,11 @@ describe("inputRulesExtension", () => {
 						}
 						return [
 							{
-								type: "insert-text",
+								type: "splice-text",
 								blockId: ctx.blockId,
-								offset: ctx.fullText.length + 1,
-								text: " ",
+								from: ctx.fullText.length + 1,
+				to: ctx.fullText.length + 1,
+				insert: " ",
 							},
 						];
 					},
@@ -143,14 +146,20 @@ describe("inputRulesExtension", () => {
 		});
 
 		const ops = getHook()!(
-			[{ type: "insert-text", blockId: "b1", offset: 1, text: " " }],
+			[{ type: "splice-text", blockId: "b1", from: 1,
+				to: 1,
+				insert: " " }],
 			{ origin: "user" },
 		);
 
 		expect(fires).toBe(1);
 		expect(ops).toEqual([
-			{ type: "insert-text", blockId: "b1", offset: 1, text: " " },
-			{ type: "insert-text", blockId: "b1", offset: 2, text: " " },
+			{ type: "splice-text", blockId: "b1", from: 1,
+				to: 1,
+				insert: " " },
+			{ type: "splice-text", blockId: "b1", from: 2,
+				to: 2,
+				insert: " " },
 		]);
 	});
 
@@ -166,7 +175,9 @@ describe("inputRulesExtension", () => {
 		});
 
 		const originalOps: DocumentOp[] = [
-			{ type: "insert-text", blockId: "b1", offset: 1, text: " " },
+			{ type: "splice-text", blockId: "b1", from: 1,
+				to: 1,
+				insert: " " },
 		];
 		const ops = getHook()!(originalOps, { origin: "input-rule" });
 

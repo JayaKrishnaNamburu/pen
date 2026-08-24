@@ -48,10 +48,11 @@ function insertText(editor: Editor, text: string, origin: OpOrigin) {
 	editor.apply(
 		[
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: editor.getBlock(blockId)!.length(),
-				text,
+				from: editor.getBlock(blockId)!.length(),
+				to: editor.getBlock(blockId)!.length(),
+				insert: text,
 			},
 		],
 		{ origin },
@@ -66,10 +67,11 @@ function insertTextMigration(id: string, text: string): DocumentMigration {
 			const blockId = editor.firstBlock()!.id;
 			editor.apply([
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: editor.getBlock(blockId)!.length(),
-					text,
+					from: editor.getBlock(blockId)!.length(),
+					to: editor.getBlock(blockId)!.length(),
+					insert: text,
 				},
 			]);
 		},
@@ -159,10 +161,11 @@ describe("@input/pen-undo origin shape contract", () => {
 		harness.peerB.editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: "b1",
-					offset: 5,
-					text: " from-b",
+					from: 5,
+				to: 5,
+				insert: " from-b",
 				},
 			],
 			{ origin: "user" },

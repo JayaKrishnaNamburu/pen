@@ -85,10 +85,11 @@ describe("@input/pen-react block selection", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: firstBlockId,
-				offset: 0,
-				text: "Alpha",
+				from: 0,
+				to: 0,
+				insert: "Alpha",
 			},
 			{
 				type: "insert-block",
@@ -98,10 +99,11 @@ describe("@input/pen-react block selection", () => {
 				position: { after: firstBlockId },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: secondBlockId,
-				offset: 0,
-				text: "Beta",
+				from: 0,
+				to: 0,
+				insert: "Beta",
 			},
 		]);
 
@@ -176,10 +178,11 @@ describe("@input/pen-react block selection", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: firstBlockId,
-				offset: 0,
-				text: "Alpha",
+				from: 0,
+				to: 0,
+				insert: "Alpha",
 			},
 			{
 				type: "insert-block",
@@ -189,10 +192,11 @@ describe("@input/pen-react block selection", () => {
 				position: { after: firstBlockId },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: secondBlockId,
-				offset: 0,
-				text: "Beta",
+				from: 0,
+				to: 0,
+				insert: "Beta",
 			},
 		]);
 
@@ -282,7 +286,9 @@ describe("@input/pen-react block selection", () => {
 		const editor = createEditor();
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "insert-text", blockId, offset: 0, text: "Alpha" },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Alpha" },
 		]);
 		editor.selectBlock(blockId);
 

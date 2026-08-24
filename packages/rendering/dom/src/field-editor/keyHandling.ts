@@ -1,9 +1,14 @@
 import {
+	caretDown,
+	caretLeft,
+	caretRight,
+	caretUp,
 	getInlineCompletionController,
 	historyRedo,
 	historyUndo,
 	isCollapsed,
 	isMultiBlock,
+	setCellCaretFocus,
 } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
 import type { FieldEditorKeyboardController } from "./controller";
@@ -82,7 +87,12 @@ export function handleFieldEditorKeyDown(options: {
 	}
 
 	if (fieldEditor.activeCellCoord) {
-		const tableHandled = handleTableCellKey(event, editor, fieldEditor);
+		const tableHandled = handleTableCellKey(
+			event,
+			editor,
+			fieldEditor,
+			range,
+		);
 		if (tableHandled !== null) {
 			return tableHandled;
 		}
@@ -171,6 +181,7 @@ function handleTableCellKey(
 	event: KeyboardEvent,
 	editor: Editor,
 	fieldEditor: FieldEditorKeyboardController,
+	range: SelectionRange | null,
 ): boolean | null {
 	if (
 		event.key === "Tab" &&
@@ -235,16 +246,74 @@ function handleTableCellKey(
 		return true;
 	}
 
-	if (
-		event.key === "ArrowLeft" ||
-		event.key === "ArrowRight" ||
-		event.key === "ArrowUp" ||
-		event.key === "ArrowDown"
-	) {
-		return false;
+	if (isCellArrowKey(event.key) && !event.metaKey && !event.ctrlKey && !event.altKey) {
+		const coord = fieldEditor.activeCellCoord;
+		if (!coord) {
+			return true;
+		}
+		const command = caretCommandForCellArrow(event.key);
+		setCellCaretFocus(
+			editor,
+			{
+				blockId: coord.blockId,
+				row: coord.row,
+				col: coord.col,
+				start: range?.start ?? 0,
+				end: range?.end ?? 0,
+			},
+			(next) => {
+				fieldEditor.commitCellTextSelection?.(
+					coord.blockId,
+					coord.row,
+					coord.col,
+					next.start,
+					next.end,
+				);
+			},
+		);
+		const handled = dispatchEditorCommand(
+			editor,
+			command,
+			{ extend: event.shiftKey },
+			{ origin: "user", fromKeymap: true },
+		);
+		setCellCaretFocus(editor, null);
+		if (!handled) {
+			return false;
+		}
+		event.preventDefault();
+		return true;
 	}
 
 	return null;
+}
+
+type CellArrowKey = "ArrowLeft" | "ArrowRight" | "ArrowUp" | "ArrowDown";
+
+function isCellArrowKey(key: string): key is CellArrowKey {
+	return (
+		key === "ArrowLeft" ||
+		key === "ArrowRight" ||
+		key === "ArrowUp" ||
+		key === "ArrowDown"
+	);
+}
+
+function caretCommandForCellArrow(key: CellArrowKey) {
+	switch (key) {
+		case "ArrowLeft":
+			return caretLeft;
+		case "ArrowRight":
+			return caretRight;
+		case "ArrowUp":
+			return caretUp;
+		case "ArrowDown":
+			return caretDown;
+		default: {
+			const _exhaustive: never = key;
+			return _exhaustive;
+		}
+	}
 }
 
 function syncAcceptedInlineCompletionSelection(

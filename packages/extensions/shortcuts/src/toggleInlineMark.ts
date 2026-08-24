@@ -137,8 +137,8 @@ function buildFormatTextOps(
 	return segments.map((segment) => ({
 		type: "format-text",
 		blockId: segment.blockId,
-		offset: segment.start,
-		length: segment.end - segment.start,
+		from: segment.start,
+		to: segment.end,
 		marks: { [markType]: nextValue },
 	}));
 }

@@ -28,12 +28,12 @@ describe("COL4 parent-cycle normalize", () => {
 				position: "last",
 			},
 			{
-				type: "update-block",
+				type: "set-props",
 				blockId: "l1",
 				props: { parentId: "l2" },
 			},
 			{
-				type: "update-block",
+				type: "set-props",
 				blockId: "l2",
 				props: { parentId: "l1" },
 			},

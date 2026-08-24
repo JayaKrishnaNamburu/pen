@@ -45,7 +45,9 @@ describe("non-secure context (HOST4)", () => {
 				props: {},
 				position: "last",
 			},
-			{ type: "insert-text", blockId: "b1", offset: 0, text: "typed on a phone" },
+			{ type: "splice-text", blockId: "b1", from: 0,
+				to: 0,
+				insert: "typed on a phone" },
 		]);
 
 		expect(editor.getBlock("b1")?.textContent()).toBe("typed on a phone");

@@ -12,7 +12,7 @@ import {
 	SCALE3_KEYSTROKE_DOCUMENT_SIZE_100_BENCH,
 	SCALE3_KEYSTROKE_DOCUMENT_SIZE_1000_BENCH,
 	SCALE3_KEYSTROKE_EXTENSION_COUNT_PLUS8_BENCH,
-	SCALE3_KEYSTROKE_PEER_COUNT_8_BENCH,
+	SCALE3_KEYSTROKE_REMOTE_CARET_COUNT_8_BENCH,
 } from "../constants/benchmarks";
 import {
 	SCALE2_PLUS8_BASE_ID,
@@ -25,7 +25,7 @@ import {
 	SCALE3_MACHINE_CLASS,
 	SCALE3_DECORATION_COUNT_POINTS,
 	SCALE3_EXTENSION_COUNT_POINTS,
-	SCALE3_PEER_COUNT_POINTS,
+	SCALE3_REMOTE_CARET_COUNT_POINTS,
 	SCALE3_PLUS_EXTENSIONS,
 	SCALE3_SHIPPED_STACK,
 	compareScale2Plus8Tolerance,
@@ -34,6 +34,7 @@ import {
 	scale2Plus8GateMs,
 } from "../constants/scale3";
 import {
+	countScale3RemoteCarets,
 	createScale3Editor,
 	createScale3Extensions,
 	scale3KeystrokeTarget,
@@ -81,7 +82,7 @@ describe("SCALE3 realistic-stack keystroke", () => {
 		expect(ids).toContain(SCALE3_KEYSTROKE_DOCUMENT_SIZE_1000_BENCH.id);
 		expect(ids).toContain(SCALE3_KEYSTROKE_EXTENSION_COUNT_PLUS8_BENCH.id);
 		expect(ids).toContain(SCALE3_KEYSTROKE_DECORATION_COUNT_256_BENCH.id);
-		expect(ids).toContain(SCALE3_KEYSTROKE_PEER_COUNT_8_BENCH.id);
+		expect(ids).toContain(SCALE3_KEYSTROKE_REMOTE_CARET_COUNT_8_BENCH.id);
 
 		expect(scale3Benchmarks.every((bench) => bench.axis != null)).toBe(true);
 		expect(SCALE3_AXIS_BENCH_PAIRS["document-size"]).toEqual([
@@ -94,8 +95,8 @@ describe("SCALE3 realistic-stack keystroke", () => {
 		expect(SCALE3_AXIS_BENCH_PAIRS["decoration-count"][1]).toBe(
 			SCALE3_KEYSTROKE_DECORATION_COUNT_256_BENCH.id,
 		);
-		expect(SCALE3_AXIS_BENCH_PAIRS["peer-count"][1]).toBe(
-			SCALE3_KEYSTROKE_PEER_COUNT_8_BENCH.id,
+		expect(SCALE3_AXIS_BENCH_PAIRS["remote-caret-count"][1]).toBe(
+			SCALE3_KEYSTROKE_REMOTE_CARET_COUNT_8_BENCH.id,
 		);
 	});
 
@@ -172,7 +173,9 @@ describe("SCALE3 realistic-stack keystroke", () => {
 		const before = editor.getBlock(blockId).textContent().length;
 
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "x" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "x" }],
 			{ origin: "user" },
 		);
 
@@ -181,18 +184,12 @@ describe("SCALE3 realistic-stack keystroke", () => {
 		void editor.destroy();
 	});
 
-	it("SCALE3: peer-count.8 is eight caret decorations on one document", () => {
+	it("SCALE3: remote-caret-count.8 is eight caret decorations on one document", () => {
 		const editor = createScale3Editor({
 			blockCount: 100,
-			peerCount: SCALE3_PEER_COUNT_POINTS[1],
+			remoteCaretCount: SCALE3_REMOTE_CARET_COUNT_POINTS[1],
 		});
-		editor.requestDecorationUpdate();
-		const carets = editor.getDecorations().decorations.filter(
-			(decoration) =>
-				decoration.type === "block" &&
-				decoration.attributes["data-pen-remote-caret"] === true,
-		);
-		expect(carets).toHaveLength(8);
+		expect(countScale3RemoteCarets(editor)).toBe(8);
 		expect(editor.document.blockOrder.length).toBe(100);
 		void editor.destroy();
 	});

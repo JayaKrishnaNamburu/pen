@@ -27,10 +27,11 @@ export function buildBenchFlowPatchTextEditExecution(
 		return [];
 	}
 	return [{
-		type: "replace-text" as const,
+		type: "splice-text" as const,
 		blockId,
-		offset: 0,
-		length: block.length(),
+		from: 0,
+				to: 0 + block.length(),
+				insert: "",
 		text,
 	}];
 }
@@ -61,10 +62,11 @@ export function buildBenchFlowPatchAlignmentExecution(editor: Editor) {
 				position: { after: "block-91" as const },
 			},
 			{
-				type: "insert-text" as const,
+				type: "splice-text" as const,
 				blockId: "bench-inserted",
-				offset: 0,
-				text: "Inserted middle benchmark block.",
+				from: 0,
+				to: 0,
+				insert: "Inserted middle benchmark block.",
 			},
 		],
 		metrics: {
@@ -103,10 +105,11 @@ export function buildBenchFlowPatchScopedReplacementExecution(editor: Editor) {
 				position: { before: "block-90" as const },
 			},
 			{
-				type: "insert-text" as const,
+				type: "splice-text" as const,
 				blockId: "bench-replacement-1",
-				offset: 0,
-				text: "Replacement intro benchmark block.",
+				from: 0,
+				to: 0,
+				insert: "Replacement intro benchmark block.",
 			},
 			{
 				type: "delete-block" as const,

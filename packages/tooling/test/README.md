@@ -48,11 +48,11 @@ const collab = createTestCollaboration({
 });
 
 collab.editorA.apply(
-  [{ type: "insert-text", blockId: "p1", offset: 5, text: " A" }],
+  [{ type: "splice-text", blockId: "p1", from: 5, to: 5, insert: " A" }],
   { origin: "user" },
 );
 collab.editorB.apply(
-  [{ type: "insert-text", blockId: "p1", offset: 5, text: " B" }],
+  [{ type: "splice-text", blockId: "p1", from: 5, to: 5, insert: " B" }],
   { origin: "user" },
 );
 collab.sync();

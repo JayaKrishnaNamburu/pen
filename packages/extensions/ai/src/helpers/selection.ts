@@ -1,6 +1,5 @@
 import { isCollapsed, selectionToRange } from "@input/pen-core";
 import type { DocumentOp, Editor, TextSelection } from "@input/pen-types";
-import { logicalTextFromStored } from "@input/pen-types";
 
 export function buildSelectionReplacementOps(
 	editor: Editor,
@@ -11,11 +10,11 @@ export function buildSelectionReplacementOps(
 	if (range.start.blockId === range.end.blockId) {
 		return [
 			{
-				type: "replace-text",
+				type: "splice-text",
 				blockId: range.start.blockId,
-				offset: range.start.offset,
-				length: range.end.offset - range.start.offset,
-				text: insertedText,
+				from: range.start.offset,
+				to: range.start.offset + range.end.offset - range.start.offset,
+				insert: insertedText,
 			},
 		];
 	}
@@ -31,19 +30,21 @@ export function buildSelectionReplacementOps(
 
 	if (range.start.offset < startText.length) {
 		ops.push({
-			type: "delete-text",
+			type: "splice-text",
 			blockId: startId,
-			offset: range.start.offset,
-			length: startText.length - range.start.offset,
+			from: range.start.offset,
+				to: range.start.offset + startText.length - range.start.offset,
+				insert: "",
 		});
 	}
 
 	if (range.end.offset > 0) {
 		ops.push({
-			type: "delete-text",
+			type: "splice-text",
 			blockId: endId,
-			offset: 0,
-			length: range.end.offset,
+			from: 0,
+				to: 0 + range.end.offset,
+				insert: "",
 		});
 	}
 
@@ -57,20 +58,22 @@ export function buildSelectionReplacementOps(
 	let insertionOffset = range.start.offset;
 	if (insertedText.length > 0) {
 		ops.push({
-			type: "insert-text",
+			type: "splice-text",
 			blockId: startId,
-			offset: insertionOffset,
-			text: insertedText,
+			from: insertionOffset,
+				to: insertionOffset,
+				insert: insertedText,
 		});
 		insertionOffset += insertedText.length;
 	}
 
 	for (const delta of suffixDeltas) {
 		ops.push({
-			type: "insert-text",
+			type: "splice-text",
 			blockId: startId,
-			offset: insertionOffset,
-			text: delta.insert,
+			from: insertionOffset,
+				to: insertionOffset,
+				insert: delta.insert,
 			marks: delta.attributes,
 		});
 		insertionOffset += delta.insert.length;
@@ -189,7 +192,7 @@ export function trimLeadingBlankBlockGenerationText(text: string): string {
 }
 
 export function isVisuallyEmptyInlineText(text: string): boolean {
-	return logicalTextFromStored(text).trim().length === 0;
+	return text.trim().length === 0;
 }
 
 export function resolveBlockInsertionOffset(

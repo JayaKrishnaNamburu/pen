@@ -237,7 +237,7 @@ export async function processStream(
           assertToolCanMutateBlock(editor, part.blockId);
           return [
             {
-              type: "update-block",
+              type: "set-props",
               blockId: part.blockId,
               props: part.props,
             },
@@ -315,9 +315,9 @@ export async function processStream(
           assertToolCanMutateBlock(editor, part.blockId);
           return [
             {
-              type: "update-layout",
+              type: "set-props",
               blockId: part.blockId,
-              layout: part.layout,
+              props: { layout: part.layout },
             },
           ];
         });
@@ -346,11 +346,14 @@ export async function processStream(
         }
         const applied = applyGuarded(editor, groupId, toolTurn, () => [
           {
-            type: "create-app",
-            appId: part.appId,
-            appType: part.appType,
-            config: part.config,
-            placement: part.placement,
+            type: "app",
+            change: {
+              kind: "create",
+              appId: part.appId,
+              appType: part.appType,
+              config: part.config,
+              placement: part.placement,
+            },
           },
         ]);
         if (!applied.ok) {
@@ -373,9 +376,12 @@ export async function processStream(
         }
         const applied = applyGuarded(editor, groupId, toolTurn, () => [
           {
-            type: "update-app",
-            appId: part.appId,
-            patch: part.patch,
+            type: "app",
+            change: {
+              kind: "update",
+              appId: part.appId,
+              patch: part.patch,
+            },
           },
         ]);
         if (!applied.ok) {
@@ -397,7 +403,7 @@ export async function processStream(
           break;
         }
         const applied = applyGuarded(editor, groupId, toolTurn, () => [
-          { type: "delete-app", appId: part.appId },
+          { type: "app", change: { kind: "delete", appId: part.appId } },
         ]);
         if (!applied.ok) {
           closeApplyFailure(editor, streaming, applied.error, groupId);
@@ -636,21 +642,35 @@ function applyGuarded(
 /** Op type → grant name. Missing keys fail closed. */
 const STREAM_OP_TOOL_NAMES: Partial<Record<DocumentOp["type"], string>> = {
   "insert-block": "insert_block",
-  "update-block": "update_block",
-  "update-layout": "update_block",
+  "set-props": "update_block",
   "delete-block": "delete_block",
   "move-block": "move_block",
-  "create-app": "create_app",
-  "update-app": "update_app",
-  "delete-app": "delete_app",
 };
+
+function streamOpToolName(op: DocumentOp): string | undefined {
+  if (op.type === "app") {
+    switch (op.change.kind) {
+      case "create":
+        return "create_app";
+      case "update":
+        return "update_app";
+      case "delete":
+        return "delete_app";
+      default: {
+        const _exhaustive: never = op.change;
+        return _exhaustive;
+      }
+    }
+  }
+  return STREAM_OP_TOOL_NAMES[op.type];
+}
 
 function deniedStreamMutation(
   ops: readonly DocumentOp[],
   toolTurn: AIToolTurn,
 ): string | null {
   for (const op of ops) {
-    const toolName = STREAM_OP_TOOL_NAMES[op.type];
+    const toolName = streamOpToolName(op);
     if (toolName === undefined) {
       return `Stream part produced an unauthorized op type "${op.type}".`;
     }

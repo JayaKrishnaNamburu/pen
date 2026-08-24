@@ -1,13 +1,10 @@
 import type { BlockHandle, DiagnosticEvent, Editor } from "@input/pen-types";
-import { logicalTextFromStored } from "@input/pen-types";
-
-export { logicalTextFromStored };
 
 const MISSING_BLOCK_CODE = "block-logical-text-missing";
 
 /**
- * Logical text of a block (I11). Empty string and sentinel-only storage
- * are identical. Missing blocks emit a diagnostic and return `""`.
+ * Stored text of a block. Empty string is empty; missing blocks emit a
+ * diagnostic and return "".
  */
 export function blockLogicalText(editor: Editor, blockId: string): string {
 	const handle = editor.getBlock(blockId);
@@ -15,12 +12,13 @@ export function blockLogicalText(editor: Editor, blockId: string): string {
 		emitMissingBlock(editor, blockId);
 		return "";
 	}
-	return logicalTextFromStored(storedTextFromHandle(handle));
+	return storedTextFromHandle(handle);
 }
 
 function storedTextFromHandle(handle: BlockHandle): string {
-	return handle.textDeltas()
-		.map((delta) => delta.insert)
+	return handle
+		.textDeltas()
+		.map((delta) => (typeof delta.insert === "string" ? delta.insert : ""))
 		.join("");
 }
 

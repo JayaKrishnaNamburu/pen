@@ -7,7 +7,7 @@ import type { DocumentOp } from "@input/pen-types";
 
 export type ReplacementTextDiffOperation = Extract<
 	DocumentOp,
-	{ type: "delete-text" | "insert-text" | "replace-text" }
+	{ type: "splice-text" }
 >;
 
 export type TextToken = {
@@ -54,16 +54,25 @@ export function compileReplacementSuggestionOps({
 	if (originalText.length === 0) {
 		return replacementText.length === 0
 			? []
-			: [{ type: "insert-text", blockId, offset, text: replacementText }];
+			: [
+					{
+						type: "splice-text",
+						blockId,
+						from: offset,
+						to: offset,
+						insert: replacementText,
+					},
+				];
 	}
 
 	if (replacementText.length === 0) {
 		return [
 			{
-				type: "delete-text",
+				type: "splice-text",
 				blockId,
-				offset,
-				length: originalText.length,
+				from: offset,
+				to: offset + originalText.length,
+				insert: "",
 			},
 		];
 	}
@@ -77,11 +86,11 @@ export function compileReplacementSuggestionOps({
 	) {
 		return [
 			{
-				type: "replace-text",
+				type: "splice-text",
 				blockId,
-				offset,
-				length: originalText.length,
-				text: replacementText,
+				from: offset,
+				to: offset + originalText.length,
+				insert: replacementText,
 			},
 		];
 	}
@@ -90,11 +99,11 @@ export function compileReplacementSuggestionOps({
 	if (shouldUseCoarseReplacement({ hunks, originalText, replacementText })) {
 		return [
 			{
-				type: "replace-text",
+				type: "splice-text",
 				blockId,
-				offset,
-				length: originalText.length,
-				text: replacementText,
+				from: offset,
+				to: offset + originalText.length,
+				insert: replacementText,
 			},
 		];
 	}
@@ -280,18 +289,20 @@ export function hunksToOperations({
 		const deleteOffset = offset + hunk.originalStart;
 		if (hunk.deletedText.length > 0) {
 			operations.push({
-				type: "delete-text",
+				type: "splice-text",
 				blockId,
-				offset: deleteOffset,
-				length: hunk.deletedText.length,
+				from: deleteOffset,
+				to: deleteOffset + hunk.deletedText.length,
+				insert: "",
 			});
 		}
 		if (hunk.insertedText.length > 0) {
 			operations.push({
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: deleteOffset + hunk.deletedText.length,
-				text: hunk.insertedText,
+				from: deleteOffset + hunk.deletedText.length,
+				to: deleteOffset + hunk.deletedText.length,
+				insert: hunk.insertedText,
 			});
 		}
 	}

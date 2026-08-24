@@ -7,7 +7,7 @@ export function CalloutRenderer(
   block: BlockHandle,
   ctx: BlockRenderContext,
 ): React.ReactElement {
-  const calloutType = (block.props?.type as string) ?? "info";
+  const calloutType = (block.props?.severity as string) ?? "info";
 
   const iconMap: Record<string, string> = {
     info: "\u2139\uFE0F",

@@ -54,7 +54,9 @@ describe("aiExtension", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello world" }],
 			{ origin: "system" },
 		);
 		editor.selectTextRange({ blockId, offset: 6 }, { blockId, offset: 11 });
@@ -100,7 +102,9 @@ describe("aiExtension", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello world" }],
 			{ origin: "system" },
 		);
 		editor.selectTextRange({ blockId, offset: 5 }, { blockId, offset: 5 });
@@ -167,12 +171,13 @@ describe("aiExtension", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "The Lighthouse Keeper",
+					from: 0,
+				to: 0,
+				insert: "The Lighthouse Keeper",
 				},
-				{ type: "convert-block", blockId, newType: "heading" },
+				{ type: "set-props", blockId, props: { type: "heading" } },
 				{
 					type: "insert-block",
 					blockId: "paragraph-1",
@@ -181,10 +186,11 @@ describe("aiExtension", () => {
 					position: { after: blockId },
 				},
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: "paragraph-1",
-					offset: 0,
-					text: "A lighthouse story.",
+					from: 0,
+				to: 0,
+				insert: "A lighthouse story.",
 				},
 			],
 			{ origin: "system" },
@@ -260,7 +266,9 @@ describe("aiExtension", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello world" }],
 			{ origin: "system" },
 		);
 
@@ -327,12 +335,13 @@ describe("aiExtension", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "The Lighthouse Keeper's Last Night",
+					from: 0,
+				to: 0,
+				insert: "The Lighthouse Keeper's Last Night",
 				},
-				{ type: "convert-block", blockId, newType: "heading" },
+				{ type: "set-props", blockId, props: { type: "heading" } },
 			],
 			{ origin: "system" },
 		);
@@ -388,7 +397,9 @@ describe("aiExtension", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello world" }],
 			{ origin: "system" },
 		);
 		editor.selectTextRange({ blockId, offset: 6 }, { blockId, offset: 11 });

@@ -1,4 +1,4 @@
-import { logicalTextFromStored, type PenDocument } from "@input/pen-types";
+import type { PenDocument } from "@input/pen-types";
 import type { TestEditor, TwoPeer } from "./types";
 
 export type InspectSource = TestEditor | TwoPeer | PenDocument;
@@ -188,7 +188,7 @@ export function visibleText(
 	blockId?: string,
 ): string {
 	if (typeof sourceOrText === "string") {
-		return logicalTextFromStored(sourceOrText);
+		return sourceOrText;
 	}
 	if (blockId) {
 		return readInlineText(sourceOrText, blockId) ?? "";
@@ -285,7 +285,7 @@ function readInlineText(
 	if (!isTextLike(content)) {
 		return null;
 	}
-	return logicalTextFromStored(content.toString());
+	return content.toString();
 }
 
 function walkParentCycle(

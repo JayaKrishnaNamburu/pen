@@ -174,10 +174,11 @@ export default tseslint.config(
 	{
 		// HOST4: above-floor APIs need a feature test or an allowlist entry
 		// that names the fallback and user-visible degradation.
-		files: [
-			"packages/*/src/**/*.{ts,tsx,js,jsx}",
-			"packages/*/*/src/**/*.{ts,tsx,js,jsx}",
-		],
+		// Recursive `**/src` — a two-level `packages/*/src` + `packages/*/*/src`
+		// pair misses any src deeper than that (measured miss:
+		// packages/tooling/conformance/harness/src). A new nesting cannot
+		// silently fall out of a `**` population.
+		files: ["packages/**/src/**/*.{ts,tsx,js,jsx}"],
 		ignores: ["**/__tests__/**", "**/*.test.ts", "**/*.test.tsx"],
 		rules: {
 			"pen/no-above-floor-api": "error",
@@ -191,13 +192,18 @@ export default tseslint.config(
 		// them to decorationsFacet.of() would drop them from getDecorations()
 		// until that collector reads the facet. Promoting those to error is what
 		// Wave 7.1 waits on.
-		files: [
-			"packages/*/src/**/*.{ts,tsx}",
-			"packages/*/*/src/**/*.{ts,tsx}",
-		],
+		// Same recursive `**/src` as HOST4 — a two-level pair misses
+		// packages/tooling/conformance/harness/src.
+		files: ["packages/**/src/**/*.{ts,tsx}"],
 		ignores: ["**/__tests__/**", "**/*.test.ts", "**/*.test.tsx"],
 		rules: {
 			"pen/no-v1-extension-fields": "error",
+		},
+	},
+	{
+		files: ["packages/types/src/types/ops.ts"],
+		rules: {
+			"pen/no-new-ops": "error",
 		},
 	},
 	{

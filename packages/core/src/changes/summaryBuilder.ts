@@ -4,11 +4,9 @@ import type {
 	YArrayDelta,
 	YTextDelta,
 } from "@input/pen-crdt-yjs";
-import { EMPTY_BLOCK_SENTINEL } from "@input/pen-types";
 
 import type { BlockIndexSnapshot } from "./blockIndex";
 import { createChangeSummary } from "./mapping";
-import { mergeSplices } from "./spliceCompose";
 import type {
 	BlockTextChange,
 	ChangeSummary,
@@ -16,13 +14,11 @@ import type {
 	TextSplice,
 } from "./types";
 
-const SENTINEL = EMPTY_BLOCK_SENTINEL;
-
-const IGNORABLE_BLOCK_KEYS = new Set(["content", "children", "type"]);
+const IGNORABLE_BLOCK_KEYS = new Set(["content", "children"]);
 const TABLE_KEYS = new Set(["tableColumns", "tableContent", "rows", "cells"]);
 
 export function logicalLengthFromStored(stored: string): number {
-	return stored === SENTINEL ? 0 : stored.length;
+	return stored.length;
 }
 
 export function buildChangeSummary(
@@ -31,12 +27,11 @@ export function buildChangeSummary(
 	commitId: number,
 ): ChangeSummary {
 	const structuralOrigin = readStructuralOrigin(delta.originTag);
-	const text = buildTextChanges(delta, index);
+	const blockText = buildTextChanges(delta, index);
 	const structural = buildStructuralChanges(delta, index, structuralOrigin);
 	return createChangeSummary({
 		commitId,
-		originType: originTypeFromTag(delta.originTag),
-		text,
+		blockText,
 		structural,
 		index,
 	});
@@ -88,7 +83,7 @@ function preCommitLengthFromTextDelta(delta: YTextDelta): number {
 
 export function textDeltaToSplices(
 	delta: YTextDelta,
-	logicalLength: number,
+	_logicalLength: number,
 ): { splices: TextSplice[]; formatRanges: { from: number; to: number }[] } {
 	const deletes: { from: number; to: number }[] = [];
 	const inserts: { at: number; text: string; embed: boolean }[] = [];
@@ -117,22 +112,8 @@ export function textDeltaToSplices(
 		}
 	}
 
-	let nextDeletes = deletes;
-	let nextInserts = inserts;
-	if (logicalLength === 0) {
-		nextDeletes = [];
-		nextInserts = inserts
-			.filter((insert) => insert.embed || insert.text !== SENTINEL)
-			.map((insert) => ({ ...insert, at: 0 }));
-	}
-
-	const deletedCount = nextDeletes.reduce((sum, item) => sum + (item.to - item.from), 0);
-	const onlySentinelInserts =
-		nextInserts.length > 0 &&
-		nextInserts.every((insert) => !insert.embed && insert.text === SENTINEL);
-	if (deletedCount >= logicalLength && onlySentinelInserts) {
-		nextInserts = [];
-	}
+	const nextDeletes = deletes;
+	const nextInserts = inserts;
 
 	const splices: TextSplice[] = [
 		...nextDeletes.map((item) => ({
@@ -231,15 +212,6 @@ function buildStructuralChanges(
 		if (newIds.has(blockId)) continue;
 		const keyList = [...keys];
 		const fromType = index.typeById.get(blockId) ?? "";
-		if (keyList.includes("type")) {
-			structural.push({
-				type: "block-converted",
-				blockId,
-				fromType,
-				toType: fromType,
-			});
-		}
-
 		const residual = keyList.filter((key) => !IGNORABLE_BLOCK_KEYS.has(key));
 		if (residual.length === 0) continue;
 
@@ -247,12 +219,18 @@ function buildStructuralChanges(
 			fromType === "table" || residual.some((key) => TABLE_KEYS.has(key));
 		if (looksTable) {
 			structural.push({ type: "table-changed", blockId });
-		} else {
-			structural.push({
-				type: "block-props-changed",
-				blockId,
-				keys: residual,
-			});
+		}
+		if (!looksTable || residual.includes("type")) {
+			const keys = looksTable
+				? residual.filter((key) => !TABLE_KEYS.has(key))
+				: residual;
+			if (keys.length > 0) {
+				structural.push({
+					type: "block-props-changed",
+					blockId,
+					keys,
+				});
+			}
 		}
 	}
 
@@ -332,13 +310,24 @@ function interpretArrayDelta(
 	return { inserted, removed };
 }
 
-function originTypeFromTag(tag: unknown): string {
-	if (typeof tag === "string" && tag.length > 0) return tag;
-	if (tag != null && typeof tag === "object" && "type" in tag) {
-		const type = (tag as { type?: unknown }).type;
-		if (typeof type === "string" && type.length > 0) return type;
+function mergeSplices(splices: readonly TextSplice[]): TextSplice[] {
+	if (splices.length === 0) return [];
+	const sorted = [...splices].sort((a, b) => a.from - b.from || a.to - b.to);
+	const merged: { from: number; to: number; insertLength: number }[] = [];
+	for (const splice of sorted) {
+		const last = merged[merged.length - 1];
+		if (last && splice.from <= last.to) {
+			last.to = Math.max(last.to, splice.to);
+			last.insertLength += splice.insertLength;
+			continue;
+		}
+		merged.push({
+			from: splice.from,
+			to: splice.to,
+			insertLength: splice.insertLength,
+		});
 	}
-	return "user";
+	return merged;
 }
 
 function readStructuralOrigin(tag: unknown): StructuralOriginTag | null {

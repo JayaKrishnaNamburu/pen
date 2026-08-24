@@ -70,7 +70,7 @@ export class ToolContextImpl implements ToolContext {
   ): void {
     assertToolCanMutateBlock(this.editor, blockId);
     const ops = assertValidToolPayloads(this.editor, [
-      { type: "update-block", blockId, props },
+      { type: "set-props", blockId, props },
     ]);
     this.editor.apply(ops, { origin: "ai" });
     this.emit({

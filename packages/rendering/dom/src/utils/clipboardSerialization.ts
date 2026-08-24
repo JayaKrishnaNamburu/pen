@@ -1,6 +1,5 @@
 import { buildTableChildren, sortDeltaAttributes } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
-import { logicalTextFromStored } from "@input/pen-types";
 import { resolveEditorUrl } from "../security/resolveEditorUrl";
 import {
 	PEN_CLIPBOARD_JSON_MIME,
@@ -10,9 +9,6 @@ import {
 	type Delta,
 	type PenBlock,
 } from "./clipboardPayload";
-
-// Apply executors persist the empty-block sentinel in Y.Text. Clipboard
-// serialization emits the logical text domain via logicalTextFromStored (I11).
 
 const HTML_ESCAPE_PATTERN = /[&<>"']/g;
 
@@ -59,7 +55,7 @@ export function writePenClipboard(
 	const penBlocksJson = serializePenClipboardPayload(penBlocks);
 	const encodedPenBlocks = encodePenBlocksForHtml(penBlocksJson);
 	const htmlWithPenData = `<meta data-pen-blocks="${encodedPenBlocks}" />${htmlContent}`;
-	const clipboardPlainText = logicalTextFromStored(plainText);
+	const clipboardPlainText = plainText;
 
 	if (event?.clipboardData) {
 		event.clipboardData.setData("text/plain", clipboardPlainText);
@@ -144,7 +140,7 @@ export function serializeDeltasToFormat(
 	let result = "";
 	for (const delta of deltas) {
 		if (typeof delta.insert !== "string") continue;
-		let text = logicalTextFromStored(delta.insert);
+		let text = delta.insert;
 		if (!text) continue;
 		if (format === "html") {
 			text = escapeHtmlText(text);

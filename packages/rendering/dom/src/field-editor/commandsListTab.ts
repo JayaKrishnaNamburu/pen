@@ -114,7 +114,7 @@ export function applyListTabBehavior(
 	editor.apply(
 		[
 			{
-				type: "update-block",
+				type: "set-props",
 				blockId,
 				props: { indent: nextIndent },
 			} as DocumentOp,

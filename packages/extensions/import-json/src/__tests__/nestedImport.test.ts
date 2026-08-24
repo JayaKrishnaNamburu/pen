@@ -61,7 +61,7 @@ function nestedJsonDocument() {
 			},
 			{
 				type: "callout",
-				props: { type: "info" },
+				props: { severity: "info" },
 				content: { text: "CALLOUT-TITLE" },
 				children: [
 					{

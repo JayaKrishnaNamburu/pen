@@ -86,6 +86,17 @@ function diagnosticsOf(emit: ReturnType<typeof vi.fn>): DiagnosticEvent[] {
 		.map((call) => call[1] as DiagnosticEvent);
 }
 
+// every app tool folds into one `app` op, so the op type alone no longer
+// distinguishes create from update from delete — the kind carries that.
+function appliedOpKinds(
+	apply: StreamEditorHarness["apply"],
+): (string | undefined)[] {
+	return apply.mock.calls.map((call) => {
+		const op = call[0][0];
+		return op?.type === "app" ? `app:${op.change.kind}` : op?.type;
+	});
+}
+
 describe("@input/pen-delta-stream processStream AIB5", () => {
 	it("AIB5: protocol version constant is the frozen handshake value", () => {
 		expect(PEN_STREAM_PROTOCOL_VERSION).toBe(1);
@@ -273,7 +284,7 @@ describe("@input/pen-delta-stream processStream AIB5", () => {
 		expect(apply).not.toHaveBeenCalled();
 	});
 
-	it("AIB5: layout-update applies update-layout", async () => {
+	it("AIB5: layout-update applies set-props carrying the layout prop", async () => {
 		const { editor, apply } = createStreamEditor();
 
 		await processStream(
@@ -294,9 +305,9 @@ describe("@input/pen-delta-stream processStream AIB5", () => {
 		expect(apply).toHaveBeenCalledWith(
 			[
 				{
-					type: "update-layout",
+					type: "set-props",
 					blockId: "block-1",
-					layout: { display: "flex" },
+					props: { layout: { display: "flex" } },
 				},
 			],
 			{
@@ -336,10 +347,10 @@ describe("@input/pen-delta-stream processStream AIB5", () => {
 			},
 		);
 
-		expect(apply.mock.calls.map((call) => call[0][0]?.type)).toEqual([
-			"create-app",
-			"update-app",
-			"delete-app",
+		expect(appliedOpKinds(apply)).toEqual([
+			"app:create",
+			"app:update",
+			"app:delete",
 		]);
 		for (const [, options] of apply.mock.calls) {
 			expect(options?.undoGroupId).toBe("turn-1");
@@ -678,11 +689,11 @@ describe("@input/pen-delta-stream processStream AIB5", () => {
 			}),
 		).resolves.toBeUndefined();
 
-		expect(apply.mock.calls.map((call) => call[0][0]?.type)).toEqual([
-			"create-app",
-			"update-app",
-			"delete-app",
-			"update-layout",
+		expect(appliedOpKinds(apply)).toEqual([
+			"app:create",
+			"app:update",
+			"app:delete",
+			"set-props",
 		]);
 	});
 });

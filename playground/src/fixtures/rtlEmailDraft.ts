@@ -25,16 +25,14 @@ export function applyRtlEmailDraft(editor: Editor): void {
 	editor.apply(
 		[
 			{
-				type: "convert-block",
-				blockId: headingId,
-				newType: "heading",
-				newProps: { level: 1, direction: "rtl" },
+				type: "set-props", blockId: headingId, props: { type: "heading", ...{ level: 1 }, direction: "rtl" },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: headingId,
-				offset: 0,
-				text: "مسودة: Re: Q3 planning — Input",
+				from: 0,
+				to: 0,
+				insert: "مسودة: Re: Q3 planning — Input",
 			},
 			{
 				type: "insert-block",
@@ -44,10 +42,11 @@ export function applyRtlEmailDraft(editor: Editor): void {
 				position: { after: headingId },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: greetingId,
-				offset: 0,
-				text: "مرحباً Nora،",
+				from: 0,
+				to: 0,
+				insert: "مرحباً Nora،",
 			},
 			{
 				type: "insert-block",
@@ -57,10 +56,11 @@ export function applyRtlEmailDraft(editor: Editor): void {
 				position: { after: greetingId },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: bodyId,
-				offset: 0,
-				text: "راجعنا ملف Q3 roadmap في Notion وأرسلنا الملخص إلى ops@input.dev. الموعد المقترح 24 Aug 2026.",
+				from: 0,
+				to: 0,
+				insert: "راجعنا ملف Q3 roadmap في Notion وأرسلنا الملخص إلى ops@input.dev. الموعد المقترح 24 Aug 2026.",
 			},
 			{
 				type: "insert-block",
@@ -70,10 +70,11 @@ export function applyRtlEmailDraft(editor: Editor): void {
 				position: { after: bodyId },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: numbersId,
-				offset: 0,
-				text: "الرابط: https://input.dev/q3 — الرقم المرجعي INV-4821.",
+				from: 0,
+				to: 0,
+				insert: "الرابط: https://input.dev/q3 — الرقم المرجعي INV-4821.",
 			},
 			{
 				type: "insert-block",
@@ -83,10 +84,11 @@ export function applyRtlEmailDraft(editor: Editor): void {
 				position: { after: numbersId },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: quoteId,
-				offset: 0,
-				text: "Sounds good — I'll send the calendar hold after legal reviews the MSA.",
+				from: 0,
+				to: 0,
+				insert: "Sounds good — I'll send the calendar hold after legal reviews the MSA.",
 			},
 			{
 				type: "insert-block",
@@ -96,10 +98,11 @@ export function applyRtlEmailDraft(editor: Editor): void {
 				position: { after: quoteId },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: closeId,
-				offset: 0,
-				text: "شكراً، نورة",
+				from: 0,
+				to: 0,
+				insert: "شكراً، نورة",
 			},
 		],
 		{ origin: "system" },

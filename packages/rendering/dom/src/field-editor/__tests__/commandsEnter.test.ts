@@ -78,7 +78,9 @@ describe("applyEnterBehavior split authority", () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "insert-text", blockId, offset: 0, text: "Hello" },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello" },
 		]);
 		// start off the split offset so onCommit mapping cannot hide a missing write
 		editor.selectText(blockId, 0, 0);
@@ -116,7 +118,9 @@ describe("applyEnterBehavior split authority", () => {
 		}
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "insert-text", blockId, offset: 0, text: "Hello" },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello" },
 		]);
 		editor.selectText(blockId, 5, 5);
 
@@ -161,7 +165,9 @@ describe("applyEnterBehavior split authority", () => {
 		}
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "insert-text", blockId, offset: 0, text: "Hello" },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello" },
 		]);
 		editor.selectText(blockId, 5, 5);
 

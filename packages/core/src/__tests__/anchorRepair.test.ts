@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { deriveContentMoves, repairAnchor } from "../index";
+import { applyMergeBlocks, applySplitBlock, deriveContentMoves, repairAnchor } from "../index";
 import { createEditor as createCoreEditor } from "../index";
 import { createDefaultSchema } from "./fixtures/testSchema";
 
@@ -26,25 +26,24 @@ describe("anchorRepair AN14", () => {
 		const editor = createEditor();
 		const source = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "insert-text", blockId: source, offset: 0, text: "meadow sage" },
+			{ type: "splice-text", blockId: source, from: 0,
+				to: 0,
+				insert: "meadow sage" },
 		]);
 		const head = editor.anchors.create({ blockId: source, offset: 3 }, 1)!;
 		const splitBefore = editor.anchors.create({ blockId: source, offset: 6 }, -1)!;
 		const splitAfter = editor.anchors.create({ blockId: source, offset: 6 }, 1)!;
 		const tail = editor.anchors.create({ blockId: source, offset: 9 }, 1)!;
 
-		editor.apply([
-			{
-				type: "split-block",
-				blockId: source,
-				offset: 6,
-				newBlockId: "dest",
-			},
-		]);
+		applySplitBlock(editor, {
+			blockId: source,
+			offset: 6,
+			newBlockId: "dest",
+		});
 		expect(visible(editor, source)).toBe("meadow");
 		expect(visible(editor, "dest")).toBe(" sage");
 
-		const moves = deriveContentMoves(editor.lastChangeSummary!, "split-block");
+		const moves = deriveContentMoves(editor.lastChangeSummary!, undefined);
 		expect(moves).toEqual([
 			{
 				fromBlockId: source,
@@ -93,7 +92,9 @@ describe("anchorRepair AN14", () => {
 		const editor = createEditor();
 		const target = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "insert-text", blockId: target, offset: 0, text: "meadow" },
+			{ type: "splice-text", blockId: target, from: 0,
+				to: 0,
+				insert: "meadow" },
 			{
 				type: "insert-block",
 				blockId: "source",
@@ -101,19 +102,22 @@ describe("anchorRepair AN14", () => {
 				props: {},
 				position: "last",
 			},
-			{ type: "insert-text", blockId: "source", offset: 0, text: " sage" },
+			{ type: "splice-text", blockId: "source", from: 0,
+				to: 0,
+				insert: " sage" },
 		]);
 		const onTarget = editor.anchors.create({ blockId: target, offset: 3 }, 1)!;
 		const onSource = editor.anchors.create({ blockId: "source", offset: 1 }, 1)!;
 
-		editor.apply([
-			{ type: "merge-blocks", targetBlockId: target, sourceBlockId: "source" },
-		]);
+		applyMergeBlocks(editor, {
+			targetBlockId: target,
+			sourceBlockId: "source",
+		});
 		expect(visible(editor, target)).toBe("meadow sage");
 		expect(editor.getBlock("source")).toBeNull();
 		expect(editor.anchors.resolve(onSource)).toBeNull();
 
-		const moves = deriveContentMoves(editor.lastChangeSummary!, "merge-blocks");
+		const moves = deriveContentMoves(editor.lastChangeSummary!, undefined);
 		expect(moves).toEqual([
 			{
 				fromBlockId: "source",
@@ -134,12 +138,13 @@ describe("anchorRepair AN14", () => {
 		const editor = createEditor();
 		const source = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "insert-text", blockId: source, offset: 0, text: "meadow sage" },
+			{ type: "splice-text", blockId: source, from: 0,
+				to: 0,
+				insert: "meadow sage" },
 		]);
 		const summary = {
 			commitId: 1,
-			originType: "collaborator",
-			text: [
+			blockText: [
 				{
 					blockId: source,
 					splices: [{ from: 6, to: 11, insertLength: 0 }],
@@ -152,14 +157,7 @@ describe("anchorRepair AN14", () => {
 				},
 			],
 			structural: [],
-			isEmpty: false,
-			mapOffset: () => 0,
-			mapPoint: () => ({ blockId: source, offset: 0 }),
-			mapRange: () => ({
-				anchor: { blockId: source, offset: 0 },
-				focus: { blockId: source, offset: 0 },
-			}),
-			compose: () => summary,
+			affectedBlockIds: [source, "dest"],
 		};
 		expect(deriveContentMoves(summary, undefined)).toEqual([
 			{
@@ -183,12 +181,12 @@ describe("anchorRepair AN14", () => {
 				position: "last",
 			},
 			{
-				type: "insert-table-cell-text",
+				type: "splice-text",
 				blockId: "t1",
-				row: 1,
-				col: 1,
-				offset: 0,
-				text: "0123456789",
+				cell: { row: 1, col: 1 },
+			from: 0,
+			to: 0,
+			insert: "0123456789",
 			},
 		]);
 		const cellAnchor = editor.anchors.create(
@@ -197,12 +195,12 @@ describe("anchorRepair AN14", () => {
 		)!;
 		editor.apply([
 			{
-				type: "insert-table-cell-text",
+				type: "splice-text",
 				blockId: "t1",
-				row: 1,
-				col: 1,
-				offset: 0,
-				text: "xx",
+				cell: { row: 1, col: 1 },
+			from: 0,
+			to: 0,
+			insert: "xx",
 			},
 		]);
 		const moves = deriveContentMoves(editor.lastChangeSummary!, undefined);
@@ -220,7 +218,9 @@ describe("anchorRepair AN14", () => {
 		const editor = createEditor();
 		const source = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "insert-text", blockId: source, offset: 0, text: "meadow sage" },
+			{ type: "splice-text", blockId: source, from: 0,
+				to: 0,
+				insert: "meadow sage" },
 			{
 				type: "insert-block",
 				blockId: "t1",
@@ -229,27 +229,24 @@ describe("anchorRepair AN14", () => {
 				position: "last",
 			},
 			{
-				type: "insert-table-cell-text",
+				type: "splice-text",
 				blockId: "t1",
-				row: 0,
-				col: 0,
-				offset: 0,
-				text: "cell text",
+				cell: { row: 0, col: 0 },
+			from: 0,
+			to: 0,
+			insert: "cell text",
 			},
 		]);
 		const cellAnchor = editor.anchors.create(
 			{ blockId: "t1", offset: 5, cell: { row: 0, col: 0 } },
 			1,
 		)!;
-		editor.apply([
-			{
-				type: "split-block",
-				blockId: source,
-				offset: 6,
-				newBlockId: "dest",
-			},
-		]);
-		const moves = deriveContentMoves(editor.lastChangeSummary!, "split-block");
+		applySplitBlock(editor, {
+			blockId: source,
+			offset: 6,
+			newBlockId: "dest",
+		});
+		const moves = deriveContentMoves(editor.lastChangeSummary!, undefined);
 		expect(repairAnchor(editor, cellAnchor, moves)).toBe(cellAnchor);
 		expect(editor.anchors.resolve(cellAnchor)).toEqual({
 			blockId: "t1",

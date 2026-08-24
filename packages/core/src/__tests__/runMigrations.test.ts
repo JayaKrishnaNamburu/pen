@@ -20,10 +20,11 @@ function insertTextMigration(id: string, text: string): DocumentMigration {
 			const blockId = editor.firstBlock()!.id;
 			editor.apply([
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: editor.getBlock(blockId)!.length(),
-					text,
+					from: editor.getBlock(blockId)!.length(),
+					to: editor.getBlock(blockId)!.length(),
+					insert: text,
 				},
 			]);
 		},
@@ -99,10 +100,11 @@ describe("runMigrations (DUR4)", () => {
 					const blockId = editor.firstBlock()!.id;
 					editor.apply([
 						{
-							type: "insert-text",
+							type: "splice-text",
 							blockId,
-							offset: editor.getBlock(blockId)!.length(),
-							text: "gone",
+							from: editor.getBlock(blockId)!.length(),
+				to: editor.getBlock(blockId)!.length(),
+				insert: "gone",
 						},
 					]);
 					throw new Error("migration failed");
@@ -162,10 +164,11 @@ describe("runMigrations (DUR4)", () => {
 				run(nextEditor) {
 					const blockId = nextEditor.firstBlock()!.id;
 					const op: DocumentOp = {
-						type: "insert-text",
+						type: "splice-text",
 						blockId,
-						offset: 0,
-						text: "x",
+						from: 0,
+				to: 0,
+				insert: "x",
 					};
 					nextEditor.apply([op]);
 				},

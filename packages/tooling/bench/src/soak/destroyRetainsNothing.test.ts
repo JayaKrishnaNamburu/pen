@@ -17,7 +17,9 @@ describe("SCALE4 destroy retention inventory", () => {
 		await editor.whenReady();
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 2, text: "x" }],
+			[{ type: "splice-text", blockId, from: 2,
+				to: 2,
+				insert: "x" }],
 			{ origin: "user" },
 		);
 		editor.on("documentCommit", () => {});
@@ -61,7 +63,9 @@ describe("SCALE4 destroy retention inventory", () => {
 		await editor.whenReady();
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 2, text: "x" }],
+			[{ type: "splice-text", blockId, from: 2,
+				to: 2,
+				insert: "x" }],
 			{ origin: "user" },
 		);
 		editor.requestDecorationUpdate();
@@ -87,7 +91,9 @@ describe("SCALE4 destroy retention inventory", () => {
 		await editor.whenReady();
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 2, text: "x" }],
+			[{ type: "splice-text", blockId, from: 2,
+				to: 2,
+				insert: "x" }],
 			{ origin: "user" },
 		);
 

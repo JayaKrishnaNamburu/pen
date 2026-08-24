@@ -76,7 +76,7 @@ Every `CreateEditorOptions` field is optional.
 
 `createHeadlessEditor` adds `useDefaultExtensions`, default `false`. When that flag is false and no `preset` is passed, the editor uses an empty preset. `useDefaultExtensions: true` installs nothing — the fallback list is empty. It does not install `document-ops`, `undo`, `rich-text-shortcuts`, or `delta-stream`. Pass `preset: defaultPreset()` for those.
 
-`readOnlyFacet` (`pen.readOnly`) only sets `aria-readonly` on a mounted surface. It does not decline typing or stop `editor.apply`. The renderer `readonly` prop is what declines typing.
+`ariaReadOnlyFacet` (`pen.ariaReadOnly`) only sets `aria-readonly` on a mounted surface. It does not decline typing or stop `editor.apply`. The renderer `readonly` prop is what declines typing.
 
 ## Documentation
 

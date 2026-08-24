@@ -69,12 +69,13 @@ describe("resolveEnterAction – schema-aware Enter", () => {
 
 		editor.apply([
 			{
-				type: "convert-block",
+				type: "set-props",
 				blockId,
-				newType: "heading",
-				newProps: { level: 1 },
+				props: { type: "heading", level: 1 },
 			},
-			{ type: "insert-text", blockId, offset: 0, text: "Title" },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Title" },
 		]);
 
 		const action = resolveEnterAction(
@@ -93,7 +94,7 @@ describe("resolveEnterAction – schema-aware Enter", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "convert-block", blockId, newType: "bulletListItem" },
+			{ type: "set-props", blockId, props: { type: "bulletListItem" } },
 		]);
 
 		const action = resolveEnterAction(
@@ -112,8 +113,10 @@ describe("resolveEnterAction – schema-aware Enter", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "convert-block", blockId, newType: "bulletListItem" },
-			{ type: "insert-text", blockId, offset: 0, text: "item" },
+			{ type: "set-props", blockId, props: { type: "bulletListItem" } },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "item" },
 		]);
 
 		const action = resolveEnterAction(
@@ -132,7 +135,7 @@ describe("resolveEnterAction – schema-aware Enter", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "convert-block", blockId, newType: "numberedListItem" },
+			{ type: "set-props", blockId, props: { type: "numberedListItem" } },
 		]);
 
 		const action = resolveEnterAction(
@@ -152,12 +155,13 @@ describe("resolveEnterAction – schema-aware Enter", () => {
 
 		editor.apply([
 			{
-				type: "convert-block",
+				type: "set-props",
 				blockId,
-				newType: "numberedListItem",
-				newProps: { start: 3 },
+				props: { type: "numberedListItem", start: 3 },
 			},
-			{ type: "insert-text", blockId, offset: 0, text: "third" },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "third" },
 		]);
 
 		const target = applyEnterBehavior(editor, {
@@ -185,7 +189,7 @@ describe("resolveEnterAction – schema-aware Enter", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "convert-block", blockId, newType: "checkListItem" },
+			{ type: "set-props", blockId, props: { type: "checkListItem" } },
 		]);
 
 		const action = resolveEnterAction(
@@ -204,7 +208,7 @@ describe("resolveEnterAction – schema-aware Enter", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "convert-block", blockId, newType: "blockquote" },
+			{ type: "set-props", blockId, props: { type: "blockquote" } },
 		]);
 
 		const action = resolveEnterAction(
@@ -223,8 +227,10 @@ describe("resolveEnterAction – schema-aware Enter", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "convert-block", blockId, newType: "blockquote" },
-			{ type: "insert-text", blockId, offset: 0, text: "quote" },
+			{ type: "set-props", blockId, props: { type: "blockquote" } },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "quote" },
 		]);
 
 		const action = resolveEnterAction(
@@ -242,7 +248,7 @@ describe("resolveEnterAction – schema-aware Enter", () => {
 		const editor = createEditor(editorOpts());
 		const blockId = editor.firstBlock()!.id;
 
-		editor.apply([{ type: "convert-block", blockId, newType: "callout" }]);
+		editor.apply([{ type: "set-props", blockId, props: { type: "callout" } }]);
 
 		const action = resolveEnterAction(
 			editor,
@@ -260,7 +266,7 @@ describe("resolveEnterAction – schema-aware Enter", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "convert-block", blockId, newType: "codeBlock" },
+			{ type: "set-props", blockId, props: { type: "codeBlock" } },
 		]);
 
 		const action = resolveEnterAction(
@@ -299,7 +305,9 @@ describe("resolveEnterAction – schema-aware Enter", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "insert-text", blockId, offset: 0, text: "hello" },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "hello" },
 		]);
 
 		const action = resolveEnterAction(
@@ -320,10 +328,7 @@ describe("resolveEnterAction – schema-aware Enter", () => {
 
 		editor.apply([
 			{
-				type: "convert-block",
-				blockId: toggleBlockId,
-				newType: "toggle",
-			},
+				type: "set-props", blockId: toggleBlockId, props: { type: "toggle" }},
 			{
 				type: "insert-block",
 				blockId: childBlockId,
@@ -332,7 +337,7 @@ describe("resolveEnterAction – schema-aware Enter", () => {
 				position: { after: toggleBlockId },
 			},
 			{
-				type: "update-block",
+				type: "set-props",
 				blockId: childBlockId,
 				props: { parentId: toggleBlockId },
 			},

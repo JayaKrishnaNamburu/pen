@@ -32,7 +32,6 @@
 - shouldAllowDirectBlockPaste
 - shouldAllowFlowInsertionInSlashMenu
 - shouldExposeBlockInTooling
-- shouldFallbackMixedSelectionToBlock
 - shouldForceBlockScopedSelectAll
 - shouldShowBlockInDefaultMenus
 

@@ -90,10 +90,11 @@ describe("@input/pen-shortcuts", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "hello",
+					from: 0,
+				to: 0,
+				insert: "hello",
 				},
 			],
 			{ origin: "user" },

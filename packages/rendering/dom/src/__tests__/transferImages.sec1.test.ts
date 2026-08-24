@@ -198,10 +198,11 @@ describe("SEC1 transfer image src", () => {
 		const paragraphId = editor.firstBlock()!.id;
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: paragraphId,
-				offset: 0,
-				text: "Hello",
+				from: 0,
+				to: 0,
+				insert: "Hello",
 			},
 		]);
 
@@ -233,10 +234,11 @@ describe("SEC1 transfer image src", () => {
 		const paragraphId = editor.firstBlock()!.id;
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: paragraphId,
-				offset: 0,
-				text: "Hello",
+				from: 0,
+				to: 0,
+				insert: "Hello",
 			},
 		]);
 

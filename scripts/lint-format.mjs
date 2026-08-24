@@ -23,7 +23,7 @@
  */
 
 import { spawnSync } from "node:child_process";
-import fs from "node:fs";
+import fs, { globSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -56,21 +56,47 @@ export const FORMAT_PATHS = [
 	"playground/package.json",
 	"spec/**/*.md",
 	"spec-v2/**/*.md",
+	"spec-v3/**/*.md",
 ];
 
-export function evaluateFormatScope({ paths = FORMAT_PATHS } = {}) {
-	const sourceGlobs = paths.filter((entry) =>
-		/\*\*\/\*\.(?:[cm]?[jt]sx?)$/.test(entry) ||
-		entry === "packages/**/*.ts" ||
-		entry.endsWith("/*.ts") ||
-		entry.endsWith("/*.tsx") ||
-		entry.endsWith("/*.mjs"),
+export function expandFormatPaths(repoRoot, paths = FORMAT_PATHS) {
+	const expanded = [];
+	const emptyGlobs = [];
+	for (const entry of paths) {
+		if (entry.includes("*")) {
+			const matched = globSync(entry, { cwd: repoRoot });
+			if (matched.length === 0) {
+				emptyGlobs.push(entry);
+			}
+			expanded.push(...matched);
+		} else {
+			expanded.push(entry);
+		}
+	}
+	return { expanded, emptyGlobs };
+}
+
+export function evaluateFormatScope({
+	paths = FORMAT_PATHS,
+	emptyGlobs = [],
+} = {}) {
+	const sourceGlobs = paths.filter(
+		(entry) =>
+			/\*\*\/\*\.(?:[cm]?[jt]sx?)$/.test(entry) ||
+			entry === "packages/**/*.ts" ||
+			entry.endsWith("/*.ts") ||
+			entry.endsWith("/*.tsx") ||
+			entry.endsWith("/*.mjs"),
 	);
 	return {
-		ok: paths.length > 0 && sourceGlobs.length === 0,
+		ok:
+			paths.length > 0 &&
+			sourceGlobs.length === 0 &&
+			emptyGlobs.length === 0,
 		paths,
 		sourceGlobs,
 		empty: paths.length === 0,
+		emptyGlobs,
 	};
 }
 
@@ -81,9 +107,21 @@ export function formatScopeReport(result) {
 		"Prettier owns docs/config. ESLint owns TypeScript/JavaScript source.",
 	);
 	lines.push(`paths   ${result.paths.length}`);
+	if (result.expandedCount != null) {
+		lines.push(`files   ${result.expandedCount}`);
+	}
 	if (result.empty) {
 		lines.push("");
 		lines.push("FAIL lint-format: path list is empty (skip of nothing).");
+	}
+	if ((result.emptyGlobs ?? []).length > 0) {
+		lines.push("");
+		lines.push(
+			"FAIL lint-format: path glob matched 0 files (skip of nothing):",
+		);
+		for (const glob of result.emptyGlobs) {
+			lines.push(`  ${glob}`);
+		}
 	}
 	if (result.sourceGlobs.length > 0) {
 		lines.push("");
@@ -106,7 +144,9 @@ export function formatScopeReport(result) {
 export function runSelfTests() {
 	const healthy = evaluateFormatScope();
 	if (!healthy.ok) {
-		throw new Error("self-test: committed path list must be docs/config only");
+		throw new Error(
+			"self-test: committed path list must be docs/config only",
+		);
 	}
 	const empty = evaluateFormatScope({ paths: [] });
 	if (empty.ok || !empty.empty) {
@@ -117,6 +157,13 @@ export function runSelfTests() {
 	});
 	if (widened.ok || !widened.sourceGlobs.includes("packages/**/*.ts")) {
 		throw new Error("self-test: a source glob must fail closed");
+	}
+	const emptyGlob = evaluateFormatScope({
+		paths: FORMAT_PATHS,
+		emptyGlobs: ["does-not-exist-mutation/**/*.md"],
+	});
+	if (emptyGlob.ok || emptyGlob.emptyGlobs.length !== 1) {
+		throw new Error("self-test: a glob matching 0 files must fail closed");
 	}
 }
 
@@ -140,7 +187,13 @@ function parseArgs(argv) {
 }
 
 function findPrettier(repoRoot) {
-	const bin = path.join(repoRoot, "node_modules", "prettier", "bin", "prettier.cjs");
+	const bin = path.join(
+		repoRoot,
+		"node_modules",
+		"prettier",
+		"bin",
+		"prettier.cjs",
+	);
 	if (fs.existsSync(bin)) {
 		return bin;
 	}
@@ -151,15 +204,22 @@ async function main() {
 	runSelfTests();
 	console.log("CH10 lint-format self-test ok");
 	console.log(
-		"  red-proof: empty path list and a packages/**/*.ts glob fail closed",
+		"  red-proof: empty path list, a packages/**/*.ts glob, and a 0-file glob fail closed",
 	);
 	console.log(
 		"  scope: Prettier owns docs/config; ESLint owns TypeScript/JavaScript source",
 	);
 
 	const args = parseArgs(process.argv.slice(2));
-	const scope = evaluateFormatScope();
+	const expansion = expandFormatPaths(args.repoRoot);
+	const scope = evaluateFormatScope({
+		emptyGlobs: expansion.emptyGlobs,
+	});
+	scope.expandedCount = expansion.expanded.length;
 	console.log("");
+	console.log(
+		`population: ${expansion.expanded.length} files from ${FORMAT_PATHS.length} path entries`,
+	);
 	console.log(formatScopeReport(scope));
 	if (!scope.ok) {
 		process.exitCode = 1;

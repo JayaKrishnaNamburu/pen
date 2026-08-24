@@ -46,7 +46,9 @@ function seedSelectedHello(editor: Editor): string {
 		throw new Error("expected an initial paragraph");
 	}
 	editor.apply(
-		[{ type: "insert-text", blockId: block.id, offset: 0, text: "hello" }],
+		[{ type: "splice-text", blockId: block.id, from: 0,
+				to: 0,
+				insert: "hello" }],
 		{ origin: "user" },
 	);
 	editor.selectText(block.id, 0, 5);

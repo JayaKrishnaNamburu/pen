@@ -14,7 +14,7 @@ In current usage, `@input/pen-ai` is the headless orchestration layer for both i
 
 - Export map: `.`
 - Primary extension entrypoint: `aiExtension()`
-- Slot and controller accessors such as `AI_CONTROLLER_SLOT`, `INLINE_COMPLETION_SLOT`, `getAIController()`, and related review/inline controllers
+- Controller accessors such as `getAIController()`, `getAIInlineCompletionController()`, `getAIInlineHistoryController()`, and `getAIReviewController()` — slot keys such as `AI_CONTROLLER_SLOT` and `INLINE_COMPLETION_SLOT` live on `@input/pen-types`
 - Command surfaces such as `AICommandRegistry` and `defaultAICommands`
 - Planner, contract, validation, and execution helpers for structured mutation flows
 - Suggestion helpers such as `acceptSuggestion()`, `rejectSuggestion()`, `readAllSuggestions()`, and suggest-mode interceptors

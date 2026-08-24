@@ -10,7 +10,7 @@ import {
 	decorationsFacet,
 	inputRulesFacet,
 	keymapFacet,
-	readOnlyFacet,
+	ariaReadOnlyFacet,
 } from "../facets/coreFacets";
 import {
 	HOOK_PRIORITIES,
@@ -110,22 +110,22 @@ describe("core facets 1.3", () => {
 		});
 	});
 
-	it("1.3: pen.readOnly some-combines boolean inputs", () => {
+	it("1.3: pen.ariaReadOnly some-combines boolean inputs", () => {
 		const empty = createFacetRegistry();
 		empty.markReady();
-		expect(empty.read(readOnlyFacet)).toBe(false);
+		expect(empty.read(ariaReadOnlyFacet)).toBe(false);
 
 		const mixed = createFacetRegistry({
-			providers: [readOnlyFacet.of(false), readOnlyFacet.of(true)],
+			providers: [ariaReadOnlyFacet.of(false), ariaReadOnlyFacet.of(true)],
 		});
 		mixed.markReady();
-		expect(mixed.read(readOnlyFacet)).toBe(true);
+		expect(mixed.read(ariaReadOnlyFacet)).toBe(true);
 	});
 
 	it("1.3: editor.facet and whenReady are wired on createHeadlessEditor", async () => {
 		const editor = createHeadlessEditor({ schema: defaultSchema });
 		await editor.whenReady();
-		expect(editor.facet(readOnlyFacet)).toBe(false);
+		expect(editor.facet(ariaReadOnlyFacet)).toBe(false);
 		expect(editor.facet(keymapFacet)).toEqual([]);
 		editor.destroy();
 	});

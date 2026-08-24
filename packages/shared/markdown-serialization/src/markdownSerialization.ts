@@ -1,5 +1,4 @@
 import type { BlockHandle, Editor, TableCellHandle } from "@input/pen-types";
-import { logicalTextFromStored } from "@input/pen-types";
 import { buildTableChildren } from "./exporterUtils";
 import { groupListItems } from "./listGrouper";
 import { getNumberedListItemValue } from "./orderedList";
@@ -17,10 +16,6 @@ export interface MarkdownExportConfig {
 }
 
 const DELETE_SUGGESTION_ACTION = "delete";
-
-// sentinel-storage: apply executors still persist the empty-block sentinel in
-// Y.Text. This serializer emits the logical text domain at the export
-// boundary via logicalTextFromStored (I11).
 
 export function exportMarkdownRange(
   editor: Editor,
@@ -118,7 +113,7 @@ function serializeInlineContent(
   const stored = deltas
     .map((delta) => (typeof delta.insert === "string" ? delta.insert : ""))
     .join("");
-  if (logicalTextFromStored(stored) === "") {
+  if (stored === "") {
     return "";
   }
 
@@ -219,7 +214,7 @@ function serializeTableCellMarkdown(
 
   const deltas = [...cell.textDeltas()];
   const stored = deltas.map((delta) => delta.insert).join("");
-  if (logicalTextFromStored(stored) === "") {
+  if (stored === "") {
     return "";
   }
 
@@ -293,9 +288,7 @@ function readResolvedText(
   handle: BlockHandle,
   viewMode: MarkdownExportViewMode,
 ): string {
-  return logicalTextFromStored(
-    viewMode === "resolved"
-      ? handle.textContent({ resolved: true })
-      : handle.textContent(),
-  );
+  return viewMode === "resolved"
+    ? handle.textContent({ resolved: true })
+    : handle.textContent();
 }

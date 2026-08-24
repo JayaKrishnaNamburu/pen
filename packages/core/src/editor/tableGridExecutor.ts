@@ -1,17 +1,9 @@
 import type {
 	CRDTAdapter,
-	DeleteTableCellTextOp,
-	DeleteTableColumnOp,
-	DeleteTableRowOp,
-	DocumentOp,
-	FormatTableCellTextOp,
-	InsertTableCellTextOp,
-	InsertTableColumnOp,
-	InsertTableRowOp,
+	GridOp,
 	TableColumnSchema,
-	UpdateTableColumnsOp,
 } from "@input/pen-types";
-import { EMPTY_BLOCK_SENTINEL, generateId } from "@input/pen-types";
+import { generateId } from "@input/pen-types";
 import {
 	type CRDTUnknownArray,
 	type CRDTUnknownMap,
@@ -30,8 +22,6 @@ import {
 	writeCellDeltas,
 } from "./tableGridCellHelpers";
 
-// sentinel-storage: empty-block caret target in cell Y.Text. Not a logical character.
-
 export type TableCellDelta = {
 	insert: string;
 	attributes?: Record<string, unknown>;
@@ -44,38 +34,25 @@ export class TableGridExecutor {
 		this._adapter = adapter;
 	}
 
-	execute(blockMap: CRDTUnknownMap, op: DocumentOp): string[] {
-		const tableOp = op as { type: string; blockId: string };
-
-		if (op.type === "update-table-columns") {
-			this.setStructuredTableColumns(
-				blockMap,
-				(op as UpdateTableColumnsOp).columns,
-			);
-			return [tableOp.blockId];
-		}
-
+	execute(blockMap: CRDTUnknownMap, op: GridOp): string[] {
 		const tableContent = getTableContent(blockMap);
 		if (!tableContent) {
 			return [];
 		}
 
-		switch (op.type) {
-			case "insert-table-row": {
-				const rowOp = op as InsertTableRowOp;
+		switch (op.change.kind) {
+			case "insert-row": {
 				const row = this.createTableRow(this.resolveGridColumnCount(blockMap));
-				tableContent.insert(rowOp.index, [row]);
+				tableContent.insert(op.change.index, [row]);
 				break;
 			}
-			case "delete-table-row": {
-				const rowOp = op as DeleteTableRowOp;
-				if (rowOp.index < tableContent.length) {
-					tableContent.delete(rowOp.index, 1);
+			case "delete-row": {
+				if (op.change.index < tableContent.length) {
+					tableContent.delete(op.change.index, 1);
 				}
 				break;
 			}
-			case "insert-table-column": {
-				const colOp = op as InsertTableColumnOp;
+			case "insert-column": {
 				for (let rowIndex = 0; rowIndex < tableContent.length; rowIndex++) {
 					const row = tableContent.get(rowIndex);
 					if (!row || !isCRDTMap(row)) {
@@ -85,12 +62,11 @@ export class TableGridExecutor {
 					if (!cells) {
 						continue;
 					}
-					cells.insert(colOp.index, [this.createTableCell()]);
+					cells.insert(op.change.index, [this.createTableCell()]);
 				}
 				break;
 			}
-			case "delete-table-column": {
-				const colOp = op as DeleteTableColumnOp;
+			case "delete-column": {
 				for (let rowIndex = 0; rowIndex < tableContent.length; rowIndex++) {
 					const row = tableContent.get(rowIndex);
 					if (!row || !isCRDTMap(row)) {
@@ -100,78 +76,23 @@ export class TableGridExecutor {
 					if (!cells) {
 						continue;
 					}
-					if (colOp.index < cells.length) {
-						cells.delete(colOp.index, 1);
+					if (op.change.index < cells.length) {
+						cells.delete(op.change.index, 1);
 					}
 				}
 				break;
 			}
-			case "merge-table-cells":
-			case "split-table-cell":
-				break;
-			case "insert-table-cell-text": {
-				const cellOp = op as InsertTableCellTextOp;
-				const content = ensureCellContent(
-					tableContent.get(cellOp.row),
-					cellOp.col,
-					() => this.createTableCell(),
-				);
-				if (content && typeof content.insert === "function") {
-					content.insert(cellOp.offset, cellOp.text);
-				}
-				break;
-			}
-			case "delete-table-cell-text": {
-				const cellOp = op as DeleteTableCellTextOp;
-				const content = getCellContent(
-					tableContent.get(cellOp.row),
-					cellOp.col,
-				);
-				if (content && typeof content.delete === "function") {
-					content.delete(cellOp.offset, cellOp.length);
-				}
-				break;
-			}
-			case "format-table-cell-text": {
-				const cellOp = op as FormatTableCellTextOp;
-				const content = getCellContent(
-					tableContent.get(cellOp.row),
-					cellOp.col,
-				);
-				if (content && typeof content.format === "function") {
-					content.format(cellOp.offset, cellOp.length, cellOp.marks);
-				}
-				break;
-			}
-			case "insert-block":
-			case "update-block":
-			case "delete-block":
-			case "move-block":
-			case "convert-block":
-			case "split-block":
-			case "merge-blocks":
-			case "insert-text":
-			case "delete-text":
-			case "format-text":
-			case "replace-text":
-			case "insert-inline-node":
-			case "remove-inline-node":
-			case "update-layout":
-			case "set-meta":
-			case "create-app":
-			case "update-app":
-			case "delete-app":
-			case "set-selection":
-			case "stream-open":
+			case "merge-cells":
+			case "split-cell":
 				break;
 			default: {
-				const _exhaustive: never = op;
+				const _exhaustive: never = op.change;
 				void _exhaustive;
 				break;
 			}
 		}
 
-		return [tableOp.blockId];
+		return [op.blockId];
 	}
 
 	seedTableBlock(
@@ -239,9 +160,7 @@ export class TableGridExecutor {
 	readTableCellText(rowMap: CRDTUnknownMap, columnIndex: number): string {
 		const content = getCellContent(rowMap, columnIndex);
 		if (content && typeof content.toString === "function") {
-			const text = content.toString();
-			// sentinel-storage: cell Y.Text may be the empty-block caret target
-			return text === EMPTY_BLOCK_SENTINEL ? "" : text;
+			return content.toString();
 		}
 		return "";
 	}

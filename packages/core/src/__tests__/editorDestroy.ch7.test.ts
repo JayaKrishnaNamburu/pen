@@ -44,7 +44,9 @@ describe("editor destroy teardown", () => {
 		const editor = createEditor();
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "x" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "x" }],
 			{ origin: "user" },
 		);
 

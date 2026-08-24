@@ -80,7 +80,7 @@ function TableRendererInner(props: {
 
 	function handleAddRow() {
 		editor.apply(
-			[{ type: "insert-table-row", blockId: block.id, index: rowCount }],
+			[{ type: "grid", blockId: block.id, change: { kind: "insert-row", index: rowCount  }}],
 			{ origin: "user" },
 		);
 		queueMicrotask(() => addRowRef.current?.focus());
@@ -88,7 +88,7 @@ function TableRendererInner(props: {
 
 	function handleAddColumn() {
 		editor.apply(
-			[{ type: "insert-table-column", blockId: block.id, index: colCount }],
+			[{ type: "grid", blockId: block.id, change: { kind: "insert-column", index: colCount  }}],
 			{ origin: "user" },
 		);
 		queueMicrotask(() => addColumnRef.current?.focus());

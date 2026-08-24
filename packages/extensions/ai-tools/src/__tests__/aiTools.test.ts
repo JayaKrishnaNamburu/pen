@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { collectToolExecutionOutput } from "@input/pen-core";
 import type { ToolDefinition } from "@input/pen-types";
 import {
 	AIToolContextImpl,
 	AIToolRuntimeImpl,
-	collectAIToolOutput,
 	executeAITool,
 	getAIToolRuntime,
 	listAITools,
@@ -47,7 +47,7 @@ describe("@input/pen-ai-tools", () => {
 	});
 
 	it("buffers async iterable tool output", async () => {
-		const output = await collectAIToolOutput(
+		const output = await collectToolExecutionOutput(
 			(async function* () {
 				yield { part: 1 };
 				yield { part: 2 };

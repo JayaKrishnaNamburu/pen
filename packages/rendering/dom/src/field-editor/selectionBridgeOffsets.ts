@@ -1,4 +1,5 @@
 import { DATA_ATTRS } from "../utils/dataAttributes";
+import { findEmptyBlockPlaceholder } from "./emptyBlockPlaceholder";
 import {
 	findLogicalDOMPoint,
 	getInlineAtomPointerOffset,
@@ -342,7 +343,10 @@ function getInlineCaretRectFromOffset(
 	offset: number,
 ): DOMRect {
 	const textLength = getLogicalNodeLength(inlineEl);
-	const inlineRect = inlineEl.getBoundingClientRect();
+	const placeholder = findEmptyBlockPlaceholder(inlineEl);
+	const inlineRect = (
+		placeholder ?? inlineEl
+	).getBoundingClientRect();
 	if (textLength <= 0) {
 		return {
 			x: inlineRect.left,

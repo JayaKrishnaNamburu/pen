@@ -78,17 +78,19 @@ function insertHelloBlocks(editor: Editor, count: number): void {
 				position: { after: string };
 		  }
 		| {
-				type: "insert-text";
+				type: "splice-text";
 				blockId: string;
-				offset: number;
-				text: string;
+				from: number;
+				to: number;
+				insert: string;
 		  }
 	> = [
 		{
-			type: "insert-text",
+			type: "splice-text",
 			blockId: firstBlockId,
-			offset: 0,
-			text: "hello 0",
+			from: 0,
+				to: 0,
+				insert: "hello 0",
 		},
 	];
 	let previousId = firstBlockId;
@@ -102,10 +104,11 @@ function insertHelloBlocks(editor: Editor, count: number): void {
 			position: { after: previousId },
 		});
 		ops.push({
-			type: "insert-text",
+			type: "splice-text",
 			blockId,
-			offset: 0,
-			text: `hello ${index}`,
+			from: 0,
+				to: 0,
+				insert: `hello ${index}`,
 		});
 		previousId = blockId;
 	}

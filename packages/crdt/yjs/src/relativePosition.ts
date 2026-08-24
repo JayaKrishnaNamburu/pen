@@ -4,7 +4,6 @@ import type {
 	CRDTDocument,
 	ResolveRelativePositionOptions,
 } from "@input/pen-types";
-import { logicalTextFromStored } from "@input/pen-types";
 import * as Y from "yjs";
 
 import { asYjsDoc } from "./document";
@@ -19,10 +18,7 @@ function clampOffset(offset: number, length: number): number {
 }
 
 function logicalLength(text: Y.Text): number {
-	const stored = text.toString();
-	const logical = logicalTextFromStored(stored);
-	const embedCount = text.length - stored.length;
-	return logical.length + Math.max(0, embedCount);
+	return text.length;
 }
 
 function toYjsIndex(text: Y.Text, logicalOffset: number): number {

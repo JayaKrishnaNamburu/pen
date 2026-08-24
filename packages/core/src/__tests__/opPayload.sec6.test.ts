@@ -52,13 +52,15 @@ describe("SEC6 op payload validation", () => {
 				props: {},
 				position: "last",
 			},
-			{ type: "insert-text", blockId: "b1", offset: 0, text: "Hi" },
+			{ type: "splice-text", blockId: "b1", from: 0,
+				to: 0,
+				insert: "Hi" },
 			{
-				type: "insert-inline-node",
+				type: "splice-text",
 				blockId: "b1",
-				offset: 2,
-				nodeType: "mention",
-				props: { id: "user-1", label: "Ada" },
+				from: 2,
+				to: 2,
+				insert: { nodeType: "mention", props: { id: "user-1", label: "Ada" } },
 			},
 		]);
 
@@ -90,17 +92,22 @@ describe("SEC6 op payload validation", () => {
 				props: {},
 				position: "last",
 			},
-			{ type: "insert-text", blockId: "b1", offset: 0, text: "Hi" },
+			{ type: "splice-text", blockId: "b1", from: 0,
+				to: 0,
+				insert: "Hi" },
 		]);
 
 		for (const key of ["__proto__", "constructor", "prototype"] as const) {
 			editor.apply([
 				{
-					type: "insert-inline-node",
+					type: "splice-text",
 					blockId: "b1",
-					offset: 2,
-					nodeType: "mention",
-					props: propsWithOwnKey(key, { polluted: true }),
+					from: 2,
+					to: 2,
+					insert: {
+						nodeType: "mention",
+						props: propsWithOwnKey(key, { polluted: true }),
+					},
 				},
 			]);
 		}
@@ -184,7 +191,7 @@ describe("SEC6 op payload validation", () => {
 
 		editor.apply([
 			{
-				type: "update-block",
+				type: "set-props",
 				blockId: "h1",
 				props: propsWithOwnKey("__proto__", { polluted: true }, { level: 2 }),
 			},
@@ -220,15 +227,17 @@ describe("SEC6 op payload validation", () => {
 				props: {},
 				position: "last",
 			},
-			{ type: "insert-text", blockId: "b1", offset: 0, text: "Hi" },
+			{ type: "splice-text", blockId: "b1", from: 0,
+				to: 0,
+				insert: "Hi" },
 		]);
 
 		editor.apply([
 			{
 				type: "format-text",
 				blockId: "b1",
-				offset: 0,
-				length: 2,
+				from: 0,
+				to: 0 + 2,
 				marks: propsWithOwnKey("__proto__", { polluted: true }, { bold: true }),
 			},
 		]);

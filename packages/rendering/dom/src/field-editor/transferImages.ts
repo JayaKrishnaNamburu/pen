@@ -1,4 +1,4 @@
-import { assetProviderFacet } from "@input/pen-core";
+import { assetProviderFacet, buildSplitBlockRecipe } from "@input/pen-core";
 import type {
 	AssetProvider,
 	DocumentOp,
@@ -298,14 +298,12 @@ export function insertUploadedImagesAtDropTarget(
 	}
 
 	const tailBlockId = generateId();
-	const ops: DocumentOp[] = [
-		{
-			type: "split-block",
-			blockId: point.blockId,
-			offset: clampedOffset,
-			newBlockId: tailBlockId,
-		},
-	];
+	const recipe = buildSplitBlockRecipe({
+		block,
+		offset: clampedOffset,
+		newBlockId: tailBlockId,
+	});
+	const ops: DocumentOp[] = [...recipe.ops];
 	let previousInsertedBlockId: string | null = null;
 	let lastInsertedBlockId: string | null = null;
 
@@ -333,6 +331,7 @@ export function insertUploadedImagesAtDropTarget(
 
 	editor.apply(ops, {
 		origin: "user",
+		structural: recipe.structural,
 		...(options?.undoGroup === false ? {} : { undoGroup: true }),
 	});
 	return lastInsertedBlockId;

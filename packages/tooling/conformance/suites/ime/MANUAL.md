@@ -6,7 +6,8 @@ longer an empty directory. Automation now has four specs
 `c3-gboard-rapid`, `c4-editcontext-preferred`). Staffing
 this directory (with `input` / `bidi` / `geometry` /
 `overlays` / `selection`) found seven product defects;
-C1, C2, and two C3 failures are among them. This matrix
+C1, C2, and two C3 failures were among them. C1's
+Chromium CDP Escape cancel is now automated. This matrix
 is still the release-train check against real devices.
 The suite is more honest, not merely bigger. A prior
 106/106 three-engine figure tested none of these paths.

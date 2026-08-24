@@ -13,6 +13,7 @@ import {
 	applyInlineDecorationsToDeltas,
 	filterVisibleInlineDecorationDeltas,
 } from "../utils/inlineDecorations";
+import { createEmptyBlockPlaceholder } from "./emptyBlockPlaceholder";
 import { createInlineAtomElement } from "./inlineAtomDom";
 import { wrapWithMarks } from "./reconcilerMarks";
 import { patchDOM } from "./reconcilerPatch";
@@ -93,8 +94,13 @@ export function fullReconcileDeltasToDOM(
 	const savedSelection = preserveSelection ? saveSelection(element) : null;
 
 	const fragment = document.createDocumentFragment();
+	let hasContent = false;
 	for (const delta of orderedDeltas) {
 		if (delta.insert == null) continue;
+		if (typeof delta.insert === "string" && delta.insert.length === 0) {
+			continue;
+		}
+		hasContent = true;
 		let node: Node =
 			typeof delta.insert === "string"
 				? document.createTextNode(delta.insert)
@@ -103,6 +109,9 @@ export function fullReconcileDeltasToDOM(
 			node = wrapWithMarks(node, delta.attributes, registry, policy);
 		}
 		fragment.appendChild(node);
+	}
+	if (!hasContent) {
+		fragment.appendChild(createEmptyBlockPlaceholder());
 	}
 
 	patchDOM(element, fragment);

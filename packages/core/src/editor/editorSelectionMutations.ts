@@ -1,5 +1,5 @@
 import type { EditorInternals, CreateEditorOptions, PenEventMap, DocumentCommitEvent, CRDTAdapter, CRDTDocument, CRDTEvent, PenDocument, SchemaRegistry, Awareness, DocumentSession, DocumentScope, DocumentScopeReplacementEvent, DocumentProfile, Extension, DocumentOp, ApplyOptions, OpOrigin, MutationGroupMetadata, SelectionState, TextSelection, DocumentRange, BlockHandle, Block, DocumentState, Unsubscribe, CRDTMap, CRDTArray, Position, DecorationSet, EditorViewMode } from "@input/pen-types";
-import { AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY, COLLECT_KEY_BINDINGS_SLOT_KEY, EMPTY_BLOCK_SENTINEL, MUTATION_GROUP_METADATA_KEY, UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY, generateId } from "@input/pen-types";
+import { AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY, COLLECT_KEY_BINDINGS_SLOT_KEY, MUTATION_GROUP_METADATA_KEY, UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY, generateId } from "@input/pen-types";
 import { usesInlineTextSelection } from "../schema/fieldEditorCapabilities";
 import { SchemaEngineImpl } from "../schema/normalize";
 import { createBlockHandle } from "../schema/handles";
@@ -34,18 +34,20 @@ if (sel.type === "text") {
 	const ops: DocumentOp[] = [];
 	if (to > from) {
 		ops.push({
-			type: "delete-text",
+			type: "splice-text",
 			blockId: range.start.blockId,
-			offset: from,
-			length: to - from,
+			from,
+			to,
+			insert: "",
 		});
 	}
 	if (typeof content === "string" && content.length > 0) {
 		ops.push({
-			type: "insert-text",
+			type: "splice-text",
 			blockId: range.start.blockId,
-			offset: from,
-			text: content,
+			from,
+			to: from,
+			insert: content,
 		});
 	}
 	if (ops.length > 0) {
@@ -91,10 +93,11 @@ if (sel.type === "block" && sel.blockIds.length > 0) {
 		});
 		if (content.length > 0) {
 			ops.push({
-				type: "insert-text",
+				type: "splice-text",
 				blockId: newId,
-				offset: 0,
-				text: content,
+				from: 0,
+				to: 0,
+				insert: content,
 			});
 		}
 	} else if (Array.isArray(content)) {
@@ -113,10 +116,11 @@ if (sel.type === "block" && sel.blockIds.length > 0) {
 				block.content.length > 0
 			) {
 				ops.push({
-					type: "insert-text",
+					type: "splice-text",
 					blockId: newId,
-					offset: 0,
-					text: block.content,
+					from: 0,
+					to: 0,
+					insert: block.content,
 				});
 			}
 			prevPosition = { after: newId };
@@ -166,10 +170,11 @@ if (sel.type === "text") {
 		self.apply(
 			[
 				{
-					type: "delete-text",
+					type: "splice-text",
 					blockId: range.start.blockId,
-					offset: from,
-					length: to - from,
+					from,
+					to,
+					insert: "",
 				},
 			],
 			options,
@@ -204,13 +209,13 @@ if (sel.type === "cell") {
 			const len = cell.length();
 			if (len > 0) {
 				ops.push({
-					type: "delete-table-cell-text",
+					type: "splice-text",
 					blockId: sel.blockId,
-					row: cellCoord.row,
-					col: cellCoord.col,
-					offset: 0,
-					length: len,
-				} as DocumentOp);
+					cell: { row: cellCoord.row, col: cellCoord.col },
+					from: 0,
+					to: len,
+					insert: "",
+				});
 			}
 		}
 	}
@@ -273,7 +278,7 @@ export function sliceInlineDeltas(
 	const self = editor as EditorImplRuntime;
 	const handle = self.getBlock(blockId);
 	if (!handle) return [];
-	const deltas = handle.textDeltas().filter((delta: { insert: string }) => delta.insert !== EMPTY_BLOCK_SENTINEL);
+	const deltas = handle.textDeltas();
 	const sliced: Array<{ insert: string; attributes?: Record<string, unknown> }> = [];
 	let offset = 0;
 	for (const delta of deltas) {
@@ -305,19 +310,44 @@ export function buildMultiBlockTextReplacement(
 	const suffixDeltas = self._sliceInlineDeltas(endId, range.end.offset);
 	const ops: DocumentOp[] = [];
 	if (range.start.offset < startText.length) {
-		ops.push({ type: "delete-text", blockId: startId, offset: range.start.offset, length: startText.length - range.start.offset });
+		ops.push({
+			type: "splice-text",
+			blockId: startId,
+			from: range.start.offset,
+			to: startText.length,
+			insert: "",
+		});
 	}
 	if (range.end.offset > 0) {
-		ops.push({ type: "delete-text", blockId: endId, offset: 0, length: range.end.offset });
+		ops.push({
+			type: "splice-text",
+			blockId: endId,
+			from: 0,
+			to: range.end.offset,
+			insert: "",
+		});
 	}
 	for (const blockId of middleIds) ops.push({ type: "delete-block", blockId });
 	let insertionOffset = range.start.offset;
 	if (insertedText.length > 0) {
-		ops.push({ type: "insert-text", blockId: startId, offset: insertionOffset, text: insertedText });
+		ops.push({
+			type: "splice-text",
+			blockId: startId,
+			from: insertionOffset,
+			to: insertionOffset,
+			insert: insertedText,
+		});
 		insertionOffset += insertedText.length;
 	}
 	for (const delta of suffixDeltas) {
-		ops.push({ type: "insert-text", blockId: startId, offset: insertionOffset, text: delta.insert, marks: delta.attributes });
+		ops.push({
+			type: "splice-text",
+			blockId: startId,
+			from: insertionOffset,
+			to: insertionOffset,
+			insert: delta.insert,
+			marks: delta.attributes,
+		});
 		insertionOffset += delta.insert.length;
 	}
 	ops.push({ type: "delete-block", blockId: endId });
@@ -335,7 +365,20 @@ export function deleteMultiBlockTextRange(
 	if (startId === endId) {
 		const from = range.start.offset;
 		const to = range.end.offset;
-		if (to > from) self.apply([{ type: "delete-text", blockId: startId, offset: from, length: to - from }], options);
+		if (to > from) {
+			self.apply(
+				[
+					{
+						type: "splice-text",
+						blockId: startId,
+						from,
+						to,
+						insert: "",
+					},
+				],
+				options,
+			);
+		}
 		const caret = { blockId: startId, offset: from };
 		self._collapseToPoint(caret);
 		return caret;
@@ -352,13 +395,29 @@ export function deleteMultiBlockTextRange(
 	const ops: DocumentOp[] = [];
 	if (startInline) {
 		const startText = self._getTextForBlock(startId);
-		if (range.start.offset < startText.length) ops.push({ type: "delete-text", blockId: startId, offset: range.start.offset, length: startText.length - range.start.offset });
+		if (range.start.offset < startText.length) {
+			ops.push({
+				type: "splice-text",
+				blockId: startId,
+				from: range.start.offset,
+				to: startText.length,
+				insert: "",
+			});
+		}
 	} else if (self._isWholeBlockSelection(startId, range.start.offset, self._getBlockSelectionSpan(startId))) {
 		ops.push({ type: "delete-block", blockId: startId });
 	}
 	for (const blockId of middleIds) ops.push({ type: "delete-block", blockId });
 	if (endInline) {
-		if (range.end.offset > 0) ops.push({ type: "delete-text", blockId: endId, offset: 0, length: range.end.offset });
+		if (range.end.offset > 0) {
+			ops.push({
+				type: "splice-text",
+				blockId: endId,
+				from: 0,
+				to: range.end.offset,
+				insert: "",
+			});
+		}
 	} else if (self._isWholeBlockSelection(endId, 0, range.end.offset)) {
 		ops.push({ type: "delete-block", blockId: endId });
 	}

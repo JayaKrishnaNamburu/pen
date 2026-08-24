@@ -18,6 +18,11 @@ export function assertPeerEditsSurvive(
 			"assertPeerEditsSurvive requires at least two editors",
 		);
 	}
+	if (new Set(editors).size !== editors.length) {
+		throw new Error(
+			"assertPeerEditsSurvive requires distinct editors",
+		);
+	}
 	if (options.tokens.length < 2) {
 		throw new Error(
 			"assertPeerEditsSurvive requires at least two tokens",

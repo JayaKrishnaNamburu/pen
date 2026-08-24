@@ -1,4 +1,3 @@
-import { logicalTextFromStored } from "@input/pen-types";
 import type { Editor, Exporter, ExportOptions } from "@input/pen-types";
 import { exportEditorToJson } from "./exporter";
 import type {
@@ -81,14 +80,12 @@ function renderInlineContentText(
 	options: PenTextExportExtraOptions,
 ): string {
 	if (block.content?.segments?.length) {
-		return logicalTextFromStored(
-			block.content.segments
-				.map((segment) => renderInlineSegmentText(segment, options))
-				.join(""),
-		);
+		return block.content.segments
+			.map((segment) => renderInlineSegmentText(segment, options))
+			.join("");
 	}
 
-	return logicalTextFromStored(block.content?.text ?? "");
+	return block.content?.text ?? "";
 }
 
 function renderInlineSegmentText(

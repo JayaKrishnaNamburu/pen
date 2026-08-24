@@ -17,10 +17,11 @@ describe("@input/pen-react selected text deletion", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: firstBlockId,
-				offset: 0,
-				text: "First",
+				from: 0,
+				to: 0,
+				insert: "First",
 			},
 			{
 				type: "insert-block",
@@ -30,10 +31,11 @@ describe("@input/pen-react selected text deletion", () => {
 				position: { after: firstBlockId },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: secondBlockId,
-				offset: 0,
-				text: "Second",
+				from: 0,
+				to: 0,
+				insert: "Second",
 			},
 		]);
 
@@ -77,10 +79,11 @@ describe("@input/pen-react selected text deletion", () => {
 			editor.apply(
 				[
 					{
-						type: "insert-text",
+						type: "splice-text",
 						blockId: secondBlockId,
-						offset: 6,
-						text: "!",
+						from: 6,
+				to: 6,
+				insert: "!",
 					},
 				],
 				{ origin: "user" },

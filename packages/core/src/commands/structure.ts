@@ -276,10 +276,11 @@ function cloneInlineDelta(
 		}
 		return {
 			op: {
-				type: "insert-text",
+				type: "splice-text",
 				blockId: newBlockId,
-				offset,
-				text: delta.insert,
+				from: offset,
+				to: offset,
+				insert: delta.insert,
 				...(delta.attributes ? { marks: delta.attributes } : {}),
 			},
 			length: delta.insert.length,
@@ -287,11 +288,14 @@ function cloneInlineDelta(
 	}
 	return {
 		op: {
-			type: "insert-inline-node",
+			type: "splice-text",
 			blockId: newBlockId,
-			offset,
-			nodeType: delta.insert.type,
-			props: { ...delta.insert.props },
+			from: offset,
+			to: offset,
+			insert: {
+				nodeType: delta.insert.type,
+				props: { ...delta.insert.props },
+			},
 		},
 		length: 1,
 	};
@@ -308,16 +312,16 @@ function cloneTableOps(block: BlockHandle, newBlockId: string): DocumentOp[] {
 	const ops: DocumentOp[] = [];
 	for (let row = 2; row < rowCount; row += 1) {
 		ops.push({
-			type: "insert-table-row",
+			type: "grid",
 			blockId: newBlockId,
-			index: row,
+			change: { kind: "insert-row", index: row },
 		});
 	}
 	for (let col = 2; col < colCount; col += 1) {
 		ops.push({
-			type: "insert-table-column",
+			type: "grid",
 			blockId: newBlockId,
-			index: col,
+			change: { kind: "insert-column", index: col },
 		});
 	}
 	for (let row = 0; row < rowCount; row += 1) {
@@ -327,12 +331,12 @@ function cloneTableOps(block: BlockHandle, newBlockId: string): DocumentOp[] {
 				continue;
 			}
 			ops.push({
-				type: "insert-table-cell-text",
+				type: "splice-text",
 				blockId: newBlockId,
-				row,
-				col,
-				offset: 0,
-				text,
+				cell: { row, col },
+				from: 0,
+				to: 0,
+				insert: text,
 			});
 		}
 	}

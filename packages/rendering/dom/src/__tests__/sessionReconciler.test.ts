@@ -24,10 +24,11 @@ describe("SessionReconciler", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "a",
+				from: 0,
+				to: 0,
+				insert: "a",
 			},
 		]);
 
@@ -45,10 +46,11 @@ describe("SessionReconciler", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "a",
+					from: 0,
+				to: 0,
+				insert: "a",
 				},
 			],
 			{ origin: { type: "history", source: "undo" } },

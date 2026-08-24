@@ -44,10 +44,11 @@ function createParityMigrations(): DocumentMigration[] {
 				const blockId = editor.firstBlock()!.id;
 				editor.apply([
 					{
-						type: "insert-text",
+						type: "splice-text",
 						blockId,
-						offset: editor.getBlock(blockId)!.length(),
-						text: " · upgraded",
+						from: editor.getBlock(blockId)!.length(),
+				to: editor.getBlock(blockId)!.length(),
+				insert: " · upgraded",
 					},
 				]);
 			},
@@ -60,8 +61,8 @@ function createParityMigrations(): DocumentMigration[] {
 					{
 						type: "format-text",
 						blockId,
-						offset: 0,
-						length: 5,
+						from: 0,
+				to: 0 + 5,
 						marks: { bold: true },
 					},
 				]);
@@ -72,7 +73,7 @@ function createParityMigrations(): DocumentMigration[] {
 			run(editor) {
 				editor.apply([
 					{
-						type: "update-block",
+						type: "set-props",
 						blockId: editor.firstBlock()!.id,
 						props: { hostAnnotation: "keep-me" },
 					},
@@ -91,10 +92,11 @@ function createParityMigrations(): DocumentMigration[] {
 						position: "last",
 					},
 					{
-						type: "insert-text",
+						type: "splice-text",
 						blockId: "dur4-toggle",
-						offset: 0,
-						text: "Nest",
+						from: 0,
+				to: 0,
+				insert: "Nest",
 					},
 					{
 						type: "insert-block",
@@ -104,10 +106,11 @@ function createParityMigrations(): DocumentMigration[] {
 						position: { parent: "dur4-toggle", index: 0 },
 					},
 					{
-						type: "insert-text",
+						type: "splice-text",
 						blockId: "dur4-child",
-						offset: 0,
-						text: "nested child",
+						from: 0,
+				to: 0,
+				insert: "nested child",
 					},
 				]);
 			},
@@ -124,20 +127,19 @@ function createParityMigrations(): DocumentMigration[] {
 						position: "last",
 					},
 					{
-						type: "insert-table-cell-text",
+						type: "splice-text",
 						blockId: "dur4-table",
-						row: 0,
-						col: 0,
-						offset: 0,
-						text: "cell-a",
+						cell: { row: 0, col: 0 },
+						from: 0,
+						to: 0,
+						insert: "cell-a",
 					},
 					{
-						type: "format-table-cell-text",
+						type: "format-text",
 						blockId: "dur4-table",
-						row: 0,
-						col: 0,
-						offset: 0,
-						length: 6,
+						cell: { row: 0, col: 0 },
+						from: 0,
+						to: 6,
 						marks: { italic: true },
 					},
 				]);
@@ -148,14 +150,17 @@ function createParityMigrations(): DocumentMigration[] {
 			run(editor) {
 				editor.apply([
 					{
-						type: "create-app",
-						appId: "dur4-host-app",
-						appType: "host",
-						config: { keep: true },
-						placement: {
-							mode: "anchored",
-							blockId: editor.firstBlock()!.id,
-							anchor: "after",
+						type: "app",
+						change: {
+							kind: "create",
+							appId: "dur4-host-app",
+							appType: "host",
+							config: { keep: true },
+							placement: {
+								mode: "anchored",
+								blockId: editor.firstBlock()!.id,
+								anchor: "after",
+							},
 						},
 					},
 				]);

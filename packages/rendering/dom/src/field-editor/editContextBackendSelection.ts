@@ -34,7 +34,6 @@ import type {
 	EditContextTextUpdateEvent,
 } from "./editContextTypes";
 import { normalizeSelectionFormation } from "../utils/selectionFormation";
-import { shouldIgnoreLeftoverFieldAfterDocumentSelectAll } from "./documentSelectAllLeftover";
 import { shouldStopEquivalentDomRead } from "./selectionReader";
 import { handleFieldEditorKeyDown } from "./keyHandling";
 import { isHistoryTransactionOrigin } from "./historyOrigin";
@@ -84,15 +83,6 @@ export abstract class EditContextBackendSelection extends EditContextBackendInpu
 		);
 
 		if (shouldStopEquivalentDomRead(this.editor, normalizedSelection)) {
-			return;
-		}
-
-		if (
-			shouldIgnoreLeftoverFieldAfterDocumentSelectAll(
-				this.editor.selection,
-				normalizedSelection,
-			)
-		) {
 			return;
 		}
 

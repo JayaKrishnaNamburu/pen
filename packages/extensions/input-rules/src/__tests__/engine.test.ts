@@ -116,10 +116,7 @@ describe("InputRuleEngine", () => {
 				match: /^# $/,
 				handler: (_m, ctx) => [
 					{
-						type: "convert-block",
-						blockId: ctx.blockId,
-						newType: "heading",
-						newProps: { level: 1 },
+						type: "set-props", blockId: ctx.blockId, props: { type: "heading", ...{ level: 1  }},
 					},
 				],
 			});
@@ -157,16 +154,14 @@ describe("InputRuleEngine", () => {
 			expect(result).not.toBeNull();
 			expect(result).toHaveLength(2);
 			expect(result![0]).toMatchObject({
-				type: "delete-text",
+				type: "splice-text",
 				blockId: "b1",
-				offset: 0,
-				length: 2,
+				from: 0,
+				to: 0 + 2,
+				insert: "",
 			});
 			expect(result![1]).toMatchObject({
-				type: "convert-block",
-				blockId: "b1",
-				newType: "heading",
-				newProps: { level: 1 },
+				type: "set-props", blockId: "b1", props: { type: "heading", ...{ level: 1  }},
 			});
 		});
 
@@ -180,9 +175,8 @@ describe("InputRuleEngine", () => {
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
-				type: "convert-block",
-				newType: "heading",
-				newProps: { level: 3 },
+				type: "set-props",
+				props: { type: "heading", level: 3 },
 			});
 		});
 
@@ -196,8 +190,8 @@ describe("InputRuleEngine", () => {
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
-				type: "convert-block",
-				newType: "bulletListItem",
+				type: "set-props",
+				props: { type: "bulletListItem" },
 			});
 		});
 
@@ -211,8 +205,8 @@ describe("InputRuleEngine", () => {
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
-				type: "convert-block",
-				newType: "bulletListItem",
+				type: "set-props",
+				props: { type: "bulletListItem" },
 			});
 		});
 
@@ -226,8 +220,8 @@ describe("InputRuleEngine", () => {
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
-				type: "convert-block",
-				newType: "numberedListItem",
+				type: "set-props",
+				props: { type: "numberedListItem" },
 			});
 		});
 
@@ -241,9 +235,8 @@ describe("InputRuleEngine", () => {
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
-				type: "convert-block",
-				newType: "numberedListItem",
-				newProps: { start: 5 },
+				type: "set-props",
+				props: { type: "numberedListItem", start: 5 },
 			});
 		});
 
@@ -257,9 +250,8 @@ describe("InputRuleEngine", () => {
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
-				type: "convert-block",
-				newType: "checkListItem",
-				newProps: { checked: false },
+				type: "set-props",
+				props: { type: "checkListItem", checked: false },
 			});
 		});
 
@@ -273,9 +265,8 @@ describe("InputRuleEngine", () => {
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
-				type: "convert-block",
-				newType: "checkListItem",
-				newProps: { checked: true },
+				type: "set-props",
+				props: { type: "checkListItem", checked: true },
 			});
 		});
 
@@ -289,8 +280,8 @@ describe("InputRuleEngine", () => {
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
-				type: "convert-block",
-				newType: "blockquote",
+				type: "set-props",
+				props: { type: "blockquote" },
 			});
 		});
 
@@ -304,8 +295,8 @@ describe("InputRuleEngine", () => {
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
-				type: "convert-block",
-				newType: "codeBlock",
+				type: "set-props",
+				props: { type: "codeBlock" },
 			});
 		});
 
@@ -319,8 +310,8 @@ describe("InputRuleEngine", () => {
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
-				type: "convert-block",
-				newType: "divider",
+				type: "set-props",
+				props: { type: "divider" },
 			});
 		});
 
@@ -334,8 +325,8 @@ describe("InputRuleEngine", () => {
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
-				type: "convert-block",
-				newType: "divider",
+				type: "set-props",
+				props: { type: "divider" },
 			});
 		});
 
@@ -349,9 +340,9 @@ describe("InputRuleEngine", () => {
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
-				type: "convert-block",
-				newType: "callout",
-				newProps: { type: "note" },
+				type: "set-props",
+				blockId: "b1",
+				props: { type: "callout", severity: "info" },
 			});
 		});
 
@@ -365,9 +356,9 @@ describe("InputRuleEngine", () => {
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
-				type: "convert-block",
-				newType: "callout",
-				newProps: { type: "warning" },
+				type: "set-props",
+				blockId: "b1",
+				props: { type: "callout", severity: "warning" },
 			});
 		});
 
@@ -444,8 +435,8 @@ describe("InputRuleEngine", () => {
 				expect(ops).toEqual(
 					expect.arrayContaining([
 						expect.objectContaining({
-							type: "convert-block",
-							newType,
+							type: "set-props",
+							props: expect.objectContaining({ type: newType }),
 						}),
 					]),
 				);
@@ -499,10 +490,7 @@ describe("InputRuleEngine", () => {
 				blockTypes: ["paragraph"],
 				handler: (_match, ctx) => [
 					{
-						type: "convert-block",
-						blockId: ctx.blockId,
-						newType: "bulletListItem",
-						newProps: {},
+						type: "set-props", blockId: ctx.blockId, props: { type: "bulletListItem", ...{ }},
 					},
 				],
 			});
@@ -512,10 +500,7 @@ describe("InputRuleEngine", () => {
 				blockTypes: ["paragraph"],
 				handler: (_match, ctx) => [
 					{
-						type: "convert-block",
-						blockId: ctx.blockId,
-						newType: "heading",
-						newProps: { level: 1 },
+						type: "set-props", blockId: ctx.blockId, props: { type: "heading", ...{ level: 1  }},
 					},
 				],
 			});
@@ -528,10 +513,7 @@ describe("InputRuleEngine", () => {
 
 			expect(result).toEqual([
 				{
-					type: "convert-block",
-					blockId: "b1",
-					newType: "bulletListItem",
-					newProps: {},
+					type: "set-props", blockId: "b1", props: { type: "bulletListItem", ...{ }},
 				},
 			]);
 		});

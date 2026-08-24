@@ -28,7 +28,9 @@ describe("@input/pen-react selected text deletion", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "insert-text", blockId, offset: 0, text: "Hello" },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello" },
 		]);
 
 		const container = document.createElement("div");
@@ -100,7 +102,9 @@ describe("@input/pen-react selected text deletion", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "insert-text", blockId, offset: 0, text: "Hello" },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello" },
 		]);
 
 		const container = document.createElement("div");
@@ -182,12 +186,13 @@ describe("@input/pen-react selected text deletion", () => {
 
 		editor.apply([
 			{
-				type: "convert-block",
+				type: "set-props",
 				blockId,
-				newType: "numberedListItem",
-				newProps: { start: 3 },
+				props: { type: "numberedListItem", start: 3 },
 			},
-			{ type: "insert-text", blockId, offset: 0, text: "Third" },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Third" },
 		]);
 
 		const container = document.createElement("div");
@@ -247,10 +252,11 @@ describe("@input/pen-react selected text deletion", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: firstBlockId,
-				offset: 0,
-				text: "Hello",
+				from: 0,
+				to: 0,
+				insert: "Hello",
 			},
 			{
 				type: "insert-block",
@@ -260,10 +266,11 @@ describe("@input/pen-react selected text deletion", () => {
 				position: { after: firstBlockId },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: secondBlockId,
-				offset: 0,
-				text: "World",
+				from: 0,
+				to: 0,
+				insert: "World",
 			},
 		]);
 

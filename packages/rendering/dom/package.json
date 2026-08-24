@@ -38,14 +38,184 @@
         "default": "./dist/field-editor/index.cjs"
       }
     },
-    "./field-editor/*": {
+    "./field-editor/beforeinputMap": {
       "import": {
-        "types": "./dist/field-editor/*.d.ts",
-        "default": "./dist/field-editor/*.mjs"
+        "types": "./dist/field-editor/beforeinputMap.d.ts",
+        "default": "./dist/field-editor/beforeinputMap.mjs"
       },
       "require": {
-        "types": "./dist/field-editor/*.d.cts",
-        "default": "./dist/field-editor/*.cjs"
+        "types": "./dist/field-editor/beforeinputMap.d.cts",
+        "default": "./dist/field-editor/beforeinputMap.cjs"
+      }
+    },
+    "./field-editor/clipboard": {
+      "import": {
+        "types": "./dist/field-editor/clipboard.d.ts",
+        "default": "./dist/field-editor/clipboard.mjs"
+      },
+      "require": {
+        "types": "./dist/field-editor/clipboard.d.cts",
+        "default": "./dist/field-editor/clipboard.cjs"
+      }
+    },
+    "./field-editor/commands": {
+      "import": {
+        "types": "./dist/field-editor/commands.d.ts",
+        "default": "./dist/field-editor/commands.mjs"
+      },
+      "require": {
+        "types": "./dist/field-editor/commands.d.cts",
+        "default": "./dist/field-editor/commands.cjs"
+      }
+    },
+    "./field-editor/contenteditableBackend": {
+      "import": {
+        "types": "./dist/field-editor/contenteditableBackend.d.ts",
+        "default": "./dist/field-editor/contenteditableBackend.mjs"
+      },
+      "require": {
+        "types": "./dist/field-editor/contenteditableBackend.d.cts",
+        "default": "./dist/field-editor/contenteditableBackend.cjs"
+      }
+    },
+    "./field-editor/crdt": {
+      "import": {
+        "types": "./dist/field-editor/crdt.d.ts",
+        "default": "./dist/field-editor/crdt.mjs"
+      },
+      "require": {
+        "types": "./dist/field-editor/crdt.d.cts",
+        "default": "./dist/field-editor/crdt.cjs"
+      }
+    },
+    "./field-editor/dropResolver": {
+      "import": {
+        "types": "./dist/field-editor/dropResolver.d.ts",
+        "default": "./dist/field-editor/dropResolver.mjs"
+      },
+      "require": {
+        "types": "./dist/field-editor/dropResolver.d.cts",
+        "default": "./dist/field-editor/dropResolver.cjs"
+      }
+    },
+    "./field-editor/editContextBackend": {
+      "import": {
+        "types": "./dist/field-editor/editContextBackend.d.ts",
+        "default": "./dist/field-editor/editContextBackend.mjs"
+      },
+      "require": {
+        "types": "./dist/field-editor/editContextBackend.d.cts",
+        "default": "./dist/field-editor/editContextBackend.cjs"
+      }
+    },
+    "./field-editor/expandedContentEditableBackend": {
+      "import": {
+        "types": "./dist/field-editor/expandedContentEditableBackend.d.ts",
+        "default": "./dist/field-editor/expandedContentEditableBackend.mjs"
+      },
+      "require": {
+        "types": "./dist/field-editor/expandedContentEditableBackend.d.cts",
+        "default": "./dist/field-editor/expandedContentEditableBackend.cjs"
+      }
+    },
+    "./field-editor/fieldEditorImpl": {
+      "import": {
+        "types": "./dist/field-editor/fieldEditorImpl.d.ts",
+        "default": "./dist/field-editor/fieldEditorImpl.mjs"
+      },
+      "require": {
+        "types": "./dist/field-editor/fieldEditorImpl.d.cts",
+        "default": "./dist/field-editor/fieldEditorImpl.cjs"
+      }
+    },
+    "./field-editor/inlineAtomDom": {
+      "import": {
+        "types": "./dist/field-editor/inlineAtomDom.d.ts",
+        "default": "./dist/field-editor/inlineAtomDom.mjs"
+      },
+      "require": {
+        "types": "./dist/field-editor/inlineAtomDom.d.cts",
+        "default": "./dist/field-editor/inlineAtomDom.cjs"
+      }
+    },
+    "./field-editor/inlineAtomInteraction": {
+      "import": {
+        "types": "./dist/field-editor/inlineAtomInteraction.d.ts",
+        "default": "./dist/field-editor/inlineAtomInteraction.mjs"
+      },
+      "require": {
+        "types": "./dist/field-editor/inlineAtomInteraction.d.cts",
+        "default": "./dist/field-editor/inlineAtomInteraction.cjs"
+      }
+    },
+    "./field-editor/inlineAtomModel": {
+      "import": {
+        "types": "./dist/field-editor/inlineAtomModel.d.ts",
+        "default": "./dist/field-editor/inlineAtomModel.mjs"
+      },
+      "require": {
+        "types": "./dist/field-editor/inlineAtomModel.d.cts",
+        "default": "./dist/field-editor/inlineAtomModel.cjs"
+      }
+    },
+    "./field-editor/keyHandling": {
+      "import": {
+        "types": "./dist/field-editor/keyHandling.d.ts",
+        "default": "./dist/field-editor/keyHandling.mjs"
+      },
+      "require": {
+        "types": "./dist/field-editor/keyHandling.d.cts",
+        "default": "./dist/field-editor/keyHandling.cjs"
+      }
+    },
+    "./field-editor/reconciler": {
+      "import": {
+        "types": "./dist/field-editor/reconciler.d.ts",
+        "default": "./dist/field-editor/reconciler.mjs"
+      },
+      "require": {
+        "types": "./dist/field-editor/reconciler.d.cts",
+        "default": "./dist/field-editor/reconciler.cjs"
+      }
+    },
+    "./field-editor/selectionBridge": {
+      "import": {
+        "types": "./dist/field-editor/selectionBridge.d.ts",
+        "default": "./dist/field-editor/selectionBridge.mjs"
+      },
+      "require": {
+        "types": "./dist/field-editor/selectionBridge.d.cts",
+        "default": "./dist/field-editor/selectionBridge.cjs"
+      }
+    },
+    "./field-editor/store": {
+      "import": {
+        "types": "./dist/field-editor/store.d.ts",
+        "default": "./dist/field-editor/store.mjs"
+      },
+      "require": {
+        "types": "./dist/field-editor/store.d.cts",
+        "default": "./dist/field-editor/store.cjs"
+      }
+    },
+    "./field-editor/transfer": {
+      "import": {
+        "types": "./dist/field-editor/transfer.d.ts",
+        "default": "./dist/field-editor/transfer.mjs"
+      },
+      "require": {
+        "types": "./dist/field-editor/transfer.d.cts",
+        "default": "./dist/field-editor/transfer.cjs"
+      }
+    },
+    "./field-editor/transferImages": {
+      "import": {
+        "types": "./dist/field-editor/transferImages.d.ts",
+        "default": "./dist/field-editor/transferImages.mjs"
+      },
+      "require": {
+        "types": "./dist/field-editor/transferImages.d.cts",
+        "default": "./dist/field-editor/transferImages.cjs"
       }
     },
     "./constants/selectAll": {

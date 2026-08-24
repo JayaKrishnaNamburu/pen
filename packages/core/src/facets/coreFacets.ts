@@ -74,8 +74,8 @@ export const commandsFacet = defineFacet<
 	},
 });
 
-export const readOnlyFacet = defineFacet<boolean, boolean>({
-	name: "pen.readOnly",
+export const ariaReadOnlyFacet = defineFacet<boolean, boolean>({
+	name: "pen.ariaReadOnly",
 	combine: (inputs) => inputs.some((value) => value),
 });
 

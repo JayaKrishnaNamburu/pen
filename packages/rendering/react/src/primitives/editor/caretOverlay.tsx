@@ -1,6 +1,10 @@
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { isCollapsed, isMultiBlock } from "@input/pen-core";
-import { measureWithRoot, type Rect } from "@input/pen-dom";
+import {
+	createReducedMotionSignal,
+	measureWithRoot,
+	type Rect,
+} from "@input/pen-dom";
 import type { Editor, TextSelection } from "@input/pen-types";
 import { EditorContext } from "../../context/editorContext";
 import { useFieldEditorContext } from "../../context/fieldEditorContext";
@@ -75,6 +79,7 @@ export function EditorCaretOverlay(props: EditorCaretOverlayProps) {
 		caretSelection,
 		isCaretVisible,
 	});
+	const reducedMotion = useReducedMotion(rootElement);
 
 	useEffect(() => {
 		if (!rootElement || !isCaretVisible) {
@@ -116,7 +121,7 @@ export function EditorCaretOverlay(props: EditorCaretOverlayProps) {
 		const renderProps = createCaretRenderProps(
 			caretSelection,
 			rect,
-			blinkPaused,
+			blinkPaused || reducedMotion,
 			variant,
 		);
 		caretNode = renderCaret ? (
@@ -165,6 +170,22 @@ function resolveCaretSelection(
 	return selection;
 }
 
+function useReducedMotion(rootElement: HTMLElement | null): boolean {
+	const [reduced, setReduced] = useState(false);
+
+	useEffect(() => {
+		const signal = createReducedMotionSignal(rootElement ?? undefined);
+		setReduced(signal.reduced);
+		const unsubscribe = signal.subscribe(() => setReduced(signal.reduced));
+		return () => {
+			unsubscribe();
+			signal.dispose();
+		};
+	}, [rootElement]);
+
+	return reduced;
+}
+
 function readCaretRect(
 	root: HTMLElement,
 	point: { blockId: string; offset: number },
@@ -174,10 +195,13 @@ function readCaretRect(
 	);
 }
 
+// AX6: `solidCaret` covers both the type-pause and reduced motion. A host that
+// supplies --pen-editor-caret-animation must not get it back under reduced
+// motion, so this is the only place the token may be written.
 function createCaretRenderProps(
 	selection: TextSelection,
 	rect: Rect,
-	blinkPaused: boolean,
+	solidCaret: boolean,
 	variant: EditorCaretVariant,
 ): EditorCaretRenderProps {
 	const height = Math.max(rect.height, 16);
@@ -197,7 +221,7 @@ function createCaretRenderProps(
 		borderRadius: `var(--pen-editor-caret-radius, var(--pen-caret-radius, ${defaultCaretRadius}))`,
 		background: `var(--pen-editor-caret-color, var(--pen-caret-color, ${defaultCaretColor}))`,
 		boxShadow: "var(--pen-editor-caret-shadow, none)",
-		animation: blinkPaused
+		animation: solidCaret
 			? "none"
 			: "var(--pen-editor-caret-animation, none)",
 		opacity: "var(--pen-editor-caret-opacity, 1)",

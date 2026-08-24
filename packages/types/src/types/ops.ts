@@ -1,7 +1,4 @@
 import type { AppPlacement } from "./block";
-import type { SelectionState } from "./selection";
-import type { LayoutProps } from "./layout";
-import type { TableColumnSchema } from "./handles";
 
 export type OpOriginType =
 	| "user"
@@ -36,11 +33,26 @@ export interface MutationGroupMetadata {
 	source?: string;
 }
 
+export type StructuralOriginTag =
+	| {
+			kind: "split";
+			blockId: string;
+			newBlockId: string;
+			offset: number;
+	  }
+	| {
+			kind: "merge";
+			targetBlockId: string;
+			sourceBlockId: string;
+	  };
+
 export interface ApplyOptions {
 	origin?: OpOrigin;
 	undoGroup?: boolean;
 	groupId?: string;
 	undoGroupId?: string;
+	/** In-transaction AN14 stamp for split/merge recipes. Not hung on origin. */
+	structural?: StructuralOriginTag;
 }
 
 export const MUTATION_GROUP_METADATA_KEY = "mutation-group";
@@ -55,38 +67,39 @@ export type Position =
 // ── Document Operations ─────────────────────────────────────
 
 export type DocumentOp =
+	| SpliceTextOp
+	| FormatTextOp
 	| InsertBlockOp
-	| UpdateBlockOp
 	| DeleteBlockOp
 	| MoveBlockOp
-	| ConvertBlockOp
-	| SplitBlockOp
-	| MergeBlocksOp
-	| InsertTextOp
-	| DeleteTextOp
-	| FormatTextOp
-	| ReplaceTextOp
-	| InsertInlineNodeOp
-	| RemoveInlineNodeOp
-	| UpdateLayoutOp
-	| InsertTableRowOp
-	| DeleteTableRowOp
-	| InsertTableColumnOp
-	| DeleteTableColumnOp
-	| MergeTableCellsOp
-	| SplitTableCellOp
-	| InsertTableCellTextOp
-	| DeleteTableCellTextOp
-	| FormatTableCellTextOp
-	| UpdateTableColumnsOp
+	| SetPropsOp
 	| SetMetaOp
-	| CreateAppOp
-	| UpdateAppOp
-	| DeleteAppOp
-	| SetSelectionOp
+	| GridOp
+	| AppOp
 	| StreamOpenOp;
 
-// ── Block ops ───────────────────────────────────────────────
+export type InlineInsert =
+	| string
+	| { readonly nodeType: string; readonly props: Record<string, unknown> };
+
+export interface SpliceTextOp {
+	type: "splice-text";
+	blockId: string;
+	cell?: { row: number; col: number };
+	from: number;
+	to: number;
+	insert: InlineInsert | readonly InlineInsert[];
+	marks?: Record<string, unknown | null>;
+}
+
+export interface FormatTextOp {
+	type: "format-text";
+	blockId: string;
+	cell?: { row: number; col: number };
+	from: number;
+	to: number;
+	marks: Record<string, unknown | null>;
+}
 
 export interface InsertBlockOp {
 	type: "insert-block";
@@ -95,160 +108,23 @@ export interface InsertBlockOp {
 	props: Record<string, unknown>;
 	position: Position;
 }
-export interface UpdateBlockOp {
-	type: "update-block";
-	blockId: string;
-	props: Record<string, unknown>;
-}
+
 export interface DeleteBlockOp {
 	type: "delete-block";
 	blockId: string;
 }
+
 export interface MoveBlockOp {
 	type: "move-block";
 	blockId: string;
 	position: Position;
 }
-export interface ConvertBlockOp {
-	type: "convert-block";
-	blockId: string;
-	newType: string;
-	newProps?: Record<string, unknown>;
-}
-export interface SplitBlockOp {
-	type: "split-block";
-	blockId: string;
-	offset: number;
-	newBlockId: string;
-	newBlockType?: string;
-}
-export interface MergeBlocksOp {
-	type: "merge-blocks";
-	targetBlockId: string;
-	sourceBlockId: string;
-}
 
-// ── Text ops ────────────────────────────────────────────────
-
-export interface InsertTextOp {
-	type: "insert-text";
+export interface SetPropsOp {
+	type: "set-props";
 	blockId: string;
-	offset: number;
-	text: string;
-	marks?: Record<string, unknown | null>;
+	props: Record<string, unknown | null>;
 }
-export interface DeleteTextOp {
-	type: "delete-text";
-	blockId: string;
-	offset: number;
-	length: number;
-}
-export interface FormatTextOp {
-	type: "format-text";
-	blockId: string;
-	offset: number;
-	length: number;
-	marks: Record<string, unknown>;
-}
-export interface ReplaceTextOp {
-	type: "replace-text";
-	blockId: string;
-	offset: number;
-	length: number;
-	text: string;
-	marks?: Record<string, unknown | null>;
-}
-export interface InsertInlineNodeOp {
-	type: "insert-inline-node";
-	blockId: string;
-	offset: number;
-	nodeType: string;
-	props: Record<string, unknown>;
-}
-export interface RemoveInlineNodeOp {
-	type: "remove-inline-node";
-	blockId: string;
-	offset: number;
-}
-
-// ── Layout ops ──────────────────────────────────────────────
-
-export interface UpdateLayoutOp {
-	type: "update-layout";
-	blockId: string;
-	layout: Partial<LayoutProps>;
-}
-
-// ── Table ops ───────────────────────────────────────────────
-
-export interface InsertTableRowOp {
-	type: "insert-table-row";
-	blockId: string;
-	index: number;
-}
-export interface DeleteTableRowOp {
-	type: "delete-table-row";
-	blockId: string;
-	index: number;
-}
-export interface InsertTableColumnOp {
-	type: "insert-table-column";
-	blockId: string;
-	index: number;
-}
-export interface DeleteTableColumnOp {
-	type: "delete-table-column";
-	blockId: string;
-	index: number;
-}
-export interface MergeTableCellsOp {
-	type: "merge-table-cells";
-	blockId: string;
-	anchor: { row: number; col: number };
-	head: { row: number; col: number };
-}
-export interface SplitTableCellOp {
-	type: "split-table-cell";
-	blockId: string;
-	row: number;
-	col: number;
-}
-
-export interface InsertTableCellTextOp {
-	type: "insert-table-cell-text";
-	blockId: string;
-	row: number;
-	col: number;
-	offset: number;
-	text: string;
-}
-
-export interface DeleteTableCellTextOp {
-	type: "delete-table-cell-text";
-	blockId: string;
-	row: number;
-	col: number;
-	offset: number;
-	length: number;
-}
-
-export interface FormatTableCellTextOp {
-	type: "format-table-cell-text";
-	blockId: string;
-	row: number;
-	col: number;
-	offset: number;
-	length: number;
-	marks: Record<string, unknown>;
-}
-
-export interface UpdateTableColumnsOp {
-	type: "update-table-columns";
-	blockId: string;
-	columns: TableColumnSchema[];
-}
-
-// ── Meta ops ────────────────────────────────────────────────
 
 export interface SetMetaOp {
 	type: "set-meta";
@@ -257,30 +133,38 @@ export interface SetMetaOp {
 	data: Record<string, unknown> | null;
 }
 
-// ── App ops ─────────────────────────────────────────────────
+export type GridChange =
+	| { kind: "insert-row"; index: number }
+	| { kind: "delete-row"; index: number }
+	| { kind: "insert-column"; index: number }
+	| { kind: "delete-column"; index: number }
+	| {
+			kind: "merge-cells";
+			anchor: { row: number; col: number };
+			head: { row: number; col: number };
+	  }
+	| { kind: "split-cell"; row: number; col: number };
 
-export interface CreateAppOp {
-	type: "create-app";
-	appId: string;
-	appType: string;
-	config: Record<string, unknown>;
-	placement: AppPlacement;
-}
-export interface UpdateAppOp {
-	type: "update-app";
-	appId: string;
-	patch: Record<string, unknown>;
-}
-export interface DeleteAppOp {
-	type: "delete-app";
-	appId: string;
+export interface GridOp {
+	type: "grid";
+	blockId: string;
+	change: GridChange;
 }
 
-// ── Selection ops ───────────────────────────────────────────
+export type AppChange =
+	| {
+			kind: "create";
+			appId: string;
+			appType: string;
+			config: Record<string, unknown>;
+			placement: AppPlacement;
+	  }
+	| { kind: "update"; appId: string; patch: Record<string, unknown> }
+	| { kind: "delete"; appId: string };
 
-export interface SetSelectionOp {
-	type: "set-selection";
-	selection: SelectionState;
+export interface AppOp {
+	type: "app";
+	change: AppChange;
 }
 
 /** Synthetic open-time op for stream veto (`06-commit-pipeline.md` ST1). */

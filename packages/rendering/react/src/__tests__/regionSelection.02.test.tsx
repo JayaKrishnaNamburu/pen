@@ -63,10 +63,11 @@ function createThreeBlockEditor() {
 
 	editor.apply([
 		{
-			type: "insert-text",
+			type: "splice-text",
 			blockId: firstBlockId,
-			offset: 0,
-			text: "First",
+			from: 0,
+				to: 0,
+				insert: "First",
 		},
 		{
 			type: "insert-block",
@@ -76,10 +77,11 @@ function createThreeBlockEditor() {
 			position: { after: firstBlockId },
 		},
 		{
-			type: "insert-text",
+			type: "splice-text",
 			blockId: secondBlockId,
-			offset: 0,
-			text: "Second",
+			from: 0,
+				to: 0,
+				insert: "Second",
 		},
 		{
 			type: "insert-block",
@@ -89,10 +91,11 @@ function createThreeBlockEditor() {
 			position: { after: secondBlockId },
 		},
 		{
-			type: "insert-text",
+			type: "splice-text",
 			blockId: thirdBlockId,
-			offset: 0,
-			text: "Third",
+			from: 0,
+				to: 0,
+				insert: "Third",
 		},
 	]);
 

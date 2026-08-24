@@ -51,10 +51,11 @@ describe("AIB4 suggestion accept undo", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "Ths sentece works.",
+					from: 0,
+				to: 0,
+				insert: "Ths sentece works.",
 				},
 			],
 			{ origin: "user" },

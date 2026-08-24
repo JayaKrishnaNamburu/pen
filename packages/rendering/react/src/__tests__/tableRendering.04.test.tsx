@@ -124,20 +124,20 @@ describe("@input/pen-react table rendering", () => {
 				position: "last",
 			},
 			{
-				type: "insert-table-cell-text",
+				type: "splice-text",
 				blockId: "t8-cell",
-				row: 0,
-				col: 0,
-				offset: 0,
-				text: "Alpha",
+				cell: { row: 0, col: 0 },
+				from: 0,
+				to: 0,
+				insert: "Alpha",
 			},
 			{
-				type: "insert-table-cell-text",
+				type: "splice-text",
 				blockId: "t8-cell",
-				row: 0,
-				col: 1,
-				offset: 0,
-				text: "Bravo",
+				cell: { row: 0, col: 1 },
+				from: 0,
+				to: 0,
+				insert: "Bravo",
 			},
 			{
 				type: "insert-block",
@@ -147,10 +147,11 @@ describe("@input/pen-react table rendering", () => {
 				position: "last",
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: paragraphId,
-				offset: 0,
-				text: "After",
+				from: 0,
+				to: 0,
+				insert: "After",
 			},
 		]);
 
@@ -224,10 +225,11 @@ describe("@input/pen-react table rendering", () => {
 				position: "last",
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: paragraphId,
-				offset: 0,
-				text: "After",
+				from: 0,
+				to: 0,
+				insert: "After",
 			},
 		]);
 
@@ -298,7 +300,7 @@ describe("@input/pen-react table rendering", () => {
 		editor.destroy();
 	});
 
-	it("falls back to block selection when dragging from a table into text in structured documents", async () => {
+	it("keeps a T2 multi-block text selection when dragging from a table into text in structured documents", async () => {
 		const editor = createEditor();
 		const paragraphId = crypto.randomUUID();
 
@@ -318,10 +320,11 @@ describe("@input/pen-react table rendering", () => {
 				position: "last",
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: paragraphId,
-				offset: 0,
-				text: "After",
+				from: 0,
+				to: 0,
+				insert: "After",
 			},
 		]);
 
@@ -376,10 +379,13 @@ describe("@input/pen-react table rendering", () => {
 			await flushAnimationFrames(2);
 		});
 
-		expect(editor.selection).toEqual({
-			type: "block",
-			blockIds: ["t9-structured", paragraphId],
-			head: paragraphId,
+		// T2 / §4.2: pointer reads never escalate by block type. Profile
+		// does not modulate that — structured matches the flow sibling.
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			isMultiBlock: true,
+			anchor: { blockId: "t9-structured", offset: 0 },
+			focus: { blockId: paragraphId, offset: 2 },
 		});
 
 		docWithCaretRange.caretRangeFromPoint = originalCaretRangeFromPoint;

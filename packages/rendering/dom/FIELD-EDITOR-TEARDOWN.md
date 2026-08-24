@@ -86,7 +86,7 @@ None of these go through `DomScheduler`. `DomScheduler` itself is not constructe
 | ContentEditable `pendingDomSyncFrame` | Released (`cancelAnimationFrame` in `deactivate()`) |
 | ContentEditable Safari composition-end frame | Guarded leftover — `deactivate()` nulls `element`; the callback returns. Not cancelled. |
 | `FocusController.waitForAttachment` frames | Guarded leftover — waiters marked `done`; frames not cancelled. |
-| `FieldEditorSelectionAuthority.applySelectionUntilNextFrame` | Guarded leftover — `reset()` zeros depth; the frame still runs and decrements. Not cancelled. |
+| `FieldEditorSelectionAuthority.withSelectionWrite` | Same-turn — raises apply-depth, runs the write, releases in `finally`. No frame. `reset()` zeros depth; there is nothing to cancel. (`applySelectionUntilNextFrame` is deleted.) |
 | `SelectionProjectionController.syncDomSelectionOnce` (up to 4 retries + follow-up frame) | Guarded leftover — callback bails when `!isEditing()`. `reset()` does not cancel the frames. |
 | `CellEditingController.trySyncBackend` (up to 3 retries) | Guarded leftover — `clear()` nulls the coord so the callback returns. Not cancelled. |
 | Expanded `beforeinput` frame that calls `activateTextSelection` after `deactivate()` | **Open** — untracked. A `destroy()` in the same turn does not cancel it; the callback can start a new session on a destroyed editor. |

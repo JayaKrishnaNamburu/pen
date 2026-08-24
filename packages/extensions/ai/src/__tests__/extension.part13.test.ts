@@ -63,10 +63,11 @@ describe("aiExtension", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: firstBlockId,
-					offset: 0,
-					text: "Intro",
+					from: 0,
+				to: 0,
+				insert: "Intro",
 				},
 				{
 					type: "insert-block",
@@ -119,10 +120,11 @@ describe("aiExtension", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: firstBlockId,
-					offset: 0,
-					text: "Alpha",
+					from: 0,
+				to: 0,
+				insert: "Alpha",
 				},
 				{
 					type: "insert-block",
@@ -132,10 +134,11 @@ describe("aiExtension", () => {
 					position: { after: firstBlockId },
 				},
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: "block-2",
-					offset: 0,
-					text: "Bravo",
+					from: 0,
+				to: 0,
+				insert: "Bravo",
 				},
 				{
 					type: "insert-block",
@@ -145,10 +148,11 @@ describe("aiExtension", () => {
 					position: { after: "block-2" },
 				},
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: "block-3",
-					offset: 0,
-					text: "Charlie",
+					from: 0,
+				to: 0,
+				insert: "Charlie",
 				},
 			],
 			{ origin: "system" },
@@ -234,10 +238,11 @@ describe("aiExtension", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: firstBlockId,
-					offset: 0,
-					text: "Alpha",
+					from: 0,
+				to: 0,
+				insert: "Alpha",
 				},
 				{
 					type: "insert-block",
@@ -247,10 +252,11 @@ describe("aiExtension", () => {
 					position: { after: firstBlockId },
 				},
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: "block-2",
-					offset: 0,
-					text: "Charlie",
+					from: 0,
+				to: 0,
+				insert: "Charlie",
 				},
 			],
 			{ origin: "system" },
@@ -327,10 +333,11 @@ describe("aiExtension", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: firstBlockId,
-					offset: 0,
-					text: "Hello",
+					from: 0,
+				to: 0,
+				insert: "Hello",
 				},
 			],
 			{ origin: "system" },
@@ -414,7 +421,9 @@ describe("aiExtension", () => {
 		});
 		blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello" }],
 			{ origin: "system" },
 		);
 

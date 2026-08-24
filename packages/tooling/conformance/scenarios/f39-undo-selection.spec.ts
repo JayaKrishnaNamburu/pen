@@ -177,10 +177,11 @@ scenario(
 				position: "last",
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: "f39-p3",
-				offset: 0,
-				text: "Third",
+				from: 0,
+				to: 0,
+				insert: "Third",
 			},
 		]);
 		// own undo items; yjs otherwise groups by capture timeout
@@ -195,19 +196,21 @@ scenario(
 
 		await s.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: "f39-p3",
-				offset: 5,
-				text: "!",
+				from: 5,
+				to: 5,
+				insert: "!",
 			},
 		]);
 		await history.stopCapturing();
 		await s.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: "f39-p3",
-				offset: 6,
-				text: "?",
+				from: 6,
+				to: 6,
+				insert: "?",
 			},
 		]);
 		await expect

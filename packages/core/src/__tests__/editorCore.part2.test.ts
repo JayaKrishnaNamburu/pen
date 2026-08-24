@@ -10,6 +10,8 @@ import { createDefaultSchema } from "./fixtures/testSchema";
 import {
 	createDecorationSet,
 	createDocumentSession,
+	applyMergeBlocks,
+	applySplitBlock,
 	createEditor as createCoreEditor,
 	createHeadlessEditor,
 	ensureInlineCompletionController,
@@ -114,10 +116,11 @@ describe("@input/pen-core createEditor", () => {
 
 		childEditor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: childBlockId,
-				offset: 0,
-				text: "Nested content",
+				from: 0,
+				to: 0,
+				insert: "Nested content",
 			},
 		]);
 
@@ -229,10 +232,11 @@ describe("@input/pen-core createEditor", () => {
 		const childBlockId = childEditor.firstBlock()!.id;
 		childEditor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: childBlockId,
-				offset: 0,
-				text: "Original nested content",
+				from: 0,
+				to: 0,
+				insert: "Original nested content",
 			},
 		]);
 
@@ -265,10 +269,11 @@ describe("@input/pen-core createEditor", () => {
 		const replacementChildBlockId = replacementChildEditor.firstBlock()!.id;
 		replacementChildEditor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: replacementChildBlockId,
-				offset: 0,
-				text: "Replacement nested content",
+				from: 0,
+				to: 0,
+				insert: "Replacement nested content",
 			},
 		]);
 
@@ -338,10 +343,11 @@ describe("@input/pen-core createEditor", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: "b1",
-				offset: 0,
-				text: "hello",
+				from: 0,
+				to: 0,
+				insert: "hello",
 			},
 		]);
 
@@ -356,7 +362,9 @@ describe("@input/pen-core createEditor", () => {
 		const { controller } = ensureInlineCompletionController(editor);
 
 		editor.apply([
-			{ type: "insert-text", blockId, offset: 0, text: "Hello" },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello" },
 		]);
 		editor.selectText(blockId, 5, 5);
 		controller.showSuggestion({
@@ -391,32 +399,27 @@ describe("@input/pen-core createEditor", () => {
 				position: "last",
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: "b1",
-				offset: 0,
-				text: "hello world",
+				from: 0,
+				to: 0,
+				insert: "hello world",
 			},
 		]);
 
-		editor.apply([
-			{
-				type: "split-block",
-				blockId: "b1",
-				offset: 5,
-				newBlockId: "b2",
-			},
-		]);
+		applySplitBlock(editor, {
+			blockId: "b1",
+			offset: 5,
+			newBlockId: "b2",
+		});
 
 		expect(editor.getBlock("b1")?.textContent()).toBe("hello");
 		expect(editor.getBlock("b2")?.textContent()).toBe(" world");
 
-		editor.apply([
-			{
-				type: "merge-blocks",
-				targetBlockId: "b1",
-				sourceBlockId: "b2",
-			},
-		]);
+		applyMergeBlocks(editor, {
+			targetBlockId: "b1",
+			sourceBlockId: "b2",
+		});
 
 		expect(editor.getBlock("b1")?.textContent()).toBe("hello world");
 		expect(editor.getBlock("b2")).toBeNull();

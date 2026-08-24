@@ -15,7 +15,6 @@ import {
 	shouldAllowFlowInsertionInSlashMenu,
 	shouldExposeBlockInTooling,
 	shouldShowBlockInDefaultMenus,
-	shouldFallbackMixedSelectionToBlock,
 	shouldForceBlockScopedSelectAll,
 } from "./editor/profilePolicy";
 
@@ -103,7 +102,6 @@ export {
 	shouldAllowFlowInsertionInSlashMenu,
 	shouldExposeBlockInTooling,
 	shouldShowBlockInDefaultMenus,
-	shouldFallbackMixedSelectionToBlock,
 	shouldForceBlockScopedSelectAll,
 };
 export {
@@ -131,6 +129,11 @@ export { buildTableChildren } from "./exporterUtils";
 // Document migrations (DUR4)
 export { runMigrations } from "./migrations/runMigrations";
 export type { DocumentMigration, MigrationReport } from "./migrations/types";
+export {
+	STRIP_EMPTY_BLOCK_ZWSP_ID,
+	createStripEmptyBlockZwspMigration,
+} from "./migrations/stripEmptyBlockSentinels";
+export { isLoneEmptyBlockZwsp } from "./schema/emptyBlockSentinel";
 
 export {
 	foldAndNormalize,
@@ -154,7 +157,7 @@ export {
 	decorationsFacet,
 	inputRulesFacet,
 	commandsFacet,
-	readOnlyFacet,
+	ariaReadOnlyFacet,
 	clipboardFacet,
 } from "./facets/coreFacets";
 export { urlPolicyFacet } from "./facets/urlPolicyFacet";
@@ -180,13 +183,20 @@ export {
 	type UrlPolicy,
 } from "./security/urlPolicy";
 export { blockLogicalText } from "./text/blockLogicalText";
-// @input/pen-types already publishes logicalTextFromStored.
 export {
 	applyDirectedBinding,
 	resolveDirectedBinding,
 	resolveDirectedCommand,
 	resolveFocusBlockDirection,
 } from "./commands/resolveDirectedBinding";
+export {
+	applyMergeBlocks,
+	applySplitBlock,
+	buildMergeBlocksRecipe,
+	buildSplitBlockRecipe,
+	spliceDeleteOp,
+	spliceInsertOp,
+} from "./ops/recipes";
 export { defineCommand, commandHandler } from "./commands/define";
 export { createCommandRegistry } from "./commands/registry";
 export { getCommandRegistry } from "./commands/install";
@@ -209,10 +219,17 @@ export {
 	caretUp,
 	caretWordLeft,
 	caretWordRight,
+	getCellCaretFocus,
 	selectAll,
 	selectBlock,
+	setCellCaretFocus,
 } from "./commands/caret";
-export type { CaretMotionParam, SelectBlockParam } from "./commands/caret";
+export type {
+	CaretMotionParam,
+	CellCaretFocus,
+	CellCaretWrite,
+	SelectBlockParam,
+} from "./commands/caret";
 export {
 	getVerticalCaretGoalX,
 	getVerticalCaretMeasure,

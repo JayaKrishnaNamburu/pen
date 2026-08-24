@@ -34,7 +34,9 @@ describe("@input/pen-undo history metadata", () => {
 			},
 		);
 
-		editor.apply([{ type: "insert-text", blockId, offset: 0, text: "A" }], {
+		editor.apply([{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "A" }], {
 			origin: "user",
 		});
 		controller!.setCurrentEntryMetadata("test", {
@@ -48,7 +50,9 @@ describe("@input/pen-undo history metadata", () => {
 			before: "step-2-before",
 			after: "step-2-after",
 		});
-		editor.apply([{ type: "insert-text", blockId, offset: 1, text: "B" }], {
+		editor.apply([{ type: "splice-text", blockId, from: 1,
+				to: 1,
+				insert: "B" }], {
 			origin: "user",
 		});
 		expect(editor.getBlock(blockId)?.textContent()).toBe("AB");
@@ -81,7 +85,9 @@ describe("@input/pen-undo history metadata", () => {
 			},
 		);
 
-		editor.apply([{ type: "insert-text", blockId, offset: 0, text: "A" }], {
+		editor.apply([{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "A" }], {
 			origin: "user",
 		});
 		controller!.setCurrentEntryMetadata("test", {
@@ -91,7 +97,9 @@ describe("@input/pen-undo history metadata", () => {
 
 		editor.undoManager.stopCapturing();
 
-		editor.apply([{ type: "insert-text", blockId, offset: 1, text: "B" }], {
+		editor.apply([{ type: "splice-text", blockId, from: 1,
+				to: 1,
+				insert: "B" }], {
 			origin: "user",
 		});
 		expect(editor.getBlock(blockId)?.textContent()).toBe("AB");
@@ -111,12 +119,16 @@ describe("@input/pen-undo history metadata", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 
-		editor.apply([{ type: "insert-text", blockId, offset: 0, text: "A" }], {
+		editor.apply([{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "A" }], {
 			origin: "user",
 			undoGroupId: "group-1",
 		});
 		await vi.advanceTimersByTimeAsync(550);
-		editor.apply([{ type: "insert-text", blockId, offset: 1, text: "B" }], {
+		editor.apply([{ type: "splice-text", blockId, from: 1,
+				to: 1,
+				insert: "B" }], {
 			origin: "user",
 			undoGroupId: "group-1",
 		});
@@ -139,7 +151,9 @@ describe("@input/pen-undo history metadata", () => {
 		const controller = getHistoryMetadataController(editor);
 		const blockId = editor.firstBlock()!.id;
 
-		editor.apply([{ type: "insert-text", blockId, offset: 0, text: "A" }], {
+		editor.apply([{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "A" }], {
 			origin: {
 				type: "ai",
 				groupId: "group-ai-1",
@@ -149,7 +163,9 @@ describe("@input/pen-undo history metadata", () => {
 			},
 		});
 		await vi.advanceTimersByTimeAsync(550);
-		editor.apply([{ type: "insert-text", blockId, offset: 1, text: "B" }], {
+		editor.apply([{ type: "splice-text", blockId, from: 1,
+				to: 1,
+				insert: "B" }], {
 			origin: {
 				type: "ai",
 				groupId: "group-ai-1",

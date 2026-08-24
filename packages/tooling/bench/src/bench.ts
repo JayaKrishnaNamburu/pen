@@ -2,11 +2,21 @@ import {
 	findBenchMetadataById,
 	findBenchMetadataByName,
 } from "./constants/benchmarks";
+import {
+	assertObservedCount,
+	assertPublishedObservation,
+	type PublishedObservation,
+} from "./harness/observe";
 
 export interface BenchContext {
 	start(): void;
 	end(): void;
 	setMetrics(metrics: BenchMetrics): void;
+	/**
+	 * Post-clock named count. A no-op cannot satisfy `expected`.
+	 * `runSuite` refuses to publish without this.
+	 */
+	observe(name: string, actual: number, expected: number): void;
 }
 
 export type BenchMetricValue = string | number | boolean;
@@ -31,6 +41,8 @@ export interface BenchResult {
 	floorP50Ms?: number;
 	/** max(0, p50Ms - floorP50Ms). Absent when there is no floor. */
 	attributedP50Ms?: number;
+	/** Post-clock named count. Absent means the bench did not observe. */
+	observation?: PublishedObservation;
 }
 
 export interface BenchOptions {
@@ -85,6 +97,7 @@ export async function bench(
 	const warmup = options?.warmup ?? 5;
 	const times: number[] = [];
 	let metrics: BenchMetrics | undefined;
+	let observation: PublishedObservation | undefined;
 
 	for (let i = 0; i < warmup; i++) {
 		const ctx = createBenchContext();
@@ -99,6 +112,9 @@ export async function bench(
 		}
 		if (ctx._metrics) {
 			metrics = { ...ctx._metrics };
+		}
+		if (ctx._observation) {
+			observation = ctx._observation;
 		}
 	}
 
@@ -123,6 +139,7 @@ export async function bench(
 		opsPerSecond,
 		isCritical: false,
 		metrics,
+		observation,
 	};
 }
 
@@ -162,6 +179,11 @@ export async function runSuite(
 				};
 			}
 		}
+		assertPublishedObservation(
+			result.id,
+			result.observation ?? null,
+			typeof benchmark.floor === "function",
+		);
 		results.push(result);
 		await benchmark.teardown?.();
 	}
@@ -245,11 +267,13 @@ export function isBenchWaiverExpired(
 function createBenchContext(): BenchContext & {
 	_elapsed: number | null;
 	_metrics: BenchMetrics | null;
+	_observation: PublishedObservation | null;
 } {
 	let startTime = 0;
 	const ctx = {
 		_elapsed: null as number | null,
 		_metrics: null as BenchMetrics | null,
+		_observation: null as PublishedObservation | null,
 		start() {
 			startTime = performance.now();
 		},
@@ -257,7 +281,16 @@ function createBenchContext(): BenchContext & {
 			ctx._elapsed = performance.now() - startTime;
 		},
 		setMetrics(metrics: BenchMetrics) {
-			ctx._metrics = { ...metrics };
+			ctx._metrics = { ...ctx._metrics, ...metrics };
+		},
+		observe(name: string, actual: number, expected: number) {
+			assertObservedCount(name, actual, expected);
+			ctx._observation = { name, actual, expected };
+			ctx._metrics = {
+				...ctx._metrics,
+				observation: name,
+				[name]: actual,
+			};
 		},
 	};
 	return ctx;

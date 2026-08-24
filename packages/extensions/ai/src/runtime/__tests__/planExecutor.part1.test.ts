@@ -1,3 +1,4 @@
+import { type InsertBlockOp } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 import { buildDocumentMutationPlanExecution } from "../planExecutor";
 import { createPlanExecutorEditor } from "./planExecutor.testUtils";
@@ -7,7 +8,9 @@ describe("document mutation plan executor", () => {
 			const editor = createPlanExecutorEditor();
 			const blockId = editor.firstBlock()!.id;
 			editor.apply(
-				[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+				[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello world" }],
 				{ origin: "system" },
 			);
 
@@ -28,11 +31,11 @@ describe("document mutation plan executor", () => {
 			expect(execution.issues).toEqual([]);
 			expect(execution.ops).toEqual([
 				{
-					type: "replace-text",
+					type: "splice-text",
 					blockId,
-					offset: 6,
-					length: 5,
-					text: "planet",
+					from: 6,
+				to: 6 + 5,
+					insert: "planet",
 				},
 			]);
 		});
@@ -42,11 +45,11 @@ describe("document mutation plan executor", () => {
 			const firstBlockId = editor.firstBlock()!.id;
 			editor.apply(
 				[{
-					type: "replace-text",
+					type: "splice-text",
 					blockId: firstBlockId,
-					offset: 0,
-					length: 0,
-					text: "Alpha",
+					from: 0,
+				to: 0 + 0,
+					insert: "Alpha",
 				}],
 				{ origin: "system" },
 			);
@@ -58,10 +61,11 @@ describe("document mutation plan executor", () => {
 					props: {},
 					position: { after: firstBlockId },
 				}, {
-					type: "insert-text",
+					type: "splice-text",
 					blockId: "block-2",
-					offset: 0,
-					text: "Bravo",
+					from: 0,
+				to: 0,
+				insert: "Bravo",
 				}],
 				{ origin: "system" },
 			);
@@ -93,21 +97,47 @@ describe("document mutation plan executor", () => {
 			expect(execution.reviewSafe).toBe(true);
 			expect(execution.issues).toEqual([]);
 			expect(execution.ops[0]).toEqual({
-				type: "replace-text",
+				type: "splice-text",
 				blockId: firstBlockId,
-				offset: 0,
-				length: 5,
-				text: "Alpha updated",
+				from: 0,
+				to: 0 + 5,
+				insert: "Alpha updated",
 			});
-			expect(execution.ops.some((op) => op.type === "insert-block")).toBe(true);
-			expect(execution.ops.some((op) => op.type === "insert-text")).toBe(true);
+			const headingInsert = execution.ops.find(
+				(op): op is InsertBlockOp =>
+					op.type === "insert-block" && op.blockType === "heading",
+			);
+			expect(
+				headingInsert,
+				"heading insert: expected insert-block heading after block-2",
+			).toEqual({
+				type: "insert-block",
+				blockId: expect.any(String),
+				blockType: "heading",
+				props: { level: 2 },
+				position: { after: "block-2" },
+			});
+			expect(
+				execution.ops.some(
+					(op) =>
+						op.type === "splice-text" &&
+						headingInsert != null &&
+						op.blockId === headingInsert.blockId &&
+						op.from === 0 &&
+						op.to === 0 &&
+						op.insert === "Next step",
+				),
+				'heading insert: expected splice-text inserting "Next step" into the new heading',
+			).toBe(true);
 		});
 
 	it("optimizes single-block markdown replacements into native ops", () => {
 			const editor = createPlanExecutorEditor();
 			const blockId = editor.firstBlock()!.id;
 			editor.apply(
-				[{ type: "insert-text", blockId, offset: 0, text: "Old title" }],
+				[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Old title" }],
 				{ origin: "system" },
 			);
 
@@ -131,17 +161,16 @@ describe("document mutation plan executor", () => {
 			expect(execution.reviewSafe).toBe(true);
 			expect(execution.ops).toEqual([
 				{
-					type: "convert-block",
+					type: "set-props",
 					blockId,
-					newType: "heading",
-					newProps: { level: 2 },
+					props: { type: "heading", level: 2 },
 				},
 				{
-					type: "replace-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					length: "Old title".length,
-					text: "New title",
+					from: 0,
+				to: 0 + "Old title".length,
+					insert: "New title",
 				},
 			]);
 		});
@@ -151,8 +180,10 @@ describe("document mutation plan executor", () => {
 			const headingId = editor.firstBlock()!.id;
 			editor.apply(
 				[
-					{ type: "convert-block", blockId: headingId, newType: "heading", newProps: { level: 1 } },
-					{ type: "insert-text", blockId: headingId, offset: 0, text: "Old heading" },
+					{ type: "set-props", blockId: headingId, props: { type: "heading", ...{ level: 1  }} },
+					{ type: "splice-text", blockId: headingId, from: 0,
+				to: 0,
+				insert: "Old heading" },
 					{
 						type: "insert-block",
 						blockId: "paragraph-2",
@@ -161,10 +192,11 @@ describe("document mutation plan executor", () => {
 						position: { after: headingId },
 					},
 					{
-						type: "insert-text",
+						type: "splice-text",
 						blockId: "paragraph-2",
-						offset: 0,
-						text: "Old body",
+						from: 0,
+				to: 0,
+				insert: "Old body",
 					},
 				],
 				{ origin: "system" },
@@ -190,23 +222,23 @@ describe("document mutation plan executor", () => {
 			expect(execution.reviewSafe).toBe(true);
 			expect(execution.ops).toEqual([
 				{
-					type: "update-block",
+					type: "set-props",
 					blockId: headingId,
 					props: { level: 2 },
 				},
 				{
-					type: "replace-text",
+					type: "splice-text",
 					blockId: headingId,
-					offset: 0,
-					length: "Old heading".length,
-					text: "New heading",
+					from: 0,
+				to: 0 + "Old heading".length,
+					insert: "New heading",
 				},
 				{
-					type: "replace-text",
+					type: "splice-text",
 					blockId: "paragraph-2",
-					offset: 0,
-					length: "Old body".length,
-					text: "New body copy",
+					from: 0,
+				to: 0 + "Old body".length,
+					insert: "New body copy",
 				},
 			]);
 		});
@@ -216,8 +248,10 @@ describe("document mutation plan executor", () => {
 			const firstId = editor.firstBlock()!.id;
 			editor.apply(
 				[
-					{ type: "convert-block", blockId: firstId, newType: "bulletListItem", newProps: { indent: 0 } },
-					{ type: "insert-text", blockId: firstId, offset: 0, text: "Alpha" },
+					{ type: "set-props", blockId: firstId, props: { type: "bulletListItem", ...{ indent: 0  }} },
+					{ type: "splice-text", blockId: firstId, from: 0,
+				to: 0,
+				insert: "Alpha" },
 					{
 						type: "insert-block",
 						blockId: "item-2",
@@ -226,10 +260,11 @@ describe("document mutation plan executor", () => {
 						position: { after: firstId },
 					},
 					{
-						type: "insert-text",
+						type: "splice-text",
 						blockId: "item-2",
-						offset: 0,
-						text: "Beta",
+						from: 0,
+				to: 0,
+				insert: "Beta",
 					},
 				],
 				{ origin: "system" },
@@ -255,30 +290,24 @@ describe("document mutation plan executor", () => {
 			expect(execution.reviewSafe).toBe(true);
 			expect(execution.ops).toEqual([
 				{
-					type: "convert-block",
+					type: "set-props", blockId: firstId, props: { type: "numberedListItem", ...{ indent: 0 }, start: 1 },
+				},
+				{
+					type: "splice-text",
 					blockId: firstId,
-					newType: "numberedListItem",
-					newProps: { indent: 0, start: 1 },
+					from: 0,
+				to: 0 + "Alpha".length,
+					insert: "First",
 				},
 				{
-					type: "replace-text",
-					blockId: firstId,
-					offset: 0,
-					length: "Alpha".length,
-					text: "First",
+					type: "set-props", blockId: "item-2", props: { type: "numberedListItem", ...{ indent: 0 }, start: undefined },
 				},
 				{
-					type: "convert-block",
+					type: "splice-text",
 					blockId: "item-2",
-					newType: "numberedListItem",
-					newProps: { indent: 0, start: undefined },
-				},
-				{
-					type: "replace-text",
-					blockId: "item-2",
-					offset: 0,
-					length: "Beta".length,
-					text: "Second",
+					from: 0,
+				to: 0 + "Beta".length,
+					insert: "Second",
 				},
 			]);
 		});
@@ -288,7 +317,9 @@ describe("document mutation plan executor", () => {
 			const firstId = editor.firstBlock()!.id;
 			editor.apply(
 				[
-					{ type: "insert-text", blockId: firstId, offset: 0, text: "Keep first" },
+					{ type: "splice-text", blockId: firstId, from: 0,
+				to: 0,
+				insert: "Keep first" },
 					{
 						type: "insert-block",
 						blockId: "block-2",
@@ -297,10 +328,11 @@ describe("document mutation plan executor", () => {
 						position: { after: firstId },
 					},
 					{
-						type: "insert-text",
+						type: "splice-text",
 						blockId: "block-2",
-						offset: 0,
-						text: "Keep second",
+						from: 0,
+				to: 0,
+				insert: "Keep second",
 					},
 				],
 				{ origin: "system" },
@@ -333,10 +365,11 @@ describe("document mutation plan executor", () => {
 					position: { before: firstId },
 				},
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: expect.any(String),
-					offset: 0,
-					text: "New intro",
+					from: 0,
+				to: 0,
+				insert: "New intro",
 				},
 			]);
 		});

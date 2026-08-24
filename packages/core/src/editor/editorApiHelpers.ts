@@ -203,7 +203,7 @@ export function applyEditorOps(
 		undo?.stopCapturing();
 	}
 
-	self._pipeline.apply(ops, origin);
+	self._pipeline.apply(ops, origin, options?.structural);
 	self._recordMutationGroupMetadata(origin, groupId);
 }
 

@@ -18,7 +18,6 @@ import type {
 	SelectionState,
 	TextSelection,
 } from "@input/pen-types";
-import { logicalTextFromStored } from "@input/pen-types";
 import { usesInlineTextSelection } from "../schema/fieldEditorCapabilities";
 import { createBlockHandle } from "../schema/handles";
 import {
@@ -37,11 +36,13 @@ const INVALID_BLOCK_CODE = "selection-invalid-block";
 const RESERVED_ORIGIN_CODE = "selection-reserved-origin";
 
 /**
- * Mixed-boundary N2 hole: a text endpoint on a non-text block is still
+ * Mixed-boundary N2: a text endpoint on a non-text block is still
  * admitted (clamped to 0..1) when the other endpoint sits on a different
- * block. `selectTextRange(p1@2, d1@1)` + `deleteSelection` keeps the
- * paragraph suffix and deletes the divider (`deleteMultiBlockTextRange`).
- * Retargeting that write onto `selectBlock` would delete the entire
+ * block. The document-order structural end is expanded to a full 0..1
+ * cover so `deleteSelection` removes the divider and keeps the paragraph
+ * prefix. A pointer drag that maps the divider to offset 0 must not stay
+ * uncovering — that left the divider in place after Backspace.
+ * Retargeting the range onto `selectBlock` would delete the entire
  * paragraph — an owner decision, not this clamp.
  *
  * Same-block fully-selected (0..1) divider/table writes are converted
@@ -54,6 +55,48 @@ export function clampNonTextPseudoOffset(offset: number): number {
 		return 0;
 	}
 	return Math.max(0, Math.min(offset, 1));
+}
+
+/**
+ * Expand a mixed text/structural range so the structural end is a full
+ * 0..1 cover. Forward `p1@2 → d1@0` becomes `d1@1`; a reversed
+ * structural start stays at 0.
+ */
+export function coverMixedBoundaryStructuralOffsets(
+	selection: { anchor: Point; focus: Point },
+	input: {
+		isNonText: (blockId: string) => boolean;
+		blockIndex: (blockId: string) => number;
+	},
+): { anchor: Point; focus: Point } {
+	if (selection.anchor.blockId === selection.focus.blockId) {
+		return selection;
+	}
+	const anchorNonText = input.isNonText(selection.anchor.blockId);
+	const focusNonText = input.isNonText(selection.focus.blockId);
+	if (anchorNonText === focusNonText) {
+		return selection;
+	}
+	const anchorIdx = input.blockIndex(selection.anchor.blockId);
+	const focusIdx = input.blockIndex(selection.focus.blockId);
+	if (anchorIdx < 0 || focusIdx < 0) {
+		return selection;
+	}
+	const selectingForward = anchorIdx <= focusIdx;
+	return {
+		anchor: anchorNonText
+			? {
+					blockId: selection.anchor.blockId,
+					offset: selectingForward ? 0 : 1,
+				}
+			: selection.anchor,
+		focus: focusNonText
+			? {
+					blockId: selection.focus.blockId,
+					offset: selectingForward ? 1 : 0,
+				}
+			: selection.focus,
+	};
 }
 
 export interface SelectionAuthority {
@@ -291,7 +334,7 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 				head: sel.anchor.blockId,
 			});
 		}
-		return stampTextSelection(this._doc, {
+		const clamped = {
 			anchor: {
 				blockId: sel.anchor.blockId,
 				offset: this._clampOffset(sel.anchor.blockId, sel.anchor.offset),
@@ -300,6 +343,15 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 				blockId: sel.focus.blockId,
 				offset: this._clampOffset(sel.focus.blockId, sel.focus.offset),
 			},
+		};
+		const order = liveChildIds(this._doc, null);
+		const covered = coverMixedBoundaryStructuralOffsets(clamped, {
+			isNonText: (blockId) => this._isNonTextBlock(blockId),
+			blockIndex: (blockId) => order.indexOf(blockId),
+		});
+		return stampTextSelection(this._doc, {
+			anchor: covered.anchor,
+			focus: covered.focus,
 			affinity: sel.affinity,
 			goalX: sel.goalX,
 		});
@@ -562,7 +614,7 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 				),
 			};
 		}
-		const textChange = summary.text.find(
+		const textChange = summary.blockText.find(
 			(change) => change.blockId === addressed.blockId,
 		);
 		const offset =
@@ -662,7 +714,7 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 			.textDeltas()
 			.map((delta) => delta.insert)
 			.join("");
-		return logicalTextFromStored(stored);
+		return stored;
 	}
 
 	/** N1: each inline embed occupies one logical offset. */
@@ -679,7 +731,7 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 				embeds += 1;
 			}
 		}
-		return logicalTextFromStored(stored).length + embeds;
+		return stored.length + embeds;
 	}
 
 	private _tableGrid(

@@ -54,9 +54,11 @@ function announceCommit(editor: Editor, event: CommitEvent): void {
 		return;
 	}
 	for (const change of event.summary.structural) {
-		if (change.type === "block-converted") {
-			const nextType =
-				editor.getBlock(change.blockId)?.type ?? change.toType;
+		if (
+			change.type === "block-props-changed" &&
+			change.keys.includes("type")
+		) {
+			const nextType = editor.getBlock(change.blockId)?.type ?? "";
 			announceEditorA11y(editor, "blockConverted", {
 				blockType: resolveA11yBlockTypeLabel(editor, nextType),
 			});

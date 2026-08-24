@@ -15,10 +15,11 @@ scenario(
 		await page.evaluate(() => {
 			window.__penConformance.remoteApply([
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: "hello-p1",
-					offset: 0,
-					text: "X",
+					from: 0,
+				to: 0,
+				insert: "X",
 				},
 			]);
 		});

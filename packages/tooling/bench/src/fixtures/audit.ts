@@ -142,17 +142,17 @@ export const RELATED_FIXTURE_AUDIT: readonly FixtureAuditRow[] = [
 			"count: apply-count, not the clock. 1000 appends coalesce to one apply when yields are removed; the wall is 100 macrotasks",
 	},
 	{
-		id: "scale3.peer-count.8",
-		fixture: "`createScale3Editor` peer-count axis",
-		claimedSubject: "keystroke with 8 remote peers",
+		id: "scale3.remote-caret-count.8",
+		fixture: "`createScale3Editor` remote-caret-count axis",
+		claimedSubject: "keystroke with 8 remote-caret decorations",
 		actualSubject:
-			"Eight `data-pen-remote-caret` decorations on the multiplayer stand-in. No second Y.Doc, no sync.",
-		verdict: "name-overstates",
+			"Eight `data-pen-remote-caret` decorations on the multiplayer stand-in. No second Y.Doc, no sync. N-synced-peer scaling is unmeasured.",
+		verdict: "agrees",
 		countTrust: "trusted",
 		clockTrust: "untrustworthy",
 		floorKind: "empty-timer",
 		howMeasured:
-			"count: 8 remote-caret decorations. Clock is a keystroke median on a single editor, not a synced Y.Doc count",
+			"count: 8 remote-caret decorations. Clock is a keystroke median on a single editor. N-synced-peer scaling is not a SCALE3 measurement",
 	},
 	{
 		id: "createLargeDocument",
@@ -178,7 +178,7 @@ export const RELATED_FIXTURE_AUDIT: readonly FixtureAuditRow[] = [
 		clockTrust: "load-taken",
 		floorKind: "empty-timer",
 		howMeasured:
-			"count: target block-50 contains FORK-MERGE-TOKEN after merge. A skipped merge or a self-copy fails assertMergeTransferred",
+			"count: mergeTransferred === 1 (token on target block-50). A skipped merge or a self-copy fails mergeTransferred 0 !== 1",
 	},
 	{
 		id: "generateGenDeltaParts",
@@ -205,6 +205,19 @@ export const RELATED_FIXTURE_AUDIT: readonly FixtureAuditRow[] = [
 		floorKind: "yield-macrotasks",
 		howMeasured:
 			"count: requestCount === cancel floor === modelCallCount === 10. A skipped loop fails assertRequestingCancelObserved",
+	},
+	{
+		id: "pg1-anchor-budget",
+		fixture: "`anchors.bench.ts` + `baselines/v3-anchor-budget.chromium.json`",
+		claimedSubject: "Chromium PG1 mint/resolve µs budgets on the 10k-word fixture",
+		actualSubject:
+			"Node/Yjs substrate counts (clientID 0) plus a Chromium scenario that asserts the same cardinalities on editor.anchors. Absolute µs/ms budgets are recorded, not gated. 4–6 byte encodings are the clientID 0 case only.",
+		verdict: "name-overstates",
+		countTrust: "trusted",
+		clockTrust: "untrustworthy",
+		floorKind: "empty-timer",
+		howMeasured:
+			"count: encodeCount === 1000, encode 4/6/6/6 for clientID 0, resolveCount === 1000/200, cell cohort, split stuckCount === 2. A missing baseline file exits 1 as PG1_BASELINE_MISSING. Clocks are record-only (CH8)",
 	},
 	{
 		id: "ai.autocomplete-provider-budget",

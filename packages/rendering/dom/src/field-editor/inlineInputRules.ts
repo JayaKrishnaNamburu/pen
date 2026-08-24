@@ -80,16 +80,18 @@ function resolveFallbackInlineInputRule(
 
 	return [
 		{
-			type: "delete-text",
+			type: "splice-text",
 			blockId,
-			offset: match.deleteRange.start,
-			length: match.deleteRange.end - match.deleteRange.start,
+			from: match.deleteRange.start,
+			to: match.deleteRange.end,
+			insert: "",
 		},
 		{
-			type: "insert-text",
+			type: "splice-text",
 			blockId,
-			offset: match.deleteRange.start,
-			text: match.text,
+			from: match.deleteRange.start,
+			to: match.deleteRange.start,
+			insert: match.text,
 			marks: match.marks,
 		},
 	];
@@ -101,8 +103,11 @@ function resolveInlineSelectionTarget(
 ): InlineInputRuleSelectionTarget | null {
 	let nextOffset: number | null = null;
 	for (const op of ops) {
-		if (op.type === "insert-text" && op.blockId === blockId) {
-			nextOffset = op.offset + op.text.length;
+		if (op.type !== "splice-text" || op.blockId !== blockId) {
+			continue;
+		}
+		if (typeof op.insert === "string" && op.insert.length > 0) {
+			nextOffset = op.from + op.insert.length;
 		}
 	}
 

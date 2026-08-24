@@ -394,10 +394,11 @@ describe("SSE server handler", () => {
 					ctx.editor.apply(
 						[
 							{
-								type: "insert-text",
+								type: "splice-text",
 								blockId: seedId,
-								offset: 0,
-								text: "granted",
+								from: 0,
+				to: 0,
+				insert: "granted",
 							},
 						],
 						{ origin: "ai" },

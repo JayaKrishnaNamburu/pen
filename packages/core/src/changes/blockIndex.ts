@@ -88,7 +88,7 @@ export function applySummaryToSnapshot(
 		applyStructural(change, lengthById, typeById, childrenByParentId);
 	}
 
-	for (const text of summary.text) {
+	for (const text of summary.blockText) {
 		const previous = lengthById.get(text.blockId) ?? 0;
 		lengthById.set(text.blockId, lengthAfterSplices(previous, text.splices));
 	}
@@ -155,10 +155,6 @@ function applyStructural(
 		case "block-moved": {
 			removeChild(childrenByParentId, change.fromParentId, change.blockId);
 			insertChild(childrenByParentId, change.toParentId, change.toIndex, change.blockId);
-			break;
-		}
-		case "block-converted": {
-			typeById.set(change.blockId, change.toType);
 			break;
 		}
 		case "block-split": {

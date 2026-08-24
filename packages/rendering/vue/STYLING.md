@@ -85,7 +85,7 @@ Additional body hooks:
 | `data-pen-list-marker`            | list marker span         | present (`aria-hidden`)                             |
 | `data-counter`                    | numbered list item       | resolved ordinal                                    |
 | `data-checked`                    | checklist item           | present when checked                                |
-| `data-callout-type`               | callout                  | `info` \| `warning` \| `error` (or the stored type) |
+| `data-callout-type`               | callout                  | `info` \| `warning` \| `error` (from the severity prop) |
 | `data-pen-callout-icon`           | callout icon             | present (`aria-hidden`)                             |
 | `data-pen-callout-body`           | callout body             | present                                             |
 | `data-pen-callout-children`       | nested callout children  | present when the callout has children               |

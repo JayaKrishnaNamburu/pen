@@ -35,18 +35,20 @@ describe("COL4 two-peer structural concurrency", () => {
 
 				harness.peerA.editor.apply([
 					{
-						type: "insert-text",
+						type: "splice-text",
 						blockId: "p1",
-						offset: 5,
-						text: " A",
+						from: 5,
+				to: 5,
+				insert: " A",
 					},
 				]);
 				harness.peerB.editor.apply([
 					{
-						type: "insert-text",
+						type: "splice-text",
 						blockId: "p1",
-						offset: 5,
-						text: " B",
+						from: 5,
+				to: 5,
+				insert: " B",
 					},
 				]);
 
@@ -79,10 +81,11 @@ describe("COL4 two-peer structural concurrency", () => {
 				harness.peerA.editor.apply([{ type: "delete-block", blockId: "p1" }]);
 				harness.peerB.editor.apply([
 					{
-						type: "insert-text",
+						type: "splice-text",
 						blockId: "p1",
-						offset: 4,
-						text: " lost",
+						from: 4,
+				to: 4,
+				insert: " lost",
 					},
 				]);
 			},
@@ -105,14 +108,14 @@ describe("COL4 two-peer structural concurrency", () => {
 			(harness) => {
 				harness.peerA.editor.apply([
 					{
-						type: "update-block",
+						type: "set-props",
 						blockId: "l2",
 						props: { indent: 1, parentId: "l1" },
 					},
 				]);
 				harness.peerB.editor.apply([
 					{
-						type: "update-block",
+						type: "set-props",
 						blockId: "l2",
 						props: { indent: 0, parentId: null },
 					},
@@ -207,7 +210,9 @@ describe("COL4 two-peer structural concurrency", () => {
 		});
 		try {
 			harness.peerA.editor.apply(
-				[{ type: "insert-text", blockId: "p1", offset: 5, text: " A" }],
+				[{ type: "splice-text", blockId: "p1", from: 5,
+				to: 5,
+				insert: " A" }],
 				{ origin: "user" },
 			);
 			expect(() => harness.assertConverged()).toThrow(

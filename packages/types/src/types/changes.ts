@@ -8,14 +8,7 @@
  */
 export type Assoc = -1 | 1;
 
-export type PointMapMode =
-	| "clamp"
-	| "delete"
-	| "delete-before"
-	| "delete-after";
-
 export type DefaultAssoc = 1;
-export type DefaultPointMapMode = "clamp";
 
 export interface Point {
 	readonly blockId: string;
@@ -56,12 +49,6 @@ export type StructuralChange =
 			readonly toIndex: number;
 	  }
 	| {
-			readonly type: "block-converted";
-			readonly blockId: string;
-			readonly fromType: string;
-			readonly toType: string;
-	  }
-	| {
 			readonly type: "block-props-changed";
 			readonly blockId: string;
 			readonly keys: readonly string[];
@@ -87,26 +74,47 @@ export type StructuralChange =
 
 export interface ChangeSummary {
 	readonly commitId: number;
-	readonly originType: string;
-	readonly text: readonly BlockTextChange[];
+	readonly blockText: readonly BlockTextChange[];
 	readonly structural: readonly StructuralChange[];
-	readonly isEmpty: boolean;
+	readonly affectedBlockIds: readonly string[];
+}
 
-	mapOffset(
-		blockId: string,
-		offset: number,
-		assoc?: Assoc,
-		mode?: PointMapMode,
-	): number | null;
-	mapPoint(
-		point: Point,
-		assoc?: Assoc,
-		mode?: PointMapMode,
-	): Point | null;
-	mapRange(
-		range: { anchor: Point; focus: Point },
-		options?: { anchorAssoc?: Assoc; focusAssoc?: Assoc; mode?: PointMapMode },
-	): { anchor: Point; focus: Point } | null;
-
-	compose(next: ChangeSummary): ChangeSummary;
+/**
+ * The splice helper is a function, not an algebra. `mapOffsetThroughSplices`
+ * is a pure convenience for derived-tier providers shifting per-block results
+ * within **one** summary. Clamp semantics only. There is no `compose`, no
+ * multi-summary form, no map modes, and no cross-commit law: code that needs a
+ * position to survive more than one commit uses an anchor (I13).
+ */
+export function mapOffsetThroughSplices(
+	splices: readonly TextSplice[],
+	offset: number,
+	assoc: Assoc,
+): number {
+	let delta = 0;
+	for (const splice of splices) {
+		const deleted = splice.to - splice.from;
+		if (offset < splice.from) {
+			return offset + delta;
+		}
+		if (splice.from < offset && offset < splice.to) {
+			return splice.from + delta;
+		}
+		if (offset === splice.from) {
+			if (splice.insertLength > 0) {
+				return assoc === -1
+					? splice.from + delta
+					: splice.from + delta + splice.insertLength;
+			}
+			if (deleted > 0) {
+				return splice.from + delta;
+			}
+			continue;
+		}
+		if (offset === splice.to && deleted > 0) {
+			return splice.from + delta + splice.insertLength;
+		}
+		delta += splice.insertLength - deleted;
+	}
+	return offset + delta;
 }

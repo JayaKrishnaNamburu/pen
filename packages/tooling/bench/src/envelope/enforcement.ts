@@ -99,13 +99,13 @@ export const ENFORCEMENT_INVENTORY: readonly EnforcementRow[] = [
 			"critical:true but timedApplyCount is 0; the apply is after b.end()",
 	},
 	{
-		id: "scale3.peer-count.8",
-		subject: "SCALE3 peer-count 8",
+		id: "scale3.remote-caret-count.8",
+		subject: "SCALE3 remote-caret-count 8",
 		unit: "enforced",
-		unitFailsOn: "remote-caret decorations !== 8 or a second Y.Doc appears",
+		unitFailsOn: "remote-caret decorations !== 8",
 		isolatedClock: "decorative",
 		clockNote:
-			"critical:true with ~13× slack (3.73ms → 50ms); peer count is decorations",
+			"critical:true with ~13× slack (3.73ms → 50ms); axis is caret decorations, not synced Y.Docs. N-peer scaling is unmeasured",
 	},
 	{
 		id: "scale3.keystroke.realistic-stack",
@@ -134,11 +134,20 @@ export const ENFORCEMENT_INVENTORY: readonly EnforcementRow[] = [
 			"sch-typing-budget.record.spec.ts writes drift; RECORD_TYPING_BUDGET=1 to update; no budget assert",
 	},
 	{
+		id: "pg1-anchor-budget",
+		subject: "PG1 anchor mint/resolve counts (clientID 0)",
+		unit: "enforced",
+		unitFailsOn:
+			"enforced versusSpec row drifted (encodeCount, 4/6/6/6 bytes, resolveCount, cell cohort, split stuckCount)",
+		isolatedClock: "record-only",
+		clockNote:
+			"PG1 µs/ms budgets are machine-dependent (CH8); clocks are record-only. 4–6 byte encodings are clientID 0 only",
+	},
+	{
 		id: "crdt.fork-merge-100",
 		subject: "CRDT fork + merge of a diverged 100-block document",
 		unit: "enforced",
-		unitFailsOn:
-			"assertMergeTransferred: target block-50 missing FORK-MERGE-TOKEN",
+		unitFailsOn: "mergeTransferred 0 !== 1 (token missing on target block-50)",
 		isolatedClock: "record-only",
 		clockNote: "empty-timer floor; count is the token on the named block",
 	},

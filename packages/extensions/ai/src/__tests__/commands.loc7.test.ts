@@ -35,7 +35,9 @@ describe("AI command catalog (LOC1)", () => {
 
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello" }],
 			{ origin: "user" },
 		);
 		editor.selectText(blockId, 0, 5);
@@ -76,7 +78,9 @@ describe("AI command catalog (LOC1)", () => {
 
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello" }],
 			{ origin: "user" },
 		);
 		editor.selectText(blockId, 0, 5);
@@ -104,7 +108,9 @@ describe("AI command catalog (LOC1)", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello world" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello world" }],
 			{ origin: "system" },
 		);
 

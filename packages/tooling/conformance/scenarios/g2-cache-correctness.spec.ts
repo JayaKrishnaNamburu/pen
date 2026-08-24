@@ -1,9 +1,14 @@
 import type { DocumentOp } from "@input/pen-types";
 import { expect } from "@playwright/test";
+import { LOCAL_FIXTURES } from "../fixtures/catalog";
 import { caretCacheHolds } from "../harness/src/geometryCompare";
 import { scenario } from "../src/scenario";
 import type { GeometryBlockInfo, GeometryCaretCompareResult } from "../src/types";
-import { sampleCaretPoints } from "../src/wave3Geometry";
+import { sampleCaretPoints, WAVE3_TAIL_BLOCK } from "../src/wave3Geometry";
+
+const WAVE3_TAIL_TEXT =
+	LOCAL_FIXTURES["wave3-geometry"].find((block) => block.id === WAVE3_TAIL_BLOCK)
+		?.content ?? "";
 
 type CommitStep = {
 	name: string;
@@ -16,7 +21,9 @@ const COMMIT_STEPS: readonly CommitStep[] = [
 		ops: (blocks) => {
 			const block = blocks[0];
 			if (!block) return [];
-			return [{ type: "insert-text", blockId: block.id, offset: 0, text: "!" }];
+			return [{ type: "splice-text", blockId: block.id, from: 0,
+				to: 0,
+				insert: "!" }];
 		},
 	},
 	{
@@ -26,10 +33,11 @@ const COMMIT_STEPS: readonly CommitStep[] = [
 			if (!block) return [];
 			return [
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: block.id,
-					offset: block.length,
-					text: "Z",
+					from: block.length,
+				to: block.length,
+				insert: "Z",
 				},
 			];
 		},
@@ -41,10 +49,11 @@ const COMMIT_STEPS: readonly CommitStep[] = [
 			if (!block || block.length < 2) return [];
 			return [
 				{
-					type: "delete-text",
+					type: "splice-text",
 					blockId: block.id,
-					offset: 1,
-					length: 1,
+					from: 1,
+				to: 1 + 1,
+				insert: "",
 				},
 			];
 		},
@@ -56,11 +65,11 @@ const COMMIT_STEPS: readonly CommitStep[] = [
 			if (!block || block.length < 2) return [];
 			return [
 				{
-					type: "replace-text",
+					type: "splice-text",
 					blockId: block.id,
-					offset: 0,
-					length: 1,
-					text: "Q",
+					from: 0,
+				to: 0 + 1,
+					insert: "Q",
 				},
 			];
 		},
@@ -72,10 +81,11 @@ const COMMIT_STEPS: readonly CommitStep[] = [
 			if (!block) return [];
 			return [
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: block.id,
-					offset: block.length,
-					text: " GROW-THE-BLOCK-WITH-A-LONG-RUN-OF-CHARACTERS",
+					from: block.length,
+				to: block.length,
+				insert: " GROW-THE-BLOCK-WITH-A-LONG-RUN-OF-CHARACTERS",
 				},
 			];
 		},
@@ -85,13 +95,17 @@ const COMMIT_STEPS: readonly CommitStep[] = [
 		ops: (blocks) => {
 			const block = blocks.find((entry) => entry.id === "g5-atoms");
 			if (!block) return [];
+			const offset = Math.min(5, block.length);
 			return [
 				{
-					type: "insert-inline-node",
+					type: "splice-text",
 					blockId: block.id,
-					offset: Math.min(5, block.length),
-					nodeType: "mention",
-					props: { id: "user-ada", label: "Ada" },
+					from: offset,
+					to: offset,
+					insert: {
+						nodeType: "mention",
+						props: { id: "user-ada", label: "Ada" },
+					},
 				},
 			];
 		},
@@ -110,10 +124,11 @@ const COMMIT_STEPS: readonly CommitStep[] = [
 					position: { after: last.id },
 				},
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: "g2-after",
-					offset: 0,
-					text: "After",
+					from: 0,
+				to: 0,
+				insert: "After",
 				},
 			];
 		},
@@ -132,10 +147,11 @@ const COMMIT_STEPS: readonly CommitStep[] = [
 					position: { before: first.id },
 				},
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: "g2-before",
-					offset: 0,
-					text: "Before",
+					from: 0,
+				to: 0,
+				insert: "Before",
 				},
 			];
 		},
@@ -143,14 +159,31 @@ const COMMIT_STEPS: readonly CommitStep[] = [
 	{
 		name: "split-block the tail paragraph",
 		ops: (blocks) => {
-			const tail = blocks.find((entry) => entry.id === "g5-tail");
+			const tail = blocks.find((entry) => entry.id === WAVE3_TAIL_BLOCK);
 			if (!tail || tail.length < 4) return [];
+			const offset = 5;
+			const tailText = WAVE3_TAIL_TEXT.slice(offset);
 			return [
 				{
-					type: "split-block",
+					type: "insert-block",
+					blockId: "g2-split",
+					blockType: "paragraph",
+					props: {},
+					position: { after: tail.id },
+				},
+				{
+					type: "splice-text",
 					blockId: tail.id,
-					offset: 5,
-					newBlockId: "g2-split",
+					from: offset,
+					to: tail.length,
+					insert: "",
+				},
+				{
+					type: "splice-text",
+					blockId: "g2-split",
+					from: 0,
+					to: 0,
+					insert: tailText,
 				},
 			];
 		},
@@ -222,7 +255,19 @@ scenario(
 				})
 				.toBe(true);
 
-			const mention = ops.some((op) => op.type === "insert-inline-node");
+			const mention = ops.some((op) => {
+				if (op.type !== "splice-text") {
+					return false;
+				}
+				const insert = op.insert;
+				return (
+					typeof insert === "object" &&
+					insert !== null &&
+					!Array.isArray(insert) &&
+					"nodeType" in insert &&
+					insert.nodeType === "mention"
+				);
+			});
 			if (mention) {
 				await expect(page.locator("[data-pen-inline-atom]")).toBeVisible();
 			}
@@ -237,12 +282,6 @@ scenario(
 				await expect(
 					page.locator(`[data-block-id="${deleted.blockId}"]`),
 				).toHaveCount(0);
-			}
-			const split = ops.find((op) => op.type === "split-block");
-			if (split && split.type === "split-block") {
-				await expect(
-					page.locator(`[data-block-id="${split.newBlockId}"]`),
-				).toBeVisible();
 			}
 
 			const after = await s.geometry.blocks();

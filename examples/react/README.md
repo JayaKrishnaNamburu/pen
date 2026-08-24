@@ -12,8 +12,7 @@ From the repository root:
 
 ```bash
 pnpm install
-pnpm build
-pnpm --filter @input/pen-example-react dev
+pnpm dev -- --filter=@input/pen-example-react
 ```
 
 The post-publish consumer command, including peers, will be:

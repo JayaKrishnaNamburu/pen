@@ -216,10 +216,11 @@ describe("clipboard JSON-flavor paste", () => {
 
 		source.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: sourceBlockId,
-				offset: 0,
-				text: "Hello world",
+				from: 0,
+				to: 0,
+				insert: "Hello world",
 			},
 		]);
 		source.selectText(sourceBlockId, 0, 11);

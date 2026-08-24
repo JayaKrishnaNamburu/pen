@@ -60,7 +60,7 @@ describe("@input/pen-react DIR2", () => {
 
 		editor.apply([
 			{
-				type: "update-block",
+				type: "set-props",
 				blockId: ltrId,
 				props: { direction: "ltr" },
 			},

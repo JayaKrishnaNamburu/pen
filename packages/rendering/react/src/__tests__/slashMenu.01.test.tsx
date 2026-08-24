@@ -202,7 +202,9 @@ describe("@input/pen-react slash menu", () => {
 
 		await act(async () => {
 			editor.apply([
-				{ type: "insert-text", blockId, offset: 0, text: "/" },
+				{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "/" },
 			]);
 		});
 

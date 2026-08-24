@@ -81,10 +81,11 @@ describe("@input/pen-ai-autocomplete", () => {
 		const blockId = editor.firstBlock()!.id;
 		fieldEditor.focusBlockId = blockId;
 		editor.apply([{
-			type: "insert-text",
+			type: "splice-text",
 			blockId,
-			offset: 0,
-			text: "He came home ",
+			from: 0,
+				to: 0,
+				insert: "He came home ",
 		}]);
 		editor.selectText(blockId, 13, 13);
 

@@ -35,7 +35,10 @@ export {
 	SUBDOCUMENT,
 } from "./document";
 export { readFormatStamp, refreshFormatStamp } from "./formatStamp";
-export { getDocumentLoadReport } from "./loadDocument";
+export {
+	getDocumentLoadReport,
+	recordDocumentLoadMigration,
+} from "./loadDocument";
 export type { DocumentLoadReport, DocumentLoadState } from "./loadDocument";
 export type {
 	BlockContentType,

@@ -69,7 +69,9 @@ describe("@input/pen-ai-autocomplete", () => {
 		const blockId = editor.firstBlock()!.id;
 		fieldEditor.focusBlockId = blockId;
 		editor.apply([
-			{ type: "insert-text", blockId, offset: 0, text: "Hello" },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello" },
 		]);
 		editor.selectText(blockId, 5, 5);
 
@@ -133,7 +135,9 @@ describe("@input/pen-ai-autocomplete", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		fieldEditor.focusBlockId = blockId;
-		editor.apply([{ type: "insert-text", blockId, offset: 0, text: "Hello" }]);
+		editor.apply([{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello" }]);
 		editor.selectText(blockId, 5, 5);
 
 		const controller = getAutocompleteController(editor);
@@ -194,7 +198,9 @@ describe("@input/pen-ai-autocomplete", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		fieldEditor.focusBlockId = blockId;
-		editor.apply([{ type: "insert-text", blockId, offset: 0, text: "Hello there" }]);
+		editor.apply([{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello there" }]);
 		editor.selectText(blockId, 11, 11);
 
 		const controller = getAutocompleteController(editor);
@@ -243,7 +249,9 @@ describe("@input/pen-ai-autocomplete", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		fieldEditor.focusBlockId = blockId;
-		editor.apply([{ type: "insert-text", blockId, offset: 0, text: "a" }]);
+		editor.apply([{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "a" }]);
 		editor.selectText(blockId, 1, 1);
 
 		const controller = getAutocompleteController(editor);
@@ -290,7 +298,9 @@ describe("@input/pen-ai-autocomplete", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		fieldEditor.focusBlockId = blockId;
-		editor.apply([{ type: "insert-text", blockId, offset: 0, text: "Hello there" }]);
+		editor.apply([{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello there" }]);
 		editor.selectText(blockId, 11, 11);
 
 		const controller = getAutocompleteController(editor);
@@ -339,7 +349,9 @@ describe("@input/pen-ai-autocomplete", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		fieldEditor.focusBlockId = blockId;
-		editor.apply([{ type: "insert-text", blockId, offset: 0, text: "Hello" }]);
+		editor.apply([{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello" }]);
 		editor.selectText(blockId, 5, 5);
 
 		const controller = getAutocompleteController(editor);
@@ -392,7 +404,9 @@ describe("@input/pen-ai-autocomplete", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		fieldEditor.focusBlockId = blockId;
-		editor.apply([{ type: "insert-text", blockId, offset: 0, text: "Hello" }]);
+		editor.apply([{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello" }]);
 		editor.selectText(blockId, 5, 5);
 
 		const controller = getAutocompleteController(editor);

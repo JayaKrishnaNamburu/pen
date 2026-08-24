@@ -8,7 +8,6 @@ export {
 	shouldAllowFlowInsertionInSlashMenu,
 	shouldExposeBlockInTooling,
 	shouldShowBlockInDefaultMenus,
-	shouldFallbackMixedSelectionToBlock,
 	shouldForceBlockScopedSelectAll,
 } from "./blockCapabilities";
 

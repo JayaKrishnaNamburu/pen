@@ -68,10 +68,11 @@ const blockId = editor.firstBlock()?.id ?? "";
 editor.apply(
   [
     {
-      type: "insert-text",
+      type: "splice-text",
       blockId,
-      offset: 0,
-      text: "Hello",
+      from: 0,
+				to: 0,
+				insert: "Hello",
     },
   ],
   { origin: "user" },
@@ -103,8 +104,11 @@ editor.apply(
 			<h2>Commits</h2>
 			<p>
 				Each pipeline run emits one <code>commit</code> event with a{" "}
-				<code>ChangeSummary</code>, the origin, and selection
-				before/after. Subscribe with{" "}
+				<code>ChangeSummary</code>{" "}
+				<code>
+					{"{ commitId, blockText, structural, affectedBlockIds }"}
+				</code>
+				, the origin, and selection before/after. Subscribe with{" "}
 				<code>{`editor.on("commit", handler)`}</code>.{" "}
 				<code>change</code> and <code>documentCommit</code> still fire
 				for this minor and emit <code>event-deprecated</code> once per

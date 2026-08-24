@@ -2,14 +2,12 @@ import { resolveA11ySpec } from "@input/pen-core";
 import type { SchemaRegistry } from "@input/pen-types";
 import { DATA_ATTRS } from "../utils/dataAttributes";
 import {
-	INLINE_ATOM_CARET_BOUNDARY_TEXT,
 	INLINE_ATOM_REPLACEMENT_TEXT,
 	resolveInlineAtomDisplayText,
 	resolveInlineAtomInsert,
 	type InlineAtomInsert,
 } from "./inlineAtomModel";
 export {
-	INLINE_ATOM_CARET_BOUNDARY_TEXT,
 	INLINE_ATOM_REPLACEMENT_TEXT,
 	resolveInlineAtomInsert,
 } from "./inlineAtomModel";
@@ -28,9 +26,7 @@ export function createInlineAtomCaretBoundaryElement(
 	const element = document.createElement("span");
 	element.setAttribute(DATA_ATTRS.inlineAtomCaretBoundary, "");
 	element.setAttribute(DATA_ATTRS.inlineAtomCaretSide, side);
-	element.appendChild(
-		document.createTextNode(INLINE_ATOM_CARET_BOUNDARY_TEXT),
-	);
+	element.appendChild(document.createElement("br"));
 	return element;
 }
 

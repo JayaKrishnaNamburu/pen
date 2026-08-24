@@ -93,7 +93,7 @@ export function openEditorTextStream(
 		}
 		const headBlockId = head.blockId;
 		if (
-			summary.text.some(
+			summary.blockText.some(
 				(change) =>
 					change.blockId === writeHead.blockId || change.blockId === headBlockId,
 			)

@@ -45,10 +45,11 @@ export function insertBlockTool(editor: Editor): ToolDefinition {
 
       if (opts.content) {
         ops.push({
-          type: "insert-text",
+          type: "splice-text",
           blockId,
-          offset: 0,
-          text: opts.content,
+          from: 0,
+				to: 0,
+				insert: opts.content,
         });
       }
 

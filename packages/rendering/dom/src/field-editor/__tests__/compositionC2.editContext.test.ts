@@ -84,7 +84,7 @@ function mountEditContextEditor(text: string) {
 	root.setAttribute(DATA_ATTRS.editorRoot, "");
 	document.body.appendChild(root);
 	const blockId = editor.firstBlock()!.id;
-	editor.apply([{ type: "insert-text", blockId, offset: 0, text }]);
+	editor.apply([{ type: "splice-text", blockId, from: 0, to: 0, insert: text }]);
 	const block = document.createElement("div");
 	block.setAttribute(DATA_ATTRS.editorBlock, "");
 	block.setAttribute(DATA_ATTRS.blockId, blockId);
@@ -109,7 +109,9 @@ describe("C2 EditContext mid-composition remote", () => {
 		const beforeDom = extractTextFromDOM(inline);
 
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "X" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "X" }],
 			{ origin: "collaborator" },
 		);
 
@@ -139,7 +141,9 @@ describe("C2 EditContext mid-composition remote", () => {
 		const beforeDom = extractTextFromDOM(inline);
 
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "X" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "X" }],
 			{ origin: "collaborator" },
 		);
 

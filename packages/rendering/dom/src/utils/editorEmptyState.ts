@@ -1,5 +1,4 @@
 import type { Editor } from "@input/pen-types";
-import { logicalTextFromStored } from "@input/pen-types";
 
 interface InlineDeltaLike {
 	insert: string | object;
@@ -31,5 +30,5 @@ export function isInlineContentEmpty(
 	const stored = deltas
 		.map((delta) => (typeof delta.insert === "string" ? delta.insert : ""))
 		.join("");
-	return logicalTextFromStored(stored) === "";
+	return stored === "";
 }

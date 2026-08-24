@@ -52,10 +52,11 @@ describe("aiExtension", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: firstBlockId,
-					offset: 0,
-					text: "The Lighthouse Keeper's Last Letter",
+					from: 0,
+				to: 0,
+				insert: "The Lighthouse Keeper's Last Letter",
 				},
 				{
 					type: "insert-block",
@@ -65,10 +66,11 @@ describe("aiExtension", () => {
 					position: { after: firstBlockId },
 				},
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: "paragraph-2",
-					offset: 0,
-					text: "The storm had been building for three days.",
+					from: 0,
+				to: 0,
+				insert: "The storm had been building for three days.",
 				},
 			],
 			{ origin: "system" },
@@ -144,10 +146,11 @@ describe("aiExtension", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: firstBlockId,
-					offset: 0,
-					text: "The Founder's Last Email",
+					from: 0,
+				to: 0,
+				insert: "The Founder's Last Email",
 				},
 				{
 					type: "insert-block",
@@ -157,10 +160,11 @@ describe("aiExtension", () => {
 					position: { after: firstBlockId },
 				},
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: "paragraph-2",
-					offset: 0,
-					text: "The Slack notification had been pinging for three days.",
+					from: 0,
+				to: 0,
+				insert: "The Slack notification had been pinging for three days.",
 				},
 			],
 			{ origin: "system" },

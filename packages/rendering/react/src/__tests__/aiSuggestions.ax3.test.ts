@@ -73,10 +73,11 @@ async function openSuggestionsPopover() {
 	editor.apply(
 		[
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "Ths sentence works.",
+				from: 0,
+				to: 0,
+				insert: "Ths sentence works.",
 			},
 		],
 		{ origin: "user" },

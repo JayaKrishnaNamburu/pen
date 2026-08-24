@@ -73,16 +73,18 @@ describe("InputRuleEngine — inline rules", () => {
 			expect(result).not.toBeNull();
 			expect(result).toHaveLength(2);
 			expect(result![0]).toMatchObject({
-				type: "delete-text",
+				type: "splice-text",
 				blockId: "b1",
-				offset: 0,
-				length: 9,
+				from: 0,
+				to: 0 + 9,
+				insert: "",
 			});
 			expect(result![1]).toMatchObject({
-				type: "insert-text",
+				type: "splice-text",
 				blockId: "b1",
-				offset: 0,
-				text: "hello",
+				from: 0,
+				to: 0,
+				insert: "hello",
 				marks: { bold: true },
 			});
 		});
@@ -94,14 +96,16 @@ describe("InputRuleEngine — inline rules", () => {
 
 			expect(result).not.toBeNull();
 			expect(result![0]).toMatchObject({
-				type: "delete-text",
-				offset: 4,
-				length: 9,
+				type: "splice-text",
+				from: 4,
+				to: 4 + 9,
+				insert: "",
 			});
 			expect(result![1]).toMatchObject({
-				type: "insert-text",
-				offset: 4,
-				text: "world",
+				type: "splice-text",
+				from: 4,
+				to: 4,
+				insert: "world",
 				marks: { bold: true },
 			});
 		});
@@ -122,14 +126,16 @@ describe("InputRuleEngine — inline rules", () => {
 
 			expect(result).not.toBeNull();
 			expect(result![0]).toMatchObject({
-				type: "delete-text",
-				offset: 0,
-				length: 7,
+				type: "splice-text",
+				from: 0,
+				to: 0 + 7,
+				insert: "",
 			});
 			expect(result![1]).toMatchObject({
-				type: "insert-text",
-				offset: 0,
-				text: "hello",
+				type: "splice-text",
+				from: 0,
+				to: 0,
+				insert: "hello",
 				marks: { italic: true },
 			});
 		});
@@ -141,7 +147,7 @@ describe("InputRuleEngine — inline rules", () => {
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
-				text: "word",
+				insert: "word",
 				marks: { italic: true },
 			});
 		});
@@ -155,7 +161,7 @@ describe("InputRuleEngine — inline rules", () => {
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
-				text: "hello",
+				insert: "hello",
 				marks: { code: true },
 			});
 		});
@@ -176,7 +182,7 @@ describe("InputRuleEngine — inline rules", () => {
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
-				text: "hello",
+				insert: "hello",
 				marks: { strikethrough: true },
 			});
 		});
@@ -190,7 +196,7 @@ describe("InputRuleEngine — inline rules", () => {
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
-				text: "marked",
+				insert: "marked",
 				marks: { highlight: true },
 			});
 		});
@@ -303,8 +309,8 @@ describe("InputRuleEngine — inline rules", () => {
 				);
 				expect(ops, markType).not.toBeNull();
 				expect(ops![1]).toMatchObject({
-					type: "insert-text",
-					text: inner,
+					type: "splice-text",
+					insert: inner,
 					marks: { [markType]: true },
 				});
 				expect(

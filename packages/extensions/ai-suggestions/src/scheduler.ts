@@ -170,7 +170,7 @@ function estimateChangedCharsForBlock(
 	summary: ChangeSummary,
 	blockId: string,
 ): number {
-	const change = summary.text.find((item) => item.blockId === blockId);
+	const change = summary.blockText.find((item) => item.blockId === blockId);
 	if (!change) {
 		return summary.structural.some((item) =>
 			"blockId" in item && item.blockId === blockId,
@@ -190,7 +190,7 @@ function resolveLastChangedOffset(
 	summary: ChangeSummary,
 	blockId: string,
 ): number | null {
-	const change = summary.text.find((item) => item.blockId === blockId);
+	const change = summary.blockText.find((item) => item.blockId === blockId);
 	const last = change?.splices[change.splices.length - 1];
 	return last?.from ?? null;
 }

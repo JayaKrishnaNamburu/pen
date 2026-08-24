@@ -57,10 +57,11 @@ describe("@input/pen-ai-suggestions extension", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "Ths sentence works.",
+					from: 0,
+				to: 0,
+				insert: "Ths sentence works.",
 				},
 			],
 			{ origin: "user" },
@@ -106,10 +107,11 @@ describe("@input/pen-ai-suggestions extension", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "Ths sentence works.",
+					from: 0,
+				to: 0,
+				insert: "Ths sentence works.",
 				},
 			],
 			{ origin: "user" },
@@ -173,10 +175,11 @@ describe("@input/pen-ai-suggestions extension", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "alpha brvo charle",
+					from: 0,
+				to: 0,
+				insert: "alpha brvo charle",
 				},
 			],
 			{ origin: "user" },
@@ -223,10 +226,11 @@ describe("@input/pen-ai-suggestions extension", () => {
 
 		editor.apply(
 			[{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "Ths sentence works.",
+				from: 0,
+				to: 0,
+				insert: "Ths sentence works.",
 			}],
 			{ origin: "user" },
 		);
@@ -299,10 +303,11 @@ describe("@input/pen-ai-suggestions extension", () => {
 		controller.setEnabled(false);
 		editor.apply(
 			[{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "Ths sentence works.",
+				from: 0,
+				to: 0,
+				insert: "Ths sentence works.",
 			}],
 			{ origin: "user" },
 		);
@@ -319,10 +324,11 @@ describe("@input/pen-ai-suggestions extension", () => {
 
 		editor.apply(
 			[{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: editor.getBlock(blockId)?.textContent({ resolved: true }).length ?? 0,
-				text: "!",
+				from: editor.getBlock(blockId)?.textContent({ resolved: true }).length ?? 0,
+				to: editor.getBlock(blockId)?.textContent({ resolved: true }).length ?? 0,
+				insert: "!",
 			}],
 			{ origin: "user" },
 		);

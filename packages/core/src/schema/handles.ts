@@ -16,7 +16,6 @@ import type {
 	PenDocument,
 	SchemaRegistry,
 } from "@input/pen-types";
-import { logicalTextFromStored } from "@input/pen-types";
 import {
 	crdtMapToPlainRecord,
 	getCellMap,
@@ -319,9 +318,9 @@ class BlockHandleImpl implements TableBlockHandle {
 		if (content) {
 			const text = content.toString();
 			if (options?.resolved) {
-				return logicalTextFromStored(resolveText(content));
+				return resolveText(content);
 			}
-			return logicalTextFromStored(text);
+			return text;
 		}
 		return "";
 	}
@@ -347,7 +346,7 @@ class BlockHandleImpl implements TableBlockHandle {
 			return 0;
 		}
 		const text = content.toString();
-		if (!logicalTextFromStored(text)) {
+		if (!text) {
 			return 0;
 		}
 		return content.length;

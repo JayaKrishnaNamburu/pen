@@ -8,16 +8,17 @@ function summaryWith(
 	structural: readonly StructuralChange[],
 	blockIds: readonly string[] = [],
 ): ChangeSummary {
+	const blockText = blockIds.map((blockId) => ({
+		blockId,
+		splices: [{ from: 0, to: 0, insertLength: 1 }],
+		formatRanges: [],
+	}));
 	const base = createEmptySummary(1);
 	return {
 		...base,
-		isEmpty: false,
-		text: blockIds.map((blockId) => ({
-			blockId,
-			splices: [{ from: 0, to: 0, insertLength: 1 }],
-			formatRanges: [],
-		})),
+		blockText,
 		structural,
+		affectedBlockIds: affectedBlockIdsFromSummary({ blockText, structural }),
 	};
 }
 

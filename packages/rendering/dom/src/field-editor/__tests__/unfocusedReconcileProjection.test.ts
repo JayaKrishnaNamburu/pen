@@ -39,7 +39,9 @@ function seedSlottedEditor() {
 	editor.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, fieldEditor);
 	const blockId = editor.firstBlock()!.id;
 	editor.apply([
-		{ type: "insert-text", blockId, offset: 0, text: "hello" },
+		{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "hello" },
 	]);
 	fieldEditor.activate(blockId);
 	return { editor, fieldEditor };

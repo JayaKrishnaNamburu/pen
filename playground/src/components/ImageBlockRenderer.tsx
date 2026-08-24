@@ -87,7 +87,7 @@ function EmptyImageBlock(props: {
 			editor.apply(
 				[
 					{
-						type: "update-block",
+						type: "set-props",
 						blockId: block.id,
 						props: {
 							src: assets.resolve(ref),

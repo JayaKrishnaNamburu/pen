@@ -65,7 +65,9 @@ describe("AIB4 autocomplete accept undo", () => {
 		const blockId = editor.firstBlock()!.id;
 		fieldEditor.focusBlockId = blockId;
 		editor.apply(
-			[{ type: "insert-text", blockId, offset: 0, text: "Hello" }],
+			[{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello" }],
 			{ origin: "user" },
 		);
 		editor.selectText(blockId, 5, 5);

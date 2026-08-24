@@ -37,7 +37,9 @@ describe("ExternalInlineTurnRegistry", () => {
 			turnId: "turn-1",
 			historyId: "history-1",
 			operations: [
-				{ type: "insert-text", blockId: "b", offset: 0, text: "x" },
+				{ type: "splice-text", blockId: "b", from: 0,
+				to: 0,
+				insert: "x" },
 			],
 			suggestionIds: ["s-1"],
 		});

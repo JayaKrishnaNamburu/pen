@@ -1,9 +1,13 @@
 import os from "node:os";
 import type { BenchContext, BenchDefinition } from "../bench";
 import {
+	ANCHORS_CELL_IN_BLOCK_EDIT_BENCH,
 	ANCHORS_ENCODE_SIZE_1000_BENCH,
+	ANCHORS_ENCODE_SIZE_CELL_1000_BENCH,
 	ANCHORS_RESOLVE_200_BLOCKS_BENCH,
+	ANCHORS_RESOLVE_200_CELLS_BENCH,
 	ANCHORS_RESOLVE_70K_1000_BENCH,
+	ANCHORS_RESOLVE_CELL_70K_1000_BENCH,
 	ANCHORS_SPLIT_FOLLOW_BENCH,
 } from "../constants/benchmarks";
 import {
@@ -31,24 +35,11 @@ import {
 	resolveEncoded,
 } from "../fixtures/anchors";
 
-export const ANCHORS_ENCODE_SIZE_CELL_1000_BENCH = {
-	id: "anchors.encode-size-cell-1000",
-	name: "Yjs relative-position encode size in a table cell x1000",
-};
-
-export const ANCHORS_RESOLVE_CELL_70K_1000_BENCH = {
-	id: "anchors.resolve-cell-70k-1000",
-	name: "Yjs relative-position resolve 70k cell chars x1000",
-};
-
-export const ANCHORS_RESOLVE_200_CELLS_BENCH = {
-	id: "anchors.resolve-200-cells",
-	name: "Yjs relative-position resolve across 200 table cells",
-};
-
-export const ANCHORS_CELL_IN_BLOCK_EDIT_BENCH = {
-	id: "anchors.cell-in-block-edit",
-	name: "Yjs relative-position survive in-cell insert and delete",
+export {
+	ANCHORS_CELL_IN_BLOCK_EDIT_BENCH,
+	ANCHORS_ENCODE_SIZE_CELL_1000_BENCH,
+	ANCHORS_RESOLVE_200_CELLS_BENCH,
+	ANCHORS_RESOLVE_CELL_70K_1000_BENCH,
 };
 
 function loadavg1(): number {
@@ -91,6 +82,7 @@ export const anchorsBenchmarks: BenchDefinition[] = [
 			if (sizes.minBytes < 1) {
 				throw new Error("encode size bench produced empty encodings");
 			}
+			b.observe("encodeCount", sizes.count, ANCHOR_ENCODE_COUNT);
 			b.setMetrics({
 				encodeCount: sizes.count,
 				minBytes: sizes.minBytes,
@@ -128,6 +120,7 @@ export const anchorsBenchmarks: BenchDefinition[] = [
 					throw new Error("resolve 70k bench left its Y.Text");
 				}
 			}
+			b.observe("resolveCount", resolved.length, ANCHOR_ENCODE_COUNT);
 			b.setMetrics({
 				resolveCount: resolved.length,
 				charCount: fixture.text.length,
@@ -154,6 +147,7 @@ export const anchorsBenchmarks: BenchDefinition[] = [
 			if (resolved.some((point) => point.index !== 0 || point.type == null)) {
 				throw new Error("resolve 200-block bench missed a mint-at-0");
 			}
+			b.observe("resolveCount", resolved.length, ANCHOR_BLOCK_COUNT);
 			b.setMetrics({
 				resolveCount: resolved.length,
 				blockCount: fixture.blockIds.length,
@@ -182,6 +176,7 @@ export const anchorsBenchmarks: BenchDefinition[] = [
 			if (!tail?.stuckOnSource) {
 				throw new Error("split bench tail followed the copy; substrate changed");
 			}
+			b.observe("stuckCount", measured.stuckCount, 2);
 			b.setMetrics({
 				stuckCount: measured.stuckCount,
 				followedCount: measured.followedCount,
@@ -227,6 +222,7 @@ export const anchorsBenchmarks: BenchDefinition[] = [
 			if (block.get("content") != null) {
 				throw new Error("encode cell bench table has block.content");
 			}
+			b.observe("encodeCount", sizes.count, ANCHOR_ENCODE_COUNT);
 			b.setMetrics({
 				encodeCount: sizes.count,
 				minBytes: sizes.minBytes,
@@ -275,6 +271,7 @@ export const anchorsBenchmarks: BenchDefinition[] = [
 			if (fixture.block.get("content") != null) {
 				throw new Error("resolve cell 70k bench table has block.content");
 			}
+			b.observe("resolveCount", resolved.length, ANCHOR_ENCODE_COUNT);
 			b.setMetrics({
 				resolveCount: resolved.length,
 				charCount: fixture.text.length,
@@ -315,6 +312,7 @@ export const anchorsBenchmarks: BenchDefinition[] = [
 			if (fixture.block.get("content") != null) {
 				throw new Error("resolve 200-cell bench table has block.content");
 			}
+			b.observe("resolveCount", resolved.length, ANCHOR_CELL_COUNT);
 			b.setMetrics({
 				resolveCount: resolved.length,
 				cellCount: fixture.cells.length,
@@ -350,6 +348,7 @@ export const anchorsBenchmarks: BenchDefinition[] = [
 			if (measured.tableHasContent) {
 				throw new Error("cell in-block edit table has block.content");
 			}
+			b.observe("insertOnCell", measured.insert.onCell ? 1 : 0, 1);
 			b.setMetrics({
 				insertShifted: measured.insert.resolvedIndex,
 				insertExpected: measured.insert.expectedIndex,

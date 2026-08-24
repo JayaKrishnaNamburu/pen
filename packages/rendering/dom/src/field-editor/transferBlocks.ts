@@ -138,7 +138,7 @@ export function pasteInlineText(
 	if (lines.length === 1) {
 		const insertedText = lines[0];
 		editor.apply(
-			[{ type: "insert-text", blockId, offset, text: insertedText }],
+			[{ type: "splice-text", blockId, from: offset, to: offset, insert: insertedText }],
 			{
 				origin: "user",
 				...(options?.undoGroup === false ? {} : { undoGroup: true }),
@@ -155,16 +155,23 @@ export function pasteInlineText(
 	const ops: DocumentOp[] = [];
 	const firstLine = lines[0];
 	if (firstLine) {
-		ops.push({ type: "insert-text", blockId, offset, text: firstLine });
+		ops.push({
+			type: "splice-text",
+			blockId,
+			from: offset,
+			to: offset,
+			insert: firstLine,
+		});
 	}
 
 	const tailText = editor.getBlock(blockId)?.textContent().slice(offset) ?? "";
 	if (tailText) {
 		ops.push({
-			type: "delete-text",
+			type: "splice-text",
 			blockId,
-			offset: offset + (firstLine?.length ?? 0),
-			length: tailText.length,
+			from: offset + (firstLine?.length ?? 0),
+				to: offset + (firstLine?.length ?? 0) + tailText.length,
+				insert: "",
 		});
 	}
 
@@ -196,10 +203,11 @@ export function pasteInlineText(
 
 		if (lineText) {
 			ops.push({
-				type: "insert-text",
+				type: "splice-text",
 				blockId: newId,
-				offset: 0,
-				text: lineText,
+				from: 0,
+				to: 0,
+				insert: lineText,
 			});
 		}
 
@@ -242,10 +250,11 @@ function pasteInlineFragment(
 	for (const delta of deltas) {
 		if (typeof delta.insert !== "string" || !delta.insert) continue;
 		ops.push({
-			type: "insert-text",
+			type: "splice-text",
 			blockId: cursor.blockId,
-			offset,
-			text: delta.insert,
+			from: offset,
+			to: offset,
+			insert: delta.insert,
 			...(delta.attributes ? { marks: delta.attributes } : {}),
 		});
 		offset += delta.insert.length;
@@ -288,10 +297,11 @@ function appendInlineContentOps(
 	for (const delta of deltas) {
 		if (typeof delta.insert !== "string" || !delta.insert) continue;
 		ops.push({
-			type: "insert-text",
+			type: "splice-text",
 			blockId,
-			offset,
-			text: delta.insert,
+			from: offset,
+			to: offset,
+			insert: delta.insert,
 			...(delta.attributes ? { marks: delta.attributes } : {}),
 		});
 		offset += delta.insert.length;
@@ -326,31 +336,31 @@ function appendTableChildrenOps(
 
 		if (rowIdx > 0) {
 			ops.push({
-				type: "insert-table-row",
+				type: "grid",
 				blockId,
-				index: rowIdx,
-			} as DocumentOp);
+				change: { kind: "insert-row", index: rowIdx },
+			});
 		}
 
 		for (let colIdx = 0; colIdx < cells.length; colIdx++) {
 			if (rowIdx === 0 && colIdx > 0) {
 				ops.push({
-					type: "insert-table-column",
+					type: "grid",
 					blockId,
-					index: colIdx,
-				} as DocumentOp);
+					change: { kind: "insert-column", index: colIdx },
+				});
 			}
 
 			const cellContent = cells[colIdx].content;
 			if (cellContent) {
 				ops.push({
-					type: "insert-table-cell-text",
+					type: "splice-text",
 					blockId,
-					row: rowIdx,
-					col: colIdx,
-					offset: 0,
-					text: cellContent,
-				} as DocumentOp);
+					cell: { row: rowIdx, col: colIdx },
+					from: 0,
+					to: 0,
+					insert: cellContent,
+				});
 			}
 		}
 	}

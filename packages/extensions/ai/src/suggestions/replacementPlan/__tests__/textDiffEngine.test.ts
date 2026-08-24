@@ -60,12 +60,14 @@ describe("compileReplacementSuggestionOps (LOC4)", () => {
 				locale: "ja",
 			}),
 		).toEqual([
-			{ type: "delete-text", blockId: "body-1", offset: 3, length: 2 },
+			{ type: "splice-text", blockId: "body-1", from: 3,
+				to: 3 + 2 , insert: "" },
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: "body-1",
-				offset: 5,
-				text: "悪い",
+				from: 5,
+				to: 5,
+				insert: "悪い",
 			},
 		]);
 	});

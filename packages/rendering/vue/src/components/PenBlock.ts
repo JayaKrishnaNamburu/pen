@@ -240,7 +240,7 @@ function renderBlockBody(args: {
               editor.apply(
                 [
                   {
-                    type: "update-block",
+                    type: "set-props",
                     blockId: block.id,
                     props: { checked: !checked },
                   },
@@ -254,7 +254,7 @@ function renderBlockBody(args: {
       );
     }
     case "callout": {
-      const calloutType = (block.props.type as string) ?? "info";
+      const calloutType = (block.props.severity as string) ?? "info";
       const icon =
         calloutType === "warning"
           ? "!"
@@ -320,7 +320,7 @@ function renderBlockBody(args: {
                 editor.apply(
                   [
                     {
-                      type: "update-block",
+                      type: "set-props",
                       blockId: block.id,
                       props: { open: !open },
                     },

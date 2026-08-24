@@ -26,8 +26,12 @@ export const SCALE3_EXTENSION_COUNT_POINTS = [9, 17] as const;
 
 export const SCALE3_DECORATION_COUNT_POINTS = [0, 256] as const;
 
-/** Matches the 8-remote-caret layout fixture cited in the wave plan. */
-export const SCALE3_PEER_COUNT_POINTS = [0, 8] as const;
+/**
+ * Remote-caret decorations on the multiplayer stand-in. This is not
+ * N synced Y.Docs — SCALE3 does not measure peer-count scaling.
+ * SCALE1 covers two concurrent peers.
+ */
+export const SCALE3_REMOTE_CARET_COUNT_POINTS = [0, 8] as const;
 
 export const SCALE3_DEFAULT_PRESET_EXTENSIONS = [
 	"document-ops",
@@ -61,7 +65,7 @@ export type Scale3Axis =
 	| "document-size"
 	| "extension-count"
 	| "decoration-count"
-	| "peer-count";
+	| "remote-caret-count";
 
 export interface Scale3AxisSpec {
 	axis: Scale3Axis;
@@ -86,9 +90,9 @@ export const SCALE3_AXES: readonly Scale3AxisSpec[] = [
 		unit: "decorations",
 	},
 	{
-		axis: "peer-count",
-		points: SCALE3_PEER_COUNT_POINTS,
-		unit: "peers",
+		axis: "remote-caret-count",
+		points: SCALE3_REMOTE_CARET_COUNT_POINTS,
+		unit: "remote-carets",
 	},
 ];
 
@@ -104,7 +108,7 @@ export interface Scale3Baseline {
 
 /**
  * Two measured points per axis. The 1000-block shipped stack is the
- * shared low point for extension / decoration / peer count.
+ * shared low point for extension / decoration / remote-caret count.
  */
 export const SCALE3_AXIS_BENCH_PAIRS: Record<
 	Scale3Axis,
@@ -122,9 +126,9 @@ export const SCALE3_AXIS_BENCH_PAIRS: Record<
 		"scale3.keystroke.realistic-stack.document-size.1000",
 		"scale3.keystroke.realistic-stack.decoration-count.256",
 	],
-	"peer-count": [
+	"remote-caret-count": [
 		"scale3.keystroke.realistic-stack.document-size.1000",
-		"scale3.keystroke.realistic-stack.peer-count.8",
+		"scale3.keystroke.realistic-stack.remote-caret-count.8",
 	],
 };
 
@@ -162,8 +166,8 @@ export const SCALE3_BASELINES: readonly Scale3Baseline[] = [
 		machineClass: SCALE3_MACHINE_CLASS,
 	},
 	{
-		id: "scale3.keystroke.realistic-stack.peer-count.8",
-		axis: "peer-count",
+		id: "scale3.keystroke.realistic-stack.remote-caret-count.8",
+		axis: "remote-caret-count",
 		point: 8,
 		measuredP50Ms: 3.73,
 		gateP50Ms: 50,

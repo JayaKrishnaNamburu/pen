@@ -35,16 +35,17 @@ describe("@input/pen-react suggestion rendering", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "Hello world",
+				from: 0,
+				to: 0,
+				insert: "Hello world",
 			},
 			{
 				type: "format-text",
 				blockId,
-				offset: 0,
-				length: 5,
+				from: 0,
+				to: 0 + 5,
 				marks: {
 					suggestion: {
 						id: "suggestion-insert-1",
@@ -58,8 +59,8 @@ describe("@input/pen-react suggestion rendering", () => {
 			{
 				type: "format-text",
 				blockId,
-				offset: 6,
-				length: 5,
+				from: 6,
+				to: 6 + 5,
 				marks: {
 					suggestion: {
 						id: "suggestion-delete-1",
@@ -129,18 +130,22 @@ describe("@input/pen-react suggestion rendering", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "Thanks for joining us",
+					from: 0,
+				to: 0,
+				insert: "Thanks for joining us",
 				},
 			],
 			{ origin: "system" },
 		);
 		applySuggestedAIOperations(editor, {
 			operations: [
-				{ type: "delete-text", blockId, offset: 11, length: 7 },
-				{ type: "insert-text", blockId, offset: 18, text: "meeting" },
+				{ type: "splice-text", blockId, from: 11,
+				to: 11 + 7 , insert: "" },
+				{ type: "splice-text", blockId, from: 18,
+				to: 18,
+				insert: "meeting" },
 			],
 			suggestionIds: ["suggestion-delete-1", "suggestion-insert-1"],
 		});
@@ -192,10 +197,11 @@ describe("@input/pen-react suggestion rendering", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "Hello world",
+					from: 0,
+				to: 0,
+				insert: "Hello world",
 				},
 			],
 			{ origin: "system" },
@@ -260,10 +266,11 @@ describe("@input/pen-react suggestion rendering", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "Sounds great",
+					from: 0,
+				to: 0,
+				insert: "Sounds great",
 				},
 			],
 			{ origin: "system" },
@@ -275,7 +282,9 @@ describe("@input/pen-react suggestion rendering", () => {
 		});
 		applySuggestedAIOperations(editor, {
 			operations: [
-				{ type: "insert-text", blockId, offset: 4, text: " good" },
+				{ type: "splice-text", blockId, from: 4,
+				to: 4,
+				insert: " good" },
 			],
 			suggestionIds: ["suggestion-insert-1"],
 		});
@@ -329,10 +338,11 @@ describe("@input/pen-react suggestion rendering", () => {
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "Delete me",
+				from: 0,
+				to: 0,
+				insert: "Delete me",
 			},
 			{
 				type: "set-meta",
@@ -393,10 +403,11 @@ describe("@input/pen-react suggestion rendering", () => {
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "Hello world",
+				from: 0,
+				to: 0,
+				insert: "Hello world",
 			},
 		]);
 
@@ -468,10 +479,11 @@ describe("@input/pen-react suggestion rendering", () => {
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "Trip",
+				from: 0,
+				to: 0,
+				insert: "Trip",
 			},
 		]);
 
@@ -549,20 +561,21 @@ describe("@input/pen-react suggestion rendering", () => {
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
 			{
-				type: "convert-block",
+				type: "set-props",
 				blockId,
-				newType: "numberedListItem",
+				props: { type: "numberedListItem" },
 			},
 			{
-				type: "update-block",
+				type: "set-props",
 				blockId,
 				props: { indent: 1 },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset: 0,
-				text: "First item",
+				from: 0,
+				to: 0,
+				insert: "First item",
 			},
 		]);
 
@@ -638,20 +651,21 @@ describe("@input/pen-react suggestion rendering", () => {
 		await act(async () => {
 			editor.apply([
 				{
-					type: "convert-block",
+					type: "set-props",
 					blockId,
-					newType: "toggle",
+					props: { type: "toggle" },
 				},
 				{
-					type: "update-block",
+					type: "set-props",
 					blockId,
 					props: { open: true },
 				},
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "Toggle title",
+					from: 0,
+				to: 0,
+				insert: "Toggle title",
 				},
 			]);
 		});
@@ -712,9 +726,9 @@ describe("@input/pen-react suggestion rendering", () => {
 
 			editor.apply([
 				{
-					type: "convert-block",
+					type: "set-props",
 					blockId,
-					newType: "subdocument",
+					props: { type: "subdocument" },
 				},
 			]);
 		});

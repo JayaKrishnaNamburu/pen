@@ -196,17 +196,19 @@ export function tenKWordOps(
 	const ops: DocumentOp[] = [];
 	if (existingLength > 0) {
 		ops.push({
-			type: "delete-text",
+			type: "splice-text",
 			blockId: existingFirstId,
-			offset: 0,
-			length: existingLength,
+			from: 0,
+			to: existingLength,
+			insert: "",
 		});
 	}
 	ops.push({
-		type: "insert-text",
+		type: "splice-text",
 		blockId: existingFirstId,
-		offset: 0,
-		text: first,
+		from: 0,
+		to: 0,
+		insert: first,
 	});
 	let previousId = existingFirstId;
 	for (let index = 1; index < paragraphs.length; index += 1) {
@@ -223,10 +225,11 @@ export function tenKWordOps(
 			position: { after: previousId },
 		});
 		ops.push({
-			type: "insert-text",
+			type: "splice-text",
 			blockId,
-			offset: 0,
-			text,
+			from: 0,
+			to: 0,
+			insert: text,
 		});
 		previousId = blockId;
 	}
@@ -240,12 +243,12 @@ export function tenKWordOps(
 	});
 	for (const cell of cells) {
 		ops.push({
-			type: "insert-table-cell-text",
+			type: "splice-text",
 			blockId: TEN_K_TABLE_ID,
-			row: cell.row,
-			col: cell.col,
-			offset: 0,
-			text: cell.text,
+			cell: { row: cell.row, col: cell.col },
+			from: 0,
+			to: 0,
+			insert: cell.text,
 		});
 	}
 	return ops;

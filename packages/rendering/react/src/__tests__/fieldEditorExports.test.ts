@@ -153,16 +153,18 @@ describe("@input/pen-react field-editor exports", () => {
 				position: { after: firstBlockId },
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: firstBlockId,
-				offset: 0,
-				text: "Hello",
+				from: 0,
+				to: 0,
+				insert: "Hello",
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: secondBlockId,
-				offset: 0,
-				text: "World",
+				from: 0,
+				to: 0,
+				insert: "World",
 			},
 		]);
 
@@ -199,19 +201,21 @@ describe("@input/pen-react field-editor exports", () => {
 				position: "last" as const,
 			},
 			{
-				type: "insert-text" as const,
+				type: "splice-text" as const,
 				blockId,
-				offset: 0,
-				text: blockId,
+				from: 0,
+				to: 0,
+				insert: blockId,
 			},
 		]);
 
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: firstBlockId,
-				offset: 0,
-				text: "first",
+				from: 0,
+				to: 0,
+				insert: "first",
 			},
 			...insertOps,
 		]);
@@ -222,6 +226,7 @@ describe("@input/pen-react field-editor exports", () => {
 		fieldEditor.expandTo(lastBlockId);
 
 		expect(shouldUseBlockSelection(editor, 51)).toBe(true);
+		expect(editor.selection?.type).toBe("text");
 		expect(fieldEditor.getSnapshot()).toMatchObject({
 			focusBlockId: firstBlockId,
 			isEditing: true,

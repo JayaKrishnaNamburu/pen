@@ -1,11 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
-import type { DocumentOp } from "@input/pen-types";
 import { htmlExporter } from "../exporter";
 import { defaultSchema } from "@input/pen-schema-default";
-
-type FormatTableCellTextOp = Extract<DocumentOp, { type: "format-table-cell-text" }>;
-type InsertTableCellTextOp = Extract<DocumentOp, { type: "insert-table-cell-text" }>;
 
 const noDefaultExtensionsPreset = {
   resolve() {
@@ -31,12 +27,14 @@ describe("@input/pen-export-html SEC1 urlPolicy", () => {
         props: {},
         position: "last",
       },
-      { type: "insert-text", blockId: "b1", offset: 0, text: "click" },
+      { type: "splice-text", blockId: "b1", from: 0,
+				to: 0,
+				insert: "click" },
       {
         type: "format-text",
         blockId: "b1",
-        offset: 0,
-        length: 5,
+        from: 0,
+				to: 0 + 5,
         marks: { link: { href: "javascript:alert(1)" } },
       },
     ]);
@@ -57,19 +55,21 @@ describe("@input/pen-export-html SEC1 urlPolicy", () => {
         props: {},
         position: "last",
       },
-      { type: "insert-text", blockId: "b1", offset: 0, text: "ab" },
+      { type: "splice-text", blockId: "b1", from: 0,
+				to: 0,
+				insert: "ab" },
       {
         type: "format-text",
         blockId: "b1",
-        offset: 0,
-        length: 1,
+        from: 0,
+				to: 0 + 1,
         marks: { link: { href: "vbscript:msgbox(1)" } },
       },
       {
         type: "format-text",
         blockId: "b1",
-        offset: 1,
-        length: 1,
+        from: 1,
+				to: 1 + 1,
         marks: { link: { href: "JAVASCRIPT:alert(1)" } },
       },
     ]);
@@ -92,19 +92,21 @@ describe("@input/pen-export-html SEC1 urlPolicy", () => {
         props: {},
         position: "last",
       },
-      { type: "insert-text", blockId: "b1", offset: 0, text: "docs mail" },
+      { type: "splice-text", blockId: "b1", from: 0,
+				to: 0,
+				insert: "docs mail" },
       {
         type: "format-text",
         blockId: "b1",
-        offset: 0,
-        length: 4,
+        from: 0,
+				to: 0 + 4,
         marks: { link: { href: "https://example.com/docs" } },
       },
       {
         type: "format-text",
         blockId: "b1",
-        offset: 5,
-        length: 4,
+        from: 5,
+				to: 5 + 4,
         marks: { link: { href: "mailto:hi@example.com" } },
       },
     ]);
@@ -180,22 +182,21 @@ describe("@input/pen-export-html SEC1 urlPolicy", () => {
     ]);
     editor.apply([
       {
-        type: "insert-table-cell-text",
+        type: "splice-text",
         blockId: "t1",
-        row: 0,
-        col: 0,
-        offset: 0,
-        text: "cell",
-      } as InsertTableCellTextOp,
+        cell: { row: 0, col: 0 },
+        from: 0,
+        to: 0,
+        insert: "cell",
+      },
       {
-        type: "format-table-cell-text",
+        type: "format-text",
         blockId: "t1",
-        row: 0,
-        col: 0,
-        offset: 0,
-        length: 4,
+        cell: { row: 0, col: 0 },
+        from: 0,
+        to: 4,
         marks: { link: { href: "javascript:alert(1)" } },
-      } as FormatTableCellTextOp,
+      },
     ]);
 
     const html = htmlExporter.export(editor);

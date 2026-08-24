@@ -116,10 +116,7 @@ function validateOnePayload(
 		);
 	}
 
-	if (
-		typeof record.text === "string" &&
-		record.text.length > MAX_OP_TEXT_FIELD_LENGTH
-	) {
+	if (insertTextLength(record) > MAX_OP_TEXT_FIELD_LENGTH) {
 		return failure(
 			`Op text field exceeds MAX_OP_TEXT_FIELD_LENGTH (${MAX_OP_TEXT_FIELD_LENGTH})`,
 			payload,
@@ -163,12 +160,7 @@ function unresolvedTargets(
 	pendingBlockIds: Set<string>,
 ): string | null {
 	const type = payload.type;
-	if (
-		type === "set-selection" ||
-		type === "create-app" ||
-		type === "update-app" ||
-		type === "delete-app"
-	) {
+	if (type === "app") {
 		return null;
 	}
 
@@ -177,13 +169,6 @@ function unresolvedTargets(
 			return "Unresolved target: insert-block is missing blockId";
 		}
 		return unresolvedPosition(editor, payload.position, pendingBlockIds);
-	}
-
-	if (type === "merge-blocks") {
-		return (
-			unresolvedBlock(editor, payload.targetBlockId, pendingBlockIds, "targetBlockId") ??
-			unresolvedBlock(editor, payload.sourceBlockId, pendingBlockIds, "sourceBlockId")
-		);
 	}
 
 	if (type === "move-block") {
@@ -209,18 +194,11 @@ function unexposedToolMutation(
 		return unexposedBlockType(editor, blockType);
 	}
 
-	if (
-		payload.type === "set-selection" ||
-		payload.type === "create-app" ||
-		payload.type === "update-app" ||
-		payload.type === "delete-app" ||
-		payload.type === "set-meta"
-	) {
+	if (payload.type === "app" || payload.type === "set-meta") {
 		return null;
 	}
 
-	const blockId =
-		payload.type === "merge-blocks" ? payload.targetBlockId : payload.blockId;
+	const blockId = payload.blockId;
 	if (typeof blockId !== "string" || blockId.length === 0) {
 		return null;
 	}
@@ -270,18 +248,28 @@ function unresolvedBlock(
 	return `Unresolved target: "${blockId}"`;
 }
 
-const INSERT_OFFSET_TYPES = new Set<string>([
-	"insert-text",
-	"insert-inline-node",
-	"remove-inline-node",
-	"split-block",
-]);
-
-const SPAN_OFFSET_TYPES = new Set<string>([
-	"delete-text",
-	"format-text",
-	"replace-text",
-]);
+function insertTextLength(payload: {
+	text?: unknown;
+	insert?: unknown;
+}): number {
+	if (typeof payload.text === "string") {
+		return payload.text.length;
+	}
+	const insert = payload.insert;
+	if (typeof insert === "string") {
+		return insert.length;
+	}
+	if (!Array.isArray(insert)) {
+		return 0;
+	}
+	let length = 0;
+	for (const item of insert) {
+		if (typeof item === "string") {
+			length += item.length;
+		}
+	}
+	return length;
+}
 
 function outOfRangeOffset(
 	editor: Editor,
@@ -290,16 +278,17 @@ function outOfRangeOffset(
 	textLengths: Map<string, number>,
 ): string | null {
 	const type = payload.type;
-	if (typeof type !== "string") {
-		return null;
-	}
-	if (!INSERT_OFFSET_TYPES.has(type) && !SPAN_OFFSET_TYPES.has(type)) {
+	if (type !== "splice-text" && type !== "format-text") {
 		return null;
 	}
 
-	const offset = payload.offset;
-	if (typeof offset !== "number" || !Number.isFinite(offset) || offset < 0) {
-		return `Offset out of range: ${formatUnknownType(offset)}`;
+	const from = payload.from;
+	const to = payload.to;
+	if (typeof from !== "number" || !Number.isFinite(from) || from < 0) {
+		return `Offset out of range: ${formatUnknownType(from)}`;
+	}
+	if (typeof to !== "number" || !Number.isFinite(to) || to < from) {
+		return `Offset out of range: ${formatUnknownType(to)}`;
 	}
 
 	const blockId = payload.blockId;
@@ -317,19 +306,11 @@ function outOfRangeOffset(
 		return null;
 	}
 
-	if (INSERT_OFFSET_TYPES.has(type)) {
-		if (offset > length) {
-			return `Offset out of range: ${offset} is past the end of "${blockId}"`;
-		}
-		return null;
+	if (from > length) {
+		return `Offset out of range: ${from} is past the end of "${blockId}"`;
 	}
-
-	const span = payload.length;
-	if (typeof span !== "number" || !Number.isFinite(span) || span < 0) {
-		return "Offset out of range: length is invalid";
-	}
-	if (offset + span > length) {
-		return `Offset out of range: ${offset}+${span} is past the end of "${blockId}"`;
+	if (to > length) {
+		return `Offset out of range: ${from}+${to - from} is past the end of "${blockId}"`;
 	}
 	return null;
 }
@@ -379,18 +360,13 @@ function rememberTextLength(
 		return;
 	}
 
-	if (payload.type === "insert-text") {
-		textLengths.set(payload.blockId, current + payload.text.length);
-		return;
-	}
-	if (payload.type === "delete-text") {
-		textLengths.set(payload.blockId, Math.max(0, current - payload.length));
-		return;
-	}
-	if (payload.type === "replace-text") {
+	if (payload.type === "splice-text") {
 		textLengths.set(
 			payload.blockId,
-			Math.max(0, current - payload.length + payload.text.length),
+			Math.max(
+				0,
+				current - (payload.to - payload.from) + insertTextLength(payload),
+			),
 		);
 	}
 }

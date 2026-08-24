@@ -59,20 +59,23 @@ function applyBlockSnapshot(
 ): void {
 	editor.apply([
 		{
-			type: "convert-block",
+			type: "set-props",
 			blockId: targetBlockId,
-			newType: block.type,
-			newProps: normalizeBlockProps(block.props, idMap),
+			props: {
+				type: block.type,
+				...normalizeBlockProps(block.props, idMap),
+			},
 		},
 	]);
 
 	if (block.text) {
 		editor.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: targetBlockId,
-				offset: 0,
-				text: block.text,
+				from: 0,
+				to: 0,
+				insert: block.text,
 			},
 		]);
 	}

@@ -123,35 +123,37 @@ function buildResolutionOps(
 					ops.push({
 						type: "format-text",
 						blockId: block.id,
-						offset: suggestion.offset,
-						length: suggestion.length,
+						from: suggestion.offset,
+				to: suggestion.offset + suggestion.length,
 						marks: { suggestion: null },
 					});
 					continue;
 				}
 				ops.push({
-					type: "delete-text",
+					type: "splice-text",
 					blockId: block.id,
-					offset: suggestion.offset,
-					length: suggestion.length,
+					from: suggestion.offset,
+				to: suggestion.offset + suggestion.length,
+				insert: "",
 				});
 				continue;
 			}
 
 			if (suggestion.action === "insert") {
 				ops.push({
-					type: "delete-text",
+					type: "splice-text",
 					blockId: block.id,
-					offset: suggestion.offset,
-					length: suggestion.length,
+					from: suggestion.offset,
+				to: suggestion.offset + suggestion.length,
+				insert: "",
 				});
 				continue;
 			}
 			ops.push({
 				type: "format-text",
 				blockId: block.id,
-				offset: suggestion.offset,
-				length: suggestion.length,
+				from: suggestion.offset,
+				to: suggestion.offset + suggestion.length,
 				marks: { suggestion: null },
 			});
 		}
@@ -174,6 +176,7 @@ function buildBlockSuggestionResolutionOps(
 	if (resolution === "accept") {
 		switch (blockSuggestion.action) {
 			case "insert-block":
+			case "split-block":
 			case "move-block":
 			case "convert-block":
 				return [{
@@ -184,11 +187,16 @@ function buildBlockSuggestionResolutionOps(
 				}];
 			case "delete-block":
 				return [{ type: "delete-block", blockId }];
+			default: {
+				const _exhaustive: never = blockSuggestion.action;
+				return _exhaustive;
+			}
 		}
 	}
 
 	switch (blockSuggestion.action) {
 		case "insert-block":
+		case "split-block":
 			return [{ type: "delete-block", blockId }];
 		case "delete-block":
 			return [{
@@ -222,10 +230,12 @@ function buildBlockSuggestionResolutionOps(
 			return blockSuggestion.previousState?.type
 				? [
 						{
-							type: "convert-block",
+							type: "set-props",
 							blockId,
-							newType: blockSuggestion.previousState.type,
-							newProps: blockSuggestion.previousState.props ?? {},
+							props: {
+								type: blockSuggestion.previousState.type,
+								...blockSuggestion.previousState.props,
+							},
 						},
 						{
 							type: "set-meta",
@@ -240,6 +250,10 @@ function buildBlockSuggestionResolutionOps(
 						namespace: "suggestion",
 						data: null,
 				  }];
+			default: {
+				const _exhaustive: never = blockSuggestion.action;
+				return _exhaustive;
+			}
 	}
 }
 

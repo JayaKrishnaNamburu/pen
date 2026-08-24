@@ -82,7 +82,7 @@ function ToggleTrigger({
     editor.apply(
       [
         {
-          type: "update-block",
+          type: "set-props",
           blockId,
           props: { open: !open },
         },

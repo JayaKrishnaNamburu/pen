@@ -34,8 +34,8 @@
 			"gateP50Ms": 50
 		},
 		{
-			"id": "scale3.keystroke.realistic-stack.peer-count.8",
-			"axis": "peer-count",
+			"id": "scale3.keystroke.realistic-stack.remote-caret-count.8",
+			"axis": "remote-caret-count",
 			"point": 8,
 			"measuredP50Ms": 3.73,
 			"gateP50Ms": 50

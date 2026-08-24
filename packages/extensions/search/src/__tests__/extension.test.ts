@@ -20,10 +20,11 @@ describe("@input/pen-search extension", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: firstBlockId,
-					offset: 0,
-					text: "hello world",
+					from: 0,
+				to: 0,
+				insert: "hello world",
 				},
 				{
 					type: "insert-block",
@@ -33,10 +34,11 @@ describe("@input/pen-search extension", () => {
 					position: { after: firstBlockId },
 				},
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: secondBlockId,
-					offset: 0,
-					text: "hello again",
+					from: 0,
+				to: 0,
+				insert: "hello again",
 				},
 			],
 			{ origin: "user" },
@@ -68,10 +70,11 @@ describe("@input/pen-search extension", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "alpha beta alpha",
+					from: 0,
+				to: 0,
+				insert: "alpha beta alpha",
 				},
 			],
 			{ origin: "user" },
@@ -104,10 +107,11 @@ describe("@input/pen-search extension", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "aa aa aa",
+					from: 0,
+				to: 0,
+				insert: "aa aa aa",
 				},
 			],
 			{ origin: "user" },
@@ -140,12 +144,12 @@ describe("@input/pen-search extension", () => {
 					position: "last",
 				},
 				{
-					type: "insert-table-cell-text",
+					type: "splice-text",
 					blockId: tableBlockId,
-					row: 0,
-					col: 0,
-					offset: 0,
-					text: "hello table",
+					cell: { row: 0, col: 0 },
+					from: 0,
+					to: 0,
+					insert: "hello table",
 				},
 			],
 			{ origin: "user" },
@@ -187,20 +191,20 @@ describe("@input/pen-search extension", () => {
 					position: "last",
 				},
 				{
-					type: "insert-table-cell-text",
+					type: "splice-text",
 					blockId: tableBlockId,
-					row: 0,
-					col: 0,
-					offset: 0,
-					text: "alpha one",
+					cell: { row: 0, col: 0 },
+					from: 0,
+					to: 0,
+					insert: "alpha one",
 				},
 				{
-					type: "insert-table-cell-text",
+					type: "splice-text",
 					blockId: tableBlockId,
-					row: 1,
-					col: 0,
-					offset: 0,
-					text: "alpha two",
+					cell: { row: 1, col: 0 },
+					from: 0,
+					to: 0,
+					insert: "alpha two",
 				},
 			],
 			{ origin: "user" },
@@ -248,10 +252,11 @@ describe("@input/pen-search extension", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId,
-					offset: 0,
-					text: "alpha beta alpha",
+					from: 0,
+				to: 0,
+				insert: "alpha beta alpha",
 				},
 			],
 			{ origin: "user" },

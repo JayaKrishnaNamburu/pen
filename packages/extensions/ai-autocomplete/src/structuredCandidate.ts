@@ -60,10 +60,11 @@ export function materializeStructuredCandidateAcceptance(options: {
 	if (candidate.appendedBlocks.length === 0) {
 		return {
 			ops: [{
-				type: "insert-text",
+				type: "splice-text",
 				blockId,
-				offset,
-				text: candidate.inlineText,
+				from: offset,
+				to: offset,
+				insert: candidate.inlineText,
 			}],
 			selection: {
 				blockId,
@@ -75,10 +76,11 @@ export function materializeStructuredCandidateAcceptance(options: {
 	const ops: DocumentOp[] = [];
 	if (candidate.inlineText.length > 0) {
 		ops.push({
-			type: "insert-text",
+			type: "splice-text",
 			blockId,
-			offset,
-			text: candidate.inlineText,
+			from: offset,
+			to: offset,
+			insert: candidate.inlineText,
 		});
 	}
 	const blockOps = blocksToOps([...candidate.appendedBlocks], {
@@ -206,14 +208,25 @@ function resolveSuggestionSelection(
 			};
 			continue;
 		}
-		if (op.type === "insert-text") {
+		if (op.type === "splice-text") {
 			selection = {
 				blockId: op.blockId,
-				offset: op.offset + op.text.length,
+				offset: op.from + spliceInsertLength(op.insert),
 			};
 		}
 	}
 	return selection;
+}
+
+function spliceInsertLength(
+	insert: Extract<DocumentOp, { type: "splice-text" }>["insert"],
+): number {
+	const items = Array.isArray(insert) ? insert : [insert];
+	let length = 0;
+	for (const item of items) {
+		length += typeof item === "string" ? item.length : 1;
+	}
+	return length;
 }
 
 function getPendingBlockPreviewText(block: PendingBlock): string {

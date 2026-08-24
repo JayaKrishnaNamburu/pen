@@ -118,12 +118,12 @@ describe("@input/pen-react table rendering", () => {
 				position: "last",
 			},
 			{
-				type: "insert-table-cell-text",
+				type: "splice-text",
 				blockId: "t5",
-				row: 0,
-				col: 0,
-				offset: 0,
-				text: "Hello",
+				cell: { row: 0, col: 0 },
+				from: 0,
+				to: 0,
+				insert: "Hello",
 			},
 		]);
 
@@ -261,10 +261,11 @@ describe("@input/pen-react table rendering", () => {
 				position: "last",
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: paragraphId,
-				offset: 0,
-				text: "After",
+				from: 0,
+				to: 0,
+				insert: "After",
 			},
 		]);
 
@@ -329,10 +330,11 @@ describe("@input/pen-react table rendering", () => {
 				position: "last",
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: paragraphId,
-				offset: 0,
-				text: "After",
+				from: 0,
+				to: 0,
+				insert: "After",
 			},
 		]);
 

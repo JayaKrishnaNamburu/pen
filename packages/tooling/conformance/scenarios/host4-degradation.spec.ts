@@ -199,10 +199,11 @@ scenario(
 		await page.evaluate(() => {
 			window.__penConformance.apply([
 				{
-					type: "delete-text",
+					type: "splice-text",
 					blockId: "two-p2",
-					offset: 0,
-					length: 18,
+					from: 0,
+				to: 0 + 18,
+				insert: "",
 				},
 			]);
 		});
@@ -213,10 +214,11 @@ scenario(
 		await page.evaluate(() => {
 			window.__penConformance.apply([
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: "two-p2",
-					offset: 0,
-					text: "Swapped inline",
+					from: 0,
+				to: 0,
+				insert: "Swapped inline",
 				},
 			]);
 		});
@@ -238,36 +240,36 @@ scenario(
 		]);
 		await s.apply([
 			{
-				type: "insert-table-cell-text",
+				type: "splice-text",
 				blockId: "host4-table",
-				row: 1,
-				col: 0,
-				offset: 0,
-				text: "Cell before",
+				cell: { row: 1, col: 0 },
+				from: 0,
+				to: 0,
+				insert: "Cell before",
 			},
 		]);
 		expect(await cellInlineText(page, 1, 0)).toContain("Cell before");
 
 		await s.apply([
 			{
-				type: "delete-table-cell-text",
+				type: "splice-text",
 				blockId: "host4-table",
-				row: 1,
-				col: 0,
-				offset: 0,
-				length: 11,
+				cell: { row: 1, col: 0 },
+				from: 0,
+				to: 11,
+				insert: "",
 			},
 		]);
 		expect(await cellInlineText(page, 1, 0)).not.toContain("Cell before");
 
 		await s.apply([
 			{
-				type: "insert-table-cell-text",
+				type: "splice-text",
 				blockId: "host4-table",
-				row: 1,
-				col: 0,
-				offset: 0,
-				text: "Cell after",
+				cell: { row: 1, col: 0 },
+				from: 0,
+				to: 0,
+				insert: "Cell after",
 			},
 		]);
 		expect(await cellInlineText(page, 1, 0)).toContain("Cell after");
@@ -388,8 +390,8 @@ scenario(
 			{
 				type: "format-text",
 				blockId: "hello-p1",
-				offset: 0,
-				length: 11,
+				from: 0,
+				to: 0 + 11,
 				marks: { link: { href: "javascript:alert(1)" } },
 			},
 		]);
@@ -436,16 +438,18 @@ scenario(
 		await s.load("hello-world");
 		await s.apply([
 			{
-				type: "delete-text",
+				type: "splice-text",
 				blockId: "hello-p1",
-				offset: 0,
-				length: 11,
+				from: 0,
+				to: 0 + 11,
+				insert: "",
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: "hello-p1",
-				offset: 0,
-				text: "hello,world",
+				from: 0,
+				to: 0,
+				insert: "hello,world",
 			},
 		]);
 		await page.evaluate(() => {
@@ -461,10 +465,11 @@ scenario(
 
 		await s.apply([
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: "hello-p1",
-				offset: 0,
-				text: "cafe\u0301",
+				from: 0,
+				to: 0,
+				insert: "cafe\u0301",
 			},
 		]);
 		await page.evaluate(() => {

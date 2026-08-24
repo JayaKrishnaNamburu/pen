@@ -1,6 +1,7 @@
 export class BatchingBuffer {
   private _buffer = "";
   private _timer: ReturnType<typeof setTimeout> | null = null;
+  private _destroyed = false;
   private readonly _flushCallback: (text: string) => void;
   private readonly _windowMs: number;
 
@@ -13,6 +14,9 @@ export class BatchingBuffer {
   }
 
   append(delta: string): void {
+    if (this._destroyed) {
+      return;
+    }
     this._buffer += delta;
 
     if (this._timer === null) {
@@ -21,6 +25,9 @@ export class BatchingBuffer {
   }
 
   flush(): void {
+    if (this._destroyed) {
+      return;
+    }
     if (this._timer !== null) {
       clearTimeout(this._timer);
       this._timer = null;
@@ -38,6 +45,10 @@ export class BatchingBuffer {
   }
 
   destroy(): void {
+    if (this._destroyed) {
+      return;
+    }
+    this._destroyed = true;
     if (this._timer !== null) {
       clearTimeout(this._timer);
       this._timer = null;

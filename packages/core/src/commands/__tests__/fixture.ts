@@ -198,10 +198,11 @@ export function createCommandEditor(blocks: readonly TestBlockSpec[]): Editor {
 		});
 		if (block.text && block.text.length > 0) {
 			ops.push({
-				type: "insert-text" as const,
+				type: "splice-text" as const,
 				blockId: block.id,
-				offset: 0,
-				text: block.text,
+				from: 0,
+				to: 0,
+				insert: block.text,
 			});
 		}
 	}
@@ -249,13 +250,16 @@ export function insertMention(
 	editor.apply(
 		[
 			{
-				type: "insert-inline-node",
+				type: "splice-text",
 				blockId,
-				offset,
-				nodeType: "mention",
-				props: {
-					id: props.id ?? "1",
-					label: props.label ?? "Ada",
+				from: offset,
+				to: offset,
+				insert: {
+					nodeType: "mention",
+					props: {
+						id: props.id ?? "1",
+						label: props.label ?? "Ada",
+					},
 				},
 			},
 		],

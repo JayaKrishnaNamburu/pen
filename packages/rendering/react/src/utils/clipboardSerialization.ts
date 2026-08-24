@@ -1,6 +1,5 @@
 import { buildTableChildren, sortDeltaAttributes } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
-import { logicalTextFromStored } from "@input/pen-types";
 import {
 	encodePenBlocksForHtml,
 	type Delta,
@@ -35,7 +34,7 @@ export function writePenClipboard(
 	const penBlocksJson = JSON.stringify(penBlocks);
 	const encodedPenBlocks = encodePenBlocksForHtml(penBlocksJson);
 	const htmlWithPenData = `<meta data-pen-blocks="${encodedPenBlocks}" />${htmlContent}`;
-	const clipboardPlainText = logicalTextFromStored(plainText);
+	const clipboardPlainText = plainText;
 
 	if (event?.clipboardData) {
 		event.clipboardData.setData("text/plain", clipboardPlainText);
@@ -113,7 +112,7 @@ export function serializeDeltasToFormat(
 	let result = "";
 	for (const delta of deltas) {
 		if (typeof delta.insert !== "string") continue;
-		let text = logicalTextFromStored(delta.insert);
+		let text = delta.insert;
 		if (!text) continue;
 
 		if (delta.attributes) {

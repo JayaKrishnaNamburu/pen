@@ -2,6 +2,8 @@ import type { Editor } from "@input/pen-types";
 import { measureWithRoot } from "../geometry/rootGeometry";
 import { DATA_ATTRS } from "../utils/dataAttributes";
 import type { FieldEditorDelta } from "./crdt";
+import { isEmptyBlockPlaceholder } from "./emptyBlockPlaceholder";
+import { findLogicalDOMPoint } from "./inlineAtomDom";
 import { domPointToOffset, getSelectionOffsets } from "./selectionBridge";
 
 export function requiresResolvedInputRange(inputType: string): boolean {
@@ -150,6 +152,10 @@ function resolveDomPointForOffset(
 	element: HTMLElement,
 	targetOffset: number,
 ): { node: Node; offset: number } | null {
+	if (isEmptyBlockPlaceholder(element.lastChild) && targetOffset <= 0) {
+		return findLogicalDOMPoint(element, 0);
+	}
+
 	const walker = element.ownerDocument.createTreeWalker(
 		element,
 		NodeFilter.SHOW_TEXT,
@@ -165,6 +171,10 @@ function resolveDomPointForOffset(
 		}
 		remaining -= length;
 		textNode = walker.nextNode() as Text | null;
+	}
+
+	if (isEmptyBlockPlaceholder(element.lastChild)) {
+		return findLogicalDOMPoint(element, 0);
 	}
 
 	if (element.lastChild) {

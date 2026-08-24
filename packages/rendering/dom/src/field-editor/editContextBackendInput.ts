@@ -54,19 +54,40 @@ import {
 	type EditContextSelectionOptions,
 } from "./editContextBackendCore";
 
+type PendingEditContextTextUpdate = {
+	blockId: string;
+	text: string;
+	originRange: { start: number; end: number };
+	selection: EditContextSelection | null;
+	selectionStart?: number;
+	selectionEnd?: number;
+};
+
 export abstract class EditContextBackendInput extends EditContextBackendCore {
 	protected isComposing = false;
 	protected deferredRemoteDeltas: Array<{ delta: FieldEditorDelta[] }> = [];
+	protected pendingTextUpdate: PendingEditContextTextUpdate | null = null;
+	protected lastCommittedTextUpdate: PendingEditContextTextUpdate | null =
+		null;
+	protected ignoreNextTextFormatUpdate = false;
+	protected paintedCompositionPreview = false;
 
 	activate(element: HTMLElement, ytext: unknown): void {
 		this.isComposing = false;
 		this.deferredRemoteDeltas = [];
+		this.clearPendingTextUpdate();
 		super.activate(element, ytext);
+		element.addEventListener("keydown", this.handleCompositionCancelKey);
 	}
 
 	deactivate(): void {
+		this.element?.removeEventListener(
+			"keydown",
+			this.handleCompositionCancelKey,
+		);
 		this.isComposing = false;
 		this.deferredRemoteDeltas = [];
+		this.clearPendingTextUpdate();
 		super.deactivate();
 	}
 
@@ -74,11 +95,32 @@ export abstract class EditContextBackendInput extends EditContextBackendCore {
 		this.beginEditContextComposition();
 	};
 
-	protected handleCompositionEnd = (): void => {
-		this.isComposing = false;
-		this.fieldEditor.setComposing(false);
-		this.flushDeferredRemoteDeltas();
-		this.fieldEditor.notifyGestureEvent?.("compositionend-completed");
+	protected handleCompositionEnd = (event?: Event): void => {
+		const committed =
+			event instanceof CompositionEvent ? (event.data ?? "") : "";
+		if (this.pendingTextUpdate) {
+			if (committed.length === 0) {
+				this.dropPendingTextUpdate();
+				this.ignoreNextTextFormatUpdate = true;
+			} else {
+				this.commitPendingTextUpdate();
+			}
+		}
+		this.closeEditContextComposition();
+	};
+
+	protected handleCompositionCancelKey = (event: KeyboardEvent): void => {
+		if (event.key !== "Escape") {
+			return;
+		}
+		if (
+			!this.pendingTextUpdate ||
+			!this.hasInFlightEditContextComposition()
+		) {
+			return;
+		}
+		this.dropPendingTextUpdate();
+		this.closeEditContextComposition();
 	};
 
 	protected hasInFlightEditContextComposition(): boolean {
@@ -93,6 +135,91 @@ export abstract class EditContextBackendInput extends EditContextBackendCore {
 		this.deferredRemoteDeltas = [];
 		this.fieldEditor.notifyGestureEvent?.("compositionstart");
 		this.fieldEditor.setComposing(true);
+	}
+
+	protected closeEditContextComposition(): void {
+		this.isComposing = false;
+		this.fieldEditor.setComposing(false);
+		this.flushDeferredRemoteDeltas();
+		this.fieldEditor.notifyGestureEvent?.("compositionend-completed");
+	}
+
+	protected clearPendingTextUpdate(): void {
+		this.pendingTextUpdate = null;
+		this.lastCommittedTextUpdate = null;
+		this.ignoreNextTextFormatUpdate = false;
+		this.paintedCompositionPreview = false;
+	}
+
+	protected capturePendingTextUpdate(input: {
+		blockId: string;
+		updateRangeStart: number;
+		updateRangeEnd: number;
+		text: string;
+		selectionStart?: number;
+		selectionEnd?: number;
+	}): PendingEditContextTextUpdate {
+		const resolved = this.resolveTextUpdateRange(input);
+		return {
+			blockId: input.blockId,
+			text: input.text,
+			originRange: resolved.range,
+			selection: resolved.selection,
+			selectionStart: input.selectionStart,
+			selectionEnd: input.selectionEnd,
+		};
+	}
+
+	protected rewindLastCommittedIntoPending(): void {
+		const last = this.lastCommittedTextUpdate;
+		if (!last || last.text.length === 0) {
+			this.lastCommittedTextUpdate = null;
+			return;
+		}
+		this.editor.apply(
+			[
+				{
+					type: "splice-text",
+					blockId: last.blockId,
+					from: last.originRange.start,
+				to: last.originRange.start + last.text.length,
+				insert: "",
+				},
+			],
+			{ origin: "system" },
+		);
+		this.pendingTextUpdate = last;
+		this.lastCommittedTextUpdate = null;
+		this.paintedCompositionPreview = true;
+	}
+
+	protected dropPendingTextUpdate(): void {
+		if (this.paintedCompositionPreview && this.element && this.ytext) {
+			fullReconcileToDOM(this.ytext, this.element, this.editor.schema, {
+				urlPolicy: urlPolicyFromEditor(this.editor),
+				preserveSelection: true,
+				inlineDecorations: this.getInlineDecorationsForBlock(),
+			});
+			this.fieldEditor.notifyDomReconciled(
+				this.fieldEditor.focusBlockId ?? undefined,
+			);
+			this.restoreDOMCaret();
+		}
+		this.pendingTextUpdate = null;
+		this.lastCommittedTextUpdate = null;
+		this.paintedCompositionPreview = false;
+	}
+
+	protected commitPendingTextUpdate(): void {
+		const pending = this.pendingTextUpdate;
+		if (!pending) {
+			return;
+		}
+		this.pendingTextUpdate = null;
+		this.lastCommittedTextUpdate = null;
+		this.paintedCompositionPreview = false;
+		this.ignoreNextTextFormatUpdate = true;
+		this.applyEditContextTextUpdate(pending);
 	}
 
 	protected flushDeferredRemoteDeltas(): void {
@@ -146,7 +273,33 @@ export abstract class EditContextBackendInput extends EditContextBackendCore {
 			return;
 		}
 
-		const resolvedTextUpdate = this.resolveTextUpdateRange({
+		if (this.pendingTextUpdate && this.hasInFlightEditContextComposition()) {
+			if (text.length === 0) {
+				this.dropPendingTextUpdate();
+				this.ignoreNextTextFormatUpdate = true;
+				this.closeEditContextComposition();
+				return;
+			}
+			this.pendingTextUpdate = {
+				...this.pendingTextUpdate,
+				text,
+				selection:
+					selectionStart != null && selectionEnd != null
+						? {
+								blockId,
+								anchorOffset: selectionStart,
+								focusOffset: selectionEnd,
+							}
+						: this.pendingTextUpdate.selection,
+				selectionStart,
+				selectionEnd,
+			};
+			this.commitPendingTextUpdate();
+			this.closeEditContextComposition();
+			return;
+		}
+
+		const pending = this.capturePendingTextUpdate({
 			blockId,
 			updateRangeStart,
 			updateRangeEnd,
@@ -154,7 +307,18 @@ export abstract class EditContextBackendInput extends EditContextBackendCore {
 			selectionStart,
 			selectionEnd,
 		});
-		const { range } = resolvedTextUpdate;
+		this.applyEditContextTextUpdate(pending);
+		this.lastCommittedTextUpdate = pending;
+	};
+
+	protected applyEditContextTextUpdate(
+		pending: PendingEditContextTextUpdate,
+	): void {
+		if (!this.ytext) {
+			return;
+		}
+		const { blockId, text, originRange } = pending;
+		const range = originRange;
 		const listInputRuleTarget = applyListInputRule(this.editor, {
 			blockId,
 			range,
@@ -216,11 +380,11 @@ export abstract class EditContextBackendInput extends EditContextBackendCore {
 				this.ytext,
 				range.start,
 			),
-			selection: resolvedTextUpdate.selection,
-			syncSelection: resolvedTextUpdate.selection != null,
+			selection: pending.selection,
+			syncSelection: pending.selection != null,
 		});
 
-		if (resolvedTextUpdate.selection) {
+		if (pending.selection) {
 			this.setEditContextSelection(selection, {
 				source: "text-update",
 			});
@@ -364,7 +528,13 @@ export abstract class EditContextBackendInput extends EditContextBackendCore {
 		const ranges =
 			(event as EditContextTextFormatUpdateEvent).getTextFormats?.() ??
 			[];
+		if (this.ignoreNextTextFormatUpdate) {
+			this.ignoreNextTextFormatUpdate = false;
+			applyEditContextTextFormats(this.element, ranges);
+			return;
+		}
 		this.beginEditContextComposition();
+		this.rewindLastCommittedIntoPending();
 		applyEditContextTextFormats(this.element, ranges);
 	};
 

@@ -33,6 +33,7 @@ export const DATA_ATTRS = {
 	inlineAtomType: "data-pen-inline-atom-type",
 	inlineAtomProps: "data-pen-inline-atom-props",
 	inlineAtomCaretBoundary: "data-pen-inline-atom-caret-boundary",
+	emptyBlock: "data-pen-empty",
 	inlineAtomCaretSide: "data-pen-inline-atom-caret-side",
 	inlineAtomDragging: "data-pen-inline-atom-dragging",
 	fieldEditorSurface: "data-pen-field-editor-surface",

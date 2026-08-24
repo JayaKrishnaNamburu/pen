@@ -57,10 +57,11 @@ describe("aiExtension", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: introBlockId,
-					offset: 0,
-					text: "Intro",
+					from: 0,
+				to: 0,
+				insert: "Intro",
 				},
 			],
 			{ origin: "system" },
@@ -158,10 +159,11 @@ describe("aiExtension", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: firstBlockId,
-					offset: 0,
-					text: "Intro",
+					from: 0,
+				to: 0,
+				insert: "Intro",
 				},
 				{
 					type: "insert-block",
@@ -234,10 +236,11 @@ describe("aiExtension", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: firstBlockId,
-					offset: 0,
-					text: "Intro",
+					from: 0,
+				to: 0,
+				insert: "Intro",
 				},
 				{
 					type: "insert-block",
@@ -305,10 +308,11 @@ describe("aiExtension", () => {
 		editor.apply(
 			[
 				{
-					type: "insert-text",
+					type: "splice-text",
 					blockId: firstBlockId,
-					offset: 0,
-					text: "Intro",
+					from: 0,
+				to: 0,
+				insert: "Intro",
 				},
 				{
 					type: "insert-block",

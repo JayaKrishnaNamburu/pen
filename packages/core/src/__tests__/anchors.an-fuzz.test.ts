@@ -4,7 +4,7 @@ import * as Y from "yjs";
 
 import { isYjsCRDTDocument } from "@input/pen-crdt-yjs";
 
-import { deriveContentMoves, repairAnchor } from "../index";
+import { applyMergeBlocks, applySplitBlock, deriveContentMoves, repairAnchor } from "../index";
 import { createEditor as createCoreEditor } from "../index";
 import { createDefaultSchema } from "./fixtures/testSchema";
 
@@ -208,7 +208,9 @@ describe("an-fuzz AN1–AN5 AN14", () => {
 		});
 		const startId = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "insert-text", blockId: startId, offset: 0, text: "meadow sage" },
+			{ type: "splice-text", blockId: startId, from: 0,
+				to: 0,
+				insert: "meadow sage" },
 		]);
 		undo.stopCapturing();
 		let remoteDoc = adapter.fork!(editor.internals.crdtDoc);
@@ -295,7 +297,9 @@ describe("an-fuzz AN1–AN5 AN14", () => {
 			if (kind === "insert") {
 				const at = rng.int(text.length + 1);
 				const insert = rng.pick(["x", "ab", " ", "Δ"]);
-				editor.apply([{ type: "insert-text", blockId, offset: at, text: insert }]);
+				editor.apply([{ type: "splice-text", blockId, from: at,
+				to: at,
+				insert: insert }]);
 				for (const item of tracked) {
 					if (item.point) {
 						item.point = mapInsert(item.point, item.assoc, blockId, at, insert.length);
@@ -306,7 +310,8 @@ describe("an-fuzz AN1–AN5 AN14", () => {
 				const from = rng.int(text.length);
 				const to = Math.min(text.length, from + 1 + rng.int(2));
 				editor.apply([
-					{ type: "delete-text", blockId, offset: from, length: to - from },
+					{ type: "splice-text", blockId, from: from,
+				to: from + to - from , insert: "" },
 				]);
 				for (const item of tracked) {
 					if (item.point) {
@@ -317,11 +322,13 @@ describe("an-fuzz AN1–AN5 AN14", () => {
 			} else if (kind === "split" && text.length > 0) {
 				const offset = 1 + rng.int(Math.max(1, text.length - 1));
 				const dest = newId();
-				editor.apply([
-					{ type: "split-block", blockId, offset, newBlockId: dest },
-				]);
+				applySplitBlock(editor, {
+					blockId,
+					offset,
+					newBlockId: dest,
+				});
 				const splitMove = (editor.lastChangeSummary
-					? deriveContentMoves(editor.lastChangeSummary, "split-block")
+					? deriveContentMoves(editor.lastChangeSummary, undefined)
 					: []
 				).find((move) => move.fromBlockId === blockId);
 				const splitAt = splitMove?.fromRange.from ?? offset;
@@ -343,15 +350,12 @@ describe("an-fuzz AN1–AN5 AN14", () => {
 				if (sourceId && sourceId !== blockId) {
 					const targetId = index + 1 === model.order.indexOf(sourceId) ? blockId : sourceId;
 					const fromId = targetId === blockId ? sourceId : blockId;
-					editor.apply([
-						{
-							type: "merge-blocks",
-							targetBlockId: targetId,
-							sourceBlockId: fromId,
-						},
-					]);
+					applyMergeBlocks(editor, {
+						targetBlockId: targetId,
+						sourceBlockId: fromId,
+					});
 					const mergeMove = (editor.lastChangeSummary
-						? deriveContentMoves(editor.lastChangeSummary, "merge-blocks")
+						? deriveContentMoves(editor.lastChangeSummary, undefined)
 						: []
 					).find((move) => move.fromBlockId === fromId);
 					const joinOffset = mergeMove?.toOffset ?? 0;
@@ -423,7 +427,9 @@ describe("an-fuzz AN1–AN5 AN14", () => {
 				histogram.stream += 1;
 			} else {
 				const at = rng.int(text.length + 1);
-				editor.apply([{ type: "insert-text", blockId, offset: at, text: "z" }]);
+				editor.apply([{ type: "splice-text", blockId, from: at,
+				to: at,
+				insert: "z" }]);
 				for (const item of tracked) {
 					if (item.point) {
 						item.point = mapInsert(item.point, item.assoc, blockId, at, 1);
@@ -487,20 +493,20 @@ describe("an-fuzz AN1–AN5 AN14", () => {
 				position: "last",
 			},
 			{
-				type: "insert-table-cell-text",
+				type: "splice-text",
 				blockId: "t1",
-				row: 0,
-				col: 0,
-				offset: 0,
-				text: "0123456789",
+				cell: { row: 0, col: 0 },
+			from: 0,
+			to: 0,
+			insert: "0123456789",
 			},
 			{
-				type: "insert-table-cell-text",
+				type: "splice-text",
 				blockId: "t1",
-				row: 1,
-				col: 1,
-				offset: 0,
-				text: "cell two",
+				cell: { row: 1, col: 1 },
+			from: 0,
+			to: 0,
+			insert: "cell two",
 			},
 		]);
 		const north = editor.anchors.create(
@@ -518,12 +524,12 @@ describe("an-fuzz AN1–AN5 AN14", () => {
 		for (let i = 1; i <= cellSteps; i++) {
 			editor.apply([
 				{
-					type: "insert-table-cell-text",
+					type: "splice-text",
 					blockId: "t1",
-					row: 0,
-					col: 0,
-					offset: 0,
-					text: "x",
+					cell: { row: 0, col: 0 },
+			from: 0,
+			to: 0,
+			insert: "x",
 				},
 			]);
 			expect(
@@ -547,12 +553,12 @@ describe("an-fuzz AN1–AN5 AN14", () => {
 		const northAfterInserts = 5 + cellSteps;
 		editor.apply([
 			{
-				type: "delete-table-cell-text",
+				type: "splice-text",
 				blockId: "t1",
-				row: 0,
-				col: 0,
-				offset: northAfterInserts - 2,
-				length: 5,
+				cell: { row: 0, col: 0 },
+			from: northAfterInserts - 2,
+			to: northAfterInserts - 2 + 5,
+			insert: "",
 			},
 		]);
 		expect(

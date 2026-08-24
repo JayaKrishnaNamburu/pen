@@ -16,6 +16,11 @@ import {
 	previousGraphemeBoundary,
 	previousWordBoundary,
 } from "../editor/textSegmentation";
+import {
+	buildMergeBlocksRecipe,
+	buildSplitBlockRecipe,
+	spliceDeleteOp,
+} from "../ops/recipes";
 import { commandHandler, defineCommand } from "./define";
 import {
 	BACKSPACE_EXIT_TYPES,
@@ -110,14 +115,7 @@ export function deleteAdjacentInlineAtom(
 		return null;
 	}
 	return {
-		ops: [
-			{
-				type: "delete-text",
-				blockId: atom.blockId,
-				offset: atom.start,
-				length: atom.end - atom.start,
-			},
-		],
+		ops: [spliceDeleteOp(atom.blockId, atom.start, atom.end - atom.start)],
 		caret: { blockId: atom.blockId, offset: atom.start },
 	};
 }
@@ -181,7 +179,10 @@ function handleInsertText(
 	if (replacement.ops.length === 0) {
 		return { selection: collapsedAt(replacement.caret.blockId, replacement.caret.offset) };
 	}
-	editor.apply(replacement.ops, { origin: "user" });
+	editor.apply(replacement.ops, {
+		origin: "user",
+		structural: replacement.structural,
+	});
 	return {
 		selection: collapsedAt(replacement.caret.blockId, replacement.caret.offset),
 	};
@@ -214,7 +215,10 @@ function handleDelete(
 			return false;
 		}
 		if (replacement.ops.length > 0) {
-			editor.apply(replacement.ops, { origin: "user" });
+			editor.apply(replacement.ops, {
+				origin: "user",
+				structural: replacement.structural,
+			});
 		}
 		return {
 			selection: collapsedAt(
@@ -265,14 +269,7 @@ function deleteCollapsed(
 	}
 
 	editor.apply(
-		[
-			{
-				type: "delete-text",
-				blockId,
-				offset: range.start,
-				length: range.end - range.start,
-			},
-		],
+		[spliceDeleteOp(blockId, range.start, range.end - range.start)],
 		{ origin: "user" },
 	);
 	return { selection: collapsedAt(blockId, range.start) };
@@ -382,16 +379,18 @@ function applyBackspaceAtBlockStart(
 	if (empty) {
 		editor.apply([{ type: "delete-block", blockId }], { origin: "user" });
 	} else {
-		editor.apply(
-			[
-				{
-					type: "merge-blocks",
-					targetBlockId: previousBlock.id,
-					sourceBlockId: blockId,
-				},
-			],
-			{ origin: "user" },
-		);
+		const source = editor.getBlock(blockId);
+		if (!source) {
+			return false;
+		}
+		const merge = buildMergeBlocksRecipe({
+			target: previousBlock,
+			source,
+		});
+		editor.apply(merge.ops, {
+			origin: "user",
+			structural: merge.structural,
+		});
 	}
 	return { selection: collapsedAt(previousBlock.id, targetOffset) };
 }
@@ -431,16 +430,18 @@ function mergeForwardAtBlockEnd(
 			origin: "user",
 		});
 	} else {
-		editor.apply(
-			[
-				{
-					type: "merge-blocks",
-					targetBlockId: blockId,
-					sourceBlockId: nextBlock.id,
-				},
-			],
-			{ origin: "user" },
-		);
+		const target = editor.getBlock(blockId);
+		if (!target) {
+			return false;
+		}
+		const merge = buildMergeBlocksRecipe({
+			target,
+			source: nextBlock,
+		});
+		editor.apply(merge.ops, {
+			origin: "user",
+			structural: merge.structural,
+		});
 	}
 	return { selection: collapsedAt(blockId, caret) };
 }
@@ -514,7 +515,7 @@ function handleSplitBlock(editor: Editor): CommandResult | false {
 			editor.apply(
 				[
 					{
-						type: "update-block",
+						type: "set-props",
 						blockId: focus.blockId,
 						props: { parentId: null },
 					},
@@ -523,19 +524,21 @@ function handleSplitBlock(editor: Editor): CommandResult | false {
 			);
 			return { selection: collapsedAt(focus.blockId, 0) };
 		case "split": {
+			const block = editor.getBlock(focus.blockId);
+			if (!block) {
+				return false;
+			}
 			const newBlockId = generateId();
-			editor.apply(
-				[
-					{
-						type: "split-block",
-						blockId: focus.blockId,
-						offset: focus.offset,
-						newBlockId,
-						newBlockType: action.newBlockType,
-					},
-				],
-				{ origin: "user" },
-			);
+			const recipe = buildSplitBlockRecipe({
+				block,
+				offset: focus.offset,
+				newBlockId,
+				newBlockType: action.newBlockType,
+			});
+			editor.apply(recipe.ops, {
+				origin: "user",
+				structural: recipe.structural,
+			});
 			return { selection: collapsedAt(newBlockId, 0) };
 		}
 		default: {
@@ -630,7 +633,7 @@ function handleListIndent(
 	editor.apply(
 		[
 			{
-				type: "update-block",
+				type: "set-props",
 				blockId: focus.blockId,
 				props: { indent: nextIndent },
 			},
@@ -678,8 +681,8 @@ function handleToggleMark(
 			{
 				type: "format-text",
 				blockId: range.start.blockId,
-				offset: range.start.offset,
-				length: range.end.offset - range.start.offset,
+				from: range.start.offset,
+				to: range.end.offset,
 				marks: { [param.mark]: nextValue },
 			},
 		],
@@ -738,8 +741,8 @@ function toggleMarkAcrossBlocks(
 		segments.map((segment) => ({
 			type: "format-text" as const,
 			blockId: segment.blockId,
-			offset: segment.start,
-			length: segment.end - segment.start,
+			from: segment.start,
+			to: segment.end,
 			marks: { [param.mark]: nextValue },
 		})),
 		{ origin: "user" },

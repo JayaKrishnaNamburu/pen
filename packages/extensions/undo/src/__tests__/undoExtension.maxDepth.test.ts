@@ -20,10 +20,11 @@ describe("@input/pen-undo maxDepth", () => {
 			editor.apply(
 				[
 					{
-						type: "insert-text",
+						type: "splice-text",
 						blockId,
-						offset: editor.getBlock(blockId)!.length(),
-						text: letter,
+						from: editor.getBlock(blockId)!.length(),
+				to: editor.getBlock(blockId)!.length(),
+				insert: letter,
 					},
 				],
 				{ origin: "user" },

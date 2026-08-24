@@ -1,6 +1,5 @@
 import { urlPolicy, type UrlContext } from "@input/pen-core";
 import {
-  logicalTextFromStored,
   type BlockHandle,
   type Editor,
   type Exporter,
@@ -112,7 +111,7 @@ function serializeInlineContentHTML(
       typeof delta.insert === "string" ? serializeMarkupText(delta.insert) : "";
     if (
       typeof delta.insert === "string" &&
-      logicalTextFromStored(delta.insert) === ""
+      delta.insert === ""
     ) {
       continue;
     }
@@ -212,7 +211,7 @@ function serializeTableCellHTML(
       typeof delta.insert === "string" ? serializeMarkupText(delta.insert) : "";
     if (
       typeof delta.insert === "string" &&
-      logicalTextFromStored(delta.insert) === ""
+      delta.insert === ""
     ) {
       continue;
     }

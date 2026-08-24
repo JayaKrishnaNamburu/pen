@@ -48,7 +48,9 @@ describe("AIB3 processStream tool authority", () => {
 		const diagnostics = listenDiagnostics(editor);
 		const seedId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId: seedId, offset: 0, text: "seed" }],
+			[{ type: "splice-text", blockId: seedId, from: 0,
+				to: 0,
+				insert: "seed" }],
 			{ origin: "user" },
 		);
 		const before = documentTexts(editor);
@@ -109,7 +111,9 @@ describe("AIB3 processStream tool authority", () => {
 		await editor.whenReady();
 		const seedId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId: seedId, offset: 0, text: "seed" }],
+			[{ type: "splice-text", blockId: seedId, from: 0,
+				to: 0,
+				insert: "seed" }],
 			{ origin: "user" },
 		);
 		const before = documentTexts(editor);
@@ -157,7 +161,9 @@ describe("AIB3 processStream tool authority", () => {
 		});
 		const seedId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId: seedId, offset: 0, text: "seed" }],
+			[{ type: "splice-text", blockId: seedId, from: 0,
+				to: 0,
+				insert: "seed" }],
 			{ origin: "user" },
 		);
 		const before = documentTexts(editor);
@@ -188,7 +194,9 @@ describe("AIB3 processStream tool authority", () => {
 		).toEqual(["tool-not-allowed"]);
 
 		editor.apply(
-			[{ type: "insert-text", blockId: seedId, offset: 4, text: "-after" }],
+			[{ type: "splice-text", blockId: seedId, from: 4,
+				to: 4,
+				insert: "-after" }],
 			{ origin: "user" },
 		);
 		expect(documentTexts(editor)).toEqual(["seed-after"]);
@@ -225,7 +233,9 @@ describe("AIB3 processStream tool authority", () => {
 		});
 		const seedId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId: seedId, offset: 0, text: "seed" }],
+			[{ type: "splice-text", blockId: seedId, from: 0,
+				to: 0,
+				insert: "seed" }],
 			{ origin: "user" },
 		);
 		const emitted: PenStreamPart[] = [];
@@ -270,7 +280,9 @@ describe("AIB3 processStream tool authority", () => {
 		await editor.whenReady();
 		const seedId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId: seedId, offset: 0, text: "seed" }],
+			[{ type: "splice-text", blockId: seedId, from: 0,
+				to: 0,
+				insert: "seed" }],
 			{ origin: "user" },
 		);
 		const before = documentTexts(editor);
@@ -315,7 +327,9 @@ describe("AIB3 processStream tool authority", () => {
 		const extraId = "extra-block";
 		editor.apply(
 			[
-				{ type: "insert-text", blockId: seedId, offset: 0, text: "seed" },
+				{ type: "splice-text", blockId: seedId, from: 0,
+				to: 0,
+				insert: "seed" },
 				{
 					type: "insert-block",
 					blockId: extraId,
@@ -371,7 +385,9 @@ describe("AIB3 processStream tool authority", () => {
 		await editor.whenReady();
 		const seedId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId: seedId, offset: 0, text: "seed" }],
+			[{ type: "splice-text", blockId: seedId, from: 0,
+				to: 0,
+				insert: "seed" }],
 			{ origin: "user" },
 		);
 
@@ -394,7 +410,9 @@ describe("AIB3 processStream tool authority", () => {
 		await editor.whenReady();
 		const seedId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "insert-text", blockId: seedId, offset: 0, text: "seed" }],
+			[{ type: "splice-text", blockId: seedId, from: 0,
+				to: 0,
+				insert: "seed" }],
 			{ origin: "user" },
 		);
 		const beforeIds = [...editor.blocks()].map((block) => block.id);
@@ -428,7 +446,9 @@ describe("AIB3 processStream tool authority", () => {
 		const extraId = "keep-block";
 		editor.apply(
 			[
-				{ type: "insert-text", blockId: seedId, offset: 0, text: "seed" },
+				{ type: "splice-text", blockId: seedId, from: 0,
+				to: 0,
+				insert: "seed" },
 				{
 					type: "insert-block",
 					blockId: extraId,

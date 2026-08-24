@@ -94,7 +94,7 @@ function install(session: MultiplayerSession) {
 				</li>
 				<li data-col5="readonly-is-ui">
 					<strong>Permissions.</strong> Pen does not enforce per-user
-					or per-block permissions. <code>pen.readOnly</code> sets{" "}
+					or per-block permissions. <code>pen.ariaReadOnly</code> sets{" "}
 					<code>aria-readonly</code> only. Local typing stops when
 					the host passes the <code>readonly</code> prop. Neither
 					is a security boundary: both stop nothing arriving over

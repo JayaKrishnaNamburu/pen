@@ -1,5 +1,4 @@
 import type { PenDocument } from "@input/pen-types";
-import { logicalTextFromStored } from "@input/pen-types";
 import { deepEqual } from "@input/pen-core";
 import type {
 	TestBlock,
@@ -206,7 +205,7 @@ function comparableMetadata(value: unknown): unknown {
 function normalizeMarks(deltas: readonly TestMarkDelta[]): TestMarkDelta[] {
 	const marks: TestMarkDelta[] = [];
 	for (const delta of deltas) {
-		const insert = logicalTextFromStored(String(delta.insert ?? ""));
+		const insert = String(delta.insert ?? "");
 		const attributes =
 			delta.attributes && Object.keys(delta.attributes).length > 0
 				? delta.attributes
@@ -226,25 +225,11 @@ function extractMarks(content: unknown): TestMarkDelta[] {
 	return normalizeMarks(content.toDelta());
 }
 
-/**
- * Logical content for comparison, not storage-faithful Y.Text.
- *
- * Tests write expected blocks in the logical domain (`content: ""` for an
- * empty paragraph). Apply executors persist the empty-block sentinel in
- * storage; comparing that character would fail every empty-block fixture
- * and would treat two live documents that differ only by empty-vs-sentinel
- * storage as unequal when they are the same document logically.
- *
- * `logicalTextFromStored` is exact-equality: only a string that _is_ the
- * sentinel becomes "". A mid-string zero-width space is real content and
- * is compared. The previous `replaceAll` in `normalizeMarks` hid that
- * difference — a self-copy-shaped false pass.
- */
 function extractText(content: unknown): string | undefined {
 	if (content == null || typeof content.toString !== "function") {
 		return undefined;
 	}
-	const text = logicalTextFromStored(content.toString());
+	const text = content.toString();
 	if (!text) {
 		return undefined;
 	}

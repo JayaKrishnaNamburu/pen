@@ -18,7 +18,7 @@ describe("@input/pen-react selected text deletion", () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 
-		editor.apply([{ type: "convert-block", blockId, newType: "heading" }]);
+		editor.apply([{ type: "set-props", blockId, props: { type: "heading" } }]);
 
 		const container = document.createElement("div");
 		document.body.appendChild(container);
@@ -94,7 +94,9 @@ describe("@input/pen-react selected text deletion", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "insert-text", blockId, offset: 0, text: "Hello" },
+			{ type: "splice-text", blockId, from: 0,
+				to: 0,
+				insert: "Hello" },
 		]);
 
 		const container = document.createElement("div");

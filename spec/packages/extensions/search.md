@@ -12,9 +12,9 @@ This package adds optional search behavior to an editor instance without couplin
 
 - Export map: `.`
 - Primary extension entrypoint: `searchExtension()`
-- Controller slot and lookup helpers such as `SEARCH_CONTROLLER_SLOT` and `getSearchController()`
-- Search controller runtime: `SearchControllerImpl`
-- Pure helpers such as `buildSearchRegex()`, `findDocumentMatches()`, `revealActiveMatch()`, `buildReplaceOps()`, and `buildReplaceAllOps()`
+- Controller lookup: `getSearchController()` — the slot key `SEARCH_CONTROLLER_SLOT` lives on `@input/pen-types`
+- `SearchControllerImpl` is the runtime controller; it is reached through `searchExtension()` / `getSearchController()`, not the barrel
+- Pure helpers such as `buildSearchRegex()`, `findDocumentMatches()`, `buildReplaceOps()`, and `buildReplaceAllOps()`
 - Search state and typing such as `SearchState`, `SearchMatch`, and `SearchOptions`
 - Workspace scripts: `build`, `clean`, `test`, `typecheck`
 

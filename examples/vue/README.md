@@ -12,8 +12,7 @@ From the repository root:
 
 ```bash
 pnpm install
-pnpm build
-pnpm --filter @input/pen-example-vue dev
+pnpm dev -- --filter=@input/pen-example-vue
 ```
 
 The post-publish consumer command, including peers, will be:

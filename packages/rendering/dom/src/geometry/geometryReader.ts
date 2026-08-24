@@ -1,5 +1,9 @@
 import type { BlockDirection } from "../bidi";
 import {
+	findEmptyBlockPlaceholder,
+	isEmptyBlockPlaceholder,
+} from "../field-editor/emptyBlockPlaceholder";
+import {
 	domPointToLogicalOffset,
 	findLogicalDOMPoint,
 	getLogicalNodeLength,
@@ -387,7 +391,8 @@ function measureCaretRect(
 
 	const length = getLogicalNodeLength(inlineEl);
 	if (length <= 0) {
-		return caretFromElementRect(inlineEl, affinity);
+		const placeholder = findEmptyBlockPlaceholder(inlineEl);
+		return caretFromElementRect(placeholder ?? inlineEl, affinity);
 	}
 
 	const offset = clampOffset(point.offset, length);
@@ -741,6 +746,14 @@ function collectLineFragments(
 	let offset = 0;
 
 	const visit = (node: Node): void => {
+		if (isEmptyBlockPlaceholder(node)) {
+			const rect = elementRect(node);
+			if (isUsefulRect(rect)) {
+				fragments.push({ rect, start: offset, end: offset });
+			}
+			return;
+		}
+
 		if (isInlineAtomHostNode(node) || isInlineAtomNode(node)) {
 			const length = getLogicalNodeLength(node);
 			const host = isInlineAtomHostNode(node)

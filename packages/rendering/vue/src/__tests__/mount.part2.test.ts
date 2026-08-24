@@ -25,12 +25,12 @@ function createTableEditor() {
 
   editor.apply([
     {
-      type: "insert-table-cell-text",
+      type: "splice-text",
       blockId: "table-1",
-      row: 0,
-      col: 0,
-      offset: 0,
-      text: "A1",
+      cell: { row: 0, col: 0 },
+      from: 0,
+      to: 0,
+      insert: "A1",
     },
   ]);
 

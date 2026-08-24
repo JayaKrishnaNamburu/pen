@@ -50,6 +50,11 @@ export {
 	urlPolicyFromEditor,
 } from "./security/resolveEditorUrl";
 export { urlPolicyExtension } from "./security/urlPolicyExtension";
+export { createReducedMotionSignal } from "./a11y/motion";
+export type {
+	ReducedMotionListener,
+	ReducedMotionSignal,
+} from "./a11y/motion";
 export { DomScheduler } from "./scheduler";
 export type {
 	DomSchedulerOptions,
@@ -63,6 +68,7 @@ export {
 	createGeometryReader,
 	getRootGeometry,
 	measureWithRoot,
+	registerVerticalCaretMeasure,
 	singleRunLineBox,
 	verticalCaretTarget,
 } from "./geometry";

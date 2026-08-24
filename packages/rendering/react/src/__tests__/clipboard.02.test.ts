@@ -83,20 +83,20 @@ function seedTable(
 			position: "last",
 		},
 		{
-			type: "insert-table-cell-text",
+			type: "splice-text",
 			blockId: tableId,
-			row: 0,
-			col: 0,
-			offset: 0,
-			text: "Alpha",
+			cell: { row: 0, col: 0 },
+			from: 0,
+			to: 0,
+			insert: "Alpha",
 		},
 		{
-			type: "insert-table-cell-text",
+			type: "splice-text",
 			blockId: tableId,
-			row: 0,
-			col: 1,
-			offset: 0,
-			text: "Bravo",
+			cell: { row: 0, col: 1 },
+			from: 0,
+			to: 0,
+			insert: "Bravo",
 		},
 	]);
 }
@@ -327,7 +327,9 @@ describe("@input/pen-react clipboard", () => {
 		const fieldEditor = createFieldEditorStub();
 
 		sourceEditor.apply([
-			{ type: "insert-text", blockId: firstBlockId, offset: 0, text: "Intro" },
+			{ type: "splice-text", blockId: firstBlockId, from: 0,
+				to: 0,
+				insert: "Intro" },
 		]);
 		seedTable(sourceEditor, "table-flow");
 		sourceEditor.apply([
@@ -339,10 +341,11 @@ describe("@input/pen-react clipboard", () => {
 				position: "last",
 			},
 			{
-				type: "insert-text",
+				type: "splice-text",
 				blockId: paragraphId,
-				offset: 0,
-				text: "After",
+				from: 0,
+				to: 0,
+				insert: "After",
 			},
 		]);
 
