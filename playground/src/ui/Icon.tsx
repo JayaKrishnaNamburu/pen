@@ -7,7 +7,10 @@ interface IconProps {
 	size?: number;
 }
 
-function Svg({ size = 14, children }: IconProps & { children: React.ReactNode }) {
+function Svg({
+	size = 14,
+	children,
+}: IconProps & { children: React.ReactNode }) {
 	return (
 		<svg
 			width={size}
@@ -31,8 +34,14 @@ const STROKE = {
 export function IconBold(props: IconProps) {
 	return (
 		<Svg {...props}>
-			<path d="M 3.75 7 L 3.75 2 L 7.5 2 A 2.5 2.5 0 0 1 7.5 7 Z" {...STROKE} />
-			<path d="M 3.75 7 L 8.25 7 A 2.5 2.5 0 0 1 8.25 12 L 3.75 12 Z" {...STROKE} />
+			<path
+				d="M 3.75 7 L 3.75 2 L 7.5 2 A 2.5 2.5 0 0 1 7.5 7 Z"
+				{...STROKE}
+			/>
+			<path
+				d="M 3.75 7 L 8.25 7 A 2.5 2.5 0 0 1 8.25 12 L 3.75 12 Z"
+				{...STROKE}
+			/>
 		</Svg>
 	);
 }
@@ -40,7 +49,10 @@ export function IconBold(props: IconProps) {
 export function IconItalic(props: IconProps) {
 	return (
 		<Svg {...props}>
-			<path d="M 5.5 2 L 11 2 M 3 12 L 8.5 12 M 8.75 2 L 5.25 12" {...STROKE} />
+			<path
+				d="M 5.5 2 L 11 2 M 3 12 L 8.5 12 M 8.75 2 L 5.25 12"
+				{...STROKE}
+			/>
 		</Svg>
 	);
 }
@@ -48,7 +60,10 @@ export function IconItalic(props: IconProps) {
 export function IconUnderline(props: IconProps) {
 	return (
 		<Svg {...props}>
-			<path d="M 3.5 1.75 L 3.5 6.5 A 3.5 3.5 0 0 0 10.5 6.5 L 10.5 1.75" {...STROKE} />
+			<path
+				d="M 3.5 1.75 L 3.5 6.5 A 3.5 3.5 0 0 0 10.5 6.5 L 10.5 1.75"
+				{...STROKE}
+			/>
 			<path d="M 2.5 12.25 L 11.5 12.25" {...STROKE} />
 		</Svg>
 	);
@@ -57,7 +72,10 @@ export function IconUnderline(props: IconProps) {
 export function IconStrikethrough(props: IconProps) {
 	return (
 		<Svg {...props}>
-			<path d="M 10.5 3.5 A 3 2.25 0 0 0 4 4.25 C 4 6.5 10 6.25 10 9.5 A 3 2.25 0 0 1 3.5 10.25" {...STROKE} />
+			<path
+				d="M 10.5 3.5 A 3 2.25 0 0 0 4 4.25 C 4 6.5 10 6.25 10 9.5 A 3 2.25 0 0 1 3.5 10.25"
+				{...STROKE}
+			/>
 			<path d="M 1.75 7 L 12.25 7" {...STROKE} />
 		</Svg>
 	);
@@ -94,7 +112,14 @@ export function IconRedo(props: IconProps) {
 export function IconPanelRight(props: IconProps) {
 	return (
 		<Svg {...props}>
-			<rect x="1" y="1.75" width="12" height="10.5" rx="2.5" {...STROKE} />
+			<rect
+				x="1"
+				y="1.75"
+				width="12"
+				height="10.5"
+				rx="2.5"
+				{...STROKE}
+			/>
 			<path d="M 9 1.75 L 9 12.25" {...STROKE} />
 		</Svg>
 	);
@@ -111,7 +136,11 @@ export function IconClose(props: IconProps) {
 export function IconArrowUp(props: IconProps) {
 	return (
 		<Svg {...props}>
-			<path d="M 11.5 6 L 7 1.5 L 2.5 6 M 7 2.25 L 7 12.5" {...STROKE} strokeWidth={2} />
+			<path
+				d="M 11.5 6 L 7 1.5 L 2.5 6 M 7 2.25 L 7 12.5"
+				{...STROKE}
+				strokeWidth={2}
+			/>
 		</Svg>
 	);
 }
@@ -119,8 +148,14 @@ export function IconArrowUp(props: IconProps) {
 export function IconSparkle(props: IconProps) {
 	return (
 		<Svg {...props}>
-			<path d="M 5.5 1.5 L 6.6 4.4 L 9.5 5.5 L 6.6 6.6 L 5.5 9.5 L 4.4 6.6 L 1.5 5.5 L 4.4 4.4 Z" {...STROKE} />
-			<path d="M 10.75 8.5 L 11.35 10.15 L 13 10.75 L 11.35 11.35 L 10.75 13 L 10.15 11.35 L 8.5 10.75 L 10.15 10.15 Z" {...STROKE} />
+			<path
+				d="M 5.5 1.5 L 6.6 4.4 L 9.5 5.5 L 6.6 6.6 L 5.5 9.5 L 4.4 6.6 L 1.5 5.5 L 4.4 4.4 Z"
+				{...STROKE}
+			/>
+			<path
+				d="M 10.75 8.5 L 11.35 10.15 L 13 10.75 L 11.35 11.35 L 10.75 13 L 10.15 11.35 L 8.5 10.75 L 10.15 10.15 Z"
+				{...STROKE}
+			/>
 		</Svg>
 	);
 }
@@ -136,7 +171,14 @@ export function IconChevronRight(props: IconProps) {
 export function IconSpinner(props: IconProps) {
 	return (
 		<Svg {...props}>
-			<circle cx="7" cy="7" r="5.25" stroke="currentColor" strokeWidth={1.5} opacity={0.2} />
+			<circle
+				cx="7"
+				cy="7"
+				r="5.25"
+				stroke="currentColor"
+				strokeWidth={1.5}
+				opacity={0.2}
+			/>
 			<path d="M 7 1.75 A 5.25 5.25 0 0 1 12.25 7" {...STROKE} />
 		</Svg>
 	);

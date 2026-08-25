@@ -39,7 +39,9 @@ export function useDocumentSnapshot(
 		let frame = 0;
 		const scheduleRead = () => {
 			cancelAnimationFrame(frame);
-			frame = requestAnimationFrame(() => setSnapshot(readSnapshot(editor)));
+			frame = requestAnimationFrame(() =>
+				setSnapshot(readSnapshot(editor)),
+			);
 		};
 
 		const unsubscribes = [
@@ -64,7 +66,10 @@ export function useDocumentSnapshot(
 function readSnapshot(editor: Editor): DocumentSnapshot {
 	const topLevelBlocks = editor.documentState.blockOrder
 		.map((blockId) => editor.getBlock(blockId))
-		.filter((block): block is BlockHandle => block !== null && block.parent === null);
+		.filter(
+			(block): block is BlockHandle =>
+				block !== null && block.parent === null,
+		);
 
 	return {
 		generation: editor.documentState.generation,

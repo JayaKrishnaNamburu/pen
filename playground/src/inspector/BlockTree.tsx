@@ -11,7 +11,9 @@ export function BlockTree({ blocks }: { blocks: SnapshotBlock[] }) {
 					<span className="block-id">{block.id.slice(0, 6)}</span>
 				</div>
 				{block.text ? <p className="block-text">{block.text}</p> : null}
-				{propsSummary ? <p className="block-props">{propsSummary}</p> : null}
+				{propsSummary ? (
+					<p className="block-props">{propsSummary}</p>
+				) : null}
 				{block.children.length > 0 ? (
 					<BlockTree blocks={block.children} />
 				) : null}
@@ -26,7 +28,10 @@ export function BlockTree({ blocks }: { blocks: SnapshotBlock[] }) {
 function formatProps(props: Record<string, unknown>): string | null {
 	const entries = Object.entries(props).filter(
 		([key, value]) =>
-			key !== "type" && value !== null && value !== undefined && value !== "",
+			key !== "type" &&
+			value !== null &&
+			value !== undefined &&
+			value !== "",
 	);
 
 	if (entries.length === 0) {

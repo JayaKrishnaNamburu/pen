@@ -16,7 +16,11 @@ interface InspectorSheetProps {
  * rather than a mirror the app maintains. Type in the editor with this open and
  * watch the revision counter and block text move.
  */
-export function InspectorSheet({ editor, isOpen, onClose }: InspectorSheetProps) {
+export function InspectorSheet({
+	editor,
+	isOpen,
+	onClose,
+}: InspectorSheetProps) {
 	const snapshot = useDocumentSnapshot(editor, isOpen);
 
 	return (

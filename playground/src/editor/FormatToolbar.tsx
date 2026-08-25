@@ -23,7 +23,11 @@ const INLINE_MARKS = [
 	{ format: "bold", label: "Bold", icon: <IconBold /> },
 	{ format: "italic", label: "Italic", icon: <IconItalic /> },
 	{ format: "underline", label: "Underline", icon: <IconUnderline /> },
-	{ format: "strikethrough", label: "Strikethrough", icon: <IconStrikethrough /> },
+	{
+		format: "strikethrough",
+		label: "Strikethrough",
+		icon: <IconStrikethrough />,
+	},
 	{ format: "code", label: "Code", icon: <IconCode /> },
 ];
 

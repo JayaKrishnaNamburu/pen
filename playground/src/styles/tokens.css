@@ -47,7 +47,8 @@
 		-apple-system, system-ui, BlinkMacSystemFont, "Inter", "Segoe UI",
 		"Helvetica Neue", sans-serif;
 	--font-mono:
-		ui-monospace, "SF Mono", "Menlo", "Consolas", "Liberation Mono", monospace;
+		ui-monospace, "SF Mono", "Menlo", "Consolas", "Liberation Mono",
+		monospace;
 
 	--text-xs: 11px;
 	--text-sm: 12px;

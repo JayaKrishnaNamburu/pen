@@ -37,7 +37,11 @@ export function applyStarterDocument(editor: Editor): void {
 	const firstBlock = editor.firstBlock();
 
 	// Leave anything that already has content alone.
-	if (!firstBlock || editor.blockCount() > 1 || firstBlock.textContent() !== "") {
+	if (
+		!firstBlock ||
+		editor.blockCount() > 1 ||
+		firstBlock.textContent() !== ""
+	) {
 		return;
 	}
 
