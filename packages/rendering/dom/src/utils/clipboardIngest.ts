@@ -83,7 +83,9 @@ export function withForbiddenKeyDrops(
 	}
 
 	const droppedByReason = [
-		...report.droppedByReason.filter((entry) => entry.reason !== "forbidden-key"),
+		...report.droppedByReason.filter(
+			(entry) => entry.reason !== "forbidden-key",
+		),
 		{ reason: "forbidden-key" as const, count: forbiddenKeyCount },
 	].sort((left, right) => left.reason.localeCompare(right.reason, "en"));
 
@@ -167,7 +169,13 @@ function admitBlock(
 	const children: PenBlock[] = [];
 	if (Array.isArray(block.children)) {
 		for (const child of block.children) {
-			const admitted = admitBlock(child, depth + 1, editor, state, counts);
+			const admitted = admitBlock(
+				child,
+				depth + 1,
+				editor,
+				state,
+				counts,
+			);
 			if (admitted) {
 				children.push(admitted);
 			}

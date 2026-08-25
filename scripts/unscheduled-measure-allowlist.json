@@ -142,8 +142,8 @@
       "reason": "Inserted-mode spacing needs the mounted surface height in the same layout effect that writes marginTop."
     },
     {
-      "file": "packages/rendering/react/src/primitives/editor/inlineAtomInteraction.ts",
-      "symbol": "resolveTargetFromPoint",
+			"file": "packages/rendering/dom/src/field-editor/inlineAtomWrapperInteractions.ts",
+			"symbol": "resolveTargetFromPoint",
       "reason": "elementFromPoint finds which editor root is under the pointer before any GeometryReader exists for that root."
     },
     {

@@ -25,9 +25,13 @@ describe("@input/pen-react selected text deletion", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
+			{
+				type: "splice-text",
+				blockId,
+				from: 0,
 				to: 0,
-				insert: "Hello world" },
+				insert: "Hello world",
+			},
 		]);
 
 		const container = document.createElement("div");
@@ -123,7 +127,6 @@ describe("@input/pen-react selected text deletion", () => {
 			type: "text",
 			anchor: { blockId, offset: 3 },
 			focus: { blockId, offset: 3 },
-			isCollapsed: true,
 		});
 		expect(domSelectionToEditor(rootElement!)).toMatchObject({
 			anchor: { blockId, offset: 3 },
@@ -142,9 +145,13 @@ describe("@input/pen-react selected text deletion", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
+			{
+				type: "splice-text",
+				blockId,
+				from: 0,
 				to: 0,
-				insert: "Hello world" },
+				insert: "Hello world",
+			},
 		]);
 
 		const container = document.createElement("div");
@@ -244,7 +251,6 @@ describe("@input/pen-react selected text deletion", () => {
 			type: "text",
 			anchor: { blockId, offset: 0 },
 			focus: { blockId, offset: 11 },
-			isCollapsed: false,
 		});
 		expect(domSelectionToEditor(rootElement!)).toMatchObject({
 			anchor: { blockId, offset: 0 },

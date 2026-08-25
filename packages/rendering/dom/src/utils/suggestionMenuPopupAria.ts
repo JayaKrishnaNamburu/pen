@@ -1,9 +1,6 @@
 import { DATA_ATTRS } from "./dataAttributes";
 
-export function suggestionMenuOptionId(
-	popupId: string,
-	index: number,
-): string {
+export function suggestionMenuOptionId(popupId: string, index: number): string {
 	return `${popupId}-option-${index}`;
 }
 

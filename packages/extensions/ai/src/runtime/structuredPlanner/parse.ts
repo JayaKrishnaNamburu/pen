@@ -4,6 +4,7 @@ import type {
 	AIPlannerMode,
 	AITargetKind,
 	AIMutationMode,
+	PromptIntent,
 } from "../contracts";
 import type { DocumentMutationPlan } from "../planTypes";
 import { validateDocumentMutationPlanShape } from "../planValidation";
@@ -19,7 +20,7 @@ import type {
 
 export function resolvePlannerMode(options: {
 	targetKind: AITargetKind;
-	intent: "rewrite" | "continue" | "local-edit" | "structural" | "search" | "review" | "unknown";
+	intent: PromptIntent;
 	target: "selection" | "block";
 }): AIPlannerMode {
 	if (options.target === "selection") {

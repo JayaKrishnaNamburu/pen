@@ -6,8 +6,8 @@ interface ChatEmptyProps {
 }
 
 const EXAMPLE_PROMPTS = [
-	"Turn the last paragraph into a bullet list",
-	"Add a heading above the last paragraph",
+	"Turn the table into a bullet list",
+	"Rewrite the quote in one sentence",
 	"Add a short closing paragraph",
 ];
 

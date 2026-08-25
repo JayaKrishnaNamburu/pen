@@ -1,65 +1,10 @@
-import type { Decoration, InlineDecoration } from "@input/pen-types";
+import type { Decoration } from "@input/pen-types";
 import type { AIStreamingReviewPreview } from "../types";
 import {
-	AI_REVIEW_PREVIEW_NEW_ATTRIBUTE,
 	AI_REVIEW_PREVIEW_VIRTUAL_ATTRIBUTE,
 	AI_REVIEW_ROLE_ATTRIBUTE,
 } from "./reviewPresentationState";
-import {
-	AI_REVIEW_INSERT_STYLE,
-	AI_STREAMING_PREVIEW_CHAR_STAGGER_MS,
-} from "./reviewPresentationStyles";
-
-export function resolveStreamingPreviewInsertedTextStart({
-	decoratedText,
-	preview,
-	planInsertedTextStart,
-}: {
-	decoratedText: string;
-	preview: AIStreamingReviewPreview;
-	planInsertedTextStart: number;
-}): number {
-	if (planInsertedTextStart <= 0) {
-		return 0;
-	}
-
-	if (preview.text.length <= decoratedText.length + 1) {
-		return 0;
-	}
-
-	if (planInsertedTextStart >= preview.text.length) {
-		return 0;
-	}
-
-	if (preview.text.length >= decoratedText.length + planInsertedTextStart) {
-		return planInsertedTextStart;
-	}
-
-	return 0;
-}
-
-export function resolveStreamingPreviewStableTextLength({
-	decoratedText,
-	insertedTextStart,
-	preview,
-}: {
-	decoratedText: string;
-	insertedTextStart: number;
-	preview: AIStreamingReviewPreview;
-}): number {
-	if (insertedTextStart === 0) {
-		return Math.max(
-			0,
-			Math.min(preview.previousTextLength, decoratedText.length),
-		);
-	}
-
-	const previousDecoratedLength = Math.max(
-		0,
-		preview.previousTextLength - insertedTextStart,
-	);
-	return Math.max(0, Math.min(previousDecoratedLength, decoratedText.length));
-}
+import { AI_REVIEW_INSERT_STYLE } from "./reviewPresentationStyles";
 
 export function resolveStreamingPreviewAnchor(
 	preview: AIStreamingReviewPreview,
@@ -91,13 +36,11 @@ export function appendVirtualPreviewTextDecorations(
 	decorations: Decoration[],
 	{
 		blockId,
-		insertedTextStart,
 		offset,
 		preview,
 		text,
 	}: {
 		blockId: string;
-		insertedTextStart: number;
 		offset: number;
 		preview: AIStreamingReviewPreview;
 		text: string;
@@ -107,61 +50,8 @@ export function appendVirtualPreviewTextDecorations(
 		return;
 	}
 
-	const stableTextLength = resolveStreamingPreviewStableTextLength({
-		decoratedText: text,
-		insertedTextStart,
-		preview,
-	});
-	const stableText = text.slice(0, stableTextLength);
-	const newText = text.slice(stableTextLength);
-	if (stableText.length > 0) {
-		decorations.push(
-			createVirtualPreviewDecoration({
-				blockId,
-				offset,
-				preview,
-				text: stableText,
-				isNew: false,
-				keySuffix: `stable:${blockId}:${offset}:${insertedTextStart}`,
-			}),
-		);
-	}
-	if (newText.length > 0) {
-		Array.from(newText).forEach((character, index) => {
-			decorations.push(
-				createVirtualPreviewDecoration({
-					blockId,
-					offset,
-					preview,
-					text: character,
-					isNew: true,
-					keySuffix: `new:${blockId}:${offset}:${insertedTextStart + stableTextLength + index}`,
-					animationDelayMs:
-						index * AI_STREAMING_PREVIEW_CHAR_STAGGER_MS,
-				}),
-			);
-		});
-	}
-}
-
-function createVirtualPreviewDecoration({
-	animationDelayMs,
-	blockId,
-	keySuffix,
-	offset,
-	preview,
-	text,
-	isNew,
-}: {
-	animationDelayMs?: number;
-	blockId: string;
-	keySuffix?: string;
-	offset: number;
-	preview: AIStreamingReviewPreview;
-	text: string;
-	isNew: boolean;
-}): InlineDecoration {
-	return {
+	// Stable key so growing text updates the same span.
+	decorations.push({
 		type: "inline",
 		blockId,
 		from: offset,
@@ -172,8 +62,8 @@ function createVirtualPreviewDecoration({
 			"ai-streaming-review-preview",
 			preview.sessionId,
 			preview.turnId ?? "turn",
-			preview.revision,
-			keySuffix ?? (isNew ? "new" : "stable"),
+			blockId,
+			String(offset),
 		].join(":"),
 		attributes: {
 			class: [
@@ -181,31 +71,13 @@ function createVirtualPreviewDecoration({
 				"pen-suggestion-final-text-change",
 				"pen-ai-review-insert",
 				"pen-ai-review-preview",
-				isNew ? "pen-ai-review-preview-new" : "",
-			]
-				.filter(Boolean)
-				.join(" "),
+			].join(" "),
 			[AI_REVIEW_ROLE_ATTRIBUTE]: "insert",
 			[AI_REVIEW_PREVIEW_VIRTUAL_ATTRIBUTE]: true,
-			[AI_REVIEW_PREVIEW_NEW_ATTRIBUTE]: isNew,
 			"data-pen-ai-preview-streaming": true,
-			"data-pen-ai-preview-revision": preview.revision,
-			"data-pen-ai-preview-updated-at": preview.updatedAt,
 			"data-pen-final-text-review-change": true,
 			contenteditable: "false",
-			style: isNew
-				? buildStreamingPreviewNewStyle(animationDelayMs)
-				: AI_REVIEW_INSERT_STYLE,
+			style: AI_REVIEW_INSERT_STYLE,
 		},
-	} as InlineDecoration;
-}
-
-function buildStreamingPreviewNewStyle(animationDelayMs = 0): string {
-	return [
-		AI_REVIEW_INSERT_STYLE,
-		"animation: var(--pen-ai-review-preview-new-animation, none)",
-		animationDelayMs > 0 ? `animation-delay: ${animationDelayMs}ms` : "",
-	]
-		.filter(Boolean)
-		.join("; ");
+	});
 }

@@ -2,7 +2,7 @@ import {
   affectedBlockIdsFromSummary,
   emptyDecorationSet,
   getNumberedListItemValue,
-  getTrustedSelectionBlockRange,
+  getSelectionBlockRange,
 } from "@input/pen-core";
 import { getExpandedBlockRole } from "@input/pen-dom/field-editor";
 import type {
@@ -165,6 +165,7 @@ export function useFieldEditorState(fieldEditor: FieldEditorStore | null) {
 }
 
 export function isBlockSelected(
+  editor: Editor,
   selection: ReadonlySelectionState,
   blockId: string,
 ): boolean {
@@ -175,7 +176,10 @@ export function isBlockSelected(
     case "block":
       return selection.blockIds.includes(blockId);
     case "text":
-      return getTrustedSelectionBlockRange(selection).includes(blockId);
+      return getSelectionBlockRange(
+        editor.documentState.blockOrder,
+        selection,
+      ).includes(blockId);
     case "cell":
     case "app":
       return false;

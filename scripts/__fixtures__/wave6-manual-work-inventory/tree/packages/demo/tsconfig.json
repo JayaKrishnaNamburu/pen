@@ -1,7 +1,0 @@
-{
-	"compilerOptions": {
-		"paths": {
-			"@input/pen-ai-suggestions": ["./src/index.ts"]
-		}
-	}
-}

@@ -28,7 +28,9 @@ export function resolveEditorRootElement(editor: Editor): HTMLElement | null {
 	return roots.length === 1 ? roots[0] : null;
 }
 
-export function resolveEditorContentElement(editor: Editor): HTMLElement | null {
+export function resolveEditorContentElement(
+	editor: Editor,
+): HTMLElement | null {
 	const aiRoot = resolveAIRootElement(editor);
 	const aiHost =
 		aiRoot?.querySelector<HTMLElement>(`[${DATA_ATTRS.editorContent}]`) ??
@@ -38,8 +40,9 @@ export function resolveEditorContentElement(editor: Editor): HTMLElement | null 
 	}
 	const editorRoot = resolveEditorRootElement(editor);
 	return (
-		editorRoot?.querySelector<HTMLElement>(`[${DATA_ATTRS.editorContent}]`) ??
-		null
+		editorRoot?.querySelector<HTMLElement>(
+			`[${DATA_ATTRS.editorContent}]`,
+		) ?? null
 	);
 }
 

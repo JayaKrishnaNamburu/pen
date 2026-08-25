@@ -14,7 +14,8 @@ import { defaultSchema } from "@input/pen-schema-default";
 
 function createDirEditor() {
 	return createEditor({
-		schema: defaultSchema, preset: defaultPreset({
+		schema: defaultSchema,
+		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
 			undo: false,
@@ -76,10 +77,14 @@ describe("@input/pen-react DIR2", () => {
 		const { container, root } = await renderEditor(editor);
 
 		expect(
-			container.querySelector(`[data-block-id="${ltrId}"]`)?.getAttribute("dir"),
+			container
+				.querySelector(`[data-block-id="${ltrId}"]`)
+				?.getAttribute("dir"),
 		).toBe("ltr");
 		expect(
-			container.querySelector(`[data-block-id="${rtlId}"]`)?.getAttribute("dir"),
+			container
+				.querySelector(`[data-block-id="${rtlId}"]`)
+				?.getAttribute("dir"),
 		).toBe("rtl");
 
 		await cleanup(editor, root, container);

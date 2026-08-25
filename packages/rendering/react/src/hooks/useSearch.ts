@@ -18,7 +18,8 @@ const EMPTY_SEARCH_STATE: SearchState = {
 
 export function useSearch(editor: Editor): SearchState {
 	const controller =
-		(editor.facet(searchControllerFacet) as SearchController | null) ?? null;
+		(editor.facet(searchControllerFacet) as SearchController | null) ??
+		null;
 	const canReadControllerState = isSearchController(controller);
 
 	return useSyncExternalStore(
@@ -28,7 +29,8 @@ export function useSearch(editor: Editor): SearchState {
 			}
 			return controller.subscribe(callback);
 		},
-		() => (canReadControllerState ? controller.getState() : EMPTY_SEARCH_STATE),
+		() =>
+			canReadControllerState ? controller.getState() : EMPTY_SEARCH_STATE,
 		() => EMPTY_SEARCH_STATE,
 	);
 }

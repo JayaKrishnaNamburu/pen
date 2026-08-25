@@ -17,7 +17,7 @@ This is the contract package for the monorepo. It is the place where packages ag
 - Editor events: `PenEventMap` — `commit` (`CommitEvent`, whose `summary.affectedBlockIds` is the touched-block list), `selectionChange`, `historyApplied`, `decorationsChange`, `diagnostic`, `crdt:corruption`, `crdt:recovered`
 - Operation origin contracts such as `OpOriginType`, `StructuredOpOrigin` (including optional `intent`), `MutationGroupMetadata`, and helpers for resolving origin/group metadata
 - The closed `DocumentOp` union and its ten payloads (`splice-text`, `format-text`, `insert-block`, `delete-block`, `move-block`, `set-props`, `set-meta`, `grid`, `app`, `stream-open`)
-- Change-summary contracts (`ChangeSummary`, `BlockTextChange`, `StructuralChange`, `TextSplice`) and `mapOffsetThroughSplices()`
+- Change-summary contracts (`ChangeSummary`, `BlockTextChange`, `StructuralChange`, `TextSplice`)
 - Anchor contracts (`EditorAnchors`, `Anchor`, `AnchorRange`, `AnchorTarget`) and adapter relative-position method types
 - Document format stamp `PEN_DOCUMENT_FORMAT` (`3`)
 - Shared AI operation contracts such as selection targets, scoped-range targets, requested-operation provenance, and low-level range helpers
@@ -94,7 +94,7 @@ A `ChangeSummary` answers what a commit touched: `commitId`, `blockText`, `struc
 
 `block-split` and `blocks-merged` are the local content-move recipes (source, dest, cut/join offsets), stamped by the executor onto the transaction and copied onto the summary. Remote commits without those tags fall back to same-length delete/insert pairing.
 
-`mapOffsetThroughSplices(splices, offset, assoc)` is a clamp helper for shifting a per-block result inside one summary. There is no compose, no multi-summary form, and no cross-commit mapping API. A position that must survive more than one commit is an `editor.anchors` mint.
+`mapOffsetThroughSplices(splices, offset, assoc)` is a clamp helper for shifting a per-block result inside one summary. It ships from `@input/pen-core`, not this package — v4 DL12 moved it there to reach API3's types-only end state. There is no compose, no multi-summary form, and no cross-commit mapping API. A position that must survive more than one commit is an `editor.anchors` mint.
 
 Summaries stay content-free: lengths, offsets, IDs, and keys only.
 

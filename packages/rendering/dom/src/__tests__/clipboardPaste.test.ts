@@ -31,7 +31,8 @@ const noDefaultExtensionsPreset = {
 
 function createBareEditor(): Editor {
 	return createEditor({
-		schema: defaultSchema, preset: noDefaultExtensionsPreset,
+		schema: defaultSchema,
+		preset: noDefaultExtensionsPreset,
 	});
 }
 
@@ -101,9 +102,9 @@ describe("clipboard JSON-flavor paste", () => {
 		expect(Object.hasOwn(block?.props ?? {}, "constructor")).toBe(false);
 		expect(Object.hasOwn(block?.props ?? {}, "prototype")).toBe(false);
 		expect(block?.props).toEqual({ level: 1, safe: "kept" });
-		expect(Object.hasOwn(block?.deltas?.[0]?.attributes ?? {}, "__proto__")).toBe(
-			false,
-		);
+		expect(
+			Object.hasOwn(block?.deltas?.[0]?.attributes ?? {}, "__proto__"),
+		).toBe(false);
 		expect(
 			(Object.prototype as { polluted?: boolean }).polluted,
 		).toBeUndefined();
@@ -145,7 +146,10 @@ describe("clipboard JSON-flavor paste", () => {
 			expect.objectContaining({
 				code: "import-dropped",
 				droppedByReason: [
-					expect.objectContaining({ reason: "forbidden-key", count: 4 }),
+					expect.objectContaining({
+						reason: "forbidden-key",
+						count: 4,
+					}),
 				],
 			}),
 		]);
@@ -227,7 +231,9 @@ describe("clipboard JSON-flavor paste", () => {
 		handleCopy(source, { clipboardData } as ClipboardEvent);
 
 		const specFlavor = clipboardData.getData(PEN_CLIPBOARD_JSON_MIME);
-		const legacyFlavor = clipboardData.getData(PEN_CLIPBOARD_JSON_MIME_LEGACY);
+		const legacyFlavor = clipboardData.getData(
+			PEN_CLIPBOARD_JSON_MIME_LEGACY,
+		);
 		expect(specFlavor).toBe(legacyFlavor);
 		expect(specFlavor.length).toBeGreaterThan(0);
 		const copied = parsePenClipboardPayload(specFlavor);
@@ -370,7 +376,8 @@ describe("clipboard JSON-flavor paste", () => {
 			}),
 		]);
 		const pasted = [...editor.documentState.allBlocks()].find(
-			(block) => block.textContent().length === CLIPBOARD_INGEST_MAX_TEXT_SIZE,
+			(block) =>
+				block.textContent().length === CLIPBOARD_INGEST_MAX_TEXT_SIZE,
 		);
 		expect(pasted).toBeDefined();
 		expect(
@@ -418,7 +425,9 @@ describe("clipboard JSON-flavor paste", () => {
 		const image = [...editor.documentState.allBlocks()].find(
 			(block) => block.type === "image",
 		);
-		const link = heading?.textDeltas().find((delta) => delta.attributes?.link);
+		const link = heading
+			?.textDeltas()
+			.find((delta) => delta.attributes?.link);
 		expect(
 			(link?.attributes?.link as { href?: string } | undefined)?.href,
 		).toBe(href);

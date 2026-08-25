@@ -1,4 +1,7 @@
-import { resolveBlockDirection, usesInlineTextSelection } from "@input/pen-core";
+import {
+	resolveBlockDirection,
+	usesInlineTextSelection,
+} from "@input/pen-core";
 import type { BlockHandle, Editor } from "@input/pen-types";
 import type { FieldEditorImpl } from "../field-editor/fieldEditorImpl";
 import { fullReconcileDeltasToDOM } from "../field-editor/reconciler";
@@ -187,7 +190,10 @@ function updateBlockNodes(
 	);
 }
 
-function visibleChildBlockIds(editor: Editor, parentBlockId: string): readonly string[] {
+function visibleChildBlockIds(
+	editor: Editor,
+	parentBlockId: string,
+): readonly string[] {
 	const parent = editor.getBlock(parentBlockId);
 	if (!parent || !PARENT_ID_CONTAINER_TYPES.has(parent.type)) {
 		return [];
@@ -202,7 +208,10 @@ function isFieldEditorOwned(
 	snapshot: ReturnType<FieldEditorImpl["getSnapshot"]>,
 	blockId: string,
 ): boolean {
-	if (snapshot.mode === "expanded" && snapshot.activeBlockIds.includes(blockId)) {
+	if (
+		snapshot.mode === "expanded" &&
+		snapshot.activeBlockIds.includes(blockId)
+	) {
 		return true;
 	}
 	return snapshot.isEditing && snapshot.focusBlockId === blockId;
@@ -225,7 +234,11 @@ function reorderChildren(
 	}
 }
 
-function setBooleanAttr(element: HTMLElement, name: string, value: boolean): void {
+function setBooleanAttr(
+	element: HTMLElement,
+	name: string,
+	value: boolean,
+): void {
 	const next = buildDataAttributes({ [name]: value })[name];
 	if (next === undefined) {
 		element.removeAttribute(name);

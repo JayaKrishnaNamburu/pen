@@ -20,18 +20,23 @@ export function AIDiffView(props: AIDiffViewProps) {
 			suggestion.kind === "text"
 				? (block
 						?.textContent()
-						.slice(suggestion.offset, suggestion.offset + suggestion.length) ?? "")
+						.slice(
+							suggestion.offset,
+							suggestion.offset + suggestion.length,
+						) ?? "")
 				: describeBlockSuggestion(
 						editor,
 						suggestion.action,
 						block?.type ?? null,
 					);
 		const beforeText =
-			suggestion.action === "delete" || suggestion.action === "delete-block"
+			suggestion.action === "delete" ||
+			suggestion.action === "delete-block"
 				? text
 				: "";
 		const afterText =
-			suggestion.action === "insert" || suggestion.action === "insert-block"
+			suggestion.action === "insert" ||
+			suggestion.action === "insert-block"
 				? text
 				: "";
 
@@ -70,4 +75,3 @@ export function AIDiffView(props: AIDiffViewProps) {
 		},
 	);
 }
-

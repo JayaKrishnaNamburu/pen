@@ -72,7 +72,11 @@ export const PenBlock = defineComponent({
 				return null;
 			}
 
-			const isSelected = isBlockSelected(selection.value, props.blockId);
+			const isSelected = isBlockSelected(
+				editor,
+				selection.value,
+				props.blockId,
+			);
 			const isFocused =
 				fieldEditorState.value.focusBlockId === props.blockId;
 			const surfaceRole = resolveExpandedSurfaceRole(
@@ -429,7 +433,7 @@ function renderBlockBody(args: {
 				{
 					"data-block-type": block.type,
 					"data-unknown-block": "",
-					"data-selected": isBlockSelected(selection, block.id)
+					"data-selected": isBlockSelected(editor, selection, block.id)
 						? ""
 						: undefined,
 					contentEditable: false,

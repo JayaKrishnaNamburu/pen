@@ -1,18 +1,16 @@
 import { isCollapsed, isMultiBlock } from "@input/pen-core";
+import type { Editor } from "@input/pen-types";
+import { getAttachedFieldEditor } from "../utils/fieldEditor";
+import type { FieldEditorSession } from "./controller";
 import {
 	getInlineAtomAtOffset,
 	replaceInlineAtomWithText,
-	type InlineAtomSnapshot,
 	type InlineAtomDropTarget,
-} from "@input/pen-dom/field-editor/inlineAtomInteraction";
-import type { Editor } from "@input/pen-types";
-import { getAttachedFieldEditor } from "../../utils/fieldEditor";
-import type { FieldEditorSession } from "@input/pen-dom";
-import type {
-	InlineAtomMoveRejectedEvent,
-	ResolvedInlineAtomInteractions,
-} from "../../context/editorContext";
-import type { InlineAtomWrapperInteractionOptions } from "./inlineAtomInteraction";
+	type InlineAtomMoveRejectedEvent,
+	type InlineAtomSnapshot,
+	type ResolvedInlineAtomInteractions,
+} from "./inlineAtomInteraction";
+import type { InlineAtomWrapperInteractionOptions } from "./inlineAtomWrapperInteractions";
 
 export function destructureInlineAtom(
 	options: InlineAtomWrapperInteractionOptions,
@@ -51,17 +49,6 @@ export function destructureInlineAtom(
 		startOffset: options.offset,
 		endOffset: options.offset + text.length,
 		text,
-	});
-	const fieldEditor = getAttachedFieldEditor(
-		options.editor,
-	) as FieldEditorSession | null;
-	requestAnimationFrame(() => {
-		fieldEditor?.activateTextSelection(
-			options.blockId,
-			options.offset + text.length,
-			options.offset + text.length,
-		);
-		fieldEditor?.focus();
 	});
 	return true;
 }
@@ -175,7 +162,9 @@ export function selectInlineAtomRangeFromShiftClick(
 	return true;
 }
 
-export function canDestructure(options: InlineAtomWrapperInteractionOptions): boolean {
+export function canDestructure(
+	options: InlineAtomWrapperInteractionOptions,
+): boolean {
 	return options.interactions.destructure !== false;
 }
 

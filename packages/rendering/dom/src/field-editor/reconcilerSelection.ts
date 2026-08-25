@@ -1,7 +1,4 @@
-import {
-	domPointToLogicalOffset,
-	findLogicalDOMPoint,
-} from "./inlineAtomDom";
+import { domPointToLogicalOffset, findLogicalDOMPoint } from "./inlineAtomDom";
 
 export interface SavedSelection {
 	anchorOffset: number;

@@ -48,7 +48,9 @@ describe("mountEditor", () => {
 		expect(root.getAttribute("aria-label")).toBe("Editor");
 		expect(root.hasAttribute(DATA_ATTRS.editorRoot)).toBe(true);
 		expect(root.querySelector("[data-pen-editor-content]")).toBeTruthy();
-		expect(root.querySelector("[data-pen-editor-blocks-host]")).toBeTruthy();
+		expect(
+			root.querySelector("[data-pen-editor-blocks-host]"),
+		).toBeTruthy();
 
 		const inline = root.querySelector(`[${DATA_ATTRS.inlineContent}]`);
 		expect(inline).toBeInstanceOf(HTMLElement);
@@ -121,8 +123,8 @@ describe("mountEditor", () => {
 						type: "splice-text",
 						blockId: firstBlock.id,
 						from: 0,
-				to: 0,
-				insert: "Hello",
+						to: 0,
+						insert: "Hello",
 					},
 				],
 				{ origin: "user" },

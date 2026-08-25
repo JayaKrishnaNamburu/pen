@@ -22,8 +22,15 @@
 	color: var(--palette-b80);
 }
 
-.chat-bar-more {
+.chat-bar-actions {
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-xxs);
 	margin-left: auto;
+}
+
+.chat-bar-actions .toggle {
+	margin-right: var(--spacing-xs);
 }
 
 .chat-bar-icon {
@@ -65,11 +72,24 @@
 
 /* One line of text, so the widest radius would read as a pill. */
 .chat-suggestion {
-	padding: var(--spacing-sm) var(--spacing-md);
+	padding: var(--spacing-md) var(--spacing-md);
 	border-radius: var(--radius-lg);
+	background: var(--card-background);
 	color: var(--palette-b60);
 	font-size: var(--font-size-md);
 	line-height: 1.4;
+	transition:
+		background 0.1s ease,
+		color 0.1s ease,
+		transform 0.1s ease;
+}
+
+.chat-suggestion::before {
+	content: none;
+}
+
+.chat-suggestion:hover {
+	background: var(--card-background-hover);
 }
 
 /* ── Transcript ────────────────────────────────────────────── */

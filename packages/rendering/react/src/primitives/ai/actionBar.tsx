@@ -10,15 +10,11 @@ export interface AIActionBarProps extends AsChildProps {
 export function AIActionBar(props: AIActionBarProps) {
 	const { state } = useAIContext();
 	const generation = state.activeGeneration;
-	return renderAsChild(
-		props,
-		"div",
-		{
-			"data-pen-ai-actionBar": "",
-			"data-status": generation?.status ?? "idle",
-			hidden: generation == null,
-		},
-	);
+	return renderAsChild(props, "div", {
+		"data-pen-ai-actionBar": "",
+		"data-status": generation?.status ?? "idle",
+		hidden: generation == null,
+	});
 }
 
 export interface AIAcceptButtonProps extends AsChildProps {
@@ -42,15 +38,11 @@ export function AIAcceptButton(props: AIAcceptButtonProps) {
 		...props,
 		onClick: handleAcceptClick,
 	};
-	return renderAsChild(
-		buttonProps,
-		"button",
-		{
-			type: "button",
-			"data-pen-ai-accept": "",
-			disabled: !canAccept,
-		},
-	);
+	return renderAsChild(buttonProps, "button", {
+		type: "button",
+		"data-pen-ai-accept": "",
+		disabled: !canAccept,
+	});
 }
 
 export interface AIRejectButtonProps extends AsChildProps {
@@ -71,14 +63,10 @@ export function AIRejectButton(props: AIRejectButtonProps) {
 		...props,
 		onClick: handleRejectClick,
 	};
-	return renderAsChild(
-		buttonProps,
-		"button",
-		{
-			type: "button",
-			"data-pen-ai-reject": "",
-		},
-	);
+	return renderAsChild(buttonProps, "button", {
+		type: "button",
+		"data-pen-ai-reject": "",
+	});
 }
 
 export interface AIRetryButtonProps extends AsChildProps {
@@ -95,12 +83,8 @@ export function AIRetryButton(props: AIRetryButtonProps) {
 			void controller?.retryActiveGeneration();
 		},
 	};
-	return renderAsChild(
-		buttonProps,
-		"button",
-		{
-			type: "button",
-			"data-pen-ai-retry": "",
-		},
-	);
+	return renderAsChild(buttonProps, "button", {
+		type: "button",
+		"data-pen-ai-retry": "",
+	});
 }

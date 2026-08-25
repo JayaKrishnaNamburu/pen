@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import { createEditor } from "@input/pen-core";
-import type { AssetProvider, AssetRef, DiagnosticEvent } from "@input/pen-types";
+import type {
+	AssetProvider,
+	AssetRef,
+	DiagnosticEvent,
+} from "@input/pen-types";
 import { uploadImageFiles } from "../transferImages";
 import { defaultSchema } from "@input/pen-schema-default";
 
@@ -57,7 +61,10 @@ describe("IOP4 asset upload lifecycle", () => {
 	});
 
 	it("IOP4 API10 rejects oversize uploads with a diagnostic naming the limit and actual size", async () => {
-		const editor = createEditor({ schema: defaultSchema,  preset: noDefaultExtensionsPreset });
+		const editor = createEditor({
+			schema: defaultSchema,
+			preset: noDefaultExtensionsPreset,
+		});
 		const diagnostics: DiagnosticEvent[] = [];
 		editor.on("diagnostic", (event) => {
 			diagnostics.push(event);
@@ -84,7 +91,10 @@ describe("IOP4 asset upload lifecycle", () => {
 	});
 
 	it("IOP4 API10 reports provider failure with a diagnostic and inserts no block", async () => {
-		const editor = createEditor({ schema: defaultSchema,  preset: noDefaultExtensionsPreset });
+		const editor = createEditor({
+			schema: defaultSchema,
+			preset: noDefaultExtensionsPreset,
+		});
 		const diagnostics: DiagnosticEvent[] = [];
 		editor.on("diagnostic", (event) => {
 			diagnostics.push(event);
@@ -121,9 +131,7 @@ describe("IOP4 asset upload lifecycle", () => {
 			},
 		});
 
-		expect(uploaded).toEqual([
-			{ src: "memory://uploaded.png", alt: "ok" },
-		]);
+		expect(uploaded).toEqual([{ src: "memory://uploaded.png", alt: "ok" }]);
 		expect(upload).toHaveBeenCalledWith(
 			file,
 			expect.objectContaining({
@@ -135,7 +143,10 @@ describe("IOP4 asset upload lifecycle", () => {
 	});
 
 	it("IOP4 inserts successful files in a mixed batch and never calls delete", async () => {
-		const editor = createEditor({ schema: defaultSchema,  preset: noDefaultExtensionsPreset });
+		const editor = createEditor({
+			schema: defaultSchema,
+			preset: noDefaultExtensionsPreset,
+		});
 		const diagnostics: DiagnosticEvent[] = [];
 		editor.on("diagnostic", (event) => {
 			diagnostics.push(event);
@@ -158,7 +169,11 @@ describe("IOP4 asset upload lifecycle", () => {
 		});
 
 		const uploaded = await uploadImageFiles(
-			[imageFile("ok.png", 4), imageFile("big.png", 32), imageFile("fail.png", 4)],
+			[
+				imageFile("ok.png", 4),
+				imageFile("big.png", 32),
+				imageFile("fail.png", 4),
+			],
 			provider,
 			{ editor },
 		);

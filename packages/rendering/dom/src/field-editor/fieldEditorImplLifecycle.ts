@@ -258,6 +258,7 @@ export abstract class FieldEditorImplLifecycle extends FieldEditorImplCore {
 		if (element && this._isEditing) {
 			this._syncActiveElement(false);
 		}
+		this._sessionReconciler.notifyFrameAvailable();
 	}
 
 	protected _bindFocusSink(root: HTMLElement): void {

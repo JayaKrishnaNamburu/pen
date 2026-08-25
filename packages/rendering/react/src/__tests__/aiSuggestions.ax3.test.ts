@@ -45,7 +45,8 @@ function dispatchKey(key: string, target: EventTarget = document): void {
 
 async function openSuggestionsPopover() {
 	const editor = createEditor({
-		schema: defaultSchema,extensions: [
+		schema: defaultSchema,
+		extensions: [
 			aiSuggestionsExtension({
 				debounceMs: 0,
 				minStableMs: 0,
@@ -85,8 +86,8 @@ async function openSuggestionsPopover() {
 
 	await waitForCondition(
 		() =>
-			(getAISuggestionsController(editor)?.getState().suggestions.length ??
-				0) > 0,
+			(getAISuggestionsController(editor)?.getState().suggestions
+				.length ?? 0) > 0,
 	);
 
 	const container = document.createElement("div");
@@ -224,7 +225,9 @@ describe("@input/pen-react AI suggestions popover AX3", () => {
 
 		expect(document.activeElement).toBe(field);
 		expect(
-			document.activeElement?.closest("[data-pen-ai-suggestions-popover]"),
+			document.activeElement?.closest(
+				"[data-pen-ai-suggestions-popover]",
+			),
 		).toBeNull();
 		expect(field?.getAttribute("aria-activedescendant")).toBe(
 			options[0]?.id,

@@ -155,7 +155,10 @@ function cellPointsEqual(
 	return left.row === right.row && left.col === right.col;
 }
 
-function stringArraysEqual(left: readonly string[], right: readonly string[]): boolean {
+function stringArraysEqual(
+	left: readonly string[],
+	right: readonly string[],
+): boolean {
 	if (left.length !== right.length) {
 		return false;
 	}

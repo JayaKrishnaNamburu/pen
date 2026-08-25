@@ -209,16 +209,64 @@ const Check = ({ size = 14, color = "currentColor" }: IconProps) => (
 	</svg>
 );
 
-const More = ({ size = 14, color = "currentColor" }: IconProps) => (
+const Plus = ({ size = 14, color = "currentColor" }: IconProps) => (
 	<svg width={size} height={size} viewBox="0 0 14 14" aria-hidden="true">
 		<path
-			d="M 1.5 5.5 C 2.328 5.5 3 6.172 3 7 C 3 7.828 2.328 8.5 1.5 8.5 C 0.672 8.5 0 7.828 0 7 C 0 6.172 0.672 5.5 1.5 5.5 Z M 12.5 5.5 C 13.328 5.5 14 6.172 14 7 C 14 7.828 13.328 8.5 12.5 8.5 C 11.672 8.5 11 7.828 11 7 C 11 6.172 11.672 5.5 12.5 5.5 Z M 7 5.5 C 7.828 5.5 8.5 6.172 8.5 7 C 8.5 7.828 7.828 8.5 7 8.5 C 6.172 8.5 5.5 7.828 5.5 7 C 5.5 6.172 6.172 5.5 7 5.5 Z"
+			d="M 6.25 1.75 C 6.25 1.336 6.586 1 7 1 C 7.414 1 7.75 1.336 7.75 1.75 L 7.75 6.25 L 12.25 6.25 C 12.664 6.25 13 6.586 13 7 C 13 7.414 12.664 7.75 12.25 7.75 L 7.75 7.75 L 7.75 12.25 C 7.75 12.664 7.414 13 7 13 C 6.586 13 6.25 12.664 6.25 12.25 L 6.25 7.75 L 1.75 7.75 C 1.336 7.75 1 7.414 1 7 C 1 6.586 1.336 6.25 1.75 6.25 L 6.25 6.25 Z"
 			fill={color}
 		/>
 	</svg>
 );
 
+const Anthropic = ({ size = 14, color = "currentColor" }: IconProps) => (
+	<svg width={size} height={size} viewBox="0 0 14 14" aria-hidden="true">
+		<path
+			d="M 10.167 2 L 14 12 L 11.898 12 L 8.066 2 Z M 6.242 8.043 L 4.931 4.529 L 3.62 8.043 Z M 6.029 2 L 9.862 12 L 7.718 12 L 6.935 9.9 L 2.926 9.9 L 2.143 12 L 0 12 L 3.832 2 Z"
+			fill={color}
+		/>
+	</svg>
+);
+
+/**
+ * Input's mark. The product icon is animated; this is the still frame from
+ * `apps/web/src/shared/ui/icons/IconLogo.tsx` (`animate="none"`).
+ */
+const Logo = ({ size = 14, color = "currentColor" }: IconProps) => (
+	<svg
+		width={size}
+		height={size}
+		viewBox="0 0 14 14"
+		fill="none"
+		style={{ overflow: "visible" }}
+		aria-hidden="true"
+	>
+		<g transform="translate(0.909 1)">
+			<path
+				d="M 6.591 0 C 3.924 0.066 2.424 1.328 2.091 3.787 L 0.129 6.594 C -0.024 6.813 -0.042 7.099 0.081 7.335 C 0.204 7.572 0.449 7.721 0.716 7.721 L 1.841 7.721 C 1.979 7.721 2.091 7.833 2.091 7.971 L 2.091 9.426 C 2.091 9.978 2.539 10.426 3.091 10.426 L 4.628 10.426 C 4.911 10.426 5.171 10.586 5.298 10.84 L 5.941 12.12 L 5.941 12.12"
+				fill="transparent"
+				strokeWidth="1.75"
+				stroke={color}
+				strokeLinecap="round"
+				strokeLinejoin="round"
+			/>
+			<path
+				d="M 4.091 4.77 C 4.091 4.091 4.65 3.54 5.341 3.54 C 6.031 3.54 6.591 4.091 6.591 4.77 C 6.591 5.449 6.031 6 5.341 6 C 4.65 6 4.091 5.449 4.091 4.77 Z"
+				fill={color}
+			/>
+			<path
+				d="M 9.591 12.12 L 9.591 12.017 C 9.591 11.644 9.799 11.302 10.13 11.13 L 11.466 10.435 C 11.806 10.258 12.014 9.9 11.998 9.516 C 11.982 9.133 11.745 8.793 11.391 8.645 L 10.568 8.301 C 10.21 8.151 9.971 7.808 9.955 7.42 C 9.938 7.032 10.148 6.67 10.493 6.491 L 11.626 5.904 C 11.958 5.732 12.166 5.39 12.166 5.016 C 12.166 4.642 11.958 4.3 11.626 4.128 L 10.236 3.409 C 9.909 3.24 9.702 2.906 9.696 2.538 C 9.689 2.17 9.885 1.829 10.206 1.649 L 11.581 0.877 C 11.896 0.7 12.091 0.366 12.091 0.005 L 12.091 0 L 12.091 0"
+				fill="transparent"
+				strokeWidth="1.75"
+				stroke={color}
+				strokeLinecap="round"
+				strokeLinejoin="round"
+			/>
+		</g>
+	</svg>
+);
+
 export const Icon = {
+	Anthropic,
 	ArrowUp,
 	Bold,
 	Check,
@@ -228,8 +276,9 @@ export const Icon = {
 	Collaborate,
 	Code,
 	Italic,
-	More,
+	Logo,
 	PenMagic,
+	Plus,
 	Redo,
 	SidebarRight,
 	Stop,

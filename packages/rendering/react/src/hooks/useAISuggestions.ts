@@ -32,8 +32,9 @@ const EMPTY_STATE: AISuggestionsState = {
 
 export function useAISuggestions(editor: Editor) {
 	const controller =
-		(editor.facet(aiSuggestionsControllerFacet) as AISuggestionsController | null) ??
-		null;
+		(editor.facet(
+			aiSuggestionsControllerFacet,
+		) as AISuggestionsController | null) ?? null;
 	const snapshotRef = useRef<AISuggestionsState>(EMPTY_STATE);
 
 	const subscribe = useCallback(
@@ -62,8 +63,9 @@ export function useAISuggestions(editor: Editor) {
 			(suggestion) => suggestion.id === state.activeSuggestionId,
 		) ?? null;
 	const activeGroup =
-		state.groups.find((group) => group.id === state.activeSuggestionGroupId) ??
-		null;
+		state.groups.find(
+			(group) => group.id === state.activeSuggestionGroupId,
+		) ?? null;
 
 	return {
 		state,
@@ -75,10 +77,12 @@ export function useAISuggestions(editor: Editor) {
 		setActiveSuggestionGroup: (id: string | null) => {
 			controller?.setActiveSuggestionGroup(id);
 		},
-		applySuggestion: (id: string) => controller?.applySuggestion(id) ?? false,
+		applySuggestion: (id: string) =>
+			controller?.applySuggestion(id) ?? false,
 		applySuggestionGroup: (id: string) =>
 			controller?.applySuggestionGroup(id) ?? 0,
-		dismissSuggestion: (id: string) => controller?.dismissSuggestion(id) ?? false,
+		dismissSuggestion: (id: string) =>
+			controller?.dismissSuggestion(id) ?? false,
 		dismissSuggestionGroup: (id: string) =>
 			controller?.dismissSuggestionGroup(id) ?? 0,
 	};
@@ -123,7 +127,8 @@ function isSameSuggestions(
 			leftSuggestion?.from !== rightSuggestion?.from ||
 			leftSuggestion?.to !== rightSuggestion?.to ||
 			leftSuggestion?.originalText !== rightSuggestion?.originalText ||
-			leftSuggestion?.replacementText !== rightSuggestion?.replacementText ||
+			leftSuggestion?.replacementText !==
+				rightSuggestion?.replacementText ||
 			leftSuggestion?.title !== rightSuggestion?.title ||
 			leftSuggestion?.kind !== rightSuggestion?.kind ||
 			leftSuggestion?.reason !== rightSuggestion?.reason ||

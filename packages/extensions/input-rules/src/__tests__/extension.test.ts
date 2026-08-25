@@ -21,7 +21,6 @@ type InputRulesExtensionTestEditor = {
 		type: "text";
 		anchor: { blockId: string; offset: number };
 		focus: { blockId: string; offset: number };
-		isCollapsed: boolean;
 	};
 	schema: {
 		resolve(): {
@@ -40,7 +39,7 @@ function createMockEditor(textContent: string) {
 		apply,
 		getBlock: () => ({
 			type: "paragraph",
-			textContent: () => textContent,
+			textContent: () => textContent
 		}),
 		onBeforeApply: vi.fn((hook: BeforeApplyHook) => {
 			beforeApplyHook = hook;
@@ -49,27 +48,26 @@ function createMockEditor(textContent: string) {
 			};
 		}),
 		internals: {
-			assignSlot: vi.fn(),
+			assignSlot: vi.fn()
 		},
 		selection: {
 			type: "text" as const,
 			anchor: { blockId: "b1", offset: textContent.length },
-			focus: { blockId: "b1", offset: textContent.length },
-			isCollapsed: true,
+			focus: { blockId: "b1", offset: textContent.length }
 		},
 		schema: {
 			resolve: () => ({
 				content: "inline",
-				fieldEditor: "richtext",
+				fieldEditor: "richtext"
 			}),
-			resolveInline: () => ({ kind: "mark" }),
-		},
+			resolveInline: () => ({ kind: "mark" })
+		}
 	} satisfies InputRulesExtensionTestEditor;
 
 	return {
 		editor: editor as unknown as Editor,
 		apply,
-		getHook: () => beforeApplyHook,
+		getHook: () => beforeApplyHook
 	};
 }
 
@@ -82,7 +80,7 @@ describe("inputRulesExtension", () => {
 			editor,
 			dom: {} as Document,
 			emit: () => undefined,
-			getState: () => undefined,
+			getState: () => undefined
 		});
 
 		const hook = getHook();
@@ -102,7 +100,7 @@ describe("inputRulesExtension", () => {
 			{ type: "splice-text", blockId: "b1", from: 0,
 				to: 0 + 2 , insert: "" },
 			{
-				type: "set-props", blockId: "b1", props: { type: "heading", ...{ level: 1  }},
+				type: "set-props", blockId: "b1", props: { type: "heading", ...{ level: 1  }}
 			},
 		]);
 		expect(apply).not.toHaveBeenCalled();
@@ -130,19 +128,19 @@ describe("inputRulesExtension", () => {
 								blockId: ctx.blockId,
 								from: ctx.fullText.length + 1,
 				to: ctx.fullText.length + 1,
-				insert: " ",
+				insert: " "
 							},
 						];
-					},
+					}
 				},
-			],
+			]
 		});
 
 		await extension.activateClient?.({
 			editor,
 			dom: {} as Document,
 			emit: () => undefined,
-			getState: () => undefined,
+			getState: () => undefined
 		});
 
 		const ops = getHook()!(
@@ -171,7 +169,7 @@ describe("inputRulesExtension", () => {
 			editor,
 			dom: {} as Document,
 			emit: () => undefined,
-			getState: () => undefined,
+			getState: () => undefined
 		});
 
 		const originalOps: DocumentOp[] = [

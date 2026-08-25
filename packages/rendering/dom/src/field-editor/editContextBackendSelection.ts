@@ -3,7 +3,6 @@ import type { FieldEditorInputController } from "./controller";
 import { urlPolicyFromEditor } from "../security/resolveEditorUrl";
 import { fullReconcileToDOM, applyDeltaToDOM } from "./reconciler";
 import {
-	domSelectionToEditor,
 	editorSelectionToDOM,
 	getDirectionalSelectionOffsets,
 } from "./selectionBridge";
@@ -33,8 +32,12 @@ import type {
 	EditContextTextFormatUpdateEvent,
 	EditContextTextUpdateEvent,
 } from "./editContextTypes";
-import { normalizeSelectionFormation } from "../utils/selectionFormation";
-import { shouldStopEquivalentDomRead } from "./selectionReader";
+import {
+	forwardDomSelectionToReader,
+	readNormalizedDomProposal,
+	resolveEditorRoot,
+	shouldStopEquivalentDomRead,
+} from "./selectionReader";
 import { handleFieldEditorKeyDown } from "./keyHandling";
 import { isHistoryTransactionOrigin } from "./historyOrigin";
 import { handleCopy, handleCut, handleClipboardPaste } from "./clipboard";
@@ -70,17 +73,14 @@ export abstract class EditContextBackendSelection extends EditContextBackendInpu
 			return;
 		}
 
-		const root = this.element.closest(
-			"[data-pen-editor-root]",
-		) as HTMLElement | null;
+		const root = resolveEditorRoot(this.element);
 		if (!root) return;
 
-		const mappedSelection = domSelectionToEditor(root);
-		if (!mappedSelection) return;
-		const normalizedSelection = normalizeSelectionFormation(
+		const normalizedSelection = readNormalizedDomProposal(
+			root,
 			this.editor,
-			mappedSelection,
 		);
+		if (!normalizedSelection) return;
 
 		if (shouldStopEquivalentDomRead(this.editor, normalizedSelection)) {
 			return;
@@ -92,11 +92,12 @@ export abstract class EditContextBackendSelection extends EditContextBackendInpu
 		}
 
 		if (normalizedSelection.type === "block") {
-			if (this.fieldEditor.readDomSelection) {
-				this.fieldEditor.readDomSelection({
-					type: "block",
-					blockIds: normalizedSelection.blockIds,
-				});
+			if (
+				forwardDomSelectionToReader(
+					this.fieldEditor,
+					normalizedSelection,
+				)
+			) {
 				return;
 			}
 			this.fieldEditor.deactivate();
@@ -111,12 +112,12 @@ export abstract class EditContextBackendSelection extends EditContextBackendInpu
 			normalizedSelection.anchor.blockId !==
 			normalizedSelection.focus.blockId
 		) {
-			if (this.fieldEditor.readDomSelection) {
-				this.fieldEditor.readDomSelection({
-					type: "text",
-					anchor: normalizedSelection.anchor,
-					focus: normalizedSelection.focus,
-				});
+			if (
+				forwardDomSelectionToReader(
+					this.fieldEditor,
+					normalizedSelection,
+				)
+			) {
 				return;
 			}
 			this.fieldEditor.applyDocumentTextSelection(
@@ -129,12 +130,12 @@ export abstract class EditContextBackendSelection extends EditContextBackendInpu
 		if (
 			normalizedSelection.anchor.blockId !== this.fieldEditor.focusBlockId
 		) {
-			if (this.fieldEditor.readDomSelection) {
-				this.fieldEditor.readDomSelection({
-					type: "text",
-					anchor: normalizedSelection.anchor,
-					focus: normalizedSelection.focus,
-				});
+			if (
+				forwardDomSelectionToReader(
+					this.fieldEditor,
+					normalizedSelection,
+				)
+			) {
 				return;
 			}
 			this.fieldEditor.activateTextSelection(
@@ -196,8 +197,8 @@ export abstract class EditContextBackendSelection extends EditContextBackendInpu
 			"user-dom",
 			nextSelection,
 		);
-		if (this.fieldEditor.readDomSelection) {
-			this.fieldEditor.readDomSelection({
+		if (
+			forwardDomSelectionToReader(this.fieldEditor, {
 				type: "text",
 				anchor: {
 					blockId: normalizedSelection.anchor.blockId,
@@ -207,7 +208,8 @@ export abstract class EditContextBackendSelection extends EditContextBackendInpu
 					blockId: normalizedSelection.anchor.blockId,
 					offset: offsets.focus,
 				},
-			});
+			})
+		) {
 			return;
 		}
 		this.fieldEditor.syncTextSelection(

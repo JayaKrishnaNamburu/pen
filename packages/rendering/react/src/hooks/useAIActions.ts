@@ -9,7 +9,10 @@ import type {
 } from "@input/pen-ai";
 
 export function useAIActions(editor: Editor): {
-	runPrompt: (prompt: string, options?: AICommandExecutionOptions) => Promise<unknown>;
+	runPrompt: (
+		prompt: string,
+		options?: AICommandExecutionOptions,
+	) => Promise<unknown>;
 	acceptSuggestion: (id: string) => boolean;
 	rejectSuggestion: (id: string) => boolean;
 	acceptAllSuggestions: () => void;
@@ -40,7 +43,10 @@ export function useAIActions(editor: Editor): {
 		turnId: string,
 		resolution: AISessionResolution,
 	) => boolean;
-	resolveSession: (sessionId: string, resolution: AISessionResolution) => boolean;
+	resolveSession: (
+		sessionId: string,
+		resolution: AISessionResolution,
+	) => boolean;
 	acceptSession: (sessionId: string) => boolean;
 	rejectSession: (sessionId: string) => boolean;
 	cancelSession: (sessionId: string) => void;
@@ -107,7 +113,10 @@ export function useAIActions(editor: Editor): {
 			return controller.runSessionPrompt(sessionId, prompt, options);
 		},
 		resolveSessionTurn(sessionId, turnId, resolution) {
-			return controller?.resolveSessionTurn(sessionId, turnId, resolution) ?? false;
+			return (
+				controller?.resolveSessionTurn(sessionId, turnId, resolution) ??
+				false
+			);
 		},
 		resolveSession(sessionId, resolution) {
 			return controller?.resolveSession(sessionId, resolution) ?? false;

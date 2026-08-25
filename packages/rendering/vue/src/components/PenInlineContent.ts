@@ -224,6 +224,7 @@ export const PenInlineContent = defineComponent({
 						unicodeBidi: "isolate",
 					},
 					"data-selected": isBlockSelected(
+						editor,
 						selection.value,
 						props.blockId,
 					)

@@ -76,7 +76,8 @@ export function measureCaretRect(
 		return collapsedCaretFromRects(collapsed, affinity);
 	}
 
-	const previous = offset > 0 ? characterRect(root, inlineEl, offset - 1) : null;
+	const previous =
+		offset > 0 ? characterRect(root, inlineEl, offset - 1) : null;
 	const next = offset < length ? characterRect(root, inlineEl, offset) : null;
 	const fromAffinity = caretFromAffinity(previous, next, affinity);
 	if (fromAffinity) {
@@ -139,7 +140,10 @@ export function measureLogicalRange(
 	return unionRects(rects.map(rectFromDOMRect));
 }
 
-export function measureBlockRect(root: HTMLElement, blockId: string): Rect | null {
+export function measureBlockRect(
+	root: HTMLElement,
+	blockId: string,
+): Rect | null {
 	const blockEl = queryBlockElement(root, blockId);
 	if (!blockEl) {
 		return null;
@@ -227,10 +231,16 @@ function caretFromAffinity(
 	if (wrapped) {
 		switch (affinity) {
 			case "downstream":
-				return next ? collapsedRect(next.left, next.top, next.height) : null;
+				return next
+					? collapsedRect(next.left, next.top, next.height)
+					: null;
 			case "upstream":
 				return previous
-					? collapsedRect(previous.right, previous.top, previous.height)
+					? collapsedRect(
+							previous.right,
+							previous.top,
+							previous.height,
+						)
 					: null;
 			default: {
 				const _exhaustive: never = affinity;
@@ -242,9 +252,15 @@ function caretFromAffinity(
 	switch (affinity) {
 		case "upstream":
 			if (previous) {
-				return collapsedRect(previous.right, previous.top, previous.height);
+				return collapsedRect(
+					previous.right,
+					previous.top,
+					previous.height,
+				);
 			}
-			return next ? collapsedRect(next.left, next.top, next.height) : null;
+			return next
+				? collapsedRect(next.left, next.top, next.height)
+				: null;
 		case "downstream":
 			if (next) {
 				return collapsedRect(next.left, next.top, next.height);
@@ -259,12 +275,18 @@ function caretFromAffinity(
 	}
 }
 
-function collapsedCaretFromRects(rects: readonly DOMRect[], affinity: Affinity): Rect {
+function collapsedCaretFromRects(
+	rects: readonly DOMRect[],
+	affinity: Affinity,
+): Rect {
 	const chosen = pickAffinityRect(rects, affinity);
 	return collapsedRect(chosen.left, chosen.top, chosen.height);
 }
 
-function pickAffinityRect(rects: readonly DOMRect[], affinity: Affinity): DOMRect {
+function pickAffinityRect(
+	rects: readonly DOMRect[],
+	affinity: Affinity,
+): DOMRect {
 	const first = rects[0];
 	const last = rects[rects.length - 1];
 	if (!first) {

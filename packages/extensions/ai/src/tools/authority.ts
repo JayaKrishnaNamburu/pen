@@ -75,7 +75,13 @@ export interface AIToolTurn {
   readonly reason: AIToolAuthorityReason | null;
   readonly lastStatus: AIToolCallStatus | null;
   tryRecordCall(): boolean;
-  recordOps(count: number): number;
+  /**
+   * Records an op batch atomically. Returns `null` when the whole batch fits;
+   * otherwise records nothing and returns the exhausted-budget reason.
+   * Exceeding the turn total also ends the turn; exceeding only the per-call
+   * limit fails the call but leaves the turn open.
+   */
+  tryRecordOps(count: number): AIToolAuthorityReason | null;
   closeCall(): void;
   markStatus(status: AIToolCallStatus, reason?: AIToolAuthorityReason): void;
 }
@@ -171,6 +177,32 @@ export function createAIToolTurn(options: AIToolTurnOptions = {}): AIToolTurn {
   return new AIToolTurnState(options);
 }
 
+/**
+ * Thrown when a tool call's op batch exceeds an op budget. The whole batch is
+ * rejected — nothing was applied — and the message tells the model how to
+ * proceed.
+ */
+export class AIToolBudgetError extends Error {
+  readonly reason: Extract<
+    AIToolAuthorityReason,
+    "budget-ops-per-call-exhausted" | "budget-total-ops-exhausted"
+  >;
+
+  constructor(
+    reason: AIToolBudgetError["reason"],
+    opCount: number,
+    limits: AIToolBudgetLimits,
+  ) {
+    super(
+      reason === "budget-ops-per-call-exhausted"
+        ? `This batch of ${opCount} document operations is over the per-call limit of ${limits.maxOpsPerCall}. None of it was applied. Split the change into smaller tool calls.`
+        : `This batch of ${opCount} document operations exceeds the remaining op budget for this turn (max ${limits.maxTotalOpsPerTurn} total). None of it was applied and the turn has ended.`,
+    );
+    this.name = "AIToolBudgetError";
+    this.reason = reason;
+  }
+}
+
 export function isAIToolCallDenied(value: unknown): value is AIToolCallDenied {
   if (value == null || typeof value !== "object") {
     return false;
@@ -181,6 +213,19 @@ export function isAIToolCallDenied(value: unknown): value is AIToolCallDenied {
     (candidate.status === "blocked" || candidate.status === "turn-ended") &&
     typeof candidate.reason === "string"
   );
+}
+
+/**
+ * A returned tool result that asks the model to retry. Handlers signal that
+ * with the generic `{ ok: false }` convention (authority denials, semantic
+ * refusals). Handler-specific fields stay out of this predicate so the loop
+ * cannot learn one tool's payload shape.
+ */
+export function isAIToolResultAskingRetry(value: unknown): boolean {
+  if (value == null || typeof value !== "object") {
+    return false;
+  }
+  return (value as { ok?: unknown }).ok === false;
 }
 
 export function denyAIToolCall(
@@ -249,23 +294,22 @@ class AIToolTurnState implements AIToolTurn {
     return true;
   }
 
-  recordOps(count: number): number {
+  tryRecordOps(count: number): AIToolAuthorityReason | null {
     if (count <= 0) {
-      return 0;
+      return null;
+    }
+    const turnRoom = this.limits.maxTotalOpsPerTurn - this._ops;
+    if (count > turnRoom) {
+      this.end("budget-total-ops-exhausted");
+      return "budget-total-ops-exhausted";
     }
     const callRoom = this.limits.maxOpsPerCall - this._opsThisCall;
-    const turnRoom = this.limits.maxTotalOpsPerTurn - this._ops;
-    const allowed = Math.max(0, Math.min(count, callRoom, turnRoom));
-    this._opsThisCall += allowed;
-    this._ops += allowed;
-    if (allowed < count) {
-      if (callRoom <= turnRoom) {
-        this.end("budget-ops-per-call-exhausted");
-      } else {
-        this.end("budget-total-ops-exhausted");
-      }
+    if (count > callRoom) {
+      return "budget-ops-per-call-exhausted";
     }
-    return allowed;
+    this._opsThisCall += count;
+    this._ops += count;
+    return null;
   }
 
   closeCall(): void {

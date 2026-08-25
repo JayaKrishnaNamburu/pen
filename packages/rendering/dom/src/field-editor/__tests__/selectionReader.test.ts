@@ -101,12 +101,12 @@ describe("isLogicallyEquivalent", () => {
 		});
 
 		it("E2 N1: opposite atom sides are not equivalent", () => {
-			expect(
-				isLogicallyEquivalent(beforeAtom, afterAtom, snapshot),
-			).toBe(false);
-			expect(
-				isLogicallyEquivalent(afterAtom, beforeAtom, snapshot),
-			).toBe(false);
+			expect(isLogicallyEquivalent(beforeAtom, afterAtom, snapshot)).toBe(
+				false,
+			);
+			expect(isLogicallyEquivalent(afterAtom, beforeAtom, snapshot)).toBe(
+				false,
+			);
 		});
 
 		it("E2 N1: an interior offset is equivalent to either atom side", () => {
@@ -499,9 +499,7 @@ describe("originForGestureWindows", () => {
 		);
 		expect(originForGestureWindows(ime)).toBe("ime");
 		expect(
-			originForGestureWindows(
-				nextGestureWindowState("pointerdown", ime),
-			),
+			originForGestureWindows(nextGestureWindowState("pointerdown", ime)),
 		).toBe("ime");
 	});
 
@@ -566,9 +564,13 @@ describe("decideDomSelectionRead §4.2 steps 4–5", () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const id = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "splice-text", blockId: id, from: 0,
+			{
+				type: "splice-text",
+				blockId: id,
+				from: 0,
 				to: 0,
-				insert: "hello" },
+				insert: "hello",
+			},
 		]);
 		editor.selectText(id, 0, 0);
 		const decided = decideDomSelectionRead({
@@ -586,9 +588,13 @@ describe("decideDomSelectionRead §4.2 steps 4–5", () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const id = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "splice-text", blockId: id, from: 0,
+			{
+				type: "splice-text",
+				blockId: id,
+				from: 0,
 				to: 0,
-				insert: "hello" },
+				insert: "hello",
+			},
 		]);
 		editor.selectText(id, 0, 0);
 		const decided = decideDomSelectionRead({
@@ -612,9 +618,13 @@ describe("decideDomSelectionRead §4.2 steps 4–5", () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const id = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "splice-text", blockId: id, from: 0,
+			{
+				type: "splice-text",
+				blockId: id,
+				from: 0,
 				to: 0,
-				insert: "hello" },
+				insert: "hello",
+			},
 		]);
 		editor.selectText(id, 0, 0);
 		const overlapping = nextGestureWindowState(
@@ -671,9 +681,13 @@ describe("decideDomSelectionRead §4.2 steps 4–5", () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const id = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "splice-text", blockId: id, from: 0,
+			{
+				type: "splice-text",
+				blockId: id,
+				from: 0,
 				to: 0,
-				insert: "hello" },
+				insert: "hello",
+			},
 		]);
 		editor.selectText(id, 0, 0);
 		const result = decideDomSelectionRead({
@@ -697,9 +711,13 @@ describe("decideDomSelectionRead §4.2 steps 4–5", () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const id = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "splice-text", blockId: id, from: 0,
+			{
+				type: "splice-text",
+				blockId: id,
+				from: 0,
 				to: 0,
-				insert: "hello" },
+				insert: "hello",
+			},
 		]);
 		editor.selectText(id, 0, 0);
 		const result = decideDomSelectionRead({
@@ -765,9 +783,13 @@ describe("shouldStopEquivalentDomRead", () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const id = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "splice-text", blockId: id, from: 0,
+			{
+				type: "splice-text",
+				blockId: id,
+				from: 0,
 				to: 0,
-				insert: "hello" },
+				insert: "hello",
+			},
 		]);
 		editor.selectText(id, 0, 0);
 		expect(
@@ -892,9 +914,9 @@ describe("gesture windows §4.1", () => {
 		});
 
 		it("never treats keydown itself as an admissible DOM read", () => {
-			expect(
-				isAdmissibleDomRead("keydown", apply("pointerdown")),
-			).toBe(false);
+			expect(isAdmissibleDomRead("keydown", apply("pointerdown"))).toBe(
+				false,
+			);
 		});
 	});
 

@@ -10,14 +10,10 @@ export function AISuggestion(props: AISuggestionProps) {
 	const { state } = useAIContext();
 	const suggestion = state.ephemeralSuggestion;
 
-	return renderAsChild(
-		props,
-		"div",
-		{
-			"data-pen-ai-suggestion": "",
-			"data-type": suggestion?.type ?? undefined,
-			"data-visible": suggestion ? "" : undefined,
-			hidden: suggestion == null,
-		},
-	);
+	return renderAsChild(props, "div", {
+		"data-pen-ai-suggestion": "",
+		"data-type": suggestion?.type ?? undefined,
+		"data-visible": suggestion ? "" : undefined,
+		hidden: suggestion == null,
+	});
 }

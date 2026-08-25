@@ -183,6 +183,8 @@
 - getAttachedFieldEditor
 - getAttachedFieldEditorStore
 - HistoryState
+- InlineAtomInteractions
+- InlineAtomRenderInteractionProps
 - InlineDecoration
 - InlineSuggestionControlPosition
 - InlineSuggestionControlsState
@@ -278,10 +280,8 @@
 - EditorContextValue
 - EditorRootProps
 - FieldEditorWrapperProps
-- InlineAtomInteractions
 - InlineAtomRenderer
 - InlineAtomRenderers
-- InlineAtomRenderInteractionProps
 - InlineAtomRenderProps
 - InlineContentProps
 - PasteImporters

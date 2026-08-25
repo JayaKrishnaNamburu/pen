@@ -79,7 +79,10 @@ describe("root geometry host", () => {
 			expect(host.scheduler.phase).toBe("read");
 			const rect = measureWithRoot(root, ({ reader, scheduler }) => {
 				expect(scheduler.phase).toBe("read");
-				return reader.caretRect({ blockId: "p1", offset: 1 }, "downstream");
+				return reader.caretRect(
+					{ blockId: "p1", offset: 1 },
+					"downstream",
+				);
 			});
 			expect(rect).toEqual(caret);
 		});

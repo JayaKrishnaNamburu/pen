@@ -93,9 +93,7 @@ export abstract class ContentEditableBackendEvents extends ContentEditableBacken
 	protected handleCompositionStart = (): void => {
 		if (this.compositionStartText != null) {
 			this.reconcileAfterComposition();
-			this.fieldEditor.notifyGestureEvent?.(
-				"compositionend-completed",
-			);
+			this.fieldEditor.notifyGestureEvent?.("compositionend-completed");
 		}
 		this.isComposing = true;
 		this.ignoreBrowserMutations = false;
@@ -121,9 +119,7 @@ export abstract class ContentEditableBackendEvents extends ContentEditableBacken
 
 		if (fieldIsQuiescent) {
 			this.reconcileAfterComposition();
-			this.fieldEditor.notifyGestureEvent?.(
-				"compositionend-completed",
-			);
+			this.fieldEditor.notifyGestureEvent?.("compositionend-completed");
 		}
 	};
 
@@ -166,9 +162,7 @@ export abstract class ContentEditableBackendEvents extends ContentEditableBacken
 		if (this.restoringDomFromModel) return;
 		if (!this.isComposing && this.compositionStartText != null) {
 			this.reconcileAfterComposition();
-			this.fieldEditor.notifyGestureEvent?.(
-				"compositionend-completed",
-			);
+			this.fieldEditor.notifyGestureEvent?.("compositionend-completed");
 			return;
 		}
 		if (this.isComposing) return;

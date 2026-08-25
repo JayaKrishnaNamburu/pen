@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { getAIController } from "@input/pen-ai";
 import {
 	getMultiplayerController,
 	type MultiplayerController,
@@ -39,7 +40,13 @@ export function usePenEditor(
 		}
 
 		setEditor(nextEditor);
-		window.penPlayground = { editor: nextEditor };
+		// Console handles for debugging. The AI controller is here for the
+		// same reason the editor is: when a turn misbehaves, the route it
+		// took and the preview it is holding are the first two things to read.
+		window.penPlayground = {
+			editor: nextEditor,
+			aiController: getAIController(nextEditor),
+		};
 
 		return () => {
 			stopWaitingForRoom?.();

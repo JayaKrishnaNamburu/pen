@@ -9,19 +9,11 @@ import {
 	buildContextDecorations,
 	shouldShowSelectionContext,
 } from "./contextDecorations";
-import {
-	resolveAIReviewPresentationState,
-	AI_REVIEW_PREVIEW_NEW_ATTRIBUTE,
-	AI_REVIEW_PREVIEW_VIRTUAL_ATTRIBUTE,
-	AI_REVIEW_ROLE_ATTRIBUTE,
-	AI_REVIEW_STATE_ATTRIBUTE,
-	FINAL_TEXT_REVIEW_HIDDEN_ATTRIBUTE,
-} from "./reviewPresentationState";
+import { resolveAIReviewPresentationState } from "./reviewPresentationState";
 import { collectSuggestionDecorations } from "./suggestionDecorations";
 import { buildStreamingReviewPreviewDecorations } from "./streamingPreviewDecorations";
 
 export {
-	AI_REVIEW_PREVIEW_NEW_ATTRIBUTE,
 	AI_REVIEW_PREVIEW_VIRTUAL_ATTRIBUTE,
 	AI_REVIEW_ROLE_ATTRIBUTE,
 	AI_REVIEW_STATE_ATTRIBUTE,
@@ -40,7 +32,7 @@ export function buildAIReviewPresentationDecorations({
 	editor,
 	sessions,
 	suggestionPresentation,
-	streamingReviewPreview,
+	streamingReviewPreviews,
 }: {
 	activeGeneration?: GenerationState | null;
 	activeSessionId: string | null | undefined;
@@ -49,7 +41,7 @@ export function buildAIReviewPresentationDecorations({
 	suggestionPresentation: NonNullable<
 		AIExtensionConfig["suggestionPresentation"]
 	>;
-	streamingReviewPreview?: AIStreamingReviewPreview | null;
+	streamingReviewPreviews?: readonly AIStreamingReviewPreview[];
 }): Decoration[] {
 	const activeSession =
 		sessions.find((session) => session.id === activeSessionId) ?? null;
@@ -64,9 +56,26 @@ export function buildAIReviewPresentationDecorations({
 		activeSession,
 		hasSuggestions,
 	});
-	const hasActiveStreamingReviewPreview =
-		activeSession != null &&
-		streamingReviewPreview?.sessionId === activeSession.id;
+	// A preview belongs to a turn, and a turn does not always have a session:
+	// chat prompts run a generation with no session row at all. Asking for one
+	// here meant the surface most edits arrive through built its preview and
+	// then dropped it, so the edit only ever appeared as the finished replace.
+	// The controller stamps the preview with `sessionId ?? id`; read it back
+	// the same way rather than through a row that may not exist.
+	const streamingPreviewOwnerId =
+		activeGeneration != null
+			? (activeGeneration.sessionId ?? activeGeneration.id)
+			: (activeSession?.id ?? null);
+	// Every operation of the streaming call is on screen at once: one has
+	// finished arriving while the next is still coming, and neither is written
+	// until the call closes (EC15).
+	const activePreviews =
+		streamingPreviewOwnerId == null
+			? []
+			: (streamingReviewPreviews ?? []).filter(
+					(preview) => preview.sessionId === streamingPreviewOwnerId,
+				);
+	const hasActiveStreamingReviewPreview = activePreviews.length > 0;
 	const contextDecorations = shouldShowSelectionContext({
 		hasActiveStreamingReviewPreview,
 		hasSuggestions,
@@ -79,13 +88,13 @@ export function buildAIReviewPresentationDecorations({
 				suggestionRangesByBlock,
 			})
 		: [];
-	const previewDecorations = hasActiveStreamingReviewPreview
-		? buildStreamingReviewPreviewDecorations({
-				editor,
-				preview: streamingReviewPreview,
-				suggestionPresentation,
-			})
-		: [];
+	const previewDecorations = activePreviews.flatMap((preview) =>
+		buildStreamingReviewPreviewDecorations({
+			editor,
+			preview,
+			suggestionPresentation,
+		}),
+	);
 
 	return [
 		...suggestionDecorations,

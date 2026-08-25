@@ -17,7 +17,11 @@ const CHAT_ENDPOINT = "/api/chat";
  */
 export function createPenModel(): ModelAdapter {
 	return {
-		async *stream({ messages, tools, signal }) {
+		capabilities: {
+			partialToolInput: true,
+			forcedToolChoice: true,
+		},
+		async *stream({ messages, tools, signal, toolChoice }) {
 			let response: Response;
 
 			try {
@@ -30,7 +34,7 @@ export function createPenModel(): ModelAdapter {
 							? { "x-anthropic-api-key": storedKey }
 							: {}),
 					},
-					body: JSON.stringify({ messages, tools }),
+					body: JSON.stringify({ messages, tools, toolChoice }),
 					signal,
 				});
 			} catch (error) {

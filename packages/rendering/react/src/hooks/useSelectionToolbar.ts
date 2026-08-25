@@ -1,8 +1,8 @@
-import { useRef, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { aiControllerFacet, isCollapsed } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
 import type { AIController } from "@input/pen-ai";
-import { DATA_ATTRS } from "../utils/dataAttributes";
+import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 import { queryBlockElement } from "@input/pen-dom/field-editor/selectionBridge";
 import { resolveSelectionRect } from "../selection/placement";
 import { useSyncExternalStoreWithSelector } from "../utils/useSyncExternalStoreWithSelector";
@@ -28,13 +28,12 @@ const CLOSED_STATE: SelectionToolbarState = {
  */
 export function useSelectionToolbar(editor: Editor): SelectionToolbarState {
 	const [state, setState] = useState<SelectionToolbarState>(CLOSED_STATE);
-	const rafRef = useRef(0);
 	const controller =
 		(editor.facet(aiControllerFacet) as AIController | null) ?? null;
 	const isInlinePromptOpen = useSyncExternalStoreWithSelector(
 		(callback) => {
 			if (!controller) {
-				return () => { };
+				return () => {};
 			}
 			return controller.subscribeSessions(callback);
 		},
@@ -55,43 +54,40 @@ export function useSelectionToolbar(editor: Editor): SelectionToolbarState {
 
 	useEffect(() => {
 		const update = () => {
-			cancelAnimationFrame(rafRef.current);
-			rafRef.current = requestAnimationFrame(() => {
-				if (isInlinePromptOpen) {
-					setState(CLOSED_STATE);
-					return;
-				}
+			if (isInlinePromptOpen) {
+				setState(CLOSED_STATE);
+				return;
+			}
 
-				const selection = editor.selection;
-				if (
-					!selection ||
-					selection.type !== "text" ||
-					isCollapsed(selection)
-				) {
-					setState(CLOSED_STATE);
-					return;
-				}
+			const selection = editor.selection;
+			if (
+				!selection ||
+				selection.type !== "text" ||
+				isCollapsed(selection)
+			) {
+				setState(CLOSED_STATE);
+				return;
+			}
 
-				const nativeRect = resolveNativeSelectionRect();
-				if (nativeRect) {
-					setState({ isOpen: true, selectionRect: nativeRect });
-					return;
-				}
+			const nativeRect = resolveNativeSelectionRect();
+			if (nativeRect) {
+				setState({ isOpen: true, selectionRect: nativeRect });
+				return;
+			}
 
-				const root = resolveEditorRoot(editor, selection);
-				if (!root) {
-					setState(CLOSED_STATE);
-					return;
-				}
+			const root = resolveEditorRoot(editor, selection);
+			if (!root) {
+				setState(CLOSED_STATE);
+				return;
+			}
 
-				const rect = resolveSelectionRect(root, selection);
-				if (!rect || (rect.width === 0 && rect.height === 0)) {
-					setState(CLOSED_STATE);
-					return;
-				}
+			const rect = resolveSelectionRect(root, selection);
+			if (!rect || (rect.width === 0 && rect.height === 0)) {
+				setState(CLOSED_STATE);
+				return;
+			}
 
-				setState({ isOpen: true, selectionRect: rect });
-			});
+			setState({ isOpen: true, selectionRect: rect });
 		};
 
 		const unsubs = [
@@ -104,7 +100,6 @@ export function useSelectionToolbar(editor: Editor): SelectionToolbarState {
 		update();
 
 		return () => {
-			cancelAnimationFrame(rafRef.current);
 			window.removeEventListener("resize", update);
 			window.removeEventListener("scroll", update, true);
 			unsubs.forEach((u) => u());
@@ -133,7 +128,9 @@ function resolveEditorRoot(
 	selection: Editor["selection"],
 ): HTMLElement | null {
 	if (selection?.type === "text") {
-		const roots = document.querySelectorAll<HTMLElement>(`[${DATA_ATTRS.editorRoot}]`);
+		const roots = document.querySelectorAll<HTMLElement>(
+			`[${DATA_ATTRS.editorRoot}]`,
+		);
 		for (const root of roots) {
 			if (queryBlockElement(root, selection.anchor.blockId)) {
 				return root;
@@ -152,7 +149,9 @@ function resolveEditorRoot(
 		return activeRoot;
 	}
 
-	const roots = document.querySelectorAll<HTMLElement>(`[${DATA_ATTRS.editorRoot}]`);
+	const roots = document.querySelectorAll<HTMLElement>(
+		`[${DATA_ATTRS.editorRoot}]`,
+	);
 	return roots.length === 1 ? roots[0] : null;
 }
 

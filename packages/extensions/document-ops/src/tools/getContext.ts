@@ -2,6 +2,7 @@ import type { Editor, ToolDefinition } from "@input/pen-types";
 import {
 	buildCursorContext,
 	exportDocumentRangeAsMarkdown,
+	formatBlocksAsAnnotatedMarkdown,
 	normalizeContextToolOptions,
 	resolveDocumentBlocks,
 	summarizeBlocks,
@@ -11,7 +12,7 @@ export function getContextTool(editor: Editor): ToolDefinition {
 	return {
 		name: "get_context",
 		description:
-			"Get document context in summary, json, or markdown form with optional selection details.",
+			"Get document context in summary, json, or markdown form with optional selection details. Set annotateBlocks with markdown format to prefix every block with a `<!-- block:<id> <type> -->` comment for precise addressing.",
 		mutating: false,
 		inputSchema: {
 			type: "object",
@@ -26,6 +27,10 @@ export function getContextTool(editor: Editor): ToolDefinition {
 					default: false,
 				},
 				includeSuggestions: {
+					type: "boolean",
+					default: false,
+				},
+				annotateBlocks: {
 					type: "boolean",
 					default: false,
 				},
@@ -59,7 +64,10 @@ export function getContextTool(editor: Editor): ToolDefinition {
 					format: "markdown",
 					viewMode,
 					blockCount: blocks.length,
-					markdown: exportDocumentRangeAsMarkdown(editor, options.range, viewMode),
+					blockIds: blocks.map((block) => block.id),
+					markdown: options.annotateBlocks
+						? formatBlocksAsAnnotatedMarkdown(blocks)
+						: exportDocumentRangeAsMarkdown(editor, options.range, viewMode),
 					...selectionPayload,
 				};
 			}

@@ -1,6 +1,7 @@
 export type {
 	AIExtensionConfig,
 	AIContentFormatOptions,
+	AIEditStreaming,
 	AISuggestionPresentation,
 	ResolvedEditTarget,
 	ResolvedEditProposal,
@@ -43,8 +44,10 @@ export type {
 } from "./types/session";
 export type {
 	PersistentBlockSuggestion,
+	PersistentBlockSuggestionAction,
 	PersistentSuggestion,
 	BlockSuggestionMeta,
+	BlockSuggestionPreviousState,
 	AIAwarenessState,
 	AICommandContext,
 	AICommandGuard,

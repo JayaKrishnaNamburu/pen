@@ -33,12 +33,6 @@ describe("S-types", () => {
 			focus: { blockId: "a", offset: 3 },
 			affinity: "upstream",
 			goalX: 12,
-			isCollapsed: false,
-			isMultiBlock: false,
-			blockRange: ["a"],
-			toRange: () => {
-				throw new Error("unused");
-			},
 		};
 		const affinity: Affinity = sel.affinity ?? "downstream";
 
@@ -51,12 +45,6 @@ describe("S-types", () => {
 			type: "text",
 			anchor: { blockId: "a", offset: 0 },
 			focus: { blockId: "a", offset: 0 },
-			isCollapsed: true,
-			isMultiBlock: false,
-			blockRange: ["a"],
-			toRange: () => {
-				throw new Error("unused");
-			},
 		};
 
 		expect(sel.affinity).toBeUndefined();
@@ -140,19 +128,12 @@ describe("S-types", () => {
 			type: "text",
 			anchor: { blockId: "a", offset: 0 },
 			focus: { blockId: "b", offset: 2 },
-			isCollapsed: false,
-			isMultiBlock: true,
-			blockRange: ["a", "b"],
-			toRange: () => {
-				throw new Error("unused");
-			},
 		};
 		const fromLive: ReadonlySelectionState = live;
 		const deepReadonlyText: ReadonlySelectionState = {
 			type: "text",
 			anchor: { blockId: "a", offset: 0 },
 			focus: { blockId: "b", offset: 2 },
-			blockRange: ["a", "b"] as readonly string[],
 		};
 		const deepReadonlyCell: ReadonlySelectionState = {
 			type: "cell",
@@ -170,7 +151,8 @@ describe("S-types", () => {
 
 		expect(accepted).toHaveLength(4);
 		if (deepReadonlyText?.type === "text") {
-			expect(deepReadonlyText.blockRange).toEqual(["a", "b"]);
+			expect(deepReadonlyText.anchor.blockId).toBe("a");
+			expect(deepReadonlyText.focus.blockId).toBe("b");
 		}
 		const _liveAssigns: ReadonlySelectionState = null as unknown as SelectionState;
 		expect(_liveAssigns).toBeNull();

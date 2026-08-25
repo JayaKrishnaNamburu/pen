@@ -9,9 +9,12 @@ type SearchResultsRenderProps = {
 };
 
 export interface SearchResultsProps
-	extends Omit<React.HTMLAttributes<HTMLDivElement>, "children">,
+	extends
+		Omit<React.HTMLAttributes<HTMLDivElement>, "children">,
 		Omit<AsChildProps, "children"> {
-	children?: React.ReactNode | ((state: SearchResultsRenderProps) => React.ReactNode);
+	children?:
+		| React.ReactNode
+		| ((state: SearchResultsRenderProps) => React.ReactNode);
 	ref?: React.Ref<HTMLElement>;
 }
 

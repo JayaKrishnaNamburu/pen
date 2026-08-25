@@ -67,9 +67,7 @@ describe("@input/pen-react field-editor commands", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" },
 		]);
 		editor.selectText(blockId, 0, 5);
 
@@ -217,9 +215,13 @@ describe("@input/pen-react field-editor commands", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
+			{
+				type: "splice-text",
+				blockId,
+				from: 0,
 				to: 0,
-				insert: "HelloWorld" },
+				insert: "HelloWorld",
+			},
 		]);
 
 		const target = splitBlockAtOffset(editor, { blockId, offset: 5 });
@@ -243,9 +245,7 @@ describe("@input/pen-react field-editor commands", () => {
 
 		editor.apply([
 			{ type: "set-props", blockId, props: { type: "codeBlock" } },
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "abcd" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "abcd" },
 		]);
 
 		const target = applyEnterBehavior(editor, {
@@ -270,9 +270,7 @@ describe("@input/pen-react field-editor commands", () => {
 
 		editor.apply([
 			{ type: "set-props", blockId, props: { type: "codeBlock" } },
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "code" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "code" },
 		]);
 		editor.selectText(blockId, 0, 4);
 
@@ -339,8 +337,8 @@ describe("@input/pen-react field-editor commands", () => {
 						type: "splice-text" as const,
 						blockId: nextBlockId,
 						from: 0,
-				to: 0 + 2,
-				insert: "",
+						to: 0 + 2,
+						insert: "",
 					},
 					{
 						type: "set-props" as const,
@@ -370,7 +368,9 @@ describe("@input/pen-react field-editor commands", () => {
 		const editor = createEditor(editorOpts());
 		const blockId = editor.firstBlock()!.id;
 
-		editor.apply([{ type: "set-props", blockId, props: { type: "heading" } }]);
+		editor.apply([
+			{ type: "set-props", blockId, props: { type: "heading" } },
+		]);
 
 		const target = applyListInputRule(editor, {
 			blockId,
@@ -389,9 +389,9 @@ describe("@input/pen-react field-editor commands", () => {
 		const editor = createEditor(editorOpts());
 		const blockId = editor.firstBlock()!.id;
 
-		editor.apply([{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hi" }]);
+		editor.apply([
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hi" },
+		]);
 
 		const target = applyListInputRule(editor, {
 			blockId,
@@ -456,6 +456,4 @@ describe("@input/pen-react field-editor commands", () => {
 
 		editor.destroy();
 	});
-
-
 });

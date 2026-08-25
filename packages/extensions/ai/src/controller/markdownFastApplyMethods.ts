@@ -1,4 +1,5 @@
 import { shouldExposeBlockInTooling } from "@input/pen-core";
+import { stripBlockAnnotations } from "@input/pen-document-ops";
 import { buildDocumentMutationPlanExecution } from "../runtime/planExecutor";
 import {
 	validateDocumentMutationPlanShape,
@@ -303,7 +304,9 @@ export const markdownFastApplyMethods = {
 						} | null;
 					})
 				: null;
-		const markdown = context?.markdown?.trim() ?? "";
+		// Annotations are model-facing metadata; the merge path needs the
+		// clean markdown the document would actually round-trip.
+		const markdown = stripBlockAnnotations(context?.markdown?.trim() ?? "");
 		const blockIds = context?.retrievedSpan?.blockIds?.length
 			? context.retrievedSpan.blockIds
 			: context?.markdownWindow?.blockIds?.length

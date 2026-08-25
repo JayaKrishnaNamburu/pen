@@ -123,14 +123,7 @@ export abstract class FieldEditorImplSelection extends FieldEditorImplLifecycle 
 			return;
 		}
 
-		const isProgrammaticDomSelection =
-			this._selectionCoordinator.isProgrammaticDomTextSelection(
-				anchor,
-				focus,
-			);
-		if (!isProgrammaticDomSelection) {
-			this._selectionCoordinator.recordUserSelectionIntent();
-		}
+		this._selectionCoordinator.recordUserSelectionIntent();
 
 		if (
 			anchor.blockId === focus.blockId &&

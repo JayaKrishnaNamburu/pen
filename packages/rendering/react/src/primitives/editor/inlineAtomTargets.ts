@@ -10,7 +10,7 @@ import type {
 	InlineAtomRenderer,
 	InlineAtomRenderers,
 } from "../../context/editorContext";
-import { DATA_ATTRS } from "../../utils/dataAttributes";
+import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 
 export interface InlineAtomRenderTarget {
 	key: string;

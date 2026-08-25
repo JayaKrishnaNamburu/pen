@@ -75,16 +75,16 @@
     {
       "name": "@input/pen-document-ops",
       "path": "packages/extensions/document-ops/dist/index.mjs",
-      "baselineBytes": 58134,
-      "limitBytes": 58134,
-      "note": "Wave P.7 re-record 2026-08-21. Wave M AIB3 tool-authority paths. 45579 \u2192 58134. Source quiet (test-only dirty)."
+      "baselineBytes": 71065,
+      "limitBytes": 71065,
+      "note": "v4 Wave 3 DL13 re-record 2026-08-25. The content-ops shims were deleted, so the block-capability, block-type-policy and payload-validation sources this package used to reach through @input/pen-content-ops are now its own. 58134 \u2192 71065. content-ops stays external in tsup, so this is moved source, not a newly bundled dependency."
     },
     {
       "name": "@input/pen-dom",
       "path": "packages/rendering/dom/dist/index.mjs",
-      "baselineBytes": 42817,
-      "limitBytes": 42817,
-      "note": "Wave 3 GeometryReader and DOM scheduling, Wave 5 field-editor work, and the Wave S urlPolicy seam in the published barrel. Re-recorded 2026-08-21 after the a11y lane reported and focusSink.ts went quiet. 28589 \u2192 42817 B."
+      "baselineBytes": 89969,
+      "limitBytes": 89969,
+      "note": "v4 Wave 4 CS8 re-record 2026-08-25. The content gesture controller, the inline-atom wrapper/destructure controllers and the region-selection store descended from @input/pen-react and are reachable from this barrel. 42817 \u2192 89969. Paired with react's 264324 \u2192 220087 in the same lane: this is transferred weight, not new code."
     },
     {
       "name": "@input/pen-interop",
@@ -124,16 +124,16 @@
     {
       "name": "@input/pen-preset-default",
       "path": "packages/presets/default/dist/index.mjs",
-      "baselineBytes": 1442,
-      "limitBytes": 1442,
-      "note": "Lane 173 re-record 2026-08-21. Path .js \u2192 .mjs (Wave P.8). Bytes: Wave P preset-first assembly. 1324 \u2192 1442."
+      "baselineBytes": 2299,
+      "limitBytes": 2299,
+      "note": "v4 Wave 4 CS8 re-record 2026-08-25. The preset gained the html-clipboard extension when react stopped value-importing @input/pen-interop, so the HTML paste default now assembles here. 1442 \u2192 2299."
     },
     {
       "name": "@input/pen-react",
       "path": "packages/rendering/react/dist/index.mjs",
-      "baselineBytes": 264324,
-      "limitBytes": 264324,
-      "note": "Wave P.7 first baseline. Wave P.6 renderer bindings over pen-dom. Live 265954 B is within +10%; 13 dirty source files, not re-recorded."
+      "baselineBytes": 220087,
+      "limitBytes": 220087,
+      "note": "v4 Wave 4 CS8 re-record 2026-08-25. Gestures and inline-atom interaction moved to @input/pen-dom, so react keeps the hook shells only. 264324 \u2192 220087. See pen-dom's paired entry."
     },
     {
       "name": "@input/pen-schema-default",

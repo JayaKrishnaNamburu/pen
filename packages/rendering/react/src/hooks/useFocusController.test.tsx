@@ -7,7 +7,7 @@ import { createEditor } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
 import type { Editor } from "@input/pen-types";
 import type { PenFocusPolicy } from "@input/pen-dom";
-import { DATA_ATTRS } from "../utils/dataAttributes";
+import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 import { Pen } from "../primitives/index";
 import { defaultSchema } from "@input/pen-schema-default";
 import {
@@ -21,7 +21,8 @@ import {
 
 function createPresetEditor() {
 	return createEditor({
-		schema: defaultSchema, preset: defaultPreset({
+		schema: defaultSchema,
+		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
 			undo: false,
@@ -66,14 +67,8 @@ async function renderEditor({
 
 	await act(async () => {
 		root.render(
-			<Pen.Editor.Root
-				editor={editor}
-				focusPolicy={focusPolicy}
-			>
-				<FocusProbe
-					editor={editor}
-					onReady={onReady}
-				/>
+			<Pen.Editor.Root editor={editor} focusPolicy={focusPolicy}>
+				<FocusProbe editor={editor} onReady={onReady} />
 				<Pen.Editor.Content />
 			</Pen.Editor.Root>,
 		);

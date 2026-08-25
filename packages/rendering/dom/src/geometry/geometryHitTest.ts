@@ -14,7 +14,11 @@ import { snapToLogicalOffset } from "./geometryMeasure";
 import type { Point } from "./types";
 import { getDistanceToRect } from "./types";
 
-export function measurePointAt(root: HTMLElement, x: number, y: number): Point | null {
+export function measurePointAt(
+	root: HTMLElement,
+	x: number,
+	y: number,
+): Point | null {
 	if (!isInsideAnyBlock(root, x, y)) {
 		return nearestBlockEdge(root, x, y);
 	}
@@ -59,7 +63,11 @@ function hitTestCaretFromPoint(
 	return null;
 }
 
-function domToPoint(root: HTMLElement, node: Node, offset: number): Point | null {
+function domToPoint(
+	root: HTMLElement,
+	node: Node,
+	offset: number,
+): Point | null {
 	const blockEl = findBlockElement(node, root);
 	if (!blockEl) {
 		return null;
@@ -84,7 +92,12 @@ function domToPoint(root: HTMLElement, node: Node, offset: number): Point | null
 function isInsideAnyBlock(root: HTMLElement, x: number, y: number): boolean {
 	for (const element of listDomBlockElements(root)) {
 		const rect = element.getBoundingClientRect();
-		if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+		if (
+			x >= rect.left &&
+			x <= rect.right &&
+			y >= rect.top &&
+			y <= rect.bottom
+		) {
 			return true;
 		}
 	}
@@ -102,8 +115,9 @@ function nearestBlockEdge(
 			rect: el.getBoundingClientRect(),
 			id: el.getAttribute(DATA_ATTRS.blockId),
 		}))
-		.filter((block): block is { el: HTMLElement; rect: DOMRect; id: string } =>
-			Boolean(block.id),
+		.filter(
+			(block): block is { el: HTMLElement; rect: DOMRect; id: string } =>
+				Boolean(block.id),
 		);
 	if (blocks.length === 0) {
 		return null;
@@ -148,7 +162,9 @@ export function listDomBlockIds(root: HTMLElement): readonly string[] {
 }
 
 function listDomBlockElements(root: HTMLElement): HTMLElement[] {
-	return Array.from(root.querySelectorAll(`[${DATA_ATTRS.editorBlock}]`)).filter(
+	return Array.from(
+		root.querySelectorAll(`[${DATA_ATTRS.editorBlock}]`),
+	).filter(
 		(element): element is HTMLElement => element instanceof HTMLElement,
 	);
 }

@@ -15,6 +15,10 @@ import {
 	shouldTrimLeadingBlankBlockGenerationText,
 	trimLeadingBlankBlockGenerationText,
 } from "../helpers";
+import {
+	captureBlockViewHashes,
+	viewHashesChanged,
+} from "../runtime/viewHashes";
 import type { AIControllerMethodHost } from "./aiControllerMethodHost";
 
 export const workingSetValidationMethods = {
@@ -33,15 +37,16 @@ export const workingSetValidationMethods = {
 		);
 		const selectionChanged =
 			workingSet.selectionSignature !== selectionSignature;
-		const revisionChanged =
-			workingSet.documentVersion !== this._documentVersion ||
-			workingSet.trackedBlockIds.some(
-				(blockId) =>
-					this._editor.getBlockRevision(blockId) !==
-					workingSet.blockRevisions[blockId],
-			);
+		// View hashes replace revision counters here. `_documentVersion`
+		// increments on every commit, so using it would treat a props-only
+		// apply as stale even when the rendered markdown did not change.
+		const viewChanged = viewHashesChanged(
+			workingSet.trackedBlockIds,
+			workingSet.viewHashes,
+			this._captureBlockViewHashes(workingSet.trackedBlockIds),
+		);
 
-		if (!selectionChanged && !revisionChanged) {
+		if (!selectionChanged && !viewChanged) {
 			return { valid: true, canRefresh: false };
 		}
 
@@ -61,9 +66,7 @@ export const workingSetValidationMethods = {
 		return {
 			valid: false,
 			canRefresh: target.type === "block",
-			reason: revisionChanged
-				? "document-revision-mismatch"
-				: "selection-changed",
+			reason: viewChanged ? "view-changed" : "selection-changed",
 		};
 	},
 
@@ -170,6 +173,17 @@ export const workingSetValidationMethods = {
 				trackedBlockId,
 				this._editor.getBlockRevision(trackedBlockId),
 			]),
+		);
+	},
+
+	_captureBlockViewHashes(
+		this: AIControllerMethodHost,
+		blockIds: readonly string[],
+	): Record<string, string> {
+		return captureBlockViewHashes(
+			this._editor,
+			blockIds,
+			this._state.suggestMode ? "raw" : "resolved",
 		);
 	},
 

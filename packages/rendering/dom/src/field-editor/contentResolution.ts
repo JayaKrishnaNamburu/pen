@@ -6,7 +6,11 @@ export function getBlockYText(
 	editor: Editor,
 	blockId: string,
 ): FieldEditorTextLike | null {
-	return (editor.internals.getBlockText(blockId) as FieldEditorTextLike | null) ?? null;
+	return (
+		(editor.internals.getBlockText(
+			blockId,
+		) as FieldEditorTextLike | null) ?? null
+	);
 }
 
 export function getCellYText(
@@ -16,8 +20,12 @@ export function getCellYText(
 	col: number,
 ): FieldEditorTextLike | null {
 	return (
-		editor.internals.getCellText(blockId, row, col) as FieldEditorTextLike | null
-	) ?? null;
+		(editor.internals.getCellText(
+			blockId,
+			row,
+			col,
+		) as FieldEditorTextLike | null) ?? null
+	);
 }
 
 export function getResolvedYText(

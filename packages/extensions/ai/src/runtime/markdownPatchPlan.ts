@@ -1,3 +1,4 @@
+import { stripBlockAnnotations } from "@input/pen-document-ops";
 import { MARKDOWN_FAST_APPLY_ROOT_TAG } from "./flowMarkdown";
 import type { FlowPatchEdit, FlowPatchPlan } from "./planTypes";
 
@@ -55,7 +56,10 @@ function parseEdit(source: string): FlowPatchEdit | null {
 	const anchorBefore = readTagContent(source, "anchorBefore") ?? undefined;
 	const anchorAfter = readTagContent(source, "anchorAfter") ?? undefined;
 	const text = readTagContent(source, "text") ?? undefined;
-	const markdown = readTagContent(source, "markdown") ?? undefined;
+	const rawMarkdown = readTagContent(source, "markdown") ?? undefined;
+	// Models sometimes echo the block annotations from the prompt context.
+	const markdown =
+		rawMarkdown == null ? undefined : stripBlockAnnotations(rawMarkdown);
 
 	return {
 		operation,

@@ -37,7 +37,12 @@ import { defaultAICommands } from "./commands/defaultCommands";
 import { resolveCatalogCopy } from "./i18n/resolveCatalogCopy";
 import { AICommandRegistry } from "./commands/registry";
 import { AIInlineHistoryService, AIReviewService } from "./controllers";
-import type { AIContentFormat } from "./runtime/contracts";
+import {
+	isAIMutationPreference,
+	type AIContentFormat,
+	type AIEditChannel,
+	type AIMutationPreference,
+} from "./runtime/contracts";
 import { SuggestedAIOperationRunner } from "./runtime/suggestedOperationRunner";
 import { ExternalInlineTurnRegistry } from "./runtime/externalInlineTurnRegistry";
 import {
@@ -53,6 +58,7 @@ import type {
 	AIContextualPromptRect,
 	AIController,
 	AIControllerState,
+	AIEditStreaming,
 	AIExtensionConfig,
 	AIExternalInlineTurnResult,
 	AIInlineCompletionController,
@@ -61,9 +67,11 @@ import type {
 	AIInlineHistorySnapshot,
 	AIReviewController,
 	AIStreamEvent,
+	AIStreamingReviewPreviewInput,
 	GenerationState,
 } from "./types";
 import { AIControllerSessionState } from "./controller/sessionState";
+import type { StreamingPreviewStatePatch } from "./controller/aiControllerMethodHost";
 import { reviewResolutionMethods } from "./controller/reviewResolutionMethods";
 import { decorationControllerMethods } from "./controller/decorationControllerMethods";
 import { generationRunnerMethods } from "./controller/generationRunnerMethods";
@@ -156,6 +164,12 @@ class AIControllerImpl extends AIControllerSessionState {
 		selectionRewrite: AIContentFormat;
 	};
 
+	private _mutationPreference: AIMutationPreference;
+
+	private readonly _editChannel: AIEditChannel;
+
+	private readonly _editStreaming: AIEditStreaming | undefined;
+
 	private _streamEvents: readonly AIStreamEvent[] = [];
 
 	private _abortController: AbortController | null = null;
@@ -172,6 +186,13 @@ class AIControllerImpl extends AIControllerSessionState {
 
 	private _queuedInlineHistoryShortcutDirections: AIInlineHistoryDirection[] =
 		[];
+
+	_streamingPreviewRaf: number | null = null;
+
+	_queuedStreamingPreview: {
+		inputs: readonly AIStreamingReviewPreviewInput[];
+		extra?: StreamingPreviewStatePatch;
+	} | null = null;
 
 	private _queuedInlineHistoryShortcutFlushScheduled = false;
 
@@ -190,8 +211,13 @@ class AIControllerImpl extends AIControllerSessionState {
 			sessions: [],
 			activeSessionId: null,
 			suggestMode: config.suggestMode ?? false,
+			mutationPreference: isAIMutationPreference(
+				config.mutationPreference,
+			)
+				? config.mutationPreference
+				: "suggestions",
 			ephemeralSuggestion: null,
-			streamingReviewPreview: null,
+			streamingReviewPreviews: [],
 			commandMenuOpen: false,
 		});
 		this._inlineCompletion = services.inlineCompletion;
@@ -207,7 +233,8 @@ class AIControllerImpl extends AIControllerSessionState {
 				) ?? null,
 			getActiveGeneration: () => this._state.activeGeneration,
 		});
-		this._maxAgenticSteps = config.maxAgenticSteps ?? AI_AGENTIC_MAX_STEPS_DEFAULT;
+		this._maxAgenticSteps =
+			config.maxAgenticSteps ?? AI_AGENTIC_MAX_STEPS_DEFAULT;
 		this._allowedMutatingTools = config.allowedMutatingTools ?? [];
 		this._confirmAITool = config.confirm;
 		this._suggestionPresentation =
@@ -216,6 +243,13 @@ class AIControllerImpl extends AIControllerSessionState {
 			blockGeneration: config.contentFormat?.blockGeneration ?? "text",
 			selectionRewrite: config.contentFormat?.selectionRewrite ?? "text",
 		};
+		this._mutationPreference = isAIMutationPreference(
+			config.mutationPreference,
+		)
+			? config.mutationPreference
+			: "suggestions";
+		this._editChannel = config.editChannel ?? "fast-apply";
+		this._editStreaming = config.editStreaming;
 		this._undoHistoryMetadata =
 			(this._editor.facet(
 				undoMetadataControllerFacet,
@@ -583,7 +617,10 @@ export function aiExtension(config: AIExtensionConfig = {}): Extension {
 					activeEditor?.facet(aiAutocompleteControllerFacet) == null
 						? (inlineCompletion?.buildDecorations() ?? [])
 						: [];
-				return createDecorationSet([...decorations, ...inlineDecorations]);
+				return createDecorationSet([
+					...decorations,
+					...inlineDecorations,
+				]);
 			}),
 		],
 
@@ -634,7 +671,6 @@ export function aiExtension(config: AIExtensionConfig = {}): Extension {
 					AI_SESSION_SUGGESTION_ORIGIN,
 					SUGGESTION_RESOLUTION_ORIGIN,
 				]);
-
 		},
 
 		deactivateClient: async () => {
@@ -684,8 +720,9 @@ export function getAIInlineHistoryController(
 	editor: Editor,
 ): AIInlineHistoryController | null {
 	return (
-		(editor.facet(aiInlineHistoryFacet) as AIInlineHistoryController | null) ??
-		null
+		(editor.facet(
+			aiInlineHistoryFacet,
+		) as AIInlineHistoryController | null) ?? null
 	);
 }
 

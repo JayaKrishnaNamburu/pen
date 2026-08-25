@@ -44,10 +44,19 @@ export interface ToolDefinition {
 
 // ── Model Adapter ───────────────────────────────────────────
 
+export type ModelToolChoice =
+	| { type: "auto" }
+	| { type: "any" }
+	| { type: "tool"; name: string };
+
+export interface ModelAdapterCapabilities {
+	structuredIntent?: boolean;
+	partialToolInput?: boolean;
+	forcedToolChoice?: boolean;
+}
+
 export interface ModelAdapter {
-	capabilities?: {
-		structuredIntent?: boolean;
-	};
+	capabilities?: ModelAdapterCapabilities;
 	stream(options: {
 		messages: ModelMessage[];
 		tools: ToolSchema[];
@@ -57,6 +66,7 @@ export interface ModelAdapter {
 		sessionId?: string;
 		turnId?: string;
 		generationId?: string;
+		toolChoice?: ModelToolChoice;
 	}): AsyncIterable<ModelStreamEvent>;
 }
 
@@ -168,6 +178,16 @@ export type ModelStreamEvent =
 			contract?: "grid" | "app";
 			data: unknown;
 			final?: boolean;
+	  }
+	| {
+			type: "tool-input-start";
+			toolCallId: string;
+			toolName: string;
+	  }
+	| {
+			type: "tool-input-delta";
+			toolCallId: string;
+			inputTextDelta: string;
 	  }
 	| {
 			type: "tool-call";

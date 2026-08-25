@@ -62,7 +62,9 @@ describe("resolveBackspaceAction – schema-aware Backspace", () => {
 		const editor = createEditor(editorOpts());
 		const blockId = editor.firstBlock()!.id;
 
-		editor.apply([{ type: "set-props", blockId, props: { type: "heading" } }]);
+		editor.apply([
+			{ type: "set-props", blockId, props: { type: "heading" } },
+		]);
 
 		const action = resolveBackspaceAction(editor, {
 			blockId,
@@ -233,5 +235,4 @@ describe("resolveBackspaceAction – schema-aware Backspace", () => {
 
 		editor.destroy();
 	});
-
 });

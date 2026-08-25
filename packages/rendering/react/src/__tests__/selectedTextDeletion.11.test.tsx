@@ -25,9 +25,7 @@ describe("@input/pen-react selected text deletion", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" },
 		]);
 
 		const container = document.createElement("div");
@@ -81,7 +79,6 @@ describe("@input/pen-react selected text deletion", () => {
 			type: "text",
 			anchor: { blockId, offset: 6 },
 			focus: { blockId, offset: 6 },
-			isCollapsed: true,
 		});
 
 		await act(async () => {
@@ -97,9 +94,7 @@ describe("@input/pen-react selected text deletion", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" },
 		]);
 
 		const container = document.createElement("div");
@@ -149,8 +144,6 @@ describe("@input/pen-react selected text deletion", () => {
 			type: "text",
 			anchor: { blockId: newBlockId, offset: 0 },
 			focus: { blockId: newBlockId, offset: 0 },
-			isCollapsed: true,
-			isMultiBlock: false,
 		});
 		expect(domSelectionToEditor(rootElement!)).toMatchObject({
 			anchor: { blockId: newBlockId, offset: 0 },
@@ -183,9 +176,7 @@ describe("@input/pen-react selected text deletion", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" },
 		]);
 
 		const container = document.createElement("div");
@@ -228,8 +219,6 @@ describe("@input/pen-react selected text deletion", () => {
 				type: "text",
 				anchor: { blockId: newBlockId, offset: 0 },
 				focus: { blockId: newBlockId, offset: 0 },
-				isCollapsed: true,
-				isMultiBlock: false,
 			});
 		} finally {
 			(
@@ -263,9 +252,7 @@ describe("@input/pen-react selected text deletion", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" },
 		]);
 
 		const container = document.createElement("div");
@@ -319,8 +306,6 @@ describe("@input/pen-react selected text deletion", () => {
 				type: "text",
 				anchor: { blockId: newBlockId, offset: 0 },
 				focus: { blockId: newBlockId, offset: 0 },
-				isCollapsed: true,
-				isMultiBlock: false,
 			});
 		} finally {
 			(

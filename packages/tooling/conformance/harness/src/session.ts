@@ -350,6 +350,22 @@ function editorRoot(): HTMLElement | null {
 	return root instanceof HTMLElement ? root : null;
 }
 
+function mountSelectionProbe(text: string, blockId: string): HTMLElement {
+	const root = document.createElement("div");
+	root.setAttribute("data-pen-editor-root", "");
+	const block = document.createElement("div");
+	block.setAttribute("data-pen-editor-block", "");
+	block.setAttribute("data-block-id", blockId);
+	block.setAttribute("data-block-type", "paragraph");
+	const inline = document.createElement("span");
+	inline.setAttribute("data-pen-inline-content", "");
+	inline.textContent = text;
+	block.append(inline);
+	root.append(block);
+	document.body.append(root);
+	return root;
+}
+
 function editorHasFocus(root: HTMLElement): boolean {
 	const active = document.activeElement;
 	return active instanceof Node && root.contains(active);
@@ -1003,6 +1019,11 @@ function installBridge(): void {
 		installBrokenProjector,
 		forceUnwindowedDomDivergence,
 		domMatchesAuthority: checkDomMatchesAuthority,
+		mapDomSelection: (root) => domSelectionToEditor(root),
+		projectSelectionToDom: (root, anchor, focus) => {
+			editorSelectionToDOM(root, anchor, focus);
+		},
+		mountSelectionProbe,
 		applyAiRangeReplacement,
 		parseClipboardPayload,
 		exerciseInlineAtomDragPreview,

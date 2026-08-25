@@ -43,9 +43,7 @@ function seedEditor(
 	fixtures.push({ editor, fieldEditor });
 	const blockId = editor.firstBlock()!.id;
 	editor.apply([
-		{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "hello" },
+		{ type: "splice-text", blockId, from: 0, to: 0, insert: "hello" },
 	]);
 	editor.selectText(blockId, 0, 0);
 	fieldEditor.activate(blockId);
@@ -195,9 +193,9 @@ describe("FieldEditorImpl.readDomSelection PR 6", () => {
 			anchor: { blockId, offset: 0 },
 			focus: { blockId, offset: 5 },
 		};
-		expect(
-			isSingleFieldNativeLeftover(editor.selection, leftover),
-		).toBe(true);
+		expect(isSingleFieldNativeLeftover(editor.selection, leftover)).toBe(
+			true,
+		);
 		const before = getEditorSelectionRecord(editor)!;
 
 		const decision = fieldEditor.readDomSelection(leftover);

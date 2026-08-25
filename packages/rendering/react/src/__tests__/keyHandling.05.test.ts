@@ -1,11 +1,6 @@
-import {
-	describe,
-	expect,
-	it } from "vitest";
-import { createEditor,
-	getInlineCompletionController } from "@input/pen-core";
-import { getSearchController,
-	searchExtension } from "@input/pen-search";
+import { describe, expect, it } from "vitest";
+import { createEditor, getInlineCompletionController } from "@input/pen-core";
+import { getSearchController, searchExtension } from "@input/pen-search";
 import {
 	AI_AUTOCOMPLETE_CONTROLLER_SLOT,
 	FIELD_EDITOR_SLOT_KEY,
@@ -17,7 +12,7 @@ import {
 	handleEditorKeyBindings,
 	handleFieldEditorKeyDown,
 } from "@input/pen-dom/field-editor/keyHandling";
-import { resolveShiftClickInlineAtomSelection } from "../primitives/editor/inlineAtomInteraction";
+import { resolveShiftClickInlineAtomSelection } from "@input/pen-dom";
 import type { FieldEditorTextLike } from "@input/pen-dom/field-editor/crdt";
 import { defaultSchema } from "@input/pen-schema-default";
 
@@ -141,7 +136,8 @@ function createPresetEditor(
 	} = {},
 ) {
 	return createEditor({
-		schema: defaultSchema, preset: defaultPreset(options.preset),
+		schema: defaultSchema,
+		preset: defaultPreset(options.preset),
 		extensions: options.extensions,
 	});
 }
@@ -161,7 +157,10 @@ describe("@input/pen-react field editor Tab handling", () => {
 
 		editor.apply([
 			{
-				type: "set-props", blockId: firstBlockId, props: { type: "bulletListItem" }},
+				type: "set-props",
+				blockId: firstBlockId,
+				props: { type: "bulletListItem" },
+			},
 			{
 				type: "insert-block",
 				blockId: secondBlockId,
@@ -209,9 +208,7 @@ describe("@input/pen-react field editor Tab handling", () => {
 
 		editor.apply([
 			{ type: "set-props", blockId, props: { type: "bulletListItem" } },
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "root" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "root" },
 		]);
 
 		const fieldEditor = createFieldEditorMock(blockId);
@@ -302,9 +299,7 @@ describe("@input/pen-react field editor Tab handling", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "root" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "root" },
 		]);
 
 		const fieldEditor = createFieldEditorMock(blockId);
@@ -442,6 +437,4 @@ describe("@input/pen-react field editor Tab handling", () => {
 
 		editor.destroy();
 	});
-
-
 });

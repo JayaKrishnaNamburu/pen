@@ -1,4 +1,8 @@
-import { isCollapsed, isMultiBlock, usesInlineTextSelection } from "@input/pen-core";
+import {
+	isCollapsed,
+	isMultiBlock,
+	usesInlineTextSelection,
+} from "@input/pen-core";
 import {
 	generateId,
 	type Editor,
@@ -234,9 +238,7 @@ function textSelectionContainsInlineAtom(
 	let offset = 0;
 	for (const delta of block.inlineDeltas()) {
 		const length =
-			typeof delta.insert === "string"
-				? delta.insert.length
-				: 1;
+			typeof delta.insert === "string" ? delta.insert.length : 1;
 		const overlapsSelection =
 			offset < selectionEnd && offset + length > selectionStart;
 		if (typeof delta.insert !== "string" && overlapsSelection) {

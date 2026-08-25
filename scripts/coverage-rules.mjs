@@ -33,7 +33,11 @@ import { fileURLToPath } from "node:url";
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_REPO_ROOT = path.resolve(SCRIPT_DIR, "..");
 const INVENTORY_DOC = path.join("spec-v2", "09-reliability-testing.md");
-const SPEC_ROOTS = ["spec-v2", "spec-v3"];
+const SPEC_ROOTS = ["spec-v2", "spec-v3", "spec-v4"];
+// Roots whose families are derived from definition lines rather than
+// the spec-v2 inventory line. spec-v2 is the inventoried root; every
+// later train is derived, so adopting a train costs nothing here.
+const DERIVED_SPEC_ROOTS = ["spec-v3", "spec-v4"];
 const DEFAULT_CLAIMED_SCOPE = path.join("scripts", "claimed-scope.txt");
 const DEFAULT_GATED_SCOPE = path.join("scripts", "gated-scope.txt");
 const WORKFLOW_DIR = ".github/workflows/";
@@ -150,9 +154,14 @@ export function derivedV3Prefixes(
 	processPrefixes = PROCESS_PREFIXES,
 ) {
 	const excluded = new Set(processPrefixes);
-	const v3 = definedByRoot.get("spec-v3") ?? new Set();
+	const derived = new Set();
+	for (const root of DERIVED_SPEC_ROOTS) {
+		for (const prefix of definedByRoot.get(root) ?? new Set()) {
+			derived.add(prefix);
+		}
+	}
 	return sortPrefixesLongestFirst(
-		[...v3].filter((prefix) => !excluded.has(prefix)),
+		[...derived].filter((prefix) => !excluded.has(prefix)),
 	);
 }
 
@@ -180,9 +189,14 @@ export function prefixesDefinedInMarkdown(text) {
 
 export function collidingPrefixes(byRoot) {
 	const v2 = byRoot.get("spec-v2") ?? new Set();
-	const v3 = byRoot.get("spec-v3") ?? new Set();
+	const later = new Set();
+	for (const root of DERIVED_SPEC_ROOTS) {
+		for (const prefix of byRoot.get(root) ?? new Set()) {
+			later.add(prefix);
+		}
+	}
 	return [...v2]
-		.filter((prefix) => v3.has(prefix))
+		.filter((prefix) => later.has(prefix))
 		.sort((a, b) => b.length - a.length || a.localeCompare(b));
 }
 
@@ -584,12 +598,12 @@ function formatReport({
 		"coverage:rules",
 		"",
 		specFileCount != null
-			? `population: ${specFileCount} spec files (spec-v2 + spec-v3), ${testFileCount} test files`
+			? `population: ${specFileCount} spec files (${SPEC_ROOTS.join(" + ")}), ${testFileCount} test files`
 			: null,
 		collisions.length > 0
 			? `COLLISION  ${collisions.join(", ")}  ${COLLISION_LINE}`
 			: null,
-		`Derived spec-v3: ${[...derivedPrefixes].sort((a, b) => a.localeCompare(b)).join(", ") || "(none)"}`,
+		`Derived ${DERIVED_SPEC_ROOTS.join(" + ")}: ${[...derivedPrefixes].sort((a, b) => a.localeCompare(b)).join(", ") || "(none)"}`,
 		`Process excluded: ${PROCESS_PREFIXES.join(", ")} (working agreements, not test-name rules)`,
 		`Claimed scope (${claimedIds.length}): ${claimedIds.join(", ")}`,
 		`Gated scope (${gatedRows.length}): ${gatedRows.map((row) => row.id).join(", ") || "(none)"}`,

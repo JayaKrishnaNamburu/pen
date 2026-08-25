@@ -158,22 +158,32 @@ export function parseCatalog(source) {
 	return { rows, counts };
 }
 
-export function parseCommandModule(source) {
-	const tokens = [];
+export function collectCommandBindings(source) {
 	const bindings = new Map();
+	for (const match of source.matchAll(DEFINE_BINDING_RE)) {
+		bindings.set(match[1], match[2]);
+	}
+	return bindings;
+}
+
+// `externalBindings` carries tokens defined in sibling command modules. A handler
+// and its `defineCommand` token may live in different files (the caret and text
+// modules split that way), so same-file resolution alone reports a false
+// violation. Ambiguous identifiers are withheld by the caller rather than
+// guessed, so an unresolved name still fails closed.
+export function parseCommandModule(source, externalBindings) {
+	const tokens = [];
 	const handlers = [];
+	const bindings = collectCommandBindings(source);
 
 	for (const match of source.matchAll(DEFINE_COMMAND_RE)) {
 		tokens.push(match[1]);
 	}
-	for (const match of source.matchAll(DEFINE_BINDING_RE)) {
-		bindings.set(match[1], match[2]);
-	}
 	for (const match of source.matchAll(COMMAND_HANDLER_RE)) {
-		const name = bindings.get(match[1]);
+		const name = bindings.get(match[1]) ?? externalBindings?.get(match[1]);
 		if (!name) {
 			throw new Error(
-				`command-catalog-check: commandHandler(${match[1]}) has no defineCommand binding in the same file`,
+				`command-catalog-check: commandHandler(${match[1]}) resolves to no defineCommand token in this file or any other command module`,
 			);
 		}
 		handlers.push(name);
@@ -407,8 +417,31 @@ function loadRepo(repoRoot) {
 		return { coverageError, modules, catalogPath };
 	}
 	const catalog = parseCatalog(fs.readFileSync(catalogPath, "utf8"));
+	const sources = new Map(
+		modules.map((filePath) => [filePath, fs.readFileSync(filePath, "utf8")]),
+	);
+
+	const crossModuleBindings = new Map();
+	const ambiguous = new Set();
+	for (const source of sources.values()) {
+		for (const [identifier, name] of collectCommandBindings(source)) {
+			const seen = crossModuleBindings.get(identifier);
+			if (seen !== undefined && seen !== name) {
+				ambiguous.add(identifier);
+				continue;
+			}
+			crossModuleBindings.set(identifier, name);
+		}
+	}
+	for (const identifier of ambiguous) {
+		crossModuleBindings.delete(identifier);
+	}
+
 	const parsedModules = modules.map((filePath) => {
-		const parsed = parseCommandModule(fs.readFileSync(filePath, "utf8"));
+		const parsed = parseCommandModule(
+			sources.get(filePath),
+			crossModuleBindings,
+		);
 		return { filePath, ...parsed };
 	});
 	return { catalog, modules: parsedModules, catalogPath };

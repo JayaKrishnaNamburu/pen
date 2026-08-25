@@ -16,7 +16,10 @@ import { useBlockSelectionState } from "../../hooks/useBlockSelectionState";
 import { useBlockSurfaceRole } from "../../hooks/useBlockSurfaceRole";
 import { resolveRenderer } from "../../renderers/index";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
-import { buildDataAttributes, DATA_ATTRS } from "../../utils/dataAttributes";
+import {
+	buildDataAttributes,
+	DATA_ATTRS,
+} from "@input/pen-dom/utils/dataAttributes";
 import { useBlockDropPreview } from "./dropPreviewContext";
 
 export interface EditorBlockProps extends AsChildProps {

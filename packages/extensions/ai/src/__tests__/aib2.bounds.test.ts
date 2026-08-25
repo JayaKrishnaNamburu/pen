@@ -94,9 +94,11 @@ describe("AIB2 agentic tool-result send bounds", () => {
 		);
 		expect(toolResults).toHaveLength(1);
 		const compacted = toolResults[0]!.text;
-		expect(compacted.endsWith("…")).toBe(true);
-		expect(compacted.slice(0, -1).length).toBeLessThanOrEqual(
-			AI_TOOL_RESULT_MAX_CHARS,
+		// Truncation is explicit: the marker tells the model content was cut
+		// and how to recover, instead of ending on a bare ellipsis.
+		expect(compacted).toMatch(/… \[truncated \d+ chars/);
+		expect(compacted.length).toBeLessThanOrEqual(
+			AI_TOOL_RESULT_MAX_CHARS + 100,
 		);
 		expect(compacted.length).toBeLessThan(oversized.length);
 		expect(compacted).not.toContain(oversized);

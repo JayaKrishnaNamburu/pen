@@ -286,7 +286,6 @@ describe("@input/pen-react table rendering", () => {
 
 		expect(editor.selection).toMatchObject({
 			type: "text",
-			isMultiBlock: true,
 			anchor: { blockId: "t9", offset: 0 },
 			focus: { blockId: paragraphId, offset: 2 },
 		});
@@ -383,7 +382,6 @@ describe("@input/pen-react table rendering", () => {
 		// does not modulate that — structured matches the flow sibling.
 		expect(editor.selection).toMatchObject({
 			type: "text",
-			isMultiBlock: true,
 			anchor: { blockId: "t9-structured", offset: 0 },
 			focus: { blockId: paragraphId, offset: 2 },
 		});

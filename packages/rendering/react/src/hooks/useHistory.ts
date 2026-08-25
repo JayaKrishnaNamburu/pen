@@ -21,7 +21,10 @@ export function useHistory(editor: Editor): HistoryState {
 			}
 			return controller.subscribe(callback);
 		},
-		() => (canReadControllerState ? controller.getState() : EMPTY_HISTORY_STATE),
+		() =>
+			canReadControllerState
+				? controller.getState()
+				: EMPTY_HISTORY_STATE,
 		() => EMPTY_HISTORY_STATE,
 	);
 }

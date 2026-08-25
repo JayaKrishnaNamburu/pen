@@ -60,8 +60,8 @@ describe("aiExtension", () => {
 					type: "splice-text",
 					blockId: introBlockId,
 					from: 0,
-				to: 0,
-				insert: "Intro",
+					to: 0,
+					insert: "Intro",
 				},
 			],
 			{ origin: "system" },
@@ -162,8 +162,8 @@ describe("aiExtension", () => {
 					type: "splice-text",
 					blockId: firstBlockId,
 					from: 0,
-				to: 0,
-				insert: "Intro",
+					to: 0,
+					insert: "Intro",
 				},
 				{
 					type: "insert-block",
@@ -239,8 +239,8 @@ describe("aiExtension", () => {
 					type: "splice-text",
 					blockId: firstBlockId,
 					from: 0,
-				to: 0,
-				insert: "Intro",
+					to: 0,
+					insert: "Intro",
 				},
 				{
 					type: "insert-block",
@@ -274,6 +274,21 @@ describe("aiExtension", () => {
 		expect(tables[0].as("table")?.tableCell(2, 0)?.textContent()).toBe(
 			"Bob",
 		);
+		expect(readAllSuggestions(editor)).toEqual([]);
+		expect(
+			tables[0]
+				.as("table")
+				?.tableCell(1, 0)
+				?.inlineDeltas()
+				.some((delta) => delta.attributes?.suggestion != null),
+		).toBe(false);
+		expect(
+			tables[0]
+				.as("table")
+				?.tableCell(2, 0)
+				?.inlineDeltas()
+				.some((delta) => delta.attributes?.suggestion != null),
+		).toBe(false);
 		expect(controller.getState().activeGeneration?.plan).toBeNull();
 		expect(controller.getState().activeGeneration?.reviewItems).toEqual([]);
 		expect(controller.getState().activeGeneration?.planState).toBe("none");
@@ -311,8 +326,8 @@ describe("aiExtension", () => {
 					type: "splice-text",
 					blockId: firstBlockId,
 					from: 0,
-				to: 0,
-				insert: "Intro",
+					to: 0,
+					insert: "Intro",
 				},
 				{
 					type: "insert-block",

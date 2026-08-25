@@ -3,7 +3,11 @@
 import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, describe, expect, it } from "vitest";
-import { a11yLabelFacet, createEditor, ariaReadOnlyFacet } from "@input/pen-core";
+import {
+	a11yLabelFacet,
+	createEditor,
+	ariaReadOnlyFacet,
+} from "@input/pen-core";
 import { defineExtension } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
 import { EditorRoot } from "../primitives/editor/root";
@@ -15,7 +19,8 @@ import { defaultSchema } from "@input/pen-schema-default";
 
 function createTestEditor() {
 	return createEditor({
-		schema: defaultSchema, preset: defaultPreset({
+		schema: defaultSchema,
+		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
 			undo: false,
@@ -81,7 +86,8 @@ describe("AX1 React editor root", () => {
 
 	it("AX1 applies createEditor a11yLabel to the content root", async () => {
 		const editor = createEditor({
-			schema: defaultSchema, preset: defaultPreset({
+			schema: defaultSchema,
+			preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,
@@ -104,7 +110,8 @@ describe("AX1 React editor root", () => {
 
 	it("AX1 reflects pen.ariaReadOnly as aria-readonly", async () => {
 		const editor = createEditor({
-			schema: defaultSchema, preset: defaultPreset({
+			schema: defaultSchema,
+			preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,

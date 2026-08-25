@@ -19,9 +19,7 @@ export type FlushCollect = {
 	readonly selection: SelectionRecord | null;
 };
 
-export type SelectionProjector = (
-	record: SelectionRecord,
-) => void | "parked";
+export type SelectionProjector = (record: SelectionRecord) => void | "parked";
 
 export type DomSchedulerOptions = {
 	onDiagnostic?: (event: DiagnosticEvent) => void;

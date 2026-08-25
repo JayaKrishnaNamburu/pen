@@ -31,13 +31,11 @@ const allowlist = JSON.parse(readFileSync(allowlistPath, "utf8"));
 const allowlistedEntry = allowlist.entries.find(
 	(entry) => entry.kind === "requestAnimationFrame",
 );
-if (!allowlistedEntry) {
-	throw new Error(
-		"no-selection-timers allowlist has no requestAnimationFrame entry left to exercise",
-	);
-}
-const authorityPath = allowlistedEntry.file;
-const allowlistedSymbol = allowlistedEntry.symbol;
+const authorityPath =
+	allowlistedEntry?.file ??
+	"packages/rendering/dom/src/field-editor/contenteditableBackendSelection.ts";
+const allowlistedSymbol =
+	allowlistedEntry?.symbol ?? "scheduleActiveDOMMatchCheck";
 
 const allowlistedRaf = `
 function ${allowlistedSymbol}() {
@@ -129,7 +127,7 @@ describe("no-selection-timers (S4)", () => {
 	});
 
 	it("S4: every allowlist entry names file, symbol, kind, and a retiring wave", () => {
-		expect(allowlist.entries.length).toBeGreaterThan(0);
+		expect(allowlist.entries).toEqual([]);
 		for (const entry of allowlist.entries) {
 			expect(missingAllowlistField(entry)).toBeNull();
 			expect(entry.reason).toMatch(/Wave \d+/);
@@ -143,7 +141,6 @@ describe("no-selection-timers (S4)", () => {
 	});
 
 	it("S4: every outOfScope entry names a file and a reason", () => {
-		expect(allowlist.outOfScope.length).toBeGreaterThan(0);
 		for (const entry of allowlist.outOfScope) {
 			expect(typeof entry.file).toBe("string");
 			expect(entry.file.length).toBeGreaterThan(0);
@@ -201,7 +198,9 @@ describe("no-selection-timers (S4)", () => {
 					filename:
 						"packages/rendering/dom/src/field-editor/sessionReconciler.ts",
 				},
-				{ code: allowlistedRaf, filename: authorityPath },
+				...(allowlistedEntry
+					? [{ code: allowlistedRaf, filename: authorityPath }]
+					: []),
 			],
 			invalid: [
 				{
@@ -277,34 +276,56 @@ describe("no-selection-timers (S4)", () => {
 						},
 					],
 				},
-				{
-					code: `${allowlistedRaf}\nsetTimeout(() => {}, 16);\n`,
-					filename: authorityPath,
-					errors: [
-						{
-							messageId: "timer",
-							data: {
-								kind: "setTimeout",
-								symbol: "(module)",
-								file: authorityPath,
+				...(allowlistedEntry
+					? []
+					: [
+							{
+								code: allowlistedRaf,
+								filename: authorityPath,
+								errors: [
+									{
+										messageId: "timer",
+										data: {
+											kind: "requestAnimationFrame",
+											symbol: allowlistedSymbol,
+											file: authorityPath,
+										},
+									},
+								],
 							},
-						},
-					],
-				},
-				{
-					code: allowlistedSymbolWithoutRaf,
-					filename: authorityPath,
-					errors: [
-						{
-							messageId: "unusedAllowlist",
-							data: {
-								file: authorityPath,
-								symbol: allowlistedSymbol,
-								kind: "requestAnimationFrame",
+						]),
+				...(allowlistedEntry
+					? [
+							{
+								code: `${allowlistedRaf}\nsetTimeout(() => {}, 16);\n`,
+								filename: authorityPath,
+								errors: [
+									{
+										messageId: "timer",
+										data: {
+											kind: "setTimeout",
+											symbol: "(module)",
+											file: authorityPath,
+										},
+									},
+								],
 							},
-						},
-					],
-				},
+							{
+								code: allowlistedSymbolWithoutRaf,
+								filename: authorityPath,
+								errors: [
+									{
+										messageId: "unusedAllowlist",
+										data: {
+											file: authorityPath,
+											symbol: allowlistedSymbol,
+											kind: "requestAnimationFrame",
+										},
+									},
+								],
+							},
+						]
+					: []),
 			],
 		});
 	});

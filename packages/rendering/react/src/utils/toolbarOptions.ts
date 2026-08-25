@@ -1,9 +1,6 @@
 import { localeFacet } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
-import {
-	displayCatalogForEditor,
-	resolveSlashMenuTitle,
-} from "./displayCopy";
+import { displayCatalogForEditor, resolveSlashMenuTitle } from "./displayCopy";
 import {
 	getFlowCapabilityFromSchema,
 	shouldShowBlockInDefaultMenus,
@@ -60,7 +57,8 @@ function compareToolbarDisplays(
 		return capabilityDelta;
 	}
 
-	const groupDelta = getGroupOrder(a.display.group) - getGroupOrder(b.display.group);
+	const groupDelta =
+		getGroupOrder(a.display.group) - getGroupOrder(b.display.group);
 	if (groupDelta !== 0) {
 		return groupDelta;
 	}

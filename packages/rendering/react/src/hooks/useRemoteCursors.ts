@@ -8,12 +8,11 @@ import type { Editor, Unsubscribe } from "@input/pen-types";
 
 const EMPTY_REMOTE_CURSORS: readonly RemoteCursorState[] = [];
 
-export function useRemoteCursors(
-	editor: Editor,
-): readonly RemoteCursorState[] {
+export function useRemoteCursors(editor: Editor): readonly RemoteCursorState[] {
 	const controller =
-		(editor.facet(multiplayerControllerFacet) as MultiplayerController | null) ??
-		null;
+		(editor.facet(
+			multiplayerControllerFacet,
+		) as MultiplayerController | null) ?? null;
 	const canReadRemoteCursors = isRemoteCursorController(controller);
 
 	return useSyncExternalStore(

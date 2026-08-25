@@ -19,7 +19,8 @@ function createEditor(
 	} = {},
 ) {
 	return createCoreEditor({
-		schema: defaultSchema,...options,
+		schema: defaultSchema,
+		...options,
 		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
@@ -63,10 +64,12 @@ function getClipboardPenBlocks(
 ): Array<{ type?: string; content?: string }> {
 	const parsed = JSON.parse(
 		clipboardData.getData("application/x-pen-blocks"),
-	) as { blocks?: Array<{ type?: string; content?: string }> } | Array<{
-		type?: string;
-		content?: string;
-	}>;
+	) as
+		| { blocks?: Array<{ type?: string; content?: string }> }
+		| Array<{
+				type?: string;
+				content?: string;
+		  }>;
 	return Array.isArray(parsed) ? parsed : (parsed.blocks ?? []);
 }
 
@@ -109,9 +112,13 @@ describe("@input/pen-react clipboard", () => {
 		const fieldEditor = createFieldEditorStub();
 
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
+			{
+				type: "splice-text",
+				blockId,
+				from: 0,
 				to: 0,
-				insert: "Hi there" },
+				insert: "Hi there",
+			},
 			{
 				type: "format-text",
 				blockId,
@@ -146,9 +153,15 @@ describe("@input/pen-react clipboard", () => {
 		const clipboardData = createClipboardData();
 		const fieldEditor = createFieldEditorStub();
 
-		editor.apply([{ type: "splice-text", blockId, from: 0,
+		editor.apply([
+			{
+				type: "splice-text",
+				blockId,
+				from: 0,
 				to: 0,
-				insert: "a 文🦄 z" }]);
+				insert: "a 文🦄 z",
+			},
+		]);
 
 		editor.selectText(blockId, 2, 5);
 		handleCopy(editor, { clipboardData } as ClipboardEvent);
@@ -173,9 +186,9 @@ describe("@input/pen-react clipboard", () => {
 		const clipboardData = createClipboardData();
 		const fieldEditor = createFieldEditorStub();
 
-		editor.apply([{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" }]);
+		editor.apply([
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" },
+		]);
 		clipboardData.setData("text/plain", "X");
 
 		editor.selectText(blockId, 1, 4);
@@ -205,13 +218,11 @@ describe("@input/pen-react clipboard", () => {
 			resolve(ref) {
 				return ref.url;
 			},
-			async delete() { },
+			async delete() {},
 		};
 
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" },
 		]);
 		editor.selectText(blockId, 0, 5);
 		editor.internals.assignSlot("paste:assetProvider", assetProvider);
@@ -244,13 +255,11 @@ describe("@input/pen-react clipboard", () => {
 			resolve(ref) {
 				return ref.url;
 			},
-			async delete() { },
+			async delete() {},
 		};
 
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" },
 		]);
 		editor.selectText(blockId, 5, 5);
 		editor.internals.assignSlot("paste:assetProvider", assetProvider);
@@ -286,7 +295,12 @@ describe("@input/pen-react clipboard", () => {
 		const fieldEditor = createFieldEditorStub();
 
 		const penBlocks = JSON.stringify([
-			{ type: "heading", props: { level: 1 }, content: "Title", deltas: [{ insert: "Title" }] },
+			{
+				type: "heading",
+				props: { level: 1 },
+				content: "Title",
+				deltas: [{ insert: "Title" }],
+			},
 		]);
 		clipboardData.setData("application/x-pen-blocks", penBlocks);
 
@@ -313,13 +327,22 @@ describe("@input/pen-react clipboard", () => {
 		const fieldEditor = createFieldEditorStub();
 
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
+			{
+				type: "splice-text",
+				blockId,
+				from: 0,
 				to: 0,
-				insert: "existing" },
+				insert: "existing",
+			},
 		]);
 
 		const penBlocks = JSON.stringify([
-			{ type: "heading", props: { level: 1 }, content: "Title", deltas: [{ insert: "Title" }] },
+			{
+				type: "heading",
+				props: { level: 1 },
+				content: "Title",
+				deltas: [{ insert: "Title" }],
+			},
 		]);
 		clipboardData.setData("application/x-pen-blocks", penBlocks);
 
@@ -345,9 +368,15 @@ describe("@input/pen-react clipboard", () => {
 		const fieldEditor = createFieldEditorStub();
 		const importers: PasteImporters = {
 			html: {
-				parse: vi.fn().mockReturnValue([
-					{ type: "heading", props: { level: 2 }, content: "Parsed title" },
-				]),
+				parse: vi
+					.fn()
+					.mockReturnValue([
+						{
+							type: "heading",
+							props: { level: 2 },
+							content: "Parsed title",
+						},
+					]),
 				import: vi.fn(),
 				name: "html",
 				mimeType: "text/html",
@@ -369,7 +398,9 @@ describe("@input/pen-react clipboard", () => {
 		expect(blockOrder).toHaveLength(1);
 		expect(blockOrder[0]).not.toBe(emptyBlockId);
 		expect(editor.getBlock(blockOrder[0])?.type).toBe("heading");
-		expect(editor.getBlock(blockOrder[0])?.textContent()).toBe("Parsed title");
+		expect(editor.getBlock(blockOrder[0])?.textContent()).toBe(
+			"Parsed title",
+		);
 		expect(importers.html?.import).not.toHaveBeenCalled();
 		expect(fieldEditor.activateTextSelection).toHaveBeenCalledWith(
 			blockOrder[0],
@@ -387,17 +418,31 @@ describe("@input/pen-react clipboard", () => {
 		const fieldEditor = createFieldEditorStub();
 		const importers: PasteImporters = {
 			html: {
-				parse: vi.fn().mockReturnValue([
-					{ type: "paragraph", props: {}, content: "First paragraph.\n\nSecond paragraph." },
-				]),
+				parse: vi
+					.fn()
+					.mockReturnValue([
+						{
+							type: "paragraph",
+							props: {},
+							content: "First paragraph.\n\nSecond paragraph.",
+						},
+					]),
 				import: vi.fn(),
 				name: "html",
 				mimeType: "text/html",
 			},
 			markdown: {
 				parse: vi.fn().mockReturnValue([
-					{ type: "paragraph", props: {}, content: "First paragraph." },
-					{ type: "paragraph", props: {}, content: "Second paragraph." },
+					{
+						type: "paragraph",
+						props: {},
+						content: "First paragraph.",
+					},
+					{
+						type: "paragraph",
+						props: {},
+						content: "Second paragraph.",
+					},
 				]),
 				import: vi.fn(),
 				name: "markdown",
@@ -405,8 +450,14 @@ describe("@input/pen-react clipboard", () => {
 			},
 		};
 
-		clipboardData.setData("text/html", "<span>First paragraph.<br><br>Second paragraph.</span>");
-		clipboardData.setData("text/plain", "First paragraph.\n\nSecond paragraph.");
+		clipboardData.setData(
+			"text/html",
+			"<span>First paragraph.<br><br>Second paragraph.</span>",
+		);
+		clipboardData.setData(
+			"text/plain",
+			"First paragraph.\n\nSecond paragraph.",
+		);
 		editor.selectText(emptyBlockId, 0, 0);
 
 		handleClipboardPaste(
@@ -419,8 +470,12 @@ describe("@input/pen-react clipboard", () => {
 
 		const blockOrder = editor.documentState.blockOrder;
 		expect(blockOrder).toHaveLength(2);
-		expect(editor.getBlock(blockOrder[0])?.textContent()).toBe("First paragraph.");
-		expect(editor.getBlock(blockOrder[1])?.textContent()).toBe("Second paragraph.");
+		expect(editor.getBlock(blockOrder[0])?.textContent()).toBe(
+			"First paragraph.",
+		);
+		expect(editor.getBlock(blockOrder[1])?.textContent()).toBe(
+			"Second paragraph.",
+		);
 		expect(importers.html?.import).not.toHaveBeenCalled();
 		expect(importers.markdown?.parse).toHaveBeenCalledWith(
 			"First paragraph.\n\nSecond paragraph.",
@@ -429,6 +484,4 @@ describe("@input/pen-react clipboard", () => {
 
 		editor.destroy();
 	});
-
-
 });

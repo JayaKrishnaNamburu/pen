@@ -2,7 +2,7 @@ import React from "react";
 import type { Editor } from "@input/pen-types";
 import { EditorContext } from "../../context/editorContext";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
-import { DATA_ATTRS } from "../../utils/dataAttributes";
+import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 import { getAttachedFieldEditor } from "../../utils/fieldEditor";
 import { useAISuggestionPopover } from "../../hooks/useAISuggestionPopover";
 
@@ -68,10 +68,15 @@ export function AISuggestionsRoot(props: AISuggestionsRootProps) {
 
 	React.useEffect(() => {
 		const handleClick = (event: MouseEvent) => {
-			const target = event.target instanceof Element ? event.target : null;
-			const anchor = target?.closest("[data-ai-suggestion-id]") as HTMLElement | null;
+			const target =
+				event.target instanceof Element ? event.target : null;
+			const anchor = target?.closest(
+				"[data-ai-suggestion-id]",
+			) as HTMLElement | null;
 			if (!anchor) {
-				if (target?.closest("[data-pen-ai-suggestions-popover]") == null) {
+				if (
+					target?.closest("[data-pen-ai-suggestions-popover]") == null
+				) {
 					closeSuggestion();
 				}
 				return;
@@ -134,7 +139,8 @@ export function AISuggestionsRoot(props: AISuggestionsRootProps) {
 			if (!styleElement) {
 				return;
 			}
-			const currentRefCount = Number(styleElement.dataset.refCount ?? "1") - 1;
+			const currentRefCount =
+				Number(styleElement.dataset.refCount ?? "1") - 1;
 			if (currentRefCount <= 0) {
 				styleElement.remove();
 				return;

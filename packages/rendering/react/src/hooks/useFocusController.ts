@@ -24,10 +24,18 @@ export type PenRangeFocusRequest = PenFocusOptions & {
 
 export type PenFocusController = {
 	text(request: PenTextFocusRequest): Promise<boolean>;
-	start(blockId: string, request?: Omit<PenTextFocusRequest, "blockId" | "offset">): Promise<boolean>;
-	end(blockId: string, request?: Omit<PenTextFocusRequest, "blockId" | "offset">): Promise<boolean>;
+	start(
+		blockId: string,
+		request?: Omit<PenTextFocusRequest, "blockId" | "offset">,
+	): Promise<boolean>;
+	end(
+		blockId: string,
+		request?: Omit<PenTextFocusRequest, "blockId" | "offset">,
+	): Promise<boolean>;
 	range(request: PenRangeFocusRequest): Promise<boolean>;
-	restore(request: PenTextFocusRequest | PenRangeFocusRequest): Promise<boolean>;
+	restore(
+		request: PenTextFocusRequest | PenRangeFocusRequest,
+	): Promise<boolean>;
 	blur(): void;
 	waitForAttachment(blockId?: string | null): Promise<boolean>;
 };
@@ -43,7 +51,11 @@ export function useFocusController(editor: Editor): PenFocusController {
 
 	return {
 		text: async (request) => {
-			const offset = resolveFocusOffset(editor, request.blockId, request.offset);
+			const offset = resolveFocusOffset(
+				editor,
+				request.blockId,
+				request.offset,
+			);
 			return focusRange(getFieldEditor, {
 				blockId: request.blockId,
 				anchorOffset: offset,
@@ -94,7 +106,11 @@ export function useFocusController(editor: Editor): PenFocusController {
 					passive: request.passive,
 				});
 			}
-			const offset = resolveFocusOffset(editor, request.blockId, request.offset);
+			const offset = resolveFocusOffset(
+				editor,
+				request.blockId,
+				request.offset,
+			);
 			return focusRange(getFieldEditor, {
 				blockId: request.blockId,
 				anchorOffset: offset,

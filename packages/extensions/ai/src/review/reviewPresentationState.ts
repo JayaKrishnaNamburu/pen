@@ -23,7 +23,6 @@ export const FINAL_TEXT_REVIEW_HIDDEN_ATTRIBUTE =
 	"data-pen-final-text-review-hidden";
 export const AI_REVIEW_PREVIEW_VIRTUAL_ATTRIBUTE =
 	"data-pen-ai-review-preview-virtual";
-export const AI_REVIEW_PREVIEW_NEW_ATTRIBUTE = "data-pen-ai-review-preview-new";
 
 export function resolveAIReviewPresentationState({
 	activeGeneration,

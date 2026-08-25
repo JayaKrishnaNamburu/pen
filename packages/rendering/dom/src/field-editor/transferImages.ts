@@ -95,7 +95,9 @@ export async function uploadImageFiles(
 			const ref = await assetProvider.upload(file, {
 				mimeType: file.type,
 				...(maxSize != null ? { maxSize } : {}),
-				...(options?.onProgress ? { onProgress: options.onProgress } : {}),
+				...(options?.onProgress
+					? { onProgress: options.onProgress }
+					: {}),
 			});
 
 			uploaded.push({
@@ -185,7 +187,9 @@ function admitTransferImageSrc(editor: Editor, raw: unknown): string | null {
 
 function emitAssetBlockedUrl(editor: Editor, raw: unknown): void {
 	const scheme =
-		typeof raw === "string" ? (parsedProtocol(raw) ?? "unparsable") : "non-string";
+		typeof raw === "string"
+			? (parsedProtocol(raw) ?? "unparsable")
+			: "non-string";
 	editor.internals.emit("diagnostic", {
 		code: "asset-blocked-url",
 		level: "warn",
@@ -281,20 +285,31 @@ export function insertUploadedImagesAtDropTarget(
 	const block = editor.getBlock(point.blockId);
 	const schema = block ? editor.schema.resolve(block.type) : null;
 	if (!block || schema?.content !== "inline") {
-		return insertUploadedImages(editor, images, "last", options).lastInsertedBlockId;
+		return insertUploadedImages(editor, images, "last", options)
+			.lastInsertedBlockId;
 	}
 
 	const textLength = block.textContent().length;
 	const clampedOffset = Math.max(0, Math.min(point.offset, textLength));
 	if (clampedOffset === 0) {
-		return insertUploadedImages(editor, images, {
-			before: point.blockId,
-		}, options).lastInsertedBlockId;
+		return insertUploadedImages(
+			editor,
+			images,
+			{
+				before: point.blockId,
+			},
+			options,
+		).lastInsertedBlockId;
 	}
 	if (clampedOffset >= textLength) {
-		return insertUploadedImages(editor, images, {
-			after: point.blockId,
-		}, options).lastInsertedBlockId;
+		return insertUploadedImages(
+			editor,
+			images,
+			{
+				after: point.blockId,
+			},
+			options,
+		).lastInsertedBlockId;
 	}
 
 	const tailBlockId = generateId();

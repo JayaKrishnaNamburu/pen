@@ -12,7 +12,7 @@ import { useFieldEditorState } from "../../hooks/useFieldEditorState";
 import { useOverlayLayout } from "../../hooks/useOverlayLayout";
 import { useSelection } from "../../hooks/useSelection";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
-import { DATA_ATTRS } from "../../utils/dataAttributes";
+import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 type CaretStyle = React.CSSProperties & Record<string, string | number>;
 const CARET_BLINK_RESUME_DELAY_MS = 500;
 

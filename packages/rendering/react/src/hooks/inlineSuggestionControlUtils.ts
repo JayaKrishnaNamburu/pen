@@ -1,5 +1,8 @@
 import type { Editor } from "@input/pen-types";
-import type { PersistentSuggestion, PersistentTextSuggestion } from "@input/pen-ai";
+import type {
+	PersistentSuggestion,
+	PersistentTextSuggestion,
+} from "@input/pen-ai";
 import type { useAIActions } from "./useAIActions";
 import type { InlineSuggestionControlPosition } from "./useInlineSuggestionControls";
 import { querySuggestionAnchorElements } from "../utils/aiDomScope";
@@ -44,7 +47,10 @@ export function resolveSuggestionControlPositions(
 
 	for (const anchor of visibleAnchors) {
 		const previousAnchor = currentGroup[currentGroup.length - 1];
-		if (!previousAnchor || shouldGroupSuggestionAnchors(previousAnchor, anchor)) {
+		if (
+			!previousAnchor ||
+			shouldGroupSuggestionAnchors(previousAnchor, anchor)
+		) {
 			currentGroup.push(anchor);
 			continue;
 		}
@@ -77,17 +83,18 @@ export function resolveSuggestionAnchorElements(
 		return [];
 	}
 	const suggestionIdSet = new Set(suggestionIds);
-	return querySuggestionAnchorElements(editor)
-		.filter((element) => {
-			if (!isRenderableSuggestionAnchor(element)) {
-				return false;
-			}
-			const suggestionId = element.dataset.suggestionId;
-			return suggestionId ? suggestionIdSet.has(suggestionId) : false;
-		});
+	return querySuggestionAnchorElements(editor).filter((element) => {
+		if (!isRenderableSuggestionAnchor(element)) {
+			return false;
+		}
+		const suggestionId = element.dataset.suggestionId;
+		return suggestionId ? suggestionIdSet.has(suggestionId) : false;
+	});
 }
 
-export function scrollSuggestionIntoView(suggestionElements: readonly HTMLElement[]): void {
+export function scrollSuggestionIntoView(
+	suggestionElements: readonly HTMLElement[],
+): void {
 	const firstVisibleElement = suggestionElements.find((suggestionElement) => {
 		const rect = suggestionElement.getBoundingClientRect();
 		return rect.width > 0 || rect.height > 0;
@@ -182,32 +189,36 @@ function resolveVisibleSuggestionAnchors(
 	const suggestionActions = new Map(
 		suggestions.map((suggestion) => [suggestion.id, suggestion.action]),
 	);
-	return querySuggestionAnchorElements(editor)
-		.flatMap((element) => {
-			if (!isRenderableSuggestionAnchor(element)) {
-				return [];
-			}
-			const suggestionId = element.dataset.suggestionId;
-			if (!suggestionId) {
-				return [];
-			}
-			const action = suggestionActions.get(suggestionId);
-			if (!action) {
-				return [];
-			}
-			const rect = element.getBoundingClientRect();
-			if (rect.width === 0 && rect.height === 0) {
-				return [];
-			}
-			return [{
+	return querySuggestionAnchorElements(editor).flatMap((element) => {
+		if (!isRenderableSuggestionAnchor(element)) {
+			return [];
+		}
+		const suggestionId = element.dataset.suggestionId;
+		if (!suggestionId) {
+			return [];
+		}
+		const action = suggestionActions.get(suggestionId);
+		if (!action) {
+			return [];
+		}
+		const rect = element.getBoundingClientRect();
+		if (rect.width === 0 && rect.height === 0) {
+			return [];
+		}
+		return [
+			{
 				suggestionId,
 				action,
-				blockId: element.closest("[data-block-id]")?.getAttribute("data-block-id") ?? null,
+				blockId:
+					element
+						.closest("[data-block-id]")
+						?.getAttribute("data-block-id") ?? null,
 				blockElement: element.closest("[data-pen-editor-block]"),
 				element,
 				rect,
-			}];
-		});
+			},
+		];
+	});
 }
 
 function isRenderableSuggestionAnchor(element: HTMLElement): boolean {
@@ -237,7 +248,9 @@ function areAdjacentSuggestionBlocks(
 	if (!blocksHost || blocksHost !== nextBlock.parentElement) {
 		return false;
 	}
-	const blockElements = [...blocksHost.querySelectorAll<HTMLElement>("[data-pen-editor-block]")];
+	const blockElements = [
+		...blocksHost.querySelectorAll<HTMLElement>("[data-pen-editor-block]"),
+	];
 	const previousIndex = blockElements.indexOf(previousBlock);
 	const nextIndex = blockElements.indexOf(nextBlock);
 	if (previousIndex < 0 || nextIndex < 0) {
@@ -261,7 +274,10 @@ function toSuggestionControlPosition(
 	if (!scrollContainer) {
 		return null;
 	}
-	const host = resolveSuggestionControlHost(anchors[0]!.element, scrollContainer);
+	const host = resolveSuggestionControlHost(
+		anchors[0]!.element,
+		scrollContainer,
+	);
 	const hostRect = host.getBoundingClientRect();
 	const suggestionIds = dedupeSuggestionIds(
 		anchors.map((anchor) => anchor.suggestionId),
@@ -272,10 +288,7 @@ function toSuggestionControlPosition(
 		action: groupActions.size > 1 ? "mixed" : anchors[0]!.action,
 		suggestionIds,
 		host,
-		top: clampSuggestionControlTop(
-			bottom - hostRect.top + 8,
-			host,
-		),
+		top: clampSuggestionControlTop(bottom - hostRect.top + 8, host),
 		left: clampSuggestionControlLeft(host),
 		placement,
 	};
@@ -284,10 +297,14 @@ function toSuggestionControlPosition(
 function hasMeaningfulSuggestionContent(
 	anchors: readonly SuggestionAnchor[],
 ): boolean {
-	return anchors.some((anchor) => (anchor.element.textContent ?? "").trim().length > 0);
+	return anchors.some(
+		(anchor) => (anchor.element.textContent ?? "").trim().length > 0,
+	);
 }
 
-function dedupeSuggestionIds(suggestionIds: readonly string[]): readonly string[] {
+function dedupeSuggestionIds(
+	suggestionIds: readonly string[],
+): readonly string[] {
 	return [...new Set(suggestionIds)];
 }
 
@@ -309,10 +326,7 @@ function clampSuggestionControlTop(
 		host.clientHeight -
 		SUGGESTION_CONTROL_HEIGHT_ESTIMATE -
 		SUGGESTION_CONTROL_VIEWPORT_PADDING;
-	return Math.max(
-		minTop,
-		Math.min(preferredTop, maxTop),
-	);
+	return Math.max(minTop, Math.min(preferredTop, maxTop));
 }
 
 export function areSuggestionControlPositionsEqual(
@@ -332,10 +346,12 @@ export function areSuggestionControlPositionsEqual(
 			previousPosition.action !== nextPosition.action ||
 			previousPosition.host !== nextPosition.host ||
 			previousPosition.placement !== nextPosition.placement ||
-			previousPosition.suggestionIds.length !== nextPosition.suggestionIds.length ||
+			previousPosition.suggestionIds.length !==
+				nextPosition.suggestionIds.length ||
 			previousPosition.suggestionIds.some(
 				(suggestionId, suggestionIndex) =>
-					suggestionId !== nextPosition.suggestionIds[suggestionIndex],
+					suggestionId !==
+					nextPosition.suggestionIds[suggestionIndex],
 			) ||
 			previousPosition.top !== nextPosition.top ||
 			previousPosition.left !== nextPosition.left
@@ -373,13 +389,17 @@ export function rejectSuggestionGroup(
 }
 
 export function resolveSuggestionGroupOptimistically(
-	setResolvingSuggestionIds: React.Dispatch<React.SetStateAction<readonly string[]>>,
+	setResolvingSuggestionIds: React.Dispatch<
+		React.SetStateAction<readonly string[]>
+	>,
 	suggestionIds: readonly string[],
 	resolveSuggestionGroup: () => readonly string[],
 ): readonly string[] {
 	setResolvingSuggestionIds((currentIds) => [
 		...currentIds,
-		...suggestionIds.filter((suggestionId) => !currentIds.includes(suggestionId)),
+		...suggestionIds.filter(
+			(suggestionId) => !currentIds.includes(suggestionId),
+		),
 	]);
 	const resolvedSuggestionIds = resolveSuggestionGroup();
 	if (resolvedSuggestionIds.length === suggestionIds.length) {
@@ -392,7 +412,8 @@ export function resolveSuggestionGroupOptimistically(
 	if (unresolvedSuggestionIds.length > 0) {
 		setResolvingSuggestionIds((currentIds) =>
 			currentIds.filter(
-				(suggestionId) => !unresolvedSuggestionIds.includes(suggestionId),
+				(suggestionId) =>
+					!unresolvedSuggestionIds.includes(suggestionId),
 			),
 		);
 	}

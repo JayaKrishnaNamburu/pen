@@ -12,7 +12,8 @@ import {
 describe("slash menu display copy (LOC2)", () => {
 	it("LOC2: group slugs resolve to catalog headings and host overrides win", () => {
 		const editor = createHeadlessEditor({
-			schema: defaultSchema,messages: {
+			schema: defaultSchema,
+			messages: {
 				"pen.display.group.basic": "Grundlagen",
 				"pen.schema.paragraph.title": "Absatz",
 			},
@@ -32,7 +33,8 @@ describe("slash menu display copy (LOC2)", () => {
 
 	it("LOC2: schema placeholders resolve through the catalog and host overrides win", () => {
 		const editor = createHeadlessEditor({
-			schema: defaultSchema,messages: {
+			schema: defaultSchema,
+			messages: {
 				"pen.schema.paragraph.placeholder": "Absatz…",
 			},
 		});

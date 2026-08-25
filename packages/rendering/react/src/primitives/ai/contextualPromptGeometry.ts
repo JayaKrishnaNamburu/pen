@@ -9,7 +9,7 @@ import {
 	domSelectionToEditor,
 	getTextSelectionClientRects,
 } from "@input/pen-dom/field-editor/selectionBridge";
-import { DATA_ATTRS } from "../../utils/dataAttributes";
+import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 import {
 	queryEditorBlockElement,
 	resolveEditorContentElement,

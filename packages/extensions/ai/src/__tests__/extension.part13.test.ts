@@ -442,10 +442,13 @@ describe("aiExtension", () => {
 			blockId,
 			newType: "heading",
 		});
-		expect(block.type).toBe("heading");
+		expect(block.type).toBe("paragraph");
 		expect(block.meta("suggestion")).toMatchObject({
 			action: "convert-block",
 			authorType: "ai",
 		});
+		acceptAllSuggestions(editor);
+		expect(editor.getBlock(blockId)!.type).toBe("heading");
+		expect(editor.getBlock(blockId)!.meta("suggestion")).toBeNull();
 	});
 });

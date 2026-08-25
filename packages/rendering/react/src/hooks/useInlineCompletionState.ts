@@ -9,7 +9,7 @@ export function useInlineCompletionState(
 		(callback) => {
 			const controller = getInlineCompletionController(editor);
 			if (!controller) {
-				return () => { };
+				return () => {};
 			}
 			return controller.subscribe(callback);
 		},

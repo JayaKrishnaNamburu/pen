@@ -46,8 +46,12 @@ export function rangeRectsFromLineBoxes(
 		return [];
 	}
 
-	const slices: { start: number; end: number; approx: Rect; runRect: Rect }[] =
-		[];
+	const slices: {
+		start: number;
+		end: number;
+		approx: Rect;
+		runRect: Rect;
+	}[] = [];
 	for (const line of lines) {
 		for (const geo of line.runs) {
 			const start = Math.max(geo.run.from, lo);
@@ -282,11 +286,7 @@ function approxVisualRunRects(
 	});
 }
 
-function sliceRunRect(
-	geo: BidiRunGeometry,
-	start: number,
-	end: number,
-): Rect {
+function sliceRunRect(geo: BidiRunGeometry, start: number, end: number): Rect {
 	if (start === geo.run.from && end === geo.run.to) {
 		return geo.rect;
 	}
@@ -353,9 +353,7 @@ function isRunBoundary(
 	runs: readonly BidiRunGeometry[],
 	offset: number,
 ): boolean {
-	return runs.some(
-		(geo) => geo.run.from === offset || geo.run.to === offset,
-	);
+	return runs.some((geo) => geo.run.from === offset || geo.run.to === offset);
 }
 
 function pickRunForAffinity(
@@ -363,7 +361,9 @@ function pickRunForAffinity(
 	offset: number,
 	affinity: Affinity,
 ): BidiRunGeometry | null {
-	const logical = [...runs].sort((left, right) => left.run.from - right.run.from);
+	const logical = [...runs].sort(
+		(left, right) => left.run.from - right.run.from,
+	);
 	switch (affinity) {
 		case "downstream": {
 			for (const geo of logical) {
@@ -394,7 +394,9 @@ function caretEdgeForPickedRun(
 	offset: number,
 	affinity: Affinity,
 ): "start" | "end" {
-	const logical = [...runs].sort((left, right) => left.run.from - right.run.from);
+	const logical = [...runs].sort(
+		(left, right) => left.run.from - right.run.from,
+	);
 	const first = logical[0];
 	const last = logical[logical.length - 1];
 	const atStart = Boolean(first && offset <= first.run.from);
@@ -414,7 +416,9 @@ function caretEdgeForPickedRun(
 function runStartingAt(line: LineBox, offset: number): BidiRunGeometry | null {
 	return (
 		line.runs.find((geo) => geo.run.from === offset) ??
-		[...line.runs].sort((left, right) => left.run.from - right.run.from)[0] ??
+		[...line.runs].sort(
+			(left, right) => left.run.from - right.run.from,
+		)[0] ??
 		null
 	);
 }

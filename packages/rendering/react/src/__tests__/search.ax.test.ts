@@ -15,7 +15,8 @@ import { defaultSchema } from "@input/pen-schema-default";
 describe("@input/pen-react search AX3", () => {
 	it("AX3 names search input, results, and navigation", async () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [searchExtension()],
+			schema: defaultSchema,
+			extensions: [searchExtension()],
 		});
 		const container = document.createElement("div");
 		document.body.appendChild(container);
@@ -57,7 +58,8 @@ describe("@input/pen-react search AX3", () => {
 
 	it("LOC1: host messages override search chrome labels", async () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [searchExtension()],
+			schema: defaultSchema,
+			extensions: [searchExtension()],
 			messages: {
 				"pen.search.input.label": "Im Dokument suchen",
 				"pen.search.next": "Nächster Treffer",
@@ -79,11 +81,15 @@ describe("@input/pen-react search AX3", () => {
 		});
 
 		expect(
-			container.querySelector("[data-pen-search-input]")?.getAttribute("aria-label"),
+			container
+				.querySelector("[data-pen-search-input]")
+				?.getAttribute("aria-label"),
 		).toBe("Im Dokument suchen");
 		expect(
 			container
-				.querySelector("[data-pen-search-navigation][data-option='next']")
+				.querySelector(
+					"[data-pen-search-navigation][data-option='next']",
+				)
 				?.getAttribute("aria-label"),
 		).toBe("Nächster Treffer");
 

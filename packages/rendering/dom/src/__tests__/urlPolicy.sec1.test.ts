@@ -29,9 +29,9 @@ describe("SEC1 urlPolicy", () => {
 		expect(urlPolicy.resolve("HTTPS://Example.COM/x", "link")).toBe(
 			"HTTPS://Example.COM/x",
 		);
-		expect(urlPolicy.resolve("https://example.com/a?q=1#hash", "download")).toBe(
-			"https://example.com/a?q=1#hash",
-		);
+		expect(
+			urlPolicy.resolve("https://example.com/a?q=1#hash", "download"),
+		).toBe("https://example.com/a?q=1#hash");
 	});
 
 	it("SEC1: data: is rejected except documented image types", () => {

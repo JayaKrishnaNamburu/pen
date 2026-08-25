@@ -36,6 +36,8 @@ export type {
 	AIBlockAdapterId,
 	AIApplyStrategy,
 	AIBlockClass,
+	AIEditChannel,
+	AIMutationPreference,
 	AITargetKind,
 	AIPlannerMode,
 	AIExecutionMode,
@@ -80,6 +82,7 @@ export { applySuggestedAIOperations } from "./suggestions/applySuggestedAIOperat
 
 export type {
 	AIExtensionConfig,
+	AIEditStreaming,
 	AIStatus,
 	AIContextualPromptAnchor,
 	AIContextualPromptAnchorKind,

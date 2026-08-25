@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from "vitest";
 import type { SchemaRegistry } from "@input/pen-types";
-import { DATA_ATTRS } from "../utils/dataAttributes";
+import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 import { resolveNextInlineAtomTargets } from "../primitives/editor/inlineAtomTargets";
 
 const registry = {

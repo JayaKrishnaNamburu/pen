@@ -11,9 +11,7 @@ import {
 
 type TextInputPipelineController = Pick<
 	FieldEditorInputController,
-	| "setBackendSelectionAuthority"
-	| "syncTextSelection"
-	| "resolveInsertMarks"
+	"setBackendSelectionAuthority" | "syncTextSelection" | "resolveInsertMarks"
 >;
 
 export interface ApplyInlineTextInputOptions {
@@ -102,10 +100,7 @@ function applyInlineTextOperations(
 	ops: readonly DocumentOp[],
 	selection: InlineTextSelectionTarget,
 ): void {
-	options.fieldEditor.setBackendSelectionAuthority(
-		"programmatic",
-		selection,
-	);
+	options.fieldEditor.setBackendSelectionAuthority("programmatic", selection);
 
 	if (ops.length > 0) {
 		options.editor.apply([...ops], { origin: "user" });

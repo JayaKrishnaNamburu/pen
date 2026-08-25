@@ -9,6 +9,11 @@ export interface ChatRequest {
 	messages: ModelMessage[];
 	/** The document tools Pen is offering for this turn. */
 	tools: ToolSchema[];
+	/** EC17: adapter-owned mapping onto Anthropic `tool_choice`. */
+	toolChoice?:
+		| { type: "auto" }
+		| { type: "any" }
+		| { type: "tool"; name: string };
 }
 
 /**
@@ -20,6 +25,16 @@ export interface ChatRequest {
  */
 export type ChatEvent =
 	| { type: "text-delta"; delta: string }
+	| {
+			type: "tool-input-start";
+			toolCallId: string;
+			toolName: string;
+	  }
+	| {
+			type: "tool-input-delta";
+			toolCallId: string;
+			inputTextDelta: string;
+	  }
 	| {
 			type: "tool-call";
 			toolCallId: string;

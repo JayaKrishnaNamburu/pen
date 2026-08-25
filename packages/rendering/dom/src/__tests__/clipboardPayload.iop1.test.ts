@@ -1,14 +1,8 @@
 // @vitest-environment jsdom
 
-import {
-	describe,
-	expect,
-	it,
-	vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createEditor } from "@input/pen-core";
-import {
-	PEN_CLIPBOARD_PAYLOAD_VERSION,
-} from "@input/pen-types";
+import { PEN_CLIPBOARD_PAYLOAD_VERSION } from "@input/pen-types";
 import { SchemaRegistryImpl } from "@input/pen-core";
 import { handleCopy } from "../field-editor/clipboard";
 import { executePasteTransfer } from "../field-editor/transferPaste";
@@ -258,7 +252,9 @@ describe("IOP1 versioned clipboard payload", () => {
 		});
 		expect(receiving.resolve("customWidget")?.type).toBe("customWidget");
 		expect(
-			receiving.allBlocks().some((block) => block.type === "customWidget"),
+			receiving
+				.allBlocks()
+				.some((block) => block.type === "customWidget"),
 		).toBe(false);
 		// V.3 passthrough is wired on resolve. Apply still refuses new inserts
 		// of types outside allBlocks() (PEN_APPLY_002). React/Vue DefaultRenderer

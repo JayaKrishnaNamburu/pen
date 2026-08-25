@@ -7,87 +7,86 @@ import {
 } from "../field-editor/beforeinputMap";
 import { DIRECT_HANDLERS } from "../field-editor/contenteditableDirectHandlers";
 
-const LISTED_COMMAND_ROWS: Readonly<
-	Record<string, BeforeInputCommandMapping>
-> = {
-	insertText: {
-		commandName: "pen.insertText",
-		preventDefault: true,
-	},
-	insertFromPaste: {
-		commandName: "pen.insertText",
-		preventDefault: true,
-	},
-	insertFromDrop: {
-		commandName: "pen.insertText",
-		preventDefault: true,
-	},
-	insertReplacementText: {
-		commandName: "pen.insertText",
-		preventDefault: true,
-	},
-	insertLineBreak: {
-		commandName: "pen.insertLineBreak",
-		preventDefault: true,
-	},
-	insertParagraph: {
-		commandName: "pen.splitBlock",
-		preventDefault: true,
-	},
-	deleteContentBackward: {
-		commandName: "pen.deleteBackward",
-		preventDefault: true,
-		param: { granularity: "grapheme" },
-	},
-	deleteContentForward: {
-		commandName: "pen.deleteForward",
-		preventDefault: true,
-		param: { granularity: "grapheme" },
-	},
-	deleteWordBackward: {
-		commandName: "pen.deleteBackward",
-		preventDefault: true,
-		param: { granularity: "word" },
-	},
-	deleteWordForward: {
-		commandName: "pen.deleteForward",
-		preventDefault: true,
-		param: { granularity: "word" },
-	},
-	deleteSoftLineBackward: {
-		commandName: "pen.deleteBackward",
-		preventDefault: true,
-		param: { granularity: "line" },
-	},
-	deleteHardLineBackward: {
-		commandName: "pen.deleteBackward",
-		preventDefault: true,
-		param: { granularity: "line" },
-	},
-	formatBold: {
-		commandName: "pen.toggleMark",
-		preventDefault: true,
-		param: { mark: "bold" },
-	},
-	formatItalic: {
-		commandName: "pen.toggleMark",
-		preventDefault: true,
-		param: { mark: "italic" },
-	},
-	formatUnderline: {
-		commandName: "pen.toggleMark",
-		preventDefault: true,
-		param: { mark: "underline" },
-	},
-	historyUndo: {
-		commandName: "history.undo",
-		preventDefault: true,
-	},
-	historyRedo: {
-		commandName: "history.redo",
-		preventDefault: true,
-	},
-};
+const LISTED_COMMAND_ROWS: Readonly<Record<string, BeforeInputCommandMapping>> =
+	{
+		insertText: {
+			commandName: "pen.insertText",
+			preventDefault: true,
+		},
+		insertFromPaste: {
+			commandName: "pen.insertText",
+			preventDefault: true,
+		},
+		insertFromDrop: {
+			commandName: "pen.insertText",
+			preventDefault: true,
+		},
+		insertReplacementText: {
+			commandName: "pen.insertText",
+			preventDefault: true,
+		},
+		insertLineBreak: {
+			commandName: "pen.insertLineBreak",
+			preventDefault: true,
+		},
+		insertParagraph: {
+			commandName: "pen.splitBlock",
+			preventDefault: true,
+		},
+		deleteContentBackward: {
+			commandName: "pen.deleteBackward",
+			preventDefault: true,
+			param: { granularity: "grapheme" },
+		},
+		deleteContentForward: {
+			commandName: "pen.deleteForward",
+			preventDefault: true,
+			param: { granularity: "grapheme" },
+		},
+		deleteWordBackward: {
+			commandName: "pen.deleteBackward",
+			preventDefault: true,
+			param: { granularity: "word" },
+		},
+		deleteWordForward: {
+			commandName: "pen.deleteForward",
+			preventDefault: true,
+			param: { granularity: "word" },
+		},
+		deleteSoftLineBackward: {
+			commandName: "pen.deleteBackward",
+			preventDefault: true,
+			param: { granularity: "line" },
+		},
+		deleteHardLineBackward: {
+			commandName: "pen.deleteBackward",
+			preventDefault: true,
+			param: { granularity: "line" },
+		},
+		formatBold: {
+			commandName: "pen.toggleMark",
+			preventDefault: true,
+			param: { mark: "bold" },
+		},
+		formatItalic: {
+			commandName: "pen.toggleMark",
+			preventDefault: true,
+			param: { mark: "italic" },
+		},
+		formatUnderline: {
+			commandName: "pen.toggleMark",
+			preventDefault: true,
+			param: { mark: "underline" },
+		},
+		historyUndo: {
+			commandName: "history.undo",
+			preventDefault: true,
+		},
+		historyRedo: {
+			commandName: "history.redo",
+			preventDefault: true,
+		},
+	};
 
 const SPEC_UNLISTED_TYPES = [
 	"insertOrderedList",

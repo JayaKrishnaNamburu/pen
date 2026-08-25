@@ -76,9 +76,13 @@ describe("K1 unbound navigation keys", () => {
 		fixtures.push(editor);
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
+			{
+				type: "splice-text",
+				blockId,
+				from: 0,
 				to: 0,
-				insert: "Hello World" },
+				insert: "Hello World",
+			},
 		]);
 		editor.selectText(blockId, 11, 11);
 
@@ -129,9 +133,13 @@ describe("M3 Home dispatch", () => {
 		}
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
+			{
+				type: "splice-text",
+				blockId,
+				from: 0,
 				to: 0,
-				insert: "Hello World" },
+				insert: "Hello World",
+			},
 		]);
 		editor.selectText(blockId, 5, 5);
 

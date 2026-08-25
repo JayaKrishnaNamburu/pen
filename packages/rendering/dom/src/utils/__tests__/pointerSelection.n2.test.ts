@@ -45,7 +45,13 @@ describe("resolvePointerDragSelection T2/N2", () => {
 	it("keeps a paragraph-to-divider drag as text", () => {
 		const { editor, p1 } = createMixedBoundaryEditor();
 		editor.apply([
-			{ type: "splice-text", blockId: p1, from: 0, to: 0, insert: "Hello" },
+			{
+				type: "splice-text",
+				blockId: p1,
+				from: 0,
+				to: 0,
+				insert: "Hello",
+			},
 		]);
 		editor.selectText(p1, 2, 2);
 		const root = {} as HTMLElement;

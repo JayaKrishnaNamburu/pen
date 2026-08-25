@@ -11,7 +11,9 @@ export interface AIStructuredTargetPreviewProps extends AsChildProps {
 	ref?: React.Ref<HTMLElement>;
 }
 
-export function AIStructuredTargetPreview(props: AIStructuredTargetPreviewProps) {
+export function AIStructuredTargetPreview(
+	props: AIStructuredTargetPreviewProps,
+) {
 	const { editor } = useAIContext();
 	const structuredPreview = useActiveAIStructuredPreview(editor);
 	const targets = structuredPreview.preview?.targets ?? [];
@@ -36,7 +38,8 @@ export function AIStructuredTargetPreview(props: AIStructuredTargetPreviewProps)
 		{
 			"data-pen-ai-structured-target-preview": "",
 			"data-target-count": targets.length,
-			"data-plan-state": structuredPreview.preview?.planState ?? undefined,
+			"data-plan-state":
+				structuredPreview.preview?.planState ?? undefined,
 		},
 	);
 }

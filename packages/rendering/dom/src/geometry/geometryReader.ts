@@ -11,13 +11,7 @@ import {
 } from "./geometryMeasure";
 import { listDomBlockIds, measurePointAt } from "./geometryHitTest";
 import { measureLineBoxes } from "./lineBoxMeasure";
-import type {
-	Affinity,
-	GeometryReader,
-	LineBox,
-	Point,
-	Rect,
-} from "./types";
+import type { Affinity, GeometryReader, LineBox, Point, Rect } from "./types";
 
 export type {
 	Affinity,
@@ -149,8 +143,7 @@ class GeometryReaderImpl implements GeometryReaderHost {
 			point.offset,
 			affinity,
 		);
-		const rect =
-			fromRuns ?? measureCaretRect(this.root, point, affinity);
+		const rect = fromRuns ?? measureCaretRect(this.root, point, affinity);
 		entry.caretRects.set(cacheKey, rect);
 		return rect;
 	}
@@ -296,7 +289,10 @@ class GeometryReaderImpl implements GeometryReaderHost {
 	}
 
 	private liveBlockRect(blockId: string): Rect | null {
-		return this.measure?.blockRect?.(blockId) ?? measureBlockRect(this.root, blockId);
+		return (
+			this.measure?.blockRect?.(blockId) ??
+			measureBlockRect(this.root, blockId)
+		);
 	}
 
 	private keyFor(blockId: string): BlockCacheKey {
@@ -324,7 +320,10 @@ function cacheKeysEqual(left: BlockCacheKey, right: BlockCacheKey): boolean {
 	);
 }
 
-function boxStillValid(cached: Rect | null | undefined, live: Rect | null): boolean {
+function boxStillValid(
+	cached: Rect | null | undefined,
+	live: Rect | null,
+): boolean {
 	if (cached === undefined) {
 		return false;
 	}

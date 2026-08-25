@@ -1,6 +1,10 @@
 // @vitest-environment jsdom
 
-import type { ChangeSummary, CommitEvent, SelectionRecord } from "@input/pen-types";
+import type {
+	ChangeSummary,
+	CommitEvent,
+	SelectionRecord,
+} from "@input/pen-types";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DomScheduler } from "../scheduler";
 
@@ -27,7 +31,10 @@ function flushFrame(): void {
 	}
 }
 
-function emptySummary(commitId: number, blockIds: readonly string[]): ChangeSummary {
+function emptySummary(
+	commitId: number,
+	blockIds: readonly string[],
+): ChangeSummary {
 	return {
 		commitId,
 		blockText: blockIds.map((blockId) => ({
@@ -100,7 +107,9 @@ describe("DomScheduler I9 collect", () => {
 		const order: string[] = [];
 		const scheduler = new DomScheduler("root-a", {
 			onInvalidate: (blockIds, commitId) => {
-				order.push(`invalidate:${blockIds.join(",")}:${commitId}:${scheduler.phase}`);
+				order.push(
+					`invalidate:${blockIds.join(",")}:${commitId}:${scheduler.phase}`,
+				);
 			},
 		});
 
@@ -122,8 +131,10 @@ describe("DomScheduler I9 collect", () => {
 	});
 
 	it("G2 SCH3: structural split/merge ids join the invalidation scan", async () => {
-		const invalidated: Array<{ blockIds: readonly string[]; commitId: number }> =
-			[];
+		const invalidated: Array<{
+			blockIds: readonly string[];
+			commitId: number;
+		}> = [];
 		const scheduler = new DomScheduler("root-a", {
 			onInvalidate: (blockIds, commitId) => {
 				invalidated.push({ blockIds, commitId });
@@ -196,9 +207,9 @@ describe("DomScheduler I9 collect", () => {
 		scheduler.setSelection(record(2));
 		expect(rafCalls).toBe(1);
 		flushFrame();
-		expect(scheduler.collect?.commits.map((event) => event.commitId)).toEqual([
-			1, 2,
-		]);
+		expect(
+			scheduler.collect?.commits.map((event) => event.commitId),
+		).toEqual([1, 2]);
 		expect(rafCalls).toBe(1);
 	});
 

@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-	BIDI_ATOM_MARKER,
-	computeBidiRuns,
-	type BidiRun,
-} from "../levels";
+import { BIDI_ATOM_MARKER, computeBidiRuns, type BidiRun } from "../levels";
 import { BIDI_VECTORS } from "./vectors";
 
 function assertPartition(text: string, runs: readonly BidiRun[]): void {

@@ -37,7 +37,8 @@ export function SearchRoot(props: SearchRootProps) {
 
 	const state = useSearch(editor);
 	const controller =
-		(editor.facet(searchControllerFacet) as SearchController | null) ?? null;
+		(editor.facet(searchControllerFacet) as SearchController | null) ??
+		null;
 	const ctx: SearchContextValue = {
 		editor,
 		state,

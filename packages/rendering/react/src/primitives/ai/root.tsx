@@ -4,7 +4,7 @@ import type { Editor } from "@input/pen-types";
 import type { AIController } from "@input/pen-ai";
 import { EditorContext } from "../../context/editorContext";
 import { useAI } from "../../hooks/useAI";
-import { DATA_ATTRS } from "../../utils/dataAttributes";
+import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 import { getAutocompleteController } from "../../utils/autocompleteController";
 import { shouldIgnoreAIKeyboardEvent } from "../../utils/aiKeyboardScope";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
@@ -44,7 +44,8 @@ export function AIRoot(props: AIRootProps) {
 		"data-pen-ai-root": "",
 		[DATA_ATTRS.viewId]: editor.internals.viewId,
 		"data-connected": controller ? "" : undefined,
-		"data-generating": state.activeGeneration?.status === "streaming" ? "" : undefined,
+		"data-generating":
+			state.activeGeneration?.status === "streaming" ? "" : undefined,
 		"data-suggest-mode": state.suggestMode ? "" : undefined,
 	};
 
@@ -72,7 +73,8 @@ export function AIRoot(props: AIRootProps) {
 		};
 
 		document.addEventListener("keydown", handleKeyDown, true);
-		return () => document.removeEventListener("keydown", handleKeyDown, true);
+		return () =>
+			document.removeEventListener("keydown", handleKeyDown, true);
 	}, [controller, editor, state.ephemeralSuggestion]);
 
 	return (

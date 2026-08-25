@@ -107,12 +107,6 @@ export class DocumentRangeImpl implements DocumentRange {
         blockId: this._focus.blockId,
         offset: this._focus.offset ?? 0,
       },
-      isCollapsed:
-        this.start.blockId === this.end.blockId &&
-        this.start.offset === this.end.offset,
-      isMultiBlock: this.isMultiBlock,
-      blockRange: this.blockRange,
-      toRange: () => this,
     };
   }
 

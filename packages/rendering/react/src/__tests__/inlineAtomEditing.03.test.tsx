@@ -23,7 +23,7 @@ import {
 	applyDeltaToDOM,
 	fullReconcileDeltasToDOM,
 } from "@input/pen-dom/field-editor/reconciler";
-import { DATA_ATTRS } from "../utils/dataAttributes";
+import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 import { FieldEditorImpl } from "@input/pen-dom/field-editor/fieldEditorImpl";
 import {
 	domPointToOffset,
@@ -61,9 +61,7 @@ function createPresetEditor() {
 function seedInlineAtomDocument(editor: ReturnType<typeof createPresetEditor>) {
 	const blockId = editor.firstBlock()!.id;
 	editor.apply([
-		{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "A" },
+		{ type: "splice-text", blockId, from: 0, to: 0, insert: "A" },
 		{
 			type: "splice-text",
 			blockId,
@@ -74,9 +72,7 @@ function seedInlineAtomDocument(editor: ReturnType<typeof createPresetEditor>) {
 				props: { id: "user-1", label: "Ada" },
 			},
 		},
-		{ type: "splice-text", blockId, from: 2,
-				to: 2,
-				insert: "B" },
+		{ type: "splice-text", blockId, from: 2, to: 2, insert: "B" },
 	]);
 	return blockId;
 }

@@ -93,7 +93,9 @@ function mountEditContextEditor(
 	root.setAttribute(DATA_ATTRS.editorRoot, "");
 	document.body.appendChild(root);
 	const blockId = editor.firstBlock()!.id;
-	editor.apply([{ type: "splice-text", blockId, from: 0, to: 0, insert: text }]);
+	editor.apply([
+		{ type: "splice-text", blockId, from: 0, to: 0, insert: text },
+	]);
 	const block = document.createElement("div");
 	block.setAttribute(DATA_ATTRS.editorBlock, "");
 	block.setAttribute(DATA_ATTRS.blockId, blockId);
@@ -142,7 +144,8 @@ function authorityText(
 
 describe("C1 EditContext composition apply sequencing", () => {
 	it("C1: ordinary textupdate applies immediately", () => {
-		const { editor, inline, blockId } = mountEditContextEditor("Hello world");
+		const { editor, inline, blockId } =
+			mountEditContextEditor("Hello world");
 		const editContext = (
 			inline as HTMLElement & { editContext?: FakeEditContext }
 		).editContext;
@@ -163,7 +166,8 @@ describe("C1 EditContext composition apply sequencing", () => {
 	});
 
 	it("C1: textformatupdate rewinds the preceding textupdate apply", () => {
-		const { editor, inline, blockId } = mountEditContextEditor("Hello world");
+		const { editor, inline, blockId } =
+			mountEditContextEditor("Hello world");
 		const editContext = (
 			inline as HTMLElement & { editContext?: FakeEditContext }
 		).editContext;
@@ -185,7 +189,8 @@ describe("C1 EditContext composition apply sequencing", () => {
 	});
 
 	it("C1: Escape drops a held composing textupdate", () => {
-		const { editor, inline, blockId } = mountEditContextEditor("Hello world");
+		const { editor, inline, blockId } =
+			mountEditContextEditor("Hello world");
 		const editContext = (
 			inline as HTMLElement & { editContext?: FakeEditContext }
 		).editContext;
@@ -219,7 +224,8 @@ describe("C1 EditContext composition apply sequencing", () => {
 	});
 
 	it("C4: insertText textupdate commits the held composition", () => {
-		const { editor, inline, blockId } = mountEditContextEditor("Hello world");
+		const { editor, inline, blockId } =
+			mountEditContextEditor("Hello world");
 		const editContext = (
 			inline as HTMLElement & { editContext?: FakeEditContext }
 		).editContext;
@@ -255,7 +261,8 @@ describe("C1 EditContext composition apply sequencing", () => {
 	});
 
 	it("C1: compositionend with empty data drops the held apply", () => {
-		const { editor, inline, blockId } = mountEditContextEditor("Hello world");
+		const { editor, inline, blockId } =
+			mountEditContextEditor("Hello world");
 		const editContext = (
 			inline as HTMLElement & { editContext?: FakeEditContext }
 		).editContext;
@@ -284,7 +291,8 @@ describe("C1 EditContext composition apply sequencing", () => {
 	});
 
 	it("C1: compositionend with data commits the held apply", () => {
-		const { editor, inline, blockId } = mountEditContextEditor("Hello world");
+		const { editor, inline, blockId } =
+			mountEditContextEditor("Hello world");
 		const editContext = (
 			inline as HTMLElement & { editContext?: FakeEditContext }
 		).editContext;
@@ -319,9 +327,7 @@ describe("C1 EditContext composition apply sequencing", () => {
 		);
 		editor.undoManager.stopCapturing();
 		editor.apply(
-			[{ type: "splice-text", blockId, from: 11,
-				to: 11,
-				insert: "!" }],
+			[{ type: "splice-text", blockId, from: 11, to: 11, insert: "!" }],
 			{ origin: "user" },
 		);
 		editor.selectText(blockId, 12, 12);

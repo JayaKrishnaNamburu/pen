@@ -14,13 +14,6 @@ function textSelection(
 		type: "text",
 		anchor,
 		focus,
-		isCollapsed:
-			anchor.blockId === focus.blockId && anchor.offset === focus.offset,
-		isMultiBlock: anchor.blockId !== focus.blockId,
-		blockRange: [anchor.blockId, focus.blockId],
-		toRange: () => {
-			throw new Error("unused");
-		},
 	};
 }
 

@@ -183,7 +183,6 @@ describe("@input/pen-react escape key handling", () => {
 			type: "text",
 			anchor: { blockId: firstBlockId, offset: 1 },
 			focus: { blockId: secondBlockId, offset: 2 },
-			isMultiBlock: true,
 		});
 		expect(fieldEditor.getSnapshot()).toMatchObject({
 			focusBlockId: firstBlockId,
@@ -286,8 +285,8 @@ describe("@input/pen-react escape key handling", () => {
 					type: "splice-text",
 					blockId: secondBlockId,
 					from: 5,
-				to: 5,
-				insert: "!",
+					to: 5,
+					insert: "!",
 				},
 			]);
 			await flushAnimationFrames(2);
@@ -393,7 +392,6 @@ describe("@input/pen-react escape key handling", () => {
 			type: "text",
 			anchor: { blockId: firstBlockId, offset: 1 },
 			focus: { blockId: secondBlockId, offset: 2 },
-			isMultiBlock: true,
 		});
 		expect(domSelectionToEditor(rootElement!)).toMatchObject({
 			anchor: { blockId: firstBlockId, offset: 1 },
@@ -419,7 +417,6 @@ describe("@input/pen-react escape key handling", () => {
 			type: "text",
 			anchor: { blockId: firstBlockId, offset: 1 },
 			focus: { blockId: secondBlockId, offset: 2 },
-			isMultiBlock: true,
 		});
 		expect(domSelectionToEditor(rootElement!)).toMatchObject({
 			anchor: { blockId: firstBlockId, offset: 1 },

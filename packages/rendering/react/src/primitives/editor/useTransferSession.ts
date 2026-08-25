@@ -7,11 +7,9 @@ import {
 	type DropPreview,
 	type ResolvedDropTarget,
 } from "@input/pen-dom/field-editor/dropResolver";
-import {
-	executeTransfer,
-} from "@input/pen-dom/field-editor/transfer";
+import { executeTransfer } from "@input/pen-dom/field-editor/transfer";
 import { canAcceptImageTransfer } from "@input/pen-dom/field-editor/transferImages";
-import { DATA_ATTRS } from "../../utils/dataAttributes";
+import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 
 interface InlineDropCaretStyle {
 	left: number;
@@ -86,12 +84,20 @@ export function useTransferSession(
 			!isIgnoredTransferTarget(event.target) &&
 			canAcceptImageTransfer(editor, event.dataTransfer) &&
 			(isNodeWithinRoot(event.target) ||
-				readPointWithinElement(rootElement, event.clientX, event.clientY));
+				readPointWithinElement(
+					rootElement,
+					event.clientX,
+					event.clientY,
+				));
 
 		const isRelevantContentDragEvent = (event: DragEvent): boolean =>
 			!isIgnoredTransferTarget(event.target) &&
 			(isNodeWithinContent(event.target) ||
-				readPointWithinElement(contentElement, event.clientX, event.clientY));
+				readPointWithinElement(
+					contentElement,
+					event.clientX,
+					event.clientY,
+				));
 
 		const updateDropPreviewFromEvent = (
 			event: DragEvent,
@@ -203,7 +209,10 @@ export function useTransferSession(
 		rootElement.addEventListener("dragleave", handleDragLeave, true);
 		rootElement.addEventListener("dragover", handleDragOver, true);
 		rootElement.addEventListener("drop", handleDrop, true);
-		rootElement.ownerDocument?.addEventListener("dragend", handleDocumentDragEnd);
+		rootElement.ownerDocument?.addEventListener(
+			"dragend",
+			handleDocumentDragEnd,
+		);
 		return () => {
 			clearImageFileDropState();
 			rootElement.removeEventListener("dragenter", handleDragEnter, true);

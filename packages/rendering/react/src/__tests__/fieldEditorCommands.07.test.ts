@@ -65,7 +65,10 @@ describe("applyListTabBehavior", () => {
 
 		editor.apply([
 			{
-				type: "set-props", blockId: firstBlockId, props: { type: "bulletListItem" }},
+				type: "set-props",
+				blockId: firstBlockId,
+				props: { type: "bulletListItem" },
+			},
 			{
 				type: "insert-block",
 				blockId: secondBlockId,
@@ -105,9 +108,7 @@ describe("applyListTabBehavior", () => {
 
 		editor.apply([
 			{ type: "set-props", blockId, props: { type: "bulletListItem" } },
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "root" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "root" },
 		]);
 
 		const target = applyListTabBehavior(editor, {
@@ -129,9 +130,7 @@ describe("applyListTabBehavior", () => {
 
 		editor.apply([
 			{ type: "set-props", blockId, props: { type: "bulletListItem" } },
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "root" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "root" },
 		]);
 
 		const target = applyListTabBehavior(editor, {
@@ -154,7 +153,10 @@ describe("applyListTabBehavior", () => {
 
 		editor.apply([
 			{
-				type: "set-props", blockId: firstBlockId, props: { type: "bulletListItem" }},
+				type: "set-props",
+				blockId: firstBlockId,
+				props: { type: "bulletListItem" },
+			},
 			{
 				type: "insert-block",
 				blockId: secondBlockId,
@@ -187,5 +189,4 @@ describe("applyListTabBehavior", () => {
 
 		editor.destroy();
 	});
-
 });

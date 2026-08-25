@@ -28,9 +28,7 @@ describe("@input/pen-react selected text deletion", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" },
 		]);
 
 		const container = document.createElement("div");
@@ -71,8 +69,6 @@ describe("@input/pen-react selected text deletion", () => {
 				type: "text",
 				anchor: { blockId: newBlockId, offset: 0 },
 				focus: { blockId: newBlockId, offset: 0 },
-				isCollapsed: true,
-				isMultiBlock: false,
 			});
 		} finally {
 			await act(async () => {
@@ -102,9 +98,7 @@ describe("@input/pen-react selected text deletion", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" },
 		]);
 
 		const container = document.createElement("div");
@@ -148,8 +142,6 @@ describe("@input/pen-react selected text deletion", () => {
 				type: "text",
 				anchor: { blockId, offset: 5 },
 				focus: { blockId, offset: 5 },
-				isCollapsed: true,
-				isMultiBlock: false,
 			});
 
 			const activeInlineElement = container.querySelector(
@@ -190,9 +182,7 @@ describe("@input/pen-react selected text deletion", () => {
 				blockId,
 				props: { type: "numberedListItem", start: 3 },
 			},
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Third" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Third" },
 		]);
 
 		const container = document.createElement("div");
@@ -319,7 +309,6 @@ describe("@input/pen-react selected text deletion", () => {
 			type: "text",
 			anchor: { blockId: firstBlockId, offset: 1 },
 			focus: { blockId: firstBlockId, offset: 1 },
-			isCollapsed: true,
 		});
 		expect(domSelectionToEditor(rootElement!)).toMatchObject({
 			anchor: { blockId: firstBlockId, offset: 1 },

@@ -2,17 +2,17 @@
 
 ## Purpose
 
-`@input/pen-content-ops` is a compatibility package over helpers that now live in `@input/pen-core`, plus the Markdown parse and write-op construction that still live here.
+`@input/pen-content-ops` is the Markdown parse and write-op construction layer. Import and profile-policy helpers live in `@input/pen-core`.
 
 ## Public Role
 
-This package used to sit _under_ core (core imported it). That inversion is gone: content-ops now depends on `@input/pen-core` and re-exports the moved helpers. Hosts should import those helpers from core. This package remains because importers and document-ops still call `parseMarkdownToBlocks()` and `buildDocumentWriteOps()` here.
+This package used to sit _under_ core (core imported it) and later re-exported the moved helpers. That dual path is gone (Wave 3 DL13): content-ops depends on `@input/pen-core` and hosts import those helpers from core. This package remains because importers and document-ops still call `parseMarkdownToBlocks()` and `buildDocumentWriteOps()` here.
 
 ## Key Exports / Entrypoints
 
 - Export map: `.`
-- Re-exports from `@input/pen-core`: `blocksToOps()`, `normalizePendingBlocksForImport()`, `filterPendingBlocksForDocumentProfile()`, `createImportResult()`, diagnostic reporting helpers, and the block-capability helpers (`getFlowCapabilityFromSchema()`, `shouldExposeBlockInTooling()`, and siblings)
-- Still implemented here: `parseMarkdownToBlocks()`, `splitPlainTextLineBlocks()`, `buildDocumentWriteOps()`, and the structured-target / plan helpers
+- Implemented here: `parseMarkdownToBlocks()`, `splitPlainTextLineBlocks()`, `buildDocumentWriteOps()`, and the structured-target / plan helpers
+- Import, profile-policy, and block-capability helpers (`blocksToOps()`, `normalizePendingBlocksForImport()`, `shouldExposeBlockInTooling()`, and siblings) export from `@input/pen-core` only
 - Structured target and plan normalization helpers for tooling and AI-oriented write flows
 - Workspace scripts: `build`, `clean`, `test`, `typecheck`
 

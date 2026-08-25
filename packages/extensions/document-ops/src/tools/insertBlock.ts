@@ -12,7 +12,8 @@ import { applyValidatedOps } from "../utils/payloadValidation";
 export function insertBlockTool(editor: Editor): ToolDefinition {
   return {
     name: "insert_block",
-    description: "Insert a new block at the specified position.",
+    description:
+      "Insert one new block at the specified position. `content` is plain text; to insert formatted or multi-block content, use write_document with markdown instead.",
     mutating: true,
     inputSchema: {
       type: "object",

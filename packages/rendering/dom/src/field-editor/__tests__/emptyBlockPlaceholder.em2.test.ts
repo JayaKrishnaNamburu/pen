@@ -50,14 +50,16 @@ describe("EM2 empty-block placeholder", () => {
 		ensureEmptyBlockPlaceholder(host);
 		expect(host.querySelector(`[${DATA_ATTRS.emptyBlock}]`)).toBeTruthy();
 
-		expect(
-			applyDeltaToDOM([{ insert: "x" }], host, defaultSchema),
-		).toBe(true);
+		expect(applyDeltaToDOM([{ insert: "x" }], host, defaultSchema)).toBe(
+			true,
+		);
 		expect(host.textContent).toBe("x");
 		expect(host.querySelector(`[${DATA_ATTRS.emptyBlock}]`)).toBeNull();
 		expect(extractTextFromDOM(host)).toBe("x");
 
-		expect(applyDeltaToDOM([{ delete: 1 }], host, defaultSchema)).toBe(true);
+		expect(applyDeltaToDOM([{ delete: 1 }], host, defaultSchema)).toBe(
+			true,
+		);
 		expect(host.textContent).toBe("");
 		const restored = host.querySelector(`[${DATA_ATTRS.emptyBlock}]`);
 		expect(restored?.tagName).toBe("BR");
@@ -70,7 +72,9 @@ describe("EM2 empty-block placeholder", () => {
 		placeholder.append(document.createTextNode("leak"));
 		host.append(placeholder);
 
-		expect(host.querySelector(`[${DATA_ATTRS.emptyBlock}]`)).toBe(placeholder);
+		expect(host.querySelector(`[${DATA_ATTRS.emptyBlock}]`)).toBe(
+			placeholder,
+		);
 		expect(extractTextFromDOM(host)).toBe("");
 	});
 });

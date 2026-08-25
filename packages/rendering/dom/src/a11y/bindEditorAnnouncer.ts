@@ -79,10 +79,7 @@ function announceHistory(editor: Editor, event: HistoryAppliedEvent): void {
 	announceEditorA11y(editor, "redoApplied", { hint });
 }
 
-function resolveHistoryHint(
-	editor: Editor,
-	selection: SelectionState,
-): string {
+function resolveHistoryHint(editor: Editor, selection: SelectionState): string {
 	const blockId = resolveHintBlockId(editor, selection);
 	const type = blockId ? editor.getBlock(blockId)?.type : undefined;
 	return type ? resolveA11yBlockTypeLabel(editor, type) : "";

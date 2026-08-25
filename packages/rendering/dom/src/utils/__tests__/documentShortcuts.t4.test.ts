@@ -87,8 +87,8 @@ function createTwoParagraphEditor() {
 			type: "splice-text",
 			blockId: firstId,
 			from: 0,
-				to: 0,
-				insert: "Alpha bravo charlie",
+			to: 0,
+			insert: "Alpha bravo charlie",
 		},
 		{
 			type: "insert-block",
@@ -101,8 +101,8 @@ function createTwoParagraphEditor() {
 			type: "splice-text",
 			blockId: secondId,
 			from: 0,
-				to: 0,
-				insert: "Delta echo foxtrot",
+			to: 0,
+			insert: "Delta echo foxtrot",
 		},
 	]);
 	return { editor, firstId, secondId };

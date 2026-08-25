@@ -6,7 +6,7 @@ import { useFieldEditorContext } from "../../context/fieldEditorContext";
 import { useFieldEditorState } from "../../hooks/useFieldEditorState";
 import { fullReconcileDeltasToDOM } from "@input/pen-dom/field-editor/reconciler";
 import { useCellTextSnapshot } from "../../hooks/useCellTextSnapshot";
-import { DATA_ATTRS } from "../../utils/dataAttributes";
+import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 import { isInlineContentEmpty } from "../../utils/editorEmptyState";
 import { fieldEditorTextEntryAttrs } from "../../utils/fieldEditorTextEntryAttrs";
 import { replaceElementChildren } from "@input/pen-dom/utils/replaceElementChildren";

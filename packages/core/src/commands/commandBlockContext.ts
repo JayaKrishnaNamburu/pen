@@ -274,6 +274,13 @@ export function marksAtOffset(
 	return inherited;
 }
 
+/**
+ * Ops that change one block's type in place, keeping its id and its text.
+ *
+ * A nested block's `parentId` is re-asserted after the type change, because
+ * `set-props` replaces the prop set and would otherwise orphan the block out
+ * of its parent.
+ */
 export function convertBlockOps(
 	editor: Editor,
 	options: {

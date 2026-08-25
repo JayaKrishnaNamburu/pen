@@ -14,7 +14,8 @@ function createEditor(
 	} = {},
 ) {
 	return createCoreEditor({
-		schema: defaultSchema,...options,
+		schema: defaultSchema,
+		...options,
 		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
@@ -63,9 +64,13 @@ describe("@input/pen-react clipboard", () => {
 		const fieldEditor = createFieldEditorStub();
 
 		targetEditor.apply([
-			{ type: "splice-text", blockId: emptyBlockId, from: 0,
+			{
+				type: "splice-text",
+				blockId: emptyBlockId,
+				from: 0,
 				to: 0,
-				insert: "Hello" },
+				insert: "Hello",
+			},
 		]);
 		targetEditor.selectText(emptyBlockId, 0, 5);
 		clipboardData.setData(
@@ -82,9 +87,10 @@ describe("@input/pen-react clipboard", () => {
 		);
 
 		expect(targetEditor.documentState.blockOrder).toHaveLength(1);
-		expect(targetEditor.getBlock(emptyBlockId)?.textContent()).toBe("Hello");
+		expect(targetEditor.getBlock(emptyBlockId)?.textContent()).toBe(
+			"Hello",
+		);
 
 		targetEditor.destroy();
 	});
-
 });

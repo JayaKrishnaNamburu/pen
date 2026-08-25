@@ -3,7 +3,7 @@ import {
   normalizePendingBlocksForImport,
   reportPendingBlockImportViolations,
   type PendingBlock,
-} from "@input/pen-content-ops";
+} from "@input/pen-core";
 import {
   generateId,
   type DocumentOp,

@@ -110,7 +110,6 @@ describe("@input/pen-react native format shortcuts", () => {
 			type: "text",
 			anchor: { blockId, offset: 6 },
 			focus: { blockId, offset: 6 },
-			isCollapsed: true,
 		});
 
 		await act(async () => {
@@ -132,9 +131,7 @@ describe("@input/pen-react native format shortcuts", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" },
 		]);
 
 		const container = document.createElement("div");

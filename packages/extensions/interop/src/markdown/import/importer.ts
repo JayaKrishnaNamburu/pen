@@ -3,8 +3,8 @@ import {
 	blocksToOps,
 	normalizePendingBlocksForImport,
 	type PendingBlock,
-	parseMarkdownToBlocks as parseMarkdownContentToBlocks,
-} from "@input/pen-content-ops";
+} from "@input/pen-core";
+import { parseMarkdownToBlocks as parseMarkdownContentToBlocks } from "@input/pen-content-ops";
 import {
 	boundPendingBlocks,
 	capRawMarkdownSource,

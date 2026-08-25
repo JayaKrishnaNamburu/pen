@@ -3,7 +3,10 @@
 import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
-import { clipboardFacet, createEditor as createCoreEditor } from "@input/pen-core";
+import {
+	clipboardFacet,
+	createEditor as createCoreEditor,
+} from "@input/pen-core";
 import { htmlImporter } from "@input/pen-interop/html";
 import { defaultPreset } from "@input/pen-preset-default";
 import { EditorRoot } from "../primitives/editor/root";

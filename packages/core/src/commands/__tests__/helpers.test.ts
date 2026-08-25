@@ -5,7 +5,7 @@ import { textSelectionResult } from "../helpers";
 import { createCommandEditor } from "./fixture";
 
 describe("textSelectionResult", () => {
-	it("stamps blockRange as the document span, not [anchor.blockId]", () => {
+	it("covers the document span through getSelectionBlockRange, not [anchor.blockId]", () => {
 		const editor = createCommandEditor([
 			{ id: "p1", type: "paragraph", text: "aa" },
 			{ id: "p2", type: "paragraph", text: "bb" },
@@ -17,17 +17,18 @@ describe("textSelectionResult", () => {
 			{ blockOrder: editor.documentState.blockOrder },
 		);
 
-		expect(payload.blockRange).toEqual(["p1", "p2", "p3"]);
-		expect(payload.blockRange).toEqual(
+		expect(
 			getSelectionBlockRange(editor.documentState.blockOrder, payload),
-		);
+		).toEqual(["p1", "p2", "p3"]);
 
 		const reversed = textSelectionResult(
 			{ blockId: "p3", offset: 2 },
 			{ blockId: "p1", offset: 0 },
 			{ blockOrder: editor.documentState.blockOrder },
 		);
-		expect(reversed.blockRange).toEqual(["p1", "p2", "p3"]);
+		expect(
+			getSelectionBlockRange(editor.documentState.blockOrder, reversed),
+		).toEqual(["p1", "p2", "p3"]);
 
 		editor.destroy();
 	});

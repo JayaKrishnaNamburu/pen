@@ -4,7 +4,8 @@ import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { useSearchContext } from "./root";
 
 export interface SearchNavigationButtonProps
-	extends AsChildProps,
+	extends
+		AsChildProps,
 		Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
 	ref?: React.Ref<HTMLElement>;
 }
@@ -36,7 +37,9 @@ export function SearchPrevious(props: SearchNavigationButtonProps) {
 type SearchNavigationButtonInternalProps = SearchNavigationButtonProps & {
 	dataOption: "next" | "previous";
 	label: string;
-	onAction: (controller: ReturnType<typeof useSearchContext>["controller"]) => void;
+	onAction: (
+		controller: ReturnType<typeof useSearchContext>["controller"],
+	) => void;
 };
 
 function SearchNavigationButton(props: SearchNavigationButtonInternalProps) {

@@ -24,8 +24,8 @@ function createFakeEditor(documentProfile: Editor["documentProfile"]): Editor {
 		apply: vi.fn<(ops: DocumentOp[], options?: ApplyOptions) => void>(),
 		facet: () => null,
 		internals: {
-			emit: vi.fn(),
-		},
+			emit: vi.fn()
+		}
 	} as unknown as Editor;
 }
 
@@ -67,7 +67,7 @@ function createMockBlockHandle(input: {
 		tableColumns: () => [],
 		as(capability: string) {
 			return capability === "table" && handle.type === "table" ? handle : null;
-		},
+		}
 	};
 	return handle;
 }
@@ -81,7 +81,7 @@ function createReadDocumentEditor(): Editor {
 			children: [],
 			textContent: (options?: { resolved?: boolean }) =>
 				options?.resolved ? "First accepted" : "First accepted",
-			textDeltas: () => [{ insert: "First accepted" }],
+			textDeltas: () => [{ insert: "First accepted" }]
 		}),
 		createMockBlockHandle({
 			id: "block-2",
@@ -93,7 +93,7 @@ function createReadDocumentEditor(): Editor {
 			textDeltas: () => [
 				{ insert: "Second" },
 				{ insert: " draft", attributes: { suggestion: { action: "delete" } } },
-			],
+			]
 		}),
 		createMockBlockHandle({
 			id: "block-3",
@@ -102,7 +102,7 @@ function createReadDocumentEditor(): Editor {
 			children: [],
 			textContent: (options?: { resolved?: boolean }) =>
 				options?.resolved ? "Third" : "Third",
-			textDeltas: () => [{ insert: "Third" }],
+			textDeltas: () => [{ insert: "Third" }]
 		}),
 	] as const;
 	for (const block of blocks) {
@@ -120,15 +120,9 @@ function createReadDocumentEditor(): Editor {
 		getSelection: () => ({
 			type: "text",
 			anchor: { blockId: "block-2", offset: 0 },
-			focus: { blockId: "block-2", offset: 6 },
-			isCollapsed: false,
-			toRange: () => ({
-				start: { blockId: "block-2", offset: 0 },
-				end: { blockId: "block-2", offset: 6 },
-				blockRange: ["block-2"],
-			}),
+			focus: { blockId: "block-2", offset: 6 }
 		}),
-		getSelectedText: () => "Second",
+		getSelectedText: () => "Second"
 	} as unknown as Editor;
 }
 
@@ -149,7 +143,7 @@ function createStructuredTargetEditor(
 			tableColumns: () => [],
 			as(capability: string) {
 				return capability === "table" && this.type === "table" ? this : null;
-			},
+			}
 		},
 		{
 			id: "table-1",
@@ -166,7 +160,7 @@ function createStructuredTargetEditor(
 			],
 			as(capability: string) {
 				return capability === "table" && this.type === "table" ? this : null;
-			},
+			}
 		},
 		{
 			id: "subdocument-1",
@@ -180,7 +174,7 @@ function createStructuredTargetEditor(
 			tableColumns: () => [],
 			as(capability: string) {
 				return capability === "table" && this.type === "table" ? this : null;
-			},
+			}
 		},
 	];
 
@@ -193,9 +187,9 @@ function createStructuredTargetEditor(
 		getBlock: (blockId: string) => blocks.find((block) => block.id === blockId) ?? null,
 		getSelection: () => ({
 			type: "block",
-			blockIds: [activeBlockId],
+			blockIds: [activeBlockId]
 		}),
-		getSelectedText: () => "",
+		getSelectedText: () => ""
 	} as unknown as Editor;
 }
 
@@ -207,7 +201,7 @@ function createNestedDocumentEditor(): Editor {
 			props: { level: 1 },
 			children: [],
 			textContent: () => "Architecture",
-			textDeltas: () => [{ insert: "Architecture" }],
+			textDeltas: () => [{ insert: "Architecture" }]
 		}),
 		createMockBlockHandle({
 			id: "layout-1",
@@ -215,7 +209,7 @@ function createNestedDocumentEditor(): Editor {
 			props: {},
 			children: [],
 			textContent: () => "",
-			textDeltas: () => [],
+			textDeltas: () => []
 		}),
 	];
 	const nestedBlocks = [
@@ -227,7 +221,7 @@ function createNestedDocumentEditor(): Editor {
 			props: {},
 			children: [],
 			textContent: () => "Fast apply preserves stable block identity.",
-			textDeltas: () => [{ insert: "Fast apply preserves stable block identity." }],
+			textDeltas: () => [{ insert: "Fast apply preserves stable block identity." }]
 		}),
 	];
 
@@ -237,22 +231,16 @@ function createNestedDocumentEditor(): Editor {
 		facet: () => null,
 		blocks: () => topLevelBlocks,
 		documentState: {
-			allBlocks: () => nestedBlocks,
+			allBlocks: () => nestedBlocks
 		},
 		getBlock: (blockId: string) =>
 			nestedBlocks.find((block) => block.id === blockId) ?? null,
 		getSelection: () => ({
 			type: "text",
 			anchor: { blockId: "paragraph-1", offset: 0 },
-			focus: { blockId: "paragraph-1", offset: 4 },
-			isCollapsed: false,
-			toRange: () => ({
-				start: { blockId: "paragraph-1", offset: 0 },
-				end: { blockId: "paragraph-1", offset: 4 },
-				blockRange: ["paragraph-1"],
-			}),
+			focus: { blockId: "paragraph-1", offset: 4 }
 		}),
-		getSelectedText: () => "Fast",
+		getSelectedText: () => "Fast"
 	} as unknown as Editor;
 }
 
@@ -281,7 +269,7 @@ describe("@input/pen-document-ops tools", () => {
 					textContent: () => "First",
 					textDeltas: () => [{ insert: "First" }],
 					prev: null,
-					next: null,
+					next: null
 				}),
 				createMockBlockHandle({
 					id: "block-2",
@@ -291,7 +279,7 @@ describe("@input/pen-document-ops tools", () => {
 					textContent: () => "Second",
 					textDeltas: () => [{ insert: "Second" }],
 					prev: null,
-					next: null,
+					next: null
 				}),
 				createMockBlockHandle({
 					id: "block-3",
@@ -301,7 +289,7 @@ describe("@input/pen-document-ops tools", () => {
 					textContent: () => "Third",
 					textDeltas: () => [{ insert: "Third" }],
 					prev: null,
-					next: null,
+					next: null
 				}),
 			];
 		blocks[0].next = blocks[1];
@@ -318,26 +306,20 @@ describe("@input/pen-document-ops tools", () => {
 					blockOrder: {
 						length: 3,
 						get: (index: number) =>
-							["block-1", "block-2", "block-3"][index],
-					},
-				},
+							["block-1", "block-2", "block-3"][index]
+					}
+				}
 			},
 			getSelection: () => ({
 				type: "text",
 				anchor: { blockId: "block-2", offset: 0 },
-				focus: { blockId: "block-2", offset: 6 },
-				isCollapsed: false,
-				toRange: () => ({
-					start: { blockId: "block-2", offset: 0 },
-					end: { blockId: "block-2", offset: 6 },
-					blockRange: ["block-2"],
-				}),
+				focus: { blockId: "block-2", offset: 6 }
 			}),
 			getSelectedText: () => "Second",
 			getBlock: (blockId: string) => blocks.find((block) => block.id === blockId) ?? null,
 			blocks: vi.fn(() => {
 				throw new Error("Cursor context should not scan the full document.");
-			}),
+			})
 		} as unknown as Editor;
 
 		const result = await getCursorContextTool(editor).handler({}, {} as never) as {
@@ -368,7 +350,7 @@ describe("@input/pen-document-ops tools", () => {
 		expect(result.target?.target).toMatchObject({
 			kind: "table",
 			rowCount: 3,
-			columnCount: 2,
+			columnCount: 2
 		});
 		expect(result.target?.validOperations).toContain("insert_row");
 		expect(result.target?.validOperations).toContain("set_cell_text");

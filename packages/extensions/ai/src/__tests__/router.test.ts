@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { refineRouteWithNavigator, routeAIRequest } from "../runtime/router";
+import {
+	AI_FAST_APPLY_MAX_DOCUMENT_BLOCKS,
+	refineRouteWithNavigator,
+	routeAIRequest,
+} from "../runtime/router";
 
 describe("ai request router", () => {
 	it("routes continuation prompts to cursor-context by default", () => {
@@ -119,7 +123,9 @@ describe("ai request router", () => {
 			surface: "bottom-chat",
 		});
 
-		expect(route.lane).toBe("tool-loop");
+		// Structural creation on a small flow document streams markdown in a
+		// single pass instead of going through the tool loop.
+		expect(route.lane).toBe("context-first");
 		expect(route.targetKind).toBe("table");
 		expect(route.plannerMode).toBe("text");
 		expect(route.mutationMode).toBe("streaming-suggestions");
@@ -129,5 +135,114 @@ describe("ai request router", () => {
 		expect(route.adapterId).toBe("flow-markdown");
 		expect(route.transportKind).toBe("flow-text");
 		expect(route.shouldStreamDirectly).toBe(false);
+	});
+
+	// spec-better-ai/01-edit-channel.md EC12
+	it("sends the edit channel's durable edits through the tool loop", () => {
+		const input = {
+			prompt: "Create a table with names",
+			selection: null,
+			blockType: "paragraph",
+			blockCount: 1,
+			suggestMode: false,
+			target: "block" as const,
+			contentFormat: "markdown" as const,
+			surface: "bottom-chat" as const,
+		};
+
+		expect(routeAIRequest(input).lane).toBe("context-first");
+
+		const toolRoute = routeAIRequest({ ...input, editChannel: "tool" });
+		expect(toolRoute.lane).toBe("tool-loop");
+		expect(toolRoute.allowToolUse).toBe(true);
+		// The durable edit has exactly one source: nothing is parsed out of
+		// the text stream on this channel.
+		expect(toolRoute.applyStrategy).toBe("tool-edit");
+	});
+
+	it("keeps the fast-apply lane within the bound the working set annotates", () => {
+		const input = {
+			prompt: "Improve the text and make the last bit a bullet.",
+			selection: null,
+			blockType: "paragraph",
+			suggestMode: false,
+			target: "block" as const,
+			contentFormat: "markdown" as const,
+		};
+
+		expect(
+			routeAIRequest({
+				...input,
+				blockCount: AI_FAST_APPLY_MAX_DOCUMENT_BLOCKS,
+			}).lane,
+		).toBe("context-first");
+
+		// Past the bound the working set stops annotating block ids, and the
+		// fast-apply prompt has nothing to address its edits to, so this
+		// document belongs to the tool loop instead.
+		expect(
+			routeAIRequest({
+				...input,
+				blockCount: AI_FAST_APPLY_MAX_DOCUMENT_BLOCKS + 1,
+			}).lane,
+		).toBe("tool-loop");
+	});
+
+	it("EC12: default channel does not select tool-edit for document-edit prompts", () => {
+		const table = routeAIRequest({
+			prompt: "Create a table with names",
+			selection: null,
+			blockType: "paragraph",
+			blockCount: 1,
+			suggestMode: false,
+			target: "block",
+			contentFormat: "markdown",
+			surface: "bottom-chat",
+		});
+		expect(table.applyStrategy).not.toBe("tool-edit");
+
+		const improve = routeAIRequest({
+			prompt: "Improve the text and make the last bit a bullet.",
+			selection: null,
+			blockType: "paragraph",
+			blockCount: 20,
+			suggestMode: false,
+			target: "block",
+			contentFormat: "markdown",
+		});
+		expect(improve.applyStrategy).not.toBe("tool-edit");
+	});
+
+	it("EC12: editChannel tool selects tool-edit on the tool-loop lane", () => {
+		const route = routeAIRequest({
+			prompt: "Create a table with names",
+			selection: null,
+			blockType: "paragraph",
+			blockCount: 1,
+			suggestMode: false,
+			target: "block",
+			contentFormat: "markdown",
+			surface: "bottom-chat",
+			editChannel: "tool",
+		});
+		expect(route.applyStrategy).toBe("tool-edit");
+		expect(route.lane).toBe("tool-loop");
+	});
+
+	// spec-better-ai/01-edit-channel.md EC1: streaming lanes keep writing text.
+	it("leaves streaming lanes on text deltas under the edit channel", () => {
+		const route = routeAIRequest({
+			prompt: "Continue this paragraph",
+			selection: null,
+			blockType: "paragraph",
+			blockCount: 20,
+			suggestMode: false,
+			target: "block",
+			contentFormat: "text",
+			editChannel: "tool",
+		});
+
+		expect(route.lane).toBe("cursor-context");
+		expect(route.allowToolUse).toBe(false);
 	});
 });

@@ -12,29 +12,6 @@
 - parseMarkdownToBlocks
 - splitPlainTextLineBlocks
 
-### value
-
-- blocksToOps
-- createImportResult
-- filterPendingBlocksForDocumentProfile
-- getBlockSelectionRoleFromSchema
-- getBlockSelectionRoleFromType
-- getFlowCapabilityFromSchema
-- getFlowCapabilityFromType
-- ImportOptions
-- isContinuousTextFlowCapability
-- normalizePendingBlocksForImport
-- PendingBlock
-- PendingBlockImportPolicyViolation
-- PendingBlockProfilePolicyViolation
-- reportPendingBlockImportViolations
-- reportPendingBlockProfileViolations
-- shouldAllowDirectBlockPaste
-- shouldAllowFlowInsertionInSlashMenu
-- shouldExposeBlockInTooling
-- shouldForceBlockScopedSelectAll
-- shouldShowBlockInDefaultMenus
-
 ### type
 
 - BlockTargetDescriptor

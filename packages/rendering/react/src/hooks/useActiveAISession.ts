@@ -16,6 +16,9 @@ export function useActiveAISession(editor: Editor): AISession | null {
 		},
 		() => controller?.getState() ?? null,
 		() => null,
-		(state) => state?.sessions.find((session) => session.id === state.activeSessionId) ?? null,
+		(state) =>
+			state?.sessions.find(
+				(session) => session.id === state.activeSessionId,
+			) ?? null,
 	);
 }

@@ -38,10 +38,12 @@ import {
 	insertUploadedImages,
 	uploadImageFiles,
 } from "./transferImages";
-import { IMAGE_BLOCK_TYPE, type ExecuteTransferOptions, type UploadedImage } from "./transferTypes";
 import {
-	shouldAllowDirectBlockPaste,
-} from "../utils/flowCapabilities";
+	IMAGE_BLOCK_TYPE,
+	type ExecuteTransferOptions,
+	type UploadedImage,
+} from "./transferTypes";
+import { shouldAllowDirectBlockPaste } from "../utils/flowCapabilities";
 
 export async function executePasteTransfer(
 	options: ExecuteTransferOptions,
@@ -100,9 +102,15 @@ export async function executePasteTransfer(
 						editor,
 						cursorBefore,
 					);
-					pasteBlocks(admitted.blocks, editor, fieldEditor, cursorAfter, {
-						undoGroup: false,
-					});
+					pasteBlocks(
+						admitted.blocks,
+						editor,
+						fieldEditor,
+						cursorAfter,
+						{
+							undoGroup: false,
+						},
+					);
 					return true;
 				}
 			} catch (error) {
@@ -117,7 +125,11 @@ export async function executePasteTransfer(
 		}
 
 		if (importers?.html) {
-			const htmlBlocks = await parseImportedBlocks(importers.html, html, editor);
+			const htmlBlocks = await parseImportedBlocks(
+				importers.html,
+				html,
+				editor,
+			);
 			let parsedBlocks = htmlBlocks;
 			let parsedSurface = "paste-html:parse";
 			if (
@@ -129,7 +141,10 @@ export async function executePasteTransfer(
 					plainText,
 					editor,
 				);
-				if (Array.isArray(markdownBlocks) && markdownBlocks.length > 1) {
+				if (
+					Array.isArray(markdownBlocks) &&
+					markdownBlocks.length > 1
+				) {
 					parsedBlocks = markdownBlocks;
 					parsedSurface = "paste-markdown:parse";
 				}
@@ -146,10 +161,10 @@ export async function executePasteTransfer(
 				return true;
 			}
 
-			const {
-				position,
-				emptyBlockToRemove,
-			} = deleteSelectionForTransfer(editor, cursorBefore);
+			const { position, emptyBlockToRemove } = deleteSelectionForTransfer(
+				editor,
+				cursorBefore,
+			);
 			const blockCountBefore = editor.documentState.blockOrder.length;
 			importers.html.import(html, editor, {
 				position,
@@ -206,10 +221,10 @@ export async function executePasteTransfer(
 				return true;
 			}
 
-			const {
-				position,
-				emptyBlockToRemove,
-			} = deleteSelectionForTransfer(editor, cursorBefore);
+			const { position, emptyBlockToRemove } = deleteSelectionForTransfer(
+				editor,
+				cursorBefore,
+			);
 			const blockCountBefore = editor.documentState.blockOrder.length;
 			importers.markdown.import(plainText, editor, {
 				position,
@@ -226,7 +241,10 @@ export async function executePasteTransfer(
 			}
 			return true;
 		}
-		const { cursorAfter } = deleteSelectionForTransfer(editor, cursorBefore);
+		const { cursorAfter } = deleteSelectionForTransfer(
+			editor,
+			cursorBefore,
+		);
 		pasteInlineText(editor, fieldEditor, plainText, cursorAfter, {
 			undoGroup: false,
 		});
@@ -247,10 +265,7 @@ function executePasteImageTransfer(options: {
 		return true;
 	}
 
-	const { position } = deleteSelectionForTransfer(
-		editor,
-		cursorBefore,
-	);
+	const { position } = deleteSelectionForTransfer(editor, cursorBefore);
 	insertUploadedImages(editor, uploaded, position ?? "last", {
 		undoGroup: false,
 	});
@@ -275,7 +290,10 @@ async function applyParsedImporterPaste(options: {
 	editor: Editor;
 	fieldEditor: FieldEditorTransferController;
 	importer: {
-		parse?: (input: string, editor: Editor) => PendingBlock[] | Promise<PendingBlock[]>;
+		parse?: (
+			input: string,
+			editor: Editor,
+		) => PendingBlock[] | Promise<PendingBlock[]>;
 	};
 	input: string;
 	cursorBefore: ReturnType<typeof getTransferCursorContext>;
@@ -308,7 +326,10 @@ async function applyParsedImporterPaste(options: {
 
 async function parseImportedBlocks(
 	importer: {
-		parse?: (input: string, editor: Editor) => PendingBlock[] | Promise<PendingBlock[]>;
+		parse?: (
+			input: string,
+			editor: Editor,
+		) => PendingBlock[] | Promise<PendingBlock[]>;
 	},
 	input: string,
 	editor: Editor,
@@ -329,14 +350,8 @@ function applyParsedBlocksPaste(options: {
 	surface: string;
 	undoGroup: boolean;
 }): boolean {
-	const {
-		editor,
-		fieldEditor,
-		blocks,
-		cursorBefore,
-		surface,
-		undoGroup,
-	} = options;
+	const { editor, fieldEditor, blocks, cursorBefore, surface, undoGroup } =
+		options;
 	if (!Array.isArray(blocks) || blocks.length === 0) {
 		return false;
 	}
@@ -351,10 +366,10 @@ function applyParsedBlocksPaste(options: {
 		return true;
 	}
 
-	const {
-		position,
-		emptyBlockToRemove,
-	} = deleteSelectionForTransfer(editor, cursorBefore);
+	const { position, emptyBlockToRemove } = deleteSelectionForTransfer(
+		editor,
+		cursorBefore,
+	);
 	const ops = blocksToOps(normalized.blocks, { position });
 	if (emptyBlockToRemove) {
 		ops.push({ type: "delete-block", blockId: emptyBlockToRemove });
@@ -367,7 +382,12 @@ function applyParsedBlocksPaste(options: {
 		origin: "user",
 		...(undoGroup ? { undoGroup: true } : {}),
 	});
-	restoreCursorAfterParsedPaste(editor, fieldEditor, lastInsertedBlockId, lastBlock);
+	restoreCursorAfterParsedPaste(
+		editor,
+		fieldEditor,
+		lastInsertedBlockId,
+		lastBlock,
+	);
 	return true;
 }
 
@@ -399,7 +419,8 @@ function getLastTopLevelInsertedBlockId(ops: DocumentOp[]): string | null {
 	for (let i = ops.length - 1; i >= 0; i--) {
 		const op = ops[i];
 		if (op.type !== "insert-block") continue;
-		if (typeof op.position === "object" && "parent" in op.position) continue;
+		if (typeof op.position === "object" && "parent" in op.position)
+			continue;
 		return op.blockId;
 	}
 	return null;
@@ -427,7 +448,8 @@ function removeLegacyEmptyPlaceholderIfNeeded(options: {
 	emptyBlockToRemove?: string;
 	blockCountBefore: number;
 }): boolean {
-	const { editor, fieldEditor, emptyBlockToRemove, blockCountBefore } = options;
+	const { editor, fieldEditor, emptyBlockToRemove, blockCountBefore } =
+		options;
 	if (!emptyBlockToRemove) return false;
 	if (!editor.getBlock(emptyBlockToRemove)) return false;
 
@@ -442,10 +464,10 @@ function removeLegacyEmptyPlaceholderIfNeeded(options: {
 	}
 
 	const replacementBlockId = blockOrder[emptyIndex - 1] ?? null;
-	editor.apply(
-		[{ type: "delete-block", blockId: emptyBlockToRemove }],
-		{ origin: "user", undoGroup: true },
-	);
+	editor.apply([{ type: "delete-block", blockId: emptyBlockToRemove }], {
+		origin: "user",
+		undoGroup: true,
+	});
 	if (replacementBlockId) {
 		restoreCursorAtBlockEnd(editor, fieldEditor, replacementBlockId);
 	}

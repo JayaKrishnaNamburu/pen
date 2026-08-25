@@ -3,14 +3,8 @@ export type {
 	SelectionRange,
 	SelectionTarget,
 } from "./commandsShared";
-export {
-	getLogicalInlineLength,
-	normalizeInlineRange,
-} from "./commandsShared";
-export {
-	applyListTabBehavior,
-	moveCaretAcrossBlocks,
-} from "./commandsListTab";
+export { getLogicalInlineLength, normalizeInlineRange } from "./commandsShared";
+export { applyListTabBehavior, moveCaretAcrossBlocks } from "./commandsListTab";
 export {
 	applyBackspaceBehavior,
 	applyDeleteBehavior,
@@ -27,7 +21,4 @@ export {
 	splitBlockAtOffset,
 	toggleInlineMark,
 } from "./commandsBlock";
-export {
-	applyEnterBehavior,
-	resolveEnterAction,
-} from "./commandsEnter";
+export { applyEnterBehavior, resolveEnterAction } from "./commandsEnter";

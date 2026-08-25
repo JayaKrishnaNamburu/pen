@@ -83,6 +83,7 @@ export function transformOpsForSuggestModeWithMetadata(
 		offset: number,
 		length: number,
 		suggestionOptions: RequiredSuggestionCreationOptions,
+		cell?: { row: number; col: number },
 	) => {
 		suggestions.push({
 			kind: "text",
@@ -99,6 +100,7 @@ export function transformOpsForSuggestModeWithMetadata(
 			blockId,
 			offset,
 			length,
+			...(cell ? { cell } : {}),
 		});
 	};
 	const pushBlockSuggestion = (
@@ -168,6 +170,7 @@ export function transformOpsForSuggestModeWithMetadata(
 						op.from,
 						deleteLen,
 						suggestionOptions,
+						op.cell,
 					);
 					intercepted.push({
 						type: "format-text",
@@ -182,6 +185,7 @@ export function transformOpsForSuggestModeWithMetadata(
 							sessionId,
 							suggestionOptions,
 						),
+						...(op.cell ? { cell: op.cell } : {}),
 					});
 				}
 				if (insertLen > 0) {
@@ -192,6 +196,7 @@ export function transformOpsForSuggestModeWithMetadata(
 						op.from + deleteLen,
 						insertLen,
 						suggestionOptions,
+						op.cell,
 					);
 					intercepted.push({
 						...op,
@@ -306,41 +311,70 @@ export function transformOpsForSuggestModeWithMetadata(
 			}
 
 			case "set-props": {
-				if (typeof op.props.type === "string") {
-					const block = editor.getBlock(op.blockId);
-					const previousState: BlockSuggestionMeta["previousState"] = {
-						type: block?.type,
-						props: block ? { ...block.props } : undefined,
-					};
-					const suggestionOptions = nextSuggestionOptions();
-					pushBlockSuggestion(
+				const previousState: BlockSuggestionMeta["previousState"] = {
+					type:
+						typeof op.props.type === "string"
+							? op.props.type
+							: undefined,
+					props: { ...op.props },
+				};
+				const suggestionOptions = nextSuggestionOptions();
+				pushBlockSuggestion(
+					"convert-block",
+					op.blockId,
+					previousState,
+					suggestionOptions,
+				);
+				intercepted.push({
+					type: "set-meta",
+					blockId: op.blockId,
+					namespace: "suggestion",
+					data: createBlockSuggestionMeta(
 						"convert-block",
-						op.blockId,
+						author,
+						authorType,
+						model,
 						previousState,
+						sessionId,
 						suggestionOptions,
-					);
-					intercepted.push(op);
-					intercepted.push({
-						type: "set-meta",
-						blockId: op.blockId,
-						namespace: "suggestion",
-						data: createBlockSuggestionMeta(
-							"convert-block",
-							author,
-							authorType,
-							model,
-							previousState,
-							sessionId,
-							suggestionOptions,
-						),
-					});
-					break;
-				}
-				intercepted.push(op);
+					),
+				});
 				break;
 			}
 
-			case "format-text":
+			case "format-text": {
+				const previousState: BlockSuggestionMeta["previousState"] = {
+					format: {
+						from: op.from,
+						to: op.to,
+						marks: { ...op.marks },
+						...(op.cell ? { cell: op.cell } : {}),
+					},
+				};
+				const suggestionOptions = nextSuggestionOptions();
+				pushBlockSuggestion(
+					"format-text",
+					op.blockId,
+					previousState,
+					suggestionOptions,
+				);
+				intercepted.push({
+					type: "set-meta",
+					blockId: op.blockId,
+					namespace: "suggestion",
+					data: createBlockSuggestionMeta(
+						"format-text",
+						author,
+						authorType,
+						model,
+						previousState,
+						sessionId,
+						suggestionOptions,
+					),
+				});
+				break;
+			}
+
 			case "set-meta":
 			case "grid":
 			case "app":

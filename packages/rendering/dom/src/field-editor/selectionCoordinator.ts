@@ -138,13 +138,6 @@ export class FieldEditorSelectionCoordinator {
 		);
 	}
 
-	isProgrammaticDomTextSelection(
-		anchor: { blockId: string; offset: number },
-		focus: { blockId: string; offset: number },
-	): boolean {
-		return this._projection.isProgrammaticDomTextSelection(anchor, focus);
-	}
-
 	prepareSyncedTextSelection(
 		currentSelection: SelectionState | null,
 		blockId: string,

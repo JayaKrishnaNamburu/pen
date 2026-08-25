@@ -39,7 +39,8 @@ export function buildAIStructuredPreviewSelection(
 	let previewDocument: unknown = {};
 	let hasPatchedPreview = false;
 	let patchCount = 0;
-	let latestPreviewSnapshot: GenerationStructuredPreviewState | null = fallbackPreview;
+	let latestPreviewSnapshot: GenerationStructuredPreviewState | null =
+		fallbackPreview;
 
 	for (const event of streamEvents) {
 		if (
@@ -113,7 +114,10 @@ export function buildAIStructuredPreviewContentItems(
 
 	const orderedIds = [...blockIds];
 	const blockInsertPlans: Array<
-		Extract<GenerationStructuredPreviewState["plan"], { kind: "block_insert" }>
+		Extract<
+			GenerationStructuredPreviewState["plan"],
+			{ kind: "block_insert" }
+		>
 	> = [];
 	appendBlockInsertPlans(preview.plan, blockInsertPlans);
 
@@ -160,9 +164,7 @@ function applyStructuredPreviewPatchOperation(
 ): unknown {
 	const pathSegments = parseJsonPointerPath(patch.path);
 	if (pathSegments.length === 0) {
-		return patch.op === "remove"
-			? null
-			: cloneStructuredValue(patch.value);
+		return patch.op === "remove" ? null : cloneStructuredValue(patch.value);
 	}
 
 	const root = isContainerValue(base)
@@ -187,14 +189,21 @@ function applyStructuredPreviewPatchOperation(
 		return root;
 	}
 
-	writeContainerValue(cursor, finalSegment, cloneStructuredValue(patch.value));
+	writeContainerValue(
+		cursor,
+		finalSegment,
+		cloneStructuredValue(patch.value),
+	);
 	return root;
 }
 
 function appendBlockInsertPlans(
 	plan: GenerationStructuredPreviewState["plan"],
 	output: Array<
-		Extract<GenerationStructuredPreviewState["plan"], { kind: "block_insert" }>
+		Extract<
+			GenerationStructuredPreviewState["plan"],
+			{ kind: "block_insert" }
+		>
 	>,
 ): void {
 	if (plan.kind === "review_bundle") {
@@ -259,7 +268,9 @@ function parseJsonPointerPath(path: string): string[] {
 		.map((segment) => segment.replaceAll("~1", "/").replaceAll("~0", "~"));
 }
 
-function createContainerForSegment(segment: string): Record<string, unknown> | unknown[] {
+function createContainerForSegment(
+	segment: string,
+): Record<string, unknown> | unknown[] {
 	return isArrayIndexSegment(segment) ? [] : {};
 }
 
@@ -354,6 +365,9 @@ function isRecordValue(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function areStructuredPreviewValuesEqual(previous: unknown, next: unknown): boolean {
+function areStructuredPreviewValuesEqual(
+	previous: unknown,
+	next: unknown,
+): boolean {
 	return deepEqual(previous, next);
 }

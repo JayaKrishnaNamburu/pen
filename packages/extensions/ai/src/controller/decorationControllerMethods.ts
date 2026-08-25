@@ -2,56 +2,41 @@ import type { Decoration } from "@input/pen-types";
 import { buildGenerationZoneDecorations } from "../decorations/generationZone";
 import { buildAIReviewPresentationDecorations } from "../review/reviewPresentation";
 import type {
+	AIStreamingReviewPreview,
 	AIStreamingReviewPreviewInput,
 	AIStreamingReviewPreviewTarget,
 } from "../types";
 import { areStringArraysEqual } from "../helpers";
-import type { AIControllerMethodHost } from "./aiControllerMethodHost";
+import type {
+	AIControllerMethodHost,
+	StreamingPreviewStatePatch,
+} from "./aiControllerMethodHost";
 
 export const decorationControllerMethods = {
+	// `extra` lands in the same `_setState` as the preview so a token does
+	// not rebuild decorations twice (generation row + preview row).
 	setStreamingReviewPreview(
 		this: AIControllerMethodHost,
 		input: AIStreamingReviewPreviewInput,
+		extra?: StreamingPreviewStatePatch,
 	): void {
-		const text = input.text ?? "";
-		if (text.length === 0) {
-			this.clearStreamingReviewPreview(input.sessionId);
-			return;
-		}
-		const previous = this._state.streamingReviewPreview;
-		const isSamePreview =
-			previous?.sessionId === input.sessionId &&
-			previous?.turnId === input.turnId &&
-			previous?.target != null &&
-			areStreamingReviewPreviewTargetsEqual(
-				previous.target,
-				input.target,
-			);
-		if (isSamePreview && previous.text === text) {
-			return;
-		}
-		this._setState({
-			streamingReviewPreview: {
-				sessionId: input.sessionId,
-				turnId: input.turnId,
-				target: input.target,
-				text,
-				previousTextLength: isSamePreview ? previous.text.length : 0,
-				revision: isSamePreview ? previous.revision + 1 : 1,
-				updatedAt: Date.now(),
-			},
-		});
+		this._queuedStreamingPreview = {
+			inputs: upsertPreviewByOperation(
+				this._queuedStreamingPreview?.inputs ?? [],
+				input,
+			),
+			extra,
+		};
+		scheduleStreamingPreviewFlush(this);
 	},
 
-	clearStreamingReviewPreview(this: AIControllerMethodHost, sessionId?: string): void {
-		const previous = this._state.streamingReviewPreview;
-		if (!previous) {
-			return;
-		}
-		if (sessionId && previous.sessionId !== sessionId) {
-			return;
-		}
-		this._setState({ streamingReviewPreview: null });
+	clearStreamingReviewPreview(
+		this: AIControllerMethodHost,
+		sessionId?: string,
+		extra?: StreamingPreviewStatePatch,
+	): void {
+		cancelStreamingPreviewFlush(this);
+		applyClearStreamingReviewPreview(this, sessionId, extra);
 	},
 
 	buildDecorations(this: AIControllerMethodHost): Decoration[] {
@@ -62,13 +47,170 @@ export const decorationControllerMethods = {
 				editor: this._editor,
 				sessions: this._state.sessions,
 				suggestionPresentation: this._suggestionPresentation,
-				streamingReviewPreview: this._state.streamingReviewPreview,
+				streamingReviewPreviews: this._state.streamingReviewPreviews,
 			}),
 			...buildGenerationZoneDecorations(this._state.activeGeneration),
 		];
 		return decorations;
 	},
 };
+
+function scheduleStreamingPreviewFlush(host: AIControllerMethodHost): void {
+	// Node tests have no rAF: apply now so probes that read state between
+	// deltas still see every fragment. The browser batches a TCP burst to
+	// one paint so a chunk of fragments does not run a full reconcile each.
+	if (typeof requestAnimationFrame !== "function") {
+		flushQueuedStreamingPreview(host);
+		return;
+	}
+	if (host._streamingPreviewRaf != null) {
+		return;
+	}
+	host._streamingPreviewRaf = requestAnimationFrame(() => {
+		host._streamingPreviewRaf = null;
+		flushQueuedStreamingPreview(host);
+	});
+}
+
+function cancelStreamingPreviewFlush(host: AIControllerMethodHost): void {
+	if (host._streamingPreviewRaf != null) {
+		cancelAnimationFrame(host._streamingPreviewRaf);
+		host._streamingPreviewRaf = null;
+	}
+	host._queuedStreamingPreview = null;
+}
+
+function flushQueuedStreamingPreview(host: AIControllerMethodHost): void {
+	const queued = host._queuedStreamingPreview;
+	if (!queued) {
+		return;
+	}
+	host._queuedStreamingPreview = null;
+	applyStreamingReviewPreviews(host, queued.inputs, queued.extra);
+}
+
+function applyStreamingReviewPreviews(
+	host: AIControllerMethodHost,
+	inputs: readonly AIStreamingReviewPreviewInput[],
+	extra?: StreamingPreviewStatePatch,
+): void {
+	let previews = host._state.streamingReviewPreviews;
+	let changed = false;
+	for (const input of inputs) {
+		const next = mergeStreamingReviewPreview(previews, input);
+		if (next !== previews) {
+			previews = next;
+			changed = true;
+		}
+	}
+	if (!changed) {
+		if (extra) {
+			host._setState(extra);
+		}
+		return;
+	}
+	host._setState({ ...extra, streamingReviewPreviews: previews });
+}
+
+/**
+ * The list with this operation's preview brought up to date.
+ *
+ * Returns the list unchanged when the text has not moved, so a fragment that
+ * only grows another operation does not rebuild every decoration. A preview
+ * from a different turn replaces the list rather than joining it: two turns are
+ * never on screen at once.
+ */
+function mergeStreamingReviewPreview(
+	previews: readonly AIStreamingReviewPreview[],
+	input: AIStreamingReviewPreviewInput,
+): readonly AIStreamingReviewPreview[] {
+	const text = input.text ?? "";
+	const operationIndex = previewOperation(input);
+	const ownsTurn = previews.every(
+		(preview) =>
+			preview.sessionId === input.sessionId &&
+			preview.turnId === input.turnId,
+	);
+	// An operation with nothing in it yet withdraws its own preview and only
+	// its own: the operations beside it in the same call are still proposing
+	// text that has not been written.
+	if (text.length === 0) {
+		const remaining = ownsTurn
+			? previews.filter(
+					(preview) => previewOperation(preview) !== operationIndex,
+				)
+			: [];
+		return remaining.length === previews.length ? previews : remaining;
+	}
+	const previous = ownsTurn
+		? (previews.find(
+				(preview) => previewOperation(preview) === operationIndex,
+			) ?? null)
+		: null;
+	const isSamePreview =
+		previous != null &&
+		areStreamingReviewPreviewTargetsEqual(previous.target, input.target);
+	if (isSamePreview && previous.text === text) {
+		return previews;
+	}
+	const merged: AIStreamingReviewPreview = {
+		sessionId: input.sessionId,
+		turnId: input.turnId,
+		operationIndex,
+		target: input.target,
+		text,
+		previousTextLength: isSamePreview ? previous.text.length : 0,
+	};
+	if (!ownsTurn) {
+		return [merged];
+	}
+	if (previous == null) {
+		return [...previews, merged];
+	}
+	return previews.map((preview) =>
+		previewOperation(preview) === operationIndex ? merged : preview,
+	);
+}
+
+/** A preview with no stated operation is the call's first and only one. */
+function previewOperation(
+	preview: Pick<AIStreamingReviewPreviewInput, "operationIndex">,
+): number {
+	return preview.operationIndex ?? 0;
+}
+
+function applyClearStreamingReviewPreview(
+	host: AIControllerMethodHost,
+	sessionId?: string,
+	extra?: StreamingPreviewStatePatch,
+): void {
+	const previews = host._state.streamingReviewPreviews;
+	const remaining =
+		sessionId == null
+			? []
+			: previews.filter((preview) => preview.sessionId !== sessionId);
+	if (remaining.length === previews.length) {
+		if (extra) {
+			host._setState(extra);
+		}
+		return;
+	}
+	host._setState({ ...extra, streamingReviewPreviews: remaining });
+}
+
+function upsertPreviewByOperation(
+	inputs: readonly AIStreamingReviewPreviewInput[],
+	input: AIStreamingReviewPreviewInput,
+): readonly AIStreamingReviewPreviewInput[] {
+	const operationIndex = previewOperation(input);
+	const existing = inputs.findIndex(
+		(queued) => previewOperation(queued) === operationIndex,
+	);
+	if (existing < 0) {
+		return [...inputs, input];
+	}
+	return inputs.map((queued, index) => (index === existing ? input : queued));
+}
 
 function areStreamingReviewPreviewTargetsEqual(
 	left: AIStreamingReviewPreviewTarget,

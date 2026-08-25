@@ -12,8 +12,9 @@ export function useRemoteSelections(
 	editor: Editor,
 ): readonly RemoteSelectionState[] {
 	const controller =
-		(editor.facet(multiplayerControllerFacet) as MultiplayerController | null) ??
-		null;
+		(editor.facet(
+			multiplayerControllerFacet,
+		) as MultiplayerController | null) ?? null;
 	const canReadRemoteSelections = isRemoteSelectionController(controller);
 
 	return useSyncExternalStore(

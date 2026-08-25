@@ -11,9 +11,7 @@ export interface MultiplayerPresenceListProps extends AsChildProps {
 	ref?: React.Ref<HTMLElement>;
 }
 
-export function MultiplayerPresenceList(
-	props: MultiplayerPresenceListProps,
-) {
+export function MultiplayerPresenceList(props: MultiplayerPresenceListProps) {
 	const { editor: editorProp, maxVisible, renderAvatar, ...rest } = props;
 	const editorContext = useContext(EditorContext);
 	const editor = editorProp ?? editorContext?.editor;
@@ -52,7 +50,10 @@ export function MultiplayerPresenceList(
 		overflowCount > 0
 			? [
 					...renderedPeerAvatars,
-					<span key="overflow" data-pen-multiplayer-presence-overflow="">
+					<span
+						key="overflow"
+						data-pen-multiplayer-presence-overflow=""
+					>
 						+{overflowCount}
 					</span>,
 				]

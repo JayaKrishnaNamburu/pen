@@ -34,9 +34,7 @@ function createMentionEditor() {
 	const editor = createEditor({ schema: defaultSchema });
 	const blockId = editor.firstBlock()!.id;
 	editor.apply([
-		{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "hiz" },
+		{ type: "splice-text", blockId, from: 0, to: 0, insert: "hiz" },
 		{
 			type: "splice-text",
 			blockId,
@@ -237,8 +235,9 @@ describe("inline atom delete select-then-delete", () => {
 			});
 
 			expect(handled).toBe(true);
-			expect(dispatched.filter((name) => name === "pen.deleteBackward"))
-				.toHaveLength(2);
+			expect(
+				dispatched.filter((name) => name === "pen.deleteBackward"),
+			).toHaveLength(2);
 			expect(hasMention(editor, blockId)).toBe(false);
 			expect(editor.getBlock(blockId)?.textContent()).toBe("hiz");
 			editor.destroy();
@@ -253,7 +252,9 @@ describe("inline atom delete select-then-delete", () => {
 				{ inputType: "deleteContentBackward" } as InputEvent,
 				editor,
 				getYText(editor, blockId),
-				createFieldEditor(blockId) as unknown as FieldEditorInputController,
+				createFieldEditor(
+					blockId,
+				) as unknown as FieldEditorInputController,
 				{} as HTMLElement,
 				{
 					resolveCurrentInputRange: () => inputRange,
@@ -311,8 +312,9 @@ describe("inline atom delete select-then-delete", () => {
 				backend,
 			);
 
-			expect(dispatched.filter((name) => name === "pen.deleteBackward"))
-				.toHaveLength(2);
+			expect(
+				dispatched.filter((name) => name === "pen.deleteBackward"),
+			).toHaveLength(2);
 			expect(hasMention(editor, blockId)).toBe(false);
 			expect(editor.getBlock(blockId)?.textContent()).toBe("hiz");
 			editor.destroy();

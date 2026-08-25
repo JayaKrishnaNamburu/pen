@@ -4,7 +4,7 @@ import {
 	applyMergeBlocks,
 	applySplitBlock,
 	createHeadlessEditor,
-	getEditorSelectionRecord,
+	getEditorSelectionRecord
 } from "@input/pen-core";
 import { defaultSchema } from "@input/pen-schema-default";
 import type { DocumentOp } from "@input/pen-types";
@@ -12,7 +12,7 @@ import {
 	commitIsStructuralSequence,
 	structuralSequenceLabel,
 	translateRecordedAuthorityOps,
-	type RecordedAuthorityOp,
+	type RecordedAuthorityOp
 } from "./authorityTranslate.js";
 import type { SerializedSelectionRecord } from "./types";
 
@@ -20,7 +20,7 @@ export type { RecordedAuthorityOp } from "./authorityTranslate.js";
 export {
 	commitIsStructuralSequence,
 	structuralSequenceLabel,
-	translateRecordedAuthorityOps,
+	translateRecordedAuthorityOps
 } from "./authorityTranslate.js";
 
 export const AUTHORITY_TRACE_SCHEMA_VERSION = 1;
@@ -106,7 +106,7 @@ const recordedParagraph = (
 		blockId,
 		blockType: "paragraph",
 		props: {},
-		position: "last",
+		position: "last"
 	},
 	{ type: "insert-text", blockId, offset: 0, text },
 ];
@@ -120,7 +120,7 @@ const insertParagraph = (
 		blockId,
 		blockType: "paragraph",
 		props: {},
-		position: "last",
+		position: "last"
 	},
 	{ type: "splice-text", blockId, from: 0, to: 0, insert: text },
 ];
@@ -141,9 +141,9 @@ export const AUTHORITY_TRACE_SCRIPT: readonly AuthorityTraceCaseDef[] = [
 				type: "split-block",
 				blockId: "b1",
 				offset: SPLIT_AT,
-				newBlockId: "b2",
+				newBlockId: "b2"
 			},
-		],
+		]
 	},
 	{
 		id: "split-point",
@@ -156,9 +156,9 @@ export const AUTHORITY_TRACE_SCRIPT: readonly AuthorityTraceCaseDef[] = [
 				type: "split-block",
 				blockId: "b1",
 				offset: SPLIT_AT,
-				newBlockId: "b2",
+				newBlockId: "b2"
 			},
-		],
+		]
 	},
 	{
 		id: "split-tail",
@@ -171,9 +171,9 @@ export const AUTHORITY_TRACE_SCRIPT: readonly AuthorityTraceCaseDef[] = [
 				type: "split-block",
 				blockId: "b1",
 				offset: SPLIT_AT,
-				newBlockId: "b2",
+				newBlockId: "b2"
 			},
-		],
+		]
 	},
 	{
 		id: "merge-target",
@@ -188,9 +188,9 @@ export const AUTHORITY_TRACE_SCRIPT: readonly AuthorityTraceCaseDef[] = [
 			{
 				type: "merge-blocks",
 				targetBlockId: "b1",
-				sourceBlockId: "b2",
+				sourceBlockId: "b2"
 			},
-		],
+		]
 	},
 	{
 		id: "merge-source",
@@ -205,9 +205,9 @@ export const AUTHORITY_TRACE_SCRIPT: readonly AuthorityTraceCaseDef[] = [
 			{
 				type: "merge-blocks",
 				targetBlockId: "b1",
-				sourceBlockId: "b2",
+				sourceBlockId: "b2"
 			},
-		],
+		]
 	},
 	{
 		id: "remove-selected",
@@ -218,7 +218,7 @@ export const AUTHORITY_TRACE_SCRIPT: readonly AuthorityTraceCaseDef[] = [
 			...recordedParagraph("b2", "gone"),
 		],
 		select: { blockId: "b2", offset: 0 },
-		commit: [{ type: "delete-block", blockId: "b2" }],
+		commit: [{ type: "delete-block", blockId: "b2" }]
 	},
 	{
 		id: "remove-kept",
@@ -229,7 +229,7 @@ export const AUTHORITY_TRACE_SCRIPT: readonly AuthorityTraceCaseDef[] = [
 			...recordedParagraph("b2", "gone"),
 		],
 		select: { blockId: "b1", offset: 2 },
-		commit: [{ type: "delete-block", blockId: "b2" }],
+		commit: [{ type: "delete-block", blockId: "b2" }]
 	},
 ];
 
@@ -254,7 +254,7 @@ export const AUTHORITY_ALGEBRA_AFTER: Readonly<
 	"merge-target": { blockId: "b1", offset: 3 },
 	"merge-source": { blockId: "b1", offset: 7 },
 	"remove-selected": { blockId: "b1", offset: 4 },
-	"remove-kept": { blockId: "b1", offset: 2 },
+	"remove-kept": { blockId: "b1", offset: 2 }
 };
 
 export function authorityTraceScriptHash(
@@ -311,7 +311,7 @@ function mismatch(reason: string, caseId?: string): AuthorityCompareCheck {
 		outcome: "mismatch",
 		kind: "implementation",
 		reason,
-		caseId,
+		caseId
 	};
 }
 
@@ -327,7 +327,7 @@ function unchecked(
 		outcome: "unchecked",
 		kind,
 		reason,
-		caseId,
+		caseId
 	};
 }
 
@@ -385,7 +385,7 @@ function snapshotRecord(
 			version: record.version,
 			origin: record.origin,
 			commitId: record.commitId,
-			state: null,
+			state: null
 		};
 	}
 	if (state.type !== "text") {
@@ -402,8 +402,8 @@ function snapshotRecord(
 								type: "cell",
 								blockId: state.blockId,
 								anchor: { ...state.anchor },
-								head: { ...state.head },
-							},
+								head: { ...state.head }
+							}
 		};
 	}
 	return {
@@ -414,16 +414,16 @@ function snapshotRecord(
 			type: "text",
 			anchor: {
 				blockId: state.anchor.blockId,
-				offset: state.anchor.offset,
+				offset: state.anchor.offset
 			},
 			focus: {
 				blockId: state.focus.blockId,
-				offset: state.focus.offset,
+				offset: state.focus.offset
 			},
 			isCollapsed:
 				state.anchor.blockId === state.focus.blockId &&
 				state.anchor.offset === state.focus.offset,
-		},
+		}
 	};
 }
 
@@ -436,14 +436,14 @@ function replayAuthorityCommit(
 			applySplitBlock(editor, {
 				blockId: op.blockId,
 				offset: op.offset,
-				newBlockId: op.newBlockId,
+				newBlockId: op.newBlockId
 			});
 			return;
 		}
 		if (op.type === "merge-blocks") {
 			applyMergeBlocks(editor, {
 				targetBlockId: op.targetBlockId,
-				sourceBlockId: op.sourceBlockId,
+				sourceBlockId: op.sourceBlockId
 			});
 			return;
 		}
@@ -492,7 +492,7 @@ export function recordAuthorityTraces(
 			...def,
 			before,
 			after,
-			documentAfter: documentFingerprint(editor),
+			documentAfter: documentFingerprint(editor)
 		};
 		editor.destroy();
 		cases.push(recorded);
@@ -501,7 +501,7 @@ export function recordAuthorityTraces(
 		schemaVersion: AUTHORITY_TRACE_SCHEMA_VERSION,
 		scriptId: AUTHORITY_TRACE_SCRIPT_ID,
 		scriptHash: authorityTraceScriptHash(script),
-		cases,
+		cases
 	};
 }
 
@@ -708,7 +708,7 @@ function textPointOf(
 	}
 	return {
 		blockId: state.anchor.blockId,
-		offset: state.anchor.offset,
+		offset: state.anchor.offset
 	};
 }
 
@@ -760,7 +760,7 @@ export function describeAuthorityTracePopulation(
 	const counts: Record<AuthorityTraceKind, number> = {
 		split: 0,
 		merge: 0,
-		remove: 0,
+		remove: 0
 	};
 	for (const entry of trace.cases) {
 		counts[entry.kind] += 1;
@@ -781,7 +781,7 @@ export function insertOnlyAuthorityScript(): AuthorityTraceCaseDef[] {
 				{ type: "splice-text", blockId: "b1", from: 3,
 				to: 3,
 				insert: "x" },
-			],
+			]
 		},
 		{
 			id: "insert-only-merge",
@@ -793,7 +793,7 @@ export function insertOnlyAuthorityScript(): AuthorityTraceCaseDef[] {
 				{ type: "splice-text", blockId: "b1", from: 3,
 				to: 3,
 				insert: "y" },
-			],
+			]
 		},
 		{
 			id: "insert-only-remove",
@@ -805,7 +805,7 @@ export function insertOnlyAuthorityScript(): AuthorityTraceCaseDef[] {
 				{ type: "splice-text", blockId: "b1", from: 3,
 				to: 3,
 				insert: "z" },
-			],
+			]
 		},
 	];
 }

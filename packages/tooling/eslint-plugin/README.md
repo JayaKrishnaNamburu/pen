@@ -31,8 +31,8 @@ Each of these is claimed by a wave in `spec-v2/waves/`. They are listed here rat
 
 Until that lands, the invariant is a grep script (or a report-only inventory). Either form satisfies the wave's lint deliverable (`spec-v2/waves/README.md` §Shared Verification Commands). Root scripts under `scripts/no-*.mjs` have matching `.github/workflows/` jobs.
 
-| Rule                     | Spec rule | ESLint owner                       | Current form                                |
-| ------------------------ | --------- | ---------------------------------- | ------------------------------------------- |
-| `no-unscheduled-measure` | SCH1–SCH3 | Wave 3                             | grep — `scripts/no-unscheduled-measure.mjs` |
-| `no-bidi-override`       | DIR1–DIR3 | Wave 6                             | grep — `scripts/no-bidi-override.mjs`       |
-| `no-pen-deep-imports`    | API4      | Wave P                             | grep — `scripts/no-pen-deep-imports.mjs`    |
+| Rule                     | Spec rule | ESLint owner | Current form                                |
+| ------------------------ | --------- | ------------ | ------------------------------------------- |
+| `no-unscheduled-measure` | SCH1–SCH3 | Wave 3       | grep — `scripts/no-unscheduled-measure.mjs` |
+| `no-bidi-override`       | DIR1–DIR3 | Wave 6       | grep — `scripts/no-bidi-override.mjs`       |
+| `no-pen-deep-imports`    | API4      | Wave P       | grep — `scripts/no-pen-deep-imports.mjs`    |

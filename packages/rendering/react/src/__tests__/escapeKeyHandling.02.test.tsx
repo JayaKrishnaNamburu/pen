@@ -180,7 +180,6 @@ describe("@input/pen-react escape key handling", () => {
 			type: "text",
 			anchor: { blockId: secondBlockId, offset: 1 },
 			focus: { blockId: secondBlockId, offset: 1 },
-			isCollapsed: true,
 		});
 		expect(fieldEditor.getSnapshot()).toMatchObject({
 			focusBlockId: secondBlockId,
@@ -277,7 +276,6 @@ describe("@input/pen-react escape key handling", () => {
 			type: "text",
 			anchor: { blockId: firstBlockId, offset: 0 },
 			focus: { blockId: thirdBlockId, offset: 5 },
-			isMultiBlock: true,
 		});
 		expect(fieldEditor.getSnapshot()).toMatchObject({
 			activeBlockIds: [firstBlockId, secondBlockId, thirdBlockId],

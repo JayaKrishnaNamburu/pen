@@ -5,7 +5,8 @@ import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { useSearchContext } from "./root";
 
 export interface SearchToggleProps
-	extends AsChildProps,
+	extends
+		AsChildProps,
 		Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
 	ref?: React.Ref<HTMLElement>;
 }
@@ -17,7 +18,10 @@ export function SearchCaseSensitive(props: SearchToggleProps) {
 			{...props}
 			option="caseSensitive"
 			dataOption="case-sensitive"
-			label={resolveEditorMessage(editor, "pen.search.toggle.caseSensitive")}
+			label={resolveEditorMessage(
+				editor,
+				"pen.search.toggle.caseSensitive",
+			)}
 		/>
 	);
 }

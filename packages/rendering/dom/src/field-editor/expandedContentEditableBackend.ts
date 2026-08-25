@@ -1,5 +1,5 @@
 import type { Editor } from "@input/pen-types";
-import { editorSelectionToDOM, domSelectionToEditor } from "./selectionBridge";
+import { editorSelectionToDOM } from "./selectionBridge";
 import {
 	getPasteImporters,
 	handlePaste,
@@ -21,8 +21,11 @@ import {
 } from "@input/pen-core";
 import { applyEnterBehavior, toggleInlineMark } from "./commands";
 import { dispatchEditorCommand } from "./commandDispatch";
-import { normalizeSelectionFormation } from "../utils/selectionFormation";
-import { shouldStopEquivalentDomRead } from "./selectionReader";
+import {
+	forwardDomSelectionToReader,
+	readNormalizedDomProposal,
+	shouldStopEquivalentDomRead,
+} from "./selectionReader";
 import {
 	handleEditorKeyBindings,
 	handleSelectAllShortcut,
@@ -140,38 +143,27 @@ export class ExpandedContentEditableBackend {
 			return;
 		}
 
-		const selection = domSelectionToEditor(this.element);
-		if (!selection) return;
-		const normalizedSelection = normalizeSelectionFormation(
+		const normalizedSelection = readNormalizedDomProposal(
+			this.element,
 			this.editor,
-			selection,
 		);
+		if (!normalizedSelection) return;
 
 		if (shouldStopEquivalentDomRead(this.editor, normalizedSelection)) {
 			return;
 		}
 
+		if (
+			forwardDomSelectionToReader(this.fieldEditor, normalizedSelection)
+		) {
+			return;
+		}
+
 		if (normalizedSelection.type === "block") {
-			if (this.fieldEditor.readDomSelection) {
-				this.fieldEditor.readDomSelection({
-					type: "block",
-					blockIds: normalizedSelection.blockIds,
-				});
-				return;
-			}
 			this.fieldEditor.deactivate();
 			this.editor.setSelection({
 				type: "block",
 				blockIds: normalizedSelection.blockIds,
-			});
-			return;
-		}
-
-		if (this.fieldEditor.readDomSelection) {
-			this.fieldEditor.readDomSelection({
-				type: "text",
-				anchor: normalizedSelection.anchor,
-				focus: normalizedSelection.focus,
 			});
 			return;
 		}

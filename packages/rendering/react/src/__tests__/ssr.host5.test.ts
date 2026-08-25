@@ -21,7 +21,8 @@ const MARKER_TEXT = "HOST5-ssr-marker";
 
 function createTestEditor() {
 	return createEditor({
-		schema: defaultSchema, preset: defaultPreset({
+		schema: defaultSchema,
+		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
 			undo: false,
@@ -39,8 +40,8 @@ function fillDocument(editor: ReturnType<typeof createTestEditor>) {
 			type: "splice-text",
 			blockId,
 			from: 0,
-				to: 0,
-				insert: MARKER_TEXT,
+			to: 0,
+			insert: MARKER_TEXT,
 		},
 	]);
 }
@@ -48,9 +49,11 @@ function fillDocument(editor: ReturnType<typeof createTestEditor>) {
 function captureConsole() {
 	const errors: unknown[][] = [];
 	const warnings: unknown[][] = [];
-	const errorSpy = vi.spyOn(console, "error").mockImplementation((...args) => {
-		errors.push(args);
-	});
+	const errorSpy = vi
+		.spyOn(console, "error")
+		.mockImplementation((...args) => {
+			errors.push(args);
+		});
 	const warnSpy = vi.spyOn(console, "warn").mockImplementation((...args) => {
 		warnings.push(args);
 	});
@@ -124,7 +127,8 @@ function installDom(html: string): {
 			if (previousDocument === undefined) {
 				delete (globalThis as { document?: unknown }).document;
 			} else {
-				(globalThis as { document: unknown }).document = previousDocument;
+				(globalThis as { document: unknown }).document =
+					previousDocument;
 			}
 		},
 	};
@@ -156,9 +160,10 @@ async function renderAndHydrate(editor: ReturnType<typeof createTestEditor>) {
 		await act(async () => {
 			hydrateRoot(container, React.createElement(PenEditor, { editor }));
 		});
-		expect(consoleCapture.errors, formatConsole(consoleCapture.errors)).toEqual(
-			[],
-		);
+		expect(
+			consoleCapture.errors,
+			formatConsole(consoleCapture.errors),
+		).toEqual([]);
 		expect(
 			consoleCapture.warnings,
 			formatConsole(consoleCapture.warnings),
@@ -185,9 +190,9 @@ describe("@input/pen-react HOST5 SSR contract", () => {
 	it("HOST5 renders a non-empty document as a shell then hydrates without warnings", async () => {
 		const editor = createTestEditor();
 		fillDocument(editor);
-		expect(editor.getBlock(editor.firstBlock()!.id)?.textContent()).toContain(
-			MARKER_TEXT,
-		);
+		expect(
+			editor.getBlock(editor.firstBlock()!.id)?.textContent(),
+		).toContain(MARKER_TEXT);
 		await renderAndHydrate(editor);
 	});
 });

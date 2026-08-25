@@ -3,7 +3,7 @@ import { resolveEditorMessage } from "@input/pen-core";
 import type { Editor, TableColumnSchema } from "@input/pen-types";
 import { generateId } from "@input/pen-types";
 import { useIsomorphicLayoutEffect } from "../hooks/useIsomorphicLayoutEffect";
-import { DATA_ATTRS } from "../utils/dataAttributes";
+import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 
 type MenuColumnType =
 	| "text"
@@ -116,7 +116,9 @@ export function ColumnHeaderMenu(props: ColumnHeaderMenuProps) {
 		const items = getRovingItems(menu);
 		if (items.length === 0) return;
 
-		const focusedIndex = items.indexOf(document.activeElement as HTMLElement);
+		const focusedIndex = items.indexOf(
+			document.activeElement as HTMLElement,
+		);
 		const from = focusedIndex >= 0 ? focusedIndex : activeIndex;
 		let next = from;
 		switch (key) {
@@ -230,7 +232,11 @@ export function ColumnHeaderMenu(props: ColumnHeaderMenuProps) {
 		const updated = allColumns.filter((_, i) => i !== columnIndex);
 		editor.apply(
 			[
-				{ type: "set-props", blockId, props: { columns: [...updated] } },
+				{
+					type: "set-props",
+					blockId,
+					props: { columns: [...updated] },
+				},
 				{
 					type: "grid",
 					blockId,
@@ -244,7 +250,11 @@ export function ColumnHeaderMenu(props: ColumnHeaderMenuProps) {
 
 	useEffect(() => {
 		const handler = (e: MouseEvent) => {
-			if (menuRef.current && !menuRef.current.contains(e.target as Node) && !anchorEl.contains(e.target as Node)) {
+			if (
+				menuRef.current &&
+				!menuRef.current.contains(e.target as Node) &&
+				!anchorEl.contains(e.target as Node)
+			) {
 				commitTitle();
 				onClose();
 			}
@@ -264,7 +274,10 @@ export function ColumnHeaderMenu(props: ColumnHeaderMenuProps) {
 			key={ct.value}
 			type="button"
 			role="menuitem"
-			tabIndex={rovingTabIndex(activeIndex, TYPE_ROVING_START + typeIndex)}
+			tabIndex={rovingTabIndex(
+				activeIndex,
+				TYPE_ROVING_START + typeIndex,
+			)}
 			data-pen-column-menu-item=""
 			className="pen-col-menu-item"
 			data-active={ct.value === column.type ? "" : undefined}
@@ -280,9 +293,13 @@ export function ColumnHeaderMenu(props: ColumnHeaderMenuProps) {
 		<div
 			ref={menuRef}
 			role="menu"
-			aria-label={resolveEditorMessage(editor, "pen.table.columnMenu.label", {
-				title: column.title,
-			})}
+			aria-label={resolveEditorMessage(
+				editor,
+				"pen.table.columnMenu.label",
+				{
+					title: column.title,
+				},
+			)}
 			aria-orientation="vertical"
 			className="pen-col-menu"
 			data-pen-column-menu=""
@@ -317,18 +334,27 @@ export function ColumnHeaderMenu(props: ColumnHeaderMenuProps) {
 				onFocus={handleRovingFocus}
 				onClick={handleInsertLeft}
 			>
-				{resolveEditorMessage(editor, "pen.table.columnMenu.insertLeft")}
+				{resolveEditorMessage(
+					editor,
+					"pen.table.columnMenu.insertLeft",
+				)}
 			</button>
 			<button
 				type="button"
 				role="menuitem"
-				tabIndex={rovingTabIndex(activeIndex, INSERT_RIGHT_ROVING_INDEX)}
+				tabIndex={rovingTabIndex(
+					activeIndex,
+					INSERT_RIGHT_ROVING_INDEX,
+				)}
 				data-pen-column-menu-item=""
 				className="pen-col-menu-item"
 				onFocus={handleRovingFocus}
 				onClick={handleInsertRight}
 			>
-				{resolveEditorMessage(editor, "pen.table.columnMenu.insertRight")}
+				{resolveEditorMessage(
+					editor,
+					"pen.table.columnMenu.insertRight",
+				)}
 			</button>
 			{colCount > 1 && (
 				<>
@@ -336,13 +362,19 @@ export function ColumnHeaderMenu(props: ColumnHeaderMenuProps) {
 					<button
 						type="button"
 						role="menuitem"
-						tabIndex={rovingTabIndex(activeIndex, DELETE_ROVING_INDEX)}
+						tabIndex={rovingTabIndex(
+							activeIndex,
+							DELETE_ROVING_INDEX,
+						)}
 						data-pen-column-menu-item=""
 						className="pen-col-menu-item pen-col-menu-danger"
 						onFocus={handleRovingFocus}
 						onClick={handleDelete}
 					>
-						{resolveEditorMessage(editor, "pen.table.columnMenu.delete")}
+						{resolveEditorMessage(
+							editor,
+							"pen.table.columnMenu.delete",
+						)}
 					</button>
 				</>
 			)}
@@ -359,7 +391,10 @@ function columnTypeLabel(editor: Editor, type: MenuColumnType): string {
 		case "select":
 			return resolveEditorMessage(editor, "pen.table.columnType.select");
 		case "checkbox":
-			return resolveEditorMessage(editor, "pen.table.columnType.checkbox");
+			return resolveEditorMessage(
+				editor,
+				"pen.table.columnType.checkbox",
+			);
 		case "date":
 			return resolveEditorMessage(editor, "pen.table.columnType.date");
 		case "url":

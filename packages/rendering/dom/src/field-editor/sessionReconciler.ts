@@ -1,6 +1,7 @@
 import { affectedBlockIdsFromSummary, getOpOriginType } from "@input/pen-core";
 import type { Editor, InlineDecoration, OpOrigin } from "@input/pen-types";
 import { urlPolicyFromEditor } from "../security/resolveEditorUrl";
+import type { DomScheduler } from "../scheduler";
 import { fullReconcileToDOM } from "./reconciler";
 import type { FieldEditorTextLike } from "./crdt";
 
@@ -20,13 +21,15 @@ interface SessionReconcilerOptions {
 	shouldProjectSelection: () => boolean;
 	projectSelection: () => void;
 	notifyDomReconciled?: (blockId: string) => void;
+	getScheduler: () => DomScheduler | null;
 }
 
 export class SessionReconciler {
 	private readonly editor: Editor;
 	private readonly options: SessionReconcilerOptions;
 	private readonly pendingBlockIds = new Set<string>();
-	private scheduledFrame: number | null = null;
+	private scheduledWrite = false;
+	private destroyed = false;
 	private shouldProjectSelection = false;
 	private readonly unsubscribeCommit: () => void;
 	private readonly unsubscribeDecorationsChange: () => void;
@@ -49,14 +52,19 @@ export class SessionReconciler {
 	}
 
 	destroy(): void {
+		this.destroyed = true;
 		this.unsubscribeCommit();
 		this.unsubscribeDecorationsChange();
-		if (this.scheduledFrame !== null) {
-			cancelAnimationFrame(this.scheduledFrame);
-			this.scheduledFrame = null;
-		}
+		this.scheduledWrite = false;
 		this.pendingBlockIds.clear();
 		this.shouldProjectSelection = false;
+	}
+
+	notifyFrameAvailable(): void {
+		if (this.pendingBlockIds.size === 0) {
+			return;
+		}
+		this.scheduleFlush();
 	}
 
 	private handleCommit(
@@ -131,11 +139,19 @@ export class SessionReconciler {
 	}
 
 	private scheduleFlush(): void {
-		if (this.scheduledFrame !== null) {
+		if (this.destroyed || this.scheduledWrite) {
 			return;
 		}
-		this.scheduledFrame = requestAnimationFrame(() => {
-			this.scheduledFrame = null;
+		const scheduler = this.options.getScheduler();
+		if (!scheduler) {
+			return;
+		}
+		this.scheduledWrite = true;
+		void scheduler.write(() => {
+			this.scheduledWrite = false;
+			if (this.destroyed) {
+				return;
+			}
 			this.flush();
 		});
 	}

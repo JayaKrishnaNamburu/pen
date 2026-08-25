@@ -38,12 +38,7 @@ afterEach(() => {
 
 const ARABIC = "مرحبا";
 
-function rect(
-	left: number,
-	top: number,
-	width: number,
-	height: number,
-): Rect {
+function rect(left: number, top: number, width: number, height: number): Rect {
 	return {
 		x: left,
 		y: top,
@@ -129,12 +124,12 @@ describe("GeometryReader G3", () => {
 		mountBlock(root, "p1", "", mockDOMRect(0, 0, 40, 16));
 		const reader = createReader(root);
 
-		expect(reader.caretRect({ blockId: "p1", offset: 0 }, "downstream")).toEqual(
-			collapsedRect(40, 0, 16),
-		);
-		expect(reader.caretRect({ blockId: "p1", offset: 0 }, "upstream")).toEqual(
-			collapsedRect(0, 0, 16),
-		);
+		expect(
+			reader.caretRect({ blockId: "p1", offset: 0 }, "downstream"),
+		).toEqual(collapsedRect(40, 0, 16));
+		expect(
+			reader.caretRect({ blockId: "p1", offset: 0 }, "upstream"),
+		).toEqual(collapsedRect(0, 0, 16));
 	});
 
 	it("G3: LineBox.runs on dir=rtl hosts uses odd embedding level", () => {
@@ -149,11 +144,14 @@ describe("GeometryReader G3", () => {
 			},
 		]);
 
-		expect(reader.caretRect({ blockId: "p1", offset: 0 }, "downstream")).toEqual(
-			collapsedRect(80, 0, 16),
-		);
 		expect(
-			reader.caretRect({ blockId: "p1", offset: ARABIC.length }, "upstream"),
+			reader.caretRect({ blockId: "p1", offset: 0 }, "downstream"),
+		).toEqual(collapsedRect(80, 0, 16));
+		expect(
+			reader.caretRect(
+				{ blockId: "p1", offset: ARABIC.length },
+				"upstream",
+			),
 		).toEqual(collapsedRect(0, 0, 16));
 	});
 
@@ -193,28 +191,35 @@ describe("GeometryReader G3", () => {
 		expect(
 			reader.caretRect({ blockId: "p1", offset: 5 }, "downstream"),
 		).toEqual(collapsedRect(0, 16, 16));
-		expect(reader.caretRect({ blockId: "p1", offset: 5 }, "upstream")).toEqual(
-			collapsedRect(100, 0, 16),
-		);
+		expect(
+			reader.caretRect({ blockId: "p1", offset: 5 }, "upstream"),
+		).toEqual(collapsedRect(100, 0, 16));
 	});
 
 	it("G3: measure.caretRect receives affinity and caches each side separately", () => {
 		const root = mountEditorRoot();
-		const caretRect = vi.fn((point: Point, affinity: "upstream" | "downstream") =>
-			affinity === "upstream" ? rect(8, 0, 0, 16) : rect(24, 0, 0, 16),
+		const caretRect = vi.fn(
+			(point: Point, affinity: "upstream" | "downstream") =>
+				affinity === "upstream"
+					? rect(8, 0, 0, 16)
+					: rect(24, 0, 0, 16),
 		);
 		const reader = createReader(root, {
 			measure: { caretRect },
 		});
 		const point: Point = { blockId: "p1", offset: 3 };
 
-		expect(reader.caretRect(point, "downstream")).toEqual(rect(24, 0, 0, 16));
+		expect(reader.caretRect(point, "downstream")).toEqual(
+			rect(24, 0, 0, 16),
+		);
 		expect(reader.caretRect(point, "upstream")).toEqual(rect(8, 0, 0, 16));
 		expect(caretRect).toHaveBeenCalledTimes(2);
 		expect(caretRect).toHaveBeenNthCalledWith(1, point, "downstream");
 		expect(caretRect).toHaveBeenNthCalledWith(2, point, "upstream");
 
-		expect(reader.caretRect(point, "downstream")).toEqual(rect(24, 0, 0, 16));
+		expect(reader.caretRect(point, "downstream")).toEqual(
+			rect(24, 0, 0, 16),
+		);
 		expect(reader.caretRect(point, "upstream")).toEqual(rect(8, 0, 0, 16));
 		expect(caretRect).toHaveBeenCalledTimes(2);
 	});

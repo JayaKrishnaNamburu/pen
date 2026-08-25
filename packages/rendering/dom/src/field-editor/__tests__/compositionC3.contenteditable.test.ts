@@ -35,7 +35,9 @@ function mountContentEditableEditor(text: string) {
 	root.setAttribute(DATA_ATTRS.editorRoot, "");
 	document.body.appendChild(root);
 	const blockId = editor.firstBlock()!.id;
-	editor.apply([{ type: "splice-text", blockId, from: 0, to: 0, insert: text }]);
+	editor.apply([
+		{ type: "splice-text", blockId, from: 0, to: 0, insert: text },
+	]);
 	const block = document.createElement("div");
 	block.setAttribute(DATA_ATTRS.editorBlock, "");
 	block.setAttribute(DATA_ATTRS.blockId, blockId);
@@ -52,9 +54,8 @@ function mountContentEditableEditor(text: string) {
 
 describe("C3 contenteditable compositionend", () => {
 	it("C3: authority has composed text before the next frame", () => {
-		const { editor, inline, blockId } = mountContentEditableEditor(
-			"Hello world",
-		);
+		const { editor, inline, blockId } =
+			mountContentEditableEditor("Hello world");
 		inline.dispatchEvent(
 			new CompositionEvent("compositionstart", { bubbles: true }),
 		);
@@ -73,9 +74,8 @@ describe("C3 contenteditable compositionend", () => {
 	});
 
 	it("C3: first commit survived the GBoard fast cycle", () => {
-		const { editor, inline, blockId } = mountContentEditableEditor(
-			"Hello world",
-		);
+		const { editor, inline, blockId } =
+			mountContentEditableEditor("Hello world");
 		inline.dispatchEvent(
 			new CompositionEvent("compositionstart", { bubbles: true }),
 		);

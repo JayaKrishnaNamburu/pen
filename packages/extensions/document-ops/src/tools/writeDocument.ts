@@ -1,4 +1,9 @@
-import type { Editor, Position, ToolDefinition } from "@input/pen-types";
+import type {
+  DocumentOp,
+  Editor,
+  Position,
+  ToolDefinition,
+} from "@input/pen-types";
 import type {
 	DocumentWriteBlockInput,
 	DocumentWriteFormat,
@@ -13,7 +18,7 @@ export function writeDocumentTool(editor: Editor): ToolDefinition {
   return {
     name: "write_document",
     description:
-      "Write or replace content in the document using text, markdown, or blocks.",
+      "Insert content written as text, markdown, or blocks. Pass replaceBlockIds to swap existing blocks for the new content in place; without it the content is only inserted at the given position.",
     mutating: true,
     destructive: true,
     inputSchema: {
@@ -36,6 +41,12 @@ export function writeDocumentTool(editor: Editor): ToolDefinition {
           },
         },
         position: POSITION_SCHEMA,
+        replaceBlockIds: {
+          type: "array",
+          items: { type: "string" },
+          description:
+            "Existing block ids the new content replaces. New content lands where the first replaced block was.",
+        },
       },
     },
     handler: async (input: unknown) => {
@@ -44,6 +55,7 @@ export function writeDocumentTool(editor: Editor): ToolDefinition {
         content?: string;
         blocks?: DocumentWriteBlockInput[];
         position?: Position;
+        replaceBlockIds?: string[];
       };
 
       if (!opts.content && (!opts.blocks || opts.blocks.length === 0)) {
@@ -60,20 +72,42 @@ export function writeDocumentTool(editor: Editor): ToolDefinition {
         }
       }
 
+      const replaceBlockIds = [...new Set(opts.replaceBlockIds ?? [])];
+      for (const blockId of replaceBlockIds) {
+        if (!editor.getBlock(blockId)) {
+          rejectToolCall(
+            editor,
+            `write_document cannot replace unknown block "${blockId}".`,
+            opts,
+          );
+        }
+      }
+
       const { ops } = buildDocumentWriteOps(editor, {
         format: opts.format,
         content: opts.content,
         blocks: opts.blocks,
-        position: opts.position ?? "last",
+        position:
+          opts.position ??
+          (replaceBlockIds.length > 0
+            ? { before: replaceBlockIds[0] }
+            : "last"),
         surface: "write-document",
       });
       const insertedIds = ops
         .filter((op) => op.type === "insert-block")
         .map((op) => op.blockId);
+      const allOps = [
+        ...ops,
+        ...replaceBlockIds.map(
+          (blockId) =>
+            ({ type: "delete-block", blockId }) satisfies DocumentOp,
+        ),
+      ];
 
-      applyValidatedOps(editor, ops, { origin: "ai" });
+      applyValidatedOps(editor, allOps, { origin: "ai" });
 
-      return { blockIds: insertedIds };
+      return { blockIds: insertedIds, replacedBlockIds: replaceBlockIds };
     },
   };
 }

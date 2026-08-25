@@ -133,6 +133,30 @@ function describeOutcome(generation: GenerationState | null): string {
 		return "Stopped.";
 	}
 
+	// A turn can fail after the model answered at length — an edit plan that
+	// did not parse leaves the document untouched. Report why rather than the
+	// character count, which reads like a success.
+	if (generation.status === "error" && generation.turnReason) {
+		return generation.turnReason;
+	}
+
+	const refusal = describeRefusal(generation);
+	if (refusal) {
+		return refusal;
+	}
+
+	const receiptStatus = generation.mutationReceipt?.status;
+	if (
+		receiptStatus === "staged_suggestions" ||
+		receiptStatus === "staged_review"
+	) {
+		const proposedCount =
+			generation.suggestionIds && generation.suggestionIds.length > 0
+				? generation.suggestionIds.length
+				: (generation.reviewItems?.length ?? 0);
+		return `Proposed ${proposedCount} changes — review in the editor`;
+	}
+
 	const toolNames = [
 		...new Set(
 			generation.steps
@@ -148,8 +172,34 @@ function describeOutcome(generation: GenerationState | null): string {
 
 	const writtenLength = generation.text.trim().length;
 	if (writtenLength > 0) {
-		return `Wrote ${writtenLength} characters into the document.`;
+		// On the tool channel the model's text is an answer, not an edit, so a
+		// turn that only talked wrote nothing — saying otherwise is how a request
+		// the model quietly declined reads as a success.
+		return generation.mutationReceipt?.status === "applied"
+			? `Wrote ${writtenLength} characters into the document.`
+			: "Answered without editing the document.";
 	}
 
 	return "No changes.";
+}
+
+/**
+ * A document tool can refuse part of what it was asked and hand the reason
+ * back to the model. Those turns still ran a tool, so reporting them as edits
+ * would hide the interesting half of the transcript.
+ */
+function describeRefusal(generation: GenerationState): string | null {
+	const reasons = generation.steps.flatMap((step) => {
+		const rejected = (step.output as { rejected?: unknown } | null)
+			?.rejected;
+		return Array.isArray(rejected)
+			? rejected.map((entry) => String((entry as { reason?: unknown }).reason))
+			: [];
+	});
+
+	if (reasons.length === 0) {
+		return null;
+	}
+
+	return `Refused ${reasons.length} operation(s): ${[...new Set(reasons)].join(" ")}`;
 }

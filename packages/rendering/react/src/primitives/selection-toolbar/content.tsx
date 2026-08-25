@@ -5,7 +5,7 @@ import type { Editor } from "@input/pen-types";
 import { useSelectionToolbarContext } from "./root";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { composeRefs } from "../../utils/composeRefs";
-import { DATA_ATTRS } from "../../utils/dataAttributes";
+import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 import { getAttachedFieldEditor } from "../../utils/fieldEditor";
 
 type Side = "top" | "bottom";

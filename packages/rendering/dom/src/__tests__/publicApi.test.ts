@@ -24,7 +24,6 @@ function collapsedTextSelection() {
 		type: "text" as const,
 		anchor: { blockId: "a", offset: 0 },
 		focus: { blockId: "a", offset: 0 },
-		blockRange: ["a"],
 	};
 }
 
@@ -33,7 +32,6 @@ function multiBlockTextSelection() {
 		type: "text" as const,
 		anchor: { blockId: "a", offset: 0 },
 		focus: { blockId: "b", offset: 1 },
-		blockRange: ["a", "b"],
 	};
 }
 
@@ -42,7 +40,6 @@ function expandedTextSelection() {
 		type: "text" as const,
 		anchor: { blockId: "a", offset: 0 },
 		focus: { blockId: "a", offset: 3 },
-		blockRange: ["a"],
 	};
 }
 

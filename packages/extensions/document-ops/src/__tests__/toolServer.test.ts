@@ -200,6 +200,7 @@ describe("@input/pen-document-ops ToolRuntimeImpl", () => {
 			},
 			schema: {
 				resolve: () => null,
+				allInlines: () => [],
 			},
 		} as never;
 		const extension = documentOpsExtension();

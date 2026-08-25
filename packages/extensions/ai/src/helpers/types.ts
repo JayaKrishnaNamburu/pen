@@ -41,6 +41,8 @@ export interface GenerationExecutionContext {
 	sessionId?: string;
 	surface?: AISurface;
 	targetType?: GenerationTarget["type"];
+	/** "document" when the prompt may edit anywhere, not just around the anchor block. */
+	scope?: "document" | "block";
 	operation?: AIRequestedOperation | null;
 	replaceTargetBlock?: boolean;
 	replaceBlockIds?: string[];

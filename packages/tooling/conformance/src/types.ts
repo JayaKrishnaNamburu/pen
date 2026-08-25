@@ -16,7 +16,7 @@ export type SerializedTextSelection = {
 	focus: LogicalPoint;
 	/**
 	 * Serialize-time snapshot from `@input/pen-core`'s `isCollapsed()`.
-	 * Not the live `TextSelection` field Wave 5.1 is removing.
+	 * Not a live `TextSelection` field.
 	 */
 	isCollapsed: boolean;
 };
@@ -322,6 +322,19 @@ export type PenConformanceBridge = {
 	installBrokenProjector(): void;
 	forceUnwindowedDomDivergence(): ForcedDomDivergence;
 	domMatchesAuthority(): DomAuthorityCheck;
+	/** CS10: call `domSelectionToEditor` on a page-owned root. */
+	mapDomSelection(root: HTMLElement): {
+		anchor: LogicalPoint;
+		focus: LogicalPoint;
+	} | null;
+	/** CS10: call `editorSelectionToDOM` on a page-owned root. */
+	projectSelectionToDom(
+		root: HTMLElement,
+		anchor: LogicalPoint,
+		focus: LogicalPoint,
+	): void;
+	/** CS10: mount the same one-paragraph probe the jsdom tests used. */
+	mountSelectionProbe(text: string, blockId: string): HTMLElement;
 	applyAiRangeReplacement(args: {
 		start: { blockId: string; offset: number };
 		end: { blockId: string; offset: number };

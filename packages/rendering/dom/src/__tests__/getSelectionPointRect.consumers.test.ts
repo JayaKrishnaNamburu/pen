@@ -65,7 +65,10 @@ describe("Wave 03 selection-point-rect consumers", () => {
 	});
 
 	it("the field-editor barrel and package index do not re-export the symbol", () => {
-		const barrel = readFileSync(join(DOM_SRC, "field-editor/index.ts"), "utf8");
+		const barrel = readFileSync(
+			join(DOM_SRC, "field-editor/index.ts"),
+			"utf8",
+		);
 		const index = readFileSync(join(DOM_SRC, "index.ts"), "utf8");
 		expect(barrel.includes(SYMBOL)).toBe(false);
 		expect(index.includes(SYMBOL)).toBe(false);

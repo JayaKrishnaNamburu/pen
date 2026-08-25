@@ -55,7 +55,9 @@ describe("@input/pen-react slash menu", () => {
 
 		editor.apply([
 			{
-				type: "set-props", blockId: toggleBlockId, props: { type: "toggle", ...{ open: true  }},
+				type: "set-props",
+				blockId: toggleBlockId,
+				props: { type: "toggle", ...{ open: true } },
 			},
 			{
 				type: "splice-text",

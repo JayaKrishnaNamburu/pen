@@ -15,7 +15,11 @@ export function computeDocumentPlaceholderVisible(editor: Editor): boolean {
 	const block = editor.getBlock(blockOrder[0]);
 	if (!block) return true;
 	const schema = editor.schema.resolve(block.type);
-	if (!schema || schema.content !== "inline" || schema.fieldEditor === "none") {
+	if (
+		!schema ||
+		schema.content !== "inline" ||
+		schema.fieldEditor === "none"
+	) {
 		return false;
 	}
 	return isInlineContentEmpty(block.inlineDeltas());

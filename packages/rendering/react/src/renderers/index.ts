@@ -1,4 +1,8 @@
-import type { BlockHandle, BlockRenderContext, BlockRenderer } from "@input/pen-types";
+import type {
+	BlockHandle,
+	BlockRenderContext,
+	BlockRenderer,
+} from "@input/pen-types";
 import { ParagraphRenderer } from "./paragraph";
 import { HeadingRenderer } from "./heading";
 import { BulletListItemRenderer } from "./bulletListItem";
@@ -15,46 +19,45 @@ import { SubdocumentRenderer } from "./subdocument";
 import { DefaultRenderer } from "./defaultRenderer";
 
 const RENDERER_MAP: Record<string, BlockRenderer> = {
-  paragraph: ParagraphRenderer,
-  heading: HeadingRenderer,
-  bulletListItem: BulletListItemRenderer,
-  numberedListItem: NumberedListItemRenderer,
-  checkListItem: CheckListItemRenderer,
-  codeBlock: CodeBlockRenderer,
-  image: ImageRenderer,
-  table: TableRenderer,
-  divider: DividerRenderer,
-  callout: CalloutRenderer,
-  toggle: ToggleRenderer,
-  blockquote: BlockquoteRenderer,
-  subdocument: SubdocumentRenderer,
+	paragraph: ParagraphRenderer,
+	heading: HeadingRenderer,
+	bulletListItem: BulletListItemRenderer,
+	numberedListItem: NumberedListItemRenderer,
+	checkListItem: CheckListItemRenderer,
+	codeBlock: CodeBlockRenderer,
+	image: ImageRenderer,
+	table: TableRenderer,
+	divider: DividerRenderer,
+	callout: CalloutRenderer,
+	toggle: ToggleRenderer,
+	blockquote: BlockquoteRenderer,
+	subdocument: SubdocumentRenderer,
 };
 
 export function resolveRenderer(blockType: string): BlockRenderer {
-  return RENDERER_MAP[blockType] ?? DefaultRenderer;
+	return RENDERER_MAP[blockType] ?? DefaultRenderer;
 }
 
 export function registerRenderer(
-  blockType: string,
-  renderer: BlockRenderer,
+	blockType: string,
+	renderer: BlockRenderer,
 ): void {
-  RENDERER_MAP[blockType] = renderer;
+	RENDERER_MAP[blockType] = renderer;
 }
 
 export {
-  ParagraphRenderer,
-  HeadingRenderer,
-  BulletListItemRenderer,
-  NumberedListItemRenderer,
-  CheckListItemRenderer,
-  CodeBlockRenderer,
-  ImageRenderer,
-  TableRenderer,
-  DividerRenderer,
-  CalloutRenderer,
-  ToggleRenderer,
-  BlockquoteRenderer,
-  SubdocumentRenderer,
-  DefaultRenderer,
+	ParagraphRenderer,
+	HeadingRenderer,
+	BulletListItemRenderer,
+	NumberedListItemRenderer,
+	CheckListItemRenderer,
+	CodeBlockRenderer,
+	ImageRenderer,
+	TableRenderer,
+	DividerRenderer,
+	CalloutRenderer,
+	ToggleRenderer,
+	BlockquoteRenderer,
+	SubdocumentRenderer,
+	DefaultRenderer,
 };
-

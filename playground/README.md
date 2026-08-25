@@ -19,7 +19,7 @@ Open http://localhost:5173. The agent works immediately: with no API key a
 scripted model answers, so you can see the whole path without signing up for
 anything.
 
-For real answers, open the agent's ⋯ menu and paste an Anthropic API key.
+For real answers, click the Anthropic mark in the agent bar and paste an API key.
 It stays in this browser. Or write it to `playground/.env.local` and restart:
 
 ```bash

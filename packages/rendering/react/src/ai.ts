@@ -70,7 +70,12 @@ export {
 	type UseContextualPromptPlacementOptions,
 } from "./primitives/ai/index";
 export { useAI } from "./hooks/useAI";
-export { useAIDebugLog, type AIDebugLogEntry, type AIDebugLogFastApplyMetrics, type AIDebugLogState } from "./hooks/useAIDebugLog";
+export {
+	useAIDebugLog,
+	type AIDebugLogEntry,
+	type AIDebugLogFastApplyMetrics,
+	type AIDebugLogState,
+} from "./hooks/useAIDebugLog";
 export { useAISessions } from "./hooks/useAISessions";
 export { useActiveAISession } from "./hooks/useActiveAISession";
 export {

@@ -15,7 +15,8 @@ import { defaultSchema } from "@input/pen-schema-default";
 describe("@input/pen-react search primitives a11y", () => {
 	it("AX3: find UI exposes a search landmark and labeled inputs", async () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [searchExtension()],
+			schema: defaultSchema,
+			extensions: [searchExtension()],
 		});
 		const container = document.createElement("div");
 		document.body.appendChild(container);
@@ -55,17 +56,23 @@ describe("@input/pen-react search primitives a11y", () => {
 
 		expect(
 			container
-				.querySelector("[data-pen-search-navigation][data-option='previous']")
+				.querySelector(
+					"[data-pen-search-navigation][data-option='previous']",
+				)
 				?.getAttribute("aria-label"),
 		).toBe("Previous match");
 		expect(
 			container
-				.querySelector("[data-pen-search-navigation][data-option='next']")
+				.querySelector(
+					"[data-pen-search-navigation][data-option='next']",
+				)
 				?.getAttribute("aria-label"),
 		).toBe("Next match");
 		expect(
 			container
-				.querySelector("[data-pen-search-replace-button][data-action='replace']")
+				.querySelector(
+					"[data-pen-search-replace-button][data-action='replace']",
+				)
 				?.getAttribute("aria-label"),
 		).toBe("Replace match");
 		expect(
@@ -77,12 +84,16 @@ describe("@input/pen-react search primitives a11y", () => {
 		).toBe("Replace all matches");
 		expect(
 			container
-				.querySelector("[data-pen-search-toggle][data-option='case-sensitive']")
+				.querySelector(
+					"[data-pen-search-toggle][data-option='case-sensitive']",
+				)
 				?.getAttribute("aria-label"),
 		).toBe("Toggle case-sensitive search");
 		expect(
 			container
-				.querySelector("[data-pen-search-toggle][data-option='whole-word']")
+				.querySelector(
+					"[data-pen-search-toggle][data-option='whole-word']",
+				)
 				?.getAttribute("aria-label"),
 		).toBe("Toggle whole-word search");
 		expect(

@@ -43,9 +43,10 @@ export interface RenderAIChangeListItemsArgs {
 	setActiveReviewTargetId(targetId: string | null): void;
 }
 
-export function renderAIChangeListItems(
-	args: RenderAIChangeListItemsArgs,
-): { nodes: React.ReactNode[]; reviewFocusTargets: ReviewFocusTarget[] } {
+export function renderAIChangeListItems(args: RenderAIChangeListItemsArgs): {
+	nodes: React.ReactNode[];
+	reviewFocusTargets: ReviewFocusTarget[];
+} {
 	const {
 		editor,
 		suggestions,
@@ -68,10 +69,12 @@ export function renderAIChangeListItems(
 		const block = editor.getBlock(suggestion.blockId);
 		const text =
 			suggestion.kind === "text"
-				? (block?.textContent().slice(
-						suggestion.offset,
-						suggestion.offset + suggestion.length,
-					) ?? "")
+				? (block
+						?.textContent()
+						.slice(
+							suggestion.offset,
+							suggestion.offset + suggestion.length,
+						) ?? "")
 				: describeBlockSuggestion(
 						editor,
 						suggestion.action,
@@ -121,7 +124,10 @@ export function renderAIChangeListItems(
 	});
 
 	const structuralReviewGroupNodes = structuralReviewGroups.map((group) => {
-		const groupRollups = summarizeStructuralReviewGroup(editor, group.items);
+		const groupRollups = summarizeStructuralReviewGroup(
+			editor,
+			group.items,
+		);
 		const subgroups = groupStructuralReviewSubgroups(editor, group.items);
 		const groupItemIds = group.items.map((item) => item.id);
 		const groupFocusTargetId = createReviewGroupFocusTargetId(group.id);
@@ -149,16 +155,22 @@ export function renderAIChangeListItems(
 				<span data-review-group-kind-rollup-count>{rollup.count}</span>
 			</span>
 		));
-		const groupSectionRollupNodes = groupRollups.sectionRollups.map((rollup) => (
-			<span
-				key={`${group.id}:section:${rollup.id}`}
-				data-review-group-section-rollup=""
-				data-review-group-section-rollup-id={rollup.id}
-			>
-				<span data-review-group-section-rollup-label>{rollup.label}</span>
-				<span data-review-group-section-rollup-count>{rollup.count}</span>
-			</span>
-		));
+		const groupSectionRollupNodes = groupRollups.sectionRollups.map(
+			(rollup) => (
+				<span
+					key={`${group.id}:section:${rollup.id}`}
+					data-review-group-section-rollup=""
+					data-review-group-section-rollup-id={rollup.id}
+				>
+					<span data-review-group-section-rollup-label>
+						{rollup.label}
+					</span>
+					<span data-review-group-section-rollup-count>
+						{rollup.count}
+					</span>
+				</span>
+			),
+		);
 		const groupActionNodes = (
 			<div data-review-group-actions>
 				<button
@@ -206,11 +218,17 @@ export function renderAIChangeListItems(
 				expand: isExpanded
 					? undefined
 					: () => {
-							toggleSubgroupExpanded(subgroupKey, defaultExpanded);
+							toggleSubgroupExpanded(
+								subgroupKey,
+								defaultExpanded,
+							);
 						},
 				collapse: isExpanded
 					? () => {
-							toggleSubgroupExpanded(subgroupKey, defaultExpanded);
+							toggleSubgroupExpanded(
+								subgroupKey,
+								defaultExpanded,
+							);
 						}
 					: undefined,
 				accept: () => {
@@ -230,7 +248,9 @@ export function renderAIChangeListItems(
 						type="button"
 						data-review-subgroup-toggle=""
 						onMouseDown={preventEditorBlur}
-						onClick={() => toggleSubgroupExpanded(subgroupKey, defaultExpanded)}
+						onClick={() =>
+							toggleSubgroupExpanded(subgroupKey, defaultExpanded)
+						}
 					>
 						{subgroupToggleLabel}
 					</button>
@@ -239,30 +259,45 @@ export function renderAIChangeListItems(
 						data-review-subgroup-button=""
 						disabled={!canApplyReviewActions}
 						onMouseDown={preventEditorBlur}
-						onClick={() => acceptReviewItemsAndStop(subgroupItemIds)}
+						onClick={() =>
+							acceptReviewItemsAndStop(subgroupItemIds)
+						}
 					>
-						{resolveEditorMessage(editor, "pen.ai.review.acceptSubgroup")}
+						{resolveEditorMessage(
+							editor,
+							"pen.ai.review.acceptSubgroup",
+						)}
 					</button>
 					<button
 						type="button"
 						data-review-subgroup-button=""
 						disabled={!canApplyReviewActions}
 						onMouseDown={preventEditorBlur}
-						onClick={() => rejectReviewItemsAndStop(subgroupItemIds)}
+						onClick={() =>
+							rejectReviewItemsAndStop(subgroupItemIds)
+						}
 					>
-						{resolveEditorMessage(editor, "pen.ai.review.rejectSubgroup")}
+						{resolveEditorMessage(
+							editor,
+							"pen.ai.review.rejectSubgroup",
+						)}
 					</button>
 				</div>
 			);
 			const structuralReviewItemNodes = subgroup.items.map((item) => {
-				const itemFocusTargetId = createReviewItemFocusTargetId(item.id);
+				const itemFocusTargetId = createReviewItemFocusTargetId(
+					item.id,
+				);
 				if (isExpanded) {
 					reviewFocusTargets.push({
 						id: itemFocusTargetId,
 						type: "item",
 						parentId: subgroupFocusTargetId,
 						collapse: () => {
-							toggleSubgroupExpanded(subgroupKey, defaultExpanded);
+							toggleSubgroupExpanded(
+								subgroupKey,
+								defaultExpanded,
+							);
 						},
 						accept: () => {
 							if (canApplyReviewActions) {
@@ -285,48 +320,65 @@ export function renderAIChangeListItems(
 					editor,
 					comparisonRows,
 				);
-				const reviewItemComparisonSectionNodes = comparisonSections.map((section) => {
-					const reviewItemComparisonRowNodes = section.rows.map((row, index) => (
-						<div
-							key={`${item.id}:comparison:${section.id}:${index}`}
-							data-review-comparison-row=""
-							data-review-comparison-kind={row.changeKind}
-							data-review-comparison-section={row.section}
-						>
-							<span data-review-comparison-kind-label>
-								{formatReviewComparisonKindLabel(editor, row.changeKind)}
-							</span>
-							<span data-review-comparison-label>{row.label}</span>
-							{row.before != null ? (
-								<span data-review-comparison-before>{row.before}</span>
-							) : null}
-							{row.after != null ? (
-								<span data-review-comparison-after>{row.after}</span>
-							) : null}
-						</div>
-					));
+				const reviewItemComparisonSectionNodes = comparisonSections.map(
+					(section) => {
+						const reviewItemComparisonRowNodes = section.rows.map(
+							(row, index) => (
+								<div
+									key={`${item.id}:comparison:${section.id}:${index}`}
+									data-review-comparison-row=""
+									data-review-comparison-kind={row.changeKind}
+									data-review-comparison-section={row.section}
+								>
+									<span data-review-comparison-kind-label>
+										{formatReviewComparisonKindLabel(
+											editor,
+											row.changeKind,
+										)}
+									</span>
+									<span data-review-comparison-label>
+										{row.label}
+									</span>
+									{row.before != null ? (
+										<span data-review-comparison-before>
+											{row.before}
+										</span>
+									) : null}
+									{row.after != null ? (
+										<span data-review-comparison-after>
+											{row.after}
+										</span>
+									) : null}
+								</div>
+							),
+						);
 
-					return (
-						<div
-							key={`${item.id}:section:${section.id}`}
-							data-review-comparison-section-group=""
-							data-review-comparison-section-id={section.id}
-						>
-							<div data-review-comparison-section-summary>
-								<span data-review-comparison-section-label>{section.label}</span>
-								<span data-review-comparison-section-count>
-									{section.rows.length}
-								</span>
+						return (
+							<div
+								key={`${item.id}:section:${section.id}`}
+								data-review-comparison-section-group=""
+								data-review-comparison-section-id={section.id}
+							>
+								<div data-review-comparison-section-summary>
+									<span data-review-comparison-section-label>
+										{section.label}
+									</span>
+									<span data-review-comparison-section-count>
+										{section.rows.length}
+									</span>
+								</div>
+								{reviewItemComparisonRowNodes}
 							</div>
-							{reviewItemComparisonRowNodes}
-						</div>
-					);
-				});
+						);
+					},
+				);
 				const reviewItemDiff =
 					item.before != null || item.after != null ? (
 						<div data-review-item-diff>
 							{item.before != null ? (
-								<span data-review-item-before>{item.before}</span>
+								<span data-review-item-before>
+									{item.before}
+								</span>
 							) : null}
 							{item.after != null ? (
 								<span data-review-item-after>{item.after}</span>
@@ -350,7 +402,9 @@ export function renderAIChangeListItems(
 						data-review-focus-target=""
 						data-review-focus-target-id={itemFocusTargetId}
 						data-review-focus-active={
-							activeReviewTargetId === itemFocusTargetId ? "" : undefined
+							activeReviewTargetId === itemFocusTargetId
+								? ""
+								: undefined
 						}
 						data-review-item=""
 					>
@@ -360,13 +414,21 @@ export function renderAIChangeListItems(
 						</div>
 						<div data-review-item-meta>
 							<span data-review-item-section-label>
-								{formatReviewItemSectionLabel(editor, item.section)}
+								{formatReviewItemSectionLabel(
+									editor,
+									item.section,
+								)}
 							</span>
 							<span data-review-item-kind-label>
-								{formatReviewItemKindLabel(editor, item.changeKind)}
+								{formatReviewItemKindLabel(
+									editor,
+									item.changeKind,
+								)}
 							</span>
 							{item.detail ? (
-								<span data-review-item-detail>{item.detail}</span>
+								<span data-review-item-detail>
+									{item.detail}
+								</span>
 							) : null}
 							{reviewItemPreview}
 						</div>
@@ -384,7 +446,10 @@ export function renderAIChangeListItems(
 								onMouseDown={preventEditorBlur}
 								onClick={() => acceptReviewItemAndStop(item.id)}
 							>
-								{resolveEditorMessage(editor, "pen.ai.review.accept")}
+								{resolveEditorMessage(
+									editor,
+									"pen.ai.review.accept",
+								)}
 							</button>
 							<button
 								type="button"
@@ -393,7 +458,10 @@ export function renderAIChangeListItems(
 								onMouseDown={preventEditorBlur}
 								onClick={() => rejectReviewItemAndStop(item.id)}
 							>
-								{resolveEditorMessage(editor, "pen.ai.review.reject")}
+								{resolveEditorMessage(
+									editor,
+									"pen.ai.review.reject",
+								)}
 							</button>
 						</div>
 					</div>
@@ -411,16 +479,22 @@ export function renderAIChangeListItems(
 					}}
 					data-review-subgroup=""
 					data-review-subgroup-id={subgroup.id}
-					data-review-subgroup-expanded={isExpanded ? "true" : "false"}
+					data-review-subgroup-expanded={
+						isExpanded ? "true" : "false"
+					}
 					data-review-focus-target=""
 					data-review-focus-target-id={subgroupFocusTargetId}
 					data-review-focus-active={
-						activeReviewTargetId === subgroupFocusTargetId ? "" : undefined
+						activeReviewTargetId === subgroupFocusTargetId
+							? ""
+							: undefined
 					}
 				>
 					<div data-review-subgroup-summary>
 						<span data-review-subgroup-label>{subgroup.label}</span>
-						<span data-review-subgroup-count>{subgroup.items.length}</span>
+						<span data-review-subgroup-count>
+							{subgroup.items.length}
+						</span>
 					</div>
 					{subgroupActionNodes}
 					{isExpanded ? structuralReviewItemNodes : null}
@@ -450,10 +524,14 @@ export function renderAIChangeListItems(
 					<span data-review-group-count>{group.items.length}</span>
 				</div>
 				{groupKindRollupNodes.length > 0 ? (
-					<div data-review-group-kind-rollups>{groupKindRollupNodes}</div>
+					<div data-review-group-kind-rollups>
+						{groupKindRollupNodes}
+					</div>
 				) : null}
 				{groupSectionRollupNodes.length > 0 ? (
-					<div data-review-group-section-rollups>{groupSectionRollupNodes}</div>
+					<div data-review-group-section-rollups>
+						{groupSectionRollupNodes}
+					</div>
 				) : null}
 				{groupActionNodes}
 				{structuralReviewSubgroupNodes}

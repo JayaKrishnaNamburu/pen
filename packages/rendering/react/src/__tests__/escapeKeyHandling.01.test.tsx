@@ -66,9 +66,13 @@ describe("@input/pen-react escape key handling", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
+			{
+				type: "splice-text",
+				blockId,
+				from: 0,
 				to: 0,
-				insert: "Hello world" },
+				insert: "Hello world",
+			},
 		]);
 
 		const container = document.createElement("div");
@@ -117,7 +121,6 @@ describe("@input/pen-react escape key handling", () => {
 			type: "text",
 			anchor: { blockId, offset: 5 },
 			focus: { blockId, offset: 2 },
-			isCollapsed: false,
 		});
 		expect(domSelectionToEditor(rootElement!)).toMatchObject({
 			anchor: { blockId, offset: 5 },
@@ -136,7 +139,6 @@ describe("@input/pen-react escape key handling", () => {
 			type: "text",
 			anchor: { blockId, offset: 2 },
 			focus: { blockId, offset: 2 },
-			isCollapsed: true,
 		});
 		expect(domSelectionToEditor(rootElement!)).toMatchObject({
 			anchor: { blockId, offset: 2 },
@@ -155,9 +157,13 @@ describe("@input/pen-react escape key handling", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
+			{
+				type: "splice-text",
+				blockId,
+				from: 0,
 				to: 0,
-				insert: "Hello world" },
+				insert: "Hello world",
+			},
 		]);
 
 		const container = document.createElement("div");
@@ -199,7 +205,6 @@ describe("@input/pen-react escape key handling", () => {
 			type: "text",
 			anchor: { blockId, offset: 0 },
 			focus: { blockId, offset: 5 },
-			isCollapsed: false,
 		});
 
 		await act(async () => {
@@ -211,7 +216,6 @@ describe("@input/pen-react escape key handling", () => {
 			type: "text",
 			anchor: { blockId, offset: 5 },
 			focus: { blockId, offset: 5 },
-			isCollapsed: true,
 		});
 		expect(domSelectionToEditor(rootElement!)).toMatchObject({
 			anchor: { blockId, offset: 5 },
@@ -258,9 +262,13 @@ describe("@input/pen-react escape key handling", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
+			{
+				type: "splice-text",
+				blockId,
+				from: 0,
 				to: 0,
-				insert: "Hello world" },
+				insert: "Hello world",
+			},
 		]);
 
 		const container = document.createElement("div");
@@ -313,7 +321,6 @@ describe("@input/pen-react escape key handling", () => {
 			type: "text",
 			anchor: { blockId, offset: 0 },
 			focus: { blockId, offset: 5 },
-			isCollapsed: false,
 		});
 		expect(fieldEditor.getSnapshot()).toMatchObject({
 			focusBlockId: blockId,

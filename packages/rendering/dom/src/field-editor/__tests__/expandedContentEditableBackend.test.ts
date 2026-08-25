@@ -90,7 +90,6 @@ describe("ExpandedContentEditableBackend handleBeforeInput enter", () => {
 		);
 		expect(editor.selection).toMatchObject({
 			type: "text",
-			isMultiBlock: true,
 		});
 
 		const fieldEditor = createFieldEditor(firstBlockId);
@@ -128,7 +127,6 @@ describe("ExpandedContentEditableBackend handleBeforeInput enter", () => {
 			expect(editor.getBlock(firstBlockId)?.textContent()).toBe("H\nrld");
 			expect(editor.selection).toMatchObject({
 				type: "text",
-				isMultiBlock: false,
 				anchor: { blockId: firstBlockId, offset: 2 },
 				focus: { blockId: firstBlockId, offset: 2 },
 			});
@@ -151,9 +149,7 @@ describe("ExpandedContentEditableBackend handleBeforeInput enter", () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" },
 		]);
 		editor.selectText(blockId, 2, 2);
 
@@ -212,9 +208,7 @@ describe("ExpandedContentEditableBackend handleBeforeInput enter", () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" },
 		]);
 		editor.selectText(blockId, 2, 2);
 

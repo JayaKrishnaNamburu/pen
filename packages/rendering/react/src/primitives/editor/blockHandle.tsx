@@ -6,7 +6,7 @@ import { useIsomorphicLayoutEffect } from "../../hooks/useIsomorphicLayoutEffect
 import { useBlockDragHandle } from "../../hooks/useBlockDragHandle";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { composeRefs } from "../../utils/composeRefs";
-import { DATA_ATTRS } from "../../utils/dataAttributes";
+import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 import { buildMoveBlockOps } from "./blockDragSession";
 
 /** Wave 4 command name (`spec-v2/05-commands.md`). Menu items dispatch this even when the command is not wired. */
@@ -188,7 +188,10 @@ export function EditorBlockHandle(props: BlockHandleProps) {
 					ref={menuRef}
 					id={menuId}
 					role="menu"
-					aria-label={resolveEditorMessage(editor, "pen.blockHandle.reorder")}
+					aria-label={resolveEditorMessage(
+						editor,
+						"pen.blockHandle.reorder",
+					)}
 					aria-orientation="vertical"
 					data-pen-block-handle-menu=""
 					onKeyDown={handleMenuKeyDown}

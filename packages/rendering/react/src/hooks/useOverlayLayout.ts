@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { DATA_ATTRS } from "../utils/dataAttributes";
+import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 import { useIsomorphicLayoutEffect } from "./useIsomorphicLayoutEffect";
 
 export function useOverlayLayout<T extends HTMLElement>(

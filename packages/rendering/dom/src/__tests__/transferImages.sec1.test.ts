@@ -46,7 +46,9 @@ describe("SEC1 transfer image src", () => {
 				scheme: "javascript:",
 			}),
 		);
-		expect(JSON.stringify(diagnostics)).not.toContain("javascript:alert(1)");
+		expect(JSON.stringify(diagnostics)).not.toContain(
+			"javascript:alert(1)",
+		);
 
 		editor.destroy();
 	});

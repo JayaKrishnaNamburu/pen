@@ -82,14 +82,6 @@
 			"reason": "DOM geometry with no react import; candidate for @input/pen-dom"
 		},
 		{
-			"file": "packages/rendering/react/src/primitives/editor/inlineAtomInteraction.ts",
-			"reason": "Inline-atom pointer interaction leftover; candidate for @input/pen-dom"
-		},
-		{
-			"file": "packages/rendering/react/src/primitives/editor/inlineAtomSelectionInteraction.ts",
-			"reason": "Inline-atom selection leftover; candidate for @input/pen-dom"
-		},
-		{
 			"file": "packages/rendering/react/src/primitives/editor/inlineAtomTargets.ts",
 			"reason": "Inline-atom target reconcile leftover; candidate for @input/pen-dom"
 		},

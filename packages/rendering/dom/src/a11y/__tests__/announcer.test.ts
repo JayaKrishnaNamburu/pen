@@ -38,7 +38,9 @@ describe("createAnnouncer (AX2)", () => {
 		expect(region?.getAttribute("aria-live")).toBe("polite");
 		// ARIA boolean: literal "true". `aria-atomic=""` is invalid.
 		expect(region?.getAttribute("aria-atomic")).toBe("true");
-		expect(document.body.querySelectorAll('[role="status"]').length).toBe(1);
+		expect(document.body.querySelectorAll('[role="status"]').length).toBe(
+			1,
+		);
 	});
 
 	it("AX2: live region is visually hidden", () => {
@@ -72,8 +74,16 @@ describe("createAnnouncer (AX2)", () => {
 		vi.useFakeTimers();
 		const announcer = mount();
 
-		announcer.announce("3 blocks selected", "polite", "blockSelectionChanged");
-		announcer.announce("4 blocks selected", "polite", "blockSelectionChanged");
+		announcer.announce(
+			"3 blocks selected",
+			"polite",
+			"blockSelectionChanged",
+		);
+		announcer.announce(
+			"4 blocks selected",
+			"polite",
+			"blockSelectionChanged",
+		);
 
 		expect(liveRegion()?.textContent).toBe("3 blocks selected");
 
@@ -85,9 +95,21 @@ describe("createAnnouncer (AX2)", () => {
 		vi.useFakeTimers();
 		const announcer = mount();
 
-		announcer.announce("3 blocks selected", "polite", "blockSelectionChanged");
-		announcer.announce("4 blocks selected", "polite", "blockSelectionChanged");
-		announcer.announce("5 blocks selected", "polite", "blockSelectionChanged");
+		announcer.announce(
+			"3 blocks selected",
+			"polite",
+			"blockSelectionChanged",
+		);
+		announcer.announce(
+			"4 blocks selected",
+			"polite",
+			"blockSelectionChanged",
+		);
+		announcer.announce(
+			"5 blocks selected",
+			"polite",
+			"blockSelectionChanged",
+		);
 
 		expect(liveRegion()?.textContent).toBe("3 blocks selected");
 
@@ -99,7 +121,11 @@ describe("createAnnouncer (AX2)", () => {
 		const announcer = mount();
 
 		announcer.announce("Streaming started", "polite", "streamingStarted");
-		announcer.announce("2 blocks selected", "polite", "blockSelectionChanged");
+		announcer.announce(
+			"2 blocks selected",
+			"polite",
+			"blockSelectionChanged",
+		);
 
 		expect(liveRegion()?.textContent).toBe("2 blocks selected");
 	});
@@ -130,8 +156,16 @@ describe("createAnnouncer (AX2)", () => {
 		vi.useFakeTimers();
 		const announcer = mount();
 
-		announcer.announce("3 blocks selected", "polite", "blockSelectionChanged");
-		announcer.announce("4 blocks selected", "polite", "blockSelectionChanged");
+		announcer.announce(
+			"3 blocks selected",
+			"polite",
+			"blockSelectionChanged",
+		);
+		announcer.announce(
+			"4 blocks selected",
+			"polite",
+			"blockSelectionChanged",
+		);
 		announcer.dispose();
 
 		expect(liveRegion()).toBeNull();

@@ -34,7 +34,9 @@ describe("syncFocusSink (AX1)", () => {
 		expect(sink.element.getAttribute(FOCUS_SINK_ATTR)).toBe("");
 		expect(sink.element.getAttribute("aria-hidden")).toBeNull();
 		expect(sink.element.getAttribute("role")).toBe("group");
-		expect(sink.element.getAttribute("aria-label")).toBe("3 blocks selected");
+		expect(sink.element.getAttribute("aria-label")).toBe(
+			"3 blocks selected",
+		);
 		editor.destroy();
 	});
 
@@ -66,12 +68,6 @@ describe("syncFocusSink (AX1)", () => {
 			type: "text",
 			anchor: { blockId: "a", offset: 0 },
 			focus: { blockId: "a", offset: 0 },
-			isCollapsed: true,
-			isMultiBlock: false,
-			blockRange: ["a"],
-			toRange: () => {
-				throw new Error("unused");
-			},
 		});
 
 		expect(sink.element.getAttribute("aria-hidden")).toBe("true");

@@ -6,7 +6,10 @@ import { useIsomorphicLayoutEffect } from "../../hooks/useIsomorphicLayoutEffect
 import { domSelectionToEditor } from "@input/pen-dom/field-editor";
 import { useAISessionActions } from "../../hooks/useAISessionActions";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
-import { resolvePromptHostElement, selectionMatchesSnapshot } from "./contextualPromptGeometry";
+import {
+	resolvePromptHostElement,
+	selectionMatchesSnapshot,
+} from "./contextualPromptGeometry";
 import { useContextualPromptSession } from "./contextualPromptPlacement";
 import { useAIContext } from "./root";
 
@@ -90,7 +93,8 @@ export function AIContextualPromptComposer(
 		return null;
 	}
 	const sessionId = session.id;
-	const selectionSnapshot = session.contextualPrompt?.anchor.selectionSnapshot ?? null;
+	const selectionSnapshot =
+		session.contextualPrompt?.anchor.selectionSnapshot ?? null;
 	const sessionLabel = resolveInlineSessionLabel(editor, session);
 	const [targetState, setTargetState] = React.useState<"active" | "pinned">(
 		"active",
@@ -118,14 +122,22 @@ export function AIContextualPromptComposer(
 	}
 
 	function handleAcceptTurn(turnId: string) {
-		const resolved = actions.resolveSessionTurn(sessionId, turnId, "accept");
+		const resolved = actions.resolveSessionTurn(
+			sessionId,
+			turnId,
+			"accept",
+		);
 		if (!resolved) {
 			actions.resolveSession(sessionId, "accept");
 		}
 	}
 
 	function handleRejectTurn(turnId: string) {
-		const resolved = actions.resolveSessionTurn(sessionId, turnId, "reject");
+		const resolved = actions.resolveSessionTurn(
+			sessionId,
+			turnId,
+			"reject",
+		);
 		if (!resolved) {
 			actions.resolveSession(sessionId, "reject");
 		}
@@ -192,12 +204,13 @@ export function AIContextualPromptComposer(
 
 		ownerDocument.addEventListener("keydown", handleDocumentKeyDown, true);
 		return () => {
-			ownerDocument.removeEventListener("keydown", handleDocumentKeyDown, true);
+			ownerDocument.removeEventListener(
+				"keydown",
+				handleDocumentKeyDown,
+				true,
+			);
 		};
-	}, [
-		handleDismiss,
-		session.contextualPrompt?.composer.isOpen,
-	]);
+	}, [handleDismiss, session.contextualPrompt?.composer.isOpen]);
 
 	React.useEffect(() => {
 		if (!session.contextualPrompt?.composer.isOpen) {
@@ -226,7 +239,8 @@ export function AIContextualPromptComposer(
 			const liveCommonAncestor =
 				liveRange?.commonAncestorContainer instanceof Element
 					? liveRange.commonAncestorContainer
-					: liveRange?.commonAncestorContainer?.parentElement ?? null;
+					: (liveRange?.commonAncestorContainer?.parentElement ??
+						null);
 			if (
 				nextTargetState === "pinned" &&
 				!hasSubmittedPrompt &&
@@ -246,9 +260,20 @@ export function AIContextualPromptComposer(
 		ownerDocument.addEventListener("focusin", updateTargetState, true);
 		ownerDocument.addEventListener("focusout", updateTargetState, true);
 		return () => {
-			ownerDocument.removeEventListener("selectionchange", updateTargetState);
-			ownerDocument.removeEventListener("focusin", updateTargetState, true);
-			ownerDocument.removeEventListener("focusout", updateTargetState, true);
+			ownerDocument.removeEventListener(
+				"selectionchange",
+				updateTargetState,
+			);
+			ownerDocument.removeEventListener(
+				"focusin",
+				updateTargetState,
+				true,
+			);
+			ownerDocument.removeEventListener(
+				"focusout",
+				updateTargetState,
+				true,
+			);
 		};
 	}, [
 		actions,
@@ -260,7 +285,8 @@ export function AIContextualPromptComposer(
 	]);
 
 	const turnItems = sessionTurns.map((turn) => {
-		const pendingChangeCount = turn.suggestionIds.length + turn.reviewItemIds.length;
+		const pendingChangeCount =
+			turn.suggestionIds.length + turn.reviewItemIds.length;
 		const isTurnRunning =
 			state.activeGeneration?.sessionId === sessionId &&
 			state.activeGeneration.turnId === turn.id &&
@@ -312,7 +338,10 @@ export function AIContextualPromptComposer(
 								onClick={() => handleAcceptTurn(turn.id)}
 								disabled={!canResolveTurn || isTurnRunning}
 							>
-								{resolveEditorMessage(editor, "pen.ai.review.accept")}
+								{resolveEditorMessage(
+									editor,
+									"pen.ai.review.accept",
+								)}
 							</button>
 							<button
 								type="button"
@@ -321,7 +350,10 @@ export function AIContextualPromptComposer(
 								onClick={() => handleRejectTurn(turn.id)}
 								disabled={!canResolveTurn}
 							>
-								{resolveEditorMessage(editor, "pen.ai.review.reject")}
+								{resolveEditorMessage(
+									editor,
+									"pen.ai.review.reject",
+								)}
 							</button>
 						</div>
 					) : null}
@@ -375,7 +407,10 @@ export function AIContextualPromptComposer(
 				value={draftPrompt}
 				onKeyDown={handleComposerKeyDown}
 				onChange={(event) =>
-					actions.updateContextualPromptDraft(sessionId, event.target.value)
+					actions.updateContextualPromptDraft(
+						sessionId,
+						event.target.value,
+					)
 				}
 			/>
 			<div
@@ -387,11 +422,20 @@ export function AIContextualPromptComposer(
 					type="submit"
 					data-pen-ai-inline-session-submit=""
 					onPointerDown={handleActionPointerDown}
-					disabled={draftPrompt.trim().length === 0 || isRunningCurrentSession}
+					disabled={
+						draftPrompt.trim().length === 0 ||
+						isRunningCurrentSession
+					}
 				>
 					{turnItems.length > 0
-						? resolveEditorMessage(editor, "pen.ai.session.followUp")
-						: resolveEditorMessage(editor, "pen.ai.session.runEdit")}
+						? resolveEditorMessage(
+								editor,
+								"pen.ai.session.followUp",
+							)
+						: resolveEditorMessage(
+								editor,
+								"pen.ai.session.runEdit",
+							)}
 				</button>
 			</div>
 		</form>
@@ -405,13 +449,9 @@ export function AIContextualPromptComposer(
 		children: props.children ?? defaultChildren,
 	};
 
-	return renderAsChild(
-		composerProps,
-		"div",
-		{
-			"data-pen-ai-contextual-prompt-composer": "",
-		},
-	);
+	return renderAsChild(composerProps, "div", {
+		"data-pen-ai-contextual-prompt-composer": "",
+	});
 }
 
 function resolveInlineSessionTurnStatusLabel(
@@ -459,7 +499,11 @@ function resolveInlineSessionTargetState(
 		return "active";
 	}
 	const activeElement = ownerDocument.activeElement;
-	if (promptElement && activeElement instanceof Node && promptElement.contains(activeElement)) {
+	if (
+		promptElement &&
+		activeElement instanceof Node &&
+		promptElement.contains(activeElement)
+	) {
 		return "active";
 	}
 	if (!hostElement) {
@@ -469,7 +513,9 @@ function resolveInlineSessionTargetState(
 	if (!domSelection) {
 		return "pinned";
 	}
-	return selectionMatchesSnapshot(domSelection, snapshot) ? "active" : "pinned";
+	return selectionMatchesSnapshot(domSelection, snapshot)
+		? "active"
+		: "pinned";
 }
 
 function resolveInlineSessionTargetHint(

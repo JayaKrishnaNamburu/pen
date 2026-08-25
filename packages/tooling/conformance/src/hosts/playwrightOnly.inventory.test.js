@@ -124,13 +124,14 @@ test("pnpm test is src/hosts/*.test.js; Playwright specs are a separate populati
 	// the same round will both be right and still collide here (48 -> 56 on
 	// 2026-08-24 was geometry/overlays staffing plus a concurrent selection
 	// spec; 56 -> 63 later the same day was a seven-lane round adding AX6,
-	// T3, T4, bidi, EM empty-blocks and two geometry specs at once). The
+	// T3, T4, bidi, EM empty-blocks and two geometry specs at once; 63 -> 64
+	// is CS10 moving getSelection engine-fidelity out of jsdom). The
 	// message states actual vs expected so the fix does not require
 	// re-deriving the count by hand.
 	// Derived into the message rather than written twice: the literal and the
 	// message had already drifted apart (56 asserted, "expected 55" reported),
 	// which is the one failure this message exists to prevent.
-	const expectedPlaywrightSpecs = 63;
+	const expectedPlaywrightSpecs = 64;
 	assert.equal(
 		playwrightSpecs.length,
 		expectedPlaywrightSpecs,

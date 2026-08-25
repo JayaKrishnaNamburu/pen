@@ -504,18 +504,8 @@ export function validateFlowPatchEditSemantics(
 		});
 	}
 
-	validateScopedBlockReference(
-		locator.anchorBefore,
-		`${path}.locator.anchorBefore`,
-		issues,
-		context,
-	);
-	validateScopedBlockReference(
-		locator.anchorAfter,
-		`${path}.locator.anchorAfter`,
-		issues,
-		context,
-	);
+	// anchorBefore/anchorAfter are text snippets inside the target block,
+	// not block references; the executor validates their placement.
 	validateKnownBlockType(
 		locator.expectedBlockType,
 		`${path}.locator.expectedBlockType`,

@@ -83,6 +83,8 @@
 - AIContextualPromptState
 - AIController
 - AIControllerState
+- AIEditChannel
+- AIEditStreaming
 - AIExecutionMode
 - AIExtensionConfig
 - AIExternalInlineTurnResult
@@ -90,6 +92,7 @@
 - AIInlineCompletionState
 - AIInlineHistoryController
 - AIInlineHistoryDirection
+- AIMutationPreference
 - AIMutationReceipt
 - AIMutationReceiptEvidence
 - AIMutationReceiptStatus

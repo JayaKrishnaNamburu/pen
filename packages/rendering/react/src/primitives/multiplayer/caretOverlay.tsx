@@ -1,9 +1,6 @@
 import React, { useContext } from "react";
 import { measureWithRoot, type Rect } from "@input/pen-dom";
-import type {
-	PeerState,
-	RemoteCursorState,
-} from "@input/pen-multiplayer";
+import type { PeerState, RemoteCursorState } from "@input/pen-multiplayer";
 import type { Editor } from "@input/pen-types";
 import { EditorContext } from "../../context/editorContext";
 import { useMultiplayer } from "../../hooks/useMultiplayer";
@@ -27,15 +24,8 @@ export interface MultiplayerCaretOverlayProps extends AsChildProps {
 	ref?: React.Ref<HTMLElement>;
 }
 
-export function MultiplayerCaretOverlay(
-	props: MultiplayerCaretOverlayProps,
-) {
-	const {
-		editor: editorProp,
-		renderCaret,
-		renderLabel,
-		...rest
-	} = props;
+export function MultiplayerCaretOverlay(props: MultiplayerCaretOverlayProps) {
+	const { editor: editorProp, renderCaret, renderLabel, ...rest } = props;
 	const editorContext = useContext(EditorContext);
 	const editor = editorProp ?? editorContext?.editor;
 
@@ -74,25 +64,22 @@ export function MultiplayerCaretOverlay(
 			peerMap.get(cursor.clientId) ?? null,
 			rect,
 		);
-		const caretNode = renderCaret
-			? renderCaret(renderProps)
-			: (
-				<div
-					{...renderProps.attributes}
-					style={renderProps.caretStyle}
-				/>
-			);
-		const labelNode = renderLabel
-			? renderLabel(renderProps)
-			: (
-				<div
-					{...renderProps.attributes}
-					data-pen-multiplayer-caret-label=""
-					style={renderProps.labelStyle}
-				>
-					{cursor.user.name}
-				</div>
-			);
+		const caretNode = renderCaret ? (
+			renderCaret(renderProps)
+		) : (
+			<div {...renderProps.attributes} style={renderProps.caretStyle} />
+		);
+		const labelNode = renderLabel ? (
+			renderLabel(renderProps)
+		) : (
+			<div
+				{...renderProps.attributes}
+				data-pen-multiplayer-caret-label=""
+				style={renderProps.labelStyle}
+			>
+				{cursor.user.name}
+			</div>
+		);
 
 		overlayItems.push(
 			<React.Fragment

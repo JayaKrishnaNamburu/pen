@@ -52,24 +52,27 @@ export function AICommandMenu(props: AICommandMenuProps) {
 	const allCommands = controller?.getCommands() ?? [];
 	const locale = editor.facet(localeFacet);
 	const foldedFilter = foldAndNormalize(filter.trim(), locale);
-	const commands = foldedFilter.length === 0
-		? allCommands
-		: allCommands.filter((command) => {
-				const haystack = foldAndNormalize(
-					[command.label, command.description, command.group]
-						.filter(Boolean)
-						.join(" "),
-					locale,
-				);
-				return haystack.includes(foldedFilter);
-			});
-	const activeIndex = commands.length === 0
-		? 0
-		: Math.min(selectedIndex, commands.length - 1);
+	const commands =
+		foldedFilter.length === 0
+			? allCommands
+			: allCommands.filter((command) => {
+					const haystack = foldAndNormalize(
+						[command.label, command.description, command.group]
+							.filter(Boolean)
+							.join(" "),
+						locale,
+					);
+					return haystack.includes(foldedFilter);
+				});
+	const activeIndex =
+		commands.length === 0
+			? 0
+			: Math.min(selectedIndex, commands.length - 1);
 	const getOptionId = (index: number) => commandOptionId(listId, index);
-	const activeOptionId = state.commandMenuOpen && commands.length > 0
-		? getOptionId(activeIndex)
-		: undefined;
+	const activeOptionId =
+		state.commandMenuOpen && commands.length > 0
+			? getOptionId(activeIndex)
+			: undefined;
 
 	function updateFilter(value: string) {
 		setFilter(value);
@@ -167,17 +170,13 @@ export function AICommandMenu(props: AICommandMenuProps) {
 				open: state.commandMenuOpen,
 			}}
 		>
-			{renderAsChild(
-				menuProps,
-				"div",
-				{
-					"data-pen-ai-command-menu": "",
-					"data-open": state.commandMenuOpen ? "" : undefined,
-					"data-block-id": commandContext?.blockId ?? undefined,
-					role: "menu",
-					"aria-activedescendant": activeOptionId,
-				},
-			)}
+			{renderAsChild(menuProps, "div", {
+				"data-pen-ai-command-menu": "",
+				"data-open": state.commandMenuOpen ? "" : undefined,
+				"data-block-id": commandContext?.blockId ?? undefined,
+				role: "menu",
+				"aria-activedescendant": activeOptionId,
+			})}
 		</CommandMenuContext.Provider>
 	);
 }
@@ -200,23 +199,19 @@ export function AICommandInput(props: AICommandInputProps) {
 		onChange: (event: React.ChangeEvent<HTMLInputElement>) =>
 			setFilter(event.target.value),
 	};
-	return renderAsChild(
-		inputProps,
-		"input",
-		{
-			type: "text",
-			role: "combobox",
-			"aria-autocomplete": "list",
-			"aria-controls": listId,
-			"aria-expanded": open,
-			"aria-activedescendant": activeOptionId,
-			placeholder: resolveEditorMessage(
-				editor,
-				"pen.ai.commandMenu.placeholder",
-			),
-			"data-pen-ai-command-input": "",
-		},
-	);
+	return renderAsChild(inputProps, "input", {
+		type: "text",
+		role: "combobox",
+		"aria-autocomplete": "list",
+		"aria-controls": listId,
+		"aria-expanded": open,
+		"aria-activedescendant": activeOptionId,
+		placeholder: resolveEditorMessage(
+			editor,
+			"pen.ai.commandMenu.placeholder",
+		),
+		"data-pen-ai-command-input": "",
+	});
 }
 
 export interface AICommandListProps extends AsChildProps {
@@ -239,7 +234,10 @@ export function AICommandList(props: AICommandListProps) {
 		{
 			id: listId,
 			role: "listbox",
-			"aria-label": resolveEditorMessage(editor, "pen.ai.commandMenu.label"),
+			"aria-label": resolveEditorMessage(
+				editor,
+				"pen.ai.commandMenu.label",
+			),
 			"aria-activedescendant": activeOptionId,
 			"data-pen-ai-command-list": "",
 		},
@@ -275,18 +273,14 @@ export function AICommandItem(props: AICommandItemProps) {
 		children: props.children ?? command.label,
 	};
 
-	return renderAsChild(
-		itemProps,
-		"div",
-		{
-			id: optionId,
-			role: "option",
-			tabIndex: -1,
-			"aria-selected": isSelected,
-			"data-pen-ai-command-item": "",
-			"data-command-id": command.id,
-			"data-command-group": command.group ?? undefined,
-			"data-selected": isSelected ? "" : undefined,
-		},
-	);
+	return renderAsChild(itemProps, "div", {
+		id: optionId,
+		role: "option",
+		tabIndex: -1,
+		"aria-selected": isSelected,
+		"data-pen-ai-command-item": "",
+		"data-command-id": command.id,
+		"data-command-group": command.group ?? undefined,
+		"data-selected": isSelected ? "" : undefined,
+	});
 }

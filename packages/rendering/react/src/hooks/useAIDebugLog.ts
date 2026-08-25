@@ -53,18 +53,22 @@ export function useAIDebugLog(
 	const suggestions = useSuggestions(editor);
 
 	return useMemo(() => {
-		const pendingReviewItemCount = aiState.activeGeneration?.reviewItems?.length ?? 0;
+		const pendingReviewItemCount =
+			aiState.activeGeneration?.reviewItems?.length ?? 0;
 		const entries = streamEvents.map((event, index) =>
 			buildDebugLogEntry(event, index),
 		);
 		const fastApplySession =
 			sessions.find((session) =>
-				options.sessionId ? session.id === options.sessionId : session.id === activeSession?.id,
+				options.sessionId
+					? session.id === options.sessionId
+					: session.id === activeSession?.id,
 			) ?? null;
 		const aggregateFastApply = sessions.reduce<AIDebugLogFastApplyMetrics>(
 			(accumulator, session) => ({
 				attemptCount:
-					accumulator.attemptCount + session.metrics.fastApply.attemptCount,
+					accumulator.attemptCount +
+					session.metrics.fastApply.attemptCount,
 				nativeFastApplyCount:
 					accumulator.nativeFastApplyCount +
 					session.metrics.fastApply.nativeFastApplyCount,
@@ -75,7 +79,8 @@ export function useAIDebugLog(
 					accumulator.plainMarkdownCount +
 					session.metrics.fastApply.plainMarkdownCount,
 				failedCount:
-					accumulator.failedCount + session.metrics.fastApply.failedCount,
+					accumulator.failedCount +
+					session.metrics.fastApply.failedCount,
 			}),
 			createEmptyFastApplyMetrics(),
 		);

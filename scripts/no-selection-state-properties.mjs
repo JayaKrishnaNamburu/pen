@@ -215,7 +215,7 @@ export function formatReport(result) {
 	if (result.unexpected.length > 0) {
 		lines.push("");
 		lines.push(
-			"FAIL unmarked SelectionState property access (convert to isCollapsed / isMultiBlock / getTrustedSelectionBlockRange, or justify the site):",
+			"FAIL unmarked SelectionState property access (convert to isCollapsed / isMultiBlock / getSelectionBlockRange, or justify the site):",
 		);
 		for (const entry of result.unexpected) {
 			lines.push(`  ${hitLocation(entry)}  ${entry.matched}`);

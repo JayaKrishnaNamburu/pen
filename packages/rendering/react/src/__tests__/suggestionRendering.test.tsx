@@ -133,19 +133,28 @@ describe("@input/pen-react suggestion rendering", () => {
 					type: "splice-text",
 					blockId,
 					from: 0,
-				to: 0,
-				insert: "Thanks for joining us",
+					to: 0,
+					insert: "Thanks for joining us",
 				},
 			],
 			{ origin: "system" },
 		);
 		applySuggestedAIOperations(editor, {
 			operations: [
-				{ type: "splice-text", blockId, from: 11,
-				to: 11 + 7 , insert: "" },
-				{ type: "splice-text", blockId, from: 18,
-				to: 18,
-				insert: "meeting" },
+				{
+					type: "splice-text",
+					blockId,
+					from: 11,
+					to: 11 + 7,
+					insert: "",
+				},
+				{
+					type: "splice-text",
+					blockId,
+					from: 18,
+					to: 18,
+					insert: "meeting",
+				},
 			],
 			suggestionIds: ["suggestion-delete-1", "suggestion-insert-1"],
 		});
@@ -200,8 +209,8 @@ describe("@input/pen-react suggestion rendering", () => {
 					type: "splice-text",
 					blockId,
 					from: 0,
-				to: 0,
-				insert: "Hello world",
+					to: 0,
+					insert: "Hello world",
 				},
 			],
 			{ origin: "system" },
@@ -237,6 +246,12 @@ describe("@input/pen-react suggestion rendering", () => {
 			);
 		});
 
+		// Preview updates are coalesced to one per frame, so a burst of stream
+		// fragments costs one reconcile rather than one each.
+		await act(async () => {
+			await new Promise((resolve) => requestAnimationFrame(resolve));
+		});
+
 		expect(container.textContent).toContain("Hi there world");
 		expect(container.textContent).not.toContain("Hello world");
 		expect(editor.firstBlock()?.textContent()).toBe("Hello world");
@@ -269,8 +284,8 @@ describe("@input/pen-react suggestion rendering", () => {
 					type: "splice-text",
 					blockId,
 					from: 0,
-				to: 0,
-				insert: "Sounds great",
+					to: 0,
+					insert: "Sounds great",
 				},
 			],
 			{ origin: "system" },
@@ -282,9 +297,13 @@ describe("@input/pen-react suggestion rendering", () => {
 		});
 		applySuggestedAIOperations(editor, {
 			operations: [
-				{ type: "splice-text", blockId, from: 4,
-				to: 4,
-				insert: " good" },
+				{
+					type: "splice-text",
+					blockId,
+					from: 4,
+					to: 4,
+					insert: " good",
+				},
 			],
 			suggestionIds: ["suggestion-insert-1"],
 		});
@@ -664,8 +683,8 @@ describe("@input/pen-react suggestion rendering", () => {
 					type: "splice-text",
 					blockId,
 					from: 0,
-				to: 0,
-				insert: "Toggle title",
+					to: 0,
+					insert: "Toggle title",
 				},
 			]);
 		});

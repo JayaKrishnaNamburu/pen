@@ -16,7 +16,10 @@ import { SUGGESTION_RESOLUTION_ORIGIN } from "./suggestMode";
 const RESOLUTION_ORIGIN = SUGGESTION_RESOLUTION_ORIGIN;
 type SuggestionResolution = "accept" | "reject";
 
-export function acceptSuggestion(editor: Editor, suggestionId: string): boolean {
+export function acceptSuggestion(
+	editor: Editor,
+	suggestionId: string,
+): boolean {
 	const groupId = generateId();
 	return acceptSuggestions(editor, [suggestionId], {
 		origin: RESOLUTION_ORIGIN,
@@ -24,7 +27,10 @@ export function acceptSuggestion(editor: Editor, suggestionId: string): boolean 
 	});
 }
 
-export function rejectSuggestion(editor: Editor, suggestionId: string): boolean {
+export function rejectSuggestion(
+	editor: Editor,
+	suggestionId: string,
+): boolean {
 	return rejectSuggestions(editor, [suggestionId]);
 }
 
@@ -118,14 +124,16 @@ function buildResolutionOps(
 
 		for (const suggestion of matches) {
 			remainingIds.delete(suggestion.id);
+			const cell = suggestion.cell ? { cell: suggestion.cell } : {};
 			if (resolution === "accept") {
 				if (suggestion.action === "insert") {
 					ops.push({
 						type: "format-text",
 						blockId: block.id,
 						from: suggestion.offset,
-				to: suggestion.offset + suggestion.length,
+						to: suggestion.offset + suggestion.length,
 						marks: { suggestion: null },
+						...cell,
 					});
 					continue;
 				}
@@ -133,8 +141,9 @@ function buildResolutionOps(
 					type: "splice-text",
 					blockId: block.id,
 					from: suggestion.offset,
-				to: suggestion.offset + suggestion.length,
-				insert: "",
+					to: suggestion.offset + suggestion.length,
+					insert: "",
+					...cell,
 				});
 				continue;
 			}
@@ -144,8 +153,9 @@ function buildResolutionOps(
 					type: "splice-text",
 					blockId: block.id,
 					from: suggestion.offset,
-				to: suggestion.offset + suggestion.length,
-				insert: "",
+					to: suggestion.offset + suggestion.length,
+					insert: "",
+					...cell,
 				});
 				continue;
 			}
@@ -155,6 +165,7 @@ function buildResolutionOps(
 				from: suggestion.offset,
 				to: suggestion.offset + suggestion.length,
 				marks: { suggestion: null },
+				...cell,
 			});
 		}
 	}
@@ -178,13 +189,38 @@ function buildBlockSuggestionResolutionOps(
 			case "insert-block":
 			case "split-block":
 			case "move-block":
+				return [clearSuggestionMeta(blockId)];
 			case "convert-block":
-				return [{
-					type: "set-meta",
-					blockId,
-					namespace: "suggestion",
-					data: null,
-				}];
+				return blockSuggestion.previousState?.props
+					? [
+							{
+								type: "set-props",
+								blockId,
+								props: blockSuggestion.previousState.props,
+							},
+							clearSuggestionMeta(blockId),
+						]
+					: [clearSuggestionMeta(blockId)];
+			case "format-text":
+				return blockSuggestion.previousState?.format
+					? [
+							{
+								type: "format-text",
+								blockId,
+								from: blockSuggestion.previousState.format.from,
+								to: blockSuggestion.previousState.format.to,
+								marks: blockSuggestion.previousState.format
+									.marks,
+								...(blockSuggestion.previousState.format.cell
+									? {
+											cell: blockSuggestion.previousState
+												.format.cell,
+										}
+									: {}),
+							},
+							clearSuggestionMeta(blockId),
+						]
+					: [clearSuggestionMeta(blockId)];
 			case "delete-block":
 				return [{ type: "delete-block", blockId }];
 			default: {
@@ -199,12 +235,9 @@ function buildBlockSuggestionResolutionOps(
 		case "split-block":
 			return [{ type: "delete-block", blockId }];
 		case "delete-block":
-			return [{
-				type: "set-meta",
-				blockId,
-				namespace: "suggestion",
-				data: null,
-			}];
+		case "convert-block":
+		case "format-text":
+			return [clearSuggestionMeta(blockId)];
 		case "move-block":
 			return blockSuggestion.previousState?.position
 				? [
@@ -213,48 +246,23 @@ function buildBlockSuggestionResolutionOps(
 							blockId,
 							position: blockSuggestion.previousState.position,
 						},
-						{
-							type: "set-meta",
-							blockId,
-							namespace: "suggestion",
-							data: null,
-						},
-				  ]
-				: [{
-						type: "set-meta",
-						blockId,
-						namespace: "suggestion",
-						data: null,
-				  }];
-		case "convert-block":
-			return blockSuggestion.previousState?.type
-				? [
-						{
-							type: "set-props",
-							blockId,
-							props: {
-								type: blockSuggestion.previousState.type,
-								...blockSuggestion.previousState.props,
-							},
-						},
-						{
-							type: "set-meta",
-							blockId,
-							namespace: "suggestion",
-							data: null,
-						},
-				  ]
-				: [{
-						type: "set-meta",
-						blockId,
-						namespace: "suggestion",
-						data: null,
-				  }];
-			default: {
-				const _exhaustive: never = blockSuggestion.action;
-				return _exhaustive;
-			}
+						clearSuggestionMeta(blockId),
+					]
+				: [clearSuggestionMeta(blockId)];
+		default: {
+			const _exhaustive: never = blockSuggestion.action;
+			return _exhaustive;
+		}
 	}
+}
+
+function clearSuggestionMeta(blockId: string): DocumentOp {
+	return {
+		type: "set-meta",
+		blockId,
+		namespace: "suggestion",
+		data: null,
+	};
 }
 
 function getAllSuggestionIds(editor: Editor): string[] {

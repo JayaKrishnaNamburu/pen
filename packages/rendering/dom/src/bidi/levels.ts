@@ -93,7 +93,8 @@ const enum Bracketed {
 	OppositeInside = 4,
 }
 
-const BidiRE = /[\u0590-\u05f4\u0600-\u06ff\u0700-\u08ac\ufb50-\ufdff\u2066-\u2069\ufffc]/;
+const BidiRE =
+	/[\u0590-\u05f4\u0600-\u06ff\u0700-\u08ac\ufb50-\ufdff\u2066-\u2069\ufffc]/;
 
 function charType(ch: number): T {
 	if (ch === ATOM) return T.NI;
@@ -170,8 +171,7 @@ function parseIsolates(text: string): Isolate[] {
 		const ch = text.charCodeAt(i);
 		if (ch === LRI || ch === RLI || ch === FSI) {
 			if (stack.length >= MAX_DEPTH) continue;
-			let direction: 0 | 1 =
-				ch === LRI ? LTR : ch === RLI ? RTL : LTR;
+			let direction: 0 | 1 = ch === LRI ? LTR : ch === RLI ? RTL : LTR;
 			if (ch === FSI) {
 				let depth = 1;
 				let end = text.length;
@@ -260,7 +260,11 @@ function computeCharTypes(
 		const to = iI < isolates.length ? isolates[iI]!.from : rTo;
 		const prevType = iI ? T.NI : outerType;
 
-		for (let i = from, prev = prevType, prevStrong = prevType; i < to; i++) {
+		for (
+			let i = from, prev = prevType, prevStrong = prevType;
+			i < to;
+			i++
+		) {
 			let type = charType(line.charCodeAt(i));
 			if (type === T.NSM) type = prev;
 			else if (type === T.EN && prevStrong === T.AL) type = T.AN;
@@ -269,7 +273,11 @@ function computeCharTypes(
 			prev = type;
 		}
 
-		for (let i = from, prev = prevType, prevStrong = prevType; i < to; i++) {
+		for (
+			let i = from, prev = prevType, prevStrong = prevType;
+			i < to;
+			i++
+		) {
 			const type = types[i]!;
 			if (type === T.CS) {
 				if (i < to - 1 && prev === types[i + 1] && prev & T.Num) {

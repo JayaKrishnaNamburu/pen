@@ -35,7 +35,7 @@ async function seedFiftyOneParagraphs(s: ScenarioApi, page: Page): Promise<void>
 			blockId: FIRST_ID,
 			from: 0,
 			to: 0,
-			insert: "P00",
+			insert: "P00"
 		},
 	];
 	for (let index = 1; index < BLOCK_COUNT; index += 1) {
@@ -46,14 +46,14 @@ async function seedFiftyOneParagraphs(s: ScenarioApi, page: Page): Promise<void>
 				blockId,
 				blockType: "paragraph",
 				props: {},
-				position: "last",
+				position: "last"
 			},
 			{
 				type: "splice-text",
 				blockId,
 				from: 0,
 				to: 0,
-				insert: `P${String(index).padStart(2, "0")}`,
+				insert: `P${String(index).padStart(2, "0")}`
 			},
 		);
 	}
@@ -77,11 +77,11 @@ async function clickOffset(
 async function dragFirstToLast(page: Page): Promise<void> {
 	const from = await getInlineOffsetPoint(page, {
 		blockId: FIRST_ID,
-		offset: 0,
+		offset: 0
 	});
 	const to = await getInlineOffsetPoint(page, {
 		blockId: LAST_ID,
-		offset: LAST_TEXT.length,
+		offset: LAST_TEXT.length
 	});
 	await page.mouse.move(from.x, from.y);
 	await page.mouse.down();
@@ -106,7 +106,7 @@ function attachLoadavg(label: string, payload: unknown): Promise<void> {
 	console.log(`${label} loadavg ${loads.join(" ")}`);
 	return test.info().attach(label, {
 		body: JSON.stringify({ loadavg: loads, payload }, null, 2),
-		contentType: "application/json",
+		contentType: "application/json"
 	});
 }
 
@@ -128,9 +128,8 @@ function expectFiftyOneBlockText(
 		),
 	).toMatchObject({
 		type: "text",
-		isCollapsed: false,
 		anchor: { blockId: FIRST_ID },
-		focus: { blockId: LAST_ID },
+		focus: { blockId: LAST_ID }
 	});
 }
 
@@ -158,7 +157,7 @@ scenario(
 		await clickOffset(page, FIRST_ID, 0);
 		await s.assert.selectionEquals({
 			anchor: { blockId: FIRST_ID, offset: 0 },
-			focus: { blockId: FIRST_ID, offset: 0 },
+			focus: { blockId: FIRST_ID, offset: 0 }
 		});
 		await shiftClickLast(page);
 		const afterShift = await readSelection(page);

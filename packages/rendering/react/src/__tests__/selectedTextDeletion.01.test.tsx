@@ -162,7 +162,8 @@ describe("@input/pen-react selected text deletion", () => {
 									from: 0,
 									to: firstBlock.length(),
 									attributes: {
-										"data-decoration-state": decorationState,
+										"data-decoration-state":
+											decorationState,
 									},
 								},
 							]);

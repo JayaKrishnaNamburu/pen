@@ -234,7 +234,7 @@ describe("React DIR1 resolved host dir", () => {
 					type: "splice-text",
 					blockId,
 					from: 0,
-				to: 0 + editor.getBlock(blockId)!.length(),
+					to: 0 + editor.getBlock(blockId)!.length(),
 					insert: "Hello",
 				},
 			]);

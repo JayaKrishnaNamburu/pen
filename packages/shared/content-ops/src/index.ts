@@ -1,31 +1,3 @@
-export {
-	getBlockSelectionRoleFromSchema,
-	getBlockSelectionRoleFromType,
-	getFlowCapabilityFromSchema,
-	getFlowCapabilityFromType,
-	isContinuousTextFlowCapability,
-	shouldAllowDirectBlockPaste,
-	shouldAllowFlowInsertionInSlashMenu,
-	shouldExposeBlockInTooling,
-	shouldShowBlockInDefaultMenus,
-	shouldForceBlockScopedSelectAll,
-} from "./blockCapabilities";
-
-export { blocksToOps } from "./blocks";
-export type { ImportOptions, PendingBlock } from "./blocks";
-
-export {
-	createImportResult,
-	filterPendingBlocksForDocumentProfile,
-	normalizePendingBlocksForImport,
-	reportPendingBlockImportViolations,
-	reportPendingBlockProfileViolations,
-} from "./profilePolicy";
-export type {
-	PendingBlockImportPolicyViolation,
-	PendingBlockProfilePolicyViolation,
-} from "./profilePolicy";
-
 export { parseMarkdownToBlocks } from "./markdown";
 
 export { splitPlainTextLineBlocks } from "./plainTextBlocks";

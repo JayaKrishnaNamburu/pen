@@ -1,5 +1,1 @@
-export {
-	urlPolicy,
-	type UrlContext,
-	type UrlPolicy,
-} from "@input/pen-core";
+export { urlPolicy, type UrlContext, type UrlPolicy } from "@input/pen-core";

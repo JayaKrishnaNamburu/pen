@@ -20,7 +20,9 @@ export function getStarterTableProps(): { hasHeaderRow: true } {
 export function getTableActivationTarget(
 	text: string | null | undefined,
 ): TableActivationTarget {
-	return hasMeaningfulBlockText(text) ? { row: 0, col: 1 } : { row: 0, col: 0 };
+	return hasMeaningfulBlockText(text)
+		? { row: 0, col: 1 }
+		: { row: 0, col: 0 };
 }
 
 export function getTableCellPlaceholder(

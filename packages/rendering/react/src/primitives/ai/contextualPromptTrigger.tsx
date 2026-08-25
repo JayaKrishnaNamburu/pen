@@ -48,7 +48,8 @@ export function AIContextualPromptTrigger(
 			openContextualPrompt();
 		};
 		document.addEventListener("keydown", handleKeyDown, true);
-		return () => document.removeEventListener("keydown", handleKeyDown, true);
+		return () =>
+			document.removeEventListener("keydown", handleKeyDown, true);
 	}, [openContextualPrompt, shortcut]);
 
 	const triggerProps: AsChildProps & {
@@ -59,15 +60,11 @@ export function AIContextualPromptTrigger(
 		onClick: handleClick,
 	};
 
-	return renderAsChild(
-		triggerProps,
-		"button",
-		{
-			type: "button",
-			"data-pen-ai-contextual-prompt-trigger": "",
-			disabled: !isSelectionEligible,
-		},
-	);
+	return renderAsChild(triggerProps, "button", {
+		type: "button",
+		"data-pen-ai-contextual-prompt-trigger": "",
+		disabled: !isSelectionEligible,
+	});
 }
 
 function matchesShortcut(event: KeyboardEvent, shortcut: string): boolean {

@@ -101,10 +101,7 @@ export function parsePenClipboardPayload(raw: unknown): PenClipboardReadResult {
 		return migrateUnversionedBlocks(value.blocks);
 	}
 
-	if (
-		typeof value.version !== "number" ||
-		!Number.isInteger(value.version)
-	) {
+	if (typeof value.version !== "number" || !Number.isInteger(value.version)) {
 		return clipboardFallback(
 			"clipboard-unknown-version",
 			"Pen clipboard payload version is not an integer; falling back to HTML.",
@@ -147,7 +144,9 @@ export function parsePenClipboardPayload(raw: unknown): PenClipboardReadResult {
 }
 
 export function encodePenBlocksForHtml(penBlocksJson: string): string {
-	return bytesToBase64(new TextEncoder().encode(ensureClipboardJson(penBlocksJson)));
+	return bytesToBase64(
+		new TextEncoder().encode(ensureClipboardJson(penBlocksJson)),
+	);
 }
 
 export function decodePenBlocksFromHtml(encoded: string): PenBlock[] {
@@ -195,7 +194,9 @@ function sanitizeIngestedJson(
 	forbiddenKeyCount: { n: number },
 ): unknown {
 	if (Array.isArray(value)) {
-		return value.map((item) => sanitizeIngestedJson(item, forbiddenKeyCount));
+		return value.map((item) =>
+			sanitizeIngestedJson(item, forbiddenKeyCount),
+		);
 	}
 	if (!isPlainObject(value)) {
 		return value;
@@ -261,14 +262,14 @@ function parseJsonValue(raw: string): unknown {
 	}
 }
 
-function isPlainObject(
-	value: unknown,
-): value is Record<string, unknown> {
+function isPlainObject(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function bytesToBase64(bytes: Uint8Array): string {
-	const binary = Array.from(bytes, (byte) => String.fromCodePoint(byte)).join("");
+	const binary = Array.from(bytes, (byte) => String.fromCodePoint(byte)).join(
+		"",
+	);
 	return btoa(binary);
 }
 

@@ -208,7 +208,6 @@ describe("@input/pen-react escape key handling", () => {
 			type: "text",
 			anchor: { blockId: firstBlockId, offset: 1 },
 			focus: { blockId: thirdBlockId, offset: 2 },
-			isMultiBlock: true,
 		});
 
 		await act(async () => {

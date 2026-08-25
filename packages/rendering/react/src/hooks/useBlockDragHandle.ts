@@ -8,7 +8,7 @@ import {
 	resolveDragBlockIds,
 	startNativeBlockDrag,
 } from "../utils/blockDrag";
-import { DATA_ATTRS } from "../utils/dataAttributes";
+import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 import { useBlockDragSession } from "../primitives/editor/blockDragSession";
 
 export interface BlockDragHandleHookResult {
@@ -28,9 +28,7 @@ export interface BlockDragHandleHookResult {
 	};
 }
 
-export function useBlockDragHandle(
-	blockId: string,
-): BlockDragHandleHookResult {
+export function useBlockDragHandle(blockId: string): BlockDragHandleHookResult {
 	const { editor, readonly, blockDragAndDrop } = useEditorContext();
 	const fieldEditor = useFieldEditorContext();
 	const selection = useSelection(editor);

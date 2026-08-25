@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { createEditor, createHeadlessEditor, keymapFacet } from "@input/pen-core";
+import {
+	createEditor,
+	createHeadlessEditor,
+	keymapFacet,
+} from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
 import {
 	expandFieldEditorRange,
@@ -21,7 +25,8 @@ import {
 
 function createFieldEditorExportsEditor() {
 	return createEditor({
-		schema: defaultSchema, preset: defaultPreset({
+		schema: defaultSchema,
+		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
 			undo: false,
@@ -57,11 +62,9 @@ describe("@input/pen-react field-editor exports", () => {
 			schema: defaultSchema,
 			extensions: [extension],
 		});
-		expect(editor.facet(keymapFacet).map((binding) => binding.key)).toEqual([
-			"Mod-b",
-			"Mod-i",
-			"Mod-u",
-		]);
+		expect(editor.facet(keymapFacet).map((binding) => binding.key)).toEqual(
+			["Mod-b", "Mod-i", "Mod-u"],
+		);
 		editor.destroy();
 	});
 

@@ -190,7 +190,7 @@ describe("AIB3 tool authority", () => {
 		expect(applied).toEqual([]);
 	});
 
-	it("AIB3: budget isolation ends the turn with a stated reason", () => {
+	it("AIB3: budget isolation rejects whole batches and ends the turn with a stated reason", () => {
 		const turn = createAIToolTurn({
 			budget: {
 				maxCallsPerTurn: 2,
@@ -200,14 +200,37 @@ describe("AIB3 tool authority", () => {
 		});
 
 		expect(turn.tryRecordCall()).toBe(true);
-		expect(turn.recordOps(3)).toBe(3);
+		expect(turn.tryRecordOps(3)).toBe(null);
 		turn.closeCall();
 		expect(turn.ended).toBe(false);
 
 		expect(turn.tryRecordCall()).toBe(true);
-		expect(turn.recordOps(3)).toBe(1);
+		// Only 1 op of turn budget remains; the batch of 3 is rejected whole.
+		expect(turn.tryRecordOps(3)).toBe("budget-total-ops-exhausted");
+		expect(turn.ops).toBe(3);
 		expect(turn.ended).toBe(true);
 		expect(turn.reason).toBe("budget-total-ops-exhausted");
+	});
+
+	it("AIB3: a batch over the per-call limit is rejected whole without ending the turn", () => {
+		const turn = createAIToolTurn({
+			budget: {
+				maxCallsPerTurn: 4,
+				maxOpsPerCall: 3,
+				maxTotalOpsPerTurn: 10,
+			},
+		});
+
+		expect(turn.tryRecordCall()).toBe(true);
+		expect(turn.tryRecordOps(5)).toBe("budget-ops-per-call-exhausted");
+		expect(turn.ops).toBe(0);
+		expect(turn.ended).toBe(false);
+		turn.closeCall();
+
+		// The next call can still apply ops.
+		expect(turn.tryRecordCall()).toBe(true);
+		expect(turn.tryRecordOps(3)).toBe(null);
+		expect(turn.ops).toBe(3);
 	});
 
 	it("AIB3: 100 mutating calls — un-allowlisted blocked, budget ends the turn, only permitted mutations apply", async () => {
@@ -389,7 +412,7 @@ describe("AIB3 tool authority", () => {
 		]);
 	});
 
-	it("AIB3: ops-per-call budget applies only the admitted prefix and ends the turn", async () => {
+	it("AIB3: an over-budget op batch is rejected whole with a visible error, turn stays open", async () => {
 		const runtime = new AIToolRuntimeImpl();
 		runtime.registerTool(mutatingTool("insert_block", AI_TOOL_MAX_OPS_PER_CALL + 8));
 		const { editor, applied } = createRecordingEditor();
@@ -398,18 +421,13 @@ describe("AIB3 tool authority", () => {
 			allowedMutatingTools: ["insert_block"],
 		});
 
-		const result = await executeAITool(
-			runtime,
-			"insert_block",
-			{},
-			context,
-			turn,
-		);
+		await expect(
+			executeAITool(runtime, "insert_block", {}, context, turn),
+		).rejects.toThrow(/per-call limit/);
 
-		expect(result).toEqual({ ok: true, name: "insert_block" });
-		expect(applied).toHaveLength(AI_TOOL_MAX_OPS_PER_CALL);
-		expect(turn.ended).toBe(true);
-		expect(turn.reason).toBe("budget-ops-per-call-exhausted");
+		expect(applied).toHaveLength(0);
+		expect(turn.ops).toBe(0);
+		expect(turn.ended).toBe(false);
 	});
 
 	it("does not offer un-allowlisted mutating tools when a grant is provided", () => {
@@ -432,7 +450,7 @@ describe("AIB3 tool authority", () => {
 
 	it("documents the default budget constants", () => {
 		expect(AI_TOOL_MAX_CALLS_PER_TURN).toBe(20);
-		expect(AI_TOOL_MAX_OPS_PER_CALL).toBe(32);
-		expect(AI_TOOL_MAX_TOTAL_OPS_PER_TURN).toBe(128);
+		expect(AI_TOOL_MAX_OPS_PER_CALL).toBe(200);
+		expect(AI_TOOL_MAX_TOTAL_OPS_PER_TURN).toBe(800);
 	});
 });

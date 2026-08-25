@@ -31,7 +31,8 @@ export function useSyncExternalStoreWithSelector<Snapshot, Selection>(
 				const nextSelection = selector(nextSnapshot);
 
 				if (instanceRef.current.hasValue && isEqual) {
-					const currentSelection = instanceRef.current.value as Selection;
+					const currentSelection = instanceRef.current
+						.value as Selection;
 					if (isEqual(currentSelection, nextSelection)) {
 						memoizedSelection = currentSelection;
 						return currentSelection;

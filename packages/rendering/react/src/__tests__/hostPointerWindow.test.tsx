@@ -5,7 +5,10 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
-import { createEditor as createCoreEditor, fieldEditorHostFacet } from "@input/pen-core";
+import {
+	createEditor as createCoreEditor,
+	fieldEditorHostFacet,
+} from "@input/pen-core";
 import type { FieldEditorImpl } from "@input/pen-dom/field-editor/fieldEditorImpl";
 import { defaultPreset } from "@input/pen-preset-default";
 import { defaultSchema } from "@input/pen-schema-default";
@@ -44,9 +47,7 @@ describe("@input/pen-react host pointer window", () => {
 		const editor = createEditor();
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" },
 		]);
 		const container = document.createElement("div");
 		document.body.appendChild(container);

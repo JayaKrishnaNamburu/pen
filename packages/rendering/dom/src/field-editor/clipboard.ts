@@ -9,10 +9,7 @@ import type { Editor, TextSelection } from "@input/pen-types";
 import type { FieldEditorTransferController } from "./controller";
 import type { PasteImporters } from "../types/paste";
 import { executeTransfer } from "./transfer";
-import {
-	type Delta,
-	type PenBlock,
-} from "../utils/clipboardPayload";
+import { type Delta, type PenBlock } from "../utils/clipboardPayload";
 import {
 	serializeDeltasToFormat,
 	sliceDeltas,
@@ -24,9 +21,7 @@ type PasteInputEvent = InputEvent & {
 	dataTransfer?: DataTransfer | null;
 };
 
-export function getPasteImporters(
-	editor: Editor,
-): PasteImporters | undefined {
+export function getPasteImporters(editor: Editor): PasteImporters | undefined {
 	const value = editor.facet(clipboardFacet);
 	if (!value || Array.isArray(value)) {
 		return undefined;
@@ -201,7 +196,9 @@ function copyBlockSelection(editor: Editor, event?: ClipboardEvent): void {
 			if (isLast) sliceTo = range.end.offset;
 		}
 		const isPartial = sliceFrom > 0 || sliceTo < fullText.length;
-		const content = isPartial ? fullText.slice(sliceFrom, sliceTo) : fullText;
+		const content = isPartial
+			? fullText.slice(sliceFrom, sliceTo)
+			: fullText;
 		const deltas = block.textDeltas();
 		const slicedDeltas = isPartial
 			? sliceDeltas(deltas, sliceFrom, sliceTo)
@@ -219,7 +216,11 @@ function copyBlockSelection(editor: Editor, event?: ClipboardEvent): void {
 		});
 
 		if (schema?.serialize?.toHTML) {
-			const inlineHtml = serializeDeltasToFormat(slicedDeltas, editor, "html");
+			const inlineHtml = serializeDeltasToFormat(
+				slicedDeltas,
+				editor,
+				"html",
+			);
 			htmlParts.push(
 				schema.serialize.toHTML({
 					id: block.id,
@@ -278,4 +279,3 @@ export function handleCut(editor: Editor, event?: ClipboardEvent): void {
 	handleCopy(editor, event);
 	editor.deleteSelection();
 }
-

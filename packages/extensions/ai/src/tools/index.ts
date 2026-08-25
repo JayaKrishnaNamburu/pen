@@ -16,6 +16,10 @@ export {
 	AI_TOOL_READ_ONLY_MUTATION_CODE,
 	AI_TOOL_UNCONFIRMED_CODE,
 } from "./constants";
+// `AIToolBudgetError` and `isAIToolResultAskingRetry` are deliberately not
+// re-exported: each has one in-package caller and never reaches a host, so
+// publishing them is the accidental-surface defect (same call as the
+// `check*` payload predicates in `@input/pen-document-ops`).
 export {
 	authorizeAIToolCall,
 	createAIToolTurn,

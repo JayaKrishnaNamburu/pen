@@ -31,7 +31,10 @@ export function startNativeBlockDrag(args: {
 			dragged,
 		}),
 	);
-	event.dataTransfer.setData(LEGACY_BLOCK_ID_DRAG_MIME, dragged.anchorBlockId);
+	event.dataTransfer.setData(
+		LEGACY_BLOCK_ID_DRAG_MIME,
+		dragged.anchorBlockId,
+	);
 	event.dataTransfer.effectAllowed = "move";
 	setBlockDragPreviewImage({
 		event,

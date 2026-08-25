@@ -36,26 +36,23 @@ export function useAttribution(
 		() => 0,
 	);
 
-	return useMemo(
-		() => {
-			if (!canReadHistoryAttribution) {
-				return EMPTY_ATTRIBUTION_STATE;
-			}
+	return useMemo(() => {
+		if (!canReadHistoryAttribution) {
+			return EMPTY_ATTRIBUTION_STATE;
+		}
 
-			return {
-				attributions: historyController.getCharacterAttribution(blockId),
-				blameRanges: historyController.getBlameRanges(blockId),
-			};
-		},
-		[
-			blockId,
-			blockRevision,
-			canReadHistoryAttribution,
-			historyController,
-			historyState,
-			multiplayerState,
-		],
-	);
+		return {
+			attributions: historyController.getCharacterAttribution(blockId),
+			blameRanges: historyController.getBlameRanges(blockId),
+		};
+	}, [
+		blockId,
+		blockRevision,
+		canReadHistoryAttribution,
+		historyController,
+		historyState,
+		multiplayerState,
+	]);
 }
 
 function isHistoryAttributionController(

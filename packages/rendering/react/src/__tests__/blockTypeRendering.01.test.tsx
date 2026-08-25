@@ -127,9 +127,13 @@ describe("@input/pen-react block type rendering", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
+			{
+				type: "splice-text",
+				blockId,
+				from: 0,
 				to: 0,
-				insert: "Hello world" },
+				insert: "Hello world",
+			},
 		]);
 		editor.selectText(blockId, 0, 0);
 
@@ -210,8 +214,8 @@ describe("@input/pen-react block type rendering", () => {
 					type: "splice-text",
 					blockId,
 					from: 0,
-				to: 0,
-				insert: "Hello streamed world",
+					to: 0,
+					insert: "Hello streamed world",
 				},
 			]);
 		});
@@ -232,9 +236,13 @@ describe("@input/pen-react block type rendering", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
+			{
+				type: "splice-text",
+				blockId,
+				from: 0,
 				to: 0,
-				insert: "Toggle me" },
+				insert: "Toggle me",
+			},
 		]);
 
 		const container = document.createElement("div");
@@ -279,9 +287,7 @@ describe("@input/pen-react block type rendering", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Name" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Name" },
 		]);
 		editor.selectText(blockId, 0, 0);
 
@@ -346,9 +352,13 @@ describe("@input/pen-react block type rendering", () => {
 
 		editor.apply([
 			{ type: "set-props", blockId, props: { type: "toggle" } },
-			{ type: "splice-text", blockId, from: 0,
+			{
+				type: "splice-text",
+				blockId,
+				from: 0,
 				to: 0,
-				insert: "Toggle title" },
+				insert: "Toggle title",
+			},
 		]);
 
 		const container = document.createElement("div");

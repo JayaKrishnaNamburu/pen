@@ -12,9 +12,12 @@ export interface SlashMenuInputProps extends AsChildProps {
 export function SlashMenuInput(props: SlashMenuInputProps) {
 	const { items, listboxId, open, query, selectedIndex, setQuery, editor } =
 		useSlashMenuContext();
-	const { placeholder = editor
-		? resolveEditorMessage(editor, "pen.slash.input.placeholder")
-		: DEFAULT_MESSAGE_CATALOG["pen.slash.input.placeholder"], ...rest } = props;
+	const {
+		placeholder = editor
+			? resolveEditorMessage(editor, "pen.slash.input.placeholder")
+			: DEFAULT_MESSAGE_CATALOG["pen.slash.input.placeholder"],
+		...rest
+	} = props;
 	const activeOptionId =
 		open && items.length > 0
 			? getSlashMenuOptionId(listboxId, selectedIndex)

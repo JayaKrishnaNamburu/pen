@@ -10,9 +10,7 @@ export interface MultiplayerRemoteCursorsProps extends AsChildProps {
 	ref?: React.Ref<HTMLElement>;
 }
 
-export function MultiplayerRemoteCursors(
-	props: MultiplayerRemoteCursorsProps,
-) {
+export function MultiplayerRemoteCursors(props: MultiplayerRemoteCursorsProps) {
 	const { editor: editorProp, renderCursor, ...rest } = props;
 	const editorContext = useContext(EditorContext);
 	const editor = editorProp ?? editorContext?.editor;

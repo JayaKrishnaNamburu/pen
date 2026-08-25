@@ -7,7 +7,7 @@ const repoRoot = path.resolve(
 	path.dirname(new URL(import.meta.url).pathname),
 	"..",
 );
-const EXPECTED_REPOSITORY_URL = "https://github.com/lemni/pen.git";
+const EXPECTED_REPOSITORY_URL = "https://github.com/input-systems/pen.git";
 
 // Commands this script runs. Pin later as root devDependencies if desired:
 //   pnpm exec publint --pack pnpm <packageDir>

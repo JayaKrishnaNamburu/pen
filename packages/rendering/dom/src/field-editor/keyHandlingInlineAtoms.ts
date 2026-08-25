@@ -1,10 +1,7 @@
 import { isCollapsed, isMultiBlock } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
 import type { FieldEditorKeyboardController } from "./controller";
-import {
-	normalizeInlineRange,
-	type SelectionRange,
-} from "./commands";
+import { normalizeInlineRange, type SelectionRange } from "./commands";
 import {
 	getInlineAtomRangeAtOffset,
 	isInlineAtomRange,

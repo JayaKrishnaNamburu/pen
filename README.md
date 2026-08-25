@@ -6,7 +6,7 @@
 </h3>
 
 <p align="center">
-  <a href="https://github.com/lemni/pen/stargazers"><img src="https://img.shields.io/github/stars/lemni/pen?style=flat&color=8D30FF" alt="GitHub stars" /></a>
+  <a href="https://github.com/input-systems/pen/stargazers"><img src="https://img.shields.io/github/stars/input-systems/pen?style=flat&color=8D30FF" alt="GitHub stars" /></a>
   <a href="LICENSE.md"><img src="https://img.shields.io/badge/license-MIT-FF2B6E" alt="license" /></a>
 </p>
 <!-- markdownlint-enable MD033 MD041 -->

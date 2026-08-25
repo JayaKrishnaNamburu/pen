@@ -8,7 +8,7 @@ import type {
 	SelectionState,
 	TextSelection,
 } from "@input/pen-types";
-import { stampTextSelection } from "../selection/helpers";
+import { createTextSelection } from "../selection/helpers";
 
 type CRDTBlockMap = CRDTMap<CRDTMap<unknown>>;
 
@@ -144,6 +144,11 @@ export function selectionEquals(
 	}
 }
 
+/**
+ * Snapshot a live selection into the record shape. Identity on the
+ * shared fields; fills record-required `affinity` / `goalX` / `head`
+ * when the live value omitted them. No computed fields remain to strip.
+ */
 export function toRecordState(state: SelectionState): SelectionRecordState {
 	if (state === null) {
 		return null;
@@ -289,7 +294,7 @@ function validateText(
 		isNonText: (blockId) => host.isNonTextBlock(blockId),
 		blockIndex: (blockId) => order.indexOf(blockId),
 	});
-	return stampTextSelection(host.doc, {
+	return createTextSelection({
 		anchor: covered.anchor,
 		focus: covered.focus,
 		affinity: sel.affinity,

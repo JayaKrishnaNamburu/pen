@@ -42,23 +42,10 @@ function createPlaceholderRange(blockId: string) {
 			);
 		},
 		toTextSelection() {
-			const range = this;
 			return {
 				type: "text" as const,
 				anchor: { blockId, offset: 0 },
 				focus: { blockId, offset: 0 },
-				get isCollapsed() {
-					return true;
-				},
-				get isMultiBlock() {
-					return false;
-				},
-				get blockRange() {
-					return [blockId];
-				},
-				toRange() {
-					return range;
-				},
 			};
 		},
 	};

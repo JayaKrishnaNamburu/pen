@@ -18,9 +18,12 @@ export function SelectionPage() {
 			<ul>
 				<li>
 					<strong>text</strong> — <code>anchor</code> and{" "}
-					<code>focus</code> points. The shipped type also exposes{" "}
-					<code>isCollapsed</code>, <code>isMultiBlock</code>,{" "}
-					<code>blockRange</code>, and <code>toRange()</code>.
+					<code>focus</code> points. Read collapsed / multi-block /
+					span through <code>isCollapsed(sel)</code>,{" "}
+					<code>isMultiBlock(sel)</code>,{" "}
+					<code>getSelectionBlockRange(doc, sel)</code>, and{" "}
+					<code>selectionToRange(doc, sel)</code> from{" "}
+					<code>@input/pen-core</code>.
 				</li>
 				<li>
 					<strong>block</strong> — <code>blockIds</code>.

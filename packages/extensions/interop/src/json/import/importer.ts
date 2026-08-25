@@ -4,7 +4,7 @@ import type {
 	Importer,
 	ImportOptions,
 } from "@input/pen-types";
-import { blocksToOps, type PendingBlock } from "@input/pen-content-ops";
+import { blocksToOps, type PendingBlock } from "@input/pen-core";
 import { emitIngestReport, type IngestReport } from "./ingestBounds";
 import { ingestJsonDocument } from "./validateJson";
 

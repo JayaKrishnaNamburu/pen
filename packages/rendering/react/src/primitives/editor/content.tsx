@@ -1,7 +1,4 @@
-import React, {
-	useRef,
-	useSyncExternalStore,
-} from "react";
+import React, { useRef, useSyncExternalStore } from "react";
 import { resolveEditorMessage } from "@input/pen-core";
 import type { FieldEditorSession } from "@input/pen-dom";
 import { EditorContentContext } from "../../context/editorContentContext";
@@ -18,18 +15,16 @@ import {
 } from "../../hooks/useDocumentEmptyState";
 import { useInlineCompletionState } from "../../hooks/useInlineCompletionState";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
-import { buildDataAttributes, DATA_ATTRS } from "../../utils/dataAttributes";
+import {
+	buildDataAttributes,
+	DATA_ATTRS,
+} from "@input/pen-dom/utils/dataAttributes";
 import { fieldEditorTextEntryAttrs } from "../../utils/fieldEditorTextEntryAttrs";
 import { AIStructuredTargetPreviewItem } from "../ai/structuredTargetPreview";
 import { AutocompletePreviewBlock } from "./autocompletePreviewBlock";
 import { EditorBlock } from "./block";
-import {
-	DropPreviewProvider,
-} from "./dropPreviewContext";
-import {
-	buildMoveBlockOps,
-	useBlockDragSession,
-} from "./blockDragSession";
+import { DropPreviewProvider } from "./dropPreviewContext";
+import { buildMoveBlockOps, useBlockDragSession } from "./blockDragSession";
 import { useEditorRegionSelectionContext } from "./regionSelectionState";
 import { useTransferSession } from "./useTransferSession";
 import { useEditorContentPointerState } from "./useEditorContentPointerState";
@@ -45,7 +40,7 @@ import {
 import {
 	getInlineAtomDragSnapshot,
 	subscribeInlineAtomDragSnapshot,
-} from "./inlineAtomInteraction";
+} from "@input/pen-dom";
 
 export interface EditorContentProps extends AsChildProps {
 	emptyPlaceholder?: string;
@@ -54,7 +49,13 @@ export interface EditorContentProps extends AsChildProps {
 
 export function EditorContent(props: EditorContentProps) {
 	const { emptyPlaceholder: emptyPlaceholderProp, ...rest } = props;
-	const { editor, readonly, blockDragAndDrop, blockSelection, interactionModel } = useEditorContext();
+	const {
+		editor,
+		readonly,
+		blockDragAndDrop,
+		blockSelection,
+		interactionModel,
+	} = useEditorContext();
 	const emptyPlaceholder =
 		emptyPlaceholderProp ??
 		resolveEditorMessage(editor, "pen.schema.document.emptyPlaceholder");
@@ -66,7 +67,8 @@ export function EditorContent(props: EditorContentProps) {
 	const visibleSuggestion = useInlineCompletionState(editor);
 	const blockDragSession = useBlockDragSession();
 	const contentRef = useRef<HTMLElement>(null);
-	const blocksHostRef = blockDragSession.blocksHostRef as React.RefObject<HTMLDivElement | null>;
+	const blocksHostRef =
+		blockDragSession.blocksHostRef as React.RefObject<HTMLDivElement | null>;
 	const {
 		regionGestureRef,
 		pointerGestureRef,
@@ -139,22 +141,27 @@ export function EditorContent(props: EditorContentProps) {
 	for (const contentItem of contentItems) {
 		if (contentItem.kind === "block") {
 			blockElements.push(
-				<EditorBlock key={contentItem.blockId} blockId={contentItem.blockId} />,
+				<EditorBlock
+					key={contentItem.blockId}
+					blockId={contentItem.blockId}
+				/>,
 			);
 			if (
 				previewBlocks.length > 0 &&
 				contentItem.blockId === visibleSuggestion?.blockId
 			) {
-				const previewBlockElements = previewBlocks.map((previewBlock, previewIndex) => (
-					<AutocompletePreviewBlock
-						key={`autocomplete-preview:${previewBlock.id}`}
-						anchorBlock={anchorBlock}
-						anchorBlockType={anchorBlock?.type}
-						anchorProps={anchorBlock?.props ?? null}
-						block={previewBlock}
-						previewIndex={previewIndex}
-					/>
-				));
+				const previewBlockElements = previewBlocks.map(
+					(previewBlock, previewIndex) => (
+						<AutocompletePreviewBlock
+							key={`autocomplete-preview:${previewBlock.id}`}
+							anchorBlock={anchorBlock}
+							anchorBlockType={anchorBlock?.type}
+							anchorProps={anchorBlock?.props ?? null}
+							block={previewBlock}
+							previewIndex={previewIndex}
+						/>
+					),
+				);
 				blockElements.push(...previewBlockElements);
 			}
 			continue;
@@ -173,7 +180,8 @@ export function EditorContent(props: EditorContentProps) {
 	}
 
 	const inlineDropCaret =
-		(isDropActive || isInlineAtomDropActive) && activeInlineDropCaretStyle ? (
+		(isDropActive || isInlineAtomDropActive) &&
+		activeInlineDropCaretStyle ? (
 			<div
 				// AX7 overlay — inline drop caret is presentation
 				aria-hidden="true"
@@ -276,9 +284,9 @@ export function EditorContent(props: EditorContentProps) {
 				data-pen-editor-blocks-host=""
 				{...(fieldEditorState.mode === "expanded"
 					? {
-						[DATA_ATTRS.fieldEditorSurface]: "",
-						...fieldEditorTextEntryAttrs(true, editor),
-					}
+							[DATA_ATTRS.fieldEditorSurface]: "",
+							...fieldEditorTextEntryAttrs(true, editor),
+						}
 					: {})}
 				ref={blocksHostRef}
 			>
@@ -326,7 +334,9 @@ function ackMountedBlockElements(
 	if (!fieldEditor || !host) {
 		return;
 	}
-	for (const element of host.querySelectorAll(`[${DATA_ATTRS.editorBlock}]`)) {
+	for (const element of host.querySelectorAll(
+		`[${DATA_ATTRS.editorBlock}]`,
+	)) {
 		if (!(element instanceof HTMLElement)) {
 			continue;
 		}
@@ -336,4 +346,3 @@ function ackMountedBlockElements(
 		}
 	}
 }
-

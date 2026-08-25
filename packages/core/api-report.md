@@ -30,6 +30,7 @@
 - collectEditorKeyBindings
 - collectToolExecutionOutput
 - commandHandler
+- convertBlockOps
 - createAppHandle
 - createBlockHandle
 - createCommandRegistry
@@ -42,6 +43,7 @@
 - createImportResult
 - createMutationGroupMetadata
 - createPseudoLocaleCatalog
+- createTextSelection
 - deepEqual
 - defineBlock
 - defineCommand
@@ -69,7 +71,6 @@
 - getOpOriginGroupId
 - getOpOriginType
 - getSelectionBlockRange
-- getTrustedSelectionBlockRange
 - getVerticalCaretGoalX
 - getVerticalCaretMeasure
 - hasFieldEditorSurface

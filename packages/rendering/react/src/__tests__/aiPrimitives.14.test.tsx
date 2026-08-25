@@ -221,7 +221,9 @@ function testStreamingToolExtension() {
 		dependencies: ["document-ops"],
 		activateClient: async ({ editor }) => {
 			toolRuntime =
-				(editor.facet(documentOpsToolRuntimeFacet) as ToolRuntime | null) ?? null;
+				(editor.facet(
+					documentOpsToolRuntimeFacet,
+				) as ToolRuntime | null) ?? null;
 			toolRuntime?.registerTool({
 				name: "test_search",
 				description: "Test streaming search tool",
@@ -281,8 +283,8 @@ describe("@input/pen-react AI primitives", () => {
 						type: "splice-text",
 						blockId,
 						from: 0,
-				to: 0,
-				insert: "Hello world",
+						to: 0,
+						insert: "Hello world",
 					},
 				],
 				{ origin: "system" },
@@ -395,9 +397,15 @@ describe("@input/pen-react AI primitives", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello world" }],
+			[
+				{
+					type: "splice-text",
+					blockId,
+					from: 0,
+					to: 0,
+					insert: "Hello world",
+				},
+			],
 			{ origin: "system" },
 		);
 		editor.selectTextRange({ blockId, offset: 0 }, { blockId, offset: 5 });
@@ -500,9 +508,15 @@ describe("@input/pen-react AI primitives", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello world" }],
+			[
+				{
+					type: "splice-text",
+					blockId,
+					from: 0,
+					to: 0,
+					insert: "Hello world",
+				},
+			],
 			{ origin: "system" },
 		);
 		editor.selectTextRange({ blockId, offset: 5 }, { blockId, offset: 5 });

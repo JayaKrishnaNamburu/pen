@@ -38,7 +38,13 @@ export function pasteBlocks(
 			return;
 		}
 		if (typeof single.content === "string") {
-			pasteInlineText(editor, fieldEditor, single.content, cursor, options);
+			pasteInlineText(
+				editor,
+				fieldEditor,
+				single.content,
+				cursor,
+				options,
+			);
 		}
 		return;
 	}
@@ -53,31 +59,30 @@ export function pasteBlocks(
 	for (const block of valid) {
 		const schema = editor.schema.resolve(block.type!)!;
 		const blockId = generateId();
-		const insertBlockOp =
-			previousBlockId
-				? ({
+		const insertBlockOp = previousBlockId
+			? ({
 					type: "insert-block",
 					blockId,
 					blockType: block.type!,
 					props: block.props ?? {},
 					position: { after: previousBlockId } as Position,
 				} as DocumentOp)
-				: cursor
-					? shouldReplaceEmpty
-						? ({
+			: cursor
+				? shouldReplaceEmpty
+					? ({
 							type: "insert-block",
 							blockId,
 							blockType: block.type!,
 							props: block.props ?? {},
 							position: { before: cursor.blockId } as Position,
 						} as DocumentOp)
-						: getInsertSiblingBlockOp(editor, {
+					: getInsertSiblingBlockOp(editor, {
 							siblingBlockId: cursor.blockId,
 							blockId,
 							blockType: block.type!,
 							props: block.props ?? {},
 						})
-					: ({
+				: ({
 						type: "insert-block",
 						blockId,
 						blockType: block.type!,
@@ -90,7 +95,9 @@ export function pasteBlocks(
 		if (schema.content === "inline") {
 			const deltas = getPenBlockInlineDeltas(block);
 			lastContentLength =
-				deltas.length > 0 ? appendInlineContentOps(ops, blockId, deltas) : 0;
+				deltas.length > 0
+					? appendInlineContentOps(ops, blockId, deltas)
+					: 0;
 		} else if (schema.content === "table" && block.children) {
 			appendTableChildrenOps(ops, blockId, block.children);
 			lastContentLength = 0;
@@ -138,7 +145,15 @@ export function pasteInlineText(
 	if (lines.length === 1) {
 		const insertedText = lines[0];
 		editor.apply(
-			[{ type: "splice-text", blockId, from: offset, to: offset, insert: insertedText }],
+			[
+				{
+					type: "splice-text",
+					blockId,
+					from: offset,
+					to: offset,
+					insert: insertedText,
+				},
+			],
 			{
 				origin: "user",
 				...(options?.undoGroup === false ? {} : { undoGroup: true }),
@@ -164,14 +179,15 @@ export function pasteInlineText(
 		});
 	}
 
-	const tailText = editor.getBlock(blockId)?.textContent().slice(offset) ?? "";
+	const tailText =
+		editor.getBlock(blockId)?.textContent().slice(offset) ?? "";
 	if (tailText) {
 		ops.push({
 			type: "splice-text",
 			blockId,
 			from: offset + (firstLine?.length ?? 0),
-				to: offset + (firstLine?.length ?? 0) + tailText.length,
-				insert: "",
+			to: offset + (firstLine?.length ?? 0) + tailText.length,
+			insert: "",
 		});
 	}
 
@@ -187,18 +203,18 @@ export function pasteInlineText(
 		ops.push({
 			...(previousBlockId === blockId
 				? getInsertSiblingBlockOp(editor, {
-					siblingBlockId: previousBlockId,
-					blockId: newId,
-					blockType,
-					props: {},
-				})
+						siblingBlockId: previousBlockId,
+						blockId: newId,
+						blockType,
+						props: {},
+					})
 				: {
-					type: "insert-block",
-					blockId: newId,
-					blockType,
-					props: {},
-					position: { after: previousBlockId },
-				}),
+						type: "insert-block",
+						blockId: newId,
+						blockType,
+						props: {},
+						position: { after: previousBlockId },
+					}),
 		});
 
 		if (lineText) {

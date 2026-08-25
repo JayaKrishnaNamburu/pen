@@ -19,6 +19,7 @@
 - buildDocumentBlockSnapshots
 - documentOpsExtension
 - exportDocumentRangeAsMarkdown
+- formatBlocksAsAnnotatedMarkdown
 - formatBlocksAsMarkdown
 - getDocumentToolRuntime
 - inspectStructuredTarget
@@ -31,6 +32,7 @@
 - resolveSelectedText
 - resolveSelectionText
 - retrieveDocumentSpans
+- stripBlockAnnotations
 - summarizeBlocks
 - validateToolPayloads
 

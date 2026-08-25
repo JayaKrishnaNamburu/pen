@@ -19,7 +19,6 @@ export interface TextRangeStreamingPreviewPlan {
 	blockId: string;
 	deleteFrom: number;
 	deleteTo: number;
-	insertedTextStart: number;
 	insertOffset: number;
 	text: string;
 }
@@ -33,7 +32,6 @@ export interface BlockRangeStreamingPreviewPlan {
 	};
 	deleteFromChar: number;
 	deleteToChar: number;
-	insertedTextStart: number;
 	insertText: string;
 }
 
@@ -81,7 +79,6 @@ function buildTextRangeStreamingPreviewPlan(
 	return buildStreamingTextPreviewPlan({
 		blockId: preview.target.blockId,
 		from,
-		insertedTextStartOffset: 0,
 		originalText,
 		previousTextLength: preview.previousTextLength,
 		replacementText: preview.text,
@@ -155,7 +152,6 @@ function buildBlockRangeStreamingPreviewPlan(
 		normalizedRange,
 		deleteFromChar,
 		deleteToChar,
-		insertedTextStart: sharedPrefixLength,
 		insertText,
 	};
 }
@@ -186,7 +182,6 @@ function buildPartialBlockRangeStreamingPreviewPlan({
 					normalizedRange,
 					deleteFromChar: sharedPrefixLength,
 					deleteToChar: sharedPrefixLength,
-					insertedTextStart: sharedPrefixLength,
 					insertText: "",
 				}
 			: null;
@@ -201,7 +196,6 @@ function buildPartialBlockRangeStreamingPreviewPlan({
 		normalizedRange,
 		deleteFromChar: sharedPrefixLength,
 		deleteToChar: sharedPrefixLength + (anchor?.originalOffset ?? 0),
-		insertedTextStart: sharedPrefixLength,
 		insertText: replacementTail.slice(
 			0,
 			anchor?.replacementOffset ?? replacementTail.length,
@@ -228,7 +222,6 @@ function buildAlignedBlockRangeStreamingPreviewPlan(
 		return null;
 	}
 
-	let paragraphStartOffset = 0;
 	const plans: TextRangeStreamingPreviewPlan[] = [];
 	for (let index = 0; index < fragments.length; index += 1) {
 		const fragment = fragments[index]!;
@@ -236,7 +229,6 @@ function buildAlignedBlockRangeStreamingPreviewPlan(
 		const plan = buildStreamingTextPreviewPlan({
 			blockId: fragment.blockId,
 			from: fragment.offset,
-			insertedTextStartOffset: paragraphStartOffset,
 			originalText: fragment.text,
 			previousTextLength: Number.POSITIVE_INFINITY,
 			replacementText: paragraph,
@@ -245,7 +237,6 @@ function buildAlignedBlockRangeStreamingPreviewPlan(
 		if (plan.deleteTo > plan.deleteFrom || plan.text.length > 0) {
 			plans.push(plan);
 		}
-		paragraphStartOffset += paragraph.length + 1;
 	}
 
 	return plans.length > 0 ? { kind: "aligned-block-range", plans } : null;
@@ -254,7 +245,6 @@ function buildAlignedBlockRangeStreamingPreviewPlan(
 function buildStreamingTextPreviewPlan({
 	blockId,
 	from,
-	insertedTextStartOffset,
 	originalText,
 	previousTextLength,
 	replacementText,
@@ -262,7 +252,6 @@ function buildStreamingTextPreviewPlan({
 }: {
 	blockId: string;
 	from: number;
-	insertedTextStartOffset: number;
 	originalText: string;
 	previousTextLength: number;
 	replacementText: string;
@@ -271,7 +260,6 @@ function buildStreamingTextPreviewPlan({
 	const partialPlan = buildPartialStreamingTextPreviewPlan({
 		blockId,
 		from,
-		insertedTextStartOffset,
 		originalText,
 		previousTextLength,
 		replacementText,
@@ -291,7 +279,6 @@ function buildStreamingTextPreviewPlan({
 		blockId,
 		deleteFrom: from + sharedPrefixLength,
 		deleteTo: to - sharedSuffixLength,
-		insertedTextStart: insertedTextStartOffset + sharedPrefixLength,
 		insertOffset: from + sharedPrefixLength,
 		text: replacementText.slice(sharedPrefixLength, insertedTextEnd),
 	};
@@ -300,14 +287,12 @@ function buildStreamingTextPreviewPlan({
 function buildPartialStreamingTextPreviewPlan({
 	blockId,
 	from,
-	insertedTextStartOffset,
 	originalText,
 	previousTextLength,
 	replacementText,
 }: {
 	blockId: string;
 	from: number;
-	insertedTextStartOffset: number;
 	originalText: string;
 	previousTextLength: number;
 	replacementText: string;
@@ -327,7 +312,6 @@ function buildPartialStreamingTextPreviewPlan({
 					blockId,
 					deleteFrom: from + sharedPrefixLength,
 					deleteTo: from + sharedPrefixLength,
-					insertedTextStart: insertedTextStartOffset + sharedPrefixLength,
 					insertOffset: from + sharedPrefixLength,
 					text: "",
 				}
@@ -343,7 +327,6 @@ function buildPartialStreamingTextPreviewPlan({
 		blockId,
 		deleteFrom: from + sharedPrefixLength,
 		deleteTo: from + sharedPrefixLength + (anchor?.originalOffset ?? 0),
-		insertedTextStart: insertedTextStartOffset + sharedPrefixLength,
 		insertOffset: from + sharedPrefixLength,
 		text: replacementTail.slice(
 			0,

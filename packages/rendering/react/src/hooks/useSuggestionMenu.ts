@@ -1,9 +1,4 @@
-import {
-	useCallback,
-	useEffect,
-	useRef,
-	useState,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { isCollapsed } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
 import { useIsomorphicLayoutEffect } from "./useIsomorphicLayoutEffect";

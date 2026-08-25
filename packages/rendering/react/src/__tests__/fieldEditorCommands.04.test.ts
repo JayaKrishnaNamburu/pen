@@ -63,9 +63,7 @@ describe("applyDeleteBehavior", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" },
 		]);
 
 		const target = applyDeleteBehavior(editor, {
@@ -85,7 +83,6 @@ describe("applyDeleteBehavior", () => {
 			type: "text",
 			anchor: { blockId, offset: 1 },
 			focus: { blockId, offset: 1 },
-			isCollapsed: true,
 		});
 
 		editor.destroy();
@@ -96,9 +93,7 @@ describe("applyDeleteBehavior", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "A" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "A" },
 			{
 				type: "splice-text",
 				blockId,
@@ -109,9 +104,7 @@ describe("applyDeleteBehavior", () => {
 					props: { id: "user-1", label: "Ada" },
 				},
 			},
-			{ type: "splice-text", blockId, from: 2,
-				to: 2,
-				insert: "B" },
+			{ type: "splice-text", blockId, from: 2, to: 2, insert: "B" },
 		]);
 
 		const target = applyDeleteBehavior(editor, {
@@ -145,9 +138,7 @@ describe("applyDeleteBehavior", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "A" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "A" },
 			{
 				type: "splice-text",
 				blockId,
@@ -158,9 +149,7 @@ describe("applyDeleteBehavior", () => {
 					props: { id: "user-1", label: "Ada" },
 				},
 			},
-			{ type: "splice-text", blockId, from: 2,
-				to: 2,
-				insert: "B" },
+			{ type: "splice-text", blockId, from: 2, to: 2, insert: "B" },
 		]);
 
 		const target = applyDeleteBehavior(editor, {
@@ -184,9 +173,7 @@ describe("applyDeleteBehavior", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "A" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "A" },
 			{
 				type: "splice-text",
 				blockId,
@@ -197,9 +184,7 @@ describe("applyDeleteBehavior", () => {
 					props: { id: "user-1", label: "Ada" },
 				},
 			},
-			{ type: "splice-text", blockId, from: 2,
-				to: 2,
-				insert: "B" },
+			{ type: "splice-text", blockId, from: 2, to: 2, insert: "B" },
 		]);
 
 		const target = applyDeleteBehavior(editor, {
@@ -220,5 +205,4 @@ describe("applyDeleteBehavior", () => {
 
 		editor.destroy();
 	});
-
 });

@@ -5,7 +5,9 @@ import type { AIController, PersistentSuggestion } from "@input/pen-ai";
 
 const EMPTY_SUGGESTIONS: readonly PersistentSuggestion[] = [];
 
-export function useSuggestions(editor: Editor): readonly PersistentSuggestion[] {
+export function useSuggestions(
+	editor: Editor,
+): readonly PersistentSuggestion[] {
 	const controller =
 		(editor.facet(aiControllerFacet) as AIController | null) ?? null;
 

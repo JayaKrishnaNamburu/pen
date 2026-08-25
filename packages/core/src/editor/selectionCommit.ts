@@ -9,7 +9,7 @@ import type {
 	SelectionState,
 	TextSelection,
 } from "@input/pen-types";
-import { stampTextSelection } from "../selection/helpers";
+import { createTextSelection } from "../selection/helpers";
 import type { EditorAnchorsImpl } from "./anchors";
 import {
 	clampCellCoord,
@@ -83,7 +83,7 @@ export function resolveHeldText(
 	if (!from || !to) {
 		return undefined;
 	}
-	return stampTextSelection(doc, {
+	return createTextSelection({
 		anchor: from,
 		focus: to,
 		affinity: state.affinity,
@@ -111,7 +111,7 @@ function mapText(
 	if (!anchor || !focus) {
 		return null;
 	}
-	const next = stampTextSelection(host.doc, {
+	const next = createTextSelection({
 		anchor,
 		focus,
 		affinity: state.affinity,
@@ -157,7 +157,7 @@ function mapBlock(
 	if (!point) {
 		return null;
 	}
-	return stampTextSelection(host.doc, {
+	return createTextSelection({
 		anchor: point,
 		focus: point,
 	});
@@ -191,7 +191,7 @@ function mapCell(
 		if (!point) {
 			return null;
 		}
-		return stampTextSelection(host.doc, {
+		return createTextSelection({
 			anchor: point,
 			focus: point,
 		});

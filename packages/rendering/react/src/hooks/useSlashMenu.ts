@@ -1,5 +1,10 @@
 import { useState, useRef, useEffect } from "react";
-import { blockLogicalText, foldAndNormalize, isCollapsed, localeFacet } from "@input/pen-core";
+import {
+	blockLogicalText,
+	foldAndNormalize,
+	isCollapsed,
+	localeFacet,
+} from "@input/pen-core";
 import type { BlockDisplay, BlockSchema, Editor } from "@input/pen-types";
 import { generateId } from "@input/pen-types";
 import {
@@ -155,8 +160,8 @@ export function useSlashMenu(
 							type: "splice-text" as const,
 							blockId,
 							from: 0,
-				to: 0 + 1,
-				insert: "",
+							to: 0 + 1,
+							insert: "",
 						});
 					}
 					if (block.type !== item.type) {

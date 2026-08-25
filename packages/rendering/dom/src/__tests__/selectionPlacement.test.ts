@@ -26,20 +26,13 @@ function flushFrame(): void {
 	}
 }
 
-function textSelection(isCollapsed = false): Extract<
-	SelectionState,
-	{ type: "text" }
-> {
+function textSelection(
+	isCollapsed = false,
+): Extract<SelectionState, { type: "text" }> {
 	return {
 		type: "text",
 		anchor: { blockId: "p1", offset: 0 },
 		focus: { blockId: "p1", offset: isCollapsed ? 0 : 4 },
-		isCollapsed,
-		isMultiBlock: false,
-		blockRange: ["p1"],
-		toRange: () => {
-			throw new Error("toRange is unused in placement wiring tests");
-		},
 	};
 }
 
@@ -74,7 +67,11 @@ describe("resolveSelectionRect", () => {
 
 	it("reads rangeRects in the scheduler read phase without measureNow", async () => {
 		const root = document.createElement("div");
-		const rangeWithWidth = { ...collapsedRect(8, 12, 10), width: 24, right: 32 };
+		const rangeWithWidth = {
+			...collapsedRect(8, 12, 10),
+			width: 24,
+			right: 32,
+		};
 		const host = getRootGeometry(root, {
 			observeResize: false,
 			observeFonts: false,

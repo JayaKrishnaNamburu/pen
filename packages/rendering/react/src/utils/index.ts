@@ -4,7 +4,7 @@ export {
 	penDataAttr,
 	buildDataAttributes,
 	DATA_ATTRS,
-} from "./dataAttributes";
+} from "@input/pen-dom/utils/dataAttributes";
 export {
 	getAttachedFieldEditor,
 	getAttachedFieldEditorStore,

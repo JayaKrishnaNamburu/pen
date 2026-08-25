@@ -4,7 +4,7 @@ import { resolveEditorMessage } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
 import { useIsomorphicLayoutEffect } from "../../hooks/useIsomorphicLayoutEffect";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
-import { DATA_ATTRS } from "../../utils/dataAttributes";
+import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 import { useAISuggestionsContext } from "./root";
 
 const POPOVER_ACTION_COUNT = 2;
@@ -29,7 +29,8 @@ export function AISuggestionsPopover(props: AISuggestionsPopoverProps) {
 	const position = popover.position;
 	const isOpen = Boolean(suggestion && position);
 	const listboxId = React.useId();
-	const [selectedIndex, setSelectedIndex] = React.useState(APPLY_OPTION_INDEX);
+	const [selectedIndex, setSelectedIndex] =
+		React.useState(APPLY_OPTION_INDEX);
 	const selectedIndexRef = React.useRef(selectedIndex);
 	const popoverRef = React.useRef(popover);
 	selectedIndexRef.current = selectedIndex;
@@ -110,7 +111,10 @@ export function AISuggestionsPopover(props: AISuggestionsPopoverProps) {
 		if (!field) {
 			return;
 		}
-		const activeOptionId = getAISuggestionsOptionId(listboxId, selectedIndex);
+		const activeOptionId = getAISuggestionsOptionId(
+			listboxId,
+			selectedIndex,
+		);
 		field.setAttribute("aria-controls", listboxId);
 		field.setAttribute("aria-expanded", "true");
 		field.setAttribute("aria-activedescendant", activeOptionId);
@@ -136,256 +140,264 @@ export function AISuggestionsPopover(props: AISuggestionsPopoverProps) {
 	const content = renderAsChild(
 		{
 			...props,
-			children:
-				props.children ?? (
-					<>
-						<div
-							style={{
-								display: "flex",
-								alignItems: "flex-start",
-								justifyContent: "space-between",
-								gap: 12,
-								marginBottom: 12,
-							}}
-						>
-							<div style={{ display: "grid", gap: 6 }}>
-								<div
+			children: props.children ?? (
+				<>
+					<div
+						style={{
+							display: "flex",
+							alignItems: "flex-start",
+							justifyContent: "space-between",
+							gap: 12,
+							marginBottom: 12,
+						}}
+					>
+						<div style={{ display: "grid", gap: 6 }}>
+							<div
+								style={{
+									display: "inline-flex",
+									alignItems: "center",
+									gap: 8,
+								}}
+							>
+								<span
 									style={{
 										display: "inline-flex",
 										alignItems: "center",
-										gap: 8,
-									}}
-								>
-									<span
-										style={{
-											display: "inline-flex",
-											alignItems: "center",
-											borderRadius: 999,
-											padding: "4px 8px",
-											background:
-												suggestion.kind === "spelling"
-													? "rgba(37, 99, 235, 0.10)"
-													: suggestion.kind === "grammar"
-														? "rgba(8, 145, 178, 0.10)"
-														: suggestion.kind === "clarity"
-															? "rgba(124, 58, 237, 0.10)"
-															: "rgba(14, 116, 144, 0.10)",
-											color:
-												suggestion.kind === "spelling"
-													? "#1d4ed8"
-													: suggestion.kind === "grammar"
-														? "#0f766e"
-														: suggestion.kind === "clarity"
-															? "#6d28d9"
-															: "#0f766e",
-											fontSize: 11,
-											fontWeight: 700,
-											letterSpacing: "0.04em",
-											textTransform: "uppercase",
-										}}
-									>
-										{kindLabel}
-									</span>
-									{groupCountLabel ? (
-										<span
-											style={{
-												fontSize: 12,
-												color: "#64748b",
-											}}
-										>
-											{groupCountLabel}
-										</span>
-									) : null}
-								</div>
-								<div
-									style={{
-										fontSize: 15,
-										fontWeight: 700,
-										color: "#0f172a",
-										lineHeight: 1.3,
-									}}
-								>
-									{groupTitle}
-								</div>
-							</div>
-							{popover.groupCount > 1 ? (
-								<div
-									style={{
-										display: "flex",
-										alignItems: "center",
-										gap: 8,
-										padding: 4,
 										borderRadius: 999,
-										background: "rgba(148, 163, 184, 0.10)",
-									}}
-								>
-									<button
-										type="button"
-										onMouseDown={preventEditorBlur}
-										onClick={popover.goToPreviousGroup}
-										disabled={popover.activeGroupIndex <= 0}
-										aria-label={resolveEditorMessage(
-											editor,
-											"pen.ai.suggestion.groupPrevious",
-										)}
-										style={buildIconButtonStyle(
-											popover.activeGroupIndex <= 0,
-										)}
-									>
-										&#8249;
-									</button>
-									<button
-										type="button"
-										onMouseDown={preventEditorBlur}
-										onClick={popover.goToNextGroup}
-										disabled={popover.activeGroupIndex >= popover.groupCount - 1}
-										aria-label={resolveEditorMessage(
-											editor,
-											"pen.ai.suggestion.groupNext",
-										)}
-										style={buildIconButtonStyle(
-											popover.activeGroupIndex >= popover.groupCount - 1,
-										)}
-									>
-										&#8250;
-									</button>
-								</div>
-							) : null}
-						</div>
-						<div style={{ display: "grid", gap: 10 }}>
-							<div
-								style={{
-									display: "grid",
-									gap: 6,
-									padding: "12px 14px",
-									borderRadius: 12,
-									background:
-										"linear-gradient(180deg, rgba(239, 246, 255, 0.96), rgba(219, 234, 254, 0.92))",
-									border: "1px solid rgba(96, 165, 250, 0.28)",
-								}}
-							>
-								<div
-									style={{
+										padding: "4px 8px",
+										background:
+											suggestion.kind === "spelling"
+												? "rgba(37, 99, 235, 0.10)"
+												: suggestion.kind === "grammar"
+													? "rgba(8, 145, 178, 0.10)"
+													: suggestion.kind ===
+														  "clarity"
+														? "rgba(124, 58, 237, 0.10)"
+														: "rgba(14, 116, 144, 0.10)",
+										color:
+											suggestion.kind === "spelling"
+												? "#1d4ed8"
+												: suggestion.kind === "grammar"
+													? "#0f766e"
+													: suggestion.kind ===
+														  "clarity"
+														? "#6d28d9"
+														: "#0f766e",
 										fontSize: 11,
 										fontWeight: 700,
 										letterSpacing: "0.04em",
 										textTransform: "uppercase",
-										color: "#2563eb",
 									}}
 								>
-									{resolveEditorMessage(
-										editor,
-										"pen.ai.suggestion.heading",
-									)}
-								</div>
-								<div
-									style={{
-										fontSize: 14,
-										fontWeight: 600,
-										color: "#0f172a",
-										lineHeight: 1.45,
-									}}
-								>
-									{suggestion.replacementText}
-								</div>
+									{kindLabel}
+								</span>
+								{groupCountLabel ? (
+									<span
+										style={{
+											fontSize: 12,
+											color: "#64748b",
+										}}
+									>
+										{groupCountLabel}
+									</span>
+								) : null}
 							</div>
-							{suggestion.reason ? (
-								<div
-									style={{
-										fontSize: 13,
-										lineHeight: 1.5,
-										color: "#475569",
-										paddingLeft: 2,
-									}}
-								>
-									{suggestion.reason}
-								</div>
-							) : null}
+							<div
+								style={{
+									fontSize: 15,
+									fontWeight: 700,
+									color: "#0f172a",
+									lineHeight: 1.3,
+								}}
+							>
+								{groupTitle}
+							</div>
 						</div>
+						{popover.groupCount > 1 ? (
+							<div
+								style={{
+									display: "flex",
+									alignItems: "center",
+									gap: 8,
+									padding: 4,
+									borderRadius: 999,
+									background: "rgba(148, 163, 184, 0.10)",
+								}}
+							>
+								<button
+									type="button"
+									onMouseDown={preventEditorBlur}
+									onClick={popover.goToPreviousGroup}
+									disabled={popover.activeGroupIndex <= 0}
+									aria-label={resolveEditorMessage(
+										editor,
+										"pen.ai.suggestion.groupPrevious",
+									)}
+									style={buildIconButtonStyle(
+										popover.activeGroupIndex <= 0,
+									)}
+								>
+									&#8249;
+								</button>
+								<button
+									type="button"
+									onMouseDown={preventEditorBlur}
+									onClick={popover.goToNextGroup}
+									disabled={
+										popover.activeGroupIndex >=
+										popover.groupCount - 1
+									}
+									aria-label={resolveEditorMessage(
+										editor,
+										"pen.ai.suggestion.groupNext",
+									)}
+									style={buildIconButtonStyle(
+										popover.activeGroupIndex >=
+											popover.groupCount - 1,
+									)}
+								>
+									&#8250;
+								</button>
+							</div>
+						) : null}
+					</div>
+					<div style={{ display: "grid", gap: 10 }}>
 						<div
 							style={{
-								display: "flex",
-								justifyContent: "space-between",
-								alignItems: "center",
-								gap: 8,
-								marginTop: 16,
+								display: "grid",
+								gap: 6,
+								padding: "12px 14px",
+								borderRadius: 12,
+								background:
+									"linear-gradient(180deg, rgba(239, 246, 255, 0.96), rgba(219, 234, 254, 0.92))",
+								border: "1px solid rgba(96, 165, 250, 0.28)",
 							}}
 						>
 							<div
 								style={{
-									fontSize: 12,
-									color: "#94a3b8",
+									fontSize: 11,
+									fontWeight: 700,
+									letterSpacing: "0.04em",
+									textTransform: "uppercase",
+									color: "#2563eb",
 								}}
 							>
 								{resolveEditorMessage(
 									editor,
-									"pen.ai.suggestion.applyHint",
+									"pen.ai.suggestion.heading",
 								)}
 							</div>
-							<div style={{ display: "flex", gap: 8 }}>
-								<button
-									type="button"
-									tabIndex={-1}
-									id={getAISuggestionsOptionId(
-										listboxId,
-										DISMISS_OPTION_INDEX,
-									)}
-									role="option"
-									aria-selected={
-										selectedIndex === DISMISS_OPTION_INDEX
-									}
-									data-pen-ai-suggestions-option=""
-									data-selected={
-										selectedIndex === DISMISS_OPTION_INDEX
-											? ""
-											: undefined
-									}
-									onMouseDown={preventEditorBlur}
-									onMouseEnter={() => {
-										setSelectedIndex(DISMISS_OPTION_INDEX);
-									}}
-									onClick={() => {
-										popover.dismissActiveGroup();
-									}}
-									style={SECONDARY_BUTTON_STYLE}
-								>
-									{resolveEditorMessage(
-										editor,
-										"pen.ai.suggestion.dismiss",
-									)}
-								</button>
-								<button
-									type="button"
-									tabIndex={-1}
-									id={getAISuggestionsOptionId(
-										listboxId,
-										APPLY_OPTION_INDEX,
-									)}
-									role="option"
-									aria-selected={
-										selectedIndex === APPLY_OPTION_INDEX
-									}
-									data-pen-ai-suggestions-option=""
-									data-selected={
-										selectedIndex === APPLY_OPTION_INDEX
-											? ""
-											: undefined
-									}
-									onMouseDown={preventEditorBlur}
-									onMouseEnter={() => {
-										setSelectedIndex(APPLY_OPTION_INDEX);
-									}}
-									onClick={() => {
-										popover.applyActiveGroup();
-									}}
-									style={PRIMARY_BUTTON_STYLE}
-								>
-									{resolveEditorMessage(editor, "pen.ai.suggestion.apply")}
-								</button>
+							<div
+								style={{
+									fontSize: 14,
+									fontWeight: 600,
+									color: "#0f172a",
+									lineHeight: 1.45,
+								}}
+							>
+								{suggestion.replacementText}
 							</div>
 						</div>
-					</>
-				),
+						{suggestion.reason ? (
+							<div
+								style={{
+									fontSize: 13,
+									lineHeight: 1.5,
+									color: "#475569",
+									paddingLeft: 2,
+								}}
+							>
+								{suggestion.reason}
+							</div>
+						) : null}
+					</div>
+					<div
+						style={{
+							display: "flex",
+							justifyContent: "space-between",
+							alignItems: "center",
+							gap: 8,
+							marginTop: 16,
+						}}
+					>
+						<div
+							style={{
+								fontSize: 12,
+								color: "#94a3b8",
+							}}
+						>
+							{resolveEditorMessage(
+								editor,
+								"pen.ai.suggestion.applyHint",
+							)}
+						</div>
+						<div style={{ display: "flex", gap: 8 }}>
+							<button
+								type="button"
+								tabIndex={-1}
+								id={getAISuggestionsOptionId(
+									listboxId,
+									DISMISS_OPTION_INDEX,
+								)}
+								role="option"
+								aria-selected={
+									selectedIndex === DISMISS_OPTION_INDEX
+								}
+								data-pen-ai-suggestions-option=""
+								data-selected={
+									selectedIndex === DISMISS_OPTION_INDEX
+										? ""
+										: undefined
+								}
+								onMouseDown={preventEditorBlur}
+								onMouseEnter={() => {
+									setSelectedIndex(DISMISS_OPTION_INDEX);
+								}}
+								onClick={() => {
+									popover.dismissActiveGroup();
+								}}
+								style={SECONDARY_BUTTON_STYLE}
+							>
+								{resolveEditorMessage(
+									editor,
+									"pen.ai.suggestion.dismiss",
+								)}
+							</button>
+							<button
+								type="button"
+								tabIndex={-1}
+								id={getAISuggestionsOptionId(
+									listboxId,
+									APPLY_OPTION_INDEX,
+								)}
+								role="option"
+								aria-selected={
+									selectedIndex === APPLY_OPTION_INDEX
+								}
+								data-pen-ai-suggestions-option=""
+								data-selected={
+									selectedIndex === APPLY_OPTION_INDEX
+										? ""
+										: undefined
+								}
+								onMouseDown={preventEditorBlur}
+								onMouseEnter={() => {
+									setSelectedIndex(APPLY_OPTION_INDEX);
+								}}
+								onClick={() => {
+									popover.applyActiveGroup();
+								}}
+								style={PRIMARY_BUTTON_STYLE}
+							>
+								{resolveEditorMessage(
+									editor,
+									"pen.ai.suggestion.apply",
+								)}
+							</button>
+						</div>
+					</div>
+				</>
+			),
 		},
 		"div",
 		{
@@ -444,13 +456,25 @@ function preventEditorBlur(event: React.MouseEvent<HTMLElement>) {
 function formatSuggestionKindLabel(editor: Editor, kind: string): string {
 	switch (kind) {
 		case "spelling":
-			return resolveEditorMessage(editor, "pen.ai.suggestion.kind.spelling");
+			return resolveEditorMessage(
+				editor,
+				"pen.ai.suggestion.kind.spelling",
+			);
 		case "grammar":
-			return resolveEditorMessage(editor, "pen.ai.suggestion.kind.grammar");
+			return resolveEditorMessage(
+				editor,
+				"pen.ai.suggestion.kind.grammar",
+			);
 		case "clarity":
-			return resolveEditorMessage(editor, "pen.ai.suggestion.kind.clarity");
+			return resolveEditorMessage(
+				editor,
+				"pen.ai.suggestion.kind.clarity",
+			);
 		case "rephrase":
-			return resolveEditorMessage(editor, "pen.ai.suggestion.kind.rephrase");
+			return resolveEditorMessage(
+				editor,
+				"pen.ai.suggestion.kind.rephrase",
+			);
 		default:
 			return resolveEditorMessage(editor, "pen.ai.suggestion.kind.other");
 	}

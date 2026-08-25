@@ -79,12 +79,20 @@ export function buildFlowPatchEditExecution(
 					"Flow patch replace_text requires an existing target block.",
 				);
 			}
+			const window = resolveAnchorWindow(primaryBlock, edit.locator);
+			if (!window.ok) {
+				return withIssue(
+					`${path}.locator`,
+					"unsupported-target",
+					window.reason,
+				);
+			}
 			return {
 				ops: [{
 					type: "splice-text",
 					blockId: primaryBlockId,
-					from: 0,
-				to: 0 + primaryBlock.length(),
+					from: window.from,
+					to: window.to,
 					insert: edit.text ?? "",
 				}],
 				issues: [],
@@ -205,6 +213,64 @@ export function buildFlowPatchEditExecution(
 			return _exhaustive;
 		}
 	}
+}
+
+type AnchorWindow =
+	| { ok: true; from: number; to: number }
+	| { ok: false; reason: string };
+
+/**
+ * Resolves the text window a `replace_text` edit covers. Without anchors the
+ * whole block is replaced. `anchorBefore` / `anchorAfter` are exact, unique
+ * text snippets from the block; the replacement covers only what sits between
+ * them (Morph-style partial edits).
+ */
+function resolveAnchorWindow(
+	block: { textContent(): string; length(): number },
+	locator: FlowPatchEdit["locator"],
+): AnchorWindow {
+	const anchorBefore = locator.anchorBefore ?? "";
+	const anchorAfter = locator.anchorAfter ?? "";
+	if (anchorBefore.length === 0 && anchorAfter.length === 0) {
+		return { ok: true, from: 0, to: block.length() };
+	}
+
+	const text = block.textContent();
+	if (text.length !== block.length()) {
+		return {
+			ok: false,
+			reason:
+				"Flow patch replace_text anchors are not supported on blocks with embedded content.",
+		};
+	}
+
+	let from = 0;
+	if (anchorBefore.length > 0) {
+		const index = text.indexOf(anchorBefore);
+		if (index === -1 || text.indexOf(anchorBefore, index + 1) !== -1) {
+			return {
+				ok: false,
+				reason:
+					"Flow patch replace_text anchorBefore must match exactly one spot in the target block.",
+			};
+		}
+		from = index + anchorBefore.length;
+	}
+
+	let to = text.length;
+	if (anchorAfter.length > 0) {
+		const index = text.indexOf(anchorAfter, from);
+		if (index === -1 || text.indexOf(anchorAfter, index + 1) !== -1) {
+			return {
+				ok: false,
+				reason:
+					"Flow patch replace_text anchorAfter must match exactly one spot after anchorBefore in the target block.",
+			};
+		}
+		to = index;
+	}
+
+	return { ok: true, from, to };
 }
 
 export function buildOptimizedBlockReplacement(

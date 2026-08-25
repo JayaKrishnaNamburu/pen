@@ -3,7 +3,10 @@
 import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
-import { createEditor as createCoreEditor, fieldEditorHostFacet } from "@input/pen-core";
+import {
+	createEditor as createCoreEditor,
+	fieldEditorHostFacet,
+} from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
 import type { FieldEditorImpl } from "@input/pen-dom/field-editor/fieldEditorImpl";
 import { handleCopy } from "@input/pen-dom/field-editor/clipboard";
@@ -170,7 +173,6 @@ describe("@input/pen-react table rendering", () => {
 
 		expect(editor.selection).toMatchObject({
 			type: "text",
-			isMultiBlock: true,
 			anchor: { blockId: "t10-shift-flow", offset: 0 },
 			focus: { blockId: paragraphId, offset: 5 },
 		});
@@ -247,7 +249,6 @@ describe("@input/pen-react table rendering", () => {
 		// does not modulate that — structured matches the flow sibling.
 		expect(editor.selection).toMatchObject({
 			type: "text",
-			isMultiBlock: true,
 			anchor: { blockId: "t10-shift-structured", offset: 0 },
 			focus: { blockId: paragraphId, offset: 5 },
 		});

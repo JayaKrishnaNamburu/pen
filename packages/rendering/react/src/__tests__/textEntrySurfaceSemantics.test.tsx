@@ -3,7 +3,10 @@
 import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
-import { createEditor as createCoreEditor, fieldEditorHostFacet } from "@input/pen-core";
+import {
+	createEditor as createCoreEditor,
+	fieldEditorHostFacet,
+} from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
 import type { FieldEditorImpl } from "@input/pen-dom/field-editor/fieldEditorImpl";
 import { Pen } from "../primitives/index";

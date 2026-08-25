@@ -49,9 +49,9 @@ describe("@input/pen-react history and multiplayer hooks", () => {
 			): void;
 		} | null;
 		const blockId = editor.firstBlock()!.id;
-		editor.apply([{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hi" }]);
+		editor.apply([
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hi" },
+		]);
 
 		controller?.handleAwarenessChange(
 			new Map<number, Record<string, unknown>>([

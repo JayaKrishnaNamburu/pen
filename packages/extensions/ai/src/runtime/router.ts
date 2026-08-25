@@ -6,11 +6,14 @@ import type {
 	AIBlockAdapterId,
 	AIBlockClass,
 	AIContentFormat,
+	AIEditChannel,
 	AIMutationMode,
+	AIMutationPreference,
 	AIPlannerMode,
 	AIRouteLane,
 	AITargetKind,
 	AITransportKind,
+	PromptIntent,
 } from "./contracts";
 import {
 	resolveBlockAdapter,
@@ -34,6 +37,8 @@ export interface RequestRouterInput {
 	target: "selection" | "block";
 	contentFormat: AIContentFormat;
 	surface?: AISurface;
+	mutationPreference?: AIMutationPreference;
+	editChannel?: AIEditChannel;
 }
 
 export interface RequestRouterDecision {
@@ -49,6 +54,8 @@ export interface RequestRouterDecision {
 	transportKind: AITransportKind;
 	suggestMode: boolean;
 	surface?: AISurface;
+	mutationPreference?: AIMutationPreference;
+	editChannel?: AIEditChannel;
 	allowToolUse: boolean;
 	useCursorContext: boolean;
 	useDocumentSummary: boolean;
@@ -64,22 +71,62 @@ interface NavigatorRefinementInput {
 	structuredTargetKind?: AITargetKind | null;
 }
 
-export type PromptIntent =
-	| "rewrite"
-	| "continue"
-	| "local-edit"
-	| "structural"
-	| "search"
-	| "review"
-	| "unknown";
+export type { PromptIntent } from "./contracts";
 
-const REWRITE_PATTERNS = /\b(rewrite|retry|redo|again|do.?over|summari[sz]e|translate|simplify|fix|improve|shorten|expand|polish|paraphrase)\b/i;
+const REWRITE_PATTERNS = /\b(rewrite|retry|redo|again|do.?over|summari[sz]e|translate|simplify|fix|improve|shorten|expand|extend|polish|paraphrase|edit|revise|reword|rephrase)\b/i;
 const CONTINUE_PATTERNS = /\b(continue|finish|complete|keep writing|next paragraph|next section)\b/i;
 const GENERATIVE_PATTERNS = /\b(write|create|draft|compose|generate|brainstorm)\b/i;
-const SEARCH_PATTERNS = /\b(find|search|where|which|list|scan|inspect|look for)\b/i;
-const STRUCTURAL_PATTERNS = /\b(restructure|reorganize|outline|move|delete section|insert section|change blocks|convert block|table|heading hierarchy)\b/i;
+const SEARCH_PATTERNS = /\b(find|search|look for|locate|where (?:is|are|does|do)|list (?:all|every|each|the)|scan for)\b/i;
+const STRUCTURAL_PATTERNS = /\b(restructure|reorganize|outline|move|delete section|insert section|change blocks|convert|turn\s+(?:\S+\s+){0,8}?into|(?:bullet(?:ed)?|numbered|ordered) list|checklist|table|heading hierarchy|merge|split)\b/i;
 const REVIEW_PATTERNS = /\b(review|critique|audit|compare|analyze entire|check whole)\b/i;
+/**
+ * Opening interrogatives only, and deliberately without the polite modals
+ * (`can`, `could`, `would`, `will`): "Can you make the title purple?" is an
+ * edit request wearing a question mark, and a trailing `?` cannot tell the two
+ * apart. The asymmetry decides the conservatism — a question misread as an
+ * edit rewrites the document, while an edit misread as a question only loses
+ * EC17's forced tool choice and still edits when the model picks the tool.
+ */
+const QUESTION_PATTERNS =
+	/^\s*(what|why|how|who|when|where|which|whose|is|are|was|were|does|do|did|has|have|should|am)\b/i;
 const TABLE_TARGET_PATTERNS = /\b(table|grid|rows?|columns?)\b/i;
+
+/**
+ * Largest document that ships whole into a fast-apply prompt. Structural work
+ * only takes the single-pass lane when the whole document fits, so the lane
+ * and its context agree by construction; bigger documents go to the tool loop,
+ * which can read what it needs. The working-set builder reads the same bound.
+ */
+export const AI_FAST_APPLY_MAX_DOCUMENT_BLOCKS = 120;
+
+/**
+ * The tool edit channel replaces the one lane that commits a durable edit by
+ * parsing the assistant text stream. Streaming lanes (selection rewrite,
+ * cursor continuation) keep writing text deltas, and the review lane keeps
+ * staging (`spec-better-ai/01-edit-channel.md` EC1, EC12).
+ */
+function applyEditChannelLane(
+	lane: AIRouteLane,
+	editChannel: AIEditChannel | undefined,
+): AIRouteLane {
+	if (editChannel !== "tool") return lane;
+	return lane === "context-first" ? "tool-loop" : lane;
+}
+
+/**
+ * A tool-channel lane must not also ask the model for a text-parsed edit plan:
+ * the prompt would demand XML while the channel expects a tool call, and the
+ * durable edit would have two possible sources. Lanes that only stream text
+ * keep their text strategy (EC1).
+ */
+function applyEditChannelStrategy(
+	strategy: AIApplyStrategy,
+	lane: AIRouteLane,
+	editChannel: AIEditChannel | undefined,
+): AIApplyStrategy {
+	if (editChannel !== "tool") return strategy;
+	return lane === "tool-loop" ? "tool-edit" : strategy;
+}
 
 export function routeAIRequest(
 	input: RequestRouterInput,
@@ -99,23 +146,38 @@ export function routeAIRequest(
 		!isStructuralBlockType(input.blockType)
 	) {
 		lane = "cursor-context";
-	} else if (intent === "review" || intent === "structural") {
+	} else if (intent === "review") {
 		lane = input.suggestMode ? "review" : "tool-loop";
+	} else if (intent === "structural") {
+		// Structural edits on flow blocks resolve fastest through the
+		// markdown fast-apply lane; structured blocks (tables, boards) and
+		// large documents still need the tool loop.
+		lane = input.suggestMode
+			? "review"
+			: !isStructuralBlockType(input.blockType) &&
+				  input.blockCount <= AI_FAST_APPLY_MAX_DOCUMENT_BLOCKS
+				? "context-first"
+				: "tool-loop";
 	} else if (intent === "search") {
 		lane = "tool-loop";
-	} else if (!selectionExpanded && input.blockCount <= 200) {
+	} else if (
+		!selectionExpanded &&
+		input.blockCount <= AI_FAST_APPLY_MAX_DOCUMENT_BLOCKS
+	) {
 		lane = "context-first";
 	} else if (selectionExpanded && input.target === "selection") {
 		lane = "selection-rewrite";
 	} else {
 		lane = "tool-loop";
 	}
+	lane = applyEditChannelLane(lane, input.editChannel);
 
 	let mutationMode = resolveMutationMode({
 		lane,
 		suggestMode: input.suggestMode,
 		selection: input.selection,
 		surface: input.surface,
+		mutationPreference: input.mutationPreference,
 	});
 	let targetKind = resolveGenerationTargetKind({
 		target: input.target,
@@ -158,6 +220,12 @@ export function routeAIRequest(
 		mutationMode,
 		fallback: input.contentFormat,
 	});
+	plannerMode = reconcilePlannerModeWithPrompt({
+		plannerMode,
+		adapterId: adapter.id,
+		contentFormat: resolvedContentFormat,
+		intent,
+	});
 
 	return {
 		target: input.target,
@@ -165,21 +233,27 @@ export function routeAIRequest(
 		mutationMode,
 		contentFormat: resolvedContentFormat,
 		plannerMode,
-		applyStrategy: resolveApplyStrategy({
-			target: input.target,
-			targetKind,
-			contentFormat: resolvedContentFormat,
-			plannerMode,
-			mutationMode,
-			intent,
-			surface: input.surface,
-		}),
+		applyStrategy: applyEditChannelStrategy(
+			resolveApplyStrategy({
+				target: input.target,
+				targetKind,
+				contentFormat: resolvedContentFormat,
+				plannerMode,
+				mutationMode,
+				intent,
+				surface: input.surface,
+			}),
+			lane,
+			input.editChannel,
+		),
 		targetKind,
 		blockClass: adapter.blockClass,
 		adapterId: adapter.id,
 		transportKind: adapter.transportKind,
 		suggestMode: input.suggestMode,
 		surface: input.surface,
+		mutationPreference: input.mutationPreference,
+		editChannel: input.editChannel,
 		allowToolUse: lane === "tool-loop" || lane === "review",
 		useCursorContext: lane === "cursor-context" || lane === "context-first",
 		useDocumentSummary: lane === "context-first" || lane === "tool-loop" || lane === "review",
@@ -227,8 +301,9 @@ export function refineRouteWithNavigator(
 			lane = "tool-loop";
 		}
 	}
+	lane = applyEditChannelLane(lane, decision.editChannel);
 
-	const plannerMode = resolvePlannerMode({
+	let plannerMode = resolvePlannerMode({
 		target: decision.target,
 		targetKind,
 		intent: decision.intent,
@@ -242,6 +317,7 @@ export function refineRouteWithNavigator(
 					suggestMode: decision.suggestMode,
 					selection: null,
 					surface: decision.surface,
+					mutationPreference: decision.mutationPreference,
 				}),
 		target: "block",
 		targetKind,
@@ -264,6 +340,12 @@ export function refineRouteWithNavigator(
 		mutationMode,
 		fallback: decision.contentFormat,
 	});
+	plannerMode = reconcilePlannerModeWithPrompt({
+		plannerMode,
+		adapterId: adapter.id,
+		contentFormat,
+		intent: decision.intent,
+	});
 
 	if (lane === decision.lane) {
 		return {
@@ -276,15 +358,19 @@ export function refineRouteWithNavigator(
 			contentFormat,
 			mutationMode,
 			plannerMode,
-			applyStrategy: resolveApplyStrategy({
-				target: decision.target,
-				targetKind,
-				contentFormat,
-				plannerMode,
-				mutationMode,
-				intent: decision.intent,
-				surface: decision.surface,
-			}),
+			applyStrategy: applyEditChannelStrategy(
+				resolveApplyStrategy({
+					target: decision.target,
+					targetKind,
+					contentFormat,
+					plannerMode,
+					mutationMode,
+					intent: decision.intent,
+					surface: decision.surface,
+				}),
+				lane,
+				decision.editChannel,
+			),
 			shouldStreamDirectly: shouldStreamDirectAIOutput({
 				mutationMode,
 				contentFormat,
@@ -299,15 +385,19 @@ export function refineRouteWithNavigator(
 		mutationMode,
 		contentFormat,
 		plannerMode,
-		applyStrategy: resolveApplyStrategy({
-			target: decision.target,
-			targetKind,
-			contentFormat,
-			plannerMode,
-			mutationMode,
-			intent: decision.intent,
-			surface: decision.surface,
-		}),
+		applyStrategy: applyEditChannelStrategy(
+			resolveApplyStrategy({
+				target: decision.target,
+				targetKind,
+				contentFormat,
+				plannerMode,
+				mutationMode,
+				intent: decision.intent,
+				surface: decision.surface,
+			}),
+			lane,
+			decision.editChannel,
+		),
 		targetKind,
 		blockClass: adapter.blockClass,
 		adapterId: adapter.id,
@@ -343,6 +433,10 @@ export function classifyPromptIntent(prompt: string): PromptIntent {
 	if (GENERATIVE_PATTERNS.test(prompt)) {
 		return "unknown";
 	}
+	// Last, so every edit verb above wins: "Improve this?" is a rewrite.
+	if (QUESTION_PATTERNS.test(prompt)) {
+		return "question";
+	}
 	if (prompt.trim().length <= 80) {
 		return "local-edit";
 	}
@@ -351,6 +445,34 @@ export function classifyPromptIntent(prompt: string): PromptIntent {
 
 function isStructuralBlockType(blockType: string | null): boolean {
 	return blockType === "table" || blockType === "kanban";
+}
+
+/**
+ * The flow-markdown adapter with markdown content sends the fast-apply
+ * prompt, so the finalize path must commit the buffered markdown instead of
+ * expecting a structured JSON plan. Review intent stays structured because it
+ * produces review bundles, not edits.
+ *
+ * This runs as a second pass because `resolveBlockAdapter` takes `plannerMode`
+ * as input, so the content format that decides the prompt shape is only known
+ * after the planner mode has been picked. Fold it upstream only by breaking
+ * that parameter dependency first.
+ */
+function reconcilePlannerModeWithPrompt(input: {
+	plannerMode: AIPlannerMode;
+	adapterId: AIBlockAdapterId;
+	contentFormat: AIContentFormat;
+	intent: PromptIntent;
+}): AIPlannerMode {
+	if (
+		input.plannerMode === "structured" &&
+		input.adapterId === "flow-markdown" &&
+		input.contentFormat === "markdown" &&
+		input.intent !== "review"
+	) {
+		return "text";
+	}
+	return input.plannerMode;
 }
 
 function inferPromptTargetKind(prompt: string): AITargetKind | null {
@@ -416,6 +538,11 @@ function resolveApplyStrategy(input: {
 		input.intent === "rewrite" ||
 		input.intent === "continue" ||
 		input.intent === "local-edit" ||
+		input.intent === "structural" ||
+		// Questions used to classify as `local-edit` and land here. Keeping
+		// them means the XML channel is unchanged by the question intent; the
+		// intent exists to stop the tool channel forcing an edit (EC17).
+		input.intent === "question" ||
 		input.targetKind === "table"
 	) {
 		return "markdown-fast-apply";

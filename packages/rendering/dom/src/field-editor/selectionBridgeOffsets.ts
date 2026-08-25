@@ -6,7 +6,11 @@ import {
 	getLogicalNodeLength,
 } from "./inlineAtomDom";
 import { queryBlockElement } from "./selectionDomQueries";
-import { domPointToOffset, type DirectionalSelectionOffsets, type SelectionPoint } from "./selectionBridge";
+import {
+	domPointToOffset,
+	type DirectionalSelectionOffsets,
+	type SelectionPoint,
+} from "./selectionBridge";
 
 function isNodeWithinOrEqual(container: HTMLElement, node: Node): boolean {
 	return node === container || container.contains(node);
@@ -195,10 +199,10 @@ export function getCaretOffset(inlineElement: HTMLElement): number {
 	return offsets?.start ?? 0;
 }
 
-function resolveWritableDOMPoint(point: {
+function resolveWritableDOMPoint(point: { node: Node; offset: number }): {
 	node: Node;
 	offset: number;
-}): { node: Node; offset: number } {
+} {
 	if (point.node.nodeType !== Node.ELEMENT_NODE) {
 		return point;
 	}
@@ -266,7 +270,10 @@ function setDOMSelection(
 			);
 			// Firefox accepts the call for mixed element/text points but
 			// leaves a caret; only trust the write when the endpoints stuck
-			if (!intendedRange || selectionHasEndpoints(selection, anchor, focus)) {
+			if (
+				!intendedRange ||
+				selectionHasEndpoints(selection, anchor, focus)
+			) {
 				return;
 			}
 		} catch {
@@ -284,7 +291,10 @@ function setDOMSelection(
 	if (intendedRange && typeof selection.extend === "function") {
 		try {
 			selection.extend(focus.node, focus.offset);
-			if (selectionHasEndpoints(selection, anchor, focus) || !selection.isCollapsed) {
+			if (
+				selectionHasEndpoints(selection, anchor, focus) ||
+				!selection.isCollapsed
+			) {
 				return;
 			}
 		} catch {
@@ -344,9 +354,7 @@ function getInlineCaretRectFromOffset(
 ): DOMRect {
 	const textLength = getLogicalNodeLength(inlineEl);
 	const placeholder = findEmptyBlockPlaceholder(inlineEl);
-	const inlineRect = (
-		placeholder ?? inlineEl
-	).getBoundingClientRect();
+	const inlineRect = (placeholder ?? inlineEl).getBoundingClientRect();
 	if (textLength <= 0) {
 		return {
 			x: inlineRect.left,
@@ -464,7 +472,9 @@ function stabilizeWrappedLineOffset(
 		inlineEl,
 		candidateOffset,
 	);
-	if (Math.abs(previousRect.top - candidateRect.top) <= WRAPPED_LINE_DELTA_PX) {
+	if (
+		Math.abs(previousRect.top - candidateRect.top) <= WRAPPED_LINE_DELTA_PX
+	) {
 		return candidateOffset;
 	}
 

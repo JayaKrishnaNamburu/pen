@@ -20,11 +20,7 @@ export const ANNOUNCE_RATE_LIMIT_MS = 500;
 export type AnnouncerPriority = "polite" | "assertive";
 
 export interface Announcer {
-	announce(
-		message: string,
-		priority?: AnnouncerPriority,
-		key?: string,
-	): void;
+	announce(message: string, priority?: AnnouncerPriority, key?: string): void;
 	dispose(): void;
 }
 
@@ -65,11 +61,18 @@ export function createAnnouncer(root?: ParentNode): Announcer {
 			const now = Date.now();
 			let gate = gates.get(key);
 			if (gate === undefined) {
-				gate = { lastWrittenAt: 0, timeout: undefined, pending: undefined };
+				gate = {
+					lastWrittenAt: 0,
+					timeout: undefined,
+					pending: undefined,
+				};
 				gates.set(key, gate);
 			}
 
-			if (gate.lastWrittenAt === 0 || now - gate.lastWrittenAt >= ANNOUNCE_RATE_LIMIT_MS) {
+			if (
+				gate.lastWrittenAt === 0 ||
+				now - gate.lastWrittenAt >= ANNOUNCE_RATE_LIMIT_MS
+			) {
 				write(region, message, priority);
 				gate.lastWrittenAt = now;
 				return;
@@ -115,7 +118,10 @@ function write(
 	region.textContent = message;
 }
 
-function createLiveRegion(doc: Document, root?: ParentNode): HTMLElement | null {
+function createLiveRegion(
+	doc: Document,
+	root?: ParentNode,
+): HTMLElement | null {
 	const mount = resolveMount(root, doc);
 	if (mount === undefined) {
 		return null;

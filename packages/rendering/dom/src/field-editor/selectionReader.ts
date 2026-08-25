@@ -5,6 +5,8 @@ import {
 } from "@input/pen-core";
 import type { Editor, Point, SelectionRecordState } from "@input/pen-types";
 import { toLogicalOffset } from "./offsetDomain";
+import { domSelectionToEditor } from "./selectionBridge";
+import { normalizeSelectionFormation } from "../utils/selectionFormation";
 
 export type ReaderPoint = Point;
 
@@ -109,7 +111,11 @@ export function isLogicallyEquivalent(
 				return false;
 			}
 			return (
-				sameSnappedPoint(domRead.anchor, authorityState.anchor, snapshot) &&
+				sameSnappedPoint(
+					domRead.anchor,
+					authorityState.anchor,
+					snapshot,
+				) &&
 				sameSnappedPoint(domRead.focus, authorityState.focus, snapshot)
 			);
 		}
@@ -173,9 +179,7 @@ export function classifyDomSelectionRead(input: {
 	) {
 		return "equivalent";
 	}
-	if (
-		!isAdmissibleDomRead("selectionchange", input.gestureWindows)
-	) {
+	if (!isAdmissibleDomRead("selectionchange", input.gestureWindows)) {
 		return "diverge";
 	}
 	return "accept";
@@ -198,6 +202,52 @@ export function shouldStopEquivalentDomRead(
 			gestureWindows: CLOSED_GESTURE_WINDOWS,
 		}) === "equivalent"
 	);
+}
+
+/**
+ * §4.2 step 2. Backends pick the root (editor root vs expanded host);
+ * the reader owns the map + formation normalize.
+ */
+export function resolveEditorRoot(element: HTMLElement): HTMLElement | null {
+	return element.closest("[data-pen-editor-root]") as HTMLElement | null;
+}
+
+export function readNormalizedDomProposal(
+	root: HTMLElement,
+	editor: Editor,
+): ReturnType<typeof normalizeSelectionFormation> | null {
+	const selection = domSelectionToEditor(root);
+	if (!selection) {
+		return null;
+	}
+	return normalizeSelectionFormation(editor, selection);
+}
+
+export function forwardDomSelectionToReader(
+	fieldEditor: {
+		readDomSelection?: (proposal: ReaderSelection) => unknown;
+	},
+	proposal: ReaderSelection,
+): boolean {
+	if (!fieldEditor.readDomSelection || proposal === null) {
+		return false;
+	}
+	if (proposal.type === "block") {
+		fieldEditor.readDomSelection({
+			type: "block",
+			blockIds: proposal.blockIds,
+		});
+		return true;
+	}
+	if (proposal.type !== "text") {
+		return false;
+	}
+	fieldEditor.readDomSelection({
+		type: "text",
+		anchor: proposal.anchor,
+		focus: proposal.focus,
+	});
+	return true;
 }
 
 export function decideDomSelectionRead(input: {

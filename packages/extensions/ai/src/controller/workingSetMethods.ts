@@ -3,6 +3,7 @@ import type { ToolRuntime } from "@input/pen-types";
 import { buildMutationReceipt } from "../runtime/mutationReceipt";
 import type { StructuralReviewItem } from "../runtime/reviewArtifacts";
 import {
+	AI_FAST_APPLY_MAX_DOCUMENT_BLOCKS,
 	refineRouteWithNavigator,
 	type RequestRouterDecision,
 } from "../runtime/router";
@@ -19,7 +20,14 @@ export const workingSetMethods = {
 	_buildFallbackMutationReceipt(
 		this: AIControllerMethodHost,
 		input: {
-			currentText: string;
+			/**
+			 * Whether the assistant text this turn produced became a document
+			 * commit. Text alone does not imply one: on the tool channel the
+			 * text is the model talking and the edit arrives as a tool call,
+			 * which applies directly and leaves no receipt for this path to
+			 * describe (`spec-better-ai/01-edit-channel.md` EC1).
+			 */
+			committedText: boolean;
 			suggestionIds: readonly string[];
 			reviewItems: readonly StructuralReviewItem[];
 			planExecutionIssueCount: number;
@@ -54,7 +62,7 @@ export const workingSetMethods = {
 			});
 		}
 		return buildMutationReceipt({
-			status: input.currentText.trim().length > 0 ? "applied" : "noop",
+			status: input.committedText ? "applied" : "noop",
 			adapterId: input.adapterId,
 			blockClass: input.blockClass,
 			transportKind: input.transportKind,
@@ -68,6 +76,7 @@ export const workingSetMethods = {
 		target: GenerationTarget,
 		blockId: string,
 		prompt: string,
+		scope?: "document" | "block",
 	): Promise<AIWorkingSetEnvelope | null> {
 		const selectionSignature = this._createSelectionSignature(
 			this._editor.selection,
@@ -95,6 +104,60 @@ export const workingSetMethods = {
 				},
 				trackedBlockIds,
 				blockRevisions: this._captureBlockRevisions(trackedBlockIds),
+				viewHashes: this._captureBlockViewHashes(trackedBlockIds),
+				selectionSignature,
+			};
+		}
+
+		// Document-scope prompts (e.g. chat) may edit anywhere, so give the
+		// editing lanes the whole annotated document instead of a narrow
+		// window around the anchor block when the document is small enough.
+		// Both edit channels address blocks by the ids these annotations
+		// carry, so both need them.
+		if (
+			scope === "document" &&
+			(route.applyStrategy === "markdown-fast-apply" ||
+				route.applyStrategy === "tool-edit") &&
+			this._editor.blockCount() <= AI_FAST_APPLY_MAX_DOCUMENT_BLOCKS
+		) {
+			const context = (await toolRuntime.executeTool(
+				"get_context",
+				{
+					format: "markdown",
+					annotateBlocks: true,
+					includeSelection: true,
+					includeSuggestions: this._state.suggestMode,
+				},
+				{} as never,
+			)) as {
+				activeBlockType?: string | null;
+				markdown?: string | null;
+				blockIds?: string[];
+				surroundingBlocks?: Array<{ id: string }>;
+				selectedText?: string | null;
+				structuredTarget?: {
+					target?: {
+						kind?: "block" | "table";
+					};
+				} | null;
+			};
+			const trackedBlockIds = [
+				...new Set([blockId, ...(context.blockIds ?? [])]),
+			];
+			return {
+				documentVersion: this._documentVersion,
+				viewMode: this._state.suggestMode ? "raw" : "resolved",
+				source: "document-summary",
+				context: {
+					...context,
+					markdownWindow: {
+						blockIds: context.blockIds ?? [blockId],
+					},
+				},
+				routeConfidence: route.confidence,
+				trackedBlockIds,
+				blockRevisions: this._captureBlockRevisions(trackedBlockIds),
+				viewHashes: this._captureBlockViewHashes(trackedBlockIds),
 				selectionSignature,
 			};
 		}
@@ -150,6 +213,9 @@ export const workingSetMethods = {
 					blockRevisions: this._captureBlockRevisions(
 						retrievedSpan.blockIds,
 					),
+					viewHashes: this._captureBlockViewHashes(
+						retrievedSpan.blockIds,
+					),
 					selectionSignature,
 				};
 			}
@@ -187,6 +253,7 @@ export const workingSetMethods = {
 				}).confidence,
 				trackedBlockIds: [...new Set(trackedBlockIds)],
 				blockRevisions: this._captureBlockRevisions(trackedBlockIds),
+				viewHashes: this._captureBlockViewHashes(trackedBlockIds),
 				selectionSignature,
 			};
 		}
@@ -242,20 +309,29 @@ export const workingSetMethods = {
 					blockRevisions: this._captureBlockRevisions(
 						retrievedSpan.blockIds,
 					),
+					viewHashes: this._captureBlockViewHashes(
+						retrievedSpan.blockIds,
+					),
 					selectionSignature,
 				};
 			}
 			const context = (await toolRuntime.executeTool(
 				"get_context",
-				{
-					format: "markdown",
-					includeSelection: true,
-					includeSuggestions: this._state.suggestMode,
-					range: {
-						startBlockId: blockId,
-						endBlockId: blockId,
-					},
-				},
+				scope === "document"
+					? {
+							format: "summary",
+							includeSelection: true,
+							includeSuggestions: this._state.suggestMode,
+						}
+					: {
+							format: "markdown",
+							includeSelection: true,
+							includeSuggestions: this._state.suggestMode,
+							range: {
+								startBlockId: blockId,
+								endBlockId: blockId,
+							},
+						},
 				{} as never,
 			)) as {
 				activeBlockType?: string | null;
@@ -287,6 +363,7 @@ export const workingSetMethods = {
 				}).confidence,
 				trackedBlockIds: [...new Set(trackedBlockIds)],
 				blockRevisions: this._captureBlockRevisions(trackedBlockIds),
+				viewHashes: this._captureBlockViewHashes(trackedBlockIds),
 				selectionSignature,
 			};
 		}
@@ -299,6 +376,7 @@ export const workingSetMethods = {
 			routeConfidence: route.confidence,
 			trackedBlockIds: [blockId],
 			blockRevisions: this._captureBlockRevisions([blockId]),
+			viewHashes: this._captureBlockViewHashes([blockId]),
 			selectionSignature,
 		};
 	},

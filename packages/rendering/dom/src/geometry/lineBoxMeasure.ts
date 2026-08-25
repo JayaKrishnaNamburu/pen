@@ -1,7 +1,5 @@
 import type { BlockDirection } from "../bidi";
-import {
-	isEmptyBlockPlaceholder,
-} from "../field-editor/emptyBlockPlaceholder";
+import { isEmptyBlockPlaceholder } from "../field-editor/emptyBlockPlaceholder";
 import {
 	getLogicalNodeLength,
 	getLogicalTextContent,
@@ -25,21 +23,31 @@ import {
 import type { BidiRun, LineBox, Rect } from "./types";
 import { isUsefulRect, rectFromDOMRect, unionRects } from "./types";
 
-export function measureLineBoxes(root: HTMLElement, blockId: string): readonly LineBox[] {
+export function measureLineBoxes(
+	root: HTMLElement,
+	blockId: string,
+): readonly LineBox[] {
 	const blockEl = queryBlockElement(root, blockId);
 	if (!blockEl) {
 		return [];
 	}
 
 	const inlineEl =
-		findInlineContentElement(blockEl) ??
-		queryInlineElement(root, blockId);
+		findInlineContentElement(blockEl) ?? queryInlineElement(root, blockId);
 	const base = readBlockDirection(blockEl, inlineEl);
 	if (!inlineEl) {
 		const rect = elementRect(blockEl);
 		return rect
 			? attachBidiRunsToLines(
-					[{ top: rect.top, bottom: rect.bottom, start: 0, end: 0, rect }],
+					[
+						{
+							top: rect.top,
+							bottom: rect.bottom,
+							start: 0,
+							end: 0,
+							rect,
+						},
+					],
 					"",
 					base,
 				)
@@ -126,7 +134,13 @@ function collectLineFragments(
 			const length = getLogicalNodeLength(node);
 			if (length > 0 && node instanceof Text) {
 				fragments.push(
-					...fragmentsForTextNode(root, inlineEl, node, offset, offset + length),
+					...fragmentsForTextNode(
+						root,
+						inlineEl,
+						node,
+						offset,
+						offset + length,
+					),
 				);
 			}
 			offset += length;
@@ -179,7 +193,13 @@ function fragmentsForTextNode(
 			continue;
 		}
 		splits.push(
-			findFirstOffsetOnLine(root, inlineEl, splits[index - 1] ?? logicalStart, logicalEnd, lineTop),
+			findFirstOffsetOnLine(
+				root,
+				inlineEl,
+				splits[index - 1] ?? logicalStart,
+				logicalEnd,
+				lineTop,
+			),
 		);
 	}
 	splits.push(logicalEnd);
@@ -233,7 +253,10 @@ function groupFragmentsIntoLineBoxes(
 
 	for (const fragment of sorted) {
 		const last = lines[lines.length - 1];
-		if (last && Math.abs(fragment.rect.top - last.top) <= LINE_TOP_EPSILON) {
+		if (
+			last &&
+			Math.abs(fragment.rect.top - last.top) <= LINE_TOP_EPSILON
+		) {
 			last.bottom = Math.max(last.bottom, fragment.rect.bottom);
 			last.start = Math.min(last.start, fragment.start);
 			last.end = Math.max(last.end, fragment.end);

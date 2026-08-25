@@ -35,18 +35,16 @@ describe("AX3 previously-reclassified bugs (rechecked, not trusted)", () => {
 	it("slash leftover query still reproduces: /head takes sibling-insert and is not deleted", () => {
 		const source = readFileSync(SLASH_MENU, "utf8");
 		expect(source).toContain(
-			"currentText.length === 0 || currentText === \"/\"",
+			'currentText.length === 0 || currentText === "/"',
 		);
 		expect(source).toMatch(/if\s*\(\s*currentText === "\/"\s*\)/);
-		expect(source).toContain("text.startsWith(\"/\")");
+		expect(source).toContain('text.startsWith("/")');
 
 		const editor = createHeadlessEditor({ schema: defaultSchema });
 		editors.push(editor);
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "/head" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "/head" },
 		]);
 		editor.selectText(blockId, 5, 5);
 

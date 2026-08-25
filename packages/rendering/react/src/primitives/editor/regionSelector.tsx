@@ -1,9 +1,9 @@
 import { useEffect } from "react";
-import {
-	useEditorRegionSelectionContext,
-	type RegionSelectorActivation,
-	type RegionSelectorSelectionMode,
-} from "./regionSelectionState";
+import type {
+	RegionSelectorActivation,
+	RegionSelectorSelectionMode,
+} from "@input/pen-dom";
+import { useEditorRegionSelectionContext } from "./regionSelectionState";
 
 const DEFAULT_THRESHOLD = 6;
 

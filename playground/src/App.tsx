@@ -5,6 +5,7 @@ import { useCollaboration } from "./collaboration/useCollaboration";
 import { EditorPane } from "./editor/EditorPane";
 import { usePenEditor } from "./editor/usePenEditor";
 import { InspectorSheet } from "./inspector/InspectorSheet";
+import { Icon } from "./ui/Icon";
 
 /**
  * Three panes over one editor: chat on the left, document in the middle,
@@ -49,6 +50,14 @@ export function App() {
 				onJoin={collaboration.join}
 				onLeave={collaboration.leave}
 			/>
+			<a
+				className="built-by"
+				href="https://www.input.so"
+				target="_blank"
+				rel="noreferrer"
+			>
+				Built&nbsp;by&nbsp;<Icon.Logo />&nbsp;<span>Input</span>
+			</a>
 		</div>
 	);
 }

@@ -135,5 +135,4 @@ describe("applyBackspaceBehavior – integration", () => {
 
 		editor.destroy();
 	});
-
 });

@@ -17,14 +17,9 @@
 			"reason": "window.getSelection().isCollapsed"
 		},
 		{
-			"file": "packages/core/src/selection/helpers.ts",
-			"construct": "sel.blockRange",
-			"reason": "getTrustedSelectionBlockRange reads the authority stamp"
-		},
-		{
 			"file": "packages/extensions/ai/src/helpers/session.ts",
 			"construct": "turn.selection.blockRange",
-			"reason": "permanent: not a SelectionState. AISessionTurn.selection is AISessionSelectionSnapshot (extensions/ai types/session.ts:133), a plain anchor/focus/blockRange/isMultiBlock record with no type discriminant, deep-cloned here. getTrustedSelectionBlockRange switches on sel.type and does not accept it; forcing the call through a cast falls to the never default and yields undefined."
+			"reason": "permanent: not a SelectionState. AISessionTurn.selection is AISessionSelectionSnapshot (extensions/ai types/session.ts:133), a plain anchor/focus/blockRange/isMultiBlock record with no type discriminant, deep-cloned here. getSelectionBlockRange switches on sel.type and does not accept it; forcing the call through a cast falls to the never default and yields undefined."
 		}
 	]
 }

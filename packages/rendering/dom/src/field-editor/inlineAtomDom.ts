@@ -82,7 +82,10 @@ export function getInlineAtomElementData(
 	if (!chip) {
 		return null;
 	}
-	return inlineAtomElementData.get(chip) ?? deserializeInlineAtomElementData(chip);
+	return (
+		inlineAtomElementData.get(chip) ??
+		deserializeInlineAtomElementData(chip)
+	);
 }
 
 export function copyInlineAtomElementData(
@@ -106,7 +109,10 @@ export function copyInlineAtomElementData(
 		text: data.text,
 	});
 	targetChip.setAttribute(DATA_ATTRS.inlineAtomType, data.type);
-	targetChip.setAttribute("aria-label", sourceChip.getAttribute("aria-label") ?? data.text);
+	targetChip.setAttribute(
+		"aria-label",
+		sourceChip.getAttribute("aria-label") ?? data.text,
+	);
 	const roleDescription = sourceChip.getAttribute("aria-roledescription");
 	if (roleDescription) {
 		targetChip.setAttribute("aria-roledescription", roleDescription);
@@ -122,7 +128,9 @@ function deserializeInlineAtomElementData(
 	}
 	return {
 		type,
-		props: parseInlineAtomProps(element.getAttribute(DATA_ATTRS.inlineAtomProps)),
+		props: parseInlineAtomProps(
+			element.getAttribute(DATA_ATTRS.inlineAtomProps),
+		),
 		text: element.getAttribute("aria-label") ?? element.textContent ?? "",
 	};
 }
@@ -235,7 +243,6 @@ function getInlineAtomChipElement(element: Element): HTMLElement | null {
 
 	return null;
 }
-
 
 export {
 	domPointToLogicalOffset,

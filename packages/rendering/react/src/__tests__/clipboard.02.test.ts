@@ -19,7 +19,8 @@ function createEditor(
 	} = {},
 ) {
 	return createCoreEditor({
-		schema: defaultSchema,...options,
+		schema: defaultSchema,
+		...options,
 		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
@@ -63,10 +64,12 @@ function getClipboardPenBlocks(
 ): Array<{ type?: string; content?: string }> {
 	const parsed = JSON.parse(
 		clipboardData.getData("application/x-pen-blocks"),
-	) as { blocks?: Array<{ type?: string; content?: string }> } | Array<{
-		type?: string;
-		content?: string;
-	}>;
+	) as
+		| { blocks?: Array<{ type?: string; content?: string }> }
+		| Array<{
+				type?: string;
+				content?: string;
+		  }>;
 	return Array.isArray(parsed) ? parsed : (parsed.blocks ?? []);
 }
 
@@ -123,8 +126,16 @@ describe("@input/pen-react clipboard", () => {
 			},
 			markdown: {
 				parse: vi.fn().mockReturnValue([
-					{ type: "paragraph", props: {}, content: "First paragraph." },
-					{ type: "paragraph", props: {}, content: "Second paragraph." },
+					{
+						type: "paragraph",
+						props: {},
+						content: "First paragraph.",
+					},
+					{
+						type: "paragraph",
+						props: {},
+						content: "Second paragraph.",
+					},
 				]),
 				import: vi.fn(),
 				name: "markdown",
@@ -132,8 +143,14 @@ describe("@input/pen-react clipboard", () => {
 			},
 		};
 
-		clipboardData.setData("text/html", "<span><strong>First</strong> paragraph.<br><br>Second paragraph.</span>");
-		clipboardData.setData("text/plain", "First paragraph.\n\nSecond paragraph.");
+		clipboardData.setData(
+			"text/html",
+			"<span><strong>First</strong> paragraph.<br><br>Second paragraph.</span>",
+		);
+		clipboardData.setData(
+			"text/plain",
+			"First paragraph.\n\nSecond paragraph.",
+		);
 		editor.selectText(emptyBlockId, 0, 0);
 
 		handleClipboardPaste(
@@ -202,7 +219,11 @@ describe("@input/pen-react clipboard", () => {
 						props: {},
 						content: "Ignored",
 					},
-					{ type: "heading", props: { level: 2 }, content: "Allowed title" },
+					{
+						type: "heading",
+						props: { level: 2 },
+						content: "Allowed title",
+					},
 				]),
 				import: vi.fn(),
 				name: "html",
@@ -226,7 +247,9 @@ describe("@input/pen-react clipboard", () => {
 		expect(blockOrder[0]).not.toBe(emptyBlockId);
 		expect(editor.getBlock(blockOrder[0])?.type).toBe("heading");
 		expect(
-			blockOrder.some((blockId) => editor.getBlock(blockId)?.type === "customWidget"),
+			blockOrder.some(
+				(blockId) => editor.getBlock(blockId)?.type === "customWidget",
+			),
 		).toBe(false);
 		expect(importers.html?.import).not.toHaveBeenCalled();
 		expect(fieldEditor.activateTextSelection).toHaveBeenCalledWith(
@@ -247,7 +270,11 @@ describe("@input/pen-react clipboard", () => {
 			html: {
 				parse: vi.fn().mockReturnValue([
 					{ type: "customWidget", props: {}, content: "Ignored" },
-					{ type: "heading", props: { level: 2 }, content: "Allowed title" },
+					{
+						type: "heading",
+						props: { level: 2 },
+						content: "Allowed title",
+					},
 				]),
 				import: vi.fn(),
 				name: "html",
@@ -289,9 +316,9 @@ describe("@input/pen-react clipboard", () => {
 		sourceEditor.selectBlock("table-structured");
 		handleCopy(sourceEditor, { clipboardData } as ClipboardEvent);
 
-		expect(getClipboardPenBlocks(clipboardData).map((block) => block.type)).toEqual([
-			"table",
-		]);
+		expect(
+			getClipboardPenBlocks(clipboardData).map((block) => block.type),
+		).toEqual(["table"]);
 
 		const targetEditor = createEditor();
 		const emptyBlockId = targetEditor.firstBlock()!.id;
@@ -306,12 +333,20 @@ describe("@input/pen-react clipboard", () => {
 		const blockOrder = targetEditor.documentState.blockOrder;
 		expect(blockOrder).toHaveLength(1);
 		expect(targetEditor.getBlock(blockOrder[0])?.type).toBe("table");
-		expect(targetEditor.getBlock(blockOrder[0])!.as("table")?.tableCell(0, 0)?.textContent()).toBe(
-			"Alpha",
-		);
-		expect(targetEditor.getBlock(blockOrder[0])!.as("table")?.tableCell(0, 1)?.textContent()).toBe(
-			"Bravo",
-		);
+		expect(
+			targetEditor
+				.getBlock(blockOrder[0])!
+				.as("table")
+				?.tableCell(0, 0)
+				?.textContent(),
+		).toBe("Alpha");
+		expect(
+			targetEditor
+				.getBlock(blockOrder[0])!
+				.as("table")
+				?.tableCell(0, 1)
+				?.textContent(),
+		).toBe("Bravo");
 
 		sourceEditor.destroy();
 		targetEditor.destroy();
@@ -327,9 +362,13 @@ describe("@input/pen-react clipboard", () => {
 		const fieldEditor = createFieldEditorStub();
 
 		sourceEditor.apply([
-			{ type: "splice-text", blockId: firstBlockId, from: 0,
+			{
+				type: "splice-text",
+				blockId: firstBlockId,
+				from: 0,
 				to: 0,
-				insert: "Intro" },
+				insert: "Intro",
+			},
 		]);
 		seedTable(sourceEditor, "table-flow");
 		sourceEditor.apply([
@@ -355,11 +394,9 @@ describe("@input/pen-react clipboard", () => {
 		);
 		handleCopy(sourceEditor, { clipboardData } as ClipboardEvent);
 
-		expect(getClipboardPenBlocks(clipboardData).map((block) => block.type)).toEqual([
-			"paragraph",
-			"table",
-			"paragraph",
-		]);
+		expect(
+			getClipboardPenBlocks(clipboardData).map((block) => block.type),
+		).toEqual(["paragraph", "table", "paragraph"]);
 
 		const targetEditor = createEditor();
 		const emptyBlockId = targetEditor.firstBlock()!.id;
@@ -373,16 +410,22 @@ describe("@input/pen-react clipboard", () => {
 
 		const blockOrder = targetEditor.documentState.blockOrder;
 		expect(blockOrder).toHaveLength(3);
-		expect(targetEditor.getBlock(blockOrder[0])?.textContent()).toBe("Intro");
-		expect(targetEditor.getBlock(blockOrder[1])?.type).toBe("table");
-		expect(targetEditor.getBlock(blockOrder[1])!.as("table")?.tableCell(0, 0)?.textContent()).toBe(
-			"Alpha",
+		expect(targetEditor.getBlock(blockOrder[0])?.textContent()).toBe(
+			"Intro",
 		);
-		expect(targetEditor.getBlock(blockOrder[2])?.textContent()).toBe("After");
+		expect(targetEditor.getBlock(blockOrder[1])?.type).toBe("table");
+		expect(
+			targetEditor
+				.getBlock(blockOrder[1])!
+				.as("table")
+				?.tableCell(0, 0)
+				?.textContent(),
+		).toBe("Alpha");
+		expect(targetEditor.getBlock(blockOrder[2])?.textContent()).toBe(
+			"After",
+		);
 
 		sourceEditor.destroy();
 		targetEditor.destroy();
 	});
-
-
 });

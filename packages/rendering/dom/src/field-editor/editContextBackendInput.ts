@@ -182,8 +182,8 @@ export abstract class EditContextBackendInput extends EditContextBackendCore {
 					type: "splice-text",
 					blockId: last.blockId,
 					from: last.originRange.start,
-				to: last.originRange.start + last.text.length,
-				insert: "",
+					to: last.originRange.start + last.text.length,
+					insert: "",
 				},
 			],
 			{ origin: "system" },
@@ -273,7 +273,10 @@ export abstract class EditContextBackendInput extends EditContextBackendCore {
 			return;
 		}
 
-		if (this.pendingTextUpdate && this.hasInFlightEditContextComposition()) {
+		if (
+			this.pendingTextUpdate &&
+			this.hasInFlightEditContextComposition()
+		) {
 			if (text.length === 0) {
 				this.dropPendingTextUpdate();
 				this.ignoreNextTextFormatUpdate = true;
@@ -376,10 +379,7 @@ export abstract class EditContextBackendInput extends EditContextBackendCore {
 			blockId,
 			range,
 			text,
-			marks: this.fieldEditor.resolveInsertMarks(
-				this.ytext,
-				range.start,
-			),
+			marks: this.fieldEditor.resolveInsertMarks(this.ytext, range.start),
 			selection: pending.selection,
 			syncSelection: pending.selection != null,
 		});
@@ -397,7 +397,7 @@ export abstract class EditContextBackendInput extends EditContextBackendCore {
 		}
 
 		this.fieldEditor.clearBackendSelectionAuthority("programmatic");
-	};
+	}
 
 	protected resolveTextUpdateRange(input: {
 		blockId: string;
@@ -427,9 +427,7 @@ export abstract class EditContextBackendInput extends EditContextBackendCore {
 				input.blockId,
 			),
 			editContextSelection:
-				this.fieldEditor.getEditContextSelectionSnapshot(
-					input.blockId,
-				),
+				this.fieldEditor.getEditContextSelectionSnapshot(input.blockId),
 			authoritativeTextInputSelection:
 				this.fieldEditor.getBackendSelectionAuthority(
 					"edit-context-textupdate",
@@ -548,5 +546,4 @@ export abstract class EditContextBackendInput extends EditContextBackendCore {
 			buildEditContextCharacterBounds(this.element, rangeStart, rangeEnd),
 		);
 	};
-
 }

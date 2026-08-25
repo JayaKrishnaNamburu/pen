@@ -144,7 +144,9 @@ describe("@input/pen-react field-editor commands", () => {
 
 		editor.apply([
 			{
-				type: "set-props", blockId: toggleBlockId, props: { type: "toggle", ...{ open: false  }},
+				type: "set-props",
+				blockId: toggleBlockId,
+				props: { type: "toggle", ...{ open: false } },
 			},
 			{
 				type: "splice-text",
@@ -204,5 +206,4 @@ describe("@input/pen-react field-editor commands", () => {
 
 		editor.destroy();
 	});
-
 });

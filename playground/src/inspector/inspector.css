@@ -22,6 +22,10 @@
 }
 
 .inspector-view {
+	flex: 1;
+	min-height: 0;
+	min-width: 0;
+	overflow: auto;
 	padding: var(--spacing-md) var(--spacing-lg);
 }
 
@@ -96,10 +100,8 @@
 
 .inspector-json {
 	margin: 0;
-	padding: var(--spacing-md);
-	overflow-x: auto;
-	border-radius: var(--radius-md);
-	background: var(--card-background);
+	max-width: 100%;
+	overflow: auto;
 	color: var(--palette-b80);
 	font-family: var(--font-family-mono);
 	font-size: var(--font-size-xs);

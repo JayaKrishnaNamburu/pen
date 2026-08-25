@@ -22,6 +22,42 @@ export type {
 	PenFocusRequest,
 	PenFocusReason,
 } from "./field-editor/controller";
+export {
+	attachInlineAtomWrapperInteractions,
+	getInlineAtomDragSnapshot,
+	getInlineAtomRenderInteractionProps,
+	isInlineAtomDragSource,
+	registerInlineAtomInteractionRoot,
+	resolveShiftClickInlineAtomSelection,
+	subscribeInlineAtomDragSnapshot,
+	type InlineAtomDragSnapshot,
+	type InlineAtomWrapperInteractionOptions,
+} from "./field-editor/inlineAtomWrapperInteractions";
+export {
+	canDestructure,
+	destructureInlineAtom,
+	selectInlineAtomRangeFromShiftClick,
+} from "./field-editor/inlineAtomDestructure";
+export { attachContentGestures } from "./field-editor/contentGestures";
+export type {
+	AttachContentGesturesOptions,
+	ContentGestureRegionGesture,
+	ContentGestureState,
+	GestureSlot,
+} from "./field-editor/contentGestures";
+export {
+	RegionSelectionStore,
+	createRegionSelectionRect,
+	intersectRegionSelectionRect,
+	resolveRegionRect,
+} from "./utils/regionSelection";
+export type {
+	RegionSelectionRect,
+	RegionSelectionSnapshot,
+	RegionSelectorActivation,
+	RegionSelectorConfig,
+	RegionSelectorSelectionMode,
+} from "./utils/regionSelection";
 export { handleEditorDocumentKeyDown } from "./utils/documentShortcuts";
 export { handleEscapeSelectionTransition } from "./utils/escapeSelection";
 export { handleTableCellSelectionKeyDown } from "./utils/tableCellNavigation";
@@ -51,10 +87,7 @@ export {
 } from "./security/resolveEditorUrl";
 export { urlPolicyExtension } from "./security/urlPolicyExtension";
 export { createReducedMotionSignal } from "./a11y/motion";
-export type {
-	ReducedMotionListener,
-	ReducedMotionSignal,
-} from "./a11y/motion";
+export type { ReducedMotionListener, ReducedMotionSignal } from "./a11y/motion";
 export { DomScheduler } from "./scheduler";
 export type {
 	DomSchedulerOptions,

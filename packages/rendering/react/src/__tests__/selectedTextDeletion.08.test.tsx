@@ -18,7 +18,9 @@ describe("@input/pen-react selected text deletion", () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 
-		editor.apply([{ type: "set-props", blockId, props: { type: "heading" } }]);
+		editor.apply([
+			{ type: "set-props", blockId, props: { type: "heading" } },
+		]);
 
 		const container = document.createElement("div");
 		document.body.appendChild(container);
@@ -74,8 +76,6 @@ describe("@input/pen-react selected text deletion", () => {
 			type: "text",
 			anchor: { blockId, offset: 2 },
 			focus: { blockId, offset: 2 },
-			isCollapsed: true,
-			isMultiBlock: false,
 		});
 		expect(domSelectionToEditor(rootElement!)).toMatchObject({
 			anchor: { blockId, offset: 2 },
@@ -94,9 +94,7 @@ describe("@input/pen-react selected text deletion", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" },
 		]);
 
 		const container = document.createElement("div");
@@ -132,8 +130,6 @@ describe("@input/pen-react selected text deletion", () => {
 			type: "text",
 			anchor: { blockId, offset: 0 },
 			focus: { blockId, offset: 5 },
-			isCollapsed: false,
-			isMultiBlock: false,
 		});
 
 		await act(async () => {
@@ -149,8 +145,6 @@ describe("@input/pen-react selected text deletion", () => {
 			type: "text",
 			anchor: { blockId, offset: 0 },
 			focus: { blockId, offset: 0 },
-			isCollapsed: true,
-			isMultiBlock: false,
 		});
 
 		await act(async () => {

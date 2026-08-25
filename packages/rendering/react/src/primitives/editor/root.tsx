@@ -37,15 +37,16 @@ import {
 } from "@input/pen-dom";
 import { useDocumentEmptyState } from "../../hooks/useDocumentEmptyState";
 import { domSelectionToEditor } from "@input/pen-dom/field-editor";
-import {
-	EditorRegionSelectionContext,
-	RegionSelectionStore,
-} from "./regionSelectionState";
+import { RegionSelectionStore } from "@input/pen-dom";
+import { EditorRegionSelectionContext } from "./regionSelectionState";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { composeRefs } from "../../utils/composeRefs";
-import { buildDataAttributes, DATA_ATTRS } from "../../utils/dataAttributes";
+import {
+	buildDataAttributes,
+	DATA_ATTRS,
+} from "@input/pen-dom/utils/dataAttributes";
 import { BlockDragSessionProvider } from "./blockDragSession";
-import { registerInlineAtomInteractionRoot } from "./inlineAtomInteraction";
+import { registerInlineAtomInteractionRoot } from "@input/pen-dom";
 
 export interface EditorRootProps extends AsChildProps {
 	editor: Editor;

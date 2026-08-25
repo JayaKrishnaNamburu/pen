@@ -222,6 +222,7 @@ export abstract class FieldEditorImplCore {
 			projectSelection: () =>
 				this._selectionCoordinator.syncDomSelectionOnce(),
 			notifyDomReconciled: (blockId) => this.notifyDomReconciled(blockId),
+			getScheduler: () => this._ensureScheduler(),
 		});
 	}
 
@@ -265,7 +266,6 @@ export abstract class FieldEditorImplCore {
 	setFocusPolicy(focusPolicy: PenFocusPolicy | undefined): void {
 		this._focusController.setFocusPolicy(focusPolicy);
 	}
-	
 
 	abstract activate(blockId: string): void;
 	abstract attachElement(
@@ -316,7 +316,9 @@ export abstract class FieldEditorImplCore {
 		col: number,
 	): FieldEditorTextLike | null;
 	protected abstract _getYText(blockId: string): FieldEditorTextLike | null;
-	protected abstract _resolveInlineElement(blockId: string): HTMLElement | null;
+	protected abstract _resolveInlineElement(
+		blockId: string,
+	): HTMLElement | null;
 	protected abstract _emitStateChange(): void;
 	protected abstract _emitFocusLifecycle(event: PenFocusLifecycleEvent): void;
 	protected abstract _recomputeSurfaceFromSelection(options?: {

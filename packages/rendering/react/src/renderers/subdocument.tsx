@@ -23,9 +23,10 @@ function SubdocumentRendererInner(props: {
 	const [childEditor, setChildEditor] = useState<Editor | null>(null);
 
 	const session = parentEditor.internals.documentSession;
-	const childScope = session?.getScopeForBlock(block.id, {
-		scopeId: parentEditor.documentScope.id,
-	}) ?? null;
+	const childScope =
+		session?.getScopeForBlock(block.id, {
+			scopeId: parentEditor.documentScope.id,
+		}) ?? null;
 	const childScopeId = childScope?.id ?? null;
 
 	useEffect(() => {

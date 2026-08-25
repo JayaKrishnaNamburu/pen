@@ -68,9 +68,7 @@ describe("applyEnterBehavior – integration", () => {
 				blockId,
 				props: { type: "heading", level: 2 },
 			},
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Section" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Section" },
 		]);
 
 		const target = applyEnterBehavior(editor, {
@@ -117,9 +115,7 @@ describe("applyEnterBehavior – integration", () => {
 
 		editor.apply([
 			{ type: "set-props", blockId, props: { type: "bulletListItem" } },
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "task" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "task" },
 		]);
 
 		const target = applyEnterBehavior(editor, {
@@ -144,7 +140,9 @@ describe("applyEnterBehavior – integration", () => {
 
 		editor.apply([
 			{
-				type: "set-props", blockId: toggleBlockId, props: { type: "toggle", ...{ open: true  }},
+				type: "set-props",
+				blockId: toggleBlockId,
+				props: { type: "toggle", ...{ open: true } },
 			},
 			{
 				type: "insert-block",
@@ -182,7 +180,9 @@ describe("applyEnterBehavior – integration", () => {
 
 		editor.apply([
 			{
-				type: "set-props", blockId: toggleBlockId, props: { type: "toggle", ...{ open: true  }},
+				type: "set-props",
+				blockId: toggleBlockId,
+				props: { type: "toggle", ...{ open: true } },
 			},
 			{
 				type: "insert-block",
@@ -221,5 +221,4 @@ describe("applyEnterBehavior – integration", () => {
 
 		editor.destroy();
 	});
-
 });

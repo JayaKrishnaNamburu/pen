@@ -194,11 +194,7 @@ describe("SEC1 documentTree render path", () => {
 				activeBlockIds: [],
 			}),
 		};
-		const tree = createDocumentTree(
-			editor,
-			fieldEditor as never,
-			root,
-		);
+		const tree = createDocumentTree(editor, fieldEditor as never, root);
 		cleanups.push(() => {
 			tree.content.remove();
 		});

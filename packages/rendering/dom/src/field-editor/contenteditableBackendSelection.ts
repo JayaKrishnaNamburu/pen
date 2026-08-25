@@ -1,24 +1,24 @@
-import { isCollapsed } from "@input/pen-core";
 import type { InlineDecoration } from "@input/pen-types";
 import { buildInlineDecorationsRenderSignature } from "../utils/inlineDecorations";
 import { urlPolicyFromEditor } from "../security/resolveEditorUrl";
 import { fullReconcileToDOM } from "./reconciler";
-import {
-	domSelectionToEditor,
-	extractTextFromDOM,
-	getSelectionOffsets,
-} from "./selectionBridge";
-import { normalizeSelectionFormation } from "../utils/selectionFormation";
+import { extractTextFromDOM, getSelectionOffsets } from "./selectionBridge";
 import { handleCopy, handleCut } from "./clipboard";
 import { handleFieldEditorKeyDown } from "./keyHandling";
 import type { InlineTextDiffOp } from "./inlineTextTransaction";
 import { applyInlineTextDiffInput } from "./textInputPipeline";
 import { ContentEditableBackendEvents } from "./contenteditableBackendEvents";
-import { shouldStopEquivalentDomRead } from "./selectionReader";
 import {
-	isNavigationSelectionKey,
-	setSelectionOffsets,
-} from "./contenteditableDomHelpers";
+	forwardDomSelectionToReader,
+	readNormalizedDomProposal,
+	resolveEditorRoot,
+	shouldStopEquivalentDomRead,
+} from "./selectionReader";
+import {
+	isCollapsedDomAgainstProjectedOffsets,
+	isFullBlockEchoAgainstCollapsedCaret,
+} from "./selectionProjectionController";
+import { isNavigationSelectionKey } from "./contenteditableDomHelpers";
 
 export class ContentEditableBackendSelection extends ContentEditableBackendEvents {
 	protected applyTextDiffAsOps(
@@ -53,13 +53,13 @@ export class ContentEditableBackendSelection extends ContentEditableBackendEvent
 		if (!result.applied) return;
 		this.ensureActiveDOMMatchesYText();
 		this.restoreDOMSelectionFromEditor();
-		this.scheduleActiveDOMMatchCheck();
 		this.fieldEditor.clearBackendSelectionAuthority("programmatic");
 	}
 
 	protected ensureActiveDOMMatchesYText(): boolean {
 		if (!this.element || !this.ytext) return false;
-		const nextInlineDecorationsSignature = this.getInlineDecorationsSignature();
+		const nextInlineDecorationsSignature =
+			this.getInlineDecorationsSignature();
 		if (
 			extractTextFromDOM(this.element) === this.ytext.toString() &&
 			nextInlineDecorationsSignature === this.inlineDecorationsSignature
@@ -84,24 +84,16 @@ export class ContentEditableBackendSelection extends ContentEditableBackendEvent
 		if (this.isComposing) {
 			return;
 		}
-		if (this.getInlineDecorationsSignature() === this.inlineDecorationsSignature) {
+		if (
+			this.getInlineDecorationsSignature() ===
+			this.inlineDecorationsSignature
+		) {
 			return;
 		}
-		this.scheduleActiveDOMMatchCheck();
-	};
-
-	protected scheduleActiveDOMMatchCheck(): void {
-		if (this.pendingDomSyncFrame != null) {
-			cancelAnimationFrame(this.pendingDomSyncFrame);
+		if (this.ensureActiveDOMMatchesYText()) {
+			this.restoreDOMSelectionFromEditor();
 		}
-
-		this.pendingDomSyncFrame = requestAnimationFrame(() => {
-			this.pendingDomSyncFrame = null;
-			if (this.ensureActiveDOMMatchesYText()) {
-				this.restoreDOMSelectionFromEditor();
-			}
-		});
-	}
+	};
 
 	protected getInlineDecorationsForBlock(): readonly InlineDecoration[] {
 		const blockId = this.fieldEditor.focusBlockId;
@@ -169,64 +161,91 @@ export class ContentEditableBackendSelection extends ContentEditableBackendEvent
 				isApplyingSelection,
 			)
 		) {
-			if (this.shouldRestoreSuppressedFullBlockSelection()) {
+			const suppressed = this.readAttachedNormalizedSelection();
+			if (
+				suppressed &&
+				isFullBlockEchoAgainstCollapsedCaret(
+					suppressed,
+					this.fieldEditor.selection,
+					(blockId) =>
+						this.editor.getBlock(blockId)?.length() ?? null,
+				)
+			) {
 				this.restoreDOMSelectionFromEditor();
 			} else if (
 				isApplyingSelection > 0 &&
-				this.shouldRestoreSuppressedProjectedSelection()
+				suppressed &&
+				isCollapsedDomAgainstProjectedOffsets(
+					suppressed,
+					(blockId) =>
+						this.fieldEditor.getBackendSelectionAuthority(
+							"programmatic",
+							blockId,
+						) ??
+						this.fieldEditor.getBackendSelectionAuthority(
+							"user-dom",
+							blockId,
+						),
+				)
 			) {
 				this.restoreDOMSelectionFromEditor();
 			}
 			return;
 		}
 
-		const root = this.element.closest(
-			"[data-pen-editor-root]",
-		) as HTMLElement | null;
+		const root = resolveEditorRoot(this.element);
 		if (!root) return;
 
-		const selection = domSelectionToEditor(root);
-		if (!selection) return;
-		const normalizedSelection = normalizeSelectionFormation(
+		const normalizedSelection = readNormalizedDomProposal(
+			root,
 			this.editor,
-			selection,
 		);
+		if (!normalizedSelection) return;
 
 		if (shouldStopEquivalentDomRead(this.editor, normalizedSelection)) {
 			return;
 		}
 
-		if (this.shouldRestoreStaleFullBlockSelection(normalizedSelection)) {
+		if (
+			isFullBlockEchoAgainstCollapsedCaret(
+				normalizedSelection,
+				this.fieldEditor.selection,
+				(blockId) => this.editor.getBlock(blockId)?.length() ?? null,
+			)
+		) {
 			this.restoreDOMSelectionFromEditor();
 			return;
 		}
 
-		if (this.shouldRestoreStaleProjectedSelection(normalizedSelection)) {
+		if (
+			isCollapsedDomAgainstProjectedOffsets(
+				normalizedSelection,
+				(blockId) =>
+					this.fieldEditor.getBackendSelectionAuthority(
+						"programmatic",
+						blockId,
+					) ??
+					this.fieldEditor.getBackendSelectionAuthority(
+						"user-dom",
+						blockId,
+					),
+			)
+		) {
 			this.restoreDOMSelectionFromEditor();
+			return;
+		}
+
+		if (
+			forwardDomSelectionToReader(this.fieldEditor, normalizedSelection)
+		) {
 			return;
 		}
 
 		if (normalizedSelection.type === "block") {
-			if (this.fieldEditor.readDomSelection) {
-				this.fieldEditor.readDomSelection({
-					type: "block",
-					blockIds: normalizedSelection.blockIds,
-				});
-				return;
-			}
 			this.fieldEditor.deactivate();
 			this.editor.setSelection({
 				type: "block",
 				blockIds: normalizedSelection.blockIds,
-			});
-			return;
-		}
-
-		if (this.fieldEditor.readDomSelection) {
-			this.fieldEditor.readDomSelection({
-				type: "text",
-				anchor: normalizedSelection.anchor,
-				focus: normalizedSelection.focus,
 			});
 			return;
 		}
@@ -236,13 +255,15 @@ export class ContentEditableBackendSelection extends ContentEditableBackendEvent
 			anchorOffset: normalizedSelection.anchor.offset,
 			focusOffset: normalizedSelection.focus.offset,
 		});
-		const projectedSelection = this.fieldEditor.getBackendSelectionAuthority(
-			"programmatic",
-			normalizedSelection.anchor.blockId,
-		);
+		const projectedSelection =
+			this.fieldEditor.getBackendSelectionAuthority(
+				"programmatic",
+				normalizedSelection.anchor.blockId,
+			);
 		if (
 			!projectedSelection ||
-			projectedSelection.anchorOffset !== normalizedSelection.anchor.offset ||
+			projectedSelection.anchorOffset !==
+				normalizedSelection.anchor.offset ||
 			projectedSelection.focusOffset !== normalizedSelection.focus.offset
 		) {
 			this.fieldEditor.clearBackendSelectionAuthority("programmatic");
@@ -253,108 +274,17 @@ export class ContentEditableBackendSelection extends ContentEditableBackendEvent
 		);
 	};
 
-	protected shouldRestoreStaleFullBlockSelection(
-		selection: ReturnType<typeof normalizeSelectionFormation>,
-	): boolean {
-		if (selection.type === "block") {
-			return false;
-		}
-		if (selection.anchor.blockId !== selection.focus.blockId) {
-			return false;
-		}
-
-		const currentSelection = this.fieldEditor.selection;
-		if (
-			currentSelection?.type !== "text" ||
-			!isCollapsed(currentSelection) ||
-			currentSelection.focus.blockId !== selection.anchor.blockId
-		) {
-			return false;
-		}
-
-		const block = this.editor.getBlock(selection.anchor.blockId);
-		const blockLength = block?.length() ?? null;
-		if (blockLength == null) {
-			return false;
-		}
-
-		const selectionStart = Math.min(
-			selection.anchor.offset,
-			selection.focus.offset,
-		);
-		const selectionEnd = Math.max(
-			selection.anchor.offset,
-			selection.focus.offset,
-		);
-		return selectionStart === 0 && selectionEnd === blockLength;
-	}
-
-	protected shouldRestoreStaleProjectedSelection(
-		selection: ReturnType<typeof normalizeSelectionFormation>,
-	): boolean {
-		if (
-			selection.type === "block" ||
-			selection.anchor.blockId !== selection.focus.blockId ||
-			selection.anchor.offset !== selection.focus.offset
-		) {
-			return false;
-		}
-		const projectedSelection = this.fieldEditor.getBackendSelectionAuthority(
-			"programmatic",
-			selection.anchor.blockId,
-		) ?? this.fieldEditor.getBackendSelectionAuthority(
-			"user-dom",
-			selection.anchor.blockId,
-		);
-		if (!projectedSelection) {
-			return false;
-		}
-		return (
-			selection.anchor.offset !== projectedSelection.anchorOffset ||
-			selection.focus.offset !== projectedSelection.focusOffset
-		);
-	}
-
-	protected shouldRestoreSuppressedProjectedSelection(): boolean {
+	private readAttachedNormalizedSelection(): ReturnType<
+		typeof readNormalizedDomProposal
+	> {
 		if (!this.element) {
-			return false;
+			return null;
 		}
-		const root = this.element.closest(
-			"[data-pen-editor-root]",
-		) as HTMLElement | null;
+		const root = resolveEditorRoot(this.element);
 		if (!root) {
-			return false;
+			return null;
 		}
-
-		const selection = domSelectionToEditor(root);
-		if (!selection) {
-			return false;
-		}
-
-		return this.shouldRestoreStaleProjectedSelection(
-			normalizeSelectionFormation(this.editor, selection),
-		);
-	}
-
-	protected shouldRestoreSuppressedFullBlockSelection(): boolean {
-		if (!this.element) {
-			return false;
-		}
-		const root = this.element.closest(
-			"[data-pen-editor-root]",
-		) as HTMLElement | null;
-		if (!root) {
-			return false;
-		}
-
-		const selection = domSelectionToEditor(root);
-		if (!selection) {
-			return false;
-		}
-
-		return this.shouldRestoreStaleFullBlockSelection(
-			normalizeSelectionFormation(this.editor, selection),
-		);
+		return readNormalizedDomProposal(root, this.editor);
 	}
 
 	// ── Clipboard events ──────────────────────────────────────

@@ -84,7 +84,9 @@ function mountEditContextEditor(text: string) {
 	root.setAttribute(DATA_ATTRS.editorRoot, "");
 	document.body.appendChild(root);
 	const blockId = editor.firstBlock()!.id;
-	editor.apply([{ type: "splice-text", blockId, from: 0, to: 0, insert: text }]);
+	editor.apply([
+		{ type: "splice-text", blockId, from: 0, to: 0, insert: text },
+	]);
 	const block = document.createElement("div");
 	block.setAttribute(DATA_ATTRS.editorBlock, "");
 	block.setAttribute(DATA_ATTRS.blockId, blockId);
@@ -101,7 +103,8 @@ function mountEditContextEditor(text: string) {
 
 describe("C2 EditContext mid-composition remote", () => {
 	it("C2: EditContext field DOM untouched during remote commit", () => {
-		const { editor, inline, blockId } = mountEditContextEditor("Hello world");
+		const { editor, inline, blockId } =
+			mountEditContextEditor("Hello world");
 		inline.dispatchEvent(
 			new CompositionEvent("compositionstart", { bubbles: true }),
 		);
@@ -109,9 +112,7 @@ describe("C2 EditContext mid-composition remote", () => {
 		const beforeDom = extractTextFromDOM(inline);
 
 		editor.apply(
-			[{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "X" }],
+			[{ type: "splice-text", blockId, from: 0, to: 0, insert: "X" }],
 			{ origin: "collaborator" },
 		);
 
@@ -126,7 +127,8 @@ describe("C2 EditContext mid-composition remote", () => {
 	});
 
 	it("C2: EditContext field DOM untouched after IME textformatupdate", () => {
-		const { editor, inline, blockId } = mountEditContextEditor("Hello world");
+		const { editor, inline, blockId } =
+			mountEditContextEditor("Hello world");
 		const editContext = (
 			inline as HTMLElement & { editContext?: FakeEditContext }
 		).editContext;
@@ -141,9 +143,7 @@ describe("C2 EditContext mid-composition remote", () => {
 		const beforeDom = extractTextFromDOM(inline);
 
 		editor.apply(
-			[{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "X" }],
+			[{ type: "splice-text", blockId, from: 0, to: 0, insert: "X" }],
 			{ origin: "collaborator" },
 		);
 

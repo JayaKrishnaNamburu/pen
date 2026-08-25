@@ -9,5 +9,7 @@ export function getAttachedFieldEditor(editor: Editor): FieldEditor | null {
 export function getAttachedFieldEditorStore(
 	editor: Editor,
 ): FieldEditorStore | null {
-	return (editor.facet(fieldEditorHostFacet) as FieldEditorStore | null) ?? null;
+	return (
+		(editor.facet(fieldEditorHostFacet) as FieldEditorStore | null) ?? null
+	);
 }

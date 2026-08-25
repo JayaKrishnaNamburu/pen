@@ -18,10 +18,7 @@ type NormalizedSelectionIntent =
 			blockIds: string[];
 	  };
 
-function isStructuralRole(
-	editor: Editor,
-	blockId: string,
-): boolean {
+function isStructuralRole(editor: Editor, blockId: string): boolean {
 	const role = getEditorBlockSelectionRole(editor, blockId);
 	return role != null && role !== "editable-inline";
 }

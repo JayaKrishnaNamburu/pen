@@ -107,7 +107,9 @@ function createMixedEditor(
 function liveText(editor: Editor): TextSelection {
 	const selection = editor.selection;
 	if (!selection || selection.type !== "text") {
-		throw new Error(`expected text selection, got ${selection?.type ?? "null"}`);
+		throw new Error(
+			`expected text selection, got ${selection?.type ?? "null"}`,
+		);
 	}
 	return selection;
 }
@@ -117,18 +119,25 @@ function logicalRuns(text: string, base: "ltr" | "rtl"): BidiRun[] {
 }
 
 function bindingNamed(platform: KeymapPlatform, key: string) {
-	const found = resolveDefaultKeymap(platform).find((entry) => entry.key === key);
+	const found = resolveDefaultKeymap(platform).find(
+		(entry) => entry.key === key,
+	);
 	if (!found) {
 		throw new Error(`missing ${platform} binding ${key}`);
 	}
 	return found;
 }
 
-function requireDirection(editor: Editor, expected: "ltr" | "rtl"): "ltr" | "rtl" {
+function requireDirection(
+	editor: Editor,
+	expected: "ltr" | "rtl",
+): "ltr" | "rtl" {
 	const direction = resolveFocusBlockDirection(editor);
 	expect(direction).toBe(expected);
 	if (direction !== expected) {
-		throw new Error(`expected ${expected} focus direction, got ${direction}`);
+		throw new Error(
+			`expected ${expected} focus direction, got ${direction}`,
+		);
 	}
 	return direction;
 }
@@ -152,7 +161,9 @@ describe("bidi motion semantics M2/M5/M6", () => {
 
 		const registry = getCommandRegistry(editor);
 		if (!registry) {
-			throw new Error("createHeadlessEditor did not install a command registry");
+			throw new Error(
+				"createHeadlessEditor did not install a command registry",
+			);
 		}
 		expect(registry.dispatch(caretRight, { extend: false })).toBe(true);
 
@@ -185,8 +196,8 @@ describe("bidi motion semantics M2/M5/M6", () => {
 		];
 		for (const [platform, key, command] of arrowCases) {
 			expect(
-				resolveDirectedBinding(editor, bindingNamed(platform, key)).command
-					.name,
+				resolveDirectedBinding(editor, bindingNamed(platform, key))
+					.command.name,
 				`${platform} ${key}`,
 			).toBe(command);
 		}
@@ -203,17 +214,21 @@ describe("bidi motion semantics M2/M5/M6", () => {
 		];
 		for (const [platform, key, command] of wordCases) {
 			expect(
-				resolveDirectedBinding(editor, bindingNamed(platform, key)).command
-					.name,
+				resolveDirectedBinding(editor, bindingNamed(platform, key))
+					.command.name,
 				`${platform} ${key}`,
 			).toBe(command);
 		}
 
-		expect(resolveKey(keyEvent("ArrowLeft"), direction)).toBe("pen.caretRight");
+		expect(resolveKey(keyEvent("ArrowLeft"), direction)).toBe(
+			"pen.caretRight",
+		);
 		expect(
 			resolveKey(keyEvent("ArrowLeft", { shiftKey: true }), direction),
 		).toBe("pen.caretRight");
-		expect(resolveKey(keyEvent("ArrowRight"), direction)).toBe("pen.caretLeft");
+		expect(resolveKey(keyEvent("ArrowRight"), direction)).toBe(
+			"pen.caretLeft",
+		);
 		expect(
 			resolveKey(keyEvent("ArrowRight", { shiftKey: true }), direction),
 		).toBe("pen.caretLeft");
@@ -236,7 +251,9 @@ describe("bidi motion semantics M2/M5/M6", () => {
 		);
 		const registry = getCommandRegistry(editor);
 		if (!registry) {
-			throw new Error("createHeadlessEditor did not install a command registry");
+			throw new Error(
+				"createHeadlessEditor did not install a command registry",
+			);
 		}
 		expect(
 			registry.dispatch(
@@ -271,13 +288,15 @@ describe("bidi motion semantics M2/M5/M6", () => {
 		];
 		for (const [platform, key, command] of cases) {
 			expect(
-				resolveDirectedBinding(editor, bindingNamed(platform, key)).command
-					.name,
+				resolveDirectedBinding(editor, bindingNamed(platform, key))
+					.command.name,
 				`${platform} ${key}`,
 			).toBe(command);
 		}
 
-		expect(resolveKey(keyEvent("ArrowLeft"), direction)).toBe("pen.caretLeft");
+		expect(resolveKey(keyEvent("ArrowLeft"), direction)).toBe(
+			"pen.caretLeft",
+		);
 		expect(resolveKey(keyEvent("ArrowRight"), direction)).toBe(
 			"pen.caretRight",
 		);
@@ -311,8 +330,8 @@ describe("bidi motion semantics M2/M5/M6", () => {
 		];
 		for (const [platform, key, command] of vertical) {
 			expect(
-				resolveDirectedBinding(editor, bindingNamed(platform, key)).command
-					.name,
+				resolveDirectedBinding(editor, bindingNamed(platform, key))
+					.command.name,
 				`${platform} ${key}`,
 			).toBe(command);
 		}
@@ -321,7 +340,9 @@ describe("bidi motion semantics M2/M5/M6", () => {
 		expect(
 			resolveKey(keyEvent("ArrowUp", { shiftKey: true }), direction),
 		).toBe("pen.caretUp");
-		expect(resolveKey(keyEvent("ArrowDown"), direction)).toBe("pen.caretDown");
+		expect(resolveKey(keyEvent("ArrowDown"), direction)).toBe(
+			"pen.caretDown",
+		);
 		expect(
 			resolveKey(keyEvent("ArrowDown", { shiftKey: true }), direction),
 		).toBe("pen.caretDown");
@@ -344,8 +365,8 @@ describe("bidi motion semantics M2/M5/M6", () => {
 		];
 		for (const [platform, key, command] of deleteCases) {
 			expect(
-				resolveDirectedBinding(editor, bindingNamed(platform, key)).command
-					.name,
+				resolveDirectedBinding(editor, bindingNamed(platform, key))
+					.command.name,
 				`${platform} ${key}`,
 			).toBe(command);
 		}
@@ -353,7 +374,9 @@ describe("bidi motion semantics M2/M5/M6", () => {
 		expect(resolveKey(keyEvent("Backspace"), direction)).toBe(
 			"pen.deleteBackward",
 		);
-		expect(resolveKey(keyEvent("Delete"), direction)).toBe("pen.deleteForward");
+		expect(resolveKey(keyEvent("Delete"), direction)).toBe(
+			"pen.deleteForward",
+		);
 		expect(
 			resolveKey(keyEvent("Backspace", { altKey: true }), direction),
 		).toBe("pen.deleteBackward");
@@ -363,7 +386,9 @@ describe("bidi motion semantics M2/M5/M6", () => {
 
 		const registry = getCommandRegistry(editor);
 		if (!registry) {
-			throw new Error("createHeadlessEditor did not install a command registry");
+			throw new Error(
+				"createHeadlessEditor did not install a command registry",
+			);
 		}
 		editor.selectText(blockId, 1, 1);
 		expect(
@@ -374,7 +399,9 @@ describe("bidi motion semantics M2/M5/M6", () => {
 			MIXED_RTL_FIRST.slice(0, 1) + MIXED_RTL_FIRST.slice(2);
 		expect(deletedBackward).not.toBe(deletedForward);
 		expect(editor.getBlock(blockId)?.textContent()).toBe(deletedBackward);
-		expect(editor.getBlock(blockId)?.textContent()).not.toBe(deletedForward);
+		expect(editor.getBlock(blockId)?.textContent()).not.toBe(
+			deletedForward,
+		);
 		expect(liveText(editor).focus.offset).toBe(0);
 		editor.destroy();
 	});

@@ -14,6 +14,8 @@ import type { AIToolConfirmFn } from "../tools";
 import type {
 	AIApplyStrategy,
 	AIContentFormat,
+	AIEditChannel,
+	AIMutationPreference,
 	AITargetKind,
 } from "../runtime/contracts";
 import type { PlanValidationContext } from "../runtime/planValidation";
@@ -33,6 +35,8 @@ import type {
 	AISessionResolution,
 	AIStreamEvent,
 	AISurface,
+	AIEditStreaming,
+	AIStreamingReviewPreviewInput,
 	AIWorkingSetEnvelope,
 	AIWorkingSetRetrievedSpan,
 	FastApplyDebugState,
@@ -48,6 +52,10 @@ import type {
 	GenerationExecutionContext,
 	GenerationTarget,
 } from "../helpers";
+
+export type StreamingPreviewStatePatch = {
+	activeGeneration?: AIControllerState["activeGeneration"];
+};
 
 export interface AIControllerMethodHost {
 	_editor: Editor;
@@ -76,14 +84,20 @@ export interface AIControllerMethodHost {
 		blockGeneration: AIContentFormat;
 		selectionRewrite: AIContentFormat;
 	};
+	_mutationPreference: AIMutationPreference;
+	_editChannel: AIEditChannel;
+	_editStreaming: AIEditStreaming | undefined;
 	_pendingInlineHistoryRestore: AIInlineHistoryRestoreRequest | null;
 	_isRestoringInlineHistory: boolean;
+	_streamingPreviewRaf: number | null;
+	_queuedStreamingPreview: {
+		/** One per operation: coalescing to the newest would strand the others. */
+		inputs: readonly AIStreamingReviewPreviewInput[];
+		extra?: StreamingPreviewStatePatch;
+	} | null;
 
 	_setState(partial: Partial<AIControllerState>): void;
-	_updateSession(
-		sessionId: string,
-		partial: Partial<AISession>,
-	): void;
+	_updateSession(sessionId: string, partial: Partial<AISession>): void;
 	_updateSessionTurn(
 		sessionId: string,
 		turnId: string,
@@ -112,7 +126,20 @@ export interface AIControllerMethodHost {
 		turnId: string,
 		resolution: AISessionResolution,
 	): boolean;
-	clearStreamingReviewPreview(sessionId?: string): void;
+	clearStreamingReviewPreview(
+		sessionId?: string,
+		extra?: StreamingPreviewStatePatch,
+	): void;
+	setStreamingReviewPreview(
+		input: AIStreamingReviewPreviewInput,
+		extra?: StreamingPreviewStatePatch,
+	): void;
+	showEphemeralSuggestion(
+		suggestion: Parameters<
+			AIInlineCompletionController["showSuggestion"]
+		>[0],
+	): void;
+	dismissEphemeralSuggestion(): void;
 	cancelActiveGeneration(): void;
 	handleExternalCommit(events: readonly CommitEvent[]): void;
 	_executeGeneration(
@@ -296,7 +323,7 @@ export interface AIControllerMethodHost {
 		replaceBlockIds?: readonly string[],
 	): DocumentOp[];
 	_buildFallbackMutationReceipt(input: {
-		currentText: string;
+		committedText: boolean;
 		suggestionIds: readonly string[];
 		reviewItems: readonly StructuralReviewItem[];
 		planExecutionIssueCount: number;
@@ -310,6 +337,7 @@ export interface AIControllerMethodHost {
 		target: GenerationTarget,
 		blockId: string,
 		prompt: string,
+		scope?: "document" | "block",
 	): Promise<AIWorkingSetEnvelope | null>;
 	_refineRouteWithWorkingSet(
 		route: RequestRouterDecision,
@@ -334,6 +362,9 @@ export interface AIControllerMethodHost {
 		prompt: string,
 	): Promise<AIWorkingSetRetrievedSpan | null>;
 	_captureBlockRevisions(blockIds: readonly string[]): Record<string, number>;
+	_captureBlockViewHashes(
+		blockIds: readonly string[],
+	): Record<string, string>;
 	_resolveContentFormat(
 		target: GenerationState["target"],
 		surface?: AISurface,

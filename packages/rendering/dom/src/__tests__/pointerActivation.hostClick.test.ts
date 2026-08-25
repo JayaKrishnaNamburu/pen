@@ -9,7 +9,10 @@ import {
 } from "../host/pointerActivation";
 import { DATA_ATTRS } from "../utils/dataAttributes";
 
-function mouseEvent(target: EventTarget, init: MouseEventInit = {}): MouseEvent {
+function mouseEvent(
+	target: EventTarget,
+	init: MouseEventInit = {},
+): MouseEvent {
 	const event = new MouseEvent("mousedown", {
 		bubbles: true,
 		button: 0,

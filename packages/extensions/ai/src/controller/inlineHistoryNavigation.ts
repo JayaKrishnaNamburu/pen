@@ -445,7 +445,7 @@ export const inlineHistoryNavigation = {
 			this._setState({
 				status: "idle",
 				activeGeneration: null,
-				streamingReviewPreview: null,
+				streamingReviewPreviews: [],
 				sessions: restoredSessions,
 				activeSessionId: snapshot.activeSessionId,
 			});

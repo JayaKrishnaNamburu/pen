@@ -336,7 +336,9 @@ describe("@input/pen-react placeholder behavior", () => {
 		document.body.appendChild(container);
 		const root = createRoot(container);
 
-		editor.apply([{ type: "set-props", blockId, props: { type: "divider" } }]);
+		editor.apply([
+			{ type: "set-props", blockId, props: { type: "divider" } },
+		]);
 
 		await act(async () => {
 			root.render(

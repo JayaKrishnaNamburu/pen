@@ -43,7 +43,8 @@ export function createEditor(
 ): ReturnType<typeof createCoreEditor> {
 	if (options.preset == null && options.extensions == null) {
 		return createCoreEditor({
-			schema: defaultSchema,...options,
+			schema: defaultSchema,
+			...options,
 			preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
@@ -59,7 +60,8 @@ export function createUndoSelectionDeletionEditor(
 	options: Parameters<typeof createCoreEditor>[0] = {},
 ): ReturnType<typeof createCoreEditor> {
 	return createCoreEditor({
-		schema: defaultSchema,...options,
+		schema: defaultSchema,
+		...options,
 		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,

@@ -1,30 +1,25 @@
+import type { Editor } from "@input/pen-types";
+import { DATA_ATTRS } from "../utils/dataAttributes";
+import {
+	createInlineAtomDragPreview,
+	type InlineAtomDragPreview,
+} from "../utils/inlineAtomDragPreview";
 import {
 	getInlineAtomAtOffset,
 	moveInlineAtom,
 	resolveInlineAtomDropTarget,
 	type InlineAtomDropTarget,
+	type InlineAtomRenderInteractionProps,
 	type InlineAtomSnapshot,
 	type InlineAtomSource,
-} from "@input/pen-dom/field-editor/inlineAtomInteraction";
-import type { Editor } from "@input/pen-types";
-import type { FieldEditorSession } from "@input/pen-dom";
-import { DATA_ATTRS } from "../../utils/dataAttributes";
-import { getAttachedFieldEditor } from "../../utils/fieldEditor";
-import type {
-	InlineAtomDestructureHandler,
-	InlineAtomRenderInteractionProps,
-	ResolvedInlineAtomInteractions,
-} from "../../context/editorContext";
-import {
-	createInlineAtomDragPreview,
-	type InlineAtomDragPreview,
-} from "../../utils/inlineAtomDragPreview";
+	type ResolvedInlineAtomInteractions,
+} from "./inlineAtomInteraction";
 import {
 	canDestructure,
 	destructureInlineAtom,
 	notifyRejected,
 	selectInlineAtomRangeFromShiftClick,
-} from "./inlineAtomSelectionInteraction";
+} from "./inlineAtomDestructure";
 
 const DRAG_THRESHOLD_PX = 4;
 
@@ -198,7 +193,7 @@ export function getInlineAtomDragSnapshot(): InlineAtomDragSnapshot {
 	return dragSnapshot;
 }
 
-export { resolveShiftClickInlineAtomSelection } from "./inlineAtomSelectionInteraction";
+export { resolveShiftClickInlineAtomSelection } from "./inlineAtomDestructure";
 
 export function isInlineAtomDragSource(
 	snapshot: InlineAtomDragSnapshot,

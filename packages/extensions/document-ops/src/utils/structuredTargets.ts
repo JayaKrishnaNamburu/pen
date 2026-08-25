@@ -2,8 +2,10 @@ import {
 	getBlockSelectionRoleFromSchema,
 	getFlowCapabilityFromSchema,
 	shouldExposeBlockInTooling,
-	type StructuredTargetDescriptor,
-	type TargetEditability,
+} from "@input/pen-core";
+import type {
+	StructuredTargetDescriptor,
+	TargetEditability,
 } from "@input/pen-content-ops";
 import {
 	isNestedContent,

@@ -1,6 +1,9 @@
 import React from "react";
 import { resolveEditorMessage } from "@input/pen-core";
-import type { StructuralReviewComparisonRow, StructuralReviewItem } from "@input/pen-ai";
+import type {
+	StructuralReviewComparisonRow,
+	StructuralReviewItem,
+} from "@input/pen-ai";
 import type { Editor, MessageKey } from "@input/pen-types";
 
 const REVIEW_COMPARISON_SECTION_KEYS = {
@@ -193,21 +196,39 @@ export function summarizeStructuralReviewGroup(
 	const sectionCounts = new Map<StructuralReviewItem["section"], number>();
 
 	for (const item of items) {
-		kindCounts.set(item.changeKind, (kindCounts.get(item.changeKind) ?? 0) + 1);
-		sectionCounts.set(item.section, (sectionCounts.get(item.section) ?? 0) + 1);
+		kindCounts.set(
+			item.changeKind,
+			(kindCounts.get(item.changeKind) ?? 0) + 1,
+		);
+		sectionCounts.set(
+			item.section,
+			(sectionCounts.get(item.section) ?? 0) + 1,
+		);
 	}
 
 	const kindRollups = REVIEW_ITEM_KIND_ORDER.flatMap((kind) => {
 		const count = kindCounts.get(kind);
 		return count == null
 			? []
-			: [{ id: kind, label: formatReviewItemKindLabel(editor, kind), count }];
+			: [
+					{
+						id: kind,
+						label: formatReviewItemKindLabel(editor, kind),
+						count,
+					},
+				];
 	});
 	const sectionRollups = REVIEW_ITEM_SECTION_ORDER.flatMap((section) => {
 		const count = sectionCounts.get(section);
 		return count == null
 			? []
-			: [{ id: section, label: formatReviewItemSectionLabel(editor, section), count }];
+			: [
+					{
+						id: section,
+						label: formatReviewItemSectionLabel(editor, section),
+						count,
+					},
+				];
 	});
 
 	return { kindRollups, sectionRollups };
@@ -239,7 +260,11 @@ export function groupStructuralReviewSubgroups(
 		}
 		subgroups.set(id, {
 			id,
-			label: formatReviewSubgroupLabel(editor, item.section, item.changeKind),
+			label: formatReviewSubgroupLabel(
+				editor,
+				item.section,
+				item.changeKind,
+			),
 			items: [item],
 		});
 	}
@@ -253,7 +278,10 @@ export function groupStructuralReviewSubgroups(
 	return orderedSubgroups;
 }
 
-export function createReviewSubgroupKey(groupId: string, subgroupId: string): string {
+export function createReviewSubgroupKey(
+	groupId: string,
+	subgroupId: string,
+): string {
 	return `${groupId}:${subgroupId}`;
 }
 
@@ -295,7 +323,9 @@ export function resolveReviewFocusTarget(
 	return targets.find((target) => target.id === targetId) ?? null;
 }
 
-export function resolveReviewFocusTargetId(target: EventTarget | null): string | null {
+export function resolveReviewFocusTargetId(
+	target: EventTarget | null,
+): string | null {
 	if (!(target instanceof HTMLElement)) {
 		return null;
 	}
@@ -331,7 +361,10 @@ export function formatReviewComparisonSectionLabel(
 	editor: Editor,
 	section: StructuralReviewComparisonRow["section"],
 ): string {
-	return resolveEditorMessage(editor, REVIEW_COMPARISON_SECTION_KEYS[section]);
+	return resolveEditorMessage(
+		editor,
+		REVIEW_COMPARISON_SECTION_KEYS[section],
+	);
 }
 
 export function formatReviewComparisonKindLabel(
@@ -394,9 +427,13 @@ export function describeBlockSuggestion(
 				{ blockType: typeLabel },
 			);
 		case "move-block":
-			return resolveEditorMessage(editor, "pen.ai.review.blockSuggestion.move", {
-				blockType: typeLabel,
-			});
+			return resolveEditorMessage(
+				editor,
+				"pen.ai.review.blockSuggestion.move",
+				{
+					blockType: typeLabel,
+				},
+			);
 		case "convert-block":
 			return resolveEditorMessage(
 				editor,

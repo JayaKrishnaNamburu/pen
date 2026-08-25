@@ -307,7 +307,9 @@ function resolveLogicalOffset(
 	targetOffset: number,
 ): number | null {
 	if (isVirtualInlineDecorationNode(current)) {
-		return current === targetNode || current.contains(targetNode) ? 0 : null;
+		return current === targetNode || current.contains(targetNode)
+			? 0
+			: null;
 	}
 	if (current === targetNode) {
 		if (isEmptyBlockPlaceholder(current)) {
@@ -432,7 +434,10 @@ function findLogicalDOMPointInElement(
 			continue;
 		}
 
-		if (isInlineAtomCaretBoundaryNode(child) || isEmptyBlockPlaceholder(child)) {
+		if (
+			isInlineAtomCaretBoundaryNode(child) ||
+			isEmptyBlockPlaceholder(child)
+		) {
 			continue;
 		}
 

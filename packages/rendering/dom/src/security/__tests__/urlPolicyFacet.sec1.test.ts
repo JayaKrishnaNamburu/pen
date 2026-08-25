@@ -22,7 +22,8 @@ const registry = {
 describe("SEC1 / S.1-facet host binding", () => {
 	it("SEC1 / S.1-facet: empty editor uses the default urlPolicy", () => {
 		const editor = createEditor({
-			schema: defaultSchema, preset: noDefaultExtensionsPreset,
+			schema: defaultSchema,
+			preset: noDefaultExtensionsPreset,
 		});
 
 		expect(editor.facet(urlPolicyFacet)).toBeUndefined();
@@ -30,16 +31,17 @@ describe("SEC1 / S.1-facet host binding", () => {
 		expect(resolveEditorUrl(editor, "javascript:alert(1)", "link")).toBe(
 			null,
 		);
-		expect(
-			resolveEditorUrl(editor, "https://example.com/a", "link"),
-		).toBe("https://example.com/a");
+		expect(resolveEditorUrl(editor, "https://example.com/a", "link")).toBe(
+			"https://example.com/a",
+		);
 
 		editor.destroy();
 	});
 
 	it("SEC1 / S.1-facet: wrap receives the default policy to delegate to", () => {
 		const editor = createEditor({
-			schema: defaultSchema, preset: noDefaultExtensionsPreset,
+			schema: defaultSchema,
+			preset: noDefaultExtensionsPreset,
 			extensions: [
 				urlPolicyExtension((defaults) => ({
 					resolve(raw, context) {
@@ -56,9 +58,9 @@ describe("SEC1 / S.1-facet host binding", () => {
 		expect(resolveEditorUrl(editor, "javascript:alert(1)", "link")).toBe(
 			null,
 		);
-		expect(
-			resolveEditorUrl(editor, "https://example.com/a", "image"),
-		).toBe("https://example.com/a");
+		expect(resolveEditorUrl(editor, "https://example.com/a", "image")).toBe(
+			"https://example.com/a",
+		);
 
 		editor.destroy();
 	});
@@ -73,7 +75,8 @@ describe("SEC1 / S.1-facet host binding", () => {
 			},
 		}));
 		const editor = createEditor({
-			schema: defaultSchema, preset: noDefaultExtensionsPreset,
+			schema: defaultSchema,
+			preset: noDefaultExtensionsPreset,
 			extensions: [policy],
 		});
 		const hostPolicy = urlPolicyFromEditor(editor);

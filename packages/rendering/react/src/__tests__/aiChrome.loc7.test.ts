@@ -22,7 +22,13 @@ import { defaultSchema } from "@input/pen-schema-default";
 describe("AI chrome pseudo-locale (LOC1, LOC7)", () => {
 	it("LOC7: command menu and change-list chrome wrap through the pseudo catalog", async () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [undoExtension(), deltaStreamExtension(), documentOpsExtension(), aiExtension()],
+			schema: defaultSchema,
+			extensions: [
+				undoExtension(),
+				deltaStreamExtension(),
+				documentOpsExtension(),
+				aiExtension(),
+			],
 			messages: createPseudoLocaleCatalog(),
 		});
 		const controller = getAIController(editor);
@@ -31,9 +37,7 @@ describe("AI chrome pseudo-locale (LOC1, LOC7)", () => {
 		}
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" }],
+			[{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" }],
 			{ origin: "user" },
 		);
 		editor.selectText(blockId, 0, 5);

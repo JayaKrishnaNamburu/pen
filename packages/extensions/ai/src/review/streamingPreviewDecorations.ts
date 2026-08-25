@@ -18,7 +18,6 @@ import {
 import {
 	appendVirtualPreviewTextDecorations,
 	resolveStreamingPreviewAnchor,
-	resolveStreamingPreviewInsertedTextStart,
 } from "./streamingPreviewVirtualDecorations";
 
 type SuggestionPresentation = NonNullable<
@@ -65,7 +64,6 @@ export function buildStreamingReviewPreviewDecorations({
 		offset: anchor.offset,
 		preview,
 		text,
-		insertedTextStart: 0,
 	});
 
 	return decorations;
@@ -101,11 +99,6 @@ function appendStreamingReplacementPreviewPlanDecorations(
 			offset: plan.insertOffset,
 			preview,
 			text: plan.text,
-			insertedTextStart: resolveStreamingPreviewInsertedTextStart({
-				decoratedText: plan.text,
-				preview,
-				planInsertedTextStart: plan.insertedTextStart,
-			}),
 		});
 		return;
 	}
@@ -181,11 +174,6 @@ function appendBlockRangeStreamingReplacementPreviewDecorations(
 		offset: insertPosition.offset,
 		preview,
 		text: plan.insertText,
-		insertedTextStart: resolveStreamingPreviewInsertedTextStart({
-			decoratedText: plan.insertText,
-			preview,
-			planInsertedTextStart: plan.insertedTextStart,
-		}),
 	});
 }
 

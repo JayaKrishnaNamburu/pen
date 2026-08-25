@@ -10,7 +10,10 @@ import { defaultPreset } from "@input/pen-preset-default";
 import { defaultSchema } from "@input/pen-schema-default";
 import { describe, expect, it } from "vitest";
 import { EditorRoot } from "../primitives/editor/root";
-import { buildDataAttributes, DATA_ATTRS } from "../utils/dataAttributes";
+import {
+	buildDataAttributes,
+	DATA_ATTRS,
+} from "@input/pen-dom/utils/dataAttributes";
 
 (
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -65,9 +68,12 @@ function emittedNamesFromSource(source: string): string[] {
 			if (!trimmed) continue;
 			const computed = /^\[DATA_ATTRS\.(\w+)\]/.exec(trimmed);
 			if (computed) {
-				const value = DATA_ATTRS[computed[1] as keyof typeof DATA_ATTRS];
+				const value =
+					DATA_ATTRS[computed[1] as keyof typeof DATA_ATTRS];
 				if (typeof value !== "string") {
-					throw new Error(`DATA_ATTRS.${computed[1]} is not in the catalog`);
+					throw new Error(
+						`DATA_ATTRS.${computed[1]} is not in the catalog`,
+					);
 				}
 				names.push(value);
 				resolvedAny = true;
@@ -76,7 +82,9 @@ function emittedNamesFromSource(source: string): string[] {
 			const quoted = /^["']([^"']+)["']/.exec(trimmed);
 			if (quoted) {
 				names.push(
-					quoted[1].startsWith("data-") ? quoted[1] : `data-${quoted[1]}`,
+					quoted[1].startsWith("data-")
+						? quoted[1]
+						: `data-${quoted[1]}`,
 				);
 				resolvedAny = true;
 				continue;
@@ -175,7 +183,7 @@ describe("HOST6 boolean data-attribute form", () => {
 		).toEqual([]);
 	});
 
-	it("HOST6: rendered root matches [data-readonly] and not [data-readonly=\"true\"]", async () => {
+	it('HOST6: rendered root matches [data-readonly] and not [data-readonly="true"]', async () => {
 		const editor = createEditor();
 		const { container, root, host } = await renderRoot(editor, true);
 

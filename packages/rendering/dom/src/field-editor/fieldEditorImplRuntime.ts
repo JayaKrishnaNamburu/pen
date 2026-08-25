@@ -53,10 +53,7 @@ import { getEditorFlowCapability } from "../utils/flowCapabilities";
 import type { FieldEditorStoreSnapshot } from "./store";
 import type { EditorSelectAllBehavior } from "../constants/selectAll";
 import { FieldEditorImplSelection } from "./fieldEditorImplSelection";
-import {
-	areBlockIdsEqual,
-	resolveInputMode,
-} from "./fieldEditorImplHelpers";
+import { areBlockIdsEqual, resolveInputMode } from "./fieldEditorImplHelpers";
 
 /**
  * HOST4 backend split (`spec-v2/15-host-integration.md`). See

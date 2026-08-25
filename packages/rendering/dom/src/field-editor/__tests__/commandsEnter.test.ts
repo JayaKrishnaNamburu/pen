@@ -78,9 +78,7 @@ describe("applyEnterBehavior split authority", () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" },
 		]);
 		// start off the split offset so onCommit mapping cannot hide a missing write
 		editor.selectText(blockId, 0, 0);
@@ -103,7 +101,6 @@ describe("applyEnterBehavior split authority", () => {
 		expect(editor.getBlock(newBlockId!)?.textContent()).toBe("");
 		expect(editor.selection).toMatchObject({
 			type: "text",
-			isCollapsed: true,
 			anchor: { blockId: newBlockId, offset: 0 },
 			focus: { blockId: newBlockId, offset: 0 },
 		});
@@ -118,9 +115,7 @@ describe("applyEnterBehavior split authority", () => {
 		}
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" },
 		]);
 		editor.selectText(blockId, 5, 5);
 
@@ -142,7 +137,6 @@ describe("applyEnterBehavior split authority", () => {
 		expect(newBlockId).toEqual(expect.any(String));
 		expect(editor.selection).toMatchObject({
 			type: "text",
-			isCollapsed: true,
 			anchor: { blockId: newBlockId, offset: 0 },
 			focus: { blockId: newBlockId, offset: 0 },
 		});
@@ -165,9 +159,7 @@ describe("applyEnterBehavior split authority", () => {
 		}
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" },
 		]);
 		editor.selectText(blockId, 5, 5);
 
@@ -193,7 +185,6 @@ describe("applyEnterBehavior split authority", () => {
 		const newBlockId = editor.documentState.blockOrder[1];
 		expect(editor.selection).toMatchObject({
 			type: "text",
-			isCollapsed: true,
 			anchor: { blockId: newBlockId, offset: 0 },
 			focus: { blockId: newBlockId, offset: 0 },
 		});

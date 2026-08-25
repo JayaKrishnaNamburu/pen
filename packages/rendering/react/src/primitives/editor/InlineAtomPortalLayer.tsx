@@ -6,14 +6,14 @@ import type {
 	InlineAtomRenderers,
 	ResolvedInlineAtomInteractions,
 } from "../../context/editorContext";
-import { DATA_ATTRS } from "../../utils/dataAttributes";
+import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 import {
 	attachInlineAtomWrapperInteractions,
 	getInlineAtomDragSnapshot,
 	getInlineAtomRenderInteractionProps,
 	isInlineAtomDragSource,
 	subscribeInlineAtomDragSnapshot,
-} from "./inlineAtomInteraction";
+} from "@input/pen-dom";
 import {
 	isInlineAtomSelected,
 	type InlineAtomRenderTarget,

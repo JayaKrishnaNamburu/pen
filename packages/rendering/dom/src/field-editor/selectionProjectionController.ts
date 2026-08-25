@@ -1,4 +1,4 @@
-import { isMultiBlock } from "@input/pen-core";
+import { isCollapsed, isMultiBlock } from "@input/pen-core";
 import type {
 	DiagnosticEvent,
 	SelectionRecord,
@@ -13,12 +13,6 @@ import {
 	type GestureEventKind,
 	type GestureWindowState,
 } from "./selectionReader";
-
-type ProgrammaticTextSelection = {
-	blockId: string;
-	anchorOffset: number;
-	focusOffset: number;
-};
 
 type ProjectionOptions = {
 	syncBackendImmediately?: boolean;
@@ -141,21 +135,6 @@ export class SelectionProjectionController {
 		return isApplyingSelection === 0;
 	}
 
-	isProgrammaticDomTextSelection(
-		anchor: { blockId: string; offset: number },
-		focus: { blockId: string; offset: number },
-	): boolean {
-		const programmaticSelection = this._getActiveProgrammaticTextSelection(
-			anchor.blockId,
-		);
-		return (
-			programmaticSelection != null &&
-			anchor.blockId === focus.blockId &&
-			anchor.offset === programmaticSelection.anchorOffset &&
-			focus.offset === programmaticSelection.focusOffset
-		);
-	}
-
 	prepareSyncedTextSelection(
 		currentSelection: SelectionState | null,
 		blockId: string,
@@ -265,7 +244,8 @@ export class SelectionProjectionController {
 				if (this._options.getFocusBlockId() !== focusBlockId) {
 					this._options.activate(focusBlockId);
 				}
-				const inlineEl = this._options.resolveInlineElement(focusBlockId);
+				const inlineEl =
+					this._options.resolveInlineElement(focusBlockId);
 				if (inlineEl) {
 					foundTarget = true;
 					projected = this._projectIntoElement(inlineEl, options);
@@ -420,40 +400,93 @@ export class SelectionProjectionController {
 		}
 		this._historySelectionCoordinator.cancelDeferredProjection();
 	}
+}
 
-	private _getActiveProgrammaticTextSelection(
-		blockId: string | null,
-	): ProgrammaticTextSelection | null {
-		const programmaticSelection = this._readProgrammaticTextSelection();
-		if (!blockId || programmaticSelection?.blockId !== blockId) {
-			return null;
-		}
-		return programmaticSelection;
+export type ProjectedDomOffsets = {
+	readonly anchorOffset: number;
+	readonly focusOffset: number;
+};
+
+export type RestoreDecisionSelection =
+	| {
+			readonly type: "text";
+			readonly anchor: {
+				readonly blockId: string;
+				readonly offset: number;
+			};
+			readonly focus: {
+				readonly blockId: string;
+				readonly offset: number;
+			};
+	  }
+	| {
+			readonly type: "block";
+			readonly blockIds: readonly string[];
+	  };
+
+/**
+ * Contenteditable restore predicate. A 0..length range on the focused
+ * block against a collapsed authority caret is an echo, not a select-all.
+ * Moved from the CE backend; the boolean is unchanged.
+ */
+export function isFullBlockEchoAgainstCollapsedCaret(
+	selection: RestoreDecisionSelection,
+	currentSelection: SelectionState | null,
+	getBlockLength: (blockId: string) => number | null,
+): boolean {
+	if (selection.type === "block") {
+		return false;
+	}
+	if (selection.anchor.blockId !== selection.focus.blockId) {
+		return false;
 	}
 
-	private _readProgrammaticTextSelection(): ProgrammaticTextSelection | null {
-		if (isAdmissibleDomRead("selectionchange", this._gestureWindows)) {
-			return null;
-		}
-		const record = this._options.getRecord?.();
-		if (
-			!record ||
-			record.origin === "pointer" ||
-			record.origin === "ime"
-		) {
-			return null;
-		}
-		const state = record.state;
-		if (state?.type !== "text") {
-			return null;
-		}
-		if (state.anchor.blockId !== state.focus.blockId) {
-			return null;
-		}
-		return {
-			blockId: state.anchor.blockId,
-			anchorOffset: state.anchor.offset,
-			focusOffset: state.focus.offset,
-		};
+	if (
+		currentSelection?.type !== "text" ||
+		!isCollapsed(currentSelection) ||
+		currentSelection.focus.blockId !== selection.anchor.blockId
+	) {
+		return false;
 	}
+
+	const blockLength = getBlockLength(selection.anchor.blockId);
+	if (blockLength == null) {
+		return false;
+	}
+
+	const selectionStart = Math.min(
+		selection.anchor.offset,
+		selection.focus.offset,
+	);
+	const selectionEnd = Math.max(
+		selection.anchor.offset,
+		selection.focus.offset,
+	);
+	return selectionStart === 0 && selectionEnd === blockLength;
+}
+
+/**
+ * Contenteditable restore predicate. A collapsed DOM caret that does not
+ * match the programmatic/user-dom stamp is a stale projection, not a move.
+ * Moved from the CE backend; the boolean is unchanged.
+ */
+export function isCollapsedDomAgainstProjectedOffsets(
+	selection: RestoreDecisionSelection,
+	getProjectedOffsets: (blockId: string) => ProjectedDomOffsets | null,
+): boolean {
+	if (
+		selection.type === "block" ||
+		selection.anchor.blockId !== selection.focus.blockId ||
+		selection.anchor.offset !== selection.focus.offset
+	) {
+		return false;
+	}
+	const projectedSelection = getProjectedOffsets(selection.anchor.blockId);
+	if (!projectedSelection) {
+		return false;
+	}
+	return (
+		selection.anchor.offset !== projectedSelection.anchorOffset ||
+		selection.focus.offset !== projectedSelection.focusOffset
+	);
 }

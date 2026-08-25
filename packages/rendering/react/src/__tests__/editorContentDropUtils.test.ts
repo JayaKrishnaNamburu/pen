@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { collapsedRect, getRootGeometry } from "@input/pen-dom";
-import { DATA_ATTRS } from "../utils/dataAttributes";
+import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 import {
 	readInlineDropCaretStyle,
 	resolveBlockDropTarget,
@@ -54,7 +54,10 @@ describe("editorContentDropUtils geometry wiring", () => {
 			measure: { caretRect: () => caret },
 		});
 
-		const style = readInlineDropCaretStyle(root, { blockId: "p1", offset: 2 });
+		const style = readInlineDropCaretStyle(root, {
+			blockId: "p1",
+			offset: 2,
+		});
 
 		expect(style).toEqual({
 			left: 12,
@@ -76,7 +79,10 @@ describe("editorContentDropUtils geometry wiring", () => {
 		let style: ReturnType<typeof readInlineDropCaretStyle> = null;
 		const pending = host.scheduler.read(() => {
 			expect(host.scheduler.phase).toBe("read");
-			style = readInlineDropCaretStyle(root, { blockId: "p1", offset: 0 });
+			style = readInlineDropCaretStyle(root, {
+				blockId: "p1",
+				offset: 0,
+			});
 		});
 		flushFrame();
 		await pending;
@@ -97,10 +103,20 @@ describe("editorContentDropUtils geometry wiring", () => {
 			measure: {
 				blockRect: (blockId) => {
 					if (blockId === "a") {
-						return { ...collapsedRect(0, 0, 20), width: 100, right: 100, bottom: 20 };
+						return {
+							...collapsedRect(0, 0, 20),
+							width: 100,
+							right: 100,
+							bottom: 20,
+						};
 					}
 					if (blockId === "b") {
-						return { ...collapsedRect(0, 40, 20), width: 100, right: 100, bottom: 60 };
+						return {
+							...collapsedRect(0, 40, 20),
+							width: 100,
+							right: 100,
+							bottom: 60,
+						};
 					}
 					return null;
 				},

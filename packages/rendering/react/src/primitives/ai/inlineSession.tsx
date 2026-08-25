@@ -40,12 +40,17 @@ export function AIInlineSession(props: AIInlineSessionProps) {
 	const surfaceChild =
 		props.asChild && React.isValidElement(props.children)
 			? React.cloneElement(
-				props.children as React.ReactElement<{ children?: React.ReactNode }>,
-				{},
-				(props.children as React.ReactElement<{ children?: React.ReactNode }>).props
-					.children ?? defaultChildren,
-			)
-			: props.children ?? defaultChildren;
+					props.children as React.ReactElement<{
+						children?: React.ReactNode;
+					}>,
+					{},
+					(
+						props.children as React.ReactElement<{
+							children?: React.ReactNode;
+						}>
+					).props.children ?? defaultChildren,
+				)
+			: (props.children ?? defaultChildren);
 
 	return (
 		<AIContextualPromptSurface

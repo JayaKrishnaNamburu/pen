@@ -111,9 +111,7 @@ describe("@input/pen-react escape key handling", () => {
 			const blockId = editor.firstBlock()!.id;
 
 			editor.apply([
-				{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hel" },
+				{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hel" },
 			]);
 
 			const container = document.createElement("div");
@@ -147,8 +145,8 @@ describe("@input/pen-react escape key handling", () => {
 							type: "splice-text",
 							blockId,
 							from: 3,
-				to: 3,
-				insert: "lo world",
+							to: 3,
+							insert: "lo world",
 						},
 					],
 					{ origin: "ai" },
@@ -175,7 +173,6 @@ describe("@input/pen-react escape key handling", () => {
 				type: "text",
 				anchor: { blockId, offset: 12 },
 				focus: { blockId, offset: 12 },
-				isCollapsed: true,
 			});
 
 			await act(async () => {
@@ -298,7 +295,6 @@ describe("@input/pen-react escape key handling", () => {
 			type: "text",
 			anchor: { blockId: firstBlockId, offset: 1 },
 			focus: { blockId: secondBlockId, offset: secondBlockBoundary },
-			isMultiBlock: true,
 		});
 		expect(domSelectionToEditor(rootElement!)).toMatchObject({
 			anchor: { blockId: firstBlockId, offset: 1 },

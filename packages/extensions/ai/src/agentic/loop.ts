@@ -1,7 +1,8 @@
 import { streamingTargetFacet } from "@input/pen-core";
 import type {
 	ModelAdapter,
-	StreamingTarget
+	ModelToolChoice,
+	StreamingTarget,
 } from "@input/pen-types";
 import { generateId } from "@input/pen-types";
 import {
@@ -9,8 +10,13 @@ import {
 	createAIToolTurn,
 	executeAITool,
 	isAIToolCallDenied,
+	isMutatingAITool,
 	listAITools,
 } from "../tools";
+// Not from `../tools`: that barrel is the published `@input/pen-ai/tools`
+// surface, and these have no consumer outside the loop.
+import { type AIToolTurn, isAIToolResultAskingRetry } from "../tools/authority";
+import { advertiseAIToolsForRoute } from "../tools/descriptors";
 import {
 	excerptsFromAgenticStep,
 	requestFeatureForAgenticStep,
@@ -21,7 +27,22 @@ import {
 	buildAssistantToolCallParts,
 	type ToolJournalEntry,
 } from "../runtime/stepJournal";
-import type { AgenticLoopOptions, AgenticStep, GenerationState } from "../types";
+import {
+	createEditDocumentPreview,
+	isTruncatedEditDocumentInput,
+	truncatedEditDocumentRefusal,
+} from "../runtime/editDocumentPreview";
+import {
+	createStreamingBlockCommitter,
+	type StreamingBlockCommitter,
+} from "../runtime/streamingBlockCommit";
+import { rejectSuggestionsForBlocks } from "../suggestions/rejectByBlock";
+import { refuseStaleEditDocumentCall } from "../runtime/viewHashes";
+import type {
+	AgenticLoopOptions,
+	AgenticStep,
+	GenerationState,
+} from "../types";
 import { publishAwareness } from "./awareness";
 import { buildToolContext } from "./contextBuilder";
 
@@ -53,12 +74,33 @@ export async function runAgenticLoop(
 		onStreamingStart,
 		onStreamingEnd,
 		onDebug,
+		onEditPreview,
+		applyStrategy,
+		editIntent = true,
+		editStreaming,
 	} = options;
+	// One fact, two consequences: EC14's turn exit and EC9's stale policy are
+	// both properties of the edit channel, not two independent switches.
+	const isEditChannel = applyStrategy === "tool-edit";
+	const streamingMode = resolveEditStreaming(editStreaming, model);
+	const previewEnabled = isEditChannel && streamingMode !== "atomic";
+	const commitEnabled = isEditChannel && streamingMode === "commit";
+	// Assigned once the turn exists, because whether anything may be written
+	// before the call closes is a property of the turn's grant (EC20).
+	let blockCommitter: StreamingBlockCommitter | null = null;
+	const editPreview = createEditDocumentPreview((update) => {
+		onEditPreview?.(
+			blockCommitter ? blockCommitter.absorb(update) : update,
+		);
+	});
 
 	const steps: AgenticStep[] = [];
 	const consecutiveErrors = new Map<string, number>();
 	const toolJournal: ToolJournalEntry[] = [];
 	let textBuffer = "";
+	// maxSteps bounds model passes (round trips); stepIndex only numbers the
+	// emitted step entries, which grow twice per tool call (call + result).
+	let passIndex = 0;
 	let stepIndex = 0;
 	let streamingStarted = false;
 	let messageAssemblyLatencyMs = 0;
@@ -71,6 +113,9 @@ export async function runAgenticLoop(
 	let workingSetRefreshCount = 0;
 	let routeConfidence = workingSet?.routeConfidence;
 	let currentWorkingSet = workingSet ?? null;
+	// Locked on the first pass so tools→system→messages stays a stable
+	// Anthropic cache prefix across retries of the same turn (EC16).
+	let advertisedToolNames: ReadonlySet<string> | null = null;
 
 	const turn =
 		options.toolTurn ??
@@ -82,6 +127,21 @@ export async function runAgenticLoop(
 		});
 	if (turn.groupId) {
 		editor.undoManager.syncExplicitUndoGroup(turn.groupId);
+	}
+	// A confirmation resolver decides whether the edit happens at all, so a
+	// turn that has one gets the decoration-only preview: writing blocks while
+	// the call is still open would put content in the document ahead of the
+	// answer that governs it (EC20).
+	if (commitEnabled && turn.grant.confirm == null) {
+		blockCommitter = createStreamingBlockCommitter({
+			editor,
+			origin: "ai",
+			undoGroupId: turn.groupId,
+			chargeOps: (count) => chargeStreamedOps(turn, count),
+			rejectBlocks: (blockIds) => {
+				rejectSuggestionsForBlocks(editor, blockIds, turn.groupId);
+			},
+		});
 	}
 	const streamingTarget =
 		(editor.facet(streamingTargetFacet) as StreamingTarget | null) ?? null;
@@ -100,7 +160,8 @@ export async function runAgenticLoop(
 		generationZoneId: zoneId,
 	});
 
-	while (stepIndex < maxSteps) {
+	while (passIndex < maxSteps) {
+		passIndex += 1;
 		if (signal?.aborted || turn.ended) break;
 
 		const validation = validateWorkingSet?.(currentWorkingSet) ?? {
@@ -109,24 +170,41 @@ export async function runAgenticLoop(
 		};
 		if (!validation.valid) {
 			staleContextCount += 1;
-			if (validation.canRefresh && refreshWorkingSet) {
+			if (refreshWorkingSet && (validation.canRefresh || isEditChannel)) {
 				currentWorkingSet = await refreshWorkingSet();
 				workingSetRefreshCount += 1;
-				routeConfidence = currentWorkingSet?.routeConfidence ?? routeConfidence;
-			} else {
-				throw new StaleWorkingSetError(validation.reason ?? "working-set-invalid");
+				routeConfidence =
+					currentWorkingSet?.routeConfidence ?? routeConfidence;
+			} else if (!isEditChannel) {
+				throw new StaleWorkingSetError(
+					validation.reason ?? "working-set-invalid",
+				);
 			}
 		}
 
 		const assemblyStart = performance.now();
 		const messages = buildAgentMessages({
 			prompt,
-			workingSet: currentWorkingSet ? buildWorkingSetPrompt(currentWorkingSet) : null,
+			workingSet: currentWorkingSet
+				? buildWorkingSetPrompt(currentWorkingSet)
+				: null,
 			toolResults: toolJournal,
 		});
 		messageAssemblyLatencyMs += performance.now() - assemblyStart;
 
-		const availableTools = listAITools(toolRuntime, turn.grant)
+		const grantedTools = listAITools(toolRuntime, turn.grant);
+		if (advertisedToolNames == null) {
+			advertisedToolNames = new Set(
+				advertiseAIToolsForRoute(grantedTools, {
+					editChannel: isEditChannel,
+					hasBlockAnnotations:
+						workingSetHasBlockAnnotations(currentWorkingSet),
+				}).map((tool) => tool.name),
+			);
+		}
+		const advertised = advertisedToolNames;
+		const availableTools = grantedTools
+			.filter((tool) => advertised.has(tool.name))
 			.filter((tool) => (consecutiveErrors.get(tool.name) ?? 0) < 3)
 			.map((tool) => ({
 				name: tool.name,
@@ -137,9 +215,14 @@ export async function runAgenticLoop(
 			toolJournal.length,
 			options.feature ?? "generation",
 		);
+		const toolChoice = resolveEditChannelToolChoice(
+			model,
+			isEditChannel && editIntent,
+			currentWorkingSet,
+		);
 		const stream = streamThroughEgress(
 			editor,
-			model,
+			withToolChoice(model, toolChoice),
 			{
 				feature,
 				messages,
@@ -169,7 +252,28 @@ export async function runAgenticLoop(
 		let passTextBuffer = "";
 
 		for await (const event of stream) {
-			if (signal?.aborted) break;
+			if (signal?.aborted) {
+				editPreview.withdraw();
+				blockCommitter?.rollback();
+				break;
+			}
+
+			if (event.type === "tool-input-start") {
+				if (previewEnabled && event.toolName === "edit_document") {
+					editPreview.start(event.toolCallId);
+				}
+				continue;
+			}
+
+			if (event.type === "tool-input-delta") {
+				if (previewEnabled) {
+					if (firstVisibleTextMs == null) {
+						firstVisibleTextMs = performance.now() - loopStartedAt;
+					}
+					editPreview.append(event.inputTextDelta);
+				}
+				continue;
+			}
 
 			if (event.type === "text-delta") {
 				if (!emittedTextInPass && pendingToolCalls.length === 0) {
@@ -221,6 +325,8 @@ export async function runAgenticLoop(
 			}
 
 			if (event.type === "error") {
+				editPreview.withdraw();
+				blockCommitter?.rollback();
 				if (streamingStarted) {
 					onStreamingEnd?.("error");
 				}
@@ -234,6 +340,9 @@ export async function runAgenticLoop(
 		}
 
 		if (pendingToolCalls.length === 0) {
+			// Fragments arrived but the call never closed. Whatever was written
+			// on the strength of it has nothing to finish it (EC20).
+			blockCommitter?.rollback();
 			if (passTextBuffer.length > 0) {
 				onMessagesChange?.([
 					...messages,
@@ -262,9 +371,24 @@ export async function runAgenticLoop(
 			},
 		]);
 
+		let passHasMutatingCall = false;
+		let passCompletedCleanly = true;
+
 		for (const toolCall of pendingToolCalls) {
 			if (turn.ended) {
+				// The call that would have finished the streamed write will not
+				// run, so the prefix it wrote has nothing to complete it.
+				blockCommitter?.rollback();
+				passCompletedCleanly = false;
 				break;
+			}
+			if (
+				isMutatingAITool(
+					toolCall.toolName,
+					toolRuntime.getTool(toolCall.toolName),
+				)
+			) {
+				passHasMutatingCall = true;
 			}
 			const step: AgenticStep = {
 				index: stepIndex++,
@@ -290,29 +414,67 @@ export async function runAgenticLoop(
 			});
 
 			try {
+				editPreview.withdraw();
 				if (firstToolStartMs == null) {
 					firstToolStartMs = performance.now() - loopStartedAt;
 				}
 				const toolStartedAt = performance.now();
-				const output = await executeAITool(
-					toolRuntime,
-					toolCall.toolName,
-					toolCall.input,
-					toolContext,
-					turn,
-					(part, progressiveOutput) => {
-						step.output = progressiveOutput;
-						onStep?.({ ...step });
-						onToolOutput?.({
-							toolCallId: toolCall.toolCallId,
-							toolName: toolCall.toolName,
-							part,
-							output: progressiveOutput,
-						});
-					},
-				);
+				const truncatedRefusal =
+					toolCall.toolName === "edit_document" &&
+					isTruncatedEditDocumentInput(toolCall.input)
+						? truncatedEditDocumentRefusal()
+						: null;
+				// What runs is the call minus the part already written while it
+				// streamed; what the model is told it called stays whole, so
+				// its next pass reasons about the edit it asked for (EC20).
+				const executedInput =
+					truncatedRefusal == null &&
+					toolCall.toolName === "edit_document" &&
+					blockCommitter
+						? blockCommitter.reconcile(toolCall.input)
+						: toolCall.input;
+				const staleRefusal =
+					truncatedRefusal == null &&
+					toolCall.toolName === "edit_document"
+						? refuseStaleEditDocumentCall(
+								editor,
+								executedInput,
+								currentWorkingSet?.viewHashes,
+								currentWorkingSet?.viewMode ?? "resolved",
+							)
+						: null;
+				if (truncatedRefusal ?? staleRefusal) {
+					blockCommitter?.rollback();
+				}
+				const output =
+					truncatedRefusal ??
+					staleRefusal ??
+					(await executeAITool(
+						toolRuntime,
+						toolCall.toolName,
+						executedInput,
+						toolContext,
+						turn,
+						(part, progressiveOutput) => {
+							step.output = progressiveOutput;
+							onStep?.({ ...step });
+							onToolOutput?.({
+								toolCallId: toolCall.toolCallId,
+								toolName: toolCall.toolName,
+								part,
+								output: progressiveOutput,
+							});
+						},
+					));
 				toolExecutionMs += performance.now() - toolStartedAt;
-				if (isAIToolCallDenied(output)) {
+				if (
+					isAIToolCallDenied(output) ||
+					isAIToolResultAskingRetry(output)
+				) {
+					// A refused call applied nothing, so the prefix written
+					// while it streamed is now content nobody asked for.
+					blockCommitter?.rollback();
+					passCompletedCleanly = false;
 					step.output = output;
 					step.status = "complete";
 					onToolResult?.({
@@ -334,6 +496,7 @@ export async function runAgenticLoop(
 				}
 				step.output = output;
 				step.status = "complete";
+				blockCommitter?.settle();
 				consecutiveErrors.set(toolCall.toolName, 0);
 				if (firstToolResultMs == null) {
 					firstToolResultMs = performance.now() - loopStartedAt;
@@ -365,16 +528,22 @@ export async function runAgenticLoop(
 				onMessagesChange?.(
 					buildAgentMessages({
 						prompt,
-						workingSet: currentWorkingSet ? buildWorkingSetPrompt(currentWorkingSet) : null,
+						workingSet: currentWorkingSet
+							? buildWorkingSetPrompt(currentWorkingSet)
+							: null,
 						toolResults: toolJournal,
 					}),
 				);
 			} catch (error) {
+				blockCommitter?.rollback();
+				passCompletedCleanly = false;
 				toolExecutionMs += 0;
-				const failures = (consecutiveErrors.get(toolCall.toolName) ?? 0) + 1;
+				const failures =
+					(consecutiveErrors.get(toolCall.toolName) ?? 0) + 1;
 				consecutiveErrors.set(toolCall.toolName, failures);
 				step.status = "error";
-				step.output = error instanceof Error ? error.message : String(error);
+				step.output =
+					error instanceof Error ? error.message : String(error);
 				onToolResult?.({
 					toolCallId: toolCall.toolCallId,
 					toolName: toolCall.toolName,
@@ -391,14 +560,25 @@ export async function runAgenticLoop(
 				onMessagesChange?.(
 					buildAgentMessages({
 						prompt,
-						workingSet: currentWorkingSet ? buildWorkingSetPrompt(currentWorkingSet) : null,
+						workingSet: currentWorkingSet
+							? buildWorkingSetPrompt(currentWorkingSet)
+							: null,
 						toolResults: toolJournal,
 					}),
 				);
 			}
 		}
+
+		// A clean mutating pass is the document outcome (EC14). Read-only
+		// calls and any refusal still loop so a correction can happen in-turn
+		// (EC10). Off by default: the legacy multi-tool channel spreads edits
+		// across passes.
+		if (isEditChannel && passHasMutatingCall && passCompletedCleanly) {
+			break;
+		}
 	}
 
+	editPreview.withdraw();
 	onCompleteText?.(textBuffer);
 	onStatusChange?.("idle");
 	publishAwareness(editor, null);
@@ -467,6 +647,91 @@ class StaleWorkingSetError extends Error {
 	}
 }
 
-function getModelName(model: ModelAdapter & { name?: string; modelId?: string }): string {
+function getModelName(
+	model: ModelAdapter & { name?: string; modelId?: string },
+): string {
 	return model.name ?? model.modelId ?? "unknown";
+}
+
+function resolveEditStreaming(
+	configured: AgenticLoopOptions["editStreaming"],
+	model: ModelAdapter,
+): "atomic" | "preview" | "commit" {
+	if (configured === "atomic") {
+		return "atomic";
+	}
+	// An adapter that cannot report partial input has nothing to stream from,
+	// so both visible modes collapse to waiting for the call.
+	if (model.capabilities?.partialToolInput !== true) {
+		return "atomic";
+	}
+	return configured ?? "commit";
+}
+
+/**
+ * Charges a streamed write against the turn's op budget, keeping headroom.
+ *
+ * The budget exists to bound one turn's writes, and a streamed write is a write
+ * — but it must not be the thing that exhausts the turn. An exhausted budget
+ * ends the turn silently, whereas the same overrun reached through the closing
+ * call returns a refusal the model can read and split (`AIToolBudgetError`).
+ * So streaming stops one op short and lets the call be the one to complain.
+ */
+function chargeStreamedOps(turn: AIToolTurn, count: number): boolean {
+	if (
+		count >= turn.limits.maxOpsPerCall ||
+		turn.ops + count >= turn.limits.maxTotalOpsPerTurn
+	) {
+		return false;
+	}
+	return turn.tryRecordOps(count) == null;
+}
+
+const BLOCK_ANNOTATION_PATTERN = /<!-- block:\S+ \S+ -->/;
+
+function workingSetHasBlockAnnotations(
+	workingSet: AgenticLoopOptions["workingSet"],
+): boolean {
+	if (!workingSet) {
+		return false;
+	}
+	const serialized =
+		typeof workingSet.context === "string"
+			? workingSet.context
+			: JSON.stringify(workingSet.context ?? "");
+	return BLOCK_ANNOTATION_PATTERN.test(serialized);
+}
+
+/**
+ * EC17, and note the first argument is edit *intent* on the edit channel, not
+ * the channel alone: forcing a tool on a pass that asked a question leaves the
+ * model no way to answer except by editing the document.
+ */
+function resolveEditChannelToolChoice(
+	model: ModelAdapter,
+	forceEditTool: boolean,
+	workingSet: AgenticLoopOptions["workingSet"],
+): ModelToolChoice | undefined {
+	if (!forceEditTool || model.capabilities?.forcedToolChoice !== true) {
+		return undefined;
+	}
+	if (workingSetHasBlockAnnotations(workingSet)) {
+		return { type: "tool", name: "edit_document" };
+	}
+	return { type: "any" };
+}
+
+function withToolChoice(
+	model: ModelAdapter,
+	toolChoice: ModelToolChoice | undefined,
+): ModelAdapter {
+	if (toolChoice == null) {
+		return model;
+	}
+	return {
+		...model,
+		async *stream(options) {
+			yield* model.stream({ ...options, toolChoice });
+		},
+	};
 }

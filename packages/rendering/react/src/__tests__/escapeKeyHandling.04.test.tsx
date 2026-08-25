@@ -156,7 +156,6 @@ describe("@input/pen-react escape key handling", () => {
 			type: "text",
 			anchor: { blockId: firstBlockId, offset: 1 },
 			focus: { blockId: secondBlockId, offset: 2 },
-			isMultiBlock: true,
 		});
 
 		await act(async () => {
@@ -168,8 +167,6 @@ describe("@input/pen-react escape key handling", () => {
 			type: "text",
 			anchor: { blockId: secondBlockId, offset: 2 },
 			focus: { blockId: secondBlockId, offset: 2 },
-			isCollapsed: true,
-			isMultiBlock: false,
 		});
 		expect(domSelectionToEditor(rootElement!)).toMatchObject({
 			anchor: { blockId: secondBlockId, offset: 2 },
@@ -347,7 +344,6 @@ describe("@input/pen-react escape key handling", () => {
 			type: "text",
 			anchor: { blockId: secondBlockId, offset: 4 },
 			focus: { blockId: firstBlockId, offset: 1 },
-			isMultiBlock: true,
 		});
 
 		await act(async () => {
@@ -359,8 +355,6 @@ describe("@input/pen-react escape key handling", () => {
 			type: "text",
 			anchor: { blockId: firstBlockId, offset: 1 },
 			focus: { blockId: firstBlockId, offset: 1 },
-			isCollapsed: true,
-			isMultiBlock: false,
 		});
 		expect(domSelectionToEditor(rootElement!)).toMatchObject({
 			anchor: { blockId: firstBlockId, offset: 1 },

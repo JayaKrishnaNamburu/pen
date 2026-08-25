@@ -120,16 +120,6 @@ export function FormatToolbar({
 						<Icon.SidebarRight open={inspectorOpen} />
 					</Button.Icon>
 				</Button.Tooltip>
-				<p className="top-bar-credit">
-					Built by{" "}
-					<a
-						href="https://www.input.so"
-						target="_blank"
-						rel="noreferrer"
-					>
-						Input
-					</a>
-				</p>
 			</div>
 		</header>
 	);

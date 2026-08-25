@@ -2,6 +2,7 @@ import type { SelectionState } from "@input/pen-types";
 import type {
 	AIContentFormat,
 	AIMutationMode,
+	AIMutationPreference,
 	AIRouteLane,
 } from "./contracts";
 
@@ -10,11 +11,19 @@ interface MutationPolicyInput {
 	suggestMode: boolean;
 	selection: SelectionState;
 	surface?: "inline-edit" | "bottom-chat";
+	mutationPreference?: AIMutationPreference;
 }
 
 export function resolveMutationMode(
 	input: MutationPolicyInput,
 ): AIMutationMode {
+	if (
+		input.mutationPreference === "direct" &&
+		!input.suggestMode &&
+		input.lane !== "review"
+	) {
+		return "direct-stream";
+	}
 	if (input.lane === "selection-rewrite") {
 		return "streaming-suggestions";
 	}

@@ -3,7 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AIContextualPromptAnchor } from "@input/pen-ai";
 import { collapsedRect, getRootGeometry } from "@input/pen-dom";
-import { DATA_ATTRS } from "../utils/dataAttributes";
+import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 import {
 	resolveAnchorRect,
 	resolveInsertedAnchorRect,

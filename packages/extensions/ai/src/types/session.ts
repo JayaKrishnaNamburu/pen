@@ -13,9 +13,12 @@ import type {
 	ToolRuntime,
 } from "@input/pen-types";
 import type { AIToolConfirmFn } from "../tools";
+import type { EditDocumentPreviewUpdate } from "../runtime/editDocumentPreview";
 import type {
 	AIApplyStrategy,
+	AIEditChannel,
 	AIMutationMode,
+	AIMutationPreference,
 	AIRouteLane,
 	AIContentFormat,
 	AIBlockAdapterId,
@@ -73,7 +76,38 @@ export interface AIExtensionConfig {
 	confirm?: AIToolConfirmFn;
 	author?: string;
 	contentFormat?: AIContentFormatOptions;
+	/**
+	 * How AI mutations land by default. "suggestions" (default) stages
+	 * track-changes suggestions for hosts with a review UI; "direct"
+	 * applies edits to the document immediately.
+	 */
+	mutationPreference?: AIMutationPreference;
+	/**
+	 * Which channel carries a durable edit. "fast-apply" (default) parses the
+	 * `<pen-fast-apply>` XML contract out of the assistant text stream; "tool"
+	 * routes edits through the block-addressed `edit_document` tool call
+	 * (`spec-better-ai/01-edit-channel.md` EC12).
+	 */
+	editChannel?: AIEditChannel;
+	/**
+	 * How much of an `edit_document` call is shown while it streams. Never a
+	 * channel, prompt, or schema fork (EC11 / EC15). Default is `"commit"`;
+	 * adapters that cannot report partial tool input degrade to `"atomic"`.
+	 */
+	editStreaming?: AIEditStreaming;
 }
+
+/**
+ * - `"atomic"`: nothing until the call lands.
+ * - `"preview"`: text appears as a decoration; the document is untouched until
+ *   the call lands, which is what a host wants when in-flight writes would be
+ *   visible to someone else — a collaborator would otherwise watch blocks
+ *   arrive and, on a refusal, be retracted (EC20).
+ * - `"commit"`: as `"preview"`, plus each block whose structure is settled is
+ *   written as it arrives, so headings, lists, and positions are real while
+ *   the rest is still coming.
+ */
+export type AIEditStreaming = "atomic" | "preview" | "commit";
 
 export type AISuggestionPresentation = "track-changes" | "final-text";
 
@@ -240,14 +274,23 @@ export type AIStreamingReviewPreviewTarget =
 export interface AIStreamingReviewPreviewInput {
 	sessionId: string;
 	turnId?: string;
+	/**
+	 * Which operation of the streaming call this preview belongs to.
+	 *
+	 * One call carries several operations (EC4) and they arrive one after
+	 * another, so a preview keyed only by its target would be replaced as soon
+	 * as the next operation started — taking a finished-but-unwritten proposal
+	 * off the screen. The index is the identity that survives the target
+	 * moving, which it does: an insert re-anchors as its blocks are written.
+	 */
+	operationIndex?: number;
 	target: AIStreamingReviewPreviewTarget;
 	text: string;
 }
 
 export interface AIStreamingReviewPreview extends AIStreamingReviewPreviewInput {
+	/** How much of `text` was already on screen, so the tail can be styled. */
 	previousTextLength: number;
-	revision: number;
-	updatedAt: number;
 }
 
 export interface AISession {
@@ -421,6 +464,7 @@ export interface GenerationState {
 	transportKind?: AITransportKind;
 	mutationReceipt?: AIMutationReceipt | null;
 	debug?: GenerationDebugState;
+	editPreview?: EditDocumentPreviewUpdate | null;
 }
 
 export type GenerationPlanState = "none" | "drafted" | "validated" | "rejected";
@@ -459,4 +503,5 @@ export interface PersistentTextSuggestion extends PersistentSuggestionBase {
 	action: "insert" | "delete";
 	offset: number;
 	length: number;
+	cell?: { row: number; col: number };
 }

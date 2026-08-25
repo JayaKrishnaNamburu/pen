@@ -53,9 +53,12 @@ function emittedNamesFromSource(source: string): {
 			if (!trimmed) continue;
 			const computed = /^\[DATA_ATTRS\.(\w+)\]/.exec(trimmed);
 			if (computed) {
-				const value = DATA_ATTRS[computed[1] as keyof typeof DATA_ATTRS];
+				const value =
+					DATA_ATTRS[computed[1] as keyof typeof DATA_ATTRS];
 				if (typeof value !== "string") {
-					throw new Error(`DATA_ATTRS.${computed[1]} is not in the catalog`);
+					throw new Error(
+						`DATA_ATTRS.${computed[1]} is not in the catalog`,
+					);
 				}
 				names.push(value);
 				resolvedAny = true;
@@ -68,7 +71,9 @@ function emittedNamesFromSource(source: string): {
 			const quoted = /^["']([^"']+)["']/.exec(trimmed);
 			if (quoted) {
 				names.push(
-					quoted[1].startsWith("data-") ? quoted[1] : `data-${quoted[1]}`,
+					quoted[1].startsWith("data-")
+						? quoted[1]
+						: `data-${quoted[1]}`,
 				);
 				resolvedAny = true;
 				continue;

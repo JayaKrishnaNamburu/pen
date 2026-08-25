@@ -28,8 +28,10 @@
 	--palette-b100: #000;
 	--palette-blue: #0af;
 	--palette-purple: #80f;
+	--palette-purple-light: #b3f;
 	--palette-red: #f43;
 	--palette-yellow: #fa0;
+	--palette-yellow-light: #cb7;
 
 	/* Radii. */
 	--radius-xxs: 4px;
@@ -106,6 +108,7 @@
 
 	/* Surfaces. */
 	--card-background: rgba(0, 0, 0, 0.03);
+	--card-background-hover: rgba(0, 0, 0, 0.06);
 	--card-background-filled: #f1f1f3;
 	--tile-background: var(--card-background-filled);
 	--sidebar-background: #f1f3f4;
@@ -137,6 +140,12 @@
 	--scroll-bar-thumb: rgba(0, 0, 0, 0.1);
 	--scroll-bar-thumb-hover: rgba(0, 0, 0, 0.3);
 
+	/* Switch track. Active fill is yellow in light, purple in dark. */
+	--toggle-background: rgba(0, 0, 0, 0.08);
+	--toggle-hover: rgba(0, 0, 0, 0.1);
+	--toggle-active: var(--palette-yellow);
+	--toggle-active-hover: var(--palette-yellow-light);
+
 	/* What a scrolling region fades into. Panels on other surfaces reset it. */
 	--fade-background: var(--sidebar-background);
 
@@ -157,8 +166,10 @@
 		--palette-b100: #fafafa;
 		--palette-blue: #6bf;
 		--palette-purple: #a6f;
+		--palette-purple-light: #c8f;
 		--palette-red: #f65;
 		--palette-yellow: #fc5;
+		--palette-yellow-light: #fe8;
 
 		--button-border: transparent;
 		--button-color-hover: rgba(227, 227, 254, 0.6);
@@ -184,6 +195,7 @@
 		--line-active: rgba(227, 227, 254, 0.24);
 
 		--card-background: rgba(227, 227, 254, 0.05);
+		--card-background-hover: rgba(227, 227, 254, 0.08);
 		--card-background-filled: #1a1a20;
 		--sidebar-background: #0b0b0f;
 		--popover-background: #111117;
@@ -205,6 +217,11 @@
 		--spinner-background: rgba(255, 255, 255, 0.4);
 		--scroll-bar-thumb: rgba(227, 227, 254, 0.1);
 		--scroll-bar-thumb-hover: rgba(227, 227, 254, 0.3);
+
+		--toggle-background: rgba(255, 255, 255, 0.2);
+		--toggle-hover: rgba(255, 255, 255, 0.2);
+		--toggle-active: var(--palette-purple);
+		--toggle-active-hover: var(--palette-purple-light);
 	}
 }
 

@@ -1,10 +1,11 @@
-import type { Editor, Position } from "@input/pen-types";
-import { shouldExposeBlockInTooling } from "./blockCapabilities";
-import { blocksToOps, type PendingBlock } from "./blocks";
 import {
+  blocksToOps,
   normalizePendingBlocksForImport,
   reportPendingBlockImportViolations,
-} from "./profilePolicy";
+  shouldExposeBlockInTooling,
+  type PendingBlock,
+} from "@input/pen-core";
+import type { Editor, Position } from "@input/pen-types";
 import { parseMarkdownToBlocks } from "./markdown";
 
 type ContentWriteEditor = {

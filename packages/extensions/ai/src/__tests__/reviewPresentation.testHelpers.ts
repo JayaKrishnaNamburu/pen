@@ -169,8 +169,6 @@ export const HI_TEXT_RANGE_STREAMING_PREVIEW = {
 	},
 	text: "Hi",
 	previousTextLength: 0,
-	revision: 1,
-	updatedAt: 123,
 };
 
 export function createAlphaBetaFriendReviewEditor(): Editor {

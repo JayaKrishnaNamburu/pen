@@ -1,12 +1,10 @@
+import { describe, expect, it } from "vitest";
 import {
-	describe,
-	expect,
-	it } from "vitest";
-import { createEditor,
+	createEditor,
 	getInlineCompletionController,
-	keymapFacet } from "@input/pen-core";
-import { getSearchController,
-	searchExtension } from "@input/pen-search";
+	keymapFacet,
+} from "@input/pen-core";
+import { getSearchController, searchExtension } from "@input/pen-search";
 import {
 	AI_AUTOCOMPLETE_CONTROLLER_SLOT,
 	FIELD_EDITOR_SLOT_KEY,
@@ -18,7 +16,7 @@ import {
 	handleEditorKeyBindings,
 	handleFieldEditorKeyDown,
 } from "@input/pen-dom/field-editor/keyHandling";
-import { resolveShiftClickInlineAtomSelection } from "../primitives/editor/inlineAtomInteraction";
+import { resolveShiftClickInlineAtomSelection } from "@input/pen-dom";
 import type { FieldEditorTextLike } from "@input/pen-dom/field-editor/crdt";
 import { defaultSchema } from "@input/pen-schema-default";
 
@@ -142,7 +140,8 @@ function createPresetEditor(
 	} = {},
 ) {
 	return createEditor({
-		schema: defaultSchema, preset: defaultPreset(options.preset),
+		schema: defaultSchema,
+		preset: defaultPreset(options.preset),
 		extensions: options.extensions,
 	});
 }
@@ -159,9 +158,7 @@ describe("@input/pen-react key binding contexts", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "A" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "A" },
 			{
 				type: "splice-text",
 				blockId,
@@ -172,9 +169,7 @@ describe("@input/pen-react key binding contexts", () => {
 					props: { id: "user-1", label: "Ada" },
 				},
 			},
-			{ type: "splice-text", blockId, from: 2,
-				to: 2,
-				insert: "B" },
+			{ type: "splice-text", blockId, from: 2, to: 2, insert: "B" },
 		]);
 		const ytext = getYText(editor, blockId);
 		const fieldEditor = createFieldEditorMock(blockId);
@@ -265,9 +260,7 @@ describe("@input/pen-react key binding contexts", () => {
 		).toBe(true);
 
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" },
 		]);
 		editor.selectText(blockId, 0, 5);
 		expect(
@@ -374,7 +367,6 @@ describe("@input/pen-react key binding contexts", () => {
 			type: "text",
 			anchor: { blockId: firstBlockId, offset: 0 },
 			focus: { blockId: firstBlockId, offset: 5 },
-			isMultiBlock: false,
 		});
 
 		expect(
@@ -403,9 +395,7 @@ describe("@input/pen-react key binding contexts", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" },
 		]);
 		editor.selectText(blockId, 0, 5);
 
@@ -439,9 +429,7 @@ describe("@input/pen-react key binding contexts", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" },
 		]);
 		editor.selectText(blockId, 0, 5);
 
@@ -463,6 +451,4 @@ describe("@input/pen-react key binding contexts", () => {
 
 		editor.destroy();
 	});
-
-
 });

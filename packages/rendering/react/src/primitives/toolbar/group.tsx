@@ -2,12 +2,12 @@ import React from "react";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 
 export interface ToolbarGroupProps extends AsChildProps {
-  ref?: React.Ref<HTMLElement>;
+	ref?: React.Ref<HTMLElement>;
 }
 
 export function ToolbarGroup(props: ToolbarGroupProps) {
-  return renderAsChild(props, "div", {
-    role: "group",
-    "data-pen-toolbar-group": "",
-  });
+	return renderAsChild(props, "div", {
+		role: "group",
+		"data-pen-toolbar-group": "",
+	});
 }

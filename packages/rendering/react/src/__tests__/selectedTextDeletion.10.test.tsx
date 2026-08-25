@@ -70,8 +70,6 @@ describe("@input/pen-react selected text deletion", () => {
 				type: "text",
 				anchor: { blockId, offset: 0 },
 				focus: { blockId, offset: 0 },
-				isCollapsed: true,
-				isMultiBlock: false,
 			});
 			expect(domSelectionToEditor(rootElement!)).toMatchObject({
 				anchor: { blockId, offset: 0 },
@@ -156,8 +154,6 @@ describe("@input/pen-react selected text deletion", () => {
 			type: "text",
 			anchor: { blockId: firstBlockId, offset: 0 },
 			focus: { blockId: secondBlockId, offset: 5 },
-			isCollapsed: false,
-			isMultiBlock: true,
 		});
 
 		await act(async () => {
@@ -278,9 +274,7 @@ describe("@input/pen-react selected text deletion", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" },
 		]);
 
 		const container = document.createElement("div");
@@ -328,7 +322,6 @@ describe("@input/pen-react selected text deletion", () => {
 			type: "text",
 			anchor: { blockId, offset: 3 },
 			focus: { blockId, offset: 3 },
-			isCollapsed: true,
 		});
 		expect(domSelectionToEditor(rootElement!)).toMatchObject({
 			anchor: { blockId, offset: 3 },
@@ -352,7 +345,6 @@ describe("@input/pen-react selected text deletion", () => {
 			type: "text",
 			anchor: { blockId, offset: 4 },
 			focus: { blockId, offset: 4 },
-			isCollapsed: true,
 		});
 		expect(domSelectionToEditor(rootElement!)).toMatchObject({
 			anchor: { blockId, offset: 4 },

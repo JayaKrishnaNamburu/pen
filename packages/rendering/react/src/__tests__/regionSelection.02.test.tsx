@@ -66,8 +66,8 @@ function createThreeBlockEditor() {
 			type: "splice-text",
 			blockId: firstBlockId,
 			from: 0,
-				to: 0,
-				insert: "First",
+			to: 0,
+			insert: "First",
 		},
 		{
 			type: "insert-block",
@@ -80,8 +80,8 @@ function createThreeBlockEditor() {
 			type: "splice-text",
 			blockId: secondBlockId,
 			from: 0,
-				to: 0,
-				insert: "Second",
+			to: 0,
+			insert: "Second",
 		},
 		{
 			type: "insert-block",
@@ -94,8 +94,8 @@ function createThreeBlockEditor() {
 			type: "splice-text",
 			blockId: thirdBlockId,
 			from: 0,
-				to: 0,
-				insert: "Third",
+			to: 0,
+			insert: "Third",
 		},
 	]);
 

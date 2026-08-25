@@ -43,7 +43,10 @@ export function useAISuggestionPopover(editor: Editor) {
 				return;
 			}
 
-			const anchor = queryAISuggestionAnchorElement(editor, anchorSuggestionId);
+			const anchor = queryAISuggestionAnchorElement(
+				editor,
+				anchorSuggestionId,
+			);
 			if (!anchor) {
 				setPosition(null);
 				return;
@@ -62,7 +65,8 @@ export function useAISuggestionPopover(editor: Editor) {
 
 	const openGroup = React.useCallback(
 		(groupId: string) => {
-			const group = state.groups.find((item) => item.id === groupId) ?? null;
+			const group =
+				state.groups.find((item) => item.id === groupId) ?? null;
 			if (!group) {
 				return;
 			}
@@ -75,8 +79,9 @@ export function useAISuggestionPopover(editor: Editor) {
 	const openSuggestion = React.useCallback(
 		(suggestionId: string) => {
 			const groupId =
-				state.groups.find((group) => group.suggestionIds.includes(suggestionId))?.id ??
-				null;
+				state.groups.find((group) =>
+					group.suggestionIds.includes(suggestionId),
+				)?.id ?? null;
 			if (groupId) {
 				openGroup(groupId);
 				return;
@@ -94,7 +99,10 @@ export function useAISuggestionPopover(editor: Editor) {
 	}, [activeGroupIndex, openGroup, state.groups]);
 
 	const goToNextGroup = React.useCallback(() => {
-		if (activeGroupIndex < 0 || activeGroupIndex >= state.groups.length - 1) {
+		if (
+			activeGroupIndex < 0 ||
+			activeGroupIndex >= state.groups.length - 1
+		) {
 			return;
 		}
 		openGroup(state.groups[activeGroupIndex + 1]!.id);

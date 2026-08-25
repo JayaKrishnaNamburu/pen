@@ -106,8 +106,11 @@ export function AIChangeList(props: AIChangeListProps) {
 		? previewReviewItems
 		: (generation?.reviewItems ?? []);
 	const canApplyReviewActions =
-		generation?.status !== "streaming" && generation?.planState === "validated";
-	const structuralReviewGroups = groupStructuralReviewItems(structuralReviewItems);
+		generation?.status !== "streaming" &&
+		generation?.planState === "validated";
+	const structuralReviewGroups = groupStructuralReviewItems(
+		structuralReviewItems,
+	);
 
 	function toggleSubgroupExpanded(
 		subgroupKey: string,
@@ -119,22 +122,23 @@ export function AIChangeList(props: AIChangeListProps) {
 		}));
 	}
 
-	const { nodes: changeListItems, reviewFocusTargets } = renderAIChangeListItems({
-		editor,
-		suggestions,
-		structuralReviewGroups,
-		subgroupExpandedState,
-		activeReviewTargetId,
-		canApplyReviewActions,
-		acceptSuggestionAndStop,
-		rejectSuggestionAndStop,
-		acceptReviewItemsAndStop,
-		rejectReviewItemsAndStop,
-		acceptReviewItemAndStop,
-		rejectReviewItemAndStop,
-		toggleSubgroupExpanded,
-		setActiveReviewTargetId,
-	});
+	const { nodes: changeListItems, reviewFocusTargets } =
+		renderAIChangeListItems({
+			editor,
+			suggestions,
+			structuralReviewGroups,
+			subgroupExpandedState,
+			activeReviewTargetId,
+			canApplyReviewActions,
+			acceptSuggestionAndStop,
+			rejectSuggestionAndStop,
+			acceptReviewItemsAndStop,
+			rejectReviewItemsAndStop,
+			acceptReviewItemAndStop,
+			rejectReviewItemAndStop,
+			toggleSubgroupExpanded,
+			setActiveReviewTargetId,
+		});
 
 	const firstReviewFocusTargetId = reviewFocusTargets[0]?.id ?? null;
 
@@ -147,7 +151,9 @@ export function AIChangeList(props: AIChangeListProps) {
 		}
 		if (
 			activeReviewTargetId == null ||
-			!reviewFocusTargets.some((target) => target.id === activeReviewTargetId)
+			!reviewFocusTargets.some(
+				(target) => target.id === activeReviewTargetId,
+			)
 		) {
 			setActiveReviewTargetId(firstReviewFocusTargetId);
 		}
@@ -157,11 +163,18 @@ export function AIChangeList(props: AIChangeListProps) {
 		if (!rootRef.current || !activeReviewTargetId) {
 			return;
 		}
-		const targetElement = findReviewFocusElement(rootRef.current, activeReviewTargetId);
+		const targetElement = findReviewFocusElement(
+			rootRef.current,
+			activeReviewTargetId,
+		);
 		if (targetElement && document.activeElement !== targetElement) {
 			targetElement.focus();
 		}
-	}, [activeReviewTargetId, structuralReviewItems.length, subgroupExpandedState]);
+	}, [
+		activeReviewTargetId,
+		structuralReviewItems.length,
+		subgroupExpandedState,
+	]);
 
 	function focusReviewTarget(targetId: string | null): void {
 		setActiveReviewTargetId(targetId);
@@ -203,7 +216,9 @@ export function AIChangeList(props: AIChangeListProps) {
 		}
 	}
 
-	function handleReviewListKeyDown(event: React.KeyboardEvent<HTMLElement>): void {
+	function handleReviewListKeyDown(
+		event: React.KeyboardEvent<HTMLElement>,
+	): void {
 		if (reviewFocusTargets.length === 0) {
 			return;
 		}
@@ -235,7 +250,8 @@ export function AIChangeList(props: AIChangeListProps) {
 			case "End": {
 				event.preventDefault();
 				const lastReviewFocusTargetId =
-					reviewFocusTargets[reviewFocusTargets.length - 1]?.id ?? null;
+					reviewFocusTargets[reviewFocusTargets.length - 1]?.id ??
+					null;
 				if (lastReviewFocusTargetId != null) {
 					focusReviewTarget(lastReviewFocusTargetId);
 				}
@@ -245,7 +261,9 @@ export function AIChangeList(props: AIChangeListProps) {
 				if (currentTarget.collapse) {
 					event.preventDefault();
 					currentTarget.collapse();
-					focusReviewTarget(currentTarget.parentId ?? currentTarget.id);
+					focusReviewTarget(
+						currentTarget.parentId ?? currentTarget.id,
+					);
 				}
 				return;
 			case "ArrowRight":
@@ -284,11 +302,14 @@ export function AIChangeList(props: AIChangeListProps) {
 		props.children ??
 		(changeListItems.length > 0
 			? changeListItems
-			: emptyState ?? (
+			: (emptyState ?? (
 					<div>
-						{resolveEditorMessage(editor, "pen.ai.review.noPendingChanges")}
+						{resolveEditorMessage(
+							editor,
+							"pen.ai.review.noPendingChanges",
+						)}
 					</div>
-				));
+				)));
 
 	return renderAsChild(
 		{

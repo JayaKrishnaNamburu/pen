@@ -83,9 +83,7 @@ const insertText: DirectHandler = (
 		return;
 	}
 	const marks = fe.resolveInsertMarks(ytext, range.start);
-	if (
-		tryDispatchInsert(editor, fe, backend, blockId, range, text, marks)
-	) {
+	if (tryDispatchInsert(editor, fe, backend, blockId, range, text, marks)) {
 		return;
 	}
 	backend.applyInlineTextEdit({
@@ -110,9 +108,16 @@ const deleteLineBackward: DirectHandler = (
 	if (!range) return;
 
 	if (
-		tryDispatchMapped(editor, fe, backend, deleteBackward, {
-			granularity: "line",
-		}, range)
+		tryDispatchMapped(
+			editor,
+			fe,
+			backend,
+			deleteBackward,
+			{
+				granularity: "line",
+			},
+			range,
+		)
 	) {
 		return;
 	}
@@ -186,9 +191,16 @@ export const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 		if (!range) return;
 
 		if (
-			tryDispatchMapped(editor, fe, backend, deleteBackward, {
-				granularity: "grapheme",
-			}, range)
+			tryDispatchMapped(
+				editor,
+				fe,
+				backend,
+				deleteBackward,
+				{
+					granularity: "grapheme",
+				},
+				range,
+			)
 		) {
 			return;
 		}
@@ -247,9 +259,16 @@ export const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 		if (!range) return;
 
 		if (
-			tryDispatchMapped(editor, fe, backend, deleteForward, {
-				granularity: "grapheme",
-			}, range)
+			tryDispatchMapped(
+				editor,
+				fe,
+				backend,
+				deleteForward,
+				{
+					granularity: "grapheme",
+				},
+				range,
+			)
 		) {
 			return;
 		}
@@ -296,9 +315,16 @@ export const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 		if (!range) return;
 
 		if (
-			tryDispatchMapped(editor, fe, backend, deleteBackward, {
-				granularity: "word",
-			}, range)
+			tryDispatchMapped(
+				editor,
+				fe,
+				backend,
+				deleteBackward,
+				{
+					granularity: "word",
+				},
+				range,
+			)
 		) {
 			return;
 		}
@@ -336,9 +362,16 @@ export const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 		if (!range) return;
 
 		if (
-			tryDispatchMapped(editor, fe, backend, deleteForward, {
-				granularity: "word",
-			}, range)
+			tryDispatchMapped(
+				editor,
+				fe,
+				backend,
+				deleteForward,
+				{
+					granularity: "word",
+				},
+				range,
+			)
 		) {
 			return;
 		}
@@ -425,18 +458,14 @@ export const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 	},
 
 	historyUndo: (_event, editor, _ytext, fe, _element, backend) => {
-		if (
-			tryDispatchMapped(editor, fe, backend, historyUndo, undefined)
-		) {
+		if (tryDispatchMapped(editor, fe, backend, historyUndo, undefined)) {
 			return;
 		}
 		editor.undoManager.undo();
 	},
 
 	historyRedo: (_event, editor, _ytext, fe, _element, backend) => {
-		if (
-			tryDispatchMapped(editor, fe, backend, historyRedo, undefined)
-		) {
+		if (tryDispatchMapped(editor, fe, backend, historyRedo, undefined)) {
 			return;
 		}
 		editor.undoManager.redo();
@@ -531,9 +560,7 @@ function tryDispatchInsert(
 		return false;
 	}
 	syncEditorTextSelection(editor, blockId, range);
-	if (
-		!dispatchEditorCommand(editor, insertTextCommand, { text, marks })
-	) {
+	if (!dispatchEditorCommand(editor, insertTextCommand, { text, marks })) {
 		return false;
 	}
 	backend.commitDispatchedEdit?.();

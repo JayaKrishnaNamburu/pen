@@ -28,7 +28,11 @@ function flushFrame(): void {
 	}
 }
 
-function mountBlock(root: HTMLElement, blockId: string, text: string): HTMLElement {
+function mountBlock(
+	root: HTMLElement,
+	blockId: string,
+	text: string,
+): HTMLElement {
 	const block = document.createElement("div");
 	block.setAttribute(DATA_ATTRS.editorBlock, "");
 	block.setAttribute(DATA_ATTRS.blockId, blockId);
@@ -88,9 +92,9 @@ describe("mount ack and parked projections", () => {
 		});
 
 		const blockId = editor.firstBlock()!.id;
-		editor.apply([{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hi" }]);
+		editor.apply([
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hi" },
+		]);
 		fieldEditor.activate(blockId);
 		editor.selectText(blockId, 2, 2);
 		flushFrame();
@@ -100,7 +104,9 @@ describe("mount ack and parked projections", () => {
 		);
 		expect(fieldEditor.lastProjectedVersion).toBe(0);
 		expect(
-			diagnostics.filter((event) => event.code === "selection-target-unmounted"),
+			diagnostics.filter(
+				(event) => event.code === "selection-target-unmounted",
+			),
 		).toHaveLength(0);
 	});
 
@@ -113,9 +119,9 @@ describe("mount ack and parked projections", () => {
 		fieldEditor.setRootElement(root);
 
 		const blockId = editor.firstBlock()!.id;
-		editor.apply([{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hi" }]);
+		editor.apply([
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hi" },
+		]);
 		fieldEditor.activate(blockId);
 		editor.selectText(blockId, 0, 0);
 		flushFrame();
@@ -138,9 +144,9 @@ describe("mount ack and parked projections", () => {
 		fieldEditor.setRootElement(root);
 
 		const blockId = editor.firstBlock()!.id;
-		editor.apply([{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hi" }]);
+		editor.apply([
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hi" },
+		]);
 		fieldEditor.activate(blockId);
 		editor.selectText(blockId, 2, 2);
 		flushFrame();
@@ -165,9 +171,13 @@ describe("mount ack and parked projections", () => {
 
 		const liveId = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "splice-text", blockId: liveId, from: 0,
+			{
+				type: "splice-text",
+				blockId: liveId,
+				from: 0,
 				to: 0,
-				insert: "Alive" },
+				insert: "Alive",
+			},
 			{
 				type: "insert-block",
 				blockId: "parked",
@@ -175,9 +185,13 @@ describe("mount ack and parked projections", () => {
 				props: {},
 				position: "last",
 			},
-			{ type: "splice-text", blockId: "parked", from: 0,
+			{
+				type: "splice-text",
+				blockId: "parked",
+				from: 0,
 				to: 0,
-				insert: "Parked" },
+				insert: "Parked",
+			},
 		]);
 		const live = mountBlock(root, liveId, "Alive");
 		fieldEditor.activate(liveId);
@@ -190,7 +204,8 @@ describe("mount ack and parked projections", () => {
 		fieldEditor.ackBlockMounted("parked", remounted);
 
 		expect(
-			remounted.querySelector(`[${DATA_ATTRS.inlineContent}]`)?.textContent,
+			remounted.querySelector(`[${DATA_ATTRS.inlineContent}]`)
+				?.textContent,
 		).toBe("Parked");
 		expect(
 			live.querySelector(`[${DATA_ATTRS.inlineContent}]`)?.textContent,

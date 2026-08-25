@@ -57,7 +57,9 @@ describe("@input/pen-react block type rendering", () => {
 
 		editor.apply([
 			{
-				type: "set-props", blockId: toggleBlockId, props: { type: "toggle", ...{ open: true  }},
+				type: "set-props",
+				blockId: toggleBlockId,
+				props: { type: "toggle", ...{ open: true } },
 			},
 			{
 				type: "splice-text",
@@ -145,7 +147,9 @@ describe("@input/pen-react block type rendering", () => {
 
 		editor.apply([
 			{
-				type: "set-props", blockId: toggleBlockId, props: { type: "toggle", ...{ open: true  }},
+				type: "set-props",
+				blockId: toggleBlockId,
+				props: { type: "toggle", ...{ open: true } },
 			},
 			{
 				type: "splice-text",
@@ -222,9 +226,13 @@ describe("@input/pen-react block type rendering", () => {
 
 		editor.apply([
 			{ type: "set-props", blockId, props: { type: "numberedListItem" } },
-			{ type: "splice-text", blockId, from: 0,
+			{
+				type: "splice-text",
+				blockId,
+				from: 0,
 				to: 0,
-				insert: "First item" },
+				insert: "First item",
+			},
 		]);
 
 		const container = document.createElement("div");
@@ -267,7 +275,10 @@ describe("@input/pen-react block type rendering", () => {
 
 		editor.apply([
 			{
-				type: "set-props", blockId: firstBlockId, props: { type: "numberedListItem" }},
+				type: "set-props",
+				blockId: firstBlockId,
+				props: { type: "numberedListItem" },
+			},
 			{
 				type: "splice-text",
 				blockId: firstBlockId,
@@ -318,8 +329,8 @@ describe("@input/pen-react block type rendering", () => {
 					type: "splice-text",
 					blockId: insertedBlockId,
 					from: 0,
-				to: 0,
-				insert: "Second item",
+					to: 0,
+					insert: "Second item",
 				},
 			]);
 		});
@@ -339,9 +350,13 @@ describe("@input/pen-react block type rendering", () => {
 
 		editor.apply([
 			{ type: "set-props", blockId, props: { type: "bulletListItem" } },
-			{ type: "splice-text", blockId, from: 0,
+			{
+				type: "splice-text",
+				blockId,
+				from: 0,
 				to: 0,
-				insert: "Bullet item" },
+				insert: "Bullet item",
+			},
 		]);
 
 		const container = document.createElement("div");
@@ -382,9 +397,13 @@ describe("@input/pen-react block type rendering", () => {
 
 		editor.apply([
 			{ type: "set-props", blockId, props: { type: "checkListItem" } },
-			{ type: "splice-text", blockId, from: 0,
+			{
+				type: "splice-text",
+				blockId,
+				from: 0,
 				to: 0,
-				insert: "Task item" },
+				insert: "Task item",
+			},
 		]);
 
 		const container = document.createElement("div");
@@ -447,8 +466,8 @@ describe("@input/pen-react block type rendering", () => {
 					type: "splice-text",
 					blockId,
 					from: 0,
-				to: 0,
-				insert: "Synced text",
+					to: 0,
+					insert: "Synced text",
 				},
 			]);
 		});

@@ -62,8 +62,8 @@ export { deriveContentMoves, repairAnchor } from "./editor/anchorRepair";
 export type { ContentMove } from "./editor/anchorRepair";
 export { getEditorSelectionRecord } from "./editor/selectionRecord";
 export {
+	createTextSelection,
 	getSelectionBlockRange,
-	getTrustedSelectionBlockRange,
 	isCollapsed,
 	isMultiBlock,
 	selectionToRange,
@@ -250,6 +250,7 @@ export {
 	splitBlock,
 	toggleMark,
 } from "./commands/text";
+export { convertBlockOps } from "./commands/commandBlockContext";
 export type {
 	ConvertBlockParam,
 	DeleteGranularity,

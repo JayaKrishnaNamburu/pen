@@ -37,7 +37,13 @@ function dispatchKey(key: string, target: EventTarget) {
 
 function createCommandMenuEditor() {
 	return createEditor({
-		schema: defaultSchema,extensions: [undoExtension(), deltaStreamExtension(), documentOpsExtension(), aiExtension({ author: "tester" })],
+		schema: defaultSchema,
+		extensions: [
+			undoExtension(),
+			deltaStreamExtension(),
+			documentOpsExtension(),
+			aiExtension({ author: "tester" }),
+		],
 	});
 }
 

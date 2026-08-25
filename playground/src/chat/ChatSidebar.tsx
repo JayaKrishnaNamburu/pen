@@ -3,7 +3,7 @@ import { Icon } from "../ui/Icon";
 import { ScrollArea } from "../ui/ScrollArea";
 import { ChatComposer } from "./ChatComposer";
 import { ChatEmpty } from "./ChatEmpty";
-import { ChatMore } from "./ChatMore";
+import { ChatBarActions } from "./ChatBarActions";
 import { ChatTranscript } from "./ChatTranscript";
 import { useChat } from "./useChat";
 
@@ -27,7 +27,7 @@ export function ChatSidebar({ editor }: { editor: Editor }) {
 					<Icon.PenMagic />
 				</span>
 				<h5>Agent</h5>
-				<ChatMore onNewChat={chat.reset} />
+				<ChatBarActions editor={editor} onNewChat={chat.reset} />
 			</header>
 
 			{isFirstPrompt ? (

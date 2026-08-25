@@ -7,7 +7,8 @@ import { defaultSchema } from "@input/pen-schema-default";
 describe("@input/pen-react parentIdTree", () => {
 	it("inserts sibling blocks after the full nested subtree and inherits parentId", () => {
 		const editor = createEditor({
-			schema: defaultSchema, preset: defaultPreset({
+			schema: defaultSchema,
+			preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,
@@ -19,7 +20,9 @@ describe("@input/pen-react parentIdTree", () => {
 
 		editor.apply([
 			{
-				type: "set-props", blockId: parentToggleId, props: { type: "toggle", ...{ open: true  }},
+				type: "set-props",
+				blockId: parentToggleId,
+				props: { type: "toggle", ...{ open: true } },
 			},
 			{
 				type: "insert-block",

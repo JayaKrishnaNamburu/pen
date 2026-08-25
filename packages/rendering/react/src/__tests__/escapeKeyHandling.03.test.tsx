@@ -119,8 +119,8 @@ describe("@input/pen-react escape key handling", () => {
 					type: "splice-text",
 					blockId: firstBlockId,
 					from: 0,
-				to: 0,
-				insert: "First",
+					to: 0,
+					insert: "First",
 				},
 				{
 					type: "insert-block",
@@ -133,8 +133,8 @@ describe("@input/pen-react escape key handling", () => {
 					type: "splice-text",
 					blockId: secondBlockId,
 					from: 0,
-				to: 0,
-				insert: "Second",
+					to: 0,
+					insert: "Second",
 				},
 				{
 					type: "insert-block",
@@ -147,8 +147,8 @@ describe("@input/pen-react escape key handling", () => {
 					type: "splice-text",
 					blockId: thirdBlockId,
 					from: 0,
-				to: 0,
-				insert: "Third",
+					to: 0,
+					insert: "Third",
 				},
 			]);
 
@@ -179,7 +179,6 @@ describe("@input/pen-react escape key handling", () => {
 				type: "text",
 				anchor: { blockId: firstBlockId, offset: 0 },
 				focus: { blockId: thirdBlockId, offset: 5 },
-				isMultiBlock: true,
 			});
 
 			await act(async () => {
@@ -343,7 +342,6 @@ describe("@input/pen-react escape key handling", () => {
 			type: "text",
 			anchor: { blockId: firstBlockId, offset: 0 },
 			focus: { blockId: firstBlockId, offset: 5 },
-			isMultiBlock: false,
 		});
 
 		await act(async () => {

@@ -29,7 +29,9 @@ export function verticalCaretTarget(
 	const currentLines = reader.lineBoxes(current.blockId);
 	const currentIndex = findLineIndex(currentLines, current, currentRect);
 	const adjacentInBlock =
-		currentIndex >= 0 ? adjacentLine(currentLines, currentIndex, direction) : null;
+		currentIndex >= 0
+			? adjacentLine(currentLines, currentIndex, direction)
+			: null;
 
 	const targetLine =
 		adjacentInBlock ??
@@ -73,7 +75,9 @@ function adjacentBlockLine(
 
 	const ranked = ids
 		.map((id) => ({ id, rect: reader.blockRect(id) }))
-		.filter((entry): entry is { id: string; rect: Rect } => entry.rect != null)
+		.filter(
+			(entry): entry is { id: string; rect: Rect } => entry.rect != null,
+		)
 		.sort((left, right) => {
 			const top = left.rect.top - right.rect.top;
 			return top !== 0 ? top : left.rect.left - right.rect.left;
@@ -114,7 +118,9 @@ function listBlockIds(reader: GeometryReader): readonly string[] {
 	return [];
 }
 
-function hasBlockIds(reader: GeometryReader): reader is GeometryReaderWithBlocks {
+function hasBlockIds(
+	reader: GeometryReader,
+): reader is GeometryReaderWithBlocks {
 	return (
 		"blockIds" in reader &&
 		typeof (reader as GeometryReaderWithBlocks).blockIds === "function"

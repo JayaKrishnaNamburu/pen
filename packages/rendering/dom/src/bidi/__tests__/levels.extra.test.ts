@@ -63,9 +63,7 @@ describe("BR4 in-tree computeBidiRuns", () => {
 		expect(source).not.toMatch(/^\s*import\s/m);
 		expect(source).not.toContain("require(");
 		expect(source).not.toContain("Intl.Segmenter");
-		expect(depNames.some((name) => /bidi|fribidi/i.test(name))).toBe(
-			false,
-		);
+		expect(depNames.some((name) => /bidi|fribidi/i.test(name))).toBe(false);
 	});
 
 	it("BR4: the vector suite still matches when Intl.Segmenter is absent", () => {
@@ -73,9 +71,10 @@ describe("BR4 in-tree computeBidiRuns", () => {
 		expect(Intl.Segmenter).toBeUndefined();
 
 		for (const vector of BIDI_VECTORS) {
-			expect(computeBidiRuns(vector.text, vector.base), vector.id).toEqual(
-				vector.runs,
-			);
+			expect(
+				computeBidiRuns(vector.text, vector.base),
+				vector.id,
+			).toEqual(vector.runs);
 		}
 	});
 });

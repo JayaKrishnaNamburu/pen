@@ -15,18 +15,24 @@ type ReadonlyTextSelection = Extract<
 >;
 
 /**
- * Stamp factory for live `TextSelection` values.
- *
- * Recomputes `isCollapsed` / `isMultiBlock` / `blockRange` / `toRange`
- * from `(doc, sel)`. Never reads those fields off the incoming value.
- * Command payloads stamp `blockRange` the same way when they pass a
- * `blockOrder`; collapsed same-block payloads do not need one.
- *
- * Helpers take `ReadonlySelectionState` because they only read. A live
- * `SelectionState` assigns; a shallow `Readonly<SelectionState>` is not
- * enough — `blockRange` must be `readonly string[]`, and `toRange` is
- * omitted so a deep-readonly unwrap cannot remap it.
+ * Live `TextSelection` constructor. Defaults `affinity` / `goalX`.
+ * Predicates and the block span are helpers, not fields.
  */
+export function createTextSelection(input: {
+	readonly anchor: Point;
+	readonly focus: Point;
+	readonly affinity?: Affinity;
+	readonly goalX?: number | null;
+}): TextSelection {
+	return {
+		type: "text",
+		anchor: { blockId: input.anchor.blockId, offset: input.anchor.offset },
+		focus: { blockId: input.focus.blockId, offset: input.focus.offset },
+		affinity: input.affinity ?? "downstream",
+		goalX: input.goalX ?? null,
+	};
+}
+
 export function isCollapsed(sel: ReadonlySelectionState): boolean {
 	if (sel === null || sel.type !== "text") {
 		return false;
@@ -44,6 +50,11 @@ export function isMultiBlock(sel: ReadonlySelectionState): boolean {
 	return sel.anchor.blockId !== sel.focus.blockId;
 }
 
+/**
+ * Document-order block ids covered by `sel`. Pass a plain `blockOrder`
+ * snapshot (`editor.documentState.blockOrder`) from a renderer effect —
+ * walking a live `Y.Array` through a deep-proxied document writes back.
+ */
 export function getSelectionBlockRange(
 	doc: PenDocument | readonly string[],
 	sel: ReadonlySelectionState,
@@ -69,68 +80,11 @@ export function getSelectionBlockRange(
 	}
 }
 
-/**
- * Document-free block ids from a selection the authority already stamped.
- * Renderers must use this instead of walking `doc.blockOrder`. A live
- * `Y.Array` `.length` / `.get(i)` loop through a deep-proxied document
- * writes back into the calling effect. Command payloads keep
- * `getSelectionBlockRange`, which is current-truth.
- */
-export function getTrustedSelectionBlockRange(
-	sel: ReadonlySelectionState,
-): string[] {
-	if (sel === null) {
-		return [];
-	}
-	switch (sel.type) {
-		case "text":
-			return [...sel.blockRange];
-		case "block":
-			return [...sel.blockIds];
-		case "cell":
-			return [sel.blockId];
-		case "app":
-			return [];
-		default: {
-			const _exhaustive: never = sel;
-			return _exhaustive;
-		}
-	}
-}
-
 export function selectionToRange(
 	doc: PenDocument,
 	sel: ReadonlyTextSelection,
 ): DocumentRange {
 	return new DocumentRangeImpl(sel.anchor, sel.focus, doc);
-}
-
-export function stampTextSelection(
-	doc: PenDocument,
-	input: {
-		readonly anchor: Point;
-		readonly focus: Point;
-		readonly affinity?: Affinity;
-		readonly goalX?: number | null;
-	},
-): TextSelection {
-	const selection: TextSelection = {
-		type: "text",
-		anchor: { blockId: input.anchor.blockId, offset: input.anchor.offset },
-		focus: { blockId: input.focus.blockId, offset: input.focus.offset },
-		affinity: input.affinity ?? "downstream",
-		goalX: input.goalX ?? null,
-		isCollapsed: false,
-		isMultiBlock: false,
-		blockRange: [],
-		toRange: () => selectionToRange(doc, selection),
-	};
-	return Object.assign(selection, {
-		isCollapsed: isCollapsed(selection),
-		isMultiBlock: isMultiBlock(selection),
-		blockRange: getSelectionBlockRange(doc, selection),
-		toRange: () => selectionToRange(doc, selection),
-	});
 }
 
 function isBlockOrderList(

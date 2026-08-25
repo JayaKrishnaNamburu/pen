@@ -1,3 +1,4 @@
+import { isCollapsed, isMultiBlock } from "@input/pen-core";
 import { useEffect, useState } from "react";
 import type { BlockHandle, Editor } from "@input/pen-types";
 
@@ -97,10 +98,10 @@ function describeSelection(editor: Editor): string {
 	switch (selection.type) {
 		case "text": {
 			const { anchor, focus } = selection;
-			if (selection.isCollapsed) {
+			if (isCollapsed(selection)) {
 				return `caret at ${anchor.offset}`;
 			}
-			if (selection.isMultiBlock) {
+			if (isMultiBlock(selection)) {
 				return `text across blocks, ${anchor.offset} → ${focus.offset}`;
 			}
 			return `text ${anchor.offset} → ${focus.offset}`;

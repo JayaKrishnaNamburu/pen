@@ -1,6 +1,7 @@
 import { Pen } from "@input/pen-react";
 import type { Editor } from "@input/pen-types";
 import { FormatToolbar } from "./FormatToolbar";
+import { ReviewSurface } from "./ReviewSurface";
 import { SlashMenu } from "./SlashMenu";
 
 interface EditorPaneProps {
@@ -34,22 +35,27 @@ export function EditorPane({
 				onOpenCollaborate={onOpenCollaborate}
 				onToggleInspector={onToggleInspector}
 			/>
-			<div className="editor-scroll">
-				{/*
-				 * `Pen.Editor.Root` binds a field editor and a rendered DOM tree
-				 * to one editor instance for its whole lifetime. Joining or
-				 * leaving a room replaces the instance, so the surface is keyed
-				 * to force a fresh mount instead of leaving the old field editor
-				 * projecting DOM selections into a document it no longer knows.
-				 */}
-				<Pen.Editor.Root editor={editor} key={editor.internals.viewId}>
-					<Pen.Editor.Content emptyPlaceholder="Write something, or ask the agent on the left." />
-					{collaborationLive ? (
-						<Pen.Multiplayer.CaretOverlay />
-					) : null}
-					<SlashMenu editor={editor} />
-				</Pen.Editor.Root>
-			</div>
+			<ReviewSurface editor={editor}>
+				<div className="editor-scroll">
+					{/*
+					 * `Pen.Editor.Root` binds a field editor and a rendered DOM tree
+					 * to one editor instance for its whole lifetime. Joining or
+					 * leaving a room replaces the instance, so the surface is keyed
+					 * to force a fresh mount instead of leaving the old field editor
+					 * projecting DOM selections into a document it no longer knows.
+					 */}
+					<Pen.Editor.Root
+						editor={editor}
+						key={editor.internals.viewId}
+					>
+						<Pen.Editor.Content emptyPlaceholder="Write something, or ask the agent on the left." />
+						{collaborationLive ? (
+							<Pen.Multiplayer.CaretOverlay />
+						) : null}
+						<SlashMenu editor={editor} />
+					</Pen.Editor.Root>
+				</div>
+			</ReviewSurface>
 		</main>
 	);
 }

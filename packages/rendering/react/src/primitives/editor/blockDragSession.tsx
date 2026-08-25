@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useRef, useState } from "react";
 import type { MoveBlockOp } from "@input/pen-types";
 import { clearBlockDragPreviewImage } from "../../utils/blockDragPreview";
-import { DATA_ATTRS } from "../../utils/dataAttributes";
+import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 
 export const BLOCK_DRAG_MIME = "application/x-pen-block-drag";
 export const LEGACY_BLOCK_ID_DRAG_MIME = "application/x-pen-block-id";

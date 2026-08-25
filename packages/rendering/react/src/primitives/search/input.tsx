@@ -4,7 +4,8 @@ import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { useSearchContext } from "./root";
 
 export interface SearchInputProps
-	extends AsChildProps,
+	extends
+		AsChildProps,
 		Omit<React.InputHTMLAttributes<HTMLInputElement>, "children"> {
 	placeholder?: string;
 	ref?: React.Ref<HTMLElement>;
@@ -12,7 +13,13 @@ export interface SearchInputProps
 
 export function SearchInput(props: SearchInputProps) {
 	const { state, controller, editor } = useSearchContext();
-	const { placeholder = resolveEditorMessage(editor, "pen.search.input.placeholder"), ...rest } = props;
+	const {
+		placeholder = resolveEditorMessage(
+			editor,
+			"pen.search.input.placeholder",
+		),
+		...rest
+	} = props;
 
 	const primitiveProps: Record<string, unknown> = {
 		"data-pen-search-input": "",

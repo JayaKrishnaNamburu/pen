@@ -36,7 +36,7 @@ export function useAIStructuredPreview(
 	return useSyncExternalStoreWithSelector(
 		(callback) => {
 			if (!controller) {
-				return () => { };
+				return () => {};
 			}
 			return controller.subscribeStreamEvents(callback);
 		},
@@ -68,7 +68,10 @@ export function useActiveAIStructuredPreview(
 	editor: Editor,
 ): AIStructuredPreviewSelection {
 	const aiState = useAI(editor);
-	const activeGenerationSelection = useAIStructuredPreview(editor, aiState.activeGeneration);
+	const activeGenerationSelection = useAIStructuredPreview(
+		editor,
+		aiState.activeGeneration,
+	);
 	if (activeGenerationSelection.preview) {
 		return activeGenerationSelection;
 	}
@@ -90,7 +93,9 @@ export function useAIStructuredTargetPreview(
 ): AIStructuredTargetPreviewSelection {
 	const structuredPreview = useActiveAIStructuredPreview(editor);
 	const target =
-		structuredPreview.preview?.targets.find((item) => item.blockId === blockId) ?? null;
+		structuredPreview.preview?.targets.find(
+			(item) => item.blockId === blockId,
+		) ?? null;
 
 	return {
 		target,
@@ -105,22 +110,28 @@ export function useAIStructuredPreviewContent(
 ): AIStructuredPreviewContentItem[] {
 	const structuredPreview = useActiveAIStructuredPreview(editor);
 
-	return buildAIStructuredPreviewContentItems(blockIds, structuredPreview.preview);
+	return buildAIStructuredPreviewContentItems(
+		blockIds,
+		structuredPreview.preview,
+	);
 }
 
 function resolveSessionStructuredPreview(
 	aiState: ReturnType<typeof useAI>,
 ): GenerationStructuredPreviewState | null {
 	const activeSession =
-		aiState.sessions.find((session) => session.id === aiState.activeSessionId) ??
-		findVisibleStructuredPreviewSession(aiState);
+		aiState.sessions.find(
+			(session) => session.id === aiState.activeSessionId,
+		) ?? findVisibleStructuredPreviewSession(aiState);
 	if (!activeSession) {
 		return null;
 	}
 
 	if (activeSession.activeTurnId) {
 		const activeTurn =
-			activeSession.turns.find((turn) => turn.id === activeSession.activeTurnId) ?? null;
+			activeSession.turns.find(
+				(turn) => turn.id === activeSession.activeTurnId,
+			) ?? null;
 		if (activeTurn && shouldUseSessionStructuredPreview(activeTurn)) {
 			return activeTurn.structuredPreview ?? null;
 		}
@@ -144,8 +155,16 @@ function findVisibleStructuredPreviewSession(
 		if (session.pendingReviewItemIds.length > 0) {
 			return session;
 		}
-		for (let turnIndex = session.turns.length - 1; turnIndex >= 0; turnIndex -= 1) {
-			if (shouldUseSessionStructuredPreview(session.turns[turnIndex] ?? null)) {
+		for (
+			let turnIndex = session.turns.length - 1;
+			turnIndex >= 0;
+			turnIndex -= 1
+		) {
+			if (
+				shouldUseSessionStructuredPreview(
+					session.turns[turnIndex] ?? null,
+				)
+			) {
 				return session;
 			}
 		}
@@ -155,9 +174,7 @@ function findVisibleStructuredPreviewSession(
 }
 
 function shouldUseSessionStructuredPreview(
-	turn:
-		| ReturnType<typeof useAI>["sessions"][number]["turns"][number]
-		| null,
+	turn: ReturnType<typeof useAI>["sessions"][number]["turns"][number] | null,
 ): boolean {
 	if (!turn?.structuredPreview) {
 		return false;

@@ -15,8 +15,9 @@ Every higher-level package depends on the contracts and runtime behavior establi
 - Schema runtime exports such as `defineBlock()`, `defineExtension()`, `prop()`, `SchemaRegistryImpl`, `mergeSchemas`, and `SchemaEngineImpl`
 - Read-model and editor helpers such as `SelectionAuthority`, `DocumentRangeImpl`, and `ExtensionManagerImpl`. `DocumentStateImpl` is the live `DocumentState` implementation but stays off the barrel; hosts read `editor.documentState`.
 - Decoration and inline-completion helpers such as `createDecorationSet()`, `mergeDecorationSets()`, `ensureInlineCompletionController()`, and `getInlineCompletionController()`
-- Import and profile-policy helpers such as `blocksToOps()`, `normalizePendingBlocksForImport()`, `filterOpsForDocumentProfile()`, and related policy-reporting APIs. `@input/pen-content-ops` re-exports these; core owns the implementation.
+- Import and profile-policy helpers such as `blocksToOps()`, `normalizePendingBlocksForImport()`, `filterOpsForDocumentProfile()`, and related policy-reporting APIs. Core owns the implementation and the public export.
 - Block-capability helpers (`getFlowCapabilityFromSchema()`, `shouldExposeBlockInTooling()`, and siblings) and selection-target helpers (`resolveSelectionTargetBlockIds()`, `renderSelectionTargetText()`, `renderSelectionTargetBlockText()`)
+- `mapOffsetThroughSplices()` — the per-block clamp helper for one summary, moved here from `@input/pen-types` by v4 DL12 so types can reach its types-only end state. There is still no compose and no cross-commit mapping form; anchors carry positions across commits.
 - Catalog helpers (`interpolateMessage()`, `resolveMessage()`), mutation-group helpers (`createMutationGroupMetadata()`, `getApplyOptionsGroupId()`, `getOpOriginGroupId()`, `getOpOriginType()`), field-editor helpers (`usesInlineTextSelection()`, `supportsInlineMarks()`, and siblings), and tool-execution helpers (`resolveToolExecution()`, `collectToolExecutionOutput()`)
 - Locale-aware case folding (`foldAndNormalize()`) next to `localeFacet`; search, AI alignment, and suggestions call this instead of `toLowerCase()`
 - Core facets including `keymapFacet` (`pen.keymap`), `inputRulesFacet`, `beforeApplyFacet`, `decorationsFacet`, `commandsFacet`, `ariaReadOnlyFacet`, `clipboardFacet`, `urlPolicyFacet`, `localeFacet` (`pen.locale`), `messagesFacet` (`pen.messages`), `a11yLabelFacet` (`pen.a11yLabel`), and `aiEgressFacet` (`pen.aiEgress`)
@@ -28,7 +29,7 @@ Every higher-level package depends on the contracts and runtime behavior establi
 
 - Runtime dependencies: `@input/pen-crdt-yjs`, `@input/pen-types`
 - Peer dependencies: No peer dependencies declared.
-- Boundary: `@input/pen-core` is the runtime center of gravity for Pen and should remain headless. It does not depend on shortcuts, undo, `@input/pen-ai/stream`, document-ops, content-ops, or markdown-serialization. Those packages depend on core, or re-export helpers that now live here.
+- Boundary: `@input/pen-core` is the runtime center of gravity for Pen and should remain headless. It does not depend on shortcuts, undo, `@input/pen-ai/stream`, document-ops, content-ops, or markdown-serialization. Those packages depend on core.
 
 ## Runtime Model
 

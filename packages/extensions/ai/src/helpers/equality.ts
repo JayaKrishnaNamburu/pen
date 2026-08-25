@@ -11,7 +11,10 @@ import { selectionMatchesSnapshot } from "./session";
 import type { AIInlineShortcutHistoryState } from "./types";
 import { resolveSessionSelectionSnapshot } from "./types";
 
-export function areStructuredValuesEqual(previous: unknown, next: unknown): boolean {
+export function areStructuredValuesEqual(
+	previous: unknown,
+	next: unknown,
+): boolean {
 	if (previous === next) {
 		return true;
 	}
@@ -133,7 +136,9 @@ export function areSuggestionsEqual(
 			previousSuggestion.kind === "text" &&
 			nextSuggestion.kind === "text" &&
 			(previousSuggestion.offset !== nextSuggestion.offset ||
-				previousSuggestion.length !== nextSuggestion.length)
+				previousSuggestion.length !== nextSuggestion.length ||
+				previousSuggestion.cell?.row !== nextSuggestion.cell?.row ||
+				previousSuggestion.cell?.col !== nextSuggestion.cell?.col)
 		) {
 			return false;
 		}
@@ -158,11 +163,12 @@ export function areAIControllerStatesEqual(
 		previous.status !== next.status ||
 		previous.activeSessionId !== next.activeSessionId ||
 		previous.suggestMode !== next.suggestMode ||
+		previous.mutationPreference !== next.mutationPreference ||
 		previous.commandMenuOpen !== next.commandMenuOpen ||
 		previous.lastRoute !== next.lastRoute ||
 		!areStructuredValuesEqual(
-			previous.streamingReviewPreview,
-			next.streamingReviewPreview,
+			previous.streamingReviewPreviews,
+			next.streamingReviewPreviews,
 		)
 	) {
 		return false;

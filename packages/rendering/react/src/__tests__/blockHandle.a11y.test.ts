@@ -20,7 +20,8 @@ import {
 
 function createHandleEditor() {
 	return createEditor({
-		schema: defaultSchema, preset: defaultPreset({
+		schema: defaultSchema,
+		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
 			undo: false,
@@ -222,7 +223,8 @@ describe("@input/pen-react block handle AX3", () => {
 
 	it("LOC1: move item labels come from the catalog and host overrides win", async () => {
 		const editor = createEditor({
-			schema: defaultSchema, preset: defaultPreset({
+			schema: defaultSchema,
+			preset: defaultPreset({
 				documentOps: false,
 				deltaStream: false,
 				undo: false,

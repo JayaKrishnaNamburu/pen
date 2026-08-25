@@ -31,12 +31,7 @@ function flushFrame(): void {
 	}
 }
 
-function rect(
-	left: number,
-	top: number,
-	width: number,
-	height: number,
-): Rect {
+function rect(left: number, top: number, width: number, height: number): Rect {
 	return {
 		x: left,
 		y: top,
@@ -55,7 +50,11 @@ function line(
 	startOffset: number,
 	endOffset: number,
 ): LineBox {
-	return singleRunLineBox(rect(0, top, 100, bottom - top), startOffset, endOffset);
+	return singleRunLineBox(
+		rect(0, top, 100, bottom - top),
+		startOffset,
+		endOffset,
+	);
 }
 
 describe("GeometryReader G2 cache (injected measure)", () => {

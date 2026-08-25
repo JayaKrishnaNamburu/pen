@@ -17,7 +17,7 @@ import type {
 import { defaultPreset } from "@input/pen-preset-default";
 import { Pen } from "../primitives/index";
 import { useEditorContext } from "../context/editorContext";
-import { DATA_ATTRS } from "../utils/dataAttributes";
+import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 import { defaultSchema } from "@input/pen-schema-default";
 
 (

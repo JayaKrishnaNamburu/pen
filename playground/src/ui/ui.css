@@ -14,6 +14,7 @@
  */
 .button {
 	position: relative;
+	isolation: isolate;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -495,11 +496,13 @@
 	position: relative;
 	display: flex;
 	flex: 1;
+	min-width: 0;
 	min-height: 0;
 }
 
 .scroll-viewport {
 	flex: 1;
+	min-width: 0;
 	min-height: 0;
 	overflow-y: auto;
 }
@@ -508,6 +511,7 @@
 .scroll-viewport > div {
 	display: flex;
 	flex-direction: column;
+	min-width: 0;
 	min-height: 100%;
 }
 
@@ -650,6 +654,7 @@
 .sheet-body {
 	display: flex;
 	flex: 1;
+	min-width: 0;
 	min-height: 0;
 }
 
@@ -662,11 +667,11 @@
  */
 .agent-loader {
 	display: inline-grid;
-	grid-template-columns: repeat(3, 3.333px);
-	grid-template-rows: repeat(3, 3.333px);
+	grid-template-columns: repeat(3, 2.667px);
+	grid-template-rows: repeat(3, 2.667px);
 	gap: 2px;
-	width: 14px;
-	height: 14px;
+	width: 12px;
+	height: 12px;
 	color: var(--spinner-background);
 	vertical-align: middle;
 }
@@ -845,6 +850,79 @@
 	justify-content: flex-end;
 	gap: var(--spacing-sm);
 	margin-top: var(--spacing-xs);
+}
+
+/* ── Toggle ────────────────────────────────────────────────── */
+
+/*
+ * Input's `Toggle`: 22×14 track, 10px knob, 8px travel. The label sits to
+ * the left and stays `--palette-b40`.
+ */
+.toggle {
+	--toggle-knob-x: 0px;
+	--toggle-knob-scale: 1;
+
+	display: inline-flex;
+	align-items: center;
+	flex-shrink: 0;
+	padding: 0;
+	color: var(--palette-b40);
+}
+
+.toggle[aria-checked="true"] {
+	--toggle-knob-x: 8px;
+}
+
+.toggle:hover:not(:disabled) {
+	--toggle-knob-scale: 0.9;
+}
+
+.toggle:disabled {
+	cursor: default;
+}
+
+.toggle-label {
+	margin-right: 5px;
+	font-size: var(--font-size-sm);
+	font-weight: 500;
+	line-height: 1em;
+	user-select: none;
+}
+
+.toggle-track {
+	display: block;
+	width: 22px;
+	height: 14px;
+	padding: 2px;
+	border-radius: var(--radius-round);
+	background: var(--toggle-background);
+	transition: background 0.18s ease;
+}
+
+.toggle:hover:not(:disabled) .toggle-track {
+	background: var(--toggle-hover);
+}
+
+.toggle[aria-checked="true"] .toggle-track {
+	background: var(--toggle-active);
+}
+
+.toggle[aria-checked="true"]:hover:not(:disabled) .toggle-track {
+	background: var(--toggle-active-hover);
+}
+
+.toggle-knob {
+	display: block;
+	width: 10px;
+	height: 10px;
+	border-radius: var(--radius-round);
+	background: var(--palette-b10);
+	transform: translateX(var(--toggle-knob-x)) scale(var(--toggle-knob-scale));
+	transition: transform 0.18s ease, opacity 0.18s ease;
+}
+
+.toggle:disabled .toggle-knob {
+	opacity: 0.5;
 }
 
 @media (prefers-reduced-motion: reduce) {

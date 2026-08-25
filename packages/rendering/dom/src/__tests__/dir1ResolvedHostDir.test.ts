@@ -195,9 +195,9 @@ describe("DOM host DIR1 resolved host dir", () => {
 			},
 		]);
 
-		expect(
-			resolveBlockDirection(editor, editor.getBlock(blockId)!),
-		).toBe("ltr");
+		expect(resolveBlockDirection(editor, editor.getBlock(blockId)!)).toBe(
+			"ltr",
+		);
 		expect(getBlockHost(root, blockId).hasAttribute("dir")).toBe(false);
 	});
 });

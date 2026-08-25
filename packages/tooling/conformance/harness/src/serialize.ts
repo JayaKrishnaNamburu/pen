@@ -2,12 +2,12 @@ import { isCollapsed } from "@input/pen-core";
 import type {
 	DiagnosticEvent,
 	SelectionRecord,
-	SelectionState,
+	SelectionState
 } from "@input/pen-types";
 import type {
 	SerializedDiagnostic,
 	SerializedSelection,
-	SerializedSelectionRecord,
+	SerializedSelectionRecord
 } from "../../src/types";
 
 /** Snapshot `isCollapsed` via the official helper — never copy a live field. */
@@ -24,30 +24,30 @@ export function serializeSelection(
 				type: "text",
 				anchor: {
 					blockId: selection.anchor.blockId,
-					offset: selection.anchor.offset,
+					offset: selection.anchor.offset
 				},
 				focus: {
 					blockId: selection.focus.blockId,
-					offset: selection.focus.offset,
+					offset: selection.focus.offset
 				},
 				isCollapsed: isCollapsed(selection),
 			};
 		case "block":
 			return {
 				type: "block",
-				blockIds: [...selection.blockIds],
+				blockIds: [...selection.blockIds]
 			};
 		case "app":
 			return {
 				type: "app",
-				appId: selection.appId,
+				appId: selection.appId
 			};
 		case "cell":
 			return {
 				type: "cell",
 				blockId: selection.blockId,
 				anchor: { ...selection.anchor },
-				head: { ...selection.head },
+				head: { ...selection.head }
 			};
 		default: {
 			const _exhaustive: never = selection;
@@ -71,11 +71,11 @@ export function serializeSelectionRecord(
 					type: "text",
 					anchor: {
 						blockId: state.anchor.blockId,
-						offset: state.anchor.offset,
+						offset: state.anchor.offset
 					},
 					focus: {
 						blockId: state.focus.blockId,
-						offset: state.focus.offset,
+						offset: state.focus.offset
 					},
 					isCollapsed:
 						state.anchor.blockId === state.focus.blockId &&
@@ -85,13 +85,13 @@ export function serializeSelectionRecord(
 			case "block":
 				serialized = {
 					type: "block",
-					blockIds: [...state.blockIds],
+					blockIds: [...state.blockIds]
 				};
 				break;
 			case "app":
 				serialized = {
 					type: "app",
-					appId: state.appId,
+					appId: state.appId
 				};
 				break;
 			case "cell":
@@ -99,7 +99,7 @@ export function serializeSelectionRecord(
 					type: "cell",
 					blockId: state.blockId,
 					anchor: { ...state.anchor },
-					head: { ...state.head },
+					head: { ...state.head }
 				};
 				break;
 			default: {
@@ -112,7 +112,7 @@ export function serializeSelectionRecord(
 		version: record.version,
 		origin: record.origin,
 		commitId: record.commitId,
-		state: serialized,
+		state: serialized
 	};
 }
 
@@ -124,6 +124,6 @@ export function serializeDiagnostic(
 		level: event.level,
 		source: event.source,
 		message: event.message,
-		...(typeof event.reason === "string" ? { reason: event.reason } : {}),
+		...(typeof event.reason === "string" ? { reason: event.reason } : {})
 	};
 }

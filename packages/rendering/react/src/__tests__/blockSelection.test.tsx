@@ -286,9 +286,7 @@ describe("@input/pen-react block selection", () => {
 		const editor = createEditor();
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Alpha" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Alpha" },
 		]);
 		editor.selectBlock(blockId);
 

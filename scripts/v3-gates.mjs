@@ -28,6 +28,41 @@ const WAVE_FILE_RE = /^wave-.*\.md$/i;
 export const CANNOT_CHECK_ABSENT = "cannot check: spec-v3/waves is absent";
 export const CANNOT_CHECK_EMPTY_DIR = "cannot check: wave directory matched 0 files";
 export const CANNOT_CHECK_ZERO_GATES = "cannot check: wave file yielded 0 gates";
+export const CANNOT_CHECK_CYCLE = "cannot check: gate cycle";
+
+/**
+ * Names the wave files whose gates are executing in this process's ancestry.
+ *
+ * Waves chain on purpose — a wave's entry gate re-runs the previous wave's
+ * gates — so a gate command spawning the runner is normal. A gate naming a
+ * file already executing above it is not: it never terminates, and each level
+ * re-runs that wave's own suites. One such gate fork-bombed a workstation for
+ * hours through the full-build gate of `wave-0-evidence.md`.
+ */
+export const GATE_STACK_ENV = "PEN_V3_GATES_STACK";
+
+export function readGateStack(env = process.env) {
+	const raw = env[GATE_STACK_ENV];
+	if (!raw) {
+		return [];
+	}
+	return raw.split(path.delimiter).filter((entry) => entry.length > 0);
+}
+
+/**
+ * The first requested file that is already executing above this process, or
+ * null. Ancestry, not siblings: a run over the whole wave directory executes
+ * each file in its own frame, so wave 1's entry gate may still descend into
+ * wave 0.
+ */
+export function detectGateCycle(files, inheritedStack) {
+	for (const file of files) {
+		if (inheritedStack.includes(file)) {
+			return file;
+		}
+	}
+	return null;
+}
 
 export function parseArgs(argv, repoRoot = DEFAULT_REPO_ROOT) {
 	const files = [];
@@ -382,11 +417,19 @@ export function formatPopulation(entries, repoRoot) {
  */
 export const GATE_TIMEOUT_MS = 900_000;
 
-export function executeGate(gate, repoRoot, timeoutMs = GATE_TIMEOUT_MS) {
+export function executeGate(
+	gate,
+	repoRoot,
+	timeoutMs = GATE_TIMEOUT_MS,
+	gateStack = [],
+) {
 	const result = spawnSync(commandShell(), ["-c", gate.command], {
 		cwd: repoRoot,
 		encoding: "utf8",
-		env: process.env,
+		env: {
+			...process.env,
+			[GATE_STACK_ENV]: gateStack.join(path.delimiter),
+		},
 		maxBuffer: 8 * 1024 * 1024,
 		input: "",
 		timeout: timeoutMs,
@@ -444,6 +487,19 @@ export function runGates(options) {
 		};
 	}
 
+	const inheritedStack = options.gateStack ?? readGateStack();
+	const cycled = detectGateCycle(collected.files, inheritedStack);
+	if (cycled) {
+		const rel = path.relative(repoRoot, cycled).split(path.sep).join("/");
+		return {
+			ok: false,
+			error: `${CANNOT_CHECK_CYCLE} (${rel} is already running above this process)`,
+			population: formatPopulation([], repoRoot),
+			entries: [],
+			results: [],
+		};
+	}
+
 	const packages = options.packages ?? loadWorkspacePackages(repoRoot);
 	const entries = [];
 	const results = [];
@@ -480,7 +536,10 @@ export function runGates(options) {
 				});
 				continue;
 			}
-			const executed = executeGate(gate, repoRoot);
+			const executed = executeGate(gate, repoRoot, GATE_TIMEOUT_MS, [
+				...inheritedStack,
+				entry.file,
+			]);
 			const evaluated = evaluateExecuted(gate, executed);
 			results.push({
 				...gate,
@@ -635,6 +694,36 @@ export function runSelfTests(repoRoot = DEFAULT_REPO_ROOT) {
 	assert(
 		failing.results.every((result) => result.status === "fail"),
 		`self-test: failing fixture statuses, got ${JSON.stringify(failing.results.map((r) => r.status))}`,
+	);
+
+	const selfRefFile = path.join(fixtureDir, "self-referential-wave.md");
+	const cycled = runGates({
+		repoRoot,
+		wavesDir: fixtureDir,
+		files: [selfRefFile],
+		preflight: true,
+		packages,
+		gateStack: [selfRefFile],
+	});
+	assert(!cycled.ok, "self-test: a file already on the gate stack must fail");
+	assert(
+		cycled.error?.startsWith(CANNOT_CHECK_CYCLE),
+		`self-test: cycle error, got ${cycled.error}`,
+	);
+	// End to end: the guard has to make the self-reference terminate, not just
+	// report well when handed a stack. This executes the fixture's gate for
+	// real, and the run must come back red rather than fork forever.
+	const selfRef = runGates({
+		repoRoot,
+		wavesDir: fixtureDir,
+		files: [selfRefFile],
+		preflight: false,
+		packages,
+	});
+	assert(!selfRef.ok, "self-test: self-referential fixture must fail");
+	assert(
+		selfRef.results.every((result) => result.status === "fail"),
+		`self-test: self-referential statuses, got ${JSON.stringify(selfRef.results.map((r) => r.status))}`,
 	);
 
 	const classifyFile = path.join(fixtureDir, "classify-wave.md");

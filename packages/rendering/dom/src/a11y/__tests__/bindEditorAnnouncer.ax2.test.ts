@@ -112,9 +112,7 @@ describe("bindEditorAnnouncer (AX2)", () => {
 
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "hello" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "hello" },
 		]);
 		editor.undoManager.undo();
 		expect(liveRegion(root)?.textContent).toBe("Undid Paragraph");

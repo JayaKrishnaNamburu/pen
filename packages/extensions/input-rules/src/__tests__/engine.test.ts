@@ -13,7 +13,6 @@ type InputRuleTestEditor = {
 				type: "text";
 				anchor: { blockId: string; offset: number };
 				focus: { blockId: string; offset: number };
-				isCollapsed: boolean;
 		  }
 		| null;
 	schema: {
@@ -34,21 +33,20 @@ function mockEditor(opts: {
 	const editor = {
 		getBlock: () => ({
 			type: opts.blockType,
-			textContent: () => opts.textContent,
+			textContent: () => opts.textContent
 		}),
 		selection: {
 			type: "text" as const,
 			anchor: { blockId: "b1", offset },
-			focus: { blockId: "b1", offset },
-			isCollapsed: true,
+			focus: { blockId: "b1", offset }
 		},
 		schema: {
 			resolve: () => ({
 				content: "inline",
-				fieldEditor: "richtext",
+				fieldEditor: "richtext"
 			}),
-			resolveInline: () => ({ kind: "mark" }),
-		},
+			resolveInline: () => ({ kind: "mark" })
+		}
 	} satisfies InputRuleTestEditor;
 
 	return editor as unknown as Editor;
@@ -63,21 +61,20 @@ function mockEditorWithSelection(opts: {
 	const editor = {
 		getBlock: () => ({
 			type: opts.blockType,
-			textContent: () => opts.textContent,
+			textContent: () => opts.textContent
 		}),
 		selection: {
 			type: "text" as const,
 			anchor: { blockId: "b1", offset: opts.anchorOffset },
-			focus: { blockId: "b1", offset: opts.focusOffset },
-			isCollapsed: opts.anchorOffset === opts.focusOffset,
+			focus: { blockId: "b1", offset: opts.focusOffset }
 		},
 		schema: {
 			resolve: () => ({
 				content: "inline",
-				fieldEditor: "richtext",
+				fieldEditor: "richtext"
 			}),
-			resolveInline: () => ({ kind: "mark" }),
-		},
+			resolveInline: () => ({ kind: "mark" })
+		}
 	} satisfies InputRuleTestEditor;
 
 	return editor as unknown as Editor;
@@ -96,14 +93,14 @@ describe("InputRuleEngine", () => {
 			const rule: InputRule = {
 				id: "test",
 				match: /^# $/,
-				handler: () => null,
+				handler: () => null
 			};
 			engine.register(rule);
 			engine.register(rule);
 
 			const editor = mockEditor({
 				blockType: "paragraph",
-				textContent: "",
+				textContent: ""
 			});
 			const result = engine.tryMatch(editor, "b1", " ");
 			expect(result).toBeNull();
@@ -116,16 +113,16 @@ describe("InputRuleEngine", () => {
 				match: /^# $/,
 				handler: (_m, ctx) => [
 					{
-						type: "set-props", blockId: ctx.blockId, props: { type: "heading", ...{ level: 1  }},
+						type: "set-props", blockId: ctx.blockId, props: { type: "heading", ...{ level: 1  }}
 					},
-				],
+				]
 			});
 
 			engine.unregister("test");
 
 			const editor = mockEditor({
 				blockType: "paragraph",
-				textContent: "#",
+				textContent: "#"
 			});
 			const result = engine.tryMatch(editor, "b1", " ");
 			expect(result).toBeNull();
@@ -137,7 +134,7 @@ describe("InputRuleEngine", () => {
 			const engine = engineWithDefaults();
 			const editor = mockEditor({
 				blockType: "paragraph",
-				textContent: "#",
+				textContent: "#"
 			});
 			const result = engine.tryMatch(editor, "b1", "a");
 			expect(result).toBeNull();
@@ -147,7 +144,7 @@ describe("InputRuleEngine", () => {
 			const engine = engineWithDefaults();
 			const editor = mockEditor({
 				blockType: "paragraph",
-				textContent: "#",
+				textContent: "#"
 			});
 			const result = engine.tryMatch(editor, "b1", " ");
 
@@ -158,10 +155,10 @@ describe("InputRuleEngine", () => {
 				blockId: "b1",
 				from: 0,
 				to: 0 + 2,
-				insert: "",
+				insert: ""
 			});
 			expect(result![1]).toMatchObject({
-				type: "set-props", blockId: "b1", props: { type: "heading", ...{ level: 1  }},
+				type: "set-props", blockId: "b1", props: { type: "heading", ...{ level: 1  }}
 			});
 		});
 
@@ -169,14 +166,14 @@ describe("InputRuleEngine", () => {
 			const engine = engineWithDefaults();
 			const editor = mockEditor({
 				blockType: "paragraph",
-				textContent: "###",
+				textContent: "###"
 			});
 			const result = engine.tryMatch(editor, "b1", " ");
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
 				type: "set-props",
-				props: { type: "heading", level: 3 },
+				props: { type: "heading", level: 3 }
 			});
 		});
 
@@ -184,14 +181,14 @@ describe("InputRuleEngine", () => {
 			const engine = engineWithDefaults();
 			const editor = mockEditor({
 				blockType: "paragraph",
-				textContent: "-",
+				textContent: "-"
 			});
 			const result = engine.tryMatch(editor, "b1", " ");
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
 				type: "set-props",
-				props: { type: "bulletListItem" },
+				props: { type: "bulletListItem" }
 			});
 		});
 
@@ -199,14 +196,14 @@ describe("InputRuleEngine", () => {
 			const engine = engineWithDefaults();
 			const editor = mockEditor({
 				blockType: "paragraph",
-				textContent: "*",
+				textContent: "*"
 			});
 			const result = engine.tryMatch(editor, "b1", " ");
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
 				type: "set-props",
-				props: { type: "bulletListItem" },
+				props: { type: "bulletListItem" }
 			});
 		});
 
@@ -214,14 +211,14 @@ describe("InputRuleEngine", () => {
 			const engine = engineWithDefaults();
 			const editor = mockEditor({
 				blockType: "paragraph",
-				textContent: "1.",
+				textContent: "1."
 			});
 			const result = engine.tryMatch(editor, "b1", " ");
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
 				type: "set-props",
-				props: { type: "numberedListItem" },
+				props: { type: "numberedListItem" }
 			});
 		});
 
@@ -229,14 +226,14 @@ describe("InputRuleEngine", () => {
 			const engine = engineWithDefaults();
 			const editor = mockEditor({
 				blockType: "paragraph",
-				textContent: "5.",
+				textContent: "5."
 			});
 			const result = engine.tryMatch(editor, "b1", " ");
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
 				type: "set-props",
-				props: { type: "numberedListItem", start: 5 },
+				props: { type: "numberedListItem", start: 5 }
 			});
 		});
 
@@ -244,14 +241,14 @@ describe("InputRuleEngine", () => {
 			const engine = engineWithDefaults();
 			const editor = mockEditor({
 				blockType: "paragraph",
-				textContent: "[ ]",
+				textContent: "[ ]"
 			});
 			const result = engine.tryMatch(editor, "b1", " ");
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
 				type: "set-props",
-				props: { type: "checkListItem", checked: false },
+				props: { type: "checkListItem", checked: false }
 			});
 		});
 
@@ -259,14 +256,14 @@ describe("InputRuleEngine", () => {
 			const engine = engineWithDefaults();
 			const editor = mockEditor({
 				blockType: "paragraph",
-				textContent: "[x]",
+				textContent: "[x]"
 			});
 			const result = engine.tryMatch(editor, "b1", " ");
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
 				type: "set-props",
-				props: { type: "checkListItem", checked: true },
+				props: { type: "checkListItem", checked: true }
 			});
 		});
 
@@ -274,14 +271,14 @@ describe("InputRuleEngine", () => {
 			const engine = engineWithDefaults();
 			const editor = mockEditor({
 				blockType: "paragraph",
-				textContent: ">",
+				textContent: ">"
 			});
 			const result = engine.tryMatch(editor, "b1", " ");
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
 				type: "set-props",
-				props: { type: "blockquote" },
+				props: { type: "blockquote" }
 			});
 		});
 
@@ -289,14 +286,14 @@ describe("InputRuleEngine", () => {
 			const engine = engineWithDefaults();
 			const editor = mockEditor({
 				blockType: "paragraph",
-				textContent: "```",
+				textContent: "```"
 			});
 			const result = engine.tryMatch(editor, "b1", " ");
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
 				type: "set-props",
-				props: { type: "codeBlock" },
+				props: { type: "codeBlock" }
 			});
 		});
 
@@ -304,14 +301,14 @@ describe("InputRuleEngine", () => {
 			const engine = engineWithDefaults();
 			const editor = mockEditor({
 				blockType: "paragraph",
-				textContent: "---",
+				textContent: "---"
 			});
 			const result = engine.tryMatch(editor, "b1", " ");
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
 				type: "set-props",
-				props: { type: "divider" },
+				props: { type: "divider" }
 			});
 		});
 
@@ -319,14 +316,14 @@ describe("InputRuleEngine", () => {
 			const engine = engineWithDefaults();
 			const editor = mockEditor({
 				blockType: "paragraph",
-				textContent: "***",
+				textContent: "***"
 			});
 			const result = engine.tryMatch(editor, "b1", " ");
 
 			expect(result).not.toBeNull();
 			expect(result![1]).toMatchObject({
 				type: "set-props",
-				props: { type: "divider" },
+				props: { type: "divider" }
 			});
 		});
 
@@ -334,7 +331,7 @@ describe("InputRuleEngine", () => {
 			const engine = engineWithDefaults();
 			const editor = mockEditor({
 				blockType: "paragraph",
-				textContent: "> [!note]",
+				textContent: "> [!note]"
 			});
 			const result = engine.tryMatch(editor, "b1", " ");
 
@@ -342,7 +339,7 @@ describe("InputRuleEngine", () => {
 			expect(result![1]).toMatchObject({
 				type: "set-props",
 				blockId: "b1",
-				props: { type: "callout", severity: "info" },
+				props: { type: "callout", severity: "info" }
 			});
 		});
 
@@ -350,7 +347,7 @@ describe("InputRuleEngine", () => {
 			const engine = engineWithDefaults();
 			const editor = mockEditor({
 				blockType: "paragraph",
-				textContent: "> [!WARNING]",
+				textContent: "> [!WARNING]"
 			});
 			const result = engine.tryMatch(editor, "b1", " ");
 
@@ -358,7 +355,7 @@ describe("InputRuleEngine", () => {
 			expect(result![1]).toMatchObject({
 				type: "set-props",
 				blockId: "b1",
-				props: { type: "callout", severity: "warning" },
+				props: { type: "callout", severity: "warning" }
 			});
 		});
 
@@ -366,7 +363,7 @@ describe("InputRuleEngine", () => {
 			const engine = engineWithDefaults();
 			const editor = mockEditor({
 				blockType: "heading",
-				textContent: "#",
+				textContent: "#"
 			});
 			const result = engine.tryMatch(editor, "b1", " ");
 			expect(result).toBeNull();
@@ -376,7 +373,7 @@ describe("InputRuleEngine", () => {
 			const engine = engineWithDefaults();
 			const editor = mockEditor({
 				blockType: "paragraph",
-				textContent: "hello #",
+				textContent: "hello #"
 			});
 			const result = engine.tryMatch(editor, "b1", " ");
 			expect(result).toBeNull();
@@ -388,7 +385,7 @@ describe("InputRuleEngine", () => {
 				blockType: "paragraph",
 				textContent: "#",
 				anchorOffset: 0,
-				focusOffset: 1,
+				focusOffset: 1
 			});
 			const result = engine.tryMatch(editor, "b1", " ");
 			expect(result).toBeNull();
@@ -398,7 +395,7 @@ describe("InputRuleEngine", () => {
 			const engine = engineWithDefaults();
 			const editor = {
 				...mockEditor({ blockType: "paragraph", textContent: "#" }),
-				selection: null,
+				selection: null
 			};
 			const result = engine.tryMatch(editor as unknown as Editor, "b1", " ");
 			expect(result).toBeNull();
@@ -428,7 +425,7 @@ describe("InputRuleEngine", () => {
 			for (const { text, newType } of conversions) {
 				const before = mockEditor({
 					blockType: "paragraph",
-					textContent: text,
+					textContent: text
 				});
 				const ops = engine.tryMatch(before, "b1", " ");
 				expect(ops, text).not.toBeNull();
@@ -436,20 +433,20 @@ describe("InputRuleEngine", () => {
 					expect.arrayContaining([
 						expect.objectContaining({
 							type: "set-props",
-							props: expect.objectContaining({ type: newType }),
+							props: expect.objectContaining({ type: newType })
 						}),
 					]),
 				);
 
 				const leftoverTrigger = mockEditor({
 					blockType: newType,
-					textContent: text,
+					textContent: text
 				});
 				expect(engine.tryMatch(leftoverTrigger, "b1", " ")).toBeNull();
 
 				const emptied = mockEditor({
 					blockType: newType,
-					textContent: "",
+					textContent: ""
 				});
 				expect(engine.tryMatch(emptied, "b1", " ")).toBeNull();
 			}
@@ -490,9 +487,9 @@ describe("InputRuleEngine", () => {
 				blockTypes: ["paragraph"],
 				handler: (_match, ctx) => [
 					{
-						type: "set-props", blockId: ctx.blockId, props: { type: "bulletListItem", ...{ }},
+						type: "set-props", blockId: ctx.blockId, props: { type: "bulletListItem", ...{ }}
 					},
-				],
+				]
 			});
 			engine.register({
 				id: "second",
@@ -500,9 +497,9 @@ describe("InputRuleEngine", () => {
 				blockTypes: ["paragraph"],
 				handler: (_match, ctx) => [
 					{
-						type: "set-props", blockId: ctx.blockId, props: { type: "heading", ...{ level: 1  }},
+						type: "set-props", blockId: ctx.blockId, props: { type: "heading", ...{ level: 1  }}
 					},
-				],
+				]
 			});
 
 			const result = engine.tryMatch(
@@ -513,7 +510,7 @@ describe("InputRuleEngine", () => {
 
 			expect(result).toEqual([
 				{
-					type: "set-props", blockId: "b1", props: { type: "bulletListItem", ...{ }},
+					type: "set-props", blockId: "b1", props: { type: "bulletListItem", ...{ }}
 				},
 			]);
 		});
@@ -526,27 +523,26 @@ describe("InputRuleEngine", () => {
 				id: "bold",
 				trigger: "*",
 				pattern: /\*\*(.+)\*\*$/,
-				markType: "bold",
+				markType: "bold"
 			});
 
 			const editor = {
 				getBlock: () => ({
 					type: "codeBlock",
-					textContent: () => "**bold*",
+					textContent: () => "**bold*"
 				}),
 				selection: {
 					type: "text" as const,
 					anchor: { blockId: "b1", offset: 7 },
-					focus: { blockId: "b1", offset: 7 },
-					isCollapsed: true,
+					focus: { blockId: "b1", offset: 7 }
 				},
 				schema: {
 					resolve: () => ({
 						content: "inline",
-						fieldEditor: "code",
+						fieldEditor: "code"
 					}),
-					resolveInline: () => ({ kind: "mark" }),
-				},
+					resolveInline: () => ({ kind: "mark" })
+				}
 			} satisfies InputRuleTestEditor;
 
 			expect(engine.tryMatchInline(editor as unknown as Editor, "b1", "*")).toBeNull();

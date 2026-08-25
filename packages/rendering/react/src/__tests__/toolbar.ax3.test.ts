@@ -14,7 +14,8 @@ import { defaultSchema } from "@input/pen-schema-default";
 
 function createTestEditor() {
 	return createEditor({
-		schema: defaultSchema, preset: defaultPreset({
+		schema: defaultSchema,
+		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
 			undo: false,
@@ -58,7 +59,11 @@ async function renderToolbar() {
 					Pen.Toolbar.Root,
 					null,
 					createElement(Pen.Toolbar.Button, null, "Bold"),
-					createElement(Pen.Toolbar.Toggle, { format: "italic" }, "Italic"),
+					createElement(
+						Pen.Toolbar.Toggle,
+						{ format: "italic" },
+						"Italic",
+					),
 					createElement(
 						Pen.Toolbar.Button,
 						{ disabled: true },
@@ -118,7 +123,9 @@ describe("@input/pen-react toolbar AX3", () => {
 		expect(disabled.length).toBe(1);
 		expect(enabled[0]?.tabIndex).toBe(0);
 		expect(
-			enabled.every((item, index) => item.tabIndex === (index === 0 ? 0 : -1)),
+			enabled.every(
+				(item, index) => item.tabIndex === (index === 0 ? 0 : -1),
+			),
 		).toBe(true);
 		expect(disabled[0]?.tabIndex).toBe(-1);
 		expect(document.activeElement).toBe(editorSurface);

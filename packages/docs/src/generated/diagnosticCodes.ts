@@ -16,6 +16,11 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 		sources: ["core/src/a11y/resolveEditorA11yLabel.ts", "core/src/a11y/resolveSchemaA11y.ts"],
 	},
 	{
+		code: "AI_MUTATION_PREFERENCE_INVALID",
+		levels: ["warn"],
+		sources: ["extensions/ai/src/controller/generationRunnerMethods.ts"],
+	},
+	{
 		code: "ai-egress-inventory",
 		levels: ["info"],
 		sources: ["core/src/facets/aiEgressFacet.ts"],
@@ -123,6 +128,11 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 	{
 		code: "GENERATION_COMPLETE",
 		levels: ["info"],
+		sources: ["extensions/ai/src/controller/generationExecutionFinalize.ts"],
+	},
+	{
+		code: "GENERATION_EDIT_NOT_APPLIED",
+		levels: ["warn"],
 		sources: ["extensions/ai/src/controller/generationExecutionFinalize.ts"],
 	},
 	{

@@ -71,22 +71,25 @@ export async function executeGeneration(
 			target.type,
 			context?.surface,
 		);
-		let route = routeAIRequest({
-			prompt,
-			selection: controller._editor.selection,
-			blockType: controller._editor.getBlock(blockId)?.type ?? null,
-			blockCount: controller._editor.blockCount(),
-			suggestMode: controller._state.suggestMode,
-			target: target.type,
-			contentFormat: requestedContentFormat,
-			surface: context?.surface,
-		});
+	let route = routeAIRequest({
+		prompt,
+		selection: controller._editor.selection,
+		blockType: controller._editor.getBlock(blockId)?.type ?? null,
+		blockCount: controller._editor.blockCount(),
+		suggestMode: controller._state.suggestMode,
+		target: target.type,
+		contentFormat: requestedContentFormat,
+		surface: context?.surface,
+		mutationPreference: controller._mutationPreference,
+		editChannel: controller._editChannel,
+	});
 		let workingSet = await controller._buildWorkingSet(
 			toolRuntime,
 			route,
 			target,
 			blockId,
 			prompt,
+			context?.scope,
 		);
 		const refinedRoute = controller._refineRouteWithWorkingSet(route, workingSet);
 		if (refinedRoute.lane !== route.lane) {
@@ -97,6 +100,7 @@ export async function executeGeneration(
 				target,
 				blockId,
 				prompt,
+				context?.scope,
 			);
 		} else {
 			route = refinedRoute;

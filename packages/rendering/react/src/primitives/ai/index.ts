@@ -14,10 +14,7 @@ export {
 	type AICommandListProps,
 	type AICommandItemProps,
 } from "./commandMenu";
-export {
-	AIGenerationZone,
-	type AIGenerationZoneProps,
-} from "./generationZone";
+export { AIGenerationZone, type AIGenerationZoneProps } from "./generationZone";
 export {
 	AIStructuredTargetPreview,
 	type AIStructuredTargetPreviewProps,

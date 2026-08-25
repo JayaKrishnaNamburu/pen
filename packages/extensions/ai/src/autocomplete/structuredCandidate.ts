@@ -6,9 +6,11 @@ import type {
 import {
 	blocksToOps,
 	normalizePendingBlocksForImport,
+	type PendingBlock,
+} from "@input/pen-core";
+import {
 	parseMarkdownToBlocks,
 	splitPlainTextLineBlocks,
-	type PendingBlock,
 } from "@input/pen-content-ops";
 
 export interface AutocompleteStructuredCandidate {

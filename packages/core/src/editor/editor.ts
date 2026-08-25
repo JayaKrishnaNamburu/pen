@@ -1,4 +1,4 @@
-import type { Editor, EditorInternals, CreateEditorOptions, PenEventMap, CRDTAdapter, CRDTDocument, CRDTEvent, PenDocument, SchemaRegistry, Awareness, DocumentSession, DocumentScope, DocumentScopeReplacementEvent, DocumentProfile, Extension, DocumentOp, ApplyOptions, OpOrigin, MutationGroupMetadata, SelectionState, TextSelection, DocumentRange, BlockHandle, Block, DocumentState, UndoManager, Unsubscribe, CRDTMap, CRDTArray, Position, DecorationSet, EditorViewMode, ChangeSummary, Facet, FacetOutput, PipelinePhase, SelectionRecord, SelectionOrigin, OpenTextStreamOptions, TextStreamWriter, EditorAnchors } from "@input/pen-types";
+import type { Editor, EditorInternals, CreateEditorOptions, PenEventMap, CRDTAdapter, CRDTDocument, CRDTEvent, PenDocument, SchemaRegistry, Awareness, DocumentSession, DocumentScope, DocumentScopeReplacementEvent, DocumentProfile, Extension, DocumentOp, ApplyOptions, OpOrigin, MutationGroupMetadata, SelectionState, TextSelection, DocumentRange, BlockHandle, Block, DocumentState, UndoManager, Unsubscribe, CRDTMap, CRDTArray, Position, DecorationSet, EditorViewMode, ChangeSummary, Facet, FacetOutput, PipelinePhase, SelectionRecord, SelectionOrigin, OpenTextStreamOptions, TextStreamWriter, EditorAnchors, SelectAllBehavior } from "@input/pen-types";
 import { AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY, COLLECT_KEY_BINDINGS_SLOT_KEY, MUTATION_GROUP_METADATA_KEY, UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY, generateId } from "@input/pen-types";
 import { yjsAdapter } from "@input/pen-crdt-yjs";
 import { resolveEditorSchema } from "../schema/emptySchema";
@@ -38,7 +38,7 @@ import { createPenDocumentForEditor, resolveEditorExtensions, installProfilePoli
 import { replaceEditorSelection, deleteEditorSelection, getTextForBlock, usesInlineTextSelectionForBlock, getBlockSelectionSpan, isWholeBlockSelection, sliceInlineDeltas, buildMultiBlockTextReplacement, deleteMultiBlockTextRange, replaceMultiBlockTextRange } from "./editorSelectionMutations";
 import type { DocumentCommitEvent, EditorImplInternal, EditorSelectionMutationContext } from "./editorImplContext";
 import { runPendingEmptyBlockMigrations } from "../migrations/runPendingEmptyBlockMigrations";
-import { stampTextSelection, selectionToRange } from "../selection/helpers";
+import { createTextSelection, selectionToRange } from "../selection/helpers";
 import {
 	buildTransitionSnapshot,
 	fromTransitionSelection,
@@ -395,16 +395,17 @@ class EditorImpl implements Editor {
 		focus: { blockId: string; offset: number },
 	): void {
 		this._writeSelection(
-			stampTextSelection(this._doc, { anchor, focus }),
+			createTextSelection({ anchor, focus }),
 			"programmatic",
 		);
 	}
 
-	selectAll(): void {
+	selectAll(behavior?: SelectAllBehavior): void {
 		const snapshot = buildTransitionSnapshot(this);
 		const next = escalateSelectAll(
 			snapshot,
 			toTransitionSelection(this),
+			behavior,
 		);
 		this._writeSelection(
 			fromTransitionSelection(next, snapshot.blockOrder),
@@ -568,7 +569,7 @@ class EditorImpl implements Editor {
 
 	private _collapseToPoint(point: { blockId: string; offset: number }): void {
 		this._writeSelection(
-			stampTextSelection(this._doc, { anchor: point, focus: point }),
+			createTextSelection({ anchor: point, focus: point }),
 			"programmatic",
 		);
 	}

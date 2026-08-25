@@ -4,7 +4,11 @@ import React, { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { describe, expect, it, vi } from "vitest";
 import { createEditor } from "@input/pen-core";
-import { aiExtension, getAIController, type AICommandBinding } from "@input/pen-ai";
+import {
+	aiExtension,
+	getAIController,
+	type AICommandBinding,
+} from "@input/pen-ai";
 import { undoExtension } from "@input/pen-undo";
 import { deltaStreamExtension } from "@input/pen-ai/stream";
 import { documentOpsExtension } from "@input/pen-document-ops";
@@ -47,7 +51,13 @@ async function renderCommandMenu(): Promise<{
 	controller: NonNullable<ReturnType<typeof getAIController>>;
 }> {
 	const editor = createEditor({
-		schema: defaultSchema,extensions: [undoExtension(), deltaStreamExtension(), documentOpsExtension(), aiExtension({ commands: TEST_COMMANDS })],
+		schema: defaultSchema,
+		extensions: [
+			undoExtension(),
+			deltaStreamExtension(),
+			documentOpsExtension(),
+			aiExtension({ commands: TEST_COMMANDS }),
+		],
 	});
 	const controller = getAIController(editor);
 	if (!controller) {
@@ -192,7 +202,8 @@ describe("@input/pen-react AI command menu AX3", () => {
 	});
 
 	it("AX3: Enter runs the active command and closes the menu", async () => {
-		const { container, root, editor, controller } = await renderCommandMenu();
+		const { container, root, editor, controller } =
+			await renderCommandMenu();
 		const runCommand = vi
 			.spyOn(controller, "runCommand")
 			.mockResolvedValue({} as never);
@@ -222,7 +233,13 @@ describe("@input/pen-react AI command menu AX3", () => {
 
 	it("LOC1: default command menu shows catalog labels and chrome", async () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [undoExtension(), deltaStreamExtension(), documentOpsExtension(), aiExtension()],
+			schema: defaultSchema,
+			extensions: [
+				undoExtension(),
+				deltaStreamExtension(),
+				documentOpsExtension(),
+				aiExtension(),
+			],
 		});
 		const controller = getAIController(editor);
 		if (!controller) {
@@ -230,9 +247,7 @@ describe("@input/pen-react AI command menu AX3", () => {
 		}
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" }],
+			[{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" }],
 			{ origin: "user" },
 		);
 		editor.selectText(blockId, 0, 5);
@@ -278,7 +293,13 @@ describe("@input/pen-react AI command menu AX3", () => {
 
 	it("LOC1: host messages override command-menu chrome and command labels", async () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [undoExtension(), deltaStreamExtension(), documentOpsExtension(), aiExtension()],
+			schema: defaultSchema,
+			extensions: [
+				undoExtension(),
+				deltaStreamExtension(),
+				documentOpsExtension(),
+				aiExtension(),
+			],
 			messages: {
 				"pen.ai.commandMenu.placeholder": "KI-Befehle suchen",
 				"pen.ai.commandMenu.label": "KI-Befehlmenü",
@@ -291,9 +312,7 @@ describe("@input/pen-react AI command menu AX3", () => {
 		}
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" }],
+			[{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" }],
 			{ origin: "user" },
 		);
 		editor.selectText(blockId, 0, 5);
@@ -338,7 +357,8 @@ describe("@input/pen-react AI command menu AX3", () => {
 	});
 
 	it("AX3: Escape closes the command menu", async () => {
-		const { container, root, editor, controller } = await renderCommandMenu();
+		const { container, root, editor, controller } =
+			await renderCommandMenu();
 		const input = container.querySelector<HTMLInputElement>(
 			"[data-pen-ai-command-input]",
 		);

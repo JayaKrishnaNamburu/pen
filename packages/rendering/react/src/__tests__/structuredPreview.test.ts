@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it } from "vitest";
-import type { AIStreamEvent, GenerationStructuredPreviewState } from "@input/pen-ai";
+import type {
+	AIStreamEvent,
+	GenerationStructuredPreviewState,
+} from "@input/pen-ai";
 import {
 	areAIStructuredPreviewSelectionsEqual,
 	buildAIStructuredPreviewContentItems,
@@ -55,13 +58,11 @@ function createStructuredPreview(
 	};
 }
 
-function createStructuredPreviewEvent(
-	input: {
-		generationId?: string;
-		preview: GenerationStructuredPreviewState;
-		patches: readonly StructuredPreviewPatch[];
-	},
-): AIStreamEvent {
+function createStructuredPreviewEvent(input: {
+	generationId?: string;
+	preview: GenerationStructuredPreviewState;
+	patches: readonly StructuredPreviewPatch[];
+}): AIStreamEvent {
 	return {
 		type: "structured-preview",
 		generationId: input.generationId ?? "generation-1",
@@ -116,7 +117,11 @@ describe("structured preview stream replay", () => {
 				createStructuredPreviewEvent({
 					preview: validatedPreview,
 					patches: [
-						{ op: "replace", path: "/planState", value: "validated" },
+						{
+							op: "replace",
+							path: "/planState",
+							value: "validated",
+						},
 						{ op: "add", path: "/plan/props", value: {} },
 						{ op: "add", path: "/plan/props/level", value: 2 },
 					],
@@ -174,7 +179,11 @@ describe("structured preview stream replay", () => {
 				createStructuredPreviewEvent({
 					preview: validatedPreview,
 					patches: [
-						{ op: "replace", path: "/planState", value: "validated" },
+						{
+							op: "replace",
+							path: "/planState",
+							value: "validated",
+						},
 						{ op: "add", path: "/plan/props", value: {} },
 						{ op: "add", path: "/plan/props/level", value: 2 },
 					],
@@ -199,7 +208,11 @@ describe("structured preview stream replay", () => {
 					generationId: "generation-2",
 					preview: fallbackPreview,
 					patches: [
-						{ op: "replace", path: "/planState", value: "validated" },
+						{
+							op: "replace",
+							path: "/planState",
+							value: "validated",
+						},
 					],
 				}),
 			],
@@ -266,9 +279,9 @@ describe("structured preview equality", () => {
 			planState: preview.planState,
 		};
 
-		expect(JSON.stringify(preview) === JSON.stringify(reorderedPreview)).toBe(
-			false,
-		);
+		expect(
+			JSON.stringify(preview) === JSON.stringify(reorderedPreview),
+		).toBe(false);
 		expect(
 			areAIStructuredPreviewSelectionsEqual(
 				{ preview, patchCount: 1 },
@@ -284,9 +297,9 @@ describe("structured preview equality", () => {
 			skipped: undefined,
 		};
 
-		expect(JSON.stringify(preview) === JSON.stringify(withUndefinedMember)).toBe(
-			true,
-		);
+		expect(
+			JSON.stringify(preview) === JSON.stringify(withUndefinedMember),
+		).toBe(true);
 		expect(
 			areAIStructuredPreviewSelectionsEqual(
 				{ preview, patchCount: 0 },
@@ -300,7 +313,9 @@ describe("structured preview equality", () => {
 			areAIStructuredPreviewSelectionsEqual(
 				{ preview: createStructuredPreview({}), patchCount: 0 },
 				{
-					preview: createStructuredPreview({ planState: "validated" }),
+					preview: createStructuredPreview({
+						planState: "validated",
+					}),
 					patchCount: 0,
 				},
 			),

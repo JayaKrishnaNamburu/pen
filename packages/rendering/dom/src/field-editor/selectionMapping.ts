@@ -8,10 +8,7 @@ import {
 	getBlockSelectionRoleFromType,
 	getSelectionLengthForRole,
 } from "../utils/blockSelectionSemantics";
-import {
-	domPointToLogicalOffset,
-	getLogicalNodeLength,
-} from "./inlineAtomDom";
+import { domPointToLogicalOffset, getLogicalNodeLength } from "./inlineAtomDom";
 import {
 	findBlockElement,
 	findInlineContentElement,

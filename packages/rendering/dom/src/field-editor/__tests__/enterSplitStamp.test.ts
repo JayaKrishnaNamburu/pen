@@ -32,8 +32,8 @@ function seedSplitSession() {
 			type: "splice-text",
 			blockId: firstBlockId,
 			from: 0,
-				to: 0,
-				insert: "Hello",
+			to: 0,
+			insert: "Hello",
 		},
 		{
 			type: "insert-block",

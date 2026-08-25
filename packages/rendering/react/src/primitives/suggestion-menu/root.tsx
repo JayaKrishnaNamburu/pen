@@ -268,10 +268,7 @@ function SuggestionMenuRootContent<TItem>(
 			}
 			const activeOptionId =
 				controller.items.length > 0
-					? suggestionMenuOptionId(
-							popupId,
-							controller.selectedIndex,
-						)
+					? suggestionMenuOptionId(popupId, controller.selectedIndex)
 					: undefined;
 			applySuggestionMenuFieldAria(field, popupId, activeOptionId);
 			annotatedFieldRef.current = field;

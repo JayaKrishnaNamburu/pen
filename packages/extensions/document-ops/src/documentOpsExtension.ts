@@ -13,6 +13,7 @@ import { insertBlockTool } from "./tools/insertBlock";
 import { updateBlockTool } from "./tools/updateBlock";
 import { deleteBlockTool } from "./tools/deleteBlock";
 import { moveBlockTool } from "./tools/moveBlock";
+import { editDocumentTool } from "./tools/editDocument";
 import { DOCUMENT_OPS_TOOL_RUNTIME_SLOT } from "./constants/toolServer";
 
 export interface DocumentOpsOptions {
@@ -46,6 +47,7 @@ export function documentOpsExtension(
       toolRuntime.registerTool(updateBlockTool(ctx.editor));
       toolRuntime.registerTool(deleteBlockTool(ctx.editor));
       toolRuntime.registerTool(moveBlockTool(ctx.editor));
+      toolRuntime.registerTool(editDocumentTool(ctx.editor));
 
       ctx.editor.internals.assignSlot(
         DOCUMENT_OPS_TOOL_RUNTIME_SLOT,

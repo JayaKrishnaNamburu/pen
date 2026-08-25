@@ -33,7 +33,9 @@ function createTestEditor(ariaReadOnlyFacetValue?: boolean) {
 				: [
 						defineExtension({
 							name: "aria-readonly-split",
-							facets: [ariaReadOnlyFacet.of(ariaReadOnlyFacetValue)],
+							facets: [
+								ariaReadOnlyFacet.of(ariaReadOnlyFacetValue),
+							],
 						}),
 					],
 	});
@@ -105,7 +107,9 @@ async function renderEditor(
 }
 
 function fieldEditor(editor: Editor): FieldEditorImpl | null {
-	return (editor.facet(fieldEditorHostFacet) as FieldEditorImpl | null) ?? null;
+	return (
+		(editor.facet(fieldEditorHostFacet) as FieldEditorImpl | null) ?? null
+	);
 }
 
 async function pointerActivateInline(container: HTMLElement): Promise<void> {

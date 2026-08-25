@@ -1,14 +1,18 @@
 import { createHeadlessEditor } from "@input/pen-core";
+import { defaultSchema } from "@input/pen-schema-default";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SessionReconciler } from "../field-editor/sessionReconciler";
-import { defaultSchema } from "@input/pen-schema-default";
+import { DomScheduler } from "../scheduler";
 
 describe("SessionReconciler", () => {
 	beforeEach(() => {
-		vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
-			callback(0);
-			return 1;
-		});
+		vi.stubGlobal(
+			"requestAnimationFrame",
+			(callback: FrameRequestCallback) => {
+				callback(0);
+				return 1;
+			},
+		);
 		vi.stubGlobal("cancelAnimationFrame", () => {});
 	});
 
@@ -49,8 +53,8 @@ describe("SessionReconciler", () => {
 					type: "splice-text",
 					blockId,
 					from: 0,
-				to: 0,
-				insert: "a",
+					to: 0,
+					insert: "a",
 				},
 			],
 			{ origin: { type: "history", source: "undo" } },
@@ -67,6 +71,7 @@ function createReconciler(
 	blockId: string,
 	getYText: () => null,
 ) {
+	const scheduler = new DomScheduler("session-reconciler-test");
 	return new SessionReconciler(editor, {
 		getSnapshot: () => ({
 			focusBlockId: blockId,
@@ -80,5 +85,6 @@ function createReconciler(
 		shouldPreserveSelection: () => false,
 		shouldProjectSelection: () => false,
 		projectSelection: () => {},
+		getScheduler: () => scheduler,
 	});
 }

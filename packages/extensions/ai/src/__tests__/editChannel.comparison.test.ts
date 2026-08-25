@@ -1,0 +1,185 @@
+import { describe, expect, it } from "vitest";
+import { createEditor } from "@input/pen-core";
+import {
+	documentOpsExtension,
+	getDocumentToolRuntime,
+} from "@input/pen-document-ops";
+import { defaultSchema } from "@input/pen-schema-default";
+import { undoExtension } from "@input/pen-undo";
+import type { Editor, ModelAdapter } from "@input/pen-types";
+import { aiExtension, getAIController } from "../index";
+import { deltaStreamExtension } from "../stream";
+
+/**
+ * The wave-0 measurement, reduced to its decisive criterion.
+ *
+ * `spec-better-ai/waves/wave-0-prototype.md` ships the tool channel only if
+ * wrong-edits is zero. A wrong edit is the document changing into something
+ * the prompt did not ask for — strictly worse than no edit, because the user
+ * has to notice and undo it. This file feeds both channels the same
+ * contract-violating model output and records what each does.
+ *
+ * Spec: `spec-better-ai/01-edit-channel.md` EC1, EC6.
+ */
+
+const OFF_CONTRACT_OUTPUT =
+	"Sure! I've turned the last paragraph into a bullet list for you:\n\n- Revenue grew\n- Costs fell";
+
+function proseModel(): ModelAdapter {
+	return {
+		async *stream() {
+			yield { type: "text-delta" as const, delta: OFF_CONTRACT_OUTPUT };
+			yield { type: "done" as const };
+		},
+	};
+}
+
+async function seedEditor(model: ModelAdapter): Promise<{
+	editor: Editor;
+	headingId: string;
+}> {
+	const editor = createEditor({
+		schema: defaultSchema,
+		extensions: [
+			undoExtension(),
+			deltaStreamExtension(),
+			documentOpsExtension(),
+			aiExtension({
+				model,
+				contentFormat: { blockGeneration: "markdown" },
+				mutationPreference: "direct",
+			}),
+		],
+	});
+	await editor.whenReady();
+
+	const headingId = editor.firstBlock()!.id;
+	editor.apply(
+		[
+			{
+				type: "set-props",
+				blockId: headingId,
+				props: { type: "heading", level: 1 },
+			},
+			{
+				type: "splice-text",
+				blockId: headingId,
+				from: 0,
+				to: 0,
+				insert: "Quarterly Report",
+			},
+			{
+				type: "insert-block",
+				blockId: "closing",
+				blockType: "paragraph",
+				props: {},
+				position: "last",
+			},
+			{
+				type: "splice-text",
+				blockId: "closing",
+				from: 0,
+				to: 0,
+				insert: "Revenue grew. Costs fell. Margins improved.",
+			},
+		],
+		{ origin: "system" },
+	);
+	return { editor, headingId };
+}
+
+function snapshot(editor: Editor): string {
+	return Array.from(editor.blocks())
+		.map((block) => `${block.type}:${block.textContent()}`)
+		.join("|");
+}
+
+describe("edit channel comparison: wrong-edits on off-contract output", () => {
+	it("EC6: the XML channel applies content the prompt did not ask for", async () => {
+		const { editor } = await seedEditor(proseModel());
+		const before = snapshot(editor);
+
+		await getAIController(editor)!.runPrompt(
+			"Turn the last paragraph into a bullet list",
+			{ target: "document" },
+		);
+
+		const after = snapshot(editor);
+		// This is the defect, recorded rather than asserted away: the model
+		// never emitted a valid plan, and the document changed anyway. The
+		// conversational preamble ("Sure! I've turned...") is now content.
+		expect(after).not.toBe(before);
+		expect(after).toContain("Sure!");
+
+		editor.destroy();
+	});
+
+	it("EC6: the tool channel refuses the same off-contract output and changes nothing", async () => {
+		const { editor } = await seedEditor(proseModel());
+		const before = snapshot(editor);
+		const runtime = getDocumentToolRuntime(editor)!;
+
+		// The tool-channel equivalent of the same failure: the model produced
+		// something that is not a valid edit. There is no path from that to a
+		// document write.
+		const result = (await runtime.executeTool(
+			"edit_document",
+			{
+				operations: [
+					{ operation: "replace_blocks", blockIds: ["closing"], markdown: "   " },
+				],
+			},
+			{} as never,
+		)) as { ok: boolean; rejected?: unknown[] };
+
+		expect(result.ok).toBe(false);
+		expect(result.rejected).toHaveLength(1);
+		expect(snapshot(editor)).toBe(before);
+
+		editor.destroy();
+	});
+
+	it("EC5: a refused tool call hands back the ids needed to succeed on retry", async () => {
+		const { editor, headingId } = await seedEditor(proseModel());
+		const runtime = getDocumentToolRuntime(editor)!;
+
+		const refused = (await runtime.executeTool(
+			"edit_document",
+			{
+				operations: [
+					{ operation: "replace_block_text", blockId: "guessed-id", text: "x" },
+				],
+			},
+			{} as never,
+		)) as { ok: boolean; outline?: Array<{ blockId: string }> };
+
+		expect(refused.ok).toBe(false);
+		const offered = refused.outline?.map((entry) => entry.blockId) ?? [];
+		expect(offered).toContain(headingId);
+		expect(offered).toContain("closing");
+
+		// The retry the outline enables succeeds, in the same turn.
+		const retried = (await runtime.executeTool(
+			"edit_document",
+			{
+				operations: [
+					{
+						operation: "replace_blocks",
+						blockIds: ["closing"],
+						markdown: "- Revenue grew\n- Costs fell\n",
+					},
+				],
+			},
+			{} as never,
+		)) as { ok: boolean };
+
+		expect(retried.ok).toBe(true);
+		expect(
+			Array.from(editor.blocks()).filter(
+				(block) => block.type === "bulletListItem",
+			),
+		).toHaveLength(2);
+
+		editor.destroy();
+	});
+});

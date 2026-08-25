@@ -1,5 +1,3 @@
-export const AI_STREAMING_PREVIEW_CHAR_STAGGER_MS = 4;
-
 export const AI_REVIEW_INLINE_STYLE = [
 	"padding-block: var(--pen-ai-review-inline-padding-block, 0.2em)",
 	"margin-block: var(--pen-ai-review-inline-margin-block, -0.2em)",
@@ -22,13 +20,3 @@ export const AI_REVIEW_CONTEXT_STYLE = [
 	"box-shadow: var(--pen-ai-review-context-box-shadow, none)",
 	AI_REVIEW_INLINE_STYLE,
 ].join("; ");
-
-export function buildStreamingPreviewNewStyle(animationDelayMs = 0): string {
-	return [
-		AI_REVIEW_INSERT_STYLE,
-		"animation: var(--pen-ai-review-preview-new-animation, none)",
-		animationDelayMs > 0 ? `animation-delay: ${animationDelayMs}ms` : "",
-	]
-		.filter(Boolean)
-		.join("; ");
-}

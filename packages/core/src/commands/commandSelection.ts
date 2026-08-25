@@ -5,15 +5,11 @@ import type {
 	TextSelection,
 } from "@input/pen-types";
 
-import {
-	getSelectionBlockRange,
-	isCollapsed,
-	isMultiBlock,
-} from "../selection/helpers";
+import { createTextSelection } from "../selection/helpers";
 
 export type Point = { blockId: string; offset: number };
 
-/** Command write payload. `blockRange` is the document span when `blockOrder` is passed. */
+/** Command write payload. `blockOrder` is accepted for callers that still pass it. */
 export function textSelectionResult(
 	anchor: Point,
 	focus: Point = anchor,
@@ -23,27 +19,12 @@ export function textSelectionResult(
 		blockOrder?: readonly string[];
 	},
 ): TextSelection {
-	const selection: TextSelection = {
-		type: "text",
+	return createTextSelection({
 		anchor,
 		focus,
-		affinity: extras?.affinity ?? "downstream",
-		goalX: extras?.goalX ?? null,
-		isCollapsed: false,
-		isMultiBlock: false,
-		blockRange: [anchor.blockId],
-		toRange: () => {
-			throw new Error("command text selection is a write payload");
-		},
-	};
-	return {
-		...selection,
-		isCollapsed: isCollapsed(selection),
-		isMultiBlock: isMultiBlock(selection),
-		blockRange: extras?.blockOrder
-			? getSelectionBlockRange(extras.blockOrder, selection)
-			: [anchor.blockId],
-	};
+		affinity: extras?.affinity,
+		goalX: extras?.goalX,
+	});
 }
 
 export function blockSelectionResult(

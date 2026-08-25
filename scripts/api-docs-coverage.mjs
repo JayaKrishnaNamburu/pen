@@ -153,8 +153,15 @@ const SKIP_DIR_NAMES = new Set([
  * and `ReducedMotionListener` / `ReducedMotionSignal` /
  * `createReducedMotionSignal` (pen-dom). The net is one fewer symbol, not
  * a TSDoc pass.
+ *
+ * Lowered 1796 → 1775 on 2026-08-25 after spec-v4 waves 3 and 4. Also not a
+ * TSDoc pass: the 21 are public symbols the waves deleted — `SelectionState`'s
+ * computed fields (DL5), the content-ops re-export shims (DL13), the v1 slot
+ * and event adapters (DL2–DL4), `DocumentCommitEvent`, and pen-dom's
+ * `./types/paste` subpath (CS9). The ratchet is a maximum, so it is lowered in
+ * the same change that shrinks the surface.
  */
-export const MAX_UNDOCUMENTED = 1796;
+export const MAX_UNDOCUMENTED = 1775;
 
 const JSDOC_RE = /\/\*\*[\s\S]*?\*\//g;
 const DECL_RE =

@@ -267,6 +267,8 @@ export type {
 	ToolContext,
 	ToolSchema,
 	ModelAdapter,
+	ModelAdapterCapabilities,
+	ModelToolChoice,
 	ModelOperationApplyPolicy,
 	ModelOperationBlockTarget,
 	ModelOperationDocumentTarget,

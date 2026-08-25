@@ -1,7 +1,4 @@
-import {
-	ariaReadOnlyFacet,
-	resolveEditorA11yLabel,
-} from "@input/pen-core";
+import { ariaReadOnlyFacet, resolveEditorA11yLabel } from "@input/pen-core";
 import {
 	FIELD_EDITOR_SLOT_KEY,
 	type Editor,
@@ -113,7 +110,11 @@ export function mountEditor(
 	root.addEventListener("focusin", handleFocusIn);
 	root.addEventListener("focusout", handleFocusOut);
 	root.addEventListener("mousedown", handlePointerActivate);
-	root.ownerDocument?.addEventListener("keydown", handleDocumentKeyDown, true);
+	root.ownerDocument?.addEventListener(
+		"keydown",
+		handleDocumentKeyDown,
+		true,
+	);
 
 	unsubscribers.push(editor.on("commit", () => tree.sync()));
 	unsubscribers.push(fieldEditor.subscribe(() => tree.sync()));
@@ -187,7 +188,11 @@ function clearEditorRootAttrs(root: HTMLElement): void {
 	root.removeAttribute("tabindex");
 }
 
-function setBooleanAttr(element: HTMLElement, name: string, value: boolean): void {
+function setBooleanAttr(
+	element: HTMLElement,
+	name: string,
+	value: boolean,
+): void {
 	const next = buildDataAttributes({ [name]: value })[name];
 	if (next === undefined) {
 		element.removeAttribute(name);
@@ -195,4 +200,3 @@ function setBooleanAttr(element: HTMLElement, name: string, value: boolean): voi
 		element.setAttribute(name, next);
 	}
 }
-

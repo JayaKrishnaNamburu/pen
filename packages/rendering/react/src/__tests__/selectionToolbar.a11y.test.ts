@@ -14,7 +14,8 @@ import { defaultSchema } from "@input/pen-schema-default";
 
 function createTestEditor() {
 	return createEditor({
-		schema: defaultSchema, preset: defaultPreset({
+		schema: defaultSchema,
+		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
 			undo: false,
@@ -94,9 +95,15 @@ async function renderSelectionToolbar() {
 	const editor = createTestEditor();
 	const blockId = editor.firstBlock()!.id;
 	editor.apply(
-		[{ type: "splice-text", blockId, from: 0,
+		[
+			{
+				type: "splice-text",
+				blockId,
+				from: 0,
 				to: 0,
-				insert: "Hello world" }],
+				insert: "Hello world",
+			},
+		],
 		{ origin: "user" },
 	);
 	editor.selectTextRange({ blockId, offset: 0 }, { blockId, offset: 5 });

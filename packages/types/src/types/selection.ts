@@ -1,5 +1,4 @@
 import type { Point } from "./changes";
-import type { DocumentRange } from "./documentRange";
 
 /**
  * Caret display side at line-wrap and bidi-run boundaries (`03-selection.md` §1.1).
@@ -30,25 +29,6 @@ export interface TextSelection {
 	 * motion was vertical. Written by SelectionAuthority.
 	 */
 	readonly goalX?: number | null;
-	/**
-	 * v1 computed field. Stays until consumer conversion (Wave 5.1 / 5.3).
-	 * Equivalent to `anchor.blockId === focus.blockId && anchor.offset === focus.offset`.
-	 * Do not add a helper here — runtime functions in this package work against API3;
-	 * the helper belongs in `@input/pen-core` when the authority lands.
-	 */
-	readonly isCollapsed: boolean;
-	/**
-	 * v1 computed field. Equivalent to `anchor.blockId !== focus.blockId`.
-	 * Same relocation as `isCollapsed`.
-	 */
-	readonly isMultiBlock: boolean;
-	/**
-	 * v1 computed field. Document-order block ids covered by the range.
-	 * Same relocation as `isCollapsed`.
-	 */
-	readonly blockRange: string[];
-	/** v1 computed method. Same relocation as `isCollapsed`. */
-	toRange(): DocumentRange;
 }
 
 export interface BlockSelection {
@@ -82,11 +62,8 @@ export type SelectionState =
 /**
  * Read view of `SelectionState`. Helpers only read, so they take this
  * rather than the live writable value. Nested fields are readonly
- * (`blockRange` is `readonly string[]`; cell coords are readonly;
- * `toRange` is omitted because helpers do not call it). A live
- * `SelectionState` assigns here, and so does any deep-readonly unwrap
- * of the same value. `Readonly<SelectionState>` is not this type — it
- * is shallow and still exposes a mutable `blockRange`.
+ * (cell coords are readonly). A live `SelectionState` assigns here,
+ * and so does any deep-readonly unwrap of the same value.
  */
 export type ReadonlySelectionState =
 	| {
@@ -95,9 +72,6 @@ export type ReadonlySelectionState =
 			readonly focus: Point;
 			readonly affinity?: Affinity;
 			readonly goalX?: number | null;
-			readonly isCollapsed?: boolean;
-			readonly isMultiBlock?: boolean;
-			readonly blockRange: readonly string[];
 	  }
 	| {
 			readonly type: "block";
@@ -119,13 +93,12 @@ export type ReadonlySelectionState =
 	| null;
 
 /**
- * Serializable selection as of a commit. Same variants as `SelectionState`
- * without computed properties. `affinity` / `goalX` / `head` are required
- * here because `snapshotSelectionRecord` already writes them.
+ * Serializable selection as of a commit. Same variants as `SelectionState`.
+ * `affinity` / `goalX` / `head` are required here because
+ * `snapshotSelectionRecord` already writes them.
  *
- * Becomes `SelectionState` when 5.3 moves `isCollapsed` / `isMultiBlock` /
- * `blockRange` / `toRange` off the live value. Helpers belong in core
- * (API3: do not add them to this package).
+ * Computed v1 fields (`isCollapsed` / `isMultiBlock` / `blockRange` /
+ * `toRange`) live on helpers in `@input/pen-core`, not on either shape.
  */
 export type SelectionRecordState =
 	| {

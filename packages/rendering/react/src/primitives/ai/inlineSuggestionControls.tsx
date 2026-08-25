@@ -37,25 +37,24 @@ export function AIInlineSuggestionControls(
 	const controls = useInlineSuggestionControls(editor);
 	const { activePosition } = controls;
 
-	const defaultChildren = controls.hasVisibleControls && activePosition
-		? [
-			<AIInlineSuggestionFloatingSurface
-				key={activePosition.id}
-			>
-				<div data-pen-ai-inline-suggestion-nav="">
-					<AIInlineSuggestionPreviousButton />
-					<AIInlineSuggestionCount />
-					<AIInlineSuggestionNextButton />
-				</div>
-				{controls.shouldUseRightEdgeRail ? null : (
-					<>
-						<AIInlineSuggestionRejectButton />
-						<AIInlineSuggestionAcceptButton />
-					</>
-				)}
-			</AIInlineSuggestionFloatingSurface>,
-		]
-		: [];
+	const defaultChildren =
+		controls.hasVisibleControls && activePosition
+			? [
+					<AIInlineSuggestionFloatingSurface key={activePosition.id}>
+						<div data-pen-ai-inline-suggestion-nav="">
+							<AIInlineSuggestionPreviousButton />
+							<AIInlineSuggestionCount />
+							<AIInlineSuggestionNextButton />
+						</div>
+						{controls.shouldUseRightEdgeRail ? null : (
+							<>
+								<AIInlineSuggestionRejectButton />
+								<AIInlineSuggestionAcceptButton />
+							</>
+						)}
+					</AIInlineSuggestionFloatingSurface>,
+				]
+			: [];
 
 	return (
 		<InlineSuggestionControlsContext.Provider value={{ editor, controls }}>
@@ -69,7 +68,9 @@ export function AIInlineSuggestionControls(
 					"data-pen-ai-inline-suggestion-controls": "",
 					"data-visible-count": controls.visibleCount,
 					"data-placement": activePosition?.placement,
-					"data-has-active-suggestion": controls.hasVisibleControls ? "" : undefined,
+					"data-has-active-suggestion": controls.hasVisibleControls
+						? ""
+						: undefined,
 				},
 			)}
 		</InlineSuggestionControlsContext.Provider>
@@ -85,23 +86,19 @@ export function AIInlineSuggestionFloatingSurface(
 		return null;
 	}
 
-	const surface = renderAsChild(
-		props,
-		"div",
-		{
-			"data-pen-ai-inline-suggestion-control": "",
-			"data-suggestion-id": activePosition.id,
-			"data-suggestion-action": activePosition.action,
-			"data-placement": activePosition.placement,
-			"data-pen-ignore-pointer-gesture": "",
-			style: {
-				position: "absolute",
-				top: `${Math.round(activePosition.top)}px`,
-				left: `${Math.round(activePosition.left)}px`,
-				zIndex: 55,
-			},
+	const surface = renderAsChild(props, "div", {
+		"data-pen-ai-inline-suggestion-control": "",
+		"data-suggestion-id": activePosition.id,
+		"data-suggestion-action": activePosition.action,
+		"data-placement": activePosition.placement,
+		"data-pen-ignore-pointer-gesture": "",
+		style: {
+			position: "absolute",
+			top: `${Math.round(activePosition.top)}px`,
+			left: `${Math.round(activePosition.left)}px`,
+			zIndex: 55,
 		},
-	);
+	});
 	return createPortal(surface, activePosition.host);
 }
 
@@ -144,16 +141,15 @@ export function AIInlineSuggestionPreviousButton(
 		onClick: controls.goToPrevious,
 		children: props.children ?? "\u2039",
 	};
-	return renderAsChild(
-		buttonProps,
-		"button",
-		{
-			type: "button",
-			"data-pen-ai-inline-suggestion-prev": "",
-			disabled: !controls.canGoToPrevious,
-			"aria-label": resolveEditorMessage(editor, "pen.ai.suggestion.previous"),
-		},
-	);
+	return renderAsChild(buttonProps, "button", {
+		type: "button",
+		"data-pen-ai-inline-suggestion-prev": "",
+		disabled: !controls.canGoToPrevious,
+		"aria-label": resolveEditorMessage(
+			editor,
+			"pen.ai.suggestion.previous",
+		),
+	});
 }
 
 export interface AIInlineSuggestionNextButtonProps extends AsChildProps {
@@ -172,16 +168,12 @@ export function AIInlineSuggestionNextButton(
 		onClick: controls.goToNext,
 		children: props.children ?? "\u203a",
 	};
-	return renderAsChild(
-		buttonProps,
-		"button",
-		{
-			type: "button",
-			"data-pen-ai-inline-suggestion-next": "",
-			disabled: !controls.canGoToNext,
-			"aria-label": resolveEditorMessage(editor, "pen.ai.suggestion.next"),
-		},
-	);
+	return renderAsChild(buttonProps, "button", {
+		type: "button",
+		"data-pen-ai-inline-suggestion-next": "",
+		disabled: !controls.canGoToNext,
+		"aria-label": resolveEditorMessage(editor, "pen.ai.suggestion.next"),
+	});
 }
 
 export interface AIInlineSuggestionAcceptButtonProps extends AsChildProps {
@@ -202,15 +194,11 @@ export function AIInlineSuggestionAcceptButton(
 			props.children ??
 			resolveEditorMessage(editor, "pen.ai.suggestion.keep"),
 	};
-	return renderAsChild(
-		buttonProps,
-		"button",
-		{
-			type: "button",
-			"data-pen-ai-inline-suggestion-accept": "",
-			disabled: !controls.hasVisibleControls,
-		},
-	);
+	return renderAsChild(buttonProps, "button", {
+		type: "button",
+		"data-pen-ai-inline-suggestion-accept": "",
+		disabled: !controls.hasVisibleControls,
+	});
 }
 
 export interface AIInlineSuggestionRejectButtonProps extends AsChildProps {
@@ -231,15 +219,11 @@ export function AIInlineSuggestionRejectButton(
 			props.children ??
 			resolveEditorMessage(editor, "pen.ai.suggestion.undo"),
 	};
-	return renderAsChild(
-		buttonProps,
-		"button",
-		{
-			type: "button",
-			"data-pen-ai-inline-suggestion-reject": "",
-			disabled: !controls.hasVisibleControls,
-		},
-	);
+	return renderAsChild(buttonProps, "button", {
+		type: "button",
+		"data-pen-ai-inline-suggestion-reject": "",
+		disabled: !controls.hasVisibleControls,
+	});
 }
 
 function preventEditorBlur(event: React.MouseEvent<HTMLElement>) {

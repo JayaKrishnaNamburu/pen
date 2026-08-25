@@ -2,7 +2,7 @@ import {
 	getFlowCapabilityFromSchema,
 	getFlowCapabilityFromType,
 	type PendingBlock,
-} from "@input/pen-content-ops";
+} from "@input/pen-core";
 import type { Editor, InlineSchema } from "@input/pen-types";
 import {
 	INGEST_MAX_IMAGE_COUNT,

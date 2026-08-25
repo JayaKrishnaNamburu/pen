@@ -159,9 +159,7 @@ describe("SEC1 React host urlPolicy", () => {
 		editor.selectText(firstId, 0, 0);
 
 		const { container, root } = await renderEditor(editor);
-		const anchor = container.querySelector(
-			'[data-block-id="linked"] a',
-		);
+		const anchor = container.querySelector('[data-block-id="linked"] a');
 
 		expect(anchor).not.toBeNull();
 		expect(anchor?.getAttribute("href")).toBeNull();
@@ -200,9 +198,7 @@ describe("SEC1 React host urlPolicy", () => {
 		editor.selectText(firstId, 0, 0);
 
 		const { container, root } = await renderEditor(editor);
-		const anchor = container.querySelector(
-			'[data-block-id="linked"] a',
-		);
+		const anchor = container.querySelector('[data-block-id="linked"] a');
 
 		expect(anchor).not.toBeNull();
 		expect(anchor?.getAttribute("href")).toBe(ADMITTED_BLOB);

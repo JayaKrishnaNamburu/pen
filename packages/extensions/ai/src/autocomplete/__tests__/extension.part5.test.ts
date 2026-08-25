@@ -4,16 +4,16 @@ import {
 	it } from "vitest";
 import {
 	createEditor,
-	getInlineCompletionController,
+	getInlineCompletionController
 	} from "@input/pen-core";
-import { FIELD_EDITOR_SLOT_KEY,
+import { FIELD_EDITOR_SLOT_KEY
 } from "@input/pen-types";
 import { defineExtension } from "@input/pen-core";
 import { defaultSchema } from "@input/pen-schema-default";
 import {
 	autocompleteExtension,
 	createAutocompleteProvider,
-	getAutocompleteController,
+	getAutocompleteController
 } from "../index";
 
 async function waitForCondition(
@@ -37,15 +37,15 @@ describe("@input/pen-ai/autocomplete", () => {
 			focusBlockId: null as string | null,
 			isEditing: true,
 			isFocused: true,
-			isComposing: false,
+			isComposing: false
 		};
 		const editor = createEditor({
 			schema: defaultSchema,extensions: [
 				autocompleteExtension({
 					blockPolicy: {
 						allowedBlockTypes: ["paragraph"],
-						deniedBlockTypes: ["codeBlock"],
-					},
+						deniedBlockTypes: ["codeBlock"]
+					}
 				}),
 				defineExtension({
 					name: "test-field-editor-slot",
@@ -56,9 +56,9 @@ describe("@input/pen-ai/autocomplete", () => {
 					deactivateClient: async () => {
 						activeEditor?.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, null);
 						activeEditor = null;
-					},
+					}
 				}),
-			],
+			]
 		});
 
 		const controller = getAutocompleteController(editor);
@@ -68,7 +68,7 @@ describe("@input/pen-ai/autocomplete", () => {
 			allowInCodeBlocks: true,
 			allowInTables: false,
 			allowedBlockTypes: ["paragraph"],
-			deniedBlockTypes: ["codeBlock"],
+			deniedBlockTypes: ["codeBlock"]
 		});
 
 		expect(() => {
@@ -98,14 +98,14 @@ describe("@input/pen-ai/autocomplete", () => {
 			focusBlockId: null as string | null,
 			isEditing: true,
 			isFocused: true,
-			isComposing: false,
+			isComposing: false
 		};
 		const editor = createEditor({
 			schema: defaultSchema,extensions: [
 				autocompleteExtension({
 					blockPolicy: {
-						allowedBlockTypes: ["paragraph"],
-					},
+						allowedBlockTypes: ["paragraph"]
+					}
 				}),
 				defineExtension({
 					name: "test-field-editor-slot",
@@ -116,9 +116,9 @@ describe("@input/pen-ai/autocomplete", () => {
 					deactivateClient: async () => {
 						activeEditor?.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, null);
 						activeEditor = null;
-					},
+					}
 				}),
-			],
+			]
 		});
 
 		const controller = getAutocompleteController(editor);
@@ -167,7 +167,7 @@ describe("@input/pen-ai/autocomplete", () => {
 			focusBlockId: null as string | null,
 			isEditing: true,
 			isFocused: true,
-			isComposing: false,
+			isComposing: false
 		};
 		const editor = createEditor({
 			schema: defaultSchema,extensions: [
@@ -188,7 +188,7 @@ describe("@input/pen-ai/autocomplete", () => {
 								yield {
 									type: "text-delta" as const,
 									delta:
-										". Hope you had a lovely vacation in Ibiza last week and came back with great stories to tell.",
+										". Hope you had a lovely vacation in Ibiza last week and came back with great stories to tell."
 								};
 								yield { type: "done" as const };
 								return;
@@ -198,14 +198,14 @@ describe("@input/pen-ai/autocomplete", () => {
 								yield {
 									type: "text-delta" as const,
 									delta:
-										" The photos alone could fill a journal.\n\nYou should turn the trip into a full essay while the details are still vivid.\n\nStart with the beach at sunset and the best meal of the week.",
+										" The photos alone could fill a journal.\n\nYou should turn the trip into a full essay while the details are still vivid.\n\nStart with the beach at sunset and the best meal of the week."
 								};
 								yield { type: "done" as const };
 								return;
 							}
 							yield { type: "done" as const };
-						},
-					},
+						}
+					}
 				}),
 				defineExtension({
 					name: "test-field-editor-slot",
@@ -216,9 +216,9 @@ describe("@input/pen-ai/autocomplete", () => {
 					deactivateClient: async () => {
 						activeEditor?.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, null);
 						activeEditor = null;
-					},
+					}
 				}),
-			],
+			]
 		});
 		const blockId = editor.firstBlock()!.id;
 		fieldEditor.focusBlockId = blockId;
@@ -267,11 +267,11 @@ describe("@input/pen-ai/autocomplete", () => {
 		expect(inlineCompletion?.getState().visibleSuggestion?.previewBlocks).toEqual([
 			expect.objectContaining({
 				text: "You should turn the trip into a full essay while the details are still vivid.",
-				blockType: "paragraph",
+				blockType: "paragraph"
 			}),
 			expect.objectContaining({
 				text: "Start with the beach at sunset and the best meal of the week.",
-				blockType: "paragraph",
+				blockType: "paragraph"
 			}),
 		]);
 
@@ -291,11 +291,10 @@ describe("@input/pen-ai/autocomplete", () => {
 		);
 		expect(editor.selection).toMatchObject({
 			type: "text",
-			isCollapsed: true,
 			focus: {
 				blockId: thirdBlock?.id,
-				offset: 61,
-			},
+				offset: 61
+			}
 		});
 		expect(requestModes).toEqual([
 			"inline-autocomplete",
@@ -313,7 +312,7 @@ describe("@input/pen-ai/autocomplete", () => {
 			focusBlockId: null as string | null,
 			isEditing: true,
 			isFocused: true,
-			isComposing: false,
+			isComposing: false
 		};
 		const editor = createEditor({
 			schema: defaultSchema,extensions: [
@@ -323,11 +322,11 @@ describe("@input/pen-ai/autocomplete", () => {
 						async *stream() {
 							yield {
 								type: "text-delta" as const,
-								delta: " with a plan\n- Book flights\n- Reserve the hotel",
+								delta: " with a plan\n- Book flights\n- Reserve the hotel"
 							};
 							yield { type: "done" as const };
-						},
-					},
+						}
+					}
 				}),
 				defineExtension({
 					name: "test-field-editor-slot",
@@ -338,9 +337,9 @@ describe("@input/pen-ai/autocomplete", () => {
 					deactivateClient: async () => {
 						activeEditor?.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, null);
 						activeEditor = null;
-					},
+					}
 				}),
-			],
+			]
 		});
 		const blockId = editor.firstBlock()!.id;
 		fieldEditor.focusBlockId = blockId;
@@ -359,11 +358,11 @@ describe("@input/pen-ai/autocomplete", () => {
 		expect(inlineCompletion?.getState().visibleSuggestion?.previewBlocks).toEqual([
 			expect.objectContaining({
 				text: "Book flights",
-				blockType: "bulletListItem",
+				blockType: "bulletListItem"
 			}),
 			expect.objectContaining({
 				text: "Reserve the hotel",
-				blockType: "bulletListItem",
+				blockType: "bulletListItem"
 			}),
 		]);
 
@@ -378,11 +377,10 @@ describe("@input/pen-ai/autocomplete", () => {
 		expect(thirdBlock?.textContent()).toBe("Reserve the hotel");
 		expect(editor.selection).toMatchObject({
 			type: "text",
-			isCollapsed: true,
 			focus: {
 				blockId: thirdBlock?.id,
-				offset: 17,
-			},
+				offset: 17
+			}
 		});
 
 		editor.destroy();

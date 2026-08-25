@@ -3,13 +3,13 @@
   "version": "0.0.1",
   "description": "Yjs CRDT adapter for Pen",
   "license": "MIT",
-  "homepage": "https://github.com/lemni/pen#readme",
+  "homepage": "https://github.com/input-systems/pen#readme",
   "bugs": {
-    "url": "https://github.com/lemni/pen/issues"
+    "url": "https://github.com/input-systems/pen/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/lemni/pen.git",
+    "url": "https://github.com/input-systems/pen.git",
     "directory": "packages/crdt/yjs"
   },
   "type": "module",

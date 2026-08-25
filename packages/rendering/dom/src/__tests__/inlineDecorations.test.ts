@@ -178,11 +178,14 @@ describe("inline decorations", () => {
 			JSON.stringify(previous[0]!.attributes) ===
 				JSON.stringify(reordered[0]!.attributes),
 		).toBe(false);
+		expect(buildInlineDecorationsRenderSignature(reordered, previous)).toBe(
+			previous,
+		);
 		expect(
-			buildInlineDecorationsRenderSignature(reordered, previous),
-		).toBe(previous);
-		expect(
-			buildInlineDecorationsRenderSignature(withUndefinedMember, previous),
+			buildInlineDecorationsRenderSignature(
+				withUndefinedMember,
+				previous,
+			),
 		).toBe(previous);
 	});
 

@@ -1,8 +1,11 @@
 import React, { useSyncExternalStore } from "react";
 import { getNumberedListItemValue as getOrderedListValue } from "@input/pen-core";
-import type { BlockHandle, InlineCompletionPreviewBlock } from "@input/pen-types";
+import type {
+	BlockHandle,
+	InlineCompletionPreviewBlock,
+} from "@input/pen-types";
 import { useEditorContext } from "../../context/editorContext";
-import { DATA_ATTRS } from "../../utils/dataAttributes";
+import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 
 const LIST_ITEM_INDENT_PX = 24;
 const LIST_ITEM_COLUMN_GAP_PX = 8;
@@ -17,18 +20,27 @@ export interface AutocompletePreviewBlockProps {
 }
 
 export function AutocompletePreviewBlock(props: AutocompletePreviewBlockProps) {
-	const { anchorBlock, anchorBlockType, anchorProps, block, previewIndex = 0 } = props;
+	const {
+		anchorBlock,
+		anchorBlockType,
+		anchorProps,
+		block,
+		previewIndex = 0,
+	} = props;
 	const numberedAnchorValue = usePreviewNumberedListItemValue(anchorBlock);
 	const headingLevel =
 		block.blockType === "heading" && typeof block.props?.level === "number"
 			? block.props.level
-			: anchorBlockType === "heading" && typeof anchorProps?.level === "number"
+			: anchorBlockType === "heading" &&
+				  typeof anchorProps?.level === "number"
 				? anchorProps.level
 				: undefined;
 	const calloutType =
-		block.blockType === "callout" && typeof block.props?.severity === "string"
+		block.blockType === "callout" &&
+		typeof block.props?.severity === "string"
 			? block.props.severity
-			: anchorBlockType === "callout" && typeof anchorProps?.severity === "string"
+			: anchorBlockType === "callout" &&
+				  typeof anchorProps?.severity === "string"
 				? anchorProps.severity
 				: undefined;
 	const listPreview = buildListPreview({
@@ -41,9 +53,7 @@ export function AutocompletePreviewBlock(props: AutocompletePreviewBlockProps) {
 	});
 	const surface = (
 		<div data-pen-autocomplete-preview-surface="">
-			<div data-pen-autocomplete-preview-content="">
-				{block.text}
-			</div>
+			<div data-pen-autocomplete-preview-content="">{block.text}</div>
 		</div>
 	);
 	const wrappedSurface = wrapSurfaceForAnchorBlock(anchorBlockType, surface);
@@ -131,13 +141,14 @@ function buildListPreview(options: {
 	} = options;
 	const previewBlockType =
 		blockType === "bulletListItem" ||
-			blockType === "checkListItem" ||
-			blockType === "numberedListItem"
+		blockType === "checkListItem" ||
+		blockType === "numberedListItem"
 			? blockType
 			: anchorBlockType;
 	const previewProps =
 		previewBlockType === blockType && blockProps ? blockProps : anchorProps;
-	const indent = typeof previewProps?.indent === "number" ? previewProps.indent : 0;
+	const indent =
+		typeof previewProps?.indent === "number" ? previewProps.indent : 0;
 	if (previewBlockType === "bulletListItem") {
 		return {
 			blockType: "bulletListItem",
@@ -173,7 +184,8 @@ function buildListPreview(options: {
 	}
 	if (previewBlockType === "numberedListItem") {
 		const baseCounter =
-			previewBlockType === blockType && typeof blockProps?.start === "number"
+			previewBlockType === blockType &&
+			typeof blockProps?.start === "number"
 				? blockProps.start
 				: numberedAnchorValue != null
 					? numberedAnchorValue + 1
@@ -197,13 +209,15 @@ function buildListPreview(options: {
 	return null;
 }
 
-function usePreviewNumberedListItemValue(block: BlockHandle | null | undefined): number | null {
+function usePreviewNumberedListItemValue(
+	block: BlockHandle | null | undefined,
+): number | null {
 	const { editor } = useEditorContext();
-	const fallbackValue = block ? getOrderedListValue(block) ?? 1 : null;
+	const fallbackValue = block ? (getOrderedListValue(block) ?? 1) : null;
 	return useSyncExternalStore(
 		(callback) => {
 			if (!block) {
-				return () => { };
+				return () => {};
 			}
 			return editor.on("commit", () => callback());
 		},
@@ -211,7 +225,9 @@ function usePreviewNumberedListItemValue(block: BlockHandle | null | undefined):
 			if (!block) {
 				return null;
 			}
-			return getOrderedListValue(editor.getBlock(block.id)) ?? fallbackValue;
+			return (
+				getOrderedListValue(editor.getBlock(block.id)) ?? fallbackValue
+			);
 		},
 		() => fallbackValue,
 	);
@@ -226,10 +242,11 @@ function wrapSurfaceForAnchorBlock(
 	}
 	if (anchorBlockType === "subdocument") {
 		return (
-			<div data-pen-subdocument-host="" data-pen-autocomplete-preview-subdocument="">
-				<div data-pen-subdocument-placeholder="">
-					{surface}
-				</div>
+			<div
+				data-pen-subdocument-host=""
+				data-pen-autocomplete-preview-subdocument=""
+			>
+				<div data-pen-subdocument-placeholder="">{surface}</div>
 			</div>
 		);
 	}

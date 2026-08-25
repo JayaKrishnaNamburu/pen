@@ -90,16 +90,25 @@ function buildHostileClipboardPayload(): PenBlock[] {
 
 	return [
 		nestToggles(CLIPBOARD_INGEST_MAX_NESTING_DEPTH + depthOverflow),
-		...Array.from({ length: CLIPBOARD_INGEST_MAX_IMAGE_COUNT + imageOverflow }, (_, index) => ({
-			type: "image" as const,
-			props: { src: `https://example.com/hostile-${index}.png` },
-		})),
-		{ type: "paragraph", content: "L".repeat(CLIPBOARD_INGEST_MAX_TEXT_SIZE) },
+		...Array.from(
+			{ length: CLIPBOARD_INGEST_MAX_IMAGE_COUNT + imageOverflow },
+			(_, index) => ({
+				type: "image" as const,
+				props: { src: `https://example.com/hostile-${index}.png` },
+			}),
+		),
+		{
+			type: "paragraph",
+			content: "L".repeat(CLIPBOARD_INGEST_MAX_TEXT_SIZE),
+		},
 		{ type: "paragraph", content: textOverflow },
-		...Array.from({ length: CLIPBOARD_INGEST_MAX_NODE_COUNT + nodeOverflow }, () => ({
-			type: "paragraph" as const,
-			content: "n",
-		})),
+		...Array.from(
+			{ length: CLIPBOARD_INGEST_MAX_NODE_COUNT + nodeOverflow },
+			() => ({
+				type: "paragraph" as const,
+				content: "n",
+			}),
+		),
 	];
 }
 
@@ -132,10 +141,18 @@ describe("IOP5/IOP6 clipboard JSON ingest", () => {
 
 		const result = admitClipboardBlocks(blocks, editor);
 
-		expect(countNodes(result.blocks)).toBeLessThanOrEqual(CLIPBOARD_INGEST_MAX_NODE_COUNT);
-		expect(maxDepth(result.blocks)).toBeLessThanOrEqual(CLIPBOARD_INGEST_MAX_NESTING_DEPTH);
-		expect(countImages(result.blocks)).toBeLessThanOrEqual(CLIPBOARD_INGEST_MAX_IMAGE_COUNT);
-		expect(totalTextLength(result.blocks)).toBeLessThanOrEqual(CLIPBOARD_INGEST_MAX_TEXT_SIZE);
+		expect(countNodes(result.blocks)).toBeLessThanOrEqual(
+			CLIPBOARD_INGEST_MAX_NODE_COUNT,
+		);
+		expect(maxDepth(result.blocks)).toBeLessThanOrEqual(
+			CLIPBOARD_INGEST_MAX_NESTING_DEPTH,
+		);
+		expect(countImages(result.blocks)).toBeLessThanOrEqual(
+			CLIPBOARD_INGEST_MAX_IMAGE_COUNT,
+		);
+		expect(totalTextLength(result.blocks)).toBeLessThanOrEqual(
+			CLIPBOARD_INGEST_MAX_TEXT_SIZE,
+		);
 		expect(result.droppedByReason).toEqual(
 			expect.arrayContaining([
 				expect.objectContaining({

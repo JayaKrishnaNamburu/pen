@@ -64,8 +64,8 @@ describe("@input/pen-react mount ack", () => {
 						type: "splice-text",
 						blockId,
 						from: 0,
-				to: 0,
-				insert: "Hi",
+						to: 0,
+						insert: "Hi",
 					},
 				]);
 			});

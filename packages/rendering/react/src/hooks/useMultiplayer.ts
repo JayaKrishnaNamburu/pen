@@ -18,19 +18,22 @@ const EMPTY_MULTIPLAYER_STATE: MultiplayerState = {
 
 export function useMultiplayer(editor: Editor): MultiplayerState {
 	const controller =
-		(editor.facet(multiplayerControllerFacet) as MultiplayerController | null) ??
-		null;
+		(editor.facet(
+			multiplayerControllerFacet,
+		) as MultiplayerController | null) ?? null;
 	const canReadControllerState = isMultiplayerController(controller);
 
 	return useSyncExternalStore(
 		(callback) => {
 			if (!canReadControllerState) {
-				return () => { };
+				return () => {};
 			}
 			return controller.subscribe(callback);
 		},
 		() =>
-			canReadControllerState ? controller.getState() : EMPTY_MULTIPLAYER_STATE,
+			canReadControllerState
+				? controller.getState()
+				: EMPTY_MULTIPLAYER_STATE,
 		() => EMPTY_MULTIPLAYER_STATE,
 	);
 }

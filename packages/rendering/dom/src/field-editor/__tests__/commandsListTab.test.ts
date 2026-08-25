@@ -37,7 +37,10 @@ describe("applyListTabBehavior", () => {
 
 		editor.apply([
 			{
-				type: "set-props", blockId: firstBlockId, props: { type: "bulletListItem" }},
+				type: "set-props",
+				blockId: firstBlockId,
+				props: { type: "bulletListItem" },
+			},
 			{
 				type: "insert-block",
 				blockId: secondBlockId,

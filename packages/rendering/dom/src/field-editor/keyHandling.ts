@@ -45,7 +45,10 @@ type LineEdgeMeasure = (
 ) => { blockId: string; offset: number } | null;
 
 function ensureLineEdgeMeasure(editor: Editor): void {
-	const host = editor as unknown as Record<symbol, LineEdgeMeasure | undefined>;
+	const host = editor as unknown as Record<
+		symbol,
+		LineEdgeMeasure | undefined
+	>;
 	if (host[LINE_EDGE_SEAM]) {
 		return;
 	}
@@ -246,7 +249,12 @@ function handleTableCellKey(
 		return true;
 	}
 
-	if (isCellArrowKey(event.key) && !event.metaKey && !event.ctrlKey && !event.altKey) {
+	if (
+		isCellArrowKey(event.key) &&
+		!event.metaKey &&
+		!event.ctrlKey &&
+		!event.altKey
+	) {
 		const coord = fieldEditor.activeCellCoord;
 		if (!coord) {
 			return true;

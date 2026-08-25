@@ -368,7 +368,10 @@ export {
 // ── Utilities ───────────────────────────────────────────────
 export { composeRefs } from "./utils/composeRefs";
 export { renderAsChild, type AsChildProps } from "./utils/asChild";
-export { DATA_ATTRS, buildDataAttributes } from "./utils/dataAttributes";
+export {
+	DATA_ATTRS,
+	buildDataAttributes,
+} from "@input/pen-dom/utils/dataAttributes";
 export {
 	getAttachedFieldEditor,
 	getAttachedFieldEditorStore,
@@ -406,6 +409,9 @@ export type {
 	HistoryState,
 } from "@input/pen-history";
 export type { MultiplayerState, PeerState } from "@input/pen-multiplayer";
-export type { RemoteCursorState, RemoteSelectionState } from "@input/pen-multiplayer";
+export type {
+	RemoteCursorState,
+	RemoteSelectionState,
+} from "@input/pen-multiplayer";
 
 export type { CreateEditorOptions } from "@input/pen-types";

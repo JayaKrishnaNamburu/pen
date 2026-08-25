@@ -4,13 +4,13 @@ import {
 	MAX_PEN_STREAM_REQUEST_ARRAY_ITEMS,
 	MAX_PEN_STREAM_REQUEST_BYTES,
 	MAX_PEN_STREAM_REQUEST_DEPTH,
-	parsePenStreamRequest,
+	parsePenStreamRequest
 } from "../parsePenStreamRequest";
 
 const TOOL_CALL = {
 	toolCallId: "tc-1",
 	name: "read_document",
-	input: {},
+	input: {}
 };
 
 function nest(depth: number): unknown {
@@ -38,17 +38,17 @@ async function postBody(body: unknown): Promise<{
 			unregisterTool() {},
 			listTools: () => [],
 			getTool: () => null,
-			executeTool,
+			executeTool
 		},
 		onRequest,
-		pingInterval: 60_000,
+		pingInterval: 60_000
 	});
 	const raw = typeof body === "string" ? body : JSON.stringify(body);
 	const response = await handler(
 		new Request("http://localhost/sse", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
-			body: raw,
+			body: raw
 		}),
 	);
 	return { status: response.status, executeTool, onRequest };
@@ -67,18 +67,18 @@ const HOSTILE_BODIES: Array<{ name: string; body: unknown }> = [
 	{ name: "non-array toolCalls", body: { prompt: "x", toolCalls: { name: "echo" } } },
 	{
 		name: "toolCalls item missing toolCallId",
-		body: { prompt: "x", toolCalls: [{ name: "echo", input: {} }] },
+		body: { prompt: "x", toolCalls: [{ name: "echo", input: {} }] }
 	},
 	{
 		name: "toolCalls item missing input",
-		body: { prompt: "x", toolCalls: [{ toolCallId: "tc-1", name: "echo" }] },
+		body: { prompt: "x", toolCalls: [{ toolCallId: "tc-1", name: "echo" }] }
 	},
 	{
 		name: "toolCalls item extra field",
 		body: {
 			prompt: "x",
-			toolCalls: [{ ...TOOL_CALL, execute: "echo" }],
-		},
+			toolCalls: [{ ...TOOL_CALL, execute: "echo" }]
+		}
 	},
 	{
 		name: "tools item extra field",
@@ -90,46 +90,46 @@ const HOSTILE_BODIES: Array<{ name: string; body: unknown }> = [
 					name: "echo",
 					description: "echo",
 					inputSchema: { type: "object" },
-					handler: "fn",
+					handler: "fn"
 				},
-			],
-		},
+			]
+		}
 	},
 	{
 		name: "unknown top-level field",
-		body: { prompt: "x", toolCalls: [TOOL_CALL], extra: 1 },
+		body: { prompt: "x", toolCalls: [TOOL_CALL], extra: 1 }
 	},
 	{
 		name: "unknown context field",
 		body: {
 			prompt: "x",
 			context: { docId: "doc-1", extra: 1 },
-			toolCalls: [TOOL_CALL],
-		},
+			toolCalls: [TOOL_CALL]
+		}
 	},
 	{
 		name: "top-level editor",
 		body: {
 			prompt: "x",
 			editor: { apply: 1, internals: 1 },
-			toolCalls: [TOOL_CALL],
-		},
+			toolCalls: [TOOL_CALL]
+		}
 	},
 	{
 		name: "context.editor",
 		body: {
 			prompt: "x",
 			context: { editor: { apply: 1, internals: 1 } },
-			toolCalls: [TOOL_CALL],
-		},
+			toolCalls: [TOOL_CALL]
+		}
 	},
 	{
 		name: "message extra field",
 		body: {
 			prompt: "x",
 			toolCalls: [TOOL_CALL],
-			messages: [{ role: "user", content: "hi", extra: true }],
-		},
+			messages: [{ role: "user", content: "hi", extra: true }]
+		}
 	},
 	{
 		name: "text selection extra field",
@@ -142,9 +142,9 @@ const HOSTILE_BODIES: Array<{ name: string; body: unknown }> = [
 					anchor: { blockId: "b1", offset: 0 },
 					focus: { blockId: "b1", offset: 1 },
 					isCollapsed: false,
-				},
-			},
-		},
+				}
+			}
+		}
 	},
 	{
 		name: "negative text offset",
@@ -155,10 +155,10 @@ const HOSTILE_BODIES: Array<{ name: string; body: unknown }> = [
 				selection: {
 					type: "text",
 					anchor: { blockId: "b1", offset: -1 },
-					focus: { blockId: "b1", offset: 0 },
-				},
-			},
-		},
+					focus: { blockId: "b1", offset: 0 }
+				}
+			}
+		}
 	},
 	{
 		name: "fractional text offset",
@@ -169,22 +169,22 @@ const HOSTILE_BODIES: Array<{ name: string; body: unknown }> = [
 				selection: {
 					type: "text",
 					anchor: { blockId: "b1", offset: 1.5 },
-					focus: { blockId: "b1", offset: 2 },
-				},
-			},
-		},
+					focus: { blockId: "b1", offset: 2 }
+				}
+			}
+		}
 	},
 	{
 		name: "protocolVersion 2",
-		body: { prompt: "x", toolCalls: [TOOL_CALL], protocolVersion: 2 },
+		body: { prompt: "x", toolCalls: [TOOL_CALL], protocolVersion: 2 }
 	},
 	{
 		name: "protocolVersion 0",
-		body: { prompt: "x", toolCalls: [TOOL_CALL], protocolVersion: 0 },
+		body: { prompt: "x", toolCalls: [TOOL_CALL], protocolVersion: 0 }
 	},
 	{
 		name: "protocolVersion 1.5",
-		body: { prompt: "x", toolCalls: [TOOL_CALL], protocolVersion: 1.5 },
+		body: { prompt: "x", toolCalls: [TOOL_CALL], protocolVersion: 1.5 }
 	},
 	{
 		name: "deeply nested toolCall.input",
@@ -193,17 +193,17 @@ const HOSTILE_BODIES: Array<{ name: string; body: unknown }> = [
 			toolCalls: [
 				{
 					...TOOL_CALL,
-					input: nest(MAX_PEN_STREAM_REQUEST_DEPTH),
+					input: nest(MAX_PEN_STREAM_REQUEST_DEPTH)
 				},
-			],
-		},
+			]
+		}
 	},
 	{
 		name: "oversized prompt",
 		body: {
 			prompt: "x".repeat(MAX_PEN_STREAM_REQUEST_BYTES + 1),
-			toolCalls: [TOOL_CALL],
-		},
+			toolCalls: [TOOL_CALL]
+		}
 	},
 	{
 		name: "oversized toolCalls array",
@@ -214,19 +214,19 @@ const HOSTILE_BODIES: Array<{ name: string; body: unknown }> = [
 				(_, i) => ({
 					toolCallId: `tc-${i}`,
 					name: "read_document",
-					input: {},
+					input: {}
 				}),
-			),
-		},
+			)
+		}
 	},
 	{ name: "tools as non-array", body: { prompt: "x", tools: { name: "echo" } } },
 	{
 		name: "messages as non-array",
-		body: { prompt: "x", messages: { role: "user", content: "x" } },
+		body: { prompt: "x", messages: { role: "user", content: "x" } }
 	},
 	{
 		name: "protocolVersion string",
-		body: { prompt: "x", toolCalls: [TOOL_CALL], protocolVersion: "1" },
+		body: { prompt: "x", toolCalls: [TOOL_CALL], protocolVersion: "1" }
 	},
 	{
 		name: "NaN text offset",
@@ -237,10 +237,10 @@ const HOSTILE_BODIES: Array<{ name: string; body: unknown }> = [
 				selection: {
 					type: "text",
 					anchor: { blockId: "b1", offset: Number.NaN },
-					focus: { blockId: "b1", offset: 0 },
-				},
-			},
-		},
+					focus: { blockId: "b1", offset: 0 }
+				}
+			}
+		}
 	},
 	{
 		name: "Infinity text offset",
@@ -251,10 +251,10 @@ const HOSTILE_BODIES: Array<{ name: string; body: unknown }> = [
 				selection: {
 					type: "text",
 					anchor: { blockId: "b1", offset: Number.POSITIVE_INFINITY },
-					focus: { blockId: "b1", offset: 0 },
-				},
-			},
-		},
+					focus: { blockId: "b1", offset: 0 }
+				}
+			}
+		}
 	},
 	{ name: "null body", body: null },
 	{
@@ -262,35 +262,35 @@ const HOSTILE_BODIES: Array<{ name: string; body: unknown }> = [
 		body: {
 			prompt: "x",
 			toolCalls: [TOOL_CALL],
-			allowedMutatingTools: ["insert_block"],
-		},
+			allowedMutatingTools: ["insert_block"]
+		}
 	},
 	{
 		name: "signal object is not an AbortSignal",
-		body: { prompt: "x", toolCalls: [TOOL_CALL], signal: { aborted: false } },
+		body: { prompt: "x", toolCalls: [TOOL_CALL], signal: { aborted: false } }
 	},
 ];
 
 const HOSTILE_JSON: Array<{ name: string; json: string }> = [
 	{
 		name: "top-level __proto__",
-		json: '{"prompt":"x","__proto__":{"admin":true},"toolCalls":[{"toolCallId":"tc-1","name":"echo","input":{}}]}',
+		json: '{"prompt":"x","__proto__":{"admin":true},"toolCalls":[{"toolCallId":"tc-1","name":"echo","input":{}}]}'
 	},
 	{
 		name: "top-level constructor",
-		json: '{"prompt":"x","constructor":{"prototype":{}},"toolCalls":[{"toolCallId":"tc-1","name":"echo","input":{}}]}',
+		json: '{"prompt":"x","constructor":{"prototype":{}},"toolCalls":[{"toolCallId":"tc-1","name":"echo","input":{}}]}'
 	},
 	{
 		name: "__proto__ inside toolCall.input",
-		json: '{"prompt":"x","toolCalls":[{"toolCallId":"tc-1","name":"echo","input":{"__proto__":{"polluted":true}}}]}',
+		json: '{"prompt":"x","toolCalls":[{"toolCallId":"tc-1","name":"echo","input":{"__proto__":{"polluted":true}}}]}'
 	},
 	{
 		name: "constructor inside toolCall.input",
-		json: '{"prompt":"x","toolCalls":[{"toolCallId":"tc-1","name":"echo","input":{"constructor":{"prototype":{}}}}]}',
+		json: '{"prompt":"x","toolCalls":[{"toolCallId":"tc-1","name":"echo","input":{"constructor":{"prototype":{}}}}]}'
 	},
 	{
 		name: "prototype inside context",
-		json: '{"prompt":"x","context":{"prototype":{}},"toolCalls":[{"toolCallId":"tc-1","name":"echo","input":{}}]}',
+		json: '{"prompt":"x","context":{"prototype":{}},"toolCalls":[{"toolCallId":"tc-1","name":"echo","input":{}}]}'
 	},
 	{ name: "invalid JSON", json: "{not-json" },
 ];
@@ -307,7 +307,7 @@ describe("SSE hostile bodies are 400 before executeTool", () => {
 	it("a well-formed body still reaches executeTool", async () => {
 		const { status, executeTool, onRequest } = await postBody({
 			prompt: "x",
-			toolCalls: [TOOL_CALL],
+			toolCalls: [TOOL_CALL]
 		});
 		expect(status).toBe(200);
 		expect(onRequest).toHaveBeenCalledTimes(1);
@@ -341,9 +341,9 @@ describe("parsePenStreamRequest hostile shapes", () => {
 				toolCalls: [
 					{
 						...TOOL_CALL,
-						input: nest(MAX_PEN_STREAM_REQUEST_DEPTH - 3),
+						input: nest(MAX_PEN_STREAM_REQUEST_DEPTH - 3)
 					},
-				],
+				]
 			}),
 		).not.toBeNull();
 		expect(
@@ -352,9 +352,9 @@ describe("parsePenStreamRequest hostile shapes", () => {
 				toolCalls: [
 					{
 						...TOOL_CALL,
-						input: nest(MAX_PEN_STREAM_REQUEST_DEPTH),
+						input: nest(MAX_PEN_STREAM_REQUEST_DEPTH)
 					},
-				],
+				]
 			}),
 		).toBeNull();
 	});
@@ -362,7 +362,7 @@ describe("parsePenStreamRequest hostile shapes", () => {
 	it("rejects a prompt longer than MAX_PEN_STREAM_REQUEST_BYTES", () => {
 		expect(
 			parsePenStreamRequest({
-				prompt: "x".repeat(MAX_PEN_STREAM_REQUEST_BYTES + 1),
+				prompt: "x".repeat(MAX_PEN_STREAM_REQUEST_BYTES + 1)
 			}),
 		).toBeNull();
 	});

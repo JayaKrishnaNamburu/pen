@@ -2,25 +2,66 @@ import type { ModelMessage } from "@input/pen-types";
 import type { ChatEvent, ChatRequest } from "./protocol";
 
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
-const DEFAULT_MODEL = "claude-sonnet-4-5";
+const DEFAULT_MODEL = "claude-sonnet-5";
+
+const PROMPT_PREAMBLE = "You are a writing assistant embedded in a rich text document.";
 
 /**
- * Pen decides what kind of answer it wants and shows it in the request: tools
- * mean "change the document", no tools mean "give me prose for a block". Any
- * text the model writes is inserted into the document, so a chatty preamble
- * ends up in the user's paragraph — hence the blunt instructions.
+ * Any text the model writes is inserted into the document, so a chatty preamble
+ * ends up in the user's paragraph — hence the blunt instruction.
  */
-const SYSTEM_PROMPT = [
-	"You are a writing assistant embedded in a rich text document.",
-	"",
-	"When the request offers tools: read the document first if you need context,",
-	"then make every change through tool calls. Prefer write_document with",
-	"markdown. Do not write any prose in your reply — it would be inserted into",
-	"the document as content.",
-	"",
-	"When the request offers no tools: reply with the document text itself and",
-	"nothing else. No preamble, no explanation, no quotes around it.",
+const NO_TOOLS_PROMPT = [
+	"When the request offers no tools: follow the output contract stated in the",
+	"request exactly. If it asks for a specific format (such as an XML plan),",
+	"return only that. Otherwise reply with the document text itself and nothing",
+	"else — no preamble, no explanation, no quotes around it.",
 ].join("\n");
+
+const MULTI_TOOL_PROMPT = [
+	"When the request offers tools: first call read_document with format",
+	'"markdown" and annotateBlocks true — the `<!-- block:<id> <type> -->`',
+	"comments give you the block ids every other tool expects. Then edit:",
+	"update_block rewrites, converts, or restyles one existing block in place;",
+	"write_document with markdown inserts new content (pass replaceBlockIds to",
+	"swap existing blocks for it); delete_block and move_block do what they say.",
+	"Cover every part of the request before stopping. Do not write any prose in",
+	"your reply — it would be inserted into the document as content.",
+].join("\n");
+
+/**
+ * The edit_document channel is one edit, preceded by a read only when the
+ * request carries no block annotations. The earlier version of this prompt
+ * mandated the read unconditionally — but the working set already annotates
+ * documents up to the fast-apply bound, so an obedient model paid a full
+ * model round trip to fetch ids it had been handed. Refusals answer
+ * themselves: a rejected operation comes back with the reason and a fresh
+ * outline (`spec-better-ai/01-edit-channel.md` EC5, EC10, EC14).
+ */
+const EDIT_DOCUMENT_PROMPT = [
+	"When the request offers tools: the block ids edit_document expects come",
+	"from `<!-- block:<id> <type> -->` annotations. If the request already",
+	"carries them, call edit_document directly — reading first adds a round",
+	"trip for ids you have. Only call read_document (format \"markdown\",",
+	"annotateBlocks true) when no annotations are present. Send every operation",
+	"the request needs in one operations array, in document order. If the",
+	"result reports rejected operations, read the reason and the outline it",
+	"returns and retry only those operations. Cover every part of the request",
+	"before stopping. On this channel your reply text is never applied to the",
+	"document; keep it to one short sentence or none.",
+].join("\n");
+
+function buildSystemPrompt(request: ChatRequest): string {
+	const offersEditDocument = request.tools.some(
+		(tool) => tool.name === "edit_document",
+	);
+	return [
+		PROMPT_PREAMBLE,
+		"",
+		offersEditDocument ? EDIT_DOCUMENT_PROMPT : MULTI_TOOL_PROMPT,
+		"",
+		NO_TOOLS_PROMPT,
+	].join("\n");
+}
 
 /**
  * Talks to Anthropic and translates its stream into `ChatEvent`s.
@@ -44,15 +85,19 @@ export async function* streamAnthropic(
 		},
 		body: JSON.stringify({
 			model: process.env.ANTHROPIC_MODEL ?? DEFAULT_MODEL,
-			max_tokens: 4096,
+			max_tokens: 8192,
 			stream: true,
-			system: SYSTEM_PROMPT,
+			system: buildSystemPrompt(request),
 			messages: request.messages.map(toAnthropicMessage),
 			tools: request.tools.map((tool) => ({
 				name: tool.name,
 				description: tool.description,
 				input_schema: tool.inputSchema,
+				...(tool.name === "edit_document"
+					? { eager_input_streaming: true }
+					: {}),
 			})),
+			...anthropicToolChoice(request),
 		}),
 		signal,
 	});
@@ -135,6 +180,11 @@ async function* readAnthropicStream(
 						toolName: event.content_block.name ?? "",
 						json: "",
 					};
+					yield {
+						type: "tool-input-start",
+						toolCallId: pendingToolCall.toolCallId,
+						toolName: pendingToolCall.toolName,
+					};
 				}
 				break;
 			}
@@ -147,13 +197,37 @@ async function* readAnthropicStream(
 					event.delta?.type === "input_json_delta" &&
 					pendingToolCall
 				) {
-					pendingToolCall.json += event.delta.partial_json ?? "";
+					const fragment = event.delta.partial_json ?? "";
+					pendingToolCall.json += fragment;
+					if (fragment.length > 0) {
+						yield {
+							type: "tool-input-delta",
+							toolCallId: pendingToolCall.toolCallId,
+							inputTextDelta: fragment,
+						};
+					}
 				}
 				break;
 			}
 
 			case "content_block_stop": {
 				if (pendingToolCall) {
+					yield {
+						type: "tool-call",
+						toolCallId: pendingToolCall.toolCallId,
+						toolName: pendingToolCall.toolName,
+						input: parseToolInput(pendingToolCall.json),
+					};
+					pendingToolCall = null;
+				}
+				break;
+			}
+
+			case "message_delta": {
+				if (
+					event.delta?.stop_reason === "max_tokens" &&
+					pendingToolCall
+				) {
 					yield {
 						type: "tool-call",
 						toolCallId: pendingToolCall.toolCallId,
@@ -178,25 +252,60 @@ async function* readAnthropicStream(
 		}
 	}
 
+	if (pendingToolCall) {
+		yield {
+			type: "tool-call",
+			toolCallId: pendingToolCall.toolCallId,
+			toolName: pendingToolCall.toolName,
+			input: parseToolInput(pendingToolCall.json),
+		};
+	}
+
 	yield { type: "done" };
+}
+
+function anthropicToolChoice(
+	request: ChatRequest,
+): { tool_choice: { type: "auto" | "any" | "tool"; name?: string } } | Record<string, never> {
+	const choice = request.toolChoice;
+	if (!choice) {
+		return {};
+	}
+	// Forced tool choice is rejected alongside extended thinking; this
+	// adapter does not send thinking, so it can state the loop's intent.
+	if (choice.type === "tool") {
+		return { tool_choice: { type: "tool", name: choice.name } };
+	}
+	return { tool_choice: { type: choice.type } };
 }
 
 function parseToolInput(json: string): unknown {
 	if (json.trim().length === 0) {
-		return {};
+		return {
+			truncated: true,
+			reason: "Tool input was truncated (max_tokens); the argument JSON did not parse.",
+		};
 	}
 
 	try {
 		return JSON.parse(json);
 	} catch {
-		return {};
+		return {
+			truncated: true,
+			reason: "Tool input was truncated (max_tokens); the argument JSON did not parse.",
+		};
 	}
 }
 
 interface AnthropicStreamEvent {
 	type: string;
 	content_block?: { type?: string; id?: string; name?: string };
-	delta?: { type?: string; text?: string; partial_json?: string };
+	delta?: {
+		type?: string;
+		text?: string;
+		partial_json?: string;
+		stop_reason?: string;
+	};
 	error?: { message?: string };
 }
 

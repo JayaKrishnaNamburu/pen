@@ -1,9 +1,13 @@
 import type { Editor, MoveBlockOp } from "@input/pen-types";
 import type React from "react";
 import { measureWithRoot } from "@input/pen-dom";
-import { DATA_ATTRS } from "../../utils/dataAttributes";
-import { BLOCK_DRAG_MIME, parseBlockDragPayload, type BlockDropPosition } from "./blockDragSession";
-import type { InlineAtomDragSnapshot } from "./inlineAtomInteraction";
+import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
+import {
+	BLOCK_DRAG_MIME,
+	parseBlockDragPayload,
+	type BlockDropPosition,
+} from "./blockDragSession";
+import type { InlineAtomDragSnapshot } from "@input/pen-dom";
 
 export interface InlineDropCaretStyle {
 	left: number;

@@ -37,9 +37,15 @@ describe("clipboard serialization (CH5)", () => {
 			},
 		);
 
-		writePenClipboard([], "", "copied", undefined, stubEditor((event) => {
-			diagnostics.push(event);
-		}));
+		writePenClipboard(
+			[],
+			"",
+			"copied",
+			undefined,
+			stubEditor((event) => {
+				diagnostics.push(event);
+			}),
+		);
 
 		await vi.waitFor(() => {
 			expect(diagnostics).toHaveLength(1);

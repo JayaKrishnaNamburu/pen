@@ -4,7 +4,7 @@ import {
 	deleteAdjacentInlineAtom,
 	deleteBackward,
 	deleteForward,
-	selectAdjacentInlineAtom,
+	selectAdjacentInlineAtom
 } from "..";
 import { isCollapsed } from "../../selection/helpers";
 import {
@@ -12,7 +12,7 @@ import {
 	createCommandEditor,
 	createCommandHarness,
 	insertMention,
-	liveRegistry,
+	liveRegistry
 } from "./fixture";
 
 /**
@@ -72,8 +72,8 @@ describe("inline atom delete select-then-delete", () => {
 				{
 					insert: {
 						type: "mention",
-						props: { id: "1", label: "Ada" },
-					},
+						props: { id: "1", label: "Ada" }
+					}
 				},
 				{ insert: "z" },
 			]);
@@ -88,9 +88,8 @@ describe("inline atom delete select-then-delete", () => {
 			expect(selected).toEqual(
 				expect.objectContaining({
 					type: "text",
-					isCollapsed: false,
 					anchor: { blockId: "a", offset: 2 },
-					focus: { blockId: "a", offset: 3 },
+					focus: { blockId: "a", offset: 3 }
 				}),
 			);
 			expect(
@@ -199,10 +198,10 @@ describe("inline atom delete select-then-delete", () => {
 						blockId: "a",
 						from: 2,
 				to: 2 + 1,
-				insert: "",
+				insert: ""
 					},
 				],
-				caret: { blockId: "a", offset: 2 },
+				caret: { blockId: "a", offset: 2 }
 			});
 			expect(hasMention(editor)).toBe(true);
 			editor.apply(oneShot!.ops, { origin: "user" });
@@ -227,9 +226,8 @@ describe("inline atom delete select-then-delete", () => {
 		expect(selected).toEqual(
 			expect.objectContaining({
 				type: "text",
-				isCollapsed: false,
 				anchor: { blockId: "a", offset: 2 },
-				focus: { blockId: "a", offset: 3 },
+				focus: { blockId: "a", offset: 3 }
 			}),
 		);
 		expectAtomSelected(liveEditor);

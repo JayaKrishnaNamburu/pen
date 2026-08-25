@@ -220,7 +220,6 @@ describe("@input/pen-react escape key handling", () => {
 			type: "text",
 			anchor: { blockId: firstBlockId, offset: 1 },
 			focus: { blockId: secondBlockId, offset: 4 },
-			isMultiBlock: true,
 		});
 
 		await act(async () => {
@@ -349,7 +348,6 @@ describe("@input/pen-react escape key handling", () => {
 			type: "text",
 			anchor: { blockId: firstBlockId, offset: 1 },
 			focus: { blockId: secondBlockId, offset: 3 },
-			isMultiBlock: true,
 		});
 		expect(getFieldEditor(editor).getSnapshot()).toMatchObject({
 			focusBlockId: firstBlockId,

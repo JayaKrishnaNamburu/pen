@@ -25,9 +25,11 @@ export async function handleChatRequest(
 		return;
 	}
 
+	incoming.socket?.setNoDelay(true);
 	response.writeHead(200, {
 		"content-type": "application/x-ndjson",
 		"cache-control": "no-cache",
+		"x-accel-buffering": "no",
 	});
 
 	// Stopping a generation aborts the browser request; pass that on to the

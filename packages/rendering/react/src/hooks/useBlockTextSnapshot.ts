@@ -32,7 +32,9 @@ export function useBlockTextSnapshot(
 	return useSyncExternalStore(
 		(callback) =>
 			editor.on("commit", (event) => {
-				if (affectedBlockIdsFromSummary(event.summary).includes(blockId)) {
+				if (
+					affectedBlockIdsFromSummary(event.summary).includes(blockId)
+				) {
 					callback();
 				}
 			}),

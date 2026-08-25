@@ -48,8 +48,7 @@ export function handleEscapeSelectionTransition(options: {
 
 	if (selection?.type === "cell") {
 		const { blockId, anchor, head } = selection;
-		const isMultiCell =
-			anchor.row !== head.row || anchor.col !== head.col;
+		const isMultiCell = anchor.row !== head.row || anchor.col !== head.col;
 
 		if (isMultiCell) {
 			editor.selectCell(blockId, anchor.row, anchor.col);

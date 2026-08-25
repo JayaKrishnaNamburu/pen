@@ -1,7 +1,11 @@
 // @vitest-environment jsdom
 
 import { afterEach, describe, expect, it } from "vitest";
-import { createEditor, defineExtension, ariaReadOnlyFacet } from "@input/pen-core";
+import {
+	createEditor,
+	defineExtension,
+	ariaReadOnlyFacet,
+} from "@input/pen-core";
 import { defaultSchema } from "@input/pen-schema-default";
 import { type Editor } from "@input/pen-types";
 import { mountEditor } from "../host/mountEditor";
@@ -23,7 +27,9 @@ function createBareEditor(ariaReadOnlyFacetValue?: boolean): Editor {
 				: [
 						defineExtension({
 							name: "aria-readonly-split",
-							facets: [ariaReadOnlyFacet.of(ariaReadOnlyFacetValue)],
+							facets: [
+								ariaReadOnlyFacet.of(ariaReadOnlyFacetValue),
+							],
 						}),
 					],
 	});

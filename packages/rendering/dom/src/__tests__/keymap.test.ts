@@ -6,10 +6,7 @@ import {
 	type KeymapEvent,
 } from "../field-editor/keymap";
 
-function event(
-	key: string,
-	mods: Omit<KeymapEvent, "key"> = {},
-): KeymapEvent {
+function event(key: string, mods: Omit<KeymapEvent, "key"> = {}): KeymapEvent {
 	return {
 		key,
 		altKey: mods.altKey ?? false,
@@ -84,21 +81,31 @@ describe("resolveKeymap", () => {
 
 	it("K1: Shift-ArrowLeft is distinct from ArrowLeft", () => {
 		expect(
-			resolveKeymap(caretBindings, event("ArrowLeft", { shiftKey: true }), {
-				composing: false,
-			}),
+			resolveKeymap(
+				caretBindings,
+				event("ArrowLeft", { shiftKey: true }),
+				{
+					composing: false,
+				},
+			),
 		).toBe("pen.caretLeft.extend");
 		expect(
-			resolveKeymap(caretBindings, event("ArrowLeft"), { composing: false }),
+			resolveKeymap(caretBindings, event("ArrowLeft"), {
+				composing: false,
+			}),
 		).toBe("pen.caretLeft");
 	});
 
 	it("K4: during composition only Escape matches", () => {
 		expect(
-			resolveKeymap(caretBindings, event("ArrowLeft"), { composing: true }),
+			resolveKeymap(caretBindings, event("ArrowLeft"), {
+				composing: true,
+			}),
 		).toBeNull();
 		expect(
-			resolveKeymap(caretBindings, event("ArrowRight"), { composing: true }),
+			resolveKeymap(caretBindings, event("ArrowRight"), {
+				composing: true,
+			}),
 		).toBeNull();
 		expect(
 			resolveKeymap(caretBindings, event("a"), { composing: true }),
@@ -248,9 +255,9 @@ describe("resolveKeymap", () => {
 	it("M5: rtl does not swap vertical caret commands", () => {
 		const rtl = { composing: false, direction: "rtl" as const };
 
-		expect(resolveKeymap(directedMotionBindings, event("ArrowUp"), rtl)).toBe(
-			"pen.caretUp",
-		);
+		expect(
+			resolveKeymap(directedMotionBindings, event("ArrowUp"), rtl),
+		).toBe("pen.caretUp");
 		expect(
 			resolveKeymap(
 				directedMotionBindings,
@@ -276,9 +283,9 @@ describe("resolveKeymap", () => {
 		expect(
 			resolveKeymap(directedMotionBindings, event("Backspace"), rtl),
 		).toBe("pen.deleteBackward");
-		expect(resolveKeymap(directedMotionBindings, event("Delete"), rtl)).toBe(
-			"pen.deleteForward",
-		);
+		expect(
+			resolveKeymap(directedMotionBindings, event("Delete"), rtl),
+		).toBe("pen.deleteForward");
 		expect(
 			resolveKeymap(
 				directedMotionBindings,

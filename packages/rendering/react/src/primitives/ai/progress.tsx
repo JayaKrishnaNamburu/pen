@@ -17,21 +17,17 @@ export function AIProgress(props: AIProgressProps) {
 	const toolOutputCount = streamEvents.filter(
 		(event) => event.type === "tool-output",
 	).length;
-	return renderAsChild(
-		props,
-		"div",
-		{
-			"data-pen-ai-progress": "",
-			"data-status": state.status,
-			"data-step-count": generation?.steps.length ?? 0,
-			"data-stream-event-count": streamEvents.length,
-			"data-last-stream-event": lastStreamEvent?.type ?? undefined,
-			"data-tool-output-count": toolOutputCount,
-			"data-structured-preview-count":
-				structuredPreview.preview?.reviewItems.length ?? 0,
-			"data-structured-preview-state":
-				structuredPreview.preview?.planState ?? undefined,
-			"data-structured-preview-patch-count": structuredPreview.patchCount,
-		},
-	);
+	return renderAsChild(props, "div", {
+		"data-pen-ai-progress": "",
+		"data-status": state.status,
+		"data-step-count": generation?.steps.length ?? 0,
+		"data-stream-event-count": streamEvents.length,
+		"data-last-stream-event": lastStreamEvent?.type ?? undefined,
+		"data-tool-output-count": toolOutputCount,
+		"data-structured-preview-count":
+			structuredPreview.preview?.reviewItems.length ?? 0,
+		"data-structured-preview-state":
+			structuredPreview.preview?.planState ?? undefined,
+		"data-structured-preview-patch-count": structuredPreview.patchCount,
+	});
 }

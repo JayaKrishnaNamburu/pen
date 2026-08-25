@@ -19,7 +19,8 @@ const noDefaultExtensionsPreset = {
 
 function createBareEditor(): Editor {
 	return createEditor({
-		schema: defaultSchema, preset: noDefaultExtensionsPreset,
+		schema: defaultSchema,
+		preset: noDefaultExtensionsPreset,
 	});
 }
 
@@ -86,14 +87,19 @@ describe("SEC4 clipboard JSON ingest bounds", () => {
 		const editor = createBareEditor();
 		const result = admitClipboardBlocks(
 			[
-				{ type: "paragraph", content: "x".repeat(CLIPBOARD_INGEST_MAX_TEXT_SIZE) },
+				{
+					type: "paragraph",
+					content: "x".repeat(CLIPBOARD_INGEST_MAX_TEXT_SIZE),
+				},
 				{ type: "paragraph", content: "overflow" },
 			],
 			editor,
 		);
 
 		expect(result.blocks).toHaveLength(1);
-		expect(result.blocks[0]?.content).toHaveLength(CLIPBOARD_INGEST_MAX_TEXT_SIZE);
+		expect(result.blocks[0]?.content).toHaveLength(
+			CLIPBOARD_INGEST_MAX_TEXT_SIZE,
+		);
 		expect(result.droppedByReason).toEqual([
 			{
 				reason: "text-size-exceeded",

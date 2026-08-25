@@ -46,7 +46,6 @@ export abstract class ContentEditableBackendCore {
 	protected lastWatchdogMismatch: string | null = null;
 	protected compositionStartText: string | null = null;
 	protected deferredRemoteDeltas: Array<{ delta: FieldEditorDelta[] }> = [];
-	protected pendingDomSyncFrame: number | null = null;
 	protected unsubscribeDecorationsChange: (() => void) | null = null;
 	protected inlineDecorationsSignature: readonly InlineDecoration[] | null =
 		null;
@@ -172,10 +171,6 @@ export abstract class ContentEditableBackendCore {
 			this.mutationObserver.disconnect();
 			this.mutationObserver = null;
 		}
-		if (this.pendingDomSyncFrame != null) {
-			cancelAnimationFrame(this.pendingDomSyncFrame);
-			this.pendingDomSyncFrame = null;
-		}
 		if (this.observer && this.ytext) {
 			this.ytext.unobserve(this.observer);
 		}
@@ -230,7 +225,6 @@ export abstract class ContentEditableBackendCore {
 		});
 		this.ensureActiveDOMMatchesYText();
 		this.restoreDOMSelectionFromEditor();
-		this.scheduleActiveDOMMatchCheck();
 		this.fieldEditor.clearBackendSelectionAuthority("programmatic");
 	}
 
@@ -256,7 +250,6 @@ export abstract class ContentEditableBackendCore {
 		}
 		this.ensureActiveDOMMatchesYText();
 		this.restoreDOMSelectionFromEditor();
-		this.scheduleActiveDOMMatchCheck();
 		this.fieldEditor.clearBackendSelectionAuthority("programmatic");
 	}
 
@@ -365,7 +358,6 @@ export abstract class ContentEditableBackendCore {
 		diff: InlineTextDiffOp[],
 	): void;
 	protected abstract ensureActiveDOMMatchesYText(): boolean;
-	protected abstract scheduleActiveDOMMatchCheck(): void;
 	protected abstract getInlineDecorationsForBlock(): readonly InlineDecoration[];
 	protected abstract getInlineDecorationsSignature(): readonly InlineDecoration[];
 }

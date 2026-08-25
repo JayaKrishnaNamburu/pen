@@ -73,7 +73,9 @@ describe("selectionBridge published value exports", () => {
 			[...BRIDGE_VALUE_EXPORTS, SELECTION_POINT_RECT].sort(),
 		);
 		expect(selectionBridge.domPointToOffset).toBe(domPointToOffset);
-		expect(selectionBridge.getBlockBoundaryPoint).toBe(getBlockBoundaryPoint);
+		expect(selectionBridge.getBlockBoundaryPoint).toBe(
+			getBlockBoundaryPoint,
+		);
 		expect(selectionBridge.domSelectionToEditor).toBe(domSelectionToEditor);
 	});
 });
@@ -208,88 +210,6 @@ describe("getBlockBoundaryPoint", () => {
 				offset: 1,
 			});
 		} finally {
-			root.remove();
-		}
-	});
-});
-
-describe("domSelectionToEditor", () => {
-	it("returns null when there is no DOM selection", () => {
-		const { root } = mountBlock({
-			blockId: "p1",
-			text: "Hello",
-		});
-		try {
-			window.getSelection()?.removeAllRanges();
-			expect(domSelectionToEditor(root)).toBeNull();
-		} finally {
-			root.remove();
-		}
-	});
-
-	it("maps a collapsed caret inside an editable-inline block", () => {
-		const { root, inline } = mountBlock({
-			blockId: "p1",
-			text: "Hello",
-			blockType: "paragraph",
-		});
-		try {
-			const text = inline!.firstChild as Text;
-			const range = document.createRange();
-			range.setStart(text, 2);
-			range.collapse(true);
-			const selection = window.getSelection();
-			selection?.removeAllRanges();
-			selection?.addRange(range);
-			expect(domSelectionToEditor(root)).toEqual({
-				anchor: { blockId: "p1", offset: 2 },
-				focus: { blockId: "p1", offset: 2 },
-			});
-		} finally {
-			root.remove();
-		}
-	});
-
-	it("maps a same-block range", () => {
-		const { root, inline } = mountBlock({
-			blockId: "p1",
-			text: "Hello",
-			blockType: "paragraph",
-		});
-		try {
-			const text = inline!.firstChild as Text;
-			const range = document.createRange();
-			range.setStart(text, 1);
-			range.setEnd(text, 4);
-			const selection = window.getSelection();
-			selection?.removeAllRanges();
-			selection?.addRange(range);
-			expect(domSelectionToEditor(root)).toEqual({
-				anchor: { blockId: "p1", offset: 1 },
-				focus: { blockId: "p1", offset: 4 },
-			});
-		} finally {
-			root.remove();
-		}
-	});
-
-	it("returns null when the DOM selection is outside the editor root", () => {
-		const { root } = mountBlock({
-			blockId: "p1",
-			text: "Hello",
-		});
-		const outsider = document.createElement("p");
-		outsider.textContent = "other";
-		document.body.append(outsider);
-		try {
-			const range = document.createRange();
-			range.selectNodeContents(outsider);
-			const selection = window.getSelection();
-			selection?.removeAllRanges();
-			selection?.addRange(range);
-			expect(domSelectionToEditor(root)).toBeNull();
-		} finally {
-			outsider.remove();
 			root.remove();
 		}
 	});

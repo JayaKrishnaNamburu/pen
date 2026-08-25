@@ -24,12 +24,7 @@ afterEach(() => {
 	vi.restoreAllMocks();
 });
 
-function rect(
-	left: number,
-	top: number,
-	width: number,
-	height: number,
-): Rect {
+function rect(left: number, top: number, width: number, height: number): Rect {
 	return {
 		x: left,
 		y: top,
@@ -153,9 +148,14 @@ describe("GeometryReader G1", () => {
 			expect(spanCreates).toEqual([]);
 		} finally {
 			if (previous) {
-				Object.defineProperty(Range.prototype, "getClientRects", previous);
+				Object.defineProperty(
+					Range.prototype,
+					"getClientRects",
+					previous,
+				);
 			} else {
-				delete (Range.prototype as { getClientRects?: unknown }).getClientRects;
+				delete (Range.prototype as { getClientRects?: unknown })
+					.getClientRects;
 			}
 		}
 	});
@@ -184,7 +184,10 @@ describe("GeometryReader G1", () => {
 		);
 
 		const reader = createReader(root);
-		const caret = reader.caretRect({ blockId: "p1", offset: 0 }, "downstream");
+		const caret = reader.caretRect(
+			{ blockId: "p1", offset: 0 },
+			"downstream",
+		);
 
 		expect(caret).toEqual(collapsedRect(40, 8, 16));
 	});
@@ -222,9 +225,14 @@ describe("GeometryReader G1", () => {
 			).toBe(24);
 		} finally {
 			if (previous) {
-				Object.defineProperty(Range.prototype, "getClientRects", previous);
+				Object.defineProperty(
+					Range.prototype,
+					"getClientRects",
+					previous,
+				);
 			} else {
-				delete (Range.prototype as { getClientRects?: unknown }).getClientRects;
+				delete (Range.prototype as { getClientRects?: unknown })
+					.getClientRects;
 			}
 		}
 	});
@@ -233,9 +241,8 @@ describe("GeometryReader G1", () => {
 describe("GeometryReader G2", () => {
 	it("G2: per-block cache keyed by commitId, resize generation, and font generation", () => {
 		const root = mountEditorRoot();
-		const caretRect = vi.fn(
-			(point: Point) =>
-				point.blockId === "a" ? rect(0, 0, 0, 16) : rect(0, 20, 0, 16),
+		const caretRect = vi.fn((point: Point) =>
+			point.blockId === "a" ? rect(0, 0, 0, 16) : rect(0, 20, 0, 16),
 		);
 		const reader = createReader(root, {
 			commitId: 1,
@@ -413,7 +420,12 @@ describe("GeometryReader G5", () => {
 			hits: [{ x: 40, y: 16, point: { blockId: "wrap", offset: 14 } }],
 		});
 		expect(
-			verticalCaretTarget(wrapped, { blockId: "wrap", offset: 4 }, "down", 40),
+			verticalCaretTarget(
+				wrapped,
+				{ blockId: "wrap", offset: 4 },
+				"down",
+				40,
+			),
 		).toEqual({
 			point: { blockId: "wrap", offset: 14 },
 			goalX: 40,
@@ -431,7 +443,12 @@ describe("GeometryReader G5", () => {
 			hits: [{ x: 12, y: 40, point: { blockId: "empty", offset: 0 } }],
 		});
 		expect(
-			verticalCaretTarget(empty, { blockId: "prev", offset: 1 }, "down", 12),
+			verticalCaretTarget(
+				empty,
+				{ blockId: "prev", offset: 1 },
+				"down",
+				12,
+			),
 		).toEqual({
 			point: { blockId: "empty", offset: 0 },
 			goalX: 12,
@@ -445,7 +462,12 @@ describe("GeometryReader G5", () => {
 			hits: [{ x: 8, y: 18, point: { blockId: "atoms", offset: 3 } }],
 		});
 		expect(
-			verticalCaretTarget(atoms, { blockId: "atoms", offset: 1 }, "down", 8),
+			verticalCaretTarget(
+				atoms,
+				{ blockId: "atoms", offset: 1 },
+				"down",
+				8,
+			),
 		).toEqual({
 			point: { blockId: "atoms", offset: 3 },
 			goalX: 8,
@@ -479,7 +501,12 @@ describe("GeometryReader G5", () => {
 		);
 		expect(down).toEqual({ point: { blockId: "b", offset: 2 }, goalX: 64 });
 		expect(
-			verticalCaretTarget(blocks, { blockId: "a", offset: 3 }, "down", 64),
+			verticalCaretTarget(
+				blocks,
+				{ blockId: "a", offset: 3 },
+				"down",
+				64,
+			),
 		).toEqual(down);
 		expect(up?.goalX).toBe(64);
 		expect(up?.point.blockId).toBe("a");

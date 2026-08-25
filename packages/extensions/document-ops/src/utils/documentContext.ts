@@ -43,6 +43,7 @@ export interface ContextToolOptions {
 	format: DocumentContextFormat;
 	includeSelection: boolean;
 	includeSuggestions: boolean;
+	annotateBlocks: boolean;
 	range: DocumentRangeInput | null;
 }
 
@@ -50,7 +51,7 @@ type BlockSnapshotHandle =
 	ReturnType<Editor["getBlock"]> extends infer T ? NonNullable<T> : never;
 
 const SURROUNDING_BLOCK_RADIUS = 2;
-const SUMMARY_PREVIEW_LIMIT = 80;
+const SUMMARY_PREVIEW_LIMIT = 160;
 
 export function normalizeContextToolOptions(input: unknown): ContextToolOptions {
 	const options = (input ?? {}) as Record<string, unknown>;
@@ -63,6 +64,7 @@ export function normalizeContextToolOptions(input: unknown): ContextToolOptions 
 				: "summary",
 		includeSelection: options.includeSelection === true,
 		includeSuggestions: options.includeSuggestions === true,
+		annotateBlocks: options.annotateBlocks === true,
 		range:
 			options.range && typeof options.range === "object"
 				? (options.range as DocumentRangeInput)
@@ -115,6 +117,43 @@ export function formatBlocksAsMarkdown(blocks: DocumentBlockSnapshot[]): string 
 		.map((block) => block.markdown)
 		.filter((block) => block.length > 0)
 		.join("\n\n");
+}
+
+/** Matches one block annotation comment produced by {@link formatBlocksAsAnnotatedMarkdown}. */
+const BLOCK_ANNOTATION_PATTERN = /^<!-- block:(\S+) (\S+) -->$/;
+
+/**
+ * Markdown with an id/type comment above every block so a model can address
+ * blocks precisely. Annotations are metadata: strip them with
+ * {@link stripBlockAnnotations} before importing the markdown back.
+ */
+export function formatBlocksAsAnnotatedMarkdown(
+	blocks: DocumentBlockSnapshot[],
+): string {
+	return blocks
+		.map(
+			(block) =>
+				`<!-- block:${block.id} ${block.type} -->\n${block.markdown.trimEnd()}`,
+		)
+		.join("\n\n");
+}
+
+/**
+ * Removes the `<!-- block:<id> <type> -->` lines that annotate markdown given
+ * to a model. Models copy the annotations back into their payloads, so this
+ * runs on the way in — an annotation that reaches the document becomes literal
+ * text in a block.
+ */
+export function stripBlockAnnotations(markdown: string): string {
+	if (!markdown.includes("<!-- block:")) {
+		return markdown;
+	}
+	return markdown
+		.split("\n")
+		.filter((line) => !BLOCK_ANNOTATION_PATTERN.test(line.trim()))
+		.join("\n")
+		.replace(/\n{3,}/g, "\n\n")
+		.trim();
 }
 
 export function exportDocumentRangeAsMarkdown(

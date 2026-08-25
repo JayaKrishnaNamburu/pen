@@ -14,7 +14,7 @@ import { useIsomorphicLayoutEffect } from "../../hooks/useIsomorphicLayoutEffect
 import { useToolbar } from "../../hooks/useToolbar";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { composeRefs } from "../../utils/composeRefs";
-import { DATA_ATTRS } from "../../utils/dataAttributes";
+import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 import { getAttachedFieldEditor } from "../../utils/fieldEditor";
 
 /**
@@ -188,10 +188,7 @@ function syncRovingTabIndex(root: HTMLElement, activeIndex?: number): void {
 	}
 }
 
-function moveRovingFocus(
-	root: HTMLElement,
-	event: React.KeyboardEvent,
-): void {
+function moveRovingFocus(root: HTMLElement, event: React.KeyboardEvent): void {
 	const items = collectToolbarItems(root);
 	if (items.length === 0) {
 		return;

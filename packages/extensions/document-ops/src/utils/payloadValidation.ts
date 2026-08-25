@@ -1,4 +1,4 @@
-import { shouldExposeBlockInTooling } from "@input/pen-content-ops";
+import { shouldExposeBlockInTooling } from "@input/pen-core";
 import type {
 	ApplyOptions,
 	DiagnosticEvent,

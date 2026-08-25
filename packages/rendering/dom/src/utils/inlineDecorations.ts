@@ -36,14 +36,16 @@ export function applyInlineDecorationsToDeltas(
 			if (!text) {
 				return [];
 			}
-			return [{
-				decoration,
-				offset:
-					virtualDecoration.virtualPlacement === "before"
-						? virtualDecoration.from
-						: virtualDecoration.to,
-				text,
-			}];
+			return [
+				{
+					decoration,
+					offset:
+						virtualDecoration.virtualPlacement === "before"
+							? virtualDecoration.from
+							: virtualDecoration.to,
+					text,
+				},
+			];
 		})
 		.sort((left, right) => left.offset - right.offset);
 	if (normalizedDecorations.length === 0 && virtualDecorations.length === 0) {
@@ -335,7 +337,8 @@ function areInlineDecorationRenderEqual(
 		(left.key ?? null) === (right.key ?? null) &&
 		(left.omitFromRender ?? null) === (right.omitFromRender ?? null) &&
 		virtualDecorationText(left) === virtualDecorationText(right) &&
-		virtualDecorationPlacement(left) === virtualDecorationPlacement(right) &&
+		virtualDecorationPlacement(left) ===
+			virtualDecorationPlacement(right) &&
 		areRenderRecordsEqual(left.attributes, right.attributes)
 	);
 }

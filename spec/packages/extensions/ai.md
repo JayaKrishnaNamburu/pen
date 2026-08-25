@@ -71,7 +71,11 @@ The current AI runtime resolves most rewrite behavior into explicit editor targe
 - The preferred rewrite path is `rewrite-selection` with a target kind of either `selection` or `scoped-range`.
 - `scoped-range` is used for synthetic scopes such as `heading`, `paragraph`, `block`, or `document` where the runtime still wants selection-like provenance and diff behavior.
 - Conflict detection uses target provenance such as selection signatures, block revisions, synced generation, and source-text checks before final apply. Alignment compares folded text via core `foldAndNormalize()`, not `toLowerCase()`.
-- Multi-block markdown rewrites stream as staged suggestions so users can review, accept, reject, and undo them like inline fast-apply flows.
+- Multi-block markdown rewrites stream as staged suggestions by default so users can review, accept, reject, and undo them like inline fast-apply flows. Hosts without a review UI can set `mutationPreference: "direct"` on `aiExtension()` to land AI edits immediately; suggest mode and the review lane always stage regardless.
+- Structural prompts (convert to list, tables, restructuring) on small flow documents route through the markdown fast-apply lane rather than the tool loop. Document-scope prompts on small documents build their working set as annotated markdown — each block prefixed with a `<!-- block:<id> <type> -->` comment — so the model can address any block precisely; annotations are stripped from model output and from the merge baseline before ops are built.
+- Fast-apply `replace_text` edits may carry `anchorBefore`/`anchorAfter` text anchors that scope the replacement to part of a block (Morph-style partial edits); anchors must match exactly once.
+- The fast-apply lane is only taken for documents the working set can annotate whole (`AI_FAST_APPLY_MAX_DOCUMENT_BLOCKS`). Larger documents go to the tool loop, because the fast-apply prompt has no block ids to address without those annotations.
+- A markdown strategy that produced model output but committed nothing — an edit plan that did not compile, or one naming blocks the document does not have — finishes as `status: "error"` with a `turnReason`, and emits a `GENERATION_EDIT_NOT_APPLIED` diagnostic. These strategies carry their edit inside the assistant text and throw nothing when it fails to parse, so without this a lost edit is indistinguishable from a completed one. Staged suggestions and review items are outcomes, not lost edits; tool-driven edits are excluded because they apply directly and produce no mutation receipt.
 
 ## Session Behavior
 
@@ -118,6 +122,8 @@ Canonical AI tool surface. Transports authorize a model-driven call before execu
 
 - `openAIToolCall()`, `executeAITool()`, `getAIToolRuntime()`, `listAITools()`, `authorizeAIToolCall()`, `createAIToolTurn()`
 - `openAIToolCall()` authorizes a call and installs the write guard before the transport runs `executeAITool`. Transports must not call `executeAITool` unless the result is `{ ok: true }`.
+- Op budgets are atomic: a batch that exceeds the per-call or per-turn op budget is rejected whole with an `AIToolBudgetError` the model can see, never applied as a silent prefix. A per-call overflow fails only that call; exhausting the turn total ends the turn.
+- The agentic loop's `maxSteps` bounds model passes (round trips), not journal entries; tool results are compacted with explicit truncation markers that tell the model what was cut and how to re-read.
 - `close()` on that opened call restores the patched `editor.apply` and is idempotent: the first result is stored, and later calls return that same result. The write guard is restored in `finally`, not `catch`. A non-throw unwind (abandoning a stream mid-`yield`) runs `finally` and skips `catch`; a `catch`-only restore left the guard patched onto the host editor and silently dropped every later `editor.apply` editor-wide.
 - The live `Editor` used for the guard is `ToolContext.editor` at construction. That is a local runtime field, not `PenStreamRequest.context.editor` (removed from the wire type).
 

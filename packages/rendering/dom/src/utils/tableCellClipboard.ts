@@ -34,7 +34,9 @@ export async function copyCellSelection(
 	for (const rowCells of resolveCellSelectionMatrix(block, selection)) {
 		const row: string[] = [];
 		for (const cellCoord of rowCells) {
-			const cell = block.as("table")?.tableCell(cellCoord.row, cellCoord.col);
+			const cell = block
+				.as("table")
+				?.tableCell(cellCoord.row, cellCoord.col);
 			row.push(cell?.textContent() ?? "");
 		}
 		cellData.push(row);
@@ -178,7 +180,8 @@ function applyPastedCells(
 
 	const table = block.as("table");
 	const rowCount = selection.rowIds?.length ?? table?.tableRowCount() ?? 0;
-	const colCount = selection.columnIds?.length ?? table?.tableColumnCount() ?? 0;
+	const colCount =
+		selection.columnIds?.length ?? table?.tableColumnCount() ?? 0;
 	const startRow = Math.min(selection.anchor.row, selection.head.row);
 	const startCol = Math.min(selection.anchor.col, selection.head.col);
 

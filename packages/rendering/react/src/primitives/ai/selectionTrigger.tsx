@@ -14,8 +14,7 @@ export function AISelectionTrigger(props: AISelectionTriggerProps) {
 	const { controller, editor } = useAIContext();
 	const activeSelection = editor.selection;
 	const isSelectionEligible =
-		activeSelection?.type === "text" &&
-		!isCollapsed(activeSelection);
+		activeSelection?.type === "text" && !isCollapsed(activeSelection);
 	const openInlineSession = React.useCallback(() => {
 		const selection = editor.selection;
 		if (selection?.type !== "text" || isCollapsed(selection)) {
@@ -50,7 +49,8 @@ export function AISelectionTrigger(props: AISelectionTriggerProps) {
 			openInlineSession();
 		};
 		document.addEventListener("keydown", handleKeyDown, true);
-		return () => document.removeEventListener("keydown", handleKeyDown, true);
+		return () =>
+			document.removeEventListener("keydown", handleKeyDown, true);
 	}, [openInlineSession, shortcut]);
 	const triggerProps: AsChildProps & {
 		ref?: React.Ref<HTMLElement>;
@@ -60,15 +60,11 @@ export function AISelectionTrigger(props: AISelectionTriggerProps) {
 		onClick: handleClick,
 	};
 
-	return renderAsChild(
-		triggerProps,
-		"button",
-		{
-			type: "button",
-			"data-pen-ai-selection-trigger": "",
-			disabled: !isSelectionEligible,
-		},
-	);
+	return renderAsChild(triggerProps, "button", {
+		type: "button",
+		"data-pen-ai-selection-trigger": "",
+		disabled: !isSelectionEligible,
+	});
 }
 
 function matchesShortcut(event: KeyboardEvent, shortcut: string): boolean {

@@ -2,9 +2,9 @@ import { useSyncExternalStore } from "react";
 import type { Editor, SelectionState } from "@input/pen-types";
 
 export function useSelection(editor: Editor): SelectionState {
-  return useSyncExternalStore(
-    (callback) => editor.on("selectionChange", callback),
-    () => editor.selection,
-    () => null,
-  );
+	return useSyncExternalStore(
+		(callback) => editor.on("selectionChange", callback),
+		() => editor.selection,
+		() => null,
+	);
 }

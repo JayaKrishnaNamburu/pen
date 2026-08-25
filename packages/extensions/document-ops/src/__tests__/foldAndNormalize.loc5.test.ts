@@ -22,7 +22,7 @@ function createLocaleEditor(locale: string, text: string): Editor {
 		tableCell: () => null,
 		tableRow: () => null,
 		tableColumns: () => [],
-		as: () => null,
+		as: () => null
 	};
 
 	return {
@@ -32,21 +32,15 @@ function createLocaleEditor(locale: string, text: string): Editor {
 		blocks: () => [block],
 		getBlock: (blockId: string) => (blockId === block.id ? block : null),
 		documentState: {
-			allBlocks: () => [block],
+			allBlocks: () => [block]
 		},
 		facet: () => locale,
 		getSelection: () => ({
 			type: "text",
 			anchor: { blockId: block.id, offset: 0 },
-			focus: { blockId: block.id, offset: text.length },
-			isCollapsed: false,
-			toRange: () => ({
-				start: { blockId: block.id, offset: 0 },
-				end: { blockId: block.id, offset: text.length },
-				blockRange: [block.id],
-			}),
+			focus: { blockId: block.id, offset: text.length }
 		}),
-		getSelectedText: () => text,
+		getSelectedText: () => text
 	} as unknown as Editor;
 }
 
@@ -66,12 +60,12 @@ describe("LOC5 document-ops folding", () => {
 			expect.objectContaining({
 				blockId: "block-1",
 				offset: 0,
-				length: TURKISH_QUERY.length,
+				length: TURKISH_QUERY.length
 			}),
 		]);
 
 		const spans = retrieveDocumentSpans(editor, {
-			query: TURKISH_QUERY,
+			query: TURKISH_QUERY
 		});
 		expect(spans[0]?.blockIds).toContain("block-1");
 		expect(spans[0]?.score).toBeGreaterThan(0);

@@ -1,4 +1,5 @@
 import {
+	createTextSelection,
 	getSelectionBlockRange,
 	isCollapsed,
 	isMultiBlock,
@@ -165,84 +166,13 @@ export function cloneInlineHistorySessions(
 }
 
 export function recreateTextSelection(
-	editor: Editor,
+	_editor: Editor,
 	snapshot: AISessionSelectionSnapshot,
 ): TextSelection {
-	const blockRange = resolveSelectionSnapshotBlockRange(editor, snapshot);
-	const collapsed =
-		snapshot.anchor.blockId === snapshot.focus.blockId &&
-		snapshot.anchor.offset === snapshot.focus.offset;
-	const documentRange = {
-		start: resolveSelectionSnapshotRangeStart(snapshot, blockRange),
-		end: resolveSelectionSnapshotRangeEnd(snapshot, blockRange),
-		get isMultiBlock() {
-			return blockRange.length > 1;
-		},
-		get blockRange() {
-			return [...blockRange];
-		},
-		contains(point: { blockId: string; offset: number }): boolean {
-			if (!blockRange.includes(point.blockId)) {
-				return false;
-			}
-			const isSingleBlock = blockRange.length === 1;
-			if (isSingleBlock) {
-				return (
-					point.offset >= this.start.offset &&
-					point.offset <= this.end.offset
-				);
-			}
-			if (point.blockId === this.start.blockId) {
-				return point.offset >= this.start.offset;
-			}
-			if (point.blockId === this.end.blockId) {
-				return point.offset <= this.end.offset;
-			}
-			return true;
-		},
-		overlaps(other: {
-			start: { blockId: string; offset: number };
-			end: { blockId: string; offset: number };
-			contains: (point: { blockId: string; offset: number }) => boolean;
-		}): boolean {
-			return (
-				this.contains(other.start) ||
-				this.contains(other.end) ||
-				other.contains(this.start)
-			);
-		},
-		equals(other: {
-			start: { blockId: string; offset: number };
-			end: { blockId: string; offset: number };
-		}): boolean {
-			return (
-				this.start.blockId === other.start.blockId &&
-				this.start.offset === other.start.offset &&
-				this.end.blockId === other.end.blockId &&
-				this.end.offset === other.end.offset
-			);
-		},
-		toTextSelection() {
-			return recreateTextSelection(editor, snapshot);
-		},
-	};
-	return {
-		type: "text",
-		anchor: { ...snapshot.anchor },
-		focus: { ...snapshot.focus },
-		get isCollapsed() {
-			return collapsed;
-		},
-		get isMultiBlock() {
-			return blockRange.length > 1;
-		},
-		get blockRange() {
-			return [...blockRange];
-		},
-		toRange() {
-			return documentRange;
-		},
-	};
+	return createTextSelection({
+		anchor: snapshot.anchor,
+		focus: snapshot.focus,
+	});
 }
 
 export function resolveSelectionSnapshotBlockRange(

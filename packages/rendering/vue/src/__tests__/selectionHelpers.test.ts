@@ -1,9 +1,6 @@
 // @vitest-environment jsdom
 
-import {
-  getSelectionBlockRange,
-  getTrustedSelectionBlockRange,
-} from "@input/pen-core";
+import { getSelectionBlockRange } from "@input/pen-core";
 import { createTestEditor } from "@input/pen-test";
 import type { Editor } from "@input/pen-types";
 import { mount } from "@vue/test-utils";
@@ -84,7 +81,7 @@ describe("@input/pen-vue selection helpers", () => {
     editor.destroy();
   });
 
-  it("reading the stamped range through a Vue-proxied editor during render does not recurse", async () => {
+  it("reading blockOrder through a Vue-proxied editor during render does not recurse", async () => {
     const editor = createTestEditor({
       blocks: [
         {
@@ -107,7 +104,10 @@ describe("@input/pen-vue selection helpers", () => {
     );
 
     const TrustedWalk = createWalkComponent((currentEditor) => {
-      getTrustedSelectionBlockRange(currentEditor.selection);
+      getSelectionBlockRange(
+        currentEditor.documentState.blockOrder,
+        currentEditor.selection,
+      );
     }, "TrustedWalk");
 
     const wrapper = mount(TrustedWalk, {

@@ -238,6 +238,7 @@
 - MessageParamsByKey
 - MessageValue
 - ModelAdapter
+- ModelAdapterCapabilities
 - ModelMessage
 - ModelMessagePart
 - ModelOperationApplyPolicy
@@ -250,6 +251,7 @@
 - ModelOperationSelectionTarget
 - ModelRequestedOperation
 - ModelStreamEvent
+- ModelToolChoice
 - MoveBlockOp
 - MultiplayerSession
 - MultiplayerSessionContext

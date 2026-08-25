@@ -109,9 +109,7 @@ describe("field-editor command registry dispatch", () => {
 
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" },
 		]);
 		editor.selectText(blockId, 2, 2);
 
@@ -141,9 +139,7 @@ describe("field-editor command registry dispatch", () => {
 		}
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hi👋" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hi👋" },
 		]);
 
 		const dispatched = spyRegistryDispatch(registry);
@@ -171,9 +167,7 @@ describe("field-editor command registry dispatch", () => {
 		}
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" },
 		]);
 		editor.selectText(blockId, 5, 5);
 
@@ -208,7 +202,10 @@ describe("field-editor command registry dispatch", () => {
 		const secondBlockId = crypto.randomUUID();
 		editor.apply([
 			{
-				type: "set-props", blockId: firstBlockId, props: { type: "bulletListItem" }},
+				type: "set-props",
+				blockId: firstBlockId,
+				props: { type: "bulletListItem" },
+			},
 			{
 				type: "insert-block",
 				blockId: secondBlockId,
@@ -254,9 +251,13 @@ describe("field-editor command registry dispatch", () => {
 		const firstBlockId = editor.firstBlock()!.id;
 		const secondBlockId = crypto.randomUUID();
 		editor.apply([
-			{ type: "splice-text", blockId: firstBlockId, from: 0,
+			{
+				type: "splice-text",
+				blockId: firstBlockId,
+				from: 0,
 				to: 0,
-				insert: "Hi" },
+				insert: "Hi",
+			},
 			{
 				type: "insert-block",
 				blockId: secondBlockId,
@@ -298,9 +299,7 @@ describe("field-editor command registry dispatch", () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "First" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "First" },
 		]);
 		editor.selectText(blockId, 0, 0);
 
@@ -330,9 +329,13 @@ describe("field-editor command registry dispatch", () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
+			{
+				type: "splice-text",
+				blockId,
+				from: 0,
 				to: 0,
-				insert: "Hello world" },
+				insert: "Hello world",
+			},
 		]);
 		editor.selectText(blockId, 3, 3);
 
@@ -361,9 +364,13 @@ describe("field-editor command registry dispatch", () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
+			{
+				type: "splice-text",
+				blockId,
+				from: 0,
 				to: 0,
-				insert: "Hello world" },
+				insert: "Hello world",
+			},
 		]);
 		editor.selectText(blockId, 3, 3);
 

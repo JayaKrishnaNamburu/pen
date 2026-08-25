@@ -9,8 +9,9 @@ const EMPTY_AI_STATE: AIControllerState = {
 	sessions: [],
 	activeSessionId: null,
 	suggestMode: false,
+	mutationPreference: "suggestions",
 	ephemeralSuggestion: null,
-	streamingReviewPreview: null,
+	streamingReviewPreviews: [],
 	commandMenuOpen: false,
 } as AIControllerState;
 

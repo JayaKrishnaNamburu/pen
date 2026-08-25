@@ -43,12 +43,6 @@ function editorWithTextSelection(blockId: string): Editor {
 			type: "text",
 			anchor: { blockId, offset: 0 },
 			focus: { blockId, offset: 1 },
-			isCollapsed: false,
-			isMultiBlock: false,
-			blockRange: [blockId],
-			toRange() {
-				return { start: { blockId, offset: 0 }, end: { blockId, offset: 1 } };
-			},
 		},
 	} as Editor;
 }
@@ -102,7 +96,9 @@ describe("resolveAnchoredMenuPosition", () => {
 			},
 		});
 
-		const seen: { position: AnchoredMenuPosition | null } = { position: null };
+		const seen: { position: AnchoredMenuPosition | null } = {
+			position: null,
+		};
 		const pending = host.scheduler.read(() => {
 			expect(host.scheduler.phase).toBe("read");
 			seen.position = resolveAnchoredMenuPosition({

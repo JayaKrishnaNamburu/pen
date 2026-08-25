@@ -6,6 +6,10 @@ import { executeGeneration } from "./generationExecution";
 import { executeLocalOperation } from "./localOperationExecution";
 import { resolveDocumentInsertionAnchor } from "../runtime/documentInsertionAnchor";
 import { AI_SESSION_SUGGESTION_ORIGIN } from "../suggestions/suggestMode";
+import {
+	isAIMutationPreference,
+	type AIMutationPreference,
+} from "../runtime/contracts";
 import type { AIRequestedOperation, GenerationState } from "../types";
 import type {
 	GenerationExecutionContext,
@@ -57,6 +61,23 @@ export const generationRunnerMethods = {
 
 	setSuggestMode(this: AIControllerMethodHost, enabled: boolean): void {
 		this._setState({ suggestMode: enabled });
+	},
+
+	setMutationPreference(
+		this: AIControllerMethodHost,
+		preference: AIMutationPreference,
+	): void {
+		if (!isAIMutationPreference(preference)) {
+			this._editor.internals.emit("diagnostic", {
+				level: "warn",
+				source: "ai",
+				code: "AI_MUTATION_PREFERENCE_INVALID",
+				message: `Unknown mutation preference: ${String(preference)}`,
+			});
+			return;
+		}
+		this._mutationPreference = preference;
+		this._setState({ mutationPreference: preference });
 	},
 
 	handleExternalCommit(
@@ -152,6 +173,7 @@ export const generationRunnerMethods = {
 			maxSteps,
 			{
 				...context,
+				scope: context?.scope ?? "document",
 				replaceTargetBlock:
 					documentTarget?.placement === "replace-blocks" ||
 					documentTarget?.placement === "replace-empty-block" ||

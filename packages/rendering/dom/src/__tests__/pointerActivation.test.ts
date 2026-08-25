@@ -9,7 +9,10 @@ import {
 } from "../host/pointerActivation";
 import { DATA_ATTRS } from "../utils/dataAttributes";
 
-function mouseEvent(target: EventTarget, init: MouseEventInit = {}): MouseEvent {
+function mouseEvent(
+	target: EventTarget,
+	init: MouseEventInit = {},
+): MouseEvent {
 	const event = new MouseEvent("mousedown", {
 		bubbles: true,
 		button: 0,
@@ -21,7 +24,9 @@ function mouseEvent(target: EventTarget, init: MouseEventInit = {}): MouseEvent 
 	return event;
 }
 
-function stubEditor(blocks: Record<string, { type: string; length?: number }>): Editor {
+function stubEditor(
+	blocks: Record<string, { type: string; length?: number }>,
+): Editor {
 	return {
 		schema: defaultSchema,
 		getBlock(blockId: string) {
@@ -75,7 +80,10 @@ describe("handleFieldEditorPointerActivate", () => {
 		document.body.replaceChildren();
 	});
 
-	function mountShell(blockId: string, type = "paragraph"): {
+	function mountShell(
+		blockId: string,
+		type = "paragraph",
+	): {
 		root: HTMLElement;
 		blocksHost: HTMLElement;
 		block: HTMLElement;
@@ -126,7 +134,11 @@ describe("handleFieldEditorPointerActivate", () => {
 	});
 
 	it("activates a nested layout child, not the parent container", () => {
-		const { root, blocksHost, block: parent } = mountShell("parent", "toggle");
+		const {
+			root,
+			blocksHost,
+			block: parent,
+		} = mountShell("parent", "toggle");
 		const child = document.createElement("div");
 		child.setAttribute(DATA_ATTRS.editorBlock, "");
 		child.setAttribute(DATA_ATTRS.blockId, "child");
@@ -155,7 +167,11 @@ describe("handleFieldEditorPointerActivate", () => {
 	});
 
 	it("activates a callout child the same way", () => {
-		const { root, blocksHost, block: parent } = mountShell("callout", "callout");
+		const {
+			root,
+			blocksHost,
+			block: parent,
+		} = mountShell("callout", "callout");
 		const child = document.createElement("div");
 		child.setAttribute(DATA_ATTRS.editorBlock, "");
 		child.setAttribute(DATA_ATTRS.blockId, "inside");
@@ -205,7 +221,10 @@ describe("handleFieldEditorPointerActivate", () => {
 			tbl: { type: "table" },
 			img: { type: "image" },
 		});
-		const tableTarget = createTarget({ isEditing: false, focusBlockId: null });
+		const tableTarget = createTarget({
+			isEditing: false,
+			focusBlockId: null,
+		});
 		expect(
 			handleFieldEditorPointerActivate({
 				event: mouseEvent(table),
@@ -217,7 +236,10 @@ describe("handleFieldEditorPointerActivate", () => {
 		).toBe(false);
 		expect(tableTarget.activations).toEqual([]);
 
-		const imageTarget = createTarget({ isEditing: false, focusBlockId: null });
+		const imageTarget = createTarget({
+			isEditing: false,
+			focusBlockId: null,
+		});
 		expect(
 			handleFieldEditorPointerActivate({
 				event: mouseEvent(image),

@@ -15,6 +15,7 @@ export {
 	buildCursorContext,
 	buildDocumentBlockSnapshots,
 	exportDocumentRangeAsMarkdown,
+	formatBlocksAsAnnotatedMarkdown,
 	formatBlocksAsMarkdown,
 	listDocumentBlockHandles,
 	normalizeContextToolOptions,
@@ -22,6 +23,7 @@ export {
 	resolveDocumentBlocks,
 	resolveSelectedText,
 	resolveSelectionText,
+	stripBlockAnnotations,
 	summarizeBlocks,
 } from "./utils/documentContext";
 export {

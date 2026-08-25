@@ -433,10 +433,7 @@ function caretYAt(host: HTMLElement, offset: number): number | null {
 	return rect ? rect.top : null;
 }
 
-function collapsedCaretRect(
-	host: HTMLElement,
-	offset: number,
-): DOMRect | null {
+function collapsedCaretRect(host: HTMLElement, offset: number): DOMRect | null {
 	const walker = document.createTreeWalker(host, NodeFilter.SHOW_TEXT);
 	let remaining = offset;
 	let node: Text | null = null;

@@ -14,7 +14,8 @@ import { defaultSchema } from "@input/pen-schema-default";
 
 function createEditor() {
 	return createCoreEditor({
-		schema: defaultSchema, preset: defaultPreset({
+		schema: defaultSchema,
+		preset: defaultPreset({
 			documentOps: false,
 			deltaStream: false,
 			undo: false,

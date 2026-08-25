@@ -20,12 +20,7 @@ afterEach(() => {
 	document.body.replaceChildren();
 });
 
-function rect(
-	left: number,
-	top: number,
-	width: number,
-	height: number,
-): Rect {
+function rect(left: number, top: number, width: number, height: number): Rect {
 	return {
 		x: left,
 		y: top,

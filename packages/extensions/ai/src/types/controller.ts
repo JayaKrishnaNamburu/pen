@@ -12,14 +12,12 @@ import type {
 	TextSelection,
 	ToolRuntime,
 } from "@input/pen-types";
-import type {
-	AIToolBudgetLimits,
-	AIToolConfirmFn,
-	AIToolTurn,
-} from "../tools";
+import type { AIToolBudgetLimits, AIToolConfirmFn, AIToolTurn } from "../tools";
+import type { EditDocumentPreviewUpdate } from "../runtime/editDocumentPreview";
 import type {
 	AIApplyStrategy,
 	AIMutationMode,
+	AIMutationPreference,
 	AIRouteLane,
 	AIContentFormat,
 	AIBlockAdapterId,
@@ -38,21 +36,74 @@ import type {
 	StructuredPreviewTargetState,
 } from "../runtime/reviewArtifacts";
 import type { StructuredIntent } from "../runtime/structuredIntent";
-import type { AIExtensionConfig, AIContentFormatOptions, ResolvedEditTarget, ResolvedEditProposal, AIStatus, AISurface, AISessionStatus, AISessionTarget, AISessionPrompt, AISessionSelectionSnapshot, AIContextualPromptRect, AIContextualPromptAnchorKind, AIContextualPromptAnchorStatus, AIContextualPromptAnchor, AIContextualPromptComposerState, AIContextualPromptState, AISessionTurnStatus, AISessionTurn, AISessionMetrics, AISessionFastApplyMetrics, AISessionAnchor, AISession, AIStreamingReviewPreview, AIStreamingReviewPreviewInput, AIInlineHistorySnapshot, AIExternalInlineTurnResult, AgenticStep, AIStreamEventType, AIStreamEventBase, AIStreamEvent, StructuredPreviewPatchOperation, GenerationStructuredPreviewState, GenerationState, GenerationPlanState, GenerationTargetKind, EphemeralSuggestion, AIInlineCompletionState, AIInlineCompletionController, PersistentSuggestionBase, PersistentTextSuggestion } from "./session";
+import type {
+	AIExtensionConfig,
+	AIContentFormatOptions,
+	AIEditStreaming,
+	ResolvedEditTarget,
+	ResolvedEditProposal,
+	AIStatus,
+	AISurface,
+	AISessionStatus,
+	AISessionTarget,
+	AISessionPrompt,
+	AISessionSelectionSnapshot,
+	AIContextualPromptRect,
+	AIContextualPromptAnchorKind,
+	AIContextualPromptAnchorStatus,
+	AIContextualPromptAnchor,
+	AIContextualPromptComposerState,
+	AIContextualPromptState,
+	AISessionTurnStatus,
+	AISessionTurn,
+	AISessionMetrics,
+	AISessionFastApplyMetrics,
+	AISessionAnchor,
+	AISession,
+	AIStreamingReviewPreview,
+	AIStreamingReviewPreviewInput,
+	AIInlineHistorySnapshot,
+	AIExternalInlineTurnResult,
+	AgenticStep,
+	AIStreamEventType,
+	AIStreamEventBase,
+	AIStreamEvent,
+	StructuredPreviewPatchOperation,
+	GenerationStructuredPreviewState,
+	GenerationState,
+	GenerationPlanState,
+	GenerationTargetKind,
+	EphemeralSuggestion,
+	AIInlineCompletionState,
+	AIInlineCompletionController,
+	PersistentSuggestionBase,
+	PersistentTextSuggestion,
+} from "./session";
+
+export type BlockSuggestionPreviousState = {
+	type?: string;
+	position?: import("@input/pen-types").Position;
+	props?: Record<string, unknown>;
+	format?: {
+		from: number;
+		to: number;
+		marks: Record<string, unknown | null>;
+		cell?: { row: number; col: number };
+	};
+};
+
+export type PersistentBlockSuggestionAction =
+	| "insert-block"
+	| "delete-block"
+	| "move-block"
+	| "convert-block"
+	| "split-block"
+	| "format-text";
 
 export interface PersistentBlockSuggestion extends PersistentSuggestionBase {
 	kind: "block";
-	action:
-		| "insert-block"
-		| "delete-block"
-		| "move-block"
-		| "convert-block"
-		| "split-block";
-	previousState?: {
-		type?: string;
-		position?: import("@input/pen-types").Position;
-		props?: Record<string, unknown>;
-	};
+	action: PersistentBlockSuggestionAction;
+	previousState?: BlockSuggestionPreviousState;
 }
 
 export type PersistentSuggestion =
@@ -61,12 +112,7 @@ export type PersistentSuggestion =
 
 export interface BlockSuggestionMeta {
 	id: string;
-	action:
-		| "insert-block"
-		| "delete-block"
-		| "move-block"
-		| "convert-block"
-		| "split-block";
+	action: PersistentBlockSuggestionAction;
 	author: string;
 	authorType: "user" | "ai";
 	createdAt: number;
@@ -75,11 +121,7 @@ export interface BlockSuggestionMeta {
 	requestId?: string;
 	turnId?: string;
 	generationId?: string;
-	previousState?: {
-		type?: string;
-		position?: import("@input/pen-types").Position;
-		props?: Record<string, unknown>;
-	};
+	previousState?: BlockSuggestionPreviousState;
 }
 
 export interface AIAwarenessState {
@@ -118,8 +160,10 @@ export interface AIControllerState {
 	sessions: readonly AISession[];
 	activeSessionId?: string | null;
 	suggestMode: boolean;
+	mutationPreference: AIMutationPreference;
 	ephemeralSuggestion: EphemeralSuggestion | null;
-	streamingReviewPreview: AIStreamingReviewPreview | null;
+	/** One entry per operation of the call currently streaming (EC15). */
+	streamingReviewPreviews: readonly AIStreamingReviewPreview[];
 	commandMenuOpen: boolean;
 	lastRoute?: AIRouteLane;
 }
@@ -199,7 +243,9 @@ export interface AIController {
 	resolveSession(sessionId: string, resolution: AISessionResolution): boolean;
 	acceptSession(sessionId: string): boolean;
 	rejectSession(sessionId: string): boolean;
-	registerExternalInlineTurnResult(input: AIExternalInlineTurnResult): boolean;
+	registerExternalInlineTurnResult(
+		input: AIExternalInlineTurnResult,
+	): boolean;
 	cancelSession(sessionId: string): void;
 	suspendInlineSession(sessionId: string): void;
 	resumeInlineSession(sessionId: string): void;
@@ -207,8 +253,14 @@ export interface AIController {
 	canRedoInlineHistory(): boolean;
 	undoInlineHistory(): boolean;
 	redoInlineHistory(): boolean;
-	runCommand(commandId: string, options?: AICommandExecutionOptions): Promise<GenerationState>;
-	runPrompt(prompt: string, options?: AICommandExecutionOptions): Promise<GenerationState>;
+	runCommand(
+		commandId: string,
+		options?: AICommandExecutionOptions,
+	): Promise<GenerationState>;
+	runPrompt(
+		prompt: string,
+		options?: AICommandExecutionOptions,
+	): Promise<GenerationState>;
 	retryActiveGeneration(): Promise<GenerationState | null>;
 	acceptActiveGeneration(): boolean;
 	rejectActiveGeneration(): boolean;
@@ -220,6 +272,7 @@ export interface AIController {
 	openCommandMenu(): void;
 	closeCommandMenu(): void;
 	setSuggestMode(enabled: boolean): void;
+	setMutationPreference(preference: AIMutationPreference): void;
 	setStreamingReviewPreview(input: AIStreamingReviewPreviewInput): void;
 	clearStreamingReviewPreview(sessionId?: string): void;
 	showEphemeralSuggestion(suggestion: EphemeralSuggestion): void;
@@ -271,20 +324,40 @@ export interface AgenticLoopOptions {
 		output: unknown;
 		state: "complete" | "error";
 	}) => void;
-	onStructuredData?: (event: {
-		data: unknown;
-		final: boolean;
-	}) => void;
+	onStructuredData?: (event: { data: unknown; final: boolean }) => void;
 	onMessagesChange?: (messages: ModelMessage[]) => void;
 	onStreamingStart?: (zoneId: string, blockId: string) => void;
 	onStreamingEnd?: (status: "complete" | "cancelled" | "error") => void;
 	workingSet?: AIWorkingSetEnvelope | null;
-	validateWorkingSet?: (
-		workingSet: AIWorkingSetEnvelope | null,
-	) => { valid: boolean; canRefresh: boolean; reason?: string };
+	validateWorkingSet?: (workingSet: AIWorkingSetEnvelope | null) => {
+		valid: boolean;
+		canRefresh: boolean;
+		reason?: string;
+	};
 	refreshWorkingSet?: () => Promise<AIWorkingSetEnvelope | null>;
 	onDebug?: (debug: GenerationDebugState) => void;
 	feature?: AIRequestContext["feature"];
+	/**
+	 * The route's apply strategy. `tool-edit` is the edit channel, which owns
+	 * two loop behaviors: a clean mutating pass ends the turn (EC14), and a
+	 * stale working set is corrected in-turn rather than thrown (EC9).
+	 */
+	applyStrategy?: AIApplyStrategy;
+	/**
+	 * Whether the prompt asked for an edit. EC17 forces the edit tool on an
+	 * edit-intent pass only: forcing a pass that asked a question would answer
+	 * it by rewriting the document. Absent, the pass is treated as edit intent,
+	 * which is what every caller before the question intent existed meant.
+	 */
+	editIntent?: boolean;
+	/**
+	 * Host gate for EC15/EC20. `"preview"` consumes tool-input-delta text as a
+	 * decoration, `"commit"` also writes each settled block as it arrives, and
+	 * `"atomic"` ignores partials. Default is resolved by the adapter.
+	 */
+	editStreaming?: AIEditStreaming;
+	onEditPreview?: (preview: EditDocumentPreviewUpdate | null) => void;
+	mutationPreference?: AIMutationPreference;
 }
 
 export interface AIWorkingSetEnvelope {
@@ -295,6 +368,7 @@ export interface AIWorkingSetEnvelope {
 	routeConfidence?: number;
 	trackedBlockIds: string[];
 	blockRevisions: Record<string, number>;
+	viewHashes?: Record<string, string>;
 	selectionSignature: string | null;
 }
 
@@ -340,9 +414,9 @@ export interface FastApplyDebugState {
 	attempted: boolean;
 	succeeded: boolean;
 	executionPath?:
-	| "native-fast-apply"
-	| "scoped-replacement"
-	| "plain-markdown";
+		| "native-fast-apply"
+		| "scoped-replacement"
+		| "plain-markdown";
 	contextChars?: number;
 	diffChars?: number;
 	confidence?: number;

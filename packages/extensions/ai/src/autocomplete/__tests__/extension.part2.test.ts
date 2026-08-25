@@ -4,16 +4,16 @@ import {
 	it } from "vitest";
 import {
 	createEditor,
-	getInlineCompletionController,
+	getInlineCompletionController
 	} from "@input/pen-core";
-import { FIELD_EDITOR_SLOT_KEY,
+import { FIELD_EDITOR_SLOT_KEY
 } from "@input/pen-types";
 import { defineExtension } from "@input/pen-core";
 import { defaultSchema } from "@input/pen-schema-default";
 import {
 	autocompleteExtension,
 	createAutocompleteProvider,
-	getAutocompleteController,
+	getAutocompleteController
 } from "../index";
 
 async function waitForCondition(
@@ -37,7 +37,7 @@ describe("@input/pen-ai/autocomplete", () => {
 			focusBlockId: null as string | null,
 			isEditing: true,
 			isFocused: true,
-			isComposing: false,
+			isComposing: false
 		};
 		const editor = createEditor({
 			schema: defaultSchema,extensions: [
@@ -47,8 +47,8 @@ describe("@input/pen-ai/autocomplete", () => {
 						async *stream() {
 							yield { type: "text-delta" as const, delta: " world from pen" };
 							yield { type: "done" as const };
-						},
-					},
+						}
+					}
 				}),
 				defineExtension({
 					name: "test-field-editor-slot",
@@ -62,9 +62,9 @@ describe("@input/pen-ai/autocomplete", () => {
 					deactivateClient: async () => {
 						activeEditor?.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, null);
 						activeEditor = null;
-					},
+					}
 				}),
-			],
+			]
 		});
 		const blockId = editor.firstBlock()!.id;
 		fieldEditor.focusBlockId = blockId;
@@ -91,11 +91,10 @@ describe("@input/pen-ai/autocomplete", () => {
 		expect(editor.getBlock(blockId)?.textContent()).toBe("Hello world from pen");
 		expect(editor.selection).toMatchObject({
 			type: "text",
-			isCollapsed: true,
 			focus: {
 				blockId,
-				offset: 20,
-			},
+				offset: 20
+			}
 		});
 		expect(inlineCompletion?.getState().visibleSuggestion).toBeNull();
 		editor.destroy();
@@ -107,7 +106,7 @@ describe("@input/pen-ai/autocomplete", () => {
 			focusBlockId: null as string | null,
 			isEditing: true,
 			isFocused: true,
-			isComposing: false,
+			isComposing: false
 		};
 		const editor = createEditor({
 			schema: defaultSchema,extensions: [
@@ -117,8 +116,8 @@ describe("@input/pen-ai/autocomplete", () => {
 						async *stream() {
 							yield { type: "text-delta" as const, delta: " world!" };
 							yield { type: "done" as const };
-						},
-					},
+						}
+					}
 				}),
 				defineExtension({
 					name: "test-field-editor-slot",
@@ -129,9 +128,9 @@ describe("@input/pen-ai/autocomplete", () => {
 					deactivateClient: async () => {
 						activeEditor?.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, null);
 						activeEditor = null;
-					},
+					}
 				}),
-			],
+			]
 		});
 		const blockId = editor.firstBlock()!.id;
 		fieldEditor.focusBlockId = blockId;
@@ -155,8 +154,8 @@ describe("@input/pen-ai/autocomplete", () => {
 					from: 4,
 					to: 5,
 					attributes: expect.objectContaining({
-						"data-suggestion-placement": "after",
-					}),
+						"data-suggestion-placement": "after"
+					})
 				}),
 			]),
 		);
@@ -170,7 +169,7 @@ describe("@input/pen-ai/autocomplete", () => {
 			focusBlockId: null as string | null,
 			isEditing: true,
 			isFocused: true,
-			isComposing: false,
+			isComposing: false
 		};
 		const editor = createEditor({
 			schema: defaultSchema,extensions: [
@@ -180,8 +179,8 @@ describe("@input/pen-ai/autocomplete", () => {
 						async *stream() {
 							yield { type: "text-delta" as const, delta: "today, with more detail" };
 							yield { type: "done" as const };
-						},
-					},
+						}
+					}
 				}),
 				defineExtension({
 					name: "test-field-editor-slot",
@@ -192,9 +191,9 @@ describe("@input/pen-ai/autocomplete", () => {
 					deactivateClient: async () => {
 						activeEditor?.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, null);
 						activeEditor = null;
-					},
+					}
 				}),
-			],
+			]
 		});
 		const blockId = editor.firstBlock()!.id;
 		fieldEditor.focusBlockId = blockId;
@@ -221,7 +220,7 @@ describe("@input/pen-ai/autocomplete", () => {
 			focusBlockId: null as string | null,
 			isEditing: true,
 			isFocused: true,
-			isComposing: false,
+			isComposing: false
 		};
 		const editor = createEditor({
 			schema: defaultSchema,extensions: [
@@ -231,8 +230,8 @@ describe("@input/pen-ai/autocomplete", () => {
 						async *stream() {
 							yield { type: "text-delta" as const, delta: "nd timeline" };
 							yield { type: "done" as const };
-						},
-					},
+						}
+					}
 				}),
 				defineExtension({
 					name: "test-field-editor-slot",
@@ -243,9 +242,9 @@ describe("@input/pen-ai/autocomplete", () => {
 					deactivateClient: async () => {
 						activeEditor?.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, null);
 						activeEditor = null;
-					},
+					}
 				}),
-			],
+			]
 		});
 		const blockId = editor.firstBlock()!.id;
 		fieldEditor.focusBlockId = blockId;
@@ -270,7 +269,7 @@ describe("@input/pen-ai/autocomplete", () => {
 			focusBlockId: null as string | null,
 			isEditing: true,
 			isFocused: true,
-			isComposing: false,
+			isComposing: false
 		};
 		const editor = createEditor({
 			schema: defaultSchema,extensions: [
@@ -280,8 +279,8 @@ describe("@input/pen-ai/autocomplete", () => {
 						async *stream() {
 							yield { type: "text-delta" as const, delta: "go" };
 							yield { type: "done" as const };
-						},
-					},
+						}
+					}
 				}),
 				defineExtension({
 					name: "test-field-editor-slot",
@@ -292,9 +291,9 @@ describe("@input/pen-ai/autocomplete", () => {
 					deactivateClient: async () => {
 						activeEditor?.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, null);
 						activeEditor = null;
-					},
+					}
 				}),
-			],
+			]
 		});
 		const blockId = editor.firstBlock()!.id;
 		fieldEditor.focusBlockId = blockId;
@@ -320,7 +319,7 @@ describe("@input/pen-ai/autocomplete", () => {
 			focusBlockId: null as string | null,
 			isEditing: true,
 			isFocused: true,
-			isComposing: false,
+			isComposing: false
 		};
 		const editor = createEditor({
 			schema: defaultSchema,extensions: [
@@ -331,8 +330,8 @@ describe("@input/pen-ai/autocomplete", () => {
 						async *stream() {
 							yield { type: "text-delta" as const, delta: " world from pen" };
 							yield { type: "done" as const };
-						},
-					},
+						}
+					}
 				}),
 				defineExtension({
 					name: "test-field-editor-slot",
@@ -343,9 +342,9 @@ describe("@input/pen-ai/autocomplete", () => {
 					deactivateClient: async () => {
 						activeEditor?.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, null);
 						activeEditor = null;
-					},
+					}
 				}),
-			],
+			]
 		});
 		const blockId = editor.firstBlock()!.id;
 		fieldEditor.focusBlockId = blockId;
@@ -376,7 +375,7 @@ describe("@input/pen-ai/autocomplete", () => {
 			focusBlockId: null as string | null,
 			isEditing: true,
 			isFocused: true,
-			isComposing: false,
+			isComposing: false
 		};
 		const editor = createEditor({
 			schema: defaultSchema,extensions: [
@@ -386,8 +385,8 @@ describe("@input/pen-ai/autocomplete", () => {
 						async *stream() {
 							yield { type: "text-delta" as const, delta: " world from pen" };
 							yield { type: "done" as const };
-						},
-					},
+						}
+					}
 				}),
 				defineExtension({
 					name: "test-field-editor-slot",
@@ -398,9 +397,9 @@ describe("@input/pen-ai/autocomplete", () => {
 					deactivateClient: async () => {
 						activeEditor?.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, null);
 						activeEditor = null;
-					},
+					}
 				}),
-			],
+			]
 		});
 		const blockId = editor.firstBlock()!.id;
 		fieldEditor.focusBlockId = blockId;

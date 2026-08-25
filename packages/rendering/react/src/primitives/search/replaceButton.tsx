@@ -4,7 +4,8 @@ import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { useSearchContext } from "./root";
 
 export interface SearchReplaceButtonProps
-	extends AsChildProps,
+	extends
+		AsChildProps,
 		Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
 	ref?: React.Ref<HTMLElement>;
 }
@@ -36,7 +37,9 @@ export function SearchReplaceAll(props: SearchReplaceButtonProps) {
 type SearchReplaceButtonInternalProps = SearchReplaceButtonProps & {
 	action: "replace" | "replace-all";
 	label: string;
-	onAction: (controller: ReturnType<typeof useSearchContext>["controller"]) => void;
+	onAction: (
+		controller: ReturnType<typeof useSearchContext>["controller"],
+	) => void;
 };
 
 function SearchReplaceButton(props: SearchReplaceButtonInternalProps) {

@@ -57,7 +57,8 @@ export function handleFieldEditorPointerActivate(
 			: resolveHostChromeFallbackBlock(event, editor, root, blocksHost);
 	const blockElement =
 		hostFallback?.element ??
-		(clickedBlock instanceof HTMLElement && blocksHost.contains(clickedBlock)
+		(clickedBlock instanceof HTMLElement &&
+		blocksHost.contains(clickedBlock)
 			? clickedBlock
 			: null);
 	if (!blockElement) {
@@ -184,7 +185,10 @@ function collectHostTextBlocks(
 	for (const element of blocksHost.querySelectorAll(
 		`[${DATA_ATTRS.editorBlock}]`,
 	)) {
-		if (!(element instanceof HTMLElement) || !blocksHost.contains(element)) {
+		if (
+			!(element instanceof HTMLElement) ||
+			!blocksHost.contains(element)
+		) {
 			continue;
 		}
 		const owningRoot = element.closest(`[${DATA_ATTRS.editorRoot}]`);

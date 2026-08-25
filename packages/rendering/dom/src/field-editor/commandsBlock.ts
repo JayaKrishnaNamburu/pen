@@ -90,7 +90,9 @@ export function getConvertBlockOps(
 	const existingParentId = editor.documentState.parentOf(options.blockId);
 	const ops: DocumentOp[] = [
 		{
-			type: "set-props", blockId: options.blockId, props: { type: options.newType, ...options.newProps },
+			type: "set-props",
+			blockId: options.blockId,
+			props: { type: options.newType, ...options.newProps },
 		} as DocumentOp,
 	];
 

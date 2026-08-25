@@ -222,11 +222,10 @@ export class EditContextBackendRuntime extends EditContextBackendSelection {
 	protected getAuthoritativeTextInputSelection(
 		blockId: string,
 	): EditContextSelection | null {
-		const selection =
-			this.fieldEditor.getBackendSelectionAuthority(
-				"edit-context-textupdate",
-				blockId,
-			);
+		const selection = this.fieldEditor.getBackendSelectionAuthority(
+			"edit-context-textupdate",
+			blockId,
+		);
 		if (!selection || selection.anchorOffset !== selection.focusOffset) {
 			return null;
 		}

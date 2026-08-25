@@ -1,6 +1,6 @@
 import type React from "react";
 import { replaceElementChildren } from "@input/pen-dom/utils/replaceElementChildren";
-import { DATA_ATTRS } from "./dataAttributes";
+import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 
 const DRAG_PREVIEW_ROOT_ATTR = "data-pen-block-drag-preview-root";
 const DRAG_PREVIEW_ATTR = "data-pen-block-drag-preview";
@@ -27,7 +27,9 @@ function getPreviewRoot(ownerDocument: Document): HTMLElement {
 }
 
 function removeDragHandles(clone: HTMLElement) {
-	const handleElements = clone.querySelectorAll(`[${DATA_ATTRS.blockHandle}]`);
+	const handleElements = clone.querySelectorAll(
+		`[${DATA_ATTRS.blockHandle}]`,
+	);
 	for (const handle of handleElements) {
 		const parent = handle.parentElement;
 		handle.remove();
@@ -69,7 +71,10 @@ function resetBlockStateAttrs(clone: HTMLElement) {
 	clone.removeAttribute("draggable");
 }
 
-function createCountBadge(ownerDocument: Document, blockCount: number): HTMLElement {
+function createCountBadge(
+	ownerDocument: Document,
+	blockCount: number,
+): HTMLElement {
 	const badge = ownerDocument.createElement("div");
 	badge.textContent = String(blockCount);
 	badge.style.position = "absolute";
@@ -140,7 +145,9 @@ export function setBlockDragPreviewImage(args: {
 	);
 }
 
-export function clearBlockDragPreviewImage(ownerDocument: Document | null | undefined) {
+export function clearBlockDragPreviewImage(
+	ownerDocument: Document | null | undefined,
+) {
 	if (!ownerDocument) {
 		return;
 	}

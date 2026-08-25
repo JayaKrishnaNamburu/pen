@@ -1,5 +1,5 @@
 import type { ImportResult, Editor } from "@input/pen-types";
-import type { PendingBlock } from "@input/pen-content-ops";
+import type { PendingBlock } from "@input/pen-core";
 
 /**
  * Ingest envelope (IOP5 / SEC4). Same numbers on every ingest path — not

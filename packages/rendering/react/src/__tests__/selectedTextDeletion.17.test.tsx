@@ -31,9 +31,7 @@ describe("@input/pen-react selected text deletion", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Title" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Title" },
 		]);
 
 		const container = document.createElement("div");
@@ -75,8 +73,6 @@ describe("@input/pen-react selected text deletion", () => {
 				type: "text",
 				anchor: { blockId, offset: 0 },
 				focus: { blockId, offset: 5 },
-				isCollapsed: false,
-				isMultiBlock: false,
 			});
 
 			await act(async () => {
@@ -92,8 +88,6 @@ describe("@input/pen-react selected text deletion", () => {
 				type: "text",
 				anchor: { blockId, offset: 0 },
 				focus: { blockId, offset: 0 },
-				isCollapsed: true,
-				isMultiBlock: false,
 			});
 
 			await act(async () => {
@@ -126,9 +120,7 @@ describe("@input/pen-react selected text deletion", () => {
 		const blockId = editor.firstBlock()!.id;
 
 		editor.apply([
-			{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Title" },
+			{ type: "splice-text", blockId, from: 0, to: 0, insert: "Title" },
 		]);
 
 		const container = document.createElement("div");
@@ -194,8 +186,6 @@ describe("@input/pen-react selected text deletion", () => {
 				type: "text",
 				anchor: { blockId, offset: 0 },
 				focus: { blockId, offset: 5 },
-				isCollapsed: false,
-				isMultiBlock: false,
 			});
 
 			await act(async () => {
@@ -211,8 +201,6 @@ describe("@input/pen-react selected text deletion", () => {
 				type: "text",
 				anchor: { blockId, offset: 0 },
 				focus: { blockId, offset: 0 },
-				isCollapsed: true,
-				isMultiBlock: false,
 			});
 
 			await act(async () => {

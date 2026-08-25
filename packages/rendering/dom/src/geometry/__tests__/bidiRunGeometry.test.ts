@@ -12,12 +12,7 @@ const LATIN_ARABIC_LTR = "Hello مرحبا";
 const ARABIC_LATIN_RTL = "مرحبا Hello";
 const HEBREW_LATIN_LTR = "abאבcd";
 
-function rect(
-	left: number,
-	top: number,
-	width: number,
-	height: number,
-): Rect {
+function rect(left: number, top: number, width: number, height: number): Rect {
 	return {
 		x: left,
 		y: top,
@@ -103,7 +98,8 @@ describe("G3 attachBidiRunsToLines", () => {
 			[seed(0, HEBREW_LATIN_LTR.length, rect(24, 0, 51, 20))],
 			HEBREW_LATIN_LTR,
 			"ltr",
-			(run) => measuredRuns.get(`${run.from}:${run.to}:${run.level}`) ?? null,
+			(run) =>
+				measuredRuns.get(`${run.from}:${run.to}:${run.level}`) ?? null,
 		);
 
 		expect(line?.runs.map((geo) => geo.rect)).toEqual([
@@ -186,23 +182,27 @@ describe("G3 attachBidiRunsToLines", () => {
 
 	it("G3: empty line keeps a degenerate paragraph-level box", () => {
 		expect(
-			attachBidiRunsToLines([seed(0, 0, rect(0, 0, 40, 16))], "", "ltr")[0]
-				?.runs,
+			attachBidiRunsToLines(
+				[seed(0, 0, rect(0, 0, 40, 16))],
+				"",
+				"ltr",
+			)[0]?.runs,
 		).toEqual([
 			{ run: { from: 0, to: 0, level: 0 }, rect: rect(0, 0, 40, 16) },
 		]);
 		expect(
-			attachBidiRunsToLines([seed(0, 0, rect(0, 0, 40, 16))], "", "rtl")[0]
-				?.runs,
+			attachBidiRunsToLines(
+				[seed(0, 0, rect(0, 0, 40, 16))],
+				"",
+				"rtl",
+			)[0]?.runs,
 		).toEqual([
 			{ run: { from: 0, to: 0, level: 1 }, rect: rect(0, 0, 40, 16) },
 		]);
 	});
 
 	it("G3: omitted text keeps the Wave 3 single-run seam", () => {
-		const [line] = attachBidiRunsToLines([
-			seed(0, 11, rect(0, 0, 80, 16)),
-		]);
+		const [line] = attachBidiRunsToLines([seed(0, 11, rect(0, 0, 80, 16))]);
 		expect(line?.runs).toEqual([
 			{
 				run: { from: 0, to: 11, level: 0 },
@@ -312,7 +312,8 @@ describe("G3 run-geometry fuzz", () => {
 	}
 
 	function overlaps(left: Rect, right: Rect): boolean {
-		const width = Math.min(left.right, right.right) - Math.max(left.left, right.left);
+		const width =
+			Math.min(left.right, right.right) - Math.max(left.left, right.left);
 		const height =
 			Math.min(left.bottom, right.bottom) - Math.max(left.top, right.top);
 		return width > 0 && height > 0;
@@ -327,11 +328,21 @@ describe("G3 run-geometry fuzz", () => {
 		return { text, base: rng.next() < 0.5 ? "ltr" : "rtl" };
 	}
 
-	function measuredLine(text: string, base: "ltr" | "rtl", overlapPx: number): LineBox {
+	function measuredLine(
+		text: string,
+		base: "ltr" | "rtl",
+		overlapPx: number,
+	): LineBox {
 		const runs = computeBidiRuns(text, base);
 		let left = 0;
 		const [line] = attachBidiRunsToLines(
-			[seed(0, text.length, rect(0, 0, Math.max(text.length, 1) * 10, 16))],
+			[
+				seed(
+					0,
+					text.length,
+					rect(0, 0, Math.max(text.length, 1) * 10, 16),
+				),
+			],
 			text,
 			base,
 			(run) => {
@@ -341,7 +352,10 @@ describe("G3 run-geometry fuzz", () => {
 				return box;
 			},
 		);
-		expect(line, `expected a line for ${JSON.stringify(text)}`).toBeTruthy();
+		expect(
+			line,
+			`expected a line for ${JSON.stringify(text)}`,
+		).toBeTruthy();
 		expect(line!.runs.map((geo) => geo.run)).toEqual(runs);
 		return line!;
 	}
@@ -386,10 +400,24 @@ describe("G3 run-geometry fuzz", () => {
 			}
 
 			for (const geo of line.runs) {
-				const down = caretRectAtBidiBoundary([line], geo.run.from, "downstream");
-				const up = caretRectAtBidiBoundary([line], geo.run.from, "upstream");
-				expect(down, `downstream at ${geo.run.from} in ${JSON.stringify(text)}`).not.toBeNull();
-				expect(up, `upstream at ${geo.run.from} in ${JSON.stringify(text)}`).not.toBeNull();
+				const down = caretRectAtBidiBoundary(
+					[line],
+					geo.run.from,
+					"downstream",
+				);
+				const up = caretRectAtBidiBoundary(
+					[line],
+					geo.run.from,
+					"upstream",
+				);
+				expect(
+					down,
+					`downstream at ${geo.run.from} in ${JSON.stringify(text)}`,
+				).not.toBeNull();
+				expect(
+					up,
+					`upstream at ${geo.run.from} in ${JSON.stringify(text)}`,
+				).not.toBeNull();
 				expect(down!.width).toBe(0);
 				expect(up!.width).toBe(0);
 			}

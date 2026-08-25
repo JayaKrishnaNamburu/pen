@@ -322,3 +322,50 @@ OPB2
 OPB3
 OPB4
 OPB6
+
+# spec-v4 entered the inventory 2026-08-25 (SPEC_ROOTS gained the root;
+# families are derived, not hand-listed, same as spec-v3). Appended:
+# CS6 and CS10 — the only v4 IDs a named test can fail today
+# (scheduler.cs6.test.ts pins the single frame authority; the relocated
+# cs10-mapping conformance scenarios are the jsdom-to-conformance move
+# the rule prescribes).
+#
+# HELD BACK — TR1-TR8, GA1-GA21, RC1-RC7, DL1-DL14, and the other CS
+# rules. These are carried by wave gates, not test names: a deletion's
+# evidence is a grep at a stated population, and the runner
+# (scripts/v3-gates.mjs over spec-v4/waves/*.md) is what fails when one
+# comes back. Listing them here would fail the run for having no
+# claiming test, and renaming a test to contain "DL3" would be the
+# name-is-not-coverage defect this file rejects everywhere else. They
+# are not gated-scope rows either: gated-scope wants one script wired
+# into one workflow, and a wave gate is a line in a markdown file read
+# by a runner. Reported-not-failed is the honest posture for them.
+CS6
+CS10
+
+# spec-better-ai Wave 0 (2026-08-25). Only IDs a named test can fail:
+# EC1 (agentChat.editChannel), EC2–EC6 (editDocument.ec),
+# EC7–EC8 (workingSetFingerprint.ec7), EC10 and EC14 (editChannel.closingPass).
+# Claimed later on 2026-08-25 as their probes landed: EC9 (editChannel.ec9),
+# EC11 (editChannel.ec11), EC13 (editChannel.ec13); Waves 1–3 same day:
+# EC18 (editDocument.ec), EC19 (editChannel.ec19), EC15 (editChannel.ec15),
+# EC17 (editChannel.ec17).
+# Still held back: EC12 (reversibility is GATE 0.13's full suite, not a
+# test name), EC16 (process rule).
+EC1
+EC2
+EC3
+EC4
+EC5
+EC6
+EC7
+EC8
+EC9
+EC10
+EC11
+EC13
+EC14
+EC15
+EC17
+EC18
+EC19

@@ -4,24 +4,42 @@
 
 `./dist/index.d.ts`
 
+### class
+
+- RegionSelectionStore
+
 ### function
 
+- attachContentGestures
+- attachInlineAtomWrapperInteractions
+- canDestructure
 - collapsedRect
 - createGeometryReader
 - createReducedMotionSignal
+- createRegionSelectionRect
+- destructureInlineAtom
 - getClosestEditorRoot
+- getInlineAtomDragSnapshot
+- getInlineAtomRenderInteractionProps
 - getRootGeometry
 - handleEditorDocumentKeyDown
 - handleEscapeSelectionTransition
 - handleFieldEditorPointerActivate
 - handleTableCellSelectionKeyDown
+- intersectRegionSelectionRect
 - isFieldEditorTextEditingKey
+- isInlineAtomDragSource
 - measureWithRoot
 - mountEditor
+- registerInlineAtomInteractionRoot
 - registerVerticalCaretMeasure
 - resolveEditorUrl
+- resolveRegionRect
+- resolveShiftClickInlineAtomSelection
+- selectInlineAtomRangeFromShiftClick
 - shouldHandleEditorKeyboardEvent
 - singleRunLineBox
+- subscribeInlineAtomDragSnapshot
 - urlPolicyExtension
 - urlPolicyFromEditor
 - verticalCaretTarget
@@ -64,14 +82,20 @@
 ### type
 
 - Affinity
+- AttachContentGesturesOptions
 - BidiRun
 - BidiRunGeometry
+- ContentGestureRegionGesture
+- ContentGestureState
 - FieldEditorPointerActivateOptions
 - FieldEditorPointerTarget
 - GeometryMeasureAdapter
 - GeometryReader
 - GeometryReaderHost
 - GeometryReaderOptions
+- GestureSlot
+- InlineAtomDragSnapshot
+- InlineAtomWrapperInteractionOptions
 - LineBox
 - MountedEditor
 - MountEditorOptions
@@ -79,6 +103,11 @@
 - Rect
 - ReducedMotionListener
 - ReducedMotionSignal
+- RegionSelectionRect
+- RegionSelectionSnapshot
+- RegionSelectorActivation
+- RegionSelectorConfig
+- RegionSelectorSelectionMode
 - RootGeometry
 - VerticalCaretTarget
 - VerticalDirection
@@ -306,6 +335,7 @@ _no exports_
 - moveInlineAtom
 - replaceInlineAtomWithText
 - resolveInlineAtomDropTarget
+- resolveInlineAtomInteractions
 
 ### value
 
@@ -313,11 +343,21 @@ _no exports_
 
 ### type
 
+- InlineAtomAfterDestructureEvent
+- InlineAtomAfterDestructureObserver
+- InlineAtomDestructureHandler
 - InlineAtomDropTarget
+- InlineAtomInteractions
+- InlineAtomMoveEvent
+- InlineAtomMoveObserver
+- InlineAtomMoveRejectedEvent
+- InlineAtomMoveRejectedObserver
+- InlineAtomRenderInteractionProps
 - InlineAtomSnapshot
 - InlineAtomSource
 - MoveInlineAtomOptions
 - ReplaceInlineAtomWithTextOptions
+- ResolvedInlineAtomInteractions
 - ResolveInlineAtomDropTargetOptions
 
 ## ./field-editor/inlineAtomModel

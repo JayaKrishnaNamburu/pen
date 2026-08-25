@@ -3,30 +3,6 @@
 	"modules": [
 		"caretPositions.ts"
 	],
-	"outOfScope": [
-		{
-			"file": "packages/rendering/dom/src/field-editor/sessionReconciler.ts",
-			"reason": "Not a Wave 5.8 selection module. scheduleFlush coalesces commit/decoration DOM reconcile onto the next animation frame — a Wave 03 DomScheduler stand-in (SCH), not a selection retry. projectSelection is a post-flush callback, not the reason for the timer. S4 does not apply; listing it here is the decision, not an allowlist waiver. resolved-by: spec-v4 CS6 (Wave 4)."
-		}
-	],
-	"entries": [
-		{
-			"file": "packages/rendering/dom/src/field-editor/contenteditableBackendSelection.ts",
-			"symbol": "scheduleActiveDOMMatchCheck",
-			"kind": "requestAnimationFrame",
-			"reason": "resolved-by: spec-v4 DL8 (Wave 3). The shape is a deferred ensureActiveDOMMatchesYText plus restoreDOMSelectionFromEditor — treat the rAF as a missing attach or a wrong seam, not an engine accommodation. Do not renew without saying what the next frame observes that this turn cannot."
-		},
-		{
-			"file": "packages/rendering/react/src/primitives/editor/inlineAtomSelectionInteraction.ts",
-			"symbol": "destructureInlineAtom",
-			"kind": "requestAnimationFrame",
-			"reason": "resolved-by: spec-v4 DL8 (Wave 3). Activate the post-destructure caret in the same turn as the replace. The shape is activateTextSelection plus focus deferred one frame after replaceInlineAtomWithText — S4's missing-attach class."
-		},
-		{
-			"file": "packages/rendering/react/src/hooks/useSelectionToolbar.ts",
-			"symbol": "update",
-			"kind": "requestAnimationFrame",
-			"reason": "resolved-by: spec-v4 DL8 (Wave 3). Route the toolbar rect through the scheduler read phase. The shape is a measurement retry: update() cancels the previous frame and schedules resolveNativeSelectionRect on the next. Do not renew without saying what the second measurement observes that the first cannot."
-		}
-	]
+	"outOfScope": [],
+	"entries": []
 }
