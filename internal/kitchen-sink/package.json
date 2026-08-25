@@ -1,11 +1,11 @@
 {
-  "name": "@input/pen-playground",
+  "name": "@input/pen-kitchen-sink",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:backend": "tsx watch --clear-screen=false --exclude \"../packages/**/dist/**\" --tsconfig tsconfig.server.json server/index.ts",
+    "dev:backend": "tsx watch --clear-screen=false --exclude \"../../packages/**/dist/**\" --tsconfig tsconfig.server.json server/index.ts",
     "dev:e2e": "PEN_E2E=1 vite --host 127.0.0.1 --port 4173 --strictPort",
     "build": "vite build",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.server.json",

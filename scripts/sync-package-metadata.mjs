@@ -8,9 +8,9 @@ const repoRoot = path.resolve(
 const packagesRoot = path.join(repoRoot, "packages");
 // The owner must match the repository the release workflow runs in: npm
 // rejects a provenance publish whose repository.url names a different repo.
-const repoHomepage = "https://github.com/lemni/pen#readme";
-const repoBugsUrl = "https://github.com/lemni/pen/issues";
-const repoUrl = "https://github.com/lemni/pen.git";
+const repoHomepage = "https://github.com/input-systems/pen#readme";
+const repoBugsUrl = "https://github.com/input-systems/pen/issues";
+const repoUrl = "https://github.com/input-systems/pen.git";
 const licenseValue = "MIT";
 // HOST3: one engines.node value on every published package.
 // CI (.github/workflows/ci.yml, release.yml, docs.yml) pins setup-node to 22.

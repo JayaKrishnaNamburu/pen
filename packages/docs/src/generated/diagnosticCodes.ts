@@ -316,11 +316,6 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 		sources: ["rendering/dom/src/field-editor/selectionProjectionController.ts"],
 	},
 	{
-		code: "sentinel-stripped",
-		levels: ["info"],
-		sources: ["core/src/schema/emptyBlockSentinel.ts"],
-	},
-	{
 		code: "slot-deprecated",
 		levels: ["warn"],
 		sources: ["core/src/editor/editorApiHelpers.ts"],

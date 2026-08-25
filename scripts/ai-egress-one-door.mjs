@@ -32,7 +32,7 @@ const ADAPTER_FILE = "packages/types/src/types/tools.ts";
 const EXPECTED_CALL_FILE = "packages/core/src/facets/aiEgressFacet.ts";
 const EXPECTED_METHODS = ["stream"];
 
-const SCAN_ROOTS = ["packages", "playground"];
+const SCAN_ROOTS = ["packages", "playground", "internal"];
 const SKIP_DIRS = new Set([
 	"node_modules",
 	"dist",

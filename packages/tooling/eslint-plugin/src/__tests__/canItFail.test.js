@@ -264,15 +264,14 @@ describe("per-rule can-it-fail (write a violation, error by name)", () => {
 			rules["no-selection-timers"],
 			{
 				code: "function seededS4Timer() { setTimeout(() => {}, 0); }\n",
-				filename:
-					"packages/rendering/dom/src/field-editor/offsetDomain.ts",
+				filename: "packages/core/src/editor/caretPositions.ts",
 				errors: [
 					{
 						messageId: "timer",
 						data: {
 							kind: "setTimeout",
 							symbol: "seededS4Timer",
-							file: "packages/rendering/dom/src/field-editor/offsetDomain.ts",
+							file: "packages/core/src/editor/caretPositions.ts",
 						},
 					},
 				],

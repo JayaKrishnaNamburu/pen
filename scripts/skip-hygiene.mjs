@@ -27,7 +27,7 @@ import { fileURLToPath } from "node:url";
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_REPO_ROOT = path.resolve(SCRIPT_DIR, "..");
 const DEFAULT_ALLOWLIST = path.join("scripts", "skip-hygiene-allowlist.json");
-const SCAN_ROOTS = ["packages", "playground"];
+const SCAN_ROOTS = ["packages", "playground", "internal"];
 
 /** Empty uncommented hits above this count stay report-only (exit 0). */
 export const REPORT_ONLY_THRESHOLD = 8;

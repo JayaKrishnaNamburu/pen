@@ -127,6 +127,103 @@ importers:
         specifier: ^6.2.0
         version: 6.4.1(@types/node@25.4.0)(tsx@4.21.0)
 
+  internal/kitchen-sink:
+    dependencies:
+      '@ai-sdk/anthropic':
+        specifier: ^3.0.58
+        version: 3.0.58(zod@4.3.6)
+      '@input/pen-ai':
+        specifier: workspace:*
+        version: link:../../packages/extensions/ai
+      '@input/pen-assets-memory':
+        specifier: workspace:^
+        version: link:../../packages/tooling/assets-memory
+      '@input/pen-core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@input/pen-crdt-yjs':
+        specifier: workspace:^
+        version: link:../../packages/crdt/yjs
+      '@input/pen-input-rules':
+        specifier: workspace:*
+        version: link:../../packages/extensions/input-rules
+      '@input/pen-interop':
+        specifier: workspace:*
+        version: link:../../packages/extensions/interop
+      '@input/pen-multiplayer':
+        specifier: workspace:^
+        version: link:../../packages/extensions/multiplayer
+      '@input/pen-preset-default':
+        specifier: workspace:*
+        version: link:../../packages/presets/default
+      '@input/pen-react':
+        specifier: workspace:*
+        version: link:../../packages/rendering/react
+      '@input/pen-schema-default':
+        specifier: workspace:*
+        version: link:../../packages/schema/default
+      '@input/pen-search':
+        specifier: workspace:*
+        version: link:../../packages/extensions/search
+      '@input/pen-shortcuts':
+        specifier: workspace:*
+        version: link:../../packages/extensions/shortcuts
+      '@input/pen-types':
+        specifier: workspace:*
+        version: link:../../packages/types
+      '@y/websocket-server':
+        specifier: ^0.1.5
+        version: 0.1.5(@y/y@14.0.0-16)
+      ai:
+        specifier: ^6.0.116
+        version: 6.0.116(zod@4.3.6)
+      dotenv:
+        specifier: ^17.3.1
+        version: 17.3.1
+      react:
+        specifier: ^19.0.0
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.4(react@19.2.4)
+      ws:
+        specifier: ^8.19.0
+        version: 8.19.0
+      y-websocket:
+        specifier: ^3.0.0
+        version: 3.0.0(yjs@13.6.29)
+      yjs:
+        specifier: 13.6.29
+        version: 13.6.29
+    devDependencies:
+      '@types/node':
+        specifier: ^25.4.0
+        version: 25.4.0
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.14)
+      '@types/ws':
+        specifier: ^8.18.1
+        version: 8.18.1
+      '@vitejs/plugin-react':
+        specifier: ^4.3.4
+        version: 4.7.0(vite@6.4.1(@types/node@25.4.0)(tsx@4.21.0))
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+      vite:
+        specifier: ^6.2.0
+        version: 6.4.1(@types/node@25.4.0)(tsx@4.21.0)
+      vitest:
+        specifier: ^3.0.7
+        version: 3.2.4(@types/debug@4.1.12)(@types/node@25.4.0)(jsdom@28.1.0)(tsx@4.21.0)
+
   packages/core:
     dependencies:
       '@input/pen-crdt-yjs':
@@ -930,72 +1027,30 @@ importers:
 
   playground:
     dependencies:
-      '@ai-sdk/anthropic':
-        specifier: ^3.0.58
-        version: 3.0.58(zod@4.3.6)
       '@input/pen-ai':
         specifier: workspace:*
         version: link:../packages/extensions/ai
-      '@input/pen-assets-memory':
-        specifier: workspace:^
-        version: link:../packages/tooling/assets-memory
       '@input/pen-core':
         specifier: workspace:*
         version: link:../packages/core
-      '@input/pen-crdt-yjs':
-        specifier: workspace:^
-        version: link:../packages/crdt/yjs
       '@input/pen-input-rules':
         specifier: workspace:*
         version: link:../packages/extensions/input-rules
-      '@input/pen-interop':
-        specifier: workspace:*
-        version: link:../packages/extensions/interop
-      '@input/pen-multiplayer':
-        specifier: workspace:^
-        version: link:../packages/extensions/multiplayer
       '@input/pen-preset-default':
         specifier: workspace:*
         version: link:../packages/presets/default
       '@input/pen-react':
         specifier: workspace:*
         version: link:../packages/rendering/react
-      '@input/pen-schema-default':
-        specifier: workspace:*
-        version: link:../packages/schema/default
-      '@input/pen-search':
-        specifier: workspace:*
-        version: link:../packages/extensions/search
-      '@input/pen-shortcuts':
-        specifier: workspace:*
-        version: link:../packages/extensions/shortcuts
       '@input/pen-types':
         specifier: workspace:*
         version: link:../packages/types
-      '@y/websocket-server':
-        specifier: ^0.1.5
-        version: 0.1.5(@y/y@14.0.0-16)
-      ai:
-        specifier: ^6.0.116
-        version: 6.0.116(zod@4.3.6)
-      dotenv:
-        specifier: ^17.3.1
-        version: 17.3.1
       react:
         specifier: ^19.0.0
         version: 19.2.4
       react-dom:
         specifier: ^19.0.0
         version: 19.2.4(react@19.2.4)
-      ws:
-        specifier: ^8.19.0
-        version: 8.19.0
-      y-websocket:
-        specifier: ^3.0.0
-        version: 3.0.0(yjs@13.6.29)
-      yjs:
-        specifier: 13.6.29
-        version: 13.6.29
     devDependencies:
       '@types/node':
         specifier: ^25.4.0
@@ -1006,24 +1061,15 @@ importers:
       '@types/react-dom':
         specifier: ^19.0.0
         version: 19.2.3(@types/react@19.2.14)
-      '@types/ws':
-        specifier: ^8.18.1
-        version: 8.18.1
       '@vitejs/plugin-react':
         specifier: ^4.3.4
         version: 4.7.0(vite@6.4.1(@types/node@25.4.0)(tsx@4.21.0))
-      tsx:
-        specifier: ^4.21.0
-        version: 4.21.0
       typescript:
         specifier: ^5.7.3
         version: 5.9.3
       vite:
         specifier: ^6.2.0
         version: 6.4.1(@types/node@25.4.0)(tsx@4.21.0)
-      vitest:
-        specifier: ^3.0.7
-        version: 3.2.4(@types/debug@4.1.12)(@types/node@25.4.0)(jsdom@28.1.0)(tsx@4.21.0)
 
 packages:
 

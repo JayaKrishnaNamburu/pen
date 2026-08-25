@@ -5,6 +5,7 @@ coverage/
 *.tsbuildinfo
 .DS_Store
 playwright-report/
-test-results/
+test-results*/
 playground/.env.local
+internal/kitchen-sink/.env.local
 .npmrc

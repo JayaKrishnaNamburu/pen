@@ -64,12 +64,7 @@ const LIVE_IN_PATH_RE = /lives? in `packages\//;
 const TYPES_BARREL_RE = /on the types barrel/i;
 const DELETED_RE = /(?:is|are) deleted\b|do not import/i;
 const NOT_REEXPORTED_RE = /not re-exported/i;
-const FIDELITY_EXPORTERS = [
-	"packages/extensions/export-html/FIDELITY.md",
-	"packages/extensions/export-markdown/FIDELITY.md",
-	"packages/extensions/export-json/FIDELITY.md",
-	"packages/extensions/export-xml/FIDELITY.md",
-];
+const FIDELITY_EXPORTERS = ["packages/extensions/interop/FIDELITY.md"];
 
 export function splitSentences(text) {
 	return text

@@ -23,6 +23,22 @@ jobs:
         id: filter
         uses: dorny/paths-filter@v3
         with:
+          # GA11 population (2026-08-25). Walked dependencies +
+          # peerDependencies of the Playwright host
+          # (@input/pen-kitchen-sink — playwright.config.ts webServer
+          # and testDir) and the GA11 roots (@input/pen-playground,
+          # @input/pen-dom). Closure:
+          #   packages/core, packages/crdt/yjs, packages/types,
+          #   packages/schema/default, packages/presets/default,
+          #   packages/rendering/dom, packages/rendering/react,
+          #   packages/extensions/{ai,document-ops,history,input-rules,
+          #   interop,multiplayer,search,shortcuts,undo},
+          #   packages/shared/{content-ops,markdown-serialization},
+          #   packages/tooling/assets-memory,
+          #   hosts internal/kitchen-sink and playground.
+          # Not in the closure: examples/*, packages/rendering/vue,
+          # packages/transports/*, packages/tooling/{bench,conformance,
+          # eslint-plugin,test}, packages/docs.
           filters: |
             e2e:
               - '.github/workflows/ci.yml'
@@ -30,13 +46,18 @@ jobs:
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
               - 'playwright.config.ts'
+              - 'internal/kitchen-sink/**'
               - 'playground/**'
               - 'packages/core/**'
               - 'packages/crdt/yjs/**'
-              - 'packages/extensions/undo/**'
-              - 'packages/rendering/react/**'
-              - 'packages/schema/default/**'
               - 'packages/types/**'
+              - 'packages/schema/default/**'
+              - 'packages/presets/default/**'
+              - 'packages/rendering/dom/**'
+              - 'packages/rendering/react/**'
+              - 'packages/extensions/**'
+              - 'packages/shared/**'
+              - 'packages/tooling/assets-memory/**'
 
   validate:
     timeout-minutes: 60

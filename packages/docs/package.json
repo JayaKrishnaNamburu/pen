@@ -15,6 +15,7 @@
     "check:samples": "node ./scripts/check-doc2-samples.mjs",
     "generate:tables": "node ./scripts/generate-doc-tables.mjs --write",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
     "clean": "rm -rf dist"
   },
   "dependencies": {

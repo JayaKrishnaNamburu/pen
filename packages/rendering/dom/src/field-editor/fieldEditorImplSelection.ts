@@ -64,7 +64,7 @@ import {
 	getFullDocumentTextRange,
 	pointsEqual,
 } from "./fieldEditorImplHelpers";
-import { shouldIgnoreLeftoverFieldAfterDocumentSelectAll } from "./documentSelectAllLeftover";
+import { isSingleFieldNativeLeftover } from "./singleFieldNativeLeftover";
 import {
 	decideDomSelectionRead,
 	type DomSelectionReadDecision,
@@ -194,24 +194,29 @@ export abstract class FieldEditorImplSelection extends FieldEditorImplLifecycle 
 				this._selectionCoordinator.isProjectionInFlight(),
 		});
 		this.notifyGestureEvent("selectionchange");
+		const isLeftoverField =
+			proposal?.type === "text" &&
+			isSingleFieldNativeLeftover(this._editor.selection, proposal);
 		if (decided.decision === "diverge") {
-			// Firefox/WebKit collapse document select-all onto the
-			// active field. that leftover is closed-window (I4) so it
-			// must not write; P2 would project the multi-block range
-			// and the engine would collapse again.
-			if (
-				proposal?.type !== "text" ||
-				!shouldIgnoreLeftoverFieldAfterDocumentSelectAll(
-					this._editor.selection,
-					proposal,
-				)
-			) {
+			// document select-all leftover is closed-window (I4) so it
+			// must not write; P2 must not run either, because projecting
+			// the multi-block range makes the engine confine it again.
+			if (!isLeftoverField) {
 				this.requestDivergenceProjection();
 			}
 			return decided.decision;
 		}
 		if (decided.decision !== "accept" || decided.normalized === null) {
 			return decided.decision;
+		}
+		if (isLeftoverField) {
+			// Same leftover with the window open: a drag onto a block
+			// with no text position reports the nearest text end, and
+			// accepting it would drop the structural cover. Re-project
+			// so the DOM follows the authority instead. A click is
+			// collapsed, so it still accepts.
+			this.requestDivergenceProjection();
+			return "diverge";
 		}
 		this._applyAcceptedDomSelection(decided.normalized, decided.origin);
 		return decided.decision;

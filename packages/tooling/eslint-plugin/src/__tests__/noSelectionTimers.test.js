@@ -372,13 +372,17 @@ describe("no-selection-timers (S4)", () => {
 	});
 
 	it("errors by file and symbol when a newly-in-scope module gains a timer", () => {
-		const file = existingModulePaths().find(
-			(modulePath) =>
-				!allowlist.entries.some((entry) => entry.file === modulePath),
-		);
-		expect(file).toBeTruthy();
-		const source = readFileSync(path.join(repoRoot, file), "utf8");
-		const mutated = `${source}\nfunction seededS4Timer() {\n\tsetTimeout(() => { void 0; }, 0);\n}\n`;
+		// `modules` is a fail-closed basename list. After the GA6 prune no
+		// entry is a live path (`existingModulePaths()` is empty), so this
+		// proves the listHasPath branch with the remaining basename rather
+		// than requiring a padded inventory file.
+		const file = "packages/core/src/editor/caretPositions.ts";
+		expect(isSelectionModule(file)).toBe(true);
+		expect(
+			allowlist.entries.some((entry) => entry.file === file),
+		).toBe(false);
+		const mutated =
+			"function seededS4Timer() {\n\tsetTimeout(() => { void 0; }, 0);\n}\n";
 		ruleTester.run(
 			"no-selection-timers-new-scope-mutation",
 			noSelectionTimers,

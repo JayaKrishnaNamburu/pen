@@ -7,7 +7,7 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."
 const allowlistPath = path.join(repoRoot, "scripts/no-new-slots-allowlist.json");
 
 const DEFAULT_ADAPTER_FILES = ["packages/core/src/editor/editorApiHelpers.ts"];
-const SCAN_ROOTS = ["packages", "playground"];
+const SCAN_ROOTS = ["packages", "playground", "internal"];
 const SKIP_DIRS = new Set([
   "node_modules",
   "dist",

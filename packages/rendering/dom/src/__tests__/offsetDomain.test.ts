@@ -16,8 +16,8 @@ const STORAGE_SAMPLES = [
 	"日本語",
 ] as const;
 
-describe("offsetDomain I11", () => {
-	it("I11 EM5: empty string is length 0; mid-string ZWSP is real; clamps invert", () => {
+describe("offsetDomain EM5", () => {
+	it("EM5: empty string is length 0; mid-string ZWSP is real; clamps invert", () => {
 		for (const text of STORAGE_SAMPLES) {
 			expect(logicalLength(text)).toBe(text.length);
 

@@ -1,0 +1,30 @@
+{
+  "name": "@input/pen-playground",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.server.json",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@input/pen-ai": "workspace:*",
+    "@input/pen-core": "workspace:*",
+    "@input/pen-input-rules": "workspace:*",
+    "@input/pen-preset-default": "workspace:*",
+    "@input/pen-react": "workspace:*",
+    "@input/pen-types": "workspace:*",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.4.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.7.3",
+    "vite": "^6.2.0"
+  }
+}

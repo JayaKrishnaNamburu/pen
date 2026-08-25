@@ -1,0 +1,77 @@
+/* Shared primitives: icon buttons and the slide-over sheet. */
+
+.icon-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	flex: none;
+	border-radius: var(--radius-sm);
+	color: var(--text-secondary);
+	transition:
+		color var(--duration) var(--ease),
+		background var(--duration) var(--ease);
+}
+
+.icon-button:hover:not(:disabled) {
+	color: var(--text-primary);
+	background: var(--fill-hover);
+}
+
+.icon-button[data-active] {
+	color: var(--text-primary);
+	background: var(--fill-active);
+}
+
+.icon-button:disabled {
+	color: var(--text-muted);
+	cursor: not-allowed;
+}
+
+.sheet {
+	position: absolute;
+	top: var(--space-2);
+	right: var(--space-2);
+	bottom: var(--space-2);
+	z-index: 2;
+	display: flex;
+	flex-direction: column;
+	width: var(--inspector-width);
+	max-width: calc(100% - var(--space-4));
+	border: 1px solid var(--line);
+	border-radius: var(--radius-lg);
+	background: var(--surface-sunken);
+	box-shadow: var(--shadow-sheet);
+	opacity: 0;
+	transform: translateX(calc(100% + var(--space-4)));
+	transition:
+		transform var(--duration) var(--ease),
+		opacity var(--duration) var(--ease);
+}
+
+.sheet[data-open] {
+	opacity: 1;
+	transform: translateX(0);
+}
+
+.sheet-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-2);
+	padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+	border-bottom: 1px solid var(--line);
+}
+
+.sheet-title {
+	margin: 0;
+	font-size: var(--text-md);
+	font-weight: 600;
+}
+
+.sheet-body {
+	flex: 1;
+	min-height: 0;
+	overflow-y: auto;
+}

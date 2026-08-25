@@ -1,0 +1,108 @@
+# Rule-ID Registry
+
+Authoring gate for new specs and new claimed rules. Check this table before adopting a family prefix. `scripts/claimed-scope.txt` points here.
+
+This registry **records** collisions and **reserves** families. It does **not** rename or renumber anything in the frozen v2/v3 documents (RD4 in `spec-v4/00-concept.md`). Only *new* specs are bound by these reservations. Grep-based coverage over a colliding family is unreliable; that is why the collision is recorded rather than "fixed" in the record trees.
+
+Status:
+
+- **live** — still governs product code or an executing train.
+- **retired** — a named member (or the confinement it described) no longer has a subject. The family row stays so the token is reserved.
+- **record-only** — evidence, findings, process, or resolved-decision labels. Not a `coverage:rules` test-name family. Do not claim them.
+
+v4 families (`TR`, `GA`, `RC`, `DL`, `CS`) are reserved and live. Do not append them to `claimed-scope.txt` until a test name actually claims the ID — the coverage gate fails any listed ID with no claiming test.
+
+## Census commands (2026-08-25)
+
+Families and collisions below were measured on this tree, not copied from a handed list.
+
+```bash
+# definition-line IDs (wave-2 seed command, plus recursive)
+rg -o '^- ([A-Z]+[0-9]+)\.' spec-v2/*.md spec-v3/*.md spec-v4/*.md | sort -u
+rg -o '^- ([A-Z]+[0-9]+)\.' spec-v2 spec-v3 spec-v4 --glob '*.md' | sort -u
+
+# DEFINITION_LINE_RE used by scripts/coverage-rules.mjs
+rg -o '^[-*]\s+([A-Z]+)\d+\s*[.—–]' spec-v2 spec-v3 spec-v4 --glob '*.md'
+
+# claimed-scope leading tokens (comments stripped by the checker)
+rg -o '^[A-Z]+' scripts/claimed-scope.txt | sort -u
+
+# prefixes defined as rules in both v2 and v3 (same matcher as coverage-rules)
+# measured intersection: D, I
+```
+
+v2 inventory line in `spec-v2/09-reliability-testing.md` (`Rule: …`) also lists `SEC`, `AX`, `API`, `CH`, `HOST`, `LOC`, `DOC`. `scripts/coverage-rules.mjs` `EXTRA_PREFIXES` adds `DUR`, `COL`, `AIB`, `IOP`, `SCALE`. `E` / `W` live in `spec-v2/00-motivation.md` (heading / table, not `^- E1.` lines). `F` is the audit-finding series in `spec-v2/11-audit.md`. `PG` is the performance contract in `spec-v3/01-anchors.md` §3. `RD` is defined as `- RD1 (was OQ1).` / `**RD1.**` (parentheses and bold), so it does not match `DEFINITION_LINE_RE`.
+
+## Families
+
+First column is the bare prefix so a check of the form `\|\s*FAMILY\s*\|` matches.
+
+| family | owning document | status | known collisions |
+| ------ | --------------- | ------ | ---------------- |
+| A | `spec-v2/03-selection.md` | live | |
+| N | `spec-v2/03-selection.md` | live | inventory line lists N1–N3; N4–N5 are defined in the same file |
+| P | `spec-v2/03-selection.md` | live | Wave P (`spec-v2/waves/README.md`) |
+| O | `spec-v2/03-selection.md` | live | |
+| T | `spec-v2/03-selection.md` | live | Wave T |
+| C | `spec-v2/03-selection.md` | live | Wave C |
+| S | `spec-v2/03-selection.md` | live | Wave S |
+| R | `spec-v2/04-facets.md` | live | same-generation: `03-selection.md` R1–R3 are reader-window rules; `04-facets.md` R1–R7 are facet-resolution rules |
+| D | `spec-v2/05-commands.md` | live | **v3 `00-concept.md` D1–D5 are design-defect labels, not command-dispatch rules** — same token, two live documents; `coverage:rules` prints `COLLISION D` |
+| K | `spec-v2/05-commands.md` | live | |
+| B | `spec-v2/05-commands.md` | live | |
+| ST | `spec-v2/06-commit-pipeline.md` | live | |
+| SCH | `spec-v2/07-dom-scheduling.md` | live | |
+| G | `spec-v2/07-dom-scheduling.md` | live | |
+| OV | `spec-v2/07-dom-scheduling.md` | live | |
+| DIR | `spec-v2/08-bidi.md` | live | |
+| BR | `spec-v2/08-bidi.md` | live | |
+| M | `spec-v2/08-bidi.md` | live | Wave M |
+| RI | `spec-v2/08-bidi.md` | live | |
+| CH | `spec-v2/09-reliability-testing.md` | live | CH10 is defined in that file; inventory line lists CH1–CH9 |
+| SEC | `spec-v2/12-security.md` | live | |
+| AX | `spec-v2/13-accessibility.md` | live | |
+| API | `spec-v2/14-api-and-packaging.md` | live | |
+| HOST | `spec-v2/15-host-integration.md` | live | |
+| LOC | `spec-v2/16-localization.md` | live | |
+| DOC | `spec-v2/17-documentation.md` | live | |
+| DUR | `spec-v2/18-document-durability.md` | live | |
+| COL | `spec-v2/19-collaboration-contract.md` | live | Wave C (letter, not this prefix) |
+| AIB | `spec-v2/20-ai-boundary.md` | live | |
+| IOP | `spec-v2/21-interop-and-assets.md` | live | |
+| SCALE | `spec-v2/22-scale-envelope.md` | live | |
+| I | `spec-v2/01-architecture.md` | live | shared invariant family across v2/v3/v4 (same meaning). Retired members: I2/I3 (mapping), I11 (two-seam sentinel). Live additions: I13/I14 (`spec-v3/00-concept.md`), I15 (`spec-v4/00-concept.md`). `DEFINITION_LINE_RE` intersection with v3 is I; that is not a meaning collision |
+| F | `spec-v2/11-audit.md` | record-only | audit findings F1–F59; Wave F is a different namespace (`spec-v2/waves/README.md`) |
+| E | `spec-v2/00-motivation.md` | record-only | evidence catalog E1–E10; Wave E is a different namespace |
+| W | `spec-v2/00-motivation.md` | record-only | Wordgard adoptions W1–W9 |
+| SM | `spec-v2/04-facets.md` | live | |
+| AN | `spec-v3/01-anchors.md` | live | |
+| AS | `spec-v3/01-anchors.md` | live | |
+| OB | `spec-v3/02-observation-and-intent.md` | live | |
+| INT | `spec-v3/02-observation-and-intent.md` | live | |
+| OP | `spec-v3/03-ops.md` | live | prefix of OPB; coverage matches a complete letter-run (`OPB1` is not `OP1`) |
+| OPB | `spec-v3/03-ops.md` | live | |
+| PR | `spec-v3/03-ops.md` | live | |
+| EM | `spec-v3/04-empty-blocks.md` | live | EM4 retired 2026-08-24 (stamp-2 remote heal deleted). EM1–EM3 and EM5–EM8 stay |
+| SF | `spec-v3/05-surface.md` | live | |
+| PG | `spec-v3/01-anchors.md` | live | PG1 performance contract (§3); not a `DEFINITION_LINE_RE` family |
+| WA | `spec-v3/00-concept.md` | record-only | working agreements. v4 extends the same family (WA7–WA8). `PROCESS_PREFIXES` in `coverage-rules.mjs` — not a test-name obligation |
+| RD | `spec-v3/00-concept.md` | record-only | **v3 RD1–RD6 and v4 RD1–RD6 are different decisions under the same tokens** (v3 RD4 = rows-as-blocks out; v4 RD4 = no retroactive renames). Frozen; do not rename (RD4) |
+| TR | `spec-v4/01-trains.md` | live | reserved; unclaimed until tests land |
+| GA | `spec-v4/02-instruments.md` | live | reserved; unclaimed until tests land |
+| RC | `spec-v4/03-record.md` | live | reserved; unclaimed until tests land |
+| DL | `spec-v4/04-scaffolding.md` | live | reserved; unclaimed until tests land |
+| CS | `spec-v4/05-structure.md` | live | reserved; unclaimed until tests land |
+
+## Collisions (measured)
+
+1. **D1–D5 (the coverage-breaking case).** `spec-v2/05-commands.md` D1–D5 are command-dispatch rules. `spec-v3/00-concept.md` D1–D5 are design-defect labels (`- D1 — …`, matches `DEFINITION_LINE_RE`). A test named `D1` claims both. Recorded in `spec-v2/09-reliability-testing.md` ("Prefix collision") and printed by `coverage:rules` as `COLLISION D`. Do not treat a D-named test as covering the v3 defects.
+
+2. **R1–R3 inside v2.** `spec-v2/03-selection.md` R1–R3 are reader-window admissibility rules. `spec-v2/04-facets.md` R1–R7 are facet provider/combine rules. Same generation, same tokens, two meanings. The inventory line attributes R1–R7 to facets. No retroactive rename (RD4).
+
+3. **Wave letters vs rule letters.** `spec-v2/waves/README.md`: "Wave letters and rule prefixes are separate namespaces and overlap in several places (Wave S vs. the `S1–S6` selection invariants, Wave P vs. `P1–P2`, Wave C vs. the `C1–C4` IME rules, Wave M vs. `M1–M6` bidi motion, Wave T vs. `T1–T6` selection transitions). A bare letter in these files means the wave; a letter with a number means the rule." Wave D / Wave F / Wave E overlap the D, F, and E families the same way.
+
+4. **RD1–RD6 across v3 and v4.** Both concept documents define RD1–RD6 as resolved decisions with different contents. Record-only; not claimed. Do not reuse `RD` for a product rule.
+
+5. **I (not a meaning collision).** v2, v3, and v4 share the invariant family. I2/I3 and I11 are retired members; I13/I14/I15 are later additions. `DEFINITION_LINE_RE` reports I in both v2 and v3 because both define I-rules, not because the token changed meaning.
+
+Reserved for new specs: do not start a new family whose prefix is already a row in this table. Do not reuse a retired member ID (I2, I3, I11, EM4) to close a coverage line.

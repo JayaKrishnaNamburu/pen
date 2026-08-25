@@ -5,8 +5,8 @@ import { createDefaultSchema } from "./fixtures/testSchema";
 import { createHeadlessEditor } from "../editor/editor";
 import { blockLogicalText } from "../text/blockLogicalText";
 
-describe("blockLogicalText I11", () => {
-	it("I11: a user-typed zero-width space in non-empty text is kept", () => {
+describe("blockLogicalText I14", () => {
+	it("EM1 I14: empty text is empty; a user-typed zero-width space is kept", () => {
 		const editor = createFakeEditor({
 			empty: "",
 			typed: "keep\u200Bme",
@@ -20,7 +20,7 @@ describe("blockLogicalText I11", () => {
 		expect(blockLogicalText(editor, "trail")).toBe("trail\u200B");
 	});
 
-	it("I11: missing block emits a diagnostic and returns empty text", () => {
+	it("missing block emits a diagnostic and returns empty text", () => {
 		const diagnostics: DiagnosticEvent[] = [];
 		const editor = createFakeEditor({}, (event) => {
 			diagnostics.push(event);
@@ -37,7 +37,7 @@ describe("blockLogicalText I11", () => {
 		]);
 	});
 
-	it("I11: headless empty block and typed ZWSP round-trip through the API", () => {
+	it("EM1 I14: headless empty block and typed ZWSP round-trip through the API", () => {
 		const editor = createHeadlessEditor({ schema: createDefaultSchema() });
 		const block = editor.firstBlock();
 		expect(block).not.toBeNull();

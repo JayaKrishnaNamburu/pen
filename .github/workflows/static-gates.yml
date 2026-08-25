@@ -8,10 +8,12 @@
 # package-metadata matrix gate (`--check`), and exercised by
 # node-matrix.yml — the leftover report does not enforce either.
 #
-# console-inventory also always exits 0. It is published into the job
-# summary of the blocking job below, not as its own check. Blocking
-# CH5 is `pnpm ch-gates`. The this-any and ts-nocheck inventories
-# were deleted: CH4/CH1 live in ch-gates.
+# console-inventory also always exits 0. It is not a job (a permanently
+# green check is a defect). CH1–CH9, including blocking CH5
+# (`pnpm ch-gates` via scripts/health-gates.mjs), run once per PR in
+# health-gates.yml — this matrix does not re-run them (GA10).
+# The this-any and ts-nocheck inventories were deleted: CH4/CH1 live
+# in ch-gates.
 
 name: Static gates
 
@@ -32,8 +34,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - gate: ch-gates
-            command: pnpm ch-gates
           - gate: skip-hygiene
             command: pnpm skip-hygiene
           # --strict is the enforcing mode; without it the script cannot fail.
@@ -93,6 +93,25 @@ jobs:
           # Bare path strings are the parking-lot shape and fail.
           - gate: above-floor-api-allowlist
             command: node scripts/above-floor-api-allowlist.mjs
+          # Classifies every spec-v3 `- GATE` line without executing it and
+          # fails when a command is structurally unable to fail. This is the
+          # only gate that can catch a gate: after the SF1 merge, GATE 2.3
+          # and 2.9 still named deleted packages, and `pnpm --filter` on a
+          # selector matching nothing exits 0 — both read green while running
+          # no tests. Cheap on purpose (no build, no suites); the executing
+          # run is a wave-owner command, not a PR hold.
+          - gate: v3-gate-scope-lint
+            command: node scripts/v3-gates.mjs --scope-lint
+          # I15 / GA1: every path-shaped datum in a check instrument
+          # resolves against the tree. Blocking — a gate that cannot
+          # fail is a defect this repo has already deleted twice.
+          # The self-test runs as its own row: --self-test does not also
+          # walk the live tree, so one invocation cannot cover both, and
+          # a checker whose red-proof never runs in CI is unverified.
+          - gate: instrument-paths
+            command: pnpm instrument-paths
+          - gate: instrument-paths-self-test
+            command: node scripts/instrument-paths.mjs --self-test
 
     steps:
       - name: Check out repository
@@ -114,19 +133,6 @@ jobs:
 
       - name: Run ${{ matrix.gate }}
         run: ${{ matrix.command }}
-
-      - name: Publish CH5 console inventory
-        if: ${{ always() && matrix.gate == 'ch-gates' }}
-        run: |
-          {
-            echo "## CH5 console.* inventory"
-            echo ""
-            echo "Report only — this step cannot fail. Blocking CH5 is \`pnpm ch-gates\`."
-            echo ""
-            echo '```'
-            pnpm console-inventory
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
 
   doc-refs:
     name: doc-refs

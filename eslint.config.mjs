@@ -20,9 +20,10 @@ export default tseslint.config(
 			"**/coverage/**",
 			"**/.turbo/**",
 			"**/playwright-report/**",
-			"**/test-results/**",
+			"**/test-results*/**",
 			"**/*.d.ts",
 			"playground/dist/**",
+			"internal/kitchen-sink/dist/**",
 		],
 	},
 	js.configs.recommended,
@@ -67,8 +68,7 @@ export default tseslint.config(
 		// document content into markup. Disable a site with a comment naming
 		// SEC5, "already-serialized", "clamped", or "justified".
 		files: [
-			"packages/extensions/export-html/src/**/*.{ts,tsx}",
-			"packages/extensions/export-xml/src/**/*.{ts,tsx}",
+			"packages/extensions/interop/src/**/*.{ts,tsx}",
 			"packages/schema/default/src/**/*.{ts,tsx}",
 			"packages/rendering/dom/src/utils/clipboardSerialization.ts",
 			"packages/rendering/dom/src/utils/tableCellClipboard.ts",
@@ -139,8 +139,6 @@ export default tseslint.config(
 			"packages/rendering/vue/src/**/*.{ts,tsx}",
 			"packages/extensions/search/src/**/*.{ts,tsx}",
 			"packages/extensions/ai/src/**/*.{ts,tsx}",
-			"packages/extensions/ai-suggestions/src/**/*.{ts,tsx}",
-			"packages/extensions/ai-autocomplete/src/**/*.{ts,tsx}",
 			"packages/extensions/document-ops/src/**/*.{ts,tsx}",
 		],
 		ignores: ["**/__tests__/**", "**/*.test.ts", "**/*.test.tsx"],
@@ -209,8 +207,6 @@ export default tseslint.config(
 	{
 		files: [
 			"packages/extensions/ai/src/**/*.{ts,tsx}",
-			"packages/extensions/ai-suggestions/src/**/*.{ts,tsx}",
-			"packages/extensions/ai-autocomplete/src/**/*.{ts,tsx}",
 			"packages/extensions/multiplayer/src/**/*.{ts,tsx}",
 			"packages/extensions/search/src/**/*.{ts,tsx}",
 			"packages/tooling/bench/src/**/*.{ts,tsx}",
@@ -280,6 +276,7 @@ export default tseslint.config(
 		files: [
 			"packages/tooling/test/**",
 			"playground/**",
+			"internal/kitchen-sink/**",
 			"packages/docs/**",
 			"scripts/**",
 		],

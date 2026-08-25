@@ -19,7 +19,7 @@ const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_REPO_ROOT = path.resolve(SCRIPT_DIR, "..");
 const DEFAULT_ALLOWLIST = path.join("scripts", "pen-deep-imports-allowlist.json");
 
-const SCAN_ROOTS = ["packages", "examples", "playground"];
+const SCAN_ROOTS = ["packages", "examples", "playground", "internal"];
 const SOURCE_EXTENSIONS = new Set([
 	".ts",
 	".tsx",

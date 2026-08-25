@@ -54,8 +54,8 @@ function randomOffset(rng: () => number, text: string): number {
 	return Math.floor(rng() * (text.length + 1));
 }
 
-describe("offsetDomain I11 properties", () => {
-	it("I11 EM5: empty string is length 0; mid-string ZWSP is real", () => {
+describe("offsetDomain EM5 properties", () => {
+	it("EM5: empty string is length 0; mid-string ZWSP is real", () => {
 		expect(logicalLength("")).toBe(0);
 		expect(logicalLength("a\u200Bb")).toBe(3);
 		const rng = mulberry32(0x49313100);
@@ -75,7 +75,7 @@ describe("offsetDomain I11 properties", () => {
 		}
 	});
 
-	it("I11: toDomOffset and toLogicalOffset invert on the stored domain of random text", () => {
+	it("EM5: toDomOffset and toLogicalOffset invert on the stored domain of random text", () => {
 		const rng = mulberry32(0x49313102);
 		for (let i = 0; i < TRIALS; i++) {
 			const text = randomStorage(rng);

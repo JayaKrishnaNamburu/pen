@@ -12,7 +12,6 @@
     "test": {
       "dependsOn": ["build"]
     },
-    "lint": {},
     "dev": {
       "dependsOn": ["^build"],
       "cache": false,

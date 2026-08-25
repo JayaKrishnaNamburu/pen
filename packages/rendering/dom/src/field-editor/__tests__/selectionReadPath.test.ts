@@ -3,7 +3,7 @@
 import { createEditor, getEditorSelectionRecord } from "@input/pen-core";
 import { defaultSchema } from "@input/pen-schema-default";
 import { afterEach, describe, expect, it } from "vitest";
-import { shouldIgnoreLeftoverFieldAfterDocumentSelectAll } from "../documentSelectAllLeftover";
+import { isSingleFieldNativeLeftover } from "../singleFieldNativeLeftover";
 import { FieldEditorImpl } from "../fieldEditorImpl";
 
 class ProbeFieldEditor extends FieldEditorImpl {
@@ -196,10 +196,7 @@ describe("FieldEditorImpl.readDomSelection PR 6", () => {
 			focus: { blockId, offset: 5 },
 		};
 		expect(
-			shouldIgnoreLeftoverFieldAfterDocumentSelectAll(
-				editor.selection,
-				leftover,
-			),
+			isSingleFieldNativeLeftover(editor.selection, leftover),
 		).toBe(true);
 		const before = getEditorSelectionRecord(editor)!;
 
@@ -215,7 +212,7 @@ describe("FieldEditorImpl.readDomSelection PR 6", () => {
 		});
 	});
 
-	it("document-select-all leftover is accepted while a pointer window is open", () => {
+	it("a collapsed pointer read inside a multi-block selection is accepted and collapses it", () => {
 		const { editor, fieldEditor, blockId } = seedProbeEditor();
 		editor.apply([
 			{
@@ -251,6 +248,50 @@ describe("FieldEditorImpl.readDomSelection PR 6", () => {
 			type: "text",
 			anchor: { blockId, offset: 2 },
 			focus: { blockId, offset: 2 },
+		});
+	});
+
+	it("a single-field range read is refused while a pointer window is open and re-projects", () => {
+		const { editor, fieldEditor, blockId } = seedProbeEditor();
+		editor.apply([
+			{
+				type: "insert-block",
+				blockId: "second",
+				blockType: "paragraph",
+				props: {},
+				position: "last",
+			},
+			{
+				type: "splice-text",
+				blockId: "second",
+				from: 0,
+				to: 0,
+				insert: "world",
+			},
+		]);
+		// the host promoted the drag across blocks from pointer geometry
+		editor.selectTextRange(
+			{ blockId, offset: 0 },
+			{ blockId: "second", offset: 5 },
+		);
+		fieldEditor.notifyGestureEvent("pointerdown");
+		const before = getEditorSelectionRecord(editor)!;
+
+		// the engine cannot represent that far end, so it reports the
+		// nearest text end inside the origin field instead
+		const decision = fieldEditor.readDomSelection({
+			type: "text",
+			anchor: { blockId, offset: 0 },
+			focus: { blockId, offset: 5 },
+		});
+
+		expect(decision).toBe("diverge");
+		expect(fieldEditor.divergenceRequests).toBe(1);
+		expect(getEditorSelectionRecord(editor)?.version).toBe(before.version);
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId, offset: 0 },
+			focus: { blockId: "second", offset: 5 },
 		});
 	});
 });

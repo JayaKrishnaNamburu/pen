@@ -54,6 +54,8 @@ export const FORMAT_PATHS = [
 	"packages/**/README.md",
 	"packages/**/package.json",
 	"playground/package.json",
+	"playground/README.md",
+	"internal/kitchen-sink/package.json",
 	"spec/**/*.md",
 	"spec-v2/**/*.md",
 	"spec-v3/**/*.md",

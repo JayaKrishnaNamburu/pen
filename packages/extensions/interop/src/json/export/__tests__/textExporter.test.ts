@@ -105,7 +105,7 @@ describe("exportPenDocumentToText", () => {
 		).toBe("Hello @Ada");
 	});
 
-	it("I11: empty block exports as empty text, not a zero-width space", () => {
+	it("EM1: empty block exports as empty text, not a zero-width space", () => {
 		expect(
 			exportPenDocumentToText({
 				version: 1,
@@ -121,7 +121,7 @@ describe("exportPenDocumentToText", () => {
 		).toBe("");
 	});
 
-	it("I11: user-typed zero-width space is not stripped", () => {
+	it("I14: user-typed zero-width space is not stripped", () => {
 		expect(
 			exportPenDocumentToText({
 				version: 1,
@@ -144,7 +144,7 @@ describe("exportPenDocumentToText", () => {
 		).toBe("keep\u200Bme");
 	});
 
-	it("I11: empty block round-trips through json export and import as empty text", async () => {
+	it("EM1 I14: empty block round-trips through json export and import as empty text", async () => {
 		const source = createBareEditor();
 		source.apply([
 			{
@@ -168,7 +168,7 @@ describe("exportPenDocumentToText", () => {
 		void target.destroy();
 	});
 
-	it("I11: user-typed zero-width space survives json export and import", async () => {
+	it("I14: user-typed zero-width space survives json export and import", async () => {
 		const source = createBareEditor();
 		source.apply([
 			{

@@ -35,7 +35,7 @@ const CONSOLE_RE = /\bconsole\.(log|warn|error|info|debug)\s*\(/g;
 
 const CONSOLE_SINK_PATHS = new Set([
 	"packages/core/src/editor/events.ts",
-	"packages/extensions/ai-autocomplete/src/autocompleteDebug.ts",
+	"packages/extensions/ai/src/autocomplete/autocompleteDebug.ts",
 ]);
 
 const PACKAGE_SLOT_SKIP = new Set([
@@ -152,6 +152,7 @@ async function runCh1() {
 	);
 	files.push(
 		...(await walkFiles(path.join(repoRoot, "playground"), TS_EXTENSIONS)),
+		...(await walkFiles(path.join(repoRoot, "internal"), TS_EXTENSIONS)),
 	);
 	if (files.length === 0) {
 		return {
@@ -274,7 +275,7 @@ async function runCh2() {
 }
 
 async function runCh3() {
-	const testRoots = ["packages", "playground"].map((dir) =>
+	const testRoots = ["packages", "playground", "internal"].map((dir) =>
 		path.join(repoRoot, dir),
 	);
 	const violations = [];
@@ -592,6 +593,21 @@ function isConsoleAllowed(rel) {
 	// diagnostic channel (H.4); a test-runner config has no editor to emit one.
 	// Wave 0 also requires the fuzz seed to reach the nightly job log.
 	if (/^vitest\..*\.tsx?$/i.test(base)) {
+		return true;
+	}
+	// Same rationale, Playwright's directory convention instead of Vitest's.
+	// isTestFile knows `__tests__/` but not the conformance test roots, which
+	// playwright.config.ts declares as testMatch scenarios/**/*.spec.ts and
+	// suites/**/*.spec.ts. A module colocated there runs in the Playwright
+	// runner process and has no editor to emit a diagnostic on; its console
+	// output is the CI log a human reads when a browser assertion flakes.
+	// Narrow on purpose: this admits the 3 non-spec helper modules under those
+	// roots, one of which logs (suites/bidi/helpers.ts logLoad). It is not a
+	// sink and must not be listed as one.
+	if (
+		rel.startsWith("packages/tooling/conformance/suites/") ||
+		rel.startsWith("packages/tooling/conformance/scenarios/")
+	) {
 		return true;
 	}
 	return /debug\.tsx?$/i.test(base) || /sink\.tsx?$/i.test(base);

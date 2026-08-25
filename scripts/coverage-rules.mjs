@@ -481,7 +481,7 @@ export async function collectTestClaims(
 	idRegex,
 	isRuleId,
 ) {
-	const searchRoots = ["packages", "playground", "scripts"].map((dir) =>
+	const searchRoots = ["packages", "playground", "internal", "scripts"].map((dir) =>
 		path.join(repoRoot, dir),
 	);
 	const files = [];

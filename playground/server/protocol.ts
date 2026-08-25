@@ -1,0 +1,35 @@
+import type { ModelMessage, ToolSchema } from "@input/pen-types";
+
+/** What the browser sends to `POST /api/chat`. */
+export interface ChatRequest {
+	/**
+	 * The conversation so far, built by Pen's agentic loop: the user's prompt,
+	 * then one assistant/tool pair per tool the model has already run.
+	 */
+	messages: ModelMessage[];
+	/** The document tools Pen is offering for this turn. */
+	tools: ToolSchema[];
+}
+
+/**
+ * What the server streams back, one JSON object per line.
+ *
+ * Pen's `ModelStreamEvent` union is larger than this — it also carries inline
+ * preview events for selection rewrites. A chat only needs these four, and
+ * naming the subset keeps the wire format something you can read in one go.
+ */
+export type ChatEvent =
+	| { type: "text-delta"; delta: string }
+	| {
+			type: "tool-call";
+			toolCallId: string;
+			toolName: string;
+			input: unknown;
+	  }
+	| { type: "done" }
+	| { type: "error"; error: string };
+
+/** True once the model has run at least one tool this turn. */
+export function hasRunTools(messages: ModelMessage[]): boolean {
+	return messages.some((message) => message.role === "tool");
+}

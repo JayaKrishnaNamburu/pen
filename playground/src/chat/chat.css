@@ -1,0 +1,183 @@
+/* The assistant column. */
+
+.chat-sidebar {
+	display: flex;
+	flex-direction: column;
+	width: var(--chat-width);
+	flex: none;
+	border-right: 1px solid var(--line);
+	background: var(--surface-app);
+}
+
+.chat-header {
+	display: flex;
+	align-items: center;
+	height: 48px;
+	padding: 0 var(--space-4);
+	flex: none;
+}
+
+.chat-title {
+	margin: 0;
+	font-size: var(--text-md);
+	font-weight: 600;
+}
+
+.chat-scroll {
+	flex: 1;
+	min-height: 0;
+	overflow-y: auto;
+	padding: 0 var(--space-3);
+}
+
+/* ── Transcript ────────────────────────────────────────────── */
+
+.chat-transcript {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-4);
+	margin: 0;
+	padding: 0 0 var(--space-4);
+	list-style: none;
+	font-size: var(--text-md);
+	line-height: 1.55;
+}
+
+.chat-turn {
+	overflow-wrap: anywhere;
+}
+
+.chat-prompt {
+	margin: 0;
+	padding: var(--space-2) var(--space-3);
+	border-radius: var(--radius-md);
+	background: var(--surface-tile);
+}
+
+.chat-outcome {
+	margin: var(--space-2) 0 0;
+	padding: 0 var(--space-1);
+	color: var(--text-secondary);
+}
+
+.chat-outcome[data-failed] {
+	color: var(--danger);
+}
+
+/* The route Pen picked, trailing the outcome. */
+.chat-route {
+	margin-left: var(--space-2);
+	color: var(--text-muted);
+	font-family: var(--font-mono);
+	font-size: var(--text-xs);
+}
+
+.chat-activity {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+	padding: 0 var(--space-1);
+	color: var(--text-muted);
+}
+
+.chat-activity-icon {
+	display: inline-flex;
+	animation: chat-spin 900ms linear infinite;
+}
+
+@keyframes chat-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* ── Empty state ───────────────────────────────────────────── */
+
+.chat-empty {
+	padding: var(--space-4) var(--space-1);
+}
+
+.chat-empty-icon {
+	display: inline-flex;
+	color: var(--accent);
+}
+
+.chat-empty-title {
+	margin: var(--space-2) 0 var(--space-1);
+	font-size: var(--text-md);
+	font-weight: 600;
+}
+
+.chat-empty-body {
+	margin: 0 0 var(--space-3);
+	color: var(--text-muted);
+	font-size: var(--text-sm);
+	line-height: 1.5;
+}
+
+.chat-examples {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-1);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.chat-example {
+	padding: 6px var(--space-2);
+	border: 1px solid var(--line);
+	border-radius: var(--radius-sm);
+	color: var(--text-muted);
+	font-size: var(--text-sm);
+}
+
+/* ── Composer ──────────────────────────────────────────────── */
+
+.chat-composer {
+	display: flex;
+	align-items: flex-end;
+	gap: var(--space-2);
+	flex: none;
+	margin: var(--space-3);
+	padding: var(--space-2);
+	border: 1px solid var(--line);
+	border-radius: var(--radius-md);
+	background: var(--surface-raised);
+}
+
+.chat-composer:focus-within {
+	border-color: var(--line-strong);
+}
+
+.chat-input {
+	flex: 1;
+	min-width: 0;
+	border: none;
+	background: none;
+	resize: none;
+	color: inherit;
+	font: inherit;
+	font-size: var(--text-md);
+	outline: none;
+}
+
+.chat-send {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 28px;
+	height: 28px;
+	padding: 0 var(--space-2);
+	flex: none;
+	border-radius: var(--radius-pill);
+	background: var(--fill-active);
+	color: var(--text-primary);
+	font-size: var(--text-sm);
+	transition: opacity var(--duration) var(--ease);
+}
+
+.chat-send:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}

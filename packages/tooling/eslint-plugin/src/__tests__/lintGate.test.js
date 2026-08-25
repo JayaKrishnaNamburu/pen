@@ -99,7 +99,7 @@ describe("CH2 lint gate", () => {
 		const messages = await lintSeededViolation(
 			'const html = `<img src="${src}" />`;\n',
 			"src/seeded-markup-concat.ts",
-			"packages/extensions/export-html",
+			"packages/extensions/interop",
 		);
 
 		expect(
@@ -241,7 +241,7 @@ describe("CH2 lint gate", () => {
 			{
 				filePath: path.join(
 					repoRoot,
-					"packages/rendering/dom/src/field-editor/offsetDomain.ts",
+					"packages/core/src/editor/caretPositions.ts",
 				),
 			},
 		);

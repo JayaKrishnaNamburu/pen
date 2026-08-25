@@ -12,7 +12,7 @@
  * The report must print a blown spec as a loud banner. Missing last-run
  * is a hard fail in reportTypingBudget.js — silent pass is the worst case.
  *
- * What 3.4ms is NOT (corrected 2026-08-23, spec-v2/SCHEDULER-WIRING-AUDIT.md):
+ * What 3.4ms is NOT (corrected 2026-08-23, spec-v2/evidence/SCHEDULER-WIRING-AUDIT.md):
  * it is not a product overrun. The timed flush belongs to a second
  * DomScheduler the harness constructs, and caretRect is inside the timed
  * region only because the harness queued it — acceptCommit has zero

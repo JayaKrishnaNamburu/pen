@@ -1,17 +1,17 @@
 {
   "browserName": "webkit",
-  "firstBlockId": "e63f9ad3-a49b-4cf1-b18b-7083951e9ef8",
-  "insertedBlockId": "fb15217c-2086-4b40-969a-021dc1704254",
-  "redoneBlockId": "fb15217c-2086-4b40-969a-021dc1704254",
+  "firstBlockId": "418329d2-ee79-4ee7-8611-e53a69fe9852",
+  "insertedBlockId": "dbd827b0-bd85-400a-89e0-f8c9a7f6ccf1",
+  "redoneBlockId": "dbd827b0-bd85-400a-89e0-f8c9a7f6ccf1",
   "afterRedo": {
     "editorSelection": {
       "type": "text",
       "anchor": {
-        "blockId": "fb15217c-2086-4b40-969a-021dc1704254",
+        "blockId": "dbd827b0-bd85-400a-89e0-f8c9a7f6ccf1",
         "offset": 0
       },
       "focus": {
-        "blockId": "fb15217c-2086-4b40-969a-021dc1704254",
+        "blockId": "dbd827b0-bd85-400a-89e0-f8c9a7f6ccf1",
         "offset": 0
       },
       "affinity": "downstream",
@@ -19,42 +19,42 @@
       "isCollapsed": true,
       "isMultiBlock": false,
       "blockRange": [
-        "fb15217c-2086-4b40-969a-021dc1704254"
+        "dbd827b0-bd85-400a-89e0-f8c9a7f6ccf1"
       ]
     },
-    "editorFocusBlockId": "fb15217c-2086-4b40-969a-021dc1704254",
+    "editorFocusBlockId": "dbd827b0-bd85-400a-89e0-f8c9a7f6ccf1",
     "activeElement": {
       "tag": "SPAN",
-      "blockId": "fb15217c-2086-4b40-969a-021dc1704254",
+      "blockId": "dbd827b0-bd85-400a-89e0-f8c9a7f6ccf1",
       "className": ""
     },
-    "attachedInlineBlockId": "fb15217c-2086-4b40-969a-021dc1704254",
+    "attachedInlineBlockId": "dbd827b0-bd85-400a-89e0-f8c9a7f6ccf1",
     "native": {
       "isCollapsed": true,
       "text": "",
       "rangeCount": 1,
       "anchor": {
-        "blockId": "fb15217c-2086-4b40-969a-021dc1704254",
+        "blockId": "dbd827b0-bd85-400a-89e0-f8c9a7f6ccf1",
         "offset": 0,
-        "nodePath": "text:\"​\"@SPAN.",
+        "nodePath": "SPAN#.",
         "domOffset": 0
       },
       "focus": {
-        "blockId": "fb15217c-2086-4b40-969a-021dc1704254",
+        "blockId": "dbd827b0-bd85-400a-89e0-f8c9a7f6ccf1",
         "offset": 0,
-        "nodePath": "text:\"​\"@SPAN.",
+        "nodePath": "SPAN#.",
         "domOffset": 0
       }
     },
     "blocks": [
       {
-        "id": "e63f9ad3-a49b-4cf1-b18b-7083951e9ef8",
+        "id": "418329d2-ee79-4ee7-8611-e53a69fe9852",
         "text": "Hello",
         "active": false
       },
       {
-        "id": "fb15217c-2086-4b40-969a-021dc1704254",
-        "text": "​",
+        "id": "dbd827b0-bd85-400a-89e0-f8c9a7f6ccf1",
+        "text": "",
         "active": true
       }
     ]

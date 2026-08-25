@@ -109,16 +109,16 @@ const SKIP_DIR_NAMES = new Set([
  * with the same caveat. The `./field-editor/*` glob then matched 80
  * `.d.ts` files, not 76. Regenerating `packages/rendering/dom/api-report.md`
  * from a fresh `.d.ts` admitted four members the committed report had
- * never listed: `commandDispatch`, `documentSelectAllLeftover`,
- * `selectionMapping`, `selectionReader`. All four were tracked at HEAD
- * and already host-reachable through the glob, so no API widened
+ * never listed: `commandDispatch`, `selectionMapping`, `selectionReader`,
+ * and a leftover helper later replaced in source. All four were tracked
+ * at HEAD and already host-reachable through the glob, so no API widened
  * that write — the report caught up to a surface that was already published.
  *
  * Those 26 were NOT documented away, and that is deliberate. The
  * previous expansion was closed by writing TSDoc; here the members are
- * internal implementation, and `documentSelectAllLeftover` is on the
- * Wave 05 step 5.6 delete list. Giving it host-facing prose would
- * advertise a module scheduled for removal.
+ * internal implementation, and one of the four was already on a Wave 05
+ * delete list. Giving it host-facing prose would advertise a module
+ * scheduled for removal.
  *
  * Closed 2026-08-24 by enumerating the 18 importer-backed
  * `./field-editor/<name>` subpaths (plus the curated barrel). Dist

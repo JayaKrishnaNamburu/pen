@@ -20,8 +20,6 @@ import {
   type CRDTUnknownArray,
   type CRDTUnknownMap,
 } from "../editor/crdtShapes";
-import { stripForeignSentinel } from "./emptyBlockSentinel";
-
 export function sortDeltaAttributes(
   attributes: Record<string, unknown>,
   registry: SchemaRegistry,
@@ -192,21 +190,6 @@ export class SchemaEngineImpl implements SchemaEngine {
     this.normalizeDirty();
   }
 
-  // EM4: strip lone sentinels arriving in remote updates. Deliberately narrower
-  // than normalizeDirty — an observed event must not run structural rules or
-  // recompute stored props, which belong to the local apply pipeline.
-  healForeignSentinels(blockIds: Iterable<string>): void {
-    this.doc.adapter.transact(this.crdtDoc, () => {
-      for (const blockId of blockIds) {
-        const blockMap = this.getBlockMap(blockId);
-        if (!blockMap) continue;
-        const schema = this.registry.resolve(blockMap.get("type") as string);
-        if (!schema) continue;
-        this.stripForeignSentinels(blockId, schema);
-      }
-    });
-  }
-
   // ── normalizeBlock Pipeline ─────────────────────────────
 
   private normalizeBlock(blockId: string): void {
@@ -232,7 +215,6 @@ export class SchemaEngineImpl implements SchemaEngine {
     if (this.normalizeLayout(blockId, schema)) return;
 
     this.ensureContentExists(blockId, schema);
-    this.stripForeignSentinels(blockId, schema);
 
     // Phase 3: Inline content rules
     if (schema.content === "inline") {
@@ -279,39 +261,6 @@ export class SchemaEngineImpl implements SchemaEngine {
 
     if (getTextProp(blockMap, "content")) return;
     blockMap.set("content", this.doc.adapter.createText());
-  }
-
-  private stripForeignSentinels(
-    blockId: string,
-    schema: BlockSchema,
-  ): void {
-    const blockMap = this.getBlockMap(blockId);
-    if (!blockMap) return;
-
-    if (schema.content === "inline") {
-      const content = getTextProp(blockMap, "content");
-      if (content) {
-        stripForeignSentinel(content, blockId, this.onDiagnostic);
-      }
-    }
-
-    const table = getTableContent(blockMap);
-    if (!table) return;
-    for (let row = 0; row < table.length; row++) {
-      const rowMap = table.get(row);
-      if (!isCRDTMap(rowMap)) continue;
-      const cells = getRowCells(rowMap);
-      if (!cells) continue;
-      for (let col = 0; col < cells.length; col++) {
-        const content = getCellText(rowMap, col);
-        if (!content) continue;
-        stripForeignSentinel(
-          content,
-          `${blockId}:${row}:${col}`,
-          this.onDiagnostic,
-        );
-      }
-    }
   }
 
   // ── Rule 4: Strip Default Props ─────────────────────────

@@ -1,0 +1,18 @@
+/*
+ * The three-pane shell: chat, editor, and the inspector sheet on top.
+ *
+ * The base reset and every token live in `styles/tokens.css`.
+ */
+
+.app-shell {
+	display: flex;
+	height: 100%;
+	overflow: hidden;
+}
+
+/* Narrow windows keep the editor and drop the chat column. */
+@media (max-width: 700px) {
+	.chat-sidebar {
+		display: none;
+	}
+}

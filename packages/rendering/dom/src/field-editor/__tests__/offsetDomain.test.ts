@@ -13,8 +13,8 @@ function expectInvertible(text: string): void {
 	}
 }
 
-describe("offsetDomain I11 S2-seam", () => {
-	it("I11 EM5: empty string has logical length 0 and maps invertibly", () => {
+describe("offsetDomain EM5", () => {
+	it("EM5: empty string has logical length 0 and maps invertibly", () => {
 		expect(logicalLength("")).toBe(0);
 		expect(toDomOffset(0, "")).toBe(0);
 		expect(toLogicalOffset(0, "")).toBe(0);
@@ -22,7 +22,7 @@ describe("offsetDomain I11 S2-seam", () => {
 		expectInvertible("");
 	});
 
-	it("I11 S2-seam: normal text maps invertibly", () => {
+	it("EM5: normal text maps invertibly", () => {
 		const text = "hello";
 		expect(logicalLength(text)).toBe(5);
 		expect(toDomOffset(0, text)).toBe(0);
@@ -31,7 +31,7 @@ describe("offsetDomain I11 S2-seam", () => {
 		expectInvertible(text);
 	});
 
-	it("I11 S2-seam: emoji uses UTF-16 offsets; mid-string ZWSP is length 1", () => {
+	it("EM5: emoji uses UTF-16 offsets; mid-string ZWSP is length 1", () => {
 		const text = "hi 👍";
 		expect(text.length).toBe(5);
 		expect(logicalLength(text)).toBe(5);

@@ -19,7 +19,7 @@ describe("@input/pen-markdown-serialization", () => {
     expect(getNumberedListItemValue(thirdItem)).toBe(5);
   });
 
-  it("I11: empty block serializes to empty markdown text, not a ZWSP", () => {
+  it("EM1: empty block serializes to empty markdown text, not a ZWSP", () => {
     const handle = createTextBlock("b1", "paragraph", "");
     const markdown = exportMarkdownForBlocks(
       createExportEditor([handle], {
@@ -32,7 +32,7 @@ describe("@input/pen-markdown-serialization", () => {
     expect(markdown).not.toContain("\u200B");
   });
 
-  it("I11: user-typed zero-width space is kept in markdown", () => {
+  it("I14: user-typed zero-width space is kept in markdown", () => {
     const handle = createTextBlock("b1", "paragraph", "keep\u200Bme");
     const markdown = exportMarkdownForBlocks(
       createExportEditor([handle], {
@@ -44,7 +44,7 @@ describe("@input/pen-markdown-serialization", () => {
     expect(markdown).toBe("keep\u200Bme");
   });
 
-  it("I11: user-typed ZWSP as its own delta is not stripped", () => {
+  it("I14: user-typed ZWSP as its own delta is not stripped", () => {
     const handle = createSegmentedTextBlock("b1", "paragraph", [
       "keep",
       "\u200B",
@@ -83,7 +83,7 @@ describe("@input/pen-markdown-serialization", () => {
     expect(markdown).toContain("NESTED-TOGGLE-CHILD");
   });
 
-  it("I11: empty table cell serializes to empty markdown text, not a ZWSP", () => {
+  it("EM1: empty table cell serializes to empty markdown text, not a ZWSP", () => {
     const handle = createEmptyTableHandle();
     const markdown = exportMarkdownForBlocks(
       createExportEditor([handle], {

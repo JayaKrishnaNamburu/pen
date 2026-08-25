@@ -34,22 +34,22 @@ function createClipboardEvent(): {
 	};
 }
 
-describe("I11 clipboard serialization", () => {
-	it("I11: writePenClipboard emits empty text/plain for an empty block", () => {
+describe("EM8 clipboard serialization", () => {
+	it("EM1: writePenClipboard emits empty text/plain for an empty block", () => {
 		const { event, get } = createClipboardEvent();
 		writePenClipboard([], "", "", event);
 
 		expect(get("text/plain")).toBe("");
 	});
 
-	it("I11: writePenClipboard leaves user text unchanged", () => {
+	it("writePenClipboard leaves user text unchanged", () => {
 		const { event, get } = createClipboardEvent();
 		writePenClipboard([], "", "Hello world", event);
 
 		expect(get("text/plain")).toBe("Hello world");
 	});
 
-	it("I11: serializeDeltasToFormat omits an empty-block delta", () => {
+	it("EM1: serializeDeltasToFormat omits an empty-block delta", () => {
 		const html = serializeDeltasToFormat(
 			[{ insert: "" }],
 			stubEditor(),

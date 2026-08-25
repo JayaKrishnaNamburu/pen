@@ -16,7 +16,7 @@ The monorepo is layered; dependencies point strictly downward:
 - `packages/schema/default` — the default block/inline schema set.
 - `packages/rendering/dom` (`@input/pen-dom`) — the framework-free DOM engine: field editors (EditContext + contenteditable backends), selection bridge, key handling, clipboard/transfer, reconciliation, overlays. The hardest code in the repo lives here.
 - `packages/rendering/react` / `packages/rendering/vue` — thin framework bindings over pen-dom. Behavior belongs in pen-dom or core, never here.
-- `packages/extensions/*` — undo, history, search, input-rules, shortcuts, multiplayer, import/export (html, markdown, json, xml), document-ops, and the AI family (ai, ai-suggestions, ai-autocomplete, ai-skills, ai-tools, delta-stream).
+- `packages/extensions/*` — undo, history, search, input-rules, shortcuts, multiplayer, document-ops, `@input/pen-ai` (subpaths: suggestions, autocomplete, skills, tools, stream), and `@input/pen-interop` (subpaths: html, markdown, json, xml).
 - `packages/presets/default` — batteries-included assembly of core + default schema + recommended extensions.
 - `packages/shared/*`, `packages/transports/*` (direct, sse), `packages/tooling/*` (test, bench, assets-memory), `packages/docs`, `playground/`.
 
@@ -24,18 +24,20 @@ The monorepo is layered; dependencies point strictly downward:
 
 Pen has no separate contracts directory; the spec set is the source of truth:
 
-- `spec/` describes the workspace as currently shipped (package-centric, current-state).
-- `spec-v2/` is the approved v2 design and audit record: selection engine, change summaries, facets, commands, commit pipeline, DOM scheduling, bidi, security, accessibility, API/packaging, and the migration wave plan.
+- `spec/` is the living current-state tree (package-centric). Future shipped-behavior edits go here.
+- `spec-v2/` is the closed v2 design-and-audit record: selection engine, change summaries, facets, commands, commit pipeline, DOM scheduling, bidi, security, accessibility, API/packaging, and the migration wave plan.
+- `spec-v3/` is the closed v3 design-and-audit record: anchors, observation, op primitives, empty blocks, and surface consolidation.
+- `spec-v4/` is the executing consolidation train.
 
 Rules for agents:
 
-- Before touching selection, input handling, the apply pipeline, extension wiring, rendering security, or packaging, read the matching `spec-v2/` document first. Normative rules carry stable IDs (`A1`–`A6`, `S1`–`S6`, `SEC1`–`SEC8`, `AX1`–`AX8`, `API1`–`API9`, ...); cite them in PR descriptions and test names.
+- Before touching selection, input handling, the apply pipeline, extension wiring, rendering security, or packaging, read the matching `spec-v2/` document first (and `spec-v3/` for anchors, ops, empty blocks, and surface). Normative rules carry stable IDs (`A1`–`A6`, `S1`–`S6`, `SEC1`–`SEC8`, `AX1`–`AX8`, `API1`–`API9`, ...); cite them in PR descriptions and test names.
 - When implementation work proves a spec rule wrong or untestable, amend the spec in the same PR. Silent divergence between code and spec is not acceptable (`spec-v2/10-migration-waves.md`, Working Agreements).
-- `spec/` gets updated when shipped behavior changes; `spec-v2/` gets updated when design decisions change.
+- `spec/` is updated when shipped behavior changes. `spec-v2/` and `spec-v3/` are closed records (dated banners only). `spec-v4/` is the executing train.
 
 ## Core Principles
 
-- `DocumentOp[]` is the mutation currency; `editor.apply(ops, { origin })` is the only durable write path. Never write `Y.Text`/`Y.Map` directly or call `adapter.transact` outside core (the delta-stream exception is being removed by `spec-v2/06-commit-pipeline.md`).
+- `DocumentOp[]` is the mutation currency; `editor.apply(ops, { origin })` is the only durable write path. Never write `Y.Text`/`Y.Map` directly or call `adapter.transact` outside core. Streaming goes through `editor.openTextStream` / `TextStreamWriter` (`@input/pen-ai/stream`).
 - Set operation origins intentionally (`user`, `ai`, `collaborator`, `input-rule`, structured origins with `groupId`/`requestId`); undo, suggestions, and diagnostics depend on them.
 - Keep Pen headless: core and extensions must work without a DOM (`createHeadlessEditor`). Only `@input/pen-dom` may touch browser globals.
 - Prefer non-fatal behavior in runtime paths: drop invalid input with a `diagnostic` event rather than throwing from hooks, observers, or extension code.

@@ -1,18 +1,12 @@
 {
-	"_comment": "S4 (spec-v2/03-selection.md) / Wave 5.8. `modules` is the protected set the basename-contains-selection matcher cannot see (focus, offsetDomain, caretPositions, v1 backend/IME offenders). Basename `selection` is a fail-closed net so selectionReader.ts cannot silently escape. `outOfScope` is a decision that a file is not a selection module — not a waiver. `entries` waive a live timer in an in-scope file; each needs file, enclosing symbol, kind, and a reason that names why the site remains and which wave retires it. Remove an entry in the same PR that deletes the call. Liveness checks the named symbol and kind, not merely the path.",
+	"_comment": "S4 (spec-v2/03-selection.md) / Wave 5.8. `modules` is the protected set the basename-contains-selection matcher cannot see. Path-shaped entries must hold a live timer (GA6); bare-basename items are fail-closed matcher patterns (caretPositions), not paths. Basename `selection` is a fail-closed net so selectionReader.ts cannot silently escape. `outOfScope` is a decision that a file is not a selection module — not a waiver. `entries` waive a live timer in an in-scope file; each needs file, enclosing symbol, kind, and a reason that names why the site remains and which wave retires it. Remove an entry in the same PR that deletes the call. Liveness checks the named symbol and kind, not merely the path.",
 	"modules": [
-		"packages/rendering/dom/src/field-editor/focusController.ts",
-		"packages/rendering/dom/src/field-editor/offsetDomain.ts",
-		"packages/core/src/selection/normalPosition.ts",
-		"caretPositions.ts",
-		"packages/rendering/dom/src/field-editor/expandedContentEditableBackend.ts",
-		"packages/rendering/dom/src/field-editor/contenteditableBackendEvents.ts",
-		"packages/rendering/dom/src/field-editor/cellEditingController.ts"
+		"caretPositions.ts"
 	],
 	"outOfScope": [
 		{
 			"file": "packages/rendering/dom/src/field-editor/sessionReconciler.ts",
-			"reason": "Not a Wave 5.8 selection module. scheduleFlush coalesces commit/decoration DOM reconcile onto the next animation frame — a Wave 03 DomScheduler stand-in (SCH), not a selection retry. projectSelection is a post-flush callback, not the reason for the timer. S4 does not apply; listing it here is the decision, not an allowlist waiver."
+			"reason": "Not a Wave 5.8 selection module. scheduleFlush coalesces commit/decoration DOM reconcile onto the next animation frame — a Wave 03 DomScheduler stand-in (SCH), not a selection retry. projectSelection is a post-flush callback, not the reason for the timer. S4 does not apply; listing it here is the decision, not an allowlist waiver. resolved-by: spec-v4 CS6 (Wave 4)."
 		}
 	],
 	"entries": [
@@ -20,19 +14,19 @@
 			"file": "packages/rendering/dom/src/field-editor/contenteditableBackendSelection.ts",
 			"symbol": "scheduleActiveDOMMatchCheck",
 			"kind": "requestAnimationFrame",
-			"reason": "Wave 05 retires this when the selection engine owns DOM-match after decoration changes. UNINVESTIGATED WAIVER recorded the moment isSelectionModule widened from a selection* prefix to a basename that contains selection: this file is a selection module by any reading of S4 and the prefix matcher walked past it. The shape is a deferred ensureActiveDOMMatchesYText plus restoreDOMSelectionFromEditor — treat the rAF as a missing attach or a wrong seam, not an engine accommodation. Whoever takes Wave 05's backend write window owns deleting it; do not renew without saying what the next frame observes that this turn cannot."
+			"reason": "resolved-by: spec-v4 DL8 (Wave 3). The shape is a deferred ensureActiveDOMMatchesYText plus restoreDOMSelectionFromEditor — treat the rAF as a missing attach or a wrong seam, not an engine accommodation. Do not renew without saying what the next frame observes that this turn cannot."
 		},
 		{
 			"file": "packages/rendering/react/src/primitives/editor/inlineAtomSelectionInteraction.ts",
 			"symbol": "destructureInlineAtom",
 			"kind": "requestAnimationFrame",
-			"reason": "Wave 05 retires this by activating the post-destructure caret in the same turn as the replace. UNINVESTIGATED WAIVER from the isSelectionModule widen: a React primitive whose basename contains Selection, walked past by the prefix matcher. The shape is activateTextSelection plus focus deferred one frame after replaceInlineAtomWithText — S4's missing-attach class. Wave 05 owns the delete."
+			"reason": "resolved-by: spec-v4 DL8 (Wave 3). Activate the post-destructure caret in the same turn as the replace. The shape is activateTextSelection plus focus deferred one frame after replaceInlineAtomWithText — S4's missing-attach class."
 		},
 		{
 			"file": "packages/rendering/react/src/hooks/useSelectionToolbar.ts",
 			"symbol": "update",
 			"kind": "requestAnimationFrame",
-			"reason": "Wave 03 retires this by routing the toolbar rect through the scheduler read phase. UNINVESTIGATED WAIVER from the isSelectionModule widen. The shape is a measurement retry: update() cancels the previous frame and schedules resolveNativeSelectionRect on the next — the same class as the selectionRect rAF that another agent deleted today. Wave 03 overlay work owns the delete; do not renew without saying what the second measurement observes that the first cannot."
+			"reason": "resolved-by: spec-v4 DL8 (Wave 3). Route the toolbar rect through the scheduler read phase. The shape is a measurement retry: update() cancels the previous frame and schedules resolveNativeSelectionRect on the next. Do not renew without saying what the second measurement observes that the first cannot."
 		}
 	]
 }

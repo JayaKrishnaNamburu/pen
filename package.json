@@ -20,6 +20,7 @@
     "coverage:rules": "node scripts/coverage-rules.mjs",
     "size-limit": "node scripts/size-limit.mjs",
     "ch-gates": "node scripts/ch-gates.mjs",
+    "instrument-paths": "node scripts/instrument-paths.mjs",
     "v3-gates": "node scripts/v3-gates.mjs",
     "migrate-imports-v3": "node scripts/migrate-imports-v3.mjs",
     "migrate-changesets-v3": "node scripts/migrate-changesets-v3.mjs",

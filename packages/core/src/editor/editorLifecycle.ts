@@ -427,14 +427,6 @@ function dispatchObservedCRDTEvent(
 	event: CRDTEvent,
 ): void {
 	if (self._pipeline.suppressObserver) return;
-	if (!self._healingRemoteSentinels) {
-		self._healingRemoteSentinels = true;
-		try {
-			self._engine.healForeignSentinels(event.affectedBlocks);
-		} finally {
-			self._healingRemoteSentinels = false;
-		}
-	}
 	// observe is registered before the summary source; wait for builder output
 	if (self._pendingSummary != null || self._unsubSummary == null) {
 		self._dispatchCRDTEvent(event);

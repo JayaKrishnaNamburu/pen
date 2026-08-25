@@ -251,7 +251,7 @@ function assertNineStructuralVariants(type: StructuralChange["type"]): void {
 }
 
 describe("change summaries — empty-block inserts (EM5)", () => {
-	it("EM5 I11: emptying a block leaves no insertLength artifact", () => {
+	it("EM5: emptying a block leaves no insertLength artifact", () => {
 		const summary = buildChangeSummary(
 			emptyDelta({
 				textDeltas: textDeltaMap(["b1", [{ delete: MEADOW.length }]]),
@@ -268,7 +268,7 @@ describe("change summaries — empty-block inserts (EM5)", () => {
 		]);
 	});
 
-	it("EM5 I11: typing into an empty block is a logical insert at 0", () => {
+	it("EM5: typing into an empty block is a logical insert at 0", () => {
 		const index = createBlockIndexSnapshot({
 			roots: ["b1"],
 			lengthById: { b1: 0 },

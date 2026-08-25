@@ -13,7 +13,7 @@ Every higher-level package depends on the contracts and runtime behavior establi
 - Export map: `.`
 - Runtime entrypoints such as `createEditor()`, `createHeadlessEditor()`, and `createDocumentSession()`
 - Schema runtime exports such as `defineBlock()`, `defineExtension()`, `prop()`, `SchemaRegistryImpl`, `mergeSchemas`, and `SchemaEngineImpl`
-- Read-model and editor helpers such as `DocumentStateImpl`, `SelectionManagerImpl`, `DocumentRangeImpl`, and `ExtensionManagerImpl`
+- Read-model and editor helpers such as `SelectionAuthority`, `DocumentRangeImpl`, and `ExtensionManagerImpl`. `DocumentStateImpl` is the live `DocumentState` implementation but stays off the barrel; hosts read `editor.documentState`.
 - Decoration and inline-completion helpers such as `createDecorationSet()`, `mergeDecorationSets()`, `ensureInlineCompletionController()`, and `getInlineCompletionController()`
 - Import and profile-policy helpers such as `blocksToOps()`, `normalizePendingBlocksForImport()`, `filterOpsForDocumentProfile()`, and related policy-reporting APIs. `@input/pen-content-ops` re-exports these; core owns the implementation.
 - Block-capability helpers (`getFlowCapabilityFromSchema()`, `shouldExposeBlockInTooling()`, and siblings) and selection-target helpers (`resolveSelectionTargetBlockIds()`, `renderSelectionTargetText()`, `renderSelectionTargetBlockText()`)
@@ -71,7 +71,7 @@ Important rules:
 - Extensions can prepare work, observe editor events, and register slots, but they do not bypass the core mutation boundary.
 - Renderer packages read `DocumentState`, `BlockHandle`, selection, and decorations from the editor; they do not become alternate document authorities.
 - `Extension.keyBindings` still exists as a v1 rider. Core copies those bindings onto `keymapFacet` at install. New shortcut work should declare `keymapFacet` providers; several shipped extensions already do.
-- Command registration and the selection engine are unsettled. Do not treat either as a finished contract from this spec.
+- The command registry and catalog are settled; v3 keeps the D/K/B rules unchanged (`spec-v3/00-concept.md`, What v3 Keeps). Selection *bridging* inside `@input/pen-dom` remains unsettled and is scheduled for consolidation by `spec-v4/05-structure.md` CS5; do not treat that bridging as a finished contract from this spec.
 
 ## Headless Workflows
 

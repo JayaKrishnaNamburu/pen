@@ -2,6 +2,10 @@
 # IDs in force: a test name must contain each ID. Each wave appends here.
 # Unlisted spec IDs are reported, not failed, until their wave closes.
 #
+# Before adopting a family prefix, check spec/charter/rule-ids.md (RC2).
+# That registry is the authoring gate. Do not invent a prefix that
+# collides with a reserved or recorded family.
+#
 # Gate-enforced IDs live in scripts/gated-scope.txt, not here. A
 # claimed-scope ID without a test name fails. Listing a docs/CI rule
 # here would hide the gap without verifying the gate still runs.
@@ -108,8 +112,21 @@
 # I2/I3 unclaimed 2026-08-23: v3 Wave 3 deleted the mapping algebra those
 # invariants describe, along with changeSummaries.properties.test.ts.
 # spec-v2/V3-BOUNDARY.md already records I2/I3 expansion as skipped for v3.
+
+# EM4 unclaimed 2026-08-24: v3 Wave 6 deleted the stamp-2 remote heal it
+# describes, along with emptyBlocks.em4.test.ts. The rule was Wave 5
+# scaffolding for stamp-2 writers inside this tree and its removal is
+# scheduled in spec-v3/waves/wave-6-surface-release.md. EM1-EM3 and EM5-EM8
+# stay in force. Do not re-add a test named EM4 to close this line: there is
+# no rule left for it to fail on.
+
+# I11 unclaimed 2026-08-25: v3 retired I11 → I14. The two-seam confinement
+# those tests named has no subject: the sentinel is gone from storage
+# (spec-v3/04-empty-blocks.md; spec-v2/01-architecture.md I11 RETIRED
+# 2026-08-24). I1, I4–I10, and I12–I15 stay in force. Do not re-add a
+# test named I11 to close this line: there is no confinement left for
+# it to fail on.
 I10
-I11
 HOST4
 HOST6
 CH7
@@ -279,7 +296,6 @@ O2
 EM1
 EM2
 EM3
-EM4
 EM5
 EM6
 EM7

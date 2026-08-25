@@ -1,18 +1,22 @@
-# Playground
+# Kitchen sink
 
-The playground is the maintainer kitchen sink: a private Vite + React app
-(`private: true`) that exercises shipped Pen packages together, including a
-local AI backend. It is a demo for working in this monorepo, not a product and
-not a consumer example. Vite aliases `@input/pen-*` to workspace source so
-maintainers can iterate without a publish cycle. Do not copy this app's
-aliases or Anthropic server into a host.
+The maintainer kitchen sink: a private Vite + React app (`private: true`) that
+exercises shipped Pen packages together, including a local AI and
+collaboration backend, and hosts the Playwright end-to-end suite. It is a demo
+for working in this monorepo, not a product and not a consumer example. Vite
+aliases `@input/pen-*` to workspace source so maintainers can iterate without a
+publish cycle. Do not copy this app's aliases or Anthropic server into a host.
 
-Pen is licensed under the [MIT License](../LICENSE.md).
+If you are looking for a readable app to learn Pen from, use
+[`playground/`](../../playground/README.md) instead — this one trades clarity
+for coverage.
+
+Pen is licensed under the [MIT License](../../LICENSE.md).
 
 ## Peers
 
 Workspace packages the playground imports declare these peers. They are already
-listed in `playground/package.json` (or resolved by the root workspace
+listed in `internal/kitchen-sink/package.json` (or resolved by the root workspace
 install):
 
 - `react` and `react-dom` `^18 || ^19` (`@input/pen-react`)
@@ -31,8 +35,8 @@ pnpm install
 Start the UI and the AI / collaboration backend in two terminals:
 
 ```bash
-pnpm --filter @input/pen-playground dev
-pnpm --filter @input/pen-playground dev:backend
+pnpm --filter @input/pen-kitchen-sink dev
+pnpm --filter @input/pen-kitchen-sink dev:backend
 ```
 
 Vite serves the UI at `http://localhost:5173` and proxies `/api` and `/health`
@@ -40,12 +44,12 @@ to the backend on `127.0.0.1:8787`. Collaboration upgrades go through the same
 backend on `/collaboration`.
 
 The editor UI runs without a model key. AI features need `ANTHROPIC_API_KEY` in
-`playground/.env.local` before starting `dev:backend`.
+`internal/kitchen-sink/.env.local` before starting `dev:backend`.
 
 Server unit tests (planner routing and local payload helpers):
 
 ```bash
-pnpm --filter @input/pen-playground test
+pnpm --filter @input/pen-kitchen-sink test
 ```
 
 End-to-end tests from the repository root:
@@ -63,7 +67,7 @@ browser-native selection rects.
 Vite only; the collaboration backend is not required.
 
 ```bash
-pnpm --filter @input/pen-playground dev
+pnpm --filter @input/pen-kitchen-sink dev
 ```
 
 Open [http://localhost:5173/#/rtl-email](http://localhost:5173/#/rtl-email)
