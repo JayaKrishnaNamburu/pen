@@ -73,10 +73,6 @@ async function flushMicrotasks(count = 2): Promise<void> {
 	}
 }
 
-function visibleText(text: string): string {
-	return text.replace(/\u200B/g, "");
-}
-
 type TestYTextLike = {
 	insert(offset: number, text: string): void;
 };
@@ -104,6 +100,7 @@ type TestTableContentLike = {
 
 describe("@input/pen-core createEditor", () => {
 	it("installs extensions from presets before user extensions", () => {
+		let presetInstalled = false;
 		const editor = createEditor({
 			preset: {
 				resolve() {
@@ -111,11 +108,8 @@ describe("@input/pen-core createEditor", () => {
 						extensions: [
 							defineExtension({
 								name: "preset-test-extension",
-								activateClient: async (ctx) => {
-									ctx.editor.internals.setSlot(
-										"test:preset-installed",
-										true,
-									);
+								activateClient: async () => {
+									presetInstalled = true;
 								},
 							}),
 						],
@@ -124,7 +118,7 @@ describe("@input/pen-core createEditor", () => {
 			},
 		});
 
-		expect(editor.internals.getSlot("test:preset-installed")).toBe(true);
+		expect(presetInstalled).toBe(true);
 
 		editor.destroy();
 	});

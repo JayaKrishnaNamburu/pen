@@ -178,12 +178,12 @@ export function useEditorContentGestures(options: UseEditorContentGesturesOption
 	regionGestureRef.current = {
 	clientX: event.clientX, clientY: event.clientY, isSelecting: false,
 	};
-	skipNextClickRef.current = false; fieldEditor.resetSelectAllCycle?.(); return;
+	skipNextClickRef.current = false; return;
 	} const blockId = resolveClickedBlockId(event); if (!blockId) return;
 	pointerGestureVersionRef.current += 1; pointerGestureRef.current = createPointerSelectionGesture(editor, {
 	blockId, clientX: event.clientX, clientY: event.clientY,
 	});
-	fieldEditor.notifyGestureEvent?.("pointerdown"); skipNextClickRef.current = false; fieldEditor.resetSelectAllCycle?.();
+	fieldEditor.notifyGestureEvent?.("pointerdown"); skipNextClickRef.current = false;
 	const clickedBlock = editor.getBlock(blockId); const clickedSchema = clickedBlock ? editor.schema.resolve(clickedBlock.type)
 	: null; const root = gestureEl.closest( "[data-pen-editor-root]",
 	) as HTMLElement | null; if ( pointerGestureRef.current &&

@@ -71,8 +71,10 @@ export function activateFieldEditorFromSelection(
 	}
 	switch (selection.type) {
 		case "text":
+			// A multi-block text selection owns the `expanded` surface, which
+			// `classifySelectionSurface` already assigned on selection change.
+			// Activating one field or deactivating would both contradict it.
 			if (isMultiBlock(selection)) {
-				fieldEditor.deactivate();
 				return;
 			}
 			if (

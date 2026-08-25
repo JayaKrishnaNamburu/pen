@@ -22,7 +22,7 @@ import type {
 	Editor,
 	InteractionModel,
 } from "@input/pen-types";
-import { FIELD_EDITOR_SLOT_KEY as CORE_FIELD_EDITOR_SLOT_KEY } from "@input/pen-types";
+import { FIELD_EDITOR_SLOT_KEY } from "@input/pen-types";
 import {
 	computed,
 	defineComponent,
@@ -37,7 +37,6 @@ import {
 	type ComponentPublicInstance,
 	type PropType,
 } from "vue";
-import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
 import { useDocumentEmptyState } from "../internal/editorState";
 import { provideEditorContext } from "../internal/editorContext";
 import {
@@ -108,7 +107,6 @@ export const PenEditor = defineComponent({
 		provideFieldEditorContext(fieldEditor);
 
 		props.editor.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, fieldEditor);
-		props.editor.internals.assignSlot(CORE_FIELD_EDITOR_SLOT_KEY, fieldEditor);
 
 		watch(
 			() => props.interactionModel,
@@ -255,10 +253,6 @@ export const PenEditor = defineComponent({
 
 		onBeforeUnmount(() => {
 			props.editor.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, undefined);
-			props.editor.internals.assignSlot(
-				CORE_FIELD_EDITOR_SLOT_KEY,
-				undefined,
-			);
 			props.editor.internals.assignSlot("paste:importers", undefined);
 			props.editor.internals.assignSlot("paste:assetProvider", undefined);
 			fieldEditor.setRootElement(null);

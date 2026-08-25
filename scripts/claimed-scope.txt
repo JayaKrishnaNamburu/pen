@@ -126,6 +126,17 @@
 # 2026-08-24). I1, I4–I10, and I12–I15 stay in force. Do not re-add a
 # test named I11 to close this line: there is no confinement left for
 # it to fail on.
+
+# SM1 + SM3 unclaimed 2026-08-25: v4 Wave 3 DL2 deleted their subject, and
+# with it slotAdapter.sm1.test.ts, which was the sole claimant of all three
+# SM ids. SM1 describes getSlot/setSlot as in-train adapters over facets;
+# the accessors and slotAdapter.ts are gone. SM3's enforcement retired by
+# design in the same PR — DL2 requires the no-new-slots gate and allowlist
+# to go with the mechanism, since "a gate that polices a deleted mechanism
+# is scaffolding squared" (spec-v4/04-scaffolding.md). SM2 stays in force:
+# the documented accessors still exist and are facet reads now, claimed by
+# packages/extensions/search/src/__tests__/extension.test.ts. Do not re-add
+# tests named SM1 or SM3: there is no adapter and no slot lint left to fail.
 I10
 HOST4
 HOST6
@@ -163,9 +174,7 @@ AIB5
 AIB6
 COL1
 I1
-SM1
 SM2
-SM3
 I7
 ST1
 ST2

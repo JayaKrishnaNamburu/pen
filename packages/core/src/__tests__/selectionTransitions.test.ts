@@ -202,6 +202,121 @@ describe("selection transitions", () => {
 				head: "next",
 			});
 		});
+
+		it("T1: document-first entry covers all content on the first press", () => {
+			expect(
+				escalateSelectAll(
+					flatDoc,
+					text({ blockId: "p2", offset: 2 }),
+					"document-first",
+				),
+			).toEqual(
+				text(
+					{ blockId: "p1", offset: 0 },
+					{ blockId: "p3", offset: 3 },
+				),
+			);
+		});
+
+		it("T1: document-first from no selection covers all content", () => {
+			expect(escalateSelectAll(flatDoc, null, "document-first")).toEqual(
+				text(
+					{ blockId: "p1", offset: 0 },
+					{ blockId: "p3", offset: 3 },
+				),
+			);
+		});
+
+		it("T1: document-first escalates to BlockSelection on the second press", () => {
+			const content = escalateSelectAll(
+				flatDoc,
+				text({ blockId: "p2", offset: 2 }),
+				"document-first",
+			);
+			const blocks = escalateSelectAll(
+				flatDoc,
+				content,
+				"document-first",
+			);
+
+			expect(blocks).toEqual({
+				type: "block",
+				blockIds: ["p1", "p2", "img", "p3"],
+				head: "p3",
+			});
+			expect(
+				escalateSelectAll(flatDoc, blocks, "document-first"),
+			).toEqual(blocks);
+		});
+
+		it("T1: document-first reaches all content across containers in one press", () => {
+			expect(
+				escalateSelectAll(
+					listDoc,
+					text({ blockId: "li2", offset: 1 }),
+					"document-first",
+				),
+			).toEqual(
+				text(
+					{ blockId: "intro", offset: 0 },
+					{ blockId: "outro", offset: 7 },
+				),
+			);
+		});
+
+		it("T1: document-first ends at a structural last block's unit extent", () => {
+			const trailingImage = snapshot([
+				block({ id: "p1", kind: "text", length: 4 }),
+				block({ id: "img", kind: "structural", length: 0 }),
+			]);
+
+			expect(
+				escalateSelectAll(
+					trailingImage,
+					text({ blockId: "p1", offset: 1 }),
+					"document-first",
+				),
+			).toEqual(
+				text(
+					{ blockId: "p1", offset: 0 },
+					{ blockId: "img", offset: 1 },
+				),
+			);
+		});
+
+		it("T1: document-first over an empty document goes straight to BlockSelection", () => {
+			const emptyDoc = snapshot([
+				block({ id: "empty", kind: "text", length: 0 }),
+			]);
+
+			expect(
+				escalateSelectAll(
+					emptyDoc,
+					text({ blockId: "empty", offset: 0 }),
+					"document-first",
+				),
+			).toEqual({
+				type: "block",
+				blockIds: ["empty"],
+				head: "empty",
+			});
+		});
+
+		it("T1: document-first does not walk a BlockSelection backwards", () => {
+			const listBlocks: SelectionState = {
+				type: "block",
+				blockIds: ["li1", "li2", "li3"],
+				head: "li3",
+			};
+
+			expect(
+				escalateSelectAll(listDoc, listBlocks, "document-first"),
+			).toEqual({
+				type: "block",
+				blockIds: ["intro", "li1", "li2", "li3", "outro"],
+				head: "outro",
+			});
+		});
 	});
 
 	describe("T2", () => {

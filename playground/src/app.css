@@ -5,6 +5,8 @@
  */
 
 .app-shell {
+	/* The inspector sheet is absolute against this. */
+	position: relative;
 	display: flex;
 	height: 100%;
 	overflow: hidden;
@@ -12,7 +14,7 @@
 
 /* Narrow windows keep the editor and drop the chat column. */
 @media (max-width: 700px) {
-	.chat-sidebar {
+	.chat-panel {
 		display: none;
 	}
 }

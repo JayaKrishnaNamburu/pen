@@ -1,10 +1,11 @@
+import { aiControllerFacet } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
-import {
-	getAIController,
-	type AICommandExecutionOptions,
-	type AISession,
-	type AISessionResolution,
-	type AISurface,
+import type {
+	AICommandExecutionOptions,
+	AIController,
+	AISession,
+	AISessionResolution,
+	AISurface,
 } from "@input/pen-ai";
 
 export function useAIActions(editor: Editor): {
@@ -44,7 +45,8 @@ export function useAIActions(editor: Editor): {
 	rejectSession: (sessionId: string) => boolean;
 	cancelSession: (sessionId: string) => void;
 } {
-	const controller = getAIController(editor);
+	const controller =
+		(editor.facet(aiControllerFacet) as AIController | null) ?? null;
 
 	return {
 		runPrompt(prompt: string, options?: AICommandExecutionOptions) {

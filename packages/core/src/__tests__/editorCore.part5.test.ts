@@ -51,10 +51,6 @@ async function flushMicrotasks(count = 2): Promise<void> {
 	}
 }
 
-function visibleText(text: string): string {
-	return text.replace(/\u200B/g, "");
-}
-
 type TestYTextLike = {
 	insert(offset: number, text: string): void;
 };
@@ -135,9 +131,15 @@ describe("@input/pen-core createEditor", () => {
 	it("replaces multi-block text selections in a single document commit batch", () => {
 		const editor = createEditor();
 		const events: Array<{ ops: readonly DocumentOp[] }> = [];
+		const commits: unknown[] = [];
 
-		editor.on("documentCommit", (event) => {
-			events.push(event);
+		editor.on("commit", (event) => {
+			commits.push(event);
+		});
+		editor.internals.onApplyBoundary((event) => {
+			if (event.phase === "after" && event.applied) {
+				events.push({ ops: event.ops });
+			}
 		});
 
 		editor.apply([
@@ -173,6 +175,7 @@ describe("@input/pen-core createEditor", () => {
 				insert: "Again" },
 		]);
 		events.length = 0;
+		commits.length = 0;
 
 		editor.selectTextRange(
 			{ blockId: "b1", offset: 2 },
@@ -180,6 +183,7 @@ describe("@input/pen-core createEditor", () => {
 		);
 		editor.replaceSelection("X");
 
+		expect(commits).toHaveLength(1);
 		expect(events).toHaveLength(1);
 		// Deletes and inserts are both splice-text under the 10-primitive union, so
 		// the op shape is what distinguishes them: a delete empties a non-empty
@@ -263,7 +267,7 @@ describe("@input/pen-core createEditor", () => {
 						expect(editor.undoManager).not.toBe(
 							registeredUndoManager,
 						);
-						editor.internals.setSlot(
+						editor.internals.assignSlot(
 							"undo:manager",
 							registeredUndoManager,
 						);

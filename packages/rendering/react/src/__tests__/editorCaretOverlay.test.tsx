@@ -3,11 +3,10 @@
 import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
-import { createEditor } from "@input/pen-core";
+import { createEditor, fieldEditorHostFacet } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
 import { Pen } from "../primitives/index";
 import { PenEditor } from "../penEditor";
-import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
 import { defaultSchema } from "@input/pen-schema-default";
 
 (
@@ -175,13 +174,13 @@ describe("@input/pen-react editor caret overlay", () => {
 });
 
 function getFieldEditor(editor: ReturnType<typeof createEditor>) {
-	const fieldEditor = editor.internals.getSlot<{
+	const fieldEditor = editor.facet(fieldEditorHostFacet) as {
 		activateTextSelection(
 			blockId: string,
 			anchorOffset: number,
 			focusOffset: number,
 		): void;
-	}>(FIELD_EDITOR_SLOT_KEY);
+	} | null;
 	if (!fieldEditor) {
 		throw new Error("Missing attached field editor");
 	}

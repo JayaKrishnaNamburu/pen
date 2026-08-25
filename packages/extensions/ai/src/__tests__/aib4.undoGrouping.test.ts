@@ -6,7 +6,6 @@ import { documentOpsExtension } from "@input/pen-document-ops";
 import { getDocumentToolRuntime } from "@input/pen-document-ops";
 import { defaultSchema } from "@input/pen-schema-default";
 import { createModelDouble } from "@input/pen-test";
-import { AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY } from "@input/pen-types";
 import {
 	acceptAllSuggestions,
 	acceptSuggestion,
@@ -21,9 +20,7 @@ import { scriptedModel } from "./extension.testUtils";
 async function awaitExtensionLifecycle(
 	editor: ReturnType<typeof createEditor>,
 ): Promise<void> {
-	await (editor.internals.getSlot<() => Promise<void>>(
-		AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY,
-	)?.() ?? Promise.resolve());
+	await editor.whenReady();
 }
 
 describe("AIB4 undo grouping", () => {

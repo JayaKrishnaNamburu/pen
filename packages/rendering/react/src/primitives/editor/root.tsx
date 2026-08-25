@@ -1,7 +1,10 @@
 import React, { useRef, useEffect, useState } from "react";
-import { htmlImporter } from "@input/pen-interop/html";
-import { ariaReadOnlyFacet, resolveEditorA11yLabel } from "@input/pen-core";
-import { FIELD_EDITOR_SLOT_KEY as CORE_FIELD_EDITOR_SLOT_KEY } from "@input/pen-types";
+import {
+	ariaReadOnlyFacet,
+	clipboardFacet,
+	resolveEditorA11yLabel,
+} from "@input/pen-core";
+import { FIELD_EDITOR_SLOT_KEY } from "@input/pen-types";
 import type {
 	AssetProvider,
 	Editor,
@@ -23,7 +26,6 @@ import {
 	resolveInteractionModel,
 } from "../../context/editorContext";
 import { FieldEditorContext } from "../../context/fieldEditorContext";
-import { FIELD_EDITOR_SLOT_KEY } from "../../constants/fieldEditor";
 import {
 	FieldEditorImpl,
 	handleEditorDocumentKeyDown,
@@ -100,11 +102,8 @@ export function EditorRoot(props: EditorRootProps) {
 	const fieldEditorRef = useRef<FieldEditorSession | null>(null);
 	const regionSelectionStoreRef = useRef<RegionSelectionStore | null>(null);
 	const rootRef = useRef<HTMLElement | null>(null);
+	const mountedEditorRef = useRef<Editor>(editor);
 	const resolvedAssets = assets ?? importers?.assets;
-	const resolvedImporters: PasteImporters = {
-		...importers,
-		html: importers?.html ?? htmlImporter,
-	};
 
 	if (!fieldEditorRef.current) {
 		const fieldEditorOptions = {
@@ -168,29 +167,68 @@ export function EditorRoot(props: EditorRootProps) {
 	}, [editor, rootElement]);
 
 	useEffect(() => {
-		editor.internals.assignSlot("paste:importers", {
-			...importers,
-			html: importers?.html ?? htmlImporter,
-		});
+		let previousImporters: unknown;
+		let wroteImporters = false;
+		if (importers) {
+			previousImporters = editor.facet(clipboardFacet);
+			const base =
+				previousImporters && !Array.isArray(previousImporters)
+					? previousImporters
+					: {};
+			const host = Object.fromEntries(
+				Object.entries(importers).filter(([, value]) => value != null),
+			);
+			editor.internals.assignSlot("paste:importers", {
+				...base,
+				...host,
+			});
+			wroteImporters = true;
+		}
 		editor.internals.assignSlot("paste:assetProvider", resolvedAssets);
 
 		return () => {
-			editor.internals.assignSlot("paste:importers", undefined);
+			if (wroteImporters) {
+				editor.internals.assignSlot(
+					"paste:importers",
+					previousImporters,
+				);
+			}
 			editor.internals.assignSlot("paste:assetProvider", undefined);
 		};
 	}, [editor, importers, resolvedAssets]);
 
 	useEffect(() => {
-		editor.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, fieldEditorRef.current);
 		editor.internals.assignSlot(
-			CORE_FIELD_EDITOR_SLOT_KEY,
+			FIELD_EDITOR_SLOT_KEY,
 			fieldEditorRef.current,
 		);
 		return () => {
 			editor.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, undefined);
-			editor.internals.assignSlot(CORE_FIELD_EDITOR_SLOT_KEY, undefined);
 			fieldEditorRef.current?.destroy();
 		};
+	}, [editor]);
+
+	/*
+	 * One root, one editor. The field editor and the rendered DOM below it are
+	 * built for the instance this root mounted with, so a swapped-in editor gets
+	 * driven by the previous one — dead keystrokes and selections projected into
+	 * a document that has never heard of those block ids. There is no silent
+	 * recovery, so say so instead of leaving the host to find it by hand.
+	 */
+	useEffect(() => {
+		if (mountedEditorRef.current === editor) {
+			return;
+		}
+		mountedEditorRef.current = editor;
+		editor.internals.emit("diagnostic", {
+			code: "editor-root-editor-replaced",
+			level: "error",
+			source: "rendering",
+			message:
+				"Pen.Editor.Root received a different editor than it mounted with.",
+			remediation:
+				"Give Pen.Editor.Root a key tied to the editor instance so it remounts, for example key={editor.internals.viewId}.",
+		});
 	}, [editor]);
 
 	useEffect(() => {
@@ -285,7 +323,8 @@ export function EditorRoot(props: EditorRootProps) {
 		role: "textbox",
 		"aria-multiline": true,
 		...resolveEditorA11yLabel(editor),
-		"aria-readonly": readonly || editor.facet(ariaReadOnlyFacet) || undefined,
+		"aria-readonly":
+			readonly || editor.facet(ariaReadOnlyFacet) || undefined,
 	};
 
 	return (
@@ -299,7 +338,7 @@ export function EditorRoot(props: EditorRootProps) {
 				blockDragAndDrop: resolvedBlockDragAndDrop,
 				blockSelection: resolvedBlockSelection,
 				blockControls,
-				importers: resolvedImporters,
+				importers,
 				assets: resolvedAssets,
 				renderers,
 				inlineAtomRenderers,

@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { ChatSidebar } from "./chat/ChatSidebar";
+import { CollaborateModal } from "./collaboration/CollaborateModal";
+import { useCollaboration } from "./collaboration/useCollaboration";
 import { EditorPane } from "./editor/EditorPane";
 import { usePenEditor } from "./editor/usePenEditor";
 import { InspectorSheet } from "./inspector/InspectorSheet";
@@ -13,7 +15,8 @@ import { InspectorSheet } from "./inspector/InspectorSheet";
  * — they both talk to the editor directly, which is why they never disagree.
  */
 export function App() {
-	const editor = usePenEditor();
+	const collaboration = useCollaboration();
+	const editor = usePenEditor(collaboration.session);
 	const [isInspectorOpen, setIsInspectorOpen] = useState(false);
 
 	if (!editor) {
@@ -25,15 +28,26 @@ export function App() {
 			<ChatSidebar editor={editor} />
 			<EditorPane
 				editor={editor}
-				isInspectorOpen={isInspectorOpen}
+				inspectorOpen={isInspectorOpen}
+				collaborationLive={collaboration.session !== null}
+				onOpenCollaborate={collaboration.openModal}
 				onToggleInspector={() =>
 					setIsInspectorOpen((isOpen) => !isOpen)
 				}
 			/>
 			<InspectorSheet
 				editor={editor}
-				isOpen={isInspectorOpen}
+				open={isInspectorOpen}
 				onClose={() => setIsInspectorOpen(false)}
+			/>
+			<CollaborateModal
+				open={collaboration.isModalOpen}
+				defaultName={collaboration.defaultName}
+				defaultRoom={collaboration.defaultRoom}
+				live={collaboration.session !== null}
+				onClose={collaboration.closeModal}
+				onJoin={collaboration.join}
+				onLeave={collaboration.leave}
 			/>
 		</div>
 	);

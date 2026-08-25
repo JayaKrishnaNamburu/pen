@@ -32,7 +32,6 @@ describe("locale and messages facets (LOC1, LOC3, LOC6)", () => {
 	it("LOC3: createEditor locale option becomes the facet value", () => {
 		const editor = createHeadlessEditor({ schema: defaultSchema,  locale: "ar" });
 		expect(editor.facet(localeFacet)).toBe("ar");
-		expect(editor.internals.getSlot("pen.locale")).toBe("ar");
 		editor.destroy();
 	});
 

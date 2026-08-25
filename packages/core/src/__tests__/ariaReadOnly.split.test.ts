@@ -31,10 +31,7 @@ function insertHello(editor: ReturnType<typeof createHeadlessEditor>): string {
 		],
 		{ origin: "user" },
 	);
-	return editor
-		.getBlock(blockId)!
-		.textContent()
-		.replace(/\u200B/g, "");
+	return editor.getBlock(blockId)!.textContent();
 }
 
 describe("pen.ariaReadOnly vs editor.apply", () => {
@@ -67,12 +64,7 @@ describe("pen.ariaReadOnly vs editor.apply", () => {
 			],
 			{ origin: "collaborator" },
 		);
-		expect(
-			editor
-				.getBlock(blockId)!
-				.textContent()
-				.replace(/\u200B/g, ""),
-		).toBe("from-peer");
+		expect(editor.getBlock(blockId)!.textContent()).toBe("from-peer");
 		editor.destroy();
 	});
 });

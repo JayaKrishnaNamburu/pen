@@ -1,5 +1,6 @@
 import {
 	announceEditorA11y,
+	announcerFacet,
 	isCollapsed,
 	resolveA11yBlockTypeLabel,
 	resolveSchemaA11y,
@@ -42,7 +43,7 @@ export function bindEditorAnnouncer(
 		for (const unsubscribe of unsubscribes) {
 			unsubscribe();
 		}
-		if (editor.internals.getSlot(ANNOUNCER_SLOT_KEY) === announcer) {
+		if (editor.facet(announcerFacet) === announcer) {
 			editor.internals.assignSlot(ANNOUNCER_SLOT_KEY, undefined);
 		}
 		announcer.dispose();

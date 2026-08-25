@@ -1,6 +1,6 @@
 import type { Editor, Extension } from "@input/pen-types";
 import { HISTORY_CONTROLLER_SLOT } from "@input/pen-types";
-import { defineExtension } from "@input/pen-core";
+import { defineExtension, historyControllerFacet } from "@input/pen-core";
 import { attachHistoryScopeRuntime } from "./scopeRuntime";
 import type { HistoryConfig, HistoryController } from "./types";
 
@@ -34,6 +34,6 @@ export function getHistoryController(
 	editor: Editor,
 ): HistoryController | null {
 	return (
-		editor.internals.getSlot<HistoryController>(HISTORY_CONTROLLER_SLOT) ?? null
+		(editor.facet(historyControllerFacet) as HistoryController | null) ?? null
 	);
 }

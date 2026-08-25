@@ -1,21 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
 import { createDefaultSchema } from "@input/pen-schema-default";
+import {
+	EM8_CELL_CONTROL,
+	EM8_KEEP,
+	interopNoExtensionsPreset,
+} from "../../../__tests__/interopCorpus";
 import { markdownImporter } from "../importer";
-
-const noDefaultExtensionsPreset = {
-	resolve() {
-		return { extensions: [] };
-	},
-};
-
-const KEEP = "keep\u200Bme";
-const CELL_CONTROL = "CELL-OK";
 
 function createBareEditor() {
 	const editor = createEditor({
 		schema: createDefaultSchema(),
-		preset: noDefaultExtensionsPreset,
+		preset: interopNoExtensionsPreset,
 	});
 	const existingBlockIds = [...editor.documentState.allBlocks()]
 		.filter((handle) => handle.parent === null)
@@ -31,9 +27,9 @@ function createBareEditor() {
 	return editor;
 }
 
-const EM8_MARKDOWN = `${KEEP}
+const EM8_MARKDOWN = `${EM8_KEEP}
 
-|  | ${CELL_CONTROL} |
+|  | ${EM8_CELL_CONTROL} |
 | --- | --- |
 `;
 
@@ -43,10 +39,10 @@ describe("EM8 markdown import", () => {
 		markdownImporter.import(EM8_MARKDOWN, editor);
 
 		const keepParagraph = [...editor.documentState.allBlocks()].find(
-			(handle) => handle.textContent() === KEEP,
+			(handle) => handle.textContent() === EM8_KEEP,
 		);
 		expect(keepParagraph).toBeDefined();
-		expect(keepParagraph?.textContent()).toBe(KEEP);
+		expect(keepParagraph?.textContent()).toBe(EM8_KEEP);
 
 		const table = [...editor.documentState.allBlocks()].find(
 			(handle) => handle.type === "table",
@@ -54,7 +50,7 @@ describe("EM8 markdown import", () => {
 		const grid = table?.as("table");
 		expect(grid).not.toBeNull();
 		expect(grid?.tableCell(0, 0)?.textContent()).toBe("");
-		expect(grid?.tableCell(0, 1)?.textContent()).toBe(CELL_CONTROL);
+		expect(grid?.tableCell(0, 1)?.textContent()).toBe(EM8_CELL_CONTROL);
 		expect(
 			[...editor.documentState.allBlocks()].some(
 				(handle) => handle.textContent() === "\u200B",

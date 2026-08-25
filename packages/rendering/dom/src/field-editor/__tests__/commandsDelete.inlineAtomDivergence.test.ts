@@ -127,7 +127,7 @@ function createFieldEditor(blockId: string) {
 		activateCell: () => {},
 		activateTextSelection: () => {},
 		deactivate: () => {},
-		selectAll: () => false,
+		selectAllBehavior: "block-first" as const,
 		resolveInsertMarks: () => undefined,
 	};
 }

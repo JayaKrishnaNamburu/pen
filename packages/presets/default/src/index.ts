@@ -8,12 +8,14 @@ import {
 } from "@input/pen-shortcuts";
 import type { EditorPreset, Extension } from "@input/pen-types";
 import { undoExtension } from "@input/pen-undo";
+import { htmlClipboardExtension } from "./htmlClipboard";
 
 export interface DefaultPresetOptions {
 	documentOps?: boolean;
 	deltaStream?: boolean | DeltaStreamOptions;
 	undo?: boolean;
 	shortcuts?: boolean | RichTextShortcutsOptions;
+	htmlClipboard?: boolean;
 }
 
 export function defaultPreset(
@@ -40,6 +42,10 @@ export function defaultPreset(
 			const shortcutsOptions = resolveShortcutsOptions(options.shortcuts);
 			if (shortcutsOptions) {
 				extensions.push(richTextShortcutsExtension(shortcutsOptions));
+			}
+
+			if (options.htmlClipboard !== false) {
+				extensions.push(htmlClipboardExtension());
 			}
 
 			return {

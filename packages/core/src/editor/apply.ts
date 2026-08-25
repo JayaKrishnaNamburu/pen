@@ -1,70 +1,51 @@
-import type { DiagnosticEvent, DocumentOp, OpOrigin, PenDocument, CRDTDocument, CRDTAdapter, CRDTEvent, SchemaRegistry, CRDTMap, CRDTArray, InsertBlockOp, DeleteBlockOp, MoveBlockOp, SetPropsOp, SpliceTextOp, FormatTextOp, SetMetaOp, GridOp, AppOp, StructuralOriginTag } from "@input/pen-types";
-import { generateId } from "@input/pen-types";
-import { resolveRuntimeContentType } from "../schema/contentType";
+import type {
+	DiagnosticEvent,
+	DocumentOp,
+	OpOrigin,
+	CRDTEvent,
+	CRDTDocument,
+	CRDTAdapter,
+	PenDocument,
+	SchemaRegistry,
+	CRDTMap,
+	CRDTArray,
+	StructuralOriginTag,
+} from "@input/pen-types";
 import type { SchemaEngineImpl } from "../schema/normalize";
-import { type CRDTUnknownArray, type CRDTUnknownMap, getArrayProp, getMapProp, getStringProp, getTableColumns, getTableContent, isCRDTMap } from "./crdtShapes";
+import {
+	type ApplyPipelineCRDTBlockMap,
+	type ApplyPipelineInternal,
+	type ApplyPipelineMutableAppStore,
+	type ApplyPipelineMutableBlockStore,
+	type ApplyPipelineMutableStringArray,
+} from "./applyPipelineContext";
 import type { EventEmitter } from "./events";
 import type { SelectionAuthorityImpl } from "./selection";
 import { TableGridExecutor } from "./tableGridExecutor";
-
-import { blockExists, createMutableMap, getMutableBlockMap, getMutableAppMap, getOrCreateMapProp, getOrCreateStringArrayProp, removeBlockIdFromArray, removeBlockIdFromAllChildren, getTextContent, getInlineTextContent, opBlockId } from "./applySharedHelpers";
-import { applyInternal, executeOps, emitApplyBoundary, validateOp, resolvePosition, executeSingleOp, transformOpsThroughHooks } from "./applyPipelineRunner";
+import { applyInternal, transformOpsThroughHooks } from "./applyPipelineRunner";
 import type { PipelinePhase } from "./pipelinePhases";
-import { insertBlock, deleteBlock, moveBlock, setProps } from "./applyBlockOps";
-import { spliceText, formatText, resolveMarks, applyApp, tableOp, clearTableState, getPreservedInlineDeltas, setMeta } from "./applyInlineAndMetaOps";
-// Typed CRDT structure interfaces used by the op executor.
-type CRDTBlockMap = CRDTMap<CRDTMap<unknown>>;
-type MutableMap = CRDTUnknownMap & { delete(key: string): void };
-type MutableBlockStore = MutableMap & {
-	get(key: string): CRDTUnknownMap | undefined;
-};
-type MutableAppStore = MutableMap & {
-	get(key: string): CRDTUnknownMap | undefined;
-};
-type MutableStringArray = CRDTUnknownArray<string>;
 
-interface CRDTInlineText extends CRDTText {
-	insertEmbed(offset: number, value: Record<string, unknown>): void;
-}
-
-interface CRDTText {
-	insert(
-		offset: number,
-		text: string,
-		attributes?: Record<string, unknown | null>,
-	): void;
-	delete(offset: number, length: number): void;
-	format(
-		offset: number,
-		length: number,
-		attributes: Record<string, unknown>,
-	): void;
-	toDelta(): Array<{
-		insert: string | object;
-		attributes?: Record<string, unknown>;
-	}>;
-	toString(): string;
-	readonly length: number;
-}
-
-export class ApplyPipeline {
-	private _doc: PenDocument;
-	private _crdtDoc: CRDTDocument;
-	private readonly _adapter: CRDTAdapter;
-	private readonly _registry: SchemaRegistry;
-	private readonly _tableGrid: TableGridExecutor;
-	private _engine: SchemaEngineImpl;
-	private readonly _emitter: EventEmitter;
-	private readonly _selection: SelectionAuthorityImpl;
-	private _onDidApply: ((event: CRDTEvent) => void) | null = null;
-	private _applying = false;
-	private _suppressObserver = false;
-	private readonly _queue: {
+export class ApplyPipeline implements ApplyPipelineInternal {
+	_doc: PenDocument;
+	_crdtDoc: CRDTDocument;
+	readonly _adapter: CRDTAdapter;
+	readonly _registry: SchemaRegistry;
+	readonly _tableGrid: TableGridExecutor;
+	_engine: SchemaEngineImpl;
+	readonly _emitter: EventEmitter;
+	readonly _selection: SelectionAuthorityImpl;
+	_onDidApply: ((event: CRDTEvent) => void) | null = null;
+	_applying = false;
+	_applyTurnCount = 0;
+	_applyStormEmitted = false;
+	_suppressObserver = false;
+	_unknownBlockTypesReported: Set<string> | undefined;
+	readonly _queue: {
 		ops: DocumentOp[];
 		origin: OpOrigin;
 		structural?: StructuralOriginTag;
 	}[] = [];
-	private _applyBoundaryHooks: Array<
+	readonly _applyBoundaryHooks: Array<
 		(event: {
 			phase: "before" | "after";
 			ops: readonly DocumentOp[];
@@ -72,51 +53,51 @@ export class ApplyPipeline {
 			applied: boolean;
 		}) => void
 	> = [];
-	private _beforeApplyHooks: Array<{
+	readonly _beforeApplyHooks: Array<{
 		hook: (
 			ops: DocumentOp[],
 			options: { origin?: OpOrigin },
 		) => DocumentOp[];
 		priority: number;
 	}> = [];
-	private _finalBeforeApplyHook:
+	_finalBeforeApplyHook:
 		| ((ops: DocumentOp[], options: { origin?: OpOrigin }) => DocumentOp[])
 		| null = null;
-	private _resolveBeforeApplyHooks:
+	_resolveBeforeApplyHooks:
 		| (() => ReadonlyArray<
 				(ops: DocumentOp[], options: { origin?: OpOrigin }) => DocumentOp[]
 		  >)
 		| null = null;
-	private _recordPhase: ((phase: PipelinePhase) => void) | null = null;
-	private _captureSelectionBefore: (() => void) | null = null;
-	private _commitDiagnostics: DiagnosticEvent[] = [];
+	_recordPhase: ((phase: PipelinePhase) => void) | null = null;
+	_captureSelectionBefore: (() => void) | null = null;
+	_commitDiagnostics: DiagnosticEvent[] = [];
 
 	get suppressObserver(): boolean {
 		return this._suppressObserver;
 	}
 
-	private get blocks(): CRDTBlockMap {
-		return this._doc.blocks as CRDTBlockMap;
+	get blocks(): ApplyPipelineCRDTBlockMap {
+		return this._doc.blocks as ApplyPipelineCRDTBlockMap;
 	}
 
-	private get mutableBlocks(): MutableBlockStore {
-		return this._doc.blocks as unknown as MutableBlockStore;
+	get mutableBlocks(): ApplyPipelineMutableBlockStore {
+		return this._doc.blocks as unknown as ApplyPipelineMutableBlockStore;
 	}
 
-	private get blockOrder(): CRDTArray<string> {
+	get blockOrder(): CRDTArray<string> {
 		return this._doc.blockOrder as CRDTArray<string>;
 	}
 
-	private get mutableBlockOrder(): MutableStringArray {
-		return this._doc.blockOrder as unknown as MutableStringArray;
+	get mutableBlockOrder(): ApplyPipelineMutableStringArray {
+		return this._doc.blockOrder as unknown as ApplyPipelineMutableStringArray;
 	}
 
-	private get apps(): CRDTMap<CRDTMap<unknown>> {
+	get apps(): CRDTMap<CRDTMap<unknown>> {
 		return this._doc.apps as CRDTMap<CRDTMap<unknown>>;
 	}
 
-	private get mutableApps(): MutableAppStore {
-		return this._doc.apps as unknown as MutableAppStore;
+	get mutableApps(): ApplyPipelineMutableAppStore {
+		return this._doc.apps as unknown as ApplyPipelineMutableAppStore;
 	}
 
 	constructor(
@@ -152,8 +133,6 @@ export class ApplyPipeline {
 		this._recordPhase = recordPhase ?? null;
 		this._captureSelectionBefore = captureSelectionBefore ?? null;
 	}
-
-	// ── Before-Apply Hooks ───────────────────────────────────
 
 	getBeforeApplyHooks(): ReadonlyArray<{
 		hook: (
@@ -207,8 +186,6 @@ export class ApplyPipeline {
 		this._finalBeforeApplyHook = hook;
 	}
 
-	// ── Apply ────────────────────────────────────────────────
-
 	takeCommitDiagnostics(): readonly DiagnosticEvent[] {
 		const diagnostics = this._commitDiagnostics;
 		this._commitDiagnostics = [];
@@ -220,176 +197,11 @@ export class ApplyPipeline {
 		origin: OpOrigin,
 		structural?: StructuralOriginTag,
 	): void {
-		this._applyInternal(ops, origin, structural);
+		applyInternal(this, ops, origin, structural);
 	}
 
 	runBeforeApplyHooks(ops: DocumentOp[], origin: OpOrigin): DocumentOp[] {
 		return transformOpsThroughHooks(this, ops, origin);
-	}
-
-	private _applyInternal(
-		ops: DocumentOp[],
-		origin: OpOrigin,
-		structural?: StructuralOriginTag,
-	): void {
-		applyInternal(this, ops, origin, structural);
-	}
-
-	// ── Core Pipeline ────────────────────────────────────────
-
-	private _executeOps(
-		ops: DocumentOp[],
-		origin: OpOrigin,
-		structural?: StructuralOriginTag,
-	): void {
-		executeOps(this, ops, origin, structural);
-	}
-
-	private _emitApplyBoundary(event: {
-		phase: "before" | "after";
-		ops: readonly DocumentOp[];
-		origin: OpOrigin;
-		applied: boolean;
-	}): void {
-		emitApplyBoundary(this, event);
-	}
-
-	// ── Schema Validation ────────────────────────────────────
-
-	private _validateOp(op: DocumentOp): boolean {
-		return validateOp(this, op);
-	}
-
-	// ── Position Resolution ──────────────────────────────────
-
-	_resolvePosition(position: import("@input/pen-types").Position): number {
-		return resolvePosition(this, position);
-	}
-
-	// ── Op Dispatch ──────────────────────────────────────────
-
-	private _executeSingleOp(op: DocumentOp): string[] {
-		return executeSingleOp(this, op);
-	}
-
-	// ── Block Ops ────────────────────────────────────────────
-
-	private _insertBlock(op: InsertBlockOp): string[] {
-		return insertBlock(this, op);
-	}
-
-	private _deleteBlock(op: DeleteBlockOp): string[] {
-		return deleteBlock(this, op);
-	}
-
-	private _moveBlock(op: MoveBlockOp): string[] {
-		return moveBlock(this, op);
-	}
-
-	private _setProps(op: SetPropsOp): string[] {
-		return setProps(this, op);
-	}
-
-	// ── Text Ops ─────────────────────────────────────────────
-
-	private _spliceText(op: SpliceTextOp): string[] {
-		return spliceText(this, op);
-	}
-
-	private _formatText(op: FormatTextOp): string[] {
-		return formatText(this, op);
-	}
-
-	private _resolveMarks(
-		marks: Record<string, unknown | null>,
-	): Record<string, unknown | null> {
-		return resolveMarks(this, marks);
-	}
-
-	// ── App / grid / meta ────────────────────────────────────
-
-	private _applyApp(op: AppOp): string[] {
-		return applyApp(this, op);
-	}
-
-	private _tableOp(op: GridOp): string[] {
-		return tableOp(this, op);
-	}
-
-	private _clearTableState(blockMap: MutableMap): void {
-		clearTableState(this, blockMap);
-	}
-
-	private _getPreservedInlineDeltas(content: CRDTText | undefined): Array<{
-		insert: string;
-		attributes?: Record<string, unknown>;
-	}> {
-		return getPreservedInlineDeltas(this, content);
-	}
-
-
-	// ── Meta Op ──────────────────────────────────────────────
-
-	private _setMeta(op: SetMetaOp): string[] {
-		return setMeta(this, op);
-	}
-
-	// ── Helpers ──────────────────────────────────────────────
-
-	private _blockExists(blockId: string): boolean {
-		return blockExists(this, blockId);
-	}
-
-	private _createMutableMap(): MutableMap {
-		return createMutableMap(this);
-	}
-
-	private _getMutableBlockMap(blockId: string): MutableMap | null {
-		return getMutableBlockMap(this, blockId);
-	}
-
-	private _getMutableAppMap(appId: string): MutableMap | null {
-		return getMutableAppMap(this, appId);
-	}
-
-	private _getOrCreateMapProp(
-		container: CRDTUnknownMap,
-		key: string,
-	): MutableMap {
-		return getOrCreateMapProp(this, container, key);
-	}
-
-	private _getOrCreateStringArrayProp(
-		container: CRDTUnknownMap,
-		key: string,
-	): MutableStringArray {
-		return getOrCreateStringArrayProp(this, container, key);
-	}
-
-	private _removeBlockIdFromArray(
-		array: MutableStringArray,
-		blockId: string,
-		stopAfterFirst = false,
-	): void {
-		removeBlockIdFromArray(this, array, blockId, stopAfterFirst);
-	}
-
-	private _removeBlockIdFromAllChildren(blockId: string): void {
-		removeBlockIdFromAllChildren(this, blockId);
-	}
-
-	private _getTextContent(blockMap: CRDTUnknownMap): CRDTText | undefined {
-		return getTextContent(this, blockMap);
-	}
-
-	private _getInlineTextContent(
-		blockMap: CRDTUnknownMap,
-	): CRDTInlineText | undefined {
-		return getInlineTextContent(this, blockMap);
-	}
-
-	private _opBlockId(op: DocumentOp): string | null {
-		return opBlockId(this, op);
 	}
 
 	updateDocument(

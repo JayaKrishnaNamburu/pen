@@ -67,4 +67,9 @@ export const DATA_ATTRS = {
 	tableCell: "data-pen-table-cell",
 	tableCellRow: "data-cell-row",
 	tableCellCol: "data-cell-col",
+	overlayLayer: "data-pen-overlay-layer",
+	overlayItem: "data-pen-overlay-item",
 } as const;
+
+export const OVERLAY_LAYER_ATTR = DATA_ATTRS.overlayLayer;
+export const OVERLAY_ITEM_ATTR = DATA_ATTRS.overlayItem;

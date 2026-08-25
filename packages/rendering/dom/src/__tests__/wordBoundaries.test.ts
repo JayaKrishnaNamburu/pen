@@ -33,10 +33,8 @@ function createHarness(options: {
 		// that the `typeof editor.selectText !== "function"` guard is gone —
 		// that guard was compensating for this stub, not for a real editor.
 		selectText: vi.fn(),
-		internals: {
-			getSlot: (key: string) =>
-				key === "pen.locale" ? options.locale : undefined,
-		},
+		facet: (facet: { name: string }) =>
+			facet.name === "pen.locale" ? options.locale : null,
 	} as unknown as Editor;
 	const ytext = {
 		length: options.text.length,

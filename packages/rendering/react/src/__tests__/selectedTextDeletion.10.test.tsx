@@ -155,9 +155,9 @@ describe("@input/pen-react selected text deletion", () => {
 		expect(editor.selection).toMatchObject({
 			type: "text",
 			anchor: { blockId: firstBlockId, offset: 0 },
-			focus: { blockId: firstBlockId, offset: 5 },
+			focus: { blockId: secondBlockId, offset: 5 },
 			isCollapsed: false,
-			isMultiBlock: false,
+			isMultiBlock: true,
 		});
 
 		await act(async () => {
@@ -181,6 +181,90 @@ describe("@input/pen-react selected text deletion", () => {
 		expect(editor.blockCount()).toBe(0);
 		expect(editor.getBlock(firstBlockId)).toBeNull();
 		expect(editor.selection).toBeNull();
+
+		await act(async () => {
+			root.unmount();
+		});
+		container.remove();
+		editor.destroy();
+	});
+
+	it("keeps an editable expanded surface after one content-first cmd+a", async () => {
+		const editor = createEditor({
+			schema: defaultSchema,
+			documentProfile: "flow",
+		});
+		const firstBlockId = editor.firstBlock()!.id;
+		const secondBlockId = crypto.randomUUID();
+
+		editor.apply([
+			{
+				type: "splice-text",
+				blockId: firstBlockId,
+				from: 0,
+				to: 0,
+				insert: "Hello",
+			},
+			{
+				type: "insert-block",
+				blockId: secondBlockId,
+				blockType: "paragraph",
+				props: {},
+				position: { after: firstBlockId },
+			},
+			{
+				type: "splice-text",
+				blockId: secondBlockId,
+				from: 0,
+				to: 0,
+				insert: "World",
+			},
+		]);
+
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(
+				<Pen.Editor.Root editor={editor}>
+					<Pen.Editor.Content />
+				</Pen.Editor.Root>,
+			);
+		});
+
+		const fieldEditor = getFieldEditor(editor);
+		const inlineElement = container.querySelector(
+			"[data-pen-inline-content]",
+		) as HTMLElement | null;
+		expect(inlineElement).not.toBeNull();
+
+		await act(async () => {
+			fieldEditor.activateTextSelection(firstBlockId, 2, 2);
+			await flushAnimationFrames(2);
+		});
+
+		await act(async () => {
+			inlineElement!.dispatchEvent(createSelectAllEvent());
+			await flushAnimationFrames(2);
+		});
+
+		expect(fieldEditor.getSnapshot()).toMatchObject({
+			activeBlockIds: [firstBlockId, secondBlockId],
+			isEditing: true,
+			inputMode: "richtext",
+			mode: "expanded",
+		});
+
+		await act(async () => {
+			inlineElement!.dispatchEvent(
+				createKeyEvent("Backspace", { cancelable: true }),
+			);
+			await flushAnimationFrames(4);
+		});
+
+		expect(editor.getBlock(firstBlockId)?.textContent()).toBe("");
+		expect(editor.getBlock(secondBlockId)).toBeNull();
 
 		await act(async () => {
 			root.unmount();

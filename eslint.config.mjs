@@ -23,7 +23,6 @@ export default tseslint.config(
 			"**/test-results*/**",
 			"**/*.d.ts",
 			"playground/dist/**",
-			"internal/kitchen-sink/dist/**",
 		],
 	},
 	js.configs.recommended,
@@ -276,7 +275,6 @@ export default tseslint.config(
 		files: [
 			"packages/tooling/test/**",
 			"playground/**",
-			"internal/kitchen-sink/**",
 			"packages/docs/**",
 			"scripts/**",
 		],

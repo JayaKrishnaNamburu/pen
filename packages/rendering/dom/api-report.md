@@ -171,6 +171,7 @@
 
 ### function
 
+- getPasteImporters
 - handleClipboardPaste
 - handleCopy
 - handleCut
@@ -459,12 +460,6 @@ _no exports_
 
 - EditorSelectAllBehavior
 
-## ./types/paste
-
-`./dist/types/paste.d.ts`
-
-_no exports_
-
 ## ./utils/autocompleteController
 
 `./dist/utils/autocompleteController.d.ts`
@@ -592,6 +587,8 @@ _no exports_
 ### value
 
 - DATA_ATTRS
+- OVERLAY_ITEM_ATTR
+- OVERLAY_LAYER_ATTR
 
 ## ./utils/editorEmptyState
 

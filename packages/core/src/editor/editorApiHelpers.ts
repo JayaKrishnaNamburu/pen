@@ -2,7 +2,6 @@ import type {
 	EditorInternals,
 	CreateEditorOptions,
 	PenEventMap,
-	DocumentCommitEvent,
 	CRDTAdapter,
 	CRDTDocument,
 	CRDTEvent,
@@ -33,18 +32,47 @@ import type {
 	EditorViewMode,
 } from "@input/pen-types";
 import {
-	AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY,
-	COLLECT_KEY_BINDINGS_SLOT_KEY,
+	AI_AUTOCOMPLETE_CONTROLLER_SLOT,
+	AI_CONTROLLER_SLOT,
+	AI_INLINE_HISTORY_SLOT,
+	AI_REVIEW_CONTROLLER_SLOT,
+	AI_SUGGESTIONS_CONTROLLER_SLOT,
+	ANNOUNCER_SLOT_KEY,
+	FIELD_EDITOR_SLOT_KEY,
+	HISTORY_CONTROLLER_SLOT,
+	INLINE_COMPLETION_SLOT,
+	INPUT_RULES_ENGINE_SLOT_KEY,
+	MULTIPLAYER_CONTROLLER_SLOT,
 	MUTATION_GROUP_METADATA_KEY,
+	SEARCH_CONTROLLER_SLOT,
 	UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY,
+	UNDO_HISTORY_RESTORE_SLOT_KEY,
+	type Facet,
 } from "@input/pen-types";
 import { createMutationGroupMetadata, getApplyOptionsGroupId } from "./origin";
-import { usesInlineTextSelection } from "../schema/fieldEditorCapabilities";
+import { clipboardFacet } from "../facets/coreFacets";
 import {
-	SLOT_DEPRECATED_CODE,
-	dispositionForSlot,
-} from "../facets/slotAdapter";
-import { undoManagerFacet } from "../facets/controllerFacets";
+	aiAutocompleteControllerFacet,
+	aiControllerFacet,
+	aiInlineCompletionFacet,
+	aiInlineHistoryFacet,
+	aiReviewControllerFacet,
+	aiSuggestionsControllerFacet,
+	announcerFacet,
+	assetProviderFacet,
+	documentOpsToolRuntimeFacet,
+	fieldEditorHostFacet,
+	historyControllerFacet,
+	inputRulesEngineFacet,
+	multiplayerControllerFacet,
+	searchControllerFacet,
+	streamingTargetFacet,
+	undoManagerFacet,
+	undoMetadataControllerFacet,
+	undoRestoreControllerFacet,
+} from "../facets/controllerFacets";
+import { a11yLabelFacet } from "../facets/a11yFacets";
+import { localeFacet, messagesFacet } from "../facets/i18nFacets";
 import { getDocumentLoadReport } from "@input/pen-crdt-yjs";
 import { SchemaEngineImpl } from "../schema/normalize";
 import { createBlockHandle } from "../schema/handles";
@@ -62,7 +90,10 @@ import { emptyDecorationSet } from "./decorations";
 import { DocumentStateImpl } from "./documentState";
 import { createDocumentSession } from "./documentSession";
 
-type EditorImplRuntime = any;
+import type { Editor } from "@input/pen-types";
+import type { EditorImplInternal } from "./editorImplContext";
+
+type EditorImplRuntime = EditorImplInternal;
 type CRDTBlockMap = CRDTMap<CRDTMap<unknown>>;
 type RawPenDocumentLike = {
 	getArray?(name: "blockOrder"): CRDTArray<string>;
@@ -76,64 +107,44 @@ function missingPenDocumentRoot(name: string): never {
 	throw new Error(`CRDT document is missing required Pen root "${name}".`);
 }
 
-function readAdaptedSlot<T>(
-	self: EditorImplRuntime,
-	key: string,
-): T | undefined {
-	const disposition = dispositionForSlot(key);
-	if (disposition?.kind === "whenReady") {
-		return (() => self.whenReady()) as T;
-	}
-	if (disposition?.kind === "engine") {
-		return self._engine as T;
-	}
-	if (self._slots.has(key)) {
-		return self._slots.get(key) as T;
-	}
-	if (disposition?.kind === "facet") {
-		return self._facetRegistry.read(disposition.facet) as T;
-	}
-	return undefined;
-}
+const FACET_BY_SLOT_KEY: Record<string, Facet<unknown, unknown>> = {
+	[FIELD_EDITOR_SLOT_KEY]: fieldEditorHostFacet,
+	[INPUT_RULES_ENGINE_SLOT_KEY]: inputRulesEngineFacet,
+	[UNDO_HISTORY_RESTORE_SLOT_KEY]: undoRestoreControllerFacet,
+	[UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY]: undoMetadataControllerFacet,
+	[INLINE_COMPLETION_SLOT]: aiInlineCompletionFacet,
+	[AI_CONTROLLER_SLOT]: aiControllerFacet,
+	[AI_INLINE_HISTORY_SLOT]: aiInlineHistoryFacet,
+	[AI_REVIEW_CONTROLLER_SLOT]: aiReviewControllerFacet,
+	[AI_AUTOCOMPLETE_CONTROLLER_SLOT]: aiAutocompleteControllerFacet,
+	[AI_SUGGESTIONS_CONTROLLER_SLOT]: aiSuggestionsControllerFacet,
+	[SEARCH_CONTROLLER_SLOT]: searchControllerFacet,
+	[MULTIPLAYER_CONTROLLER_SLOT]: multiplayerControllerFacet,
+	[HISTORY_CONTROLLER_SLOT]: historyControllerFacet,
+	"paste:importers": clipboardFacet,
+	"paste:assetProvider": assetProviderFacet,
+	"undo:manager": undoManagerFacet,
+	"document-ops:toolRuntime": documentOpsToolRuntimeFacet,
+	"pen.locale": localeFacet,
+	"pen.messages": messagesFacet,
+	"pen.a11yLabel": a11yLabelFacet,
+	"delta-stream:target": streamingTargetFacet,
+	[ANNOUNCER_SLOT_KEY]: announcerFacet,
+};
 
-function writeAdaptedSlot(
+function writeAssignedSlot(
 	self: EditorImplRuntime,
 	key: string,
 	value: unknown,
-	deprecated: boolean,
 ): void {
 	self._slots.set(key, value);
 	if (key === "undo:manager") {
 		self._refreshUndoManager();
 	}
-	const disposition = dispositionForSlot(key);
-	if (disposition?.kind === "facet") {
-		self._facetRegistry.override(disposition.facet, value);
+	const facet = FACET_BY_SLOT_KEY[key];
+	if (facet) {
+		self._facetRegistry.override(facet, value);
 	}
-	if (
-		deprecated &&
-		disposition &&
-		(disposition.kind === "facet" || disposition.kind === "keymapCollector")
-	) {
-		warnSlotDeprecated(self, key);
-	}
-}
-
-function warnSlotDeprecated(self: EditorImplRuntime, key: string): void {
-	const warned: Set<string> = (self._slotDeprecationWarned ??= new Set());
-	if (warned.has(key)) {
-		return;
-	}
-	warned.add(key);
-	self._emitter.emit("diagnostic", {
-		code: SLOT_DEPRECATED_CODE,
-		level: "warn",
-		source: "facets",
-		message: `getSlot/setSlot("${key}") is deprecated; use editor.facet()`,
-		remediation:
-			"Read the mapped facet from editor.facet() and stop calling setSlot for this key.",
-		key,
-	});
 }
 
 export function getRawBlockMap(
@@ -162,12 +173,8 @@ export function getEditorInternals(editor: EditorImplRuntime): EditorInternals {
 		hasListeners: (event) => self._emitter.has(event),
 		onApplyBoundary: (hook) => self._pipeline.addApplyBoundaryHook(hook),
 		onPipelinePhase: (listener) => self._onPipelinePhase(listener),
-		getSlot: <T>(key: string): T | undefined => readAdaptedSlot(self, key),
-		setSlot: (key: string, value: unknown): void => {
-			writeAdaptedSlot(self, key, value, true);
-		},
 		assignSlot: (key: string, value: unknown): void => {
-			writeAdaptedSlot(self, key, value, false);
+			writeAssignedSlot(self, key, value);
 		},
 		getBlockText: (blockId: string): unknown => {
 			const blockMap = self._getRawBlockMap(blockId);
@@ -241,7 +248,7 @@ export function loadEditorDocument(
 ): void {
 	const self = editor as EditorImplRuntime;
 	self._queueExtensionLifecycle(async () => {
-		await self._extensions.deactivateAll(self);
+		await self._extensions.deactivateAll(self as unknown as Editor);
 		if (self._isDestroyed) {
 			return;
 		}
@@ -342,7 +349,7 @@ export function destroyEditor(editor: EditorImplRuntime): Promise<void> {
 	self._isDestroyed = true;
 	self._blockRevisions.clear();
 	return self._queueExtensionLifecycle(async () => {
-		await self._extensions.deactivateAll(self);
+		await self._extensions.deactivateAll(self as unknown as Editor);
 		self._teardownObservation();
 		self._releaseSession?.();
 		self._releaseSession = null;

@@ -1,4 +1,4 @@
-import type { EditorInternals, CreateEditorOptions, PenEventMap, DocumentCommitEvent, CRDTAdapter, CRDTDocument, CRDTEvent, DiagnosticEvent, PenDocument, PipelinePhase, SchemaRegistry, Awareness, DocumentSession, DocumentScope, DocumentScopeReplacementEvent, DocumentProfile, Extension, DocumentOp, ApplyOptions, OpOrigin, MutationGroupMetadata, SelectionState, TextSelection, DocumentRange, BlockHandle, Block, DocumentState, UndoManager, Unsubscribe, CRDTMap, CRDTArray, Position, DecorationSet, EditorViewMode, ChangeSummary } from "@input/pen-types";
+import type { EditorInternals, CreateEditorOptions, PenEventMap, CRDTAdapter, CRDTDocument, CRDTEvent, DiagnosticEvent, PenDocument, PipelinePhase, SchemaRegistry, Awareness, DocumentSession, DocumentScope, DocumentScopeReplacementEvent, DocumentProfile, Extension, DocumentOp, ApplyOptions, OpOrigin, MutationGroupMetadata, SelectionState, TextSelection, DocumentRange, BlockHandle, Block, DocumentState, UndoManager, Unsubscribe, CRDTMap, CRDTArray, Position, DecorationSet, EditorViewMode, ChangeSummary } from "@input/pen-types";
 import { AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY, COLLECT_KEY_BINDINGS_SLOT_KEY, MUTATION_GROUP_METADATA_KEY, UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY, generateId } from "@input/pen-types";
 import { SchemaEngineImpl } from "../schema/normalize";
 import { createBlockHandle } from "../schema/handles";
@@ -9,18 +9,19 @@ import type { CRDTUnknownMap } from "./crdtShapes";
 import { getTextProp, getTableContent, getCellText as getCellTextFromRow, isCRDTMap } from "./crdtShapes";
 import { DocumentStateImpl } from "./documentState";
 import { installChangeSummaries, teardownChangeSummaries } from "../changes/install";
-import { createEmptySummary } from "../changes/mapping";
+import { createEmptySummary } from "../changes/summaryBuilder";
 import {
-	adapterChangeEvent,
 	buildCommitEvent,
-	createEventDeprecatedDiagnostic,
 	resolveCommitSource,
 	snapshotSelectionRecord,
 } from "./commitEvent";
 import { createDocumentSession } from "./documentSession";
 import { runPendingEmptyBlockMigrations } from "../migrations/runPendingEmptyBlockMigrations";
 
-type EditorImplRuntime = any;
+import type { Editor } from "@input/pen-types";
+import type { DocumentCommitEvent, EditorImplInternal } from "./editorImplContext";
+
+type EditorImplRuntime = EditorImplInternal;
 type CRDTBlockMap = CRDTMap<CRDTMap<unknown>>;
 type RawPenDocumentLike = { getArray?(name: "blockOrder"): CRDTArray<string>; getMap?(name: "blocks" | "apps" | "metadata"): CRDTMap<unknown>; blockOrder?: CRDTArray<string>; blocks?: CRDTMap<unknown>; apps?: CRDTMap<unknown>; metadata?: CRDTMap<unknown>; };
 function missingPenDocumentRoot(name: string): never { throw new Error(`CRDT document is missing required Pen root "${name}".`); }
@@ -153,7 +154,7 @@ if (event.previousScope.id !== self._documentScope.id) {
 	return;
 }
 self._queueExtensionLifecycle(async () => {
-	await self._extensions.deactivateAll(self);
+	await self._extensions.deactivateAll(self as unknown as Editor);
 	if (self._isDestroyed) {
 		return;
 	}
@@ -211,7 +212,7 @@ self._refreshCoreSlots();
 // before the pipeline's dispatch callback and the observer are wired.
 // Migrations run before the profile write: persisting refreshes the format
 // stamp, which would hide a stamp-2 document from the migration check.
-runPendingEmptyBlockMigrations(self);
+runPendingEmptyBlockMigrations(self as unknown as Editor);
 persistEditorDocumentProfile(self);
 
 self._pipeline._init(
@@ -233,13 +234,12 @@ export function refreshUndoManager(editor: EditorImplRuntime, ): void {
 const slotUndo = self._slots.get("undo:manager") as
 	| UndoManager
 	| undefined;
-(self as { undoManager: UndoManager }).undoManager =
-	slotUndo ?? NOOP_UNDO;
+	self.undoManager = slotUndo ?? NOOP_UNDO;
 }
 
 export async function activateEditorExtensions(editor: EditorImplRuntime, ): Promise<void> {
 	const self = editor as EditorImplRuntime;
-const activation = self._extensions.activateAll(self);
+const activation = self._extensions.activateAll(self as unknown as Editor);
 self._refreshUndoManager();
 await activation;
 self._refreshUndoManager();
@@ -360,30 +360,7 @@ export function dispatchCRDTEvent(editor: EditorImplRuntime, event: CRDTEvent): 
 	if (mappedSelection) {
 		self._emitter.emit("selectionChange", self._selection.record);
 	}
-	self._extensions.dispatchObserve([commit], self);
-	emitDeprecatedAdapter(
-		self,
-		"change",
-		() => self._emitter.emit("change", [adapterChangeEvent(event)]),
-	);
-	emitDeprecatedAdapter(self, "documentCommit", () =>
-		self._emitter.emit("documentCommit", documentCommit),
-	);
-}
-
-function emitDeprecatedAdapter(
-	editor: EditorImplRuntime,
-	key: "change" | "documentCommit",
-	emit: () => void,
-): void {
-	if (
-		editor._emitter.has(key) &&
-		!editor._eventDeprecationWarned.has(key)
-	) {
-		editor._eventDeprecationWarned.add(key);
-		editor._emitter.emit("diagnostic", createEventDeprecatedDiagnostic(key));
-	}
-	emit();
+	self._extensions.dispatchObserve([commit], self as unknown as Editor);
 }
 
 export function syncDocumentProfileFromStorage(editor: EditorImplRuntime, ): void {

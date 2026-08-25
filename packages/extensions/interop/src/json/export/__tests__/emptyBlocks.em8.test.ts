@@ -1,80 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { createEditor } from "@input/pen-core";
-import { defaultSchema } from "@input/pen-schema-default";
+import {
+	createBareInteropEditor,
+	EM8_CELL_CONTROL,
+	EM8_KEEP,
+	seedEm8Document,
+} from "../../../__tests__/interopCorpus";
 import { exportEditorToJson, jsonExporter } from "../exporter";
 import { jsonImporter } from "../importer";
 import type { PenBlockJSON, PenDocumentJSON } from "../types";
-
-const noDefaultExtensionsPreset = {
-	resolve() {
-		return { extensions: [] };
-	},
-};
-
-const KEEP = "keep\u200Bme";
-const CELL_CONTROL = "CELL-OK";
-
-function createBareEditor() {
-	const editor = createEditor({
-		schema: defaultSchema,
-		preset: noDefaultExtensionsPreset,
-	});
-	const existingBlockIds = [...editor.documentState.allBlocks()]
-		.filter((handle) => handle.parent === null)
-		.map((handle) => handle.id);
-	if (existingBlockIds.length > 0) {
-		editor.apply(
-			existingBlockIds.reverse().map((blockId) => ({
-				type: "delete-block" as const,
-				blockId,
-			})),
-		);
-	}
-	return editor;
-}
-
-function seedEm8Fixture(editor: ReturnType<typeof createBareEditor>) {
-	editor.apply([
-		{
-			type: "insert-block",
-			blockId: "empty",
-			blockType: "paragraph",
-			props: {},
-			position: "last",
-		},
-		{
-			type: "insert-block",
-			blockId: "keep",
-			blockType: "paragraph",
-			props: {},
-			position: "last",
-		},
-		{
-			type: "insert-block",
-			blockId: "t1",
-			blockType: "table",
-			props: { hasHeaderRow: true },
-			position: "last",
-		},
-	]);
-	editor.apply([
-		{
-			type: "splice-text",
-			blockId: "keep",
-			from: 0,
-			to: 0,
-			insert: KEEP,
-		},
-		{
-			type: "splice-text",
-			blockId: "t1",
-			cell: { row: 0, col: 1 },
-			from: 0,
-			to: 0,
-			insert: CELL_CONTROL,
-		},
-	]);
-}
 
 function inlineText(block: PenBlockJSON | undefined): string {
 	return block?.content?.text ?? "";
@@ -107,8 +40,8 @@ function cellAt(
 
 describe("EM8 JSON interop", () => {
 	it("EM8: empty paragraph and empty table cell export as empty; keep\\u200Bme is preserved", async () => {
-		const editor = createBareEditor();
-		seedEm8Fixture(editor);
+		const editor = createBareInteropEditor();
+		seedEm8Document(editor);
 
 		const json = await jsonExporter.export(editor);
 		const serialized = JSON.stringify(json);
@@ -124,29 +57,29 @@ describe("EM8 JSON interop", () => {
 		expect(emptyCell?.type).toBe("__table_cell");
 		expect(inlineText(emptyCell)).toBe("");
 		expect(keep).toBeDefined();
-		expect(inlineText(keep)).toBe(KEEP);
+		expect(inlineText(keep)).toBe(EM8_KEEP);
 		expect(controlCell).toBeDefined();
-		expect(inlineText(controlCell)).toBe(CELL_CONTROL);
-		expect(serialized).toContain(KEEP);
-		expect(serialized).toContain(CELL_CONTROL);
+		expect(inlineText(controlCell)).toBe(EM8_CELL_CONTROL);
+		expect(serialized).toContain(EM8_KEEP);
+		expect(serialized).toContain(EM8_CELL_CONTROL);
 		expect(serialized).not.toContain(`"text":"${"\u200B"}"`);
 
 		editor.destroy();
 	});
 
 	it("EM8: JSON import keeps empty paragraph and empty cell empty and preserves keep\\u200Bme", async () => {
-		const source = createBareEditor();
-		seedEm8Fixture(source);
+		const source = createBareInteropEditor();
+		seedEm8Document(source);
 		const json = exportEditorToJson(source);
 
-		const target = createBareEditor();
+		const target = createBareInteropEditor();
 		await jsonImporter.import(json, target, { replace: true });
 
 		expect(target.getBlock("empty")?.textContent()).toBe("");
-		expect(target.getBlock("keep")?.textContent()).toBe(KEEP);
+		expect(target.getBlock("keep")?.textContent()).toBe(EM8_KEEP);
 		const table = target.getBlock("t1")?.as("table");
 		expect(table?.tableCell(0, 0)?.textContent()).toBe("");
-		expect(table?.tableCell(0, 1)?.textContent()).toBe(CELL_CONTROL);
+		expect(table?.tableCell(0, 1)?.textContent()).toBe(EM8_CELL_CONTROL);
 		expect(table).not.toBeNull();
 
 		source.destroy();
@@ -154,14 +87,14 @@ describe("EM8 JSON interop", () => {
 	});
 
 	it("EM8: getSelectedText is empty for empty paragraph and empty cell and keeps keep\\u200Bme", () => {
-		const editor = createBareEditor();
-		seedEm8Fixture(editor);
+		const editor = createBareInteropEditor();
+		seedEm8Document(editor);
 
 		editor.selectBlocks(["empty", "keep"]);
-		expect(editor.getSelectedText()).toBe(`\n${KEEP}`);
+		expect(editor.getSelectedText()).toBe(`\n${EM8_KEEP}`);
 
-		editor.selectText("keep", 0, KEEP.length);
-		expect(editor.getSelectedText()).toBe(KEEP);
+		editor.selectText("keep", 0, EM8_KEEP.length);
+		expect(editor.getSelectedText()).toBe(EM8_KEEP);
 
 		editor.selectBlock("empty");
 		expect(editor.getSelectedText()).toBe("");
@@ -170,7 +103,7 @@ describe("EM8 JSON interop", () => {
 		expect(editor.getSelectedText()).toBe("");
 
 		editor.selectCell("t1", 0, 1);
-		expect(editor.getSelectedText()).toBe(CELL_CONTROL);
+		expect(editor.getSelectedText()).toBe(EM8_CELL_CONTROL);
 
 		editor.destroy();
 	});

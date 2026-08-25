@@ -37,10 +37,14 @@
  *   - zero extractable entries across non-None in-scope waves
  *   - missing MIGRATION.md or zero headings
  *
- * Default scope is every discovered `wave-*.md` (today: waves 0–6).
- * Waves 0–2 are included because WA5 is per deletion, not per wave
- * number; 0–1 are explicit None. `--min-wave` / `--max-wave` exist
- * if a later owner wants the Wave 6-literal 3–6 reading.
+ * Default scope is every discovered `wave-*.md` under both train
+ * wave dirs (`spec-v3/waves` and `spec-v4/waves`), same closed-list
+ * style as `coverage-rules.mjs` `SPEC_ROOTS`. A missing train dir is
+ * skipped; zero files across all present dirs fails closed. Waves
+ * 0–2 of each train are included because WA5 is per deletion, not
+ * per wave number. `--waves-dir` replaces the default list (repeatable).
+ * `--min-wave` / `--max-wave` exist if a later owner wants a numeric
+ * slice; wave numbers collide across trains, so prefer `--waves-dir`.
  */
 
 import fs from "node:fs";
@@ -51,6 +55,8 @@ import {
 	CANNOT_CHECK_EMPTY_DIR,
 	collectWaveFiles,
 } from "./v3-gates.mjs";
+
+export const DEFAULT_WAVES_DIR_RELS = ["spec-v3/waves", "spec-v4/waves"];
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_REPO_ROOT = path.resolve(SCRIPT_DIR, "..");
@@ -132,9 +138,14 @@ export const CANNOT_CHECK_MULTI_DELETIONS =
 export const CANNOT_CHECK_EMPTY_DELETIONS =
 	"cannot check: Deletions section yielded 0 entries";
 
+function defaultWavesDirs(repoRoot) {
+	return DEFAULT_WAVES_DIR_RELS.map((rel) => path.join(repoRoot, rel));
+}
+
 export function parseArgs(argv, repoRoot = DEFAULT_REPO_ROOT) {
 	const files = [];
-	let wavesDir = path.join(repoRoot, "spec-v3", "waves");
+	let wavesDirs = defaultWavesDirs(repoRoot);
+	let wavesDirOverridden = false;
 	let guideRel = GUIDE_REL;
 	let selfTest = false;
 	let minWave = 0;
@@ -150,7 +161,11 @@ export function parseArgs(argv, repoRoot = DEFAULT_REPO_ROOT) {
 			if (!value || value.startsWith("--")) {
 				throw new Error("missing value for --waves-dir");
 			}
-			wavesDir = path.resolve(repoRoot, value);
+			if (!wavesDirOverridden) {
+				wavesDirs = [];
+				wavesDirOverridden = true;
+			}
+			wavesDirs.push(path.resolve(repoRoot, value));
 			i += 1;
 			continue;
 		}
@@ -191,7 +206,16 @@ export function parseArgs(argv, repoRoot = DEFAULT_REPO_ROOT) {
 		}
 		files.push(path.resolve(repoRoot, arg));
 	}
-	return { files, wavesDir, guideRel, selfTest, minWave, maxWave, repoRoot };
+	return {
+		files,
+		wavesDir: wavesDirs[0],
+		wavesDirs,
+		guideRel,
+		selfTest,
+		minWave,
+		maxWave,
+		repoRoot,
+	};
 }
 
 export function waveNumberFromFile(filePath) {
@@ -411,11 +435,53 @@ function posixRel(repoRoot, filePath) {
 	return path.relative(repoRoot, filePath).split(path.sep).join("/");
 }
 
+function resolveWavesDirs(options, repoRoot) {
+	if (Array.isArray(options.wavesDirs) && options.wavesDirs.length > 0) {
+		return options.wavesDirs;
+	}
+	if (options.wavesDir) {
+		return [options.wavesDir];
+	}
+	return defaultWavesDirs(repoRoot);
+}
+
+export function collectFromWavesDirs(wavesDirs, explicitFiles = []) {
+	if (explicitFiles.length > 0) {
+		return collectWaveFiles(wavesDirs[0] ?? "", explicitFiles);
+	}
+	const files = [];
+	for (const dir of wavesDirs) {
+		const collected = collectWaveFiles(dir, []);
+		if (
+			collected.error === CANNOT_CHECK_ABSENT ||
+			collected.error === CANNOT_CHECK_EMPTY_DIR
+		) {
+			continue;
+		}
+		if (collected.error) {
+			return collected;
+		}
+		files.push(...collected.files);
+	}
+	if (files.length === 0) {
+		return {
+			error:
+				wavesDirs.length === 0
+					? CANNOT_CHECK_ABSENT
+					: CANNOT_CHECK_EMPTY_DIR,
+			files: [],
+		};
+	}
+	files.sort();
+	return { error: null, files };
+}
+
 export function evaluateCrossCheck(options) {
 	const repoRoot = options.repoRoot ?? DEFAULT_REPO_ROOT;
 	const minWave = options.minWave ?? 0;
 	const maxWave = options.maxWave ?? Number.POSITIVE_INFINITY;
-	const collected = collectWaveFiles(options.wavesDir, options.files ?? []);
+	const wavesDirs = resolveWavesDirs(options, repoRoot);
+	const collected = collectFromWavesDirs(wavesDirs, options.files ?? []);
 	if (collected.error) {
 		return {
 			ok: false,
@@ -714,6 +780,50 @@ export function runSelfTests(repoRoot = DEFAULT_REPO_ROOT) {
 		`self-test: empty fixture must name the file, got ${empty.error}`,
 	);
 
+	const defaults = parseArgs([], repoRoot);
+	assert(
+		defaults.wavesDirs.length === DEFAULT_WAVES_DIR_RELS.length,
+		`self-test: default wavesDirs length, got ${defaults.wavesDirs.length}`,
+	);
+	assert(
+		defaults.wavesDirs.some((dir) => dir.endsWith(path.join("spec-v3", "waves"))),
+		`self-test: default must include spec-v3/waves, got ${JSON.stringify(defaults.wavesDirs)}`,
+	);
+	assert(
+		defaults.wavesDirs.some((dir) => dir.endsWith(path.join("spec-v4", "waves"))),
+		`self-test: default must include spec-v4/waves, got ${JSON.stringify(defaults.wavesDirs)}`,
+	);
+
+	const overridden = parseArgs(["--waves-dir", "scripts/__fixtures__"], repoRoot);
+	assert(
+		overridden.wavesDirs.length === 1,
+		`self-test: --waves-dir replaces the default list, got ${JSON.stringify(overridden.wavesDirs)}`,
+	);
+
+	const repeated = parseArgs(
+		["--waves-dir", "spec-v3/waves", "--waves-dir", "spec-v4/waves"],
+		repoRoot,
+	);
+	assert(
+		repeated.wavesDirs.length === 2,
+		`self-test: repeated --waves-dir accumulates, got ${JSON.stringify(repeated.wavesDirs)}`,
+	);
+
+	const bothTrains = collectFromWavesDirs(defaultWavesDirs(repoRoot));
+	assert(
+		bothTrains.error == null,
+		`self-test: both train dirs must collect, got ${bothTrains.error}`,
+	);
+	const bothRels = bothTrains.files.map((file) => posixRel(repoRoot, file));
+	assert(
+		bothRels.some((rel) => rel.startsWith("spec-v3/waves/")),
+		`self-test: collectFromWavesDirs must see spec-v3, got ${JSON.stringify(bothRels)}`,
+	);
+	assert(
+		bothRels.some((rel) => rel.startsWith("spec-v4/waves/")),
+		`self-test: collectFromWavesDirs must see spec-v4, got ${JSON.stringify(bothRels)}`,
+	);
+
 	return { passing, failing, empty };
 }
 
@@ -733,6 +843,7 @@ function main() {
 	const result = evaluateCrossCheck({
 		repoRoot: parsed.repoRoot,
 		wavesDir: parsed.wavesDir,
+		wavesDirs: parsed.wavesDirs,
 		files: parsed.files,
 		guideRel: parsed.guideRel,
 		minWave: parsed.minWave,

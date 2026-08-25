@@ -92,7 +92,7 @@ function createFieldEditor(blockId: string) {
 				_focusOffset: number,
 			) => {},
 			deactivate: () => {},
-			selectAll: () => false,
+			selectAllBehavior: "block-first" as const,
 			resolveInsertMarks: () => undefined,
 		},
 		activations,

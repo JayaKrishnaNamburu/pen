@@ -27,7 +27,7 @@ Future names: `spec-v2/05-commands.md` catalog (`caret.ts`, `text.ts`, `structur
 | `applyListTabBehavior` | `commandsListTab.ts` | `pen.indent` / `pen.outdent` | `shiftKey` chooses outdent. List items only. |
 | `moveCaretAcrossBlocks` | `commandsListTab.ts` | `pen.caretLeft` / `pen.caretRight` | T4 / boundary entry. ArrowUp/Down no longer call it — keymap dispatches `pen.caretUp` / `pen.caretDown`, and `mountEditor` registers the G5 measure. Kept exported only because eight React `fieldEditorCommands.*.test.ts` files still import it. |
 | `selectInlineAtomWithArrowKey` | `keyHandlingInlineAtoms.ts` | `pen.caretLeft` / `pen.caretRight` | N1 atom cases. `extend` is the private `extendInlineAtomSelectionWithArrowKey`. |
-| `handleSelectAllShortcut` | `keyHandling.ts` | `pen.selectAll` | Delegates to `fieldEditor.selectAll` (T1 ladder) or `getDocumentTextRange`. |
+| `handleSelectAllShortcut` | `keyHandling.ts` | `pen.selectAll` | Calls `editor.selectAll(fieldEditor.selectAllBehavior)`; core owns the T1 ladder. |
 | `handleHistoryShortcut` | `keyHandling.ts` | `history.undo` / `history.redo` | After `tryHandleHistoryOverrideBinding`. |
 | `handleFieldEditorKeyDown` (cell Tab) | `keyHandling.ts` | `table.cellNext` / `table.cellPrev` | Inline Tab/Shift-Tab when `activeCellCoord` is set. Not a named function. |
 | `handleFieldEditorKeyDown` (cell Enter) | `keyHandling.ts` | `table.cellDown` | Inline Enter when `activeCellCoord` is set. Not a named function. |

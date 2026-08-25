@@ -16,10 +16,8 @@ function createRecordingEditor() {
 		apply(ops: DocumentOp[]) {
 			applied.push(...ops);
 		},
+		facet: () => null,
 		internals: {
-			getSlot() {
-				return undefined;
-			},
 			emit() {},
 		},
 	} as unknown as Editor;

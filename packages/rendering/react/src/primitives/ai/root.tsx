@@ -1,9 +1,7 @@
 import React, { createContext, useContext, useEffect } from "react";
+import { aiControllerFacet } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
-import {
-	getAIController,
-	type AIController,
-} from "@input/pen-ai";
+import type { AIController } from "@input/pen-ai";
 import { EditorContext } from "../../context/editorContext";
 import { useAI } from "../../hooks/useAI";
 import { DATA_ATTRS } from "../../utils/dataAttributes";
@@ -40,7 +38,8 @@ export function AIRoot(props: AIRootProps) {
 	}
 
 	const state = useAI(editor);
-	const controller = getAIController(editor);
+	const controller =
+		(editor.facet(aiControllerFacet) as AIController | null) ?? null;
 	const primitiveProps: Record<string, unknown> = {
 		"data-pen-ai-root": "",
 		[DATA_ATTRS.viewId]: editor.internals.viewId,

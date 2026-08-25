@@ -228,16 +228,6 @@
         "default": "./dist/constants/selectAll.cjs"
       }
     },
-    "./types/paste": {
-      "import": {
-        "types": "./dist/types/paste.d.ts",
-        "default": "./dist/types/paste.mjs"
-      },
-      "require": {
-        "types": "./dist/types/paste.d.cts",
-        "default": "./dist/types/paste.cjs"
-      }
-    },
     "./utils/autocompleteController": {
       "import": {
         "types": "./dist/utils/autocompleteController.d.ts",

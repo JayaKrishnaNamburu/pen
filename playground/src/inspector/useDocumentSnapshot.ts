@@ -20,10 +20,10 @@ export interface DocumentSnapshot {
 /**
  * A plain-object copy of the document, refreshed as it changes.
  *
- * Three editor events cover everything a reader cares about: `documentCommit`
- * for applied operations, `change` for remote or CRDT-level updates, and
- * `selectionChange` for the caret. Reads are coalesced into one animation
- * frame so a fast typist does not re-serialise per keystroke.
+ * Two editor events cover everything a reader cares about: `commit` for
+ * applied operations, local and remote alike, and `selectionChange` for the
+ * caret. Reads are coalesced into one animation frame so a fast typist does
+ * not re-serialise per keystroke.
  */
 export function useDocumentSnapshot(
 	editor: Editor,
@@ -45,8 +45,7 @@ export function useDocumentSnapshot(
 		};
 
 		const unsubscribes = [
-			editor.on("documentCommit", scheduleRead),
-			editor.on("change", scheduleRead),
+			editor.on("commit", scheduleRead),
 			editor.on("selectionChange", scheduleRead),
 		];
 

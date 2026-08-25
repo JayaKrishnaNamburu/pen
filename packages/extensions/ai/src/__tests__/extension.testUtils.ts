@@ -1,3 +1,4 @@
+import { getDocumentToolRuntime } from "@input/pen-document-ops";
 import type { ToolRuntime } from "@input/pen-types";
 import { defineExtension } from "@input/pen-core";
 import {
@@ -21,7 +22,7 @@ export function testStreamingToolExtension() {
 		name: "test-streaming-tool",
 		dependencies: ["document-ops"],
 		activateClient: async ({ editor }) => {
-			toolRuntime = editor.internals.getSlot<ToolRuntime>("document-ops:toolRuntime") ?? null;
+			toolRuntime = getDocumentToolRuntime(editor);
 			const definition = {
 				name: "test_search",
 				description: "Test streaming search tool",

@@ -50,7 +50,7 @@ Status:
 | Field-editor slots (`FIELD_EDITOR_SLOT_KEY` / core slot) | Open — host must clear. React and Vue do. |
 | `_rootElement` | Open — left pointing at the last root. |
 | `_editor` reference | Open — retained after destroy. |
-| Select-all cycle (`SelectAllController`) | Open — session reset does not clear it. State only; no observer. |
+| Select-all cycle (`SelectAllController`) | Gone — core computes the T1 rung from selection state, so there is no cycle to leak. |
 
 ### Observers
 
@@ -131,7 +131,7 @@ Listed so this file does not imply they ride along:
 | `createGeometryReader` | `dispose()` | No |
 | `createReducedMotionSignal` | `dispose()` (removes `matchMedia` `change`) | No |
 | `DomScheduler` | none — pending `requestAnimationFrame` is never cancelled | No |
-| Overlay layer (`src/overlays/`) | host unmount of the layer node | No |
+| Overlay layer (conformance harness `harness/src/overlays/`) | host unmount of the layer node | No |
 
 ## Still open
 

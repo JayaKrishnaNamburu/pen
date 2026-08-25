@@ -3,11 +3,8 @@
 import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
-import { createEditor } from "@input/pen-core";
-import {
-	AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY,
-	type ToolRuntime,
-} from "@input/pen-types";
+import { createEditor, documentOpsToolRuntimeFacet } from "@input/pen-core";
+import type { ToolRuntime } from "@input/pen-types";
 import { defineExtension } from "@input/pen-core";
 import { aiExtension, getAIController } from "@input/pen-ai";
 import { undoExtension } from "@input/pen-undo";
@@ -224,9 +221,7 @@ function testStreamingToolExtension() {
 		dependencies: ["document-ops"],
 		activateClient: async ({ editor }) => {
 			toolRuntime =
-				editor.internals.getSlot<ToolRuntime>(
-					"document-ops:toolRuntime",
-				) ?? null;
+				(editor.facet(documentOpsToolRuntimeFacet) as ToolRuntime | null) ?? null;
 			toolRuntime?.registerTool({
 				name: "test_search",
 				description: "Test streaming search tool",
@@ -410,9 +405,7 @@ describe("@input/pen-react AI primitives", () => {
 				testStreamingToolExtension(),
 			],
 		});
-		await (editor.internals.getSlot<() => Promise<void>>(
-			AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY,
-		)?.() ?? Promise.resolve());
+		await editor.whenReady();
 		const controller = getAIController(editor);
 		expect(controller).toBeTruthy();
 

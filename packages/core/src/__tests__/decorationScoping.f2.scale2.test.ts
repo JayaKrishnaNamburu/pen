@@ -2,7 +2,6 @@ import type {
   BlockDecoration,
   Decoration,
   InlineDecoration,
-  PositionMapping,
 } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 
@@ -33,18 +32,6 @@ function blockDec(blockId: string, mark = "x"): BlockDecoration {
     type: "block",
     blockId,
     attributes: { mark },
-  };
-}
-
-function mappingFor(
-  affectedBlocks: readonly string[],
-  shift = 1,
-): PositionMapping {
-  return {
-    affectedBlocks,
-    mapOffset(blockId, offset) {
-      return affectedBlocks.includes(blockId) ? offset + shift : offset;
-    },
   };
 }
 
@@ -122,31 +109,6 @@ describe("SCALE2 decoration scoping (F.2)", () => {
     expect(next.forBlock("a")).toBe(emptyDecorationSet().forBlock("missing"));
     expect(next.forBlock("a")).toHaveLength(0);
     expect(next.forBlock("b")).toBe(untouchedB);
-  });
-
-  it("SCALE2: map remaps one block and keeps the others by identity", () => {
-    const previous = createDecorationSet([
-      inlineDec("a", 0, 2),
-      inlineDec("b", 1, 4),
-      blockDec("c"),
-    ]);
-    const untouchedB = previous.forBlock("b");
-    const untouchedC = previous.forBlock("c");
-
-    const next = previous.map(mappingFor(["a"], 3));
-
-    expect(next).not.toBe(previous);
-    expect(next.forBlock("a")).toEqual([inlineDec("a", 3, 5)]);
-    expect(next.forBlock("b")).toBe(untouchedB);
-    expect(next.forBlock("c")).toBe(untouchedC);
-  });
-
-  it("SCALE2: map returns the same set when offsets do not move", () => {
-    const previous = createDecorationSet([
-      inlineDec("a", 0, 2),
-      inlineDec("b", 1, 4),
-    ]);
-    expect(previous.map(mappingFor(["a"], 0))).toBe(previous);
   });
 
   it("SCALE2: eight no-op providers run once per commit, not once per block", () => {

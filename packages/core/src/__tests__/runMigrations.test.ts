@@ -36,10 +36,7 @@ function readLedger(editor: Editor): unknown {
 }
 
 function visibleText(editor: Editor): string {
-	return editor
-		.firstBlock()!
-		.textContent()
-		.replace(/\u200B/g, "");
+	return editor.firstBlock()!.textContent();
 }
 
 describe("runMigrations (DUR4)", () => {

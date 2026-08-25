@@ -27,6 +27,7 @@
 - buildSplitBlockRecipe
 - buildTableChildren
 - builtinCommandHandlers
+- collectEditorKeyBindings
 - collectToolExecutionOutput
 - commandHandler
 - createAppHandle
@@ -41,7 +42,6 @@
 - createImportResult
 - createMutationGroupMetadata
 - createPseudoLocaleCatalog
-- createStripEmptyBlockZwspMigration
 - deepEqual
 - defineBlock
 - defineCommand
@@ -78,10 +78,10 @@
 - interpolateMessage
 - isCollapsed
 - isContinuousTextFlowCapability
-- isLoneEmptyBlockZwsp
 - isMultiBlock
 - isPseudoLocaleText
 - keyBindingPriorityToPrecedence
+- mapOffsetThroughSplices
 - mergeDecorationSets
 - mergeSchemas
 - nextGraphemeBoundary
@@ -149,6 +149,7 @@
 - aiInlineHistoryFacet
 - aiReviewControllerFacet
 - aiSuggestionsControllerFacet
+- announcerFacet
 - APPLY_STORM_CODE
 - APPLY_STORM_QUEUE_LIMIT
 - ariaReadOnlyFacet
@@ -178,7 +179,6 @@
 - deleteForward
 - documentOpsToolRuntimeFacet
 - duplicateBlock
-- EVENT_DEPRECATED_CODE
 - fieldEditorHostFacet
 - historyControllerFacet
 - historyRedo
@@ -205,9 +205,8 @@
 - selectAll
 - selectBlock
 - SelectionAuthority
-- SLOT_DEPRECATED_CODE
 - splitBlock
-- STRIP_EMPTY_BLOCK_ZWSP_ID
+- streamingTargetFacet
 - suggestion
 - tableCellDown
 - tableCellNext

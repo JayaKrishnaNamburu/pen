@@ -1,7 +1,7 @@
 import {
-	HISTORY_CONTROLLER_SLOT,
-	MULTIPLAYER_CONTROLLER_SLOT,
-} from "@input/pen-types";
+	historyControllerFacet,
+	multiplayerControllerFacet,
+} from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
 import type {
 	HistoryAuthor,
@@ -55,10 +55,9 @@ export function resolvePresenceDisplayHint(
 	editor: Editor,
 	clientId: number,
 ): PresenceDisplayHint | undefined {
-	const multiplayerController =
-		editor.internals.getSlot<PresenceIdentitySource>(
-			MULTIPLAYER_CONTROLLER_SLOT,
-		);
+	const multiplayerController = editor.facet(
+		multiplayerControllerFacet,
+	) as PresenceIdentitySource | null;
 	if (!multiplayerController) {
 		return undefined;
 	}
@@ -83,8 +82,9 @@ export function resolvePresenceDisplayHint(
 }
 
 function readHostResolver(editor: Editor): ResolveHistoryAuthor | undefined {
-	return editor.internals.getSlot<HistoryController>(HISTORY_CONTROLLER_SLOT)
-		?.resolveAuthor;
+	return (
+		editor.facet(historyControllerFacet) as HistoryController | null
+	)?.resolveAuthor;
 }
 
 function toVerifiedAuthor(identity: HistoryAuthorIdentity): VerifiedHistoryAuthor {

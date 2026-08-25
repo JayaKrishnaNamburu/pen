@@ -1,5 +1,6 @@
 import {
 	buildTableChildren,
+	clipboardFacet,
 	isCollapsed,
 	isMultiBlock,
 	selectionToRange,
@@ -22,6 +23,16 @@ import { resolveEditorUrl } from "../security/resolveEditorUrl";
 type PasteInputEvent = InputEvent & {
 	dataTransfer?: DataTransfer | null;
 };
+
+export function getPasteImporters(
+	editor: Editor,
+): PasteImporters | undefined {
+	const value = editor.facet(clipboardFacet);
+	if (!value || Array.isArray(value)) {
+		return undefined;
+	}
+	return value as PasteImporters;
+}
 
 // ── Paste entry points ──────────────────────────────────────
 

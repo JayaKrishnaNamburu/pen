@@ -1,13 +1,17 @@
 // @vitest-environment jsdom
 
-import { defineExtension, ariaReadOnlyFacet } from "@input/pen-core";
-import { FIELD_EDITOR_SLOT_KEY } from "@input/pen-types";
+import {
+	ariaReadOnlyFacet,
+	assetProviderFacet,
+	clipboardFacet,
+	defineExtension,
+	fieldEditorHostFacet,
+} from "@input/pen-core";
 import { createTestEditor } from "@input/pen-test";
 import { mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it } from "vitest";
 import { nextTick } from "vue";
 import { PenEditor } from "../components/PenEditor";
-import { FIELD_EDITOR_SLOT_KEY as VUE_FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
 
 afterEach(() => {
   document.body.replaceChildren();
@@ -271,17 +275,17 @@ describe("@input/pen-vue host surface", () => {
       props: { editor, importers: { html }, assets },
     });
 
-    expect(editor.internals.getSlot(FIELD_EDITOR_SLOT_KEY)).toBeTruthy();
-    expect(editor.internals.getSlot(VUE_FIELD_EDITOR_SLOT_KEY)).toBeTruthy();
-    expect(editor.internals.getSlot("paste:importers")).toMatchObject({ html });
-    expect(editor.internals.getSlot("paste:assetProvider")).toBe(assets);
+    expect(editor.facet(fieldEditorHostFacet)).toBeTruthy();
+    expect(editor.facet(clipboardFacet)).toMatchObject({ html });
+    expect(editor.facet(assetProviderFacet)).toBe(assets);
 
     wrapper.unmount();
 
-    expect(editor.internals.getSlot(FIELD_EDITOR_SLOT_KEY)).toBeUndefined();
-    expect(editor.internals.getSlot(VUE_FIELD_EDITOR_SLOT_KEY)).toBeUndefined();
-    expect(editor.internals.getSlot("paste:importers")).toBeUndefined();
-    expect(editor.internals.getSlot("paste:assetProvider")).toBeUndefined();
+    // assignSlot(undefined) overrides the facet to undefined (not the
+    // empty-combine null / []). That is the live teardown write.
+    expect(editor.facet(fieldEditorHostFacet)).toBeUndefined();
+    expect(editor.facet(clipboardFacet)).toBeUndefined();
+    expect(editor.facet(assetProviderFacet)).toBeUndefined();
 
     editor.destroy();
   });

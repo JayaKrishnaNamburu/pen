@@ -18,6 +18,10 @@ export interface CRDTTextLike {
 	readonly length: number;
 }
 
+export interface CRDTInlineTextLike extends CRDTTextLike {
+	insertEmbed(offset: number, value: Record<string, unknown>): void;
+}
+
 export interface CRDTUnknownArray<T = unknown> {
 	readonly length: number;
 	get(index: number): T;

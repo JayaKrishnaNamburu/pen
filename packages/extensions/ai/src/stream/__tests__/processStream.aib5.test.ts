@@ -57,17 +57,17 @@ function createStreamEditor(overrides?: {
 		},
 		getBlock: (blockId: string) => (block && blockId === block.id ? block : null),
 		apply,
+		facet: (facet: { name: string }) => {
+			if (facet.name === "deltaStream.target") {
+				return overrides?.hasTarget === false ? null : streamingTarget;
+			}
+			if (facet.name === "documentOps.toolRuntime") {
+				return overrides?.toolRuntime ?? null;
+			}
+			return null;
+		},
 		internals: {
 			emit,
-			getSlot(key: string) {
-				if (key === "delta-stream:target") {
-					return overrides?.hasTarget === false ? undefined : streamingTarget;
-				}
-				if (key === "document-ops:toolRuntime") {
-					return overrides?.toolRuntime;
-				}
-				return undefined;
-			},
 		},
 	} as unknown as Editor;
 

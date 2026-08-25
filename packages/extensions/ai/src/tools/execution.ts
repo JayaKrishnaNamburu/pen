@@ -1,4 +1,7 @@
-import { collectToolExecutionOutput } from "@input/pen-core";
+import {
+  collectToolExecutionOutput,
+  streamingTargetFacet,
+} from "@input/pen-core";
 import type {
   ApplyOptions,
   DocumentOp,
@@ -210,9 +213,7 @@ function finishDeniedCall(
   return denyAIToolCall("blocked", reason);
 }
 
-const STREAMING_TARGET_SLOT = "delta-stream:target";
-
-type StreamingTargetSlot = {
+type StreamingTargetHandle = {
   beginStreaming?: (zoneId: string, blockId: string, origin?: OpOrigin) => void;
   appendDelta?: (delta: string) => void;
   endStreaming?: (status: "complete" | "cancelled" | "error") => void;
@@ -317,9 +318,9 @@ function patchStreamingTarget(
   if (options.mutating) {
     return () => {};
   }
-  const streaming = editor.internals?.getSlot<StreamingTargetSlot>(
-    STREAMING_TARGET_SLOT,
-  );
+  const streaming = editor.facet(streamingTargetFacet) as
+    | StreamingTargetHandle
+    | null;
   if (!streaming || typeof streaming !== "object") {
     return () => {};
   }

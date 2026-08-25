@@ -7,7 +7,6 @@ import {
 import { defaultSchema } from "@input/pen-schema-default";
 import { createModelDouble } from "@input/pen-test";
 import { undoExtension } from "@input/pen-undo";
-import { AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY } from "@input/pen-types";
 import {
 	AI_TOOL_MAX_CALLS_PER_TURN,
 	isAIToolCallDenied,
@@ -17,9 +16,7 @@ import { runAgenticLoop } from "../index";
 async function awaitExtensionLifecycle(
 	editor: ReturnType<typeof createEditor>,
 ): Promise<void> {
-	await (editor.internals.getSlot<() => Promise<void>>(
-		AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY,
-	)?.() ?? Promise.resolve());
+	await editor.whenReady();
 }
 
 function blockTexts(editor: ReturnType<typeof createEditor>): string[] {

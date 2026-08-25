@@ -1,9 +1,8 @@
-import { sortDeltaAttributes } from "@input/pen-core";
-import {
-	FIELD_EDITOR_SLOT_KEY,
-	type Editor,
-	type InlineDecoration,
-	type SchemaRegistry,
+import { fieldEditorHostFacet, sortDeltaAttributes } from "@input/pen-core";
+import type {
+	Editor,
+	InlineDecoration,
+	SchemaRegistry,
 } from "@input/pen-types";
 import { urlPolicyFromEditor } from "../security/resolveEditorUrl";
 import type { UrlPolicy } from "../security/urlPolicy";
@@ -28,9 +27,9 @@ type DivergenceProjector = {
 };
 
 function requestUnwindowedProjection(editor: Editor): void {
-	const fieldEditor = editor.internals.getSlot<DivergenceProjector>(
-		FIELD_EDITOR_SLOT_KEY,
-	);
+	const fieldEditor = editor.facet(
+		fieldEditorHostFacet,
+	) as DivergenceProjector | null;
 	if (!fieldEditor || fieldEditor.isAdmissibleGestureRead?.()) {
 		return;
 	}

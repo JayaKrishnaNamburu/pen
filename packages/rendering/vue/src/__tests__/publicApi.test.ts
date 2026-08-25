@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { createDecorationSet } from "@input/pen-core";
+import { createDecorationSet, decorationsFacet } from "@input/pen-core";
 import { createTestEditor } from "@input/pen-test";
 import type { Editor } from "@input/pen-types";
 import { defineExtension } from "@input/pen-core";
@@ -73,20 +73,22 @@ describe("@input/pen-vue public API", () => {
     let decorationsEnabled = false;
     const decorationsExtension = defineExtension({
       name: "test-vue-decorations",
-      decorations(_state, currentEditor) {
-        const blockId = currentEditor.firstBlock()?.id;
-        if (!decorationsEnabled || !blockId) {
-          return createDecorationSet([]);
-        }
+      facets: [
+        decorationsFacet.of((_state, currentEditor) => {
+          const blockId = currentEditor.firstBlock()?.id;
+          if (!decorationsEnabled || !blockId) {
+            return createDecorationSet([]);
+          }
 
-        return createDecorationSet([
-          {
-            type: "block",
-            blockId,
-            attributes: { highlighted: true },
-          },
-        ]);
-      },
+          return createDecorationSet([
+            {
+              type: "block",
+              blockId,
+              attributes: { highlighted: true },
+            },
+          ]);
+        }),
+      ],
     });
 
     const editor = createTestEditor({

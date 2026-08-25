@@ -163,8 +163,8 @@ describe("@input/pen-react history and multiplayer hooks", () => {
 		const editor = createEditor({ schema: defaultSchema });
 		const blockId = editor.firstBlock()!.id;
 		const historyController = createMockHistoryController(blockId, 1);
-		editor.internals.setSlot(HISTORY_CONTROLLER_SLOT, historyController);
-		editor.internals.setSlot(MULTIPLAYER_CONTROLLER_SLOT, {
+		editor.internals.assignSlot(HISTORY_CONTROLLER_SLOT, historyController);
+		editor.internals.assignSlot(MULTIPLAYER_CONTROLLER_SLOT, {
 			subscribe() {
 				return () => {};
 			},

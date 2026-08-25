@@ -9,16 +9,11 @@
     "typecheck": {
       "dependsOn": ["^typecheck"]
     },
+    // ^build is what lets a test read a dependency's dist/. Without it a task
+    // that require()s a sibling's built artifact races the build that produces
+    // it — HOST2 in the conformance package is the case that surfaced this.
     "test": {
       "dependsOn": ["build", "^build"]
-    },
-    "@input/pen-conformance#test": {
-      "dependsOn": [
-        "build",
-        "^build",
-        "@input/pen-react#test",
-        "@input/pen-vue#test"
-      ]
     },
     "dev": {
       "dependsOn": ["^build"],

@@ -7,41 +7,27 @@ import type {
 	SpliceTextOp,
 } from "@input/pen-types";
 import {
+	type CRDTInlineTextLike,
+	type CRDTTextLike,
 	type CRDTUnknownMap,
 	getTableContent,
 } from "./crdtShapes";
-import type { ApplyPipeline } from "./apply";
+import type { ApplyPipelineDocumentAccess } from "./applyPipelineContext";
 import { rejectedOwnPropKeys } from "./rejectedOwnKeys";
 import {
 	ensureCellContent,
 	getCellContent,
 } from "./tableGridCellHelpers";
+import {
+	createMutableMap,
+	getInlineTextContent,
+	getMutableAppMap,
+	getMutableBlockMap,
+	getOrCreateMapProp,
+	getTextContent,
+} from "./applySharedHelpers";
 
-type ApplyPipelineRuntime = any;
 type MutableMap = CRDTUnknownMap & { delete(key: string): void };
-
-interface CRDTInlineText extends CRDTText {
-	insertEmbed(offset: number, value: Record<string, unknown>): void;
-}
-interface CRDTText {
-	insert(
-		offset: number,
-		text: string,
-		attributes?: Record<string, unknown | null>,
-	): void;
-	delete(offset: number, length: number): void;
-	format(
-		offset: number,
-		length: number,
-		attributes: Record<string, unknown>,
-	): void;
-	toDelta(): Array<{
-		insert: string | object;
-		attributes?: Record<string, unknown>;
-	}>;
-	toString(): string;
-	readonly length: number;
-}
 
 // sentinel-storage: empty-block caret target in Y.Text. Not a logical character.
 
@@ -68,43 +54,42 @@ function flattenInsert(
 	return [insert as InlineInsert];
 }
 
-function insertHasString(items: readonly InlineInsert[]): boolean {
-	return items.some((item) => typeof item === "string" && item.length > 0);
-}
 
 function resolveBlockText(
-	pipeline: ApplyPipelineRuntime,
+	pipeline: ApplyPipelineDocumentAccess,
 	blockId: string,
-): { blockMap: MutableMap; content: CRDTText } | null {
-	const blockMap = pipeline._getMutableBlockMap(blockId);
+): { blockMap: MutableMap; content: CRDTTextLike } | null {
+	const blockMap = getMutableBlockMap(pipeline, blockId);
 	if (!blockMap) return null;
-	const content = pipeline._getTextContent(blockMap);
+	const content = getTextContent(pipeline, blockMap);
 	if (!content) return null;
 	return { blockMap, content };
 }
 
 function resolveCellText(
-	pipeline: ApplyPipelineRuntime,
+	pipeline: ApplyPipelineDocumentAccess,
 	blockId: string,
 	cell: { row: number; col: number },
 	forInsert: boolean,
-): CRDTText | null {
-	const blockMap = pipeline._getMutableBlockMap(blockId);
+): CRDTTextLike | null {
+	const blockMap = getMutableBlockMap(pipeline, blockId);
 	if (!blockMap) return null;
 	const tableContent = getTableContent(blockMap);
 	if (!tableContent) return null;
 	if (forInsert) {
-		return (ensureCellContent(
-			tableContent.get(cell.row),
-			cell.col,
-			() => pipeline._tableGrid.createTableCell(),
-		) ?? null) as CRDTText | null;
+		return (
+			ensureCellContent(
+				tableContent.get(cell.row),
+				cell.col,
+				() => pipeline._tableGrid.createTableCell(),
+			) ?? null
+		);
 	}
-	return getCellContent(tableContent.get(cell.row), cell.col) as CRDTText | null;
+	return getCellContent(tableContent.get(cell.row), cell.col) as CRDTTextLike | null;
 }
 
 function emitClamped(
-	pipeline: ApplyPipelineRuntime,
+	pipeline: ApplyPipelineDocumentAccess,
 	op: SpliceTextOp | FormatTextOp,
 	from: number,
 	to: number,
@@ -119,7 +104,7 @@ function emitClamped(
 }
 
 function clampRange(
-	pipeline: ApplyPipelineRuntime,
+	pipeline: ApplyPipelineDocumentAccess,
 	op: SpliceTextOp | FormatTextOp,
 	length: number,
 	from: number,
@@ -134,15 +119,15 @@ function clampRange(
 }
 
 function insertItems(
-	pipeline: ApplyPipelineRuntime,
-	content: CRDTText,
+	pipeline: ApplyPipelineDocumentAccess,
+	content: CRDTTextLike,
 	offset: number,
 	items: readonly InlineInsert[],
 	marks: Record<string, unknown | null> | undefined,
 	op: SpliceTextOp,
 ): boolean {
 	let pos = offset;
-	const resolvedMarks = marks ? pipeline._resolveMarks(marks) : undefined;
+	const resolvedMarks = marks ? resolveMarks(pipeline, marks) : undefined;
 	for (const item of items) {
 		if (typeof item === "string") {
 			if (item.length === 0) {
@@ -165,7 +150,7 @@ function insertItems(
 			});
 			return false;
 		}
-		const inline = content as CRDTInlineText;
+		const inline = content as CRDTInlineTextLike;
 		if (typeof inline.insertEmbed !== "function") {
 			return false;
 		}
@@ -175,61 +160,62 @@ function insertItems(
 	return true;
 }
 
-export function spliceText(pipeline: ApplyPipeline, op: SpliceTextOp): string[] {
-	const self = pipeline as ApplyPipelineRuntime;
+export function spliceText(
+	pipeline: ApplyPipelineDocumentAccess,
+	op: SpliceTextOp,
+): string[] {
 	const items = flattenInsert(op.insert);
-	const insertingString = insertHasString(items);
 	const insertingAnything = items.some((item) =>
 		typeof item === "string" ? item.length > 0 : true,
 	);
 
 	if (op.cell) {
 		const content = resolveCellText(
-			self,
+			pipeline,
 			op.blockId,
 			op.cell,
 			insertingAnything,
 		);
 		if (!content) return [];
-		const range = clampRange(self, op, content.length, op.from, op.to);
+		const range = clampRange(pipeline, op, content.length, op.from, op.to);
 		if (range.to > range.from) {
 			content.delete(range.from, range.to - range.from);
 		}
 		if (insertingAnything) {
-			insertItems(self, content, range.from, items, op.marks, op);
+			insertItems(pipeline, content, range.from, items, op.marks, op);
 		}
 		return [op.blockId];
 	}
 
-	const resolved = resolveBlockText(self, op.blockId);
+	const resolved = resolveBlockText(pipeline, op.blockId);
 	if (!resolved) return [];
 	const { content } = resolved;
 
-	const range = clampRange(self, op, content.length, op.from, op.to);
+	const range = clampRange(pipeline, op, content.length, op.from, op.to);
 	if (range.to > range.from) {
 		content.delete(range.from, range.to - range.from);
 	}
 	if (insertingAnything) {
 		if (items.length === 1 && typeof items[0] === "object") {
-			const inline = self._getInlineTextContent(
-				resolved.blockMap,
-			) as CRDTInlineText | undefined;
+			const inline = getInlineTextContent(pipeline, resolved.blockMap);
 			if (!inline) return [];
-			insertItems(self, inline, range.from, items, op.marks, op);
+			insertItems(pipeline, inline, range.from, items, op.marks, op);
 		} else {
-			insertItems(self, content, range.from, items, op.marks, op);
+			insertItems(pipeline, content, range.from, items, op.marks, op);
 		}
 	}
 	return [op.blockId];
 }
 
-export function formatText(pipeline: ApplyPipeline, op: FormatTextOp): string[] {
-	const self = pipeline as ApplyPipelineRuntime;
+export function formatText(
+	pipeline: ApplyPipelineDocumentAccess,
+	op: FormatTextOp,
+): string[] {
 	const content = op.cell
-		? resolveCellText(self, op.blockId, op.cell, false)
-		: resolveBlockText(self, op.blockId)?.content;
+		? resolveCellText(pipeline, op.blockId, op.cell, false)
+		: resolveBlockText(pipeline, op.blockId)?.content;
 	if (!content) return [];
-	const range = clampRange(self, op, content.length, op.from, op.to);
+	const range = clampRange(pipeline, op, content.length, op.from, op.to);
 	if (range.to > range.from) {
 		content.format(range.from, range.to - range.from, op.marks);
 	}
@@ -237,41 +223,42 @@ export function formatText(pipeline: ApplyPipeline, op: FormatTextOp): string[] 
 }
 
 export function resolveMarks(
-	pipeline: ApplyPipeline,
+	pipeline: Pick<ApplyPipelineDocumentAccess, "_registry">,
 	marks: Record<string, unknown | null>,
 ): Record<string, unknown | null> {
-	const self = pipeline as ApplyPipelineRuntime;
 	const resolved: Record<string, unknown | null> = {};
 	for (const [type, value] of Object.entries(marks)) {
-		const schema = self._registry.resolveInline(type);
+		const schema = pipeline._registry.resolveInline(type);
 		if (!schema) continue;
 		resolved[type] = value;
 	}
 	return resolved;
 }
 
-export function applyApp(pipeline: ApplyPipeline, op: AppOp): string[] {
-	const self = pipeline as ApplyPipelineRuntime;
+export function applyApp(
+	pipeline: ApplyPipelineDocumentAccess,
+	op: AppOp,
+): string[] {
 	const change = op.change;
 	switch (change.kind) {
 		case "create": {
-			const appMap = self._createMutableMap();
+			const appMap = createMutableMap(pipeline);
 			appMap.set("type", change.appType);
 			appMap.set("placement", change.placement);
 			if (change.config && Object.keys(change.config).length > 0) {
-				const configMap = self._createMutableMap();
+				const configMap = createMutableMap(pipeline);
 				for (const [key, value] of Object.entries(change.config)) {
 					configMap.set(key, value);
 				}
 				appMap.set("config", configMap);
 			}
-			self.mutableApps.set(change.appId, appMap);
+			pipeline.mutableApps.set(change.appId, appMap);
 			return [];
 		}
 		case "update": {
-			const appMap = self._getMutableAppMap(change.appId);
+			const appMap = getMutableAppMap(pipeline, change.appId);
 			if (!appMap) return [];
-			const configMap = self._getOrCreateMapProp(appMap, "config");
+			const configMap = getOrCreateMapProp(pipeline, appMap, "config");
 			for (const [key, value] of Object.entries(change.patch)) {
 				if (value === undefined || value === null) {
 					configMap.delete(key);
@@ -282,7 +269,7 @@ export function applyApp(pipeline: ApplyPipeline, op: AppOp): string[] {
 			return [];
 		}
 		case "delete": {
-			self.mutableApps.delete(change.appId);
+			pipeline.mutableApps.delete(change.appId);
 			return [];
 		}
 		default: {
@@ -292,24 +279,22 @@ export function applyApp(pipeline: ApplyPipeline, op: AppOp): string[] {
 	}
 }
 
-export function tableOp(pipeline: ApplyPipeline, op: GridOp): string[] {
-	const self = pipeline as ApplyPipelineRuntime;
-	const blockMap = self._getMutableBlockMap(op.blockId);
+export function tableOp(
+	pipeline: ApplyPipelineDocumentAccess,
+	op: GridOp,
+): string[] {
+	const blockMap = getMutableBlockMap(pipeline, op.blockId);
 	if (!blockMap) return [];
-	return self._tableGrid.execute(blockMap, op);
+	return pipeline._tableGrid.execute(blockMap, op);
 }
 
-export function clearTableState(
-	_pipeline: ApplyPipeline,
-	blockMap: MutableMap,
-): void {
+export function clearTableState(blockMap: MutableMap): void {
 	blockMap.delete("tableContent");
 	blockMap.delete("tableColumns");
 }
 
 export function getPreservedInlineDeltas(
-	_pipeline: ApplyPipeline,
-	content: CRDTText | undefined,
+	content: CRDTTextLike | undefined,
 ): Array<{ insert: string; attributes?: Record<string, unknown> }> {
 	if (!content || typeof content.toDelta !== "function") {
 		return [];
@@ -322,12 +307,14 @@ export function getPreservedInlineDeltas(
 	);
 }
 
-export function setMeta(pipeline: ApplyPipeline, op: SetMetaOp): string[] {
-	const self = pipeline as ApplyPipelineRuntime;
-	const blockMap = self._getMutableBlockMap(op.blockId);
+export function setMeta(
+	pipeline: ApplyPipelineDocumentAccess,
+	op: SetMetaOp,
+): string[] {
+	const blockMap = getMutableBlockMap(pipeline, op.blockId);
 	if (!blockMap) return [];
 
-	const metaMap = self._getOrCreateMapProp(blockMap, "meta");
+	const metaMap = getOrCreateMapProp(pipeline, blockMap, "meta");
 
 	if (op.data === null) {
 		metaMap.delete(op.namespace);

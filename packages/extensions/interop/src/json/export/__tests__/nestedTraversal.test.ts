@@ -1,172 +1,43 @@
 import { describe, expect, it } from "vitest";
-import { createEditor } from "@input/pen-core";
-import type { DocumentOp } from "@input/pen-types";
-import { defaultSchema } from "@input/pen-schema-default";
+import {
+	createBareInteropEditor,
+	NESTED_TRAVERSAL_MARKERS,
+	nestedTraversalDocumentOps,
+} from "../../../__tests__/interopCorpus";
 import { jsonExporter } from "../exporter";
 
-const noDefaultExtensionsPreset = {
-  resolve() {
-    return { extensions: [] };
-  },
-};
-
-const MARKERS = {
-  heading: "HEADING-TOP",
-  toggleTitle: "TOGGLE-TITLE",
-  toggleChild: "NESTED-TOGGLE-CHILD",
-  calloutChild: "NESTED-CALLOUT-CHILD",
-  tableCell: "TABLE-CELL-ALICE",
-  listFirst: "LIST-ITEM-FIRST",
-  listNested: "LIST-ITEM-NESTED",
-} as const;
-
-function createBareEditor() {
-  const editor = createEditor({
-    schema: defaultSchema,
-    preset: noDefaultExtensionsPreset,
-  });
-  const existingBlockIds = [...editor.documentState.allBlocks()]
-    .filter((handle) => handle.parent === null)
-    .map((handle) => handle.id);
-  if (existingBlockIds.length > 0) {
-    editor.apply(
-      existingBlockIds.reverse().map((blockId) => ({
-        type: "delete-block" as const,
-        blockId,
-      })),
-    );
-  }
-  return editor;
-}
-
-function nestedDocumentOps(): DocumentOp[] {
-  return [
-    {
-      type: "insert-block",
-      blockId: "h1",
-      blockType: "heading",
-      props: { level: 1 },
-      position: "last",
-    },
-    { type: "splice-text", blockId: "h1", from: 0,
-				to: 0,
-				insert: MARKERS.heading },
-    {
-      type: "insert-block",
-      blockId: "toggle-1",
-      blockType: "toggle",
-      props: {},
-      position: "last",
-    },
-    { type: "splice-text", blockId: "toggle-1", from: 0,
-				to: 0,
-				insert: MARKERS.toggleTitle },
-    {
-      type: "insert-block",
-      blockId: "toggle-child",
-      blockType: "paragraph",
-      props: {},
-      position: { parent: "toggle-1", index: 0 },
-    },
-    {
-      type: "splice-text",
-      blockId: "toggle-child",
-      from: 0,
-				to: 0,
-				insert: MARKERS.toggleChild,
-    },
-    {
-      type: "insert-block",
-      blockId: "callout-1",
-      blockType: "callout",
-      props: { severity: "info" },
-      position: "last",
-    },
-    { type: "splice-text", blockId: "callout-1", from: 0,
-				to: 0,
-				insert: "CALLOUT-TITLE" },
-    {
-      type: "insert-block",
-      blockId: "callout-child",
-      blockType: "paragraph",
-      props: {},
-      position: { parent: "callout-1", index: 0 },
-    },
-    {
-      type: "splice-text",
-      blockId: "callout-child",
-      from: 0,
-				to: 0,
-				insert: MARKERS.calloutChild,
-    },
-    {
-      type: "insert-block",
-      blockId: "t1",
-      blockType: "table",
-      props: { hasHeaderRow: true },
-      position: "last",
-    },
-    {
-      type: "splice-text",
-      blockId: "t1",
-      cell: { row: 0, col: 0 },
-      from: 0,
-      to: 0,
-      insert: MARKERS.tableCell,
-    },
-    {
-      type: "insert-block",
-      blockId: "l1",
-      blockType: "bulletListItem",
-      props: {},
-      position: "last",
-    },
-    { type: "splice-text", blockId: "l1", from: 0,
-				to: 0,
-				insert: MARKERS.listFirst },
-    {
-      type: "insert-block",
-      blockId: "l2",
-      blockType: "bulletListItem",
-      props: { indent: 1 },
-      position: "last",
-    },
-    { type: "splice-text", blockId: "l2", from: 0,
-				to: 0,
-				insert: MARKERS.listNested },
-  ];
-}
+const MARKERS = NESTED_TRAVERSAL_MARKERS;
 
 describe("JSON export nested traversal", () => {
-  it("nests layout children and keeps table and list content", async () => {
-    const editor = createBareEditor();
-    editor.apply(nestedDocumentOps());
+	it("nests layout children and keeps table and list content", async () => {
+		const editor = createBareInteropEditor();
+		editor.apply(nestedTraversalDocumentOps());
 
-    const json = await jsonExporter.export(editor);
-    const topIds = json.blocks.map((block) => block.id);
-    expect(topIds).toEqual(["h1", "toggle-1", "callout-1", "t1", "l1", "l2"]);
-    expect(topIds).not.toContain("toggle-child");
-    expect(topIds).not.toContain("callout-child");
+		const json = await jsonExporter.export(editor);
+		const topIds = json.blocks.map((block) => block.id);
+		expect(topIds).toEqual(["h1", "toggle-1", "callout-1", "t1", "l1", "l2"]);
+		expect(topIds).not.toContain("toggle-child");
+		expect(topIds).not.toContain("callout-child");
 
-    const toggle = json.blocks.find((block) => block.id === "toggle-1");
-    const callout = json.blocks.find((block) => block.id === "callout-1");
-    expect(toggle?.children).toHaveLength(1);
-    expect(toggle?.children?.[0]?.id).toBe("toggle-child");
-    expect(toggle?.children?.[0]?.content?.text).toBe(MARKERS.toggleChild);
-    expect(callout?.children).toHaveLength(1);
-    expect(callout?.children?.[0]?.id).toBe("callout-child");
-    expect(callout?.children?.[0]?.content?.text).toBe(MARKERS.calloutChild);
+		const toggle = json.blocks.find((block) => block.id === "toggle-1");
+		const callout = json.blocks.find((block) => block.id === "callout-1");
+		expect(toggle?.children).toHaveLength(1);
+		expect(toggle?.children?.[0]?.id).toBe("toggle-child");
+		expect(toggle?.children?.[0]?.content?.text).toBe(MARKERS.toggleChild);
+		expect(callout?.children).toHaveLength(1);
+		expect(callout?.children?.[0]?.id).toBe("callout-child");
+		expect(callout?.children?.[0]?.content?.text).toBe(MARKERS.calloutChild);
 
-    const table = json.blocks.find((block) => block.id === "t1");
-    expect(table?.children?.[0]?.children?.[0]?.content?.text).toBe(
-      MARKERS.tableCell,
-    );
+		const table = json.blocks.find((block) => block.id === "t1");
+		expect(table?.children?.[0]?.children?.[0]?.content?.text).toBe(
+			MARKERS.tableCell,
+		);
 
-    const listTexts = json.blocks
-      .filter((block) => block.type === "bulletListItem")
-      .map((block) => block.content?.text);
-    expect(listTexts).toEqual([MARKERS.listFirst, MARKERS.listNested]);
+		const listTexts = json.blocks
+			.filter((block) => block.type === "bulletListItem")
+			.map((block) => block.content?.text);
+		expect(listTexts).toEqual([MARKERS.listFirst, MARKERS.listNested]);
 
-    editor.destroy();
-  });
+		editor.destroy();
+	});
 });

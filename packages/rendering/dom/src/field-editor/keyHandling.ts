@@ -393,13 +393,12 @@ export function handleSelectAllShortcut(
 	editor: Editor,
 	event: KeyboardEvent,
 	fieldEditor?: FieldEditorKeyboardController,
-	_options?: { rootElement?: HTMLElement | null },
 ): boolean {
 	if (!isSelectAllShortcut(event)) {
 		return false;
 	}
 
-	editor.selectAll();
+	editor.selectAll(fieldEditor?.selectAllBehavior);
 	if (fieldEditor) {
 		activateFieldEditorFromSelection(editor, fieldEditor);
 	}

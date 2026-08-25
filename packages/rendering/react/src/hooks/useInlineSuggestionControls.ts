@@ -1,7 +1,8 @@
 import React from "react";
+import { aiControllerFacet } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
 import { useIsomorphicLayoutEffect } from "./useIsomorphicLayoutEffect";
-import { getAIController, type PersistentTextSuggestion } from "@input/pen-ai";
+import type { AIController, PersistentTextSuggestion } from "@input/pen-ai";
 import { useActiveAISession } from "./useActiveAISession";
 import { useAIActions } from "./useAIActions";
 import { useSuggestions } from "./useSuggestions";
@@ -48,7 +49,8 @@ export interface InlineSuggestionControlsState {
 export function useInlineSuggestionControls(
 	editor: Editor,
 ): InlineSuggestionControlsState {
-	const controller = getAIController(editor);
+	const controller =
+		(editor.facet(aiControllerFacet) as AIController | null) ?? null;
 	const actions = useAIActions(editor);
 	const suggestions = useSuggestions(editor);
 	const activeSession = useActiveAISession(editor);

@@ -10,6 +10,7 @@ import {
   type PenStreamPart,
   type Position,
 } from "@input/pen-types";
+import { streamingTargetFacet } from "@input/pen-core";
 import type { StreamingTarget } from "./streamingTarget";
 import {
   applyValidatedOps,
@@ -55,9 +56,8 @@ export async function processStream(
     return;
   }
 
-  const streaming = editor.internals.getSlot<StreamingTarget>(
-    "delta-stream:target",
-  );
+  const streaming =
+    (editor.facet(streamingTargetFacet) as StreamingTarget | null) ?? null;
   if (!streaming) {
     emitStreamDiagnostic(editor, {
       code: "stream-target-missing",
@@ -71,10 +71,7 @@ export async function processStream(
     return;
   }
 
-  const toolRuntime =
-    editor.internals.getSlot<ToolRuntimeImpl>(
-      "document-ops:toolRuntime",
-    ) ?? getDocumentToolRuntime(editor);
+  const toolRuntime = getDocumentToolRuntime(editor) as ToolRuntimeImpl | null;
   const groupId = options?.groupId;
   const toolTurn = createAIToolTurn({
     allowedMutatingTools: options?.allowedMutatingTools ?? [],

@@ -2,7 +2,7 @@
 
 Authoring gate for new specs and new claimed rules. Check this table before adopting a family prefix. `scripts/claimed-scope.txt` points here.
 
-This registry **records** collisions and **reserves** families. It does **not** rename or renumber anything in the frozen v2/v3 documents (RD4 in `spec-v4/00-concept.md`). Only *new* specs are bound by these reservations. Grep-based coverage over a colliding family is unreliable; that is why the collision is recorded rather than "fixed" in the record trees.
+This registry **records** collisions and **reserves** families. It does **not** rename or renumber anything in the frozen v2/v3 documents (RD4 in `spec-v4/00-concept.md`). Only _new_ specs are bound by these reservations. Grep-based coverage over a colliding family is unreliable; that is why the collision is recorded rather than "fixed" in the record trees.
 
 Status:
 
@@ -37,61 +37,61 @@ v2 inventory line in `spec-v2/09-reliability-testing.md` (`Rule: …`) also list
 
 First column is the bare prefix so a check of the form `\|\s*FAMILY\s*\|` matches.
 
-| family | owning document | status | known collisions |
-| ------ | --------------- | ------ | ---------------- |
-| A | `spec-v2/03-selection.md` | live | |
-| N | `spec-v2/03-selection.md` | live | inventory line lists N1–N3; N4–N5 are defined in the same file |
-| P | `spec-v2/03-selection.md` | live | Wave P (`spec-v2/waves/README.md`) |
-| O | `spec-v2/03-selection.md` | live | |
-| T | `spec-v2/03-selection.md` | live | Wave T |
-| C | `spec-v2/03-selection.md` | live | Wave C |
-| S | `spec-v2/03-selection.md` | live | Wave S |
-| R | `spec-v2/04-facets.md` | live | same-generation: `03-selection.md` R1–R3 are reader-window rules; `04-facets.md` R1–R7 are facet-resolution rules |
-| D | `spec-v2/05-commands.md` | live | **v3 `00-concept.md` D1–D5 are design-defect labels, not command-dispatch rules** — same token, two live documents; `coverage:rules` prints `COLLISION D` |
-| K | `spec-v2/05-commands.md` | live | |
-| B | `spec-v2/05-commands.md` | live | |
-| ST | `spec-v2/06-commit-pipeline.md` | live | |
-| SCH | `spec-v2/07-dom-scheduling.md` | live | |
-| G | `spec-v2/07-dom-scheduling.md` | live | |
-| OV | `spec-v2/07-dom-scheduling.md` | live | |
-| DIR | `spec-v2/08-bidi.md` | live | |
-| BR | `spec-v2/08-bidi.md` | live | |
-| M | `spec-v2/08-bidi.md` | live | Wave M |
-| RI | `spec-v2/08-bidi.md` | live | |
-| CH | `spec-v2/09-reliability-testing.md` | live | CH10 is defined in that file; inventory line lists CH1–CH9 |
-| SEC | `spec-v2/12-security.md` | live | |
-| AX | `spec-v2/13-accessibility.md` | live | |
-| API | `spec-v2/14-api-and-packaging.md` | live | |
-| HOST | `spec-v2/15-host-integration.md` | live | |
-| LOC | `spec-v2/16-localization.md` | live | |
-| DOC | `spec-v2/17-documentation.md` | live | |
-| DUR | `spec-v2/18-document-durability.md` | live | |
-| COL | `spec-v2/19-collaboration-contract.md` | live | Wave C (letter, not this prefix) |
-| AIB | `spec-v2/20-ai-boundary.md` | live | |
-| IOP | `spec-v2/21-interop-and-assets.md` | live | |
-| SCALE | `spec-v2/22-scale-envelope.md` | live | |
-| I | `spec-v2/01-architecture.md` | live | shared invariant family across v2/v3/v4 (same meaning). Retired members: I2/I3 (mapping), I11 (two-seam sentinel). Live additions: I13/I14 (`spec-v3/00-concept.md`), I15 (`spec-v4/00-concept.md`). `DEFINITION_LINE_RE` intersection with v3 is I; that is not a meaning collision |
-| F | `spec-v2/11-audit.md` | record-only | audit findings F1–F59; Wave F is a different namespace (`spec-v2/waves/README.md`) |
-| E | `spec-v2/00-motivation.md` | record-only | evidence catalog E1–E10; Wave E is a different namespace |
-| W | `spec-v2/00-motivation.md` | record-only | Wordgard adoptions W1–W9 |
-| SM | `spec-v2/04-facets.md` | live | |
-| AN | `spec-v3/01-anchors.md` | live | |
-| AS | `spec-v3/01-anchors.md` | live | |
-| OB | `spec-v3/02-observation-and-intent.md` | live | |
-| INT | `spec-v3/02-observation-and-intent.md` | live | |
-| OP | `spec-v3/03-ops.md` | live | prefix of OPB; coverage matches a complete letter-run (`OPB1` is not `OP1`) |
-| OPB | `spec-v3/03-ops.md` | live | |
-| PR | `spec-v3/03-ops.md` | live | |
-| EM | `spec-v3/04-empty-blocks.md` | live | EM4 retired 2026-08-24 (stamp-2 remote heal deleted). EM1–EM3 and EM5–EM8 stay |
-| SF | `spec-v3/05-surface.md` | live | |
-| PG | `spec-v3/01-anchors.md` | live | PG1 performance contract (§3); not a `DEFINITION_LINE_RE` family |
-| WA | `spec-v3/00-concept.md` | record-only | working agreements. v4 extends the same family (WA7–WA8). `PROCESS_PREFIXES` in `coverage-rules.mjs` — not a test-name obligation |
-| RD | `spec-v3/00-concept.md` | record-only | **v3 RD1–RD6 and v4 RD1–RD6 are different decisions under the same tokens** (v3 RD4 = rows-as-blocks out; v4 RD4 = no retroactive renames). Frozen; do not rename (RD4) |
-| TR | `spec-v4/01-trains.md` | live | reserved; unclaimed until tests land |
-| GA | `spec-v4/02-instruments.md` | live | reserved; unclaimed until tests land |
-| RC | `spec-v4/03-record.md` | live | reserved; unclaimed until tests land |
-| DL | `spec-v4/04-scaffolding.md` | live | reserved; unclaimed until tests land |
-| CS | `spec-v4/05-structure.md` | live | reserved; unclaimed until tests land |
+| family | owning document                        | status      | known collisions                                                                                                                                                                                                                                                                     |
+| ------ | -------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| A      | `spec-v2/03-selection.md`              | live        |                                                                                                                                                                                                                                                                                      |
+| N      | `spec-v2/03-selection.md`              | live        | inventory line lists N1–N3; N4–N5 are defined in the same file                                                                                                                                                                                                                       |
+| P      | `spec-v2/03-selection.md`              | live        | Wave P (`spec-v2/waves/README.md`)                                                                                                                                                                                                                                                   |
+| O      | `spec-v2/03-selection.md`              | live        |                                                                                                                                                                                                                                                                                      |
+| T      | `spec-v2/03-selection.md`              | live        | Wave T                                                                                                                                                                                                                                                                               |
+| C      | `spec-v2/03-selection.md`              | live        | Wave C                                                                                                                                                                                                                                                                               |
+| S      | `spec-v2/03-selection.md`              | live        | Wave S                                                                                                                                                                                                                                                                               |
+| R      | `spec-v2/04-facets.md`                 | live        | same-generation: `03-selection.md` R1–R3 are reader-window rules; `04-facets.md` R1–R7 are facet-resolution rules                                                                                                                                                                    |
+| D      | `spec-v2/05-commands.md`               | live        | **v3 `00-concept.md` D1–D5 are design-defect labels, not command-dispatch rules** — same token, two live documents; `coverage:rules` prints `COLLISION D`                                                                                                                            |
+| K      | `spec-v2/05-commands.md`               | live        |                                                                                                                                                                                                                                                                                      |
+| B      | `spec-v2/05-commands.md`               | live        |                                                                                                                                                                                                                                                                                      |
+| ST     | `spec-v2/06-commit-pipeline.md`        | live        |                                                                                                                                                                                                                                                                                      |
+| SCH    | `spec-v2/07-dom-scheduling.md`         | live        |                                                                                                                                                                                                                                                                                      |
+| G      | `spec-v2/07-dom-scheduling.md`         | live        |                                                                                                                                                                                                                                                                                      |
+| OV     | `spec-v2/07-dom-scheduling.md`         | live        |                                                                                                                                                                                                                                                                                      |
+| DIR    | `spec-v2/08-bidi.md`                   | live        |                                                                                                                                                                                                                                                                                      |
+| BR     | `spec-v2/08-bidi.md`                   | live        |                                                                                                                                                                                                                                                                                      |
+| M      | `spec-v2/08-bidi.md`                   | live        | Wave M                                                                                                                                                                                                                                                                               |
+| RI     | `spec-v2/08-bidi.md`                   | live        |                                                                                                                                                                                                                                                                                      |
+| CH     | `spec-v2/09-reliability-testing.md`    | live        | CH10 is defined in that file; inventory line lists CH1–CH9                                                                                                                                                                                                                           |
+| SEC    | `spec-v2/12-security.md`               | live        |                                                                                                                                                                                                                                                                                      |
+| AX     | `spec-v2/13-accessibility.md`          | live        |                                                                                                                                                                                                                                                                                      |
+| API    | `spec-v2/14-api-and-packaging.md`      | live        |                                                                                                                                                                                                                                                                                      |
+| HOST   | `spec-v2/15-host-integration.md`       | live        |                                                                                                                                                                                                                                                                                      |
+| LOC    | `spec-v2/16-localization.md`           | live        |                                                                                                                                                                                                                                                                                      |
+| DOC    | `spec-v2/17-documentation.md`          | live        |                                                                                                                                                                                                                                                                                      |
+| DUR    | `spec-v2/18-document-durability.md`    | live        |                                                                                                                                                                                                                                                                                      |
+| COL    | `spec-v2/19-collaboration-contract.md` | live        | Wave C (letter, not this prefix)                                                                                                                                                                                                                                                     |
+| AIB    | `spec-v2/20-ai-boundary.md`            | live        |                                                                                                                                                                                                                                                                                      |
+| IOP    | `spec-v2/21-interop-and-assets.md`     | live        |                                                                                                                                                                                                                                                                                      |
+| SCALE  | `spec-v2/22-scale-envelope.md`         | live        |                                                                                                                                                                                                                                                                                      |
+| I      | `spec-v2/01-architecture.md`           | live        | shared invariant family across v2/v3/v4 (same meaning). Retired members: I2/I3 (mapping), I11 (two-seam sentinel). Live additions: I13/I14 (`spec-v3/00-concept.md`), I15 (`spec-v4/00-concept.md`). `DEFINITION_LINE_RE` intersection with v3 is I; that is not a meaning collision |
+| F      | `spec-v2/11-audit.md`                  | record-only | audit findings F1–F59; Wave F is a different namespace (`spec-v2/waves/README.md`)                                                                                                                                                                                                   |
+| E      | `spec-v2/00-motivation.md`             | record-only | evidence catalog E1–E10; Wave E is a different namespace                                                                                                                                                                                                                             |
+| W      | `spec-v2/00-motivation.md`             | record-only | Wordgard adoptions W1–W9                                                                                                                                                                                                                                                             |
+| SM     | `spec-v2/04-facets.md`                 | live        |                                                                                                                                                                                                                                                                                      |
+| AN     | `spec-v3/01-anchors.md`                | live        |                                                                                                                                                                                                                                                                                      |
+| AS     | `spec-v3/01-anchors.md`                | live        |                                                                                                                                                                                                                                                                                      |
+| OB     | `spec-v3/02-observation-and-intent.md` | live        |                                                                                                                                                                                                                                                                                      |
+| INT    | `spec-v3/02-observation-and-intent.md` | live        |                                                                                                                                                                                                                                                                                      |
+| OP     | `spec-v3/03-ops.md`                    | live        | prefix of OPB; coverage matches a complete letter-run (`OPB1` is not `OP1`)                                                                                                                                                                                                          |
+| OPB    | `spec-v3/03-ops.md`                    | live        |                                                                                                                                                                                                                                                                                      |
+| PR     | `spec-v3/03-ops.md`                    | live        |                                                                                                                                                                                                                                                                                      |
+| EM     | `spec-v3/04-empty-blocks.md`           | live        | EM4 retired 2026-08-24 (stamp-2 remote heal deleted). EM1–EM3 and EM5–EM8 stay                                                                                                                                                                                                       |
+| SF     | `spec-v3/05-surface.md`                | live        |                                                                                                                                                                                                                                                                                      |
+| PG     | `spec-v3/01-anchors.md`                | live        | PG1 performance contract (§3); not a `DEFINITION_LINE_RE` family                                                                                                                                                                                                                     |
+| WA     | `spec-v3/00-concept.md`                | record-only | working agreements. v4 extends the same family (WA7–WA8). `PROCESS_PREFIXES` in `coverage-rules.mjs` — not a test-name obligation                                                                                                                                                    |
+| RD     | `spec-v3/00-concept.md`                | record-only | **v3 RD1–RD6 and v4 RD1–RD6 are different decisions under the same tokens** (v3 RD4 = rows-as-blocks out; v4 RD4 = no retroactive renames). Frozen; do not rename (RD4)                                                                                                              |
+| TR     | `spec-v4/01-trains.md`                 | live        | reserved; unclaimed until tests land                                                                                                                                                                                                                                                 |
+| GA     | `spec-v4/02-instruments.md`            | live        | reserved; unclaimed until tests land                                                                                                                                                                                                                                                 |
+| RC     | `spec-v4/03-record.md`                 | live        | reserved; unclaimed until tests land                                                                                                                                                                                                                                                 |
+| DL     | `spec-v4/04-scaffolding.md`            | live        | reserved; unclaimed until tests land                                                                                                                                                                                                                                                 |
+| CS     | `spec-v4/05-structure.md`              | live        | reserved; unclaimed until tests land                                                                                                                                                                                                                                                 |
 
 ## Collisions (measured)
 

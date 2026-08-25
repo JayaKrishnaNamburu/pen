@@ -35,10 +35,8 @@ function createRecordingEditor() {
 		apply(ops: DocumentOp[]) {
 			applied.push(...ops);
 		},
+		facet: () => null,
 		internals: {
-			getSlot() {
-				return undefined;
-			},
 			emit(_event: string, diagnostic: { code: string; message: string }) {
 				diagnostics.push(diagnostic);
 			},
@@ -257,10 +255,8 @@ describe("AIB3 tool authority", () => {
 			apply(ops: DocumentOp[], options?: ApplyOptions) {
 				applied.push({ ops, options });
 			},
+			facet: () => null,
 			internals: {
-				getSlot() {
-					return undefined;
-				},
 				emit() {},
 			},
 		} as unknown as Editor;

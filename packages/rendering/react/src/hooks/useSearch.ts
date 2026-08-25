@@ -1,10 +1,7 @@
 import { useSyncExternalStore } from "react";
+import { searchControllerFacet } from "@input/pen-core";
 import type { Editor, Unsubscribe } from "@input/pen-types";
-import {
-	getSearchController,
-	type SearchController,
-	type SearchState,
-} from "@input/pen-search";
+import type { SearchController, SearchState } from "@input/pen-search";
 
 const EMPTY_SEARCH_STATE: SearchState = {
 	open: false,
@@ -20,7 +17,8 @@ const EMPTY_SEARCH_STATE: SearchState = {
 };
 
 export function useSearch(editor: Editor): SearchState {
-	const controller = getSearchController(editor);
+	const controller =
+		(editor.facet(searchControllerFacet) as SearchController | null) ?? null;
 	const canReadControllerState = isSearchController(controller);
 
 	return useSyncExternalStore(

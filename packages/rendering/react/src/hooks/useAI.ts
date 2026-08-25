@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
+import { aiControllerFacet } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
-import { getAIController, type AIControllerState } from "@input/pen-ai";
+import type { AIController, AIControllerState } from "@input/pen-ai";
 
 const EMPTY_AI_STATE: AIControllerState = {
 	status: "idle",
@@ -14,7 +15,8 @@ const EMPTY_AI_STATE: AIControllerState = {
 } as AIControllerState;
 
 export function useAI(editor: Editor): AIControllerState {
-	const controller = getAIController(editor);
+	const controller =
+		(editor.facet(aiControllerFacet) as AIController | null) ?? null;
 
 	return useSyncExternalStore(
 		(callback) => {

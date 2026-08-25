@@ -26,7 +26,7 @@ This package has no peer dependencies. `engines.node` is `>=22`.
 
 ## COL2: Awareness is validated on read
 
-Pen treats remote awareness as untrusted input. One validator owns the payload and runs **on receipt**, before any peer state reaches identity, decorations, or the author ledger. Local state is published as-is; peers validate what they receive.
+Pen treats remote awareness as untrusted input. One validator owns the payload and runs **on receipt**, before any peer state reaches identity, decorations, or the author ledger. Local state is published as its own latest value; peers validate what they receive.
 
 **Hostile or invalid presence is ignored.** That peer degrades to invisible. The document is unchanged. Pen emits a `presence-rejected` diagnostic (`PRESENCE_REJECTED_CODE`) with a reason. One bad peer never breaks the others.
 
@@ -47,6 +47,7 @@ A bad `user` drops the whole peer. A bad cursor or selection is dropped for that
 ### Peer cap and rate limit
 
 - **Rate limit.** After `MAX_PRESENCE_UPDATES_PER_SECOND` accepted updates from a peer in a one-second window, further updates are ignored and that peer keeps its last accepted state.
+- **Send rate.** Because a rejected update leaves a peer holding a caret that has already moved, Pen coalesces its own presence writes to one per `LOCAL_PRESENCE_MIN_INTERVAL_MS`. The first move of an interval is published immediately and everything after it folds into one trailing write carrying the latest selection, which keeps a fast typist well inside what peers accept. Publishing on every selection change would not.
 - **Peer cap.** After `MAX_TRACKED_PEERS` remote peers, extra peers are counted (`untrackedPeerCount` on the diagnostic) and not rendered. The document does not degrade.
 
 | Bound                         | Constant                           | Default |
@@ -59,7 +60,8 @@ A bad `user` drops the whole peer. A bad cursor or selection is dropped for that
 | Serialized presence anchor    | `MAX_PRESENCE_ANCHOR_LENGTH`       | 768     |
 | Block ids per block selection | `MAX_PRESENCE_BLOCK_SELECTION_IDS` | 256     |
 | Cursor / selection offset     | `MAX_PRESENCE_OFFSET`              | 1048576 |
-| Updates per second per peer   | `MAX_PRESENCE_UPDATES_PER_SECOND`  | 10      |
+| Updates per second per peer   | `MAX_PRESENCE_UPDATES_PER_SECOND`  | 30      |
+| Local presence write interval | `LOCAL_PRESENCE_MIN_INTERVAL_MS`   | 50      |
 | Tracked peers per document    | `MAX_TRACKED_PEERS`                | 32      |
 
 Avatar URLs go through `pen.urlPolicy` (image context) and then a second image-scheme check: `http:`, `https:`, relative, and `data:image` for png/jpeg/gif/webp/avif. Hostile schemes are rejected as `script-bearing`. A host policy that denies a URL strips the avatar and keeps the peer.

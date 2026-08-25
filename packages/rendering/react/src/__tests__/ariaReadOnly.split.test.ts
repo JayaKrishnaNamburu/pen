@@ -3,11 +3,16 @@
 import React, { act } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
-import { createEditor, defineExtension, ariaReadOnlyFacet } from "@input/pen-core";
+import {
+	createEditor,
+	defineExtension,
+	ariaReadOnlyFacet,
+	fieldEditorHostFacet,
+} from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
 import { defaultSchema } from "@input/pen-schema-default";
 import type { FieldEditorImpl } from "@input/pen-dom";
-import { FIELD_EDITOR_SLOT_KEY, type Editor } from "@input/pen-types";
+import type { Editor } from "@input/pen-types";
 import { PenEditor } from "../penEditor";
 
 (
@@ -100,7 +105,7 @@ async function renderEditor(
 }
 
 function fieldEditor(editor: Editor): FieldEditorImpl | null {
-	return editor.internals.getSlot<FieldEditorImpl>(FIELD_EDITOR_SLOT_KEY) ?? null;
+	return (editor.facet(fieldEditorHostFacet) as FieldEditorImpl | null) ?? null;
 }
 
 async function pointerActivateInline(container: HTMLElement): Promise<void> {

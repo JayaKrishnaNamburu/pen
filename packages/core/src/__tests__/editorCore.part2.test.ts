@@ -14,7 +14,9 @@ import {
 	applySplitBlock,
 	createEditor as createCoreEditor,
 	createHeadlessEditor,
+	documentOpsToolRuntimeFacet,
 	ensureInlineCompletionController,
+	undoManagerFacet,
 } from "../index";
 
 const noDefaultExtensionsPreset = {
@@ -50,10 +52,6 @@ async function flushMicrotasks(count = 8): Promise<void> {
 	for (let index = 0; index < count; index++) {
 		await Promise.resolve();
 	}
-}
-
-function visibleText(text: string): string {
-	return text.replace(/\u200B/g, "");
 }
 
 type TestYTextLike = {
@@ -304,16 +302,12 @@ describe("@input/pen-core createEditor", () => {
 
 		expect(editor.schema.resolve("paragraph")).toBeTruthy();
 		expect(typeof editor.clientId).toBe("number");
-		expect(editor.internals.getSlot("core:engine")).toBe(
-			editor.internals.engine,
-		);
+		expect(editor.internals.engine).toBeTruthy();
 		// bare core is not batteries-included: document-ops and undo both arrive
 		// via @input/pen-preset-default. createEditor's fallback list is empty,
 		// so core depends on no extension package at all (API1/F12).
-		expect(
-			editor.internals.getSlot("document-ops:toolRuntime"),
-		).toBeFalsy();
-		expect(editor.internals.getSlot("undo:manager")).toBeFalsy();
+		expect(editor.facet(documentOpsToolRuntimeFacet)).toBeNull();
+		expect(editor.facet(undoManagerFacet)).toBeNull();
 
 		editor.destroy();
 	});
@@ -328,7 +322,7 @@ describe("@input/pen-core createEditor", () => {
 		editor.destroy();
 	});
 
-	it("applies insert-block and insert-text operations", () => {
+	it("applies insert-block and splice-text operations", () => {
 		const editor = createEditor();
 
 		editor.apply([

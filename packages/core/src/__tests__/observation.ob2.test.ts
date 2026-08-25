@@ -7,7 +7,6 @@ import type { CommitEvent, CommitEventSource } from "@input/pen-types";
 import { describe, expect, it, vi } from "vitest";
 
 import { createBlockIndexSnapshotFromDocument } from "../changes/fromDocument";
-import * as mapping from "../changes/mapping";
 import * as summaryBuilder from "../changes/summaryBuilder";
 import { createHeadlessEditor } from "../index";
 import { defaultSchema } from "./fixtures/testSchema";
@@ -66,7 +65,7 @@ function asRecord(value: unknown): Record<string, unknown> {
 describe("observation — one builder (OB2)", () => {
 	it("OB2: one builder produces summaries for local, remote, undo/redo, and stream commits", () => {
 		const buildSpy = vi.spyOn(summaryBuilder, "buildChangeSummary");
-		const emptySpy = vi.spyOn(mapping, "createEmptySummary");
+		const emptySpy = vi.spyOn(summaryBuilder, "createEmptySummary");
 
 		const editor = createHeadlessEditor({ schema: defaultSchema });
 		const firstId = editor.firstBlock()!.id;

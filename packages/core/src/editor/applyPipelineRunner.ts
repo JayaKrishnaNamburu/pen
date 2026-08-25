@@ -5,24 +5,30 @@ import type {
 	InsertBlockOp,
 	SetPropsOp,
 	StructuralOriginTag,
-	CRDTArray,
 } from "@input/pen-types";
-import { generateId } from "@input/pen-types";
 import type { DiagnosticEvent } from "@input/pen-types";
-import { resolveRuntimeContentType } from "../schema/contentType";
 import { toStructuredOrigin } from "./commitEvent";
-import {
-	type CRDTUnknownArray,
-	type CRDTUnknownMap,
-	getArrayProp,
-	getMapProp,
-	getStringProp,
-	getTableColumns,
-	getTableContent,
-	isCRDTMap,
-} from "./crdtShapes";
-import type { ApplyPipeline } from "./apply";
+import { isCRDTMap } from "./crdtShapes";
+import type { ApplyPipelineInternal } from "./applyPipelineContext";
 import { validateOpProps } from "./validateOpProps";
+import {
+	blockExists,
+	opBlockId,
+} from "./applySharedHelpers";
+import {
+	insertBlock,
+	deleteBlock,
+	moveBlock,
+	setProps,
+	tagStructuralOrigin,
+} from "./applyBlockOps";
+import {
+	spliceText,
+	formatText,
+	setMeta,
+	tableOp,
+	applyApp,
+} from "./applyInlineAndMetaOps";
 import {
 	APPLY_STORM_CODE,
 	APPLY_STORM_QUEUE_LIMIT,
@@ -31,78 +37,59 @@ import {
 import { resolveCommitSource } from "./commitEvent";
 import { snapshotOrigin } from "./origin";
 import { rejectedOwnPropKeys } from "./rejectedOwnKeys";
-import { tagStructuralOrigin } from "./applyBlockOps";
-
-type ApplyPipelineRuntime = any;
-type MutableMap = CRDTUnknownMap & { delete(key: string): void };
-type MutableStringArray = CRDTUnknownArray<string>;
-interface CRDTInlineText extends CRDTText {
-	insertEmbed(offset: number, value: Record<string, unknown>): void;
-}
-interface CRDTText {
-	insert(offset: number, text: string, attributes?: Record<string, unknown | null>): void;
-	delete(offset: number, length: number): void;
-	format(offset: number, length: number, attributes: Record<string, unknown>): void;
-	toDelta(): Array<{ insert: string | object; attributes?: Record<string, unknown> }>;
-	toString(): string;
-	readonly length: number;
-}
 export function applyInternal(
-	pipeline: ApplyPipeline,
+	pipeline: ApplyPipelineInternal,
 	ops: DocumentOp[],
 	origin: OpOrigin,
 	structural?: StructuralOriginTag,
 ): void {
-	const self = pipeline as ApplyPipelineRuntime;
-	if (self._applying) {
-		if (self._applyTurnCount >= APPLY_STORM_QUEUE_LIMIT) {
+	if (pipeline._applying) {
+		if (pipeline._applyTurnCount >= APPLY_STORM_QUEUE_LIMIT) {
 			emitApplyStorm(pipeline);
 			return;
 		}
-		self._applyTurnCount += 1;
-		self._queue.push({ ops, origin, structural });
+		pipeline._applyTurnCount += 1;
+		pipeline._queue.push({ ops, origin, structural });
 		return;
 	}
 
-	self._applying = true;
-	self._applyTurnCount = 1;
-	self._applyStormEmitted = false;
+	pipeline._applying = true;
+	pipeline._applyTurnCount = 1;
+	pipeline._applyStormEmitted = false;
 	try {
-		self._executeOps(ops, origin, structural);
-		while (self._queue.length > 0) {
+		executeOps(pipeline, ops, origin, structural);
+		while (pipeline._queue.length > 0) {
 			const {
 				ops: queued,
 				origin: queuedOrigin,
 				structural: queuedStructural,
-			} = self._queue.shift()!;
-			self._executeOps(queued, queuedOrigin, queuedStructural);
+			} = pipeline._queue.shift()!;
+			executeOps(pipeline, queued, queuedOrigin, queuedStructural);
 		}
 	} finally {
-		self._applying = false;
-		self._applyTurnCount = 0;
-		self._applyStormEmitted = false;
+		pipeline._applying = false;
+		pipeline._applyTurnCount = 0;
+		pipeline._applyStormEmitted = false;
 	}
 }
 
 function emitPipelineDiagnostic(
-	pipeline: ApplyPipeline,
+	pipeline: ApplyPipelineInternal,
 	diagnostic: DiagnosticEvent,
 ): void {
-	const self = pipeline as ApplyPipelineRuntime;
-	if (!self._commitDiagnostics) {
-		self._commitDiagnostics = [];
+	if (!pipeline._commitDiagnostics) {
+		pipeline._commitDiagnostics = [];
 	}
-	self._commitDiagnostics.push(diagnostic);
-	self._emitter.emit("diagnostic", diagnostic);
+	pipeline._commitDiagnostics.push(diagnostic);
+	pipeline._emitter.emit("diagnostic", diagnostic);
 }
 
-function emitApplyStorm(pipeline: ApplyPipeline): void {
-	const self = pipeline as ApplyPipelineRuntime;
-	if (self._applyStormEmitted) {
+function emitApplyStorm(pipeline: ApplyPipelineInternal): void {
+	if (pipeline._applyStormEmitted) {
 		return;
 	}
-	self._applyStormEmitted = true;
-	self._emitter.emit("diagnostic", {
+	pipeline._applyStormEmitted = true;
+	pipeline._emitter.emit("diagnostic", {
 		code: APPLY_STORM_CODE,
 		level: "warn",
 		source: "apply",
@@ -113,9 +100,8 @@ function emitApplyStorm(pipeline: ApplyPipeline): void {
 	});
 }
 
-function recordPhase(pipeline: ApplyPipeline, phase: PipelinePhase): void {
-	const self = pipeline as ApplyPipelineRuntime;
-	self._recordPhase?.(phase);
+function recordPhase(pipeline: ApplyPipelineInternal, phase: PipelinePhase): void {
+	pipeline._recordPhase?.(phase);
 }
 
 function isRegisteredBlockType(
@@ -130,16 +116,17 @@ function isRegisteredBlockType(
 	return false;
 }
 
-function unknownBlockTypesReported(pipeline: ApplyPipeline): Set<string> {
-	const self = pipeline as ApplyPipelineRuntime;
-	if (!self._unknownBlockTypesReported) {
-		self._unknownBlockTypesReported = new Set();
+function unknownBlockTypesReported(pipeline: ApplyPipelineInternal): Set<string> {
+	if (!pipeline._unknownBlockTypesReported) {
+		pipeline._unknownBlockTypesReported = new Set();
 	}
-	return self._unknownBlockTypesReported as Set<string>;
+	return pipeline._unknownBlockTypesReported;
 }
 
-function emitSchemaUnknownBlock(pipeline: ApplyPipeline, type: string): void {
-	const self = pipeline as ApplyPipelineRuntime;
+function emitSchemaUnknownBlock(
+	pipeline: ApplyPipelineInternal,
+	type: string,
+): void {
 	const reported = unknownBlockTypesReported(pipeline);
 	if (reported.has(type)) {
 		return;
@@ -154,9 +141,8 @@ function emitSchemaUnknownBlock(pipeline: ApplyPipeline, type: string): void {
 	});
 }
 
-function reportUnknownBlocksInDocument(pipeline: ApplyPipeline): void {
-	const self = pipeline as ApplyPipelineRuntime;
-	for (const [, rawBlockMap] of self._doc.blocks.entries()) {
+function reportUnknownBlocksInDocument(pipeline: ApplyPipelineInternal): void {
+	for (const [, rawBlockMap] of pipeline._doc.blocks.entries()) {
 		if (!isCRDTMap(rawBlockMap)) {
 			continue;
 		}
@@ -164,7 +150,7 @@ function reportUnknownBlocksInDocument(pipeline: ApplyPipeline): void {
 		if (typeof type !== "string") {
 			continue;
 		}
-		if (isRegisteredBlockType(self._registry, type)) {
+		if (isRegisteredBlockType(pipeline._registry, type)) {
 			continue;
 		}
 		emitSchemaUnknownBlock(pipeline, type);
@@ -172,11 +158,10 @@ function reportUnknownBlocksInDocument(pipeline: ApplyPipeline): void {
 }
 
 function readStoredBlockType(
-	pipeline: ApplyPipeline,
+	pipeline: ApplyPipelineInternal,
 	blockId: string,
 ): string | null {
-	const self = pipeline as ApplyPipelineRuntime;
-	const rawBlockMap = self.blocks.get(blockId);
+	const rawBlockMap = pipeline.blocks.get(blockId);
 	if (!isCRDTMap(rawBlockMap)) {
 		return null;
 	}
@@ -185,11 +170,10 @@ function readStoredBlockType(
 }
 
 function rewriteBlockOpProps(
-	pipeline: ApplyPipeline,
+	pipeline: ApplyPipelineInternal,
 	op: InsertBlockOp | SetPropsOp,
 	pendingBlockTypes: Map<string, string>,
 ): InsertBlockOp | SetPropsOp {
-	const self = pipeline as ApplyPipelineRuntime;
 	const conversionType =
 		op.type === "set-props" && typeof op.props.type === "string"
 			? op.props.type
@@ -203,7 +187,7 @@ function rewriteBlockOpProps(
 	if (!blockType) {
 		return op;
 	}
-	const schema = self._registry.resolve(blockType);
+	const schema = pipeline._registry.resolve(blockType);
 	if (!schema) {
 		return op;
 	}
@@ -261,15 +245,14 @@ function rewriteBlockOpProps(
 }
 
 export function transformOpsThroughHooks(
-	pipeline: ApplyPipeline,
+	pipeline: ApplyPipelineInternal,
 	ops: DocumentOp[],
 	origin: OpOrigin,
 ): DocumentOp[] {
-	const self = pipeline as ApplyPipelineRuntime;
 	let transformedOps = ops;
 	const beforeApplyHooks =
-		self._resolveBeforeApplyHooks?.() ??
-		self._beforeApplyHooks.map(
+		pipeline._resolveBeforeApplyHooks?.() ??
+		pipeline._beforeApplyHooks.map(
 			(entry: {
 				hook: (
 					ops: DocumentOp[],
@@ -290,10 +273,10 @@ export function transformOpsThroughHooks(
 			transformedOps = next;
 		}
 	}
-	if (self._finalBeforeApplyHook) {
+	if (pipeline._finalBeforeApplyHook) {
 		const next = runBeforeApplyHook(
 			pipeline,
-			self._finalBeforeApplyHook,
+			pipeline._finalBeforeApplyHook,
 			transformedOps,
 			origin,
 			{
@@ -336,7 +319,7 @@ function snapshotOps(ops: readonly DocumentOp[]): DocumentOp[] {
 }
 
 function runBeforeApplyHook(
-	pipeline: ApplyPipeline,
+	pipeline: ApplyPipelineInternal,
 	hook: (
 		ops: DocumentOp[],
 		options: { origin?: OpOrigin },
@@ -507,7 +490,7 @@ function malformedOpMessage(op: DocumentOp): string | null {
 }
 
 function emitMalformedOpDiagnostic(
-	pipeline: ApplyPipeline,
+	pipeline: ApplyPipelineInternal,
 	op: DocumentOp,
 	error?: unknown,
 ): void {
@@ -524,138 +507,138 @@ function emitMalformedOpDiagnostic(
 }
 
 export function executeOps(
-	pipeline: ApplyPipeline,
+	pipeline: ApplyPipelineInternal,
 	ops: DocumentOp[],
 	origin: OpOrigin,
 	structural?: StructuralOriginTag,
 ): void {
-	const self = pipeline as ApplyPipelineRuntime;
-	self._commitDiagnostics = [];
+	pipeline._commitDiagnostics = [];
 	reportUnknownBlocksInDocument(pipeline);
-	self._captureSelectionBefore?.();
+	pipeline._captureSelectionBefore?.();
 	recordPhase(pipeline, "hooks");
 	const transformedOps = transformOpsThroughHooks(pipeline, ops, origin);
 
-self._emitApplyBoundary({
-	phase: "before",
-	ops: transformedOps,
-	origin,
-	applied: false,
-});
-
-recordPhase(pipeline, "validate");
-const affectedBlocks: string[] = [];
-const validatedOps: DocumentOp[] = [];
-const pendingBlockIds = new Set<string>();
-const pendingBlockTypes = new Map<string, string>();
-
-for (const op of transformedOps) {
-	const blockId = self._opBlockId(op);
-
-	if (!self._validateOp(op)) continue;
-
-	if (op.type === "insert-block") {
-		pendingBlockIds.add(op.blockId);
-		pendingBlockTypes.set(op.blockId, op.blockType);
-	}
-
-	const nextOp =
-		op.type === "insert-block" || op.type === "set-props"
-			? rewriteBlockOpProps(pipeline, op, pendingBlockTypes)
-			: op;
-
-	if (
-		blockId &&
-		!self._blockExists(blockId) &&
-		!pendingBlockIds.has(blockId) &&
-		nextOp.type !== "insert-block"
-	) {
-		emitPipelineDiagnostic(pipeline, {
-			code: "PEN_APPLY_003",
-			level: "warn",
-			source: "apply",
-			message: `apply: skipping ${op.type} for non-existent block "${blockId}"`,
-		});
-		continue;
-	}
-
-	if (malformedOpMessage(nextOp)) {
-		emitMalformedOpDiagnostic(pipeline, nextOp);
-		continue;
-	}
-
-	validatedOps.push(nextOp);
-}
-
-if (validatedOps.length === 0) {
-	self._commitDiagnostics = [];
-	self._emitApplyBoundary({
-		phase: "after",
+	emitApplyBoundary(pipeline, {
+		phase: "before",
 		ops: transformedOps,
 		origin,
 		applied: false,
 	});
-	return;
-}
 
-recordPhase(pipeline, "execute");
-self._suppressObserver = true;
+	recordPhase(pipeline, "validate");
+	const affectedBlocks: string[] = [];
+	const validatedOps: DocumentOp[] = [];
+	const pendingBlockIds = new Set<string>();
+	const pendingBlockTypes = new Map<string, string>();
 
-try {
-	self._adapter.transact(
-		self._crdtDoc,
-		() => {
-			if (structural) {
-				tagStructuralOrigin(pipeline, structural);
-			}
-			for (const op of validatedOps) {
-				try {
-					const affected = self._executeSingleOp(op);
-					affectedBlocks.push(...affected);
-				} catch (err) {
-					emitMalformedOpDiagnostic(pipeline, op, err);
+	for (const op of transformedOps) {
+		const blockId = opBlockId(pipeline, op);
+
+		if (!validateOp(pipeline, op)) continue;
+
+		if (op.type === "insert-block") {
+			pendingBlockIds.add(op.blockId);
+			pendingBlockTypes.set(op.blockId, op.blockType);
+		}
+
+		const nextOp =
+			op.type === "insert-block" || op.type === "set-props"
+				? rewriteBlockOpProps(pipeline, op, pendingBlockTypes)
+				: op;
+
+		if (
+			blockId &&
+			!blockExists(pipeline, blockId) &&
+			!pendingBlockIds.has(blockId) &&
+			nextOp.type !== "insert-block"
+		) {
+			emitPipelineDiagnostic(pipeline, {
+				code: "PEN_APPLY_003",
+				level: "warn",
+				source: "apply",
+				message: `apply: skipping ${op.type} for non-existent block "${blockId}"`,
+			});
+			continue;
+		}
+
+		if (malformedOpMessage(nextOp)) {
+			emitMalformedOpDiagnostic(pipeline, nextOp);
+			continue;
+		}
+
+		validatedOps.push(nextOp);
+	}
+
+	if (validatedOps.length === 0) {
+		pipeline._commitDiagnostics = [];
+		emitApplyBoundary(pipeline, {
+			phase: "after",
+			ops: transformedOps,
+			origin,
+			applied: false,
+		});
+		return;
+	}
+
+	recordPhase(pipeline, "execute");
+	pipeline._suppressObserver = true;
+
+	try {
+		pipeline._adapter.transact(
+			pipeline._crdtDoc,
+			() => {
+				if (structural) {
+					tagStructuralOrigin(pipeline, structural);
 				}
-			}
+				for (const op of validatedOps) {
+					try {
+						const affected = executeSingleOp(pipeline, op);
+						affectedBlocks.push(...affected);
+					} catch (err) {
+						emitMalformedOpDiagnostic(pipeline, op, err);
+					}
+				}
 
-			for (const blockId of affectedBlocks) {
-				self._engine.markDirty(blockId);
-			}
+				for (const blockId of affectedBlocks) {
+					pipeline._engine.markDirty(blockId);
+				}
 
-			recordPhase(pipeline, "normalize");
-			self._engine.normalizeDirty();
-		},
-		// pass the structured origin through; do not copy — Y.UndoManager matches trackedOrigins by identity
-		toStructuredOrigin(origin),
-	);
-} finally {
-	self._suppressObserver = false;
+				recordPhase(pipeline, "normalize");
+				pipeline._engine.normalizeDirty();
+			},
+			toStructuredOrigin(origin),
+		);
+	} finally {
+		pipeline._suppressObserver = false;
+	}
+
+	const event: CRDTEvent = {
+		origin,
+		affectedBlocks: [...new Set(affectedBlocks)],
+		ops: validatedOps,
+		timestamp: Date.now(),
+		source: resolveCommitSource(origin, "apply"),
+	};
+
+	pipeline._onDidApply?.(event);
+	emitApplyBoundary(pipeline, {
+		phase: "after",
+		ops: validatedOps,
+		origin,
+		applied: true,
+	});
 }
 
-const event: CRDTEvent = {
-	origin,
-	affectedBlocks: [...new Set(affectedBlocks)],
-	ops: validatedOps,
-	timestamp: Date.now(),
-	source: resolveCommitSource(origin, "apply"),
-};
-
-self._onDidApply?.(event);
-self._emitApplyBoundary({
-	phase: "after",
-	ops: validatedOps,
-	origin,
-	applied: true,
-});
-}
-
-export function emitApplyBoundary(pipeline: ApplyPipeline, event: {
-	phase: "before" | "after";
-	ops: readonly DocumentOp[];
-	origin: OpOrigin;
-	applied: boolean;
-}): void {
-	const self = pipeline as ApplyPipelineRuntime;
-	for (const hook of self._applyBoundaryHooks) {
+export function emitApplyBoundary(
+	pipeline: ApplyPipelineInternal,
+	event: {
+		phase: "before" | "after";
+		ops: readonly DocumentOp[];
+		origin: OpOrigin;
+		applied: boolean;
+	},
+): void {
+	for (const hook of pipeline._applyBoundaryHooks) {
 		try {
 			hook({
 				...event,
@@ -675,8 +658,10 @@ export function emitApplyBoundary(pipeline: ApplyPipeline, event: {
 	}
 }
 
-export function validateOp(pipeline: ApplyPipeline, op: DocumentOp): boolean {
-	const self = pipeline as ApplyPipelineRuntime;
+export function validateOp(
+	pipeline: ApplyPipelineInternal,
+	op: DocumentOp,
+): boolean {
 	const rejectedKeys = [...new Set(rejectedOwnPropKeys(op))];
 	if (rejectedKeys.length > 0) {
 		emitPipelineDiagnostic(pipeline, {
@@ -690,9 +675,9 @@ export function validateOp(pipeline: ApplyPipeline, op: DocumentOp): boolean {
 		});
 		return false;
 	}
-switch (op.type) {
+	switch (op.type) {
 	case "insert-block": {
-		if (!isRegisteredBlockType(self._registry, op.blockType)) {
+		if (!isRegisteredBlockType(pipeline._registry, op.blockType)) {
 			emitPipelineDiagnostic(pipeline, {
 				code: "PEN_APPLY_002",
 				level: "warn",
@@ -706,7 +691,7 @@ switch (op.type) {
 	}
 	case "set-props": {
 		if (typeof op.props.type === "string") {
-			if (!isRegisteredBlockType(self._registry, op.props.type)) {
+			if (!isRegisteredBlockType(pipeline._registry, op.props.type)) {
 				emitPipelineDiagnostic(pipeline, {
 					code: "PEN_APPLY_002",
 					level: "warn",
@@ -728,7 +713,7 @@ switch (op.type) {
 			if (typeof item === "string") {
 				continue;
 			}
-			const schema = self._registry.resolveInline(item.nodeType);
+			const schema = pipeline._registry.resolveInline(item.nodeType);
 			if (!schema || schema.kind !== "node") {
 				emitPipelineDiagnostic(pipeline, {
 					code: "PEN_APPLY_002",
@@ -758,62 +743,29 @@ switch (op.type) {
 }
 }
 
-export function resolvePosition(pipeline: ApplyPipeline, position: import("@input/pen-types").Position): number {
-	const self = pipeline as ApplyPipelineRuntime;
-const blockOrder = self._doc.blockOrder;
-
-if (position === "first") return 0;
-if (position === "last") return blockOrder.length;
-
-if (typeof position === "object" && "after" in position) {
-	for (let i = 0; i < blockOrder.length; i++) {
-		if ((blockOrder.get(i) as string) === position.after)
-			return i + 1;
-	}
-	return blockOrder.length;
-}
-
-if (typeof position === "object" && "before" in position) {
-	for (let i = 0; i < blockOrder.length; i++) {
-		if ((blockOrder.get(i) as string) === position.before) return i;
-	}
-	return 0;
-}
-
-if (typeof position === "object" && "parent" in position) {
-	const parentMap = self.blocks.get(position.parent);
-	if (!parentMap) return blockOrder.length;
-	const children = parentMap.get("children") as
-		| CRDTArray<string>
-		| undefined;
-	if (!children) return 0;
-	return Math.min(position.index, children.length);
-}
-
-return blockOrder.length;
-}
-
-export function executeSingleOp(pipeline: ApplyPipeline, op: DocumentOp): string[] {
-	const self = pipeline as ApplyPipelineRuntime;
+export function executeSingleOp(
+	pipeline: ApplyPipelineInternal,
+	op: DocumentOp,
+): string[] {
 	switch (op.type) {
 		case "insert-block":
-			return self._insertBlock(op);
+			return insertBlock(pipeline, op);
 		case "delete-block":
-			return self._deleteBlock(op);
+			return deleteBlock(pipeline, op);
 		case "move-block":
-			return self._moveBlock(op);
+			return moveBlock(pipeline, op);
 		case "set-props":
-			return self._setProps(op);
+			return setProps(pipeline, op);
 		case "splice-text":
-			return self._spliceText(op);
+			return spliceText(pipeline, op);
 		case "format-text":
-			return self._formatText(op);
+			return formatText(pipeline, op);
 		case "set-meta":
-			return self._setMeta(op);
+			return setMeta(pipeline, op);
 		case "grid":
-			return self._tableOp(op);
+			return tableOp(pipeline, op);
 		case "app":
-			return self._applyApp(op);
+			return applyApp(pipeline, op);
 		case "stream-open":
 			return [];
 		default: {

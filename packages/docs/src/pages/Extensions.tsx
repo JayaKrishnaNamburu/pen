@@ -79,16 +79,6 @@ export function ExtensionsPage() {
 				the AI family. Public accessors such as{" "}
 				<code>getAIController</code> read those facets.
 			</p>
-
-			<h2>What still uses the older fields</h2>
-			<p>
-				<code>Extension.keyBindings</code>,{" "}
-				<code>inputRules</code>, and <code>decorations</code> are
-				still on the type and still register into the matching facets.{" "}
-				<code>getSlot</code> / <code>setSlot</code> are deprecated
-				adapters. <code>setSlot</code> on a facet-backed key emits{" "}
-				<code>slot-deprecated</code> once per key per session.
-			</p>
 			<pre>
 				<code>{`import { createEditor, ariaReadOnlyFacet } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";

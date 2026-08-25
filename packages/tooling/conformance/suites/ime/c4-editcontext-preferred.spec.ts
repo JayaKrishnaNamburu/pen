@@ -43,7 +43,7 @@ scenario(
 		const text = await readDocumentText(page);
 		const commits = await page.evaluate(() =>
 			window.__penConformance.lastEvents.filter(
-				(event) => event.type === "documentCommit",
+				(event) => event.type === "commit",
 			),
 		);
 

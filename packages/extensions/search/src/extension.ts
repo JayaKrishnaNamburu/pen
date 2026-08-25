@@ -2,6 +2,7 @@ import type { Editor, Extension, FacetProvider, KeyBinding } from "@input/pen-ty
 import { SEARCH_CONTROLLER_SLOT } from "@input/pen-types";
 import {
 	createDecorationSet,
+	decorationsFacet,
 	defineExtension,
 	keyBindingPriorityToPrecedence,
 	keymapFacet,
@@ -108,7 +109,16 @@ export function searchExtension(): Extension {
 
 	return defineExtension({
 		name: SEARCH_EXTENSION_NAME,
-		facets: searchKeymapProviders(SEARCH_KEY_BINDINGS),
+		facets: [
+			...searchKeymapProviders(SEARCH_KEY_BINDINGS),
+			decorationsFacet.of(() => {
+				const state = controller?.getState();
+				if (!state || state.matches.length === 0) {
+					return createDecorationSet([]);
+				}
+				return createDecorationSet(buildSearchDecorations(state));
+			}),
+		],
 
 		activateClient: async ({ editor }) => {
 			activeEditor = editor;
@@ -132,14 +142,6 @@ export function searchExtension(): Extension {
 			activeEditor?.internals.assignSlot(SEARCH_CONTROLLER_SLOT, null);
 			controller = null;
 			activeEditor = null;
-		},
-
-		decorations: () => {
-			const state = controller?.getState();
-			if (!state || state.matches.length === 0) {
-				return createDecorationSet([]);
-			}
-			return createDecorationSet(buildSearchDecorations(state));
 		},
 	});
 }

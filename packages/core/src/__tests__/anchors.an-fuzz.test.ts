@@ -106,7 +106,7 @@ function createEditor(): Editor {
 }
 
 function logicalText(editor: Editor, blockId: string): string {
-	return (editor.getBlock(blockId)?.textContent() ?? "").replace(/\u200B/g, "");
+	return editor.getBlock(blockId)?.textContent() ?? "";
 }
 
 function snapshotModel(editor: Editor): Model {

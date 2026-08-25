@@ -7,6 +7,7 @@ import {
 	insertText as insertTextCommand,
 	isCollapsed,
 	isMultiBlock,
+	localeFacet,
 	nextGraphemeBoundary,
 	nextWordBoundary,
 	previousGraphemeBoundary,
@@ -17,7 +18,6 @@ import {
 import type { Command, Editor } from "@input/pen-types";
 import type { FieldEditorInputController } from "./controller";
 import type { FieldEditorTextLike } from "./crdt";
-import type { PasteImporters } from "../types/paste";
 import {
 	applyDeleteBehavior,
 	applyEnterBehavior,
@@ -28,7 +28,7 @@ import {
 	dispatchEditorCommand,
 	syncEditorTextSelection,
 } from "./commandDispatch";
-import { handlePaste } from "./clipboard";
+import { getPasteImporters, handlePaste } from "./clipboard";
 import { staticRangeToOffsets } from "./contenteditableDomHelpers";
 
 export interface ContentEditableDirectInputBackend {
@@ -443,9 +443,7 @@ export const DIRECT_HANDLERS: Record<string, DirectHandler> = {
 	},
 
 	insertFromPaste: (event, editor, _ytext, fe) => {
-		const importers =
-			editor.internals.getSlot<PasteImporters>("paste:importers");
-		handlePaste(event, editor, fe, importers ?? undefined);
+		handlePaste(event, editor, fe, getPasteImporters(editor));
 	},
 
 	formatBold: (_event, editor, _ytext, fe) => {
@@ -570,7 +568,7 @@ function hasMultiBlockTextSelection(editor: Editor): boolean {
 }
 
 function resolveEditorLocale(editor: Editor): string {
-	const locale = editor.internals.getSlot<string>("pen.locale");
+	const locale = editor.facet(localeFacet);
 	if (typeof locale === "string" && locale.length > 0) {
 		return locale;
 	}

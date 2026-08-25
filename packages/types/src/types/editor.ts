@@ -7,7 +7,6 @@ import type {
 import type {
 	CRDTAdapter,
 	CRDTDocument,
-	CRDTEvent,
 	PenDocument,
 	Awareness,
 	DocumentSession,
@@ -17,7 +16,12 @@ import type {
 import type { EditorAnchors } from "./anchors";
 import type { ChangeSummary, Point } from "./changes";
 import type { Facet, FacetOutput } from "./facets";
-import type { DocumentOp, OpOrigin, ApplyOptions, StructuredOpOrigin } from "./ops";
+import type {
+	DocumentOp,
+	OpOrigin,
+	ApplyOptions,
+	StructuredOpOrigin,
+} from "./ops";
 import type { Decoration, DecorationSet } from "./decorations";
 import type { Extension } from "./extension";
 import type { BlockHandle, AppHandle } from "./handles";
@@ -41,6 +45,15 @@ export type PipelinePhase =
 	| "emit";
 
 export type InteractionModel = "content-first" | "block-first";
+
+/**
+ * Which rung `Mod-a` enters the T1 select-all ladder on
+ * (`spec-v2/03-selection.md` T1).
+ *
+ * `"block-first"` starts at the active block and escalates on each press.
+ * `"document-first"` enters at the top rung, so one press covers all content.
+ */
+export type SelectAllBehavior = "document-first" | "block-first";
 
 // ── Document State ──────────────────────────────────────────
 
@@ -112,21 +125,7 @@ export interface HistoryAppliedEvent {
 	requestId: number;
 }
 
-export interface DocumentCommitEvent {
-	commitId: number;
-	ops: readonly DocumentOp[];
-	origin: OpOrigin;
-	affectedBlocks: string[];
-	blockRevisions: Readonly<Record<string, number>>;
-	scope?: DocumentScope;
-}
-
-export type CommitEventSource =
-	| "apply"
-	| "remote"
-	| "undo"
-	| "redo"
-	| "stream";
+export type CommitEventSource = "apply" | "remote" | "undo" | "redo" | "stream";
 
 /** Dropped ops and validation failures for one commit (`06-commit-pipeline.md`). */
 export type Diagnostic = DiagnosticEvent;
@@ -169,13 +168,13 @@ export interface DiagnosticEvent {
 
 export interface DocumentValidationError {
 	code:
-	| "MISSING_SHARED_TYPE"
-	| "INVALID_BLOCK_STRUCTURE"
-	| "ORPHAN_BLOCK"
-	| "DUPLICATE_BLOCK_ORDER"
-	| "UNKNOWN_CONTENT_TYPE"
-	| "MISSING_BLOCK_MAP_KEY"
-	| "INVALID_SUBDOCUMENT";
+		| "MISSING_SHARED_TYPE"
+		| "INVALID_BLOCK_STRUCTURE"
+		| "ORPHAN_BLOCK"
+		| "DUPLICATE_BLOCK_ORDER"
+		| "UNKNOWN_CONTENT_TYPE"
+		| "MISSING_BLOCK_MAP_KEY"
+		| "INVALID_SUBDOCUMENT";
 	blockId?: string;
 	message: string;
 	severity: "error" | "warning";
@@ -185,8 +184,6 @@ export interface DocumentValidationError {
 
 export interface PenEventMap {
 	commit: (event: CommitEvent) => void;
-	change: (events: CRDTEvent[]) => void;
-	documentCommit: (event: DocumentCommitEvent) => void;
 	historyApplied: (event: HistoryAppliedEvent) => void;
 	decorationsChange: (generation: number) => void;
 	selectionChange: (record: SelectionRecord) => void;
@@ -251,7 +248,10 @@ export interface InlineCompletionSuggestion {
 	blockType?: string;
 	props?: Record<string, unknown>;
 	previewBlocks?: readonly InlineCompletionPreviewBlock[];
-	accept?: (editor: Editor, suggestion: InlineCompletionSuggestion) => boolean;
+	accept?: (
+		editor: Editor,
+		suggestion: InlineCompletionSuggestion,
+	) => boolean;
 }
 
 export interface InlineCompletionPreviewBlock {
@@ -345,7 +345,7 @@ export interface Editor {
 		anchor: { blockId: string; offset: number },
 		focus: { blockId: string; offset: number },
 	): void;
-	selectAll(): void;
+	selectAll(behavior?: SelectAllBehavior): void;
 
 	getSelectedText(): string;
 	getSelectedBlocks(): BlockHandle[];
@@ -356,7 +356,6 @@ export interface Editor {
 	getDecorations(): DecorationSet;
 	scrollToBlock?(blockId: string): void;
 
-	onDocumentCommit(callback: PenEventMap["documentCommit"]): Unsubscribe;
 	onSelectionChange(callback: PenEventMap["selectionChange"]): Unsubscribe;
 	onHistoryApplied(callback: PenEventMap["historyApplied"]): Unsubscribe;
 
@@ -364,7 +363,14 @@ export interface Editor {
 		event: K,
 		handler: PenEventMap[K],
 	): Unsubscribe;
-	on(event: string, handler: (...args: unknown[]) => void): Unsubscribe;
+	// Extension-namespaced channel emitted by extensionManager as
+	// `ext:<name>:<event>`. Deliberately narrower than `string`: a plain string
+	// overload also accepts deleted and misspelled core event names, which then
+	// fail silently at runtime instead of compiling.
+	on(
+		event: `ext:${string}:${string}`,
+		handler: (...args: unknown[]) => void,
+	): Unsubscribe;
 
 	readonly undoManager: UndoManager;
 
@@ -403,8 +409,6 @@ export interface EditorInternals {
 		}) => void,
 	): Unsubscribe;
 	onPipelinePhase(listener: (phase: PipelinePhase) => void): Unsubscribe;
-	getSlot<T>(key: string): T | undefined;
-	setSlot: (key: string, value: unknown) => void;
 	assignSlot: (key: string, value: unknown) => void;
 	getBlockText(blockId: string): unknown;
 	getCellText(blockId: string, row: number, col: number): unknown;

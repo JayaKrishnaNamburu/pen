@@ -66,7 +66,7 @@ function createFieldEditor(blockId: string) {
 				});
 			},
 			deactivate: () => {},
-			selectAll: () => false,
+			selectAllBehavior: "block-first" as const,
 			resolveInsertMarks: () => undefined,
 		},
 		activations,

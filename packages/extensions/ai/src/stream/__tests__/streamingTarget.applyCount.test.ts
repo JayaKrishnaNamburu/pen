@@ -1,3 +1,4 @@
+import { streamingTargetFacet } from "@input/pen-core";
 import type { DocumentOp, StreamingTarget } from "@input/pen-types";
 import { createTestEditor } from "@input/pen-test";
 import { afterEach, describe, expect, it } from "vitest";
@@ -41,9 +42,9 @@ async function createCountingEditor() {
 		originalApply(ops, applyOptions);
 	}) as typeof editor.apply;
 
-	const streaming = editor.internals.getSlot<StreamingTarget>(
-		"delta-stream:target",
-	);
+	const streaming = editor.facet(streamingTargetFacet) as
+		| StreamingTarget
+		| null;
 	if (!streaming) {
 		throw new Error("missing streaming target");
 	}

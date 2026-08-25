@@ -1,12 +1,13 @@
+import { aiControllerFacet } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
 import type {
 	AICommandExecutionOptions,
+	AIController,
 	AISession,
 	AISessionResolution,
 	AISurface,
 	GenerationState,
 } from "@input/pen-ai";
-import { getAIController } from "@input/pen-ai";
 
 export function useAISessionActions(editor: Editor): {
 	startSession: (input: {
@@ -42,7 +43,8 @@ export function useAISessionActions(editor: Editor): {
 	suspendInlineSession: (sessionId: string) => void;
 	resumeInlineSession: (sessionId: string) => void;
 } {
-	const controller = getAIController(editor);
+	const controller =
+		(editor.facet(aiControllerFacet) as AIController | null) ?? null;
 
 	return {
 		startSession(input) {

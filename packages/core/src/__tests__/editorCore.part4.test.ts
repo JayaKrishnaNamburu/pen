@@ -50,10 +50,6 @@ async function flushMicrotasks(count = 2): Promise<void> {
 	}
 }
 
-function visibleText(text: string): string {
-	return text.replace(/\u200B/g, "");
-}
-
 type TestYTextLike = {
 	insert(offset: number, text: string): void;
 };
@@ -80,7 +76,7 @@ type TestTableContentLike = {
 
 
 describe("@input/pen-core createEditor", () => {
-	it("emits unified change and documentCommit once for observed CRDT updates", () => {
+	it("emits one commit for observed CRDT updates", () => {
 		const observed: unknown[][] = [];
 		const ext = defineExtension({
 			name: "capture-observed-dispatch",
@@ -91,8 +87,7 @@ describe("@input/pen-core createEditor", () => {
 		const editor = createEditor({
 			extensions: [ext],
 		});
-		const changes: unknown[][] = [];
-		const documentCommits: unknown[] = [];
+		const commits: unknown[] = [];
 		const adapter = editor.internals.adapter;
 		const editorDoc = editor.internals.crdtDoc;
 		const blockId = editor.firstBlock()!.id;
@@ -106,15 +101,11 @@ describe("@input/pen-core createEditor", () => {
 			throw new Error(`Missing collaborator text for block ${blockId}`);
 		}
 
-		editor.on("change", (events) => {
-			changes.push(events);
-		});
-		editor.on("documentCommit", (event) => {
-			documentCommits.push(event);
+		editor.on("commit", (event) => {
+			commits.push(event);
 		});
 		observed.length = 0;
-		changes.length = 0;
-		documentCommits.length = 0;
+		commits.length = 0;
 
 		adapter.transact(
 			remoteDoc,
@@ -125,20 +116,15 @@ describe("@input/pen-core createEditor", () => {
 		);
 		adapter.applyUpdate(editorDoc, adapter.encodeState(remoteDoc));
 
-		expect(changes).toHaveLength(1);
-		expect(changes[0]).toHaveLength(1);
-		expect(changes[0][0]).toMatchObject({
-			affectedBlocks: [blockId],
-		});
-		expect(documentCommits).toHaveLength(1);
-		expect(documentCommits[0]).toMatchObject({
+		expect(commits).toHaveLength(1);
+		expect(commits[0]).toMatchObject({
 			commitId: 1,
-			affectedBlocks: [blockId],
+			origin: { type: "collaborator" },
 		});
 		expect(
-			(documentCommits[0] as { blockRevisions: Record<string, number> })
-				.blockRevisions[blockId],
-		).toBe(editor.getBlockRevision(blockId));
+			(commits[0] as { summary: { blockText: { blockId: string }[] } })
+				.summary.blockText.map((text) => text.blockId),
+		).toContain(blockId);
 		expect(observed).toHaveLength(1);
 		expect(observed[0]).toHaveLength(1);
 

@@ -155,7 +155,7 @@ describe("@input/pen-vue", () => {
     editor.destroy();
   });
 
-  it("selects the current block with the first Mod-A", async () => {
+  it("selects all content with the first Mod-A", async () => {
     const editor = createParagraphEditor();
     editor.selectText("paragraph-1", 0, 0);
 
@@ -173,10 +173,12 @@ describe("@input/pen-vue", () => {
     );
     await nextTick();
 
+    // The default interaction model is content-first, so T1 enters at the
+    // content rung: one press spans every block.
     expect(editor.selection).toMatchObject({
       type: "text",
       anchor: { blockId: "paragraph-1", offset: 0 },
-      focus: { blockId: "paragraph-1", offset: 5 },
+      focus: { blockId: "paragraph-2", offset: 6 },
     });
 
     document.dispatchEvent(

@@ -17,8 +17,7 @@ Provide a stable overview of the workspace layout and the spec paths that mirror
 - `packages/shared`: lower-level shared support libraries
 - `packages/tooling`: testing, benchmarks, and development utilities
 - `packages/docs`: repository docs app for the current public Pen surface
-- `playground`: small reference app for embedding Pen — editor, AI assistant, document inspector
-- `internal/kitchen-sink`: maintainer sandbox covering every surface, including collaboration; the end-to-end suite runs against it
+- `playground`: reference app for embedding Pen — editor, AI agent, document inspector, optional collaboration; hosts `pnpm test:e2e`
 
 ## Generated Package Specs
 
@@ -48,7 +47,6 @@ Provide a stable overview of the workspace layout and the spec paths that mirror
 - `@input/pen-transport-sse` -> `packages/transports/sse.md`
 - `@input/pen-types` -> `packages/types.md`
 - `@input/pen-playground` -> `packages/playground.md`
-- `@input/pen-kitchen-sink` -> `packages/kitchen-sink.md`
 
 AI feature subpaths (`@input/pen-ai/suggestions`, `/autocomplete`, `/skills`, `/tools`, `/stream`) are documented in `packages/extensions/ai.md`. Interop format subpaths (`@input/pen-interop/html`, `/markdown`, `/json`, `/xml`) are documented in `packages/extensions/interop.md`.
 

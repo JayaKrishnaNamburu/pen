@@ -50,10 +50,6 @@ async function flushMicrotasks(count = 2): Promise<void> {
 	}
 }
 
-function visibleText(text: string): string {
-	return text.replace(/\u200B/g, "");
-}
-
 type TestYTextLike = {
 	insert(offset: number, text: string): void;
 };

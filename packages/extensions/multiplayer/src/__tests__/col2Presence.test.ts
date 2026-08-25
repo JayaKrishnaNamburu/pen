@@ -31,7 +31,11 @@ import type {
 	MultiplayerAwarenessState,
 	MultiplayerCursorPayload,
 } from "../types";
-import { VALID_WIRE_ANCHOR, wireCursor, wireTextSelection } from "./presenceAnchors";
+import {
+	VALID_WIRE_ANCHOR,
+	wireCursor,
+	wireTextSelection,
+} from "./presenceAnchors";
 
 const LOCAL_CLIENT_ID = 1;
 const GOOD_PEER_ID = 77;
@@ -155,7 +159,9 @@ function goodPeerState(editor?: Editor): MultiplayerAwarenessState {
 function applyStates(
 	controller: MultiplayerControllerImpl,
 	editor: ReturnType<typeof createEditor>,
-	entries: Array<[number, MultiplayerAwarenessState | Record<string, unknown>]>,
+	entries: Array<
+		[number, MultiplayerAwarenessState | Record<string, unknown>]
+	>,
 ): void {
 	controller.handleAwarenessChange(
 		new Map<number, MultiplayerAwarenessState>([
@@ -944,7 +950,11 @@ describe("COL2 awareness is untrusted input", () => {
 					BAD_PEER_ID,
 					{
 						user: { id: "u-far", name: "Far", color: "#abc123" },
-						cursor: { blockId: "b1", offset: 99, clock: 11 } as unknown as MultiplayerCursorPayload,
+						cursor: {
+							blockId: "b1",
+							offset: 99,
+							clock: 11,
+						} as unknown as MultiplayerCursorPayload,
 					},
 				],
 			]);
@@ -1346,7 +1356,10 @@ describe("COL2 awareness is untrusted input", () => {
 	});
 
 	it("COL2: rate-limit flood keeps one cursor and never throws", () => {
-		let now = 1_000_000;
+		// The clock is held still so the whole flood lands in one rate-limit
+		// window: the cap is what a peer gets per second, so a flood that
+		// straddled two windows would be allowed twice the cap.
+		const now = 1_000_000;
 		const { editor, controller, diagnostics } = createPresenceEditor(
 			() => now,
 		);
@@ -1354,7 +1367,6 @@ describe("COL2 awareness is untrusted input", () => {
 
 		expect(() => {
 			for (let index = 0; index < floodCount; index += 1) {
-				now += 1;
 				applyStates(controller, editor, [
 					[
 						GOOD_PEER_ID,

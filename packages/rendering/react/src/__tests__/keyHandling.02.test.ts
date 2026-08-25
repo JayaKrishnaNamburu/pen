@@ -3,7 +3,8 @@ import {
 	expect,
 	it } from "vitest";
 import { createEditor,
-	getInlineCompletionController } from "@input/pen-core";
+	getInlineCompletionController,
+	keymapFacet } from "@input/pen-core";
 import { getSearchController,
 	searchExtension } from "@input/pen-search";
 import {
@@ -125,7 +126,7 @@ function createFieldEditorMock(blockId: string) {
 				});
 			},
 			deactivate: () => {},
-			selectAll: () => false,
+			selectAllBehavior: "block-first" as const,
 		},
 		activations,
 		programmaticSelections,
@@ -196,15 +197,17 @@ describe("@input/pen-react key binding contexts", () => {
 			extensions: [
 				defineExtension({
 					name: "history-override",
-					keyBindings: [
-						{
-							key: "Mod-z",
-							priority: 1000,
-							handler: () => {
-								handled += 1;
-								return true;
+					facets: [
+						keymapFacet.of([
+							{
+								key: "Mod-z",
+								priority: 1000,
+								handler: () => {
+									handled += 1;
+									return true;
+								},
 							},
-						},
+						]),
 					],
 				}),
 			],

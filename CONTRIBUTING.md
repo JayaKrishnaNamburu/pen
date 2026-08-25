@@ -29,9 +29,7 @@ pnpm test:e2e
 ```
 
 That script is `playwright test` from the repository root. It drives
-`internal/kitchen-sink`, the maintainer sandbox that exercises every
-surface. `playground/` is the small reference app and is kept readable
-rather than exhaustive.
+`playground/`.
 
 ## Repository Shape
 
@@ -39,7 +37,7 @@ rather than exhaustive.
 - `packages/types` owns shared contracts and lightweight helpers.
 - `packages/rendering/*` bind the headless runtime to framework-specific surfaces.
 - `packages/extensions/*` add optional runtime behavior such as AI, search, import/export, and collaboration.
-- `packages/docs`, `playground`, and `internal/kitchen-sink` are workspace apps used to document and exercise shipped surfaces.
+- `packages/docs` and `playground` are workspace apps used to document and exercise shipped surfaces.
 - `examples/` has consumer-style React, Vue, and vanilla apps. They are pnpm workspace members and each has a CI smoke job, so they build against the same workspace sources as everything else.
 
 ## Engineering Expectations

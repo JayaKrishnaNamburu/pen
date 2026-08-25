@@ -1,110 +1,214 @@
 /*
- * Design tokens and the base reset.
+ * The theme, lifted from Input.
  *
- * Every colour, radius, and duration used anywhere in the playground is
- * declared here, so restyling the app means editing this file and nothing
- * else. Values follow the Input design system.
+ * Input's themes are TypeScript manifests — a palette, a radius scale, and a
+ * flat map of semantic tokens — that get written to the document as CSS
+ * variables (`palette.b80` becomes `--palette-b80`, `button.shadow.primary.
+ * default` becomes `--button-shadow-primary-default`). This file is that output
+ * for the light and dark themes, hand-narrowed to the tokens the playground
+ * actually uses, with the same names and the same values.
+ *
+ * Same names matters. It means the CSS here reads like Input's, and a value you
+ * want to change is one you can look up there.
+ *
+ * Input can switch themes at runtime and has a dozen of them; the playground
+ * follows the operating system and has two.
  */
 
 :root {
 	color-scheme: light dark;
 
-	/* Neutrals, lightest to darkest. */
-	--grey-0: #ffffff;
-	--grey-10: #f8f8fa;
-	--grey-20: #cacacd;
-	--grey-40: #9b9b9b;
-	--grey-60: #646465;
-	--grey-80: #2e3342;
-	--grey-100: #000000;
+	/* Palette: b0 is the page, b100 is the ink. */
+	--palette-b0: #fff;
+	--palette-b10: #f8f8fa;
+	--palette-b20: #cacacd;
+	--palette-b40: #9b9b9b;
+	--palette-b60: #646465;
+	--palette-b80: #2e3342;
+	--palette-b100: #000;
+	--palette-blue: #0af;
+	--palette-purple: #80f;
+	--palette-red: #f43;
+	--palette-yellow: #fa0;
 
-	--accent: #0088ff;
-	--accent-soft: rgba(0, 136, 255, 0.1);
-	--danger: #e5484d;
+	/* Radii. */
+	--radius-xxs: 4px;
+	--radius-xs: 6px;
+	--radius-sm: 8px;
+	--radius-md: 10px;
+	--radius-lg: 12px;
+	--radius-xl: 16px;
+	--radius-xxl: 20px;
+	--radius-round: 999px;
+
+	/* Type. */
+	--font-family:
+		-apple-system, system-ui, BlinkMacSystemFont, "Inter", "Helvetica Neue",
+		"Segoe UI", "Roboto", sans-serif;
+	--font-family-mono:
+		"SF Mono", "Monaco", "Inconsolata", "Fira Code", "Menlo", "Consolas",
+		monospace;
+	--font-size-xs: 11px;
+	--font-size-sm: 12px;
+	--font-size-md: 13px;
+	--font-size-base: 14px;
+	--font-size-body: 15px;
+	--font-size-lg: 16px;
+	--font-size-xl: 20px;
+
+	/* Spacing. */
+	--spacing-xxs: 2px;
+	--spacing-xs: 4px;
+	--spacing-sm: 8px;
+	--spacing-md: 10px;
+	--spacing-lg: 15px;
+	--spacing-xl: 20px;
+	--spacing-xxl: 28px;
+
+	/* Buttons. Every kind is a pairing of these. */
+	--button-border: rgba(0, 0, 0, 0.03);
+	--button-color-hover: rgba(0, 0, 0, 0.6);
+	--button-color-disabled: rgba(0, 0, 0, 0.3);
+	--button-primary-text: var(--palette-b100);
+	--button-primary-text-hover: var(--palette-b80);
+	--button-primary-background: var(--tab-default);
+	--button-primary-background-hover: var(--tab-active);
+	--button-primary-background-disabled: var(--tab-hover);
+	--button-secondary-text: var(--palette-b0);
+	--button-secondary-text-disabled: var(--palette-b60);
+	--button-secondary-background: var(--palette-b100);
+	--button-secondary-background-hover: var(--palette-b80);
+	--button-faded-background: var(--tab-default);
+	--button-faded-background-hover: var(--tab-active);
+	--button-shadow-primary-default:
+		0px 1px 2px rgba(95, 122, 143, 0.25),
+		inset 1px 1px 1px 0px rgb(255, 255, 255);
+	--button-shadow-primary-hover:
+		0px 2px 3px rgba(95, 122, 143, 0.25),
+		inset 1px 1px 1px 0px rgb(255, 255, 255);
+	--button-shadow-primary-active:
+		0px 1px 2px rgba(95, 122, 143, 0.1),
+		inset 1px 1px 1px 0px rgb(255, 255, 255);
+	--button-shadow-secondary-default: 0px 2px 5px rgba(0, 0, 0, 0.4);
+	--button-shadow-secondary-hover: 0px 3px 5px rgba(0, 0, 0, 0.4);
+	--button-shadow-secondary-active: 0px 1px 3px rgba(0, 0, 0, 0.2);
+
+	/* Interactive fills, layered over whatever surface is beneath them. */
+	--tab-default: rgba(0, 0, 0, 0.05);
+	--tab-hover: rgba(0, 0, 0, 0.03);
+	--tab-active: rgba(0, 0, 0, 0.065);
+
+	/* Hairlines. */
+	--line-faded: rgba(0, 0, 0, 0.03);
+	--line-default: rgba(0, 0, 0, 0.05);
+	--line-hover: rgba(0, 0, 0, 0.09);
+	--line-active: rgba(0, 0, 0, 0.14);
 
 	/* Surfaces. */
-	--surface-app: #f1f3f4;
-	--surface-raised: #ffffff;
-	--surface-sunken: #f6f6f8;
-	--surface-tile: #f1f1f3;
+	--card-background: rgba(0, 0, 0, 0.03);
+	--card-background-filled: #f1f1f3;
+	--tile-background: var(--card-background-filled);
+	--sidebar-background: #f1f3f4;
+	--top-bar-background: color-mix(
+		in srgb,
+		var(--palette-b10) 70%,
+		transparent
+	);
+	--popover-background: #f6f6f8;
+	--popover-shadow:
+		0px 4px 14px 0px rgba(95, 122, 143, 0.2),
+		inset 0px 0px 1px 1px rgb(255, 255, 255),
+		inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+	--tooltip-background: rgba(246, 246, 248, 0.9);
 
-	/* Lines and interactive fills, layered over the surface beneath them. */
-	--line: rgba(0, 0, 0, 0.08);
-	--line-strong: rgba(0, 0, 0, 0.14);
-	--fill-hover: rgba(0, 0, 0, 0.04);
-	--fill-active: rgba(0, 0, 0, 0.07);
-	--backdrop: rgba(0, 0, 0, 0.22);
-	--scrollbar-thumb: rgba(0, 0, 0, 0.16);
+	/* Text fields, and the shadow every card borrows for its edge. */
+	--input-background: #f6f6f8;
+	--input-placeholder: rgba(0, 0, 0, 0.35);
+	--input-shadow-default:
+		0px 3px 10px 0px rgba(95, 122, 143, 0.18),
+		inset 0px 0px 0px 1px rgba(0, 0, 0, 0.08);
+	--input-shadow-focus:
+		0px 3px 10px 0px rgba(95, 122, 143, 0.23),
+		inset 0px 0px 0px 1.5px rgba(0, 0, 0, 0.14);
 
-	/* Text. */
-	--text-primary: var(--grey-100);
-	--text-secondary: var(--grey-60);
-	--text-muted: var(--grey-40);
+	--link-default: #0af;
+	--selection-background: rgba(102, 187, 255, 0.1);
+	--spinner-background: rgba(0, 0, 0, 0.4);
+	--scroll-bar-thumb: rgba(0, 0, 0, 0.1);
+	--scroll-bar-thumb-hover: rgba(0, 0, 0, 0.3);
 
-	--shadow-sheet: 0 4px 24px rgba(95, 122, 143, 0.18);
+	/* What a scrolling region fades into. Panels on other surfaces reset it. */
+	--fade-background: var(--sidebar-background);
 
-	--font-sans:
-		-apple-system, system-ui, BlinkMacSystemFont, "Inter", "Segoe UI",
-		"Helvetica Neue", sans-serif;
-	--font-mono:
-		ui-monospace, "SF Mono", "Menlo", "Consolas", "Liberation Mono",
-		monospace;
-
-	--text-xs: 11px;
-	--text-sm: 12px;
-	--text-md: 13px;
-	--text-base: 14px;
-	--text-lg: 16px;
-
-	--space-1: 4px;
-	--space-2: 8px;
-	--space-3: 12px;
-	--space-4: 16px;
-	--space-5: 24px;
-	--space-6: 32px;
-
-	--radius-sm: 6px;
-	--radius-md: 10px;
-	--radius-lg: 16px;
-	--radius-pill: 999px;
-
-	--duration: 150ms;
-	--ease: cubic-bezier(0.22, 0.72, 0.23, 1);
-
-	/* Layout. */
-	--chat-width: 300px;
-	--inspector-width: 380px;
+	/* Playground layout. */
+	--top-bar-height: 48px;
+	--chat-width: 320px;
+	--sheet-width: 380px;
 }
 
 @media (prefers-color-scheme: dark) {
 	:root {
-		--grey-0: #000000;
-		--grey-10: #0f0f14;
-		--grey-20: #40404c;
-		--grey-40: #636475;
-		--grey-60: #a2a2ab;
-		--grey-80: #e3e4e7;
-		--grey-100: #fafafa;
+		--palette-b0: #000;
+		--palette-b10: #0f0f14;
+		--palette-b20: #40404c;
+		--palette-b40: #636475;
+		--palette-b60: #a2a2ab;
+		--palette-b80: #e3e4e7;
+		--palette-b100: #fafafa;
+		--palette-blue: #6bf;
+		--palette-purple: #a6f;
+		--palette-red: #f65;
+		--palette-yellow: #fc5;
 
-		--accent: #66bbff;
-		--accent-soft: rgba(102, 187, 255, 0.14);
-		--danger: #ff6369;
+		--button-border: transparent;
+		--button-color-hover: rgba(227, 227, 254, 0.6);
+		--button-color-disabled: rgba(255, 255, 255, 0.3);
+		--button-secondary-text-disabled: var(--palette-b10);
+		--button-shadow-primary-default:
+			0px 2px 3px rgb(0, 0, 0, 0.5),
+			inset 0.5px 0.5px 0.5px 0.5px rgba(255, 255, 255, 0.24);
+		--button-shadow-primary-hover:
+			0px 3px 4px rgb(0, 0, 0, 0.6),
+			inset 0.5px 0.5px 0.5px 0.5px rgba(255, 255, 255, 0.24);
+		--button-shadow-primary-active:
+			0px 2px 3px rgb(0, 0, 0, 0.35),
+			inset 0.5px 0.5px 0.5px 0.5px rgba(255, 255, 255, 0.24);
 
-		--surface-app: #0b0b0f;
-		--surface-raised: #0f0f14;
-		--surface-sunken: #111117;
-		--surface-tile: #1a1a20;
+		--tab-default: rgba(227, 227, 254, 0.08);
+		--tab-hover: rgba(227, 227, 254, 0.06);
+		--tab-active: rgba(227, 227, 254, 0.1);
 
-		--line: rgba(227, 227, 254, 0.1);
-		--line-strong: rgba(227, 227, 254, 0.24);
-		--fill-hover: rgba(227, 227, 254, 0.06);
-		--fill-active: rgba(227, 227, 254, 0.12);
-		--backdrop: rgba(0, 0, 0, 0.5);
-		--scrollbar-thumb: rgba(227, 227, 254, 0.16);
+		--line-faded: rgba(227, 227, 254, 0.05);
+		--line-default: rgba(227, 227, 254, 0.08);
+		--line-hover: rgba(227, 227, 254, 0.16);
+		--line-active: rgba(227, 227, 254, 0.24);
 
-		--shadow-sheet: 0 4px 24px rgba(0, 0, 0, 0.5);
+		--card-background: rgba(227, 227, 254, 0.05);
+		--card-background-filled: #1a1a20;
+		--sidebar-background: #0b0b0f;
+		--popover-background: #111117;
+		--popover-shadow:
+			0px 4px 14px 0px rgba(0, 0, 0, 0.5),
+			inset 0px 0px 0px 1px rgba(255, 255, 255, 0.1);
+		--tooltip-background: rgba(24, 24, 31, 0.9);
+
+		--input-background: #111117;
+		--input-placeholder: rgba(209, 207, 252, 0.35);
+		--input-shadow-default:
+			0px 4px 14px 0px rgba(0, 0, 0, 0.5),
+			inset 0px 0px 0px 1px rgba(255, 255, 255, 0.1);
+		--input-shadow-focus:
+			0px 4px 18px 0px rgba(0, 0, 0, 0.6),
+			inset 0px 0px 0px 1.5px rgba(255, 255, 255, 0.12);
+
+		--link-default: #6bf;
+		--spinner-background: rgba(255, 255, 255, 0.4);
+		--scroll-bar-thumb: rgba(227, 227, 254, 0.1);
+		--scroll-bar-thumb-hover: rgba(227, 227, 254, 0.3);
 	}
 }
+
+/* ── Base ──────────────────────────────────────────────────── */
 
 *,
 *::before,
@@ -120,12 +224,40 @@ body,
 
 body {
 	margin: 0;
-	font-family: var(--font-sans);
-	font-size: var(--text-base);
+	font-family: var(--font-family);
+	font-size: var(--font-size-base);
 	line-height: 1.5;
-	color: var(--text-primary);
-	background: var(--surface-app);
+	color: var(--palette-b100);
+	background: var(--sidebar-background);
 	-webkit-font-smoothing: antialiased;
+}
+
+/* Input's type scale, from `general.styles.ts`. */
+h1,
+h2,
+h3,
+h4,
+h5,
+p {
+	margin: 0;
+}
+
+h2 {
+	font-size: var(--font-size-xl);
+	font-weight: 500;
+	line-height: 1.2em;
+	letter-spacing: -0.01em;
+}
+
+h4 {
+	font-size: var(--font-size-lg);
+	font-weight: 500;
+	line-height: 1.3em;
+}
+
+h5 {
+	font-size: var(--font-size-base);
+	font-weight: 500;
 }
 
 button {
@@ -137,18 +269,17 @@ button {
 }
 
 :focus-visible {
-	outline: 2px solid var(--accent);
-	outline-offset: 1px;
+	outline: 1.5px solid var(--line-active);
 }
 
 ::selection {
-	background: var(--accent-soft);
+	background: var(--selection-background);
 }
 
 /* Thin scrollbars that only show their thumb. */
 * {
 	scrollbar-width: thin;
-	scrollbar-color: var(--scrollbar-thumb) transparent;
+	scrollbar-color: var(--scroll-bar-thumb) transparent;
 }
 
 *::-webkit-scrollbar {
@@ -157,8 +288,12 @@ button {
 }
 
 *::-webkit-scrollbar-thumb {
-	background: var(--scrollbar-thumb);
-	border-radius: var(--radius-pill);
+	background: var(--scroll-bar-thumb);
+	border-radius: var(--radius-round);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+	background: var(--scroll-bar-thumb-hover);
 }
 
 *::-webkit-scrollbar-track {

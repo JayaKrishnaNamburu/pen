@@ -1,4 +1,8 @@
-import { createDecorationSet, emptyDecorationSet } from "@input/pen-core";
+import {
+	createDecorationSet,
+	decorationsFacet,
+	emptyDecorationSet,
+} from "@input/pen-core";
 import { createTestEditor } from "@input/pen-test";
 import { defineExtension } from "@input/pen-core";
 import type { Decoration, Extension } from "@input/pen-types";
@@ -52,9 +56,7 @@ function makeNoopPlusExtension(
 		observe(_events, _editor) {
 			// no-op: installed so dispatchObserve still walks the shipped list
 		},
-		decorations() {
-			return set;
-		},
+		facets: [decorationsFacet.of(() => set)],
 	});
 }
 

@@ -1,4 +1,5 @@
 import type { ModelAdapter, ModelStreamEvent } from "@input/pen-types";
+import { getStoredAnthropicKey } from "./apiKey";
 
 const CHAT_ENDPOINT = "/api/chat";
 
@@ -20,9 +21,15 @@ export function createPenModel(): ModelAdapter {
 			let response: Response;
 
 			try {
+				const storedKey = getStoredAnthropicKey();
 				response = await fetch(CHAT_ENDPOINT, {
 					method: "POST",
-					headers: { "content-type": "application/json" },
+					headers: {
+						"content-type": "application/json",
+						...(storedKey
+							? { "x-anthropic-api-key": storedKey }
+							: {}),
+					},
 					body: JSON.stringify({ messages, tools }),
 					signal,
 				});
@@ -33,7 +40,7 @@ export function createPenModel(): ModelAdapter {
 				yield {
 					type: "error",
 					error: new Error(
-						"Could not reach the AI server. Start it with `pnpm dev:ai`.",
+						"Could not reach /api/chat. Is the playground dev server running?",
 						{ cause: error },
 					),
 				};

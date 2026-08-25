@@ -11,7 +11,7 @@ import {
 	OVERLAY_LAYER_ATTR,
 	type OverlayLayer,
 	type PaintPlan,
-} from "../../../../rendering/dom/src/overlays";
+} from "./overlays";
 import type {
 	GeometryBlockInfo,
 	GeometryCaretCompare,
@@ -33,17 +33,11 @@ import {
 const CONTENT_SELECTOR = "[data-pen-editor-content]";
 const ROOT_SELECTOR = "[data-pen-editor-root]";
 
-type PendingInvalidation = {
-	blockIds: readonly string[];
-	commitId: number;
-};
-
 type GeometryHost = {
 	reader: GeometryReaderHost;
 	scheduler: DomScheduler;
 	overlay: OverlayLayer;
 	pendingCommits: CommitEvent[];
-	pendingInvalidations: PendingInvalidation[];
 	unsubscribers: Unsubscribe[];
 };
 
@@ -135,16 +129,9 @@ function attachHost(editor: Editor): GeometryHost {
 	placeOverlay(overlay, root);
 
 	const pendingCommits: CommitEvent[] = [];
-	const pendingInvalidations: PendingInvalidation[] = [];
 	const unsubscribers: Unsubscribe[] = [
 		editor.on("commit", (event) => {
 			pendingCommits.push(event);
-		}),
-		editor.on("documentCommit", (event) => {
-			pendingInvalidations.push({
-				blockIds: event.affectedBlocks,
-				commitId: event.commitId,
-			});
 		}),
 	];
 
@@ -153,7 +140,6 @@ function attachHost(editor: Editor): GeometryHost {
 		scheduler,
 		overlay,
 		pendingCommits,
-		pendingInvalidations,
 		unsubscribers,
 	};
 }
@@ -182,15 +168,12 @@ export function ensureGeometry(editor: Editor): GeometryHost {
 function drainCommits(current: GeometryHost): void {
 	for (const event of current.pendingCommits) {
 		current.scheduler.acceptCommit(event);
-	}
-	current.pendingCommits.length = 0;
-	for (const invalidation of current.pendingInvalidations) {
 		current.reader.invalidateBlocks(
-			invalidation.blockIds,
-			invalidation.commitId,
+			event.summary.affectedBlockIds,
+			event.commitId,
 		);
 	}
-	current.pendingInvalidations.length = 0;
+	current.pendingCommits.length = 0;
 }
 
 export function geometryGeneration(): number {

@@ -33,7 +33,6 @@ Until that lands, the invariant is a grep script (or a report-only inventory). E
 
 | Rule                     | Spec rule | ESLint owner                       | Current form                                |
 | ------------------------ | --------- | ---------------------------------- | ------------------------------------------- |
-| `no-new-slots`           | SM3       | Wave E.2 (Wave 1 shipped the grep) | grep — `scripts/no-new-slots.mjs`           |
 | `no-unscheduled-measure` | SCH1–SCH3 | Wave 3                             | grep — `scripts/no-unscheduled-measure.mjs` |
 | `no-bidi-override`       | DIR1–DIR3 | Wave 6                             | grep — `scripts/no-bidi-override.mjs`       |
 | `no-pen-deep-imports`    | API4      | Wave P                             | grep — `scripts/no-pen-deep-imports.mjs`    |

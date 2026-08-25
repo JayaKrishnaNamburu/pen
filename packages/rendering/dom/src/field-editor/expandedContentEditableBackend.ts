@@ -1,7 +1,11 @@
 import type { Editor } from "@input/pen-types";
 import { editorSelectionToDOM, domSelectionToEditor } from "./selectionBridge";
-import { handlePaste, handleCopy, handleCut } from "./clipboard";
-import type { PasteImporters } from "../types/paste";
+import {
+	getPasteImporters,
+	handlePaste,
+	handleCopy,
+	handleCut,
+} from "./clipboard";
 import type { FieldEditorInputController } from "./controller";
 import type { FieldEditorTextLike } from "./crdt";
 import {
@@ -325,15 +329,11 @@ export class ExpandedContentEditableBackend {
 				return;
 			}
 			case "insertFromPaste": {
-				const importers =
-					this.editor.internals.getSlot<PasteImporters>(
-						"paste:importers",
-					);
 				handlePaste(
 					event,
 					this.editor,
 					this.fieldEditor,
-					importers ?? undefined,
+					getPasteImporters(this.editor),
 				);
 				return;
 			}

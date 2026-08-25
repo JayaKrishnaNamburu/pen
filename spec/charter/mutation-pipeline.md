@@ -23,7 +23,7 @@ Split and merge are command recipes, not ops. `pen.splitBlock` emits `insert-blo
 - change-summary construction
 - extension dispatch hooks
 - history integration
-- document commit events
+- `commit` events (`CommitEvent`, with `summary.affectedBlockIds`)
 
 ## Design Constraints
 

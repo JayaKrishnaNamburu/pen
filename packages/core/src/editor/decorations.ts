@@ -2,7 +2,6 @@ import type {
   Decoration,
   DecorationSet,
   InlineDecoration,
-  PositionMapping,
 } from "@input/pen-types";
 
 let nextGeneration = 1;
@@ -44,42 +43,6 @@ class DecorationSetImpl implements DecorationSet {
 
   equals(other: DecorationSet): boolean {
     return this.generation === other.generation;
-  }
-
-  map(mapping: PositionMapping): DecorationSet {
-    if (this._released) return EMPTY_SET;
-    if (!mapping.affectedBlocks || mapping.affectedBlocks.length === 0) {
-      return this;
-    }
-
-    const affected = new Set(mapping.affectedBlocks);
-    let changed = false;
-    const mapped: Decoration[] = [];
-
-    for (const dec of this._decorations) {
-      if (dec.type === "inline" && affected.has(dec.blockId)) {
-        const newFrom = mapping.mapOffset(dec.blockId, dec.from);
-        const newTo = mapping.mapOffset(dec.blockId, dec.to);
-
-        if (newFrom >= newTo) {
-          changed = true;
-          continue;
-        }
-
-        if (newFrom !== dec.from || newTo !== dec.to) {
-          changed = true;
-          mapped.push({ ...dec, from: newFrom, to: newTo });
-          continue;
-        }
-      }
-      mapped.push(dec);
-    }
-
-    if (!changed && mapped.length === this._decorations.length) {
-      return this;
-    }
-
-    return DecorationSetImpl.fromMapped(this, mapped, affected);
   }
 
   replaceAffected(
@@ -135,28 +98,6 @@ class DecorationSetImpl implements DecorationSet {
     }
     this._blockIndex.clear();
     this._decorations = [];
-  }
-
-  private static fromMapped(
-    previous: DecorationSetImpl,
-    mapped: Decoration[],
-    affected: Set<string>,
-  ): DecorationSet {
-    if (mapped.length === 0) return EMPTY_SET;
-    const nextIndex = new Map(previous._blockIndex);
-    for (const blockId of affected) {
-      nextIndex.delete(blockId);
-    }
-    for (const dec of mapped) {
-      if (!affected.has(dec.blockId)) continue;
-      let list = nextIndex.get(dec.blockId);
-      if (!list) {
-        list = [];
-        nextIndex.set(dec.blockId, list);
-      }
-      list.push(dec);
-    }
-    return new DecorationSetImpl(mapped, undefined, nextIndex);
   }
 }
 

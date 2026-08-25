@@ -148,7 +148,7 @@ describe("Pen inline atom editing", () => {
 				});
 			},
 			deactivate: vi.fn(),
-			selectAll: vi.fn(() => false),
+			selectAllBehavior: "block-first" as const,
 		};
 		const ytext = {
 			length: 3,

@@ -26,7 +26,6 @@ import { ExpandedContentEditableBackend } from "./expandedContentEditableBackend
 import { FocusController } from "./focusController";
 import { HistorySelectionCoordinator } from "./historySelectionCoordinator";
 import { PendingMarkController } from "./pendingMarkController";
-import { SelectAllController } from "./selectAllController";
 import { FieldEditorSelectionCoordinator } from "./selectionCoordinator";
 import type {
 	FieldEditorSelectionSnapshot,
@@ -51,16 +50,13 @@ import {
 	queryBlockElement,
 	queryInlineElement,
 } from "./selectionBridge";
-import {
-	getEditorBlockSelectionLength,
-	getEditorBlockSelectionRole,
-} from "../utils/blockSelectionSemantics";
-import {
-	getEditorFlowCapability,
-	shouldForceBlockScopedSelectAll,
-} from "../utils/flowCapabilities";
+import { getEditorBlockSelectionRole } from "../utils/blockSelectionSemantics";
+import { getEditorFlowCapability } from "../utils/flowCapabilities";
 import type { FieldEditorStoreSnapshot } from "./store";
-import type { EditorSelectAllBehavior } from "../constants/selectAll";
+import {
+	DEFAULT_SELECT_ALL_BEHAVIOR,
+	type EditorSelectAllBehavior,
+} from "../constants/selectAll";
 import type { FocusSink } from "../a11y/focusSink";
 import { getRootGeometry } from "../geometry/rootGeometry";
 import type { DomScheduler } from "../scheduler";
@@ -98,7 +94,7 @@ export abstract class FieldEditorImplCore {
 	protected readonly _cellEditingController: CellEditingController;
 	protected readonly _historySelectionCoordinator: HistorySelectionCoordinator;
 	protected readonly _pendingMarkController: PendingMarkController;
-	protected readonly _selectAllController: SelectAllController;
+	protected _selectAllBehavior: EditorSelectAllBehavior;
 	protected readonly _selectionCoordinator: FieldEditorSelectionCoordinator;
 	protected _scheduler: DomScheduler | null = null;
 
@@ -108,9 +104,8 @@ export abstract class FieldEditorImplCore {
 			this._editor,
 			this as unknown as FieldEditorInputController,
 		);
-		this._selectAllController = new SelectAllController(
-			options?.selectAllBehavior,
-		);
+		this._selectAllBehavior =
+			options?.selectAllBehavior ?? DEFAULT_SELECT_ALL_BEHAVIOR;
 		this._focusController = new FocusController({
 			editor: this._editor,
 			getRootElement: () => this._findEditorRoot(),
@@ -180,14 +175,6 @@ export abstract class FieldEditorImplCore {
 		this._unsubscribeSelection = this._editor.onSelectionChange(
 			(record) => {
 				const selection = this._editor.selection;
-				this._selectAllController.consumeShouldPreserveCycle(
-					selection,
-					(cycle, nextSelection) =>
-						this._selectionMatchesSelectAllCycle(
-							cycle,
-							nextSelection,
-						),
-				);
 				if (
 					selection?.type !== "text" ||
 					!isCollapsed(selection) ||
@@ -267,8 +254,12 @@ export abstract class FieldEditorImplCore {
 		return this._cellEditingController.activeCellCoord;
 	}
 
+	get selectAllBehavior(): EditorSelectAllBehavior {
+		return this._selectAllBehavior;
+	}
+
 	setSelectAllBehavior(behavior: EditorSelectAllBehavior): void {
-		this._selectAllController.setBehavior(behavior);
+		this._selectAllBehavior = behavior;
 	}
 
 	setFocusPolicy(focusPolicy: PenFocusPolicy | undefined): void {
@@ -310,13 +301,6 @@ export abstract class FieldEditorImplCore {
 			attachImmediately: boolean;
 		},
 	): boolean;
-	protected abstract _resolveActiveCellElement(
-		rootElement?: HTMLElement | null,
-	): HTMLElement | null;
-	protected abstract _resolveSelectAllBlockId(
-		rootElement?: HTMLElement | null,
-	): string | null;
-	protected abstract _selectElementContents(element: HTMLElement): void;
 	protected abstract _syncSelectionToDOM(): void;
 	protected abstract _restoreFocusAfterDeactivate(
 		blockId: string | null,
@@ -335,10 +319,6 @@ export abstract class FieldEditorImplCore {
 	protected abstract _resolveInlineElement(blockId: string): HTMLElement | null;
 	protected abstract _emitStateChange(): void;
 	protected abstract _emitFocusLifecycle(event: PenFocusLifecycleEvent): void;
-	protected abstract _selectionMatchesSelectAllCycle(
-		cycle: { blockId: string; scope: "cell" | "block" | "document" },
-		selection: SelectionState | null,
-	): boolean;
 	protected abstract _recomputeSurfaceFromSelection(options?: {
 		syncSelectionToBackend?: boolean;
 		skipBackendWrite?: boolean;

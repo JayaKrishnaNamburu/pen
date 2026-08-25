@@ -28,19 +28,17 @@ function createStreamEditor(): {
 		},
 		getBlock: () => null,
 		apply,
-		internals: {
-			emit,
-			getSlot(key: string) {
-				if (key === "delta-stream:target") {
-					return {
+		facet: (facet: { name: string }) =>
+			facet.name === "deltaStream.target"
+				? {
 						generationZone: null,
 						beginStreaming: vi.fn(),
 						appendDelta: vi.fn(),
 						endStreaming: vi.fn(),
-					};
-				}
-				return undefined;
-			},
+					}
+				: null,
+		internals: {
+			emit,
 		},
 	} as unknown as Editor;
 

@@ -9,13 +9,17 @@ import type {
 import { MultiplayerControllerImpl } from "./controller";
 import { AuthorLedger } from "./presence/authorLedger";
 import { ClientIdentityMap } from "./presence/identityMap";
+import { LocalPresenceWriter } from "./presence/localPresenceWriter";
 import type {
 	MultiplayerAwarenessState,
 	MultiplayerConfig,
 	MultiplayerUser,
 } from "./types";
 
-const runtimesByOwner = new WeakMap<object, Map<string, MultiplayerScopeRuntime>>();
+const runtimesByOwner = new WeakMap<
+	object,
+	Map<string, MultiplayerScopeRuntime>
+>();
 
 export interface MultiplayerScopeRuntimeHandle {
 	readonly controller: MultiplayerControllerImpl;
@@ -87,9 +91,13 @@ class MultiplayerScopeRuntime {
 	private readonly editors = new Set<Editor>();
 	private readonly selectionUnsubscribers = new Map<Editor, Unsubscribe>();
 	private readonly commitUnsubscribers = new Map<Editor, Unsubscribe>();
+	private readonly presenceWriter: LocalPresenceWriter;
 	private readonly session: MultiplayerSession | null;
 	private readonly unsubscribeSessionState: Unsubscribe | null;
 	private readonly user: MultiplayerUser;
+
+	/** The editor whose selection local presence currently describes. */
+	private presenceTarget: Editor | null;
 
 	constructor(options: MultiplayerScopeRuntimeOptions) {
 		const { editor, config, user, buildLocalAwarenessState } = options;
@@ -101,6 +109,12 @@ class MultiplayerScopeRuntime {
 		this.awareness = awareness;
 		this.user = user;
 		this.buildLocalAwarenessState = buildLocalAwarenessState;
+		this.presenceTarget = editor;
+		this.presenceWriter = new LocalPresenceWriter({
+			publish: () => {
+				this.writeLocalPresence();
+			},
+		});
 		this.controller = new MultiplayerControllerImpl({
 			editor,
 			config: {
@@ -112,11 +126,12 @@ class MultiplayerScopeRuntime {
 				resolvePeerIdentity: config.resolvePeerIdentity,
 			}),
 		});
-		this.awareness.setLocalState(
-			this.buildLocalAwarenessState(editor, user, editor.selection),
-		);
+		this.writeLocalPresence();
 		this.controller.handleAwarenessChange(
-			this.awareness.getStates() as Map<number, MultiplayerAwarenessState>,
+			this.awareness.getStates() as Map<
+				number,
+				MultiplayerAwarenessState
+			>,
 		);
 
 		this.awareness.on("change", this.handleAwarenessChange);
@@ -154,14 +169,9 @@ class MultiplayerScopeRuntime {
 		this.editors.add(editor);
 		this.selectionUnsubscribers.set(
 			editor,
-			editor.onSelectionChange((record) => {
-				this.awareness.setLocalState(
-					this.buildLocalAwarenessState(
-						editor,
-						this.user,
-						record.state,
-					),
-				);
+			editor.onSelectionChange(() => {
+				this.presenceTarget = editor;
+				this.presenceWriter.request();
 			}),
 		);
 		this.commitUnsubscribers.set(
@@ -170,13 +180,8 @@ class MultiplayerScopeRuntime {
 				if (event.summary.structural.length === 0) {
 					return;
 				}
-				this.awareness.setLocalState(
-					this.buildLocalAwarenessState(
-						editor,
-						this.user,
-						editor.selection,
-					),
-				);
+				this.presenceTarget = editor;
+				this.presenceWriter.request();
 			}),
 		);
 		editor.requestDecorationUpdate();
@@ -188,21 +193,18 @@ class MultiplayerScopeRuntime {
 		this.commitUnsubscribers.get(editor)?.();
 		this.commitUnsubscribers.delete(editor);
 		this.editors.delete(editor);
+		this.presenceWriter.cancel();
 
 		const remainingEditor = this.editors.values().next().value as
 			| Editor
 			| undefined;
 		if (!remainingEditor) {
+			this.presenceTarget = null;
 			this.awareness.setLocalState(null);
 			return;
 		}
-		this.awareness.setLocalState(
-			this.buildLocalAwarenessState(
-				remainingEditor,
-				this.user,
-				remainingEditor.selection,
-			),
-		);
+		this.presenceTarget = remainingEditor;
+		this.writeLocalPresence();
 	}
 
 	isIdle(): boolean {
@@ -210,6 +212,8 @@ class MultiplayerScopeRuntime {
 	}
 
 	destroy(): void {
+		this.presenceWriter.cancel();
+		this.presenceTarget = null;
 		this.awareness.setLocalState(null);
 		for (const unsubscribe of this.selectionUnsubscribers.values()) {
 			unsubscribe();
@@ -226,9 +230,22 @@ class MultiplayerScopeRuntime {
 		this.controller.destroy();
 	}
 
+	private writeLocalPresence(): void {
+		const target = this.presenceTarget;
+		if (!target) {
+			return;
+		}
+		this.awareness.setLocalState(
+			this.buildLocalAwarenessState(target, this.user, target.selection),
+		);
+	}
+
 	private readonly handleAwarenessChange = (): void => {
 		this.controller.handleAwarenessChange(
-			this.awareness.getStates() as Map<number, MultiplayerAwarenessState>,
+			this.awareness.getStates() as Map<
+				number,
+				MultiplayerAwarenessState
+			>,
 		);
 		for (const editor of this.editors) {
 			editor.requestDecorationUpdate();
@@ -239,4 +256,3 @@ class MultiplayerScopeRuntime {
 function resolveScopeOwner(editor: Editor): object {
 	return editor.internals.documentSession ?? editor;
 }
-

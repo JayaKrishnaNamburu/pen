@@ -60,7 +60,7 @@ See the root README for the full package overview and licensing details.
 
 ## Options
 
-`PenEditor` takes a required `editor` prop. This package has no create-function options. The optional peer `@input/pen-interop` is not required to mount the editor.
+`PenEditor` takes a required `editor` prop. This package has no create-function options. The optional peer `@input/pen-interop` is not required to mount the editor. HTML paste is a `defaultPreset()` battery (`html-clipboard`); a bare `createEditor()` host must pass `importers.html` to get it.
 
 `readonly` defaults to `false`. The prop declines typing and pointer activation, sets `data-readonly` (match with `[data-readonly]`, not `[data-readonly="true"]`), and sets `aria-readonly="true"`. It does not stop `editor.apply`. `pen.ariaReadOnly` the facet only sets `aria-readonly`.
 

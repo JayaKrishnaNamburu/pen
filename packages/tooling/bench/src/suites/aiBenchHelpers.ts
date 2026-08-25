@@ -19,6 +19,7 @@ import type { ToolRuntime } from "@input/pen-types";
 import {
 	buildDocumentWriteOps,
 	documentOpsExtension,
+	getDocumentToolRuntime,
 } from "@input/pen-document-ops";
 
 export const AI_BENCH_BLOCK_COUNT = 200;
@@ -44,7 +45,7 @@ export function createAIBenchEditor() {
 }
 
 export function getToolRuntime(editor: ReturnType<typeof createTestEditor>): ToolRuntime {
-	const toolRuntime = editor.internals.getSlot<ToolRuntime>("document-ops:toolRuntime");
+	const toolRuntime = getDocumentToolRuntime(editor);
 	if (!toolRuntime) {
 		throw new Error("AI bench editor is missing the document-ops tool runtime.");
 	}

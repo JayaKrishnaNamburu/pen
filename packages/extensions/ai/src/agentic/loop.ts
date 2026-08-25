@@ -1,3 +1,4 @@
+import { streamingTargetFacet } from "@input/pen-core";
 import type {
 	ModelAdapter,
 	StreamingTarget
@@ -83,7 +84,7 @@ export async function runAgenticLoop(
 		editor.undoManager.syncExplicitUndoGroup(turn.groupId);
 	}
 	const streamingTarget =
-		editor.internals.getSlot<StreamingTarget>("delta-stream:target") ?? null;
+		(editor.facet(streamingTargetFacet) as StreamingTarget | null) ?? null;
 	const toolContext = buildToolContext(
 		editor,
 		zoneId,

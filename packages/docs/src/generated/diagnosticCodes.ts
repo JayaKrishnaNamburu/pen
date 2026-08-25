@@ -78,7 +78,7 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 	{
 		code: "caret-geometry-unavailable",
 		levels: ["info"],
-		sources: ["core/src/commands/caret.ts"],
+		sources: ["core/src/commands/caretVerticalMotion.ts"],
 	},
 	{
 		code: "clipboard-invalid-payload",
@@ -111,14 +111,14 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 		sources: ["rendering/dom/src/field-editor/contenteditableBackendEvents.ts"],
 	},
 	{
+		code: "editor-root-editor-replaced",
+		levels: ["error"],
+		sources: ["rendering/react/src/primitives/editor/root.tsx"],
+	},
+	{
 		code: "empty-block-sentinels-stripped",
 		levels: ["info"],
 		sources: ["core/src/migrations/stripEmptyBlockSentinels.ts"],
-	},
-	{
-		code: "event-deprecated",
-		levels: ["warn"],
-		sources: ["core/src/editor/commitEvent.ts"],
 	},
 	{
 		code: "GENERATION_COMPLETE",
@@ -143,7 +143,7 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 	{
 		code: "invalid-block-type",
 		levels: ["warn"],
-		sources: ["core/src/commands/text.ts"],
+		sources: ["core/src/commands/textConvert.ts"],
 	},
 	{
 		code: "invalid-tool-payload",
@@ -213,7 +213,7 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 	{
 		code: "PEN_CLIPBOARD_002",
 		levels: ["warn"],
-		sources: ["rendering/dom/src/utils/clipboardSerialization.ts", "rendering/dom/src/utils/tableCellClipboard.ts", "rendering/react/src/utils/clipboardSerialization.ts"],
+		sources: ["rendering/dom/src/utils/clipboardSerialization.ts", "rendering/dom/src/utils/tableCellClipboard.ts"],
 	},
 	{
 		code: "PEN_EVENT_001",
@@ -314,11 +314,6 @@ export const DIAGNOSTIC_CODE_ROWS: readonly DiagnosticCodeRow[] = [
 		code: "selection-target-unmounted",
 		levels: ["warn"],
 		sources: ["rendering/dom/src/field-editor/selectionProjectionController.ts"],
-	},
-	{
-		code: "slot-deprecated",
-		levels: ["warn"],
-		sources: ["core/src/editor/editorApiHelpers.ts"],
 	},
 	{
 		code: "stream-aborted",

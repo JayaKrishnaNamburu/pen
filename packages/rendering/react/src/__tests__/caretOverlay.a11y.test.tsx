@@ -4,10 +4,9 @@ import React, { act } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createRoot } from "react-dom/client";
 import { createReducedMotionSignal } from "@input/pen-dom";
-import { createEditor } from "@input/pen-core";
+import { createEditor, fieldEditorHostFacet } from "@input/pen-core";
 import { multiplayerExtension } from "@input/pen-multiplayer";
 import { defaultPreset } from "@input/pen-preset-default";
-import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
 import { Pen } from "../primitives/index";
 import { defaultSchema } from "@input/pen-schema-default";
 
@@ -153,13 +152,13 @@ function stubMatchMedia(matches: boolean): void {
 }
 
 function getFieldEditor(editor: ReturnType<typeof createEditor>) {
-	const fieldEditor = editor.internals.getSlot<{
+	const fieldEditor = editor.facet(fieldEditorHostFacet) as {
 		activateTextSelection(
 			blockId: string,
 			anchorOffset: number,
 			focusOffset: number,
 		): void;
-	}>(FIELD_EDITOR_SLOT_KEY);
+	} | null;
 	if (!fieldEditor) {
 		throw new Error("Missing attached field editor");
 	}

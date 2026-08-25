@@ -345,9 +345,7 @@ Published packages declare the Node floor as `engines.node: ">=22"`. CI verifies
 
 - `packages/docs`: repository docs app for the current public Pen surface
 - `.github/workflows/docs.yml`: GitHub Pages deployment for the docs app (Pages is enabled on this repository)
-- `playground`: the small reference app — editor, AI assistant, document inspector — meant to be read
-- `internal/kitchen-sink`: maintainer sandbox that exercises every surface, including collaboration; the end-to-end suite runs against it
-- `internal/kitchen-sink/src/utils/playgroundCollaboration.ts`: concrete `y-websocket` wiring
+- `playground`: the reference app — editor, AI agent, document inspector, optional collaboration — and the host for `pnpm test:e2e`
 
 ## Development
 

@@ -31,10 +31,6 @@ function createEditor(options: Parameters<typeof createCoreEditor>[0] = {}) {
 	});
 }
 
-function visibleText(text: string): string {
-	return text.replace(/\u200B/g, "");
-}
-
 type TestYDocLike = {
 	on(
 		event: "afterTransaction",
@@ -108,7 +104,7 @@ describe("@input/pen-core origin shape contract", () => {
 				txnOrigins[0] !== null &&
 				(txnOrigins[0] as { type?: unknown }).type,
 		).toBe("user");
-		expect(visibleText(editor.getBlock(blockId)!.textContent())).toBe(
+		expect(editor.getBlock(blockId)!.textContent()).toBe(
 			"typed",
 		);
 
@@ -127,7 +123,7 @@ describe("@input/pen-core origin shape contract", () => {
 		expect(commits[0]!.origin).toBe(origin);
 		expect(txnOrigins[0]).toBe(origin);
 		expect(commits[0]!.origin.type).toBe("user");
-		expect(visibleText(editor.getBlock(blockId)!.textContent())).toBe(
+		expect(editor.getBlock(blockId)!.textContent()).toBe(
 			"typed",
 		);
 
@@ -210,7 +206,7 @@ describe("@input/pen-core origin shape contract", () => {
 		expect(commits[0]!.source).not.toBe("remote");
 		expect(txnOrigins.length).toBeGreaterThan(0);
 		expect(originTypeOf(txnOrigins[0])).not.toBe("user");
-		expect(visibleText(editor.getBlock(blockId)!.textContent())).toBe(
+		expect(editor.getBlock(blockId)!.textContent()).toBe(
 			"typed",
 		);
 
@@ -256,7 +252,7 @@ describe("@input/pen-core origin shape contract", () => {
 		const report = runMigrations(editor, [migration]);
 
 		expect(report.applied).toEqual(["upgrade"]);
-		expect(visibleText(editor.firstBlock()!.textContent())).toBe(
+		expect(editor.firstBlock()!.textContent()).toBe(
 			"upgraded",
 		);
 		expect(commits.length).toBeGreaterThan(0);
@@ -301,7 +297,7 @@ describe("@input/pen-core origin shape contract", () => {
 			origin,
 		);
 
-		expect(visibleText(editor.getBlock(blockId)!.textContent())).toBe(
+		expect(editor.getBlock(blockId)!.textContent()).toBe(
 			"typed",
 		);
 		expect(commits.length).toBeGreaterThan(0);
@@ -339,7 +335,7 @@ describe("@input/pen-core origin shape contract", () => {
 			origin,
 		);
 
-		expect(visibleText(editor.getBlock(blockId)!.textContent())).toBe(
+		expect(editor.getBlock(blockId)!.textContent()).toBe(
 			"remote",
 		);
 		const event = commits.at(-1)!;
@@ -375,7 +371,7 @@ describe("@input/pen-core origin shape contract", () => {
 			expect(event.origin.type).not.toBe("user");
 			expect(event.source).toBe("stream");
 		}
-		expect(visibleText(editor.getBlock(blockId)!.textContent())).toBe(
+		expect(editor.getBlock(blockId)!.textContent()).toBe(
 			"streamed",
 		);
 

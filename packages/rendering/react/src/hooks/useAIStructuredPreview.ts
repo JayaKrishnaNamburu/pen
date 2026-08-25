@@ -1,10 +1,11 @@
+import { aiControllerFacet } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
 import type {
+	AIController,
 	AIStreamEvent,
 	GenerationState,
 	GenerationStructuredPreviewState,
 } from "@input/pen-ai";
-import { getAIController } from "@input/pen-ai";
 import {
 	areAIStructuredPreviewSelectionsEqual,
 	buildAIStructuredPreviewContentItems,
@@ -27,7 +28,8 @@ export function useAIStructuredPreview(
 	editor: Editor,
 	generation: GenerationState | null,
 ): AIStructuredPreviewSelection {
-	const controller = getAIController(editor);
+	const controller =
+		(editor.facet(aiControllerFacet) as AIController | null) ?? null;
 	const generationId = generation?.id ?? null;
 	const fallbackPreview = generation?.structuredPreview ?? null;
 

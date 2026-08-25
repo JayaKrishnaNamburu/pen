@@ -50,13 +50,13 @@ describe("AIB4 autocomplete accept undo", () => {
 					name: "test-field-editor-slot",
 					activateClient: async ({ editor: nextEditor }) => {
 						activeEditor = nextEditor;
-						nextEditor.internals.setSlot(
+						nextEditor.internals.assignSlot(
 							FIELD_EDITOR_SLOT_KEY,
 							fieldEditor,
 						);
 					},
 					deactivateClient: async () => {
-						activeEditor?.internals.setSlot(FIELD_EDITOR_SLOT_KEY, null);
+						activeEditor?.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, null);
 						activeEditor = null;
 					},
 				}),

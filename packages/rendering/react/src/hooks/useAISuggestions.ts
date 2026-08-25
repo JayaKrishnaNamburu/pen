@@ -1,9 +1,10 @@
 import { useCallback, useRef, useSyncExternalStore } from "react";
+import { aiSuggestionsControllerFacet } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
-import {
-	getAISuggestionsController,
-	type AISuggestion,
-	type AISuggestionsState,
+import type {
+	AISuggestion,
+	AISuggestionsController,
+	AISuggestionsState,
 } from "@input/pen-ai/suggestions";
 
 const EMPTY_STATE: AISuggestionsState = {
@@ -30,7 +31,9 @@ const EMPTY_STATE: AISuggestionsState = {
 };
 
 export function useAISuggestions(editor: Editor) {
-	const controller = getAISuggestionsController(editor);
+	const controller =
+		(editor.facet(aiSuggestionsControllerFacet) as AISuggestionsController | null) ??
+		null;
 	const snapshotRef = useRef<AISuggestionsState>(EMPTY_STATE);
 
 	const subscribe = useCallback(

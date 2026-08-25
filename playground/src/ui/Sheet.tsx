@@ -1,25 +1,39 @@
 import { useEffect, type ReactNode } from "react";
-import { IconButton } from "./IconButton";
-import { IconClose } from "./Icon";
+import { Button } from "./Button";
+import { Icon } from "./Icon";
+import { ScrollArea } from "./ScrollArea";
 
 interface SheetProps {
 	title: string;
-	isOpen: boolean;
+	open: boolean;
 	onClose: () => void;
 	children: ReactNode;
+	/** Sits in the header bar, left of the close button. */
+	headerActions?: ReactNode;
 }
 
 /**
- * A panel that slides in from the right edge.
+ * A panel that slides in over the right edge, ported from Input's `Sheet`.
  *
- * It deliberately has no backdrop and does not trap focus — you keep editing
- * while it is open, which is the whole point of watching document state, so it
- * is a complementary region rather than a dialog. `inert` keeps it out of the
- * tab order while closed.
+ * Input's is a stack: sheets push each other back with a scale and an offset,
+ * the width is draggable, and framer-motion animates the entrance. This one
+ * holds a single panel at a fixed width, so a CSS transition covers it. The
+ * surface is Input's — `--popover-background`, `--popover-shadow`, and the
+ * widest radius in the scale.
+ *
+ * It has no backdrop and does not trap focus: you keep editing while it is open,
+ * which is the point of watching document state, so it is a complementary region
+ * rather than a dialog. `inert` keeps it out of the tab order while closed.
  */
-export function Sheet({ title, isOpen, onClose, children }: SheetProps) {
+export function Sheet({
+	title,
+	open,
+	onClose,
+	children,
+	headerActions,
+}: SheetProps) {
 	useEffect(() => {
-		if (!isOpen) {
+		if (!open) {
 			return;
 		}
 
@@ -31,22 +45,29 @@ export function Sheet({ title, isOpen, onClose, children }: SheetProps) {
 
 		document.addEventListener("keydown", closeOnEscape);
 		return () => document.removeEventListener("keydown", closeOnEscape);
-	}, [isOpen, onClose]);
+	}, [open, onClose]);
 
 	return (
 		<aside
 			className="sheet"
 			aria-label={title}
-			data-open={isOpen || undefined}
-			inert={!isOpen}
+			data-open={open || undefined}
+			inert={!open}
 		>
-			<div className="sheet-header">
-				<h2 className="sheet-title">{title}</h2>
-				<IconButton label="Close panel" onClick={onClose}>
-					<IconClose />
-				</IconButton>
+			<div className="sheet-bar">
+				<h4>{title}</h4>
+				<div className="sheet-actions">
+					{headerActions}
+					<Button.Tooltip content="Close" shortcut="Escape">
+						<Button.Icon label="Close panel" onClick={onClose}>
+							<Icon.Close />
+						</Button.Icon>
+					</Button.Tooltip>
+				</div>
 			</div>
-			<div className="sheet-body">{children}</div>
+			<div className="sheet-body">
+				<ScrollArea>{children}</ScrollArea>
+			</div>
 		</aside>
 	);
 }

@@ -73,7 +73,7 @@ Important rules:
 - Vanilla hosts should call `mountEditor()`. Framework renderers assemble the same pieces themselves.
 - Renderer packages should depend on this package instead of each reimplementing selection bridging or reconciliation
 - The `./field-editor` subpath is the main surface for renderer authors who need lower-level control
-- React and Vue roots both install `FieldEditorImpl`, register the shared field-editor slots, wire paste importers/assets, and delegate document-level keyboard handling back to this package. Vue also uses `handleFieldEditorPointerActivate()` on the editor root.
+- React and Vue roots both install `FieldEditorImpl`, `assignSlot` the field editor and paste assets, and delegate document-level keyboard handling back to this package. Vue also uses `handleFieldEditorPointerActivate()` on the editor root. Default HTML paste is not owned here: `defaultPreset()` installs `html-clipboard`; Vue still defaults `htmlImporter` when the host omits importers.
 - This package should stay small in conceptual scope even if its internals are complex, because it is a boundary package rather than a product surface
 
 ## Current Maturity / Intended Usage

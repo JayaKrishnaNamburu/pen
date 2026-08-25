@@ -1,19 +1,18 @@
-import { createEditor } from "@input/pen-core";
+import { createEditor, undoMetadataControllerFacet } from "@input/pen-core";
 import { defaultSchema } from "@input/pen-schema-default";
 import {
 	type MutationGroupMetadata,
 	type UndoHistoryMetadataController,
 	MUTATION_GROUP_METADATA_KEY,
-	UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY,
 } from "@input/pen-types";
 import { describe, expect, it, vi } from "vitest";
 
 import { undoExtension } from "../undoExtension";
 
 function getHistoryMetadataController(editor: ReturnType<typeof createEditor>) {
-	return editor.internals.getSlot<UndoHistoryMetadataController>(
-		UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY,
-	);
+	return editor.facet(undoMetadataControllerFacet) as
+		| UndoHistoryMetadataController
+		| null;
 }
 
 describe("@input/pen-undo history metadata", () => {

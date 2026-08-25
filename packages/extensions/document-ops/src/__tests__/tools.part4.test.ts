@@ -22,6 +22,7 @@ function createFakeEditor(documentProfile: Editor["documentProfile"]): Editor {
 		documentProfile,
 		schema: defaultSchema,
 		apply: vi.fn<(ops: DocumentOp[], options?: ApplyOptions) => void>(),
+		facet: () => null,
 		internals: {
 			emit: vi.fn(),
 		},
@@ -112,6 +113,7 @@ function createReadDocumentEditor(): Editor {
 	return {
 		documentProfile: "structured",
 		schema: defaultSchema,
+		facet: () => null,
 		blockCount: () => 3,
 		blocks: () => blocks,
 		getBlock: (blockId: string) => blocks.find((block) => block.id === blockId) ?? null,
@@ -185,6 +187,7 @@ function createStructuredTargetEditor(
 	return {
 		documentProfile,
 		schema: defaultSchema,
+		facet: () => null,
 		apply: vi.fn<(ops: DocumentOp[], options?: ApplyOptions) => void>(),
 		blocks: () => blocks,
 		getBlock: (blockId: string) => blocks.find((block) => block.id === blockId) ?? null,
@@ -231,6 +234,7 @@ function createNestedDocumentEditor(): Editor {
 	return {
 		documentProfile: "structured",
 		schema: defaultSchema,
+		facet: () => null,
 		blocks: () => topLevelBlocks,
 		documentState: {
 			allBlocks: () => nestedBlocks,

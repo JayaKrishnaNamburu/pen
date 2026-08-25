@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { createEditor, getNumberedListItemValue } from "@input/pen-core";
-import {
-	FIELD_EDITOR_SLOT_KEY as CORE_FIELD_EDITOR_SLOT_KEY,
-	INPUT_RULES_ENGINE_SLOT_KEY,
-} from "@input/pen-types";
 import { defaultPreset } from "@input/pen-preset-default";
 import {
 	applyDeleteBehavior,
@@ -20,7 +16,6 @@ import {
 	toggleInlineMark,
 } from "@input/pen-dom/field-editor/commands";
 import { FieldEditorImpl } from "@input/pen-dom/field-editor/fieldEditorImpl";
-import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
 import type { FieldEditorTextLike } from "@input/pen-dom/field-editor/crdt";
 
 type BlocksMapLike = {

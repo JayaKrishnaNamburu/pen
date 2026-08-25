@@ -22,7 +22,7 @@ Add optional runtime behavior on top of the editor core without changing the can
 
 ## Data Flow / Runtime Model
 
-`richTextShortcutsExtension()` publishes bindings on `keymapFacet` (`pen.keymap`). `extension.keyBindings` is undefined. Bare `createEditor()` does not include these shortcuts; `defaultPreset()` does.
+`richTextShortcutsExtension()` publishes bindings on `keymapFacet` (`pen.keymap`). Bare `createEditor()` does not include these shortcuts; `defaultPreset()` does.
 
 ## Integration Notes
 

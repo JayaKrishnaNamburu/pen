@@ -1,7 +1,10 @@
-import { createDocumentSession, createEditor } from "@input/pen-core";
+import {
+	createDocumentSession,
+	createEditor,
+	historyControllerFacet,
+} from "@input/pen-core";
 import { yjsAdapter } from "@input/pen-crdt-yjs";
 import {
-	HISTORY_CONTROLLER_SLOT,
 	type PenPersistence,
 	type VersionEntry,
 	type VersionMetadata,
@@ -23,7 +26,7 @@ describe("historyExtension", () => {
 			],
 		});
 
-		expect(editor.internals.getSlot(HISTORY_CONTROLLER_SLOT)).toBeTruthy();
+		expect(editor.facet(historyControllerFacet)).toBeTruthy();
 		expect(getHistoryController(editor)).toBeTruthy();
 	});
 
@@ -171,8 +174,8 @@ describe("historyExtension", () => {
 			],
 		});
 
-		expect(editorA.internals.getSlot(HISTORY_CONTROLLER_SLOT)).toBe(
-			editorB.internals.getSlot(HISTORY_CONTROLLER_SLOT),
+		expect(editorA.facet(historyControllerFacet)).toBe(
+			editorB.facet(historyControllerFacet),
 		);
 		expect(getHistoryController(editorA)).toBe(
 			getHistoryController(editorB),

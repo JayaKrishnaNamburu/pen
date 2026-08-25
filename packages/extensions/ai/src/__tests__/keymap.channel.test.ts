@@ -1,4 +1,5 @@
 import {
+	collectEditorKeyBindings,
 	createEditor,
 	defineExtension,
 	keyBindingPriorityToPrecedence,
@@ -7,8 +8,7 @@ import {
 import { deltaStreamExtension } from "../stream";
 import { documentOpsExtension } from "@input/pen-document-ops";
 import { defaultSchema } from "@input/pen-schema-default";
-import { COLLECT_KEY_BINDINGS_SLOT_KEY } from "@input/pen-types";
-import type { Editor, KeyBinding, SchemaRegistry } from "@input/pen-types";
+import type { Editor, KeyBinding } from "@input/pen-types";
 import { undoExtension } from "@input/pen-undo";
 import { describe, expect, it } from "vitest";
 import { aiExtension } from "../index";
@@ -32,10 +32,7 @@ const AI_INLINE_SHORTCUTS = [
 ] as const;
 
 function collectBindings(editor: Editor): readonly KeyBinding[] {
-	const collect = editor.internals.getSlot<
-		(registry: SchemaRegistry) => readonly KeyBinding[]
-	>(COLLECT_KEY_BINDINGS_SLOT_KEY);
-	return collect?.(editor.schema) ?? [];
+	return collectEditorKeyBindings(editor);
 }
 
 function createAIEditor(extra: ReturnType<typeof defineExtension>[] = []) {
@@ -68,7 +65,7 @@ describe("ai keymap channel", () => {
 		const { editor, extension } = createAIEditor();
 		const lifted = aiShortcutBindings(editor.facet(keymapFacet));
 
-		expect(extension.keyBindings).toBeUndefined();
+		expect("keyBindings" in extension).toBe(false);
 		expect(lifted).toHaveLength(3);
 		expect(
 			lifted.map((binding) => ({

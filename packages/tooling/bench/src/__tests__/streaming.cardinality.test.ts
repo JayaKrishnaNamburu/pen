@@ -1,3 +1,4 @@
+import { streamingTargetFacet } from "@input/pen-core";
 import type { DocumentOp, StreamingTarget } from "@input/pen-types";
 import { deltaStreamExtension } from "@input/pen-ai/stream";
 import { createTestEditor } from "@input/pen-test";
@@ -32,9 +33,9 @@ async function createCountingEditor() {
 		originalApply(ops, applyOptions);
 	}) as typeof editor.apply;
 
-	const streaming = editor.internals.getSlot<StreamingTarget>(
-		"delta-stream:target",
-	);
+	const streaming = editor.facet(streamingTargetFacet) as
+		| StreamingTarget
+		| null;
 	if (!streaming) {
 		throw new Error(
 			"Streaming bench editor is missing the delta-stream target.",

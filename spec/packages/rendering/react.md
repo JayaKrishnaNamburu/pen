@@ -21,8 +21,8 @@ This package is where most adopters start when embedding Pen in a React applicat
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@input/pen-ai`, `@input/pen-core`, `@input/pen-dom`, `@input/pen-history`, `@input/pen-interop`, `@input/pen-multiplayer`, `@input/pen-schema-default`, `@input/pen-search`, `@input/pen-shortcuts`, `@input/pen-types`
-- Peer dependencies: `@input/pen-interop` (optional), `react`, `react-dom`
+- Runtime dependencies: `@input/pen-core`, `@input/pen-dom`, `@input/pen-schema-default`, `@input/pen-shortcuts`, `@input/pen-types`
+- Peer dependencies: `@input/pen-ai`, `@input/pen-history`, `@input/pen-interop`, `@input/pen-multiplayer`, `@input/pen-search` (all optional), plus `react` and `react-dom`
 - Boundary: `@input/pen-react` binds the headless runtime to React without taking ownership of document truth.
 
 ## Runtime Model
@@ -50,7 +50,8 @@ Important responsibilities:
 
 - Mount editor roots and block rendering surfaces
 - Subscribe React state to editor state through hooks and contexts
-- Install the shared field-editor session, paste importer slots, and captured document-keyboard handlers for the active editor root
+- Install the shared field-editor session and captured document-keyboard handlers for the active editor root. Host `importers` / assets, when passed, are written with `internals.assignSlot("paste:importers" | "paste:assetProvider", …)`. This package does not install a default HTML importer; `defaultPreset()`'s `html-clipboard` extension does.
+- Feature hooks (`useAI`, `useAISuggestions`, `useSearch`, `useHistory`, `useMultiplayer`, and siblings) read controllers from core facets (`aiControllerFacet`, `aiSuggestionsControllerFacet`, `searchControllerFacet`, `historyControllerFacet`, `multiplayerControllerFacet`). When the matching optional peer / extension is absent, the hook returns empty state.
 - Pointer activation walks to the block element (`data-pen-editor-block`), not the inline span. React keeps its own gesture path in `useEditorContentGestures` rather than calling `handleFieldEditorPointerActivate()`; the hit target is still the block. Clicks in the empty space above the first block or below the last block are handled by `handleClickOutsideBlocks` (focus an empty adjacent text block, or insert a paragraph). Vanilla and Vue share a different fallback in `handleFieldEditorPointerActivate` that places the caret at the last text block's end instead of inserting.
 - Idle `InlineContent` and `TableCellContent` pass `{ editor }` into `fullReconcileDeltasToDOM` so `pen.urlPolicy` cannot be skipped by omitting a policy. `ImageRenderer` resolves `src` with `resolveEditorUrl(editor, src, "image")`. Denied URLs omit the attribute and set `data-pen-blocked-url`.
 - `useEditor()` with no argument calls `createEditor({ schema: defaultSchema })`. It injects the default schema and still installs no preset — no undo, no shortcuts, no document-ops, no stream extension. Pass `preset: defaultPreset()` or an explicit `extensions` list when the host wants those.
@@ -67,7 +68,7 @@ Important responsibilities:
 - The `Pen` namespace exists for lower-level composition when hosts need toolbar, slash-menu, AI, search, or multiplayer surfaces
 - Optional subpath entrypoints let hosts import AI, AI suggestions, history, multiplayer, and search surfaces without pulling from the root barrel directly.
 - `Pen.Editor.CaretOverlay` renders an optional local caret for collapsed active text selections, exposes `CARET` variants, and hides the native caret while the overlay is visible.
-- HTML ingest comes from `@input/pen-interop`. Markdown ingest stays an optional peer on the same package because not every React integration needs it. The renderer still exports `./ai-suggestions` as a UI subpath; the headless suggestion runtime is `@input/pen-ai/suggestions`.
+- Markdown ingest stays an optional peer on `@input/pen-interop` because not every React integration needs it. HTML paste ingest is not a React default; it comes from `defaultPreset()`'s `html-clipboard` extension (or a host `importers` prop). The renderer still exports `./ai-suggestions` as a UI subpath; the headless suggestion runtime is `@input/pen-ai/suggestions`.
 
 ## Current Maturity / Intended Usage
 

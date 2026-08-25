@@ -1,7 +1,6 @@
 import type {
 	Anchor,
 	BlockHandle,
-	BlockSelection,
 	CellSelection,
 	ChangeSummary,
 	CRDTDocument,
@@ -9,95 +8,45 @@ import type {
 	DiagnosticEvent,
 	Editor,
 	PenDocument,
-	Point,
 	SchemaRegistry,
-	Assoc,
 	SelectionOrigin,
 	SelectionRecord,
-	SelectionRecordState,
 	SelectionState,
-	TextSelection,
 } from "@input/pen-types";
 import { usesInlineTextSelection } from "../schema/fieldEditorCapabilities";
 import { createBlockHandle } from "../schema/handles";
 import {
 	getSelectionBlockRange,
 	selectionToRange,
-	stampTextSelection,
 } from "../selection/helpers";
 import { deriveContentMoves, repairAnchor } from "./anchorRepair";
 import type { EditorAnchorsImpl } from "./anchors";
 import { resolveCellSelectionMatrix } from "./cellSelection";
 import { EventEmitter } from "./events";
+import {
+	mapSelectionState,
+	mintTextAnchors,
+	resolveHeldText,
+} from "./selectionCommit";
+import {
+	clampNonTextPseudoOffset,
+	clampOffsetToLength,
+	selectionEquals,
+	toRecordState,
+	validateSelection,
+} from "./selectionValidation";
+
+export {
+	clampNonTextPseudoOffset,
+	coverMixedBoundaryStructuralOffsets,
+	selectionEquals,
+	toRecordState,
+} from "./selectionValidation";
 
 type CRDTBlockMap = CRDTMap<CRDTMap<unknown>>;
 
 const INVALID_BLOCK_CODE = "selection-invalid-block";
 const RESERVED_ORIGIN_CODE = "selection-reserved-origin";
-
-/**
- * Mixed-boundary N2: a text endpoint on a non-text block is still
- * admitted (clamped to 0..1) when the other endpoint sits on a different
- * block. The document-order structural end is expanded to a full 0..1
- * cover so `deleteSelection` removes the divider and keeps the paragraph
- * prefix. A pointer drag that maps the divider to offset 0 must not stay
- * uncovering — that left the divider in place after Backspace.
- * Retargeting the range onto `selectBlock` would delete the entire
- * paragraph — an owner decision, not this clamp.
- *
- * Same-block fully-selected (0..1) divider/table writes are converted
- * to `BlockSelection` in `_validateText`. A collapsed caret on a table
- * stays a text point — autocomplete and similar callers still probe it.
- * `nextNormalPosition` already forbids these positions (N2).
- */
-export function clampNonTextPseudoOffset(offset: number): number {
-	if (!Number.isFinite(offset)) {
-		return 0;
-	}
-	return Math.max(0, Math.min(offset, 1));
-}
-
-/**
- * Expand a mixed text/structural range so the structural end is a full
- * 0..1 cover. Forward `p1@2 → d1@0` becomes `d1@1`; a reversed
- * structural start stays at 0.
- */
-export function coverMixedBoundaryStructuralOffsets(
-	selection: { anchor: Point; focus: Point },
-	input: {
-		isNonText: (blockId: string) => boolean;
-		blockIndex: (blockId: string) => number;
-	},
-): { anchor: Point; focus: Point } {
-	if (selection.anchor.blockId === selection.focus.blockId) {
-		return selection;
-	}
-	const anchorNonText = input.isNonText(selection.anchor.blockId);
-	const focusNonText = input.isNonText(selection.focus.blockId);
-	if (anchorNonText === focusNonText) {
-		return selection;
-	}
-	const anchorIdx = input.blockIndex(selection.anchor.blockId);
-	const focusIdx = input.blockIndex(selection.focus.blockId);
-	if (anchorIdx < 0 || focusIdx < 0) {
-		return selection;
-	}
-	const selectingForward = anchorIdx <= focusIdx;
-	return {
-		anchor: anchorNonText
-			? {
-					blockId: selection.anchor.blockId,
-					offset: selectingForward ? 0 : 1,
-				}
-			: selection.anchor,
-		focus: focusNonText
-			? {
-					blockId: selection.focus.blockId,
-					offset: selectingForward ? 1 : 0,
-				}
-			: selection.focus,
-	};
-}
 
 export interface SelectionAuthority {
 	readonly record: SelectionRecord;
@@ -173,12 +122,23 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 
 	onCommit(summary: ChangeSummary): void {
 		this._repairHeldAnchors(summary);
-		const resolved = this._resolveHeldText();
+		const resolved = resolveHeldText(
+			this._state,
+			this._fromAnchor,
+			this._toAnchor,
+			this._anchors,
+			this._doc,
+		);
 		if (resolved !== undefined && !selectionEquals(this._state, resolved)) {
 			this._accept(resolved, "mapped", summary.commitId, { emit: false });
 			return;
 		}
-		const mapped = this._mapState(this._state, summary);
+		const mapped = mapSelectionState(this._state, summary, {
+			blockExists: (blockId) => this._blockExists(blockId),
+			logicalLength: (blockId) => this._logicalLength(blockId),
+			tableGrid: (blockId) => this._tableGrid(blockId),
+			doc: this._doc,
+		});
 		if (mapped === undefined) {
 			return;
 		}
@@ -273,7 +233,14 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 		commitId: number,
 		options?: { emit?: boolean },
 	): SelectionRecord {
-		const validated = this._validate(state);
+		const validated = validateSelection(state, {
+			blockExists: (blockId) => this._blockExists(blockId),
+			emitMissingBlock: (blockId) => this._emitMissingBlock(blockId),
+			isNonTextBlock: (blockId) => this._isNonTextBlock(blockId),
+			clampOffset: (blockId, offset) => this._clampOffset(blockId, offset),
+			tableGrid: (blockId) => this._tableGrid(blockId),
+			doc: this._doc,
+		});
 		if (validated === undefined) {
 			return this.record;
 		}
@@ -284,279 +251,15 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 		this._version += 1;
 		this._origin = origin;
 		this._commitId = commitId;
-		this._mintTextAnchors(validated);
+		const minted = mintTextAnchors(validated, this._anchors, (blockId) =>
+			this._isNonTextBlock(blockId),
+		);
+		this._fromAnchor = minted.from;
+		this._toAnchor = minted.to;
 		if (options?.emit !== false) {
 			this._emitter.emit("selectionChange", this.record);
 		}
 		return this.record;
-	}
-
-	private _validate(sel: SelectionState): SelectionState | undefined {
-		if (sel === null) {
-			return null;
-		}
-		switch (sel.type) {
-			case "text":
-				return this._validateText(sel);
-			case "block":
-				return this._validateBlock(sel);
-			case "app":
-				return { type: "app", appId: sel.appId };
-			case "cell":
-				return this._validateCell(sel);
-			default: {
-				const _exhaustive: never = sel;
-				return _exhaustive;
-			}
-		}
-	}
-
-	private _validateText(sel: TextSelection): SelectionState | undefined {
-		if (
-			!this._blockExists(sel.anchor.blockId) ||
-			!this._blockExists(sel.focus.blockId)
-		) {
-			this._emitMissingBlock(
-				this._blockExists(sel.anchor.blockId)
-					? sel.focus.blockId
-					: sel.anchor.blockId,
-			);
-			return undefined;
-		}
-		if (
-			sel.anchor.blockId === sel.focus.blockId &&
-			this._isNonTextBlock(sel.anchor.blockId) &&
-			this._isFullySelectedNonText(sel)
-		) {
-			return this._validateBlock({
-				type: "block",
-				blockIds: [sel.anchor.blockId],
-				head: sel.anchor.blockId,
-			});
-		}
-		const clamped = {
-			anchor: {
-				blockId: sel.anchor.blockId,
-				offset: this._clampOffset(sel.anchor.blockId, sel.anchor.offset),
-			},
-			focus: {
-				blockId: sel.focus.blockId,
-				offset: this._clampOffset(sel.focus.blockId, sel.focus.offset),
-			},
-		};
-		const order = liveChildIds(this._doc, null);
-		const covered = coverMixedBoundaryStructuralOffsets(clamped, {
-			isNonText: (blockId) => this._isNonTextBlock(blockId),
-			blockIndex: (blockId) => order.indexOf(blockId),
-		});
-		return stampTextSelection(this._doc, {
-			anchor: covered.anchor,
-			focus: covered.focus,
-			affinity: sel.affinity,
-			goalX: sel.goalX,
-		});
-	}
-
-	private _validateBlock(sel: BlockSelection): BlockSelection | undefined {
-		if (sel.blockIds.length === 0) {
-			this._emitMissingBlock("");
-			return undefined;
-		}
-		for (const id of sel.blockIds) {
-			if (!this._blockExists(id)) {
-				this._emitMissingBlock(id);
-				return undefined;
-			}
-		}
-		return {
-			type: "block",
-			blockIds: [...sel.blockIds],
-			head:
-				sel.head && sel.blockIds.includes(sel.head)
-					? sel.head
-					: (sel.blockIds[sel.blockIds.length - 1] ??
-						sel.blockIds[0] ??
-						""),
-		};
-	}
-
-	private _validateCell(sel: CellSelection): CellSelection | undefined {
-		if (!this._blockExists(sel.blockId)) {
-			this._emitMissingBlock(sel.blockId);
-			return undefined;
-		}
-		const grid = this._tableGrid(sel.blockId);
-		if (!grid) {
-			return {
-				type: "cell",
-				blockId: sel.blockId,
-				anchor: { ...sel.anchor },
-				head: { ...sel.head },
-				...(sel.rowIds ? { rowIds: [...sel.rowIds] } : {}),
-				...(sel.columnIds ? { columnIds: [...sel.columnIds] } : {}),
-			};
-		}
-		return {
-			type: "cell",
-			blockId: sel.blockId,
-			anchor: clampCellCoord(sel.anchor, grid),
-			head: clampCellCoord(sel.head, grid),
-			...(sel.rowIds ? { rowIds: [...sel.rowIds] } : {}),
-			...(sel.columnIds ? { columnIds: [...sel.columnIds] } : {}),
-		};
-	}
-
-	private _mapState(
-		state: SelectionState,
-		summary: ChangeSummary,
-	): SelectionState | undefined {
-		if (state === null) {
-			return undefined;
-		}
-		switch (state.type) {
-			case "text":
-				return this._mapText(state, summary);
-			case "block":
-				return this._mapBlock(state, summary);
-			case "cell":
-				return this._mapCell(state, summary);
-			case "app":
-				return undefined;
-			default: {
-				const _exhaustive: never = state;
-				return _exhaustive;
-			}
-		}
-	}
-
-	private _mapText(
-		state: TextSelection,
-		summary: ChangeSummary,
-	): SelectionState | undefined {
-		const collapsed = isCollapsedRange(state);
-		const anchor = this._fallbackPoint(
-			state.anchor,
-			summary,
-			collapsed ? 1 : -1,
-		);
-		const focus = this._fallbackPoint(state.focus, summary, 1);
-		if (!anchor || !focus) {
-			return null;
-		}
-		const next = stampTextSelection(this._doc, {
-			anchor,
-			focus,
-			affinity: state.affinity,
-			goalX: state.goalX,
-		});
-		if (selectionEquals(state, next)) {
-			return undefined;
-		}
-		return next;
-	}
-
-	private _mapBlock(
-		state: BlockSelection,
-		summary: ChangeSummary,
-	): SelectionState | undefined {
-		const removed = removedBlockIds(summary);
-		const remaining = state.blockIds.filter((id) => !removed.has(id));
-		if (remaining.length > 0) {
-			const next: BlockSelection = {
-				type: "block",
-				blockIds: remaining,
-				head:
-					state.head && remaining.includes(state.head)
-						? state.head
-						: (remaining[remaining.length - 1] ?? remaining[0] ?? ""),
-			};
-			if (selectionEquals(state, next)) {
-				return undefined;
-			}
-			return next;
-		}
-
-		const firstDeleted = state.blockIds[0];
-		if (!firstDeleted) {
-			return null;
-		}
-		const point = this._fallbackForRemovedBlock(firstDeleted, summary);
-		if (!point) {
-			return null;
-		}
-		return stampTextSelection(this._doc, {
-			anchor: point,
-			focus: point,
-		});
-	}
-
-	private _mapCell(
-		state: CellSelection,
-		summary: ChangeSummary,
-	): SelectionState | undefined {
-		const tableChanged = summary.structural.some(
-			(change) =>
-				change.type === "table-changed" &&
-				change.blockId === state.blockId,
-		);
-		if (tableChanged) {
-			return {
-				type: "cell",
-				blockId: state.blockId,
-				anchor: { row: 0, col: 0 },
-				head: { row: 0, col: 0 },
-			};
-		}
-
-		if (removedBlockIds(summary).has(state.blockId)) {
-			const point = this._fallbackForRemovedBlock(state.blockId, summary);
-			if (!point) {
-				return null;
-			}
-			return stampTextSelection(this._doc, {
-				anchor: point,
-				focus: point,
-			});
-		}
-
-		const grid = this._tableGrid(state.blockId);
-		if (!grid) {
-			return undefined;
-		}
-		const next: CellSelection = {
-			type: "cell",
-			blockId: state.blockId,
-			anchor: clampCellCoord(state.anchor, grid),
-			head: clampCellCoord(state.head, grid),
-			...(state.rowIds ? { rowIds: [...state.rowIds] } : {}),
-			...(state.columnIds ? { columnIds: [...state.columnIds] } : {}),
-		};
-		if (selectionEquals(state, next)) {
-			return undefined;
-		}
-		return next;
-	}
-
-	private _mintTextAnchors(state: SelectionState): void {
-		if (!state || state.type !== "text") {
-			this._fromAnchor = null;
-			this._toAnchor = null;
-			return;
-		}
-		if (
-			this._isNonTextBlock(state.anchor.blockId) ||
-			this._isNonTextBlock(state.focus.blockId)
-		) {
-			this._fromAnchor = null;
-			this._toAnchor = null;
-			return;
-		}
-		const collapsed = isCollapsedRange(state);
-		this._fromAnchor = this._anchors.create(
-			state.anchor,
-			collapsed ? 1 : -1,
-		);
-		this._toAnchor = this._anchors.create(state.focus, 1);
 	}
 
 	private _repairHeldAnchors(summary: ChangeSummary): void {
@@ -571,114 +274,6 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 		this._toAnchor = repairAnchor(this._editor, this._toAnchor, moves);
 	}
 
-	private _resolveHeldText(): TextSelection | undefined {
-		if (
-			this._state?.type !== "text" ||
-			!this._fromAnchor ||
-			!this._toAnchor
-		) {
-			return undefined;
-		}
-		const from = this._anchors.resolve(this._fromAnchor);
-		const to = this._anchors.resolve(this._toAnchor);
-		if (!from || !to) {
-			return undefined;
-		}
-		return stampTextSelection(this._doc, {
-			anchor: from,
-			focus: to,
-			affinity: this._state.affinity,
-			goalX: this._state.goalX,
-		});
-	}
-
-	private _fallbackPoint(
-		original: Point,
-		summary: ChangeSummary,
-		assoc: Assoc,
-	): Point | null {
-		const addressed = readdressThroughStructural(
-			original,
-			summary.structural,
-			assoc,
-		);
-		if (!this._blockExists(addressed.blockId)) {
-			return this._fallbackForRemovedBlock(original.blockId, summary);
-		}
-		if (addressed.blockId !== original.blockId) {
-			return {
-				blockId: addressed.blockId,
-				offset: clampOffsetToLength(
-					addressed.offset,
-					this._logicalLength(addressed.blockId),
-				),
-			};
-		}
-		const textChange = summary.blockText.find(
-			(change) => change.blockId === addressed.blockId,
-		);
-		const offset =
-			textChange && textChange.splices.length > 0
-				? shiftThroughSplices(textChange.splices, addressed.offset, assoc)
-				: addressed.offset;
-		return {
-			blockId: addressed.blockId,
-			offset: clampOffsetToLength(
-				offset,
-				this._logicalLength(addressed.blockId),
-			),
-		};
-	}
-
-	private _fallbackForRemovedBlock(
-		blockId: string,
-		summary: ChangeSummary,
-	): Point | null {
-		for (const change of summary.structural) {
-			if (
-				change.type === "blocks-merged" &&
-				change.sourceBlockId === blockId
-			) {
-				if (!this._blockExists(change.targetBlockId)) {
-					break;
-				}
-				return {
-					blockId: change.targetBlockId,
-					offset: clampOffsetToLength(
-						change.joinOffset,
-						this._logicalLength(change.targetBlockId),
-					),
-				};
-			}
-		}
-		const removed = summary.structural.find(
-			(change) =>
-				change.type === "block-removed" && change.blockId === blockId,
-		);
-		if (removed && removed.type === "block-removed") {
-			const siblings = liveChildIds(this._doc, removed.parentId);
-			const nextId = siblings[removed.index];
-			if (nextId && this._blockExists(nextId)) {
-				return { blockId: nextId, offset: 0 };
-			}
-			const previousId = siblings[removed.index - 1];
-			if (previousId && this._blockExists(previousId)) {
-				return {
-					blockId: previousId,
-					offset: this._logicalLength(previousId),
-				};
-			}
-			if (removed.parentId && this._blockExists(removed.parentId)) {
-				return { blockId: removed.parentId, offset: 0 };
-			}
-		}
-		const first = liveChildIds(this._doc, null)[0];
-		if (first && this._blockExists(first)) {
-			return { blockId: first, offset: 0 };
-		}
-		return null;
-	}
-
 	private _isNonTextBlock(blockId: string): boolean {
 		const blockMap = (this._doc.blocks as CRDTBlockMap).get(blockId);
 		const blockType = blockMap?.get("type");
@@ -687,13 +282,6 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 		}
 		const schema = this._registry.resolve(blockType);
 		return Boolean(schema && !usesInlineTextSelection(schema));
-	}
-
-	/** v1 non-text span is 0..1; only that full cover is safe to escalate. */
-	private _isFullySelectedNonText(sel: TextSelection): boolean {
-		const from = Math.min(sel.anchor.offset, sel.focus.offset);
-		const to = Math.max(sel.anchor.offset, sel.focus.offset);
-		return from <= 0 && to >= 1;
 	}
 
 	private _clampOffset(blockId: string, offset: number): number {
@@ -791,258 +379,4 @@ export class SelectionAuthorityImpl implements SelectionAuthority {
 		}
 		return rowParts.join("\n");
 	}
-}
-
-export function selectionEquals(
-	left: SelectionState,
-	right: SelectionState,
-): boolean {
-	if (left === right) {
-		return true;
-	}
-	if (left === null || right === null) {
-		return false;
-	}
-	if (left.type !== right.type) {
-		return false;
-	}
-	switch (left.type) {
-		case "text": {
-			if (right.type !== "text") {
-				return false;
-			}
-			return (
-				pointEquals(left.anchor, right.anchor) &&
-				pointEquals(left.focus, right.focus) &&
-				(left.affinity ?? "downstream") ===
-					(right.affinity ?? "downstream")
-			);
-		}
-		case "block": {
-			if (right.type !== "block") {
-				return false;
-			}
-			if (left.blockIds.length !== right.blockIds.length) {
-				return false;
-			}
-			if (left.blockIds.some((id, index) => id !== right.blockIds[index])) {
-				return false;
-			}
-			const leftHead =
-				left.head ??
-				left.blockIds[left.blockIds.length - 1] ??
-				left.blockIds[0] ??
-				"";
-			const rightHead =
-				right.head ??
-				right.blockIds[right.blockIds.length - 1] ??
-				right.blockIds[0] ??
-				"";
-			return leftHead === rightHead;
-		}
-		case "app":
-			return right.type === "app" && left.appId === right.appId;
-		case "cell": {
-			if (right.type !== "cell") {
-				return false;
-			}
-			return (
-				left.blockId === right.blockId &&
-				left.anchor.row === right.anchor.row &&
-				left.anchor.col === right.anchor.col &&
-				left.head.row === right.head.row &&
-				left.head.col === right.head.col
-			);
-		}
-		default: {
-			const _exhaustive: never = left;
-			return _exhaustive;
-		}
-	}
-}
-
-export function toRecordState(state: SelectionState): SelectionRecordState {
-	if (state === null) {
-		return null;
-	}
-	switch (state.type) {
-		case "text":
-			return {
-				type: "text",
-				anchor: { ...state.anchor },
-				focus: { ...state.focus },
-				affinity: state.affinity ?? "downstream",
-				goalX: state.goalX ?? null,
-			};
-		case "block":
-			return {
-				type: "block",
-				blockIds: [...state.blockIds],
-				head:
-					state.head ??
-					state.blockIds[state.blockIds.length - 1] ??
-					state.blockIds[0] ??
-					"",
-			};
-		case "app":
-			return { type: "app", appId: state.appId };
-		case "cell":
-			return {
-				type: "cell",
-				blockId: state.blockId,
-				anchor: { ...state.anchor },
-				head: { ...state.head },
-			};
-		default: {
-			const _exhaustive: never = state;
-			return _exhaustive;
-		}
-	}
-}
-
-function pointEquals(left: Point, right: Point): boolean {
-	return left.blockId === right.blockId && left.offset === right.offset;
-}
-
-function isCollapsedRange(range: { anchor: Point; focus: Point }): boolean {
-	return (
-		range.anchor.blockId === range.focus.blockId &&
-		range.anchor.offset === range.focus.offset
-	);
-}
-
-function clampCellCoord(
-	coord: { row: number; col: number },
-	grid: { rows: number; cols: number },
-): { row: number; col: number } {
-	return {
-		row: clampIndex(coord.row, grid.rows),
-		col: clampIndex(coord.col, grid.cols),
-	};
-}
-
-function clampOffsetToLength(offset: number, length: number): number {
-	if (!Number.isFinite(offset) || offset < 0) {
-		return 0;
-	}
-	return Math.max(0, Math.min(offset, length));
-}
-
-function clampIndex(value: number, length: number): number {
-	if (!Number.isFinite(value) || length <= 0) {
-		return 0;
-	}
-	return Math.max(0, Math.min(Math.trunc(value), length - 1));
-}
-
-function readdressThroughStructural(
-	point: Point,
-	structural: ChangeSummary["structural"],
-	assoc: Assoc,
-): Point {
-	let current = point;
-	for (const change of structural) {
-		if (
-			change.type === "blocks-merged" &&
-			current.blockId === change.sourceBlockId
-		) {
-			current = {
-				blockId: change.targetBlockId,
-				offset: change.joinOffset + current.offset,
-			};
-			continue;
-		}
-		if (change.type === "block-split" && current.blockId === change.blockId) {
-			if (current.offset > change.offset) {
-				current = {
-					blockId: change.newBlockId,
-					offset: current.offset - change.offset,
-				};
-			} else if (current.offset === change.offset && assoc === 1) {
-				current = { blockId: change.newBlockId, offset: 0 };
-			}
-		}
-	}
-	return current;
-}
-
-function shiftThroughSplices(
-	splices: readonly { from: number; to: number; insertLength: number }[],
-	offset: number,
-	assoc: Assoc,
-): number {
-	let delta = 0;
-	for (const splice of splices) {
-		const deleted = splice.to - splice.from;
-		if (offset < splice.from) {
-			return offset + delta;
-		}
-		if (splice.from < offset && offset < splice.to) {
-			return splice.from + delta;
-		}
-		if (offset === splice.from) {
-			if (splice.insertLength > 0) {
-				return assoc === -1
-					? splice.from + delta
-					: splice.from + delta + splice.insertLength;
-			}
-			if (deleted > 0) {
-				return splice.from + delta;
-			}
-			continue;
-		}
-		if (offset === splice.to && deleted > 0) {
-			return splice.from + delta + splice.insertLength;
-		}
-		delta += splice.insertLength - deleted;
-	}
-	return offset + delta;
-}
-
-function liveChildIds(doc: PenDocument, parentId: string | null): string[] {
-	if (parentId === null) {
-		return readIdArray(doc.blockOrder);
-	}
-	const block = (doc.blocks as CRDTBlockMap).get(parentId);
-	return readIdArray(block?.get("children"));
-}
-
-function readIdArray(value: unknown): string[] {
-	if (
-		value == null ||
-		typeof (value as { length?: unknown }).length !== "number" ||
-		typeof (value as { get?: unknown }).get !== "function"
-	) {
-		return [];
-	}
-	const arr = value as { length: number; get: (index: number) => unknown };
-	const ids: string[] = [];
-	for (let i = 0; i < arr.length; i++) {
-		const id = arr.get(i);
-		if (typeof id === "string") {
-			ids.push(id);
-		}
-	}
-	return ids;
-}
-
-function removedBlockIds(summary: ChangeSummary): Set<string> {
-	const removed = new Set<string>();
-	for (const change of summary.structural) {
-		if (change.type === "block-removed") {
-			removed.add(change.blockId);
-		}
-		if (change.type === "blocks-merged") {
-			removed.add(change.sourceBlockId);
-		}
-	}
-	for (const change of summary.structural) {
-		if (change.type === "block-inserted") {
-			removed.delete(change.blockId);
-		}
-		if (change.type === "block-split") {
-			removed.delete(change.newBlockId);
-		}
-	}
-	return removed;
 }

@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 
+import { fieldEditorHostFacet } from "@input/pen-core";
 import type { FieldEditorImpl } from "@input/pen-dom";
 import { createTestEditor } from "@input/pen-test";
 import { mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it } from "vitest";
 import { nextTick } from "vue";
-import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
 import { PenEditor } from "../components/PenEditor";
 
 afterEach(() => {
@@ -124,9 +124,9 @@ describe("@input/pen-vue AX1 surface", () => {
       wrapper.findAll('[role="textbox"]:not([data-pen-editor-root])'),
     ).toHaveLength(0);
 
-    const fieldEditor = editor.internals.getSlot<FieldEditorImpl>(
-      FIELD_EDITOR_SLOT_KEY,
-    );
+    const fieldEditor = editor.facet(
+      fieldEditorHostFacet,
+    ) as FieldEditorImpl | null;
     fieldEditor?.activate("paragraph-1");
     await nextTick();
 
@@ -185,9 +185,9 @@ describe("@input/pen-vue AX1 surface", () => {
       wrapper.findAll('[role="textbox"]:not([data-pen-editor-root])'),
     ).toHaveLength(0);
 
-    const fieldEditor = editor.internals.getSlot<FieldEditorImpl>(
-      FIELD_EDITOR_SLOT_KEY,
-    );
+    const fieldEditor = editor.facet(
+      fieldEditorHostFacet,
+    ) as FieldEditorImpl | null;
     fieldEditor?.activateCellFromElement?.(
       "t1",
       0,

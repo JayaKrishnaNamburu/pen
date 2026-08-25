@@ -12,7 +12,7 @@ This package is the bridge between Pen's headless editor and tool-driven executi
 
 - Export map: `.`
 - Primary extension entrypoint: `documentOpsExtension()`
-- Tool runtime slot and accessors such as `DOCUMENT_OPS_TOOL_RUNTIME_SLOT` and `getDocumentToolRuntime()`
+- Tool runtime: `getDocumentToolRuntime()` reads `editor.facet(documentOpsToolRuntimeFacet)`. Activate `assignSlot`s `DOCUMENT_OPS_TOOL_RUNTIME_SLOT`.
 - Runtime plumbing such as `ToolRuntimeImpl` and `ToolContextImpl`
 - Context helpers such as `buildCursorContext()`, `resolveDocumentBlocks()`, `exportDocumentRangeAsMarkdown()`, `resolveSelectedText()`, and retrieval helpers
 - Structured-target helpers such as `inspectStructuredTarget()`, `listValidOperationsForTarget()`, and block-type policy helpers

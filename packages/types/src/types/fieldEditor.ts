@@ -39,8 +39,6 @@ export interface FieldEditor {
 		element: HTMLElement,
 	): void;
 	deactivate(): void;
-	selectAll?(rootElement?: HTMLElement | null): boolean;
-	resetSelectAllCycle?(): void;
 	suspendForPointerSelection?(): void;
 	syncTextSelection?(
 		blockId: string,

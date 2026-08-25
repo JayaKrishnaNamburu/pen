@@ -1,4 +1,4 @@
-import { selectionToRange } from "@input/pen-core";
+import { selectionToRange, streamingTargetFacet } from "@input/pen-core";
 import { getDocumentToolRuntime } from "@input/pen-document-ops";
 import { generateId, type StreamingTarget } from "@input/pen-types";
 import { getBlockAdapter } from "../runtime/blockAdapters";
@@ -104,9 +104,8 @@ export async function executeGeneration(
 		const adapter = getBlockAdapter(route.adapterId);
 		const contentFormat = route.contentFormat;
 		const streamingTarget =
-			controller._editor.internals.getSlot<StreamingTarget>(
-				"delta-stream:target",
-			) ?? null;
+			(controller._editor.facet(streamingTargetFacet) as StreamingTarget | null) ??
+			null;
 		const shouldStreamDirectly = route.shouldStreamDirectly;
 		const selectionRange =
 			target.type === "selection"

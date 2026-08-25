@@ -23,7 +23,6 @@ import { ExpandedContentEditableBackend } from "./expandedContentEditableBackend
 import { FocusController } from "./focusController";
 import { HistorySelectionCoordinator } from "./historySelectionCoordinator";
 import { PendingMarkController } from "./pendingMarkController";
-import { SelectAllController } from "./selectAllController";
 import { FieldEditorSelectionCoordinator } from "./selectionCoordinator";
 import type {
 	FieldEditorSelectionSnapshot,
@@ -48,26 +47,19 @@ import {
 	queryBlockElement,
 	queryInlineElement,
 } from "./selectionBridge";
+import { getEditorBlockSelectionRole } from "../utils/blockSelectionSemantics";
+import { getEditorFlowCapability } from "../utils/flowCapabilities";
 import {
-	getEditorBlockSelectionLength,
-	getEditorBlockSelectionRole,
-} from "../utils/blockSelectionSemantics";
-import {
-	getEditorFlowCapability,
-	shouldForceBlockScopedSelectAll,
-} from "../utils/flowCapabilities";
-import { OVERLAY_ITEM_ATTR, OVERLAY_LAYER_ATTR } from "../overlays/types";
-import { DATA_ATTRS } from "../utils/dataAttributes";
+	DATA_ATTRS,
+	OVERLAY_ITEM_ATTR,
+	OVERLAY_LAYER_ATTR,
+} from "../utils/dataAttributes";
 import type { FieldEditorStoreSnapshot } from "./store";
 import type { EditorSelectAllBehavior } from "../constants/selectAll";
 import { bindEditorAnnouncer } from "../a11y/bindEditorAnnouncer";
 import { createFocusSink, FOCUS_SINK_ATTR } from "../a11y/focusSink";
 import { syncFocusSink } from "../a11y/syncFocusSink";
 import { FieldEditorImplCore } from "./fieldEditorImplCore";
-import {
-	getFullDocumentTextRange,
-	isDomSelectionCoveringElementContents,
-} from "./fieldEditorImplHelpers";
 
 export abstract class FieldEditorImplLifecycle extends FieldEditorImplCore {
 	activate(blockId: string): void {
@@ -111,107 +103,6 @@ export abstract class FieldEditorImplLifecycle extends FieldEditorImplCore {
 
 	deactivate(): void {
 		this._deactivate({ restoreFocus: true });
-	}
-
-	selectAll(rootElement?: HTMLElement | null): boolean {
-		const activeCellElement = this._resolveActiveCellElement(rootElement);
-		if (activeCellElement) {
-			const activeCellBlockId =
-				this._cellEditingController.activeCellCoord?.blockId ??
-				this._resolveSelectAllBlockId(rootElement);
-			const shouldSelectCellContents =
-				!isDomSelectionCoveringElementContents(activeCellElement) ||
-				!this._selectAllController.hasScope(activeCellBlockId, "cell");
-			if (shouldSelectCellContents) {
-				if (
-					this._attachedElement !== activeCellElement ||
-					!this._attachedElement?.isConnected
-				) {
-					this.attachElement(activeCellElement);
-				}
-				this._selectElementContents(activeCellElement);
-				if (activeCellBlockId) {
-					this._selectAllController.recordScope(
-						activeCellBlockId,
-						"cell",
-					);
-				}
-				return true;
-			}
-		}
-
-		if (this._selectAllController.getBehavior() === "document-first") {
-			const activeBlockId = this._resolveSelectAllBlockId(rootElement);
-			const activeCapability = activeBlockId
-				? getEditorFlowCapability(this._editor, activeBlockId)
-				: null;
-			if (
-				!shouldForceBlockScopedSelectAll(
-					this._editor.documentProfile,
-					activeCapability,
-				)
-			) {
-				return this._selectEntireDocument();
-			}
-		}
-
-		const blockId = this._resolveSelectAllBlockId(rootElement);
-		if (blockId) {
-			const blockLength = getEditorBlockSelectionLength(
-				this._editor,
-				blockId,
-			);
-			const blockRole = getEditorBlockSelectionRole(
-				this._editor,
-				blockId,
-			);
-			const shouldSelectDocument =
-				blockLength === 0 ||
-				this._selectAllController.hasScope(blockId, "block");
-			const nextScope = shouldSelectDocument ? "document" : "block";
-			if (nextScope === "block") {
-				if (blockRole && blockRole !== "editable-inline") {
-					this.deactivate();
-					this._editor.selectBlock(blockId);
-					this._selectAllController.recordScope(blockId, "block");
-					return true;
-				}
-				this.commitProgrammaticTextSelection(blockId, 0, blockLength);
-				this._selectAllController.recordScope(blockId, "block");
-				return true;
-			}
-		}
-
-		return this._selectEntireDocument(blockId ?? null);
-	}
-
-	protected _selectEntireDocument(blockId?: string | null): boolean {
-		const range = getFullDocumentTextRange(this._editor);
-		if (!range) {
-			return true;
-		}
-
-		if (range.start.blockId === range.end.blockId) {
-			this.commitProgrammaticTextSelection(
-				range.start.blockId,
-				range.start.offset,
-				range.end.offset,
-			);
-		} else {
-			if (!this._isEditing) {
-				this.activate(range.focusBlockId);
-			}
-			this._editor.selectTextRange(range.start, range.end);
-		}
-		this._recomputeSurfaceFromSelection();
-		if (this._selectAllController.getBehavior() === "block-first") {
-			this._selectAllController.recordScope(
-				blockId ?? range.focusBlockId,
-				"document",
-			);
-		}
-		this._syncSelectionToDOM();
-		return true;
 	}
 
 	suspendForPointerSelection(): void {

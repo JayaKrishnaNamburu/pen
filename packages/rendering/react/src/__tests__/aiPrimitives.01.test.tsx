@@ -3,7 +3,7 @@
 import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
-import { createEditor } from "@input/pen-core";
+import { createEditor, documentOpsToolRuntimeFacet } from "@input/pen-core";
 import type { ToolRuntime } from "@input/pen-types";
 import { defineExtension } from "@input/pen-core";
 import { aiExtension, getAIController } from "@input/pen-ai";
@@ -221,9 +221,7 @@ function testStreamingToolExtension() {
 		dependencies: ["document-ops"],
 		activateClient: async ({ editor }) => {
 			toolRuntime =
-				editor.internals.getSlot<ToolRuntime>(
-					"document-ops:toolRuntime",
-				) ?? null;
+				(editor.facet(documentOpsToolRuntimeFacet) as ToolRuntime | null) ?? null;
 			toolRuntime?.registerTool({
 				name: "test_search",
 				description: "Test streaming search tool",

@@ -3,6 +3,7 @@ import {
 	createEditor,
 	createHeadlessEditor,
 	createPseudoLocaleCatalog,
+	fieldEditorHostFacet,
 	getEditorSelectionRecord,
 	isCollapsed as selectionIsCollapsed,
 } from "@input/pen-core";
@@ -34,7 +35,6 @@ import {
 	populateYDoc,
 } from "@input/pen-test";
 import {
-	FIELD_EDITOR_SLOT_KEY,
 	type CRDTAdapter,
 	type CRDTDocument,
 	type DiagnosticEvent,
@@ -270,11 +270,11 @@ function recordEvent(target: Session, type: string, payload: unknown): void {
 function wireEvents(target: Session): void {
 	const editor = target.editor;
 	target.unsubscribers.push(
-		editor.on("documentCommit", (event) => {
-			recordEvent(target, "documentCommit", {
+		editor.on("commit", (event) => {
+			recordEvent(target, "commit", {
 				commitId: event.commitId,
 				origin: event.origin,
-				affectedBlocks: [...event.affectedBlocks],
+				affectedBlockIds: [...event.summary.affectedBlockIds],
 			});
 		}),
 		editor.on("selectionChange", () => {
@@ -285,9 +285,6 @@ function wireEvents(target: Session): void {
 				"selectionChange",
 				serializeSelection(editor.selection),
 			);
-		}),
-		editor.on("change", (events) => {
-			recordEvent(target, "change", events.length);
 		}),
 		editor.on("historyApplied", (event) => {
 			recordEvent(target, "historyApplied", {
@@ -647,9 +644,9 @@ function focusText(block = 0): void {
 	if (!blockId) {
 		throw new Error(`focusText: no block at index ${block}`);
 	}
-	const fieldEditor = current.editor.internals.getSlot<FieldEditor>(
-		FIELD_EDITOR_SLOT_KEY,
-	);
+	const fieldEditor = current.editor.facet(fieldEditorHostFacet) as
+		| FieldEditor
+		| null;
 	if (!fieldEditor) {
 		throw new Error("focusText: field editor is not attached");
 	}
@@ -972,10 +969,7 @@ function installBridge(): void {
 			return getHarnessSession().generation;
 		},
 		get hasFieldEditor() {
-			return (
-				getHarnessSession().editor.internals.getSlot(FIELD_EDITOR_SLOT_KEY) !=
-				null
-			);
+			return getHarnessSession().editor.facet(fieldEditorHostFacet) != null;
 		},
 		get reducedMotion() {
 			return reducedMotion();

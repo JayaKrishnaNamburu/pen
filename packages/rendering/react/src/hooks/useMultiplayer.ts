@@ -1,10 +1,10 @@
 import { useSyncExternalStore } from "react";
-import type { Editor, Unsubscribe } from "@input/pen-types";
-import {
-	type MultiplayerController,
-	getMultiplayerController,
-	type MultiplayerState,
+import { multiplayerControllerFacet } from "@input/pen-core";
+import type {
+	MultiplayerController,
+	MultiplayerState,
 } from "@input/pen-multiplayer";
+import type { Editor, Unsubscribe } from "@input/pen-types";
 
 const EMPTY_MULTIPLAYER_STATE: MultiplayerState = {
 	connectionState: "disconnected",
@@ -17,7 +17,9 @@ const EMPTY_MULTIPLAYER_STATE: MultiplayerState = {
 };
 
 export function useMultiplayer(editor: Editor): MultiplayerState {
-	const controller = getMultiplayerController(editor);
+	const controller =
+		(editor.facet(multiplayerControllerFacet) as MultiplayerController | null) ??
+		null;
 	const canReadControllerState = isMultiplayerController(controller);
 
 	return useSyncExternalStore(

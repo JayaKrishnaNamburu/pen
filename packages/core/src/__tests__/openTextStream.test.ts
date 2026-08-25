@@ -1,5 +1,6 @@
 import type { CommitEvent, Point } from "@input/pen-types";
-import { HOOK_PRIORITY_AUTH, mapOffsetThroughSplices } from "@input/pen-types";
+import { HOOK_PRIORITY_AUTH } from "@input/pen-types";
+import { mapOffsetThroughSplices } from "../changes/mapOffsetThroughSplices";
 import { describe, expect, it } from "vitest";
 
 import { createDefaultSchema } from "./fixtures/testSchema";
@@ -17,10 +18,6 @@ function createEditor(options: Parameters<typeof createCoreEditor>[0] = {}) {
 		...options,
 		preset: options.preset ?? noDefaultExtensionsPreset,
 	});
-}
-
-function visibleText(text: string): string {
-	return text.replace(/\u200B/g, "");
 }
 
 function mapSerial(start: Point, summaries: readonly CommitEvent["summary"][]): Point {
@@ -78,7 +75,7 @@ describe("editor.openTextStream (Wave 2.4)", () => {
 			groupId: "gen-1",
 			source: "stream",
 		});
-		expect(visibleText(editor.getBlock(blockId)!.textContent())).toBe(
+		expect(editor.getBlock(blockId)!.textContent()).toBe(
 			"hello",
 		);
 
@@ -90,7 +87,7 @@ describe("editor.openTextStream (Wave 2.4)", () => {
 		expect(commits).toHaveLength(2);
 		expect(commits[1].source).toBe("stream");
 		expect(commits[1].origin.groupId).toBe("gen-1");
-		expect(visibleText(editor.getBlock(blockId)!.textContent())).toBe(
+		expect(editor.getBlock(blockId)!.textContent()).toBe(
 			"hello!",
 		);
 
@@ -114,7 +111,7 @@ describe("editor.openTextStream (Wave 2.4)", () => {
 		writer.append("hello");
 		writer.close();
 
-		expect(visibleText(editor.getBlock(blockId)!.textContent())).toBe(
+		expect(editor.getBlock(blockId)!.textContent()).toBe(
 			"hello",
 		);
 		expect(diagnostics).not.toContain("normalize-cap");
@@ -148,7 +145,7 @@ describe("editor.openTextStream (Wave 2.4)", () => {
 		writer.close();
 
 		expect(commits).toHaveLength(0);
-		expect(visibleText(editor.getBlock(blockId)!.textContent())).toBe("");
+		expect(editor.getBlock(blockId)!.textContent()).toBe("");
 
 		editor.destroy();
 	});
@@ -239,8 +236,8 @@ describe("editor.openTextStream (Wave 2.4)", () => {
 
 		writer.append("!");
 		writer.flush();
-		expect(visibleText(editor.getBlock(source)!.textContent())).toBe("meadow");
-		expect(visibleText(editor.getBlock("dest")!.textContent())).toBe(" sage!");
+		expect(editor.getBlock(source)!.textContent()).toBe("meadow");
+		expect(editor.getBlock("dest")!.textContent()).toBe(" sage!");
 		expect(writer.position).toEqual({ blockId: "dest", offset: 6 });
 
 		writer.close();
@@ -280,7 +277,7 @@ describe("editor.openTextStream (Wave 2.4)", () => {
 
 		writer.append("!");
 		writer.flush();
-		expect(visibleText(editor.getBlock("tail")!.textContent())).toBe(" sage!");
+		expect(editor.getBlock("tail")!.textContent()).toBe(" sage!");
 		expect(writer.position).toEqual({ blockId: "tail", offset: 6 });
 
 		applyMergeBlocks(editor, {
@@ -291,7 +288,7 @@ describe("editor.openTextStream (Wave 2.4)", () => {
 
 		writer.append("?");
 		writer.flush();
-		expect(visibleText(editor.getBlock(target)!.textContent())).toBe(
+		expect(editor.getBlock(target)!.textContent()).toBe(
 			"meadow sage!?",
 		);
 		expect(writer.position).toEqual({ blockId: target, offset: 13 });
@@ -313,7 +310,7 @@ describe("editor.openTextStream (Wave 2.4)", () => {
 				(change) => change.type === "block-removed" && change.blockId === target,
 			),
 		).toBe(true);
-		expect(visibleText(editor.getBlock("keep")!.textContent())).toBe("keep");
+		expect(editor.getBlock("keep")!.textContent()).toBe("keep");
 
 		writer.close();
 		editor.destroy();
@@ -399,7 +396,7 @@ describe("editor.openTextStream (Wave 2.4)", () => {
 
 		writer.append("!");
 		writer.flush();
-		expect(visibleText(editor.getBlock(target)!.textContent())).toBe("meadow!");
+		expect(editor.getBlock(target)!.textContent()).toBe("meadow!");
 		expect(writer.position).toEqual({ blockId: target, offset: 7 });
 
 		writer.close();
@@ -426,7 +423,7 @@ describe("editor.openTextStream (Wave 2.4)", () => {
 		}
 
 		expect(editor.anchors.liveCount).toBe(minted);
-		expect(visibleText(editor.getBlock(blockId)!.textContent())).toBe(
+		expect(editor.getBlock(blockId)!.textContent()).toBe(
 			"a".repeat(100),
 		);
 

@@ -14,7 +14,7 @@ Wave D also named `collaboration`, `ai`, `import-export`, and `rsc`. Those direc
 
 | Named and missing | Where that path actually lives |
 | --- | --- |
-| `collaboration` | `playground/` — two clients on one document, with the kitchen-sink AI server |
+| `collaboration` | `playground/` — two clients on one document, via the collaborate button |
 | `ai` | `playground/` plus the AI package READMEs — a stub adapter with no vendor SDK is not an example until someone has clicked it |
 | `import-export` | the import/export package READMEs and their tests — a round-trip UI that nobody has run is worse than no UI |
 | `rsc` | `packages/rendering/react/fixtures/rsc/` — HOST1 is a `"use client"` assert, not a Next.js app |

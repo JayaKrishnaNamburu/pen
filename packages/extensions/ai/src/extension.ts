@@ -7,6 +7,7 @@ import {
 	beforeApplyFacet,
 	undoMetadataControllerFacet,
 	createDecorationSet,
+	decorationsFacet,
 	keyBindingPriorityToPrecedence,
 	keymapFacet,
 	ensureInlineCompletionController,
@@ -576,6 +577,14 @@ export function aiExtension(config: AIExtensionConfig = {}): Extension {
 					{ origin: options.origin },
 				);
 			}, "high"),
+			decorationsFacet.of(() => {
+				const decorations = controller?.buildDecorations() ?? [];
+				const inlineDecorations =
+					activeEditor?.facet(aiAutocompleteControllerFacet) == null
+						? (inlineCompletion?.buildDecorations() ?? [])
+						: [];
+				return createDecorationSet([...decorations, ...inlineDecorations]);
+			}),
 		],
 
 		activateClient: async ({ editor }) => {
@@ -651,15 +660,6 @@ export function aiExtension(config: AIExtensionConfig = {}): Extension {
 				return;
 			}
 			controller.handleDocumentChange(events);
-		},
-
-		decorations: () => {
-			const decorations = controller?.buildDecorations() ?? [];
-			const inlineDecorations =
-				activeEditor?.facet(aiAutocompleteControllerFacet) == null
-					? (inlineCompletion?.buildDecorations() ?? [])
-					: [];
-			return createDecorationSet([...decorations, ...inlineDecorations]);
 		},
 	});
 }

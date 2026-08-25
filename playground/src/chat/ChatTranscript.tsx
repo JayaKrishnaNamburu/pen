@@ -1,4 +1,8 @@
-import { IconSparkle, IconSpinner } from "../ui/Icon";
+import type { ReactNode } from "react";
+import { AgentLoader } from "../ui/AgentLoader";
+import { Badge } from "../ui/Badge";
+import { Icon } from "../ui/Icon";
+import { Tile } from "../ui/Tile";
 import type { ChatTurn } from "./useChat";
 
 interface ChatTranscriptProps {
@@ -6,67 +10,60 @@ interface ChatTranscriptProps {
 	activity: string | null;
 }
 
-const EXAMPLE_PROMPTS = [
-	"Turn the last paragraph into a bullet list",
-	"Add a heading above the last paragraph",
-	"Add a short closing paragraph",
-];
-
+/**
+ * What was asked, and what came of it.
+ *
+ * Laid out like Input's message list: the prompt is a tile, and the agent's
+ * side is a status line rather than a bubble — because Pen's answer is the
+ * document, not a reply. Only the newest turn can still be running, so the
+ * activity line always belongs to the last one.
+ */
 export function ChatTranscript({ turns, activity }: ChatTranscriptProps) {
-	if (turns.length === 0) {
-		return <ChatEmptyState />;
-	}
-
 	const turnItems = turns.map((turn) => (
 		<li key={turn.id} className="chat-turn">
-			<p className="chat-prompt">{turn.prompt}</p>
-			{turn.outcome ? (
-				<p
-					className="chat-outcome"
-					data-failed={turn.isFailed || undefined}
+			<Tile className="chat-prompt">{turn.prompt}</Tile>
+			{turn.outcome === null ? (
+				activity ? (
+					<ChatStatus kind="loading" icon={<AgentLoader />}>
+						{activity}
+					</ChatStatus>
+				) : null
+			) : (
+				<ChatStatus
+					kind={turn.isFailed ? "failed" : "done"}
+					icon={<Icon.Check />}
 				>
 					{turn.outcome}
 					{turn.route ? (
-						<span className="chat-route">{turn.route}</span>
+						<Badge color="var(--palette-b40)">{turn.route}</Badge>
 					) : null}
-				</p>
-			) : null}
+				</ChatStatus>
+			)}
 		</li>
 	));
 
-	return (
-		<ol className="chat-transcript">
-			{turnItems}
-			{activity ? (
-				<li className="chat-activity">
-					<span className="chat-activity-icon">
-						<IconSpinner />
-					</span>
-					{activity}
-				</li>
-			) : null}
-		</ol>
-	);
+	return <ol className="chat-transcript">{turnItems}</ol>;
 }
 
-function ChatEmptyState() {
-	const promptItems = EXAMPLE_PROMPTS.map((prompt) => (
-		<li key={prompt} className="chat-example">
-			{prompt}
-		</li>
-	));
-
+/**
+ * Input's `AgentStatusText`: a mark, then a line that shimmers while it is
+ * still true. While the agent is working the mark is the 3×3 IntelligenceLoader
+ * (called `AgentLoader` here); when it is done, a check. The shimmer is one
+ * gradient clipped to the glyphs.
+ */
+function ChatStatus({
+	kind,
+	icon,
+	children,
+}: {
+	kind: "loading" | "done" | "failed";
+	icon: ReactNode;
+	children: ReactNode;
+}) {
 	return (
-		<div className="chat-empty">
-			<span className="chat-empty-icon">
-				<IconSparkle size={20} />
-			</span>
-			<p className="chat-empty-title">Ask for an edit</p>
-			<p className="chat-empty-body">
-				The answer lands in the document, not here. This column keeps a
-				receipt of what changed.
-			</p>
-			<ul className="chat-examples">{promptItems}</ul>
-		</div>
+		<p className="chat-status" data-kind={kind}>
+			<span className="chat-status-icon">{icon}</span>
+			<span className="chat-status-body">{children}</span>
+		</p>
 	);
 }

@@ -317,9 +317,7 @@ describe("@input/pen-dom public helpers", () => {
 			},
 			deleteSelection,
 			firstBlock: () => null,
-			internals: {
-				getSlot: () => undefined,
-			},
+			internals: {},
 		};
 		const fieldEditor = {
 			deactivate,

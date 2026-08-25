@@ -10,11 +10,6 @@
       "name": "formatUuidV4",
       "kind": "helper",
       "reason": "P.3: private formatter for generateId; counted so unexported helpers cannot hide from the leftover total"
-    },
-    {
-      "name": "mapOffsetThroughSplices",
-      "kind": "function",
-      "reason": "P.3: required public by spec-v3 OB3, which supersedes API3 for this symbol. It replaces the deleted ChangeSummary.mapOffset/mapPoint/mapRange/compose algebra, so pen-types is where the derived tier already looks. Relocating it to core would put a runtime dependency on the same serialization packages the Wave 3 allowlist was written to spare. Added 2026-08-24 with the Wave 3 closure that deleted the algebra"
     }
   ]
 }

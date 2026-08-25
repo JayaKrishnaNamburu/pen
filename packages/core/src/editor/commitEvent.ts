@@ -1,7 +1,6 @@
 import type {
 	CommitEvent,
 	CommitEventSource,
-	CRDTEvent,
 	DiagnosticEvent,
 	OpOrigin,
 	SelectionRecord,
@@ -10,8 +9,6 @@ import type {
 import { getOpOriginType } from "./origin";
 
 import type { ChangeSummary } from "../changes/types";
-
-export const EVENT_DEPRECATED_CODE = "event-deprecated";
 
 export function toStructuredOrigin(origin: OpOrigin): StructuredOpOrigin {
 	return typeof origin === "string" ? { type: origin } : origin;
@@ -107,26 +104,3 @@ export function buildCommitEvent(input: {
 	};
 }
 
-export function createEventDeprecatedDiagnostic(
-	key: "change" | "documentCommit",
-): DiagnosticEvent {
-	return {
-		code: EVENT_DEPRECATED_CODE,
-		level: "warn",
-		source: "pipeline",
-		message: `on("${key}") is deprecated; use editor.on("commit")`,
-		remediation:
-			"Subscribe to commit events and read event.summary / event.origin.",
-		key,
-	};
-}
-
-export function adapterChangeEvent(event: CRDTEvent): CRDTEvent {
-	return {
-		origin: event.origin,
-		affectedBlocks: event.affectedBlocks,
-		ops: event.ops,
-		timestamp: event.timestamp,
-		...(event.scope ? { scope: event.scope } : {}),
-	};
-}

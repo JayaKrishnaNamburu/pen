@@ -9,37 +9,52 @@ import type {
 import { STRUCTURAL_ORIGIN_META_KEY } from "@input/pen-crdt-yjs";
 import { resolveRuntimeContentType } from "../schema/contentType";
 import {
+	type CRDTTextLike,
 	type CRDTUnknownMap,
 	getMapProp,
 	getTableContent,
 } from "./crdtShapes";
-import type { ApplyPipeline } from "./apply";
+import type { ApplyPipelineDocumentAccess } from "./applyPipelineContext";
+import {
+	clearTableState,
+	getPreservedInlineDeltas,
+} from "./applyInlineAndMetaOps";
+import {
+	getMutableBlockMap,
+	getOrCreateMapProp,
+	getOrCreateStringArrayProp,
+	getTextContent,
+	removeBlockIdFromAllChildren,
+	removeBlockIdFromArray,
+	resolvePosition,
+} from "./applySharedHelpers";
 
-type ApplyPipelineRuntime = any;
 type MutableMap = CRDTUnknownMap & { delete(key: string): void };
 
-export function insertBlock(pipeline: ApplyPipeline, op: InsertBlockOp): string[] {
-	const self = pipeline as ApplyPipelineRuntime;
-	const schema = self._registry.resolve(op.blockType);
+export function insertBlock(
+	pipeline: ApplyPipelineDocumentAccess,
+	op: InsertBlockOp,
+): string[] {
+	const schema = pipeline._registry.resolve(op.blockType);
 	if (!schema) return [];
 
 	const contentType = resolveRuntimeContentType(schema);
-	const blockMap = self._adapter.initBlockMap(
-		self._crdtDoc,
+	const blockMap = pipeline._adapter.initBlockMap(
+		pipeline._crdtDoc,
 		op.blockId,
 		op.blockType,
 		contentType,
 	) as MutableMap;
 
 	if (op.props && Object.keys(op.props).length > 0) {
-		const propsMap = self._getOrCreateMapProp(blockMap, "props");
+		const propsMap = getOrCreateMapProp(pipeline, blockMap, "props");
 		for (const [key, value] of Object.entries(op.props)) {
 			propsMap.set(key, value);
 		}
 	}
 
 	if ((schema as { content: unknown }).content === "subdocument") {
-		const propsMap = self._getOrCreateMapProp(blockMap, "props");
+		const propsMap = getOrCreateMapProp(pipeline, blockMap, "props");
 		const subdocument = blockMap.get("subdocument") as
 			| { guid?: unknown }
 			| undefined;
@@ -53,9 +68,10 @@ export function insertBlock(pipeline: ApplyPipeline, op: InsertBlockOp): string[
 	}
 
 	if (typeof op.position === "object" && "parent" in op.position) {
-		const parentMap = self._getMutableBlockMap(op.position.parent);
+		const parentMap = getMutableBlockMap(pipeline, op.position.parent);
 		if (parentMap) {
-			const children = self._getOrCreateStringArrayProp(
+			const children = getOrCreateStringArrayProp(
+				pipeline,
 				parentMap,
 				"children",
 			);
@@ -63,31 +79,36 @@ export function insertBlock(pipeline: ApplyPipeline, op: InsertBlockOp): string[
 			children.insert(idx, [op.blockId]);
 		}
 	} else {
-		const idx = self._resolvePosition(op.position);
-		self.mutableBlockOrder.insert(idx, [op.blockId]);
+		const idx = resolvePosition(pipeline, op.position);
+		pipeline.mutableBlockOrder.insert(idx, [op.blockId]);
 	}
 
 	return [op.blockId];
 }
 
-export function deleteBlock(pipeline: ApplyPipeline, op: DeleteBlockOp): string[] {
-	const self = pipeline as ApplyPipelineRuntime;
-	self.mutableBlocks.delete(op.blockId);
-	self._removeBlockIdFromArray(self.mutableBlockOrder, op.blockId);
-	self._removeBlockIdFromAllChildren(op.blockId);
+export function deleteBlock(
+	pipeline: ApplyPipelineDocumentAccess,
+	op: DeleteBlockOp,
+): string[] {
+	pipeline.mutableBlocks.delete(op.blockId);
+	removeBlockIdFromArray(pipeline.mutableBlockOrder, op.blockId);
+	removeBlockIdFromAllChildren(pipeline, op.blockId);
 
 	return [op.blockId];
 }
 
-export function moveBlock(pipeline: ApplyPipeline, op: MoveBlockOp): string[] {
-	const self = pipeline as ApplyPipelineRuntime;
-	self._removeBlockIdFromArray(self.mutableBlockOrder, op.blockId, true);
-	self._removeBlockIdFromAllChildren(op.blockId);
+export function moveBlock(
+	pipeline: ApplyPipelineDocumentAccess,
+	op: MoveBlockOp,
+): string[] {
+	removeBlockIdFromArray(pipeline.mutableBlockOrder, op.blockId, true);
+	removeBlockIdFromAllChildren(pipeline, op.blockId);
 
 	if (typeof op.position === "object" && "parent" in op.position) {
-		const parentMap = self._getMutableBlockMap(op.position.parent);
+		const parentMap = getMutableBlockMap(pipeline, op.position.parent);
 		if (parentMap) {
-			const children = self._getOrCreateStringArrayProp(
+			const children = getOrCreateStringArrayProp(
+				pipeline,
 				parentMap,
 				"children",
 			);
@@ -95,26 +116,25 @@ export function moveBlock(pipeline: ApplyPipeline, op: MoveBlockOp): string[] {
 			children.insert(idx, [op.blockId]);
 		}
 	} else {
-		const idx = self._resolvePosition(op.position);
-		self.mutableBlockOrder.insert(idx, [op.blockId]);
+		const idx = resolvePosition(pipeline, op.position);
+		pipeline.mutableBlockOrder.insert(idx, [op.blockId]);
 	}
 
 	return [op.blockId];
 }
 
 function convertBlock(
-	pipeline: ApplyPipeline,
+	pipeline: ApplyPipelineDocumentAccess,
 	blockId: string,
 	newType: string,
 	newProps?: Record<string, unknown>,
 ): string[] {
-	const self = pipeline as ApplyPipelineRuntime;
-	const blockMap = self._getMutableBlockMap(blockId);
+	const blockMap = getMutableBlockMap(pipeline, blockId);
 	if (!blockMap) return [];
 
 	const oldType = blockMap.get("type") as string;
-	const oldSchema = self._registry.resolve(oldType);
-	const newSchema = self._registry.resolve(newType);
+	const oldSchema = pipeline._registry.resolve(oldType);
+	const newSchema = pipeline._registry.resolve(newType);
 	if (!newSchema) return [];
 
 	blockMap.set("type", newType);
@@ -131,7 +151,7 @@ function convertBlock(
 	}
 
 	if (newProps) {
-		const props = self._getOrCreateMapProp(blockMap, "props");
+		const props = getOrCreateMapProp(pipeline, blockMap, "props");
 		for (const [key, value] of Object.entries(newProps)) {
 			props.set(key, value);
 		}
@@ -141,7 +161,9 @@ function convertBlock(
 	const newContent = newSchema.content;
 	const preservedInlineDeltas =
 		oldContent === "inline"
-			? self._getPreservedInlineDeltas(self._getTextContent(blockMap))
+			? getPreservedInlineDeltas(
+					getTextContent(pipeline, blockMap),
+				)
 			: [];
 
 	if (oldContent === "inline" && newContent !== "inline") {
@@ -153,7 +175,7 @@ function convertBlock(
 			blockMap.delete("content");
 		}
 	} else if (oldContent !== "inline" && newContent === "inline") {
-		const ytext = self._adapter.createText();
+		const ytext = pipeline._adapter.createText();
 		blockMap.set("content", ytext);
 	}
 
@@ -161,11 +183,11 @@ function convertBlock(
 	if (targetContent === "table") {
 		blockMap.delete("tableColumns");
 	} else {
-		self._clearTableState(blockMap);
+		clearTableState(blockMap);
 	}
 
 	if (targetContent === "table" && !getTableContent(blockMap)) {
-		self._tableGrid.seedTableBlock(blockMap, {
+		pipeline._tableGrid.seedTableBlock(blockMap, {
 			rowCount: 2,
 			colCount: 2,
 			preservedInlineDeltas,
@@ -176,7 +198,7 @@ function convertBlock(
 }
 
 function applyLayoutReplacement(
-	pipeline: ApplyPipelineRuntime,
+	pipeline: ApplyPipelineDocumentAccess,
 	blockMap: MutableMap,
 	layout: unknown,
 ): void {
@@ -187,7 +209,7 @@ function applyLayoutReplacement(
 	if (layout === undefined || typeof layout !== "object" || Array.isArray(layout)) {
 		return;
 	}
-	const layoutMap = pipeline._getOrCreateMapProp(blockMap, "layout");
+	const layoutMap = getOrCreateMapProp(pipeline, blockMap, "layout");
 	const next = layout as Record<string, unknown>;
 	for (const key of [...(layoutMap.keys?.() ?? [])]) {
 		if (!(key in next)) {
@@ -203,9 +225,11 @@ function applyLayoutReplacement(
 	}
 }
 
-export function setProps(pipeline: ApplyPipeline, op: SetPropsOp): string[] {
-	const self = pipeline as ApplyPipelineRuntime;
-	const blockMap = self._getMutableBlockMap(op.blockId);
+export function setProps(
+	pipeline: ApplyPipelineDocumentAccess,
+	op: SetPropsOp,
+): string[] {
+	const blockMap = getMutableBlockMap(pipeline, op.blockId);
 	if (!blockMap) return [];
 
 	const nextType = op.props.type;
@@ -227,14 +251,14 @@ export function setProps(pipeline: ApplyPipeline, op: SetPropsOp): string[] {
 			}
 		}
 		convertBlock(pipeline, op.blockId, nextType, newProps);
-		const propsMap = self._getOrCreateMapProp(blockMap, "props");
+		const propsMap = getOrCreateMapProp(pipeline, blockMap, "props");
 		for (const [key, value] of Object.entries(regular)) {
 			if (value === null) {
 				propsMap.delete(key);
 			}
 		}
 	} else {
-		const propsMap = self._getOrCreateMapProp(blockMap, "props");
+		const propsMap = getOrCreateMapProp(pipeline, blockMap, "props");
 		for (const [key, value] of Object.entries(regular)) {
 			if (value === undefined || value === null) {
 				propsMap.delete(key);
@@ -245,14 +269,14 @@ export function setProps(pipeline: ApplyPipeline, op: SetPropsOp): string[] {
 	}
 
 	if (layout !== undefined) {
-		applyLayoutReplacement(self, blockMap, layout);
+		applyLayoutReplacement(pipeline, blockMap, layout);
 	}
 
 	if (columns !== undefined) {
 		if (columns === null) {
 			blockMap.delete("tableColumns");
 		} else if (Array.isArray(columns)) {
-			self._tableGrid.setStructuredTableColumns(
+			pipeline._tableGrid.setStructuredTableColumns(
 				blockMap,
 				columns as TableColumnSchema[],
 			);
@@ -263,16 +287,12 @@ export function setProps(pipeline: ApplyPipeline, op: SetPropsOp): string[] {
 }
 
 export function tagStructuralOrigin(
-	pipeline: ApplyPipeline,
+	pipeline: Pick<ApplyPipelineDocumentAccess, "_adapter" | "_crdtDoc">,
 	structural: StructuralOriginTag,
 ): void {
-	const self = pipeline as ApplyPipelineRuntime;
-	const raw = self._adapter.raw?.(self._crdtDoc) as
+	const raw = pipeline._adapter.raw?.(pipeline._crdtDoc) as
 		| { _transaction?: { meta?: Map<unknown, unknown> } }
 		| undefined;
 	const txn = raw?._transaction;
-	// write split/merge intent onto txn.meta only — never mutate the origin
-	// object. Y.UndoManager matches trackedOrigins by identity; hanging extra
-	// fields on the live origin is the same class of bug as copying it.
 	txn?.meta?.set(STRUCTURAL_ORIGIN_META_KEY, structural);
 }

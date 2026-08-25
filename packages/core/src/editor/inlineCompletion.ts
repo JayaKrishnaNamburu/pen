@@ -241,7 +241,7 @@ function createInlineCompletionRelease(
 			return;
 		}
 		inlineCompletionLeases.delete(editor);
-		if (editor.internals.getSlot(INLINE_COMPLETION_SLOT) === controller) {
+		if (getInlineCompletionController(editor) === controller) {
 			editor.internals.assignSlot(INLINE_COMPLETION_SLOT, null);
 		}
 		controller.destroy();

@@ -6,7 +6,7 @@ import { generateId, type Editor } from "@input/pen-types";
 export interface ChatTurn {
 	id: string;
 	prompt: string;
-	/** What the assistant did, once the turn is finished. */
+	/** What the agent did, once the turn is finished. */
 	outcome: string | null;
 	/** The lane Pen routed the prompt to, for the curious. */
 	route: string | null;
@@ -15,11 +15,12 @@ export interface ChatTurn {
 
 export interface Chat {
 	turns: ChatTurn[];
-	/** What the assistant is doing right now, or `null` when idle. */
+	/** What the agent is doing right now, or `null` when idle. */
 	activity: string | null;
 	isBusy: boolean;
 	send: (prompt: string) => void;
 	stop: () => void;
+	reset: () => void;
 }
 
 const ACTIVITY_LABELS: Record<string, string> = {
@@ -30,9 +31,9 @@ const ACTIVITY_LABELS: Record<string, string> = {
 };
 
 /**
- * The assistant transcript.
+ * The agent transcript.
  *
- * Worth knowing before reading this: Pen's assistant is not a chatbot that
+ * Worth knowing before reading this: Pen's agent is not a chatbot that
  * happens to sit next to a document. A prompt goes in, Pen decides how to
  * handle it, and the answer arrives *as document content* — either streamed
  * into a block or applied through document tools. Nothing comes back for the
@@ -66,7 +67,7 @@ export function useChat(editor: Editor): Chat {
 			},
 		]);
 
-		// `target: "document"` lets the assistant work anywhere in the document.
+		// `target: "document"` lets the agent work anywhere in the document.
 		// Pass "selection" to scope it to what the user highlighted instead.
 		void aiActions
 			.runPrompt(trimmedPrompt, { target: "document" })
@@ -95,6 +96,11 @@ export function useChat(editor: Editor): Chat {
 		}
 	};
 
+	const reset = () => {
+		stop();
+		setTurns([]);
+	};
+
 	function finishTurn(
 		turnId: string,
 		update: Omit<ChatTurn, "id" | "prompt">,
@@ -114,6 +120,7 @@ export function useChat(editor: Editor): Chat {
 		isBusy,
 		send,
 		stop,
+		reset,
 	};
 }
 

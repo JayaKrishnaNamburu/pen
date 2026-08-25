@@ -1,3 +1,4 @@
+import { streamingTargetFacet } from "@input/pen-core";
 import {
   generateId,
   type Editor,
@@ -97,9 +98,9 @@ export class ToolContextImpl implements ToolContext {
     this._activeStreamingZone = { zoneId, blockId };
     this.emit({ type: "gen-start", zoneId, blockId });
 
-    const streaming = this.editor.internals.getSlot<{
+    const streaming = this.editor.facet(streamingTargetFacet) as {
       beginStreaming(zoneId: string, blockId: string): void;
-    }>("delta-stream:target");
+    } | null;
     if (streaming) {
       streaming.beginStreaming(zoneId, blockId);
     }
@@ -116,9 +117,9 @@ export class ToolContextImpl implements ToolContext {
       delta,
     });
 
-    const streaming = this.editor.internals.getSlot<{
+    const streaming = this.editor.facet(streamingTargetFacet) as {
       appendDelta(delta: string): void;
-    }>("delta-stream:target");
+    } | null;
     if (streaming) {
       streaming.appendDelta(delta);
     }
@@ -138,9 +139,9 @@ export class ToolContextImpl implements ToolContext {
     });
     this._activeStreamingZone = null;
 
-    const streaming = this.editor.internals.getSlot<{
+    const streaming = this.editor.facet(streamingTargetFacet) as {
       endStreaming(status: "complete" | "cancelled" | "error"): void;
-    }>("delta-stream:target");
+    } | null;
     if (streaming) {
       streaming.endStreaming(status);
     }

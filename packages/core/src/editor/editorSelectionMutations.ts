@@ -1,4 +1,4 @@
-import type { EditorInternals, CreateEditorOptions, PenEventMap, DocumentCommitEvent, CRDTAdapter, CRDTDocument, CRDTEvent, PenDocument, SchemaRegistry, Awareness, DocumentSession, DocumentScope, DocumentScopeReplacementEvent, DocumentProfile, Extension, DocumentOp, ApplyOptions, OpOrigin, MutationGroupMetadata, SelectionState, TextSelection, DocumentRange, BlockHandle, Block, DocumentState, Unsubscribe, CRDTMap, CRDTArray, Position, DecorationSet, EditorViewMode } from "@input/pen-types";
+import type { EditorInternals, CreateEditorOptions, PenEventMap, CRDTAdapter, CRDTDocument, CRDTEvent, PenDocument, SchemaRegistry, Awareness, DocumentSession, DocumentScope, DocumentScopeReplacementEvent, DocumentProfile, Extension, DocumentOp, ApplyOptions, OpOrigin, MutationGroupMetadata, SelectionState, TextSelection, DocumentRange, BlockHandle, Block, DocumentState, Unsubscribe, CRDTMap, CRDTArray, Position, DecorationSet, EditorViewMode } from "@input/pen-types";
 import { AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY, COLLECT_KEY_BINDINGS_SLOT_KEY, MUTATION_GROUP_METADATA_KEY, UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY, generateId } from "@input/pen-types";
 import { usesInlineTextSelection } from "../schema/fieldEditorCapabilities";
 import { SchemaEngineImpl } from "../schema/normalize";
@@ -10,7 +10,10 @@ import { getTextProp, getTableContent, getCellText as getCellTextFromRow, isCRDT
 import { DocumentStateImpl } from "./documentState";
 import { createDocumentSession } from "./documentSession";
 
-type EditorImplRuntime = any;
+import type { EditorSelectionMutationContext } from "./editorImplContext";
+import { resolvePosition } from "./applySharedHelpers";
+
+type EditorImplRuntime = EditorSelectionMutationContext;
 type CRDTBlockMap = CRDTMap<CRDTMap<unknown>>;
 type RawPenDocumentLike = { getArray?(name: "blockOrder"): CRDTArray<string>; getMap?(name: "blocks" | "apps" | "metadata"): CRDTMap<unknown>; blockOrder?: CRDTArray<string>; blocks?: CRDTMap<unknown>; apps?: CRDTMap<unknown>; metadata?: CRDTMap<unknown>; };
 function missingPenDocumentRoot(name: string): never { throw new Error(`CRDT document is missing required Pen root "${name}".`); }
@@ -64,7 +67,7 @@ if (sel.type === "text") {
 
 if (sel.type === "block" && sel.blockIds.length > 0) {
 	const firstId = sel.blockIds[0];
-	const firstIndex = self._pipeline._resolvePosition({
+	const firstIndex = resolvePosition(self._pipeline, {
 		before: firstId,
 	});
 	const ops: DocumentOp[] = [];

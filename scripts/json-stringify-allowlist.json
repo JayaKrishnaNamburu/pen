@@ -42,11 +42,6 @@
       "reason": "Debug display — unknown-block fallback pretty-prints props in development only."
     },
     {
-      "file": "packages/rendering/react/src/utils/clipboardSerialization.ts",
-      "symbol": "writePenClipboard",
-      "reason": "Clipboard wire format — writePenClipboard serializes pen-blocks onto the clipboard."
-    },
-    {
       "file": "packages/rendering/react/src/utils/structuredPreview.ts",
       "symbol": "cloneStructuredValue",
       "reason": "HOST4 clone fallback — structuredClone is preferred; JSON clone is only used when that API is missing."

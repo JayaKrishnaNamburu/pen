@@ -185,7 +185,7 @@ flowchart TD
 
 - Path in workspace: `packages/extensions/interop`
 - Spec path mirrors workspace path: `packages/extensions/interop.md`
-- `@input/pen-react` and `@input/pen-vue` take HTML ingest from this package. Markdown ingest stays an optional React peer on `@input/pen-interop`.
+- `@input/pen-preset-default` takes the default HTML paste importer from `./html` (`htmlClipboardExtension` assigns `htmlImporter` to `paste:importers`). `@input/pen-vue` still defaults `paste:importers.html` to `htmlImporter` when the host does not pass one. `@input/pen-react` does not install a default HTML importer. Markdown ingest stays an optional React peer on `@input/pen-interop`.
 - `@input/pen-test` uses JSON export from `./json` for headless export contracts.
 - Prefer `./json` as the conceptual starting point when reasoning about data shape; XML stays aligned with that shape.
 - `parse*ToBlocks()` / `parse*WithReport()` are useful when a host wants pending blocks without immediately applying them. `*Importer.import()` is the live-editor path.

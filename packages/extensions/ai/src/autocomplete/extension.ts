@@ -2,6 +2,7 @@ import type { Editor, Extension, InlineCompletionController } from "@input/pen-t
 import {
 	aiAutocompleteControllerFacet,
 	createDecorationSet,
+	decorationsFacet,
 	ensureInlineCompletionController,
 	} from "@input/pen-core";
 import { AI_AUTOCOMPLETE_CONTROLLER_SLOT,
@@ -23,6 +24,13 @@ export function autocompleteExtension(
 
 	return defineExtension({
 		name: AI_AUTOCOMPLETE_EXTENSION_NAME,
+		facets: [
+			decorationsFacet.of(() =>
+				createDecorationSet([
+					...(inlineCompletion?.buildDecorations() ?? []),
+				]),
+			),
+		],
 		activateClient: async ({ editor }) => {
 			activeEditor = editor;
 			const inlineCompletionRegistration =
@@ -43,10 +51,6 @@ export function autocompleteExtension(
 			releaseInlineCompletion = null;
 			activeEditor = null;
 		},
-		decorations: () =>
-			createDecorationSet([
-				...(inlineCompletion?.buildDecorations() ?? []),
-			]),
 	});
 }
 

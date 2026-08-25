@@ -6,11 +6,11 @@ import { createRoot } from "react-dom/client";
 import {
 	createEditor as createCoreEditor,
 	DocumentRangeImpl,
+	fieldEditorHostFacet,
 } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
 import type { FieldEditorImpl } from "@input/pen-dom/field-editor/fieldEditorImpl";
 import { Pen } from "../primitives/index";
-import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
 import {
 	domSelectionToEditor,
 	editorSelectionToDOM,
@@ -51,9 +51,9 @@ async function flushAnimationFrames(count = 1): Promise<void> {
 function getFieldEditor(
 	editor: ReturnType<typeof createEditor>,
 ): FieldEditorImpl {
-	const fieldEditor = editor.internals.getSlot<FieldEditorImpl>(
-		FIELD_EDITOR_SLOT_KEY,
-	);
+	const fieldEditor = editor.facet(
+		fieldEditorHostFacet,
+	) as FieldEditorImpl | null;
 	if (!fieldEditor) {
 		throw new Error("Missing attached field editor");
 	}

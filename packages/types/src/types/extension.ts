@@ -1,8 +1,4 @@
-import type { CRDTEvent } from "./crdt";
-import type { BlockSchema, InlineSchema } from "./schema";
-import type { KeyBinding, InputRule } from "./input";
-import type { DecorationSet } from "./decorations";
-import type { CommitEvent, DocumentState, Editor } from "./editor";
+import type { CommitEvent, Editor } from "./editor";
 import type { FacetProvider } from "./facets";
 
 export interface ServerExtensionContext {
@@ -28,10 +24,6 @@ export interface Extension {
   deactivateClient?(): Promise<void>;
 
   observe?(events: readonly CommitEvent[], editor: Editor): void;
-  decorations?(state: DocumentState, editor: Editor): DecorationSet;
-
-  readonly inputRules?: readonly InputRule[];
-  readonly keyBindings?: readonly KeyBinding[];
 
   state?: ExtensionStateSpec<unknown>;
 }

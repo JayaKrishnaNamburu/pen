@@ -1,13 +1,22 @@
+import { useState } from "react";
 import type { Editor } from "@input/pen-types";
 import { Sheet } from "../ui/Sheet";
+import { tabId, Tabs } from "../ui/Tabs";
 import { BlockTree } from "./BlockTree";
 import { useDocumentSnapshot } from "./useDocumentSnapshot";
 
 interface InspectorSheetProps {
 	editor: Editor;
-	isOpen: boolean;
+	open: boolean;
 	onClose: () => void;
 }
+
+type InspectorView = "blocks" | "json";
+
+const VIEWS = [
+	{ value: "blocks", label: "Blocks" },
+	{ value: "json", label: "JSON" },
+] satisfies { value: InspectorView; label: string }[];
 
 /**
  * The right-hand panel: what the document actually contains.
@@ -16,15 +25,19 @@ interface InspectorSheetProps {
  * rather than a mirror the app maintains. Type in the editor with this open and
  * watch the revision counter and block text move.
  */
-export function InspectorSheet({
-	editor,
-	isOpen,
-	onClose,
-}: InspectorSheetProps) {
-	const snapshot = useDocumentSnapshot(editor, isOpen);
+export function InspectorSheet({ editor, open, onClose }: InspectorSheetProps) {
+	const snapshot = useDocumentSnapshot(editor, open);
+	const [view, setView] = useState<InspectorView>("blocks");
 
 	return (
-		<Sheet title="Document state" isOpen={isOpen} onClose={onClose}>
+		<Sheet
+			title="Document state"
+			open={open}
+			onClose={onClose}
+			headerActions={
+				<Tabs items={VIEWS} active={view} onChange={setView} />
+			}
+		>
 			<dl className="inspector-summary">
 				<dt>Blocks</dt>
 				<dd>{snapshot.blockCount}</dd>
@@ -34,15 +47,19 @@ export function InspectorSheet({
 				<dd>{snapshot.selection}</dd>
 			</dl>
 
-			<section className="inspector-section">
-				<h3 className="inspector-heading">Blocks</h3>
-				<BlockTree blocks={snapshot.blocks} />
-			</section>
-
-			<details className="inspector-raw">
-				<summary>Raw JSON</summary>
-				<pre>{JSON.stringify(snapshot.blocks, null, 2)}</pre>
-			</details>
+			<div
+				className="inspector-view"
+				role="tabpanel"
+				aria-labelledby={tabId(view)}
+			>
+				{view === "blocks" ? (
+					<BlockTree blocks={snapshot.blocks} />
+				) : (
+					<pre className="inspector-json">
+						{JSON.stringify(snapshot.blocks, null, 2)}
+					</pre>
+				)}
+			</div>
 		</Sheet>
 	);
 }

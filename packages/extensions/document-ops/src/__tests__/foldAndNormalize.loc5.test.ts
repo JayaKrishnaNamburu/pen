@@ -34,9 +34,7 @@ function createLocaleEditor(locale: string, text: string): Editor {
 		documentState: {
 			allBlocks: () => [block],
 		},
-		internals: {
-			getSlot: (key: string) => (key === "pen.locale" ? locale : undefined),
-		},
+		facet: () => locale,
 		getSelection: () => ({
 			type: "text",
 			anchor: { blockId: block.id, offset: 0 },

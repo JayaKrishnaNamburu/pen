@@ -16,7 +16,7 @@ Package the standard runtime stack for most adopters so they can start from a co
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@input/pen-ai`, `@input/pen-document-ops`, `@input/pen-schema-default`, `@input/pen-shortcuts`, `@input/pen-types`, `@input/pen-undo`
+- Runtime dependencies: `@input/pen-ai`, `@input/pen-core`, `@input/pen-document-ops`, `@input/pen-interop`, `@input/pen-schema-default`, `@input/pen-shortcuts`, `@input/pen-types`, `@input/pen-undo`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: Presets compose existing runtime packages rather than becoming new architecture layers.
 
@@ -24,7 +24,7 @@ Package the standard runtime stack for most adopters so they can start from a co
 
 `defaultPreset()` is the only batteries-included composition path. Bare `createEditor()` installs neither this stack nor a schema.
 
-The preset's `resolve()` returns `createDefaultSchema()` plus, unless turned off, `documentOpsExtension()`, `deltaStreamExtension()` from `@input/pen-ai/stream`, `undoExtension()`, and `richTextShortcutsExtension()`. Hosts can turn individual defaults off or pass typed options to the composed packages. Hosts that need full control should skip the preset and register extensions explicitly through `createEditor({ extensions: [...] })`.
+The preset's `resolve()` returns `createDefaultSchema()` plus, unless turned off, `documentOpsExtension()`, `deltaStreamExtension()` from `@input/pen-ai/stream`, `undoExtension()`, and `richTextShortcutsExtension()`. It always also installs `htmlClipboardExtension()` (`name: "html-clipboard"`), which `assignSlot`s `{ html: htmlImporter }` onto `paste:importers` so HTML paste works without a renderer-owned importer. That clipboard extension is not gated by `DefaultPresetOptions`. Hosts can turn the other defaults off or pass typed options to the composed packages. Hosts that need full control should skip the preset and register extensions explicitly through `createEditor({ extensions: [...] })`.
 
 ## Integration Notes
 

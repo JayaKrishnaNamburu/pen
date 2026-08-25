@@ -13,7 +13,12 @@ function competitor(binding: KeyBinding): Extension {
 	return {
 		name: "keymap-competitor",
 		version: "0.0.0",
-		keyBindings: [binding],
+		facets: [
+			keymapFacet.of(
+				[binding],
+				keyBindingPriorityToPrecedence(binding.priority ?? 300),
+			),
+		],
 	};
 }
 
@@ -21,7 +26,7 @@ describe("R-keymap / K1", () => {
 	it("R-keymap / K1: ships one highest provider per default mark binding", () => {
 		const extension = richTextShortcutsExtension();
 
-		expect(extension.keyBindings).toBeUndefined();
+		expect("keyBindings" in extension).toBe(false);
 		expect(extension.facets?.map((provider) => provider.facetName)).toEqual([
 			PEN_KEYMAP_FACET_NAME,
 			PEN_KEYMAP_FACET_NAME,

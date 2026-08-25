@@ -24,7 +24,6 @@ import { ExpandedContentEditableBackend } from "./expandedContentEditableBackend
 import { FocusController } from "./focusController";
 import { HistorySelectionCoordinator } from "./historySelectionCoordinator";
 import { PendingMarkController } from "./pendingMarkController";
-import { SelectAllController } from "./selectAllController";
 import { FieldEditorSelectionCoordinator } from "./selectionCoordinator";
 import type {
 	FieldEditorSelectionSnapshot,
@@ -49,14 +48,8 @@ import {
 	queryBlockElement,
 	queryInlineElement,
 } from "./selectionBridge";
-import {
-	getEditorBlockSelectionLength,
-	getEditorBlockSelectionRole,
-} from "../utils/blockSelectionSemantics";
-import {
-	getEditorFlowCapability,
-	shouldForceBlockScopedSelectAll,
-} from "../utils/flowCapabilities";
+import { getEditorBlockSelectionRole } from "../utils/blockSelectionSemantics";
+import { getEditorFlowCapability } from "../utils/flowCapabilities";
 import type { FieldEditorStoreSnapshot } from "./store";
 import type { EditorSelectAllBehavior } from "../constants/selectAll";
 import { FieldEditorImplSelection } from "./fieldEditorImplSelection";
@@ -473,30 +466,5 @@ export abstract class FieldEditorImplRuntime extends FieldEditorImplSelection {
 		col: number,
 	): FieldEditorTextLike | null {
 		return getCellYText(this._editor, blockId, row, col);
-	}
-
-	protected _selectElementContents(element: HTMLElement): void {
-		if (
-			!this.requestDomFocus(element, "select-all", {
-				preventScroll: true,
-			})
-		) {
-			return;
-		}
-		const selection = element.ownerDocument?.getSelection();
-		if (!selection) return;
-
-		const range = element.ownerDocument.createRange();
-		range.selectNodeContents(element);
-		selection.removeAllRanges();
-		selection.addRange(range);
-	}
-
-	protected _resolveActiveCellElement(
-		rootElement?: HTMLElement | null,
-	): HTMLElement | null {
-		return this._cellEditingController.resolveActiveCellElement(
-			rootElement,
-		);
 	}
 }

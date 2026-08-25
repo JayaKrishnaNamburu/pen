@@ -69,10 +69,10 @@ describe("@input/pen-ai/autocomplete", () => {
 					name: "test-field-editor-slot",
 					activateClient: async ({ editor: nextEditor }) => {
 						activeEditor = nextEditor;
-						nextEditor.internals.setSlot(FIELD_EDITOR_SLOT_KEY, fieldEditor);
+						nextEditor.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, fieldEditor);
 					},
 					deactivateClient: async () => {
-						activeEditor?.internals.setSlot(FIELD_EDITOR_SLOT_KEY, null);
+						activeEditor?.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, null);
 						activeEditor = null;
 					},
 				}),
@@ -134,10 +134,10 @@ describe("@input/pen-ai/autocomplete", () => {
 					name: "test-field-editor-slot",
 					activateClient: async ({ editor: nextEditor }) => {
 						activeEditor = nextEditor;
-						nextEditor.internals.setSlot(FIELD_EDITOR_SLOT_KEY, fieldEditor);
+						nextEditor.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, fieldEditor);
 					},
 					deactivateClient: async () => {
-						activeEditor?.internals.setSlot(FIELD_EDITOR_SLOT_KEY, null);
+						activeEditor?.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, null);
 						activeEditor = null;
 					},
 				}),
@@ -189,10 +189,10 @@ describe("@input/pen-ai/autocomplete", () => {
 					name: "test-field-editor-slot",
 					activateClient: async ({ editor: nextEditor }) => {
 						activeEditor = nextEditor;
-						nextEditor.internals.setSlot(FIELD_EDITOR_SLOT_KEY, fieldEditor);
+						nextEditor.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, fieldEditor);
 					},
 					deactivateClient: async () => {
-						activeEditor?.internals.setSlot(FIELD_EDITOR_SLOT_KEY, null);
+						activeEditor?.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, null);
 						activeEditor = null;
 					},
 				}),
@@ -254,10 +254,10 @@ describe("@input/pen-ai/autocomplete", () => {
 					name: "test-field-editor-slot",
 					activateClient: async ({ editor: nextEditor }) => {
 						activeEditor = nextEditor;
-						nextEditor.internals.setSlot(FIELD_EDITOR_SLOT_KEY, fieldEditor);
+						nextEditor.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, fieldEditor);
 					},
 					deactivateClient: async () => {
-						activeEditor?.internals.setSlot(FIELD_EDITOR_SLOT_KEY, null);
+						activeEditor?.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, null);
 						activeEditor = null;
 					},
 				}),
@@ -315,10 +315,10 @@ describe("@input/pen-ai/autocomplete", () => {
 					name: "test-field-editor-slot",
 					activateClient: async ({ editor: nextEditor }) => {
 						activeEditor = nextEditor;
-						nextEditor.internals.setSlot(FIELD_EDITOR_SLOT_KEY, fieldEditor);
+						nextEditor.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, fieldEditor);
 					},
 					deactivateClient: async () => {
-						activeEditor?.internals.setSlot(FIELD_EDITOR_SLOT_KEY, null);
+						activeEditor?.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, null);
 						activeEditor = null;
 					},
 				}),
@@ -380,10 +380,10 @@ describe("@input/pen-ai/autocomplete", () => {
 					name: "test-field-editor-slot",
 					activateClient: async ({ editor: nextEditor }) => {
 						activeEditor = nextEditor;
-						nextEditor.internals.setSlot(FIELD_EDITOR_SLOT_KEY, fieldEditor);
+						nextEditor.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, fieldEditor);
 					},
 					deactivateClient: async () => {
-						activeEditor?.internals.setSlot(FIELD_EDITOR_SLOT_KEY, null);
+						activeEditor?.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, null);
 						activeEditor = null;
 					},
 				}),

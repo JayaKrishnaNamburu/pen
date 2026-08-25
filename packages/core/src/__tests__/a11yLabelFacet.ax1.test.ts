@@ -24,7 +24,6 @@ describe("pen.a11yLabel facet (AX1)", () => {
 	it("AX1: createEditor a11yLabel becomes the facet value", () => {
 		const editor = createHeadlessEditor({ schema: defaultSchema,  a11yLabel: "Compose email" });
 		expect(editor.facet(a11yLabelFacet)).toBe("Compose email");
-		expect(editor.internals.getSlot("pen.a11yLabel")).toBe("Compose email");
 		expect(resolveEditorA11yLabel(editor)).toEqual({
 			"aria-label": "Compose email",
 		});

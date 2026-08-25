@@ -130,12 +130,29 @@ function compilerPaths(packages) {
 					continue;
 				}
 				const spec = `${pkg.name}${key.slice(1)}`;
-				const nestedDist = join(pkg.dir, "dist", `${key.slice(2)}.d.ts`);
-				const nestedSrc = join(pkg.dir, "src", `${key.slice(2)}.ts`);
-				if (existsSync(nestedDist)) {
-					paths[spec] = [nestedDist];
-				} else if (existsSync(nestedSrc)) {
-					paths[spec] = [nestedSrc];
+				const sub = key.slice(2);
+				const entry = exportsField[key];
+				const declaredTypes =
+					typeof entry === "object" && entry !== null
+						? (entry.import?.types ?? entry.types ?? entry.require?.types)
+						: undefined;
+				// dist first: it is the published surface these samples document.
+				// src is the no-build fallback. Both come in flat and directory
+				// form (`./field-editor` -> `dist/field-editor/index.d.ts`), and
+				// guessing only the flat one left every directory subpath
+				// unresolvable on a cold tree.
+				const candidates = [
+					declaredTypes === undefined ? undefined : join(pkg.dir, declaredTypes),
+					join(pkg.dir, "dist", `${sub}.d.ts`),
+					join(pkg.dir, "dist", sub, "index.d.ts"),
+					join(pkg.dir, "src", `${sub}.ts`),
+					join(pkg.dir, "src", sub, "index.ts"),
+				];
+				const resolved = candidates.find(
+					(candidate) => candidate !== undefined && existsSync(candidate),
+				);
+				if (resolved !== undefined) {
+					paths[spec] = [resolved];
 				}
 			}
 		}
@@ -251,11 +268,51 @@ function extractSamples() {
 	return samples;
 }
 
+function discoveredInputPackages(sampleList, packageList) {
+	const names = new Set();
+	const specRe = /@input\/pen-[a-z0-9-]+/g;
+	for (const sample of sampleList) {
+		for (const name of sample.code.match(specRe) ?? []) {
+			names.add(name);
+		}
+	}
+	for (const pkg of packageList) {
+		if (pkg.manifest.private === true) {
+			continue;
+		}
+		names.add(pkg.name);
+	}
+	return [...names].sort();
+}
+
+function assertDiscoveredPackagesDeclared(discovered) {
+	const manifest = JSON.parse(
+		readFileSync(join(packageRoot, "package.json"), "utf8"),
+	);
+	const declared = new Set([
+		...Object.keys(manifest.dependencies ?? {}),
+		...Object.keys(manifest.devDependencies ?? {}),
+	]);
+	const missing = discovered.filter((name) => !declared.has(name));
+	if (missing.length > 0) {
+		console.error(
+			`DOC2: discovered but undeclared: ${missing.join(", ")}`,
+		);
+		process.exit(1);
+	}
+	console.log(
+		`DOC2: ${discovered.length} resolved @input packages are declared dependencies`,
+	);
+}
+
 const samples = extractSamples();
 if (samples.length === 0) {
 	console.error("DOC2 sample gate: no <pre><code> samples found under src/pages");
 	process.exit(1);
 }
+
+const packages = collectPackages(join(repoRoot, "packages"));
+assertDiscoveredPackagesDeclared(discoveredInputPackages(samples, packages));
 
 const prepared = [];
 const skipped = [];
@@ -268,7 +325,6 @@ for (const sample of samples) {
 	prepared.push({ sample, source: next.source, ext: next.ext });
 }
 
-const packages = collectPackages(join(repoRoot, "packages"));
 const tmp = mkdtempSync(join(tmpdir(), "pen-doc2-samples-"));
 const files = [];
 

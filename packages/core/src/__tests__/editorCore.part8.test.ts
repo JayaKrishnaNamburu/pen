@@ -3,7 +3,7 @@ import {
 	type DocumentSession,
 	type PenStreamPart,
 } from "@input/pen-types";
-import { defineExtension, getOpOriginType } from "@input/pen-core";
+import { decorationsFacet, defineExtension, getOpOriginType } from "@input/pen-core";
 import { describe, expect, it, vi } from "vitest";
 
 import { createDefaultSchema } from "./fixtures/testSchema";
@@ -48,10 +48,6 @@ async function flushMicrotasks(count = 2): Promise<void> {
 	for (let index = 0; index < count; index++) {
 		await Promise.resolve();
 	}
-}
-
-function visibleText(text: string): string {
-	return text.replace(/\u200B/g, "");
 }
 
 type TestYTextLike = {
@@ -152,20 +148,22 @@ describe("@input/pen-core table operations", () => {
 			extensions: [
 				defineExtension({
 					name: "test-decorations",
-					decorations(_state, currentEditor) {
-						const blockId = currentEditor.firstBlock()?.id;
-						if (!blockId) {
-							return createDecorationSet([]);
-						}
+					facets: [
+						decorationsFacet.of((_state, currentEditor) => {
+							const blockId = currentEditor.firstBlock()?.id;
+							if (!blockId) {
+								return createDecorationSet([]);
+							}
 
-						return createDecorationSet([
-							{
-								type: "block",
-								blockId,
-								attributes: { active: true },
-							},
-						]);
-					},
+							return createDecorationSet([
+								{
+									type: "block",
+									blockId,
+									attributes: { active: true },
+								},
+							]);
+						}),
+					],
 				}),
 			],
 		});

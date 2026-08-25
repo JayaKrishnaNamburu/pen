@@ -6,10 +6,10 @@ import type { ChatEvent, ChatRequest } from "./protocol";
 /**
  * `POST /api/chat`: the one endpoint the playground has.
  *
- * With `ANTHROPIC_API_KEY` set it proxies Anthropic; without it, a scripted
- * model answers so a fresh clone still works. Either way the response is the
- * same newline-delimited event stream, which is why the browser does not know
- * or care which one replied.
+ * A request header `x-anthropic-api-key` (from the agent menu) or
+ * `ANTHROPIC_API_KEY` on the server proxies Anthropic; without either, a
+ * scripted model answers so a fresh clone still works. Either way the
+ * response is the same newline-delimited event stream.
  */
 export async function handleChatRequest(
 	incoming: IncomingMessage,
@@ -35,8 +35,9 @@ export async function handleChatRequest(
 	const controller = new AbortController();
 	incoming.on("close", () => controller.abort());
 
-	const events = apiKey
-		? streamAnthropic(request, apiKey, controller.signal)
+	const resolvedKey = resolveApiKey(incoming, apiKey);
+	const events = resolvedKey
+		? streamAnthropic(request, resolvedKey, controller.signal)
 		: streamScripted(request);
 
 	try {
@@ -53,6 +54,18 @@ export async function handleChatRequest(
 	}
 
 	response.end();
+}
+
+function resolveApiKey(
+	incoming: IncomingMessage,
+	envKey: string | undefined,
+): string | undefined {
+	const header = incoming.headers["x-anthropic-api-key"];
+	const fromHeader = typeof header === "string" ? header.trim() : "";
+	if (fromHeader.length > 0) {
+		return fromHeader;
+	}
+	return envKey;
 }
 
 function write(response: ServerResponse, event: ChatEvent): void {

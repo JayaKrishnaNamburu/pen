@@ -1,10 +1,10 @@
 import { useMemo, useSyncExternalStore } from "react";
+import { historyControllerFacet } from "@input/pen-core";
 import type {
 	BlameRange,
 	CharacterAttribution,
 	HistoryController,
 } from "@input/pen-history";
-import { getHistoryController } from "@input/pen-history";
 import type { Editor, Unsubscribe } from "@input/pen-types";
 import { useHistory } from "./useHistory";
 import { useMultiplayer } from "./useMultiplayer";
@@ -23,7 +23,9 @@ export function useAttribution(
 	editor: Editor,
 	blockId: string,
 ): AttributionState {
-	const historyController = getHistoryController(editor);
+	const historyController =
+		(editor.facet(historyControllerFacet) as HistoryController | null) ??
+		null;
 	const historyState = useHistory(editor);
 	const multiplayerState = useMultiplayer(editor);
 	const canReadHistoryAttribution =

@@ -109,10 +109,7 @@ editor.apply(
 					{"{ commitId, blockText, structural, affectedBlockIds }"}
 				</code>
 				, the origin, and selection before/after. Subscribe with{" "}
-				<code>{`editor.on("commit", handler)`}</code>.{" "}
-				<code>change</code> and <code>documentCommit</code> still fire
-				for this minor and emit <code>event-deprecated</code> once per
-				session.
+				<code>{`editor.on("commit", handler)`}</code>.
 			</p>
 
 			<h2>Diagnostics</h2>

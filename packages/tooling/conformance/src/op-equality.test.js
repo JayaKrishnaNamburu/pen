@@ -16,10 +16,13 @@ import { join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import {
-	createHeadlessEditor,
-	STRIP_EMPTY_BLOCK_ZWSP_ID,
-} from "@input/pen-core";
+import { createHeadlessEditor } from "@input/pen-core";
+
+// The ledger value is persisted into the document, so the string is the
+// contract and a rename of core's constant must not move it. Asserting the
+// literal is what makes that failure visible; importing the constant would
+// silently follow a rename while stored documents kept the old value.
+const STRIP_EMPTY_BLOCK_ZWSP_ID = "strip-empty-block-sentinels";
 import {
 	initBlockMap,
 	readFormatStamp,

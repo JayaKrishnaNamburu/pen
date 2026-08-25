@@ -40,7 +40,7 @@ function createFieldEditor(blockId: string) {
 		shouldHandleDomSelectionChange: () => false,
 		getBackendSelectionApplicationDepth: () => 0,
 		applyDomTextSelection: () => {},
-		selectAll: () => false,
+		selectAllBehavior: "block-first" as const,
 		resolveInsertMarks: () => undefined,
 	};
 	return { controller, activations, deactivated: () => deactivated };

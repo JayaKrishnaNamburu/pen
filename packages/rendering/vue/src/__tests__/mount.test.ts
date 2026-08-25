@@ -1,16 +1,15 @@
 // @vitest-environment jsdom
 
+import { fieldEditorHostFacet } from "@input/pen-core";
 import {
   handleEditorDocumentKeyDown,
   type FieldEditorImpl,
 } from "@input/pen-dom";
-import { FIELD_EDITOR_SLOT_KEY } from "@input/pen-types";
 import { createTestEditor } from "@input/pen-test";
 import { mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it } from "vitest";
 import { h, nextTick } from "vue";
 import { PenEditor } from "../components/PenEditor";
-import { FIELD_EDITOR_SLOT_KEY as VUE_FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
 
 afterEach(() => {
   document.body.replaceChildren();
@@ -145,7 +144,7 @@ describe("@input/pen-vue", () => {
     });
 
     expect(wrapper.text()).toContain("Hello Vue");
-    expect(editor.internals.getSlot(FIELD_EDITOR_SLOT_KEY)).toBeTruthy();
+    expect(editor.facet(fieldEditorHostFacet)).toBeTruthy();
 
     wrapper.unmount();
     editor.destroy();
@@ -382,9 +381,9 @@ describe("@input/pen-vue", () => {
     });
     await nextTick();
 
-    const fieldEditor =
-      editor.internals.getSlot<FieldEditorImpl>(FIELD_EDITOR_SLOT_KEY) ??
-      editor.internals.getSlot<FieldEditorImpl>(VUE_FIELD_EDITOR_SLOT_KEY);
+    const fieldEditor = editor.facet(
+      fieldEditorHostFacet,
+    ) as FieldEditorImpl | null;
     if (!fieldEditor) {
       throw new Error("expected mounted field editor");
     }

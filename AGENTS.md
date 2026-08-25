@@ -18,7 +18,7 @@ The monorepo is layered; dependencies point strictly downward:
 - `packages/rendering/react` / `packages/rendering/vue` — thin framework bindings over pen-dom. Behavior belongs in pen-dom or core, never here.
 - `packages/extensions/*` — undo, history, search, input-rules, shortcuts, multiplayer, document-ops, `@input/pen-ai` (subpaths: suggestions, autocomplete, skills, tools, stream), and `@input/pen-interop` (subpaths: html, markdown, json, xml).
 - `packages/presets/default` — batteries-included assembly of core + default schema + recommended extensions.
-- `packages/shared/*`, `packages/transports/*` (direct, sse), `packages/tooling/*` (test, bench, assets-memory), `packages/docs`, `playground/` (small reference app), `internal/kitchen-sink/` (maintainer sandbox; the e2e suite runs against it).
+- `packages/shared/*`, `packages/transports/*` (direct, sse), `packages/tooling/*` (test, bench, assets-memory), `packages/docs`, `playground/` (reference app; `pnpm test:e2e` runs against it).
 
 ## Specs Are The Contract
 

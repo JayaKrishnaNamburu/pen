@@ -5,7 +5,9 @@ import { SlashMenu } from "./SlashMenu";
 
 interface EditorPaneProps {
 	editor: Editor;
-	isInspectorOpen: boolean;
+	inspectorOpen: boolean;
+	collaborationLive: boolean;
+	onOpenCollaborate: () => void;
 	onToggleInspector: () => void;
 }
 
@@ -18,19 +20,33 @@ interface EditorPaneProps {
  */
 export function EditorPane({
 	editor,
-	isInspectorOpen,
+	inspectorOpen,
+	collaborationLive,
+	onOpenCollaborate,
 	onToggleInspector,
 }: EditorPaneProps) {
 	return (
 		<main className="editor-pane">
 			<FormatToolbar
 				editor={editor}
-				isInspectorOpen={isInspectorOpen}
+				inspectorOpen={inspectorOpen}
+				collaborationLive={collaborationLive}
+				onOpenCollaborate={onOpenCollaborate}
 				onToggleInspector={onToggleInspector}
 			/>
 			<div className="editor-scroll">
-				<Pen.Editor.Root editor={editor}>
-					<Pen.Editor.Content emptyPlaceholder="Write something, or ask the assistant on the left." />
+				{/*
+				 * `Pen.Editor.Root` binds a field editor and a rendered DOM tree
+				 * to one editor instance for its whole lifetime. Joining or
+				 * leaving a room replaces the instance, so the surface is keyed
+				 * to force a fresh mount instead of leaving the old field editor
+				 * projecting DOM selections into a document it no longer knows.
+				 */}
+				<Pen.Editor.Root editor={editor} key={editor.internals.viewId}>
+					<Pen.Editor.Content emptyPlaceholder="Write something, or ask the agent on the left." />
+					{collaborationLive ? (
+						<Pen.Multiplayer.CaretOverlay />
+					) : null}
 					<SlashMenu editor={editor} />
 				</Pen.Editor.Root>
 			</div>

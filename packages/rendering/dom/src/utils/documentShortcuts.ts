@@ -31,9 +31,7 @@ export function handleEditorDocumentKeyDown(options: {
 		handleEscapeSelectionTransition({ event, editor, fieldEditor, root }) ||
 		handleDeleteSelectionShortcut(event, editor, fieldEditor, root) ||
 		handleTableCellSelectionKeyDown({ event, editor, fieldEditor, root }) ||
-		handleSelectAllShortcut(editor, event, fieldEditor, {
-			rootElement: root,
-		}) ||
+		handleSelectAllShortcut(editor, event, fieldEditor) ||
 		handleBlockSelectionEnter(
 			event,
 			editor,

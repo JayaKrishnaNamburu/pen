@@ -133,11 +133,6 @@
     },
     {
       "package": "@input/pen-dom",
-      "key": "./types/paste",
-      "reason": "P.6 first-class paste types, not a src/dist escape hatch."
-    },
-    {
-      "package": "@input/pen-dom",
       "key": "./utils/aiDomScope",
       "reason": "P.6 relocated aiDomScope, not a src/dist escape hatch."
     },

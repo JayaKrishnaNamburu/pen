@@ -10,7 +10,6 @@
 - blockId
 - docId
 - generateId
-- mapOffsetThroughSplices
 - zoneId
 
 ### guard
@@ -156,7 +155,6 @@
 - Diagnostic
 - DiagnosticEvent
 - DocId
-- DocumentCommitEvent
 - DocumentOp
 - DocumentProfile
 - DocumentRange
@@ -275,7 +273,6 @@
 - PluralMessage
 - Point
 - Position
-- PositionMapping
 - Precedence
 - PropSchema
 - Range
@@ -286,6 +283,7 @@
 - ResolveRelativePositionOptions
 - SchemaEngine
 - SchemaRegistry
+- SelectAllBehavior
 - SelectionOrigin
 - SelectionRecord
 - SelectionRecordState

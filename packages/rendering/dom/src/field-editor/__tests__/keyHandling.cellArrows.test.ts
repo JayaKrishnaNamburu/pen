@@ -81,7 +81,7 @@ describe("handleTableCellKey arrows", () => {
 				written.push({ start, end });
 			},
 			deactivate: () => {},
-			selectAll: () => false,
+			selectAllBehavior: "block-first" as const,
 		};
 
 		const event = createArrowEvent("ArrowRight");

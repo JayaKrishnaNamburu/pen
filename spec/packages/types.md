@@ -13,7 +13,8 @@ This is the contract package for the monorepo. It is the place where packages ag
 - Export map: `.`
 - Root export of package-wide contracts via `./types/index`
 - Lightweight runtime helpers such as `generateId()`. Schema creation APIs, block-capability helpers, field-editor helpers, message interpolation, mutation-group helpers, `getOpOriginType()`, and tool-execution helpers live on `@input/pen-core`. `PenDocumentUnreadableError` lives on `@input/pen-crdt-yjs`.
-- Shared slot keys such as `FIELD_EDITOR_SLOT_KEY`, `SEARCH_CONTROLLER_SLOT`, `MULTIPLAYER_CONTROLLER_SLOT`, `HISTORY_CONTROLLER_SLOT`, and AI/undo-related slots
+- Shared `assignSlot` keys such as `FIELD_EDITOR_SLOT_KEY`, `SEARCH_CONTROLLER_SLOT`, `MULTIPLAYER_CONTROLLER_SLOT`, `HISTORY_CONTROLLER_SLOT`, and AI/undo-related keys. `editor.internals.assignSlot` is the write surface; it overrides the matching core facet.
+- Editor events: `PenEventMap` — `commit` (`CommitEvent`, whose `summary.affectedBlockIds` is the touched-block list), `selectionChange`, `historyApplied`, `decorationsChange`, `diagnostic`, `crdt:corruption`, `crdt:recovered`
 - Operation origin contracts such as `OpOriginType`, `StructuredOpOrigin` (including optional `intent`), `MutationGroupMetadata`, and helpers for resolving origin/group metadata
 - The closed `DocumentOp` union and its ten payloads (`splice-text`, `format-text`, `insert-block`, `delete-block`, `move-block`, `set-props`, `set-meta`, `grid`, `app`, `stream-open`)
 - Change-summary contracts (`ChangeSummary`, `BlockTextChange`, `StructuralChange`, `TextSplice`) and `mapOffsetThroughSplices()`
@@ -49,7 +50,7 @@ flowchart TD
 
 Important rules:
 
-- Slot keys and interfaces defined here are cross-package contracts and should remain stable unless a real architectural change requires otherwise.
+- `assignSlot` keys and interfaces defined here are cross-package contracts and should remain stable unless a real architectural change requires otherwise.
 - Lightweight helpers are acceptable when they support contract authoring or schema declarations, but heavier behavior belongs elsewhere.
 - Other packages should depend on this package to agree on shapes, not to inherit hidden runtime behavior.
 - Structured mutation metadata belongs here because `@input/pen-core`, undo/history packages, AI extensions, and host workflows all need to agree on attribution and grouping semantics.
@@ -123,8 +124,8 @@ The Yjs adapter implements `createRelativePosition` and `resolveRelativePosition
 
 - Path in workspace: `packages/types`
 - Spec path mirrors workspace path: `packages/types.md`
-- Reach for this package when defining extension interfaces, tool contracts, slots, editor-facing types, or lightweight schema helpers
-- Slot constants coordinate extension lifecycle and cross-package discovery. `defineExtension()` lives on `@input/pen-core`.
+- Reach for this package when defining extension interfaces, tool contracts, `assignSlot` keys, editor-facing types, or lightweight schema helpers
+- Slot-key constants are the `assignSlot` write names that override mapped core facets. `defineExtension()` lives on `@input/pen-core`.
 - Keep additions here broadly reusable; if something only matters once runtime state exists, it probably belongs in another package
 - When AI, playground, and transport layers need to share mutation target behavior, prefer adding the shared shape and helper here once instead of letting each layer infer it differently
 

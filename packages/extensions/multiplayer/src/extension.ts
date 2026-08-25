@@ -6,7 +6,11 @@ import type {
 } from "@input/pen-types";
 import { MULTIPLAYER_CONTROLLER_SLOT } from "@input/pen-types";
 import { defineExtension } from "@input/pen-core";
-import { createDecorationSet, multiplayerControllerFacet } from "@input/pen-core";
+import {
+	createDecorationSet,
+	decorationsFacet,
+	multiplayerControllerFacet,
+} from "@input/pen-core";
 import type { MultiplayerControllerImpl } from "./controller";
 import { buildRemoteCursorDecorations } from "./decorations/remoteCursors";
 import { buildRemoteSelectionDecorations } from "./decorations/remoteSelections";
@@ -36,6 +40,21 @@ export function multiplayerExtension(config: MultiplayerConfig): Extension {
 
 	return defineExtension({
 		name: MULTIPLAYER_EXTENSION_NAME,
+		facets: [
+			decorationsFacet.of((_state, editor) => {
+				const cursorDecorations = buildRemoteCursorDecorations(
+					controller?.getRemoteCursors() ?? [],
+				);
+				const selectionDecorations = buildRemoteSelectionDecorations(
+					editor,
+					controller?.getRemoteSelections() ?? [],
+				);
+				return createDecorationSet([
+					...cursorDecorations,
+					...selectionDecorations,
+				]);
+			}),
+		],
 
 		activateClient: async ({ editor }) => {
 			activeEditor = editor;
@@ -56,20 +75,6 @@ export function multiplayerExtension(config: MultiplayerConfig): Extension {
 			activeEditor?.internals.assignSlot(MULTIPLAYER_CONTROLLER_SLOT, null);
 			controller = null;
 			activeEditor = null;
-		},
-
-		decorations: (_state, editor) => {
-			const cursorDecorations = buildRemoteCursorDecorations(
-				controller?.getRemoteCursors() ?? [],
-			);
-			const selectionDecorations = buildRemoteSelectionDecorations(
-				editor,
-				controller?.getRemoteSelections() ?? [],
-			);
-			return createDecorationSet([
-				...cursorDecorations,
-				...selectionDecorations,
-			]);
 		},
 	});
 }

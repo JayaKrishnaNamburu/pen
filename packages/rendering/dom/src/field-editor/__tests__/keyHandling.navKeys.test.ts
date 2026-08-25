@@ -66,7 +66,7 @@ function createFieldEditor(blockId: string) {
 		activateTextSelection: () => {},
 		commitProgrammaticTextSelection: () => {},
 		deactivate: () => {},
-		selectAll: () => false,
+		selectAllBehavior: "block-first" as const,
 	};
 }
 

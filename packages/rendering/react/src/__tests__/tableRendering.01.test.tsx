@@ -3,11 +3,10 @@
 import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
-import { createEditor as createCoreEditor } from "@input/pen-core";
+import { createEditor as createCoreEditor, fieldEditorHostFacet } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
 import type { FieldEditorImpl } from "@input/pen-dom/field-editor/fieldEditorImpl";
 import { handleCopy } from "@input/pen-dom/field-editor/clipboard";
-import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
 import { Pen } from "../primitives/index";
 import { defaultSchema } from "@input/pen-schema-default";
 
@@ -96,9 +95,9 @@ function createMouseEvent(
 function getFieldEditor(
 	editor: ReturnType<typeof createEditor>,
 ): FieldEditorImpl {
-	const fieldEditor = editor.internals.getSlot<FieldEditorImpl>(
-		FIELD_EDITOR_SLOT_KEY,
-	);
+	const fieldEditor = editor.facet(
+		fieldEditorHostFacet,
+	) as FieldEditorImpl | null;
 	if (!fieldEditor) {
 		throw new Error("Missing attached field editor");
 	}

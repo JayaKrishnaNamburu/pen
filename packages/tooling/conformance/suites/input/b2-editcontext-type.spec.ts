@@ -36,7 +36,7 @@ scenario(
 		const text = await readDocumentText(page);
 		const commits = await page.evaluate(() =>
 			window.__penConformance.lastEvents.filter(
-				(event) => event.type === "documentCommit",
+				(event) => event.type === "commit",
 			),
 		);
 
@@ -56,7 +56,7 @@ scenario(
 		expect(
 			commits.length,
 			formatCheckReport(
-				"B2: typing produced a documentCommit",
+				"B2: typing produced a commit",
 				commits.length > 0 ? "passed" : "failed",
 				`commits=${commits.length}`,
 			),

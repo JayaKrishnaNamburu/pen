@@ -1,5 +1,4 @@
 import {
-	ANNOUNCER_SLOT_KEY,
 	isMessageKey,
 	type A11yMessageKey,
 	type Editor,
@@ -8,6 +7,7 @@ import {
 	type MessageKey,
 } from "@input/pen-types";
 
+import { announcerFacet } from "../facets/controllerFacets";
 import { resolveEditorMessage } from "../i18n/resolveEditorMessage";
 
 export function announceEditorA11y<K extends A11yMessageKey>(
@@ -15,9 +15,8 @@ export function announceEditorA11y<K extends A11yMessageKey>(
 	key: K,
 	...args: MessageArgs<`pen.a11y.${K}` & MessageKey>
 ): void {
-	const announcer = editor.internals.getSlot<EditorAnnouncer | undefined>(
-		ANNOUNCER_SLOT_KEY,
-	);
+	const announcer =
+		(editor.facet(announcerFacet) as EditorAnnouncer | null) ?? null;
 	if (!announcer) {
 		return;
 	}

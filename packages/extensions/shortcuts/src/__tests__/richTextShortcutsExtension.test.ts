@@ -14,7 +14,7 @@ describe("@input/pen-shortcuts", () => {
 		const extension = richTextShortcutsExtension();
 
 		expect(extension.name).toBe("rich-text-shortcuts");
-		expect(extension.keyBindings).toBeUndefined();
+		expect("keyBindings" in extension).toBe(false);
 		expect(extension.facets).toHaveLength(3);
 		expect(
 			extension.facets?.every(

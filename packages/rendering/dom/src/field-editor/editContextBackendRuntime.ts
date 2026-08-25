@@ -36,8 +36,12 @@ import type {
 import { normalizeSelectionFormation } from "../utils/selectionFormation";
 import { handleFieldEditorKeyDown } from "./keyHandling";
 import { isHistoryTransactionOrigin } from "./historyOrigin";
-import { handleCopy, handleCut, handleClipboardPaste } from "./clipboard";
-import type { PasteImporters } from "../types/paste";
+import {
+	getPasteImporters,
+	handleCopy,
+	handleCut,
+	handleClipboardPaste,
+} from "./clipboard";
 import { applyListInputRule } from "./commands";
 import { isFieldEditorTextEditingKey } from "../utils/textEntryTarget";
 import { applyInlineInputRule } from "./inlineInputRules";
@@ -190,13 +194,11 @@ export class EditContextBackendRuntime extends EditContextBackendSelection {
 
 	protected handlePasteEvent = (event: ClipboardEvent): void => {
 		event.preventDefault();
-		const importers =
-			this.editor.internals.getSlot<PasteImporters>("paste:importers");
 		handleClipboardPaste(
 			event,
 			this.editor,
 			this.fieldEditor,
-			importers ?? undefined,
+			getPasteImporters(this.editor),
 		);
 	};
 

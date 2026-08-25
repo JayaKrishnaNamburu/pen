@@ -20,9 +20,7 @@ function createStructuredEditor(): Editor {
 		schema: defaultSchema,
 		apply: vi.fn<(ops: DocumentOp[], options?: ApplyOptions) => void>(),
 		getBlock: (blockId: string) => blocks.find((block) => block.id === blockId) ?? null,
-		internals: {
-			getSlot: () => undefined,
-		},
+		facet: () => null,
 		undoManager: {
 			stopCapturing: vi.fn(),
 		},

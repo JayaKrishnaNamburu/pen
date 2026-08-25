@@ -4,10 +4,10 @@ import type {
 	Editor,
 	DocumentState,
 	DecorationSet,
-	InputRule,
 	KeyBinding,
 	SchemaRegistry,
 } from "@input/pen-types";
+import { decorationsFacet, keymapFacet } from "../facets/coreFacets";
 import { EventEmitter } from "./events";
 import { emptyDecorationSet, mergeDecorationSets } from "./decorations";
 
@@ -206,10 +206,10 @@ export class ExtensionManagerImpl {
 
 	collectDecorations(state: DocumentState, editor: Editor): DecorationSet {
 		const sets: DecorationSet[] = [];
-		for (const ext of this._sorted) {
-			if (!ext.decorations) continue;
+		for (const source of editor.facet(decorationsFacet)) {
 			try {
-				const set = ext.decorations(state, editor);
+				const set =
+					typeof source === "function" ? source(state, editor) : source;
 				if (set && set.decorations.length > 0) {
 					sets.push(set);
 				}
@@ -218,9 +218,9 @@ export class ExtensionManagerImpl {
 					code: "PEN_EXT_003",
 					level: "error",
 					source: "extension",
-					message: `Extension "${ext.name}" decorations() threw`,
+					message: "A decorations facet source threw",
 					remediation:
-						`Fix the "${ext.name}" decorations() implementation to return a valid decoration set ` +
+						"Fix the decorations facet provider to return a valid decoration set " +
 						"for the current document state.",
 					error: err,
 				});
@@ -232,39 +232,13 @@ export class ExtensionManagerImpl {
 		return mergeDecorationSets(...sets);
 	}
 
-	// ── Input Rules & Key Bindings ───────────────────────────
-
-	collectInputRules(): readonly InputRule[] {
-		const rules: InputRule[] = [];
-		for (const ext of this._sorted) {
-			if (ext.inputRules) {
-				rules.push(...ext.inputRules);
-			}
-		}
-		return rules;
-	}
+	// ── Key Bindings ─────────────────────────────────────────
 
 	collectKeyBindings(
 		registry: SchemaRegistry,
 		extensionBindings: readonly KeyBinding[] = [],
 	): readonly KeyBinding[] {
-		const bindings: KeyBinding[] = [...extensionBindings];
-
-		for (const schema of registry.allBlocks()) {
-			if (schema.keyBindings) {
-				for (const binding of schema.keyBindings) {
-					bindings.push({
-						...binding,
-						context: {
-							...binding.context,
-							blockType: [schema.type],
-						},
-					});
-				}
-			}
-		}
-
-		return bindings;
+		return mergeKeyBindings(registry, extensionBindings);
 	}
 
 	// ── State ────────────────────────────────────────────────
@@ -326,4 +300,33 @@ export class ExtensionManagerImpl {
 
 		this._sorted = sorted;
 	}
+}
+
+export function collectEditorKeyBindings(
+	editor: Editor,
+): readonly KeyBinding[] {
+	return mergeKeyBindings(editor.schema, editor.facet(keymapFacet));
+}
+
+function mergeKeyBindings(
+	registry: SchemaRegistry,
+	extensionBindings: readonly KeyBinding[],
+): readonly KeyBinding[] {
+	const bindings: KeyBinding[] = [...extensionBindings];
+
+	for (const schema of registry.allBlocks()) {
+		if (schema.keyBindings) {
+			for (const binding of schema.keyBindings) {
+				bindings.push({
+					...binding,
+					context: {
+						...binding.context,
+						blockType: [schema.type],
+					},
+				});
+			}
+		}
+	}
+
+	return bindings;
 }

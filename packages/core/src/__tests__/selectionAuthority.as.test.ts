@@ -232,16 +232,19 @@ describe("SelectionAuthority AS1–AS5", () => {
 		editor.destroy();
 	});
 
-	it("AS4: selection.ts does not import changes/mapping", () => {
-		const source = readFileSync(
-			resolve(
-				dirname(fileURLToPath(import.meta.url)),
-				"../editor/selection.ts",
-			),
-			"utf8",
-		);
-		expect(source).not.toMatch(/changes\/mapping/);
-		expect(source).toMatch(/anchorRepair/);
+	it("AS4: the selection surface does not import changes/mapping", () => {
+		const here = dirname(fileURLToPath(import.meta.url));
+		const read = (module: string) =>
+			readFileSync(resolve(here, module), "utf8");
+
+		for (const module of [
+			"../editor/selection.ts",
+			"../editor/selectionValidation.ts",
+			"../editor/selectionCommit.ts",
+		]) {
+			expect(read(module)).not.toMatch(/changes\/mapping/);
+		}
+		expect(read("../editor/selection.ts")).toMatch(/anchorRepair/);
 	});
 
 	it("AS5: updateDocument releases authority anchors and writes null", () => {

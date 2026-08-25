@@ -18,7 +18,7 @@ function createEditor() {
 }
 
 function visible(editor: ReturnType<typeof createEditor>, blockId: string): string {
-	return editor.getBlock(blockId)!.textContent().replace(/\u200B/g, "");
+	return editor.getBlock(blockId)!.textContent();
 }
 
 describe("anchorRepair AN14", () => {

@@ -3,7 +3,7 @@
 import React, { act } from "react";
 import { describe, expect, it } from "vitest";
 import { createRoot } from "react-dom/client";
-import { createDecorationSet } from "@input/pen-core";
+import { createDecorationSet, decorationsFacet } from "@input/pen-core";
 import { defineExtension } from "@input/pen-core";
 import { domSelectionToEditor } from "@input/pen-dom/field-editor/selectionBridge";
 import { Pen } from "../primitives/index";
@@ -85,7 +85,7 @@ describe("@input/pen-react selected text deletion", () => {
 
 			React.useEffect(
 				() =>
-					editor.onDocumentCommit(() =>
+					editor.on("commit", () =>
 						setCommitCount((count) => count + 1),
 					),
 				[],
@@ -148,24 +148,26 @@ describe("@input/pen-react selected text deletion", () => {
 			extensions: [
 				defineExtension({
 					name: "active-inline-decoration-test",
-					decorations(_state, currentEditor) {
-						const firstBlock = currentEditor.firstBlock();
-						if (!firstBlock || firstBlock.length() === 0) {
-							return createDecorationSet([]);
-						}
+					facets: [
+						decorationsFacet.of((_state, currentEditor) => {
+							const firstBlock = currentEditor.firstBlock();
+							if (!firstBlock || firstBlock.length() === 0) {
+								return createDecorationSet([]);
+							}
 
-						return createDecorationSet([
-							{
-								type: "inline",
-								blockId: firstBlock.id,
-								from: 0,
-								to: firstBlock.length(),
-								attributes: {
-									"data-decoration-state": decorationState,
+							return createDecorationSet([
+								{
+									type: "inline",
+									blockId: firstBlock.id,
+									from: 0,
+									to: firstBlock.length(),
+									attributes: {
+										"data-decoration-state": decorationState,
+									},
 								},
-							},
-						]);
-					},
+							]);
+						}),
+					],
 				}),
 			],
 		});

@@ -1,11 +1,13 @@
 import { useSyncExternalStore } from "react";
+import { aiControllerFacet } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
-import { getAIController, type PersistentSuggestion } from "@input/pen-ai";
+import type { AIController, PersistentSuggestion } from "@input/pen-ai";
 
 const EMPTY_SUGGESTIONS: readonly PersistentSuggestion[] = [];
 
 export function useSuggestions(editor: Editor): readonly PersistentSuggestion[] {
-	const controller = getAIController(editor);
+	const controller =
+		(editor.facet(aiControllerFacet) as AIController | null) ?? null;
 
 	return useSyncExternalStore(
 		(callback) => {

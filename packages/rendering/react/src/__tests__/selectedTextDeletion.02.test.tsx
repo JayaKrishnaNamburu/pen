@@ -43,7 +43,7 @@ describe("@input/pen-react selected text deletion", () => {
 
 			React.useEffect(
 				() =>
-					editor.onDocumentCommit(() =>
+					editor.on("commit", () =>
 						setCommitCount((count) => count + 1),
 					),
 				[],

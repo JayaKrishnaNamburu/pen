@@ -1,6 +1,9 @@
-import { isCollapsed, usesInlineTextSelection } from "@input/pen-core";
+import {
+	collectEditorKeyBindings,
+	isCollapsed,
+	usesInlineTextSelection,
+} from "@input/pen-core";
 import type { Editor, KeyBindingContext } from "@input/pen-types";
-import { COLLECT_KEY_BINDINGS_SLOT_KEY } from "@input/pen-types";
 import { getEditorBlockSelectionLength } from "../utils/blockSelectionSemantics";
 
 export function tryHandleHistoryOverrideBinding(
@@ -60,15 +63,7 @@ export function collectKeyBindings(editor: Editor): ReadonlyArray<{
 	context?: KeyBindingContext;
 	handler: (editor: Editor, event: KeyboardEvent) => boolean;
 }> {
-	const collect =
-		editor.internals.getSlot<
-			(registry: Editor["schema"]) => ReadonlyArray<{
-				key: string;
-				context?: KeyBindingContext;
-				handler: (editor: Editor, event: KeyboardEvent) => boolean;
-			}>
-		>(COLLECT_KEY_BINDINGS_SLOT_KEY) ?? null;
-	return collect?.(editor.schema) ?? [];
+	return collectEditorKeyBindings(editor);
 }
 
 export function matchesBindingContext(

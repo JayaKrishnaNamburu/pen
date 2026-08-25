@@ -1,5 +1,13 @@
-import { createEditor, createHeadlessEditor, keymapFacet } from "@input/pen-core";
+import {
+	clipboardFacet,
+	createEditor,
+	createHeadlessEditor,
+	keymapFacet,
+	streamingTargetFacet,
+	undoManagerFacet,
+} from "@input/pen-core";
 import { getDocumentToolRuntime } from "@input/pen-document-ops";
+import { htmlImporter } from "@input/pen-interop/html";
 import { createDefaultSchema } from "@input/pen-schema-default";
 import type { CreateEditorOptions, Editor, Extension } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
@@ -11,6 +19,7 @@ const PRESET_RESOLVE_ORDER = [
 	"delta-stream",
 	"undo",
 	"rich-text-shortcuts",
+	"html-clipboard",
 ] as const;
 
 // Live `createEditor({ schema })` installs nothing. Core's no-preset fallback
@@ -95,7 +104,9 @@ describe("@input/pen-preset-default", () => {
 			documentProfile: "structured",
 		});
 
-		expect(result.extensions ?? []).toEqual([]);
+		expect(result.extensions?.map((extension) => extension.name)).toEqual([
+			"html-clipboard",
+		]);
 	});
 });
 
@@ -163,12 +174,12 @@ describe("defaultPreset() batteries actually work", () => {
 			expect(editor.getBlock(blockId)?.textContent()).toBe("hello");
 			editor.undoManager.undo();
 			expect(editor.getBlock(blockId)?.textContent()).toBe("");
-			expect(editor.internals.getSlot("undo:manager")).toBeTruthy();
+			expect(editor.facet(undoManagerFacet)).toBeTruthy();
 		});
 
 		await withEditor({ schema: createDefaultSchema() }, (editor) => {
 			const blockId = seedSelectedHello(editor);
-			expect(editor.internals.getSlot("undo:manager")).toBeFalsy();
+			expect(editor.facet(undoManagerFacet)).toBeFalsy();
 			expect(editor.undoManager.canUndo()).toBe(false);
 			expect(editor.undoManager.undo()).toBe(false);
 			expect(editor.getBlock(blockId)?.textContent()).toBe("hello");
@@ -178,7 +189,7 @@ describe("defaultPreset() batteries actually work", () => {
 	it("defaultPreset({ undo: false }) leaves undo inert: the document stays changed", async () => {
 		await withEditor({ preset: defaultPreset({ undo: false }) }, (editor) => {
 			const blockId = seedSelectedHello(editor);
-			expect(editor.internals.getSlot("undo:manager")).toBeFalsy();
+			expect(editor.facet(undoManagerFacet)).toBeFalsy();
 			expect(editor.undoManager.canUndo()).toBe(false);
 			expect(editor.undoManager.undo()).toBe(false);
 			expect(editor.getBlock(blockId)?.textContent()).toBe("hello");
@@ -193,7 +204,7 @@ describe("defaultPreset() batteries actually work", () => {
 		try {
 			const blockId = seedSelectedHello(editor);
 			expect(installedExtensionNames(editor)).toEqual([]);
-			expect(editor.internals.getSlot("undo:manager")).toBeFalsy();
+			expect(editor.facet(undoManagerFacet)).toBeFalsy();
 			expect(editor.undoManager.canUndo()).toBe(false);
 			expect(editor.undoManager.undo()).toBe(false);
 			expect(editor.getBlock(blockId)?.textContent()).toBe("hello");
@@ -229,19 +240,54 @@ describe("defaultPreset() batteries actually work", () => {
 		);
 	});
 
-	it("delta-stream installs a live streaming target slot", async () => {
+	it("defaultPreset() resolves an HTML paste importer the paste path can read", async () => {
 		await withEditor({ preset: defaultPreset() }, (editor) => {
-			expect(editor.internals.getSlot("delta-stream:target")).toBeTruthy();
+			const value = editor.facet(clipboardFacet);
+			expect(Array.isArray(value)).toBe(false);
+			expect(value).toMatchObject({ html: htmlImporter });
 		});
 
 		await withEditor({ schema: createDefaultSchema() }, (editor) => {
-			expect(editor.internals.getSlot("delta-stream:target")).toBeUndefined();
+			const value = editor.facet(clipboardFacet);
+			expect(value).toEqual([]);
+		});
+	});
+
+	it("a partial host importer table keeps the preset HTML importer", async () => {
+		await withEditor({ preset: defaultPreset() }, (editor) => {
+			const markdown = {
+				name: "markdown",
+				mimeType: "text/markdown",
+				parse: () => [],
+				import: () => undefined,
+			};
+			const current = editor.facet(clipboardFacet);
+			const base =
+				current && !Array.isArray(current) ? current : {};
+			editor.internals.assignSlot("paste:importers", {
+				...base,
+				markdown,
+			});
+			expect(editor.facet(clipboardFacet)).toMatchObject({
+				html: htmlImporter,
+				markdown,
+			});
+		});
+	});
+
+	it("delta-stream installs a live streaming target slot", async () => {
+		await withEditor({ preset: defaultPreset() }, (editor) => {
+			expect(editor.facet(streamingTargetFacet)).toBeTruthy();
+		});
+
+		await withEditor({ schema: createDefaultSchema() }, (editor) => {
+			expect(editor.facet(streamingTargetFacet) == null).toBe(true);
 		});
 
 		await withEditor(
 			{ preset: defaultPreset({ deltaStream: false }) },
 			(editor) => {
-				expect(editor.internals.getSlot("delta-stream:target")).toBeUndefined();
+				expect(editor.facet(streamingTargetFacet) == null).toBe(true);
 			},
 		);
 	});

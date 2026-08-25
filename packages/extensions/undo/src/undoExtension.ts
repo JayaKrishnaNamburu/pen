@@ -14,11 +14,14 @@ import type {
 	Unsubscribe,
 } from "@input/pen-types";
 import {
-	FIELD_EDITOR_SLOT_KEY,
 	UNDO_HISTORY_METADATA_CONTROLLER_SLOT_KEY,
 	UNDO_HISTORY_RESTORE_SLOT_KEY,
 } from "@input/pen-types";
-import { deriveContentMoves, repairAnchor } from "@input/pen-core";
+import {
+	deriveContentMoves,
+	fieldEditorHostFacet,
+	repairAnchor,
+} from "@input/pen-core";
 import { getOpOriginType } from "./origin";
 import { UndoManagerImpl } from "./undoManager";
 
@@ -572,10 +575,10 @@ function captureSelection(selection: SelectionState): StoredSelection {
 
 function captureFocusBlockId(editor: {
 	selection: SelectionState;
-	internals: { getSlot<T>(key: string): T | undefined };
+	facet: Editor["facet"];
 }): string | null {
 	const fe =
-		editor.internals.getSlot<FieldEditor>(FIELD_EDITOR_SLOT_KEY) ?? null;
+		(editor.facet(fieldEditorHostFacet) as FieldEditor | null) ?? null;
 	if (fe?.focusBlockId) return fe.focusBlockId;
 
 	const sel = editor.selection;

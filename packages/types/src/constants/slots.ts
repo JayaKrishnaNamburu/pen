@@ -1,19 +1,19 @@
 /**
  * Extension-slot keys shared across core, renderers, and extensions.
  *
- * These are the contract `editor.internals.assignSlot` / `getSlot` and
- * `SLOT_DISPOSITION_BY_KEY` speak. They are not host-app API — a host
- * using `createEditor` never names them — but they are the extension
- * author surface, and several packages re-export the key they own
- * (`SEARCH_CONTROLLER_SLOT`, `MULTIPLAYER_CONTROLLER_SLOT`,
- * `HISTORY_CONTROLLER_SLOT`, `AUTOCOMPLETE_CONTROLLER_SLOT`).
+ * These are the contract `editor.internals.assignSlot` speaks. They are
+ * not host-app API — a host using `createEditor` never names them — but
+ * they are the extension author write surface, and several packages
+ * re-export the key they own (`SEARCH_CONTROLLER_SLOT`,
+ * `MULTIPLAYER_CONTROLLER_SLOT`, `HISTORY_CONTROLLER_SLOT`,
+ * `AUTOCOMPLETE_CONTROLLER_SLOT`).
  *
  * Marking them with the internal JSDoc tag would remove them from the
  * published `.d.ts` (`stripInternal`) while every in-repo consumer
  * still imports them from the root barrel. `package.json` exports only
  * `.` (no internal subpath), so hiding them in this package alone
  * breaks typecheck. Keep them public until Wave P lands an internal
- * entry or the consumers move onto facets.
+ * entry or the consumers write facets directly.
  */
 
 export const FIELD_EDITOR_SLOT_KEY = "field-editor";

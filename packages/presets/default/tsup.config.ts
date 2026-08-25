@@ -8,7 +8,9 @@ export default defineConfig({
   clean: true,
   external: [
     "@input/pen-ai",
+    "@input/pen-core",
     "@input/pen-document-ops",
+    "@input/pen-interop",
     "@input/pen-shortcuts",
     "@input/pen-types",
     "@input/pen-undo",

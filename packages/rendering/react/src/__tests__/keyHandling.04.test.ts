@@ -125,7 +125,7 @@ function createFieldEditorMock(blockId: string) {
 				});
 			},
 			deactivate: () => {},
-			selectAll: () => false,
+			selectAllBehavior: "block-first" as const,
 		},
 		activations,
 		programmaticSelections,

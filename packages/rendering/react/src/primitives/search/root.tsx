@@ -1,10 +1,7 @@
 import React, { createContext, useContext } from "react";
+import { searchControllerFacet } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
-import {
-	getSearchController,
-	type SearchController,
-	type SearchState,
-} from "@input/pen-search";
+import type { SearchController, SearchState } from "@input/pen-search";
 import { useSearch } from "../../hooks/useSearch";
 import { EditorContext } from "../../context/editorContext";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
@@ -39,7 +36,8 @@ export function SearchRoot(props: SearchRootProps) {
 	}
 
 	const state = useSearch(editor);
-	const controller = getSearchController(editor);
+	const controller =
+		(editor.facet(searchControllerFacet) as SearchController | null) ?? null;
 	const ctx: SearchContextValue = {
 		editor,
 		state,

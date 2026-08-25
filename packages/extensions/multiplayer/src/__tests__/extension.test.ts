@@ -1,8 +1,10 @@
-import { createDocumentSession, createEditor } from "@input/pen-core";
+import {
+	createDocumentSession,
+	createEditor,
+	multiplayerControllerFacet,
+} from "@input/pen-core";
 import { yjsAdapter } from "@input/pen-crdt-yjs";
 import {
-	AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY,
-	MULTIPLAYER_CONTROLLER_SLOT,
 	type ConnectionState,
 	type MultiplayerSession,
 } from "@input/pen-types";
@@ -21,9 +23,7 @@ describe("multiplayerExtension", () => {
 			],
 		});
 
-		expect(
-			editor.internals.getSlot(MULTIPLAYER_CONTROLLER_SLOT),
-		).toBeTruthy();
+		expect(editor.facet(multiplayerControllerFacet)).toBeTruthy();
 		expect(getMultiplayerController(editor)).toBeTruthy();
 	});
 
@@ -81,13 +81,9 @@ describe("multiplayerExtension", () => {
 		});
 
 		editor.destroy();
-		await (editor.internals.getSlot<() => Promise<void>>(
-			AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY,
-		)?.() ?? Promise.resolve());
+		await editor.whenReady();
 
-		expect(
-			editor.internals.getSlot(MULTIPLAYER_CONTROLLER_SLOT),
-		).toBeFalsy();
+		expect(editor.facet(multiplayerControllerFacet)).toBeFalsy();
 	});
 
 	it("publishes local text selection into awareness state", () => {
@@ -178,9 +174,7 @@ describe("multiplayerExtension", () => {
 		});
 
 		editor.destroy();
-		await (editor.internals.getSlot<() => Promise<void>>(
-			AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY,
-		)?.() ?? Promise.resolve());
+		await editor.whenReady();
 
 		expect(awareness?.getLocalState()).toBeNull();
 

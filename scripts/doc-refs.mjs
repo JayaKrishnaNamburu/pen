@@ -697,10 +697,7 @@ function hostCompilerPaths(repoRoot) {
 	const fromReact = path.join(repoRoot, "packages/rendering/react/package.json");
 	const fromVue = path.join(repoRoot, "packages/rendering/vue/package.json");
 	const fromYjs = path.join(repoRoot, "packages/crdt/yjs/package.json");
-	const fromKitchenSink = path.join(
-		repoRoot,
-		"internal/kitchen-sink/package.json",
-	);
+	const fromPlayground = path.join(repoRoot, "playground/package.json");
 
 	addHostTypes(paths, fromReact, "react", "@types/react");
 	addHostTypes(paths, fromReact, "react/jsx-runtime", "@types/react", "jsx-runtime.d.ts");
@@ -709,7 +706,7 @@ function hostCompilerPaths(repoRoot) {
 	addHostTypes(paths, fromReact, "react-dom/client", "@types/react-dom", "client.d.ts");
 	addHostTypes(paths, fromVue, "vue", "vue");
 	addHostTypes(paths, fromYjs, "yjs", "yjs");
-	addHostTypes(paths, fromKitchenSink, "y-websocket", "y-websocket");
+	addHostTypes(paths, fromPlayground, "y-websocket", "y-websocket");
 	return paths;
 }
 

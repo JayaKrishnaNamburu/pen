@@ -1,0 +1,98 @@
+import type {
+	Affinity,
+	Editor,
+	SelectionState,
+	TextSelection,
+} from "@input/pen-types";
+
+import {
+	getSelectionBlockRange,
+	isCollapsed,
+	isMultiBlock,
+} from "../selection/helpers";
+
+export type Point = { blockId: string; offset: number };
+
+/** Command write payload. `blockRange` is the document span when `blockOrder` is passed. */
+export function textSelectionResult(
+	anchor: Point,
+	focus: Point = anchor,
+	extras?: {
+		affinity?: Affinity;
+		goalX?: number | null;
+		blockOrder?: readonly string[];
+	},
+): TextSelection {
+	const selection: TextSelection = {
+		type: "text",
+		anchor,
+		focus,
+		affinity: extras?.affinity ?? "downstream",
+		goalX: extras?.goalX ?? null,
+		isCollapsed: false,
+		isMultiBlock: false,
+		blockRange: [anchor.blockId],
+		toRange: () => {
+			throw new Error("command text selection is a write payload");
+		},
+	};
+	return {
+		...selection,
+		isCollapsed: isCollapsed(selection),
+		isMultiBlock: isMultiBlock(selection),
+		blockRange: extras?.blockOrder
+			? getSelectionBlockRange(extras.blockOrder, selection)
+			: [anchor.blockId],
+	};
+}
+
+export function blockSelectionResult(
+	blockIds: readonly string[],
+	head: string = blockIds[blockIds.length - 1] ?? blockIds[0] ?? "",
+): SelectionState {
+	return {
+		type: "block",
+		blockIds: [...blockIds],
+		head,
+	};
+}
+
+export function collapsedAt(blockId: string, offset: number): SelectionState {
+	return textSelectionResult({ blockId, offset });
+}
+
+export function readTextFocus(editor: Editor): Point | null {
+	const selection = editor.selection;
+	if (!selection || selection.type !== "text") {
+		return null;
+	}
+	return selection.focus;
+}
+
+export function readTextAnchor(editor: Editor): Point | null {
+	const selection = editor.selection;
+	if (!selection || selection.type !== "text") {
+		return null;
+	}
+	return selection.anchor;
+}
+
+export function documentOrderedTextPoints(
+	editor: Editor,
+	selection: TextSelection,
+): { start: Point; end: Point } | null {
+	const order = editor.documentState.blockOrder;
+	const anchorIndex = order.indexOf(selection.anchor.blockId);
+	const focusIndex = order.indexOf(selection.focus.blockId);
+	if (anchorIndex < 0 || focusIndex < 0) {
+		return null;
+	}
+	if (
+		anchorIndex < focusIndex ||
+		(anchorIndex === focusIndex &&
+			selection.anchor.offset <= selection.focus.offset)
+	) {
+		return { start: selection.anchor, end: selection.focus };
+	}
+	return { start: selection.focus, end: selection.anchor };
+}

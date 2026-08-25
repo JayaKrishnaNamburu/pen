@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:e2e": "vite --host 127.0.0.1 --port 4173 --strictPort",
     "build": "vite build",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.server.json",
     "lint": "eslint ."
@@ -12,15 +13,22 @@
   "dependencies": {
     "@input/pen-ai": "workspace:*",
     "@input/pen-core": "workspace:*",
+    "@input/pen-crdt-yjs": "workspace:*",
     "@input/pen-input-rules": "workspace:*",
+    "@input/pen-multiplayer": "workspace:*",
     "@input/pen-preset-default": "workspace:*",
     "@input/pen-react": "workspace:*",
     "@input/pen-types": "workspace:*",
+    "@y/websocket-server": "^0.1.5",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "ws": "^8.19.0",
+    "y-websocket": "^3.0.0",
+    "yjs": "13.6.29"
   },
   "devDependencies": {
     "@types/node": "^25.4.0",
+    "@types/ws": "^8.18.1",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.4",

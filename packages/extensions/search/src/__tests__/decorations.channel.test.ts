@@ -20,37 +20,45 @@ type DecorationCall = {
 	readonly editor: Editor;
 };
 
-function instrumentDecorations(extension: Extension): DecorationCall[] {
-	const original = extension.decorations;
-	if (!original) {
-		throw new Error("expected the v1 decorations field");
-	}
+function countingProbe(): {
+	calls: DecorationCall[];
+	extension: Extension;
+} {
 	const calls: DecorationCall[] = [];
-	extension.decorations = (state, editor) => {
-		calls.push({ state, editor });
-		return original(state, editor);
+	return {
+		calls,
+		extension: defineExtension({
+			name: "decoration-call-probe",
+			facets: [
+				decorationsFacet.of((state, editor) => {
+					calls.push({ state, editor });
+					return createDecorationSet([]);
+				}),
+			],
+		}),
 	};
-	return calls;
 }
 
 function markerExtension(name: string, className: string): Extension {
 	return defineExtension({
 		name,
-		decorations: (_state, editor) => {
-			const blockId = editor.firstBlock()?.id;
-			if (!blockId) {
-				return createDecorationSet([]);
-			}
-			return createDecorationSet([
-				{
-					type: "inline",
-					blockId,
-					from: 0,
-					to: 1,
-					attributes: { class: className },
-				},
-			]);
-		},
+		facets: [
+			decorationsFacet.of((_state, editor) => {
+				const blockId = editor.firstBlock()?.id;
+				if (!blockId) {
+					return createDecorationSet([]);
+				}
+				return createDecorationSet([
+					{
+						type: "inline",
+						blockId,
+						from: 0,
+						to: 1,
+						attributes: { class: className },
+					},
+				]);
+			}),
+		],
 	});
 }
 
@@ -112,51 +120,51 @@ function insertHelloBlocks(editor: Editor, count: number): void {
 }
 
 describe("search decorations channel", () => {
-	it("lifts the v1 decorations function onto decorationsFacet without wrapping it", () => {
+	it("declares decorations on decorationsFacet, not Extension.decorations", () => {
 		const extension = searchExtension();
 		const editor = createEditor({
 			schema: defaultSchema,
 			extensions: [extension],
 		});
 
-		expect(extension.decorations).toBeTypeOf("function");
-		expect(editor.facet(decorationsFacet)).toContain(extension.decorations);
+		expect("decorations" in extension).toBe(false);
+		expect(
+			editor.facet(decorationsFacet).some((source) => typeof source === "function"),
+		).toBe(true);
 		editor.destroy();
 	});
 
-	it("invokes the v1 decorations function with (documentState, editor)", () => {
-		const extension = searchExtension();
-		const calls = instrumentDecorations(extension);
+	it("invokes decorationsFacet sources with (documentState, editor)", () => {
+		const probe = countingProbe();
 		const editor = createEditor({
 			schema: defaultSchema,
-			extensions: [extension],
+			extensions: [searchExtension(), probe.extension],
 		});
 
-		expect(calls.length).toBeGreaterThan(0);
-		const first = calls[0];
+		expect(probe.calls.length).toBeGreaterThan(0);
+		const first = probe.calls[0];
 		expect(first?.state).toBe(editor.documentState);
 		expect(first?.editor).toBe(editor);
 		editor.destroy();
 	});
 
-	it("invokes search decorations once per commit, not once per block", () => {
-		const extension = searchExtension();
-		const calls = instrumentDecorations(extension);
+	it("invokes decorationsFacet sources once per commit, not once per block", () => {
+		const probe = countingProbe();
 		const editor = createEditor({
 			schema: defaultSchema,
-			extensions: [extension],
+			extensions: [searchExtension(), probe.extension],
 		});
-		const afterInit = calls.length;
+		const afterInit = probe.calls.length;
 		const blockCount = 8;
 
 		insertHelloBlocks(editor, blockCount);
 
-		expect(calls.length - afterInit).toBe(1);
-		expect(calls.length - afterInit).not.toBe(blockCount);
+		expect(probe.calls.length - afterInit).toBe(1);
+		expect(probe.calls.length - afterInit).not.toBe(blockCount);
 		editor.destroy();
 	});
 
-	it("merges v1 decorations in extension registration order", () => {
+	it("merges decorations in extension registration order", () => {
 		const search = searchExtension();
 		const editor = createEditor({
 			schema: defaultSchema,
@@ -193,7 +201,7 @@ describe("search decorations channel", () => {
 		editor.destroy();
 	});
 
-	it("does not collect a decorationsFacet-only sibling into getDecorations()", () => {
+	it("collects decorationsFacet sources into getDecorations()", () => {
 		const search = searchExtension();
 		const facetOnly = defineExtension({
 			name: "facet-only-probe",
@@ -240,25 +248,7 @@ describe("search decorations channel", () => {
 		expect(
 			classes.some((value) => value.includes("pen-search-match")),
 		).toBe(true);
-		expect(classes).not.toContain("facet-only-probe");
-		expect(editor.facet(decorationsFacet).length).toBeGreaterThan(1);
-		editor.destroy();
-	});
-
-	it("places the v1-lifted provider before a native decorationsFacet.of() in the facet list", () => {
-		const search = searchExtension();
-		const nativeSource = () => createDecorationSet([]);
-		const native = defineExtension({
-			name: "native-deco",
-			facets: [decorationsFacet.of(nativeSource)],
-		});
-		const editor = createEditor({
-			schema: defaultSchema,
-			extensions: [native, search],
-		});
-
-		expect(editor.facet(decorationsFacet)[0]).toBe(search.decorations);
-		expect(editor.facet(decorationsFacet)).toContain(nativeSource);
+		expect(classes).toContain("facet-only-probe");
 		editor.destroy();
 	});
 });

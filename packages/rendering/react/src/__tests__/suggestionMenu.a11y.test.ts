@@ -3,10 +3,9 @@
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import { describe, expect, it, vi } from "vitest";
-import { createEditor } from "@input/pen-core";
+import { createEditor, fieldEditorHostFacet } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
 import type { FieldEditorImpl } from "@input/pen-dom/field-editor/fieldEditorImpl";
-import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
 import { useSuggestionMenu } from "../hooks/useSuggestionMenu";
 import { Pen } from "../primitives/index";
 import { defaultSchema } from "@input/pen-schema-default";
@@ -51,9 +50,9 @@ function createSuggestionMenuEditor() {
 function getFieldEditor(
 	editor: ReturnType<typeof createSuggestionMenuEditor>,
 ): FieldEditorImpl {
-	const fieldEditor = editor.internals.getSlot<FieldEditorImpl>(
-		FIELD_EDITOR_SLOT_KEY,
-	);
+	const fieldEditor = editor.facet(
+		fieldEditorHostFacet,
+	) as FieldEditorImpl | null;
 	if (!fieldEditor) {
 		throw new Error("Missing attached field editor");
 	}

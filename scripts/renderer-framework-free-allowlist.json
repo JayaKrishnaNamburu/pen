@@ -2,10 +2,6 @@
 	"_comment": "API6 (spec-v2/14-api-and-packaging.md): renderer modules that import neither their framework nor a framework type. Re-export stubs are not listed — they are the P.6 end state. Each entry needs file and reason. Remove an entry in the same PR that relocates the module or adds a framework import.",
 	"modules": [
 		{
-			"file": "packages/rendering/react/src/constants/fieldEditor.ts",
-			"reason": "React field-editor slot key; framework binding without a react import"
-		},
-		{
 			"file": "packages/rendering/react/src/hooks/inlineSuggestionControlUtils.ts",
 			"reason": "Helpers for React suggestion-control hooks; no react import. Candidate for pen-dom or a disable"
 		},
@@ -110,10 +106,6 @@
 			"reason": "AI controller helper with no react import; candidate for @input/pen-ai"
 		},
 		{
-			"file": "packages/rendering/react/src/utils/clipboardSerialization.ts",
-			"reason": "Wave T step T.1 owns clipboard relocation into pen-dom"
-		},
-		{
 			"file": "packages/rendering/react/src/utils/displayCopy.ts",
 			"reason": "Imports @input/pen-schema-default; stays in the renderer until that inversion lands"
 		},
@@ -136,10 +128,6 @@
 		{
 			"file": "packages/rendering/vue/src/composables/useSelection.ts",
 			"reason": "Vue composable; framework coupling is through useExternalStore, not a vue import"
-		},
-		{
-			"file": "packages/rendering/vue/src/constants/fieldEditor.ts",
-			"reason": "Vue field-editor slot key; framework binding without a vue import"
 		},
 		{
 			"file": "packages/rendering/vue/src/internal/displayCopy.ts",

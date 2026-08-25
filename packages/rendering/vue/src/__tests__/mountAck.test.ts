@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
 
+import { fieldEditorHostFacet } from "@input/pen-core";
 import { createTestEditor } from "@input/pen-test";
 import { mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it } from "vitest";
 import { nextTick } from "vue";
 import { DATA_ATTRS } from "@input/pen-dom/utils/dataAttributes";
 import { PenEditor } from "../components/PenEditor";
-import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
 import type { VueFieldEditor } from "../internal/fieldEditorContext";
 
 afterEach(() => {
@@ -31,9 +31,9 @@ describe("@input/pen-vue mount ack", () => {
 			props: { editor },
 		});
 
-		const fieldEditor = editor.internals.getSlot<VueFieldEditor>(
-			FIELD_EDITOR_SLOT_KEY,
-		);
+		const fieldEditor = editor.facet(
+			fieldEditorHostFacet,
+		) as VueFieldEditor | null;
 		if (!fieldEditor) {
 			throw new Error("Missing attached field editor");
 		}

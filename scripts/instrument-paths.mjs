@@ -8,7 +8,7 @@
  * in the same PR, not at the next hand audit.
  *
  * This checker validates the closed GA1 list (corrected 2026-08-25):
- *   - 16 named allowlist/data files under scripts/
+ *   - 15 named allowlist/data files under scripts/
  *   - path-bearing top-level constants in ch-gates.mjs (sink paths)
  *     and migration-guide-check.mjs (fidelity/exporter and guide/origin
  *     paths); api-docs-coverage.mjs is visited for named modules when
@@ -57,7 +57,6 @@ const DEFAULT_REPO_ROOT = path.resolve(SCRIPT_DIR, "..");
 const FIXTURE_DIR = path.join(SCRIPT_DIR, "__fixtures__", "instrument-paths");
 
 const ALLOWLIST_FILES = [
-	"scripts/no-new-slots-allowlist.json",
 	"scripts/pen-deep-imports-allowlist.json",
 	"scripts/renderer-framework-free-allowlist.json",
 	"scripts/selection-state-properties-allowlist.json",
@@ -703,10 +702,6 @@ function assert(condition, message) {
 
 function emptyAllowlistBodies() {
 	return {
-		"scripts/no-new-slots-allowlist.json": {
-			exportedSlots: [],
-			setSlotFiles: [],
-		},
 		"scripts/pen-deep-imports-allowlist.json": { entries: [] },
 		"scripts/renderer-framework-free-allowlist.json": { modules: [] },
 		"scripts/selection-state-properties-allowlist.json": { entries: [] },
@@ -870,7 +865,7 @@ export function runSelfTests(repoRoot = DEFAULT_REPO_ROOT) {
 		{
 			allowlistOverlay: {
 				src: missingFixture,
-				dest: "scripts/no-new-slots-allowlist.json",
+				dest: "scripts/pen-deep-imports-allowlist.json",
 			},
 			eslintFixture: unmarkedFixture,
 		},

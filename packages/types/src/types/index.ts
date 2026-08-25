@@ -236,7 +236,6 @@ export {
 	type UndoHistoryMetadataController,
 	type UndoHistoryRestore,
 	type HistoryAppliedEvent,
-	type DocumentCommitEvent,
 	type CommitEvent,
 	type CommitEventSource,
 	type Diagnostic,
@@ -251,6 +250,7 @@ export {
 	type InlineCompletionController,
 	type EditorViewMode,
 	type InteractionModel,
+	type SelectAllBehavior,
 	HOOK_PRIORITY_AUTH,
 	HOOK_PRIORITY_SUGGEST,
 	HOOK_PRIORITY_INPUT_RULE,
@@ -346,7 +346,6 @@ export type {
 	BlockDecoration,
 	AppDecoration,
 	DecorationSet,
-	PositionMapping,
 } from "./decorations";
 export { DECORATION_OMIT_FROM_RENDER_ATTRIBUTE } from "./decorations";
 
@@ -405,4 +404,3 @@ export type {
 	StructuralChange,
 	ChangeSummary,
 } from "./changes";
-export { mapOffsetThroughSplices } from "./changes";

@@ -125,7 +125,7 @@ function createFieldEditorMock(blockId: string) {
 				});
 			},
 			deactivate: () => {},
-			selectAll: () => false,
+			selectAllBehavior: "block-first" as const,
 		},
 		activations,
 		programmaticSelections,
@@ -242,7 +242,7 @@ describe("@input/pen-react field editor Tab handling", () => {
 					name: "test-autocomplete-slot",
 					activateClient: async ({ editor: nextEditor }) => {
 						activeEditor = nextEditor;
-						nextEditor.internals.setSlot(
+						nextEditor.internals.assignSlot(
 							AI_AUTOCOMPLETE_CONTROLLER_SLOT,
 							{
 								getState: () => ({
@@ -290,7 +290,7 @@ describe("@input/pen-react field editor Tab handling", () => {
 						);
 					},
 					deactivateClient: async () => {
-						activeEditor?.internals.setSlot(
+						activeEditor?.internals.assignSlot(
 							AI_AUTOCOMPLETE_CONTROLLER_SLOT,
 							null,
 						);
@@ -343,13 +343,13 @@ describe("@input/pen-react field editor Tab handling", () => {
 					name: "test-field-editor-slot",
 					activateClient: async ({ editor: nextEditor }) => {
 						activeEditor = nextEditor;
-						nextEditor.internals.setSlot(FIELD_EDITOR_SLOT_KEY, {
+						nextEditor.internals.assignSlot(FIELD_EDITOR_SLOT_KEY, {
 							focusBlockId: null,
 							isEditing: true,
 							isFocused: true,
 							isComposing: false,
 						});
-						nextEditor.internals.setSlot(
+						nextEditor.internals.assignSlot(
 							AI_AUTOCOMPLETE_CONTROLLER_SLOT,
 							{
 								getState: () => ({
@@ -397,11 +397,11 @@ describe("@input/pen-react field editor Tab handling", () => {
 						);
 					},
 					deactivateClient: async () => {
-						activeEditor?.internals.setSlot(
+						activeEditor?.internals.assignSlot(
 							FIELD_EDITOR_SLOT_KEY,
 							null,
 						);
-						activeEditor?.internals.setSlot(
+						activeEditor?.internals.assignSlot(
 							AI_AUTOCOMPLETE_CONTROLLER_SLOT,
 							null,
 						);

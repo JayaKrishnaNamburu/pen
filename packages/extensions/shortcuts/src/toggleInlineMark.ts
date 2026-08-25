@@ -1,11 +1,14 @@
-import { isCollapsed, selectionToRange } from "@input/pen-core";
+import {
+	fieldEditorHostFacet,
+	isCollapsed,
+	selectionToRange,
+} from "@input/pen-core";
 import type {
 	DocumentOp,
 	Editor,
 	FieldEditor,
 	TextSelection,
 } from "@input/pen-types";
-import { FIELD_EDITOR_SLOT_KEY } from "@input/pen-types";
 
 export function toggleInlineMark(editor: Editor, markType: string): boolean {
 	const selection = editor.selection;
@@ -35,7 +38,7 @@ export function toggleInlineMark(editor: Editor, markType: string): boolean {
 }
 
 export function getAttachedFieldEditor(editor: Editor): FieldEditor | null {
-	return editor.internals.getSlot<FieldEditor>(FIELD_EDITOR_SLOT_KEY) ?? null;
+	return (editor.facet(fieldEditorHostFacet) as FieldEditor | null) ?? null;
 }
 
 function isInlineMarkEditableBlock(editor: Editor, blockId: string): boolean {

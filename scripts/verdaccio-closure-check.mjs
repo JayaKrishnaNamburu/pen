@@ -55,6 +55,14 @@ export const DEFAULT_TOP_LEVEL = [
 ];
 
 const HOST_PEERS = ["react", "react-dom", "vue", "yjs", "y-protocols"];
+/** CS8 optional peers on @input/pen-react (wave-4 Step 4.4). */
+export const REACT_OPTIONAL_PEERS = [
+	"@input/pen-ai",
+	"@input/pen-history",
+	"@input/pen-interop",
+	"@input/pen-multiplayer",
+	"@input/pen-search",
+];
 const HOST_DEV_DEPS = [
 	"typescript",
 	"vite",
@@ -91,6 +99,7 @@ export function parseArgs(argv) {
 		skipSmoke: false,
 		keepTemp: false,
 		topLevel: [...DEFAULT_TOP_LEVEL],
+		reactPeerProfile: "both",
 	};
 	for (let i = 0; i < argv.length; i += 1) {
 		const arg = argv[i];
@@ -142,6 +151,21 @@ export function parseArgs(argv) {
 				);
 			}
 			args.topLevel = names;
+			i += 1;
+			continue;
+		}
+		if (arg === "--react-peer-profile") {
+			const profile = argv[i + 1] ?? "";
+			if (
+				profile !== "absent" &&
+				profile !== "present" &&
+				profile !== "both"
+			) {
+				throw new Error(
+					"--react-peer-profile needs absent, present, or both",
+				);
+			}
+			args.reactPeerProfile = profile;
 			i += 1;
 			continue;
 		}
@@ -923,8 +947,9 @@ async function createHostProject({
 	repoRoot,
 	registryUrl,
 	userconfig,
+	hostDirSuffix = "",
 }) {
-	const hostDir = path.join(scratch, "host");
+	const hostDir = path.join(scratch, `host${hostDirSuffix}`);
 	await fs.mkdir(path.join(hostDir, "src"), { recursive: true });
 	assertOutsideRepo(hostDir, repoRoot);
 	await fs.writeFile(
@@ -1173,6 +1198,24 @@ async function evaluateSpecifier(hostDir, specifier) {
 	return { ok: true, resolved: resolved.resolved };
 }
 
+const BUILD_DIAGNOSTIC_LINE =
+	/MISSING_EXPORT|is not exported by|Could not (?:load|resolve)|Failed to resolve|ERR_MODULE_NOT_FOUND|ERR_PACKAGE_PATH_NOT_EXPORTED|Package path .* is not exported/;
+
+// Vite prints the lines that name the offending module or export before the
+// stack, so a fixed-size tail keeps the stack and drops the diagnosis.
+function buildFailureDetail(output) {
+	const lines = output.trim().split("\n");
+	const named = lines.filter((line) => BUILD_DIAGNOSTIC_LINE.test(line));
+	if (named.length === 0) {
+		return output.trim().slice(-800);
+	}
+	return [
+		...named.slice(0, 12),
+		"--- output tail ---",
+		...lines.slice(-8),
+	].join("\n");
+}
+
 async function buildHost(hostDir) {
 	const built = runCapture("pnpm", ["exec", "vite", "build"], {
 		cwd: hostDir,
@@ -1190,7 +1233,7 @@ async function buildHost(hostDir) {
 			);
 			return fail(
 				exportsFailureReason(match?.[0] ?? "an @input/pen-* specifier"),
-				[output.trim().slice(-800)],
+				[buildFailureDetail(output)],
 			);
 		}
 		if (
@@ -1199,10 +1242,10 @@ async function buildHost(hostDir) {
 			)
 		) {
 			return fail("host build failed resolving a published file", [
-				output.trim().slice(-800),
+				buildFailureDetail(output),
 			]);
 		}
-		return fail("host build failed", [output.trim().slice(-800)]);
+		return fail("host build failed", [buildFailureDetail(output)]);
 	}
 	return { ok: true };
 }
@@ -1560,11 +1603,21 @@ async function runFullCheck({
 	scratch,
 	registry,
 	keepTemp,
+	reactPeerProfile = "absent",
+	extraPackages = [],
+	hostDirSuffix = "",
 }) {
 	console.log(`top-level: ${topLevel.join(", ")}`);
+	console.log(
+		`react optional peers (${reactPeerProfile}): ${extraPackages.length > 0 ? extraPackages.join(", ") : "none installed"}`,
+	);
+	const closureStarts =
+		extraPackages.length > 0
+			? [...new Set([...topLevel, ...extraPackages])]
+			: topLevel;
 	const published = await publishWorkspaceClosure({
 		repoRoot,
-		starts: topLevel,
+		starts: closureStarts,
 		scratch,
 		registryUrl: registry.registryUrl,
 		userconfig: registry.userconfig,
@@ -1577,12 +1630,14 @@ async function runFullCheck({
 		repoRoot,
 		registryUrl: registry.registryUrl,
 		userconfig: registry.userconfig,
+		hostDirSuffix,
 	});
 	const installed = await installTopLevel({
 		hostDir: host.hostDir,
 		topLevel,
 		registryUrl: registry.registryUrl,
 		userconfig: registry.userconfig,
+		extraPackages,
 	});
 	if (installed.outcome) {
 		return installed;
@@ -1603,7 +1658,7 @@ async function runFullCheck({
 	console.log("build: ok");
 	if (skipSmoke) {
 		return pass(
-			"host install of the published closure resolved and built (smoke skipped)",
+			`host install of the published closure resolved and built (smoke skipped; react peers ${reactPeerProfile})`,
 			[keepTemp ? `temp ${scratch}` : ""].filter(Boolean),
 		);
 	}
@@ -1616,11 +1671,74 @@ async function runFullCheck({
 	}
 	console.log("smoke: ok");
 	return pass(
-		"host install of the published closure mounts and accepts a keystroke",
+		`host install of the published closure mounts and accepts a keystroke (react peers ${reactPeerProfile})`,
 		[
 			`closure ${published.packages.length} packages`,
 			`host ${host.hostDir}`,
 		],
+	);
+}
+
+function reactPeerProfiles(profile) {
+	if (profile === "both") {
+		return ["absent", "present"];
+	}
+	return [profile];
+}
+
+async function runReactPeerProfileChecks(args) {
+	const profiles = reactPeerProfiles(args.reactPeerProfile);
+	const details = [];
+	const failures = [];
+	for (const profile of profiles) {
+		const extraPackages =
+			profile === "present" ? [...REACT_OPTIONAL_PEERS] : [];
+		// Every profile publishes the same 0.0.1 closure, so each needs its own
+		// registry: a shared one rejects the second publish outright, and a peer
+		// left behind by one profile stays resolvable by the profile that exists
+		// to prove the host builds without it.
+		const result = await withRegistry(args.repoRoot, args.keepTemp, (ctx) =>
+			runFullCheck({
+				repoRoot: args.repoRoot,
+				topLevel: args.topLevel,
+				requireSubpaths: args.requireSubpaths,
+				skipSmoke: args.skipSmoke,
+				keepTemp: args.keepTemp,
+				reactPeerProfile: profile,
+				extraPackages,
+				hostDirSuffix:
+					profiles.length > 1 ? `-react-peers-${profile}` : "",
+				...ctx,
+			}),
+		);
+		if (result.outcome !== "PASS") {
+			failures.push({ profile, result });
+			details.push(
+				`react peer profile ${profile}: ${result.outcome} — ${result.reason}`,
+				...(result.details ?? []),
+			);
+			continue;
+		}
+		details.push(`react peer profile ${profile}: ok`);
+	}
+	if (failures.length > 0) {
+		// Report every profile, then answer as the most actionable one: a real
+		// failure outranks a profile that could not be measured.
+		const worst =
+			failures.find((entry) => entry.result.outcome === "FAIL") ??
+			failures[0];
+		const summary = `${failures.length} of ${profiles.length} react peer profiles failed (${failures
+			.map((entry) => entry.profile)
+			.join(", ")})`;
+		return worst.result.outcome === "FAIL"
+			? fail(summary, details)
+			: inconclusive(summary, details);
+	}
+	return pass(
+		profiles.length === 1
+			? `host install with react peers ${profiles[0]} succeeded`
+			: "host install succeeded with react optional peers absent and present",
+		details,
 	);
 }
 
@@ -1653,34 +1771,24 @@ async function main() {
 		return;
 	}
 
-	const result = await withRegistry(
-		args.repoRoot,
-		args.keepTemp,
-		async (ctx) => {
-			if (args.proveFail === "exports") {
-				return proveFailExports({
-					repoRoot: args.repoRoot,
-					keepTemp: args.keepTemp,
-					...ctx,
-				});
-			}
-			if (args.proveFail === "files") {
+	// The profile checks own their registries, one per profile; only the
+	// prove-fail paths run against a single ambient one.
+	const result = args.proveFail
+		? await withRegistry(args.repoRoot, args.keepTemp, async (ctx) => {
+				if (args.proveFail === "exports") {
+					return proveFailExports({
+						repoRoot: args.repoRoot,
+						keepTemp: args.keepTemp,
+						...ctx,
+					});
+				}
 				return proveFailFiles({
 					repoRoot: args.repoRoot,
 					keepTemp: args.keepTemp,
 					...ctx,
 				});
-			}
-			return runFullCheck({
-				repoRoot: args.repoRoot,
-				topLevel: args.topLevel,
-				requireSubpaths: args.requireSubpaths,
-				skipSmoke: args.skipSmoke,
-				keepTemp: args.keepTemp,
-				...ctx,
-			});
-		},
-	);
+			})
+		: await runReactPeerProfileChecks(args);
 
 	console.log("");
 	console.log(

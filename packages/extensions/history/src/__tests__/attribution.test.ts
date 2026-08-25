@@ -81,7 +81,7 @@ describe("history attribution", () => {
 			},
 		];
 
-		editor.internals.setSlot(MULTIPLAYER_CONTROLLER_SLOT, {
+		editor.internals.assignSlot(MULTIPLAYER_CONTROLLER_SLOT, {
 			getIdentityMap() {
 				return {
 					get(clientId: number) {
@@ -143,7 +143,7 @@ describe("history attribution", () => {
 			},
 		];
 
-		editor.internals.setSlot(MULTIPLAYER_CONTROLLER_SLOT, {
+		editor.internals.assignSlot(MULTIPLAYER_CONTROLLER_SLOT, {
 			getAuthorLedger() {
 				return {
 					resolve(clientId: number) {
@@ -248,7 +248,7 @@ describe("COL3 identity is host-authoritative", () => {
 				clientId: peerBClientId,
 			},
 		];
-		editor.internals.setSlot(MULTIPLAYER_CONTROLLER_SLOT, {
+		editor.internals.assignSlot(MULTIPLAYER_CONTROLLER_SLOT, {
 			getIdentityMap() {
 				return {
 					get(clientId: number) {
@@ -409,7 +409,7 @@ describe("COL3 identity is host-authoritative", () => {
 				}),
 			],
 		});
-		editor.internals.setSlot(MULTIPLAYER_CONTROLLER_SLOT, {
+		editor.internals.assignSlot(MULTIPLAYER_CONTROLLER_SLOT, {
 			getIdentityMap() {
 				return {
 					get() {

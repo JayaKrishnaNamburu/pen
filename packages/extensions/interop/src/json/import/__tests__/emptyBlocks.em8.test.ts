@@ -1,21 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { createEditor } from "@input/pen-core";
 import { createDefaultSchema } from "@input/pen-schema-default";
+import {
+	EM8_CELL_CONTROL,
+	EM8_KEEP,
+	interopNoExtensionsPreset,
+} from "../../../__tests__/interopCorpus";
 import { jsonImporter } from "../importer";
-
-const noDefaultExtensionsPreset = {
-	resolve() {
-		return { extensions: [] };
-	},
-};
-
-const KEEP = "keep\u200Bme";
-const CELL_CONTROL = "CELL-OK";
 
 function createBareEditor() {
 	const editor = createEditor({
 		schema: createDefaultSchema(),
-		preset: noDefaultExtensionsPreset,
+		preset: interopNoExtensionsPreset,
 	});
 	const existingBlockIds = [...editor.documentState.allBlocks()]
 		.filter((handle) => handle.parent === null)
@@ -43,7 +39,7 @@ function em8JsonDocument() {
 			{
 				type: "paragraph",
 				props: {},
-				content: { text: KEEP },
+				content: { text: EM8_KEEP },
 			},
 			{
 				type: "table",
@@ -61,7 +57,7 @@ function em8JsonDocument() {
 							{
 								type: "__table_cell",
 								props: {},
-								content: { text: CELL_CONTROL },
+								content: { text: EM8_CELL_CONTROL },
 							},
 						],
 					},
@@ -83,18 +79,18 @@ describe("EM8 JSON import", () => {
 			(handle) => handle.textContent() === "",
 		);
 		const keepParagraph = paragraphs.find(
-			(handle) => handle.textContent() === KEEP,
+			(handle) => handle.textContent() === EM8_KEEP,
 		);
 		expect(emptyParagraph).toBeDefined();
 		expect(keepParagraph).toBeDefined();
-		expect(keepParagraph?.textContent()).toBe(KEEP);
+		expect(keepParagraph?.textContent()).toBe(EM8_KEEP);
 
 		const table = [...editor.documentState.allBlocks()].find(
 			(handle) => handle.type === "table",
 		);
 		const grid = table?.as("table");
 		expect(grid?.tableCell(0, 0)?.textContent()).toBe("");
-		expect(grid?.tableCell(0, 1)?.textContent()).toBe(CELL_CONTROL);
+		expect(grid?.tableCell(0, 1)?.textContent()).toBe(EM8_CELL_CONTROL);
 		expect(
 			[...editor.documentState.allBlocks()].some(
 				(handle) => handle.textContent() === "\u200B",

@@ -17,7 +17,6 @@ import {
 	readSuggestionsFromBlock,
 } from "../suggestions/persistent";
 import { defaultSchema } from "@input/pen-schema-default";
-import { AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY } from "@input/pen-types";
 import {
 	createDeferred,
 	testStreamingToolExtension,
@@ -27,9 +26,7 @@ import {
 async function awaitExtensionLifecycle(
 	editor: ReturnType<typeof createEditor>,
 ): Promise<void> {
-	await (editor.internals.getSlot<() => Promise<void>>(
-		AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY,
-	)?.() ?? Promise.resolve());
+	await editor.whenReady();
 }
 
 describe("aiExtension", () => {

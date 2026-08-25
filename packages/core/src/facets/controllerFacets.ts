@@ -51,3 +51,7 @@ export const assetProviderFacet = singleController<unknown>(
 export const documentOpsToolRuntimeFacet = singleController<unknown>(
 	"documentOps.toolRuntime",
 );
+export const announcerFacet = singleController<unknown>("pen.announcer");
+export const streamingTargetFacet = singleController<unknown>(
+	"deltaStream.target",
+);

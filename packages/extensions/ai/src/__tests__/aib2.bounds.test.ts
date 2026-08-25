@@ -7,10 +7,7 @@ import {
 import { defaultSchema } from "@input/pen-schema-default";
 import { createModelDouble } from "@input/pen-test";
 import { undoExtension } from "@input/pen-undo";
-import {
-	AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY,
-	type PenStreamRequest,
-} from "@input/pen-types";
+import { type PenStreamRequest } from "@input/pen-types";
 import { AI_TOOL_RESULT_MAX_CHARS, runAgenticLoop } from "../index";
 
 type AssertFalse<T extends false> = T;
@@ -23,9 +20,7 @@ type _PenStreamRequestHasNoEditor = AssertFalse<
 async function awaitExtensionLifecycle(
 	editor: ReturnType<typeof createEditor>,
 ): Promise<void> {
-	await (editor.internals.getSlot<() => Promise<void>>(
-		AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY,
-	)?.() ?? Promise.resolve());
+	await editor.whenReady();
 }
 
 describe("AIB2 agentic tool-result send bounds", () => {

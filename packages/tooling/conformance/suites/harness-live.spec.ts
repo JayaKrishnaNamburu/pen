@@ -29,13 +29,13 @@ scenario("harness: remote.splice reaches the local document", async (s) => {
 	await s.assert.textContains("QHello");
 });
 
-scenario("harness: lastEvents records documentCommit", async (s, page) => {
+scenario("harness: lastEvents records commit", async (s, page) => {
 	await s.load("hello-world");
 	await s.keyboard.type("z");
 	const types = await page.evaluate(() =>
 		window.__penConformance.lastEvents.map((event) => event.type),
 	);
-	expect(types).toContain("documentCommit");
+	expect(types).toContain("commit");
 });
 
 scenario("harness: documentText includes nested children", async (s) => {

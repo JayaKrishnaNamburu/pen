@@ -23,11 +23,10 @@ jobs:
         id: filter
         uses: dorny/paths-filter@v3
         with:
-          # GA11 population (2026-08-25). Walked dependencies +
-          # peerDependencies of the Playwright host
-          # (@input/pen-kitchen-sink — playwright.config.ts webServer
-          # and testDir) and the GA11 roots (@input/pen-playground,
-          # @input/pen-dom). Closure:
+          # GA11 population. Walked dependencies + peerDependencies of
+          # the Playwright host (@input/pen-playground —
+          # playwright.config.ts webServer and testDir) and
+          # @input/pen-dom. Closure:
           #   packages/core, packages/crdt/yjs, packages/types,
           #   packages/schema/default, packages/presets/default,
           #   packages/rendering/dom, packages/rendering/react,
@@ -35,7 +34,7 @@ jobs:
           #   interop,multiplayer,search,shortcuts,undo},
           #   packages/shared/{content-ops,markdown-serialization},
           #   packages/tooling/assets-memory,
-          #   hosts internal/kitchen-sink and playground.
+          #   host playground.
           # Not in the closure: examples/*, packages/rendering/vue,
           # packages/transports/*, packages/tooling/{bench,conformance,
           # eslint-plugin,test}, packages/docs.
@@ -46,7 +45,6 @@ jobs:
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
               - 'playwright.config.ts'
-              - 'internal/kitchen-sink/**'
               - 'playground/**'
               - 'packages/core/**'
               - 'packages/crdt/yjs/**'

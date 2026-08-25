@@ -14,18 +14,12 @@ describe("defineExtension", () => {
 	});
 
 	it("preserves all fields", () => {
-		const inputRule = {
-			id: "test-rule",
-			match: /^# /,
-			handler: () => null,
-		};
 		const ext = defineExtension({
 			name: "x",
 			version: "1.0.0",
-			inputRules: [inputRule],
+			dependencies: ["y"],
 		});
-		expect(ext.inputRules).toHaveLength(1);
-		expect(ext.inputRules![0].id).toBe("test-rule");
+		expect(ext.dependencies).toEqual(["y"]);
 	});
 
 	it("preserves dependencies", () => {

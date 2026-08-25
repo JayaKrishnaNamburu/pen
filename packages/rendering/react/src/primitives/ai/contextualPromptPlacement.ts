@@ -1,6 +1,10 @@
+import { aiControllerFacet } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
-import type { AIContextualPromptAnchor, AISession } from "@input/pen-ai";
-import { getAIController } from "@input/pen-ai";
+import type {
+	AIContextualPromptAnchor,
+	AIController,
+	AISession,
+} from "@input/pen-ai";
 import React from "react";
 import { useIsomorphicLayoutEffect } from "../../hooks/useIsomorphicLayoutEffect";
 import { useSyncExternalStoreWithSelector } from "../../utils/useSyncExternalStoreWithSelector";
@@ -10,7 +14,8 @@ import type { ContextualPromptPlacement, UseContextualPromptPlacementOptions } f
 const SESSION_VIEWPORT_PADDING = 8;
 
 export function useContextualPromptSession(editor: Editor): AISession | null {
-	const controller = getAIController(editor);
+	const controller =
+		(editor.facet(aiControllerFacet) as AIController | null) ?? null;
 
 	return useSyncExternalStoreWithSelector(
 		(callback) => {
@@ -41,7 +46,8 @@ export function useContextualPromptAnchor(
 	editor: Editor,
 	sessionId?: string,
 ): AIContextualPromptAnchor | null {
-	const controller = getAIController(editor);
+	const controller =
+		(editor.facet(aiControllerFacet) as AIController | null) ?? null;
 
 	return useSyncExternalStoreWithSelector(
 		(callback) => {
@@ -66,7 +72,8 @@ export function useContextualPromptPlacement(
 	editor: Editor,
 	options: UseContextualPromptPlacementOptions = {},
 ): ContextualPromptPlacement | null {
-	const controller = getAIController(editor);
+	const controller =
+		(editor.facet(aiControllerFacet) as AIController | null) ?? null;
 	const session = useContextualPromptSession(editor);
 	const anchor = useContextualPromptAnchor(editor, options.sessionId);
 	const {

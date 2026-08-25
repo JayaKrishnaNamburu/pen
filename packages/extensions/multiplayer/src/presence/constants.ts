@@ -23,7 +23,16 @@ export const MAX_PRESENCE_ANCHOR_LENGTH = 768;
 export const MAX_PRESENCE_BLOCK_SELECTION_IDS = 256;
 
 /** COL2: max awareness updates accepted per peer per second. */
-export const MAX_PRESENCE_UPDATES_PER_SECOND = 10;
+export const MAX_PRESENCE_UPDATES_PER_SECOND = 30;
+
+/**
+ * COL2: shortest gap between local presence writes.
+ *
+ * Lives next to the cap above because the two numbers only work together: a
+ * sender coalescing to this interval stays under 20 updates a second, which
+ * every peer accepts.
+ */
+export const LOCAL_PRESENCE_MIN_INTERVAL_MS = 50;
 
 /** COL2: max remote peers whose presence is tracked and rendered. */
 export const MAX_TRACKED_PEERS = 32;

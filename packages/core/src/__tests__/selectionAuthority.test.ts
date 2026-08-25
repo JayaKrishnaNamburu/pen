@@ -4,11 +4,11 @@ import type {
 	SelectionState,
 	TextSelection,
 } from "@input/pen-types";
-import { mapOffsetThroughSplices } from "@input/pen-types";
+import { mapOffsetThroughSplices } from "../changes/mapOffsetThroughSplices";
 import { describe, expect, it } from "vitest";
 
 import { createBlockIndexSnapshot } from "../changes/blockIndex";
-import { createChangeSummary } from "../changes/mapping";
+import { createChangeSummary } from "../changes/summaryBuilder";
 import {
 	createEditor as createCoreEditor,
 	getEditorSelectionRecord,

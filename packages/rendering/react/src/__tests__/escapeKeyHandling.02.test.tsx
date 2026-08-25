@@ -7,11 +7,11 @@ import {
 	createEditor as createCoreEditor,
 	DocumentRangeImpl,
 	ensureInlineCompletionController,
+	fieldEditorHostFacet,
 } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
 import type { FieldEditorImpl } from "@input/pen-dom/field-editor/fieldEditorImpl";
 import { Pen } from "../primitives/index";
-import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
 import {
 	domSelectionToEditor,
 	editorSelectionToDOM,
@@ -62,9 +62,9 @@ async function flushAnimationFrames(count = 1): Promise<void> {
 function getFieldEditor(
 	editor: ReturnType<typeof createEditor>,
 ): FieldEditorImpl {
-	const fieldEditor = editor.internals.getSlot<FieldEditorImpl>(
-		FIELD_EDITOR_SLOT_KEY,
-	);
+	const fieldEditor = editor.facet(
+		fieldEditorHostFacet,
+	) as FieldEditorImpl | null;
 	if (!fieldEditor) {
 		throw new Error("Missing attached field editor");
 	}
@@ -200,7 +200,7 @@ describe("@input/pen-react escape key handling", () => {
 		editor.destroy();
 	});
 
-	it("maps cmd+a from a partial text selection to the current block in flow documents", async () => {
+	it("maps cmd+a from a partial text selection to all content in flow documents", async () => {
 		const editor = createEditor({
 			documentProfile: "flow",
 		});
@@ -276,14 +276,13 @@ describe("@input/pen-react escape key handling", () => {
 		expect(editor.selection).toMatchObject({
 			type: "text",
 			anchor: { blockId: firstBlockId, offset: 0 },
-			focus: { blockId: firstBlockId, offset: 5 },
-			isMultiBlock: false,
+			focus: { blockId: thirdBlockId, offset: 5 },
+			isMultiBlock: true,
 		});
 		expect(fieldEditor.getSnapshot()).toMatchObject({
-			focusBlockId: firstBlockId,
-			activeBlockIds: [firstBlockId],
+			activeBlockIds: [firstBlockId, secondBlockId, thirdBlockId],
 			isEditing: true,
-			mode: "single",
+			mode: "expanded",
 		});
 
 		await act(async () => {
@@ -293,7 +292,7 @@ describe("@input/pen-react escape key handling", () => {
 		editor.destroy();
 	});
 
-	it("maps cmd+a from an empty block to top-level BlockSelection in flow documents", async () => {
+	it("maps cmd+a from an empty block to all content, then top-level BlockSelection", async () => {
 		const editor = createEditor({
 			documentProfile: "flow",
 		});
@@ -348,6 +347,17 @@ describe("@input/pen-react escape key handling", () => {
 		await act(async () => {
 			fieldEditor.activate(firstBlockId);
 			await flushAnimationFrames(2);
+		});
+
+		await act(async () => {
+			document.dispatchEvent(createSelectAllEvent());
+			await flushAnimationFrames(2);
+		});
+
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId: firstBlockId, offset: 0 },
+			focus: { blockId: thirdBlockId, offset: 5 },
 		});
 
 		await act(async () => {

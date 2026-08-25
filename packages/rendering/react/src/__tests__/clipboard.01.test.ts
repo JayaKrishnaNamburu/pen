@@ -214,7 +214,7 @@ describe("@input/pen-react clipboard", () => {
 				insert: "Hello" },
 		]);
 		editor.selectText(blockId, 0, 5);
-		editor.internals.setSlot("paste:assetProvider", assetProvider);
+		editor.internals.assignSlot("paste:assetProvider", assetProvider);
 
 		handleClipboardPaste(
 			{ clipboardData } as ClipboardEvent,
@@ -253,7 +253,7 @@ describe("@input/pen-react clipboard", () => {
 				insert: "Hello" },
 		]);
 		editor.selectText(blockId, 5, 5);
-		editor.internals.setSlot("paste:assetProvider", assetProvider);
+		editor.internals.assignSlot("paste:assetProvider", assetProvider);
 
 		handleClipboardPaste(
 			{ clipboardData } as ClipboardEvent,

@@ -4,15 +4,30 @@ import {
 	createHeadlessEditor,
 	keyBindingPriorityToPrecedence,
 	keymapFacet,
+	searchControllerFacet,
 } from "@input/pen-core";
 import type { Extension, KeyBinding } from "@input/pen-types";
 import { getSearchController, searchExtension } from "../index";
 import { defaultSchema } from "@input/pen-schema-default";
 
 describe("@input/pen-search extension", () => {
+	it("SM2: getSearchController keeps its documented name and resolves through the facet", () => {
+		const editor = createEditor({
+			schema: defaultSchema,
+			extensions: [searchExtension()],
+		});
+		expect(getSearchController(editor)).toBe(
+			editor.facet(searchControllerFacet),
+		);
+		expect(
+			getSearchController(createEditor({ schema: defaultSchema })),
+		).toBeNull();
+	});
+
 	it("registers a controller and finds matches across blocks", () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [searchExtension()],
+			schema: defaultSchema,
+			extensions: [searchExtension()],
 		});
 		const firstBlockId = editor.firstBlock()!.id;
 		const secondBlockId = "b2";
@@ -23,8 +38,8 @@ describe("@input/pen-search extension", () => {
 					type: "splice-text",
 					blockId: firstBlockId,
 					from: 0,
-				to: 0,
-				insert: "hello world",
+					to: 0,
+					insert: "hello world",
 				},
 				{
 					type: "insert-block",
@@ -37,8 +52,8 @@ describe("@input/pen-search extension", () => {
 					type: "splice-text",
 					blockId: secondBlockId,
 					from: 0,
-				to: 0,
-				insert: "hello again",
+					to: 0,
+					insert: "hello again",
 				},
 			],
 			{ origin: "user" },
@@ -63,7 +78,8 @@ describe("@input/pen-search extension", () => {
 
 	it("navigates matches and replaces the active match", () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [searchExtension()],
+			schema: defaultSchema,
+			extensions: [searchExtension()],
 		});
 		const blockId = editor.firstBlock()!.id;
 
@@ -73,8 +89,8 @@ describe("@input/pen-search extension", () => {
 					type: "splice-text",
 					blockId,
 					from: 0,
-				to: 0,
-				insert: "alpha beta alpha",
+					to: 0,
+					insert: "alpha beta alpha",
 				},
 			],
 			{ origin: "user" },
@@ -93,14 +109,17 @@ describe("@input/pen-search extension", () => {
 		controller?.setReplaceText("omega");
 		controller?.replace();
 
-		expect(editor.getBlock(blockId)?.textContent()).toBe("alpha beta omega");
+		expect(editor.getBlock(blockId)?.textContent()).toBe(
+			"alpha beta omega",
+		);
 
 		editor.destroy();
 	});
 
 	it("replaces all matches in descending offset order", () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [searchExtension()],
+			schema: defaultSchema,
+			extensions: [searchExtension()],
 		});
 		const blockId = editor.firstBlock()!.id;
 
@@ -110,8 +129,8 @@ describe("@input/pen-search extension", () => {
 					type: "splice-text",
 					blockId,
 					from: 0,
-				to: 0,
-				insert: "aa aa aa",
+					to: 0,
+					insert: "aa aa aa",
 				},
 			],
 			{ origin: "user" },
@@ -130,7 +149,8 @@ describe("@input/pen-search extension", () => {
 
 	it("finds and replaces matches inside table cells", () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [searchExtension()],
+			schema: defaultSchema,
+			extensions: [searchExtension()],
 		});
 		const tableBlockId = "table-1";
 
@@ -170,14 +190,21 @@ describe("@input/pen-search extension", () => {
 		controller?.setReplaceText("hi");
 		controller?.replace();
 
-		expect(editor.getBlock(tableBlockId)!.as("table")?.tableCell(0, 0)?.textContent()).toBe("hi table");
+		expect(
+			editor
+				.getBlock(tableBlockId)!
+				.as("table")
+				?.tableCell(0, 0)
+				?.textContent(),
+		).toBe("hi table");
 
 		editor.destroy();
 	});
 
 	it("navigates table-cell matches by selecting the active cell without inline decorations", () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [searchExtension()],
+			schema: defaultSchema,
+			extensions: [searchExtension()],
 		});
 		const tableBlockId = "table-1";
 
@@ -228,7 +255,8 @@ describe("@input/pen-search extension", () => {
 
 	it("tracks open and close state", () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [searchExtension()],
+			schema: defaultSchema,
+			extensions: [searchExtension()],
 		});
 
 		const controller = getSearchController(editor);
@@ -245,7 +273,8 @@ describe("@input/pen-search extension", () => {
 
 	it("clears search decorations when closed", () => {
 		const editor = createEditor({
-			schema: defaultSchema,extensions: [searchExtension()],
+			schema: defaultSchema,
+			extensions: [searchExtension()],
 		});
 		const blockId = editor.firstBlock()!.id;
 
@@ -255,8 +284,8 @@ describe("@input/pen-search extension", () => {
 					type: "splice-text",
 					blockId,
 					from: 0,
-				to: 0,
-				insert: "alpha beta alpha",
+					to: 0,
+					insert: "alpha beta alpha",
 				},
 			],
 			{ origin: "user" },
@@ -277,13 +306,11 @@ describe("@input/pen-search extension", () => {
 
 	it("K1: undeclared-priority search bindings stay at the shim default of 300", () => {
 		const extension = searchExtension();
-		expect(extension.keyBindings).toBeUndefined();
+		expect("keyBindings" in extension).toBe(false);
 		expect(
-			extension.facets?.every(
-				(provider) =>
-					provider.facetName === "pen.keymap" &&
-					provider.precedence === "default",
-			),
+			extension.facets
+				?.filter((provider) => provider.facetName === "pen.keymap")
+				.every((provider) => provider.precedence === "default"),
 		).toBe(true);
 
 		const editor = createHeadlessEditor({
@@ -311,15 +338,20 @@ describe("@input/pen-search extension", () => {
 		const competitor: Extension = {
 			name: "search-keymap-competitor",
 			version: "0.0.0",
-			keyBindings: [
-				{
-					key: "Mod-f",
-					priority: 100,
-					handler: () => {
-						winner = "highest";
-						return true;
-					},
-				} satisfies KeyBinding,
+			facets: [
+				keymapFacet.of(
+					[
+						{
+							key: "Mod-f",
+							priority: 100,
+							handler: () => {
+								winner = "highest";
+								return true;
+							},
+						} satisfies KeyBinding,
+					],
+					"highest",
+				),
 			],
 		};
 

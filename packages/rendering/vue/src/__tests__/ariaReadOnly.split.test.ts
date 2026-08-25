@@ -1,14 +1,16 @@
 // @vitest-environment jsdom
 
-import { defineExtension, ariaReadOnlyFacet } from "@input/pen-core";
+import {
+	defineExtension,
+	ariaReadOnlyFacet,
+	fieldEditorHostFacet,
+} from "@input/pen-core";
 import type { FieldEditorImpl } from "@input/pen-dom";
 import { createTestEditor } from "@input/pen-test";
-import { FIELD_EDITOR_SLOT_KEY } from "@input/pen-types";
 import { mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it } from "vitest";
 import { nextTick } from "vue";
 import { PenEditor } from "../components/PenEditor";
-import { FIELD_EDITOR_SLOT_KEY as VUE_FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
 
 afterEach(() => {
 	document.body.replaceChildren();
@@ -61,11 +63,7 @@ function insertHello(
 function fieldEditor(
 	editor: ReturnType<typeof createTestEditor>,
 ): FieldEditorImpl | null {
-	return (
-		editor.internals.getSlot<FieldEditorImpl>(FIELD_EDITOR_SLOT_KEY) ??
-		editor.internals.getSlot<FieldEditorImpl>(VUE_FIELD_EDITOR_SLOT_KEY) ??
-		null
-	);
+	return (editor.facet(fieldEditorHostFacet) as FieldEditorImpl | null) ?? null;
 }
 
 describe("Vue pen.ariaReadOnly vs readonly prop", () => {

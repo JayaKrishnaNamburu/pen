@@ -1,13 +1,12 @@
-import { createEditor } from "@input/pen-core";
+import {
+	aiControllerFacet,
+	aiInlineHistoryFacet,
+	aiReviewControllerFacet,
+	createEditor,
+} from "@input/pen-core";
 import { undoExtension } from "@input/pen-undo";
 import { deltaStreamExtension } from "../stream";
 import { documentOpsExtension } from "@input/pen-document-ops";
-import {
-	AI_CONTROLLER_SLOT,
-	AI_INLINE_HISTORY_SLOT,
-	AI_REVIEW_CONTROLLER_SLOT,
-	AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY,
-} from "@input/pen-types";
 import { describe, expect, it } from "vitest";
 import { defaultSchema } from "@input/pen-schema-default";
 import {
@@ -21,9 +20,7 @@ import {
 async function awaitExtensionLifecycle(
 	editor: ReturnType<typeof createEditor>,
 ) {
-	await (editor.internals.getSlot<() => Promise<void>>(
-		AWAIT_EXTENSION_LIFECYCLE_SLOT_KEY,
-	)?.() ?? Promise.resolve());
+	await editor.whenReady();
 }
 
 describe("aiExtension", () => {
@@ -50,11 +47,9 @@ describe("aiExtension", () => {
 		expect(controller).toBeTruthy();
 		expect(getAIInlineHistoryController(editor)).toBeTruthy();
 		expect(getAIReviewController(editor)).toBeTruthy();
-		expect(editor.internals.getSlot(AI_CONTROLLER_SLOT)).toBe(controller);
-		expect(editor.internals.getSlot(AI_INLINE_HISTORY_SLOT)).toBeTruthy();
-		expect(
-			editor.internals.getSlot(AI_REVIEW_CONTROLLER_SLOT),
-		).toBeTruthy();
+		expect(editor.facet(aiControllerFacet)).toBe(controller);
+		expect(editor.facet(aiInlineHistoryFacet)).toBeTruthy();
+		expect(editor.facet(aiReviewControllerFacet)).toBeTruthy();
 		expect(controller!.getState().suggestMode).toBe(false);
 	});
 

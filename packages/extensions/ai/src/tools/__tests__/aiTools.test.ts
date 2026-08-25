@@ -8,19 +8,12 @@ import {
 	getAIToolRuntime,
 	listAITools,
 } from "../index";
-import { AI_TOOL_RUNTIME_SLOT } from "../toolServer";
 
 describe("@input/pen-ai/tools", () => {
-	it("reads the canonical tool runtime slot from the editor", () => {
+	it("reads the canonical tool runtime from the editor facet", () => {
 		const runtime = new AIToolRuntimeImpl();
 		const editor = {
-			internals: {
-				getSlot<T>(key: string): T | undefined {
-					return key === AI_TOOL_RUNTIME_SLOT
-						? (runtime as T)
-						: undefined;
-				},
-			},
+			facet: () => runtime,
 		} as never;
 
 		expect(getAIToolRuntime(editor)).toBe(runtime);
@@ -63,11 +56,7 @@ describe("@input/pen-ai/tools", () => {
 			apply() {
 				/* noop */
 			},
-			internals: {
-				getSlot() {
-					return undefined;
-				},
-			},
+			facet: () => null,
 		} as never;
 
 		const tool: ToolDefinition = {

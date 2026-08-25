@@ -509,6 +509,7 @@ void registry.dispatch(splitBlock, undefined);`}</code>
 			<pre>
 				<code>{`import {
   defineExtension,
+  keymapFacet,
   resolveDefaultKeymap,
 } from "@input/pen-core";
 
@@ -519,11 +520,11 @@ const toggleBold = macos.find(
 
 const hostKeys = defineExtension({
   name: "host-keys",
-  keyBindings: [
-    {
-      key: "Mod-s",
-      handler: () => true,
-    },
+  facets: [
+    keymapFacet.of(
+      [{ key: "Mod-s", handler: () => true }],
+      "high",
+    ),
   ],
 });
 
@@ -531,17 +532,19 @@ void toggleBold;
 void hostKeys;`}</code>
 			</pre>
 			<p>
-				Host-contributed bindings are still{" "}
-				<code>Extension.keyBindings</code>: a <code>KeyBinding</code>{" "}
-				with <code>key</code> and{" "}
-				<code>handler(editor, event)</code>, not a command token. The
-				v1 shim writes those onto <code>keymapFacet</code> (
-				<code>pen.keymap</code>).{" "}
+				Host-contributed bindings go through{" "}
+				<code>extension.facets</code> as <code>keymapFacet</code>{" "}
+				(<code>pen.keymap</code>) providers. A <code>KeyBinding</code>{" "}
+				has <code>key</code> and{" "}
+				<code>handler(editor, event)</code>, not a command token.{" "}
+				<code>keymapFacet.of</code> takes a <code>KeyBinding[]</code>{" "}
+				and an optional precedence (<code>highest</code> /{" "}
+				<code>high</code> / <code>default</code> / <code>low</code> /{" "}
+				<code>lowest</code>).{" "}
 				<code>defaultPreset()</code> installs{" "}
 				<code>richTextShortcutsExtension</code> from{" "}
 				<code>@input/pen-shortcuts</code> unless{" "}
-				<code>shortcuts: false</code> is passed. Custom chords still go
-				on the extension <code>keyBindings</code> array. Read the
+				<code>shortcuts: false</code> is passed. Read the
 				merged list with <code>editor.facet(keymapFacet)</code>.
 			</p>
 			<p>
@@ -550,10 +553,10 @@ void hostKeys;`}</code>
 				<code>dispatch</code>es the matching command. A miss —
 				including <code>pen.caretUp</code> /{" "}
 				<code>pen.caretDown</code> — falls through to{" "}
-				<code>Extension.keyBindings</code> (
+				<code>keymapFacet</code> (
 				<code>KeyBinding.handler</code>, not a command token). Those
 				two tables are not one. Until they are, a host chord stays on{" "}
-				<code>keyBindings</code>; a host that needs an editing action
+				<code>keymapFacet</code>; a host that needs an editing action
 				the default keymap does not cover calls{" "}
 				<code>getCommandRegistry(editor)?.dispatch(...)</code>.{" "}
 				<code>Editor</code> still has no <code>dispatch</code> method.

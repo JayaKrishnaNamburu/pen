@@ -68,10 +68,10 @@ Important rules:
 - Without `undoExtension()`, `editor.undoManager` is an inert stub: `canUndo()` / `canRedo()` return `false`, `undo()` / `redo()` return `false`, and the `undo:manager` slot is absent. There is no error. Undo looks present and does nothing. Install `undoExtension()` or `defaultPreset()`.
 - `pen.ariaReadOnly` (`ariaReadOnlyFacet`) some-combines booleans. It does **not** decline typing, does **not** stop `editor.apply`, and does **not** stop the wire. Renderers read it only to set `aria-readonly`. The `readonly` prop on `EditorRoot` / `PenEditor` / `mountEditor` is what declines local typing. That split is shipped and is an open owner decision; this spec records it, it does not resolve it.
 - `editor.blocks()` / `editor.blockCount()` walk nested and layout children, matching `documentState.blocks` / `documentState.blockCount`. `documentState.blockOrder` is the top-level sequence only.
-- Extensions can prepare work, observe editor events, and register slots, but they do not bypass the core mutation boundary.
+- Extensions can prepare work, observe `commit` events (`CommitEvent`), and write `internals.assignSlot` (which overrides the mapped core facet). They do not bypass the core mutation boundary.
 - Renderer packages read `DocumentState`, `BlockHandle`, selection, and decorations from the editor; they do not become alternate document authorities.
-- `Extension.keyBindings` still exists as a v1 rider. Core copies those bindings onto `keymapFacet` at install. New shortcut work should declare `keymapFacet` providers; several shipped extensions already do.
-- The command registry and catalog are settled; v3 keeps the D/K/B rules unchanged (`spec-v3/00-concept.md`, What v3 Keeps). Selection *bridging* inside `@input/pen-dom` remains unsettled and is scheduled for consolidation by `spec-v4/05-structure.md` CS5; do not treat that bridging as a finished contract from this spec.
+- `extension.facets` is the only `Extension` contribution channel: shortcuts are `keymapFacet` providers, input rules `inputRulesFacet`, decorations `decorationsFacet` (all in `core/src/facets/coreFacets.ts`).
+- The command registry and catalog are settled; v3 keeps the D/K/B rules unchanged (`spec-v3/00-concept.md`, What v3 Keeps). Selection _bridging_ inside `@input/pen-dom` remains unsettled and is scheduled for consolidation by `spec-v4/05-structure.md` CS5; do not treat that bridging as a finished contract from this spec.
 
 ## Headless Workflows
 

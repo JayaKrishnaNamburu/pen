@@ -1,4 +1,4 @@
-import { createEditor } from "@input/pen-core";
+import { createEditor, streamingTargetFacet } from "@input/pen-core";
 import { defaultSchema } from "@input/pen-schema-default";
 import type { PenStreamPart } from "@input/pen-types";
 import { describe, expect, it } from "vitest";
@@ -50,8 +50,10 @@ describe("@input/pen-ai/stream processStream generation undo", () => {
 			"Hello world",
 		);
 		expect(
-			editor.internals.getSlot<{ generationZone: unknown }>(
-				"delta-stream:target",
+			(
+				editor.facet(streamingTargetFacet) as {
+					generationZone: unknown;
+				} | null
 			)?.generationZone ?? null,
 		).toBeNull();
 

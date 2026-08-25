@@ -1,9 +1,13 @@
 // @vitest-environment jsdom
 
 import { afterEach, describe, expect, it } from "vitest";
-import { createEditor, getVerticalCaretMeasure } from "@input/pen-core";
+import {
+	createEditor,
+	fieldEditorHostFacet,
+	getVerticalCaretMeasure,
+} from "@input/pen-core";
 import { defaultSchema } from "@input/pen-schema-default";
-import { FIELD_EDITOR_SLOT_KEY, type Editor } from "@input/pen-types";
+import type { Editor } from "@input/pen-types";
 import { mountEditor } from "../host/mountEditor";
 import { DATA_ATTRS } from "../utils/dataAttributes";
 
@@ -52,9 +56,7 @@ describe("mountEditor", () => {
 		expect(placeholder?.tagName).toBe("BR");
 		expect(placeholder?.getAttribute(DATA_ATTRS.emptyBlock)).toBe("");
 		expect(inline?.textContent).toBe("");
-		expect(editor.internals.getSlot(FIELD_EDITOR_SLOT_KEY)).toBe(
-			mounted.fieldEditor,
-		);
+		expect(editor.facet(fieldEditorHostFacet)).toBe(mounted.fieldEditor);
 	});
 
 	it("activates FieldEditorImpl on inline pointer down", () => {

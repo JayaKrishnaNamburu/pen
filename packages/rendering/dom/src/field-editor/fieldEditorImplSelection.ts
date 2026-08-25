@@ -24,7 +24,6 @@ import { ExpandedContentEditableBackend } from "./expandedContentEditableBackend
 import { FocusController } from "./focusController";
 import { HistorySelectionCoordinator } from "./historySelectionCoordinator";
 import { PendingMarkController } from "./pendingMarkController";
-import { SelectAllController } from "./selectAllController";
 import { FieldEditorSelectionCoordinator } from "./selectionCoordinator";
 import type {
 	FieldEditorSelectionSnapshot,
@@ -49,21 +48,11 @@ import {
 	queryBlockElement,
 	queryInlineElement,
 } from "./selectionBridge";
-import {
-	getEditorBlockSelectionLength,
-	getEditorBlockSelectionRole,
-} from "../utils/blockSelectionSemantics";
-import {
-	getEditorFlowCapability,
-	shouldForceBlockScopedSelectAll,
-} from "../utils/flowCapabilities";
+import { getEditorBlockSelectionRole } from "../utils/blockSelectionSemantics";
+import { getEditorFlowCapability } from "../utils/flowCapabilities";
 import type { FieldEditorStoreSnapshot } from "./store";
 import type { EditorSelectAllBehavior } from "../constants/selectAll";
 import { FieldEditorImplLifecycle } from "./fieldEditorImplLifecycle";
-import {
-	getFullDocumentTextRange,
-	pointsEqual,
-} from "./fieldEditorImplHelpers";
 import { isSingleFieldNativeLeftover } from "./singleFieldNativeLeftover";
 import {
 	decideDomSelectionRead,
@@ -479,119 +468,8 @@ export abstract class FieldEditorImplSelection extends FieldEditorImplLifecycle 
 		this._pendingMarkController.clear();
 	}
 
-	resetSelectAllCycle(): void {
-		this._selectAllController.resetCycle();
-	}
-
 	protected _syncSelectionToDOM(): void {
 		if (!this._isEditing) return;
 		this._selectionCoordinator.syncDomSelectionOnce();
-	}
-
-	protected _resolveSelectAllBlockId(
-		rootElement?: HTMLElement | null,
-	): string | null {
-		const selection = this._editor.selection;
-		if (selection?.type === "text" && !isMultiBlock(selection)) {
-			return selection.focus.blockId;
-		}
-		if (
-			this._selectAllController.getBehavior() === "block-first" &&
-			selection?.type === "block" &&
-			selection.blockIds.length === 1
-		) {
-			return selection.blockIds[0] ?? null;
-		}
-		if (selection?.type === "cell") {
-			return selection.blockId;
-		}
-
-		if (this._focusBlockId) {
-			return this._focusBlockId;
-		}
-
-		const root = rootElement ?? this._findEditorRoot();
-		if (!root) {
-			return null;
-		}
-
-		const domSelection = domSelectionToEditor(root);
-		if (
-			domSelection &&
-			domSelection.anchor.blockId === domSelection.focus.blockId
-		) {
-			return domSelection.focus.blockId;
-		}
-
-		const activeElement = root.ownerDocument?.activeElement;
-		if (activeElement instanceof HTMLElement) {
-			return (
-				activeElement
-					.closest("[data-block-id]")
-					?.getAttribute("data-block-id") ?? null
-			);
-		}
-
-		return null;
-	}
-
-	protected _selectionMatchesSelectAllCycle(
-		cycle: { blockId: string; scope: "cell" | "block" | "document" },
-		selection: SelectionState | null,
-	): boolean {
-		if (cycle.scope === "cell") {
-			return (
-				selection?.type === "cell" &&
-				selection.blockId === cycle.blockId
-			);
-		}
-
-		if (cycle.scope === "block") {
-			const blockLength = getEditorBlockSelectionLength(
-				this._editor,
-				cycle.blockId,
-			);
-			const blockRole = getEditorBlockSelectionRole(
-				this._editor,
-				cycle.blockId,
-			);
-			if (blockRole && blockRole !== "editable-inline") {
-				return (
-					selection?.type === "block" &&
-					selection.blockIds.length === 1 &&
-					selection.blockIds[0] === cycle.blockId
-				);
-			}
-
-			if (selection?.type !== "text") {
-				return false;
-			}
-			return (
-				!isMultiBlock(selection) &&
-				selection.anchor.blockId === cycle.blockId &&
-				selection.focus.blockId === cycle.blockId &&
-				Math.min(selection.anchor.offset, selection.focus.offset) ===
-					0 &&
-				Math.max(selection.anchor.offset, selection.focus.offset) ===
-					blockLength
-			);
-		}
-
-		const range = getFullDocumentTextRange(this._editor);
-		if (!range) {
-			return false;
-		}
-
-		if (selection?.type !== "text") {
-			return false;
-		}
-
-		return (
-			isMultiBlock(selection) &&
-			((pointsEqual(selection.anchor, range.start) &&
-				pointsEqual(selection.focus, range.end)) ||
-				(pointsEqual(selection.anchor, range.end) &&
-					pointsEqual(selection.focus, range.start)))
-		);
 	}
 }

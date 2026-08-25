@@ -26,19 +26,17 @@ function createReadOnlyTargetEditor(): Editor {
 		},
 		getBlock: (blockId: string) => (blockId === block.id ? block : null),
 		apply: vi.fn<(ops: DocumentOp[], options?: ApplyOptions) => void>(),
-		internals: {
-			emit: vi.fn(),
-			getSlot(key: string) {
-				if (key === "delta-stream:target") {
-					return {
+		facet: (facet: { name: string }) =>
+			facet.name === "deltaStream.target"
+				? {
 						generationZone: null,
 						beginStreaming: vi.fn(),
 						appendDelta: vi.fn(),
 						endStreaming: vi.fn(),
-					};
-				}
-				return undefined;
-			},
+					}
+				: null,
+		internals: {
+			emit: vi.fn(),
 		},
 	} as unknown as Editor;
 }
@@ -68,17 +66,17 @@ function createToolRuntimeEditor(): {
 				resolve: () => null,
 			},
 			apply: vi.fn<(ops: DocumentOp[], options?: ApplyOptions) => void>(),
+			facet: (facet: { name: string }) => {
+				if (facet.name === "deltaStream.target") {
+					return streamingTarget;
+				}
+				if (facet.name === "documentOps.toolRuntime") {
+					return runtime;
+				}
+				return null;
+			},
 			internals: {
 				emit: vi.fn(),
-				getSlot(key: string) {
-					if (key === "delta-stream:target") {
-						return streamingTarget;
-					}
-					if (key === "document-ops:toolRuntime") {
-						return runtime;
-					}
-					return undefined;
-				},
 			},
 		} as unknown as Editor,
 		onPart,

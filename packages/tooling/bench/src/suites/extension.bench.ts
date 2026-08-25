@@ -1,5 +1,5 @@
 import type { BenchContext, BenchDefinition } from "../bench";
-import { emptyDecorationSet } from "@input/pen-core";
+import { decorationsFacet, emptyDecorationSet } from "@input/pen-core";
 import { createTestEditor } from "@input/pen-test";
 import { defineExtension } from "@input/pen-core";
 import {
@@ -16,9 +16,7 @@ function makeNoopExtension(name: string) {
 		observe(_events, _editor) {
 			// intentional no-op for dispatch overhead measurement
 		},
-		decorations(_state, _editor) {
-			return emptyDecorationSet();
-		},
+		facets: [decorationsFacet.of(() => emptyDecorationSet())],
 	});
 }
 

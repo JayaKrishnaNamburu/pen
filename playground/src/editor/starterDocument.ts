@@ -18,7 +18,7 @@ const STARTER_BLOCKS: StarterBlock[] = [
 	},
 	{
 		type: "paragraph",
-		text: "Ask the assistant on the left to write or rewrite something. It edits this document through the same operations your keyboard does.",
+		text: "Ask the agent on the left to write or rewrite something. It edits this document through the same operations your keyboard does.",
 	},
 	{
 		type: "paragraph",
@@ -30,8 +30,8 @@ const STARTER_BLOCKS: StarterBlock[] = [
  * Fills a brand-new editor with something to read.
  *
  * Documents are changed by applying operations, which is the only way anything
- * writes to a Pen document — typing, pasting, undo, and the assistant all end
- * up here. `set-props` on the first block is how a block changes type.
+ * writes to a Pen document — typing, pasting, undo, and the agent all end up
+ * here. `set-props` on the first block is how a block changes type.
  */
 export function applyStarterDocument(editor: Editor): void {
 	const firstBlock = editor.firstBlock();

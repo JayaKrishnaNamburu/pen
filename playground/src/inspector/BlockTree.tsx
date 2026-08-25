@@ -24,7 +24,7 @@ export function BlockTree({ blocks }: { blocks: SnapshotBlock[] }) {
 	return <ul className="block-tree">{blockItems}</ul>;
 }
 
-/** `type` is omitted because the badge already shows the block type. */
+/** `type` is omitted because the row above already shows the block type. */
 function formatProps(props: Record<string, unknown>): string | null {
 	const entries = Object.entries(props).filter(
 		([key, value]) =>

@@ -1,7 +1,9 @@
-import { createEditor as createCoreEditor } from "@input/pen-core";
+import {
+	createEditor as createCoreEditor,
+	fieldEditorHostFacet,
+} from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
 import type { FieldEditorImpl } from "@input/pen-dom/field-editor/fieldEditorImpl";
-import { FIELD_EDITOR_SLOT_KEY } from "../../constants/fieldEditor";
 import { defaultSchema } from "@input/pen-schema-default";
 
 (
@@ -69,9 +71,9 @@ export function createUndoSelectionDeletionEditor(
 export function getFieldEditor(
 	editor: ReturnType<typeof createEditor>,
 ): FieldEditorImpl {
-	const fieldEditor = editor.internals.getSlot<FieldEditorImpl>(
-		FIELD_EDITOR_SLOT_KEY,
-	);
+	const fieldEditor = editor.facet(
+		fieldEditorHostFacet,
+	) as FieldEditorImpl | null;
 	if (!fieldEditor) {
 		throw new Error("Missing attached field editor");
 	}

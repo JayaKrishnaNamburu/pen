@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { affectedBlockIdsFromSummary } from "../changes/affectedBlocks";
-import { createEmptySummary } from "../changes/mapping";
+import { createEmptySummary } from "../changes/summaryBuilder";
 import type { ChangeSummary, StructuralChange } from "../changes/types";
 
 function summaryWith(

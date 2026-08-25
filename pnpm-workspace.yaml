@@ -4,4 +4,3 @@ packages:
   - "examples/vue"
   - "examples/vanilla"
   - "playground"
-  - "internal/kitchen-sink"

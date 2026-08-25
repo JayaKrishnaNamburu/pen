@@ -1,9 +1,10 @@
+import { localeFacet } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
 
 const DEFAULT_DOCUMENT_OPS_LOCALE = "en";
 
 export function resolveEditorLocale(editor: Editor): string {
-	const locale = editor.internals?.getSlot<string>("pen.locale");
+	const locale = editor.facet(localeFacet);
 	return typeof locale === "string" && locale.length > 0
 		? locale
 		: DEFAULT_DOCUMENT_OPS_LOCALE;

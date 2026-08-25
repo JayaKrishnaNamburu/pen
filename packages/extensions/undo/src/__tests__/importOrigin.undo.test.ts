@@ -42,12 +42,12 @@ describe("@input/pen-undo import and history origins", () => {
 		editor.destroy();
 	});
 
-	it("emits history origin for undo transactions on documentCommit", () => {
+	it("emits history origin for undo transactions on commit", () => {
 		const editor = createEditorWithUndo();
 		const blockId = editor.firstBlock()!.id;
 		const commitOrigins: string[] = [];
 
-		editor.on("documentCommit", (event) => {
+		editor.on("commit", (event) => {
 			commitOrigins.push(getOpOriginType(event.origin));
 		});
 

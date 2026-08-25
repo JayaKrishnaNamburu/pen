@@ -129,11 +129,6 @@ export { buildTableChildren } from "./exporterUtils";
 // Document migrations (DUR4)
 export { runMigrations } from "./migrations/runMigrations";
 export type { DocumentMigration, MigrationReport } from "./migrations/types";
-export {
-	STRIP_EMPTY_BLOCK_ZWSP_ID,
-	createStripEmptyBlockZwspMigration,
-} from "./migrations/stripEmptyBlockSentinels";
-export { isLoneEmptyBlockZwsp } from "./schema/emptyBlockSentinel";
 
 export {
 	foldAndNormalize,
@@ -357,9 +352,9 @@ export {
 	historyControllerFacet,
 	assetProviderFacet,
 	documentOpsToolRuntimeFacet,
+	announcerFacet,
+	streamingTargetFacet,
 } from "./facets/controllerFacets";
-export { SLOT_DEPRECATED_CODE } from "./facets/slotAdapter";
-// SLOT_DISPOSITION_BY_KEY / dispositionForSlot stay off the barrel; they are the
-// engine's slot→facet migration table. Hosts switch on SLOT_DEPRECATED_CODE.
+export { collectEditorKeyBindings } from "./editor/extensionManager";
 export { affectedBlockIdsFromSummary } from "./changes/affectedBlocks";
-export { EVENT_DEPRECATED_CODE } from "./editor/commitEvent";
+export { mapOffsetThroughSplices } from "./changes/mapOffsetThroughSplices";

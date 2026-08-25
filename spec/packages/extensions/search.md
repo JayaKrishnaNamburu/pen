@@ -12,7 +12,7 @@ This package adds optional search behavior to an editor instance without couplin
 
 - Export map: `.`
 - Primary extension entrypoint: `searchExtension()`
-- Controller lookup: `getSearchController()` — the slot key `SEARCH_CONTROLLER_SLOT` lives on `@input/pen-types`
+- Controller lookup: `getSearchController()` reads `editor.facet(searchControllerFacet)`. Activate still `assignSlot`s `SEARCH_CONTROLLER_SLOT` (defined on `@input/pen-types`), which overrides that facet.
 - `SearchControllerImpl` is the runtime controller; it is reached through `searchExtension()` / `getSearchController()`, not the barrel
 - Pure helpers such as `buildSearchRegex()`, `findDocumentMatches()`, `buildReplaceOps()`, and `buildReplaceAllOps()`
 - Search state and typing such as `SearchState`, `SearchMatch`, and `SearchOptions`
@@ -51,7 +51,7 @@ Important rules:
 
 - Search state is derived from the current editor document and options.
 - Case-insensitive match uses core `foldAndNormalize()` and `localeFacet`. Case-sensitive search skips folding.
-- The extension declares `Mod-f` / `Mod-g` (and siblings) on `keymapFacet`, not `Extension.keyBindings`.
+- The extension declares `Mod-f` / `Mod-g` (and siblings) on `keymapFacet`, which is the only binding channel.
 - Active-match navigation is controller state, not renderer-local state.
 - Replace and replace-all actions resolve to editor operations instead of direct DOM mutations.
 

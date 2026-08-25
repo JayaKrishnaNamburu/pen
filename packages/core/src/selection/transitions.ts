@@ -5,6 +5,8 @@
  * manager, commands, or reader.
  */
 
+import type { SelectAllBehavior } from "@input/pen-types";
+
 export type Affinity = "upstream" | "downstream";
 
 export interface Point {
@@ -83,7 +85,12 @@ const DEFAULT_AFFINITY: Affinity = "downstream";
 export function escalateSelectAll(
 	doc: TransitionSnapshot,
 	selection: SelectionState,
+	behavior: SelectAllBehavior = "block-first",
 ): SelectionState {
+	if (entersAtContentRung(doc, selection, behavior)) {
+		return selectAllContent(doc) ?? topLevelBlockSelection(doc);
+	}
+
 	if (selection === null) {
 		return topLevelBlockSelection(doc);
 	}
@@ -200,6 +207,84 @@ export function transitionCellSelection(
 			return _exhaustive;
 		}
 	}
+}
+
+/**
+ * T1 document-first entry: the first press covers all content rather than the
+ * active block. Only a text or empty selection enters here. A `block`, `cell`,
+ * or `app` selection already sits at or above the content rung, so entering
+ * from the content range would walk the ladder backwards.
+ */
+function entersAtContentRung(
+	doc: TransitionSnapshot,
+	selection: SelectionState,
+	behavior: SelectAllBehavior,
+): boolean {
+	if (behavior !== "document-first") {
+		return false;
+	}
+	if (selection !== null && selection.type !== "text") {
+		return false;
+	}
+	return !coversAllContent(doc, selection);
+}
+
+/**
+ * Returns `null` when the content range is empty, so a document of empty blocks
+ * falls through to `BlockSelection` instead of writing a collapsed caret that
+ * looks like a dropped keystroke.
+ */
+function selectAllContent(doc: TransitionSnapshot): SelectionState {
+	const range = contentRange(doc);
+	if (!range || samePoint(range.start, range.end)) {
+		return null;
+	}
+	return textSelection(range.start, range.end, DEFAULT_AFFINITY);
+}
+
+function coversAllContent(
+	doc: TransitionSnapshot,
+	selection: SelectionState,
+): boolean {
+	if (selection === null || selection.type !== "text") {
+		return false;
+	}
+	const content = contentRange(doc);
+	const range = orderedTextRange(doc, selection);
+	if (!content || !range) {
+		return false;
+	}
+	return (
+		samePoint(content.start, range.start) &&
+		samePoint(content.end, range.end)
+	);
+}
+
+function contentRange(
+	doc: TransitionSnapshot,
+): { start: Point; end: Point } | null {
+	const firstId = doc.blockOrder[0];
+	const lastId = doc.blockOrder[doc.blockOrder.length - 1];
+	if (!firstId || !lastId) {
+		return null;
+	}
+	const lastBlock = doc.blocks[lastId];
+	if (!doc.blocks[firstId] || !lastBlock) {
+		return null;
+	}
+	return {
+		start: { blockId: firstId, offset: 0 },
+		end: { blockId: lastId, offset: selectableExtent(lastBlock) },
+	};
+}
+
+/** A structural block has no text domain; 0..1 covers it as a unit (N2). */
+function selectableExtent(block: TransitionBlock): number {
+	return block.kind === "structural" ? 1 : block.length;
+}
+
+function samePoint(left: Point, right: Point): boolean {
+	return left.blockId === right.blockId && left.offset === right.offset;
 }
 
 function escalateSelectAllFromText(

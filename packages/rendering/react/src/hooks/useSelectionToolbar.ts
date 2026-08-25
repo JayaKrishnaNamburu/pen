@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from "react";
-import { isCollapsed } from "@input/pen-core";
+import { aiControllerFacet, isCollapsed } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
-import { getAIController } from "@input/pen-ai";
+import type { AIController } from "@input/pen-ai";
 import { DATA_ATTRS } from "../utils/dataAttributes";
 import { queryBlockElement } from "@input/pen-dom/field-editor/selectionBridge";
 import { resolveSelectionRect } from "../selection/placement";
@@ -29,7 +29,8 @@ const CLOSED_STATE: SelectionToolbarState = {
 export function useSelectionToolbar(editor: Editor): SelectionToolbarState {
 	const [state, setState] = useState<SelectionToolbarState>(CLOSED_STATE);
 	const rafRef = useRef(0);
-	const controller = getAIController(editor);
+	const controller =
+		(editor.facet(aiControllerFacet) as AIController | null) ?? null;
 	const isInlinePromptOpen = useSyncExternalStoreWithSelector(
 		(callback) => {
 			if (!controller) {

@@ -212,6 +212,8 @@ export interface FieldEditorKeyboardController extends Pick<
 	"focusBlockId" | "inputMode"
 > {
 	readonly activeCellCoord: ActiveCellCoord | null;
+	/** Which rung `Mod-a` enters the T1 ladder on, from the interaction model. */
+	readonly selectAllBehavior: EditorSelectAllBehavior;
 	activateCell(blockId: string, row: number, col: number): void;
 	activateTextSelection(
 		blockId: string,
@@ -231,7 +233,6 @@ export interface FieldEditorKeyboardController extends Pick<
 		focusOffset: number,
 	): void;
 	deactivate(): void;
-	selectAll(rootElement?: HTMLElement | null): boolean;
 }
 
 export interface FieldEditorTableNavigationController {
@@ -281,8 +282,6 @@ export type FieldEditorSession = FieldEditorStore &
 		notifyGestureEvent(eventKind: GestureEventKind): void;
 		isAdmissibleGestureRead(): boolean;
 		readDomSelection(proposal: ReaderSelection): DomSelectionReadDecision;
-		selectAll(rootElement?: HTMLElement | null): boolean;
-		resetSelectAllCycle(): void;
 		suspendForPointerSelection(): void;
 		getPendingMarks(): Readonly<Record<string, unknown | null>>;
 		togglePendingMark(markType: string): boolean;

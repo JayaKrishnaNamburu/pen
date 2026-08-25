@@ -1,5 +1,6 @@
+import { aiControllerFacet } from "@input/pen-core";
 import type { Editor } from "@input/pen-types";
-import { getAIController } from "@input/pen-ai";
+import type { AIController } from "@input/pen-ai";
 import { useAI } from "./useAI";
 
 export function useSuggestMode(editor: Editor): {
@@ -7,10 +8,12 @@ export function useSuggestMode(editor: Editor): {
 	setSuggestMode: (enabled: boolean) => void;
 } {
 	const state = useAI(editor);
+	const controller =
+		(editor.facet(aiControllerFacet) as AIController | null) ?? null;
 	return {
 		suggestMode: state.suggestMode,
 		setSuggestMode(enabled: boolean) {
-			getAIController(editor)?.setSuggestMode(enabled);
+			controller?.setSuggestMode(enabled);
 		},
 	};
 }

@@ -1,6 +1,7 @@
 import {
 	aiSuggestionsControllerFacet,
 	createDecorationSet,
+	decorationsFacet,
 } from "@input/pen-core";
 import { AI_SUGGESTIONS_CONTROLLER_SLOT } from "@input/pen-types";
 import { defineExtension } from "@input/pen-core";
@@ -26,6 +27,21 @@ export function aiSuggestionsExtension(
 
 	return defineExtension({
 		name: AI_SUGGESTIONS_EXTENSION_NAME,
+		facets: [
+			decorationsFacet.of(() => {
+				const state = controller?.getState();
+				if (!state || state.suggestions.length === 0) {
+					return createDecorationSet([]);
+				}
+				return createDecorationSet(
+					buildAISuggestionDecorations(
+						state.suggestions,
+						state.activeSuggestionId,
+						state.groups,
+					),
+				);
+			}),
+		],
 
 		activateClient: async ({ editor }) => {
 			activeEditor = editor;
@@ -44,20 +60,6 @@ export function aiSuggestionsExtension(
 			controller?.destroy();
 			controller = null;
 			activeEditor = null;
-		},
-
-		decorations: () => {
-			const state = controller?.getState();
-			if (!state || state.suggestions.length === 0) {
-				return createDecorationSet([]);
-			}
-			return createDecorationSet(
-				buildAISuggestionDecorations(
-					state.suggestions,
-					state.activeSuggestionId,
-					state.groups,
-				),
-			);
 		},
 	});
 }

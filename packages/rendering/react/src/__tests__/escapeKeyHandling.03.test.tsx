@@ -7,11 +7,11 @@ import {
 	createEditor as createCoreEditor,
 	DocumentRangeImpl,
 	ensureInlineCompletionController,
+	fieldEditorHostFacet,
 } from "@input/pen-core";
 import { defaultPreset } from "@input/pen-preset-default";
 import type { FieldEditorImpl } from "@input/pen-dom/field-editor/fieldEditorImpl";
 import { Pen } from "../primitives/index";
-import { FIELD_EDITOR_SLOT_KEY } from "../constants/fieldEditor";
 import {
 	domSelectionToEditor,
 	editorSelectionToDOM,
@@ -62,9 +62,9 @@ async function flushAnimationFrames(count = 1): Promise<void> {
 function getFieldEditor(
 	editor: ReturnType<typeof createEditor>,
 ): FieldEditorImpl {
-	const fieldEditor = editor.internals.getSlot<FieldEditorImpl>(
-		FIELD_EDITOR_SLOT_KEY,
-	);
+	const fieldEditor = editor.facet(
+		fieldEditorHostFacet,
+	) as FieldEditorImpl | null;
 	if (!fieldEditor) {
 		throw new Error("Missing attached field editor");
 	}
@@ -178,8 +178,8 @@ describe("@input/pen-react escape key handling", () => {
 			expect(editor.selection).toMatchObject({
 				type: "text",
 				anchor: { blockId: firstBlockId, offset: 0 },
-				focus: { blockId: firstBlockId, offset: 5 },
-				isMultiBlock: false,
+				focus: { blockId: thirdBlockId, offset: 5 },
+				isMultiBlock: true,
 			});
 
 			await act(async () => {
@@ -196,7 +196,7 @@ describe("@input/pen-react escape key handling", () => {
 		}
 	});
 
-	it("escalates whole-block cmd+a to BlockSelection in content-first structured documents", async () => {
+	it("escalates cmd+a to all content then BlockSelection in content-first structured documents", async () => {
 		const editor = createEditor();
 		const firstBlockId = editor.firstBlock()!.id;
 		const secondBlockId = crypto.randomUUID();
@@ -241,6 +241,17 @@ describe("@input/pen-react escape key handling", () => {
 		await act(async () => {
 			fieldEditor.activateTextSelection(firstBlockId, 0, 5);
 			await flushAnimationFrames(2);
+		});
+
+		await act(async () => {
+			document.dispatchEvent(createSelectAllEvent());
+			await flushAnimationFrames(2);
+		});
+
+		expect(editor.selection).toMatchObject({
+			type: "text",
+			anchor: { blockId: firstBlockId, offset: 0 },
+			focus: { blockId: secondBlockId, offset: 6 },
 		});
 
 		await act(async () => {

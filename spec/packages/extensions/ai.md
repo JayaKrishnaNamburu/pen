@@ -13,7 +13,7 @@ In current usage, `@input/pen-ai` is the headless orchestration layer for both i
 ## Key Exports / Entrypoints
 
 - Export map: `.`, `./suggestions`, `./autocomplete`, `./skills`, `./tools`, `./stream`, `./package.json`
-- Root: `aiExtension()`, controller accessors such as `getAIController()`, `getAIInlineCompletionController()`, `getAIInlineHistoryController()`, and `getAIReviewController()` — slot keys such as `AI_CONTROLLER_SLOT` and `INLINE_COMPLETION_SLOT` live on `@input/pen-types`
+- Root: `aiExtension()`, controller accessors such as `getAIController()`, `getAIInlineCompletionController()`, `getAIInlineHistoryController()`, and `getAIReviewController()`. Accessors read core facets (`aiControllerFacet` and siblings). Activate still `assignSlot`s keys such as `AI_CONTROLLER_SLOT` and `INLINE_COMPLETION_SLOT` (defined on `@input/pen-types`).
 - Command surfaces such as `AICommandRegistry` and `defaultAICommands`
 - Planner, contract, validation, and execution helpers for structured mutation flows
 - Suggestion helpers such as `acceptSuggestion()`, `rejectSuggestion()`, `readAllSuggestions()`, and suggest-mode interceptors
@@ -87,7 +87,7 @@ Sessions are first-class runtime state, not renderer-local convenience state.
 
 Proactive Grammarly-style writing suggestions. Headless: detects eligible local edits, asks a host-provided analyzer for bounded candidates, stages those suggestions against live document ranges, and exposes controller state for renderer UIs.
 
-- `aiSuggestionsExtension()`, `getAISuggestionsController()` — slot key `AI_SUGGESTIONS_CONTROLLER_SLOT` lives on `@input/pen-types`
+- `aiSuggestionsExtension()`, `getAISuggestionsController()` — reads `aiSuggestionsControllerFacet`; activate `assignSlot`s `AI_SUGGESTIONS_CONTROLLER_SLOT`
 - Analyzer helpers on the barrel: `AI_SUGGESTIONS_REQUEST_MODE`, `AI_SUGGESTIONS_SYSTEM_PROMPT`, `buildAISuggestionMessages()`, `parseSuggestionResponse()`
 - Analyzer requests stream through core `streamThroughEgress()` / `pen.aiEgress`
 - Matching, cache fingerprints, and analyzer no-op checks fold text with core `foldAndNormalize()` and `localeFacet`
