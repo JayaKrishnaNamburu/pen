@@ -165,7 +165,7 @@ export function formatReport(result) {
 	const lines = [
 		"API4 no-pen-deep-imports inventory",
 		"",
-		`${result.hits.length} hit(s) in packages + examples + playground.`,
+		`${result.hits.length} hit(s) in packages + examples + playground + internal.`,
 	];
 
 	lines.push("");

@@ -345,8 +345,9 @@ Published packages declare the Node floor as `engines.node: ">=22"`. CI verifies
 
 - `packages/docs`: repository docs app for the current public Pen surface
 - `.github/workflows/docs.yml`: GitHub Pages deployment for the docs app (Pages is enabled on this repository)
-- `playground`: integration sandbox for trying renderer, AI, and collaboration flows
-- `playground/src/utils/playgroundCollaboration.ts`: concrete `y-websocket` wiring used by the playground
+- `playground`: the small reference app — editor, AI assistant, document inspector — meant to be read
+- `internal/kitchen-sink`: maintainer sandbox that exercises every surface, including collaboration; the end-to-end suite runs against it
+- `internal/kitchen-sink/src/utils/playgroundCollaboration.ts`: concrete `y-websocket` wiring
 
 ## Development
 

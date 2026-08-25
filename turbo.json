@@ -10,7 +10,15 @@
       "dependsOn": ["^typecheck"]
     },
     "test": {
-      "dependsOn": ["build"]
+      "dependsOn": ["build", "^build"]
+    },
+    "@input/pen-conformance#test": {
+      "dependsOn": [
+        "build",
+        "^build",
+        "@input/pen-react#test",
+        "@input/pen-vue#test"
+      ]
     },
     "dev": {
       "dependsOn": ["^build"],

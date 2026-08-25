@@ -38,7 +38,8 @@ Then read package specs by layer:
 - Renderer packages bind to the editor runtime but do not own document truth.
 - JSON is the canonical machine-readable format. XML is an interoperability surface layered on top of that model. Both live on `@input/pen-interop`.
 - React is the primary documented renderer. Vue is a shipped renderer proof built on the shared DOM engine.
-- Private apps such as `@input/pen-docs` and `@input/pen-playground` are specified because they are part of the workspace, but they are not publishable runtime packages.
+- Private apps such as `@input/pen-docs`, `@input/pen-playground`, and `@input/pen-kitchen-sink` are specified because they are part of the workspace, but they are not publishable runtime packages.
+- `playground/` is the small reference app; `internal/kitchen-sink/` is the maintainer sandbox that covers every surface and hosts the end-to-end suite. The two swapped roles on 2026-08-25, so `spec-v2`/`spec-v3` evidence recorded before then means the kitchen sink when it says `playground/`.
 - Two workspace packages have no current-state spec on purpose: `@input/pen-conformance` and `@input/pen-eslint-plugin`. `packages/` has 27 package.json files (24 published, 3 private); 25 have a matching spec. See `charter/package-map.md`.
 - `pen.ariaReadOnly` (the facet) only sets `aria-readonly`. The renderer `readonly` prop is what declines typing. That split is shipped and unresolved; package specs describe it, they do not pick a winner.
 - The command registry and catalog are settled (v3 keeps D/K/B). Selection bridging inside `@input/pen-dom` remains unsettled until `spec-v4/05-structure.md` CS5; package specs that mention that bridging mark it as such.

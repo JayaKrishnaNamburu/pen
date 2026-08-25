@@ -726,7 +726,7 @@ async function runCoverage(
 	);
 	if (testFileCount === 0) {
 		throw new Error(
-			"coverage-rules: cannot check: packages+playground+scripts test walk matched 0 files",
+			"coverage-rules: cannot check: packages+playground+internal+scripts test walk matched 0 files",
 		);
 	}
 	const result = evaluateCoverage({

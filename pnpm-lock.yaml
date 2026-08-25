@@ -904,6 +904,45 @@ importers:
       '@axe-core/playwright':
         specifier: ^4.13.0
         version: 4.13.0(playwright-core@1.58.2)
+      '@input/pen-assets-memory':
+        specifier: workspace:*
+        version: link:../assets-memory
+      '@input/pen-bench':
+        specifier: workspace:*
+        version: link:../bench
+      '@input/pen-content-ops':
+        specifier: workspace:*
+        version: link:../../shared/content-ops
+      '@input/pen-history':
+        specifier: workspace:*
+        version: link:../../extensions/history
+      '@input/pen-input-rules':
+        specifier: workspace:*
+        version: link:../../extensions/input-rules
+      '@input/pen-markdown-serialization':
+        specifier: workspace:*
+        version: link:../../shared/markdown-serialization
+      '@input/pen-multiplayer':
+        specifier: workspace:*
+        version: link:../../extensions/multiplayer
+      '@input/pen-search':
+        specifier: workspace:*
+        version: link:../../extensions/search
+      '@input/pen-shortcuts':
+        specifier: workspace:*
+        version: link:../../extensions/shortcuts
+      '@input/pen-transport-direct':
+        specifier: workspace:*
+        version: link:../../transports/direct
+      '@input/pen-transport-sse':
+        specifier: workspace:*
+        version: link:../../transports/sse
+      '@input/pen-undo':
+        specifier: workspace:*
+        version: link:../../extensions/undo
+      '@input/pen-vue':
+        specifier: workspace:*
+        version: link:../../rendering/vue
       '@playwright/test':
         specifier: ^1.58.2
         version: 1.58.2

@@ -160,7 +160,7 @@ async function runCh1() {
 			title: "@ts-nocheck / @ts-expect-error",
 			status: "fail",
 			details: [
-				"cannot check: packages+playground *.ts/*.tsx walk matched 0 files",
+				"cannot check: packages+playground+internal *.ts/*.tsx walk matched 0 files",
 			],
 		};
 	}
@@ -186,7 +186,7 @@ async function runCh1() {
 	const remaining = nocheckFiles.filter((rel) => allowed.has(rel)).sort();
 
 	const details = [
-		`population: ${files.length} files (packages+playground *.ts/*.tsx)`,
+		`population: ${files.length} files (packages+playground+internal *.ts/*.tsx)`,
 	];
 	if (
 		remaining.length === 0 &&
@@ -297,13 +297,13 @@ async function runCh3() {
 			title: "skip-hygiene",
 			status: "fail",
 			details: [
-				"cannot check: packages+playground test walk matched 0 files",
+				"cannot check: packages+playground+internal test walk matched 0 files",
 			],
 		};
 	}
 
 	const details = [
-		`population: ${testFiles.length} files (packages+playground tests)`,
+		`population: ${testFiles.length} files (packages+playground+internal tests)`,
 		...(violations.length === 0
 			? [
 					"no skipped/todo tests missing a body or a tracked-issue + wave comment",

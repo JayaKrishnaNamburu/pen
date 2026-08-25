@@ -22,14 +22,16 @@ script runs Prettier on an explicit docs/config path list
 `spec/**/*.md`, package READMEs). `packages/**/*.ts` is not on that
 list. ESLint owns TypeScript and JavaScript source style.
 
-If you are working on browser flows in the playground, run the
-end-to-end suite with:
+If you are working on browser flows, run the end-to-end suite with:
 
 ```bash
 pnpm test:e2e
 ```
 
-That script is `playwright test` from the repository root.
+That script is `playwright test` from the repository root. It drives
+`internal/kitchen-sink`, the maintainer sandbox that exercises every
+surface. `playground/` is the small reference app and is kept readable
+rather than exhaustive.
 
 ## Repository Shape
 
@@ -37,7 +39,7 @@ That script is `playwright test` from the repository root.
 - `packages/types` owns shared contracts and lightweight helpers.
 - `packages/rendering/*` bind the headless runtime to framework-specific surfaces.
 - `packages/extensions/*` add optional runtime behavior such as AI, search, import/export, and collaboration.
-- `packages/docs` and `playground` are workspace apps used to document and exercise shipped surfaces.
+- `packages/docs`, `playground`, and `internal/kitchen-sink` are workspace apps used to document and exercise shipped surfaces.
 - `examples/` has consumer-style React, Vue, and vanilla apps. They are pnpm workspace members and each has a CI smoke job, so they build against the same workspace sources as everything else.
 
 ## Engineering Expectations

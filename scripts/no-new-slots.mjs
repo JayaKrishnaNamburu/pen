@@ -156,12 +156,12 @@ function main() {
   const files = loadRepoFiles();
   if (files.length === 0) {
     console.error(
-      "no-new-slots: cannot check: packages+playground source walk matched 0 files",
+      "no-new-slots: cannot check: packages+playground+internal source walk matched 0 files",
     );
     process.exit(1);
   }
   console.log(
-    `population: ${files.length} files (packages+playground source, tests excluded)`,
+    `population: ${files.length} files (packages+playground+internal source, tests excluded)`,
   );
   const result = checkNoNewSlots(files, allowlist);
   if (!result.ok) {
