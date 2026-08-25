@@ -6,5 +6,5 @@ coverage/
 .DS_Store
 playwright-report/
 test-results*/
-playground/.env.local
+.env.local
 .npmrc
