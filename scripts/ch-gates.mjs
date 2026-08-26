@@ -249,8 +249,15 @@ async function runCh2() {
 		details.push("FAIL missing eslint.config.mjs (CH2 host)");
 		failed = true;
 	}
-	if (packageJson.scripts?.["lint:eslint"] !== "eslint .") {
-		details.push("FAIL root lint:eslint is not `eslint .`");
+	// CH2 is about the shape of the pass, not the exact string: one repo-wide
+	// `eslint .` rather than a task-runner fan-out. Trailing flags are allowed
+	// because `--max-warnings` tightens this gate instead of narrowing it.
+	if (
+		!/^eslint\s+\.(\s|$)/.test(packageJson.scripts?.["lint:eslint"] ?? "")
+	) {
+		details.push(
+			"FAIL root lint:eslint is not a repo-wide `eslint .` pass",
+		);
 		failed = true;
 	}
 	if (
