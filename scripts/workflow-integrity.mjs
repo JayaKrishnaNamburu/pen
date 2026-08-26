@@ -38,6 +38,14 @@
  *              and github/ are exempt — they are GitHub-owned, and
  *              dependabot updates both forms anyway.
  *
+ *   NAMES      Every job declares a `name`, does not repeat its workflow's
+ *              name, and — when it fans out over a matrix — interpolates a
+ *              matrix value. `<workflow> / <job>` is the whole vocabulary a
+ *              contributor reads on a pull request, and each of those three
+ *              omissions produced a name nobody chose: a raw job id, a
+ *              stutter like `Docs / docs`, and the tuple GitHub appends to a
+ *              matrix job that does not name its own axis.
+ *
  *   CONTEXT    A composite action manifest references no job-level context.
  *              The runner evaluates expressions while it parses the
  *              manifest, where `needs` and `matrix` do not exist, so one
@@ -199,6 +207,39 @@ export function evaluateActionManifest({ file, source }) {
 	return { kind: "action", file, jobCount: 0, problems };
 }
 
+/**
+ * GitHub renders a check as `<workflow name> / <job name>`, so those two
+ * strings are the entire vocabulary a contributor reads on a pull request.
+ * Left alone they drift: a job with no `name` shows its raw id, a job named
+ * after its workflow reads `Docs / docs`, and a matrix job whose name skips
+ * the matrix gets the raw tuple appended — which is how this repository
+ * shipped `Analyze JavaScript and TypeScript (javascript-typescript, none)`.
+ */
+export function nameProblems({ workflowName, id, job }) {
+	const problems = [];
+	const name = job?.name;
+	if (typeof name !== "string" || name.trim() === "") {
+		problems.push(
+			`job \`${id}\` has no \`name:\`, so the check reads its raw id`,
+		);
+		return problems;
+	}
+	if (
+		typeof workflowName === "string" &&
+		name.trim().toLowerCase() === workflowName.trim().toLowerCase()
+	) {
+		problems.push(
+			`job \`${id}\` is named after its workflow, so the check reads \`${workflowName} / ${name}\``,
+		);
+	}
+	if (job?.strategy?.matrix != null && !name.includes("matrix.")) {
+		problems.push(
+			`job \`${id}\` is a matrix job whose name interpolates no matrix value, so GitHub appends the raw tuple to \`${name}\``,
+		);
+	}
+	return problems;
+}
+
 export function evaluateWorkflow({ file, workflow }) {
 	const problems = [];
 	const jobs = workflow.jobs ?? {};
@@ -217,6 +258,13 @@ export function evaluateWorkflow({ file, workflow }) {
 				rule: "TIMEOUT",
 				detail: `job \`${id}\` has no timeout-minutes (defaults to 6 hours)`,
 			});
+		}
+		for (const detail of nameProblems({
+			workflowName: workflow.name,
+			id,
+			job,
+		})) {
+			problems.push({ rule: "NAMES", detail });
 		}
 		for (const need of normalizeNeeds(job?.needs)) {
 			if (!jobIds.includes(need)) {
@@ -283,7 +331,7 @@ export function formatReport(results) {
 	if (failing.length === 0) {
 		lines.push("");
 		lines.push(
-			"OK: every workflow aggregates its jobs behind one always() check, bounds every job, declares its permissions, and pins third-party actions; no composite action names a job-level context.",
+			"OK: every workflow aggregates its jobs behind one always() check, bounds every job, declares its permissions, names every job readably, and pins third-party actions; no composite action names a job-level context.",
 		);
 		return lines.join("\n");
 	}
@@ -320,10 +368,12 @@ export function runSelfTests() {
 			permissions: { contents: "read" },
 			jobs: {
 				build: {
+					name: "Build",
 					"timeout-minutes": 10,
 					steps: [{ uses: "actions/checkout@v5" }],
 				},
 				gate: {
+					name: "Summary",
 					"timeout-minutes": 5,
 					if: "always()",
 					needs: ["build"],
@@ -384,7 +434,9 @@ export function runSelfTests() {
 		workflow: {
 			on: { pull_request: null },
 			permissions: { contents: "read" },
-			jobs: { only: { "timeout-minutes": 5, steps: [] } },
+			jobs: {
+				only: { name: "Check", "timeout-minutes": 5, steps: [] },
+			},
 		},
 	};
 	assert(
@@ -398,8 +450,13 @@ export function runSelfTests() {
 			on: { schedule: [{ cron: "0 3 * * *" }] },
 			permissions: { contents: "read" },
 			jobs: {
-				fuzz: { "timeout-minutes": 40, steps: [] },
-				report: { "timeout-minutes": 5, needs: ["fuzz"], steps: [] },
+				fuzz: { name: "Fuzz", "timeout-minutes": 40, steps: [] },
+				report: {
+					name: "Report",
+					"timeout-minutes": 5,
+					needs: ["fuzz"],
+					steps: [],
+				},
 			},
 		},
 	};
@@ -417,8 +474,13 @@ export function runSelfTests() {
 			on: { pull_request: null },
 			permissions: { contents: "read" },
 			jobs: {
-				build: { "timeout-minutes": 30, steps: [] },
-				deploy: { "timeout-minutes": 15, needs: ["build"], steps: [] },
+				build: { name: "Build", "timeout-minutes": 30, steps: [] },
+				deploy: {
+					name: "Deploy",
+					"timeout-minutes": 15,
+					needs: ["build"],
+					steps: [],
+				},
 			},
 		},
 	};
@@ -490,6 +552,43 @@ export function runSelfTests() {
 			jobOnlyContextsIn("${{ steps.read.outputs.matrix }}").length === 0,
 		"self-test: a context root is a defect, the same word as a property is not",
 	);
+
+	assert(
+		nameProblems({ workflowName: "Performance", id: "bench", job: {} })
+			.length === 1,
+		"self-test: a job with no name must fail",
+	);
+	assert(
+		nameProblems({
+			workflowName: "Docs",
+			id: "docs",
+			job: { name: "docs" },
+		}).length === 1,
+		"self-test: a job named after its workflow must fail",
+	);
+	// The literal shape that produced `(javascript-typescript, none)`.
+	assert(
+		nameProblems({
+			workflowName: "CodeQL",
+			id: "analyze",
+			job: {
+				name: "Analyze JavaScript and TypeScript",
+				strategy: { matrix: { include: [{ language: "js" }] } },
+			},
+		}).length === 1,
+		"self-test: a matrix job whose name skips the matrix must fail",
+	);
+	assert(
+		nameProblems({
+			workflowName: "CI",
+			id: "e2e",
+			job: {
+				name: "Browser tests (${{ matrix.label }})",
+				strategy: { matrix: { include: [{ engine: "chromium" }] } },
+			},
+		}).length === 0,
+		"self-test: a matrix job naming its own axis must pass",
+	);
 }
 
 export function loadWorkflows(repoRoot) {
@@ -558,7 +657,7 @@ function main() {
 	const args = parseArgs(process.argv.slice(2));
 	runSelfTests();
 	console.log(
-		"workflow-integrity self-test ok (an unaggregated job, a missing always(), an unbounded job, a default-permission workflow, a floating third-party tag, and a job-level context in an action manifest all fail closed)",
+		"workflow-integrity self-test ok (an unaggregated job, a missing always(), an unbounded job, a default-permission workflow, a floating third-party tag, an unnamed or self-named or matrix-blind job, and a job-level context in an action manifest all fail closed)",
 	);
 	if (args.selfTestOnly) {
 		return;

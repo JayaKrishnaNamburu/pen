@@ -9,11 +9,12 @@
  * locally, in the same order, and prints one summary naming the workflow
  * each failure came from.
  *
- * The static gate list is read from scripts/gates.json, which is also what
- * .github/workflows/static-gates.yml builds its matrix from. Adding a gate
- * there adds it here; the two cannot drift.
+ * The static gate list is read from scripts/gates.json. The `Repo gates` job
+ * in .github/workflows/static-gates.yml runs this same script with `--gates`,
+ * so CI and this command execute one list from one file. Adding a gate there
+ * adds it to both; the two cannot drift.
  *
- * The build-dependent steps below mirror the `validate` job in
+ * The build-dependent steps below mirror the `Lint, types and tests` job in
  * .github/workflows/ci.yml. That job's steps are named individually on
  * purpose (the GitHub UI times them separately), so this list is the one
  * place that restates them. Keep the two in step.
@@ -39,88 +40,104 @@ const GATES_FILE = path.join(SCRIPT_DIR, "gates.json");
  * Steps that need `dist/` to exist, in the order ci.yml runs them.
  * `workflow` is the check name a contributor will see go red on GitHub.
  */
+const VALIDATE_CHECK = "CI / Lint, types and tests";
+const GATES_CHECK = "Static analysis / Repo gates";
+
 const BUILD_STAGE = [
 	{
 		id: "build",
 		command: "pnpm build",
-		workflow: "CI / validate",
+		workflow: VALIDATE_CHECK,
 		description: "Every package compiles.",
 	},
 	{
 		id: "api-reports",
 		command: "node scripts/api-reports.mjs",
-		workflow: "CI / validate",
+		workflow: VALIDATE_CHECK,
 		description:
 			"Committed api-report.md matches the built .d.ts. Rerun with --write to accept.",
 	},
 	{
 		id: "types-purity",
 		command: "node scripts/types-purity.mjs",
-		workflow: "CI / validate",
+		workflow: VALIDATE_CHECK,
 		description: "@input/pen-types stays types-only (API3).",
 	},
 	{
 		id: "strip-internal",
 		command: "node scripts/strip-internal.mjs",
-		workflow: "CI / validate",
+		workflow: VALIDATE_CHECK,
 		description: "@internal does not leak into published .d.ts (API4).",
-	},
-	{
-		id: "doc-refs",
-		command: "pnpm doc-refs",
-		workflow: "Static gates / doc-refs",
-		description:
-			"Docs reference real packages and their samples typecheck.",
 	},
 	{
 		id: "typecheck",
 		command: "pnpm typecheck",
-		workflow: "CI / validate",
+		workflow: VALIDATE_CHECK,
 		description: "Every package typechecks against its dependencies.",
 	},
 	{
 		id: "test",
 		command: "pnpm test",
-		workflow: "CI / validate",
+		workflow: VALIDATE_CHECK,
 		description: "Unit and integration suites, all workspaces.",
 	},
 ];
 
-export function buildPlan(gates) {
-	const asStep = (gate) => ({
-		id: gate.id,
-		command: gate.command,
-		workflow: `Static gates / ${gate.id}`,
-		description: gate.description,
-	});
+const asGateStep = (gate) => ({
+	id: gate.id,
+	command: gate.command,
+	workflow: GATES_CHECK,
+	description: gate.description,
+});
 
-	// A `needsBuild` gate reads dist/ or resolves workspace types, so it has to
-	// run after `pnpm build` — the same split static-gates.yml makes. Running
-	// them immediately after the build, rather than at the end, keeps the fast
-	// failure fast: typecheck and test are the slow steps behind them.
-	const sourceGates = gates.filter((gate) => !gate.needsBuild);
-	const builtGates = gates.filter((gate) => gate.needsBuild);
+/**
+ * A `needsBuild` gate reads dist/ or resolves workspace types, so it runs
+ * after `pnpm build`. Ordering the cheap gates first means a source-level
+ * failure lands before anything pays for a build.
+ */
+function splitGates(gates) {
+	return {
+		source: gates.filter((gate) => !gate.needsBuild),
+		built: gates.filter((gate) => gate.needsBuild),
+	};
+}
+
+export function buildPlan(gates) {
+	const { source, built } = splitGates(gates);
 	const [build, ...afterBuild] = BUILD_STAGE;
 
 	return [
 		{
 			id: "lint",
 			command: "pnpm lint",
-			workflow: "CI / validate",
+			workflow: VALIDATE_CHECK,
 			description: "Prettier on docs and config, ESLint on source.",
 		},
 		{
 			id: "changeset-check",
 			command: "node scripts/changeset-check.mjs",
-			workflow: "Static gates / changeset",
+			workflow: "Static analysis / Changeset",
 			description:
 				"Published packages whose shipped source changed are named in a changeset.",
 		},
-		...sourceGates.map(asStep),
+		...source.map(asGateStep),
 		build,
-		...builtGates.map(asStep),
+		...built.map(asGateStep),
 		...afterBuild,
 	];
+}
+
+/**
+ * The gate subset on its own, which is what the single `Repo gates` job runs.
+ * CI and `pnpm verify` therefore execute the same list from the same file in
+ * the same order; a gate cannot exist in one and be missing from the other.
+ */
+export function buildGatePlan(gates) {
+	const { source, built } = splitGates(gates);
+	if (built.length === 0) {
+		return source.map(asGateStep);
+	}
+	return [...source.map(asGateStep), BUILD_STAGE[0], ...built.map(asGateStep)];
 }
 
 function loadGates() {
@@ -208,6 +225,7 @@ function formatSummary(results, skipped) {
 function parseArgs(argv) {
 	let bail = false;
 	let list = false;
+	let gatesOnly = false;
 	let filter = null;
 	for (let i = 0; i < argv.length; i += 1) {
 		const arg = argv[i];
@@ -219,21 +237,26 @@ function parseArgs(argv) {
 			list = true;
 			continue;
 		}
+		if (arg === "--gates") {
+			gatesOnly = true;
+			continue;
+		}
 		if (arg === "--only") {
 			filter = argv[i + 1] ?? null;
 			i += 1;
 			continue;
 		}
 		throw new Error(
-			`Unknown flag: ${arg}. Supported: --bail, --list, --only <substring>.`,
+			`Unknown flag: ${arg}. Supported: --bail, --list, --gates, --only <substring>.`,
 		);
 	}
-	return { bail, list, filter };
+	return { bail, list, gatesOnly, filter };
 }
 
 function main() {
 	const args = parseArgs(process.argv.slice(2));
-	const plan = buildPlan(loadGates()).filter(
+	const gates = loadGates();
+	const plan = (args.gatesOnly ? buildGatePlan(gates) : buildPlan(gates)).filter(
 		(step) => args.filter == null || step.id.includes(args.filter),
 	);
 
@@ -249,7 +272,9 @@ function main() {
 	}
 
 	console.log(
-		`verify: ${plan.length} checks, mirroring the pull-request gates.`,
+		args.gatesOnly
+			? `verify: ${plan.length} gates from scripts/gates.json. Every one runs; the summary names the failures.`
+			: `verify: ${plan.length} checks, mirroring the pull-request gates.`,
 	);
 
 	const results = [];

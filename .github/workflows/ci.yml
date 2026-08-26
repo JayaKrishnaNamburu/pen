@@ -18,6 +18,7 @@ concurrency:
 
 jobs:
   changes:
+    name: Detect changes
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -70,6 +71,7 @@ jobs:
               - 'packages/tooling/assets-memory/**'
 
   validate:
+    name: Lint, types and tests
     timeout-minutes: 60
     runs-on: ubuntu-latest
 
@@ -104,10 +106,13 @@ jobs:
         run: pnpm test
 
   e2e:
-    # Check names are e2e-chromium / e2e-webkit / e2e-firefox (this `name:`).
-    # Branch protection requires the aggregate `ci` job below rather than
-    # these names, so promoting an engine no longer needs a settings change.
-    name: e2e-${{ matrix.engine }}
+    # Check names are Browser tests (Chromium) / (WebKit) / (Firefox). The
+    # name has to interpolate a matrix value or GitHub appends the raw matrix
+    # tuple to it, which is where `(javascript-typescript, none)` comes from
+    # on jobs that do not. Branch protection requires the aggregate `Summary`
+    # job below rather than these names, so promoting an engine no longer
+    # needs a settings change.
+    name: Browser tests (${{ matrix.label }})
     needs: changes
     if: ${{ needs.changes.outputs.e2e == 'true' }}
     timeout-minutes: 30
@@ -142,7 +147,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        engine: [chromium, webkit, firefox]
+        # `label` exists only to render the check name; `engine` is what
+        # Playwright is given.
+        include:
+          - engine: chromium
+            label: Chromium
+          - engine: webkit
+            label: WebKit
+          - engine: firefox
+            label: Firefox
 
     steps:
       - name: Check out repository
@@ -182,7 +195,7 @@ jobs:
     # The single required check for this workflow. See
     # .github/actions/require-jobs for why the aggregation exists and why
     # `always()` is load-bearing.
-    name: ci
+    name: Summary
     if: always()
     needs: [changes, validate, e2e]
     timeout-minutes: 5

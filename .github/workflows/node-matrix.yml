@@ -2,7 +2,7 @@
 # plus one non-Linux runner. Kept out of ci.yml so it can be edited
 # independently. Floor 22 is the setup-node pin in ci/release/docs;
 # 26 is Node Current as of 2026-08 (the open upper end of >=22).
-name: Node matrix
+name: Node
 
 on:
   push:
@@ -20,18 +20,22 @@ concurrency:
 
 jobs:
   host3-node-matrix:
-    name: node-${{ matrix.node-version }}-${{ matrix.os }}
+    name: ${{ matrix.label }}
     timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
+        # `label` exists only to render the check name.
         include:
           - os: ubuntu-latest
             node-version: 22
+            label: 22 on Ubuntu
           - os: ubuntu-latest
             node-version: 26
+            label: 26 on Ubuntu
           - os: macos-latest
             node-version: 22
+            label: 22 on macOS
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -57,7 +61,7 @@ jobs:
     # The single required check for this workflow. See
     # .github/actions/require-jobs for why the aggregation exists and why
     # `always()` is load-bearing.
-    name: node-matrix
+    name: Summary
     if: always()
     needs: [host3-node-matrix]
     timeout-minutes: 5

@@ -24,6 +24,7 @@ concurrency:
 
 jobs:
   fuzz-nightly:
+    name: Fuzz
     timeout-minutes: 40
     runs-on: ubuntu-latest
 

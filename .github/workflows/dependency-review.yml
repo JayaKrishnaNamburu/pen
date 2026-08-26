@@ -1,4 +1,4 @@
-name: Dependency review
+name: Dependencies
 
 on:
   pull_request:
@@ -12,6 +12,7 @@ concurrency:
 
 jobs:
   dependency-review:
+    name: Review
     timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:

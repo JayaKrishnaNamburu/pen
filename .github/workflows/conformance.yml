@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   conformance-engine:
-    name: conformance-${{ matrix.engine }}
+    name: ${{ matrix.label }}
     timeout-minutes: 30
     runs-on: ubuntu-latest
 
@@ -36,7 +36,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        engine: [chromium, webkit, firefox]
+        # `label` exists only to render the check name; `engine` is what
+        # Playwright is given.
+        include:
+          - engine: chromium
+            label: Chromium
+          - engine: webkit
+            label: WebKit
+          - engine: firefox
+            label: Firefox
 
     steps:
       - name: Check out repository
@@ -71,7 +79,7 @@ jobs:
     # The single required check for this workflow. See
     # .github/actions/require-jobs for why the aggregation exists and why
     # `always()` is load-bearing.
-    name: conformance
+    name: Summary
     if: always()
     needs: [conformance-engine]
     timeout-minutes: 5

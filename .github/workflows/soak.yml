@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   soak:
-    name: SCALE4 soak
+    name: SCALE4
     timeout-minutes: 30
     runs-on: ubuntu-latest
     permissions:

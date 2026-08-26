@@ -2,7 +2,7 @@
 # answer twice. Ten runs on an unchanged tree, scheduled — not per PR.
 # Failures are quarantined via scripts/flake-allowlist.json (test, issue,
 # reason). A gate that passes on a second attempt is not a gate.
-name: Flake
+name: Flake sweep
 
 on:
   schedule:
@@ -14,6 +14,7 @@ permissions:
 
 jobs:
   flake:
+    name: Ten-run determinism
     timeout-minutes: 120
     runs-on: ubuntu-latest
     permissions:

@@ -107,6 +107,12 @@ const MAX_ITERATIONS = 1000;
 
 type DiagnosticSink = (event: DiagnosticEvent) => void;
 
+type NormalizePassIndex = {
+	blockOrderSet: Set<string>;
+	blockOrderIndices: Map<string, number[]>;
+	parentByChild: Map<string, string>;
+};
+
 export class SchemaEngineImpl implements SchemaEngine {
 	private readonly registry: SchemaRegistry;
 	private readonly doc: PenDocument;
@@ -114,6 +120,7 @@ export class SchemaEngineImpl implements SchemaEngine {
 	private readonly dirtyBlockIds = new Set<string>();
 	private readonly deferredBlockIds = new Set<string>();
 	private onDiagnostic: DiagnosticSink | undefined;
+	private passIndex: NormalizePassIndex | null = null;
 
 	constructor(
 		registry: SchemaRegistry,
@@ -160,6 +167,7 @@ export class SchemaEngineImpl implements SchemaEngine {
 
 			iterations++;
 			this.dirtyBlockIds.clear();
+			this.invalidatePassIndex();
 
 			this.doc.adapter.transact(this.crdtDoc, () => {
 				for (const blockId of snapshot) {
@@ -171,6 +179,8 @@ export class SchemaEngineImpl implements SchemaEngine {
 				}
 			});
 		}
+
+		this.invalidatePassIndex();
 
 		if (iterations >= MAX_ITERATIONS) {
 			// CH5: dirty-loop cap is a diagnostic, not a console site.
@@ -380,7 +390,7 @@ export class SchemaEngineImpl implements SchemaEngine {
 	// ── Rule 9: No Duplicate Block IDs ──────────────────────
 
 	private deduplicateBlockIds(blockId: string): void {
-		this.deduplicateArray(this.blockOrder, blockId);
+		this.deduplicateBlockOrder(blockId);
 
 		const blockMap = this.getBlockMap(blockId);
 		const children = blockMap
@@ -389,6 +399,12 @@ export class SchemaEngineImpl implements SchemaEngine {
 		if (children) {
 			this.deduplicateArray(children, blockId);
 		}
+	}
+
+	private deduplicateBlockOrder(blockId: string): void {
+		const indices = this.getPassIndex().blockOrderIndices.get(blockId);
+		if (!indices || indices.length <= 1) return;
+		this.deduplicateAtIndices(this.blockOrder, indices);
 	}
 
 	private deduplicateArray(
@@ -401,11 +417,19 @@ export class SchemaEngineImpl implements SchemaEngine {
 				indices.push(i);
 			}
 		}
+		this.deduplicateAtIndices(arr, indices);
+	}
+
+	private deduplicateAtIndices(
+		arr: CRDTUnknownArray<string>,
+		indices: readonly number[],
+	): void {
 		if (indices.length <= 1) return;
 
 		for (let i = indices.length - 2; i >= 0; i--) {
 			arr.delete(indices[i], 1);
 		}
+		this.invalidatePassIndex();
 	}
 
 	// ── Rule 10: Orphan Promotion ───────────────────────────
@@ -447,6 +471,7 @@ export class SchemaEngineImpl implements SchemaEngine {
 		const parentId = this.parentOf(childToClear);
 		if (!parentId) return;
 		this.clearParentEdge(childToClear, parentId);
+		this.invalidatePassIndex();
 		this.dirtyBlockIds.add(childToClear);
 		this.dirtyBlockIds.add(parentId);
 		this.onDiagnostic?.({
@@ -531,30 +556,26 @@ export class SchemaEngineImpl implements SchemaEngine {
 	}
 
 	private isInBlockOrder(blockId: string): boolean {
-		for (let i = 0; i < this.blockOrder.length; i++) {
-			if (this.blockOrder.get(i) === blockId) return true;
-		}
-		return false;
+		return this.getPassIndex().blockOrderSet.has(blockId);
 	}
 
 	private findParentWithChild(blockId: string): string | null {
-		for (const [id, rawBlockMap] of this.doc.blocks.entries()) {
-			if (!isCRDTMap(rawBlockMap)) continue;
-			const children = getArrayProp<string>(rawBlockMap, "children");
-			if (!children) continue;
-			for (let i = 0; i < children.length; i++) {
-				if (children.get(i) === blockId) return id;
-			}
-		}
-		return null;
+		return this.getPassIndex().parentByChild.get(blockId) ?? null;
 	}
 
 	// ── Block Order Helpers ─────────────────────────────────
 
 	private removeFromBlockOrder(blockId: string): void {
+		const indices = this.getPassIndex().blockOrderIndices.get(blockId);
+		if (indices && indices.length > 0) {
+			this.blockOrder.delete(indices[indices.length - 1], 1);
+			this.invalidatePassIndex();
+			return;
+		}
 		for (let i = this.blockOrder.length - 1; i >= 0; i--) {
 			if (this.blockOrder.get(i) === blockId) {
 				this.blockOrder.delete(i, 1);
+				this.invalidatePassIndex();
 				return;
 			}
 		}
@@ -562,11 +583,13 @@ export class SchemaEngineImpl implements SchemaEngine {
 
 	private insertIntoBlockOrder(blockId: string, index: number): void {
 		this.blockOrder.insert(index, [blockId]);
+		this.invalidatePassIndex();
 	}
 
 	private getBlockOrderIndex(blockId: string): number {
-		for (let i = 0; i < this.blockOrder.length; i++) {
-			if (this.blockOrder.get(i) === blockId) return i;
+		const indices = this.getPassIndex().blockOrderIndices.get(blockId);
+		if (indices && indices.length > 0) {
+			return indices[0];
 		}
 		return -1;
 	}
@@ -609,5 +632,48 @@ export class SchemaEngineImpl implements SchemaEngine {
 
 	private deleteBlock(blockId: string): void {
 		this.blocksMap.delete?.(blockId);
+		this.invalidatePassIndex();
+	}
+
+	private getPassIndex(): NormalizePassIndex {
+		if (!this.passIndex) {
+			this.passIndex = this.buildPassIndex();
+		}
+		return this.passIndex;
+	}
+
+	private invalidatePassIndex(): void {
+		this.passIndex = null;
+	}
+
+	private buildPassIndex(): NormalizePassIndex {
+		const blockOrderSet = new Set<string>();
+		const blockOrderIndices = new Map<string, number[]>();
+		const parentByChild = new Map<string, string>();
+
+		for (let i = 0; i < this.blockOrder.length; i++) {
+			const id = this.blockOrder.get(i);
+			blockOrderSet.add(id);
+			const indices = blockOrderIndices.get(id);
+			if (indices) {
+				indices.push(i);
+			} else {
+				blockOrderIndices.set(id, [i]);
+			}
+		}
+
+		for (const [id, rawBlockMap] of this.doc.blocks.entries()) {
+			if (!isCRDTMap(rawBlockMap)) continue;
+			const children = getArrayProp<string>(rawBlockMap, "children");
+			if (!children) continue;
+			for (let i = 0; i < children.length; i++) {
+				const childId = children.get(i);
+				if (!parentByChild.has(childId)) {
+					parentByChild.set(childId, id);
+				}
+			}
+		}
+
+		return { blockOrderSet, blockOrderIndices, parentByChild };
 	}
 }

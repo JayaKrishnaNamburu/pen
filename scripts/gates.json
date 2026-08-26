@@ -2,7 +2,7 @@
   {
     "id": "workflow-integrity",
     "command": "node scripts/workflow-integrity.mjs",
-    "description": "Every pull-request workflow aggregates its jobs behind one always() check, bounds every job, declares its permissions, and pins third-party actions."
+    "description": "Every pull-request workflow aggregates its jobs behind one always() check, bounds every job, declares its permissions, names every job readably, and pins third-party actions."
   },
   {
     "id": "ch-gates",
@@ -75,6 +75,12 @@
     "command": "node scripts/migration-guide-check.mjs",
     "needsBuild": true,
     "description": "MIGRATION.md stays mechanically true: export claims, origin union, yjs peer, named paths, fenced samples."
+  },
+  {
+    "id": "doc-refs",
+    "command": "pnpm doc-refs",
+    "needsBuild": true,
+    "description": "Docs reference real packages and their samples typecheck."
   },
   {
     "id": "dag-check",

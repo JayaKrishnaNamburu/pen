@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   prod-audit:
-    name: Published production audit
+    name: Production audit
     timeout-minutes: 20
     runs-on: ubuntu-latest
     steps:
@@ -159,7 +159,7 @@ jobs:
           EOF
 
   no-install-scripts:
-    name: No published install scripts
+    name: Install scripts
     timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
@@ -179,7 +179,7 @@ jobs:
         run: node scripts/no-install-scripts.mjs
 
   sec8-dynamic-code-lint:
-    name: SEC8 dynamic-code lint configured
+    name: Dynamic-code lint
     timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
@@ -224,7 +224,7 @@ jobs:
     # The single required check for this workflow. See
     # .github/actions/require-jobs for why the aggregation exists and why
     # `always()` is load-bearing.
-    name: supply-chain
+    name: Summary
     if: always()
     needs: [prod-audit, no-install-scripts, sec8-dynamic-code-lint]
     timeout-minutes: 5

@@ -51,9 +51,10 @@ export function populateYDoc(
   ydoc.getMap("metadata");
 
   ydoc.transact(() => {
+    const orderIds: string[] = [];
     for (const block of blocks) {
       const id = block.id ?? generateTestId();
-      blockOrder.push([id]);
+      orderIds.push(id);
       populateBlock(blocksMap, block, id);
 
       if (block.children) {
@@ -79,6 +80,9 @@ export function populateYDoc(
           }
         }
       }
+    }
+    if (orderIds.length > 0) {
+      blockOrder.push(orderIds);
     }
   });
 }

@@ -21,14 +21,22 @@ concurrency:
 
 jobs:
   smoke:
-    name: example-${{ matrix.example }}
+    name: ${{ matrix.label }}
     timeout-minutes: 30
     runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
       matrix:
-        example: [react, vue, vanilla]
+        # `label` exists only to render the check name; `example` is the
+        # workspace directory.
+        include:
+          - example: react
+            label: React
+          - example: vue
+            label: Vue
+          - example: vanilla
+            label: Vanilla
 
     steps:
       - name: Check out repository
@@ -65,7 +73,7 @@ jobs:
     # The single required check for this workflow. See
     # .github/actions/require-jobs for why the aggregation exists and why
     # `always()` is load-bearing.
-    name: examples
+    name: Summary
     if: always()
     needs: [smoke]
     timeout-minutes: 5

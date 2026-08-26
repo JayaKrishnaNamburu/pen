@@ -17,6 +17,7 @@ concurrency:
 
 jobs:
   build:
+    name: Build
     timeout-minutes: 30
     runs-on: ubuntu-latest
     permissions:
@@ -61,6 +62,7 @@ jobs:
           path: packages/docs/dist
 
   deploy:
+    name: Deploy
     if: ${{ github.event_name != 'pull_request' }}
     timeout-minutes: 15
     runs-on: ubuntu-latest
@@ -81,7 +83,7 @@ jobs:
     # The single required check for this workflow. See
     # .github/actions/require-jobs for why the aggregation exists and why
     # `always()` is load-bearing.
-    name: docs
+    name: Summary
     if: always()
     needs: [build, deploy]
     timeout-minutes: 5

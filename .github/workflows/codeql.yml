@@ -21,7 +21,10 @@ concurrency:
 
 jobs:
   analyze:
-    name: Analyze JavaScript and TypeScript
+    # Interpolating a matrix value suppresses the raw tuple GitHub otherwise
+    # appends: this check read "Analyze JavaScript and TypeScript
+    # (javascript-typescript, none)".
+    name: ${{ matrix.label }}
     timeout-minutes: 60
     runs-on: ubuntu-latest
     permissions:
@@ -36,6 +39,7 @@ jobs:
         include:
           - language: javascript-typescript
             build-mode: none
+            label: JavaScript and TypeScript
 
     steps:
       - name: Check out repository

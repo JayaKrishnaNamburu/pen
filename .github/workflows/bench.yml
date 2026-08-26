@@ -1,4 +1,4 @@
-name: Bench
+name: Performance
 
 on:
   push:
@@ -16,6 +16,7 @@ concurrency:
 
 jobs:
   bench:
+    name: Budgets
     timeout-minutes: 30
     runs-on: ubuntu-latest
 
