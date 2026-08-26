@@ -170,6 +170,10 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 22
+          # Reads manifests with node: builtins only, so there is no workspace
+          # install here. setup-node@v5 would otherwise cache for the pnpm named
+          # in packageManager and fail on the missing binary.
+          package-manager-cache: false
 
       - name: Fail if published manifests grow install scripts
         run: node scripts/no-install-scripts.mjs
@@ -186,6 +190,9 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 22
+          # Reads eslint.config.mjs as text; no workspace install, so decline
+          # the package-manager cache for the same reason as above.
+          package-manager-cache: false
 
       - name: Assert SEC8 rules stay error
         run: |

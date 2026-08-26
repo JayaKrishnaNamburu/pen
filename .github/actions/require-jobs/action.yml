@@ -17,7 +17,12 @@ description: Fail unless every dependency job succeeded.
 
 inputs:
   needs:
-    description: The calling job's ${{ toJSON(needs) }}.
+    # Plain prose on purpose. The runner evaluates expressions while it parses
+    # this manifest, and `needs` is not a context that exists here, so writing
+    # the example as a live `${{ }}` fails the whole action at load time.
+    description: >-
+      The calling job's needs context, serialized by the caller with
+      toJSON(needs).
     required: true
   allow-skipped:
     description: >-

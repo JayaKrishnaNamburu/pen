@@ -127,6 +127,11 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 22
+          # changeset-check.mjs imports only node: builtins, so this job skips
+          # the workspace install. setup-node@v5 caches for the package manager
+          # named in packageManager by default, which would shell out to a pnpm
+          # that was never installed, so the cache has to be declined.
+          package-manager-cache: false
 
       - name: Check changeset coverage
         run: node scripts/changeset-check.mjs
