@@ -52,7 +52,12 @@ function resolveOpCount(): number {
 	if (Number.isFinite(override) && override > 0) {
 		return Math.floor(override);
 	}
-	return NIGHTLY ? 1_000_000 : 10_000;
+	// Nightly (PEN_FUZZ_NIGHTLY) is the 1M-op soak via vitest.nightly.ts.
+	// The pull-request `pnpm test` path is a smoke: 200 matches the I1
+	// properties PR count. 10_000 was a soak in a unit job — 11.6s idle,
+	// 200s on ubuntu-latest under turbo, past birpc's 60s RPC window, so
+	// every assertion passed and vitest still exited 1.
+	return NIGHTLY ? 1_000_000 : 200;
 }
 
 class Rng {
@@ -227,14 +232,7 @@ function yText(
 describe("an-fuzz AN1–AN5 AN14", () => {
 	it(
 		"AN1-AN5: repaired anchors match the v2 cross-block oracle after every generated step",
-		// 120_000 timed out on CI (11.6s idle, 42.8s under a local `pnpm test`,
-		// ~200s on ubuntu-latest). 300_000 is the test budget. It is not the
-		// worker budget: vitest's birpc default is 60s, and this loop is
-		// synchronous CPU work, so the worker cannot ack `onTaskUpdate` until
-		// the loop ends. On CI that is past 60s, every assertion has already
-		// passed, and vitest still exits 1 with an unhandled RPC error.
-		// Yielding every 100 ops lets birpc flush without cutting OP_COUNT.
-		{ timeout: 300_000 },
+		{ timeout: 20_000 },
 		async () => {
 			const rng = new Rng(SEED);
 			const editor = createEditor();

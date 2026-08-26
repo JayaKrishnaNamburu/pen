@@ -7,5 +7,11 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
 	test: {
 		testTimeout: 10_000,
+		// GitHub-hosted runners are 4 vCPU and `turbo run test` already fans
+		// out every package. Vitest's default (CPU count per package) is how
+		// a long core loop starved birpc (`Timeout calling "onTaskUpdate"`)
+		// while 101 files were already green. Cap only in CI; local stays
+		// unlimited.
+		maxWorkers: process.env.CI ? 2 : undefined,
 	},
 });
