@@ -38,6 +38,16 @@
  *              and github/ are exempt — they are GitHub-owned, and
  *              dependabot updates both forms anyway.
  *
+ *   CONTEXT    A composite action manifest references no job-level context.
+ *              The runner evaluates expressions while it parses the
+ *              manifest, where `needs` and `matrix` do not exist, so one
+ *              such expression — even inside an input's description, which
+ *              reads as documentation — fails the whole action at load
+ *              time. Every caller dies with a template error that names the
+ *              action rather than the job. This rule exists because
+ *              `${{ toJSON(needs) }}` sat in require-jobs' own description
+ *              and took every aggregate job in the repository down with it.
+ *
  * Fails closed on a walk that finds no workflows. Self-tests on every run
  * so a checker that cannot fail is visible.
  */
@@ -51,6 +61,17 @@ const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_REPO_ROOT = path.resolve(SCRIPT_DIR, "..");
 
 const WORKFLOW_DIR = ".github/workflows";
+const ACTION_DIR = ".github/actions";
+
+/**
+ * Contexts that exist only once a job is running. A composite action
+ * manifest is parsed before that, so naming one here is a load-time error
+ * rather than an empty string. `inputs.needs` is how a caller passes the
+ * real thing in, which is why the match below ignores property positions.
+ */
+const JOB_ONLY_CONTEXTS = ["needs", "matrix", "strategy", "secrets"];
+
+const EXPRESSION_RE = /\$\{\{(.*?)\}\}/gs;
 
 /**
  * Action owners exempt from SHA pinning. GitHub controls these namespaces;
@@ -75,7 +96,8 @@ const SHA_RE = /^[0-9a-f]{40}$/;
  */
 export function needsAggregate(workflow) {
 	return (
-		runsOnPullRequest(workflow) && Object.keys(workflow.jobs ?? {}).length > 1
+		runsOnPullRequest(workflow) &&
+		Object.keys(workflow.jobs ?? {}).length > 1
 	);
 }
 
@@ -149,6 +171,34 @@ export function isPinned(uses) {
 	return SHA_RE.test(target.slice(at + 1));
 }
 
+/**
+ * Job-level contexts named as expression roots in `source`. A leading dot or
+ * word character means the name is a property (`inputs.needs`), which is
+ * legal and is exactly how require-jobs receives its argument.
+ */
+export function jobOnlyContextsIn(source) {
+	const found = [];
+	for (const match of source.matchAll(EXPRESSION_RE)) {
+		const body = match[1];
+		for (const context of JOB_ONLY_CONTEXTS) {
+			if (new RegExp(`(?<![.\\w-])${context}\\b`).test(body)) {
+				found.push({ context, expression: match[0].trim() });
+			}
+		}
+	}
+	return found;
+}
+
+export function evaluateActionManifest({ file, source }) {
+	const problems = jobOnlyContextsIn(source).map(
+		({ context, expression }) => ({
+			rule: "CONTEXT",
+			detail: `\`${context}\` is not a context here — \`${expression}\` fails the manifest at load time, breaking every job that uses this action`,
+		}),
+	);
+	return { kind: "action", file, jobCount: 0, problems };
+}
+
 export function evaluateWorkflow({ file, workflow }) {
 	const problems = [];
 	const jobs = workflow.jobs ?? {};
@@ -213,22 +263,27 @@ export function evaluateWorkflow({ file, workflow }) {
 		}
 	}
 
-	return { file, jobCount: jobIds.length, problems };
+	return { kind: "workflow", file, jobCount: jobIds.length, problems };
 }
 
 export function formatReport(results) {
 	const failing = results.filter((result) => result.problems.length > 0);
 	const lines = ["CI configuration integrity"];
 	lines.push("");
-	lines.push(`workflows  ${results.length}`);
+	lines.push(
+		`workflows  ${results.filter((result) => result.kind === "workflow").length}`,
+	);
 	lines.push(
 		`jobs       ${results.reduce((total, result) => total + result.jobCount, 0)}`,
+	);
+	lines.push(
+		`actions    ${results.filter((result) => result.kind === "action").length}`,
 	);
 
 	if (failing.length === 0) {
 		lines.push("");
 		lines.push(
-			"OK: every workflow aggregates its jobs behind one always() check, bounds every job, declares its permissions, and pins third-party actions.",
+			"OK: every workflow aggregates its jobs behind one always() check, bounds every job, declares its permissions, and pins third-party actions; no composite action names a job-level context.",
 		);
 		return lines.join("\n");
 	}
@@ -369,7 +424,8 @@ export function runSelfTests() {
 	};
 	const deployingRules = ruleIds(evaluateWorkflow(deploying));
 	assert(
-		deployingRules.includes("COVERAGE") && !deployingRules.includes("ALWAYS"),
+		deployingRules.includes("COVERAGE") &&
+			!deployingRules.includes("ALWAYS"),
 		"self-test: a downstream deploy is a missing aggregate, not a broken one",
 	);
 
@@ -393,6 +449,47 @@ export function runSelfTests() {
 			!runsOnPullRequest({ on: { schedule: [] } }),
 		"self-test: pull_request trigger detection",
 	);
+
+	// The literal line that broke every aggregate job, kept verbatim so the
+	// rule is proved against the defect rather than a paraphrase of it.
+	const brokenManifest = evaluateActionManifest({
+		file: "require-jobs/action.yml",
+		source: [
+			"inputs:",
+			"  needs:",
+			"    description: The calling job's ${{ toJSON(needs) }}.",
+			"runs:",
+			"  using: composite",
+		].join("\n"),
+	});
+	assert(
+		ruleIds(brokenManifest).includes("CONTEXT"),
+		"self-test: a job-level context in an action manifest must fail",
+	);
+
+	const passedThrough = evaluateActionManifest({
+		file: "require-jobs/action.yml",
+		source: [
+			"runs:",
+			"  using: composite",
+			"  steps:",
+			"    - shell: bash",
+			"      env:",
+			"        NEEDS: ${{ inputs.needs }}",
+			"        SKIP: ${{ inputs.allow-skipped }}",
+			'      run: echo "$NEEDS"',
+		].join("\n"),
+	});
+	assert(
+		passedThrough.problems.length === 0,
+		"self-test: `inputs.needs` is the legal way to receive it and must pass",
+	);
+
+	assert(
+		jobOnlyContextsIn("${{ matrix.gate.id }}").length === 1 &&
+			jobOnlyContextsIn("${{ steps.read.outputs.matrix }}").length === 0,
+		"self-test: a context root is a defect, the same word as a property is not",
+	);
 }
 
 export function loadWorkflows(repoRoot) {
@@ -408,6 +505,34 @@ export function loadWorkflows(repoRoot) {
 			file: `${WORKFLOW_DIR}/${name}`,
 			workflow: parse(fs.readFileSync(path.join(dir, name), "utf8")),
 		}));
+}
+
+/**
+ * Read as text, not parsed YAML: the expression that breaks a manifest can
+ * sit in any scalar, including a description, and text keeps every position
+ * in scope without enumerating the schema.
+ */
+export function loadActionManifests(repoRoot) {
+	const dir = path.join(repoRoot, ACTION_DIR);
+	if (!fs.existsSync(dir)) {
+		return [];
+	}
+	const manifests = [];
+	for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+		if (!entry.isDirectory()) {
+			continue;
+		}
+		for (const name of ["action.yml", "action.yaml"]) {
+			const full = path.join(dir, entry.name, name);
+			if (fs.existsSync(full)) {
+				manifests.push({
+					file: `${ACTION_DIR}/${entry.name}/${name}`,
+					source: fs.readFileSync(full, "utf8"),
+				});
+			}
+		}
+	}
+	return manifests.sort((a, b) => a.file.localeCompare(b.file));
 }
 
 function parseArgs(argv) {
@@ -433,7 +558,7 @@ function main() {
 	const args = parseArgs(process.argv.slice(2));
 	runSelfTests();
 	console.log(
-		"workflow-integrity self-test ok (an unaggregated job, a missing always(), an unbounded job, a default-permission workflow, and a floating third-party tag all fail closed)",
+		"workflow-integrity self-test ok (an unaggregated job, a missing always(), an unbounded job, a default-permission workflow, a floating third-party tag, and a job-level context in an action manifest all fail closed)",
 	);
 	if (args.selfTestOnly) {
 		return;
@@ -448,9 +573,15 @@ function main() {
 		return;
 	}
 
-	const results = workflows.map(evaluateWorkflow);
+	const manifests = loadActionManifests(args.repoRoot);
+	const results = [
+		...workflows.map(evaluateWorkflow),
+		...manifests.map(evaluateActionManifest),
+	];
 	console.log("");
-	console.log(`population: ${workflows.length} workflows`);
+	console.log(
+		`population: ${workflows.length} workflows, ${manifests.length} composite actions`,
+	);
 	console.log(formatReport(results));
 	if (hasFailures(results)) {
 		process.exitCode = 1;

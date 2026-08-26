@@ -69,7 +69,8 @@ const BUILD_STAGE = [
 		id: "doc-refs",
 		command: "pnpm doc-refs",
 		workflow: "Static gates / doc-refs",
-		description: "Docs reference real packages and their samples typecheck.",
+		description:
+			"Docs reference real packages and their samples typecheck.",
 	},
 	{
 		id: "typecheck",
@@ -139,7 +140,10 @@ function loadGates() {
 				`verify: scripts/gates.json entries need id, command, and description: ${JSON.stringify(gate)}`,
 			);
 		}
-		if (gate.needsBuild !== undefined && typeof gate.needsBuild !== "boolean") {
+		if (
+			gate.needsBuild !== undefined &&
+			typeof gate.needsBuild !== "boolean"
+		) {
 			throw new Error(
 				`verify: gate ${gate.id} has a non-boolean needsBuild; static-gates.yml reads it as a matrix condition`,
 			);
@@ -244,7 +248,9 @@ function main() {
 		return;
 	}
 
-	console.log(`verify: ${plan.length} checks, mirroring the pull-request gates.`);
+	console.log(
+		`verify: ${plan.length} checks, mirroring the pull-request gates.`,
+	);
 
 	const results = [];
 	const skipped = [];
