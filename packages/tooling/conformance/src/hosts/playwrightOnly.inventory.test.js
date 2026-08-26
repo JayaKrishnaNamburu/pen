@@ -79,7 +79,16 @@ test("pnpm test is src/hosts/*.test.js; Playwright specs are a separate populati
 		/run test:\$\{\{ matrix\.engine \}\}/,
 		"CI conformance-engine must invoke test:${{ matrix.engine }}, not only pnpm test",
 	);
-	assert.match(workflow, /engine: \[chromium/);
+	// The matrix moved from an inline list to `include` rows so each leg could
+	// carry a display label; what matters here is the engine coverage, not the
+	// shape the coverage is written in.
+	for (const engine of ["chromium", "webkit", "firefox"]) {
+		assert.match(
+			workflow,
+			new RegExp(`engine: ${engine}\\b`),
+			`CI conformance matrix must still cover ${engine}`,
+		);
+	}
 	assert.doesNotMatch(
 		workflow,
 		/filter @input\/pen-conformance test(?:\s|$)/,
