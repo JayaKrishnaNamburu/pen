@@ -1,8 +1,5 @@
 // @vitest-environment jsdom
 
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import {
@@ -19,12 +16,6 @@ import { Pen } from "../primitives/index";
 	globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
 ).IS_REACT_ACT_ENVIRONMENT = true;
 
-const SRC_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const GESTURES = join(
-	SRC_ROOT,
-	"primitives/editor/useEditorContentGestures.ts",
-);
-
 function createEditor() {
 	return createCoreEditor({
 		schema: defaultSchema,
@@ -37,12 +28,6 @@ function createEditor() {
 }
 
 describe("@input/pen-react host pointer window", () => {
-	it("does not call beginPointerSelection or endPointerSelection", () => {
-		const source = readFileSync(GESTURES, "utf8");
-		expect(source).not.toMatch(/\bbeginPointerSelection\s*\(/);
-		expect(source).not.toMatch(/\bendPointerSelection\s*\(/);
-	});
-
 	it("opens the pointer window from root pointerdown without beginPointerSelection", async () => {
 		const editor = createEditor();
 		const blockId = editor.firstBlock()!.id;

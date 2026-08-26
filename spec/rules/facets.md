@@ -2,7 +2,7 @@
 
 Facets are the single typed primitive for every "many extensions contribute values, one consumer combines them" seam: keymaps, before-apply hooks, decoration sources, input rules, command handlers, clipboard handlers, block direction, and the single-value controller seams. The `R` family governs provider ordering, recomputation, and reads; the `SM` family governs what replaced the v1 untyped slot mechanism. Contracts live in `@input/pen-types` (`packages/types/src/types/facets.ts`), and the registry, resolution, and core-defined facets in `@input/pen-core` (`packages/core/src/facets/`), read through `editor.facet(facet)`. Extensions contribute through the `facets` array on the extension object; extensions are fixed at editor creation, so there are no compartments and no runtime reconfiguration.
 
-The letter `R` names two unrelated families. `R1`–`R7` in this document are facet provider and combine rules. `R1`–`R3` in `spec/rules/selection.md` are reader gesture-window admissibility rules. The prefix collision is recorded in `spec/charter/rule-ids.md`; neither family was renamed, so a bare `R` reference is only meaningful with its document.
+The letter `R` names two unrelated families. `R1`–`R7` in this document are facet provider and combine rules. `R1`–`R3` in `spec/rules/selection.md` are reader gesture-window admissibility rules. Neither family was renamed, so a bare `R` reference is only meaningful with its document.
 
 ## R — Facet resolution
 

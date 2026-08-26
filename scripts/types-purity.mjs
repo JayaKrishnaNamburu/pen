@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * API3 types-package purity (spec/rules/api.md, Wave P step P.3).
+ * API3 types-package purity (spec/rules/api.md).
  *
  * `@input/pen-types` must have zero `dependencies`. Its API report may contain
  * types, frozen values, brand constructors, and type-predicate guards. Any

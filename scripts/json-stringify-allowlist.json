@@ -2,6 +2,11 @@
   "_comment": "SCALE2 (spec/rules/scale.md, Wave F step F.2): JSON.stringify sites in packages/rendering and packages/core runtime src that produce a wire format, debug display, HOST4 clone, or Intl cache key — not a per-commit / per-render change signature. Each entry needs file, enclosing symbol, and a reason. Remove an entry in the same PR that deletes the last call in that symbol.",
   "entries": [
     {
+      "file": "packages/core/src/editor/anchors.ts",
+      "symbol": "serialize",
+      "reason": "Anchor wire format — EditorAnchorsImpl.serialize writes the versioned relative-anchor JSON payload."
+    },
+    {
       "file": "packages/core/src/i18n/formatters.ts",
       "symbol": "formatterKey",
       "reason": "Intl cache key — formatterKey stringifies options so PluralRules / NumberFormat / DateTimeFormat can be reused (LOC3/LOC6)."

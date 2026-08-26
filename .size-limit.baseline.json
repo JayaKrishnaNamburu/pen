@@ -7,173 +7,173 @@
       "path": "packages/types/dist/index.mjs",
       "baselineBytes": 30625,
       "limitBytes": 30625,
-      "note": "Wave P.7 first baseline. Public-surface shrink in flight (live 15762 B); not re-recorded."
+      "note": "First baseline. Public-surface shrink in flight (live 15762 B); not re-recorded."
     },
     {
       "name": "@input/pen-transport-direct",
       "path": "packages/transports/direct/dist/index.mjs",
       "baselineBytes": 6034,
       "limitBytes": 6034,
-      "note": "Wave P.7 re-record 2026-08-21. Wave M AIB3: allowedMutatingTools / createAIToolTurn on the in-process transport. 3880 \u2192 6034. Source quiet (test-only dirty)."
+      "note": "Re-recorded baseline 2026-08-21. AIB3: allowedMutatingTools / createAIToolTurn on the in-process transport. 3880 \u2192 6034. Source quiet (test-only dirty)."
     },
     {
       "name": "@input/pen-shortcuts",
       "path": "packages/extensions/shortcuts/dist/index.mjs",
       "baselineBytes": 5471,
       "limitBytes": 5471,
-      "note": "Lane 173 re-record 2026-08-21. Wave 4: keymap facet conversion (shortcutsToKeymapProviders / pen.keymap). 4876 \u2192 5471."
+      "note": "Re-recorded baseline 2026-08-21. Keymap facet conversion (shortcutsToKeymapProviders / pen.keymap). 4876 \u2192 5471."
     },
     {
       "name": "@input/pen-undo",
       "path": "packages/extensions/undo/dist/index.mjs",
       "baselineBytes": 18628,
       "limitBytes": 18628,
-      "note": "v3 Wave 2 re-record 2026-08-22. Anchor-based cursor drift replaces summaryLog/mapPoint restore; drift keyed by stack-item meta id."
+      "note": "Re-recorded baseline 2026-08-22. Anchor-based cursor drift replaces summaryLog/mapPoint restore; drift keyed by stack-item meta id."
     },
     {
       "name": "@input/pen-ai",
       "path": "packages/extensions/ai/dist/*.mjs",
       "baselineBytes": 607722,
       "limitBytes": 607722,
-      "note": "v3 Wave 6 SF1 re-record 2026-08-24. The five AI satellites became subpaths of this package, so the budget is now the whole shipped ESM closure rather than dist/index.mjs: tsup code-splits the subpaths into content-hashed chunks, and a hashed name cannot be written into a baseline. Replaces six budgets totalling 604703 B (435771 root + 75536 autocomplete + 47823 suggestions + 25211 delta-stream + 15831 tools + 4531 skills). 604703 \u2192 607722, +0.5% for duplicated barrel wiring; no satellite budget was dropped without a successor. Byte total reproduced across three rebuilds."
+      "note": "Re-recorded baseline 2026-08-24 (SF1). The five AI satellites became subpaths of this package, so the budget is now the whole shipped ESM closure rather than dist/index.mjs: tsup code-splits the subpaths into content-hashed chunks, and a hashed name cannot be written into a baseline. Replaces six budgets totalling 604703 B (435771 root + 75536 autocomplete + 47823 suggestions + 25211 delta-stream + 15831 tools + 4531 skills). 604703 \u2192 607722, +0.5% for duplicated barrel wiring; no satellite budget was dropped without a successor. Byte total reproduced across three rebuilds."
     },
     {
       "name": "@input/pen-assets-memory",
       "path": "packages/tooling/assets-memory/dist/index.mjs",
       "baselineBytes": 1403,
       "limitBytes": 1403,
-      "note": "Wave P.7 re-record 2026-08-21. Wave T T.3 IOP4: maxSize, onProgress, delete, rejectUpload. 1291 \u2192 1403. Source quiet."
+      "note": "Re-recorded baseline 2026-08-21. IOP4: maxSize, onProgress, delete, rejectUpload. 1291 \u2192 1403. Source quiet."
     },
     {
       "name": "@input/pen-bench",
       "path": "packages/tooling/bench/dist/index.mjs",
       "baselineBytes": 27000,
       "limitBytes": 27000,
-      "note": "Wave F / SCALE1 envelope table, reporters, drift check and CLI, plus the harness-floor feature (a Pen-removed null implementation timed alongside each bench, so a wall-clock cannot be attributed to Pen without one). Re-recorded twice on 2026-08-21: 1421 \u2192 25779 once the lane editing envelope/compare.ts reported, then \u2192 27000 when the floor landed. The first jump is 18x and is stated rather than smoothed over \u2014 the Wave P.7 figure was taken when the package was a stub, so it was the first measurement of a bench harness that actually exists, not a regression in one."
+      "note": "SCALE1 envelope table, reporters, drift check and CLI, plus the harness-floor feature (a Pen-removed null implementation timed alongside each bench, so a wall-clock cannot be attributed to Pen without one). Re-recorded twice on 2026-08-21: 1421 \u2192 25779 once the envelope/compare.ts work landed, then \u2192 27000 when the floor landed. The first jump is 18x and is stated rather than smoothed over \u2014 the earlier figure was taken when the package was a stub, so it was the first measurement of a bench harness that actually exists, not a regression in one."
     },
     {
       "name": "@input/pen-content-ops",
       "path": "packages/shared/content-ops/dist/index.mjs",
       "baselineBytes": 29428,
       "limitBytes": 29428,
-      "note": "Wave P.7 first baseline. Wave P API3 blockCapabilities live here. Live 17572 B shrink deferred (writeContent.ts mid-edit)."
+      "note": "First baseline. API3 blockCapabilities live here. Live 17572 B shrink deferred (writeContent.ts mid-edit)."
     },
     {
       "name": "@input/pen-core",
       "path": "packages/core/dist/index.mjs",
       "baselineBytes": 405550,
       "limitBytes": 405550,
-      "note": "Wave 2 apply pipeline and commit path, plus Wave P.1 extension-free core and the Wave 4 command registry. Re-recorded 2026-08-21 after the core-commands lane reported and the package went quiet. 275169 \u2192 405550 B."
+      "note": "The apply pipeline and commit path, the extension-free core, and the command registry. Re-recorded baseline 2026-08-21 after the core-commands work landed and the package went quiet. 275169 \u2192 405550 B."
     },
     {
       "name": "@input/pen-crdt-yjs",
       "path": "packages/crdt/yjs/dist/index.mjs",
       "baselineBytes": 59734,
       "limitBytes": 59734,
-      "note": "Wave P.7 first baseline kept through Wave P API2 yjs peer + singleton guard (live 55563 B). Re-recorded 2026-08-23: v3 Wave 1 placed the createRelativePosition/resolveRelativePosition anchor primitives in this package and Wave 3 rewrote summarySource to carry a per-block list of cell text deltas. 55563 -> 59734 B."
+      "note": "First baseline kept through the API2 yjs peer + singleton guard (live 55563 B). Re-recorded 2026-08-23: the createRelativePosition/resolveRelativePosition anchor primitives moved into this package and summarySource was rewritten to carry a per-block list of cell text deltas. 55563 -> 59734 B."
     },
     {
       "name": "@input/pen-document-ops",
       "path": "packages/extensions/document-ops/dist/index.mjs",
       "baselineBytes": 81629,
       "limitBytes": 81629,
-      "note": "v5 Wave 0 re-record 2026-08-26. 71065 \u2192 81629, inherited drift rather than a change to this package: its own source moved by 4 lines since the previous record (b6432f4), and tsup marks content-ops, markdown-serialization and types external but NOT @input/pen-core, so this bundle carries a slice of core. Core itself drifted 405550 \u2192 429672 over the same span while staying under its +10% ceiling, which is why the overflow surfaced here first. Byte total reproduced across two clean rebuilds. Wave 3 touches this package's mount lists (UC7); if that work does not bring the number down, the external list is the thing to revisit, not this budget. Previously: v4 Wave 3 DL13 re-record 2026-08-25, 58134 \u2192 71065, when the content-ops shims were deleted and the block-capability, block-type-policy and payload-validation sources became this package's own."
+      "note": "Re-recorded baseline 2026-08-26. 71065 \u2192 81629, inherited drift rather than a change to this package: its own source moved by 4 lines since the previous record (b6432f4), and tsup marks content-ops, markdown-serialization and types external but NOT @input/pen-core, so this bundle carries a slice of core. Core itself drifted 405550 \u2192 429672 over the same span while staying under its +10% ceiling, which is why the overflow surfaced here first. Byte total reproduced across two clean rebuilds. Pending work on this package's mount lists (UC7) may bring the number down; if it does not, the external list is the thing to revisit, not this budget. Previously: re-recorded 2026-08-25 (DL13), 58134 \u2192 71065, when the content-ops shims were deleted and the block-capability, block-type-policy and payload-validation sources became this package's own."
     },
     {
       "name": "@input/pen-dom",
       "path": "packages/rendering/dom/dist/index.mjs",
       "baselineBytes": 89969,
       "limitBytes": 89969,
-      "note": "v4 Wave 4 CS8 re-record 2026-08-25. The content gesture controller, the inline-atom wrapper/destructure controllers and the region-selection store descended from @input/pen-react and are reachable from this barrel. 42817 \u2192 89969. Paired with react's 264324 \u2192 220087 in the same lane: this is transferred weight, not new code."
+      "note": "Re-recorded baseline 2026-08-25 (CS8). The content gesture controller, the inline-atom wrapper/destructure controllers and the region-selection store descended from @input/pen-react and are reachable from this barrel. 42817 \u2192 89969. Paired with react's 264324 \u2192 220087 in the same change: this is transferred weight, not new code."
     },
     {
       "name": "@input/pen-interop",
       "path": "packages/extensions/interop/dist/*.mjs",
       "baselineBytes": 104761,
       "limitBytes": 104761,
-      "note": "v3 Wave 6 SF2 first baseline 2026-08-24. Budgeted as the whole shipped ESM closure, not dist/index.mjs: the four format subpaths code-split into content-hashed chunks, so the root entry is 1722 B of re-exports while the chunks carry 100335 B \u2014 an index.mjs budget would guard 1.6% of the package. Replaces seven budgets totalling 100361 B (30302 import-html + 16369 export-xml + 15551 export-json + 14228 import-json + 10107 export-html + 9197 import-markdown + 4607 export-markdown). 100361 \u2192 104761, +4.4% for per-format barrel wiring. Byte total reproduced across three rebuilds."
+      "note": "First baseline 2026-08-24 (SF2). Budgeted as the whole shipped ESM closure, not dist/index.mjs: the four format subpaths code-split into content-hashed chunks, so the root entry is 1722 B of re-exports while the chunks carry 100335 B \u2014 an index.mjs budget would guard 1.6% of the package. Replaces seven budgets totalling 100361 B (30302 import-html + 16369 export-xml + 15551 export-json + 14228 import-json + 10107 export-html + 9197 import-markdown + 4607 export-markdown). 100361 \u2192 104761, +4.4% for per-format barrel wiring. Byte total reproduced across three rebuilds."
     },
     {
       "name": "@input/pen-history",
       "path": "packages/extensions/history/dist/index.mjs",
       "baselineBytes": 38744,
       "limitBytes": 38744,
-      "note": "Lane 173 re-record 2026-08-21. Path .js \u2192 .mjs (Wave P.8). Bytes: Wave C identity resolution + Wave V snapshot restore. 11886 \u2192 38744."
+      "note": "Re-recorded baseline 2026-08-21. Path .js \u2192 .mjs. Bytes: identity resolution + snapshot restore. 11886 \u2192 38744."
     },
     {
       "name": "@input/pen-input-rules",
       "path": "packages/extensions/input-rules/dist/index.mjs",
       "baselineBytes": 9553,
       "limitBytes": 9553,
-      "note": "Wave P.7 first baseline kept. Wave 4 input-rule commands; live 9837 B is within +10%."
+      "note": "First baseline kept. Input-rule commands; live 9837 B is within +10%."
     },
     {
       "name": "@input/pen-markdown-serialization",
       "path": "packages/shared/markdown-serialization/dist/index.mjs",
       "baselineBytes": 7446,
       "limitBytes": 7446,
-      "note": "Wave P.7 re-record 2026-08-21. Under previous budget after Wave P API3 (logicalTextFromStored stays in types; 10359 \u2192 7446). Source quiet (test-only dirty)."
+      "note": "Re-recorded baseline 2026-08-21. Under previous budget after API3 (logicalTextFromStored stays in types; 10359 \u2192 7446). Source quiet (test-only dirty)."
     },
     {
       "name": "@input/pen-multiplayer",
       "path": "packages/extensions/multiplayer/dist/index.mjs",
       "baselineBytes": 43166,
       "limitBytes": 43166,
-      "note": "Lane 173 re-record 2026-08-21. Path .js \u2192 .mjs (Wave P.8). Bytes: Wave C awareness validation / presence bounds. 20968 \u2192 43166."
+      "note": "Re-recorded baseline 2026-08-21. Path .js \u2192 .mjs. Bytes: awareness validation / presence bounds. 20968 \u2192 43166."
     },
     {
       "name": "@input/pen-preset-default",
       "path": "packages/presets/default/dist/index.mjs",
       "baselineBytes": 2299,
       "limitBytes": 2299,
-      "note": "v4 Wave 4 CS8 re-record 2026-08-25. The preset gained the html-clipboard extension when react stopped value-importing @input/pen-interop, so the HTML paste default now assembles here. 1442 \u2192 2299."
+      "note": "Re-recorded baseline 2026-08-25 (CS8). The preset gained the html-clipboard extension when react stopped value-importing @input/pen-interop, so the HTML paste default now assembles here. 1442 \u2192 2299."
     },
     {
       "name": "@input/pen-react",
       "path": "packages/rendering/react/dist/index.mjs",
       "baselineBytes": 220087,
       "limitBytes": 220087,
-      "note": "v4 Wave 4 CS8 re-record 2026-08-25. Gestures and inline-atom interaction moved to @input/pen-dom, so react keeps the hook shells only. 264324 \u2192 220087. See pen-dom's paired entry."
+      "note": "Re-recorded baseline 2026-08-25 (CS8). Gestures and inline-atom interaction moved to @input/pen-dom, so react keeps the hook shells only. 264324 \u2192 220087. See pen-dom's paired entry."
     },
     {
       "name": "@input/pen-schema-default",
       "path": "packages/schema/default/dist/index.mjs",
       "baselineBytes": 4899,
       "limitBytes": 4899,
-      "note": "Lane 173 re-record 2026-08-21. Wave L LOC2 display catalog (primary); Wave S SEC5 escapeHtml; Wave X a11y specs. 1068 \u2192 4899."
+      "note": "Re-recorded baseline 2026-08-21. LOC2 display catalog (primary); SEC5 escapeHtml; a11y specs. 1068 \u2192 4899."
     },
     {
       "name": "@input/pen-search",
       "path": "packages/extensions/search/dist/index.mjs",
       "baselineBytes": 22866,
       "limitBytes": 22866,
-      "note": "Lane 173 re-record 2026-08-21. Wave L LOC4/LOC5 fold-and-normalize + Wave S SEC9 query/budget caps. 18130 \u2192 22866."
+      "note": "Re-recorded baseline 2026-08-21. LOC4/LOC5 fold-and-normalize + SEC9 query/budget caps. 18130 \u2192 22866."
     },
     {
       "name": "@input/pen-test",
       "path": "packages/tooling/test/dist/index.mjs",
       "baselineBytes": 40505,
       "limitBytes": 40505,
-      "note": "Wave P.7 re-record 2026-08-21. Wave C COL4 two-peer harness + Wave F envelope fixtures + Wave 18 durability corpus. 18429 \u2192 40505. Source quiet (test-only dirty)."
+      "note": "Re-recorded baseline 2026-08-21. COL4 two-peer harness + envelope fixtures + durability corpus. 18429 \u2192 40505. Source quiet (test-only dirty)."
     },
     {
       "name": "@input/pen-transport-sse",
       "path": "packages/transports/sse/dist/index.mjs",
       "baselineBytes": 22076,
       "limitBytes": 22076,
-      "note": "Wave P.7 re-record 2026-08-21. Wave C COL6 reconnect surface + Wave M AIB2 (no editor on PenStreamRequest) / AIB3 authority. 11867 \u2192 22076. Source quiet (test-only dirty)."
+      "note": "Re-recorded baseline 2026-08-21. COL6 reconnect surface + AIB2 (no editor on PenStreamRequest) / AIB3 authority. 11867 \u2192 22076. Source quiet (test-only dirty)."
     },
     {
       "name": "@input/pen-vue",
       "path": "packages/rendering/vue/dist/index.mjs",
       "baselineBytes": 1054,
       "limitBytes": 1054,
-      "note": "Wave P.7 first baseline. Wave P.6 Vue bindings. Live 1153 B is just under the +10% ceiling; renderer mid-edit, not re-recorded."
+      "note": "First baseline. Vue bindings. Live 1153 B is just under the +10% ceiling; renderer mid-edit, not re-recorded."
     }
   ],
   "_deferred": {
     "recorded": "2026-08-21",
-    "note": "Empty, and discharged rather than abandoned. Three packages (bench, core, dom) were deferred earlier the same day because their sources were being edited while the baseline was taken; each was re-recorded once its lane reported and a rebuild produced the same byte count twice. Keep this mechanism: deferring a mid-edit package leaves it failing against the last quiet baseline, which is the honest state, whereas recording a half-finished package silently blesses whatever size it happened to have. Re-record only after a rebuild reproduces the number.",
+    "note": "Empty, and discharged rather than abandoned. Three packages (bench, core, dom) were deferred earlier the same day because their sources were being edited while the baseline was taken; each was re-recorded once its work landed and a rebuild produced the same byte count twice. Keep this mechanism: deferring a mid-edit package leaves it failing against the last quiet baseline, which is the honest state, whereas recording a half-finished package silently blesses whatever size it happened to have. Re-record only after a rebuild reproduces the number.",
     "packages": []
   }
 }

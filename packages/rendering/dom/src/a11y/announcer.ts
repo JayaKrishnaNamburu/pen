@@ -2,13 +2,11 @@
  * AX2: one visually-hidden live region per editor root.
  * Rate-limit one per key per 500ms, latest wins.
  *
- * wave-3-adopt: announcement writes (`aria-live` + textContent) move
- * into DomScheduler.write when wired. Construction of the region is
- * wave-3-exempt — the node must exist before the first announce.
- *
- * Wave 3.4 inventory is `rg 'wave-3-(adopt|exempt)'` across a11y/.
- * `rg wave-3-adopt` alone is not the inventory: focus-sink writes are
- * exempt (see focusSink.ts) and must not be converted with this file.
+ * Announcement writes (`aria-live` + textContent) belong in
+ * DomScheduler.write once wired. Construction of the region does not —
+ * the node must exist before the first announce. The focus-sink writes
+ * in focusSink.ts are likewise not schedulable; do not convert them
+ * along with this file.
  *
  * ARIA booleans stay the literal strings "true"/"false". Do not apply
  * the data-* present/absent spelling to `aria-atomic` (or any ARIA
@@ -111,9 +109,9 @@ function write(
 	if (region === null) {
 		return;
 	}
-	// wave-3-adopt: schedule this write in DomScheduler.write when wired
+	// schedule this write in DomScheduler.write when wired
 	region.setAttribute("aria-live", priority);
-	// wave-3-adopt: schedule this write in DomScheduler.write when wired
+	// schedule this write in DomScheduler.write when wired
 	region.textContent = "";
 	region.textContent = message;
 }
@@ -128,7 +126,7 @@ function createLiveRegion(
 	}
 
 	const region = doc.createElement("div");
-	// wave-3-exempt: construction of the live region, not a scheduled paint write
+	// construction of the live region, not a scheduled paint write
 	region.setAttribute("role", "status");
 	region.setAttribute("aria-live", "polite");
 	// ARIA boolean: literal "true". `aria-atomic=""` is invalid.

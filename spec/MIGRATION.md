@@ -661,7 +661,7 @@ Same cut as `map*` and `PointMapMode`: the mapping methods and modes left `packa
 
 **What it was:** the autocomplete satellite package.
 
-**Replacement:** SF1 folds it into the `autocomplete` subpath of `@input/pen-ai`. Run `node scripts/migrate-imports-v3.mjs` (specifier-position rewrite; string literals stay put). Manifest dependency becomes `@input/pen-ai`.
+**Replacement:** SF1 folds it into the `autocomplete` subpath of `@input/pen-ai`. Manifest dependency becomes `@input/pen-ai`.
 
 **Before / after:** point `autocompleteExtension` at `@input/pen-ai/autocomplete`. The codemod's `SOURCE_REWRITE` table is the closed mapping.
 
@@ -711,7 +711,7 @@ Same cut as `map*` and `PointMapMode`: the mapping methods and modes left `packa
 
 **What it was:** HTML exporter (`htmlExporter`).
 
-**Replacement:** SF2 folds the import/export family into one interop package. HTML import and export share the `html` format subpath. Run `node scripts/migrate-imports-v3.mjs` — `SOURCE_REWRITE` and `MANIFEST_REWRITE` are the closed table. `@input/pen-markdown-serialization` survives and is not merged (`document-ops` still consumes it).
+**Replacement:** SF2 folds the import/export family into one interop package. HTML import and export share the `html` format subpath. `@input/pen-markdown-serialization` survives and is not merged (`document-ops` still consumes it).
 
 **Before / after:** point `htmlExporter` at the html format subpath the codemod writes.
 
@@ -992,7 +992,7 @@ The 23 tracked Playwright artifacts under the conformance `test-results-n2*` dir
 
 ## `static-gates.yml`
 
-The `ch-gates` matrix entry left `.github/workflows/static-gates.yml`. `health-gates.yml` is the single execution. Hosts never imported this file.
+`ch-gates` runs as a matrix row in `.github/workflows/static-gates.yml`. The `health-gates.mjs` wrapper is gone. Hosts never imported this file.
 
 ---
 
@@ -1004,7 +1004,7 @@ The root `turbo.json` `lint` task is gone; every package answers `pnpm --filter 
 
 ## four one-shot scripts with aliases and references
 
-The spent 0.3 one-shots (`migrate-changesets-v3.mjs`, `wave6-manual-work-inventory.mjs`, `record-wave0-baseline.mjs`, `sf3-package-list-check.mjs`) retire with their aliases. `gate-mutation.mjs` and `verdaccio-closure-check.mjs` stay. `v3-gates.mjs` and `wave-deletions-migration-check.mjs` were removed when the v5 train's wave files were deleted — both read a train's `waves/*.md` as their only input, so neither has a population to check without one. A future train reintroduces them. Hosts never imported any of these.
+The spent 0.3 one-shots (`migrate-changesets-v3.mjs`, `wave6-manual-work-inventory.mjs`, `record-wave0-baseline.mjs`, `sf3-package-list-check.mjs`) retire with their aliases. `migrate-imports-v3.mjs`, `gate-mutation.mjs`, `check-instruments.mjs`, `health-gates.mjs`, `console-inventory.mjs`, `engines-inventory.mjs`, `skip-hygiene.mjs`, `renderer-inventory.mjs`, `f22-dead-bindings.mjs`, `above-floor-api-allowlist.mjs`, `instrument-paths.mjs`, `pen-stream-request-no-editor.mjs`, `coverage-rules.mjs`, `no-pen-deep-imports.mjs`, `no-unscheduled-measure.mjs`, `no-bidi-override.mjs`, `no-json-stringify-signatures.mjs`, and `no-selection-state-properties.mjs` retire the same way: duplicates of lint or `ch-gates`, always-green inventories, meta-gates, spent one-shots, and greps that moved into `@input/pen-eslint-plugin`. `verdaccio-closure-check.mjs` stays. `v3-gates.mjs` and `wave-deletions-migration-check.mjs` were removed when the v5 train's wave files were deleted — both read a train's `waves/*.md` as their only input, so neither has a population to check without one. A future train reintroduces them. Hosts never imported any of these.
 
 ---
 

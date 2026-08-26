@@ -15,7 +15,7 @@ The `I` family is the shared cross-generation invariant set: the durable propert
 - I12. Everything outside `@input/pen-dom` works with `createHeadlessEditor()` and no DOM. The modules under `@input/pen-dom` are the only ones allowed to touch browser globals.
 - I13. Durable position tracking uses anchors. Library code that retains a raw `{ blockId, offset }` across commits, re-mints anchors per ordinary commit, or re-locates content by fingerprint is a defect.
 - I14. No sentinel exists in storage. `isLoneEmptyBlockZwsp` in `packages/core/src/schema/emptyBlockSentinel.ts` — the load-migration detector behind EM3 — is the only production module permitted to name `\u200B`; no other production code tests for the character.
-- I15. Instrument-path integrity: every path-shaped datum in a check instrument — allowlist entries, lint-target globs, sink lists, coverage claims, baseline entries — must resolve against the tree. Paths exist, and globs match a non-empty population or state why zero is expected. A deletion or merge that orphans an instrument path fails CI in the same change, not at the next hand audit.
+- I15. Instrument-path integrity belongs to the check that reads the path: an allowlist entry, glob, or sink list that no longer resolves fails that check, not a separate inventory job. A deletion or merge that orphans an instrument path is a defect of the deleting change.
 
 ## Retired
 

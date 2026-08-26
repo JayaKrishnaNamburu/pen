@@ -1,7 +1,0 @@
-{
-  "name": "@input/pen-host",
-  "dependencies": {
-    "@input/pen-ai-suggestions": "workspace:*",
-    "@input/pen-ai-tools": "^1.0.0"
-  }
-}

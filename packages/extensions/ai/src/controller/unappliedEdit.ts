@@ -24,7 +24,7 @@ export const EDIT_NOT_APPLIED_REASON =
  * (EC9) and authority denials (EC13) alike. What this reports is the turn that
  * called the edit tool, landed nothing, and produced no account of either:
  * reporting that as a completed turn is what makes the channel look like it
- * silently ignored the request (`spec/charter/working-agreements.md`, Defect 4).
+ * silently ignored the request.
  */
 export function isUnappliedEdit(input: {
 	/** Evidence this turn was asked for a durable edit. */

@@ -6,7 +6,7 @@ These families govern how Pen reads and writes the DOM and how bidirectional tex
 
 `DomScheduler` exposes `read`, `write`, `measureNow`, and a `phase` of `"idle" | "read" | "write"`. One flush runs per animation frame when work is pending: it collects the commits since the last flush plus the current selection record, runs the read phase (geometry cache invalidation, then queued reads in FIFO order), then runs the write phase (renderer DOM updates, queued writes FIFO, the selection projector last so it sees final layout, then overlay paints). A write queued during the read phase joins the same flush; a read queued during the write phase moves to the next flush and emits `diagnostic { code: "read-after-write" }` when it observes layout that write invalidated.
 
-- SCH1. Pen-internal code — the selection projector, overlays, and geometry — never calls `getBoundingClientRect`, `getClientRects`, `elementFromPoint`, or `caretPositionFromPoint` outside a read phase or `measureNow`. The gate is `scripts/no-unscheduled-measure.mjs`, scoped to `@input/pen-dom`, `@input/pen-react`, and `@input/pen-vue`.
+- SCH1. Pen-internal code — the selection projector, overlays, and geometry — never calls `getBoundingClientRect`, `getClientRects`, `elementFromPoint`, or `caretPositionFromPoint` outside a read phase or `measureNow`. The gate is `pen/no-unscheduled-measure` in the root ESLint config, scoped to `@input/pen-dom`, `@input/pen-react`, and `@input/pen-vue`. Allowlisted GeometryReader and justified pre-scheduler sites live in `scripts/unscheduled-measure-allowlist.json`.
 - SCH2. `measureNow` is the synchronous escape hatch for command handlers that need geometry during dispatch, such as vertical caret motion. Each call forces a flush boundary and increments a counter surfaced in diagnostics, and the perf budget caps that counter.
 - SCH3. The scheduler is per editor root. Multiple editors on a page never share read or write queues.
 
@@ -75,7 +75,7 @@ Direction affects which key advances the caret, not how a caret is represented: 
 
 Exporters emit text as stored: Pen inserts no LRM or RLM direction marks on export.
 
-- RI1. The content root gets `unicode-bidi: isolate` per block host, and marks or decorations must not introduce `bidi-override`. The gate is `scripts/no-bidi-override.mjs` over style objects in the DOM and framework renderer packages.
+- RI1. The content root gets `unicode-bidi: isolate` per block host, and marks or decorations must not introduce `bidi-override`. The gate is `pen/no-bidi-override` in the root ESLint config over style objects in the DOM and framework renderer packages.
 - RI2. IME composition inside an RTL run needs no special handling beyond the ordinary composition rules: composition owns the field, and geometry reads resume after it ends.
 - RI3. Pasted mixed-direction text is plain content. Direction resolution reacts through DIR1 invalidation rather than through a paste-specific path.
 - RI4. The overlay caret measures through `caretRect` and so inherits bidi correctness, and the native caret inside the active field agrees because DIR2 sets `dir` on the same element the browser measures.

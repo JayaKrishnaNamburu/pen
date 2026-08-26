@@ -63,6 +63,57 @@ export default tseslint.config(
 		},
 	},
 	{
+		// SCH1 / RI1: geometry reads stay scheduled; marks never introduce
+		// bidi-override. Allowlists live in scripts/.
+		files: ["packages/rendering/**/*.{ts,tsx,js,jsx}"],
+		ignores: ["**/__tests__/**", "**/*.test.ts", "**/*.test.tsx"],
+		rules: {
+			"pen/no-unscheduled-measure": "error",
+			"pen/no-bidi-override": "error",
+		},
+	},
+	{
+		// SCALE2: JSON.stringify is not a change-detection signature in
+		// core or rendering runtime. Wire-format / display / clone sites
+		// are in scripts/json-stringify-allowlist.json.
+		files: [
+			"packages/rendering/**/*.{ts,tsx,js,jsx}",
+			"packages/core/**/*.{ts,tsx,js,jsx}",
+		],
+		ignores: ["**/__tests__/**", "**/*.test.ts", "**/*.test.tsx"],
+		rules: {
+			"pen/no-json-stringify-signatures": "error",
+		},
+	},
+	{
+		// Selection-helper conversion: SelectionState receivers read
+		// through core helpers. Browser Selection and snapshot records
+		// are in scripts/selection-state-properties-allowlist.json.
+		files: ["packages/**/*.{ts,tsx}"],
+		ignores: [
+			"**/__tests__/**",
+			"**/*.test.ts",
+			"**/*.test.tsx",
+			"**/*.spec.ts",
+		],
+		rules: {
+			"pen/no-selection-state-properties": "error",
+		},
+	},
+	{
+		// API4: no @input/pen-* import through /src/, /dist/, or an
+		// unpublished subpath. Allowlist: scripts/pen-deep-imports-allowlist.json.
+		files: [
+			"packages/**/*.{ts,tsx,js,jsx,mjs,cjs}",
+			"examples/**/*.{ts,tsx,js,jsx,mjs,cjs}",
+			"playground/**/*.{ts,tsx,js,jsx,mjs,cjs}",
+			"internal/**/*.{ts,tsx,js,jsx,mjs,cjs}",
+		],
+		rules: {
+			"pen/no-pen-deep-imports": "error",
+		},
+	},
+	{
 		// SEC5: exporters and schema toHTML must not concatenate unescaped
 		// document content into markup. Disable a site with a comment naming
 		// SEC5, "already-serialized", "clamped", or "justified".

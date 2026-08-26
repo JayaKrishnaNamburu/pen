@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * API4 published-exports check (spec/rules/api.md, Wave P step P.4).
+ * API4 published-exports check (spec/rules/api.md).
  *
  * Every published package must export `.`. Extra keys fail unless listed in
  * scripts/published-exports-allowlist.json with a reason. Unmarked keys and

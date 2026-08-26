@@ -10,7 +10,6 @@ Start with the charter docs if you want the durable architectural rules:
 - `charter/document-model.md`
 - `charter/mutation-pipeline.md`
 - `charter/package-map.md`
-- `charter/rule-ids.md` — rule-ID family registry
 
 Then read package specs by layer:
 
@@ -46,7 +45,7 @@ Then read package specs by layer:
 
 ## What Changed
 
-- Historical wave docs and planning notes were removed. The `spec-v2`, `spec-v3`, `spec-v4`, and `spec-better-ai` design trees are gone; the rules that still govern shipped code were folded into the documents here, and `charter/rule-ids.md` records where each family now lives.
+- Historical design trees and planning notes were removed. The rules that still govern shipped code were folded into the documents here.
 - Specs now describe the workspace as shipped today.
 - The highest-value packages now have deeper runtime notes, boundaries, and architecture diagrams rather than just metadata summaries.
 

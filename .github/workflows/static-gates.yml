@@ -1,19 +1,9 @@
-# Static gates that had no npm alias and no workflow of their own.
-# New file so this does not race editors of ci.yml / conformance.yml /
-# health-gates.yml / the other per-gate workflows.
+# Static analysis gates. One job per gate so a failure names itself.
 #
-# engines-inventory always exits 0 (35 of 35 ok today). It has an npm
-# alias so the documented command exists; it is not a job. HOST3's
-# declared floor is written by sync-package-metadata.mjs, held by the
-# package-metadata matrix gate (`--check`), and exercised by
-# node-matrix.yml — the leftover report does not enforce either.
-#
-# console-inventory also always exits 0. It is not a job (a permanently
-# green check is a defect). CH1–CH9, including blocking CH5
-# (`pnpm ch-gates` via scripts/health-gates.mjs), run once per PR in
-# health-gates.yml — this matrix does not re-run them (GA10).
-# The this-any and ts-nocheck inventories were deleted: CH4/CH1 live
-# in ch-gates.
+# Every gate here is a fast, dependency-light check over the source tree
+# or the published manifests. Anything that needs a build lives in ci.yml;
+# anything that needs a browser lives in conformance.yml or ci.yml's e2e
+# matrix.
 
 name: Static gates
 
@@ -34,91 +24,74 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - gate: skip-hygiene
-            command: pnpm skip-hygiene
-          # --strict is the enforcing mode; without it the script cannot fail.
-          - gate: renderer-inventory
-            command: pnpm renderer-inventory -- --strict
+          # Code health: ts-nocheck, empty skips, `this: any`, runtime
+          # console calls, orphan packages.
+          - gate: ch-gates
+            command: pnpm ch-gates
+          # The model adapter exposes one door (.stream()); only the egress
+          # facet may call it.
           - gate: ai-egress-one-door
             command: node scripts/ai-egress-one-door.mjs
-          # AIB2: PenStreamRequest must not grow an editor field
-          # (top-level or nested). Self-tests nested + top-level
-          # editor on every run. Was a script with no workflow.
-          - gate: pen-stream-request-no-editor
-            command: node scripts/pen-stream-request-no-editor.mjs
-          # D.5 TSDoc coverage. Ratchet: undocumented count may only
-          # decrease (MAX_UNDOCUMENTED in the script). Becomes the hard
-          # zero-undocumented DOC3 gate when that constant hits 0.
-          # --strict fails on any undocumented symbol; do not use it
-          # here until the TSDoc / un-export pass lands.
+          # TSDoc coverage ratchet: the undocumented count may only decrease.
+          # Switch to --strict once the count reaches zero.
           - gate: api-docs-coverage
             command: pnpm api-docs-coverage
-          # HB1/HB5: every capability-matrix cell that claims a surface
-          # names a path that exists and is not in the playground, so a
-          # renamed test cannot leave a cell vouching for nothing.
+          # Every capability-matrix cell that claims a surface must name a
+          # path that exists outside the playground.
           - gate: capability-matrix
             command: pnpm capability-matrix
-          # API8: retired source-available / commercial wording stays
-          # in the license decision record.
+          # The license positioning stays accurate: no stray source-available
+          # or commercial wording outside the decision record.
           - gate: positioning-check
             command: node scripts/positioning-check.mjs
-          # In-page conformance mirrors must stay assignable both ways
-          # to the production type they name. Compared count is printed
-          # so a silent empty glob cannot go green.
+          # Conformance mirrors stay assignable both ways to the production
+          # type they name.
           - gate: conformance-mirror-drift
             command: node scripts/conformance-mirror-drift.mjs
-          # Wave 4 catalog vs core command registry. Fails when
-          # CATALOG.md and defineCommand / commandHandler disagree.
+          # CATALOG.md and the core command registry must agree.
           - gate: command-catalog-check
             command: node scripts/command-catalog-check.mjs
-          # API7 / HOST3 / API8: published manifests match what
-          # sync-package-metadata.mjs would write (repository.url,
-          # engines.node, files, publishConfig, LICENSE.md). Write
-          # mode is manual; --check is the PR-blocking hold.
+          # Every diagnostic code has a message catalog entry.
+          - gate: catalog-check
+            command: node scripts/catalog-check.mjs
+          # Published manifests match what sync-package-metadata would write
+          # (repository.url, engines.node, files, publishConfig, LICENSE.md).
           - gate: package-metadata
             command: node scripts/sync-package-metadata.mjs --check
-          # SCALE1: generated envelope table must match
-          # baselines/envelope.json. Table-diff only — does not
-          # re-run benches. Timing stays in bench.yml and is
-          # same-class only.
+          # Generated envelope table must match baselines/envelope.json.
+          # Table diff only; timing lives in bench.yml.
           - gate: bench-envelope-drift
             command: node scripts/bench-envelope-drift.mjs
-          # API7: npm provenance preconditions (id-token, NPM_CONFIG_PROVENANCE,
-          # --provenance, repository.url). Outcome is unobservable until the
-          # first publish; this holds the static contract. Zero tags is not
-          # a failure — it is printed as UNEXERCISED.
+          # npm provenance preconditions. Zero tags prints UNEXERCISED
+          # rather than failing.
           - gate: provenance-preconditions
             command: node scripts/release-check.mjs --provenance-preconditions
-          # Wave P exit: MIGRATION.md host-guide mechanical truth.
-          # Export claims, origin union, yjs peer, named paths.
-          # Samples type-check when present; today's guide has zero fences.
+          # MIGRATION.md must stay mechanically true: export claims, origin
+          # union, yjs peer, named paths, and any fenced samples typecheck.
           - gate: migration-guide-check
             command: node scripts/migration-guide-check.mjs
-          # HOST4: above-floor allowlist sites must be { path, reason }.
-          # Bare path strings are the parking-lot shape and fail.
-          - gate: above-floor-api-allowlist
-            command: node scripts/above-floor-api-allowlist.mjs
-          # The gate-that-catches-gates (`v3-gates.mjs --scope-lint`) was
-          # removed with the v5 train: it classified `- GATE` lines in a
-          # train's wave files, and with no train executing there is no
-          # population to lint. It earned its keep — it caught gates naming
-          # deleted packages, where `pnpm --filter` on a selector matching
-          # nothing exits 0 and reads green while running no tests. The v5
-          # train hit that class three more times by hand (a Playwright spec
-          # handed to `node --test`, twice) plus a gate that passed on its own
-          # placeholder text. A future train reintroduces the runner and this
-          # row with it; until then, review is the only thing checking that a
-          # new gate can fail.
-          # I15 / GA1: every path-shaped datum in a check instrument
-          # resolves against the tree. Blocking — a gate that cannot
-          # fail is a defect this repo has already deleted twice.
-          # The self-test runs as its own row: --self-test does not also
-          # walk the live tree, so one invocation cannot cover both, and
-          # a checker whose red-proof never runs in CI is unverified.
-          - gate: instrument-paths
-            command: pnpm instrument-paths
-          - gate: instrument-paths-self-test
-            command: node scripts/instrument-paths.mjs --self-test
+          # Published package dependency layers follow the types -> crdt ->
+          # core -> extensions DAG.
+          - gate: dag-check
+            command: node scripts/dag-check.mjs
+          # Installing @input/pen-core must not pull extensions, renderers,
+          # or presets.
+          - gate: core-clean-install
+            command: node scripts/core-clean-install.mjs
+          # Every published package exports "."; extra keys need a reason.
+          - gate: published-exports
+            command: node scripts/published-exports.mjs
+          # No workspace:* pins or dist re-exports in published manifests.
+          - gate: workspace-pins
+            command: node scripts/workspace-pins.mjs
+          # Each published package README carries the required sections.
+          - gate: readme-sections
+            command: node scripts/readme-sections.mjs
+          # The generated envelope table must match its fixture metadata.
+          - gate: envelope-table
+            command: |
+              node scripts/envelope-table.mjs
+              git diff --exit-code -- packages/tooling/test/ENVELOPE.md
 
     steps:
       - name: Check out repository

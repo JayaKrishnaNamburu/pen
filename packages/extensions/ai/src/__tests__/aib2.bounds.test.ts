@@ -11,10 +11,14 @@ import { type PenStreamRequest } from "@input/pen-types";
 import { AI_TOOL_RESULT_MAX_CHARS, runAgenticLoop } from "../index";
 
 type AssertFalse<T extends false> = T;
-// Compile-time: a top-level `editor` on PenStreamRequest fails typecheck.
-// Nested `context.editor` is still declared — the grep gate covers that.
+// Compile-time: neither the request nor its context may grow an `editor` field (AIB2).
 type _PenStreamRequestHasNoEditor = AssertFalse<
 	"editor" extends keyof PenStreamRequest ? true : false
+>;
+type _PenStreamRequestContextHasNoEditor = AssertFalse<
+	"editor" extends keyof NonNullable<PenStreamRequest["context"]>
+		? true
+		: false
 >;
 
 async function awaitExtensionLifecycle(

@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 /**
- * API7 bundle budgets (spec/rules/api.md, Wave P step P.7).
+ * API7 bundle budgets (spec/rules/api.md).
  *
  * Weighs each published entry path against `.size-limit.baseline.json` via
  * `fs.stat` (same method that recorded the numbers) — `dist/index.mjs`, or
  * `dist/*.mjs` where code splitting means no single file is the package.
  * Growth above
  * `regressionPercent` fails. A re-record is a re-record, not a waiver:
- * every entry's `note` must name the wave that added the bytes.
+ * every entry's `note` must account for the bytes, either as a recorded
+ * baseline or as a `before → after` change.
  *
  * `_deferred` is documentation only — deferred packages stay in
  * `entries` at their last quiet baseline so they still fail until a
@@ -24,7 +25,7 @@ import { fileURLToPath } from "node:url";
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_REPO_ROOT = path.resolve(SCRIPT_DIR, "..");
 const BASELINE_NAME = ".size-limit.baseline.json";
-const WAVE_RE = /\bWave\b/;
+const ATTRIBUTED_NOTE_RE = /→|->|\bbaseline\b/i;
 
 /**
  * A code-split package ships content-hashed chunk names, so no single file
@@ -61,8 +62,13 @@ export function resolveLimitBytes(entry) {
 	throw new Error(`${entry.name} needs limitBytes or baselineBytes.`);
 }
 
-export function noteNamesWave(note) {
-	return typeof note === "string" && WAVE_RE.test(note);
+/**
+ * An attributed note either records a baseline or states the byte movement
+ * it is accounting for. A note that only says where the number was read
+ * from does not attribute the bytes.
+ */
+export function noteAttributesBytes(note) {
+	return typeof note === "string" && ATTRIBUTED_NOTE_RE.test(note);
 }
 
 export function evaluateSizeLimit({ baseline, stats }) {
@@ -95,7 +101,7 @@ export function evaluateSizeLimit({ baseline, stats }) {
 		const bytes = stats[entry.path];
 		const limitBytes = resolveLimitBytes(entry);
 		const ceiling = Math.floor(limitBytes * (1 + regressionPercent / 100));
-		const attributed = noteNamesWave(entry.note);
+		const attributed = noteAttributesBytes(entry.note);
 		const row = {
 			name: entry.name,
 			path: entry.path,
@@ -155,7 +161,7 @@ export function formatSizeLimit(result) {
 	if (result.over.length > 0) {
 		lines.push("");
 		lines.push(
-			`FAIL size-limit: exceeds the +${result.regressionPercent}% ceiling. Re-record with a Wave-named note if the growth is intended; do not drop the entry.`,
+			`FAIL size-limit: exceeds the +${result.regressionPercent}% ceiling. Re-record with a note accounting for the bytes if the growth is intended; do not drop the entry.`,
 		);
 		for (const row of result.over) {
 			const mark = row.deferred ? " (deferred; mid-edit, not re-recorded)" : "";
@@ -167,7 +173,7 @@ export function formatSizeLimit(result) {
 	if (result.unattributed.length > 0) {
 		lines.push("");
 		lines.push(
-			"FAIL size-limit: note does not name the Wave that added the bytes (a re-record without attribution is a waiver):",
+			"FAIL size-limit: note does not account for the bytes it records (a re-record without attribution is a waiver):",
 		);
 		for (const row of result.unattributed) {
 			lines.push(`  ${row.name}`);
@@ -185,7 +191,7 @@ export function formatSizeLimit(result) {
 	if (result.ok) {
 		lines.push("");
 		lines.push(
-			`OK: ${result.rows.length} packages within +${result.regressionPercent}%; every note names a Wave.`,
+			`OK: ${result.rows.length} packages within +${result.regressionPercent}%; every note accounts for its bytes.`,
 		);
 	}
 	return lines.join("\n");
@@ -200,7 +206,7 @@ export function runSelfTests() {
 					name: "@input/pen-shortcuts",
 					path: "packages/extensions/shortcuts/dist/index.mjs",
 					baselineBytes: 100,
-					note: "Wave 4: keymap facet. 80 → 100.",
+					note: "keymap facet. 80 → 100.",
 				},
 			],
 		},
@@ -252,7 +258,7 @@ export function runSelfTests() {
 					name: "@input/pen-core",
 					path: "packages/core/dist/index.mjs",
 					baselineBytes: 100,
-					note: "Wave P.7 first baseline.",
+					note: "First baseline.",
 				},
 			],
 		},
@@ -273,7 +279,7 @@ export function runSelfTests() {
 					name: "@input/pen-ai-tools",
 					path: "packages/extensions/ai-tools/dist/index.mjs",
 					baselineBytes: 100,
-					note: "Wave M AIB3 tool authority. 100 → 400.",
+					note: "AIB3 tool authority. 100 → 400.",
 				},
 			],
 		},
@@ -299,14 +305,17 @@ export function runSelfTests() {
 	});
 	if (waiver.ok || waiver.unattributed[0]?.name !== "@input/pen-types") {
 		throw new Error(
-			"self-test: a note without Wave must fail (re-record without attribution is a waiver)",
+			"self-test: an unattributed note must fail (re-record without attribution is a waiver)",
 		);
 	}
 
-	if (noteNamesWave("Wave P.7 first baseline.") !== true) {
-		throw new Error("self-test: Wave P.7 counts");
+	if (noteAttributesBytes("First baseline.") !== true) {
+		throw new Error("self-test: a recorded baseline counts");
 	}
-	if (noteNamesWave("Measured from dist.") !== false) {
+	if (noteAttributesBytes("keymap facet. 80 → 100.") !== true) {
+		throw new Error("self-test: a stated byte movement counts");
+	}
+	if (noteAttributesBytes("Measured from dist.") !== false) {
 		throw new Error("self-test: unattributed measured-from note fails");
 	}
 }

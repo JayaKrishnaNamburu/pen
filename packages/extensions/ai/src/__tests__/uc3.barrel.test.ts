@@ -77,22 +77,6 @@ describe("UC3: planner symbols are absent from the public API", () => {
 		expect(offenders, "planner values are still exported").toEqual([]);
 	});
 
-	it("UC3: the barrel source re-exports no planner type or module", () => {
-		const source = readFileSync(
-			join(AI_PACKAGE, "src", "index.ts"),
-			"utf8",
-		);
-		const offenders = [
-			...PLANNER_NAMES,
-			...STRANDED_INTENT_TRANSPORT_NAMES,
-			...BLOCK_ADAPTER_NAMES,
-		].filter((name) => source.includes(name));
-		expect(
-			offenders,
-			"the barrel still names the planner (types are invisible at runtime, so this reads the source)",
-		).toEqual([]);
-	});
-
 	it("UC3: the recorded API report names no planner symbol", () => {
 		// The report is the artifact a consumer diffs across releases, so a
 		// symbol that left the barrel but stayed here is still a promise.

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * One-door gate for ModelAdapter (Wave M / AIB1).
+ * One-door gate for ModelAdapter (AIB1).
  *
  * The only durable way to reach a model is ModelAdapter.stream, and the
  * only non-test call of that method is streamThroughEgress after

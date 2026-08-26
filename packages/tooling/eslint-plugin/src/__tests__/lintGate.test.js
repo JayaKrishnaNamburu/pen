@@ -310,6 +310,86 @@ describe("CH2 lint gate", () => {
 		).toHaveLength(1);
 	});
 
+	it("reports a seeded unscheduled measure as an error through the root config", async () => {
+		const messages = await lintSeededViolation(
+			"function overlayPaint() { return el.getBoundingClientRect(); }\n",
+			"src/seeded-measure.ts",
+			"packages/rendering/dom",
+		);
+
+		expect(
+			messages.filter(
+				(message) =>
+					message.ruleId === "pen/no-unscheduled-measure" &&
+					message.severity === 2,
+			),
+		).toHaveLength(1);
+	});
+
+	it("reports seeded bidi-override as an error through the root config", async () => {
+		const messages = await lintSeededViolation(
+			'export const style = { unicodeBidi: "bidi-override" };\n',
+			"src/seeded-bidi.ts",
+			"packages/rendering/dom",
+		);
+
+		expect(
+			messages.filter(
+				(message) =>
+					message.ruleId === "pen/no-bidi-override" &&
+					message.severity === 2,
+			),
+		).toHaveLength(1);
+	});
+
+	it("reports seeded JSON.stringify as an error through the root config", async () => {
+		const messages = await lintSeededViolation(
+			"function signature() { return JSON.stringify(summary); }\n",
+			"src/seeded-stringify.ts",
+			"packages/core",
+		);
+
+		expect(
+			messages.filter(
+				(message) =>
+					message.ruleId === "pen/no-json-stringify-signatures" &&
+					message.severity === 2,
+			),
+		).toHaveLength(1);
+	});
+
+	it("reports a seeded SelectionState property as an error through the root config", async () => {
+		const messages = await lintSeededViolation(
+			"if (sel.isCollapsed) { return; }\n",
+			"src/seeded-selection-props.ts",
+			"packages/core",
+		);
+
+		expect(
+			messages.filter(
+				(message) =>
+					message.ruleId === "pen/no-selection-state-properties" &&
+					message.severity === 2,
+			),
+		).toHaveLength(1);
+	});
+
+	it("reports a seeded deep Pen import as an error through the root config", async () => {
+		const messages = await lintSeededViolation(
+			'import { createEditor } from "@input/pen-core/src/editor";\n',
+			"src/seeded-deep.ts",
+			"packages/core",
+		);
+
+		expect(
+			messages.filter(
+				(message) =>
+					message.ruleId === "pen/no-pen-deep-imports" &&
+					message.severity === 2,
+			),
+		).toHaveLength(1);
+	});
+
 	it("reports a seeded above-floor API in a src deeper than packages/*/*/src", async () => {
 		const messages = await lintSeededViolation(
 			"const copy = structuredClone(value);\n",

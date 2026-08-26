@@ -1,6 +1,5 @@
-# Wave 0.6 CI wiring. New file so this does not race H.7 / H.8 / E.4 edits to ci.yml.
-# coverage:rules lives at scripts/coverage-rules.mjs (Wave 0.6). The conformance
-# package script delegates there. Do not rebuild the harness in this workflow.
+# Browser conformance suite. The harness needs a real engine, so these jobs
+# build and run Playwright; static checks live in static-gates.yml.
 
 name: Conformance
 
@@ -16,44 +15,15 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  coverage-rules:
-    timeout-minutes: 10
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v5
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v5
-        with:
-          node-version: 22
-
-      - name: Self-test coverage:rules fixture
-        run: node scripts/coverage-rules.mjs --self-test
-
-      - name: Check claimed-scope rule coverage
-        run: node scripts/coverage-rules.mjs
-
-      - name: Check message catalog completeness
-        run: node scripts/catalog-check.mjs
-
   conformance-engine:
     name: conformance-${{ matrix.engine }}
     timeout-minutes: 30
     runs-on: ubuntu-latest
 
     # chromium blocks the merge. webkit and firefox report only until a
-    # conformance-${{ matrix.engine }} job on THIS workflow finishes the
-    # Playwright suite with 0 failed. Playground e2e green is a different
-    # matrix (ci.yml) and does not promote these jobs.
-    #
-    # Local 2026-08-22 after pnpm build, 1-min loadavg < 8, workers=1:
-    # webkit 98 passed / 5 failed / 2 skipped; firefox 97 / 6 / 2.
-    # Assertions were reached (not mount-wait / missing-dist). Failures
-    # were torn-tree (core selection.ts, undoExtension mid-edit) or
-    # product (HOST4 cell refill, standing S2, COL2 cursors) — not a
-    # 0-failed job on this workflow. Do not promote on that class of red.
+    # conformance job on this workflow finishes the Playwright suite with
+    # 0 failed. Playground e2e green is a different matrix (ci.yml) and
+    # does not promote these jobs.
     continue-on-error: ${{ matrix.engine != 'chromium' }}
 
     strategy:

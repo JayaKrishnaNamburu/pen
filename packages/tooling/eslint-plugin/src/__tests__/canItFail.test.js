@@ -355,20 +355,90 @@ describe("per-rule can-it-fail (write a violation, error by name)", () => {
 		});
 	});
 
-	it("plugin ships fifteen rules and each can-it-fail case is registered", () => {
+	it("no-unscheduled-measure errors by name on getBoundingClientRect", () => {
+		expectRuleErrors(
+			tsTester,
+			"no-unscheduled-measure",
+			rules["no-unscheduled-measure"],
+			{
+				code: "function overlayPaint() { return el.getBoundingClientRect(); }\n",
+				filename: "packages/rendering/dom/src/seeded-measure.ts",
+				errors: [{ messageId: "measure" }],
+			},
+		);
+	});
+
+	it("no-bidi-override errors by name on a bidi-override style", () => {
+		expectRuleErrors(
+			tsTester,
+			"no-bidi-override",
+			rules["no-bidi-override"],
+			{
+				code: 'export const style = { unicodeBidi: "bidi-override" };\n',
+				filename: "packages/rendering/dom/src/seeded-bidi.ts",
+				errors: [{ messageId: "override" }],
+			},
+		);
+	});
+
+	it("no-json-stringify-signatures errors by name on JSON.stringify", () => {
+		expectRuleErrors(
+			tsTester,
+			"no-json-stringify-signatures",
+			rules["no-json-stringify-signatures"],
+			{
+				code: "function signature() { return JSON.stringify(summary); }\n",
+				filename: "packages/core/src/seeded-stringify.ts",
+				errors: [{ messageId: "stringify" }],
+			},
+		);
+	});
+
+	it("no-selection-state-properties errors by name on sel.isCollapsed", () => {
+		expectRuleErrors(
+			tsTester,
+			"no-selection-state-properties",
+			rules["no-selection-state-properties"],
+			{
+				code: "if (sel.isCollapsed) { return; }\n",
+				filename: "packages/core/src/seeded-selection-props.ts",
+				errors: [{ messageId: "property" }],
+			},
+		);
+	});
+
+	it("no-pen-deep-imports errors by name on a /src/ specifier", () => {
+		expectRuleErrors(
+			tsTester,
+			"no-pen-deep-imports",
+			rules["no-pen-deep-imports"],
+			{
+				code: 'import { createEditor } from "@input/pen-core/src/editor";\n',
+				filename: "packages/extensions/history/src/seeded-deep.ts",
+				errors: [{ messageId: "deep" }],
+			},
+		);
+	});
+
+	it("plugin ships twenty rules and each can-it-fail case is registered", () => {
 		expect(Object.keys(rules).sort()).toEqual([
 			"no-above-floor-api",
 			"no-aria-hidden-visible",
 			"no-ascii-word-boundaries",
 			"no-bare-case-folding",
 			"no-bare-random-uuid",
+			"no-bidi-override",
 			"no-framework-free-modules-in-renderers",
 			"no-html-injection-sinks",
 			"no-implicit-locale",
+			"no-json-stringify-signatures",
 			"no-module-scope-browser-globals",
 			"no-new-ops",
+			"no-pen-deep-imports",
+			"no-selection-state-properties",
 			"no-selection-timers",
 			"no-unescaped-markup-concat",
+			"no-unscheduled-measure",
 			"no-unstyled-focus",
 			"no-user-facing-literals",
 			"no-v1-extension-fields",

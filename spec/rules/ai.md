@@ -35,4 +35,4 @@ Pen ships no vendor SDK and makes no network call of its own: model access goes 
 
 ## Retired
 
-No `AIB`, `UC`, or `RS` member is retired. AIB1–AIB7, UC1–UC9, and RS1–RS6 are all live. One surface element was removed rather than a rule: the `editor` field left `PenStreamRequest.context` under AIB2 and is kept out by a gate.
+No `AIB`, `UC`, or `RS` member is retired. AIB1–AIB7, UC1–UC9, and RS1–RS6 are all live. One surface element was removed rather than a rule: the `editor` field left `PenStreamRequest.context` under AIB2 and is kept out by a type assertion in `aib2.bounds.test.ts`.

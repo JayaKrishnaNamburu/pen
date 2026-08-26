@@ -10,7 +10,7 @@ Standing DOM↔authority has three results: **matched** (checked and equal), **m
 
 Standing assertions (`assertStandingDiagnostics`, `assertStandingDomMatchesAuthority`), axe analyzers (`analyzeEditorSurface`, `analyzeEditorWcag22Aa`), `harness/src/geometry.ts`, and most of `harness/src/session.ts` are **Playwright-only**. Their extractable predicates live in Node (`standingFilter`, `axeFormat`, `domAuthorityCompare`, `geometryCompare`, `serialize`). The wrappers themselves need a page.
 
-`domAuthorityCompare` compares the live DOM selection to `editor.selection`. That name is not `authorityCompare`. Wave 1 GATE 1.11 is the recorded-trace replay in `src/authorityCompare.ts` (`pnpm --filter @input/pen-conformance exec node --experimental-strip-types --test src/hosts/authorityCompare.test.js`). Do not use `--test-name-pattern`: a pattern matching nothing still reports the file itself as a passed test and exits 0. The Playwright form is `pnpm --filter @input/pen-conformance run test:chromium -- scenarios/authorityCompare.spec.ts` — a missing file exits 1; `--grep authorityCompare` starts Chromium and reaches the harness copy, not this Node replay. The committed corpus is split/merge/remove with mapPoint algebra landings; a live copy-split that stays on the source must mismatch, not pass.
+`domAuthorityCompare` compares the live DOM selection to `editor.selection`. That name is not `authorityCompare`. The recorded-trace replay lives in `src/authorityCompare.ts` (`pnpm --filter @input/pen-conformance exec node --experimental-strip-types --test src/hosts/authorityCompare.test.js`). Do not use `--test-name-pattern`: a pattern matching nothing still reports the file itself as a passed test and exits 0. The Playwright form is `pnpm --filter @input/pen-conformance run test:chromium -- scenarios/authorityCompare.spec.ts` — a missing file exits 1; `--grep authorityCompare` starts Chromium and reaches the harness copy, not this Node replay. The committed corpus is split/merge/remove with mapPoint algebra landings; a live copy-split that stays on the source must mismatch, not pass.
 
 The scenario gate is a separate command:
 
@@ -22,15 +22,14 @@ pnpm --filter @input/pen-conformance run test:ax3
 pnpm --filter @input/pen-conformance run test:ax6
 pnpm --filter @input/pen-conformance run test:scale5
 pnpm --filter @input/pen-conformance run test:host4
-pnpm --filter @input/pen-conformance run coverage:rules
 ```
 
 - `harness/` — Vite app: one v1-preset editor, fixture loader, `window.__penConformance`
-- `src/` — scenario DSL, standing assertions, rule-coverage and lint scripts
-- `scenarios/` — scripted journeys (hello-world, harness self-test, wave suites)
+- `src/` — scenario DSL, standing assertions, and lint scripts
+- `scenarios/` — scripted journeys (hello-world, harness self-test, feature suites)
 - `suites/` — selection (live I4/P1/S3/S5/S6), input (K1/K2/K4/B1/B2), ime (C1–C4 plus `MANUAL.md`), bidi (M2/M3/DIR2), overlays (O1/O2), geometry (G2). Other live wiring stays in `scenarios/` and `harness-live.spec.ts`.
 - `fixtures/` — documents plus the diagnostics allowlist
-- `fixtures/hostile/` — Wave S.0 attacker corpus (`window.__xssProbe` canary)
+- `fixtures/hostile/` — attacker corpus (`window.__xssProbe` canary)
 
 ## Known defects — the ledger is empty again (2026-08-24)
 

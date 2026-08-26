@@ -1,8 +1,0 @@
-{
-  "name": "@input/pen-host",
-  "dependencies": {
-    "@input/pen-ai": "workspace:*",
-    "@input/pen-core": "workspace:*",
-    "@input/pen-interop": "workspace:*"
-  }
-}
