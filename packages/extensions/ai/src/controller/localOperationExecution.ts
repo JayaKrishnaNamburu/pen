@@ -78,7 +78,7 @@ export async function executeLocalOperation(
 					? "selection-rewrite"
 					: operation.kind === "continue-block"
 						? "cursor-context"
-						: "context-first",
+						: "tool-loop",
 			mutationMode,
 			contentFormat,
 			applyStrategy,

@@ -81,7 +81,6 @@ export async function executeGeneration(
 		contentFormat: requestedContentFormat,
 		surface: context?.surface,
 		mutationPreference: controller._mutationPreference,
-		editChannel: controller._editChannel,
 	});
 		let workingSet = await controller._buildWorkingSet(
 			toolRuntime,

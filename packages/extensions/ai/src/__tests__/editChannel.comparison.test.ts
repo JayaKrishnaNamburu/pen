@@ -11,15 +11,11 @@ import { aiExtension, getAIController } from "../index";
 import { deltaStreamExtension } from "../stream";
 
 /**
- * The wave-0 measurement, reduced to its decisive criterion.
+ * The wave-0 measurement's decisive criterion, now the only remaining channel.
  *
- * `spec-better-ai/waves/wave-0-prototype.md` ships the tool channel only if
- * wrong-edits is zero. A wrong edit is the document changing into something
- * the prompt did not ask for — strictly worse than no edit, because the user
- * has to notice and undo it. This file feeds both channels the same
- * contract-violating model output and records what each does.
- *
- * Spec: `spec-better-ai/01-edit-channel.md` EC1, EC6.
+ * A wrong edit is the document changing into something the prompt did not ask
+ * for — strictly worse than no edit. Off-contract assistant text must not
+ * become a document write (`spec-better-ai/01-edit-channel.md` EC1, EC6).
  */
 
 const OFF_CONTRACT_OUTPUT =
@@ -95,7 +91,7 @@ function snapshot(editor: Editor): string {
 }
 
 describe("edit channel comparison: wrong-edits on off-contract output", () => {
-	it("EC6: the XML channel applies content the prompt did not ask for", async () => {
+	it("EC6: off-contract assistant text changes the document zero times", async () => {
 		const { editor } = await seedEditor(proseModel());
 		const before = snapshot(editor);
 
@@ -104,12 +100,8 @@ describe("edit channel comparison: wrong-edits on off-contract output", () => {
 			{ target: "document" },
 		);
 
-		const after = snapshot(editor);
-		// This is the defect, recorded rather than asserted away: the model
-		// never emitted a valid plan, and the document changed anyway. The
-		// conversational preamble ("Sure! I've turned...") is now content.
-		expect(after).not.toBe(before);
-		expect(after).toContain("Sure!");
+		expect(snapshot(editor)).toBe(before);
+		expect(snapshot(editor)).not.toContain("Sure!");
 
 		editor.destroy();
 	});

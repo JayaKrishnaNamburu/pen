@@ -57,7 +57,6 @@ function isUnappliedEdit(input: {
 	reviewItemCount: number;
 }): boolean {
 	if (
-		input.applyStrategy !== "markdown-fast-apply" &&
 		input.applyStrategy !== "markdown-full-replace"
 	) {
 		return false;

@@ -14,11 +14,8 @@ import type { AIToolConfirmFn } from "../tools";
 import type {
 	AIApplyStrategy,
 	AIContentFormat,
-	AIEditChannel,
 	AIMutationPreference,
-	AITargetKind,
 } from "../runtime/contracts";
-import type { PlanValidationContext } from "../runtime/planValidation";
 import type { SuggestedAIOperationRunner } from "../runtime/suggestedOperationRunner";
 import type { ExternalInlineTurnRegistry } from "../runtime/externalInlineTurnRegistry";
 import type {
@@ -38,7 +35,6 @@ import type {
 	AIEditStreaming,
 	AIStreamingReviewPreviewInput,
 	AIWorkingSetEnvelope,
-	AIWorkingSetRetrievedSpan,
 	FastApplyDebugState,
 	GenerationState,
 	PersistentSuggestion,
@@ -85,7 +81,6 @@ export interface AIControllerMethodHost {
 		selectionRewrite: AIContentFormat;
 	};
 	_mutationPreference: AIMutationPreference;
-	_editChannel: AIEditChannel;
 	_editStreaming: AIEditStreaming | undefined;
 	_pendingInlineHistoryRestore: AIInlineHistoryRestoreRequest | null;
 	_isRestoringInlineHistory: boolean;
@@ -236,39 +231,10 @@ export interface AIControllerMethodHost {
 			replaceBlockIds?: readonly string[];
 		},
 	): AIMutationReceipt;
-	_commitBufferedMarkdownFastApply(
-		blockId: string,
-		text: string,
-		mutationMode: NonNullable<GenerationState["mutationMode"]>,
-		sessionId: string | undefined,
-		workingSet: AIWorkingSetEnvelope | null,
-	): AIMutationReceipt | null;
-	_resolveMarkdownFastApplyScope(
-		blockId: string,
-		workingSet: AIWorkingSetEnvelope | null,
-	): { markdown: string; blockIds: string[] } | null;
-	_buildPlanValidationContext(
-		blockId: string,
-		scopeBlockIds: readonly string[],
-	): PlanValidationContext;
-	_resolvePlanValidationTargetKind(blockId: string): AITargetKind;
 	_verifyMarkdownFastApplyResult(
 		blockIds: readonly string[],
 		markdown: string,
 	): { valid: boolean; reason?: string };
-	_verifyFlowPatchPlanResult(
-		plan: {
-			edits: Array<{
-				locator: { blockId?: string; blockIds?: string[] };
-			}>;
-		},
-		ops: readonly DocumentOp[],
-		scopeBlockIds: readonly string[],
-	): {
-		valid: boolean;
-		reason?: string;
-		untouchedBlockMutationCount: number;
-	};
 	_buildMarkdownScopedReplacementOps(
 		blockIds: readonly string[],
 		text: string,
@@ -284,7 +250,6 @@ export interface AIControllerMethodHost {
 		deletedBlockCount: number;
 		targetBlockCount?: number;
 	};
-	_readBlockIdsFromOp(op: DocumentOp): string[];
 	_applySuggestedMarkdownPlaceholderReplacement(
 		blockId: string,
 		text: string,
@@ -348,19 +313,6 @@ export interface AIControllerMethodHost {
 		target: GenerationTarget,
 		workingSet: AIWorkingSetEnvelope | null,
 	): { valid: boolean; canRefresh: boolean; reason?: string };
-	_resolveMarkdownFastApplyWindow(
-		route: RequestRouterDecision,
-		blockId: string,
-	): {
-		range: { startBlockId: string; endBlockId: string };
-		blockIds: string[];
-	} | null;
-	_resolveMarkdownFastApplyRetrievedSpan(
-		toolRuntime: ToolRuntime,
-		route: RequestRouterDecision,
-		blockId: string,
-		prompt: string,
-	): Promise<AIWorkingSetRetrievedSpan | null>;
 	_captureBlockRevisions(blockIds: readonly string[]): Record<string, number>;
 	_captureBlockViewHashes(
 		blockIds: readonly string[],

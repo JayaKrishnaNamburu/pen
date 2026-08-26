@@ -65,7 +65,7 @@ describe("aiExtension", () => {
 		expect(editor.documentState.blockOrder).toHaveLength(1);
 	});
 
-	it("routes context-first block edits into persistent suggestions", async () => {
+	it("EC12: rewrite prompts take the tool loop and do not apply assistant text", async () => {
 		const editor = createEditor({
 			schema: defaultSchema,
 			extensions: [
@@ -87,9 +87,7 @@ describe("aiExtension", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" }],
+			[{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" }],
 			{ origin: "system" },
 		);
 
@@ -98,16 +96,14 @@ describe("aiExtension", () => {
 			"Improve this paragraph",
 			{ blockId },
 		);
-		const block = editor.getBlock(blockId)!;
 
-		expect(generation.route).toBe("context-first");
-		expect(generation.mutationMode).toBe("persistent-suggestions");
-		expect(block.textContent()).toBe("Hello Updated");
-		expect(controller.getSuggestions().length).toBeGreaterThan(0);
+		expect(generation.route).toBe("tool-loop");
+		expect(generation.applyStrategy).toBe("tool-edit");
+		expect(editor.getBlock(blockId)!.textContent()).toBe("Hello");
+		expect(controller.getSuggestions()).toHaveLength(0);
 	});
 
-	it("uses markdown block generation for bottom-chat document writing", async () => {
-		const releaseFinalDelta = createDeferred();
+	it("EC1: bottom-chat document writing does not apply assistant markdown", async () => {
 		const editor = createEditor({
 			schema: defaultSchema,
 			extensions: [
@@ -123,12 +119,7 @@ describe("aiExtension", () => {
 						async *stream() {
 							yield {
 								type: "text-delta" as const,
-								delta: "Once upon ",
-							};
-							await releaseFinalDelta.promise;
-							yield {
-								type: "text-delta" as const,
-								delta: "a time",
+								delta: "Once upon a time",
 							};
 							yield { type: "done" as const };
 						},
@@ -138,9 +129,7 @@ describe("aiExtension", () => {
 		});
 		const blockId = editor.firstBlock()!.id;
 		editor.apply(
-			[{ type: "splice-text", blockId, from: 0,
-				to: 0,
-				insert: "Hello" }],
+			[{ type: "splice-text", blockId, from: 0, to: 0, insert: "Hello" }],
 			{ origin: "system" },
 		);
 
@@ -149,64 +138,20 @@ describe("aiExtension", () => {
 			surface: "bottom-chat",
 			target: "document",
 		});
-		const generationPromise = controller.runSessionPrompt(
+		const generation = await controller.runSessionPrompt(
 			session.id,
 			"Write a short story",
 			{ target: "document" },
 		);
 
-		await waitForPreview(() => {
-			const activeGeneration = controller.getState().activeGeneration;
-			const streamedVisibleBlockTexts = editor.documentState.blockOrder
-				.map(
-					(id) =>
-						editor.getBlock(id)?.textContent({ resolved: true }) ??
-						"",
-				)
-				.filter((text) => text.trim().length > 0);
-			return (
-				activeGeneration?.surface === "bottom-chat" &&
-				activeGeneration.contentFormat === "markdown" &&
-				streamedVisibleBlockTexts.includes("Once upon")
-			);
-		});
-
-		const streamedVisibleBlockTexts = editor.documentState.blockOrder
-			.map(
-				(id) =>
-					editor.getBlock(id)?.textContent({ resolved: true }) ?? "",
-			)
-			.filter((text) => text.trim().length > 0);
-
-		expect(controller.getState().activeGeneration?.surface).toBe(
-			"bottom-chat",
-		);
-		expect(controller.getState().activeGeneration?.contentFormat).toBe(
-			"markdown",
-		);
-		expect(controller.getState().activeGeneration?.mutationMode).toBe(
-			"streaming-suggestions",
-		);
-		expect(streamedVisibleBlockTexts).toEqual(["Hello", "Once upon"]);
-		expect(session.surface).toBe("bottom-chat");
-
-		releaseFinalDelta.resolve();
-		const generation = await generationPromise;
-		const visibleBlockTexts = editor.documentState.blockOrder
-			.map(
-				(id) =>
-					editor.getBlock(id)?.textContent({ resolved: true }) ?? "",
-			)
-			.filter((text) => text.trim().length > 0);
+		expect(generation.route).toBe("tool-loop");
+		expect(generation.applyStrategy).toBe("tool-edit");
 		expect(generation.status).toBe("complete");
-		expect(generation.mutationMode).toBe("streaming-suggestions");
-		expect(generation.contentFormat).toBe("markdown");
-		expect(generation.adapterId).toBe("flow-markdown");
-		expect(generation.blockClass).toBe("flow");
-		expect(generation.transportKind).toBe("flow-text");
-		expect(generation.mutationReceipt?.status).toBe("staged_suggestions");
-		expect(generation.suggestionIds?.length ?? 0).toBeGreaterThan(0);
-		expect(visibleBlockTexts).toEqual(["Hello", "Once upon a time"]);
+		expect(
+			editor.documentState.blockOrder
+				.map((id) => editor.getBlock(id)?.textContent() ?? "")
+				.filter((text) => text.trim().length > 0),
+		).toEqual(["Hello"]);
 	});
 
 	it("streams bottom-chat markdown as block suggestions before completion", async () => {

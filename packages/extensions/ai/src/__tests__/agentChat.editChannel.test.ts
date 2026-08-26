@@ -8,11 +8,10 @@ import { aiExtension, getAIController } from "../index";
 import { deltaStreamExtension } from "../stream";
 
 /**
- * The same agent-chat prompts as `agentChat.documentEdit.test.ts`, but wired
- * through the `edit_document` channel instead of the XML fast-apply contract.
- * These run the whole chain the playground runs — router lane, tool grant,
- * agentic loop, tool handler, apply — so the prototype is proven end to end
- * and not just at the handler (`spec-better-ai/waves/wave-0-prototype.md`).
+ * Agent-chat edits through `edit_document`. These run the whole chain the
+ * playground runs — router lane, tool grant, agentic loop, tool handler,
+ * apply — so a durable edit is proven end to end rather than only at the
+ * handler (`spec-better-ai/01-edit-channel.md` EC1).
  */
 
 const BLOCK_ANNOTATION_PATTERN = /<!-- block:(\S+) (\S+) -->/g;
@@ -76,7 +75,6 @@ function createChatEditor(model: ModelAdapter) {
 				model,
 				contentFormat: { blockGeneration: "markdown" },
 				mutationPreference: "direct",
-				editChannel: "tool",
 				allowedMutatingTools: ["edit_document"],
 			}),
 		],

@@ -1,0 +1,46 @@
+# Commit Pipeline, Streaming Writes, And Op Primitives
+
+These families govern the single durable write path. `ST` is the streaming writer contract, `OP` closes the operation union and puts intent on the origin, `PR` gives each primitive its semantics, and `OPB` binds the boundary consumers that must key to the same union. Implementation lives in `@input/pen-core` (apply pipeline, executors, `openTextStream`), `@input/pen-types` (`types/ops.ts`), `@input/pen-document-ops` (tool table), and `@input/pen-ai` (stream client, suggest-mode interception). The pipeline runs eight named phases per commit — `hooks`, `validate`, `execute`, `normalize`, `summarize`, `map-selection`, `settle-facets`, `emit`. Remote updates and undo/redo skip the first four, because their content is already settled, and enter at `summarize`; the last four phases are identical for every source, which is how I1's single-event guarantee holds regardless of where a state transition came from.
+
+## ST — Streaming Writes
+
+- ST1. Each flush of a `TextStreamWriter` is one pipeline commit with `source: "stream"`. Phase-1 hooks run once at `openTextStream` against a synthetic `stream-open` op, so suggest-mode and authorization policy veto or redirect a stream as a whole rather than per token.
+- ST2. The writer's write head is durable: it is held as an anchor, passed through the anchor repair step, and resolved before each flush splices. Concurrent local typing and collaborator edits cannot corrupt it, and there is no manual length tracking.
+- ST3. `deferNormalization` accumulates dirty marks across the stream through the engine's defer/undefer hooks; `close()` undefers and normalizes in a final commit.
+- ST4. `openTextStream` closes the undo capture boundary, and every commit from one stream shares the origin's `groupId`, so a whole generation undoes as a single unit.
+- ST5. The generation protocol surface (`gen-start` / `gen-delta` / `gen-end`) in `@input/pen-ai/stream` is a `TextStreamWriter` client. It holds no direct `Y.Text` write and no `adapter.transact` call of its own; structural stream parts such as block inserts are ordinary applies sharing the stream's `groupId`.
+- ST6. Streaming flags and decorations hang off `commit` events with `source: "stream"`. There is no side channel.
+
+Applies dispatched while a pipeline run is active queue and run after the emit phase, each as its own commit; command dispatch uses the same queue. Queue depth beyond 16 in one task turn emits `diagnostic { code: "apply-storm" }`, which is the smell of an observer feedback loop and therefore an I7 violation.
+
+## OP — Union Closure And Intent
+
+- OP1. `DocumentOp` is closed at ten variants and only shrinks: `splice-text`, `format-text`, `insert-block`, `delete-block`, `move-block`, `set-props`, `set-meta`, `grid`, `app`, `stream-open`. A new need is a command, a facet, or a schema change — never a new op.
+- OP2. `StructuredOpOrigin` carries an optional `intent`. Command dispatch stamps it with the command's name, such as `intent: "pen.splitBlock"`. Remote commits carry no intent and nothing may synthesize one.
+- OP3. `block-converted` does not exist: a conversion is `block-props-changed` with `"type"` among the changed keys. `block-split` and `blocks-merged` remain as the executor-stamped content-move recipe that anchor repair reads for geometry, not as intent names. Consumers that want to know why read `origin.intent` on local commits and stop guessing about remote ones.
+- OP4. Validation, document-profile boundary hooks, suggest-mode interception, and the document-ops tool table operate on the ten primitives plus `intent`. Exhaustive `Record<DocumentOp["type"], true>` tables are the compile-time gate.
+- OP5. Commits stay atomic: a command's primitives execute in one transaction producing one summary and one `CommitEvent`. Nothing about the closed union changes commit granularity.
+
+Three earlier variants have no successor op. `split-block` and `merge-blocks` are command recipes: `pen.splitBlock` emits `insert-block` plus two `splice-text` ops in one apply, and merge is a side effect of `pen.deleteBackward` / `pen.deleteForward` at a block boundary, emitting a `splice-text` append plus `delete-block`. `set-selection` is deleted outright because selection is not a document effect; command results and direct authority writes own selection.
+
+## PR — Per-Primitive Semantics
+
+- PR1. `splice-text` offsets are in the target text's pre-op logical domain, and out-of-range `from` / `to` are clamped with `diagnostic { code: "op-clamped" }`. An `insert` array interleaves strings and inline atoms in order, each atom occupying exactly one logical offset; deleting a range containing atoms deletes them. `marks` apply to inserted text only.
+- PR2. `format-text` is attribute-only: it moves no content and appears in summaries as a format range, never as a splice.
+- PR3. `insert-block` keeps pending-insert validation, so ops later in the same batch may target the block being inserted.
+- PR4. `delete-block` removes the block; anchors into it resolve to `null` afterward, and selection repair is the authority's fallback chain (AS3), not an anchor resolve.
+- PR5. `move-block` keeps its `Position` resolution order and rejects cycles at the validate phase.
+- PR6. `set-props` replaces per key, and `null` deletes a key; there is no deep merge, so a command wanting merge semantics reads the current value and emits the full replacement. Setting `"type"` is a conversion: validate revalidates all props against the target schema and drops incompatible keys with diagnostics.
+- PR7. `set-meta` merges into a namespace and clears the namespace on `null`. It stays separate from `set-props` precisely because its merge semantics differ from PR6's replace.
+- PR8. `grid` carries six change kinds — insert row, delete row, insert column, delete column, merge cells, split cell — with the payloads the six former table ops carried. Cell content edits are `splice-text` / `format-text` with `cell`, not grid changes.
+- PR9. `app` carries three change kinds — create, update, delete — with the payloads the three former app ops carried.
+- PR10. `stream-open` is synthetic: emitted once at `openTextStream`, vetoable by `pen.beforeApply` hooks, and rejected by the document-ops tool table as not tool-applicable.
+
+## OPB — Boundary Consumers
+
+- OPB1. The validate phase keys its case analysis to the ten variants, retaining the diagnostic codes whose meaning survives. The prototype-key rejection walk over `__proto__`, `constructor`, and `prototype` applies to all ten payloads unchanged.
+- OPB2. There is one executor per primitive. The `splice-text` executor is the union of the text executors it absorbed and preserves their behavior at the CRDT level — single `Y.Text` insert and delete calls with mark attribute application — so an equivalent edit's wire shape is unchanged.
+- OPB3. The document-ops tool table is a `Record<DocumentOp["type"], true>` over ten keys, and the tool payload validator (known type, resolved targets, 1 MB text cap, prototype-key walk) and the tool authority classes key to the same ten.
+- OPB4. Suggest-mode interception matches primitives plus `origin.intent`, never compound op shapes. A split arrives as one apply carrying `intent: "pen.splitBlock"` and renders as a split suggestion from that intent rather than from op-shape sniffing.
+- OPB5. Document-profile boundary allow/deny tables key to the ten variants plus intent. A profile that denied a compound op denies the corresponding command intent instead.
+- OPB6. Every `Record<DocumentOp["type"], true>` table and every `switch` over `DocumentOp["type"]` compiles only at exactly ten variants. That compile-time exhaustiveness is the standing gate on the union's closure.

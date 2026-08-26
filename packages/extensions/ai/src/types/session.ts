@@ -16,7 +16,6 @@ import type { AIToolConfirmFn } from "../tools";
 import type { EditDocumentPreviewUpdate } from "../runtime/editDocumentPreview";
 import type {
 	AIApplyStrategy,
-	AIEditChannel,
 	AIMutationMode,
 	AIMutationPreference,
 	AIRouteLane,
@@ -82,13 +81,6 @@ export interface AIExtensionConfig {
 	 * applies edits to the document immediately.
 	 */
 	mutationPreference?: AIMutationPreference;
-	/**
-	 * Which channel carries a durable edit. "fast-apply" (default) parses the
-	 * `<pen-fast-apply>` XML contract out of the assistant text stream; "tool"
-	 * routes edits through the block-addressed `edit_document` tool call
-	 * (`spec-better-ai/01-edit-channel.md` EC12).
-	 */
-	editChannel?: AIEditChannel;
 	/**
 	 * How much of an `edit_document` call is shown while it streams. Never a
 	 * channel, prompt, or schema fork (EC11 / EC15). Default is `"commit"`;

@@ -36,7 +36,6 @@ export type {
 	AIBlockAdapterId,
 	AIApplyStrategy,
 	AIBlockClass,
-	AIEditChannel,
 	AIMutationPreference,
 	AITargetKind,
 	AIPlannerMode,

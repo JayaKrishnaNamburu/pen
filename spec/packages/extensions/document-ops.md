@@ -16,14 +16,16 @@ This package is the bridge between Pen's headless editor and tool-driven executi
 - Runtime plumbing such as `ToolRuntimeImpl` and `ToolContextImpl`
 - Context helpers such as `buildCursorContext()`, `resolveDocumentBlocks()`, `exportDocumentRangeAsMarkdown()`, `resolveSelectedText()`, and retrieval helpers
 - Structured-target helpers such as `inspectStructuredTarget()`, `listValidOperationsForTarget()`, and block-type policy helpers
+- `edit_document`: the block-addressed AI write tool, registered by `documentOpsExtension()`. Seven operations (`replace_block_text`, `replace_blocks`, `insert_blocks`, `delete_blocks`, `move_block`, `format_text`, `set_block_props`) returning an `EditDocumentResult`. Specified in `packages/extensions/ai.md` under Edit Channel.
+- Mutation policy: `assertToolCanMutateBlock()` throws for the older block tools; the non-throwing `check*` predicates behind it stay in-package because a returned refusal is what `edit_document` needs and a host needs neither.
 - Re-exported shared write helper: `buildDocumentWriteOps()`
-- Workspace scripts: `build`, `clean`, `test`, `typecheck`
+- Workspace scripts: `build`, `clean`, `lint`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@input/pen-content-ops`, `@input/pen-markdown-serialization`, `@input/pen-types`
+- Runtime dependencies: `@input/pen-content-ops`, `@input/pen-core`, `@input/pen-markdown-serialization`, `@input/pen-types`
 - Peer dependencies: No peer dependencies declared.
-- Boundary: This package owns tool-facing document inspection and mutation preparation, but it does not replace the core mutation pipeline or renderer layer.
+- Boundary: This package owns tool-facing document inspection and mutation preparation, but it does not replace the core mutation pipeline or renderer layer. The dependency on `@input/pen-core` runs one way — core does not load `documentOpsExtension()`, so installing this package is always the host's choice.
 
 ## Runtime Model
 
@@ -52,7 +54,7 @@ Important rules:
 - Tool-facing operations still resolve back into editor mutations.
 - Context retrieval and structured target inspection should stay explicit and bounded so tools do not mutate blindly.
 - Shared write-op construction comes from `@input/pen-content-ops`; this package owns the editor-aware tooling boundary built around it.
-- Document search and span retrieval fold text with a local `foldAndNormalize` copy in `utils/editorLocale.ts`. This package does not depend on `@input/pen-core` (only content-ops, markdown-serialization, and types). A core import would not cycle — core does not load `documentOpsExtension` — but it would add a dependency this package currently avoids. The local body must stay identical to core's (`toLocaleLowerCase`, final-sigma fold, NFC).
+- Document search and span retrieval fold text with a local `foldAndNormalize` copy in `utils/editorLocale.ts`. That copy is a leftover: the same file already imports `localeFacet` from `@input/pen-core`, and core exports `foldAndNormalize` on its barrel, so nothing prevents using core's. Until it is removed, the local body must stay identical to core's (`toLocaleLowerCase`, final-sigma fold, NFC).
 
 ## Integration Notes
 

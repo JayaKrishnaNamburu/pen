@@ -1,10 +1,6 @@
 import { getInlineCompletionController } from "@input/pen-core";
 import { buildDocumentWriteOps } from "@input/pen-document-ops";
 import {
-	applyBenchMarkdownFastApply,
-	parseBenchMarkdownFastApplyContract,
-} from "../utils/markdownFastApply";
-import {
 	buildBenchFlowPatchAlignmentExecution,
 	buildBenchFlowPatchScopedReplacementExecution,
 	buildBenchFlowPatchTextEditExecution,
@@ -20,7 +16,6 @@ import {
 	AI_AUTOCOMPLETE_PARTIAL_ACCEPT_BENCH,
 	AI_AUTOCOMPLETE_PREFETCH_AFTER_ACCEPT_BENCH,
 	AI_AUTOCOMPLETE_REQUESTING_CANCEL_CHURN_BENCH,
-	AI_MARKDOWN_FAST_APPLY_TABLE_INSERT_BENCH,
 	AI_MARKDOWN_FULL_REPLACE_TABLE_INSERT_BENCH,
 	AI_PROMPT_ASSEMBLY_TOOL_JOURNAL_BENCH,
 	AI_READ_DOCUMENT_RANGE_20_BLOCKS_BENCH,
@@ -177,44 +172,6 @@ export const aiBenchmarks: BenchDefinition[] = [
 			b.end();
 			b.observe("spanCount", (result.spans?.length ?? 0) >= 1 ? 1 : 0, 1);
 			await editor.destroy();
-		},
-	},
-	{
-		...AI_MARKDOWN_FAST_APPLY_TABLE_INSERT_BENCH,
-		fn(b) {
-			const contract = parseBenchMarkdownFastApplyContract(`
-<pen-fast-apply>
-  <instructions>I am inserting a people table after the intro paragraph.</instructions>
-  <anchorBefore><![CDATA[Benchmark block 90. This is representative playground context for AI read latency measurement.]]></anchorBefore>
-  <anchorAfter><![CDATA[Benchmark block 91. This is representative playground context for AI read latency measurement.]]></anchorAfter>
-  <patch><![CDATA[
-<!-- ... existing markdown ... -->
-
-| Name | Role |
-| --- | --- |
-| Alice | Design |
-| Bob | Engineering |
-<!-- ... existing markdown ... -->
-  ]]></patch>
-</pen-fast-apply>
-`);
-			const originalMarkdown = [
-				"Benchmark block 90. This is representative playground context for AI read latency measurement.",
-				"",
-				"Benchmark block 91. This is representative playground context for AI read latency measurement.",
-			].join("\n");
-
-			b.start();
-			const patched = applyBenchMarkdownFastApply({
-				originalMarkdown,
-				contract: contract!,
-			});
-			b.end();
-			b.observe(
-				"tableNameCount",
-				(patched.includes("Alice") ? 1 : 0) + (patched.includes("Bob") ? 1 : 0),
-				2,
-			);
 		},
 	},
 	{

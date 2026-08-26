@@ -1,11 +1,10 @@
-import type { DocumentOp, ToolRuntime } from "@input/pen-types";
+import type { DocumentOp } from "@input/pen-types";
 import { buildDocumentWriteOps } from "@input/pen-document-ops";
 import type { AIContentFormat } from "../runtime/contracts";
 import type { RequestRouterDecision } from "../runtime/router";
 import type {
 	AISurface,
 	AIWorkingSetEnvelope,
-	AIWorkingSetRetrievedSpan,
 	GenerationState,
 } from "../types";
 import type { GenerationTarget } from "../helpers";
@@ -67,100 +66,6 @@ export const workingSetValidationMethods = {
 			valid: false,
 			canRefresh: target.type === "block",
 			reason: viewChanged ? "view-changed" : "selection-changed",
-		};
-	},
-
-	_resolveMarkdownFastApplyWindow(
-		this: AIControllerMethodHost,
-		route: RequestRouterDecision,
-		blockId: string,
-	): {
-		range: { startBlockId: string; endBlockId: string };
-		blockIds: string[];
-	} | null {
-		const blocks = Array.from(this._editor.blocks());
-		const blockIndex = blocks.findIndex((block) => block.id === blockId);
-		if (blockIndex === -1) {
-			return null;
-		}
-
-		const radius =
-			route.targetKind === "table"
-				? 0
-				: route.intent === "continue"
-					? 0
-					: route.intent === "rewrite" ||
-						  route.intent === "local-edit"
-						? 1
-						: 0;
-		const startIndex = Math.max(0, blockIndex - radius);
-		const endIndex = Math.min(blocks.length - 1, blockIndex + radius);
-		const blockIds = blocks
-			.slice(startIndex, endIndex + 1)
-			.map((block) => block.id);
-		return {
-			range: {
-				startBlockId: blockIds[0] ?? blockId,
-				endBlockId: blockIds[blockIds.length - 1] ?? blockId,
-			},
-			blockIds,
-		};
-	},
-
-	async _resolveMarkdownFastApplyRetrievedSpan(
-		this: AIControllerMethodHost,
-		toolRuntime: ToolRuntime,
-		route: RequestRouterDecision,
-		blockId: string,
-		prompt: string,
-	): Promise<AIWorkingSetRetrievedSpan | null> {
-		if (route.applyStrategy !== "markdown-fast-apply") {
-			return null;
-		}
-
-		try {
-			const retrieved = (await toolRuntime.executeTool(
-				"retrieve_document_spans",
-				{
-					query: prompt,
-					maxResults: 1,
-					includeSuggestions: this._state.suggestMode,
-					activeBlockId: blockId,
-					targetBlockId: blockId,
-				},
-				{} as never,
-			)) as {
-				spans?: AIWorkingSetRetrievedSpan[];
-			};
-			const retrievedSpan = retrieved.spans?.[0] ?? null;
-			if (retrievedSpan?.blockIds?.length) {
-				return retrievedSpan;
-			}
-		} catch {
-			// Older test fixtures or stale builds may not register the retriever yet.
-		}
-
-		const markdownWindow = this._resolveMarkdownFastApplyWindow(
-			route,
-			blockId,
-		);
-		if (!markdownWindow) {
-			return null;
-		}
-		return {
-			id: `span:${markdownWindow.blockIds.join(":")}`,
-			blockIds: markdownWindow.blockIds,
-			range: markdownWindow.range,
-			blockTypes: [],
-			headingPath: [],
-			preview: "",
-			markdown: "",
-			score: 0,
-			rationale: "window-fallback",
-			neighbors: {
-				beforeBlockId: null,
-				afterBlockId: null,
-			},
 		};
 	},
 

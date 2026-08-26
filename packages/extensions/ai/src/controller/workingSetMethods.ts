@@ -3,7 +3,7 @@ import type { ToolRuntime } from "@input/pen-types";
 import { buildMutationReceipt } from "../runtime/mutationReceipt";
 import type { StructuralReviewItem } from "../runtime/reviewArtifacts";
 import {
-	AI_FAST_APPLY_MAX_DOCUMENT_BLOCKS,
+	AI_ANNOTATED_WORKING_SET_MAX_BLOCKS,
 	refineRouteWithNavigator,
 	type RequestRouterDecision,
 } from "../runtime/router";
@@ -75,7 +75,7 @@ export const workingSetMethods = {
 		route: RequestRouterDecision,
 		target: GenerationTarget,
 		blockId: string,
-		prompt: string,
+		_prompt: string,
 		scope?: "document" | "block",
 	): Promise<AIWorkingSetEnvelope | null> {
 		const selectionSignature = this._createSelectionSignature(
@@ -112,13 +112,11 @@ export const workingSetMethods = {
 		// Document-scope prompts (e.g. chat) may edit anywhere, so give the
 		// editing lanes the whole annotated document instead of a narrow
 		// window around the anchor block when the document is small enough.
-		// Both edit channels address blocks by the ids these annotations
-		// carry, so both need them.
+		// `edit_document` addresses blocks by the ids these annotations carry.
 		if (
 			scope === "document" &&
-			(route.applyStrategy === "markdown-fast-apply" ||
-				route.applyStrategy === "tool-edit") &&
-			this._editor.blockCount() <= AI_FAST_APPLY_MAX_DOCUMENT_BLOCKS
+			route.applyStrategy === "tool-edit" &&
+			this._editor.blockCount() <= AI_ANNOTATED_WORKING_SET_MAX_BLOCKS
 		) {
 			const context = (await toolRuntime.executeTool(
 				"get_context",
@@ -163,62 +161,6 @@ export const workingSetMethods = {
 		}
 
 		if (route.useCursorContext) {
-			const retrievedSpan =
-				await this._resolveMarkdownFastApplyRetrievedSpan(
-					toolRuntime,
-					route,
-					blockId,
-					prompt,
-				);
-			if (
-				route.applyStrategy === "markdown-fast-apply" &&
-				retrievedSpan
-			) {
-				const context = (await toolRuntime.executeTool(
-					"get_context",
-					{
-						format: "markdown",
-						includeSelection: true,
-						includeSuggestions: this._state.suggestMode,
-						range: retrievedSpan.range,
-					},
-					{} as never,
-				)) as {
-					activeBlockType?: string | null;
-					markdown?: string | null;
-					surroundingBlocks?: Array<{ id: string }>;
-					selectedText?: string | null;
-					structuredTarget?: {
-						target?: {
-							kind?: "block" | "table";
-						};
-					} | null;
-				};
-				return {
-					documentVersion: this._documentVersion,
-					viewMode: this._state.suggestMode ? "raw" : "resolved",
-					source: "cursor-context",
-					context: {
-						...context,
-						retrievedSpan,
-					},
-					routeConfidence: refineRouteWithNavigator(route, {
-						surroundingBlockCount: retrievedSpan.blockIds.length,
-						selectedTextLength: context.selectedText?.length ?? 0,
-						activeBlockType: context.activeBlockType ?? null,
-						structuredTargetKind:
-							context.structuredTarget?.target?.kind ?? null,
-					}).confidence,
-					trackedBlockIds: [...new Set(retrievedSpan.blockIds)],
-					blockRevisions: this._captureBlockRevisions(
-						retrievedSpan.blockIds,
-					),
-					viewHashes: this._captureBlockViewHashes(
-						retrievedSpan.blockIds,
-					),
-					selectionSignature,
-				};
-			}
 			const context = (await toolRuntime.executeTool(
 				"get_cursor_context",
 				{ includeSuggestions: this._state.suggestMode },
@@ -244,8 +186,6 @@ export const workingSetMethods = {
 				source: "cursor-context",
 				context,
 				routeConfidence: refineRouteWithNavigator(route, {
-					surroundingBlockCount:
-						context.surroundingBlocks?.length ?? 0,
 					selectedTextLength: context.selectedText?.length ?? 0,
 					activeBlockType: context.activeBlockType ?? null,
 					structuredTargetKind:
@@ -259,62 +199,6 @@ export const workingSetMethods = {
 		}
 
 		if (route.useDocumentSummary) {
-			const retrievedSpan =
-				await this._resolveMarkdownFastApplyRetrievedSpan(
-					toolRuntime,
-					route,
-					blockId,
-					prompt,
-				);
-			if (
-				route.applyStrategy === "markdown-fast-apply" &&
-				retrievedSpan
-			) {
-				const context = (await toolRuntime.executeTool(
-					"get_context",
-					{
-						format: "markdown",
-						includeSelection: true,
-						includeSuggestions: this._state.suggestMode,
-						range: retrievedSpan.range,
-					},
-					{} as never,
-				)) as {
-					activeBlockType?: string | null;
-					markdown?: string | null;
-					surroundingBlocks?: Array<{ id: string }>;
-					selectedText?: string | null;
-					structuredTarget?: {
-						target?: {
-							kind?: "block" | "table";
-						};
-					} | null;
-				};
-				return {
-					documentVersion: this._documentVersion,
-					viewMode: this._state.suggestMode ? "raw" : "resolved",
-					source: "document-summary",
-					context: {
-						...context,
-						retrievedSpan,
-					},
-					routeConfidence: refineRouteWithNavigator(route, {
-						surroundingBlockCount: retrievedSpan.blockIds.length,
-						selectedTextLength: context.selectedText?.length ?? 0,
-						activeBlockType: context.activeBlockType ?? null,
-						structuredTargetKind:
-							context.structuredTarget?.target?.kind ?? null,
-					}).confidence,
-					trackedBlockIds: [...new Set(retrievedSpan.blockIds)],
-					blockRevisions: this._captureBlockRevisions(
-						retrievedSpan.blockIds,
-					),
-					viewHashes: this._captureBlockViewHashes(
-						retrievedSpan.blockIds,
-					),
-					selectionSignature,
-				};
-			}
 			const context = (await toolRuntime.executeTool(
 				"get_context",
 				scope === "document"
@@ -354,8 +238,6 @@ export const workingSetMethods = {
 				source: "document-summary",
 				context,
 				routeConfidence: refineRouteWithNavigator(route, {
-					surroundingBlockCount:
-						context.surroundingBlocks?.length ?? 0,
 					selectedTextLength: context.selectedText?.length ?? 0,
 					activeBlockType: context.activeBlockType ?? null,
 					structuredTargetKind:
@@ -401,7 +283,6 @@ export const workingSetMethods = {
 			} | null;
 		};
 		return refineRouteWithNavigator(route, {
-			surroundingBlockCount: context.surroundingBlocks?.length ?? 0,
 			selectedTextLength: context.selectedText?.length ?? 0,
 			activeBlockType: context.activeBlockType ?? null,
 			structuredTargetKind:

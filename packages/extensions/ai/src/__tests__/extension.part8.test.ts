@@ -75,7 +75,7 @@ describe("aiExtension", () => {
 		expect(controller.getSuggestions().length).toBeGreaterThan(0);
 	});
 
-	it("uses the live collapsed caret offset for block generations", async () => {
+	it("streams continuation onto the target block", async () => {
 		const editor = createEditor({
 			schema: defaultSchema,
 			extensions: [
@@ -111,12 +111,8 @@ describe("aiExtension", () => {
 		);
 
 		expect(generation.target).toBe("block");
-		const suggestions = controller.getSuggestions();
-		expect(suggestions.length).toBeGreaterThan(0);
-		expect(suggestions[0]).toMatchObject({
-			blockId,
-			offset: 5,
-		});
+		expect(generation.route).toBe("cursor-context");
+		expect(editor.getBlock(blockId)?.textContent()).toBe("Hello world AI");
 	});
 
 	it("uses the selection end as the insertion offset for inline block turns", async () => {

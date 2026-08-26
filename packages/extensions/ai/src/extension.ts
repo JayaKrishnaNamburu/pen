@@ -40,7 +40,6 @@ import { AIInlineHistoryService, AIReviewService } from "./controllers";
 import {
 	isAIMutationPreference,
 	type AIContentFormat,
-	type AIEditChannel,
 	type AIMutationPreference,
 } from "./runtime/contracts";
 import { SuggestedAIOperationRunner } from "./runtime/suggestedOperationRunner";
@@ -79,7 +78,6 @@ import { suggestionControllerMethods } from "./controller/suggestionControllerMe
 import { commitSupportMethods } from "./controller/commitSupportMethods";
 import { operationCommitMethods } from "./controller/operationCommitMethods";
 import { bufferedBlockGenerationMethods } from "./controller/bufferedBlockGenerationMethods";
-import { markdownFastApplyMethods } from "./controller/markdownFastApplyMethods";
 import { fastApplySupportMethods } from "./controller/fastApplySupportMethods";
 import { workingSetMethods } from "./controller/workingSetMethods";
 import { workingSetValidationMethods } from "./controller/workingSetValidationMethods";
@@ -166,8 +164,6 @@ class AIControllerImpl extends AIControllerSessionState {
 
 	private _mutationPreference: AIMutationPreference;
 
-	private readonly _editChannel: AIEditChannel;
-
 	private readonly _editStreaming: AIEditStreaming | undefined;
 
 	private _streamEvents: readonly AIStreamEvent[] = [];
@@ -248,7 +244,6 @@ class AIControllerImpl extends AIControllerSessionState {
 		)
 			? config.mutationPreference
 			: "suggestions";
-		this._editChannel = config.editChannel ?? "fast-apply";
 		this._editStreaming = config.editStreaming;
 		this._undoHistoryMetadata =
 			(this._editor.facet(
@@ -561,7 +556,6 @@ function installControllerMethods(controller: AIControllerImpl): void {
 		commitSupportMethods,
 		operationCommitMethods,
 		bufferedBlockGenerationMethods,
-		markdownFastApplyMethods,
 		fastApplySupportMethods,
 		workingSetMethods,
 		workingSetValidationMethods,

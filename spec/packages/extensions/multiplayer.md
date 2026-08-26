@@ -49,7 +49,7 @@ Important rules:
 - Remote presence is collaboration state, not document truth.
 - Remote cursor and selection visuals are derived from controller state and emitted as decorations.
 - Peers put serialized `editor.anchors` payloads on the awareness wire. Receivers `deserialize` them as `provenance: "wire"` and resolve per flush. A `null` resolve hides the caret until the next awareness frame or catch-up.
-- Local presence is coalesced to `LOCAL_PRESENCE_MIN_INTERVAL_MS`, not published per selection change. The two COL2 numbers are a pair: a sender that outruns `MAX_PRESENCE_UPDATES_PER_SECOND` is rate-limited by its peers, and a rate-limited peer keeps the sender's previous caret — so the caret freezes and then jumps rather than trailing smoothly.
+- Local presence is coalesced to a 50ms minimum interval (`LOCAL_PRESENCE_MIN_INTERVAL_MS`, internal), not published per selection change. Receivers cap ingest at `MAX_PRESENCE_UPDATES_PER_SECOND` (30, exported). The two numbers are a pair: a sender that outruns the receive cap is rate-limited by its peers, and a rate-limited peer keeps the sender's previous caret — so the caret freezes and then jumps rather than trailing smoothly. Coalescing below the receive budget is what keeps that from happening.
 - Identity resolution and author ledgers should enrich collaboration state without coupling the package to one transport provider.
 
 ## Integration Notes

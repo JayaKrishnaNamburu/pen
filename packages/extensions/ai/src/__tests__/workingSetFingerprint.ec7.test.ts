@@ -44,7 +44,6 @@ function createChatEditor(model: ModelAdapter) {
 				model,
 				contentFormat: { blockGeneration: "markdown" },
 				mutationPreference: "direct",
-				editChannel: "tool",
 				allowedMutatingTools: ["edit_document"],
 			}),
 		],
@@ -126,7 +125,6 @@ async function captureWorkingSet(
 		target: "block",
 		contentFormat: "markdown",
 		mutationPreference: "direct",
-		editChannel: "tool",
 	});
 	const workingSet = await host._buildWorkingSet(
 		getDocumentToolRuntime(editor)!,

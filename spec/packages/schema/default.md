@@ -12,9 +12,10 @@ Ship the default block and inline definitions used by most applications and test
 
 - Export map: `.`, `./defs`
 - `createDefaultSchema()` and the prebuilt `defaultSchema`
-- Named block defs such as `paragraph`, `heading`, `table`, `callout`, and named marks/inlines such as `bold`, `link`, `mention`
-- Display-catalog helpers: `SCHEMA_DISPLAY_CATALOG`, `resolveDisplayCopy()`, `resolveDisplayGroup()`
-- Workspace scripts: `build`, `clean`, `test`, `typecheck`
+- Named block defs such as `paragraph`, `heading`, `table`, `callout`, `blockquote`, `toggle`, `checkListItem`, and `subdocument`, plus named marks/inlines such as `bold`, `link`, `mention`
+- `./defs` also exports the `defaultBlocks` and `defaultInlines` collections
+- Display-catalog helpers: `SCHEMA_DISPLAY_CATALOG`, `resolveDisplayCopy()`, `resolveDisplayGroup()`, `schemaDisplayKey()`, `schemaGroupKey()`
+- Workspace scripts: `build`, `clean`, `lint`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 

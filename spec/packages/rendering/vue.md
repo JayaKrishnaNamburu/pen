@@ -11,7 +11,7 @@ This package gives Vue applications a lean but real renderer surface: core edito
 ## Key Exports / Entrypoints
 
 - Export map: `.`, `./plugin`
-- Root exports such as `PenEditor`, `PenContent`, `PenBlock`, `PenInlineContent`, `PenFieldEditor`, and `PenEditorProps`
+- Root exports such as `PenEditor`, `PenContent`, `PenBlock`, `PenInlineContent`, and `PenFieldEditor`. The `PenEditorProps` interface is declared on the component but is not on the barrel; `PenTableCellContent` is likewise internal.
 - Composables such as `useEditor`, `useSelection`, `useBlockList`, and `useDecorations`
 - Plugin export: `PenVuePlugin`
 - Public renderer and paste-importer types such as `RendererOverrides` and `PasteImporters`

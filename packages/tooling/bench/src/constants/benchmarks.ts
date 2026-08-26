@@ -159,11 +159,6 @@ export const AI_RETRIEVE_DOCUMENT_SPANS_BENCH: BenchMetadata = {
 	name: "ai retrieve_document_spans ranked lookup",
 };
 
-export const AI_MARKDOWN_FAST_APPLY_TABLE_INSERT_BENCH: BenchMetadata = {
-	id: "ai.markdown-fast-apply-table-insert",
-	name: "ai markdown fast apply table insert",
-};
-
 export const AI_MARKDOWN_FULL_REPLACE_TABLE_INSERT_BENCH: BenchMetadata = {
 	id: "ai.markdown-full-replace-table-insert",
 	name: "ai markdown full replace table insert",
@@ -297,7 +292,6 @@ export const BENCHMARK_METADATA: BenchMetadata[] = [
 	AI_PROMPT_ASSEMBLY_TOOL_JOURNAL_BENCH,
 	AI_READ_DOCUMENT_RANGE_20_BLOCKS_BENCH,
 	AI_RETRIEVE_DOCUMENT_SPANS_BENCH,
-	AI_MARKDOWN_FAST_APPLY_TABLE_INSERT_BENCH,
 	AI_MARKDOWN_FULL_REPLACE_TABLE_INSERT_BENCH,
 	AI_FLOW_PATCH_TEXT_EDIT_BENCH,
 	AI_FLOW_PATCH_ALIGNMENT_BENCH,

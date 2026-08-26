@@ -83,7 +83,6 @@
 - AIContextualPromptState
 - AIController
 - AIControllerState
-- AIEditChannel
 - AIEditStreaming
 - AIExecutionMode
 - AIExtensionConfig

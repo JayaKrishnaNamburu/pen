@@ -32,7 +32,7 @@ const MULTI_TOOL_PROMPT = [
  * The edit_document channel is one edit, preceded by a read only when the
  * request carries no block annotations. The earlier version of this prompt
  * mandated the read unconditionally — but the working set already annotates
- * documents up to the fast-apply bound, so an obedient model paid a full
+ * documents up to the annotation bound, so an obedient model paid a full
  * model round trip to fetch ids it had been handed. Refusals answer
  * themselves: a rejected operation comes back with the reason and a fresh
  * outline (`spec-better-ai/01-edit-channel.md` EC5, EC10, EC14).

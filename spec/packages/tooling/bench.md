@@ -11,11 +11,16 @@ Support development, testing, benchmarking, or local integration workflows aroun
 ## Key Exports / Entrypoints
 
 - Export map: `.`
-- Workspace scripts: `bench`, `build`, `clean`, `test`, `typecheck`
+- Runner: `bench()`, `runSuite()`, `runAllSuites()`, `createBenchSuites()`
+- Gating: `evaluateBenchResult()`, `isCriticalBench()`, `getBenchTarget()`, `BENCH_GATE_SAMPLE_SIZE`
+- Envelope and scale baselines: `buildEnvelopeRecord()`, `compareEnvelopeDrift()`, and their tolerance helpers
+- Fixtures: `createLargeDocument()`, `createScale3Editor()`, `createEnvelopeEditor()`
+- Reporters: `reportConsole()`, `reportJSON()`
+- Workspace scripts: `bench`, `bench:ci`, `bench:envelope`, `bench:anchors`, `build`, `clean`, `lint`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: No runtime workspace dependencies declared.
+- Runtime dependencies: none declared. The workspace packages it measures (`@input/pen-core`, `@input/pen-test`, `@input/pen-ai`, and others) are devDependencies, because a benchmark harness is not something a host installs — but the package does not run without them.
 - Peer dependencies: No peer dependencies declared.
 - Boundary: Tooling packages serve the workspace and advanced integrators more than standard runtime embedding.
 

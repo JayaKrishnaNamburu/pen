@@ -20,17 +20,16 @@ import {
 	OFF_CONTRACT_PROMPT,
 	annotationsFromRequest,
 	buildToolOperations,
-	buildXmlPayload,
 	isBenchSkip,
 	type CorpusPromptId,
 } from "./fixtures/editChannelBenchDoubles";
 
 /**
- * GATE 0.14 harness. Scripted doubles prove the runner, not Wave 0 ship/delete.
+ * GATE 0.14 harness, now running the remaining `edit_document` channel.
  * Spec: `spec-better-ai/waves/wave-0-prototype.md` Step 0.7.
  */
 
-export type BenchChannel = "xml" | "tool";
+export type BenchChannel = "tool";
 
 export interface BenchRow extends EditChannelCorpusMetrics {
 	promptId: string;
@@ -50,7 +49,7 @@ export interface BenchReport {
 	rows: BenchRow[];
 }
 
-const CHANNELS: readonly BenchChannel[] = ["xml", "tool"];
+const CHANNELS: readonly BenchChannel[] = ["tool"];
 
 function snapshotDocument(editor: Editor): string {
 	return Array.from(editor.blocks())
@@ -123,10 +122,7 @@ function firstFeedbackMs(
 	return Math.min(...candidates);
 }
 
-function createChatEditor(
-	model: ModelAdapter,
-	channel: BenchChannel,
-): Editor {
+function createChatEditor(model: ModelAdapter): Editor {
 	return createEditor({
 		schema: defaultSchema,
 		extensions: [
@@ -137,12 +133,7 @@ function createChatEditor(
 				model,
 				contentFormat: { blockGeneration: "markdown" },
 				mutationPreference: "direct",
-				...(channel === "tool"
-					? {
-							editChannel: "tool" as const,
-							allowedMutatingTools: ["edit_document"],
-						}
-					: {}),
+				allowedMutatingTools: ["edit_document"],
 			}),
 		],
 	});
@@ -191,40 +182,6 @@ function toolChannelModel(
 	};
 }
 
-function xmlChannelModel(
-	promptId: CorpusPromptId,
-	seedRef: { current: EditChannelCorpusSeed },
-): {
-	adapter: ModelAdapter;
-	passes: () => number;
-	skipReason: () => string | undefined;
-} {
-	let passes = 0;
-	let skipReason: string | undefined;
-	const adapter: ModelAdapter = {
-		async *stream(request) {
-			passes += 1;
-			const payload = buildXmlPayload(
-				promptId,
-				annotationsFromRequest(request),
-				seedRef.current,
-			);
-			if (isBenchSkip(payload)) {
-				skipReason = payload.reason;
-				yield { type: "done" } as ModelStreamEvent;
-				return;
-			}
-			yield { type: "text-delta", delta: payload } as ModelStreamEvent;
-			yield { type: "done" } as ModelStreamEvent;
-		},
-	};
-	return {
-		adapter,
-		passes: () => passes,
-		skipReason: () => skipReason,
-	};
-}
-
 function proseModel(): { adapter: ModelAdapter; passes: () => number } {
 	let passes = 0;
 	const adapter: ModelAdapter = {
@@ -251,11 +208,9 @@ async function runOnce(options: {
 	const model =
 		options.kind === "off-contract"
 			? proseModel()
-			: options.channel === "tool"
-				? toolChannelModel(options.corpusId!, seedRef)
-				: xmlChannelModel(options.corpusId!, seedRef);
+			: toolChannelModel(options.corpusId!, seedRef);
 
-	const editor = createChatEditor(model.adapter, options.channel);
+	const editor = createChatEditor(model.adapter);
 	await editor.whenReady();
 	const seed: EditChannelCorpusSeed = seedEditChannelCorpus(editor);
 	seedRef.current = seed;
@@ -291,7 +246,7 @@ async function runOnce(options: {
 	// Either channel can decline a prompt its operation set cannot express.
 	const skipReason =
 		options.kind === "corpus"
-			? (model as ReturnType<typeof xmlChannelModel>).skipReason?.()
+			? (model as ReturnType<typeof toolChannelModel>).skipReason?.()
 			: undefined;
 
 	const row: BenchRow = {
@@ -331,7 +286,7 @@ function writeReportIfRequested(report: BenchReport): void {
 
 describe("edit channel corpus bench (GATE 0.14)", () => {
 	it(
-		"runs both channels on the full corpus plus the off-contract control",
+		"runs the tool channel on the full corpus plus the off-contract control",
 		{ timeout: 60_000 },
 		async () => {
 		const rows: BenchRow[] = [];
@@ -366,32 +321,21 @@ describe("edit channel corpus bench (GATE 0.14)", () => {
 		};
 		writeReportIfRequested(report);
 
-		const xmlCorpus = rows.filter(
-			(row) => row.channel === "xml" && row.promptId !== "off-contract",
-		);
 		const toolCorpus = rows.filter(
 			(row) => row.channel === "tool" && row.promptId !== "off-contract",
-		);
-		expect(xmlCorpus.map((row) => row.promptId)).toEqual(
-			EDIT_CHANNEL_CORPUS.map((entry) => entry.id),
 		);
 		expect(toolCorpus.map((row) => row.promptId)).toEqual(
 			EDIT_CHANNEL_CORPUS.map((entry) => entry.id),
 		);
-		expect(xmlCorpus.some((row) => row.promptId === "p9" && row.knownWeak)).toBe(
+		expect(toolCorpus.some((row) => row.promptId === "p9" && row.knownWeak)).toBe(
 			true,
 		);
 
-		const xmlControl = rows.find(
-			(row) => row.channel === "xml" && row.promptId === "off-contract",
-		)!;
 		const toolControl = rows.find(
 			(row) => row.channel === "tool" && row.promptId === "off-contract",
 		)!;
 		expect(toolControl.documentChanged).toBe(false);
 		expect(toolControl.wrongEdit).toBe(false);
-		expect(xmlControl.documentChanged).toBe(true);
-		expect(xmlControl.wrongEdit).toBe(true);
 
 		if (process.env.EDIT_CHANNEL_BENCH_OUT) {
 			expect(existsSync(process.env.EDIT_CHANNEL_BENCH_OUT)).toBe(true);

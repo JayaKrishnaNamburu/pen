@@ -6,7 +6,6 @@ import type {
 	AIBlockAdapterId,
 	AIBlockClass,
 	AIContentFormat,
-	AIEditChannel,
 	AIMutationMode,
 	AIMutationPreference,
 	AIPlannerMode,
@@ -38,7 +37,6 @@ export interface RequestRouterInput {
 	contentFormat: AIContentFormat;
 	surface?: AISurface;
 	mutationPreference?: AIMutationPreference;
-	editChannel?: AIEditChannel;
 }
 
 export interface RequestRouterDecision {
@@ -55,7 +53,6 @@ export interface RequestRouterDecision {
 	suggestMode: boolean;
 	surface?: AISurface;
 	mutationPreference?: AIMutationPreference;
-	editChannel?: AIEditChannel;
 	allowToolUse: boolean;
 	useCursorContext: boolean;
 	useDocumentSummary: boolean;
@@ -65,7 +62,6 @@ export interface RequestRouterDecision {
 }
 
 interface NavigatorRefinementInput {
-	surroundingBlockCount?: number;
 	selectedTextLength?: number;
 	activeBlockType?: string | null;
 	structuredTargetKind?: AITargetKind | null;
@@ -92,39 +88,21 @@ const QUESTION_PATTERNS =
 const TABLE_TARGET_PATTERNS = /\b(table|grid|rows?|columns?)\b/i;
 
 /**
- * Largest document that ships whole into a fast-apply prompt. Structural work
- * only takes the single-pass lane when the whole document fits, so the lane
- * and its context agree by construction; bigger documents go to the tool loop,
- * which can read what it needs. The working-set builder reads the same bound.
+ * Largest document whose working set annotates every block. Bigger documents
+ * still take the tool loop; they just do not ship a fully annotated copy.
+ * The working-set builder is the only reader.
  */
-export const AI_FAST_APPLY_MAX_DOCUMENT_BLOCKS = 120;
+export const AI_ANNOTATED_WORKING_SET_MAX_BLOCKS = 120;
 
 /**
- * The tool edit channel replaces the one lane that commits a durable edit by
- * parsing the assistant text stream. Streaming lanes (selection rewrite,
- * cursor continuation) keep writing text deltas, and the review lane keeps
- * staging (`spec-better-ai/01-edit-channel.md` EC1, EC12).
+ * A tool-loop lane must not also ask the model for a text-parsed edit plan:
+ * the durable edit has one source. Lanes that only stream text keep their
+ * text strategy (EC1).
  */
-function applyEditChannelLane(
-	lane: AIRouteLane,
-	editChannel: AIEditChannel | undefined,
-): AIRouteLane {
-	if (editChannel !== "tool") return lane;
-	return lane === "context-first" ? "tool-loop" : lane;
-}
-
-/**
- * A tool-channel lane must not also ask the model for a text-parsed edit plan:
- * the prompt would demand XML while the channel expects a tool call, and the
- * durable edit would have two possible sources. Lanes that only stream text
- * keep their text strategy (EC1).
- */
-function applyEditChannelStrategy(
+function applyDurableEditStrategy(
 	strategy: AIApplyStrategy,
 	lane: AIRouteLane,
-	editChannel: AIEditChannel | undefined,
 ): AIApplyStrategy {
-	if (editChannel !== "tool") return strategy;
 	return lane === "tool-loop" ? "tool-edit" : strategy;
 }
 
@@ -146,31 +124,16 @@ export function routeAIRequest(
 		!isStructuralBlockType(input.blockType)
 	) {
 		lane = "cursor-context";
-	} else if (intent === "review") {
-		lane = input.suggestMode ? "review" : "tool-loop";
-	} else if (intent === "structural") {
-		// Structural edits on flow blocks resolve fastest through the
-		// markdown fast-apply lane; structured blocks (tables, boards) and
-		// large documents still need the tool loop.
-		lane = input.suggestMode
-			? "review"
-			: !isStructuralBlockType(input.blockType) &&
-				  input.blockCount <= AI_FAST_APPLY_MAX_DOCUMENT_BLOCKS
-				? "context-first"
-				: "tool-loop";
-	} else if (intent === "search") {
-		lane = "tool-loop";
 	} else if (
-		!selectionExpanded &&
-		input.blockCount <= AI_FAST_APPLY_MAX_DOCUMENT_BLOCKS
+		(intent === "review" || intent === "structural") &&
+		input.suggestMode
 	) {
-		lane = "context-first";
+		lane = "review";
 	} else if (selectionExpanded && input.target === "selection") {
 		lane = "selection-rewrite";
 	} else {
 		lane = "tool-loop";
 	}
-	lane = applyEditChannelLane(lane, input.editChannel);
 
 	let mutationMode = resolveMutationMode({
 		lane,
@@ -233,18 +196,12 @@ export function routeAIRequest(
 		mutationMode,
 		contentFormat: resolvedContentFormat,
 		plannerMode,
-		applyStrategy: applyEditChannelStrategy(
+		applyStrategy: applyDurableEditStrategy(
 			resolveApplyStrategy({
 				target: input.target,
-				targetKind,
 				contentFormat: resolvedContentFormat,
-				plannerMode,
-				mutationMode,
-				intent,
-				surface: input.surface,
 			}),
 			lane,
-			input.editChannel,
 		),
 		targetKind,
 		blockClass: adapter.blockClass,
@@ -253,10 +210,9 @@ export function routeAIRequest(
 		suggestMode: input.suggestMode,
 		surface: input.surface,
 		mutationPreference: input.mutationPreference,
-		editChannel: input.editChannel,
 		allowToolUse: lane === "tool-loop" || lane === "review",
-		useCursorContext: lane === "cursor-context" || lane === "context-first",
-		useDocumentSummary: lane === "context-first" || lane === "tool-loop" || lane === "review",
+		useCursorContext: lane === "cursor-context",
+		useDocumentSummary: lane === "tool-loop" || lane === "review",
 		shouldStreamDirectly: shouldStreamDirectAIOutput({
 			mutationMode,
 			contentFormat: resolvedContentFormat,
@@ -280,14 +236,9 @@ export function refineRouteWithNavigator(
 			targetKind = "table";
 		}
 		confidence = Math.min(confidence, 0.45);
-		if (lane === "cursor-context" || lane === "context-first") {
+		if (lane === "cursor-context") {
 			lane = "tool-loop";
 		}
-	}
-
-	if ((input.surroundingBlockCount ?? 0) <= 1 && lane === "cursor-context") {
-		confidence = Math.min(confidence, 0.4);
-		lane = "context-first";
 	}
 
 	if ((input.selectedTextLength ?? 0) > 1200 && lane === "selection-rewrite") {
@@ -297,11 +248,10 @@ export function refineRouteWithNavigator(
 	if (input.structuredTargetKind === "table") {
 		targetKind = input.structuredTargetKind;
 		confidence = Math.min(confidence, 0.5);
-		if (lane === "cursor-context" || lane === "context-first") {
+		if (lane === "cursor-context") {
 			lane = "tool-loop";
 		}
 	}
-	lane = applyEditChannelLane(lane, decision.editChannel);
 
 	let plannerMode = resolvePlannerMode({
 		target: decision.target,
@@ -358,18 +308,12 @@ export function refineRouteWithNavigator(
 			contentFormat,
 			mutationMode,
 			plannerMode,
-			applyStrategy: applyEditChannelStrategy(
+			applyStrategy: applyDurableEditStrategy(
 				resolveApplyStrategy({
 					target: decision.target,
-					targetKind,
 					contentFormat,
-					plannerMode,
-					mutationMode,
-					intent: decision.intent,
-					surface: decision.surface,
 				}),
 				lane,
-				decision.editChannel,
 			),
 			shouldStreamDirectly: shouldStreamDirectAIOutput({
 				mutationMode,
@@ -385,26 +329,20 @@ export function refineRouteWithNavigator(
 		mutationMode,
 		contentFormat,
 		plannerMode,
-		applyStrategy: applyEditChannelStrategy(
+		applyStrategy: applyDurableEditStrategy(
 			resolveApplyStrategy({
 				target: decision.target,
-				targetKind,
 				contentFormat,
-				plannerMode,
-				mutationMode,
-				intent: decision.intent,
-				surface: decision.surface,
 			}),
 			lane,
-			decision.editChannel,
 		),
 		targetKind,
 		blockClass: adapter.blockClass,
 		adapterId: adapter.id,
 		transportKind: adapter.transportKind,
 		allowToolUse: lane === "tool-loop" || lane === "review",
-		useCursorContext: lane === "cursor-context" || lane === "context-first",
-		useDocumentSummary: lane === "context-first" || lane === "tool-loop" || lane === "review",
+		useCursorContext: lane === "cursor-context",
+		useDocumentSummary: lane === "tool-loop" || lane === "review",
 		shouldStreamDirectly: shouldStreamDirectAIOutput({
 			mutationMode,
 			contentFormat,
@@ -518,34 +456,10 @@ function resolveStructuredMutationMode(input: {
 
 function resolveApplyStrategy(input: {
 	target: "selection" | "block";
-	targetKind: AITargetKind;
 	contentFormat: AIContentFormat;
-	plannerMode: AIPlannerMode;
-	mutationMode: AIMutationMode;
-	intent: PromptIntent;
-	surface?: AISurface;
 }): AIApplyStrategy {
 	if (input.target === "selection" || input.contentFormat === "text") {
 		return "text-fast-apply";
-	}
-	if (
-		input.surface === "bottom-chat" &&
-		input.mutationMode === "streaming-suggestions"
-	) {
-		return "markdown-full-replace";
-	}
-	if (
-		input.intent === "rewrite" ||
-		input.intent === "continue" ||
-		input.intent === "local-edit" ||
-		input.intent === "structural" ||
-		// Questions used to classify as `local-edit` and land here. Keeping
-		// them means the XML channel is unchanged by the question intent; the
-		// intent exists to stop the tool channel forcing an edit (EC17).
-		input.intent === "question" ||
-		input.targetKind === "table"
-	) {
-		return "markdown-fast-apply";
 	}
 	return "markdown-full-replace";
 }

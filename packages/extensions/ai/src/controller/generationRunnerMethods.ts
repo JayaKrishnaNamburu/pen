@@ -87,9 +87,8 @@ export const generationRunnerMethods = {
 		const active = this._state.activeGeneration;
 		if (!active || active.status !== "streaming") return;
 		if (
-			active.route === "tool-loop" ||
-			active.route === "context-first" ||
-			active.route === "review"
+			active.route !== "selection-rewrite" &&
+			active.route !== "cursor-context"
 		) {
 			return;
 		}

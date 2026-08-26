@@ -16,18 +16,6 @@ import { runAgenticLoop } from "../index";
 const ANNOTATED_CONTEXT =
 	"<!-- block:title heading -->\nTitle\n<!-- block:closing paragraph -->\nRevenue grew.";
 
-const FULL_GRANTED_TOOL_NAMES = [
-	"read_document",
-	"get_context",
-	"get_cursor_context",
-	"inspect_target",
-	"list_valid_operations",
-	"search_document",
-	"retrieve_document_spans",
-	"list_block_types",
-	"edit_document",
-] as const;
-
 const ANNOTATED_EDIT_TOOL_NAMES = ["edit_document"] as const;
 
 const UNANNOTATED_EDIT_TOOL_NAMES = [
@@ -140,27 +128,6 @@ describe("EC16: every pass pays for the tools it is offered", () => {
 		});
 
 		expect(captured()[0]?.tools).toEqual([...UNANNOTATED_EDIT_TOOL_NAMES]);
-
-		editor.destroy();
-	});
-
-	it("EC16: the legacy multi-tool channel still offers the full granted set", async () => {
-		const { adapter, captured } = capturingModel(() => [{ type: "done" }]);
-		const editor = await createLoopEditor();
-		const toolRuntime = getDocumentToolRuntime(editor)!;
-
-		await runAgenticLoop({
-			model: adapter,
-			editor,
-			toolRuntime,
-			prompt: "Shorten the closing paragraph.",
-			blockId: editor.firstBlock()!.id,
-			applyStrategy: "markdown-fast-apply",
-			allowedMutatingTools: ["edit_document"],
-			workingSet: annotatedWorkingSet(),
-		});
-
-		expect(captured()[0]?.tools).toEqual([...FULL_GRANTED_TOOL_NAMES]);
 
 		editor.destroy();
 	});

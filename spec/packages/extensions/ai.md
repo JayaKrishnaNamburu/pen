@@ -20,8 +20,9 @@ In current usage, `@input/pen-ai` is the headless orchestration layer for both i
 - Rich AI types covering sessions, prompts, execution modes, previews, plans, receipts, and stream events
 - Session surfaces for `inline-edit` and `bottom-chat`, including prompt history, turn tracking, and contextual prompt state
 - Shared AI mutation contracts for selection-backed rewrites, scoped-range rewrites, block rewrites, and document transforms
+- Edit-channel configuration on `aiExtension()`: durable edits always go through `edit_document` (`tool-edit`); `editStreaming` (`AIEditStreaming`) and `mutationPreference` with runtime `setMutationPreference()`
 - Egress re-exports: `aiEgressFacet`, `aiEgressExtension()`, `streamThroughEgress()` from `@input/pen-core`
-- Workspace scripts: `build`, `clean`, `test`, `typecheck`
+- Workspace scripts: `build`, `clean`, `lint`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 
@@ -66,16 +67,60 @@ Important rules:
 
 The current AI runtime resolves most rewrite behavior into explicit editor targets before streaming begins.
 
+Durable document edits always go through `edit_document`. Streaming generation lanes (selection rewrite, cursor continuation) still write text deltas. Prompt routing, mutation posture, op budgets, undo grouping, and the apply path are shared.
+
+- Chat and document-scope prompts route to `tool-loop` / `tool-edit`. The model is offered `edit_document` and assistant text is never applied as a mutation.
+- Selection-rewrite and cursor-continuation keep their text streaming strategies (`text-fast-apply`, `markdown-full-replace`).
+
+`@input/pen-playground` exposes `?mutation=direct|suggestions` and `?editStreaming=preview|atomic`.
+
 - Inline edits operate on live or pinned selections and stage reviewable suggestions against that selection.
 - Chat rewrites that target a title, paragraph, or whole document are resolved into synthetic but explicit range targets rather than open-ended document narration.
 - The preferred rewrite path is `rewrite-selection` with a target kind of either `selection` or `scoped-range`.
 - `scoped-range` is used for synthetic scopes such as `heading`, `paragraph`, `block`, or `document` where the runtime still wants selection-like provenance and diff behavior.
 - Conflict detection uses target provenance such as selection signatures, block revisions, synced generation, and source-text checks before final apply. Alignment compares folded text via core `foldAndNormalize()`, not `toLowerCase()`.
-- Multi-block markdown rewrites stream as staged suggestions by default so users can review, accept, reject, and undo them like inline fast-apply flows. Hosts without a review UI can set `mutationPreference: "direct"` on `aiExtension()` to land AI edits immediately; suggest mode and the review lane always stage regardless.
-- Structural prompts (convert to list, tables, restructuring) on small flow documents route through the markdown fast-apply lane rather than the tool loop. Document-scope prompts on small documents build their working set as annotated markdown — each block prefixed with a `<!-- block:<id> <type> -->` comment — so the model can address any block precisely; annotations are stripped from model output and from the merge baseline before ops are built.
-- Fast-apply `replace_text` edits may carry `anchorBefore`/`anchorAfter` text anchors that scope the replacement to part of a block (Morph-style partial edits); anchors must match exactly once.
-- The fast-apply lane is only taken for documents the working set can annotate whole (`AI_FAST_APPLY_MAX_DOCUMENT_BLOCKS`). Larger documents go to the tool loop, because the fast-apply prompt has no block ids to address without those annotations.
-- A markdown strategy that produced model output but committed nothing — an edit plan that did not compile, or one naming blocks the document does not have — finishes as `status: "error"` with a `turnReason`, and emits a `GENERATION_EDIT_NOT_APPLIED` diagnostic. These strategies carry their edit inside the assistant text and throw nothing when it fails to parse, so without this a lost edit is indistinguishable from a completed one. Staged suggestions and review items are outcomes, not lost edits; tool-driven edits are excluded because they apply directly and produce no mutation receipt.
+- Multi-block markdown rewrites stream as staged suggestions by default so users can review, accept, reject, and undo them. Hosts without a review UI can set `mutationPreference: "direct"` on `aiExtension()` to land AI edits immediately; suggest mode and the review lane always stage regardless.
+- Structural prompts (convert to list, tables, restructuring) route through the tool loop with every other durable mutation. Document-scope prompts on small documents build their working set as annotated markdown — each block prefixed with a `<!-- block:<id> <type> -->` comment — so the model can address any block precisely.
+- Documents larger than `AI_ANNOTATED_WORKING_SET_MAX_BLOCKS` still take the tool loop; the bound only gates whether the working set annotates the whole document.
+
+## Edit Channel
+
+A durable AI edit is an `edit_document` tool call. Prompt routing, mutation posture, op budgets, undo grouping, and the apply path are shared with the rest of the AI runtime. Selection-rewrite and cursor-continuation lanes keep writing text deltas; they are generation, not an edit plan.
+
+`@input/pen-playground` exposes `?mutation=direct|suggestions` and `?editStreaming=preview|atomic`.
+
+### The `edit_document` tool
+
+`documentOpsExtension()` registers `edit_document` as a mutating, destructive tool. Its envelope is `{ operations: [...] }` over a closed set of seven operations: `replace_block_text`, `replace_blocks`, `insert_blocks`, `delete_blocks`, `move_block`, `format_text`, and `set_block_props`. Content arrives as plain `text` or as `markdown` compiled through `buildDocumentWriteOps()`; structured operations carry `marks`, `blockType`, or `props` instead.
+
+Operations compile to `DocumentOp[]`, pass batch validation, and land through `editor.apply(..., { origin: "ai" })`. The handler does not throw for semantic failures — it returns an `EditDocumentResult` in which good operations applied and rejected ones come back with a live outline of `{ blockId, blockType, preview }` so the model can re-target without re-reading the document.
+
+### Staleness
+
+The runtime hashes the annotated markdown it actually rendered for the model, per tracked block, and keeps those hashes on the working set envelope. Staleness is therefore a property of the view the model was shown, not of a document revision counter, which is what lets an unrelated edit elsewhere in the document leave a pending call valid.
+
+### Rules
+
+- EC1. On the tool channel a durable edit is an `edit_document` call and nothing else. Assistant text on that channel is reply-only: `textCanCommitMutation()` is false for `tool-edit`, so buffered prose is never committed.
+- EC2. Operations address blocks by id. Ranges within a block are allowed; document-wide locators such as offsets or line numbers are not in the schema.
+- EC3. The envelope is structured; the content inside it is markdown compiled by the shared `buildDocumentWriteOps()` path rather than a second parser.
+- EC4. The operation set is closed and minimal. Adding an operation is a schema change, not a prompt change.
+- EC5. A refusal is informative. Semantic failures return a result naming what was rejected and why, with a live outline; schema violations throw and reach the model as a journal entry. Operations in one call apply independently, so a partial batch is a partial apply plus a refusal, never a silent drop.
+- EC6. The tool channel has no fallback that writes unparsed or unvalidated content. If the call does not compile, nothing lands.
+- EC7. Staleness is detected by comparing a fingerprint of the rendered view against the block's current view, not by a revision counter.
+- EC8. Fingerprints are runtime-only. They are never placed in the prompt and the model never sees or echoes them.
+- EC9. A stale target produces a refusal and a refreshed working set inside the same turn. It does not cancel the generation.
+- EC10. The edit channel runs inside the agentic loop, so a refusal is retried in the same turn rather than surfacing as a failed generation.
+- EC11. Direct and suggestions postures are one parameter. The schema, the prompt, and the compiled operation plan are identical; only the final write differs — `editor.apply` versus the suggest-mode interceptor.
+- EC12. The XML channel is retired. `edit_document` is the only durable edit path; `editChannel` is not an `aiExtension()` option.
+- EC13. Tool-channel ops go through `editor.apply` like every other mutation. Op budgets, the write guard, and undo grouping are unchanged by the channel.
+- EC14. A mutating tool pass that completes cleanly ends the turn without spending an extra closing model pass.
+- EC15. Partial `edit_document` input streams into an in-document preview decoration, scanned per operation index rather than by first match. The durable apply still happens when the call closes.
+- EC16. Tool advertising is route-scoped: on the edit channel with block annotations present, non-mutating tools are filtered down to a discovery set.
+- EC17. The edit tool is forced only on a pass that has edit intent and block annotations, and only when the adapter supports forced tool choice. `question` intent is exempt, so asking about a document does not provoke an edit.
+- EC18. `format_text` and `set_block_props` stage marks and props as structured operations. Marks are enumerated from the live schema, and an HTML payload in a text or markdown field is refused rather than escaped.
+- EC19. `mutationPreference` is live through `setMutationPreference()`. A turn already in flight keeps the posture it started with.
+- EC20. With `editStreaming: "commit"`, `insert_blocks` blocks whose structure has settled are written as they arrive; replace and delete are excluded because early writes would stale their own fingerprints. Streamed ops charge against the turn op budget, and a refusal rolls them back — by deleting the inserted blocks, or by rejecting their suggestions under the suggestions posture.
 
 ## Session Behavior
 
@@ -122,7 +167,7 @@ Canonical AI tool surface. Transports authorize a model-driven call before execu
 
 - `openAIToolCall()`, `executeAITool()`, `getAIToolRuntime()`, `listAITools()`, `authorizeAIToolCall()`, `createAIToolTurn()`
 - `openAIToolCall()` authorizes a call and installs the write guard before the transport runs `executeAITool`. Transports must not call `executeAITool` unless the result is `{ ok: true }`.
-- Op budgets are atomic: a batch that exceeds the per-call or per-turn op budget is rejected whole with an `AIToolBudgetError` the model can see, never applied as a silent prefix. A per-call overflow fails only that call; exhausting the turn total ends the turn.
+- Op budgets are atomic: a batch that exceeds the per-call or per-turn op budget is rejected whole and reaches the model as an error, never applied as a silent prefix. A per-call overflow fails only that call; exhausting the turn total ends the turn. The `AIToolBudgetError` class itself is deliberately not re-exported — it has one in-package caller and never reaches a host.
 - The agentic loop's `maxSteps` bounds model passes (round trips), not journal entries; tool results are compacted with explicit truncation markers that tell the model what was cut and how to re-read.
 - `close()` on that opened call restores the patched `editor.apply` and is idempotent: the first result is stored, and later calls return that same result. The write guard is restored in `finally`, not `catch`. A non-throw unwind (abandoning a stream mid-`yield`) runs `finally` and skips `catch`; a `catch`-only restore left the guard patched onto the host editor and silently dropped every later `editor.apply` editor-wide.
 - The live `Editor` used for the guard is `ToolContext.editor` at construction. That is a local runtime field, not `PenStreamRequest.context.editor` (removed from the wire type).

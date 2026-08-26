@@ -24,7 +24,6 @@ export const AI_REFERENCE_ARCHITECTURE = {
 export const AI_ROUTE_LANES = [
 	"selection-rewrite",
 	"cursor-context",
-	"context-first",
 	"tool-loop",
 	"review",
 ] as const;
@@ -61,18 +60,6 @@ export function isAIMutationPreference(
 }
 
 /**
- * Which channel carries a durable edit. "fast-apply" is the `<pen-fast-apply>`
- * XML contract parsed out of the assistant text stream; "tool" is the
- * block-addressed `edit_document` tool call. "fast-apply" stays the default
- * until the Wave 0 measurement decides
- * (`spec-better-ai/01-edit-channel.md` EC12).
- */
-export const AI_EDIT_CHANNELS = ["fast-apply", "tool"] as const;
-
-/** One of {@link AI_EDIT_CHANNELS}. */
-export type AIEditChannel = (typeof AI_EDIT_CHANNELS)[number];
-
-/**
  * What the prompt asked for. Lives here rather than next to the classifier in
  * `router.ts` because the planner reads it too, and a second copy of the union
  * is how a new member gets missed.
@@ -97,12 +84,13 @@ export type AIContentFormat = (typeof AI_CONTENT_FORMATS)[number];
 
 export const AI_APPLY_STRATEGIES = [
 	"text-fast-apply",
-	"markdown-fast-apply",
 	"markdown-full-replace",
 	/**
-	 * Durable edits arrive as `edit_document` tool calls, so nothing is parsed
-	 * out of the assistant text stream (`spec-better-ai/01-edit-channel.md`
-	 * EC1). Selected by `editChannel: "tool"`.
+	 * Durable document edits arrive as `edit_document` tool calls. Nothing is
+	 * parsed out of the assistant text stream
+	 * (`spec-better-ai/01-edit-channel.md` EC1). Streaming lanes still use
+	 * `text-fast-apply` / `markdown-full-replace` for generation into a
+	 * target, which is not an edit plan.
 	 */
 	"tool-edit",
 ] as const;

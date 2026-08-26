@@ -11,7 +11,11 @@ Support development, testing, benchmarking, or local integration workflows aroun
 ## Key Exports / Entrypoints
 
 - Export map: `.`
-- Workspace scripts: `build`, `clean`, `test`, `typecheck`
+- `memoryAssets()` is the sole entrypoint, with `MemoryAssetsOptions`: `maxSize`, `uploadUrl`, and the `rejectUpload` / `rejectAfterProgress` failure doubles
+- Upload enforces `maxSize` and reports `onProgress(0)` then `onProgress(1)` with no intermediate ticks, so hosts cannot accidentally depend on a progress curve this store does not have
+- `delete()` is implemented; nothing in Pen calls it
+- Falls back to a data URL when `URL.createObjectURL` is absent, which is what makes the store usable under Node
+- Workspace scripts: `build`, `clean`, `lint`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 

@@ -18,7 +18,7 @@ This package is the reversible-editing layer for live editing sessions. It does 
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@input/pen-types`
+- Runtime dependencies: `@input/pen-core`, `@input/pen-types`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: This package owns undo/redo orchestration around the CRDT undo manager, but it does not become the editor mutation authority.
 
@@ -44,8 +44,8 @@ Important rules:
 
 - Undo and redo operate on previously applied operations; they do not bypass the core mutation path.
 - Origins matter: the package decides which operation origins are tracked and how explicit undo groups change capture behavior. The Yjs adapter, not this package, owns `TrackedOriginSet` — the apply pipeline tags transactions with a structured origin object, and `Y.UndoManager` would otherwise miss those transactions because it matches `trackedOrigins` by identity.
-- This package is not installed by bare `createEditor()`. Without it, `editor.undoManager` is an inert stub (`canUndo()` is `false`, `undo()` returns `false`) and the `undo:manager` slot is absent. Mod-Z reaches that stub and does nothing. No diagnostic is emitted. Install this extension or `defaultPreset()`.
-- This package does not depend on `@input/pen-core`. It keeps a local `getOpOriginType` rather than importing core's.
+- This package is not installed by bare `createEditor()`. Without it, `editor.undoManager` is an inert stub (`canUndo()` is `false`, `undo()` returns `false`) and the `undo:manager` slot is absent. Where a keymap binds undo at all, Mod-Z reaches that stub and does nothing; a bare `createEditor({ schema })` has no keymap bindings, so nothing is bound in the first place. Either way no diagnostic is emitted. Install this extension or `defaultPreset()`.
+- This package depends on `@input/pen-core` for anchor repair (`deriveContentMoves`, `repairAnchor`) and `fieldEditorHostFacet`. It also keeps a local `getOpOriginType` in `src/origin.ts` even though core exports one; that copy is a leftover, and this package's own tests import core's.
 - Cursor and metadata restoration are part of the package contract so history operations restore editor state, not just document bytes. Stack-item selection snapshots stay the primary restore path. When commits land after capture, the extension resolves local-provenance drift anchors minted at capture (`editor.anchors`) instead of mapping through a summary window.
 
 ## Integration Notes

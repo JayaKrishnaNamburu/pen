@@ -1,13 +1,10 @@
 #!/usr/bin/env node
 /**
- * GATE 0.14 — both edit channels against the Wave 0 corpus.
+ * GATE 0.14 — the `edit_document` channel against the Wave 0 corpus.
  *
- * Runs the headless bench test (TypeScript, via vitest) and writes
- * spec-better-ai/evidence/wave-0-corpus.md. Scripted doubles prove the
- * harness, not contract adherence.
- *
- * Fail-closed: missing flags print usage and exit 1. A gate that cannot
- * fail is worse than no script.
+ * `--both` is a historical alias; the XML channel is gone and the harness
+ * only emits tool-channel rows. Fail-closed: missing flags print usage
+ * and exit 1.
  */
 
 import { spawnSync } from "node:child_process";
@@ -134,55 +131,34 @@ function promptTable(rows) {
 
 function renderMarkdown(report) {
 	const rows = report.rows ?? [];
-	const xml = rows.filter(
-		(row) => row.channel === "xml" && row.promptId !== "off-contract",
-	);
 	const tool = rows.filter(
 		(row) => row.channel === "tool" && row.promptId !== "off-contract",
-	);
-	const xmlControl = rows.find(
-		(row) => row.channel === "xml" && row.promptId === "off-contract",
 	);
 	const toolControl = rows.find(
 		(row) => row.channel === "tool" && row.promptId === "off-contract",
 	);
-	const xmlTotals = channelTotals(xml);
-	const toolTotals = channelTotals(tool);
-	const p9xml = xml.find((row) => row.promptId === "p9");
-	const p9tool = tool.find((row) => row.promptId === "p9");
-
-	const xmlMet = xmlTotals.postconditionsMet;
-	const toolMet = toolTotals.postconditionsMet;
-	const criterion1 =
-		xmlMet === toolMet
-			? "Criterion 1 is not decided: postconditions-met is tied. Scripted doubles that already know the answers cannot produce a Wave 0 ship/delete verdict."
-			: "Criterion 1's numeric comparison is not a Wave 0 verdict. These are doubles that already know the intended edit (or honestly skip an inexpressible one). A live model is what Decision Criteria require.";
+	const totals = channelTotals(tool);
+	const p9 = tool.find((row) => row.promptId === "p9");
 
 	return `# Wave 0 corpus harness (GATE 0.14)
 
 **Scripted model doubles prove the harness, not contract adherence.**
 
-This file is the written report for \`node scripts/edit-channel-bench.mjs --both --corpus\`. It does **not** auto-ship or auto-delete the tool channel. ${criterion1}
+This file is the written report for \`node scripts/edit-channel-bench.mjs --both --corpus\`. The XML channel is retired; only the \`edit_document\` channel remains. These are doubles that already know the intended edit (or honestly skip an inexpressible one). A live model is what Decision Criteria require.
 
 - Generated: ${report.generatedAt}
 - \`mutationPreference\`: \`${report.mutationPreference}\` (held constant; Do-Not-Miss)
-- XML channel: \`editChannel\` unset / default (\`<pen-fast-apply>\`)
-- Tool channel: \`editChannel: "tool"\`
+- Channel: \`edit_document\` (\`tool-edit\`)
 - First feedback: first document change or first visible text, whichever comes first (\`performance.now()\` around \`runPrompt\`, plus \`generation.debug\` when present)
 - \`wrongEdit\`: the document changed **and** the postcondition is not met. Unchanged + failed postcondition is a miss, not a wrong-edit.
 
-## Channel totals (${xml.length} corpus prompts)
+## Totals (${tool.length} corpus prompts)
 
 | Channel | Postconditions met | Wrong-edits | Mean passes | Calls | Refusals | Output chars | Wall (ms) | Mean first feedback (ms) |
 | ------- | ------------------ | ----------- | ----------- | ----- | -------- | ------------ | --------- | ------------------------ |
-| XML (fast-apply) | ${xmlMet} / ${xml.length} | ${xmlTotals.wrongEdits} | ${fmt(xmlTotals.meanPasses)} | ${fmt(xmlTotals.toolCalls)} | ${fmt(xmlTotals.refusals)} | ${fmt(xmlTotals.outputChars)} | ${fmt(xmlTotals.wallMs)} | ${fmt(xmlTotals.firstFeedbackMs)} |
-| Tool (\`edit_document\`) | ${toolMet} / ${tool.length} | ${toolTotals.wrongEdits} | ${fmt(toolTotals.meanPasses)} | ${fmt(toolTotals.toolCalls)} | ${fmt(toolTotals.refusals)} | ${fmt(toolTotals.outputChars)} | ${fmt(toolTotals.wallMs)} | ${fmt(toolTotals.firstFeedbackMs)} |
+| Tool (\`edit_document\`) | ${totals.postconditionsMet} / ${tool.length} | ${totals.wrongEdits} | ${fmt(totals.meanPasses)} | ${fmt(totals.toolCalls)} | ${fmt(totals.refusals)} | ${fmt(totals.outputChars)} | ${fmt(totals.wallMs)} | ${fmt(totals.firstFeedbackMs)} |
 
-## XML channel, per prompt
-
-${promptTable(xml)}
-
-## Tool channel, per prompt
+## Per prompt
 
 ${promptTable(tool)}
 
@@ -192,21 +168,19 @@ Same prose-that-is-not-an-edit as \`editChannel.comparison.test.ts\` (\`Sure! I'
 
 | Channel | Document changed | Postcondition (p1) | Wrong-edit | Passes | Output chars | Wall (ms) | First feedback (ms) |
 | ------- | ---------------- | ------------------ | ---------- | ------ | ------------ | --------- | ------------------- |
-| XML | ${xmlControl?.documentChanged ?? "—"} | ${xmlControl?.postconditionMet ? "met" : "miss"} | ${xmlControl?.wrongEdit ?? "—"} | ${fmt(xmlControl?.modelPasses)} | ${fmt(xmlControl?.outputChars)} | ${fmt(xmlControl?.wallMs)} | ${fmt(xmlControl?.firstFeedbackMs)} |
 | Tool | ${toolControl?.documentChanged ?? "—"} | ${toolControl?.postconditionMet ? "met" : "miss"} | ${toolControl?.wrongEdit ?? "—"} | ${fmt(toolControl?.modelPasses)} | ${fmt(toolControl?.outputChars)} | ${fmt(toolControl?.wallMs)} | ${fmt(toolControl?.firstFeedbackMs)} |
 
-The tool channel must score \`wrongEdit: false\` and no document change. The XML channel's plain-markdown fallback may score \`wrongEdit: true\`. That failure mode is recorded, not "fixed" here.
+The tool channel must score \`wrongEdit: false\` and no document change.
 
 ## Prompt 9 (knownWeak)
 
 Cross-block rename. Left in the table even if it fails (Do-Not-Miss).
 
-- XML: ${p9xml?.postconditionMet ? "met" : `miss (${p9xml?.postconditionReason ?? "no row"})`}
-- Tool: ${p9tool?.postconditionMet ? "met" : `miss (${p9tool?.postconditionReason ?? "no row"})`}
+- Tool: ${p9?.postconditionMet ? "met" : `miss (${p9?.postconditionReason ?? "no row"})`}
 
 ## What this run did not measure
 
-- A live model. Doubles emit the intended \`edit_document\` call or \`<pen-fast-apply>\` XML; they do not test whether a real model follows the contract.
+- A live model. Doubles emit the intended \`edit_document\` call; they do not test whether a real model follows the contract.
 - Provider time-to-first-token / streaming of partial tool input (EC15). \`firstFeedbackMs\` here is harness-local: one-shot text-delta or the first \`commit\` / \`debug.firstToolResultMs\`.
 - Token cost, cache-hit rate, or playground \`dist/\` latency (see \`measurement.md\`).
 `;

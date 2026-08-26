@@ -30,15 +30,12 @@ export function resolveMutationMode(
 	if (
 		(input.surface === "bottom-chat" ||
 			input.surface === "inline-edit") &&
-		(input.lane === "cursor-context" || input.lane === "context-first")
+		input.lane === "cursor-context"
 	) {
 		return "streaming-suggestions";
 	}
 	if (input.lane === "cursor-context") {
 		return "direct-stream";
-	}
-	if (input.lane === "context-first") {
-		return "persistent-suggestions";
 	}
 	if (input.lane === "review") {
 		return "staged-review";

@@ -28,6 +28,7 @@ Pen has no separate contracts directory; the spec set is the source of truth:
 - `spec-v2/` is the closed v2 design-and-audit record: selection engine, change summaries, facets, commands, commit pipeline, DOM scheduling, bidi, security, accessibility, API/packaging, and the migration wave plan.
 - `spec-v3/` is the closed v3 design-and-audit record: anchors, observation, op primitives, empty blocks, and surface consolidation.
 - `spec-v4/` is the executing consolidation train.
+- `spec-v5/` is the adopted unification train (one edit channel, one preview surface, one field-editor spine, a declared host contract) with rule families `UC`/`RS`/`FE`/`HB`; see `spec-v5/README.md` for precedence against `spec-better-ai/`.
 
 Rules for agents:
 

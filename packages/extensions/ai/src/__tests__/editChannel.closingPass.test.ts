@@ -41,7 +41,6 @@ function createChatEditor(model: ModelAdapter) {
 				model,
 				contentFormat: { blockGeneration: "markdown" },
 				mutationPreference: "direct",
-				editChannel: "tool",
 				allowedMutatingTools: ["edit_document"],
 			}),
 		],

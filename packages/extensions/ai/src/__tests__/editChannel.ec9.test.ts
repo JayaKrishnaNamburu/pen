@@ -28,7 +28,6 @@ function createChatEditor(model: ModelAdapter) {
 				model,
 				contentFormat: { blockGeneration: "markdown" },
 				mutationPreference: "direct",
-				editChannel: "tool",
 				allowedMutatingTools: ["edit_document"],
 			}),
 		],
@@ -294,16 +293,7 @@ async function loopWithStaleWorkingSetAfterFirstPass(options: {
 	}
 }
 
-describe("EC9: the shared stale branch behaves per channel", () => {
-	it("EC9: the legacy channel still throws StaleWorkingSetError when it cannot refresh", async () => {
-		await expect(
-			loopWithStaleWorkingSetAfterFirstPass({}),
-		).rejects.toMatchObject({
-			name: "StaleWorkingSetError",
-			message: "view-changed",
-		});
-	});
-
+describe("EC9: the shared stale branch continues the turn", () => {
 	it("EC9: the edit channel continues the turn instead of throwing", async () => {
 		const { passes, validations } = await loopWithStaleWorkingSetAfterFirstPass(
 			{ applyStrategy: "tool-edit" },

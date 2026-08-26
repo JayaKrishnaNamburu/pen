@@ -1,8 +1,5 @@
 import type { AIApplyStrategy, AIContentFormat } from "../runtime/contracts";
-import {
-	MARKDOWN_FAST_APPLY_ROOT_TAG,
-	normalizeFlowMarkdownOutput,
-} from "../runtime/flowMarkdown";
+import { normalizeFlowMarkdownOutput } from "../runtime/flowMarkdown";
 import { buildMutationReceipt } from "../runtime/mutationReceipt";
 import type {
 	AIMutationReceipt,
@@ -28,39 +25,6 @@ export const bufferedBlockGenerationMethods = {
 			replaceBlockIds?: readonly string[];
 		},
 	): AIMutationReceipt {
-		let fastApplyFallbackMode: "plain-markdown" | null = null;
-		if (
-			contentFormat === "markdown" &&
-			options?.applyStrategy === "markdown-fast-apply" &&
-			(options?.replaceBlockIds?.length ?? 0) === 0
-		) {
-			const fastApplyReceipt = this._commitBufferedMarkdownFastApply(
-				blockId,
-				text,
-				mutationMode,
-				sessionId,
-				options.workingSet ?? null,
-			);
-			if (fastApplyReceipt) {
-				return fastApplyReceipt;
-			}
-			if (!text.trim().startsWith(`<${MARKDOWN_FAST_APPLY_ROOT_TAG}>`)) {
-				// Backward compatibility: tolerate plain markdown when the model
-				// does not honor the fast-apply contract.
-				fastApplyFallbackMode = "plain-markdown";
-			} else {
-				return buildMutationReceipt({
-					status: "invalid",
-					adapterId: "flow-markdown",
-					blockClass: "flow",
-					transportKind: "flow-text",
-					issues: [
-						"Fast apply contract could not be compiled safely.",
-					],
-				});
-			}
-		}
-
 		const normalizedText =
 			contentFormat === "markdown"
 				? normalizeFlowMarkdownOutput(text)
@@ -148,15 +112,6 @@ export const bufferedBlockGenerationMethods = {
 				options?.replaceBlockIds,
 			)
 		) {
-			if (fastApplyFallbackMode) {
-				this._recordFastApplyDebug({
-					executionPath: "plain-markdown",
-					fallback: this._summarizeFastApplyFallbackOps(
-						"plain-markdown",
-						[],
-					),
-				});
-			}
 			return buildMutationReceipt({
 				status: "staged_suggestions",
 				adapterId: "flow-markdown",
@@ -179,15 +134,6 @@ export const bufferedBlockGenerationMethods = {
 						options?.insertionOffset,
 					);
 		if (ops.length === 0) {
-			if (fastApplyFallbackMode) {
-				this._recordFastApplyDebug({
-					executionPath: "plain-markdown",
-					fallback: this._summarizeFastApplyFallbackOps(
-						"plain-markdown",
-						ops,
-					),
-				});
-			}
 			return buildMutationReceipt({
 				status: "noop",
 				ops,
@@ -202,15 +148,6 @@ export const bufferedBlockGenerationMethods = {
 			mutationMode === "staged-review"
 		) {
 			this._applySuggestedAIOps(ops, sessionId);
-			if (fastApplyFallbackMode) {
-				this._recordFastApplyDebug({
-					executionPath: "plain-markdown",
-					fallback: this._summarizeFastApplyFallbackOps(
-						"plain-markdown",
-						ops,
-					),
-				});
-			}
 			return buildMutationReceipt({
 				status: "staged_suggestions",
 				ops,
@@ -223,15 +160,6 @@ export const bufferedBlockGenerationMethods = {
 			ops,
 			aiGroupedApplyOptions(this._state.activeGeneration?.undoGroupId),
 		);
-		if (fastApplyFallbackMode) {
-			this._recordFastApplyDebug({
-				executionPath: "plain-markdown",
-				fallback: this._summarizeFastApplyFallbackOps(
-					"plain-markdown",
-					ops,
-				),
-			});
-		}
 		return buildMutationReceipt({
 			status: "applied",
 			ops,

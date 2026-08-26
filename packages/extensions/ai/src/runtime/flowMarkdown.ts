@@ -12,10 +12,6 @@ const FLOW_MARKDOWN_ALLOWED_FEATURES = [
 	"GFM tables",
 ] as const;
 
-export const MARKDOWN_FAST_APPLY_ROOT_TAG = "pen-fast-apply";
-export const MARKDOWN_FAST_APPLY_OMISSION_MARKER =
-	"<!-- ... existing markdown ... -->";
-
 export interface FlowMarkdownPromptInput {
 	prompt: string;
 	workingSet: AIWorkingSetEnvelope | null;
@@ -26,9 +22,6 @@ export function buildFlowMarkdownRequestPrompt(
 	input: FlowMarkdownPromptInput,
 ): string {
 	const contextSummary = serializeWorkingSetContext(input.workingSet);
-	if (input.applyStrategy === "markdown-fast-apply") {
-		return buildFlowMarkdownFastApplyPrompt(input.prompt, contextSummary);
-	}
 	if (input.applyStrategy === "tool-edit") {
 		return buildFlowMarkdownToolEditPrompt(input.prompt, contextSummary);
 	}
@@ -85,71 +78,6 @@ function buildFlowMarkdownToolEditPrompt(
 		"If an operation is rejected, read the reason and the outline it returns, then call the tool again with corrected ids.",
 		"",
 		"Context summary:",
-		contextSummary,
-		"",
-		"User request:",
-		prompt,
-	].join("\n");
-}
-
-function buildFlowMarkdownFastApplyPrompt(
-	prompt: string,
-	contextSummary: string,
-): string {
-	return [
-		`You are editing existing Pen flow content using the <${MARKDOWN_FAST_APPLY_ROOT_TAG}> contract.`,
-		"Return only XML. Do not return prose, markdown explanations, or code fences outside the XML payload.",
-		"The context below may annotate each block with `<!-- block:<id> <type> -->`. Those ids are the block ids your edits must target. Never repeat annotation comments inside `<text>` or `<markdown>` payloads.",
-		"Handle every part of the user request: a multi-part request needs one `<edit>` entry per distinct change, all in the same plan.",
-		"Prefer the smallest valid edit plan that preserves existing block identity.",
-		"",
-		"Operations:",
-		"- `replace_text`: replace the text of one block (`<text>` holds the final plain text; keep the block's type).",
-		"- `append_text`: append plain text at the end of one block.",
-		"- `insert_before` / `insert_after`: insert new blocks from `<markdown>` next to the target block.",
-		"- `replace_blocks`: replace one or more blocks with new `<markdown>` — use this to convert a block to another type (e.g. paragraph to bullet list) or to restructure.",
-		"- `delete_blocks`: remove the listed blocks.",
-		"",
-		"For `replace_text` you may scope the edit to part of the block: `<anchorBefore>` and `<anchorAfter>` hold exact, unique text snippets from the block, and `<text>` then replaces only what sits between them (empty anchorBefore means from the start, empty anchorAfter means to the end).",
-		"",
-		`Expected XML shape:`,
-		`<${MARKDOWN_FAST_APPLY_ROOT_TAG}>`,
-		"<instructions>I am ...</instructions>",
-		"<scope>section</scope>",
-		"<edit>",
-		"<operation>replace_text</operation>",
-		"<blockId>target-block-id</blockId>",
-		"<expectedBlockType>paragraph</expectedBlockType>",
-		"<text><![CDATA[Final block text]]></text>",
-		"</edit>",
-		"<edit>",
-		"<operation>replace_blocks</operation>",
-		"<block>first-block-id</block>",
-		"<block>second-block-id</block>",
-		"<markdown><![CDATA[- First point",
-		"- Second point",
-		"]]></markdown>",
-		"</edit>",
-		"<edit>",
-		"<operation>insert_after</operation>",
-		"<blockId>target-block-id</blockId>",
-		"<markdown><![CDATA[| Column A | Column B |",
-		"| --- | --- |",
-		"| Value | Value |",
-		"]]></markdown>",
-		"</edit>",
-		`</${MARKDOWN_FAST_APPLY_ROOT_TAG}>`,
-		"",
-		"Rules:",
-		"- `instructions` must be a short first-person summary of the exact edit.",
-		"- `scope` must be one of `single-block`, `adjacent-blocks`, or `section`.",
-		"- Every edit must target block ids that appear in the context.",
-		"- Use `<blockId>` for a single target or repeated `<block>` tags for multiple blocks.",
-		"- `replace_text` and `append_text` use `<text>`. Structural edits use `<markdown>`.",
-		`- Use ${MARKDOWN_FAST_APPLY_OMISSION_MARKER} only inside markdown when you truly need to signal omitted unchanged content.`,
-		`- Allowed markdown subset: ${FLOW_MARKDOWN_ALLOWED_FEATURES.join(", ")}. Use a GFM table when the user asks for a table.`,
-		"",
-		"Scoped markdown context:",
 		contextSummary,
 		"",
 		"User request:",

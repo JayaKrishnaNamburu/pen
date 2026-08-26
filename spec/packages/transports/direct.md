@@ -11,13 +11,14 @@ Provide transport-specific wiring around Pen protocols and sessions.
 ## Key Exports / Entrypoints
 
 - Export map: `.`
-- Workspace scripts: `build`, `clean`, `test`, `typecheck`
+- `directTransport()` and `DirectTransportOptions`. `toolRuntime` is required; construction throws without it.
+- Workspace scripts: `build`, `clean`, `lint`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@input/pen-core`, `@input/pen-types`
+- Runtime dependencies: `@input/pen-ai`, `@input/pen-core`, `@input/pen-types`
 - Peer dependencies: No peer dependencies declared.
-- Boundary: Transport packages should stay below product policy and above raw network wiring.
+- Boundary: Transport packages should stay below product policy and above raw network wiring. The `@input/pen-ai` dependency is for tool authorization (`openAIToolCall`, `createAIToolTurn`), not for AI orchestration.
 
 ## Data Flow / Runtime Model
 

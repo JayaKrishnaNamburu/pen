@@ -10,7 +10,7 @@ Start with the charter docs if you want the durable architectural rules:
 - `charter/document-model.md`
 - `charter/mutation-pipeline.md`
 - `charter/package-map.md`
-- `charter/rule-ids.md` — rule-ID family registry (Wave 2 RC2)
+- `charter/rule-ids.md` — rule-ID family registry
 
 Then read package specs by layer:
 
@@ -39,14 +39,14 @@ Then read package specs by layer:
 - JSON is the canonical machine-readable format. XML is an interoperability surface layered on top of that model. Both live on `@input/pen-interop`.
 - React is the primary documented renderer. Vue is a shipped renderer proof built on the shared DOM engine.
 - Private apps such as `@input/pen-docs` and `@input/pen-playground` are specified because they are part of the workspace, but they are not publishable runtime packages.
-- `playground/` is the reference app and the host for `pnpm test:e2e`. `spec-v2`/`spec-v3` evidence recorded before 2026-08-25 that says `playground/` may mean the deleted kitchen-sink app.
+- `playground/` is the reference app and the host for `pnpm test:e2e`. The former kitchen-sink app is deleted.
 - Two workspace packages have no current-state spec on purpose: `@input/pen-conformance` and `@input/pen-eslint-plugin`. `packages/` has 27 package.json files (24 published, 3 private); 25 have a matching spec. See `charter/package-map.md`.
 - `pen.ariaReadOnly` (the facet) only sets `aria-readonly`. The renderer `readonly` prop is what declines typing. That split is shipped and unresolved; package specs describe it, they do not pick a winner.
-- The command registry and catalog are settled (v3 keeps D/K/B). Selection bridging inside `@input/pen-dom` remains unsettled until `spec-v4/05-structure.md` CS5; package specs that mention that bridging mark it as such.
+- The command registry and catalog are settled: dispatch keeps the D/K/B rules. Selection bridging inside `@input/pen-dom` is the one part of the surface still unsettled; package specs that mention that bridging mark it as such.
 
 ## What Changed
 
-- Historical wave docs and planning notes were removed.
+- Historical wave docs and planning notes were removed. The `spec-v2`, `spec-v3`, `spec-v4`, and `spec-better-ai` design trees are gone; the rules that still govern shipped code were folded into the documents here, and `charter/rule-ids.md` records where each family now lives.
 - Specs now describe the workspace as shipped today.
 - The highest-value packages now have deeper runtime notes, boundaries, and architecture diagrams rather than just metadata summaries.
 

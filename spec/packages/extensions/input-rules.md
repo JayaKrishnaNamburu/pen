@@ -17,7 +17,9 @@ Add optional runtime behavior on top of the editor core without changing the can
 
 - Runtime dependencies: `@input/pen-core`, `@input/pen-types`
 - Peer dependencies: No peer dependencies declared.
-- Boundary: Extensions compose through the core editor and slots/events rather than side channels. Rules land on `inputRulesFacet` (`pen.inputRules`) via `inputRulesToProviders()`.
+- Boundary: Extensions compose through the core editor and slots/events rather than side channels. The extension publishes a rules engine on `inputRulesEngineFacet` / `INPUT_RULES_ENGINE_SLOT_KEY` and rewrites matching input from an `onBeforeApply` hook; `@input/pen-dom` reads that engine facet. The package also exports `inputRulesToProviders()` and `PEN_INPUT_RULES_FACET_NAME` for the `inputRulesFacet` provider shape, but the extension itself does not use them.
+- Rules are bypassed for the `input-rule`, `collaborator`, `import`, `history`, and `system` origins, so a rule cannot fire on a peer's text or on its own rewrite.
+- Not installed by `defaultPreset()`. This is opt-in like `@input/pen-search`.
 
 ## Data Flow / Runtime Model
 

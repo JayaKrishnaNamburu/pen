@@ -1,28 +1,25 @@
 #!/usr/bin/env node
 /**
- * coverage:rules (Wave 0.6)
+ * coverage:rules
  *
- * Greps spec-v2 and spec-v3 (when present) for rule-ID tokens
- * (inventory prefixes from spec-v2/09-reliability-testing.md "Rule:"
- * line, plus EXTRA_PREFIXES, plus spec-v3 families derived from
- * definition lines) and greps tests for claims. spec-v3 is optional;
- * a missing directory is skipped. Zero collected IDs is empty
- * inventory and fails. Prefixes defined as rules in both spec roots
- * are printed as COLLISION (D is the known case).
+ * Greps the spec roots for rule-ID tokens and greps tests for claims.
  *
- * spec-v3 families are not hand-listed. DEFINITION_LINE_RE walks the
- * files; PROCESS_PREFIXES is the only documented exclusion. Adding a
- * family to EXTRA_PREFIXES instead of deriving it is the silent-filter
- * defect this gate has hit twice.
+ * Every family is derived from definition lines: DEFINITION_LINE_RE
+ * walks the markdown and PROCESS_PREFIXES is the only documented
+ * exclusion. There is no hand-maintained inventory list, because a
+ * family that exists only in a hand-maintained list can be forgotten,
+ * and that is the silent-filter defect this gate hit twice under the
+ * previous inventory-line model.
+ *
+ * A missing root is skipped, so a root can be retired without editing
+ * this script. Zero collected IDs across all roots is empty inventory
+ * and fails. A prefix defined as a rule in more than one root is
+ * printed as COLLISION: a test named for the shared token claims the
+ * rule in every root that defines it.
  *
  * Claimed-scope IDs without a claiming test name fail.
  * Gated-scope IDs without a verified, wired gate fail.
  * Unlisted spec IDs are reported, not failed.
- *
- * Handover: @input/pen-conformance does not exist in this checkout.
- * When packages/tooling/conformance lands, add
- *   "coverage:rules": "node ../../../scripts/coverage-rules.mjs"
- * to that package.json. Do not rebuild the harness here.
  */
 
 import fs from "node:fs/promises";
@@ -32,49 +29,35 @@ import { fileURLToPath } from "node:url";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_REPO_ROOT = path.resolve(SCRIPT_DIR, "..");
-const INVENTORY_DOC = path.join("spec-v2", "09-reliability-testing.md");
-const SPEC_ROOTS = ["spec-v2", "spec-v3", "spec-v4"];
-// Roots whose families are derived from definition lines rather than
-// the spec-v2 inventory line. spec-v2 is the inventoried root; every
-// later train is derived, so adopting a train costs nothing here.
-const DERIVED_SPEC_ROOTS = ["spec-v3", "spec-v4"];
+// `spec` is the current-state tree and the home of every durable
+// normative rule (spec/rules/*.md, plus package docs that carry their
+// own families). `spec-v5` is the executing train. Adopting or
+// retiring a train is a one-line edit here; a listed root that does
+// not exist on disk is skipped rather than failing.
+const SPEC_ROOTS = ["spec", "spec-v5"];
 const DEFAULT_CLAIMED_SCOPE = path.join("scripts", "claimed-scope.txt");
 const DEFAULT_GATED_SCOPE = path.join("scripts", "gated-scope.txt");
 const WORKFLOW_DIR = ".github/workflows/";
 const GATED_ROW_RE =
 	/^([A-Z]+\d+)\s*\|\s*(\S+)\s*\|\s*(\S+)\s*\|\s*(\S+)\s*\|\s*(.+)$/;
 
-// spec-v2 families that are real rules but were never added to the
-// Rule: inventory line in 09-reliability-testing.md. This is not a
-// v3 inclusion list — v3 families are derived from definition lines.
-// Do not add a v3 prefix here: a family that exists only here can be
-// forgotten, which is the defect derivation replaces. A narrowing
-// filter that "looks redundant" next to derivation is how this gate
-// went blind to OP/OPB/INT.
-const EXTRA_PREFIXES = ["DUR", "COL", "AIB", "IOP", "SCALE"];
 // Spec IDs with these prefixes fail if no test name claims them,
 // even when claimed-scope.txt has not listed them yet. Fail now,
-// pass when the claiming tests land. Derived v3 families default to
-// reported-not-failed (the SF posture) so GATE 0.1 cannot block
-// later waves. Put a family here only when it is already claimed
-// and must stay that way — not to hide an unimplemented set.
+// pass when the claiming tests land. Every other family defaults to
+// reported-not-failed so an in-flight train cannot block the gate.
+// Put a family here only when it is already claimed and must stay
+// that way — not to hide an unimplemented set.
 const IN_FORCE_PREFIXES = ["OB", "PR"];
-// WA1–WA6 are working agreements (process), not product invariants.
-// Excluded from the derived v3 set so they are not mistaken for
-// unclaimed test-name obligations. This list is the documented
-// exclusion; dropping WA from derivation without naming it here
-// would be the silent-filter defect. Script-gateable: WA1
-// (spec-v3 closed at 00–06 + waves/), WA2 (scripts/v3-gates.mjs;
-// wave files must contain no status prose), WA5
-// (scripts/wave-deletions-migration-check.mjs). Review-only: WA3
-// (mechanism + first consumer in the same wave), WA4 (do not put
-// standing gates on the v3 critical path), WA6 (name the native
-// capability before borrowing).
+// Working agreements are process, not product invariants. They are
+// excluded from derivation so they are not mistaken for unclaimed
+// test-name obligations. This list is the documented exclusion;
+// dropping a prefix from derivation without naming it here would be
+// the silent-filter defect.
 const PROCESS_PREFIXES = ["WA"];
 const EMPTY_INVENTORY = "empty inventory";
 const DEFINITION_LINE_RE = /^[-*]\s+([A-Z]+)\d+\s*[.—–]/;
 const COLLISION_LINE =
-	"defined as rules in spec-v2 and spec-v3; a test named for either root claims both";
+	"defined as rules in more than one spec root; a test named for the shared token claims each";
 
 export function parseRuleId(id) {
 	// Greedy [A-Z]+ is the letter-run extract. OPB1 → OPB, not OP.
@@ -107,73 +90,20 @@ const SKIP_DIR_NAMES = new Set([
 const TEST_NAME_RE =
 	/\b(?:describe|it|test|scenario)(?:\.(?:skip|only|todo))*\s*\(\s*(['"`])((?:\\.|[^\\])*?)\1/g;
 
-export function parseInventoryRanges(markdown) {
-	const ruleLine = markdown
-		.split(/\r?\n/)
-		.find((line) => line.startsWith("Rule:"));
-	if (ruleLine == null) {
-		throw new Error(`No "Rule:" inventory line in ${INVENTORY_DOC}`);
-	}
-	const paren = ruleLine.match(/\(([^)]+)\)/);
-	if (paren == null) {
-		throw new Error(
-			`"Rule:" line has no parenthesized inventory in ${INVENTORY_DOC}`,
-		);
-	}
-	return paren[1].split(",").map((part) => parseRangeToken(part.trim()));
-}
-
-function parseRangeToken(token) {
-	const match = token.match(/^([A-Z]+)(\d+)[–-](?:[A-Z]+)?(\d+)$/);
-	if (match == null) {
-		throw new Error(`Unparseable inventory range: ${token}`);
-	}
-	const prefix = match[1];
-	const from = Number(match[2]);
-	const to = Number(match[3]);
-	if (!Number.isInteger(from) || !Number.isInteger(to) || to < from) {
-		throw new Error(`Invalid inventory bounds: ${token}`);
-	}
-	const ids = [];
-	for (let n = from; n <= to; n += 1) {
-		ids.push(`${prefix}${n}`);
-	}
-	return { prefix, from, to, ids };
-}
-
-export function prefixesFromRanges(ranges, extraPrefixes = EXTRA_PREFIXES) {
-	const prefixes = new Set(extraPrefixes);
-	for (const range of ranges) {
-		prefixes.add(range.prefix);
-	}
-	return sortPrefixesLongestFirst(prefixes);
-}
-
-export function derivedV3Prefixes(
+export function derivedPrefixes(
 	definedByRoot,
 	processPrefixes = PROCESS_PREFIXES,
 ) {
 	const excluded = new Set(processPrefixes);
 	const derived = new Set();
-	for (const root of DERIVED_SPEC_ROOTS) {
-		for (const prefix of definedByRoot.get(root) ?? new Set()) {
+	for (const prefixes of definedByRoot.values()) {
+		for (const prefix of prefixes) {
 			derived.add(prefix);
 		}
 	}
 	return sortPrefixesLongestFirst(
 		[...derived].filter((prefix) => !excluded.has(prefix)),
 	);
-}
-
-export function inventoryPrefixes(
-	ranges,
-	definedByRoot,
-	extraPrefixes = EXTRA_PREFIXES,
-) {
-	return prefixesFromRanges(ranges, [
-		...extraPrefixes,
-		...derivedV3Prefixes(definedByRoot),
-	]);
 }
 
 export function prefixesDefinedInMarkdown(text) {
@@ -188,15 +118,15 @@ export function prefixesDefinedInMarkdown(text) {
 }
 
 export function collidingPrefixes(byRoot) {
-	const v2 = byRoot.get("spec-v2") ?? new Set();
-	const later = new Set();
-	for (const root of DERIVED_SPEC_ROOTS) {
-		for (const prefix of byRoot.get(root) ?? new Set()) {
-			later.add(prefix);
+	const rootCount = new Map();
+	for (const prefixes of byRoot.values()) {
+		for (const prefix of prefixes) {
+			rootCount.set(prefix, (rootCount.get(prefix) ?? 0) + 1);
 		}
 	}
-	return [...v2]
-		.filter((prefix) => later.has(prefix))
+	return [...rootCount.entries()]
+		.filter(([, count]) => count > 1)
+		.map(([prefix]) => prefix)
 		.sort((a, b) => b.length - a.length || a.localeCompare(b));
 }
 
@@ -250,27 +180,16 @@ export function collectIds(text, idRegex, isRuleId = () => true) {
 	return ids;
 }
 
-export function ruleIdPredicate(ranges, extraPrefixes = EXTRA_PREFIXES) {
-	const extra = new Set(extraPrefixes);
+export function ruleIdPredicate(prefixes) {
+	// Membership only. Upper bounds used to come from a hand-written
+	// inventory line, which meant a rule appended to a family was
+	// invisible until someone remembered to widen the range. Families
+	// now grow by writing a definition line, so the definition is the
+	// bound and there is nothing to keep in sync.
+	const known = new Set(prefixes);
 	return (id) => {
 		const parsed = parseRuleId(id);
-		if (parsed == null) {
-			return false;
-		}
-		const { prefix, n } = parsed;
-		const range = ranges.find((entry) => entry.prefix === prefix);
-		if (range != null) {
-			// Ranges first: a derived v3 prefix that collides with a
-			// v2 inventory token (D) must not widen the v2 bounds.
-			// Extras-first would accept D6 once D is derived.
-			// API10 is specified in 09-reliability-testing.md after the inventory line.
-			const max = prefix === "API" ? Math.max(range.to, 10) : range.to;
-			return n >= range.from && n <= max;
-		}
-		if (extra.has(prefix)) {
-			return n >= 1;
-		}
-		return false;
+		return parsed != null && known.has(parsed.prefix) && parsed.n >= 1;
 	};
 }
 
@@ -489,6 +408,18 @@ export function assertNonEmptyInventory(ids) {
 	}
 }
 
+export function assertPrefixesDerived(prefixes) {
+	// Derivation replaced a hand-written inventory, so the failure mode
+	// moved: the gate can no longer be wrong about bounds, but it can
+	// silently inventory nothing if the roots stop containing
+	// definition lines. Fail loudly instead of reporting a clean sweep.
+	if (prefixes.length === 0) {
+		throw new Error(
+			`${EMPTY_INVENTORY}: no rule families defined under ${SPEC_ROOTS.join(" or ")}; expected definition lines matching ${DEFINITION_LINE_RE}`,
+		);
+	}
+}
+
 export async function collectTestClaims(
 	repoRoot,
 	claimedIds,
@@ -592,7 +523,7 @@ function formatReport({
 	specFileCount,
 	testFileCount,
 	collisions = [],
-	derivedPrefixes = [],
+	prefixes = [],
 }) {
 	const lines = [
 		"coverage:rules",
@@ -603,7 +534,7 @@ function formatReport({
 		collisions.length > 0
 			? `COLLISION  ${collisions.join(", ")}  ${COLLISION_LINE}`
 			: null,
-		`Derived ${DERIVED_SPEC_ROOTS.join(" + ")}: ${[...derivedPrefixes].sort((a, b) => a.localeCompare(b)).join(", ") || "(none)"}`,
+		`Derived families (${prefixes.length}): ${[...prefixes].sort((a, b) => a.localeCompare(b)).join(", ") || "(none)"}`,
 		`Process excluded: ${PROCESS_PREFIXES.join(", ")} (working agreements, not test-name rules)`,
 		`Claimed scope (${claimedIds.length}): ${claimedIds.join(", ")}`,
 		`Gated scope (${gatedRows.length}): ${gatedRows.map((row) => row.id).join(", ") || "(none)"}`,
@@ -698,16 +629,11 @@ async function runCoverage(
 	claimedScopeRel,
 	gatedScopeRel = DEFAULT_GATED_SCOPE,
 ) {
-	const inventoryText = await fs.readFile(
-		path.join(repoRoot, INVENTORY_DOC),
-		"utf8",
-	);
-	const ranges = parseInventoryRanges(inventoryText);
 	const definedByRoot = await collectDefinedPrefixes(repoRoot);
-	const derivedPrefixes = derivedV3Prefixes(definedByRoot);
-	const prefixes = inventoryPrefixes(ranges, definedByRoot);
+	const prefixes = derivedPrefixes(definedByRoot);
+	assertPrefixesDerived(prefixes);
 	const idRegex = ruleIdRegex(prefixes);
-	const isRuleId = ruleIdPredicate(ranges, prefixes);
+	const isRuleId = ruleIdPredicate(prefixes);
 
 	const listedClaimedIds = parseClaimedScope(
 		await fs.readFile(resolveRepoPath(repoRoot, claimedScopeRel), "utf8"),
@@ -726,7 +652,7 @@ async function runCoverage(
 	);
 	if (specFileCount === 0) {
 		throw new Error(
-			"coverage-rules: cannot check: spec-v2/spec-v3 markdown walk matched 0 files",
+			`coverage-rules: cannot check: markdown walk over ${SPEC_ROOTS.join(" + ")} matched 0 files`,
 		);
 	}
 	assertNonEmptyInventory(specIds);
@@ -758,516 +684,374 @@ async function runCoverage(
 		specFileCount,
 		testFileCount,
 		collisions,
-		derivedPrefixes,
+		prefixes,
 	};
 }
 
-async function runSelfTest() {
-	const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "pen-coverage-rules-"));
-	const specDir = path.join(tmp, "spec-v2");
-	const testDir = path.join(tmp, "packages", "core", "src", "__tests__");
-	await fs.mkdir(specDir, { recursive: true });
-	await fs.mkdir(testDir, { recursive: true });
+async function makeTree(label, files) {
+	const root = await fs.mkdtemp(
+		path.join(os.tmpdir(), `pen-coverage-rules-${label}-`),
+	);
+	await writeFiles(root, files);
+	return root;
+}
 
-	const inventory = `Rule: every normative rule ID in spec-v2 documents (I1–I12, HOST1–HOST6) must be claimed.\n`;
-	await fs.writeFile(
-		path.join(specDir, "09-reliability-testing.md"),
-		inventory,
+async function writeFiles(root, files) {
+	for (const [relative, contents] of Object.entries(files)) {
+		const full = path.join(root, ...relative.split("/"));
+		await fs.mkdir(path.dirname(full), { recursive: true });
+		await fs.writeFile(full, contents);
+	}
+}
+
+function namedTest(name) {
+	return `import { describe, it } from "vitest";\ndescribe("fixture", () => {\n  it(${JSON.stringify(name)}, () => {});\n});\n`;
+}
+
+const TEST_PATH = "packages/core/src/__tests__/fixture.test.ts";
+const SECOND_TEST_PATH = "packages/core/src/__tests__/second.test.ts";
+
+function cover(root) {
+	return runCoverage(root, "claimed-scope.txt", "gated-scope.txt");
+}
+
+function expect(condition, message) {
+	if (!condition) {
+		throw new Error(`self-test: ${message}`);
+	}
+}
+
+async function selfTestClaimsAndReports() {
+	const root = await makeTree("claims", {
+		"spec/rules/fixture.md":
+			"- I2. Mapping stays in range.\n- HOST5. Fixture-only unlisted ID.\n",
+		"claimed-scope.txt": "I2\n",
+		"gated-scope.txt": "",
+		[TEST_PATH]: namedTest("does not mention a rule"),
+	});
+
+	const failing = await cover(root);
+	expect(
+		failing.claimedUnclaimed.join() === "I2",
+		`expected I2 unclaimed, got ${failing.claimedUnclaimed.join(",")}`,
 	);
-	await fs.writeFile(
-		path.join(specDir, "fixture-unclaimed.md"),
-		"- I2. Mapping stays in range.\n- HOST5. Fixture-only unlisted ID.\n",
-	);
-	await fs.writeFile(path.join(tmp, "claimed-scope.txt"), "I2\n");
-	await fs.writeFile(path.join(tmp, "gated-scope.txt"), "");
-	await fs.writeFile(
-		path.join(testDir, "empty.test.ts"),
-		`import { describe, it } from "vitest";\ndescribe("no claims", () => {\n  it("does not mention a rule", () => {});\n});\n`,
+	expect(
+		failing.unlisted.includes("HOST5"),
+		`expected HOST5 reported, got ${failing.unlisted.join(",")}`,
 	);
 
-	const failing = await runCoverage(
-		tmp,
-		"claimed-scope.txt",
-		"gated-scope.txt",
+	await writeFiles(root, {
+		[SECOND_TEST_PATH]: namedTest(
+			"I2 maps every pre-commit point into range or null",
+		),
+	});
+	const passing = await cover(root);
+	expect(
+		passing.claimedUnclaimed.length === 0,
+		"expected I2 claimed after fixture test, still unclaimed",
 	);
-	if (failing.claimedUnclaimed.join() !== "I2") {
-		throw new Error(
-			`self-test: expected I2 unclaimed, got ${failing.claimedUnclaimed.join(",")}`,
-		);
-	}
-	if (!failing.unlisted.includes("HOST5")) {
-		throw new Error(
-			`self-test: expected HOST5 reported, got ${failing.unlisted.join(",")}`,
-		);
-	}
+	expect(
+		passing.unlisted.includes("HOST5"),
+		"HOST5 must stay reported-not-failed",
+	);
 
-	await fs.writeFile(
-		path.join(testDir, "mapping.test.ts"),
-		`import { describe, it } from "vitest";\ndescribe("summaries", () => {\n  it("I2 maps every pre-commit point into range or null", () => {});\n});\n`,
+	await fs.rm(root, { recursive: true, force: true });
+	console.log(
+		"coverage:rules self-test ok (fixture spec fails closed, then claims I2)",
 	);
-	const passing = await runCoverage(
-		tmp,
-		"claimed-scope.txt",
-		"gated-scope.txt",
-	);
-	if (passing.claimedUnclaimed.length !== 0) {
-		throw new Error(
-			`self-test: expected I2 claimed after fixture test, still unclaimed`,
-		);
-	}
-	if (!passing.unlisted.includes("HOST5")) {
-		throw new Error(`self-test: HOST5 must stay reported-not-failed`);
-	}
+}
 
+async function selfTestGatedScope() {
 	let bareThrew = false;
 	try {
 		parseGatedScope("I4\n");
 	} catch (error) {
 		bareThrew = String(error.message).includes("gated-scope");
 	}
-	if (!bareThrew) {
-		throw new Error(
-			"self-test: a bare gated-scope ID must be a parse error",
-		);
-	}
+	expect(bareThrew, "a bare gated-scope ID must be a parse error");
 
-	await fs.appendFile(
-		path.join(specDir, "fixture-unclaimed.md"),
-		"- I4. Gate-covered fixture.\n",
-	);
-	const scriptsDir = path.join(tmp, "scripts");
-	const workflowDir = path.join(tmp, ".github", "workflows");
-	await fs.mkdir(scriptsDir, { recursive: true });
-	await fs.mkdir(workflowDir, { recursive: true });
-	const gatePath = path.join(scriptsDir, "col-gate.mjs");
-	const workflowPath = path.join(workflowDir, "docs.yml");
-	await fs.writeFile(gatePath, "// data-col5\nexport {}\n");
-	await fs.writeFile(
-		workflowPath,
-		"jobs:\n  build:\n    steps:\n      - run: node scripts/col-gate.mjs\n",
-	);
-	await fs.writeFile(
-		path.join(tmp, "gated-scope.txt"),
-		"I4 | scripts/col-gate.mjs | .github/workflows/docs.yml | col-gate.mjs | data-col5\n",
-	);
+	const root = await makeTree("gated", {
+		"spec/rules/fixture.md":
+			"- I2. Mapping stays in range.\n- HOST5. Fixture-only unlisted ID.\n- I4. Gate-covered fixture.\n",
+		"claimed-scope.txt": "I2\n",
+		"gated-scope.txt":
+			"I4 | scripts/col-gate.mjs | .github/workflows/docs.yml | col-gate.mjs | data-col5\n",
+		[TEST_PATH]: namedTest(
+			"I2 maps every pre-commit point into range or null",
+		),
+		"scripts/col-gate.mjs": "// data-col5\nexport {}\n",
+		".github/workflows/docs.yml":
+			"jobs:\n  build:\n    steps:\n      - run: node scripts/col-gate.mjs\n",
+	});
+	const gatePath = path.join(root, "scripts", "col-gate.mjs");
+	const workflowPath = path.join(root, ".github", "workflows", "docs.yml");
 
-	const gated = await runCoverage(
-		tmp,
-		"claimed-scope.txt",
-		"gated-scope.txt",
+	const gated = await cover(root);
+	expect(
+		gated.gatedOk.map((row) => row.id).join() === "I4",
+		`expected I4 gated, got ok=${gated.gatedOk.map((row) => row.id)} fail=${JSON.stringify(gated.gatedFailed)}`,
 	);
-	if (gated.gatedOk.map((row) => row.id).join() !== "I4") {
-		throw new Error(
-			`self-test: expected I4 gated, got ok=${gated.gatedOk.map((row) => row.id)} fail=${JSON.stringify(gated.gatedFailed)}`,
-		);
-	}
-	if (gated.unlisted.includes("I4")) {
-		throw new Error(
-			"self-test: I4 must leave the unlisted report once gated",
-		);
-	}
-	if (!gated.unlisted.includes("HOST5")) {
-		throw new Error(
-			"self-test: HOST5 must stay reported-not-failed next to a GATE row",
-		);
-	}
+	expect(
+		!gated.unlisted.includes("I4"),
+		"I4 must leave the unlisted report once gated",
+	);
+	expect(
+		gated.unlisted.includes("HOST5"),
+		"HOST5 must stay reported-not-failed next to a GATE row",
+	);
 
 	await fs.rm(gatePath);
-	const missing = await runCoverage(
-		tmp,
-		"claimed-scope.txt",
-		"gated-scope.txt",
+	const missing = await cover(root);
+	expect(
+		missing.gatedFailed.map((row) => row.id).join() === "I4",
+		"deleting the gate file must FAIL I4",
 	);
-	if (missing.gatedFailed.map((row) => row.id).join() !== "I4") {
-		throw new Error("self-test: deleting the gate file must FAIL I4");
-	}
-	if (
-		!missing.gatedFailed[0].errors.some((error) =>
+	expect(
+		missing.gatedFailed[0].errors.some((error) =>
 			error.includes("gated-but-missing"),
-		)
-	) {
-		throw new Error(
-			`self-test: missing gate must say gated-but-missing, got ${missing.gatedFailed[0].errors}`,
-		);
-	}
+		),
+		`missing gate must say gated-but-missing, got ${missing.gatedFailed[0].errors}`,
+	);
 
 	await fs.writeFile(gatePath, "// data-col5\nexport {}\n");
 	await fs.writeFile(workflowPath, "# run: node scripts/col-gate.mjs\n");
-	const unwired = await runCoverage(
-		tmp,
-		"claimed-scope.txt",
-		"gated-scope.txt",
+	const unwired = await cover(root);
+	expect(
+		unwired.gatedFailed.map((row) => row.id).join() === "I4",
+		"commenting out the workflow run must FAIL I4",
 	);
-	if (unwired.gatedFailed.map((row) => row.id).join() !== "I4") {
-		throw new Error(
-			"self-test: commenting out the workflow run must FAIL I4",
-		);
-	}
-	if (
-		!unwired.gatedFailed[0].errors.some((error) =>
+	expect(
+		unwired.gatedFailed[0].errors.some((error) =>
 			error.includes("gated-but-unwired"),
-		)
-	) {
-		throw new Error(
-			`self-test: unwired gate must say gated-but-unwired, got ${unwired.gatedFailed[0].errors}`,
-		);
-	}
-
-	await fs.rm(tmp, { recursive: true, force: true });
-	console.log(
-		"coverage:rules self-test ok (fixture spec fails closed, then claims I2)",
+		),
+		`unwired gate must say gated-but-unwired, got ${unwired.gatedFailed[0].errors}`,
 	);
+
+	await fs.rm(root, { recursive: true, force: true });
 	console.log(
 		"coverage:rules self-test ok (gated I4 fails closed when the gate is deleted or unwired)",
 	);
+}
 
-	const v3tmp = await fs.mkdtemp(
-		path.join(os.tmpdir(), "pen-coverage-rules-v3-"),
+async function selfTestSecondRootIsOptional() {
+	const root = await makeTree("roots", {
+		"spec/rules/fixture.md": "- I2. Mapping stays in range.\n",
+		"spec-v5/01-anchors.md":
+			"- AN1. Resolution is total.\n- AS2. Repair then resolve.\n",
+		"claimed-scope.txt": "I2\n",
+		"gated-scope.txt": "",
+		[TEST_PATH]: namedTest(
+			"I2 maps every pre-commit point into range or null",
+		),
+	});
+
+	const withTrain = await cover(root);
+	expect(
+		withTrain.unlisted.includes("AN1") && withTrain.unlisted.includes("AS2"),
+		`train families AN/AS must be inventoried, got ${withTrain.unlisted.join(",")}`,
 	);
-	const v3SpecV2 = path.join(v3tmp, "spec-v2");
-	const v3SpecV3 = path.join(v3tmp, "spec-v3");
-	const v3Tests = path.join(v3tmp, "packages", "core", "src", "__tests__");
-	await fs.mkdir(v3SpecV2, { recursive: true });
-	await fs.mkdir(v3SpecV3, { recursive: true });
-	await fs.mkdir(v3Tests, { recursive: true });
-	await fs.writeFile(
-		path.join(v3SpecV2, "09-reliability-testing.md"),
-		`Rule: every normative rule ID in spec-v2 documents (I1–I12, HOST1–HOST6) must be claimed.\n`,
-	);
-	await fs.writeFile(
-		path.join(v3SpecV2, "fixture-v2.md"),
-		"- I2. Mapping stays in range.\n",
-	);
-	await fs.writeFile(
-		path.join(v3SpecV3, "01-anchors.md"),
-		"- AN1. Resolution is total.\n- AS2. Repair then resolve.\n",
-	);
-	await fs.writeFile(path.join(v3tmp, "claimed-scope.txt"), "I2\n");
-	await fs.writeFile(path.join(v3tmp, "gated-scope.txt"), "");
-	await fs.writeFile(
-		path.join(v3Tests, "mapping.test.ts"),
-		`import { describe, it } from "vitest";\ndescribe("summaries", () => {\n  it("I2 maps every pre-commit point into range or null", () => {});\n});\n`,
+	expect(
+		!withTrain.collisions.includes("D"),
+		"collision must stay silent when only one root defines a family",
 	);
 
-	const withV3 = await runCoverage(
-		v3tmp,
-		"claimed-scope.txt",
-		"gated-scope.txt",
+	await fs.rm(path.join(root, "spec-v5"), { recursive: true, force: true });
+	const withoutTrain = await cover(root);
+	expect(
+		withoutTrain.claimedUnclaimed.length === 0,
+		"an absent train root must not break the current-state inventory",
 	);
-	if (!withV3.unlisted.includes("AN1") || !withV3.unlisted.includes("AS2")) {
-		throw new Error(
-			`self-test: spec-v3 AN/AS must be inventoried, got ${withV3.unlisted.join(",")}`,
-		);
-	}
+	expect(
+		!withoutTrain.unlisted.includes("AN1"),
+		"an absent train root must not invent AN/AS IDs",
+	);
 
-	await fs.rm(v3SpecV3, { recursive: true, force: true });
-	const withoutV3 = await runCoverage(
-		v3tmp,
-		"claimed-scope.txt",
-		"gated-scope.txt",
+	const emptyIds = await collectSpecIds(root, ruleIdRegex(["NOPE"]), () => false);
+	expect(
+		emptyIds.ids.size === 0,
+		`rejecting predicate must yield zero IDs, got ${[...emptyIds.ids]}`,
 	);
-	if (withoutV3.claimedUnclaimed.length !== 0) {
-		throw new Error(
-			"self-test: absent spec-v3 must not break a v2 inventory",
-		);
-	}
-	if (withoutV3.unlisted.includes("AN1")) {
-		throw new Error("self-test: absent spec-v3 must not invent AN/AS IDs");
-	}
-
-	const emptyIds = await collectSpecIds(
-		v3tmp,
-		ruleIdRegex(["NOPE"]),
-		() => false,
-	);
-	if (emptyIds.ids.size !== 0) {
-		throw new Error(
-			`self-test: rejecting predicate must yield zero IDs, got ${[...emptyIds.ids]}`,
-		);
-	}
 	let emptyThrew = false;
 	try {
 		assertNonEmptyInventory(emptyIds.ids);
 	} catch (error) {
 		emptyThrew = String(error.message).includes(EMPTY_INVENTORY);
 	}
-	if (!emptyThrew) {
-		throw new Error(
-			"self-test: an inventory that finds zero rule IDs must fail empty inventory",
-		);
-	}
+	expect(
+		emptyThrew,
+		"an inventory that finds zero rule IDs must fail empty inventory",
+	);
 
-	if (withV3.collisions.includes("D")) {
-		throw new Error(
-			"self-test: D-collision must stay silent when only one root defines D",
-		);
+	let noFamiliesThrew = false;
+	try {
+		assertPrefixesDerived([]);
+	} catch (error) {
+		noFamiliesThrew = String(error.message).includes(EMPTY_INVENTORY);
 	}
+	expect(
+		noFamiliesThrew,
+		"roots with no definition lines must fail empty inventory, not report a clean sweep",
+	);
 
-	await fs.rm(v3tmp, { recursive: true, force: true });
+	await fs.rm(root, { recursive: true, force: true });
 	console.log(
-		"coverage:rules self-test ok (spec-v3 AN/AS inventoried; absent spec-v3 stays on v2; empty inventory fails)",
+		"coverage:rules self-test ok (train families inventoried; absent train root is skipped; empty inventory fails)",
+	);
+}
+
+async function selfTestInForceFamily() {
+	const root = await makeTree("inforce", {
+		"spec/rules/fixture.md": "- I2. Mapping stays in range.\n",
+		"spec-v5/02-observation.md": "- OB2. One builder, one code path.\n",
+		"claimed-scope.txt": "I2\n",
+		"gated-scope.txt": "",
+		[TEST_PATH]: namedTest(
+			"I2 maps every pre-commit point into range or null",
+		),
+	});
+
+	const unclaimed = await cover(root);
+	expect(
+		unclaimed.claimedUnclaimed.includes("OB2"),
+		`in-force OB2 must be unclaimed, got ${unclaimed.claimedUnclaimed.join(",")}`,
 	);
 
-	const obtmp = await fs.mkdtemp(
-		path.join(os.tmpdir(), "pen-coverage-rules-ob-"),
-	);
-	const obSpecV2 = path.join(obtmp, "spec-v2");
-	const obSpecV3 = path.join(obtmp, "spec-v3");
-	const obTests = path.join(obtmp, "packages", "core", "src", "__tests__");
-	await fs.mkdir(obSpecV2, { recursive: true });
-	await fs.mkdir(obSpecV3, { recursive: true });
-	await fs.mkdir(obTests, { recursive: true });
-	await fs.writeFile(
-		path.join(obSpecV2, "09-reliability-testing.md"),
-		`Rule: every normative rule ID in spec-v2 documents (I1–I12, HOST1–HOST6) must be claimed.\n`,
-	);
-	await fs.writeFile(
-		path.join(obSpecV2, "fixture-v2.md"),
-		"- I2. Mapping stays in range.\n",
-	);
-	await fs.writeFile(
-		path.join(obSpecV3, "02-observation.md"),
-		"- OB2. One builder, one code path.\n",
-	);
-	await fs.writeFile(path.join(obtmp, "claimed-scope.txt"), "I2\n");
-	await fs.writeFile(path.join(obtmp, "gated-scope.txt"), "");
-	await fs.writeFile(
-		path.join(obTests, "mapping.test.ts"),
-		`import { describe, it } from "vitest";\ndescribe("summaries", () => {\n  it("I2 maps every pre-commit point into range or null", () => {});\n});\n`,
+	await writeFiles(root, {
+		[SECOND_TEST_PATH]: namedTest("OB2 keeps one builder path"),
+	});
+	const claimed = await cover(root);
+	expect(
+		!claimed.claimedUnclaimed.includes("OB2"),
+		"OB2 must leave claimedUnclaimed once named",
 	);
 
-	const unclaimedOb = await runCoverage(
-		obtmp,
-		"claimed-scope.txt",
-		"gated-scope.txt",
-	);
-	if (!unclaimedOb.claimedUnclaimed.includes("OB2")) {
-		throw new Error(
-			`self-test: spec-v3 OB2 must be unclaimed, got ${unclaimedOb.claimedUnclaimed.join(",")}`,
-		);
-	}
-
-	await fs.writeFile(
-		path.join(obTests, "observation.test.ts"),
-		`import { describe, it } from "vitest";\ndescribe("observation", () => {\n  it("OB2 keeps one builder path", () => {});\n});\n`,
-	);
-	const claimedOb = await runCoverage(
-		obtmp,
-		"claimed-scope.txt",
-		"gated-scope.txt",
-	);
-	if (claimedOb.claimedUnclaimed.includes("OB2")) {
-		throw new Error(
-			"self-test: OB2 must leave claimedUnclaimed once named",
-		);
-	}
-
-	await fs.rm(obtmp, { recursive: true, force: true });
+	await fs.rm(root, { recursive: true, force: true });
 	console.log(
-		"coverage:rules self-test ok (spec-v3 OB2 fails closed without a claiming test, then claims)",
+		"coverage:rules self-test ok (in-force OB2 fails closed without a claiming test, then claims)",
+	);
+}
+
+async function selfTestCollision() {
+	const root = await makeTree("collision", {
+		"spec/rules/commands.md": "- D1. Handlers run in facet order.\n",
+		"spec-v5/00-concept.md":
+			"- D1 — The mapping algebra duplicates CRDT position identity.\n",
+		"claimed-scope.txt": "D1\n",
+		"gated-scope.txt": "",
+		[TEST_PATH]: namedTest("D1 tries handlers in facet order"),
+	});
+
+	const both = await cover(root);
+	expect(
+		both.collisions.includes("D"),
+		`collision must fire when both roots define D, got ${both.collisions.join(",")}`,
+	);
+	const bothReport = formatReport(both);
+	expect(
+		bothReport.includes(`COLLISION  D  ${COLLISION_LINE}`),
+		`collision must print COLLISION D, got ${bothReport.split("\n").slice(0, 8).join(" | ")}`,
 	);
 
-	const dtmp = await fs.mkdtemp(
-		path.join(os.tmpdir(), "pen-coverage-rules-d-"),
+	await writeFiles(root, {
+		"spec-v5/00-concept.md": "- OB1. Effect plus the two repair recipes.\n",
+	});
+	const single = await cover(root);
+	expect(
+		!single.collisions.includes("D"),
+		"collision must stay silent when only one root defines D",
 	);
-	const dSpecV2 = path.join(dtmp, "spec-v2");
-	const dSpecV3 = path.join(dtmp, "spec-v3");
-	const dTests = path.join(dtmp, "packages", "core", "src", "__tests__");
-	await fs.mkdir(dSpecV2, { recursive: true });
-	await fs.mkdir(dSpecV3, { recursive: true });
-	await fs.mkdir(dTests, { recursive: true });
-	await fs.writeFile(
-		path.join(dSpecV2, "09-reliability-testing.md"),
-		`Rule: every normative rule ID in spec-v2 documents (D1–D5, I1–I12) must be claimed.\n`,
-	);
-	await fs.writeFile(
-		path.join(dSpecV2, "05-commands.md"),
-		"- D1. Handlers run in facet order.\n",
-	);
-	await fs.writeFile(
-		path.join(dSpecV3, "00-concept.md"),
-		"- D1 — The mapping algebra duplicates CRDT position identity.\n",
-	);
-	await fs.writeFile(path.join(dtmp, "claimed-scope.txt"), "D1\n");
-	await fs.writeFile(path.join(dtmp, "gated-scope.txt"), "");
-	await fs.writeFile(
-		path.join(dTests, "commands.test.ts"),
-		`import { describe, it } from "vitest";\ndescribe("dispatch", () => {\n  it("D1 tries handlers in facet order", () => {});\n});\n`,
+	expect(
+		!formatReport(single).includes("COLLISION  D  "),
+		"a silent collision must omit the COLLISION D line",
 	);
 
-	const bothDefineD = await runCoverage(
-		dtmp,
-		"claimed-scope.txt",
-		"gated-scope.txt",
-	);
-	if (!bothDefineD.collisions.includes("D")) {
-		throw new Error(
-			`self-test: D-collision must fire when both roots define D, got ${bothDefineD.collisions.join(",")}`,
-		);
-	}
-	const bothReport = formatReport(bothDefineD);
-	if (!bothReport.includes(`COLLISION  D  ${COLLISION_LINE}`)) {
-		throw new Error(
-			`self-test: D-collision must print COLLISION D, got ${bothReport.split("\n").slice(0, 8).join(" | ")}`,
-		);
-	}
-
-	await fs.writeFile(
-		path.join(dSpecV3, "00-concept.md"),
-		"- OB1. Effect plus the two repair recipes.\n",
-	);
-	const onlyV2DefinesD = await runCoverage(
-		dtmp,
-		"claimed-scope.txt",
-		"gated-scope.txt",
-	);
-	if (onlyV2DefinesD.collisions.includes("D")) {
-		throw new Error(
-			"self-test: D-collision must stay silent when only one root defines D",
-		);
-	}
-	const silentReport = formatReport(onlyV2DefinesD);
-	if (silentReport.includes("COLLISION  D  ")) {
-		throw new Error(
-			"self-test: silent D-collision must omit the COLLISION D line",
-		);
-	}
-
-	await fs.rm(dtmp, { recursive: true, force: true });
+	await fs.rm(root, { recursive: true, force: true });
 	console.log(
-		"coverage:rules self-test ok (D-collision fires when both roots define D; silent when only one does)",
+		"coverage:rules self-test ok (collision fires when both roots define D; silent when only one does)",
 	);
+}
 
-	const zztmp = await fs.mkdtemp(
-		path.join(os.tmpdir(), "pen-coverage-rules-zz-"),
-	);
-	const zzSpecV2 = path.join(zztmp, "spec-v2");
-	const zzSpecV3 = path.join(zztmp, "spec-v3");
-	const zzTests = path.join(zztmp, "packages", "core", "src", "__tests__");
-	await fs.mkdir(zzSpecV2, { recursive: true });
-	await fs.mkdir(zzSpecV3, { recursive: true });
-	await fs.mkdir(zzTests, { recursive: true });
-	await fs.writeFile(
-		path.join(zzSpecV2, "09-reliability-testing.md"),
-		`Rule: every normative rule ID in spec-v2 documents (I1–I12, HOST1–HOST6) must be claimed.\n`,
-	);
-	await fs.writeFile(
-		path.join(zzSpecV2, "fixture-v2.md"),
-		"- I2. Mapping stays in range.\n",
-	);
-	await fs.writeFile(
-		path.join(zzSpecV3, "scratch-zz.md"),
-		"- ZZ1. Invented family must be seen without a hand list.\n",
-	);
-	await fs.writeFile(path.join(zztmp, "claimed-scope.txt"), "I2\n");
-	await fs.writeFile(path.join(zztmp, "gated-scope.txt"), "");
-	await fs.writeFile(
-		path.join(zzTests, "mapping.test.ts"),
-		`import { describe, it } from "vitest";\ndescribe("summaries", () => {\n  it("I2 maps every pre-commit point into range or null", () => {});\n});\n`,
-	);
+async function selfTestInventedFamilyIsDerived() {
+	const root = await makeTree("invented", {
+		"spec/rules/fixture.md": "- I2. Mapping stays in range.\n",
+		"spec-v5/scratch-zz.md":
+			"- ZZ1. Invented family must be seen without a hand list.\n",
+		"claimed-scope.txt": "I2\n",
+		"gated-scope.txt": "",
+		[TEST_PATH]: namedTest(
+			"I2 maps every pre-commit point into range or null",
+		),
+	});
 
-	const invented = await runCoverage(
-		zztmp,
-		"claimed-scope.txt",
-		"gated-scope.txt",
+	const invented = await cover(root);
+	expect(
+		invented.prefixes.includes("ZZ"),
+		`invented ZZ must be derived, got ${invented.prefixes.join(",")}`,
 	);
-	if (!invented.derivedPrefixes.includes("ZZ")) {
-		throw new Error(
-			`self-test: invented ZZ must be derived, got ${invented.derivedPrefixes.join(",")}`,
-		);
-	}
-	if (!invented.unlisted.includes("ZZ1")) {
-		throw new Error(
-			`self-test: invented ZZ1 must be reported-not-failed, got ${invented.unlisted.join(",")}`,
-		);
-	}
-	if (invented.claimedUnclaimed.includes("ZZ1")) {
-		throw new Error(
-			"self-test: invented ZZ1 must not fail GATE 0.1; it is unlisted, not in-force",
-		);
-	}
+	expect(
+		invented.unlisted.includes("ZZ1"),
+		`invented ZZ1 must be reported-not-failed, got ${invented.unlisted.join(",")}`,
+	);
+	expect(
+		!invented.claimedUnclaimed.includes("ZZ1"),
+		"invented ZZ1 must not fail the gate; it is unlisted, not in-force",
+	);
 	const inventedLine = formatReport(invented)
 		.split("\n")
 		.find((line) => /\bZZ1\b/.test(line));
-	if (inventedLine == null) {
-		throw new Error("self-test: invented ZZ1 must appear in the report");
-	}
+	expect(inventedLine != null, "invented ZZ1 must appear in the report");
 	console.log(`coverage:rules invented-family proof: ${inventedLine}`);
 
-	await fs.rm(zztmp, { recursive: true, force: true });
+	await fs.rm(root, { recursive: true, force: true });
 	console.log(
-		"coverage:rules self-test ok (invented spec-v3 family ZZ is derived and reported, not failed)",
+		"coverage:rules self-test ok (invented family ZZ is derived and reported, not failed)",
+	);
+}
+
+async function selfTestContainmentFence() {
+	const root = await makeTree("containment", {
+		"spec/rules/fixture.md": "- I2. Mapping stays in range.\n",
+		"spec-v5/03-ops.md": "- OP1. Closed union.\n- OPB1. Validate phase.\n",
+		"claimed-scope.txt": "I2\nOP1\n",
+		"gated-scope.txt": "",
+		[TEST_PATH]: namedTest(
+			"I2 maps every pre-commit point into range or null",
+		),
+		[SECOND_TEST_PATH]: namedTest("OPB1 runs in the validate phase"),
+	});
+
+	const contained = await cover(root);
+	expect(
+		contained.claimedUnclaimed.includes("OP1"),
+		`OPB1 must not claim OP1, got unclaimed=${contained.claimedUnclaimed.join(",")}`,
+	);
+	expect(
+		contained.unlisted.includes("OPB1"),
+		`OPB1 must stay reported-not-failed, got ${contained.unlisted.join(",")}`,
+	);
+	expect(
+		(contained.claims.get("OP1") ?? []).length === 0,
+		"OPB1 must not be recorded as a claim on OP1",
+	);
+	expect(
+		(contained.claims.get("OPB1") ?? []).length > 0,
+		"OPB1 must be recorded as its own claim",
 	);
 
-	const optmp = await fs.mkdtemp(
-		path.join(os.tmpdir(), "pen-coverage-rules-op-"),
-	);
-	const opSpecV2 = path.join(optmp, "spec-v2");
-	const opSpecV3 = path.join(optmp, "spec-v3");
-	const opTests = path.join(optmp, "packages", "core", "src", "__tests__");
-	await fs.mkdir(opSpecV2, { recursive: true });
-	await fs.mkdir(opSpecV3, { recursive: true });
-	await fs.mkdir(opTests, { recursive: true });
-	await fs.writeFile(
-		path.join(opSpecV2, "09-reliability-testing.md"),
-		`Rule: every normative rule ID in spec-v2 documents (I1–I12, HOST1–HOST6) must be claimed.\n`,
-	);
-	await fs.writeFile(
-		path.join(opSpecV2, "fixture-v2.md"),
-		"- I2. Mapping stays in range.\n",
-	);
-	await fs.writeFile(
-		path.join(opSpecV3, "03-ops.md"),
-		"- OP1. Closed union.\n- OPB1. Validate phase.\n",
-	);
-	await fs.writeFile(path.join(optmp, "claimed-scope.txt"), "I2\nOP1\n");
-	await fs.writeFile(path.join(optmp, "gated-scope.txt"), "");
-	await fs.writeFile(
-		path.join(opTests, "ops.test.ts"),
-		`import { describe, it } from "vitest";\ndescribe("ops", () => {\n  it("OPB1 keeps one executor", () => {});\n  it("I2 maps every pre-commit point into range or null", () => {});\n});\n`,
-	);
-
-	const contained = await runCoverage(
-		optmp,
-		"claimed-scope.txt",
-		"gated-scope.txt",
-	);
-	if (
-		!contained.derivedPrefixes.includes("OP") ||
-		!contained.derivedPrefixes.includes("OPB")
-	) {
-		throw new Error(
-			`self-test: OP and OPB must both be derived, got ${contained.derivedPrefixes.join(",")}`,
-		);
-	}
-	if (!contained.claimedUnclaimed.includes("OP1")) {
-		throw new Error(
-			"self-test: a test named OPB1 must not claim OP1 (prefix containment)",
-		);
-	}
-	if (contained.claimedUnclaimed.includes("OPB1")) {
-		throw new Error(
-			"self-test: OPB1 was named and is not claimed-scope; it must not fail",
-		);
-	}
-	if (!contained.unlisted.includes("OPB1")) {
-		throw new Error(
-			`self-test: OPB1 must stay reported-not-failed, got ${contained.unlisted.join(",")}`,
-		);
-	}
-	if ((contained.claims.get("OP1") ?? []).length > 0) {
-		throw new Error(
-			"self-test: OPB1 must not be recorded as a claim on OP1",
-		);
-	}
-	if ((contained.claims.get("OPB1") ?? []).length === 0) {
-		throw new Error("self-test: OPB1 must be recorded as its own claim");
-	}
-
-	await fs.rm(optmp, { recursive: true, force: true });
+	await fs.rm(root, { recursive: true, force: true });
 	console.log(
 		"coverage:rules self-test ok (OPB1 does not claim OP1; both families stay distinct)",
 	);
+}
+
+async function runSelfTest() {
+	await selfTestClaimsAndReports();
+	await selfTestGatedScope();
+	await selfTestSecondRootIsOptional();
+	await selfTestInForceFamily();
+	await selfTestCollision();
+	await selfTestInventedFamilyIsDerived();
+	await selfTestContainmentFence();
 }
 
 async function main() {

@@ -1,6 +1,5 @@
 import type { DocumentOp } from "@input/pen-types";
 import { buildDocumentWriteOps } from "@input/pen-document-ops";
-import type { AITargetKind } from "../runtime/contracts";
 import { normalizeFlowMarkdownOutput } from "../runtime/flowMarkdown";
 import { buildMutationReceipt } from "../runtime/mutationReceipt";
 import type { AIMutationReceipt, GenerationState } from "../types";
@@ -11,17 +10,6 @@ import {
 import type { AIControllerMethodHost } from "./aiControllerMethodHost";
 
 export const fastApplySupportMethods = {
-	_resolvePlanValidationTargetKind(
-		this: AIControllerMethodHost,
-		blockId: string,
-	): AITargetKind {
-		const blockType = this._editor.getBlock(blockId)?.type ?? null;
-		if (blockType === "table") {
-			return "table";
-		}
-		return "block";
-	},
-
 	_verifyMarkdownFastApplyResult(
 		this: AIControllerMethodHost,
 		blockIds: readonly string[],
@@ -44,68 +32,6 @@ export const fastApplySupportMethods = {
 			};
 		}
 		return { valid: true };
-	},
-
-	_verifyFlowPatchPlanResult(
-		this: AIControllerMethodHost,
-		plan: {
-			edits: Array<{
-				locator: { blockId?: string; blockIds?: string[] };
-			}>;
-		},
-		ops: readonly DocumentOp[],
-		scopeBlockIds: readonly string[],
-	): {
-		valid: boolean;
-		reason?: string;
-		untouchedBlockMutationCount: number;
-	} {
-		const targetedBlockIds = new Set<string>(
-			plan.edits.flatMap((edit) => [
-				...(edit.locator.blockId ? [edit.locator.blockId] : []),
-				...(edit.locator.blockIds ?? []),
-			]),
-		);
-		const scopeSet = new Set(scopeBlockIds);
-		const mutatedExistingBlockIds = new Set<string>();
-		const outOfScopeMutations = new Set<string>();
-		const createdBlockIds = new Set<string>();
-
-		for (const op of ops) {
-			if (op.type === "insert-block") {
-				createdBlockIds.add(op.blockId);
-			}
-			for (const blockId of this._readBlockIdsFromOp(op)) {
-				if (scopeSet.has(blockId)) {
-					mutatedExistingBlockIds.add(blockId);
-				} else if (
-					!createdBlockIds.has(blockId) &&
-					op.type !== "insert-block"
-				) {
-					outOfScopeMutations.add(blockId);
-				}
-			}
-		}
-
-		if (outOfScopeMutations.size > 0) {
-			return {
-				valid: false,
-				reason: `flow-patch-mutated-outside-scope:${[...outOfScopeMutations].join(",")}`,
-				untouchedBlockMutationCount: 0,
-			};
-		}
-
-		const untouchedBlockMutationCount = [...mutatedExistingBlockIds].filter(
-			(blockId) => !targetedBlockIds.has(blockId),
-		).length;
-		return {
-			valid: untouchedBlockMutationCount === 0,
-			reason:
-				untouchedBlockMutationCount > 0
-					? "flow-patch-mutated-untargeted-blocks"
-					: undefined,
-			untouchedBlockMutationCount,
-		};
 	},
 
 	_buildMarkdownScopedReplacementOps(
@@ -163,23 +89,6 @@ export const fastApplySupportMethods = {
 			deletedBlockCount,
 			targetBlockCount,
 		};
-	},
-
-	_readBlockIdsFromOp(
-		this: AIControllerMethodHost,
-		op: DocumentOp,
-	): string[] {
-		const blockIds = new Set<string>();
-		if ("blockId" in op && typeof op.blockId === "string") {
-			blockIds.add(op.blockId);
-		}
-		if ("targetBlockId" in op && typeof op.targetBlockId === "string") {
-			blockIds.add(op.targetBlockId);
-		}
-		if ("sourceBlockId" in op && typeof op.sourceBlockId === "string") {
-			blockIds.add(op.sourceBlockId);
-		}
-		return [...blockIds];
 	},
 
 	_recordFastApplyDebug(

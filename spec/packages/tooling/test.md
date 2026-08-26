@@ -11,7 +11,13 @@ Support development, testing, benchmarking, or local integration workflows aroun
 ## Key Exports / Entrypoints
 
 - Export map: `.`
-- Workspace scripts: `build`, `clean`, `test`, `typecheck`
+- Editor harness: `createTestEditor()`, `createTestDocument()`, `populateYDoc()`
+- Collaboration harness: `createTestCollaboration()`, `createTwoPeerHarness()`, `runBothInterleavings()`, plus two-peer inspection helpers such as `visibleText()` and `listBlockIds()`
+- Assertions: `assertDocEquals()`, `assertPeerEditsSurvive()`, `assertDocumentRoots()`
+- Fixtures: `encodeFixtureUpdate()`, `normalizeDocumentForSnapshot()`, `DEFAULT_PEN_ROOTS`, `PenFixtureError`
+- AI doubles: `createModelDouble()` and its types, used by the AI and transport suites
+- `simulateTyping()` / `simulateKeypress()` are methods on `TestEditor` rather than barrel exports
+- Workspace scripts: `build`, `clean`, `lint`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 

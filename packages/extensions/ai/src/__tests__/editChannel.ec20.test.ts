@@ -54,7 +54,6 @@ function createChatEditor(
 				model,
 				contentFormat: { blockGeneration: "markdown" },
 				mutationPreference: options?.mutationPreference ?? "direct",
-				editChannel: "tool",
 				editStreaming: options?.editStreaming ?? "commit",
 				allowedMutatingTools: ["edit_document"],
 				...(options?.confirm ? { confirm: options.confirm } : {}),

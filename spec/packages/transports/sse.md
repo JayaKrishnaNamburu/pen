@@ -11,13 +11,14 @@ Provide transport-specific wiring around Pen protocols and sessions. The live `E
 ## Key Exports / Entrypoints
 
 - Export map: `.`
-- Server: `createSSEHandler()`, `parsePenStreamRequest()`
-- Client stream helper on the same root export
-- Workspace scripts: `build`, `clean`, `test`, `typecheck`
+- Server: `createSSEHandler()`. Types: `SSEServerOptions`, `SSEClientOptions`, `SSEEvent`.
+- Client: `sseTransport()` on the same root export
+- `parsePenStreamRequest()` is internal to the handler and deliberately not on the barrel
+- Workspace scripts: `build`, `clean`, `lint`, `test`, `typecheck`
 
 ## Dependencies And Boundaries
 
-- Runtime dependencies: `@input/pen-core`, `@input/pen-types`
+- Runtime dependencies: `@input/pen-ai`, `@input/pen-core`, `@input/pen-types`
 - Peer dependencies: No peer dependencies declared.
 - Boundary: Transport packages should stay below product policy and above raw network wiring.
 

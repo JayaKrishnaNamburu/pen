@@ -220,7 +220,6 @@ export {
 } from "./primitives/multiplayer/index";
 
 // ── Hooks ───────────────────────────────────────────────────
-// useVisualViewport stays off the barrel (API10: declared, never called).
 export {
 	useAI,
 	useAISuggestions,
