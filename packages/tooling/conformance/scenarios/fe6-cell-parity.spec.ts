@@ -17,8 +17,8 @@ import type { DocumentContentSnapshot } from "../src/types";
  *
  * jsdom cannot stand in for this. The supported rows are keyboard and selection
  * behavior, and the unsupported row is reached through a real `beforeinput` that
- * only a browser's bold accelerator produces — and only on one engine, which is
- * itself part of what this scenario pins down.
+ * only a browser's bold accelerator produces. Chromium and WebKit produce it;
+ * Firefox does not. That split is part of what this scenario pins down.
  *
  * The keyboard is driven through `page`, not `s.keyboard`, for the reason
  * `t6-cell-editing-arrows.spec.ts` does the same: the harness's per-step
@@ -179,19 +179,20 @@ scenario(
  * Which browsers route the bold accelerator into the page as a `formatBold`
  * `beforeinput`, measured rather than assumed.
  *
- * Only Chromium does. Firefox and WebKit deliver the keydown and nothing else,
- * so a host on those engines has no native route to a mark toggle at all — the
+ * Chromium and WebKit produce it. Firefox delivers the keydown and nothing
+ * else, so a Firefox host has no native route to a mark toggle at all — the
  * intent never reaches Pen, and there is nothing for Pen to decline. (In a
  * paragraph even Chromium delivers nothing, because it is on EditContext there;
  * cells are always contenteditable, which is why this route exists in a cell.)
  *
  * The scenario asserts this per browser instead of skipping the engines that
- * lack the route. Skipping would mean a Chromium regression that silenced both
- * the route and the diagnostic still passed. Pinning it means drift in either
- * direction is red: if Chromium stops delivering `formatBold`, or if Firefox or
- * WebKit start, the claim fails and the contract gets re-read.
+ * lack the route. Skipping would mean a Chromium or WebKit regression that
+ * silenced both the route and the diagnostic still passed. Pinning it means
+ * drift in either direction is red: if a routing engine stops delivering
+ * `formatBold`, or if Firefox starts, the claim fails and the contract gets
+ * re-read.
  */
-const ENGINES_ROUTING_BOLD_ACCELERATOR = new Set(["chromium"]);
+const ENGINES_ROUTING_BOLD_ACCELERATOR = new Set(["chromium", "webkit"]);
 
 scenario(
 	"FE6: a mark toggle inside a cell fails closed and says so",

@@ -315,7 +315,10 @@ describe("an-fuzz AN1–AN5 AN14", () => {
 
 			for (let i = 1; i <= OP_COUNT; i++) {
 				if (i % 100 === 0) {
-					await Promise.resolve();
+					// macrotask, not Promise.resolve: birpc acks on timers/IPC
+					await new Promise<void>((resolve) => {
+						setImmediate(resolve);
+					});
 				}
 				if (Number.isFinite(FORCE_FAIL_AT) && i === FORCE_FAIL_AT) {
 					throw new Error(
