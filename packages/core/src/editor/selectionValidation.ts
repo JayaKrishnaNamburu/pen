@@ -39,7 +39,7 @@ export function clampNonTextPseudoOffset(offset: number): number {
  * 0..1 cover. Forward `p1@2 → d1@0` becomes `d1@1`; a reversed
  * structural start stays at 0.
  */
-export function coverMixedBoundaryStructuralOffsets(
+function coverMixedBoundaryStructuralOffsets(
 	selection: { anchor: Point; focus: Point },
 	input: {
 		isNonText: (blockId: string) => boolean;

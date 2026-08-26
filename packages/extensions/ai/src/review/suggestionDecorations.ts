@@ -89,7 +89,7 @@ export function collectSuggestionDecorations(
 	};
 }
 
-export function readSuggestionInlineRanges(
+function readSuggestionInlineRanges(
 	editor: Editor,
 	blockId: string,
 	suggestionPresentation: SuggestionPresentation,
@@ -126,7 +126,7 @@ export function readSuggestionInlineRanges(
 	return ranges;
 }
 
-export function buildSuggestionAttributes(
+function buildSuggestionAttributes(
 	action: "insert" | "delete",
 	suggestion: Record<string, unknown>,
 	suggestionPresentation: SuggestionPresentation,
@@ -164,7 +164,7 @@ export function buildSuggestionAttributes(
 	};
 }
 
-export function createSuggestionInlineDecoration(
+function createSuggestionInlineDecoration(
 	blockId: string,
 	range: SuggestionInlineRange,
 ): InlineDecoration {
@@ -180,7 +180,7 @@ export function createSuggestionInlineDecoration(
 	};
 }
 
-export function resolveBlockSuggestionRole(
+function resolveBlockSuggestionRole(
 	action: string,
 ): AIReviewPresentationRole {
 	switch (action) {

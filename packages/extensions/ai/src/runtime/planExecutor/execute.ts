@@ -31,7 +31,7 @@ export function buildDocumentMutationPlanExecution(
 	return buildPlanExecution(editor, plan, context);
 }
 
-export function buildPlanExecution(
+function buildPlanExecution(
 	editor: Editor,
 	plan: DocumentMutationPlan,
 	context: PlanExecutionContext,
@@ -58,7 +58,7 @@ export function buildPlanExecution(
 	}
 }
 
-export function buildTextEditExecution(
+function buildTextEditExecution(
 	editor: Editor,
 	plan: TextEditPlan,
 	context: PlanExecutionContext,
@@ -146,7 +146,7 @@ export function buildTextEditExecution(
 	};
 }
 
-export function buildBlockInsertExecution(
+function buildBlockInsertExecution(
 	editor: Editor,
 	plan: BlockInsertPlan,
 	context: PlanExecutionContext,
@@ -193,7 +193,7 @@ export function buildBlockInsertExecution(
 	};
 }
 
-export function buildBlockUpdateExecution(
+function buildBlockUpdateExecution(
 	editor: Editor,
 	plan: BlockUpdatePlan,
 	context: PlanExecutionContext,
@@ -222,7 +222,7 @@ export function buildBlockUpdateExecution(
 	};
 }
 
-export function buildBlockMoveExecution(
+function buildBlockMoveExecution(
 	editor: Editor,
 	plan: BlockMovePlan,
 	context: PlanExecutionContext,
@@ -246,7 +246,7 @@ export function buildBlockMoveExecution(
 	};
 }
 
-export function buildBlockConvertExecution(
+function buildBlockConvertExecution(
 	editor: Editor,
 	plan: BlockConvertPlan,
 	context: PlanExecutionContext,
@@ -277,7 +277,7 @@ export function buildBlockConvertExecution(
 	};
 }
 
-export function buildReviewBundleExecution(
+function buildReviewBundleExecution(
 	editor: Editor,
 	plan: ReviewBundlePlan,
 	context: PlanExecutionContext,

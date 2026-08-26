@@ -13,7 +13,6 @@ import { buildSearchDecorations } from "./decorations";
 import type { SearchController } from "./types";
 
 export const SEARCH_EXTENSION_NAME = "search";
-export { SEARCH_CONTROLLER_SLOT };
 
 const SEARCH_KEY_BINDINGS: KeyBinding[] = [
 	{

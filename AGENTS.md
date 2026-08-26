@@ -57,6 +57,8 @@ From the repository root (pnpm + turbo):
 
 For substantive changes run `pnpm build`, `pnpm typecheck`, and `pnpm test` before finishing (`.cursor/rules/pen-security-quality-gates.mdc`). Scale scope to the change: a one-package fix needs that package's checks plus its dependents' tests, not the world.
 
+Fallow (`.fallowrc.jsonc`) is the cleanup / changed-file risk gate. Pre-commit and agent commit hooks run `fallow audit` new-only against `main`. Treat findings as hints: verify against public package entry points, CI scripts, and spec-fenced copies before deleting. Do not strip published API, Editor/FieldEditor class methods, or documented ingest/clipboard envelope constants because fallow marked them unused.
+
 ## Testing Guidance
 
 - Vitest, `.test.ts`, colocated per package (`src/__tests__/` or alongside sources — match the package you are in).

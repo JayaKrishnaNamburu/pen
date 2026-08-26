@@ -46,7 +46,7 @@ export interface CreateDocumentSessionOptions {
   ownsDocuments?: boolean;
 }
 
-export class DocumentSessionImpl implements DocumentSession {
+class DocumentSessionImpl implements DocumentSession {
   readonly adapter: CRDTAdapter;
   readonly rootScope: DocumentScope;
 

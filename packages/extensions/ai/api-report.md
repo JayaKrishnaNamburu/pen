@@ -125,7 +125,6 @@
 - FastApplyDebugState
 - GenerationPlanState
 - GenerationState
-- GenerationStructuredPreviewState
 - GenerationTargetKind
 - PersistentBlockSuggestion
 - PersistentSuggestion
@@ -137,7 +136,6 @@
 - StructuralReviewComparisonRow
 - StructuralReviewItem
 - StructuredGenerationDebugState
-- StructuredPreviewPatchOperation
 
 ## ./suggestions
 

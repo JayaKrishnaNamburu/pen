@@ -400,9 +400,9 @@ describe("ops OP1–OP5", () => {
 	it("OP4: validation, profile, suggest-mode, and the tool table key the ten primitives plus intent", () => {
 		const pipeline = readRepoFile("../editor/applyPipelineRunner.ts");
 		expectClosedTypeSet(switchCaseLabels(pipeline, "function malformedOpMessage"));
-		expectClosedTypeSet(switchCaseLabels(pipeline, "export function validateOp"));
+		expectClosedTypeSet(switchCaseLabels(pipeline, "function validateOp"));
 		expectClosedTypeSet(
-			switchCaseLabels(pipeline, "export function executeSingleOp"),
+			switchCaseLabels(pipeline, "function executeSingleOp"),
 		);
 
 		const profile = readRepoFile("../editor/profilePolicy.ts");

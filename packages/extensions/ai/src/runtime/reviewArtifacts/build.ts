@@ -15,39 +15,16 @@ import type {
 	StructuralReviewBuildContext,
 	StructuralReviewComparisonRow,
 	StructuralReviewItem,
-	StructuredPreviewTargetState,
-	VirtualReviewBlock,
 } from "./types";
 
 export function buildStructuralReviewItems(
 	editor: Editor,
 	plan: DocumentMutationPlan,
 ): StructuralReviewItem[] {
-	return buildStructuralPreviewArtifacts(editor, plan).reviewItems;
-}
-
-export function buildStructuredPreviewTargets(
-	editor: Editor,
-	plan: DocumentMutationPlan,
-): StructuredPreviewTargetState[] {
-	return buildStructuralPreviewArtifacts(editor, plan).targets;
-}
-
-export function buildStructuralPreviewArtifacts(
-	editor: Editor,
-	plan: DocumentMutationPlan,
-): {
-	reviewItems: StructuralReviewItem[];
-	targets: StructuredPreviewTargetState[];
-} {
 	const context: StructuralReviewBuildContext = {
 		virtualBlocks: new Map(),
 	};
-	const reviewItems = buildReviewItemsForPlan(editor, plan, [], context);
-	return {
-		reviewItems,
-		targets: serializeStructuredPreviewTargets(context.virtualBlocks),
-	};
+	return buildReviewItemsForPlan(editor, plan, [], context);
 }
 
 export function selectStructuralReviewItemPlan(
@@ -64,7 +41,7 @@ export function removeStructuralReviewItemPlan(
 	return removePlanAtPath(plan, item.bundlePath, item.stepIndex);
 }
 
-export function buildReviewItemsForPlan(
+function buildReviewItemsForPlan(
 	editor: Editor,
 	plan: DocumentMutationPlan,
 	bundlePath: number[],
@@ -213,13 +190,7 @@ export function buildReviewItemsForPlan(
 	}
 }
 
-export function serializeStructuredPreviewTargets(
-	_virtualBlocks: Map<string, VirtualReviewBlock>,
-): StructuredPreviewTargetState[] {
-	return [];
-}
-
-export function createReviewItem(
+function createReviewItem(
 	bundlePath: number[],
 	planKind: DocumentMutationPlan["kind"],
 	targetKind: StructuralReviewItem["targetKind"],
@@ -259,7 +230,7 @@ export function createReviewItem(
 	};
 }
 
-export function createReviewItemId(
+function createReviewItemId(
 	planKind: DocumentMutationPlan["kind"],
 	bundlePath: number[],
 	stepIndex: number | null,

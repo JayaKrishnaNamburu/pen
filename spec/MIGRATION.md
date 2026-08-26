@@ -945,7 +945,7 @@ Same cut as `DecorationSet.map`. The mapping-era decoration contract goes; recom
 
 ## content-ops shims
 
-**Shipped.** The 1-line re-export modules in `@input/pen-content-ops` and the barrel passthroughs of the same names are deleted. Import those names from `@input/pen-core`. The package keeps its real code (`parseMarkdownToBlocks`, `splitPlainTextLineBlocks`, `buildDocumentWriteOps`, structured-target / plan helpers).
+**Shipped.** The 1-line re-export modules in `@input/pen-content-ops` and the barrel passthroughs of the same names are deleted. Import those names from `@input/pen-core`. The package keeps its real code (`parseMarkdownToBlocks`, `splitPlainTextLineBlocks`, `buildDocumentWriteOps`, structured-target types).
 
 | Deleted shim                  | Old import                                                                                            | New import                                                                                     |
 | ----------------------------- | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
@@ -953,6 +953,16 @@ Same cut as `DecorationSet.map`. The mapping-era decoration contract goes; recom
 | `blocks.ts` (`ImportOptions`) | `import type { ImportOptions } from "@input/pen-content-ops"`                                         | `import type { ImportOptions } from "@input/pen-types"`                                        |
 | `blockCapabilities.ts`        | `import { getFlowCapabilityFromSchema, shouldExposeBlockInTooling, … } from "@input/pen-content-ops"` | `import { getFlowCapabilityFromSchema, shouldExposeBlockInTooling, … } from "@input/pen-core"` |
 | `profilePolicy.ts`            | `import { createImportResult, normalizePendingBlocksForImport, … } from "@input/pen-content-ops"`     | `import { createImportResult, normalizePendingBlocksForImport, … } from "@input/pen-core"`     |
+
+---
+
+## content-ops plan-record helpers
+
+**Shipped.** `normalizePlanRecord`, `normalizePlanSteps`, and `PlanRecord` are deleted from `@input/pen-content-ops`. They coerced unknown JSON-plan payloads for the retired structured planner and had no production caller after that channel closed. There is no replacement — hosts that parsed assistant-text plans should use `edit_document` instead.
+
+`packages/shared/content-ops/src/plan/planSchemas.ts` is deleted.
+
+The structured-target types in `packages/shared/content-ops/src/plan/targets.ts` stay.
 
 ---
 

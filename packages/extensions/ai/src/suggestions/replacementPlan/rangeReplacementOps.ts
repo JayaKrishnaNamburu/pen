@@ -176,7 +176,7 @@ export function buildMultiBlockReplacementOperations({
 	return operations;
 }
 
-export function buildAlignedMultiBlockParagraphReplacementOperations({
+function buildAlignedMultiBlockParagraphReplacementOperations({
 	maxDiffCells,
 	normalizedRange,
 	replacementParagraphs,
@@ -204,7 +204,7 @@ export function buildAlignedMultiBlockParagraphReplacementOperations({
 	);
 }
 
-export function buildInsertedParagraphBlockOperations({
+function buildInsertedParagraphBlockOperations({
 	afterBlockId,
 	blockType,
 	createBlockId,
@@ -223,14 +223,14 @@ export function buildInsertedParagraphBlockOperations({
 	}).flatMap(toInsertedParagraphBlockOperations);
 }
 
-export interface InsertedParagraphBlock {
+interface InsertedParagraphBlock {
 	afterBlockId: string;
 	blockId: string;
 	blockType: string;
 	text: string;
 }
 
-export function buildInsertedParagraphBlocks({
+function buildInsertedParagraphBlocks({
 	afterBlockId,
 	blockType,
 	createBlockId,
@@ -258,7 +258,7 @@ export function buildInsertedParagraphBlocks({
 	return blocks;
 }
 
-export function toInsertedParagraphBlockOperations(
+function toInsertedParagraphBlockOperations(
 	block: InsertedParagraphBlock,
 ): ReplacementReviewOperation[] {
 	const operations: ReplacementReviewOperation[] = [

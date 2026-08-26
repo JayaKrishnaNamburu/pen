@@ -54,7 +54,7 @@ export const FLOW_PATCH_EDIT_OPERATIONS = new Set([
 	"delete_blocks",
 ]);
 
-export const POSITION_LITERALS = new Set(["first", "last"]);
+const POSITION_LITERALS = new Set(["first", "last"]);
 
 export function validateTextRange(
 	value: unknown,
@@ -160,7 +160,7 @@ export function requireString(
 	);
 }
 
-export function requireNumber(
+function requireNumber(
 	record: Record<string, unknown>,
 	field: string,
 	path: string,
@@ -225,7 +225,7 @@ export function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-export function isFiniteNumber(value: unknown): value is number {
+function isFiniteNumber(value: unknown): value is number {
 	return typeof value === "number" && Number.isFinite(value);
 }
 

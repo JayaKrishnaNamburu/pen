@@ -301,5 +301,3 @@ export const PenEditor = defineComponent({
 		};
 	},
 });
-
-export type PenEditorProps = InstanceType<typeof PenEditor>["$props"];

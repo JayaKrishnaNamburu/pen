@@ -11,9 +11,6 @@ export {
 	getEditorLocale,
 	getInlineNodeRange,
 	getListIndent,
-	getParentIdChildBlockIds,
-	getRootBlockIds,
-	getVisibleBlockIds,
 	HEADING_TYPES,
 	isEditableTextBlock,
 	isInsideParentIdContainer,
@@ -21,9 +18,7 @@ export {
 	LIST_BLOCK_TYPES,
 	logicalInline,
 	marksAtOffset,
-	PARENT_ID_CONTAINER_TYPES,
 	usesInlineMarks,
-	type DeleteDirection,
 } from "./commandBlockContext";
 export {
 	blockSelectionResult,
@@ -40,4 +35,4 @@ export {
 	fromTransitionSelection,
 	toTransitionSelection,
 } from "./commandSnapshots";
-export { replaceRangeOps, type RangeReplaceResult } from "./rangeReplace";
+export { replaceRangeOps } from "./rangeReplace";

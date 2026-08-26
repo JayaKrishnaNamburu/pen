@@ -72,7 +72,7 @@ import { areBlockIdsEqual, resolveInputMode } from "./fieldEditorImplHelpers";
  * caret rather than `textformatupdate` / `characterboundsupdate`. The field
  * stays editable — typing, paste, and undo still apply.
  */
-export const FIELD_EDITOR_BACKEND_SPLIT = {
+const FIELD_EDITOR_BACKEND_SPLIT = {
 	preferred: "edit-context",
 	fallback: "contenteditable",
 	alwaysContentEditable: ["expanded", "table-cell"],

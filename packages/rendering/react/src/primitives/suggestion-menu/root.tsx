@@ -308,4 +308,3 @@ function SuggestionMenuRootContent<TItem>(
 	);
 }
 
-export { SuggestionMenuContext };

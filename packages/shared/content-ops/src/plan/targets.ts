@@ -4,7 +4,7 @@ import type {
   TableColumnSchema,
 } from "@input/pen-types";
 
-export const STRUCTURED_TARGET_KINDS = [
+const STRUCTURED_TARGET_KINDS = [
   "block",
   "table",
 ] as const;
@@ -12,7 +12,7 @@ export const STRUCTURED_TARGET_KINDS = [
 export type StructuredTargetKind =
   (typeof STRUCTURED_TARGET_KINDS)[number];
 
-export const TARGET_EDITABILITIES = [
+const TARGET_EDITABILITIES = [
   "editable",
   "read-only",
   "unsupported",

@@ -16,13 +16,13 @@ export type TextToken = {
 	end: number;
 };
 
-export type DiffHunk = {
+type DiffHunk = {
 	originalStart: number;
 	deletedText: string;
 	insertedText: string;
 };
 
-export const DEFAULT_MAX_DIFF_CELLS = 20_000;
+const DEFAULT_MAX_DIFF_CELLS = 20_000;
 
 const DEFAULT_DIFF_LOCALE = "en";
 
@@ -149,7 +149,7 @@ export function tokenizeText(
 	return tokens;
 }
 
-export function diffTokens(
+function diffTokens(
 	originalTokens: readonly TextToken[],
 	replacementTokens: readonly TextToken[],
 ): DiffHunk[] {
@@ -181,7 +181,7 @@ export function diffTokens(
 	}));
 }
 
-export function diffTokenMiddle(
+function diffTokenMiddle(
 	originalTokens: readonly TextToken[],
 	replacementTokens: readonly TextToken[],
 ): DiffHunk[] {
@@ -275,7 +275,7 @@ export function diffTokenMiddle(
 	return hunks;
 }
 
-export function hunksToOperations({
+function hunksToOperations({
 	blockId,
 	hunks,
 	offset,
@@ -309,7 +309,7 @@ export function hunksToOperations({
 	return operations;
 }
 
-export function shouldUseCoarseReplacement({
+function shouldUseCoarseReplacement({
 	hunks,
 	originalText,
 	replacementText,

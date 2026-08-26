@@ -4,7 +4,7 @@ import type {
   MarkdownNode,
   XMLElement,
 } from "./serialization";
-import type { LayoutSchema, LayoutProps, LayoutChildProps } from "./layout";
+import type { LayoutSchema } from "./layout";
 import type { KeyBinding } from "./input";
 import type { SelectionState } from "./selection";
 import type { BlockA11ySpec } from "./a11y";
@@ -215,5 +215,4 @@ export interface ComposableSchema extends SchemaRegistry {
   overrideSystemMark(type: string, schema: InlineSchema): ComposableSchema;
 }
 
-// Re-export layout types for consumers that import from schema
-export type { LayoutSchema, LayoutProps, LayoutChildProps };
+export type { LayoutSchema };

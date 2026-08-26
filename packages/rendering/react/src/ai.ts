@@ -9,7 +9,6 @@ export {
 	AICommandList,
 	AICommandItem,
 	AIGenerationZone,
-	AIStructuredTargetPreview,
 	AIActionBar,
 	AIAcceptButton,
 	AIRejectButton,
@@ -41,7 +40,6 @@ export {
 	type AICommandListProps,
 	type AICommandItemProps,
 	type AIGenerationZoneProps,
-	type AIStructuredTargetPreviewProps,
 	type AIActionBarProps,
 	type AIAcceptButtonProps,
 	type AIRejectButtonProps,
@@ -78,14 +76,6 @@ export {
 } from "./hooks/useAIDebugLog";
 export { useAISessions } from "./hooks/useAISessions";
 export { useActiveAISession } from "./hooks/useActiveAISession";
-export {
-	useAIStructuredPreview,
-	useActiveAIStructuredPreview,
-	useAIStructuredTargetPreview,
-	useAIStructuredPreviewContent,
-	type AIStructuredPreviewSelection,
-	type AIStructuredTargetPreviewSelection,
-} from "./hooks/useAIStructuredPreview";
 export { useAIActions } from "./hooks/useAIActions";
 export { useAISessionActions } from "./hooks/useAISessionActions";
 export { useAIStreamEvents } from "./hooks/useAIStreamEvents";
@@ -116,7 +106,6 @@ export type {
 	AIStreamEvent,
 	AIStreamEventType,
 	GenerationState,
-	GenerationStructuredPreviewState,
 	PersistentSuggestion,
 	StructuralReviewItem,
 	StructuralReviewComparisonRow,

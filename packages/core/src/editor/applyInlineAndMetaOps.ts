@@ -54,7 +54,6 @@ function flattenInsert(
 	return [insert as InlineInsert];
 }
 
-
 function resolveBlockText(
 	pipeline: ApplyPipelineDocumentAccess,
 	blockId: string,
@@ -222,7 +221,7 @@ export function formatText(
 	return [op.blockId];
 }
 
-export function resolveMarks(
+function resolveMarks(
 	pipeline: Pick<ApplyPipelineDocumentAccess, "_registry">,
 	marks: Record<string, unknown | null>,
 ): Record<string, unknown | null> {

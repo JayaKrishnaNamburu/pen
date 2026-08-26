@@ -24,7 +24,7 @@ export function isSyntheticProvenance(
   return provenance === PASTE_CORPUS_SYNTHETIC_PROVENANCE;
 }
 
-export function isCapturedProvenance(
+function isCapturedProvenance(
   provenance: PasteCorpusProvenance,
 ): provenance is PasteCorpusCaptureProvenance {
   return (

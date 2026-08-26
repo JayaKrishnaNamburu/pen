@@ -7,7 +7,7 @@ import type { AutocompleteRequestContext } from "./providers/types";
 
 export { streamThroughEgress } from "@input/pen-core";
 
-export function excerptsFromAutocompleteContext(
+function excerptsFromAutocompleteContext(
 	context: AutocompleteRequestContext,
 ): AIDocumentExcerpt[] {
 	const excerpts: AIDocumentExcerpt[] = [

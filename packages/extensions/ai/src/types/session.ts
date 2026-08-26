@@ -21,10 +21,7 @@ import type {
 	AITransportKind,
 } from "../runtime/contracts";
 import type { DocumentMutationPlan } from "../runtime/planTypes";
-import type {
-	StructuralReviewItem,
-	StructuredPreviewTargetState,
-} from "../runtime/reviewArtifacts";
+import type { StructuralReviewItem } from "../runtime/reviewArtifacts";
 import type { StructuredIntent } from "../runtime/structuredIntent";
 import type {
 	AICommandBinding,
@@ -185,7 +182,6 @@ export interface AISessionTurn {
 	reviewItemIds: string[];
 	generatedBlockIds: string[];
 	operation?: AIRequestedOperation;
-	structuredPreview?: GenerationStructuredPreviewState | null;
 	anchor?: AISessionAnchor;
 	selection?: AISessionSelectionSnapshot;
 }
@@ -309,7 +305,6 @@ export type AIStreamEventType =
 	| "tool-call"
 	| "tool-output"
 	| "tool-result"
-	| "structured-preview"
 	| "generation-finish";
 
 export interface AIStreamEventBase {
@@ -362,11 +357,6 @@ export type AIStreamEvent =
 			state: "complete" | "error";
 	  })
 	| (AIStreamEventBase & {
-			type: "structured-preview";
-			preview: GenerationStructuredPreviewState;
-			patches: readonly StructuredPreviewPatchOperation[];
-	  })
-	| (AIStreamEventBase & {
 			type: "operation";
 			operation: AIRequestedOperation;
 			phase: "preview" | "final" | "conflict";
@@ -378,19 +368,6 @@ export type AIStreamEvent =
 			status: GenerationState["status"];
 			text: string;
 	  });
-
-export interface StructuredPreviewPatchOperation {
-	op: "add" | "remove" | "replace";
-	path: string;
-	value?: unknown;
-}
-
-export interface GenerationStructuredPreviewState {
-	planState: "drafted" | "validated";
-	plan: DocumentMutationPlan;
-	reviewItems: StructuralReviewItem[];
-	targets: StructuredPreviewTargetState[];
-}
 
 export interface GenerationState {
 	id: string;
@@ -418,7 +395,6 @@ export interface GenerationState {
 	plan?: DocumentMutationPlan | null;
 	structuredIntent?: StructuredIntent | null;
 	reviewItems?: StructuralReviewItem[];
-	structuredPreview?: GenerationStructuredPreviewState | null;
 	targetKind?: GenerationTargetKind;
 	blockClass?: AIBlockClass;
 	adapterId?: AIBlockAdapterId;

@@ -2,7 +2,7 @@ import type { Editor } from "@input/pen-types";
 import type { ActiveCellCoord } from "./controller";
 import type { FieldEditorTextLike } from "./crdt";
 
-export function getBlockYText(
+function getBlockYText(
 	editor: Editor,
 	blockId: string,
 ): FieldEditorTextLike | null {

@@ -8,7 +8,6 @@ import {
 	getDirectionalSelectionOffsets,
 } from "./selectionBridge";
 import {
-	collapsedSelectionOffset,
 	rangesEqual,
 	resolveEditContextKeyDownRange,
 	resolveEditContextTextUpdateRange,

@@ -124,7 +124,7 @@ export function resolveInlineAlignmentPlan(
 	};
 }
 
-export function shouldPreferInlineSubstitution(
+function shouldPreferInlineSubstitution(
 	targetBlock: NonNullable<ReturnType<Editor["getBlock"]>>,
 	parsedBlock: PendingInlineBlock,
 	substituteCost: number,
@@ -141,20 +141,20 @@ export function shouldPreferInlineSubstitution(
 	return areBlocksReusableMatch(targetBlock, parsedBlock, locale);
 }
 
-export function estimateInlineSubstituteCost(
+function estimateInlineSubstituteCost(
 	targetBlock: NonNullable<ReturnType<Editor["getBlock"]>>,
 	parsedBlock: PendingInlineBlock,
 ): number {
 	return estimateInlineBlockRewriteCost(targetBlock, parsedBlock);
 }
 
-export function estimateInlineDeleteCost(
+function estimateInlineDeleteCost(
 	_targetBlock: NonNullable<ReturnType<Editor["getBlock"]>>,
 ): number {
 	return 1;
 }
 
-export function estimateInlineInsertCost(block: PendingInlineBlock): number {
+function estimateInlineInsertCost(block: PendingInlineBlock): number {
 	let cost = 1;
 	if ((block.content ?? "").length > 0) {
 		cost += 1;
@@ -167,7 +167,7 @@ export function estimateInlineInsertCost(block: PendingInlineBlock): number {
 	return cost;
 }
 
-export function estimateInlineBlockRewriteCost(
+function estimateInlineBlockRewriteCost(
 	targetBlock: NonNullable<ReturnType<Editor["getBlock"]>>,
 	parsedBlock: PendingInlineBlock,
 ): number {
@@ -190,7 +190,7 @@ export function estimateInlineBlockRewriteCost(
 	return cost;
 }
 
-export function summarizeInlineAlignment(
+function summarizeInlineAlignment(
 	alignment: InlineAlignmentStep[],
 	targetBlocks: Array<NonNullable<ReturnType<Editor["getBlock"]>>>,
 	parsedBlocks: PendingInlineBlock[],
@@ -255,7 +255,7 @@ export function mergeFlowPatchAlignmentMetrics(
 	};
 }
 
-export function areBlocksReusableMatch(
+function areBlocksReusableMatch(
 	targetBlock: NonNullable<ReturnType<Editor["getBlock"]>>,
 	parsedBlock: PendingInlineBlock,
 	locale: string,
@@ -306,7 +306,7 @@ export function normalizeReusableText(text: string, locale: string): string {
 	return foldAndNormalize(text.trim().replace(/\s+/g, " "), locale);
 }
 
-export function resolveSharedPrefixLength(left: string, right: string): number {
+function resolveSharedPrefixLength(left: string, right: string): number {
 	let index = 0;
 	while (index < left.length && index < right.length && left[index] === right[index]) {
 		index += 1;
@@ -314,7 +314,7 @@ export function resolveSharedPrefixLength(left: string, right: string): number {
 	return index;
 }
 
-export function resolveSharedSuffixLength(left: string, right: string): number {
+function resolveSharedSuffixLength(left: string, right: string): number {
 	let count = 0;
 	while (
 		count < left.length &&
@@ -326,7 +326,7 @@ export function resolveSharedSuffixLength(left: string, right: string): number {
 	return count;
 }
 
-export function resolveLevenshteinDistance(
+function resolveLevenshteinDistance(
 	left: string,
 	right: string,
 	maxDistance: number,

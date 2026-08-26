@@ -1,8 +1,6 @@
 import { defineCommand } from "./define";
 import type { CaretMotionParam, SelectBlockParam } from "./caretParams";
 
-export type { CaretMotionParam, SelectBlockParam } from "./caretParams";
-
 export const caretLeft = defineCommand<CaretMotionParam>("pen.caretLeft");
 export const caretRight = defineCommand<CaretMotionParam>("pen.caretRight");
 export const caretUp = defineCommand<CaretMotionParam>("pen.caretUp");

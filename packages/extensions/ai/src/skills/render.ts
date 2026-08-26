@@ -17,7 +17,7 @@ function renderInstructionList(skill: AISkillDefinition): string {
  *
  * @remarks English packaging template. Pen does not localize this output.
  */
-export function renderSkillMarkdown(skill: AISkillDefinition): string {
+function renderSkillMarkdown(skill: AISkillDefinition): string {
 	return [
 		"---",
 		`name: ${skill.name}`,

@@ -16,10 +16,6 @@ export {
 } from "./commandMenu";
 export { AIGenerationZone, type AIGenerationZoneProps } from "./generationZone";
 export {
-	AIStructuredTargetPreview,
-	type AIStructuredTargetPreviewProps,
-} from "./structuredTargetPreview";
-export {
 	AIActionBar,
 	AIAcceptButton,
 	AIRejectButton,
@@ -55,9 +51,6 @@ export {
 	AIContextualPromptTrigger,
 	AIContextualPromptSurface,
 	AIContextualPromptComposer,
-	useContextualPromptSession,
-	useContextualPromptAnchor,
-	useContextualPromptPlacement,
 	type AIContextualPromptTriggerProps,
 	type AIContextualPromptSurfaceProps,
 	type AIContextualPromptComposerProps,

@@ -160,8 +160,17 @@ const SKIP_DIR_NAMES = new Set([
  * and event adapters (DL2–DL4), `DocumentCommitEvent`, and pen-dom's
  * `./types/paste` subpath (CS9). The ratchet is a maximum, so it is lowered in
  * the same change that shrinks the surface.
+ *
+ * Lowered 1775 → 1761 on 2026-08-26 by wave 2's structured-preview deletion
+ * (`spec-v5/waves/wave-2-one-preview.md` GATE 2.12). Again not a TSDoc pass:
+ * 11 are the deleted producer-less preview surface — `pen-ai`'s
+ * `GenerationStructuredPreviewState` / `StructuredPreviewPatchOperation` and
+ * `pen-react`'s four `AIStructuredTargetPreview*` / `AIStructuredPreview*`
+ * types plus its four preview hooks — and 3 are content-ops' plan-record
+ * helpers (`normalizePlanRecord`, `normalizePlanSteps`, `PlanRecord`) that
+ * the same dead-plan cleanup un-exported.
  */
-export const MAX_UNDOCUMENTED = 1775;
+export const MAX_UNDOCUMENTED = 1761;
 
 const JSDOC_RE = /\/\*\*[\s\S]*?\*\//g;
 const DECL_RE =

@@ -6,6 +6,5 @@
 export type {
 	CommitEvent,
 	CommitEventSource,
-	Diagnostic,
 	SelectionRecord,
 } from "./editor";

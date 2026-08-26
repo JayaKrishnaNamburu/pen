@@ -154,7 +154,7 @@ describe("aiExtension", () => {
 		).toEqual(["Hello"]);
 	});
 
-	it("streams bottom-chat markdown as block suggestions before completion", async () => {
+	it("previews bottom-chat markdown on the review surface before staging it", async () => {
 		const releaseFinalDelta = createDeferred();
 		const editor = createEditor({
 			schema: defaultSchema,
@@ -206,6 +206,9 @@ describe("aiExtension", () => {
 		expect(controller.getState().activeGeneration?.contentFormat).toBe(
 			"markdown",
 		);
+		// RS2: an in-flight markdown block generation shows on the review
+		// surface and writes nothing, where it used to re-stage the whole
+		// parsed payload as suggestions on every frame.
 		const visibleStreamingTexts = editor.documentState.blockOrder
 			.map(
 				(id) =>
@@ -217,7 +220,12 @@ describe("aiExtension", () => {
 				editor.getBlock(blockId)?.textContent({ resolved: true }) ?? ""
 			).replace(/^\u200b/, ""),
 		).toBe("");
-		expect(visibleStreamingTexts).toEqual(["Once upon"]);
+		expect(visibleStreamingTexts).toEqual([]);
+		expect(
+			controller
+				.getState()
+				.streamingReviewPreviews.map((preview) => preview.text),
+		).toEqual(["Once upon"]);
 
 		releaseFinalDelta.resolve();
 		const generation = await generationPromise;

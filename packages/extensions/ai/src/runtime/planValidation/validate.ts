@@ -38,7 +38,7 @@ export function isDocumentMutationPlan(
 	return validateDocumentMutationPlanShape(value).valid;
 }
 
-export function validatePlan(
+function validatePlan(
 	plan: unknown,
 	path: string,
 	issues: PlanValidationIssue[],
@@ -94,7 +94,7 @@ export function validatePlan(
 	}
 }
 
-export function validateTextEditPlan(
+function validateTextEditPlan(
 	plan: Record<string, unknown>,
 	path: string,
 	issues: PlanValidationIssue[],
@@ -127,7 +127,7 @@ export function validateTextEditPlan(
 	validateConfidence(plan.confidence, `${path}.confidence`, issues);
 }
 
-export function validateFlowPatchPlan(
+function validateFlowPatchPlan(
 	plan: Record<string, unknown>,
 	path: string,
 	issues: PlanValidationIssue[],
@@ -169,7 +169,7 @@ export function validateFlowPatchPlan(
 	validateConfidence(plan.confidence, `${path}.confidence`, issues);
 }
 
-export function validateBlockInsertPlan(
+function validateBlockInsertPlan(
 	plan: Record<string, unknown>,
 	path: string,
 	issues: PlanValidationIssue[],
@@ -198,7 +198,7 @@ export function validateBlockInsertPlan(
 	validateConfidence(plan.confidence, `${path}.confidence`, issues);
 }
 
-export function validateFlowPatchEdit(
+function validateFlowPatchEdit(
 	edit: unknown,
 	path: string,
 	issues: PlanValidationIssue[],
@@ -284,7 +284,7 @@ export function validateFlowPatchEdit(
 	validateConfidence(record.confidence, `${path}.confidence`, issues);
 }
 
-export function validateBlockUpdatePlan(
+function validateBlockUpdatePlan(
 	plan: Record<string, unknown>,
 	path: string,
 	issues: PlanValidationIssue[],
@@ -296,7 +296,7 @@ export function validateBlockUpdatePlan(
 	validateConfidence(plan.confidence, `${path}.confidence`, issues);
 }
 
-export function validateBlockMovePlan(
+function validateBlockMovePlan(
 	plan: Record<string, unknown>,
 	path: string,
 	issues: PlanValidationIssue[],
@@ -306,7 +306,7 @@ export function validateBlockMovePlan(
 	validateConfidence(plan.confidence, `${path}.confidence`, issues);
 }
 
-export function validateBlockConvertPlan(
+function validateBlockConvertPlan(
 	plan: Record<string, unknown>,
 	path: string,
 	issues: PlanValidationIssue[],
@@ -319,7 +319,7 @@ export function validateBlockConvertPlan(
 	validateConfidence(plan.confidence, `${path}.confidence`, issues);
 }
 
-export function validateReviewBundlePlan(
+function validateReviewBundlePlan(
 	plan: Record<string, unknown>,
 	path: string,
 	issues: PlanValidationIssue[],
@@ -352,7 +352,7 @@ export function validateReviewBundlePlan(
 	validateConfidence(plan.confidence, `${path}.confidence`, issues);
 }
 
-export function validatePlanSemantics(
+function validatePlanSemantics(
 	plan: unknown,
 	path: string,
 	issues: PlanValidationIssue[],
@@ -448,7 +448,7 @@ export function validatePlanSemantics(
 	}
 }
 
-export function validateTargetKindCompatibility(
+function validateTargetKindCompatibility(
 	kind: DocumentMutationPlanKind,
 	path: string,
 	issues: PlanValidationIssue[],
@@ -470,7 +470,7 @@ export function validateTargetKindCompatibility(
 	);
 }
 
-export function validateFlowPatchEditSemantics(
+function validateFlowPatchEditSemantics(
 	edit: unknown,
 	path: string,
 	issues: PlanValidationIssue[],
@@ -514,7 +514,7 @@ export function validateFlowPatchEditSemantics(
 	);
 }
 
-export function validatePositionSemantics(
+function validatePositionSemantics(
 	value: unknown,
 	path: string,
 	issues: PlanValidationIssue[],
@@ -530,7 +530,7 @@ export function validatePositionSemantics(
 	validateScopedBlockReference(position.parent, `${path}.parent`, issues, context);
 }
 
-export function validateKnownBlockType(
+function validateKnownBlockType(
 	value: unknown,
 	path: string,
 	issues: PlanValidationIssue[],
@@ -552,7 +552,7 @@ export function validateKnownBlockType(
 	);
 }
 
-export function validateMutableTargetBlockReference(
+function validateMutableTargetBlockReference(
 	value: unknown,
 	path: string,
 	issues: PlanValidationIssue[],
@@ -588,7 +588,7 @@ export function validateMutableTargetBlockReference(
 	}
 }
 
-export function validateScopedBlockReference(
+function validateScopedBlockReference(
 	value: unknown,
 	path: string,
 	issues: PlanValidationIssue[],

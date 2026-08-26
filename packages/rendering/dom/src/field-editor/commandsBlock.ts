@@ -7,19 +7,10 @@ import {
 } from "@input/pen-shortcuts";
 import { matchListInputRule } from "../utils/listInputRule";
 import {
-	getLogicalInlineLength,
 	type BlockInputRuleEngine,
-	type InlineTextLike,
 	type SelectionRange,
 	type SelectionTarget,
 } from "./commandsShared";
-
-export function normalizeInlineOffset(
-	ytext: InlineTextLike,
-	offset: number,
-): number {
-	return Math.max(0, Math.min(offset, getLogicalInlineLength(ytext)));
-}
 
 export function toggleInlineMark(editor: Editor, markType: string): boolean {
 	return toggleInlineMarkCommand(editor, markType);

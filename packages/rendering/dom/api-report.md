@@ -222,7 +222,6 @@
 - insertTextAtRange
 - mergeBackwardAtBlockStart
 - moveCaretAcrossBlocks
-- normalizeInlineOffset
 - resolveBackspaceAction
 - resolveEnterAction
 - setInlineMark
@@ -233,6 +232,7 @@
 
 - getLogicalInlineLength
 - InlineTextLike
+- normalizeInlineOffset
 - normalizeInlineRange
 - SelectionRange
 - SelectionTarget

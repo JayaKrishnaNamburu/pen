@@ -76,7 +76,7 @@ export function createBlockIndex(initial: BlockIndexSnapshot): BlockIndex {
 	};
 }
 
-export function applySummaryToSnapshot(
+function applySummaryToSnapshot(
 	snapshot: BlockIndexSnapshot,
 	summary: ChangeSummary,
 ): BlockIndexSnapshot {
@@ -111,7 +111,7 @@ export function applySummaryToSnapshot(
 	};
 }
 
-export function lengthAfterSplices(
+function lengthAfterSplices(
 	length: number,
 	splices: readonly TextSplice[],
 ): number {
@@ -122,7 +122,7 @@ export function lengthAfterSplices(
 	return Math.max(0, next);
 }
 
-export function cloneSnapshot(snapshot: BlockIndexSnapshot): BlockIndexSnapshot {
+function cloneSnapshot(snapshot: BlockIndexSnapshot): BlockIndexSnapshot {
 	return {
 		lengthById: new Map(snapshot.lengthById),
 		typeById: new Map(snapshot.typeById),

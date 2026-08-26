@@ -3,7 +3,11 @@ export type {
 	SelectionRange,
 	SelectionTarget,
 } from "./commandsShared";
-export { getLogicalInlineLength, normalizeInlineRange } from "./commandsShared";
+export {
+	getLogicalInlineLength,
+	normalizeInlineOffset,
+	normalizeInlineRange,
+} from "./commandsShared";
 export { applyListTabBehavior, moveCaretAcrossBlocks } from "./commandsListTab";
 export {
 	applyBackspaceBehavior,
@@ -16,7 +20,6 @@ export {
 	convertBlock,
 	getConvertBlockOps,
 	insertTextAtRange,
-	normalizeInlineOffset,
 	setInlineMark,
 	splitBlockAtOffset,
 	toggleInlineMark,

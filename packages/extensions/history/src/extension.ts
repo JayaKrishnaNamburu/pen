@@ -6,7 +6,6 @@ import type { HistoryConfig, HistoryController } from "./types";
 
 /** Extension name under which document history registers. */
 export const HISTORY_EXTENSION_NAME = "history";
-export { HISTORY_CONTROLLER_SLOT };
 
 /**
  * Add snapshot history and authorship attribution to an editor. The

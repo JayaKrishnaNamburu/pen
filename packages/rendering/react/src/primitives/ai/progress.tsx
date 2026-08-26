@@ -1,5 +1,4 @@
 import React from "react";
-import { useAIStructuredPreview } from "../../hooks/useAIStructuredPreview";
 import { useAIStreamEvents } from "../../hooks/useAIStreamEvents";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { useAIContext } from "./root";
@@ -12,7 +11,6 @@ export function AIProgress(props: AIProgressProps) {
 	const { editor, state } = useAIContext();
 	const generation = state.activeGeneration;
 	const streamEvents = useAIStreamEvents(editor);
-	const structuredPreview = useAIStructuredPreview(editor, generation);
 	const lastStreamEvent = streamEvents[streamEvents.length - 1];
 	const toolOutputCount = streamEvents.filter(
 		(event) => event.type === "tool-output",
@@ -24,10 +22,5 @@ export function AIProgress(props: AIProgressProps) {
 		"data-stream-event-count": streamEvents.length,
 		"data-last-stream-event": lastStreamEvent?.type ?? undefined,
 		"data-tool-output-count": toolOutputCount,
-		"data-structured-preview-count":
-			structuredPreview.preview?.reviewItems.length ?? 0,
-		"data-structured-preview-state":
-			structuredPreview.preview?.planState ?? undefined,
-		"data-structured-preview-patch-count": structuredPreview.patchCount,
 	});
 }

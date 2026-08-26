@@ -20,7 +20,7 @@ export const AX6_MOTION_MAPPING = {
 	transitions: "instant",
 } as const;
 
-export type Ax6MotionMapping = typeof AX6_MOTION_MAPPING;
+type Ax6MotionMapping = typeof AX6_MOTION_MAPPING;
 
 export type ReducedMotionListener = () => void;
 

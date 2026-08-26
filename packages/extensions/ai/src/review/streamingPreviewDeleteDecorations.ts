@@ -31,7 +31,7 @@ export function createStreamingDeleteDecoration({
 	};
 }
 
-export function buildStreamingDeleteAttributes(
+function buildStreamingDeleteAttributes(
 	suggestionPresentation: SuggestionPresentation,
 ): DecorationAttributes {
 	if (suggestionPresentation === "final-text") {

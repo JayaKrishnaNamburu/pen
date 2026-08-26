@@ -36,7 +36,7 @@ export const XML_EXPORT_FIDELITY: readonly ExportFidelityRow[] = [
   { kind: "inline-node", type: "inlineApp", fidelity: FULL, notes: "" },
 ];
 
-export function renderFidelityTable(
+function renderFidelityTable(
   title: string,
   intro: string,
   rows: readonly ExportFidelityRow[],

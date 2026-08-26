@@ -91,7 +91,7 @@ type SanitizeAttributeHookEvent = {
 	keepAttr: boolean;
 };
 
-export function filterInlineStyleDeclarations(value: string): string {
+function filterInlineStyleDeclarations(value: string): string {
 	return value
 		.split(";")
 		.map((declaration) => declaration.trim())

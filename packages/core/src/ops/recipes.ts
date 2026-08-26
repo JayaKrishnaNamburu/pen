@@ -39,7 +39,7 @@ export function spliceDeleteOp(
 	};
 }
 
-export function insertsFromDeltas(
+function insertsFromDeltas(
 	deltas: readonly InlineDelta[],
 ): InlineInsert | InlineInsert[] {
 	const inserts: InlineInsert[] = [];

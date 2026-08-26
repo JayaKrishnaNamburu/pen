@@ -51,7 +51,7 @@ export type ReaderSnapshot = {
 	readonly blocks: Readonly<Record<string, ReaderBlock>>;
 };
 
-export type GestureWindowKind = "pointer" | "ime" | "context-menu" | "drag";
+type GestureWindowKind = "pointer" | "ime" | "context-menu" | "drag";
 
 export type GestureWindowState = {
 	readonly pointer: boolean;

@@ -84,7 +84,7 @@ export function startPrefetchForAcceptedContinuation(
 	});
 }
 
-export async function runPrefetchRequest(
+async function runPrefetchRequest(
 	controller: AutocompleteControllerHost,
 	options: {
 		abortController: AbortController;
@@ -189,7 +189,7 @@ export async function runPrefetchRequest(
 	activatePendingAcceptedContinuation(controller);
 }
 
-export function activatePendingAcceptedContinuation(
+function activatePendingAcceptedContinuation(
 	controller: AutocompleteControllerHost,
 ): boolean {
 	if (

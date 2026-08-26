@@ -65,7 +65,7 @@ export function setLineEdgeMeasure(
 	)[LINE_EDGE_SEAM] = measure;
 }
 
-export function getLineEdgeMeasure(
+function getLineEdgeMeasure(
 	editor: Editor,
 ): LineEdgeMeasure | undefined {
 	return (

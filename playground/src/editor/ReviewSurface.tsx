@@ -41,10 +41,7 @@ export function ReviewSurface({ editor, children }: ReviewSurfaceProps) {
 	const generation = useGeneration(editor);
 	const aiActions = useAIActions(editor);
 
-	const reviewItems =
-		generation?.status === "streaming"
-			? (generation.structuredPreview?.reviewItems ?? [])
-			: (generation?.reviewItems ?? []);
+	const reviewItems = generation?.reviewItems ?? [];
 	const reviewActionsEnabled =
 		generation?.status !== "streaming" &&
 		generation?.planState === "validated";

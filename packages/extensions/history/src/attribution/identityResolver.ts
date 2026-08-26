@@ -28,7 +28,7 @@ interface PresenceIdentitySource {
 	};
 }
 
-export function opaqueClientHandle(clientId: number): OpaqueClientHandle {
+function opaqueClientHandle(clientId: number): OpaqueClientHandle {
 	return {
 		verified: false,
 		id: String(clientId),

@@ -118,10 +118,6 @@ export class HistoryControllerImpl implements HistoryController {
 		return buildBlameRanges(this.getCharacterAttribution(blockId));
 	}
 
-	triggerAISnapshot(): Promise<void> {
-		return this.autoSnapshotScheduler?.triggerAISnapshot() ?? Promise.resolve();
-	}
-
 	destroy(): void {
 		this.autoSnapshotScheduler?.destroy();
 		this.editors.clear();

@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .turbo/
+.fallow/
 coverage/
 *.tsbuildinfo
 .DS_Store
@@ -8,3 +9,4 @@ playwright-report/
 test-results*/
 .env.local
 .npmrc
+.claude/

@@ -47,7 +47,7 @@ export type TableContentArray = CRDTUnknownArray<TableRowMap>;
 export type TableColumnMap = CRDTUnknownMap;
 export type TableColumnArray = CRDTUnknownArray<TableColumnMap>;
 
-export function isCRDTArray(value: unknown): value is CRDTUnknownArray {
+function isCRDTArray(value: unknown): value is CRDTUnknownArray {
 	return (
 		typeof value === "object" &&
 		value !== null &&
@@ -136,7 +136,7 @@ export function getCellText(
 	return cell ? getTextProp(cell, "content") : null;
 }
 
-export function findColumnIndexById(
+function findColumnIndexById(
 	blockMap: CRDTUnknownMap,
 	columnId: string,
 ): number {
@@ -150,7 +150,7 @@ export function findColumnIndexById(
 	return -1;
 }
 
-export function findColumnMapById(
+function findColumnMapById(
 	blockMap: CRDTUnknownMap,
 	columnId: string,
 ): CRDTUnknownMap | null {
@@ -162,7 +162,7 @@ export function findColumnMapById(
 	return columnMap && isCRDTMap(columnMap) ? columnMap : null;
 }
 
-export function findRowIndexById(
+function findRowIndexById(
 	tableContent: TableContentArray,
 	rowId: string,
 ): number {

@@ -1,4 +1,4 @@
-export const REJECTED_OWN_PROP_KEYS = new Set([
+const REJECTED_OWN_PROP_KEYS = new Set([
 	"__proto__",
 	"constructor",
 	"prototype",

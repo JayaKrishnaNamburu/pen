@@ -31,7 +31,6 @@ import type {
 } from "./types";
 
 export const MULTIPLAYER_EXTENSION_NAME = "multiplayer";
-export { MULTIPLAYER_CONTROLLER_SLOT };
 
 export function multiplayerExtension(config: MultiplayerConfig): Extension {
 	let activeEditor: Editor | null = null;

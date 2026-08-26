@@ -83,14 +83,6 @@ export class AutoSnapshotScheduler {
 		this.cleanup.length = 0;
 	}
 
-	triggerAISnapshot(): Promise<void> {
-		if (!this.config.onAIGeneration) {
-			return Promise.resolve();
-		}
-
-		return this.safeCreateSnapshot("Pre-AI generation", "ai-generation");
-	}
-
 	destroy(): void {
 		if (this.timer) {
 			clearInterval(this.timer);

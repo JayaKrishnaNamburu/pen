@@ -8,7 +8,7 @@ export type VerticalCaretTarget = {
 	readonly goalX: number;
 };
 
-export type GeometryReaderWithBlocks = GeometryReader & {
+type GeometryReaderWithBlocks = GeometryReader & {
 	blockIds(): readonly string[];
 };
 

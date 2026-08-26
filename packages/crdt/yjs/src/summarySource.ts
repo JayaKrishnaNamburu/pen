@@ -163,7 +163,7 @@ function readOriginTag(txn: Y.Transaction): unknown {
 	};
 }
 
-export function transactionToRawCommitDelta(txn: Y.Transaction): RawCommitDelta {
+function transactionToRawCommitDelta(txn: Y.Transaction): RawCommitDelta {
 	const blocks = txn.doc.getMap(BLOCKS) as Y.Map<Y.Map<unknown>>;
 	const blockOrder = txn.doc.getArray(BLOCK_ORDER);
 	const apps = txn.doc.getMap(APPS) as Y.Map<Y.Map<unknown>>;

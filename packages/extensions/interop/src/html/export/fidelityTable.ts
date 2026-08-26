@@ -69,7 +69,7 @@ export const HTML_EXPORT_FIDELITY: readonly ExportFidelityRow[] = [
   },
 ];
 
-export function renderFidelityTable(
+function renderFidelityTable(
   title: string,
   intro: string,
   rows: readonly ExportFidelityRow[],

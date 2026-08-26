@@ -1,6 +1,5 @@
 import type { DocumentOp } from "@input/pen-types";
 import { buildDocumentWriteOps } from "@input/pen-document-ops";
-import { normalizeFlowMarkdownOutput } from "../runtime/flowMarkdown";
 import { buildMutationReceipt } from "../runtime/mutationReceipt";
 import type { AIMutationReceipt, GenerationState } from "../types";
 import {
@@ -156,58 +155,6 @@ export const fastApplySupportMethods = {
 		] satisfies DocumentOp[];
 		this._applySuggestedAIOps(replacementOps, sessionId);
 		return replacementOps;
-	},
-
-	_refreshStreamingMarkdownBlockPreview(
-		this: AIControllerMethodHost,
-		blockId: string,
-		text: string,
-		mutationMode: NonNullable<GenerationState["mutationMode"]>,
-		sessionId: string | undefined,
-		baselineSuggestionIds: ReadonlySet<string>,
-		previewSuggestionIds: readonly string[],
-		previousNormalizedText: string,
-		replaceTargetBlock?: boolean,
-		replaceBlockIds?: readonly string[],
-	): { suggestionIds: string[]; normalizedText: string } {
-		const normalizedText = normalizeFlowMarkdownOutput(text);
-		if (normalizedText === previousNormalizedText) {
-			return {
-				suggestionIds: [...previewSuggestionIds],
-				normalizedText,
-			};
-		}
-
-		this._rejectPreviewSuggestions(previewSuggestionIds);
-
-		if (
-			normalizedText.trim().length === 0 &&
-			!replaceTargetBlock &&
-			(replaceBlockIds?.length ?? 0) === 0
-		) {
-			return {
-				suggestionIds: [],
-				normalizedText,
-			};
-		}
-
-		this._commitBufferedBlockGeneration(
-			blockId,
-			normalizedText,
-			mutationMode,
-			"markdown",
-			sessionId,
-			{ replaceTargetBlock, replaceBlockIds },
-		);
-
-		return {
-			suggestionIds: this.getSuggestions()
-				.map((item) => item.id)
-				.filter(
-					(suggestionId) => !baselineSuggestionIds.has(suggestionId),
-				),
-			normalizedText,
-		};
 	},
 
 	_commitStructuredPlan(

@@ -5,7 +5,7 @@ import type {
 	Precedence,
 } from "@input/pen-types";
 
-export const PEN_COMMANDS_FACET = "pen.commands";
+const PEN_COMMANDS_FACET = "pen.commands";
 
 export const BUILTIN_COMMAND_PRECEDENCE: Precedence = "default";
 

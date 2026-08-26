@@ -17,7 +17,6 @@ import {
 	resolveSessionSelectionSnapshot,
 	shouldReplaceEmptyMarkdownTarget,
 	shouldTrimLeadingBlankBlockGenerationText,
-	supportsStructuredIntent,
 } from "../helpers";
 import { finalizeGenerationExecution, handleGenerationExecutionError } from "./generationExecutionFinalize";
 import { runGenerationLoop } from "./generationExecutionLoop";
@@ -158,12 +157,8 @@ export async function executeGeneration(
 			existingSession,
 			prompt,
 		);
-		const useStructuredIntentTransport =
-			adapter.transportKind !== "flow-text" &&
-			supportsStructuredIntent(controller._model);
 		const generationPrompt =
-			useStructuredIntentTransport ||
-			(adapter.id === "flow-markdown" && contentFormat === "markdown")
+			adapter.id === "flow-markdown" && contentFormat === "markdown"
 				? adapter.buildPrompt({
 						prompt: executionPrompt,
 						targetKind: route.targetKind,
@@ -198,7 +193,6 @@ export async function executeGeneration(
 			plan: null,
 			structuredIntent: null,
 			reviewItems: [],
-			structuredPreview: null,
 			targetKind: route.targetKind,
 			blockClass: route.blockClass,
 			adapterId: route.adapterId,
@@ -274,7 +268,6 @@ export async function executeGeneration(
 								suggestionIds: [],
 								reviewItemIds: [],
 								generatedBlockIds: [],
-								structuredPreview: null,
 								anchor:
 									target.type === "selection"
 										? resolveSessionAnchor(
@@ -366,8 +359,6 @@ export async function executeGeneration(
 		canStreamMarkdownBlockSuggestions,
 		streamedSuggestionInitialized: false,
 		streamedSuggestionLength: 0,
-		streamedMarkdownSuggestionIds: [],
-		lastStreamedMarkdownPreviewText: "",
 		sessionTurnId,
 		existingSession,
 		executionPrompt,
@@ -376,10 +367,8 @@ export async function executeGeneration(
 			shouldTrimLeadingBlankBlockGenerationText(
 				controller._editor.getBlock(blockId),
 			),
-		useStructuredIntentTransport,
 		generationPrompt,
 		seedGeneration,
-		currentStructuredPreview: null,
 		currentStructuredIntent: null,
 		currentMutationReceipt: null,
 	};

@@ -50,7 +50,7 @@ export function toggleInlineMark(editor: Editor, markType: string): boolean {
 	return true;
 }
 
-export function getAttachedFieldEditor(editor: Editor): FieldEditor | null {
+function getAttachedFieldEditor(editor: Editor): FieldEditor | null {
 	return (editor.facet(fieldEditorHostFacet) as FieldEditor | null) ?? null;
 }
 

@@ -104,7 +104,7 @@ export function writeCellDeltas(
 	}
 }
 
-export function readTableCellDeltas(cellMap: CRDTUnknownMap): CRDTDelta[] {
+function readTableCellDeltas(cellMap: CRDTUnknownMap): CRDTDelta[] {
 	const sourceContent = cellMap.get("content") as CRDTTextWithDelta | undefined;
 	if (!sourceContent) {
 		return [];

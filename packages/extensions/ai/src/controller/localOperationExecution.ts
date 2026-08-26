@@ -15,6 +15,10 @@ import {
 import { excerptsFromOperation, streamThroughEgress } from "../egress";
 import { finalizeLocalOperationExecution } from "./localOperationExecutionFinalize";
 import type { ExecuteLocalOperationInput } from "./generationExecutionState";
+import {
+	markdownStreamingPreviewText,
+	resolveMarkdownPreviewTarget,
+} from "./streamingPreviewInput";
 
 export async function executeLocalOperation(
 	controller: AIControllerMethodHost,
@@ -86,7 +90,6 @@ export async function executeLocalOperation(
 			plan: null,
 			structuredIntent: null,
 			reviewItems: [],
-			structuredPreview: null,
 			targetKind: undefined,
 			blockClass: "flow",
 			adapterId: "flow-markdown",
@@ -163,7 +166,6 @@ export async function executeLocalOperation(
 								suggestionIds: [],
 								reviewItemIds: [],
 								generatedBlockIds: [],
-								structuredPreview: null,
 								anchor:
 									target.type === "selection"
 										? resolveSessionAnchor(
@@ -233,8 +235,27 @@ export async function executeLocalOperation(
 		let currentText = "";
 		let currentMutationReceipt: AIMutationReceipt | null = null;
 		let sawStructuredFinalFrame = false;
-		let streamedSelectionSuggestionIds: string[] = [];
-		let lastStreamedSelectionPreviewText = "";
+		const previewSessionId = context?.sessionId ?? seedGeneration.id;
+		const showScopedMarkdownPreview = (
+			previewBlockId: string,
+			replaceBlockIds: readonly string[] | undefined,
+			text: string,
+		) => {
+			controller.setStreamingReviewPreview({
+				sessionId: previewSessionId,
+				turnId: sessionTurnId,
+				target: resolveMarkdownPreviewTarget(controller._editor, {
+					blockId: previewBlockId,
+					offset: 0,
+					replaceTargetBlock: true,
+					replaceBlockIds,
+				}),
+				text: markdownStreamingPreviewText(text),
+			});
+		};
+		const clearScopedMarkdownPreview = () => {
+			controller.clearStreamingReviewPreview(previewSessionId);
+		};
 		const updatePreview = (text: string, phase: "preview" | "final") => {
 			currentText = text;
 			const nextStatus =
@@ -322,23 +343,12 @@ export async function executeLocalOperation(
 							operation.target.kind === "scoped-range"
 						) {
 							updatePreview(currentText, "preview");
-							const previewRefresh =
-								controller._refreshStreamingMarkdownBlockPreview(
-									operation.target.blockIds?.[0] ??
-										operation.target.anchor.blockId,
-									currentText,
-									mutationMode,
-									context?.sessionId,
-									baselineSuggestionIds,
-									streamedSelectionSuggestionIds,
-									lastStreamedSelectionPreviewText,
-									true,
-									operation.target.blockIds,
-								);
-							streamedSelectionSuggestionIds =
-								previewRefresh.suggestionIds;
-							lastStreamedSelectionPreviewText =
-								previewRefresh.normalizedText;
+							showScopedMarkdownPreview(
+								operation.target.blockIds?.[0] ??
+									operation.target.anchor.blockId,
+								operation.target.blockIds,
+								currentText,
+							);
 						}
 						continue;
 					}
@@ -356,23 +366,12 @@ export async function executeLocalOperation(
 						streamsMarkdownSelectionPreview &&
 						operation.target.kind === "scoped-range"
 					) {
-						const previewRefresh =
-							controller._refreshStreamingMarkdownBlockPreview(
-								operation.target.blockIds?.[0] ??
-									operation.target.anchor.blockId,
-								event.text,
-								mutationMode,
-								context?.sessionId,
-								baselineSuggestionIds,
-								streamedSelectionSuggestionIds,
-								lastStreamedSelectionPreviewText,
-								true,
-								operation.target.blockIds,
-							);
-						streamedSelectionSuggestionIds =
-							previewRefresh.suggestionIds;
-						lastStreamedSelectionPreviewText =
-							previewRefresh.normalizedText;
+						showScopedMarkdownPreview(
+							operation.target.blockIds?.[0] ??
+								operation.target.anchor.blockId,
+							operation.target.blockIds,
+							event.text,
+						);
 					}
 					continue;
 				}
@@ -387,11 +386,7 @@ export async function executeLocalOperation(
 						streamsMarkdownSelectionPreview &&
 						operation.target.kind === "scoped-range"
 					) {
-						controller._rejectPreviewSuggestions(
-							streamedSelectionSuggestionIds,
-						);
-						streamedSelectionSuggestionIds = [];
-						lastStreamedSelectionPreviewText = "";
+						clearScopedMarkdownPreview();
 					}
 					currentMutationReceipt =
 						controller._commitRequestedOperationResult(
@@ -440,9 +435,7 @@ export async function executeLocalOperation(
 				currentText.length > 0 &&
 				streamsMarkdownSelectionPreview
 			) {
-				controller._rejectPreviewSuggestions(streamedSelectionSuggestionIds);
-				streamedSelectionSuggestionIds = [];
-				lastStreamedSelectionPreviewText = "";
+				clearScopedMarkdownPreview();
 				currentMutationReceipt = controller._commitRequestedOperationResult(
 					operation,
 					currentText,

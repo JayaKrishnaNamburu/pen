@@ -141,10 +141,6 @@ export function createIngestReport(
   };
 }
 
-export function emptyIngestReport(): IngestReport {
-  return createIngestReport(0, 0, [], new IngestDropCounts());
-}
-
 export function capRawHtmlSource(
   input: string,
   drops: IngestDropCounts,

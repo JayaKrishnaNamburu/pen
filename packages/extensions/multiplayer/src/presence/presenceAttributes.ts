@@ -39,7 +39,7 @@ export function createRemotePresenceAttributes(input: {
 	return attributes;
 }
 
-export function capPresenceDisplayName(name: string): string {
+function capPresenceDisplayName(name: string): string {
 	if (name.length <= MAX_PRESENCE_DISPLAY_NAME_LENGTH) {
 		return name;
 	}

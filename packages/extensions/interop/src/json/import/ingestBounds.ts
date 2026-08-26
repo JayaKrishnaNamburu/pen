@@ -176,7 +176,7 @@ export function emitIngestReport(
 	});
 }
 
-export function isForbiddenKey(key: string): boolean {
+function isForbiddenKey(key: string): boolean {
 	return (
 		key === "__proto__" || key === "constructor" || key === "prototype"
 	);
@@ -195,7 +195,7 @@ export function isRecord(value: unknown): value is Record<string, unknown> {
  * existing object. `__proto__` / `constructor` / `prototype` own keys are
  * rejected anywhere in the tree (SEC4).
  */
-export function copyJsonValue(
+function copyJsonValue(
 	value: unknown,
 	drops: IngestDropCounts,
 ): unknown {

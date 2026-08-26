@@ -127,7 +127,7 @@ export function getRootBlockIds(editor: Editor): readonly string[] {
 	);
 }
 
-export function getParentIdChildBlockIds(
+function getParentIdChildBlockIds(
 	editor: Editor,
 	parentBlockId: string,
 ): readonly string[] {
@@ -136,7 +136,7 @@ export function getParentIdChildBlockIds(
 	);
 }
 
-export function getVisibleBlockIds(editor: Editor): readonly string[] {
+function getVisibleBlockIds(editor: Editor): readonly string[] {
 	const visibleBlockIds: string[] = [];
 	for (const rootBlockId of getRootBlockIds(editor)) {
 		collectVisibleBlockIds(editor, rootBlockId, visibleBlockIds);

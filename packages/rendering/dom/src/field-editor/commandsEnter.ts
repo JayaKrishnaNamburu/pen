@@ -5,6 +5,7 @@ import {
 	HEADING_TYPES,
 	LIST_BLOCK_TYPES,
 	isBlockEmpty,
+	normalizeInlineOffset,
 	type EnterAction,
 	type SelectionRange,
 	type SelectionTarget,
@@ -12,7 +13,6 @@ import {
 import {
 	convertBlock,
 	insertTextAtRange,
-	normalizeInlineOffset,
 	splitBlockAtOffset,
 } from "./commandsBlock";
 

@@ -105,7 +105,7 @@ function preCommitLengthFromTextDelta(delta: YTextDelta): number {
 	return length;
 }
 
-export function textDeltaToSplices(
+function textDeltaToSplices(
 	delta: YTextDelta,
 	_logicalLength: number,
 ): { splices: TextSplice[]; formatRanges: { from: number; to: number }[] } {

@@ -40,11 +40,13 @@ describe("UC3: the structured plan pipeline has one producer", () => {
 	});
 
 	/**
-	 * `useStructuredIntentTransport` in `controller/generationExecution.ts` is
-	 * `adapter.transportKind !== "flow-text" && supportsStructuredIntent(model)`.
-	 * The left side is false for every reachable adapter, so no model
-	 * capability can open the transport — the plan can only come from the text
-	 * parse.
+	 * Opening the structured-intent transport needed a non-flow-text adapter
+	 * *and* a model advertising the capability. The left side is false for
+	 * every reachable adapter, so no model capability could open it. Wave 2
+	 * deleted the flag and the producer-less preview surface it fed
+	 * (`spec-v5/waves/wave-2-one-preview.md` GATE 2.12); this case keeps the
+	 * adapter-side half of that argument honest, so a new transport cannot
+	 * reopen the door unnoticed.
 	 */
 	it("UC3: no model capability can open the structured intent transport", () => {
 		const structuredIntentModel = {

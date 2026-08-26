@@ -23,7 +23,6 @@ import type {
 	AIStreamEvent,
 	AISurface,
 	GenerationState,
-	GenerationStructuredPreviewState,
 } from "../types";
 
 export type GenerationTarget =
@@ -245,15 +244,6 @@ type AIStreamEventInput =
 			toolName: string;
 			output: unknown;
 			state: "complete" | "error";
-	  }
-	| {
-			type: "structured-preview";
-			preview: GenerationStructuredPreviewState;
-			patches: readonly {
-				op: "add" | "remove" | "replace";
-				path: string;
-				value?: unknown;
-			}[];
 	  }
 	| {
 			type: "generation-finish";

@@ -312,7 +312,7 @@ export function buildContextForPosition(
 	};
 }
 
-export function shouldContinueRequest(
+function shouldContinueRequest(
 	controller: AutocompleteControllerHost,
 	requestId: string,
 	context: AutocompleteRequestContext,

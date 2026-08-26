@@ -10,9 +10,9 @@ import type {
 	ResolvedAnchorRange,
 } from "@input/pen-types";
 
-export const ANCHOR_TARGET_MISSING_CODE = "anchor-target-missing";
-export const ANCHOR_DECODE_CODE = "anchor-decode";
-export const ANCHOR_BUDGET_CODE = "anchor-budget";
+const ANCHOR_TARGET_MISSING_CODE = "anchor-target-missing";
+const ANCHOR_DECODE_CODE = "anchor-decode";
+const ANCHOR_BUDGET_CODE = "anchor-budget";
 
 const ANCHOR_BUDGET = 4096;
 const MAX_POSITION_BYTES = 256;

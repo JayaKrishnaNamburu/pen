@@ -14,7 +14,7 @@ const FNV64_MASK = 0xffffffffffffffffn;
  * FNV-1a 64-bit, hex. Change detector for the model's rendered view — not a
  * security primitive. No shared hasher exists in this package.
  */
-export function hashRenderedView(value: string): string {
+function hashRenderedView(value: string): string {
 	let hash = FNV64_OFFSET;
 	for (let index = 0; index < value.length; index++) {
 		hash ^= BigInt(value.charCodeAt(index));

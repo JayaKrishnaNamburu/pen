@@ -9,14 +9,7 @@ import type {
 } from "@input/pen-types";
 import type { PendingBlock } from "@input/pen-core";
 export type {
-	InlineAtomAfterDestructureEvent,
-	InlineAtomAfterDestructureObserver,
-	InlineAtomDestructureHandler,
 	InlineAtomInteractions,
-	InlineAtomMoveEvent,
-	InlineAtomMoveObserver,
-	InlineAtomMoveRejectedEvent,
-	InlineAtomMoveRejectedObserver,
 	InlineAtomRenderInteractionProps,
 	ResolvedInlineAtomInteractions,
 } from "@input/pen-dom/field-editor/inlineAtomInteraction";

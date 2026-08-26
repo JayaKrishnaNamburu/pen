@@ -32,10 +32,6 @@ export class InputRuleEngine {
 		}
 	}
 
-	unregisterInline(id: string): void {
-		this._inlineRules = this._inlineRules.filter((r) => r.id !== id);
-	}
-
 	tryMatch(
 		editor: Editor,
 		blockId: string,

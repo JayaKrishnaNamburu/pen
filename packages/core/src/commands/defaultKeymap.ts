@@ -25,9 +25,6 @@ import {
 	toggleMark,
 } from "./text";
 
-export { historyRedo, historyUndo } from "./history";
-export { tableCellDown, tableCellNext, tableCellPrev } from "./table";
-
 export type DefaultKeymapContext = "text" | "cell" | "block" | "any";
 
 export type KeymapPlatform = "macos" | "windows" | "linux";

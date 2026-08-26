@@ -20,7 +20,7 @@ type DirectionSession = {
 
 const sessions = new WeakMap<Editor, DirectionSession>();
 
-export function asDirectionSetting(
+function asDirectionSetting(
 	value: unknown,
 ): BlockDirectionSetting | undefined {
 	if (value === "ltr" || value === "rtl" || value === "auto") {

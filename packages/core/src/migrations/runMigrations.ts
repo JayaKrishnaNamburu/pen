@@ -7,7 +7,7 @@ import {
 
 import type { DocumentMigration, MigrationReport } from "./types";
 
-export const MIGRATION_ORIGIN = "migration" as const;
+const MIGRATION_ORIGIN = "migration" as const;
 
 interface MutableMetadataMap {
 	get(key: string): unknown;

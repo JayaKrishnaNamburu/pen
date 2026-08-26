@@ -19,7 +19,7 @@ export function toPseudoLocaleText(text: string): string {
 	return `${PSEUDO_LOCALE_OPEN}${text}${PSEUDO_LOCALE_CLOSE}`;
 }
 
-export function toPseudoLocaleValue(value: MessageValue): MessageValue {
+function toPseudoLocaleValue(value: MessageValue): MessageValue {
 	if (!isPluralMessage(value)) {
 		return toPseudoLocaleText(value);
 	}

@@ -78,13 +78,6 @@ export const commitSupportMethods = {
 						: (overrides.reviewItems ??
 							activeGeneration.reviewItems ??
 							[]),
-				structuredPreview:
-					overrides.planState === "none" ||
-					overrides.planState === "rejected"
-						? null
-						: (overrides.structuredPreview ??
-							activeGeneration.structuredPreview ??
-							null),
 				suggestionIds:
 					overrides.suggestionIds ??
 					activeGeneration.suggestionIds ??

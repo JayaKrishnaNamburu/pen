@@ -560,18 +560,10 @@ export class AIControllerSessionState {
 							.map((item) => item.id)
 							.filter((id) => turn.reviewItemIds.includes(id))
 					: [];
-				const structuredPreview = activeGenerationForTurn
-					? (activeGenerationForTurn.structuredPreview ??
-						turn.structuredPreview ??
-						null)
-					: turn.reviewItemIds.length > 0
-						? (turn.structuredPreview ?? null)
-						: null;
 				return {
 					...turn,
 					suggestionIds,
 					reviewItemIds,
-					structuredPreview,
 				};
 			});
 			const pendingSuggestionIds = [
@@ -677,7 +669,6 @@ export class AIControllerSessionState {
 			status: resolution === "accept" ? "accepted" : "rejected",
 			suggestionIds: [],
 			reviewItemIds: [],
-			structuredPreview: null,
 			anchor: refreshedInlineSelectionTarget
 				? resolveSessionAnchor(
 						this._editor,

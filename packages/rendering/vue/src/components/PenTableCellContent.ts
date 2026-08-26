@@ -143,7 +143,3 @@ export const PenTableCellContent = defineComponent({
 			});
 	},
 });
-
-export type PenTableCellContentProps = InstanceType<
-	typeof PenTableCellContent
->["$props"];

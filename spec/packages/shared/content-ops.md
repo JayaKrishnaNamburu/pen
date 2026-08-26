@@ -11,9 +11,9 @@ This package used to sit _under_ core (core imported it) and later re-exported t
 ## Key Exports / Entrypoints
 
 - Export map: `.`
-- Implemented here: `parseMarkdownToBlocks()`, `splitPlainTextLineBlocks()`, `buildDocumentWriteOps()`, and the structured-target / plan helpers
+- Implemented here: `parseMarkdownToBlocks()`, `splitPlainTextLineBlocks()`, `buildDocumentWriteOps()`, and the structured-target types
 - Import, profile-policy, and block-capability helpers (`blocksToOps()`, `normalizePendingBlocksForImport()`, `shouldExposeBlockInTooling()`, and siblings) export from `@input/pen-core` only
-- Structured target and plan normalization helpers for tooling and AI-oriented write flows
+- Structured-target descriptor types for document-ops and autocomplete write flows
 - Workspace scripts: `build`, `clean`, `test`, `typecheck`
 
 ## Dependencies And Boundaries

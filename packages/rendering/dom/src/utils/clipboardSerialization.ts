@@ -196,4 +196,3 @@ function admitClipboardLinkProps(
 	return { ...props, href };
 }
 
-export { buildTableChildren };

@@ -1,6 +1,6 @@
 import type { Editor, SelectionRecord } from "@input/pen-types";
 
-export type EditorWithSelectionRecord = Editor & {
+type EditorWithSelectionRecord = Editor & {
 	readonly selectionRecord: SelectionRecord;
 };
 

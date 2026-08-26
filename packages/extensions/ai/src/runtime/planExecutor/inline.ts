@@ -10,7 +10,7 @@ import type {
 	PendingInlineBlock,
 } from "./types";
 
-export function buildInlineBlockRewriteOps(
+function buildInlineBlockRewriteOps(
 	targetBlock: NonNullable<ReturnType<Editor["getBlock"]>>,
 	parsedBlock: PendingInlineBlock,
 ): DocumentOp[] {

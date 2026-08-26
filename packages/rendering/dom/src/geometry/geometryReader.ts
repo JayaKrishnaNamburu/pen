@@ -15,8 +15,6 @@ import type { Affinity, GeometryReader, LineBox, Point, Rect } from "./types";
 
 export type {
 	Affinity,
-	BidiRun,
-	BidiRunGeometry,
 	GeometryReader,
 	LineBox,
 	Point,
@@ -24,7 +22,6 @@ export type {
 } from "./types";
 export { verticalCaretTarget } from "./verticalCaretTarget";
 export type {
-	GeometryReaderWithBlocks,
 	VerticalCaretTarget,
 	VerticalDirection,
 } from "./verticalCaretTarget";

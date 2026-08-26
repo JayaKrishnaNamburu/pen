@@ -256,17 +256,6 @@ export interface AIControllerMethodHost {
 		replaceTargetBlock?: boolean,
 		replaceBlockIds?: readonly string[],
 	): DocumentOp[] | null;
-	_refreshStreamingMarkdownBlockPreview(
-		blockId: string,
-		text: string,
-		mutationMode: NonNullable<GenerationState["mutationMode"]>,
-		sessionId: string | undefined,
-		baselineSuggestionIds: ReadonlySet<string>,
-		previewSuggestionIds: readonly string[],
-		previousNormalizedText: string,
-		replaceTargetBlock?: boolean,
-		replaceBlockIds?: readonly string[],
-	): { suggestionIds: string[]; normalizedText: string };
 	_commitStructuredPlan(
 		ops: DocumentOp[],
 		reviewSafe: boolean,

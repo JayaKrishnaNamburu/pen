@@ -36,13 +36,6 @@ import {
 	validateSelection,
 } from "./selectionValidation";
 
-export {
-	clampNonTextPseudoOffset,
-	coverMixedBoundaryStructuralOffsets,
-	selectionEquals,
-	toRecordState,
-} from "./selectionValidation";
-
 type CRDTBlockMap = CRDTMap<CRDTMap<unknown>>;
 
 const INVALID_BLOCK_CODE = "selection-invalid-block";

@@ -17,6 +17,3 @@ export type {
 	BlockTargetDescriptor,
 	TableTargetDescriptor,
 } from "./plan/targets";
-
-export { normalizePlanRecord, normalizePlanSteps } from "./plan/planSchemas";
-export type { PlanRecord } from "./plan/planSchemas";

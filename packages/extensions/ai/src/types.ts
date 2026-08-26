@@ -29,8 +29,6 @@ export type {
 	AgenticStep,
 	AIStreamEventType,
 	AIStreamEvent,
-	StructuredPreviewPatchOperation,
-	GenerationStructuredPreviewState,
 	GenerationState,
 	GenerationPlanState,
 	GenerationTargetKind,

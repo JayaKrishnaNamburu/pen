@@ -12,7 +12,7 @@ import {
 import { isLoneEmptyBlockZwsp } from "../schema/emptyBlockSentinel";
 import type { DocumentMigration } from "./types";
 
-export const STRIP_EMPTY_BLOCK_ZWSP_ID = "strip-empty-block-sentinels";
+const STRIP_EMPTY_BLOCK_ZWSP_ID = "strip-empty-block-sentinels";
 
 export function createStripEmptyBlockZwspMigration(): DocumentMigration {
 	return {
@@ -40,7 +40,7 @@ export function createStripEmptyBlockZwspMigration(): DocumentMigration {
 	};
 }
 
-export function collectLoneSentinelStripOps(editor: Editor): DocumentOp[] {
+function collectLoneSentinelStripOps(editor: Editor): DocumentOp[] {
 	const ops: DocumentOp[] = [];
 	const blocks = editor.internals.doc.blocks;
 	for (const handle of editor.blocks()) {

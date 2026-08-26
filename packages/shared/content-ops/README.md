@@ -14,7 +14,7 @@ pnpm add @input/pen-content-ops
 
 - Parse markdown or plain text into pending blocks.
 - Turn parsed or authored content into write ops (`buildDocumentWriteOps`).
-- Share structured-target and plan-record shapes used by document-ops and AI planning.
+- Share structured-target types used by document-ops.
 
 ## What this package does not do
 
@@ -26,17 +26,15 @@ pnpm add @input/pen-content-ops
 
 ## Public exports
 
-The index is the public surface. Unused former exports (`TARGET_EDITABILITIES`, `STRUCTURED_TARGET_KINDS`, `normalizePlanProps`) are not on it. Internal modules (`astToBlocks`, `htmlInline`, `inlineMarks`, `tableParser`) are not either.
+The index is the public surface. Unused former exports (`TARGET_EDITABILITIES`, `STRUCTURED_TARGET_KINDS`, `normalizePlanProps`, `normalizePlanRecord`, `normalizePlanSteps`, `PlanRecord`) are not on it. Internal modules (`astToBlocks`, `htmlInline`, `inlineMarks`, `tableParser`) are not either.
 
 | Export                                                                                                                                   | Role                                                                                                                                    |
 | ---------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | `parseMarkdownToBlocks`                                                                                                                  | Markdown → pending blocks. Used by interop markdown, `buildDocumentWriteOps`, and autocomplete.                                         |
 | `splitPlainTextLineBlocks`                                                                                                               | Plain text → trimmed line strings (leading/trailing empty lines stripped). Used by AI replacement and autocomplete.                     |
 | `buildDocumentWriteOps`                                                                                                                  | Text, markdown, or block input → write ops (normalizes first). Used by document-ops (re-export + write tool) and AI via that re-export. |
-| `normalizePlanRecord`, `normalizePlanSteps`                                                                                              | Coerce unknown plan payloads. Covered by this package's tests; no production caller.                                                    |
 | `DocumentWriteFormat`, `DocumentWriteBlockInput`, `BuildDocumentWriteOpsOptions`, `BuildDocumentWriteOpsResult`                          | Write-ops option/result types.                                                                                                          |
 | `StructuredTargetDescriptor` and members (`StructuredTargetKind`, `TargetEditability`, `BlockTargetDescriptor`, `TableTargetDescriptor`) | Structured-target types. Used by document-ops. Kind/editability const arrays are not exported.                                          |
-| `PlanRecord`                                                                                                                             | `Record<string, unknown>` returned by `normalizePlanRecord`.                                                                            |
 
 ### `buildDocumentWriteOps` options
 

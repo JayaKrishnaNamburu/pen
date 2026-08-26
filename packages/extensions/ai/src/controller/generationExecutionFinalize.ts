@@ -1,7 +1,5 @@
-import { buildDocumentMutationPlanExecution } from "../runtime/planExecutor";
-import { buildStructuralReviewItems } from "../runtime/reviewArtifacts";
+import type { StructuralReviewItem } from "../runtime/reviewArtifacts";
 import { resolveExecutionMode } from "../runtime/generationTarget";
-import { buildGenerationStructuredPreviewState } from "../runtime/structuredPreview";
 import type { AIApplyStrategy } from "../runtime/contracts";
 import type { AIMutationReceiptStatus, GenerationState } from "../types";
 import type { AIControllerMethodHost } from "./aiControllerMethodHost";
@@ -74,7 +72,7 @@ export function finalizeGenerationExecution(
 	state: GenerationExecutionState,
 	result: GenerationState,
 ): GenerationState {
-	const { target, canStreamSelectionSuggestions, route, context, selectionSourceText, seedGeneration, contentFormat, shouldStreamDirectly, canStreamBlockSuggestions, canStreamMarkdownBlockSuggestions, workingSet, useStructuredIntentTransport, adapter, blockId, requestedOperation, sessionTurnId, commandId, baselineSuggestionIds, shouldReplaceMarkdownTarget } = state;
+	const { target, canStreamSelectionSuggestions, route, context, selectionSourceText, seedGeneration, contentFormat, shouldStreamDirectly, canStreamBlockSuggestions, canStreamMarkdownBlockSuggestions, workingSet, blockId, requestedOperation, sessionTurnId, commandId, baselineSuggestionIds, shouldReplaceMarkdownTarget } = state;
 	const textCommitsMutation = textCanCommitMutation(route.applyStrategy);
 			if (
 				textCommitsMutation &&
@@ -82,13 +80,15 @@ export function finalizeGenerationExecution(
 				state.currentText.length > 0 &&
 				!canStreamSelectionSuggestions
 			) {
+				controller.clearStreamingReviewPreview(
+					context?.sessionId ?? seedGeneration.id,
+				);
 				state.currentMutationReceipt = controller._commitSelectionRewrite(
 					target.selection,
 					state.currentText,
 					route.mutationMode,
 					context?.sessionId,
 				);
-				controller._inlineCompletion.dismissSuggestion();
 			} else if (
 				target.type === "selection" &&
 				state.currentText.length > 0 &&
@@ -106,9 +106,17 @@ export function finalizeGenerationExecution(
 				target.type === "block" &&
 				state.currentText.length > 0 &&
 				!shouldStreamDirectly &&
-				!canStreamBlockSuggestions &&
-				!canStreamMarkdownBlockSuggestions
+				!canStreamBlockSuggestions
 			) {
+				// Markdown block generation previews as streaming text and
+				// stages here on close (RS2), so it commits on the same path
+				// as an unstreamed buffered generation rather than having
+				// re-staged itself on every delta.
+				if (canStreamMarkdownBlockSuggestions) {
+					controller.clearStreamingReviewPreview(
+						context?.sessionId ?? seedGeneration.id,
+					);
+				}
 				state.currentMutationReceipt = controller._commitBufferedBlockGeneration(
 					target.blockId,
 					state.currentText,
@@ -129,56 +137,18 @@ export function finalizeGenerationExecution(
 			const suggestionIds = controller.getSuggestions()
 				.map((item) => item.id)
 				.filter((id) => !baselineSuggestionIds.has(id));
-			const structuredIntentResolution = useStructuredIntentTransport
-				? (adapter.resolveResult?.({
-						value: state.currentStructuredIntent,
-						targetKind: route.targetKind,
-						activeBlockId: blockId,
-					}) ?? null)
-				: null;
-			const structuredIntentResult =
-				structuredIntentResolution?.parseResult ?? null;
-			const structuredIntentCompilation =
-				structuredIntentResolution?.compilation ?? null;
-			const resolvedStructuredPlan =
-				structuredIntentCompilation?.plan ?? null;
-			const planExecution = resolvedStructuredPlan
-				? buildDocumentMutationPlanExecution(
-						controller._editor,
-						resolvedStructuredPlan,
-					)
-				: null;
-			const reviewItems =
-				resolvedStructuredPlan &&
-				route.mutationMode !== "direct-stream" &&
-				(!planExecution || !planExecution.reviewSafe)
-					? buildStructuralReviewItems(
-							controller._editor,
-							resolvedStructuredPlan,
-						)
-					: [];
+			// the structured-intent transport was the only producer of plans
+			// here, and every registered adapter is flow-text (UC3). Wave 3
+			// removes the stranded plan executor and the field itself.
+			const reviewItems: StructuralReviewItem[] = [];
 
-			if (
-				resolvedStructuredPlan &&
-				planExecution &&
-				planExecution.issues.length === 0
-			) {
-				state.currentMutationReceipt = controller._commitStructuredPlan(
-					planExecution.ops,
-					planExecution.reviewSafe,
-					route.mutationMode,
-					route.adapterId,
-					route.blockClass,
-					route.transportKind,
-				);
-			}
 			if (!state.currentMutationReceipt) {
 				state.currentMutationReceipt = controller._buildFallbackMutationReceipt({
 					committedText:
 						textCommitsMutation && state.currentText.trim().length > 0,
 					suggestionIds,
 					reviewItems,
-					planExecutionIssueCount: planExecution?.issues.length ?? 0,
+					planExecutionIssueCount: 0,
 					adapterId: route.adapterId,
 					blockClass: route.blockClass,
 					transportKind: route.transportKind,
@@ -187,10 +157,7 @@ export function finalizeGenerationExecution(
 			const structuredDebug = {
 				executionMode: resolveExecutionMode(route.mutationMode),
 				targetKind: route.targetKind,
-				validationIssueCount:
-					(structuredIntentResult?.issues.length ?? 0) +
-					(structuredIntentCompilation?.issues.length ?? 0) +
-					(planExecution?.issues.length ?? 0),
+				validationIssueCount: 0,
 			};
 			const resolvedDebug =
 				controller._state.activeGeneration?.id === seedGeneration.id
@@ -198,17 +165,6 @@ export function finalizeGenerationExecution(
 						result.debug ??
 						seedGeneration.debug!)
 					: (result.debug ?? seedGeneration.debug!);
-			const resolvedPlanState: GenerationState["planState"] =
-				planExecution && planExecution.issues.length > 0
-					? "rejected"
-					: structuredIntentResult?.intentState === "validated" &&
-						  (structuredIntentCompilation?.issues.length ?? 0) ===
-								0
-						? "validated"
-						: structuredIntentResult?.intentState === "drafted"
-							? "drafted"
-							: seedGeneration.planState;
-
 			const unappliedEdit =
 				result.status === "complete" &&
 				isUnappliedEdit({
@@ -237,23 +193,10 @@ export function finalizeGenerationExecution(
 				mutationMode: route.mutationMode,
 				contentFormat,
 				applyStrategy: route.applyStrategy,
-				planState: resolvedPlanState,
-				plan: resolvedStructuredPlan,
-				structuredIntent:
-					structuredIntentResult?.intent ??
-					state.currentStructuredIntent ??
-					null,
+				planState: seedGeneration.planState,
+				plan: null,
+				structuredIntent: state.currentStructuredIntent ?? null,
 				reviewItems,
-				structuredPreview: resolvedStructuredPlan
-					? buildGenerationStructuredPreviewState(controller._editor, {
-							planState:
-								planExecution &&
-								planExecution.issues.length === 0
-									? "validated"
-									: "drafted",
-							plan: resolvedStructuredPlan,
-						})
-					: state.currentStructuredPreview,
 				targetKind: route.targetKind,
 				blockClass: route.blockClass,
 				adapterId: route.adapterId,
@@ -277,13 +220,6 @@ export function finalizeGenerationExecution(
 				activeGeneration: finalGeneration,
 			});
 			if (context?.sessionId) {
-				const structuredPreviewEvents = controller.getStreamEvents().filter(
-					(event) =>
-						event.type === "structured-preview" &&
-						event.sessionId === context.sessionId,
-				);
-				const lastStructuredPreviewEvent =
-					structuredPreviewEvents[structuredPreviewEvents.length - 1];
 				const refreshedInlineReviewSelectionTarget =
 					context?.surface === "inline-edit" &&
 					suggestionIds.length > 0
@@ -313,8 +249,6 @@ export function finalizeGenerationExecution(
 						suggestionIds,
 						reviewItemIds: reviewItems.map((item) => item.id),
 						generatedBlockIds,
-						structuredPreview:
-							finalGeneration.structuredPreview ?? null,
 						anchor: refreshedInlineReviewSelectionTarget
 							? resolveSessionAnchor(
 									controller._editor,
@@ -368,11 +302,7 @@ export function finalizeGenerationExecution(
 						streamEventCount: controller._streamEvents.filter(
 							(event) => event.sessionId === context.sessionId,
 						).length,
-						patchCount:
-							lastStructuredPreviewEvent?.type ===
-							"structured-preview"
-								? lastStructuredPreviewEvent.patches.length
-								: 0,
+						patchCount: 0,
 					},
 				});
 			}
@@ -447,7 +377,6 @@ export function handleGenerationExecutionError(
 					controller._updateSessionTurn(context.sessionId, sessionTurnId, {
 						status: failedGeneration.status,
 						reviewItemIds: [],
-						structuredPreview: null,
 					});
 				}
 				controller._updateSession(context.sessionId, {

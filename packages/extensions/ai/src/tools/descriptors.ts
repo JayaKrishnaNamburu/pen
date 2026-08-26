@@ -3,7 +3,7 @@ import { isDestructiveAITool, isMutatingAITool, type AIToolGrant } from "./autho
 import { AI_EDIT_CHANNEL_DISCOVERY_TOOL_NAMES } from "./constants";
 import type { AIToolDescriptor, AIToolRuntime } from "./types";
 
-export function toAIToolDescriptor(definition: ToolDefinition): AIToolDescriptor {
+function toAIToolDescriptor(definition: ToolDefinition): AIToolDescriptor {
   return {
     name: definition.name,
     description: definition.description,

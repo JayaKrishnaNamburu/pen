@@ -9,10 +9,7 @@ export type {
 	StructuredIntent,
 	StructuredIntentParseResult,
 } from "./structuredIntent/types";
-export {
-	parseStructuredIntentResult,
-	parseStructuredIntentPreview,
-} from "./structuredIntent/parse";
+export { parseStructuredIntentResult } from "./structuredIntent/parse";
 export {
 	getStructuredIntentOutputSchema,
 	buildStructuredIntentRequestPrompt,

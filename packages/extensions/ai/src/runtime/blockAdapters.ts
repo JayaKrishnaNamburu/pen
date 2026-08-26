@@ -9,8 +9,6 @@ import type {
 	AITransportKind,
 } from "./contracts";
 import { buildFlowMarkdownRequestPrompt } from "./flowMarkdown";
-import type { StructuredIntentParseResult } from "./structuredIntent";
-import type { StructuredIntentCompilationResult } from "./structuredIntentCompiler";
 
 export interface BlockAdapterBuildPromptInput {
 	prompt: string;
@@ -20,17 +18,6 @@ export interface BlockAdapterBuildPromptInput {
 	applyStrategy: AIApplyStrategy;
 }
 
-export interface BlockAdapterResolveResultInput {
-	value: unknown;
-	targetKind: AITargetKind;
-	activeBlockId: string | null;
-}
-
-export interface BlockAdapterResolvedPlan {
-	parseResult: StructuredIntentParseResult;
-	compilation: StructuredIntentCompilationResult | null;
-}
-
 export interface BlockAdapter {
 	id: AIBlockAdapterId;
 	blockClass: AIBlockClass;
@@ -38,8 +25,6 @@ export interface BlockAdapter {
 	contentFormat: AIContentFormat;
 	transportKind: AITransportKind;
 	buildPrompt(input: BlockAdapterBuildPromptInput): string;
-	parsePreview?(input: BlockAdapterResolveResultInput): StructuredIntentParseResult | null;
-	resolveResult?(input: BlockAdapterResolveResultInput): BlockAdapterResolvedPlan | null;
 }
 
 const FLOW_BLOCK_ADAPTER: BlockAdapter = {

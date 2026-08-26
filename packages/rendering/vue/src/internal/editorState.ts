@@ -1,6 +1,5 @@
 import {
   affectedBlockIdsFromSummary,
-  emptyDecorationSet,
   getNumberedListItemValue,
   getSelectionBlockRange,
 } from "@input/pen-core";
@@ -13,7 +12,6 @@ import { computeDocumentPlaceholderVisible } from "@input/pen-dom/utils/editorEm
 import { getParentIdChildBlockIds } from "@input/pen-dom/utils/parentIdTree";
 import type {
   Decoration,
-  DecorationSet,
   Editor,
   ReadonlySelectionState,
   TableCellHandle,
@@ -25,19 +23,19 @@ interface BlockTextDelta {
   attributes?: Readonly<Record<string, unknown>>;
 }
 
-export interface BlockTextSnapshot {
+interface BlockTextSnapshot {
   exists: boolean;
   text: string;
   deltas: readonly BlockTextDelta[];
 }
 
-export interface CellTextSnapshot {
+interface CellTextSnapshot {
   exists: boolean;
   text: string;
   deltas: readonly BlockTextDelta[];
 }
 
-export interface BlockModelSnapshot {
+interface BlockModelSnapshot {
   exists: boolean;
   id: string;
   type: string | null;
@@ -208,14 +206,6 @@ export function resolveNumberedListValue(editor: Editor, blockId: string): numbe
   return getNumberedListItemValue(editor.getBlock(blockId)) ?? 1;
 }
 
-export function getBlockInlineDecorations(
-  decorations: readonly Decoration[],
-): DecorationSet["decorations"] {
-  return decorations.filter(
-    (decoration) => decoration.type === "inline",
-  );
-}
-
 function getBlockTextSnapshot(editor: Editor, blockId: string): BlockTextSnapshot {
   const block = editor.getBlock(blockId);
   if (!block) {
@@ -365,4 +355,3 @@ function shallowEqual(
   return true;
 }
 
-export { emptyDecorationSet };

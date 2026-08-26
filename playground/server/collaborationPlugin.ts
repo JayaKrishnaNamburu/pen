@@ -1,7 +1,4 @@
-import {
-	docs as collaborationDocs,
-	setupWSConnection,
-} from "@y/websocket-server/utils";
+import { setupWSConnection } from "@y/websocket-server/utils";
 import type { IncomingMessage } from "node:http";
 import type { Duplex } from "node:stream";
 import type { Plugin } from "vite";
@@ -60,15 +57,3 @@ function roomFromRequest(request: IncomingMessage): string {
 	return room || DEFAULT_ROOM;
 }
 
-export function getCollaborationStats(): {
-	documents: number;
-	connections: number;
-} {
-	return {
-		documents: collaborationDocs.size,
-		connections: Array.from(collaborationDocs.values()).reduce(
-			(total, doc) => total + doc.conns.size,
-			0,
-		),
-	};
-}

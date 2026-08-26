@@ -250,7 +250,3 @@ function resolveInlineContentDir(
 	}
 	return undefined;
 }
-
-export type PenInlineContentProps = InstanceType<
-	typeof PenInlineContent
->["$props"];

@@ -1,24 +1,15 @@
 export {
 	BUILTIN_COMMAND_PRECEDENCE,
-	PEN_COMMANDS_FACET,
 	commandHandler,
 	defineCommand,
 	isCommandHandlerProvider,
 } from "./define";
-export type { CommandHandlerProviderRecord } from "./define";
 export { createCommandRegistry } from "./registry";
-export type {
-	CommandDispatchContext,
-	CommandRegistry,
-	CreateCommandRegistryOptions,
-	RecordedApplyIntent,
-	RecordedSelectionIntent,
-} from "./registry";
+export type { CommandRegistry } from "./registry";
 export { getCommandRegistry } from "./install";
 export {
 	caretBlockEnd,
 	caretBlockStart,
-	caretCommandHandlers,
 	caretDocEnd,
 	caretDocStart,
 	caretDown,
@@ -29,16 +20,9 @@ export {
 	caretUp,
 	caretWordLeft,
 	caretWordRight,
-	getCellCaretFocus,
 	selectAll,
 	selectBlock,
 	setCellCaretFocus,
-} from "./caret";
-export type {
-	CaretMotionParam,
-	CellCaretFocus,
-	CellCaretWrite,
-	SelectBlockParam,
 } from "./caret";
 export {
 	convertBlock,
@@ -51,29 +35,18 @@ export {
 	outdent,
 	selectAdjacentInlineAtom,
 	splitBlock,
-	textCommandHandlers,
 	toggleMark,
 } from "./text";
-export type {
-	ConvertBlockParam,
-	DeleteGranularity,
-	DeleteParam,
-	InsertTextParam,
-	ToggleMarkParam,
-} from "./text";
 export {
-	defaultKeymapBindings,
 	resolveDefaultKeymap,
 	serializeDefaultKeymap,
 } from "./defaultKeymap";
 export type {
 	DefaultKeymapBinding,
-	DefaultKeymapContext,
 	KeymapPlatform,
 	SerializedKeymapBinding,
 } from "./defaultKeymap";
 export {
-	applyDirectedBinding,
 	resolveDirectedBinding,
 	resolveDirectedCommand,
 	resolveFocusBlockDirection,
@@ -83,31 +56,19 @@ export {
 	duplicateBlock,
 	moveBlockDown,
 	moveBlockUp,
-	structureCommandHandlers,
 } from "./structure";
-export type { StructureBlockParam } from "./structure";
 export {
 	tableCellDown,
 	tableCellNext,
 	tableCellPrev,
-	tableCommandHandlers,
 	tableEscapeGrid,
 } from "./table";
 export {
-	historyCommandHandlers,
 	historyRedo,
 	historyUndo,
 } from "./history";
 export { builtinCommandHandlers } from "./builtin";
 export {
 	getVerticalCaretGoalX,
-	getVerticalCaretMeasure,
-	setVerticalCaretGoalX,
 	setVerticalCaretMeasure,
-} from "./verticalCaret";
-export type {
-	VerticalCaretDirection,
-	VerticalCaretMeasure,
-	VerticalCaretMeasureResult,
-	VerticalCaretPoint,
 } from "./verticalCaret";

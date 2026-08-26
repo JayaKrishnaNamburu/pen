@@ -271,4 +271,3 @@ function SlashMenuRootContent(props: SlashMenuRootContentProps) {
 	);
 }
 
-export { SlashMenuContext };

@@ -36,7 +36,7 @@ export function parseStructuredIntentResult(
 	};
 }
 
-export function parseStructuredIntentPreview(
+function parseStructuredIntentPreview(
 	value: unknown,
 	targetKind: AITargetKind,
 ): StructuredIntentParseResult | null {
@@ -79,7 +79,7 @@ export function stringifyContextSummary(value: unknown): string {
 	}
 }
 
-export function readStructuredIntent(
+function readStructuredIntent(
 	value: unknown,
 	path: string,
 	issues: StructuredIntentParseIssue[],
@@ -138,7 +138,7 @@ export function readStructuredIntent(
 	}
 }
 
-export function readInsertBlockIntent(
+function readInsertBlockIntent(
 	record: Record<string, unknown>,
 	path: string,
 	issues: StructuredIntentParseIssue[],
@@ -181,7 +181,7 @@ export function readInsertBlockIntent(
 	};
 }
 
-export function readUpdateBlockIntent(
+function readUpdateBlockIntent(
 	record: Record<string, unknown>,
 	path: string,
 	issues: StructuredIntentParseIssue[],
@@ -212,7 +212,7 @@ export function readUpdateBlockIntent(
 	};
 }
 
-export function readMoveBlockIntent(
+function readMoveBlockIntent(
 	record: Record<string, unknown>,
 	path: string,
 	issues: StructuredIntentParseIssue[],
@@ -241,7 +241,7 @@ export function readMoveBlockIntent(
 	};
 }
 
-export function readConvertBlockIntent(
+function readConvertBlockIntent(
 	record: Record<string, unknown>,
 	path: string,
 	issues: StructuredIntentParseIssue[],
@@ -271,7 +271,7 @@ export function readConvertBlockIntent(
 	};
 }
 
-export function readTextEditIntent(
+function readTextEditIntent(
 	record: Record<string, unknown>,
 	path: string,
 	issues: StructuredIntentParseIssue[],
@@ -320,7 +320,7 @@ export function readTextEditIntent(
 	};
 }
 
-export function readReviewBundleIntent(
+function readReviewBundleIntent(
 	record: Record<string, unknown>,
 	path: string,
 	issues: StructuredIntentParseIssue[],

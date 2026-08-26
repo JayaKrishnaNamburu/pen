@@ -24,16 +24,10 @@ export {
 	type ContextualPromptSide,
 	type UseContextualPromptPlacementOptions,
 } from "../primitives/ai/contextualPrompt";
-export { useAIStreamEvents } from "./useAIStreamEvents";
-export { useAttribution, type AttributionState } from "./useAttribution";
 export {
-	useAIStructuredPreview,
-	useActiveAIStructuredPreview,
-	useAIStructuredTargetPreview,
-	useAIStructuredPreviewContent,
-	type AIStructuredPreviewSelection,
-	type AIStructuredTargetPreviewSelection,
-} from "./useAIStructuredPreview";
+	useAttribution,
+	type AttributionState,
+} from "./useAttribution";
 export { useAIActions } from "./useAIActions";
 export { useAISessionActions } from "./useAISessionActions";
 export { useFieldEditor } from "./useFieldEditor";

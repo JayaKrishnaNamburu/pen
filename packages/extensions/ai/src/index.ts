@@ -129,8 +129,6 @@ export type {
 	AIWorkingSetRetrievedSpan,
 	AIStreamEvent,
 	AIStreamEventType,
-	GenerationStructuredPreviewState,
-	StructuredPreviewPatchOperation,
 	AIMutationReceipt,
 	AIMutationReceiptEvidence,
 	AIMutationReceiptStatus,

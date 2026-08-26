@@ -37,7 +37,7 @@ export interface CreateYArrayFieldAdapterOptions<T extends object> {
 	origin?: unknown;
 }
 
-export class YjsFieldAdapterError extends Error {
+class YjsFieldAdapterError extends Error {
 	constructor(message: string) {
 		super(message);
 		this.name = "YjsFieldAdapterError";

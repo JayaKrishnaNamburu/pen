@@ -249,7 +249,7 @@ function testStreamingToolExtension() {
 }
 
 describe("@input/pen-react AI primitives", () => {
-	it("renders bottom-chat markdown as schema blocks while streaming", async () => {
+	it("previews bottom-chat markdown as text while streaming, then renders schema blocks", async () => {
 		const releaseFinalDelta = createDeferred();
 		const editor = createEditor({
 			schema: defaultSchema,
@@ -309,25 +309,19 @@ describe("@input/pen-react AI primitives", () => {
 				"Write a short story",
 				{ target: "document" },
 			);
-			await waitForCondition(() => {
-				const heading = container.querySelector(
-					"h1[data-block-type='heading']",
-				);
-				const text = (container.textContent ?? "").replace(
-					/\u200B/g,
-					"",
-				);
-				return (
-					heading?.textContent?.includes("Story") === true &&
-					text.includes("Once upon")
-				);
-			});
+			await waitForCondition(() =>
+				(container.textContent ?? "")
+					.replace(/\u200B/g, "")
+					.includes("Once upon"),
+			);
 		});
 
-		const heading = container.querySelector(
-			"h1[data-block-type='heading']",
-		);
-		expect(heading?.textContent).toContain("Story");
+		// RS2: while the call is open the words show on the review surface and
+		// the structure does not, because the structure is not final yet. The
+		// heading arrives when the edit stages.
+		expect(
+			container.querySelector("h1[data-block-type='heading']"),
+		).toBeNull();
 		expect((container.textContent ?? "").replace(/\u200B/g, "")).toContain(
 			"Once upon",
 		);
@@ -336,6 +330,19 @@ describe("@input/pen-react AI primitives", () => {
 			releaseFinalDelta.resolve();
 			await generationPromise;
 		});
+
+		await act(async () => {
+			await waitForCondition(
+				() =>
+					container
+						.querySelector("h1[data-block-type='heading']")
+						?.textContent?.includes("Story") === true,
+			);
+		});
+		expect(
+			container.querySelector("h1[data-block-type='heading']")
+				?.textContent,
+		).toContain("Story");
 
 		await act(async () => {
 			root.unmount();

@@ -9,7 +9,7 @@ import { getBlockSelectionRoleFromSchema } from "../utils/blockSelectionSemantic
  * and managing shared Y.Text observation.
  */
 
-export interface CrossBlockState {
+interface CrossBlockState {
 	isExpanded: boolean;
 	blockIds: readonly string[];
 	anchorBlockId: string | null;

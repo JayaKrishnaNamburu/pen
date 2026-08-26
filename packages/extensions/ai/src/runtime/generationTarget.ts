@@ -31,7 +31,7 @@ export function resolveGenerationTargetKind(options: {
 	return "block";
 }
 
-export function readStructuredTargetKind(
+function readStructuredTargetKind(
 	workingSet: AIWorkingSetEnvelope | null,
 ): AITargetKind | null {
 	if (!workingSet?.context || typeof workingSet.context !== "object") {

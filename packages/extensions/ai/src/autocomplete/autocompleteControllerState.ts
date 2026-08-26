@@ -68,14 +68,14 @@ export function invalidateForPolicyChange(
 	recordPolicyInvalidation(controller, policyFailure, invalidationStage);
 }
 
-export function getActiveSelectionBlockId(
+function getActiveSelectionBlockId(
 	controller: AutocompleteControllerHost,
 ): string | null {
 	const selection = controller._editor.selection;
 	return selection?.type === "text" ? selection.focus.blockId : null;
 }
 
-export function getPolicyInvalidationStage(
+function getPolicyInvalidationStage(
 	controller: AutocompleteControllerHost,
 ): AutocompletePolicyInvalidationStage | null {
 	if (
@@ -127,7 +127,7 @@ export function resolveContextEligibilityFailure(
 	return null;
 }
 
-export function resolveBlockPolicyFailure(
+function resolveBlockPolicyFailure(
 	controller: AutocompleteControllerHost,
 	blockType: string | null,
 ): AutocompleteBlockedReason | null {

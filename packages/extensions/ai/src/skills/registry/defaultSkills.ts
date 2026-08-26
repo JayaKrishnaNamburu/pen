@@ -12,7 +12,7 @@ const DEFAULT_USAGE = [
  *
  * @remarks Instruction strings are English packaging copy, not a localization catalog.
  */
-export function createDocumentAgentSkill(
+function createDocumentAgentSkill(
 	tools: readonly AIToolDescriptor[],
 ): AISkillDefinition {
 	return {
@@ -54,7 +54,7 @@ export function createDocumentAgentSkill(
  *
  * @remarks Instruction strings are English packaging copy, not a localization catalog.
  */
-export function createAutocompleteProviderSkill(
+function createAutocompleteProviderSkill(
 	providers: readonly AutocompleteProviderDescriptor[],
 ): AISkillDefinition {
 	return {

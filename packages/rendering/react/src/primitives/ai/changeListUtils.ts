@@ -357,7 +357,7 @@ export function shouldDefaultSubgroupExpanded(
 	return !(groupItemCount > 2 && subgroupItemCount > 1);
 }
 
-export function formatReviewComparisonSectionLabel(
+function formatReviewComparisonSectionLabel(
 	editor: Editor,
 	section: StructuralReviewComparisonRow["section"],
 ): string {
@@ -445,7 +445,7 @@ export function describeBlockSuggestion(
 	}
 }
 
-export function formatReviewSubgroupLabel(
+function formatReviewSubgroupLabel(
 	editor: Editor,
 	section: StructuralReviewItem["section"],
 	kind: StructuralReviewItem["changeKind"],

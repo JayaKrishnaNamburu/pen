@@ -154,8 +154,6 @@ function describeEvent(event: AIStreamEvent): string {
 			return `Tool output: ${event.toolName}`;
 		case "tool-result":
 			return `Tool result: ${event.toolName}`;
-		case "structured-preview":
-			return "Structured preview";
 	}
 
 	return "Unknown event";
@@ -177,8 +175,6 @@ function describeEventDetail(event: AIStreamEvent): string | null {
 			return truncateString(event.output);
 		case "tool-result":
 			return `${event.state}: ${truncateString(event.output)}`;
-		case "structured-preview":
-			return `${event.patches.length} patches`;
 	}
 
 	return null;

@@ -47,7 +47,7 @@ export function buildFlowPatchExecution(
 	};
 }
 
-export function buildFlowPatchEditExecution(
+function buildFlowPatchEditExecution(
 	editor: Editor,
 	edit: FlowPatchEdit,
 	path: string,
@@ -273,7 +273,7 @@ function resolveAnchorWindow(
 	return { ok: true, from, to };
 }
 
-export function buildOptimizedBlockReplacement(
+function buildOptimizedBlockReplacement(
 	editor: Editor,
 	targetBlockIds: string[],
 	markdown: string,

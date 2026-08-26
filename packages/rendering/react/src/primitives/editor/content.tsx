@@ -7,7 +7,6 @@ import { useFieldEditorContext } from "../../context/fieldEditorContext";
 
 import { useFieldEditorState } from "../../hooks/useFieldEditorState";
 import { useIsomorphicLayoutEffect } from "../../hooks/useIsomorphicLayoutEffect";
-import { useAIStructuredPreviewContent } from "../../hooks/useAIStructuredPreview";
 import { useBlockList } from "../../hooks/useBlockList";
 import {
 	useDocumentEmptyState,
@@ -20,7 +19,6 @@ import {
 	DATA_ATTRS,
 } from "@input/pen-dom/utils/dataAttributes";
 import { fieldEditorTextEntryAttrs } from "../../utils/fieldEditorTextEntryAttrs";
-import { AIStructuredTargetPreviewItem } from "../ai/structuredTargetPreview";
 import { AutocompletePreviewBlock } from "./autocompletePreviewBlock";
 import { EditorBlock } from "./block";
 import { DropPreviewProvider } from "./dropPreviewContext";
@@ -63,7 +61,6 @@ export function EditorContent(props: EditorContentProps) {
 	const { store: regionSelectionStore } = useEditorRegionSelectionContext();
 	const fieldEditorState = useFieldEditorState(fieldEditor);
 	const blockIds = useBlockList(editor);
-	const contentItems = useAIStructuredPreviewContent(editor, blockIds);
 	const visibleSuggestion = useInlineCompletionState(editor);
 	const blockDragSession = useBlockDragSession();
 	const contentRef = useRef<HTMLElement>(null);
@@ -109,9 +106,12 @@ export function EditorContent(props: EditorContentProps) {
 		fieldEditor.attachElement(blocksHostRef.current);
 	}, [fieldEditor, fieldEditorState.mode, fieldEditorState.activeBlockIds]);
 
+	// no dep array: acks every commit, matching the Vue binding's
+	// onMounted + onUpdated pair. A text-only splice leaves blockIds
+	// referentially stable but can still replace block DOM nodes.
 	useIsomorphicLayoutEffect(() => {
 		ackMountedBlockElements(fieldEditor, blocksHostRef.current);
-	}, [fieldEditor, blockIds, contentItems, fieldEditorState.mode]);
+	});
 
 	// Click-to-activate: when user clicks on a block, activate the field editor.
 	// Shift-click: select a range of blocks (AC #22).
@@ -138,45 +138,23 @@ export function EditorContent(props: EditorContentProps) {
 	const anchorBlock = visibleSuggestion
 		? editor.getBlock(visibleSuggestion.blockId)
 		: null;
-	for (const contentItem of contentItems) {
-		if (contentItem.kind === "block") {
-			blockElements.push(
-				<EditorBlock
-					key={contentItem.blockId}
-					blockId={contentItem.blockId}
-				/>,
+	for (const blockId of blockIds) {
+		blockElements.push(<EditorBlock key={blockId} blockId={blockId} />);
+		if (previewBlocks.length > 0 && blockId === visibleSuggestion?.blockId) {
+			const previewBlockElements = previewBlocks.map(
+				(previewBlock, previewIndex) => (
+					<AutocompletePreviewBlock
+						key={`autocomplete-preview:${previewBlock.id}`}
+						anchorBlock={anchorBlock}
+						anchorBlockType={anchorBlock?.type}
+						anchorProps={anchorBlock?.props ?? null}
+						block={previewBlock}
+						previewIndex={previewIndex}
+					/>
+				),
 			);
-			if (
-				previewBlocks.length > 0 &&
-				contentItem.blockId === visibleSuggestion?.blockId
-			) {
-				const previewBlockElements = previewBlocks.map(
-					(previewBlock, previewIndex) => (
-						<AutocompletePreviewBlock
-							key={`autocomplete-preview:${previewBlock.id}`}
-							anchorBlock={anchorBlock}
-							anchorBlockType={anchorBlock?.type}
-							anchorProps={anchorBlock?.props ?? null}
-							block={previewBlock}
-							previewIndex={previewIndex}
-						/>
-					),
-				);
-				blockElements.push(...previewBlockElements);
-			}
-			continue;
+			blockElements.push(...previewBlockElements);
 		}
-		blockElements.push(
-			<div
-				key={`virtual-target:${contentItem.target.blockId}`}
-				data-pen-ai-structured-virtual-target=""
-				data-block-type={contentItem.target.targetKind}
-				data-plan-state={contentItem.planState}
-				{...{ [DATA_ATTRS.ignorePointerGesture]: "" }}
-			>
-				<AIStructuredTargetPreviewItem target={contentItem.target} />
-			</div>,
-		);
 	}
 
 	const inlineDropCaret =

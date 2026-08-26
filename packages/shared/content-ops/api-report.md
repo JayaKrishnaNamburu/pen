@@ -7,8 +7,6 @@
 ### function
 
 - buildDocumentWriteOps
-- normalizePlanRecord
-- normalizePlanSteps
 - parseMarkdownToBlocks
 - splitPlainTextLineBlocks
 
@@ -19,7 +17,6 @@
 - BuildDocumentWriteOpsResult
 - DocumentWriteBlockInput
 - DocumentWriteFormat
-- PlanRecord
 - StructuredTargetDescriptor
 - StructuredTargetKind
 - TableTargetDescriptor

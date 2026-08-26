@@ -1,14 +1,13 @@
 import { selectionToRange } from "@input/pen-core";
 import { runAgenticLoop } from "../agentic/loop";
-import { compileStructuredIntentToPlan } from "../runtime/structuredIntentCompiler";
-import {
-	buildGenerationStructuredPreviewState,
-	buildStructuredPreviewPatchOperations,
-} from "../runtime/structuredPreview";
 import type { GenerationState } from "../types";
 import type { AIControllerMethodHost } from "./aiControllerMethodHost";
 import {
-	areStructuredValuesEqual,
+	markdownStreamingPreviewText,
+	resolveMarkdownPreviewTarget,
+	resolveSelectionPreviewTarget,
+} from "./streamingPreviewInput";
+import {
 	createAIStreamEvent,
 	EMPTY_TOOL_RUNTIME,
 	resolveGenerationRequestMode,
@@ -38,8 +37,6 @@ export async function runGenerationLoop(
 		context,
 		baselineSuggestionIds,
 		shouldReplaceMarkdownTarget,
-		useStructuredIntentTransport,
-		adapter,
 		abortController,
 		workingSet,
 		sessionTurnId,
@@ -188,33 +185,51 @@ export async function runGenerationLoop(
 					canStreamMarkdownBlockSuggestions &&
 					target.type === "block"
 				) {
-					const previewRefresh =
-						controller._refreshStreamingMarkdownBlockPreview(
-							target.blockId,
-							state.currentText,
-							route.mutationMode,
-							context?.sessionId,
-							baselineSuggestionIds,
-							state.streamedMarkdownSuggestionIds,
-							state.lastStreamedMarkdownPreviewText,
-							shouldReplaceMarkdownTarget,
-							context?.replaceBlockIds,
-						);
-					state.streamedMarkdownSuggestionIds =
-						previewRefresh.suggestionIds;
-					state.lastStreamedMarkdownPreviewText =
-						previewRefresh.normalizedText;
+					const active = controller._state.activeGeneration;
+					if (active) {
+						controller.setStreamingReviewPreview({
+							sessionId: active.sessionId ?? active.id,
+							turnId: active.turnId,
+							target: resolveMarkdownPreviewTarget(
+								controller._editor,
+								{
+									blockId: target.blockId,
+									offset: target.offset,
+									replaceTargetBlock:
+										shouldReplaceMarkdownTarget,
+									replaceBlockIds: context?.replaceBlockIds,
+								},
+							),
+							text: markdownStreamingPreviewText(
+								state.currentText,
+							),
+						});
+					}
 				} else if (target.type === "selection") {
-					controller._inlineCompletion.showSuggestion({
-						id: seedGeneration.id,
-						blockId: blockId,
-						offset: selectionToRange(
-							controller._editor.internals.doc,
-							target.selection,
-						).start.offset,
-						text: state.currentText,
-						type: "inline",
-					});
+					// RS2: a proposed selection rewrite previews on the review
+					// surface. The ghost overlay stays for autocomplete, whose
+					// job is a keystroke-accepted completion rather than an
+					// edit awaiting review (RS1).
+					const active = controller._state.activeGeneration;
+					if (active) {
+						controller.setStreamingReviewPreview({
+							sessionId: active.sessionId ?? active.id,
+							turnId: active.turnId,
+							target: resolveSelectionPreviewTarget(
+								controller._editor,
+								selectionToRange(
+									controller._editor.internals.doc,
+									target.selection,
+								),
+							),
+							text:
+								state.contentFormat === "markdown"
+									? markdownStreamingPreviewText(
+											state.currentText,
+										)
+									: state.currentText,
+						});
+					}
 				}
 				const active = controller._state.activeGeneration;
 				if (!active) return;
@@ -230,83 +245,6 @@ export async function runGenerationLoop(
 						type: "text-delta",
 						delta: nextDelta,
 						text: state.currentText,
-					}),
-				);
-			},
-			onStructuredData: (event) => {
-				if (!useStructuredIntentTransport) {
-					return;
-				}
-				const previewResult =
-					adapter.parsePreview?.({
-						value: event.data,
-						targetKind: route.targetKind,
-						activeBlockId: blockId,
-					}) ?? null;
-				if (!previewResult?.intent) {
-					return;
-				}
-				state.currentStructuredIntent = previewResult.intent;
-				const compilation = compileStructuredIntentToPlan(
-					previewResult.intent,
-					{
-						activeBlockId: blockId,
-					},
-				);
-				if (!compilation.plan) {
-					return;
-				}
-				const nextStructuredPreview =
-					buildGenerationStructuredPreviewState(controller._editor, {
-						planState:
-							previewResult.intentState === "validated" &&
-							compilation.issues.length === 0
-								? "validated"
-								: "drafted",
-						plan: compilation.plan,
-					});
-				if (
-					areStructuredValuesEqual(
-						state.currentStructuredPreview,
-						nextStructuredPreview,
-					)
-				) {
-					return;
-				}
-				const patches = buildStructuredPreviewPatchOperations(
-					state.currentStructuredPreview,
-					nextStructuredPreview,
-				);
-				state.currentStructuredPreview = nextStructuredPreview;
-				controller._resolveActiveGeneration({
-					structuredIntent: previewResult.intent,
-					structuredPreview: nextStructuredPreview,
-				});
-				if (context?.sessionId && sessionTurnId) {
-					controller._updateSessionTurn(
-						context.sessionId,
-						sessionTurnId,
-						{
-							reviewItemIds:
-								nextStructuredPreview.reviewItems.map(
-									(item) => item.id,
-								),
-							structuredPreview: nextStructuredPreview,
-						},
-					);
-				}
-				controller._appendStreamEvent(
-					createAIStreamEvent(seedGeneration, {
-						type: "app-partial",
-						data: event.data,
-						final: event.final,
-					}),
-				);
-				controller._appendStreamEvent(
-					createAIStreamEvent(seedGeneration, {
-						type: "structured-preview",
-						preview: nextStructuredPreview,
-						patches,
 					}),
 				);
 			},

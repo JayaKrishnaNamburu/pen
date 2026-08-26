@@ -8,7 +8,6 @@ import type {
 	AISession,
 	AIWorkingSetEnvelope,
 	GenerationState,
-	GenerationStructuredPreviewState,
 } from "../types";
 import type {
 	GenerationExecutionContext,
@@ -72,16 +71,12 @@ export interface GenerationExecutionState {
 	canStreamMarkdownBlockSuggestions: boolean;
 	streamedSuggestionInitialized: boolean;
 	streamedSuggestionLength: number;
-	streamedMarkdownSuggestionIds: string[];
-	lastStreamedMarkdownPreviewText: string;
 	sessionTurnId: string | undefined;
 	existingSession: AISession | null;
 	executionPrompt: string;
 	shouldTrimLeadingBlankBlockText: boolean;
-	useStructuredIntentTransport: boolean;
 	generationPrompt: string;
 	seedGeneration: GenerationState;
-	currentStructuredPreview: GenerationStructuredPreviewState | null;
 	currentStructuredIntent: GenerationState["structuredIntent"];
 	currentMutationReceipt: AIMutationReceipt | null;
 }

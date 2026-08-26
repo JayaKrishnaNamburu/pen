@@ -67,7 +67,7 @@ interface EditRejection {
 	reason: string;
 }
 
-export interface EditDocumentResult {
+interface EditDocumentResult {
 	ok: boolean;
 	appliedOperations: string[];
 	rejected?: EditRejection[];

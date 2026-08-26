@@ -506,7 +506,7 @@ function emitMalformedOpDiagnostic(
 	});
 }
 
-export function executeOps(
+function executeOps(
 	pipeline: ApplyPipelineInternal,
 	ops: DocumentOp[],
 	origin: OpOrigin,
@@ -629,7 +629,7 @@ export function executeOps(
 	});
 }
 
-export function emitApplyBoundary(
+function emitApplyBoundary(
 	pipeline: ApplyPipelineInternal,
 	event: {
 		phase: "before" | "after";
@@ -658,7 +658,7 @@ export function emitApplyBoundary(
 	}
 }
 
-export function validateOp(
+function validateOp(
 	pipeline: ApplyPipelineInternal,
 	op: DocumentOp,
 ): boolean {
@@ -743,7 +743,7 @@ export function validateOp(
 }
 }
 
-export function executeSingleOp(
+function executeSingleOp(
 	pipeline: ApplyPipelineInternal,
 	op: DocumentOp,
 ): string[] {

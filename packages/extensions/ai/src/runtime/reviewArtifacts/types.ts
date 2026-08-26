@@ -32,11 +32,6 @@ export interface StructuralReviewBuildContext {
 	virtualBlocks: Map<string, VirtualReviewBlock>;
 }
 
-export interface StructuredPreviewTargetState {
-	blockId: string;
-	targetKind: AITargetKind;
-}
-
 export type VirtualReviewBlock = {
 	type: string;
 };

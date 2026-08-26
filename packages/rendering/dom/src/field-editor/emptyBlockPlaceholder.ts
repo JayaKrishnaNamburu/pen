@@ -27,7 +27,7 @@ export function findEmptyBlockPlaceholder(
 	return null;
 }
 
-export function fieldHasOnlyPlaceholder(element: HTMLElement): boolean {
+function fieldHasOnlyPlaceholder(element: HTMLElement): boolean {
 	return (
 		element.childNodes.length === 1 &&
 		isEmptyBlockPlaceholder(element.firstChild)

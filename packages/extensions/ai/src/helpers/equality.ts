@@ -221,10 +221,6 @@ function areGenerationsEqual(
 		previous.mutationMode !== next.mutationMode ||
 		previous.planState !== next.planState ||
 		previous.targetKind !== next.targetKind ||
-		!areStructuredValuesEqual(
-			previous.structuredPreview,
-			next.structuredPreview,
-		) ||
 		!areStructuredValuesEqual(previous.reviewItems, next.reviewItems) ||
 		!areStructuredValuesEqual(previous.plan, next.plan) ||
 		!areStructuredValuesEqual(previous.debug, next.debug)

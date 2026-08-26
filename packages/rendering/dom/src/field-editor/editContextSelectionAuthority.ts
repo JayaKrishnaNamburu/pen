@@ -189,7 +189,7 @@ export function resolveEditContextKeyDownRange(input: {
 	};
 }
 
-export function collapsedSelectionOffset(
+function collapsedSelectionOffset(
 	selection: EditContextSelection | null,
 	blockId: string,
 ): number | null {
@@ -202,7 +202,7 @@ export function collapsedSelectionOffset(
 	return selection.focusOffset;
 }
 
-export function selectionToRange(
+function selectionToRange(
 	selection: EditContextSelection,
 ): EditContextRange {
 	return {
@@ -211,7 +211,7 @@ export function selectionToRange(
 	};
 }
 
-export function directionalSelectionToRange(
+function directionalSelectionToRange(
 	selection: DirectionalSelectionOffsets,
 ): EditContextRange {
 	return {
@@ -220,7 +220,7 @@ export function directionalSelectionToRange(
 	};
 }
 
-export function rangeToSelection(
+function rangeToSelection(
 	blockId: string,
 	range: EditContextRange,
 ): EditContextSelection {

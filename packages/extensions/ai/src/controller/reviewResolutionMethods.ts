@@ -4,7 +4,6 @@ import {
 	removeStructuralReviewItemPlan,
 	selectStructuralReviewItemPlan,
 } from "../runtime/reviewArtifacts";
-import { buildGenerationStructuredPreviewState } from "../runtime/structuredPreview";
 import {
 	acceptSuggestions,
 	rejectSuggestions,
@@ -61,7 +60,6 @@ export const reviewResolutionMethods = {
 			if (accepted) {
 				this._resolveActiveGeneration({
 					suggestionIds: [],
-					structuredPreview: null,
 				});
 				if (generation.sessionId) {
 					if (generation.turnId) {
@@ -71,7 +69,6 @@ export const reviewResolutionMethods = {
 							{
 								status: "accepted",
 								suggestionIds: [],
-								structuredPreview: null,
 								anchor: refreshedInlineSelectionTarget
 									? resolveSessionAnchor(
 											this._editor,
@@ -133,7 +130,6 @@ export const reviewResolutionMethods = {
 		this._editor.apply(execution.ops, { origin: "ai", undoGroup: true });
 		this._resolveActiveGeneration({
 			planState: "none",
-			structuredPreview: null,
 		});
 		if (generation.sessionId) {
 			if (generation.turnId) {
@@ -143,7 +139,6 @@ export const reviewResolutionMethods = {
 					{
 						status: "accepted",
 						reviewItemIds: [],
-						structuredPreview: null,
 					},
 				);
 			}
@@ -168,7 +163,6 @@ export const reviewResolutionMethods = {
 				this._resolveActiveGeneration({
 					suggestionIds: [],
 					planState: "rejected",
-					structuredPreview: null,
 				});
 				if (generation.sessionId) {
 					if (generation.turnId) {
@@ -178,7 +172,6 @@ export const reviewResolutionMethods = {
 							{
 								status: "rejected",
 								suggestionIds: [],
-								structuredPreview: null,
 							},
 						);
 					}
@@ -195,7 +188,6 @@ export const reviewResolutionMethods = {
 			this._resolveActiveGeneration({
 				status: "cancelled",
 				planState: "rejected",
-				structuredPreview: null,
 			});
 			if (generation.sessionId) {
 				if (generation.turnId) {
@@ -205,7 +197,6 @@ export const reviewResolutionMethods = {
 						{
 							status: "rejected",
 							reviewItemIds: [],
-							structuredPreview: null,
 						},
 					);
 				}
@@ -326,12 +317,6 @@ export const reviewResolutionMethods = {
 					: "rejected",
 			plan: nextPlan,
 			reviewItems: nextReviewItems,
-			structuredPreview: nextPlan
-				? buildGenerationStructuredPreviewState(this._editor, {
-						planState: "validated",
-						plan: nextPlan,
-					})
-				: null,
 		});
 		if (generation.sessionId) {
 			if (generation.turnId) {

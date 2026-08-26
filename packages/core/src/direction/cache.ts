@@ -1,6 +1,6 @@
 import type { BlockDirection } from "./firstStrong";
 
-export type DirectionCacheEntry = {
+type DirectionCacheEntry = {
 	fingerprint: string;
 	direction: BlockDirection;
 };

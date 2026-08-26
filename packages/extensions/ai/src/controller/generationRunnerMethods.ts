@@ -31,7 +31,6 @@ export const generationRunnerMethods = {
 				activeGeneration: {
 					...this._state.activeGeneration,
 					status: "cancelled",
-					structuredPreview: null,
 				},
 			});
 			if (sessionId) {

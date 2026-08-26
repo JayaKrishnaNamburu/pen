@@ -1,6 +1,6 @@
 import { toStreamingPreviewText } from "./streamingPreviewText";
 
-export const TRUNCATED_EDIT_DOCUMENT_MARKER = "truncated";
+const TRUNCATED_EDIT_DOCUMENT_MARKER = "truncated";
 
 export interface EditDocumentPreviewUpdate {
 	toolCallId: string;

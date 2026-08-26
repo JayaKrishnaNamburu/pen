@@ -4,11 +4,13 @@ export {
 	type GeometryMeasureAdapter,
 	type GeometryReaderHost,
 	type GeometryReaderOptions,
-	type GeometryReaderWithBlocks,
 	type VerticalCaretTarget,
 	type VerticalDirection,
 } from "./geometryReader";
-export { getRootGeometry, measureWithRoot } from "./rootGeometry";
+export {
+	getRootGeometry,
+	measureWithRoot,
+} from "./rootGeometry";
 export type { RootGeometry } from "./rootGeometry";
 export { registerVerticalCaretMeasure } from "./verticalCaretMeasure";
 export type {
@@ -22,10 +24,5 @@ export type {
 } from "./types";
 export {
 	collapsedRect,
-	getDistanceToRect,
-	rectCenterX,
-	rectCenterY,
-	rectFromDOMRect,
-	rectToDOMRect,
 	singleRunLineBox,
 } from "./types";

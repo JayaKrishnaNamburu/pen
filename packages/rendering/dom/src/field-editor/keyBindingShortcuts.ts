@@ -28,7 +28,7 @@ export function tryHandleHistoryOverrideBinding(
 	return false;
 }
 
-export function getDocumentTextRange(editor: Editor): {
+function getDocumentTextRange(editor: Editor): {
 	start: { blockId: string; offset: number };
 	end: { blockId: string; offset: number };
 	focusBlockId: string;

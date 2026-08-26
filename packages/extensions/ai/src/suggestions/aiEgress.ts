@@ -7,7 +7,7 @@ import type { BuiltSuggestionScope } from "./scopeBuilder";
 
 export { streamThroughEgress } from "@input/pen-core";
 
-export function excerptsFromSuggestionScope(
+function excerptsFromSuggestionScope(
 	scope: BuiltSuggestionScope,
 ): AIDocumentExcerpt[] {
 	const excerpts: AIDocumentExcerpt[] = [

@@ -27,7 +27,7 @@ export const AUTOCOMPLETE_SYSTEM_PROMPT = [
 	"Prefer a short, high-confidence continuation.",
 ].join(" ");
 
-export const AUTOCOMPLETE_CONTINUATION_SYSTEM_PROMPT = [
+const AUTOCOMPLETE_CONTINUATION_SYSTEM_PROMPT = [
 	"You are generating the next inline continuation after a visible autocomplete suggestion has already been accepted.",
 	"Return only the text that should be inserted at the cursor.",
 	"Do not repeat the already accepted text unless it truly must be changed.",
@@ -82,7 +82,7 @@ export async function buildAutocompleteMessages(options: {
 	};
 }
 
-export async function collectProviderSections(options: {
+async function collectProviderSections(options: {
 	context: AutocompleteRequestContext;
 	registry: AutocompleteProviderRegistry;
 	maxProviderChars: number;

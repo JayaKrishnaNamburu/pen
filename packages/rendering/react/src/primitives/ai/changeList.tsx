@@ -1,6 +1,5 @@
 import React from "react";
 import { resolveEditorMessage } from "@input/pen-core";
-import { useAIStructuredPreview } from "../../hooks/useAIStructuredPreview";
 import { useSuggestions } from "../../hooks/useSuggestions";
 import { renderAsChild, type AsChildProps } from "../../utils/asChild";
 import { cancelStreamingAIGenerationAfterResolution } from "../../utils/cancelStreamingAIGeneration";
@@ -26,7 +25,6 @@ export function AIChangeList(props: AIChangeListProps) {
 
 	const suggestions = useSuggestions(editor);
 	const generation = state.activeGeneration;
-	const structuredPreview = useAIStructuredPreview(editor, generation);
 	const rootRef = React.useRef<HTMLElement | null>(null);
 	const activeSessionId = generation?.sessionId ?? null;
 
@@ -99,12 +97,7 @@ export function AIChangeList(props: AIChangeListProps) {
 	const [activeReviewTargetId, setActiveReviewTargetId] = React.useState<
 		string | null
 	>(null);
-	const previewReviewItems = structuredPreview.preview?.reviewItems ?? [];
-	const isPreviewActive =
-		generation?.status === "streaming" && previewReviewItems.length > 0;
-	const structuralReviewItems = isPreviewActive
-		? previewReviewItems
-		: (generation?.reviewItems ?? []);
+	const structuralReviewItems = generation?.reviewItems ?? [];
 	const canApplyReviewActions =
 		generation?.status !== "streaming" &&
 		generation?.planState === "validated";
@@ -322,7 +315,6 @@ export function AIChangeList(props: AIChangeListProps) {
 			"data-pen-ai-change-list": "",
 			"data-suggestion-count": suggestions.length,
 			"data-review-item-count": structuralReviewItems.length,
-			"data-review-preview-active": isPreviewActive ? "" : undefined,
 			tabIndex: reviewFocusTargets.length > 0 ? 0 : undefined,
 			onFocus: handleReviewListFocus,
 			onKeyDown: handleReviewListKeyDown,
