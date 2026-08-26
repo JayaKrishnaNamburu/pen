@@ -1,4 +1,4 @@
-import type { DocumentOp, StructuralOriginTag } from "@input/pen-types";
+import type { DocumentOp } from "@input/pen-types";
 
 export type RecordedAuthorityOp =
 	| {
@@ -50,27 +50,10 @@ export type AuthorityTraceKind = "split" | "merge" | "remove";
 
 export function structuralSequenceLabel(kind: AuthorityTraceKind): string;
 
-export function setupBlocksFromRecordedOps(
-	setup: readonly RecordedAuthorityOp[],
-): Map<string, { type: string; text: string }>;
-
-export function replayContextFromSetup(
-	setup: readonly RecordedAuthorityOp[],
-): AuthorityReplayContext;
-
-export function translateRecordedAuthorityOp(
-	op: RecordedAuthorityOp,
-	context?: AuthorityReplayContext,
-): DocumentOp[];
-
 export function translateRecordedAuthorityOps(
 	ops: readonly RecordedAuthorityOp[],
 	context?: AuthorityReplayContext,
 ): DocumentOp[];
-
-export function structuralFromRecordedCommit(
-	commit: readonly RecordedAuthorityOp[],
-): StructuralOriginTag | undefined;
 
 export function commitIsStructuralSequence(
 	kind: AuthorityTraceKind,

@@ -1,10 +1,10 @@
 import type { Decoration } from "@input/pen-types";
+import { REVIEW_SURFACE_CLASSES } from "@input/pen-types";
 import type { AIStreamingReviewPreview } from "../types";
 import {
 	AI_REVIEW_PREVIEW_VIRTUAL_ATTRIBUTE,
 	AI_REVIEW_ROLE_ATTRIBUTE,
 } from "./reviewPresentationState";
-import { AI_REVIEW_INSERT_STYLE } from "./reviewPresentationStyles";
 
 export function resolveStreamingPreviewAnchor(
 	preview: AIStreamingReviewPreview,
@@ -67,17 +67,16 @@ export function appendVirtualPreviewTextDecorations(
 		].join(":"),
 		attributes: {
 			class: [
-				"pen-suggestion-insert",
-				"pen-suggestion-final-text-change",
-				"pen-ai-review-insert",
-				"pen-ai-review-preview",
+				REVIEW_SURFACE_CLASSES.suggestionInsert,
+				REVIEW_SURFACE_CLASSES.suggestionFinalTextChange,
+				REVIEW_SURFACE_CLASSES.reviewInsert,
+				REVIEW_SURFACE_CLASSES.preview,
 			].join(" "),
 			[AI_REVIEW_ROLE_ATTRIBUTE]: "insert",
 			[AI_REVIEW_PREVIEW_VIRTUAL_ATTRIBUTE]: true,
 			"data-pen-ai-preview-streaming": true,
 			"data-pen-final-text-review-change": true,
 			contenteditable: "false",
-			style: AI_REVIEW_INSERT_STYLE,
 		},
 	});
 }

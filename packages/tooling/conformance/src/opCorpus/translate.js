@@ -9,7 +9,7 @@
  * Mapping cites `spec/rules/pipeline.md` §5.
  */
 
-export const SET_SELECTION_REPLAY = "__penReplaySetSelection";
+const SET_SELECTION_REPLAY = "__penReplaySetSelection";
 
 const UNCHANGED_TYPES = new Set([
 	"insert-block",

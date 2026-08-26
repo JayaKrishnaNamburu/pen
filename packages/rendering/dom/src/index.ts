@@ -120,3 +120,11 @@ export type {
 	VerticalCaretTarget,
 	VerticalDirection,
 } from "./geometry";
+
+// The review surface's styling contract (RS4): one sheet, one vocabulary.
+export { PEN_REVIEW_STYLESHEET } from "./styles/reviewStylesheet";
+export {
+	REVIEW_SURFACE_BLOCK_SUGGESTION_CLASSES,
+	REVIEW_SURFACE_CLASSES,
+	REVIEW_SURFACE_CUSTOM_PROPERTIES,
+} from "@input/pen-types";

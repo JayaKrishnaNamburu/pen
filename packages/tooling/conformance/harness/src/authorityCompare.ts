@@ -9,15 +9,9 @@ import {
 } from "../../src/authorityTrace";
 
 export {
-	AUTHORITY_ALGEBRA_AFTER,
-	AUTHORITY_TRACE_SCHEMA_VERSION,
 	AUTHORITY_TRACE_SCRIPT,
 	AUTHORITY_TRACE_SCRIPT_HASH,
-	AUTHORITY_TRACE_SCRIPT_ID,
-	AUTHORITY_TRACES_PATH,
-	MOVING_CASE_IDS,
 	authorityCompareKind,
-	authorityTraceScriptHash,
 	cloneAuthorityTrace,
 	describeAuthorityTracePopulation,
 	formatAuthorityCompareReport,

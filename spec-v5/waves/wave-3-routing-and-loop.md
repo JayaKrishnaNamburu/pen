@@ -60,6 +60,19 @@ The loop knows the mutating tool's name and the forcing rule; payload shape, ref
 - GATE 3.12 [test]: `pnpm --filter @input/pen-ai test -- src/__tests__/uc8.questionIntent.test.ts`
   expect: exit 0 — UC8 claimed: a question stages nothing, opens no review session, leaves the document hash unchanged — while the same fixture under an edit prompt stages an edit.
 
+### Inherited from wave 2: the unapplied-edit report (RS3)
+
+Added 2026-08-26. Wave 2 discharged RS3's posture half and could not discharge its reporting half; the remainder lands here because it needs exactly the distinction this section draws.
+
+`isUnappliedEdit` in `controller/generationExecutionFinalize.ts` keys on `applyStrategy === "markdown-full-replace"` reaching `complete` with a `noop` receipt — the signature of a plan that failed to compile, which UC3 deletes outright. Once the planner lane is gone, that guard watches nothing. Two lanes that genuinely end with an edit proposed and nothing landing are uncovered:
+
+The tool loop reaches `complete` with a `noop` receipt and non-empty text (measured in wave 2, not inferred). Reporting that as an unapplied edit would be wrong, because on this lane text with no document change is usually the answer to a question — which is UC8's whole subject. The condition that distinguishes them is whether the turn called the mutating tool, and UC6 puts the tool's name at the loop boundary, so the report becomes expressible here: an edit tool called, no receipt of an applied or staged result, is a lost edit; no tool call is an answer.
+
+The requested-operation path (`controller/localOperationExecutionFinalize.ts`) can commit a `noop` and never consults the report at all.
+
+- GATE 3.12a [test]: `pnpm --filter @input/pen-ai test -- src/__tests__/rs3.unappliedEditReport.test.ts`
+  expect: exit 0 — RS3 completed: a turn that calls the mutating tool and lands neither an applied nor a staged result reports the unapplied edit; a question turn on the same fixture does not, and the report no longer keys on a deleted apply strategy.
+
 ## 5. Release 0.5 (UC9)
 
 One coordinated minor; one migration note covering the channel teardown, preview consolidation, planner deletion, vocabulary fold, and staleness change.

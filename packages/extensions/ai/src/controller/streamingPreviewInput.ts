@@ -65,12 +65,13 @@ export function resolveMarkdownPreviewTarget(
  * A rewrite replaces the selection, so the preview strikes exactly the
  * selected text. A selection spanning blocks cannot say that as one text
  * range, and naming only its first block would leave the rest of the
- * selection looking untouched while the replacement grows.
+ * selection looking untouched while the replacement grows. Endpoints
+ * missing from blockOrder cannot be named either; callers skip the preview.
  */
 export function resolveSelectionPreviewTarget(
 	editor: Editor,
-	range: DocumentRange,
-): AIStreamingReviewPreviewTarget {
+	range: Pick<DocumentRange, "start" | "end">,
+): AIStreamingReviewPreviewTarget | null {
 	if (range.start.blockId === range.end.blockId) {
 		return {
 			kind: "text-range",
@@ -83,12 +84,7 @@ export function resolveSelectionPreviewTarget(
 	const startIndex = blockOrder.indexOf(range.start.blockId);
 	const endIndex = blockOrder.indexOf(range.end.blockId);
 	if (startIndex < 0 || endIndex < 0) {
-		return {
-			kind: "text-range",
-			blockId: range.start.blockId,
-			from: range.start.offset,
-			to: range.end.offset,
-		};
+		return null;
 	}
 	return {
 		kind: "block-range",

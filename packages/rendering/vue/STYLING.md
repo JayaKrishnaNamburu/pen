@@ -29,6 +29,33 @@ The package sets one class, and only on a code block that has a language:
 
 Hosts that run a highlighter (Prism, highlight.js, Shiki) can target that class. Vue does not load a highlighter.
 
+## AI review
+
+Review presentation — inserted and deleted text, streaming preview text,
+selection context, block suggestions — is painted by `@input/pen-ai`
+decorations that land in this tree. This package sets none of those classes.
+
+They ship as one stylesheet and one class vocabulary, both exported from
+`@input/pen-dom` (RS4), and are the same contract the React binding documents.
+Adopt the sheet once, then theme it with the `--pen-ai-review-*` custom
+properties; do not re-declare the rule blocks:
+
+```ts
+import { PEN_REVIEW_STYLESHEET } from "@input/pen-dom";
+
+const style = document.createElement("style");
+style.textContent = PEN_REVIEW_STYLESHEET;
+document.head.prepend(style);
+```
+
+It is exported as text rather than a `.css` file because every published
+package sets `sideEffects: false` (API7), which entitles a bundler to drop a
+bare stylesheet import. `REVIEW_SURFACE_CLASSES`,
+`REVIEW_SURFACE_BLOCK_SUGGESTION_CLASSES`, and
+`REVIEW_SURFACE_CUSTOM_PROPERTIES` are exported alongside it. See
+[`@input/pen-react`'s styling guide](../react/STYLING.md#ai-review-painted-by-inputpen-ai-decorations-in-this-tree)
+for the property defaults; there is one table, not one per binding.
+
 ## Data-attribute hooks
 
 Boolean `data-*` attributes are the valueless HTML form (`data-readonly=""`), omitted when off. The `present` column below means that form. Write the bare selector `[data-readonly]`, not `[data-readonly=""]` or `[data-readonly="true"]`. Both the bare form and `[data-readonly=""]` match today; the bare form stays correct if one of these attributes ever carries a real value. The bare-attribute rule is for `data-*` only.

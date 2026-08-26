@@ -9,12 +9,7 @@ import {
 	unexpectedStandingDiagnostics,
 } from "./standingFilter";
 
-export {
-	authorityCheckKind,
-	isStandingCode,
-	standingAuthorityHolds,
-	unexpectedStandingDiagnostics,
-} from "./standingFilter";
+export { authorityCheckKind } from "./standingFilter";
 
 export async function assertStandingDiagnostics(
 	page: Page,

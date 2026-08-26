@@ -66,24 +66,42 @@ Read by `@input/pen-ai-suggestions` decorations; remapped by the injected sheet 
 
 ### AI review (painted by `@input/pen-ai` decorations in this tree)
 
-> These are written into an inline `style` attribute on the decoration span, and
-> the DOM renderer drops `style` from decoration attributes under SEC2. Setting
-> them has no effect today; style the class hooks below instead.
+Review presentation ships as one stylesheet and one class vocabulary, both
+exported from `@input/pen-dom` (RS4). Adopt the sheet once, then theme it with
+the custom properties below — do not re-declare the rule blocks, which is how
+hosts drift out of sync with what the decorations actually emit:
 
-| Token                                   | Default                                                                              | Purpose                                                   |
-| --------------------------------------- | ------------------------------------------------------------------------------------ | --------------------------------------------------------- |
-| `--pen-ai-review-inline-padding-block`  | `0.2em`                                                                              | Insert / context inline padding.                          |
-| `--pen-ai-review-inline-margin-block`   | `-0.2em`                                                                             | Insert / context inline margin.                           |
-| `--pen-ai-review-border-radius`         | `3px`                                                                                | Insert / context corner radius.                           |
-| `--pen-ai-review-insert-color`          | `#6d28d9`                                                                            | Insert text color.                                        |
-| `--pen-ai-review-insert-background`     | `#7c3aed`                                                                            | Insert fill (paired with a `color-mix` fallback at 12%).  |
-| `--pen-ai-review-context-background`    | `#2563eb`                                                                            | Context fill (paired with a `color-mix` fallback at 14%). |
-| `--pen-ai-review-context-box-shadow`    | `none`                                                                               | Context edge.                                             |
-| `--pen-ai-affected-range-background`    | `color-mix(in srgb, #2563eb 26%, transparent)`                                       | Affected-range fill.                                      |
-| `--pen-ai-affected-range-box-shadow`    | `inset 0 0 0 1px rgba(96, 165, 250, 0.72), inset 0 -1px 0 rgba(147, 197, 253, 0.92)` | Affected-range edge.                                      |
-| `--pen-ai-affected-range-border-radius` | `4px`                                                                                | Affected-range corner radius.                             |
-| `--pen-ai-affected-range-padding-block` | `0`                                                                                  | Affected-range padding.                                   |
-| `--pen-ai-affected-range-margin-block`  | `0`                                                                                  | Affected-range margin.                                    |
+```ts
+import { PEN_REVIEW_STYLESHEET } from "@input/pen-dom";
+
+const style = document.createElement("style");
+style.textContent = PEN_REVIEW_STYLESHEET;
+document.head.prepend(style);
+```
+
+It is exported as text rather than a `.css` file because every published
+package sets `sideEffects: false` (API7), which entitles a bundler to drop a
+bare stylesheet import. `REVIEW_SURFACE_CLASSES`,
+`REVIEW_SURFACE_BLOCK_SUGGESTION_CLASSES`, and
+`REVIEW_SURFACE_CUSTOM_PROPERTIES` are exported alongside it, so a host that
+writes its own rules can still reference the names rather than retyping them.
+
+| Token                                  | Default                                              | Purpose                                                 |
+| -------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------- |
+| `--pen-ai-review-insert-color`         | `#6d28d9`                                            | Inserted text color.                                    |
+| `--pen-ai-review-insert-background`    | `color-mix(in srgb, #7c3aed 12%, transparent)`       | Inserted text fill.                                     |
+| `--pen-ai-review-delete-color`         | `#6b7280`                                            | Deleted and replaced-original text, struck through.     |
+| `--pen-ai-review-context-background`   | `color-mix(in srgb, #2563eb 14%, transparent)`       | Selection context and affected-range fill.              |
+| `--pen-ai-review-context-box-shadow`   | `none`                                               | Context edge.                                           |
+| `--pen-ai-review-border-radius`        | `3px`                                                | Insert / context / affected-range corner radius.        |
+| `--pen-ai-review-inline-padding-block` | `0.2em`                                              | Insert / context inline padding.                        |
+| `--pen-ai-review-inline-margin-block`  | `-0.2em`                                             | Insert / context inline margin.                         |
+
+Earlier revisions of this table listed `--pen-ai-affected-range-*` tokens and
+warned that none of these properties did anything, because `@input/pen-ai` set
+them in an inline `style` attribute that the renderer drops under SEC2. The
+sheet is where they live now, so they work; affected-range shares the context
+properties instead of carrying its own set.
 
 ## Class hooks
 
@@ -109,7 +127,7 @@ These `class` values are written by this package (or by the AI-suggestions sheet
 | `pen-ai-suggestion-underline`    | Suggestion mark; targeted by the injected sheet.                            |
 | `pen-ai-suggestion-active`       | Active suggestion mark; targeted by the injected sheet.                     |
 
-Decoration classes from `@input/pen-ai` / `@input/pen-ai-suggestions` that land in this tree (not assigned as React `className` in this package): `pen-ai-suggestion-animated`, `pen-suggestion-insert`, `pen-suggestion-delete`, `pen-suggestion-final-text-change`, `pen-ai-review-insert`, `pen-ai-review-delete`, `pen-ai-review-context`, `pen-ai-affected-range`, `pen-ai-review-preview`, `pen-ai-review-preview-original`, `pen-block-suggestion-delete-block`.
+Decoration classes from `@input/pen-ai` / `@input/pen-ai-suggestions` that land in this tree (not assigned as React `className` in this package): `pen-ai-suggestion-animated`, plus the review vocabulary. The review names are not restated here — they are exported as `REVIEW_SURFACE_CLASSES` and `REVIEW_SURFACE_BLOCK_SUGGESTION_CLASSES` from `@input/pen-dom` and styled by `PEN_REVIEW_STYLESHEET` (see [AI review](#ai-review-painted-by-inputpen-ai-decorations-in-this-tree) above), so a list in this file could only go stale.
 
 Code blocks may also get `language-${language}` from the fence language (Prism convention), not a Pen theme class.
 

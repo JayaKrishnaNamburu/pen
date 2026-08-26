@@ -4,6 +4,10 @@ import type {
 	Editor,
 	InlineDecoration,
 } from "@input/pen-types";
+import {
+	REVIEW_SURFACE_BLOCK_SUGGESTION_CLASSES,
+	REVIEW_SURFACE_CLASSES,
+} from "@input/pen-types";
 import { readBlockSuggestionMeta } from "../suggestions/persistent";
 import type { AIExtensionConfig } from "../types";
 import {
@@ -11,7 +15,6 @@ import {
 	FINAL_TEXT_REVIEW_HIDDEN_ATTRIBUTE,
 	type AIReviewPresentationRole,
 } from "./reviewPresentationState";
-import { AI_REVIEW_INSERT_STYLE } from "./reviewPresentationStyles";
 
 interface InlineRange {
 	from: number;
@@ -56,7 +59,12 @@ export function collectSuggestionDecorations(
 				type: "block",
 				blockId: block.id,
 				attributes: {
-					class: `pen-block-suggestion pen-block-suggestion-${blockSuggestion.action}`,
+					class: [
+						REVIEW_SURFACE_CLASSES.blockSuggestion,
+						REVIEW_SURFACE_BLOCK_SUGGESTION_CLASSES[
+							blockSuggestion.action
+						],
+					].join(" "),
 					"data-suggestion-id": blockSuggestion.id,
 					"data-suggestion-action": blockSuggestion.action,
 					"data-suggestion-author-type": blockSuggestion.authorType,
@@ -135,8 +143,15 @@ function buildSuggestionAttributes(
 		return {
 			class:
 				action === "delete"
-					? "pen-suggestion-delete pen-ai-review-delete"
-					: "pen-suggestion-insert pen-suggestion-final-text-change pen-ai-review-insert",
+					? [
+							REVIEW_SURFACE_CLASSES.suggestionDelete,
+							REVIEW_SURFACE_CLASSES.reviewDelete,
+						].join(" ")
+					: [
+							REVIEW_SURFACE_CLASSES.suggestionInsert,
+							REVIEW_SURFACE_CLASSES.suggestionFinalTextChange,
+							REVIEW_SURFACE_CLASSES.reviewInsert,
+						].join(" "),
 			"data-suggestion-id": String(suggestion.id),
 			"data-suggestion-action": action,
 			"data-suggestion-author": String(suggestion.author ?? ""),
@@ -147,15 +162,21 @@ function buildSuggestionAttributes(
 				action === "delete" ? "delete-hidden" : "insert",
 			...(action === "delete"
 				? { [FINAL_TEXT_REVIEW_HIDDEN_ATTRIBUTE]: true }
-				: {
-						"data-pen-final-text-review-change": true,
-						style: AI_REVIEW_INSERT_STYLE,
-					}),
+				: { "data-pen-final-text-review-change": true }),
 		};
 	}
 
 	return {
-		class: `pen-suggestion-${action} pen-ai-review-${action}`,
+		class:
+			action === "delete"
+				? [
+						REVIEW_SURFACE_CLASSES.suggestionDelete,
+						REVIEW_SURFACE_CLASSES.reviewDelete,
+					].join(" ")
+				: [
+						REVIEW_SURFACE_CLASSES.suggestionInsert,
+						REVIEW_SURFACE_CLASSES.reviewInsert,
+					].join(" "),
 		"data-suggestion-id": String(suggestion.id),
 		"data-suggestion-action": action,
 		"data-suggestion-author": String(suggestion.author ?? ""),

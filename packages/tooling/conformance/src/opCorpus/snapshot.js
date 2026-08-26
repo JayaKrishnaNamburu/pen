@@ -67,10 +67,6 @@ export function encodeUpdateBytes(bytes) {
 	return Buffer.from(bytes).toString("base64");
 }
 
-export function decodeUpdateBytes(base64) {
-	return Uint8Array.from(Buffer.from(base64, "base64"));
-}
-
 /**
  * Wave 5 (EM3) advanced the store-generation stamp from 2 to 3 and writes
  * the `strip-empty-block-sentinels` ledger on load of a stamp < 3 document.

@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState, type MouseEvent } from "react";
 import { Button } from "./Button";
 import { Icon } from "./Icon";
 
-export interface SelectOption {
+interface SelectOption {
 	value: string;
 	label: string;
 }

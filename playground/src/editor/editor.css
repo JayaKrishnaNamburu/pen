@@ -686,37 +686,20 @@ th[data-pen-table-cell] {
 }
 
 /*
- * Same language as Input's composer: inserted text is purple on the
- * selection wash, no underline. Deletions stay visible here because this
- * is a review surface — muted and struck, not hidden.
- */
-.pen-suggestion-insert {
-	color: var(--palette-purple);
-	background: var(--selection-background);
-	border-bottom: none;
-	border-radius: 2px;
-	box-decoration-break: clone;
-	-webkit-box-decoration-break: clone;
-}
-
-.pen-suggestion-delete {
-	color: var(--palette-b40);
-	text-decoration: line-through;
-	text-decoration-color: var(--palette-b40);
-}
-
-/*
- * Text arriving from the model, before any of it is written.
+ * Review presentation comes from Pen's exported sheet (`PEN_REVIEW_STYLESHEET`,
+ * adopted in `main.tsx`); this app only themes it (RS4). Same language as
+ * Input's composer: inserted text is purple on the selection wash, deletions
+ * muted and struck rather than hidden, because this is a review surface.
  *
- * Styled by class, not by Pen's inline defaults: the renderer drops `style`
- * from decoration attributes (SEC2), so the `--pen-ai-review-*` variables Pen
- * writes inline never reach the DOM. The class hooks do.
- *
- * Keep line breaks: the payload is markdown flattened to lines, and without
- * `pre-wrap` a list previews as one long sentence.
+ * Setting these properties rather than re-declaring the rule blocks is the
+ * point: the sheet already knows about `pre-wrap` for flattened markdown,
+ * `box-decoration-break` across line wraps, and the block-suggestion gutter.
  */
-.pen-ai-review-preview {
-	white-space: pre-wrap;
+:root {
+	--pen-ai-review-insert-color: var(--palette-purple);
+	--pen-ai-review-insert-background: var(--selection-background);
+	--pen-ai-review-delete-color: var(--palette-b40);
+	--pen-ai-review-border-radius: 2px;
 }
 
 .review-bar {

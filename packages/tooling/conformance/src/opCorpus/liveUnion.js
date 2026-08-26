@@ -6,10 +6,6 @@
 
 const TIGHT_UNION_MEMBER = /^\s*\| ([A-Z][A-Za-z]+Op)/gm;
 
-export function countTightDocumentOpMembers(source) {
-	return [...source.matchAll(TIGHT_UNION_MEMBER)].length;
-}
-
 export function readLiveDocumentOpTypes(source) {
 	const members = [...source.matchAll(TIGHT_UNION_MEMBER)].map(
 		(match) => match[1],

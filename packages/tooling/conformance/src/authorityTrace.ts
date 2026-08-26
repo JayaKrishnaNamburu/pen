@@ -17,16 +17,12 @@ import {
 import type { SerializedSelectionRecord } from "./types";
 
 export type { RecordedAuthorityOp } from "./authorityTranslate.js";
-export {
-	commitIsStructuralSequence,
-	structuralSequenceLabel,
-	translateRecordedAuthorityOps
-} from "./authorityTranslate.js";
+export { commitIsStructuralSequence } from "./authorityTranslate.js";
 
-export const AUTHORITY_TRACE_SCHEMA_VERSION = 1;
-export const AUTHORITY_TRACE_SCRIPT_ID = "authority-v2-structural";
+const AUTHORITY_TRACE_SCHEMA_VERSION = 1;
+const AUTHORITY_TRACE_SCRIPT_ID = "authority-v2-structural";
 
-export const AUTHORITY_TRACES_PATH = fileURLToPath(
+const AUTHORITY_TRACES_PATH = fileURLToPath(
 	new URL("./authorityTraces.v2.json", import.meta.url),
 );
 
@@ -233,7 +229,7 @@ export const AUTHORITY_TRACE_SCRIPT: readonly AuthorityTraceCaseDef[] = [
 	},
 ];
 
-export const MOVING_CASE_IDS = [
+const MOVING_CASE_IDS = [
 	"split-point",
 	"split-tail",
 	"merge-source",
@@ -245,7 +241,7 @@ export const MOVING_CASE_IDS = [
  * `remove-selected` lands at `b1:4` because the preceding sibling keeps
  * its length ("stay") when the removed block has no follower.
  */
-export const AUTHORITY_ALGEBRA_AFTER: Readonly<
+const AUTHORITY_ALGEBRA_AFTER: Readonly<
 	Record<string, { blockId: string; offset: number }>
 > = {
 	"split-head": { blockId: "b1", offset: 3 },
@@ -257,7 +253,7 @@ export const AUTHORITY_ALGEBRA_AFTER: Readonly<
 	"remove-kept": { blockId: "b1", offset: 2 }
 };
 
-export function authorityTraceScriptHash(
+function authorityTraceScriptHash(
 	script: readonly AuthorityTraceCaseDef[] = AUTHORITY_TRACE_SCRIPT,
 ): string {
 	return JSON.stringify(script);

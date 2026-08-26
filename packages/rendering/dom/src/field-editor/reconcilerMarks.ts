@@ -1,4 +1,5 @@
 import type { SchemaRegistry } from "@input/pen-types";
+import { REVIEW_SURFACE_CLASSES } from "@input/pen-types";
 import { urlPolicy, type UrlPolicy } from "../security/urlPolicy";
 import { INLINE_DECORATION_ATTRIBUTE_KEY } from "../utils/inlineDecorations";
 
@@ -119,8 +120,8 @@ function createMarkElement(
 				span.dataset.suggestionAction = suggestionAction;
 				span.classList.add(
 					suggestionAction === "delete"
-						? "pen-suggestion-delete"
-						: "pen-suggestion-insert",
+						? REVIEW_SURFACE_CLASSES.suggestionDelete
+						: REVIEW_SURFACE_CLASSES.suggestionInsert,
 				);
 			}
 

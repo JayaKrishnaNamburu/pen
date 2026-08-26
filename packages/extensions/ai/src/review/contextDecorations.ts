@@ -1,12 +1,12 @@
 import { getSelectionBlockRange, isMultiBlock } from "@input/pen-core";
 import type { Editor, InlineDecoration } from "@input/pen-types";
+import { REVIEW_SURFACE_CLASSES } from "@input/pen-types";
 import type { AIExtensionConfig, AISession } from "../types";
 import {
 	AI_REVIEW_ROLE_ATTRIBUTE,
 	AI_REVIEW_STATE_ATTRIBUTE,
 	type AIReviewPresentationState,
 } from "./reviewPresentationState";
-import { AI_REVIEW_CONTEXT_STYLE } from "./reviewPresentationStyles";
 import { subtractRanges } from "./rangeHelpers";
 import type { SuggestionInlineRange } from "./suggestionDecorations";
 
@@ -109,12 +109,14 @@ export function buildContextDecorations({
 				to: range.to,
 				key: `ai-review-context:${blockId}:${range.from}:${range.to}`,
 				attributes: {
-					class: "pen-ai-review-context pen-ai-affected-range",
+					class: [
+						REVIEW_SURFACE_CLASSES.context,
+						REVIEW_SURFACE_CLASSES.affectedRange,
+					].join(" "),
 					"data-ai-affected-range": "",
 					"data-ai-affected-range-session": "",
 					[AI_REVIEW_ROLE_ATTRIBUTE]: "context",
 					[AI_REVIEW_STATE_ATTRIBUTE]: reviewState,
-					style: AI_REVIEW_CONTEXT_STYLE,
 				},
 			});
 		}

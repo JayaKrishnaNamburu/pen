@@ -25,32 +25,10 @@ export function parseStructuredIntentResult(
 	targetKind: AITargetKind,
 ): StructuredIntentParseResult {
 	const issues: StructuredIntentParseIssue[] = [];
-	const intent = readStructuredIntent(value, "intent", issues, {
-		allowPartial: false,
-		targetKind,
-	});
+	const intent = readStructuredIntent(value, "intent", issues, targetKind);
 	return {
 		intent,
 		intentState: intent ? "validated" : "rejected",
-		issues,
-	};
-}
-
-function parseStructuredIntentPreview(
-	value: unknown,
-	targetKind: AITargetKind,
-): StructuredIntentParseResult | null {
-	const issues: StructuredIntentParseIssue[] = [];
-	const intent = readStructuredIntent(value, "intent", issues, {
-		allowPartial: true,
-		targetKind,
-	});
-	if (!intent) {
-		return null;
-	}
-	return {
-		intent,
-		intentState: issues.length === 0 ? "validated" : "drafted",
 		issues,
 	};
 }
@@ -83,12 +61,9 @@ function readStructuredIntent(
 	value: unknown,
 	path: string,
 	issues: StructuredIntentParseIssue[],
-	options: {
-		allowPartial: boolean;
-		targetKind: AITargetKind;
-	},
+	targetKind: AITargetKind,
 ): StructuredIntent | null {
-	if (options.targetKind === "table") {
+	if (targetKind === "table") {
 		issues.push({
 			path,
 			code: "invalid-kind",
@@ -117,17 +92,17 @@ function readStructuredIntent(
 	}
 	switch (kind) {
 		case "insert_block":
-			return readInsertBlockIntent(record, path, issues, options.allowPartial);
+			return readInsertBlockIntent(record, path, issues);
 		case "update_block":
-			return readUpdateBlockIntent(record, path, issues, options.allowPartial);
+			return readUpdateBlockIntent(record, path, issues);
 		case "move_block":
-			return readMoveBlockIntent(record, path, issues, options.allowPartial);
+			return readMoveBlockIntent(record, path, issues);
 		case "convert_block":
-			return readConvertBlockIntent(record, path, issues, options.allowPartial);
+			return readConvertBlockIntent(record, path, issues);
 		case "text_edit":
-			return readTextEditIntent(record, path, issues, options.allowPartial);
+			return readTextEditIntent(record, path, issues);
 		case "review_bundle":
-			return readReviewBundleIntent(record, path, issues, options);
+			return readReviewBundleIntent(record, path, issues, targetKind);
 		default:
 			issues.push({
 				path: `${path}.kind`,
@@ -142,32 +117,27 @@ function readInsertBlockIntent(
 	record: Record<string, unknown>,
 	path: string,
 	issues: StructuredIntentParseIssue[],
-	allowPartial: boolean,
 ): InsertBlockIntent | null {
 	const blockType = readRequiredString(
 		record.blockType,
 		`${path}.blockType`,
 		issues,
-		allowPartial,
 	);
 	const position = readStructuredPosition(
 		record.position,
 		`${path}.position`,
 		issues,
-		allowPartial,
 	);
 	if (!blockType || !position) {
 		return null;
 	}
 	if (blockType === "table") {
-		if (!allowPartial) {
-			issues.push({
-				path: `${path}.blockType`,
-				code: "invalid-kind",
-				message:
-					"Structured table intents are not supported. Use the markdown authoring lane for tables.",
-			});
-		}
+		issues.push({
+			path: `${path}.blockType`,
+			code: "invalid-kind",
+			message:
+				"Structured table intents are not supported. Use the markdown authoring lane for tables.",
+		});
 		return null;
 	}
 	return {
@@ -185,17 +155,15 @@ function readUpdateBlockIntent(
 	record: Record<string, unknown>,
 	path: string,
 	issues: StructuredIntentParseIssue[],
-	allowPartial: boolean,
 ): UpdateBlockIntent | null {
 	const blockId = readRequiredString(
 		record.blockId,
 		`${path}.blockId`,
 		issues,
-		allowPartial,
 	);
 	const props = asRecord(record.props);
 	if (!blockId || !props) {
-		if (!props && !allowPartial) {
+		if (!props) {
 			issues.push({
 				path: `${path}.props`,
 				code: "invalid-shape",
@@ -216,19 +184,16 @@ function readMoveBlockIntent(
 	record: Record<string, unknown>,
 	path: string,
 	issues: StructuredIntentParseIssue[],
-	allowPartial: boolean,
 ): MoveBlockIntent | null {
 	const blockId = readRequiredString(
 		record.blockId,
 		`${path}.blockId`,
 		issues,
-		allowPartial,
 	);
 	const position = readStructuredPosition(
 		record.position,
 		`${path}.position`,
 		issues,
-		allowPartial,
 	);
 	if (!blockId || !position) {
 		return null;
@@ -245,19 +210,16 @@ function readConvertBlockIntent(
 	record: Record<string, unknown>,
 	path: string,
 	issues: StructuredIntentParseIssue[],
-	allowPartial: boolean,
 ): ConvertBlockIntent | null {
 	const blockId = readRequiredString(
 		record.blockId,
 		`${path}.blockId`,
 		issues,
-		allowPartial,
 	);
 	const newType = readRequiredString(
 		record.newType,
 		`${path}.newType`,
 		issues,
-		allowPartial,
 	);
 	if (!blockId || !newType) {
 		return null;
@@ -275,27 +237,19 @@ function readTextEditIntent(
 	record: Record<string, unknown>,
 	path: string,
 	issues: StructuredIntentParseIssue[],
-	allowPartial: boolean,
 ): TextEditIntent | null {
 	const target = asRecord(record.target);
 	const blockId = readRequiredString(
 		target?.blockId,
 		`${path}.target.blockId`,
 		issues,
-		allowPartial,
 	);
 	const operation = readRequiredString(
 		record.operation,
 		`${path}.operation`,
 		issues,
-		allowPartial,
 	) as TextEditIntent["operation"] | null;
-	const text = readRequiredString(
-		record.text,
-		`${path}.text`,
-		issues,
-		allowPartial,
-	);
+	const text = readRequiredString(record.text, `${path}.text`, issues);
 	if (!blockId || !operation || !text) {
 		return null;
 	}
@@ -309,9 +263,9 @@ function readTextEditIntent(
 				isFiniteNumber(rangeRecord.startOffset) &&
 				isFiniteNumber(rangeRecord.endOffset)
 					? {
-						startOffset: rangeRecord.startOffset,
-						endOffset: rangeRecord.endOffset,
-					}
+							startOffset: rangeRecord.startOffset,
+							endOffset: rangeRecord.endOffset,
+						}
 					: undefined,
 		},
 		operation,
@@ -324,16 +278,21 @@ function readReviewBundleIntent(
 	record: Record<string, unknown>,
 	path: string,
 	issues: StructuredIntentParseIssue[],
-	options: { allowPartial: boolean; targetKind: AITargetKind },
+	targetKind: AITargetKind,
 ): ReviewBundleIntent | null {
 	const changes = Array.isArray(record.changes)
 		? record.changes
-			.map((entry, index) =>
-				readStructuredIntent(entry, `${path}.changes[${index}]`, issues, options),
-			)
-			.filter((entry): entry is StructuredIntent => entry !== null)
+				.map((entry, index) =>
+					readStructuredIntent(
+						entry,
+						`${path}.changes[${index}]`,
+						issues,
+						targetKind,
+					),
+				)
+				.filter((entry): entry is StructuredIntent => entry !== null)
 		: [];
-	if (changes.length === 0 && !options.allowPartial) {
+	if (changes.length === 0) {
 		issues.push({
 			path: `${path}.changes`,
 			code: "missing-field",
@@ -343,12 +302,8 @@ function readReviewBundleIntent(
 	}
 	return {
 		kind: "review_bundle",
-		label:
-			readNonEmptyString(record.label) ??
-			(options.allowPartial ? "Streaming structured changes" : ""),
-		reason:
-			readNonEmptyString(record.reason) ??
-			(options.allowPartial ? "Streaming structured preview." : ""),
+		label: readNonEmptyString(record.label) ?? "",
+		reason: readNonEmptyString(record.reason) ?? "",
 		changes,
 		confidence: readConfidence(record.confidence),
 	};

@@ -20,26 +20,6 @@ export function isPg1Record(value: unknown): value is {
 	>;
 };
 
-export function enforcedRows(
-	versusSpec: Record<
-		string,
-		{
-			enforced?: unknown;
-			measured?: unknown;
-			budget?: unknown;
-			blown?: unknown;
-		}
-	>,
-): Array<{
-	name: string;
-	entry: {
-		enforced?: unknown;
-		measured?: unknown;
-		budget?: unknown;
-		blown?: unknown;
-	};
-}>;
-
 export function comparePg1Counts(
 	fresh: {
 		versusSpec: Record<

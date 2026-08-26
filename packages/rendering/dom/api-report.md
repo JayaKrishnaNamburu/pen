@@ -66,6 +66,7 @@
 - FlushCollect
 - GeometryInvalidator
 - PasteImporters
+- PEN_REVIEW_STYLESHEET
 - PenFieldEditorFocusOptions
 - PenFocusAction
 - PenFocusDecision
@@ -75,6 +76,9 @@
 - PenFocusReason
 - PenFocusRequest
 - resolveSelectAllBehavior
+- REVIEW_SURFACE_BLOCK_SUGGESTION_CLASSES
+- REVIEW_SURFACE_CLASSES
+- REVIEW_SURFACE_CUSTOM_PROPERTIES
 - UrlContext
 - urlPolicy
 - UrlPolicy

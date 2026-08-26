@@ -1,7 +1,6 @@
 export type CheckOutcome = "passed" | "failed" | "skipped";
 
 export const STANDING_DOM_AUTHORITY_CHECK: string;
-export const STANDING_DIAGNOSTICS_CHECK: string;
 
 export function formatCheckReport(
 	check: string,

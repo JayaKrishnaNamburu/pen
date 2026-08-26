@@ -22,19 +22,16 @@ export function readRequiredString(
 	value: unknown,
 	path: string,
 	issues: StructuredIntentParseIssue[],
-	allowPartial: boolean,
 ): string | null {
 	const stringValue = readNonEmptyString(value);
 	if (stringValue) {
 		return stringValue;
 	}
-	if (!allowPartial) {
-		issues.push({
-			path,
-			code: "missing-field",
-			message: "Field is required.",
-		});
-	}
+	issues.push({
+		path,
+		code: "missing-field",
+		message: "Field is required.",
+	});
 	return null;
 }
 
@@ -63,7 +60,6 @@ export function readStructuredPosition(
 	value: unknown,
 	path: string,
 	issues: StructuredIntentParseIssue[],
-	allowPartial: boolean,
 ): StructuredInsertPosition | null {
 	if (
 		value === "before_active" ||
@@ -75,13 +71,11 @@ export function readStructuredPosition(
 	}
 	const record = asRecord(value);
 	if (!record) {
-		if (!allowPartial) {
-			issues.push({
-				path,
-				code: "invalid-shape",
-				message: "Structured position is required.",
-			});
-		}
+		issues.push({
+			path,
+			code: "invalid-shape",
+			message: "Structured position is required.",
+		});
 		return null;
 	}
 	const beforeBlockId = readNonEmptyString(record.beforeBlockId);
@@ -96,12 +90,10 @@ export function readStructuredPosition(
 	if (parentId && isFiniteNumber(record.index)) {
 		return { parentId, index: record.index };
 	}
-	if (!allowPartial) {
-		issues.push({
-			path,
-			code: "invalid-shape",
-			message: "Structured position is invalid.",
-		});
-	}
+	issues.push({
+		path,
+		code: "invalid-shape",
+		message: "Structured position is invalid.",
+	});
 	return null;
 }

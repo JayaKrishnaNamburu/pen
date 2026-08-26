@@ -17,10 +17,6 @@ export function graphemeBoundaryOffsets(text: string): number[] {
 	return offsets;
 }
 
-export function isGraphemeBoundary(text: string, offset: number): boolean {
-	return graphemeBoundaryOffsets(text).includes(offset);
-}
-
 export type GraphemeWalkCheck = {
 	ok: boolean;
 	skipped?: boolean;

@@ -21,6 +21,11 @@
     ]
   },
 
+  // Compile-time type pin: included by tsconfig, never imported.
+  "dynamicallyLoaded": [
+    "packages/tooling/conformance/src/mirrors/pin.ts"
+  ],
+
   // CLI / Vite / CI files that are executed, not imported.
   "entry": [
     "scripts/*.mjs",

@@ -12,19 +12,6 @@ import type {
 	SerializedSelection,
 } from "./types";
 
-export type {
-	AuthorityCompareCheck,
-	AuthorityCompareKind,
-	AuthorityCompareOutcome,
-	AuthorityTrace,
-	AuthorityTraceCase,
-	AuthorityTraceCaseDef,
-	AuthorityTraceKind,
-	AuthorityTraceRegion,
-	DocumentFingerprint,
-	RecordedAuthorityOp,
-} from "./authorityTrace";
-
 export type DomAuthorityObservation = {
 	id: string;
 	hasRoot: boolean;

@@ -15,7 +15,7 @@
 export const STANDING_DOM_AUTHORITY_CHECK =
 	"standing: DOM vs editor.selection (v1 authority)";
 
-export const STANDING_DIAGNOSTICS_CHECK = "standing: diagnostics-zero";
+const STANDING_DIAGNOSTICS_CHECK = "standing: diagnostics-zero";
 
 /**
  * @param {string} check

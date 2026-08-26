@@ -27,11 +27,3 @@ export interface StructuralReviewComparisonRow {
 	changeKind: "added" | "removed" | "updated";
 	section: "schema" | "view";
 }
-
-export interface StructuralReviewBuildContext {
-	virtualBlocks: Map<string, VirtualReviewBlock>;
-}
-
-export type VirtualReviewBlock = {
-	type: string;
-};

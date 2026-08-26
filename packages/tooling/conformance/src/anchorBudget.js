@@ -31,7 +31,7 @@ export function isPg1Record(value) {
 /**
  * @param {Record<string, { enforced?: unknown; measured?: unknown; budget?: unknown; blown?: unknown }>} versusSpec
  */
-export function enforcedRows(versusSpec) {
+function enforcedRows(versusSpec) {
 	return Object.entries(versusSpec)
 		.filter(([, entry]) => entry && entry.enforced === true)
 		.map(([name, entry]) => ({ name, entry }));

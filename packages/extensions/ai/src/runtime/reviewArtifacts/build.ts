@@ -12,7 +12,6 @@ import {
 	stringifyReviewValue,
 } from "./previews";
 import type {
-	StructuralReviewBuildContext,
 	StructuralReviewComparisonRow,
 	StructuralReviewItem,
 } from "./types";
@@ -21,10 +20,7 @@ export function buildStructuralReviewItems(
 	editor: Editor,
 	plan: DocumentMutationPlan,
 ): StructuralReviewItem[] {
-	const context: StructuralReviewBuildContext = {
-		virtualBlocks: new Map(),
-	};
-	return buildReviewItemsForPlan(editor, plan, [], context);
+	return buildReviewItemsForPlan(editor, plan, []);
 }
 
 export function selectStructuralReviewItemPlan(
@@ -45,7 +41,6 @@ function buildReviewItemsForPlan(
 	editor: Editor,
 	plan: DocumentMutationPlan,
 	bundlePath: number[],
-	context: StructuralReviewBuildContext,
 ): StructuralReviewItem[] {
 	switch (plan.kind) {
 		case "text_edit":
@@ -181,7 +176,7 @@ function buildReviewItemsForPlan(
 			];
 		case "review_bundle":
 			return plan.plans.flatMap((nestedPlan, index) =>
-				buildReviewItemsForPlan(editor, nestedPlan, [...bundlePath, index], context),
+				buildReviewItemsForPlan(editor, nestedPlan, [...bundlePath, index]),
 			);
 		default: {
 			const _exhaustive: never = plan;

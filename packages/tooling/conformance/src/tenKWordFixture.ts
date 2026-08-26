@@ -10,22 +10,22 @@ import type { DocumentOp } from "@input/pen-types";
  * (hash moves) from a scheduler change (hash stable, numbers move).
  */
 export const TEN_K_FIXTURE_ID = "wave3-10k-words";
-export const TEN_K_SEED = 0x70656e33;
+const TEN_K_SEED = 0x70656e33;
 export const TEN_K_PARAGRAPH_COUNT = 20;
-export const TEN_K_WORDS_PER_PARAGRAPH = 500;
+const TEN_K_WORDS_PER_PARAGRAPH = 500;
 export const TEN_K_WORD_COUNT =
 	TEN_K_PARAGRAPH_COUNT * TEN_K_WORDS_PER_PARAGRAPH;
-export const TEN_K_BLOCK_PREFIX = "w3-10k-p";
+const TEN_K_BLOCK_PREFIX = "w3-10k-p";
 export const TEN_K_TABLE_ID = "w3-10k-table";
 /** Independent of the paragraph seed so the 20×500 LCG walk stays bit-identical. */
-export const TEN_K_CELL_SEED = 0x63656c6c;
+const TEN_K_CELL_SEED = 0x63656c6c;
 export const TEN_K_CELL_ROWS = 2;
 export const TEN_K_CELL_COLS = 2;
-export const TEN_K_WORDS_PER_CELL = 50;
+const TEN_K_WORDS_PER_CELL = 50;
 export const TEN_K_CELL_COUNT = TEN_K_CELL_ROWS * TEN_K_CELL_COLS;
 export const TEN_K_CELL_WORD_COUNT = TEN_K_CELL_COUNT * TEN_K_WORDS_PER_CELL;
 
-export const TEN_K_LEXICON = [
+const TEN_K_LEXICON = [
 	"the",
 	"quick",
 	"brown",

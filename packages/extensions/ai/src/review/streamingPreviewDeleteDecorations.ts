@@ -1,4 +1,8 @@
 import type { BlockDecoration, InlineDecoration } from "@input/pen-types";
+import {
+	REVIEW_SURFACE_BLOCK_SUGGESTION_CLASSES,
+	REVIEW_SURFACE_CLASSES,
+} from "@input/pen-types";
 import type { AIExtensionConfig } from "../types";
 import {
 	AI_REVIEW_ROLE_ATTRIBUTE,
@@ -36,14 +40,18 @@ function buildStreamingDeleteAttributes(
 ): DecorationAttributes {
 	if (suggestionPresentation === "final-text") {
 		return {
-			class: "pen-ai-review-preview-original",
+			class: REVIEW_SURFACE_CLASSES.previewOriginal,
 			[AI_REVIEW_ROLE_ATTRIBUTE]: "delete-hidden",
 			[FINAL_TEXT_REVIEW_HIDDEN_ATTRIBUTE]: true,
 		};
 	}
 
 	return {
-		class: "pen-ai-review-preview-original pen-suggestion-delete pen-ai-review-delete",
+		class: [
+			REVIEW_SURFACE_CLASSES.previewOriginal,
+			REVIEW_SURFACE_CLASSES.suggestionDelete,
+			REVIEW_SURFACE_CLASSES.reviewDelete,
+		].join(" "),
 		[AI_REVIEW_ROLE_ATTRIBUTE]: "delete",
 	};
 }
@@ -55,7 +63,10 @@ export function createStreamingDeleteBlockDecoration(
 		type: "block",
 		blockId,
 		attributes: {
-			class: "pen-block-suggestion pen-block-suggestion-delete-block",
+			class: [
+				REVIEW_SURFACE_CLASSES.blockSuggestion,
+				REVIEW_SURFACE_BLOCK_SUGGESTION_CLASSES["delete-block"],
+			].join(" "),
 			"data-suggestion-action": "delete-block",
 			[AI_REVIEW_ROLE_ATTRIBUTE]: "block-delete",
 		},

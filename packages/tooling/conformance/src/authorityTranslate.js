@@ -23,7 +23,7 @@ export function structuralSequenceLabel(kind) {
 	return STRUCTURAL_SEQUENCE_BY_KIND[kind].join("+");
 }
 
-export function setupBlocksFromRecordedOps(setup) {
+function setupBlocksFromRecordedOps(setup) {
 	const blocks = new Map();
 	for (const op of setup) {
 		switch (op.type) {
@@ -67,7 +67,7 @@ export function setupBlocksFromRecordedOps(setup) {
 	return blocks;
 }
 
-export function replayContextFromSetup(setup) {
+function replayContextFromSetup(setup) {
 	const blocks = setupBlocksFromRecordedOps(setup);
 	return {
 		readBlock(blockId) {
@@ -76,7 +76,7 @@ export function replayContextFromSetup(setup) {
 	};
 }
 
-export function translateRecordedAuthorityOp(op, context = {}) {
+function translateRecordedAuthorityOp(op, context = {}) {
 	if (op == null || typeof op.type !== "string") {
 		throw new Error("translateRecordedAuthorityOp: op is missing a type");
 	}
@@ -126,27 +126,6 @@ export function translateRecordedAuthorityOp(op, context = {}) {
 
 export function translateRecordedAuthorityOps(ops, context = {}) {
 	return ops.flatMap((op) => translateRecordedAuthorityOp(op, context));
-}
-
-export function structuralFromRecordedCommit(commit) {
-	for (const op of commit) {
-		if (op.type === "split-block") {
-			return {
-				kind: "split",
-				blockId: op.blockId,
-				newBlockId: op.newBlockId,
-				offset: op.offset,
-			};
-		}
-		if (op.type === "merge-blocks") {
-			return {
-				kind: "merge",
-				targetBlockId: op.targetBlockId,
-				sourceBlockId: op.sourceBlockId,
-			};
-		}
-	}
-	return undefined;
 }
 
 /**

@@ -342,6 +342,12 @@ export type { PenFormatStamp, ReservedMetadataKey } from "./format";
 // Canonical path for INLINE_COMPLETION_VISIBLE_BLOCK_ATTRIBUTE (also
 // defined in `../constants/decorations`; do not re-export from `../index`).
 export { INLINE_COMPLETION_VISIBLE_BLOCK_ATTRIBUTE } from "../constants/decorations";
+// Same discipline for the review-surface vocabulary (RS4).
+export {
+	REVIEW_SURFACE_BLOCK_SUGGESTION_CLASSES,
+	REVIEW_SURFACE_CLASSES,
+	REVIEW_SURFACE_CUSTOM_PROPERTIES,
+} from "../constants/reviewSurface";
 export type {
 	Decoration,
 	InlineDecoration,

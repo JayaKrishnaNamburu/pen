@@ -212,23 +212,26 @@ export async function runGenerationLoop(
 					// edit awaiting review (RS1).
 					const active = controller._state.activeGeneration;
 					if (active) {
-						controller.setStreamingReviewPreview({
-							sessionId: active.sessionId ?? active.id,
-							turnId: active.turnId,
-							target: resolveSelectionPreviewTarget(
-								controller._editor,
-								selectionToRange(
-									controller._editor.internals.doc,
-									target.selection,
-								),
+						const previewTarget = resolveSelectionPreviewTarget(
+							controller._editor,
+							selectionToRange(
+								controller._editor.internals.doc,
+								target.selection,
 							),
-							text:
-								state.contentFormat === "markdown"
-									? markdownStreamingPreviewText(
-											state.currentText,
-										)
-									: state.currentText,
-						});
+						);
+						if (previewTarget) {
+							controller.setStreamingReviewPreview({
+								sessionId: active.sessionId ?? active.id,
+								turnId: active.turnId,
+								target: previewTarget,
+								text:
+									state.contentFormat === "markdown"
+										? markdownStreamingPreviewText(
+												state.currentText,
+											)
+										: state.currentText,
+							});
+						}
 					}
 				}
 				const active = controller._state.activeGeneration;

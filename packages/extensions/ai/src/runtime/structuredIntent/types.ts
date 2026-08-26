@@ -92,7 +92,7 @@ export interface StructuredIntentParseIssue {
 
 export interface StructuredIntentParseResult {
 	intent: StructuredIntent | null;
-	intentState: "drafted" | "validated" | "rejected";
+	intentState: "validated" | "rejected";
 	issues: StructuredIntentParseIssue[];
 }
 
