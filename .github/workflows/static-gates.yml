@@ -7,10 +7,11 @@
 # by the job, which is why the per-gate comments that used to live here are
 # gone rather than lost.
 #
-# Every gate here is fast and dependency-light: source tree or published
-# manifests only. Anything that needs a build lives in ci.yml or in the
-# doc-refs job below; anything that needs a browser lives in conformance.yml
-# or in the ci.yml e2e matrix.
+# Most gates here are fast and dependency-light: source tree or published
+# manifests only. The few that read built output declare `needsBuild` in
+# gates.json and pay for `pnpm build` in their own leg, so the cheap gates
+# stay cheap. Anything that needs a browser lives in conformance.yml or in
+# the ci.yml e2e matrix.
 
 name: Static gates
 
@@ -73,6 +74,14 @@ jobs:
 
       - name: Set up Pen toolchain
         uses: ./.github/actions/setup
+        with:
+          turbo-cache-scope: ${{ matrix.gate.needsBuild && 'static-gate' || '' }}
+
+      - name: Build packages
+        # Only the gates that read dist/ or resolve workspace types. The rest
+        # would pay several minutes for output they never open.
+        if: matrix.gate.needsBuild
+        run: pnpm build
 
       - name: Run ${{ matrix.gate.id }}
         env:

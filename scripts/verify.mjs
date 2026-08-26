@@ -86,6 +86,21 @@ const BUILD_STAGE = [
 ];
 
 export function buildPlan(gates) {
+	const asStep = (gate) => ({
+		id: gate.id,
+		command: gate.command,
+		workflow: `Static gates / ${gate.id}`,
+		description: gate.description,
+	});
+
+	// A `needsBuild` gate reads dist/ or resolves workspace types, so it has to
+	// run after `pnpm build` — the same split static-gates.yml makes. Running
+	// them immediately after the build, rather than at the end, keeps the fast
+	// failure fast: typecheck and test are the slow steps behind them.
+	const sourceGates = gates.filter((gate) => !gate.needsBuild);
+	const builtGates = gates.filter((gate) => gate.needsBuild);
+	const [build, ...afterBuild] = BUILD_STAGE;
+
 	return [
 		{
 			id: "lint",
@@ -100,13 +115,10 @@ export function buildPlan(gates) {
 			description:
 				"Published packages whose shipped source changed are named in a changeset.",
 		},
-		...gates.map((gate) => ({
-			id: gate.id,
-			command: gate.command,
-			workflow: `Static gates / ${gate.id}`,
-			description: gate.description,
-		})),
-		...BUILD_STAGE,
+		...sourceGates.map(asStep),
+		build,
+		...builtGates.map(asStep),
+		...afterBuild,
 	];
 }
 
@@ -125,6 +137,11 @@ function loadGates() {
 		) {
 			throw new Error(
 				`verify: scripts/gates.json entries need id, command, and description: ${JSON.stringify(gate)}`,
+			);
+		}
+		if (gate.needsBuild !== undefined && typeof gate.needsBuild !== "boolean") {
+			throw new Error(
+				`verify: gate ${gate.id} has a non-boolean needsBuild; static-gates.yml reads it as a matrix condition`,
 			);
 		}
 	}

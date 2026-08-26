@@ -52,6 +52,7 @@
   {
     "id": "bench-envelope-drift",
     "command": "node scripts/bench-envelope-drift.mjs",
+    "needsBuild": true,
     "description": "Generated envelope table must match baselines/envelope.json. Table diff only; timing lives in bench.yml."
   },
   {
@@ -72,6 +73,7 @@
   {
     "id": "migration-guide-check",
     "command": "node scripts/migration-guide-check.mjs",
+    "needsBuild": true,
     "description": "MIGRATION.md stays mechanically true: export claims, origin union, yjs peer, named paths, fenced samples."
   },
   {
