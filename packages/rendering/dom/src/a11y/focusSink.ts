@@ -68,8 +68,8 @@ export function createFocusSink(doc: Document = document): FocusSink {
 }
 
 function hideSink(element: HTMLElement): void {
-	// The hide body — aria-hidden, tabIndex, and role/label removal —
-	// runs in the same selectionChange turn as leaving block/cell
+	// The focus sink hide body — aria-hidden, tabIndex, and role/label
+	// removal — runs in the same selectionChange turn as leaving block/cell
 	// selection. Deferring it to DomScheduler.write leaves AT on a
 	// still-labeled, still-tabbable group/grid after the user has moved
 	// on, and focus moves off the sink in this turn too. Value is the
